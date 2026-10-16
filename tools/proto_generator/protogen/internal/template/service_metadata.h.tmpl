@@ -1,0 +1,38 @@
+#pragma once
+#include <cstdint>
+
+{{.IncludeName}}
+{{- range .ServiceInfo }}
+{{range .Methods}}
+constexpr uint32_t {{.KeyName}}{{$.MessageIdName}} = {{.Id}};
+constexpr uint32_t {{.KeyName}}Index = {{.Index}};
+#define {{.KeyName}}Method  ::{{.Service}}_Stub::descriptor()->method({{.Index}})
+{{end}}
+{{end}}
+{{- if .MethodTags }}
+// 节点间 RPC0 的方法 tag(docs/design/muduo-rpc-channel.md §10):RpcChannel / RpcClient / RpcSession 的
+// CallMethod<Tag> / SendRequest<Tag> 按它取消息号与请求 / 响应类型。只含类型信息、不依赖 core;
+// 请求 / 响应类型在此前向声明,tag 本身不要求完整类型。
+{{- range .ForwardDecls }}
+{{- if .Namespace }}
+namespace {{.Namespace}}
+{
+{{- range .Classes }}
+class {{.}};
+{{- end }}
+}
+{{- else }}
+{{- range .Classes }}
+class {{.}};
+{{- end }}
+{{- end }}
+{{- end }}
+{{range .MethodTags}}
+struct {{.TagName}}
+{
+    static constexpr uint32_t kMessageId = {{.MessageIdConst}};
+    using Request = {{.Request}};
+    using Response = {{.Response}};
+};
+{{end}}
+{{- end }}

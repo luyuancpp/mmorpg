@@ -114,7 +114,9 @@ const (
 	// friend 的 DB 3 已删(2026-09-18,friend 移植 F3):它唯一服务的键 friend:online:{pid}
 	// 全仓没有写者、读者也已删除,审计改用 shared 的 player:session 判在线。
 	defaultSharedRedisDB = 0 // login / db / player_locator / scene_manager
-	// go/db/etc/db.yaml → Kafka.GroupID
+	// go/db/etc/db.yaml → Kafka.GroupID。它有两个身份:legacy 全 zone 共用的消费组名(-kafka-legacy-group 的缺省),
+	// 以及按 zone 推导组名的基名 —— db_rpc_consumer_group_z<zone>(dbConsumerGroupForZone,
+	// 与 k8s_deploy.ps1 切组后的 ConfigMap、go_services.ps1 的 -Zone N 本机启动同名)。
 	defaultKafkaGroup = "db_rpc_consumer_group"
 	// 导表器产物;仓库根的相对路径(dev_tools.ps1 在仓库根跑 go run)。
 	defaultTableListPath = "generated/data/mysql_database_table_list.json"
@@ -173,7 +175,10 @@ type options struct {
 	manifestPath       string
 	tableListPath      string
 
+	// kafkaGroup 是 -kafka-group(非空时 P3 只看它);kafkaLegacyGroup 是 -kafka-legacy-group,
+	// 只在 kafkaGroup 为空时与 db_rpc_consumer_group_z<zone> 一起作 P3 的候选,见 kafkaGroupCandidates。
 	kafkaGroup         string
+	kafkaLegacyGroup   string
 	kafkaTopicGen      uint
 	kafkaCLI           string
 	kafkaBootstrap     string
@@ -316,7 +321,13 @@ func main() {
 	flag.StringVar(&o.tableListPath, "table-list-json", defaultTableListPath,
 		"go/db table list JSON used to discover the per-zone player tables")
 
-	flag.StringVar(&o.kafkaGroup, "kafka-group", defaultKafkaGroup, "go/db consumer group id (db.yaml Kafka.GroupID) used for the lag pre-flight")
+	flag.StringVar(&o.kafkaGroup, "kafka-group", "",
+		"Explicit go/db consumer group for the lag pre-flight (only this group is checked); empty = derive "+
+			"db_rpc_consumer_group_z<zone> plus -kafka-legacy-group and use the single group that holds committed offsets "+
+			"on the topic (both holding offsets = refused: finalize the handoff with kafka_offset_reset.ps1 -FinalizeHandoff first)")
+	flag.StringVar(&o.kafkaLegacyGroup, "kafka-legacy-group", defaultKafkaGroup,
+		"Legacy shared go/db consumer group checked next to db_rpc_consumer_group_z<zone> when -kafka-group is empty; "+
+			"pass an empty value to check only the zone group")
 	flag.UintVar(&o.kafkaTopicGen, "kafka-topic-generation", 1,
 		"go/db Kafka.TopicGeneration; topic = db_task_zone_<zone>[_g<gen>] (merge lag pre-flight; relocate R2 waits on the "+
 			"go/db ordering locks of each player's home-zone topic)")

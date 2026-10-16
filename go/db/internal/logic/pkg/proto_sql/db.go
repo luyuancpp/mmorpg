@@ -3,6 +3,7 @@ package proto_sql
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"db/internal/config"
 	"db/internal/dbguard"
 	"db/internal/migrate"
@@ -27,6 +28,10 @@ import (
 type GameDB struct {
 	SqlModel *proto2mysql.DB
 	DB       *sql.DB
+	// Connector 是建这个连接池用的连接器。探活(store_health.go)用它绕过连接池新建一条连接:
+	// 池里的空闲连接可能早已失效(Windows 上驱动不做空闲连接活性检查),池满时取连接还要排队,
+	// 两种情况都会把活着的库误判成不可达。为 nil(单测里只带库名的模型)时退回连接池的 PingContext。
+	Connector driver.Connector
 }
 
 // DB 是本 zone 库(zone_{ZoneId}_db),由 InitDB 在启动期打开并过全部断言。
@@ -121,7 +126,67 @@ func newMysqlConfig() *mysql.Config {
 }
 
 // NewMysqlConfig 暴露给迁移入口(cmd/migrate)复用同一套连接参数。
+// 它不带业务池的读写超时与会话级锁等待(见 newServiceMysqlConfig):DDL 可能合法地跑几分钟,
+// 迁移 runner 也会在自己的会话上单独设 lock_wait_timeout。
 func NewMysqlConfig() *mysql.Config { return newMysqlConfig() }
+
+// newServiceMysqlConfig 是业务连接池(本 zone 库与按需打开的落点库)的连接参数:在 newMysqlConfig 之上加
+// 拨号 / 读 / 写超时,以及会话级的锁等待上限(docs/design/db-task-store-unavailable-deferral.md §8)。
+//
+// 没有这组超时时,MySQL 卡住(排在一条 DDL 的元数据锁后面、进程被暂停、对端不回包)会让 SQL 既不返回也不报错:
+// 子分片协程永久阻塞,通道一路堵到全实例唯一的重试协程,Stop() 也挂住。超时之后驱动返回连接类错误,
+// 任务按 L-04 延后。
+//
+// 会话级锁等待要短于读超时:客户端读超时撤不回已经发出的语句,让服务端先以 1205 中止排队中的语句,
+// 超时之后才不会留下事后生效的在途写。这一层只是缩小窗口,不是栅栏;挡旧写要靠条件写。
+func newServiceMysqlConfig() *mysql.Config {
+	myCnf := newMysqlConfig()
+	db := config.AppConfig.ServerConfig.Database
+	myCnf.Timeout = positiveSeconds(db.DialTimeoutSeconds)
+	myCnf.ReadTimeout = positiveSeconds(db.ReadTimeoutSeconds)
+	myCnf.WriteTimeout = positiveSeconds(db.WriteTimeoutSeconds)
+	if db.SessionLockWaitSeconds > 0 {
+		myCnf.Params["lock_wait_timeout"] = strconv.Itoa(db.SessionLockWaitSeconds)
+	}
+	if db.SessionInnodbLockWaitSeconds > 0 {
+		myCnf.Params["innodb_lock_wait_timeout"] = strconv.Itoa(db.SessionInnodbLockWaitSeconds)
+	}
+	return myCnf
+}
+
+// positiveSeconds 把配置里的秒数转成时长;0 与负数都表示不设(驱动按 0 处理即不加超时)。
+func positiveSeconds(seconds int) time.Duration {
+	if seconds <= 0 {
+		return 0
+	}
+	return time.Duration(seconds) * time.Second
+}
+
+// logServicePoolTimeouts 在启动时打印一次业务池的超时口径,并检查「会话级锁等待短于读超时」。
+// 不满足时只打 ERROR 不拒启:它削弱的是在途语句窗口的保护,不会造成写错数据,拒启等于停掉整个 zone 的存盘。
+func logServicePoolTimeouts() {
+	db := config.AppConfig.ServerConfig.Database
+	logx.Infof("mysql service pool timeouts: dial=%ds read=%ds write=%ds session lock_wait_timeout=%ds innodb_lock_wait_timeout=%ds (<=0 means unset)",
+		db.DialTimeoutSeconds, db.ReadTimeoutSeconds, db.WriteTimeoutSeconds, db.SessionLockWaitSeconds, db.SessionInnodbLockWaitSeconds)
+	if db.ReadTimeoutSeconds <= 0 {
+		logx.Errorf("mysql service pool has no read timeout: a stalled MySQL will block db workers forever (Database.ReadTimeoutSeconds)")
+		return
+	}
+	for name, wait := range map[string]int{
+		"SessionLockWaitSeconds":       db.SessionLockWaitSeconds,
+		"SessionInnodbLockWaitSeconds": db.SessionInnodbLockWaitSeconds,
+	} {
+		if wait <= 0 {
+			// 写负数是有意关掉(例如 TiDB 不接受 lock_wait_timeout),只提示,不当错误。
+			logx.Infof("Database.%s is disabled (%d): the server-side lock wait stays at its server default", name, wait)
+			continue
+		}
+		if wait >= db.ReadTimeoutSeconds {
+			logx.Errorf("Database.%s=%d is not below ReadTimeoutSeconds=%d: a statement queued on a lock can outlive the client timeout and take effect after the task was rescheduled",
+				name, wait, db.ReadTimeoutSeconds)
+		}
+	}
+}
 
 // AllowlistSpec 组装白名单的三个外部来源。迁移入口与业务服务共用同一份,
 // 保证「迁移能改的库」和「服务能写的库」永远是同一个集合。
@@ -214,7 +279,7 @@ func isUnknownDatabaseError(err error) bool {
 }
 
 func openDB(policy DDLPolicy) error {
-	mysqlConfig := newMysqlConfig()
+	mysqlConfig := newServiceMysqlConfig()
 	conn, err := mysql.NewConnector(mysqlConfig)
 	if err != nil {
 		return fmt.Errorf("create MySQL connector: %w", err)
@@ -255,8 +320,9 @@ func openDB(policy DDLPolicy) error {
 	}
 
 	DB = &GameDB{
-		DB:       databaseHandle,
-		SqlModel: proto2mysql.NewDB(),
+		DB:        databaseHandle,
+		SqlModel:  proto2mysql.NewDB(),
+		Connector: conn,
 	}
 
 	DB.DB.SetMaxOpenConns(config.AppConfig.ServerConfig.Database.MaxOpenConn)
@@ -461,6 +527,7 @@ func InitDB() error {
 	if err := openDB(policy); err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}
+	logServicePoolTimeouts()
 
 	// 注册必须无条件执行:Save / FindOneByWhereClause 都从 SqlModel.Tables
 	// 取表结构,不注册就是运行期 ErrTableNotFound。历史实现把注册和建表写在

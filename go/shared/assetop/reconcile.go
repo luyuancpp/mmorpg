@@ -119,10 +119,12 @@ type Store interface {
 	ListDue(ctx context.Context, nowMs uint64, limit int) ([]uint64, error)
 
 	// Claim 单行主键 CAS 领取(autocommit),紧挨着处理前调用:
-	//   UPDATE {op} SET lease_until_ms=?, lease_token=?
+	//   UPDATE {op} SET last_send_ms=GREATEST(last_send_ms, lease_until_ms), lease_until_ms=?, lease_token=?
 	//    WHERE op_id=? AND status=<pending> AND lease_until_ms<?
 	// RowsAffected==0 → (Op{}, false, nil):行已被别的副本领走或已终结,跳过即可。
-	// RowsAffected==1 → 回读整行并解 payload。
+	// RowsAffected==1 → 回读整行并解 payload,同时填 Op.CreatedMs 与 Op.LastSendMs。
+	// last_send_ms 那一项是自动放弃的安全依据,必须写在改 lease_until_ms **之前**(读到的是上一个租约),
+	// 理由见 abandon.go 文件头「LastSendMs 契约」;不维护它的 Store 只是用不了自动放弃(fail-closed)。
 	// 解码失败时 Store 自己把行推迟并返回 (Op{}, false, ErrPoisonRow):
 	//   UPDATE {op} SET last_outcome=0, next_attempt_ms=<poisonUntilMs>, lease_until_ms=0
 	//    WHERE op_id=? AND lease_token=?
@@ -143,9 +145,12 @@ type Store interface {
 
 	// Reschedule 推进下一次投递时刻:
 	//   UPDATE {op} SET attempts=attempts+1, next_attempt_ms=?, lease_until_ms=0,
-	//                   durable=?, last_outcome=?, last_reason=?, updated_ms=?
+	//                   durable=?, last_outcome=?, last_reason=?, updated_ms=?,
+	//                   last_send_ms=IF(?, GREATEST(last_send_ms, ?), last_send_ms)   -- (!res.Local, nowMs)
 	//    WHERE op_id=? AND status=<pending> AND lease_token=?
 	// 带回领取令牌是为了:租约已经被别人抢走时,自己这次的结果不该再写回去。
+	// last_send_ms 只在本次确实发出过请求(res.Local 为假)时推进:本地合成的 NOT_HERE 没有发送,
+	// 推进它会让停放中的离线行永远「刚发过」,自动放弃就永远不会发生(abandon.go「LastSendMs 契约」)。
 	//
 	// RowsAffected==1 → nil。
 	// RowsAffected==0 → **必须**返回 ErrLeaseLost(可以 fmt.Errorf("%w: op_id=%d", …) 包一层,
@@ -180,6 +185,25 @@ type PendingAgeReader interface {
 	OldestPendingCreatedMs(ctx context.Context, stream assetpb.AssetOpStream) (uint64, bool, error)
 }
 
+// maxWakeOpsPerPlayer 是一次落地唤醒最多处理的行数。来历:每个服务独占两条流(I6),
+// 每条流的未决行上限是 DefaultLimits.MaxPending = 16(I5),所以一个玩家在一个服务里最多 32 行未决。
+// 超过只可能是守卫失效,多出来的照常等自己的 next_attempt_ms。
+const maxWakeOpsPerPlayer = 32
+
+// PlayerPendingLister 是 Store 的**可选**能力:列出某个玩家的 PENDING 行主键,供落地唤醒用
+// (docs/design/landing-recovery-sync-digest.md §5.3)。
+//
+// 契约:
+//   - 非加锁一致性读,只回主键,条数 <= limit;走按玩家的二级索引
+//     (guild 为 idx_guild_asset_op_2,trade 为 idx_trade_asset_op_1);
+//   - **不看** next_attempt_ms 与 lease_until_ms:唤醒本来就是要提前,租约由随后的 Claim CAS 判;
+//   - 玩家没有 PENDING 行时回 (nil, nil),不是错误。
+//
+// 不放进 Store 主接口:那会逼两个实现同批改。没实现它的 Store,唤醒只是空操作。
+type PlayerPendingLister interface {
+	ListPendingByPlayer(ctx context.Context, playerID uint64, limit int) ([]uint64, error)
+}
+
 // ManualResolution 是一次人工终结的完整输入。
 type ManualResolution struct {
 	OpID uint64
@@ -195,6 +219,9 @@ type ManualResolution struct {
 // assetopfix CLI 都要在写库之前做同一套检查,分两份写迟早只改一边。
 //
 // 长度上限跟列宽一致 —— 超长会被 MySQL 静默截断,而截掉的正是事后追责要看的那几个字。
+//
+// StatusAbandoned 刻意不在白名单里:放弃只能由 AbandonOnce 在全部条件成立时自动产生(abandon.go),
+// 人工判定「放弃」时应按证据选 Aborted(scene 流水里查不到 correlation_id)。
 func (r ManualResolution) validate() error {
 	switch r.Final {
 	case StatusApplied, StatusRejected, StatusAborted, StatusAppliedPartial:
@@ -261,11 +288,34 @@ type LoopConfig struct {
 	// LedgerReadMinAttempts 连续几次拿不到位置之后,才去读已落盘账本。
 	// 设这个门槛是为了不给 data_service 增加无谓的读:刚离线的玩家很快会回来。
 	LedgerReadMinAttempts uint32
-	// Streams 是本服务独占的流(不变量 I6)。只用于刷新最老未决行年龄;留空则不刷。
+	// Streams 是本服务独占的流(不变量 I6)。用于刷新最老未决行年龄与日对账的按类 gauge;留空则不刷。
 	Streams []assetpb.AssetOpStream
+
+	// 以下是落地恢复追加的配置(docs/design/landing-recovery-sync-digest.md §6)。
+	// 全部允许零值 = 关闭,这样直接写 LoopConfig 字面量、还没接这批配置的调用方行为不变。
+
+	// OfflineAfterAttempts 是进入离线停放档的已投递次数门槛(decide.go 的 OfflineParking)。
+	// 0 = 关闭停放档。默认 5:刚下线、正在过图的玩家几分钟内就回来,前几次仍按普通退避。
+	OfflineAfterAttempts uint32
+	// OfflineBackoff 是停放档的间隔中值(±20% 抖动)。OfflineAfterAttempts > 0 时必须 >= MaxBackoff
+	// (否则「停放」比普通退避还勤,等于没有),且 <= 24 小时(唤醒丢失时的最坏延迟上界)。
+	OfflineBackoff time.Duration
+	// AbandonAfter 是自动放弃的年龄门槛:PENDING 且 created_ms 早于 now − AbandonAfter 才是候选
+	// (abandon.go)。0 = 关闭自动放弃;非 0 时不得小于 30 天 —— 放弃不可逆,门槛太短会把
+	// 只是暂时不上线的玩家的东西作废。
+	AbandonAfter time.Duration
+	// AbandonSafetyGap 是放弃条件 4 的安全间隔:距该行最后一次**可能**的发送不足这么久就不放弃。
+	// 自动放弃开启时必须 >= 10 分钟且 >= Lease,理由见 abandon.go「LastSendMs 契约」第 3 条。
+	AbandonSafetyGap time.Duration
+	// AbandonBatch 是一轮放弃最多处理多少行(候选分页大小),开启时取 [1, 1000]。
+	AbandonBatch int
+	// AbandonInterval 是 RunMaintenance 两轮放弃之间的间隔;自动放弃开启时必须为正。
+	AbandonInterval time.Duration
+	// AuditInterval 是 RunMaintenance 两轮日对账之间的间隔;0 = 不跑对账,负数非法。
+	AuditInterval time.Duration
 }
 
-// DefaultLoopConfig 是规格 §4.37 的取值。
+// DefaultLoopConfig 是规格 §4.37 的取值,加上落地恢复设计 §6 的取值。
 func DefaultLoopConfig() LoopConfig {
 	return LoopConfig{
 		Interval:              2 * time.Second,
@@ -278,7 +328,19 @@ func DefaultLoopConfig() LoopConfig {
 		AwaitDurableDelay:     500 * time.Millisecond,
 		PoisonDelay:           time.Hour,
 		LedgerReadMinAttempts: 3,
+		OfflineAfterAttempts:  5,
+		OfflineBackoff:        30 * time.Minute,
+		AbandonAfter:          180 * 24 * time.Hour,
+		AbandonSafetyGap:      time.Hour,
+		AbandonBatch:          200,
+		AbandonInterval:       time.Hour,
+		AuditInterval:         24 * time.Hour,
 	}
+}
+
+// offlineParking 把停放档的两项配置交给纯函数(decide.go)。
+func (c LoopConfig) offlineParking() OfflineParking {
+	return OfflineParking{AfterAttempts: c.OfflineAfterAttempts, Backoff: c.OfflineBackoff}
 }
 
 func (c LoopConfig) validate() error {
@@ -316,8 +378,25 @@ func (c LoopConfig) validate() error {
 	if c.PoisonDelay <= 0 {
 		return fmt.Errorf("assetop: PoisonDelay 必须为正(当前 %v)", c.PoisonDelay)
 	}
-	return nil
+	// 停放档:只在开启时校验间隔,关闭时(OfflineAfterAttempts=0)OfflineBackoff 是多少都无所谓。
+	if c.OfflineAfterAttempts > 0 {
+		if c.OfflineBackoff < c.MaxBackoff {
+			return fmt.Errorf("assetop: OfflineBackoff(%v)不得小于 MaxBackoff(%v):停放比普通退避还勤等于没有停放",
+				c.OfflineBackoff, c.MaxBackoff)
+		}
+		if c.OfflineBackoff > maxOfflineBackoff {
+			return fmt.Errorf("assetop: OfflineBackoff(%v)不得超过 %v:唤醒丢失时玩家要等满这么久", c.OfflineBackoff, maxOfflineBackoff)
+		}
+	}
+	if c.AuditInterval < 0 {
+		return fmt.Errorf("assetop: AuditInterval 不得为负(当前 %v;0 表示不跑对账)", c.AuditInterval)
+	}
+	return c.validateAbandon()
 }
+
+// maxOfflineBackoff 是停放间隔的上限。毫秒 / 秒配错一个量级时,这道闸让服务起不来,
+// 而不是让离线行一停就是几十天。
+const maxOfflineBackoff = 24 * time.Hour
 
 // Processed 是处理一行的结果,供同步路径(业务写 RPC 提交后立刻投一次)判断该回什么。
 type Processed struct {
@@ -342,6 +421,25 @@ type Loop struct {
 	Manual ManualResolver
 	// Rand 可选:退避抖动的随机源,单测注入确定值。为 nil 时取中值,不抖动。
 	Rand func() float64
+	// Locator 可选:自动放弃前重新解析玩家位置(abandon.go 条件 3)。生产与 Caller.Resolver
+	// 共用同一个 scenenode.Locator。为 nil 时自动放弃不运行(fail-closed)。在 RunMaintenance 之前设置。
+	Locator Resolver
+
+	// slots 是本副本「同时在途的资产 RPC」的唯一预算,容量 = Workers:Tick 的 worker 与 WakePlayer
+	// 都要先拿到一个名额才领行(LoopConfig.Workers 的理由对两者同样成立)。业务写 RPC 直接调
+	// ProcessOne 的同步投递不经过它,与引入唤醒之前一致。
+	slots chan struct{}
+
+	// abandonMu 串行化 AbandonOnce,并保护 abandonCursor(下一轮从哪个 op_id 之后接着翻页)。
+	abandonMu     sync.Mutex
+	abandonCursor uint64
+	// auditMu 串行化 AuditOnce 与 resetAuditGauges,并保护 auditExtra:上一轮报过的、不在
+	// LoopConfig.Streams 里的 (流, 类别) 组合,本轮没再出现时要置 0(audit.go)。
+	auditMu    sync.Mutex
+	auditExtra map[pendingKey]struct{}
+	// 「功能没装配齐、不运行」各只打一次 INFO,免得每一轮都刷一遍。
+	auditOffOnce   sync.Once
+	abandonOffOnce sync.Once
 }
 
 // NewLoop 校验配置并组装循环。校验失败就别启动服务:这些都是一眼能看出的配置错,
@@ -356,7 +454,14 @@ func NewLoop(cfg LoopConfig, store Store, applier Applier, m *Metrics, now func(
 	if now == nil {
 		now = time.Now
 	}
-	return &Loop{cfg: cfg, store: store, applier: applier, metrics: m, now: now}, nil
+	return &Loop{
+		cfg:     cfg,
+		store:   store,
+		applier: applier,
+		metrics: m,
+		now:     now,
+		slots:   make(chan struct{}, cfg.Workers),
+	}, nil
 }
 
 func (l *Loop) nowMs() uint64 { return uint64(l.now().UnixMilli()) }
@@ -383,10 +488,49 @@ func (l *Loop) Run(ctx context.Context) {
 	}
 }
 
+// RunMaintenance 按 AuditInterval 跑日对账(AuditOnce)、按 AbandonInterval 跑自动放弃(AbandonOnce),
+// 直到 ctx 结束。调用方用 safego.Go 启动它。
+//
+// **只该在一个副本上跑**:装配方用 go/shared/leader 选主,当选时用领导权的 ctx 启动、卸任时取消
+// (设计 §6.2)。多个副本同时跑不会出错 —— 对账只读,放弃靠 Claim CAS 与令牌互斥 —— 但按类 gauge
+// 会有多份、候选扫描会重复。
+//
+// 启动后先跑一轮对账:按类 gauge 不该在每次部署或换主之后空着 24 小时。放弃不立刻跑,等满一个间隔,
+// 免得领导权来回抖动时每次当选都扫一遍。退出时清空按类 gauge(理由见 Metrics.resetPendingClass)。
+// 每一轮各自 recover,理由同 Run。
+func (l *Loop) RunMaintenance(ctx context.Context) {
+	defer l.resetAuditGauges()
+
+	var auditC, abandonC <-chan time.Time
+	if l.cfg.AuditInterval > 0 {
+		ticker := time.NewTicker(l.cfg.AuditInterval)
+		defer ticker.Stop()
+		auditC = ticker.C
+		safego.Run("assetop.audit", func() { _ = l.AuditOnce(ctx, l.nowMs()) })
+	}
+	if l.cfg.AbandonAfter > 0 {
+		ticker := time.NewTicker(l.cfg.AbandonInterval)
+		defer ticker.Stop()
+		abandonC = ticker.C
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-auditC:
+			safego.Run("assetop.audit", func() { _ = l.AuditOnce(ctx, l.nowMs()) })
+		case <-abandonC:
+			safego.Run("assetop.abandon", func() { _, _ = l.AbandonOnce(ctx, l.nowMs()) })
+		}
+	}
+}
+
 // Tick 领一批到期行并逐行处理,返回实际处理了多少行。
 //
 // 并发严格受 Workers 限制,原因见 LoopConfig.Workers。Tick 等所有 worker 结束才返回,
-// 于是「同时在途的资产 RPC」在一个副本内恒 <= Workers,不会因为上一轮没跑完就叠加。
+// 于是「同时在途的资产 RPC」在一个副本内恒 <= Workers,不会因为上一轮没跑完就叠加;
+// 每个 worker 处理每一行前还要从 slots 拿名额,与同时进行的 WakePlayer 共用这份预算。
 func (l *Loop) Tick(ctx context.Context) int {
 	ids, err := l.store.ListDue(ctx, l.nowMs(), l.cfg.Batch)
 	if err != nil {
@@ -429,26 +573,158 @@ func (l *Loop) drain(ctx context.Context, queue <-chan uint64, processed *atomic
 		if ctx.Err() != nil {
 			return
 		}
-		op, ok := l.claim(ctx, opID)
-		if !ok {
-			continue
+		if l.claimAndProcess(ctx, opID) {
+			processed.Add(1)
 		}
-		if _, err := l.ProcessOne(ctx, op); err != nil {
-			// 单行失败只记不抛:下一行照常处理,这一行靠 next_attempt_ms 再来。
-			logx.Errorf("[AssetOp] Failed to process pending row op_id=%d stream=%d seq=%d: %v",
-				op.OpID, op.Stream, op.Seq, err)
-		}
-		processed.Add(1)
 	}
 }
 
-// claim 领一行。返回 false 表示这一行本轮不处理(被别人领走、已终结、毒行或出错)。
-func (l *Loop) claim(ctx context.Context, opID uint64) (Op, bool) {
+// claimAndProcess 是退避重投(Tick)与落地唤醒(WakePlayer)**共用**的单行路径:
+// 拿并发名额 → Claim CAS → ProcessOne → 还名额。两个入口只在「这一批 op_id 从哪来」上不同,
+// 领取与处理一个字都不分叉 —— 这正是唤醒不改变资产通道任何正确性论证的原因(设计 L-4)。
+//
+// 返回这一行是否被本副本领到并处理过。ProcessOne 出错也算处理过:单行失败只记不抛,
+// 下一行照常处理,这一行靠 next_attempt_ms 再来。
+//
+// 拿到名额之后、领取之前再看一次剩余预算(rowBudgetLeft):等名额可能已经吃掉了大半预算,
+// 此时领下来的行会被截在半路 —— 投递超时被记成传输失败、attempts+1 并按退避重排;或者 Claim 已提交、
+// 调用方的 ctx 先到期,行带着租约却没人处理。不够一整个 OpBudget 就不领,行原样留给下一次。
+// Tick 用的是没有截止时刻的 Run ctx,这一步对它只等于「ctx 还没结束」。
+func (l *Loop) claimAndProcess(ctx context.Context, opID uint64) bool {
+	if !l.acquireSlot(ctx) {
+		return false
+	}
+	defer l.releaseSlot()
+	if !l.rowBudgetLeft(ctx) {
+		return false
+	}
+
+	op, claimed := l.claim(ctx, opID)
+	if claimed != claimOK {
+		return false
+	}
+	if _, err := l.ProcessOne(ctx, op); err != nil {
+		logx.Errorf("[AssetOp] Failed to process pending row op_id=%d stream=%d seq=%d: %v",
+			op.OpID, op.Stream, op.Seq, err)
+	}
+	return true
+}
+
+// acquireSlot 拿一个在途名额;ctx 先结束则返回 false。
+func (l *Loop) acquireSlot(ctx context.Context) bool {
+	if ctx.Err() != nil {
+		return false
+	}
+	if l.slots == nil {
+		// 只有绕过 NewLoop 造出来的 Loop 会走到这里;不设预算总比永远阻塞在 nil 通道上好。
+		return true
+	}
+	select {
+	case l.slots <- struct{}{}:
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
+func (l *Loop) releaseSlot() {
+	if l.slots == nil {
+		return
+	}
+	<-l.slots
+}
+
+// rowBudgetLeft 报告 ctx 剩下的时间还够不够**完整**处理一行(领取 + 投递 + 落库 <= OpBudget)。
+// ctx 已结束时为假;没有截止时刻时只看是否结束。
+//
+// 用的是真实时钟(time.Until)而不是 l.now:ctx 的截止时刻本来就是按真实单调时钟设的,
+// l.now 在单测里是一个固定时刻,拿它去减截止时刻毫无意义。
+func (l *Loop) rowBudgetLeft(ctx context.Context) bool {
+	if ctx.Err() != nil {
+		return false
+	}
+	deadline, ok := ctx.Deadline()
+	return !ok || time.Until(deadline) >= l.cfg.OpBudget
+}
+
+// WakePlayer 立即重投某个玩家的全部 PENDING 行,返回实际领到并处理的行数
+// (docs/design/landing-recovery-sync-digest.md §5.3)。
+//
+// 它是落地唤醒(shared/assetopwake)的落点:scene 在玩家进场完成时发布唤醒,本副本抢到去重键后调它。
+// 每一行走的都是与 Tick 相同的 claimAndProcess(Claim CAS + ProcessOne),所以:
+//   - 不必改 next_attempt_ms 也能领:Claim 只看 status 与租约(Store.Claim 契约),
+//     也就避开了 TiDB 下修改 idx_0 列之前必须先加锁的规则;
+//   - 结局、重排、终结都与退避重投一致,唤醒没有任何新的状态迁移;玩家仍在加载、战斗或冻结时
+//     scene 回 RETRY,行按原有退避重排(设计 L-4);
+//   - 并发计入 Workers 预算(与 Tick 共用 slots),一波登录潮压不垮 scene 的 poller。
+//
+// 逐行串行:一个玩家最多 32 行,串行只占一个名额,而且这些请求本来就都落在同一个 scene 节点上。
+//
+// ctx 是这次唤醒的总预算(assetopwake 默认给 10 秒),它**只决定要不要开始下一行**:剩余时间不够
+// 一整个 OpBudget 就不再领取(rowBudgetLeft),已经开始的行总能在自己的 OpBudget 内走完,
+// 不会被截在半路。没轮到的行照常等各自的 next_attempt_ms —— 停放中的行最多再等一个 OfflineBackoff。
+// 总预算连一行都装不下(WakeTimeout 配得比 OpBudget 还小)时回错误:那样的唤醒永远领不到行,
+// 不报出来就会静默退化成「从不唤醒」。
+//
+// Store 没实现 PlayerPendingLister 时回 (0, nil):唤醒是加速,不是正确性路径。
+func (l *Loop) WakePlayer(ctx context.Context, playerID uint64) (int, error) {
+	lister, ok := l.store.(PlayerPendingLister)
+	if !ok || playerID == 0 {
+		l.metrics.IncWake(WakeNone)
+		return 0, nil
+	}
+	if ctx.Err() == nil && !l.rowBudgetLeft(ctx) {
+		l.metrics.IncWake(WakeError)
+		return 0, fmt.Errorf("assetop: 唤醒预算不足一个 OpBudget(%v),一行也领不了;检查唤醒超时配置 player_id=%d",
+			l.cfg.OpBudget, playerID)
+	}
+	ids, err := lister.ListPendingByPlayer(ctx, playerID, maxWakeOpsPerPlayer)
+	if err != nil {
+		l.metrics.incStoreError("wake_list")
+		l.metrics.IncWake(WakeError)
+		return 0, fmt.Errorf("assetop: 列出玩家未决行失败 player_id=%d: %w", playerID, err)
+	}
+	if len(ids) > maxWakeOpsPerPlayer {
+		ids = ids[:maxWakeOpsPerPlayer]
+	}
+
+	processed := 0
+	for _, opID := range ids {
+		// 预算只会越用越少:这一行开始不了,后面的也开始不了。
+		if !l.rowBudgetLeft(ctx) {
+			break
+		}
+		if l.claimAndProcess(ctx, opID) {
+			processed++
+		}
+	}
+	if processed > 0 {
+		l.metrics.IncWake(WakeWoke)
+	} else {
+		l.metrics.IncWake(WakeNone)
+	}
+	return processed, nil
+}
+
+// claimResult 是领取一行的结果。自动放弃要区分「被别人领走」与「出错」,分别计数。
+type claimResult uint8
+
+const (
+	// claimOK 领到了,租约在本副本手里。
+	claimOK claimResult = iota
+	// claimLost 没领到:被别的副本领走、已终结,或是毒行(Store 已推迟它)。
+	claimLost
+	// claimFailed 存储或令牌生成出错。
+	claimFailed
+)
+
+// claim 领一行。返回值不是 claimOK 时这一行本轮不处理(被别人领走、已终结、毒行或出错)。
+func (l *Loop) claim(ctx context.Context, opID uint64) (Op, claimResult) {
 	token, err := newLeaseToken()
 	if err != nil {
 		l.metrics.incStoreError("claim")
 		logx.Errorf("[AssetOp] Failed to generate lease token op_id=%d: %v", opID, err)
-		return Op{}, false
+		return Op{}, claimFailed
 	}
 	nowMs := l.nowMs()
 	leaseUntilMs := nowMs + uint64(l.cfg.Lease/time.Millisecond)
@@ -462,17 +738,17 @@ func (l *Loop) claim(ctx context.Context, opID uint64) (Op, bool) {
 		l.metrics.incClaim("poison")
 		l.metrics.incStoreError("decode")
 		logx.Errorf("[AssetOp] Could not decode pending row payload; postponed for manual handling op_id=%d", opID)
-		return Op{}, false
+		return Op{}, claimLost
 	case err != nil:
 		l.metrics.incStoreError("claim")
 		logx.Errorf("[AssetOp] Failed to claim pending row op_id=%d: %v", opID, err)
-		return Op{}, false
+		return Op{}, claimFailed
 	case !claimed:
 		l.metrics.incClaim("lost")
-		return Op{}, false
+		return Op{}, claimLost
 	}
 	l.metrics.incClaim("claimed")
-	return op, true
+	return op, claimOK
 }
 
 // ProcessOne 处理一行:决定方向 → 投一次 → 按 Decide 分支落地。
@@ -511,8 +787,17 @@ func (l *Loop) ProcessOne(ctx context.Context, op Op) (Processed, error) {
 		next := nowMs + uint64(l.cfg.AwaitDurableDelay/time.Millisecond)
 		return l.reschedule(ctx, op, next, res, nowMs, "await_durable")
 	case ActionRetry:
-		next := NextAttemptMs(nowMs, op.Attempts, l.cfg.BaseBackoff, l.cfg.MaxBackoff, l.Rand)
-		return l.reschedule(ctx, op, next, res, nowMs, "retry")
+		// 长期拿不到位置的行降到停放档(设计 §6.1),重排原因单列 offline,便于看停放了多少。
+		park := l.cfg.offlineParking()
+		next := NextRetryMs(nowMs, op.Attempts, res, l.cfg.BaseBackoff, l.cfg.MaxBackoff, park, l.Rand)
+		reason := "retry"
+		if park.Parks(res, op.Attempts) {
+			reason = "offline"
+		}
+		if err != nil {
+			return l.rescheduleTransportFailure(ctx, op, next, res, nowMs)
+		}
+		return l.reschedule(ctx, op, next, res, nowMs, reason)
 	default: // ActionAlert
 		if errors.Is(err, ErrOutcomeFlip) {
 			// 翻转已由 Caller 计过 assetop_outcome_flip_total,这里只留日志证据。
@@ -608,6 +893,29 @@ func (l *Loop) reschedule(ctx context.Context, op Op, nextAttemptMs uint64, res 
 	}
 	l.metrics.incReschedule(op.Stream, reason)
 	return Processed{Result: res}, nil
+}
+
+// rescheduleTransportFailure 重排一次「没拿到 scene 任何答复」的投递(传输失败、超时、定位出错)。
+//
+// 落库的那一份结局写 RETRY(原因码 0),而不是 Caller 回的零值 Result(结局 UNKNOWN):
+// last_outcome = UNKNOWN 在列上专指「scene 回了 UNKNOWN / 坏流号 / 毒行」这类要人看的行 ——
+// 日对账按它归 alert 类(ClassifyPending),assetopfix 按它判「反复 UNKNOWN」。传输失败若也写 UNKNOWN,
+// 对账那一刻 scene 短暂不可达就会让 alert 类误报一整天(gauge 24 小时才刷新一次),assetopfix 也会把
+// 「scene 可能已应用、只是回包丢了」的行当成可人工终结的候选。RETRY 的语义正是「结局未定、稍后再投」。
+//
+// 只改落库的那一份:返回给同步路径的仍是本次真实结果(零值),与以前一致。
+// 其余列照常:durable=0;last_reason 仍经 carryPartialReason(27007 粘性不变);
+// last_send_ms 照常推进(Result.Local 为假,按「可能发过」保守处理,见 abandon.go「LastSendMs 契约」)。
+// 实时信号不受影响:RPC 调用失败仍计 assetop_rpc_total{outcome="error"}(Caller.invoke);
+// 一直投不出去的行会在 online_retry 类里变老,由该类的最老年龄告警兜住。
+//
+// 这时列上的 RETRY + 原因码 0 与 scene 的「物品 guid 号段余量不足」(asset_op_system.cpp 回 RETRY、
+// 原因 0)分不开;两者都是「稍后再投」,分类与 assetopfix 的判定对它们一致,不需要分开。
+func (l *Loop) rescheduleTransportFailure(ctx context.Context, op Op, nextAttemptMs uint64, res Result, nowMs uint64) (Processed, error) {
+	stored := Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_RETRY}
+	processed, err := l.reschedule(ctx, op, nextAttemptMs, stored, nowMs, "retry")
+	processed.Result = res
+	return processed, err
 }
 
 // carryPartialReason 让 outbox 行上的 last_reason 对「曾见部分发放」保持粘性。

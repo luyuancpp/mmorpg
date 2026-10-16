@@ -1,7 +1,12 @@
 
+#include <string>
+#include "engine/core/type_define/player_guid_comp.h"
+
 #include "thread_context/ecs_context.h"
 #include "proto/common/database/mysql_database_table.pb.h"
 #include "proto/common/component/player_comp.pb.h"  // PlayerProfileComp(角色名只读副本)
+#include "modules/bag/comp/player_bags_comp.h"       // 存盘前确认背包组件在场(bag_marshal 对缺组件输出空记录)
+#include "modules/mission/comp/mission_comp.h"       // 同上,任务容器
 #include "modules/currency/comp/player_currency_comp.h"
 #include "player_skill.h"
 #include "player_attribute.h"
@@ -15,8 +20,13 @@
 // 回合制战斗结算幂等账本(turn-battle-gap-closure.md §9.3):与 asset_op_ledger 同一条不变量 I3,
 // 必须与 currency / bag_component 同记录同一次落盘,否则「资产落了标记没落」=重复发奖,反之=白丢奖励。
 #include "proto/common/component/battle_settlement_ledger_comp.pb.h"
+// 玩家收件箱消费端账本(player-inbox-service.md §4.4):与资产账本同一条不变量(IB-3 ≡ I3),
+// 处置效果(CurrencyComp.blocked_types / debts)与账本必须同记录、同一次落盘。
+#include "proto/common/component/player_inbox_ledger_comp.pb.h"
 #include "asset_op_ledger.h"
 #include "asset_op_system.h"
+#include "player/comp/player_inbox_runtime_comp.h" // PlayerInboxLedgerInvalidComp
+#include "player_inbox_rules.h"
 #include "table/code/class_table.h"
 #include "muduo/base/Logging.h"
 #include "proto/common/component/actor_attribute_state_comp.pb.h"  // DerivedAttributesComp
@@ -72,6 +82,24 @@ void TopUpToDerivedMax(entt::entity player, BaseAttributesComp& attrs) {
 	LOG_INFO << "[PlayerInit] Restored to secondary attribute limits: health=" << attrs.health()
 			 << " mana=" << attrs.mana();
 }
+
+// 存盘只读:取一个持久化组件,不在就把名字记进 missing(逗号分隔),**不补建**。
+// 持久化组件的唯一创建点是加载(PlayerDatabaseMessageFieldsUnmarshal),之后没有任何路径摘它们;
+// 存盘时缺了说明加载不变量已被破坏。此刻补一个零值组件再落盘,等于拿空货币 / 空账本覆盖盘上的真实数据。
+template <typename Comp>
+const Comp* FindPersistedComp(entt::entity player, const char* name, std::string& missing)
+{
+	const auto* comp = tlsEcs.actorRegistry.try_get<Comp>(player);
+	if (comp == nullptr)
+	{
+		if (!missing.empty())
+		{
+			missing += ',';
+		}
+		missing += name;
+	}
+	return comp;
+}
 }  // namespace
 
 void ReviveBaseAttributesIfDead(BaseAttributesComp& attrs, uint64_t maxHealth, uint64_t maxMana) {
@@ -121,12 +149,23 @@ void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_data
 	// 空账本的后果只是「上一局可能被重投补发一次」,而补发本身被待结算记录的条件删兜住;
 	// 拿不准时宁可多判一次「已应用」也不要让玩家进不去游戏。
 	tlsEcs.actorRegistry.emplace<BattleSettlementLedgerComp>(player, message.settlement_ledger());
+	// 玩家收件箱消费端账本(字段 20)跟着同一条 player_database 行回来;旧存档没有这个字段 = 空账本,合法。
+	// 校验不过只停用这名玩家的收件箱(挂 PlayerInboxLedgerInvalidComp,前置闸据此不再拉取),不阻断登录、
+	// 不改写原数据 —— 拿坏账本继续记账会让不幂等的挂欠款被重复执行(设计 §8 #19)。
+	auto& inboxLedger = tlsEcs.actorRegistry.emplace<PlayerInboxLedgerComp>(player, message.inbox_ledger());
+	if (auto err = player_inbox_rules::ValidateLedger(inboxLedger); !err.empty()) {
+		LOG_ERROR << "[PlayerInbox] Ledger corrupted;inbox consumption disabled for player player_id=" << message.player_id()
+				  << " reason=" << err;
+		tlsEcs.actorRegistry.emplace_or_replace<PlayerInboxLedgerInvalidComp>(player);
+	}
 	tlsEcs.actorRegistry.emplace<CurrencyComp>(player, message.currency());
 	// 补缴欠款(debts)是 PlayerCurrencyComp 的运行时结构,持久化载体是
 	// CurrencyComp.debts。这一对 LoadFromProto/SaveToProto 之前从未被调用过 ——
 	// 于是 GM 挂上的欠款、以及 AddCurrency 已扣到一半的补缴进度(debt.paid),
 	// 玩家一下线重登就整体消失,补缴机制被「重登一次」完整绕过。
-	tlsEcs.actorRegistry.get_or_emplace<PlayerCurrencyComp>(player).LoadFromProto(message.currency());
+	// 这里就是 PlayerCurrencyComp 的唯一创建点(实体由 InitPlayerFromAllData 新建,此前没有路径会挂它),
+	// 用 emplace 表达「创建」而不是「有就复用」:若将来有人在加载前提前挂了它,断言会立刻指出重复创建。
+	tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player).LoadFromProto(message.currency());
 	// 属性加点:补默认方案 + 按等级/方案重算二级属性(max_health 等此前无写者,战斗快照靠它)
 	PlayerAttributeSystem::InitializeOnLoad(player);
 	// 宝宝:同步等级(跟随主人)+ 按上限夹当前 HP/MP;必须在主人等级已 emplace 之后
@@ -137,28 +176,68 @@ void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_data
 	}
 }
 
-void PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& message){
-	message.mutable_transform()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<Transform>(player));
-	message.mutable_uint64_pb_component()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<PlayerUint64Comp>(player));
-	message.mutable_skill_list()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<PlayerSkillListComp>(player));
-	message.mutable_uint32_pb_component()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<PlayerUint32Comp>(player));
-	message.mutable_derived_attributes_component()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<BaseAttributesComp>(player));
-	message.mutable_level_component()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<LevelComp>(player));
-	message.mutable_attribute_component()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<PlayerAttributeComp>(player));
-	message.mutable_pet_component()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<PlayerPetComp>(player));
-	// 名字副本原样存回(scene 不改它)。存盘路径非逐帧,沿用本函数的 get_or_emplace 写法。
-	message.mutable_profile_component()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<PlayerProfileComp>(player));
+bool PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& message){
+	// 存盘只读当前状态,不改变实体的组件集合。校验前置:先确认全部持久化组件都在,再写 message;
+	// 缺任何一个都整份放弃、message 原样不动并返回 false,由调用方放弃这次写入(fail-closed)。
+	// 旧写法用 get_or_emplace 取组件:组件一旦缺失就当场造出零值组件,把零货币、空账本当真实数据
+	// 写进 Redis 与 DB —— 账本被清空还会让已应用的资产指令 / 战斗结算被重复应用。
+	std::string missing;
+	const auto* transform = FindPersistedComp<Transform>(player, "Transform", missing);
+	const auto* uint64Comp = FindPersistedComp<PlayerUint64Comp>(player, "PlayerUint64Comp", missing);
+	const auto* skillList = FindPersistedComp<PlayerSkillListComp>(player, "PlayerSkillListComp", missing);
+	const auto* uint32Comp = FindPersistedComp<PlayerUint32Comp>(player, "PlayerUint32Comp", missing);
+	const auto* baseAttributes = FindPersistedComp<BaseAttributesComp>(player, "BaseAttributesComp", missing);
+	const auto* level = FindPersistedComp<LevelComp>(player, "LevelComp", missing);
+	const auto* attribute = FindPersistedComp<PlayerAttributeComp>(player, "PlayerAttributeComp", missing);
+	const auto* pet = FindPersistedComp<PlayerPetComp>(player, "PlayerPetComp", missing);
+	const auto* profile = FindPersistedComp<PlayerProfileComp>(player, "PlayerProfileComp", missing);
+	// 背包 / 任务由各自的 marshal 读。它们对缺组件输出的是「权威的空记录」(任务还会标 scoped_state_present),
+	// 落盘就等于清空玩家的物品与任务,所以存盘侧必须在这里先拦住。
+	FindPersistedComp<PlayerBagsComp>(player, "PlayerBagsComp", missing);
+	FindPersistedComp<MissionsContainerComp>(player, "MissionsContainerComp", missing);
+	const auto* assetOpLedger = FindPersistedComp<PlayerAssetOpLedgerComp>(player, "PlayerAssetOpLedgerComp", missing);
+	const auto* settlementLedger =
+		FindPersistedComp<BattleSettlementLedgerComp>(player, "BattleSettlementLedgerComp", missing);
+	// 收件箱账本缺失同样整份拒存:补一本空账本落盘,会让已执行过的挂欠款在下次投递时被判成"没见过"再挂一次。
+	const auto* inboxLedger = FindPersistedComp<PlayerInboxLedgerComp>(player, "PlayerInboxLedgerComp", missing);
+	const auto* currency = FindPersistedComp<CurrencyComp>(player, "CurrencyComp", missing);
+	const auto* currencyRuntime = FindPersistedComp<PlayerCurrencyComp>(player, "PlayerCurrencyComp", missing);
+	if (!missing.empty())
+	{
+		const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+		LOG_ERROR << "[PlayerSave] Persisted component(s) missing, refusing to marshal player_database"
+				  << " (load invariant broken; nothing is written): entity=" << entt::to_integral(player)
+				  << " player_id=" << (guid != nullptr ? guid->value : kInvalidGuid) << " missing=" << missing;
+		return false;
+	}
+
+	message.mutable_transform()->CopyFrom(*transform);
+	message.mutable_uint64_pb_component()->CopyFrom(*uint64Comp);
+	message.mutable_skill_list()->CopyFrom(*skillList);
+	message.mutable_uint32_pb_component()->CopyFrom(*uint32Comp);
+	message.mutable_derived_attributes_component()->CopyFrom(*baseAttributes);
+	message.mutable_level_component()->CopyFrom(*level);
+	message.mutable_attribute_component()->CopyFrom(*attribute);
+	message.mutable_pet_component()->CopyFrom(*pet);
+	// 名字副本原样存回(scene 不改它)。
+	message.mutable_profile_component()->CopyFrom(*profile);
     bag_marshal::Marshal(player, *message.mutable_bag_component());
     mission_marshal::Marshal(player, *message.mutable_mission_component());
 	// 资产通道账本与 currency / bag_component 同记录同 DBTask(不变量 I3)。
 	// 位置必须在下面那对 currency CopyFrom / SaveToProto **之外** —— 夹在中间会把
-	// 刚写进去的补缴欠款抹掉(见下条注释)。存盘路径非逐帧,沿用本函数的 get_or_emplace 写法。
-	message.mutable_asset_op_ledger()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<PlayerAssetOpLedgerComp>(player));
+	// 刚写进去的补缴欠款抹掉(见下条注释)。
+	message.mutable_asset_op_ledger()->CopyFrom(*assetOpLedger);
 	// 结算幂等账本:与上一行同理由(不变量 I3)。位置同样必须在下面那对 currency
 	// CopyFrom / SaveToProto **之外**,夹在中间会把刚写进去的补缴欠款抹掉。
-	message.mutable_settlement_ledger()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<BattleSettlementLedgerComp>(player));
-	message.mutable_currency()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<CurrencyComp>(player));
+	message.mutable_settlement_ledger()->CopyFrom(*settlementLedger);
+	// 玩家收件箱消费端账本(字段 20):与上两条同理由(IB-3,与 I3 同构)—— GM 处置的效果
+	// (封锁在 CurrencyComp.blocked_types、欠款经 SaveToProto 写进 CurrencyComp.debts)与账本同记录、
+	// 同一次 Marshal。位置同样必须在下面那对 currency CopyFrom / SaveToProto **之外**:那一对的先后决定
+	// 欠款会不会被抹掉,任何新写入都不夹进它们中间。
+	message.mutable_inbox_ledger()->CopyFrom(*inboxLedger);
+	message.mutable_currency()->CopyFrom(*currency);
 	// 必须在 CopyFrom 之后:CopyFrom 会覆盖整个 currency 子消息(含 debts),
 	// 反序会把刚写进去的欠款抹掉。
-	tlsEcs.actorRegistry.get_or_emplace<PlayerCurrencyComp>(player).SaveToProto(*message.mutable_currency());
+	currencyRuntime->SaveToProto(*message.mutable_currency());
+	return true;
 }

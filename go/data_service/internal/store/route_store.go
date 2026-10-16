@@ -35,9 +35,10 @@ import (
 // 用 AST 机械守住 player_route)。Redis 一侧的发布(set-if-newer)在 routing 包,不在这里:
 // 事务里绝不做 Redis 读写 —— 预检在开事务之前,发布在提交之后(规格 c.2 第 3 条)。
 //
-// 「行片」与「围栏片」是两回事,同一函数里不得同名:行片 rowShard = player_id % 16(聚簇主键首列,常量,建表后不可改);
-// 围栏片 fenceShard = player_id % FenceShards(可配,只决定 W1 锁哪一个围栏行)。绑错的后果:把围栏片绑进 R4,
-// 一半新号撞 chk_route_shard(3819)建角失败;绑进 R5 / R6,按错片点查读不到行 → ErrRouteRowVanished。
+// 「行片」与「围栏片」是两回事,同一函数里不得同名:行片 rowShard = player_id % placement.RouteRowShards
+// (聚簇主键首列,常量 64,建表后不可改);围栏片 fenceShard = player_id % FenceShards(可配,只决定 W1 锁哪一个
+// 围栏行)。绑错的后果:把围栏片绑进 R4,两种片不相等的新号(FenceShards=8 时占 7/8)撞 chk_route_shard(3819)
+// 建角失败;绑进 R5 / R6,按错片点查读不到行 → ErrRouteRowVanished。
 //
 // 不变量,按重要性排序:
 //  1. **判定只认加锁读**(R5 / R8 / R11 的 FOR UPDATE)。新行一律 ODKU no-op 插入、撞键 = 受影响 0 行,
@@ -89,8 +90,8 @@ const (
 	routeLockRetryBackoffMin = 10 * time.Millisecond
 	routeLockRetryBackoffMax = 50 * time.Millisecond
 
-	// routeProbeTimeout 是建 store 时探针(会话变量、TiDB 事务模式、route_meta 行、chk_route_shard 实测)的总时限,
-	// 四步共用。
+	// routeProbeTimeout 是建 store 时探针(会话变量、TiDB 事务模式、route_meta 行、chk_route_shard 实测与模数核对)的总时限,
+	// 五步共用(含 P4 + P5 遇 1213 / 9007 的重跑与退避)。
 	routeProbeTimeout = 5 * time.Second
 
 	// routeWriterMaxLen = player_route.updated_by 的列宽 varchar(96)。
@@ -102,7 +103,7 @@ const (
 
 	// mysqlErrCheckConstraintViolated 3819 ER_CHECK_CONSTRAINT_VIOLATED:探针 P4 期望收到的那一个。
 	mysqlErrCheckConstraintViolated = 3819
-	// mysqlErrTableAccessDenied 1142 ER_TABLEACCESS_DENIED_ERROR:账号对表没有该权限(P4 要 player_route 的 INSERT 权限)。
+	// mysqlErrTableAccessDenied 1142 ER_TABLEACCESS_DENIED_ERROR:账号对表没有该权限(P4 / P5 要 player_route 的 INSERT 权限)。
 	mysqlErrTableAccessDenied = 1142
 )
 
@@ -127,10 +128,18 @@ var (
 	ErrRouteCheckNotEnforced = errors.New("player_route: CHECK constraint chk_route_shard is not enforced " +
 		"(player_id uniqueness depends on it; needs MySQL >= 8.0.16, or TiDB >= 7.2 with " +
 		"`SET GLOBAL tidb_enable_check_constraint=ON` before the table is created)")
+	// ErrRouteShardModulusMismatch 正向探针 P5 证明表上 chk_route_shard 的模数不是 placement.RouteRowShards:表是按另一个
+	// 模数建的(例如跑过行片还是 16 的 d5cbb8a8e 的迁移),拒绝建 store(见 probeRouteShardModulus)。重跑迁移修不好它
+	// (CREATE TABLE IF NOT EXISTS 不改已有的表);也不能改常量迁就旧表 —— 模数是聚簇主键的一部分,改它 = 整表重写。
+	ErrRouteShardModulusMismatch = errors.New("player_route: the route_shard modulus in CHECK chk_route_shard differs from " +
+		"this binary's placement.RouteRowShards (the table was created with another modulus); after confirming the route " +
+		"tables hold no data worth keeping, DROP TABLE player_route, zone_merge_fence, zone_merged_into, route_meta, " +
+		"route_reconcile by hand (proposal §11.2 HR4), then rerun `data_service -f <yaml> -migrate`; " +
+		"do not change the constant to fit the old table")
 	// ErrRouteShardMismatch 库里某一行存的 route_shard 不等于 placement.RouteRowShard(player_id):只有 CHECK 曾经
 	// 不生效时被绕过 store 的写者写进来。fail-closed,整页 / 整批作废。只有全表键集扫描(ScanRoutes)在真库上
 	// 看得见这种行;按 id 的点读(R5 / R8 / R13)按正确片查,错片行对它们表现为缺席。
-	ErrRouteShardMismatch = errors.New("player_route: stored route_shard does not match player_id % 16")
+	ErrRouteShardMismatch = errors.New("player_route: stored route_shard does not match placement.RouteRowShard(player_id)")
 	// ErrRouteTiDBNotClustered tidb-prepare 的前置核对失败:player_route / zone_merge_fence 在 TiDB 上不是聚簇主键。
 	// 非聚簇的表按 (route_shard, player_id) 切毫无意义,而且建表后改不了,只能趁表空 DROP 后用 -migrate 重建。
 	ErrRouteTiDBNotClustered = errors.New("route tables are not CLUSTERED on TiDB; while they are still empty, " +
@@ -158,6 +167,12 @@ const (
 	// home / 落点 / 冻结全 NULL、rev=1),包在必然回滚的事务里(probeRouteShardCheck)。
 	routeProbeShardCheckSQL = "INSERT INTO player_route (route_shard, player_id, rev, updated_by, created_at_ms, updated_at_ms)" +
 		" VALUES (1, 0, 1, 'route-probe', 0, 0)"
+
+	// P5 正向探针:一行**按 placement.RouteRowShards 合法**的插入(实参:行片、player_id,取自 routeShardModulusProbeKeys;
+	// 其余列与 P4 相同:home / 落点 / 冻结全 NULL、rev=1,满足 player_route 上其余五条 CHECK 与全部 NOT NULL),
+	// 与 P4 在同一个必然回滚的事务里(probeRouteShardModulus)。
+	routeProbeShardModulusSQL = "INSERT INTO player_route (route_shard, player_id, rev, updated_by, created_at_ms, updated_at_ms)" +
+		" VALUES (?, ?, 1, 'route-probe', 0, 0)"
 
 	// R1 读可写开关(普通一致读,提案 §4.1-2 第 1 步)。建 store 的探针也用它确认 meta 行在。
 	routeReadWritableSQL = "SELECT writable FROM route_meta WHERE id = 1"
@@ -387,6 +402,19 @@ func NewRouteStore(cfg MySQLConfig, opts RouteStoreOptions) (*RouteStore, error)
 	return st, nil
 }
 
+// OpenRouteStoreHint 是 NewRouteStore 失败时给运维的一句处理提示(英文,拼进日志、错误或 stderr 的括号里),建 route store 的
+// 三个入口共用:db_first 的 data_service 装配、debugutil、route_tool。configPath 是 data_service 的 yaml 路径,
+// 不知道时传 "<yaml>"。表按另一个行片模数建的(ErrRouteShardModulusMismatch)不能照常提示「先跑迁移」:
+// CREATE TABLE IF NOT EXISTS 不改已有的表,只重跑 -migrate 修不好,要先按报错里的步骤 DROP 五张路由表
+// (runbook §9.3 前置第 1 条)。其余原因回原来的「先跑迁移」提示。
+func OpenRouteStoreHint(configPath string, err error) string {
+	if errors.Is(err, ErrRouteShardModulusMismatch) {
+		return "the route tables were created with another route_shard modulus; rerunning -migrate alone does not fix that, " +
+			"see merge-zone-runbook §9.3 prerequisite 1"
+	}
+	return fmt.Sprintf("run `data_service -f %s -migrate` first if route_meta is missing", configPath)
+}
+
 // newRouteStoreFromDB 在一个已开好的池上跑探针并装出 store。任一步失败都会关掉 db(调用方不必再 Close)。
 // 单独成函数是为了让契约用例注入假驱动、真库用例注入一个会话变量不对的池。
 //
@@ -397,7 +425,10 @@ func NewRouteStore(cfg MySQLConfig, opts RouteStoreOptions) (*RouteStore, error)
 //  3. route_meta(id=1)必须在:表不存在原样返回(1146),没有行返回 ErrRouteMetaMissing。
 //     writable != 1 不拒绝建 store(那是运维显式冻结,写路径会逐次拒绝),只打 Error;
 //  4. chk_route_shard 必须生效(probeRouteShardCheck,G1a):player_id 的唯一性靠它,证不了就 ErrRouteCheckNotEnforced。
-//     这一步是一次必然回滚的写尝试,所以只读用途(route_tool audit)也要 player_route 的 INSERT 权限。
+//     这一步是一次必然回滚的写尝试,所以只读用途(route_tool audit)也要 player_route 的 INSERT 权限;
+//  5. chk_route_shard 的模数必须是 placement.RouteRowShards(probeRouteShardModulus,P5):与 P4 同一个必然回滚的事务、
+//     同一条权限;按另一个模数建过的表 → ErrRouteShardModulusMismatch。
+//     P4 + P5 这个事务遇到 1213 / 9007 时整个重跑(retryRouteTx,与写事务同一预算;1205 不重试)。
 func newRouteStoreFromDB(ctx context.Context, db *sql.DB, opts RouteStoreOptions) (*RouteStore, error) {
 	fail := func(err error) (*RouteStore, error) {
 		_ = db.Close()
@@ -417,7 +448,9 @@ func newRouteStoreFromDB(ctx context.Context, db *sql.DB, opts RouteStoreOptions
 		logx.Errorf("[RouteStore] route_meta(id=%d).writable=%d: route writers are frozen, every db_first RegisterPlayerZone "+
 			"will be refused until it is set back to 1", routeMetaRowID, writable)
 	}
-	if err := probeRouteShardCheck(ctx, db); err != nil {
+	// P4 + P5 每次尝试都是新开的一个必然回滚的事务,1213 / 9007 整事务重跑(见 probeRouteShardModulus 的「锁」);
+	// 1205 与其它错误不重试(文件头不变量 4)。退避受 ctx(routeProbeTimeout)约束。
+	if err := retryRouteTx(ctx, "chk_route_shard probes", nil, func() error { return probeRouteShardCheck(ctx, db) }); err != nil {
 		return fail(err)
 	}
 	return &RouteStore{db: db, fenceShards: opts.FenceShards, writer: opts.Writer}, nil
@@ -430,10 +463,12 @@ func newRouteStoreFromDB(ctx context.Context, db *sql.DB, opts RouteStoreOptions
 // 插入成功或被别的约束拒绝都说明我们证不了它,拒建 store(fail-closed,AGENTS.md §11.3)。
 //
 // 为什么实测而不是查元数据:MySQL 的 information_schema.TABLE_CONSTRAINTS.ENFORCED 与 TiDB 的全局变量口径不一,
-// 实测在两种引擎上是同一个判据。它只证明「CHECK 生效」,不证明模数是 16(模数由 DDL 契约测试钉住,且表只由迁移建)。
+// 实测在两种引擎上是同一个判据。它只证明「CHECK 生效」,不证明模数是 64(探针行 (片 1, player_id 0) 对任何模数都违例,
+// 按旧模数 16 建的表也过得了这一步):P4 通过之后,在同一个事务里接着跑第 5 步 probeRouteShardModulus 核对模数。
 //
 // 无论哪种结果事务都回滚,CHECK 没生效时那行也不会留下。CHECK 生效时语句在写索引前就被拒、不取锁;
-// 不生效时多副本同时探针,后到的最多等 1s 行锁(会话锁等待封顶)后同样回滚。
+// 不生效时多副本同时探针,后到的最多等 1s 行锁(会话锁等待封顶)后同样回滚(三方以上并发时可能 1213,
+// 由 newRouteStoreFromDB 整事务有界重跑,见 probeRouteShardModulus 的「锁」)。
 func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -451,8 +486,10 @@ func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 	}
 	switch me.Number {
 	case mysqlErrCheckConstraintViolated:
-		if strings.Contains(strings.ToLower(me.Message), "chk_route_shard") {
-			return nil
+		if namesRouteShardCheck(me) {
+			// P4 通过:同一个事务里接着核对模数(P5),结束时由上面的 defer 一并回滚。MySQL 只回滚失败的那条语句、
+			// 事务仍可用;TiDB 上是否如此未核实(见 probeRouteShardModulus)。
+			return probeRouteShardModulus(ctx, tx)
 		}
 		return fmt.Errorf("%w: the probe row was rejected by another constraint, so chk_route_shard is not proven: %v",
 			ErrRouteCheckNotEnforced, err)
@@ -461,11 +498,95 @@ func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 			"(route_shard=1, player_id=0), i.e. a mis-sharded row was written while CHECK was not enforced; "+
 			"remove it by hand after review, then run `route_tool audit`: %w", err)
 	case mysqlErrTableAccessDenied:
-		return fmt.Errorf("route store: chk_route_shard probe needs INSERT privilege on player_route "+
-			"(the probe is a rolled-back insert, so read-only uses such as route_tool audit need it too): %w", err)
+		return routeProbeInsertDenied(err)
 	default:
 		return fmt.Errorf("route store: chk_route_shard probe: %w", err)
 	}
+}
+
+// probeRouteShardModulus 是探针第 5 步(P5,正向探针,2026-10-14):P4 只证明 chk_route_shard 生效,证不了它的模数。
+// 按另一个模数建过的表(例如跑过行片还是 16 的 d5cbb8a8e 的迁移)迁移、形状守卫、P4 全都过得去 —— CREATE TABLE
+// IF NOT EXISTS 不改已有的表,形状守卫只查列名与主键,P4 的违例行对任何模数都违例 —— 要到运行期 W1 / 导入对大部分
+// 新号撞 3819 才暴露。所以在 P4 的同一个必然回滚的事务里(tx 由调用方持有并回滚),按聚簇键升序再插两行「按
+// N = placement.RouteRowShards 合法」的行(routeShardModulusProbeKeys;其余列同 P4)。表的模数为 M 时:
+//
+//	(0, N)      被接受 ⇔ N % M = 0       ⇔ M 整除 N(于是 M ≤ N)
+//	(N−1, N−1)  被接受 ⇔ (N−1) % M = N−1 ⇔ M ≥ N
+//
+// 两行都被接受 ⇔ M = N,对任何 M ≥ 1 都成立,不必为个别模数再补探针行。N = 64 时的判别表
+// (TestRouteShardModulusProbeDiscriminates 钉住,并对 M = 1..256 穷举;route_shard 是 tinyint unsigned,
+// 提案 H2 的后备模数最大取 256):
+//
+//	M     (0, 64)  (63, 63)  结论
+//	16    收       拒        不一致
+//	32    收       拒        不一致
+//	64    收       收        一致
+//	128   拒       收        不一致
+//	192   拒       收        不一致
+//	256   拒       收        不一致
+//
+// 逐行判定:成功或 1062 = 该行被接受;3819 且点名 chk_route_shard → ErrRouteShardModulusMismatch;1142 → 与 P4
+// 同一条权限提示;3819 点名别的约束(探针行本该满足其余全部约束)、1205 与其它任何错误 → 原样包装(证不了就不建
+// store,fail-closed);其中 1213 / 9007 由调用方整事务重跑(见下「锁」)。不需要 P4 之外的新权限。
+// 1062 = 库里已有这一行:CHECK 生效的表上已有的行都满足它,所以撞键同样说明这一行在表的模数下合法,
+// 与引擎先判 CHECK 还是先判撞键无关(CHECK 被关掉期间写进来的行除外,那是 HR2 的范畴)。号段从 1 发号
+// (IdSegmentFirstID),63 / 64 号是开服后最早的一批真实玩家,撞键在生产上是常态。
+//
+// 锁:这两行不存在且模数一致时真的插进去(未提交);已存在时撞键会在那一行上取共享锁(评审按 mysql-server 8.0.36
+// 源码 row0ins.cc 核对,未实跑;真库用例 TestRouteStore_ProbeKeysHeldByRealPlayers 取证)。两种都持到回滚(毫秒级),
+// 所以 63 / 64 号玩家的 W1 可能在探针期间短暂排队;反过来探针最多等会话锁等待 1s,等满即 1205、这次建池失败
+// (不重试,重启即可)。各副本都按聚簇键升序插这两行,两行之间不成环;但三个及以上会话并发插同一个**缺席**的探针键时
+// (空表、首次部署,或 63 / 64 号还没建角),先插入者回滚后,其余等待者查重取的 S 锁会被继承成 gap 锁(MySQL 8.0 在
+// RC 下同样继承;评审按源码 lock0lock.cc 推断,未实跑),它们重新插入要插入意向锁,互等成 1213。所以 newRouteStoreFromDB
+// 对 P4 + P5 整个事务按 1213 / 9007 有界重跑(retryRouteTx;InnoDB 遇 1213 已整事务回滚、探针不留数据,重跑安全)。
+// P4 被拒之后事务继续用:MySQL 只回滚失败的那条语句;TiDB 是否同样只回滚语句【未核实】,
+// 由真 TiDB 用例(TestRouteStore_TiDBClusteredShardsAndPresplit)取证。
+//
+// 作用范围:只在建 route store 时跑(db_first 的 data_service、debugutil、route_tool)。redis 模式的 data_service
+// 不建这个 store,它启动期的迁移照样会建出(或留着)旧模数的表而这里挡不住,所以提案 §11.2「行片 16 → 64」与
+// runbook §9.3 前置的人工核对(SHOW CREATE TABLE player_route)仍要做。
+func probeRouteShardModulus(ctx context.Context, tx *sql.Tx) error {
+	for _, key := range routeShardModulusProbeKeys() {
+		_, err := tx.ExecContext(ctx, routeProbeShardModulusSQL, uint64(key.Shard), key.PlayerID)
+		if err == nil {
+			continue
+		}
+		var me *mysql.MySQLError
+		isMySQL := errors.As(err, &me)
+		switch {
+		case isMySQL && me.Number == mysqlErrDupEntry:
+			continue // 库里已有这一行,等同被接受(见上)
+		case isMySQL && me.Number == mysqlErrCheckConstraintViolated && namesRouteShardCheck(me):
+			return fmt.Errorf("%w: probe row (route_shard=%d, player_id=%d) is legal under %% %d but chk_route_shard rejected it: %v",
+				ErrRouteShardModulusMismatch, key.Shard, key.PlayerID, placement.RouteRowShards, err)
+		case isMySQL && me.Number == mysqlErrTableAccessDenied:
+			return routeProbeInsertDenied(err)
+		default:
+			return fmt.Errorf("route store: route_shard modulus probe row (route_shard=%d, player_id=%d): %w",
+				key.Shard, key.PlayerID, err)
+		}
+	}
+	return nil
+}
+
+// routeShardModulusProbeKeys 返回 P5 的两行聚簇键,按聚簇键升序(插入即按这个顺序取锁):(0, N) 与 (N−1, N−1),
+// N = placement.RouteRowShards。片经 routeKeyOf(即 placement.RouteRowShard)算,所以两行就是本二进制会写的样子。
+func routeShardModulusProbeKeys() []RouteScanCursor {
+	n := uint64(placement.RouteRowShards)
+	return []RouteScanCursor{routeKeyOf(n), routeKeyOf(n - 1)}
+}
+
+// namesRouteShardCheck 报告一条 3819 的报错是否点名 chk_route_shard(P4 与 P5 共用这一个判据)。只按名字的子串认:
+// MySQL 8.0 的原文是 "Check constraint 'chk_route_shard' is violated.",TiDB 的引号格式未核实;
+// 其余五条约束(chk_route_home 等)的名字都不含这个子串。
+func namesRouteShardCheck(me *mysql.MySQLError) bool {
+	return strings.Contains(strings.ToLower(me.Message), "chk_route_shard")
+}
+
+// routeProbeInsertDenied 是 P4 / P5 收到 1142 时的报错:两步都是必然回滚的 INSERT,只读用途也要这条权限。
+func routeProbeInsertDenied(err error) error {
+	return fmt.Errorf("route store: the chk_route_shard probes need INSERT privilege on player_route "+
+		"(P4 and the modulus probe P5 are rolled-back inserts, so read-only uses such as route_tool audit need it too): %w", err)
 }
 
 // probeRouteSession 探针第 1、2 步(见 newRouteStoreFromDB)。
@@ -787,7 +908,7 @@ type RouteRegisterResult struct {
 //	R2 锁围栏分片 (home, player_id % N)      缺行 → 回滚、事务外 R3 补行、重开(不耗重试预算;再缺 → ErrRouteFenceShardVanished)
 //	                                          生效或 NULL → 回滚,Fenced
 //	R4 ODKU 插新行(仅 !ExistingRowOnly)     1 行 → COMMIT,Inserted;0 行 → 往下;其它 → fail-closed
-//	R5 加锁读玩家行 (player_id % 16, id)      缺行 → RowMissing(ExistingRowOnly)/ ErrRouteRowVanished
+//	R5 加锁读玩家行 (player_id % 64, id)      缺行 → RowMissing(ExistingRowOnly)/ ErrRouteRowVanished
 //	   home == 请求 → 回滚,AlreadySame;home 是别的值 → 回滚,Conflict
 //	   home 为 NULL → R6b(请求带 storage 且行里没落点)或 R6a → COMMIT,Filled*
 //
@@ -993,13 +1114,20 @@ func isRouteLockConflict(err error) bool {
 	return me.Number == mysqlErrDeadlock || me.Number == tidbErrWriteConflict
 }
 
-// runRouteTx 跑一个「一次事务尝试」的函数,有界重来:
+// runRouteTx 跑一个「一次事务尝试」的函数,有界重来(规则见 retryRouteTx),1213 / 9007 的重来次数记进 s.lockRetries。
+func (s *RouteStore) runRouteTx(ctx context.Context, op string, attempt func() error) error {
+	return retryRouteTx(ctx, op, &s.lockRetries, attempt)
+}
+
+// retryRouteTx 是 runRouteTx 的循环体,有界重来:
 //   - 1213 / 9007:计 lockRetries,抖动退避(可被 ctx 取消)后重来;
 //   - errRouteImportRaced:不是锁冲突,不计数、不退避,直接重来;
 //   - 其它错误(含 1205):立刻返回。
 //
 // 总尝试次数不超过 routeTxAttempts;用尽后把最后一次的错误包着返回(errors.As 仍能取到 MySQLError)。
-func (s *RouteStore) runRouteTx(ctx context.Context, op string, attempt func() error) error {
+// 抽成自由函数是因为建 store 的探针 P4 + P5(newRouteStoreFromDB)也要同一套重来规则,而那时 store 还没建出来:
+// lockRetries 为 nil 时不计数(日志照打)。
+func retryRouteTx(ctx context.Context, op string, lockRetries *atomic.Uint64, attempt func() error) error {
 	var err error
 	for n := 1; n <= routeTxAttempts; n++ {
 		if err = attempt(); err == nil {
@@ -1016,7 +1144,9 @@ func (s *RouteStore) runRouteTx(ctx context.Context, op string, attempt func() e
 			logx.Infof("[RouteStore] %s retry %d/%d: %v", op, n, routeTxAttempts, err)
 			continue
 		}
-		s.lockRetries.Add(1)
+		if lockRetries != nil {
+			lockRetries.Add(1)
+		}
 		logx.Infof("[RouteStore] %s retry %d/%d after lock conflict: %v", op, n, routeTxAttempts, err)
 		if waitErr := sleepCtx(ctx, jitteredBackoff(routeLockRetryBackoffMin, routeLockRetryBackoffMax)); waitErr != nil {
 			return fmt.Errorf("%s: %w", op, errors.Join(err, waitErr))
@@ -1529,7 +1659,7 @@ func validateMergedIntoRows(rows []MergedIntoRow) error {
 // limit 必须在 [1, RouteBatchLimit];after.Shard 必须 < placement.RouteRowShards(否则查询静默回空页,
 // 调用方会当作扫完)。下一页从 RouteScanCursorAt(最后一行) 接着翻,不漏不重。
 //
-// 任一行库里存的 route_shard ≠ player_id % 16 → ErrRouteShardMismatch(整页作废,fail-closed)。
+// 任一行库里存的 route_shard ≠ player_id % 64 → ErrRouteShardMismatch(整页作废,fail-closed)。
 // 这是真库上唯一看得见错片行的地方(audit 方向 A / 第 1b 批全量预热就是检测器),点读看不见。
 func (s *RouteStore) ScanRoutes(ctx context.Context, after RouteScanCursor, limit int) ([]RouteRow, error) {
 	if limit < 1 || limit > RouteBatchLimit {

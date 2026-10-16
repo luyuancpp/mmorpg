@@ -22,7 +22,7 @@
 	branch = v1.x
 [submodule "third_party/ue5navmesh"]
 	path = third_party/ue5navmesh
-	url = https://github.com/luyuan-cpp/ue5navmesh.git
+	url = https://github.com/lhl-cpp/ue5navmesh.git
 [submodule "pkg/muduo_windows/src"]
 	path = cpp/libs/engine/muduo_windows/src/muduo/net
 	url = https://github.com/luyuan-cpp/muduo-windows.git
@@ -74,3 +74,7 @@
 	path = third_party/openssl
 	url = https://github.com/openssl/openssl.git
 	branch = openssl-3.6
+[submodule "third_party/nghttp2"]
+	path = third_party/nghttp2
+	url = https://github.com/nghttp2/nghttp2.git
+	ignore = dirty

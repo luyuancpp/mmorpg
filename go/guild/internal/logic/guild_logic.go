@@ -17,6 +17,7 @@ import (
 	"guild/internal/session"
 	base "proto/common/base"
 	pb "proto/guild"
+	scenepb "proto/scene"
 )
 
 // IDMinter 是 guild_id 的发号入口(*shared/idsegment.Minter 满足;单测用假实现)。
@@ -46,6 +47,11 @@ type GuildLogic struct {
 	notifier GuildNotifier
 	// applyPushGate 见 ApplyPushGate;默认"总是放行"。
 	applyPushGate ApplyPushGate
+	// applicationQuota 在任何申请仓储访问之前消费；nil 仅供未装配的单测。
+	applicationQuota *ApplicationQuota
+	// syncBumper 是落地恢复摘要 bump 的唯一出口(push.go 的 GuildSyncBumper),默认 NoopSyncBumper{}。
+	// 与 notifier 同一纪律:只在 MySQL 提交之后被调用,失败绝不影响 RPC 结果。
+	syncBumper GuildSyncBumper
 	// playerNames 批量取成员 / 帮主的展示名(player_name_resolver.go)。
 	// nil = 没配 DataServiceRpc 或单测:名字一律留空,不 panic。只经 resolveNames 访问。
 	playerNames PlayerNameResolver
@@ -75,6 +81,17 @@ func WithNotifier(n GuildNotifier) Option {
 	}
 }
 
+// WithSyncBumper 注入落地恢复摘要的 bump 实现;不传 = NoopSyncBumper(单测与未接摘要 Redis 的环境)。
+// 传 nil 被忽略而不是覆盖成 nil:bumpSync 在提交之后被调用,那里不该出现 nil 解引用。
+// 生产由 guild.go 传 NewGuildSyncBumper(svcCtx.PlayerSyncBumper)。
+func WithSyncBumper(b GuildSyncBumper) Option {
+	return func(l *GuildLogic) {
+		if b != nil {
+			l.syncBumper = b
+		}
+	}
+}
+
 // WithApplyPushGate 注入"申请推送冷却"判定;不传 = 总是放行。
 // 生产由 guild.go 传 repo.TryMarkApplyPush。
 func WithApplyPushGate(g ApplyPushGate) Option {
@@ -83,6 +100,11 @@ func WithApplyPushGate(g ApplyPushGate) Option {
 			l.applyPushGate = g
 		}
 	}
+}
+
+// WithApplicationQuota 注入跨副本共享的入帮申请尝试配额。
+func WithApplicationQuota(q *ApplicationQuota) Option {
+	return func(l *GuildLogic) { l.applicationQuota = q }
 }
 
 // WithPlayerNames 注入展示名解析器;不传或传 nil = 名字一律留空(90-consistency.md Y-02:
@@ -109,6 +131,7 @@ func NewGuildLogic(repo *data.GuildRepo, ids IDMinter, onlineResolver *OnlineSta
 		repo: repo, ids: ids, onlineResolver: onlineResolver,
 		mergeFence: mergeFence, homeZones: homeZones,
 		notifier:      NoopNotifier{},
+		syncBumper:    NoopSyncBumper{},
 		applyPushGate: func(context.Context, uint64, uint64) bool { return true },
 	}
 	for _, opt := range opts {
@@ -287,6 +310,10 @@ func (l *GuildLogic) CreateGuild(ctx context.Context, req *pb.CreateGuildRequest
 	}
 
 	// 建帮不推送:此刻帮里只有建帮者自己,而他手上这个响应就是最新状态。
+	// 但要 bump 本人(摘要纪律 2:回包可能在断线时丢):GUILD 变了,建帮事务还清掉了他的全部申请(I2),
+	// 所以 GUILD_APPLICATION 也变了。那些申请所在帮会的审批人待审数同样变了,但事务不回这组人
+	// (改 data 层不在本批范围),由他们打开帮会界面时的拉取覆盖。
+	l.bumpSync([]uint64{who.playerID}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_APPLICATION)
 	return &pb.CreateGuildResponse{Guild: l.guildInfoFor(ctx, guild, viewerOf(who))}, nil
 }
 
@@ -422,6 +449,7 @@ func (l *GuildLogic) GetPlayerGuild(ctx context.Context, req *pb.GetPlayerGuildR
 
 // LeaveGuild:主动退帮。帮主不能退(先转让或解散),判定在事务内按权威 role + leader_id 做,
 // 不再看缓存里的 LeaderID —— 那个值在降权 / 转让之后会说谎整整一个 TTL。
+// expected_guild_id 非 0 时只退该帮,不在该帮回 kGuildNotInGuild(expected_guild.go)。
 func (l *GuildLogic) LeaveGuild(ctx context.Context, req *pb.LeaveGuildRequest) (*pb.LeaveGuildResponse, error) {
 	who := callerOf(ctx, req.PlayerId)
 	if who.fromClient {
@@ -437,12 +465,19 @@ func (l *GuildLogic) LeaveGuild(ctx context.Context, req *pb.LeaveGuildRequest) 
 		}
 	}
 
-	guildID, tip, err := l.operatorGuild(ctx, who.playerID)
+	expected := req.GetExpectedGuildId()
+	guildID, tip, err := l.bindExpectedGuild(ctx, who, expected, expectedGuildMethodLeave)
+	if expectedGuildLost(expected, err) {
+		return &pb.LeaveGuildResponse{ErrorMessage: l.rejectExpectedGuild(ctx, who.playerID, expected, expectedGuildMethodLeave, err)}, nil
+	}
 	if err != nil || tip != nil {
 		return &pb.LeaveGuildResponse{ErrorMessage: tip}, err
 	}
 	// now 显式传入(B5):事务内要把本人未结算捐献的截止时间提前到"现在",时钟归调用方(§11.2 显式依赖)。
 	res, err := l.repo.LeaveGuild(ctx, guildID, who.playerID, nowMs())
+	if expectedGuildLost(expected, err) {
+		return &pb.LeaveGuildResponse{ErrorMessage: l.rejectExpectedGuild(ctx, who.playerID, expected, expectedGuildMethodLeave, err)}, nil
+	}
 	if errors.Is(err, data.ErrNotGuildMember) || errors.Is(err, data.ErrGuildGone) {
 		// 缓存指的帮会里没有他:以 MySQL 复核。真的不在任何帮 = 这次退帮本来就无事可做(幂等成功);
 		// 在别的帮 = 缓存过期,让客户端刷新后重来,**绝不**按旧 guild_id 去删别的帮的成员行。
@@ -462,11 +497,14 @@ func (l *GuildLogic) LeaveGuild(ctx context.Context, req *pb.LeaveGuildRequest) 
 	}
 	// 快照已不含退帮者,所以"剩余全体"就是收件人;他自己拿的是这次响应,不必再推。
 	l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_MEMBER_LEFT, guildID, who.playerID, who.playerID, membersExcept(res.Guild))
+	// 摘要要把退帮者本人算进去(他的 GetPlayerGuild 从"在帮"变成"未入帮")。
+	l.bumpSync(membersPlus(res.Guild, who.playerID), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 	return &pb.LeaveGuildResponse{}, nil
 }
 
 // DisbandGuild:解散帮会。授权改读 MySQL(事务内 FOR UPDATE 的 leader_id),
 // 原实现按缓存 LeaderID 判帮主 —— 转让之后那个值在一个 TTL 内还是旧帮主,等于把解散权多发一份。
+// expected_guild_id 非 0 时只解散该帮,不在该帮回 kGuildNotInGuild(expected_guild.go)。
 func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildRequest) (*pb.DisbandGuildResponse, error) {
 	who := callerOf(ctx, req.PlayerId)
 	if who.fromClient {
@@ -482,7 +520,11 @@ func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildReque
 		}
 	}
 
-	guildID, tip, err := l.operatorGuild(ctx, who.playerID)
+	expected := req.GetExpectedGuildId()
+	guildID, tip, err := l.bindExpectedGuild(ctx, who, expected, expectedGuildMethodDisband)
+	if expectedGuildLost(expected, err) {
+		return &pb.DisbandGuildResponse{ErrorMessage: l.rejectExpectedGuild(ctx, who.playerID, expected, expectedGuildMethodDisband, err)}, nil
+	}
 	if err != nil || tip != nil {
 		return &pb.DisbandGuildResponse{ErrorMessage: tip}, err
 	}
@@ -491,9 +533,16 @@ func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildReque
 	// 与合服置闸之间有检查到使用的窗口,内部调用路径更是完全不查;repo 锁住 guild 行后按行里的 zone_id 调它,
 	// 拒绝回 data.ErrZoneMerging,由 mapWriteErr 翻成 kGuildZoneMerging。
 	res, err := l.repo.DisbandGuild(ctx, guildID, who.playerID, nowMs(), l.economyFence)
+	// 事务在锁住的 guild 行上复核:预期帮会已不存在(ErrGuildGone),或操作者已不是它的成员(ErrNotGuildMember:
+	// 预检之后才转让并离帮,repo 的 disbandRefusal 区分)→ kGuildNotInGuild。两种情况事务都已回滚,没有写。
+	if expectedGuildLost(expected, err) {
+		return &pb.DisbandGuildResponse{ErrorMessage: l.rejectExpectedGuild(ctx, who.playerID, expected, expectedGuildMethodDisband, err)}, nil
+	}
 	// 解散是唯一一处 ErrRankTooLow 不回 kGuildRankTooLow 的地方:解散只有帮主能做,
 	// 沿用既有的"只有会长可以执行该操作"文案比"职位不足"更贴合玩家看到的按钮。
-	if errors.Is(err, data.ErrRankTooLow) {
+	// ErrNotGuildMember 是 repo 为 expected_guild_id 才区分出来的(以前同样回 ErrRankTooLow):旧客户端(expected = 0)
+	// 照旧答 kGuildNotLeader,答复与映射自愈行为都不变。
+	if errors.Is(err, data.ErrRankTooLow) || errors.Is(err, data.ErrNotGuildMember) {
 		return &pb.DisbandGuildResponse{ErrorMessage: tipErr(constants.ErrNotLeader, "not guild leader")}, nil
 	}
 	if tip, err := l.mapWriteErr(ctx, who.playerID, guildID, guildID, err); err != nil || tip != nil {
@@ -516,6 +565,10 @@ func (l *GuildLogic) DisbandGuild(ctx context.Context, req *pb.DisbandGuildReque
 	// target 取 0:解散没有"被作用的那个人"。只提交过申请的玩家不通知(他们的申请行已被删,
 	// 下次打开申请列表自然就没了)。
 	l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_DISBANDED, guildID, who.playerID, 0, recipients)
+	// 摘要给解散前的全体成员(MemberIDs 含操作者本人)。申请人的 GUILD_APPLICATION 同样变了(申请行被删),
+	// 但 DisbandResult 不回这组人(改 data 层不在本批范围):他们的申请列表由打开界面时的拉取覆盖,
+	// 列表里的残留行本来也按"帮会已不存在"过滤掉(myApplicationViews)。
+	l.bumpSync(res.MemberIDs, scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 	return &pb.DisbandGuildResponse{}, nil
 }
 
@@ -552,6 +605,8 @@ func (l *GuildLogic) SetAnnouncement(ctx context.Context, req *pb.SetAnnouncemen
 	// 玩家会以为自己没改成功而反复重试。
 	l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_ANNOUNCEMENT_CHANGED, req.GuildId, who.playerID, 0,
 		membersExcept(snapshot, who.playerID))
+	// 快照含操作者本人(他是 officer / leader 才过得了事务),全体即 bump 集合。
+	l.bumpSync(membersPlus(snapshot), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 	return &pb.SetAnnouncementResponse{Guild: l.guildInfoFor(ctx, snapshot, viewerOf(who))}, nil
 }
 

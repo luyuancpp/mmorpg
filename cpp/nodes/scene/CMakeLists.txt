@@ -84,20 +84,11 @@ add_definitions(-DMMORPG_AGONES_CURL=1)
 
 set(SOURCE_FILES
     handler/event/scene_kafka_command_router.cpp
-    handler/event/actor_combat_state_event_handler.cpp
-    handler/event/actor_event_handler.cpp
-    handler/event/buff_event_handler.cpp
-    handler/event/combat_event_handler.cpp
     handler/event/event_handler.cpp
-    handler/event/mission_event_handler.cpp
-    handler/event/node_event_handler.cpp
-    handler/event/npc_event_handler.cpp
-    handler/event/player_event_handler.cpp
+    handler/local_event/scene_local_events.cpp
     handler/event/player_migration_event_handler.cpp
-    handler/event/scene_event_handler.cpp
-    handler/event/server_event_handler.cpp
-    handler/event/skill_event_handler.cpp
     handler/event/team_event_handler.cpp
+    handler/event/player_inbox_event_handler.cpp
     handler/rpc/scene_admin_handler.cpp
     handler/rpc/player/player_currency_handler.cpp
     handler/rpc/player/player_attribute_handler.cpp
@@ -113,15 +104,7 @@ set(SOURCE_FILES
     handler/rpc/player/player_state_attribute_sync_handler.cpp
     handler/rpc/register_handler.cpp
     main.cpp
-    rpc_replies/gate_service_response_handler.cpp
     rpc_replies/scene_manager_response_handler.cpp
-    rpc_replies/player/player_lifecycle_response_handler.cpp
-    rpc_replies/player/s2s_player_scene_response_handler.cpp
-    rpc_replies/player/player_currency_response_handler.cpp
-    rpc_replies/player/player_rollback_response_handler.cpp
-    rpc_replies/player/player_rpc_response_handler.cpp
-    rpc_replies/player/player_state_attribute_sync_response_handler.cpp
-    rpc_replies/register_response_handler.cpp
     # 2026-09-18 补登记:这 7 个在 scene.vcxproj 里都有,只有 Linux CMake 清单漏了。
     handler/event/battle_event_handler.cpp
     handler/grpc/scene_node_service.cpp
@@ -164,6 +147,8 @@ target_link_libraries(scene
     -lrpc
     -lproto
     -lthird_party
+    # muduo_h2 etcd 传输(core 的 muduo_etcd_transport,NODE_ETCD_TRANSPORT 选择;docs/design/grpc-muduo-transport.md §13.4)
+    -lmuduo_grpc
     -Wl,--end-group
     gRPC::grpc++
     gRPC::grpc++_reflection
@@ -171,6 +156,10 @@ target_link_libraries(scene
     gRPC::gpr
     CURL::libcurl
     protobuf::libprotobuf
+    # 静态链入的 nghttp2(1.70)不得导出到动态符号表:系统 libcurl.so 依赖旧版 libnghttp2.so,
+    # 导出后 libcurl 的 nghttp2_* 调用会绑到我们的副本、两个版本混用(docs/design/grpc-muduo-transport.md §9)。
+    -Wl,--exclude-libs,libnghttp2.a
+    nghttp2
     muduo_net
     muduo_base
     rdkafka++

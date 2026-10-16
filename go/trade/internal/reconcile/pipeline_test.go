@@ -127,7 +127,7 @@ func TestNilPipelineFailsInsteadOfPanicking(t *testing.T) {
 	if _, err := p.ResolveManually(context.Background(), assetop.ManualResolution{OpID: 1}); !errors.Is(err, ErrSignerMissing) {
 		t.Errorf("空管线人工终结 err = %v, want errors.Is(..., ErrSignerMissing)", err)
 	}
-	p.Start(context.Background()) // 不得 panic
+	p.Run(context.Background()) // 不得 panic,也不得阻塞(svc 的 wg 等的就是它返回)
 }
 
 // TestEnqueueRejectsMalformedRequestBeforeTouchingStorage:入参不全、或包形状不合 v1 时,

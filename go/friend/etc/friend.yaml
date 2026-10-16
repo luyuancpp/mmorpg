@@ -3,6 +3,8 @@
 # 本文件的键名与 internal/config/config.go、k8s_deploy.ps1 的 friend ConfigMap 三处必须逐字一致 ——
 # 键名写错 go-zero 当未知键静默忽略,现象是"线上跑的还是默认值",没有任何报错。
 Name: friend.rpc
+# 本地单机 MySQL 仅用于事务回归；生产必须 true 且全部副本连接同一 TiDB 事务域。
+RequireTiDB: false
 ListenOn: 127.0.0.1:50400
 
 # zrpc 服务端整体超时(毫秒)。必须 ≤ 路由服 ForwardTimeoutMs(5000)− 1000(契约 §3),

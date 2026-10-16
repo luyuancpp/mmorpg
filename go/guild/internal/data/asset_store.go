@@ -6,6 +6,12 @@ package data
 // 它回答四件事:哪些行到期了(ListDue)、这一行归我处理(Claim)、这一轮没结论改天再来(Reschedule)、
 // 结论定了一次性落库并做对侧账(Finalize / ResolveManually)。另有清理任务与 assetopfix 用的两个读。
 //
+// 落地恢复(docs/design/landing-recovery-sync-digest.md §5.3 / §6)追加三项可选能力与一列:
+//   - assetop.PlayerPendingLister(落地唤醒按玩家列未决行)、assetop.PendingClassCounter(日对账,只读)、
+//     assetop.Abandoner(超 180 天自动放弃,对侧账与 REJECTED / ABORTED 共用 applyCounterparty);
+//   - last_send_ms 列按 go/shared/assetop/abandon.go 文件头「LastSendMs 契约」维护(见 lastSendMsOnInsert 上方的逐条对应)。
+// 终结的摘要 bump 只在 logic.OnAssetFinalized(经 OnFinalized 回调),本文件**不**另加 bump 挂点。
+//
 // 与 go/trade/internal/data/asset_op_repo.go 同形,**有意不同的三处**:
 //  1. Finalize 与 ResolveManually 都同写 next_attempt_ms = now(07 §7.4.1 硬要求):B5d 的回档检查按
 //     "终态行的 next_attempt_ms = 终结时刻"查 `next_attempt_ms > since`,漏写 = 漏行 = 回档复制资产(fail-open),
@@ -49,10 +55,11 @@ package data
 // (领取只写行 key,见下;预留插的是新行新 uk 值)。点锁读不到行 = 行已被清理(只删终态行),按"已被别人处理"走原语义。
 // MySQL 下点锁与随后的主键 UPDATE 锁的是同一条聚簇记录,锁集与顺序都不变(聚簇 → 二级),只多一次往返。
 //   - 重排(Reschedule)、毒行(markPoison)改 next_attempt_ms(idx_0),与提前截止 / 终结 / 人工终结改同一行:进事务,首句点锁;
-//   - 终结 / 人工终结(terminate):lockCounterparty(guild / 成员 / seq 行,锁序靠前的表)之后、CAS 之前点锁;
+//   - 终结 / 人工终结 / 自动放弃(terminate):lockCounterparty(guild / 成员 / seq 行,锁序靠前的表)之后、CAS 之前点锁;
 //   - 提前截止(economy_repo.go 的 accelerateDonationDeadlines):每个候选先点锁、再带复核条件点改;
-//   - 领取(Claim)**保留自动提交,且不许包进事务**:自动提交 UPDATE 只有在 !InTxn 时才带 SkipWriteUntouchedIndices
-//     (tidb pkg/executor/write.go),它只改无索引列,变更集合只有行 key 一个;lock_unchanged_keys 对乐观事务直接返回
+//   - 领取(Claim)与放弃判定后的归还租约(ReleaseLease)**保留自动提交,且不许包进事务**:
+//     自动提交 UPDATE 只有在 !InTxn 时才带 SkipWriteUntouchedIndices
+//     (tidb pkg/executor/write.go),它只改无索引列(last_send_ms 同样不在任何索引里),变更集合只有行 key 一个;lock_unchanged_keys 对乐观事务直接返回
 //     (addUnchangedKeysForLockByRow 的 !IsPessimistic 分支)。单 key 不可能"只拿到一部分",只会单向等待。
 //     包进事务反而会让它在语句末尾并行锁 PRIMARY / uk_guild_asset_op,与带额外谓词的 CAS 写者之间出现可检测的 1213,
 //     还给热路径多 3 次往返。同理**不要**在没有重新推演 Claim 的情况下打开 TiDB 的 pessimistic-auto-commit:
@@ -68,7 +75,7 @@ package data
 // O = guild_asset_op、C = guild_daily_counter):
 //   - 带上限 upsert(T-D / T-S):M → Q(p, stream) FOR UPDATE → 插 O → 语句末尾整批锁 C 本行 {行 key, PRIMARY key};
 //     只写 period_key = 请求开头 start 所在周期的行;
-//   - 退次数 / 退限购(终结 / 人工终结):[M] → Q(p, stream) → O 点锁 → C Point_Get 点改(PRIMARY key → 行 key);
+//   - 退次数 / 退限购(终结 / 人工终结 / 自动放弃):[M] → Q(p, stream) → O 点锁 → C Point_Get 点改(PRIMARY key → 行 key);
 //   - 清理:C Point_Get 点锁(PRIMARY key → 行 key)→ 带范围复核的点删;只删 period_key ≤ 截止键的行(counterCleanupCutoffs)。
 //   upsert 与退款先在同一 Q 上串行;退款与清理在 C 上同序;upsert 与清理的行集合不相交(截止键所在周期早于任何
 //   开始于 24h 内的请求的周期,见 minCounterCleanupAge),所以计数行上不存在反序对。
@@ -193,7 +200,13 @@ const (
 	// 以及清理点删(execCleanupDelete)。MySQL 下是 PRIMARY const,只锁这一条聚簇记录 —— 随后的主键写本来就要锁它,锁集不变。
 	sqlLockAssetOp = "SELECT `op_id` FROM " + guildAssetOpTable + " WHERE `op_id` = ? FOR UPDATE"
 
-	sqlClaimAssetOp = "UPDATE " + guildAssetOpTable + " SET `lease_until_ms` = ?, `lease_token` = ?, `updated_ms` = ?" +
+	// sqlClaimAssetOp:领取的主键 CAS(自动提交,理由见文件头 TiDB 附加规则"领取"一条)。
+	// 第一项 last_send_ms 是 LastSendMs 契约第 2、5 条(见 lastSendMsOnInsert 上方),**必须排在改 lease_until_ms / updated_ms 之前**:
+	// MySQL 单表 UPDATE 从左到右求值、后面的赋值看得到前面赋过的新值;排在最前,"从左到右"与"一律用旧值"两种求值读到的
+	// 都是旧租约与旧 updated_ms。它不带参数,参数顺序与改动前相同。
+	sqlClaimAssetOp = "UPDATE " + guildAssetOpTable +
+		" SET `last_send_ms` = GREATEST(IF(`last_send_ms` = 0, GREATEST(`created_ms`, `updated_ms`), `last_send_ms`), `lease_until_ms`)," +
+		" `lease_until_ms` = ?, `lease_token` = ?, `updated_ms` = ?" +
 		" WHERE `op_id` = ? AND `status` = ? AND `lease_until_ms` < ?"
 	// 毒行推迟:令牌之外还要带 `status = PENDING`。人工终结(sqlResolveAssetOp)的 CAS 只看 status、不换令牌,
 	// 它可能恰好落在 Claim 的 CAS 与这里之间;只凭令牌会把已终结的行改回"一小时后再来"、抹掉 last_outcome,
@@ -201,9 +214,13 @@ const (
 	sqlPoisonAssetOp = "UPDATE " + guildAssetOpTable +
 		" SET `last_outcome` = ?, `next_attempt_ms` = ?, `lease_until_ms` = 0, `updated_ms` = ?" +
 		" WHERE `op_id` = ? AND `lease_token` = ? AND `status` = ?"
+	// 末项 last_send_ms 是 LastSendMs 契约第 3 条:参数 (mayHaveSentFlag(res), nowMs)。本地合成的 NOT_HERE(res.Local)
+	// 根本没发请求,不推进;传输失败、坏流号等其余结果一律按"可能发过"推进到本次 ProcessOne 的开始时刻。
+	// 它只读写自己这一列,放在哪个位置都不受求值顺序影响。
 	sqlRescheduleAssetOp = "UPDATE " + guildAssetOpTable +
 		" SET `attempts` = `attempts` + 1, `next_attempt_ms` = ?, `lease_until_ms` = 0," +
-		" `durable` = ?, `last_outcome` = ?, `last_reason` = ?, `updated_ms` = ?" +
+		" `durable` = ?, `last_outcome` = ?, `last_reason` = ?, `updated_ms` = ?," +
+		" `last_send_ms` = IF(?, GREATEST(`last_send_ms`, ?), `last_send_ms`)" +
 		" WHERE `op_id` = ? AND `status` = ? AND `lease_token` = ?"
 
 	// 终结 CAS:`status = PENDING` 是"一次且仅一次"的最后一道闸,人工与自动同时下手也只有一个赢家。
@@ -217,6 +234,18 @@ const (
 		" SET `status` = ?, `resolved_by` = ?, `resolve_reason` = ?, `lease_until_ms` = 0," +
 		" `next_attempt_ms` = ?, `updated_ms` = ?" +
 		" WHERE `op_id` = ? AND `status` = ?"
+	// 自动放弃(assetop.Abandoner.Abandon,设计 §6.3 条件 6):以 (op_id, PENDING, lease_token) 为条件终结为 ABANDONED。
+	// 比 Finalize / 人工终结多带令牌:放弃只在"持租约期间没人能发请求"时才成立,租约中途被接管(令牌对不上)必须落空。
+	// 与人工终结一样不置 durable(不是 scene 确认的结局)、不改 last_outcome / last_reason(保留最后一次真实答复作证据)、
+	// 不写 reason_tip_id(保持 0,同 ABORTED);同写 next_attempt_ms = 终结时刻(07 §7.4.1,清理判龄与回档检查按它)。
+	sqlAbandonAssetOp = "UPDATE " + guildAssetOpTable +
+		" SET `status` = ?, `lease_until_ms` = 0, `next_attempt_ms` = ?, `updated_ms` = ?" +
+		" WHERE `op_id` = ? AND `status` = ? AND `lease_token` = ?"
+	// 放弃判定"这一轮不放弃"之后归还租约(assetop.Abandoner.ReleaseLease):只清租约,不动 attempts / next_attempt_ms /
+	// last_send_ms(LastSendMs 契约第 4 条)。只改无索引列(lease_until_ms、updated_ms),与 Claim 同为自动提交。
+	sqlReleaseLeaseAssetOp = "UPDATE " + guildAssetOpTable +
+		" SET `lease_until_ms` = 0, `updated_ms` = ?" +
+		" WHERE `op_id` = ? AND `status` = ? AND `lease_token` = ?"
 
 	// 终结前在事务外读的**不可变列**:插入之后没有任何路径改它们,读一次即可,不必占事务时间。
 	// stream 给退次数 / 退限购分支的 seq 行守卫用(C6):取 op 行自身的列,不按 kind 反推(不造第二份 kind→stream 事实源)。
@@ -234,6 +263,22 @@ const (
 	sqlListStuckAssetOps = "SELECT " + assetOpColumns + " FROM " + guildAssetOpTable +
 		" WHERE `status` = ? AND `created_ms` < ? ORDER BY `created_ms` ASC, `op_id` ASC LIMIT ?"
 	sqlOldestPendingAssetOp = "SELECT MIN(`created_ms`) FROM " + guildAssetOpTable + " WHERE `status` = ? AND `stream` = ?"
+
+	// 落地恢复的三条候选 / 统计读,全是**普通读**(不带任何锁定子句,TestEconomyCandidateReadsTakeNoLocks 钉文本):
+	// 领取与终结仍各自走主键 CAS,这里读到的只是候选,过时了由那一步落空兜住。
+	//
+	// sqlListPendingByPlayer:落地唤醒(assetop.PlayerPendingLister),走 idx_guild_asset_op_2 的 player_id 前缀,
+	// 不看 next_attempt_ms 与租约(唤醒本来就是要提前,租约由随后的 Claim CAS 判)。按 op_id(≈ 创建顺序)升序,
+	// 截断时先处理老行。
+	sqlListPendingByPlayer = "SELECT `op_id` FROM " + guildAssetOpTable +
+		" WHERE `player_id` = ? AND `status` = ? ORDER BY `op_id` ASC LIMIT ?"
+	// sqlListPendingFactsPage:日对账(assetop.PendingClassCounter)按主键翻页,只取 assetop.PendingFacts 要的列。
+	sqlListPendingFactsPage = "SELECT `op_id`, `stream`, `created_ms`, `attempts`, `last_outcome`, `last_reason` FROM " +
+		guildAssetOpTable + " WHERE `status` = ? AND `op_id` > ? ORDER BY `op_id` ASC LIMIT ?"
+	// sqlListAbandonCandidates:自动放弃候选(assetop.Abandoner.ListAbandonCandidates),按 op_id 翻页、只回主键;
+	// 真正的判定在 Loop 持租约之后逐行复核。
+	sqlListAbandonCandidates = "SELECT `op_id` FROM " + guildAssetOpTable +
+		" WHERE `status` = ? AND `created_ms` < ? AND `op_id` > ? ORDER BY `op_id` ASC LIMIT ?"
 
 	// 对侧账。guild_member 的两条 UPDATE 带 FORCE INDEX (PRIMARY):WHERE 同时钉死了 uk_guild_member(player_id),
 	// 理由同 economy_repo.go 的 sqlLockMemberBalance;行已在同一事务里先经 sqlLockMemberRole 锁住,
@@ -262,13 +307,16 @@ const (
 // 单向等待,不可能成环;锁也只持有一行的时间,不会再让离帮 / 被踢 / 解散在整批清理后面排满 1s。
 // 为什么是短事务而不是单条自动提交(死锁复核 C5,TiDB):见文件头 TiDB 附加规则与 execCleanupDelete。
 const (
-	// 终态行只删三种:**不含** APPLIED_PARTIAL(要人工补偿,证据不能自动消失,X-15 / 90 part2 §3)与 PENDING(永不删)。
-	// 判龄按 next_attempt_ms —— 终态行上它等于终结时刻(Finalize / ResolveManually 同写)。
+	// 终态行只删四种(APPLIED / REJECTED / ABORTED / ABANDONED,参数顺序见 cleanupTerminalOpsBatch):
+	// **不含** APPLIED_PARTIAL(要人工补偿,证据不能自动消失,X-15 / 90 part2 §3)与 PENDING(永不删)。
+	// ABANDONED 与其它终态同等对待(落地恢复 §6.3):对侧账已在放弃事务里做完,保留期内的行与 [AssetOp] 放弃日志
+	// 是人工补偿的依据,保留期之后与 ABORTED 一样删。
+	// 判龄按 next_attempt_ms —— 终态行上它等于终结时刻(Finalize / ResolveManually / Abandon 同写)。
 	// 按 op_id 升序取前 500:op_id 是雪花号、随创建时刻单调增,老的终态行天然排在前面。
 	sqlListCleanupTerminalOps = "SELECT `op_id` FROM " + guildAssetOpTable +
-		" WHERE `status` IN (?, ?, ?) AND `next_attempt_ms` < ? ORDER BY `op_id` ASC LIMIT ?"
+		" WHERE `status` IN (?, ?, ?, ?) AND `next_attempt_ms` < ? ORDER BY `op_id` ASC LIMIT ?"
 	sqlCleanupTerminalOp = "DELETE FROM " + guildAssetOpTable +
-		" WHERE `op_id` = ? AND `status` IN (?, ?, ?) AND `next_attempt_ms` < ?"
+		" WHERE `op_id` = ? AND `status` IN (?, ?, ?, ?) AND `next_attempt_ms` < ?"
 
 	// 计数行:4 列完整主键点删,period_key 的范围条件同时作复核(日键与周键各走一段,见 dayKeyFloor)。
 	sqlListCleanupCounters = `SELECT player_id, counter_kind, ref_id, period_key FROM guild_daily_counter
@@ -303,12 +351,16 @@ func StatusToRecord(st assetop.Status) pb.GuildAssetOpStatus {
 		return pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABORTED
 	case assetop.StatusAppliedPartial:
 		return pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL
+	case assetop.StatusAbandoned:
+		return pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED
 	default:
 		return pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_UNSPECIFIED
 	}
 }
 
-// isTerminalRecord:终结路径只接受四个终态。PENDING 写进去等于没终结,UNSPECIFIED 会让客服查不到结局。
+// isTerminalRecord:Finalize / ResolveManually 只接受四个终态。PENDING 写进去等于没终结,UNSPECIFIED 会让客服查不到结局。
+// ABANDONED 刻意不在其中:它只能经 Abandon(带令牌条件的 CAS,assetop.StatusAbandoned 的契约)写入;
+// Finalize 拿到它说明 assetop 的判定出了 bug,人工终结拿到它说明绕过了 ManualResolution 的白名单 —— 都在碰库之前拒绝。
 func isTerminalRecord(st pb.GuildAssetOpStatus) bool {
 	switch st {
 	case pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED,
@@ -349,9 +401,12 @@ type GuildAssetStore struct {
 }
 
 var (
-	_ assetop.Store            = (*GuildAssetStore)(nil)
-	_ assetop.ManualResolver   = (*GuildAssetStore)(nil)
-	_ assetop.PendingAgeReader = (*GuildAssetStore)(nil)
+	_ assetop.Store               = (*GuildAssetStore)(nil)
+	_ assetop.ManualResolver      = (*GuildAssetStore)(nil)
+	_ assetop.PendingAgeReader    = (*GuildAssetStore)(nil)
+	_ assetop.PlayerPendingLister = (*GuildAssetStore)(nil)
+	_ assetop.PendingClassCounter = (*GuildAssetStore)(nil)
+	_ assetop.Abandoner           = (*GuildAssetStore)(nil)
 )
 
 // NewGuildAssetStore。guilds 为 nil 时报错:对侧账要用它的缓存失效,连接池也取自它。
@@ -426,6 +481,7 @@ func (s *GuildAssetStore) listDueSegment(ctx context.Context, query string, nowM
 // 刻意**不**进事务(死锁复核 C5 的结论):TiDB 下它只改无索引列,自动提交时变更集合只有行 key 一个,不会部分持有;
 // 包进悲观事务反而会在语句末尾并行锁 PRIMARY / uk_guild_asset_op,见文件头 TiDB 附加规则。
 // RowsAffected != 1 → (Op{}, false, nil):已被别的副本领走或已终结。
+// 同一条 CAS 顺带维护 last_send_ms(折进上一个租约、存量 0 懒初始化,见 sqlClaimAssetOp),回读时填 Op.CreatedMs / Op.LastSendMs。
 //
 // payload 为空或解不开都是毒行:把它推迟到 poisonUntilMs(循环按 LoopConfig.PoisonDelay 算好的绝对时刻,
 // **本文件不另写毒行延迟常量**)并回 assetop.ErrPoisonRow,循环计 decode 后继续下一行。空 payload 也算毒行:
@@ -487,10 +543,15 @@ func (s *GuildAssetStore) Claim(ctx context.Context, opID, nowMs, leaseUntilMs, 
 		DeadlineMs:    rec.GetDeadlineMs(),
 		LeaseToken:    token,
 		LastReason:    rec.GetLastReason(),
+		// 只有自动放弃读这两项(abandon.go 条件 1 的复核与条件 4)。LastSendMs 是上面那条 CAS 刚写下的值:
+		// 已折进上一个租约、存量 0 已懒初始化,所以领到的行上它恒非 0(created_ms 为 0 的坏行除外,放弃路径按 0 跳过)。
+		CreatedMs:  rec.GetCreatedMs(),
+		LastSendMs: rec.GetLastSendMs(),
 	}, true, nil
 }
 
-// markPoison 把毒行推迟到 poisonUntilMs,last_outcome 记"结局未知"。用本次领取的 lease_token 且仍为 PENDING 做 CAS:
+// markPoison 把毒行推迟到 poisonUntilMs,last_outcome 记"结局未知"。只清租约、不动 last_send_ms(LastSendMs 契约第 4 条:
+// 解码失败发生在发送之前,本次租约内没有任何请求)。用本次领取的 lease_token 且仍为 PENDING 做 CAS:
 // 不会推迟别的副本刚领走的同一行,也不会改写领取之后才被人工终结的行。写失败只记日志:后果是下一轮再撞一次
 // 同一行(仍然跳过),不丢数据。
 //
@@ -521,7 +582,7 @@ func (s *GuildAssetStore) markPoison(ctx context.Context, opID, token, nowMs, po
 // RowsAffected == 0 → assetop.ErrLeaseLost:租约在处理期间被另一个副本接管,本次结果一个字都没写进去;
 // 回 nil 会把"我的结果被丢弃"伪装成成功,assetop_reschedule_lost_total 就恒为 0。
 // last_reason 照写 res.Reason:部分发放码(assetop.ReasonPartialApplied)的粘性由 assetop 的 carryPartialReason 负责,
-// 这里不自作主张。
+// 这里不自作主张。last_send_ms 只在 res.Local 为假时推进到 nowMs(mayHaveSentFlag,LastSendMs 契约第 3 条)。
 //
 // 显式 RC 短事务,不用自动提交(G-C2,见文件头 TiDB 附加规则)。TiDB 下自动提交按乐观事务提交:本语句可能先把
 // idx_0 旧项 (PENDING, 旧 next_attempt_ms, rowid) 锁上,再在行 key 上撞到提前截止 / 终结的悲观锁,而对方提交时要删的
@@ -549,6 +610,7 @@ func (s *GuildAssetStore) Reschedule(ctx context.Context, op assetop.Op, nextAtt
 		}
 		result, err := tx.ExecContext(ctx, sqlRescheduleAssetOp,
 			nextAttemptMs, durableFlag(res.Durable), uint32(res.Outcome), res.Reason, nowMs,
+			mayHaveSentFlag(res), nowMs,
 			op.OpID, PendingStatus(), op.LeaseToken)
 		if err != nil {
 			return fmt.Errorf("reschedule %s %d: %w", guildAssetOpTable, op.OpID, err)
@@ -569,6 +631,16 @@ func durableFlag(durable bool) uint32 {
 		return 1
 	}
 	return 0
+}
+
+// mayHaveSentFlag 是 sqlRescheduleAssetOp 里"本次是否可能向 scene 发出过请求"的标志(LastSendMs 契约第 3 条):
+// 只有 res.Local(本地合成的 NOT_HERE,根本没发)记 0;传输失败、超时、坏流号重排这类拿不到答复的结果一律记 1,
+// 按"发过"保守处理 —— 漏推进会让放弃的安全间隔从一次真实发送之前算起。
+func mayHaveSentFlag(res assetop.Result) uint32 {
+	if res.Local {
+		return 0
+	}
+	return 1
 }
 
 // Finalize 把行终结成 status,并在**同一事务**里做对侧账;返回是否**本次**终结。
@@ -654,7 +726,8 @@ type counterpartyOutcome struct {
 	unknownKind bool // kind 不认识:只做了 CAS
 }
 
-// terminate 是 Finalize 与 ResolveManually 的共同骨架;两者只差 CAS 语句(casQuery / casArgs)。
+// terminate 是 Finalize、ResolveManually 与 Abandon 的共同骨架;三者只差 CAS 语句(casQuery / casArgs)。
+// 返回 false 且无错误 = 行不存在或 CAS 落空(已被别人终结 / 令牌对不上),对侧账一个字没做。
 func (s *GuildAssetStore) terminate(ctx context.Context, opID uint64, status assetop.Status, nowMs uint64,
 	what, casQuery string, casArgs ...any) (bool, error) {
 	dbCtx, cancel := context.WithTimeout(ctx, storeFinalizeBudget)
@@ -759,12 +832,26 @@ func (s *GuildAssetStore) readImmutable(ctx context.Context, opID uint64) (asset
 	return row, true, nil
 }
 
+// refundsCounterparty 判定一个终态是不是"scene 从未应用、要把预留退回去"的那一类:REJECTED / ABORTED / ABANDONED。
+// **只此一处**:counterRefund(退次数 / 退限购)、lockCounterparty(兑换退帮贡要锁成员行)与 applyCounterparty(退帮贡)
+// 都经它判,所以自动放弃的对侧账与 REJECTED / ABORTED 由构造保证完全相同(落地恢复 §6.3:捐献退次数且资金帮贡不入账、
+// 兑换退帮贡与限购、活动发奖只留审计行),不会出现"放弃退了限购却没退帮贡"的分叉。
+func refundsCounterparty(status assetop.Status) bool {
+	switch status {
+	case assetop.StatusRejected, assetop.StatusAborted, assetop.StatusAbandoned:
+		return true
+	default:
+		return false
+	}
+}
+
 // counterRefund 判定本次终结要不要退次数 / 退限购,以及退哪类计数、退几份。**判定只此一处**:
 // lockCounterparty 的 seq 行守卫与 applyCounterparty 的退款都调它,两边不许各写一份条件(迟早分叉 —— 守卫漏锁即 C6)。
-//   - 只有 REJECTED / ABORTED 退;APPLIED / APPLIED_PARTIAL 不退;period_key == 0(不限购的商品,当初没占计数行)不退;
+//   - 只有 refundsCounterparty 的三个终态(REJECTED / ABORTED / ABANDONED)退;APPLIED / APPLIED_PARTIAL 不退;
+//     period_key == 0(不限购的商品,当初没占计数行)不退;
 //   - DONATE 退今日次数 1 次;SHOP 退限购 ref_count 份(0 份不退);其余 kind(活动发奖、未知)不退。
 func counterRefund(row assetOpImmutable, status assetop.Status) (pb.GuildDailyCounterKind, uint32, bool) {
-	if (status != assetop.StatusRejected && status != assetop.StatusAborted) || row.PeriodKey == 0 {
+	if !refundsCounterparty(status) || row.PeriodKey == 0 {
 		return 0, 0, false
 	}
 	switch row.Kind {
@@ -780,7 +867,7 @@ func counterRefund(row assetOpImmutable, status assetop.Status) (pb.GuildDailyCo
 //
 //   - DONATE + APPLIED:guild 行 FOR UPDATE;帮会在才锁成员行。成员行按 op.guild_id 找 —— D2:结算一律记给
 //     发起时绑定的帮会,不看玩家此刻在哪个帮。
-//   - SHOP + REJECTED / ABORTED:成员行 FOR UPDATE(要退帮贡)。
+//   - SHOP + REJECTED / ABORTED / ABANDONED(refundsCounterparty):成员行 FOR UPDATE(要退帮贡)。
 //   - 要退次数 / 退限购的(counterRefund 为真):最后再锁 guild_player_op_seq(p, op 的流)作计数行守卫(C6,sqlLockSeqGuard)。
 //     兑换分支因此是 guild_member → seq → op → counter,与 T-S 同向;捐献分支是 seq → op → counter,与 T-D 的 member → seq
 //     同向(T-D 先持的成员行,本事务从不要)。seq 行建出后永不删除;缺行(人工删过、或夹具直接插的 op 行)不当错误 ——
@@ -802,8 +889,7 @@ func lockCounterparty(ctx context.Context, tx *sql.Tx, row assetOpImmutable, sta
 		if locks.memberOK, err = lockRowExists(ctx, tx, sqlLockMemberRole, row.GuildID, row.PlayerID); err != nil {
 			return locks, fmt.Errorf("lock donor %d of guild %d: %w", row.PlayerID, row.GuildID, err)
 		}
-	case row.Kind == pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_SHOP &&
-		(status == assetop.StatusRejected || status == assetop.StatusAborted):
+	case row.Kind == pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_SHOP && refundsCounterparty(status):
 		ok, err := lockRowExists(ctx, tx, sqlLockMemberRole, row.GuildID, row.PlayerID)
 		if err != nil {
 			return locks, fmt.Errorf("lock buyer %d of guild %d: %w", row.PlayerID, row.GuildID, err)
@@ -831,16 +917,17 @@ func lockRowExists(ctx context.Context, tx *sql.Tx, query string, args ...any) (
 	return true, nil
 }
 
-// applyCounterparty 是 Finalize 与 ResolveManually 共用的对侧账(D2 覆盖后的 §5.19.3 第 4 步):
+// applyCounterparty 是 Finalize、ResolveManually 与 Abandon 共用的对侧账(D2 覆盖后的 §5.19.3 第 4 步;
+// ABANDONED 按落地恢复 §6.3 与 REJECTED / ABORTED 同列,由 refundsCounterparty 一处判定):
 //
-//	| kind            | 终态               | 动作                                                                 |
-//	| 任意            | APPLIED_PARTIAL    | 无(只 CAS;部分发放转人工补偿,不退次数、不退帮贡)                    |
-//	| DONATE          | APPLIED            | 帮会在:资金 += funds_delta;成员在:帮贡两列 += c;缺哪边计哪条 orphan |
-//	| DONATE          | REJECTED / ABORTED | 退今日次数 1 次                                                      |
-//	| SHOP            | REJECTED / ABORTED | 成员在:退 balance;否则 orphan{shop,refund_member_gone};有周期键则退限购 ref_count 份 |
-//	| SHOP            | APPLIED            | 无                                                                   |
-//	| ACTIVITY_REWARD | 任意               | 无(帮贡与资金在入队事务里已记完)                                     |
-//	| 其它            | 任意               | 只 CAS,提交后 ERROR                                                  |
+//	| kind            | 终态                           | 动作                                                                 |
+//	| 任意            | APPLIED_PARTIAL                | 无(只 CAS;部分发放转人工补偿,不退次数、不退帮贡)                    |
+//	| DONATE          | APPLIED                        | 帮会在:资金 += funds_delta;成员在:帮贡两列 += c;缺哪边计哪条 orphan |
+//	| DONATE          | REJECTED / ABORTED / ABANDONED | 退今日次数 1 次(资金与帮贡不入账)                                   |
+//	| SHOP            | REJECTED / ABORTED / ABANDONED | 成员在:退 balance;否则 orphan{shop,refund_member_gone};有周期键则退限购 ref_count 份 |
+//	| SHOP            | APPLIED                        | 无                                                                   |
+//	| ACTIVITY_REWARD | 任意                           | 无(帮贡与资金在入队事务里已记完;放弃时奖励作废,只留审计行与日志)   |
+//	| 其它            | 任意                           | 只 CAS,提交后 ERROR                                                  |
 //
 // 增量为 0 的那一列跳过:ClientFoundRows=false 下"加 0"的 UPDATE RowsAffected 为 0,会被恰好一行的自检误判。
 func applyCounterparty(ctx context.Context, tx *sql.Tx, row assetOpImmutable, status assetop.Status,
@@ -849,7 +936,7 @@ func applyCounterparty(ctx context.Context, tx *sql.Tx, row assetOpImmutable, st
 	if status == assetop.StatusAppliedPartial {
 		return out, nil
 	}
-	refunded := status == assetop.StatusRejected || status == assetop.StatusAborted
+	refunded := refundsCounterparty(status)
 
 	switch row.Kind {
 	case pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_DONATE:
@@ -931,6 +1018,174 @@ func (s *GuildAssetStore) OldestPendingCreatedMs(ctx context.Context, stream ass
 		return 0, false, nil
 	}
 	return uint64(oldest.Int64), true, nil
+}
+
+// ── 落地恢复:last_send_ms / 唤醒 / 对账 / 放弃(landing-recovery-sync-digest.md §5.3 / §6)──
+
+// LastSendMs 契约(go/shared/assetop/abandon.go 文件头)在本表上的逐条落点:
+//  1. 插行写 created_ms —— lastSendMsOnInsert(经 assetOpInsertArgs,所有插行路径共用);
+//  2. Claim 的 CAS 先于改 lease_until_ms 把旧租约折进来 —— sqlClaimAssetOp 第一项;
+//  3. Reschedule 只在可能发过请求时推进到 now —— sqlRescheduleAssetOp 末项 + mayHaveSentFlag;
+//  4. 毒行推迟(sqlPoisonAssetOp)与 ReleaseLease(sqlReleaseLeaseAssetOp)只清租约,不碰这一列;
+//  5. 存量行(schemamigrate ADD COLUMN 后为 0)在 Claim 的同一项里懒初始化为 GREATEST(created_ms, updated_ms),不做单独回填。
+// 终结类写法(Finalize / ResolveManually / Abandon)不碰这一列:行已终结,它此后只是审计证据。
+
+// lastSendMsOnInsert 是插行时写进 last_send_ms 的值(契约第 1 条):插行即持租约,同步投递紧接着就可能发出,
+// 所以不得小于 created_ms。生产调用方不填 LastSendMs,得到的就是 created_ms;测试夹具显式填了更大的值时原样保留。
+func lastSendMsOnInsert(rec *pb.GuildAssetOpRecord) uint64 {
+	return max(rec.GetLastSendMs(), rec.GetCreatedMs())
+}
+
+// 日对账的翻页规模与单页预算:每页至多 500 行、单页 2s。对账一天一次、只读;单页预算比普通读宽一档,
+// 是因为它按主键扫、可能要跳过同一段主键里的终态行。
+const (
+	pendingAuditPageSize   = 500
+	pendingAuditPageBudget = 2 * time.Second
+)
+
+// pendingByPlayerLimit 是 ListPendingByPlayer 的条数上限:本服务独占两条流(I6)× 每条流未决上限
+// assetop.DefaultLimits.MaxPending(16,I5)= 32,与 assetop 一次唤醒的上限(maxWakeOpsPerPlayer)同值同源。
+// 写成函数而不是常量:DefaultLimits 是变量,不另抄一个 16。
+func pendingByPlayerLimit() int { return 2 * int(assetop.DefaultLimits.MaxPending) }
+
+// ListPendingByPlayer 实现 assetop.PlayerPendingLister(落地唤醒,§5.3):该玩家 PENDING 行的 op_id,按 op_id 升序,
+// 至多 min(limit, 32) 条。非加锁读,走 idx_guild_asset_op_2 的 player_id 前缀;不看 next_attempt_ms 与租约。
+// 玩家没有未决行时回 (nil, nil)。
+func (s *GuildAssetStore) ListPendingByPlayer(ctx context.Context, playerID uint64, limit int) ([]uint64, error) {
+	if playerID == 0 || limit <= 0 {
+		return nil, nil
+	}
+	limit = min(limit, pendingByPlayerLimit())
+	ctx, cancel := context.WithTimeout(ctx, storeReadBudget)
+	defer cancel()
+	ids, err := scanOpIDs(ctx, s.db, sqlListPendingByPlayer, playerID, PendingStatus(), limit)
+	if err != nil {
+		return nil, fmt.Errorf("list pending %s of player %d: %w", guildAssetOpTable, playerID, err)
+	}
+	return ids, nil
+}
+
+// CountPendingByClass 实现 assetop.PendingClassCounter(日对账,§6.2):按主键翻页非加锁读全部 PENDING 行,
+// 逐行交给 assetop.PendingTally 分类累加 —— 分类口径只在 assetop.ClassifyPending 一处,这里不另写 SQL CASE。
+// 不改任何行。ctx 结束或某一页读失败即返回错误(Loop 保持上一轮的 gauge)。
+func (s *GuildAssetStore) CountPendingByClass(ctx context.Context, nowMs, abandonBeforeMs uint64) ([]assetop.ClassCount, error) {
+	tally := assetop.NewPendingTally(nowMs, abandonBeforeMs)
+	var after uint64
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, fmt.Errorf("count pending %s by class: %w", guildAssetOpTable, err)
+		}
+		facts, lastOpID, err := s.pendingFactsPage(ctx, after)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range facts {
+			tally.Add(f)
+		}
+		if len(facts) < pendingAuditPageSize {
+			return tally.Counts(), nil
+		}
+		after = lastOpID
+	}
+}
+
+// pendingFactsPage 读 op_id > after 的一页 PENDING 行的分类列,返回本页最后一行的 op_id(下一页的游标)。
+func (s *GuildAssetStore) pendingFactsPage(ctx context.Context, after uint64) ([]assetop.PendingFacts, uint64, error) {
+	ctx, cancel := context.WithTimeout(ctx, pendingAuditPageBudget)
+	defer cancel()
+	rows, err := s.db.QueryContext(ctx, sqlListPendingFactsPage, PendingStatus(), after, pendingAuditPageSize)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list pending %s for audit: %w", guildAssetOpTable, err)
+	}
+	defer rows.Close()
+
+	facts := make([]assetop.PendingFacts, 0, pendingAuditPageSize)
+	lastOpID := after
+	for rows.Next() {
+		var opID, createdMs uint64
+		var stream, attempts, outcome, lastReason uint32
+		if err := rows.Scan(&opID, &stream, &createdMs, &attempts, &outcome, &lastReason); err != nil {
+			return nil, 0, fmt.Errorf("scan pending %s for audit: %w", guildAssetOpTable, err)
+		}
+		facts = append(facts, assetop.PendingFacts{
+			Stream:      assetpb.AssetOpStream(stream),
+			CreatedMs:   createdMs,
+			Attempts:    attempts,
+			LastOutcome: assetpb.AssetOpOutcome(outcome),
+			LastReason:  lastReason,
+		})
+		lastOpID = opID
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate pending %s for audit: %w", guildAssetOpTable, err)
+	}
+	return facts, lastOpID, nil
+}
+
+// ListAbandonCandidates 实现 assetop.Abandoner(§6.3):status = PENDING 且 created_ms < createdBeforeMs 且 op_id > afterOpID,
+// 按 op_id 升序至多 limit 条主键。非加锁读,只给候选;创建时刻、位置、安全间隔、账本都由 Loop 持租约之后逐行复核。
+// createdBeforeMs 为 0 表示没有候选(功能关闭或时钟太早),直接回空,不碰库。
+func (s *GuildAssetStore) ListAbandonCandidates(ctx context.Context, createdBeforeMs, afterOpID uint64, limit int) ([]uint64, error) {
+	if createdBeforeMs == 0 || limit <= 0 {
+		return nil, nil
+	}
+	ctx, cancel := context.WithTimeout(ctx, storeReadBudget)
+	defer cancel()
+	ids, err := scanOpIDs(ctx, s.db, sqlListAbandonCandidates, PendingStatus(), createdBeforeMs, afterOpID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("list abandon candidates %s: %w", guildAssetOpTable, err)
+	}
+	return ids, nil
+}
+
+// Abandon 实现 assetop.Abandoner(§6.3 条件 6):在**一个事务**里按业务锁序加锁 → 以 (op_id, PENDING, lease_token) 为条件
+// 终结为 ABANDONED → RowsAffected == 1 才做对侧账。事务骨架、锁序、重试口径(WithTxRetry,1213 / 9007 / 1205)、
+// 提交后的缓存失效与 OnFinalized 回调都与 Finalize 共用 terminate;对侧账经 refundsCounterparty 与 REJECTED / ABORTED 完全相同。
+//
+// CAS 落空(令牌对不上 = 租约在判定期间被别人接管,别人可能已经发出请求)或行已不存在(只会被清理删掉终态行)
+// 一律回 assetop.ErrLeaseLost(%w 包一层,errors.Is 可判),绝不放弃。
+// 不置 durable、不改 last_outcome / last_reason,见 sqlAbandonAssetOp。摘要 bump 由 OnFinalized(logic.OnAssetFinalized)负责,
+// 这里不另加。
+func (s *GuildAssetStore) Abandon(ctx context.Context, op assetop.Op, nowMs uint64) error {
+	// 令牌 0 在本表表示"没有租约":拿它做条件会匹配一条从未被领取过的行,等于不持租约就放弃(fail-closed,碰库之前拒绝)。
+	if op.LeaseToken == 0 {
+		return fmt.Errorf("abandon %s %d: lease token is zero (lease not held)", guildAssetOpTable, op.OpID)
+	}
+	abandoned, err := s.terminate(ctx, op.OpID, assetop.StatusAbandoned, nowMs, "abandon", sqlAbandonAssetOp,
+		int32(pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED), nowMs, nowMs,
+		op.OpID, PendingStatus(), op.LeaseToken)
+	if err != nil {
+		return err
+	}
+	if !abandoned {
+		return fmt.Errorf("guild asset op %d: abandon CAS missed: %w", op.OpID, assetop.ErrLeaseLost)
+	}
+	return nil
+}
+
+// ReleaseLease 实现 assetop.Abandoner:放弃判定"这一轮不放弃"之后归还租约,只清 lease_until_ms(写 updated_ms),
+// 不动 attempts / next_attempt_ms / last_send_ms(契约第 4 条)。RowsAffected == 0 → assetop.ErrLeaseLost(行已被接管或已终结)。
+//
+// 自动提交、不进事务,理由同 Claim(文件头 TiDB 附加规则):只改无索引列,TiDB 下变更集合只有行 key 一个;MySQL 下只锁聚簇记录。
+// 不还会怎样(见 assetop.Abandoner.ReleaseLease):下一次 Claim 会把这段租约折进 last_send_ms,这一行晚一个安全间隔才能再判。
+func (s *GuildAssetStore) ReleaseLease(ctx context.Context, op assetop.Op, nowMs uint64) error {
+	if op.LeaseToken == 0 {
+		return fmt.Errorf("release lease %s %d: lease token is zero (lease not held)", guildAssetOpTable, op.OpID)
+	}
+	ctx, cancel := context.WithTimeout(ctx, storeClaimBudget)
+	defer cancel()
+	result, err := s.db.ExecContext(ctx, sqlReleaseLeaseAssetOp, nowMs, op.OpID, PendingStatus(), op.LeaseToken)
+	if err != nil {
+		return fmt.Errorf("release lease %s %d: %w", guildAssetOpTable, op.OpID, err)
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("release lease %s %d: read rows affected: %w", guildAssetOpTable, op.OpID, err)
+	}
+	if affected == 0 {
+		return fmt.Errorf("guild asset op %d: release lease missed: %w", op.OpID, assetop.ErrLeaseLost)
+	}
+	return nil
 }
 
 // ── assetopfix 用的读 ────────────────────────────────────────
@@ -1083,14 +1338,15 @@ func (s *GuildAssetStore) cleanupInBatches(ctx context.Context, table string, ba
 	return nil
 }
 
-// cleanupTerminalOpsBatch:普通读至多 500 个保留期外的三种终态 op_id(升序),逐行短事务点锁 + 点删并复核条件。
+// cleanupTerminalOpsBatch:普通读至多 500 个保留期外的四种终态 op_id(升序),逐行短事务点锁 + 点删并复核条件。
 func (s *GuildAssetStore) cleanupTerminalOpsBatch(ctx context.Context, cutoffMs uint64) (int, int64, error) {
 	applied := int32(pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED)
 	rejected := int32(pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_REJECTED)
 	aborted := int32(pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABORTED)
+	abandoned := int32(pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED)
 
 	readCtx, cancel := context.WithTimeout(ctx, storeReadBudget)
-	opIDs, err := scanOpIDs(readCtx, s.db, sqlListCleanupTerminalOps, applied, rejected, aborted, cutoffMs, cleanupBatchSize)
+	opIDs, err := scanOpIDs(readCtx, s.db, sqlListCleanupTerminalOps, applied, rejected, aborted, abandoned, cutoffMs, cleanupBatchSize)
 	cancel()
 	if err != nil {
 		return 0, 0, fmt.Errorf("list terminal %s: %w", guildAssetOpTable, err)
@@ -1098,7 +1354,7 @@ func (s *GuildAssetStore) cleanupTerminalOpsBatch(ctx context.Context, cutoffMs 
 	var deleted int64
 	for _, opID := range opIDs {
 		n, err := s.execCleanupDelete(ctx, sqlLockAssetOp, []any{opID},
-			sqlCleanupTerminalOp, opID, applied, rejected, aborted, cutoffMs)
+			sqlCleanupTerminalOp, opID, applied, rejected, aborted, abandoned, cutoffMs)
 		deleted += n
 		if err != nil {
 			return len(opIDs), deleted, fmt.Errorf("delete terminal %s %d: %w", guildAssetOpTable, opID, err)

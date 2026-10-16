@@ -18,19 +18,19 @@
 #   代价:go/proto、go/shared 改动后必须在 robot/ 下重跑 `go mod vendor` 并提交,
 #   否则镜像里是旧快照 —— vendor 一致性检查只比对 go.mod 与 vendor/modules.txt,查不出内容过期。
 #
-# 基础镜像钉 digest(2026-09-16 查询,均为多平台 index digest):
-#   docker buildx imagetools inspect golang:1.24.5-alpine3.22   → 取顶部 Digest
+# 基础镜像钉 digest(Go 2026-10-13、运行层 2026-09-16 查询,均为多平台 index digest):
+#   docker buildx imagetools inspect golang:1.27.2-alpine3.24   → 取顶部 Digest
 #   docker buildx imagetools inspect alpine:3.20.10             → 同上
 #   升级时 tag 与 digest 必须来自同一次查询一起改;Go 版本还要同步 robot/go.mod 的
 #   go 指令与下方 GOVERSION 断言,三处不一致构建直接失败。
 # ────────────────────────────────────────────────────────────────
 
 # ── Build stage ──────────────────────────────────────────────────
-FROM golang:1.24.5-alpine3.22@sha256:daae04ebad0c21149979cd8e9db38f565ecefd8547cf4a591240dc1972cf1399 AS builder
+FROM golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS builder
 
 # local:禁止按 go.mod 自动下载别的工具链,编译器版本只由上面的基础镜像决定。
 ENV GOTOOLCHAIN=local
-RUN test "$(go env GOVERSION)" = "go1.24.5"
+RUN test "$(go env GOVERSION)" = "go1.27.2"
 
 WORKDIR /src/robot
 COPY robot/ ./

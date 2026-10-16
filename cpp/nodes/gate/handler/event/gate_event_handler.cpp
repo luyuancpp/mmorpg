@@ -16,11 +16,12 @@
 #include "node/system/node/node_util.h"
 #include "scene_route_helper.h"
 #include "scene_entry_dispatch.h"
+#include "handler/rpc/client_request_lane.h"
 
 #include <chrono>
 
 // 向 scene 转发进场(ForwardPlayerToScene)、欠账补发与超限收口都在 scene_entry_dispatch.cpp(CPP-2);
-// 下面 RoutePlayer / BindSession 的守护段只做会话字段的写入并委托过去。
+// 下面 RoutePlayer / BindSession 的守护段只经 scene_route_helper.h 的纯函数写会话字段,再委托过去。
 ///<<< END WRITING YOUR CODE
 void GateEventHandler::Register()
 {
@@ -72,24 +73,20 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
 
     auto &session = it->second;
 
-    // Use player_id from the event if session doesn't have it yet (BindSession may not have arrived).
-    if (event.player_id() != 0 && session.playerId == kInvalidGuid)
-    {
-        session.playerId = event.player_id();
-    }
-
-    // 归属 zone 与 epoch 属于"本次路由决策",在转发之前就无条件覆盖旧值:
-    // 两次改派挨近时只有后到事件的 epoch 与 Redis 相等,旧值不能保留;转发若因节点未就绪失败,
-    // 重投或晚到的 BindSession 补发时也必须带的是这份最新值,所以不能只在转发成功后才提交。
-    // 节点暂时交不出去时,之后的补发也必须带这份值(补发从会话取,不再读路由事件)。
-    session.homeZoneId = event.home_zone_id();
-    session.ownerEpoch = event.owner_epoch();
+    // 身份字段在转发之前写进会话(scene_route_helper.h ApplyRouteIdentity):转发、欠账重试与晚到 BindSession
+    // 的补发都从会话取,不再读路由事件。玩家只在会话未绑角色时采用(BindSession 可能尚未到达);归属 zone 与
+    // epoch 属于"本次路由决策",无条件覆盖,两次改派挨近时旧值不能保留;登录代次只对本角色的路由取 max,
+    // 不据此丢弃路由(scene-enter-session-fence.md §4)。
+    gate_scene_route::ApplyRouteIdentity(session, event.player_id(), event.home_zone_id(), event.owner_epoch(),
+                                         event.login_generation());
 
     LOG_DEBUG << "RoutePlayer: route decision, session_id=" << sessionId
               << " target_node_id=" << targetNodeId
               << " scene_id=" << event.scene_id()
               << " home_zone_id=" << event.home_zone_id()
-              << " owner_epoch=" << event.owner_epoch();
+              << " owner_epoch=" << event.owner_epoch()
+              << " login_generation=" << event.login_generation()
+              << " session_login_generation=" << session.loginGeneration;
 
     // 路由(sceneId 与 scene 节点指向)只在转发成功后才整体提交,见 scene_route_helper.h 的
     // AttemptPendingSceneEntry;交不出去时记欠账、按单调时钟有上限地补发,超限推 kEnterSceneFailed 并踢线
@@ -188,6 +185,8 @@ void GateEventHandler::PlayerLeaseExpiredEventHandler(const contracts::kafka::Pl
     // 无 conn 的残留会话:断开回调永远不会来,只能就地摘除。
     LOG_INFO << "LeaseExpired: removing connectionless session. session_id=" << sessionId
              << " player_id=" << event.player_id();
+    // 与正常断开同一收尾:先注销路由 lane 的在途调用、丢弃排队项,再摘会话(client-request-ordering.md §4.6)。
+    gate_lane::OnSessionClosing(it->second);
     sessions.erase(it);
 ///<<< END WRITING YOUR CODE
 }
@@ -208,23 +207,28 @@ void GateEventHandler::BindSessionEventHandler(const contracts::kafka::BindSessi
         return;
     }
 
-    it->second.playerId = playerId;
-    it->second.sessionVersion = event.session_version();
+    auto &session = it->second;
 
-    // 登录类型先落进会话,再交给 CPP-2 的欠账逻辑(scene_entry_dispatch.cpp OnLoginTypeBound):
+    // 角色、会话版本号、登录代次与登录类型先落进会话(scene_route_helper.h ApplyLoginBinding),再交给 CPP-2
+    // 的欠账逻辑(scene_entry_dispatch.cpp OnLoginTypeBound)。代次必须在它之前写:它会同步按最近一次路由补发,
+    // 盖章从会话取值;同连接重登时 Bind 先于本次路由到达,这次补发若带上一次登录的代次,中间被别的设备顶过号时
+    // 会被 scene 判陈旧(scene-enter-session-fence.md §4)。
     // 以前只在"已提交节点指向 && sceneId != 0"时按已提交的指向立即补发,转发失败就只把登录类型留在会话里;
     // 指向随后被节点摘除置无效、或因同 uuid 重注册而悬空时,登录类型会永远挂着。现在按最近一次路由的
     // node_id 重新解析,建一笔有上限的欠账(超限推 kEnterSceneFailed 并踢线);还没收到路由时什么都不做,
     // 等路由到达时由 RoutePlayer 一并转发。归属 zone / epoch 仍取会话里 RoutePlayer 先前存下的那份。
-    if (enterGsType != 0)
+    if (gate_scene_route::ApplyLoginBinding(session, playerId, event.session_version(), event.login_generation(),
+                                            enterGsType))
     {
-        it->second.pendingEnterGsType = enterGsType;
-        gate_scene_entry::OnLoginTypeBound(sessionId, it->second, std::chrono::steady_clock::now());
+        // 不会 erase 会话(AttemptAndSettle 的约定),下面的日志仍可读 session。
+        gate_scene_entry::OnLoginTypeBound(sessionId, session, std::chrono::steady_clock::now());
     }
 
     LOG_DEBUG << "BindSession: bound session_id=" << sessionId
               << " player_id=" << playerId
-              << " enter_gs_type=" << enterGsType;
+              << " enter_gs_type=" << enterGsType
+              << " login_generation=" << event.login_generation()
+              << " session_login_generation=" << session.loginGeneration;
     ///<<< END WRITING YOUR CODE
 }
 void GateEventHandler::RedirectToGateEventHandler(const contracts::kafka::RedirectToGateEvent& event)
@@ -247,6 +251,11 @@ void GateEventHandler::RedirectToGateEventHandler(const contracts::kafka::Redire
         LOG_DEBUG << "RedirectToGate: connection already closed, session_id=" << sessionId;
         return;
     }
+
+    // 路由 lane(docs/design/client-request-ordering.md O9):会话转去别的 gate,丢弃还没发出的排队项,
+    // 之后到达的路由类请求回带请求 id 的 1003;在途那一条的回包照常下发。不这样做,旧连接上排着的请求会继续发出,
+    // 与目标 zone 新 gate 上的新会话请求交错执行。与 Java 版 ClientDispatcher.enterRedirected 一致。
+    gate_lane::OnSessionRedirected(it->second);
 
     // Build client-facing redirect message.
     RedirectToGateNotify notify;

@@ -1,6 +1,6 @@
 module robot
 
-go 1.24.5
+go 1.27.2
 
 require (
 	github.com/luyuancpp/muduoclient v0.0.14

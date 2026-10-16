@@ -65,6 +65,12 @@ type fakeStore struct {
 	blockOn   map[string]bool
 	deadlines []time.Time
 
+	// 请求截止用例(client-request-ordering.md §6.1):honorCtx=true 时按 ListingStore 契约「调用方 ctx 更早到期时
+	// 以 ctx 为准」拒绝已截止的调用(真实现确实如此,见 data 包 request_deadline_fence_test.go 的录制驱动用例);
+	// afterAdmit 在某次调用通过 ctx 检查之后调用,用来把截止精确地放在「这一步完成、下一步还没开始」。
+	honorCtx   bool
+	afterAdmit func(op string)
+
 	lastQuery          *data.ListingQuery
 	lastSeller         uint64
 	lastOffset         uint64
@@ -87,6 +93,14 @@ func newFakeStore() *fakeStore {
 func (s *fakeStore) enter(ctx context.Context, op string) error {
 	s.calls = append(s.calls, op)
 	s.deadlines = append(s.deadlines, deadlineOf(ctx))
+	if s.honorCtx {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+	}
+	if s.afterAdmit != nil {
+		s.afterAdmit(op)
+	}
 	if s.blockOn[op] {
 		if _, ok := ctx.Deadline(); !ok {
 			// 没有截止时间还阻塞会让用例永久挂起;直接失败,让断言指出预算缺失。
@@ -975,6 +989,67 @@ func TestRequestBudgetExpiryIsInBand(t *testing.T) {
 			assert.True(t, f.store.called(tc.blockOp), "用例必须真正卡在 %s", tc.blockOp)
 			assert.True(t, elapsed < serverTimeout,
 				"耗时 %v 未早于服务端 Timeout %v:in-band 结果会被 go-zero 超时拦截器丢弃", elapsed, serverTimeout)
+		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// 请求截止之后不再提交(docs/design/client-request-ordering.md §6.1 / O11 / §14 第 4 条)
+// ---------------------------------------------------------------------------
+
+// 收藏是客户端路径上唯一的写。gate 对同一会话的路由类请求单飞,路由服回超时就放行下一条:
+// 截止之后才落库的「收藏」会晚于紧随其后的「取消收藏」,玩家看到取消成功、商品却仍在收藏里。
+//
+// fake 按 ListingStore 契约拒绝已截止的调用(honorCtx;真实现的证据是 data 包 request_deadline_fence_test.go
+// 的录制驱动用例)。这里钉住 logic 一侧:整请求预算从请求 ctx 派生,并一路传进每一次存储调用 ——
+// 任何一处改用 context.Background() / WithoutCancel,截止之后的写就会被 fake 放行,用例判红。
+func TestSetFavoriteAfterRequestDeadlineWritesNothing(t *testing.T) {
+	cases := []struct {
+		name     string
+		favorite bool
+		// seeded 为 true 时预置 playerB 对商品 11 的收藏(取消收藏的用例要能看出「没删」)。
+		seeded bool
+		// cancelAfter 非空:请求在这一步存储调用完成之后截止;空:进入 SetFavorite 之前就已截止。
+		cancelAfter string
+		// reached 是走到的存储调用(含被已截止 ctx 挡住的那一次)。
+		reached []string
+	}{
+		{name: "收藏_进入前已截止", favorite: true, reached: []string{"GetListing"}},
+		{name: "取消收藏_进入前已截止", favorite: false, seeded: true, reached: []string{"DeleteFavorite"}},
+		{name: "收藏_上限检查之后截止", favorite: true, cancelAfter: "CountFavorites",
+			reached: []string{"GetListing", "FavoriteExists", "CountFavorites", "InsertFavorite"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newFixture(t, config.ScopeGlobal)
+			f.store.listings[11] = onSaleListing(11, playerA, zoneA)
+			want := map[favoriteKey]uint64{}
+			if tc.seeded {
+				f.store.favorites[favoriteKey{playerB, 11}] = testNowMs
+				want[favoriteKey{playerB, 11}] = testNowMs
+			}
+			f.store.honorCtx = true
+			ctx, cancel := context.WithCancel(playerCtx(playerB))
+			defer cancel()
+			if tc.cancelAfter == "" {
+				cancel() // 已经截止的请求 ctx(go-zero 超时拦截器到期后 handler 拿到的就是这种 ctx)
+			} else {
+				f.store.afterAdmit = func(op string) {
+					if op == tc.cancelAfter {
+						cancel()
+					}
+				}
+			}
+
+			resp, err := NewJubaozhaiLogic(ctx, f.deps).SetFavorite(&tradepb.SetFavoriteRequest{ListingId: 11, Favorite: tc.favorite})
+
+			require.NoError(t, err, "截止也必须 in-band")
+			require.Error(t, ctx.Err(), "用例必须真正截止")
+			assert.Equal(t, constants.ErrServiceUnavailable, resp.GetErrorMessage().GetId(), "截止之后不得回成功")
+			assert.Equal(t, tc.reached, f.store.calls)
+			assert.Empty(t, f.store.insertedFavorites, "截止之后不得写收藏")
+			assert.Empty(t, f.store.deletedFavorites, "截止之后不得删收藏")
+			assert.Equal(t, want, f.store.favorites)
 		})
 	}
 }

@@ -1,173 +1,60 @@
 # QQ / 微信第三方登录端到端联调设计
 
-**Date:** 2026-05-08
-**Task:** #11
-**前置:** [auth-provider-framework.md](./auth-provider-framework.md), [dual-token-authentication.md](./dual-token-authentication.md)
-**目标:** 把现有 `WeChatProvider` / `QQProvider` 串成完整可上线链路
+更新：2026-10-15。HTTP 登录入口已经实现；渠道真实凭据联调、客户端 SDK 和账号绑定按各自验收记录判断，不能再把“缺少 /api/login”作为当前阻塞。
 
----
+前置：[认证提供者框架](./auth-provider-framework.md)、[双 Token 设计](./dual-token-authentication.md)、[渠道沙盒手册](../ops/wechat-qq-sandbox-runbook.md)。
 
-## 一、现状盘点
+## 一、当前实现与待验收边界
 
-| 组件 | 状态 |
+| 组件 | 当前状态 |
 |---|---|
-| `WeChatProvider.Validate` (调微信 OAuth API,返回 `wx_<unionid\|openid>`) | ✅ 已实现 |
-| `QQProvider.Validate` (调 QQ Graph API,返回 `qq_<unionid\|openid>`) | ✅ 已实现 |
-| `auth.Register("wechat" / "qq", ...)` | ✅ 已注册 |
-| go-zero `LoginRequest{auth_type, auth_token}` proto 字段 | ✅ 已存在 |
-| Java Gateway `/api/login` HTTP 入口 | ❌ **缺失**(目前只有 `/api/assign-gate`) |
-| 客户端 SDK 集成(微信/QQ 登录按钮) | ❌ 未做 |
-| 账号合并 / 绑定流程(已有 password 账号绑微信) | ❌ 未做 |
-| 灰度配置(某 zone 只允许某些 auth_type) | ❌ 未做 |
+| WeChat / QQ provider 与注册入口 | 服务端已有实现；配置和真实渠道联调分别验收 |
+| Java Gateway `POST /api/login` | 已在 LoginController 实现，委托 LoginService 调 login gRPC |
+| `POST /api/assign-gate` | 独立负责分配 gate 与握手票据，不由 /api/login 加发 |
+| 客户端 SDK、按钮与完整 OAuth 体验 | 本次未读取客户端仓，状态由客户端任务核对 |
+| 跨渠道账号绑定、按 zone 鉴权类型白名单 | 下文的后续设计，不能当作已支持的表或配置项 |
 
-**核心缺口:** Provider 在 go-zero login 已 ready,但**客户端的 OAuth code 没有 HTTP 入口送进来**。当前架构下游戏客户端拿 gate token 后才连 gate,gate 上才走 Login RPC——这对密码登录没问题,但对第三方登录 UX 极差(玩家要等到 TCP 建好才能验微信)。
+实现入口：[LoginController](../../java/gateway_node/src/main/java/com/game/gateway/controller/LoginController.java)、[LoginService](../../java/gateway_node/src/main/java/com/game/gateway/service/LoginService.java)、[LoginResponse](../../java/gateway_node/src/main/java/com/game/gateway/dto/LoginResponse.java)。
 
----
+## 二、现有登录链路
 
-## 二、推荐链路(改造后)
-
-### 2.1 总览
-
-```
-Client(SDK)
-   │ ① 拉起微信/QQ 授权 UI
-   │ ② 拿到 code / access_token
-   ▼
-Java Gateway POST /api/login
-   { auth_type: "wechat", auth_token: <code>, device_id, zone_id }
-   │ (限流/排队 / IP 防刷,见 #10)
-   │
-   ▼ gRPC Login(LoginRequest{auth_type, auth_token, device_id})
-go-zero login
-   │ resolveAccount → AuthProvider("wechat").Validate
-   │   → 调微信 API,拿 unionid/openid
-   │   → account = "wx_<unionid>"
-   │
-   │ EnterGame 主流程(现有):
-   │   RedisLocker → loginstep → DecideEnterGame
-   │   issue access_token + refresh_token
-   │
-   ▼
-Java Gateway 收到 LoginResponse,加发 gate 信息
-   { code, access_token, refresh_token, players,
-     gate_ip, gate_port, gate_token, deadline }
-   │
-   ▼
-Client → 拿 gate_token → TCP 连 gate
+```text
+客户端取得渠道凭据
+  → POST /api/login（auth_type、auth_token、zone_id 等，字段见 LoginRequest 与 Jackson 配置）
+  → Gateway 限流（login 的账号冷却与 assign-gate 独立）
+  → LoginService 按 zone 调 ClientPlayerLogin.Login
+  → Go provider 验证与账号逻辑
+  ← 玩家列表、access_token / refresh_token 及过期时间
+  → POST /api/assign-gate
+  ← gate 地址与握手票据
+  → TCP 连 gate、验票，再执行建角/EnterGame 等玩家 RPC
 ```
 
-### 2.2 为什么登录入口要加 `/api/login` 而不是继续走 `/api/assign-gate` + gate
+Gateway 在 `application.yaml` 中配置 Jackson `SNAKE_CASE`，HTTP JSON 使用 `auth_type`、`zone_id`、`access_token`、`refresh_token` 等名称；Java DTO 内部仍使用驼峰属性。`/api/login` 不返回 gate 地址或 gate_token，也不代表已经完成场景入场。字段以 [LoginRequest](../../java/gateway_node/src/main/java/com/game/gateway/dto/LoginRequest.java)、LoginResponse 及全局序列化配置为准。
 
-| 方案 | 优 | 劣 |
-|---|---|---|
-| **新加 `/api/login` (推荐)** | OAuth 失败/账号没建在 HTTP 401 阶段就返回;客户端可走通用错误 UI;Java Gateway 可统一限流/审计 | 多一个端点 |
-| 复用 `/api/assign-gate` 兼带登录 | 端点少 | 把"分配 gate"和"账号鉴权"耦合,一个失败两边重试逻辑乱 |
-| 只在 gate TCP 阶段做 Login | 现有路径 | OAuth code 必须先建 TCP 才能验,失败后 gate 要主动断,UX 差;HTTP 限流派不上用场 |
+旧 gate TCP Login 路径是否开放受 login 的 `LegacyGateLoginEnabled` 控制。它与 HTTP 入口共享后端鉴权能力；后续会话恢复与入场见 [登录流程](./player_login_flow.md)。
 
-**结论:** 加 `/api/login`,与 `/api/assign-gate` 解耦。客户端流程变:
-```
-1. /api/login                → 拿 access/refresh token + 玩家列表
-2. /api/assign-gate          → 拿 gate_ip + gate_token
-3. TCP 连 gate + token verify → 进游戏
-```
+## 三、返回码与 Gateway 配置
 
-老的密码客户端如果走 gate 的 Login RPC,**保留兼容**(后端是同一个 EnterGame 路径),但官方推荐新客户端走 HTTP `/api/login`。
+LoginController 返回 LoginResponse 对象。JSON 的 `code` 是业务码，不能把旧方案里的 401/403/423/429 映射表当成实际 HTTP 状态约定。
 
----
+| 结果 | 实际返回语义 |
+|---|---|
+| 成功 | `CODE_OK`，附玩家列表与双 token |
+| 前置限流排队 | `CODE_QUEUEING`，JSON 附 retry_after_ms、queue_pos |
+| 前置拒绝 | `CODE_RATE_LIMITED` |
+| 上游鉴权/业务拒绝 | LoginService 当前统一映射为 `CODE_AUTH_REJECTED` |
+| gRPC 不可用、deadline 或内部异常 | `CODE_INTERNAL` |
 
-## 三、Java Gateway 改造
+这张表只说明现有适配器，不代表已细分账号封禁、维护等错误。连接目标、zone 路由与超时以 Gateway 的 LoginRpcClient 和 `application.yaml` 为准；旧提案中的 `gate.login.grpc-endpoint` / `retry` 配置不能直接复制使用。
 
-### 3.1 新增 endpoint
+## 四、渠道联调与后续改造
 
-```java
-@PostMapping("/api/login")
-public LoginResponse login(@RequestBody LoginRequest req,
-                           HttpServletRequest http) {
-    // ① 限流(zone + ip + account-cooldown,详见 #10)
-    rateLimiter.check(req.zoneId(), extractIp(http), req.account());
+渠道凭据按 `go/login/etc/login.yaml`、对应配置类型与 provider 的现有字段注入；真实 AppSecret / AppKey 只从部署环境提供，禁止写入仓库与日志。沙盒验证按 [微信/QQ 手册](../ops/wechat-qq-sandbox-runbook.md) 执行。
 
-    // ② 转发到 go-zero login(gRPC,长连接池)
-    var rpcResp = loginRpcClient.login(
-        com.game.proto.login.LoginRequest.newBuilder()
-            .setAccount(nullSafe(req.account()))
-            .setPassword(nullSafe(req.password()))
-            .setAuthType(req.authType())     // "wechat" / "qq" / "satoken" / "password"
-            .setAuthToken(nullSafe(req.authToken()))
-            .setDeviceId(nullSafe(req.deviceId()))
-            .build()
-    );
+新增账号的持久化与索引规则应从当前 login 逻辑核对，不能执行旧草案中的 `INSERT IGNORE UserAccounts` 或照抄假设存在的 UserAccountsModel。账号绑定和按 zone 白名单仍需独立实现、迁移与测试；旧草案的 `Auth.EnabledTypes` / `PerZoneOverrides` 不是已经支持的配置。
 
-    // ③ 直接返回 access/refresh + 玩家列表;gate 由后续 /api/assign-gate 给
-    return LoginResponse.from(rpcResp);
-}
-```
-
-### 3.2 errcode 映射
-
-| go-zero 返回 | HTTP code | 客户端动作 |
-|---|---|---|
-| OK | 200 | 进入选服 |
-| auth provider rejected | 401 | 重新走 OAuth |
-| account banned | 403 | 显示封禁原因 |
-| zone closed | 423 | 显示维护文案 |
-| rate limited | 429 | 排队 / 退避(见 #10) |
-| internal | 500 | 上报埋点 + 重试 |
-
-### 3.3 配置示例
-
-```yaml
-gate:
-  login:
-    grpc-endpoint: "etcd:///login.rpc"
-    timeout-ms: 3000
-    retry: 1
-```
-
----
-
-## 四、go-zero login 侧需要补的小项
-
-### 4.1 配置打开(`go/login/etc/login.yaml`)
-
-```yaml
-Auth:
-  WeChat:
-    AppId: "wx1234567890"
-    AppSecret: "${WECHAT_APP_SECRET}"      # 走 K8s Secret
-  QQ:
-    AppId: "qq1234567890"
-    AppKey: "${QQ_APP_KEY}"
-```
-
-### 4.2 账号建库(首次 OAuth 登录)
-
-`UserAccounts` 表已有,首次 `wx_<unionid>` 进来要做的事:
-
-```
-INSERT IGNORE UserAccounts (account, account_type, created_at, ...)
-   VALUES ("wx_xxx", "wechat", now(), ...)
-```
-
-这个逻辑应该已经在 `loginlogic.go` 的"账号不存在自动注册"分支里;若没有,需要补:
-
-```go
-if user, err := svc.UserAccountsModel.FindByAccount(ctx, account); err == sqlc.ErrNotFound {
-    user = &UserAccounts{Account: account, AccountType: deriveType(authType)}
-    svc.UserAccountsModel.Insert(ctx, user)
-}
-```
-
-### 4.3 灰度配置
-
-```yaml
-Auth:
-  EnabledTypes: ["password", "wechat", "qq"]   # 黑/白名单
-  PerZoneOverrides:
-    1: ["password"]                            # 测试服只允许密码
-    2: ["wechat", "qq"]                        # 海外服只允许第三方
-```
-
-`resolveAccount` 入口处加白名单检查,失败返回 `ProviderDisabled`。
+以下保留渠道接入、绑定、安全与监控的后续设计清单；其中 API、表、指标及渠道时效均须在对应任务中核实，不作为本次已经实现或验收的声明。
 
 ---
 

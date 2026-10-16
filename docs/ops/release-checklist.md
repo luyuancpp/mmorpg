@@ -326,7 +326,9 @@ net.ipv4.tcp_keepalive_probes = 3
 
 - [ ] redis FLUSHDB(测试库)+ 真实库做 `BGSAVE` 备份
 - [ ] kafka topic 提前创建:`gate-0` ~ `gate-{N}` partition=8,retention 5min
-- [ ] etcd `Compact + Defrag`
+- [ ] etcd 空间:CronJob `etcd-compact` 最近一次成功、`etcdctl alarm list` 为空、各成员 DB SIZE 低于配额一半
+      (命令见 [etcd-maintenance-runbook.md](etcd-maintenance-runbook.md) §4.3、§5.1)。需要 defrag 时按该手册 §5 在更早的低峰窗口逐成员做,
+      不要压在开服前 1 小时
 - [ ] Gateway 配置波次 schedule:
   ```yaml
   gate.rate-limit.wave:

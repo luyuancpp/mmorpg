@@ -46,4 +46,6 @@ namespace EtcdHelper
 
 	void RevokeLeaseAndCleanup(int64_t leaseId);
 	void DeleteRange(const std::string &key, bool isPrefix);
+	// 往 LeaseKeepAlive 流写一拍。新传输在流断开、尚未重建时丢弃(重建后 EtcdService 立即补一拍)。
+	void KeepAliveLease(int64_t leaseId);
 }

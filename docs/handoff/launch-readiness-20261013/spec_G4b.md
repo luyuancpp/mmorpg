@@ -87,7 +87,7 @@
 
 ### 1.5 打开排队后会变成线上行为的两条基线缺陷（评审补）
 
-排队在 K8s 上从没开过，所以下面两条今天不可达；G4b-2 一打开就生效。Java 版已经修掉（Java 仓库 `PARITY.md:98` 有意差异 ②③）。
+排队在 K8s 上从没开过，所以下面两条今天不可达；G4b-2 一打开就生效。Java 版已经修掉（Java 仓库 `PARITY.md`「登录排队」行有意差异 ②③）。
 
 | # | 事实 | 出处 | 后果 |
 |---|---|---|---|
@@ -509,7 +509,7 @@ function Show-PeakShavingPlan {
 
 ### 4.10 G4b-J：gateway 限流在「打开」那一刻才暴露的三个面
 
-三条都是限流关着时不可达、一打开就生效的问题。J0 是 G4b-1 的前置（必做）；J1、J2 建议同批，可拆，需拍板 §10 #2。三条 Java 版都已按同样口径做过（Java 仓库 `PARITY.md:99` 有意差异 ④⑧②）。
+三条都是限流关着时不可达、一打开就生效的问题。J0 是 G4b-1 的前置（必做）；J1、J2 建议同批，可拆，需拍板 §10 #2。三条 Java 版都已按同样口径做过（Java 仓库 `PARITY.md`「开服限流」行有意差异 ④⑧②）。
 
 #### J0（必做，G4b-1 前置）：`queue_token` 不再整个绕过限流
 
@@ -527,6 +527,25 @@ function Show-PeakShavingPlan {
 
   删掉原来的提前 return 与其注释，后面的 `isQueue` / `isDeny` / `assignGate` 分支不变。`account == null` 时 `check` 本来就跳过冷却（`AssignGateRateLimiter.java:105`）。
 - **客户端契约**：不新增回包码。重入被 zone 桶挡住时回 `code=100, queue_source="ratelimit"`（不带新 token），客户端保留原 `queue_token` 按 `retry_after_ms` 重试即可（robot 已是这样：`robot/main.go:666-670` 把 token 留在 req 上）；IP 桶空回 429。
+  - **（2026-10-15 更正：持有 token 时改轮询 `/api/queue-status`，不再重调 assign-gate）** 上一条「保留 token 按 `retry_after_ms` 重试」对 IP 桶那一支不成立：IP 桶由 `/api/login` 与 `/api/assign-gate` 共用，开服档 5/s、突发 20，CGNAT 后的玩家会持续吃 429（R2）；而 `AssignGateRequest` 注释与设计稿 §11.5 给 429 的退避是 30/60/120s，连吃两次就是 90s，超过 login 的 AdmitTTL 60s（`go/login/etc/login.yaml` 的 `Queue.AdmitTTL`）。放行槽过期后 `consumeAdmitAndSign` 的 GETDEL 取空、ZRANK 也落空，login 回 `QUEUEING`、名次 0（`queue.go` 的 `Lookup`），一直持续到 meta 与 token 索引按 `QueueEntryTTL` 1h 过期 —— 已被放行的玩家卡在「名次 0」最长约 1h。J0 之前重入不限流，这条路径不存在。现行契约改为：**持有 `queue_token` 时，assign-gate 回 `code=100, queue_source="ratelimit"` 或 429，客户端改用同一个 token 轮询 `/api/queue-status`**（间隔取 `retry_after_ms`，为 0 时取 2s），不再按 30/60/120s 退避重调 assign-gate；收到 410 时丢掉 token，重新调 assign-gate。`/api/queue-status` 不过限流器，排队开着时走同一个 `Lookup`、能取走放行票（`querystatuslogic.go`）；排队关着时直接回 EXPIRED → 410。伪造的 token 过不了 login 的 HMAC 校验，所以不削弱 J0。服务端代码不变，只改契约与注释（`AssignGateRequest.java`、`AssignGateController.java`、设计稿 §11.3 #9 与 §11.5）。可达性：登录排队目前被合入门槛挡住（`k8s_deploy.ps1` 的 `$script:LoginQueueMergeGateCleared = $false`），独立客户端是否按此口径实现未核实（另仓）。剩余缺口（login 侧，不在本更正范围）：放行槽一旦已经过期，轮询 `/api/queue-status` 同样只能拿到名次 0，直到 1h 后 EXPIRED；本更正只保证持有 token 的客户端不再因限流退避错过 60s 的放行窗口。
+  - **（2026-10-15 待负责人拍板；评审成立，不改代码）** 上一条更正里的「持有 token 时改轮询 `/api/queue-status`」改的是客户端退避口径（设计稿 §11.5「客户端退避要求」），属于客户端可见契约，需负责人拍板后才能算现行契约。
+    - **现象**：已被放行的玩家卡在「排队中、名次 0」，最长约 1h。
+    - **触发条件**：登录排队开着（J0 之后带 `queue_token` 的 assign-gate 照样过 zone 桶与 IP 桶）；持 token 的玩家按 `AssignGateRequest` 注释重调 assign-gate，连吃 429（CGNAT / 网吧共用 IP 时常见，R2），按客户端 30/60/120s 退避，两次合计 90s；放行若发生在这段退避里，且距下一次成功请求超过 AdmitTTL 60s，放行槽就过期。
+    - **证据**：`java/gateway_node/src/main/java/com/game/gateway/dto/AssignGateRequest.java:30-32`（本注写下时仍是旧口径：保留 token，429 时按客户端退避重调 assign-gate）；`docs/design/open-server-rate-limit-design.md:378`（429 按 30/60/120s 退避）；`go/login/etc/login.yaml:485`（`AdmitTTL: 60s`）、`:486`（`QueueEntryTTL: 1h`）；`go/login/internal/logic/pkg/loginqueue/queue.go:306-310`（放行槽过期后 ZRANK 落空，回 `QUEUEING`、名次 0）；只有 token 索引过期才回 EXPIRED（`queue.go:262-268`）。
+    - **建议做法**：采纳上一条更正的口径：持有 `queue_token` 时，遇到 `code=100, queue_source="ratelimit"` 或 429，都改用同一个 token 轮询 `/api/queue-status`。这个端点不限流（`QueueStatusController.java:22`），能取走放行票；排队关着时它回 410，客户端再丢掉 token、重新调 assign-gate。服务端代码不变。
+    - **为什么要负责人定**：AGENTS.md §12 要求两版同批改客户端可见契约；本仓库与 Java 版共用同一个客户端，新口径要在 Java 版上同样成立（本注未核 Java 侧）。独立客户端仓 `../mmorpg-client` 本任务未获授权，客户端现在按哪种口径实现也未核实。
+    - **时限**：登录排队目前被合入门槛挡住（`tools/scripts/k8s_deploy.ps1:366`，`$script:LoginQueueMergeGateCleared = $false`），这条路径今天不可达；**门槛放开之前必须拍板**，并把客户端改动排进同一批。
+    - **顺带（只指出，不改 robot）**：`robot/main.go:712-713` 的注释说放行槽过期（`admit:{queueId}` TTL'd）会回 410，与代码不符：实际回 `QUEUEING`、名次 0，见上面的 `queue.go:306-310`。另外 robot 遇到 429 直接返回错误（`robot/main.go:725-726`），不走退避重试，所以压测复现不了这条链。
+  - **（负责人 2026-10-15 按「最标准」定为：持有 token 一律轮询 `/api/queue-status`；上面的更正与待拍板注原文保留）** 上面的待拍板注改为已定。定下的契约比 10-15 更正那一条更宽：不只是「重入被限流后改轮询」，而是持 token 时轮询本来就走状态端点。
+    - **契约**：持有 `queue_token` 的客户端一律用 `/api/queue-status` 轮询排位与取票。这个端点不过限流器；排队开着时与 assign-gate 重入走同一个 `Lookup`，能取走放行票；排队关着时回 EXPIRED → 410。带 token 重调 assign-gate 只作为 `/api/queue-status` 本身失败（网络错误 / 5xx）后的恢复手段。重入回 `code=100, queue_source="ratelimit"` 或 `code=429` 时，回到 `/api/queue-status` 轮询（间隔取 `retry_after_ms`，为 0 时取 2s），不再按 30/60/120s 退避重调 assign-gate。收到 410 时丢掉 token，重新调 assign-gate。服务端回包格式不变，J0 的 fail-closed 取舍不变。
+    - **理由**：状态查询走专用的状态端点，入口端点只管入场；限流不该让已被放行的玩家错过 AdmitTTL 60s 的放行窗口。
+    - **login 侧兜底（另一项改动）**：放行窗口过后，login 对该 token 改回 EXPIRED（`go/login/internal/logic/pkg/loginqueue/queue.go`，由另一名代理落码，本注未核对其实现）。所以旧客户端即使仍按 30/60/120s 退避重调 assign-gate，窗口过后也会拿到确定的 410、丢 token 重新入队，而不是卡在名次 0 约 1h。上面 10-15 更正末尾「剩余缺口（login 侧）」一句由这项改动处理。旧客户端仍会错过这一次放行，所以客户端仍要按新契约改。
+    - **本仓库已落地（未编译、未运行，待 Codex 验证）**：
+      - gateway 只改注释：`AssignGateRequest.java` 的 `queueToken` Javadoc、`AssignGateController.java` 限流调用前的注释。代码不变。
+      - 设计稿 §11.3 #9 与 §11.5 追加 2026-10-15 更正。
+      - robot 按新契约实现：状态机收进 `robot/http_assign_gate.go` 的 `AssignGateWithQueue`，`robot/main.go` 的 `assignGateHTTPLocal` 改为委托给它；新增用例 `robot/http_assign_gate_test.go`。robot 不持 token 时遇到 429 仍直接返回错误（R2 口径不变），持 token 时 429 回到轮询。
+      - 上面「顺带」一条指出的 `robot/main.go:712-713` 错误注释已随旧循环删除。本节 J0「客户端契约」正文引用的 `robot/main.go:666-670` 已随之失效。
+    - **待跟进**：独立客户端 `../mmorpg-client` 按上面的契约改（另仓，本任务未获授权、未读取）；Java 版对齐由主会话登记 `PARITY.md`（AGENTS.md §12）。时限不变：登录排队的合入门槛放开之前，客户端改动要排进同一批。
 - **测试**：新增 `src/test/java/com/game/gateway/controller/AssignGateControllerTest.java`（纯 Mockito，mock `AssignGateService` / `AssignGateRateLimiter` / `ClientIpResolver`，不起 Spring 上下文）：
   - `reentryWithQueueToken_stillRateLimited`：limiter 返回 `deny("IP_RATE_LIMIT")` 时回 code=429，`verify(assignGateService, never()).assignGate(any())`；
   - `reentryWithQueueToken_skipsAccountCooldown`：`verify(limiter).check(eq(1L), anyString(), isNull())`；
@@ -617,7 +636,7 @@ function Show-PeakShavingPlan {
 | 12 | `dev -GatewayRateLimit on -LoginQueue on:两段写出,不写 Secrets.QueueToken,不要求注入,Mode 仍为 dev` | 退出码 0；`Queue.Enabled=true`；不含 `Secrets.QueueToken`；`Mode == login.yaml 的 Mode` |
 | 13 | `all-up 多 zone(prod):每个 zone 的 login 锁键与 ZoneCapacityOverride 只指向本 zone,两把锁键互不相同` | 退出码 0；用 `Get-ManifestBlocks` 过滤出 `name: go-svc-login-config`，共 2 块；每块的锁键 == `"<基名>:zone:" + 该块 Node.ZoneId`（101 / 102）；每块的 `ZoneCapacityOverride.*` 只有本 zone 一个键 |
 | 14 | `staging 与 prod 的削峰产物逐字相同(档位只决定开关,不决定阈值)` | 两次运行抽出的 `rate-limit:` 段与 `Queue:` 段文本相等 |
-| 15（评审补，G4b-2） | `G4b-2 前置:G1b 已合入(DispatcherLockKey 是前缀,锁键按 zone 派生)` | `go/login/internal/logic/pkg/loginqueue/dispatcher.go` 含 `func ZoneDispatcherLockKey(` 与 `"%s:zone:%d"`；`go/login/internal/svc/servicecontext.go` 不再含 `activeZones := func`。把「G1b → G4b-2」的合入顺序变成机械门禁：G1b 没合，这条就红 |
+| 15（评审补，G4b-2） | `G4b-2 前置:G1b 与 G4b-G 已合入(DispatcherLockKey 是前缀,锁键按 zone 派生;在途占位是新键 ZSET)` | `go/login/internal/logic/pkg/loginqueue/dispatcher.go` 含 `func ZoneDispatcherLockKey(` 与 `"%s:zone:%d"`；`go/login/internal/svc/servicecontext.go` 不再含 `activeZones := func`；`go/login/internal/logic/pkg/loginqueue/queue.go` 含 `admitted:zset:zone:%d`，且不含 `"admitted:zone:%d"`。把「G1b → G4b-2」「G4b-G → G4b-2」两条合入顺序变成机械门禁：G1b 或 G4b-G 没合，这条就红（G4b-G 一半是 2026-10-15 按 `spec_G4b-G.md` §5.5 / §7.2 第 4 项补的） |
 | 16（评审补，G4b-1） | `常量表自检:改坏 PeakShavingLaunchTier 时在任何写操作之前 throw` | 用 AST 从 `k8s_deploy.ps1` 抽出 `Get-GatewayRateLimitSettings`（`ParseFile` + `FunctionDefinitionAst` + `Set-Item Function:script:`，写法同 `k8s_migrate_gate.tests.ps1:15-29`），在测试脚本作用域里设 `$script:GatewayRateLimitOn = $true` 与一份 `ZoneDefaultRps=2000; ZoneDefaultBurst=1000`（其余合法）的常量表，断言 throw 文本匹配 `不满足 rps ≥ 1 且 burst ≥ rps`；对照：合法表不 throw、返回 6 个键 |
 | 17（评审补，G4b-1） | `gateway 削峰指纹随 Redis 口令变化(轮换口令自动滚动 gateway)` | `$peakGwRedisRotRun` 与 `$prodRun` 的 gateway `peak-shaving-hash` 不同、`gateway-admin-api-key-hash` 相同；`$peakGwRedisRotRun` 的 `data.application.yaml.spring.data.redis.password` == 换过的新口令 |
 
@@ -672,6 +691,13 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
 **合入门槛**：
 - G4b-1：G4b-J0 同批或先合，`AssignGateControllerTest` 由 Codex 跑绿。
 - G4b-2：同一棵树里，G1b 规格指定的多 zone 用例（L-01 验收标准：每个 zone 的队列都能出队；G1b T3 / T8a）已经由 Codex 跑绿，契约用例 15 绿；并且 §1.5 的 Q1 / Q2 要么由 G4b-G 修掉并跑绿，要么负责人在 §10 #11 书面接受。三者缺一，G4b-2 不合。
+  - 2026-10-13 已选方案 A：「或负责人书面接受」这一支作废，只剩「G4b-G 由 Codex 跑绿」这一条。
+  - 打开排队之前，G4b-G 的新脚本至少在真实 Redis 上跑过一次（`spec_G4b-G.md` §8.4 的最小冒烟）；是否作为硬门槛见该规格 §11 #5。
+  - **（2026-10-15 负责人按「最标准」定为硬门槛，`spec_G4b-G.md` §11 #5）真实 Redis 首跑**：`spec_G4b-G.md` §8.4 的最小冒烟（含 10-15 补的两项：整键 `PTTL` 在 (0, 120000] 内、手工调大的整键 TTL 不被后续写入压回）由 Codex 或负责人在真实 Redis 7.x 上跑通，命令原文与输出摘要记进 `docs/PROGRESS.md`。没有这份记录，G4b-2 不合，任何环境都不打开排队（含 `-LoginQueue on` 与手改 `Queue.Enabled`）；miniredis 上的单测结果不能顶替。与上面三条并列，缺一不合。
+  - **（2026-10-15 更正：G4b-2 实际已越序入库，改为机械拦截）** 上面写的是「门槛不满足 G4b-2 就不合」，但 G4b-2（login 段、排队密钥、login 指纹、契约用例 3/7/8/9–13/15）实际已先于门槛随快照提交 `e4ff1d165` / `ebccaf04d` 入库，此后 `k8s_deploy.ps1` 在 staging / prod 的缺省 `auto` 下会打开排队，而三项门槛一项都还没满足，仓库里也没有拦截（契约用例 15 只检查 G1b / G4b-G 的代码形状，证明不了门槛）。现改为由 `tools/scripts/k8s_deploy.ps1` 的脚本常量 `$script:LoginQueueMergeGateCleared`（当前 `$false`）机械拦截：门槛未清时 `-LoginQueue auto` 在 dev / staging / prod 都解析为关，非 dev 档部署 login 时打 `[PeakShaving]LoginQueueGate=closed` 警告；`-LoginQueue on` 在参数解析后、任何 kubectl 之前拒绝。即三项门槛满足之前所有环境的排队都关着；手改 login ConfigMap 或 `go/login/etc/login.yaml` 的 `Queue.Enabled` 同样违规（文档约束，脚本拦不住）。三项都满足、`docs/PROGRESS.md` 有记录之后，由负责人在同一提交里把常量改为 `$true`，并在常量注释里写上那条 PROGRESS 条目的标题；契约测试里断「门槛未清」产物的用例 19 / 20 随之改写（纯函数与源码形状的用例 21 / 22 不随常量变）。
+    - 测试接缝：契约测试经环境变量 `MMORPG_TEST_LOGIN_QUEUE_GATE_CLEARED=1` 让依赖「排队开」的 DryRun 用例在门槛清掉之前照旧运行。它只在 `-DryRun` 下生效；不带 `-DryRun` 时只要设置了它，`k8s_deploy.ps1` 就在任何写操作之前拒绝，所以它放不开任何真实部署。
+    - 清门槛本身要跑的真实 Redis 冒烟（`spec_G4b-G.md` §8.4）用本地栈 + scratchpad 里的 login 配置副本，不经过 `k8s_deploy.ps1`，不受这道门禁影响。
+    - （2026-10-15 补注，门槛项数）上面「三项门槛」没有单列本节原文的「契约用例 15 绿」：改这个常量的提交必须同时改写用例 19 / 20 并重跑整套 `k8s_deploy_contract`，`tools/scripts/**` 的改动也会触发 `deploy-config-tests.yml`，所以用例 15 必然随之重跑。它只核对 G1b / G4b-G 的代码形状，代替不了 ① ②。常量注释（`k8s_deploy.ps1` 常量旁）写的是同一口径。
 
 **真实环境（可选，不作为合入门槛，需要外部依赖：kind 集群、gateway / login / node 三套镜像，以及上面那组 MMORPG_* 环境变量）**：
 
@@ -699,7 +725,19 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
 | 7 | 新增 Pod 指纹注解：开关、阈值、代理网段、排队密钥一变就滚动 | 不这样做，`off` 止血在镜像不变时不生效（ConfigMap 只在启动时读，同理见 `:4694-4696`） | 每次调阈值都会滚动 gateway / login；排队密钥轮换时，在排玩家的令牌失效、重新入队（§9 R11） |
 | 8 | 开服波次 `wave` 不打开（设计稿 §四） | 需要开服时刻，属于运营决策 | 开服 0 秒的整体洪峰只靠令牌桶挡 |
 | 9 | `login-queue-2026-05.md:194` 写的是「复用 GateTokenSecret」 | 代码早已拆开（`secrets.go:1-8`） | 文档事实更正，不属于行为偏离 |
-| 10（评审补） | G4b-J0：带 `queue_token` 的 assign-gate 在排队**开着**时也过 zone / IP 桶；Java 版只在其排队关闭时才限流这类请求（`PARITY.md:99` 有意差异 ④） | 本仓库的 gateway 与排队分属两个进程，gateway 不知道 login 排队开没开、也验不了 token；只能二选一，选 fail-closed | 网络抖动后带 token 重调 assign-gate 的玩家偶尔多扣一个 zone / IP 令牌，可能先拿到一次 `ratelimit` 排队；正常轮询走 `/api/queue-status`，不受影响 |
+| 10（评审补） | G4b-J0：带 `queue_token` 的 assign-gate 在排队**开着**时也过 zone / IP 桶；Java 版只在其排队关闭时才限流这类请求（`PARITY.md`「开服限流」行有意差异 ④） | 本仓库的 gateway 与排队分属两个进程，gateway 不知道 login 排队开没开、也验不了 token；只能二选一，选 fail-closed | 网络抖动后带 token 重调 assign-gate 的玩家偶尔多扣一个 zone / IP 令牌，可能先拿到一次 `ratelimit` 排队；正常轮询走 `/api/queue-status`，不受影响（2026-10-15 更正见表后注） |
+
+> **#10 的 2026-10-15 更正（代价漏算 429 与 AdmitTTL）**：上表只算了「多扣一个令牌、先拿到一次 `ratelimit` 排队」。按 J0 当时的客户端契约（重入吃 429 时按客户端退避 30/60/120s 重调 assign-gate），CGNAT 后的玩家连吃两次 429 就是 90s，超过 AdmitTTL 60s，已被放行的玩家放行槽过期，之后 login 对这枚 token 一直回名次 0，最长约 1h（链条与依据见 §4.10 J0「客户端契约」下的 2026-10-15 更正）。处理：服务端不变，契约改为「持有 token 时 assign-gate 回 `ratelimit` 排队或 429，改用同一 token 轮询不限流的 `/api/queue-status`；收到 410 再丢 token 重调 assign-gate」，J0 的 fail-closed 取舍不变。
+>
+> **#10 的 2026-10-15 待负责人拍板**：上面这条「处理」改的是客户端退避口径，属于客户端可见契约。AGENTS.md §12 要求两版同批改，独立客户端仓未获授权，所以在负责人拍板、客户端同批改完之前，它只是建议口径，不算现行契约。现象、触发条件、证据、建议做法与理由逐项见 §4.10 J0「客户端契约」下的 2026-10-15 待拍板注。登录排队目前被合入门槛挡住（`k8s_deploy.ps1:366`），**门槛放开之前必须定**。
+>
+> **#10 的负责人 2026-10-15 决定（上面两条原文保留）**：负责人 2026-10-15 按「最标准」定为：
+> - 持有 `queue_token` 的客户端一律轮询 `/api/queue-status`。带 token 重调 assign-gate 只作为 queue-status 本身失败（网络错误 / 5xx）后的恢复手段。
+> - 重入回 `ratelimit` 排队或 429 时，回到 queue-status 轮询（间隔取 `retry_after_ms`，为 0 时取 2s）；收到 410 时丢 token、重调 assign-gate。
+> - 服务端回包格式与 J0 的 fail-closed 取舍都不变，所以 #10 的偏离与理由不变。代价改为「恢复用的重入偶尔多扣一个令牌」；持 token 的客户端不再因限流退避错过放行窗口。
+> - login 侧同批改为放行窗口过后回 EXPIRED（另一项改动）。旧客户端即使仍按退避重调，窗口过后也拿到确定的 410，而不是卡在名次 0 约 1h。
+>
+> 细节与落地状态见 §4.10 J0「客户端契约」下的负责人 2026-10-15 决定注。
 
 ---
 
@@ -711,7 +749,7 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
 | R2 | IP 桶误伤：网吧、CGNAT；集群内 robot 共用 Pod IP，staging 压测会被 IP 桶扭曲（robot 把 429 当失败，`robot/http_assign_gate.go:146-147`） | `AssignGateRateLimiter.java:94-98` | L-14 先用 `-GatewayRateLimit off` 跑基线；要开着限流跑，robot 需要伪造 XFF，同时 trusted-proxies 要覆盖 robot 的 Pod 网段（后续项，§10 #5） |
 | R3 | 调阈值不生效，除非清掉 `rl:zone:*`（推断，见 §4.9） | `AssignGateRateLimiter.java:84-85`；`RateLimitConfig.java:71`、`:89-92` | 运维手册写清；后续给 Java 加 `withImplicitConfigurationReplacement`（§10 #8） |
 | R4 | 热键 `rl:zone:<id>` 在共享单主 Redis 上被 CAS 争用（推断，未实测）；J1 之后 zone 桶已空的请求每次 3 个 Redis 往返（§4.10 J1「代价」） | `RateLimitConfig.java:5`、`:89-92`（`lettuce.cas`）；`launch_verdict.txt:22` | L-14 测 Redis ops 和 gateway 的 p99；L-06 拆出限流专用 Redis；Redis 先饱和就去掉 J1 的退还 |
-| R5 | 限流开启后，gateway 启动依赖 Redis 可达（Bean 创建时 `connect()`），与 `gateway.yaml:63-68`「Redis 不该挡住网关启动」的设计相悖 | `RateLimitConfig.java:60-64` | Redis 故障期间 login 本来就不可用，影响有限；改成懒连接留作后续 |
+| R5 | 限流开启后，gateway 启动依赖 Redis 可达（Bean 创建时 `connect()`），与 `gateway.yaml:63-68`「Redis 不该挡住网关启动」的设计相悖 | `RateLimitConfig.java:60-64` | Redis 故障期间 login 本来就不可用，影响有限；改成懒连接留作后续（2026-10-15 更正：运行期也有阻塞，见表后注） |
 | R6 | 可观测性缺口：gateway 没有指标（全仓没有 Micrometer）；K8s 的 login 没有 Prometheus 段，抓不到 `login_queue_*`；fail-open 时每个请求一条 WARN，会刷屏 | `k8s_deploy.ps1:3558-3690`；`AssignGateRateLimiter.java:100` | 后续项（§10 #8）；开服当天靠日志和客户端回包码判断 |
 | R7 | 参数不粘滞：`off` 止血后，任何一次重新部署（含回档第 6 步）都会恢复为开 | 与 `-GateRouterMode` 同一口径 | 文档写清；§10 #9 讨论是否给回档脚本透传 |
 | R8 | 与 G1b 的方案耦合。G1b 规格已定「配置值是前缀」，显式的分 zone 键在新镜像上变成 `…:zone:N:zone:N`（每 zone 唯一，正确，只是排查时键名要按它查）；它的价值在 `rollout undo` 回到 G1b 之前的镜像时仍按 zone 隔离。若 G1b 最终改成「一个 leader 覆盖全部 zone」，显式键会产生 N 个 leader，超发准入 | §1.4；§4.5；`launch_spec_G1b.md` §3.1、§4.5 | 合入顺序 G1b → G4b-2，由契约用例 15 机械守住；README 写明 K8s 上的实际键名 |
@@ -720,13 +758,23 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
 | R11 | 排队密钥轮换会自动滚动 login，在排玩家拿到 EXPIRED 后重新入队，排位丢失 | `secrets.go:12-14`（三段式轮换需要 Additional） | 只在维护窗口轮换；三段式轮换留作后续 |
 | R12 | 口令里含 `"` 或 `\` 会破坏生成的 YAML；gateway 的口令还会经 Spring 占位符解析，含 `${` 时 Spring 会把它当嵌套占位符，解析不了就拒启（评审补，推断，与既有数据源口令同一问题） | 既有问题，所有模板都一样 | 运维用只含字母数字与 `-_` 的随机串 |
 | R13 | 先扣 zone 再判 IP：单个 IP 就能把一个 zone 的入口压成排队 | `AssignGateRateLimiter.java:83-98` | G4b-J1（§4.10） |
-| R14 | `rl:ip:*` 在 Redis 上的内存：每个 IP 一个键，TTL 约 1h + 补满时间；百万级 IP 估约 100MB，而 Redis 没设 maxmemory（推断）。评审补：① `rl:zone:<id>` 的 id 由请求决定，限流先于 zone 校验，按现行顺序不受 IP 限速，攻击者可造任意多个 zone 桶键；② IPv6 客户端在自己的 /64 内换源地址即可得到新 IP 桶（Java 版按 /64 分桶，`PARITY.md:99` ⑨）；③ 排队打开后 `queue:zone:*`、`queue:meta:*`、`queue:token:*` 按在排人数线性占内存 | `RateLimitConfig.java:71`、`:89-92`；`redis.yaml:137-143`；`AssignGateController.java:59` | L-14 测内存曲线；L-06；①由 J1 改为先过 IP 桶后受限；②③登记为后续项 |
-| R15（评审补） | §1.5 Q1：排队打开后快速通道占位只靠整集合 TTL 回收，持续有人登录时余量被重复扣减到 0，zone「放一批、停最长 60s」循环；Q2：consume 即撤占位而 gate 人数滞后，开区几拍内超发数倍容量 | §1.5；G1b 规格 §4.7 第 2 条（明确留给 L-02） | G4b-G（§10 #11）或负责人书面接受；L-14 观察 `admitted:zone:*` 的 SCARD 与出队速率曲线 |
+| R14 | `rl:ip:*` 在 Redis 上的内存：每个 IP 一个键，TTL 约 1h + 补满时间；百万级 IP 估约 100MB，而 Redis 没设 maxmemory（推断）。评审补：① `rl:zone:<id>` 的 id 由请求决定，限流先于 zone 校验，按现行顺序不受 IP 限速，攻击者可造任意多个 zone 桶键；② IPv6 客户端在自己的 /64 内换源地址即可得到新 IP 桶（Java 版按 /64 分桶，`PARITY.md`「开服限流」行 ⑨）；③ 排队打开后 `queue:zone:*`、`queue:meta:*`、`queue:token:*` 按在排人数线性占内存 | `RateLimitConfig.java:71`、`:89-92`；`redis.yaml:137-143`；`AssignGateController.java:59` | L-14 测内存曲线；L-06；①由 J1 改为先过 IP 桶后受限；②③登记为后续项 |
+| R15（评审补） | §1.5 Q1：排队打开后快速通道占位只靠整集合 TTL 回收，持续有人登录时余量被重复扣减到 0，zone「放一批、停最长 60s」循环；Q2：consume 即撤占位而 gate 人数滞后，开区几拍内超发数倍容量 | §1.5；G1b 规格 §4.7 第 2 条（明确留给 L-02） | G4b-G（§10 #11）或负责人书面接受；L-14 观察 `admitted:zset:zone:*` 的 ZCARD（清过期后的在途占位数，即指标 `login_queue_admitted_inflight`；G4b-G 起换了新键，旧通配 `admitted:zone:*` 匹配不到它）与出队速率曲线 |
 | R16（评审补） | 排队轮询压在共享单主 Redis：`/api/queue-status` 不限流，每次 `Lookup` 4–5 次往返，约 2.5·Q ops/s；`DefaultRetryAfterMs` 镜像 login.yaml 的 2000。开服若全服排 10 万人，约 25 万 ops/s 落在同一个 Redis 主上，与限流桶、会话、锁、PlayerAllData 争用（推断，未实测） | `queue.go:220-290`；`QueueStatusController.java:22-26`；`launch_verdict.txt:22` | L-14 带排队压测时必须测 Redis 主的 ops / CPU；§10 #12 决定开服档轮询间隔；L-06 把排队与限流拆到独立 Redis |
 | R17（评审补） | J0 之前：限流开、排队关（G4b-1 单独上线或 `-LoginQueue off` 止血）时，带任意 `queue_token` 的 assign-gate 绕过整个限流并拿到 gate 票 | `AssignGateController.java:51-57`；`assigngatelogic.go:62-66`、`:90-93` | G4b-J0 作为 G4b-1 前置（§4.10） |
 | R18（评审补） | 账号冷却按未认证的 account 计：限流一开，任何人都能每 4 秒替他人账号打一次 `/api/login`，让对方在同一副本上持续 429 | `AssignGateRateLimiter.java:104-118`；`LoginController.java:50-54` | G4b-J2（冷却键带 IP）；不做则登记为已知风险 |
 | R19（评审补） | gateway 只在启动时读 Redis 口令：轮换 `MMORPG_REDIS_PASSWORD` 而 gateway 不滚动，旧口令被拒后限流一律 fail-open | `RateLimitConfig.java:46-58` | 已在 §4.7 把口令纳入 gateway 削峰指纹（用例 17）；go-svc 同类缺口不在本批 |
 | R20（评审补） | 对已在运行的 staging / prod zone 首次开排队：若当前在线已 ≥ `LoginQueueZoneCapacity`（5000），新登录全部入队，直到在线降到 5000 以下；dispatcher 不会因此报错 | `capacity.go:76-100` | 首次打开前按 README 核对各 zone 在线；超过的先调大常量（§10 #3）或先只开 gateway 限流 |
+
+> **R5 的 2026-10-15 更正（漏了运行期阻塞与 liveness 连锁，已修）**：R5 只登记了启动期依赖。运行期更严重：限流在 Tomcat 请求线程上同步调用（`LoginController` 与 `AssignGateController` 里的 `limiter.check`），而改动前的限流专用 Lettuce 连接 RedisURI 没设超时（缺省 60s）、ClientOptions 用缺省（不开命令超时，断线时命令先进缓冲等重连），Bucket4j 也没配客户端侧请求超时，对 Redis 回包做无超时等待（按 Lettuce 6.4.2、Bucket4j 8.10.1 的 jar 核对）。Redis 停摆、卡住或连接半开时，每个 login / assign-gate 请求都占住一个线程，200 个线程很快占满；探针与业务同在 8081，liveness 随之超时，两个副本同时被杀 —— 与 §5「Redis 异常 → 放行」正好相反。已修（`RateLimitConfig` 的 `bucket4jRedisUri`、`bucket4jClientOptions`、`bucket4jClientSideConfig`，单测 `RateLimitConfigTest`）：命令超时 300ms（RedisURI 与 TimeoutOptions 同值），断线时 `REJECT_COMMANDS` 立即失败，Bucket4j 整次桶操作时限 500ms；超时与拒绝都以 RuntimeException 落进 `AssignGateRateLimiter.check` 现有的 catch，按 fail-open 放行。两个数值是经验值，待 L-14 压测确认；改动未编译、测试未运行，待 Codex 验证。仍未解决：① Redis 卡住期间每个请求仍多占约 300ms，单副本 login + assign-gate 合计超过约 600 次/秒时仍会占满线程，根治要熔断；② 超时的命令留在 Lettuce 协议栈里等回包，连接半开期间随请求量累积，可加 `ClientOptions.requestQueueSize` 上限；③ 启动期依赖（本行原文）仍是后续项，懒连接未做，且建连握手现在也受 300ms 约束。依据列的 `RateLimitConfig.java:60-64` 已随本次改动漂移，`connect()` 现在在 `bucket4jConnection`。探针改走独立管理端口（同日另一项改动，见 `deploy/k8s/manifests/java-svc/gateway.yaml` 探针注释）是另一层缓解，不在本更正范围。
+>
+> **R5 更正的 2026-10-15 补注（评审后修订）**：
+> - 上面 ② 已处理：`bucket4jClientOptions` 加了 `requestQueueSize(1024)`（常量 `REDIS_REQUEST_QUEUE_SIZE`）。超限的命令由 Lettuce 立即以 `RedisException` 失败，同样走 fail-open。不设上限时，有未确认数据的半开连接要等内核重传超时（Linux 缺省约 15 分钟）才判死，期间命令会在 gateway 384m 的堆里无界堆积。这是 300ms 超时修法自己带来的退化，所以同批修掉，不留作后续。
+> - ① 的数字只适用于 Redis 完全不回包：此时第一次桶操作的首条命令 300ms 超时即放行。Redis 慢而未死时，zone 桶、IP 桶两次桶操作各自可用到接近 500ms，一次 check 最坏约 1s，单副本约 200 次/秒就会占满线程。熔断 Java 版已有（`RateLimiter` 的 5s fail-open hold），本仓库未做，记为待对齐。
+> - 负载下的语义变化（补进 R4）：以前热键 `rl:zone:<id>` 的 CAS 争用或 Redis 饱和只会让请求变慢，限流仍然有效。现在超过 500ms 整次时限或 300ms 单命令超时，就直接 fail-open 放行：既不扣 zone / IP 桶，也跳过账号冷却。开服洪峰正是 zone 桶最可能这样漏的时候。L-14 压测要在 Redis 健康的前提下统计 `rate-limit fail-open` 的 WARN 数；非零说明 500ms 偏小，或热键已成瓶颈（对应 L-06 拆 Redis）。
+> - 「改动前不开命令超时、无超时等待」已对 `lettuce-core-6.4.2.RELEASE.jar` 做 javap 核对：`ClientOptions.DEFAULT_TIMEOUT_OPTIONS` 由 `TimeoutOptions.create()` 生成（`timeoutCommands=false`），不是 `enabled()`。评审曾怀疑缺省是「按 RedisURI 的 60s 超时」，核对后不成立。`withExpirationStrategy` 与 `withClientSideConfig` 写的是 `AbstractRedisProxyManagerBuilder` 的两个独立字段，`getNotNullExpirationStrategy` 先取 `clientSideConfig` 里的策略，所以两次调用的先后顺序无关。
+> - 单测 `RateLimitConfigTest` 加了两例：未完成命令上限为 1024；`bucket4jRedisClient()` 确实把这些选项设到了客户端上（钉住 `setOptions` 接线）。ProxyManager 构建链上的 `withClientSideConfig` 接线没有用例钉住，靠评审与真实环境验证。
+> - 本次改动后 R3 / R4 / R19 引用的 `RateLimitConfig.java` 行号已漂移，按符号查：`BUCKET_IDLE_TTL`、`bucket4jProxyManager` 构建链、`LettuceBasedProxyManager` 的 import、`bucket4jRedisUri`（口令）、`bucket4jConnection`（`connect()`）。上面「探针与业务同在 8081」指 HEAD 上的状态。
 
 ---
 
@@ -743,7 +791,7 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
 9. **回档脚本与 `dev_tools.ps1` / `k8s_image.ps1`** 是否透传 `-GatewayRateLimit` / `-LoginQueue`（「留空不透传、给了才透传」，同 `-GateRouterMode`；要补就同步 `k8s_client_entry_contract.tests.ps1` 的 `$WrapperPairs`）？目前不透传：回档后按档位恢复为开，事故止血只能直接调 `k8s_deploy.ps1`。
 10. **开服日过后**，prod 是否降回「普通运营」档 500/1000？
 11. **（评审补）§1.5 的两条排队基线缺陷怎么处理**：
-    - 方案 A（建议）：另立 **G4b-G**（Go，`go/login/internal/logic/pkg/loginqueue`），照 Java 版有意差异 ②③ 修：在途占位改为新键 `admitted:zset:zone:{z}` 的 ZSET（分数 = 到期毫秒），`AdmittedCount` 先 `ZREMRANGEBYSCORE -inf now` 再 `ZCARD`（同一段 Lua），快速通道 Lua 与 dispatcher 放行都改 ZADD；consume 不 ZREM，而是把分数改成「现在 + 15s」（覆盖 gate 每几秒发布一次人数的滞后）。用新键名而不是原地改类型，避免新旧版本混跑时 `WRONGTYPE`；K8s 上排队从没开过，没有存量状态要迁移。单测用 miniredis 覆盖：持续快速通道下余量不归零、consume 后 15s 内不超发、旧键不再被写。合入顺序 G1b → G4b-G → G4b-2。
+    - 方案 A（建议）：另立 **G4b-G**（Go，`go/login/internal/logic/pkg/loginqueue`），照 Java 版有意差异 ②③ 修：在途占位改为新键 `admitted:zset:zone:{z}` 的 ZSET（分数 = 到期毫秒），`AdmittedCount` 先 `ZREMRANGEBYSCORE -inf now` 再 `ZCARD`（同一段 Lua），快速通道 Lua 与 dispatcher 放行都改 ZADD；consume 不 ZREM，而是把分数改成「现在 + 15s」（覆盖 gate 每几秒发布一次人数的滞后）。用新键名而不是原地改类型，避免新旧版本混跑时 `WRONGTYPE`；K8s 上排队从没开过，没有存量状态要迁移。单测用 miniredis 覆盖：持续快速通道下余量不归零、consume 后 15s 内不超发、旧键不再被写。合入顺序 G1b → G4b-G → G4b-2。**2026-10-13 已拍板（方案 A）**，规格见 `spec_G4b-G.md`。
     - 方案 B：负责人书面接受 R15，开服当天靠 L-14 的曲线与 `-LoginQueue off` 兜底。
 12. **（评审补）开服档的排队轮询间隔**：`DefaultRetryAfterMs` 现镜像 login.yaml 的 2000（每个在排玩家每秒 0.5 次 `Lookup`，R16）。是否在 `PeakShavingLaunchTier` 里加一项、开服档写 5000 之类的值（排位更新变慢，Redis 压力降到 2/5）？本规格默认不加（YAGNI），等 L-14 的 Redis 曲线再定。
 
@@ -752,8 +800,8 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
 ## 11. Java 版状态（AGENTS §12）
 
 - **功能已对齐，行为有意不同**：
-  - Java 的 game-gateway 自带限流和排队，都缺省关闭，开关为 `GAME_GATEWAY_RATE_LIMIT_ENABLED` / `GAME_GATEWAY_QUEUE_ENABLED`（Java 仓库 `game-gateway/src/main/resources/application.yaml:76-84`、`:93-103`；`PARITY.md:98-99`）。
-  - 判定顺序已经是先 IP、后 zone，zone 桶空时退回 IP 令牌，等于已经做了 G4b-J（`PARITY.md:99`）。
+  - Java 的 game-gateway 自带限流和排队，都缺省关闭，开关为 `GAME_GATEWAY_RATE_LIMIT_ENABLED` / `GAME_GATEWAY_QUEUE_ENABLED`（Java 仓库 `game-gateway/src/main/resources/application.yaml:76-84`、`:93-103`；`PARITY.md`「登录排队」「开服限流」两行）。
+  - 判定顺序已经是先 IP、后 zone，zone 桶空时退回 IP 令牌，等于已经做了 G4b-J（`PARITY.md`「开服限流」行）。
   - 排队由一个 leader 遍历区服目录里的全部 zone（`QueueDispatcher.java:19-26`、`:95`），容量取 `zone_config.capacity`。Java 版**没有 G1b 的缺陷**，也不需要 `ZoneCapacityOverride`。
 - **「按档位打开」这件事 Java 版待做**：
   - Java 仓库没有 K8s 部署脚本，`deploy/` 下只有 compose 和 docker。
@@ -761,8 +809,8 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
   - 等它的部署工具落地时，按同一口径实现：staging / prod 两开关为 true，zone 2000/5000，IP 5/20，冷却 5000。
   - 原因：部署工具还没做。
 - 客户端契约（帧、proto、tip 码）不变，两版都不需要同批改协议。G4b-J0 只改变「带 token 的 assign-gate 何时可能拿到 100 / 429」，回包码集合不变。
-- **G4b-J / G4b-G 与 Java 已有实现的对齐**（评审补）：J0 对应 Java 有意差异 ④（但本仓库在排队开着时也限流，Java 不限，见 §8 #10，仍是有意差异）；J1 对应 ⑧（做完即对齐）；J2 对应 ②（Java 冷却键 = 身份哈希 + IP，且放在 Redis；本仓库仍是进程内，部分对齐）；G4b-G 对应排队行 `PARITY.md:98` 的 ②③（做完即对齐）。
-- **登记**：由 Docs 阶段在 `PARITY.md` 加一行「削峰按发布档位开启（G4b）」：本仓库 commit ↔ Java「待做（部署工具未落地）」；J0 / J1 / J2 / G4b-G 落地时，同步改 `PARITY.md:98-99` 两行的「有意差异」措辞（基线已修的条目不再写成「基线是……」），否则对账本会继续把已修的基线缺陷当现状。
+- **G4b-J / G4b-G 与 Java 已有实现的对齐**（评审补）：J0 对应 Java 有意差异 ④（但本仓库在排队开着时也限流，Java 不限，见 §8 #10，仍是有意差异）；J1 对应 ⑧（做完即对齐）；J2 对应 ②（Java 冷却键 = 身份哈希 + IP，且放在 Redis；本仓库仍是进程内，部分对齐）；G4b-G 对应 `PARITY.md`「登录排队」行的 ②③（做完即对齐）。（2026-10-15 更正：③ 是复合条目，G4b-G 只对齐其中「取走后占位再留 15s」一句；② 也只对齐「逐个到期」本身，快速通道占位寿命与整键 TTL 仍不同。见 `spec_G4b-G.md` §12，`PARITY.md` 已按那里改写。J1 按负责人 2026-10-13 拍板不做，⑧ 仍是差异。）（2026-10-15 再更正，负责人「按最标准的去做」之后：mmorpg 交票后与快速通道的占位都改为保留 20s（gate 每 10s 上报，留两个上报周期），与 Java 的 15s 不再相同，③ 这一句改为差异；整键 TTL 两版都只延长不缩短，② 里这条已对齐；「一轮按段挑 gate」mmorpg 已改为每拍取一次候选、批内按本地计数轮转，③ 里这一句已对齐。以 `spec_G4b-G.md` §11 / §12 与 `PARITY.md`「登录排队」行为准。）
+- **登记**：由 Docs 阶段在 `PARITY.md` 加一行「削峰按发布档位开启（G4b）」：本仓库 commit ↔ Java「待做（部署工具未落地）」；J0 / J1 / J2 / G4b-G 落地时，同步改 `PARITY.md`「登录排队」「开服限流」两行的「有意差异」措辞（基线已修的条目不再写成「基线是……」），否则对账本会继续把已修的基线缺陷当现状。
 
 ---
 
@@ -789,6 +837,8 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
 ---
 
 ## 13. 评审处理记录（对抗式评审，2026-10-12）
+
+本节是历史快照，引用的 Java 仓库 `PARITY.md` 行号不改：其中 `:98` 指「登录排队」行，`:99` 指「开服限流」行，`:98-99` 指这两行。该文件此后一直在追加，这些行号都比现状小，而且还会漂，以行名为准（正文已于 2026-10-15 改为按行名引用）。
 
 > 只读核对：逐条回到工作区代码（含他人未提交改动）、G1b 规格与 Java 仓库 `PARITY.md`；未改任何仓库文件，未运行任何编译 / 测试 / 生成命令。以下「已吸收」均已改进上文对应小节。
 

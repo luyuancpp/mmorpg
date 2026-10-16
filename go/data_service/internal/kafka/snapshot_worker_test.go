@@ -424,6 +424,34 @@ func TestSnapshotConsumer_ShutdownMidFlushIsNotAFailure(t *testing.T) {
 	assert.Equal(t, float64(0), snapshotMessages(t, "db_error")-dbErrBefore)
 }
 
+// TestSnapshotConsumer_CancelledBatchNeverLetsQueuedMessagesCommit 钉住 run 循环顶部的 ctx 检查(snapshot_worker.go 文件头
+// 「不丢」不变量的最后一条):一批因 ctx 取消而没落库、没提交之后,worker 必须立刻退出,不许再取通道里排在后面的消息。
+// 排在后面的是坏消息时最危险:0 行的批不经 runAttempt(ctx 复核在那里),flush 直接提交 —— 这次提交就越过了没落库的那条快照。
+// 没有顶部检查时,回到循环的 select 在 ctx.Done 与通道都就绪时随机选,每轮约一半概率越位提交;所以跑 50 轮
+// (每轮全新的 reader / sink / consumer),让回归必红而不是偶红。有检查时每一轮都确定通过。
+// 依赖 fakeReader.CommitMessages 不看 ctx、来者必记(见其注释)。
+func TestSnapshotConsumer_CancelledBatchNeverLetsQueuedMessagesCommit(t *testing.T) {
+	for i := 0; i < 50; i++ {
+		func() {
+			reader := newFakeReader(nil)
+			sink := &fakeSnapSink{gate: make(chan struct{})}
+			c := NewSnapshotConsumer(SnapshotConsumerConfig{}, reader, sink)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			done := runSnapshot(t, ctx, c)
+
+			reader.push(snapMsg(t, 0, 0, validSnap(141)), badMsg(0, 1))
+			// 默认配置下分区通道容量 1:第 3 次 FetchMessage 说明坏消息已投进通道,排在被 gate 挡住的那条快照后面。
+			require.Eventually(t, func() bool { return sink.inflightNow() == 1 && reader.fetches.Load() >= 3 },
+				eventually, 5*time.Millisecond, "round %d: offset 0 应在途、offset 1 应已排队", i)
+			cancel()
+
+			require.NoError(t, waitDone(t, done), "round %d", i)
+			require.Empty(t, reader.commitCalls(), "round %d: offset 0 没落库,排在它后面的坏消息 offset 1 不许提交", i)
+		}()
+	}
+}
+
 // TestSnapshotConsumer_WorkerPanicStopsRunInsteadOfHanging:sink panic → Run 在时限内返回 errSnapshotWorkerAborted
 // (而不是其它分区继续跑、这个分区静默停摆),该批不提交,落库名额已归还。
 func TestSnapshotConsumer_WorkerPanicStopsRunInsteadOfHanging(t *testing.T) {
@@ -516,4 +544,25 @@ func TestSnapshotConsumerConfig_ClampsBatchRowsToStoreCap(t *testing.T) {
 	c := NewSnapshotConsumer(SnapshotConsumerConfig{BatchMaxRows: store.MaxSnapshotBatchRows + 44}, newFakeReader(nil), &fakeSnapSink{})
 	assert.Equal(t, store.MaxSnapshotBatchRows, c.cfg.BatchMaxRows)
 	assert.Equal(t, 1, cap(c.sem), "MaxInflightFlushes 零值 = 1")
+}
+
+// TestIsReaderOffsetTraceLine 钉住 newReader 给 kafka-go 普通 Logger 配的白名单(两条消费者共用):只放行分区 reader
+// (重新)初始化时的两行位点记录,其余一律丢弃。reader 重建 / rebalance / 重连后 kafka-go 静默跳到日志起点,
+// 这两行之差是那条路径上「被保留期删了多少」的唯一精确记录。
+// format 抄自 kafka-go v0.4.47 reader.go:升级 kafka-go 时须重新核对这两行的措辞,否则白名单会静默失效(本用例拦不住)。
+func TestIsReaderOffsetTraceLine(t *testing.T) {
+	for _, tc := range []struct {
+		format string
+		want   bool
+	}{
+		{"initializing kafka reader for partition %d of %s starting at offset %d", true},
+		{"the kafka reader for partition %d of %s is seeking to offset %d", true},
+		// fetch 超时的一行(空闲分区上反复出现),不许放行;它含 "at offset" 但不是 "starting at offset"。
+		{"no messages received from kafka within the allocated time for partition %d of %s at offset %d: %v", false},
+		// 运行中被保留期追上的那一行走 ErrorLogger,不靠这个白名单。
+		{"the kafka reader is reading before the first offset for partition %d of %s, skipping from offset %d to %d (%d messages)", false},
+		{"", false},
+	} {
+		assert.Equalf(t, tc.want, isReaderOffsetTraceLine(tc.format), "format=%q", tc.format)
+	}
 }

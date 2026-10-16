@@ -6,6 +6,7 @@
 #include "proto/contracts/kafka/gate_event.pb.h"
 #include "rpc/service_metadata/contracts_kafka_gate_event_event_id.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
+#include "rpc/service_metadata/kafka_command_event_whitelist.h"
 #include <thread_context/ecs_context.h>
 #include "muduo/base/Logging.h"
 
@@ -16,9 +17,14 @@ void DispatchGateKafkaCommand(const std::string& topic, const contracts::kafka::
         return;
     }
 
-    // If payload is present, decode and dispatch the embedded proto event.
+    if (!IsGateCommandEvent(command.event_id())) {
+        LOG_ERROR << "GateCommand event not allowed, topic=" << topic << ", event_id=" << command.event_id();
+        return;
+    }
+
+    // 载荷与信封回退共用同一道白名单。
     if (!command.payload().empty()) {
-        if (!DispatchProtoEvent(command.event_id(), command.payload())) {
+        if (DispatchGateCommandEvent(command.event_id(), command.payload()) == KafkaEventDispatchResult::kDecodeFailed) {
             LOG_WARN << "GateCommand payload decode failed, topic=" << topic
                      << ", event_id=" << command.event_id();
         }
@@ -38,13 +44,6 @@ void DispatchGateKafkaCommand(const std::string& topic, const contracts::kafka::
     case ContractsKafkaKickPlayerEventEventId: {
         contracts::kafka::KickPlayerEvent event;
         event.set_session_id(command.session_id());
-        tlsEcs.dispatcher.trigger(event);
-        return;
-    }
-    case ContractsKafkaPlayerDisconnectedEventEventId: {
-        contracts::kafka::PlayerDisconnectedEvent event;
-        event.set_session_id(command.session_id());
-        event.set_player_id(command.player_id());
         tlsEcs.dispatcher.trigger(event);
         return;
     }

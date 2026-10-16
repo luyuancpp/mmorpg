@@ -33,8 +33,16 @@ type SessionDetails struct {
 	// home_zone 弹回。gate 只透传,不据此做业务决定。
 	TicketPlayerId     uint64 `protobuf:"varint,5,opt,name=ticket_player_id,json=ticketPlayerId,proto3" json:"ticket_player_id,omitempty"`
 	TicketTargetZoneId uint32 `protobuf:"varint,6,opt,name=ticket_target_zone_id,json=ticketTargetZoneId,proto3" json:"ticket_target_zone_id,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// 会话代次(docs/design/client-request-ordering.md §4.8;client-access-band-routing.md D60 预订的 7 号)。
+	// gate 进程内单调,会话存续期间不变;与 gate_instance_id 合起来全局唯一。0 = 旧版 gate(无栅栏)。
+	// gate 认领回包时用它挡住 session_id 被复用后迟到的旧回包;login 会话栅栏用 (gate_instance_id, 本字段) 建键。
+	SessionIncarnation uint64 `protobuf:"varint,7,opt,name=session_incarnation,json=sessionIncarnation,proto3" json:"session_incarnation,omitempty"`
+	// gate 调用序号(client-request-ordering.md §4.8):gate 进程内单调,准入时按收包顺序分配;
+	// 0 = 不受 lane 管理(gate 合成的断线通知)。路由服原值回写响应头,gate 据此认领 lane 队头。
+	// 业务服务不得把它当幂等键(它按调用编号,不按客户端意图编号);可以作为 (session_incarnation, 本字段) 水位栅栏。
+	GateCallSeq   uint64 `protobuf:"varint,8,opt,name=gate_call_seq,json=gateCallSeq,proto3" json:"gate_call_seq,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SessionDetails) Reset() {
@@ -109,11 +117,25 @@ func (x *SessionDetails) GetTicketTargetZoneId() uint32 {
 	return 0
 }
 
+func (x *SessionDetails) GetSessionIncarnation() uint64 {
+	if x != nil {
+		return x.SessionIncarnation
+	}
+	return 0
+}
+
+func (x *SessionDetails) GetGateCallSeq() uint64 {
+	if x != nil {
+		return x.GateCallSeq
+	}
+	return 0
+}
+
 var File_proto_common_base_session_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_session_proto_rawDesc = "" +
 	"\n" +
-	"\x1fproto/common/base/session.proto\"\xf5\x01\n" +
+	"\x1fproto/common/base/session.proto\"\xca\x02\n" +
 	"\x0eSessionDetails\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\rR\tsessionId\x12\x1b\n" +
@@ -122,7 +144,9 @@ const file_proto_common_base_session_proto_rawDesc = "" +
 	"gateNodeId\x12(\n" +
 	"\x10gate_instance_id\x18\x04 \x01(\tR\x0egateInstanceId\x12(\n" +
 	"\x10ticket_player_id\x18\x05 \x01(\x04R\x0eticketPlayerId\x121\n" +
-	"\x15ticket_target_zone_id\x18\x06 \x01(\rR\x12ticketTargetZoneIdB\x13Z\x11proto/common/baseb\x06proto3"
+	"\x15ticket_target_zone_id\x18\x06 \x01(\rR\x12ticketTargetZoneId\x12/\n" +
+	"\x13session_incarnation\x18\a \x01(\x04R\x12sessionIncarnation\x12\"\n" +
+	"\rgate_call_seq\x18\b \x01(\x04R\vgateCallSeqB\x13Z\x11proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_session_proto_rawDescOnce sync.Once

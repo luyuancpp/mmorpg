@@ -65,6 +65,13 @@ metadata:
   name: redis
   labels:
     app: redis
+  # 重启闸(P0-E 第 2 批,docs/handoff/global-singletons-p0-findings-20261014.md「P0-E」修复设计五·2):
+  # k8s_deploy.ps1 的 Apply-Infra 把下面 spec.template 段的摘要(Get-RedisPodTemplateDigest,去掉 YAML 注释与空行后算)
+  # 填进这条注解。它挂在 StatefulSet 自己的 metadata 上、不在 Pod 模板里,改它不会滚动 redis-0。下一次 infra-up 先读线上这条注解:
+  # 模板变了(= apply 会重启 redis-0)或线上没有注解,而命令行没给 -ConfirmRedisCoreRestart,就在任何写操作之前拒绝。
+  # 占位没替换就 apply 会被 Apply-Infra 的「未替换占位」检查拦下;不要手写真实摘要。
+  annotations:
+    mmorpg.io/redis-pod-template-digest: "__REDIS_POD_TEMPLATE_DIGEST__"
 spec:
   serviceName: redis-headless
   replicas: 1
@@ -87,14 +94,43 @@ spec:
           # 两边不自洽 —— 客户端对一个没设密码的 Redis 发 AUTH 会直接报错,整个 release 档连不上。
           # 用 sh 包一层是因为官方镜像不支持用环境变量设密码;"$REDIS_PASSWORD" 在双引号内展开,
           # 密码里的任何字符都不会被 shell 再解释。exec 让 redis-server 成为 1 号进程,SIGTERM 直达。
+          #
+          # 连接上限(P0-E 第 1 批,docs/handoff/global-singletons-p0-findings-20261014.md「P0-E」修复设计二、三·1):
+          # 以前两条 exec 都没写 --maxclients,上限是 Redis 缺省 10000,而且缺省值还会被容器 nofile 硬限悄悄压低
+          # (Redis 需要 maxclients + 32 个 fd,硬限不够就自己下调 maxclients 并只在启动日志里留一条,外部常识,待 Codex 薄壳实测)。
+          # 全服所有 zone 的 Go 连接池、Java gateway 与每个 C++ 进程都连这一个实例,连接数随 zone 数线性增长、到峰值后不回落
+          # (go-redis 池没有后台回收),到线后新连接被拒、客户端日志多半看不出原因。
+          #   - 取值 40000(负责人 2026-10-15 定;取值待实测 / 压测复核):按 tools/scripts/k8s_deploy.ps1「Redis 连接总账」的公式,
+          #     每 zone 约 252 条(GOMAXPROCS 按 2 计,待 S6 实测),80% 水位约能承载 124 个 zone;需要 40032 个 fd。
+          #     MAXCLIENTS 只在这里定义一次,两条 exec 都引用它;部署脚本的总账与契约测试从这一行读值
+          #     (tools/scripts/tests/redis_maxclients_contract.tests.ps1 钉住:恰好一次、两条 exec 都带、compose 同值)。
+          #   - 启动前打印 fd 限值:生产运行时的 nofile 本机无法核实,这一行是事后唯一的证据(部署后核对与排查都靠它)。
+          #     硬限不够时只打 ERROR、不拒启 —— 唯一的 Redis 起不来等于全服停,这是有意的 fail-open,靠这行日志、
+          #     infra-up -WaitReady 的 CONFIG GET maxclients 核对与告警兜住。补救是调节点上容器运行时的 LimitNOFILE
+          #     (K8s 清单层无法声明 ulimit,同 kafka.yaml 的说明)。不自己执行 ulimit -n:redis-server 会把软限抬到硬限(外部常识,待实测)。
+          #   - 不设 timeout(保持缺省 0):设了会不停踢掉常驻的空闲池连接和 C++ 每进程唯一的那条连接。tcp-keepalive / tcp-backlog 本批不动。
+          #   - 就绪探针不改:到线时不论探针怎么判,新连接都进不来(到线后 redis-cli 自己也连不上,在线调大必须在到线之前做)。
+          # **改这个数或改本段任何一行都会改 Pod 模板,apply 即重启 redis-0**(全服登录中断并重放 AOF):k8s_deploy.ps1 的重启闸
+          # 要求显式 -ConfirmRedisCoreRestart,只在维护窗口做。要先调大已在运行的实例,在到线之前 redis-cli CONFIG SET maxclients <N>
+          # (不持久,重启后回到清单值),步骤见 deploy/k8s/README.md「Redis 连接上限与总账」。
+          # redis-ha.yaml 接入时要同样显式 --maxclients,节点上限 ≥(代理副本数 + maxSurge)× haproxy maxconn + 余量,并重算总账。
           command:
             - sh
             - -c
             - |
+              MAXCLIENTS=40000
+              need=$((MAXCLIENTS + 32))
+              soft=$(ulimit -Sn 2>/dev/null || echo unknown)
+              hard=$(ulimit -Hn 2>/dev/null || echo unknown)
+              echo "redis fd limit: soft=$soft hard=$hard need=$need maxclients=$MAXCLIENTS"
+              case "$hard" in
+                unlimited|unknown) ;;
+                *) if [ "$hard" -lt "$need" ]; then echo "ERROR: nofile hard limit $hard < $need, redis-server will lower maxclients below $MAXCLIENTS" >&2; fi ;;
+              esac
               if [ -n "$REDIS_PASSWORD" ]; then
-                exec redis-server --appendonly yes --requirepass "$REDIS_PASSWORD"
+                exec redis-server --appendonly yes --maxclients "$MAXCLIENTS" --requirepass "$REDIS_PASSWORD"
               fi
-              exec redis-server --appendonly yes
+              exec redis-server --appendonly yes --maxclients "$MAXCLIENTS"
           env:
             - name: REDIS_PASSWORD
               valueFrom:

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"chat/internal/config"
+	"chat/internal/textfilter"
 
 	chatpb "proto/chat"
 
@@ -22,6 +23,8 @@ import (
 
 type ServiceContext struct {
 	Config config.Config
+	// ContentFilter 是启动期词表快照；读路径无状态，不在请求中解析配置或查询词库。
+	ContentFilter *textfilter.Filter
 
 	// 双存储(契约 §4):
 	//   - ChatRedis:chat 私有 key(chat:{world}:log / chat:{p:a:b}:log / chat:{req:pid}:rid /
@@ -49,6 +52,10 @@ type ServiceContext struct {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
+	contentFilter, err := textfilter.New(c.SensitiveWords)
+	if err != nil {
+		panic("invalid chat sensitive words: " + err.Error())
+	}
 	etcdCli, err := clientv3.New(clientv3.Config{
 		Endpoints:   c.Etcd.Hosts,
 		DialTimeout: 5 * time.Second,
@@ -60,6 +67,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	chatRds, sharedRds, target := NewRedisHandles(c)
 	return &ServiceContext{
 		Config:          c,
+		ContentFilter:   contentFilter,
 		ChatRedis:       chatRds,
 		SharedRedis:     sharedRds,
 		ChatRedisTarget: target,

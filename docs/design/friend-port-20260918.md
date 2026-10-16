@@ -1,5 +1,7 @@
 # friend:移植为全局服务 + 客户端经路由服可达
 
+> **2026-10-15 范围更正：读本文末 §9 与 [最新决定 D-15](xuanming-port-decisions-20260910.md#d-15-八域对比选型与容量目标2026-10-15用户最终范围)。** 本文 F1–F3 是历史“四块增量”；本轮八域含 friend / chat / guild / mail / leaderboard / login / auction / trade，目标 DAU 1 亿 / CCU 2000 万，独立客户端同步已授权。最新准则为比较两仓并选择更可扩展实现，正确性/一致性/兼容不降级；旧增量范围和机械照搬均不再作为终态。
+
 **Created:** 2026-09-18
 **状态:** 2026-09-18/19 由 Claude 分 F1 / F2 / F3 三批落码。**未编译、未运行任何测试、未提交;proto-gen 与导表器一次都没跑过**(本机 `go` 与 `protoc` 都不存在,`E:\work\tools` 曾被清空)。§7 的验证清单一步都还没执行,本文任何"应该 / 期望"都不是实测结论。
 〔2026-09-28 更正:上一段已过期。三批已提交(`f06090b19` 等,见 `friend-handoff-20260920.md` 开头);09-20 22:39 导表、22:41 proto-gen;09-21 `go/friend` 首次编译即通过,真 MySQL(实为 26.7.0)上全部包 314 PASS / 0 FAIL / 0 SKIP,首跑抓到的锁序真死锁已修(`docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md`,随 `9cef7b2ec` 进库);09-25 空库 `-migrate` + 常驻启动 + 两区 `friend-smoke` 通过。§7 的 ①–⑥ 均已执行,⑦ 改由单测 `TestVersionedCache_FillsWhenGenerationKeyNeverWritten` 覆盖(09-21 PASS),逐步证据见 `friend-handoff-20260920.md` §9.4。之后的状态(推荐查询有界化等)以该文 §9.5 为准。〕
@@ -237,3 +239,92 @@ Commit
 - **建库不在 Job 里**:存量卷 / PVC 不会重跑 initdb,必须先手工执行 `deploy/mysql-init/00_init_zone_dbs.sql` 里 `mmorpg_friend` 的两句(建库 + GRANT),否则 migrate Job 以 1 退出并点名库名。
 - 回退到 gate 直连模式,等于 friend / chat / guild / trade 这些只承诺路由模式的服务**同时**不可达。回退前先用 killswitch 关掉对应方法并发公告(D-12)。
 - 三个新 tip 码的 `Tip.xlsx` 行与导表器必须跟着 friend 二进制**同批**发布:码不在表里时 `serverbase` 会把它判成 `VerdictUnknown`,客户端拿不到文案。
+
+---
+
+## 9. 八域基线下的 friend 范围更正(2026-10-15)
+
+### 9.1 历史交付与最终范围
+
+§1.1 的“只搬四块能力”是 F1–F3 当时事实，不是现要求的终态。本轮 **friend / chat / guild / mail / leaderboard / login / auction / trade** 八域比较原仓 `D:/luyuan/xuanming-server` 与本仓，目标 **DAU 1 亿 / CCU 2000 万**，授权独立客户端同步、分批端到端完成。用户最新准则为“对比原来，哪个能承载更多玩家用哪个”，以正确性/一致性/兼容不降级为前提，不再机械承诺逐字复用。现行决定见 [D-15](xuanming-port-decisions-20260910.md#d-15-八域对比选型与容量目标2026-10-15用户最终范围)，对比矩阵/批次见 [可行性文档 §13](xuanming-port-feasibility-20260902.md#13-八域能力对比与依赖批次2026-10-15)。
+
+**dialogue / player / inventory / mission / scene_manager 明确排除**；team、match、owner、allocator 等只记必要接缝，不独立移植。auction / trade 已纳入本轮，但 inventory 仍不迁。客户端授权针对本项目 `../mmorpg-client/`，不包括源 UE 客户端。首批申请代次修复只是切片，不能当成全部八域完成。
+
+本次核对源 HEAD 为 **`b1f6c1ebf4583b45a9370ad0522c64196dc792b2`**，2026-10-15 工作区干净。逐项比较好友协议、权威规则、事务/错误、上限、配置/迁移、推送/恢复、查询与热点，再选择实现。现静态候选为保留本仓已修点锁/容量/有界推荐，结合源 request_id/默认 TiDB/恢复能力；无同负载测量，尚不能断言哪边实际承载人数更多。复用源文件可选，需留源版本/内容校验、适配差异与源风险，不要求所有文件逐字相同。
+
+### 9.2 分布式加好友的准确含义
+
+源 friend 使用 `database/sql` 显式事务；分布式存储由 TiDB 提供，**`BeginTx` 不代表单机 MySQL**。源 `run_services.ps1` 默认 friend / chat / guild / mail 使用 `*-dev-tidb.yaml`，`-SocialOnMysql` 才切回 MySQL；`start.ps1` 的 K8s 编排向生成器显式传 `-SocialStore tidb`，而生成器参数本身仍默认 mysql。源 `friend-dev-tidb.yaml` 明确双向建边在 TiDB 悲观事务内运行。
+
+`internal/biz/friend_sharding.go` 的路由、幂等键与跨分片观测不改该建边路径，不是已接通的应用分库 Saga。首要差异是**真实 TiDB 接入/配置/迁移/部署与完整业务契约**，不能看到 `FOR UPDATE` 就强行拆 Saga；跨地域图写入的另行设计须有容量/延迟/故障依据。
+
+推送须分段描述：源好友事务提交后发 Kafka，尚无同事务 outbox，提交→Kafka 仍有缺口；runtime/push 消费后原子分配游标并写缓冲，失败拒绝成功消费并可重放，只解决消费后的交付。好友列表/申请权威补拉继续保留；要求可靠送达的八域事件须在当批完成生产侧持久化边界、去重、重放/保留窗口和故障验证，不能宣称“源仓零丢失”。本次不因此独立移植整个 push 服务。
+
+### 9.3 不能回退的修复与适配接缝
+
+- 保留容量计数、缺行按权威边数重建、按 `RowsAffected` 增减、固定锁序和完整主键点锁。§7 早期 `IN/OR + ORDER BY` 计划保证已由 09-21 真死锁修复取代，旧源 SQL/旧解释不能覆盖确定性点锁回归。
+- 保留缓存 generation、Redis Cluster hash tag、时间预算、会话取身份、内部/下行方法拒绝客户端调用、列表上限与推荐 SQL 有界性。10 月 MySQL/TiDB 方言及语句预算随两种真库回归，不因 TiDB 接入删除 MySQL 锁序测试。
+- 客户端继续用本仓 gate 帧、tip 配表、消息号与生成链；跨区路由、目标实例和安全门按本仓接缝实现。
+- 数据迁移/权限沿本仓每服务数据所有权处理，不直接把本仓连到源 `pandora_social` 或绕过兼容/迁移。功能与数据库事务保证必须对齐，内部代码和部署命名可适配。C++ 资产仍为唯一权威，排除域不迁移。
+
+### 9.4 后续闭环与证据边界
+
+friend 进入八域批次 A：核清源完整契约、修申请代次等回归切片、接真实 TiDB，补配置/迁移/启动/部署与必要差异，再由授权客户端/robot 跑跨区流程；后续随社交批次补通知/补拉与契约差异。每批包含并发申请/接受/拉黑/删除、容量/边一致性、重复、提交结果未知、进程崩溃、推送中断和恢复，实际运行受影响构建/真库测试并区分 PASS / SKIP / 未跑。旧 friend-smoke 通过不替代新验证，也不是 2000 万 CCU 证据。
+
+源默认 TiDB与独立服务只证明实现/装配方向，尚缺行为模型、好友图规模、热点/推荐成本、生产副本/故障拓扑及压测数据。容量按本仓压测纪律另验，不能凭数据库名称承诺达标。Java 八域本次状态为**待逐能力对账与对齐**，不能推定已完成。
+
+**本节仅最终范围与静态事实；本次未改实现、未编译、未测试、未压测。**
+
+### 9.5 申请代次与单事务权威校验移植（2026-10-15，用户指定 AcceptRequest 设计）
+
+用户随后贴出源 `MySQLFriendRepo.AcceptRequest`，明确要求保留该设计并直接移植，同时要求全球同服、强一致性。本批以其业务不变量为准：按申请 ID 定位，仅接收者本人可操作；先取得守卫，再锁定读复核申请代次、目标、状态、双向拉黑与双方硬上限；正向状态、反向 pending 收敛、双向好友边和容量计数同一 RC 事务提交。失败回滚；重复终态操作不重复建边、计数、摘要或推送。保留本仓容量守卫和完整玩家对主键点锁，不把源 OR 锁定查询或依赖 COUNT/gap lock 的上限写法带回。
+
+协议只追加：`FriendRequest.request_id=5`、`AddFriendResponse.request_id=2`、`AcceptFriendRequest.request_id=3`、`RejectFriendRequest.request_id=3`；存储 `FriendRequestRecord.request_id=6`，追加普通 ID 索引，旧字段号/主键保持。Accept/Reject 必须带非零 request_id，操作者来自会话；既有 from_player_id 兼容字段被忽略，不允许退回仅凭玩家对修改或用 hint 授权。申请 ID 使用 data_service 的 `friend_request` 号段，失败明确拒绝，不使用注册 node_id 自造 Snowflake。新建/终态重发换 ID，重复 pending 保留原 ID 和发起时间；入口频控仍有效，幂等不是绕过配额。
+
+旧 pending 的 request_id=0 采用安全按需补齐：列表 SQL 游标关闭后逐玩家对处理，锁内只给仍 pending 且 ID 为 0 的行赋值，保留原时间；重复 Add 遇旧行同样补齐。领号等网络 I/O 在事务外，重新取锁后复核，已经非零的 ID 永不被补号覆盖。补号完成后整页单次 SQL 重读，不能拼接补号前后快照；若最终仍存在零代次则明确报错。ID 定位遇重复记录失败关闭；普通索引必须真实存在，不能把迁移器“缺索引仅告警”当作已就绪。不删除历史申请、不猜测代次。发布须先禁旧版好友写入并排空旧写者，再开放新版与带 ID 的客户端；旧写者忽略 ID 时不能声称代次保护成立。
+
+**本批强一致范围是好友权威关系和申请状态。** 两条列表读直接查询权威 SQL，不以 Redis 列表缓存、缓存失效成功或推送到达充当提交证明；数据库不可确认时回明确错误，不能成功返回旧缓存或空列表。生产要求所有全服好友实例接同一个逻辑 TiDB 事务域并验证后端，不能按 zone 各写独立好友库再异步拼合。开发 MySQL 回归只证明事务行为，不等于分布式部署、跨洲容灾或 2000 万 CCU 验收。TiDB 的 RC/SI 也不会自动把任意业务串行化，不变量由守卫、当前读和条件更新共同保证。
+
+在线状态、通知触发等派生展示不在该 SQL 事务内；仍须区分可过期展示与资产/关系权威。整个游戏的全球单一玩家写者、资产持久化和跨服务交易边界需另外逐域验收，不能因本批 friend 完成就标记整游强一致。客户端本批补齐实际申请入口、保存 request_id 和迟到回调隔离；Java 版执行同一契约。实现、生成、红绿回归、真实库与构建结果在完成后追加，当前不提前声明通过。
+
+### 9.6 首批落地与真实验证（2026-10-15，申请代次及好友权威事务）
+
+Go 已落地申请代次、按 ID/会话主体处理、同操作终态幂等与 Changed 副作用控制、终态重发换号、旧零代次锁外领号/守卫内补齐、补号后单次 SQL 权威快照及两条列表直接 SQL。生产 RequireTiDB 强制验证实际后端，每个物理连接的 DSN 固定 READ-COMMITTED+pessimistic；常驻与 -migrate 同配置。独立客户端补真实申请入口、非零ID流转、会话/迟到回调隔离及未知结果补拉；本批没有把其余好友UI或八域整体标为已完成。
+
+实际证据：
+
+- Go `FRIEND_REQUIRE_MYSQL_TESTS=1 go test ./... -count=1 -timeout=300s` 全包通过，data 包 274.458s；后续同玩家对/硬限/重复语义定向复验通过。`go build ./...`、`go vet ./...` 通过。号段配置包回归通过，store 的所选名称无匹配测试，不能记作执行了存储集成。
+- 真 TiDB 8.5.2 上的 `TestTiDBRequestGeneration_TransactionsAndHardLimit` 与 `TestAuthorityDB_TiDBPessimisticOnEveryConnection` 通过（data 6.379s、svc 6.861s）：原生 NONCLUSTERED 主键，重放/换代/迟到请求、16 方并发硬上限 2、历史补号/错误接收者，以及同时持有三个物理连接逐一检查 pessimistic+RC。环境为本地隔离开发拓扑，未验证生产 HA/跨洲故障。
+- 混合快照有确定性红→绿：原实现先读 A10 pending+B0，再在补 B 号时并发接受 A，错误返回 A10+B20；修复为全部补号后整页重新 SELECT，只返回 B，回归通过。Java 相反终态误报成功也经独立审查修正，并与同操作重放语义对齐。
+- 正规旧 schema 迁移使用 proto2mysql 生成四表旧夹具（仅移除本批新增列/索引）并保留一条旧 pending。真 TiDB 上新二进制 -migrate 自动 ADD COLUMN，因缺普通索引明确 exit 4；按同一 proto2mysql 生成定义补 idx_friend_request_2(request_id)，再次 -migrate 为 exit 0、零漂移。旧行 request_time_ms/updated_ms=123456789、status=0、request_id=0 均保留；零代次业务补齐由上面的真库用例覆盖。DDL 未手写进生产仓储，未操作现有/生产数据库。
+- C++ 两个标准生成的 friend.pb.cc / friend_table.pb.cc 使用 VS18 x64 和 protobuf 35.1 逐个隔离编译 exit 0，无 warning/error；未链接完整节点。客户端 Unity 89 PASS / 0 FAIL / 0 SKIP（新增好友22），431 个运行时源码离线编译零错误；未执行真实 gate 端到端。
+- K8s 好友入口/RequireTiDB/Host 与生产拒绝门禁用例通过。完整部署契约第二轮为 123/124：剩余 all-up -SkipInfra 多 zone 登录配置夹具期望2块、实际4块；该路径不生成好友配置，保留日志，不修改并行登录工作。首轮另有 PowerShell 子进程 OOM、现已在后次消失，不把第一次失败隐去。
+
+生成边界：隔离快照按标准 dev_tools proto-gen-build 完成构建，proto-gen-run 的 CompilationAndUtilGeneration 阶段已产出本批绑定；随后全局事件防墓碑门禁因其他在途删除的 29 个事件拒绝，未设置绕过环境变量，也未覆盖全局 ID/事件产物。本批仅同步已完成阶段的好友绑定及原有 playersync 所需 scene SyncDomain Go 依赖，再用上述编译验证；不能把脚本包装器的 exit 0 当完整生成流水线成功。
+
+验证原始材料在 ignored build/friend-* 下，包括 proto-run.log、两次正规迁移日志、由 proto 生成的当前/旧表/索引DDL、C++隔离脚本/日志和部署契约摘要。客户端 Unity 原始 XML/日志位于系统临时目录 friend-client-requestid-20261015。Java 最终证据另追加；源码/客户端均未提交，无生产发布/数据迁移/账号登录。
+
+部署必要条件仍未自动完成：先停旧 friend 写者，审阅补索引并迁移到 exit0，预播种 friend_request 号段，使用同一全服 TiDB 事务域及不可回退的号源水位，配齐客户端协议；生产 TiDB 的备份/恢复和故障预算另验。提交后推送/摘要仍是通知旁路，没有与好友事务同提交的 outbox，漏通知由权威补拉恢复，不宣称可靠事件全链路零丢失或整游强一致。DAU1亿/CCU2000万尚无压测证据。
+Java最终回执（0.1.0-SNAPSHOT，对应并行保存d57d11f）：完整隔离11模块构建成功，friend上一快照完整MySQL/Redis97项中96通过/1跳过、robot616项执行通过；最终忽略from兼容字段的源码编译及15项FriendServiceTest通过。Java真实TiDB与最终全量真库因Docker引擎停止未执行，已在PARITY和既有friend-spec登记，不以Go真TiDB结果代替Java。机器人smoke也已改为保留/核对代次与时间、按ID接受及按权威列表清理；主树构建受其他域vendor绑定滞后阻断，完整新生成绑定的只读overlay编译通过，未覆盖其他域vendor且未执行真实冒烟。期间工作区被其他操作保存为ab0f27907，前文“未提交”为当时状态；本AI没有执行commit/push/tag。
+
+### 9.7 Java 真 TiDB 迁移修复与最终回归（2026-10-15，续验）
+
+Docker 恢复后补齐上一节未执行的 Java 真库证据。首轮原样 14 项真 TiDB 回归为 13 通过、1 错误：TiDB 8.5.2 不接受同一 `ALTER TABLE` 同时新增 `request_id` 与引用该列的普通索引。没有过滤失败用例；`game-pbmysql` 规划器现按普通列、主键、二级索引分步执行，索引阶段失败可由下次迁移继续。新增自增列及其必需支撑键仍同句，避免破坏 MySQL 对非主键/联合主键非首列自增的约束。只改该模块的规划、执行与两组测试，不手写好友专用 DDL、不更改生成契约或旧行数据。
+
+最终验证：`game-pbmysql` 在隔离 MySQL `13316` 上 132/132；好友完整 MySQL `13316`＋Redis `13379`＋实际 TiDB 生产门禁 98/98，package 成功；原失败选择器的相同 14 项在 TiDB `4000` 上 14/14，含旧表补列/补索引，全部零失败、零错误、零跳过。旧表迁移日志明确分两句执行成功。构建快照 2287 个输入逐文件 SHA 一致，好友主树 46 文件及迁移器主树 4 文件与被测快照一致；好友 jar 内也核实嵌入修复后的迁移器。摘要为主仓 ignored `build/friend-final-verification-20261015.json`，内含原红、最终日志和快照位置；专用随机测试库剩余为零。
+
+Java 版本仍 `0.1.0-SNAPSHOT`，本轮没有发布或运行真实 gate/客户端跨区冒烟；通知 outbox、生产迁移停写和整游强一致的边界仍按上一节，不因真 TiDB 测试通过而扩大结论。
+
+### 9.8 每个物理连接的强读策略与生产拒关（2026-10-15）
+
+权威列表在事务外执行普通 SELECT，只有 RC 与悲观事务仍不够。TiDB 的低精度 TSO 可经全局默认被新连接继承，历史 snapshot、陈旧读与 weak 也可通过 JDBC 会话设置启用；不能让服务通过后端类型门禁后悄悄读旧关系。Go DSN 与 Java 生产 Druid 初始化现逐个物理连接固定：`READ-COMMITTED`、`pessimistic`、空 `tidb_snapshot`、`tidb_read_staleness=0`、`tidb_low_resolution_tso=OFF`、`tidb_read_consistency='strict'`、`tidb_replica_read='leader'`。启动复核不符即拒绝，不回旧缓存；本批只设 SESSION，没有修改 GLOBAL。陈旧读和低精度 TSO 的作用域不同，不把两者都描述为全局继承。正常 follower ReadIndex 也能提供一致读，固定 leader 是本项目显式策略，不是将 follower 一律判为旧数据。
+
+Java 在配置属性绑定之后、Druid 初始化之前追加强制语句，覆盖 URL 或自定义 init SQL 中的弱策略；物理连接淘汰后重新创建仍执行。生产拒绝已提前初始化或无法保证策略的其他连接池。本地 MySQL 不注入 TiDB 专用变量。独立审查发现 `application-prod.yaml` 的默认 true 仍可被命令行关闭，新增真实 Spring 配置回归先复现旧代码错误放行，再在实际静态策略工厂用 `Environment` 检查 active `prod` 并拒绝 `require-tidb=false`，包括 `nacos,prod` 组合；Go 已有等价生产拒关。开发模式保留原 MySQL 兼容路径，没有新增并行运行模式。
+
+本轮最终运行证据：
+
+- Go svc 5/5、零跳过，真实 MySQL 兼容/生产拒绝及 TiDB 8.5.2 同时持有三个不同 CONNECTION_ID 的七项策略均执行；`go build ./...`、`go vet ./internal/svc`、gofmt/diff 检查通过。摘要为 `build/friend-authority-session-20261015/strict-snapshot/final-verification.json`，两处源码与被测输入一致。全好友业务的先前完整真库证据仍见 §9.6，不将这五项称为重跑了全域。
+- Java 最终 104/104、零失败、零错误、零跳过，9 reactor package 成功。真实 MySQL `13316`、Redis `13379`、TiDB `4000` 均启用。TiDB 池测试采用实际 Druid 自动装配/属性绑定，在 prod 下分别注入弱读 URL 和历史 snapshot URL，同时借用三连接、强制淘汰、再借三连接，核对每次七项和新连接 ID；逐项污染强读变量的门禁负例也实际执行。测试装配最初缺少 Spring 占位符解析导致两项失败，补入正式自动配置后通过，原失败日志保留；未把该夹具失败解释为业务故障。
+- Java 原样 TiDB 核心选择器的旧 14 个用例全部保留，加一项数据库门禁后 15/15、零跳过；独立 9 reactor package 成功。此轮未选择新池测试，新池及后补 prod 拒关由上一条最终 104 项覆盖；不把旧选择器日志拼成同一次执行。
+
+最终 Java 摘要为 `build/friend-strong-read-java-20261015/final-verification.json`，536 个构建输入运行期间零漂移，当前主树好友 45 个输入及迁移器 4 文件与快照一致；jar SHA-256 为 `70239BC2AC63E49A06CAA526E466EA69E9CA57A0F3821C288071B2DD656829D4`，实际含新连接策略类。原选择器证据为 `build/friend-strong-read-tidb-core-20261015/final-verification.json`。随机好友测试库和 Redis DB13 测试键只读审计剩余零。Java 版本 `0.1.0-SNAPSHOT`，无发布、真实 gate 或跨洲故障/容量验收；全球同服仍要求所有写者实际接入同一逻辑 TiDB 权威域，推送 outbox 等 §9.6 未完事项继续保留。

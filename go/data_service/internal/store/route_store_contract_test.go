@@ -133,6 +133,8 @@ func routeStmtLabel(query string) string {
 		return "R16"
 	case routeProbeShardCheckSQL:
 		return "PROBE_CHECK"
+	case routeProbeShardModulusSQL:
+		return "PROBE_MODULUS"
 	case routeTiDBPKTypeSQL:
 		return "PK_TYPE"
 	}
@@ -434,8 +436,9 @@ func replyErr(err error) fakeRouteReply { return fakeRouteReply{err: err} }
 // ── W1:RegisterHome 的终局契约 ─────────────────────────────────────────────────
 
 const (
-	// contractPlayer:4242 % 8 = 4242 % 16 = 2 —— 本常量**区分不了**围栏片与行片(两者恰好相等),
-	// 绑错片的实现在用它的用例里照样全绿;区分两者的是 TestRegisterHomeBindsRowShardNotFenceShard(4250)。
+	// contractPlayer:围栏片 4242 % 8 = 2,行片 4242 % 64 = 18(4242 = 66×64 + 18)—— 两者不相等,绑错片的实现
+	// 在用它的用例里会被 assertRegisterArgs 拦下(行片还是 16 片时两者恰好都是 2,区分不了)。把两个片号按字面量、
+	// 逐下标钉死的仍是 TestRegisterHomeBindsRowShardNotFenceShard(4250)。
 	contractPlayer  uint64 = 4242
 	contractHome    uint32 = 7
 	contractStorage uint32 = 1000000
@@ -444,7 +447,7 @@ const (
 // wantRegisterArgs 是每条 W1 语句应有的实参(经 mysqlLikeConvert:无符号整数一律 uint64,NULL 为 nil)。
 // rowRev 是 R5 读到的 rev(R6 的 CAS 条件)。
 // 两个「片」分开算:fenceShard 是围栏片(player_id % FenceShards,只进 R2 / R3),
-// rowShard 是 player_route 的行片(player_id % 16,进 R4 / R5 / R6)。
+// rowShard 是 player_route 的行片(placement.RouteRowShard,即 player_id % 64,进 R4 / R5 / R6)。
 func wantRegisterArgs(t *testing.T, label string, req RouteRegisterRequest, rowRev uint64) []driver.Value {
 	t.Helper()
 	fenceShard := req.PlayerID % uint64(fakeRouteShards)
@@ -821,11 +824,12 @@ func TestRegisterHomeBindsNullForAbsentPlacement(t *testing.T) {
 }
 
 // TestRegisterHomeBindsRowShardNotFenceShard:R2 / R3 绑围栏片(player_id % FenceShards),R4 / R5 / R6 绑行片
-// (player_id % 16)。两者绑反了的后果:R4 对一半新号撞 chk_route_shard(3819)建角失败;R5 / R6 按错片点查读不到行
-// → ErrRouteRowVanished。contractPlayer=4242 的两种片恰好相等,区分不了,这里用 4250(围栏片 2、行片 10)。
+// (player_id % 64)。两者绑反了的后果:R4 对两种片不相等的新号(FenceShards=8 时占 7/8)撞 chk_route_shard(3819)
+// 建角失败;R5 / R6 按错片点查读不到行 → ErrRouteRowVanished。这里用 4250,两个片号按字面量钉死:
+// 围栏片 4250 % 8 = 2,行片 4250 % 64 = 26(4250 = 66×64 + 26)。
 func TestRegisterHomeBindsRowShardNotFenceShard(t *testing.T) {
 	const player uint64 = 4250
-	const wantFence, wantRow = uint64(2), uint64(10)
+	const wantFence, wantRow = uint64(2), uint64(26)
 	// 先确认用例本身没有退化:两种片必须不同,否则下面的断言什么也证明不了。
 	probe := RouteRegisterRequest{PlayerID: player, HomeZone: contractHome}
 	fenceArg := wantRegisterArgs(t, "R2", probe, 0)[1]
@@ -1025,37 +1029,46 @@ func TestRegisterHomeRetryStopsOnCanceledContext(t *testing.T) {
 // ── 导入 ─────────────────────────────────────────────────────────────────────────
 
 // importContractRows 一批覆盖五种判定的导入行(player_id 升序)。
+// id 取 100..300(步长 50):64 片下行片依次是 36 / 22 / 8 / 58 / 44,聚簇键序与 id 序不同,行片也都不等于 id ——
+// 「按聚簇键排」与「行片在 player_id 之前」才测得出来(原先的 10..50 在 64 片下行片就是 id 本身,两件事都测不到)。
 func importContractRows() []RouteImportRow {
 	stable := func(s uint32, v uint64) *placement.Record { return &placement.Record{StorageID: s, Version: v} }
 	return []RouteImportRow{
-		{PlayerID: 10, HomeZone: 7, Placement: stable(1000000, 1), MapRev: 5}, // 库无行 → 插入,rev=5
-		{PlayerID: 20, HomeZone: 7, Placement: stable(7, 1)},                  // 库 home 为 NULL → 补列
-		{PlayerID: 30, HomeZone: 7},                                           // 相同 → match
-		{PlayerID: 40, HomeZone: 7},                                           // 库 home=8 → conflict,不写
-		{PlayerID: 50, HomeZone: 7, MapRev: 9},                                // 库 rev=2 < maprev → rev_regression,不写
+		{PlayerID: 100, HomeZone: 7, Placement: stable(1000000, 1), MapRev: 5}, // 库无行 → 插入,rev=5
+		{PlayerID: 150, HomeZone: 7, Placement: stable(7, 1)},                  // 库 home 为 NULL → 补列
+		{PlayerID: 200, HomeZone: 7},                                           // 相同 → match
+		{PlayerID: 250, HomeZone: 7},                                           // 库 home=8 → conflict,不写
+		{PlayerID: 300, HomeZone: 7, MapRev: 9},                                // 库 rev=2 < maprev → rev_regression,不写
 	}
 }
 
-// importContractExisting 是 R8 读到的已有行(对应 importContractRows 的 20..50)。
+// importContractExisting 是 R8 读到的已有行(对应 importContractRows 的 150..300)。
 func importContractExisting() [][]driver.Value {
 	return [][]driver.Value{
-		routeRowValues(20, 0, 7, 1, "", 2),
-		routeRowValues(30, 7, 0, 0, "", 3),
-		routeRowValues(40, 8, 0, 0, "", 1),
-		routeRowValues(50, 7, 0, 0, "", 2),
+		routeRowValues(150, 0, 7, 1, "", 2),
+		routeRowValues(200, 7, 0, 0, "", 3),
+		routeRowValues(250, 8, 0, 0, "", 1),
+		routeRowValues(300, 7, 0, 0, "", 2),
 	}
 }
 
 // TestImportRoutesStatementOrderAndAffectedMismatchRetries:R1 → R8(加锁)→ R7 → R9 → COMMIT,
 // 冲突与 rev 倒退的行一字不写;R7 行数对不上(R8 之后有并发插入)时整批回滚重来,不计锁冲突。
-// R8 的实参是按聚簇键 (route_shard, player_id) 升序交错的对:10..50 的行片是 10 / 4 / 14 / 8 / 2。
+// R8 的实参是按聚簇键 (route_shard, player_id) 升序交错的对。行片 = id % 64:
+// 100 → 36(100 − 64)、150 → 22(150 − 128)、200 → 8(200 − 192)、250 → 58(250 − 192)、300 → 44(300 − 256)。
 func TestImportRoutesStatementOrderAndAffectedMismatchRetries(t *testing.T) {
 	ids := []driver.Value{
-		uint64(2), uint64(50),
-		uint64(4), uint64(20),
-		uint64(8), uint64(40),
-		uint64(10), uint64(10),
-		uint64(14), uint64(30),
+		uint64(8), uint64(200),
+		uint64(22), uint64(150),
+		uint64(36), uint64(100),
+		uint64(44), uint64(300),
+		uint64(58), uint64(250),
+	}
+	// 夹具自检:上面的片号是手算的字面量,这里用 placement.RouteRowShard 对一遍(模数若再变,先红在这里)。
+	for i := 0; i < len(ids); i += 2 {
+		if id := ids[i+1].(uint64); ids[i] != uint64(placement.RouteRowShard(id)) {
+			t.Fatalf("夹具的行片写错了:id %d 的行片是 %d,用例里写的是 %v", id, placement.RouteRowShard(id), ids[i])
+		}
 	}
 
 	t.Run("语句顺序与实参", func(t *testing.T) {
@@ -1073,7 +1086,7 @@ func TestImportRoutesStatementOrderAndAffectedMismatchRetries(t *testing.T) {
 			len(stats.Conflicts) != 1 || len(stats.RevRegressions) != 1 {
 			t.Fatalf("stats = %+v, want inserted=1 filled=1 matched=1 conflicts=1 rev_regressions=1", stats)
 		}
-		if stats.Conflicts[0].PlayerID != 40 || stats.RevRegressions[0].PlayerID != 50 {
+		if stats.Conflicts[0].PlayerID != 250 || stats.RevRegressions[0].PlayerID != 300 {
 			t.Fatalf("冲突 / 倒退归错了人:%+v", stats)
 		}
 		want := []string{"BEGIN", "R1", "R8", "R7", "R9", "COMMIT"}
@@ -1086,21 +1099,21 @@ func TestImportRoutesStatementOrderAndAffectedMismatchRetries(t *testing.T) {
 			t.Fatalf("R8 = %q %#v, want %q %#v", r8.sql, r8.args, routeSelectRowsSQL(5, true), ids)
 		}
 		r7 := fake.callsWithLabel("R7")[0]
-		wantR7 := []driver.Value{uint64(10), uint64(10), uint64(7), uint64(1000000), uint64(1), nil, uint64(5), fakeRouteWriter}
+		wantR7 := []driver.Value{uint64(36), uint64(100), uint64(7), uint64(1000000), uint64(1), nil, uint64(5), fakeRouteWriter}
 		if r7.sql != routeImportInsertSQL(1) || !reflect.DeepEqual(r7.args, wantR7) {
-			t.Fatalf("R7 = %q %#v, want %q %#v(行片在最前;rev 必须是 maprev)", r7.sql, r7.args, routeImportInsertSQL(1), wantR7)
+			t.Fatalf("R7 = %q %#v, want %q %#v(行片 36 在最前、id 100 其次;rev 必须是 maprev)", r7.sql, r7.args, routeImportInsertSQL(1), wantR7)
 		}
 		r9 := fake.callsWithLabel("R9")[0]
-		wantR9 := []driver.Value{uint64(7), uint64(7), uint64(1), nil, fakeRouteWriter, uint64(4), uint64(20), uint64(2)}
+		wantR9 := []driver.Value{uint64(7), uint64(7), uint64(1), nil, fakeRouteWriter, uint64(22), uint64(150), uint64(2)}
 		if !reflect.DeepEqual(r9.args, wantR9) {
-			t.Fatalf("R9 实参 = %#v, want %#v(按聚簇键 (4, 20) 定位、按读到的 rev=2 做 CAS)", r9.args, wantR9)
+			t.Fatalf("R9 实参 = %#v, want %#v(按聚簇键 (22, 150) 定位、按读到的 rev=2 做 CAS)", r9.args, wantR9)
 		}
 	})
 
 	t.Run("R7行数不等_回滚后重来", func(t *testing.T) {
 		rows := importContractRows()
 		rows[0].MapRev = 0 // 重来时那一行已被并发的 W1 以 rev=1 插入,maprev 为 0 才是 match
-		reread := append([][]driver.Value{routeRowValues(10, 7, 1000000, 1, "", 1)}, importContractExisting()...)
+		reread := append([][]driver.Value{routeRowValues(100, 7, 1000000, 1, "", 1)}, importContractExisting()...)
 		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
 			"R1": {replyWritable, replyWritable},
 			"R8": {{rows: importContractExisting()}, {rows: reread}},
@@ -1145,11 +1158,11 @@ func TestImportRoutesStatementOrderAndAffectedMismatchRetries(t *testing.T) {
 	})
 }
 
-// TestImportRoutesInsertsAndFillsInRouteKeyOrder:入参按 player_id 升序({2, 17}),写入按聚簇键升序 ——
-// 17 的行片是 1、2 的行片是 2,所以 R7 的 VALUES 与 R9 的发出顺序都是 17 在前。任何一次锁多行的语句都按聚簇键
-// 升序取锁(与 R8 同序),两个并发导入之间才不成环。
+// TestImportRoutesInsertsAndFillsInRouteKeyOrder:入参按 player_id 升序({2, 65}),写入按聚簇键升序 ——
+// 65 的行片是 1(65 = 64 + 1)、2 的行片是 2,所以 R7 的 VALUES 与 R9 的发出顺序都是 65 在前。任何一次锁多行的
+// 语句都按聚簇键升序取锁(与 R8 同序),两个并发导入之间才不成环。
 func TestImportRoutesInsertsAndFillsInRouteKeyOrder(t *testing.T) {
-	rows := []RouteImportRow{{PlayerID: 2, HomeZone: 7}, {PlayerID: 17, HomeZone: 7}}
+	rows := []RouteImportRow{{PlayerID: 2, HomeZone: 7}, {PlayerID: 65, HomeZone: 7}}
 
 	t.Run("两行都新插_R7按聚簇键排", func(t *testing.T) {
 		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
@@ -1160,16 +1173,16 @@ func TestImportRoutesInsertsAndFillsInRouteKeyOrder(t *testing.T) {
 			t.Fatalf("ImportRoutes = (%+v, %v), want inserted=2", stats, err)
 		}
 		r8 := fake.callsWithLabel("R8")[0]
-		if want := []driver.Value{uint64(1), uint64(17), uint64(2), uint64(2)}; !reflect.DeepEqual(r8.args, want) {
+		if want := []driver.Value{uint64(1), uint64(65), uint64(2), uint64(2)}; !reflect.DeepEqual(r8.args, want) {
 			t.Fatalf("R8 实参 = %#v, want %#v(按聚簇键升序)", r8.args, want)
 		}
 		r7 := fake.callsWithLabel("R7")[0]
 		want := []driver.Value{
-			uint64(1), uint64(17), uint64(7), nil, nil, nil, uint64(1), fakeRouteWriter,
+			uint64(1), uint64(65), uint64(7), nil, nil, nil, uint64(1), fakeRouteWriter,
 			uint64(2), uint64(2), uint64(7), nil, nil, nil, uint64(1), fakeRouteWriter,
 		}
 		if r7.sql != routeImportInsertSQL(2) || !reflect.DeepEqual(r7.args, want) {
-			t.Fatalf("R7 = %q %#v\nwant %q %#v(17 的行片 1 < 2 的行片 2,必须排在前面)", r7.sql, r7.args, routeImportInsertSQL(2), want)
+			t.Fatalf("R7 = %q %#v\nwant %q %#v(65 的行片 1 < 2 的行片 2,必须排在前面)", r7.sql, r7.args, routeImportInsertSQL(2), want)
 		}
 	})
 
@@ -1177,7 +1190,7 @@ func TestImportRoutesInsertsAndFillsInRouteKeyOrder(t *testing.T) {
 		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
 			"R1": {replyWritable},
 			// 库里两行都是 home 为 NULL 的墓碑(应答顺序随意,判定按 player_id 取)。
-			"R8": {{rows: [][]driver.Value{routeRowValues(2, 0, 0, 0, "", 3), routeRowValues(17, 0, 0, 0, "", 5)}}},
+			"R8": {{rows: [][]driver.Value{routeRowValues(2, 0, 0, 0, "", 3), routeRowValues(65, 0, 0, 0, "", 5)}}},
 			"R9": {replyAffected(1), replyAffected(1)},
 		}})
 		stats, err := st.ImportRoutes(context.Background(), rows, false)
@@ -1189,12 +1202,12 @@ func TestImportRoutesInsertsAndFillsInRouteKeyOrder(t *testing.T) {
 		}
 		r9 := fake.callsWithLabel("R9")
 		want := [][]driver.Value{
-			{uint64(7), nil, nil, nil, fakeRouteWriter, uint64(1), uint64(17), uint64(5)},
+			{uint64(7), nil, nil, nil, fakeRouteWriter, uint64(1), uint64(65), uint64(5)},
 			{uint64(7), nil, nil, nil, fakeRouteWriter, uint64(2), uint64(2), uint64(3)},
 		}
 		for i := range want {
 			if !reflect.DeepEqual(r9[i].args, want[i]) {
-				t.Fatalf("第 %d 次 R9 实参 = %#v, want %#v(补列按聚簇键升序:17 在前)", i, r9[i].args, want[i])
+				t.Fatalf("第 %d 次 R9 实参 = %#v, want %#v(补列按聚簇键升序:65 在前)", i, r9[i].args, want[i])
 			}
 		}
 	})
@@ -1354,7 +1367,7 @@ func TestRouteReadQueriesShapes(t *testing.T) {
 	}
 }
 
-// TestRouteReadsRejectShardMismatchRows:库里存的 route_shard 与 player_id % 16 不符的行(只有 CHECK 曾经不生效时
+// TestRouteReadsRejectShardMismatchRows:库里存的 route_shard 与 player_id % 64 不符的行(只有 CHECK 曾经不生效时
 // 被绕过 store 的写者写进来),读到就 ErrRouteShardMismatch、整页作废,不能当成正常行交给 audit / 发布。
 func TestRouteReadsRejectShardMismatchRows(t *testing.T) {
 	ctx := context.Background()
@@ -1363,7 +1376,7 @@ func TestRouteReadsRejectShardMismatchRows(t *testing.T) {
 		st, _ := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
 			"R12": {{rows: [][]driver.Value{
 				routeRowValues(1, 7, 0, 0, "", 1),
-				routeRowValuesWithShard(3, 6, 7, 0, 0, "", 1), // 6 % 16 = 6 ≠ 3
+				routeRowValuesWithShard(3, 6, 7, 0, 0, "", 1), // 6 % 64 = 6 ≠ 3
 			}}},
 		}})
 		rows, err := st.ScanRoutes(ctx, RouteScanCursor{}, 10)
@@ -1389,7 +1402,8 @@ func TestRouteReadsRejectShardMismatchRows(t *testing.T) {
 // ── 探针 ─────────────────────────────────────────────────────────────────────────
 
 // TestNewRouteStoreProbeFailClosed:会话隔离级别不对、锁等待不是 1、TiDB 是乐观事务、meta 行缺失 / 表不存在、
-// chk_route_shard 不生效(P4),一律拒绝建 store 并关池;探针通过时 store 可用、池不关。
+// chk_route_shard 不生效(P4)、P4 撞键 / 没有 INSERT 权限,一律拒绝建 store 并关池;探针通过(P4 之后 P5 的两行
+// 都被接受)时 store 可用、池不关。P5 自己的各个分支见 TestNewRouteStoreShardModulusProbeContract。
 func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 	sessionOK := fakeRouteReply{rows: [][]driver.Value{{"READ-COMMITTED", int64(1)}}}
 	mysqlVersion := fakeRouteReply{rows: [][]driver.Value{{"8.0.36"}}}
@@ -1397,6 +1411,8 @@ func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 	goodOpts := RouteStoreOptions{FenceShards: fakeRouteShards, Writer: fakeRouteWriter}
 	// P4 期望的应答:3819 且点名 chk_route_shard(MySQL 8.0 的原文格式)。
 	checkEnforced := replyErr(&mysql.MySQLError{Number: 3819, Message: "Check constraint 'chk_route_shard' is violated."})
+	// P5 期望的应答:两行按当前模数合法的行都被接受(必然回滚的事务里,受影响 1 行)。
+	modulusOK := []fakeRouteReply{replyAffected(1), replyAffected(1)}
 	passedP1toP3 := map[string][]fakeRouteReply{"PROBE": {sessionOK}, "VERSION": {mysqlVersion}, "R1": {replyWritable}}
 	withProbeCheck := func(reply fakeRouteReply) map[string][]fakeRouteReply {
 		out := make(map[string][]fakeRouteReply, len(passedP1toP3)+1)
@@ -1406,7 +1422,9 @@ func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 		out["PROBE_CHECK"] = []fakeRouteReply{reply}
 		return out
 	}
+	// P4 没通过时停在 P4、不发 P5;通过时 P5 在同一个事务里接着发两条,最后照样回滚。
 	probeCheckLabels := []string{"PROBE", "VERSION", "R1", "BEGIN", "PROBE_CHECK", "ROLLBACK"}
+	probePassedLabels := []string{"PROBE", "VERSION", "R1", "BEGIN", "PROBE_CHECK", "PROBE_MODULUS", "PROBE_MODULUS", "ROLLBACK"}
 
 	for _, tc := range []struct {
 		name       string
@@ -1415,6 +1433,9 @@ func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 		wantErr    error // 非 nil:errors.Is;nil 且 wantErrNo == 0 表示应成功
 		wantErrNo  uint16
 		wantLabels []string
+		// wantErrContains 非空时报错文案必须含它:1062 / 1142 的分支与 default 分支一样原样带出 MySQLError,
+		// 只断言错误号的话删掉这两个分支用例照样绿,钉不住给人看的处理提示。
+		wantErrContains string
 	}{
 		{
 			name:       "隔离级别不对",
@@ -1467,26 +1488,27 @@ func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 			opts: goodOpts,
 			replies: map[string][]fakeRouteReply{
 				"PROBE": {sessionOK}, "VERSION": {mysqlVersion}, "R1": {replyWritable}, "PROBE_CHECK": {checkEnforced},
+				"PROBE_MODULUS": modulusOK,
 			},
-			wantLabels: probeCheckLabels,
+			wantLabels: probePassedLabels,
 		},
 		{
 			name: "TiDB悲观事务_探针通过",
 			opts: goodOpts,
 			replies: map[string][]fakeRouteReply{
 				"PROBE": {sessionOK}, "VERSION": {tidbVersion}, "TXN_MODE": {{rows: [][]driver.Value{{"pessimistic"}}}},
-				"R1": {replyWritable}, "PROBE_CHECK": {checkEnforced},
+				"R1": {replyWritable}, "PROBE_CHECK": {checkEnforced}, "PROBE_MODULUS": modulusOK,
 			},
-			wantLabels: []string{"PROBE", "VERSION", "TXN_MODE", "R1", "BEGIN", "PROBE_CHECK", "ROLLBACK"},
+			wantLabels: []string{"PROBE", "VERSION", "TXN_MODE", "R1", "BEGIN", "PROBE_CHECK", "PROBE_MODULUS", "PROBE_MODULUS", "ROLLBACK"},
 		},
 		{
 			name: "writable为0不拒建store",
 			opts: goodOpts,
 			replies: map[string][]fakeRouteReply{
 				"PROBE": {sessionOK}, "VERSION": {mysqlVersion}, "R1": {{rows: [][]driver.Value{{int64(0)}}}},
-				"PROBE_CHECK": {checkEnforced},
+				"PROBE_CHECK": {checkEnforced}, "PROBE_MODULUS": modulusOK,
 			},
-			wantLabels: probeCheckLabels,
+			wantLabels: probePassedLabels,
 		},
 		{
 			// CHECK 没生效(MySQL < 8.0.16、TiDB 没开 tidb_enable_check_constraint):违例行被接受。事务必须回滚。
@@ -1510,6 +1532,24 @@ func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 			replies:    withProbeCheck(replyErr(mysqlErrNo(1146))),
 			wantErrNo:  1146,
 			wantLabels: probeCheckLabels,
+		},
+		{
+			// 只读账号:P4 / P5 都是必然回滚的 INSERT,提示里要写明缺的是哪条权限。
+			name:            "P4_没有INSERT权限_1142带权限提示",
+			opts:            goodOpts,
+			replies:         withProbeCheck(replyErr(mysqlErrNo(mysqlErrTableAccessDenied))),
+			wantErrNo:       mysqlErrTableAccessDenied,
+			wantLabels:      probeCheckLabels,
+			wantErrContains: "INSERT privilege on player_route",
+		},
+		{
+			// 库里已有 (1, 0) 这一行:只可能是 CHECK 不生效期间写进来的错片行,提示人工核对后删除。
+			name:            "P4_撞键_1062带错片行提示",
+			opts:            goodOpts,
+			replies:         withProbeCheck(replyErr(mysqlErrNo(mysqlErrDupEntry))),
+			wantErrNo:       mysqlErrDupEntry,
+			wantLabels:      probeCheckLabels,
+			wantErrContains: "already holds the row",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1538,6 +1578,9 @@ func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 					t.Fatalf("store 参数没装上:%+v", st)
 				}
 			}
+			if tc.wantErrContains != "" && (err == nil || !strings.Contains(err.Error(), tc.wantErrContains)) {
+				t.Fatalf("err = %v, want 文案含 %q", err, tc.wantErrContains)
+			}
 			if wantFail && st != nil {
 				t.Fatal("探针失败却返回了 store")
 			}
@@ -1550,6 +1593,285 @@ func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestNewRouteStoreShardModulusProbeContract:P5(正向探针)的逐行判定。两行 (0, 64)、(63, 63) 按聚簇键升序发、实参逐个
+// 钉住;两行都被接受(1062 = 库里已有这一行,同样算接受)才建池;任一行 3819 且点名 chk_route_shard →
+// ErrRouteShardModulusMismatch,且不再发下一行;1142 带权限提示;3819 点名别的约束、1205、非 MySQL 错误一律原样包装,
+// 不是模数哨兵。任何结局都只回滚、不提交,失败时关池。哪种模数拒哪一行(判别表)由纯函数用例
+// TestRouteShardModulusProbeDiscriminates 钉住,这里只证「库回什么 → 建池回什么」。
+func TestNewRouteStoreShardModulusProbeContract(t *testing.T) {
+	sessionOK := fakeRouteReply{rows: [][]driver.Value{{"READ-COMMITTED", int64(1)}}}
+	mysqlVersion := fakeRouteReply{rows: [][]driver.Value{{"8.0.36"}}}
+	// 3819 且点名 chk_route_shard(MySQL 8.0 的原文格式):对 P4 是「CHECK 生效」,对 P5 是「模数不一致」。
+	shardCheckViolated := replyErr(&mysql.MySQLError{Number: 3819, Message: "Check constraint 'chk_route_shard' is violated."})
+	otherCheckViolated := replyErr(&mysql.MySQLError{Number: 3819, Message: "Check constraint 'chk_route_rev' is violated."})
+	errConnLost := errors.New("fake route db: 连接中途断开")
+	// 64 片下的两行写成字面量(片 0 / id 64、片 63 / id 63),故意不经 placement.RouteRowShards 算:被测代码用的就是它。
+	wantArgs := [][]driver.Value{{uint64(0), uint64(64)}, {uint64(63), uint64(63)}}
+	wantLabels := func(modulusCalls int) []string {
+		out := []string{"PROBE", "VERSION", "R1", "BEGIN", "PROBE_CHECK"}
+		for i := 0; i < modulusCalls; i++ {
+			out = append(out, "PROBE_MODULUS")
+		}
+		return append(out, "ROLLBACK")
+	}
+
+	for _, tc := range []struct {
+		name    string
+		modulus []fakeRouteReply // P5 两行的应答,按发出顺序
+		calls   int              // P5 实际发出的条数(失败的那一行之后不再发)
+		// 结局:全为零值 = 应建池成功。
+		wantMismatch    bool   // errors.Is ErrRouteShardModulusMismatch
+		wantErrNo       uint16 // 非 0:errors.As 取得出这个号的 MySQLError(原样包装)
+		wantErrIs       error  // 非 nil:errors.Is(非 MySQL 错误原样包装)
+		wantErrContains string
+	}{
+		{name: "两行都被接受_模数一致_建池", modulus: []fakeRouteReply{replyAffected(1), replyAffected(1)}, calls: 2},
+		{
+			// 号段从 1 发号,开服后 63 / 64 号是真实玩家:撞键是生产上的常态,不能当失败。
+			name:    "两行都撞键_库里已有这两行_视为接受",
+			modulus: []fakeRouteReply{replyErr(mysqlErrNo(mysqlErrDupEntry)), replyErr(mysqlErrNo(mysqlErrDupEntry))},
+			calls:   2,
+		},
+		{name: "首行撞键次行插入_视为接受", modulus: []fakeRouteReply{replyErr(mysqlErrNo(mysqlErrDupEntry)), replyAffected(1)}, calls: 2},
+		{
+			// 表的模数不整除 64(如 128):64 % 128 = 64 ≠ 0。
+			name:            "(0,64)被chk_route_shard拒_模数不一致_不再发下一行",
+			modulus:         []fakeRouteReply{shardCheckViolated, replyAffected(1)},
+			calls:           1,
+			wantMismatch:    true,
+			wantErrContains: "route_shard=0, player_id=64",
+		},
+		{
+			// 表的模数小于 64(如 16):63 % 16 = 15 ≠ 63。
+			name:            "(63,63)被chk_route_shard拒_模数不一致",
+			modulus:         []fakeRouteReply{replyAffected(1), shardCheckViolated},
+			calls:           2,
+			wantMismatch:    true,
+			wantErrContains: "route_shard=63, player_id=63",
+		},
+		{
+			// 探针行本该满足其余全部约束:被别的约束拒说明证不了模数,原样带出,不冒充模数哨兵。
+			name:      "3819点名别的约束_原样包装",
+			modulus:   []fakeRouteReply{otherCheckViolated, replyAffected(1)},
+			calls:     1,
+			wantErrNo: 3819,
+		},
+		{
+			// 多副本同时建池、或 63 / 64 号玩家的 W1 持锁超过 1s:这次建池失败,不重试。
+			name:      "1205锁等待超时_原样包装",
+			modulus:   []fakeRouteReply{replyAffected(1), replyErr(mysqlErrNo(1205))},
+			calls:     2,
+			wantErrNo: 1205,
+		},
+		{
+			name:            "没有INSERT权限_1142带权限提示",
+			modulus:         []fakeRouteReply{replyErr(mysqlErrNo(mysqlErrTableAccessDenied)), replyAffected(1)},
+			calls:           1,
+			wantErrNo:       mysqlErrTableAccessDenied,
+			wantErrContains: "INSERT privilege on player_route",
+		},
+		{name: "非MySQL错误_原样包装", modulus: []fakeRouteReply{replyErr(errConnLost), replyAffected(1)}, calls: 1, wantErrIs: errConnLost},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := newFakeRouteDB(fakeRouteScript{replies: map[string][]fakeRouteReply{
+				"PROBE": {sessionOK}, "VERSION": {mysqlVersion}, "R1": {replyWritable}, "PROBE_CHECK": {shardCheckViolated},
+				"PROBE_MODULUS": tc.modulus,
+			}})
+			db := sql.OpenDB(fakeRouteConnector{fake: fake})
+			t.Cleanup(func() { _ = db.Close() })
+			ctx := context.Background()
+
+			st, err := newRouteStoreFromDB(ctx, db, RouteStoreOptions{FenceShards: fakeRouteShards, Writer: fakeRouteWriter})
+			wantFail := tc.wantMismatch || tc.wantErrNo != 0 || tc.wantErrIs != nil
+			if !wantFail && (err != nil || st == nil) {
+				t.Fatalf("探针应通过:st=%v err=%v", st, err)
+			}
+			if wantFail && (err == nil || st != nil) {
+				t.Fatalf("探针应失败:st=%v err=%v", st, err)
+			}
+			if got := errors.Is(err, ErrRouteShardModulusMismatch); got != tc.wantMismatch {
+				t.Fatalf("errors.Is(err, ErrRouteShardModulusMismatch) = %t, want %t;err = %v", got, tc.wantMismatch, err)
+			}
+			if errors.Is(err, ErrRouteCheckNotEnforced) {
+				t.Fatalf("P4 已经通过,P5 的任何结局都不该报 ErrRouteCheckNotEnforced:%v", err)
+			}
+			if tc.wantErrNo != 0 {
+				var me *mysql.MySQLError
+				if !errors.As(err, &me) || me.Number != tc.wantErrNo {
+					t.Fatalf("err = %v, want 原样带出 MySQL %d", err, tc.wantErrNo)
+				}
+			}
+			if tc.wantErrIs != nil && !errors.Is(err, tc.wantErrIs) {
+				t.Fatalf("err = %v, want 原样带出 %v", err, tc.wantErrIs)
+			}
+			if tc.wantErrContains != "" && (err == nil || !strings.Contains(err.Error(), tc.wantErrContains)) {
+				t.Fatalf("err = %v, want 文案含 %q", err, tc.wantErrContains)
+			}
+			// 失败必须关池;成功不许关。
+			if pingErr := db.PingContext(ctx); (pingErr != nil) != wantFail {
+				t.Fatalf("Ping 之后 err=%v:探针失败=%v 时池应%s", pingErr, wantFail, map[bool]string{true: "已关", false: "仍开"}[wantFail])
+			}
+			// 任何结局都只回滚、不提交;失败的那一行之后不再发。
+			if got := fake.labels(); !reflect.DeepEqual(got, wantLabels(tc.calls)) {
+				t.Fatalf("探针语句序列不对:\n got=%v\nwant=%v", got, wantLabels(tc.calls))
+			}
+			calls := fake.callsWithLabel("PROBE_MODULUS")
+			for i, c := range calls {
+				if !reflect.DeepEqual(c.args, wantArgs[i]) {
+					t.Fatalf("P5 第 %d 行的实参 = %#v, want %#v(按聚簇键升序:先 (0, 64) 后 (63, 63))", i+1, c.args, wantArgs[i])
+				}
+			}
+		})
+	}
+}
+
+// TestNewRouteStoreProbeRetriesLockConflict:P4 + P5 的事务遇到 1213 时整事务重跑(三个及以上建池方并发插同一个缺席的
+// 探针键时,MySQL 8.0 在 RC 下也可能互等成 1213,见 probeRouteShardModulus 的「锁」)。每次重来新开事务、P4 与 P5 从头发,
+// 任何结局都只回滚、不提交;连续 routeTxAttempts 次冲突后建池失败并关池,errors.As 仍取得出 1213;退避途中 ctx 结束即停、
+// 不再开下一个事务。1205 不重试由 TestNewRouteStoreShardModulusProbeContract 的「1205锁等待超时_原样包装」钉住。
+func TestNewRouteStoreProbeRetriesLockConflict(t *testing.T) {
+	sessionOK := fakeRouteReply{rows: [][]driver.Value{{"READ-COMMITTED", int64(1)}}}
+	mysqlVersion := fakeRouteReply{rows: [][]driver.Value{{"8.0.36"}}}
+	shardCheckViolated := replyErr(&mysql.MySQLError{Number: 3819, Message: "Check constraint 'chk_route_shard' is violated."})
+	deadlock := replyErr(mysqlErrNo(mysqlErrDeadlock))
+	opts := RouteStoreOptions{FenceShards: fakeRouteShards, Writer: fakeRouteWriter}
+	// script:P1–P3 各一份应答;P4 每次尝试一份「3819 且点名 chk_route_shard」(= P4 通过);P5 按 modulus 排队。
+	script := func(attempts int, modulus ...fakeRouteReply) map[string][]fakeRouteReply {
+		checks := make([]fakeRouteReply, attempts)
+		for i := range checks {
+			checks[i] = shardCheckViolated
+		}
+		return map[string][]fakeRouteReply{
+			"PROBE": {sessionOK}, "VERSION": {mysqlVersion}, "R1": {replyWritable},
+			"PROBE_CHECK": checks, "PROBE_MODULUS": modulus,
+		}
+	}
+	// attempt 是一次尝试的语句序列:p5Calls 是这次发出的 P5 条数(冲突的那一行之后不再发),一律以 ROLLBACK 收尾。
+	attempt := func(p5Calls int) []string {
+		out := []string{"BEGIN", "PROBE_CHECK"}
+		for i := 0; i < p5Calls; i++ {
+			out = append(out, "PROBE_MODULUS")
+		}
+		return append(out, "ROLLBACK")
+	}
+	// seq 是完整的探针语句序列:P1–P3 之后接各次尝试。
+	seq := func(attempts ...[]string) []string {
+		out := []string{"PROBE", "VERSION", "R1"}
+		for _, a := range attempts {
+			out = append(out, a...)
+		}
+		return out
+	}
+	// 两行探针键的实参,同 TestNewRouteStoreShardModulusProbeContract 写成字面量。
+	keyLow, keyHigh := []driver.Value{uint64(0), uint64(64)}, []driver.Value{uint64(63), uint64(63)}
+
+	for _, tc := range []struct {
+		name       string
+		attempts   int
+		modulus    []fakeRouteReply
+		wantLabels []string
+		wantArgs   [][]driver.Value
+	}{
+		{
+			name:       "首行1213_重跑后建池",
+			attempts:   2,
+			modulus:    []fakeRouteReply{deadlock, replyAffected(1), replyAffected(1)},
+			wantLabels: seq(attempt(1), attempt(2)),
+			wantArgs:   [][]driver.Value{keyLow, keyLow, keyHigh},
+		},
+		{
+			name:       "次行1213_重跑后建池",
+			attempts:   2,
+			modulus:    []fakeRouteReply{replyAffected(1), deadlock, replyAffected(1), replyAffected(1)},
+			wantLabels: seq(attempt(2), attempt(2)),
+			wantArgs:   [][]driver.Value{keyLow, keyHigh, keyLow, keyHigh},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := newFakeRouteDB(fakeRouteScript{replies: script(tc.attempts, tc.modulus...)})
+			db := sql.OpenDB(fakeRouteConnector{fake: fake})
+			t.Cleanup(func() { _ = db.Close() })
+
+			st, err := newRouteStoreFromDB(context.Background(), db, opts)
+			if err != nil || st == nil {
+				t.Fatalf("1213 重跑之后探针应通过:st=%v err=%v", st, err)
+			}
+			if pingErr := db.PingContext(context.Background()); pingErr != nil {
+				t.Fatalf("建池成功却关了池:%v", pingErr)
+			}
+			if got := fake.labels(); !reflect.DeepEqual(got, tc.wantLabels) {
+				t.Fatalf("探针语句序列不对:\n got=%v\nwant=%v", got, tc.wantLabels)
+			}
+			calls := fake.callsWithLabel("PROBE_MODULUS")
+			if len(calls) != len(tc.wantArgs) {
+				t.Fatalf("P5 发了 %d 条,want %d", len(calls), len(tc.wantArgs))
+			}
+			for i, c := range calls {
+				if !reflect.DeepEqual(c.args, tc.wantArgs[i]) {
+					t.Fatalf("P5 第 %d 条的实参 = %#v, want %#v(每次重来都从 (0, 64) 起按聚簇键升序)", i+1, c.args, tc.wantArgs[i])
+				}
+			}
+		})
+	}
+
+	t.Run("连续1213用尽预算_建池失败", func(t *testing.T) {
+		modulus := make([]fakeRouteReply, routeTxAttempts)
+		attempts := make([][]string, routeTxAttempts)
+		for i := range modulus {
+			modulus[i] = deadlock
+			attempts[i] = attempt(1)
+		}
+		fake := newFakeRouteDB(fakeRouteScript{replies: script(routeTxAttempts, modulus...)})
+		db := sql.OpenDB(fakeRouteConnector{fake: fake})
+		t.Cleanup(func() { _ = db.Close() })
+
+		st, err := newRouteStoreFromDB(context.Background(), db, opts)
+		if st != nil {
+			t.Fatal("用尽预算却返回了 store")
+		}
+		var me *mysql.MySQLError
+		if !errors.As(err, &me) || me.Number != mysqlErrDeadlock {
+			t.Fatalf("err = %v, want 包着最后一次的 1213", err)
+		}
+		if errors.Is(err, ErrRouteShardModulusMismatch) {
+			t.Fatalf("锁冲突不是模数不一致:%v", err)
+		}
+		if db.PingContext(context.Background()) == nil {
+			t.Fatal("建池失败必须关池")
+		}
+		if got, want := fake.labels(), seq(attempts...); !reflect.DeepEqual(got, want) {
+			t.Fatalf("探针语句序列不对:\n got=%v\nwant=%v", got, want)
+		}
+	})
+
+	t.Run("退避途中ctx结束_不再开事务", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		// 第二轮的应答刻意留着:真的重来了就能看出来。第一次 ROLLBACK 记下之后才取消,序列才是确定的。
+		fake := newFakeRouteDB(fakeRouteScript{
+			replies:    script(2, deadlock, replyAffected(1), replyAffected(1)),
+			onRollback: cancel,
+		})
+		db := sql.OpenDB(fakeRouteConnector{fake: fake})
+		t.Cleanup(func() { _ = db.Close() })
+
+		st, err := newRouteStoreFromDB(ctx, db, opts)
+		if st != nil || !errors.Is(err, context.Canceled) {
+			t.Fatalf("newRouteStoreFromDB = (%v, %v), want (nil, 带 context.Canceled)", st, err)
+		}
+		var me *mysql.MySQLError
+		if !errors.As(err, &me) || me.Number != mysqlErrDeadlock {
+			t.Fatalf("err = %v, want 同时带着那次 1213", err)
+		}
+		if db.PingContext(context.Background()) == nil {
+			t.Fatal("建池失败必须关池")
+		}
+		if got, want := fake.labels(), seq(attempt(1)); !reflect.DeepEqual(got, want) {
+			t.Fatalf("ctx 取消后仍在重试:\n got=%v\nwant=%v", got, want)
+		}
+	})
 }
 
 // ── tidb-prepare ─────────────────────────────────────────────────────────────────
@@ -1685,6 +2007,49 @@ func TestPrepareTiDBContract(t *testing.T) {
 			t.Fatalf("失败之后还在发:SPLIT 发了 %d 次,want 4", got)
 		}
 	})
+
+	// SPLIT 的结果读不出「切了几个 Region」的三种形状(规格 §4.8):没有列、没有行、首列不是整数,一律 fail-closed ——
+	// 看不到结果就不能声称切过了。都放在第一条 SPLIT(8 条里的第 3 步)上:那一步不记 Executed,之后一条都不再发。
+	// 这三条错误不是 MySQLError,只能按文案认(文案出自 execRouteTiDBPrepareStep)。
+	for _, tc := range []struct {
+		name    string
+		reply   fakeRouteReply
+		wantErr string
+	}{
+		// 一行零列:假驱动按首行的列数报列,于是 Columns() 为空。go-sql-driver/mysql v1.9.3 对「没有结果集」的应答
+		// 交回的也是这个形状(connection.go 的 query 在 resLen == 0 时返回不带列的 rows)。
+		{name: "零列", reply: fakeRouteReply{rows: [][]driver.Value{{}}}, wantErr: "SPLIT returned no columns"},
+		{name: "零行", reply: replyNoRows, wantErr: "SPLIT returned no rows"},
+		{name: "首列不是整数", reply: fakeRouteReply{rows: [][]driver.Value{{"n/a", float64(1)}}}, wantErr: "is not an integer"},
+	} {
+		t.Run("SPLIT结果"+tc.name+"_报第3步且不再发", func(t *testing.T) {
+			splits := sixSplits()
+			splits[0] = tc.reply
+			st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+				"VERSION": {tidbVersion}, "PK_TYPE": {clustered},
+				"ALTER_ATTR": {replyAffected(0), replyAffected(0)}, "SPLIT": splits,
+			}})
+			rep, err := st.PrepareTiDB(ctx, req)
+			if err == nil || !strings.Contains(err.Error(), "step 3/8") || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("err = %v, want 带 step 3/8 与 %q(读不到结果不许当成切了 0 个)", err, tc.wantErr)
+			}
+			if len(rep.Steps) != len(wantSQL) {
+				t.Fatalf("失败时 Steps 仍应是完整清单:%+v", rep.Steps)
+			}
+			for i, step := range rep.Steps {
+				if want := i < 2; step.Executed != want {
+					t.Fatalf("第 %d 步 Executed = %t, want %t(读不到结果的那条 SPLIT 不算执行过)", i+1, step.Executed, want)
+				}
+			}
+			if got := rep.SplitRegions(); got != 0 {
+				t.Fatalf("SplitRegions() = %d, want 0", got)
+			}
+			wantLabels := []string{"VERSION", "PK_TYPE", "ALTER_ATTR", "ALTER_ATTR", "SPLIT"}
+			if got := fake.labels(); !reflect.DeepEqual(got, wantLabels) {
+				t.Fatalf("失败之后还在发:\n got=%v\nwant=%v", got, wantLabels)
+			}
+		})
+	}
 
 	t.Run("入参非法_一条语句都不发", func(t *testing.T) {
 		st, fake := newFakeRouteStore(t, fakeRouteScript{})

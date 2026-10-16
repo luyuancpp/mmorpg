@@ -35,7 +35,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-// 不 import "time":WaitDuration 是 time.Duration,取 .Seconds() 不需要导入 time 包。
+// 不 import "time":WaitDuration 是 time.Duration,int64(...) 是类型转换,不需要导入 time 包。
 
 // OtherPool 收容类别不在声明集合里的样本(调用方笔误),不让它们扩张 label 基数。
 // 它只在确有这类样本时输出,不预置 0:本来就不该出现,预置会让面板上多一组看着像在用的序列。
@@ -145,7 +145,7 @@ type poolTotals struct {
 	inUse             int64
 	idle              int64
 	waitCount         int64
-	waitSeconds       float64
+	waitNanos         int64
 	maxIdleClosed     int64
 	maxIdleTimeClosed int64
 	maxLifetimeClosed int64
@@ -163,7 +163,10 @@ func (t *poolTotals) add(s sql.DBStats) {
 	t.inUse += int64(s.InUse)
 	t.idle += int64(s.Idle)
 	t.waitCount += s.WaitCount
-	t.waitSeconds += s.WaitDuration.Seconds()
+	// 按整数纳秒累加,输出时才换算成秒:浮点加法不满足结合律,而调用方给样本的顺序不固定
+	// (go/db 的 PoolSamples 遍历 map)。按秒累加时同一组值两次抓取可能差 1 ULP,
+	// 变小的那次会被 Prometheus 当成 counter reset。
+	t.waitNanos += int64(s.WaitDuration)
 	t.maxIdleClosed += s.MaxIdleClosed
 	t.maxIdleTimeClosed += s.MaxIdleTimeClosed
 	t.maxLifetimeClosed += s.MaxLifetimeClosed
@@ -225,6 +228,7 @@ func (c *collector) emit(ch chan<- prometheus.Metric, pool string, t *poolTotals
 	if t.unlimited {
 		maxOpen = math.Inf(1)
 	}
+	waitSeconds := float64(t.waitNanos) / 1e9
 	gauge := func(desc *prometheus.Desc, v float64) {
 		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, v, pool)
 	}
@@ -237,7 +241,7 @@ func (c *collector) emit(ch chan<- prometheus.Metric, pool string, t *poolTotals
 	gauge(c.inUseDesc, float64(t.inUse))
 	gauge(c.idleDesc, float64(t.idle))
 	counter(c.waitCountDesc, float64(t.waitCount))
-	counter(c.waitDurationDesc, t.waitSeconds)
+	counter(c.waitDurationDesc, waitSeconds)
 	counter(c.maxIdleClosedDesc, float64(t.maxIdleClosed))
 	counter(c.maxIdleTimeClosedDesc, float64(t.maxIdleTimeClosed))
 	counter(c.maxLifetimeClosedDesc, float64(t.maxLifetimeClosed))

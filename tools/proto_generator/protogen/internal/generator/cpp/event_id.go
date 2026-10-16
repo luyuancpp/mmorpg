@@ -25,6 +25,7 @@ type ProtoEventInfo struct {
 	MessageName   string
 	QualifiedName string
 	ProtoInclude  string
+	Ingress       eventIngress
 }
 
 // 墓碑行格式与语义见 internal.ReservedEventIdPrefix(turn-based §22 D67)。
@@ -164,6 +165,12 @@ func registerProtoEvents(protoRelativeDir string, files []os.DirEntry) {
 		))
 
 		for _, messageName := range messages {
+			descriptor := eventDescriptor(filepath.Join(protoRelativeDir, file.Name()), messageName)
+			ingress, ingressErr := classifyEventIngress(filepath.Join(protoRelativeDir, file.Name()), descriptor,
+				_config.Global.PathLists.ProtoDirs.LogicEvent, _config.Global.PathLists.ProtoDirs.ContractsKafka)
+			if ingressErr != nil {
+				logger.Global.Fatal("事件入口标注校验失败", zap.String("message", messageName), zap.Error(ingressErr))
+			}
 			idName := buildEventIdName(packageName, messageName)
 			for _, existing := range globalProtoEventList {
 				if existing.IdName == idName {
@@ -180,6 +187,7 @@ func registerProtoEvents(protoRelativeDir string, files []os.DirEntry) {
 				MessageName:   messageName,
 				QualifiedName: qualifyProtoType(packageName, messageName),
 				ProtoInclude:  protoInclude,
+				Ingress:       ingress,
 			})
 		}
 	}

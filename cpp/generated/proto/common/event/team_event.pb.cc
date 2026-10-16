@@ -199,20 +199,26 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
 };
 const char descriptor_table_protodef_proto_2fcommon_2fevent_2fteam_5fevent_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n#proto/common/event/team_event.proto\"+\n"
-    "\026PlayerTeamRefreshEvent\022\021\n\tplayer_id\030\001 \001"
-    "(\004B\016Z\014common/eventb\006proto3"
+    "\n#proto/common/event/team_event.proto\032/p"
+    "roto/common/options/event_ingress_option"
+    ".proto\"2\n\026PlayerTeamRefreshEvent\022\021\n\tplay"
+    "er_id\030\001 \001(\004:\005\210\346\325\002\001B\016Z\014common/eventb\006prot"
+    "o3"
+};
+static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
+    descriptor_table_proto_2fcommon_2fevent_2fteam_5fevent_2eproto_deps[1] = {
+        &::descriptor_table_proto_2fcommon_2foptions_2fevent_5fingress_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fevent_2fteam_5fevent_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fevent_2fteam_5fevent_2eproto = {
     false,
     false,
-    106,
+    162,
     descriptor_table_protodef_proto_2fcommon_2fevent_2fteam_5fevent_2eproto,
     "proto/common/event/team_event.proto",
     &descriptor_table_proto_2fcommon_2fevent_2fteam_5fevent_2eproto_once,
-    nullptr,
-    0,
+    descriptor_table_proto_2fcommon_2fevent_2fteam_5fevent_2eproto_deps,
+    1,
     1,
     schemas,
     file_message_globals,

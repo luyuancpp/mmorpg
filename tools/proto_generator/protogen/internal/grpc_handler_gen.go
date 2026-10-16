@@ -1,6 +1,7 @@
 package internal
 
 import (
+	_ "embed"
 	"strings"
 	"text/template"
 
@@ -8,74 +9,73 @@ import (
 	"protogen/internal/utils"
 )
 
+// 模板与工具同批编译，独立模板文件是骨架的事实源，运行时不依赖工作目录定位模板。
+//
+//go:embed template/grpc_service_handler.h.tmpl
+var grpcServiceHandlerHeadTemplate string
+
+//go:embed template/grpc_service_handler.cpp.tmpl
+var grpcServiceHandlerCppTemplate string
+
 // GrpcHandlerMethod holds data for a gRPC handler method.
 type GrpcHandlerMethod struct {
-	HandlerName string
-	CppRequest  string
-	CppResponse string
-	Code        string
-	HasCode     bool
+	HandlerName    string
+	CppRequest     string
+	CppResponse    string
+	Code           string
+	HasCode        bool
 	IsVoidResponse bool
 	// PreDispatchCode 是 gRPC 包装函数里、投递到事件循环之前的守护段(含首尾标记)。
 	// 用于必须在 gRPC 线程上完成的准入检查(如 Agones 建场景许可),可返回非 OK。
 	// 包装函数原本没有守护段,守护段外的手写代码会被重生成吞掉(commit 6c4021ae5 事故)。
-	PreDispatchCode string
+	PreDispatchCode  string
+	InLoopCode       string
+	PostDispatchCode string
 }
 
 // GrpcHandlerHeadData holds data for generating a gRPC service handler header.
 type GrpcHandlerHeadData struct {
-	GrpcInclude string
-	Service     string
-	Package     string
-	Methods     []*MethodInfo
+	GrpcInclude  string
+	Service      string
+	Package      string
+	Methods      []*MethodInfo
+	IncludesCode string
+	PublicCode   string
+	PrivateCode  string
 }
 
 // GrpcHandlerCppData holds data for generating a gRPC service handler CPP file.
 type GrpcHandlerCppData struct {
-	IncludeName string
-	Service     string
-	Package     string
-	FirstCode   string
+	IncludeName  string
+	Service      string
+	Package      string
+	FirstCode    string
 	YourCodePair string
-	Methods     []GrpcHandlerMethod
+	Methods      []GrpcHandlerMethod
 }
 
 // GetGrpcServiceHandlerHeadStr generates the gRPC service handler header file.
 // The generated class extends the grpc-generated ::Service base and dispatches
 // each RPC to a static Handle* method. Handle* methods contain BEGIN WRITING YOUR CODE blocks.
 func GetGrpcServiceHandlerHeadStr(methods RPCMethods) (string, error) {
-	const tmplStr = `#pragma once
+	return renderGrpcServiceHandlerHead(methods, nil)
+}
 
-#include <grpcpp/grpcpp.h>
-#include <muduo/net/EventLoop.h>
-{{.GrpcInclude}}
-// gRPC service implementation for {{.Service}}.
-// All RPC methods dispatch to the muduo event loop via runInLoop + promise/future
-// (blocking the gRPC thread pool thread until the event loop processes the request).
-//
-// IMPORTANT: Handle* methods run on the event loop thread.
-//   - Do NOT perform blocking I/O or long-running operations.
-//   - Always return grpc::Status::OK; communicate errors via response fields.
-//   - Each RPC wrapper also has a WRITING YOUR CODE section that runs on the gRPC
-//     thread BEFORE dispatch (admission checks such as Agones permits); only that
-//     section may return a non-OK status.
-class {{.Service}}Impl final : public {{.Package}}{{.Service}}::Service
-{
-public:
-    explicit {{.Service}}Impl(muduo::net::EventLoop& loop);
-{{range .Methods}}
-    grpc::Status {{.Method}}(grpc::ServerContext* context,
-        const {{.CppRequest}}* request,
-        {{.CppResponse}}* response) override;
-{{end}}
-private:
-    // Handler functions -- run on the muduo event loop thread.
-    // WARNING: Must complete quickly. The gRPC thread is blocked waiting via promise/future.{{range .Methods}}
-    static void Handle{{.Method}}(const {{.CppRequest}}* request{{handleResponseParam .}});{{end}}
+// 头文件的 include、公开声明与私有状态也属于自定义代码，必须在重生成时保存。
+func GetGrpcServiceHandlerHeadFromFileStr(dst string, methods RPCMethods) (string, error) {
+	sections, err := readNamedGrpcCodeSections(dst)
+	if err != nil {
+		return "", err
+	}
+	return renderGrpcServiceHandlerHead(methods, sections)
+}
 
-    muduo::net::EventLoop& loop_;
-};
-`
+func renderGrpcServiceHandlerHead(methods RPCMethods, sections map[string]string) (string, error) {
+	if err := validateNamedGrpcCodeSections(sections, []string{
+		"grpc.header.includes", "grpc.header.public", "grpc.header.private",
+	}); err != nil {
+		return "", err
+	}
 
 	if len(methods) == 0 {
 		return "", nil
@@ -84,10 +84,13 @@ private:
 	first := methods[0]
 
 	data := GrpcHandlerHeadData{
-		GrpcInclude: first.GrpcIncludeHeadName(),
-		Service:     first.Service(),
-		Package:     cppPackagePrefix(first),
-		Methods:     methods,
+		GrpcInclude:  first.GrpcIncludeHeadName(),
+		Service:      first.Service(),
+		Package:      cppPackagePrefix(first),
+		Methods:      methods,
+		IncludesCode: namedGrpcCodeSection(sections, "grpc.header.includes", ""),
+		PublicCode:   namedGrpcCodeSection(sections, "grpc.header.public", "    "),
+		PrivateCode:  namedGrpcCodeSection(sections, "grpc.header.private", "    "),
 	}
 
 	funcs := template.FuncMap{
@@ -99,53 +102,29 @@ private:
 		},
 	}
 
-	return utils.GlobalEngine.MustExecute("grpcServiceHandlerHead", tmplStr, data, funcs)
+	return utils.GlobalEngine.MustExecute("grpcServiceHandlerHead", grpcServiceHandlerHeadTemplate, data, funcs)
 }
 
 // GetGrpcServiceHandlerCppStr generates the gRPC service handler CPP file content.
 func GetGrpcServiceHandlerCppStr(dst string, methods RPCMethods, className string, includeName string) string {
-	const tmplStr = `{{ .IncludeName }}
-
-{{- if .FirstCode }}
-{{ .FirstCode }}
-{{- end }}
-
-{{ .Service }}Impl::{{ .Service }}Impl(muduo::net::EventLoop& loop)
-    : loop_(loop)
-{
-}
-{{ range .Methods }}
-void {{ $.Service }}Impl::Handle{{ .HandlerName }}(const {{ .CppRequest }}* request{{ if not .IsVoidResponse }},
-    {{ .CppResponse }}* response{{ end }})
-{
-{{ if .HasCode }}{{ .Code -}}
-{{ else }}{{ $.YourCodePair }}
-{{ end }}}
-{{ end }}
-{{- range .Methods }}
-grpc::Status {{ $.Service }}Impl::{{ .HandlerName }}(grpc::ServerContext* /*context*/,
-    const {{ .CppRequest }}* request,
-    {{ .CppResponse }}* response)
-{
-{{ .PreDispatchCode }}
-    std::promise<void> promise;
-    auto future = promise.get_future();
-
-    loop_.runInLoop([request{{ if not .IsVoidResponse }}, response{{ end }}, &promise]
-                    {
-        Handle{{ .HandlerName }}(request{{ if not .IsVoidResponse }}, response{{ end }});
-        promise.set_value(); });
-
-    future.get();
-    return grpc::Status::OK;
-}
-{{ end }}`
 
 	if len(methods) == 0 {
 		return ""
 	}
 
 	emptyStr := ""
+	namedSections, err := readNamedGrpcCodeSections(dst)
+	if err == nil {
+		var allowedNames []string
+		for _, method := range methods {
+			allowedNames = append(allowedNames, "grpc."+method.Method()+".in_loop", "grpc."+method.Method()+".post_dispatch")
+		}
+		err = validateNamedGrpcCodeSections(namedSections, allowedNames)
+	}
+	if err != nil {
+		// 拒绝生成而不是覆盖损坏的守护段；既有字符串接口的调用方只在返回后才写文件。
+		panic(err)
+	}
 	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, &methods, GenerateGrpcHandlerNameWrapper, emptyStr)
 	// 第二遍按包装函数签名取"投递前"守护段。解析器只在命中方法签名之后才收集守护段,
 	// Handle* 的签名不含 "(grpc::ServerContext",所以两遍互不串段;
@@ -164,13 +143,15 @@ grpc::Status {{ $.Service }}Impl::{{ .HandlerName }}(grpc::ServerContext* /*cont
 			preDispatchCode = _config.Global.Naming.YourCodePair
 		}
 		methodList = append(methodList, GrpcHandlerMethod{
-			HandlerName:     handlerName,
-			CppRequest:      methodInfo.CppRequest(),
-			CppResponse:     methodInfo.CppResponse(),
-			Code:            code,
-			HasCode:         exists,
-			IsVoidResponse:  isVoidResponse(methodInfo),
-			PreDispatchCode: strings.TrimRight(preDispatchCode, "\n"),
+			HandlerName:      handlerName,
+			CppRequest:       methodInfo.CppRequest(),
+			CppResponse:      methodInfo.CppResponse(),
+			Code:             strings.TrimRight(code, "\n"),
+			HasCode:          exists,
+			IsVoidResponse:   isVoidResponse(methodInfo),
+			PreDispatchCode:  strings.TrimRight(preDispatchCode, "\n"),
+			InLoopCode:       namedGrpcCodeSection(namedSections, "grpc."+handlerName+".in_loop", "        "),
+			PostDispatchCode: namedGrpcCodeSection(namedSections, "grpc."+handlerName+".post_dispatch", "    "),
 		})
 	}
 
@@ -178,12 +159,12 @@ grpc::Status {{ $.Service }}Impl::{{ .HandlerName }}(grpc::ServerContext* /*cont
 		IncludeName:  grpcHandlerIncludeName(first),
 		Service:      first.Service(),
 		Package:      cppPackagePrefix(first),
-		FirstCode:    firstCode,
+		FirstCode:    strings.TrimRight(firstCode, "\n"),
 		YourCodePair: _config.Global.Naming.YourCodePair,
 		Methods:      methodList,
 	}
 
-	return utils.ExecuteTemplate("grpcServiceHandlerCpp", tmplStr, data)
+	return utils.ExecuteTemplate("grpcServiceHandlerCpp", grpcServiceHandlerCppTemplate, data)
 }
 
 // GenerateGrpcHandlerNameWrapper generates the method lookup key for code parsing.

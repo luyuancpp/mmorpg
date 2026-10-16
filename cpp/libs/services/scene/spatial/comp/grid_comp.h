@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "engine/core/type_define/type_define.h"
 
 class HexagonsGrid
@@ -9,5 +11,12 @@ public:
 };
 
 using GridId = absl::uint128;
-using SceneGridListComp = std::unordered_map<GridId, HexagonsGrid, absl::Hash<GridId>>;
+struct SceneGridListComp : std::unordered_map<GridId, HexagonsGrid, absl::Hash<GridId>>
+{
+    using Base = std::unordered_map<GridId, HexagonsGrid, absl::Hash<GridId>>;
+    using Base::Base;
+    SceneGridListComp() = default;
+    explicit SceneGridListComp(const Base& values) : Base(values) {}
+    explicit SceneGridListComp(Base&& values) : Base(std::move(values)) {}
+};
 using GridSet = std::unordered_set<absl::uint128, absl::Hash<GridId>>;

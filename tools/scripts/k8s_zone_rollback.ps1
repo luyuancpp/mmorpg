@@ -12,7 +12,7 @@
     It will NOT do the destructive steps without -Apply. Default is dry-run.
 
     What it does (in order):
-      0. 预检(只读,先于停服;dry-run 只预告,不执行),两部分都过了才进 Step 1:
+      0. 预检(只读,先于停服;dry-run 只预告,不执行),a / b / d 都过了才进 Step 1(c 只告警):
          a. 集群现状:以下三项凡是留空的,都要与集群现状核对,一次 kubectl 读 zone namespace 里的
             gate(StatefulSet 或 Deployment,两种形态都认)与 Ingress gateway:
               - -GateRouterMode 留空:gate 模板当前的 GATE_CLIENT_RPC_ROUTER 须与 k8s_deploy.ps1 的 -GateRouterMode 默认值一致;
@@ -25,13 +25,28 @@
          b. 静态预检:把 Step 6 将要传给 dev_tools.ps1 k8s-zone-up 的同一份参数加 -DryRun 执行一遍
             (k8s_deploy.ps1 -DryRun 只在本地渲染清单、不调 kubectl),非 0 即拒绝。参数组合、档位与密钥、发布门禁的
             规则只在 k8s_deploy.ps1 一处,这里不复制,拼错或矛盾的组合在停服之前就暴露。
+         c. Kafka LAG 只读快照(2026-10-15):对 zone 组与 legacy 组各 describe 一次,只打印本 topic 的分区、位点与 LAG 合计,
+            供操作者核对;任何失败只告警,绝不拒绝(取代原 Step 2 的排空等待,见下)。
+         d. Step 5 预演(2026-10-15):zone 组在本 topic 上已有数值位点就跳过;否则(组不存在 / 没有位点)用
+            kafka_offset_reset.ps1 的 dry-run 对 zone 组按 TargetTime 生成重置计划,计划不完整或失败即在停服之前拒绝 ——
+            Kafka 不能为 zone 组建出完整计划时,拖到 Step 5 才发现,zone 已停服、MySQL 已回档、Redis 已清。
+            describe 本身失败同样拒绝(判不出就无法证明 Step 5 走得通)。
       1. `k8s-zone-down -ZoneName <zone>` — stop all writers(删掉整个 zone namespace)
-      2. Wait for Kafka consumer LAG to drain (in-flight writes settle)
+      2. (已删除,2026-10-15)原来是 zone-down 之后等 Kafka LAG 排空。zone-down 之后本 zone 的 db 已停,LAG 不可能排空,
+         以前必然等满超时再「proceeding anyway」;而 Step 5 本来就把位点拨回 TargetTime,排空没有意义。
+         改为第 0 步 c 的只读快照。编号 3–7 不变。
       3. ⚠️ MySQL PITR is NOT automated — print runbook reference and pause
          for confirmation. Operator runs PITR manually, hits ENTER to continue.
       4. Redis FLUSHDB on the zone's data Redis (cache rebuilds from MySQL)
-      5. Kafka offset reset on db_task_zone_<id> (avoids replaying post-target writes)
+      5. Kafka offset reset on db_task_zone_<id>(avoids replaying post-target writes):重置 zone 组
+         (db_rpc_consumer_group_z<id>,-KafkaGroup 留空即按 go/db/etc/db.yaml 的 GroupID 基名推导)到 TargetTime,
+         逐分区复核之后删除 legacy 组(-KafkaLegacyGroup,留空即该基名)在本 topic 上的位点。回档之后该 zone 一律以 zone 组为权威,
+         仍在 legacy 组上的 zone 借此迁到 zone 组(docs/design/db-consumer-group-per-zone.md §6)。
+         legacy 组即使还有别的 zone 的成员,只要没有成员订阅本 topic,broker 就允许删除;仍有订阅者时脚本在这一步失败
+         (zone 已停、数据已回档,清掉残留实例后单独重跑 kafka_offset_reset.ps1 的同一条命令)。
       6. `k8s-zone-up -ZoneName <zone> -ZoneId <id>` — restart zone
+         显式传 -DbConsumerGroup zone:Step 5 之后 zone 组有完整位点、legacy 组在本 topic 上没有位点,k8s_deploy.ps1 的决策表
+         因此落到最终形状(db ConfigMap 写 `GroupID: "<zone 组>"`,不带 GroupHandoffFrom),任何镜像都能起。
          ⚠️ gate 路由模式不粘滞:k8s_deploy.ps1 每次部署都把 -GateRouterMode 原样重写进 gate env
          (默认 "1",turn-based §22 D75),不从集群读回旧值。该 zone 若以 "0" 回退运行,回滚时
          **必须传 -GateRouterMode 0**,否则本步把它静默切回 "1";回退的原因(如路由服不可用)
@@ -119,7 +134,12 @@ param(
     # go/db 的 Kafka.TopicGeneration > 1 时真实名字带 _g<gen> 后缀，这里推不出来,
     # 必须显式传 -KafkaTopic。
     [string]$KafkaTopic = "",
-    [string]$KafkaGroup = "db_rpc_consumer_group",
+    # go/db 存盘消费组(docs/design/db-consumer-group-per-zone.md)。留空 = 按 go/db/etc/db.yaml 的
+    # ServerConfig.Kafka.GroupID 基名推导:-KafkaGroup 为 <基名>_z<ZoneId>(回档后的权威组,Step 5 重置它),
+    # -KafkaLegacyGroup 为 <基名>(K8s 上全 zone 共用的旧组,Step 5 删除它在本 topic 上的位点)。两者相同时入口即拒。
+    # 以前缺省是 legacy 组:只要别的 zone 在线,它就不是 Empty,Step 5 的重置一定被 Kafka 拒绝。
+    [string]$KafkaGroup = "",
+    [string]$KafkaLegacyGroup = "",
 
     # Zone restart args.
     #
@@ -214,9 +234,6 @@ param(
     # 只有确认目标 DB 里的这些键本来就该清(例如整套环境重建)时才传本开关。
     [switch]$ConfirmFlushSharedRedis,
 
-    # Drain budget for Kafka consumer LAG before restart.
-    [int]$KafkaDrainTimeoutSec = 300,
-
     [switch]$Apply
 )
 
@@ -231,6 +248,9 @@ $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 # 只为 Get-GateAddressHint 取 Get-ClientEntryContract(gate 生成器内部 env 名与端口模式取值的唯一来源);
 # 该库只定义函数、不读脚本级变量、不设 StrictMode,dot-source 无副作用。
 . (Join-Path $ScriptDir "lib\k8s_client_entry.ps1")
+# 第 0 步 c / d 解析 kafka-consumer-groups --describe 用(与 kafka_offset_reset.ps1、k8s_deploy.ps1 同一份规则);
+# 纯函数库,dot-source 无副作用。
+. (Join-Path $ScriptDir "lib" "kafka_consumer_groups.ps1")
 
 <#
 .SYNOPSIS
@@ -723,6 +743,146 @@ function New-RedisCliScanProbe {
     }.GetNewClosure()
 }
 
+<#
+.SYNOPSIS
+    执行一次本机 kafka-consumer-groups.sh --describe --group <g>,合并收集 stdout / stderr 为字符串行,返回 @{ Lines; ExitCode }。不判成败。
+.DESCRIPTION
+    局部放宽 ErrorActionPreference(成败只看退出码与输出);先清零 LASTEXITCODE,不把更早一次调用的退出码当成本次的。
+    命令不存在等异常原样抛给调用方。
+#>
+function Invoke-KafkaGroupDescribe {
+    param(
+        [Parameter(Mandatory = $true)][string]$Bootstrap,
+        [Parameter(Mandatory = $true)][string]$Group
+    )
+
+    $prevErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $global:LASTEXITCODE = 0
+        $lines = @(& kafka-consumer-groups.sh --bootstrap-server $Bootstrap --describe --group $Group 2>&1 | ForEach-Object { "$_" })
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $prevErrorAction
+    }
+    return [pscustomobject]@{ Lines = $lines; ExitCode = $exitCode }
+}
+
+<#
+.SYNOPSIS
+    第 0 步 c:Kafka LAG 只读快照。对每个组 describe 一次,只打印本 topic 的分区 / current / end / lag 与 LAG 合计。
+
+.DESCRIPTION
+    只告警、绝不抛出:它取代的是原 Step 2 的排空等待 —— zone-down 之后 LAG 不可能排空,Step 5 又会把位点拨回 TargetTime,
+    排空本来就没有意义;快照只供操作者在停服前看一眼两组在本 topic 上的进度(切组前后哪个组在用)。
+    组不存在打印 (group does not exist);describe 失败或输出解析不了只 Write-Warning。别的 topic 的行一律不计入。
+#>
+function Show-KafkaTopicLagSnapshot {
+    param(
+        [Parameter(Mandatory = $true)][string]$Bootstrap,
+        [Parameter(Mandatory = $true)][string]$Topic,
+        [Parameter(Mandatory = $true)][string[]]$Groups
+    )
+
+    foreach ($group in $Groups) {
+        try {
+            $describe = Invoke-KafkaGroupDescribe -Bootstrap $Bootstrap -Group $group
+            $state = Resolve-KafkaGroupTopicOffsets -Lines $describe.Lines -ExitCode $describe.ExitCode -Topic $Topic
+            if ($state.State -eq 'missing') {
+                Write-Host "  group ${group}: (group does not exist)"
+                continue
+            }
+            $rows = @($state.Rows)
+            if ($rows.Count -eq 0) {
+                Write-Host "  group ${group}: no partitions of $Topic in the describe output (no committed offsets, no assignment)"
+                continue
+            }
+            $totalLag = [long]0
+            $unknownLag = 0
+            foreach ($row in ($rows | Sort-Object Partition)) {
+                $current = if ($null -ne $row.CurrentOffset) { $row.CurrentOffset } else { '-' }
+                $end = if ($null -ne $row.LogEndOffset) { $row.LogEndOffset } else { '-' }
+                $lag = '-'
+                if ($null -ne $row.Lag) {
+                    $totalLag += [long]$row.Lag
+                    $lag = $row.Lag
+                }
+                else {
+                    $unknownLag++
+                }
+                Write-Host "    $group $Topic partition=$($row.Partition) current=$current end=$end lag=$lag"
+            }
+            $unknownText = if ($unknownLag -gt 0) { " ($unknownLag partition(s) without committed offsets, lag unknown)" } else { '' }
+            Write-Host "  group ${group}: $Topic partitions=$($rows.Count) total lag=$totalLag$unknownText"
+        }
+        catch {
+            Write-Warning "Kafka LAG snapshot unavailable: group ${group}: $($_.Exception.Message)"
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    第 0 步 d:Step 5 预演(只在 -Apply 下、Step 1 之前调用)。
+
+.DESCRIPTION
+    zone 组在本 topic 上已有数值位点 → 组已存在,Step 5 的重置走的是成熟路径,跳过预演。
+    否则(组不存在 / 没有位点,即从未切过组的 zone)以 kafka_offset_reset.ps1 的 dry-run(hashtable splatting,
+    不带 -Apply 与 -RetireGroup)对 zone 组按 TargetTime 生成重置计划;它要求计划覆盖 0..Partitions-1,失败、throw、
+    退出码非 0 都在停服之前抛出。Kafka 能否为不存在的组建出位点未在钉版镜像上实测(设计文档 §11 V3(c)),
+    这一步把「Step 5 走不通」提前到破坏性步骤之前暴露;Step 5 自己 -Apply 之后还有逐分区复核。
+    describe 本身失败同样抛出:判不出就无法证明 Step 5 走得通。
+#>
+function Invoke-Step5Rehearsal {
+    param(
+        [Parameter(Mandatory = $true)][string]$ResetScriptPath,
+        [Parameter(Mandatory = $true)][string]$Bootstrap,
+        [Parameter(Mandatory = $true)][string]$Topic,
+        [Parameter(Mandatory = $true)][string]$ZoneGroup,
+        [Parameter(Mandatory = $true)][string]$TargetTime,
+        [Parameter(Mandatory = $true)][int]$Partitions
+    )
+
+    $refusal = "k8s-zone-rollback 在停服之前拒绝执行,尚未产生任何改动:"
+    try {
+        $describe = Invoke-KafkaGroupDescribe -Bootstrap $Bootstrap -Group $ZoneGroup
+        $state = Resolve-KafkaGroupTopicOffsets -Lines $describe.Lines -ExitCode $describe.ExitCode -Topic $Topic
+    }
+    catch {
+        throw ($refusal + "Step 5 预演读不到 zone 组 $ZoneGroup 在 $Topic 上的位点(kafka-consumer-groups.sh --describe 失败或输出无法解析)," +
+            "判不出 Step 5 能否走通。`n原因:$($_.Exception.Message)`n确认本机 kafka-consumer-groups.sh 可用、-KafkaBootstrap 可达后重跑。")
+    }
+    if ($state.State -eq 'offsets') {
+        Write-Host "  zone group already holds offsets on ${Topic}; Step 5 rehearsal skipped" -ForegroundColor Green
+        return
+    }
+
+    Write-Host "  zone group $ZoneGroup has no committed offsets on $Topic ($($state.State)); rehearsing Step 5 with kafka_offset_reset.ps1 (dry-run)"
+    $rehearsalArgs = @{
+        BootstrapServer = $Bootstrap
+        Topic           = $Topic
+        Group           = $ZoneGroup
+        ToDatetime      = $TargetTime
+        Partitions      = $Partitions
+    }
+    $failure = $null
+    # 被调脚本不以 exit 结束时 $LASTEXITCODE 保留更早的值,先清零,才能把它的非 0 判成本次失败。
+    $global:LASTEXITCODE = 0
+    try {
+        & $ResetScriptPath @rehearsalArgs
+        if ($LASTEXITCODE -ne 0) { $failure = "kafka_offset_reset.ps1 以退出码 $LASTEXITCODE 结束" }
+    }
+    catch {
+        $failure = $_.Exception.Message
+    }
+    if ($null -ne $failure) {
+        throw ($refusal + "Step 5 预演失败,Kafka 无法为 zone 组 $ZoneGroup 在 $Topic 上生成完整的重置计划(TargetTime=$TargetTime,分区数 $Partitions)。" +
+            "拖到 Step 5 才失败时 zone 已停服、数据已回档。见 docs/design/db-consumer-group-per-zone.md §11 V3(c)。`n原因:$failure")
+    }
+    Write-Host "  Step 5 rehearsal passed: Kafka produced a complete reset plan for $ZoneGroup on $Topic" -ForegroundColor Green
+}
+
 # 回滚目标必须是不可变 tag,否则"回到旧版本"根本没发生。
 $rollbackTag = Get-ImageTagFromRef -ImageRef $NodeImage
 $rollbackChk = Test-ImmutableImageTag -Tag $rollbackTag
@@ -740,6 +900,27 @@ if ($ConfirmNoGatewayIngress -and -not [string]::IsNullOrWhiteSpace($GatewayIngr
     throw "k8s-zone-rollback 拒绝执行:-ConfirmNoGatewayIngress 与 -GatewayIngressHost 互斥,尚未产生任何改动(前者 = 回滚后不要 Ingress,后者 = 回滚后按 $GatewayIngressHost 重建 Ingress),请按该 zone 的部署记录二选一。"
 }
 
+# go/db 存盘消费组的基名与分区数从 go/db/etc/db.yaml 现读(K8s 的 db ConfigMap 由 k8s_deploy.ps1 从同一文件渲染),
+# 本脚本不抄常量;读不到就拒绝(fail-closed):组名猜错,Step 5 会重置一个没人用的组、再删掉真正在用的组的位点。
+# 分区数给 Step 5 与第 0 步 d 做逐分区的计划覆盖与 -Apply 后复核。
+$dbYamlPath = Join-Path "$RepoRoot" "go" "db" "etc" "db.yaml"
+$dbGroupBase = Get-YamlScalar -Path $dbYamlPath -KeyPath 'ServerConfig.Kafka.GroupID'
+if (-not $dbGroupBase.Found -or [string]::IsNullOrWhiteSpace([string]$dbGroupBase.Value)) {
+    throw "k8s-zone-rollback 拒绝执行,尚未产生任何改动:读不到 go/db/etc/db.yaml 的 ServerConfig.Kafka.GroupID($($dbGroupBase.Reason)),无法推导 db 消费组名。"
+}
+$dbPartitionCnt = Get-YamlScalar -Path $dbYamlPath -KeyPath 'ServerConfig.Kafka.PartitionCnt'
+$kafkaPartitionCount = 0
+if (-not $dbPartitionCnt.Found -or -not [int]::TryParse([string]$dbPartitionCnt.Value, [ref]$kafkaPartitionCount) -or $kafkaPartitionCount -le 0) {
+    throw "k8s-zone-rollback 拒绝执行,尚未产生任何改动:读不到 go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt,或不是正整数('$($dbPartitionCnt.Value)' $($dbPartitionCnt.Reason)),Step 5 无法逐分区复核位点。"
+}
+if ([string]::IsNullOrWhiteSpace($KafkaGroup)) { $KafkaGroup = "$($dbGroupBase.Value)_z$ZoneId" }
+if ([string]::IsNullOrWhiteSpace($KafkaLegacyGroup)) { $KafkaLegacyGroup = [string]$dbGroupBase.Value }
+if ($KafkaGroup -ceq $KafkaLegacyGroup) {
+    throw ("k8s-zone-rollback 拒绝执行,尚未产生任何改动:-KafkaGroup 与 -KafkaLegacyGroup 都是 $KafkaGroup。" +
+        "Step 5 会重置这个组、再删除它自己在 $KafkaTopic 上的位点,go/db 将从 Oldest 重放整个保留期。" +
+        "回档后的权威组是 zone 组:-KafkaGroup 留空即按 go/db/etc/db.yaml 推导为 $($dbGroupBase.Value)_z$ZoneId。")
+}
+
 $verb = if ($Apply) { "APPLY" } else { "DRY-RUN" }
 Write-Host "" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
@@ -748,7 +929,7 @@ Write-Host "============================================================" -Foreg
 Write-Host "  zone        : $ZoneName (id=$ZoneId)"
 Write-Host "  target time : $TargetTime"
 Write-Host "  redis       : $(if ($RedisHost) { "$RedisHost`:$RedisPort/db$RedisDB" } else { '(skipped — no -RedisHost)' })"
-Write-Host "  kafka       : $KafkaBootstrap topic=$KafkaTopic group=$KafkaGroup"
+Write-Host "  kafka       : $KafkaBootstrap topic=$KafkaTopic group=$KafkaGroup retire=$KafkaLegacyGroup partitions=$kafkaPartitionCount"
 # 回退态不粘滞,留空时在摘要里就提醒:操作者在 dry-run 阶段就能看出 Step 6 会以哪种路由模式拉起 gate。
 Write-Host "  gate router : $(if ($GateRouterMode) { "-GateRouterMode $GateRouterMode" } else { '(unset; using the k8s_deploy.ps1 default. A zone running in fallback mode "0" must pass -GateRouterMode 0; -Apply checks before shutdown and rejects mismatches or unavailable state)' })"
 # 集群外入口参数同样不粘滞,同样在摘要里提醒;地址参数的实际透传值见 Step 6 那一行。
@@ -775,6 +956,11 @@ $upArgs = @{
     NodeImage       = $NodeImage
     NamespacePrefix = $NamespacePrefix
     WaitReady       = $true
+    # 回档后永远落到 zone 组(docs/design/db-consumer-group-per-zone.md §6):Step 5 收尾后 zone 组有完整位点、
+    # legacy 组在本 topic 上已没有位点,k8s_deploy.ps1 的决策表真跑时落到最终形状 —— db ConfigMap 写
+    # `GroupID: "<zone 组>"`、不带 GroupHandoffFrom,交接闸之前的旧镜像也能起。第 0 步静态预检(-DryRun 不读集群)
+    # 渲染的是交接形状预览,只校验参数组合。
+    DbConsumerGroup = 'zone'
 }
 # 留空不传,由下游默认值接管(k8s_deploy.ps1 / dev_tools.ps1 各自唯一的一处);只有显式给了才覆盖(同 dev_tools.ps1 / k8s_image.ps1 的透传)。
 # 字符串非空才传,GateNodePortBase 非 -1 才传,switch 只在被指定时传(同 dev_tools.ps1 Invoke-K8sDeploy)。
@@ -853,6 +1039,25 @@ if ($RedisHost -ne "") {
         Write-Host "  (dry-run does not read Redis; -Apply rejects shared-key matches or unavailable state before shutdown)" -ForegroundColor Yellow
     }
 }
+# 第 0 步 c:Kafka LAG 只读快照(只告警,取代原 Step 2 的排空等待)。
+Write-Host "  Kafka LAG snapshot on $KafkaTopic (read-only, warnings only; replaces the removed Step 2 drain wait):"
+foreach ($snapshotGroup in @($KafkaGroup, $KafkaLegacyGroup)) {
+    Write-Host "    kafka-consumer-groups.sh --bootstrap-server $KafkaBootstrap --describe --group $snapshotGroup"
+}
+if ($Apply) {
+    Show-KafkaTopicLagSnapshot -Bootstrap $KafkaBootstrap -Topic $KafkaTopic -Groups @($KafkaGroup, $KafkaLegacyGroup)
+} else {
+    Write-Host "  (dry-run does not read Kafka)" -ForegroundColor Yellow
+}
+# 第 0 步 d:Step 5 预演。zone 组没有位点时,Kafka 能否为它按 TargetTime 生成完整计划要在停服之前确认。
+Write-Host ("  Step 5 rehearsal: describe $KafkaGroup; when it holds no committed offsets on $KafkaTopic, run kafka_offset_reset.ps1 " +
+    "-BootstrapServer $KafkaBootstrap -Topic $KafkaTopic -Group $KafkaGroup -ToDatetime $TargetTime -Partitions $kafkaPartitionCount (dry-run, no -RetireGroup)")
+if ($Apply) {
+    Invoke-Step5Rehearsal -ResetScriptPath (Join-Path $ScriptDir "kafka_offset_reset.ps1") -Bootstrap $KafkaBootstrap -Topic $KafkaTopic `
+        -ZoneGroup $KafkaGroup -TargetTime $TargetTime -Partitions $kafkaPartitionCount
+} else {
+    Write-Host "  (not executed during dry-run; -Apply rejects a failed describe or an incomplete reset plan before shutdown)" -ForegroundColor Yellow
+}
 Write-Host ""
 
 # ── Step 1: stop the zone ────────────────────────────────────────
@@ -873,33 +1078,8 @@ if ($Apply) {
 }
 Write-Host ""
 
-# ── Step 2: drain Kafka consumer LAG ─────────────────────────────
-Write-Host "── Step 2: drain Kafka consumer LAG (timeout ${KafkaDrainTimeoutSec}s) ──" -ForegroundColor Cyan
-$describeCmd = "kafka-consumer-groups.sh --bootstrap-server $KafkaBootstrap --describe --group $KafkaGroup"
-Write-Host "  $describeCmd"
-if ($Apply) {
-    $deadline = (Get-Date).AddSeconds($KafkaDrainTimeoutSec)
-    while ((Get-Date) -lt $deadline) {
-        $out = & kafka-consumer-groups.sh --bootstrap-server $KafkaBootstrap --describe --group $KafkaGroup 2>&1
-        # LAG column is field 5 in default output. Sum non-zero values.
-        $hasLag = $false
-        foreach ($line in $out) {
-            if ($line -match "^\S+\s+\S+\s+\d+\s+\d+\s+\d+\s+(\d+)") {
-                if ([int]$matches[1] -gt 0) { $hasLag = $true; break }
-            }
-        }
-        if (-not $hasLag) {
-            Write-Host "  consumer LAG drained" -ForegroundColor Green
-            break
-        }
-        Write-Host "  ... waiting for LAG to drain"
-        Start-Sleep -Seconds 5
-    }
-    if ((Get-Date) -ge $deadline) {
-        Write-Warning "consumer LAG did not drain within ${KafkaDrainTimeoutSec}s — proceeding anyway"
-    }
-}
-Write-Host ""
+# Step 2(zone-down 之后等 LAG 排空)已删除(2026-10-15):本 zone 的 db 已停,LAG 不可能排空,
+# 而 Step 5 本来就把位点拨回 TargetTime。停服前的只读快照见第 0 步 c。
 
 # ── Step 3: MySQL PITR (manual) ──────────────────────────────────
 Write-Host "── Step 3: MySQL Point-in-Time Recovery ──" -ForegroundColor Cyan
@@ -944,15 +1124,21 @@ Write-Host "── Step 5: Kafka offset reset ($KafkaTopic) ──" -ForegroundC
 # 元素当**位置参数**依次绑定,于是 "-BootstrapServer" 这个字符串本身被绑到
 # BootstrapServer、"kafka:9092" 绑到 Group、…… 最后 "-Group" 撞上 [int]$Partitions
 # 直接类型转换失败。结果是这个灾难恢复脚本连 dry-run 都跑不到第 6 步。
+# 重置 zone 组到 TargetTime;kafka_offset_reset.ps1 -Apply 之后逐分区复核(CURRENT-OFFSET == 计划 NEW-OFFSET),
+# 复核通过才删除 legacy 组在本 topic 上的位点(-RetireGroup)。回档后该 zone 一律以 zone 组为权威,Step 6 据此落到最终形状。
 $kArgs = @{
     BootstrapServer = $KafkaBootstrap
     Topic           = $KafkaTopic
     Group           = $KafkaGroup
+    RetireGroup     = $KafkaLegacyGroup
     ToDatetime      = $TargetTime
+    Partitions      = $kafkaPartitionCount
 }
 if ($Apply) { $kArgs.Apply = $true }
 Write-Host ("  kafka_offset_reset.ps1 " + (($kArgs.GetEnumerator() | Sort-Object Name | ForEach-Object { "-$($_.Key) $($_.Value)" }) -join ' '))
 if ($Apply) {
+    # 先清零:被调脚本正常结束时 $LASTEXITCODE 保留的是更早一次原生命令的值。
+    $global:LASTEXITCODE = 0
     & "$ScriptDir/kafka_offset_reset.ps1" @kArgs
     if ($LASTEXITCODE -ne 0) { throw "kafka_offset_reset.ps1 failed" }
 }

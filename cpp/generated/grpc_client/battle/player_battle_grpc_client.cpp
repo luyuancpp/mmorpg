@@ -30,9 +30,19 @@ using AsyncBattleClientPlayerSubmitBattleActionHandlerFunctionType =
 AsyncBattleClientPlayerSubmitBattleActionHandlerFunctionType AsyncBattleClientPlayerSubmitBattleActionHandler;
 AsyncBattleClientPlayerSubmitBattleActionFailedHandlerFunctionType AsyncBattleClientPlayerSubmitBattleActionFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerSubmitBattleAction(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerSubmitBattleActionGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerSubmitBattleAction(AsyncBattleClientPlayerSubmitBattleActionGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerSubmitBattleActionGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerSubmitBattleActionPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerSubmitBattleActionGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerSubmitBattleActionHandler) {
             AsyncBattleClientPlayerSubmitBattleActionHandler(call->context, call->reply);
@@ -54,36 +64,64 @@ void AsyncCompleteGrpcBattleClientPlayerSubmitBattleAction(entt::registry& regis
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerSubmitBattleActionPool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerSubmitBattleAction(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerSubmitBattleActionGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerSubmitBattleAction(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerSubmitBattleActionCall(entt::registry& registry, entt::entity nodeEntity, const ::SubmitBattleActionRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::SubmitBattleActionResponse> done) {
+    auto call(BattleClientPlayerSubmitBattleActionPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerSubmitBattleAction(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncSubmitBattleAction(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerSubmitBattleActionMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerSubmitBattleAction(entt::registry& registry, entt::entity nodeEntity, const ::SubmitBattleActionRequest& request,
+                                            GrpcDone<::SubmitBattleActionResponse> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerSubmitBattleActionCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerSubmitBattleAction(entt::registry& registry, entt::entity nodeEntity, const ::SubmitBattleActionRequest& request) {
-
-    SendBattleClientPlayerSubmitBattleAction(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerSubmitBattleAction(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerSubmitBattleAction(entt::registry& registry, entt::entity nodeEntity, const ::SubmitBattleActionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerSubmitBattleActionPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncSubmitBattleAction(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerSubmitBattleActionMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerSubmitBattleActionCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -99,9 +137,19 @@ using AsyncBattleClientPlayerGetBattleStateHandlerFunctionType =
 AsyncBattleClientPlayerGetBattleStateHandlerFunctionType AsyncBattleClientPlayerGetBattleStateHandler;
 AsyncBattleClientPlayerGetBattleStateFailedHandlerFunctionType AsyncBattleClientPlayerGetBattleStateFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerGetBattleState(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerGetBattleStateGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerGetBattleState(AsyncBattleClientPlayerGetBattleStateGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerGetBattleStateGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerGetBattleStatePool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerGetBattleStateGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerGetBattleStateHandler) {
             AsyncBattleClientPlayerGetBattleStateHandler(call->context, call->reply);
@@ -123,36 +171,64 @@ void AsyncCompleteGrpcBattleClientPlayerGetBattleState(entt::registry& registry,
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerGetBattleStatePool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerGetBattleState(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerGetBattleStateGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerGetBattleState(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerGetBattleStateCall(entt::registry& registry, entt::entity nodeEntity, const ::GetBattleStateRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::BattleStateS2C> done) {
+    auto call(BattleClientPlayerGetBattleStatePool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerGetBattleState(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncGetBattleState(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerGetBattleStateMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerGetBattleState(entt::registry& registry, entt::entity nodeEntity, const ::GetBattleStateRequest& request,
+                                            GrpcDone<::BattleStateS2C> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerGetBattleStateCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerGetBattleState(entt::registry& registry, entt::entity nodeEntity, const ::GetBattleStateRequest& request) {
-
-    SendBattleClientPlayerGetBattleState(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerGetBattleState(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerGetBattleState(entt::registry& registry, entt::entity nodeEntity, const ::GetBattleStateRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerGetBattleStatePool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncGetBattleState(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerGetBattleStateMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerGetBattleStateCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -168,9 +244,19 @@ using AsyncBattleClientPlayerNotifyBattleStartHandlerFunctionType =
 AsyncBattleClientPlayerNotifyBattleStartHandlerFunctionType AsyncBattleClientPlayerNotifyBattleStartHandler;
 AsyncBattleClientPlayerNotifyBattleStartFailedHandlerFunctionType AsyncBattleClientPlayerNotifyBattleStartFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerNotifyBattleStart(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerNotifyBattleStartGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerNotifyBattleStart(AsyncBattleClientPlayerNotifyBattleStartGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerNotifyBattleStartGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerNotifyBattleStartPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerNotifyBattleStartGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerNotifyBattleStartHandler) {
             AsyncBattleClientPlayerNotifyBattleStartHandler(call->context, call->reply);
@@ -192,36 +278,64 @@ void AsyncCompleteGrpcBattleClientPlayerNotifyBattleStart(entt::registry& regist
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerNotifyBattleStartPool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerNotifyBattleStart(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerNotifyBattleStartGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerNotifyBattleStart(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerNotifyBattleStartCall(entt::registry& registry, entt::entity nodeEntity, const ::BattleStartS2C& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::Empty> done) {
+    auto call(BattleClientPlayerNotifyBattleStartPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerNotifyBattleStart(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncNotifyBattleStart(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifyBattleStartMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerNotifyBattleStart(entt::registry& registry, entt::entity nodeEntity, const ::BattleStartS2C& request,
+                                            GrpcDone<::Empty> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerNotifyBattleStartCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerNotifyBattleStart(entt::registry& registry, entt::entity nodeEntity, const ::BattleStartS2C& request) {
-
-    SendBattleClientPlayerNotifyBattleStart(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerNotifyBattleStart(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerNotifyBattleStart(entt::registry& registry, entt::entity nodeEntity, const ::BattleStartS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerNotifyBattleStartPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncNotifyBattleStart(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifyBattleStartMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerNotifyBattleStartCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -237,9 +351,19 @@ using AsyncBattleClientPlayerNotifyTurnResultHandlerFunctionType =
 AsyncBattleClientPlayerNotifyTurnResultHandlerFunctionType AsyncBattleClientPlayerNotifyTurnResultHandler;
 AsyncBattleClientPlayerNotifyTurnResultFailedHandlerFunctionType AsyncBattleClientPlayerNotifyTurnResultFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerNotifyTurnResult(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerNotifyTurnResultGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerNotifyTurnResult(AsyncBattleClientPlayerNotifyTurnResultGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerNotifyTurnResultGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerNotifyTurnResultPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerNotifyTurnResultGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerNotifyTurnResultHandler) {
             AsyncBattleClientPlayerNotifyTurnResultHandler(call->context, call->reply);
@@ -261,36 +385,64 @@ void AsyncCompleteGrpcBattleClientPlayerNotifyTurnResult(entt::registry& registr
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerNotifyTurnResultPool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerNotifyTurnResult(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerNotifyTurnResultGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerNotifyTurnResult(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerNotifyTurnResultCall(entt::registry& registry, entt::entity nodeEntity, const ::TurnResultS2C& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::Empty> done) {
+    auto call(BattleClientPlayerNotifyTurnResultPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerNotifyTurnResult(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncNotifyTurnResult(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifyTurnResultMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerNotifyTurnResult(entt::registry& registry, entt::entity nodeEntity, const ::TurnResultS2C& request,
+                                            GrpcDone<::Empty> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerNotifyTurnResultCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerNotifyTurnResult(entt::registry& registry, entt::entity nodeEntity, const ::TurnResultS2C& request) {
-
-    SendBattleClientPlayerNotifyTurnResult(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerNotifyTurnResult(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerNotifyTurnResult(entt::registry& registry, entt::entity nodeEntity, const ::TurnResultS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerNotifyTurnResultPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncNotifyTurnResult(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifyTurnResultMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerNotifyTurnResultCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -306,9 +458,19 @@ using AsyncBattleClientPlayerNotifyBattleEndHandlerFunctionType =
 AsyncBattleClientPlayerNotifyBattleEndHandlerFunctionType AsyncBattleClientPlayerNotifyBattleEndHandler;
 AsyncBattleClientPlayerNotifyBattleEndFailedHandlerFunctionType AsyncBattleClientPlayerNotifyBattleEndFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerNotifyBattleEnd(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerNotifyBattleEndGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerNotifyBattleEnd(AsyncBattleClientPlayerNotifyBattleEndGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerNotifyBattleEndGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerNotifyBattleEndPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerNotifyBattleEndGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerNotifyBattleEndHandler) {
             AsyncBattleClientPlayerNotifyBattleEndHandler(call->context, call->reply);
@@ -330,36 +492,64 @@ void AsyncCompleteGrpcBattleClientPlayerNotifyBattleEnd(entt::registry& registry
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerNotifyBattleEndPool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerNotifyBattleEnd(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerNotifyBattleEndGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerNotifyBattleEnd(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerNotifyBattleEndCall(entt::registry& registry, entt::entity nodeEntity, const ::BattleEndS2C& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::Empty> done) {
+    auto call(BattleClientPlayerNotifyBattleEndPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerNotifyBattleEnd(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncNotifyBattleEnd(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifyBattleEndMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerNotifyBattleEnd(entt::registry& registry, entt::entity nodeEntity, const ::BattleEndS2C& request,
+                                            GrpcDone<::Empty> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerNotifyBattleEndCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerNotifyBattleEnd(entt::registry& registry, entt::entity nodeEntity, const ::BattleEndS2C& request) {
-
-    SendBattleClientPlayerNotifyBattleEnd(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerNotifyBattleEnd(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerNotifyBattleEnd(entt::registry& registry, entt::entity nodeEntity, const ::BattleEndS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerNotifyBattleEndPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncNotifyBattleEnd(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifyBattleEndMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerNotifyBattleEndCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -375,9 +565,19 @@ using AsyncBattleClientPlayerNotifyBattleReconnectHandlerFunctionType =
 AsyncBattleClientPlayerNotifyBattleReconnectHandlerFunctionType AsyncBattleClientPlayerNotifyBattleReconnectHandler;
 AsyncBattleClientPlayerNotifyBattleReconnectFailedHandlerFunctionType AsyncBattleClientPlayerNotifyBattleReconnectFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerNotifyBattleReconnect(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerNotifyBattleReconnectGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerNotifyBattleReconnect(AsyncBattleClientPlayerNotifyBattleReconnectGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerNotifyBattleReconnectGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerNotifyBattleReconnectPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerNotifyBattleReconnectGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerNotifyBattleReconnectHandler) {
             AsyncBattleClientPlayerNotifyBattleReconnectHandler(call->context, call->reply);
@@ -399,36 +599,64 @@ void AsyncCompleteGrpcBattleClientPlayerNotifyBattleReconnect(entt::registry& re
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerNotifyBattleReconnectPool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerNotifyBattleReconnect(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerNotifyBattleReconnectGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerNotifyBattleReconnect(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerNotifyBattleReconnectCall(entt::registry& registry, entt::entity nodeEntity, const ::BattleReconnectS2C& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::Empty> done) {
+    auto call(BattleClientPlayerNotifyBattleReconnectPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerNotifyBattleReconnect(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncNotifyBattleReconnect(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifyBattleReconnectMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerNotifyBattleReconnect(entt::registry& registry, entt::entity nodeEntity, const ::BattleReconnectS2C& request,
+                                            GrpcDone<::Empty> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerNotifyBattleReconnectCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerNotifyBattleReconnect(entt::registry& registry, entt::entity nodeEntity, const ::BattleReconnectS2C& request) {
-
-    SendBattleClientPlayerNotifyBattleReconnect(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerNotifyBattleReconnect(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerNotifyBattleReconnect(entt::registry& registry, entt::entity nodeEntity, const ::BattleReconnectS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerNotifyBattleReconnectPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncNotifyBattleReconnect(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifyBattleReconnectMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerNotifyBattleReconnectCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -444,9 +672,19 @@ using AsyncBattleClientPlayerStopWatchBattleHandlerFunctionType =
 AsyncBattleClientPlayerStopWatchBattleHandlerFunctionType AsyncBattleClientPlayerStopWatchBattleHandler;
 AsyncBattleClientPlayerStopWatchBattleFailedHandlerFunctionType AsyncBattleClientPlayerStopWatchBattleFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerStopWatchBattle(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerStopWatchBattleGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerStopWatchBattle(AsyncBattleClientPlayerStopWatchBattleGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerStopWatchBattleGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerStopWatchBattlePool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerStopWatchBattleGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerStopWatchBattleHandler) {
             AsyncBattleClientPlayerStopWatchBattleHandler(call->context, call->reply);
@@ -468,36 +706,64 @@ void AsyncCompleteGrpcBattleClientPlayerStopWatchBattle(entt::registry& registry
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerStopWatchBattlePool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerStopWatchBattle(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerStopWatchBattleGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerStopWatchBattle(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerStopWatchBattleCall(entt::registry& registry, entt::entity nodeEntity, const ::StopWatchBattleRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::StopWatchBattleResponse> done) {
+    auto call(BattleClientPlayerStopWatchBattlePool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerStopWatchBattle(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncStopWatchBattle(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerStopWatchBattleMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerStopWatchBattle(entt::registry& registry, entt::entity nodeEntity, const ::StopWatchBattleRequest& request,
+                                            GrpcDone<::StopWatchBattleResponse> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerStopWatchBattleCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerStopWatchBattle(entt::registry& registry, entt::entity nodeEntity, const ::StopWatchBattleRequest& request) {
-
-    SendBattleClientPlayerStopWatchBattle(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerStopWatchBattle(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerStopWatchBattle(entt::registry& registry, entt::entity nodeEntity, const ::StopWatchBattleRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerStopWatchBattlePool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncStopWatchBattle(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerStopWatchBattleMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerStopWatchBattleCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -513,9 +779,19 @@ using AsyncBattleClientPlayerSetAutoBattleHandlerFunctionType =
 AsyncBattleClientPlayerSetAutoBattleHandlerFunctionType AsyncBattleClientPlayerSetAutoBattleHandler;
 AsyncBattleClientPlayerSetAutoBattleFailedHandlerFunctionType AsyncBattleClientPlayerSetAutoBattleFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerSetAutoBattle(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerSetAutoBattleGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerSetAutoBattle(AsyncBattleClientPlayerSetAutoBattleGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerSetAutoBattleGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerSetAutoBattlePool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerSetAutoBattleGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerSetAutoBattleHandler) {
             AsyncBattleClientPlayerSetAutoBattleHandler(call->context, call->reply);
@@ -537,36 +813,64 @@ void AsyncCompleteGrpcBattleClientPlayerSetAutoBattle(entt::registry& registry, 
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerSetAutoBattlePool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerSetAutoBattle(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerSetAutoBattleGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerSetAutoBattle(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerSetAutoBattleCall(entt::registry& registry, entt::entity nodeEntity, const ::SetAutoBattleRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::SetAutoBattleResponse> done) {
+    auto call(BattleClientPlayerSetAutoBattlePool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerSetAutoBattle(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncSetAutoBattle(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerSetAutoBattleMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerSetAutoBattle(entt::registry& registry, entt::entity nodeEntity, const ::SetAutoBattleRequest& request,
+                                            GrpcDone<::SetAutoBattleResponse> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerSetAutoBattleCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerSetAutoBattle(entt::registry& registry, entt::entity nodeEntity, const ::SetAutoBattleRequest& request) {
-
-    SendBattleClientPlayerSetAutoBattle(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerSetAutoBattle(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerSetAutoBattle(entt::registry& registry, entt::entity nodeEntity, const ::SetAutoBattleRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerSetAutoBattlePool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncSetAutoBattle(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerSetAutoBattleMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerSetAutoBattleCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -582,9 +886,19 @@ using AsyncBattleClientPlayerNotifySpectateStateHandlerFunctionType =
 AsyncBattleClientPlayerNotifySpectateStateHandlerFunctionType AsyncBattleClientPlayerNotifySpectateStateHandler;
 AsyncBattleClientPlayerNotifySpectateStateFailedHandlerFunctionType AsyncBattleClientPlayerNotifySpectateStateFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerNotifySpectateState(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerNotifySpectateStateGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerNotifySpectateState(AsyncBattleClientPlayerNotifySpectateStateGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerNotifySpectateStateGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerNotifySpectateStatePool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerNotifySpectateStateGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerNotifySpectateStateHandler) {
             AsyncBattleClientPlayerNotifySpectateStateHandler(call->context, call->reply);
@@ -606,36 +920,64 @@ void AsyncCompleteGrpcBattleClientPlayerNotifySpectateState(entt::registry& regi
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerNotifySpectateStatePool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerNotifySpectateState(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerNotifySpectateStateGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerNotifySpectateState(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerNotifySpectateStateCall(entt::registry& registry, entt::entity nodeEntity, const ::SpectateStateS2C& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::Empty> done) {
+    auto call(BattleClientPlayerNotifySpectateStatePool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerNotifySpectateState(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncNotifySpectateState(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifySpectateStateMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerNotifySpectateState(entt::registry& registry, entt::entity nodeEntity, const ::SpectateStateS2C& request,
+                                            GrpcDone<::Empty> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerNotifySpectateStateCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerNotifySpectateState(entt::registry& registry, entt::entity nodeEntity, const ::SpectateStateS2C& request) {
-
-    SendBattleClientPlayerNotifySpectateState(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerNotifySpectateState(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerNotifySpectateState(entt::registry& registry, entt::entity nodeEntity, const ::SpectateStateS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerNotifySpectateStatePool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncNotifySpectateState(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifySpectateStateMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerNotifySpectateStateCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -651,9 +993,19 @@ using AsyncBattleClientPlayerNotifySpectateTurnResultHandlerFunctionType =
 AsyncBattleClientPlayerNotifySpectateTurnResultHandlerFunctionType AsyncBattleClientPlayerNotifySpectateTurnResultHandler;
 AsyncBattleClientPlayerNotifySpectateTurnResultFailedHandlerFunctionType AsyncBattleClientPlayerNotifySpectateTurnResultFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerNotifySpectateTurnResult(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerNotifySpectateTurnResultGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerNotifySpectateTurnResult(AsyncBattleClientPlayerNotifySpectateTurnResultGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerNotifySpectateTurnResultGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerNotifySpectateTurnResultPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerNotifySpectateTurnResultGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerNotifySpectateTurnResultHandler) {
             AsyncBattleClientPlayerNotifySpectateTurnResultHandler(call->context, call->reply);
@@ -675,36 +1027,64 @@ void AsyncCompleteGrpcBattleClientPlayerNotifySpectateTurnResult(entt::registry&
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerNotifySpectateTurnResultPool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerNotifySpectateTurnResult(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerNotifySpectateTurnResultGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerNotifySpectateTurnResult(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerNotifySpectateTurnResultCall(entt::registry& registry, entt::entity nodeEntity, const ::TurnResultS2C& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::Empty> done) {
+    auto call(BattleClientPlayerNotifySpectateTurnResultPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerNotifySpectateTurnResult(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncNotifySpectateTurnResult(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifySpectateTurnResultMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerNotifySpectateTurnResult(entt::registry& registry, entt::entity nodeEntity, const ::TurnResultS2C& request,
+                                            GrpcDone<::Empty> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerNotifySpectateTurnResultCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerNotifySpectateTurnResult(entt::registry& registry, entt::entity nodeEntity, const ::TurnResultS2C& request) {
-
-    SendBattleClientPlayerNotifySpectateTurnResult(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerNotifySpectateTurnResult(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerNotifySpectateTurnResult(entt::registry& registry, entt::entity nodeEntity, const ::TurnResultS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerNotifySpectateTurnResultPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncNotifySpectateTurnResult(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifySpectateTurnResultMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerNotifySpectateTurnResultCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -720,9 +1100,19 @@ using AsyncBattleClientPlayerNotifySpectateEndHandlerFunctionType =
 AsyncBattleClientPlayerNotifySpectateEndHandlerFunctionType AsyncBattleClientPlayerNotifySpectateEndHandler;
 AsyncBattleClientPlayerNotifySpectateEndFailedHandlerFunctionType AsyncBattleClientPlayerNotifySpectateEndFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerNotifySpectateEnd(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerNotifySpectateEndGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerNotifySpectateEnd(AsyncBattleClientPlayerNotifySpectateEndGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerNotifySpectateEndGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerNotifySpectateEndPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerNotifySpectateEndGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerNotifySpectateEndHandler) {
             AsyncBattleClientPlayerNotifySpectateEndHandler(call->context, call->reply);
@@ -744,36 +1134,64 @@ void AsyncCompleteGrpcBattleClientPlayerNotifySpectateEnd(entt::registry& regist
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerNotifySpectateEndPool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerNotifySpectateEnd(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerNotifySpectateEndGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerNotifySpectateEnd(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerNotifySpectateEndCall(entt::registry& registry, entt::entity nodeEntity, const ::SpectateEndS2C& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::Empty> done) {
+    auto call(BattleClientPlayerNotifySpectateEndPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerNotifySpectateEnd(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncNotifySpectateEnd(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifySpectateEndMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerNotifySpectateEnd(entt::registry& registry, entt::entity nodeEntity, const ::SpectateEndS2C& request,
+                                            GrpcDone<::Empty> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerNotifySpectateEndCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerNotifySpectateEnd(entt::registry& registry, entt::entity nodeEntity, const ::SpectateEndS2C& request) {
-
-    SendBattleClientPlayerNotifySpectateEnd(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerNotifySpectateEnd(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerNotifySpectateEnd(entt::registry& registry, entt::entity nodeEntity, const ::SpectateEndS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerNotifySpectateEndPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncNotifySpectateEnd(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifySpectateEndMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerNotifySpectateEndCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -789,9 +1207,19 @@ using AsyncBattleClientPlayerNotifyBattleAssignedHandlerFunctionType =
 AsyncBattleClientPlayerNotifyBattleAssignedHandlerFunctionType AsyncBattleClientPlayerNotifyBattleAssignedHandler;
 AsyncBattleClientPlayerNotifyBattleAssignedFailedHandlerFunctionType AsyncBattleClientPlayerNotifyBattleAssignedFailedHandler;
 
-void AsyncCompleteGrpcBattleClientPlayerNotifyBattleAssigned(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncBattleClientPlayerNotifyBattleAssignedGrpcClient*>(got_tag));
+void CompleteBattleClientPlayerNotifyBattleAssigned(AsyncBattleClientPlayerNotifyBattleAssignedGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncBattleClientPlayerNotifyBattleAssignedGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        BattleClientPlayerNotifyBattleAssignedPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncBattleClientPlayerNotifyBattleAssignedGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncBattleClientPlayerNotifyBattleAssignedHandler) {
             AsyncBattleClientPlayerNotifyBattleAssignedHandler(call->context, call->reply);
@@ -813,36 +1241,64 @@ void AsyncCompleteGrpcBattleClientPlayerNotifyBattleAssigned(entt::registry& reg
                   << " msg=" << call->status.error_message();
     }
 
-	BattleClientPlayerNotifyBattleAssignedPool.destroy(call);
+}
+
+void AsyncCompleteGrpcBattleClientPlayerNotifyBattleAssigned(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncBattleClientPlayerNotifyBattleAssignedGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteBattleClientPlayerNotifyBattleAssigned(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartBattleClientPlayerNotifyBattleAssignedCall(entt::registry& registry, entt::entity nodeEntity, const ::BattleAssignedS2C& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::Empty> done) {
+    auto call(BattleClientPlayerNotifyBattleAssignedPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<BattleClientPlayerStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteBattleClientPlayerNotifyBattleAssigned(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncNotifyBattleAssigned(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifyBattleAssignedMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendBattleClientPlayerNotifyBattleAssigned(entt::registry& registry, entt::entity nodeEntity, const ::BattleAssignedS2C& request,
+                                            GrpcDone<::Empty> done, const GrpcCallOptions& options) {
+    StartBattleClientPlayerNotifyBattleAssignedCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendBattleClientPlayerNotifyBattleAssigned(entt::registry& registry, entt::entity nodeEntity, const ::BattleAssignedS2C& request) {
-
-    SendBattleClientPlayerNotifyBattleAssigned(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendBattleClientPlayerNotifyBattleAssigned(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendBattleClientPlayerNotifyBattleAssigned(entt::registry& registry, entt::entity nodeEntity, const ::BattleAssignedS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(BattleClientPlayerNotifyBattleAssignedPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<BattleClientPlayerStubPtr>(nodeEntity)
-        ->PrepareAsyncNotifyBattleAssigned(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(BattleClientPlayerNotifyBattleAssignedMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartBattleClientPlayerNotifyBattleAssignedCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -852,55 +1308,45 @@ void SendBattleClientPlayerNotifyBattleAssigned(entt::registry& registry, entt::
 }
 #pragma endregion
 
-void HandlePlayerBattleCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
+void HandlePlayerBattleCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag) {
+        const auto releaseTag = [](GrpcTag* tag) { tagPool.destroy(tag); };
+        const std::unique_ptr<GrpcTag, decltype(releaseTag)> owner(grpcTag, releaseTag);
         switch (grpcTag->messageId) {
         case BattleClientPlayerSubmitBattleActionMessageId:
-            AsyncCompleteGrpcBattleClientPlayerSubmitBattleAction(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerSubmitBattleAction(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerGetBattleStateMessageId:
-            AsyncCompleteGrpcBattleClientPlayerGetBattleState(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerGetBattleState(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerNotifyBattleStartMessageId:
-            AsyncCompleteGrpcBattleClientPlayerNotifyBattleStart(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerNotifyBattleStart(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerNotifyTurnResultMessageId:
-            AsyncCompleteGrpcBattleClientPlayerNotifyTurnResult(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerNotifyTurnResult(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerNotifyBattleEndMessageId:
-            AsyncCompleteGrpcBattleClientPlayerNotifyBattleEnd(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerNotifyBattleEnd(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerNotifyBattleReconnectMessageId:
-            AsyncCompleteGrpcBattleClientPlayerNotifyBattleReconnect(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerNotifyBattleReconnect(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerStopWatchBattleMessageId:
-            AsyncCompleteGrpcBattleClientPlayerStopWatchBattle(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerStopWatchBattle(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerSetAutoBattleMessageId:
-            AsyncCompleteGrpcBattleClientPlayerSetAutoBattle(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerSetAutoBattle(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerNotifySpectateStateMessageId:
-            AsyncCompleteGrpcBattleClientPlayerNotifySpectateState(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerNotifySpectateState(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerNotifySpectateTurnResultMessageId:
-            AsyncCompleteGrpcBattleClientPlayerNotifySpectateTurnResult(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerNotifySpectateTurnResult(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerNotifySpectateEndMessageId:
-            AsyncCompleteGrpcBattleClientPlayerNotifySpectateEnd(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerNotifySpectateEnd(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case BattleClientPlayerNotifyBattleAssignedMessageId:
-            AsyncCompleteGrpcBattleClientPlayerNotifyBattleAssigned(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcBattleClientPlayerNotifyBattleAssigned(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         default:
             break;

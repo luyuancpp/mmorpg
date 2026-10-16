@@ -139,11 +139,21 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 - 可打开 = 名字在 `dbguard` 白名单里,**或** `Placement.AllowStoreFamilies=true`(默认)且名字属于 `zone_{1..999999}_db` / `player_store_{≥1000000}_db` 两个家族。
   按需打开**从不建库**,只 Ping + 只读 schema 闸;白名单防「ZoneId 填错静默建新库」的原有语义不变。
 - 前提:所有落点库与 go/db 的 `Database.Hosts` 在同一 MySQL 实例 / TiDB 集群(与合服工具同一前提)。
-- 每库独立 `*sql.DB` + proto2mysql 模型(proto2mysql 靠 DSN 默认库选库);额外库连接池 `Placement.ExtraStoreMaxOpenConn`(默认 8)、`ExtraStoreMaxIdleConn`(默认 2)。不设库数上限。
+- 每库独立 `*sql.DB` + proto2mysql 模型(proto2mysql 靠 DSN 默认库选库)。不设库数上限。
+  额外库(本 zone 库之外)的连接池按库所属家族分两组旋钮(2026-10-13 G2b 批 C:已落码,未编译、未测试;本 zone 库仍用 `ServerConfig.Database.MaxOpenConn` / `MaxIdleConn`):
+  - `Placement.ZoneStoreMaxOpenConn` / `ZoneStoreMaxIdleConn`:**每个**额外 zone 家族库 `zone_{1..999999}_db` 的池(冷缓存访客读、合服 pin 后的源区库);
+  - `Placement.NonZoneStoreMaxOpenConn` / `NonZoneStoreMaxIdleConn`:**每个**非 zone 落点库 `player_store_{≥1000000}_db` 的池(Phase 2);
+  - `Placement.ExtraStoreConnMaxIdleSeconds`(默认 60):两类额外库池共用的 `SetConnMaxIdleTime`,空闲超过这么多秒的连接即关闭,冷库的池回到 0 条,不再按 MaxIdleConn 常驻。
+    `ConnMaxLifetime` 仍是 5 分钟,所以本值大于 300 等于不生效;
+  - 旧键 `Placement.ExtraStoreMaxOpenConn` / `ExtraStoreMaxIdleConn` 仍认,但只作回落:新键没写(≤ 0)时两类库都取旧键的值,旧键也没写再取默认 8 / 2
+    (`go/db/internal/config/config.go` 的 `Normalize`,优先级 新键 > 旧键 > 默认;「只写旧键」的旧部署两类库维持原来的大小)。新配置不要再写旧键。
+  - 拆开的原因:zone 家族池的名义预算随 zone 数平方增长(最坏每个实例打开其余全部 zone 的库),非 zone 池在 Phase 2 是瓶颈、要单独调大,一个旋钮两头顾不上。
+    两组都计入共用 MySQL 的连接总账(`tools/scripts/k8s_deploy.ps1` 的 `Get-MysqlConnectionLedger`,说明见 `deploy/k8s/README.md`「MySQL 连接总账」),调任一旋钮前先重算;数值待压测确认。
 - 按需打开失败 = **延后重试且不耗重试次数**(与排序锁忙同口径),ERROR 日志 + `db_placement_store_open_total{result="error"}`;不进死信(死信无消费者)。
 
 实现口径(v2.1):
 - **不耗预算只对写生效,读照常耗预算。** 「写进死信 = 丢盘」对读不成立:读不改数据,等待方早已超时。读也豁免的话,库长期打不开时每次登录都往重试队列加一条永远排不完的读,会挤掉真正需要重试的写。
+  - 2026-10-14 L-04 第 1 批起(代码已落、未编译):选库时库打不开或在冷却期内的读**立即回失败回执**并 ack,不再进重试队列;读重试用完预算后丢弃,不进死信。已打开的库在运行期失联时也会进冷却(探活确认整库不可达才进)。见 [db-task-store-unavailable-deferral.md](db-task-store-unavailable-deferral.md) §3.4、§3.6。
 - **单次按需打开预算 10s,失败后冷却 10s。** 同一个库的并发请求在 singleflight 上等打开结果,所在的 worker 子分片跟着停住。没有冷却,一个连不上的库会让每条指向它的任务都在 worker 上等满超时,同子分片里无关的玩家一起被拖住。冷却期内直接复用上次的错误,不重复计数、不重复打 ERROR。
 - `db_placement_store_open_total` 的 result 多一个 `rejected`(不被放行,属于配置问题),与 `error`(连不上 / 库不存在 / schema 闸不过)分开。
 - 本 zone 库照旧由 `InitDB` 打开,再登记为落点 ZoneId。启动期有两道拒启:ZoneId 不在 `1..999999`;`config.ZoneDBName(ZoneId)` 与 `placement.StoreDBName(ZoneId)` 不一致。

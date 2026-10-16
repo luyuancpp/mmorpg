@@ -55,6 +55,13 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string &nodeJson, uint32
 				  << ", Error: " << parseResult.message().data();
 		return;
 	}
+	if (discoveredNode.node_type() != nodeType)
+	{
+		// etcd 前缀决定所属桶；value 不得把另一个服务的身份带进此桶或取消其摘除。
+		LOG_ERROR << "Service discovery node type mismatch: prefix_type=" << nodeType
+				  << ", value_type=" << discoveredNode.node_type();
+		return;
+	}
 
 	// Multi-zone safety guard:
 	//   Zone-scoped services (Gate / Scene / Login / PlayerLocator) register
@@ -85,25 +92,13 @@ void ServiceDiscoveryManager::AddServiceNode(const std::string &nodeJson, uint32
 	// Cancel any pending grace-period removal for this node.
 	gNode->CancelPendingNodeRemoval(discoveredNode.node_uuid());
 
-	auto &serviceNodesByType = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity());
-	auto &cachedNodesOfType = *serviceNodesByType[nodeType].mutable_node_list();
-
-	bool hasExistingSnapshot = false;
-	for (auto &cachedNode : cachedNodesOfType)
+	const auto result = serviceNodes_.Upsert(nodeType, discoveredNode);
+	if (result == ServiceNodeSnapshot::UpsertResult::kRejected)
 	{
-		if (!NodeUtils::IsSameNode(cachedNode.node_uuid(), discoveredNode.node_uuid()))
-		{
-			continue;
-		}
-
-		cachedNode.CopyFrom(discoveredNode);
-		hasExistingSnapshot = true;
-		break;
+		return;
 	}
-
-	if (!hasExistingSnapshot)
+	if (result == ServiceNodeSnapshot::UpsertResult::kAdded)
 	{
-		*cachedNodesOfType.Add() = discoveredNode;
 		LOG_INFO << "Node added, type: " << nodeType
 				 << ", node_id: " << discoveredNode.node_id()
 				 << ", uuid: " << discoveredNode.node_uuid()

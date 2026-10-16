@@ -8,7 +8,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <vector>
 
 #include "engine/core/type_define/type_define.h"
 
@@ -17,6 +16,9 @@
 #include "eviction_policy.h"
 #include "item_store.h"
 #include "item_system.h"
+
+// 按配置号升序安排批量预检与写入。哈希遍历序不得决定谁先占低号格、先报错或先落流水。
+[[nodiscard]] std::vector<std::pair<uint32_t, uint32_t>> SortedByConfigId(const ItemCountMap &counts);
 
 // ─────────────────────────────────────────────────────────────────────────
 // Bag —— 桥层。
@@ -41,8 +43,8 @@
 // 一个函数既改 size 又重排格子、DestroyItem() 销毁实体后还要线扫 posToGuid。
 // 详见 docs/design/bag-instance-layout-split.md。
 //
-// **公开 API 与拆分前逐字一致** —— BagService / bag_marshal / PlayerBagsComp /
-// bag_test 一行都不用改。这也是这次重构的验收判据。
+// 以 guid / 槽位访问的公开 API 保持不变;2026-10-15 删除了两个零调用方的
+// entt::entity 访问器,私有存储的句柄不再外泄。
 // ─────────────────────────────────────────────────────────────────────────
 
 constexpr std::size_t kDefaultCapacity{10};
@@ -94,7 +96,7 @@ struct DestroyedInstance
 };
 
 // 一条"被扣数量"的回执:从哪个实例、哪个 config、扣了多少。
-// 与 DestroyedInstance 的区别是**实例没有消失**(可能只是 size 变 0),
+// 与 DestroyedInstance 的区别是 amount 记录本次实扣量；被扣光的实例会立即退役,
 // 所以不能复用那个结构(它的 size 语义是"销毁前的整堆数量")。
 // 存在的理由同样是 transaction_log:消耗也要按 item_uuid 落流水,否则
 // "这瓶药是谁的哪一堆扣的"事后查不到,反刷追溯链断在战斗这一步。
@@ -173,7 +175,7 @@ struct BagProfile
     //
     // 淘汰给 RejectWhenFull 是**硬要求**,不是默认值:"为了给新手镯腾位而销毁
     // 你正戴着的手镯"不是任何游戏想要的行为。桥层对具名槽布局额外上了一道锁
-    // (Bag::ReserveOrEvict 直接拒绝淘汰),两道一起才够。
+    // (Bag::PlanEviction 直接拒绝淘汰),两道一起才够。
     static BagProfile Equipment(std::size_t slotCount)
     {
         return BagProfile{std::make_unique<FixedSlotLayout>(slotCount),
@@ -212,9 +214,11 @@ struct BagProfile
 class Bag
 {
 public:
+    // 实例指针、ForEach 借用和 Layout 引用仅限当前只读阶段；任何成功写入（含纯合堆）
+    // 都可能整体替换候选仓库/布局，后续必须按 guid 重新获取，不得跨写操作持有借用。
     // 特殊成员函数全部走隐式生成:layout_ 用类内初始化器给出默认布局,
-    // 于是 Bag 保持"默认可构造 + 可移动 + 不可复制"—— 与拆分前(entt::registry
-    // 本身就不可复制)完全一致。PlayerBagsComp 的 std::array<Bag,4> 和 entt
+    // 于是 Bag 保持"默认可构造 + 可移动 + 不可复制"(unique_ptr 成员禁止复制)。
+    // PlayerBagsComp 的 std::array<Bag,4> 和外层 ECS
     // 的组件存储都依赖这一点,别去手写它们。
 
     // ── 布局策略 ──────────────────────────────────────────────────────
@@ -267,41 +271,29 @@ public:
     std::size_t GetTotalItemCount(uint32_t config_id) const;
     ItemComp *GetItemCompByGuid(Guid guid);
     ItemComp *GetItemCompByPos(uint32_t pos);
-    entt::entity GetItemByGuid(Guid guid);
-    entt::entity GetItemByPos(uint32_t pos);
 
     // instancesNeededOut(可为 nullptr)回执:这一批总共要**新建多少个实例**。
-    // 批量入包拿它做铸号预检 —— 见 AddItems 的注释。
+    // 只预测当前空位；真正入包还会按最终淘汰结果重新规划并预留 ID。
     uint32_t CheckSpaceFor(const ItemCountMap &itemsToAdd,
                            std::size_t *instancesNeededOut = nullptr);
 
-    // 批量入包前的 reserve:摆得下就什么都不做,摆不下就按淘汰策略腾位。
-    //
-    // **编排层(BagService)的批量入包用它,不要用 CheckSpaceFor。**
-    // CheckSpaceFor 是纯预测("照现在这样放得下吗"),对会淘汰的包偏保守 ——
-    // 它会抢在淘汰之前把整批拒掉,于是临时格的先进先出在批量路径上永远不生效。
-    //
-    // evictedOut(可为 nullptr)收集为腾位而销毁的实例,调用方必须落流水。
-    //
-    // **两个重载各自带齐了全部零副作用预检**(零数量、配置表、准入、预设 guid 撞车、
-    // 铸号),并保证它们全跑在腾位之前。编排层不需要、也不应该在外面再补预检 ——
-    // 第一版把预检留给 Bag::AddItems 自己,而 BagService 有另一套批量循环并不经过
-    // 它,于是发号器被 fence 时临时格先挤掉旧物、再整批失败。把预检并进 reserve
-    // 入口,这个错就没法再犯。
-    uint32_t ReserveForBatchAdd(const ItemCountMap &itemsToAdd,
-                                std::vector<DestroyedInstance> *evictedOut = nullptr);
-    uint32_t ReserveForBatchAdd(const std::vector<InitItemParam> &itemsToAdd,
-                                std::vector<DestroyedInstance> *evictedOut = nullptr);
     uint32_t CheckItemsAvailable(const ItemCountMap &requiredItems);
     // evictedOut(可为 nullptr)按退役顺序收集**本次入包为了腾位而销毁的实例**
     // (销毁前抓拍 guid/config/size)。今天只有临时格(EvictOldestFirst)会非空。
     // 与 MergeAndCompact 的 destroyedOut 是同一个形状、同一个理由:被挤掉的
     // item_uuid 是 transaction_log 做外挂回收的关联键,不留痕追溯链就断了。
     // 生产代码请走 BagService::AddItem / AddItems,那里会把回执落成流水。
+    // 先完成最终空间规划及全部发号，再发布整批实例和布局；失败时所有输出保持原值。
+    // writtenByEntryOut 与 map 的配置升序或 vector 的输入顺序一一对应，供服务层提交后落流水。
+    // 候选复制的时间与临时内存随本包实例和布局大小增长，换取失败时不依赖反向回滚。
     uint32_t AddItems(const ItemCountMap &itemsToAdd,
-                      std::vector<DestroyedInstance> *evictedOut = nullptr);
+                      std::vector<DestroyedInstance> *evictedOut = nullptr,
+                      std::vector<GuidVector> *writtenByEntryOut = nullptr,
+                      const ItemInstanceInitializer *instanceInitializer = nullptr);
     uint32_t AddItems(const std::vector<InitItemParam> &itemsToAdd,
-                      std::vector<DestroyedInstance> *evictedOut = nullptr);
+                      std::vector<DestroyedInstance> *evictedOut = nullptr,
+                      std::vector<GuidVector> *writtenByEntryOut = nullptr,
+                      const ItemInstanceInitializer *instanceInitializer = nullptr);
     // 全或无:任何一种不够就整体失败(kBagInsufficientItems),绝不做部分删除。
     // drainedOut(可为 nullptr)按抽取顺序收集被扣的 (guid, config, 数量)。
     uint32_t RemoveItems(const ItemCountMap &itemsToRemove,
@@ -309,7 +301,7 @@ public:
 
     // ── 按 guid 的全或无扣出:reserve 段(聚宝斋 P2 托管)────────────────
     //
-    // **纯预检、零副作用**,与 ReserveForBatchAdd 是同一套"规划 -> 预留 -> 提交"
+    // **纯预检、零副作用**,与 AddItems 是同一套"规划 -> 预留 -> 提交"
     // 纪律的另一半:它返回 kSuccess 之后,编排层逐个 RemoveItem 不会再失败。
     //
     // **与 RemoveItemsClamped 语义相反,不要复用它。** 那条路是"按 config 夹紧、
@@ -317,11 +309,11 @@ public:
     // 少一件就整批拒 —— 托管的是玩家挂出去卖的**那一件具体装备**,夹紧等于凭空少卖。
     //
     // 只接受 `max_stack_size == 1` 的不可叠加实例,这是硬约束不是保守:可叠加物品
-    // 的预设 guid 在 AddStackableItem 里会被并堆重铸,发回来的 guid 根本不保证还
+    // 的预设 guid 在合堆时会被重新铸造,发回来的 guid 根本不保证还
     // 指向同一堆,"按 guid 还回去"在那一侧就不成立了。
     //
     // removableOut(可为 nullptr)按入参顺序给出**销毁前抓拍**的 (guid, config, size),
-    // 编排层拿它落流水 —— 与 ReserveForBatchAdd 的 evictedOut 同一个形状、同一个理由。
+    // 编排层拿它落流水 —— 与 AddItems 的 evictedOut 同一个形状、同一个理由。
     //
     // 返回 kSuccess,或 kAssetInvalidBundle(REJECTED 类,终局拒绝):空列表、
     // 同一 guid 报两次、guid 不在本包、config 查不到表、可叠加物品、实例 size != 1。
@@ -380,7 +372,7 @@ public:
     // 「整份实例」:身份(guid)与实例数据(equip 段)原样带走,所以
     //   * 不写流水 —— 实例没有被创造也没有被销毁,只是换了个包;写了反而会在
     //     transaction_log 里伪造一对「销毁 + 获得」;
-    //   * 不过封禁闸(GainBlockService / PlayerItemBlockList)—— 那是「获得」的闸,
+    //   * 不过封禁闸(GainBlockService)—— 那是「获得」的闸,
     //     封了某件装备不等于不许把已经穿着的那件脱下来;
     //   * 不掷属性 —— 不调 ItemInstanceInitializer(设计文档 §5 不变量 1 / 5);
     //   * 不查跨区冻结 / 战斗中 —— 那是编排层入口的事。
@@ -532,6 +524,8 @@ public:
     // **绝不调用 ItemInstanceInitializer**:还原的是已经存在过的实例,has_equip() 为假
     // 就是「它本来就没有」,不是「还没掷」(设计文档 §5 不变量 1)。
     void InsertItemForRestore(ItemComp item, uint32_t pos);
+    // 还原前先扫描本包全部非零序号并抬高水位，再按出现顺序补盖零序号。
+    void RaiseAcquireSeqForRestore(uint64_t sequence);
 
     // Set capacity (replays Bag::ExpandCapacity's effect without the audit log).
     // Used by Unmarshal to restore gameplay-unlocked slots.
@@ -582,7 +576,7 @@ private:
     // 同一部位可以有**多个**槽（两个手镯位就是表里两行 equip_kind 相同），
     // 所以这里是「找第一个空的」，不是「找那个唯一的」—— 上一版的
     // 模型（equip_slot = 只能进第 N 号槽）根本表达不了这个需求。
-    [[nodiscard]] SlotId FindFreeSlotForKind(uint32_t kind) const;
+    [[nodiscard]] SlotId FindFreeSlotForKind(uint32_t kind, const IContainerLayout *target = nullptr) const;
 
     // 这个部位当前还空着几个槽。`FindFreeSlotForKind` 的计数版,两者**必须**
     // 走同一套筛选(同 kind + 槽位在容量内 + 当前空着),否则 reserve 与 commit
@@ -607,50 +601,31 @@ private:
     //
     // 抽出来是因为它有两个用途且**不能共用同一个结尾**:
     //   * CheckSpaceFor(公开预测,必须纯)= PlanInstances + CanReserve
-    //   * AddItems(真入包,可淘汰)      = PlanInstances + ReserveOrEvict
+    //   * AddItems(真入包,可淘汰)      = PlanInstances + PlanEviction
     // 从前两者是一个函数,于是会淘汰的包在批量路径上根本没机会淘汰:
     // CheckSpaceFor 先一步把整批拒了。
     //
     // exclude(可为 nullptr):把这些 guid 的实例当作已不存在来算 —— 淘汰腾位前
-    // 用它回答"如果这几件被挤掉,这批还要新建几个实例"。见 ReserveOrEvict。
+    // 用它回答"如果这几件被挤掉,这批还要新建几个实例"。见 PlanEviction。
     uint32_t PlanInstances(const ItemCountMap &itemsToAdd, ItemCountMap *instancesByConfigOut,
                            std::size_t *totalInstancesOut,
                            const std::unordered_set<Guid> *exclude = nullptr);
 
-    // 批量入包的 reserve 段:先用 PlanInstances 拿精确错误码(配置表 / 准入),
-    // 再交给 ReserveOrEvict(摆得下直接过;摆不下就先算到不动点再腾位)。
-    // totalInstancesOut(可为 nullptr)给的是**腾位之后**的实例数。
-    uint32_t ReserveBatch(const ItemCountMap &itemsToAdd, std::size_t *totalInstancesOut,
-                          std::vector<DestroyedInstance> *evictedOut);
-
     [[nodiscard]] bool CanReserve(const ItemCountMap &instancesByConfig,
                                   std::size_t totalInstances) const;
 
-    // reserve 段的完整版:摆不下时先按淘汰策略腾位,腾够了再回答"能放"。
-    // 入参是 config -> **单位数**(不是实例数):它要自己反复规划。
-    //
-    // **这是唯一一处会在 reserve 段改状态的地方**,所以它的纪律最严:
-    //   * **先算到不动点,再销毁。** 被挤掉的可能正是本批打算并进去的未满堆,
-    //     那样需求会变大 —— 所以把牺牲者当作已不存在重新规划,需求变大就多选,
-    //     直到"腾出的格子 >= 排除牺牲者后的需求"稳定下来,全程零副作用;稳定了
-    //     才真的 DestroyItem。于是"腾不够就一件都不动"是**结构保证**,不是祈愿。
-    //     (2026-09-01 第一版按淘汰前的规划算缺口,临时格里拾取同种材料就会
-    //      "先销毁旧堆、再放不下、返回失败" —— 玩家净损失。见设计文档 §6.3。)
-    //   * 腾位是一次**独立且完整**的提交,发生在这一批写入任何东西之前 ——
-    //     于是三段仍然成立:要么腾完再放,要么一件不动;
-    //   * 具名槽布局**一律不淘汰**;容量不是标量的布局(格子碎片)也不淘汰;
-    //   * **没有回执就不淘汰**(evictedOut == nullptr 直接拒):被销毁的实例必须
-    //     经 evictedOut 回执给调用方、由 BagService 落流水 —— item_uuid 是外挂
-    //     回收的关联键,绝不能无声消失。这条此前只是注释,现在是闸。
-    [[nodiscard]] bool ReserveOrEvict(const ItemCountMap &unitsToAdd,
-                                      std::vector<DestroyedInstance> *evictedOut);
+    // 不动点纯规划：排除候选牺牲者后重算需求；具名槽不淘汰，缺回执不淘汰。
+    // 独立实例数不参与普通合堆，返回的实例数包含淘汰后的真实需求。
+    [[nodiscard]] bool PlanEviction(const ItemCountMap &unitsToAdd, bool allowEviction,
+                                    GuidVector &victims, std::size_t *totalInstancesOut = nullptr,
+                                    const ItemCountMap *separateInstances = nullptr);
 
     // 把一个实例放进布局:
     //   * 具名槽布局(装备栏)-> 按「物品的部位 + 槽位表」找第一个空的接受槽,
     //     没有声明部位的东西压根不该进这个包;
     //   * 其余布局           -> first-fit,与拆分前一致。
     // 放不下返回 kInvalidSlot,不留下任何半写状态。
-    [[nodiscard]] SlotId PlaceInstance(Guid guid, uint32_t configId);
+    [[nodiscard]] SlotId PlaceInstance(Guid guid, uint32_t configId, IContainerLayout *target = nullptr);
 
     // 整理用:实例层按 (config 升序, size 降序) 给出期望顺序,布局层负责落位。
     [[nodiscard]] GuidVector DesiredOrder() const;
@@ -658,26 +633,6 @@ private:
     // 当前槽位顺序是否已满足 (config 升序, size 降序)。需要同时读两层,
     // 所以留在桥层。
     [[nodiscard]] bool IsOrderedByConfigThenSize() const;
-
-    // writtenGuidsOut(可为 nullptr)按写入顺序收集**本次调用实际落到背包里的实例 guid**:
-    // 新铸的、沿用调用方预设的、以及被并入的既有堆,都算。调用方据此写流水,
-    // 不必再回读任何"上一次发号"的残值。
-    // evictedOut 透传给 ReserveOrEvict —— 腾位发生在这两个函数的 reserve 段。
-    //
-    // instanceInitializer 只有不可叠加这一支收:它的逐件循环是**所有玩法入包的唯一汇聚点**
-    // (单件 / count = N / 两个批量重载最终都落到这里),挂在这儿就不存在"哪条入口漏了"。
-    uint32_t AddNonStackableItem(ItemComp itemProto, std::vector<Guid> *writtenGuidsOut,
-                                 std::vector<DestroyedInstance> *evictedOut,
-                                 const ItemInstanceInitializer *instanceInitializer);
-    uint32_t AddStackableItem(ItemComp itemProto, uint32_t maxStackSize,
-                              std::vector<Guid> *writtenGuidsOut,
-                              std::vector<DestroyedInstance> *evictedOut);
-
-    // 把 remaining 个剩余单位铺进 newInstanceCount 个新建实例,每个最多
-    // maxStackSize 个,并为每个实例向布局层申请一个位置。
-    uint32_t SpillIntoNewInstances(ItemComp proto, uint32_t maxStackSize,
-                                   uint32_t remaining, std::size_t newInstanceCount,
-                                   std::vector<Guid> *writtenGuidsOut);
 
     std::size_t EmptyGridCount() const
     {

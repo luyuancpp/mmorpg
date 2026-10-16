@@ -95,7 +95,7 @@ message EnterSceneRequest {
   //   所以不能复用 request_id(复用会让每条交接请求多一次 SETNX/EVAL,还会带出假的"执行中")。
   // - 取值是发送方线程内的单调号:scene 进程所有 EnterScene 都经统一出口发出,恒非 0;
   //   0 表示调用方不需要按请求对应答(如 login)。
-  // - 请求侧后续新字段从 11 起用。
+  // - 请求侧后续新字段从 13 起用。
   uint64 correlation_id = 10;
   // 客户端主动选线(docs/design/world-channel-switch.md §4):这条请求的 scene_id 是玩家自己在
   // 客户端点选的,不是服务器替他决定的。只有 scene 节点的客户端 EnterScene 入口会置位;
@@ -104,6 +104,13 @@ message EnterSceneRequest {
   // 并在放行后开始计冷却;目标不是分线(按 id 进副本 / 镜像)时本字段不产生任何效果。
   // 进 request_id 指纹(它是业务语义);proto3 不序列化 false,不带它的请求指纹与加字段前逐字节相同。
   bool client_channel_pick = 11;
+  // 登录代次(docs/design/scene-enter-session-fence.md):login 每条登录链持玩家锁铸造一次的单调值,
+  // 随 RoutePlayerEvent 原样下发,供 scene 入场栅栏区分新旧会话。scene_manager 只透传、不校验。
+  // - 0 = 调用方没有代次:scene 节点自发的 EnterScene(换图 / 跟随 / 疏散 / 交接重发 / 镜像进场)
+  //   一律填 0,它们的路由到 gate 后由会话已知代次盖章;旧版 login 同样为 0。
+  // - 不进 request_id 的去重指纹(算指纹前清零,与 correlation_id 同理):login 的重试复用同一个
+  //   request_id,但每条登录链铸出的代次都不同,进指纹会把合法重试判成幂等冲突。
+  uint64 login_generation = 12;
 }
 
 message EnterSceneResponse {

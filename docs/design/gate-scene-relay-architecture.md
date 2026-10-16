@@ -1,182 +1,89 @@
-# Gate-Scene Connection Explosion & Solution
+# Gate–Scene 连接规模与跨 zone 换 Gate
 
-## Problem
+2026-10-15 按 `6281e4d27` 核对。本文说明已落码的连接拓扑；本次只改文档，未执行构建、联机或容量验证。
 
-全球同服 MMO 下，Gate 和 Scene 之间的 gRPC 直连会导致连接爆炸：
+## 当前链路
 
-- 40,000 Gate x 2,000 Scene = 8000万连接 (worst case full mesh)
-- 即使使用 lazy 按需建连 + gRPC channel pooling，跨区交互频繁时连接 fan-out 仍趋向 N x M
-- 控制面已用 Kafka 解决 (RoutePlayer/KickPlayer)，但数据面 (玩家实时消息) 需要低延迟，不能全走 Kafka
+| 通路 | 传输 | 连接边界 |
+|---|---|---|
+| Gate ↔ Scene 玩家实时消息 | muduo TCP RPC（RPC0） | Gate 只连接本 zone 的 Scene |
+| SceneManager / login → Gate 的路由、踢人、会话绑定、重定向 | Kafka 命令 | 共享分区 topic；目标身份由命令路由和实例 UUID 校验 |
+| Gate → Go 业务服务 | gRPC；路由模式先到 `client_rpc_router` | 与 Gate↔Scene 的 TCP 通道独立 |
+| Scene → SceneManager 换图、镜像创建、疏散 | gRPC | SceneManager 编排场景落点 |
 
-## Current State
+Gate 的两种客户端路由模式都把 `SceneNodeService` 列入出站白名单。服务发现通过 zone 过滤限制
+Scene 候选；服务启动后发现可连接节点就调用 `NodeConnector::ConnectToNode`，启动时也会遍历
+已有发现记录。TCP 分支创建 `RpcClient` 后立即 `connect()`，不是等玩家首次使用才 lazy 建连。
+`grpc_channel_cache.h` 只管理 gRPC channel，不能用来描述 Gate↔Scene 的连接复用。
 
-| Channel | Method | Connection Scale |
-|---------|--------|-----------------|
-| Control plane | Kafka (RoutePlayer/KickPlayer) | No direct connections, solved |
-| Data plane | gRPC (player realtime messages) | Gate -> Scene lazy connect, worst case -> N x M |
+实现入口：`cpp/nodes/gate/main.cpp`、
+`cpp/libs/engine/core/node/system/discovery/service_discovery_manager.cpp`、
+`cpp/libs/engine/core/node/system/node/node_connector.cpp`。
 
-### Existing Optimizations
-- **gRPC channel pooling**: `grpc_channel_cache.h` -- one channel per (ip, port), weak_ptr auto-cleanup
-- **Lazy connect**: connections created on first use, not pre-established full mesh
-- **Single-zone scenario**: works fine -- one Gate's players typically spread across only dozens of Scenes
+## 为什么按 zone 限制连接
 
-### Why It Breaks at Global Scale
-- Cross-zone interaction means Gate-A (zone 1) players may enter Scene-X (zone 5)
-- More cross-zone interaction = larger connection fan-out per Gate
-- Worst case: every Gate connects to every Scene = N x M
+若允许所有 Gate 连接所有 Scene，连接对数上界为 `G × S`；按 zone 限制后为
+`Σ(G_zone × S_zone)`。这限制的是连接扇出，不消除单 zone 内的连接乘积。
 
-## Recommended Solution: Gate Per Zone + Client Gate-Switching
+| 假定规模 | 不分 zone 的连接对数 | 各 zone 均匀分配时的连接对数 |
+|---|---:|---:|
+| 100 Gate、50 Scene、1 zone | 5,000 | 5,000 |
+| 1,000 Gate、200 Scene、10 zones | 200,000 | 20,000 |
+| 40,000 Gate、2,000 Scene、100 zones | 80,000,000 | 800,000 |
 
-### Core Idea
+以上只是拓扑算式，不是实测容量、活跃 socket 数或延迟承诺。双向连接及重连期间的实际资源占用
+须结合节点建连规则测量。
 
-Gates are grouped by zone. Each Gate only connects to Scenes in its own zone. When a player crosses zones, the **client switches to a Gate in the target zone**.
+## 跨 zone：客户端换到目标 zone 的 Gate
 
-```
-Zone A:  Gate-A1, Gate-A2  <-->  Scene-A1 ~ Scene-A20   (40 x 20 = 800 connections)
-Zone B:  Gate-B1, Gate-B2  <-->  Scene-B1 ~ Scene-B20   (40 x 20 = 800 connections)
-
-Gate-to-Scene connections are ALWAYS local to the zone. Connection explosion eliminated.
-```
-
-### Why This Works
-
-The existing codebase **already supports Gate switching** (Different-Gate Reconnect, Scenario B):
-
-```
-1. Client -> Gate B (TCP) -> Login (gRPC EnterGame)
-2. player_locator: update gate_id = B, session_version++
-3. Kafka -> gate-{B}: BindSession
-4. SceneManager.EnterScene -> Kafka -> gate-{B}: RoutePlayer
-5. Gate B -> Scene (gRPC, in-zone direct connect)
+```text
+客户端 → Gate-A → Scene-A → SceneManager.EnterScene
+                           │
+                           ├─ 源 Scene 冻结、存盘并写 handoff 标记
+                           ├─ SceneManager 校验 owner_epoch / handoff
+                           └─ 选择目标 zone Gate，签发重定向凭证
+客户端 ← Gate-A ← Kafka RedirectToGate
+客户端断开 Gate-A，连接 Gate-B、验证凭证并重新 EnterGame
+login / player_locator 更新新会话 → BindSession / RoutePlayer
+Gate-B → 本 zone Scene-B（muduo TCP RPC）→ 从玩家数据层加载后落地
 ```
 
-### Cross-Zone Flow
+这是链路示意，完整顺序、换手门、回滚和两条腿的凭证规则以
+[cross-zone-scene-travel.md](cross-zone-scene-travel.md) 为准。`RedirectToGate`、zone 发现过滤和
+目标 Gate 的重新入场已在本仓实现，不再列为待新增功能。跨 zone 不搬运 `PlayerAllData`，也不让
+Gate-A 直接连接远端 Scene-B。
 
-```
-Player is in Zone A, wants to enter a scene in Zone B:
+不同 Gate 重连是已有能力：新 Gate 的 SessionInfo 由新连接与 BindSession / RoutePlayer 重建，
+`player_locator.Reconnect` 更新 Gate 和 session。当前连接的状态属于原 Gate，不代表重连必须
+返回原 Gate。参见 [player_login_flow.md](player_login_flow.md) 的不同 Gate 重连流程。
 
-1. Client -> Gate-A -> SceneManager: EnterScene(scene_in_zone_b)
+## 控制面 topic 与 token 边界
 
-2. SceneManager detects target Scene is in Zone B, current Gate is in Zone A
-   -> Does NOT directly RoutePlayer
-   -> Triggers gate redirect flow
+命令 topic 按 [control-plane-topic-partitioning-20260908.md](control-plane-topic-partitioning-20260908.md)
+计算，例如 `gate-cmd_g<N>`；旧 `gate-{id}` 是迁移窗口的旧记法。生产者须填写目标 node 与
+`target_instance_id`，按玩家实体 ID 保序。
 
-3. Login/SceneManager assigns a Zone B Gate:
-   AssignGate(zone_id = B) -> {gate_b_ip, gate_b_port, token}
+Gate Token 仍由 login 签发、Gate 本地验签，并绑定选中的 Gate。客户端重连可以重新选择 Gate，
+但已经签给 Gate-A 的票不能被任意负载均衡到 Gate-B。集群外入口使用每实例可寻址的 Gate，见
+[gate-load-balancing-design.md](gate-load-balancing-design.md) 与 [k8s-client-entry.md](k8s-client-entry.md)。
 
-4. Gate-A sends RedirectToGate {ip, port, token} to client
-   (Client sees: server transfer / loading screen)
+## 未采用的中继层
 
-5. Client disconnects Gate-A, connects Gate-B, verifies token
+在 Gate 与 Scene 之间增加无状态 Relay 可以改变连接扇出，但会引入额外转发、生命周期和故障
+处理。本仓采用 zone 内直连与跨 zone 换 Gate，没有新增 Relay 节点。原方案里的延迟估值不作为
+当前系统的测量结论。
 
-6. Standard Scenario B reconnect flow:
-   Login.EnterGame -> player_locator update -> BindSession -> RoutePlayer
-   Gate-B direct-connects Zone B Scene -> player enters scene
-```
+## 代码与验证入口
 
-### What Needs to Change
+| 文件或文档 | 职责 |
+|---|---|
+| `go/login/internal/logic/loginpregate/assigngatelogic.go` | AssignGate 的编排入口 |
+| `go/login/internal/logic/pkg/loginqueue/gatetoken.go` | 选 Gate 与签票 |
+| `go/scene_manager/internal/logic/gate_redirect.go` | 跨 zone 重定向 |
+| `cpp/nodes/gate/handler/rpc/client_message_processor.cpp` | token 校验与客户端转发 |
+| `cpp/nodes/gate/handler/event/gate_event_handler.cpp` | Kafka 控制事件处理 |
+| [cross-zone-scene-travel.md](cross-zone-scene-travel.md) | 已实施链路、剩余缺口和交接索引 |
+| [跨区故障注入手册](../ops/cross-zone-failure-test-runbook.md) | 真实环境验收步骤与证据边界 |
 
-1. **Proto**: Add `RedirectToGate` message (Gate -> Client)
-2. **SceneManager**: When cross-zone, trigger Gate redirect instead of direct RoutePlayer
-3. **Client**: Handle `RedirectToGate` -> disconnect -> connect new Gate -> normal login
-4. **Gate etcd registration**: Include zone_id label (for zone-filtered discovery)
-
-### What Does NOT Change
-
-- Gate -> Scene connection logic (still in-zone lazy gRPC direct connect)
-- Kafka control plane
-- No new node types needed
-- Token verification flow (reuse existing HMAC-SHA256 mechanism)
-
-### Player Experience
-
-- Cross-zone: 1~2s loading screen (same as WoW cross-realm instances, FF14 World Visit)
-- In-zone: zero impact, no additional latency
-
-## Alternative: Relay Node (Not Adopted)
-
-An intermediate stateless forwarding layer between Gate and Scene.
-
-```
-                    +----------+
-  40,000 Gates ---- |  Relay   | ---- 2,000 Scenes
-  (each -> ~3)      |  Nodes   |  (each Relay -> all Scenes)
-                    |  (~50)   |
-                    +----------+
-
-Connections: 40,000 x 3 + 50 x 2,000 = 220K
-```
-
-- **Pros**: Client doesn't notice cross-zone transitions
-- **Cons**: Higher architecture complexity, persistent forwarding overhead, new node type required
-- **Not adopted because**: Gate-switching is simpler, reuses existing infrastructure, zero runtime overhead
-
-## Comparison
-
-| Approach | Latency | Connections | Complexity | Player Experience |
-|----------|---------|-------------|-----------|-------------------|
-| **Client Gate-Switch (recommended)** | Cross-zone: one-time 1~2s | Per-zone ~thousands | Low | Loading screen on cross-zone |
-| Relay Node | Per-message +0.1~0.5ms | ~220K | Medium | Seamless |
-| Kafka data plane | +2~10ms | 0 | Low | Non-realtime only |
-
-## Integration with Existing Architecture
-
-### Compatibility
-- Consistent with **cross-server architecture principle**: Scene doesn't care about player origin
-- Reuses **existing Gate-switch flow** (Scenario B: Different-Gate Reconnect)
-- Reuses **existing AssignGate with zone_id** parameter (`getgatelistlogic.go`)
-- Reuses **existing token mechanism** (HMAC-SHA256 sign/verify)
-- Control plane stays on Kafka, unchanged
-
-### Data Flow
-
-```
-[In-Zone]
-Player -> Gate -> Scene (gRPC direct)
-                   |
-                   | gRPC (Data Service)
-                   v
-                 Redis (home realm)
-
-[Cross-Zone Transition]
-Player -> Gate-A -> SceneManager: "target is Zone B"
-                         |
-                         v
-                    AssignGate(zone_id=B) -> token
-                         |
-                         v
-Gate-A -> Client: RedirectToGate {ip, port, token}
-Client disconnects Gate-A
-Client connects Gate-B -> token verify -> EnterGame -> BindSession -> RoutePlayer
-Gate-B -> Scene-B (gRPC direct, in-zone)
-
-[Control Plane]
-SceneManager/Login -> Kafka topic gate-{id} -> Gate
-```
-
-### Connection Count
-
-| Scale | Direct Mesh (no zoning) | Gate-Per-Zone (recommended) |
-|-------|------------------------|----------------------------|
-| 100 Gate x 50 Scene (1 zone) | 5,000 | 5,000 (same, single zone) |
-| 1,000 Gate x 200 Scene (10 zones) | 200,000 | 100 x 20 x 10 = 20,000 |
-| 40,000 Gate x 2,000 Scene (100 zones) | 80,000,000 | 400 x 20 x 100 = 800,000 |
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `go/login/internal/logic/pregate/getgatelistlogic.go` | AssignGate (already supports zone_id) |
-| `cpp/nodes/gate/handler/rpc/client_message_processor.cpp` | Gate token verify + message routing |
-| `cpp/libs/engine/core/node/system/grpc_channel_cache.h` | Existing channel pooling |
-| `cpp/nodes/gate/main.cpp` | Gate startup (Kafka consumer + gRPC direct) |
-| `go/scene_manager/` | SceneManager (add cross-zone redirect logic) |
-
-## TODO (Implementation)
-
-- [ ] Proto: define `RedirectToGate` message (Gate -> Client)
-- [ ] SceneManager: detect cross-zone and trigger gate redirect flow
-- [ ] Gate: send `RedirectToGate` to client when instructed
-- [ ] Client: handle `RedirectToGate` (disconnect + reconnect + re-login)
-- [ ] Gate etcd registration: ensure zone_id label is present
-- [ ] Integration test: cross-zone scene entry via gate switch
+工作区正在进行的 muduo RPC channel 改造不改变本文的 TCP/gRPC 平面划分；不能据未提交改造
+宣称新回调、超时或完整节点构建已经验证。

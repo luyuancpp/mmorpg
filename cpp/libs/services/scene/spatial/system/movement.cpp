@@ -1,4 +1,5 @@
 #include "movement.h"
+#include "actor/actor_net_id.h"
 
 #include <chrono>
 #include <cmath>
@@ -71,7 +72,7 @@ void MovementSystem::Update(const double delta)
 	// InBattleComp:回合制战斗在途不积分位移(进战时的残留速度会让玩家在战斗中
 	// 一路飘走,战后位置与客户端画面对不上)
 	auto view = tlsEcs.actorRegistry.view<Transform, Velocity>(
-		entt::exclude<Acceleration, AfkComp, PlayerFrozenComp, InBattleComp>);
+		entt::exclude<AfkComp, PlayerFrozenComp, InBattleComp>);
 	for (auto&& [entity, transform, velocity] : view.each())
 	{
 		if (velocity.x() == 0.0 && velocity.y() == 0.0 && velocity.z() == 0.0)
@@ -160,7 +161,13 @@ void MovementSystem::BroadcastMove(const entt::entity entity)
 	}
 
 	ActorMoveS2C move;
-	move.set_entity(entt::to_integral(entity));
+	const auto netId = actor_net_id::Of(tlsEcs.actorRegistry, entity);
+	if (netId == 0)
+	{
+		LOG_ERROR << "BroadcastMove: actor network id missing";
+		return;
+	}
+	move.set_entity(netId);
 	*move.mutable_transform() = *transform;
 	bool moving = false;
 	if (const auto* velocity = tlsEcs.actorRegistry.try_get<Velocity>(entity))
@@ -204,10 +211,15 @@ void MovementSystem::TeleportWithinScene(const entt::entity entity, const Vector
 	settle.targetY = location.y();
 	settle.expireAtMs = SteadyNowMs() + kTeleportSettleTimeoutMs;
 
-	if (tlsEcs.actorRegistry.any_of<Player>(entity))
+	const auto netId = actor_net_id::Of(tlsEcs.actorRegistry, entity);
+	if (tlsEcs.actorRegistry.any_of<Player>(entity) && netId == 0)
+	{
+		LOG_ERROR << "TeleportWithinScene: client notification skipped, actor network id missing";
+	}
+	if (tlsEcs.actorRegistry.any_of<Player>(entity) && netId != 0)
 	{
 		TeleportS2C teleport;
-		teleport.set_entity(entt::to_integral(entity));
+		teleport.set_entity(netId);
 		*teleport.mutable_transform() = *transform;
 		teleport.set_reason(reason);
 		SendMessageToClientViaGate(SceneMovementClientPlayerNotifyTeleportMessageId, teleport, entity);
@@ -227,7 +239,7 @@ bool MovementSystem::ShouldDropReportAfterTeleport(const entt::entity entity, co
 
 	// 瞬移之后换了场景:目标点属于上一个场景,不再有可比性,直接作废并照常裁决。
 	const auto* sceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(entity);
-	const entt::entity currentScene = sceneComp != nullptr ? sceneComp->sceneEntity : entt::null;
+	const SceneEntity currentScene = sceneComp != nullptr ? sceneComp->sceneEntity : SceneEntity{entt::null};
 	if (currentScene != settle->scene)
 	{
 		tlsEcs.actorRegistry.remove<TeleportSettleComp>(entity);

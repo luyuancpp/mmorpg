@@ -164,6 +164,7 @@ set(SOURCE_FILES
     proto/equipgem_table.pb.cc
     proto/equipgemsocket_table.pb.cc
     proto/tip/equip_error_tip.pb.cc
+    proto/tip/player_inbox_error_tip.pb.cc
 )
 
 add_library(table STATIC ${SOURCE_FILES})

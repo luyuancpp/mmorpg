@@ -1,10 +1,14 @@
 #include <gtest/gtest.h>
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <cstdint>
 #include <limits>
 
 #include "modules/bag/comp/player_bags_comp.h"
 #include "modules/mission/comp/mission_comp.h"
+#include "modules/snapshot/snapshot_system.h"
+#include "proto/common/component/actor_comp.pb.h"
+#include "proto/common/component/asset_op_ledger_comp.pb.h"
 #include "proto/common/component/currency_comp.pb.h"
 #include "proto/scene/player_activity.pb.h"
 #include "proto/scene/player_bag.pb.h"
@@ -23,7 +27,7 @@ class PlayerFeatureSnapshotTest : public testing::Test {
 protected:
     void SetUp() override {
         player = tlsEcs.actorRegistry.create();
-        tlsEcs.actorRegistry.emplace<Guid>(player, Guid{424200});
+        tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, Guid{424200});
     }
     void TearDown() override {
         if (tlsEcs.actorRegistry.valid(player)) tlsEcs.actorRegistry.destroy(player);
@@ -69,6 +73,17 @@ TEST_F(PlayerFeatureSnapshotTest, MissingBagReadDoesNotInitializeOrPublishStaleD
     EXPECT_TRUE(out.items().empty());
     EXPECT_FALSE(out.has_layout());
     EXPECT_EQ(nullptr, tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player));
+}
+
+// 回滚快照同样是只读路径(审计 F059 / F060):玩家缺持久化组件时 CaptureAndSend 必须放弃这条快照,
+// 而不是像旧 marshal 那样 get_or_emplace 补出零值组件、把零货币 / 空账本写进回滚链路。
+// 本用例的玩家只有 Guid,任何一个持久化组件都不在。
+TEST_F(PlayerFeatureSnapshotTest, RollbackSnapshotOfIncompletePlayerDoesNotCreateComponents) {
+    EXPECT_EQ(0u, SnapshotSystem::CaptureAndSend(player, SNAPSHOT_LOGIN));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<Transform>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<CurrencyComp>(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerAssetOpLedgerComp>(player));
+    EXPECT_EQ(nullptr, tlsEcs.actorRegistry.try_get<MissionsContainerComp>(player));
 }
 
 TEST_F(PlayerFeatureSnapshotTest, RejectsOutOfRangeBagAndInvalidEntity) {

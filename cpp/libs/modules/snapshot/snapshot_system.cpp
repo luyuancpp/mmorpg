@@ -1,4 +1,5 @@
 #include "snapshot_system.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <muduo/base/Logging.h>
 
@@ -21,17 +22,25 @@ uint64_t SnapshotSystem::CaptureAndSend(entt::entity player, SnapshotTrigger tri
         return 0;
     }
 
-    const auto *guidPtr = tlsEcs.actorRegistry.try_get<Guid>(player);
-    if (guidPtr == nullptr || *guidPtr == kInvalidGuid)
+    const auto *guidPtr = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+    if (guidPtr == nullptr || guidPtr->value == kInvalidGuid)
     {
         LOG_ERROR << "[SnapshotSystem] Player entity has no valid Guid";
         return 0;
     }
-    const Guid playerId = *guidPtr;
+    const Guid playerId = guidPtr->value;
 
     // ── Marshal player state ─────────────────────────────────────────────
+    // 放在领 snapshot_id 之前:校验不过就不消耗号段。
     PlayerAllData allData;
-    PlayerAllDataMessageFieldsMarshal(player, allData);
+    if (!PlayerAllDataMessageFieldsMarshal(player, allData))
+    {
+        // 持久化组件缺失(marshal 已打 ERROR 写明缺哪个)。快照是回滚的依据,
+        // 带着零值货币 / 空账本的快照一旦被 GM 回滚采用,就是把玩家资产清零。宁可少一条,fail-closed。
+        LOG_ERROR << "[SnapshotSystem] Marshal refused (persisted component missing); skipping snapshot for player "
+                  << playerId << " trigger=" << static_cast<int>(trigger);
+        return 0;
+    }
     allData.mutable_player_database_data()->set_player_id(playerId);
     allData.mutable_player_database_1_data()->set_player_id(playerId);
 

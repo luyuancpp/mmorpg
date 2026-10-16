@@ -4,13 +4,25 @@ Name: login.rpc
 # 生产部署走 deploy/ 下的受管配置,不复用本文件。
 Mode: dev
 ListenOn: 127.0.0.1:53000
-# zrpc 服务端超时(毫秒)。2026-09-29 由 100000 改为 10000:原值与本行旧注释「(10s)」不符,确认是多写了一个 0。
-# 下限:同步路径里最慢的 CreatePlayer 持锁后串行三次跨进程 gRPC,各 3s = 9s(见下方 Locker 注释),常态 Redis
-# 毫秒级,10s 装得下;EnterGame 的预加载链在 RPC 返回之后后台跑(chainBudget 5min),不受本值约束。
+# zrpc 服务端超时(毫秒)。2026-09-29 由笔误 100000 改为 10000;2026-10-14 再改为 4000
+# (docs/design/client-request-ordering.md O10 / §5,用户拍板 Q2=B)。
+# 为什么是 4000:生产走路由模式,路由服以 ForwardTimeoutMs(5000)调 login,deadline 经 gRPC 传播,
+# 10000 在路由模式下本来就不生效,handler 实际只有约 5s。预算链要求「目标 Timeout + 1000 ≤ ForwardTimeoutMs」,
+# 这样路由服回超时的时候 login handler 的 ctx 已经取消、不会再发出新的写;否则 gate 放行同一会话的下一条请求后,
+# 这一条仍可能晚落地,顺序就乱了。由 tools/scripts/k8s_deploy.ps1 的 Assert-RouterForwardBudget 在部署前核对。
+# 代价:CreatePlayer 持锁后串行三次跨进程 gRPC(发号 / 名字登记 / player:zone 登记,各自子预算 3s,见下方 Locker
+# 注释)合计必须在 4s 内完成;常态各是毫秒级,任何一步拖慢时整体在 4s 处失败,建角失败可重试(名字注册表幂等)。
+# 子预算没有按 4s 重分(2026-10-15 核对):名义之和 = 发号 3s + 名字 3s + player:zone 3s(开种子再 +1s)= 9~10s > 4s,
+# 但每一步的 ctx 都派生自 handler ctx,实际一律截在 4s;截止之后建角不再发出任何写、只做补偿(createplayerlogic.go
+# 6c''),所以超出的名义预算只影响「慢在哪一步、以哪一步失败」,不影响提交语义。要不要按 4s 重分、怎么分(名字那步
+# 还牵连同名重试的 1s 门槛),由 login 负责人定(client-request-ordering.md §5.3)。
+# 2026-10-15 补:名字登记之前还有一次新铸 id 的只读探测(6b',1s ctx 预算,见下方 Locker 注释),上面的名义之和
+# 再 +1s(10~11s);它同样派生自 handler ctx,结论不变。
+# EnterGame 的预加载链在 RPC 返回之后后台跑(chainBudget 5min),不受本值约束。
 # 上限约束(上游比下游宽):gate 直连 login 的 C++ deadline = bin/etc/base_deploy_config.yaml 的
-# GrpcClient.CallDeadlineMs.LoginNodeService(12000),必须 >= 本值 + 2000,由 tools/scripts/k8s_deploy.ps1 的
-# Assert-GrpcClientDeadlineBudget 在部署前核对。K8s ConfigMap 从这里镜像;deploy/login-stack.linux/login.yaml 另有一份,同步改。
-Timeout: 10000
+# GrpcClient.CallDeadlineMs.LoginNodeService(12000),必须 >= 本值 + 2000,由 Assert-GrpcClientDeadlineBudget 核对。
+# K8s ConfigMap 从这里镜像;deploy/login-stack.linux/login.yaml 另有一份,同步改。
+Timeout: 4000
 
 # Canonical go-zero RPC registration/discovery settings.
 Etcd:
@@ -68,9 +80,20 @@ Locker:
   #     + 名字登记 3s(建角侧总预算)+ player:zone 登记 3s(HomeZone.RegisterTimeout)= 9s;
   #   - 三次 Redis:读 blob、围栏写 blob、写未确认时的回读。常态是毫秒级;Redis 变慢但每次
   #     回包都还在 3s 以内时,三步合计 < 9s。
-  #   - 开 NewPlayerSeed 时多一次 Redis(新号种子;代码里的 1s ctx 预算只掐重发,单次最坏仍是 3s 读超时):
-  #     Redis 合计变成四步 < 12s,加上 gRPC 的 9s 最坏是 21s,**超过**下面的 20 —— 开着种子时「20 盖住」
-  #     不再成立,正确性照旧只靠围栏 + 回读;是否上调见 docs/design/new-player-first-enter-no-cold-read.md §10 P6。
+  #   - 开 NewPlayerSeed 时多一次 Redis(新号种子;代码里的 1s ctx 预算只掐重发,单次最坏仍是 3s 读超时)。
+  #     各步预算直接相加是 gRPC 9s + Redis 4×3s = 21s,但在现行 zrpc Timeout(本文件顶部,4s)下到不了:
+  #     除回读、名字补偿释放、建角锁释放与提交后的反查映射写(7b)外,每一步的 ctx 都派生自 handler ctx,
+  #     4s 一到 gRPC 立即失败、go-redis 不再发新命令(建角在每次写之前也显式查 ctx,见 createplayerlogic.go 6c''),
+  #     围栏写最晚在 handler 起算 4s 内发出,Redis 还在 3s 内回包时约 7s 前执行;围栏写确认之后的 7b 走独立 ctx,
+  #     单次最多再等约 3s 读超时,锁在它之后才释放,合计约 10s,下面的 20 仍盖得住。
+  #     种子在慢 Redis 下的真实代价:多吃最多 3s 的 handler 预算,围栏写可能来不及发出,本次建角失败
+  #     (名字释放,player:zone 映射与孤儿种子留下)。把 Timeout 调到约 17s 以上时 21s 才可达,届时重算
+  #     (docs/design/new-player-first-enter-no-cold-read.md §10 P6)。
+  #   - 2026-10-15 起名字登记之前多一次只读探测(6b':新铸 id 的父键 / owner_epoch,两条 EXISTS 走一个 pipeline、
+  #     一次往返;1s ctx 预算同样只掐重发,单次最坏仍是 3s 读超时),不看种子开关。Redis 因此是 4 次(开种子 5 次),
+  #     各步预算直接相加是 21s(开种子 24s)。探测的 ctx 派生自 handler ctx、排在围栏写之前,所以上面「围栏写最晚在
+  #     handler 起算 4s 内发出、合计约 10s、20 仍盖得住」的推导不变;上调 Timeout 按 P6 重算时把这一次算进去
+  #     (同文 §10 P7)。
   # 原值 10 是名字登记加入之前定的,已经盖不住;20 盖住「gRPC 三步全部拖满 + Redis 慢但还在回包」。
   # **20 不是硬上界**,不要把它读成「有余量的保证」:
   #   - Redis 那个 3s 是 go-redis 默认的**单次** socket 读超时。svc/servicecontext.go 构造客户端时
@@ -249,7 +272,8 @@ Placement:
 #   前提(既有契约,不是新增):PlayerAllData 与 player:{id}:owner_epoch 在同一个 Redis 实例(CZ-2 / CZ-4)。
 #   打开前置:go/db 的 db_placement_guard_total{outcome="missing_required"} 与
 #   db_placement_store_open_total{result=~"error|rejected"} 两类告警已就位(见上方 Placement 第 3 条)。
-#   开着时新号的入场链在 PreloadPool 里跑完,池满回 kLoginInProgress;压测看 [preload-pool] 日志的 dropped_delta。
+#   开着时新号的入场链在 PreloadPool 里跑完,池满回 kLoginInProgress;压测看指标 entergame_total{result="pool_saturated"}
+#   (tools/scripts/stress_summarize.ps1 的 pool_saturated 列),[preload-pool] 日志的 dropped_delta 作辅证。
 #   启动日志 "[new-player-seed] enabled=..." 是核对依据。
 NewPlayerSeed:
   Enabled: false
@@ -344,9 +368,13 @@ Prometheus:
   Path: /metrics
 
 # Background goroutine pool for player data preload (Kafka fan-out).
-# Size: max concurrent in-flight preload tasks. Submit is non-blocking; if the
-#       pool is saturated, the task is dropped with a log and the Scene-side
-#       Redis NIL retry compensates (extra latency only, no data loss).
+# Size: max concurrent in-flight EnterGame preload tasks. Submit is non-blocking;
+#       when the pool is saturated the chain is NOT started and EnterGame returns
+#       kLoginInProgress (the client retries); nothing downstream compensates.
+#       Cache-hit chains run the whole apply phase on a pool worker; with
+#       NewPlayerSeed on that includes every new player.
+#       Watch entergame_total{result="pool_saturated"}; dropped_delta in the
+#       [preload-pool] log is the secondary signal.
 # StatsInterval: periodic pool snapshot log (running/free/cap, drop counter).
 #       Set to 0 to disable.
 PreloadPool:
@@ -369,6 +397,10 @@ PasswordAuth:
   KDFConcurrency: 2
   # Waiting for a KDF slot is bounded and context-aware; overload fails closed.
   KDFWaitTimeout: 500ms
+  # 跨副本账号失败门，必须共用不可淘汰的 Redis；单账号在途租期固定 30s。
+  FailureLimit: 5
+  FailureWindow: 15m
+  FailureLock: 5m
 
 # Local robots and the Unity dev client use this explicit development-only
 # gate: the shared secret must come from an environment variable and only the
@@ -433,9 +465,14 @@ AuthProviders:
 #   - reconnect/replace callers (existing PlayerSession) bypass the queue.
 #
 # Roll-out checklist:
-#   0. 多个 zone 共用一个 Redis 时,先把所有 zone 的 login 升到 2026-10-12(G1b)之后的版本,
-#      再打开 Enabled。新旧版本混跑时,同一个 zone 可能短暂出现两个 leader:只会多放行一批,
-#      不丢人、不重复放行(docs/design/login-queue-2026-05.md §7.1)。
+#   门槛(2026-10-15):打开排队之前,docs/handoff/launch-readiness-20261013/spec_G4b.md §7「合入门槛」的三项
+#      (G1b 多 zone 用例与 G4b-G 由 Codex 跑绿、spec_G4b-G.md §8.4 真实 Redis 冒烟记进 docs/PROGRESS.md)必须都已满足。
+#      K8s 部署由 tools/scripts/k8s_deploy.ps1 的 $script:LoginQueueMergeGateCleared 机械拦截(未清时各档位排队都关、
+#      -LoginQueue on 拒绝);手改本文件或 ConfigMap 的 Enabled 同样违规,脚本拦不住。清门槛本身的冒烟用 scratchpad 里的
+#      配置副本,本文件 Enabled 保持 false。
+#   0. 先在 Enabled=false 下把所有 zone 的 login 升到 2026-10-13(G4b-G,含 G1b)之后的版本,再打开 Enabled。
+#      排队开着混跑时:同一个 zone 可能短暂两个 leader(G1b);新旧两种在途占位键互不可见,旧版副本放行 / 取走的
+#      部分仍按旧版超发(G4b-G)。不丢人、不重复放行(docs/design/login-queue-2026-05.md §7.1 与「在途占位的生命周期」)。
 #   1. Deploy with Enabled=false → verify no behavior change.
 #   2. Set ZoneCapacityOverride for each live zone (use observed peak * 0.9
 #      as the initial value; tune from there).
@@ -443,11 +480,18 @@ AuthProviders:
 #   4. Roll out fleet-wide.
 #
 # DispatchInterval too low burns Redis QPS without improving fairness;
-# 1s is the sweet spot since gate PlayerCount only refreshes every few
-# seconds via etcd.
+# 1s is the sweet spot since gate PlayerCount only refreshes every 10s
+# via etcd (cpp/nodes/gate/main.cpp playerCountReportTimer).
 #
-# AdmitTTL must outlive the worst-case "client reads admit token →
-# connects to gate" round-trip across mobile networks. 60s is generous.
+# AdmitTTL:放行槽等客户端来取的时限,也是没人来取时在途占位的寿命。取走之后(以及快速通道当场
+# 交票之后)占位只再留 20s —— 代码常量 loginqueue.defaultHandoffGrace,不是配置(G4b-G;2026-10-13 定 15s,
+# 10-15 改为 20s,即 gate 两个上报周期)。
+# 占位键的整键 TTL 只做垃圾回收、只增不减:各副本写占位时,剩余 TTL 不足自己的 max(AdmitTTL, 20s) + 1min
+# 才续上(2026-10-15 起;此前是无条件续期)。所以排队开着时也可以滚动调整 AdmitTTL,新旧值并存不会让整键
+# 先于未到期的占位消失;调小之后,已续上的较大整键 TTL 要自然走完才收敛(只影响 zone 下线后键多留多久)。
+#
+# Enabled=true 时 DispatchInterval、DispatcherLockTTL 必须为正(loginqueue.NewDispatcher 校验),否则起服失败;
+# 代码里的默认值(1s / 30s)只在键缺省时生效,显式写 0s 不会回落到默认值,也不是「关掉」。
 Queue:
   Enabled: false
   DispatchInterval: 1s

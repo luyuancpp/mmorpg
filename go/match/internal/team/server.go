@@ -19,7 +19,9 @@ import (
 // 本层只做三件事:自设请求预算、从 session 取身份(fail-closed)、记 team_rpc_total;业务全部委托 Service。
 
 // teamRPCBudget 每个方法入口自设的请求预算(J-14 方案 a):赶在路由服 ForwardTimeoutMs=5000 之前把
-// in-band 结果回去,且不改 match 的 zrpc Timeout(5000,改小会截断 WatchBattle 同步链)。
+// in-band 结果回去。match 的 zrpc Timeout 已于 2026-10-14 由 5000 降为 4000(client-request-ordering.md O10),
+// 3500 < 4000,入口预算先到;原先「不改 Timeout、改小会截断 WatchBattle 同步链」的理由已由 WatchBattle 改用
+// 请求 ctx 取代(team-system.md §A.3 第 7 条的 2026-10-14 更正)。
 // go-zero 超时拦截器到期后 handler 仍会跑完,迟到写入由 expected_team_id 绑定与提交前 ctx 检查兜住(§D.6)。
 const teamRPCBudget = 3500 * time.Millisecond
 

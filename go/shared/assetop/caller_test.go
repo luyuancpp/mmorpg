@@ -313,13 +313,16 @@ func TestCallerDetectsOutcomeFlip(t *testing.T) {
 // 比如把 ErrAwaitingPlacement(跨 zone 交接放行、目标 zone 还没落点)当成故障上抛,
 // 帮会同步路径就会在玩家过图的那一两秒里回"操作失败",而其实只该稍后重试。
 func TestCallerNoHolderIsLocalNotHere(t *testing.T) {
+	// absent:只有位置键不存在才算「没有位置」,另两种玩家多半在线,不能进离线停放档(Result.Absent)。
 	cases := []struct {
-		name string
-		err  error
+		name   string
+		err    error
+		absent bool
 	}{
-		{"不在线", scenenode.ErrNotOnline},
-		{"节点未注册", scenenode.ErrNodeUnknown},
-		{"跨 zone 等待落点", scenenode.ErrAwaitingPlacement},
+		{"不在线", scenenode.ErrNotOnline, true},
+		{"节点未注册", scenenode.ErrNodeUnknown, false},
+		{"节点身份歧义", scenenode.ErrNodeAmbiguous, false},
+		{"跨 zone 等待落点", scenenode.ErrAwaitingPlacement, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -335,6 +338,9 @@ func TestCallerNoHolderIsLocalNotHere(t *testing.T) {
 			}
 			if !res.Local || res.Outcome != assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE {
 				t.Fatalf("应当是本地合成的 NOT_HERE,实际 %+v", res)
+			}
+			if res.Absent != tc.absent {
+				t.Fatalf("Absent 应为 %v,实际 %+v", tc.absent, res)
 			}
 			if res.Durable {
 				t.Fatal("本地合成的结局绝不能标成已落盘 —— 那会让调用方直接终结")

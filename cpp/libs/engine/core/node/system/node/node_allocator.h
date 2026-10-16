@@ -14,11 +14,7 @@ public:
 
 	static void ReRegisterExistingNode();
 
-	// CAS losers: ids we tried and lost. Persists across the
-	// allocateNodeTimer.RunAfter(1, AcquireNode) retry path so that the
-	// next attempt skips ids we already know are taken globally, without
-	// having to wait for the etcd watch stream to deliver the winning
-	// peer's NodeInfo into our local ServiceNodeList snapshot.
+	// 记录本进程已抢号失败的 id，跨定时重试保留，不等待服务发现快照追上获胜节点。
 	static void RecordLostId(uint32_t id);
 
 private:

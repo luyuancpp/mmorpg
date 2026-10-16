@@ -200,12 +200,22 @@ jobs:
             third_party/ue5navmesh
             third_party/recastnavigation
           )
+          # 不带 --recursive 拉的子模块：nghttp2 只编静态核心库（ENABLE_LIB_ONLY），
+          # 它自己的嵌套子模块（mruby / neverbleed / munit / urlparse）一个都用不到，
+          # 递归拉下来只会让 Docker COPY 与 setup_dependencies.sh 的源码树哈希白白变大。
+          SUBMODULES_NO_RECURSE=(
+            third_party/nghttp2
+          )
           # --depth 1 省下几个 GB，但子模块钉的 SHA 若不是分支尖端，浅克隆会
           # 报 "fatal: reference is not a tree"。所以浅拉失败就退回全深度，
           # 而不是让整个 job 红在一个纯优化项上。
           if ! git submodule update --init --depth 1 --recursive -- "${SUBMODULES[@]}"; then
             echo "::warning::Shallow submodule clone failed; falling back to a full-depth fetch"
             git submodule update --init --recursive -- "${SUBMODULES[@]}" || exit 1
+          fi
+          if ! git submodule update --init --depth 1 -- "${SUBMODULES_NO_RECURSE[@]}"; then
+            echo "::warning::Shallow non-recursive submodule clone failed; falling back to a full-depth fetch"
+            git submodule update --init -- "${SUBMODULES_NO_RECURSE[@]}" || exit 1
           fi
           df -h /
 

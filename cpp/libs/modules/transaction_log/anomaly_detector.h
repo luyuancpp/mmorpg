@@ -41,6 +41,14 @@ struct PlayerAnomalyBucket
     uint64_t cumulativeAmount{0};
 };
 
+// 按需状态,只由 Record* 经 WindowForWrite 首次写入时创建,不入库。
+// 缺失表示空窗口;随玩家实体销毁,不保留进程级旁路索引。
+struct PlayerAnomalyWindowComp
+{
+    std::unordered_map<uint32_t, PlayerAnomalyBucket> currencies;
+    std::unordered_map<uint32_t, PlayerAnomalyBucket> items;
+};
+
 class AnomalyDetector
 {
 public:
@@ -74,23 +82,7 @@ public:
     static void ClearAll();
 
 private:
-    // Keep player as the outer key so logout cleanup is O(1), not a full scan
-    // of every player's buckets. Currency and item maps are intentionally
-    // separate: a currency enum value may equal an item config id.
-    struct PlayerBuckets
-    {
-        std::unordered_map<uint32_t, PlayerAnomalyBucket> currencies;
-        std::unordered_map<uint32_t, PlayerAnomalyBucket> items;
-    };
-
-    struct EntityHash
-    {
-        size_t operator()(entt::entity entity) const noexcept
-        {
-            return std::hash<uint32_t>{}(entt::to_integral(entity));
-        }
-    };
-
+    static PlayerAnomalyWindowComp* WindowForWrite(entt::entity player, const AnomalyThreshold& threshold);
     static const AnomalyThreshold &GetCurrencyThreshold(CurrencyType type);
     static const AnomalyThreshold &GetItemThreshold(uint32_t configId);
 
@@ -103,8 +95,7 @@ private:
                           uint32_t subKey, uint64_t count, uint64_t totalAmount,
                           const AnomalyThreshold &threshold);
 
-    // Storage — thread-local via TLS, no mutex needed.
-    static thread_local std::unordered_map<entt::entity, PlayerBuckets, EntityHash> buckets_;
+    // 配置仍归当前线程,窗口数据归玩家实体。
     static thread_local std::unordered_map<uint32_t, AnomalyThreshold> currencyThresholds_;
     static thread_local std::unordered_map<uint32_t, AnomalyThreshold> itemThresholds_;
     static thread_local AnomalyThreshold defaultThreshold_;

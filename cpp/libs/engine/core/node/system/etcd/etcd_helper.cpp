@@ -1,9 +1,24 @@
 #include "etcd_helper.h"
 #include <google/protobuf/util/json_util.h>
-#include "thread_context/redis_manager.h"
-#include "grpc_client/etcd/etcd_grpc_client.h"
 #include <muduo/base/Logging.h>
-#include "thread_context/node_context_manager.h"
+#include "node/system/etcd/etcd_transport.h"
+#include "node/system/node/node.h"
+
+namespace
+{
+// 全部 etcd 请求的唯一出口(docs/design/grpc-muduo-transport.md §13.4)。EtcdService 还没 Init、或已经 Shutdown 时
+// 没有传输:请求丢弃并记一笔(关机之后的写本来就不会被处理;旧实现此时也是投进正在关闭的 CQ)。
+EtcdTransport *ActiveTransport(const char *operation)
+{
+	EtcdTransport *transport =
+		gNode != nullptr ? gNode->GetServiceDiscoveryManager().etcdService.Transport() : nullptr;
+	if (transport == nullptr)
+	{
+		LOG_WARN << "etcd " << operation << " dropped: the etcd transport is not running";
+	}
+	return transport;
+}
+} // namespace
 
 void EtcdHelper::PutServiceNodeInfo(const NodeInfo &nodeInfo, const std::string &key, int64_t lease)
 {
@@ -27,7 +42,10 @@ void EtcdHelper::PutServiceNodeInfo(const NodeInfo &nodeInfo, const std::string 
 	}
 	request.set_value(jsonValue);
 
-	SendKVPut(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), request);
+	if (auto *transport = ActiveTransport("Put"))
+	{
+		transport->Put(request);
+	}
 }
 
 void EtcdHelper::RangeQuery(const std::string &prefix)
@@ -39,7 +57,10 @@ void EtcdHelper::RangeQuery(const std::string &prefix)
 	range_end.back() += 1; // last char + 1
 	request.set_range_end(range_end);
 
-	SendKVRange(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), request);
+	if (auto *transport = ActiveTransport("Range"))
+	{
+		transport->Range(request);
+	}
 }
 
 void EtcdHelper::StartWatchingPrefix(const std::string &prefix, int64_t revision)
@@ -59,7 +80,10 @@ void EtcdHelper::StartWatchingPrefix(const std::string &prefix, int64_t revision
 		createReq.set_start_revision(revision);
 	}
 
-	SendWatchWatch(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), request);
+	if (auto *transport = ActiveTransport("Watch"))
+	{
+		transport->WatchWrite(request);
+	}
 }
 
 void EtcdHelper::StopAllWatching()
@@ -72,7 +96,10 @@ void EtcdHelper::GrantLease(uint32_t ttlSeconds)
 	etcdserverpb::LeaseGrantRequest leaseReq;
 	leaseReq.set_ttl(ttlSeconds);
 
-	SendLeaseLeaseGrant(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), leaseReq);
+	if (auto *transport = ActiveTransport("LeaseGrant"))
+	{
+		transport->LeaseGrant(leaseReq);
+	}
 }
 
 void EtcdHelper::PutIfAbsent(const std::string &key, const std::string &newValue, int64_t currentVersion, int64_t lease)
@@ -91,7 +118,10 @@ void EtcdHelper::PutIfAbsent(const std::string &key, const std::string &newValue
 	successOp.set_value(newValue);
 	successOp.set_lease(lease);
 
-	SendKVTxn(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), txn);
+	if (auto *transport = ActiveTransport("Txn"))
+	{
+		transport->Txn(txn);
+	}
 }
 
 void EtcdHelper::PutWithLease(const std::string &key, const std::string &newValue, int64_t lease)
@@ -105,7 +135,10 @@ void EtcdHelper::PutWithLease(const std::string &key, const std::string &newValu
 	successOp.set_value(newValue);
 	successOp.set_lease(lease);
 
-	SendKVTxn(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), txn);
+	if (auto *transport = ActiveTransport("Txn"))
+	{
+		transport->Txn(txn);
+	}
 }
 
 void EtcdHelper::PutWithLease(const std::string &key, const NodeInfo &nodeInfo, int64_t lease)
@@ -167,7 +200,10 @@ etcdserverpb::TxnRequest EtcdHelper::BuildClaimIfAbsentOrOwnedTxn(const std::str
 void EtcdHelper::PutIfAbsentOrOwned(const std::string &key, const std::string &value, const std::string &ownerValue, int64_t lease)
 {
 	const auto txn = BuildClaimIfAbsentOrOwnedTxn(key, value, ownerValue, lease);
-	SendKVTxn(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), txn);
+	if (auto *transport = ActiveTransport("Txn"))
+	{
+		transport->Txn(txn);
+	}
 }
 
 bool EtcdHelper::TxnClaimSucceeded(const etcdserverpb::TxnResponse &reply)
@@ -218,7 +254,10 @@ void EtcdHelper::RevokeLeaseAndCleanup(int64_t leaseId)
 	etcdserverpb::LeaseRevokeRequest request;
 	request.set_id(leaseId);
 
-	SendLeaseLeaseRevoke(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), request);
+	if (auto *transport = ActiveTransport("LeaseRevoke"))
+	{
+		transport->LeaseRevoke(request);
+	}
 }
 
 void EtcdHelper::DeleteRange(const std::string &key, bool isPrefix)
@@ -233,5 +272,20 @@ void EtcdHelper::DeleteRange(const std::string &key, bool isPrefix)
 		request.set_range_end(range_end);
 	}
 
-	SendKVDeleteRange(tlsNodeContextManager.GetRegistry(EtcdNodeService), tlsNodeContextManager.GetGlobalEntity(EtcdNodeService), request);
+	if (auto *transport = ActiveTransport("DeleteRange"))
+	{
+		transport->DeleteRange(request);
+	}
+}
+
+
+void EtcdHelper::KeepAliveLease(int64_t leaseId)
+{
+	etcdserverpb::LeaseKeepAliveRequest request;
+	request.set_id(leaseId);
+
+	if (auto *transport = ActiveTransport("LeaseKeepAlive"))
+	{
+		transport->KeepAliveWrite(request);
+	}
 }

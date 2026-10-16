@@ -17,6 +17,7 @@ package kafka
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -135,6 +136,16 @@ func observeFlushAttempt(ctx context.Context, consumer string, start time.Time, 
 	metrics.ObserveKafkaConsumerFlushAttempt(consumer, result, time.Since(start))
 }
 
+// isReaderOffsetTraceLine 判断 kafka-go 普通 Logger(不是 ErrorLogger)上的一行是不是分区 reader (重新)初始化时的位点记录。
+// 按 format 子串放行两行(kafka-go v0.4.47 reader.go,已按 tag 源码核对,两行都只经 Logger):
+// (*reader).run 每次初始化前的 "initializing kafka reader for partition %d of %s starting at offset %d"(传入的起读位点)
+// 与 (*reader).initialize 里的 "the kafka reader for partition %d of %s is seeking to offset %d"(实际起读位点)。
+// Logger 上其余输出一律不放行(全集未核实,白名单与全集无关)。其中 fetch 超时的 "no messages received ..." 一行
+// 也只经 Logger:空闲分区上它会反复出现(频率未核实),这是用白名单而不是整个接出来的原因。
+func isReaderOffsetTraceLine(format string) bool {
+	return strings.Contains(format, "starting at offset") || strings.Contains(format, "seeking to offset")
+}
+
 // newReader 建 kafka-go reader。NewReader 不拨号,连不上只会让 FetchMessage 报错并按
 // 退避重试,所以这里不是启动失败点。
 func newReader(brokers []string, topic, group string) *kafkago.Reader {
@@ -149,12 +160,25 @@ func newReader(brokers []string, topic, group string) *kafkago.Reader {
 		MaxWait:     500 * time.Millisecond,
 		// CommitInterval=0:同步提交,由消费循环自己决定何时提交(插库成功之后)。
 		CommitInterval: 0,
-		// kafka-go 在已提交位点早于日志起点(保留期已删掉未消费的消息)时会自动跳到起点,并只经 ErrorLogger 说一声。
-		// 那一句是「审计数据被保留期删了多少」的唯一精确记录:不配它,这一跳完全静默,
-		// 而 lag 探针的 retention_gap 也会在消费者跳过、提交之后自行归零。只加日志,不改消费行为。
-		// (措辞按 kafka-go v0.4.47 reader.go 的 out-of-range 分支,组模式是否同样经它待按源码核对。)
+		// 保留期删掉未消费的消息之后 kafka-go 会自动跳到日志起点。它留下什么记录分两种情形
+		// (v0.4.47 reader.go,已按 tag 源码核对;组 / 非组模式的分区 reader 同走 (*reader).run):
+		//   - 运行中被保留期追上(fetch 返回 OffsetOutOfRange 且 offset < first):经 ErrorLogger 打
+		//     `... skipping from offset X to Y (N messages)`,是该情形的精确记录;
+		//   - 分区 reader 每次(重新)initialize(进程重启 / STOPPED 冷却后重建 / rebalance / 断线重连)时,已提交位点早于
+		//     日志起点会在 initialize 里**静默**改到起点,ErrorLogger 不出声。这条路径靠下面 Logger 放行的两行:
+		//     `starting at offset A`(传入位点;负数 = 这个组没提交过,不算丢)与 `seeking to offset B`(实际起读位点),
+		//     A >= 0 且 B > A 时 B − A 就是被跳过的条数。DB 故障 → 停机 → 冷却 → 重建走的正是这条。
+		// 两个都不配,这一跳完全静默,而 lag 探针的 retention_gap 会在消费者越过缺口、提交之后自行归零
+		// (探针的 `AUDIT DATA LOST` 行只是采样到的下界)。只加日志,不改消费行为。
 		ErrorLogger: kafkago.LoggerFunc(func(format string, args ...interface{}) {
 			logx.Errorf("[kafka-go] topic=%s group=%s: "+format, append([]interface{}{topic, group}, args...)...)
+		}),
+		// 只放行上面说的两行位点记录,其余丢弃(见 isReaderOffsetTraceLine)。量:每个分区每次(重新)初始化两行;
+		// broker 不可达期间每次初始化重试多一行 `starting at offset`,与 ErrorLogger 上已有的 `error initializing` 行同频。
+		Logger: kafkago.LoggerFunc(func(format string, args ...interface{}) {
+			if isReaderOffsetTraceLine(format) {
+				logx.Infof("[kafka-go] topic=%s group=%s: "+format, append([]interface{}{topic, group}, args...)...)
+			}
 		}),
 	})
 }

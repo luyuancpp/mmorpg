@@ -28,6 +28,9 @@ type PlayerSession struct {
 	State          int32  `json:"state"` // 0=unknown, 1=online, 2=disconnecting, 3=offline
 	LastActiveTs   int64  `json:"last_active_ts"`
 	RequestID      string `json:"request_id"`
+	// LoginGeneration 是写下这条会话的登录链铸出的代次(login_generation.go);0 = 旧版 login 写入、无代次。
+	// 下一次铸造以它为下限,保证 player_locator 提交点"严格递增"的校验能过(scene-enter-session-fence.md §3.4)。
+	LoginGeneration uint64 `json:"login_generation"`
 }
 
 // EnterGameDecision mirrors Centre's enum.
@@ -78,6 +81,8 @@ type OnlineSessionInput struct {
 	Account        string
 	RequestID      string
 	Now            time.Time
+	// LoginGeneration 是本条登录链铸出的代次,原样写进会话记录。调用方保证非 0:铸造失败的链走不到写会话。
+	LoginGeneration uint64
 }
 
 func idempotencyKey(playerID uint64, requestID string) string {
@@ -121,17 +126,22 @@ func SetSessionDisconnecting(ctx context.Context, plClient plpb.PlayerLocatorCli
 }
 
 // Reconnect cancels the disconnect lease and restores the session to online via player_locator.
+//
+// loginGeneration 是本条重连链铸出的代次,由 player_locator 随整字节 CAS 写进会话记录。
+// 返回值是 locator 回带的会话记录:旧版 locator 不认这个字段,会原样回出上一条会话的代次,
+// 所以调用方下游一律用自己铸出的值,不用返回值里的(scene-enter-session-fence.md §3.4)。
 func Reconnect(ctx context.Context, plClient plpb.PlayerLocatorClient, playerID uint64,
 	newSessionID uint32, gateID string, gateInstanceID string,
-	account string, requestID string,
+	account string, requestID string, loginGeneration uint64,
 ) (*PlayerSession, error) {
 	resp, err := plClient.Reconnect(ctx, &plpb.ReconnectRequest{
-		PlayerId:       playerID,
-		NewSessionId:   newSessionID,
-		GateId:         gateID,
-		GateInstanceId: gateInstanceID,
-		Account:        account,
-		RequestId:      requestID,
+		PlayerId:        playerID,
+		NewSessionId:    newSessionID,
+		GateId:          gateID,
+		GateInstanceId:  gateInstanceID,
+		Account:         account,
+		RequestId:       requestID,
+		LoginGeneration: loginGeneration,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("player_locator Reconnect: %w", err)
@@ -210,17 +220,18 @@ func SetIdempotency(ctx context.Context, rdb *redis.Client, playerID uint64, req
 
 func toProto(s *PlayerSession) *plpb.PlayerSession {
 	return &plpb.PlayerSession{
-		PlayerId:       s.PlayerID,
-		SessionId:      s.SessionID,
-		GateId:         s.GateID,
-		GateInstanceId: s.GateInstanceID,
-		SceneNodeId:    s.SceneNodeID,
-		SceneId:        s.SceneID,
-		SessionVersion: s.SessionVersion,
-		State:          plpb.PlayerSessionState(s.State),
-		LastActiveTs:   s.LastActiveTs,
-		RequestId:      s.RequestID,
-		Account:        s.Account,
+		PlayerId:        s.PlayerID,
+		SessionId:       s.SessionID,
+		GateId:          s.GateID,
+		GateInstanceId:  s.GateInstanceID,
+		SceneNodeId:     s.SceneNodeID,
+		SceneId:         s.SceneID,
+		SessionVersion:  s.SessionVersion,
+		State:           plpb.PlayerSessionState(s.State),
+		LastActiveTs:    s.LastActiveTs,
+		RequestId:       s.RequestID,
+		Account:         s.Account,
+		LoginGeneration: s.LoginGeneration,
 	}
 }
 
@@ -229,17 +240,18 @@ func fromProto(pb *plpb.PlayerSession) *PlayerSession {
 		return nil
 	}
 	return &PlayerSession{
-		PlayerID:       pb.PlayerId,
-		SessionID:      pb.SessionId,
-		GateID:         pb.GateId,
-		GateInstanceID: pb.GateInstanceId,
-		SceneNodeID:    pb.SceneNodeId,
-		SceneID:        pb.SceneId,
-		Account:        pb.Account,
-		SessionVersion: pb.SessionVersion,
-		State:          int32(pb.State),
-		LastActiveTs:   pb.LastActiveTs,
-		RequestID:      pb.RequestId,
+		PlayerID:        pb.PlayerId,
+		SessionID:       pb.SessionId,
+		GateID:          pb.GateId,
+		GateInstanceID:  pb.GateInstanceId,
+		SceneNodeID:     pb.SceneNodeId,
+		SceneID:         pb.SceneId,
+		Account:         pb.Account,
+		SessionVersion:  pb.SessionVersion,
+		State:           int32(pb.State),
+		LastActiveTs:    pb.LastActiveTs,
+		RequestID:       pb.RequestId,
+		LoginGeneration: pb.LoginGeneration,
 	}
 }
 
@@ -257,6 +269,7 @@ func applyOnlineSession(session *PlayerSession, input OnlineSessionInput) {
 	session.State = StateOnline
 	session.LastActiveTs = now.UnixMilli()
 	session.RequestID = input.RequestID
+	session.LoginGeneration = input.LoginGeneration
 }
 
 func nextSessionVersion(existing *PlayerSession) uint32 {

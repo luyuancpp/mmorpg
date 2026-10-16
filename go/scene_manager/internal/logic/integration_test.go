@@ -62,6 +62,8 @@ type fakeSceneNode struct {
 	// the "new node misbehaving" test to prove the redis mapping stays on
 	// the old node when the migration can't complete.
 	createShouldFail error
+	// 覆盖业务应答,用于模拟 RPC OK 但场景未真正创建的拒绝分支。
+	createReplyOverride atomic.Pointer[scenepb.CreateSceneResponse]
 }
 
 func (f *fakeSceneNode) CreateScene(_ context.Context, req *scenepb.CreateSceneRequest) (*scenepb.CreateSceneResponse, error) {
@@ -71,7 +73,12 @@ func (f *fakeSceneNode) CreateScene(_ context.Context, req *scenepb.CreateSceneR
 	if f.createShouldFail != nil {
 		return nil, f.createShouldFail
 	}
-	return &scenepb.CreateSceneResponse{}, nil
+	if reply := f.createReplyOverride.Load(); reply != nil {
+		return reply, nil
+	}
+	return &scenepb.CreateSceneResponse{SceneInfo: &scenepb.SceneInfoComp{
+		SceneId: req.SceneId, SceneConfigId: req.ConfigId,
+	}}, nil
 }
 
 func (f *fakeSceneNode) DestroyScene(_ context.Context, req *scenepb.DestroySceneRequest) (*basepb.Empty, error) {
@@ -693,4 +700,77 @@ func TestIntegration_Rebalance_CascadesDependentMirrors(t *testing.T) {
 	got, err := sc.Redis.Get(fmt.Sprintf("scene:%d:node", sourceSceneId))
 	require.NoError(t, err)
 	require.Equal(t, hB.nodeID, got)
+}
+
+// 修复前 RPC OK 的空/错实例应答会被当成成功,调用者可能发布一个并不存在的场景归属。
+func TestIntegration_NodeCreateSceneRequiresConfirmedIdentity(t *testing.T) {
+	const sceneID uint64 = 99001
+	for _, tc := range []struct {
+		name      string
+		reply     *scenepb.CreateSceneResponse
+		wantError bool
+	}{
+		{name: "empty_response", reply: &scenepb.CreateSceneResponse{}, wantError: true},
+		{name: "zero_identity", reply: &scenepb.CreateSceneResponse{SceneInfo: &scenepb.SceneInfoComp{}}, wantError: true},
+		{name: "different_identity", reply: &scenepb.CreateSceneResponse{SceneInfo: &scenepb.SceneInfoComp{SceneId: sceneID + 1}}, wantError: true},
+		{name: "confirmed_identity", reply: &scenepb.CreateSceneResponse{SceneInfo: &scenepb.SceneInfoComp{SceneId: sceneID}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			clearKnownNodesForTest()
+			ResetNodeConnCacheForTest()
+			t.Cleanup(clearKnownNodesForTest)
+			sc, _ := newIntegrationSvcCtx(t)
+			h := startFakeSceneNode(t, "9901")
+			h.fake.createReplyOverride.Store(tc.reply)
+			installBufconnDialer(t, h)
+			t.Cleanup(SetNodeEndpointResolverForTest(func(_ uint32, nodeID string) (string, bool) {
+				return "bufnet:" + h.nodeID, nodeID == h.nodeID
+			}))
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			response, err := RequestNodeCreateSceneWithOptions(ctx, sc, 1, h.nodeID, 300, sceneID, 0, nil)
+			if tc.wantError {
+				require.Error(t, err)
+				require.Nil(t, response, "拒绝应答不得继续向调用者返回可用实例")
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, sceneID, response.GetSceneInfo().GetSceneId())
+			}
+			require.EqualValues(t, 1, h.fake.createCalls.Load())
+		})
+	}
+}
+
+// 覆盖真正的迁移提交链,不是只验证应答判断函数。
+func TestIntegration_Rebalance_UnconfirmedCreateSceneKeepsOldMapping(t *testing.T) {
+	clearKnownNodesForTest()
+	ResetNodeConnCacheForTest()
+	t.Cleanup(clearKnownNodesForTest)
+	const zoneID uint32 = 1
+	const configID uint64 = 300
+	const sceneID uint64 = 99002
+	sc, mr := newIntegrationSvcCtx(t)
+	oldNode := startFakeSceneNode(t, "9902")
+	newNode := startFakeSceneNode(t, "9903")
+	newNode.fake.createReplyOverride.Store(&scenepb.CreateSceneResponse{})
+	installBufconnDialer(t, oldNode, newNode)
+	registerWorldNodeFromHarness(t, sc, zoneID, oldNode)
+	registerWorldNodeFromHarness(t, sc, zoneID, newNode)
+	mr.SAdd(worldChannelsKey(zoneID, configID), strconv.FormatUint(sceneID, 10))
+	require.NoError(t, sc.Redis.Set(fmt.Sprintf("scene:%d:node", sceneID), oldNode.nodeID))
+	_, err := sc.Redis.Incr(nodeSceneCountKey(zoneID, oldNode.nodeID))
+	require.NoError(t, err)
+	killNode(sc, zoneID, oldNode.nodeID)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	RebalanceWorldChannelsForZone(ctx, sc, zoneID, []uint64{configID})
+
+	require.EqualValues(t, 1, newNode.fake.createCalls.Load())
+	require.EqualValues(t, 0, newNode.fake.destroyCalls.Load())
+	mapped, err := sc.Redis.Get(fmt.Sprintf("scene:%d:node", sceneID))
+	require.NoError(t, err)
+	require.Equal(t, oldNode.nodeID, mapped, "RPC OK 但无创建证据时不得切换归属")
+	require.EqualValues(t, 1, readInt64(sc, nodeSceneCountKey(zoneID, oldNode.nodeID)))
+	require.EqualValues(t, 0, readInt64(sc, nodeSceneCountKey(zoneID, newNode.nodeID)))
 }

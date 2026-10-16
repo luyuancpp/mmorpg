@@ -65,15 +65,13 @@ set(SOURCE_FILES
     handler/event/gate_kafka_command_router.cpp
     handler/event/player_event_handler.cpp
     handler/rpc/client_message_processor.cpp
+    handler/rpc/client_request_lane.cpp
+    handler/rpc/router_muduo_forward.cpp
+    handler/rpc/rpc_reply_bridge.cpp
     handler/rpc/gate_service_handler.cpp
     handler/rpc/player/player_service_interface.cpp
     main.cpp
-    rpc_replies/scene_admin_response_handler.cpp
-    rpc_replies/scene_response_handler.cpp
-    rpc_replies/player/player_rpc_response_handler.cpp
     rpc_replies/register_handler.cpp
-    rpc_replies/register_response_handler.cpp
-    rpc_replies/route_message_response_handler.cpp
     # 2026-09-18 补登记:gate.vcxproj 有、Linux CMake 清单漏了。
     handler/event/match_event_handler.cpp
 )
@@ -106,12 +104,17 @@ target_link_libraries(gate
     -lrpc
     -lproto
     -lthird_party
+    -lmuduo_grpc
     -Wl,--end-group
     gRPC::grpc++
     gRPC::grpc++_reflection
     gRPC::grpc
     gRPC::gpr
     protobuf::libprotobuf
+    # 静态链入的 nghttp2(1.70)不得导出到动态符号表:系统 libcurl.so 依赖旧版 libnghttp2.so,
+    # 导出后 libcurl 的 nghttp2_* 调用会绑到我们的副本、两个版本混用(docs/design/grpc-muduo-transport.md §9)。
+    -Wl,--exclude-libs,libnghttp2.a
+    nghttp2
     muduo_protobuf_codec
     muduo_hiredis
     muduo_net

@@ -6,12 +6,13 @@
 #include "network/codec/dispatcher.h"
 #include "engine/core/type_define/type_define.h"
 #include "proto/common/base/message.pb.h"
+#include "entt/src/entt/signal/sigh.hpp"
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 using ClientTokenVerifyRequestPtr = std::shared_ptr<ClientTokenVerifyRequest>;
 
 struct SessionInfo;
-class OnNodeRemoveEvent;
+struct OnNodeRemoveEvent;
 
 class RpcClientSessionHandler : muduo::noncopyable
 {
@@ -45,6 +46,8 @@ public:
     void OnNodeRemoveEventHandler(const OnNodeRemoveEvent &pb);
 
 private:
+    // handler 销毁即断开带 this 的订阅,dispatcher 的寿命可以长于 handler。
+    entt::scoped_connection nodeRemovedSubscription_;
     static void HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr &conn);
 
     static void HandleConnectionEstablished(const muduo::net::TcpConnectionPtr &conn);

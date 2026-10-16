@@ -1,6 +1,6 @@
 module schemamigrate
 
-go 1.26.5
+go 1.27.2
 
 // D-14 第 7 条:proto2mysql 必须 require 未被移动过、含 TiDB 选项与 191 索引前缀的 tag(≥ v0.1.1);
 // 禁止 v0.1.0(该 tag 被移动过),禁止 replace 到仓库外目录。

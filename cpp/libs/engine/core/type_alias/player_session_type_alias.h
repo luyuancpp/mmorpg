@@ -1,14 +1,8 @@
 #pragma once
-#include <unordered_map>
-
-#include "type_define/type_define.h"
-
 #include <thread_context/ecs_context.h>
 
-using SessionList = std::unordered_map<SessionId, Guid>;
-
-inline SessionList& SessionMap()
+// 路由索引归 EcsContext::sessionPlayers 所有,随上下文清理,不再借全局实体暂存。
+inline SessionPlayerIndex& SessionMap()
 {
-	auto& list = tlsEcs.globalRegistry.get_or_emplace<SessionList>(tlsEcs.GlobalEntity());
-	return list;
+	return tlsEcs.sessionPlayers;
 }

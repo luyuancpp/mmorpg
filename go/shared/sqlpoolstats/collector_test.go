@@ -14,6 +14,8 @@ const testService = "unit"
 
 // gatherPools 把一个只注册了本收集器的注册表抓一次,返回 指标名 → pool → 值;同时核对每条序列都带
 // sql_client=testService 的常量 label(告警表达式按它分组,丢了就静默落空)。
+// label 名写字面量,不引用实现里的 poolLabel / clientLabel:它们是告警表达式 sum by (namespace, sql_client, pool)
+// 的契约(deploy/k8s/mysql-connection-alerts.yaml),不能跟着实现常量一起改。
 func gatherPools(t *testing.T, c prometheus.Collector) map[string]map[string]float64 {
 	t.Helper()
 	reg := prometheus.NewPedanticRegistry()
@@ -31,9 +33,9 @@ func gatherPools(t *testing.T, c prometheus.Collector) map[string]map[string]flo
 			var pool, client string
 			for _, l := range m.GetLabel() {
 				switch l.GetName() {
-				case poolLabel:
+				case "pool":
 					pool = l.GetValue()
-				case clientLabel:
+				case "sql_client":
 					client = l.GetValue()
 				}
 			}
@@ -96,6 +98,26 @@ func TestCollectorSumsSamplesPerPool(t *testing.T) {
 		if g, ok := got[name]["home"]; !ok || g != v {
 			t.Fatalf("%s{pool=home} = %v (present=%v), want %v", name, g, ok, v)
 		}
+	}
+
+	// 等待时长之和与样本顺序无关:go/db 的 PoolSamples 遍历 map,同一组池每次抓取给出的顺序都不固定。
+	// 按浮点秒累加时 (0.1+0.2)+0.3 = 0.6000000000000001、(0.3+0.2)+0.1 = 0.6,两次抓取差 1 ULP,
+	// 变小的那次会被 Prometheus 当成 counter reset;按整数纳秒累加,两种顺序都恰为 0.6。
+	const waitDuration = "mmorpg_sql_pool_wait_duration_seconds_total"
+	ascending := fixedSource(
+		Sample{Pool: "home", Stats: sql.DBStats{WaitDuration: 100 * time.Millisecond}},
+		Sample{Pool: "home", Stats: sql.DBStats{WaitDuration: 200 * time.Millisecond}},
+		Sample{Pool: "home", Stats: sql.DBStats{WaitDuration: 300 * time.Millisecond}},
+	)
+	descending := fixedSource(
+		Sample{Pool: "home", Stats: sql.DBStats{WaitDuration: 300 * time.Millisecond}},
+		Sample{Pool: "home", Stats: sql.DBStats{WaitDuration: 200 * time.Millisecond}},
+		Sample{Pool: "home", Stats: sql.DBStats{WaitDuration: 100 * time.Millisecond}},
+	)
+	up := gatherPools(t, NewCollector(testService, []string{"home"}, ascending))[waitDuration]["home"]
+	down := gatherPools(t, NewCollector(testService, []string{"home"}, descending))[waitDuration]["home"]
+	if up != down || up != 0.6 {
+		t.Fatalf("%s{pool=home} depends on sample order: ascending=%v descending=%v, want both 0.6", waitDuration, up, down)
 	}
 }
 
@@ -180,14 +202,23 @@ func TestCollectorIsPedanticallyConsistent(t *testing.T) {
 		Sample{Pool: "a", Stats: sql.DBStats{MaxOpenConnections: 3, OpenConnections: 2, InUse: 1, Idle: 1}},
 		Sample{Pool: "unknown", Stats: sql.DBStats{MaxOpenConnections: 1}},
 	)
-	got := gatherPools(t, NewCollector(testService, []string{"a", "b"}, src))
+	c := NewCollector(testService, []string{"a", "b"}, src)
+	got := gatherPools(t, c)
 	if len(got) != 10 {
 		t.Fatalf("got %d metric families, want 10", len(got))
 	}
-	// 两次 Gather 结果一致:收集器构造后只读,不残留上一次抓取的累加值。
-	again := gatherPools(t, NewCollector(testService, []string{"a", "b"}, src))
-	if got["mmorpg_sql_pool_open_connections"]["a"] != again["mmorpg_sql_pool_open_connections"]["a"] {
-		t.Fatalf("two scrapes disagree: %v vs %v", got, again)
+	// 同一个收集器实例抓两次,结果逐条一致:累加器是 Collect 内的局部变量,不残留上一次抓取的累加值。
+	// (gatherPools 每次新建注册表,所以两次抓取之间共享的只有收集器本身。)
+	again := gatherPools(t, c)
+	if len(again) != len(got) {
+		t.Fatalf("second scrape of the same collector has %d metric families, first had %d", len(again), len(got))
+	}
+	for name, byPool := range got {
+		for pool, v := range byPool {
+			if w, ok := again[name][pool]; !ok || w != v {
+				t.Fatalf("second scrape of the same collector disagrees on %s{pool=%q}: %v vs %v (present=%v)", name, pool, v, w, ok)
+			}
+		}
 	}
 }
 

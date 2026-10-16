@@ -1,8 +1,10 @@
 #include "player/system/asset_op_auth.h"
 
+#include <cstdlib>
 #include <iterator>
 #include <limits>
 #include <string>
+#include <string_view>
 
 #include "muduo/base/Logging.h"
 
@@ -31,12 +33,13 @@ static_assert(std::size(kAssetOpAuthVerdictNames) == static_cast<size_t>(AssetOp
 // SYSTEM_CREDIT(邮件 / GM 发物,D1 预留)在 v1 没有合法调用方,故意不出现在表里。
 struct AssetOpCallerRule
 {
-	const char* caller;       // canonical 串第 2 行;也是本表的查找键
-	const char* secretEnv;    // scene 读取的环境变量**名**;密钥值不进仓库、不进日志
+	std::string_view caller;    // canonical 串第 2 行;也是本表的查找键
+	std::string_view secretEnv; // scene 读取的环境变量**名**;密钥值不进仓库、不进日志
 	AssetOpStream streams[2]; // 该调用方独占的流
 	uint8_t streamCount;
 };
 
+// 名称均借用完整字符串字面量，保证 getenv 和日志边界的 data() 仍以 NUL 结尾。
 constexpr AssetOpCallerRule kAssetOpCallerRules[] = {
 	{"guild",
 	 "MMORPG_ASSET_OP_SECRET_GUILD",
@@ -96,7 +99,7 @@ std::string DefaultSecretLookup(std::string_view caller)
 		auto& entry = g_secretCache[index];
 		if (!entry.loaded)
 		{
-			const char* raw = std::getenv(kAssetOpCallerRules[index].secretEnv);
+			const char* raw = std::getenv(kAssetOpCallerRules[index].secretEnv.data());
 			entry.secret = (raw != nullptr) ? raw : "";
 			entry.loaded = true;
 		}
@@ -249,8 +252,8 @@ AssetOpAuthVerdict VerifyAssetOpAuth(std::string_view rpc, const ::AssetOpReques
 			g_secretMissingReported[ruleIndex] = true;
 			// 只写变量**名**与长度下限,绝不写密钥值、也不写实际长度(AGENTS §11.3)。
 			LOG_ERROR << "[AssetOpAuth] Caller secret is not configured or shorter than " << kAssetOpAuthMinSecretBytes
-					  << " bytes after trimming;all asset RPCs from this caller will be rejected caller=" << rule->caller
-					  << " env=" << rule->secretEnv;
+					  << " bytes after trimming;all asset RPCs from this caller will be rejected caller=" << rule->caller.data()
+					  << " env=" << rule->secretEnv.data();
 		}
 		return AssetOpAuthVerdict::kSecretMissing;
 	}

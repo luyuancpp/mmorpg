@@ -288,8 +288,8 @@ TEST(AssetOpAuthTest, VerifyOkOnEveryOwnedStream)
 	struct Case
 	{
 		AssetOpStream stream;
-		const char* caller;
-		const char* rpc;
+		std::string caller;
+		std::string rpc;
 	};
 	const Case cases[] = {
 		{ASSET_OP_STREAM_GUILD_DEBIT, "guild", "debit"},
@@ -335,9 +335,9 @@ TEST(AssetOpAuthTest, CallerNotAllowed)
 {
 	struct Case
 	{
-		const char* name;
+		std::string name;
 		AssetOpStream stream;
-		const char* caller;
+		std::string caller;
 	};
 	const Case cases[] = {
 		{"guild 的调用方去动 trade 的流", ASSET_OP_STREAM_TRADE_DEBIT, "guild"},

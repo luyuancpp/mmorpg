@@ -1,8 +1,33 @@
 
+#include <string>
+
 #include "thread_context/ecs_context.h"
 #include "proto/common/database/mysql_database_table.pb.h"
+#include "muduo/base/Logging.h"
+#include "modules/bag/comp/player_bags_comp.h"
+#include "modules/mission/comp/mission_comp.h"
 #include "player/system/bag_marshal.h"
 #include "player/system/mission_marshal.h"
+
+namespace {
+// 存盘只读:取一个持久化组件,不在就把名字记进 missing(逗号分隔),**不补建**。
+// 持久化组件的唯一创建点是下面的 Unmarshal(加载);存盘时缺了说明加载不变量已被破坏,
+// 此刻补一个零值组件再落盘,等于拿空数据覆盖盘上的真实数据。
+template <typename Comp>
+const Comp* FindPersistedComp(entt::entity player, const char* name, std::string& missing)
+{
+	const auto* comp = tlsEcs.actorRegistry.try_get<Comp>(player);
+	if (comp == nullptr)
+	{
+		if (!missing.empty())
+		{
+			missing += ',';
+		}
+		missing += name;
+	}
+	return comp;
+}
+}  // namespace
 
 void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.MessageType}}& message){
 	{{- range .Fields }}
@@ -16,15 +41,38 @@ void {{.HandlerName}}MessageFieldsUnmarshal(entt::entity player, const {{.Messag
 	{{- end }}
 }
 
-void {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message){
+// 存盘只读当前状态,不改变实体的组件集合。校验前置:先确认全部持久化组件都在,再写 message;
+// 缺任何一个都整份放弃、message 原样不动并返回 false,由调用方放弃这次写入(fail-closed)。
+// 绝不用 get_or_emplace:它会在组件缺失时造出零值组件,把零值当真实数据写进 Redis / DB。
+bool {{.HandlerName}}MessageFieldsMarshal(entt::entity player, {{.MessageType}}& message){
+	std::string missing;
+	{{- range .Fields }}
+	{{- if eq .TypeName "BagAllData" }}
+	// bag_marshal 对缺组件输出「权威的空记录」,落盘即清空物品,必须先在这里拦住。
+	FindPersistedComp<PlayerBagsComp>(player, "PlayerBagsComp", missing);
+	{{- else if eq .TypeName "QuestAllData" }}
+	// mission_marshal 同理(还会标 scoped_state_present),落盘即清空任务。
+	FindPersistedComp<MissionsContainerComp>(player, "MissionsContainerComp", missing);
+	{{- else if .TypeName }}
+	const auto* {{.Name}}_comp = FindPersistedComp<{{.TypeName}}>(player, "{{.TypeName}}", missing);
+	{{- end }}
+	{{- end }}
+	if (!missing.empty())
+	{
+		LOG_ERROR << "[PlayerSave] Persisted component(s) missing, refusing to marshal {{.MessageType}}"
+				  << " (load invariant broken; nothing is written): entity=" << entt::to_integral(player)
+				  << " missing=" << missing;
+		return false;
+	}
 	{{- range .Fields }}
 	{{- if eq .TypeName "BagAllData" }}
 	bag_marshal::Marshal(player, *message.mutable_{{.Name}}());
 	{{- else if eq .TypeName "QuestAllData" }}
 	mission_marshal::Marshal(player, *message.mutable_{{.Name}}());
 	{{- else if .TypeName }}
-	message.mutable_{{.Name}}()->CopyFrom(tlsEcs.actorRegistry.get_or_emplace<{{.TypeName}}>(player));
+	message.mutable_{{.Name}}()->CopyFrom(*{{.Name}}_comp);
 	{{- end }}
 	{{- end }}
+	return true;
 }
 

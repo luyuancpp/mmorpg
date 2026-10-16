@@ -27,7 +27,7 @@ const (
 type ReleaseSkillRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SkillTableId  uint32                 `protobuf:"varint,1,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
-	TargetId      uint64                 `protobuf:"varint,2,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
+	TargetId      uint64                 `protobuf:"varint,2,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"` // 服务端下发的不透明 actor 网络号；0 表示无目标，不得填玩家 GUID 或本地 ECS 句柄。
 	Position      *component.Vector3     `protobuf:"bytes,3,opt,name=position,proto3" json:"position,omitempty"`
 	Rotation      *component.Rotation    `protobuf:"bytes,4,opt,name=rotation,proto3" json:"rotation,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -138,8 +138,8 @@ func (x *ReleaseSkillResponse) GetErrorMessage() *base.TipInfoMessage {
 
 type SkillInterruptedS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	TargetEntity  uint64                 `protobuf:"varint,2,opt,name=target_entity,json=targetEntity,proto3" json:"target_entity,omitempty"`
+	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`                                 // 施法者的不透明 actor 网络号。
+	TargetEntity  uint64                 `protobuf:"varint,2,opt,name=target_entity,json=targetEntity,proto3" json:"target_entity,omitempty"` // 目标的不透明 actor 网络号；0 表示无目标。
 	SkillTableId  uint32                 `protobuf:"varint,3,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
 	ReasonCode    uint32                 `protobuf:"varint,4,opt,name=reason_code,json=reasonCode,proto3" json:"reason_code,omitempty"`
 	SkillId       uint64                 `protobuf:"varint,5,opt,name=skill_id,json=skillId,proto3" json:"skill_id,omitempty"`
@@ -214,8 +214,8 @@ func (x *SkillInterruptedS2C) GetSkillId() uint64 {
 
 type SkillUsedS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	TargetEntity  []uint64               `protobuf:"varint,2,rep,packed,name=target_entity,json=targetEntity,proto3" json:"target_entity,omitempty"`
+	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`                                        // 施法者的不透明 actor 网络号。
+	TargetEntity  []uint64               `protobuf:"varint,2,rep,packed,name=target_entity,json=targetEntity,proto3" json:"target_entity,omitempty"` // 目标的不透明 actor 网络号列表，不是玩家 GUID 或本地 ECS 句柄。
 	SkillTableId  uint32                 `protobuf:"varint,3,opt,name=skill_table_id,json=skillTableId,proto3" json:"skill_table_id,omitempty"`
 	Position      *component.Vector3     `protobuf:"bytes,4,opt,name=position,proto3" json:"position,omitempty"`
 	TimeStamp     uint64                 `protobuf:"varint,5,opt,name=time_stamp,json=timeStamp,proto3" json:"time_stamp,omitempty"`

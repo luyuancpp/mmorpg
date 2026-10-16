@@ -393,6 +393,7 @@ func startServer(watchCtx context.Context, cfg config.Config, ctx *svc.ServiceCo
 	// 必须在 MustNewServer 之后:它内部的 SetUp → prometheus.StartAgent 才打开 go-zero 指标的
 	// 全局开关,在那之前写的样本会被直接丢弃(理由与告警口径见 PrimeCreatePlayerMetrics)。
 	loginlogic.PrimeCreatePlayerMetrics()
+	loginlogic.PrimeEnterGameMetrics()
 
 	// 拦截器顺序有讲究(go-zero 把它们交给 grpc.ChainUnaryInterceptor,
 	// **排在前面的在外层、先执行**;注意 recover/timeout/stat 等 go-zero

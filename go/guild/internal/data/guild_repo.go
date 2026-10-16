@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -815,6 +816,26 @@ func (r *GuildRepo) acquireRankLock(ctx context.Context) (func(), error) {
 	}
 }
 
+// 两个脚本各只读一个榜键，Cluster 下不会跨槽；总数/本页及名次/分数来自同一快照。
+// 分数字符串原样返回，避免 Redis Lua 把 double 返回值截断成整数。
+var guildRankPageScript = redis.NewScript(`
+local total = redis.call("ZCARD", KEYS[1])
+local size = tonumber(ARGV[2])
+if size == 0 then return {total} end
+local start = tonumber(ARGV[1])
+if start >= total then return {total} end
+local stop = math.min(start + size - 1, total - 1)
+local rows = redis.call("ZREVRANGE", KEYS[1], start, stop, "WITHSCORES")
+table.insert(rows, 1, total)
+return rows
+`)
+
+var guildRankEntryScript = redis.NewScript(`
+local rank = redis.call("ZREVRANK", KEYS[1], ARGV[1])
+if not rank then return {} end
+return {rank, redis.call("ZSCORE", KEYS[1], ARGV[1])}
+`)
+
 // GetGuildRankPage returns a page of guilds sorted by score descending.
 // page is 1-based; zoneID=0 means global ranking.
 func (r *GuildRepo) GetGuildRankPage(ctx context.Context, zoneID, page, pageSize uint32) ([]RankEntry, uint32, error) {
@@ -823,35 +844,46 @@ func (r *GuildRepo) GetGuildRankPage(ctx context.Context, zoneID, page, pageSize
 		key = zoneRankKey(zoneID)
 	}
 
-	total, err := r.rdb.ZCard(ctx, key).Result()
-	if err != nil {
-		return nil, 0, fmt.Errorf("zcard %s: %w", key, err)
+	// uint32 页码和页长先按 uint64 相乘，超大起点在脚本内先与榜长比较，
+	// 为空页时不传给 ZREVRANGE，避免无符号转有符号后环绕回榜首。
+	var start uint64
+	size := pageSize
+	if page == 0 || pageSize == 0 {
+		size = 0
+	} else {
+		start = uint64(page-1) * uint64(pageSize)
+		if start > math.MaxInt64 {
+			// Redis 的基数/下标都是 int64；该起点必为空页，也不让 Lua
+			// 解析超出有符号范围的十进制数（不同 Lua 实现行为不一致）。
+			size = 0
+		}
 	}
-	if total == 0 || page == 0 || pageSize == 0 {
+	reply, err := guildRankPageScript.Run(ctx, r.rdb, []string{key}, strconv.FormatUint(start, 10), size).Slice()
+	if err != nil {
+		return nil, 0, fmt.Errorf("read rank page %s: %w", key, err)
+	}
+	if len(reply) == 0 || len(reply)%2 != 1 {
+		return nil, 0, fmt.Errorf("invalid rank page reply for %s", key)
+	}
+	total, ok := reply[0].(int64)
+	if !ok || total < 0 {
+		return nil, 0, fmt.Errorf("invalid rank total for %s", key)
+	}
+	if len(reply) == 1 {
 		return nil, uint32(total), nil
 	}
 
-	// 请求字段是 uint32:先提升到 uint64 再相乘,避免高页码环绕回榜首。
-	// 内部调用的 pageSize 也可能为 MaxUint32,乘积可超过 MaxInt64;
-	// 先按实际榜长判断空页,再转换 Redis 使用的有符号下标。
-	start := uint64(page-1) * uint64(pageSize)
-	if start >= uint64(total) {
-		return nil, uint32(total), nil
-	}
-	stop := min(start+uint64(pageSize)-1, uint64(total)-1)
-
-	members, err := r.rdb.ZRevRangeWithScores(ctx, key, int64(start), int64(stop)).Result()
-	if err != nil {
-		return nil, 0, fmt.Errorf("zrevrange %s: %w", key, err)
-	}
-
-	entries := make([]RankEntry, 0, len(members))
-	for i, z := range members {
-		guildID, _ := strconv.ParseUint(fmt.Sprintf("%v", z.Member), 10, 64)
+	entries := make([]RankEntry, 0, (len(reply)-1)/2)
+	for i := 1; i < len(reply); i += 2 {
+		guildID, _ := strconv.ParseUint(fmt.Sprintf("%v", reply[i]), 10, 64)
+		score, err := parseRankScore(reply[i+1])
+		if err != nil {
+			return nil, 0, fmt.Errorf("read rank score for guild %d: %w", guildID, err)
+		}
 		entries = append(entries, RankEntry{
 			GuildID: guildID,
-			Score:   int64(z.Score),
-			Rank:    uint32(start) + uint32(i) + 1,
+			Score:   score,
+			Rank:    uint32(start) + uint32((i-1)/2) + 1,
 		})
 	}
 	return entries, uint32(total), nil
@@ -866,23 +898,37 @@ func (r *GuildRepo) GetGuildRank(ctx context.Context, guildID uint64, zoneID uin
 
 	member := fmt.Sprintf("%d", guildID)
 
-	// ZREVRANK: 0-based index in descending order
-	rank, err := r.rdb.ZRevRank(ctx, key, member).Result()
-	if err == redis.Nil {
-		return RankEntry{}, nil // not in ranking
-	}
+	reply, err := guildRankEntryScript.Run(ctx, r.rdb, []string{key}, member).Slice()
 	if err != nil {
-		return RankEntry{}, fmt.Errorf("zrevrank guild %d: %w", guildID, err)
+		return RankEntry{}, fmt.Errorf("read rank for guild %d: %w", guildID, err)
 	}
-
-	score, err := r.rdb.ZScore(ctx, key, member).Result()
+	if len(reply) == 0 {
+		return RankEntry{}, nil // 未上榜仍返回零值，不是存储故障。
+	}
+	if len(reply) != 2 {
+		return RankEntry{}, fmt.Errorf("invalid rank reply for guild %d", guildID)
+	}
+	rank, ok := reply[0].(int64)
+	if !ok || rank < 0 {
+		return RankEntry{}, fmt.Errorf("invalid rank position for guild %d", guildID)
+	}
+	score, err := parseRankScore(reply[1])
 	if err != nil {
-		return RankEntry{}, fmt.Errorf("zscore guild %d: %w", guildID, err)
+		return RankEntry{}, fmt.Errorf("read rank score for guild %d: %w", guildID, err)
 	}
 
 	return RankEntry{
 		GuildID: guildID,
-		Score:   int64(score),
+		Score:   score,
 		Rank:    uint32(rank) + 1, // 1-based
 	}, nil
+}
+
+func parseRankScore(raw any) (int64, error) {
+	text, ok := raw.(string)
+	if !ok {
+		return 0, fmt.Errorf("invalid rank score type %T", raw)
+	}
+	score, err := strconv.ParseFloat(text, 64)
+	return int64(score), err
 }

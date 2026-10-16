@@ -99,6 +99,25 @@ function Reset-MigrateFixture {
         ConfigFile = 'data_service.yaml'; ImageName = 'mmorpg-data-service'; Port = 9000
     }
 
+    # player-inbox(玩家收件箱,D-14 独占库 mmorpg_player_inbox)是第四个带 MigrateJob 的服务,另带运维口令的 Secret 注入
+    # (docs/design/player-inbox-service.md §1.6)。口令相关的脚本级变量在 k8s_deploy.ps1 顶层赋值,AST 只抽函数,这里照抄一份;
+    # 默认未注入(= dev 档没给 MMORPG_PLAYER_INBOX_ADMIN_TOKEN)。Apply-InjectedSecret 换成只记事件的桩,不碰集群。
+    $script:GoSvcCatalogue['player-inbox'] = @{
+        ConfigMap = 'go-svc-player-inbox-config'; Manifest = 'player-inbox.yaml'; MigrateJob = 'player-inbox-migrate.yaml'
+        ConfigFile = 'player_inbox.yaml'; ImageName = 'mmorpg-player-inbox'; Port = 50950; Global = $true
+    }
+    $script:PlayerInboxAdminTokenSecretName = 'player-inbox-admin-token'
+    $script:PlayerInboxAdminTokenSecretKey = 'admin-token'
+    $script:PlayerInboxAdminTokenEnv = 'PLAYER_INBOX_ADMIN_TOKEN'
+    $script:PlayerInboxAdminToken = ''
+    foreach ($name in @('Add-GoSvcSecretEnv', 'Get-InjectedSecretFingerprint')) {
+        Restore-ProductionFunction $name
+    }
+    Set-Item Function:script:Apply-InjectedSecret {
+        param($Namespace, $Name, $Key, $Value, $AppLabel)
+        $script:Events.Add("apply:Secret:$Name")
+    }
+
     Set-Item Function:script:Get-GoSvcMigrateJobWaitSeconds { return $script:BudgetSeconds }
     Set-Item Function:script:New-GoSvcConfigMapYaml {
         param($SvcName, $CurrentZoneId, $CurrentClusterId)
@@ -215,10 +234,47 @@ Test-Case 'data-service 的迁移门禁:ConfigMap → Job → Deployment,且 Dep
     Assert-Match -Text $script:DeploymentContent -Pattern 'name: data-service-pdb' -Because 'PDB 随主 manifest 一起 apply'
 }
 
+# player-inbox(玩家收件箱,全局库 mmorpg_player_inbox)走同一条门禁。用真 manifest 跑,顺带钉住两个文件都在、占位全部可替换
+# (含 Pod 模板上的运维口令指纹占位)。未注入口令时:不注入 env、不建 Secret,指纹写 disabled(运维接口停用,fail-closed)。
+Test-Case 'player-inbox 的迁移门禁与 trade 同链路,未注入运维口令时不建 Secret' {
+    Reset-MigrateFixture
+    $script:JobAbsentBeforeApply = $true
+    Apply-OneGoSvc -SvcName 'player-inbox' -Namespace audit-infra -CurrentZoneId 0 -CurrentClusterId 0
+    $events = @($script:Events)
+    Assert-True -Condition ([Array]::IndexOf($events, 'apply:ConfigMap') -lt [Array]::IndexOf($events, 'apply:Job')) -Because 'player-inbox-migrate Job 要读取先前创建的 ConfigMap'
+    Assert-True -Condition ([Array]::IndexOf($events, 'apply:Job') -lt [Array]::IndexOf($events, 'apply:Deployment')) -Because 'staging/prod 的 Schema.AutoMigrate=false,表没建出来 player-inbox 会拒启,迁移必须先于 Deployment'
+    Assert-True -Condition ($events -contains 'query:Job') -Because '放行必须来自 Job 查询结果'
+    Assert-True -Condition (-not ($events | Where-Object { $_ -like 'apply:Secret:*' })) -Because '未注入口令时不能建出一个空口令的 Secret'
+    $content = $script:DeploymentContent
+    Assert-NotMatch -Text $content -Pattern 'PLACEHOLDER_' -Because '镜像、拉取策略与口令指纹占位都必须被替换'
+    Assert-Match -Text $content -Pattern 'mmorpg.io/player-inbox-admin-token-hash: "disabled"' -Because '未注入口令时指纹写 disabled,注入后模板必然变化、触发滚动'
+    Assert-NotMatch -Text $content -Pattern 'name: PLAYER_INBOX_ADMIN_TOKEN' -Because '未注入口令时不能引用一个不存在的 Secret(Pod 会卡在 CreateContainerConfigError)'
+    Assert-Match -Text $content -Pattern '(?m)^  replicas: 2\s*$' -Because 'MySQL 连接总账按两副本计'
+    Assert-Match -Text $content -Pattern 'name: player-inbox-pdb' -Because 'PDB 随主 manifest 一起 apply'
+}
+
+Test-Case 'player-inbox 注入运维口令:先建 Secret 再 apply Deployment,env 走 secretKeyRef,口令值不进 manifest' {
+    Reset-MigrateFixture
+    $script:JobAbsentBeforeApply = $true
+    $token = 'audit-only-player-inbox-admin-token-0123456789abcdef'
+    $script:PlayerInboxAdminToken = $token
+    Apply-OneGoSvc -SvcName 'player-inbox' -Namespace audit-infra -CurrentZoneId 0 -CurrentClusterId 0
+    $events = @($script:Events)
+    $secretAt = [Array]::IndexOf($events, 'apply:Secret:player-inbox-admin-token')
+    Assert-True -Condition ($secretAt -ge 0) -Because '口令已解析时必须建 Secret'
+    Assert-True -Condition ($secretAt -lt [Array]::IndexOf($events, 'apply:Deployment')) -Because 'secretKeyRef 不是 optional,Secret 必须先于引用它的 Deployment'
+    $content = $script:DeploymentContent
+    Assert-Match -Text $content -Pattern '- name: PLAYER_INBOX_ADMIN_TOKEN\s+valueFrom:\s+secretKeyRef:\s+name: player-inbox-admin-token\s+key: admin-token' -Because '口令只经 Secret 进容器'
+    Assert-Equal -Expected 1 -Actual ([regex]::Matches($content, 'name: PLAYER_INBOX_ADMIN_TOKEN').Count) -Because '只能注入一份'
+    Assert-Match -Text $content -Pattern 'mmorpg.io/player-inbox-admin-token-hash: "[0-9a-f]{12}"' -Because '模板带口令指纹,轮换口令即滚动'
+    Assert-True -Condition (-not $content.Contains($token)) -Because '口令值绝不能出现在 manifest 里'
+    Assert-NotMatch -Text $content -Pattern 'PLACEHOLDER_' -Because '注入不能打乱原有占位替换'
+}
+
 
 # 控制面命令 topic 契约(KAFKA_COMMAND_TOPIC_*)统一注入。背景:go/shared/kafkacmd 不配这两个变量就回落到 256 / 1,
 # 而 C++ gate / scene 消费的是 base_deploy_config.yaml 的代号,不一致时 Go 发给 gate / scene 的命令静默丢失。
-foreach ($svc in @('trade', 'friend')) {
+foreach ($svc in @('trade', 'friend', 'player-inbox')) {
     Test-Case "$svc 的 Deployment 带上注入的命令 topic 契约,且只有一份" {
         Reset-MigrateFixture
         $script:JobAbsentBeforeApply = $true

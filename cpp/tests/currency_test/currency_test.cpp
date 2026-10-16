@@ -231,7 +231,7 @@ TEST(CurrencyTest, DebtDeductsFromGain)
     auto player = CreateTestPlayer();
 
     // Attach a debt of 60 gold.
-    CurrencySystem::AttachDebt(player, kCurrencyGold, 60);
+    EXPECT_EQ(kSuccess, CurrencySystem::AttachDebt(player, kCurrencyGold, 60));
 
     // Add 100 gold — 60 goes to debt, 40 is credited.
     EXPECT_EQ(kSuccess, CurrencySystem::AddCurrency(player, kCurrencyGold, 100));
@@ -244,7 +244,7 @@ TEST(CurrencyTest, DebtPartialRepayment)
 {
     auto player = CreateTestPlayer();
 
-    CurrencySystem::AttachDebt(player, kCurrencyGold, 100);
+    EXPECT_EQ(kSuccess, CurrencySystem::AttachDebt(player, kCurrencyGold, 100));
 
     // First gain: 30 gold — all goes to debt.
     EXPECT_EQ(kSuccess, CurrencySystem::AddCurrency(player, kCurrencyGold, 30));
@@ -265,7 +265,7 @@ TEST(CurrencyTest, DebtDoesNotAffectOtherTypes)
 {
     auto player = CreateTestPlayer();
 
-    CurrencySystem::AttachDebt(player, kCurrencyGold, 100);
+    EXPECT_EQ(kSuccess, CurrencySystem::AttachDebt(player, kCurrencyGold, 100));
 
     // Diamond has no debt — full credit.
     EXPECT_EQ(kSuccess, CurrencySystem::AddCurrency(player, kCurrencyDiamond, 50));
@@ -300,11 +300,42 @@ TEST(CurrencyTest, DebtIncreaseRejectsUint64Overflow)
     auto &debt = comp.debts[static_cast<uint32_t>(kCurrencyGold)];
     debt.owed = std::numeric_limits<uint64_t>::max() - 5;
 
-    CurrencySystem::AttachDebt(player, kCurrencyGold, 10);
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AttachDebt(player, kCurrencyGold, 10))
+        << "溢出拒绝必须如实回码,收件箱执行器据此记 REJECTED";
     EXPECT_EQ(std::numeric_limits<uint64_t>::max() - 5, debt.owed);
 
     CurrencySystem::AdjustDebt(player, kCurrencyGold, 10);
     EXPECT_EQ(std::numeric_limits<uint64_t>::max() - 5, debt.owed);
+
+    DestroyTestPlayer(player);
+}
+
+// AttachDebt 改为返回 tip 码(docs/design/player-inbox-service.md §7.6):纯参数错误与缺组件都回
+// kInvalidParameter,且不留下任何欠款条目。
+TEST(CurrencyTest, AttachDebtReportsInvalidParametersWithoutSideEffects)
+{
+    auto player = CreateTestPlayer();
+    const auto &comp = tlsEcs.actorRegistry.get<PlayerCurrencyComp>(player);
+
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AttachDebt(player, kCurrencyGold, 0));
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AttachDebt(player, kCurrencyGold, -5));
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AttachDebt(player, kCurrencyMax, 10)) << "越界币种";
+    EXPECT_TRUE(comp.debts.empty()) << "拒绝路径不得落下欠款条目";
+
+    EXPECT_EQ(kSuccess, CurrencySystem::AttachDebt(player, kCurrencyGold, 7, "audit", "gm"));
+    ASSERT_EQ(1u, comp.debts.count(static_cast<uint32_t>(kCurrencyGold)));
+    EXPECT_EQ(7u, comp.debts.at(static_cast<uint32_t>(kCurrencyGold)).owed);
+
+    DestroyTestPlayer(player);
+}
+
+TEST(CurrencyTest, AttachDebtWithoutRuntimeCurrencyCompIsRejected)
+{
+    auto player = CreateTestPlayer();
+    tlsEcs.actorRegistry.remove<PlayerCurrencyComp>(player);
+
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AttachDebt(player, kCurrencyGold, 10));
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerCurrencyComp>(player)) << "只取不建";
 
     DestroyTestPlayer(player);
 }
@@ -839,26 +870,18 @@ struct LeakConnectionOnExit
 // 同步连接,只用来布置与核对键。
 struct SyncRedisForTest
 {
-    redisContext* context{nullptr};
-
-    ~SyncRedisForTest()
-    {
-        if (context != nullptr)
-        {
-            redisFree(context);
-        }
-    }
+    std::unique_ptr<redisContext, decltype(&redisFree)> context{nullptr, &redisFree};
 
     bool Connect(const std::string& host, uint16_t port)
     {
-        context = redisConnect(host.c_str(), port);
+        context.reset(redisConnect(host.c_str(), port));
         return context != nullptr && context->err == 0;
     }
 
     // 键不存在时返回 "(nil)"。
     std::string Get(const std::string& key)
     {
-        auto* reply = static_cast<redisReply*>(redisCommand(context, "GET %b", key.data(), key.size()));
+        auto* reply = static_cast<redisReply*>(redisCommand(context.get(), "GET %b", key.data(), key.size()));
         std::string value = "(nil)";
         if (reply != nullptr && reply->type == REDIS_REPLY_STRING)
         {
@@ -873,14 +896,14 @@ struct SyncRedisForTest
 
     void Set(const std::string& key, const std::string& value)
     {
-        Run(redisCommand(context, "SET %b %b", key.data(), key.size(), value.data(), value.size()));
+        Run(redisCommand(context.get(), "SET %b %b", key.data(), key.size(), value.data(), value.size()));
     }
 
-    void Del(const std::string& key) { Run(redisCommand(context, "DEL %b", key.data(), key.size())); }
+    void Del(const std::string& key) { Run(redisCommand(context.get(), "DEL %b", key.data(), key.size())); }
 
     void SRem(const std::string& set, const std::string& member)
     {
-        Run(redisCommand(context, "SREM %b %b", set.data(), set.size(), member.data(), member.size()));
+        Run(redisCommand(context.get(), "SREM %b %b", set.data(), set.size(), member.data(), member.size()));
     }
 
 private:
@@ -1205,6 +1228,48 @@ TEST(CurrencyTest, ProgrammingErrorsStillReturnInvalidParameter)
     // 不是"冻结判定被整个删掉了"。
     EXPECT_EQ(kAssetFrozen, CurrencySystem::AddCurrency(player, kCurrencyGold, 10));
     tlsEcs.actorRegistry.remove<PlayerFrozenComp>(player);
+
+    DestroyTestPlayer(player);
+}
+
+// ---------------------------------------------------------------------------
+// 必需组件缺失必须 fail-closed(docs/design/ecs-entt-misuse-audit-20261015.md F025)
+//
+// PlayerCurrencyComp 只在玩家加载时挂上(欠款从 CurrencyComp.debts 装载)。修复前增减路径在
+// 缺它时当场 get_or_emplace 一本空的继续记账:欠款被绕过、组件集合被悄悄改掉,
+// 下一次存盘还会用空表覆盖盘上的欠款。修复后:拒绝(kInvalidParameter)、余额不动、不补建组件。
+// ---------------------------------------------------------------------------
+
+TEST(CurrencyTest, AddCurrencyMissingPlayerCurrencyCompFailsClosed)
+{
+    // 只有 CurrencyComp、没有 PlayerCurrencyComp:模拟加载不完整的实体。
+    const auto player = tlsEcs.actorRegistry.create();
+    tlsEcs.actorRegistry.emplace<CurrencyComp>(player);
+
+    // 修复前这三条都红:返回 kSuccess、余额变成 100、组件被补建出来。
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::AddCurrency(player, kCurrencyGold, 100));
+    EXPECT_EQ(0u, CurrencySystem::GetBalance(player, kCurrencyGold));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerCurrencyComp>(player));
+
+    DestroyTestPlayer(player);
+}
+
+TEST(CurrencyTest, DeductCurrencyMissingPlayerCurrencyCompFailsClosed)
+{
+    auto player = CreateTestPlayer();
+    ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player, kCurrencyGold, 100));
+    tlsEcs.actorRegistry.remove<PlayerCurrencyComp>(player);
+
+    // 修复前先扣钱、再补建组件:返回 kSuccess、余额 60、组件重新出现 —— 三条都红。
+    EXPECT_EQ(kInvalidParameter, CurrencySystem::DeductCurrency(player, kCurrencyGold, 40));
+    EXPECT_EQ(100u, CurrencySystem::GetBalance(player, kCurrencyGold));
+    // ASSERT 而非 EXPECT:修复前组件已被补建,下面的 emplace 会触发 entt 断言把整个测试进程带崩。
+    ASSERT_FALSE(tlsEcs.actorRegistry.any_of<PlayerCurrencyComp>(player));
+
+    // 组件按加载路径补回来之后同一笔扣款照常成立:拒绝的原因确实只是缺组件。
+    tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player);
+    EXPECT_EQ(kSuccess, CurrencySystem::DeductCurrency(player, kCurrencyGold, 40));
+    EXPECT_EQ(60u, CurrencySystem::GetBalance(player, kCurrencyGold));
 
     DestroyTestPlayer(player);
 }

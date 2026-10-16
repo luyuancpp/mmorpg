@@ -29,6 +29,8 @@ const (
 	SceneSceneClientPlayer_NotifyActorListCreate_FullMethodName  = "/SceneSceneClientPlayer/NotifyActorListCreate"
 	SceneSceneClientPlayer_NotifyActorListDestroy_FullMethodName = "/SceneSceneClientPlayer/NotifyActorListDestroy"
 	SceneSceneClientPlayer_TravelToZone_FullMethodName           = "/SceneSceneClientPlayer/TravelToZone"
+	SceneSceneClientPlayer_GetSyncDigest_FullMethodName          = "/SceneSceneClientPlayer/GetSyncDigest"
+	SceneSceneClientPlayer_NotifySyncDigest_FullMethodName       = "/SceneSceneClientPlayer/NotifySyncDigest"
 )
 
 // SceneSceneClientPlayerClient is the client API for SceneSceneClientPlayer service.
@@ -45,6 +47,10 @@ type SceneSceneClientPlayerClient interface {
 	NotifyActorListDestroy(ctx context.Context, in *ActorListDestroyS2C, opts ...grpc.CallOption) (*base.Empty, error)
 	// 只能追加在末尾:CallMethod 按 method index 分发,插到中间会让后面所有方法移位。
 	TravelToZone(ctx context.Context, in *TravelToZoneRequest, opts ...grpc.CallOption) (*TravelToZoneResponse, error)
+	// 落地恢复(docs/design/landing-recovery-sync-digest.md §4.1):客户端落地后取摘要。应答是 Empty,
+	// 数据走 NotifySyncDigest 推送;handler 里禁止 SetTip,所有失败都推 status = UNAVAILABLE。
+	GetSyncDigest(ctx context.Context, in *GetSyncDigestRequest, opts ...grpc.CallOption) (*base.Empty, error)
+	NotifySyncDigest(ctx context.Context, in *SyncDigestS2C, opts ...grpc.CallOption) (*base.Empty, error)
 }
 
 type sceneSceneClientPlayerClient struct {
@@ -145,6 +151,26 @@ func (c *sceneSceneClientPlayerClient) TravelToZone(ctx context.Context, in *Tra
 	return out, nil
 }
 
+func (c *sceneSceneClientPlayerClient) GetSyncDigest(ctx context.Context, in *GetSyncDigestRequest, opts ...grpc.CallOption) (*base.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(base.Empty)
+	err := c.cc.Invoke(ctx, SceneSceneClientPlayer_GetSyncDigest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sceneSceneClientPlayerClient) NotifySyncDigest(ctx context.Context, in *SyncDigestS2C, opts ...grpc.CallOption) (*base.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(base.Empty)
+	err := c.cc.Invoke(ctx, SceneSceneClientPlayer_NotifySyncDigest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SceneSceneClientPlayerServer is the server API for SceneSceneClientPlayer service.
 // All implementations must embed UnimplementedSceneSceneClientPlayerServer
 // for forward compatibility.
@@ -159,6 +185,10 @@ type SceneSceneClientPlayerServer interface {
 	NotifyActorListDestroy(context.Context, *ActorListDestroyS2C) (*base.Empty, error)
 	// 只能追加在末尾:CallMethod 按 method index 分发,插到中间会让后面所有方法移位。
 	TravelToZone(context.Context, *TravelToZoneRequest) (*TravelToZoneResponse, error)
+	// 落地恢复(docs/design/landing-recovery-sync-digest.md §4.1):客户端落地后取摘要。应答是 Empty,
+	// 数据走 NotifySyncDigest 推送;handler 里禁止 SetTip,所有失败都推 status = UNAVAILABLE。
+	GetSyncDigest(context.Context, *GetSyncDigestRequest) (*base.Empty, error)
+	NotifySyncDigest(context.Context, *SyncDigestS2C) (*base.Empty, error)
 	mustEmbedUnimplementedSceneSceneClientPlayerServer()
 }
 
@@ -195,6 +225,12 @@ func (UnimplementedSceneSceneClientPlayerServer) NotifyActorListDestroy(context.
 }
 func (UnimplementedSceneSceneClientPlayerServer) TravelToZone(context.Context, *TravelToZoneRequest) (*TravelToZoneResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TravelToZone not implemented")
+}
+func (UnimplementedSceneSceneClientPlayerServer) GetSyncDigest(context.Context, *GetSyncDigestRequest) (*base.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSyncDigest not implemented")
+}
+func (UnimplementedSceneSceneClientPlayerServer) NotifySyncDigest(context.Context, *SyncDigestS2C) (*base.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method NotifySyncDigest not implemented")
 }
 func (UnimplementedSceneSceneClientPlayerServer) mustEmbedUnimplementedSceneSceneClientPlayerServer() {
 }
@@ -380,6 +416,42 @@ func _SceneSceneClientPlayer_TravelToZone_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SceneSceneClientPlayer_GetSyncDigest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSyncDigestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneSceneClientPlayerServer).GetSyncDigest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneSceneClientPlayer_GetSyncDigest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneSceneClientPlayerServer).GetSyncDigest(ctx, req.(*GetSyncDigestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SceneSceneClientPlayer_NotifySyncDigest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SyncDigestS2C)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneSceneClientPlayerServer).NotifySyncDigest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneSceneClientPlayer_NotifySyncDigest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneSceneClientPlayerServer).NotifySyncDigest(ctx, req.(*SyncDigestS2C))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SceneSceneClientPlayer_ServiceDesc is the grpc.ServiceDesc for SceneSceneClientPlayer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -422,6 +494,14 @@ var SceneSceneClientPlayer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TravelToZone",
 			Handler:    _SceneSceneClientPlayer_TravelToZone_Handler,
+		},
+		{
+			MethodName: "GetSyncDigest",
+			Handler:    _SceneSceneClientPlayer_GetSyncDigest_Handler,
+		},
+		{
+			MethodName: "NotifySyncDigest",
+			Handler:    _SceneSceneClientPlayer_NotifySyncDigest_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -7,6 +7,7 @@
 #include "spatial/constants/aoi_priority.h"
 
 #include <modules/scene/comp/scene_comp.h>
+#include <muduo/base/Logging.h>
 #include <thread_context/ecs_context.h>
 
 // ---------------------------------------------------------------------------
@@ -38,6 +39,7 @@ static entt::entity FindLowestWeightEntity(const AoiListComp& comp,
 
 std::size_t InterestSystem::GetEffectiveCapacity(entt::entity watcher)
 {
+    // 三种容量/策略组件是稀疏可选配置,生产尚未接线。缺失表示使用默认值,不补建。
     // Client-reported desired count (per-entity).
     std::size_t clientCap = kAoiListCapacityDefault;
     if (const auto* clientComp = tlsEcs.actorRegistry.try_get<AoiClientCapacityComp>(watcher))
@@ -64,6 +66,7 @@ std::size_t InterestSystem::GetEffectiveCapacity(entt::entity watcher)
 
 const AoiPriorityPolicy& InterestSystem::GetPriorityPolicy(entt::entity watcher)
 {
+    // ScenePriorityPolicyComp 仅是预留入口,生产不预挂;缺省即 OpenWorld 策略。
     if (const auto* sceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(watcher))
     {
         if (tlsEcs.sceneRegistry.valid(sceneComp->sceneEntity))
@@ -81,36 +84,57 @@ bool InterestSystem::AddAoiEntity(entt::entity watcher, entt::entity target, Aoi
 {
     if (watcher == entt::null || target == entt::null) return false;
 
-    auto& comp = tlsEcs.actorRegistry.get_or_emplace<AoiListComp>(watcher);
+    // 先校验再动表:已销毁的句柄(格子集合里的陈旧条目、调用方持有的过期实体)
+    // 既不能当观察者,也不能被登记进别人的兴趣表 —— 前者会在空槽位上挂出孤儿组件,
+    // 后者会把下发给客户端的实体号指向一个不存在的 actor。
+    if (!tlsEcs.actorRegistry.valid(watcher) || !tlsEcs.actorRegistry.valid(target))
+    {
+        LOG_ERROR << "AddAoiEntity: invalid entity, watcher=" << entt::to_integral(watcher)
+                  << " target=" << entt::to_integral(target);
+        return false;
+    }
+
+    // 按需状态的唯一写入口:没有兴趣表表示尚无观察对象,不是初始化失败。
+    // 先完成句柄与容量校验,只有下面确实插入第一个条目时才延迟创建。
+    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
     const auto& policy = GetPriorityPolicy(watcher);
 
     // If target already present, upgrade priority if the new tag has higher weight.
-    if (auto it = comp.entries.find(target); it != comp.entries.end())
+    if (comp != nullptr)
     {
-        if (policy.GetWeight(priority) > policy.GetWeight(it->second.priority))
+        if (auto it = comp->entries.find(target); it != comp->entries.end())
         {
-            it->second.priority = priority;
+            if (policy.GetWeight(priority) > policy.GetWeight(it->second.priority))
+            {
+                it->second.priority = priority;
+            }
+            return true;
         }
-        return true;
     }
 
     // Room available — insert directly.
     const auto capacity = GetEffectiveCapacity(watcher);
-    if (comp.entries.size() < capacity)
+    if (capacity == 0) return false;
+    if (comp == nullptr)
     {
-        comp.entries.emplace(target, AoiEntry{priority});
+        // 此处延迟创建,Pin 与空间可见性写入都经本入口。
+        comp = &tlsEcs.actorRegistry.emplace<AoiListComp>(watcher);
+    }
+    if (comp->entries.size() < capacity)
+    {
+        comp->entries.emplace(target, AoiEntry{priority});
         return true;
     }
 
     // At capacity: try to evict the lowest-weight entry if new one outranks it.
-    const auto lowestEntity = FindLowestWeightEntity(comp, policy);
+    const auto lowestEntity = FindLowestWeightEntity(*comp, policy);
     if (lowestEntity == entt::null) return false;
 
-    const auto lowestWeight = policy.GetWeight(comp.entries.at(lowestEntity).priority);
+    const auto lowestWeight = policy.GetWeight(comp->entries.at(lowestEntity).priority);
     if (policy.GetWeight(priority) <= lowestWeight) return false; // not important enough
 
-    comp.entries.erase(lowestEntity);
-    comp.entries.emplace(target, AoiEntry{priority});
+    comp->entries.erase(lowestEntity);
+    comp->entries.emplace(target, AoiEntry{priority});
     return true;
 }
 
@@ -126,20 +150,6 @@ void InterestSystem::RemoveAoiEntity(entt::entity watcher, entt::entity target)
 bool InterestSystem::PinAoiEntity(entt::entity watcher, entt::entity target)
 {
     return AddAoiEntity(watcher, target, AoiPriority::kPinned);
-}
-
-void InterestSystem::UnpinAoiEntity(entt::entity watcher, entt::entity target)
-{
-    if (watcher == entt::null || target == entt::null) return;
-
-    auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    if (comp == nullptr) return;
-
-    auto it = comp->entries.find(target);
-    if (it == comp->entries.end()) return;
-
-    // Downgrade from pinned — next Update() will evict if out of range.
-    it->second.priority = AoiPriority::kNormal;
 }
 
 void InterestSystem::UpgradePriority(entt::entity watcher, entt::entity target, AoiPriority priority)

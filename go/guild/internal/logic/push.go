@@ -17,6 +17,7 @@ package logic
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -26,8 +27,10 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"guild/generated/pb/game"
+	"guild/internal/constants"
 	"guild/internal/data"
 	pb "proto/guild"
+	scenepb "proto/scene"
 	"shared/kafkautil"
 	"shared/safego"
 )
@@ -312,4 +315,189 @@ func membersExcept(g *data.GuildData, excluded ...uint64) []uint64 {
 		out = append(out, m.PlayerID)
 	}
 	return out
+}
+
+// ── 落地恢复摘要 bump(docs/design/landing-recovery-sync-digest.md §3.3 / §3.5) ──
+//
+// 推送是"在线时的提示",摘要是"落地后的提示":传送、断线、下线期间推送会丢且不补发,客户端落地后取摘要
+// (核心 Redis 的 player:{id}:sync_digest),与本地缓存逐域比对、只拉变了的域。bump 与推送同形,
+// 四条纪律:
+//
+//  1. **只在 MySQL 提交成功、repo 已失效缓存之后调用**(§3.5 第 1、2 条)。先 bump 后提交,客户端会把
+//     旧数据记成新版本,下一次变化之前都看不到这次改动。repo 的写方法在返回前已做完 invalidateAfterCommit。
+//  2. **收件人 = "拉取结果会变的所有玩家",含操作者本人**(§3.5 第 3 条)。这是与推送唯一的口径差:
+//     推送刻意排除操作者(他手上有回包),而回包恰恰可能在断线时丢失。
+//  3. **绝不影响业务结果**。失败只记日志与 playersync 的低基数指标 player_sync_bump_total{service,result};
+//     漏掉的一次由打开面板时的拉取兜底(§3.5 第 5 条)。
+//  4. **不占 RPC 预算**。整批在 safego 协程里跑,总预算 guildSyncBumpBudget,不继承请求 ctx
+//     (全帮扇出最多 constants.MaxGuildMembersCap 人,§3.5 第 6 条)。
+//
+// 帮会级数值(资金、灯会进度)不**逐次**扇出:每笔捐献乘全帮人数的写放大不值得,由打开面板时的拉取覆盖(§3.3)。
+// 这条豁免只针对"为了它专门扇出给他人":
+//   - 本人那一次 bump 多带一个域号是零成本(同一条 Lua 多一个 ARGV),本人 GuildInfo 里的帮贡变了就带上 GUILD;
+//   - 已经因为别的原因在扇出(升级、首次达阈值、计了资金的历练胜局)时,顺带的域号同样零成本,照带。
+
+// guildSyncBumpBudget 是**一整批** bump 的总预算(设计 §3.5 第 6 条:2 秒)。
+//
+// 一次 bump 是核心 Redis 上的一条单键 Lua,全帮 100 人串行正常远低于这个数;Redis 不可用时 2s 已足够判定,
+// 再等只是让协程堆积。比推送的 guildPushBudget 小:摘要丢一次的代价只是落地后多拉一次。
+//
+// 这个预算能封住**单条**命令,前提是底下的 go-redis 客户端开了 ContextTimeoutEnabled(svc.newPlayerSyncRedis):
+// 不开时 go-redis v9 的套接字读写换成 context.Background(),一条卡住的命令要等满 ReadTimeout(默认 3s),
+// ctx 只在逐人检查、取连接排队、拨号与重试退避处生效。
+const guildSyncBumpBudget = 2 * time.Second
+
+// guildSyncBumpPoint 是 safego 的点位名,会直接变成 safego_panic_total 的 label,必须是常量。
+const guildSyncBumpPoint = "guild.sync_bump"
+
+// PlayerSyncBumper 是"给一批玩家的同一组域各 +1"的能力,*playersync.Bumper 满足它(go/shared/playersync)。
+//
+// 契约由 playersync.Bumper.BumpAll 保证:nil 接收者安全;玩家去重、跳过 0;每个玩家发命令前先看 ctx,
+// 预算到期后剩余玩家不再发;失败已记 WARN 日志并计入 player_sync_bump_total{service,result}(含预算耗尽时跳过的人数),
+// 返回的 error 只是汇总。用窄接口而不是直接依赖 *playersync.Bumper:logic 只用这一个方法,单测的替身也只需实现这一个。
+type PlayerSyncBumper interface {
+	BumpAll(ctx context.Context, playerIDs []uint64, domains ...scenepb.SyncDomain) error
+}
+
+// GuildSyncBumper 是帮会侧摘要 bump 的唯一接缝(与 GuildNotifier 同形)。
+//
+// 契约(实现必须全部满足):
+//   - 只在 MySQL 提交成功(repo 已失效缓存)之后调用;
+//   - 异步、立即返回,不阻塞 RPC;整批共用一个预算,不继承请求 ctx;
+//   - 失败只记日志与指标,绝不影响业务结果;
+//   - 玩家去重、丢弃 0;domains 为空时什么都不做;
+//   - 返回之后不再读、也从不改调用方传入的切片(调用方可以在返回后复用它们)。
+type GuildSyncBumper interface {
+	Bump(players []uint64, domains ...scenepb.SyncDomain)
+}
+
+// NoopSyncBumper:没接摘要 Redis(guild.go 未传 WithSyncBumper)或单测时使用。
+// 退化形态 = 本功能上线前的现状:帮会各域在摘要里永不变化,客户端落地后不会因摘要去拉帮会,
+// 只在打开帮会界面时拉取。不出错,只是传送窗口里丢的推送要等打开界面才对齐。
+type NoopSyncBumper struct{}
+
+func (NoopSyncBumper) Bump([]uint64, ...scenepb.SyncDomain) {}
+
+// AsyncGuildSyncBumper 把一批 bump 放进 safego 协程,交给 PlayerSyncBumper.BumpAll 逐人执行(纪律 4)。
+//
+// 逐人发命令、预算耗尽即停、失败记 WARN 与指标,这些都由 playersync 统一做(friend / team 共用同一份口径),
+// 本类型只负责"异步 + 不继承请求 ctx + 整批一个预算 + 不别名调用方切片"。
+//
+// 只经 NewGuildSyncBumper 构造(四个字段都必须非零);单测在同一包内按字段注入替身。
+type AsyncGuildSyncBumper struct {
+	inner  PlayerSyncBumper
+	budget time.Duration
+	// withBudget 按 budget 给每一批建一个独立的预算上下文(不继承请求 ctx)。生产是 backgroundWithTimeout;
+	// 抽成字段是为了单测注入截止时间固定的上下文,直接比对截止时间,不与真实墙钟比较(AGENTS §11.4)。
+	withBudget func(time.Duration) (context.Context, context.CancelFunc)
+	// launch 把一批交给另一个协程执行。生产是 launchSyncBump(safego.Go);
+	// 单测注入记录器,同步地观察"起没起协程",并在调用方复用切片之后才执行交出去的那一批。
+	launch func(func())
+}
+
+// backgroundWithTimeout 是 AsyncGuildSyncBumper.withBudget 的生产实现:挂在 Background 上,刻意不继承请求 ctx。
+func backgroundWithTimeout(budget time.Duration) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), budget)
+}
+
+// launchSyncBump 是 AsyncGuildSyncBumper.launch 的生产实现:panic 由 safego 兜住并计 safego_panic_total。
+func launchSyncBump(fn func()) { safego.Go(guildSyncBumpPoint, fn) }
+
+// NewGuildSyncBumper 是 nil 安全的唯一收口:inner 为 nil 接口即退回 NoopSyncBumper。
+//
+// nil 接口的坑:装着 nil *playersync.Bumper 的接口不等于 nil,走不到这里的退回分支;
+// 那种形态(NewGoRedisEvaler / NewBumper 拿到 nil 句柄时返回 nil)由 playersync.Bumper 自己的
+// nil 接收者兜住(BumpAll 直接返回 nil),不会 panic,只是多起一个空跑的协程。
+func NewGuildSyncBumper(inner PlayerSyncBumper) GuildSyncBumper {
+	if inner == nil {
+		logx.Info("[guild] sync digest bumper not configured: guild domains never change in the landing digest, client refreshes when opening the guild panel")
+		return NoopSyncBumper{}
+	}
+	return &AsyncGuildSyncBumper{
+		inner:      inner,
+		budget:     guildSyncBumpBudget,
+		withBudget: backgroundWithTimeout,
+		launch:     launchSyncBump,
+	}
+}
+
+func (b *AsyncGuildSyncBumper) Bump(players []uint64, domains ...scenepb.SyncDomain) {
+	ids := uniqueNonZero(players)
+	if len(ids) == 0 || len(domains) == 0 {
+		return
+	}
+	// 去重与复制都在起协程**之前**:players 常是事务快照的成员切片、domains 是可变参数的底层数组,
+	// 交给另一个 goroutine 之后调用方若复用它们,-race 下必报。uniqueNonZero 已返回新切片。
+	ds := slices.Clone(domains)
+	b.launch(func() {
+		ctx, cancel := b.withBudget(b.budget)
+		defer cancel()
+		// 返回值只是汇总:每一个失败(含预算耗尽时没来得及发的人数)playersync 都已记 WARN 与指标,
+		// 这里再记一行只会让同一次故障出现两遍。漏掉的由打开面板时的拉取兜底(纪律 3)。
+		_ = b.inner.BumpAll(ctx, ids, ds...)
+	})
+}
+
+// bumpSync 是 logic 侧唯一的 bump 入口,与 notify 写在同一处(提交之后)。
+//
+// 与 notify 同一套防御:正常路径不会遇到 nil(NewGuildLogic 的默认值是 NoopSyncBumper{}),
+// 真遇到了只记 Error 不 panic —— 它跑在提交之后,panic 等于把一次已经写成功的操作报成 RPC 失败。
+func (l *GuildLogic) bumpSync(players []uint64, domains ...scenepb.SyncDomain) {
+	if l.syncBumper == nil {
+		logx.Errorf("[guild] sync bumper not wired; digest bump dropped domains=%v players=%d", domains, len(players))
+		return
+	}
+	l.syncBumper.Bump(players, domains...)
+}
+
+// membersPlus 返回快照全体成员再追加 extra(已不在快照里的当事人:离帮者、被踢者)。
+// 不去重、不丢 0:那两件事在 GuildSyncBumper.Bump 里统一做(同 membersExcept 的约定)。
+func membersPlus(g *data.GuildData, extra ...uint64) []uint64 {
+	return append(membersExcept(g), extra...)
+}
+
+// reviewersIn 返回快照里有审批权的人(长老与帮主)。待审数只显示在他们的 GuildInfo 里(guildInfoFor),
+// 所以申请行的增删要给这组人 bump GUILD。职位判定与 guildInfoFor 同一个阈值(RankOfficer)。
+// 快照通常来自事务内的权威读;撤回申请没有事务快照,用的是提交之后的缓存读(GetGuild,职位变更会失效缓存)。
+func reviewersIn(g *data.GuildData) []uint64 {
+	if g == nil {
+		return nil
+	}
+	out := make([]uint64, 0, len(g.Members))
+	for _, m := range g.Members {
+		if constants.Rank(m.Role) >= constants.RankOfficer {
+			out = append(out, m.PlayerID)
+		}
+	}
+	return out
+}
+
+// assetFinalizedSyncDomains:一条资产指令终结之后,本人哪些域的拉取结果会变。
+//
+//   - DONATE → 捐献页(待结算 / 最近结果 / 今日次数);SHOP → 商店页(待发放 / 最近结果 / 帮贡 / 限购)。
+//     两页同属 GUILD_ECONOMY(§3.3 表第 8 行)。
+//     另带 GUILD:终结的对侧账会改本人 GetPlayerGuild 的结果 —— 捐献 APPLIED 给他记帮贡(GuildInfo.members[] 的
+//     contribution_*)并入帮会资金,兑换 REJECTED / ABORTED 退回他的帮贡。不按终态细分:细分等于把
+//     data.applyCounterparty 的对侧账表在 logic 里再抄一份,那张表一改这里就静默漏 bump;
+//     本人多拉一次 GetPlayerGuild 无害,漏拉才违反 L-1。
+//   - ACTIVITY_REWARD → 活动页的待发奖励(RewardStatuses → my_pending_reward_count),属 GUILD_ACTIVITY。
+//     两个经济页都按 kind 过滤掉它,所以不 bump GUILD_ECONOMY(§3.5 第 3 条:只给拉取结果会变的域);
+//     它的帮贡与资金在入队事务里已记完(afterActivityCommit 已 bump 过 GUILD),终结只 CAS,所以也不带 GUILD。
+//   - 未知 kind → 三个域都 bump:多拉一次无害,漏拉才违反 L-1。
+func assetFinalizedSyncDomains(kind pb.GuildAssetOpKind) []scenepb.SyncDomain {
+	switch kind {
+	case pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_DONATE, pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_SHOP:
+		return []scenepb.SyncDomain{
+			scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ECONOMY,
+			scenepb.SyncDomain_SYNC_DOMAIN_GUILD,
+		}
+	case pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_ACTIVITY_REWARD:
+		return []scenepb.SyncDomain{scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ACTIVITY}
+	default:
+		return []scenepb.SyncDomain{
+			scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ECONOMY,
+			scenepb.SyncDomain_SYNC_DOMAIN_GUILD_ACTIVITY,
+			scenepb.SyncDomain_SYNC_DOMAIN_GUILD,
+		}
+	}
 }

@@ -21,6 +21,7 @@
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/arena.h"
 #include "google/protobuf/arenastring.h"
+#include "google/protobuf/generated_message_bases.h"
 #include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
@@ -64,6 +65,10 @@ enum ActorType : int;
 extern const uint32_t ActorType_internal_data_[];
 enum SceneChannelState : int;
 extern const uint32_t SceneChannelState_internal_data_[];
+enum SyncDigestStatus : int;
+extern const uint32_t SyncDigestStatus_internal_data_[];
+enum SyncDomain : int;
+extern const uint32_t SyncDomain_internal_data_[];
 class ActorCreateS2C;
 struct ActorCreateS2CGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -120,6 +125,14 @@ extern const ::google::protobuf::internal::ClassDataFull EnterSceneS2C_class_dat
 #else
 extern const EnterSceneS2CGlobalsTypeInternal EnterSceneS2C_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class GetSyncDigestRequest;
+struct GetSyncDigestRequestGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GetSyncDigestRequestGlobalsTypeInternal GetSyncDigestRequest_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GetSyncDigestRequest_class_data_;
+#else
+extern const GetSyncDigestRequestGlobalsTypeInternal GetSyncDigestRequest_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class SceneChannelDirectory;
 struct SceneChannelDirectoryGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -160,6 +173,22 @@ extern const ::google::protobuf::internal::ClassDataFull SceneInfoS2C_class_data
 #else
 extern const SceneInfoS2CGlobalsTypeInternal SceneInfoS2C_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class SyncDigestEntry;
+struct SyncDigestEntryGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern SyncDigestEntryGlobalsTypeInternal SyncDigestEntry_globals_;
+extern const ::google::protobuf::internal::ClassDataFull SyncDigestEntry_class_data_;
+#else
+extern const SyncDigestEntryGlobalsTypeInternal SyncDigestEntry_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class SyncDigestS2C;
+struct SyncDigestS2CGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern SyncDigestS2CGlobalsTypeInternal SyncDigestS2C_globals_;
+extern const ::google::protobuf::internal::ClassDataFull SyncDigestS2C_class_data_;
+#else
+extern const SyncDigestS2CGlobalsTypeInternal SyncDigestS2C_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class TravelToZoneRequest;
 struct TravelToZoneRequestGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -184,6 +213,12 @@ internal::EnumTraitsT<::ActorType_internal_data_>
 template <>
 internal::EnumTraitsT<::SceneChannelState_internal_data_>
     internal::EnumTraitsImpl::value<::SceneChannelState>;
+template <>
+internal::EnumTraitsT<::SyncDigestStatus_internal_data_>
+    internal::EnumTraitsImpl::value<::SyncDigestStatus>;
+template <>
+internal::EnumTraitsT<::SyncDomain_internal_data_>
+    internal::EnumTraitsImpl::value<::SyncDomain>;
 }  // namespace protobuf
 }  // namespace google
 
@@ -270,6 +305,94 @@ template <>
 [[nodiscard]] inline bool ActorType_Parse(
     ::absl::string_view name, ActorType* PROTOBUF_NONNULL value) {
   return ::google::protobuf::internal::ParseNamedEnum<ActorType>(ActorType_descriptor(), name,
+                                           value);
+}
+enum SyncDomain : int {
+  SYNC_DOMAIN_UNSPECIFIED = 0,
+  SYNC_DOMAIN_FRIEND_LIST = 1,
+  SYNC_DOMAIN_FRIEND_REQUEST = 2,
+  SYNC_DOMAIN_FRIEND_BLOCK = 3,
+  SYNC_DOMAIN_TEAM = 4,
+  SYNC_DOMAIN_TEAM_INVITE = 5,
+  SYNC_DOMAIN_GUILD = 6,
+  SYNC_DOMAIN_GUILD_APPLICATION = 7,
+  SYNC_DOMAIN_GUILD_ECONOMY = 8,
+  SYNC_DOMAIN_GUILD_ACTIVITY = 9,
+  SyncDomain_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  SyncDomain_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t SyncDomain_internal_data_[];
+inline constexpr SyncDomain SyncDomain_MIN =
+    static_cast<SyncDomain>(0);
+inline constexpr SyncDomain SyncDomain_MAX =
+    static_cast<SyncDomain>(9);
+[[nodiscard]] inline bool SyncDomain_IsValid(int value) {
+  return 0 <= value && value <= 9;
+}
+inline constexpr int SyncDomain_ARRAYSIZE = 9 + 1;
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+SyncDomain_descriptor();
+[[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(SyncDomain) {
+  return SyncDomain_descriptor();
+}
+template <typename T>
+[[nodiscard]] const ::std::string& SyncDomain_Name(T value) {
+  static_assert(::std::is_same<T, SyncDomain>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to SyncDomain_Name().");
+  return SyncDomain_Name(static_cast<SyncDomain>(value));
+}
+template <>
+[[nodiscard]] inline const ::std::string& SyncDomain_Name(SyncDomain value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<SyncDomain_descriptor, 0, 9>(
+      static_cast<int>(value));
+}
+[[nodiscard]] inline bool SyncDomain_Parse(
+    ::absl::string_view name, SyncDomain* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<SyncDomain>(SyncDomain_descriptor(), name,
+                                           value);
+}
+enum SyncDigestStatus : int {
+  SYNC_DIGEST_STATUS_OK = 0,
+  SYNC_DIGEST_STATUS_UNAVAILABLE = 1,
+  SyncDigestStatus_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  SyncDigestStatus_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t SyncDigestStatus_internal_data_[];
+inline constexpr SyncDigestStatus SyncDigestStatus_MIN =
+    static_cast<SyncDigestStatus>(0);
+inline constexpr SyncDigestStatus SyncDigestStatus_MAX =
+    static_cast<SyncDigestStatus>(1);
+[[nodiscard]] inline bool SyncDigestStatus_IsValid(int value) {
+  return 0 <= value && value <= 1;
+}
+inline constexpr int SyncDigestStatus_ARRAYSIZE = 1 + 1;
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+SyncDigestStatus_descriptor();
+[[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(SyncDigestStatus) {
+  return SyncDigestStatus_descriptor();
+}
+template <typename T>
+[[nodiscard]] const ::std::string& SyncDigestStatus_Name(T value) {
+  static_assert(::std::is_same<T, SyncDigestStatus>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to SyncDigestStatus_Name().");
+  return SyncDigestStatus_Name(static_cast<SyncDigestStatus>(value));
+}
+template <>
+[[nodiscard]] inline const ::std::string& SyncDigestStatus_Name(SyncDigestStatus value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<SyncDigestStatus_descriptor, 0, 1>(
+      static_cast<int>(value));
+}
+[[nodiscard]] inline bool SyncDigestStatus_Parse(
+    ::absl::string_view name, SyncDigestStatus* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<SyncDigestStatus>(SyncDigestStatus_descriptor(), name,
                                            value);
 }
 using ::google::protobuf::internal::generated_enum::AbslParseFlag;
@@ -486,6 +609,219 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TravelToZoneRequest final : public 
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint32_t target_zone_id_;
     ::uint32_t scene_config_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fscene_2fplayer_5fscene_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SyncDigestEntry final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:SyncDigestEntry) */ {
+ public:
+  inline SyncDigestEntry() : SyncDigestEntry(nullptr) {}
+  ~SyncDigestEntry() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SyncDigestEntry* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SyncDigestEntry));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr SyncDigestEntry(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline SyncDigestEntry(const SyncDigestEntry& from) : SyncDigestEntry(nullptr, from) {}
+  inline SyncDigestEntry(SyncDigestEntry&& from) noexcept : SyncDigestEntry(nullptr, ::std::move(from)) {}
+  inline SyncDigestEntry& operator=(const SyncDigestEntry& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SyncDigestEntry& operator=(SyncDigestEntry&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const SyncDigestEntry& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<SyncDigestEntry>(&SyncDigestEntry_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 14;
+  friend void swap(SyncDigestEntry& a, SyncDigestEntry& b) { a.Swap(&b); }
+  inline void Swap(SyncDigestEntry* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SyncDigestEntry* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] SyncDigestEntry* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SyncDigestEntry>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SyncDigestEntry& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SyncDigestEntry& from) { SyncDigestEntry::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SyncDigestEntry* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "SyncDigestEntry"; }
+
+  explicit SyncDigestEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SyncDigestEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SyncDigestEntry& from);
+  SyncDigestEntry(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SyncDigestEntry&& from) noexcept
+      : SyncDigestEntry(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kVersionFieldNumber = 2,
+    kDomainFieldNumber = 1,
+  };
+  // uint64 version = 2;
+  void clear_version() ;
+  [[nodiscard]] ::uint64_t version() const;
+  void set_version(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_version() const;
+  void _internal_set_version(::uint64_t value);
+
+  public:
+  // .SyncDomain domain = 1;
+  void clear_domain() ;
+  [[nodiscard]] ::SyncDomain domain() const;
+  void set_domain(::SyncDomain value);
+
+  private:
+  ::SyncDomain _internal_domain() const;
+  void _internal_set_domain(::SyncDomain value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:SyncDigestEntry)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SyncDigestEntry& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t version_;
+    int domain_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -927,6 +1263,144 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SceneChannelInfo final : public ::g
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fscene_2fplayer_5fscene_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetSyncDigestRequest final : public ::google::protobuf::internal::ZeroFieldsBase
+/* @@protoc_insertion_point(class_definition:GetSyncDigestRequest) */ {
+ public:
+  inline GetSyncDigestRequest() : GetSyncDigestRequest(nullptr) {}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetSyncDigestRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetSyncDigestRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GetSyncDigestRequest(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GetSyncDigestRequest(const GetSyncDigestRequest& from) : GetSyncDigestRequest(nullptr, from) {}
+  inline GetSyncDigestRequest(GetSyncDigestRequest&& from) noexcept : GetSyncDigestRequest(nullptr, ::std::move(from)) {}
+  inline GetSyncDigestRequest& operator=(const GetSyncDigestRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetSyncDigestRequest& operator=(GetSyncDigestRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GetSyncDigestRequest& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GetSyncDigestRequest>(&GetSyncDigestRequest_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 15;
+  friend void swap(GetSyncDigestRequest& a, GetSyncDigestRequest& b) { a.Swap(&b); }
+  inline void Swap(GetSyncDigestRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetSyncDigestRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GetSyncDigestRequest* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<GetSyncDigestRequest>(arena);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const GetSyncDigestRequest& from) { ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from); }
+  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const GetSyncDigestRequest& from) { ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from); }
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "GetSyncDigestRequest"; }
+
+  explicit GetSyncDigestRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetSyncDigestRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetSyncDigestRequest& from);
+  GetSyncDigestRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetSyncDigestRequest&& from) noexcept
+      : GetSyncDigestRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  // @@protoc_insertion_point(class_scope:GetSyncDigestRequest)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<0, 0,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
   friend struct ::TableStruct_proto_2fscene_2fplayer_5fscene_2eproto;
 };
 // -------------------------------------------------------------------
@@ -1544,6 +2018,242 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TravelToZoneResponse final : public
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fscene_2fplayer_5fscene_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED SyncDigestS2C final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:SyncDigestS2C) */ {
+ public:
+  inline SyncDigestS2C() : SyncDigestS2C(nullptr) {}
+  ~SyncDigestS2C() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SyncDigestS2C* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SyncDigestS2C));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr SyncDigestS2C(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline SyncDigestS2C(const SyncDigestS2C& from) : SyncDigestS2C(nullptr, from) {}
+  inline SyncDigestS2C(SyncDigestS2C&& from) noexcept : SyncDigestS2C(nullptr, ::std::move(from)) {}
+  inline SyncDigestS2C& operator=(const SyncDigestS2C& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SyncDigestS2C& operator=(SyncDigestS2C&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const SyncDigestS2C& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<SyncDigestS2C>(&SyncDigestS2C_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 16;
+  friend void swap(SyncDigestS2C& a, SyncDigestS2C& b) { a.Swap(&b); }
+  inline void Swap(SyncDigestS2C* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SyncDigestS2C* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] SyncDigestS2C* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SyncDigestS2C>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SyncDigestS2C& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SyncDigestS2C& from) { SyncDigestS2C::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SyncDigestS2C* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "SyncDigestS2C"; }
+
+  explicit SyncDigestS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SyncDigestS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SyncDigestS2C& from);
+  SyncDigestS2C(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SyncDigestS2C&& from) noexcept
+      : SyncDigestS2C(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kEntriesFieldNumber = 3,
+    kGenerationFieldNumber = 2,
+    kStatusFieldNumber = 1,
+  };
+  // repeated .SyncDigestEntry entries = 3;
+  [[nodiscard]] int entries_size()
+      const;
+  private:
+  int _internal_entries_size() const;
+
+  public:
+  void clear_entries() ;
+  [[nodiscard]] const ::SyncDigestEntry& entries(int index) const;
+  [[nodiscard]] ::SyncDigestEntry* PROTOBUF_NONNULL mutable_entries(int index);
+  ::SyncDigestEntry* PROTOBUF_NONNULL add_entries();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::SyncDigestEntry>&
+  entries() const;
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::SyncDigestEntry>* PROTOBUF_NONNULL
+  mutable_entries();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::SyncDigestEntry>& _internal_entries() const;
+  ::google::protobuf::RepeatedPtrField<::SyncDigestEntry>* PROTOBUF_NONNULL _internal_mutable_entries();
+
+  public:
+  // uint64 generation = 2;
+  void clear_generation() ;
+  [[nodiscard]] ::uint64_t generation() const;
+  void set_generation(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_generation() const;
+  void _internal_set_generation(::uint64_t value);
+
+  public:
+  // .SyncDigestStatus status = 1;
+  void clear_status() ;
+  [[nodiscard]] ::SyncDigestStatus status() const;
+  void set_status(::SyncDigestStatus value);
+
+  private:
+  ::SyncDigestStatus _internal_status() const;
+  void _internal_set_status(::SyncDigestStatus value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:SyncDigestS2C)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<2, 3,
+                          1, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SyncDigestS2C& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::SyncDigestEntry > entries_;
+    ::uint64_t generation_;
+    int status_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3460,6 +4170,14 @@ class SceneSceneClientPlayer : public ::google::protobuf::Service {
                         const ::TravelToZoneRequest* PROTOBUF_NONNULL request,
                         ::TravelToZoneResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
+  virtual void GetSyncDigest(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::GetSyncDigestRequest* PROTOBUF_NONNULL request,
+                        ::Empty* PROTOBUF_NONNULL response,
+                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
+  virtual void NotifySyncDigest(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::SyncDigestS2C* PROTOBUF_NONNULL request,
+                        ::Empty* PROTOBUF_NONNULL response,
+                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
 
   // implements Service ----------------------------------------------
   const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL GetDescriptor() override;
@@ -3527,6 +4245,14 @@ class SceneSceneClientPlayer_Stub final : public SceneSceneClientPlayer {
   void TravelToZone(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::TravelToZoneRequest* PROTOBUF_NONNULL request,
                         ::TravelToZoneResponse* PROTOBUF_NONNULL response,
+                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
+  void GetSyncDigest(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::GetSyncDigestRequest* PROTOBUF_NONNULL request,
+                        ::Empty* PROTOBUF_NONNULL response,
+                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
+  void NotifySyncDigest(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                        const ::SyncDigestS2C* PROTOBUF_NONNULL request,
+                        ::Empty* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
 
  private:
@@ -4968,6 +5694,169 @@ inline void TravelToZoneResponse::set_allocated_error_message(::TipInfoMessage* 
   // @@protoc_insertion_point(field_set_allocated:TravelToZoneResponse.error_message)
 }
 
+// -------------------------------------------------------------------
+
+// SyncDigestEntry
+
+// .SyncDomain domain = 1;
+inline void SyncDigestEntry::clear_domain() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.domain_ = 0;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::SyncDomain SyncDigestEntry::domain() const {
+  // @@protoc_insertion_point(field_get:SyncDigestEntry.domain)
+  return _internal_domain();
+}
+inline void SyncDigestEntry::set_domain(::SyncDomain value) {
+  _internal_set_domain(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:SyncDigestEntry.domain)
+}
+inline ::SyncDomain SyncDigestEntry::_internal_domain() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::SyncDomain>(_impl_.domain_);
+}
+inline void SyncDigestEntry::_internal_set_domain(::SyncDomain value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.domain_ = value;
+}
+
+// uint64 version = 2;
+inline void SyncDigestEntry::clear_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.version_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline ::uint64_t SyncDigestEntry::version() const {
+  // @@protoc_insertion_point(field_get:SyncDigestEntry.version)
+  return _internal_version();
+}
+inline void SyncDigestEntry::set_version(::uint64_t value) {
+  _internal_set_version(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:SyncDigestEntry.version)
+}
+inline ::uint64_t SyncDigestEntry::_internal_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.version_;
+}
+inline void SyncDigestEntry::_internal_set_version(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.version_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GetSyncDigestRequest
+
+// -------------------------------------------------------------------
+
+// SyncDigestS2C
+
+// .SyncDigestStatus status = 1;
+inline void SyncDigestS2C::clear_status() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.status_ = 0;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::SyncDigestStatus SyncDigestS2C::status() const {
+  // @@protoc_insertion_point(field_get:SyncDigestS2C.status)
+  return _internal_status();
+}
+inline void SyncDigestS2C::set_status(::SyncDigestStatus value) {
+  _internal_set_status(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:SyncDigestS2C.status)
+}
+inline ::SyncDigestStatus SyncDigestS2C::_internal_status() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::SyncDigestStatus>(_impl_.status_);
+}
+inline void SyncDigestS2C::_internal_set_status(::SyncDigestStatus value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.status_ = value;
+}
+
+// uint64 generation = 2;
+inline void SyncDigestS2C::clear_generation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.generation_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t SyncDigestS2C::generation() const {
+  // @@protoc_insertion_point(field_get:SyncDigestS2C.generation)
+  return _internal_generation();
+}
+inline void SyncDigestS2C::set_generation(::uint64_t value) {
+  _internal_set_generation(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:SyncDigestS2C.generation)
+}
+inline ::uint64_t SyncDigestS2C::_internal_generation() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.generation_;
+}
+inline void SyncDigestS2C::_internal_set_generation(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.generation_ = value;
+}
+
+// repeated .SyncDigestEntry entries = 3;
+inline int SyncDigestS2C::_internal_entries_size() const {
+  return _internal_entries().size();
+}
+inline int SyncDigestS2C::entries_size() const {
+  return _internal_entries_size();
+}
+inline void SyncDigestS2C::clear_entries() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.entries_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::SyncDigestEntry& SyncDigestS2C::entries(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:SyncDigestS2C.entries)
+  return _internal_entries().Get(index);
+}
+inline ::SyncDigestEntry* PROTOBUF_NONNULL SyncDigestS2C::mutable_entries(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:SyncDigestS2C.entries)
+  return _internal_mutable_entries()->Mutable(index);
+}
+inline ::SyncDigestEntry* PROTOBUF_NONNULL SyncDigestS2C::add_entries()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::SyncDigestEntry* _add =
+      _internal_mutable_entries()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:SyncDigestS2C.entries)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::SyncDigestEntry>& SyncDigestS2C::entries() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:SyncDigestS2C.entries)
+  return _internal_entries();
+}
+inline ::google::protobuf::RepeatedPtrField<::SyncDigestEntry>* PROTOBUF_NONNULL
+SyncDigestS2C::mutable_entries() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:SyncDigestS2C.entries)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_entries();
+}
+inline const ::google::protobuf::RepeatedPtrField<::SyncDigestEntry>&
+SyncDigestS2C::_internal_entries() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.entries_;
+}
+inline ::google::protobuf::RepeatedPtrField<::SyncDigestEntry>* PROTOBUF_NONNULL
+SyncDigestS2C::_internal_mutable_entries() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.entries_;
+}
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif  // __GNUC__
@@ -4989,6 +5878,18 @@ struct is_proto_enum<::ActorType> : std::true_type {};
 template <>
 inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::ActorType>() {
   return ::ActorType_descriptor();
+}
+template <>
+struct is_proto_enum<::SyncDomain> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::SyncDomain>() {
+  return ::SyncDomain_descriptor();
+}
+template <>
+struct is_proto_enum<::SyncDigestStatus> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::SyncDigestStatus>() {
+  return ::SyncDigestStatus_descriptor();
 }
 
 }  // namespace protobuf

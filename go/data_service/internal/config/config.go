@@ -221,7 +221,7 @@ type IdSegmentConfig struct {
 // trade_listing 的消费表在独占库 mmorpg_trade,不在本服务全局库里,所以不进 schema.go 的水位地板校验。
 // guild_asset_op:帮会资产指令的 op_id(Go guild,同时作资产通道的 correlation_id;
 // docs/design/guild-phase2/05-economy.md §5.8)。消费表在独占库 mmorpg_guild,同理不做地板校验。
-var DefaultIdSegmentBootstrapTags = []string{"player", "guild", "item", "txlog", "snapshot", "trade_listing", "guild_asset_op"}
+var DefaultIdSegmentBootstrapTags = []string{"player", "guild", "item", "txlog", "snapshot", "trade_listing", "guild_asset_op", "friend_request"}
 
 // EffectiveBootstrapTags 是迁移路径实际预建的 tag 清单:没配 = 默认清单。
 // 返回副本,免得调用方改到包级默认值。
@@ -263,7 +263,8 @@ const RouteStoreModeRedis = "redis"
 const RouteStoreModeDBFirst = "db_first"
 
 // RouteStore 段各键的默认值(Normalize 照抄这一份;etc/data_service.yaml 写的就是它们)。
-// FenceShards 的默认值与上限在 shared/placement(DefaultRouteFenceShards / MaxRouteFenceShards),那里同时是围栏持有者的契约。
+// FenceShards 的默认值与上限在 shared/placement(DefaultRouteFenceShards / MaxRouteFenceShards),那里同时是围栏持有者的契约;
+// 它是唯一的例外:etc/data_service.yaml 写的是 MySQL 档的 16,不是默认值 8(2026-10-13,见该文件的注释)。
 const (
 	DefaultRouteStoreMaxOpenConn        = 20
 	DefaultRouteStoreMaxIdleConn        = 5

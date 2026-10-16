@@ -10,6 +10,12 @@
     <ClCompile Include="bag_instance_data_test.cpp">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="bag_selection_order_test.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="bag_java_parity_test.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
     <ClCompile Include="player_equip_test.cpp">
       <Filter>source</Filter>
     </ClCompile>
@@ -30,7 +36,7 @@
     <ClCompile Include="player_mission_system_test.cpp" />
     <ClCompile Include="player_activity_schedule_test.cpp" />
     <ClCompile Include="player_feature_persistence_test.cpp" />
-    <ClCompile Include="..\..\nodes\scene\handler\event\mission_event_handler.cpp" />
+    <ClCompile Include="..\..\nodes\scene\handler\local_event\scene_local_events.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene_spawn_test.cpp" />

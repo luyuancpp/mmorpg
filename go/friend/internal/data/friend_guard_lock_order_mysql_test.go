@@ -240,7 +240,7 @@ func TestBlockAndAcceptFriendInterleaved(t *testing.T) {
 			return callBlock(ctx, repo, me, peer, lim)
 		}
 		// AcceptFriend 的参数顺序是 (申请人, 接受者)。
-		return repo.AcceptFriend(ctx, peer, me, lim.MaxFriends)
+		return callAcceptFriend(ctx, repo, peer, me, lim.MaxFriends)
 	})
 
 	// 允许的业务拒绝:
@@ -291,33 +291,36 @@ func TestAddFriendAndAcceptFriendOnSamePair(t *testing.T) {
 		lim := defaultTestLimits()
 		seedPending(t, ctx, db, a, b)
 
+		changes := make([]RequestChange, guardConcurrency)
 		errs := runConcurrent(t, guardConcurrency, func(i int) error {
+			var err error
 			if i%2 == 0 {
-				return callAddFriend(ctx, repo, a, b, lim) // 重发申请
+				changes[i], err = callAddFriendChange(ctx, repo, a, b, lim)
+			} else {
+				changes[i], err = callAcceptFriendChange(ctx, repo, a, b, lim.MaxFriends)
 			}
-			return repo.AcceptFriend(ctx, a, b, lim.MaxFriends) // 接受
+			return err
 		})
 
-		// AddFriend 在这一支**永远不该成功**:它要么看到 status=1 的申请(ErrRequestAlreadySent),
-		// 要么看到已经建好的边(ErrAlreadyFriends)。成功一次就意味着它在守卫内用的是
-		// 快照读而不是当前读(RC 的代价,§2.3 ②)。
-		// AcceptFriend 恰好成功一次:RowsAffected==1 的 fail-closed 门禁 + 守卫串行化。
-		accepted, rejectedAdds := 0, 0
+		// 已有pending重放可以成功，但不得新写；接受可重复成功，但只允许消费一次。
+		accepted := 0
 		for i, err := range errs {
 			assertNoDeadlock(t, err, "同一对玩家并发 AddFriend / AcceptFriend")
 			if i%2 == 0 {
 				if err == nil {
-					t.Fatalf("AddFriend 在已有 pending / 已是好友时成功了:守卫内的判定读不是当前读")
-				}
-				if !errors.Is(err, ErrRequestAlreadySent) && !errors.Is(err, ErrAlreadyFriends) {
+					if changes[i].Changed {
+						t.Fatal("已有pending不能新增代次")
+					}
+				} else if !errors.Is(err, ErrAlreadyFriends) {
 					t.Fatalf("AddFriend 非预期错误: %v", err)
 				}
-				rejectedAdds++
 				continue
 			}
 			switch {
 			case err == nil:
-				accepted++
+				if changes[i].Changed {
+					accepted++
+				}
 			case errors.Is(err, ErrRequestNotFound):
 			default:
 				t.Fatalf("AcceptFriend 非预期错误: %v", err)
@@ -325,9 +328,6 @@ func TestAddFriendAndAcceptFriendOnSamePair(t *testing.T) {
 		}
 		if accepted != 1 {
 			t.Fatalf("AcceptFriend 成功 %d 次, want 恰好 1(>1 = 申请被重复消费,0 = 全部被误拒)", accepted)
-		}
-		if rejectedAdds != guardConcurrency/2 {
-			t.Fatalf("AddFriend 被拒 %d 次, want %d", rejectedAdds, guardConcurrency/2)
 		}
 
 		if got := mustCount(t, ctx, db, "SELECT COUNT(*) FROM friend"); got != 2 {
@@ -344,11 +344,15 @@ func TestAddFriendAndAcceptFriendOnSamePair(t *testing.T) {
 
 		// 反过来的一支:没有申请可接受,所以是 AddFriend 恰好成功一次。
 		// 两支一起跑才覆盖"谁先拿到守卫"的两种顺序;只写一支会让锁序缺陷有一半概率溜过。
+		changes := make([]RequestChange, guardConcurrency)
 		errs := runConcurrent(t, guardConcurrency, func(i int) error {
+			var err error
 			if i%2 == 0 {
-				return callAddFriend(ctx, repo, a, b, lim)
+				changes[i], err = callAddFriendChange(ctx, repo, a, b, lim)
+			} else {
+				changes[i], err = callAcceptFriendChange(ctx, repo, a, b, lim.MaxFriends)
 			}
-			return repo.AcceptFriend(ctx, a, b, lim.MaxFriends)
+			return err
 		})
 
 		addOK := 0
@@ -357,8 +361,10 @@ func TestAddFriendAndAcceptFriendOnSamePair(t *testing.T) {
 			if i%2 == 0 {
 				switch {
 				case err == nil:
-					addOK++
-				case errors.Is(err, ErrRequestAlreadySent), errors.Is(err, ErrAlreadyFriends):
+					if changes[i].Changed {
+						addOK++
+					}
+				case errors.Is(err, ErrAlreadyFriends):
 				default:
 					t.Fatalf("AddFriend 非预期错误: %v", err)
 				}
@@ -594,7 +600,7 @@ func TestCapacityRowReclaimRacesWithGuardedWrites(t *testing.T) {
 			if err := step(i, "AddFriend", func() error { return callAddFriend(ctx, repo, p, q, lim) }); err != nil {
 				return err
 			}
-			if err := step(i, "AcceptFriend", func() error { return repo.AcceptFriend(ctx, p, q, lim.MaxFriends) }); err != nil {
+			if err := step(i, "AcceptFriend", func() error { return callAcceptFriend(ctx, repo, p, q, lim.MaxFriends) }); err != nil {
 				return err
 			}
 			if i == iterations-1 {
@@ -604,7 +610,7 @@ func TestCapacityRowReclaimRacesWithGuardedWrites(t *testing.T) {
 			}
 			// 此刻两行 friend_count=1,而陈旧的那行多半还躺在某个回收者的候选名单里
 			// (名单是它 friend_count 还是 0 的时候读的):DELETE 的 WHERE 复核必须挡住它。
-			if err := step(i, "RemoveFriend", func() error { return repo.RemoveFriend(ctx, p, q) }); err != nil {
+			if err := step(i, "RemoveFriend", func() error { _, err := repo.RemoveFriend(ctx, p, q); return err }); err != nil {
 				return err
 			}
 			if err := step(i, "Block", func() error { return callBlock(ctx, repo, p, q, lim) }); err != nil {
@@ -982,7 +988,7 @@ func TestBlockInsertOnRowUnderPendingDeleteDoesNotDeadlockWithQueuedUnblock(t *t
 		waitBudget        = 10 * time.Second
 	)
 
-	if err := repo.Block(ctx, me, target, 0); err != nil {
+	if _, err := repo.Block(ctx, me, target, 0); err != nil {
 		t.Fatalf("夹具:先拉黑一次造出活行失败: %v", err)
 	}
 

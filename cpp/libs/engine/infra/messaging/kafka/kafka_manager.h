@@ -28,6 +28,9 @@ public:
 	KafkaManager(const KafkaManager&) = delete;
 	KafkaManager& operator=(const KafkaManager&) = delete;
 
+	// 只登记生产端 broker,不订阅任何 topic(消费一律经 Node::RegisterKafkaMessageHandler -> Subscribe)。
+	// 必须在之后调用 Publish / KafkaProducer::send 的那个线程上调用:生产者是 thread_local。
+	// 返回 false 仅当 Kafka.Brokers 为空;调用方必须检查(Node::InitKafka 会拒绝启动)。
 	bool Init(const KafkaConfig& config);
 	bool Subscribe(const KafkaConfig& config,
 		const std::vector<std::string>& topics,

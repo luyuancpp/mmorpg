@@ -42,6 +42,8 @@
 	    Get-ClientEntryKubectlBaseArgs  -KubeContext -KubeConfig                          → string[]
 	    Invoke-ClientEntryKubectl       -KubectlArgs -KubeContext -KubeConfig [-AllowFailure] [-CaptureOutput]
 	                                    → CaptureOutput 时返回 { ExitCode; Stdout; Stderr }
+	    ConvertTo-ClientEntryPodAnnotationBlock -Annotations -KeyIndent                    → Pod 模板 annotations 段 | 空串
+	                                    (k8s_deploy.ps1 的 New-NodeDeploymentYaml / New-SceneFleetYaml 也用它)
 
 	  规则与计划(纯函数)
 	    Resolve-GateClientEndpointPlan  -ServiceType NodePort|LoadBalancer -Replicas -ServicePort
@@ -57,6 +59,7 @@
 	    New-ClientEntryPodCommon        -Image -ImagePullPolicy -SnowflakeCacheDir -LogVolumeSizeLimit
 	                                    [-LogPrunerCommand ''] [-GrpcServerMaxPollers 0]
 	                                    [-SidecarContainerYaml ''] [-SidecarVolumeYaml ''] [-SidecarConfigHash '']
+	                                    [-PodAnnotations $null]
 	    New-GateStatefulSetYaml         -PodCommon -Plan -RpcPort -StartCommand -ConfigMapName -GateRouterMode
 	                                    [-TerminationGracePeriodSeconds 30]
 	    New-GateOrdinalServicesYaml     -Plan [-ExternalTrafficPolicy Local]              → gate-<i> 用 --- 连接
@@ -69,7 +72,7 @@
 	                                    [-ClientPublicHost ''] [-TerminationGracePeriodSeconds 30]
 	    New-GatewayIngressYaml          -IngressHost [-ZoneName ''] [-IngressClassName nginx] [-TlsSecret '']
 	                                    [-ServiceName gateway] [-ServicePort 8081]         → 只路由 /api(Prefix)
-	    New-GatewayRateLimitYaml        -TrustedProxies [-Indent '  ']                    → 挂在 gate: 下的片段
+	    New-GatewayRateLimitYaml        -TrustedProxies [-Indent '  '] [-Settings $null]  → 挂在 gate: 下的片段
 	    New-LoginDevPasswordAuthYaml                                                      → login.yaml 顶层片段
 
 	  preflight
@@ -104,7 +107,7 @@
 	  内部辅助(接入方不要直接依赖,签名可能调整):ConvertTo-ClientEntryLf、ConvertTo-ClientEntryYamlString、Add-ClientEntryIndent、
 	    Get-ClientEntryMember、Test-ClientEntryHostName、ConvertTo-ClientEntryCidrList、Get-ClientEntryInvalidCidrs、
 	    Get-ClientEntryEnvYaml、Get-ClientEntryNodeBaseEnv、Get-ClientEntryStartScript、Get-ClientEntryVolumeMountYaml、
-	    Get-ClientEntryPodVolumeYaml、Get-ClientEntrySidecarBlocks、Measure-FleetRolloutReadiness(纯函数,契约测试可直测)、
+	    Get-ClientEntryPodVolumeYaml、Get-ClientEntrySidecarBlocks、Get-ClientEntryPodAnnotationBlock、Measure-FleetRolloutReadiness(纯函数,契约测试可直测)、
 	    ConvertTo-ClientEntryUtcTime、Get-ClientEntryStringMapText、New-ClientEntryObsoleteItem、
 	    Get-ClientEntryObsoleteTarget、Wait-ForClientEntryCondition。
 
@@ -602,6 +605,8 @@ function Resolve-BattleFleetHealth {
 	        -SidecarConfigHash (Get-CppLogSidecarConfigHash)
 	关闭 sidecar(-NoCppLogSidecar)时三个 Sidecar* 参数都留空。三者必须同时给或同时不给。
 	业务日志卷名固定 node-logs:与 New-NodeDeploymentYaml 以及 sidecar 片段里的 $script:CppLogVolumeName 同名。
+	-PodAnnotations 是其余的 Pod 模板注解(k8s_deploy.ps1 经它传 zone Redis 口令指纹,见该脚本 Get-CppZoneRedisAuthAnnotations),
+	与 sidecar 配置指纹写进同一个 annotations: 段(Get-ClientEntryPodAnnotationBlock)。
 #>
 function New-ClientEntryPodCommon {
 	param(
@@ -615,7 +620,10 @@ function New-ClientEntryPodCommon {
 		[ValidateRange(0, 1024)][int]$GrpcServerMaxPollers = 0,
 		[AllowEmptyString()][string]$SidecarContainerYaml = '',
 		[AllowEmptyString()][string]$SidecarVolumeYaml = '',
-		[AllowEmptyString()][string]$SidecarConfigHash = ''
+		[AllowEmptyString()][string]$SidecarConfigHash = '',
+		# 附加的 Pod 模板注解(键 = 注解名,值 = 注解值),按迭代顺序写在 sidecar 配置指纹之后;要稳定顺序就传 [ordered]。
+		# 留空或空表 = 不加,生成物与不传时逐字相同。键名与 sidecar 注解重名、值为空或含控制字符,在渲染时 throw。
+		[AllowNull()][System.Collections.IDictionary]$PodAnnotations = $null
 	)
 
 	$given = @($SidecarContainerYaml, $SidecarVolumeYaml, $SidecarConfigHash | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
@@ -624,6 +632,11 @@ function New-ClientEntryPodCommon {
 	}
 	if ($LogPrunerCommand.Contains('"')) {
 		throw "New-ClientEntryPodCommon: -LogPrunerCommand 不得含双引号(它要进 YAML 流式标量)。"
+	}
+	# 拷一份:调用方之后再改自己的字典,不影响已经打包好的 PodCommon。
+	$podAnnotationsCopy = [ordered]@{}
+	if ($null -ne $PodAnnotations) {
+		foreach ($key in $PodAnnotations.Keys) { $podAnnotationsCopy[[string]$key] = [string]$PodAnnotations[$key] }
 	}
 
 	return [pscustomobject]@{
@@ -638,6 +651,7 @@ function New-ClientEntryPodCommon {
 		SidecarContainerYaml = $SidecarContainerYaml
 		SidecarVolumeYaml    = $SidecarVolumeYaml
 		SidecarConfigHash    = $SidecarConfigHash
+		PodAnnotations       = $podAnnotationsCopy
 	}
 }
 
@@ -722,23 +736,82 @@ function Get-ClientEntryPodVolumeYaml {
 	return $text
 }
 
-# 日志 sidecar 的两个片段。KeyIndent = Pod 模板里 metadata / spec 子键所在的列
+# 日志 sidecar 的 initContainers 片段。KeyIndent = Pod 模板里 metadata / spec 子键所在的列
 # (apps/v1 为 6 个空格,Fleet 为 10 个空格)。sidecar 放 initContainers + restartPolicy: Always(原生 sidecar),
-# 理由见 k8s_deploy.ps1 New-CppLogSidecarContainerYaml。哈希加引号:12 位十六进制可能全是数字或形如 1e5,
-# 不加引号会被解析成数字,API server 拒收。
+# 理由见 k8s_deploy.ps1 New-CppLogSidecarContainerYaml。它的配置指纹注解不在这里:同一个 Pod 模板只能有一个
+# annotations: 段,与其它 Pod 模板注解一起由 Get-ClientEntryPodAnnotationBlock 写出。
 function Get-ClientEntrySidecarBlocks {
 	param(
 		[Parameter(Mandatory = $true)]$PodCommon,
 		[Parameter(Mandatory = $true)][string]$KeyIndent
 	)
 	if (-not $PodCommon.SidecarEnabled) {
-		return [pscustomobject]@{ InitBlock = ''; AnnotationBlock = '' }
+		return [pscustomobject]@{ InitBlock = '' }
 	}
-	$hash = ConvertTo-ClientEntryYamlString -Value $PodCommon.SidecarConfigHash
 	return [pscustomobject]@{
-		InitBlock       = "`n${KeyIndent}initContainers:`n" + (Add-ClientEntryIndent -Text $PodCommon.SidecarContainerYaml -Indent ($KeyIndent + '  '))
-		AnnotationBlock = "`n${KeyIndent}annotations:`n${KeyIndent}  mmorpg.io/cpp-log-sidecar-config-hash: $hash"
+		InitBlock = "`n${KeyIndent}initContainers:`n" + (Add-ClientEntryIndent -Text $PodCommon.SidecarContainerYaml -Indent ($KeyIndent + '  '))
 	}
+}
+
+<#
+.SYNOPSIS
+	Pod 模板 metadata 下的 annotations 段(含前导换行),按 -Annotations 的迭代顺序逐条写出;一条都没有时返回空串,
+	模板与不带注解时逐字相同。本库三个生成器与 k8s_deploy.ps1 的 New-NodeDeploymentYaml / New-SceneFleetYaml 共用。
+
+.DESCRIPTION
+	KeyIndent = Pod 模板里 metadata / spec 子键所在的列(apps/v1 为 6 个空格,Fleet 为 10 个空格)。
+	同一个 Pod 模板只能有一个 annotations: 段(重复键的 YAML 各解析器行为不一),多条注解必须经这里一次写出。
+	值一律经 ConvertTo-ClientEntryYamlString 加双引号:12 位十六进制可能全是数字或形如 1e5,不加引号会被解析成数字,API server 拒收。
+	校验口径同 k8s_deploy.ps1 的 Add-PodTemplateAnnotation:键必须是「小写 DNS 前缀/名字」形状;值非空、不含控制字符
+	(换行会把 YAML 写坏;制表符会被 k8s_deploy.ps1 的 Invoke-KubectlWithInputFile 换成 4 个空格,值被静默改掉)。
+#>
+function ConvertTo-ClientEntryPodAnnotationBlock {
+	param(
+		[AllowNull()][System.Collections.IDictionary]$Annotations = $null,
+		[Parameter(Mandatory = $true)][string]$KeyIndent
+	)
+	if ($null -eq $Annotations -or $Annotations.Count -eq 0) { return '' }
+	$lines = @("${KeyIndent}annotations:")
+	foreach ($key in $Annotations.Keys) {
+		$name = [string]$key
+		$value = [string]$Annotations[$key]
+		if ($name -cnotmatch '^[a-z0-9]([a-z0-9.-]*[a-z0-9])?/[a-z0-9]([a-z0-9._-]*[a-z0-9])?$') {
+			throw "ConvertTo-ClientEntryPodAnnotationBlock: 注解键 '$name' 不是「小写 DNS 前缀/名字」形状,拒绝渲染。"
+		}
+		if ([string]::IsNullOrEmpty($value)) {
+			throw "ConvertTo-ClientEntryPodAnnotationBlock: 注解 $name 的值为空,拒绝渲染。"
+		}
+		if ($value -match '\p{Cc}') {
+			throw "ConvertTo-ClientEntryPodAnnotationBlock: 注解 $name 的值含换行、制表符或其它控制字符,拒绝渲染。"
+		}
+		$lines += "${KeyIndent}  ${name}: $(ConvertTo-ClientEntryYamlString -Value $value)"
+	}
+	return "`n" + ($lines -join "`n")
+}
+
+# 本库三个 C++ 节点生成器的 annotations 段:日志 sidecar 配置指纹(开 sidecar 时)在前,PodCommon.PodAnnotations 按序在后;
+# 两者都没有时返回空串。sidecar 指纹让「只改 Alloy 配置」也能触发滚动(理由见 k8s_deploy.ps1 Get-CppLogSidecarConfigHash)。
+function Get-ClientEntryPodAnnotationBlock {
+	param(
+		[Parameter(Mandatory = $true)]$PodCommon,
+		[Parameter(Mandatory = $true)][string]$KeyIndent
+	)
+	$sidecarHashKey = 'mmorpg.io/cpp-log-sidecar-config-hash'
+	$annotations = [ordered]@{}
+	if ($PodCommon.SidecarEnabled) {
+		$annotations[$sidecarHashKey] = $PodCommon.SidecarConfigHash
+	}
+	# 经 Get-ClientEntryMember 读:调用方自己拼的 PodCommon 可能没有这个成员(缺席 = 空表)。
+	$extra = Get-ClientEntryMember -Object $PodCommon -Path @('PodAnnotations')
+	if ($null -ne $extra) {
+		foreach ($key in $extra.Keys) {
+			if ($annotations.Contains($key)) {
+				throw "Get-ClientEntryPodAnnotationBlock: PodAnnotations 里的 $key 与日志 sidecar 配置指纹注解重名,拒绝渲染。"
+			}
+			$annotations[$key] = $extra[$key]
+		}
+	}
+	return ConvertTo-ClientEntryPodAnnotationBlock -Annotations $annotations -KeyIndent $KeyIndent
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -801,6 +874,8 @@ function New-GateStatefulSetYaml {
 	$mountBlock = Get-ClientEntryVolumeMountYaml -PodCommon $PodCommon -ItemIndent '            '
 	$volumeBlock = Get-ClientEntryPodVolumeYaml -PodCommon $PodCommon -ConfigMapName $ConfigMapName -ItemIndent '        '
 	$sidecar = Get-ClientEntrySidecarBlocks -PodCommon $PodCommon -KeyIndent '      '
+	# OnDelete:注解(含 zone Redis 口令指纹)变了也不会自动重建 Pod,按 k8s_gate_drain.ps1 逐个排空删 Pod 才换上新模板。
+	$annotationBlock = Get-ClientEntryPodAnnotationBlock -PodCommon $PodCommon -KeyIndent '      '
 
 	# 就绪探针同 Deployment 版(推导见 New-NodeDeploymentYaml):gate 只有 RpcPort 一个监听口,不加 startup / liveness。
 	return ConvertTo-ClientEntryLf -Text @"
@@ -818,7 +893,7 @@ spec:
     matchLabels:
       app: gate
   template:
-    metadata:$($sidecar.AnnotationBlock)
+    metadata:$annotationBlock
       labels:
         app: gate
     spec:
@@ -1024,6 +1099,7 @@ function New-BattleFleetYaml {
 	$mountBlock = Get-ClientEntryVolumeMountYaml -PodCommon $PodCommon -ItemIndent '                '
 	$volumeBlock = Get-ClientEntryPodVolumeYaml -PodCommon $PodCommon -ConfigMapName $ConfigMapName -ItemIndent '            '
 	$sidecar = Get-ClientEntrySidecarBlocks -PodCommon $PodCommon -KeyIndent '          '
+	$annotationBlock = Get-ClientEntryPodAnnotationBlock -PodCommon $PodCommon -KeyIndent '          '
 
 	# container: battle 始终显式写出:原生 sidecar 在 initContainers 里,但将来再加普通容器时不写这行 Fleet 会被拒。
 	return ConvertTo-ClientEntryLf -Text @"
@@ -1064,7 +1140,7 @@ spec:
       eviction:
         safe: Never
       template:
-        metadata:$($sidecar.AnnotationBlock)
+        metadata:$annotationBlock
           labels:
             app: battle
             mmorpg.io/role: battle
@@ -1135,6 +1211,7 @@ function New-BattleHostPortDeploymentYaml {
 	$mountBlock = Get-ClientEntryVolumeMountYaml -PodCommon $PodCommon -ItemIndent '            '
 	$volumeBlock = Get-ClientEntryPodVolumeYaml -PodCommon $PodCommon -ConfigMapName $ConfigMapName -ItemIndent '        '
 	$sidecar = Get-ClientEntrySidecarBlocks -PodCommon $PodCommon -KeyIndent '      '
+	$annotationBlock = Get-ClientEntryPodAnnotationBlock -PodCommon $PodCommon -KeyIndent '      '
 
 	return ConvertTo-ClientEntryLf -Text @"
 apiVersion: apps/v1
@@ -1152,7 +1229,7 @@ spec:
     matchLabels:
       app: battle
   template:
-    metadata:$($sidecar.AnnotationBlock)
+    metadata:$annotationBlock
       labels:
         app: battle
     spec:
@@ -1255,30 +1332,69 @@ spec:$classLine$tlsBlock
 
 <#
 .SYNOPSIS
-	gateway application.yaml 里 gate: 键**下面**的 rate-limit 片段(Spring 属性 gate.rate-limit.trusted-proxies)。
+	gateway application.yaml 里 gate: 键**下面**的 rate-limit 片段(Spring 属性 gate.rate-limit.trusted-proxies,
+	以及可选的削峰阈值 gate.rate-limit.<键>,G4b)。
 
 .DESCRIPTION
 	java-svc-gateway-config 的承载形式是 application.yaml(k8s_deploy.ps1 New-JavaSvcConfigMapYaml),
 	所以只写这一处,不再另设 GATE_RATELIMIT_TRUSTEDPROXIES env(ingress_final §3 二选一)。
 	现有 gateway 配置已经有一个 gate: 键(token-secret),本片段必须接在它下面,不能再起一个 gate:
 	(重复键在 YAML 里是非法 / 后者覆盖前者)。-Indent 是 gate: 子键的缩进。
-	列表为空时返回空串:Java 侧未配置 = 只信 socket 对端地址(fail-closed)。
+	列表为空时不写 trusted-proxies:Java 侧未配置 = 只信 socket 对端地址(fail-closed)。
+	-Settings(G4b)是削峰阈值:按字典的迭代顺序写在 trusted-proxies 之前,两者共用同一个 rate-limit: 键。
+	键必须是 kebab-case 的 Spring 属性名,值只收 bool / 整数,不合格即 throw。本函数只保证形状;键名是否与 jar 内
+	application.yaml 的 gate.rate-limit.* 同名,由调用方(k8s_deploy.ps1 Get-GatewayRateLimitSettings)与契约测试核对。
+	阈值与 trusted-proxies 都没有时返回空串;不传 -Settings 时输出与加这个参数之前逐字相同。
 #>
 function New-GatewayRateLimitYaml {
 	param(
 		[Parameter(Mandatory = $true)][AllowEmptyString()][string]$TrustedProxies,
-		[string]$Indent = '  '
+		[string]$Indent = '  ',
+		# 削峰阈值(G4b):键 = gate.rate-limit 下的 Spring 属性名(kebab-case),值只收 bool / 整数;$null 或空 = 不写。
+		# 与 trusted-proxies 共用同一个 rate-limit: 键(另起一个就是重复键,见上)。
+		[AllowNull()][System.Collections.IDictionary]$Settings = $null
 	)
 
-	$cidrs = ConvertTo-ClientEntryCidrList -CommaSeparated $TrustedProxies
-	if ($cidrs.Count -eq 0) { return '' }
-	$invalid = Get-ClientEntryInvalidCidrs -CommaSeparated $TrustedProxies
-	if ($invalid.Count -gt 0) {
-		throw "-GatewayTrustedProxies 含非法 CIDR:$($invalid -join ', ')"
+	$settingLines = @()
+	if ($null -ne $Settings) {
+		foreach ($key in $Settings.Keys) {
+			if ([string]$key -cnotmatch '^[a-z][a-z0-9-]*$') {
+				throw "内部错误:gate.rate-limit 的设置键 '$key' 不是 kebab-case 属性名。"
+			}
+			$settingValue = $Settings[$key]
+			# $null 单列一支:落到最后一支的 GetType() 会先抛「对空值调用方法」,报错就不再点名是哪个键。
+			$rendered = ''
+			if ($null -eq $settingValue) {
+				throw "内部错误:gate.rate-limit.$key 的值为空。"
+			}
+			elseif ($settingValue -is [bool]) {
+				$rendered = if ($settingValue) { 'true' } else { 'false' }
+			}
+			elseif ($settingValue -is [int] -or $settingValue -is [long]) {
+				$rendered = ([long]$settingValue).ToString([System.Globalization.CultureInfo]::InvariantCulture)
+			}
+			else {
+				throw "内部错误:gate.rate-limit.$key 的值只收 bool / 整数(实际类型 $($settingValue.GetType().Name))。"
+			}
+			$settingLines += "${Indent}  ${key}: $rendered"
+		}
 	}
-	$lines = @("${Indent}rate-limit:", "${Indent}  trusted-proxies:")
-	foreach ($cidr in $cidrs) {
-		$lines += "${Indent}    - $(ConvertTo-ClientEntryYamlString -Value $cidr)"
+
+	$cidrs = ConvertTo-ClientEntryCidrList -CommaSeparated $TrustedProxies
+	if ($cidrs.Count -gt 0) {
+		$invalid = Get-ClientEntryInvalidCidrs -CommaSeparated $TrustedProxies
+		if ($invalid.Count -gt 0) {
+			throw "-GatewayTrustedProxies 含非法 CIDR:$($invalid -join ', ')"
+		}
+	}
+	if ($settingLines.Count -eq 0 -and $cidrs.Count -eq 0) { return '' }
+
+	$lines = @("${Indent}rate-limit:") + $settingLines
+	if ($cidrs.Count -gt 0) {
+		$lines += "${Indent}  trusted-proxies:"
+		foreach ($cidr in $cidrs) {
+			$lines += "${Indent}    - $(ConvertTo-ClientEntryYamlString -Value $cidr)"
+		}
 	}
 	return (ConvertTo-ClientEntryLf -Text ($lines -join "`n"))
 }

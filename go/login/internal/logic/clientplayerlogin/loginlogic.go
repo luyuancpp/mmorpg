@@ -2,6 +2,7 @@ package clientplayerloginlogic
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"login/internal/config"
 	"login/internal/constants"
@@ -11,6 +12,7 @@ import (
 	"login/internal/logic/pkg/locker"
 	"login/internal/logic/pkg/loginsession"
 	"login/internal/logic/pkg/playernamereg"
+	"login/internal/logic/pkg/sessionfence"
 	"login/internal/logic/pkg/token"
 	"login/internal/svc"
 	login_proto_common "proto/common/base"
@@ -148,31 +150,54 @@ func (l *LoginLogic) Login(in *login_proto.LoginRequest) (*login_proto.LoginResp
 
 	logx.Infof("Login start: account=%s sessionId=%d", account, sessionDetails.SessionId)
 
-	// 3. Save login session (stores account for this session in Redis)
-	if err := loginsession.Save(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, account); err != nil {
-		logx.Errorf("Login save failed: sessionId=%d account=%s err=%v", sessionDetails.SessionId, account, err)
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
-		return resp, nil
-	}
-
-	// 4. Enforce device limit
 	sessionKey := constants.GenerateSessionKey(account)
 	expire := time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
 
-	// Self-heal: drop any device-set entries whose login_session:{id} key has
-	// already been cleaned up. This absorbs the Gate→login.Disconnect race
-	// that would otherwise trip MaxDevicesPerAccount under rapid reconnect.
-	loginsession.PruneStaleFromDeviceSet(l.ctx, l.svcCtx.RedisClient, sessionKey)
+	if fenceKey, fenced := sessionfence.KeyOf(sessionDetails); fenced {
+		// 3+4. gate 连接会话栅栏(docs/design/client-request-ordering.md §6.2):「连接未关闭」的检查与
+		// 写 login_session、登记设备集放在同一段脚本里。gate 合成的 Disconnect 可能抢在这条仍在途的 Login 之前执行,
+		// 原先 Login 晚落地会留下没人清理的 login_session 与设备集条目(最长 SessionExpireMin),还可能误触设备数上限。
+		//
+		// Self-heal 照旧在提交前做:剔除 login_session 已不存在的设备集条目。
+		loginsession.PruneStaleFromDeviceSet(l.ctx, l.svcCtx.RedisClient, sessionKey)
+		if err := sessionfence.CommitLogin(l.ctx, l.svcCtx.RedisClient, fenceKey,
+			loginsession.Key(sessionDetails.SessionId), account, loginsession.TTL(),
+			sessionKey, sessionDetails.SessionId, expire); err != nil {
+			if errors.Is(err, sessionfence.ErrClosed) {
+				// 连接已断开,回包也送不到;什么都没写。
+				logx.Infof("Login skipped: gate connection already closed sessionId=%d account=%s", sessionDetails.SessionId, account)
+				resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionNotFound)}
+				return resp, nil
+			}
+			logx.Errorf("Login commit failed: sessionId=%d account=%s err=%v", sessionDetails.SessionId, account, err)
+			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
+			return resp, nil
+		}
+	} else {
+		// 旧版 gate(没有会话代次):沿用原先的两步写。
+		// 3. Save login session (stores account for this session in Redis)
+		if err := loginsession.Save(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId, account); err != nil {
+			logx.Errorf("Login save failed: sessionId=%d account=%s err=%v", sessionDetails.SessionId, account, err)
+			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
+			return resp, nil
+		}
 
-	_, err = l.svcCtx.RedisClient.TxPipelined(l.ctx, func(pipe redis.Pipeliner) error {
-		pipe.SAdd(l.ctx, sessionKey, sessionDetails.SessionId)
-		pipe.Expire(l.ctx, sessionKey, expire)
-		return nil
-	})
-	if err != nil {
-		logx.Errorf("Device set pipeline failed: sessionKey=%s err=%v", sessionKey, err)
-		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
-		return resp, nil
+		// 4. Enforce device limit
+		// Self-heal: drop any device-set entries whose login_session:{id} key has
+		// already been cleaned up. This absorbs the Gate→login.Disconnect race
+		// that would otherwise trip MaxDevicesPerAccount under rapid reconnect.
+		loginsession.PruneStaleFromDeviceSet(l.ctx, l.svcCtx.RedisClient, sessionKey)
+
+		_, err = l.svcCtx.RedisClient.TxPipelined(l.ctx, func(pipe redis.Pipeliner) error {
+			pipe.SAdd(l.ctx, sessionKey, sessionDetails.SessionId)
+			pipe.Expire(l.ctx, sessionKey, expire)
+			return nil
+		})
+		if err != nil {
+			logx.Errorf("Device set pipeline failed: sessionKey=%s err=%v", sessionKey, err)
+			resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginRedisSetFailed)}
+			return resp, nil
+		}
 	}
 
 	count, err := l.svcCtx.RedisClient.SCard(l.ctx, sessionKey).Result()

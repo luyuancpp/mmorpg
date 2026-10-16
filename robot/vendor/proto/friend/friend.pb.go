@@ -249,6 +249,7 @@ type FriendRequest struct {
 	ToPlayerId    uint64                 `protobuf:"varint,2,opt,name=to_player_id,json=toPlayerId,proto3" json:"to_player_id,omitempty"`
 	RequestTimeMs int64                  `protobuf:"varint,3,opt,name=request_time_ms,json=requestTimeMs,proto3" json:"request_time_ms,omitempty"`
 	Status        FriendRequestStatus    `protobuf:"varint,4,opt,name=status,proto3,enum=friendpb.FriendRequestStatus" json:"status,omitempty"`
+	RequestId     uint64                 `protobuf:"varint,5,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // 本次申请的唯一代次；终态后重新申请必须换号。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -311,6 +312,13 @@ func (x *FriendRequest) GetStatus() FriendRequestStatus {
 	return FriendRequestStatus_FRIEND_REQUEST_UNKNOWN
 }
 
+func (x *FriendRequest) GetRequestId() uint64 {
+	if x != nil {
+		return x.RequestId
+	}
+	return 0
+}
+
 type AddFriendRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	TargetPlayerId uint64                 `protobuf:"varint,2,opt,name=target_player_id,json=targetPlayerId,proto3" json:"target_player_id,omitempty"`
@@ -358,6 +366,7 @@ func (x *AddFriendRequest) GetTargetPlayerId() uint64 {
 type AddFriendResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	RequestId     uint64                 `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // 重复的待处理申请返回同一代次。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -399,9 +408,17 @@ func (x *AddFriendResponse) GetErrorMessage() *base.TipInfoMessage {
 	return nil
 }
 
+func (x *AddFriendResponse) GetRequestId() uint64 {
+	if x != nil {
+		return x.RequestId
+	}
+	return 0
+}
+
 type AcceptFriendRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FromPlayerId  uint64                 `protobuf:"varint,2,opt,name=from_player_id,json=fromPlayerId,proto3" json:"from_player_id,omitempty"`
+	RequestId     uint64                 `protobuf:"varint,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // 必填；操作者身份仅取当前会话。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -439,6 +456,13 @@ func (*AcceptFriendRequest) Descriptor() ([]byte, []int) {
 func (x *AcceptFriendRequest) GetFromPlayerId() uint64 {
 	if x != nil {
 		return x.FromPlayerId
+	}
+	return 0
+}
+
+func (x *AcceptFriendRequest) GetRequestId() uint64 {
+	if x != nil {
+		return x.RequestId
 	}
 	return 0
 }
@@ -490,6 +514,7 @@ func (x *AcceptFriendResponse) GetErrorMessage() *base.TipInfoMessage {
 type RejectFriendRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FromPlayerId  uint64                 `protobuf:"varint,2,opt,name=from_player_id,json=fromPlayerId,proto3" json:"from_player_id,omitempty"`
+	RequestId     uint64                 `protobuf:"varint,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // 必填；保留 from_player_id 兼容字段但不将其用作身份。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -527,6 +552,13 @@ func (*RejectFriendRequest) Descriptor() ([]byte, []int) {
 func (x *RejectFriendRequest) GetFromPlayerId() uint64 {
 	if x != nil {
 		return x.FromPlayerId
+	}
+	return 0
+}
+
+func (x *RejectFriendRequest) GetRequestId() uint64 {
+	if x != nil {
+		return x.RequestId
 	}
 	return 0
 }
@@ -1501,23 +1533,31 @@ const file_proto_friend_friend_proto_rawDesc = "" +
 	"\x06gender\x18\b \x01(\rR\x06gender\x12#\n" +
 	"\rappearance_id\x18\t \x01(\tR\fappearanceId\x12\x17\n" +
 	"\azone_id\x18\n" +
-	" \x01(\rR\x06zoneId\"\xb6\x01\n" +
+	" \x01(\rR\x06zoneId\"\xd5\x01\n" +
 	"\rFriendRequest\x12$\n" +
 	"\x0efrom_player_id\x18\x01 \x01(\x04R\ffromPlayerId\x12 \n" +
 	"\fto_player_id\x18\x02 \x01(\x04R\n" +
 	"toPlayerId\x12&\n" +
 	"\x0frequest_time_ms\x18\x03 \x01(\x03R\rrequestTimeMs\x125\n" +
-	"\x06status\x18\x04 \x01(\x0e2\x1d.friendpb.FriendRequestStatusR\x06status\"M\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x1d.friendpb.FriendRequestStatusR\x06status\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x05 \x01(\x04R\trequestId\"M\n" +
 	"\x10AddFriendRequest\x12(\n" +
-	"\x10target_player_id\x18\x02 \x01(\x04R\x0etargetPlayerIdJ\x04\b\x01\x10\x02R\tplayer_id\"I\n" +
+	"\x10target_player_id\x18\x02 \x01(\x04R\x0etargetPlayerIdJ\x04\b\x01\x10\x02R\tplayer_id\"h\n" +
 	"\x11AddFriendResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"L\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x02 \x01(\x04R\trequestId\"k\n" +
 	"\x13AcceptFriendRequest\x12$\n" +
-	"\x0efrom_player_id\x18\x02 \x01(\x04R\ffromPlayerIdJ\x04\b\x01\x10\x02R\tplayer_id\"L\n" +
+	"\x0efrom_player_id\x18\x02 \x01(\x04R\ffromPlayerId\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x03 \x01(\x04R\trequestIdJ\x04\b\x01\x10\x02R\tplayer_id\"L\n" +
 	"\x14AcceptFriendResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"L\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"k\n" +
 	"\x13RejectFriendRequest\x12$\n" +
-	"\x0efrom_player_id\x18\x02 \x01(\x04R\ffromPlayerIdJ\x04\b\x01\x10\x02R\tplayer_id\"L\n" +
+	"\x0efrom_player_id\x18\x02 \x01(\x04R\ffromPlayerId\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x03 \x01(\x04R\trequestIdJ\x04\b\x01\x10\x02R\tplayer_id\"L\n" +
 	"\x14RejectFriendResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"P\n" +
 	"\x13RemoveFriendRequest\x12(\n" +

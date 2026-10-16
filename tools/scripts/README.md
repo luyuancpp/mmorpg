@@ -4,7 +4,7 @@ PowerShell and shell scripts for common development tasks.
 
 ## Directory Rules
 
-- The repository root keeps only thin launchers (`dev.bat`, `start-server.cmd`, `start-game.cmd`) that forward into this directory; they contain no logic of their own.
+- 仓库根保留 `dev.bat` 开发菜单，以及转调本目录的 `start-server.cmd` / `start-game.cmd` 薄启动器；维护中的独立工程脚本放在本目录，不把菜单本身误称为无逻辑的薄包装。
 - [tools/scripts](.) is the canonical home for maintained engineering scripts.
 - One-off or retired scripts go to [tools/archived](../archived) instead of staying here.
 - [tools/scripts/third_party](third_party) stores third-party build and maintenance scripts, such as gRPC or future protobuf/redis builds.
@@ -16,12 +16,12 @@ PowerShell and shell scripts for common development tasks.
 ### start_game.ps1（本机游戏一键启动）
 
 电脑重启后双击仓库根目录 `start-server.cmd`；双击 `start-game.cmd` 可同时打开客户端。
-脚本复用现有 `dev_tools.ps1` 和编译产物，依次启动本机 Docker、数据库依赖、六个 Go 服务、Java 网关、一区 gate / scene / battle，并等待就绪。关闭启动窗口后服务继续运行；再次双击会复用已有实例。
+脚本复用现有 `dev_tools.ps1` 和编译产物，依次启动本机 Docker、数据库依赖、已配置并具备产物的 Go 服务（含 client_rpc_router；可选服务按前置检查决定）、Java 网关、一区 gate / scene / battle，并等待就绪。关闭启动窗口后服务继续运行；再次双击会复用已有实例。
 
 - 网关：`http://127.0.0.1:8081`，一区；默认客户端：同级工作目录 `tmp/showcase_player/mmorpg.exe`。
 - 指定客户端：`pwsh -File tools/scripts/start_game.ps1 -OpenClient -ClientPath "E:/其他目录/mmorpg.exe"`。
 - 只检查运行文件：`pwsh -File tools/scripts/start_game.ps1 -CheckOnly`。
-- 前置：PowerShell 7、Java 21+、本机 Docker Desktop、已缓存镜像与游戏编译产物；日常启动不执行构建或镜像下载。
+- 前置：PowerShell 7、Java 23+、本机 Docker Desktop、已缓存镜像与游戏编译产物；日常启动不执行构建或镜像下载。
 - 日志：`run/logs/game-launcher/<时间>/`；服务日志仍位于 `run/logs/go_services` 和 `run/logs/cpp_nodes`。
 - 旧 PID 会核对程序完整路径，失效记录先备份。Docker 停止时，已知遗留通信目录与独立 socket 会重命名备份；不删除数据卷、账号或角色。
 - 失败时显示原因与日志位置；已经启动的服务保留，解决原因后可重新双击。
@@ -175,7 +175,7 @@ pwsh -File dev_tools.ps1 -Command iwyu-run -NodePath cpp/nodes/scene,cpp/nodes/g
 # Run Task -> third_party: grpc build
 
 # Run proto-gen with custom config
-pwsh -File dev_tools.ps1 -Command proto-gen-run -ConfigPath <path-to-config>
+pwsh -File dev_tools.ps1 -Command proto-gen-run -ConfigPath "<path-to-config>"
 
 # Generate project tree report
 pwsh -File dev_tools.ps1 -Command tree
@@ -190,10 +190,10 @@ pwsh -File dev_tools.ps1 -Command naming-apply
 pwsh -File dev_tools.ps1 -Command naming-audit -Style kebab -MaxChanges 200
 
 # Open one k8s zone
-pwsh -File dev_tools.ps1 -Command k8s-zone-up -ZoneName yesterday -ZoneId 101 -OpsProfile managed-cloud -NodeImage <image> -WaitReady
+pwsh -File dev_tools.ps1 -Command k8s-zone-up -ZoneName yesterday -ZoneId 101 -OpsProfile managed-cloud -NodeImage "<image>" -WaitReady
 
 # Open all zones from JSON/YAML config
-pwsh -File dev_tools.ps1 -Command k8s-all-up -ZonesConfigPath deploy/k8s/zones.ops-recommended.yaml -OpsProfile managed-cloud -NodeImage <image> -WaitReady
+pwsh -File dev_tools.ps1 -Command k8s-all-up -ZonesConfigPath deploy/k8s/zones.ops-recommended.yaml -OpsProfile managed-cloud -NodeImage "<image>" -WaitReady
 
 # Check/close k8s zones
 pwsh -File dev_tools.ps1 -Command k8s-zone-status -ZoneName yesterday
@@ -253,8 +253,8 @@ pwsh -File tree.ps1
 Kubernetes-only deployment entrypoint used by `dev_tools.ps1`.
 
 - Supports single-zone and multi-zone one-click open-server flows.
-- Applies infra (`etcd`, `redis`, `kafka`) and game node workloads (`centre`, `gate`, `scene`) per namespace.
-- Exposes `gate` through a per-zone Kubernetes Service and can wait for deployment readiness.
+- 按 infra / zone 职责部署基础设施、Go 服务、Java 网关和 C++ gate/scene；battle 为全局池，Centre 已退役。Go/Java 部署需显式提供各自镜像仓库参数。
+- 集群外入口显式使用 `-ClientEntryMode external`，为 gate 创建 StatefulSet 与每序号 Service；默认 podip 只面向集群内测试，不能用生产暴露 profile 代替入口模式。生产还须显式设置 `-ReleaseProfile prod`。
 - Reads multi-zone definitions from `deploy/k8s/zones.json` or `deploy/k8s/zones.yaml` (or custom path).
 - Do not assume `LoadBalancer` across all environments: managed cloud K8s usually prefers `LoadBalancer`, while self-hosted / bare metal K8s should usually prefer `NodePort` plus an external L4 load balancer.
 - Prefer passing `-OpsProfile managed-cloud` or `-OpsProfile bare-metal` so the exposure choice is explicit in commands and change records.
@@ -305,7 +305,7 @@ pwsh -File dev_tools.ps1 -Command proto-gen-run -ConfigPath ../proto_generator/p
 
 ## Notes
 
-- All scripts are Windows PowerShell 5.1+ compatible
+- 维护中的 PowerShell 入口使用 PowerShell 7（`pwsh`）；不要假设 Windows PowerShell 5.1 兼容。
 - Use `-Verbose` flag for detailed output
 - Scripts are designed to be cross-platform compatible where possible
 - For large repositories, prefer iterative rename batches with `-MaxChanges` to keep refactors reviewable and reduce breakage risk

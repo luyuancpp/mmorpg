@@ -3,11 +3,11 @@
 #include <algorithm>
 
 #include "actor/attribute/system/actor_attribute_calculator.h"
+#include "actor/actor_net_id.h"
 #include "actor/attribute/system/actor_state_attribute_sync.h"
 #include "combat/buff/system/buff.h"
 #include "core/constants/fps.h"
 #include "spatial/system/aoi.h"
-#include "spatial/system/movement_acceleration.h"
 #include "spatial/system/movement.h"
 #include "frame/manager/frame_time.h"
 #include "player/system/afk.h"
@@ -27,6 +27,7 @@ static uint64_t GetTimeInMilliseconds()
 
 void World::InitializeSystemBeforeConnect()
 {
+    actor_net_id::Install(tlsEcs.actorRegistry);
     tlsFrameTimeManager.frameTime.set_previous_time(GetTimeInMilliseconds());
     tlsFrameTimeManager.frameTime.set_target_fps(kTargetFPS);
     tlsFrameTimeManager.frameTime.set_delta_time(1.0 / tlsFrameTimeManager.frameTime.target_fps());
@@ -59,7 +60,6 @@ void World::Update()
 
             AoiSystem::Update(fixedDeltaTime);
             MovementSystem::Update(fixedDeltaTime);
-            MovementAccelerationSystem::Update(fixedDeltaTime);
             BuffSystem::Update(fixedDeltaTime);
 
             // Attribute calculation must run last (depends on state changes above)

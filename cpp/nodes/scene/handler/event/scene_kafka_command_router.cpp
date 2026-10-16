@@ -16,7 +16,10 @@ void DispatchSceneKafkaCommand(const std::string& topic, const contracts::kafka:
         return;
     }
 
-    if (!DispatchProtoEvent(command.event_id(), command.payload())) {
+    const auto result = DispatchSceneCommandEvent(command.event_id(), command.payload());
+    if (result == KafkaEventDispatchResult::kNotAllowed) {
+        LOG_ERROR << "SceneCommand event not allowed, topic=" << topic << ", event_id=" << command.event_id();
+    } else if (result == KafkaEventDispatchResult::kDecodeFailed) {
         LOG_WARN << "SceneCommand payload decode failed, topic=" << topic << ", event_id=" << command.event_id();
     }
 }

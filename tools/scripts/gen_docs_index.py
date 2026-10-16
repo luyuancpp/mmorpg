@@ -37,6 +37,7 @@ DESIGN_RULES = [
         "robot-*", "login-test-anti-stuck-system.md", "data-consistency-stress-testing.md",
     ]),
     ("玩家数据与存储", [
+        "reliable-player-inbox-*", "player-inbox-service.md",
         "player-async-save-loss-windows.md", "player-storage-placement.md",
         "player-route-mapping-*",
         "new-player-*",
@@ -61,6 +62,7 @@ DESIGN_RULES = [
     ("战斗", ["turn-*", "battle-*", "pve-*", "session-extractability-mmo-slg.md"]),
     ("接入层:网关、gate 与登录", [
         "gate-*", "gate_*", "client-access-band-routing.md", "client-rpc-router.md",
+        "client-request-ordering.md",
         "k8s-client-entry.md", "k8s_gate_exposure_guidance*", "login-*", "login_*",
         "player_login_flow*", "auth-provider-framework.md", "dual-token-authentication.md",
         "third-party-login-*", "hmac-message-signing.md", "open-server-rate-limit-design.md",
@@ -81,6 +83,7 @@ DESIGN_RULES = [
     ("基础设施与中间件", [
         "kafka-*", "infra-reconnect-overview.md", "go-zero-rpc-timeout-fix.md",
         "grpc-client-deadline-failure-callback.md", "muduo-timer-cancellation-hazards.md",
+        "muduo-rpc-*", "player-handler-deferred-reply.md",
         "hashed-timing-wheel.md", "double-buffer-queue-optimizations.md",
         "distributed-tracing.md", "error-reporting.md", "traffic-statistics-design.md",
         "thread-count-monitoring*", "no-single-node-*", "shared-redis-*",

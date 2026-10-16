@@ -1,4 +1,5 @@
 #include "skill.h"
+#include "actor/actor_net_id.h"
 
 #include <muduo/base/Logging.h>
 
@@ -15,13 +16,13 @@
 #include "player/comp/player_frozen_comp.h"  // cross-zone-readiness-audit.md §11.3 / §11.4
 #include "proto/common/component/battle_comp.pb.h"  // InBattleComp:回合制战斗局中闸(§5.3 冻结清单)
 #include "spatial/system/view.h"
-#include "proto/common/event/combat_event.pb.h"
-#include "proto/common/event/skill_event.pb.h"
+#include "services/scene/combat/combat_events.h"
 #include "macros/return_define.h"
 #include "macros/error_return.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/skill_error_tip.pb.h"
 #include "proto/common/component/buff_comp.pb.h"
+#include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/npc_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "rpc/service_metadata/player_skill_service_metadata.h"
@@ -29,6 +30,7 @@
 #include "proto/common/component/actor_attribute_state_comp.pb.h"  // DerivedAttributesComp(属性加点二级属性)
 #include "services/battle/system/combat_damage_rules.h"  // 与回合引擎共用的伤害公式
 
+#include "modules/scene/comp/scene_comp.h"
 #include "time/comp/timer_task_comp.h"
 #include "time/system/time_cooldown.h"
 #include "time/system/time.h"
@@ -36,11 +38,11 @@
 #include <core/system/id_generator.h>
 #include <utils/random/random.h>
 
-uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterSkillContexts, const SkillContextCompMap& targetSkillContexts) {
+uint64_t GenerateUniqueSkillId(const SkillContextCompMap& casterSkillContexts) {
 	uint64_t newSkillId;
 	do {
 		newSkillId = tlsIdGeneratorManager.skillIdGenerator.Generate();
-	} while (casterSkillContexts.contains(newSkillId) || targetSkillContexts.contains(newSkillId));
+	} while (casterSkillContexts.contains(newSkillId));
 	return newSkillId;
 }
 
@@ -57,45 +59,149 @@ bool IsCasterFrozenForMigration(entt::entity casterEntity, uint64_t skillId, con
 	return true;
 }
 
-// Mirror a skill context onto the target's context map (if the target has one).
-void AddTargetSkillContext(entt::entity target, const SkillContextPtrComp& context) {
-	if (auto* targetSkillContextMap = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(target)) {
-		targetSkillContextMap->emplace(context->skillid(), context);
+namespace {
+
+// 施法者与目标共用唯一上下文写入口:第一次写入时延迟创建,失效实体绝不创建。
+uint32_t StoreSkillContextForWrite(entt::entity actor, const SkillContextPtrComp& context) {
+	if (!tlsEcs.actorRegistry.valid(actor)) {
+		return MAKE_ERROR_MSG(kThisEntityIsInvalid,
+			"cannot store skill context, entity=" << entt::to_integral(actor));
 	}
+	tlsEcs.actorRegistry.get_or_emplace<SkillContextCompMap>(actor).emplace(context->skillid(), context);
+	return kSuccess;
 }
 
-// Drop a skill context from the target's context map (if the target has one).
-void RemoveTargetSkillContext(entt::entity target, uint64_t skillId) {
-	if (auto* targetSkillContextMap = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(target)) {
-		targetSkillContextMap->erase(skillId);
-	}
-}
+} // namespace
 
 // Look up a skill context on the caster's context map; nullptr if absent.
 SkillContextPtrComp FindCasterSkillContext(entt::entity caster, uint64_t skillId) {
 	auto* casterSkillContextMap = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
 	if (!casterSkillContextMap) {
+		// 按需表不存在就是没有在途上下文,查询不创建。
 		return nullptr;
 	}
 	const auto it = casterSkillContextMap->find(skillId);
 	return it != casterSkillContextMap->end() ? it->second : nullptr;
 }
 
+namespace {
+
+bool IsInSameScene(entt::entity caster, entt::entity target) {
+	const auto* casterScene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(caster);
+	const auto* targetScene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(target);
+	return casterScene != nullptr && targetScene != nullptr &&
+		casterScene->sceneEntity != entt::null && casterScene->sceneEntity == targetScene->sceneEntity;
+}
+
+// 校验已解析的本地目标。客户端不透明actor号先经ActorNetIds反查,技能上下文仍保存本地完整句柄。
+// registry由本节点所有场景共用,有效句柄仍须确认目标是玩家/NPC、同场景且未冻结。
+// InBattleComp 不在这里判断,由调用方按各自语义处理(施法期拒绝 / 落点期整体丢弃)。
+entt::entity ValidateSkillTargetEntity(entt::entity caster, entt::entity target) {
+	const auto& registry = tlsEcs.actorRegistry;
+	if (!registry.valid(target) || !registry.any_of<Player, Npc>(target)) {
+		return entt::null;
+	}
+	if (registry.any_of<PlayerFrozenComp>(target) || !IsInSameScene(caster, target)) {
+		return entt::null;
+	}
+	return target;
+}
+
+entt::entity ResolveSkillTarget(entt::entity caster, uint64_t actorNetId) {
+	return ValidateSkillTargetEntity(caster, actor_net_id::Resolve(tlsEcs.actorRegistry, actorNetId));
+}
+
+// 持久数据和玩家派生属性不能按空表放行;冷却、上下文与相位是按需状态,不在此列。
+uint32_t CheckRequiredSkillComps(entt::entity caster, uint32_t skillTableId) {
+	const auto& registry = tlsEcs.actorRegistry;
+	if (!registry.valid(caster)) {
+		return MAKE_ERROR_MSG(kThisEntityIsInvalid,
+			"invalid skill caster=" << entt::to_integral(caster) << " skill_table_id=" << skillTableId);
+	}
+	if (registry.all_of<BaseAttributesComp, LevelComp>(caster) &&
+        (!registry.any_of<Player>(caster) || registry.all_of<DerivedAttributesComp>(caster)) &&
+		actor_net_id::Of(registry, caster) != 0) {
+		return kSuccess;
+	}
+	return MAKE_ERROR_MSG(kServiceUnavailable,
+		"missing required skill comps, caster=" << entt::to_integral(caster)
+		<< " skill_table_id=" << skillTableId
+		<< " has_base_attributes=" << registry.all_of<BaseAttributesComp>(caster)
+		<< " has_level=" << registry.all_of<LevelComp>(caster)
+		<< " has_derived_attributes=" << registry.all_of<DerivedAttributesComp>(caster)
+		<< " has_actor_network_id=" << (actor_net_id::Of(registry, caster) != 0));
+}
+
+// 打断 = 这次施法结束:它的全部相位定时器一起摘掉(摘组件即取消定时器)。
+// 同一施法者同一时刻至多一次施法在途 —— 相位进行中,非立即技能被前置校验拒绝,
+// 立即技能先打断它 —— 所以全摘不会误伤别的施法。引导的周期 think 定时器也在其中,
+// 以前只摘被检查的那一个组件,引导被打断后 RunEvery 会一直跑下去。
+void EndAllSkillPhases(entt::entity caster) {
+	tlsEcs.actorRegistry.remove<CastingTimerComp, RecoveryTimerComp, ChannelFinishTimerComp, ChannelIntervalTimerComp>(caster);
+}
+
+// 延迟落点失败只结束指定技能,避免旧回调清掉后来施法的相位。
+void AbortSkillCast(entt::entity caster, uint64_t skillId) {
+	SkillSystem::HandleSkillFinish(caster, skillId);
+	if (!tlsEcs.actorRegistry.valid(caster)) return;
+	if (const auto* phase = tlsEcs.actorRegistry.try_get<CastingTimerComp>(caster);
+		phase != nullptr && phase->skillId == skillId) {
+		tlsEcs.actorRegistry.remove<CastingTimerComp>(caster);
+	}
+	if (const auto* phase = tlsEcs.actorRegistry.try_get<RecoveryTimerComp>(caster);
+		phase != nullptr && phase->skillId == skillId) {
+		tlsEcs.actorRegistry.remove<RecoveryTimerComp>(caster);
+	}
+	if (const auto* phase = tlsEcs.actorRegistry.try_get<ChannelFinishTimerComp>(caster);
+		phase != nullptr && phase->skillId == skillId) {
+		tlsEcs.actorRegistry.remove<ChannelFinishTimerComp, ChannelIntervalTimerComp>(caster);
+	}
+}
+
+// 前置检查与落点之间允许延迟;每个异步执行入口都必须重新验证,失败不能继续走零伤害+Buff回调。
+bool CanContinueSkillCast(entt::entity caster, uint64_t skillId) {
+	const auto context = FindCasterSkillContext(caster, skillId);
+	if (context == nullptr) return false;
+	if (CheckRequiredSkillComps(caster, context->skilltableid()) != kSuccess ||
+		IsCasterFrozenForMigration(caster, skillId, "SkillSystem::CanContinueSkillCast") ||
+		tlsEcs.actorRegistry.any_of<InBattleComp>(caster)) {
+		AbortSkillCast(caster, skillId);
+		return false;
+	}
+	return true;
+}
+
+bool HasRequiredTargetComps(entt::entity target) {
+	const auto& registry = tlsEcs.actorRegistry;
+	if (registry.all_of<BaseAttributesComp>(target) &&
+		(!registry.any_of<Player>(target) || registry.all_of<LevelComp, DerivedAttributesComp>(target))) {
+		return true;
+	}
+	LOG_ERROR << "Skill target missing persisted or derived component, target=" << entt::to_integral(target);
+	return false;
+}
+
+}  // namespace
+
 void SkillSystem::StartCooldown(entt::entity caster, const SkillTable* skillTable) {
-	ECS_GET_OR_VOID(coolDownComp, CooldownTimeListComp, caster);
+	if (!tlsEcs.actorRegistry.valid(caster) || skillTable == nullptr) {
+		LOG_ERROR << "StartCooldown: invalid caster or skill table, caster=" << entt::to_integral(caster);
+		return;
+	}
+	// 冷却表的唯一写入口,第一次启动冷却时延迟创建。
+	auto& coolDownComp = tlsEcs.actorRegistry.get_or_emplace<CooldownTimeListComp>(caster);
 	CooldownTimeComp comp;
 	comp.set_start(TimeSystem::NowMilliseconds());
 	comp.set_cooldown_table_id(skillTable->cooldown_id());
 
-	const auto coolDownList = coolDownComp->mutable_cooldown_list();
+	const auto coolDownList = coolDownComp.mutable_cooldown_list();
 	(*coolDownList)[skillTable->cooldown_id()] = comp;
 }
 
 void LookAtTargetPosition(entt::entity caster, const ReleaseSkillRequest* request) {
 	if (request->has_position()) {
 		ViewSystem::LookAtPosition(caster, request->position());
-	} else if (request->target_id() > 0) {
-		const entt::entity target{ request->target_id() };
+	} else if (const auto target = ResolveSkillTarget(caster, request->target_id()); target != entt::null) {
 		const auto *transform = tlsEcs.actorRegistry.try_get<Transform>(target);
 		if (transform)
 		{
@@ -108,23 +214,21 @@ std::shared_ptr<SkillContextComp> CreateSkillContext(entt::entity caster, const 
 	auto context = std::make_shared<SkillContextComp>();
 	context->set_caster(entt::to_integral(caster));
 	context->set_skilltableid(request->skill_table_id());
-	context->set_target(request->target_id());
+	// 只记录解析通过的目标:后续落点(HandleSkillSpell / TriggerSkillEffect)按这个整数作用到目标上。
+	const auto target = ResolveSkillTarget(caster, request->target_id());
+	context->set_target(target == entt::null ? 0 : entt::to_integral(target));
 	context->set_casttime(TimeSystem::NowMilliseconds());
 
 	static const SkillContextCompMap kEmptyContexts;
 	const auto* casterContexts = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
-	context->set_skillid(GenerateUniqueSkillId(casterContexts ? *casterContexts : kEmptyContexts, kEmptyContexts));
+	context->set_skillid(GenerateUniqueSkillId(casterContexts ? *casterContexts : kEmptyContexts));
 	return context;
 }
 
-void AddSkillContext(entt::entity caster, const ReleaseSkillRequest* request, std::shared_ptr<SkillContextComp> context) {
-	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, caster);
-	casterSkillContextMap->emplace(context->skillid(), context);
-
-	entt::entity target{ request->target_id() };
-	if (tlsEcs.actorRegistry.valid(target)) {
-		AddTargetSkillContext(target, context);
-	}
+uint32_t AddSkillContext(entt::entity caster, const SkillContextPtrComp& context) {
+	// 在途上下文只归施法者所有;目标不保存只写不读的副本,施法者销毁即自然回收。
+	// 目标有效性由施法预检与落点复核负责,登记上下文不读写目标的组件。
+	return StoreSkillContextForWrite(caster, context);
 }
 
 void ConsumeItems(entt::entity caster, const SkillTable* skillTable) {
@@ -136,8 +240,9 @@ void ConsumeResources(entt::entity caster, const SkillTable* skillTable) {
 }
 
 void ApplySkillHitEffectIfValid(const entt::entity casterEntity, const uint64_t targetId) {
-	const entt::entity targetEntity{targetId};
-	if (!tlsEcs.actorRegistry.valid(targetEntity)) {
+	const auto targetEntity = ResolveSkillTarget(casterEntity, targetId);
+	// 回合制战斗中的目标不受实时技能影响(与 ValidateTarget / HandleSkillSpell 口径一致)。
+	if (targetEntity == entt::null || tlsEcs.actorRegistry.any_of<InBattleComp>(targetEntity)) {
 		return;
 	}
 	BuffSystem::OnSkillHit(casterEntity, targetEntity);
@@ -151,7 +256,7 @@ uint32_t SkillSystem::ReleaseSkill(const entt::entity casterEntity, const Releas
 	BroadcastSkillUsedMessage(casterEntity, request);
     
 	const auto context = CreateSkillContext(casterEntity, request);
-	AddSkillContext(casterEntity, request, context);
+	RETURN_ON_ERROR(AddSkillContext(casterEntity, context));
     
 	ConsumeItems(casterEntity, skillRow);
 	ConsumeResources(casterEntity, skillRow);
@@ -190,7 +295,8 @@ uint32_t CanUseSkillInCurrentState(const uint32_t state, const uint32_t skill) {
 
 
 uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable) {
-
+	// CombatStateCollectionComp 是按需状态(CombatStateSystem::AddCombatState 第一次加状态时创建),
+	// 不存在 = 身上没有任何战斗状态 = 不受限制,这里放行是正常分支,不是缺必需组件。
 	ECS_GET_OR_RETURN(combatStateCollection, CombatStateCollectionComp, casterEntity, kSuccess);
 
 	// Every active combat state must permit every skill type this skill carries.
@@ -206,8 +312,8 @@ uint32_t CheckBuff(const entt::entity casterEntity, const SkillTable* skillTable
 
 
 uint32_t CheckState(const entt::entity casterEntity, const SkillTable* skillTable) {
-	RETURN_ON_ERROR(ActorActionStateSystem::TryPerformAction(casterEntity, kActorActionUseSkill, kActorStateCombat));
 	RETURN_ON_ERROR(CombatStateSystem::ValidateSkillUsage(casterEntity, kActorActionUseSkill));
+	RETURN_ON_ERROR(ActorActionStateSystem::TryPerformAction(casterEntity, kActorActionUseSkill, kActorStateCombat));
 	return kSuccess;
 }
 
@@ -219,6 +325,12 @@ uint32_t CheckItemUse(const entt::entity casterEntity, const SkillTable* skillTa
 uint32_t SkillSystem::CheckSkillPrerequisites(const entt::entity casterEntity, const ::ReleaseSkillRequest* request) {
 	LookupSkillOrReturnError(request->skill_table_id());
 
+	// 只验证持久和派生组件,不能要求尚未使用过的冷却/上下文先存在。
+	RETURN_ON_ERROR(CheckRequiredSkillComps(casterEntity, request->skill_table_id()));
+	if (IsCasterFrozenForMigration(casterEntity, 0, "SkillSystem::CheckSkillPrerequisites")) {
+		return kSkillCannotBeCastInCurrentState;
+	}
+
 	// 回合制战斗在途:实时技能一律拒绝(moba-battle-target-architecture.md 红线 2
 	// "局中挡背包/交易/换装",turn-based-battle-server.md §5.3 冻结清单)。
 	// 玩家的战斗数值已经被快照带进 battle 节点,此刻在场景里放技能既改不了局内状态,
@@ -228,15 +340,20 @@ uint32_t SkillSystem::CheckSkillPrerequisites(const entt::entity casterEntity, c
 		return kSkillCannotBeCastInCurrentState;
 	}
 
-	RETURN_ON_ERROR(ValidateTarget(request));
+	RETURN_ON_ERROR(ValidateTarget(casterEntity, request));
 	RETURN_ON_ERROR(CheckCooldown(casterEntity, skillRow));
+	// 相位检查可能打断旧施法。可以提前完成的纯校验必须先过,拒绝新技能时保留旧上下文和相位。
+	RETURN_ON_ERROR(CheckPlayerLevel(casterEntity, skillRow));
+	RETURN_ON_ERROR(CheckBuff(casterEntity, skillRow));
+	RETURN_ON_ERROR(CombatStateSystem::ValidateSkillUsage(casterEntity, kActorActionUseSkill));
+	RETURN_ON_ERROR(ActorActionStateSystem::CanExecuteActionWithoutStateChange(casterEntity, kActorActionUseSkill));
+	RETURN_ON_ERROR(CheckItemUse(casterEntity, skillRow));
+
 	RETURN_ON_ERROR(CheckCasting(casterEntity, skillRow));
 	RETURN_ON_ERROR(CheckRecovery(casterEntity, skillRow));
 	RETURN_ON_ERROR(CheckChannel(casterEntity, skillRow));
-	RETURN_ON_ERROR(CheckPlayerLevel(casterEntity, skillRow));
-	RETURN_ON_ERROR(CheckBuff(casterEntity, skillRow));
+	// 提交阶段仍复核动作/战斗状态,通过后才激活状态;预检不能取代提交校验。
 	RETURN_ON_ERROR(CheckState(casterEntity, skillRow));
-	RETURN_ON_ERROR(CheckItemUse(casterEntity, skillRow));
 	return kSuccess;
 }
 
@@ -253,30 +370,22 @@ bool SkillSystem::IsSkillOfType(const uint32_t skillTableId, const uint32_t skil
 }
 
 void SkillSystem::HandleGeneralSkillSpell(const entt::entity casterEntity, const uint64_t skillId) {
-    if (!tlsEcs.actorRegistry.valid(casterEntity))
-    {
-        return;
-    }
-
-    // Frozen caster: skill cast attempted while the player is mid cross-
-    // zone migration. The skill would resolve on the source side and never
-    // reach the destination - treat as no-op. cross-zone-readiness-audit.md §11.3.
-    if (IsCasterFrozenForMigration(casterEntity, skillId, "SkillSystem::HandleGeneralSkillSpell"))
-    {
-        return;
-    }
+	if (!CanContinueSkillCast(casterEntity, skillId)) return;
 
 	HandleSkillSpell(casterEntity, skillId);
+	if (!CanContinueSkillCast(casterEntity, skillId)) return;
 
 	LOG_INFO << "Handling general skill spell. Caster: " << entt::to_integral(casterEntity)
 		<< ", Skill ID: " << skillId;
 
 	TriggerSkillEffect(casterEntity, skillId);
+	if (!CanContinueSkillCast(casterEntity, skillId)) return;
 	HandleSkillRecovery(casterEntity, skillId);
 }
 
 // Set up a timer for skill recovery after casting
 void SkillSystem::HandleSkillRecovery(const entt::entity casterEntity, uint64_t skillId) {
+	if (!CanContinueSkillCast(casterEntity, skillId)) return;
 	const auto skillContext = FindCasterSkillContext(casterEntity, skillId);
 	if (!skillContext)
 	{
@@ -285,10 +394,14 @@ void SkillSystem::HandleSkillRecovery(const entt::entity casterEntity, uint64_t 
 
 	LookupSkillOrReturnVoid(skillContext->skilltableid());
 
-	auto& recoveryTimerComp = tlsEcs.actorRegistry.get_or_emplace<RecoveryTimerComp>(casterEntity);
+	// 后摇相位开始(按需状态,生命周期见 skill_comp.h)
+	auto& recoveryTimerComp = tlsEcs.actorRegistry.emplace_or_replace<RecoveryTimerComp>(casterEntity);
 	recoveryTimerComp.skillId = skillId;
-	recoveryTimerComp.timer.RunAfter(skillRow->recovery_time(), [casterEntity, skillId] {
-		return HandleSkillFinish(casterEntity, skillId);
+	recoveryTimerComp.timer.RunAfter(skillRow->recovery_time(), [casterEntity = casterEntity, skillId = skillId] {
+		// 后摇结束:先摘相位组件再收尾。在自身定时器回调里销毁组件是安全的 ——
+		// TimerTaskComp::OnTimer 调完回调就返回,不再碰组件。
+		tlsEcs.actorRegistry.remove<RecoveryTimerComp>(casterEntity);
+		HandleSkillFinish(casterEntity, skillId);
 		});
 }
 
@@ -298,32 +411,24 @@ void SkillSystem::HandleSkillFinish(const entt::entity casterEntity, uint64_t sk
         return;
     }
 
-	// TODO: Handle offline player
-	ECS_GET_OR_VOID(casterSkillContextMap, SkillContextCompMap, casterEntity);
-	auto skillContentIt = casterSkillContextMap->find(skillId);
-	if (skillContentIt != casterSkillContextMap->end())
+	// 没有按需表表示没有在途上下文,重复收尾不创建表。
+	auto* casterSkillContextMap = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(casterEntity);
+	if (casterSkillContextMap == nullptr)
 	{
-		entt::entity target = entt::to_entity(skillContentIt->second->target());
-		if (tlsEcs.actorRegistry.valid(target)) {
-			RemoveTargetSkillContext(target, skillId);
-		}
-		casterSkillContextMap->erase(skillContentIt);
+		return;
 	}
+	const auto skillContentIt = casterSkillContextMap->find(skillId);
+	if (skillContentIt == casterSkillContextMap->end())
+	{
+		return;
+	}
+
+	// 只有施法者拥有这条上下文,不再维护目标镜像。
+	casterSkillContextMap->erase(skillContentIt);
 }
 
 void SkillSystem::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t skillId) {
-    if (!tlsEcs.actorRegistry.valid(casterEntity))
-    {
-        return;
-    }
-
-    // Frozen caster (channel variant). Same rationale as HandleGeneralSkillSpell -
-    // any in-flight migration means the source-side cast cannot reach the
-    // destination. cross-zone-readiness-audit.md §11.3.
-    if (IsCasterFrozenForMigration(casterEntity, skillId, "SkillSystem::HandleChannelSkillSpell"))
-    {
-        return;
-    }
+	if (!CanContinueSkillCast(casterEntity, skillId)) return;
 
 	// skillId 是 tlsIdGeneratorManager 发的技能实例 id,不是技能表 id。
 	// 旧写法直接拿它查 SkillTable,雪花 id 永远查不到行 —— 于是这里必然
@@ -343,20 +448,24 @@ void SkillSystem::HandleChannelSkillSpell(entt::entity casterEntity, uint64_t sk
 		<< ", Skill ID: " << skillId;
 
 	HandleSkillSpell(casterEntity, skillId);
+	// 命中阶段可能因目标/施法者数据缺失结束本次施法,不能再给它挂引导定时器。
+	if (!CanContinueSkillCast(casterEntity, skillId)) return;
 
-	auto& channelFinishTimerComp = tlsEcs.actorRegistry.get_or_emplace<ChannelFinishTimerComp>(casterEntity);
+	// 引导相位开始(按需状态,生命周期见 skill_comp.h):结束定时器 + 周期 think 定时器
+	auto& channelFinishTimerComp = tlsEcs.actorRegistry.emplace_or_replace<ChannelFinishTimerComp>(casterEntity);
 	channelFinishTimerComp.skillId = skillId;
-	channelFinishTimerComp.timer.RunAfter(skillRow->channel_finish(), [casterEntity, skillId] {
+	channelFinishTimerComp.timer.RunAfter(skillRow->channel_finish(), [casterEntity = casterEntity, skillId = skillId] {
 		return HandleChannelFinish(casterEntity, skillId);
 		});
 
-	auto& channelIntervalTimer = tlsEcs.actorRegistry.get_or_emplace<ChannelIntervalTimerComp>(casterEntity).timer;
-	channelIntervalTimer.RunEvery(skillRow->channel_think(), [casterEntity, skillId] {
+	auto& channelIntervalTimer = tlsEcs.actorRegistry.emplace_or_replace<ChannelIntervalTimerComp>(casterEntity).timer;
+	channelIntervalTimer.RunEvery(skillRow->channel_think(), [casterEntity = casterEntity, skillId = skillId] {
 		return HandleChannelThink(casterEntity, skillId);
 		});
 }
 
 void SkillSystem::HandleChannelThink(entt::entity casterEntity, uint64_t skillId) {
+	if (!CanContinueSkillCast(casterEntity, skillId)) return;
 	// TODO: Implement channel think logic
 }
 
@@ -366,11 +475,14 @@ void SkillSystem::HandleChannelFinish(const entt::entity casterEntity, const uin
         return;
     }
 
-	tlsEcs.actorRegistry.remove<ChannelIntervalTimerComp>(casterEntity);
+	// 引导相位结束:结束定时器与周期 think 定时器一起摘掉,再进入后摇。
+	// 本函数就是 ChannelFinishTimerComp 自己的定时器回调,在回调里销毁它是安全的
+	// (TimerTaskComp::OnTimer 调完回调就返回,不再碰组件)。
+	tlsEcs.actorRegistry.remove<ChannelFinishTimerComp, ChannelIntervalTimerComp>(casterEntity);
 	HandleSkillRecovery(casterEntity, skillId);
 }
 
-uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
+uint32_t SkillSystem::ValidateTarget(const entt::entity casterEntity, const ::ReleaseSkillRequest* request) {
 	LookupSkillOrReturnError(request->skill_table_id());
 
 	// Validate target ID
@@ -392,7 +504,7 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
 			continue;
 		}
 
-		const entt::entity target{ request->target_id() };
+		const entt::entity target = actor_net_id::Resolve(tlsEcs.actorRegistry, request->target_id());
 		if (!tlsEcs.actorRegistry.valid(target)) {
 			return MAKE_ERROR_MSG(kSkillInvalidTargetId,
 				"target_id=" << request->target_id()
@@ -413,6 +525,14 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
 			return kSkillInvalidTarget;
 		}
 
+		// 别的场景里的实体、归属交接冻结中的玩家:见 ResolveSkillTarget 的说明。
+		if (ResolveSkillTarget(casterEntity, request->target_id()) == entt::null) {
+			return MAKE_ERROR_MSG(kSkillInvalidTargetId,
+				"target_id=" << request->target_id()
+				<< " skill_table_id=" << request->skill_table_id()
+				<< " reason=not_in_caster_scene_or_frozen");
+		}
+
 		return kSuccess;
 	}
 
@@ -420,33 +540,62 @@ uint32_t SkillSystem::ValidateTarget(const ::ReleaseSkillRequest* request) {
 }
 
 // Common interrupt-or-reject check for casting/recovery/channel timers
-template <typename TimerComp>
+// 相位组件是按需状态(见 skill_comp.h):不存在 = 没在这一相位,正常放行,不是缺必需组件;
+// 存在 = 相位进行中,立即技能打断它,其余技能拒绝。这里不再顺手摘「已经跑完」的组件 ——
+// 相位结束时由结束动作自己摘(F051);这里只处理打断,以及定时器已不在跑的异常残留。
+template <typename PhaseComp>
 uint32_t CheckTimerPhase(const entt::entity casterEntity, const SkillTable* skillTable) {
-	ECS_GET_OR_RETURN(timerComp, TimerComp, casterEntity, kSuccess);
-	if (timerComp->timer.IsActive())
+	auto* phase = tlsEcs.actorRegistry.try_get<PhaseComp>(casterEntity);
+	if (phase == nullptr)
 	{
-		if (skillTable->immediate()) {
-			LOG_INFO << "Immediate skill: " << skillTable->id()
-				<< " is currently in phase. Sending interrupt message.";
-			SkillSystem::SendSkillInterruptedMessage(casterEntity, skillTable->id());
-			// 被打断的那一次施法,它的 SkillContext 是在 ReleaseSkill 里建的,
-			// 只有 HandleSkillFinish 会删。这里把定时器组件摘掉之后回调再也不会
-			// 触发,上下文就永久留在 caster / target 的 SkillContextCompMap 里 ——
-			// 玩家每打断一次泄漏一条,无上界。先收口再摘定时器。
-			SkillSystem::HandleSkillFinish(casterEntity, timerComp->skillId);
-			tlsEcs.actorRegistry.remove<TimerComp>(casterEntity);
-			return kSuccess;
-		}
+		return kSuccess;
+	}
+
+	if (!phase->timer.IsActive())
+	{
+		// 组件在、定时器却没在跑:某条路径开始了相位却没挂上定时器,或结束时漏摘。
+		// 它的结束回调永远不会来了,不能因此把施法者永久卡住:记错误,然后按「这次施法结束」
+		// 收尾 —— 与打断分支同样处理。只摘这一个组件不够:残留的是引导结束定时器时,
+		// 周期 think 定时器还在跑;这次施法的上下文也没人收,会一直留在上下文表里。
+		LOG_ERROR << "Stale skill phase component without active timer. caster=" << entt::to_integral(casterEntity)
+			<< " skill_id=" << phase->skillId << " skill_table_id=" << skillTable->id();
+		const auto staleSkillId = phase->skillId;
+		SkillSystem::HandleSkillFinish(casterEntity, staleSkillId);
+		EndAllSkillPhases(casterEntity);
+		return kSuccess;
+	}
+
+	if (!skillTable->immediate())
+	{
 		return MAKE_ERROR_MSG(kSkillUnInterruptible,
 			"skill_id=" << skillTable->id()
 			<< " caster=" << entt::to_integral(casterEntity));
 	}
-	tlsEcs.actorRegistry.remove<TimerComp>(casterEntity);
+
+	LOG_INFO << "Immediate skill: " << skillTable->id()
+		<< " is currently in phase. Sending interrupt message.";
+	SkillSystem::SendSkillInterruptedMessage(casterEntity, skillTable->id());
+	// 被打断的那一次施法,它的 SkillContext 是在 ReleaseSkill 里建的,
+	// 只有 HandleSkillFinish 会删。相位组件摘掉之后回调再也不会触发,
+	// 上下文就永久留在施法者的 SkillContextCompMap 里 ——
+	// 玩家每打断一次泄漏一条,无上界。先收口上下文,再结束这次施法的全部相位。
+	const auto interruptedSkillId = phase->skillId;
+	SkillSystem::HandleSkillFinish(casterEntity, interruptedSkillId);
+	EndAllSkillPhases(casterEntity);
 	return kSuccess;
 }
 
 uint32_t SkillSystem::CheckCooldown(const entt::entity casterEntity, const SkillTable* skillTable) {
-	ECS_GET_OR_RETURN(coolDownTimeListComp, CooldownTimeListComp, casterEntity, kSuccess);
+	if (!tlsEcs.actorRegistry.valid(casterEntity)) {
+		return MAKE_ERROR_MSG(kThisEntityIsInvalid,
+			"invalid cooldown caster=" << entt::to_integral(casterEntity));
+	}
+	// 按需表不存在表示没有启动过冷却;查询保持组件集合不变。
+	auto* coolDownTimeListComp = tlsEcs.actorRegistry.try_get<CooldownTimeListComp>(casterEntity);
+	if (coolDownTimeListComp == nullptr)
+	{
+		return kSuccess;
+	}
 	if (const auto it = coolDownTimeListComp->cooldown_list().find(skillTable->cooldown_id());
 		it != coolDownTimeListComp->cooldown_list().end() &&
 		CoolDownTimeMillisecondSystem::IsInCooldown(it->second))
@@ -475,8 +624,15 @@ uint32_t SkillSystem::CheckChannel(const entt::entity casterEntity, const SkillT
 
 void SkillSystem::BroadcastSkillUsedMessage(const entt::entity casterEntity, const ::ReleaseSkillRequest* request) {
 	SkillUsedS2C skillUsedS2C;
-	skillUsedS2C.set_entity(entt::to_integral(casterEntity));
-	skillUsedS2C.add_target_entity(request->target_id());
+	const auto casterNetId = actor_net_id::Of(tlsEcs.actorRegistry, casterEntity);
+	if (casterNetId == 0) {
+		LOG_ERROR << "BroadcastSkillUsedMessage: caster network id missing";
+		return;
+	}
+	skillUsedS2C.set_entity(casterNetId);
+	if (const auto target = ResolveSkillTarget(casterEntity, request->target_id()); target != entt::null) {
+		skillUsedS2C.add_target_entity(actor_net_id::Of(tlsEcs.actorRegistry, target));
+	}
 	skillUsedS2C.set_skill_table_id(request->skill_table_id());
 	skillUsedS2C.mutable_position()->CopyFrom(request->position());
 
@@ -488,24 +644,44 @@ void SkillSystem::BroadcastSkillUsedMessage(const entt::entity casterEntity, con
 }
 
 void SkillSystem::SetupCastingTimer(entt::entity casterEntity, const SkillTable* skillTable, uint64_t skillId) {
-	auto& castingTimerComp = tlsEcs.actorRegistry.get_or_emplace<CastingTimerComp>(casterEntity);
-	castingTimerComp.skillId = skillId;
-	auto& castingTimer = castingTimerComp.timer;
+	if (!tlsEcs.actorRegistry.valid(casterEntity) || skillTable == nullptr) {
+		LOG_ERROR << "SetupCastingTimer: invalid caster or skill table, caster=" << entt::to_integral(casterEntity);
+		return;
+	}
+	// 前摇到点后进入哪种施放:普通技能直接结算,引导技能进入引导相位。
+	// 其它类型没有前摇相位,不挂组件 —— 以前先懒建一个空的 CastingTimerComp,
+	// 留给下一次施法的 CheckCasting 去摘(F051)。
+	void (*onCastPoint)(entt::entity, uint64_t) = nullptr;
 	if (IsSkillOfType(skillTable->id(), kGeneralSkill)) {
-		castingTimer.RunAfter(skillTable->cast_point(), [casterEntity, skillId] {
-			return HandleGeneralSkillSpell(casterEntity, skillId);
-			});
+		onCastPoint = &SkillSystem::HandleGeneralSkillSpell;
 	}
 	else if (IsSkillOfType(skillTable->id(), kChannelSkill)) {
-		castingTimer.RunAfter(skillTable->cast_point(), [casterEntity, skillId] {
-			return HandleChannelSkillSpell(casterEntity, skillId);
-			});
+		onCastPoint = &SkillSystem::HandleChannelSkillSpell;
 	}
+	if (onCastPoint == nullptr) {
+		return;
+	}
+
+	// 前摇相位开始(按需状态,生命周期见 skill_comp.h)
+	auto& castingTimerComp = tlsEcs.actorRegistry.emplace_or_replace<CastingTimerComp>(casterEntity);
+	castingTimerComp.skillId = skillId;
+	castingTimerComp.timer.RunAfter(skillTable->cast_point(),
+		[casterEntity = casterEntity, skillId = skillId, onCastPoint] {
+			// 前摇结束:先摘相位组件再进入施放。在自身定时器回调里销毁组件是安全的 ——
+			// TimerTaskComp::OnTimer 调完回调就返回,不再碰组件。
+			tlsEcs.actorRegistry.remove<CastingTimerComp>(casterEntity);
+			onCastPoint(casterEntity, skillId);
+		});
 }
 
 void SkillSystem::SendSkillInterruptedMessage(const entt::entity casterEntity, const uint32_t skillTableId) {
 	SkillInterruptedS2C skillInterruptedS2C;
-	skillInterruptedS2C.set_entity(entt::to_integral(casterEntity));
+	const auto casterNetId = actor_net_id::Of(tlsEcs.actorRegistry, casterEntity);
+	if (casterNetId == 0) {
+		LOG_ERROR << "SendSkillInterruptedMessage: caster network id missing";
+		return;
+	}
+	skillInterruptedS2C.set_entity(casterNetId);
 	skillInterruptedS2C.set_skill_table_id(skillTableId);
 
 	ViewSystem::BroadcastMessageToVisiblePlayers(
@@ -516,6 +692,7 @@ void SkillSystem::SendSkillInterruptedMessage(const entt::entity casterEntity, c
 }
 
 void SkillSystem::TriggerSkillEffect(const entt::entity casterEntity, const uint64_t skillId) {
+	if (!CanContinueSkillCast(casterEntity, skillId)) return;
 	const auto skillContext = FindCasterSkillContext(casterEntity, skillId);
 	if (!skillContext)
 	{
@@ -524,10 +701,27 @@ void SkillSystem::TriggerSkillEffect(const entt::entity casterEntity, const uint
 
 	LookupSkillOrReturnVoid(skillContext->skilltableid());
 
+	// 落点时重新解析:从施法到 cast_point 之间目标可能已经换场景、下线或进入冻结 / 回合制战斗。
+	// 没有目标(0)时直接收手,不把 entity{0} 之类的无效句柄交给 AddOrUpdateBuff。
+	const auto targetEntity = ValidateSkillTargetEntity(casterEntity, entt::entity{skillContext->target()});
+	if (targetEntity == entt::null || tlsEcs.actorRegistry.any_of<InBattleComp>(targetEntity))
+	{
+		return;
+	}
+	if (!HasRequiredTargetComps(targetEntity)) {
+		AbortSkillCast(casterEntity, skillId);
+		return;
+	}
+
 	LOG_INFO << "Triggering skill effect. Caster: " << entt::to_integral(casterEntity) << ", Skill ID: " << skillId;
 
 	for (const auto& effect : skillRow->effect()) {
-		BuffSystem::AddOrUpdateBuff(entt::to_entity(skillContext->target()), effect, skillContext);
+		if (!CanContinueSkillCast(casterEntity, skillId)) return;
+		if (!HasRequiredTargetComps(targetEntity)) {
+			AbortSkillCast(casterEntity, skillId);
+			return;
+		}
+		BuffSystem::AddOrUpdateBuff(targetEntity, effect, skillContext);
 	}
 }
 
@@ -541,9 +735,17 @@ bool IsTargetDead(entt::entity targetEntity) {
 // 技能按 SkillTable.damage_type 选物伤 / 法伤;实时侧没有 PVP 对局概念,不乘 PVP 伤害系数。
 double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity target, double baseDamage,
 							const SkillTable& skillRow) {
+	// 施法者的 BaseAttributesComp 是持久数据,玩家加载时挂上(PlayerDatabaseMessageFieldsUnmarshal):
+	// 调用方已经验证两端必需组件,且到这里没有回调;缺失仍保守拒绝计算,绝不补建。
 	const auto *casterAttributes = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(casterEntity);
+	if (casterAttributes == nullptr)
+	{
+		LOG_ERROR << "CalculateFinalDamage: missing caster BaseAttributesComp, caster=" << entt::to_integral(casterEntity)
+			<< " skill_table_id=" << skillRow.id();
+		return 0.0;
+	}
 	const auto *targetAttributes = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(target);
-	if (!casterAttributes || !targetAttributes)
+	if (targetAttributes == nullptr)
 		return 0.0;
 
 	// critchance 是 uint64(见 CLAUDE.md §4),装不下 0~1 的小数,口径只能是
@@ -585,21 +787,21 @@ double CalculateFinalDamage(const entt::entity casterEntity, const entt::entity 
 }
 
 
-void CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& damageEvent) {
+bool CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& damageEvent) {
 	const auto skillContext = FindCasterSkillContext(casterEntity, damageEvent.skill_id());
 	if (!skillContext)
 	{
 		LOG_ERROR << "Skill context not found for skill ID: " << damageEvent.skill_id();
-        return;
+		return false;
 	}
 
-	LookupSkillOrReturnVoid(skillContext->skilltableid());
+	LookupSkillOrReturn(skillContext->skilltableid(), false);
 
-    auto targetEntity = entt::to_entity(damageEvent.target());
+    auto targetEntity = entt::entity{damageEvent.target()};
 
 	if (!tlsEcs.actorRegistry.valid(targetEntity))
 	{
-		return;
+		return false;
 	}
 
     // Frozen target: skill landed on a player who is mid cross-zone
@@ -613,15 +815,23 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& dama
         LOG_INFO << "[CrossZone] Damage on frozen target dropped. caster="
                  << entt::to_integral(casterEntity) << " target=" << entt::to_integral(targetEntity)
                  << " skill_id=" << damageEvent.skill_id();
-        return;
+        return false;
     }
 
     if (IsTargetDead(targetEntity)) {
         LOG_INFO << "Target is already dead, skipping damage calculation.";
-        return;
+        return false;
     }
 
-	ECS_GET_OR_VOID(levelComponent, LevelComp, casterEntity);
+	// 施法者的 LevelComp 在玩家加载时挂上(PlayerDatabaseMessageFieldsUnmarshal),是必需组件;
+	// 缺了是不变量被破坏,返回失败让整条落点链路停止,不能让零伤害继续触发Buff。
+	const auto* levelComponent = tlsEcs.actorRegistry.try_get<LevelComp>(casterEntity);
+	if (levelComponent == nullptr)
+	{
+		LOG_ERROR << "CalculateSkillDamage: missing caster LevelComp, caster=" << entt::to_integral(casterEntity)
+			<< " skill_id=" << damageEvent.skill_id();
+		return false;
+	}
 	SkillTableManager::Instance().SetDamageParam({static_cast<double>(levelComponent->level())});
 
 	damageEvent.set_attacker_id(entt::to_integral(casterEntity));
@@ -629,6 +839,7 @@ void CalculateSkillDamage(const entt::entity casterEntity, DamageEventComp& dama
     double baseDamage = SkillTableManager::Instance().GetDamage(skillContext->skilltableid());
     double finalDamage = CalculateFinalDamage(casterEntity, targetEntity, baseDamage, *skillRow);
     damageEvent.set_damage(finalDamage);
+	return true;
 }
 
 
@@ -641,14 +852,6 @@ void ApplyDamage(BaseAttributesComp& baseAttributesPBComponent, const DamageEven
     // 与回合引擎共用落血规则:向上取整、不超过当前气血;buff 改写后的伤害若为 NaN / 无穷,不进整数转换
     const uint64_t health = baseAttributesPBComponent.health();
     baseAttributesPBComponent.set_health(health - combatdamage::DamageToHealth(damageEvent.damage(), health));
-}
-
-void TriggerBeKillEvent(const entt::entity casterEntity, const entt::entity target) {
-	BeKillEvent beKillEvent;
-	beKillEvent.set_caster(entt::to_integral(casterEntity));
-	beKillEvent.set_target(entt::to_integral(target));
-
-	tlsEcs.dispatcher.trigger(beKillEvent);
 }
 
 void TriggerAfterDamageEvents(const entt::entity casterEntity, const entt::entity targetEntity, DamageEventComp& damageEvent) {
@@ -665,7 +868,6 @@ void HandleTargetDeath(const entt::entity casterEntity, const entt::entity targe
         BuffSystem::OnKill(casterEntity);
     }
 
-    TriggerBeKillEvent(casterEntity, target);
 }
 
 void DealDamage(DamageEventComp& damageEvent, const entt::entity caster, const entt::entity target) {
@@ -687,19 +889,22 @@ void DealDamage(DamageEventComp& damageEvent, const entt::entity caster, const e
 }
 
 void SkillSystem::HandleSkillSpell(const entt::entity casterEntity, const uint64_t skillId) {
+	if (!CanContinueSkillCast(casterEntity, skillId)) return;
 	const auto skillContext = FindCasterSkillContext(casterEntity, skillId);
 	if (!skillContext)
 	{
 		return;
 	}
 
-	const entt::entity targetEntity = entt::to_entity(skillContext->target());
+	// 落点时重新解析:施法期间目标可能已经换场景、下线或进入归属交接冻结。
+	// 冻结目标也要在这里整体拦下,理由同下面 InBattleComp 的注释。
+	const entt::entity targetEntity = ValidateSkillTargetEntity(casterEntity, entt::entity{skillContext->target()});
 
-	if (!tlsEcs.actorRegistry.valid(targetEntity))
+	if (targetEntity == entt::null)
 	{
 		return;
 	}
-    
+
 	// 施法瞬间目标还在场景里、cast_point 定时器触发时它已经进了回合制战斗:整体早退。
 	// 必须在这里拦(而不是照抄 CalculateSkillDamage 里对 PlayerFrozenComp 的那段) ——
 	// 那段只是 return 让伤害留 0,后面 DealDamage 照跑,NextBasicAttack 的加成伤害仍会落血。
@@ -710,16 +915,23 @@ void SkillSystem::HandleSkillSpell(const entt::entity casterEntity, const uint64
 				 << " skill_id=" << skillId;
 		return;
 	}
+	if (!HasRequiredTargetComps(targetEntity)) {
+		AbortSkillCast(casterEntity, skillId);
+		return;
+	}
 
 	DamageEventComp damageEvent;
 	damageEvent.set_skill_id(skillId);
 	damageEvent.set_target(skillContext->target());
-	CalculateSkillDamage(casterEntity, damageEvent);
+	if (!CalculateSkillDamage(casterEntity, damageEvent)) {
+		AbortSkillCast(casterEntity, skillId);
+		return;
+	}
 	DealDamage(damageEvent, casterEntity, targetEntity);
 
 	SkillExecutedEvent skillExecutedEvent;
-	skillExecutedEvent.set_caster(entt::to_integral(casterEntity));
-	skillExecutedEvent.set_target(skillContext->target());
+	skillExecutedEvent.caster = casterEntity;
+	skillExecutedEvent.target = entt::entity{skillContext->target()};
 	BuffSystem::OnSkillExecuted(skillExecutedEvent);
 }
 

@@ -2,26 +2,23 @@
 
 #include <grpcpp/grpcpp.h>
 #include <muduo/net/EventLoop.h>
-#include "battle_admission_gate.h"
 #include "proto/battle/battle_node.grpc.pb.h"
 
-// BattleNode 内部控制面 gRPC 实现(match 服务调用)。
-// 手写文件:生成器暂未给 battle 节点配 handler 骨架输出,形态严格镜像
-// cpp/nodes/scene/handler/grpc/scene_node_service.h(runInLoop + promise/future
-// 把请求投递到 muduo loop 线程,阻塞 gRPC 池线程直至处理完成)。
-//
-// 注意:Handle* 在 loop 线程执行 —— 不做阻塞 I/O;业务错误经 response 字段(tip)返回,
-// gRPC status 为 OK。唯一例外是 CreateBattle 的节点级准入拒绝(集群外入口 D82):
-// 建房准入闸未开 / 已关(battle_admission_gate.h),或拿不到 Agones 分配许可,即回
-// grpc::Status(UNAVAILABLE, "battle_not_allocatable"),此时没有任何副作用。
-// 这是节点级"换一台试"信号,发生在业务处理之前,客户端看不到,故不走 tip。
-// 消息字面量是跨语言字符串契约,常量与说明在 battle_node.cpp。
+///<<< BEGIN WRITING YOUR CODE: grpc.header.includes
+#include "battle_admission_gate.h"
+///<<< END WRITING YOUR CODE
 
+// 由 proto 工具生成 BattleNode 的 gRPC 骨架；自定义代码只写在守护段内。
+// gRPC 线程通过 runInLoop + promise/future 等待事件循环完成请求。
+// Handle* 在事件循环执行，不做阻塞 I/O；业务错误经响应字段返回。
+// 投递前段在 gRPC 线程运行，可取得准入许可并提前返回非 OK。
+// loop 内段在 Handle* 前复核状态：将 dispatchStatus 设为非 OK 即跳过业务委托。
+// 完成后段在 gRPC 线程运行；许可与捕获的栈引用存活到 future.get() 完成。
 class BattleNodeImpl final : public BattleNode::Service
 {
 public:
     explicit BattleNodeImpl(muduo::net::EventLoop& loop);
-
+    ///<<< BEGIN WRITING YOUR CODE: grpc.header.public
     // ---- 建房准入闸(battle_admission_gate.h;只管 CreateBattle,其余 RPC 只作用于已有房间) ----
     // 两者都只在 loop 线程调用:loop 内复核与 Close 同在 loop 上,才能保证排在关闸之后的建房必被拒。
 
@@ -31,6 +28,7 @@ public:
 
     // SetBeforeShutdown 第一句调用(先于 AbortAllRooms)。终态,幂等。
     void CloseAdmission();
+    ///<<< END WRITING YOUR CODE
 
     grpc::Status CreateBattle(grpc::ServerContext* context,
         const ::CreateBattleRequest* request,
@@ -40,8 +38,6 @@ public:
         const ::DestroyBattleRequest* request,
         ::Empty* response) override;
 
-    // ---- 二期:观战接入(match → battle,设计文档 §10) ----
-
     grpc::Status AddObserver(grpc::ServerContext* context,
         const ::AddObserverRequest* request,
         ::AddObserverResponse* response) override;
@@ -50,15 +46,12 @@ public:
         const ::RemoveObserverRequest* request,
         ::Empty* response) override;
 
-    // ---- 客户端直连:丢票补签(match → battle,turn-based §18 D25 / client-rpc-router.md D33) ----
-    // 会话身份由 match 从大厅会话取得并放进 request.player_id,本节点只核对名单并自签。
-
     grpc::Status IssueBattleTicket(grpc::ServerContext* context,
         const ::IssueBattleTicketRequest* request,
         ::IssueBattleTicketResponse* response) override;
 
 private:
-    // loop 线程执行;必须快速完成(gRPC 线程经 promise/future 等待)。
+    // 业务委托在事件循环线程执行，gRPC 线程同步等待完成。
     static void HandleCreateBattle(const ::CreateBattleRequest* request, ::CreateBattleResponse* response);
     static void HandleDestroyBattle(const ::DestroyBattleRequest* request);
     static void HandleAddObserver(const ::AddObserverRequest* request, ::AddObserverResponse* response);
@@ -66,5 +59,7 @@ private:
     static void HandleIssueBattleTicket(const ::IssueBattleTicketRequest* request, ::IssueBattleTicketResponse* response);
 
     muduo::net::EventLoop& loop_;
+    ///<<< BEGIN WRITING YOUR CODE: grpc.header.private
     battle_admission::AdmissionGate admission_;
+    ///<<< END WRITING YOUR CODE
 };

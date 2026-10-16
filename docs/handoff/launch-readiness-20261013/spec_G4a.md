@@ -77,6 +77,8 @@
 
 排队默认关闭:`login.yaml:428-429`;K8s 的 login ConfigMap 不写 Queue 段,取缺省值 false。
 
+> **2026-10-15 更正(上表 `dispatcher:lock:login_queue` 一行;原文不删)**:「键是全局的」是 G1b 之前的事实。G1b(2026-10-12,修 L-01)起 `Queue.DispatcherLockKey` 只是**前缀**,实际锁键是 `<前缀>:zone:<Node.ZoneId>`,默认即 `dispatcher:lock:login_queue:zone:{z}`,每个 zone 一把、各选一个 leader;配置键名与默认值没变。依据:`go/login/internal/logic/pkg/loginqueue/dispatcher.go:132`(锁键由本进程 zoneID 派生)、`:137-142`(`ZoneDispatcherLockKey`)、`go/login/internal/config/config.go:265-270`(注释)与 `:282`(字段默认值)、`go/login/etc/login.yaml:490-493`。上表的行号证据也随之过时。键的读写方、频率(每个 zone 1/s)、TTL 30s、单键这几列不变。
+
 **B. 开服限流(Java gateway)**
 
 | 键 | 写 / 读 | TTL | 证据 |
@@ -240,9 +242,11 @@ merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows
 - **约束**:
   1. 同一个 zone 的 login 与 `k8s_gate_drain.ps1` 必须看同一个实例:MarkScript 会同时检查本台和同 zone 其它台的 draining(`k8s_gate_drain.ps1:150-158`)。
   2. **切换期间所有 zone 的排队必须关着**。zone-up 是逐 zone 执行的,做不到「同一拍」;放行循环的锁是全局键(`config.go:253`),排队开着时,切换窗口里两个实例上会各有一个 leader、各有一套队列,准入翻倍。所以部署闸要读线上 login ConfigMap 的 `Queue.Enabled`,为 true 就拒绝切换(§4.4)。
+     - **2026-10-15 更正(锁键;原文不删)**:「放行循环的锁是全局键(`config.go:253`)」已过时。G1b 起锁键按 zone 分,是 `dispatcher:lock:login_queue:zone:{z}`(依据见 §2.2 表 A 后的更正注)。**结论与部署闸不变**,理由改为:同一个 zone 的 login 滚动期间新旧副本并存,旧副本的锁键与队列在核心实例上,新副本的在 `redis-queue` 上,两边各有一把本 zone 的锁,同一个 zone 仍会有两个 leader、两套队列,准入翻倍。不同 zone 的锁已经互不相干,「逐 zone 做不到同一拍」不再是锁的问题,但仍是第 3 条(排空标记)与 gateway `rl:ip` 桶一分为二的原因。§5.8 回退(「逐 zone 回退会重演 §3.2.1 约束 2 的双 leader 与双队列」)与评审处理记录第 11 条的结论同样成立。
   3. 从第一个 zone 的 login 开始滚动,到最后一个 zone 滚完为止,不许执行 `k8s_gate_drain.ps1`,也不许滚动 gate:脚本按新 ConfigMap 往 `redis-queue` 写 draining,还没滚到的旧 login 读核心,看不到标记,会继续往正在排空的 gate 分人。
 - **与 L-01 / L-02 的关系**:
   - L-01(排队 leader 锁)的修复与本拆分无关。
+    - **2026-10-15 补注**:L-01 已由 G1b 落码(`dispatcher.go:132`、`:137-142`),锁键从全服一把改为每个 zone 一把 `dispatcher:lock:login_queue:zone:{z}`。与本拆分仍然无关;只是本稿凡写 `dispatcher:lock:login_queue` 的地方,线上实际键名都要按带 `:zone:{z}` 后缀的形式查(见约束 2 的更正注)。
   - **拆分应排在 L-02(打开排队与限流)之前**。今天排队和限流都关着(`login.yaml:429`;`application.yaml:38`),切换时没有在途数据要搬。
 - **不并入**:
   - friend 私有键:`FriendRedis` 要求 `Type: cluster`(`go/friend/internal/config/config.go:93-95`)。

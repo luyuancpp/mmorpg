@@ -200,6 +200,41 @@ class AssignGateRateLimiterTest {
     }
 
     @Test
+    void accountCooldown_isPerAccountAndIp() {
+        // G4b-J2:冷却键 = scope + 账号 + 客户端 IP。account 在这一步未经认证,只按账号计时的话,
+        // 任何人都能替别人的账号刷请求、让对方一直拿 ACCOUNT_COOLDOWN。
+        // 本用例只看冷却,不关心两层桶的先后:所有 build 都返回同一个两层都放行的桶
+        // (桶 mock 要在打开 builder 的 when() 之前建好,理由同上一个用例)。
+        BucketProxy bucket = mock(BucketProxy.class);
+        ConsumptionProbe ok = ConsumptionProbe.consumed(99, 0);
+        when(bucket.tryConsumeAndReturnRemaining(1)).thenReturn(ok);
+        when(bucket.tryConsume(1)).thenReturn(true);
+        @SuppressWarnings("unchecked")
+        RemoteBucketBuilder<byte[]> builder = mock(RemoteBucketBuilder.class);
+        when(proxyManager.builder()).thenReturn(builder);
+        when(builder.build(any(byte[].class), any(Supplier.class))).thenReturn(bucket);
+        // 窗口放大到 60s:四次调用之间即使线程被挂起几秒,也仍在同一个冷却窗口内。
+        props.setAccountCooldownMs(60_000);
+
+        AssignGateRateLimiter limiter = new AssignGateRateLimiter(proxyManager, props, disabledWave());
+
+        assertTrue(limiter.check(1, "10.0.1.1", "ivy").isPass());
+        // 同账号、不同 IP:各记各的冷却,第二次仍放行(J2 之前这里是 ACCOUNT_COOLDOWN)。
+        assertTrue(limiter.check(1, "10.0.1.2", "ivy").isPass(),
+                "同账号换一个 IP,不应被另一个 IP 上的冷却挡住");
+
+        // 同账号、同 IP:仍在窗口内,被挡。
+        var sameIp = limiter.check(1, "10.0.1.1", "ivy");
+        assertTrue(sameIp.isDeny());
+        assertEquals("ACCOUNT_COOLDOWN", sameIp.getReason());
+        // 第二个 IP 也有自己的一份窗口 —— 同时证明上面那次放行确实走到了冷却这一步并记了账,
+        // 而不是后端异常被 fail-open 放过去的。
+        var otherIpAgain = limiter.check(1, "10.0.1.2", "ivy");
+        assertTrue(otherIpAgain.isDeny());
+        assertEquals("ACCOUNT_COOLDOWN", otherIpAgain.getReason());
+    }
+
+    @Test
     void backendException_failsOpen() {
         when(proxyManager.builder()).thenThrow(new RuntimeException("redis down"));
 

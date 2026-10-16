@@ -9,7 +9,6 @@
 #include "engine/core/macros/error_return.h"
 #include "engine/core/type_define/type_define.h"
 #include "proto/common/component/actor_comp.pb.h"
-#include "proto/common/event/actor_event.pb.h"
 
 namespace {
     // Check if an action conflicts with the current state; return error code on conflict
@@ -33,12 +32,6 @@ namespace {
 
         if (const auto& state = actorActionStateTable->state(static_cast<int32_t>(actorState));
             state.state_mode() == kActionStateInterrupt) {
-            // Trigger interrupt event
-            InterruptCurrentStateEvent interruptEvent;
-            interruptEvent.set_actor_entity(entt::to_integral(actorEntity));
-            interruptEvent.set_actor_state(actorState);
-            tlsEcs.dispatcher.trigger(interruptEvent);
-
             RETURN_FALSE_ON_ERROR(ActorActionStateSystem::RemoveState(actorEntity, actorState));
             
             return true;
@@ -46,32 +39,47 @@ namespace {
 
         return false;
     }
+
+    // 行为状态按需存在:没有组件表示尚无激活状态,查询不能替实体创建空列表。
+    ActorStateComp* FindActorStateComp(entt::entity actorEntity) {
+        if (!tlsEcs.actorRegistry.valid(actorEntity)) {
+            return nullptr;
+        }
+        return tlsEcs.actorRegistry.try_get<ActorStateComp>(actorEntity);
+    }
 }
 
 uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint32_t actorAction, uint32_t successState) {
     LookupActorActionStateOrReturnError(actorAction);
 
-    const auto *actorStatePbComponent = tlsEcs.actorRegistry.try_get<ActorStateComp>(actorEntity);
-    if (!actorStatePbComponent)
+    // 校验前置:实体与目标状态值都确认无误之后,才允许触发打断事件、删改状态。
+    // 以前非法 successState 要等打断都做完、到 AddState 里才被拒,前面的打断已经生效。
+    if (!tlsEcs.actorRegistry.valid(actorEntity))
     {
-        RETURN_ON_ERROR(AddState(actorEntity, successState));
-        return kSuccess;
+        return MAKE_ERROR_MSG(kThisEntityIsInvalid,
+            "entity=" << entt::to_integral(actorEntity)
+            << " actorAction=" << actorAction);
     }
-    for (const auto &actorState : actorStatePbComponent->state_list() | std::views::keys)
+    if (successState >= kActorStateActorStateMax)
     {
-        RETURN_ON_ERROR(CheckForStateConflict(actorActionStateRow, actorState));
+        return MAKE_ERROR_MSG(kInvalidParameter,
+            "entity=" << entt::to_integral(actorEntity)
+            << " successState=" << successState);
     }
-
     // 打断分支会走 RemoveState -> state_list()->erase(actorState),而 protobuf Map
     // 的 erase 会让指向被删元素的迭代器失效 —— 正好就是 range-for 手里那一个,
     // 下一次 ++it 就是 UB。这条路径挂在每次释放技能的 CheckState 上,必须先把
     // 状态键快照出来再遍历。快照同时也切断了对 actorStatePbComponent 指针的依赖
-    // (InterruptCurrentStateEvent 的下游 handler 可以任意增删组件)。
+    // (RemoveState 会修改对应组件里的状态表)。
     UInt32Vector currentStates;
-    currentStates.reserve(actorStatePbComponent->state_list().size());
-    for (const auto &actorState : actorStatePbComponent->state_list() | std::views::keys)
+    if (const auto *actorStatePbComponent = FindActorStateComp(actorEntity))
     {
-        currentStates.emplace_back(actorState);
+        currentStates.reserve(actorStatePbComponent->state_list().size());
+        for (const auto &actorState : actorStatePbComponent->state_list() | std::views::keys)
+        {
+            RETURN_ON_ERROR(CheckForStateConflict(actorActionStateRow, actorState));
+            currentStates.emplace_back(actorState);
+        }
     }
 
     for (const auto actorState : currentStates)
@@ -88,7 +96,17 @@ uint32_t ActorActionStateSystem::TryPerformAction(entt::entity actorEntity, uint
 uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity actorEntity, uint32_t actorAction) {
     LookupActorActionStateOrReturnError(actorAction);
 
-    ECS_GET_OR_RETURN(actorStatePbComponent, ActorStateComp, actorEntity, kSuccess);
+    if (!tlsEcs.actorRegistry.valid(actorEntity))
+    {
+        return MAKE_ERROR_MSG(kThisEntityIsInvalid,
+            "entity=" << entt::to_integral(actorEntity)
+            << " actorAction=" << actorAction);
+    }
+    const auto *actorStatePbComponent = FindActorStateComp(actorEntity);
+    if (actorStatePbComponent == nullptr)
+    {
+        return kSuccess;
+    }
     for (const auto &actorState : actorStatePbComponent->state_list() | std::views::keys)
     {
         RETURN_ON_ERROR(CheckForStateConflict(actorActionStateRow, actorState));
@@ -98,22 +116,30 @@ uint32_t ActorActionStateSystem::CanExecuteActionWithoutStateChange(entt::entity
 }
 
 bool ActorActionStateSystem::HasState(const entt::entity actorEntity, const uint32_t state) {
-    ECS_GET_OR_FALSE(actorStatePbComponent, ActorStateComp, actorEntity);
     if (state >= kActorStateActorStateMax) {
         return false;
     }
 
-    return actorStatePbComponent->state_list().contains(state);
+    const auto *actorStatePbComponent = FindActorStateComp(actorEntity);
+    return actorStatePbComponent != nullptr && actorStatePbComponent->state_list().contains(state);
 }
 
 uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32_t actorState) {
-    auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     if (actorState >= kActorStateActorStateMax){
         return MAKE_ERROR_MSG(kInvalidParameter,
             "entity=" << entt::to_integral(actorEntity)
             << " actorState=" << actorState);
     }
 
+    if (!tlsEcs.actorRegistry.valid(actorEntity))
+    {
+        return MAKE_ERROR_MSG(kThisEntityIsInvalid,
+            "entity=" << entt::to_integral(actorEntity)
+            << " actorState=" << actorState);
+    }
+
+    // 唯一写入口在第一次激活状态时延迟创建,只读校验不创建。
+    auto& actorStatePbComponent = tlsEcs.actorRegistry.get_or_emplace<ActorStateComp>(actorEntity);
     if (actorStatePbComponent.state_list().contains(actorState)){
         return kSuccess;
     }
@@ -123,23 +149,23 @@ uint32_t ActorActionStateSystem::AddState(const entt::entity actorEntity, uint32
 }
 
 uint32_t ActorActionStateSystem::RemoveState(entt::entity actorEntity, uint32_t actorState) {
-    auto *actorStatePbComponent = tlsEcs.actorRegistry.try_get<ActorStateComp>(actorEntity);
-    if (!actorStatePbComponent)
+    if (!tlsEcs.actorRegistry.valid(actorEntity))
     {
-        return MAKE_ERROR_MSG(kInvalidParameter,
+        return MAKE_ERROR_MSG(kThisEntityIsInvalid,
                               "entity=" << entt::to_integral(actorEntity)
-                                        << " actorState=" << actorState
-                                        << " reason=no_ActorStateComp");
+                                        << " actorState=" << actorState);
     }
-    if (actorState >= kActorStateActorStateMax ||
-        !actorStatePbComponent->state_list().contains(actorState))
+    if (actorState >= kActorStateActorStateMax)
     {
         return MAKE_ERROR_MSG(kInvalidParameter,
             "entity=" << entt::to_integral(actorEntity)
             << " actorState=" << actorState);
     }
 
-    actorStatePbComponent->mutable_state_list()->erase(actorState);
+    // 没有列表或目标状态都表示已经移除;幂等清理不创建组件。
+    if (auto *actorStatePbComponent = FindActorStateComp(actorEntity)) {
+        actorStatePbComponent->mutable_state_list()->erase(actorState);
+    }
     return kSuccess;
 }
 

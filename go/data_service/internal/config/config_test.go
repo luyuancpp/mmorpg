@@ -711,7 +711,8 @@ RouteStore:
 }
 
 // TestShippedYamlRouteStoreIsRedisAndValid:仓库里那份 yaml **显式**写 Mode: redis(本地默认必须与今天逐字相同),
-// 其余键写的就是代码默认值,且合法。切 db_first 是 P2 的显式运维动作,不能出现在随仓库发的配置里。
+// FenceShards 写的是 MySQL 档的 16(2026-10-13,容量模型 §4.1 的连带修正;代码默认仍是 8),其余键写的就是代码默认值,
+// 且合法。切 db_first 是 P2 的显式运维动作,不能出现在随仓库发的配置里。
 func TestShippedYamlRouteStoreIsRedisAndValid(t *testing.T) {
 	var c Config
 	if err := conf.Load("../../etc/data_service.yaml", &c); err != nil {
@@ -723,7 +724,14 @@ func TestShippedYamlRouteStoreIsRedisAndValid(t *testing.T) {
 	if c.RouteStore.WaitAOFNumLocal == nil || c.RouteStore.WaitAOFNumReplicas == nil {
 		t.Fatal("etc/data_service.yaml must spell out both WaitAOF keys (their safe default is not the zero value)")
 	}
-	assertRouteStoreDefaults(t, c.RouteStore)
+	if c.RouteStore.FenceShards != 16 {
+		t.Fatalf("etc/data_service.yaml RouteStore.FenceShards = %d, want 16 (the MySQL tier; the TiDB tier uses 64, the code default stays 8)",
+			c.RouteStore.FenceShards)
+	}
+	// 其余键与代码默认值相同:把 FenceShards 换回默认值之后整段应当就是默认形态。
+	rest := c.RouteStore
+	rest.FenceShards = 8
+	assertRouteStoreDefaults(t, rest)
 	if err := c.RouteStore.Validate(); err != nil {
 		t.Fatalf("shipped RouteStore block must validate: %v", err)
 	}

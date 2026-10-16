@@ -118,9 +118,10 @@ inline bool GmClientMessagesAllowed()
 // ── GM 面鉴权 ───────────────────────────────────────────────────────────────
 //
 // GmGracefulShutdownRequest 只有 operator / reason 两个字段
-// (proto/common/base/gm_admin.proto),而这条 RPC 走的是 muduo GameChannel:
-// CallMethod 的 controller 和 done 都恒为 nullptr(game_channel.cpp:451),
-// **没有任何 metadata 边信道**可用。本轮不动 proto(改了就得重生成 C++/Go/Java
+// (proto/common/base/gm_admin.proto),而这条 RPC 走的是节点间 muduo RPC0 通道(RpcChannel):
+// controller 是每次派发在栈上构造的 RpcController(只携带本次调用所在的连接),done 非空、可经
+// RpcDoneCallback::Adopt 接管延后完成——两者都不承载调用方身份,信封 GameRpcMessage 也只有类型 / 调用号 /
+// 消息号 / 载荷,**没有任何 metadata 边信道**可用。本轮不动 proto(改了就得重生成 C++/Go/Java
 // 三侧产物,无法在本工作包内验证),因此签名寄生在 operator 字段里:
 //
 //     operator = "<操作人>|<unix 秒>|<nonce>|<hmac-sha256 hex>"
@@ -444,8 +445,8 @@ inline int64_t ResolveGmSkewSeconds()
 
 inline GmNonceCache &ProcessGmNonceCache()
 {
-	// gate 的 RPC handler 全部跑在 muduo 事件循环线程上(GameChannel 在
-	// EventLoop 线程里 CallMethod),所以这里不需要额外加锁。
+	// gate 的 RPC handler 全部跑在 muduo 事件循环线程上(RpcChannel 在
+	// EventLoop 线程里派发 CallServiceMethod,入口 assertInLoopThread),所以这里不需要额外加锁。
 	static GmNonceCache cache;
 	return cache;
 }

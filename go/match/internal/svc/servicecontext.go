@@ -16,6 +16,7 @@ import (
 
 	"shared/kafkacmd"
 	"shared/kafkautil"
+	"shared/playersync"
 	"shared/snowflake"
 	"shared/snowflakealloc"
 
@@ -50,6 +51,13 @@ type ServiceContext struct {
 	// Redis 是 SharedRedis 的过渡别名:保留一版避免外部引用断裂,
 	// 新代码一律按 key 归属显式选 MatchRedis / SharedRedis,不要再用它。
 	Redis *redis.Redis
+
+	// SyncDigest 组队名册提交后给受影响玩家的落地摘要 bump TEAM / TEAM_INVITE
+	// (docs/design/landing-recovery-sync-digest.md §3.3),由 team.NewService 取用。
+	// 句柄必须是 SharedRedis:player:{id}:sync_digest 是 C++ scene 读的核心契约键,MatchRedis(可能是集群)C++ 读不到。
+	// 指标 label service 固定为 "team":排队 / 切磋 / 观战不 bump 摘要。
+	// 手工构造的 ServiceContext(单测)不填时为 nil,bump 全部是无操作。
+	SyncDigest *playersync.Bumper
 
 	Etcd *clientv3.Client
 	// Kafka 只用于挑战(切磋)S2C 经 gate-{id} 的推送,同步 RequireOne
@@ -131,6 +139,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		MatchRedis:         matchRds,
 		SharedRedis:        sharedRds,
 		Redis:              sharedRds,
+		SyncDigest:         playersync.NewBumper(playersync.NewGoZeroEvaler(sharedRds), "team"),
 		Etcd:               etcdCli,
 		GateCommandBuilder: matchkafka.NewGateCommandBuilder(),
 		BattleIDGen:        hd.NewNode(),

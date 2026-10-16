@@ -2,7 +2,8 @@
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <boost/circular_buffer.hpp>
+#include <deque>
+#include "core/network/grpc_client_runtime.h"
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/data_service/data_service.grpc.pb.h"
@@ -27,6 +28,10 @@ struct AsyncDataServiceLoadPlayerDataGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::LoadPlayerDataRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceLoadPlayerDataHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::LoadPlayerDataResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceLoadPlayerDataHandlerFunctionType =
@@ -41,6 +46,9 @@ extern AsyncDataServiceLoadPlayerDataFailedHandlerFunctionType AsyncDataServiceL
 void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::LoadPlayerDataRequest& request);
 void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::LoadPlayerDataRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::LoadPlayerDataRequest& request, GrpcDone<::data_service::LoadPlayerDataResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceSavePlayerData
 
@@ -54,6 +62,10 @@ struct AsyncDataServiceSavePlayerDataGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::SavePlayerDataRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceSavePlayerDataHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::SavePlayerDataResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceSavePlayerDataHandlerFunctionType =
@@ -68,6 +80,9 @@ extern AsyncDataServiceSavePlayerDataFailedHandlerFunctionType AsyncDataServiceS
 void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SavePlayerDataRequest& request);
 void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SavePlayerDataRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SavePlayerDataRequest& request, GrpcDone<::data_service::SavePlayerDataResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceGetPlayerField
 
@@ -81,6 +96,10 @@ struct AsyncDataServiceGetPlayerFieldGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::GetPlayerFieldRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerFieldHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::GetPlayerFieldResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceGetPlayerFieldHandlerFunctionType =
@@ -95,6 +114,9 @@ extern AsyncDataServiceGetPlayerFieldFailedHandlerFunctionType AsyncDataServiceG
 void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerFieldRequest& request);
 void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerFieldRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerFieldRequest& request, GrpcDone<::data_service::GetPlayerFieldResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceSetPlayerField
 
@@ -108,6 +130,10 @@ struct AsyncDataServiceSetPlayerFieldGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::SetPlayerFieldRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceSetPlayerFieldHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::SetPlayerFieldResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceSetPlayerFieldHandlerFunctionType =
@@ -122,6 +148,9 @@ extern AsyncDataServiceSetPlayerFieldFailedHandlerFunctionType AsyncDataServiceS
 void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SetPlayerFieldRequest& request);
 void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SetPlayerFieldRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SetPlayerFieldRequest& request, GrpcDone<::data_service::SetPlayerFieldResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceRegisterPlayerZone
 
@@ -135,6 +164,10 @@ struct AsyncDataServiceRegisterPlayerZoneGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::RegisterPlayerZoneRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceRegisterPlayerZoneHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::google::protobuf::Empty> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceRegisterPlayerZoneHandlerFunctionType =
@@ -149,6 +182,9 @@ extern AsyncDataServiceRegisterPlayerZoneFailedHandlerFunctionType AsyncDataServ
 void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RegisterPlayerZoneRequest& request);
 void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RegisterPlayerZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RegisterPlayerZoneRequest& request, GrpcDone<::google::protobuf::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceGetPlayerHomeZone
 
@@ -162,6 +198,10 @@ struct AsyncDataServiceGetPlayerHomeZoneGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::GetPlayerHomeZoneRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerHomeZoneHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::GetPlayerHomeZoneResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceGetPlayerHomeZoneHandlerFunctionType =
@@ -176,6 +216,9 @@ extern AsyncDataServiceGetPlayerHomeZoneFailedHandlerFunctionType AsyncDataServi
 void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerHomeZoneRequest& request);
 void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerHomeZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerHomeZoneRequest& request, GrpcDone<::data_service::GetPlayerHomeZoneResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceBatchGetPlayerHomeZone
 
@@ -189,6 +232,10 @@ struct AsyncDataServiceBatchGetPlayerHomeZoneGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::BatchGetPlayerHomeZoneRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceBatchGetPlayerHomeZoneHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::BatchGetPlayerHomeZoneResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceBatchGetPlayerHomeZoneHandlerFunctionType =
@@ -203,6 +250,9 @@ extern AsyncDataServiceBatchGetPlayerHomeZoneFailedHandlerFunctionType AsyncData
 void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerHomeZoneRequest& request);
 void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerHomeZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerHomeZoneRequest& request, GrpcDone<::data_service::BatchGetPlayerHomeZoneResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceRemapHomeZoneForMerge
 
@@ -216,6 +266,10 @@ struct AsyncDataServiceRemapHomeZoneForMergeGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::RemapHomeZoneForMergeRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceRemapHomeZoneForMergeHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::RemapHomeZoneForMergeResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceRemapHomeZoneForMergeHandlerFunctionType =
@@ -230,6 +284,9 @@ extern AsyncDataServiceRemapHomeZoneForMergeFailedHandlerFunctionType AsyncDataS
 void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request);
 void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request, GrpcDone<::data_service::RemapHomeZoneForMergeResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceDeletePlayerData
 
@@ -243,6 +300,10 @@ struct AsyncDataServiceDeletePlayerDataGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::DeletePlayerDataRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceDeletePlayerDataHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::DeletePlayerDataResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceDeletePlayerDataHandlerFunctionType =
@@ -257,6 +318,9 @@ extern AsyncDataServiceDeletePlayerDataFailedHandlerFunctionType AsyncDataServic
 void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::DeletePlayerDataRequest& request);
 void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::DeletePlayerDataRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::DeletePlayerDataRequest& request, GrpcDone<::data_service::DeletePlayerDataResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceCreatePlayerSnapshot
 
@@ -270,6 +334,10 @@ struct AsyncDataServiceCreatePlayerSnapshotGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::CreatePlayerSnapshotRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceCreatePlayerSnapshotHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::CreatePlayerSnapshotResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceCreatePlayerSnapshotHandlerFunctionType =
@@ -284,6 +352,9 @@ extern AsyncDataServiceCreatePlayerSnapshotFailedHandlerFunctionType AsyncDataSe
 void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request);
 void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request, GrpcDone<::data_service::CreatePlayerSnapshotResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceListPlayerSnapshots
 
@@ -297,6 +368,10 @@ struct AsyncDataServiceListPlayerSnapshotsGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::ListPlayerSnapshotsRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceListPlayerSnapshotsHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::ListPlayerSnapshotsResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceListPlayerSnapshotsHandlerFunctionType =
@@ -311,6 +386,9 @@ extern AsyncDataServiceListPlayerSnapshotsFailedHandlerFunctionType AsyncDataSer
 void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request);
 void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request, GrpcDone<::data_service::ListPlayerSnapshotsResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceGetPlayerSnapshotDiff
 
@@ -324,6 +402,10 @@ struct AsyncDataServiceGetPlayerSnapshotDiffGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::GetPlayerSnapshotDiffRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerSnapshotDiffHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::GetPlayerSnapshotDiffResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceGetPlayerSnapshotDiffHandlerFunctionType =
@@ -338,6 +420,9 @@ extern AsyncDataServiceGetPlayerSnapshotDiffFailedHandlerFunctionType AsyncDataS
 void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request);
 void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request, GrpcDone<::data_service::GetPlayerSnapshotDiffResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceRollbackPlayer
 
@@ -351,6 +436,10 @@ struct AsyncDataServiceRollbackPlayerGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::RollbackPlayerRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceRollbackPlayerHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::RollbackPlayerResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceRollbackPlayerHandlerFunctionType =
@@ -365,6 +454,9 @@ extern AsyncDataServiceRollbackPlayerFailedHandlerFunctionType AsyncDataServiceR
 void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request);
 void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request, GrpcDone<::data_service::RollbackPlayerResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceRollbackZone
 
@@ -378,6 +470,10 @@ struct AsyncDataServiceRollbackZoneGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::RollbackZoneRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceRollbackZoneHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::RollbackZoneResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceRollbackZoneHandlerFunctionType =
@@ -392,6 +488,9 @@ extern AsyncDataServiceRollbackZoneFailedHandlerFunctionType AsyncDataServiceRol
 void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request);
 void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request, GrpcDone<::data_service::RollbackZoneResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceRollbackAll
 
@@ -405,6 +504,10 @@ struct AsyncDataServiceRollbackAllGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::RollbackAllRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceRollbackAllHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::RollbackAllResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceRollbackAllHandlerFunctionType =
@@ -419,6 +522,9 @@ extern AsyncDataServiceRollbackAllFailedHandlerFunctionType AsyncDataServiceRoll
 void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request);
 void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request, GrpcDone<::data_service::RollbackAllResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceBatchRecallItems
 
@@ -432,6 +538,10 @@ struct AsyncDataServiceBatchRecallItemsGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::BatchRecallItemsRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceBatchRecallItemsHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::BatchRecallItemsResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceBatchRecallItemsHandlerFunctionType =
@@ -446,6 +556,9 @@ extern AsyncDataServiceBatchRecallItemsFailedHandlerFunctionType AsyncDataServic
 void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request);
 void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request, GrpcDone<::data_service::BatchRecallItemsResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceQueryTransactionLog
 
@@ -459,6 +572,10 @@ struct AsyncDataServiceQueryTransactionLogGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::QueryTransactionLogRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceQueryTransactionLogHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::QueryTransactionLogResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceQueryTransactionLogHandlerFunctionType =
@@ -473,6 +590,9 @@ extern AsyncDataServiceQueryTransactionLogFailedHandlerFunctionType AsyncDataSer
 void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request);
 void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request, GrpcDone<::data_service::QueryTransactionLogResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceCreateEventSnapshot
 
@@ -486,6 +606,10 @@ struct AsyncDataServiceCreateEventSnapshotGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::CreateEventSnapshotRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceCreateEventSnapshotHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::CreateEventSnapshotResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceCreateEventSnapshotHandlerFunctionType =
@@ -500,6 +624,9 @@ extern AsyncDataServiceCreateEventSnapshotFailedHandlerFunctionType AsyncDataSer
 void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request);
 void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request, GrpcDone<::data_service::CreateEventSnapshotResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceAllocateIdSegment
 
@@ -513,6 +640,10 @@ struct AsyncDataServiceAllocateIdSegmentGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::AllocateIdSegmentRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceAllocateIdSegmentHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::AllocateIdSegmentResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceAllocateIdSegmentHandlerFunctionType =
@@ -527,6 +658,9 @@ extern AsyncDataServiceAllocateIdSegmentFailedHandlerFunctionType AsyncDataServi
 void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const ::data_service::AllocateIdSegmentRequest& request);
 void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const ::data_service::AllocateIdSegmentRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const ::data_service::AllocateIdSegmentRequest& request, GrpcDone<::data_service::AllocateIdSegmentResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceReservePlayerName
 
@@ -540,6 +674,10 @@ struct AsyncDataServiceReservePlayerNameGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::ReservePlayerNameRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceReservePlayerNameHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::ReservePlayerNameResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceReservePlayerNameHandlerFunctionType =
@@ -554,6 +692,9 @@ extern AsyncDataServiceReservePlayerNameFailedHandlerFunctionType AsyncDataServi
 void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReservePlayerNameRequest& request);
 void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReservePlayerNameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReservePlayerNameRequest& request, GrpcDone<::data_service::ReservePlayerNameResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceReleasePlayerName
 
@@ -567,6 +708,10 @@ struct AsyncDataServiceReleasePlayerNameGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::ReleasePlayerNameRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceReleasePlayerNameHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::google::protobuf::Empty> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceReleasePlayerNameHandlerFunctionType =
@@ -581,6 +726,9 @@ extern AsyncDataServiceReleasePlayerNameFailedHandlerFunctionType AsyncDataServi
 void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReleasePlayerNameRequest& request);
 void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReleasePlayerNameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReleasePlayerNameRequest& request, GrpcDone<::google::protobuf::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceBatchGetPlayerName
 
@@ -594,6 +742,10 @@ struct AsyncDataServiceBatchGetPlayerNameGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::BatchGetPlayerNameRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceBatchGetPlayerNameHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::BatchGetPlayerNameResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceBatchGetPlayerNameHandlerFunctionType =
@@ -608,6 +760,9 @@ extern AsyncDataServiceBatchGetPlayerNameFailedHandlerFunctionType AsyncDataServ
 void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerNameRequest& request);
 void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerNameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerNameRequest& request, GrpcDone<::data_service::BatchGetPlayerNameResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceGetPlayerAssetOpLedger
 
@@ -621,6 +776,10 @@ struct AsyncDataServiceGetPlayerAssetOpLedgerGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::data_service::GetPlayerAssetOpLedgerRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerAssetOpLedgerHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::GetPlayerAssetOpLedgerResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncDataServiceGetPlayerAssetOpLedgerHandlerFunctionType =
@@ -635,6 +794,43 @@ extern AsyncDataServiceGetPlayerAssetOpLedgerFailedHandlerFunctionType AsyncData
 void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request);
 void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request, GrpcDone<::data_service::GetPlayerAssetOpLedgerResponse> done, const GrpcCallOptions& options = {});
+#pragma endregion
+#pragma region DataServiceGetPlayerInboxLedger
+
+struct AsyncDataServiceGetPlayerInboxLedgerGrpcClient {
+    uint32_t messageId{ DataServiceGetPlayerInboxLedgerMessageId };
+    ClientContext context;
+    Status status;
+    ::data_service::GetPlayerInboxLedgerResponse reply;
+    std::unique_ptr<ClientAsyncResponseReader<::data_service::GetPlayerInboxLedgerResponse>> response_reader;
+    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
+    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+    ::data_service::GetPlayerInboxLedgerRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerInboxLedgerHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::data_service::GetPlayerInboxLedgerResponse> done;
+    GrpcClientRuntimePtr runtime;
+};
+
+using AsyncDataServiceGetPlayerInboxLedgerHandlerFunctionType =
+    std::function<void(const ClientContext&, const ::data_service::GetPlayerInboxLedgerResponse&)>;
+extern AsyncDataServiceGetPlayerInboxLedgerHandlerFunctionType AsyncDataServiceGetPlayerInboxLedgerHandler;
+// 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
+// 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
+using AsyncDataServiceGetPlayerInboxLedgerFailedHandlerFunctionType =
+    std::function<void(const GrpcCallFailure&, const ::data_service::GetPlayerInboxLedgerRequest&)>;
+extern AsyncDataServiceGetPlayerInboxLedgerFailedHandlerFunctionType AsyncDataServiceGetPlayerInboxLedgerFailedHandler;
+
+void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request);
+void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request, GrpcDone<::data_service::GetPlayerInboxLedgerResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 void SetDataServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -642,7 +838,7 @@ void SetDataServiceFailedHandler(const std::function<void(const GrpcCallFailure&
 void SetDataServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 // 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
 void SetDataServiceCallDeadline(std::chrono::milliseconds deadline);
-void HandleDataServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+void HandleDataServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
 void InitDataServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace data_service

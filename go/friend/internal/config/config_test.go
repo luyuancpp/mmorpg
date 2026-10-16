@@ -16,6 +16,23 @@ import (
 // 所以这条相对路径在任何机器 / 任何 checkout 位置都成立(与 trade 同名测试同一写法)。
 const etcYaml = "../../etc/friend.yaml"
 
+func TestProductionRequiresTiDB(t *testing.T) {
+	c := validConfig()
+	c.Mode = service.ProMode
+	c.RequireTiDB = false
+	if err := c.Validate(); err == nil {
+		t.Fatal("生产未强制TiDB仍可启动")
+	}
+	c.RequireTiDB = true
+	if err := c.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	c.Mode, c.RequireTiDB = service.DevMode, false
+	if err := c.Validate(); err != nil {
+		t.Fatalf("本地单机MySQL回归应允许: %v", err)
+	}
+}
+
 // TestEtcYamlContractValues 钉住 etc/friend.yaml 的关键值。
 //
 // 为什么值得一条测试:段名 / 键名写错时 go-zero 会把字段静默保持零值(例如 Friend 段拼成
@@ -215,6 +232,7 @@ func TestEtcYamlZoneRewriteAnchors(t *testing.T) {
 // 刻意不从 yaml 读:yaml 里任何一处被改坏,负向用例就会因为"基准本来就不合法"而集体误报。
 func validConfig() Config {
 	c := Config{
+		RequireTiDB:       true,
 		ZoneId:            1,
 		LeaseTTL:          60,
 		MetricsListenAddr: ":9180",

@@ -1,0 +1,153 @@
+#requires -Version 7
+<#
+.SYNOPSIS
+    共享 Redis 连接上限(P0-E 第 1 批)的静态契约:redis.yaml 显式 maxclients、启动时打印 fd 限值,docker-compose 同值。
+
+.DESCRIPTION
+    只读仓库里的静态文件:不调用 k8s_deploy.ps1,不访问集群、容器或网络。
+    能直接读清单的理由:Apply-Infra 对 redis.yaml 的 Pod 模板不做任何替换(只替换 __INFRA_NAMESPACE__,
+    以及 StatefulSet 自己 metadata 上的模板摘要注解),Pod 模板的渲染结果就是文件本身。
+    连接总账、重启闸、部署后核对与包装入口透传(第 2 批)要跑部署脚本,放在 k8s_deploy_contract.tests.ps1 的
+    「Redis 连接总账与重启闸」一节。
+
+    守住的东西:
+      - T1 MAXCLIENTS 只定义一次,而且是正整数字面量(部署脚本的总账与本文件都从这一行读值);
+      - T2 每一条 exec redis-server 都带 --maxclients "$MAXCLIENTS",且这样的行至少 2 条(有口令、无口令两个分支);
+      - T3 启动薄壳打印 fd 限值(redis fd limit: 一行,部署后核对与排查都靠它);
+      - T4 deploy/docker-compose.yml 的 redis 带 --maxclients,数值与 T1 相同;
+      - T5 硬限不足只打 ERROR 不拒启(薄壳里没有 exit),不设 timeout,不自己改 nofile。
+    修复前(redis.yaml 没有 MAXCLIENTS)T1~T4 以「应当恰好出现 1 次,实际 0 次」一类文本失败,退出码非 0。
+
+    设计与取值:docs/handoff/global-singletons-p0-findings-20261014.md「## P0-E」;运维:deploy/k8s/README.md「Redis 连接上限与总账」。
+
+.EXAMPLE
+    pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1
+#>
+
+$ErrorActionPreference = 'Stop'
+. "$PSScriptRoot/lib/test_harness.ps1"
+
+# 路径一律正斜杠 + Join-Path:CI 在 ubuntu 上跑(.github/workflows/deploy-config-tests.yml)。
+$script:RepoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
+$script:RedisPath = Join-Path $script:RepoRoot 'deploy/k8s/manifests/infra/redis.yaml'
+$script:ComposePath = Join-Path $script:RepoRoot 'deploy/docker-compose.yml'
+
+# 读文件放在各用例里调用:文件缺失时每条用例各自报红,而不是整个脚本中断。
+function Read-RepoText {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { throw "找不到 $Path" }
+    return ([IO.File]::ReadAllText($Path) -replace "`r`n", "`n")
+}
+
+# 去掉整行注释(YAML 注释与 shell 注释都是去掉缩进后以 # 开头),只对真正生效的内容断言。
+function Get-NonCommentText {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
+    return ((($Text -split "`n") | Where-Object { -not $_.TrimStart().StartsWith('#') }) -join "`n")
+}
+
+# 取 compose 里某个服务的块:从 `  <服务名>:` 到下一个缩进 ≤ 2 的非注释行(下一个服务或顶层的 volumes:)。
+# 写法同 etcd_maintenance_contract.tests.ps1 的同名函数(两份测试文件各自独立运行,不互相 dot-source)。
+function Get-ComposeServiceBlock {
+    param(
+        [Parameter(Mandatory = $true)][string]$Text,
+        [Parameter(Mandatory = $true)][string]$Service
+    )
+    $lines = $Text -split "`n"
+    $start = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match ('^  ' + [regex]::Escape($Service) + ':\s*$')) { $start = $i; break }
+    }
+    if ($start -lt 0) { throw "compose 里找不到服务 $Service" }
+
+    $body = [System.Collections.Generic.List[string]]::new()
+    $body.Add($lines[$start])
+    for ($i = $start + 1; $i -lt $lines.Count; $i++) {
+        $l = $lines[$i]
+        $isKeyLine = $l.Trim().Length -gt 0 -and -not $l.TrimStart().StartsWith('#')
+        if ($isKeyLine -and ($l.Length - $l.TrimStart().Length) -le 2) { break }
+        $body.Add($l)
+    }
+    return ($body -join "`n")
+}
+
+# redis.yaml 的启动薄壳(command 里 `- |` 字面块的正文,不含注释行)。探针里也有 exit / redis-cli,
+# 只对启动薄壳断言的条目必须用它,不能扫整份清单。取法与修复设计第八节第 4 步交给 Codex 的取法一致:第一个 `- |` 之后、
+# 缩进回到它同级或更浅之前的全部行。
+function Get-RedisStartupScript {
+    $lines = (Read-RepoText $script:RedisPath) -split "`n"
+    $start = -1
+    $indent = 0
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $m = [regex]::Match($lines[$i], '^([ ]*)- \|[ \t]*$')
+        if ($m.Success) { $start = $i + 1; $indent = $m.Groups[1].Value.Length; break }
+    }
+    if ($start -lt 0) { throw 'redis.yaml 里找不到启动薄壳(command 下的 `- |` 字面块)' }
+    $body = [System.Collections.Generic.List[string]]::new()
+    for ($i = $start; $i -lt $lines.Count; $i++) {
+        $l = $lines[$i]
+        if ($l.Trim().Length -eq 0) { $body.Add(''); continue }
+        if (($l.Length - $l.TrimStart().Length) -le $indent) { break }
+        $body.Add($l)
+    }
+    $code = Get-NonCommentText ($body -join "`n")
+    if ([string]::IsNullOrWhiteSpace($code)) { throw 'redis.yaml 的启动薄壳是空的' }
+    return $code
+}
+
+# redis.yaml 里生效的 MAXCLIENTS 值。凡是以 MAXCLIENTS= 开头的赋值行都算一次定义(不论右边是什么),
+# 必须恰好 1 次且右边是不带前导 0 的正整数字面量;否则 throw(fail-closed,不取「第一个」糊过去)。
+function Get-RedisManifestMaxClients {
+    $code = Get-NonCommentText (Read-RepoText $script:RedisPath)
+    $definitions = [regex]::Matches($code, '(?m)^[ \t]*MAXCLIENTS=(\S*)[ \t]*$')
+    if ($definitions.Count -ne 1) {
+        throw "redis.yaml 里 MAXCLIENTS=<值> 的定义应当恰好出现 1 次,实际 $($definitions.Count) 次(定义多于一处时以哪一处为准要靠猜;0 处 = 回到 Redis 缺省 10000)"
+    }
+    $value = $definitions[0].Groups[1].Value
+    if ($value -notmatch '^[1-9][0-9]*$') {
+        throw "redis.yaml 的 MAXCLIENTS 必须是不带前导 0 的正整数字面量(实际 '$value'):部署脚本的连接总账按字面量读它,不展开 shell 变量"
+    }
+    return [long]$value
+}
+
+Write-Host "== 共享 Redis maxclients 契约(P0-E 第 1 批)=="
+
+Test-Case 'T1:redis.yaml 的 MAXCLIENTS 恰好定义 1 次,且是正整数' {
+    $maxClients = Get-RedisManifestMaxClients
+    Assert-True -Condition ($maxClients -gt 0) -Because "MAXCLIENTS 必须为正(实际 $maxClients)"
+}
+
+Test-Case 'T2:每一条 exec redis-server 都带 --maxclients "$MAXCLIENTS",这样的行至少 2 条' {
+    $code = Get-NonCommentText (Read-RepoText $script:RedisPath)
+    $execLines = @(($code -split "`n") | Where-Object { $_ -match '\bexec[ \t]+redis-server\b' })
+    Assert-True -Condition ($execLines.Count -ge 2) -Because "有口令、无口令两个分支各一条 exec redis-server(实际 $($execLines.Count) 条)"
+    foreach ($line in $execLines) {
+        Assert-Match -Text $line -Pattern '--maxclients[ \t]+"\$MAXCLIENTS"(?:[ \t]|$)' -Because "每一条 exec redis-server 都必须带 --maxclients `"`$MAXCLIENTS`"(漏一条 = 那个分支回到 Redis 缺省 10000):$($line.Trim())"
+    }
+}
+
+Test-Case 'T3:启动薄壳在 exec 之前打印 fd 限值(redis fd limit: 一行)' {
+    $code = Get-RedisStartupScript
+    $printAt = $code.IndexOf('redis fd limit:')
+    Assert-True -Condition ($printAt -ge 0) -Because '启动日志里必须有 redis fd limit: 一行:生产运行时的 nofile 本机无法核实,事后只能靠它判断 maxclients 有没有被下调'
+    Assert-Match -Text $code -Pattern 'echo "redis fd limit: soft=\$soft hard=\$hard need=\$need maxclients=\$MAXCLIENTS"' -Because '打印要带软限、硬限、所需 fd 数与 maxclients 四项,排查时才不用再去猜'
+    $firstExecAt = [regex]::Match($code, '\bexec[ \t]+redis-server\b').Index
+    Assert-True -Condition ($printAt -lt $firstExecAt) -Because 'fd 限值必须在 exec redis-server 之前打印(exec 之后 shell 已被替换,不会再有输出)'
+}
+
+Test-Case 'T4:docker-compose 的 redis 带 --maxclients,数值与 redis.yaml 的 MAXCLIENTS 相同' {
+    $maxClients = Get-RedisManifestMaxClients
+    $block = Get-NonCommentText (Get-ComposeServiceBlock -Text (Read-RepoText $script:ComposePath) -Service 'redis')
+    $found = [regex]::Matches($block, '--maxclients[ \t]+(\S+)')
+    Assert-Equal -Expected 1 -Actual $found.Count -Because 'compose 的 redis 命令里 --maxclients 应当恰好出现 1 次'
+    Assert-Equal -Expected ([string]$maxClients) -Actual $found[0].Groups[1].Value -Because '本机 / 预发与 K8s 用同一个连接上限,改一边必须同改另一边'
+}
+
+Test-Case 'T5:硬限不足只打 ERROR 不拒启;不设 timeout;不自己改 nofile' {
+    $code = Get-RedisStartupScript
+    Assert-Match -Text $code -Pattern 'if \[ "\$hard" -lt "\$need" \]; then echo "ERROR: nofile hard limit' -Because '硬限低于 maxclients + 32 时必须在日志里明说'
+    Assert-NotMatch -Text $code -Pattern '\bexit\b' -Because '唯一的 Redis 起不来等于全服停:硬限不足是有意的 fail-open,只打 ERROR,启动薄壳里不能 exit'
+    Assert-NotMatch -Text $code -Pattern '--timeout\b' -Because '设了 timeout 会不停踢掉常驻的空闲池连接与 C++ 每进程唯一的那条连接'
+    Assert-NotMatch -Text $code -Pattern 'ulimit[ \t]+-[SH]?n[ \t]+(?!2>)\S' -Because 'redis-server 会自己把软限抬到硬限(待实测);薄壳只读不改,读数才是 Redis 启动时真正面对的限值'
+}
+
+exit (Complete-TestRun -SuiteName 'redis_maxclients_contract')

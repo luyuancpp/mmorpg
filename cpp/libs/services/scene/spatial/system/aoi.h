@@ -1,16 +1,22 @@
 #pragma once
 
 #include "spatial/comp/grid_comp.h"
+#include "engine/core/utils/registry/scene_entity.h"
 
-class AfterEnterScene;
-class BeforeLeaveScene;
+struct BeforeLeaveScene;
 
 struct Hex;
 
 class AoiSystem {
 public:
     static void Update(double delta);
+
     static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
+
+    // Pin 保留跨格观察;Unpin 立即按当前场景、邻格与可见性重新判断。
+    // 仍可见时恢复空间优先级(队友仍为 kTeammate),否则立即摘除并发送销毁通知。
+    static bool PinAoiEntity(entt::entity watcher, entt::entity target);
+    static void UnpinAoiEntity(entt::entity watcher, entt::entity target);
 
     // 实体在**同一场景内**被瞬移之后调用(MovementSystem::TeleportWithinScene),调用前 Transform 必须
     // 已经写成新位置。效果等价于"从旧位置离开视野、在新位置重新进场":
@@ -25,8 +31,10 @@ public:
     // 目前没有任何玩法会钉住玩家,真有了要给钉住方补一条瞬移通知。
     static void ResetEntityVisibility(entt::entity entity);
 private:
-    static void UpdateGridState(entt::entity entity, SceneGridListComp& gridList, const Hex& currentHex,
-                                GridId currentGridId, GridSet& gridsToEnter, GridSet& gridsToLeave);
+    // 首次真实入格时延迟创建 SceneGridListComp;位置未变返回 nullptr,不创建空表。
+    static SceneGridListComp* UpdateGridState(entt::entity entity, SceneEntity sceneEntity,
+                                const Hex& currentHex, GridId currentGridId,
+                                GridSet& gridsToEnter, GridSet& gridsToLeave);
     static void HandleEntityVisibility(entt::entity entity, SceneGridListComp& gridList,
                                        const GridSet& gridsToEnter, const GridSet& gridsToLeave);
     static void NotifyEntityVisibilityChanges(entt::entity entity,

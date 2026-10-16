@@ -16,7 +16,7 @@ namespace turnbattle {
 inline constexpr uint64_t kRoundDurationMs = 6000;
 
 // DungeonTable.time_limit 为 0 时的回合上限缺省值
-inline constexpr uint32_t kDefaultMaxRounds = 30;
+inline constexpr uint32_t kDefaultMaxRounds = 300;
 
 // ---- 匹配模式(镜像 proto/match/match_service.proto 的 MatchMode,决定逃跑规则等) ----
 

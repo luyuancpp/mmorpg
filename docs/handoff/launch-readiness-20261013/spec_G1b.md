@@ -425,6 +425,8 @@ func mustNewDispatcher(t *testing.T, q *Queue, prov CapacityProvider, rdb *redis
 | T8c | `TestInitLoginQueue_DisabledSkipsDispatcherValidation`（svc） | 新增，**向后兼容** | miniredis | `Enabled=false`、`ZoneId=0`、前缀为空 → 不 panic，`LoginQueue` 和 `QueueDispatcher` 都是 nil |
 | T9 | `TestDispatchOnce_EmptyQueueSkipsGateDirectory` | 新增，**先判空再算容量** | miniredis | 不 Start，直接调 `dispatchOnce`（没有 goroutine，结果确定）。空队列调 3 次，`CandidatesForZone` 一次都没被调用；入队 1 人后再调 1 次，`CandidatesForZone` 被调用过，队列变空 |
 
+> **更正（2026-10-15）**：T9 一行「入队 1 人后再调 1 次，`CandidatesForZone` 被调用过」已过时（原文保留；§5.3 的 T9 参考实现同样只断言「不为 0」）。现在 `dispatchOnce` 每个非空拍**恰好**调用 1 次 `CandidatesForZone`：算容量（`freeSlotsFromCandidates`）与批内挑 gate（`newBatchPickFn`）共用这一份候选（`go/login/internal/logic/pkg/loginqueue/dispatcher.go:323-345`）。当前 `dispatcher_test.go` 里的 T9 已改为断言恰好 1 次（`:526-529`）；另有 `TestDispatchOnce_BatchSpreadsAcrossGatesWithOneCandidateRead`（`:541` 起）断言一拍放 10 人也只读 1 次 gate 目录（`:599-602`），并断言批内按「在线 + 本拍已分到的人数」最少、同数取 NodeID 最小分配。按本规格复核时以这两条为准。
+
 `startIntegrationFixture`（:40-72）改为：删掉 `activeZones` 闭包，调用 `NewDispatcher(q, prov, rdb, secret, 300*time.Second, 50*time.Millisecond, 1.5, 2*time.Second, "dispatcher:lock:test", 1)`，err 非空时 `t.Fatalf`，并加注释「用它的两个用例都只有 zone 1」。
 
 ### 5.3 参考实现（T3、T4 骨架、T9、T8）
@@ -803,6 +805,8 @@ func TestG1bRepro_SharedRedisTwoZones_BothQueuesDrain(t *testing.T) {
 前置：不需要清 Redis / Kafka / MySQL，也不需要起任何服务。全部是 Go 单测，Windows PowerShell。C++、Java、proto 都没改，不需要 MSBuild / mvn / build.bat。
 
 ### 7.1 红（推荐，用于证明复现）
+
+> **更正（2026-10-14，评审 G1b-spec-2）**：本规格写于修复提交之前，文中的 `HEAD` 均指 `73b852f32`（`d5cbb8a8e` 的父提交，修复前最后一个提交）；修复已随 `d5cbb8a8e` 进入 HEAD，在现在的 HEAD 上按 §5.4 的旧签名写复现用例会编译失败，拿不到 FAIL 证据。所以红用例要在 `73b852f32` 的临时 worktree 里跑：下面第一行命令执行时把末尾的 `HEAD` 换成 `73b852f32`，即 `git -C D:\luyuan\xuanming-server-mmo-cpp worktree add --detach D:\luyuan\g1b-red 73b852f32`，其余步骤与通过标准不变。§5.4 标题与正文、§7.2「先在 HEAD 上跑同一条命令做基线对比」里的 `HEAD` 同样按 `73b852f32` 理解（现在的 HEAD 已含整批改动，不能当基线）。正文不改。
 
 ```powershell
 git -C D:\luyuan\xuanming-server-mmo-cpp worktree add --detach D:\luyuan\g1b-red HEAD

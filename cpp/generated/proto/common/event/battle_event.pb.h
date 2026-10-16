@@ -31,6 +31,7 @@
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
 #include "proto/battle/battle_data.pb.h"
+#include "proto/common/options/event_ingress_option.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.

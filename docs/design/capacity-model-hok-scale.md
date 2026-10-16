@@ -1,5 +1,7 @@
 # 容量模型：王者荣耀量级（S1 / S2 / S3）推算
 
+> **2026-10-15 目标修订（负责人确认）**：当前容量目标为 **DAU 1 亿、峰值同时在线 2000 万**，覆盖本次 login / friend / chat / guild / mail / leaderboard / auction / trade 的比较与迁移。下面旧 S3 的 1000 万 PCU 和派生数字保留为历史推算，不能作为新目标的验收预算；新口径及比较要求见文末 §7。目标尚无达标实测证据。
+
 > **目标档已确认(2026-10-13,负责人)**:S3 —— 同时在线 1000 万、日活 1 亿。下文三档中以 S3 为容量决策基准,S1 / S2 作为分阶段压测里程碑。交接与后续工作见 [handoff-launch-readiness-and-d1-20261013.md](../handoff/handoff-launch-readiness-and-d1-20261013.md)。
 
 > **状态**：草稿，2026-10-13。本文只读推算：读了代码、配置、文档和 git，没有改动仓库里的任何文件，也没有运行编译、测试或压测（AGENTS §10.1）。**文中所有数字都是「公式 + 参数出处」推出来的，不是运行证据。三档场景是假设，目标数字要负责人确认（§6）。**
@@ -264,7 +266,7 @@
 | 会话对账 SessionReconciler | 每个 zone 的每个 locator 实例每 60 秒 SCAN 一遍 `player:session:*` 全键空间，再对每个键 GET 一次（`session_reconciler.go:42-44`、`:123`，本次抽查；`:196`）。2Z 个实例，GET = 2Z·N/60 | 33 万~77 万 GET/s | 833 万~1,870 万 | 3,333 万~7,430 万 | 实际跑不完，会退化成 2Z 条串行循环，长期占住执行线程。一轮跑不完时，「连续两轮缺席才清理」被拉长到小时级，gate 崩溃后的 ONLINE 会话清理随之失效；存活集用的是全服 Range（`:155`） | 3.3~7.7 / 83~187 / 333~743 倍 |
 | 按用途拆分（G4a）后的核心 | 存盘 EVALSHA + 进退场 + 切场景 + SM 刷新 + 建角 + 子表缓存 SET（第 3 批不做时） | 6.5~8.2 万 | 34~57 万 | 71~153 万 | 单主 | 0.65~0.82 / 3.4~5.7 / 7.1~15 倍；S1 没有给浪涌留出余量 |
 | 拆分后 redis-mapping（并入控制面） | 10×DBTask + 2E + 3C_n | 4.6~11.2 万 | 23~56 万 | 46~112 万 | 单主；go/db 必须读主（`go/db/internal/config/config.go:57-58`） | 0.46~1.1 / 2.3~5.6 / 4.6~11 倍 |
-| 排队轮询 | 2.5·Q：每次轮询 5 条命令（`queue.go:226-284`），客户端间隔 2 秒 | 25 万 | 125 万 | 250 万 | redis-queue 单主；排队默认关 | 2.5 / 12.5 / 25 倍 |
+| 排队轮询 | 2.5·Q：每次轮询 5 条命令（`queue.go` 的 `Lookup`），客户端间隔 2 秒 | 25 万 | 125 万 | 250 万 | redis-queue 单主；排队默认关 | 2.5 / 12.5 / 25 倍 |
 | 全服重连浪涌 | N/120×35：假设全服在 120 秒内重新进场，只算进场链路 | 29 万 | 146 万 | 292 万 | 同核心 | 2.9 / 15 / 29 倍 |
 | WAITAOF 建角上限（D1 db_first） | ≈ 映射连接池总数 ÷ 0.5 秒 = 2Z×10/0.5 = 40Z。每 Pod 池 10 的来历：data-service CPU limit 500m（`data-service.yaml:110`），automaxprocs（`go.mod:94`）使 GOMAXPROCS=1，go-redis 缺省 PoolSize=10；go-zero 是否另行覆盖未核实 | 400~920/s | 2,000~4,480 | 4,000~8,920 | appendfsync everysec 下平均等约 0.5 秒 | 开服 C_p 对此上限 1.1~12.5 倍；WAITAOF 阻塞的是同一个池，同实例的路由 MGET 会一起被饿住 |
 | 连接数 | C++ 每进程 1 条，加上 Go 各服务的连接池（仓库里没设 PoolSize） | 2.5k~6.2k | 1.2 万~3 万 | 2.5 万~6 万 | maxclients 没配，缺省 10000 | 0.25~0.6 / 1.2~3 / 2.5~6 倍 |
@@ -414,6 +416,7 @@
    - scene_manager fullSync 的 `SCAN scene_nodes:zone:*:load`（`load_reporter.go:750`）改成显式的 zone 注册集合。
    - friend 在线目录的 SCAN（`online_directory.go:23-26`）改走索引。
    - 显式设置 go-redis / go-zero 的 PoolSize 和 Redis 的 maxclients，按 Z 记总账。
+     - （2026-10-15 补，P0-E）maxclients 与总账已落码、未经 Codex 验证：`redis.yaml` 显式 `MAXCLIENTS=40000`，总账在 `tools/scripts/k8s_deploy.ps1`「Redis 连接总账」（C++ 每进程一条，G 按 2 记，待实测），§2.5「连接数」一行的现有上限以它为准；PoolSize 仍未做。按用途拆分后，每个拆出的实例都要显式 `--maxclients`，并按用途重算总账。
 5. **task:result 按 login 实例分频道**：直接用 SPUBLISH 形态，便于日后上集群。
 6. **新号**：NewPlayerSeed 默认打开，K8s ConfigMap 渲染这个键；同一批让新号首登不再发 LOGIN 快照（§4.4）。
 7. **gate 分配**：
@@ -625,6 +628,13 @@
 - `go/shared/placement/route.go`、`route_store*.go` 在工作区是未跟踪文件（本次 `git status` 抽查）。第 1a 批没提交、没编译（`PROGRESS.md` 2026-10-12「第 1a 批落码」条）。
 - 改之前必须确认：没有任何环境（包括 Codex 本机、kind、staging）用工作区代码跑过 data_service 的 `-migrate`。原因是 MigrateSchema 在 redis 模式下也会建表，一旦建出 player_route 就改不了了。
 
+> **状态注（2026-10-13）**：已按 64 落码，**未编译、未测试**（AGENTS.md §10.1，待 Codex 验证）。
+> - 上面「工作区未跟踪、没提交」的说法已过时：R=16 的版本已随提交 `d5cbb8a8e` 提交并推送。所以任何跑过那一版迁移、或用那一版启动过 data_service 的库，都可能已经按 `% 16` 建了 player_route。这种表迁移和建池探针都不会报错（形状守卫只查列名与主键；探针行对 `% 16` 与 `% 64` 同样违例），要人工 `SHOW CREATE TABLE player_route` 核对，是 `% 16` 就确认无数据后 DROP 全部五张路由表再迁移。
+> - 落码内容：`RouteRowShards` 与 `chk_route_shard` 改为 64；`route_tidb.go` 里 idx_route_home / idx_route_storage 每个 zone / 落点值切 8 个点（片 0、8、…、56），行数据与 idx_route_updated 仍是每片一段（各 63 个切点）；服务 yaml 的 `RouteStore.FenceShards` 改为 16（MySQL 档）。
+> - 下面「连带修正」里只做了 FenceShards 的 MySQL 档，以及把 `route_meta CACHE`、EVALSHA 两条写进提案；zone_merge_fence 细切、WAITAOF 两条没动。
+> - 细节、前置步骤与验证命令见 [player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §11.2「行片 16 → 64」。本节正文与 §1.1、§2.6、§2.9、附录里的 R=16 是当时的抽查结果，不回改。
+> - **2026-10-15 补**（上面第一条的「建池探针都不会报错」已过时，原句不回改）：2026-10-14 起建池探针第 5 步 P5 能认出按另一个行片模数建的表（`ErrRouteShardModulusMismatch`）。db_first 的 data_service 不装配 route store（`Store.Required=true` 时拒启），route_tool 退出码 2，debugutil 返回错误。迁移仍然不报错；redis 模式的 data_service 不建 route store，认不出旧模数，所以人工 `SHOW CREATE TABLE player_route` 核对保留。见提案 §11.2「正向探针 P5」。
+
 **要改的地方**：
 
 - `route.go:60`；
@@ -781,7 +791,7 @@ S2/S3 不做全量演练，按「单元容量 × 单元数」线性外推，前�
 - [C] `cpp/nodes/gate/handler/rpc/client_message_processor.cpp:542-545`
 - [D] `docs/design/gate-connection-admission-control.md:143`、`:207`（G4、G5、G11）
 - [C] `go/login/internal/svc/servicecontext.go:151-160`、`:292-297`、`:310-317`
-- [C] `go/login/internal/logic/pkg/loginqueue/gatetoken.go:84-101`；`gatedrain.go:67-90`；`queue.go:226-284`
+- [C] `go/login/internal/logic/pkg/loginqueue/gatetoken.go:84-101`；`gatedrain.go:67-90`；`queue.go` 的 `Lookup`
 - [C] `go/login/internal/logic/pkg/auth/password_provider.go:24-35`；`go/login/etc/login.yaml:89`、`:189-191`、`:356-373`、`:496`；`go/login/internal/config/config.go:276`
 - [C] `deploy/k8s/manifests/go-svc/gateway.yaml:24`、`:70`；[D] `docs/design/k8s-client-entry.md:174`、`:311`
 - [C] `tools/scripts/k8s_deploy.ps1:77`、`:140-144`、`:203-207`、`:211`
@@ -862,3 +872,72 @@ S2/S3 不做全量演练，按「单元容量 × 单元数」线性外推，前�
 > - 在 `docs/README.md` 对应分类登记一行。
 > - 在 `docs/PROGRESS.md` 追加一条，注明「只读推算，未编译、未测试、未压测；Java 版：容量模型不涉及实现，各改造项的状态见 §3」。
 > - 在 `tidb-phase1-and-launch-readiness.md` §7 的 L-07、L-14、L-15，`shared-redis-split-by-purpose.md` §6、§9、§13，以及 `new-player-first-enter-no-cold-read.md` §1，各加一行指向本文的注记。
+
+## 7. 2026-10-15：2000 万同时在线与两仓容量比较
+
+### 7.1 本次范围和证据边界
+
+负责人本次确认 DAU 1 亿、峰值同时在线 2000 万，并要求比较本仓与
+`D:/luyuan/xuanming-server`，在正确性、数据一致性与既有必需能力均满足的前提下，选择更可扩展的实现。
+不再以“全部照搬原文件”或“本仓已有实现就只取几个增量”作为选型规则。
+
+范围为 login、friend、chat、guild、mail、runtime/leaderboard、economy/auction、economy/trade。
+不迁移 dialogue、player、inventory、mission、scene_manager；玩家资产和任务继续由既有 C++ 系统持有权威。
+客户端同步已经授权。trade 是原仓双方确认的玩家交易，不能用本仓同名聚宝斋寄售服务代替。
+原仓审计基线为 `b1f6c1ebf4583b45a9370ad0522c64196dc792b2`（检查时工作区干净）；
+本仓以当时工作区源码为准，保留其他会话已有修改。
+
+本节是源码、配置和既有证据的对照，没有运行新的性能比较。**两套系统目前都没有本次目标的同口径达标证据。**
+多副本 API、TiDB DDL、Redis Cluster 配置和 cellroute 纯函数均不能单独证明承载人数。
+少做持久化、少发通知、漏发邮件、减少功能或放宽资产一致性，也不能算性能更好。
+
+### 7.2 新目标不能直接把旧 S3 所有数字乘二
+
+DAU 仍为 1 亿，PCU 从 1000 万增加到 2000 万；按在线人数增长的负载与按日活增长的负载要分开。
+沿用 §0.3 的会话次数、时长和换场景间隔作为假设时，有以下推导：
+
+| 量 | 新目标下的条件推导 | 性质 |
+|---|---|---|
+| 日均会话开始速率 | `1 亿 × 2 / 86400 ≈ 2315/s` | 假设每 DAU 每天 2 次会话，不是登录实测 |
+| 日均在线人数 | `2315 × 1800 ≈ 417 万` | 假设平均会话 1800 秒 |
+| 峰均在线比 | `2000 万 / 417 万 ≈ 4.8` | 因此旧表 2.4 峰均比不能同时沿用 |
+| 峰时进退场速率 | 稳态近似下 `2000 万 / 1800 ≈ 11111/s` | 依赖会话分布及稳态假设；不代表开服洪峰 |
+| 换场景速率 | `2000 万 / 300 ≈ 66667/s` | 场景管理不迁移，但登录与恢复接缝仍须考虑这项外部负载 |
+| 全服广播投递量 | 每秒 1 条全服消息即 `2000 万次投递/s` | 发送端限流和消费者扩容都不能消掉收件人数乘数 |
+
+好友读写、邮件收取、榜单更新、拍卖下单和交易确认的峰值，不能仅由 PCU 推出。
+每域必须写清活跃比例、每活跃玩家操作频率、热点集中度、消息大小、保留期和失败重试率，
+再计算 SQL / Redis / Kafka / 下行带宽预算；未知参数保持未知，不用来源不明的“单机可承载人数”补齐。
+
+### 7.3 已确认的比较方向
+
+| 域 | 本次源码证据与比较方向 | 尚不能宣称的结论 |
+|---|---|---|
+| friend | 本仓 `recommend_repo.go` 的候选窗口、`recommend_sql.go` 的按方言提示与服务器语句超时，以及 `friend_repo.go` 的升序主键点锁应保留；原仓补充申请代次、推送恢复与 TiDB 运行接线。原仓 `friend_sharding.go` 仅做落点观测，真正跨节点事务由 TiDB 提供 | 不能根据一段 `database/sql` 事务判定单机，也不能把原仓旧推荐 SQL 覆盖本仓已有的有界修复；无同口径新实测，不能报提升百分比 |
+| chat | 本仓有 Redis Cluster 安全的单键操作，但世界历史固定 `chat:{world}:log`；原仓有多频道、持久私聊与推送。原仓 `chat_routing.go` 明确区域桥仅观测、未改变单总线投递，`sendWorld` 仍全服广播 | 双方都不能仅靠增加 chat 副本解决世界频道热点与全服扇出；本仓只做部分频道、历史尽力保留，不能直接与原仓完整推送业务比 QPS |
+| guild | 必须比较本仓 `guild_player_state(0)` 全局插入守卫、`guild_rank:maintenance_lock` 与原仓按 guild 父行锁的冲突范围；优先消除不相关帮会之间的串行化，同时保留本仓已有经济和活动的一致性门禁 | 不能直接删守卫以换吞吐，也不能把原仓少做的业务当作更高容量的证明 |
+| mail | 原仓有完整业务，可作为移植起点；其递增 Snowflake 游标与提交乱序的多副本漏信风险、系统 / 帮会邮件无查询上限须先修复，再接现有 C++ 资产接口 | 本仓没有可直接比较的完整 mail 实现；原仓代码存在不等于可安全横向扩容，不能照搬后宣布可用 |
+| leaderboard | 以原仓现成服务为业务起点，另核单榜热 key、更新频率、排序口径、结算写放大及多副本结算幂等；本仓帮会内部榜不能代替通用榜 | Redis Cluster 可以分散不同榜，不会自动拆开同一个榜；无热点榜测试不能推断亿级玩家榜容量 |
+| login | 保留本仓已接 C++ 的 gate 会话栅栏、KDF 资源上限、开服队列；比较原仓账号 SQL 代际、失败配额和统一恢复行为。原仓 owner / allocator 不在本次迁移范围，恢复出口须适配现有场景管理 | 不得删掉 owner 依赖后直接启动原仓恢复链，造成全员 WAIT；不能把本仓当前保证冒充原仓 exact owner / lease 的完整证明 |
+| auction | 原仓有市场分片与撮合业务，但现有启动硬限两片，HRW 选主不是已接好的跨实例请求转发；需验证热点市场串行上限、改片数迁移与真实资产接线 | 原仓分片数量不能随意改 N，单个热门 market 也不会因多起实例自动变成并行撮合 |
+| trade | 原仓是双方确认的玩家交易，本仓是聚宝斋市场；按相同订单状态、托管资产与提交语义准备对比入口，复用现有资产通道，inventory 权威不迁移 | 两个不同业务不能直接拿吞吐排输赢；路由日志不等于已将订单或结算分片 |
+
+### 7.4 同口径验证与选择门禁
+
+1. 固定源版本、目标工作区快照、硬件、数据库版本 / 拓扑、Redis / Kafka 拓扑与配置。
+   每项先对齐可观察语义、数据规模、好友度数 / 帮会大小 / 热点榜和市场分布、消息保留期、缓存冷热和副作用。
+2. 先跑正确性与并发不变量，再比较吞吐和资源；记录完成的业务操作数，而非仅 API 接收数。
+   超时后后台仍在做、漏投递、重复发奖或订单未结算，都不能记成成功。
+3. 输出吞吐、p50 / p95 / p99、错误 / 超时、CPU / 内存 / 网络、SQL 扫描与锁等待、
+   Redis 热 key / 槽负载、Kafka lag / 最老积压时间、恢复时间及单位完成操作的资源成本。
+   延迟 SLO 和故障恢复期限须在测试前冻结，不能看完结果再改通过线。
+4. 覆盖单副本、多副本扩容、热点倾斜、冷缓存、消费者重启和依赖短暂不可用。
+   重点检验增加副本后完成吞吐是否增长，以及错误率 / 一致性 / 队列最老年龄是否恶化。
+5. 压测执行仍逐项遵守 AGENTS.md §6：保存上一轮 `prev-summary.txt`、使用隔离测试数据和规定清理、
+   三阶段 snapshot、只用 `stress_summarize.ps1` 汇总及前后对比。没有授权不得清理现有业务环境。
+   任何新域若尚无可用采集与汇总入口，先补齐口径，再运行比较，不绕过现有压测纪律。
+6. 首先完成单域可重复验证，再验证八域混合负载与共用基础设施的总预算。
+   单域通过、短时间爬坡或静态公式均不能替代 2000 万同时在线的完整验收。
+
+Java 版当前版本 `0.1.0-SNAPSHOT`，本节没有新增实现或测量；选择落地时逐域登记 PARITY，
+各域未完成对齐、未执行的验证继续如实保留。

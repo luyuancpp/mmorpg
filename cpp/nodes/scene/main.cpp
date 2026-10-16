@@ -1,10 +1,13 @@
 ﻿#include "muduo/net/EventLoop.h"
+#include "engine/core/type_define/player_guid_comp.h"
 #include "muduo/base/Logging.h"
 
 #include "node/system/node/node_entry.h"
+#include "node/system/etcd/etcd_transport.h"
 #include "infra/agones/agones_gameserver_lifecycle.h"
 #include "handler/rpc/scene_handler.h"
 #include "rpc_replies/scene_manager_response_handler.h"
+#include "rpc_replies/player_inbox_response_handler.h"
 #include "handler/grpc/scene_node_service.h"
 #include "core/config/config.h"
 #include "world/world.h"
@@ -12,9 +15,12 @@
 #include "frame/manager/frame_time.h"
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_equip.h"
+#include "player/system/player_inbox_system.h"
 #include "battle/system/player_battle.h"
 #include "services/battle/data/battle_table_fingerprint.h"
 #include "proto/contracts/kafka/scene_command.pb.h"
+#include "handler/event/scene_kafka_command_router.h"
+#include "handler/local_event/scene_local_events.h"
 #include "id_segment_bootstrap.h"
 #include "modules/id_segment/guid_segment_registry.h"
 
@@ -32,6 +38,9 @@ namespace
     struct SceneRuntimeContext
     {
         TimerTaskComp worldTimer;
+        // 玩家持久收件箱的 1 秒 tick(PlayerInboxSystem::Tick)。刻意不挂在 DependencyGate 之后:
+        // 收件箱不可用不得阻断进场(IB-7),它自己按退避处理"没有 READY 节点"。
+        TimerTaskComp playerInboxTimer;
         DependencyGate dependencyGate;
         SceneNodeGrpcImpl grpcService;
         std::unordered_set<Guid> shutdownPlayerIds;
@@ -66,12 +75,18 @@ namespace
             }
         };
         using KafkaCommandType = contracts::kafka::SceneCommand;
+        static void DispatchKafkaCommand(const std::string& topic, const KafkaCommandType& command)
+        {
+            DispatchSceneKafkaCommand(topic, command);
+        }
     };
 
 } // namespace
 
 int main(int argc, char *argv[])
 {
+    // 检查旧的 NODE_ETCD_TRANSPORT 环境变量(etcd 只剩 muduo_h2 传输;设成 grpc 会打 WARN),须在 Node 构造前调用。
+    etcd_transport::InstallFromEnv();
     return node::entry::RunNodeMain([](EventLoop &loop)
                                     {
         node::entry::detail::ApplyPreConstructionHooks<SceneNodeHooks>();
@@ -82,11 +97,15 @@ int main(int argc, char *argv[])
 		{
         // DataServiceNodeService:永久 guid 号段经它的 AllocateIdSegment 领取(全局池 gRPC 节点,
         // 在 DataServiceNodeService.rpc 前缀下发现)。不在白名单里发现了也不会建连。
+        // PlayerInboxNodeService:玩家持久收件箱的 FetchItems / AckItems(全局 gRPC 服务,
+        // 在 PlayerInboxNodeService.rpc 前缀下发现;docs/design/player-inbox-service.md §1.4)。
         Node node(&loop, SceneNodeService,
-                  Node::CanConnectNodeTypeList{ SceneManagerNodeService, DataServiceNodeService },
+                  Node::CanConnectNodeTypeList{ SceneManagerNodeService, DataServiceNodeService,
+                                                PlayerInboxNodeService },
                   &handler);
 
         node::entry::detail::ApplyPostConstructionHooks<SceneNodeHooks>(node);
+        scene_local_events::RegisterAll();
 
         // 断线释放标记(A1′)的"本节点身份当前有效"探针(cross-zone-scene-travel.md §12.6.4 M3):
         // EtcdService::IsIdentityConfirmedFresh —— lease 已授予、不在重注册中(分配键 CAS 尚未裁定)、
@@ -104,12 +123,13 @@ int main(int argc, char *argv[])
 
         // SceneManager 的 gRPC 应答处理器必须由这里装。
         //
-        // 别的应答处理器走 Node::RegisterHandlers() → InitReply(),但那个 InitReply 在
-        // rpc_replies/register_response_handler.cpp 里,是 proto 生成器的产物
-        // (WriteRepliedRegisterFile,筛选谓词 IsSceneNodeReceivedProtocolResponseHandler),
-        // 而该谓词只收 cc_generic_services(muduo TCP RPC)的服务;scene_manager 在
-        // tools/proto_generator/protogen/etc/proto_gen.yaml 里是 rpc.type: grpc,
-        // **生成器永远不会把 InitSceneManagerReply 写进去**。手写加进那个文件也没用:
+        // 节点间 muduo RPC0 的「按 message_id 的全局回包表」(InitReply / gRpcResponseDispatcher /
+        // 生成的 rpc_replies/register_response_handler.cpp)已整体退场:RPC0 的回包改在调用点按次的 lambda 里处理
+        // (docs/design/muduo-rpc-channel.md §9.2),Node::RegisterHandlers() 也不再调用 InitReply。
+        // gRPC 应答适配从来不在那条链上,本段照旧:那份生成文件的筛选谓词
+        // (IsSceneNodeReceivedProtocolResponseHandler)只收 cc_generic_services(muduo TCP RPC)的服务,
+        // scene_manager 在 tools/proto_generator/protogen/etc/proto_gen.yaml 里是 rpc.type: grpc,
+        // **生成器从来不会替它装 InitSceneManagerReply**。历史上手写加进那个生成文件,
         // 下一次 regen 必然抹掉(2026-04-16 的 f1b110bcc 就是这么把它弄丢的,
         // 自那以后 AsyncSceneManagerEnterScene/CreateSceneHandler 一直为空,
         // 生成客户端的 if(handler) 静默跳过每一条应答)。
@@ -117,6 +137,10 @@ int main(int argc, char *argv[])
         // 手写引导代码自己装自己的 gRPC 应答处理器。
         // 只是给两个全局 std::function 赋值,没有前置依赖,放在发出任何请求之前即可。
         InitSceneManagerReply();
+        // 玩家持久收件箱:同理手写装 FetchItems / AckItems 的应答与失败处理器(设计 §7.11),
+        // 再做一次注册表自检并打印生效配置(GameConfig 已在 Node 构造时加载)。
+        InitPlayerInboxReply();
+        PlayerInboxSystem::Initialize();
 
         tlsRedisSystem.Initialize(&loop);
         World::InitializeSystemBeforeConnect();
@@ -145,6 +169,9 @@ int main(int argc, char *argv[])
             agones::GameServerLifecycle::Instance().Stop();
 			context->dependencyGate.probeTimer.Cancel();
 			context->worldTimer.Cancel();
+			// 收件箱 tick 一并停:停机期间不再拉取 / 确认。已应用、未确认的结局随退出存盘落地,
+			// 下次落地时由账本补确认(设计 §7.7)。
+			context->playerInboxTimer.Cancel();
 			PlayerBattleSystem::StopReaper();
 			tlsRedisSystem.BeginShutdown();
 
@@ -154,9 +181,9 @@ int main(int argc, char *argv[])
             for (auto entity : view)
             {
 				players.push_back(entity);
-				if (const auto *playerId = tlsEcs.actorRegistry.try_get<Guid>(entity))
+				if (const auto *playerId = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(entity))
 				{
-					context->shutdownPlayerIds.insert(*playerId);
+					context->shutdownPlayerIds.insert(playerId->value);
 				}
             }
 
@@ -180,13 +207,13 @@ int main(int argc, char *argv[])
 			std::vector<entt::entity> playersNeedingExit;
 			for (auto entity : view)
 			{
-				const auto *playerId = tlsEcs.actorRegistry.try_get<Guid>(entity);
+				const auto *playerId = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(entity);
 				if (playerId == nullptr)
 				{
 					continue;
 				}
-				context->shutdownPlayerIds.insert(*playerId);
-				if (!PlayerLifecycleSystem::IsSaveInFlight(*playerId))
+				context->shutdownPlayerIds.insert(playerId->value);
+				if (!PlayerLifecycleSystem::IsSaveInFlight(playerId->value))
 				{
 					playersNeedingExit.push_back(entity);
 				}
@@ -333,6 +360,10 @@ int main(int argc, char *argv[])
             // turn-based-battle-server.md §3.2)。不进 20FPS World::Update。
             PlayerBattleSystem::StartReaper(n.GetLoop());
 
+            // 玩家持久收件箱的 tick(docs/design/player-inbox-service.md §7.4):每秒处理到期的检查、在线兜底、
+            // 等落盘与补确认。不进 DependencyGate(IB-7):收件箱没连上时 tick 只会按退避记一次延后。
+            context->playerInboxTimer.RunEvery(PlayerInboxSystem::kTickIntervalSec, PlayerInboxSystem::Tick);
+
             // 号段首段是启动硬依赖:每个启用的种类领到第一段 [lo, hi) 之前不放玩家进来 ——
             // 拾取 / 交易流水 / 快照都要铸永久 guid,没段时一律 fail-closed(kInvalidGuid),
             // 那不是"号段模式在跑"。运行期靠双 buffer 弱依赖,启动期必须硬等,这是设计取舍(§6.5)。
@@ -357,6 +388,7 @@ int main(int argc, char *argv[])
 
         loop.loop();
 		} // 异常 quit 时先让 Node 析构兜底完成业务 drain,Redis 此时仍保持可用。
+		scene_local_events::UnregisterAll();
 
 		// Node 已析构:身份探针捕获的引用从此悬空,立即清掉(之后不再跑 loop,A1′ 也不会再被调用)。
 		PlayerLifecycleSystem::SetNodeIdentityProbe({});

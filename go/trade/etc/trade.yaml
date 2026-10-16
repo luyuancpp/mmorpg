@@ -1,6 +1,8 @@
 # 聚宝斋 trade 服务配置(docs/design/jubaozhai-market.md;契约 microservice-zone-contract-20260914 §2/§3/§4/§7;D-14)
 # 全局服务:全服一份、多副本;客户端只经 gate → 路由服到达(路由模式)。
-# 本文件的键名与 internal/config/config.go、k8s_deploy.ps1 的 trade ConfigMap 三处必须逐字一致。
+# 本文件的键名与 internal/config/config.go 的 json tag 逐字一致;k8s_deploy.ps1 的 trade ConfigMap 里写出来的键也逐字一致,
+# 但 ConfigMap 刻意不镜像 AssetOp 段的落地恢复与终态行清理键(只写 Enabled 与 SecretEnv),理由与打开通道时要补的内容
+# 见 internal/config/config.go 的包头注释。
 Name: trade.rpc
 ListenOn: 127.0.0.1:50800
 
@@ -99,10 +101,11 @@ Market:
   MaxPage: 100
   MaxFavoritesPerPlayer: 100
 
-# 共享单库 Redis(与 C++ scene / scene_manager 同一实例),只读一类跨运行时契约键:
-#   player:{id}:location —— scene_manager 写,值是 PlayerLocation protobuf。
-# 通用资产通道(guild-phase2/04-asset-channel.md §S4)用它定位玩家所在 scene 节点,
-# 再直连该节点的 SceneNodeGrpc 调 AssetDebit / AssetCredit / AssetAbortDebit。
+# 共享单库 Redis(与 C++ scene / scene_manager 同一实例)。通用资产通道(guild-phase2/04-asset-channel.md §S4)在这里:
+#   读位置键 player:{id}:location —— scene_manager 写,值是 PlayerLocation protobuf;据此定位玩家所在 scene 节点,
+#     再直连该节点的 SceneNodeGrpc 调 AssetDebit / AssetCredit / AssetAbortDebit;
+#   订阅落地唤醒频道 assetop:wake(scene 发布),另写唤醒去重键 assetop:wake:trade:{id}
+#     与维护选主锁 trade:assetop:maintenance:leader。
 #
 # 段名不能改成 Redis:go-zero 的 zrpc.RpcServerConf 已经有同名字段,加载期会报 conflict key Redis。
 # DB 必须是 **0**(位置键所在库);指到别的实例或别的库 = 永远找不到人 = 托管 / 交付永远悬挂,
@@ -130,13 +133,47 @@ SharedRedis:
 # `Secret` 是保留键:写了任何值都会被 config.Validate 当场拒启,免得密钥被静默忽略后
 # 留在仓库和 ConfigMap 里。
 #
-# **本批只有开关与密钥来源两个键。** 规格 90-consistency.md 的 Y-06 还要求 8 个重投循环字段
-# (ReconcileIntervalMs / ReconcileBatch / Workers / LeaseMs / OpBudgetMs / MaxBackoffMs /
-# PoisonDelayMs / LedgerReadMinAttempts),它们的消费者是 internal/reconcile 建 assetop.LoopConfig
-# 的那处,本批没有改那个文件,所以也不在这里写 —— 写了也不会生效,而"改了没反应的配置"
-# 比没有配置更难查。接线时一并补齐这三处。当前值由 internal/reconcile 的常量固定(§4.37)。
+# 规格 90-consistency.md 的 Y-06 还要求 8 个重投循环字段(ReconcileIntervalMs / ReconcileBatch / Workers /
+# LeaseMs / OpBudgetMs / MaxBackoffMs / PoisonDelayMs / LedgerReadMinAttempts),**仍未接线**,所以不在这里写 ——
+# 写了也不会生效,而"改了没反应的配置"比没有配置更难查。当前值由 internal/reconcile 的常量固定(§4.37)。
 #
-# 键名与 internal/config/config.go 的 json tag、k8s_deploy.ps1 的 trade ConfigMap 三处逐字一致。
+# 落地恢复(docs/design/landing-recovery-sync-digest.md §6.4)的键**已接线**,与 guild 的 AssetOp 段同名同默认
+# (默认值的事实源是 shared/assetop.DefaultLoopConfig 与 shared/assetopwake 的 Default*):
+#   停放档 / 自动放弃 / 日对账 / 落地唤醒只在 Enabled=true 时生效与校验;
+#   终态行清理(Cleanup*)与 Enabled 独立(同 guild):通道关着时历史终态行照样要清。
+# 日对账与自动放弃由多副本里经 Redis 选主(SharedRedis 上的 trade:assetop:maintenance:leader)选出的一个副本执行;
+# 落地唤醒订阅 SharedRedis 上的 assetop:wake 频道(scene 在玩家进场完成时发布)。
+#
+# 键名与 internal/config/config.go 的 json tag 逐字一致。k8s_deploy.ps1 的 trade ConfigMap 只镜像 Enabled(所有档位固定 false)
+# 与 SecretEnv,下面的落地恢复与 Cleanup* 键刻意不镜像:Enabled 固定 false 时落地恢复参数没有消费者;CleanupEnabled 在 K8s 上
+# 缺省 false(通道从未开过,没有行可清)。打开 K8s 通道时要把这些键连同 Enabled=true 一起补进 ConfigMap。
 AssetOp:
   Enabled: false
   SecretEnv: MMORPG_ASSET_OP_SECRET_TRADE
+  # 离线停放档(§6.1):连续投递 5 次仍"玩家没有位置"的行改为约 30 分钟一次(±20%),玩家上线由落地唤醒立刻处理。
+  # OfflineAfterAttempts=0 关闭停放档;OfflineBackoffMs 必须在 [60000(重投退避封顶), 86400000] 内。
+  OfflineAfterAttempts: 5
+  OfflineBackoffMs: 1800000
+  # 自动放弃(§6.3):PENDING 超过 180 天、玩家无位置、距最后一次可能的发送超过 1 小时、已落盘账本确认 scene 从未见过,
+  # 才终结为 ABANDONED。0 = 关闭;非 0 时 ≥ 30。trade 的对侧账尚未实现(P3),放弃只终结并留痕,
+  # 且只处理 TRADE_DEBIT(上架托管)行;TRADE_CREDIT(交付 / 回退)在对侧账落地之前一律不放弃(data.AssetOpRepo 存储层拦)。
+  # **滚动升级**:新二进制全量上线之前必须写 0(旧实例的发送不推进 last_send_ms),全量之后再改回 180。
+  AbandonAfterDays: 180
+  AbandonSafetyGapMs: 3600000
+  AbandonBatch: 200
+  AbandonIntervalMs: 3600000
+  # 日对账(§6.2,只读):每 24 小时把 PENDING 行按 online_retry / offline / alert / abandon_candidate 计数,
+  # 刷 assetop_pending_rows{class} 与 assetop_pending_class_oldest_age_seconds{class}。0 = 不跑。
+  AuditIntervalMs: 86400000
+  # 落地唤醒订阅(§5.3),键与默认值同 guild 的 AssetOp.Wake:订阅 SharedRedis 上的 assetop:wake,玩家进场完成后
+  # 立即重投他的 PENDING 行,不再等退避 / 停放档。唤醒只是提示,丢了退回原退避,只慢不错。
+  # Enabled 不写 = 开;Concurrency 不写 = 4([1, 64],满了直接丢);TimeoutMs 不写 = 10000
+  # (必须大于单行预算 2500ms:写 0 或 [5000, 60000])。跨副本去重窗口固定 5 秒(对齐 scene 的合并窗口),不开放配置。
+  Wake:
+    Enabled: true
+    Concurrency: 4
+    TimeoutMs: 10000
+  # 终态行清理(每个副本都跑,删除幂等,PENDING 与 APPLIED_PARTIAL 永不删;ABANDONED 与其它终态一样 30 天后删)。
+  CleanupEnabled: true
+  CleanupIntervalMinutes: 10
+  TerminalRetentionDays: 30

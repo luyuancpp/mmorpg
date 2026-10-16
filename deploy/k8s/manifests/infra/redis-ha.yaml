@@ -2,6 +2,10 @@
 # (docs/design/no-single-node-horizontal-scaling-20261001.md §5)。
 # k8s_deploy.ps1 在 -RedisReplicas 3(staging / prod 档默认)时 apply 本文件,**代替** redis.yaml;
 # 本机 kind / dev 档默认仍用 redis.yaml 的单实例。两份清单里的对象同名,所以可以原地从单实例切过来。
+# **接入前置(P0-E,2026-10-15;本文件行为未改)**:接入前必须像 redis.yaml 那样给每个 redis-server 显式 --maxclients,并重算
+# k8s_deploy.ps1「Redis 连接总账」(haproxy 的 maxconn 也要算进去:节点上限 ≥(代理副本数 + maxSurge)× maxconn + 余量,
+# 现在是 (2 + 1) × 20000 = 60000,超过 Redis 缺省 10000,也超过 redis.yaml 的 40000;到线时代理健康检查失败会
+# 踢掉全部会话,推断、未实测)。现状与取值见 deploy/k8s/README.md「Redis 连接上限与总账」。
 #
 # 一句话说清结构:
 #   客户端 ──▶ Service redis(名字与 ClusterIP 都不变)──▶ redis-proxy(haproxy ×2)──▶ 当前的主

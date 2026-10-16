@@ -1,6 +1,6 @@
 # 新号首次进场免冷读:建角时写入 PlayerAllData 种子
 
-> **状态**:提案(开服准备 L-05 / G3),2026-10-12 起草,等负责人按 §10 拍板。2026-10-13 已按 §10 的默认值落码(开关默认关,见 §13);没有编译、测试或压测,按 AGENTS.md §10.1 交 Codex 验证。
+> **状态**:提案(开服准备 L-05 / G3),2026-10-12 起草,等负责人按 §10 拍板。2026-10-13 已按 §10 的默认值落码(开关默认关,见 §13);同日三视角评审的修复见 §13.1。没有编译、测试或压测,按 AGENTS.md §10.1 交 Codex 验证。
 > **依据**:只读核对代码、配置与文档,HEAD `73b852f32`。`go/db/internal/kafka/key_ordered_consumer.go`、`tools/scripts/k8s_deploy.ps1`、`docs/design/player-storage-placement.md`、`docs/design/zone_data_rollback.md` 有他人未提交的改动,按工作区行号引用;其余文件工作区与 HEAD 相同。
 > **起因**:[tidb-phase1-and-launch-readiness.md](./tidb-phase1-and-launch-readiness.md) §7 的 L-05(:816)。新号第一次 EnterGame 一定冷读数据库,玩家在加载屏上同步等待,每个读任务的等待上限是 8s。首日这是 Phase 2 全局玩家库唯一的同步路径,也是单 zone 预加载链的第一个瓶颈。
 > **关联**:[player-storage-placement.md](./player-storage-placement.md) §13、[player-route-mapping-durability-proposal.md](./player-route-mapping-durability-proposal.md) §12、[cross-zone-scene-travel.md](./cross-zone-scene-travel.md) CZ-2 / CZ-4、[scene-owner-reentry-barrier.md](./scene-owner-reentry-barrier.md)、[no-single-node-horizontal-scaling-20261001.md](./no-single-node-horizontal-scaling-20261001.md) §5。
@@ -40,6 +40,8 @@
 | 6d | 登记 `player:zone`,fail-closed;`PinOnCreate` 时同一次 RPC 原子钉落点 | :257-274、:707-717 |
 | 7 | 以建角锁为围栏写账号 blob;结果不确定时回读 | :287-301、:54-73、:621-656 |
 | 7b | 写反查索引 `player_id → account` | :303-308 |
+
+> **2026-10-15 更正注**(负责人按「最标准」定 §10 P2 / P7 之后):上表是 G3 落码前的现状。现行链路在 6b 与 6c 之间多一步 **6b'**:对新铸 id 只读探测 `PlayerAllData:{id}` 父键与 `player:{id}:owner_epoch`(两条 `EXISTS` 走一个 pipeline,一次往返),命中或探测出错都拒绝建角(`kLoginDataSerializeFailed`,与 6c / 6d 故障同码),此时名字、`player:zone` 都还没登记,只烧掉这一个 id;不看种子开关,每次建角都探。开着种子时,6d' 种子脚本报 `parent_exists` / `owner_epoch_exists`(探测与种子之间的窗口)也改为拒绝:先释放 6c 的名字,6d 已登记的 `player:zone` 撤不掉、留下一条,与第 7 步失败同类。详见 §10 P2 / P7 的结论注与 §13.2。
 
 - 没有任何一步写 `PlayerAllData:{id}`。
 - `player_class_backfill.go:18-20` 的注释原话就是:「PlayerAllData 在建角时还不存在,首次 EnterGame 才由预加载建出」。
@@ -167,7 +169,11 @@
 
 1. owner_epoch 键已存在:返回 -1,不写。
 2. 父键不存在:`SET … PX`,返回 1。
-3. 父键的值正好就是本次种子:返回 2,算成功。这是 go-redis 读超时后,把已经执行过的 EVAL 又重发了一次。
+3. 父键的值正好就是本次种子:返回 2,算成功(计 `idempotent`)。成因有两种:
+   - go-redis 把已经在服务端执行过的 EVAL 又重发了一次。建角调用点套了 1s 的 ctx 预算,读超时(3s)之后的重发到不了,只剩连接层快速失败(EOF、连接被重置)后的重发。
+   - 这个 id 以前铸出过,当时写的种子还没过期。这是 id 复用。
+
+   所以 `idempotent` 在稳态应接近 0。每次出现都打一条带 `player_id` 的 INFO 日志;持续出现要按 id 复用排查。
 4. 其余情况:返回 0,不写。
 
 **为什么要看 owner_epoch**:
@@ -186,6 +192,8 @@
 - 存盘;
 - go/db。
 
+唯一的例外是 2026-10-13 评审并入的一个计数:EnterGame 在 PreloadPool 满的分支里多记一次 `entergame_total{result="pool_saturated"}`。它不改任何行为(§13.1)。
+
 ### 4.5 开关、指标、日志
 
 | 项 | 内容 |
@@ -193,6 +201,8 @@
 | 开关 | `login.yaml` 的 `NewPlayerSeed.Enabled`,bool,缺省 false;整块不写也是关 |
 | 指标 | `login_create_player_seed_total{result}`,result ∈ written / idempotent / parent_exists / owner_epoch_exists / error |
 | 指标 | `login_create_player_stage_seconds{stage="seed"}` |
+| 指标 | `login_create_player_id_probe_total{result}`,result ∈ clear / parent_exists / owner_epoch_exists / error;`login_create_player_stage_seconds{stage="id_probe"}`。2026-10-15 并入(§10 P7、§13.2),不看种子开关,每次建角都有 |
+| 指标 | `entergame_total{result="pool_saturated"}`:PreloadPool 满、入场链没启动的次数。只计数,不进 `entergame_total_seconds` 直方图;起服时预置为 0。2026-10-13 评审并入(§6 第 21 行、R8) |
 | 启动日志 | `[new-player-seed] enabled=… (pin_on_create=…)` |
 | 看效果 | `dataloader_preload_cache_check_seconds_count{hit="miss"}` 下降;go/db `db_task_result_total{op="read"}` 下降 |
 
@@ -212,7 +222,7 @@
 
 | # | 场景 | 会发生什么 | 结论 |
 |---|---|---|---|
-| 1 | 号段 id 不复用(万一复用了) | 父键或 owner_epoch 已存在:不写,计 `parent_exists` / `owner_epoch_exists`,打 ERROR;首次进场读到的是已有缓存,和今天一样。都不存在、但库里有旧行(要求旧玩家的父键和 owner_epoch 在 Redis 里也都没了):种子让新角色从空档起步,首存**覆盖**旧行;今天则是冷读把旧行读给新角色,两个账号共用一份档。两者都是 ID 安全事故,但形态不同:今天是旧角色的资产串给新账号,旧行还在;开种子后资产不外泄,但旧玩家在库里的进度被覆盖,只能靠快照或备份找回 | 两种都不可接受,只能靠 I1 兜底。种子在 Redis 侧多给一个检测信号。是否升级为拒绝建角见 §10 P2 |
+| 1 | 号段 id 不复用(万一复用了) | 父键或 owner_epoch 已存在:不写,计 `parent_exists` / `owner_epoch_exists`,打 ERROR;首次进场读到的是已有缓存,和今天一样。都不存在、但库里有旧行(要求旧玩家的父键和 owner_epoch 在 Redis 里也都没了):种子让新角色从空档起步,首存**覆盖**旧行;今天则是冷读把旧行读给新角色,两个账号共用一份档。两者都是 ID 安全事故,但形态不同:今天是旧角色的资产串给新账号,旧行还在;开种子后资产不外泄,但旧玩家在库里的进度被覆盖,只能靠快照或备份找回 | 两种都不可接受,只能靠 I1 兜底。种子在 Redis 侧多给一个检测信号。是否升级为拒绝建角见 §10 P2。**2026-10-15 更正注**(§10 P2 / P7 已定):「会发生什么」一栏的前半句不再成立。父键或 owner_epoch 在建角之前就已存在时,建角在 6b' 只读探测处拒绝(计 `login_create_player_id_probe_total` 的 `parent_exists` / `owner_epoch_exists`,打 ERROR),名字、`player:zone` 不登记,种子不写,新账号拿不到这个 id,也就不会读到那份已有缓存;关着种子同样拒。探测与种子之间的窗口里才出现的,由种子脚本报出后同样拒绝(名字释放,`player:zone` 留下一条)。后半句「都不存在、但库里有旧行」那一形态 Redis 侧没有任何信号,探测拦不住,结论不变,仍只能靠 I1 兜底 |
 | 2 | 建角在种子之前失败(发号 / 名字 / 归属) | 种子没写 | 无残留 |
 | 3 | 建角在种子之后失败:账号 blob 围栏写回 -1 或报错,回读确认不含新角色(`createplayerlogic.go:621-656`) | 留下一个只带 player_id、24h 后过期的孤儿种子。这个 id 已经烧掉,没人能用它进场。约百字节 | 无害 |
 | 3' | 回读本身失败(`accountBlobUnknown`) | 角色可能已经落盘,而种子恰好就是它正确的初始值 | 无害 |
@@ -233,7 +243,7 @@
 | 18 | 滚动升级 / 新旧混跑 | 新旧 login 的读路径相同,旧 login 只是不写种子。开关随时可关;已写的种子 ≡ 冷读结果,24h 自然过期 | 无需清理 |
 | 19 | 展示类读者 | 种子不含身份,首次进场照旧由身份补齐写入。好友资料、外观回填读到种子时,按「缺字段」处理(`go/friend/internal/data/friend_profiles.go:44-62`;`role_appearance_backfill.go:50-52`),展示结果和读不到 blob 时一样 | 不变 |
 | 20 | 资产账本 | 对未进场的新号,data_service `GetPlayerAssetOpLedger` 的结果从 absent 变成 found + 空账本(`asset_op_ledger_logic.go:36-44`、:117-123)。guild / trade 两种情况都判 UNKNOWN,继续等(`go/shared/assetop/classify.go:144-162`) | 语义不变,只是计数 label 变了 |
-| 21 | 入场链占用哪个池(§2.2) | 开种子后,新号也走快路径:`applyLoadedPlayerSession` 整段在 PreloadPool 的 worker 里同步跑完,不再在 dispatcher worker 上跑。每个新号占用池 worker 的时间,从「发完 Kafka」变成「整段 apply」,其中含 player_locator、scene_manager 两次 gRPC 和一次 Kafka 同步发送。池是非阻塞提交,Size 256(`login.yaml:332-334`),池满回 `kLoginInProgress`,客户端重试。另一面,dispatcher 不再替新号跑 apply,`cb_wait` 的排队压力变小。老玩家命中缓存今天就是这条路 | 背压形态变了,不是正确性问题。L-14 开、关两轮都要看 `[preload-pool] dropped_delta` 日志和 `entergame_apply_*` 各阶段;出现掉单就调大 `PreloadPool.Size`(只改配置) |
+| 21 | 入场链占用哪个池(§2.2) | 开种子后,新号也走快路径:`applyLoadedPlayerSession` 整段在 PreloadPool 的 worker 里同步跑完,不再在 dispatcher worker 上跑。每个新号占用池 worker 的时间,从「发完 Kafka」变成「整段 apply」,其中含 player_locator、scene_manager 两次 gRPC 和一次 Kafka 同步发送。池是非阻塞提交,Size 256(`login.yaml:332-334`),池满回 `kLoginInProgress`,客户端重试。另一面,dispatcher 不再替新号跑 apply,`cb_wait` 的排队压力变小。老玩家命中缓存今天就是这条路 | 背压形态变了,不是正确性问题。L-14 开、关两轮都要看池掉单指标 `entergame_total{result="pool_saturated"}`(`stress_summarize.ps1` 的 pool_saturated 列;`[preload-pool] dropped_delta` 日志作辅证)和 `entergame_apply_*` 各阶段;出现掉单就调大 `PreloadPool.Size`(只改配置) |
 
 ## 7. 上线与回退
 
@@ -245,8 +255,15 @@
    - go/db `db_placement_guard_total{op="write",outcome="missing_required"}`(违规配置一:Required 开着而新号没落点);
    - go/db `db_placement_store_open_total{result=~"error|rejected"}`,以及 go/db 的 ERROR 日志 `retry task rescheduled`,其 cause 含 `placement store is unavailable`(违规配置二:`NewPlayerStorageId` 指向打不开的库。写任务按 `errPlacementStoreUnavailable` 延后、不耗重试预算,会一直在重试队列里转,`placement_route.go:36-37`、`key_ordered_consumer.go:2072-2107`);
    - `login_create_player_seed_total{result=~"parent_exists|owner_epoch_exists"}`。
-4. 开服尖峰压测(L-14)里开、关各跑一轮,按 AGENTS §6 出对比表:首次进场 p99、db_task 读量、Redis ops,以及 PreloadPool 掉单(login 日志 `[preload-pool] dropped_delta`)、`kLoginInProgress` 次数、`entergame_apply_*` 各阶段(§6 第 21 行)。
-5. K8s 打开:login ConfigMap 生成器加上这一键。单独一批做,契约测试同步改。
+4. 开服尖峰压测(L-14)里开、关各跑一轮,按 AGENTS §6 出对比表:首次进场 p99、db_task 读量、Redis ops,以及 PreloadPool 掉单、`kLoginInProgress` 次数、`entergame_apply_*` 各阶段(§6 第 21 行)。
+   - PreloadPool 掉单看指标 `entergame_total{result="pool_saturated"}`,即 `stress_summarize.ps1` EnterGame 表的 pool_saturated 列。AGENTS §6.1 规定复盘只读这个脚本的输出,日志进不了对比表。
+   - login 日志 `[preload-pool] dropped_delta` 只作辅证。
+   - 建角锁内新增的那一步看同一脚本 CreatePlayer stages 表的 seed 列;开关关着时这一列是 n/a,可以用来核对本轮的开关状态。
+5. K8s 打开:单独一批做,契约测试同步改。除 `NewPlayerSeed.Enabled` 外,同批必须补齐 login 在 K8s 上的观测面(同一缺口见 `docs/handoff/launch-readiness-20261013/spec_G4b.md` 的 R6):
+   - login ConfigMap 加 `Prometheus`(Host / Port / Path),`deploy/k8s/manifests/go-svc/login.yaml` 加抓取端口与 prometheus.io 注解;
+   - login ConfigMap 加 `PreloadPool`(Size、StatsInterval)。整块缺失时 go-zero 不填内层默认值,`StatsInterval` 为 0,`[preload-pool]` 日志不打。
+   - 缺这两项时,第 3 步的 login 告警和第 4 步的池掉单指标、日志在集群里都没有数据源,只剩 ERROR 日志。
+   - L-14 若在 K8s 上跑,这两项要排在压测之前。
 
 **回退**
 
@@ -259,8 +276,8 @@
 | 层 | 用例(文件见 §13) | 外部依赖 |
 |---|---|---|
 | dataloader | 种子内容与 TTL;重发幂等;不覆盖已有父键;owner_epoch 存在就拒写;零 id / nil 客户端;Redis 不可用;**种子 ≡ 冷读骨架**(子表缓存给出「无行」时,`EnsurePlayerAllDataInRedisAsync` 写出的父键和种子 `proto.Equal`);种子命中后快路径不碰 Kafka 和 dispatcher | 无(miniredis) |
-| CreatePlayer | 开关关 → 不写;开关开 → 写骨架并带 TTL;归属登记失败 → 不写;账号 blob 围栏失败 → 只留会过期的种子;已有父键 → 不覆盖并计数;owner_epoch 已存在 → 不写并计数;种子脚本报错 → 建角照常成功并计 `error` | 无(miniredis + 假 data_service) |
-| EnterGame | 种子 → EnterGame:走快路径,身份补齐写进种子,TTL 保留,没有子表缓存键 | 无(miniredis + ants 池 + 假 player_locator) |
+| CreatePlayer | 开关关 → 不写;开关开 → 写骨架并带 TTL;归属登记失败 → 不写;账号 blob 围栏失败 → 只留会过期的种子;已有父键 → 不覆盖并计数;owner_epoch 已存在 → 不写并计数;种子脚本报错 → 建角照常成功并计 `error`;请求 ctx 在持锁之后被取消 → 建角失败,但建角锁已释放(§13.1) | 无(miniredis + 假 data_service) |
+| EnterGame | 种子 → EnterGame:走快路径,身份补齐写进种子,TTL 保留,没有子表缓存键;PreloadPool 满 → 回 `kLoginInProgress`、释放玩家锁、计 `pool_saturated` 且不进耗时直方图;起服预置后 `pool_saturated` 序列存在(§13.1) | 无(miniredis + ants 池 + 假 player_locator) |
 | 配置 | 整块缺失 = 关;两份样例 yaml 显式写出且为关;探针拒绝拼写错误 | 无 |
 | C++ | 不改代码,不新增用例。scene 的新号初始化分支今天也被冷读路径走着,没有单测是既有缺口(§10 R7) | — |
 | 端到端 | 本地全栈冒烟(可选),开服尖峰压测(L-14) | 本地 MySQL / Redis / Kafka / etcd / C++ 节点 |
@@ -269,11 +286,19 @@
 
 1. **建角持锁时间多一次 Redis 往返**。
    - ctx 预算 1s,只能掐掉 go-redis 的重发;单次最坏仍是 3s 读超时。
-   - `login.yaml:65-82` 的锁 TTL 预算注释要同步更新,而且要写出真实的数:
+   - `login.yaml` `Locker` 段的锁 TTL 预算注释要同步更新,而且要写出真实的数:
      - 原注释的最坏和是 gRPC 3×3s + Redis 3×3s(读 blob、围栏写、回读)= 18s,「20 盖住」成立;
-     - 开种子后 Redis 变成 4 次,最坏和是 21s,**超过** `AccountLockTTL: 20`。
-   - 原注释的口径本来就是「20 不是硬上界」,正确性靠围栏 + 回读(:78-81)。本批不改 TTL,只把注释改成如实的数;是否上调见 §10 P6。
-   - zrpc 服务端 `Timeout: 10000`(`login.yaml:7-13`)的注释按「常态 Redis 毫秒级」估算。种子在常态下也是毫秒级,所以不用改。Redis 变慢时今天的路径本来就可能超 10s,种子会再多占最多 3s。
+     - 开种子后 Redis 变成 4 次,各步预算直接相加是 21s,数值上超过 `AccountLockTTL: 20`。
+   - **但 21s 在现行配置下到不了**(2026-10-13 评审更正;初稿写的是「开着种子时 20 不再盖得住」):
+     - zrpc 服务端 `Timeout: 10000`(`login.yaml:7-13`)给 handler 的 ctx 套了 10s 截止时间。除回读、名字补偿释放和建角锁释放外,建角每一步的 ctx 都派生自它。
+     - 10s 一到,gRPC 立即失败;go-redis 在取连接之前先看 ctx,不再发新命令。
+     - 所以围栏写最晚在 handler 起算 10s 内发出。Redis 还在 3s 内回包时,它约在 13s 前执行,20 仍盖得住。有没有种子都一样。
+     - 把 zrpc `Timeout` 调到约 17s 以上时,21s 才可达,届时要重算(§10 P6)。
+   - 种子在慢 Redis 下的真实代价是另一件事:它多吃最多 3s 的 handler 预算,围栏写可能来不及发出,本次建角失败。失败时名字会释放,`player:zone` 映射和孤儿种子留下。
+   - 原注释的口径本来就是「20 不是硬上界」,正确性靠围栏 + 回读。本批不改 TTL,只把注释改成如实的数。
+   - zrpc `Timeout` 的注释按「常态 Redis 毫秒级」估算。种子在常态下也是毫秒级,所以不用改。
+   - **建角锁的释放**(2026-10-13 评审并入,既有缺陷):原先用请求 ctx 释放。handler ctx 一过期,释放命令发不出去,锁要等 `AccountLockTTL` 自然过期,期间同账号重试建角一律 `kLoginInProgress`。开种子后建角越过 10s 的机会略增,所以一并修:改用脱离请求 ctx 的 1s 预算释放(`createLockReleaseTimeout`)。释放按锁令牌比对,删不到别人的锁。`loginlogic.go` 里同类的 `accountLock.Release(l.ctx)` 不在本项范围,没有改。
+   - **2026-10-15 补(§10 P7 已定)**:6b' 只读探测让持锁期间的 Redis 再多一次往返(两条 `EXISTS` 走一个 pipeline;1s ctx 预算同样只掐重发,单次最坏仍是 3s),而且不看种子开关:Redis 变成 4 次(关种子)/ 5 次(开种子),各步预算直接相加是 21s / 24s。探测的 ctx 派生自 handler ctx、排在围栏写之前,上面「围栏写最晚在 handler 截止时发出」的推导不变。现行 zrpc `Timeout` 已是 4000(`login.yaml` 顶部,2026-10-14 起,不归本项),`login.yaml` `Locker` 注释按 4s 算出的「合计约 10s、20 仍盖得住」同样不受影响,已在那里追加一句。上调 `Timeout` 按 P6 重算时把这一次算进去。
 2. **失去一个早期信号:`player-storage-placement.md` §13 第 3 条的两种违规配置**。
    - `login.yaml:229-231`、`deploy/login-stack.linux/login.yaml:150`、`config.go:163-166` 和 `player-storage-placement.md:448` 写的症状都是「新号进游戏预加载秒级失败、存盘全进死信」。
    - 开种子后,新号不再走预加载读,症状只剩存盘这一半:
@@ -291,7 +316,7 @@
    - 今天新号的 apply 跑在 dispatcher worker 上,开种子后跑在 PreloadPool worker 上。
    - 后者容量有上限,而且是非阻塞提交,池满回 `kLoginInProgress`。
    - 这条路老玩家命中缓存时今天就在走,不是新机制;但开服首日新号占大头,池的占用时长会明显变长。
-   - L-14 压测必须观察池掉单;出现掉单就调大 `PreloadPool.Size`。
+   - L-14 压测必须观察池掉单(指标 `entergame_total{result="pool_saturated"}`,§7 第 4 步);出现掉单就调大 `PreloadPool.Size`。
 
 ## 10. 风险与待负责人拍板
 
@@ -299,25 +324,26 @@
 
 | # | 风险 | 处置 |
 |---|---|---|
-| R1 | 整个方案建立在「号段 id 不复用」上,这也是全系统的前提。万一复用、而 Redis 侧旧状态也没了,串档形态会从「旧行被新账号继承」变成「旧行被新角色首存覆盖」(§6 第 1 行) | 种子顺带提供了检测信号:`parent_exists` / `owner_epoch_exists` 计数 + ERROR 日志 |
+| R1 | 整个方案建立在「号段 id 不复用」上,这也是全系统的前提。万一复用、而 Redis 侧旧状态也没了,串档形态会从「旧行被新账号继承」变成「旧行被新角色首存覆盖」(§6 第 1 行) | 种子顺带提供了检测信号:`parent_exists` / `owner_epoch_exists` 计数 + ERROR 日志。**2026-10-15 补**:信号命中即拒绝建角(P2 / P7 结论注);建角前就在的状态由 6b' 探测拦下,另计 `login_create_player_id_probe_total`,不看种子开关 |
 | R2 | TTL 边界(§6 第 15 行) | 默认接受;可选加固见 P4 |
 | R3 | §13 第 3 条的两种违规配置变隐蔽(§9 第 2 条) | 两类告警作为打开前置 |
 | R4 | L-06 拆 Redis 时,父键、owner_epoch、身份补齐 Lua 里的会话 / 位置 / 玩家锁键必须仍在同一实例 | 这是既有约束,种子没有新增。拆分方案里要点名这一组 |
 | R5 | 账号锁内多一次 Redis;Redis 卡顿时最坏多 3s | 正确性靠围栏,不受影响;观察 `stage="seed"` |
 | R6 | 收益没有实测 | 走 L-14 对比表;拿不出表不下性能结论 |
 | R7 | C++ 新号初始化分支没有单测 | 既有缺口,种子没新增风险;可在后续 C++ 批次补 |
-| R8 | 新号入场链改占 PreloadPool,池满回 `kLoginInProgress`(§6 第 21 行、§9 第 7 条) | L-14 看池掉单;按需调大 `PreloadPool.Size` |
+| R8 | 新号入场链改占 PreloadPool,池满回 `kLoginInProgress`(§6 第 21 行、§9 第 7 条) | L-14 看池掉单(`entergame_total{result="pool_saturated"}`);按需调大 `PreloadPool.Size` |
 
 ### 待拍板
 
 | # | 事项 | 本稿默认 |
 |---|---|---|
 | P1 | 采用方案 A(种子只带 player_id,不带身份) | 采用 |
-| P2 | id 复用信号是否升级为拒绝建角 | **只告警**。走到种子这一步时 `player:zone` 已登记;此时拒绝,会留下永久的幽灵映射(`createplayerlogic.go:257-263`) |
-| P3 | 何时在 K8s / 开服档打开 | L-14 对比表出来、告警就位之后;另起一批改 `k8s_deploy.ps1` |
+| P2 | id 复用信号是否升级为拒绝建角 | **只告警**(仍待拍板;依据在 2026-10-13 评审后更正)。种子报 `parent_exists` / `owner_epoch_exists` 时,这个 id 上已有既有状态。旧持有者若经现行建角流程创建,它的 `player:zone` 映射已存在:同 zone 时 6d 是幂等空操作,拒绝不新增映射;不同 zone 在 6d 已被拒,到不了这里。只有旧持有者没有映射时才会留下一条,与第 7 步失败同类。只告警的代价:已确知 id 上有既有状态,仍把它交给新账号,首次入场读到那份缓存(与关着种子时相同,但此刻本可拦下)。若改为拒绝,要像 6d 失败分支一样先释放 6c 登记的名字,`TestCreatePlayer_SeedNeverOverwritesExistingParent` 与 `TestCreatePlayer_SeedRefusedAfterOwnerEpochMinted` 的期望同步改。可选做法见 P7。**负责人 2026-10-15 按『最标准』定为:采用 P7 且 P2 升级为拒绝**(上面「只告警(仍待拍板)」不再适用)。种子脚本报 `parent_exists` / `owner_epoch_exists` 时拒绝建角,tip 复用 6c / 6d 故障时的 `kLoginDataSerializeFailed`(不新增 tip 码);先按「确定已登记」释放 6c 的名字;6d 已登记的 `player:zone` 映射撤不掉 —— login 没有删除入口,data_service 的 `DeletePlayerData` 会连同这个 id 的玩家数据一起删,而 id 复用时删的正是旧持有者的数据,不能用 —— 留下一条并记 ERROR,与第 7 步失败口径一致。走到这一步的只剩探测与种子写之间窗口里冒出的状态,建角前就在的由 P7 的探测拦下。两条用例改为在这个窗口里注入状态、期望改为拒绝 + 名字释放(§13.2) |
+| P3 | 何时在 K8s / 开服档打开 | L-14 对比表出来、告警就位之后;另起一批改 `k8s_deploy.ps1`,同批补齐 login 在 K8s 上的 `Prometheus` 与 `PreloadPool`(§7 第 5 步) |
 | P4 | TTL 边界加固:快路径命中、且父键剩余 TTL 低于阈值时续期 | **不做**。窗口极小,且能自愈 |
 | P5 | `missing_required` 与 `db_placement_store_open_total{result=~"error|rejected"}` 两类告警是否作为硬门禁 | 是 |
-| P6 | 开种子后 `AccountLockTTL` 是否从 20 上调到 ≥22,让「gRPC 拖满 + Redis 慢但回包」的最坏和(21s)仍被盖住(§9 第 1 条) | **不调**。20 本来就不是硬上界,正确性靠围栏;上调的代价是 login 崩溃后同账号建角被挡得更久。`k8s_deploy.ps1` 从 `login.yaml` 读这个值,要调只改 `login.yaml` 一处,K8s 自动跟随 |
+| P6 | 开种子后 `AccountLockTTL` 是否从 20 上调到 ≥22,让各步预算直接相加的 21s 仍被盖住(§9 第 1 条) | **不调**。仅当 zrpc `Timeout` 上调到约 17s 以上时才需要考虑;现行 10s 下 21s 到不了,20 仍盖得住(§9 第 1 条)。20 本来也不是硬上界,正确性靠围栏;上调的代价是 login 崩溃后同账号建角被挡得更久。`k8s_deploy.ps1` 从 `login.yaml` 读这个值,要调只改 `login.yaml` 一处,K8s 自动跟随 |
+| P7 | P2 的可选做法:在 6c(名字登记)之前加一次只读探测(`EXISTS` 父键与 `player:{id}:owner_epoch`),命中即拒绝建角 | **未采用,待拍板**。好处:拒绝发生在名字和 `player:zone` 登记之前,只烧掉一个 id,不留任何持久状态,也不用补偿释放名字。代价:开种子时每次建角多一次 Redis 往返,落在账号锁内;探测与 6d' 的种子写之间仍有窗口,种子脚本的条件判断要保留。若采用,P2 提到的两条用例期望同步改。**负责人 2026-10-15 按『最标准』定为:采用 P7 且 P2 升级为拒绝**(上面「未采用,待拍板」不再适用)。落点 6b':发号之后、名字登记之前。探测两条 `EXISTS`(键名与种子脚本共用 `newPlayerStateKeys`)走一个 pipeline,一次往返;命中或探测本身出错都拒绝建角(fail-closed),不登记名字、不登记 `player:zone`、不写种子,打带 `player_id` 的 ERROR,计 `login_create_player_id_probe_total{result}`(clear / parent_exists / owner_epoch_exists / error,后三个起服预置为 0),阶段耗时记 `stage="id_probe"`。**不看种子开关**:login 的 `RedisClient` 就是 EnterGame 预加载读父键的那个实例,关着种子也拿得到,而 id 复用在关着种子时同样会让新账号读到旧缓存;所以代价一栏的「开种子时每次建角多一次 Redis 往返」改为「每次建角都多一次」。请求 ctx 已截止时不发探测、直接拒绝(不计探测指标)。种子脚本的条件判断保留为写时的原子复核 |
 
 ## 11. Java 版(AGENTS §12)
 
@@ -373,4 +399,131 @@ go test ./... -count=1
 
 通过标准:第一条 gofmt 零输出,第二条的 diff 里没有本批改动的行;vet / build 零报错;20 个新用例全部 PASS(不得 SKIP),已有用例全绿。`-race` 本机无 gcc 时跳过并如实报告。仓库根再跑 `python tools/scripts/gen_docs_index.py --check`,退出码 0。
 
-**后续批(不在本批)**:`k8s_deploy.ps1` 的 login ConfigMap 加这一键(待 P3);C++ 三处过时注释(`player_lifecycle.cpp:1916-1922`、`:2037-2041`,`redis_client.h:103-105`);`stress_summarize.ps1` 的 dataloader 表加 hit/miss 计数列(可选)。
+**后续批(不在本批)**:
+
+- `k8s_deploy.ps1` 的 login ConfigMap 加这一键(待 P3)。同批必须补齐 login 在 K8s 上的观测面:ConfigMap 加 `Prometheus` 与 `PreloadPool`,`deploy/k8s/manifests/go-svc/login.yaml` 加抓取端口与 prometheus.io 注解(§7 第 5 步)。缺这两项时,§7 第 3 步的 login 告警和第 4 步的池掉单在集群里没有数据源。L-14 若在 K8s 上跑,排在压测之前。
+- C++ 三处过时注释(`player_lifecycle.cpp:1916-1922`、`:2037-2041`,`redis_client.h:103-105`)。
+- `stress_summarize.ps1` 的 dataloader 表加 hit/miss 计数列(可选);再加一行 `login_create_player_seed_total` 各 result 的计数(可选)。CreatePlayer stages 表的 seed 列和 EnterGame 表的 pool_saturated 列已在 §13.1 加上。
+- `loginlogic.go` 的 `accountLock.Release(l.ctx)` 与建角锁修复前是同一种写法(§9 第 1 条),待单独处理。
+- `docs/design/guild-phase2/03-names.md:456` 与 `92-handoff.md:408` 仍把建角阶段列成四个,没有 seed。这两份是帮会二期的文档,本批没有改。
+
+### 13.1 三视角评审修复(2026-10-13)
+
+三视角评审加对抗核实确认了十条问题,按负责人当天的拍板全部处置。**未编译、未测试**,待 Codex 验证。
+
+| 条目 | 处置 | 文件 |
+|---|---|---|
+| G3-compile-1 | `chainBudget` 改回 5 分钟。它是被误带进提交的改动,与 `login.yaml:9` 的注释、`grpc-client-deadline-failure-callback.md` 重新一致 | `entergamelogic.go` |
+| G3-consistency-3 | 池满(PreloadPool 满、链未启动)计 `entergame_total{result="pool_saturated"}`,只计数,不进耗时直方图;起服由 `PrimeEnterGameMetrics` 预置为 0;汇总脚本 EnterGame 表加 pool_saturated 列,缺序列打印 n/a | `entergamelogic.go`、`clientplayerlogin/metrics.go`、`login.go`、`stress_summarize.ps1`、`test_stress_summarize.ps1`、`login.yaml`、本文 §6 / §7 |
+| G3-consistency-4 | 建角锁的释放改用脱离请求 ctx 的 1s 预算(`createLockReleaseTimeout`) | `createplayerlogic.go` |
+| G3-consistency-1 | 汇总脚本 CreatePlayer stages 表加 seed 列,五个阶段 | `stress_summarize.ps1`、`test_stress_summarize.ps1` |
+| G3-consistency-5 | 种子 `error` 的日志与注释改为「写入未确认」;`idempotent` 单独打 INFO,成因说明更正 | `createplayer_seed.go`、`clientplayerlogin/metrics.go`、`dataloader/new_player_seed.go`(只改注释)、本文 §4.3 |
+| G3-consistency-6 | P2 的依据更正,只改文字,不改行为;可选做法列为 P7 | `createplayer_seed.go`(只改注释)、本文 §10 |
+| G3-spec-2 | K8s 打开步骤补上 login 的观测面缺口 | 本文 §7 第 5 步、§13 后续批 |
+| G3-spec-3 | 锁预算:21s 在现行 zrpc `Timeout` 10s 下到不了;P6 的前提改写 | `login.yaml`、本文 §9 第 1 条、§10 P6 |
+| G3-spec-4 | 配置用例对两份样例 yaml 都断言 `Enabled=false` | `config/new_player_seed_conf_test.go` |
+| G3-spec-5 | `PreloadPool` 的旧注释(「池满时丢任务,scene 侧重试补偿」)更正为与代码一致 | `login.yaml`、`svc/servicecontext.go`(只改 `SubmitPreload` 的函数注释) |
+
+**新增用例**(3 个 Go 用例,1 个新文件):
+
+- `createplayer_name_test.go` 的 `TestCreatePlayer_ReleasesLockAfterRequestCancelledMidCreate`:请求 ctx 在持锁之后才取消,建角返回后锁必须已删。**修复前应红**。
+- `entergame_pool_saturated_test.go`(新文件)的 `TestEnterGame_PoolSaturatedCountsWithoutLatencySample`:池满回 `kLoginInProgress`、玩家锁已释放、`pool_saturated` 计数 +1、耗时直方图里没有这个取值。
+- 同一文件的 `TestPrimeEnterGameMetrics_ExposesPoolSaturatedSeries`:预置之后序列存在。
+- `test_stress_summarize.ps1` 新造两份 login 快照(有序列 / 缺序列),断言两张表的表头与四行数据。
+
+**没有做的**:`deploy/login-stack.linux/login.yaml` 没有改动(它没有那段旧的 PreloadPool 注释,锁预算注释也只在 etc 那份)。
+
+**交 Codex 的验证**(先在 `go/login` 下串行跑,不需要外部服务;最后一条在仓库根):
+
+```powershell
+gofmt -l internal/logic/clientplayerlogin/entergame_pool_saturated_test.go internal/logic/clientplayerlogin/createplayer_name_test.go internal/logic/clientplayerlogin/createplayer_seed.go internal/config/new_player_seed_conf_test.go internal/logic/pkg/dataloader/new_player_seed.go
+gofmt -d internal/logic/clientplayerlogin/createplayerlogic.go internal/logic/clientplayerlogin/metrics.go internal/logic/clientplayerlogin/entergamelogic.go internal/svc/servicecontext.go login.go
+go vet ./internal/logic/clientplayerlogin/... ./internal/logic/pkg/dataloader/... ./internal/config/... ./internal/svc/... .
+go build ./...
+go test ./internal/logic/clientplayerlogin/... -run "TestCreatePlayer_ReleasesLockAfterRequestCancelledMidCreate|TestEnterGame_PoolSaturated|TestPrimeEnterGameMetrics" -count=10 -v
+go test ./internal/config/... -run "NewPlayerSeed|EtcYaml|LoginYaml" -count=1 -v
+go test ./internal/logic/clientplayerlogin/... ./internal/logic/pkg/dataloader/... ./internal/config/... ./internal/svc/... -count=1
+pwsh -NoProfile -File tools/scripts/test_stress_summarize.ps1
+```
+
+通过标准:
+
+- 第一条 gofmt 零输出;第二条的 diff 里没有 §13.1 改动的行(这些文件里别的会话的改动不归本批)。
+- vet / build 零报错。
+- 三个新用例各 10 遍全部 PASS,不得 SKIP;`TestLoginYamlSpellsOutNewPlayerSeedKeys` 的两个子用例 PASS;其余已有用例全绿。
+- `test_stress_summarize.ps1` 末行是 `PASS`,退出码 0。它会临时挪走并还原 `run/logs/cpp_nodes/scene*.log`,跑的时候不要同时起 scene。
+- 「修复前应红」的核对(可选):在 HEAD 的临时 worktree 里只带上 `createplayer_name_test.go` 的新用例跑一遍,应在 `create lock still held` 处失败。
+
+失败时保留:失败用例的完整 `-v` 输出;`test_stress_summarize.ps1` 失败时它打印的整段 stress_summarize 输出,必要时加 `-KeepArtifacts` 保留临时目录。前一步红了就停下归因,不连续重试(AGENTS §10.2)。
+
+### 13.2 P2 / P7 定案后的落码(2026-10-15)
+
+负责人 2026-10-15 指示「按最标准修复」,§10 P2 / P7 定为:采用 P7(6c 之前只读探测),P2 升级为拒绝。取舍依据 AGENTS §11.3:玩家资产与数据完整性路径默认 fail-closed;能在副作用前完成的纯校验先完成(探测),提交点仍由同一机制原子复核(种子脚本的条件判断)。**未编译、未测试**,待 Codex 验证。
+
+**行为**
+
+| 步 | 情形 | 结果 |
+|---|---|---|
+| 6b'(新增) | 请求 ctx 已截止 | 不发探测,直接拒绝(`kLoginDataSerializeFailed`),不计探测指标(没有发生探测,也不是 Redis 故障;截止语义见 client-request-ordering.md §6.1) |
+| 6b' | 父键或 `player:{id}:owner_epoch` 已在 | 拒绝,ERROR `[minted-id-probe] freshly minted player_id=… already has …`,`id_probe_total{parent_exists 或 owner_epoch_exists}` +1;名字、`player:zone`、种子一个都不写 |
+| 6b' | 探测出错 | 拒绝(fail-closed),ERROR `[minted-id-probe] probe failed …`,`id_probe_total{error}` +1 |
+| 6b' | 两把键都不在 | `id_probe_total{clear}` +1,继续 |
+| 6d'(开种子) | 种子脚本报 `parent_exists` / `owner_epoch_exists` | 拒绝(`kLoginDataSerializeFailed`);名字按「确定已登记」释放一次;`player:zone` 留下一条(撤不掉,理由见 §10 P2 结论注),ERROR 日志带 `player_id` |
+| 6d' | `written` / `idempotent` / `error` | 不变,尽力而为 |
+
+探测的键名与种子脚本共用 `dataloader.newPlayerStateKeys`;两把都在时归 `owner_epoch_exists`,与种子脚本先判 owner_epoch 的顺序一致。tip 一律复用 6c / 6d 故障时的 `kLoginDataSerializeFailed`,不新增 tip 码。
+
+**改动文件**
+
+| 文件 | 内容 |
+|---|---|
+| `go/login/internal/logic/pkg/dataloader/new_player_seed.go` | 新增 `newPlayerStateKeys`(种子与探测共用)、`MintedIDProbe` 及其 `String()`、`ProbeMintedPlayerState`;`SeedNewPlayerAllData` 改用 `newPlayerStateKeys`(键名不变) |
+| `go/login/internal/logic/clientplayerlogin/createplayer_seed.go` | 新增 `mintedIDProbeTimeout`(1s)与 `probeMintedID`;`seedNewPlayer` 改为返回 tip,对 `parent_exists` / `owner_epoch_exists` 返回拒绝,注释改为现行行为 |
+| `go/login/internal/logic/clientplayerlogin/createplayerlogic.go` | 6b' 调用点;6d' 拿到 tip 后释放名字并返回;6c、6d' 注释补顺序与例外 |
+| `go/login/internal/logic/clientplayerlogin/metrics.go` | `createStageIDProbe = "id_probe"`;`login_create_player_id_probe_total{result}`;`PrimeCreatePlayerMetrics` 预置它的 parent_exists / owner_epoch_exists / error;`seed_total` 的注释与 Help 补「建角被拒」 |
+| `go/login/etc/login.yaml` | 只改注释:`Locker` 锁预算补一句探测的那次 Redis |
+
+**用例**(`createplayer_seed_test.go`、`dataloader/new_player_seed_test.go`)
+
+| 用例 | 断言 | 修复前为什么红 |
+|---|---|---|
+| `TestCreatePlayer_IDProbeRefusesMintedIDWithExistingState`(新,4 个子用例:父键 / owner_epoch × 种子开 / 关) | 拒绝;data_service 零调用(名字、`player:zone` 都没登记,也没有释放);`id_probe_total` 对应结果 +1;`seed_total` 五个结果都不变;父键原样、无 TTL;账号 blob 无角色、反查映射不写、建角锁已释放 | 没有探测:关种子时建角直接成功,开种子时种子只告警、建角成功,`requireTip` 处即红 |
+| `TestCreatePlayer_IDProbeErrorRefusesCreate`(新) | 发号之后 Redis 整个不可用(`mintHookSegment` 里 `SetError`):拒绝;data_service 零调用;`id_probe_total{error}` +1;不记孤儿;账号 blob 无角色 | 没有探测:名字与 `player:zone` 照常登记,围栏写与回读都失败后保留登记、记孤儿,tip 是 `kLoginRedisSetFailed`,`requireTip` 处即红 |
+| `TestCreatePlayer_SeedNeverOverwritesExistingParent`(改写) | 父键改在 Reserve 回调里(探测之后、种子之前)注入;先断言 `id_probe_total{clear}` +1(拒绝确实来自种子那步);拒绝,调用序列 `reserve,register,release`,释放的正是登记的 id / 名字;父键字节不变、无 TTL;`seed_total{parent_exists}` +1 | 前提断言处即红(没有探测指标);去掉前提断言则在 `requireTip` 处红(种子只告警,建角成功) |
+| `TestCreatePlayer_SeedRefusedAfterOwnerEpochMinted`(改写) | owner_epoch 改在窗口里注入;同上的拒绝与补偿断言;父键不存在;`seed_total{owner_epoch_exists}` +1 | 同上 |
+| `TestCreatePlayer_SeedErrorDoesNotFailCreate`(只改注入时机) | list 型父键改在窗口里注入(原写法会被探测当成 parent_exists 拒在 6c 之前,种子跑不到);期望不变 | 不是回归用例,修复前后都应绿 |
+| `TestProbeMintedPlayerState_Verdicts`(新,dataloader) | 四种结论与 label 字面量;探测前后键集合不变、父键无 TTL | 新 API,修复前不存在 |
+| `TestProbeMintedPlayerState_SeesTheSeedsParentKey`(新) | 种子写下之后探测报 parent_exists(两边判同一组键) | 同上 |
+| `TestProbeMintedPlayerState_ErrorsAreNotClear`(新) | 零 id、nil 客户端、Redis 不可用都报 error 且带 err,不写键 | 同上 |
+
+两条被点名的旧用例,期望逐条怎么改写在各自的函数注释里。
+
+**与他人未提交改动的关系**:`createplayer_deadline_test.go`(另一会话的截止语义用例)没有改。它的「发号之后」子用例要求截止之后不再有命令碰种子父键,6b' 在发探测之前先查请求 ctx,满足这一条;「种子写之后」子用例的 `cancelWhen` 匹配所有参数里带种子父键的命令,但只挂在 `ProcessHook` 上,而探测走 pipeline(`ProcessPipelineHook`),所以只会在种子那条 EVAL 之后取消。以后若把探测改成单条命令,那个谓词要收窄到种子脚本。
+
+**没有做的 / 后续**
+
+- `tools/scripts/stress_summarize.ps1` 的 CreatePlayer stages 表还没有 `id_probe` 列(本批只许改 login 下的文件和两份文档);持锁时间对比要看这一列时另起一批加。
+- 告警:`login_create_player_id_probe_total{result=~"parent_exists|owner_epoch_exists|error"}` 出现即告警。它不看种子开关,不属于 §7 第 3 步的「打开种子前置」,随 login 观测面一起上(K8s 上的前提同 §7 第 5 步)。
+- `deploy/login-stack.linux/login.yaml` 没有 `Locker` 锁预算注释(§13.1 已记),这次也不用改。
+- Java 版:§11 判定种子这条链不适用;id 复用时拒绝建角在 Java 版有没有对等项(例如主键冲突天然拒绝),由主会话核对后登记 `PARITY.md`。`docs/PROGRESS.md` 也由主会话统一记。
+
+**交 Codex 的验证**(工作目录 `go/login`,串行,不需要外部服务):
+
+```powershell
+gofmt -l internal/logic/pkg/dataloader/new_player_seed.go internal/logic/pkg/dataloader/new_player_seed_test.go internal/logic/clientplayerlogin/createplayer_seed.go internal/logic/clientplayerlogin/createplayer_seed_test.go internal/logic/clientplayerlogin/metrics.go internal/logic/clientplayerlogin/createplayerlogic.go
+go vet ./internal/logic/pkg/dataloader/... ./internal/logic/clientplayerlogin/...
+go build ./...
+go test ./internal/logic/pkg/dataloader/... -run "ProbeMintedPlayerState|Seed" -count=1 -v
+go test ./internal/logic/clientplayerlogin/... -run "TestCreatePlayer_IDProbe|TestCreatePlayer_Seed|TestCreatePlayer_RequestDoneMidCreateCommitsNothing|TestCreatePlayer_ReleasesLock|TestCreatePlayer_HomeZoneRegistrationFailsClosed" -count=10 -v
+go test ./internal/config/... -run "NewPlayerSeed|EtcYaml|LoginYaml" -count=1 -v
+go test ./internal/logic/clientplayerlogin/... ./internal/logic/pkg/dataloader/... ./internal/config/... ./internal/svc/... -count=1
+```
+
+通过标准:
+
+- gofmt 零输出。若列出 `createplayerlogic.go` 或 `metrics.go`,先用 `gofmt -d` 看差异是否落在本批改动的行上;落在别的会话的改动上不归本批,如实报告。
+- vet / build 零报错。
+- 新增与改写的用例全部 PASS(clientplayerlogin 那条各 10 遍),不得 SKIP;`TestCreatePlayer_RequestDoneMidCreateCommitsNothing` 的 5 个子用例 PASS;其余已有用例全绿。
+- 「修复前应红」的核对(可选):在 HEAD 的临时 worktree 里只换上新版 `createplayer_seed_test.go` 跑 `-run "TestCreatePlayer_IDProbe|TestCreatePlayer_SeedNeverOverwritesExistingParent|TestCreatePlayer_SeedRefusedAfterOwnerEpochMinted"`:两个 `IDProbe` 用例应在 `create succeeded, want tip` / `tip = …` 处失败,两条改写用例应在 `id_probe_total{clear} delta = 0, want 1` 处失败。dataloader 的三个新用例引用新 API,在 HEAD 上编译不过,不做这项核对。
+
+失败时保留:失败用例的完整 `-v` 输出,以及 `gofmt -d` 的输出。前一步红了就停下归因,不连续重试(AGENTS §10.2)。

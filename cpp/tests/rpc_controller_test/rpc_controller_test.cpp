@@ -1,15 +1,20 @@
 // rpc_controller_test — 回归测试,对应事故
 //   docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md
 //
-// 被锁定的不变量:**一次 GameChannel 派发结束后,不得在任何长生命周期存储里留下
+// 被锁定的不变量:**一次 RpcChannel 派发结束后,不得在任何长生命周期存储里留下
 // 这条连接的强引用。** 旧代码在 HandleRpcMessage 里 `tlsRpc.conn = conn;`(thread_local,
 // 从不清空),使 muduo TcpClient::~TcpClient 的 `use_count()==1` 判断失真、跳过 forceClose,
 // 连接在 kConnected 态被析构(TcpConnection.cc:71 assert;Release 下是 poller 里的悬垂
 // Channel*)。现在连接随 per-call RpcController 显式传递,派发返回后引用计数必须回到派发前。
+// 接管 done(RpcDoneCallback::Adopt)之后同样不得多出强引用,那一条在 rpc_channel_loopback_test.cpp。
 //
 // 为什么用真实回环连接而不是 mock:TcpConnection 是具体类,不可替身;且在 Debug 下它必须
 // 走完 kConnected → kDisconnected 才能安全析构,所以只能让 TcpServer + TcpClient 在
 // EventLoopThread 上真连一次,server 侧连接就是被测对象。
+//
+// 本文件提供整个测试工程唯一的 main。链接桩(InitPlayerService /
+// InitServiceHandler)在 rpc_client_lifecycle_test.cpp;消息号注册表由 rpc_channel_loopback_test.cpp
+// 的全局 Environment 在任何用例之前填充一次。
 
 #include <gtest/gtest.h>
 
@@ -22,9 +27,10 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <functional>
 #include <future>
-#include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -37,7 +43,7 @@
 #include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpServer.h"
 
-#include "network/game_channel.h"
+#include "network/rpc_channel.h"
 #include "network/rpc_controller.h"
 #include "proto/common/base/rpc_message.pb.h"
 #include "rpc/service_metadata/rpc_event_registry.h"   // kMaxRpcMethodCount
@@ -65,27 +71,27 @@ uint16_t FindFreeLoopbackPort()
 }
 
 // 把一条 GameRpcMessage 按线上格式(size | "RPC0" | payload | adler32)编进 Buffer。
-// 直接复用生产 codec 的 fillEmptyBuffer,保证喂进去的是 HandleIncomingMessage 的真实入口。
+// 直接复用生产 codec 的 fillEmptyBuffer,保证喂进去的是 RpcChannel::OnMessage 的真实入口。
 void EncodeRpcMessage(const GameRpcMessage& msg, muduo::net::Buffer* out)
 {
     ::RpcCodec encoder([](const TcpConnectionPtr&, const RpcMessagePtr&, muduo::Timestamp) {});
     encoder.fillEmptyBuffer(out, msg);
 }
 
-// 真实回环:server 侧连接是被测对象(GameChannel 绑定它),client 侧只负责把它连起来。
+// 真实回环:server 侧连接是被测对象(RpcChannel 绑定它),client 侧只负责把它连起来。
 class LoopbackFixture : public ::testing::Test
 {
 protected:
     void SetUp() override
     {
-        loop_ = loopThread_.startLoop();
+        loop_.emplace(*loopThread_.startLoop());
         const uint16_t port = FindFreeLoopbackPort();
         ASSERT_NE(port, 0);
 
         auto connectedFuture = connected_.get_future();
         RunInLoopAndWait([this, port] {
             server_ = std::make_unique<muduo::net::TcpServer>(
-                loop_, muduo::net::InetAddress(port, /*loopbackOnly=*/true), "rpc_controller_test_server");
+                &Loop(), muduo::net::InetAddress(port, /*loopbackOnly=*/true), "rpc_controller_test_server");
             server_->setConnectionCallback([this](const TcpConnectionPtr& conn) {
                 if (conn->connected())
                 {
@@ -98,7 +104,7 @@ protected:
             });
             server_->start();
             client_ = std::make_unique<muduo::net::TcpClient>(
-                loop_, muduo::net::InetAddress("127.0.0.1", port), "rpc_controller_test_client");
+                &Loop(), muduo::net::InetAddress("127.0.0.1", port), "rpc_controller_test_client");
             client_->connect();
         });
 
@@ -127,32 +133,36 @@ protected:
         // loopThread_ 析构 = quit + join;上面排队的 connectDestroyed 早已在 DOWN 之后跑完。
     }
 
+    muduo::net::EventLoop& Loop() { return loop_->get(); }
+
     template <typename F>
     void RunInLoopAndWait(F&& fn)
     {
         muduo::CountDownLatch done(1);
-        loop_->runInLoop([&] { fn(); done.countDown(); });
+        Loop().runInLoop([&] { fn(); done.countDown(); });
         done.wait();
     }
 
-    // 在 loop 线程上把一条消息喂给 GameChannel::HandleIncomingMessage(生产入口),
+    // 在 loop 线程上把一条消息喂给 RpcChannel::OnMessage(生产入口),
     // 返回派发前后 serverConn_ 的 use_count。参数全程 const& 传递,派发本身不应改变计数;
     // 计数增加只可能来自"某处把连接存下来了" —— 这正是被修掉的缺陷形态。
-    std::pair<long, long> DispatchAndMeasure(const GameRpcMessage& msg, GameChannel& channel)
+    std::pair<long, long> DispatchAndMeasure(const GameRpcMessage& msg, RpcChannel& channel)
     {
         std::pair<long, long> counts{};
         RunInLoopAndWait([&] {
             muduo::net::Buffer buf;
             EncodeRpcMessage(msg, &buf);
             counts.first = serverConn_.use_count();
-            channel.HandleIncomingMessage(serverConn_, &buf, muduo::Timestamp::now());
+            channel.OnMessage(serverConn_, &buf, muduo::Timestamp::now());
             counts.second = serverConn_.use_count();
         });
         return counts;
     }
 
+    // loopThread_ 排第一:最后析构,保证其余成员析构时 loop 仍在。
     muduo::net::EventLoopThread loopThread_;
-    muduo::net::EventLoop* loop_ = nullptr;
+    // 引用而非裸指针成员(裸指针成员门禁覆盖测试工程);SetUp 里绑定。
+    std::optional<std::reference_wrapper<muduo::net::EventLoop>> loop_;
     std::unique_ptr<muduo::net::TcpServer> server_;
     std::unique_ptr<muduo::net::TcpClient> client_;
     TcpConnectionPtr serverConn_;
@@ -170,41 +180,38 @@ protected:
 // ---------------------------------------------------------------------------
 
 // 旧的 `tlsRpc.conn = conn;` 位于 HandleRpcMessage 的 switch 之前,任何消息类型都会触发它。
-// 用一个未知的 type 值走 default 分支:只记一条日志,不需要服务表,是最小的红/绿探针。
+// 用一个未知的 type 值走 default 分支:只计数并采样记录,不需要服务表,是最小的红/绿探针。
 TEST_F(LoopbackFixture, DispatchLeavesNoStrongRefBehind_UnknownType)
 {
-    GameChannel channel;
-    channel.SetConnection(serverConn_);   // HandleRpcMessage 首行 assert(conn == connection_)
+    // RpcChannel 只能经 Create 构造(由 shared_ptr 持有);它只存 weak 连接,构造本身不改变计数。
+    const RpcChannelPtr channel = RpcChannel::Create(Loop(), serverConn_, RpcServiceMap{});
 
     GameRpcMessage msg;
     msg.set_type(static_cast<GameMessageType>(42));
     msg.set_message_id(0);
 
-    const auto [before, after] = DispatchAndMeasure(msg, channel);
+    const auto [before, after] = DispatchAndMeasure(msg, *channel);
     EXPECT_EQ(before, after)
         << "派发结束后连接多出 " << (after - before) << " 个强引用 —— 有人把它存进了长生命周期存储(旧 tlsRpc.conn 形态)";
 }
 
-// REQUEST 走 ProcessMessage(tracing::Set、消息 id 校验)→ 越界 id → SendErrorResponse(INVALID_REQUEST)
-// → 真的往连接上发一条 RPC_ERROR 应答 → 返回。覆盖派发层入口与"错误应答发送"这条路径。
+// REQUEST 走 CallServiceMethod → 越界 message_id 不可派发 → RejectRequest(INVALID_REQUEST)
+// → 真的往连接上发一条回显调用号的 RPC_ERROR → 返回。覆盖派发层入口与"错误应答发送"这条路径。
 //
-// 为什么必须用**越界**的 message_id:gRpcMethodRegistry 由节点启动时的 Init*ServiceMetadata 填充,
-// 单测进程里它是全空的默认数组,RpcMethodMeta::serviceName / methodName 都是 const char* nullptr;
-// 合法 id 会走到 services_->find(meta.serviceName) 与 SendErrorResponse 里的 std::string(nullptr),
-// 直接访问违例(与修复无关的测试环境事实)。越界 id 在 IsValidMessageId / RecordRecv / RecordSend /
-// LogMessageStatistics 四处都有显式边界检查,是这条路径唯一不碰注册表内容的输入。
+// 调用号必须非 0:id == 0 是单向请求,服务端永远不回(连拒绝也不回),就走不到发送路径了。
+// 用**越界**的 message_id:IsDispatchableMessageId 在任何注册表访问之前就拒绝它,
+// 结果与注册表是否已由全局 Environment 填充无关。注册表空槽(以前拿 nullptr 构造 std::string)
+// 的拒绝在 rpc_channel_loopback_test.cpp 的 ServerRejectionsEchoTheCallId 里覆盖。
 TEST_F(LoopbackFixture, DispatchLeavesNoStrongRefBehind_RequestWithInvalidMessageId)
 {
-    GameChannel channel;
-    channel.SetConnection(serverConn_);
-    const std::map<std::string, ProtobufService*> noServices;
-    channel.SetServiceMap(noServices);
+    const RpcChannelPtr channel = RpcChannel::Create(Loop(), serverConn_, RpcServiceMap{});
 
     GameRpcMessage msg;
     msg.set_type(GameMessageType::REQUEST);
+    msg.set_id(1);
     msg.set_message_id(kMaxRpcMethodCount);   // == gRpcMethodRegistry.size(),首个非法 id
 
-    const auto [before, after] = DispatchAndMeasure(msg, channel);
+    const auto [before, after] = DispatchAndMeasure(msg, *channel);
     EXPECT_EQ(before, after);
 }
 

@@ -302,17 +302,21 @@
 步骤 4|§3.15a zone 库加列。阻断项:必须在任何新版 go/db 或 scene 启动之前做。
 - 工作目录:go/db。
 - 命令:`go run ./cmd/migrate -f etc/db.yaml -command plan`。
-  - plan 里只允许出现下面三条 `ALTER TABLE player_database ADD COLUMN ...`(G-03),已经迁移过的列不会再出现,所以实际可能只有其中一两条,也可能为空(B4a 或回合制战斗那边已先跑过 up):
+  - plan 里只允许出现下面六条 `ALTER TABLE player_database ADD COLUMN ...`(G-03),已经迁移过的列不会再出现,所以实际可能只有其中几条,也可能为空(B4a 或回合制战斗那边已先跑过 up):
     - `profile_component`(15,本批);
     - `asset_op_ledger`(16,B4a);
-    - `settlement_ledger`(17,回合制战斗结算幂等,来自 docs/design/turn-battle-gap-closure.md §9.3,不属于帮会批次)。
+    - `settlement_ledger`(17,回合制战斗结算幂等,来自 docs/design/turn-battle-gap-closure.md §9.3,不属于帮会批次);
+    - `fence_owner_epoch`(18)、`fence_save_seq`(19)(MySQL 行内围栏,来自 docs/design/db-write-fencing-mysql.md §3.2,不属于帮会批次,2026-10-15 起);
+    - `inbox_ledger`(20,玩家收件箱消费端账本,来自 docs/design/player-inbox-service.md §4.4,不属于帮会批次,2026-10-15 起;只加在 player_database);
+    - 另允许 `ALTER TABLE player_database_1 ADD COLUMN` 的 `fence_owner_epoch`(3)、`fence_save_seq`(4)(同上)。
   - 为什么要放行 settlement_ledger:`-command up` 按 plan 整条执行,不能挑列;17 号字段已在 proto 和生成物里,这列不加,新版 go/db 存盘同样 unknown column 失败。
-  - 这三条之外出现任何语句(别的列、别的表、MODIFY / DROP)先停下核对。
+  - 上面这些列之外出现任何语句(别的列、别的表、MODIFY / DROP)先停下核对。
+  - plan 里 18 起的列(fence_*、inbox_ledger)和 profile_component 或 settlement_ledger 同时出现时也先停下:语句按字母排序执行,迁移后的列序会和新库建表不一致(G-03)。
   - 库名白名单拒绝时,按 cmd/migrate/main.go 的注释设置 DB_ALLOWED_DATABASES。
 - 然后跑 `-command up`。plan 为空时这一步可跳过,直接做下面的核对。
-- 每个 zone 库核对:对 profile_component、asset_op_ledger、settlement_ledger 各跑一次 `SHOW COLUMNS FROM player_database LIKE '<列名>';`,各返回 1 行。
+- 每个 zone 库核对:对 profile_component、asset_op_ledger、settlement_ledger、fence_owner_epoch、fence_save_seq、inbox_ledger 各跑一次 `SHOW COLUMNS FROM player_database LIKE '<列名>';`,再对 fence_owner_epoch、fence_save_seq 各跑一次 `SHOW COLUMNS FROM player_database_1 LIKE '<列名>';`,各返回 1 行。
 - 本机多 zone 时,对每份 zone 的 db 配置重复一遍。run/etc/go_services/z<N>_db.yaml 由启动脚本生成,当前机器上还没有这个目录,以实际存在的配置为准。
-- 通过标准:plan 只含上面三条里的 ADD COLUMN(或为空),跑了 up 的话退出码 0,每个库三次 SHOW COLUMNS 各返回 1 行。
+- 通过标准:plan 只含上面所列的 ADD COLUMN(或为空),跑了 up 的话退出码 0,每个库上述各次 SHOW COLUMNS 各返回 1 行。
 - 失败保留:plan 全文和 up 输出。
 
 步骤 5|go/login 静态检查。

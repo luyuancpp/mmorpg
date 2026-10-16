@@ -43,6 +43,7 @@ const (
 	DataService_ReleasePlayerName_FullMethodName      = "/data_service.DataService/ReleasePlayerName"
 	DataService_BatchGetPlayerName_FullMethodName     = "/data_service.DataService/BatchGetPlayerName"
 	DataService_GetPlayerAssetOpLedger_FullMethodName = "/data_service.DataService/GetPlayerAssetOpLedger"
+	DataService_GetPlayerInboxLedger_FullMethodName   = "/data_service.DataService/GetPlayerInboxLedger"
 )
 
 // DataServiceClient is the client API for DataService service.
@@ -95,6 +96,11 @@ type DataServiceClient interface {
 	// BatchGetPlayerName 同级)。实现 go/shared/assetop 的 LedgerReader。
 	// 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8。
 	GetPlayerAssetOpLedger(ctx context.Context, in *GetPlayerAssetOpLedgerRequest, opts ...grpc.CallOption) (*GetPlayerAssetOpLedgerResponse, error)
+	// ── 玩家收件箱:已落盘账本只读 ───────────────────────────────
+	// 读同一份 PlayerAllData blob 的 inbox_ledger 子字段,读法与错误语义照 GetPlayerAssetOpLedger。
+	// 调用方是 go/player_inbox 的对账(定时作业与运维 ReconcilePlayer),不是 scene。
+	// 设计见 docs/design/player-inbox-service.md §5.1、§9.3。
+	GetPlayerInboxLedger(ctx context.Context, in *GetPlayerInboxLedgerRequest, opts ...grpc.CallOption) (*GetPlayerInboxLedgerResponse, error)
 }
 
 type dataServiceClient struct {
@@ -335,6 +341,16 @@ func (c *dataServiceClient) GetPlayerAssetOpLedger(ctx context.Context, in *GetP
 	return out, nil
 }
 
+func (c *dataServiceClient) GetPlayerInboxLedger(ctx context.Context, in *GetPlayerInboxLedgerRequest, opts ...grpc.CallOption) (*GetPlayerInboxLedgerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPlayerInboxLedgerResponse)
+	err := c.cc.Invoke(ctx, DataService_GetPlayerInboxLedger_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DataServiceServer is the server API for DataService service.
 // All implementations must embed UnimplementedDataServiceServer
 // for forward compatibility.
@@ -385,6 +401,11 @@ type DataServiceServer interface {
 	// BatchGetPlayerName 同级)。实现 go/shared/assetop 的 LedgerReader。
 	// 设计见 docs/design/guild-phase2/07-rollback-fail-closed.md §7.8。
 	GetPlayerAssetOpLedger(context.Context, *GetPlayerAssetOpLedgerRequest) (*GetPlayerAssetOpLedgerResponse, error)
+	// ── 玩家收件箱:已落盘账本只读 ───────────────────────────────
+	// 读同一份 PlayerAllData blob 的 inbox_ledger 子字段,读法与错误语义照 GetPlayerAssetOpLedger。
+	// 调用方是 go/player_inbox 的对账(定时作业与运维 ReconcilePlayer),不是 scene。
+	// 设计见 docs/design/player-inbox-service.md §5.1、§9.3。
+	GetPlayerInboxLedger(context.Context, *GetPlayerInboxLedgerRequest) (*GetPlayerInboxLedgerResponse, error)
 	mustEmbedUnimplementedDataServiceServer()
 }
 
@@ -463,6 +484,9 @@ func (UnimplementedDataServiceServer) BatchGetPlayerName(context.Context, *Batch
 }
 func (UnimplementedDataServiceServer) GetPlayerAssetOpLedger(context.Context, *GetPlayerAssetOpLedgerRequest) (*GetPlayerAssetOpLedgerResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPlayerAssetOpLedger not implemented")
+}
+func (UnimplementedDataServiceServer) GetPlayerInboxLedger(context.Context, *GetPlayerInboxLedgerRequest) (*GetPlayerInboxLedgerResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPlayerInboxLedger not implemented")
 }
 func (UnimplementedDataServiceServer) mustEmbedUnimplementedDataServiceServer() {}
 func (UnimplementedDataServiceServer) testEmbeddedByValue()                     {}
@@ -899,6 +923,24 @@ func _DataService_GetPlayerAssetOpLedger_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DataService_GetPlayerInboxLedger_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPlayerInboxLedgerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServiceServer).GetPlayerInboxLedger(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DataService_GetPlayerInboxLedger_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServiceServer).GetPlayerInboxLedger(ctx, req.(*GetPlayerInboxLedgerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DataService_ServiceDesc is the grpc.ServiceDesc for DataService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -997,6 +1039,10 @@ var DataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPlayerAssetOpLedger",
 			Handler:    _DataService_GetPlayerAssetOpLedger_Handler,
+		},
+		{
+			MethodName: "GetPlayerInboxLedger",
+			Handler:    _DataService_GetPlayerInboxLedger_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

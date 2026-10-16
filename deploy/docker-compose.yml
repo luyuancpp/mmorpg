@@ -2,8 +2,21 @@ version: '3.8'
 
 services:
   # Kafka service
+  #
+  # 镜像钉 tag@digest(2026-10-15),不再用浮动的 apache/kafka:latest。原因:
+  #   - 下面的命名卷 kafka-data 让日志目录与 KRaft 元数据跨容器重建保留,浮动 tag 一次 pull
+  #     就可能让新版本 broker 去读旧版本写下的目录,版本在无人察觉时漂移;
+  #   - group coordinator 的状态机与 OffsetDelete(kafka-consumer-groups.sh --delete-offsets)的语义
+  #     会随镜像变化,go/db 存盘消费组按 zone 拆分后的交接闸与 tools/scripts/kafka_offset_reset.ps1
+  #     的收尾都依赖它们。
+  # 2026-10-15 核对 Docker Hub:latest 与 4.3.1 是同一个 index digest,钉版不改变当时 latest 对应的版本。
+  # 但本机缓存的 latest 可能更旧,核对与升级步骤见 deploy/k8s/README.md「镜像钉版本」。
+  # 升级时四处同改、digest 也必须相同:本文件的 kafka 与 kafka-topic-init、
+  # deploy/k8s/manifests/infra/kafka.yaml、deploy/k8s/manifests/infra/kafka-topic-init.yaml。
+  # 先用 `docker buildx imagetools inspect apache/kafka:<版本>` 取 Digest 行,再在本地跑一遍
+  # kafka-topic-init(以 0 退出)与 README 列出的 kafka-consumer-groups.sh 行为核对。
   kafka:
-    image: apache/kafka:latest
+    image: apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837
     container_name: kafka
     ports:
       - "9092:9092"
@@ -80,7 +93,8 @@ services:
   # with the wrong PartitionCount makes this container exit 1 instead of
   # pretending — delete the auto-created topic and re-run kafka-topic-init.
   kafka-topic-init:
-    image: apache/kafka:latest
+    # 与上面 kafka 服务同一个钉版引用(tag 与 digest 都相同),见 kafka 服务上方的注释。
+    image: apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837
     container_name: kafka-topic-init
     depends_on:
       - kafka
@@ -177,10 +191,9 @@ services:
         create_topic "scene-cmd_g$$cg" "$$cparts" "retention.ms=3600000"
         assert_partitions "scene-cmd_g$$cg" "$$cparts"
         ensure_retention "scene-cmd_g$$cg" 3600000
-        # Shared event topic referenced by base_deploy_config.yaml. It currently has no
-        # consumer (Kafka.GroupID is empty, so KafkaManager::Init skips the top-level
-        # subscribe), but declare the retention anyway so it never depends on whatever
-        # the broker default happens to be the day someone wires a consumer to it.
+        # base_deploy_config.yaml 的 Kafka.Topics 里列着的共享事件 topic。目前没有消费者:没有节点为它
+        # 注册消费回调,KafkaManager::Init 也不做任何顶层 subscribe(2026-10-15 起与 Kafka.GroupID 无关,
+        # 见 P0-B 批 1)。仍然显式声明保留期,免得哪天有人接上消费者时取决于 broker 默认值。
         create_topic "game-events" 1 "retention.ms=3600000"
         ensure_retention "game-events" 3600000
         # data_service audit topics (see the comment above): contracted partitions + 30d retention.
@@ -230,12 +243,19 @@ services:
     # 游标被淘汰时 orderingForTask 直接判 Apply,顺序守卫静默失效;映射被淘汰时缺键被当成「没有记录」,
     # 写会落错库。这些都比「内存满了写入报错」危险。见 docs/design/player-route-mapping-durability-proposal.md §3.3。
     # 代价:本机内存打满时写入报错(fail-closed),要清数据或调大 maxmemory,不会再静默腾空间。
+    #
+    # --maxclients 40000 与 K8s(deploy/k8s/manifests/infra/redis.yaml 的 MAXCLIENTS)同值(P0-E,2026-10-15;取值待实测 / 压测复核),
+    # tools/scripts/tests/redis_maxclients_contract.tests.ps1 钉住两边相等。以前不写 = Redis 缺省 10000,且会被容器 nofile 硬限压低。
+    # 只对新建的容器生效:start_game.ps1 起 compose 带 --no-recreate,既有 redis 容器要
+    #   docker --context desktop-linux compose -f deploy/docker-compose.yml up -d --force-recreate redis
+    # 才会带上(会重启本机 Redis,数据在命名卷 redis-data 里不丢)。核对:docker --context desktop-linux exec redis redis-cli config get maxclients
     command: >
       redis-server
       --appendonly yes
       --maxmemory 8gb
       --maxmemory-policy noeviction
       --notify-keyspace-events Eg
+      --maxclients 40000
     volumes:
       - redis-data:/data
     restart: unless-stopped
@@ -447,6 +467,8 @@ services:
   etcd:
     # bitnami/etcd 2025-08 起从 Docker Hub 下架(Bitnami 商业化调整),
     # bitnamilegacy/ 是官方冻结存档,镜像内容与环境变量语义完全一致。
+    # 与 deploy/k8s/manifests/infra/etcd.yaml、etcd-maintenance.yaml 逐字相同(etcd_maintenance_contract.tests.ps1 守住);
+    # 钉 tag@摘要待 Codex 实测 M0 后三处同批改(docs/ops/etcd-maintenance-runbook.md「阶段 2」)。
     image: bitnamilegacy/etcd:latest
     container_name: etcd
     ports:
@@ -471,6 +493,22 @@ services:
       # restores stable RPC latency.
       - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379  # Listen on all interfaces for client connections
       - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380  # Listen on all interfaces for peer communication
+      # MVCC 历史压缩与空间配额(P0-C,原理与取值见 docs/ops/etcd-maintenance-runbook.md;取值待实测 / 压测复核)。
+      # 这份 compose 也是 Linux 预发压测机的 etcd,那里没有 K8s CronJob,只能靠这三项。
+      #   - 自动压缩按 revision 保留最近 1000000 个版本,必须与 deploy/k8s/manifests/infra/etcd-maintenance.yaml
+      #     的 KEEP_REVISIONS 相同(etcd_maintenance_contract.tests.ps1 守住)。
+      #   - 配额 3GiB:满足「配额 × 2 + 1Gi ≤ etcd.yaml 的 PVC 8Gi」,给 defrag 的临时文件留余量。K8s 的 etcd 在阶段 2
+      #     之前仍是默认配额。
+      # 只对新建的容器生效:start_game.ps1 起 compose 带 --no-recreate,既有 etcd 容器要
+      #   docker --context desktop-linux compose -f deploy/docker-compose.yml up -d --force-recreate etcd
+      # 才会带上。这等于重启本机 etcd(数据在命名卷 etcd-data 里,不丢),应与整栈重启一起做:C++ etcd 流重建
+      # (docs/design/grpc-muduo-transport.md §10.2 第 2 批)修好之前,单独重启 etcd 会让在跑的 C++ 节点进入约 181s 一轮的
+      # 失租重注册循环。
+      # 未验证(待 Codex 实测 M3):bitnamilegacy 镜像是否把这些 ETCD_* 环境变量交给 etcd(若它改用配置文件启动,
+      # etcd 会忽略环境变量)、已有数据目录重启后是否仍生效。生效前用 runbook「compose」一节的手工压缩兜底。
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000000
+      - ETCD_QUOTA_BACKEND_BYTES=3221225472
     volumes:
       - etcd-data:/bitnami/etcd/data  # Persistent data volume
     restart: unless-stopped

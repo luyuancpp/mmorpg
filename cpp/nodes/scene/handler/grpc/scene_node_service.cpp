@@ -2,9 +2,9 @@
 #include <future>
 ///<<< BEGIN WRITING YOUR CODE
 #include "infra/agones/agones_gameserver_lifecycle.h"
-#include "modules/scene/comp/scene_node_comp.h"
+#include "proto/scene/scene_info.pb.h"
 #include "player/system/player_lifecycle.h"
-#include "proto/common/event/scene_event.pb.h"
+#include "modules/scene/scene_events.h"
 #include "thread_context/ecs_context.h"
 #include "muduo/base/Logging.h"
 #include "battle/system/player_battle.h"
@@ -38,30 +38,52 @@ void SceneNodeGrpcImpl::HandleCreateScene(const ::CreateSceneRequest* request,
 
     auto sceneEntity = tlsEcs.sceneRegistry.create();
 
-    auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
-    sceneInfo.set_scene_config_id(request->config_id());
-    sceneInfo.set_mirror_config_id(request->mirror_config_id());
-    sceneInfo.set_dungeon_config_id(request->dungeon_config_id());
-	sceneInfo.set_scene_id(request->scene_id());
-
-    for (const auto creator_id : request->creator_ids())
+    // sceneInfo 引用只在这个块里用。下面的 dispatcher.trigger 会同步跑监听者,监听者一旦删掉场景
+    // 或 SceneInfoComp(swap-and-pop),trigger 之前拿的引用就悬空了(ecs-entt-misuse-audit-20261015 F087/F088)。
     {
-        sceneInfo.mutable_creators()->insert({creator_id, true});
+        auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
+        sceneInfo.set_scene_config_id(request->config_id());
+        sceneInfo.set_mirror_config_id(request->mirror_config_id());
+        sceneInfo.set_dungeon_config_id(request->dungeon_config_id());
+        sceneInfo.set_scene_id(request->scene_id());
+
+        for (const auto creator_id : request->creator_ids())
+        {
+            sceneInfo.mutable_creators()->insert({creator_id, true});
+        }
     }
 
-    tlsEcs.sceneRegistry.emplace<ScenePlayers>(sceneEntity);
-
     OnSceneCreated event;
-    event.set_entity(entt::to_integral(sceneEntity));
+    event.scene = sceneEntity;
     tlsEcs.dispatcher.trigger(event);
 
-    response->mutable_scene_info()->CopyFrom(sceneInfo);
+    // 回包按监听者跑完之后的状态重新取。场景在 trigger 里被删掉时不回 scene_info,
+    // 与 SceneHandler::CreateScene 同一口径。
+    const auto *createdInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneEntity);
+    if (createdInfo == nullptr)
+    {
+        LOG_ERROR << "[gRPC] CreateScene: entity=" << entt::to_integral(sceneEntity)
+                  << " scene_id=" << request->scene_id()
+                  << " lost SceneInfoComp inside OnSceneCreated listeners, not reporting success";
+        // 回滚半成品场景,与 SceneHandler::CreateScene 同一做法和理由:先补发 OnSceneDestroyed 让监听者
+        // 对称撤账(Agones 计数、AOI 格子表),再销毁实体;否则这个没有 SceneInfoComp 的实体去重看不到,
+        // 重试会再建一个,它永远留在 sceneRegistry 里。实体已被监听者自己销毁时不再重复。
+        if (tlsEcs.sceneRegistry.valid(sceneEntity))
+        {
+            OnSceneDestroyed rollbackEvent;
+            rollbackEvent.scene = sceneEntity;
+            tlsEcs.dispatcher.trigger(rollbackEvent);
+            tlsEcs.sceneRegistry.destroy(sceneEntity);
+        }
+        return;
+    }
+    response->mutable_scene_info()->CopyFrom(*createdInfo);
 
     LOG_INFO << "[gRPC] CreateScene: created entity=" << entt::to_integral(sceneEntity)
              << " config_id=" << request->config_id()
-             << " scene_id=" << sceneInfo.scene_id()
-             << " mirror_config_id=" << sceneInfo.mirror_config_id()
-             << " dungeon_config_id=" << sceneInfo.dungeon_config_id();
+             << " scene_id=" << createdInfo->scene_id()
+             << " mirror_config_id=" << createdInfo->mirror_config_id()
+             << " dungeon_config_id=" << createdInfo->dungeon_config_id();
     ///<<< END WRITING YOUR CODE
 }
 
@@ -70,7 +92,7 @@ void SceneNodeGrpcImpl::HandleDestroyScene(const ::DestroySceneRequest* request)
     ///<<< BEGIN WRITING YOUR CODE
     const auto sceneId = request->scene_id();
 
-    entt::entity targetEntity = entt::null;
+    SceneEntity targetEntity = entt::null;
     auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
     for (auto entity : view)
     {
@@ -115,7 +137,7 @@ void SceneNodeGrpcImpl::HandleDestroyScene(const ::DestroySceneRequest* request)
     }
 
     OnSceneDestroyed event;
-    event.set_entity(entt::to_integral(targetEntity));
+    event.scene = targetEntity;
     tlsEcs.dispatcher.trigger(event);
 
     tlsEcs.sceneRegistry.destroy(targetEntity);
@@ -190,7 +212,7 @@ void SceneNodeGrpcImpl::HandlePrepareBattle(const ::PrepareBattleRequest* reques
     // match -> scene 备战冻结(外层已 runInLoop 投递到 loop 线程,可直接同步访问 ECS;
     // 失败原因经 response.error_message 返回,gRPC status 恒为 OK)
     PlayerBattleSystem::PrepareBattle(*request, *response);
-///<<< END WRITING YOUR CODE}
+///<<< END WRITING YOUR CODE
 }
 
 void SceneNodeGrpcImpl::HandleCancelBattlePrepare(const ::CancelBattlePrepareRequest* request)
@@ -198,7 +220,7 @@ void SceneNodeGrpcImpl::HandleCancelBattlePrepare(const ::CancelBattlePrepareReq
 ///<<< BEGIN WRITING YOUR CODE
     // gather 失败补偿解冻:battle_id 匹配才摘 InBattleComp + DEL battle:lock,幂等
     PlayerBattleSystem::CancelBattlePrepare(*request);
-///<<< END WRITING YOUR CODE}
+///<<< END WRITING YOUR CODE
 }
 
 void SceneNodeGrpcImpl::HandleAssetDebit(const ::AssetOpRequest* request,
@@ -257,52 +279,79 @@ grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext* /*context*/,
         return grpc::Status(grpc::StatusCode::UNAVAILABLE, "agones allocate not confirmed");
     }
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, response, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleCreateScene(request, response);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.CreateScene.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleCreateScene(request, response);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.CreateScene.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext* /*context*/,
     const ::DestroySceneRequest* request,
-    ::Empty* response)
+    ::Empty* /*response*/)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleDestroyScene(request);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.DestroyScene.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleDestroyScene(request);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.DestroyScene.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::ReleasePlayer(grpc::ServerContext* /*context*/,
     const ::scene_node::ReleasePlayerRequest* request,
-    ::Empty* response)
+    ::Empty* /*response*/)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleReleasePlayer(request);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.ReleasePlayer.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleReleasePlayer(request);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.ReleasePlayer.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::PrepareBattle(grpc::ServerContext* /*context*/,
@@ -311,34 +360,52 @@ grpc::Status SceneNodeGrpcImpl::PrepareBattle(grpc::ServerContext* /*context*/,
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, response, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandlePrepareBattle(request, response);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.PrepareBattle.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandlePrepareBattle(request, response);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.PrepareBattle.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::CancelBattlePrepare(grpc::ServerContext* /*context*/,
     const ::CancelBattlePrepareRequest* request,
-    ::Empty* response)
+    ::Empty* /*response*/)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleCancelBattlePrepare(request);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.CancelBattlePrepare.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleCancelBattlePrepare(request);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.CancelBattlePrepare.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::AssetDebit(grpc::ServerContext* /*context*/,
@@ -347,16 +414,25 @@ grpc::Status SceneNodeGrpcImpl::AssetDebit(grpc::ServerContext* /*context*/,
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, response, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleAssetDebit(request, response);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.AssetDebit.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleAssetDebit(request, response);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetDebit.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::AssetAbortDebit(grpc::ServerContext* /*context*/,
@@ -365,16 +441,25 @@ grpc::Status SceneNodeGrpcImpl::AssetAbortDebit(grpc::ServerContext* /*context*/
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, response, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleAssetAbortDebit(request, response);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.AssetAbortDebit.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleAssetAbortDebit(request, response);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetAbortDebit.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }
 
 grpc::Status SceneNodeGrpcImpl::AssetCredit(grpc::ServerContext* /*context*/,
@@ -383,14 +468,23 @@ grpc::Status SceneNodeGrpcImpl::AssetCredit(grpc::ServerContext* /*context*/,
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    std::promise<void> promise;
+    std::promise<grpc::Status> promise;
     auto future = promise.get_future();
 
-    loop_.runInLoop([request, response, &promise]
+    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
+    loop_.runInLoop([&]
                     {
-        HandleAssetCredit(request, response);
-        promise.set_value(); });
+        grpc::Status dispatchStatus = grpc::Status::OK;
+        ///<<< BEGIN WRITING YOUR CODE: grpc.AssetCredit.in_loop
+        ///<<< END WRITING YOUR CODE
+        if (dispatchStatus.ok())
+        {
+            HandleAssetCredit(request, response);
+        }
+        promise.set_value(dispatchStatus); });
 
-    future.get();
-    return grpc::Status::OK;
+    auto status = future.get();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetCredit.post_dispatch
+    ///<<< END WRITING YOUR CODE
+    return status;
 }

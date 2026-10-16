@@ -1,4 +1,5 @@
 #include "player_message_utils.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include "proto/common/component/player_network_comp.pb.h"
 #include "thread_context/redis_manager.h"
@@ -52,9 +53,9 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 	// 身份栅栏(R13):玩家实体的 Guid 是权威身份,一并带给 gate 供写 socket 前比对。
 	// try_get 而不是 get:极少数内部实体(测试桩 / 未完全构造的玩家)可能没有 Guid,
 	// 拿不到时带 0 走兼容位,总比在推送路径上抛异常好。
-	const auto *playerGuid = tlsEcs.actorRegistry.try_get<Guid>(playerEntity);
+	const auto *playerGuid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(playerEntity);
 	SendMessageToClientViaGate(messageId, message, *gateSessionPtr, playerSessionSnapshotPB->gate_session_id(),
-							   playerGuid != nullptr ? *playerGuid : kInvalidGuid);
+							   playerGuid != nullptr ? playerGuid->value : kInvalidGuid);
 }
 
 void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Message &message, RpcSession &gate, SessionId sessionId, Guid targetPlayerId)
@@ -79,28 +80,6 @@ void SendMessageToClientViaGate(uint32_t messageId, const google::protobuf::Mess
 	gate.SendRequest(GateSendMessageToPlayerMessageId, request);
 }
 
-void SendMessageToGateById(uint32_t messageId, const google::protobuf::Message &message, NodeId gateNodeId)
-{
-	// Post uuid-refactor entt::entity != node_id, so resolve the entity via
-	// (self_zone, node_id). This path is only used by same-zone callers.
-	auto gateEntityOpt = NodeUtils::FindNodeEntityByZoneAndNodeId(
-		eNodeType::GateNodeService, GetZoneId(), gateNodeId);
-	if (!gateEntityOpt)
-	{
-		LOG_ERROR << "Gate not found for NodeId -> " << gateNodeId;
-		return;
-	}
-	auto &gateNodeRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
-	const auto gateSessionPtr = gateNodeRegistry.try_get<RpcSession>(*gateEntityOpt);
-	if (!gateSessionPtr)
-	{
-		LOG_ERROR << "RpcSession not found for Gate NodeId -> " << gateNodeId;
-		return;
-	}
-
-	gateSessionPtr->SendRequest(messageId, message);
-}
-
 // 广播目标:(session_id, player_id) 成对。编解码收在 broadcast_target_codec.h,
 // 与 gate 侧共用同一份顺序契约(R13)—— 两边各写一遍必然某天错开一格,
 // 而错开一格的表现是"每个人的身份都被比对成别人的"。
@@ -123,8 +102,8 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &mess
 		const auto *playerSessionSnapshotPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
 		if (!playerSessionSnapshotPB)
 		{
-			const auto* playerGuid = tlsEcs.actorRegistry.try_get<Guid>(player);
-			LOG_ERROR << "Player node info not found for player entity: " << (playerGuid ? *playerGuid : 0);
+			const auto* playerGuid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+			LOG_ERROR << "Player node info not found for player entity: " << (playerGuid ? playerGuid->value : 0);
 			continue;
 		}
 
@@ -139,10 +118,10 @@ void InternalBroadcast(uint32_t messageId, const google::protobuf::Message &mess
 		// 身份栅栏(R13):带上玩家 Guid,gate 写每一条 socket 前比对。
 		// 拿不到 Guid(极少数未完全构造的实体)时填 0 = 兼容位,gate 放行不校验;
 		// 绝不能填 kInvalidGuid —— 那是 uint64 最大值,会被当成一个真实玩家号去比对。
-		const auto *playerGuid = tlsEcs.actorRegistry.try_get<Guid>(player);
+		const auto *playerGuid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
 		gateList[gateNodeId].push_back(broadcast_targets::Target{
 			playerSessionSnapshotPB->gate_session_id(),
-			(playerGuid != nullptr && *playerGuid != kInvalidGuid) ? *playerGuid : 0});
+			(playerGuid != nullptr && playerGuid->value != kInvalidGuid) ? playerGuid->value : 0});
 	}
 
 	const std::string serializedMessage = message.SerializeAsString();
@@ -234,170 +213,4 @@ void BroadcastMessageToAll(uint32_t messageId, const google::protobuf::Message &
 		auto &gateSession = view.get<RpcSession>(entity);
 		gateSession.SendRequest(GateBroadcastToAllMessageId, request);
 	}
-}
-
-void SendMessageToPlayerOnSceneNode(uint32_t messageId,
-									const google::protobuf::Message &message,
-									entt::entity playerEntity)
-{
-	SendMessageToPlayerOnNode(
-		/* wrappedMessageId */ SceneSendMessageToPlayerMessageId,
-		/* nodeType */ eNodeType::SceneNodeService,
-		/* messageId */ messageId,
-		message,
-		playerEntity);
-}
-
-void SendMessageToPlayerOnSceneNode(uint32_t messageId,
-									const google::protobuf::Message &message,
-									Guid playerId)
-{
-	SendMessageToPlayerOnSceneNode(messageId, message, tlsEcs.GetPlayer(playerId));
-}
-
-void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
-							   uint32_t nodeType,
-							   uint32_t messageId,
-							   const google::protobuf::Message &message,
-							   Guid playerId)
-{
-	SendMessageToPlayerOnNode(wrappedMessageId, nodeType, messageId, message, tlsEcs.GetPlayer(playerId));
-}
-
-namespace {
-
-// Validate player and return its session snapshot. Logs and returns null on failure.
-const PlayerSessionSnapshotComp* ResolvePlayerSessionSnapshot(entt::entity playerEntity, const char* context)
-{
-	if (!tlsEcs.actorRegistry.valid(playerEntity))
-	{
-		LOG_ERROR << context << ": invalid player entity -> " << entt::to_integral(playerEntity);
-		return nullptr;
-	}
-	const auto* snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(playerEntity);
-	if (!snapshot)
-	{
-		LOG_ERROR << context << ": player session snapshot not found -> " << entt::to_integral(playerEntity);
-	}
-	return snapshot;
-}
-
-// Resolve the RpcSession of the node a player is connected to for the given node type.
-// Logs and returns null on any failure.
-RpcSession* ResolvePlayerNodeSession(const PlayerSessionSnapshotComp& snapshot, uint32_t nodeType,
-	entt::entity playerEntity, const char* context)
-{
-	const auto& nodeIdMap = snapshot.node_id();
-	const auto it = nodeIdMap.find(nodeType);
-	if (it == nodeIdMap.end())
-	{
-		LOG_ERROR << context << ": node type not found in player session snapshot: " << nodeType
-			<< ", player entity: " << entt::to_integral(playerEntity);
-		return nullptr;
-	}
-
-	auto& registry = tlsNodeContextManager.GetRegistry(nodeType);
-	const entt::entity nodeEntity{ it->second };
-	if (!registry.valid(nodeEntity))
-	{
-		LOG_ERROR << context << ": node entity invalid for player -> " << entt::to_integral(playerEntity)
-			<< ", node id: " << it->second;
-		return nullptr;
-	}
-
-	auto* session = registry.try_get<RpcSession>(nodeEntity);
-	if (!session)
-	{
-		LOG_ERROR << context << ": RpcSession not found for node -> " << it->second;
-	}
-	return session;
-}
-
-}  // namespace
-
-void SendMessageToPlayerOnNode(uint32_t wrappedMessageId,
-							   uint32_t nodeType,
-							   uint32_t messageId,
-							   const google::protobuf::Message &message,
-							   entt::entity playerEntity)
-{
-	const auto *playerSessionSnapshotPB = ResolvePlayerSessionSnapshot(playerEntity, "SendMessageToPlayerOnNode");
-	if (!playerSessionSnapshotPB)
-	{
-		return;
-	}
-
-	auto *session = ResolvePlayerNodeSession(*playerSessionSnapshotPB, nodeType, playerEntity, "SendMessageToPlayerOnNode");
-	if (!session)
-	{
-		return;
-	}
-
-	NodeRouteMessageRequest request;
-	request.mutable_message_content()->set_message_id(messageId);
-	if (!message.SerializeToString(request.mutable_message_content()->mutable_serialized_message()))
-	{
-		LOG_ERROR << "Failed to serialize message.";
-		return;
-	}
-	request.mutable_header()->set_session_id(playerSessionSnapshotPB->gate_session_id());
-	// 身份栅栏(R13):目标节点按 session_id 反查玩家时用它复核,防"同号 session 已易主"。
-	if (const auto *playerGuid = tlsEcs.actorRegistry.try_get<Guid>(playerEntity);
-		playerGuid != nullptr && *playerGuid != kInvalidGuid)
-	{
-		request.mutable_header()->set_target_player_id(*playerGuid);
-	}
-
-	session->SendRequest(wrappedMessageId, request);
-}
-
-void CallMethodOnPlayerNode(
-	uint32_t remoteMethodId,
-	uint32_t nodeType,
-	uint32_t messageId,
-	const google::protobuf::Message &message,
-	Guid playerId)
-{
-	CallMethodOnPlayerNode(remoteMethodId, nodeType, messageId, message, tlsEcs.GetPlayer(playerId));
-}
-
-void CallMethodOnPlayerNode(
-	uint32_t remoteMethodId,
-	uint32_t nodeType,
-	uint32_t messageId,
-	const google::protobuf::Message &message,
-	entt::entity player)
-{
-	const auto *playerSessionSnapshotPB = ResolvePlayerSessionSnapshot(player, "CallMethodOnPlayerNode");
-	if (!playerSessionSnapshotPB)
-	{
-		return;
-	}
-
-	auto *session = ResolvePlayerNodeSession(*playerSessionSnapshotPB, nodeType, player, "CallMethodOnPlayerNode");
-	if (!session)
-	{
-		return;
-	}
-
-	NodeRouteMessageRequest request;
-	const size_t byteSize = message.ByteSizeLong();
-	request.mutable_message_content()->mutable_serialized_message()->resize(byteSize);
-
-	if (!message.SerializePartialToArray(request.mutable_message_content()->mutable_serialized_message()->data(), static_cast<int>(byteSize)))
-	{
-		LOG_ERROR << "Failed to serialize message.";
-		return;
-	}
-
-	request.mutable_message_content()->set_message_id(messageId);
-	request.mutable_header()->set_session_id(playerSessionSnapshotPB->gate_session_id());
-	// 身份栅栏(R13),与 SendMessageToPlayerOnNode 同一理由。
-	if (const auto *playerGuid = tlsEcs.actorRegistry.try_get<Guid>(player);
-		playerGuid != nullptr && *playerGuid != kInvalidGuid)
-	{
-		request.mutable_header()->set_target_player_id(*playerGuid);
-	}
-
-	session->CallRemoteMethod(remoteMethodId, request);
 }

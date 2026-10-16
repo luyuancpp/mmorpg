@@ -1640,7 +1640,7 @@ type ManualResolver interface {
 - 第 1 步生成后:
   - `Compare-Object (Get-Content message_id.before.txt) (Get-Content generated/proto/_unified/proto/message_id.txt)`:只允许 3 条 `=>`,分别含 AssetDebit / AssetAbortDebit / AssetCredit;出现任何 `<=` 立即停下(说明与交易会话未提交的 196–200 号冲突)。
   - `Select-String go/client_rpc_router/generated/pb/game/route_table.go -Pattern 'Method: "Asset(Debit|AbortDebit|Credit)"'` 恰 3 行,且每行含 `ClientProtocol: false`(对照 :119 的 PrepareBattle 行)。
-- **新第 1b 步 MySQL 迁移**(导表之后、编译之前均可,冒烟之前必须):`cd go/db; go run ./cmd/migrate -f etc/db.yaml -command plan`,计划只含 `player_database` 加列 `asset_op_ledger`(若 B3a 同批加字段,两者同一次)【2026-09-28 修订:允许的列集合以 [90-consistency.md](./90-consistency.md) G-03 为准 —— `profile_component` / `asset_op_ledger` / `settlement_ledger`(回合制战斗结算账本,17 号),计划也可能为空;`up` 退出码 4 表示已成功但有 NEEDS-REVIEW,不是失败】;确认后 `-command up`(不加 `-allow-modify`)。本地多 zone 时对启动器实际使用的每份 db 配置各跑一次,记录用了哪些 `-f`。随后每个 zone 库 `SHOW COLUMNS FROM player_database LIKE 'asset_op_ledger'` 返回 1 行。原因:`go/db/etc/db.yaml:62` `AutoMigrateSchema: false`,`key_ordered_consumer.go:597` 按 descriptor 写全部列,缺列会让全部玩家回写失败。K8s 部署时由 db migrate Job 执行(`k8s_deploy.ps1:1616`)。
+- **新第 1b 步 MySQL 迁移**(导表之后、编译之前均可,冒烟之前必须):`cd go/db; go run ./cmd/migrate -f etc/db.yaml -command plan`,计划只含 `player_database` 加列 `asset_op_ledger`(若 B3a 同批加字段,两者同一次)【2026-09-28 修订:允许的列集合以 [90-consistency.md](./90-consistency.md) G-03 为准 —— `profile_component` / `asset_op_ledger` / `settlement_ledger`(回合制战斗结算账本,17 号),计划也可能为空;`up` 退出码 4 表示已成功但有 NEEDS-REVIEW,不是失败】【2026-10-15 再修订:列集合仍以 G-03 为准,现为 `player_database` 的 `profile_component` / `asset_op_ledger` / `settlement_ledger` / `fence_owner_epoch` / `fence_save_seq`(18 / 19,MySQL 行内围栏,[db-write-fencing-mysql.md](../db-write-fencing-mysql.md) §3.2)/ `inbox_ledger`(20,玩家收件箱消费端账本,[player-inbox-service.md](../player-inbox-service.md) §4.4),外加 `player_database_1` 的 `fence_owner_epoch` / `fence_save_seq`;下文的 SHOW COLUMNS 也照 G-03 对这些新列逐列各查一次,各 1 行】;确认后 `-command up`(不加 `-allow-modify`)。本地多 zone 时对启动器实际使用的每份 db 配置各跑一次,记录用了哪些 `-f`。随后每个 zone 库 `SHOW COLUMNS FROM player_database LIKE 'asset_op_ledger'` 返回 1 行。原因:`go/db/etc/db.yaml:62` `AutoMigrateSchema: false`,`key_ordered_consumer.go:597` 按 descriptor 写全部列,缺列会让全部玩家回写失败。K8s 部署时由 db migrate Job 执行(`k8s_deploy.ps1:1616`)。
 - 第 4 步过滤器 `--gtest_filter=AssetOp*:CurrencyTest*`(覆盖 AssetOpLedgerTest / AssetOpSystemTest / AssetOpAuthTest)。
 - 第 6 步字段号检查改为只看 `player_database` 消息体:
   ```powershell
@@ -1708,3 +1708,17 @@ type ManualResolver interface {
 4. **新批次 B4c**(存盘属主围栏)需用户单独授权;建议列为"任何共享/预发环境开放帮会资产操作"的硬前置。(**2026-09-21 订正**:已被 [08-save-owner-fence.md](./08-save-owner-fence.md) 取代,不造 token 围栏;共享环境门禁见 08 §8.3)。
 5. **契约 §6** 建议补一行:`robot_95xx` 归资产通道冒烟。
 6. **上线项**:K8s 注入两把资产密钥(`Resolve-InjectedSecret -MinLength 32`,不得与其它密钥复用);scene gRPC 端口 NetworkPolicy 只放行 scene_manager / match / guild / trade。
+
+---
+
+# 第 12 部分：落地唤醒、离线停放与自动放弃（2026-10-14 追加）
+
+> 详细设计见 [landing-recovery-sync-digest.md](../landing-recovery-sync-digest.md) §5–§6，本节只登记对本通道契约的增补。未落码前以该文为准；落码后以代码为准。
+
+- **落地唤醒**：scene 在玩家进场完成时 `PUBLISH assetop:wake <player_id>`；guild / trade 订阅后对该玩家的 PENDING 行走与退避重投**完全相同**的 `Claim` + `ProcessOne`（`Loop.WakePlayer`）。唤醒没有新的状态迁移，丢了只退回原退避。不变量 I1–I10 不变。
+- **离线停放档**：本地合成 NOT_HERE 且 `Attempts ≥ OfflineAfterAttempts`（默认 5）时，下次重投推迟 `OfflineBackoff`（默认 30 分钟，±20% 抖动）。玩家上线由唤醒立即处理。
+- **日对账**：`Auditor` 按 online_retry / offline / alert / abandon_candidate 分类计数，只读不改。本部分第 4.38 节的「最老年龄」告警改为只看 online_retry 类，规则见 `deploy/k8s/asset-channel-alerts.yaml`。
+- **自动放弃（ABANDONED）**：PENDING 超过 `AbandonAfter`（默认 180 天）、持租约、无位置、距最后一次发送超过 1 小时、已落盘账本确认未见时，终结为 `ABANDONED`；对侧账同 REJECTED / ABORTED（退回限购、帮贡、捐献次数），活动奖励作废并留审计行。
+  - 这是 **I7「Go 不得自判中止」的窄例外**：上述条件保证 scene 不可能再收到这条 seq。证明见设计 §6.3。
+  - 每个 (玩家, 流) 一次最多放弃 16 条（I5），对第 8 部分 4.29 的跳号上限（累计 511）影响可忽略。人工终结与放弃的累计仍按 4.31 抬纪元处置。
+- **状态值**：`assetop.Status` 追加 `StatusAbandoned`；`GuildAssetOpStatus` / `TradeAssetOpStatus` 追加 `ABANDONED = 6`（库内状态）；客户端视图映射为已有的 `GUILD_ASSET_ORDER_STATUS_ABORTED`，不改客户端契约。

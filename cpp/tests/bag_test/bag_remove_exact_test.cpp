@@ -4,7 +4,7 @@
 // 这条路夹在两个容易被"顺手合并"的兄弟之间,所以单独一组用例钉住:
 //   * RemoveItemsClamped:按 config 夹紧、恒成功(战斗结算,契约就是"不足按 0");
 //   * RemoveItemsByGuid :按 guid 全或无,且**销毁实例**(寄售托管);
-//   * RemoveItemsExact  :按 config 全或无,只扣数量,**不销毁实例、也不整理**。
+//   * RemoveItemsExact  :按 config 全或无扣数量,扣光即成对释放实例和槽位,不整理其余布局。
 //
 // 有两点与 bag_remove_by_guid_test.cpp 不同,都是有意的:
 //
@@ -25,6 +25,7 @@
 // 进程基线的"未启用" —— 不依赖别的文件的用例先跑或后跑。
 
 #include <gtest/gtest.h>
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <cstdint>
 #include <functional>
@@ -133,7 +134,7 @@ protected:
 		ASSERT_NO_FATAL_FAILURE(RequireFixtureRows());
 
 		player = tlsEcs.actorRegistry.create();
-		tlsEcs.actorRegistry.emplace<Guid>(player, kPlayerGuid);
+		tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, kPlayerGuid);
 	}
 
 	void TearDown() override
@@ -386,9 +387,9 @@ TEST_F(BagRemoveExactTest, InBattleIsNotCheckedAtThisLayer)
 	EXPECT_EQ(3u, bag.GetTotalItemCount(kMaterial));
 }
 
-// ── 扣到 0:空堆留在包里,由调用方整理 ─────────────────────────────────────
+// ── 扣到 0:立即释放,后续整理幂等且不重复落销毁流水 ──────────────────────
 
-TEST_F(BagRemoveExactTest, DrainedStackStaysAsAnEmptyInstanceUntilTheCallerCompacts)
+TEST_F(BagRemoveExactTest, DrainedStackReleasesInstanceAndSlotBeforeIdempotentCompaction)
 {
 	Bag bag;
 	bag.InsertItemForRestore(kGuidA, kMaterial, /*stackSize=*/3, /*pos=*/0);
@@ -401,42 +402,37 @@ TEST_F(BagRemoveExactTest, DrainedStackStaysAsAnEmptyInstanceUntilTheCallerCompa
 	EXPECT_EQ(0u, bag.GetTotalItemCount(kMaterial));
 	EXPECT_EQ(1u, LogAttempts() - logsBefore);
 
-	// 实例与槽位都还在,只是 size == 0:本函数不整理。整理会销毁实例、让调用方手里的
-	// 实例指针失效,放在提交段的哪一步由调用方定(契约 §4.3:放在写实例之后)。
-	{
-		const ItemComp *drained = bag.GetItemCompByGuid(kGuidA);
-		ASSERT_NE(nullptr, drained) << "the emptied stack must not be destroyed here";
-		EXPECT_EQ(0u, drained->size());
-	}
-	EXPECT_EQ(0u, bag.GetItemPosByGuid(kGuidA));
-	EXPECT_EQ(2u, bag.OccupiedGridCount());
-	EXPECT_EQ(2u, bag.GridSlotCount());
+	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA));
+	EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
+	EXPECT_EQ(kInvalidSlot, bag.GetItemPosByGuid(kGuidA));
+	EXPECT_EQ(1u, bag.OccupiedGridCount());
+	EXPECT_EQ(1u, bag.GridSlotCount());
 	EXPECT_TRUE(bag.IsLayerConsistent());
 
-	// 空堆不算持有:再扣 1 个就是不够。
+	// 已扣光的配置不算持有:再扣 1 个不足,不得新增流水。
 	const ItemCountMap oneMore{{kMaterial, 1}};
 	EXPECT_EQ(kBagInsufficientItems,
 			  BagService::RemoveItemsExact(player, bag, oneMore, TX_EQUIP_ENHANCE, kTargetEquipGuid,
 										   kEnhanceExtra));
 	EXPECT_EQ(1u, LogAttempts() - logsBefore);
 
-	// 调用方随后的整理(只合并不重排)把空堆回收,它的 item_uuid 退役也留一条流水。
+	// 扣除已释放实例;随后整理不应再次报告销毁或落流水。
 	bool changed = false;
 	EXPECT_EQ(kSuccess,
 			  BagService::MergeAndCompact(player, bag, CompactPolicy::kMergeOnly, &changed));
-	EXPECT_TRUE(changed);
+	EXPECT_FALSE(changed);
 	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA));
 	EXPECT_EQ(1u, bag.OccupiedGridCount());
 	EXPECT_EQ(1u, bag.GetItemPosByGuid(kGuidB)) << "kMergeOnly never moves a slot";
 	EXPECT_EQ(4u, bag.GetTotalItemCount(kOtherMaterial));
-	EXPECT_EQ(2u, LogAttempts() - logsBefore);
+	EXPECT_EQ(1u, LogAttempts() - logsBefore);
 	EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
 // ── 这一层没有"装备不许按 config 扣"的闸 ───────────────────────────────────
 
 // 按 config 抽数量不查表、不看 has_equip():被点名的 config 若是装备,带属性的实例会被
-// 抽成 0,下一次整理就连同强化等级与宝石一起销毁。
+// 扣光并立即释放,不会保留带强化等级与宝石的零数量实例。
 //
 // 这条用例钉的是"这里没有闸"这个事实,不是说这是好行为 —— 契约把闸放在调用方
 // (§5 不变量 9:表校验报、写入口挡,两道都要有)。哪天在这一层加了闸,这条会红,
@@ -450,20 +446,23 @@ TEST_F(BagRemoveExactTest, EquipInstancesAreDrainedLikeAnyOtherConfig)
 	forged.set_size(1);
 	forged.mutable_equip()->set_enhance_level(7);
 	bag.InsertItemForRestore(forged, 0);
+	const uint64_t logsBefore = LogAttempts();
 
 	const ItemCountMap request{{kEquipConfig, 1}};
 	EXPECT_EQ(kSuccess, BagService::RemoveItemsExact(player, bag, request, TX_EQUIP_ENHANCE,
 													 kTargetEquipGuid, kEnhanceExtra));
-	{
-		const ItemComp *drained = bag.GetItemCompByGuid(kGuidA);
-		ASSERT_NE(nullptr, drained);
-		EXPECT_EQ(0u, drained->size()) << "an equipment instance was consumed as if it were material";
-		EXPECT_TRUE(drained->has_equip());
-	}
-
-	EXPECT_EQ(kSuccess, BagService::MergeAndCompact(player, bag, CompactPolicy::kMergeOnly));
-	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA)) << "and the next compaction destroys it";
+	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA));
+	EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
+	EXPECT_EQ(kInvalidSlot, bag.GetItemPosByGuid(kGuidA));
 	EXPECT_EQ(0u, bag.OccupiedGridCount());
+	EXPECT_EQ(1u, LogAttempts() - logsBefore);
+
+	bool changed = true;
+	EXPECT_EQ(kSuccess, BagService::MergeAndCompact(player, bag, CompactPolicy::kMergeOnly, &changed));
+	EXPECT_FALSE(changed);
+	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA));
+	EXPECT_EQ(0u, bag.OccupiedGridCount());
+	EXPECT_EQ(1u, LogAttempts() - logsBefore) << "整理不能重复记录已消费实例的销毁";
 	EXPECT_TRUE(bag.IsLayerConsistent());
 }
 

@@ -2,7 +2,8 @@
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <boost/circular_buffer.hpp>
+#include <deque>
+#include "core/network/grpc_client_runtime.h"
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/friend/friend.grpc.pb.h"
@@ -27,6 +28,10 @@ struct AsyncClientPlayerFriendAddFriendGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::AddFriendRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendAddFriendHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::friendpb::AddFriendResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendAddFriendHandlerFunctionType =
@@ -41,6 +46,9 @@ extern AsyncClientPlayerFriendAddFriendFailedHandlerFunctionType AsyncClientPlay
 void SendClientPlayerFriendAddFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AddFriendRequest& request);
 void SendClientPlayerFriendAddFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AddFriendRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendAddFriend(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendAddFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AddFriendRequest& request, GrpcDone<::friendpb::AddFriendResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerFriendAcceptFriend
 
@@ -54,6 +62,10 @@ struct AsyncClientPlayerFriendAcceptFriendGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::AcceptFriendRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendAcceptFriendHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::friendpb::AcceptFriendResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendAcceptFriendHandlerFunctionType =
@@ -68,6 +80,9 @@ extern AsyncClientPlayerFriendAcceptFriendFailedHandlerFunctionType AsyncClientP
 void SendClientPlayerFriendAcceptFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AcceptFriendRequest& request);
 void SendClientPlayerFriendAcceptFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AcceptFriendRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendAcceptFriend(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendAcceptFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AcceptFriendRequest& request, GrpcDone<::friendpb::AcceptFriendResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerFriendRejectFriend
 
@@ -81,6 +96,10 @@ struct AsyncClientPlayerFriendRejectFriendGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::RejectFriendRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendRejectFriendHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::friendpb::RejectFriendResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendRejectFriendHandlerFunctionType =
@@ -95,6 +114,9 @@ extern AsyncClientPlayerFriendRejectFriendFailedHandlerFunctionType AsyncClientP
 void SendClientPlayerFriendRejectFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RejectFriendRequest& request);
 void SendClientPlayerFriendRejectFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RejectFriendRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendRejectFriend(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendRejectFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RejectFriendRequest& request, GrpcDone<::friendpb::RejectFriendResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerFriendRemoveFriend
 
@@ -108,6 +130,10 @@ struct AsyncClientPlayerFriendRemoveFriendGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::RemoveFriendRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendRemoveFriendHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::friendpb::RemoveFriendResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendRemoveFriendHandlerFunctionType =
@@ -122,6 +148,9 @@ extern AsyncClientPlayerFriendRemoveFriendFailedHandlerFunctionType AsyncClientP
 void SendClientPlayerFriendRemoveFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RemoveFriendRequest& request);
 void SendClientPlayerFriendRemoveFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RemoveFriendRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendRemoveFriend(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendRemoveFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RemoveFriendRequest& request, GrpcDone<::friendpb::RemoveFriendResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerFriendGetFriendList
 
@@ -135,6 +164,10 @@ struct AsyncClientPlayerFriendGetFriendListGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::GetFriendListRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendGetFriendListHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::friendpb::GetFriendListResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendGetFriendListHandlerFunctionType =
@@ -149,6 +182,9 @@ extern AsyncClientPlayerFriendGetFriendListFailedHandlerFunctionType AsyncClient
 void SendClientPlayerFriendGetFriendList(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetFriendListRequest& request);
 void SendClientPlayerFriendGetFriendList(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetFriendListRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendGetFriendList(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendGetFriendList(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetFriendListRequest& request, GrpcDone<::friendpb::GetFriendListResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerFriendGetPendingRequests
 
@@ -162,6 +198,10 @@ struct AsyncClientPlayerFriendGetPendingRequestsGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::GetPendingRequestsRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendGetPendingRequestsHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::friendpb::GetPendingRequestsResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendGetPendingRequestsHandlerFunctionType =
@@ -176,6 +216,9 @@ extern AsyncClientPlayerFriendGetPendingRequestsFailedHandlerFunctionType AsyncC
 void SendClientPlayerFriendGetPendingRequests(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetPendingRequestsRequest& request);
 void SendClientPlayerFriendGetPendingRequests(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetPendingRequestsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendGetPendingRequests(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendGetPendingRequests(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetPendingRequestsRequest& request, GrpcDone<::friendpb::GetPendingRequestsResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerFriendBlock
 
@@ -189,6 +232,10 @@ struct AsyncClientPlayerFriendBlockGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::BlockRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendBlockHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::friendpb::BlockResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendBlockHandlerFunctionType =
@@ -203,6 +250,9 @@ extern AsyncClientPlayerFriendBlockFailedHandlerFunctionType AsyncClientPlayerFr
 void SendClientPlayerFriendBlock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::BlockRequest& request);
 void SendClientPlayerFriendBlock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::BlockRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendBlock(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendBlock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::BlockRequest& request, GrpcDone<::friendpb::BlockResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerFriendUnblock
 
@@ -216,6 +266,10 @@ struct AsyncClientPlayerFriendUnblockGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::UnblockRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendUnblockHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::friendpb::UnblockResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendUnblockHandlerFunctionType =
@@ -230,6 +284,9 @@ extern AsyncClientPlayerFriendUnblockFailedHandlerFunctionType AsyncClientPlayer
 void SendClientPlayerFriendUnblock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::UnblockRequest& request);
 void SendClientPlayerFriendUnblock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::UnblockRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendUnblock(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendUnblock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::UnblockRequest& request, GrpcDone<::friendpb::UnblockResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerFriendListBlocks
 
@@ -243,6 +300,10 @@ struct AsyncClientPlayerFriendListBlocksGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::ListBlocksRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendListBlocksHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::friendpb::ListBlocksResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendListBlocksHandlerFunctionType =
@@ -257,6 +318,9 @@ extern AsyncClientPlayerFriendListBlocksFailedHandlerFunctionType AsyncClientPla
 void SendClientPlayerFriendListBlocks(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::ListBlocksRequest& request);
 void SendClientPlayerFriendListBlocks(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::ListBlocksRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendListBlocks(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendListBlocks(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::ListBlocksRequest& request, GrpcDone<::friendpb::ListBlocksResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerFriendRecommendFriends
 
@@ -270,6 +334,10 @@ struct AsyncClientPlayerFriendRecommendFriendsGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::RecommendFriendsRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendRecommendFriendsHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::friendpb::RecommendFriendsResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendRecommendFriendsHandlerFunctionType =
@@ -284,6 +352,9 @@ extern AsyncClientPlayerFriendRecommendFriendsFailedHandlerFunctionType AsyncCli
 void SendClientPlayerFriendRecommendFriends(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RecommendFriendsRequest& request);
 void SendClientPlayerFriendRecommendFriends(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RecommendFriendsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendRecommendFriends(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendRecommendFriends(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RecommendFriendsRequest& request, GrpcDone<::friendpb::RecommendFriendsResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerFriendNotifyFriendEvent
 
@@ -297,6 +368,10 @@ struct AsyncClientPlayerFriendNotifyFriendEventGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::friendpb::FriendEventS2C request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerFriendNotifyFriendEventHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::Empty> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncClientPlayerFriendNotifyFriendEventHandlerFunctionType =
@@ -311,6 +386,9 @@ extern AsyncClientPlayerFriendNotifyFriendEventFailedHandlerFunctionType AsyncCl
 void SendClientPlayerFriendNotifyFriendEvent(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::FriendEventS2C& request);
 void SendClientPlayerFriendNotifyFriendEvent(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::FriendEventS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendClientPlayerFriendNotifyFriendEvent(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendClientPlayerFriendNotifyFriendEvent(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::FriendEventS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 void SetFriendHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetFriendIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -318,7 +396,7 @@ void SetFriendFailedHandler(const std::function<void(const GrpcCallFailure&, con
 void SetFriendIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 // 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
 void SetFriendCallDeadline(std::chrono::milliseconds deadline);
-void HandleFriendCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+void HandleFriendCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
 void InitFriendGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace friendpb

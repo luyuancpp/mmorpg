@@ -135,6 +135,10 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
         // ::data_service::GetPlayerAssetOpLedgerResponse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
+        // ::data_service::GetPlayerInboxLedgerRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
+        // ::data_service::GetPlayerInboxLedgerResponse
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto, /* tracker*/ nullptr,},
 };
 }  // namespace
 #endif
@@ -3838,6 +3842,147 @@ const ::_pbi::ClassData* GetPlayerSnapshotDiffRequest_get_class_data() {
   return GetPlayerSnapshotDiffRequest_globals_.GetClassData();
 #else
   return GetPlayerSnapshotDiffRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class GetPlayerInboxLedgerRequest::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<GetPlayerInboxLedgerRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerRequest, _impl_._has_bits_);
+};
+
+constexpr GetPlayerInboxLedgerRequest::ParseTableT_ GetPlayerInboxLedgerRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerRequest, _impl_._has_bits_),
+      0, // no _extensions_
+      1, 0,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967294,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      1,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::data_service::GetPlayerInboxLedgerRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint64 player_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetPlayerInboxLedgerRequest, _impl_.player_id_), 0>(),
+       {8, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerRequest, _impl_.player_id_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // uint64 player_id = 1;
+      {PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    // no aux_entries
+    {{
+    }},
+  };
+}
+
+
+inline constexpr GetPlayerInboxLedgerRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_{::uint64_t{0u}} {}
+
+template <typename>
+constexpr GetPlayerInboxLedgerRequest::GetPlayerInboxLedgerRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL GetPlayerInboxLedgerRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetPlayerInboxLedgerRequest(arena);
+}
+constexpr auto GetPlayerInboxLedgerRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetPlayerInboxLedgerRequest), alignof(GetPlayerInboxLedgerRequest));
+}
+constexpr auto GetPlayerInboxLedgerRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GetPlayerInboxLedgerRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetPlayerInboxLedgerRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetPlayerInboxLedgerRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetPlayerInboxLedgerRequest>(), &GetPlayerInboxLedgerRequest::ByteSizeLong,
+              &GetPlayerInboxLedgerRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[53],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GetPlayerInboxLedgerRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GetPlayerInboxLedgerRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GetPlayerInboxLedgerRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GetPlayerInboxLedgerRequest::InternalGenerateClassData_(
+            _default, &GetPlayerInboxLedgerRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GetPlayerInboxLedgerRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GetPlayerInboxLedgerRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GetPlayerInboxLedgerRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetPlayerInboxLedgerRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetPlayerInboxLedgerRequestGlobalsTypeInternal GetPlayerInboxLedgerRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GetPlayerInboxLedgerRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GetPlayerInboxLedgerRequest_globals_.GetClassData();
+#else
+  return GetPlayerInboxLedgerRequest_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -8712,6 +8857,160 @@ const ::_pbi::ClassData* BatchGetPlayerHomeZoneResponse_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class GetPlayerInboxLedgerResponse::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<GetPlayerInboxLedgerResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerResponse, _impl_._has_bits_);
+};
+
+constexpr GetPlayerInboxLedgerResponse::ParseTableT_ GetPlayerInboxLedgerResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerResponse, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      1,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::data_service::GetPlayerInboxLedgerResponse>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // .PlayerInboxLedgerComp ledger = 2;
+      {::_pbi::TcParser::FastMtS1,
+       {18, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerResponse, _impl_.ledger_)}},
+      // bool found = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GetPlayerInboxLedgerResponse, _impl_.found_), 1>(),
+       {8, 1, 0,
+        PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerResponse, _impl_.found_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // bool found = 1;
+      {PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerResponse, _impl_.found_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      // .PlayerInboxLedgerComp ledger = 2;
+      {PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerResponse, _impl_.ledger_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::PlayerInboxLedgerComp>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::PlayerInboxLedgerComp_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr GetPlayerInboxLedgerResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        ledger_{nullptr},
+        found_{false} {}
+
+template <typename>
+constexpr GetPlayerInboxLedgerResponse::GetPlayerInboxLedgerResponse(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL GetPlayerInboxLedgerResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetPlayerInboxLedgerResponse(arena);
+}
+constexpr auto GetPlayerInboxLedgerResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetPlayerInboxLedgerResponse), alignof(GetPlayerInboxLedgerResponse));
+}
+constexpr auto GetPlayerInboxLedgerResponse::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GetPlayerInboxLedgerResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetPlayerInboxLedgerResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetPlayerInboxLedgerResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetPlayerInboxLedgerResponse>(), &GetPlayerInboxLedgerResponse::ByteSizeLong,
+              &GetPlayerInboxLedgerResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerResponse, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[54],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GetPlayerInboxLedgerResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GetPlayerInboxLedgerResponseGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GetPlayerInboxLedgerResponse_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GetPlayerInboxLedgerResponse::InternalGenerateClassData_(
+            _default, &GetPlayerInboxLedgerResponse_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GetPlayerInboxLedgerResponse>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GetPlayerInboxLedgerResponseGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GetPlayerInboxLedgerResponse _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetPlayerInboxLedgerResponse>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerResponseGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetPlayerInboxLedgerResponseGlobalsTypeInternal GetPlayerInboxLedgerResponse_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GetPlayerInboxLedgerResponse_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GetPlayerInboxLedgerResponse_globals_.GetClassData();
+#else
+  return GetPlayerInboxLedgerResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class GetPlayerAssetOpLedgerResponse::_Internal {
  public:
   using HasBits = decltype(::std::declval<GetPlayerAssetOpLedgerResponse>()._impl_._has_bits_);
@@ -9423,6 +9722,18 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerResponse, _impl_.ledger_),
         1,
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerInboxLedgerRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerInboxLedgerRequest, _impl_.player_id_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerInboxLedgerResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerInboxLedgerResponse, _impl_.found_),
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerInboxLedgerResponse, _impl_.ledger_),
+        1,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -9480,6 +9791,8 @@ static const ::_pbi::MigrationSchema
         {532, sizeof(::data_service::BatchGetPlayerNameResponse)},
         {537, sizeof(::data_service::GetPlayerAssetOpLedgerRequest)},
         {542, sizeof(::data_service::GetPlayerAssetOpLedgerResponse)},
+        {549, sizeof(::data_service::GetPlayerInboxLedgerRequest)},
+        {554, sizeof(::data_service::GetPlayerInboxLedgerResponse)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -9536,249 +9849,259 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
         &::data_service::BatchGetPlayerNameResponse_globals_,
         &::data_service::GetPlayerAssetOpLedgerRequest_globals_,
         &::data_service::GetPlayerAssetOpLedgerResponse_globals_,
+        &::data_service::GetPlayerInboxLedgerRequest_globals_,
+        &::data_service::GetPlayerInboxLedgerResponse_globals_,
 };
 const char descriptor_table_protodef_proto_2fdata_5fservice_2fdata_5fservice_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n%proto/data_service/data_service.proto\022"
     "\014data_service\032\033google/protobuf/empty.pro"
     "to\0321proto/common/component/asset_op_ledg"
-    "er_comp.proto\":\n\025LoadPlayerDataRequest\022\021"
-    "\n\tplayer_id\030\001 \001(\004\022\016\n\006fields\030\002 \003(\t\"\250\001\n\026Lo"
-    "adPlayerDataResponse\022\022\n\nerror_code\030\001 \001(\r"
-    "\022<\n\004data\030\002 \003(\0132..data_service.LoadPlayer"
-    "DataResponse.DataEntry\022\017\n\007version\030\003 \001(\004\032"
-    "+\n\tDataEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\014"
-    ":\0028\001\"\256\001\n\025SavePlayerDataRequest\022\021\n\tplayer"
-    "_id\030\001 \001(\004\022;\n\004data\030\002 \003(\0132-.data_service.S"
-    "avePlayerDataRequest.DataEntry\022\030\n\020expect"
-    "ed_version\030\003 \001(\004\032+\n\tDataEntry\022\013\n\003key\030\001 \001"
-    "(\t\022\r\n\005value\030\002 \001(\014:\0028\001\"A\n\026SavePlayerDataR"
-    "esponse\022\022\n\nerror_code\030\001 \001(\r\022\023\n\013new_versi"
-    "on\030\002 \001(\004\"9\n\025GetPlayerFieldRequest\022\021\n\tpla"
-    "yer_id\030\001 \001(\004\022\r\n\005field\030\002 \001(\t\";\n\026GetPlayer"
-    "FieldResponse\022\022\n\nerror_code\030\001 \001(\r\022\r\n\005val"
-    "ue\030\002 \001(\014\"b\n\025SetPlayerFieldRequest\022\021\n\tpla"
-    "yer_id\030\001 \001(\004\022\r\n\005field\030\002 \001(\t\022\r\n\005value\030\003 \001"
-    "(\014\022\030\n\020expected_version\030\004 \001(\004\"A\n\026SetPlaye"
-    "rFieldResponse\022\022\n\nerror_code\030\001 \001(\r\022\023\n\013ne"
-    "w_version\030\002 \001(\004\"X\n\031RegisterPlayerZoneReq"
-    "uest\022\021\n\tplayer_id\030\001 \001(\004\022\024\n\014home_zone_id\030"
-    "\002 \001(\r\022\022\n\nstorage_id\030\003 \001(\r\"-\n\030GetPlayerHo"
-    "meZoneRequest\022\021\n\tplayer_id\030\001 \001(\004\"L\n\031GetP"
-    "layerHomeZoneResponse\022\024\n\014home_zone_id\030\001 "
-    "\001(\r\022\031\n\021home_zone_merging\030\002 \001(\010\"3\n\035BatchG"
-    "etPlayerHomeZoneRequest\022\022\n\nplayer_ids\030\001 "
-    "\003(\004\"\260\001\n\036BatchGetPlayerHomeZoneResponse\022X"
-    "\n\017player_zone_map\030\002 \003(\0132\?.data_service.B"
-    "atchGetPlayerHomeZoneResponse.PlayerZone"
-    "MapEntry\0324\n\022PlayerZoneMapEntry\022\013\n\003key\030\001 "
-    "\001(\004\022\r\n\005value\030\002 \001(\r:\0028\001\"_\n\034RemapHomeZoneF"
-    "orMergeRequest\022\026\n\016source_zone_id\030\001 \001(\r\022\026"
-    "\n\016target_zone_id\030\002 \001(\r\022\017\n\007dry_run\030\003 \001(\010\""
-    "e\n\035RemapHomeZoneForMergeResponse\022\022\n\nerro"
-    "r_code\030\001 \001(\r\022\027\n\017players_matched\030\002 \001(\r\022\027\n"
-    "\017players_updated\030\003 \001(\r\"I\n\027DeletePlayerDa"
-    "taRequest\022\021\n\tplayer_id\030\001 \001(\004\022\033\n\023delete_z"
-    "one_mapping\030\002 \001(\010\"D\n\030DeletePlayerDataRes"
-    "ponse\022\022\n\nerror_code\030\001 \001(\r\022\024\n\014keys_delete"
-    "d\030\002 \001(\r\"|\n\033CreatePlayerSnapshotRequest\022\021"
-    "\n\tplayer_id\030\001 \001(\004\022(\n\004type\030\002 \001(\0162\032.data_s"
-    "ervice.SnapshotType\022\016\n\006reason\030\003 \001(\t\022\020\n\010o"
-    "perator\030\004 \001(\t\"[\n\034CreatePlayerSnapshotRes"
-    "ponse\022\022\n\nerror_code\030\001 \001(\r\022\023\n\013snapshot_id"
-    "\030\002 \001(\004\022\022\n\ncreated_at\030\003 \001(\004\"S\n\032ListPlayer"
-    "SnapshotsRequest\022\021\n\tplayer_id\030\001 \001(\004\022\023\n\013b"
-    "efore_time\030\002 \001(\004\022\r\n\005limit\030\003 \001(\r\"\320\001\n\014Snap"
-    "shotInfo\022\023\n\013snapshot_id\030\001 \001(\004\022\021\n\tplayer_"
-    "id\030\002 \001(\004\022\017\n\007zone_id\030\003 \001(\r\022(\n\004type\030\004 \001(\0162"
-    "\032.data_service.SnapshotType\022\022\n\ncreated_a"
-    "t\030\005 \001(\004\022\016\n\006reason\030\006 \001(\t\022\020\n\010operator\030\007 \001("
-    "\t\022\027\n\017data_size_bytes\030\010 \001(\r\022\016\n\006fields\030\t \003"
-    "(\t\"`\n\033ListPlayerSnapshotsResponse\022\022\n\nerr"
-    "or_code\030\001 \001(\r\022-\n\tsnapshots\030\002 \003(\0132\032.data_"
-    "service.SnapshotInfo\"[\n\034GetPlayerSnapsho"
-    "tDiffRequest\022\021\n\tplayer_id\030\001 \001(\004\022\023\n\013snaps"
-    "hot_id\030\002 \001(\004\022\023\n\013target_time\030\003 \001(\004\"|\n\tFie"
-    "ldDiff\022\r\n\005field\030\001 \001(\t\022\026\n\016snapshot_value\030"
-    "\002 \001(\014\022\025\n\rcurrent_value\030\003 \001(\014\022\030\n\020only_in_"
-    "snapshot\030\004 \001(\010\022\027\n\017only_in_current\030\005 \001(\010\""
-    "\214\001\n\035GetPlayerSnapshotDiffResponse\022\022\n\nerr"
-    "or_code\030\001 \001(\r\022\030\n\020snapshot_id_used\030\002 \001(\004\022"
-    "\025\n\rsnapshot_time\030\003 \001(\004\022&\n\005diffs\030\004 \003(\0132\027."
-    "data_service.FieldDiff\"\260\001\n\027RollbackGuild"
-    "Divergence\022\r\n\005op_id\030\001 \001(\004\022\021\n\tplayer_id\030\002"
-    " \001(\004\022\020\n\010guild_id\030\003 \001(\004\022\014\n\004kind\030\004 \001(\r\022\016\n\006"
-    "status\030\005 \001(\r\022\023\n\013funds_delta\030\006 \001(\004\022\032\n\022con"
-    "tribution_delta\030\007 \001(\004\022\022\n\nupdated_ms\030\010 \001("
-    "\004\"\323\001\n\025RollbackPlayerRequest\022\021\n\tplayer_id"
+    "er_comp.proto\0325proto/common/component/pl"
+    "ayer_inbox_ledger_comp.proto\":\n\025LoadPlay"
+    "erDataRequest\022\021\n\tplayer_id\030\001 \001(\004\022\016\n\006fiel"
+    "ds\030\002 \003(\t\"\250\001\n\026LoadPlayerDataResponse\022\022\n\ne"
+    "rror_code\030\001 \001(\r\022<\n\004data\030\002 \003(\0132..data_ser"
+    "vice.LoadPlayerDataResponse.DataEntry\022\017\n"
+    "\007version\030\003 \001(\004\032+\n\tDataEntry\022\013\n\003key\030\001 \001(\t"
+    "\022\r\n\005value\030\002 \001(\014:\0028\001\"\256\001\n\025SavePlayerDataRe"
+    "quest\022\021\n\tplayer_id\030\001 \001(\004\022;\n\004data\030\002 \003(\0132-"
+    ".data_service.SavePlayerDataRequest.Data"
+    "Entry\022\030\n\020expected_version\030\003 \001(\004\032+\n\tDataE"
+    "ntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\014:\0028\001\"A\n\026"
+    "SavePlayerDataResponse\022\022\n\nerror_code\030\001 \001"
+    "(\r\022\023\n\013new_version\030\002 \001(\004\"9\n\025GetPlayerFiel"
+    "dRequest\022\021\n\tplayer_id\030\001 \001(\004\022\r\n\005field\030\002 \001"
+    "(\t\";\n\026GetPlayerFieldResponse\022\022\n\nerror_co"
+    "de\030\001 \001(\r\022\r\n\005value\030\002 \001(\014\"b\n\025SetPlayerFiel"
+    "dRequest\022\021\n\tplayer_id\030\001 \001(\004\022\r\n\005field\030\002 \001"
+    "(\t\022\r\n\005value\030\003 \001(\014\022\030\n\020expected_version\030\004 "
+    "\001(\004\"A\n\026SetPlayerFieldResponse\022\022\n\nerror_c"
+    "ode\030\001 \001(\r\022\023\n\013new_version\030\002 \001(\004\"X\n\031Regist"
+    "erPlayerZoneRequest\022\021\n\tplayer_id\030\001 \001(\004\022\024"
+    "\n\014home_zone_id\030\002 \001(\r\022\022\n\nstorage_id\030\003 \001(\r"
+    "\"-\n\030GetPlayerHomeZoneRequest\022\021\n\tplayer_i"
+    "d\030\001 \001(\004\"L\n\031GetPlayerHomeZoneResponse\022\024\n\014"
+    "home_zone_id\030\001 \001(\r\022\031\n\021home_zone_merging\030"
+    "\002 \001(\010\"3\n\035BatchGetPlayerHomeZoneRequest\022\022"
+    "\n\nplayer_ids\030\001 \003(\004\"\260\001\n\036BatchGetPlayerHom"
+    "eZoneResponse\022X\n\017player_zone_map\030\002 \003(\0132\?"
+    ".data_service.BatchGetPlayerHomeZoneResp"
+    "onse.PlayerZoneMapEntry\0324\n\022PlayerZoneMap"
+    "Entry\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\r:\0028\001\"_\n"
+    "\034RemapHomeZoneForMergeRequest\022\026\n\016source_"
+    "zone_id\030\001 \001(\r\022\026\n\016target_zone_id\030\002 \001(\r\022\017\n"
+    "\007dry_run\030\003 \001(\010\"e\n\035RemapHomeZoneForMergeR"
+    "esponse\022\022\n\nerror_code\030\001 \001(\r\022\027\n\017players_m"
+    "atched\030\002 \001(\r\022\027\n\017players_updated\030\003 \001(\r\"I\n"
+    "\027DeletePlayerDataRequest\022\021\n\tplayer_id\030\001 "
+    "\001(\004\022\033\n\023delete_zone_mapping\030\002 \001(\010\"D\n\030Dele"
+    "tePlayerDataResponse\022\022\n\nerror_code\030\001 \001(\r"
+    "\022\024\n\014keys_deleted\030\002 \001(\r\"|\n\033CreatePlayerSn"
+    "apshotRequest\022\021\n\tplayer_id\030\001 \001(\004\022(\n\004type"
+    "\030\002 \001(\0162\032.data_service.SnapshotType\022\016\n\006re"
+    "ason\030\003 \001(\t\022\020\n\010operator\030\004 \001(\t\"[\n\034CreatePl"
+    "ayerSnapshotResponse\022\022\n\nerror_code\030\001 \001(\r"
+    "\022\023\n\013snapshot_id\030\002 \001(\004\022\022\n\ncreated_at\030\003 \001("
+    "\004\"S\n\032ListPlayerSnapshotsRequest\022\021\n\tplaye"
+    "r_id\030\001 \001(\004\022\023\n\013before_time\030\002 \001(\004\022\r\n\005limit"
+    "\030\003 \001(\r\"\320\001\n\014SnapshotInfo\022\023\n\013snapshot_id\030\001"
+    " \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\017\n\007zone_id\030\003 \001(\r"
+    "\022(\n\004type\030\004 \001(\0162\032.data_service.SnapshotTy"
+    "pe\022\022\n\ncreated_at\030\005 \001(\004\022\016\n\006reason\030\006 \001(\t\022\020"
+    "\n\010operator\030\007 \001(\t\022\027\n\017data_size_bytes\030\010 \001("
+    "\r\022\016\n\006fields\030\t \003(\t\"`\n\033ListPlayerSnapshots"
+    "Response\022\022\n\nerror_code\030\001 \001(\r\022-\n\tsnapshot"
+    "s\030\002 \003(\0132\032.data_service.SnapshotInfo\"[\n\034G"
+    "etPlayerSnapshotDiffRequest\022\021\n\tplayer_id"
     "\030\001 \001(\004\022\023\n\013snapshot_id\030\002 \001(\004\022\023\n\013target_ti"
-    "me\030\003 \001(\004\022*\n\005scope\030\004 \001(\0162\033.data_service.R"
-    "ollbackScope\022\016\n\006fields\030\005 \003(\t\022\016\n\006reason\030\006"
-    " \001(\t\022\020\n\010operator\030\007 \001(\t\022\037\n\027accept_guild_d"
-    "ivergence\030\010 \001(\010\"\212\002\n\026RollbackPlayerRespon"
-    "se\022\022\n\nerror_code\030\001 \001(\r\022\030\n\020snapshot_id_us"
-    "ed\030\002 \001(\004\022 \n\030pre_rollback_snapshot_id\030\003 \001"
-    "(\004\022\027\n\017fields_restored\030\004 \003(\t\022\036\n\026guild_div"
-    "ergence_count\030\005 \001(\r\022@\n\021guild_divergences"
-    "\030\006 \003(\0132%.data_service.RollbackGuildDiver"
-    "gence\022%\n\035guild_unprovable_player_count\030\007"
-    " \001(\r\"~\n\023RollbackZoneRequest\022\017\n\007zone_id\030\001"
-    " \001(\r\022\023\n\013target_time\030\002 \001(\004\022\016\n\006reason\030\003 \001("
-    "\t\022\020\n\010operator\030\004 \001(\t\022\037\n\027accept_guild_dive"
-    "rgence\030\005 \001(\010\"\264\002\n\024RollbackZoneResponse\022\022\n"
-    "\nerror_code\030\001 \001(\r\022\030\n\020players_affected\030\002 "
-    "\001(\r\022\026\n\016players_failed\030\003 \001(\r\022\031\n\021failed_pl"
-    "ayer_ids\030\004 \003(\004\022\031\n\021orphan_player_ids\030\005 \003("
-    "\004\022\027\n\017orphans_cleaned\030\006 \001(\r\022\036\n\026guild_dive"
-    "rgence_count\030\007 \001(\r\022@\n\021guild_divergences\030"
-    "\010 \003(\0132%.data_service.RollbackGuildDiverg"
-    "ence\022%\n\035guild_unprovable_player_count\030\t "
-    "\001(\r\"l\n\022RollbackAllRequest\022\023\n\013target_time"
-    "\030\001 \001(\004\022\016\n\006reason\030\002 \001(\t\022\020\n\010operator\030\003 \001(\t"
-    "\022\037\n\027accept_guild_divergence\030\004 \001(\010\"\375\001\n\023Ro"
-    "llbackAllResponse\022\022\n\nerror_code\030\001 \001(\r\022\027\n"
-    "\017zones_processed\030\002 \001(\r\022\030\n\020players_affect"
-    "ed\030\003 \001(\r\022\026\n\016players_failed\030\004 \001(\r\022\036\n\026guil"
-    "d_divergence_count\030\005 \001(\r\022@\n\021guild_diverg"
-    "ences\030\006 \003(\0132%.data_service.RollbackGuild"
-    "Divergence\022%\n\035guild_unprovable_player_co"
-    "unt\030\007 \001(\r\"\307\001\n\027BatchRecallItemsRequest\022\022\n"
-    "\nplayer_ids\030\001 \003(\004\022\026\n\016item_config_id\030\002 \001("
-    "\r\022\025\n\rcurrency_type\030\003 \001(\r\022\022\n\ntime_start\030\004"
-    " \001(\004\022\020\n\010time_end\030\005 \001(\004\022\020\n\010tx_types\030\006 \003(\r"
-    "\022\016\n\006reason\030\007 \001(\t\022\020\n\010operator\030\010 \001(\t\022\017\n\007dr"
-    "y_run\030\t \001(\010\"\203\001\n\014RecallResult\022\021\n\tplayer_i"
-    "d\030\001 \001(\004\022\021\n\titem_uuid\030\002 \001(\004\022\026\n\016item_confi"
-    "g_id\030\003 \001(\r\022\016\n\006amount\030\004 \001(\004\022\017\n\007success\030\005 "
-    "\001(\010\022\024\n\014error_detail\030\006 \001(\t\"\240\001\n\030BatchRecal"
-    "lItemsResponse\022\022\n\nerror_code\030\001 \001(\r\022\025\n\rto"
-    "tal_matched\030\002 \001(\r\022\026\n\016total_recalled\030\003 \001("
-    "\r\022\024\n\014total_failed\030\004 \001(\r\022+\n\007results\030\005 \003(\013"
-    "2\032.data_service.RecallResult\"\265\001\n\032QueryTr"
-    "ansactionLogRequest\022\021\n\tplayer_id\030\001 \001(\004\022\022"
-    "\n\ntime_start\030\002 \001(\004\022\020\n\010time_end\030\003 \001(\004\022\020\n\010"
-    "tx_types\030\004 \003(\r\022\026\n\016item_config_id\030\005 \001(\r\022\025"
-    "\n\rcurrency_type\030\006 \001(\r\022\r\n\005limit\030\007 \001(\r\022\016\n\006"
-    "offset\030\010 \001(\004\"\265\002\n\021TransactionLogRow\022\r\n\005tx"
-    "_id\030\001 \001(\004\022\021\n\ttimestamp\030\002 \001(\004\022\017\n\007tx_type\030"
-    "\003 \001(\r\022\023\n\013from_player\030\004 \001(\004\022\021\n\tto_player\030"
-    "\005 \001(\004\022\021\n\titem_uuid\030\006 \001(\004\022\026\n\016item_config_"
-    "id\030\007 \001(\r\022\025\n\ritem_quantity\030\010 \001(\r\022\025\n\rcurre"
-    "ncy_type\030\t \001(\r\022\026\n\016currency_delta\030\n \001(\003\022\026"
-    "\n\016balance_before\030\013 \001(\004\022\025\n\rbalance_after\030"
-    "\014 \001(\004\022\026\n\016correlation_id\030\r \001(\004\022\r\n\005extra\030\016"
-    " \001(\t\"u\n\033QueryTransactionLogResponse\022\022\n\ne"
-    "rror_code\030\001 \001(\r\022-\n\004rows\030\002 \003(\0132\037.data_ser"
-    "vice.TransactionLogRow\022\023\n\013total_count\030\003 "
-    "\001(\r\"\214\001\n\032CreateEventSnapshotRequest\022\021\n\tpl"
-    "ayer_id\030\001 \001(\004\0223\n\nevent_type\030\002 \001(\0162\037.data"
-    "_service.SnapshotEventType\022\024\n\014event_deta"
-    "il\030\003 \001(\t\022\020\n\010operator\030\004 \001(\t\"Z\n\033CreateEven"
-    "tSnapshotResponse\022\022\n\nerror_code\030\001 \001(\r\022\023\n"
-    "\013snapshot_id\030\002 \001(\004\022\022\n\ncreated_at\030\003 \001(\004\"9"
-    "\n\030AllocateIdSegmentRequest\022\017\n\007biz_tag\030\001 "
-    "\001(\t\022\014\n\004step\030\002 \001(\r\"G\n\031AllocateIdSegmentRe"
-    "sponse\022\022\n\nerror_code\030\001 \001(\r\022\n\n\002lo\030\002 \001(\004\022\n"
-    "\n\002hi\030\003 \001(\004\";\n\030ReservePlayerNameRequest\022\021"
-    "\n\tplayer_id\030\001 \001(\004\022\014\n\004name\030\002 \001(\t\"D\n\031Reser"
-    "vePlayerNameResponse\022\016\n\006result\030\001 \001(\r\022\027\n\017"
-    "owner_player_id\030\002 \001(\004\";\n\030ReleasePlayerNa"
-    "meRequest\022\021\n\tplayer_id\030\001 \001(\004\022\014\n\004name\030\002 \001"
-    "(\t\"/\n\031BatchGetPlayerNameRequest\022\022\n\nplaye"
-    "r_ids\030\001 \003(\004\"\216\001\n\032BatchGetPlayerNameRespon"
-    "se\022B\n\005names\030\001 \003(\01323.data_service.BatchGe"
-    "tPlayerNameResponse.NamesEntry\032,\n\nNamesE"
-    "ntry\022\013\n\003key\030\001 \001(\004\022\r\n\005value\030\002 \001(\t:\0028\001\"2\n\035"
-    "GetPlayerAssetOpLedgerRequest\022\021\n\tplayer_"
-    "id\030\001 \001(\004\"Y\n\036GetPlayerAssetOpLedgerRespon"
-    "se\022\r\n\005found\030\001 \001(\010\022(\n\006ledger\030\002 \001(\0132\030.Play"
-    "erAssetOpLedgerComp*\207\001\n\014SnapshotType\022\023\n\017"
-    "SNAPSHOT_MANUAL\020\000\022\025\n\021SNAPSHOT_PERIODIC\020\001"
-    "\022\034\n\030SNAPSHOT_PRE_MAINTENANCE\020\002\022\031\n\025SNAPSH"
-    "OT_PRE_ROLLBACK\020\003\022\022\n\016SNAPSHOT_LOGIN\020\004*8\n"
-    "\rRollbackScope\022\021\n\rROLLBACK_FULL\020\000\022\024\n\020ROL"
-    "LBACK_PARTIAL\020\001*\212\001\n\021SnapshotEventType\022\033\n"
-    "\027EVENT_LARGE_TRANSACTION\020\000\022\022\n\016EVENT_RECH"
-    "ARGE\020\001\022\031\n\025EVENT_PRE_MAINTENANCE\020\002\022\022\n\016EVE"
-    "NT_LEVEL_UP\020\003\022\025\n\021EVENT_FIRST_LOGIN\020\0042\305\022\n"
-    "\013DataService\022]\n\016LoadPlayerData\022#.data_se"
-    "rvice.LoadPlayerDataRequest\032$.data_servi"
-    "ce.LoadPlayerDataResponse\"\000\022]\n\016SavePlaye"
-    "rData\022#.data_service.SavePlayerDataReque"
-    "st\032$.data_service.SavePlayerDataResponse"
-    "\"\000\022]\n\016GetPlayerField\022#.data_service.GetP"
-    "layerFieldRequest\032$.data_service.GetPlay"
-    "erFieldResponse\"\000\022]\n\016SetPlayerField\022#.da"
-    "ta_service.SetPlayerFieldRequest\032$.data_"
-    "service.SetPlayerFieldResponse\"\000\022W\n\022Regi"
-    "sterPlayerZone\022\'.data_service.RegisterPl"
-    "ayerZoneRequest\032\026.google.protobuf.Empty\""
-    "\000\022f\n\021GetPlayerHomeZone\022&.data_service.Ge"
-    "tPlayerHomeZoneRequest\032\'.data_service.Ge"
-    "tPlayerHomeZoneResponse\"\000\022u\n\026BatchGetPla"
-    "yerHomeZone\022+.data_service.BatchGetPlaye"
-    "rHomeZoneRequest\032,.data_service.BatchGet"
-    "PlayerHomeZoneResponse\"\000\022r\n\025RemapHomeZon"
-    "eForMerge\022*.data_service.RemapHomeZoneFo"
-    "rMergeRequest\032+.data_service.RemapHomeZo"
-    "neForMergeResponse\"\000\022c\n\020DeletePlayerData"
-    "\022%.data_service.DeletePlayerDataRequest\032"
-    "&.data_service.DeletePlayerDataResponse\""
-    "\000\022o\n\024CreatePlayerSnapshot\022).data_service"
-    ".CreatePlayerSnapshotRequest\032*.data_serv"
-    "ice.CreatePlayerSnapshotResponse\"\000\022l\n\023Li"
-    "stPlayerSnapshots\022(.data_service.ListPla"
-    "yerSnapshotsRequest\032).data_service.ListP"
-    "layerSnapshotsResponse\"\000\022r\n\025GetPlayerSna"
-    "pshotDiff\022*.data_service.GetPlayerSnapsh"
-    "otDiffRequest\032+.data_service.GetPlayerSn"
-    "apshotDiffResponse\"\000\022]\n\016RollbackPlayer\022#"
-    ".data_service.RollbackPlayerRequest\032$.da"
-    "ta_service.RollbackPlayerResponse\"\000\022W\n\014R"
-    "ollbackZone\022!.data_service.RollbackZoneR"
-    "equest\032\".data_service.RollbackZoneRespon"
-    "se\"\000\022T\n\013RollbackAll\022 .data_service.Rollb"
-    "ackAllRequest\032!.data_service.RollbackAll"
-    "Response\"\000\022c\n\020BatchRecallItems\022%.data_se"
-    "rvice.BatchRecallItemsRequest\032&.data_ser"
-    "vice.BatchRecallItemsResponse\"\000\022l\n\023Query"
-    "TransactionLog\022(.data_service.QueryTrans"
-    "actionLogRequest\032).data_service.QueryTra"
-    "nsactionLogResponse\"\000\022l\n\023CreateEventSnap"
-    "shot\022(.data_service.CreateEventSnapshotR"
-    "equest\032).data_service.CreateEventSnapsho"
-    "tResponse\"\000\022f\n\021AllocateIdSegment\022&.data_"
-    "service.AllocateIdSegmentRequest\032\'.data_"
-    "service.AllocateIdSegmentResponse\"\000\022f\n\021R"
-    "eservePlayerName\022&.data_service.ReserveP"
-    "layerNameRequest\032\'.data_service.ReserveP"
-    "layerNameResponse\"\000\022U\n\021ReleasePlayerName"
-    "\022&.data_service.ReleasePlayerNameRequest"
-    "\032\026.google.protobuf.Empty\"\000\022i\n\022BatchGetPl"
-    "ayerName\022\'.data_service.BatchGetPlayerNa"
-    "meRequest\032(.data_service.BatchGetPlayerN"
-    "ameResponse\"\000\022u\n\026GetPlayerAssetOpLedger\022"
-    "+.data_service.GetPlayerAssetOpLedgerReq"
-    "uest\032,.data_service.GetPlayerAssetOpLedg"
-    "erResponse\"\000B\033Z\031data_service/data_servic"
-    "eb\006proto3"
+    "me\030\003 \001(\004\"|\n\tFieldDiff\022\r\n\005field\030\001 \001(\t\022\026\n\016"
+    "snapshot_value\030\002 \001(\014\022\025\n\rcurrent_value\030\003 "
+    "\001(\014\022\030\n\020only_in_snapshot\030\004 \001(\010\022\027\n\017only_in"
+    "_current\030\005 \001(\010\"\214\001\n\035GetPlayerSnapshotDiff"
+    "Response\022\022\n\nerror_code\030\001 \001(\r\022\030\n\020snapshot"
+    "_id_used\030\002 \001(\004\022\025\n\rsnapshot_time\030\003 \001(\004\022&\n"
+    "\005diffs\030\004 \003(\0132\027.data_service.FieldDiff\"\260\001"
+    "\n\027RollbackGuildDivergence\022\r\n\005op_id\030\001 \001(\004"
+    "\022\021\n\tplayer_id\030\002 \001(\004\022\020\n\010guild_id\030\003 \001(\004\022\014\n"
+    "\004kind\030\004 \001(\r\022\016\n\006status\030\005 \001(\r\022\023\n\013funds_del"
+    "ta\030\006 \001(\004\022\032\n\022contribution_delta\030\007 \001(\004\022\022\n\n"
+    "updated_ms\030\010 \001(\004\"\323\001\n\025RollbackPlayerReque"
+    "st\022\021\n\tplayer_id\030\001 \001(\004\022\023\n\013snapshot_id\030\002 \001"
+    "(\004\022\023\n\013target_time\030\003 \001(\004\022*\n\005scope\030\004 \001(\0162\033"
+    ".data_service.RollbackScope\022\016\n\006fields\030\005 "
+    "\003(\t\022\016\n\006reason\030\006 \001(\t\022\020\n\010operator\030\007 \001(\t\022\037\n"
+    "\027accept_guild_divergence\030\010 \001(\010\"\212\002\n\026Rollb"
+    "ackPlayerResponse\022\022\n\nerror_code\030\001 \001(\r\022\030\n"
+    "\020snapshot_id_used\030\002 \001(\004\022 \n\030pre_rollback_"
+    "snapshot_id\030\003 \001(\004\022\027\n\017fields_restored\030\004 \003"
+    "(\t\022\036\n\026guild_divergence_count\030\005 \001(\r\022@\n\021gu"
+    "ild_divergences\030\006 \003(\0132%.data_service.Rol"
+    "lbackGuildDivergence\022%\n\035guild_unprovable"
+    "_player_count\030\007 \001(\r\"~\n\023RollbackZoneReque"
+    "st\022\017\n\007zone_id\030\001 \001(\r\022\023\n\013target_time\030\002 \001(\004"
+    "\022\016\n\006reason\030\003 \001(\t\022\020\n\010operator\030\004 \001(\t\022\037\n\027ac"
+    "cept_guild_divergence\030\005 \001(\010\"\264\002\n\024Rollback"
+    "ZoneResponse\022\022\n\nerror_code\030\001 \001(\r\022\030\n\020play"
+    "ers_affected\030\002 \001(\r\022\026\n\016players_failed\030\003 \001"
+    "(\r\022\031\n\021failed_player_ids\030\004 \003(\004\022\031\n\021orphan_"
+    "player_ids\030\005 \003(\004\022\027\n\017orphans_cleaned\030\006 \001("
+    "\r\022\036\n\026guild_divergence_count\030\007 \001(\r\022@\n\021gui"
+    "ld_divergences\030\010 \003(\0132%.data_service.Roll"
+    "backGuildDivergence\022%\n\035guild_unprovable_"
+    "player_count\030\t \001(\r\"l\n\022RollbackAllRequest"
+    "\022\023\n\013target_time\030\001 \001(\004\022\016\n\006reason\030\002 \001(\t\022\020\n"
+    "\010operator\030\003 \001(\t\022\037\n\027accept_guild_divergen"
+    "ce\030\004 \001(\010\"\375\001\n\023RollbackAllResponse\022\022\n\nerro"
+    "r_code\030\001 \001(\r\022\027\n\017zones_processed\030\002 \001(\r\022\030\n"
+    "\020players_affected\030\003 \001(\r\022\026\n\016players_faile"
+    "d\030\004 \001(\r\022\036\n\026guild_divergence_count\030\005 \001(\r\022"
+    "@\n\021guild_divergences\030\006 \003(\0132%.data_servic"
+    "e.RollbackGuildDivergence\022%\n\035guild_unpro"
+    "vable_player_count\030\007 \001(\r\"\307\001\n\027BatchRecall"
+    "ItemsRequest\022\022\n\nplayer_ids\030\001 \003(\004\022\026\n\016item"
+    "_config_id\030\002 \001(\r\022\025\n\rcurrency_type\030\003 \001(\r\022"
+    "\022\n\ntime_start\030\004 \001(\004\022\020\n\010time_end\030\005 \001(\004\022\020\n"
+    "\010tx_types\030\006 \003(\r\022\016\n\006reason\030\007 \001(\t\022\020\n\010opera"
+    "tor\030\010 \001(\t\022\017\n\007dry_run\030\t \001(\010\"\203\001\n\014RecallRes"
+    "ult\022\021\n\tplayer_id\030\001 \001(\004\022\021\n\titem_uuid\030\002 \001("
+    "\004\022\026\n\016item_config_id\030\003 \001(\r\022\016\n\006amount\030\004 \001("
+    "\004\022\017\n\007success\030\005 \001(\010\022\024\n\014error_detail\030\006 \001(\t"
+    "\"\240\001\n\030BatchRecallItemsResponse\022\022\n\nerror_c"
+    "ode\030\001 \001(\r\022\025\n\rtotal_matched\030\002 \001(\r\022\026\n\016tota"
+    "l_recalled\030\003 \001(\r\022\024\n\014total_failed\030\004 \001(\r\022+"
+    "\n\007results\030\005 \003(\0132\032.data_service.RecallRes"
+    "ult\"\265\001\n\032QueryTransactionLogRequest\022\021\n\tpl"
+    "ayer_id\030\001 \001(\004\022\022\n\ntime_start\030\002 \001(\004\022\020\n\010tim"
+    "e_end\030\003 \001(\004\022\020\n\010tx_types\030\004 \003(\r\022\026\n\016item_co"
+    "nfig_id\030\005 \001(\r\022\025\n\rcurrency_type\030\006 \001(\r\022\r\n\005"
+    "limit\030\007 \001(\r\022\016\n\006offset\030\010 \001(\004\"\265\002\n\021Transact"
+    "ionLogRow\022\r\n\005tx_id\030\001 \001(\004\022\021\n\ttimestamp\030\002 "
+    "\001(\004\022\017\n\007tx_type\030\003 \001(\r\022\023\n\013from_player\030\004 \001("
+    "\004\022\021\n\tto_player\030\005 \001(\004\022\021\n\titem_uuid\030\006 \001(\004\022"
+    "\026\n\016item_config_id\030\007 \001(\r\022\025\n\ritem_quantity"
+    "\030\010 \001(\r\022\025\n\rcurrency_type\030\t \001(\r\022\026\n\016currenc"
+    "y_delta\030\n \001(\003\022\026\n\016balance_before\030\013 \001(\004\022\025\n"
+    "\rbalance_after\030\014 \001(\004\022\026\n\016correlation_id\030\r"
+    " \001(\004\022\r\n\005extra\030\016 \001(\t\"u\n\033QueryTransactionL"
+    "ogResponse\022\022\n\nerror_code\030\001 \001(\r\022-\n\004rows\030\002"
+    " \003(\0132\037.data_service.TransactionLogRow\022\023\n"
+    "\013total_count\030\003 \001(\r\"\214\001\n\032CreateEventSnapsh"
+    "otRequest\022\021\n\tplayer_id\030\001 \001(\004\0223\n\nevent_ty"
+    "pe\030\002 \001(\0162\037.data_service.SnapshotEventTyp"
+    "e\022\024\n\014event_detail\030\003 \001(\t\022\020\n\010operator\030\004 \001("
+    "\t\"Z\n\033CreateEventSnapshotResponse\022\022\n\nerro"
+    "r_code\030\001 \001(\r\022\023\n\013snapshot_id\030\002 \001(\004\022\022\n\ncre"
+    "ated_at\030\003 \001(\004\"9\n\030AllocateIdSegmentReques"
+    "t\022\017\n\007biz_tag\030\001 \001(\t\022\014\n\004step\030\002 \001(\r\"G\n\031Allo"
+    "cateIdSegmentResponse\022\022\n\nerror_code\030\001 \001("
+    "\r\022\n\n\002lo\030\002 \001(\004\022\n\n\002hi\030\003 \001(\004\";\n\030ReservePlay"
+    "erNameRequest\022\021\n\tplayer_id\030\001 \001(\004\022\014\n\004name"
+    "\030\002 \001(\t\"D\n\031ReservePlayerNameResponse\022\016\n\006r"
+    "esult\030\001 \001(\r\022\027\n\017owner_player_id\030\002 \001(\004\";\n\030"
+    "ReleasePlayerNameRequest\022\021\n\tplayer_id\030\001 "
+    "\001(\004\022\014\n\004name\030\002 \001(\t\"/\n\031BatchGetPlayerNameR"
+    "equest\022\022\n\nplayer_ids\030\001 \003(\004\"\216\001\n\032BatchGetP"
+    "layerNameResponse\022B\n\005names\030\001 \003(\01323.data_"
+    "service.BatchGetPlayerNameResponse.Names"
+    "Entry\032,\n\nNamesEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005valu"
+    "e\030\002 \001(\t:\0028\001\"2\n\035GetPlayerAssetOpLedgerReq"
+    "uest\022\021\n\tplayer_id\030\001 \001(\004\"Y\n\036GetPlayerAsse"
+    "tOpLedgerResponse\022\r\n\005found\030\001 \001(\010\022(\n\006ledg"
+    "er\030\002 \001(\0132\030.PlayerAssetOpLedgerComp\"0\n\033Ge"
+    "tPlayerInboxLedgerRequest\022\021\n\tplayer_id\030\001"
+    " \001(\004\"U\n\034GetPlayerInboxLedgerResponse\022\r\n\005"
+    "found\030\001 \001(\010\022&\n\006ledger\030\002 \001(\0132\026.PlayerInbo"
+    "xLedgerComp*\207\001\n\014SnapshotType\022\023\n\017SNAPSHOT"
+    "_MANUAL\020\000\022\025\n\021SNAPSHOT_PERIODIC\020\001\022\034\n\030SNAP"
+    "SHOT_PRE_MAINTENANCE\020\002\022\031\n\025SNAPSHOT_PRE_R"
+    "OLLBACK\020\003\022\022\n\016SNAPSHOT_LOGIN\020\004*8\n\rRollbac"
+    "kScope\022\021\n\rROLLBACK_FULL\020\000\022\024\n\020ROLLBACK_PA"
+    "RTIAL\020\001*\212\001\n\021SnapshotEventType\022\033\n\027EVENT_L"
+    "ARGE_TRANSACTION\020\000\022\022\n\016EVENT_RECHARGE\020\001\022\031"
+    "\n\025EVENT_PRE_MAINTENANCE\020\002\022\022\n\016EVENT_LEVEL"
+    "_UP\020\003\022\025\n\021EVENT_FIRST_LOGIN\020\0042\266\023\n\013DataSer"
+    "vice\022]\n\016LoadPlayerData\022#.data_service.Lo"
+    "adPlayerDataRequest\032$.data_service.LoadP"
+    "layerDataResponse\"\000\022]\n\016SavePlayerData\022#."
+    "data_service.SavePlayerDataRequest\032$.dat"
+    "a_service.SavePlayerDataResponse\"\000\022]\n\016Ge"
+    "tPlayerField\022#.data_service.GetPlayerFie"
+    "ldRequest\032$.data_service.GetPlayerFieldR"
+    "esponse\"\000\022]\n\016SetPlayerField\022#.data_servi"
+    "ce.SetPlayerFieldRequest\032$.data_service."
+    "SetPlayerFieldResponse\"\000\022W\n\022RegisterPlay"
+    "erZone\022\'.data_service.RegisterPlayerZone"
+    "Request\032\026.google.protobuf.Empty\"\000\022f\n\021Get"
+    "PlayerHomeZone\022&.data_service.GetPlayerH"
+    "omeZoneRequest\032\'.data_service.GetPlayerH"
+    "omeZoneResponse\"\000\022u\n\026BatchGetPlayerHomeZ"
+    "one\022+.data_service.BatchGetPlayerHomeZon"
+    "eRequest\032,.data_service.BatchGetPlayerHo"
+    "meZoneResponse\"\000\022r\n\025RemapHomeZoneForMerg"
+    "e\022*.data_service.RemapHomeZoneForMergeRe"
+    "quest\032+.data_service.RemapHomeZoneForMer"
+    "geResponse\"\000\022c\n\020DeletePlayerData\022%.data_"
+    "service.DeletePlayerDataRequest\032&.data_s"
+    "ervice.DeletePlayerDataResponse\"\000\022o\n\024Cre"
+    "atePlayerSnapshot\022).data_service.CreateP"
+    "layerSnapshotRequest\032*.data_service.Crea"
+    "tePlayerSnapshotResponse\"\000\022l\n\023ListPlayer"
+    "Snapshots\022(.data_service.ListPlayerSnaps"
+    "hotsRequest\032).data_service.ListPlayerSna"
+    "pshotsResponse\"\000\022r\n\025GetPlayerSnapshotDif"
+    "f\022*.data_service.GetPlayerSnapshotDiffRe"
+    "quest\032+.data_service.GetPlayerSnapshotDi"
+    "ffResponse\"\000\022]\n\016RollbackPlayer\022#.data_se"
+    "rvice.RollbackPlayerRequest\032$.data_servi"
+    "ce.RollbackPlayerResponse\"\000\022W\n\014RollbackZ"
+    "one\022!.data_service.RollbackZoneRequest\032\""
+    ".data_service.RollbackZoneResponse\"\000\022T\n\013"
+    "RollbackAll\022 .data_service.RollbackAllRe"
+    "quest\032!.data_service.RollbackAllResponse"
+    "\"\000\022c\n\020BatchRecallItems\022%.data_service.Ba"
+    "tchRecallItemsRequest\032&.data_service.Bat"
+    "chRecallItemsResponse\"\000\022l\n\023QueryTransact"
+    "ionLog\022(.data_service.QueryTransactionLo"
+    "gRequest\032).data_service.QueryTransaction"
+    "LogResponse\"\000\022l\n\023CreateEventSnapshot\022(.d"
+    "ata_service.CreateEventSnapshotRequest\032)"
+    ".data_service.CreateEventSnapshotRespons"
+    "e\"\000\022f\n\021AllocateIdSegment\022&.data_service."
+    "AllocateIdSegmentRequest\032\'.data_service."
+    "AllocateIdSegmentResponse\"\000\022f\n\021ReservePl"
+    "ayerName\022&.data_service.ReservePlayerNam"
+    "eRequest\032\'.data_service.ReservePlayerNam"
+    "eResponse\"\000\022U\n\021ReleasePlayerName\022&.data_"
+    "service.ReleasePlayerNameRequest\032\026.googl"
+    "e.protobuf.Empty\"\000\022i\n\022BatchGetPlayerName"
+    "\022\'.data_service.BatchGetPlayerNameReques"
+    "t\032(.data_service.BatchGetPlayerNameRespo"
+    "nse\"\000\022u\n\026GetPlayerAssetOpLedger\022+.data_s"
+    "ervice.GetPlayerAssetOpLedgerRequest\032,.d"
+    "ata_service.GetPlayerAssetOpLedgerRespon"
+    "se\"\000\022o\n\024GetPlayerInboxLedger\022).data_serv"
+    "ice.GetPlayerInboxLedgerRequest\032*.data_s"
+    "ervice.GetPlayerInboxLedgerResponse\"\000B\033Z"
+    "\031data_service/data_serviceb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_deps[2] = {
+    descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_deps[3] = {
         &::descriptor_table_google_2fprotobuf_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fasset_5fop_5fledger_5fcomp_2eproto,
+        &::descriptor_table_proto_2fcommon_2fcomponent_2fplayer_5finbox_5fledger_5fcomp_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto = {
     false,
     false,
-    8889,
+    9194,
     descriptor_table_protodef_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
     "proto/data_service/data_service.proto",
     &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_once,
     descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_deps,
-    2,
-    53,
+    3,
+    55,
     schemas,
     file_message_globals,
     TableStruct_proto_2fdata_5fservice_2fdata_5fservice_2eproto::offsets,
@@ -24219,6 +24542,446 @@ void GetPlayerAssetOpLedgerResponse::InternalSwap(GetPlayerAssetOpLedgerResponse
 }
 
 ::google::protobuf::Metadata GetPlayerAssetOpLedgerResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+GetPlayerInboxLedgerRequest::GetPlayerInboxLedgerRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerInboxLedgerRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:data_service.GetPlayerInboxLedgerRequest)
+}
+GetPlayerInboxLedgerRequest::GetPlayerInboxLedgerRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetPlayerInboxLedgerRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerInboxLedgerRequest_get_class_data()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE GetPlayerInboxLedgerRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void GetPlayerInboxLedgerRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.player_id_ = {};
+}
+GetPlayerInboxLedgerRequest::~GetPlayerInboxLedgerRequest() {
+  // @@protoc_insertion_point(destructor:data_service.GetPlayerInboxLedgerRequest)
+  SharedDtor(*this);
+}
+inline void GetPlayerInboxLedgerRequest::SharedDtor(MessageLite& self) {
+  GetPlayerInboxLedgerRequest& this_ = static_cast<GetPlayerInboxLedgerRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetPlayerInboxLedgerRequest_class_data_ =
+        GetPlayerInboxLedgerRequest::InternalGenerateClassData_(GetPlayerInboxLedgerRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetPlayerInboxLedgerRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetPlayerInboxLedgerRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetPlayerInboxLedgerRequest_class_data_.tc_table);
+  return GetPlayerInboxLedgerRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetPlayerInboxLedgerRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetPlayerInboxLedgerRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetPlayerInboxLedgerRequest_globals_));
+  return GetPlayerInboxLedgerRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetPlayerInboxLedgerRequest::ParseTableT_
+    GetPlayerInboxLedgerRequest::_table_ =
+        GetPlayerInboxLedgerRequest::InternalGenerateParseTable_(GetPlayerInboxLedgerRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void GetPlayerInboxLedgerRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:data_service.GetPlayerInboxLedgerRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.player_id_ = ::uint64_t{0u};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetPlayerInboxLedgerRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetPlayerInboxLedgerRequest& this_ = static_cast<const GetPlayerInboxLedgerRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetPlayerInboxLedgerRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetPlayerInboxLedgerRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:data_service.GetPlayerInboxLedgerRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // uint64 player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_player_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          1, this_._internal_player_id(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:data_service.GetPlayerInboxLedgerRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetPlayerInboxLedgerRequest::ByteSizeLong(const MessageLite& base) {
+  const GetPlayerInboxLedgerRequest& this_ = static_cast<const GetPlayerInboxLedgerRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetPlayerInboxLedgerRequest::ByteSizeLong() const {
+  const GetPlayerInboxLedgerRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:data_service.GetPlayerInboxLedgerRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // uint64 player_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_player_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_player_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetPlayerInboxLedgerRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<GetPlayerInboxLedgerRequest*>(&to_msg);
+  auto& from = static_cast<const GetPlayerInboxLedgerRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:data_service.GetPlayerInboxLedgerRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (from._internal_player_id() != 0) {
+      _this->_impl_.player_id_ = from._impl_.player_id_;
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetPlayerInboxLedgerRequest::CopyFrom(const GetPlayerInboxLedgerRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:data_service.GetPlayerInboxLedgerRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetPlayerInboxLedgerRequest::InternalSwap(GetPlayerInboxLedgerRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.player_id_, other->_impl_.player_id_);
+}
+
+::google::protobuf::Metadata GetPlayerInboxLedgerRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+void GetPlayerInboxLedgerResponse::clear_ledger() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.ledger_ != nullptr) _impl_.ledger_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+GetPlayerInboxLedgerResponse::GetPlayerInboxLedgerResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerInboxLedgerResponse_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:data_service.GetPlayerInboxLedgerResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetPlayerInboxLedgerResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::data_service::GetPlayerInboxLedgerResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0} {}
+
+GetPlayerInboxLedgerResponse::GetPlayerInboxLedgerResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetPlayerInboxLedgerResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerInboxLedgerResponse_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetPlayerInboxLedgerResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.ledger_ = (CheckHasBit(cached_has_bits, 0x00000001U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.ledger_)
+                : nullptr;
+  _impl_.found_ = from._impl_.found_;
+
+  // @@protoc_insertion_point(copy_constructor:data_service.GetPlayerInboxLedgerResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetPlayerInboxLedgerResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void GetPlayerInboxLedgerResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, ledger_),
+           0,
+           offsetof(Impl_, found_) -
+               offsetof(Impl_, ledger_) +
+               sizeof(Impl_::found_));
+}
+GetPlayerInboxLedgerResponse::~GetPlayerInboxLedgerResponse() {
+  // @@protoc_insertion_point(destructor:data_service.GetPlayerInboxLedgerResponse)
+  SharedDtor(*this);
+}
+inline void GetPlayerInboxLedgerResponse::SharedDtor(MessageLite& self) {
+  GetPlayerInboxLedgerResponse& this_ = static_cast<GetPlayerInboxLedgerResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  delete this_._impl_.ledger_;
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetPlayerInboxLedgerResponse_class_data_ =
+        GetPlayerInboxLedgerResponse::InternalGenerateClassData_(GetPlayerInboxLedgerResponse_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetPlayerInboxLedgerResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetPlayerInboxLedgerResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetPlayerInboxLedgerResponse_class_data_.tc_table);
+  return GetPlayerInboxLedgerResponse_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetPlayerInboxLedgerResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetPlayerInboxLedgerResponse_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetPlayerInboxLedgerResponse_globals_));
+  return GetPlayerInboxLedgerResponse_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetPlayerInboxLedgerResponse::ParseTableT_
+    GetPlayerInboxLedgerResponse::_table_ =
+        GetPlayerInboxLedgerResponse::InternalGenerateParseTable_(GetPlayerInboxLedgerResponse_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void GetPlayerInboxLedgerResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:data_service.GetPlayerInboxLedgerResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    ABSL_DCHECK(_impl_.ledger_ != nullptr);
+    _impl_.ledger_->Clear();
+  }
+  _impl_.found_ = false;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetPlayerInboxLedgerResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetPlayerInboxLedgerResponse& this_ = static_cast<const GetPlayerInboxLedgerResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetPlayerInboxLedgerResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetPlayerInboxLedgerResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:data_service.GetPlayerInboxLedgerResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // bool found = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_found() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          1, this_._internal_found(), target);
+    }
+  }
+
+  // .PlayerInboxLedgerComp ledger = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        2, *this_._impl_.ledger_, this_._impl_.ledger_->GetCachedSize(), target,
+        stream);
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:data_service.GetPlayerInboxLedgerResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetPlayerInboxLedgerResponse::ByteSizeLong(const MessageLite& base) {
+  const GetPlayerInboxLedgerResponse& this_ = static_cast<const GetPlayerInboxLedgerResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetPlayerInboxLedgerResponse::ByteSizeLong() const {
+  const GetPlayerInboxLedgerResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:data_service.GetPlayerInboxLedgerResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // .PlayerInboxLedgerComp ledger = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.ledger_);
+    }
+    // bool found = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_found() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetPlayerInboxLedgerResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<GetPlayerInboxLedgerResponse*>(&to_msg);
+  auto& from = static_cast<const GetPlayerInboxLedgerResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:data_service.GetPlayerInboxLedgerResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(from._impl_.ledger_ != nullptr);
+      if (_this->_impl_.ledger_ == nullptr) {
+        _this->_impl_.ledger_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.ledger_);
+      } else {
+        _this->_impl_.ledger_->MergeFrom(*from._impl_.ledger_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_found() != 0) {
+        _this->_impl_.found_ = from._impl_.found_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetPlayerInboxLedgerResponse::CopyFrom(const GetPlayerInboxLedgerResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:data_service.GetPlayerInboxLedgerResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetPlayerInboxLedgerResponse::InternalSwap(GetPlayerInboxLedgerResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerResponse, _impl_.found_)
+      + sizeof(GetPlayerInboxLedgerResponse::_impl_.found_)
+      - PROTOBUF_FIELD_OFFSET(GetPlayerInboxLedgerResponse, _impl_.ledger_)>(
+          reinterpret_cast<char*>(&_impl_.ledger_),
+          reinterpret_cast<char*>(&other->_impl_.ledger_));
+}
+
+::google::protobuf::Metadata GetPlayerInboxLedgerResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -31,9 +31,19 @@ using AsyncClientPlayerChatSendChatHandlerFunctionType =
 AsyncClientPlayerChatSendChatHandlerFunctionType AsyncClientPlayerChatSendChatHandler;
 AsyncClientPlayerChatSendChatFailedHandlerFunctionType AsyncClientPlayerChatSendChatFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerChatSendChat(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerChatSendChatGrpcClient*>(got_tag));
+void CompleteClientPlayerChatSendChat(AsyncClientPlayerChatSendChatGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerChatSendChatGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerChatSendChatPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerChatSendChatGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerChatSendChatHandler) {
             AsyncClientPlayerChatSendChatHandler(call->context, call->reply);
@@ -55,36 +65,64 @@ void AsyncCompleteGrpcClientPlayerChatSendChat(entt::registry& registry, entt::e
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerChatSendChatPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerChatSendChat(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerChatSendChatGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerChatSendChat(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerChatSendChatCall(entt::registry& registry, entt::entity nodeEntity, const ::chatpb::SendChatRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::chatpb::SendChatResponse> done) {
+    auto call(ClientPlayerChatSendChatPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerChatStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerChatSendChat(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncSendChat(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerChatSendChatMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerChatSendChat(entt::registry& registry, entt::entity nodeEntity, const ::chatpb::SendChatRequest& request,
+                                            GrpcDone<::chatpb::SendChatResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerChatSendChatCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerChatSendChat(entt::registry& registry, entt::entity nodeEntity, const ::chatpb::SendChatRequest& request) {
-
-    SendClientPlayerChatSendChat(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerChatSendChat(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerChatSendChat(entt::registry& registry, entt::entity nodeEntity, const ::chatpb::SendChatRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerChatSendChatPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerChatStubPtr>(nodeEntity)
-        ->PrepareAsyncSendChat(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerChatSendChatMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerChatSendChatCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -100,9 +138,19 @@ using AsyncClientPlayerChatPullChatHistoryHandlerFunctionType =
 AsyncClientPlayerChatPullChatHistoryHandlerFunctionType AsyncClientPlayerChatPullChatHistoryHandler;
 AsyncClientPlayerChatPullChatHistoryFailedHandlerFunctionType AsyncClientPlayerChatPullChatHistoryFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerChatPullChatHistory(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerChatPullChatHistoryGrpcClient*>(got_tag));
+void CompleteClientPlayerChatPullChatHistory(AsyncClientPlayerChatPullChatHistoryGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerChatPullChatHistoryGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerChatPullChatHistoryPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerChatPullChatHistoryGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerChatPullChatHistoryHandler) {
             AsyncClientPlayerChatPullChatHistoryHandler(call->context, call->reply);
@@ -124,36 +172,64 @@ void AsyncCompleteGrpcClientPlayerChatPullChatHistory(entt::registry& registry, 
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerChatPullChatHistoryPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerChatPullChatHistory(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerChatPullChatHistoryGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerChatPullChatHistory(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerChatPullChatHistoryCall(entt::registry& registry, entt::entity nodeEntity, const ::chatpb::PullChatHistoryRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::chatpb::PullChatHistoryResponse> done) {
+    auto call(ClientPlayerChatPullChatHistoryPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerChatStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerChatPullChatHistory(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncPullChatHistory(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerChatPullChatHistoryMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerChatPullChatHistory(entt::registry& registry, entt::entity nodeEntity, const ::chatpb::PullChatHistoryRequest& request,
+                                            GrpcDone<::chatpb::PullChatHistoryResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerChatPullChatHistoryCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerChatPullChatHistory(entt::registry& registry, entt::entity nodeEntity, const ::chatpb::PullChatHistoryRequest& request) {
-
-    SendClientPlayerChatPullChatHistory(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerChatPullChatHistory(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerChatPullChatHistory(entt::registry& registry, entt::entity nodeEntity, const ::chatpb::PullChatHistoryRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerChatPullChatHistoryPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerChatStubPtr>(nodeEntity)
-        ->PrepareAsyncPullChatHistory(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerChatPullChatHistoryMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerChatPullChatHistoryCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -163,15 +239,15 @@ void SendClientPlayerChatPullChatHistory(entt::registry& registry, entt::entity 
 }
 #pragma endregion
 
-void HandleChatCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
+void HandleChatCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag) {
+        const auto releaseTag = [](GrpcTag* tag) { tagPool.destroy(tag); };
+        const std::unique_ptr<GrpcTag, decltype(releaseTag)> owner(grpcTag, releaseTag);
         switch (grpcTag->messageId) {
         case ClientPlayerChatSendChatMessageId:
-            AsyncCompleteGrpcClientPlayerChatSendChat(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerChatSendChat(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerChatPullChatHistoryMessageId:
-            AsyncCompleteGrpcClientPlayerChatPullChatHistory(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerChatPullChatHistory(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         default:
             break;

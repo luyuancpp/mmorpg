@@ -962,6 +962,9 @@ func TestOrderViewOf(t *testing.T) {
 			pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_REJECTED, terminalReason},
 		{"已中止", pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABORTED,
 			pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_ABORTED, terminalReason},
+		// 库内专用的 ABANDONED(6)不是客户端契约:显式映射为已有的 ABORTED,原因按终态取 reason_tip_id(落地恢复 §6.3)。
+		{"自动放弃按已中止展示", pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED,
+			pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_ABORTED, terminalReason},
 		{"部分发放", pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL,
 			pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED_PARTIAL, terminalReason},
 		{"未指定", pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_UNSPECIFIED,
@@ -1097,6 +1100,29 @@ func TestRecentResults(t *testing.T) {
 	assert.Empty(t, recentResults(nil, atMs, keep))
 	// 时钟比窗口还小(刚开服的测试环境)时不能下溢成一个巨大的截止值把一切都滤掉。
 	assert.Len(t, recentResults([]data.AssetOpRow{row(1, applied, 5, 9)}, 100, keep), 1)
+}
+
+// TestAbandonedOpCountsAsRecentResult:自动放弃的行(库内 ABANDONED)是终态,10 分钟内进"最近结果"、
+// 窗口外照常滤掉 —— 漏了它,被放弃的那一行在"待结算"与"最近结果"里都看不到,玩家只会觉得东西凭空消失。
+func TestAbandonedOpCountsAsRecentResult(t *testing.T) {
+	abandoned := pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED
+	assert.True(t, isTerminalOpStatus(abandoned))
+	assert.False(t, isTerminalOpStatus(pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_PENDING), "对照:PENDING 不是终态")
+
+	const atMs uint64 = 10_000_000
+	row := func(opID, updatedMs uint64) data.AssetOpRow {
+		return data.AssetOpRow{OpID: opID, Status: abandoned, UpdatedMs: updatedMs, GuildID: 9,
+			Kind: pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_SHOP}
+	}
+	keep := func(r data.AssetOpRow) bool { return r.GuildID == 9 }
+	// 1 在窗口内;2 恰在窗口边界(保留);3 在窗口外。
+	got := recentResults([]data.AssetOpRow{row(1, atMs-1000), row(2, atMs-600000), row(3, atMs-600001)}, atMs, keep)
+
+	ids := make([]uint64, 0, len(got))
+	for _, r := range got {
+		ids = append(ids, r.OpID)
+	}
+	assert.Equal(t, []uint64{1, 2}, ids)
 }
 
 // TestExceptPlayer:升级推送不发给操作者本人(B2 §14)。

@@ -34,7 +34,7 @@ type SeedResult uint8
 const (
 	SeedError            SeedResult = iota // Redis 出错 / 回复不认识:种子是否落地未知
 	SeedWritten                            // 父键原本不存在,已写入种子
-	SeedIdempotent                         // 父键已是这份种子:go-redis 读超时后重发了已在服务端执行过的 EVAL
+	SeedIdempotent                         // 父键已是这份种子:同一条 EVAL 被 go-redis 重发,或这个 id 以前写过种子(成因见 seedNewPlayerScript)
 	SeedParentExists                       // 父键已存在且不是这份种子:未写
 	SeedOwnerEpochExists                   // player:{id}:owner_epoch 已存在(玩家被派入过场景):未写
 )
@@ -62,7 +62,10 @@ func (r SeedResult) String() string {
 //   - owner_epoch 键不存在。scene_manager 每次把玩家派入场景都会 INCR 它、从不删除(shared/ownerepoch 包注释;C++ redis_client.h kSaveIfGuardLuaScript 的注释)。
 //     它在 = 这名玩家进过场景,scene 的存档才是真相,种子绝不能落。这一条兜住「种子请求在网络里滞留,
 //     落地时玩家早已入场并存过盘、父键又恰好被删(合服失效缓存)」这类交错;
-//   - 父键不存在。存在就不覆盖;若它恰好就是这份种子(go-redis 读超时后重发了已执行过的 EVAL),回 2 算成功。
+//   - 父键不存在。存在就不覆盖;若它恰好就是这份种子,回 2 算成功。回 2 有两种成因:go-redis 把已在服务端执行过的
+//     EVAL 又重发了一次;或者这个 id 以前铸出过、当时写的种子还在(id 复用)。建角调用点套了 1s 的 ctx 预算,
+//     读超时(3s)之后的重发到不了,只剩连接层快速失败(EOF / 连接被重置)后的重发,所以 idempotent 稳态
+//     应接近 0,持续出现要按 id 复用排查。
 //
 // 写入带 PX,与冷读组装的父键同一 TTL(playerAllDataParentTTL);scene 首次存盘的裸 SET 会去掉 TTL。
 // 两把键必须在同一实例:C++ 存盘的 owner_epoch 守卫脚本本来就同时访问它们(redis_client.h kSaveIfGuardLuaScript)。
@@ -103,7 +106,7 @@ func SeedNewPlayerAllData(ctx context.Context, rc *redis.Client, playerId uint64
 	if err != nil {
 		return SeedError, fmt.Errorf("marshal seed for player %d: %w", playerId, err)
 	}
-	keys := []string{buildParentKey(parent, playerId), ownerepoch.OwnerEpochKey(playerId)}
+	keys := newPlayerStateKeys(playerId)
 	res, err := seedNewPlayerScript.Run(ctx, rc, keys, data, playerAllDataParentTTL.Milliseconds()).Int()
 	if err != nil {
 		return SeedError, fmt.Errorf("seed new player %d: %w", playerId, err)
@@ -119,5 +122,76 @@ func SeedNewPlayerAllData(ctx context.Context, rc *redis.Client, playerId uint64
 		return SeedOwnerEpochExists, nil
 	default:
 		return SeedError, fmt.Errorf("seed new player %d: unexpected script result %d", playerId, res)
+	}
+}
+
+// newPlayerStateKeys 返回判定「这个 id 上已有既有状态」的两把键:{PlayerAllData 父键, player:{id}:owner_epoch}。
+// 种子脚本(写时的原子复核)与建角的只读探测(ProbeMintedPlayerState)共用它:两边判的必须是同一组键,
+// 否则探测放行的 id 可能在种子那一步才被拦下,或者反过来。顺序即 seedNewPlayerScript 的 KEYS 顺序。
+func newPlayerStateKeys(playerId uint64) []string {
+	return []string{buildParentKey(&login_proto_database.PlayerAllData{}, playerId), ownerepoch.OwnerEpochKey(playerId)}
+}
+
+// MintedIDProbe 是 ProbeMintedPlayerState 的结论。零值 MintedIDProbeError:漏判的分支落在「探不清」上,
+// 调用方一律按拒绝处理(fail-closed)。
+type MintedIDProbe uint8
+
+const (
+	MintedIDProbeError       MintedIDProbe = iota // Redis 出错 / 入参不合法:探不清
+	MintedIDClear                                 // 两把键都不在
+	MintedIDParentExists                          // PlayerAllData 父键已存在
+	MintedIDOwnerEpochExists                      // player:{id}:owner_epoch 已存在(两把都在时也归这一类,与种子脚本的判定顺序相同)
+)
+
+// String 返回指标 label 值(login_create_player_id_probe_total{result}),集合封闭。
+// parent_exists / owner_epoch_exists 与 SeedResult 的同名取值含义相同,告警表达式可以共用一个正则。
+func (r MintedIDProbe) String() string {
+	switch r {
+	case MintedIDClear:
+		return "clear"
+	case MintedIDParentExists:
+		return "parent_exists"
+	case MintedIDOwnerEpochExists:
+		return "owner_epoch_exists"
+	default:
+		return "error"
+	}
+}
+
+// ProbeMintedPlayerState 只读探测刚铸出的 playerId 上是否已有既有状态(newPlayerStateKeys 的两把键),一次往返。
+//
+// 建角在登记名字之前调用它(docs/design/new-player-first-enter-no-cold-read.md §10 P7,负责人 2026-10-15 定):
+// 号段 id 不复用(I1),新铸 id 上本不该有任何状态;有,说明发号器把在役 id 又发了一次,或 id_segment 表被重置
+// 而 Redis 没清,这个 id 不能交给新账号。与种子开关无关:关着种子时,id 复用同样会让新账号在首次入场时读到那份
+// 旧缓存(父键在),或让旧玩家的进度被当成新号的(owner_epoch 在)。
+//
+// 它只是写之前的预检,不是提交点:探测与种子写之间仍有窗口,seedNewPlayerScript 的条件判断照旧保留,
+// 作为写时的原子复核(建角侧对它报的 parent_exists / owner_epoch_exists 同样拒绝,设计 §10 P2)。
+//
+// 两条 EXISTS 走一个 pipeline:一次往返,并且分得清是哪把键在。两条之间不需要原子:任何一把在都拒绝。
+// rc 必须与预加载、scene 读写父键是同一个 Redis 实例(同 SeedNewPlayerAllData)。本函数不写任何键。
+//
+// err 只在结论为 MintedIDProbeError 时非 nil。
+func ProbeMintedPlayerState(ctx context.Context, rc *redis.Client, playerId uint64) (MintedIDProbe, error) {
+	if rc == nil {
+		return MintedIDProbeError, fmt.Errorf("probe minted player %d: redis client not wired", playerId)
+	}
+	if playerId == 0 {
+		return MintedIDProbeError, fmt.Errorf("probe minted player: player_id is 0")
+	}
+	keys := newPlayerStateKeys(playerId)
+	pipe := rc.Pipeline()
+	parent := pipe.Exists(ctx, keys[0])
+	ownerEpoch := pipe.Exists(ctx, keys[1])
+	if _, err := pipe.Exec(ctx); err != nil {
+		return MintedIDProbeError, fmt.Errorf("probe minted player %d: %w", playerId, err)
+	}
+	switch {
+	case ownerEpoch.Val() > 0:
+		return MintedIDOwnerEpochExists, nil
+	case parent.Val() > 0:
+		return MintedIDParentExists, nil
+	default:
+		return MintedIDClear, nil
 	}
 }

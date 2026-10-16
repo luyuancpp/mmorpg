@@ -124,7 +124,7 @@ bool TurnBattleEngine::Initialize(const CreateBattleRequest& request) {
     roundIndex = 1;
     outcome = BATTLE_OUTCOME_ONGOING;
 
-    // 回合上限:DungeonTable.time_limit(秒)换算,缺省 30 回合
+    // 回合上限:DungeonTable.time_limit(秒)换算,缺省 300 回合
     maxRounds = kDefaultMaxRounds;
     if (const auto* dungeonRow = dataProvider->FindDungeon(request.battle_config_id());
         dungeonRow != nullptr && dungeonRow->time_limit() > 0) {

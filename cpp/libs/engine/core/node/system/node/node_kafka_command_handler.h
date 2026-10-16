@@ -146,33 +146,4 @@ bool RegisterKafkaCommandHandler(Node& node,
         std::forward<DispatchFn>(dispatchFn));
 }
 
-// Default dispatch: validate event_id + payload, then DispatchProtoEvent.
-// Works for any command proto with event_id() and payload() accessors.
-template <typename CommandT>
-void DefaultKafkaCommandDispatch(const std::string& topic, const CommandT& command)
-{
-    if (command.event_id() == 0) {
-        LOG_WARN << "Kafka command missing event_id, topic=" << topic;
-        return;
-    }
-    if (command.payload().empty()) {
-        LOG_WARN << "Kafka command payload is empty, topic=" << topic
-                 << ", event_id=" << command.event_id();
-        return;
-    }
-    if (!DispatchProtoEvent(command.event_id(), command.payload())) {
-        LOG_WARN << "Kafka command dispatch failed, topic=" << topic
-                 << ", event_id=" << command.event_id();
-    }
-}
-
-// Fully-automatic overload: auto-derive options + use default dispatch.
-template <typename CommandT>
-bool RegisterKafkaCommandHandler(Node& node)
-{
-    return RegisterKafkaCommandHandler<CommandT>(
-        node, BuildDefaultKafkaOptions(node.GetNodeType()),
-        DefaultKafkaCommandDispatch<CommandT>);
-}
-
 } // namespace node::kafka

@@ -2,6 +2,7 @@
 #include "muduo/base/Logging.h"
 
 #include "node/system/node/node_entry.h"
+#include "node/system/etcd/etcd_transport.h"
 #include "node/system/node/client_endpoint.h"
 #include "infra/agones/agones_client_endpoint_source.h"
 #include "infra/agones/agones_gameserver_lifecycle.h"
@@ -252,6 +253,8 @@ namespace
 
 int main(int argc, char *argv[])
 {
+    // 检查旧的 NODE_ETCD_TRANSPORT 环境变量(etcd 只剩 muduo_h2 传输;设成 grpc 会打 WARN),须在 Node 构造前调用。
+    etcd_transport::InstallFromEnv();
     return node::entry::RunSimpleNodeMainWithOwnedContext<BattleHandler, BattleRuntimeContext, BattleNodeHooks>(
         common::base::BattleNodeService,
         // battle 无出站拨号:入站是 match 的 gRPC + 客户端直连 TCP,出站除直连外全走 Kafka producer,
@@ -292,7 +295,7 @@ int main(int argc, char *argv[])
                 // 两个地址都打出来(集群外入口 D76):endpoint 是集群内身份(直连面监听在它的端口上),
                 // client_endpoint 是自报的客户端可达地址(未设置 = podip 形态,客户端直接用 endpoint);
                 // client_facing 是票据里真正下发的地址(ClientFacing,与 BuildAssignment 同一规则)。
-                // 这里在 loop 线程,GetNodeInfo() 有效。
+                // NodeInfo 由 Node 持有且跨线程读写不同步;此处在 loop 线程读取。
                 const auto &info = n.GetNodeInfo();
                 const bool required = n.ClientEndpointRequired();
                 const auto clientFacing = client_endpoint::ClientFacing(info, required);

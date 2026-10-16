@@ -57,6 +57,12 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto, /* tracker*/ nullptr,},
         // ::TravelToZoneResponse
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto, /* tracker*/ nullptr,},
+        // ::SyncDigestEntry
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto, /* tracker*/ nullptr,},
+        // ::GetSyncDigestRequest
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto, /* tracker*/ nullptr,},
+        // ::SyncDigestS2C
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto, /* tracker*/ nullptr,},
 };
 }  // namespace
 #endif
@@ -204,6 +210,154 @@ const ::_pbi::ClassData* TravelToZoneRequest_get_class_data() {
   return TravelToZoneRequest_globals_.GetClassData();
 #else
   return TravelToZoneRequest_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class SyncDigestEntry::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<SyncDigestEntry>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(SyncDigestEntry, _impl_._has_bits_);
+};
+
+constexpr SyncDigestEntry::ParseTableT_ SyncDigestEntry::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(SyncDigestEntry, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::SyncDigestEntry>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint64 version = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SyncDigestEntry, _impl_.version_), 0>(),
+       {16, 0, 0,
+        PROTOBUF_FIELD_OFFSET(SyncDigestEntry, _impl_.version_)}},
+      // .SyncDomain domain = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SyncDigestEntry, _impl_.domain_), 1>(),
+       {8, 1, 0,
+        PROTOBUF_FIELD_OFFSET(SyncDigestEntry, _impl_.domain_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .SyncDomain domain = 1;
+      {PROTOBUF_FIELD_OFFSET(SyncDigestEntry, _impl_.domain_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      // uint64 version = 2;
+      {PROTOBUF_FIELD_OFFSET(SyncDigestEntry, _impl_.version_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+    }},
+    // no aux_entries
+    {{
+    }},
+  };
+}
+
+
+inline constexpr SyncDigestEntry::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        version_{::uint64_t{0u}},
+        domain_{static_cast< ::SyncDomain >(0)} {}
+
+template <typename>
+constexpr SyncDigestEntry::SyncDigestEntry(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL SyncDigestEntry::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) SyncDigestEntry(arena);
+}
+constexpr auto SyncDigestEntry::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(SyncDigestEntry), alignof(SyncDigestEntry));
+}
+constexpr auto SyncDigestEntry::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &SyncDigestEntry::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SyncDigestEntry>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &SyncDigestEntry::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SyncDigestEntry>(), &SyncDigestEntry::ByteSizeLong,
+              &SyncDigestEntry::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(SyncDigestEntry, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[14],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct SyncDigestEntryGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr SyncDigestEntryGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 SyncDigestEntry_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(SyncDigestEntry::InternalGenerateClassData_(
+            _default, &SyncDigestEntry_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<SyncDigestEntry>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~SyncDigestEntryGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) SyncDigestEntry _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<SyncDigestEntry>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(SyncDigestEntryGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST SyncDigestEntryGlobalsTypeInternal SyncDigestEntry_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* SyncDigestEntry_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return SyncDigestEntry_globals_.GetClassData();
+#else
+  return SyncDigestEntry_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -507,6 +661,130 @@ const ::_pbi::ClassData* SceneChannelInfo_get_class_data() {
   return SceneChannelInfo_globals_.GetClassData();
 #else
   return SceneChannelInfo_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class GetSyncDigestRequest::_Internal {
+ public:
+};
+
+constexpr GetSyncDigestRequest::ParseTableT_ GetSyncDigestRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GetSyncDigestRequest,
+                            _impl_._cached_size_),  // no hasbits
+      0, // no _extensions_
+      0, 0,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967295,  // skipmap
+      offsetof(ParseTableT_, field_names),  // no field_entries
+      0,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::GetSyncDigestRequest>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+    }}, {{
+      65535, 65535
+    }}, // no field_entries, or aux_entries
+    {{
+    }},
+  };
+}
+
+template <typename>
+constexpr GetSyncDigestRequest::GetSyncDigestRequest(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::internal::ZeroFieldsBase(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      ) {
+}
+inline void* PROTOBUF_NONNULL GetSyncDigestRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetSyncDigestRequest(arena);
+}
+constexpr auto GetSyncDigestRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetSyncDigestRequest), alignof(GetSyncDigestRequest));
+}
+constexpr auto GetSyncDigestRequest::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GetSyncDigestRequest::MergeImpl,
+          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<GetSyncDigestRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetSyncDigestRequest::SharedDtor,
+          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<GetSyncDigestRequest>(), &GetSyncDigestRequest::ByteSizeLong,
+              &GetSyncDigestRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetSyncDigestRequest, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[15],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GetSyncDigestRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GetSyncDigestRequestGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GetSyncDigestRequest_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GetSyncDigestRequest::InternalGenerateClassData_(
+            _default, &GetSyncDigestRequest_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GetSyncDigestRequest>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GetSyncDigestRequestGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GetSyncDigestRequest _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GetSyncDigestRequest>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GetSyncDigestRequestGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GetSyncDigestRequestGlobalsTypeInternal GetSyncDigestRequest_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GetSyncDigestRequest_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GetSyncDigestRequest_globals_.GetClassData();
+#else
+  return GetSyncDigestRequest_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -941,6 +1219,172 @@ const ::_pbi::ClassData* TravelToZoneResponse_get_class_data() {
   return TravelToZoneResponse_globals_.GetClassData();
 #else
   return TravelToZoneResponse_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
+class SyncDigestS2C::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<SyncDigestS2C>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_._has_bits_);
+};
+
+constexpr SyncDigestS2C::ParseTableT_ SyncDigestS2C::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_._has_bits_),
+      0, // no _extensions_
+      3, 24,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967288,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      3,  // num_field_entries
+      1,  // num_aux_entries
+      offsetof(ParseTableT_, aux_entries),
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::SyncDigestS2C>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // .SyncDigestStatus status = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SyncDigestS2C, _impl_.status_), 2>(),
+       {8, 2, 0,
+        PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_.status_)}},
+      // uint64 generation = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SyncDigestS2C, _impl_.generation_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_.generation_)}},
+      // repeated .SyncDigestEntry entries = 3;
+      {::_pbi::TcParser::FastMtR1,
+       {26, 0, 0,
+        PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_.entries_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // .SyncDigestStatus status = 1;
+      {PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_.status_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      // uint64 generation = 2;
+      {PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_.generation_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // repeated .SyncDigestEntry entries = 3;
+      {PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_.entries_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+    }},
+    {{
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::SyncDigestEntry>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::SyncDigestEntry_globals_},
+        #endif
+    }},
+    {{
+    }},
+  };
+}
+
+
+inline constexpr SyncDigestS2C::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        entries_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::SyncDigestS2C,
+            PROTOBUF_FIELD_OFFSET(::SyncDigestS2C, _impl_.entries_)>()
+         }
+        ,
+        generation_{::uint64_t{0u}},
+        status_{static_cast< ::SyncDigestStatus >(0)} {}
+
+template <typename>
+constexpr SyncDigestS2C::SyncDigestS2C(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL SyncDigestS2C::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) SyncDigestS2C(arena);
+}
+constexpr auto SyncDigestS2C::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(SyncDigestS2C), alignof(SyncDigestS2C));
+}
+constexpr auto SyncDigestS2C::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &SyncDigestS2C::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SyncDigestS2C>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &SyncDigestS2C::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SyncDigestS2C>(), &SyncDigestS2C::ByteSizeLong,
+              &SyncDigestS2C::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[16],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct SyncDigestS2CGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr SyncDigestS2CGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 SyncDigestS2C_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(SyncDigestS2C::InternalGenerateClassData_(
+            _default, &SyncDigestS2C_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<SyncDigestS2C>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~SyncDigestS2CGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) SyncDigestS2C _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<SyncDigestS2C>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(SyncDigestS2CGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST SyncDigestS2CGlobalsTypeInternal SyncDigestS2C_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* SyncDigestS2C_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return SyncDigestS2C_globals_.GetClassData();
+#else
+  return SyncDigestS2C_class_data_.base();
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 }
 }  // namespace
@@ -2247,7 +2691,7 @@ const ::_pbi::ClassData* ActorListCreateS2C_get_class_data() {
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
-    file_level_enum_descriptors_proto_2fscene_2fplayer_5fscene_2eproto[2];
+    file_level_enum_descriptors_proto_2fscene_2fplayer_5fscene_2eproto[4];
 static const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL
     file_level_service_descriptors_proto_2fscene_2fplayer_5fscene_2eproto[1];
 const ::uint32_t
@@ -2359,6 +2803,23 @@ const ::uint32_t
         4, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::TravelToZoneResponse, _impl_.error_message_),
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::SyncDigestEntry, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::SyncDigestEntry, _impl_.domain_),
+        PROTOBUF_FIELD_OFFSET(::SyncDigestEntry, _impl_.version_),
+        1,
+        0,
+        0x000, // bitmap
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::SyncDigestS2C, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::SyncDigestS2C, _impl_.status_),
+        PROTOBUF_FIELD_OFFSET(::SyncDigestS2C, _impl_.generation_),
+        PROTOBUF_FIELD_OFFSET(::SyncDigestS2C, _impl_.entries_),
+        2,
+        1,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -2377,6 +2838,9 @@ static const ::_pbi::MigrationSchema
         {89, sizeof(::ActorListDestroyS2C)},
         {94, sizeof(::TravelToZoneRequest)},
         {101, sizeof(::TravelToZoneResponse)},
+        {106, sizeof(::SyncDigestEntry)},
+        {113, sizeof(::GetSyncDigestRequest)},
+        {114, sizeof(::SyncDigestS2C)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -2394,6 +2858,9 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
         &::ActorListDestroyS2C_globals_,
         &::TravelToZoneRequest_globals_,
         &::TravelToZoneResponse_globals_,
+        &::SyncDigestEntry_globals_,
+        &::GetSyncDigestRequest_globals_,
+        &::SyncDigestS2C_globals_,
 };
 const char descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -2431,27 +2898,44 @@ const char descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto[] AB
     "TravelToZoneRequest\022\026\n\016target_zone_id\030\001 "
     "\001(\r\022\027\n\017scene_config_id\030\002 \001(\r\">\n\024TravelTo"
     "ZoneResponse\022&\n\rerror_message\030\001 \001(\0132\017.Ti"
-    "pInfoMessage*\326\001\n\021SceneChannelState\022\037\n\033SC"
-    "ENE_CHANNEL_STATE_UNKNOWN\020\000\022\036\n\032SCENE_CHA"
-    "NNEL_STATE_SMOOTH\020\001\022\034\n\030SCENE_CHANNEL_STA"
-    "TE_BUSY\020\002\022\034\n\030SCENE_CHANNEL_STATE_FULL\020\003\022"
-    "\037\n\033SCENE_CHANNEL_STATE_CLOSING\020\004\022#\n\037SCEN"
-    "E_CHANNEL_STATE_UNAVAILABLE\020\005*K\n\tActorTy"
-    "pe\022\023\n\017ACTOR_TYPE_NONE\020\000\022\025\n\021ACTOR_TYPE_PL"
-    "AYER\020\001\022\022\n\016ACTOR_TYPE_NPC\020\0022\353\003\n\026SceneScen"
-    "eClientPlayer\022;\n\nEnterScene\022\025.EnterScene"
-    "C2SRequest\032\026.EnterSceneC2SResponse\022*\n\020No"
-    "tifyEnterScene\022\016.EnterSceneS2C\032\006.Empty\022)"
-    "\n\014SceneInfoC2S\022\021.SceneInfoRequest\032\006.Empt"
-    "y\022(\n\017NotifySceneInfo\022\r.SceneInfoS2C\032\006.Em"
-    "pty\022,\n\021NotifyActorCreate\022\017.ActorCreateS2"
-    "C\032\006.Empty\022.\n\022NotifyActorDestroy\022\020.ActorD"
-    "estroyS2C\032\006.Empty\0224\n\025NotifyActorListCrea"
-    "te\022\023.ActorListCreateS2C\032\006.Empty\0226\n\026Notif"
-    "yActorListDestroy\022\024.ActorListDestroyS2C\032"
-    "\006.Empty\022;\n\014TravelToZone\022\024.TravelToZoneRe"
-    "quest\032\025.TravelToZoneResponse\032\n\200\250\303\001\001\210\250\303\001\001"
-    "B\016Z\005scene\200\001\001\230\324a\003b\006proto3"
+    "pInfoMessage\"\?\n\017SyncDigestEntry\022\033\n\006domai"
+    "n\030\001 \001(\0162\013.SyncDomain\022\017\n\007version\030\002 \001(\004\"\026\n"
+    "\024GetSyncDigestRequest\"i\n\rSyncDigestS2C\022!"
+    "\n\006status\030\001 \001(\0162\021.SyncDigestStatus\022\022\n\ngen"
+    "eration\030\002 \001(\004\022!\n\007entries\030\003 \003(\0132\020.SyncDig"
+    "estEntry*\326\001\n\021SceneChannelState\022\037\n\033SCENE_"
+    "CHANNEL_STATE_UNKNOWN\020\000\022\036\n\032SCENE_CHANNEL"
+    "_STATE_SMOOTH\020\001\022\034\n\030SCENE_CHANNEL_STATE_B"
+    "USY\020\002\022\034\n\030SCENE_CHANNEL_STATE_FULL\020\003\022\037\n\033S"
+    "CENE_CHANNEL_STATE_CLOSING\020\004\022#\n\037SCENE_CH"
+    "ANNEL_STATE_UNAVAILABLE\020\005*K\n\tActorType\022\023"
+    "\n\017ACTOR_TYPE_NONE\020\000\022\025\n\021ACTOR_TYPE_PLAYER"
+    "\020\001\022\022\n\016ACTOR_TYPE_NPC\020\002*\260\002\n\nSyncDomain\022\033\n"
+    "\027SYNC_DOMAIN_UNSPECIFIED\020\000\022\033\n\027SYNC_DOMAI"
+    "N_FRIEND_LIST\020\001\022\036\n\032SYNC_DOMAIN_FRIEND_RE"
+    "QUEST\020\002\022\034\n\030SYNC_DOMAIN_FRIEND_BLOCK\020\003\022\024\n"
+    "\020SYNC_DOMAIN_TEAM\020\004\022\033\n\027SYNC_DOMAIN_TEAM_"
+    "INVITE\020\005\022\025\n\021SYNC_DOMAIN_GUILD\020\006\022!\n\035SYNC_"
+    "DOMAIN_GUILD_APPLICATION\020\007\022\035\n\031SYNC_DOMAI"
+    "N_GUILD_ECONOMY\020\010\022\036\n\032SYNC_DOMAIN_GUILD_A"
+    "CTIVITY\020\t*Q\n\020SyncDigestStatus\022\031\n\025SYNC_DI"
+    "GEST_STATUS_OK\020\000\022\"\n\036SYNC_DIGEST_STATUS_U"
+    "NAVAILABLE\020\0012\307\004\n\026SceneSceneClientPlayer\022"
+    ";\n\nEnterScene\022\025.EnterSceneC2SRequest\032\026.E"
+    "nterSceneC2SResponse\022*\n\020NotifyEnterScene"
+    "\022\016.EnterSceneS2C\032\006.Empty\022)\n\014SceneInfoC2S"
+    "\022\021.SceneInfoRequest\032\006.Empty\022(\n\017NotifySce"
+    "neInfo\022\r.SceneInfoS2C\032\006.Empty\022,\n\021NotifyA"
+    "ctorCreate\022\017.ActorCreateS2C\032\006.Empty\022.\n\022N"
+    "otifyActorDestroy\022\020.ActorDestroyS2C\032\006.Em"
+    "pty\0224\n\025NotifyActorListCreate\022\023.ActorList"
+    "CreateS2C\032\006.Empty\0226\n\026NotifyActorListDest"
+    "roy\022\024.ActorListDestroyS2C\032\006.Empty\022;\n\014Tra"
+    "velToZone\022\024.TravelToZoneRequest\032\025.Travel"
+    "ToZoneResponse\022.\n\rGetSyncDigest\022\025.GetSyn"
+    "cDigestRequest\032\006.Empty\022*\n\020NotifySyncDige"
+    "st\022\016.SyncDigestS2C\032\006.Empty\032\n\200\250\303\001\001\210\250\303\001\001B\016"
+    "Z\005scene\200\001\001\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_deps[5] = {
@@ -2465,13 +2949,13 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto = {
     false,
     false,
-    2184,
+    2862,
     descriptor_table_protodef_proto_2fscene_2fplayer_5fscene_2eproto,
     "proto/scene/player_scene.proto",
     &descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_once,
     descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto_deps,
     5,
-    14,
+    17,
     schemas,
     file_message_globals,
     TableStruct_proto_2fscene_2fplayer_5fscene_2eproto::offsets,
@@ -2492,6 +2976,20 @@ ActorType_descriptor() {
 }
 PROTOBUF_CONSTINIT const uint32_t ActorType_internal_data_[] = {
     196608u, 0u, };
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+SyncDomain_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto);
+  return file_level_enum_descriptors_proto_2fscene_2fplayer_5fscene_2eproto[2];
+}
+PROTOBUF_CONSTINIT const uint32_t SyncDomain_internal_data_[] = {
+    655360u, 0u, };
+[[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
+SyncDigestStatus_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto);
+  return file_level_enum_descriptors_proto_2fscene_2fplayer_5fscene_2eproto[3];
+}
+PROTOBUF_CONSTINIT const uint32_t SyncDigestStatus_internal_data_[] = {
+    131072u, 0u, };
 // ===================================================================
 
 void EnterSceneC2SRequest::clear_scene_info() {
@@ -5940,6 +6438,587 @@ void TravelToZoneResponse::InternalSwap(TravelToZoneResponse* PROTOBUF_RESTRICT 
 }
 // ===================================================================
 
+SyncDigestEntry::SyncDigestEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SyncDigestEntry_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:SyncDigestEntry)
+}
+SyncDigestEntry::SyncDigestEntry(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SyncDigestEntry& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SyncDigestEntry_get_class_data()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE SyncDigestEntry::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void SyncDigestEntry::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, version_),
+           0,
+           offsetof(Impl_, domain_) -
+               offsetof(Impl_, version_) +
+               sizeof(Impl_::domain_));
+}
+SyncDigestEntry::~SyncDigestEntry() {
+  // @@protoc_insertion_point(destructor:SyncDigestEntry)
+  SharedDtor(*this);
+}
+inline void SyncDigestEntry::SharedDtor(MessageLite& self) {
+  SyncDigestEntry& this_ = static_cast<SyncDigestEntry&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull SyncDigestEntry_class_data_ =
+        SyncDigestEntry::InternalGenerateClassData_(SyncDigestEntry_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SyncDigestEntry::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SyncDigestEntry_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SyncDigestEntry_class_data_.tc_table);
+  return SyncDigestEntry_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SyncDigestEntry::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SyncDigestEntry_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&SyncDigestEntry_globals_));
+  return SyncDigestEntry_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const SyncDigestEntry::ParseTableT_
+    SyncDigestEntry::_table_ =
+        SyncDigestEntry::InternalGenerateParseTable_(SyncDigestEntry_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void SyncDigestEntry::Clear() {
+// @@protoc_insertion_point(message_clear_start:SyncDigestEntry)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    ::memset(&_impl_.version_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.domain_) -
+        reinterpret_cast<char*>(&_impl_.version_)) + sizeof(_impl_.domain_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL SyncDigestEntry::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const SyncDigestEntry& this_ = static_cast<const SyncDigestEntry&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL SyncDigestEntry::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const SyncDigestEntry& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:SyncDigestEntry)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .SyncDomain domain = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_domain() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_domain(), target);
+    }
+  }
+
+  // uint64 version = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_version() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_version(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:SyncDigestEntry)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t SyncDigestEntry::ByteSizeLong(const MessageLite& base) {
+  const SyncDigestEntry& this_ = static_cast<const SyncDigestEntry&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t SyncDigestEntry::ByteSizeLong() const {
+  const SyncDigestEntry& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:SyncDigestEntry)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // uint64 version = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_version() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_version());
+      }
+    }
+    // .SyncDomain domain = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_domain() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_domain());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void SyncDigestEntry::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<SyncDigestEntry*>(&to_msg);
+  auto& from = static_cast<const SyncDigestEntry&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:SyncDigestEntry)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_version() != 0) {
+        _this->_impl_.version_ = from._impl_.version_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_domain() != 0) {
+        _this->_impl_.domain_ = from._impl_.domain_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void SyncDigestEntry::CopyFrom(const SyncDigestEntry& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:SyncDigestEntry)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SyncDigestEntry::InternalSwap(SyncDigestEntry* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(SyncDigestEntry, _impl_.domain_)
+      + sizeof(SyncDigestEntry::_impl_.domain_)
+      - PROTOBUF_FIELD_OFFSET(SyncDigestEntry, _impl_.version_)>(
+          reinterpret_cast<char*>(&_impl_.version_),
+          reinterpret_cast<char*>(&other->_impl_.version_));
+}
+
+::google::protobuf::Metadata SyncDigestEntry::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+GetSyncDigestRequest::GetSyncDigestRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, GetSyncDigestRequest_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(arena_constructor:GetSyncDigestRequest)
+}
+GetSyncDigestRequest::GetSyncDigestRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetSyncDigestRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, GetSyncDigestRequest_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetSyncDigestRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:GetSyncDigestRequest)
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetSyncDigestRequest_class_data_ =
+        GetSyncDigestRequest::InternalGenerateClassData_(GetSyncDigestRequest_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetSyncDigestRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetSyncDigestRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetSyncDigestRequest_class_data_.tc_table);
+  return GetSyncDigestRequest_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetSyncDigestRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetSyncDigestRequest_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GetSyncDigestRequest_globals_));
+  return GetSyncDigestRequest_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GetSyncDigestRequest::ParseTableT_
+    GetSyncDigestRequest::_table_ =
+        GetSyncDigestRequest::InternalGenerateParseTable_(GetSyncDigestRequest_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+
+
+
+
+
+
+
+::google::protobuf::Metadata GetSyncDigestRequest::GetMetadata() const {
+  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+SyncDigestS2C::SyncDigestS2C(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SyncDigestS2C_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:SyncDigestS2C)
+}
+PROTOBUF_NDEBUG_INLINE SyncDigestS2C::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::SyncDigestS2C& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        entries_ {
+          visibility, ::_pbi::InternalMetadataOffset::Build<
+              ::SyncDigestS2C,
+              PROTOBUF_FIELD_OFFSET(::SyncDigestS2C, _impl_.entries_)>()
+          , from.entries_
+        }
+     {}
+
+SyncDigestS2C::SyncDigestS2C(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const SyncDigestS2C& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SyncDigestS2C_get_class_data()) {
+
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SyncDigestS2C* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, generation_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, generation_),
+           offsetof(Impl_, status_) -
+               offsetof(Impl_, generation_) +
+               sizeof(Impl_::status_));
+
+  // @@protoc_insertion_point(copy_constructor:SyncDigestS2C)
+}
+PROTOBUF_NDEBUG_INLINE SyncDigestS2C::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        entries_ { visibility, ::_pbi::InternalMetadataOffset::Build<
+            ::SyncDigestS2C,
+            PROTOBUF_FIELD_OFFSET(::SyncDigestS2C, _impl_.entries_)>()
+         }
+     {}
+
+inline void SyncDigestS2C::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, generation_),
+           0,
+           offsetof(Impl_, status_) -
+               offsetof(Impl_, generation_) +
+               sizeof(Impl_::status_));
+}
+SyncDigestS2C::~SyncDigestS2C() {
+  // @@protoc_insertion_point(destructor:SyncDigestS2C)
+  SharedDtor(*this);
+}
+inline void SyncDigestS2C::SharedDtor(MessageLite& self) {
+  SyncDigestS2C& this_ = static_cast<SyncDigestS2C&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull SyncDigestS2C_class_data_ =
+        SyncDigestS2C::InternalGenerateClassData_(SyncDigestS2C_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SyncDigestS2C::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SyncDigestS2C_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SyncDigestS2C_class_data_.tc_table);
+  return SyncDigestS2C_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SyncDigestS2C::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SyncDigestS2C_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&SyncDigestS2C_globals_));
+  return SyncDigestS2C_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const SyncDigestS2C::ParseTableT_
+    SyncDigestS2C::_table_ =
+        SyncDigestS2C::InternalGenerateParseTable_(SyncDigestS2C_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void SyncDigestS2C::Clear() {
+// @@protoc_insertion_point(message_clear_start:SyncDigestS2C)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.entries_.Clear();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000006U)) {
+    ::memset(&_impl_.generation_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.status_) -
+        reinterpret_cast<char*>(&_impl_.generation_)) + sizeof(_impl_.status_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL SyncDigestS2C::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const SyncDigestS2C& this_ = static_cast<const SyncDigestS2C&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL SyncDigestS2C::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const SyncDigestS2C& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:SyncDigestS2C)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .SyncDigestStatus status = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_status() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_status(), target);
+    }
+  }
+
+  // uint64 generation = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_generation() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          2, this_._internal_generation(), target);
+    }
+  }
+
+  // repeated .SyncDigestEntry entries = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_entries_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_entries().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              3, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:SyncDigestS2C)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t SyncDigestS2C::ByteSizeLong(const MessageLite& base) {
+  const SyncDigestS2C& this_ = static_cast<const SyncDigestS2C&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t SyncDigestS2C::ByteSizeLong() const {
+  const SyncDigestS2C& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:SyncDigestS2C)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // repeated .SyncDigestEntry entries = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_entries_size();
+      for (const auto& msg : this_._internal_entries()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // uint64 generation = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_generation() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_generation());
+      }
+    }
+    // .SyncDigestStatus status = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_status() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_status());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void SyncDigestS2C::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<SyncDigestS2C*>(&to_msg);
+  auto& from = static_cast<const SyncDigestS2C&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:SyncDigestS2C)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_entries()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_entries());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_generation() != 0) {
+        _this->_impl_.generation_ = from._impl_.generation_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_status() != 0) {
+        _this->_impl_.status_ = from._impl_.status_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void SyncDigestS2C::CopyFrom(const SyncDigestS2C& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:SyncDigestS2C)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SyncDigestS2C::InternalSwap(SyncDigestS2C* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.entries_.InternalSwap(&other->_impl_.entries_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_.status_)
+      + sizeof(SyncDigestS2C::_impl_.status_)
+      - PROTOBUF_FIELD_OFFSET(SyncDigestS2C, _impl_.generation_)>(
+          reinterpret_cast<char*>(&_impl_.generation_),
+          reinterpret_cast<char*>(&other->_impl_.generation_));
+}
+
+::google::protobuf::Metadata SyncDigestS2C::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
 const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL SceneSceneClientPlayer::descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fscene_2fplayer_5fscene_2eproto);
   return file_level_service_descriptors_proto_2fscene_2fplayer_5fscene_2eproto[0];
@@ -6012,6 +7091,20 @@ void SceneSceneClientPlayer::TravelToZone(::google::protobuf::RpcController* PRO
   controller->SetFailed("Method TravelToZone() not implemented.");
   done->Run();
 }
+void SceneSceneClientPlayer::GetSyncDigest(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                         const ::GetSyncDigestRequest* PROTOBUF_NONNULL,
+                         ::Empty* PROTOBUF_NONNULL,
+                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
+  controller->SetFailed("Method GetSyncDigest() not implemented.");
+  done->Run();
+}
+void SceneSceneClientPlayer::NotifySyncDigest(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+                         const ::SyncDigestS2C* PROTOBUF_NONNULL,
+                         ::Empty* PROTOBUF_NONNULL,
+                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
+  controller->SetFailed("Method NotifySyncDigest() not implemented.");
+  done->Run();
+}
 
 void SceneSceneClientPlayer::CallMethod(
     const ::google::protobuf::MethodDescriptor* PROTOBUF_NONNULL method,
@@ -6056,6 +7149,14 @@ void SceneSceneClientPlayer::CallMethod(
       this->TravelToZone(controller, ::google::protobuf::DownCastMessage<::TravelToZoneRequest>(request),
                    ::google::protobuf::DownCastMessage<::TravelToZoneResponse>(response), done);
       break;
+    case 9:
+      this->GetSyncDigest(controller, ::google::protobuf::DownCastMessage<::GetSyncDigestRequest>(request),
+                   ::google::protobuf::DownCastMessage<::Empty>(response), done);
+      break;
+    case 10:
+      this->NotifySyncDigest(controller, ::google::protobuf::DownCastMessage<::SyncDigestS2C>(request),
+                   ::google::protobuf::DownCastMessage<::Empty>(response), done);
+      break;
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -6085,6 +7186,10 @@ const ::google::protobuf::Message& SceneSceneClientPlayer::GetRequestPrototype(
       return ::ActorListDestroyS2C::default_instance();
     case 8:
       return ::TravelToZoneRequest::default_instance();
+    case 9:
+      return ::GetSyncDigestRequest::default_instance();
+    case 10:
+      return ::SyncDigestS2C::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -6115,6 +7220,10 @@ const ::google::protobuf::Message& SceneSceneClientPlayer::GetResponsePrototype(
       return ::Empty::default_instance();
     case 8:
       return ::TravelToZoneResponse::default_instance();
+    case 9:
+      return ::Empty::default_instance();
+    case 10:
+      return ::Empty::default_instance();
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -6197,6 +7306,20 @@ void SceneSceneClientPlayer_Stub::TravelToZone(
     const ::TravelToZoneRequest* PROTOBUF_NONNULL request, ::TravelToZoneResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   channel_->CallMethod(descriptor()->method(8), controller,
+                       request, response, done);
+}
+void SceneSceneClientPlayer_Stub::GetSyncDigest(
+    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+    const ::GetSyncDigestRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
+    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
+  channel_->CallMethod(descriptor()->method(9), controller,
+                       request, response, done);
+}
+void SceneSceneClientPlayer_Stub::NotifySyncDigest(
+    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
+    const ::SyncDigestS2C* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
+    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
+  channel_->CallMethod(descriptor()->method(10), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -68,6 +68,9 @@ func (r *fakeReader) FetchMessage(ctx context.Context) (kafkago.Message, error) 
 	}
 }
 
+// CommitMessages 刻意不看 ctx、来者必记:真 kafka-go(v0.4.47)在 ctx 已取消时仍可能把提交请求放进队列
+// (入队与 ctx.Done 同在一个 select 里随机选;入队后是否一定发出未核实),所以「ctx 取消之后不许再有提交」类用例
+// (如 TestSnapshotConsumer_CancelledBatchNeverLetsQueuedMessagesCommit)靠它暴露越位提交。改成 ctx 取消即拒收会让那些用例失明。
 func (r *fakeReader) CommitMessages(_ context.Context, msgs ...kafkago.Message) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

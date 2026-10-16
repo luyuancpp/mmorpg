@@ -140,7 +140,12 @@ func NextAttemptMs(nowMs uint64, attempts uint32, base, max time.Duration, rnd f
 	} else {
 		delay = max
 	}
+	return nowMs + jitteredMs(delay, rnd)
+}
 
+// jitteredMs 把 delay 乘上 (0.8 + 0.4×rnd()) 并换成毫秒。普通退避与停放档共用这一份抖动口径。
+// rnd 为 nil 时取 0.5(不抖动的中值)。
+func jitteredMs(delay time.Duration, rnd func() float64) uint64 {
 	jitter := 0.5
 	if rnd != nil {
 		jitter = rnd()
@@ -152,5 +157,51 @@ func NextAttemptMs(nowMs uint64, attempts uint32, base, max time.Duration, rnd f
 		jitter = math.Nextafter(1, 0)
 	}
 	scaled := float64(delay) * (0.8 + 0.4*jitter)
-	return nowMs + uint64(scaled/float64(time.Millisecond))
+	return uint64(scaled / float64(time.Millisecond))
+}
+
+// OfflineParking 是离线停放档(docs/design/landing-recovery-sync-digest.md §6.1)。
+//
+// 为什么要有它:玩家长期离线时,普通退避封顶在 MaxBackoff(默认 60s),一行待办每分钟被领一次、
+// 每次还要整份读一遍已落盘账本 —— 一个离线半年的玩家会白白产生几十万次库写与 data_service 读。
+// 停放档把这类行降到约 OfflineBackoff 一次;玩家上线时由落地唤醒(Loop.WakePlayer)立刻处理,
+// 体感不变。唤醒丢了才退回停放档的间隔,只慢不错(L-4)。
+//
+// AfterAttempts == 0 表示关闭停放档,所有重试都走 NextAttemptMs 的指数退避。
+type OfflineParking struct {
+	// AfterAttempts 是进入停放档的已投递次数门槛(op.Attempts >= 它)。
+	AfterAttempts uint32
+	// Backoff 是停放间隔的中值,实际取 Backoff × (0.8 + 0.4×rnd)。
+	Backoff time.Duration
+}
+
+// Parks 报告这次结局是否落进停放档:结局是**本地合成**的 NOT_HERE、原因是玩家**没有位置**
+// (res.Absent,根本没发出 RPC),且这一行此前已投递 attempts 次、达到门槛。
+//
+// 只认 res.Local:scene 自己回的 NOT_HERE 说明玩家刚换节点、位置正在更新,下一次很可能就成,
+// 不能一停半小时。传输层失败时 res 是零值(不是 Local),同样不停放 —— 那是 scene 或网络的问题,
+// 不是玩家不在。
+//
+// 还要 res.Absent:等待跨 zone 落点、节点未注册 / 歧义、节点镜像未完成首次同步(每次服务重启都有
+// 这个窗口)同样是本地合成的 NOT_HERE,但那时玩家多半在线、不会再有落地唤醒,停半小时就是玩家
+// 可感知的延迟。位置键不存在时玩家下次上线一定经过进场,唤醒兜得住。
+//
+// 本次若读过已落盘账本但没有拿到结局(未见 / 没有 blob / 读失败),res 原样保留,照样停放:
+// 读失败多半是 data_service 不可用,此时把成批离线行留在 60s 退避里只会持续压它。
+func (p OfflineParking) Parks(res Result, attempts uint32) bool {
+	return p.AfterAttempts > 0 && p.Backoff > 0 &&
+		res.Local && res.Absent && res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE &&
+		attempts >= p.AfterAttempts
+}
+
+// NextRetryMs 是 ActionRetry 分支的下一次投递时刻:落进停放档时取
+// now + Backoff × (0.8 + 0.4×rnd),否则就是 NextAttemptMs 的指数退避。
+//
+// 纯函数:没有 I/O,时钟与随机数都由参数给。之所以不直接给 NextAttemptMs 加参数,
+// 是因为 seq.go 的事务重试退避也复用 NextAttemptMs,那里没有「玩家在不在线」这回事。
+func NextRetryMs(nowMs uint64, attempts uint32, res Result, base, max time.Duration, park OfflineParking, rnd func() float64) uint64 {
+	if park.Parks(res, attempts) {
+		return nowMs + jitteredMs(park.Backoff, rnd)
+	}
+	return NextAttemptMs(nowMs, attempts, base, max, rnd)
 }

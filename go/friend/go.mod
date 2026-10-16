@@ -1,8 +1,8 @@
 module friend
 
-// go 1.26.5:schemamigrate(proto2mysql v0.2.0)要求 1.26.5,依赖它的 module 只能跟着抬
-// (D-14 理由 3)。friend 自带 `-migrate` 入口,所以必须与 trade / schemamigrate 同版本线。
-go 1.26.5
+// 仓库统一使用 Go 1.27.2；schemamigrate(proto2mysql v0.2.0)最低要求 1.26.5(D-14 理由 3)。
+// friend 自带 `-migrate` 入口，与 trade / schemamigrate 使用仓库统一版本。
+go 1.27.2
 
 replace proto => ../proto
 

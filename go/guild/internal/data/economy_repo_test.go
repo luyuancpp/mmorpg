@@ -91,6 +91,8 @@ func TestStatusToRecordMapsEverySemanticStatus(t *testing.T) {
 		{assetop.StatusRejected, pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_REJECTED},
 		{assetop.StatusAborted, pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABORTED},
 		{assetop.StatusAppliedPartial, pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL},
+		// 自动放弃(落地恢复 §6.3):只经 Abandon 写入,但映射同样只此一处。
+		{assetop.StatusAbandoned, pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED},
 	}
 	for _, tc := range cases {
 		assert.Equal(t, tc.want, StatusToRecord(tc.in), "StatusToRecord(%s)", tc.in)
@@ -152,11 +154,13 @@ func econNoDBRepo(t *testing.T) *GuildRepo {
 
 // TestFinalizeAndResolveRefuseNonFinalStatusBeforeTouchingStorage:终结只能落成四个终态之一。
 // 落成 PENDING 等于没终结(循环会立刻再领走),落成 UNSPECIFIED 会让客服查不到结局。
+// ABANDONED 同样被拒:它只能经 Abandon(带令牌条件的 CAS)写入,Finalize / 人工终结拿到它说明上游判定出了 bug
+// 或绕过了 ManualResolution 的白名单(isTerminalRecord 的注释)。
 func TestFinalizeAndResolveRefuseNonFinalStatusBeforeTouchingStorage(t *testing.T) {
 	store, err := NewGuildAssetStore(econNoDBRepo(t))
 	require.NoError(t, err)
 	ctx := context.Background()
-	for _, status := range []assetop.Status{assetop.StatusPending, assetop.Status(0), assetop.Status(250)} {
+	for _, status := range []assetop.Status{assetop.StatusPending, assetop.StatusAbandoned, assetop.Status(0), assetop.Status(250)} {
 		finalized, err := store.Finalize(ctx, assetop.Op{OpID: 1}, status, assetop.Result{}, testNowMs)
 		assert.Error(t, err, "Finalize status=%d", status)
 		assert.False(t, finalized)
@@ -237,6 +241,11 @@ func TestEconomyCandidateReadsTakeNoLocks(t *testing.T) {
 		// ensureSeqRowTx 的前置读:它在成员行锁之下只判存在,带锁定子句只会重复取锁(AllocateSeq 随后就锁这一行),
 		// TiDB 下还会去锁不存在的 key。
 		"sqlSeqRowExists": sqlSeqRowExists,
+		// 落地恢复(§5.3 / §6)的三条候选 / 统计读:落地唤醒按玩家列未决行(走 idx_2 的 player_id 前缀)、日对账翻页、
+		// 自动放弃候选翻页。领取与终结仍各走主键 CAS,这里读到的只是候选;加锁就又是"经二级索引先锁二级项"。
+		"sqlListPendingByPlayer":   sqlListPendingByPlayer,
+		"sqlListPendingFactsPage":  sqlListPendingFactsPage,
+		"sqlListAbandonCandidates": sqlListAbandonCandidates,
 	}
 	for name, query := range candidateReads {
 		upper := strings.ToUpper(query)
@@ -281,7 +290,8 @@ func TestCounterRefundIsTheOnlyRefundRule(t *testing.T) {
 	shop := assetOpImmutable{Kind: pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_SHOP, RefCount: 3, PeriodKey: 20260921}
 	activity := assetOpImmutable{Kind: pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_ACTIVITY_REWARD, RefCount: 1, PeriodKey: 20260921}
 
-	for _, status := range []assetop.Status{assetop.StatusRejected, assetop.StatusAborted} {
+	// ABANDONED 的对侧账与 REJECTED / ABORTED 由同一个判定给出(refundsCounterparty,落地恢复 §6.3)。
+	for _, status := range []assetop.Status{assetop.StatusRejected, assetop.StatusAborted, assetop.StatusAbandoned} {
 		kind, n, ok := counterRefund(donate, status)
 		assert.True(t, ok, "捐献 %s 要退次数", status)
 		assert.Equal(t, pb.GuildDailyCounterKind_GUILD_DAILY_COUNTER_KIND_DONATE, kind)
@@ -694,7 +704,7 @@ func econTiDBDeadlockDump(ctx context.Context, db *sql.DB) string {
 }
 
 // econInsertOpsBulk 一条多行 INSERT 插一批指令(生产的列清单与参数顺序),给需要成百上千行夹具的并发回归用。
-// 每行 28 个占位符,调用方一批别超过 2000 行(MySQL 单语句占位符上限 65535)。
+// 每行 assetOpColumnCount(29)个占位符,调用方一批别超过 2000 行(MySQL 单语句占位符上限 65535)。
 func econInsertOpsBulk(t *testing.T, f econFixture, recs []*pb.GuildAssetOpRecord) {
 	t.Helper()
 	if len(recs) == 0 {
@@ -749,8 +759,9 @@ func econNextSeq(t *testing.T, f econFixture, playerID uint64, stream assetpb.As
 
 // ── T-D 捐献预留 ─────────────────────────────────────────────
 
-// TestReserveDonation_WritesPendingRowAndOccupiesCount:成功路径写满 28 列、占一次今日次数,
+// TestReserveDonation_WritesPendingRowAndOccupiesCount:成功路径写满 29 列、占一次今日次数,
 // 可空的三列写成空值而不是 NULL,合服闸门拿到的是事务内读到的 zone。
+// last_send_ms = created_ms(LastSendMs 契约第 1 条)由 asset_store_landing_test.go 的 TestReserve_WritesLastSendMsAsCreatedMs 钉住。
 func TestReserveDonation_WritesPendingRowAndOccupiesCount(t *testing.T) {
 	f := openEconomyFixture(t)
 	const (
@@ -1885,8 +1896,10 @@ func TestAccelerate_ChunksCandidatesAndSkipsNonMatching(t *testing.T) {
 
 // ── 清理 ─────────────────────────────────────────────────────
 
-// TestCleanupOnce_KeepsPendingAndPartial:只删保留期外的 APPLIED / REJECTED / ABORTED;APPLIED_PARTIAL(待人工补偿)
+// TestCleanupOnce_KeepsPendingAndPartial:只删保留期外的 APPLIED / REJECTED / ABORTED / ABANDONED;APPLIED_PARTIAL(待人工补偿)
 // 与 PENDING 永不自动删;过期的日键 / 周键计数行删掉,当期的保留。
+// ABANDONED(落地恢复 §6.3)与其它终态同等对待:对侧账已在放弃事务里做完,保留期内的行是人工补偿的依据,之后照删;
+// 保留期内的 ABANDONED 行不删。
 func TestCleanupOnce_KeepsPendingAndPartial(t *testing.T) {
 	f := openEconomyFixture(t)
 	const player uint64 = 8691
@@ -1908,6 +1921,8 @@ func TestCleanupOnce_KeepsPendingAndPartial(t *testing.T) {
 		{704, pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL, oldMs, true},
 		{705, pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_PENDING, oldMs, true},
 		{706, pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_APPLIED, recentMs, true},
+		{707, pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED, oldMs, false},
+		{708, pb.GuildAssetOpStatus_GUILD_ASSET_OP_STATUS_ABANDONED, recentMs, true},
 	}
 	for i, c := range cases {
 		rec := econShopRecord(t, c.opID, player, oldMs, uint64(i+1))
@@ -1944,7 +1959,7 @@ func TestCleanupOnce_KeepsPendingAndPartial(t *testing.T) {
 		_, found := econCounterUsed(t, f, player, pb.GuildDailyCounterKind_GUILD_DAILY_COUNTER_KIND_SHOP, 101, key)
 		assert.Equal(t, survives, found, "period_key=%d", key)
 	}
-	assert.Equal(t, map[string]int64{"guild_asset_op": 3, "guild_daily_counter": 2}, deleted)
+	assert.Equal(t, map[string]int64{"guild_asset_op": 4, "guild_daily_counter": 2}, deleted)
 }
 
 // ── 读查询 ───────────────────────────────────────────────────

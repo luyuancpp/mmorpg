@@ -31,7 +31,8 @@ type Config struct {
 	// 回合制战斗 + 观战端到端冒烟(见 battle_smoke_scenario.go;子模式
 	// 见 BattleSmoke 块); "travel-smoke" — 单机器人跨 zone 场景传送往返
 	// 冒烟(见 travel_smoke_scenario.go / TravelSmoke 块); "channel-smoke" —
-	// 单机器人玩家主动切线冒烟(见 channel_smoke_scenario.go / ChannelSmoke 块)。
+	// 单机器人玩家主动切线冒烟(见 channel_smoke_scenario.go / ChannelSmoke 块);
+	// "sync-smoke" — 落地恢复的按域版本摘要冒烟(见 sync_smoke_scenario.go / SyncSmoke 块)。
 	Mode string `yaml:"mode"`
 
 	// FeaturesSmoke only uses an explicitly selected existing account/character.
@@ -69,6 +70,10 @@ type Config struct {
 	// ChannelSmoke 是 "channel-smoke" 模式的子开关(见 ChannelSmokeConfig / channel_smoke_scenario.go)。
 	// 整块可缺省。
 	ChannelSmoke ChannelSmokeConfig `yaml:"channel_smoke"`
+
+	// SyncSmoke 是 "sync-smoke" 模式的子开关(见 SyncSmokeConfig / sync_smoke_scenario.go)。
+	// 整块可缺省:缺省不做跨 zone 腿。
+	SyncSmoke SyncSmokeConfig `yaml:"sync_smoke"`
 
 	// CurrencyCrash configures the "currency-crash-snapshot" mode used by
 	// docs/notes/currency-crash-window-verification.md. Driven by an external
@@ -539,6 +544,38 @@ func (c *ChannelSmokeConfig) validate() error {
 	return nil
 }
 
+// SyncSmokeConfig 配置 "sync-smoke" 模式(docs/design/landing-recovery-sync-digest.md §10 第 6 步)。
+//
+// 被观测方 A 与触发方 B 都登顶层 zone_id。本块只管可选的跨 zone 腿(场景步骤 S5),整块可缺省。
+type SyncSmokeConfig struct {
+	// CrossZone=true 时做 S5:A 从 zone_id 传送到 visit_zone、落地取摘要,再传送回 zone_id 再取一次。
+	// 缺省 false:跨 zone 落地依赖的环境(两个 zone、共享 Redis、GateTokenSecret 等,见 etc/travel_smoke.yaml)
+	// 不是每个开发机都有。
+	CrossZone bool `yaml:"cross_zone"`
+	// VisitZone 仅 cross_zone=true 时使用,必须非 0 且与 zone_id 不同。
+	VisitZone uint32 `yaml:"visit_zone"`
+	// SceneConfigId 是去程与回程两次 TravelToZoneRequest.scene_config_id;0 = 由目标 zone 的 scene_manager 挑默认大世界。
+	SceneConfigId uint32 `yaml:"scene_config_id"`
+}
+
+// validate 只在 mode=sync-smoke 时调用。homeZone 是顶层 zone_id:跨 zone 腿从它出发、最后回到它,
+// 所以必须显式给出 —— 0 会被 server-list 自动选区顶掉,"回家"就不确定了。
+func (c *SyncSmokeConfig) validate(homeZone uint32) error {
+	if !c.CrossZone {
+		return nil
+	}
+	if homeZone == 0 {
+		return fmt.Errorf("zone_id must be set (non-zero) when cross_zone is true")
+	}
+	if c.VisitZone == 0 {
+		return fmt.Errorf("visit_zone must be set (non-zero) when cross_zone is true")
+	}
+	if c.VisitZone == homeZone {
+		return fmt.Errorf("visit_zone must differ from zone_id when cross_zone is true (got %d)", homeZone)
+	}
+	return nil
+}
+
 type LLMConfig struct {
 	Enabled  bool   `yaml:"enabled"`
 	Endpoint string `yaml:"endpoint"` // e.g. "http://localhost:11434/v1/chat/completions"
@@ -606,10 +643,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "travel-smoke", "friend-smoke", "channel-smoke":
+	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "travel-smoke", "friend-smoke", "channel-smoke", "ordering-smoke", "sync-smoke":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, travel-smoke, friend-smoke, or channel-smoke)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, travel-smoke, friend-smoke, channel-smoke, ordering-smoke, or sync-smoke)", c.Mode)
 	}
 	if c.AuthType == "satoken" && c.SaTokenAddr == "" {
 		return fmt.Errorf("satoken_addr must be set when auth_type is satoken")
@@ -652,6 +689,11 @@ func (c *Config) validate() error {
 	if c.Mode == "channel-smoke" {
 		if err := c.ChannelSmoke.validate(); err != nil {
 			return fmt.Errorf("channel_smoke: %w", err)
+		}
+	}
+	if c.Mode == "sync-smoke" {
+		if err := c.SyncSmoke.validate(c.ZoneID); err != nil {
+			return fmt.Errorf("sync_smoke: %w", err)
 		}
 	}
 	return nil

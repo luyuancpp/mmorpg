@@ -1,4 +1,5 @@
 #include "player_team.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <cmath>
 #include <limits>
@@ -55,8 +56,8 @@ namespace
 
 	uint64_t GuidOf(entt::entity player)
 	{
-		const auto* guid = tlsEcs.actorRegistry.try_get<Guid>(player);
-		return guid != nullptr ? *guid : 0;
+		const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+		return guid != nullptr ? guid->value : 0;
 	}
 
 	// 多跳回调的统一核对:实体仍存在且仍是发命令时的那个玩家(槽位复用后 Guid 会不同)。

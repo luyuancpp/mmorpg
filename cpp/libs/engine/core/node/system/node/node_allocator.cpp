@@ -37,8 +37,7 @@ void NodeAllocator::AcquireNode()
 
 	// All services pick next free ID in local snapshot,
 	// then rely on etcd PutIfAbsent CAS to enforce same-type uniqueness.
-	auto &nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity())[nodeType];
-	auto &existingNodes = *nodeList.mutable_node_list();
+	const auto &existingNodes = gNode->GetServiceDiscoveryManager().ServiceNodes().NodesOfType(nodeType);
 
 	std::unordered_set<uint32_t> usedIds;
 	uint32_t maxUsedId = 0;
@@ -52,10 +51,8 @@ void NodeAllocator::AcquireNode()
 		}
 	}
 
-	// Merge in ids we already lost CAS on this boot. The local ECS snapshot
-	// can lag the etcd watch stream by hundreds of ms during cold start, so
-	// without this we'd retry the same id forever (the snapshot stays empty
-	// because watch events haven't fanned out yet).
+	// 合入本次启动中已经输掉 CAS 的 ID:冷启动时本地发现快照可能落后 Watch 数百毫秒,
+	// 否则事件尚未分发时快照仍为空,每次都会重试同一个失败 ID。
 	for (uint32_t id : lostIds())
 	{
 		usedIds.insert(id);
@@ -90,7 +87,7 @@ void NodeAllocator::AcquireNode()
 
 	(void)maxUsedId; // retained for log/debug parity; iteration starts at 0
 
-	GetNodeInfo().set_node_id(nextNodeId);
+	gNode->MutableNodeInfo().set_node_id(nextNodeId);
 
 	gNode->GetEtcdManager().RegisterNodeService();
 }
@@ -172,8 +169,7 @@ uint32_t AllocatePortInRange(const std::unordered_set<uint32_t> &usedPorts,
 
 bool NodeAllocator::AcquireNodePort()
 {
-	auto &nodeList = tlsEcs.nodeGlobalRegistry.get_or_emplace<ServiceNodeList>(tlsEcs.GrpcNodeEntity())[gNode->GetNodeType()];
-	auto &existingNodes = *nodeList.mutable_node_list();
+	const auto &existingNodes = gNode->GetServiceDiscoveryManager().ServiceNodes().NodesOfType(gNode->GetNodeType());
 
 	// Port layout (TCP + 30000 = gRPC, non-overlapping):
 	//
@@ -297,7 +293,7 @@ bool NodeAllocator::AcquireNodePort()
 		tryPortId = assignedPort + 1;
 	}
 
-	GetNodeInfo().mutable_endpoint()->set_port(assignedPort);
+	gNode->MutableNodeInfo().mutable_endpoint()->set_port(assignedPort);
 
 	// gRPC port = TCP port + 30000 (deterministic, separate range).
 	//
@@ -317,11 +313,11 @@ bool NodeAllocator::AcquireNodePort()
 					  << "; nothing published to etcd, caller must retry";
 			// 把 TCP 端口退回本轮之前的值:扫描路径要保持 0(下轮继续扫),
 			// 否则重试时会把刚挑到的端口误当成"预设端口"死等。
-			GetNodeInfo().mutable_endpoint()->set_port(presetPort);
+			gNode->MutableNodeInfo().mutable_endpoint()->set_port(presetPort);
 			return false;
 		}
-		GetNodeInfo().mutable_grpc_endpoint()->set_ip(GetNodeInfo().endpoint().ip());
-		GetNodeInfo().mutable_grpc_endpoint()->set_port(grpcPort);
+		gNode->MutableNodeInfo().mutable_grpc_endpoint()->set_ip(GetNodeInfo().endpoint().ip());
+		gNode->MutableNodeInfo().mutable_grpc_endpoint()->set_port(grpcPort);
 		LOG_INFO << "Assigned gRPC port: " << grpcPort
 				 << " (TCP " << assignedPort << " + " << kGrpcPortOffset << ")";
 	}

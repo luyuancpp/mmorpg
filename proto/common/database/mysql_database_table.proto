@@ -5,6 +5,7 @@ import "proto/db/proto_option.proto";
 import "proto/common/base/user_accounts.proto";
 import "proto/common/component/asset_op_ledger_comp.proto";
 import "proto/common/component/battle_settlement_ledger_comp.proto";
+import "proto/common/component/player_inbox_ledger_comp.proto";
 import "proto/common/component/player_attribute_comp.proto";
 import "proto/common/component/player_pet_comp.proto";
 import "proto/common/component/player_scene_comp.proto";
@@ -152,6 +153,19 @@ message player_database
   // currency / bag_component 同记录同一次落盘 —— 标记和它产生的资产要么一起在盘上,
   // 要么一起没有,不允许"资产落了标记没落"(重复发奖)或"标记落了资产没落"(白丢奖励)。
   BattleSettlementLedgerComp settlement_ledger = 17;
+  // MySQL 行内围栏(docs/design/db-write-fencing-mysql.md §3.2):存储版本元数据,按 (fence_owner_epoch, fence_save_seq)
+  // 字典序比较。只由 go/db 按 DBTask 的 (owner_epoch, save_seq) 盖章写入;C++ 只在加载时读来给存盘发号器播种(§7.2),
+  // 存盘时不以它为业务数据。存量行默认 (0,0) 表示"还没见过带版本的写",不回填。
+  // 2026-10-15 先于条件写落码声明(只占号、加列),让后续加列(收件箱 inbox_ledger 取 20)保持新老库列序一致;
+  // 在 go/db 条件写上线前,这两列只被原样读写,不参与任何判定。
+  uint64 fence_owner_epoch = 18;
+  uint64 fence_save_seq = 19;
+  // 玩家收件箱消费端账本(docs/design/player-inbox-service.md §4.4):每域「已按 seq 处理到哪」+ 最近 32 条结局。
+  // 与 asset_op_ledger 同一条不变量 I3(收件箱侧记作 IB-3):必须与 currency / bag_component 同记录同一次落盘 ——
+  // GM 处置的效果(封锁 / 欠款随 CurrencyComp 落盘)和它的账本要么一起在盘上,要么一起没有;
+  // 否则「效果落了账本没落」会让不幂等的 AttachDebt 被重复执行,「账本落了效果没落」会把没生效的处置确认成已执行。
+  // 按加列纪律取 18/19 之后的下一个空闲号 20,声明在末尾、不留空洞;下一个新字段从 21 起。
+  PlayerInboxLedgerComp inbox_ledger = 20;
 }
 
 message player_database_1
@@ -168,6 +182,9 @@ message player_database_1
   // Same instrumentation surface as player_database; the data_stress driver
   // and robot data-stress mode write to whichever table the test addresses.
   PlayerStressTestProbe stress_test_probe = 2;
+  // MySQL 行内围栏,语义同 player_database 的 18 / 19 号(db-write-fencing-mysql.md §3.2)。
+  uint64 fence_owner_epoch = 3;
+  uint64 fence_save_seq = 4;
 }
 
 // player_snapshot / rollback_audit_log 已移到 rollback_database_table.proto:导表器按本文件的 message 成员生成 zone 库建表清单(generated/data/mysql_database_table_list.json),而这两张表只该存在于全局库(data_service)一处。

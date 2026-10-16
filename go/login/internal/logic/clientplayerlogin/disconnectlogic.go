@@ -2,6 +2,7 @@ package clientplayerloginlogic
 
 import (
 	"context"
+	"login/internal/logic/pkg/sessionfence"
 	"login/internal/svc"
 	login_proto "proto/login"
 
@@ -28,11 +29,29 @@ func (l *DisconnectLogic) Disconnect(in *login_proto.LoginNodeDisconnectRequest)
 		return &login_proto.LoginEmptyResponse{}, nil
 	}
 
+	// gate 连接会话栅栏(docs/design/client-request-ordering.md §6.2):先标记这条连接已关闭,再清理登录态。
+	// 之后晚到的 Login 不再写 login_session;EnterGame 后台链在绑定点看到关闭会自己补挂断线租约。
+	// 反过来,后台链已经绑定了玩家、而 gate 会话还没收到 BindSession 时,从栅栏读回绑定的玩家补挂租约:
+	// 这时会话头里的 player_id 是 0(首次进游戏),或是换角前的旧角色(gate 在 LeaveGame 后不清 playerId),
+	// 只认会话头的话新角色会永久停在 ONLINE。两者都收尾,见 sessionPlayersToSettle。
+	var bound uint64
+	if fenceKey, fenced := sessionfence.KeyOf(sessionDetails); fenced {
+		var err error
+		bound, err = sessionfence.Close(l.ctx, l.svcCtx.RedisClient, fenceKey, sessionFenceTTL)
+		if err != nil {
+			// 栅栏写失败不阻断清理:照旧按会话里的身份清,只是失去「补挂租约」这一层兜底。
+			logx.Errorf("Disconnect session fence close failed: sessionId=%d err=%v", sessionDetails.SessionId, err)
+			bound = 0
+		}
+	}
+
 	cleanupLoginSessionState(l.ctx, l.svcCtx, sessionDetails.SessionId, "disconnect")
 
 	// Mark session as disconnecting with 30s lease in Redis (replaces Centre's DelayedCleanupTimer).
 	// When the Redis key TTL expires, the session is effectively cleaned up.
-	markPlayerSessionDisconnecting(l.ctx, l.svcCtx, sessionDetails.PlayerId, in.SessionId)
+	for _, playerID := range sessionPlayersToSettle(sessionDetails.PlayerId, bound) {
+		markPlayerSessionDisconnecting(l.ctx, l.svcCtx, playerID, in.SessionId)
+	}
 
 	return &login_proto.LoginEmptyResponse{}, nil
 }

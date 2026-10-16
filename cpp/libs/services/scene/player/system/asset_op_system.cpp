@@ -13,6 +13,7 @@
 #include "engine/core/time/system/time.h"
 #include "modules/bag/bag_service.h"
 #include "modules/bag/comp/player_bags_comp.h"
+#include "modules/currency/comp/player_currency_comp.h"
 #include "modules/currency/system/currency_system.h"
 #include "modules/gain_block/gain_block_service.h"
 #include "modules/id_segment/guid_segment_registry.h"
@@ -21,6 +22,7 @@
 #include "player/comp/player_ownership_comp.h"
 #include "player/system/asset_op_ledger.h"
 #include "player/system/player_lifecycle.h"
+#include "player/system/player_mutability.h" // HasFencedOwnership / IsPlayerMutable(与玩家收件箱共用,D12)
 #include "proto/common/component/player_comp.pb.h" // UnregisterPlayer
 #include "table/code/item_table.h"
 #include "table/proto/tip/asset_error_tip.pb.h"
@@ -145,37 +147,14 @@ void Answer(::AssetOpResponse& response, ::AssetOpOutcome outcome, uint32_t tipI
 
 // ── 可改判定 ────────────────────────────────────────────────────────────────
 
-// 本实体的存盘是否受 owner_epoch 围栏保护(docs/design/guild-phase2/08-save-owner-fence.md §8.2.1)。
+// HasFencedOwnership / IsPlayerMutable 已原样抽到 player/system/player_mutability.h(D12,与玩家收件箱共用,
+// 行为零变化)。判定依据、"为什么刻意不复用 IsCrossZoneFrozen"的论证都在那个头文件里。
 //
-// epoch 由 scene_manager 铸造、随路由事件下发(PlayerOwnerEpochComp)。epoch == 0 是滚动升级的兼容窗口:
-// SavePlayerToRedis 走**无守卫**的旧 Save,db 侧按 legacy_zero 放行。此时若记账并上报 durable,
-// 旧节点晚到的退出存盘能原样盖掉这笔改动 —— 帮会已据 durable 记了资金,玩家侧的扣款却被抹掉(04 K1)。
-// 所以资产通道在无围栏的实体上不引发任何写入。组件缺失与 epoch == 0 一律按无围栏处理(fail-closed)。
-bool HasFencedOwnership(entt::entity player)
-{
-	const auto* ownerEpoch = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player);
-	return ownerEpoch != nullptr && ownerEpoch->epoch != 0;
-}
-
-// 该实体此刻能不能被改(不变量 I1 单写者的本地一侧)。
-//
-// **刻意不复用 PlayerLifecycleSystem::IsCrossZoneFrozen**:它只看 PlayerFrozenComp,
-// 漏掉"归属交接已挂但存盘还没落地"的窗口。而 SavePlayerToRedis 在
-// `PlayerTravelHandoffComp.requestedAtMs != 0` 时直接跳过写盘并返回 false
-// (player_lifecycle.cpp 的 SavePlayerToRedis 开头,日志 "skip: zone travel handoff already
-// requested" 那一支;不写行号,该文件改动频繁)—— 与"脏比较相等、盘上已是最新"共用同一个返回值。
-// 若在交接在途时记账,这个 false 会被误当成"结局已在盘上",把没落地的结局报成 durable,
-// Go 随即终结,而这份内存态马上会随实体销毁一起丢。所以交接一挂上就必须在**记账之前**
-// 回 RETRY。UnregisterPlayer(退出存盘在途)同理:退出优先,不接受新改动。
-// 另一条:本实体的存盘必须带归属围栏(HasFencedOwnership,见上)。
-//
-// 调用点只有 AnswerSeenSeq 的补存。Decide 第 5 步的改动闸**不**调用它,而是逐条内联同样的判定
-// (为了按原因回不同的 reason:kAssetFrozen / kAssetPlayerNotHere);新增可改判定时两处要同改。
-bool IsPlayerMutable(entt::entity player)
-{
-	return !tlsEcs.actorRegistry.any_of<PlayerFrozenComp, PlayerTravelHandoffComp, UnregisterPlayer>(player) &&
-		   HasFencedOwnership(player);
-}
+// IsPlayerMutable 在本文件的调用点只有 AnswerSeenSeq 的补存。Decide 第 5 步的改动闸**不**调用它,而是逐条
+// 内联同样的判定(为了按原因回不同的 reason:kAssetFrozen / kAssetPlayerNotHere);新增可改判定时,
+// player_mutability.h 与 Decide 第 5 步两处要同改。
+using player_mutability::HasFencedOwnership;
+using player_mutability::IsPlayerMutable;
 
 // ── durable 判定(§4.6)─────────────────────────────────────────────────────
 
@@ -218,9 +197,9 @@ bool IsAssetOpDurable(entt::entity player, AssetOpStream stream, uint64_t epoch,
 }
 
 // 触发一次存盘并记下时刻。返回 SavePlayerToRedis 的原值:
-// true = 确实压了一次写、稍后有落盘回调;false = 脏比较判定与上次落盘逐字段相等、本次不写。
-// **前置**:IsPlayerMutable(player) 为真 —— 否则 false 还可能来自"交接在途跳过写盘",
-// 那是"没落盘",不是"已在盘上"(见 IsPlayerMutable 的说明)。
+// true = 确实压了一次写、稍后有落盘回调;false 仅表示没有压入新写,
+// 包括与旧快照相等、交接已发起、缺身份/持久组件拒存。不能从 bool 推断具体原因或 durable。
+// **前置**:IsPlayerMutable(player) 为真;durable 始终由真实落盘快照单独判定。
 bool RequestAssetOpPersist(entt::entity player, int64_t nowMs)
 {
 	auto& persistRequest = tlsEcs.actorRegistry.get_or_emplace<PlayerAssetOpPersistRequestComp>(player);
@@ -237,9 +216,9 @@ bool PersistAndProbeDurable(entt::entity player, const ::AssetOpRequest& request
 		IsAssetOpDurable(player, request.stream(), request.stream_epoch(), request.seq(), expectApplied);
 	if (!wrote && !durable)
 	{
-		// 没写盘 = 内存与上次落盘快照逐字段相等;结局既然已在内存里,就必然也在快照里。
-		// 走到这里说明脏比较或快照维护有 bug,如实报 durable=false 让 Go 继续重查。
-		LOG_ERROR << "[AssetOp] Save skipped by dirty comparison but outcome is absent from persisted snapshot player_id=" << request.player_id()
+		// bool facade 分不出相等跳过、交接跳过和拒存。这里只报告未排入新写且缺少落盘证据,
+		// 如实保留 durable=false 让 Go 重查;具体拒存原因由保存入口日志和累计计数说明。
+		LOG_ERROR << "[AssetOp] No save queued and outcome is absent from persisted snapshot player_id=" << request.player_id()
 				  << " stream=" << static_cast<int>(request.stream()) << " epoch=" << request.stream_epoch()
 				  << " seq=" << request.seq();
 	}
@@ -523,17 +502,12 @@ void ApplyCredit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const
 	if (!itemsToAdd.empty())
 	{
 		auto& bags = tlsEcs.actorRegistry.get<PlayerBagsComp>(player);
-		const PlayerItemBlockList emptyBlockList;
-		const auto* blockList = tlsEcs.actorRegistry.try_get<PlayerItemBlockList>(player);
-		// mutated 是 §4.11 给 BagService::AddItems 追加的出参:
-		//   AddItems(entity, bag, blockList, items, txType, correlationId, extra, bool* mutated)
-		// 语义 = "这次调用有没有真的动过包"(ReserveForBatchAdd 淘汰了实例,或任何一条 AddItem
-		// 写出了 guid)。设计稿写的是 7 参签名(那时还没有 extra),落码以工作区现签名为准:
-		// extra 是战斗掉落在用的参数,删掉会打断既有调用点。
+		// mutated 表示这次物品批量是否已提交；候选提交失败保持 false，
+		// 不因规划淘汰或已取号就宣称资产已变化。extra 保留既有流水关联。
 		bool mutated = false;
 		const uint32_t error =
 			BagService::AddItems(player, bags.bags[kInventory],
-								 blockList == nullptr ? emptyBlockList : *blockList, itemsToAdd, txType,
+								 itemsToAdd, txType,
 								 request.correlation_id(), /*extra=*/{}, &mutated);
 		if (error == kSuccess)
 		{
@@ -794,9 +768,14 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetInBattle);
 		return;
 	}
-	if (tlsEcs.actorRegistry.try_get<CurrencyComp>(player) == nullptr)
+	if (!tlsEcs.actorRegistry.all_of<CurrencyComp, PlayerCurrencyComp>(player))
 	{
-		LOG_WARN << "[AssetOp] Player lacks CurrencyComp(still loading) player_id=" << request.player_id();
+		// 两份数据都由加载恢复。尤其 Credit 先发物品再加币,缺债务镜像必须在物品副作用前拦住,
+		// 不能由后面的 AddCurrency 拒绝才发现,否则这笔资产指令已经部分应用。
+		LOG_ERROR << "[AssetOp] Asset application refused: persisted currency component missing (load invariant broken) player_id="
+				  << request.player_id()
+				  << " has_currency=" << tlsEcs.actorRegistry.all_of<CurrencyComp>(player)
+				  << " has_player_currency=" << tlsEcs.actorRegistry.all_of<PlayerCurrencyComp>(player);
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);
 		return;
 	}

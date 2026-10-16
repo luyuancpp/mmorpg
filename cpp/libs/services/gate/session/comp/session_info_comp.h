@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <optional>
 #include <unordered_map>
@@ -7,48 +7,38 @@
 #include "engine/core/type_define/type_define.h"
 #include "message_limiter/message_limiter.h"
 #include "pending_scene_entry_comp.h"
+#include "router_lane_item.h"
 
 struct SessionInfo
 {
-	// Entity IDs are uint64_t (ENTT_ID_TYPE=uint64_t with version bits).
-	// Using uint64_t avoids truncation that loses entity version/generation,
-	// which causes registry.valid() to reject recycled entities.
-	//
-	// Naming note: these methods are named Entity*-Id (not Node*-Id) because
-	// what we track per nodeType is the local entt::entity integer for the
-	// remote node — NOT the business `node_id` on that node. Post uuid-primary-
-	// key refactor of node_connector, entity and node_id are no longer equal,
-	// so using "EntityId" terminology prevents a common footgun where callers
-	// would assume the returned value can be fed into `entt::entity{...}` and
-	// land on a valid slot without going through a FindNodeEntity* helper.
-	static constexpr uint64_t kInvalidEntityId{UINT64_MAX};
-	using NodeEntityMap = std::unordered_map<uint32_t, uint64_t>;
+	// 句柄属于 tlsNodeContextManager.GetRegistry(nodeType)，只在本进程有效。
+	using NodeEntityMap = std::unordered_map<uint32_t, entt::entity>;
 
 	SessionInfo() = default;
 
-	void SetEntityId(uint32_t nodeType, uint64_t entityId)
+	void SetNodeEntity(uint32_t nodeType, entt::entity entityId)
 	{
 		entityIds[nodeType] = entityId;
 	}
 
-	uint64_t GetEntityId(uint32_t nodeType) const
+	entt::entity GetNodeEntity(uint32_t nodeType) const
 	{
 		auto it = entityIds.find(nodeType);
 		if (it != entityIds.end())
 		{
 			return it->second;
 		}
-		return kInvalidEntityId;
+		return entt::null;
 	}
 
-	bool HasEntityId(uint32_t nodeType) const
+	bool HasNodeEntity(uint32_t nodeType) const
 	{
 		auto it = entityIds.find(nodeType);
 		if (it == entityIds.end())
 		{
 			return false;
 		}
-		return it->second != kInvalidEntityId;
+		return it->second != entt::null;
 	}
 
 	Guid playerId{kInvalidGuid};
@@ -70,6 +60,24 @@ struct SessionInfo
 	// 会话销毁即随之消失,不需要额外清理路径。
 	uint32_t homeZoneId{0}; // 玩家归属 zone;0 = 未知(旧版 scene_manager 未填),scene 侧 fail-closed 落进程 zone 并计数
 	uint64_t ownerEpoch{0}; // 本次路由的归属 epoch;0 = 旧版未铸造(兼容窗口),scene 侧存盘跳过 CAS 并计数
+
+	// 登录代次(docs/design/scene-enter-session-fence.md §4):本会话、本角色见过的最高代次。来源是
+	// BindSessionEvent 与 RoutePlayerEvent,同一角色取 max;同一条连接上换了角色时以新角色的值为准(上一个
+	// 角色的代次与新角色无关)。只用于给 PlayerEnterGameNodeRequest 盖章,新旧由 scene 入场栅栏判;gate 不据此
+	// 拒绝或丢弃任何路由:一次失败的重登(Bind 已到、scene_manager 拒绝)会把会话代次抬高,之后同连接上
+	// scene 自发的换图路由带的是 0(由本字段盖章),按代次丢会把它们全吞掉。0 = 上游未带(旧版),原样透传。
+	// 写入只经 scene_route_helper.h 的 ApplyLoginBinding / ApplyRouteIdentity,且都必须先于转发:
+	// 转发从会话取值盖章。会话销毁即随之消失。
+	uint64_t loginGeneration{0};
+
+	// 会话代次(docs/design/client-request-ordering.md §4.2):建连时由 gate_lane::NextIncarnation() 分配,
+	// 进程内单调、会话存续期间不变,与 gate_instance_id 合起来全局唯一。随 SessionDetails.session_incarnation 发出:
+	// gate 认领回包时用它挡住 session_id 被新连接复用后迟到的旧回包,login 会话栅栏用它建键。0 = 未分配。
+	uint64_t incarnation{0};
+	// 路由 lane:本会话经路由服转发的 gRPC 类请求按收包顺序单飞(client-request-ordering.md §4)。
+	// 放在会话里 = 会话 erase 即取消,也不怕 session_id 复用(与 pendingSceneEntry 同一先例);
+	// 只由 nodes/gate/handler/rpc/client_request_lane.cpp 读写。
+	gate_lane::SessionRouterLane routerLane;
 
 	// 最近一次 RoutePlayerEvent 的决策(CPP-2);每次到达无条件覆盖,与是否转发成功无关。
 	// 只供 BindSession 晚到时按 node_id 重建欠账(scene_route_helper.h EntryForLateLoginBinding):

@@ -134,29 +134,117 @@ func (m *Manager) ValidateAccess(ctx context.Context, accessToken string) (*Toke
 	return m.validate(ctx, accessTokenPrefix+accessToken)
 }
 
+// rotateRefreshScript 把「作废旧 refresh token」与「签发新的一对」并成**一次**原子提交。
+//
+// 为什么不再分步(旧版 DEL → ZREM → Issue 的 MULTI 是三次往返):请求在三步之间截止时
+// (zrpc 服务端 Timeout,docs/design/client-request-ordering.md §6.1),go-redis 不再发后续命令,
+// 留下「旧的已作废、新的没签出」—— 客户端手里的 refresh token 作废,只能回去走第三方重新认证;
+// 连接在两步之间断开也是同样结局。合成一段 Lua 之后提交点只有一个:截止前没发出就什么都没变,
+// 发出了就整体生效。
+//
+// 旧 token 按**值**比对(compare-and-delete),而不是只看 DEL 的返回值:Refresh 先 GET 出旧 token 的
+// payload 拿到账号(集合键要由它拼出,必须经 KEYS 传入),再交给脚本。两步之间被并发的另一次刷新消费
+// 或已过期,脚本就读不到同一份值,整段不写。go-redis 对读超时的 EVALSHA 原样重发时也一样:第二次执行
+// 看到旧 token 已不在,回 0、不会二次签发。
+//
+// KEYS = {旧 refresh 键, account_refresh 集合, 新 access 键, 新 refresh 键}
+// ARGV = {旧 refresh 键当前的值, 旧 refresh token(集合成员), 新 payload, access TTL(毫秒),
+//         refresh TTL(毫秒), 死成员清理的 score 上界, 新成员 score, 新 refresh token(集合成员)}
+// 写入顺序与 Issue 的 MULTI 相同(先清死成员再加新成员,见 Issue 注释)。
+// 返回 1 = 已轮换;0 = 旧 token 已不是读到的那一份,什么都没写。
+var rotateRefreshScript = redis.NewScript(`
+if redis.call("GET", KEYS[1]) ~= ARGV[1] then
+    return 0
+end
+redis.call("DEL", KEYS[1])
+redis.call("ZREM", KEYS[2], ARGV[2])
+redis.call("SET", KEYS[3], ARGV[3], "PX", ARGV[4])
+redis.call("SET", KEYS[4], ARGV[3], "PX", ARGV[5])
+redis.call("ZREMRANGEBYSCORE", KEYS[2], "-inf", ARGV[6])
+redis.call("ZADD", KEYS[2], ARGV[7], ARGV[8])
+redis.call("PEXPIRE", KEYS[2], ARGV[5])
+return 1
+`)
+
+// rotateRefreshScript 的返回值。
+const (
+	refreshRotated  = 1
+	refreshConsumed = 0
+)
+
 // Refresh validates a refresh token, invalidates it, and issues a new token pair (rotation).
+//
+// 作废与签发是同一次原子提交(rotateRefreshScript):要么旧的仍有效、新的没签,要么旧的作废、新的已签。
+// 提交前先查 ctx:请求已截止 / 已取消就不发脚本(截止之后 gate 已放行同一会话的下一条请求,
+// 见 client-request-ordering.md §6.1)。已知残留(不在本函数解决):脚本已在 Redis 执行、回包却丢了时,
+// 新的一对签出了但客户端拿不到,旧的已作废,重试必然失败(同文 §7.2 第 5 条,是重试问题,不是顺序问题)。
 func (m *Manager) Refresh(ctx context.Context, refreshToken string) (*TokenPair, error) {
+	// 非正 TTL 会让 SET PX / PEXPIRE 报错或签出永不过期的 token,提交前显式拒绝(fail-closed)。
+	if m.cfg.AccessTokenTTL <= 0 || m.cfg.RefreshTokenTTL <= 0 {
+		return nil, fmt.Errorf("token TTL must be positive (access=%v refresh=%v)", m.cfg.AccessTokenTTL, m.cfg.RefreshTokenTTL)
+	}
 	key := refreshTokenPrefix + refreshToken
-	data, err := m.validate(ctx, key)
+	raw, data, err := m.load(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 
-	// Atomically delete old refresh token (one-time use)
-	deleted, err := m.rdb.Del(ctx, key).Result()
+	now := time.Now()
+	newAccess, err := generateToken()
 	if err != nil {
-		return nil, fmt.Errorf("delete old refresh token: %w", err)
+		return nil, fmt.Errorf("generate access token: %w", err)
 	}
-	if deleted == 0 {
-		// Race: another request already consumed this token
+	newRefresh, err := generateToken()
+	if err != nil {
+		return nil, fmt.Errorf("generate refresh token: %w", err)
+	}
+	payload, err := json.Marshal(&TokenData{
+		Account:   data.Account,
+		AuthType:  data.AuthType,
+		DeviceID:  data.DeviceID,
+		CreatedAt: now.Unix(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("marshal token data: %w", err)
+	}
+	accessExpire := now.Add(m.cfg.AccessTokenTTL)
+	refreshExpire := now.Add(m.cfg.RefreshTokenTTL)
+	setKey := accountRefreshKey + data.Account
+
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("request done before rotating refresh token, nothing written: %w", err)
+	}
+	res, err := rotateRefreshScript.Run(ctx, m.rdb,
+		[]string{key, setKey, accessTokenPrefix + newAccess, refreshTokenPrefix + newRefresh},
+		raw, refreshToken, payload,
+		m.cfg.AccessTokenTTL.Milliseconds(), m.cfg.RefreshTokenTTL.Milliseconds(),
+		now.Unix()-1, refreshExpire.Unix(), newRefresh,
+	).Int64()
+	if err != nil {
+		return nil, fmt.Errorf("rotate refresh token: %w", err)
+	}
+	switch res {
+	case refreshRotated:
+	case refreshConsumed:
+		// 并发的另一次刷新先消费了它,或在 GET 与脚本之间过期。
 		return nil, fmt.Errorf("refresh token already consumed")
+	default:
+		return nil, fmt.Errorf("unexpected rotateRefreshScript result %d", res)
 	}
 
-	// Remove from account set (ZSET now — 见文件头 key 说明)
-	m.rdb.ZRem(ctx, accountRefreshKey+data.Account, refreshToken)
+	// 提交之后的封顶清理,与 Issue 相同是 best-effort:请求恰好此刻截止时这一次不清,集合最多暂时多出
+	// 一枚活成员,下一次签发会清掉。
+	m.trimRefreshSet(ctx, setKey)
 
-	// Issue new pair
-	return m.Issue(ctx, data.Account, data.AuthType, data.DeviceID)
+	logx.Infof("[Token] Rotated refresh token for account=%s auth_type=%s access_ttl=%v refresh_ttl=%v",
+		data.Account, data.AuthType, m.cfg.AccessTokenTTL, m.cfg.RefreshTokenTTL)
+
+	return &TokenPair{
+		AccessToken:        newAccess,
+		RefreshToken:       newRefresh,
+		AccessTokenExpire:  accessExpire.Unix(),
+		RefreshTokenExpire: refreshExpire.Unix(),
+	}, nil
 }
 
 // trimRefreshSet 把 account_refresh ZSET 封顶到 maxRefreshTokensPerAccount 枚活跃成员:
@@ -207,19 +295,25 @@ func (m *Manager) RevokeAll(ctx context.Context, account string) error {
 }
 
 func (m *Manager) validate(ctx context.Context, key string) (*TokenData, error) {
+	_, data, err := m.load(ctx, key)
+	return data, err
+}
+
+// load 读出 token 键的原始字节并解析。Refresh 要原始字节交给轮换脚本做按值比对(见 rotateRefreshScript)。
+func (m *Manager) load(ctx context.Context, key string) ([]byte, *TokenData, error) {
 	val, err := m.rdb.Get(ctx, key).Bytes()
 	if err == redis.Nil {
-		return nil, fmt.Errorf("token not found or expired")
+		return nil, nil, fmt.Errorf("token not found or expired")
 	}
 	if err != nil {
-		return nil, fmt.Errorf("Redis lookup: %w", err)
+		return nil, nil, fmt.Errorf("Redis lookup: %w", err)
 	}
 
 	var data TokenData
 	if err := json.Unmarshal(val, &data); err != nil {
-		return nil, fmt.Errorf("unmarshal token data: %w", err)
+		return nil, nil, fmt.Errorf("unmarshal token data: %w", err)
 	}
-	return &data, nil
+	return val, &data, nil
 }
 
 func generateToken() (string, error) {

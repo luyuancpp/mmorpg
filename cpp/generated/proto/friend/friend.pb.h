@@ -918,6 +918,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RejectFriendRequest final : public 
   // accessors -------------------------------------------------------
   enum : int {
     kFromPlayerIdFieldNumber = 2,
+    kRequestIdFieldNumber = 3,
   };
   // uint64 from_player_id = 2;
   void clear_from_player_id() ;
@@ -929,11 +930,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RejectFriendRequest final : public 
   void _internal_set_from_player_id(::uint64_t value);
 
   public:
+  // uint64 request_id = 3;
+  void clear_request_id() ;
+  [[nodiscard]] ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:friendpb.RejectFriendRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 1,
+      ::google::protobuf::internal::TcParseTable<1, 2,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -963,6 +974,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED RejectFriendRequest final : public 
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t from_player_id_;
+    ::uint64_t request_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2124,6 +2136,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendRequest final : public ::goog
     kFromPlayerIdFieldNumber = 1,
     kToPlayerIdFieldNumber = 2,
     kRequestTimeMsFieldNumber = 3,
+    kRequestIdFieldNumber = 5,
     kStatusFieldNumber = 4,
   };
   // uint64 from_player_id = 1;
@@ -2156,6 +2169,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendRequest final : public ::goog
   void _internal_set_request_time_ms(::int64_t value);
 
   public:
+  // uint64 request_id = 5;
+  void clear_request_id() ;
+  [[nodiscard]] ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
   // .friendpb.FriendRequestStatus status = 4;
   void clear_status() ;
   [[nodiscard]] ::friendpb::FriendRequestStatus status() const;
@@ -2170,7 +2193,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendRequest final : public ::goog
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 4,
+      ::google::protobuf::internal::TcParseTable<3, 5,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -2202,6 +2225,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED FriendRequest final : public ::goog
     ::uint64_t from_player_id_;
     ::uint64_t to_player_id_;
     ::int64_t request_time_ms_;
+    ::uint64_t request_id_;
     int status_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -3518,6 +3542,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AcceptFriendRequest final : public 
   // accessors -------------------------------------------------------
   enum : int {
     kFromPlayerIdFieldNumber = 2,
+    kRequestIdFieldNumber = 3,
   };
   // uint64 from_player_id = 2;
   void clear_from_player_id() ;
@@ -3529,11 +3554,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AcceptFriendRequest final : public 
   void _internal_set_from_player_id(::uint64_t value);
 
   public:
+  // uint64 request_id = 3;
+  void clear_request_id() ;
+  [[nodiscard]] ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:friendpb.AcceptFriendRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 1,
+      ::google::protobuf::internal::TcParseTable<1, 2,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -3563,6 +3598,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AcceptFriendRequest final : public 
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t from_player_id_;
+    ::uint64_t request_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -5496,6 +5532,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AddFriendResponse final : public ::
   // accessors -------------------------------------------------------
   enum : int {
     kErrorMessageFieldNumber = 1,
+    kRequestIdFieldNumber = 2,
   };
   // .TipInfoMessage error_message = 1;
   [[nodiscard]] bool has_error_message()
@@ -5513,11 +5550,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AddFriendResponse final : public ::
   ::TipInfoMessage* PROTOBUF_NONNULL _internal_mutable_error_message();
 
   public:
+  // uint64 request_id = 2;
+  void clear_request_id() ;
+  [[nodiscard]] ::uint64_t request_id() const;
+  void set_request_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_request_id() const;
+  void _internal_set_request_id(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:friendpb.AddFriendResponse)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 1,
+      ::google::protobuf::internal::TcParseTable<1, 2,
                           1, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -5547,6 +5594,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AddFriendResponse final : public ::
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::TipInfoMessage* PROTOBUF_NULLABLE error_message_;
+    ::uint64_t request_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -6176,7 +6224,7 @@ inline void FriendRequest::_internal_set_request_time_ms(::int64_t value) {
 inline void FriendRequest::clear_status() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.status_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::friendpb::FriendRequestStatus FriendRequest::status() const {
   // @@protoc_insertion_point(field_get:friendpb.FriendRequest.status)
@@ -6184,7 +6232,7 @@ inline ::friendpb::FriendRequestStatus FriendRequest::status() const {
 }
 inline void FriendRequest::set_status(::friendpb::FriendRequestStatus value) {
   _internal_set_status(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:friendpb.FriendRequest.status)
 }
 inline ::friendpb::FriendRequestStatus FriendRequest::_internal_status() const {
@@ -6194,6 +6242,30 @@ inline ::friendpb::FriendRequestStatus FriendRequest::_internal_status() const {
 inline void FriendRequest::_internal_set_status(::friendpb::FriendRequestStatus value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.status_ = value;
+}
+
+// uint64 request_id = 5;
+inline void FriendRequest::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t FriendRequest::request_id() const {
+  // @@protoc_insertion_point(field_get:friendpb.FriendRequest.request_id)
+  return _internal_request_id();
+}
+inline void FriendRequest::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:friendpb.FriendRequest.request_id)
+}
+inline ::uint64_t FriendRequest::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void FriendRequest::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -6321,6 +6393,30 @@ inline void AddFriendResponse::set_allocated_error_message(::TipInfoMessage* PRO
   // @@protoc_insertion_point(field_set_allocated:friendpb.AddFriendResponse.error_message)
 }
 
+// uint64 request_id = 2;
+inline void AddFriendResponse::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t AddFriendResponse::request_id() const {
+  // @@protoc_insertion_point(field_get:friendpb.AddFriendResponse.request_id)
+  return _internal_request_id();
+}
+inline void AddFriendResponse::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:friendpb.AddFriendResponse.request_id)
+}
+inline ::uint64_t AddFriendResponse::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void AddFriendResponse::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // AcceptFriendRequest
@@ -6347,6 +6443,30 @@ inline ::uint64_t AcceptFriendRequest::_internal_from_player_id() const {
 inline void AcceptFriendRequest::_internal_set_from_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.from_player_id_ = value;
+}
+
+// uint64 request_id = 3;
+inline void AcceptFriendRequest::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t AcceptFriendRequest::request_id() const {
+  // @@protoc_insertion_point(field_get:friendpb.AcceptFriendRequest.request_id)
+  return _internal_request_id();
+}
+inline void AcceptFriendRequest::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:friendpb.AcceptFriendRequest.request_id)
+}
+inline ::uint64_t AcceptFriendRequest::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void AcceptFriendRequest::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -6472,6 +6592,30 @@ inline ::uint64_t RejectFriendRequest::_internal_from_player_id() const {
 inline void RejectFriendRequest::_internal_set_from_player_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.from_player_id_ = value;
+}
+
+// uint64 request_id = 3;
+inline void RejectFriendRequest::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t RejectFriendRequest::request_id() const {
+  // @@protoc_insertion_point(field_get:friendpb.RejectFriendRequest.request_id)
+  return _internal_request_id();
+}
+inline void RejectFriendRequest::set_request_id(::uint64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:friendpb.RejectFriendRequest.request_id)
+}
+inline ::uint64_t RejectFriendRequest::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void RejectFriendRequest::_internal_set_request_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
 }
 
 // -------------------------------------------------------------------

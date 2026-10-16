@@ -30,7 +30,8 @@ import (
 //     ListMyInvites 拉取自愈(J-26);
 //   - 每份视图的 epoch 只取自 S_COMMIT / S_READ_MEMBERS 的同源结果(view.go);
 //   - RPC 调用者本人不收快照推送:他的回包里已经是同一次提交构建的视图;
-//   - scene 信号只是"去重读一下 SharedRedis",不带权威数据,乱序 / 重复 / 丢失都安全(§B.2)。
+//   - scene 信号只是"去重读一下 SharedRedis",不带权威数据,乱序 / 重复 / 丢失都安全(§B.2);
+//   - 落地摘要 bump 也从 publish 派发(syncdigest.go),同一个异步上下文、先于推送,失败同样只记日志与指标。
 
 const (
 	// pushBatchBudget 一批推送 + scene 信号的总预算(§G.3)。
@@ -66,8 +67,9 @@ var (
 	asyncFn = safego.Go
 )
 
-// publish 异步执行一批已落盘提交的推送与 scene 信号,另给 healed 里的玩家发 scene 信号。
+// publish 异步执行一批已落盘提交的落地摘要 bump、推送与 scene 信号,另给 healed 里的玩家发 scene 信号。
 // commits 按落盘顺序传入(修复提交在前、主提交在后),调用方交出后不得再修改。
+// caller 是 RPC 调用者(后台提交传 0):推送排除他,摘要 bump 包含他(syncdigest.go)。
 func (s *Service) publish(caller uint64, commits []*CommitResult, healed []uint64) {
 	if len(commits) == 0 && len(healed) == 0 {
 		return
@@ -75,6 +77,8 @@ func (s *Service) publish(caller uint64, commits []*CommitResult, healed []uint6
 	asyncFn("match.team.publish", func() {
 		ctx, cancel := context.WithTimeout(context.Background(), pushBatchBudget)
 		defer cancel()
+		// 摘要先于推送:推送至多一次、丢了靠拉取自愈,而 bump 正是落地后那次拉取的触发条件。
+		s.bumpSyncDigest(ctx, caller, commits, healed)
 		var refresh []uint64
 		for _, c := range commits {
 			if c == nil {

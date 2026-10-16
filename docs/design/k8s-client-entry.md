@@ -695,7 +695,7 @@ Agones 段 7000–7009 → 7100–7109;前置条件新增端口预检、「先�
    - 安装 Agones,`gameservers.namespaces` 包含 infra namespace(scene 也用 Agones 时再加 zone namespace),端口段按防火墙规划确定。
    - 安装 Ingress controller:ingress-nginx 已退役,生产选型另立决策。
    - 按「防火墙」一节放行端口。
-   - staging / prod 准备好 `MMORPG_GATEWAY_ADMIN_API_KEY`(≥32 位,非占位)。
+   - staging / prod 准备好 `MMORPG_GATEWAY_ADMIN_API_KEY`(≥32 位,非占位)。staging / prod 还需要 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`(排队缺省开;见 `deploy/k8s/README.md`)。(2026-10-15 更正:登录排队合入门槛未清时各档排队都关,不要求该变量;见 `deploy/k8s/README.md`「登录排队的合入门槛」。)
    - 各节点预拉 battle 镜像:Fleet health 预算不含首次拉取。
    - zones 配置给每个 zone 写好不重叠的 `gateNodePortBase`。
 3. **第 2 批:一个维护窗口内完成,提前公告。**

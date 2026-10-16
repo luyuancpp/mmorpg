@@ -134,6 +134,8 @@ func TestResolveManuallyRejectsBadInput(t *testing.T) {
 	}{
 		{"状态不是终局", func(r *ManualResolution) { r.Final = StatusPending }},
 		{"状态越界", func(r *ManualResolution) { r.Final = Status(99) }},
+		// 放弃只能由 AbandonOnce 在六条证据齐全时产生;人工判定应按证据选 Aborted。
+		{"人工不得判放弃", func(r *ManualResolution) { r.Final = StatusAbandoned }},
 		{"没有操作人", func(r *ManualResolution) { r.Operator = "" }},
 		{"操作人超长", func(r *ManualResolution) { r.Operator = strings.Repeat("操", 65) }},
 		{"理由超长", func(r *ManualResolution) { r.Reason = strings.Repeat("字", 192) }},

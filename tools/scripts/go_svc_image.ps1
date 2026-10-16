@@ -164,6 +164,12 @@ $Catalogue = [ordered]@{
     # Dockerfile.go-svc 通用的 `COPY schemamigrate/` 带入,**不需要改 Dockerfile**,也不走 ExternalReplaceStages。
     # 同一镜像既跑 friend Deployment,也跑 friend-migrate Job(args 加 -migrate,D-14)。
     friend          = @{ Dir = "friend";          Entry = "friend.go";              ImageName = "mmorpg-friend" }
+    # 玩家持久收件箱 player-inbox(docs/design/player-inbox-service.md):与 k8s_deploy.ps1 $GoSvcCatalogue 的 player-inbox 条目配对
+    # (ImageName 必须一致)。调用方是 C++ scene 与运维,不经路由服,不需要与路由服成对发布;但 scene 认识新账本字段的版本
+    # 必须先于本服务打开 EnqueueTypes(上线顺序 §11.7)。go.mod 的 `replace schemamigrate => ../schemamigrate` 与 trade 同形态,
+    # 由 Dockerfile.go-svc 通用的 `COPY schemamigrate/` 带入。同一镜像既跑 player-inbox Deployment,也跑 player-inbox-migrate Job
+    # (args 加 -migrate,D-14)。
+    "player-inbox"  = @{ Dir = "player_inbox";    Entry = "player_inbox.go";        ImageName = "mmorpg-player-inbox" }
 }
 
 # 先把每个元素再按逗号拆一次,兼容 "a,b"(单字符串)和 a,b(数组)两种传法。

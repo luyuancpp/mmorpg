@@ -417,6 +417,27 @@
         "EquipGemTypeMismatch": 28020,
         "EquipGemBagFull": 28021
       }
+    },
+    "player_inbox_error": {
+      "base": 29000,
+      "width": 1000,
+      "ids": {
+        "PlayerInboxDisabled": 29000,
+        "PlayerInboxUnknownType": 29001,
+        "PlayerInboxPlayerNotFound": 29002,
+        "PlayerInboxPayloadInvalid": 29003,
+        "PlayerInboxPayloadTooLarge": 29004,
+        "PlayerInboxTextTooLong": 29005,
+        "PlayerInboxIssuedOutOfWindow": 29006,
+        "PlayerInboxFull": 29007,
+        "PlayerInboxIdempotencyConflict": 29008,
+        "PlayerInboxStaleOwner": 29009,
+        "PlayerInboxEpochRequired": 29010,
+        "PlayerInboxEpochAhead": 29011,
+        "PlayerInboxItemNotFound": 29012,
+        "PlayerInboxItemStateConflict": 29013,
+        "PlayerInboxStoreUnavailable": 29014
+      }
     }
   },
   "legacy_ids": {

@@ -231,7 +231,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
 | 以 `"0"` 回退运行 | `-GateRouterMode 0`(回退态不粘滞,见 `k8s_deploy.ps1:157-160` 参数注释;D-12 修订的"回退"条款) |
 | 以 external 对外 | `-ClientEntryMode external`、`-GateServiceType`、`-GateNodePortBase`、`-ClientPublicHost` 或 `-GateClientHostTemplate`、`-GateExternalTrafficPolicy`;逐个 zone 切 external 的窗口里还有 `-RequireClientEndpoint` |
 | 经 Ingress 对外 | `-GatewayIngressHost`、`-GatewayTrustedProxies`(及 `-GatewayIngressClassName` / `-GatewayIngressTlsSecret`) |
-| staging / prod | `-ReleaseProfile`(**留空 = 按 dev 档部署**:login 以 dev 模式、密钥回落占位值拉起,安全方向 fail-open);部署 Java 服务时还需环境变量 `MMORPG_GATEWAY_ADMIN_API_KEY`(Step 6 子进程继承) |
+| staging / prod | `-ReleaseProfile`(**留空 = 按 dev 档部署**:login 以 dev 模式、密钥回落占位值拉起,安全方向 fail-open);部署 Java 服务时还需环境变量 `MMORPG_GATEWAY_ADMIN_API_KEY`(Step 6 子进程继承);staging / prod 还需要 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`(排队缺省开;见 `deploy/k8s/README.md`)(2026-10-15 更正:登录排队合入门槛未清时各档排队都关,不要求该变量;见 `deploy/k8s/README.md`「登录排队的合入门槛」) |
 | dev 依赖开发口令登录 | `-LoginDevPasswordAuth`(照常透传到 Step 6,由 `k8s_deploy.ps1` 的 dev 档门禁把关;漏传则 login 没有任何认证配置,Step 7 冒烟登录失败) |
 | 指定集群 | `-KubeContext` / `-KubeConfig`:第 0 步、Step 1、Step 6 用同一集群。`dev_tools.ps1` 的回滚入口以前静默丢掉它们、回滚落到 kubectl 当前 context,现已转发 |
 

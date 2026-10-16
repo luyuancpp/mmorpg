@@ -341,19 +341,37 @@ const (
 	enterWiringSessionID = uint32(5151)
 )
 
-// enterWiringLocator 是 player_locator 的假客户端,只实现入场链在这段路上会碰的两个 RPC;
-// 别的走内嵌的 nil 接口,调到即 panic。setSessionCalls 用原子量:它在入场链的 worker 上自增。
+// enterWiringLocator 是 player_locator 的假客户端,只实现入场链在这段路上会碰的 RPC(GetSession /
+// SetSession / Reconnect);别的走内嵌的 nil 接口,调到即 panic。计数与最后一次请求用原子量:
+// 它们在入场链的 worker 上写。SetSession 与 Reconnect 都回错误,让链停在 persist。
 type enterWiringLocator struct {
 	plpb.PlayerLocatorClient
+	// existing 非 nil 时 GetSession 回这条会话记录(顶号 / 短线重连用例);nil = 无会话(首登)。
+	// 只在 EnterGame 之前写,之后只读。
+	existing *plpb.PlayerSession
+
 	setSessionCalls atomic.Int32
+	lastSetSession  atomic.Pointer[plpb.SetSessionRequest]
+	reconnectCalls  atomic.Int32
+	lastReconnect   atomic.Pointer[plpb.ReconnectRequest]
 }
 
 func (f *enterWiringLocator) GetSession(context.Context, *plpb.GetSessionRequest, ...grpc.CallOption) (*plpb.GetSessionResponse, error) {
-	return &plpb.GetSessionResponse{}, nil
+	if f.existing == nil {
+		return &plpb.GetSessionResponse{}, nil
+	}
+	return &plpb.GetSessionResponse{Found: true, Session: proto.Clone(f.existing).(*plpb.PlayerSession)}, nil
 }
 
-func (f *enterWiringLocator) SetSession(context.Context, *plpb.SetSessionRequest, ...grpc.CallOption) (*pbbase.Empty, error) {
+func (f *enterWiringLocator) SetSession(_ context.Context, in *plpb.SetSessionRequest, _ ...grpc.CallOption) (*pbbase.Empty, error) {
 	f.setSessionCalls.Add(1)
+	f.lastSetSession.Store(in)
+	return nil, errors.New("enter wiring test stops the chain at persist")
+}
+
+func (f *enterWiringLocator) Reconnect(_ context.Context, in *plpb.ReconnectRequest, _ ...grpc.CallOption) (*plpb.ReconnectResponse, error) {
+	f.reconnectCalls.Add(1)
+	f.lastReconnect.Store(in)
 	return nil, errors.New("enter wiring test stops the chain at persist")
 }
 

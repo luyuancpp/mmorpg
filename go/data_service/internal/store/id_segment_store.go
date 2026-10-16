@@ -43,7 +43,7 @@ const (
 // 与帮会资产指令 guild_asset_op(docs/design/guild-phase2/05-economy.md §5.8),
 // 与 config.DefaultIdSegmentBootstrapTags **必须一致**(config 包不能被本包 import,反向也不行)。
 // 迁移路径以 config 的 EffectiveBootstrapTags 为准;这份给 main 的 -migrate 摘要和测试用。
-var DefaultIdSegmentBootstrapTags = []string{"player", "guild", "item", "txlog", "snapshot", "trade_listing", "guild_asset_op"}
+var DefaultIdSegmentBootstrapTags = []string{"player", "guild", "item", "txlog", "snapshot", "trade_listing", "guild_asset_op", "friend_request"}
 
 var (
 	// ErrIdSegmentExhausted:max_id + step 会越过 2^55,fail-closed,表状态零变更。

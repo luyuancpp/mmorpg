@@ -31,9 +31,19 @@ using AsyncClientPlayerFriendAddFriendHandlerFunctionType =
 AsyncClientPlayerFriendAddFriendHandlerFunctionType AsyncClientPlayerFriendAddFriendHandler;
 AsyncClientPlayerFriendAddFriendFailedHandlerFunctionType AsyncClientPlayerFriendAddFriendFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendAddFriend(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendAddFriendGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendAddFriend(AsyncClientPlayerFriendAddFriendGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendAddFriendGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendAddFriendPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendAddFriendGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendAddFriendHandler) {
             AsyncClientPlayerFriendAddFriendHandler(call->context, call->reply);
@@ -55,36 +65,64 @@ void AsyncCompleteGrpcClientPlayerFriendAddFriend(entt::registry& registry, entt
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendAddFriendPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendAddFriend(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendAddFriendGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendAddFriend(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendAddFriendCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AddFriendRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::friendpb::AddFriendResponse> done) {
+    auto call(ClientPlayerFriendAddFriendPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendAddFriend(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncAddFriend(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendAddFriendMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendAddFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AddFriendRequest& request,
+                                            GrpcDone<::friendpb::AddFriendResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendAddFriendCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendAddFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AddFriendRequest& request) {
-
-    SendClientPlayerFriendAddFriend(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendAddFriend(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendAddFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AddFriendRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendAddFriendPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncAddFriend(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendAddFriendMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendAddFriendCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -100,9 +138,19 @@ using AsyncClientPlayerFriendAcceptFriendHandlerFunctionType =
 AsyncClientPlayerFriendAcceptFriendHandlerFunctionType AsyncClientPlayerFriendAcceptFriendHandler;
 AsyncClientPlayerFriendAcceptFriendFailedHandlerFunctionType AsyncClientPlayerFriendAcceptFriendFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendAcceptFriend(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendAcceptFriendGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendAcceptFriend(AsyncClientPlayerFriendAcceptFriendGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendAcceptFriendGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendAcceptFriendPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendAcceptFriendGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendAcceptFriendHandler) {
             AsyncClientPlayerFriendAcceptFriendHandler(call->context, call->reply);
@@ -124,36 +172,64 @@ void AsyncCompleteGrpcClientPlayerFriendAcceptFriend(entt::registry& registry, e
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendAcceptFriendPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendAcceptFriend(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendAcceptFriendGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendAcceptFriend(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendAcceptFriendCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AcceptFriendRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::friendpb::AcceptFriendResponse> done) {
+    auto call(ClientPlayerFriendAcceptFriendPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendAcceptFriend(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncAcceptFriend(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendAcceptFriendMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendAcceptFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AcceptFriendRequest& request,
+                                            GrpcDone<::friendpb::AcceptFriendResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendAcceptFriendCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendAcceptFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AcceptFriendRequest& request) {
-
-    SendClientPlayerFriendAcceptFriend(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendAcceptFriend(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendAcceptFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::AcceptFriendRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendAcceptFriendPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncAcceptFriend(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendAcceptFriendMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendAcceptFriendCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -169,9 +245,19 @@ using AsyncClientPlayerFriendRejectFriendHandlerFunctionType =
 AsyncClientPlayerFriendRejectFriendHandlerFunctionType AsyncClientPlayerFriendRejectFriendHandler;
 AsyncClientPlayerFriendRejectFriendFailedHandlerFunctionType AsyncClientPlayerFriendRejectFriendFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendRejectFriend(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendRejectFriendGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendRejectFriend(AsyncClientPlayerFriendRejectFriendGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendRejectFriendGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendRejectFriendPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendRejectFriendGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendRejectFriendHandler) {
             AsyncClientPlayerFriendRejectFriendHandler(call->context, call->reply);
@@ -193,36 +279,64 @@ void AsyncCompleteGrpcClientPlayerFriendRejectFriend(entt::registry& registry, e
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendRejectFriendPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendRejectFriend(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendRejectFriendGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendRejectFriend(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendRejectFriendCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RejectFriendRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::friendpb::RejectFriendResponse> done) {
+    auto call(ClientPlayerFriendRejectFriendPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendRejectFriend(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncRejectFriend(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendRejectFriendMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendRejectFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RejectFriendRequest& request,
+                                            GrpcDone<::friendpb::RejectFriendResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendRejectFriendCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendRejectFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RejectFriendRequest& request) {
-
-    SendClientPlayerFriendRejectFriend(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendRejectFriend(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendRejectFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RejectFriendRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendRejectFriendPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncRejectFriend(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendRejectFriendMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendRejectFriendCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -238,9 +352,19 @@ using AsyncClientPlayerFriendRemoveFriendHandlerFunctionType =
 AsyncClientPlayerFriendRemoveFriendHandlerFunctionType AsyncClientPlayerFriendRemoveFriendHandler;
 AsyncClientPlayerFriendRemoveFriendFailedHandlerFunctionType AsyncClientPlayerFriendRemoveFriendFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendRemoveFriend(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendRemoveFriendGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendRemoveFriend(AsyncClientPlayerFriendRemoveFriendGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendRemoveFriendGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendRemoveFriendPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendRemoveFriendGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendRemoveFriendHandler) {
             AsyncClientPlayerFriendRemoveFriendHandler(call->context, call->reply);
@@ -262,36 +386,64 @@ void AsyncCompleteGrpcClientPlayerFriendRemoveFriend(entt::registry& registry, e
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendRemoveFriendPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendRemoveFriend(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendRemoveFriendGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendRemoveFriend(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendRemoveFriendCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RemoveFriendRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::friendpb::RemoveFriendResponse> done) {
+    auto call(ClientPlayerFriendRemoveFriendPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendRemoveFriend(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncRemoveFriend(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendRemoveFriendMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendRemoveFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RemoveFriendRequest& request,
+                                            GrpcDone<::friendpb::RemoveFriendResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendRemoveFriendCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendRemoveFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RemoveFriendRequest& request) {
-
-    SendClientPlayerFriendRemoveFriend(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendRemoveFriend(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendRemoveFriend(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RemoveFriendRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendRemoveFriendPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncRemoveFriend(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendRemoveFriendMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendRemoveFriendCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -307,9 +459,19 @@ using AsyncClientPlayerFriendGetFriendListHandlerFunctionType =
 AsyncClientPlayerFriendGetFriendListHandlerFunctionType AsyncClientPlayerFriendGetFriendListHandler;
 AsyncClientPlayerFriendGetFriendListFailedHandlerFunctionType AsyncClientPlayerFriendGetFriendListFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendGetFriendList(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendGetFriendListGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendGetFriendList(AsyncClientPlayerFriendGetFriendListGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendGetFriendListGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendGetFriendListPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendGetFriendListGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendGetFriendListHandler) {
             AsyncClientPlayerFriendGetFriendListHandler(call->context, call->reply);
@@ -331,36 +493,64 @@ void AsyncCompleteGrpcClientPlayerFriendGetFriendList(entt::registry& registry, 
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendGetFriendListPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendGetFriendList(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendGetFriendListGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendGetFriendList(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendGetFriendListCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetFriendListRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::friendpb::GetFriendListResponse> done) {
+    auto call(ClientPlayerFriendGetFriendListPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendGetFriendList(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncGetFriendList(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendGetFriendListMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendGetFriendList(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetFriendListRequest& request,
+                                            GrpcDone<::friendpb::GetFriendListResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendGetFriendListCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendGetFriendList(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetFriendListRequest& request) {
-
-    SendClientPlayerFriendGetFriendList(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendGetFriendList(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendGetFriendList(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetFriendListRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendGetFriendListPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncGetFriendList(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendGetFriendListMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendGetFriendListCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -376,9 +566,19 @@ using AsyncClientPlayerFriendGetPendingRequestsHandlerFunctionType =
 AsyncClientPlayerFriendGetPendingRequestsHandlerFunctionType AsyncClientPlayerFriendGetPendingRequestsHandler;
 AsyncClientPlayerFriendGetPendingRequestsFailedHandlerFunctionType AsyncClientPlayerFriendGetPendingRequestsFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendGetPendingRequests(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendGetPendingRequestsGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendGetPendingRequests(AsyncClientPlayerFriendGetPendingRequestsGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendGetPendingRequestsGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendGetPendingRequestsPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendGetPendingRequestsGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendGetPendingRequestsHandler) {
             AsyncClientPlayerFriendGetPendingRequestsHandler(call->context, call->reply);
@@ -400,36 +600,64 @@ void AsyncCompleteGrpcClientPlayerFriendGetPendingRequests(entt::registry& regis
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendGetPendingRequestsPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendGetPendingRequests(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendGetPendingRequestsGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendGetPendingRequests(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendGetPendingRequestsCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetPendingRequestsRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::friendpb::GetPendingRequestsResponse> done) {
+    auto call(ClientPlayerFriendGetPendingRequestsPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendGetPendingRequests(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncGetPendingRequests(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendGetPendingRequestsMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendGetPendingRequests(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetPendingRequestsRequest& request,
+                                            GrpcDone<::friendpb::GetPendingRequestsResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendGetPendingRequestsCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendGetPendingRequests(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetPendingRequestsRequest& request) {
-
-    SendClientPlayerFriendGetPendingRequests(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendGetPendingRequests(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendGetPendingRequests(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::GetPendingRequestsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendGetPendingRequestsPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncGetPendingRequests(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendGetPendingRequestsMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendGetPendingRequestsCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -445,9 +673,19 @@ using AsyncClientPlayerFriendBlockHandlerFunctionType =
 AsyncClientPlayerFriendBlockHandlerFunctionType AsyncClientPlayerFriendBlockHandler;
 AsyncClientPlayerFriendBlockFailedHandlerFunctionType AsyncClientPlayerFriendBlockFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendBlock(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendBlockGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendBlock(AsyncClientPlayerFriendBlockGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendBlockGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendBlockPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendBlockGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendBlockHandler) {
             AsyncClientPlayerFriendBlockHandler(call->context, call->reply);
@@ -469,36 +707,64 @@ void AsyncCompleteGrpcClientPlayerFriendBlock(entt::registry& registry, entt::en
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendBlockPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendBlock(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendBlockGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendBlock(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendBlockCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::BlockRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::friendpb::BlockResponse> done) {
+    auto call(ClientPlayerFriendBlockPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendBlock(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncBlock(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendBlockMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendBlock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::BlockRequest& request,
+                                            GrpcDone<::friendpb::BlockResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendBlockCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendBlock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::BlockRequest& request) {
-
-    SendClientPlayerFriendBlock(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendBlock(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendBlock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::BlockRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendBlockPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncBlock(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendBlockMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendBlockCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -514,9 +780,19 @@ using AsyncClientPlayerFriendUnblockHandlerFunctionType =
 AsyncClientPlayerFriendUnblockHandlerFunctionType AsyncClientPlayerFriendUnblockHandler;
 AsyncClientPlayerFriendUnblockFailedHandlerFunctionType AsyncClientPlayerFriendUnblockFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendUnblock(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendUnblockGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendUnblock(AsyncClientPlayerFriendUnblockGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendUnblockGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendUnblockPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendUnblockGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendUnblockHandler) {
             AsyncClientPlayerFriendUnblockHandler(call->context, call->reply);
@@ -538,36 +814,64 @@ void AsyncCompleteGrpcClientPlayerFriendUnblock(entt::registry& registry, entt::
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendUnblockPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendUnblock(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendUnblockGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendUnblock(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendUnblockCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::UnblockRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::friendpb::UnblockResponse> done) {
+    auto call(ClientPlayerFriendUnblockPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendUnblock(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncUnblock(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendUnblockMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendUnblock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::UnblockRequest& request,
+                                            GrpcDone<::friendpb::UnblockResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendUnblockCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendUnblock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::UnblockRequest& request) {
-
-    SendClientPlayerFriendUnblock(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendUnblock(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendUnblock(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::UnblockRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendUnblockPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncUnblock(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendUnblockMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendUnblockCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -583,9 +887,19 @@ using AsyncClientPlayerFriendListBlocksHandlerFunctionType =
 AsyncClientPlayerFriendListBlocksHandlerFunctionType AsyncClientPlayerFriendListBlocksHandler;
 AsyncClientPlayerFriendListBlocksFailedHandlerFunctionType AsyncClientPlayerFriendListBlocksFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendListBlocks(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendListBlocksGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendListBlocks(AsyncClientPlayerFriendListBlocksGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendListBlocksGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendListBlocksPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendListBlocksGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendListBlocksHandler) {
             AsyncClientPlayerFriendListBlocksHandler(call->context, call->reply);
@@ -607,36 +921,64 @@ void AsyncCompleteGrpcClientPlayerFriendListBlocks(entt::registry& registry, ent
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendListBlocksPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendListBlocks(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendListBlocksGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendListBlocks(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendListBlocksCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::ListBlocksRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::friendpb::ListBlocksResponse> done) {
+    auto call(ClientPlayerFriendListBlocksPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendListBlocks(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncListBlocks(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendListBlocksMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendListBlocks(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::ListBlocksRequest& request,
+                                            GrpcDone<::friendpb::ListBlocksResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendListBlocksCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendListBlocks(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::ListBlocksRequest& request) {
-
-    SendClientPlayerFriendListBlocks(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendListBlocks(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendListBlocks(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::ListBlocksRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendListBlocksPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncListBlocks(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendListBlocksMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendListBlocksCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -652,9 +994,19 @@ using AsyncClientPlayerFriendRecommendFriendsHandlerFunctionType =
 AsyncClientPlayerFriendRecommendFriendsHandlerFunctionType AsyncClientPlayerFriendRecommendFriendsHandler;
 AsyncClientPlayerFriendRecommendFriendsFailedHandlerFunctionType AsyncClientPlayerFriendRecommendFriendsFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendRecommendFriends(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendRecommendFriendsGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendRecommendFriends(AsyncClientPlayerFriendRecommendFriendsGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendRecommendFriendsGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendRecommendFriendsPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendRecommendFriendsGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendRecommendFriendsHandler) {
             AsyncClientPlayerFriendRecommendFriendsHandler(call->context, call->reply);
@@ -676,36 +1028,64 @@ void AsyncCompleteGrpcClientPlayerFriendRecommendFriends(entt::registry& registr
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendRecommendFriendsPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendRecommendFriends(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendRecommendFriendsGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendRecommendFriends(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendRecommendFriendsCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RecommendFriendsRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::friendpb::RecommendFriendsResponse> done) {
+    auto call(ClientPlayerFriendRecommendFriendsPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendRecommendFriends(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncRecommendFriends(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendRecommendFriendsMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendRecommendFriends(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RecommendFriendsRequest& request,
+                                            GrpcDone<::friendpb::RecommendFriendsResponse> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendRecommendFriendsCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendRecommendFriends(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RecommendFriendsRequest& request) {
-
-    SendClientPlayerFriendRecommendFriends(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendRecommendFriends(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendRecommendFriends(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::RecommendFriendsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendRecommendFriendsPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncRecommendFriends(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendRecommendFriendsMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendRecommendFriendsCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -721,9 +1101,19 @@ using AsyncClientPlayerFriendNotifyFriendEventHandlerFunctionType =
 AsyncClientPlayerFriendNotifyFriendEventHandlerFunctionType AsyncClientPlayerFriendNotifyFriendEventHandler;
 AsyncClientPlayerFriendNotifyFriendEventFailedHandlerFunctionType AsyncClientPlayerFriendNotifyFriendEventFailedHandler;
 
-void AsyncCompleteGrpcClientPlayerFriendNotifyFriendEvent(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncClientPlayerFriendNotifyFriendEventGrpcClient*>(got_tag));
+void CompleteClientPlayerFriendNotifyFriendEvent(AsyncClientPlayerFriendNotifyFriendEventGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncClientPlayerFriendNotifyFriendEventGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        ClientPlayerFriendNotifyFriendEventPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncClientPlayerFriendNotifyFriendEventGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncClientPlayerFriendNotifyFriendEventHandler) {
             AsyncClientPlayerFriendNotifyFriendEventHandler(call->context, call->reply);
@@ -745,36 +1135,64 @@ void AsyncCompleteGrpcClientPlayerFriendNotifyFriendEvent(entt::registry& regist
                   << " msg=" << call->status.error_message();
     }
 
-	ClientPlayerFriendNotifyFriendEventPool.destroy(call);
+}
+
+void AsyncCompleteGrpcClientPlayerFriendNotifyFriendEvent(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncClientPlayerFriendNotifyFriendEventGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteClientPlayerFriendNotifyFriendEvent(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartClientPlayerFriendNotifyFriendEventCall(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::FriendEventS2C& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::Empty> done) {
+    auto call(ClientPlayerFriendNotifyFriendEventPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerFriendStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerFriendNotifyFriendEvent(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncNotifyFriendEvent(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendNotifyFriendEventMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendClientPlayerFriendNotifyFriendEvent(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::FriendEventS2C& request,
+                                            GrpcDone<::Empty> done, const GrpcCallOptions& options) {
+    StartClientPlayerFriendNotifyFriendEventCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendClientPlayerFriendNotifyFriendEvent(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::FriendEventS2C& request) {
-
-    SendClientPlayerFriendNotifyFriendEvent(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendClientPlayerFriendNotifyFriendEvent(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendClientPlayerFriendNotifyFriendEvent(entt::registry& registry, entt::entity nodeEntity, const ::friendpb::FriendEventS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(ClientPlayerFriendNotifyFriendEventPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<ClientPlayerFriendStubPtr>(nodeEntity)
-        ->PrepareAsyncNotifyFriendEvent(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerFriendNotifyFriendEventMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartClientPlayerFriendNotifyFriendEventCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -784,51 +1202,42 @@ void SendClientPlayerFriendNotifyFriendEvent(entt::registry& registry, entt::ent
 }
 #pragma endregion
 
-void HandleFriendCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
+void HandleFriendCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag) {
+        const auto releaseTag = [](GrpcTag* tag) { tagPool.destroy(tag); };
+        const std::unique_ptr<GrpcTag, decltype(releaseTag)> owner(grpcTag, releaseTag);
         switch (grpcTag->messageId) {
         case ClientPlayerFriendAddFriendMessageId:
-            AsyncCompleteGrpcClientPlayerFriendAddFriend(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendAddFriend(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerFriendAcceptFriendMessageId:
-            AsyncCompleteGrpcClientPlayerFriendAcceptFriend(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendAcceptFriend(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerFriendRejectFriendMessageId:
-            AsyncCompleteGrpcClientPlayerFriendRejectFriend(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendRejectFriend(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerFriendRemoveFriendMessageId:
-            AsyncCompleteGrpcClientPlayerFriendRemoveFriend(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendRemoveFriend(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerFriendGetFriendListMessageId:
-            AsyncCompleteGrpcClientPlayerFriendGetFriendList(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendGetFriendList(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerFriendGetPendingRequestsMessageId:
-            AsyncCompleteGrpcClientPlayerFriendGetPendingRequests(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendGetPendingRequests(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerFriendBlockMessageId:
-            AsyncCompleteGrpcClientPlayerFriendBlock(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendBlock(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerFriendUnblockMessageId:
-            AsyncCompleteGrpcClientPlayerFriendUnblock(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendUnblock(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerFriendListBlocksMessageId:
-            AsyncCompleteGrpcClientPlayerFriendListBlocks(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendListBlocks(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerFriendRecommendFriendsMessageId:
-            AsyncCompleteGrpcClientPlayerFriendRecommendFriends(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendRecommendFriends(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         case ClientPlayerFriendNotifyFriendEventMessageId:
-            AsyncCompleteGrpcClientPlayerFriendNotifyFriendEvent(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcClientPlayerFriendNotifyFriendEvent(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         default:
             break;

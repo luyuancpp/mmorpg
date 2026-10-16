@@ -120,6 +120,12 @@ message rollback_audit_log
 // ============================================================================
 // Player Debt — deferred-clawback (补缴) records; separate from CurrencyComp
 // so GM tool can query/manage offline.
+//
+// 【已弃用,2026-10-15,docs/design/player-inbox-service.md D9】不再接任何读写,新代码禁止引用。
+// - 欠款与封锁的唯一事实源是玩家存档里的 CurrencyComp.debts / blocked_types(proto/common/component/currency_comp.proto),
+//   随 player_database 落盘;本表全仓没有任何读写方,再接一份就是第二份事实源(DRY)。
+// - GM 挂欠款 / 封锁获取走玩家收件箱:PlayerInboxAdmin.GmSanctionPlayer 入箱 → owner scene 执行 CurrencySystem::AttachDebt 等。
+// - 本批只加注释、保留定义(不改字段,不动生成产物的结构);是否删除另行评审。
 // ============================================================================
 message player_debt
 {

@@ -29,6 +29,8 @@
 python tools/scripts/gen_docs_index.py
 ```
 
+ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与未验收项见 [第 1 批 Codex 实施回执](handoff/ecs-refactor/batch1-codex-receipt.md)。早期在途证据保留在 [Codex 只读回执](handoff/ecs-refactor/codex-readonly-receipt.md),运行时与存盘采样稿由该回执索引。
+
 ## 索引
 
 <!-- BEGIN GENERATED INDEX: tools/scripts/gen_docs_index.py -->
@@ -40,8 +42,9 @@ python tools/scripts/gen_docs_index.py
 - [ARCH.md](design/ARCH.md) — MMO 服务端架构总览 (ARCH.md)
 - [architecture-current-state-vs-gaps-2026-05.md](design/architecture-current-state-vs-gaps-2026-05.md) — 架构现状盘点 vs 缺口清单 (2026-05)
 - [capacity-model-hok-scale.md](design/capacity-model-hok-scale.md) — 容量模型：王者荣耀量级（S1 / S2 / S3）推算
-- [ecs.md](design/ecs.md) — ECS Design Rules (inspired by Overwatch) · [EN](design/ecs_en.md) · [中文](design/ecs_zh.md)
+- [ecs.md](design/ecs.md) — ECS 设计规则 · [EN](design/ecs_en.md) · [中文](design/ecs_zh.md)
 - [ecs-component-access-rules.md](design/ecs-component-access-rules.md) — ECS Component Access Rules
+- [ecs-entt-misuse-audit-20261015.md](design/ecs-entt-misuse-audit-20261015.md) — entt 误用审计（2026-10-15）
 - [onboarding.md](design/onboarding.md) — 开发者上手指南 — MMO Server
 - [root_level_cleanup_findings.md](design/root_level_cleanup_findings.md) — Root Level & Tools Directory Audit (2026-03-24) · [EN](design/root_level_cleanup_findings_en.md) · [中文](design/root_level_cleanup_findings_zh.md)
 - [script_directory_rules.md](design/script_directory_rules.md) — Script Directory Rules · [EN](design/script_directory_rules_en.md) · [中文](design/script_directory_rules_zh.md)
@@ -51,14 +54,15 @@ python tools/scripts/gen_docs_index.py
 
 - [auth-provider-framework.md](design/auth-provider-framework.md) — Auth Provider Framework
 - [client-access-band-routing.md](design/client-access-band-routing.md) — 客户端接入的标准形态，与 gate 按号段整体转发给路由服（client-rpc-router 续篇，D51–D64）
+- [client-request-ordering.md](design/client-request-ordering.md) — 客户端请求按会话保序:路由服水平扩展下的乱序修复(gate 路由 lane)
 - [client-rpc-router.md](design/client-rpc-router.md) — 客户端 RPC 路由服(client_rpc_router):gate 唯一的 gRPC 目标
 - [dual-token-authentication.md](design/dual-token-authentication.md) — Dual Token Authentication Design (Access + Refresh)
 - [gate-connection-admission-control.md](design/gate-connection-admission-control.md) — gate 连接准入控制：muduo 无条件 accept 的业界解法与本仓落地 (2026-09-03)
 - [gate-entity-id-truncation-fix.md](design/gate-entity-id-truncation-fix.md) — Gate Entity ID Truncation Fix (2026-04-04)
 - [gate-grpc-long-connection-audit-2026-05.md](design/gate-grpc-long-connection-audit-2026-05.md) — Gate→Login gRPC 长连接核查 (2026-05)
-- [gate-load-balancing-design.md](design/gate-load-balancing-design.md) — Gate Load Balancing Design / Gate 负载均衡设计
+- [gate-load-balancing-design.md](design/gate-load-balancing-design.md) — Gate 负载均衡、票据与重连边界
 - [gate-login-rpc-boundary.md](design/gate-login-rpc-boundary.md) — Gate ↔ Login RPC 边界 (2026-05)
-- [gate-scene-relay-architecture.md](design/gate-scene-relay-architecture.md) — Gate-Scene Connection Explosion & Solution
+- [gate-scene-relay-architecture.md](design/gate-scene-relay-architecture.md) — Gate–Scene 连接规模与跨 zone 换 Gate
 - [gate_client_high_water_mark.md](design/gate_client_high_water_mark.md) — Gate 客户端 TCP 高水位处理（重要） · [EN](design/gate_client_high_water_mark_en.md) · [中文](design/gate_client_high_water_mark_zh.md)
 - [hmac-message-signing.md](design/hmac-message-signing.md) — Per-Message HMAC Signing — Design (todo.md #76)
 - [java-gateway-portal-decision.md](design/java-gateway-portal-decision.md) — Java Gateway Portal Decision (2026-04-14)
@@ -84,10 +88,11 @@ python tools/scripts/gen_docs_index.py
 - [enter-scene-zone-routing.md](design/enter-scene-zone-routing.md) — EnterScene Zone Routing Design (updated 2026-08-03; handoff-gate, login-side and merge sections re-verified against code 2026-09-20)
 - [nav-spawn-fix-2026-09-05.md](design/nav-spawn-fix-2026-09-05.md) — 客户端/服务端导航数据、出生点与位置纠正契约统一(2026-09-05)
 - [scene-creation-architecture.md](design/scene-creation-architecture.md) — Scene Creation Architecture
+- [scene-enter-session-fence.md](design/scene-enter-session-fence.md) — 入场会话栅栏:登录代次(login_generation)
 - [scene-grpc-server-design.md](design/scene-grpc-server-design.md) — Scene Node gRPC Server Design
 - [scene-navmesh-pipeline.md](design/scene-navmesh-pipeline.md) — 场景导航网格管线(Recast 烘焙 + 服务器寻路阻挡校验)
 - [scene-node-threading-model.md](design/scene-node-threading-model.md) — Scene Node 线程模型决策
-- [scene-owner-reentry-barrier.md](design/scene-owner-reentry-barrier.md) — 场景所有权:再入屏障 + owner_epoch(防 etcd 分区期双写/回档)
+- [scene-owner-reentry-barrier.md](design/scene-owner-reentry-barrier.md) — 场景所有权：再入屏障与 owner_epoch
 - [scene-switch-release-design.md](design/scene-switch-release-design.md) — SceneManager跨节点切场景释放玩家方案选型
 - [world-channel-autoscale.md](design/world-channel-autoscale.md) — 按人数自动扩缩容:大世界频道 / gate / Scene Node 进程
 - [world-channel-switch.md](design/world-channel-switch.md) — 玩家主动切线(分线列表 + 选线切换)
@@ -122,7 +127,7 @@ python tools/scripts/gen_docs_index.py
 - [guild-zone-client-access.md](design/guild-zone-client-access.md) — 公会:按 zone 隔离的客户端接入
 - [guild_friend_service_notes.md](design/guild_friend_service_notes.md) — Guild & Friend Service Implementation Notes (2025-03-25) · [EN](design/guild_friend_service_notes_en.md) · [中文](design/guild_friend_service_notes_zh.md)
 - [guild_ranking_architecture.md](design/guild_ranking_architecture.md) — Guild Ranking Architecture (2025-03-25) · [EN](design/guild_ranking_architecture_en.md) · [中文](design/guild_ranking_architecture_zh.md)
-- [jubaozhai-market.md](design/jubaozhai-market.md) — 聚宝斋(玩家间人民币寄售交易)设计 — 2026-09-14
+- [jubaozhai-market.md](design/jubaozhai-market.md) — 聚宝斋与 mall 游戏经济适配；现行选型及全球权威见移植决定 D-17
 - [leaderboard-system.md](design/leaderboard-system.md) — 排行榜(leaderboard / rank)v1 设计
 - [mail-system.md](design/mail-system.md) — mail(邮件)M1:全局服务 + 系统邮件 / 定向邮件 + 领取短路
 - [player-attribute-allocation.md](design/player-attribute-allocation.md) — 角色属性加点系统
@@ -132,21 +137,25 @@ python tools/scripts/gen_docs_index.py
 
 #### 玩家数据与存储
 
-- [async-load-disconnect-reconnect-race.md](design/async-load-disconnect-reconnect-race.md) — Async Load Race Conditions: Disconnect & Reconnect During Redis Load
-- [data_service_role_and_scope.md](design/data_service_role_and_scope.md) — data_service 定位与边界 (2026-04-11)
-- [db-service-root-credentials.md](design/db-service-root-credentials.md) — DB Service: Root Credentials for MySQL
+- [async-load-disconnect-reconnect-race.md](design/async-load-disconnect-reconnect-race.md) — 异步加载竞态：Redis 加载期间的断线与重连
+- [data_service_role_and_scope.md](design/data_service_role_and_scope.md) — data_service 定位与边界
+- [db-service-root-credentials.md](design/db-service-root-credentials.md) — go/db 的 MySQL 凭据与建库边界
 - [db-task-kafka-partition-contract.md](design/db-task-kafka-partition-contract.md) — DB Task Kafka 分区不可变契约
 - [db-task-pipeline-bottlenecks.md](design/db-task-pipeline-bottlenecks.md) — 玩家存盘管线(go/db)的瓶颈、不停服转移与修复计划
+- [db-task-store-unavailable-deferral.md](design/db-task-store-unavailable-deferral.md) — go/db 存盘任务：存储不可用时延后、不进死信（L-04）设计评审稿
+- [db-write-fencing-mysql.md](design/db-write-fencing-mysql.md) — 玩家存盘 MySQL 条件写（围栏）：go/db、C++、proto、schema 详细设计
 - [db_write_behind_dirty_flag_race.md](design/db_write_behind_dirty_flag_race.md) — DB Write-Behind 脏标记方案竞态分析 · [EN](design/db_write_behind_dirty_flag_race_en.md) · [中文](design/db_write_behind_dirty_flag_race_zh.md)
 - [db_zone_isolation.md](design/db_zone_isolation.md) — DB Zone Isolation (2026-04-11)
 - [global-data-layer-tidb-decision.md](design/global-data-layer-tidb-decision.md) — 全区全服数据层 + TiDB 架构决策
 - [new-player-first-enter-no-cold-read.md](design/new-player-first-enter-no-cold-read.md) — 新号首次进场免冷读:建角时写入 PlayerAllData 种子
 - [player-async-save-loss-windows.md](design/player-async-save-loss-windows.md) — 玩家异步存盘的丢失窗口（置脏 / 快照跳过 / 重试耗尽）
+- [player-inbox-service.md](design/player-inbox-service.md) — 玩家持久收件箱服务（player_inbox）设计
 - [player-route-mapping-durability-proposal.md](design/player-route-mapping-durability-proposal.md) — 玩家归属与落点映射持久化:库为真源 + Redis 完整副本 + 就绪标记(已拍板,分批落码:第 0、1a 批已落码,未验证)
 - [player-storage-placement.md](design/player-storage-placement.md) — 玩家存储落点(Placement):归属与存储拆分、单玩家搬库、Phase 2 全局库
 - [player_live_data_export_runbook.md](design/player_live_data_export_runbook.md) — 玩家线上数据下线导出操作记录
 - [proto-compare-dirty-save.md](design/proto-compare-dirty-save.md) — Proto-Compare-Driven Dirty Save — Design (todo.md #204 + #226)
 - [redis-async-client-retry-fix.md](design/redis-async-client-retry-fix.md) — Redis Async Client Retry Fix
+- [reliable-player-inbox-20261014.md](design/reliable-player-inbox-20261014.md) — 重要玩家消息：持久收件箱、拉取恢复与迁移围栏（2026-10-14）
 - [tidb-phase1-and-launch-readiness.md](design/tidb-phase1-and-launch-readiness.md) — TiDB Phase 1 设计与实施清单（含开服准备）
 
 #### 跨服、合服与回档
@@ -192,15 +201,17 @@ python tools/scripts/gen_docs_index.py
 - [infra-reconnect-overview.md](design/infra-reconnect-overview.md) — Infrastructure Reconnection Overview
 - [kafka-producer-txn-concurrency-bug.md](design/kafka-producer-txn-concurrency-bug.md) — Kafka Producer Transactional Concurrency Bug
 - [kafka-topic-retention-strategy.md](design/kafka-topic-retention-strategy.md) — Kafka Topic Retention Strategy
+- [muduo-rpc-channel.md](design/muduo-rpc-channel.md) — 节点间 muduo RPC:每次调用的回调、延后回包与完整的完成语义(RpcChannel 改造)
 - [muduo-timer-cancellation-hazards.md](design/muduo-timer-cancellation-hazards.md) — muduo 定时器取消语义与野引用
 - [no-single-node-horizontal-scaling-20261001.md](design/no-single-node-horizontal-scaling-20261001.md) — 消除单节点:所有服务都能水平扩展(2026-10-01)
+- [player-handler-deferred-reply.md](design/player-handler-deferred-reply.md) — 玩家级 handler 延后完成(PlayerCallContext)
 - [shared-redis-split-by-purpose.md](design/shared-redis-split-by-purpose.md) — 共享 Redis 按用途拆实例(G4a 设计稿)
 - [thread-count-monitoring.md](design/thread-count-monitoring.md) — Thread Count Monitoring & Control per Process · [EN](design/thread-count-monitoring_en.md) · [中文](design/thread-count-monitoring_zh.md)
 - [traffic-statistics-design.md](design/traffic-statistics-design.md) — Traffic Statistics Design
 
 #### 协议与配表工具链
 
-- [excel-6row-header-format.md](design/excel-6row-header-format.md) — Excel 6-Row Header Format (data_table_exporter) · [EN](design/excel-6row-header-format_en.md) · [中文](design/excel-6row-header-format_zh.md)
+- [excel-6row-header-format.md](design/excel-6row-header-format.md) — 配置表格式说明入口（旧六行表头已停用） · [EN](design/excel-6row-header-format_en.md) · [中文](design/excel-6row-header-format_zh.md)
 - [generated-table-header-decoupling-plan.md](design/generated-table-header-decoupling-plan.md) — 交接：mmorpg 导表器生成头文件解耦（①exprtk ②FK声明化 ③muduo）
 - [pbgen_notes.md](design/pbgen_notes.md) — Proto-Gen (pbgen) Notes · [EN](design/pbgen_notes_en.md) · [中文](design/pbgen_notes_zh.md)
 - [proto-event-message-suffix-rename-2026-06.md](design/proto-event-message-suffix-rename-2026-06.md) — Proto Event Message Suffix Rename (2026-06)
@@ -230,6 +241,11 @@ python tools/scripts/gen_docs_index.py
 - [xuanming-port-decisions-20260910.md](design/xuanming-port-decisions-20260910.md) — 玄冥移植:开工前决策记录(2026-09-10)
 - [xuanming-port-feasibility-20260902.md](design/xuanming-port-feasibility-20260902.md) — XuanMing-Server → mmorpg/go 移植可行性定谳（2026-09-02）
 
+#### 未分类
+
+- [grpc-muduo-transport.md](design/grpc-muduo-transport.md) — C++ gRPC 传输改由 muduo 驱动(nghttp2 + 自有 gRPC 调用语义)
+- [landing-recovery-sync-digest.md](design/landing-recovery-sync-digest.md) — 落地恢复：按域版本摘要、场景侧待办唤醒与超窗处置（2026-10-14）
+
 #### 成套设计
 
 - [guild-phase2/](design/guild-phase2/README.md) — 帮会二期设计(管理审批 / 名字 / 资产通道 / 捐献升级商店 / 活动)
@@ -240,22 +256,25 @@ python tools/scripts/gen_docs_index.py
 
 - [incident-friend-lock-order-deadlock-2026-09-21.md](ops/incident-friend-lock-order-deadlock-2026-09-21.md) — 事故报告:friend 锁定读被规划成索引全扫描,锁集越出守卫,真死锁 1213
 - [incident-gate-tcpconnection-dtor-assert-2026-09-13.md](ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md) — 事故报告:gate 在 `~TcpConnection` 断言崩溃(thread_local 持有连接强引用)
+- [incident-scene-ecs-gameplay-20261014.md](ops/incident-scene-ecs-gameplay-20261014.md) — 严重事故记录：任务、实时技能、Buff 与节点生命周期缺陷（2026-10-14）
 
 #### 运维手册
 
 - [audit-topic-generation-bump-runbook.md](ops/audit-topic-generation-bump-runbook.md) — 审计 topic 离线换代 Runbook(player_snapshot / transaction_log 改分区数)
 - [cross-zone-failure-test-runbook.md](ops/cross-zone-failure-test-runbook.md) — 跨 Zone 传送 / 归属交接 失败场景测试 Runbook
+- [etcd-maintenance-runbook.md](ops/etcd-maintenance-runbook.md) — etcd MVCC 压缩与空间维护 Runbook
 - [gate-kernel-tuning-runbook.md](ops/gate-kernel-tuning-runbook.md) — Gate 内核调优 Runbook
 - [grafana-loki-local-logs.md](ops/grafana-loki-local-logs.md) — 本地日志观测台:Grafana + Loki + Alloy(C++ / Go / Java 三语言统一接入)
 - [k8s-docker-desktop-troubleshooting.md](ops/k8s-docker-desktop-troubleshooting.md) — K8s Docker Desktop Troubleshooting Guide · [EN](ops/k8s-docker-desktop-troubleshooting_en.md) · [中文](ops/k8s-docker-desktop-troubleshooting_zh.md)
-- [k8s-open-server-runbook.md](ops/k8s-open-server-runbook.md) — K8s Open-Server Runbook · [EN](ops/k8s-open-server-runbook_en.md) · [中文](ops/k8s-open-server-runbook_zh.md)
+- [k8s-open-server-runbook.md](ops/k8s-open-server-runbook.md) — K8s 开服操作手册 · [EN](ops/k8s-open-server-runbook_en.md) · [中文](ops/k8s-open-server-runbook_zh.md)
 - [kafka-cluster-production-runbook.md](ops/kafka-cluster-production-runbook.md) — Kafka 集群化生产部署 Runbook
 - [linux-staging-stress-runbook.md](ops/linux-staging-stress-runbook.md) — Linux Staging 部署 + 阶梯压测留位
 - [log-management.md](ops/log-management.md) — Log Management
 - [login-queue-stress-runbook.md](ops/login-queue-stress-runbook.md) — 登录排队压测 — 判读清单
 - [merge-zone-runbook.md](ops/merge-zone-runbook.md) — Merge-Zone Runbook(合服操作手册)
 - [mysql-backup-pitr-runbook.md](ops/mysql-backup-pitr-runbook.md) — MySQL Backup & PITR Runbook
-- [online-debug-data-fetch.md](ops/online-debug-data-fetch.md) — Online Debug Data Fetch
+- [online-debug-data-fetch.md](ops/online-debug-data-fetch.md) — 在线调试数据读取
+- [player-inbox-runbook.md](ops/player-inbox-runbook.md) — 玩家持久收件箱(player_inbox)运维手册
 - [release-checklist.md](ops/release-checklist.md) — 服务端发布清单
 - [run-directory.md](ops/run-directory.md) — `run/` — Runtime Artifacts
 - [stress-3zone-runbook.md](ops/stress-3zone-runbook.md) — 3 Zone × 15000 压测 — Runbook(2026-05)
@@ -264,6 +283,7 @@ python tools/scripts/gen_docs_index.py
 #### 其他
 
 - [deferred-clawback-bypass-audit-2026-05.md](ops/deferred-clawback-bypass-audit-2026-05.md) — 补缴系统(Deferred Clawback)旁路审计报告
+- [godb-pipeline-launch-todo.md](ops/godb-pipeline-launch-todo.md) — 存盘管线（go/db）上线待做
 - [pr-templates.md](ops/pr-templates.md) — PR Templates — HTTP /api/login Migration
 - [scene-node-role-split.md](ops/scene-node-role-split.md) — Scene Node Role Split Runbook
 
@@ -291,8 +311,12 @@ python tools/scripts/gen_docs_index.py
 ### 交接说明(`handoff/`)
 
 - [friend-handoff-20260920.md](handoff/friend-handoff-20260920.md) — friend 服务移植 —— 交接文档(2026-09-20)
-- [godb-pipeline-handoff-20261013-appendix.md](handoff/godb-pipeline-handoff-20261013-appendix.md) — 附录：存盘管线修复方案明细（工作流原始产出）
+- [global-singletons-p0-codex-tasksheet-20261014.md](handoff/global-singletons-p0-codex-tasksheet-20261014.md) — Codex 任务单:全局单点 P0 五项的实测核实(2026-10-14)
+- [global-singletons-p0-findings-20261014.md](handoff/global-singletons-p0-findings-20261014.md) — 全局单点 P0 五项:静态调查记录与修复设计(2026-10-14)
+- [global-singletons-p0-measure-steps-20261014.md](handoff/global-singletons-p0-measure-steps-20261014.md) — 全局单点 P0 五项:实测步骤原文(2026-10-14)
+- [godb-pipeline-codex-tasksheet-20261013.md](handoff/godb-pipeline-codex-tasksheet-20261013.md) — Codex 任务单：存盘管线第 0 批与 proto2mysql 条件写原语的验证（2026-10-13）
 - [godb-pipeline-handoff-20261013.md](handoff/godb-pipeline-handoff-20261013.md) — 交接：玩家存盘管线（go/db）瓶颈修复与条件写（2026-10-13）
+- [godb-pipeline-handoff-20261013-appendix.md](handoff/godb-pipeline-handoff-20261013-appendix.md) — 附录：存盘管线修复方案明细（工作流原始产出）
 - [handoff-backlog-2026-09-05.md](handoff/handoff-backlog-2026-09-05.md) — 交接清单:2026-09-02 ~ 09-05 三天工作的留档待办(经代码核实)
 - [handoff-crosszone-20260920.md](handoff/handoff-crosszone-20260920.md) — 跨 zone 场景传送:交接说明(2026-09-20)
 - [handoff-gate-dtor-fix-verify-and-stress-20260914.md](handoff/handoff-gate-dtor-fix-verify-and-stress-20260914.md) — 交接:gate `~TcpConnection` 事故第二批修复 —— 构建 / 验证 / 压测(执行方:ChatGPT;方案方:Claude Code)
@@ -339,9 +363,8 @@ python tools/scripts/gen_docs_index.py
 
 ### 历史归档(`archive/`)
 
-- [centre_decommission_first_batch_code_touchpoints.md](archive/centre_decommission_first_batch_code_touchpoints.md) — Centre Decommission First Batch - Code Touchpoints (2026-03-15) · [EN](archive/centre_decommission_first_batch_code_touchpoints_en.md) · [中文](archive/centre_decommission_first_batch_code_touchpoints_zh.md)
 - [centre_decommission_ha_checklist.md](archive/centre_decommission_ha_checklist.md) — Centre Decommission + HA Checklist (2026-03-15) · [EN](archive/centre_decommission_ha_checklist_en.md) · [中文](archive/centre_decommission_ha_checklist_zh.md)
-- [centre_decommission_migration_plan.md](archive/centre_decommission_migration_plan.md) — Centre 去中心化迁移方案 (2026-03-15) · [EN](archive/centre_decommission_migration_plan_en.md) · [中文](archive/centre_decommission_migration_plan_zh.md)
+- [centre_decommission_migration_plan.md](archive/centre_decommission_migration_plan.md) — Centre 去中心化迁移方案 (2026-03-15)
 - [cross-zone-merge-rollback-audit-2026-05.md](archive/cross-zone-merge-rollback-audit-2026-05.md) — 跨服 / 合服 / 回档 — 真实实现状态审计
 
 <!-- END GENERATED INDEX -->

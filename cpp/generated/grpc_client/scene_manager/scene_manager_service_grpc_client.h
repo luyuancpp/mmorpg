@@ -2,7 +2,8 @@
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <boost/circular_buffer.hpp>
+#include <deque>
+#include "core/network/grpc_client_runtime.h"
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/scene_manager/scene_manager_service.grpc.pb.h"
@@ -27,6 +28,10 @@ struct AsyncSceneManagerCreateSceneGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::scene_manager::CreateSceneRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncSceneManagerCreateSceneHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::scene_manager::CreateSceneResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncSceneManagerCreateSceneHandlerFunctionType =
@@ -41,6 +46,9 @@ extern AsyncSceneManagerCreateSceneFailedHandlerFunctionType AsyncSceneManagerCr
 void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request);
 void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request, GrpcDone<::scene_manager::CreateSceneResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region SceneManagerDestroyScene
 
@@ -54,6 +62,10 @@ struct AsyncSceneManagerDestroySceneGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::scene_manager::DestroySceneRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncSceneManagerDestroySceneHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::Empty> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncSceneManagerDestroySceneHandlerFunctionType =
@@ -68,6 +80,9 @@ extern AsyncSceneManagerDestroySceneFailedHandlerFunctionType AsyncSceneManagerD
 void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request);
 void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region SceneManagerEnterScene
 
@@ -81,6 +96,10 @@ struct AsyncSceneManagerEnterSceneGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::scene_manager::EnterSceneRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncSceneManagerEnterSceneHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::scene_manager::EnterSceneResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncSceneManagerEnterSceneHandlerFunctionType =
@@ -95,6 +114,9 @@ extern AsyncSceneManagerEnterSceneFailedHandlerFunctionType AsyncSceneManagerEnt
 void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request);
 void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request, GrpcDone<::scene_manager::EnterSceneResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region SceneManagerLeaveScene
 
@@ -108,6 +130,10 @@ struct AsyncSceneManagerLeaveSceneGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::scene_manager::LeaveSceneRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncSceneManagerLeaveSceneHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::Empty> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncSceneManagerLeaveSceneHandlerFunctionType =
@@ -122,6 +148,9 @@ extern AsyncSceneManagerLeaveSceneFailedHandlerFunctionType AsyncSceneManagerLea
 void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request);
 void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 void SetSceneManagerServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -129,7 +158,7 @@ void SetSceneManagerServiceFailedHandler(const std::function<void(const GrpcCall
 void SetSceneManagerServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 // 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
 void SetSceneManagerServiceCallDeadline(std::chrono::milliseconds deadline);
-void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
 void InitSceneManagerServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace scene_manager

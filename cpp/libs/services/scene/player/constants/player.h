@@ -25,3 +25,15 @@ inline std::string GetDbTaskTopic(uint32_t zoneId, uint32_t generation)
     }
     return topic + "_g" + std::to_string(generation);
 }
+
+// 玩家存盘 DBTask 的 Kafka key:玩家 id 的无符号十进制 ASCII,无前导零。与 Go 侧
+// kafkautil.DBTaskKey(strconv.FormatUint(id, 10))逐字节相同 —— login 发读请求用的就是那一个。
+// 分区 = CRC-32/IEEE(key) mod N(librdkafka consistent_random,见 kafka_producer.cpp createProducer),
+// 所以 key 的字节就是分区契约的一部分:这里换一种写法(补前导零、改成有符号、加前缀),同一玩家的写
+// 就会换分区,被 go/db 判为 orderingIncomparable 送进死信,读后写屏障也随之失效。
+// 契约见 docs/design/db-task-kafka-partition-contract.md「分区函数契约」;
+// 两侧共读的 golden 向量在 go/shared/kafkautil/testdata/dbtask_partition_vectors.json。
+inline std::string DbTaskKafkaKey(uint64_t playerId)
+{
+    return std::to_string(playerId);
+}

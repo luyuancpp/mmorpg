@@ -1,9 +1,12 @@
 # 装备属性系统(问道式:基础属性 + 蓝/粉/黄随机属性)
 
-> 落地日期:2026-10-07 / 08(**未编译、未导表、未 proto-gen,待 Codex 验证**,见 §9)。2026-10-09 已并入 main(功能提交 `d69d50be7d`),并随 `b3889a7c11` 到了 origin/main。
-> 客户端:数据层与界面已随客户端提交 `0eadd618` 进了客户端 main(消息号 249 / 246 也已写入 `MessageIds.cs`,它们目前只存在于服务器主仓工作区**未提交**的 `proto/message_id.txt` 里);
-> 但 `Docs/EquipmentUI-20261007.md`、`EquipCombatEventsPlanTests.cs`、`BattleData.cs` 的重生成、两个截图夹具的装备部分仍只在隔离工作树 `mmorpg-client-equip` 里(未提交,别清理)。
-> **二期(强化 + 镶嵌)见 [equipment-enhance-inlay.md](equipment-enhance-inlay.md)**;两期的表与协议要在同一次正式导表 / 全量 proto-gen 里首次产出(二期 §9)。
+> 落地日期：2026-10-07 / 08；2026-10-15 按 HEAD `6281e4d27` 与进度记录更新状态。
+> 一、二期已在主干完成正式导表和全量 proto-gen，生成产物已入库；2026-10-13 装备定向 robot 测试
+> 32 个顶层用例、连同子用例 253 项通过。**相关 C++ 完整构建、C++ 单测与联机冒烟仍待验证**，见 §9。
+> 客户端生成同步在当日进度中有记录，本次没有读取独立客户端或核对其当前运行结果，不再把旧隔离工作树、
+> 未发消息号或预期 CS0117 当作现状。客户端与 Java 版的当前状态须分别核对其仓库记录。
+> **二期（强化 + 镶嵌）见 [equipment-enhance-inlay.md](equipment-enhance-inlay.md)**；两期首次生成已完成，
+> 不要再按首次发号流程重新占号。后续协议变更仍按正常生成门禁执行。
 > 实现分布:配表 `data/EquipAttribute*.xlsx` / `data/EquipAffix*.xlsx` + `data/Item.xlsx` 新列;
 > 协议 `proto/common/component/item_base_comp.proto`、`proto/scene/player_bag.proto`、
 > `proto/scene/player_attribute.proto`、`proto/battle/battle_data.proto`;
@@ -470,7 +473,7 @@ static CombatStatDisplay DescribeCombatStat(equiprules::CombatStat stat);     //
 
 ### 4.6 入口(`player_bag_handler.cpp` 守护段、GM 三道闸)
 
-- 三个新方法只做:参数粗检 → 调 `PlayerEquipSystem` → 失败 `SetTip` → 成功回全量(`PlayerBagSystem::BuildSnapshot`)。
+- 三个新方法只做:参数粗检 → 调 `PlayerEquipSystem` → 失败直接写本次 `response->mutable_error_message()->set_id(...)` → 成功回全量(`PlayerBagSystem::BuildSnapshot`)。
 - `GmGrantItem`:`scene_gm_guard::RejectGmClientRpc`、`gate_gm_client_messages.h` 登记、`client_gm_gate_test.cpp` 清单同步、
   `cpp/nodes/gate/SECURITY.md` §3 清单同步。**这是「prod 关掉」不是鉴权。**
 - `BuildSnapshot`:每件物品调 `FillItemDisplay`;`bag_type = 2` 时调 `FillEquipSlots`。
@@ -504,7 +507,8 @@ static CombatStatDisplay DescribeCombatStat(equiprules::CombatStat stat);     //
 
 ## 7. 验证
 
-全部**未编译、未运行**;用例条数是落码时的数,以 Codex 实跑为准。
+以下是测试覆盖清单，用例条数为首次落码时的数。C++ 构建、C++ 单测与联机冒烟仍缺验证；
+robot 装备定向测试已于 2026-10-13 通过，证据与边界见 §9，不能再统称全部未运行。
 
 | 层 | 位置 | 内容 |
 |---|---|---|
@@ -533,122 +537,66 @@ static CombatStatDisplay DescribeCombatStat(equiprules::CombatStat stat);     //
 - **重登 / 离线结算窗口内可以穿脱**:「战斗中禁穿脱」只认 `InBattleComp`,而重登后它的重建与挂起结算的应用要等 1–2 次 Redis 往返;窗口内脱装备 → 结算按当时的上限夹取气血 → 再穿回按比例放大,等于一次小额回血(违反 §5 不变量 4)。窗口很窄,且相关函数(`RestoreBattleFreezeOnLogin` / `ApplyPendingSettlement`)在 main 上刚被改过,所以留到带入 main 之后在 `PlayerBattleSystem::IsInBattle` 一处收口(加点、宝宝同时受益)。
 - **入包边界整份信任实例上的 `equip` 段**:只要 `has_equip()` 就原样入库,消费侧只按上限夹单条数值,不校验条数、同档唯一、属性是否属于该装备的池。今天 `equip` 的来源只有服务器自己掷的和读盘,客户端碰不到;做邮件回流 / 寄售交付(P3)之前必须在玩法层补这道校验。
 - 没配部位名的槽「不展示但仍可穿」:只有 GM 发夹具物品 1 / 2 才会占到,占着时以空名下发,客户端显示「栏位 N」。
-- **Java 版(AGENTS §12):待做。** 本机 `D:\luyuan\wuxingqitan\xuanming-server-mmo-java` 不存在;Java 版目前只有「登录 → 进场景」竖切,
-  做背包 / 战斗时按本文 §2 / §3(客户端可见契约:`player_bag.proto` / `player_attribute.proto` / `battle_data.proto` 新字段、
-  `equip_error` tip 域、5 张表数据)对齐。
+- **Java 版（AGENTS §12）**：2026-10-13 装备整合进度仍登记待做，本次未核对 Java 仓的 `PARITY.md`，不提升完成状态。
+  Java 仓现行位置以根 AGENTS.md §12 为准；旧路径不存在不构成 Java 未实现的证据。对齐时需核对本文 §2 / §3
+  的客户端可见字段、tip 与配置表，并登记对应版本。
 
-## 9. 交接给 Codex 的验证清单(AGENTS §10.1)
+## 9. 已有证据与后续验证（AGENTS §10.1）
 
-**现状:全部未编译、未导表(只做过沙盒导表)、未 proto-gen、未运行。** 下面的顺序经整体审查的生成器视角核对过;
-任何一步的通过标准不满足就停,保留该步写明的日志。
+### 9.1 已完成：主干整合、正式生成与定向测试
 
-> **二期(强化 + 镶嵌)并入之后,本节的数字与路径以 [equipment-enhance-inlay.md](equipment-enhance-inlay.md) §9 为准**:
-> 补丁子命令 5 个 → 8 个;`item.json` 48 → 61 行;新表 4 张 → 7 张;tip 号 28000–28010 → 28000–28021;
-> `message_id.txt` 的基线是并入时本机 main 的版本(已含 244–249);handler 的 case 2–4 → 2–7;用例条数
-> (`PlayerEquipTest` 47 → 151、`PlayerEquipAttributeTest` 20 → 37、`BagInstanceDataTest` 27 → 31、`Equip*` 33 → 56、robot `TestEquip*` 14 → 32);
-> 客户端工作树 `mmorpg-client-equip` → `mmorpg-client-forge`。步骤顺序(0–11)不变。
+依据 [PROGRESS](../PROGRESS.md) 的“2026-10-13 装备强化与镶嵌并入主干、正式生成与定向验证”条目：
 
-**总原则**
-- **生成与 C++ 编译都在主仓 `E:\work\xuanming-server-mmo` 做**,且主仓必须先带上 origin/main 与本功能的改动。
-  隔离工作树 `xuanming-server-mmo-equip` 没有子模块(protoc / grpc)、gtest 库与运行期 DLL,只是源改动的载体;`dev.bat gen` 在那里第一步就失败。
-- **不要在隔离工作树上跑全量 proto-gen**:它的 `proto/message_id.txt` 止于 238,而 main 已发到 243;生成器对新方法是从 Go map 里取空号(顺序随机),
-  在那棵树上发号必然与 main 错位,随后按号写进 `MessageLimiter.xlsx` 的行会绑到别的 RPC 上。
-- 两条生成流水线的客户端落点都是相对路径 `../mmorpg-client`(那是 Codex 在用的另一条分支的检出)。要让产物落进 `mmorpg-client-equip`,用第 2 步的配置副本。
-- MSBuild 一律串行:`/m:1 /p:Configuration=Debug /p:Platform=x64`。
+- 一、二期已在主干整合；正式执行两次导表、一次全量 proto-gen，产物随 `0b40715d0` 等提交入库。
+- 当次清单为 version 25 / 42 表，42 张源表及 84 份 JSON/PB 的尺寸、哈希和行数逐项一致；
+  这是当次生成记录，后续加表应以新清单为准，不把历史版本号当永久断言。
+- 一期消息号已入库：`UnequipItem=246`、`GmGrantItem=247`、`EquipItem=249`；二期为
+  `InlayGem=250`、`EnhanceEquip=251`、`RemoveGem=252`，既有号未改。业务代码继续引用生成常量。
+- 装备 tip 为 28000–28021；正式生成已同步装备表、协议、handler 元数据和限流规则。
+- 当次在 `robot` 运行 `go test -mod=mod -run '^TestEquip' -count=1 -timeout=120s -json .`，
+  32 个顶层用例、含子用例 253 项通过，0 失败。此证据是定向契约/逻辑测试，不是 C++ 或联机验收。
 
-**0. 带入(2026-10-09 已完成,用户同意后由 Claude 执行;未推送)**
-- 功能提交 `d69d50be7d`(分支 `feat/equip-attributes`)已与 main 合并。冲突只有两处,都是「两边各追加一段」:
-  `cpp/tests/cross_zone_test/cross_zone_test.cpp`(main 的第 14 节 RelocateConfirm 在前,本功能的往返用例顺延为第 15 节)与 `docs/PROGRESS.md`(两边条目都保留)。
-- 合并后已核对的通过标准(Codex 可复核):`proto/message_id.txt` 末行是 `243=GuildServiceRespondGuildTrialInvite`;
-  `grep -n StripEngineOnlyState cpp/nodes/battle/logic/battle_room_manager.cpp` 命中且在 `RedactStateForViewer` 内
-  (它是「不向客户端暴露 combat」的唯一闸口,节点侧没有单测兜底);`data/` 下 xlsx 的差异只有装备这一批。
+不再执行旧分支合并、首次占号或指向 `E:\work` 隔离工作树的生成步骤。后续确有协议/表源改动时，
+先检查当前工作区与生成落点，按根规范和 `data/AGENTS.md` 重新生成，并保留 handler 守护段。
+本次文档修订没有生成、编译或测试。
 
-**1. xlsx 补丁确认**
-- `py tools/scripts/equip_xlsx_patch.py <子命令> --dry-run`,子命令依次 `new-tables`、`item-columns`、`item-rows`、`equip-slots`、`tip-codes`。
-- 通过标准:五次都报「已是目标状态」。若合并时某个 xlsx 取了对方版本,去掉 `--dry-run` 重跑对应子命令(脚本幂等)。
+### 9.2 待验证：C++ 构建与单测
 
-**2. 配置副本(放在原件同目录,用完删除,不提交)**
-- `tools\data_table_exporter\exporter_config.equip.yaml`:`languages.csharp.deploy` 的 `dst` 改成 `../../../mmorpg-client-equip/Assets/Scripts/Table/Generated`。
-- `tools\proto_generator\protogen\etc\proto_gen.equip.yaml`:`unity_client_dir` 改成 `"{{output_root}}../mmorpg-client-equip/"`。
-- PATH 前置:`third_party\grpc\install_vs2026_dbg\bin`(protoc 35.1,必须排第一)、`third_party\grpc\install_vs2026\bin`(grpc_cpp_plugin)、`C:\Users\luyua\go\bin`(protoc-gen-go)。
+2026-10-13 装备批没有重编 C++ modules / scene / 节点，没有运行 C++ 单测。使用当前主仓与同批
+生成物，MSBuild 一律 `/m:1 /p:Configuration=Debug /p:Platform=x64`，先核对既有依赖可用；缺工具
+或依赖时按 AGENTS.md §10.2 报告，不自行安装或绕过门禁。
 
-**3. 第一次导表**
-- `py -3 tools\data_table_exporter\run.py tools\data_table_exporter\exporter_config.equip.yaml`
-- 通过标准:退出码 0;`generated/tables/` 行数 `equipattribute.json` 26、`equipattributecap.json` 125、`equipaffixpool.json` 29、`equipaffixrule.json` 1、
-  `item.json` 48(1101–1405 共 20 行带 name)、`equipslot.json` 7(3–6 带 name);`cpp/generated/table/` 出现 4 张新表管理器、`item_table_fk.{h,cpp}`、
-  `proto/tip/equip_error_tip.pb.{h,cc}`,`all_table.cpp` 加载 4 张新表;tip 号只新增 28000–28010;`E:\work\mmorpg-client` 没有新改动。
-- 随后 `py tools/data_table_exporter/tools/gen_schema_index.py`(重生 `data/AGENTS.md` 索引),再带 `--check` 应通过。
-- 这一步会顺带导出别人登记但未导的表,属预期。
+顺序为 table → proto → core → rpc → grpc_client → modules → battle 库 → scene 库 →
+gate / scene / battle 节点 → 相关测试工程。**modules 与 scene 必须同批重编**，避免 ItemComp / Bag
+布局不一致。工作区还有并行 RPC/ECS 改动，失败需按实际文件归因，不能统称装备问题。
 
-**4. 全量 proto-gen**
-- `pwsh -File tools\scripts\dev_tools.ps1 -Command proto-gen-build`(用并入后的源码重编生成器;旧 exe 不认新的事件号格式)。
-- `pwsh -File tools\scripts\dev_tools.ps1 -Command proto-gen-run -UseBinary -ConfigPath tools\proto_generator\protogen\etc\proto_gen.equip.yaml`
-- 通过标准:
-  - `proto/message_id.txt` 的 0–243 逐行不变;新增号全部 ≥ 244,其中有 `SceneBagClientPlayerEquipItem / UnequipItem / GmGrantItem`
-    (同批还会给别人已提交未生成的 RPC 发号,例如 `DataServiceGetPlayerAssetOpLedger`、`GuildInternalListAppliedAssetOpsSince`、`MatchInternalStartActivityBattle`);
-    `rpc_event_registry.h` 的 `kMaxRpcMethodCount` == 最大号 + 1;
-  - `cpp/nodes/scene/handler/rpc/player/player_bag_handler.cpp` 无 diff(三个新方法的守护段与文件头守护段内容都在);`.h` 的 case 2 / 3 / 4 与手写一致;
-  - `player_bag_service_metadata.h` 多 3 组常量;`robot/generated/pb/game/message_id.go` 与 `message_body_handler.go` 各多 3 条,三个手写 stub 没被覆盖;
-  - `grep -n AcquireAllocationPermitBlocking cpp/nodes/scene/handler/grpc/scene_node_service.cpp` 仍命中(Agones 块被生成器吃掉是老坑,被吃就从 git diff 恢复)。
-- **`match_internal` 的既有缺口**:基线里新增的 `proto/match/match_internal.proto` 的生成物没登记进任何工程,不处理的话节点链接必报 LNK2019(与装备无关)。
-  照 `trade_admin` 的先例登记(`match\match_internal.pb.cc`、`.grpc.pb.cc` 进 `proto.vcxproj` + filters + CMakeLists;
-  `match_internal_grpc_client.cpp` 进 `grpc_client.vcxproj` + filters + CMakeLists)。
-- 发完号的 `message_id.txt` 尽快进 main,并知会其它会话。
+测试目标与通过标准以二期 [§9.2](equipment-enhance-inlay.md#92-c-构建与单测) 为准，至少覆盖
+`PlayerEquipTest.*`、`PlayerEquipAttributeTest.*`、`BagInstanceDataTest.*`、战斗 `Equip*`、
+`ClientGmGateTest.*`、`CrossZoneBagMarshal.*` 及对应既有回归。先确认 `table_data_directory`
+下七张装备表及依赖齐全；缺文件导致的 `LOG_FATAL` / abort 不能算测试通过。
 
-**5. 限流表(号定死之后,只在这棵树上跑一次)**
-- `py tools/scripts/equip_xlsx_patch.py message-limiter`,然后重复第 3 步再导一次表。
-- 通过标准:`generated/tables/messagelimiter.json` 能查到三个新 bag 方法的号以及 `GetBag`(191)、`SortBag`(192)。
-- 回填 `cpp/nodes/gate/SECURITY.md` 里 `GmGrantItem` 的消息号(现在是占位)。
+### 9.3 Go 与 robot 验证边界
 
-**6. C++ 编译(严格按序)**
-1. `cpp\generated\table\table.vcxproj` → 2. `cpp\generated\proto\proto.vcxproj` → 3. `cpp\libs\engine\core\core.vcxproj` → 4. `cpp\generated\rpc\rpc.vcxproj`
-   → 5. `cpp\generated\grpc_client\grpc_client.vcxproj` → 6. `cpp\libs\modules\modules.vcxproj` → 7. `cpp\libs\services\battle\battle.vcxproj`
-   → 8. `cpp\libs\services\scene\scene.vcxproj` → 9. `cpp\nodes\gate`、`cpp\nodes\scene`、`cpp\nodes\battle` 的 vcxproj
-   → 10. 测试工程 `bag_test`、`turn_battle_engine_test`、`currency_test`、`cross_zone_test`。
-- **`modules` 与 `scene` 必须同批重编**(`ItemComp` 与 `Bag` 的内存布局变了):只编一边链接不报错,运行期内存损坏。
-- 预期的失败形态:`kEquip*` / `Equip*TableManager` 未声明 → 第 3 步没做;`has_equip` / `CombatAttributes` / `EquipItemRequest` 未声明 → 第 4 步没做;
-  `static_assert(CombatStatIsField…)` 失败 → proto 字段号与 `CombatStat` 错位,回头对 §3.3,**不要改断言**;`openssl/crypto.h` 找不到(bag_test)→ 那两条新 include 目录没生效。
-- 这些工程是 `/W3` + 警告即错误,生成的 getter 带 `[[nodiscard]]`;首个错误连同上下 20 行保留。
-- 复核代理估计最可能先出错的位置:① 第 0 步的合并冲突;② 第 4 步之后的首次节点链接(`match_internal`、Agones 块);
-  ③ `modules`(`bag_system.cpp` / `bag_service.cpp` / `item_store.cpp`)与 battle 库的 `turn_battle_engine.cpp`;
-  ④ scene 库的 `player_attribute.cpp` 与全新的 `player_equip.cpp`;⑤ `bag_test` 首次编译(三个从未编译的大测试文件)。
+已执行的装备定向命令见 §9.1。当时采用的 `-mod=mod` 结果不能当作 vendor 验证。后续运行使用
+当前模块声明的 Go 版本与 `GOTOOLCHAIN=local`，不得再固定已过时的 Go 1.26.5 安装路径，或仅为
+测试重写 go.mod / vendor。受影响 Go 服务需用同批协议与表代码构建，新增验证逐项登记。
 
-**7. C++ 单测**
-- 先 `pwsh tools/scripts/run_cpp_tests.ps1 -Filter bag_test`(它会同步运行期 DLL),再按过滤器直跑 exe:
+### 9.4 待验证：起栈与冒烟
 
-| exe | 过滤器 | 通过标准 |
-|---|---|---|
-| `build\cpp\tests\bag_test.exe` | `PlayerEquipTest.*` | 47 条 |
-| 同上 | `PlayerEquipAttributeTest.*` | 20 条 |
-| 同上 | `BagInstanceDataTest.*` | 27 条 |
-| 同上 | 不带过滤 | 没有既有用例变红;`FixedSlotLayoutTest.RestoreFollowsConfigNotTheSnapshotPos` 仍绿 |
-| `turn_battle_engine_test.exe` | `TurnBattleEngineTest.*` | 89 条(原 60 + 新 29);既有 60 条里任何一条红都说明「无装备」路径被动到了 |
-| 同上 | `Equip*` | 33 条 |
-| `currency_test.exe` | `ClientGmGateTest.*` | 全绿 |
-| `cross_zone_test.exe` | 不带过滤 | 全绿,含 `CrossZoneBagMarshal.*` |
+在已授权的 dev 栈使用同一批产物重启受影响服务；scene 与 battle 同批换表，GM 入口只在允许的
+开发模式打开。先执行既有登录基线，再在 `robot` 下运行 `etc/equip_smoke.yaml` 两遍，随后按二期
+§9.4 运行强化镶嵌场景。装备一期要求两遍均输出 `EQUIP_SMOKE_OK`、退出码 0，第二遍不重复发物。
+这不是压测；若要登录压测，另行遵守根 AGENTS.md §6 的清库与基线流程。
 
-- 退出码非 0 但没有 `[  FAILED  ]` 行 = 中途 `LOG_FATAL`,不算绿。各 `*Refuses*` 用例与三条回滚用例会按设计打 ERROR 与调用栈。
-- `ShippedTablesPassValidation` 红 → 看同次输出里 `[PlayerEquip] 表校验:` 的 ERROR 行,是表的问题,不改测试。
-- `CombatFractionalRollsFollowDocumentedRandomOrder` 红 → 保留输出里的种子、回合号与两串记号(实际 / 预期),它直接指出哪一步掷骰顺序对不上。
+失败保留场景失败行及前文、同时间段 scene 的 `[PlayerEquip]` / ERROR、首个编译错误上下文、
+失败用例完整输出，不注释断言、不跳过测试。不要为了重跑随意清除真实账号存档。
 
-**8. Go**(Go 1.26.5 在模块缓存里、不在 PATH;`GOTOOLCHAIN=local`)
-- `pwsh -File tools\scripts\go_services.ps1 -Command build`(至少 login / scene_manager / player_locator / guild 用同批生成物重编,见 §5 不变量 9)。
-- `go test ./generated/table/...`(工作目录 `go\shared`);`go test ./internal/logic/...`(工作目录 `go\guild`)。
-- robot(工作目录 `robot\`):`go mod vendor` → `go build -mod=vendor -o robot.exe .` → `go test -mod=vendor -run "TestEquip|TestFeature" . ./logic/handler ./logic/gameobject`。
-- 通过标准:全部退出码 0;14 个 `TestEquip*` 全过,既有 `TestFeature*` 不回归。
+### 9.5 客户端与双版本
 
-**9. 起栈与冒烟**
-- 用同一批产物重启 Go 服务与 scene / gate / battle(scene 与 battle 同批换表);GM 闸为 dev。
-- **先跑既有 login-test 基线**(健康栈 23/23),确认别的 mode 没被新表带坏;再在 `robot\` 下连跑两遍 `.\robot.exe -c etc/equip_smoke.yaml`。
-- 通过标准:两遍都以 `EQUIP_SMOKE_OK` 结尾、退出码 0;第二遍 `granted=0`;scene 启动日志里装备表校验问题数为 0。
-- 失败时保留 `EQUIP_SMOKE_FAIL` 行及其前 20 行、同时段 scene 日志的 `[PlayerEquip]` / ERROR 行。红在 `display-*` 时看 `[reused=…]`,修好后要换账号或清 `robot_9103` 的背包存档。
-
-**10. 客户端(`E:\work\mmorpg-client-equip`)**
-- `pwsh -File tools/gen_proto.ps1 -ProtoRoot E:\work\xuanming-server-mmo`、`pwsh -File tools/gen_messageids.ps1 -ProtoRoot E:\work\xuanming-server-mmo`。
-- 通过标准:`MessageIds.EquipItem / UnequipItem` 出现,此前预期的 15 处 CS0117 消失;已放好的 5 个协议生成物无差异。
-- 之后按客户端 `Docs/EquipmentUI-20261007.md` 跑 EditMode 用例与截图(Unity 许可过期时要先在 Unity Hub 登录一次)。
-
-**11. 收尾**:删除第 2 步的两份配置副本;在 `docs/PROGRESS.md` 的条目里补上实跑结果。
+2026-10-13 进度记录了客户端代理同步官方 C# 协议、消息号、表代码及 handler；本次没有检查
+客户端仓，不能据此宣称 Unity 测试、截图或当前运行通过。旧隔离检出的占位消息号与 CS0117
+仅属于当时的离线测试背景。客户端后续验证在其仓库按规范执行，服务端本次不读写该仓。
+Java 版仍以独立仓 `PARITY.md` 为准，不据旧路径或过期交接推断完成度。
 
 ## 10. 实现偏离记录
 
@@ -657,7 +605,7 @@ static CombatStatDisplay DescribeCombatStat(equiprules::CombatStat stat);     //
 ### 10.1 配置表地基(§2,2026-10-07)
 
 列、类型、字段号、初始数据、tip 码与段号均与 §2 一致,**没有偏离**。以下是 §2 没写明、落地时补上的决定,
-以及导表器能力带来的限制(沙盒导表已通过,正式导表 / 编译待 Codex):
+以及导表器能力带来的限制（本节记录 2026-10-07 的实现过程；正式生成已于 10-13 完成，C++ 验证边界见 §9）：
 
 1. **`EquipAttribute.sort` 初值**:§2.1 没给,落地为 `sort = id × 10`(升序即 §2.1 清单顺序,留空档方便插队)。
    消费方只能按 `sort` 排序,不要假设它等于 id。
@@ -676,9 +624,8 @@ static CombatStatDisplay DescribeCombatStat(equiprules::CombatStat stat);     //
    (`GetByAffixRule` / `GetByAttrId`),并新增产物 `item_table_fk.{h,cpp}`(已登记进 `CMakeLists.txt` / `table.vcxproj`)。
 6. **tip 段**:28000 段核对为空闲且未被说明行预留,按 §2.7 原样落地;沙盒发号 `kEquipItemNotFound = 28000` …
    `kEquipInternalError = 28010`(枚举 `equip_error`,头文件 `table/proto/tip/equip_error_tip.pb.h`)。
-7. **`MessageLimiter` 未执行**:`equip_xlsx_patch.py message-limiter` 要等全量 proto-gen 把
-   `SceneBagClientPlayerEquipItem / UnequipItem / GmGrantItem` 写进 `proto/message_id.txt` 之后再跑
-   (现在跑会报「找不到」并且不写任何文件);届时会顺带补上还不在表里的 `GetBag`(10 次/秒)/ `SortBag`(5 次/秒)。
+7. **`MessageLimiter` 的生成顺序**：首次实现时需等 proto-gen 发号后按方法名写表；这一步已完成，
+   当前装备与 GetBag / SortBag 规则应从源表和生成物核对，不再视为未执行。将来新增方法仍须先发号再写限流表。
 
 ### 10.2 背包实例层(§4.1,2026-10-07/08)
 
@@ -762,8 +709,7 @@ static CombatStatDisplay DescribeCombatStat(equiprules::CombatStat stat);     //
 
 实现与验证细节在客户端仓 `Docs/EquipmentUI-20261007.md`。与 §6 的差异:
 
-1. **消息号待生成**:客户端代码引用 `MessageIds.EquipItem / UnequipItem`(`tools/gen_messageids.ps1` 白名单已加),仓内 `MessageIds.cs` **没有**写入臆造的号 ——
-   服务端 proto-gen 发号并重跑 `gen_messageids.ps1` 之前,客户端有 15 处预期的 CS0117(缺这两个常量)。离线验证时用的是只存在于临时目录的占位号。
+1. **首次实现时的消息号依赖**：2026-10-08 离线验证使用临时占位号，曾因常量缺失出现 CS0117。`MessageIds` 与正式协议后来已生成并入库；该历史现象不能当作当前允许的编译错误，当前客户端状态见 §9.5。
 2. **卡片多了一行物品说明**(§6 原清单没有):装备选中后原详情栏不再显示,说明搬到卡片的属性行与按钮之间。
 3. **失败后的同步策略**(见 §6 正文):不是「失败就补拉」,而是「失败不作废在途读取 + 只有状态未知的失败才重拉」,避免连点时顶到 `GetBag` 限流。
 4. **传输层 / gate 级错误显示成中文文案**(「装备失败:网络异常,请稍后重试」等),原始英文串不上屏。

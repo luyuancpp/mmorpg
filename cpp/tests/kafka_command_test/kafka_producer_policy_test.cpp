@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <vector>
 
 #include "messaging/kafka/kafka_producer_policy.h"
 
@@ -23,6 +25,7 @@
 namespace {
 
 using kafka_producer_policy::ClassifyProduceResult;
+using kafka_producer_policy::DeliveryTracker;
 using kafka_producer_policy::FailureLogThrottle;
 using kafka_producer_policy::IsFatalDeliveryError;
 using kafka_producer_policy::IsPurgeDeliveryError;
@@ -258,4 +261,60 @@ TEST(FailureLogThrottle, TakeSuppressedDrainsUnconditionallyAndKeepsTheWindow)
     const auto later = throttle.OnFailure(At(std::chrono::milliseconds(3)));
     EXPECT_FALSE(later.logThisOne);
     EXPECT_EQ(1u, throttle.PendingSuppressed());
+}
+
+// ---------------------------------------------------------------------------
+// DeliveryTracker:sendTracked 的关联号登记簿。契约是「每个 Accept 过的非 0 id 恰好一次经 Resolve 或
+// TakeAll 离开」—— 少一次,scene 的下线收尾就一直等到 330s 超时;多一次,同一条 DBTask 会被记两次结局。
+// ---------------------------------------------------------------------------
+
+TEST(DeliveryTracker, AcceptThenResolveIsTrueOnceThenFalse)
+{
+    DeliveryTracker tracker;
+    tracker.Accept(7);
+    EXPECT_EQ(1u, tracker.Size());
+    EXPECT_TRUE(tracker.Resolve(7));
+    EXPECT_FALSE(tracker.Resolve(7)) << "同一条消息的重复回执不能二次通知";
+    EXPECT_EQ(0u, tracker.Size());
+}
+
+TEST(DeliveryTracker, ZeroIdIsNeverTracked)
+{
+    // 0 = 普通 send(),不跟踪:msg_opaque 为 nullptr 的回执一律不通知。
+    DeliveryTracker tracker;
+    tracker.Accept(0);
+    EXPECT_EQ(0u, tracker.Size());
+    EXPECT_FALSE(tracker.Resolve(0));
+}
+
+TEST(DeliveryTracker, ResolveUnknownIdIsFalse)
+{
+    DeliveryTracker tracker;
+    tracker.Accept(1);
+    EXPECT_FALSE(tracker.Resolve(2)) << "没登记过的 id(入队失败、或别的线程的生产者)不通知";
+    EXPECT_EQ(1u, tracker.Size()) << "不认识的 id 不影响已登记的";
+}
+
+TEST(DeliveryTracker, TakeAllReturnsEveryOutstandingIdAndEmpties)
+{
+    DeliveryTracker tracker;
+    tracker.Accept(11);
+    tracker.Accept(12);
+    tracker.Accept(13);
+    ASSERT_TRUE(tracker.Resolve(12));
+
+    std::vector<std::uint64_t> taken = tracker.TakeAll();
+    std::sort(taken.begin(), taken.end()); // 顺序不作保证
+    EXPECT_EQ((std::vector<std::uint64_t>{11, 13}), taken) << "已 Resolve 的不再合成失败回执";
+    EXPECT_EQ(0u, tracker.Size());
+    EXPECT_TRUE(tracker.TakeAll().empty()) << "取空之后再取为空";
+}
+
+TEST(DeliveryTracker, ResolveAfterTakeAllIsFalse)
+{
+    // 实例重建时已为它合成过失败回执;旧实例的原回执若迟到(理论上 rd_kafka_destroy 不回调,防御),不能二次通知。
+    DeliveryTracker tracker;
+    tracker.Accept(21);
+    ASSERT_EQ(1u, tracker.TakeAll().size());
+    EXPECT_FALSE(tracker.Resolve(21));
 }

@@ -250,7 +250,7 @@ func runMerge(o options) {
 	}, preflightParams{
 		zone:            src,
 		scope:           "source",
-		kafkaGroup:      o.kafkaGroup,
+		kafkaGroups:     kafkaGroupCandidates(o.kafkaGroup, o.kafkaLegacyGroup, src),
 		topicGeneration: uint32(o.kafkaTopicGen),
 		playerIDs:       playerIDs,
 	}); err != nil {

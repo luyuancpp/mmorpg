@@ -353,12 +353,15 @@ blob、同一次落盘**,于是两者同生共死:崩溃 → 一起没 → pendi
 #### 验证清单(全部未执行)
 
 1. **MySQL 加列必须先跑**:`cd go/db && go run ./cmd/migrate -f etc/db.yaml -command plan`。计划里允许出现的
-   `player_database` 加列只有 `profile_component` / `asset_op_ledger` / `settlement_ledger` 三条(与
+   `player_database` 加列只有 `profile_component` / `asset_op_ledger` / `settlement_ledger` / `fence_owner_epoch` /
+   `fence_save_seq` / `inbox_ledger` 六条,另允许 `player_database_1` 加 `fence_owner_epoch` / `fence_save_seq` 两条
+   (2026-10-15 起:`fence_*` 属 MySQL 行内围栏 [db-write-fencing-mysql.md](./db-write-fencing-mysql.md) §3.2,
+   `inbox_ledger` 属玩家收件箱 [player-inbox-service.md](./player-inbox-service.md) §4.4;与
    [guild-phase2/90-consistency.md](./guild-phase2/90-consistency.md) G-03 同一口径;已迁移过的不会再出现,**也可能为空**),
    其余语句先停下核对。确认后 `-command up`(不加 `-allow-modify`)。**退出码 4 = 迁移已成功、只是有 NEEDS-REVIEW**
    (本地库上已知的 `user_oauth.provider_id` / `user_phone.phone` 类型漂移会一直触发),不是失败;1 / 3 才是失败。
    本地多 zone 时对启动器实际用的每份 db 配置各跑一次;随后每个 zone 库
-   `SHOW COLUMNS FROM player_database LIKE 'settlement_ledger'` 返回 1 行。
+   `SHOW COLUMNS FROM player_database LIKE 'settlement_ledger'` 返回 1 行;其余新列照 G-03 逐列各查一次,各 1 行。
    **漏这一步,新编的 go/db 会拒启并打印这条命令**(改造前是静默地让全服玩家回写全部失败)。
    本地启动器(`go_services.ps1` / `start_game.ps1`)和 K8s 都**不会**替你跑迁移,清过 MySQL 的环境同样要先跑一次。
 2. 编译 go/db(`go build ./...`、`go vet ./...`),编译 scene 相关工程与 `bag_test`(MSBuild 串行 `/m:1`)。

@@ -1,8 +1,7 @@
 #pragma once
 
 #include <sstream>
-
-#include <thread_context/ecs_context.h>
+#include <type_traits>
 
 #include "error_reporter/error_reporter.h"
 
@@ -34,9 +33,9 @@ void SendErrorToClient(const Request& request, Response& response, uint32_t err)
 
     response.mutable_message_content()->set_message_id(request.message_content().message_id());
 
-    auto& tip = tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity());
-    response.mutable_message_content()->mutable_error_message()->CopyFrom(tip);
-    response.mutable_message_content()->mutable_error_message()->set_id(err);
+    auto* error = response.mutable_message_content()->mutable_error_message();
+    error->Clear();
+    error->set_id(err);
 
     if (err != 0) {
         const auto* descriptor = request.GetDescriptor();
@@ -59,7 +58,5 @@ void SendErrorToClient(const Request& request, Response& response, uint32_t err)
         msg << "proto=" << protoName << " message_id=" << messageId;
         error_reporter::Record(err, "rpc_reject", msg.str());
     }
-    // Decide whether to clear based on semantics (avoid unconditionally clearing global state)
-    // tip->Clear();
 }
 

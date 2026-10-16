@@ -1,0 +1,20 @@
+server:
+  address: ${COMMERCE_BIND_ADDRESS:127.0.0.1}
+  port: ${COMMERCE_PORT:18120}
+  error:
+    include-message: never
+    include-stacktrace: never
+spring:
+  sql:
+    init:
+      mode: never
+  datasource:
+    url: ${COMMERCE_JDBC_URL}
+    username: ${COMMERCE_DB_USER}
+    password: ${COMMERCE_DB_PASSWORD}
+commerce:
+  run-mode: ${COMMERCE_RUN_MODE:prod}
+  require-tidb: ${COMMERCE_REQUIRE_TIDB:true}
+  gateway-secret: ${COMMERCE_GATEWAY_SECRET}
+  payment-secret: ${COMMERCE_PAYMENT_SECRET}
+  payment-subject: ${COMMERCE_PAYMENT_SUBJECT:payment-adapter}

@@ -121,6 +121,16 @@ func sendAndRecv(gc *pkg.GameClient, stats *metrics.Stats, msgId uint32, req, re
 	return sendAndRecvTimeout(gc, stats, msgId, req, resp, defaultLoginTimeout)
 }
 
+// envelopeError 是应答信封上的错误(MessageContent.error_message),不是业务应答体里的 error_message。
+type envelopeError struct {
+	msgID uint32
+	tipID uint32
+}
+
+func (e *envelopeError) Error() string {
+	return fmt.Sprintf("envelope error tip_id=%d for msg_id=%d", e.tipID, e.msgID)
+}
+
 // sendAndRecvTimeout is like sendAndRecv but with an explicit timeout.
 // If the response is not received within the timeout, it returns an error
 // indicating the login is stuck.
@@ -163,6 +173,12 @@ func sendAndRecvTimeout(gc *pkg.GameClient, stats *metrics.Stats, msgId uint32, 
 	case r := <-ch:
 		if r.err != nil {
 			return r.err
+		}
+		// gate / 路由服级失败(lane 满 1008、排队超时 / 后端不可用 1003、路由服上游错误)回的是带请求 id 的
+		// 信封错误,body 为空(docs/design/client-request-ordering.md §4.7)。原先只解 body,空 body 会被当成
+		// 「成功、字段全默认」——Login 看成角色列表为空去建角,EnterGame 看成已进游戏去等 79,失败归因被带偏。
+		if tipID := r.msg.GetErrorMessage().GetId(); tipID != 0 {
+			return &envelopeError{msgID: msgId, tipID: tipID}
 		}
 		return proto.Unmarshal(r.msg.SerializedMessage, resp)
 	case <-time.After(timeout):

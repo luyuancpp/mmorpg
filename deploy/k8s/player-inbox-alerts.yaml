@@ -1,0 +1,232 @@
+# Prometheus alert rules for the player inbox (玩家持久收件箱,go/player_inbox)。
+#
+# 来源:docs/design/player-inbox-service.md §9.4(指标与告警)、§8(失败矩阵)、§7.8(围栏)。
+# 处置手册:docs/ops/player-inbox-runbook.md(每条告警的处置在该文「告警处置」一节逐条对应)。
+#
+# Install as a PrometheusRule CR (kube-prometheus stack),与 owner-epoch-alerts.yaml / asset-channel-alerts.yaml 同法:
+#   kubectl apply -n observability -f deploy/k8s/player-inbox-alerts.yaml
+#
+# Scrape prerequisites:
+#   - manifests/go-svc/player-inbox.yaml 的 Pod 带 prometheus.io/scrape 注解,metrics 端口 9270(ConfigMap MetricsListenAddr ":9270");
+#     集群里要有 ServiceMonitor / PodMonitor(或按注解抓取的 job)指向它,否则本文件的规则一条都不会触发。
+#
+# 聚合口径(设计 §9.4):
+#   - 计数器每个副本各报一份 → 规则一律 sum(...) 跨副本求和;
+#   - 扫描型 gauge 只由领导者产出(多副本重复上报会被放大)→ 规则一律 max(...) 聚合,**不要**改成 sum;
+#   - label 只用有限枚举,**不用 player_id**(AGENTS §9);要定位玩家看同一时刻的 ERROR 日志(player_id 只进日志)。
+#
+# label 取值契约(规则依赖,go/player_inbox/internal/metrics 改名要同步改这里):
+#   - player_inbox_ack_total{domain,result}:result 取 Ack 结果的小写名(finalized / finalized_settled_unknown / already_same /
+#     conflict / unknown_seq / not_delivered / skip_not_requested / mismatch),整请求被围栏拒绝时是围栏结局名
+#     (go/player_inbox/internal/metrics/metrics.go 的 Help)。下面的正则带 (?i) 且允许前缀,写成枚举全名也能匹配。
+#   - 一辈子可能只发生几次的结局(围栏倒退、epoch 超前、CursorAhead、对账不一致、Ack 异常结果),对应的 CounterVec 序列
+#     必须在进程启动时按封闭集合预置为 0(照 data_service 的 PrimeRollbackGuildCheck):
+#     increase(...) 对「从无到 1」只有一个样本,恰好漏掉第一次(owner-epoch-alerts.yaml 同一个坑)。无 label 的 Counter 天然从 0 起,不受影响。
+#
+# 连接池(设计 §9.4「单独出池指标」):go/player_inbox 用 client_golang 的 DBStatsCollector 导出 go_sql_*{db_name="player_inbox"},
+# 不是 go/shared/sqlpoolstats 的 mmorpg_sql_pool_*,所以不在 mysql-connection-alerts.yaml 的 sql-pool 组覆盖范围内,
+# 本文件的 player-inbox.stuck 组单独写了一条 PlayerInboxSqlPoolSaturated。
+#
+# 只进 info 看板、**不告警**的(设计 §9.4):player_inbox_open_items、player_inbox_oldest_open_age_seconds。
+# 流失玩家的条目永远不会被消费,按它们告警会一直亮着,淹没真正的「卡住」信号(已投递未确认)。
+#
+# scene 侧没有 Prometheus 端点,收件箱信号只在结构化日志里(`[PlayerInbox] metric=...`,设计 §9.4)。
+# Loki ruler 目前没有挂载规则目录,下列 LogQL 先作为值班固定查询,ruler 接线之后转为规则:
+#   warning : count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_unknown_type" [10m]) > 0
+#             (新类型先于 scene 支持被加进 EnqueueTypes:scene 停在队头不记 REJECTED,§8 #13;回滚 EnqueueTypes 或先升 scene)
+#   warning : count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_halted" [10m]) > 0
+#             (MISMATCH / NOT_DELIVERED / SKIP_NOT_REQUESTED 后该玩家该域停用,§7.7;与下面的 PlayerInboxAckAnomaly 对照)
+#   critical: count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_replay_mismatch" [10m]) > 0(IB-9 回放核对失败)
+#   info    : sum by (reason) (count_over_time({app=~"scene.*"} |= "metric=inbox_deferred" | regexp "reason=(?P<reason>\\w+)" [10m]))
+#
+# Severity conventions(与 scene-manager-alerts.yaml 相同):
+#   critical = pager, someone wakes up
+#   warning  = next-business-hours channel
+#   info     = dashboard annotation / trend signal
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: player-inbox-alerts
+  labels:
+    app: player-inbox
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: player-inbox.correctness
+      interval: 30s
+      rules:
+        # STALE 且 R == req:核心 Redis 里的 owner_epoch 倒退了(备份恢复 / AOF 或主从丢尾 / 键被删,§8 #14)。
+        # 新 owner 的 epoch 小于收件箱围栏,该玩家的收件箱拉不动,而存盘围栏同样可能失效 —— 不是收件箱自己的问题。
+        - alert: PlayerInboxFenceRegressed
+          expr: |
+            sum(increase(player_inbox_fence_regressed_total[10m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "收件箱发现 owner_epoch 计数器倒退(fence_regressed)"
+            description: >-
+              过去 10 分钟约 {{ $value | printf "%.0f" }} 次 Fetch / Ack 判 STALE 且请求 epoch 等于 Redis 当前值:
+              核心 Redis 的 owner_epoch 已低于收件箱记录的高水位。收件箱**不提供归零**;按
+              docs/ops/player-inbox-runbook.md「计数器倒退」执行 db-write-fencing-mysql.md §9.1 的 epoch-raise,
+              取最大值的来源要包含收件箱 GetSummary 的 max_fence_epoch。
+
+        # req > fence 且 req > R:只会来自缺陷或伪造(IB-8),状态未改。
+        - alert: PlayerInboxEpochAhead
+          expr: |
+            sum(increase(player_inbox_epoch_ahead_total[10m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "收件箱收到超前于 Redis 的 owner_epoch(EPOCH_AHEAD)"
+            description: >-
+              过去 10 分钟约 {{ $value | printf "%.0f" }} 次请求带的 owner_epoch 大于核心 Redis 当前值,已拒绝、未改状态。
+              只可能来自 scene 缺陷或内网伪造(设计 §1.6 威胁模型)。按 ERROR 日志里的 scene_node_id 定位发送方,
+              核对该节点版本与 owner_epoch 来源;不要为它抬高任何计数器。
+
+        # consumer_decided_through ≥ next_seq:收件箱库被恢复过(§7.8 第 2 步、§8 #18),已自动抬号。
+        - alert: PlayerInboxCursorAhead
+          expr: |
+            sum(increase(player_inbox_cursor_ahead_total[10m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "消费方账本水位领先收件箱 next_seq(CursorAhead)"
+            description: >-
+              过去 10 分钟约 {{ $value | printf "%.0f" }} 次。说明收件箱库按备份恢复过、或流行被意外删除;
+              新 seq 已自动抬到水位之上,但恢复窗口内丢失的条目要人工核对重下。
+              按 docs/ops/player-inbox-runbook.md「收件箱库恢复」处理。
+
+        # Ack 异常结果:MISMATCH / CONFLICT / NOT_DELIVERED / SKIP_NOT_REQUESTED / UNKNOWN_SEQ 都不改状态、只告警(§7.8 Ack 表)。
+        # MISMATCH / NOT_DELIVERED / SKIP_NOT_REQUESTED 之后 scene 停用该玩家的该域(§7.7),不处置就一直停着。
+        # ack_total 是 CounterVec,这几个结果的序列在第一次发生之前不存在(服务端只预置了 notify / reconcile 两组),
+        # increase 对「从无到 1」恰好漏掉第一次:第二支用 unless … offset 把 10 分钟内新出现的序列也算进来。
+        - alert: PlayerInboxAckAnomaly
+          expr: |
+            sum by (result) (increase(player_inbox_ack_total{result=~"(?i).*(mismatch|conflict|not_delivered|skip_not_requested|unknown_seq)"}[10m])) > 0
+            or
+            sum by (result) (
+              player_inbox_ack_total{result=~"(?i).*(mismatch|conflict|not_delivered|skip_not_requested|unknown_seq)"}
+              unless player_inbox_ack_total{result=~"(?i).*(mismatch|conflict|not_delivered|skip_not_requested|unknown_seq)"} offset 10m
+            )
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "收件箱 Ack 出现异常结果 {{ $labels.result }}"
+            description: >-
+              过去 10 分钟约 {{ $value | printf "%.0f" }} 次 {{ $labels.result }}。行状态未改(IB-4 / IB-9),
+              按 docs/ops/player-inbox-runbook.md「Ack 异常结果」逐类核对:CONFLICT 永不翻转,保留现场;
+              MISMATCH 多见于收件箱库恢复后的旧行;NOT_DELIVERED / SKIP_NOT_REQUESTED / UNKNOWN_SEQ 指向 scene 缺陷或伪造。
+
+        # 每小时对账:收件箱已终结、账本却没到这个 seq(回档 / Redis 丢数据),或收件箱 PENDING、账本已处理(§9.3)。
+        - alert: PlayerInboxReconcileMismatch
+          expr: |
+            sum(increase(player_inbox_reconcile_mismatch_total[2h])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "收件箱对账发现与已落盘账本不一致"
+            description: >-
+              过去 2 小时对账作业发现约 {{ $value | printf "%.0f" }} 处不一致。player_id 只在收件箱 ERROR 日志里
+              (`reconcile mismatch`);逐个用 PlayerInboxAdmin.ReconcilePlayer 复核,按 docs/ops/player-inbox-runbook.md
+              「对账不一致」处理(事后人工补发 = 用新的 request_id 重下处置)。
+
+    - name: player-inbox.stuck
+      interval: 1m
+      rules:
+        # 已投递未确认最老超过 1 小时:真正的「卡住」信号(scene 拉到了却迟迟不确认:落盘失败、停用、崩溃循环)。
+        - alert: PlayerInboxDeliveredUnackedTooOld
+          expr: |
+            max(player_inbox_delivered_unacked_oldest_seconds) > 3600
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "收件箱有已投递超过 1 小时仍未确认的条目"
+            description: >-
+              最老的已投递未确认条目已等待 {{ $value | humanizeDuration }}(当前共
+              {{ with query "max(player_inbox_delivered_unacked)" }}{{ . | first | value | printf "%.0f" }}{{ end }} 条)。
+              用 PlayerInboxAdmin.ListItems(state=PENDING)找出 delivery_count 高的行,对照 scene 的 `[PlayerInbox]` 日志;
+              按 docs/ops/player-inbox-runbook.md「卡住与毒消息」处理。
+
+        # delivery_count ≥ 5:疑似毒消息引发崩溃循环(D11:v1 不自动隔离,§7.9)。
+        - alert: PlayerInboxPoisonSuspect
+          expr: |
+            max(player_inbox_max_delivery_count) >= 5
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "收件箱有条目被投递了 {{ $value | printf \"%.0f\" }} 次仍未终结"
+            description: >-
+              疑似毒消息(载荷让 scene 崩溃或处理永远失败)。核对后用 PlayerInboxAdmin.VoidItem(reason=QUARANTINED)隔离:
+              作废路径不解码载荷,不会再次触发崩溃。步骤与限速见 docs/ops/player-inbox-runbook.md「卡住与毒消息」。
+
+        # 在线提醒积压:补发循环没把 notify_due_ms 到点的流清掉(Kafka 写不进 / 领导者没在跑)。
+        - alert: PlayerInboxNotifyBacklog
+          expr: |
+            max(player_inbox_notify_backlog) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "收件箱在线提醒积压超过 5 分钟"
+            description: >-
+              当前约 {{ $value | printf "%.0f" }} 条流的提醒到点未发。提醒只是加速(落地拉取与 30 分钟在线兜底仍会生效),
+              不丢条目;检查 Kafka 写入(player_inbox_notify_total{result})与领导者选举是否正常。
+
+        # 独占库连接池长期用满:落地拉取的快路径是不加锁的点读,但锁路径持流行行锁等 1s;池满时 Fetch / Ack 排队,
+        # scene 侧表现为超时退避(不阻断进场,IB-7)。按副本分别看(一个副本满、另一个闲时求和会被摊平)。
+        - alert: PlayerInboxSqlPoolSaturated
+          expr: |
+            max by (instance) (
+              go_sql_in_use_connections{db_name="player_inbox"} / go_sql_max_open_connections{db_name="player_inbox"}
+            ) > 0.9
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "player-inbox {{ $labels.instance }} 的 MySQL 连接池长期用满(占比 {{ $value | printf \"%.2f\" }})"
+            description: >-
+              持续 15 分钟在用连接占上限 90% 以上。先看 go_sql_wait_duration_seconds_total 的增速与 fetch_total{path="locked"};
+              调大 MySQL.MaxOpenConn 必须同步 MySQL 连接总账(k8s_deploy.ps1 Get-MysqlConnectionLedger)与 mysql.yaml 的 max_connections。
+
+        # UNKNOWN 报告被终结为 SETTLED_UNKNOWN:消费方水位已过这一条、原结局已被挤出最近结局环(§4.3、§7.7)。
+        - alert: PlayerInboxSettledUnknown
+          expr: |
+            sum(increase(player_inbox_ack_total{result=~"(?i).*settled_unknown"}[1h])) > 0
+            or
+            sum(
+              player_inbox_ack_total{result=~"(?i).*settled_unknown"}
+              unless player_inbox_ack_total{result=~"(?i).*settled_unknown"} offset 1h
+            )
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "收件箱有条目以 SETTLED_UNKNOWN 收尾"
+            description: >-
+              过去 1 小时约 {{ $value | printf "%.0f" }} 条。效果是否生效无法从账本确认;对照 scene 的
+              `[PlayerInbox] applied` 日志与玩家存档人工核实,必要时用新的 request_id 重下处置。
+
+    - name: player-inbox.info
+      interval: 5m
+      rules:
+        # 未决条目与最老未决时长:只做看板趋势,不告警(见文件头)。用 for: 0m + info 便于在面板上打注解。
+        - alert: PlayerInboxOpenItemsTrend
+          expr: |
+            max(player_inbox_oldest_open_age_seconds) > 30 * 86400
+          for: 0m
+          labels:
+            severity: info
+          annotations:
+            summary: "收件箱最老未决条目已超过 30 天(多为流失玩家,信息项)"
+            description: >-
+              未决条目 {{ with query "max(player_inbox_open_items)" }}{{ . | first | value | printf "%.0f" }}{{ end }} 条。
+              流失玩家的条目不会被消费,也不会自动删除(IB-1);只用于观察趋势与容量。

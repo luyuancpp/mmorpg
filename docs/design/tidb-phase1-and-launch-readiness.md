@@ -60,8 +60,8 @@
 | 打散后的行数据写入 | 能。Region 自动分裂，调度到多台 TiKV | `NONCLUSTERED` + `SHARD_ROW_ID_BITS=4` 打散的是 `_tidb_rowid`。三张主表等已声明（`mysql_database_table.proto:90-92`、`:106-108`、`:164-166`） |
 | 读 | 能。加 tidb-server 与 TiKV，Load Base Split 按读流量分裂 | — |
 | 连接入口 | 能。tidb-server 无状态 | 客户端池仍要按总账配额（§2.4） |
-| **单调递增索引的尾部** | **不能**。新值都比旧值大，只写最右一个 Region；分裂后，新的尾部仍承接全部写入 | `PRIMARY KEY(player_id)` 退化成的二级唯一索引、`uk_player_name_owner`、快照与流水的时间类联合索引、D1 `player_route` 的 4 条索引（§5.1）。（2026-10-12 G1a）D1 四条索引都带 16 片前缀，预切后不再是单尾，见 §5.1 |
-| **单行热点** | **不能**。一行只在一个 Region leader 上，悲观锁要排队 | `id_segment` 的 `FOR UPDATE` 行（`id_segment_store.go:184`）；D1 的 `zone_merge_fence` 分片行与 `route_meta` 单行（提案 :93-124）。（2026-10-12 G1a）`route_meta` 已拆出常写的 `route_reconcile`，开关行可设缓存表；`zone_merge_fence` 由 `route_tool tidb-prepare` 按 zone 预切 |
+| **单调递增索引的尾部** | **不能**。新值都比旧值大，只写最右一个 Region；分裂后，新的尾部仍承接全部写入 | `PRIMARY KEY(player_id)` 退化成的二级唯一索引、`uk_player_name_owner`、快照与流水的时间类联合索引、D1 `player_route` 的 4 条索引（§5.1）。（2026-10-12 G1a）D1 四条索引都带 16 片前缀，预切后不再是单尾，见 §5.1（2026-10-14 更正：行片已改为 64，见 D1 提案 §11.2「行片 16 → 64」） |
+| **单行热点** | **不能**。一行只在一个 Region leader 上，悲观锁要排队 | `id_segment` 的 `FOR UPDATE` 行（`id_segment_store.go:184`）；D1 的 `zone_merge_fence` 分片行与 `route_meta` 单行（提案 :93-124）。（2026-10-12 G1a）`route_meta` 已拆出常写的 `route_reconcile`，开关行可设缓存表；`zone_merge_fence` 由 `route_tool tidb-prepare` 按 zone 预切。（2026-10-15 更正：「可设缓存表」已改定为 `route_meta CACHE` **S2 档起必选、S1 可选**；围栏分片数按档位取 MySQL 16 / TiDB 64，不再是 8。见 §5.1 单行热点一行与 §9.3 第 21 项的更正注） |
 | **大事务 / 大行** | 有硬上限。单行 KV ≤ `txn-entry-size-limit`（默认 6MB，上限 120MB）；单事务 ≤ `txn-total-size-limit`（默认 100MB）【文 tidb-configuration-file】；TiKV 拒绝大于 `raft-entry-max-size`（默认 8MB）的写请求 | 快照行最大 16MiB−1（`snapshot_consumer.go:24`）；批量工具必须分批 |
 | **跨地域延迟** | **不能**。每个事务都要取 TSO、走 2PC，写延迟至少是跨 AZ RTT 的两倍【文 multi-data-centers-in-one-city】。官方要求单集群跨地域延迟 <30ms（dr-solution-introduction） | §8 |
 
@@ -87,7 +87,7 @@
 | 削峰默认全关；排队的 leader 锁跨 zone 不出队 | 否 |
 | 单 zone 的 EnterGame 预加载链：新号首读冷读、go/db 80 个 worker、10 分区 | 否。Phase 1 只把库换成能扩的，管线上限不变 |
 | 共享 Redis 单主 | 否 |
-| **按现有清单开服时的 MySQL**：1 CPU / 1Gi，`max_connections=500`，2 个 zone 时零余量 | **是**。这是 Phase 1 唯一直接消除的一项 |
+| **按现有清单开服时的 MySQL**：1 CPU / 1Gi，`max_connections=500`，2 个 zone 时零余量（2026-10-14 注：G2b 已把清单改为 `max_connections=1800`、内存 limits 5Gi，并加了部署期连接总账，见 §2.4 的状态注；CPU 仍是 1 核） | **是**。这是 Phase 1 唯一直接消除的一项 |
 | 跨 zone 的全局耦合（所有 zone 的 go/db 共用一个消费组） | 否 |
 | data_service 全局库上的同步写（名字登记、D1 事务） | 部分。库能扩了，但单行锁和单调尾部还在 |
 | 全球审计管道：快照 >约 1MB 在发送端失败；积压超过每分区 512MiB 会被删 | 否（L-07） |
@@ -167,6 +167,13 @@
 
 - 名义值 T = Z·(210+16E) + 80，不含新增两项。Z=2、E=0 时 T=500；Z=4 时 T=920。
 - T_peak = T + D1 池 + PasswordAuth + 滚动余量 + 工具。
+- **（2026-10-13 G2b 状态注，已落码，未编译、未测试；数值均待压测确认）** 上表是 2026-10-12 的核算口径，原表不改。MySQL 档的现行口径以可执行总账为准：`tools/scripts/k8s_deploy.ps1` 的 `Get-MysqlConnectionPlan` / `Get-MysqlConnectionLedger`，说明见 `deploy/k8s/README.md`「MySQL 连接总账」，规格见 `docs/handoff/launch-readiness-20261013/spec_G2b.md`。与上表不同的地方：
+  - **Java gateway 行**：现为显式 2×5。`java/gateway_node/src/main/resources/application.yaml` 配了 Hikari `maximum-pool-size: 5`、`minimum-idle: 2`，K8s ConfigMap 镜像这两个值，不再是按默认值推断的 2×10。
+  - **滚动余量行**：按 R=2 计，即滚动期间每个 Deployment 多 2 个实例（maxSurge 的 1 个新 Pod，加 1 个仍在优雅退出、连接还没释放的旧 Pod）。范围是一个 zone 的 db / data-service / gateway 三个 Deployment，加全局的 friend、trade；不是上表的「每 zone 临时多出 (60+8E)+35」。这里的 R 是多出的实例数，与「D1 route store」行里表示池大小的 R 不是同一个量。
+  - **D1 route store 行**：池大小已定为 20（`go/data_service/etc/data_service.yaml` 的 `RouteStore.MaxOpenConn`）。K8s 上 `RouteStore.Mode` 现在固定 `redis`、不装配这个池，规划档按 db_first 提前计入。
+  - **取值**：规划档（4 个 zone、每个 go/db 实例打开其余 3 个 zone 的库、Phase 2 未开、运维余量 20）峰值 1620；`deploy/k8s/manifests/infra/mysql.yaml` 的 `max_connections` 已从 500 改为 1800，内存 limits 从 1Gi 改为 5Gi。login PasswordAuth 仍不计入（K8s ConfigMap 不写该段）。
+  - 下面「两种后端都要做的」三条里，后两条已由 G2b 落码：池指标见 §7 L-08 的状态注；旋钮拆成 `Placement.ZoneStore*` / `NonZoneStore*`，`ExtraStoreMaxOpenConn` 只作回落。第一条（L-04）没有做。
+  - 换成 TiDB 后，总账里各项客户端连接数不变，变的只是上限参数，取值口径见下面「TiDB 侧」。
 
 **TiDB 侧：**
 - 单实例上限是 `instance.max_connections`，默认 0（不限），范围 0–100000；同时设了 `max-server-connections` 时以前者为准。并发执行的会话数由 `token-limit` 控制，默认 1000【文 tidb-configuration-file】。
@@ -684,12 +691,12 @@ Redis `FLUSHALL`、etcd、Kafka offset reset 照旧执行。AGENTS §6.2 第 6 �
 | `player_name`（全局库） | `uk_player_name_owner(player_id)` 单调；`PRIMARY(name_norm)` 随机 | 同上 | 1 条 | 1 条 |
 | `transaction_log`（全局库） | `PK tx_id`；4 条「X + timestamp_sec」联合索引（`rollback_database_table.proto:19`），其中 `(tx_type, ts)` 是低基数前缀加单调时间 | 同上 | 少数几条 | 同左 |
 | `player_snapshot`（全局库） | 自增 `PK id`（每台 tidb-server 缓存一批 id，各自形成一条尾部）；`player_id`、`snapshot_guid` 单调；`(zone_id, created_at)` 有 Z 条尾部（`:68`） | 同上 | 若干条 | 同左 |
-| D1 `player_route`（全局库） | 4 条索引都有单调尾部：<br>• PK 1 条；<br>• `idx_route_home(home_zone, player_id)` Z 条；<br>• `idx_route_storage(storage_id, player_id)` 1 条，新号的 storage 相同或同为 NULL；<br>• `idx_route_updated(updated_at_ms)` 1 条，每次更新都改写到尾部<br>**（2026-10-12 G1a）**改为聚簇 `(route_shard, player_id)`，`route_shard = player_id % 16`，三条二级索引都带片前缀：PK / `idx_route_updated` 各 16 尾，`idx_route_home` 每 zone 16 尾，`idx_route_storage` 每个落点值 16 尾 | NONCLUSTERED + SHARD（提案 :80、:90）。**G1a 起**：聚簇 + 片前缀 + `route_tool tidb-prepare` 预切与 `merge_option=deny`，预切后分散 | 1+Z+1+1（G1a 后为 16·(3+Z) 条，分散在预切出的 Region 上；`idx_route_storage` 的 NULL 段 16 条尾部在一个 Region，见提案 G1a HR5） | 同左 |
+| D1 `player_route`（全局库） | 4 条索引都有单调尾部：<br>• PK 1 条；<br>• `idx_route_home(home_zone, player_id)` Z 条；<br>• `idx_route_storage(storage_id, player_id)` 1 条，新号的 storage 相同或同为 NULL；<br>• `idx_route_updated(updated_at_ms)` 1 条，每次更新都改写到尾部<br>**（2026-10-12 G1a）**改为聚簇 `(route_shard, player_id)`，`route_shard = player_id % 16`，三条二级索引都带片前缀：PK / `idx_route_updated` 各 16 尾，`idx_route_home` 每 zone 16 尾，`idx_route_storage` 每个落点值 16 尾<br>**（2026-10-14 更正）**行片已改为 64（`player_id % 64`），各条尾数随之为 64；`tidb-prepare` 对 PK 与 `idx_route_updated` 每片一段，对 `idx_route_home` / `idx_route_storage` 每个前缀值切 8 个点，见 D1 提案 §11.2「行片 16 → 64」 | NONCLUSTERED + SHARD（提案 :80、:90）。**G1a 起**：聚簇 + 片前缀 + `route_tool tidb-prepare` 预切与 `merge_option=deny`，预切后分散 | 1+Z+1+1（G1a 后为 16·(3+Z) 条，分散在预切出的 Region 上；`idx_route_storage` 的 NULL 段 16 条尾部在一个 Region，见提案 G1a HR5） | 同左 |
 | trade、guild、friend | 号段单调主键：`trade_listing.listing_id`（`trade_table.proto:30`）、`trade_asset_op.op_id`（`:108`）、`guild_asset_op.op_id`（`guild_db.proto:143`）。时间类索引：`(state, created_ms)`（`:272`）、`guild_trial_reward_owed(created_ms)`（`:302`）、friend 的 `(friend_count, created_ms)`（`friend_table.proto:108`） | 已声明 NONCLUSTERED + SHARD + PRE_SPLIT（评审已核对） | 写入频率低，不阻塞 | 同左 |
-| 单行热点 | `id_segment` 行（每次领段做一次 `FOR UPDATE`）；D1 的 `zone_merge_fence`（每 zone N=8 行，每次建角锁其中一行）；`route_meta` 单行。**（2026-10-12 G1a）**`zone_merge_fence` 按 zone 预切（每 zone 一个 Region）；`route_meta` 读多写极少，可选设缓存表；常写的 leader / 水位在 `route_reconcile`（只有 1 个写者） | — | TiDB 扩不了 | 同左 |
+| 单行热点 | `id_segment` 行（每次领段做一次 `FOR UPDATE`）；D1 的 `zone_merge_fence`（每 zone N=8 行，每次建角锁其中一行）；`route_meta` 单行。**（2026-10-12 G1a）**`zone_merge_fence` 按 zone 预切（每 zone 一个 Region）；`route_meta` 读多写极少，可选设缓存表；常写的 leader / 水位在 `route_reconcile`（只有 1 个写者）<br>**（2026-10-15 更正，原文不删）**① 「每 zone N=8 行」已过时：围栏分片数 `RouteStore.FenceShards` 按容量模型 §4.1「连带修正」取 **MySQL 档 16、TiDB 档 64**（D1 提案 §11.2「行片 16 → 64」的「改了什么」与「连带修正」，:908、:930）。它只是配置、任何时候可改（上限 64，围栏持有者总是锁满 0..63 全部分片行）；MySQL 档的 16 已写进 `go/data_service/etc/data_service.yaml`，代码默认仍是 8。TiDB 档 64 目前**没有配置载体**（仓库里没有 TiDB 档的服务 yaml；`k8s_deploy.ps1` 的 data-service ConfigMap 不镜像这个键，K8s 上取默认 8），切 db_first 之前按档位补进 ConfigMap 并加契约用例，见 D1 提案 §11.2「正向探针 P5」段末的「2026-10-15 补登」。② 「可选设缓存表」已改定：`ALTER TABLE route_meta CACHE` **S2 档起必选，S1 可选**（D1 提案 §11.2「TiDB 运维步骤」第 6 条 :836、「连带修正」:931、§12 梯子第 2 级 :1093；容量模型 §4.1「连带修正」、§2.6 route_meta R1 单行读一行），见 §9.3 第 21 项的更正注 | — | TiDB 扩不了 | 同左 |
 
 - 号段发号只打散了行数据。仓库里没有任何 `SPLIT TABLE … INDEX`，也没有对 id 做打散（决策文档 §D3 更正第 2 条）。
-- launch_verdict 里「player_route 4 条索引（其中 3 条单调）」的说法要更正：漏算了 `idx_route_home`，4 条都单调。（2026-10-12 G1a 更正：D1 路由表已在建表前改为聚簇 + 16 片前缀，四条索引都不再是单尾；前提是 TiDB 上跑过 `route_tool tidb-prepare`，见 §5.2 第 7 条与 D1 提案 §11.2「第 1a 批热点修复」。）
+- launch_verdict 里「player_route 4 条索引（其中 3 条单调）」的说法要更正：漏算了 `idx_route_home`，4 条都单调。（2026-10-12 G1a 更正：D1 路由表已在建表前改为聚簇 + 16 片前缀，四条索引都不再是单尾；前提是 TiDB 上跑过 `route_tool tidb-prepare`，见 §5.2 第 7 条与 D1 提案 §11.2「第 1a 批热点修复」。2026-10-14 起行片为 64，见同节「行片 16 → 64」。）
 - 主表的首行由 go/db 经 Kafka 异步写入，所以尾部热点首先表现为 Kafka lag，不会直接导致建角失败。`player_name` 和 D1 的事务在建角的同步路径上，热点会直接拉高建角 p99。
 
 ### 5.2 Phase 1 必做
@@ -706,6 +713,7 @@ Redis `FLUSHALL`、etcd、Kafka offset reset 照旧执行。AGENTS §6.2 第 6 �
 6. **验证**：在 TiDB 压测环境里，用 PD 的热点数据和 Key Visualizer 区分 index 流量与 record 流量。在 `stress_snap` 支持 TiDB 之前（§3.5），这部分只作为附件。
 7. **（2026-10-12 G1a）D1 路由表：`route_tool -f <yaml> tidb-prepare -zones=<全部 zone> [-storages=1000000] -dry-run=false`**（D1 提案 §11.2「第 1a 批热点修复」）。
    - 做什么：判引擎（MySQL 打印 `SKIP`、退出 0）→ 核对 `player_route`、`zone_merge_fence` 的 `TIDB_PK_TYPE=CLUSTERED`（不是就退出 2，一条都不发）→ 两表 `ATTRIBUTES 'merge_option=deny'` → `SPLIT TABLE player_route BY (1,0)…(15,0)`、`INDEX idx_route_updated BY (1,0,0)…(15,0,0)`、每个 zone 一条 `INDEX idx_route_home BY (z,0,0)…(z,15,0)`、每个 `-storages` 值一条 `INDEX idx_route_storage`、`SPLIT TABLE zone_merge_fence BY (z1,0),(z2,0),…`。
+   - （2026-10-15 更正，上一条原文不删）上一条的切点是行片 16 时的写法。2026-10-13 起行片为 64（`placement.RouteRowShards`）：`player_route` 行数据与 `idx_route_updated` 切片 1..63 的起点（各 63 个点，每片一段）；`idx_route_home` / `idx_route_storage` 每个 zone / 落点值只切 8 个点（片 0、8、…、56，每段 8 片）；`zone_merge_fence` 仍是每 zone 一个点。见 D1 提案 §11.2「行片 16 → 64」的「预切密度」。`tidb-prepare` 仍不发 `ALTER TABLE route_meta CACHE`，S2 档起要另行执行（§9.3 第 21 项更正注）。
    - 默认 `-dry-run=true` 只列语句；全部语句幂等，中途失败重跑即可。只碰全局库，不连 mapping Redis；会经过 route store 的建池探针（含 `chk_route_shard` 实测），CHECK 不生效的库直接退出 2。
    - 何时跑：Phase 1 预建表之后（§3.2 第 6 步）；开新 zone 时（见下）；BR / PITR 恢复之后；TRUNCATE 之后（§3.5）。
    - 权限：SPLIT / ATTRIBUTES 需要的权限【未核实】，应用账号不够时用运维账号的 yaml 副本跑（副本不进 git）。
@@ -829,15 +837,15 @@ Phase 1 的逻辑库仍按 zone 分开，用按库过滤恢复就能表达「只
 | L-01 | P0 | 修 login 排队的 leader 锁。锁键是全局的（`config.go:253`、`login.yaml:436`），但 `activeZones` 只读本 zone 的 GateWatcher（`servicecontext.go:152-161`、`:453-466`），结果只有 leader 所在 zone 的队列会出队。二选一：锁键带上 zone，或者让 `activeZones` 覆盖所有 zone | go/login | 否 | login 负责人 | 多 zone 单测或集成测试：每个 zone 的队列都能出队 |
 | L-02 | P0 | 打开削峰：<br>• Bucket4j（`application.yaml:38` 现为 false；zone 阈值从设计稿开服档 2000/5000 起）；<br>• login `Queue`（`login.yaml:429` 现为 false），配合 `ZoneCapacityOverride`；<br>• 客户端做指数退避加抖动 | Java gateway、go/login、客户端 | 否 | 负责人；阈值用压测定 | L-14 尖峰压测 |
 | L-03 | P0 | 数据层：完成 Phase 1（本文）。若未完成就开服，按连接总账重配 MySQL 规格和 `max_connections` | 本文 | **是** | 已拍板（B） | §9.1 |
-| L-04 | P0 | go/db 遇到 1040 或拿不到连接时改为延后，不消耗重试预算（上限 3 次）；死信加消费者和告警。问题见 PROGRESS.md:7181，建议见 :7188 | go/db | 否，两种后端都要 | 设计评审 | 单测 + 故障注入 |
-| L-05 | P0 | 设计评审「新号首次进场免 DB 读」：建角时写一个空的 `PlayerAllData`，或打新号标记。号段 id 不复用，读到空就是真值。现状是新号首读一定冷读：每张子表一条 Kafka 读任务，玩家同步等待 8s（`entergamelogic.go:380`） | login、go/db | 否 | 负责人 | 压测首次进场 p99 与 db_task 读量 |
+| L-04 | P0 | go/db 遇到 1040 或拿不到连接时改为延后，不消耗重试预算（上限 3 次）；死信加消费者和告警。问题见 PROGRESS.md:7181，建议见 :7188<br>**（2026-10-14 第 1 批已落码，未编译、未测试）** 延后不耗预算、库级冷却、读任务快速失败、业务池读写超时、延后 / 死信计数与告警已写，设计 [db-task-store-unavailable-deferral.md](db-task-store-unavailable-deferral.md)；死信的查看与重放工具（第 2 批）未做，本条仍未关闭 | go/db | 否，两种后端都要 | 设计评审 | 单测 + 故障注入 |
+| L-05 | P0 | 设计评审「新号首次进场免 DB 读」：建角时写一个空的 `PlayerAllData`，或打新号标记。号段 id 不复用，读到空就是真值。现状是新号首读一定冷读：每张子表一条 Kafka 读任务，玩家同步等待 8s（`entergamelogic.go:380`）<br>**（2026-10-14）已落码，未编译、未验证**：G3 建角后写新号种子，开关 `NewPlayerSeed.Enabled` 默认关，见 `new-player-first-enter-no-cold-read.md` §13 | login、go/db | 否 | 负责人 | 压测首次进场 p99 与 db_task 读量 |
 | L-06 | P0/P1 | 共享 Redis 按用途拆实例：排队与限流 / 会话与锁 / PlayerAllData / mapping。`task:result` 改为按 login 实例分频道。压测后再定 `maxmemory` 和 limits，保持 noeviction（`redis.yaml:137-143` 现在只设了 requests；`redis-ha.yaml:9-13` 说明为什么上不了 Cluster）。注意：`redis-ha.yaml` 的 apply 路径在部署脚本里不存在（§6.1） | deploy、go/login | 否 | 负责人 | 压测出 Redis 主的 CPU / ops / 内存曲线 |
-| L-07 | P1 | 全球审计管道：消息上限、积压保留、容量预算，见表后展开 | data_service、C++ snapshot、Kafka 部署 | 部分：落库耗时要在 TiDB 上重测 | 回档负责人 | consumer lag 指标；`snapshot_system` 发送失败计数 |
-| L-08 | P1 | 连接预算：<br>• 导出 `sql.DBStats`，label 只用池类别；<br>• TiDB 每实例 `max_connections` 按 §2.4 取值（TiDB 默认不限，1040 只在设了上限时出现）；<br>• 拆开全局库池与访客池两个旋钮 | go/db、data_service | 是，上限参数随后端变 | — | DBStats 指标 |
+| L-07 | P1 | 全球审计管道：消息上限、积压保留、容量预算，见表后展开<br>**（2026-10-14）积压与观测部分已落码，未编译、未验证**：G2a 按分区并发消费、批量落库旋钮（默认逐条）、lag 探针（含单分区最大积压）与告警 `deploy/k8s/data-service-audit-alerts.yaml`；消息上限与容量预算未做 | data_service、C++ snapshot、Kafka 部署 | 部分：落库耗时要在 TiDB 上重测 | 回档负责人 | consumer lag 指标；`snapshot_system` 发送失败计数 |
+| L-08 | P1 | 连接预算：<br>• 导出 `sql.DBStats`，label 只用池类别；<br>• TiDB 每实例 `max_connections` 按 §2.4 取值（TiDB 默认不限，1040 只在设了上限时出现）；<br>• 拆开全局库池与访客池两个旋钮<br>**（2026-10-13 G2b，已落码，未编译、未测试）** 第 1、3 条已落码，第 2 条随 Phase 1：<br>• 池指标 `mmorpg_sql_pool_*{sql_client,pool}`（`go/shared/sqlpoolstats`，label 只有池类别）：go/db 在 K8s 上打开 `:9160`，data_service 在 `:9260`；告警文件 `deploy/k8s/mysql-connection-alerts.yaml`；friend / trade / Java gateway 没有导出；<br>• 额外落点库池拆成 `Placement.ZoneStore*` / `NonZoneStore*` 两组旋钮，另加 `ExtraStoreConnMaxIdleSeconds`（默认 60），旧键 `ExtraStore*` 只作回落；<br>• MySQL 档的 `max_connections` 500 → 1800，滚动余量按 R=2，总账写成部署脚本里的可执行函数并有契约测试（§2.4 状态注）；数值均待压测确认 | go/db、data_service | 是，上限参数随后端变 | — | DBStats 指标 |
 | L-09 | P1 | go/db 消费组按 zone 命名。K8s 上全部 zone 共用 `db_rpc_consumer_group`（`k8s_deploy.ps1:3437`），任何一个 db Pod 变动，全球存盘一起停几秒；它还让单 zone 的 offset reset 变成全服操作（§6.3 第 7 步）。要同步改 merge_zone 等依赖方（no-single-node §3.4）。go/db 不配 HPA；首日冻结 db 和 data_service 的发布与扩缩容 | go/db、脚本 | 否 | 负责人 | kind 上删一个 Pod，只影响本 zone |
 | L-10 | P1 | 号段开服档 Step=1000（§5.2 第 4 条） | login 配置 | 否 | 只改配置 | `login_create_player_stage_seconds` |
 | L-11 | P1 | 名字表：<br>• `PRIMARY(name_norm)` 预切并设 `merge_option=deny`；<br>• `uk_player_name_owner` 的单调尾部与 §5.3 联动；<br>• 名字池 Z×2×20（`data_service.yaml:109-110`）计入连接总账；<br>• ODKU 行数语义在 TiDB 上回归（§4 #12） | data_service、runbook | 是 | — | PD 热点数据；`name` 阶段耗时 |
-| L-12 | P1 | D1 的 `player_route` 同步事务：<br>• 压测定分片数 N 和 WAITAOF 的实际延迟；<br>• 评估去掉单调的 `idx_route_updated`；<br>• 4 条索引的尾部见 §5.1<br>**（2026-10-12 G1a）**`idx_route_updated` 已改为 `(route_shard, updated_at_ms, player_id)` 并保留（1b 增量推送要用，以后补索引要另写收敛代码）；四条索引都带 16 片前缀，TiDB 上由 `route_tool tidb-prepare` 预切（§5.2 第 7 条） | data_service（D1） | 部分 | D1 负责人 | 建角压测：`register` 阶段 p99、1213 / 1205 计数；PD 热点里路由表（`player_route`、`zone_merge_fence`）的 Region |
+| L-12 | P1 | D1 的 `player_route` 同步事务：<br>• 压测定分片数 N 和 WAITAOF 的实际延迟；<br>• 评估去掉单调的 `idx_route_updated`；<br>• 4 条索引的尾部见 §5.1<br>**（2026-10-12 G1a）**`idx_route_updated` 已改为 `(route_shard, updated_at_ms, player_id)` 并保留（1b 增量推送要用，以后补索引要另写收敛代码）；四条索引都带 16 片前缀，TiDB 上由 `route_tool tidb-prepare` 预切（§5.2 第 7 条）<br>**（2026-10-14）**分片数 N 已按容量模型 §4.1 定为 64（建表前），不再由压测定；WAITAOF 延迟仍待压测<br>**（2026-10-15 更正，上一条不删）**上一条说的「定为 64（建表前）」是 `player_route` 的**行片** `RouteRowShards`（建表后不可改）。本行原文「压测定分片数 N」写于 G1a 引入行片之前，N 指的是 `zone_merge_fence` 的**围栏分片数**（D1 提案 :376、:409、§12 :1067），二者不是一个参数。围栏分片数是配置 `RouteStore.FenceShards`，按容量模型 §4.1「连带修正」取 MySQL 档 16、TiDB 档 64，任何时候可改；建角压测的 `register` p99 与 1213 / 1205 计数仍用来复核它够不够。TiDB 档 64 目前没有配置载体，见 §5.1 单行热点一行的更正 | data_service（D1） | 部分 | D1 负责人 | 建角压测：`register` 阶段 p99、1213 / 1205 计数；PD 热点里路由表（`player_route`、`zone_merge_fence`）的 Region |
 | L-13 | P1 | TiDB 写热点：`tidb_scatter_region=global`；发号方案（§5.3）；存量 id 审计 | 本文 §5 | 是 | 负责人 | PD 热点数据 / Key Visualizer |
 | L-14 | P1 | 交给 Codex 跑一轮开服尖峰压测，按 AGENTS §6 全流程，**环境是 §3.5 的专用压测环境**，同环境先跑 MySQL 基线。<br>场景：多 zone，0–30s 尖峰，同时覆盖建角、首次进场、周期存盘、进退场快照。用 `stress_summarize` 出对比表；没有这张表，不下容量结论 | Codex | 是 | 负责人点名环境（§9.3 #13） | 对比表 |
 | L-15 | P2 | 首日按地域多开 zone，按负载分流选区。db_task 的 10 个分区不能在线扩，要扩只能走离线换代（`db-task-kafka-partition-contract.md`） | 运营、部署 | 否 | 负责人 | — |
@@ -925,7 +933,7 @@ Phase 1 的逻辑库仍按 zone 分开，用按库过滤恢复就能表达「只
 | 批 | 内容 | 主要文件 | 估计文件数 | 依赖 |
 |---|---|---|---|---|
 | P1-0 核实与拍板 | 第一项先验证 `lock_wait_timeout` 与 GET_LOCK 的行为（§4 #2）。<br>其余：Codex 读 proto2mysql Go 源码，确认 Save 与 DDL；导出 `GetCreateTableSQL`；在各环境审计 `player_id < 2^55` 的存量；量出各环境数据量，确认哪些环境要保留数据；核对 `tidb_txn_mode`；核对 MySQL 只写 CHARSET 的表实际用的排序规则；完成 §9.3 拍板 | — | 0 | — |
-| P1-1 代码兼容 | 快照去重的 TiDB 形态（§4 #1），并让 `NewSnapshotStore` 在 TiDB 上缺键时拒绝装配；如果拍板，去掉主表的 AUTO_INCREMENT 并配 MySQL 迁移；friend 查询钉住计划；data_service、friend、trade、guild、login PasswordAuth 补 `ConnMaxLifetime`；更正 `store_registry.go:294` 的注释；导出 `sql.DBStats`（与 L-08 合并）；gateway 表补 COLLATE | `go/data_service/internal/store/*`、`proto/common/database/*.proto`、`go/friend/...`、各服务 `svc`、`deploy/mysql-init/gateway_tables.sql` | 13–19 | **D1 第 1 批合入之后** |
+| P1-1 代码兼容 | 快照去重的 TiDB 形态（§4 #1），并让 `NewSnapshotStore` 在 TiDB 上缺键时拒绝装配；如果拍板，去掉主表的 AUTO_INCREMENT 并配 MySQL 迁移；friend 查询钉住计划；data_service、friend、trade、guild、login PasswordAuth 补 `ConnMaxLifetime`；更正 `store_registry.go:294` 的注释；导出 `sql.DBStats`（与 L-08 合并）**（2026-10-13 G2b：这一子项由 G2b 批 B 承担（`go/shared/sqlpoolstats`，已落码，未编译、未测试），P1-1 不再另注册收集器；本行其余子项不变，新增的池接指标时复用这个包）**；gateway 表补 COLLATE | `go/data_service/internal/store/*`、`proto/common/database/*.proto`、`go/friend/...`、各服务 `svc`、`deploy/mysql-init/gateway_tables.sql` | 13–19 | **D1 第 1 批合入之后** |
 | P1-2 部署 | Operator 安装说明，以及 dev / staging / 压测 / prod 四档的 TidbCluster CR（放在 `mmorpg-tidb`）；TidbInitializer + 幂等初始化 Job；`k8s_deploy.ps1 -Database`（必填、带预检、生成集群标记）；三个 migrate Job 参数化；`Wait mysql` 门禁参数化；db-migrate Job（如果拍板）；infra-down 保护；`dev_tools.ps1` / `k8s_image.ps1` 透传参数；`k8s_zone_rollback.ps1` 第 0 步核对；契约测试；告警 | `deploy/k8s/manifests/tidb/*`、`deploy/k8s/manifests/go-svc/*-migrate.yaml`、`deploy/tidb-config/*`、`tools/scripts/{k8s_deploy,dev_tools,k8s_image,k8s_zone_rollback}.ps1`、`tools/scripts/tests/*`、`deploy/k8s/*-alerts.yaml` | 14–20 | P1-0；D1 第 1 批之后（同改 `k8s_deploy.ps1`） |
 | P1-3 迁移与预切工具 | `tidb_migrate.ps1`：Dumpling `--no-schemas` 并排除台账 → 导入前断言 → Lightning → sync-diff → ANALYZE；`tidb_presplit.ps1`；TiCDC 反向 changefeed；清库脚本支持 TiDB；`stress_snap` / `stress_summarize` 增加 TiDB 与 PD 段 | `tools/scripts/*` | 6–8 | P1-2 |
 | P1-4 备份恢复 | `docs/ops/tidb-br-pitr-runbook.md`；Backup / BackupSchedule / 日志备份 CR，**并在目标环境运行**；`zone_data_rollback.md` §3；`k8s_zone_rollback.ps1` Step 2/3/4/5 的 TiDB 版，包括 Redis 按 zone 范围清理 | — | 5–7 | P1-2 |
@@ -964,6 +972,7 @@ Phase 1 的逻辑库仍按 zone 分开，用按库过滤恢复就能表达「只
 19. §7 各项 P0 的负责人与时间点。
 20. Java 版：登记「不适用」，还是同步评估（§10）。
 21. （2026-10-12 G1a）D1 `route_meta` 是否设为 TiDB 缓存表（`ALTER TABLE route_meta CACHE`）：默认不设，看压测里它所在 Region 的读热度再定；设了之后冻结写最长阻塞一个读租约（D1 提案 §11.2 G1a 段）。
+    - **（2026-10-15 更正：本项已不是待拍板项，原文不删）**2026-10-13 起按容量模型 §4.1「连带修正」改定为 **S2 档起必选，S1 可选**，「默认不设、看压测再定」作废。D1 提案已同步：§11.2「TiDB 运维步骤」第 6 条（:836）、「对 §5.4 / 第 1b 批的约束」（:824）、「行片 16 → 64」的「连带修正」（:931）、§12 梯子第 2 级（:1093）。依据是容量模型 §2.6 的「route_meta 的 R1 单行读」：每次 W1 一次点读，压在单个 Region leader 上，S2 档 5k~2.5 万/s，设成缓存表后为 0（推算，没有压测）。从拍板清单角度视为已定；剩下的是执行项：`tidb-prepare` 目前不发这条语句（是否并入留给 D1 第 1b 批），BR / TiCDC 是否保留 CACHE 属性【未核实】、按不保留处理、恢复后重放（§6.2「恢复后必做」②）；冻结写最长阻塞一个读租约的代价不变，1b 的冻结超时要 ≥ 租约 + 余量。
 
 ### 9.4 未核实项
 

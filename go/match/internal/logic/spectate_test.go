@@ -44,7 +44,7 @@ func stubObserverRPCs(t *testing.T) *fakeObserverRPCs {
 	t.Helper()
 	f := &fakeObserverRPCs{}
 	prevAdd, prevRemove := addObserverFn, removeObserverFn
-	addObserverFn = func(_ string, req *battlepb.AddObserverRequest) (*battlepb.AddObserverResponse, error) {
+	addObserverFn = func(_ context.Context, _ string, req *battlepb.AddObserverRequest) (*battlepb.AddObserverResponse, error) {
 		f.mu.Lock()
 		f.adds = append(f.adds, req)
 		onAdd := f.onAdd

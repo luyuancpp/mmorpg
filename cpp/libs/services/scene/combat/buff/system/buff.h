@@ -4,7 +4,7 @@
 #include "engine/core/type_define/type_define.h"
 
 class BuffTable;
-class SkillExecutedEvent;
+struct SkillExecutedEvent;
 
 // Caster (buff applier), Parent (buff target),
 // Skill (which skill created this buff), BuffLayer (stacks),
@@ -15,11 +15,20 @@ class SkillExecutedEvent;
 class DamageEventComp;
 struct BuffEntry;
 
+// BuffListComp 是按需状态组件:「没有它」= 身上没有 buff,读路径一律 try_get,拿不到是正常分支。
+// 生命周期只有两个出入口:AddOrUpdateBuff 第一次真正插入条目时创建(唯一创建入口),
+// Update 在帧末发现列表为空时摘掉。除实体销毁外,其余路径都不创建、不摘除它。
 class BuffSystem
 {
 public:
+    // 每帧推进周期 buff、处理帧末待删;处理完列表为空的实体随即摘掉 BuffListComp。
     static void Update(double delta);
 
+    // 同一帧使用同一个同进程单调毫秒读数；显式时间入口也用于确定性回归。
+    static void Update(double delta, uint64_t nowMilliseconds);
+
+    // 返回 {错误码, 新建条目的 buff_id};叠层 / 纯驱散 / 冻结或回合战斗中丢弃时 buff_id 为 UINT64_MAX。
+    // 只有真正新建条目时才会在 parent 上创建 BuffListComp;被拒绝、纯驱散、叠层的施加不改变组件集合。
     static std::tuple<uint32_t, uint64_t>  AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
     static std::tuple<uint32_t, uint64_t> AddOrUpdateBuff(entt::entity parent, uint32_t buffTableId);
@@ -30,6 +39,7 @@ public:
 
     static void RemoveSubBuff(BuffEntry& buffComp, UInt64Set& buffsToRemove);
 
+    // 标记帧末移除;buff 不在 parent 的列表里时不标记(记错误日志)。
     static void MarkBuffForRemoval(entt::entity parent, uint64_t buffId);
 
     // Remove pending buffs at end of frame
@@ -38,6 +48,8 @@ public:
     // Check if buff can be created (checks target immunity)
     static uint32_t CanCreateBuff(entt::entity parentEntity, uint32_t buffTableId);
 
+    // 同表、同「处理后的施法者」(no_caster 时不区分施法者)的条目已存在时叠层 / 刷新并返回 true。
+    // 不改变实体的组件集合;没有 BuffListComp(身上没有 buff)时返回 false。
     static bool HandleExistingBuff(entt::entity parentEntity, uint32_t buffTableId, const SkillContextPtrComp& abilityContext);
 
     // Fired after instantiation but before activation (not yet in buff container).
@@ -61,6 +73,9 @@ public:
     // Interval-based periodic effect via StartIntervalThink. Designer-configurable.
 
     static void OnIntervalThink(entt::entity parent, uint64_t buffId);
+
+    // nowMilliseconds 必须与 Buff 的 last_time 属于同一单调时钟域。
+    static void OnIntervalThink(entt::entity parent, uint64_t buffId, uint64_t nowMilliseconds);
 
     static void OnBuffExpire(entt::entity parent, uint64_t buffId);
 
@@ -107,6 +122,12 @@ public:
         const BuffTable* buffTable,
         BuffEntry& buffComp
     );
+
+private:
+    // 有脱战父 id 时创建独立子项，并在启动回调前登记归属；UINT64_MAX 表示普通施加。
+    static std::tuple<uint32_t, uint64_t> AddOrUpdateBuffWithOwner(
+        entt::entity parent, uint32_t buffTableId,
+        const SkillContextPtrComp& abilityContext, uint64_t combatIdleOwnerId);
 };
 
 

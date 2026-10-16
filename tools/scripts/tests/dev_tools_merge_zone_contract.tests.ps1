@@ -96,15 +96,64 @@ try {
         }
     }
 
-    Test-Case '公共参数:mapping 取 data_service.yaml 的 Host、DB 缺省 0;Kafka 世代号取 db.yaml' {
+    Test-Case '公共参数:mapping 取 data_service.yaml 的 Host、DB 缺省 0;Kafka 世代号取 db.yaml;consumer group 缺省不转发' {
         Reset-MergeParams
         $script:MergeSourceZone = 1; $script:MergeTargetZone = 2; $script:MergeDbCapabilityZones = 'none'
         $a = Get-CmdArgs 'merge-zone'
         Assert-Equal '10.9.9.9:6379' (Get-ArgValue $a '-mapping-redis-addr') 'mapping 地址必须现读 data_service.yaml'
         Assert-Equal '0' (Get-ArgValue $a '-mapping-redis-db') 'yaml 里没有 DB 键时 mapping DB 必须兜底为 0(不是 15)'
         Assert-Equal '3' (Get-ArgValue $a '-kafka-topic-generation') '积压门禁 / 搬库等锁的 topic 世代号必须取 db.yaml'
-        Assert-Equal 'db_rpc_consumer_group' (Get-ArgValue $a '-kafka-group') 'consumer group 必须取 db.yaml'
+        # go/db 按 zone 拆组之后(docs/design/db-consumer-group-per-zone.md §7),db.yaml 的 GroupID 只是基名:
+        # 转发裸名会让门禁只查一个可能不存在或已退役的组。不转发时由 merge_zone 按 zone 推导候选组并认定唯一权威组。
+        Assert-True (-not ($a -contains '-kafka-group')) 'consumer group 缺省不得转发(由工具按 zone 推导)'
         Assert-NotMatch $devToolsSource '今天是 15' '参数说明里不得再把 mapping DB 写成 15(gap-fixes B6)'
+
+        $script:MergeKafkaGroup = 'custom_group'
+        foreach ($cmd in @('merge-zone', 'merge-zone-audit')) {
+            Assert-Equal 'custom_group' (Get-ArgValue (Get-CmdArgs $cmd) '-kafka-group') "${cmd}:显式 -MergeKafkaGroup 必须原样转发(本机混用裸名 / _zN 两种启动方式时用它指定实际在跑的组)"
+        }
+        $script:MergeKafkaGroup = ''
+    }
+
+    # 源码断言:dev_tools.ps1 与回滚脚本 / kafka_offset_reset.ps1 的透传口径(2026-10-15)。
+    # 分支文本按 switch 分支的起止锚点切出,只断本分支,不受参数块注释影响。
+    function Get-DevToolsBranchText([string]$Branch, [string]$NextBranch) {
+        $start = $devToolsSource.IndexOf("    `"$Branch`" {")
+        $end = $devToolsSource.IndexOf("    `"$NextBranch`" {", [Math]::Max($start, 0))
+        if ($start -lt 0 -or $end -le $start) { throw "dev_tools.ps1 里找不到 $Branch 分支(契约测试的前提被改掉了)" }
+        return $devToolsSource.Substring($start, $end - $start)
+    }
+
+    Test-Case 'k8s-zone-rollback 分支:不再转发 KafkaDrainTimeoutSec;KafkaGroup / KafkaLegacyGroup 只在非空时转发' {
+        $branch = Get-DevToolsBranchText 'k8s-zone-rollback' 'dev-robot-zones'
+        Assert-NotMatch $branch 'KafkaDrainTimeoutSec' '回滚脚本删掉了 Step 2 与 -KafkaDrainTimeoutSec,再转发会以「找不到参数」失败'
+        Assert-Match $branch 'if \(\$RollbackKafkaGroup -ne ""\)\s*\{\s*\$rbArgs\.KafkaGroup = \$RollbackKafkaGroup' 'zone 组留空由回滚脚本按 db.yaml 推导,只在显式给了时转发'
+        Assert-Match $branch 'if \(\$RollbackKafkaLegacyGroup -ne ""\)\s*\{\s*\$rbArgs\.KafkaLegacyGroup = \$RollbackKafkaLegacyGroup' 'legacy 组同上'
+        Assert-NotMatch $branch 'KafkaGroup\s*=\s*\$RollbackKafkaGroup\s*\r?\n' 'hashtable 字面量里不得无条件放 KafkaGroup'
+        $paramNames = @($ast.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
+        Assert-True ('RollbackKafkaLegacyGroup' -in $paramNames) 'param 块必须有 -RollbackKafkaLegacyGroup'
+        Assert-True (-not ('RollbackKafkaDrainTimeoutSec' -in $paramNames)) '-RollbackKafkaDrainTimeoutSec 已删除'
+        $groupDefault = ($ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'RollbackKafkaGroup' }).DefaultValue.Value
+        Assert-Equal '' $groupDefault '-RollbackKafkaGroup 缺省必须为空(由回滚脚本推导 zone 组),不能再是 legacy 共享组'
+    }
+
+    Test-Case 'kafka-offset-reset 分支:hashtable splatting,转发 -RetireGroup 与 -FinalizeHandoff' {
+        $branch = Get-DevToolsBranchText 'kafka-offset-reset' 'k8s-zone-rollback'
+        Assert-NotMatch $branch '\$kArgs\s*=\s*@\(' '数组 splatting 按位置绑定,topic 名会撞上 [int]$Partitions;必须用 hashtable'
+        Assert-Match $branch '\$kArgs\s*=\s*@\{' '必须用 hashtable splatting'
+        Assert-Match $branch 'if \(\$KafkaRetireGroup -ne ""\)\s*\{\s*\$kArgs\.RetireGroup = \$KafkaRetireGroup' '-KafkaRetireGroup 非空才转发'
+        Assert-Match $branch 'if \(\$KafkaFinalizeHandoff\)\s*\{\s*\$kArgs\.FinalizeHandoff = \$true' '-KafkaFinalizeHandoff 打开才转发'
+    }
+
+    Test-Case 'Invoke-K8sDeploy:-DbConsumerGroup 只在非空时透传,ValidateSet 为 空 / keep / zone / legacy' {
+        $param = $ast.ParamBlock.Parameters | Where-Object { $_.Name.VariablePath.UserPath -eq 'DbConsumerGroup' }
+        Assert-True ($null -ne $param) 'param 块必须有 -DbConsumerGroup'
+        $validateSet = $param.Attributes | Where-Object { $_.TypeName.Name -eq 'ValidateSet' }
+        $allowed = @($validateSet.PositionalArguments | ForEach-Object { $_.Value })
+        Assert-Equal ('|keep|zone|legacy') ($allowed -join '|') 'ValidateSet 必须是 空 / keep / zone / legacy(留空 = 不透传)'
+        Assert-Equal '' $param.DefaultValue.Value '默认留空,不覆盖 k8s_deploy.ps1 的默认值 keep'
+        $deploy = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Invoke-K8sDeploy' }, $true)
+        Assert-Match $deploy.Extent.Text 'if \(-not \[string\]::IsNullOrWhiteSpace\(\$DbConsumerGroup\)\)\s*\{\s*\$args\.DbConsumerGroup = \$DbConsumerGroup' '留空不透传,非空才透传'
     }
 
     Test-Case '帮会跳过开关:默认不转发,给了就对合服 / 撤销 / 审计同口径转发' {

@@ -1,6 +1,8 @@
 ﻿#include "item_store.h"
 
-#include <unordered_map>
+#include <algorithm>
+#include <cassert>
+#include <map>
 
 #include "engine/core/error_handling/error_handling.h"
 #include "table/code/item_table.h"
@@ -11,34 +13,41 @@
 
 // ── 身份与生命期 ─────────────────────────────────────────────────────────
 
-entt::entity ItemStore::EntityOf(Guid guid) const
-{
-    auto it = guidToEntity_.find(guid);
-    return it != guidToEntity_.end() ? it->second : entt::null;
-}
-
 ItemComp *ItemStore::Find(Guid guid)
 {
-    auto it = guidToEntity_.find(guid);
-    return it != guidToEntity_.end() ? registry_.try_get<ItemComp>(it->second) : nullptr;
+    auto it = items_.find(guid);
+    if (it == items_.end())
+    {
+        return nullptr;
+    }
+    assert(it->first == it->second.item_id());
+    return &it->second;
 }
 
 const ItemComp *ItemStore::Find(Guid guid) const
 {
-    auto it = guidToEntity_.find(guid);
-    return it != guidToEntity_.end() ? registry_.try_get<ItemComp>(it->second) : nullptr;
+    auto it = items_.find(guid);
+    if (it == items_.end())
+    {
+        return nullptr;
+    }
+    assert(it->first == it->second.item_id());
+    return &it->second;
 }
 
 ItemComp *ItemStore::Insert(ItemComp proto)
 {
+    const Guid guid = proto.item_id();
+    if (items_.contains(guid))
+    {
+        return nullptr; // 重复请求不占用入包序号,也不抬高水位。
+    }
     // 入包序号在这里、也只在这里盖章 —— Insert 是本仓库唯一的创建口径。
     //
     //   acquire_seq == 0  新实例 / 旧存档没盖过章 -> 盖当前水位;
     //   acquire_seq  > 0  快照带回来的章 -> 原样保留,并把水位抬到它之上。
     //
-    // 于是"店里的每个实例都有非零、且同包内单调"这条不变量由结构保证:
-    // 淘汰策略可以直接比大小,不必再考虑 0 与 guid 混排(两个数域混排会让
-    // 旧存档的物品永远排在最后,先进先出就挤错人)。
+    // 加载边界先调用 RaiseAcquireSeq 扫全包水位，避免零章条目与后到的既有序号冲突。
     if (proto.acquire_seq() == 0)
     {
         proto.set_acquire_seq(nextAcquireSeq_++);
@@ -48,58 +57,72 @@ ItemComp *ItemStore::Insert(ItemComp proto)
         nextAcquireSeq_ = proto.acquire_seq() + 1;
     }
 
-    auto entity = registry_.create();
-    auto &stored = registry_.emplace<ItemComp>(entity, std::move(proto));
+    auto [it, inserted] = items_.emplace(guid, std::move(proto));
+    assert(inserted); // 单线程所有权,上面的查重与插入之间没有回调。
+    return &it->second;
+}
 
-    auto [it, inserted] = guidToEntity_.emplace(stored.item_id(), entity);
-    if (!inserted)
+void ItemStore::RaiseAcquireSeq(uint64_t sequence)
+{
+    if (sequence >= nextAcquireSeq_)
     {
-        // guid 撞车 —— 把半建好的实体回滚掉,让 guidToEntity_ 与 registry_
-        // 严丝合缝地同步(孤儿实体绝不能泄漏出去)。
-        registry_.destroy(entity);
-        return nullptr;
+        nextAcquireSeq_ = sequence + 1;
     }
-    return &stored;
 }
 
 bool ItemStore::Erase(Guid guid)
 {
-    auto it = guidToEntity_.find(guid);
-    if (it == guidToEntity_.end())
-    {
-        return false;
-    }
-    // 实体也要销毁 —— 否则那个 size=0 的组件会作为孤儿留在 registry_ 里,
-    // view<ItemComp> 仍然看得见它,后续并堆会往一个已经不在索引里的实例上
-    // 灌数量,单位就静默丢了。
-    if (registry_.valid(it->second))
-    {
-        registry_.destroy(it->second);
-    }
-    guidToEntity_.erase(it);
-    return true;
+    return items_.erase(guid) != 0;
 }
 
 void ItemStore::Clear()
 {
-    for (const auto &[guid, entity] : guidToEntity_)
-    {
-        if (registry_.valid(entity))
-        {
-            registry_.destroy(entity);
-        }
-    }
-    guidToEntity_.clear();
+    items_.clear();
     // 水位跟着清空一起复位:ResetFromSnapshot 之后紧跟着的就是按快照顺序重放,
     // 那批实例会带着自己的章回来(或没章、由这里重新按顺序盖)。不复位的话,
     // 一个反复还原的实体水位会单调涨到没有意义的大数。
     nextAcquireSeq_ = 1;
 }
 
+bool ItemStore::AcquiredBefore(const ItemComp &lhs, const ItemComp &rhs)
+{
+    return lhs.acquire_seq() != rhs.acquire_seq() ? lhs.acquire_seq() < rhs.acquire_seq()
+                                                   : lhs.item_id() < rhs.item_id();
+}
+
+std::vector<const ItemStore::Items::value_type *> ItemStore::InAcquireOrder() const
+{
+    std::vector<const Items::value_type *> ordered;
+    ordered.reserve(items_.size());
+    for (const auto &entry : items_)
+    {
+        assert(entry.first == entry.second.item_id());
+        ordered.push_back(&entry);
+    }
+    std::sort(ordered.begin(), ordered.end(), [](const auto *lhs, const auto *rhs)
+              { return AcquiredBefore(lhs->second, rhs->second); });
+    return ordered;
+}
+
+std::vector<ItemStore::Items::value_type *> ItemStore::InAcquireOrder()
+{
+    std::vector<Items::value_type *> ordered;
+    ordered.reserve(items_.size());
+    for (auto &entry : items_)
+    {
+        assert(entry.first == entry.second.item_id());
+        ordered.push_back(&entry);
+    }
+    std::sort(ordered.begin(), ordered.end(), [](const auto *lhs, const auto *rhs)
+              { return AcquiredBefore(lhs->second, rhs->second); });
+    return ordered;
+}
+
 std::size_t ItemStore::TotalCountOf(uint32_t configId) const
 {
     std::size_t totalSize = 0;
-    for (const auto &[entity, item] : registry_.view<ItemComp>().each())
+    // 总量与遍历顺序无关。
+    for (const auto &[guid, item] : items_)
     {
         if (item.config_id() == configId)
         {
@@ -115,7 +138,8 @@ bool ItemStore::HasAll(const ItemCountMap &required) const
     // 思路:把需求拷一份,遍历实例逐个堆叠去抵扣,需求全部清零即满足。
     auto itemsToCheck = required;  // 拷一份,边遍历边扣减(不污染入参)
 
-    for (const auto &[entity, item] : registry_.view<ItemComp>().each())
+    // 是否足额与遍历顺序无关。
+    for (const auto &[guid, item] : items_)
     {
         auto it = itemsToCheck.find(item.config_id());  // 这个 config 在需求清单里吗
         if (it == itemsToCheck.end())
@@ -139,14 +163,15 @@ ItemCountMap ItemStore::MeasureFreeRoomPerConfig(const ItemCountMap &wanted,
                                                  const std::unordered_set<Guid> *exclude) const
 {
     ItemCountMap freeRoomByConfig;
-    for (const auto &[entity, item] : registry_.view<ItemComp>().each())
+    // 空余总量与遍历顺序无关,空堆仍可作为并堆目标。
+    for (const auto &[guid, item] : items_)
     {
         if (!wanted.contains(item.config_id()))
         {
             continue;
         }
         // 被排除的实例视同不存在 —— 它的空余不能算给这一批。
-        if (exclude != nullptr && exclude->contains(static_cast<Guid>(item.item_id())))
+        if (exclude != nullptr && exclude->contains(guid))
         {
             continue;
         }
@@ -173,8 +198,9 @@ uint32_t ItemStore::PlanStackIntoExistingStacks(const ItemComp &proto, uint32_t 
                                                 const std::unordered_set<Guid> *exclude) const
 {
     uint32_t remaining = proto.size();
-    for (auto &&[entity, item] : registry_.view<ItemComp>().each())
+    for (const auto *entry : InAcquireOrder())
     {
+        const auto &[guid, item] = *entry;
         if (remaining == 0)
         {
             break;
@@ -183,7 +209,7 @@ uint32_t ItemStore::PlanStackIntoExistingStacks(const ItemComp &proto, uint32_t 
         {
             continue;
         }
-        if (exclude != nullptr && exclude->contains(static_cast<Guid>(item.item_id())))
+        if (exclude != nullptr && exclude->contains(guid))
         {
             continue; // 视同不存在,见头文件
         }
@@ -200,7 +226,7 @@ uint32_t ItemStore::PlanStackIntoExistingStacks(const ItemComp &proto, uint32_t 
             continue;
         }
         const uint32_t fill = remaining < room ? remaining : room;
-        outFillPlan.emplace_back(StackFill{entity, fill});
+        outFillPlan.emplace_back(StackFill{guid, fill});
         remaining -= fill;
     }
     return remaining;
@@ -211,43 +237,50 @@ void ItemStore::ApplyStackFill(const std::vector<StackFill> &fillPlan,
 {
     for (const auto &plan : fillPlan)
     {
-        // 防御:计划里的实体在 plan 与 apply 之间被销毁(唯一的销毁点是淘汰腾位,
-        // 桥层腾位后必定重新规划,所以正常到不了这里)。到了就是编程错误 ——
-        // 但 entt 对失效实体 get 在 Release 下是 UB,宁可丢这一份数量并吼,
-        // 也不能拿悬空实体去解引用。
-        if (!registry_.valid(plan.entity))
+        // 淘汰后桥层必须重新规划。找不到 guid 是顺序错误,不得凭空补回已销毁实例。
+        auto *item = Find(plan.guid);
+        if (item == nullptr)
         {
-            LOG_ERROR << "ItemStore::ApplyStackFill: fill plan references a destroyed entity; "
-                      << plan.amount << " unit(s) NOT applied. The plan must be recomputed after "
-                      << "any eviction — this is a bridge-layer ordering bug.";
+            LOG_ERROR << "ItemStore::ApplyStackFill: 计划引用已销毁的 guid=" << plan.guid
+                      << ", 未写入数量=" << plan.amount << "; 淘汰后必须重新规划";
             continue;
         }
-        auto &item = registry_.get<ItemComp>(plan.entity);
-        item.set_size(item.size() + plan.amount);
+        item->set_size(item->size() + plan.amount);
 
         // 回执:并入既有堆没有铸新号,但这一堆确实是本次数量的去处,
         // 流水按它记录才能追溯到"东西进了哪个实例"。
         if (writtenGuidsOut != nullptr)
         {
-            writtenGuidsOut->push_back(item.item_id());
+            writtenGuidsOut->push_back(plan.guid);
         }
     }
 }
 
 uint32_t ItemStore::DrainStacks(uint32_t configId, uint32_t count,
+                                const DrainRank &drainRank,
                                 std::vector<StackDrain> *drainedOut)
 {
+    // 每个候选只查一次 rank,比较器不调用外部逻辑。空 rank 时仅按实例序。
+    std::vector<std::pair<uint64_t, Items::value_type *>> ordered;
+    for (auto &entry : items_)
+    {
+        assert(entry.first == entry.second.item_id());
+        if (entry.second.config_id() == configId && entry.second.size() > 0)
+        {
+            ordered.emplace_back(drainRank ? drainRank(entry.first) : uint64_t{0}, &entry);
+        }
+    }
+    std::sort(ordered.begin(), ordered.end(), [](const auto &lhs, const auto &rhs)
+              { return lhs.first != rhs.first ? lhs.first < rhs.first
+                                               : AcquiredBefore(lhs.second->second, rhs.second->second); });
     const uint32_t requested = count;
-    for (const auto &[entity, item] : registry_.view<ItemComp>().each())  // 遍历所有堆叠
+    for (const auto &[rank, entry] : ordered)
     {
         if (count == 0)
         {
             break;  // 这种物品已经抽够了
         }
-        if (item.config_id() != configId)
-        {
-            continue;  // 不是目标物品,跳过
-        }
+        auto &item = entry->second;
         const uint32_t take = count < item.size() ? count : item.size();  // 需求与库存取小
         if (take == 0)
         {
@@ -257,7 +290,7 @@ uint32_t ItemStore::DrainStacks(uint32_t configId, uint32_t count,
         count -= take;                                                    // 更新还需抽取的数量
         if (drainedOut != nullptr)
         {
-            drainedOut->push_back(StackDrain{static_cast<Guid>(item.item_id()), take});
+            drainedOut->push_back(StackDrain{entry->first, take});
         }
     }
     return requested - count;  // 实扣量:库存不足时 < requested
@@ -268,20 +301,12 @@ bool ItemStore::HasMergeablePartials() const
     // 同一个 config 一旦出现 >= 2 个未满堆(一高一低 / 两个半堆),就能合并出
     // 更少的实例。这一条完全独立于槽位紧不紧凑 —— 它是纯粹的实例层判据。
     std::unordered_map<uint32_t, uint32_t> partialCountByConfig;
-    for (auto &&[entity, item] : registry_.view<ItemComp>().each())
+    for (const auto &[guid, item] : items_)
     {
-        if (item.has_equip())
-        {
-            continue;  // 带实例数据:不参与合并(与 CanStack / MergePartialStacks 同一口径)
-        }
         LookupItemOrContinue(item.config_id());
-        if (itemRow->max_stack_size() <= 1)
+        if (!IsMergeCandidate(item, itemRow->max_stack_size()))
         {
-            continue;  // 不可叠加:不参与合并
-        }
-        if (item.size() >= itemRow->max_stack_size())
-        {
-            continue;  // 满堆:不参与合并
+            continue;
         }
         if (++partialCountByConfig[item.config_id()] >= 2)
         {
@@ -291,31 +316,24 @@ bool ItemStore::HasMergeablePartials() const
     return false;
 }
 
+bool ItemStore::IsMergeCandidate(const ItemComp &item, uint32_t maxStack)
+{
+    return !item.has_equip() && maxStack > 1 && item.size() > 0 && item.size() < maxStack;
+}
+
 void ItemStore::MergePartialStacks()
 {
-    // ① 分组 —— 把同 config_id 的"未满可叠加堆"归到一组。
-    // 直接用 config_id 做哈希分组,O(实例数),避免"逐物品线性扫已有组"的
-    // O(实例数 × 组数) 开销。它与 CanStack 等价的前提是**先把带实例数据的堆剔出去**:
-    // CanStack 对 has_equip() 的实例一律返回 false(装备被误配成可堆叠时的兜底),
-    // 这里不剔就会绕过那道兜底,把属性各不相同的几件装备并成一堆 —— 数量守恒,
-    // 属性只剩下排在前面那一件的,其余无声消失。
-    std::unordered_map<uint32_t, EntityVector> groupsByConfig;
-    for (auto &&[entity, item] : registry_.view<ItemComp>().each())
+    // 按实例序入组,最早的非空堆先填满并留下。空堆仅交给回收,装备不参与并堆。
+    std::map<uint32_t, std::vector<ItemComp *>> groupsByConfig;
+    for (auto *entry : InAcquireOrder())
     {
-        if (item.has_equip())
-        {
-            continue;  // 带实例数据:不参与合并
-        }
+        auto &item = entry->second;
         LookupItemOrContinue(item.config_id());  // 查物品表(查不到跳过),注入 itemRow
-        if (itemRow->max_stack_size() <= 1)
+        if (!IsMergeCandidate(item, itemRow->max_stack_size()))
         {
-            continue;  // 不可叠加:无可合并,跳过
+            continue;
         }
-        if (item.size() >= itemRow->max_stack_size())
-        {
-            continue;  // 已经是满堆:无需参与合并,跳过
-        }
-        groupsByConfig[item.config_id()].emplace_back(entity);  // 未满堆,按 config 入组
+        groupsByConfig[item.config_id()].push_back(&item);
     }
 
     // ② 合并每组 —— 把组内总数量重新分配:前几个填满,最后一个放余数,其余清 0。
@@ -327,20 +345,20 @@ void ItemStore::MergePartialStacks()
         const uint32_t maxStack = itemRow->max_stack_size();
 
         // 先求出该 config 这些未满堆里的总数量。
-        uint32_t totalStackSize = 0;
-        for (auto &entity : group)
+        uint64_t totalStackSize = 0;
+        for (const auto *item : group)
         {
-            totalStackSize += registry_.get<ItemComp>(entity).size();
+            totalStackSize += item->size();
         }
 
         // 前面的实例逐个填满 maxStack,直到剩余量能塞进一个为止。
         std::size_t index = 0;
         for (; index < group.size(); ++index)
         {
-            auto &currentItem = registry_.get<ItemComp>(group[index]);
+            auto &currentItem = *group[index];
             if (totalStackSize <= maxStack)
             {
-                currentItem.set_size(totalStackSize);  // 余量一堆放下,合并完成
+                currentItem.set_size(static_cast<uint32_t>(totalStackSize)); // 已确认余量不超过单堆上限。
                 ++index;                               // 这一个已用,后面的都要清空
                 break;
             }
@@ -351,14 +369,15 @@ void ItemStore::MergePartialStacks()
         // 合并后多出来的实例全部清空,交给 CollectEmptyInstances 统一回收。
         for (; index < group.size(); ++index)
         {
-            registry_.get<ItemComp>(group[index]).set_size(0);
+            group[index]->set_size(0);
         }
     }
 }
 
 bool ItemStore::HasEmptyInstances() const
 {
-    for (const auto &[entity, item] : registry_.view<ItemComp>().each())
+    // 是否存在空堆与遍历顺序无关。
+    for (const auto &[guid, item] : items_)
     {
         if (item.size() == 0)
         {
@@ -371,11 +390,11 @@ bool ItemStore::HasEmptyInstances() const
 GuidVector ItemStore::CollectEmptyInstances() const
 {
     GuidVector empties;
-    for (const auto &[entity, item] : registry_.view<ItemComp>().each())
+    for (const auto *entry : InAcquireOrder())
     {
-        if (item.size() == 0)
+        if (entry->second.size() == 0)
         {
-            empties.emplace_back(static_cast<Guid>(item.item_id()));
+            empties.push_back(entry->first);
         }
     }
     return empties;

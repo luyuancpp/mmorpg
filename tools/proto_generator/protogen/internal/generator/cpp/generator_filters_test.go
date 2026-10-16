@@ -63,10 +63,3 @@ func TestSceneNodeHostedProtocolHandler(t *testing.T) {
 		t.Fatalf("did not expect scene player service in non-player hosted filter")
 	}
 }
-
-func TestSceneNodeReceivedFilters(t *testing.T) {
-	sceneNormal := asMethods(buildMethod("proto/scene/scene.proto", messageoption.NodeType_NODE_SCENE, true, false, false))
-	if IsSceneNodeReceivedProtocolResponseHandler(&sceneNormal) {
-		t.Fatalf("did not expect scene node to treat own scene service as external response")
-	}
-}

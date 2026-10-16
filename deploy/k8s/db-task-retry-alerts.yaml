@@ -1,0 +1,111 @@
+# Prometheus alert rules for go/db retry / deferral / dead-letter (玩家存盘的延后、重试与死信)。
+#
+# 来源:docs/design/db-task-store-unavailable-deferral.md §3.7 / §3.8(L-04 第 1 批)。
+# 指标定义:go/db/internal/metrics/metrics.go(task_deferred_total / task_dead_letter_total /
+# task_read_abandoned_total / retry_queue_length / store_cooldown_stores)。
+#
+# Install as a PrometheusRule CR (kube-prometheus stack),与 owner-epoch-alerts.yaml 同法:
+#   kubectl apply -n observability -f deploy/k8s/db-task-retry-alerts.yaml
+#
+# Scrape prerequisites:
+#   - go/db 的 MetricsListenAddr 已配置(K8s 上由 tools/scripts/k8s_deploy.ps1 的 db ConfigMap 写 ":9160")。
+#   - A ServiceMonitor or PodMonitor pointed at that port.
+#   前提不满足时这些告警是哑的;上线检查见 docs/ops/godb-pipeline-launch-todo.md。
+#
+# 口径:
+#   - ready 与 dead 是同一个 db_task topic 所有 go/db 实例共用的 Redis 列表,每个副本报的是同一个数,
+#     所以按 namespace(一个 zone 一个 namespace)取 max,不求和。
+#   - 计数器在进程启动时就以 0 建出全部 reason 的序列,increase 能抓到第一次。
+#   - 本批没有死信重放工具(设计稿 §4.1,第 2 批)。在它落地之前死信告警定为 warning,处置方式写在 description 里。
+#
+# Severity conventions(与 scene-manager-alerts.yaml 相同):
+#   critical = pager, someone wakes up
+#   warning  = next-business-hours channel
+#   info     = dashboard annotation / trend signal
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: db-task-retry-alerts
+  labels:
+    app: db
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: db-task.retry-and-dead-letter
+      interval: 30s
+      rules:
+        # 写任务正在因为存储问题延后:MySQL 在落后于 Redis 里的在线数据。持续不退就说明库没恢复。
+        # 只看写:读任务遇到存储不可用时立即回失败回执,不延后。
+        - alert: DbTaskDeferredByStore
+          expr: |
+            sum by (namespace, reason) (
+              rate(db_task_deferred_total{op="write", reason=~"conn_refused|conn_lost|store_readonly|store_busy|store_cooldown|store_open_failed"}[5m])
+            ) > 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.namespace }} 的存盘因存储问题延后({{ $labels.reason }})"
+            description: >-
+              过去 5 分钟写任务以每秒约 {{ $value | printf "%.2f" }} 条的速率因 {{ $labels.reason }} 延后。
+              这些写不耗重试预算,会一直留在 Redis 的 kafka:retry:queue:{topic} 里等库恢复;
+              在库恢复之前,不要重启或清空这台 Redis —— 它们只在那里有一份。
+              conn_refused = 连接数满(查 MySQL Threads_connected 与 mysql-connection-alerts.yaml);
+              conn_lost / store_cooldown = 连不上(查 MySQL 是否在重启、网络);store_readonly = 只读(主从切换);
+              store_busy = 锁等待超时 / 死锁 / TiDB 写冲突(查长事务与 DDL)。
+
+        # 探活确认整库不可达,进入冷却。期间该库上的写全部延后,读立即失败。
+        - alert: DbStoreCoolingDown
+          expr: |
+            sum by (namespace, pool) (db_store_cooldown_stores) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.namespace }} 的 go/db 判定 {{ $labels.pool }} 类库不可达"
+            description: >-
+              {{ $value }} 个 {{ $labels.pool }} 类的库被探活确认连不上,go/db 已停止向它发 SQL(每约 5 秒探活一次)。
+              存盘在延后,不会丢;需要读库的冷登录会直接失败。查 MySQL 是否在重启、网络是否可达。
+
+        # 有新任务进了死信。写任务进死信 = 这笔存盘不会自动落库。
+        - alert: DbTaskDeadLetterAdded
+          expr: |
+            sum by (namespace, reason) (increase(db_task_dead_letter_total[10m])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.namespace }} 有任务进了死信({{ $labels.reason }})"
+            description: >-
+              过去 10 分钟约 {{ $value | printf "%.0f" }} 条任务进了 kafka:dead:queue:{topic}(原因 {{ $labels.reason }})。
+              本批没有死信重放工具。处置:保留现场,不要清空列表;按 go/db 日志里含 dead queue / quarantined 的行归因;上报负责人。
+              不要用 redis-cli 把条目搬回 ready:budget_exhausted 的条目里重试次数已满,下一拍认领时会被立刻送回死信。
+
+        # 死信里有存量。上线前请先记录各 zone 的存量(LLEN),否则存量环境部署后会一直处于告警态。
+        - alert: DbTaskDeadLetterNonEmpty
+          expr: |
+            max by (namespace) (db_retry_queue_length{queue="dead"}) > 0
+          for: 1h
+          labels:
+            severity: info
+          annotations:
+            summary: "{{ $labels.namespace }} 的死信列表非空"
+            description: >-
+              kafka:dead:queue:{topic} 里有 {{ $value }} 条。它不会自己变空;处置方式同 DbTaskDeadLetterAdded。
+
+        # 重试队列排不动:库长期不可用,或者重试本身在失败。ready 里每条都是一整行玩家数据,Redis 内存在涨。
+        # 阈值待压测确认(docs/ops/godb-pipeline-launch-todo.md)。
+        - alert: DbTaskRetryQueueGrowing
+          expr: |
+            max by (namespace) (db_retry_queue_length{queue="ready"}) > 1000
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.namespace }} 的重试队列持续积压"
+            description: >-
+              kafka:retry:queue:{topic} 已有 {{ $value }} 条且 10 分钟没有降下来。
+              先看 DbTaskDeferredByStore / DbStoreCoolingDown 是否同时在响;都没响时按 db_task_deferred_total 的 reason 查原因。
+              同时核对共享 Redis 的内存余量。

@@ -38,3 +38,11 @@ constexpr uint32_t SceneSceneClientPlayerNotifyActorListDestroyIndex = 7;
 constexpr uint32_t SceneSceneClientPlayerTravelToZoneMessageId = 226;
 constexpr uint32_t SceneSceneClientPlayerTravelToZoneIndex = 8;
 #define SceneSceneClientPlayerTravelToZoneMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(8)
+
+constexpr uint32_t SceneSceneClientPlayerGetSyncDigestMessageId = 253;
+constexpr uint32_t SceneSceneClientPlayerGetSyncDigestIndex = 9;
+#define SceneSceneClientPlayerGetSyncDigestMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(9)
+
+constexpr uint32_t SceneSceneClientPlayerNotifySyncDigestMessageId = 254;
+constexpr uint32_t SceneSceneClientPlayerNotifySyncDigestIndex = 10;
+#define SceneSceneClientPlayerNotifySyncDigestMethod  ::SceneSceneClientPlayer_Stub::descriptor()->method(10)

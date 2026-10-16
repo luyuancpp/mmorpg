@@ -30,6 +30,27 @@ type BlockEntry struct {
 	SinceMs         int64
 }
 
+// BlockEffect 是一次 Block 在**同一事务**里对被拉黑方可见状态造成的实际效果。
+// logic 只按它决定要不要给被拉黑方 bump 落地摘要(docs/design/landing-recovery-sync-digest.md §3.3)。
+//
+// 为什么由 repo 报告、而不是 logic 自己判断:Block 的目标可以是任意 player_id,无条件给对方 bump,
+// 客户端循环拉黑不同目标就能在核心 Redis 上为任意 id 造出 30 天的摘要键;事务外预读又拿不准
+// (读与写之间关系可能已变)。只有守卫之内实际执行的那几条语句的 RowsAffected 是确定的。
+//
+// 零值 = 被拉黑方的任何拉取结果都没变(拉黑陌生人、重复拉黑且没有残留可收敛)。
+// 拉黑者自己的视图(黑名单、好友列表、申请列表)不在这里表达,由 logic 无条件 bump。
+type BlockEffect struct {
+	// EdgeRemoved:⑤ 删好友边的语句实际删掉了行(两个方向的 RowsAffected 合计 > 0),
+	// 即被拉黑方的好友列表(GetFriendList)变了。
+	// 只剩 me→target 一条单边残留时也会为真,而对方的列表其实没变 —— 多 bump 只是多拉一次;
+	// 单边残留本身是该由修复流程处理的异常态,不为它再拆一个方向。
+	EdgeRemoved bool
+	// OutboundPendingRejected:⑥ 中 me→target 那条置 rejected 的语句实际改了行,
+	// 即落在被拉黑方收件箱(GetPendingRequests 只列入站)里的那条申请没了。
+	// 反方向 target→me 落在拉黑者自己的收件箱,不是对方可见的效果,不在这里报告。
+	OutboundPendingRejected bool
+}
+
 // insertBlockRowSQL 是 Block ④ 写黑名单的语句,用 ODKU 而不是 INSERT IGNORE 的原因见该步说明。
 const insertBlockRowSQL = "INSERT INTO friend_block (player_id, blocked_player_id, since_ms) VALUES (?, ?, ?)" +
 	" ON DUPLICATE KEY UPDATE player_id = player_id"
@@ -47,18 +68,21 @@ const insertBlockRowSQL = "INSERT INTO friend_block (player_id, blocked_player_i
 //	      ② 已拉黑?(锁定读)→ 幂等提交,不占新名额
 //	      ③ 名额(守卫内普通读 COUNT,见该步说明)≥ maxBlocks → ErrBlockListFull
 //	      ④ 写 friend_block(INSERT … ON DUPLICATE KEY UPDATE,不是 INSERT IGNORE,见该步说明)
-//	      ⑤ 删双向好友边 + 按 RowsAffected 减 friend_count
-//	      ⑥ 两个方向的 pending 置 rejected 并写 updated_ms
+//	      ⑤ 删双向好友边 + 按 RowsAffected 减 friend_count(删掉的行数 → BlockEffect.EdgeRemoved)
+//	      ⑥ 两个方向的 pending 置 rejected 并写 updated_ms(me→target 那条的 RowsAffected → OutboundPendingRejected)
 //	  Commit
 //	提交后 → 失效双方的好友缓存与申请缓存
 //
+// 返回的 BlockEffect 只在 err == nil 时有意义(出错时为零值):它取自**提交了的那一遍**事务里
+// ⑤⑥ 的 RowsAffected,所以是这次调用对被拉黑方的实际效果,而不是事务外的推测。
+//
 // **不推送**:被拉黑的人不该收到"你被拉黑了"的通知(照 A 仓的原则),
 // 拉黑者自己也不需要推送(他的 RPC 回包就是结果)。
-func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64, maxBlocks uint32) error {
+func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64, maxBlocks uint32) (BlockEffect, error) {
 	// 拉黑自己没有任何语义,而且会让 ⑤ 的双向删边退化成删同一行两次。
 	// 与 AddFriend 一样,logic 层已经先挡过一遍(§3.4),这里是防御性的第二道。
 	if playerID == 0 || targetPlayerID == 0 || playerID == targetPlayerID {
-		return errInvalidPlayerPair(playerID, targetPlayerID)
+		return BlockEffect{}, errInvalidPlayerPair(playerID, targetPlayerID)
 	}
 
 	// 事务外快速失败:名额已满时直接拒,**不** ensure 容量行。
@@ -82,14 +106,14 @@ func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64,
 			`SELECT COUNT(*), COUNT(CASE WHEN blocked_player_id = ? THEN 1 END)
 			 FROM friend_block WHERE player_id = ?`,
 			targetPlayerID, playerID).Scan(&blocked, &alreadyBlocked); err != nil {
-			return fmt.Errorf("probe block count %d: %w", playerID, err)
+			return BlockEffect{}, fmt.Errorf("probe block count %d: %w", playerID, err)
 		}
 		// alreadyBlocked > 0 时**不能**按名额拒:重复拉黑同一个人是幂等成功、不占新名额
 		// (与事务内 ② 的判定是同一条规则)。漏掉这个条件会让名单满之后
 		// "再拉黑一次同一个人"被报满,玩家会以为拉黑失效了 —— 而且那时的 Block 还要靠
 		// ⑤⑥ 去收敛残留的好友边与 pending,直接拒会把收敛一起跳过。
 		if alreadyBlocked == 0 && blocked >= maxBlocks {
-			return ErrBlockListFull
+			return BlockEffect{}, ErrBlockListFull
 		}
 	}
 
@@ -102,6 +126,10 @@ func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64,
 	// 而且只有锁住 target 才能与"以 target 为发起方的 AddFriend / AcceptFriend"互斥 ——
 	// 只锁 me 的话,并发的 AcceptFriend(target 视角)仍能在本事务删边之后把边插回来,
 	// 结果是"既是好友又在黑名单里"。
+	//
+	// effect 由 body 在 ⑤⑥ 里**整体覆盖赋值**(不是累加):body 在一次 runGuardedWrite 里至多跑一遍,
+	// 这样写即便将来重试形态变了,留下的也只会是真正走到 Commit 的那一遍的效果。
+	var effect BlockEffect
 	err := r.runGuardedWrite(ctx, playerID, targetPlayerID, func(ctx context.Context, tx *sql.Tx, _ map[uint64]uint32) error {
 		// 一个事务只取一次时刻:拉黑时间与被取消申请的 updated_ms 表达的是同一件事发生的时间,
 		// 分两次 time.Now() 会让它们相差几毫秒,排查时序时反而要先怀疑是不是两次操作。
@@ -161,9 +189,12 @@ func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64,
 		//
 		// 即使 ② 判定"早就拉黑过"也照样执行:拉黑与删边是两条独立的写,
 		// 历史上可能出现"拉黑成功但删边没成功"(旧版本、人工改库),重复调用应当把它收敛干净。
-		if err := deleteFriendEdges(ctx, tx, playerID, targetPlayerID, nowMs); err != nil {
+		// 实际删掉的行数报告给 logic(EdgeRemoved):重复拉黑且没有残留时它是 0,对方不该被 bump。
+		removedEdges, err := deleteFriendEdges(ctx, tx, playerID, targetPlayerID, nowMs)
+		if err != nil {
 			return err
 		}
+		effect.EdgeRemoved = removedEdges > 0
 
 		// ⑥ 取消两人之间**两个方向**的 pending 申请:两条按主键的点更新,同一事务内,原子性不变。
 		// 置 rejected 而不是删行:玩家的申请列表要能解释"我发的申请怎么没了";
@@ -171,17 +202,28 @@ func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64,
 		// 否则这些行在 sweep 眼里永远停在 0。
 		// ⚠ 不要合回一条 `status=? AND ((…) OR (…))`:真库上它走 idx_status_updated 的 status 前缀
 		// (type=range),扫的是全服所有 pending 行,先二级索引后主键,与别的玩家对上"先主键"的写可以成环
-		// (friend_repo.go 顶部锁序说明 (6))。
-		for _, dir := range [2][2]uint64{{playerID, targetPlayerID}, {targetPlayerID, playerID}} {
-			if _, err := tx.ExecContext(ctx, cancelPendingRequestSQL,
-				requestStatusRejected, nowMs, dir[0], dir[1], requestStatusPending); err != nil {
+		// (friend_repo.go 顶部锁序说明 (6))。分两条也正好让两个方向的 RowsAffected 各自可读。
+		//
+		// rejected[0] 是 me→target(落在对方收件箱,报告为 OutboundPendingRejected),
+		// rejected[1] 是 target→me(落在我自己的收件箱,logic 对本人无条件 bump,不需要报告)。
+		// WHERE 带 status = pending,所以 RowsAffected 只数"真的从 pending 改成 rejected"的行,
+		// 已是终态的历史行不会被算成效果。
+		var rejected [2]int64
+		for i, dir := range [2][2]uint64{{playerID, targetPlayerID}, {targetPlayerID, playerID}} {
+			res, err := tx.ExecContext(ctx, cancelPendingRequestSQL,
+				requestStatusRejected, nowMs, dir[0], dir[1], requestStatusPending)
+			if err != nil {
 				return fmt.Errorf("cancel pending request %d->%d: %w", dir[0], dir[1], err)
 			}
+			if rejected[i], err = res.RowsAffected(); err != nil {
+				return fmt.Errorf("read rows affected of cancel pending request %d->%d: %w", dir[0], dir[1], err)
+			}
 		}
+		effect.OutboundPendingRejected = rejected[0] > 0
 		return nil
 	})
 	if err != nil {
-		return err
+		return BlockEffect{}, err
 	}
 
 	// 四个键都要失效:双方的好友列表(⑤ 删了边)、双方的申请列表(⑥ 两个方向的 pending 都动了)。
@@ -192,7 +234,7 @@ func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64,
 		pendingRequestsKey(playerID),
 		pendingRequestsKey(targetPlayerID),
 	)
-	return nil
+	return effect, nil
 }
 
 // Unblock 从黑名单移除,幂等(删不到行不报错)。**不自动恢复好友关系** ——
@@ -222,7 +264,7 @@ func (r *FriendRepo) Unblock(ctx context.Context, playerID, targetPlayerID uint6
 
 // ListBlocks 返回该玩家拉黑的人。
 //
-// **不缓存**,与好友列表 / 申请列表不同:
+// **不缓存**；好友列表 / 申请列表也采用权威 SQL 读取：
 //   - 打开黑名单界面是低频操作,缓存收益近乎为零;
 //   - 而缓存的代价是要再维护一套失效路径(Block / Unblock 都得记得失效),
 //     少维护一条就会出现"解除拉黑后对方还在名单里"。KISS(AGENTS §11.2)。

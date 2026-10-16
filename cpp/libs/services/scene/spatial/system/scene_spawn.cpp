@@ -1,4 +1,5 @@
 #include "scene_spawn.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <cmath>
 
@@ -36,8 +37,8 @@ void WriteLocation(Vector3& dst, const Location& src)
 
 uint64_t GuidForLog(const entt::entity player)
 {
-	const auto* g = tlsEcs.actorRegistry.try_get<Guid>(player);
-	return g ? *g : 0;
+	const auto* g = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+	return g ? g->value : 0;
 }
 
 }  // namespace
@@ -89,7 +90,7 @@ bool SceneSpawnSystem::IsUnsetLocation(const Vector3& location)
 }
 
 bool SceneSpawnSystem::EnsureValidEnterLocation(
-	const entt::entity player, const entt::entity scene, const bool useSceneSpawn)
+	const entt::entity player, const SceneEntity scene, const bool useSceneSpawn)
 {
 	const auto* sceneInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(scene);
 	if (sceneInfo == nullptr)

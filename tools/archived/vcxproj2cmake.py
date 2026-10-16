@@ -10,7 +10,7 @@ Run from repo root:
 Current project structure (active nodes: gate + scene + battle):
   - third_party/         → navmesh/hexagon static lib
   - cpp/generated/       → proto, rpc, table, grpc_client, proto_helpers
-  - cpp/libs/engine/     → core, config, session, infra, thread_context
+  - cpp/libs/engine/     → core, config, session, infra, thread_context, muduo_grpc
   - cpp/libs/modules/    → bag, mission, currency, etc.
   - cpp/libs/services/   → battle, scene, gate, player (header-only)
   - cpp/nodes/gate/      → gate executable
@@ -50,6 +50,9 @@ SKIP_INCLUDE_PATTERNS = [
     "third_party/grpc/third_party/abseil-cpp",
     "third_party/grpc/third_party/re2",
     "third_party/grpc/third_party/utf8_range",
+    # Windows 上 build_nghttp2.ps1 的安装目录;Linux 的 nghttp2 头由 setup_dependencies.sh
+    # 装到 /usr/local/include(下面每个工程都会加这一项)。
+    "third_party/nghttp2/install_vs2026_dbg",
 ]
 
 # ── External link libraries (installed by setup_dependencies.sh) ────────────
@@ -59,6 +62,15 @@ EXTERNAL_LIBS = [
     # gRPC + protobuf (CMake imported targets from find_package)
     "gRPC::grpc++", "gRPC::grpc++_reflection", "gRPC::grpc", "gRPC::gpr",
     "protobuf::libprotobuf",
+    # nghttp2 静态核心库(setup_dependencies.sh 第 8 段装到 /usr/local/lib/libnghttp2.a),
+    # 供 muduo_grpc 使用;排在 --end-group 之后,组内的 muduo_grpc 引用都能解析到。
+    #
+    # --exclude-libs:libcurl.so 自己依赖系统的 libnghttp2.so.14(apt 的 libcurl4 带进来的,
+    # 版本比我们钉的旧)。不加这一项时,链接器会把可执行文件里静态链入的 nghttp2_* 符号导出到
+    # 动态符号表(因为 libcurl.so 引用了它们),运行期 libcurl 会一部分调到我们的 1.70、
+    # 一部分调到系统 .so —— 两个版本的内部结构混用。隐藏静态库的符号后各用各的。
+    "-Wl,--exclude-libs,libnghttp2.a",
+    "nghttp2",
     # muduo (from muduo-linux cmake build, no find_package)
     "muduo_protobuf_codec", "muduo_hiredis", "muduo_net", "muduo_base",
     # other third-party (installed to /usr/local/lib)
@@ -359,49 +371,54 @@ if __name__ == "__main__":
 
     # ── Static libraries (build order matters) ──
 
-    print("[1/15] third_party (navmesh/hexagon)")
+    print("[1/16] third_party (navmesh/hexagon)")
     generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
 
-    print("[2/15] generated/proto")
+    print("[2/16] generated/proto")
     generate("./cpp/generated/proto/proto.vcxproj", "./cpp/generated/proto/", "lib")
 
-    print("[3/15] generated/rpc")
+    print("[3/16] generated/rpc")
     generate("./cpp/generated/rpc/rpc.vcxproj", "./cpp/generated/rpc/", "lib")
 
-    print("[4/15] generated/proto_helpers")
+    print("[4/16] generated/proto_helpers")
     generate("./cpp/generated/proto_helpers/proto_helpers.vcxproj", "./cpp/generated/proto_helpers/", "lib")
 
-    print("[5/15] generated/table")
+    print("[5/16] generated/table")
     generate("./cpp/generated/table/table.vcxproj", "./cpp/generated/table/", "lib")
 
-    print("[6/15] generated/grpc_client")
+    print("[6/16] generated/grpc_client")
     generate("./cpp/generated/grpc_client/grpc_client.vcxproj", "./cpp/generated/grpc_client/", "lib")
 
-    print("[7/15] engine/core")
+    print("[7/16] engine/core")
     generate("./cpp/libs/engine/core/core.vcxproj", "./cpp/libs/engine/core/", "lib")
 
-    print("[8/15] engine/config")
+    print("[8/16] engine/config")
     generate("./cpp/libs/engine/config/config.vcxproj", "./cpp/libs/engine/config/", "lib")
 
-    print("[9/15] engine/session")
+    print("[9/16] engine/session")
     generate("./cpp/libs/engine/session/session.vcxproj", "./cpp/libs/engine/session/", "lib")
 
-    print("[10/15] engine/infra")
+    print("[10/16] engine/infra")
     generate("./cpp/libs/engine/infra/infra.vcxproj", "./cpp/libs/engine/infra/", "lib")
 
-    print("[11/15] engine/thread_context")
+    print("[11/16] engine/thread_context")
     generate("./cpp/libs/engine/thread_context/thread_context.vcxproj", "./cpp/libs/engine/thread_context/", "lib")
 
-    print("[12/15] modules")
+    # muduo_grpc 只依赖 muduo 头与 nghttp2(core 只前向声明它的通道类型,不链接它);
+    # 目前只有 nodes/gate 链接它,放在 engine 库末尾、各节点之前。
+    print("[12/16] engine/muduo_grpc")
+    generate("./cpp/libs/engine/muduo_grpc/muduo_grpc.vcxproj", "./cpp/libs/engine/muduo_grpc/", "lib")
+
+    print("[13/16] modules")
     generate("./cpp/libs/modules/modules.vcxproj", "./cpp/libs/modules/", "lib")
 
-    print("[13/15] services/battle")
+    print("[14/16] services/battle")
     generate("./cpp/libs/services/battle/battle.vcxproj", "./cpp/libs/services/battle/", "lib")
 
-    print("[14/15] services/scene")
+    print("[15/16] services/scene")
     generate("./cpp/libs/services/scene/scene.vcxproj", "./cpp/libs/services/scene/", "lib")
 
-    print("[15/15] services/gate")
+    print("[16/16] services/gate")
     generate("./cpp/libs/services/gate/gate.vcxproj", "./cpp/libs/services/gate/", "lib")
 
     # NOTE: services/player is header-only (0 .cpp files) — no CMake needed

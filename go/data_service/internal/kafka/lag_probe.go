@@ -27,7 +27,8 @@ type lagTarget struct {
 // 后者是各实例各自看到的局部值,rebalance 后旧主人的数留成陈值。要的是 broker 上「这个组在这个 topic 上还差多少」,
 // 与哪个实例拿着哪个分区无关 —— 每个实例报同一个数,告警取 max。
 //
-// 探不到只记 lag_probe_total{result="error"} 并在下一轮重建连接,gauge 保留上一次的值(由 LagProbeBlind 告警兜)。
+// 探不到只记 lag_probe_total{result="error"} 并在下一轮重建连接,gauge 保留上一次的值
+// (陈值会参与告警的 max;由按实例触发的 LagProbeBlind 点名)。
 // 每一轮用 safego.Run 包住,一轮 panic 不杀循环。第一轮在 interval 之后。
 func runLagProbe(ctx context.Context, brokers []string, interval time.Duration, targets []lagTarget) {
 	var prober *kafkautil.GroupLagProber
@@ -80,11 +81,13 @@ func probeLagOnce(prober *kafkautil.GroupLagProber, brokers []string, targets []
 			logx.Errorf("[%s] lag probe failed group=%s topic=%s: %v", t.consumer, t.group, t.topic, err)
 			continue
 		}
-		metrics.SetKafkaConsumerLag(t.consumer, lag.Lag, lag.RetentionGap)
+		metrics.SetKafkaConsumerLag(t.consumer, lag.Lag, lag.MaxPartitionLag, lag.RetentionGap)
 		metrics.ObserveKafkaConsumerLagProbe(t.consumer, metrics.KafkaResultOK)
 		if lag.RetentionGap > 0 {
 			// 审计数据已经丢了:保留期(retention.ms 或每分区 retention.bytes)删掉了这个组还没消费到的消息。
-			// 精确条数以 [kafka-go] 的 out-of-range 跳转日志为准(消费者跳过并提交之后本值会自行归零)。
+			// 本行是采样值,只是下界:消费者越过缺口并提交之后本值自行归零。精确条数看 [kafka-go] 的日志(口径见 newReader):
+			// 运行中被保留期追上是 `skipping from offset` 行;reader (重新)初始化时 kafka-go 静默跳到日志起点,
+			// 看 `starting at offset` 与 `seeking to offset` 两行之差。
 			logx.Errorf("[%s] AUDIT DATA LOST: %d message(s) of topic %s were deleted by retention before consumer group %s consumed them (lag=%d); see docs/ops/audit-topic-generation-bump-runbook.md",
 				t.consumer, lag.RetentionGap, t.topic, t.group, lag.Lag)
 		}

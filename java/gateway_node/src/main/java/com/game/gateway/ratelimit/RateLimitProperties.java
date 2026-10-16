@@ -34,7 +34,12 @@ public class RateLimitProperties {
     /** Per-IP burst capacity. */
     private long ipBurst = 10;
 
-    /** Same-account cooldown window (ms) between /api/login calls. */
+    /**
+     * 账号冷却窗口(ms):同一端点上同一(账号, 客户端 IP)两次请求的最小间隔。
+     * /api/login 与 /api/assign-gate 按 scope 各自计时;带 queue_token 的 assign-gate 重入不参与冷却
+     * (G4b-J0);键含客户端 IP 的原因见 {@link AssignGateRateLimiter} 类注释(G4b-J2)。
+     * 冷却在进程内,每个 gateway 副本各一份。
+     */
     private long accountCooldownMs = 5000;
 
     /** Hard queue timeout (ms). After this the client gets QUEUE_TIMEOUT. */

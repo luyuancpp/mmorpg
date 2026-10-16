@@ -64,6 +64,8 @@ constexpr uint64_t kSampleMask = 0x3F;
 thread_local uint64_t tlsDeferredLogSeq{0};
 thread_local uint64_t tlsRecoveredLogSeq{0};
 thread_local uint64_t tlsPlayerChangedLogSeq{0};
+// 链路判定通过、SendRequest 却在本地拒绝(竞态或编程错误),同样 1/64 采样。
+thread_local uint64_t tlsSendRejectedLogSeq{0};
 
 bool ShouldLogSampled(uint64_t &seq)
 {
@@ -78,22 +80,22 @@ int64_t ElapsedMs(const Clock::time_point from, const Clock::time_point to)
 // 向 scene 转发 PlayerEnterGameNode,如实返回"有没有真的交出去"。
 // Gate is the bridge: it holds the TCP session and routes the RPC to the correct Scene node.
 //
-// 必须在调用 CallRemoteMethod **之前**判定链路:
-//   - RpcClient::CallRemoteMethod 在未连接时只打一条 ERROR 就静默丢弃,调用方拿不到失败;
+// 必须在调用 SendRequest **之前**判定链路:
+//   - RpcClient::SendRequest 在未连接时返回 false 并计数,但它只知道"有没有连接",不知道"当前连接上握过手没有";
 //   - TCP 连上后 registration_manager 要 RunAfter(0.5) 才发 NodeHandshake,scene 收到握手才为本 gate 挂
 //     RpcSession;在那之前发出的进场,scene 会照常载入玩家,但 NotifyEnterScene 等推送找不到 RpcSession
 //     会被丢掉(player_message_utils.cpp)。所以要求"已连上,且在**当前**连接上握过手"。
 // 这些都是"本地确定没发出去",调用方可以安全地补发(I1);一旦返回 kSent 就不再重发。
 //
-// playerId / homeZoneId / ownerEpoch 一律从会话取:路由到达时已把最新决策写进会话,BindSession 晚到的补发
-// 读不到路由事件,只能从会话取。sceneId 显式传入:会话的 sceneId 只在转发成功后才提交,调用时还是旧图。
+// playerId / homeZoneId / ownerEpoch / loginGeneration 一律从会话取:路由到达时已把最新决策写进会话,BindSession
+// 晚到的补发读不到路由事件,只能从会话取。sceneId 显式传入:会话的 sceneId 只在转发成功后才提交,调用时还是旧图。
 SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_t enterGsType,
-                                        const uint64_t sceneNodeEntityId, const SessionInfo &session,
+                                        const entt::entity sceneNodeEntityId, const SessionInfo &session,
                                         const uint64_t sceneId)
 {
     // LOGIN_NONE(0) 用于已登录角色换图;要不要转发、以什么类型转发由 ApplyRoute 决定。
     auto &sceneRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
-    const entt::entity sceneEntity{sceneNodeEntityId};
+    const auto sceneEntity = sceneNodeEntityId;
     if (!sceneRegistry.valid(sceneEntity))
     {
         return SceneForwardResult::kNodeNotFound;
@@ -128,25 +130,42 @@ SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_
     // 0 也照发——它是 scene 侧"兼容窗口/未知"的信号,gate 擅自填进程 zone 会把 fail-closed 变成静默落错库。
     req.set_home_zone_id(session.homeZoneId);
     req.set_owner_epoch(session.ownerEpoch);
+    // 登录代次盖章(scene-enter-session-fence.md §4):会话上记的是本会话、本角色见过的最高值,scene 自发的
+    // 换图路由(0)也由它盖章。0 同样照发 —— 上游未带代次,由 scene 栅栏按版本 0 规则处理,gate 不补值。
+    req.set_login_generation(session.loginGeneration);
 
-    (*rpcClient)->CallRemoteMethod(ScenePlayerEnterGameNodeMessageId, req);
+    // 单向发送(id = 0,不要应答):PlayerEnterGameNode 返回 Empty,线上与旧的 CallRemoteMethod 逐字节相同。
+    // 返回 false = 本地确定没交给连接(链路刚断 / 请求与注册表不符 / 序列化失败;RpcClient / RpcChannel 内部已计数并采样告警),
+    // 与上面的链路判定同属"确定没发出去",按 kNotConnected 交给欠账补发(I1),不新增结果类型、不改补发规则。
+    // 以前这里拿不到失败,只能当作 kSent 清掉欠账。
+    if (!(*rpcClient)->SendRequest(ScenePlayerEnterGameNodeMessageId, req))
+    {
+        if (ShouldLogSampled(tlsSendRejectedLogSeq))
+        {
+            LOG_WARN << "ForwardPlayerToScene: SendRequest rejected locally, treating as link not ready. scene_node="
+                     << entt::to_integral(sceneNodeEntityId) << " player=" << playerId << " session=" << sessionId
+                     << " scene_id=" << sceneId << " rejected_seq=" << tlsSendRejectedLogSeq;
+        }
+        return SceneForwardResult::kNotConnected;
+    }
 
-    LOG_DEBUG << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node=" << sceneNodeEntityId
+    LOG_DEBUG << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node=" << entt::to_integral(sceneNodeEntityId)
               << " player=" << playerId << " session=" << sessionId
               << " scene_id=" << sceneId << " enter_gs_type=" << enterGsType
-              << " home_zone_id=" << session.homeZoneId << " owner_epoch=" << session.ownerEpoch;
+              << " home_zone_id=" << session.homeZoneId << " owner_epoch=" << session.ownerEpoch
+              << " login_generation=" << session.loginGeneration;
     return SceneForwardResult::kSent;
 }
 
 // 按业务 node_id 解析 gate 上的 scene 节点实体号;每次尝试都重新解析,不缓存实体号(I3)。
-std::optional<uint64_t> ResolveSceneNodeEntity(const uint32_t nodeId)
+std::optional<entt::entity> ResolveSceneNodeEntity(const uint32_t nodeId)
 {
     const auto entity = NodeUtils::FindNodeEntityByNodeId(SceneNodeService, nodeId);
     if (!entity)
     {
         return std::nullopt;
     }
-    return entt::to_integral(*entity);
+    return *entity;
 }
 
 // 放弃收口:只做三件事 —— 推 tip、踢线、关连接(I6)。
@@ -211,8 +230,9 @@ void AttemptAndSettle(const SessionId sessionId, SessionInfo &session, const Clo
 
     // 客户端连接不可用(断开中、被顶号 kick 的 shutdown、LeaseExpired 的 forceClose、我们自己放弃之后):
     // 撤销欠账,不转发、不提交。对每一次尝试都生效,包括路由刚到时那一次 —— 给一条正在关闭的连接转发进场
-    // 只会制造一个马上要退出的实体,还可能把在用实体从新会话手里抢走(scene 侧 PlayerEnterGameNode
-    // 在任何 epoch 判定之前先摘会话)。
+    // 只会制造一个马上要退出的实体。跨会话抢绑定现在由 scene 的登录代次栅栏拦在入口(代次更旧、同代异会话、
+    // 对方有代次而本请求没有都拒,scene-enter-session-fence.md §5),但当前身份没有代次(经旧版上游登录)时
+    // scene 仍放行,所以这里照旧不发,作为第一道防线。
     const auto clientConn = session.conn.lock();
     if (!clientConn || !clientConn->connected())
     {
@@ -227,7 +247,7 @@ void AttemptAndSettle(const SessionId sessionId, SessionInfo &session, const Clo
 
     const auto outcome = gate_scene_route::AttemptPendingSceneEntry(
         session, now, ResolveSceneNodeEntity,
-        [&](const uint32_t enterType, const uint64_t nodeEntityId, const uint64_t sceneId)
+        [&](const uint32_t enterType, const entt::entity nodeEntityId, const uint64_t sceneId)
         {
             return ForwardPlayerToScene(sessionId, enterType, nodeEntityId, session, sceneId);
         });

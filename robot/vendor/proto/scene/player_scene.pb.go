@@ -134,6 +134,124 @@ func (ActorType) EnumDescriptor() ([]byte, []int) {
 	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{1}
 }
 
+// 落地恢复:按域版本摘要(docs/design/landing-recovery-sync-digest.md)。
+// 域号是客户端契约:只追加,上线后不复用;hash 字段名 = 域号十进制。
+type SyncDomain int32
+
+const (
+	SyncDomain_SYNC_DOMAIN_UNSPECIFIED       SyncDomain = 0
+	SyncDomain_SYNC_DOMAIN_FRIEND_LIST       SyncDomain = 1
+	SyncDomain_SYNC_DOMAIN_FRIEND_REQUEST    SyncDomain = 2
+	SyncDomain_SYNC_DOMAIN_FRIEND_BLOCK      SyncDomain = 3
+	SyncDomain_SYNC_DOMAIN_TEAM              SyncDomain = 4
+	SyncDomain_SYNC_DOMAIN_TEAM_INVITE       SyncDomain = 5
+	SyncDomain_SYNC_DOMAIN_GUILD             SyncDomain = 6
+	SyncDomain_SYNC_DOMAIN_GUILD_APPLICATION SyncDomain = 7
+	SyncDomain_SYNC_DOMAIN_GUILD_ECONOMY     SyncDomain = 8
+	SyncDomain_SYNC_DOMAIN_GUILD_ACTIVITY    SyncDomain = 9
+)
+
+// Enum value maps for SyncDomain.
+var (
+	SyncDomain_name = map[int32]string{
+		0: "SYNC_DOMAIN_UNSPECIFIED",
+		1: "SYNC_DOMAIN_FRIEND_LIST",
+		2: "SYNC_DOMAIN_FRIEND_REQUEST",
+		3: "SYNC_DOMAIN_FRIEND_BLOCK",
+		4: "SYNC_DOMAIN_TEAM",
+		5: "SYNC_DOMAIN_TEAM_INVITE",
+		6: "SYNC_DOMAIN_GUILD",
+		7: "SYNC_DOMAIN_GUILD_APPLICATION",
+		8: "SYNC_DOMAIN_GUILD_ECONOMY",
+		9: "SYNC_DOMAIN_GUILD_ACTIVITY",
+	}
+	SyncDomain_value = map[string]int32{
+		"SYNC_DOMAIN_UNSPECIFIED":       0,
+		"SYNC_DOMAIN_FRIEND_LIST":       1,
+		"SYNC_DOMAIN_FRIEND_REQUEST":    2,
+		"SYNC_DOMAIN_FRIEND_BLOCK":      3,
+		"SYNC_DOMAIN_TEAM":              4,
+		"SYNC_DOMAIN_TEAM_INVITE":       5,
+		"SYNC_DOMAIN_GUILD":             6,
+		"SYNC_DOMAIN_GUILD_APPLICATION": 7,
+		"SYNC_DOMAIN_GUILD_ECONOMY":     8,
+		"SYNC_DOMAIN_GUILD_ACTIVITY":    9,
+	}
+)
+
+func (x SyncDomain) Enum() *SyncDomain {
+	p := new(SyncDomain)
+	*p = x
+	return p
+}
+
+func (x SyncDomain) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SyncDomain) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_scene_player_scene_proto_enumTypes[2].Descriptor()
+}
+
+func (SyncDomain) Type() protoreflect.EnumType {
+	return &file_proto_scene_player_scene_proto_enumTypes[2]
+}
+
+func (x SyncDomain) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SyncDomain.Descriptor instead.
+func (SyncDomain) EnumDescriptor() ([]byte, []int) {
+	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{2}
+}
+
+type SyncDigestStatus int32
+
+const (
+	SyncDigestStatus_SYNC_DIGEST_STATUS_OK          SyncDigestStatus = 0
+	SyncDigestStatus_SYNC_DIGEST_STATUS_UNAVAILABLE SyncDigestStatus = 1 // 读不到摘要(Redis 不可用 / 命令未发出 / 应答畸形):客户端按全量拉处理
+)
+
+// Enum value maps for SyncDigestStatus.
+var (
+	SyncDigestStatus_name = map[int32]string{
+		0: "SYNC_DIGEST_STATUS_OK",
+		1: "SYNC_DIGEST_STATUS_UNAVAILABLE",
+	}
+	SyncDigestStatus_value = map[string]int32{
+		"SYNC_DIGEST_STATUS_OK":          0,
+		"SYNC_DIGEST_STATUS_UNAVAILABLE": 1,
+	}
+)
+
+func (x SyncDigestStatus) Enum() *SyncDigestStatus {
+	p := new(SyncDigestStatus)
+	*p = x
+	return p
+}
+
+func (x SyncDigestStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SyncDigestStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_scene_player_scene_proto_enumTypes[3].Descriptor()
+}
+
+func (SyncDigestStatus) Type() protoreflect.EnumType {
+	return &file_proto_scene_player_scene_proto_enumTypes[3]
+}
+
+func (x SyncDigestStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SyncDigestStatus.Descriptor instead.
+func (SyncDigestStatus) EnumDescriptor() ([]byte, []int) {
+	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{3}
+}
+
 type EnterSceneC2SRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SceneInfo     *SceneInfoComp         `protobuf:"bytes,1,opt,name=scene_info,json=sceneInfo,proto3" json:"scene_info,omitempty"`
@@ -576,7 +694,7 @@ func (x *SceneInfoResponse) GetSceneInfo() []*SceneInfoComp {
 
 type ActorCreateS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
+	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"` // 不透明 actor 网络号；不持久化，不是玩家 GUID 或本地 ECS 句柄。
 	Transform     *component.Transform   `protobuf:"bytes,2,opt,name=transform,proto3" json:"transform,omitempty"`
 	ActorType     ActorType              `protobuf:"varint,3,opt,name=actor_type,json=actorType,proto3,enum=ActorType" json:"actor_type,omitempty"`
 	Guid          uint64                 `protobuf:"varint,4,opt,name=guid,proto3" json:"guid,omitempty"`
@@ -676,7 +794,7 @@ func (x *ActorCreateS2C) GetGender() uint32 {
 
 type ActorDestroyS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"`
+	Entity        uint64                 `protobuf:"varint,1,opt,name=entity,proto3" json:"entity,omitempty"` // 需要移除的不透明 actor 网络号。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -764,7 +882,7 @@ func (x *ActorListCreateS2C) GetActorList() []*ActorCreateS2C {
 
 type ActorListDestroyS2C struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entity        []uint64               `protobuf:"varint,1,rep,packed,name=entity,proto3" json:"entity,omitempty"`
+	Entity        []uint64               `protobuf:"varint,1,rep,packed,name=entity,proto3" json:"entity,omitempty"` // 需要移除的不透明 actor 网络号列表。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -910,6 +1028,154 @@ func (x *TravelToZoneResponse) GetErrorMessage() *base.TipInfoMessage {
 	return nil
 }
 
+type SyncDigestEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Domain        SyncDomain             `protobuf:"varint,1,opt,name=domain,proto3,enum=SyncDomain" json:"domain,omitempty"`
+	Version       uint64                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncDigestEntry) Reset() {
+	*x = SyncDigestEntry{}
+	mi := &file_proto_scene_player_scene_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncDigestEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncDigestEntry) ProtoMessage() {}
+
+func (x *SyncDigestEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_scene_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncDigestEntry.ProtoReflect.Descriptor instead.
+func (*SyncDigestEntry) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *SyncDigestEntry) GetDomain() SyncDomain {
+	if x != nil {
+		return x.Domain
+	}
+	return SyncDomain_SYNC_DOMAIN_UNSPECIFIED
+}
+
+func (x *SyncDigestEntry) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+type GetSyncDigestRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSyncDigestRequest) Reset() {
+	*x = GetSyncDigestRequest{}
+	mi := &file_proto_scene_player_scene_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSyncDigestRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSyncDigestRequest) ProtoMessage() {}
+
+func (x *GetSyncDigestRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_scene_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSyncDigestRequest.ProtoReflect.Descriptor instead.
+func (*GetSyncDigestRequest) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{15}
+}
+
+type SyncDigestS2C struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        SyncDigestStatus       `protobuf:"varint,1,opt,name=status,proto3,enum=SyncDigestStatus" json:"status,omitempty"`
+	Generation    uint64                 `protobuf:"varint,2,opt,name=generation,proto3" json:"generation,omitempty"` // 摘要代次 g;0 = 摘要不存在(从未 bump 或已过期)
+	Entries       []*SyncDigestEntry     `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`        // 只含出现过的域;缺席的域版本按 0 处理。顺序无业务含义
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncDigestS2C) Reset() {
+	*x = SyncDigestS2C{}
+	mi := &file_proto_scene_player_scene_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncDigestS2C) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncDigestS2C) ProtoMessage() {}
+
+func (x *SyncDigestS2C) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_scene_player_scene_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncDigestS2C.ProtoReflect.Descriptor instead.
+func (*SyncDigestS2C) Descriptor() ([]byte, []int) {
+	return file_proto_scene_player_scene_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *SyncDigestS2C) GetStatus() SyncDigestStatus {
+	if x != nil {
+		return x.Status
+	}
+	return SyncDigestStatus_SYNC_DIGEST_STATUS_OK
+}
+
+func (x *SyncDigestS2C) GetGeneration() uint64 {
+	if x != nil {
+		return x.Generation
+	}
+	return 0
+}
+
+func (x *SyncDigestS2C) GetEntries() []*SyncDigestEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
 var File_proto_scene_player_scene_proto protoreflect.FileDescriptor
 
 const file_proto_scene_player_scene_proto_rawDesc = "" +
@@ -969,7 +1235,17 @@ const file_proto_scene_player_scene_proto_rawDesc = "" +
 	"\x0etarget_zone_id\x18\x01 \x01(\rR\ftargetZoneId\x12&\n" +
 	"\x0fscene_config_id\x18\x02 \x01(\rR\rsceneConfigId\"L\n" +
 	"\x14TravelToZoneResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage*\xd6\x01\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"P\n" +
+	"\x0fSyncDigestEntry\x12#\n" +
+	"\x06domain\x18\x01 \x01(\x0e2\v.SyncDomainR\x06domain\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\x04R\aversion\"\x16\n" +
+	"\x14GetSyncDigestRequest\"\x86\x01\n" +
+	"\rSyncDigestS2C\x12)\n" +
+	"\x06status\x18\x01 \x01(\x0e2\x11.SyncDigestStatusR\x06status\x12\x1e\n" +
+	"\n" +
+	"generation\x18\x02 \x01(\x04R\n" +
+	"generation\x12*\n" +
+	"\aentries\x18\x03 \x03(\v2\x10.SyncDigestEntryR\aentries*\xd6\x01\n" +
 	"\x11SceneChannelState\x12\x1f\n" +
 	"\x1bSCENE_CHANNEL_STATE_UNKNOWN\x10\x00\x12\x1e\n" +
 	"\x1aSCENE_CHANNEL_STATE_SMOOTH\x10\x01\x12\x1c\n" +
@@ -980,7 +1256,22 @@ const file_proto_scene_player_scene_proto_rawDesc = "" +
 	"\tActorType\x12\x13\n" +
 	"\x0fACTOR_TYPE_NONE\x10\x00\x12\x15\n" +
 	"\x11ACTOR_TYPE_PLAYER\x10\x01\x12\x12\n" +
-	"\x0eACTOR_TYPE_NPC\x10\x022\xeb\x03\n" +
+	"\x0eACTOR_TYPE_NPC\x10\x02*\xb0\x02\n" +
+	"\n" +
+	"SyncDomain\x12\x1b\n" +
+	"\x17SYNC_DOMAIN_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17SYNC_DOMAIN_FRIEND_LIST\x10\x01\x12\x1e\n" +
+	"\x1aSYNC_DOMAIN_FRIEND_REQUEST\x10\x02\x12\x1c\n" +
+	"\x18SYNC_DOMAIN_FRIEND_BLOCK\x10\x03\x12\x14\n" +
+	"\x10SYNC_DOMAIN_TEAM\x10\x04\x12\x1b\n" +
+	"\x17SYNC_DOMAIN_TEAM_INVITE\x10\x05\x12\x15\n" +
+	"\x11SYNC_DOMAIN_GUILD\x10\x06\x12!\n" +
+	"\x1dSYNC_DOMAIN_GUILD_APPLICATION\x10\a\x12\x1d\n" +
+	"\x19SYNC_DOMAIN_GUILD_ECONOMY\x10\b\x12\x1e\n" +
+	"\x1aSYNC_DOMAIN_GUILD_ACTIVITY\x10\t*Q\n" +
+	"\x10SyncDigestStatus\x12\x19\n" +
+	"\x15SYNC_DIGEST_STATUS_OK\x10\x00\x12\"\n" +
+	"\x1eSYNC_DIGEST_STATUS_UNAVAILABLE\x10\x012\xc7\x04\n" +
 	"\x16SceneSceneClientPlayer\x12;\n" +
 	"\n" +
 	"EnterScene\x12\x15.EnterSceneC2SRequest\x1a\x16.EnterSceneC2SResponse\x12*\n" +
@@ -991,7 +1282,9 @@ const file_proto_scene_player_scene_proto_rawDesc = "" +
 	"\x12NotifyActorDestroy\x12\x10.ActorDestroyS2C\x1a\x06.Empty\x124\n" +
 	"\x15NotifyActorListCreate\x12\x13.ActorListCreateS2C\x1a\x06.Empty\x126\n" +
 	"\x16NotifyActorListDestroy\x12\x14.ActorListDestroyS2C\x1a\x06.Empty\x12;\n" +
-	"\fTravelToZone\x12\x14.TravelToZoneRequest\x1a\x15.TravelToZoneResponse\x1a\n" +
+	"\fTravelToZone\x12\x14.TravelToZoneRequest\x1a\x15.TravelToZoneResponse\x12.\n" +
+	"\rGetSyncDigest\x12\x15.GetSyncDigestRequest\x1a\x06.Empty\x12*\n" +
+	"\x10NotifySyncDigest\x12\x0e.SyncDigestS2C\x1a\x06.Empty\x1a\n" +
 	"\x80\xa8\xc3\x01\x01\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x03Z\vproto/scene\x80\x01\x01b\x06proto3"
 
 var (
@@ -1006,66 +1299,78 @@ func file_proto_scene_player_scene_proto_rawDescGZIP() []byte {
 	return file_proto_scene_player_scene_proto_rawDescData
 }
 
-var file_proto_scene_player_scene_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_proto_scene_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_proto_scene_player_scene_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_proto_scene_player_scene_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_proto_scene_player_scene_proto_goTypes = []any{
 	(SceneChannelState)(0),        // 0: SceneChannelState
 	(ActorType)(0),                // 1: ActorType
-	(*EnterSceneC2SRequest)(nil),  // 2: EnterSceneC2SRequest
-	(*EnterSceneC2SResponse)(nil), // 3: EnterSceneC2SResponse
-	(*EnterSceneS2C)(nil),         // 4: EnterSceneS2C
-	(*SceneChannelInfo)(nil),      // 5: SceneChannelInfo
-	(*SceneChannelDirectory)(nil), // 6: SceneChannelDirectory
-	(*SceneInfoS2C)(nil),          // 7: SceneInfoS2C
-	(*SceneInfoRequest)(nil),      // 8: SceneInfoRequest
-	(*SceneInfoResponse)(nil),     // 9: SceneInfoResponse
-	(*ActorCreateS2C)(nil),        // 10: ActorCreateS2C
-	(*ActorDestroyS2C)(nil),       // 11: ActorDestroyS2C
-	(*ActorListCreateS2C)(nil),    // 12: ActorListCreateS2C
-	(*ActorListDestroyS2C)(nil),   // 13: ActorListDestroyS2C
-	(*TravelToZoneRequest)(nil),   // 14: TravelToZoneRequest
-	(*TravelToZoneResponse)(nil),  // 15: TravelToZoneResponse
-	(*SceneInfoComp)(nil),         // 16: SceneInfoComp
-	(*base.TipInfoMessage)(nil),   // 17: TipInfoMessage
-	(*component.Transform)(nil),   // 18: Transform
-	(*base.Empty)(nil),            // 19: Empty
+	(SyncDomain)(0),               // 2: SyncDomain
+	(SyncDigestStatus)(0),         // 3: SyncDigestStatus
+	(*EnterSceneC2SRequest)(nil),  // 4: EnterSceneC2SRequest
+	(*EnterSceneC2SResponse)(nil), // 5: EnterSceneC2SResponse
+	(*EnterSceneS2C)(nil),         // 6: EnterSceneS2C
+	(*SceneChannelInfo)(nil),      // 7: SceneChannelInfo
+	(*SceneChannelDirectory)(nil), // 8: SceneChannelDirectory
+	(*SceneInfoS2C)(nil),          // 9: SceneInfoS2C
+	(*SceneInfoRequest)(nil),      // 10: SceneInfoRequest
+	(*SceneInfoResponse)(nil),     // 11: SceneInfoResponse
+	(*ActorCreateS2C)(nil),        // 12: ActorCreateS2C
+	(*ActorDestroyS2C)(nil),       // 13: ActorDestroyS2C
+	(*ActorListCreateS2C)(nil),    // 14: ActorListCreateS2C
+	(*ActorListDestroyS2C)(nil),   // 15: ActorListDestroyS2C
+	(*TravelToZoneRequest)(nil),   // 16: TravelToZoneRequest
+	(*TravelToZoneResponse)(nil),  // 17: TravelToZoneResponse
+	(*SyncDigestEntry)(nil),       // 18: SyncDigestEntry
+	(*GetSyncDigestRequest)(nil),  // 19: GetSyncDigestRequest
+	(*SyncDigestS2C)(nil),         // 20: SyncDigestS2C
+	(*SceneInfoComp)(nil),         // 21: SceneInfoComp
+	(*base.TipInfoMessage)(nil),   // 22: TipInfoMessage
+	(*component.Transform)(nil),   // 23: Transform
+	(*base.Empty)(nil),            // 24: Empty
 }
 var file_proto_scene_player_scene_proto_depIdxs = []int32{
-	16, // 0: EnterSceneC2SRequest.scene_info:type_name -> SceneInfoComp
-	17, // 1: EnterSceneC2SResponse.error_message:type_name -> TipInfoMessage
-	16, // 2: EnterSceneS2C.scene_info:type_name -> SceneInfoComp
+	21, // 0: EnterSceneC2SRequest.scene_info:type_name -> SceneInfoComp
+	22, // 1: EnterSceneC2SResponse.error_message:type_name -> TipInfoMessage
+	21, // 2: EnterSceneS2C.scene_info:type_name -> SceneInfoComp
 	0,  // 3: SceneChannelInfo.state:type_name -> SceneChannelState
-	5,  // 4: SceneChannelDirectory.channels:type_name -> SceneChannelInfo
-	16, // 5: SceneInfoS2C.scene_info:type_name -> SceneInfoComp
-	6,  // 6: SceneInfoS2C.channel_directory:type_name -> SceneChannelDirectory
-	16, // 7: SceneInfoResponse.scene_info:type_name -> SceneInfoComp
-	18, // 8: ActorCreateS2C.transform:type_name -> Transform
+	7,  // 4: SceneChannelDirectory.channels:type_name -> SceneChannelInfo
+	21, // 5: SceneInfoS2C.scene_info:type_name -> SceneInfoComp
+	8,  // 6: SceneInfoS2C.channel_directory:type_name -> SceneChannelDirectory
+	21, // 7: SceneInfoResponse.scene_info:type_name -> SceneInfoComp
+	23, // 8: ActorCreateS2C.transform:type_name -> Transform
 	1,  // 9: ActorCreateS2C.actor_type:type_name -> ActorType
-	10, // 10: ActorListCreateS2C.actor_list:type_name -> ActorCreateS2C
-	17, // 11: TravelToZoneResponse.error_message:type_name -> TipInfoMessage
-	2,  // 12: SceneSceneClientPlayer.EnterScene:input_type -> EnterSceneC2SRequest
-	4,  // 13: SceneSceneClientPlayer.NotifyEnterScene:input_type -> EnterSceneS2C
-	8,  // 14: SceneSceneClientPlayer.SceneInfoC2S:input_type -> SceneInfoRequest
-	7,  // 15: SceneSceneClientPlayer.NotifySceneInfo:input_type -> SceneInfoS2C
-	10, // 16: SceneSceneClientPlayer.NotifyActorCreate:input_type -> ActorCreateS2C
-	11, // 17: SceneSceneClientPlayer.NotifyActorDestroy:input_type -> ActorDestroyS2C
-	12, // 18: SceneSceneClientPlayer.NotifyActorListCreate:input_type -> ActorListCreateS2C
-	13, // 19: SceneSceneClientPlayer.NotifyActorListDestroy:input_type -> ActorListDestroyS2C
-	14, // 20: SceneSceneClientPlayer.TravelToZone:input_type -> TravelToZoneRequest
-	3,  // 21: SceneSceneClientPlayer.EnterScene:output_type -> EnterSceneC2SResponse
-	19, // 22: SceneSceneClientPlayer.NotifyEnterScene:output_type -> Empty
-	19, // 23: SceneSceneClientPlayer.SceneInfoC2S:output_type -> Empty
-	19, // 24: SceneSceneClientPlayer.NotifySceneInfo:output_type -> Empty
-	19, // 25: SceneSceneClientPlayer.NotifyActorCreate:output_type -> Empty
-	19, // 26: SceneSceneClientPlayer.NotifyActorDestroy:output_type -> Empty
-	19, // 27: SceneSceneClientPlayer.NotifyActorListCreate:output_type -> Empty
-	19, // 28: SceneSceneClientPlayer.NotifyActorListDestroy:output_type -> Empty
-	15, // 29: SceneSceneClientPlayer.TravelToZone:output_type -> TravelToZoneResponse
-	21, // [21:30] is the sub-list for method output_type
-	12, // [12:21] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	12, // 10: ActorListCreateS2C.actor_list:type_name -> ActorCreateS2C
+	22, // 11: TravelToZoneResponse.error_message:type_name -> TipInfoMessage
+	2,  // 12: SyncDigestEntry.domain:type_name -> SyncDomain
+	3,  // 13: SyncDigestS2C.status:type_name -> SyncDigestStatus
+	18, // 14: SyncDigestS2C.entries:type_name -> SyncDigestEntry
+	4,  // 15: SceneSceneClientPlayer.EnterScene:input_type -> EnterSceneC2SRequest
+	6,  // 16: SceneSceneClientPlayer.NotifyEnterScene:input_type -> EnterSceneS2C
+	10, // 17: SceneSceneClientPlayer.SceneInfoC2S:input_type -> SceneInfoRequest
+	9,  // 18: SceneSceneClientPlayer.NotifySceneInfo:input_type -> SceneInfoS2C
+	12, // 19: SceneSceneClientPlayer.NotifyActorCreate:input_type -> ActorCreateS2C
+	13, // 20: SceneSceneClientPlayer.NotifyActorDestroy:input_type -> ActorDestroyS2C
+	14, // 21: SceneSceneClientPlayer.NotifyActorListCreate:input_type -> ActorListCreateS2C
+	15, // 22: SceneSceneClientPlayer.NotifyActorListDestroy:input_type -> ActorListDestroyS2C
+	16, // 23: SceneSceneClientPlayer.TravelToZone:input_type -> TravelToZoneRequest
+	19, // 24: SceneSceneClientPlayer.GetSyncDigest:input_type -> GetSyncDigestRequest
+	20, // 25: SceneSceneClientPlayer.NotifySyncDigest:input_type -> SyncDigestS2C
+	5,  // 26: SceneSceneClientPlayer.EnterScene:output_type -> EnterSceneC2SResponse
+	24, // 27: SceneSceneClientPlayer.NotifyEnterScene:output_type -> Empty
+	24, // 28: SceneSceneClientPlayer.SceneInfoC2S:output_type -> Empty
+	24, // 29: SceneSceneClientPlayer.NotifySceneInfo:output_type -> Empty
+	24, // 30: SceneSceneClientPlayer.NotifyActorCreate:output_type -> Empty
+	24, // 31: SceneSceneClientPlayer.NotifyActorDestroy:output_type -> Empty
+	24, // 32: SceneSceneClientPlayer.NotifyActorListCreate:output_type -> Empty
+	24, // 33: SceneSceneClientPlayer.NotifyActorListDestroy:output_type -> Empty
+	17, // 34: SceneSceneClientPlayer.TravelToZone:output_type -> TravelToZoneResponse
+	24, // 35: SceneSceneClientPlayer.GetSyncDigest:output_type -> Empty
+	24, // 36: SceneSceneClientPlayer.NotifySyncDigest:output_type -> Empty
+	26, // [26:37] is the sub-list for method output_type
+	15, // [15:26] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_proto_scene_player_scene_proto_init() }
@@ -1079,8 +1384,8 @@ func file_proto_scene_player_scene_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_scene_player_scene_proto_rawDesc), len(file_proto_scene_player_scene_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   14,
+			NumEnums:      4,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

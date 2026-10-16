@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,6 +16,8 @@
 
 // 回合引擎(cpp/libs/services/battle,纯逻辑库,API 见设计文档 §5.1)
 #include "system/turn_battle_engine.h"
+// 结算发件箱的判定与 Redis 契约(PendingIndexSweepCursor 作为成员类型)
+#include "settlement/settlement_outbox.h"
 
 #include "proto/battle/battle_data.pb.h"
 #include "proto/battle/battle_node.pb.h"
@@ -63,6 +67,12 @@ class BattleClientEdge;
 class BattleRoomManager
 {
 public:
+    // 房间及重试回调捕获管理器 this,单例的地址必须固定。
+    BattleRoomManager(const BattleRoomManager&) = delete;
+    BattleRoomManager& operator=(const BattleRoomManager&) = delete;
+    BattleRoomManager(BattleRoomManager&&) = delete;
+    BattleRoomManager& operator=(BattleRoomManager&&) = delete;
+
     static BattleRoomManager &Instance();
 
     // ---- 房间生命周期回调(集群外入口 D82 / D85;main.cpp 装配,转发给 Agones GameServerLifecycle) ----
@@ -84,7 +94,15 @@ public:
 
     // ---- 客户端直连面(main.cpp 装配;BattleClientEdge 生命周期由 main 的运行时上下文持有) ----
 
-    void SetClientEdge(BattleClientEdge *edge) { edge_ = edge; }
+    void SetClientEdge(BattleClientEdge *edge)
+    {
+        if (edge == nullptr)
+        {
+            edge_.reset();
+            return;
+        }
+        edge_ = std::ref(*edge);
+    }
 
     // 票据握手通过后把直连挂到房间上。校验"房间仍存在 + 该玩家按 role 确在名单上";
     // 同一玩家已有直连(重连)则关闭旧连接、换成新的。成功时回填该玩家的 gate 会话号
@@ -171,12 +189,21 @@ public:
     //
     // 重投窗口 = kSettlementRetryIntervalSec × kSettlementRetryMaxAttempts = 120s。
     // 上界取自"要覆盖一次 scene 进程重启 + 服务发现补齐"的时间尺度;再长没有意义:
-    // 持久记录仍在(TTL 7 天),玩家下次进场景会由登录钩子补应用。
+    // 持久记录仍在(不再过期,landing-recovery-sync-digest.md §7),玩家下次进场景会由登录钩子补应用,
+    // 在线玩家战斗冻结到期时 scene reaper 也会补读一次。
+    // 原来的 kPendingSettlementTtlSec(与 scene 侧同值的 7 天)随 TTL 一起删除。
     static constexpr double kSettlementRetryIntervalSec = 10.0;
     static constexpr uint32_t kSettlementRetryMaxAttempts = 12;
-    // 与 scene 侧 PlayerBattleSystem::kPendingSettlementTtlSec 同值(设计文档 §6)。
-    // 两处必须一致:battle 写、scene 读与销账,TTL 分叉就是"记录先于消费者过期"。
-    static constexpr uint32_t kPendingSettlementTtlSec = 7 * 24 * 3600;
+
+    // ---- 待结算积压报数(landing-recovery-sync-digest.md §7)----
+    //
+    // 每 kSettlementBacklogReportIntervalSec 秒一轮:查积压索引里一批 kSettlementBacklogSweepBatch 个成员、
+    // 清掉其中的孤儿(头部与轮转窗口交替,见 settlement_outbox.h 的 PendingIndexSweepCursor),
+    // 再打一行 metric=battle_settlement_pending_backlog count= oldest_age_s= orphans_removed=。
+    // battle / scene 进程没有 Prometheus 端点,这一行就是积压的唯一信号(值班 LogQL 登记在
+    // deploy/k8s/asset-channel-alerts.yaml 文件头,设计 §6.5)。
+    static constexpr double kSettlementBacklogReportIntervalSec = 60.0;
+    static constexpr uint32_t kSettlementBacklogSweepBatch = 10;
 
 private:
     BattleRoomManager() = default;
@@ -305,7 +332,7 @@ private:
     // 不能放玩家进一场连不上的战斗。expire_at_ms = room.deadlineMs(调用前必须已落到房间上)。
     // host/port 取 client_endpoint::ClientFacing(集群外入口 D78):client_endpoint 可用就用它,
     // 否则 required=false 时回落 endpoint,required=true(CLIENT_ENDPOINT_REQUIRED=1)时拒签。
-    // 只能在 loop 线程调用:ClientFacing 的 NodeInfo 取自 thread_local 的 gNode->GetNodeInfo()。
+    // NodeInfo 由 Node 持有、只在 loop 线程写;跨线程读写不同步,本函数仍只能在 loop 线程调用。
     bool BuildAssignment(const BattleRoom &room, uint64_t playerId, ::eBattleTicketRole role,
                          ::BattleAssignedS2C &out) const;
 
@@ -360,6 +387,13 @@ private:
     void ProbeAndRetryOne(uint64_t battleId, uint64_t playerId);
     // outbox 空了就停表:battle 常态下没有未销账记录,不该留一个每 10s 空转的定时器。
     void StopSettlementRetryTimerIfIdle();
+    // 保证积压报数定时器已装填(幂等)。由 DispatchSettlementDurably 在本节点第一次结算时装填,
+    // 之后常驻:积压是全局的(记录不过期),不随本节点的 outbox 清空而停。
+    // 本节点从没结算过就不报 —— 多个 battle 节点报的是同一个全局数,有一个在打的节点报就够了。
+    void EnsureSettlementBacklogReporter();
+    // 定时器回调:按 settlementBacklogCursor_ 选一批索引成员清孤儿,再打一行积压 metric。
+    // 回调链只以 weak_ptr<自己> 回到本对象推进游标,其余只捕获值(AGENTS.md §11.7)。
+    void ReportPendingSettlementBacklog();
 
     // ---- 活动结果发件箱(帮会同道历练,docs/design/guild-phase2/06-activities.md §6.19–§6.21)----
     //
@@ -395,7 +429,8 @@ private:
     // "只绑 weak_ptr<自己>"写的防线,不是在修某个已知的悬垂路径。R07 结算发件箱沿用裸 this,本批不动。
     std::weak_ptr<BattleRoomManager> WeakSelf() { return std::shared_ptr<BattleRoomManager>(lifeToken_, this); }
 
-    BattleClientEdge *edge_ = nullptr;
+    // 仅借用运行时上下文持有的直连面；清空借用不销毁对象。
+    std::optional<std::reference_wrapper<BattleClientEdge>> edge_;
 
     // 房间表:增删与生命周期回调(SetRoomLifecycleHooks)绑死在 RoomTable 里,本类只经
     // EmplaceRoom / EraseRoom 调它的 Emplace / Erase,其余路径只读(FindRoom / AbortAllRooms 抄 id)。
@@ -404,6 +439,11 @@ private:
     // key = (battle_id, player_id);量级 = 未销账的结算条数,常态为 0。
     std::map<std::pair<uint64_t, uint64_t>, PendingSettlement> settlementOutbox_;
     TimerTaskComp settlementRetryTimer_;
+    // 积压报数(EnsureSettlementBacklogReporter);装填后常驻。
+    TimerTaskComp settlementBacklogTimer_;
+    // 孤儿清理的扫描窗口(头部 / 轮转交替,见 settlement_outbox.h 的 PendingIndexSweepCursor)。
+    // 纯进程内状态:节点重启从头部开始,不影响正确性。
+    battle_settlement::PendingIndexSweepCursor settlementBacklogCursor_;
 
     // key = battle_id;量级 = 未被 guild 销账的活动局结果数,常态为 0。
     // 有序容器:与 settlementOutbox_ 同口径,重发遍历与日志顺序稳定。

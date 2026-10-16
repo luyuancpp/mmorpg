@@ -19,6 +19,9 @@ import (
 //	dispatcher promotes → admit:{queueId} populated with AdmitSlot (gate pick only)
 //	next poll   → consumeAdmitAndSign fires → ADMITTED (gate token signed NOW)
 //	subsequent  → admit consumed; token-index TTL still alive but ZSET miss → EXPIRED
+//	              (2026-10-15 更正:判据不是 ZSET 落空——那只说明已出队,在途窗口里也落空、回名次 0;
+//	              是 meta 有 admitted_at 而放行槽已不在,见 loginqueue.Queue.Lookup。放行槽没人来取、
+//	              按 AdmitTTL 过期之后再查同样回 EXPIRED。此前代码实际回 QUEUEING、名次 0,与本注释不符)
 //
 // The ADMITTED → EXPIRED transition deliberately gives the client exactly
 // one chance to read the gate token. If the client drops it (network blip

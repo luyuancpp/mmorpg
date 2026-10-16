@@ -1,10 +1,10 @@
 ﻿#pragma once
 
+#include <functional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
-#include "entt/src/entt/entity/registry.hpp"
 #include "engine/core/type_define/type_define.h"
 
 #include "item_system.h"
@@ -28,51 +28,49 @@
 // 了一个,正是两层焊死的症状之一。
 // ─────────────────────────────────────────────────────────────────────────
 
-// guid -> 承载该实例的 ECS 实体。
-using ItemsMap = std::unordered_map<Guid, entt::entity>;
-
 class ItemStore
 {
 public:
     // ── 身份与生命期 ──────────────────────────────────────────────────
-    [[nodiscard]] std::size_t Size() const { return guidToEntity_.size(); }
-    [[nodiscard]] bool Contains(Guid guid) const { return guidToEntity_.contains(guid); }
-    [[nodiscard]] entt::entity EntityOf(Guid guid) const;
+    [[nodiscard]] std::size_t Size() const { return items_.size(); }
+    [[nodiscard]] bool Contains(Guid guid) const { return items_.contains(guid); }
 
+    // 返回仓库内的实例。调用方不得改 item_id / acquire_seq,也不得把指针留到下一次
+    // Insert / Erase / Clear / 整理之后;接口不承诺跨写操作保留借用。
     ItemComp *Find(Guid guid);
     [[nodiscard]] const ItemComp *Find(Guid guid) const;
 
     // 当前水位(下一个会盖出的序号)。只读,给用例断言用。
     [[nodiscard]] uint64_t NextAcquireSeq() const { return nextAcquireSeq_; }
+    // 加载边界先抬到全包最大既有序号之后，零章条目随后由 Insert 按出现顺序补章。
+    void RaiseAcquireSeq(uint64_t sequence);
 
-    // 建实体、存组件、登记索引 —— 三件事一次做完。
-    // 顺带给 acquire_seq 盖章(0 则盖当前水位;非 0 则保留并抬高水位)。
-    // guid 撞车时回滚半建好的实体并返回 nullptr(绝不留下孤儿实体)。
+    // 存入整份实例并给 acquire_seq 盖章(0 则盖当前水位;非 0 则保留并抬高水位)。
+    // guid 撞车时返回 nullptr,实例和入包水位都不改变。
     // proto 必须已经填好 item_id / config_id / size。
     //
-    // guidToEntity_ 与 registry_ 必须始终同步。为了让"改了一边忘了另一边"
-    // 在结构上不可能发生,**所有**创建走 Insert、**所有**销毁走 Erase /
-    // Clear;任何地方都不要直接碰 registry_.create()/destroy() 或
-    // guidToEntity_.emplace()/erase()。
+    // items_ 是唯一权威,键始终等于 item_id;创建只走 Insert,销毁只走 Erase / Clear。
     ItemComp *Insert(ItemComp proto);
 
-    // 销毁一个实例(实体 + 索引)。未知 guid 是安全的空操作,返回 false。
+    // 销毁一个实例。未知 guid 是安全的空操作,返回 false。
     // 注意:**它不管槽位** —— 释放槽位是布局层的事,由桥层 Bag 成对调用。
     bool Erase(Guid guid);
 
     // 丢掉所有实例。容量 / 槽位不归它管,一点都不会动。
     void Clear();
 
-    // 以 (guid, ItemComp) 遍历。ItemComp 是仓库里的那份,调用方不得在循环
-    // 之外持有该指针 —— 下一次 Insert / Erase 就可能让它失效。
+    // 包内实例序:(acquire_seq 升序,item_id 升序),与 Java BagItem.ACQUIRE_ORDER 同口径。
+    // guid 在包内唯一,所以这是一条全序;理论不可达的零序号排最前。
+    [[nodiscard]] static bool AcquiredBefore(const ItemComp &lhs, const ItemComp &rhs);
+
+    // 按实例序以 (guid, ItemComp) 遍历。回调不得修改本仓库,借用遵守 Find 的寿命约束。
+    // guid 取唯一权威 map 的键,不从可写消息字段重新推导身份。
     template <typename Fn>
     void ForEach(Fn &&fn) const
     {
-        // item.item_id() 就是 guid(它正是 guidToEntity_ 的键,见 Insert),
-        // 所以不必反查 guidToEntity_,遍历保持 O(n) 而不是 O(n²)。
-        for (const auto &[entity, item] : registry_.view<ItemComp>().each())
+        for (const auto *entry : InAcquireOrder())
         {
-            fn(static_cast<Guid>(item.item_id()), item);
+            fn(entry->first, entry->second);
         }
     }
 
@@ -83,11 +81,11 @@ public:
     [[nodiscard]] bool HasAll(const ItemCountMap &required) const;
 
     // ── 堆叠语义 ──────────────────────────────────────────────────────
-    // 一次计划中的补堆:往既有堆 entity 里再倒 amount 个单位。
+    // 一次计划中的补堆:往既有 guid 里再倒 amount 个单位。
     struct StackFill
     {
-        entt::entity entity;
-        uint32_t amount;
+        Guid guid{kInvalidGuid};
+        uint32_t amount{0};
     };
 
     // 对 wanted 里的每个 config,汇总既有堆叠还空着多少(config_id -> 空余单位)。
@@ -127,10 +125,13 @@ public:
     // 库存不足时按实际持有夹紧(本来就是逐堆 min(需求, 库存)),**返回值即实扣量**;
     // 调用方要"不够就整体失败"的语义,必须自己先 HasAll(Bag::RemoveItems 就是这么做的)。
     // drainedOut(可为 nullptr)按抽取顺序收集 (guid, 抽走量),size==0 的僵尸堆不进回执。
-    uint32_t DrainStacks(uint32_t configId, uint32_t count,
+    // rank 由调用方提供,实例层不解释它。桥层传槽位号,按 rank 再按实例序抽取。
+    // 回调只读且不重入仓库;每个候选的 rank 在排序前只计算一次。
+    using DrainRank = std::function<uint64_t(Guid)>;
+    uint32_t DrainStacks(uint32_t configId, uint32_t count, const DrainRank &drainRank,
                          std::vector<StackDrain> *drainedOut = nullptr);
 
-    // 存不存在"同一 config 有 >= 2 个未满堆"。有就说明还能合并出更少的实例。
+    // 存不存在"同一 config 有 >= 2 个非空未满堆"。空堆只回收,不当合并幸存者。
     [[nodiscard]] bool HasMergeablePartials() const;
 
     // 把同 config 的未满堆合并成尽量少的满堆:组内总量重新分配,前几个填满、
@@ -158,9 +159,8 @@ public:
     // 并堆只加数量,两件属性不同的装备会并成一堆、其中一份属性无声消失。
     // 判的是 has_equip() 这个 presence,不是属性条数。
     //
-    // 同一口径还有三处不经过本函数、各自内联了等价判断(都在 .cpp 里):
-    // MeasureFreeRoomPerConfig / HasMergeablePartials / MergePartialStacks。
-    // 改这里的判据时四处同改,否则 reserve 与 commit、整理与入包会给出不一致的答案。
+    // MeasureFreeRoomPerConfig 和合并两处的 IsMergeCandidate 同样排除 equip。
+    // size>0 只约束合并;并堆刻意允许往空堆回填。
     [[nodiscard]] static bool CanStack(const ItemComp &leftItem, const ItemComp &rightItem);
 
     // totalSize 个单位、每堆最多 maxStackSize 个,要拆成几个实例。
@@ -185,8 +185,14 @@ public:
     [[nodiscard]] static bool IsInvalidGuid(const ItemComp &item);
 
 private:
-    ItemsMap guidToEntity_{};
-    entt::registry registry_{};
+    using Items = std::unordered_map<Guid, ItemComp>;
+    // 节点容器在 rehash 时不移动实例,排序候选只借用节点地址,不复制物品数据。
+    // 借用仅限本次调用;任何排序或 ForEach 回调都不得修改容器结构。
+    [[nodiscard]] std::vector<const Items::value_type *> InAcquireOrder() const;
+    [[nodiscard]] std::vector<Items::value_type *> InAcquireOrder();
+    [[nodiscard]] static bool IsMergeCandidate(const ItemComp &item, uint32_t maxStack);
+
+    Items items_{};
 
     // 下一个要盖的入包序号。1 起步,0 是"没盖章"的哨兵。
     // 只由 Insert 推进、只由 Clear 复位 —— 见 Insert 里的注释。

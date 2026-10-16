@@ -93,6 +93,8 @@ type ServiceContext struct {
 
 	// gateDrainStop 取消 startGateDrainMonitor 起的 gate 排空判定循环;nil = 没起。
 	gateDrainStop context.CancelFunc
+	// authCleanup 只拥有生产口令的专用 Redis 池与只读 SQL 连接。
+	authCleanup func()
 }
 
 func NewServiceContext() *ServiceContext {
@@ -101,7 +103,13 @@ func NewServiceContext() *ServiceContext {
 	table.LoadTables(config.AppConfig.TableDir, false)
 
 	// Register auth providers based on config
-	InitAuthProviders()
+	authCleanup := InitAuthProviders()
+	initialized := false
+	defer func() {
+		if !initialized {
+			authCleanup()
+		}
+	}()
 
 	// Initialize Redis client
 	redisHost := config.AppConfig.Node.RedisClient.Host
@@ -191,6 +199,7 @@ func NewServiceContext() *ServiceContext {
 	}
 
 	sc := &ServiceContext{
+		authCleanup:          authCleanup,
 		RedisClient:          redisClient,
 		KafkaClient:          kafkaClient,
 		ExpandMonitor:        monitor,
@@ -205,6 +214,7 @@ func NewServiceContext() *ServiceContext {
 	sc.initPlayerIDMinter()
 	sc.initHomeZoneResolver() // 依赖 initPlayerIDMinter 可能已拨好的 DataServiceClient
 	sc.initPlayerNames()      // 依赖 initHomeZoneResolver 兜底拨好的 DataServiceClient
+	initialized = true
 	return sc
 }
 
@@ -276,8 +286,11 @@ func (s *ServiceContext) QueueCapacityProvider() loginqueue.CapacityProvider {
 }
 
 // gateWatcherCapacityProvider adapts NodeWatcher to the loginqueue.CapacityProvider
-// interface. Filtering by zone happens here; sorting (least-loaded first) is the
-// caller's job in PickAndSignGateToken so the dispatcher and the fast path agree.
+// interface. 这里只产出本 zone 的候选集(按 zone 过滤、去重、剔除排空中的 gate,见 candidatesFromNodes),
+// 不排序、不挑 gate。挑 gate 的规则只有一份,在 loginqueue 的 gatePicker:
+// 负载 = 在线人数(PlayerCount)+ 本拍已分给它的人数,取最少,同数取 NodeID 最小。
+// 快速通道经 PickAndSignGateToken → PickGate 在一份新候选上挑一次;dispatcher 每个非空拍取一次候选,
+// 由 newBatchPickFn 在这一份上逐条挑并记账。
 type gateWatcherCapacityProvider struct {
 	watcher *node.NodeWatcher
 	caps    map[string]uint32 // zone_id (decimal string) → capacity ceiling
@@ -578,10 +591,11 @@ func (c *ServiceContext) SetNodeId(nodeId int64) {
 //
 // 寻址与两道 fail-closed 守卫都在 buildGateCommandMessage 里(gate_command.go),
 // 这里只负责组业务字段并把算好的 (topic, partition) 原样交给生产者。
+// loginGeneration 是本条登录链铸出的代次,随 BindSessionEvent 下发给 gate(scene-enter-session-fence.md §4)。
 func (s *ServiceContext) SendBindSessionToGate(gateID string, gateInstanceID string,
-	sessionID uint32, playerID uint64, sessionVersion uint32, enterGsType uint32) error {
+	sessionID uint32, playerID uint64, sessionVersion uint32, enterGsType uint32, loginGeneration uint64) error {
 
-	msg, err := buildBindSessionCommand(gateID, gateInstanceID, sessionID, playerID, enterGsType)
+	msg, err := buildBindSessionCommand(gateID, gateInstanceID, sessionID, playerID, sessionVersion, enterGsType, loginGeneration)
 	if err != nil {
 		return err
 	}
@@ -630,6 +644,9 @@ func (s *ServiceContext) PushTipToSession(gateID string, gateInstanceID string, 
 }
 
 func (s *ServiceContext) Stop() {
+	if s.authCleanup != nil {
+		defer s.authCleanup()
+	}
 	s.ExpandMonitor.Stop()
 	if s.PlayerIDSegment != nil {
 		s.PlayerIDSegment.Close()
@@ -654,8 +671,12 @@ func (s *ServiceContext) Stop() {
 }
 
 // SubmitPreload submits a background task to the preload pool and updates
-// throughput counters. Returns false if the pool is saturated (task dropped);
-// callers should treat that as a soft failure (Scene-side retry compensates).
+// throughput counters. Returns false if the pool is saturated: the task is
+// NOT queued and never runs, and nothing downstream compensates for it. The
+// only caller (EnterGame) then does not start the chain, answers
+// kLoginInProgress so the client retries, and counts
+// entergame_total{result="pool_saturated"}. The drop counter kept here only
+// feeds the periodic [preload-pool] log.
 func (s *ServiceContext) SubmitPreload(task func()) bool {
 	if err := s.PreloadPool.Submit(task); err != nil {
 		s.preloadDropped.Add(1)

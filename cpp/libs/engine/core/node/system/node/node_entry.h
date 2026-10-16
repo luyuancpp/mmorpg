@@ -34,6 +34,7 @@ namespace entry {
 //   struct MyNodeHooks {
 //       struct TableLoadHandler { static void OnLoaded(); };
 //       using KafkaCommandType = contracts::kafka::MyNodeCommand;
+//       static void DispatchKafkaCommand(const std::string&, const KafkaCommandType&);
 //       // 可选:CLIENT_ENDPOINT_SOURCE=agones 时构造外部地址来源(D79)。
 //       // 返回 nullptr = 本构建/本进程不支持,Node 会致命退出。
 //       struct ClientEndpointSourceFactory {
@@ -83,8 +84,11 @@ void ApplyPostConstructionHooks(Node& node)
 {
     ::RegisterNodeEvents();
     if constexpr (!std::is_void_v<THooks> && has_kafka_command_type<THooks>::value) {
+        static_assert(std::is_convertible_v<decltype(&THooks::DispatchKafkaCommand),
+            void (*)(const std::string&, const typename THooks::KafkaCommandType&)>,
+            "Kafka 命令必须显式指定节点白名单派发函数");
         node.SetKafkaHandlers([](Node& n) {
-            return kafka::RegisterKafkaCommandHandler<typename THooks::KafkaCommandType>(n);
+            return kafka::RegisterKafkaCommandHandler<typename THooks::KafkaCommandType>(n, &THooks::DispatchKafkaCommand);
         });
     }
 }

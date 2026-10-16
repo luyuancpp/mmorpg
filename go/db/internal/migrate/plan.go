@@ -174,7 +174,7 @@ func (s *ProtoSource) Drift(ctx context.Context, q Queryer, database string) (Mi
 			if _, ok := primaries[table]; !ok {
 				warnings = append(warnings, fmt.Sprintf(
 					"缺主键:%s 按 proto 应有 PRIMARY KEY (%s),实际没有。"+
-						"INSERT ... ON DUPLICATE KEY UPDATE 的幂等语义会整个失效(每次存盘追加新行),"+
+						"存盘(proto2mysql Save:按主键 UPDATE,0 行再 INSERT)没有主键时不会撞 1062,内容未变或并发首写都会追加新行,"+
 						"需人工 ALTER TABLE 补主键", table, pk))
 			}
 		}
@@ -246,9 +246,9 @@ var primaryKeyRe = regexp.MustCompile(`PRIMARY KEY \(([^)]*)\)`)
 //
 //   - 缺主键告警永远不可能触发(regex 永远匹配不到),这条守卫等于没写;
 //   - 更糟的是 Baseline() 也用同一份 CREATE SQL,于是用本工具建出来的表会
-//     **没有主键**,而 player_database 的存盘走 INSERT ... ON DUPLICATE KEY
-//     UPDATE —— 没有主键就没有"重复"可言,每次存盘都会追加一行新记录,
-//     玩家数据表会无限膨胀且读出来的是任意一行。
+//     **没有主键**,而 player_database 的存盘(proto2mysql Save:按主键 UPDATE,
+//     0 行再 INSERT)没有主键时不会撞 1062 —— 内容未变(UPDATE 返回 0 行)或
+//     并发首写都会追加一行新记录,玩家数据表会无限膨胀且读出来的是任意一行。
 //
 // 所以这里直接读 proto 的 OptionPrimaryKey 扩展(它才是人写下的意图),
 // 建表 SQL 只作为回退。
@@ -296,8 +296,8 @@ func primaryKeyFromOptions(msg proto.Message) string {
 //
 // 为什么必须补而不是只告警:proto2mysql v0.0.18 的 GetCreateTableSQL 对
 // player_database / player_database_1 不输出 PRIMARY KEY 子句。若原样拿它建表,
-// 建出来的玩家数据表**没有主键**,而存盘走的是 INSERT ... ON DUPLICATE KEY
-// UPDATE —— 没有唯一键就永远不会命中 "duplicate",每次存盘都追加一行新记录:
+// 建出来的玩家数据表**没有主键**,而存盘(proto2mysql Save:按主键 UPDATE,0 行再
+// INSERT)没有唯一键就永远不会撞 1062 —— 内容未变或并发首写都会追加一行新记录:
 // 表无限膨胀,读回来的是任意一行,等于玩家数据静默损坏。
 // go/db/model/mysql_database_table.sql 里这两张表写的是 PRIMARY KEY (player_id),
 // 本函数保证按 proto 建出来的表与那份 schema 一致。

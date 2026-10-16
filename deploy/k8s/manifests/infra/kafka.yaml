@@ -153,7 +153,16 @@ spec:
                     app: kafka
       containers:
         - name: kafka
-          image: apache/kafka:latest
+          # 镜像钉 tag@digest(2026-10-15)。浮动的 :latest 配 PVC 上的持久日志目录,一次重启就可能让新版本 broker
+          # 去读旧版本写下的日志与 KRaft 元数据;group coordinator 与 OffsetDelete 的语义也会随镜像漂移,
+          # 而 go/db 存盘消费组按 zone 拆分的交接依赖它们。2026-10-15 核对时它与 Docker Hub 上的 latest 是同一个
+          # index digest。四处必须同改、digest 也必须相同:本文件、kafka-topic-init.yaml、deploy/docker-compose.yml
+          # 的 kafka 与 kafka-topic-init。核对与升级步骤见 README「Kafka:StatefulSet + PVC」的「镜像钉版本」。
+          # 改这一行会让下一次 infra-up 滚动重启 kafka StatefulSet:单 broker 档等于一次 broker 重启,
+          # 在没有玩家的窗口做;多 broker 档按 PDB 逐个滚动。
+          image: apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837
+          # 引用带 digest,内容不会变,节点上已有就不必重拉(:latest 缺省是 Always)。
+          imagePullPolicy: IfNotPresent
           # 文件描述符上限(R06)。K8s 没有声明 ulimit 的字段,容器运行时的 nofile **软**限
           # 因运行时/版本而异(Docker Desktop 给 1048576,不少 containerd 配置只给 1024)。
           # 而这个 broker 光控制面命令 topic 就有 2×256 个分区,每个分区至少 3 个打开文件
@@ -164,8 +173,8 @@ spec:
           # 所以在 exec 真正的入口之前把软限抬到硬限。软限只能升到硬限,不需要任何特权。
           # 覆盖 command/args 就绕过了镜像的 ENTRYPOINT/CMD,这里显式把它接回来:
           #   ENTRYPOINT ["/__cacert_entrypoint.sh"]  CMD ["/etc/kafka/docker/run"]
-          # 换镜像版本时用
-          #   docker image inspect apache/kafka:latest --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}'
+          # 换镜像版本时用(引用换成新的钉版引用)
+          #   docker image inspect apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837 --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}'
           # 核一遍;路径不对会立刻 CrashLoop 并打出 "not found",不会静默降级。
           command: ["/bin/sh", "-c"]
           args:

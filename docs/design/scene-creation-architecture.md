@@ -2,10 +2,12 @@
 
 **Updated:** 2026-08-03 (rev 4 — zone-scoped node identity + safe EnterScene commit)
 
+> 2026-10-15 修订：世界频道按 `(zoneId, confId)` 的 Redis SET 保存，多频道各有独立 scene_id；同步创建、收敛与幂等示意，依据 `world_init.go`、`world_autoscale.go` 与 C++ `SceneHandler::CreateScene`。
+
 ## Overview
 
 The scene system supports two scene types managed by Go SceneManager and hosted on C++ SceneNodes:
-- **Main World** scenes: persistent, one per config ID per zone, created at startup.
+- **Main World** scenes：每个 zone 的每个配置可有多个持久频道，启动时按期望频道数补建；每个频道有独立 scene_id。
 - **Instance** scenes: on-demand, lifecycle-managed, auto-destroyed when idle.
 
 ### Node Role Separation (WoW-style)
@@ -58,7 +60,7 @@ SceneManager is **stateless and horizontally scalable**. It does not bind to any
 
 | Type | Constant | Behavior |
 |------|----------|----------|
-| Main World | `SceneTypeMainWorld=1` | Persistent. Created at startup via `InitWorldScenes`. Idempotent (returns existing if already created). Never auto-destroyed. |
+| Main World | `SceneTypeMainWorld=1` | 持久频道；`initWorldScenesForZone` 按期望数补建，CreateScene 返回可用频道。频道自动扩缩容见 [world-channel-autoscale.md](./world-channel-autoscale.md)，不走普通副本的空闲超时销毁。 |
 | Instance | `SceneTypeInstance=2` | On-demand. Unique per request. Tracked in Redis sorted set. Auto-destroyed after `InstanceIdleTimeoutSeconds` (default 300s) with 0 players. Mirror instances (`MirrorConfigId > 0` or `SourceSceneId > 0`) use the shorter `MirrorIdleTimeoutSeconds` (default 30s) — see [Mirror vs. instance idle timeouts](#mirror-vs-instance-idle-timeouts). |
 
 Auto-detection: if `scene_type` is unset in the request, the system checks `WorldConfIds` config. If the `scene_conf_id` is in that list → main world; otherwise → instance.
@@ -71,11 +73,14 @@ Client/System → Go SceneManager.CreateScene(scene_conf_id)
 ├─ resolveSceneType (auto-detect or explicit)
 │
 ├─ Main World path:
-│  ├─ Check Redis hash → return existing (idempotent)
-│  ├─ getNodesForPurpose(World)  # filters by scene_node_type
-│  ├─ allocateScene → SceneIDGen.Generate(Snowflake), SET scene:{id}:node
-│  ├─ HSET world_channels:zone:{zoneId} confId → sceneId
-│  └─ RequestNodeCreateScene → gRPC → C++ Scene.CreateScene(config_id)
+│  ├─ GetBestWorldChannel: SMEMBERS world_channels:zone:{zoneId}:{confId}
+│  │    └─ 已有可用频道 → 返回当前人数最少的频道
+│  ├─ 无可用频道 → initWorldScenesForZone（持 zone 补建锁）
+│  │    ├─ DesiredWorldChannelCount + SMEMBERS → 只分配缺少的频道
+│  │    ├─ getNodesForPurpose(World) → SceneIDGen.Generate
+│  │    ├─ SET scene:{id}:node / zone，SADD world_channels:zone:{zoneId}:{confId} sceneId
+│  │    └─ 对全部频道发 CreateScene(scene_id, config_id)，C++ 按 scene_id 幂等
+│  └─ 再次 GetBestWorldChannel → 返回可用频道，否则回错误
 │
 └─ Instance path:
    ├─ pickInstanceNode:
@@ -100,8 +105,7 @@ WorldChannelCountByConfId:
   1010: 1     # tutorial — only one
 ```
 
-The lookup is exposed as `Config.ChannelCountFor(confId)` and consulted
-per confId in `initWorldScenesForZone`.
+`Config.ChannelCountFor(confId)` 是首次播种的频道数。`DesiredWorldChannelCount` 将其种入 `world_channels:desired:zone:{zoneId}`；之后补建以该 Redis Hash 中的期望数为准，自动扩缩容也修改它，避免缩容后又被静态配置补回。活动频道本身保存在另一族 SET：`world_channels:zone:{zoneId}:{confId}`。
 
 ### Composite load score
 
@@ -335,7 +339,7 @@ auto-routes the requesting player(s) into that mirror.
 
 ### C++ Side (Scene.CreateScene handler)
 
-1. **Idempotency check**: scans `sceneRegistry.view<SceneInfoComp>()` for existing entity with same `config_id`. If found, returns existing info without creating — safe to call repeatedly.
+1. **幂等检查**：按请求 `scene_id` 查找已有 `SceneInfoComp`，命中返回已有场景。同一 `config_id` 的不同频道有不同 scene_id，不能按配置号去重。
 2. `tlsEcs.sceneRegistry.create()` — creates entt entity (only if no duplicate).
 3. Emplaces `SceneInfoComp` (config_id, guid) and `ScenePlayers` (empty set).
 4. Fires `OnSceneCreated` event for downstream handlers (AOI, etc.).
@@ -630,24 +634,24 @@ StartLoadReporter (外层 for 循环)
 
 | K8s Controller 概念 | 本项目实现 |
 |--------------------|-----------|
-| Desired State | `WorldConfIds` 配置："每个 zone 应该有这些主场景" |
-| Current State | Redis `world_channels:zone:{zoneId}` 哈希 + C++ ECS registry |
+| Desired State | 世界配置集合 + `DesiredWorldChannelCount` 给出的每图期望频道数 |
+| Current State | Redis `world_channels:zone:{zoneId}:{confId}` SET 的 sceneId 集合 + C++ ECS registry |
 | Reconcile 函数 | `initWorldScenesForZone()` — 对比 + 收敛 |
 | Reconcile 触发方式 | Watch PUT event（增量）或 fullSync（全量） |
-| 幂等保证 | Redis 层跳过已有 ID + C++ CreateScene 按 config_id 去重 |
+| 幂等保证 | zone 补建锁内只分配缺失的频道 ID + C++ CreateScene 按 scene_id 去重 |
 
 ```
 Reconcile (initWorldScenesForZone):
 
-  for each confId in WorldConfIds:
-      ┌─ Redis Hget(world_channels:zone:X, confId)
-      │
-      ├─ 不存在 → 分配 scene ID (INCR), 写 Redis (HSET)
-      │           └─ 调 C++ CreateScene RPC → 创建 ECS entity
-      │
-      └─ 已存在 → 跳过 ID 分配
-                  └─ 仍然调 C++ CreateScene RPC → C++ 幂等返回已有 entity
-                     (覆盖 C++ 重启后 ECS 为空的情况)
+  持有 world_init:lock:zone:{zoneId} 的属主令牌:
+    for each confId in 世界配置集合:
+      desired = DesiredWorldChannelCount(zoneId, confId)
+      existing = SMEMBERS world_channels:zone:{zoneId}:{confId}
+      ├─ len(existing) < desired → SceneIDGen.Generate 分配缺失频道 ID
+      │    └─ 写 scene:{id}:node / zone，SADD 频道 SET
+      └─ 对频道 SET 中每个 sceneId 调 C++ CreateScene(scene_id, config_id)
+           ├─ ECS 已有同 scene_id → 返回已有 entity
+           └─ ECS 没有同 scene_id → 创建频道 entity（同配置可创建多个）
 ```
 
 #### 3. 两者结合 = 事件驱动的收敛控制器
@@ -681,11 +685,11 @@ etcd Watch (事件驱动，不轮询)
 
 ### Three-Layer Protection
 
-1. **C++ CreateScene idempotent by `config_id`**: Before creating a new entity, scans `sceneRegistry.view<SceneInfoComp>()` for an existing entity with the same `scene_confid`. If found, returns the existing scene info. This makes the RPC safe to call any number of times.
+1. **C++ CreateScene 按 `scene_id` 幂等**：已有同 scene_id 时返回原场景；相同 config_id 的另一个 scene_id 代表另一条频道，应独立创建。
 
 2. **Go `initWorldScenesForZone` dual-layer idempotency**:
-   - Redis layer: `Hget` checks if `confId` already has a scene ID → skips ID allocation.
-   - C++ layer: **always sends `CreateScene` RPC** regardless of Redis state (C++ deduplicates).
+   - Redis 层：在 zone 补建锁内读取 `SMEMBERS world_channels:zone:{zoneId}:{confId}`，只分配低于当前期望数的差额。
+   - C++ 层：为频道 SET 中的全部 scene_id 发送 `CreateScene`，由 C++ 按 scene_id 去重。
    - This handles the scenario where Redis has stale data (scene ID exists) but the C++ node restarted and its ECS registry is empty.
 
 3. **Go LoadReporter list-watch**: etcd Watch 事件驱动。节点 PUT → 触发 reconcile。Watch 断开 → fullSync re-list + 全量 reconcile。
@@ -705,7 +709,7 @@ etcd Watch (事件驱动，不轮询)
 事件驱动，不阻塞启动：
 1. `StartLoadReporter` → `fullSync()` 全量拉 etcd → 对所有发现的 zone 执行 `initWorldScenesForZone`（全量 reconcile）。
 2. 之后 Watch 接管：每当有 C++ 场景节点注册（PUT 事件），`handleWatchEvent` 触发该 zone 的 `initWorldScenesForZone`（增量 reconcile）。
-3. `initWorldScenesForZone`: iterates `WorldConfIds`, performs Redis idempotent check (skip ID allocation if exists), always sends C++ CreateScene RPC, assigns nodes via FNV-1a consistent hashing.
+3. `initWorldScenesForZone` 在 zone 补建锁内遍历世界配置，按 Redis 期望数与频道 SET 的差额分配 ID，再为集合中的每个频道发送 C++ CreateScene RPC；节点选择保留哈希分布与存活检查。
 
 ## Key Redis Keys
 
@@ -716,7 +720,8 @@ etcd Watch (事件驱动，不轮询)
 | `scene:{id}:mirror` | String | `"1"` marker for mirror scenes (shorter idle timeout) |
 | `scene:{id}:source` | String (int) | A mirror's source scene id, for reverse SREM on destroy |
 | `scene:{sourceId}:mirrors` | Set | Mirror scene ids whose source is this scene (cascade destroy) |
-| `world_channels:zone:{zoneId}` | Hash | confId → sceneId for main worlds |
+| `world_channels:zone:{zoneId}:{confId}` | Set | 该 zone、该世界配置的活动频道 sceneId 集合 |
+| `world_channels:desired:zone:{zoneId}` | Hash | confId → 当前期望频道数；配置只作首次播种 |
 | `instances:zone:{zoneId}:active` | ZSet | Active instances (score = create/last-active timestamp) |
 | `instance:{id}:player_count` | String (int) | Player count per instance |
 | `scene_nodes:zone:{zoneId}:load` | ZSet | Node load balancing (score = α·scene_count + β·player_count) |

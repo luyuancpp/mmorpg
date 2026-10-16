@@ -9,10 +9,11 @@
 // 逻辑全在 internal/routetool。退出码:0 干净 / 1 需要人工处理 / 2 失败 / 3 有生效的合服围栏或窗口内跑过合服(仅 import)。
 //
 // tidb-prepare(2026-10-12 G1a,TiDB-only):对路由表设 merge_option=deny 并按片 / 按 zone 预切 Region
-// (player_route 改成聚簇 (route_shard, player_id) 之后,不预切的话 16 条写入尾部在首日仍压在同一个 Region 上)。
+// (player_route 改成聚簇 (route_shard, player_id) 之后,不预切的话 64 条写入尾部在首日仍压在同一个 Region 上)。
 // 放在 route_tool 而不是迁移里:按 zone 预切要真实 zone 清单,data_service 的 yaml 里没有。只碰全局库,不连
 // mapping Redis;MySQL 上自动跳过(退出码 0)。何时要跑:TiDB 上建表之后、开新 zone 时(该 zone 开放前、低峰)、
-// BR / PITR 恢复之后、TRUNCATE 之后。它同样经过建池探针(含 chk_route_shard 实测),CHECK 不生效的库直接退出码 2。
+// BR / PITR 恢复之后、TRUNCATE 之后。它同样经过建池探针(含 chk_route_shard 实测与模数核对),CHECK 不生效、或表是按
+// 另一个行片模数建的库直接退出码 2。
 // K8s 上要等第 1b 批把 route_tool 并进主程序入口(与 import / audit 同一限制,见下)。
 //
 // 与 data_service 读同一份 yaml:mapping Redis 永远是 DB 0(go-zero RedisConf 没有 DB 字段),全局库取 SnapshotMySQL 段,
@@ -139,8 +140,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	}
 	st, err := openRouteStore(c)
 	if err != nil {
-		fmt.Fprintf(stderr, "route_tool: cannot open the route tables on the global DB "+
-			"(run `data_service -f %s -migrate` first if route_meta is missing): %v\n", a.configPath, err)
+		fmt.Fprintf(stderr, "route_tool: cannot open the route tables on the global DB (%s): %v\n", store.OpenRouteStoreHint(a.configPath, err), err)
 		return routetool.ExitFailed
 	}
 	defer func() { _ = st.Close() }()
@@ -179,12 +179,11 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 }
 
 // runTiDBPrepare 是 tidb-prepare 的装配:只开全局库的 RouteStore(探针照跑:TiDB 上同时证明悲观事务与
-// chk_route_shard 已就绪),不连 mapping Redis。失败原因由 routetool.TiDBPrepare 打在 stderr(FAILED 行)。
+// chk_route_shard 已就绪、模数与本二进制一致),不连 mapping Redis。失败原因由 routetool.TiDBPrepare 打在 stderr(FAILED 行)。
 func runTiDBPrepare(ctx context.Context, a cliArgs, c config.Config, stdout, stderr io.Writer) int {
 	st, err := openRouteStore(c)
 	if err != nil {
-		fmt.Fprintf(stderr, "route_tool: cannot open the route tables on the global DB "+
-			"(run `data_service -f %s -migrate` first if route_meta is missing): %v\n", a.configPath, err)
+		fmt.Fprintf(stderr, "route_tool: cannot open the route tables on the global DB (%s): %v\n", store.OpenRouteStoreHint(a.configPath, err), err)
 		return routetool.ExitFailed
 	}
 	defer func() { _ = st.Close() }()
@@ -327,7 +326,9 @@ func connectMappingRedis(ctx context.Context, rc redis.RedisConf) (*redis.Redis,
 }
 
 // openRouteStore 开全局库的 RouteStore:连接参数同 data_service(svc.MySQLConfigOf),池大小取 RouteStore 段,
-// 探针(会话 RC + 锁等待 1s、TiDB 悲观事务、route_meta 行在)失败就返回 error。
+// 探针失败就返回 error。探针五步:会话 RC + 锁等待 1s、TiDB 悲观事务、route_meta 行在、chk_route_shard 实测(P4)、
+// 行片模数核对(P5)。后两步是同一个必然回滚的事务里的三次 INSERT,不留数据,但要 player_route 的 INSERT 权限 ——
+// 只读的 audit 与 dry-run 也一样。
 func openRouteStore(c config.Config) (*store.RouteStore, error) {
 	cfg := svc.MySQLConfigOf(c)
 	cfg.MaxOpenConn = c.RouteStore.MaxOpenConn

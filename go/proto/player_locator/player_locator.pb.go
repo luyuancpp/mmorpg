@@ -226,8 +226,12 @@ type PlayerSession struct {
 	LastActiveTs   int64                  `protobuf:"varint,11,opt,name=last_active_ts,json=lastActiveTs,proto3" json:"last_active_ts,omitempty"` // Last active time (unix ms)
 	RequestId      string                 `protobuf:"bytes,12,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`             // Latest login request_id (idempotent)
 	Account        string                 `protobuf:"bytes,13,opt,name=account,proto3" json:"account,omitempty"`                                  // Account name (used by Login for reconnect decisions)
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// 登录代次:login 持玩家锁铸造,随本记录的整字节 CAS 提交;记录与请求都非 0 时提交点要求严格递增。
+	// 与 session_version 不同,断线不变、删键不归零(铸造带毫秒下限)。0 = 旧版 login 写入的无代次会话。
+	// 见 docs/design/scene-enter-session-fence.md §3。
+	LoginGeneration uint64 `protobuf:"varint,14,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PlayerSession) Reset() {
@@ -349,6 +353,13 @@ func (x *PlayerSession) GetAccount() string {
 		return x.Account
 	}
 	return ""
+}
+
+func (x *PlayerSession) GetLoginGeneration() uint64 {
+	if x != nil {
+		return x.LoginGeneration
+	}
+	return 0
 }
 
 type SetSessionRequest struct {
@@ -625,8 +636,10 @@ type ReconnectRequest struct {
 	TokenExpiryMs  uint64                 `protobuf:"varint,6,opt,name=token_expiry_ms,json=tokenExpiryMs,proto3" json:"token_expiry_ms,omitempty"`
 	RequestId      string                 `protobuf:"bytes,7,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	Account        string                 `protobuf:"bytes,8,opt,name=account,proto3" json:"account,omitempty"` // Account name (from Login)
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// 本次重连链铸造的登录代次,写进会话记录;记录与请求都非 0 时要求严格递增。0 = 旧版 login。
+	LoginGeneration uint64 `protobuf:"varint,9,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ReconnectRequest) Reset() {
@@ -713,6 +726,13 @@ func (x *ReconnectRequest) GetAccount() string {
 		return x.Account
 	}
 	return ""
+}
+
+func (x *ReconnectRequest) GetLoginGeneration() uint64 {
+	if x != nil {
+		return x.LoginGeneration
+	}
+	return 0
 }
 
 type ReconnectResponse struct {
@@ -874,7 +894,7 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\x05token\x18\x06 \x01(\tR\x05token\x12\x0e\n" +
 	"\x02ts\x18\a \x01(\x03R\x02ts\"\x1c\n" +
 	"\bPlayerId\x12\x10\n" +
-	"\x03uid\x18\x01 \x01(\x03R\x03uid\"\xd1\x03\n" +
+	"\x03uid\x18\x01 \x01(\x03R\x03uid\"\xfc\x03\n" +
 	"\rPlayerSession\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
@@ -891,7 +911,8 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\x0elast_active_ts\x18\v \x01(\x03R\flastActiveTs\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\f \x01(\tR\trequestId\x12\x18\n" +
-	"\aaccount\x18\r \x01(\tR\aaccount\"K\n" +
+	"\aaccount\x18\r \x01(\tR\aaccount\x12)\n" +
+	"\x10login_generation\x18\x0e \x01(\x04R\x0floginGeneration\"K\n" +
 	"\x11SetSessionRequest\x126\n" +
 	"\asession\x18\x01 \x01(\v2\x1c.playerlocator.PlayerSessionR\asession\"0\n" +
 	"\x11GetSessionRequest\x12\x1b\n" +
@@ -907,7 +928,7 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x02 \x01(\rR\tsessionId\x12*\n" +
-	"\x11lease_ttl_seconds\x18\x03 \x01(\rR\x0fleaseTtlSeconds\"\x94\x02\n" +
+	"\x11lease_ttl_seconds\x18\x03 \x01(\rR\x0fleaseTtlSeconds\"\xbf\x02\n" +
 	"\x10ReconnectRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12$\n" +
 	"\x0enew_session_id\x18\x02 \x01(\rR\fnewSessionId\x12\x17\n" +
@@ -917,7 +938,8 @@ const file_proto_player_locator_player_locator_proto_rawDesc = "" +
 	"\x0ftoken_expiry_ms\x18\x06 \x01(\x04R\rtokenExpiryMs\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\a \x01(\tR\trequestId\x12\x18\n" +
-	"\aaccount\x18\b \x01(\tR\aaccount\"\x8a\x01\n" +
+	"\aaccount\x18\b \x01(\tR\aaccount\x12)\n" +
+	"\x10login_generation\x18\t \x01(\x04R\x0floginGeneration\"\x8a\x01\n" +
 	"\x11ReconnectResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x126\n" +
 	"\asession\x18\x02 \x01(\v2\x1c.playerlocator.PlayerSessionR\asession\x12#\n" +

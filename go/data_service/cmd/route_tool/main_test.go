@@ -165,6 +165,9 @@ func TestRouteToolTiDBPrepareDoesNotTouchRedis(t *testing.T) {
 	assert.NotContains(t, stderr, "unreachable", "那是 mapping Redis 的文案")
 }
 
+// 建池失败时 stderr 括号里的提示按原因分流(store.OpenRouteStoreHint,三个建 route store 的入口共用),
+// 纯函数用例在 store 包的 TestOpenRouteStoreHintByCause。
+
 // minimalYaml 是能被 conf.Load 接受的最小配置(同 internal/config 的 minimalYaml),MappingRedis.Host 由用例填。
 const minimalYaml = `
 Name: dataservice.rpc

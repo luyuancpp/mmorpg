@@ -99,6 +99,7 @@ gate:    回包桥接 → 按响应头找会话 → MessageContent 原样写回�
 ## 6. 运维
 
 - 路由服配置:`ListenOn 127.0.0.1:50600` / `Timeout 6000`(zrpc 整体超时必须 > `ForwardTimeoutMs`,否则慢目标会被服务端先掐成故障,`config.Validate` 强制)/ `Etcd` / `ZoneId`(仅注册路径用)/ `LeaseTTL` / `ForwardTimeoutMs`(默认 5000)/ `ZoneScopedNodeTypes`(默认 `[LoginNodeService]`,枚举名解析失败 fail-fast)/ `MetricsListenAddr`(默认空;开启建议 `:9200` —— 9180 已被 friend 占用,guild 与 match 都写 9170 是既有撞号)。
+- **预算链(2026-10-14 补)**:每个路由目标的 zrpc `Timeout + 1000 ≤ ForwardTimeoutMs`,由部署门禁 `Assert-RouterForwardBudget` 核对;`ForwardTimeoutMs < Timeout`(`config.Validate`);`Timeout + 2000 ≤` gate 的 `GrpcClient.CallDeadlineMs.ClientRpcRouterNodeService`(`Assert-GrpcClientDeadlineBudget`);gate deadline + 排队等待上限 + 1000 ≤ 客户端超时 15000。这条链也是 gate 按会话保序的前提,见 [client-request-ordering.md](./client-request-ordering.md) §5。调大 `ForwardTimeoutMs` 前要先把整条链重算一遍。
 - 副本数 ≥ 2;gate 的 gRPC 连接数 = 副本数。
 - 观测:`client_rpc_router_forward_total{message_id, outcome}`(outcome ∈ ok / missing_session / invalid_request / unknown_message / not_client_protocol / battle_rejected / no_target / dial_error / upstream_timeout / upstream_error)、`client_rpc_router_forward_seconds{message_id}`(不在路由表的消息号归 `unknown`,基数有界)、`client_rpc_router_targets{node_type}`。
 - 部署链待补(与 battle 同批):`tools/scripts/k8s_deploy.ps1` 第 307 行附近的部署服务表与 ConfigMap 模板没有路由服;`cpp/generated/{proto,grpc_client}/CMakeLists.txt`(Linux)本次只加了 client_rpc_router,battle / match 的条目原本就缺,是既有缺口。

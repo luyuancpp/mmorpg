@@ -143,8 +143,20 @@ var (
 		Help:      "Consumer group lag summed over all partitions, as seen by the broker (every replica reports the same group value; alert on max).",
 	}, []string{"consumer"})
 
+	// 同一个组在这个 topic 上**单个分区**的最大积压。broker 的 retention.bytes 按分区执行:积压集中在少数分区时
+	// (持有它的实例卡住 / 毒丸行卡住所在分区)合计值还远没到线,那个分区已经开始被删 —— 「离删除线还有多远」的告警比的是它,
+	// 阈值因此与分区数无关。每个 consumer 一条序列,基数恒定;**不是**按分区出序列。每个实例报同一个数,告警取 max。
+	kafkaConsumerLagMaxPartitionMessages = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "kafka_consumer_lag_max_partition_messages",
+		Help:      "Largest single-partition lag of the consumer group on its topic, as seen by the broker (retention.bytes is enforced per partition; every replica reports the same group value; alert on max).",
+	}, []string{"consumer"})
+
 	// 保留期已经删掉、而这个组还没消费到的消息条数:> 0 = 审计数据已经丢了。
-	// 消费者跳过并提交之后它会自行归零 —— 「丢了多少」以 [kafka-go] 的 out of range / skipping 日志为准。
+	// 消费者越过缺口并提交之后它会自行归零 —— 「丢了多少」以日志为准(kafka-go v0.4.47,已按源码核对,见 kafka.newReader 的说明):
+	// 运行中被保留期追上是 [kafka-go] 的 `skipping from offset X to Y (N messages)` 行(精确);reader (重新)初始化时
+	// (进程重启 / 停机冷却后重建 / rebalance / 断线重连)kafka-go 静默跳到日志起点,看 [kafka-go] 的 `starting at offset` 与
+	// `seeking to offset` 两行之差;lag 探针的 `AUDIT DATA LOST` 行是 30s 采样值,只是下界。
 	kafkaConsumerRetentionGapMessages = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Subsystem: subsystem,
 		Name:      "kafka_consumer_retention_gap_messages",
@@ -213,6 +225,16 @@ var (
 		Subsystem: subsystem,
 		Name:      "asset_op_ledger_read_total",
 		Help:      "GetPlayerAssetOpLedger outcomes: found (blob read, ledger returned) | absent (no PlayerAllData blob) | error (routing, Redis or corrupt blob).",
+	}, []string{"result"})
+
+	// ── 玩家收件箱:已落盘账本读取(docs/design/player-inbox-service.md §9.3)──
+	//
+	// 调用方是 go/player_inbox 的对账(领导者每小时一轮 + 运维 ReconcilePlayer),GM 域量很小。
+	// result 集合与上面的资产账本相同;absent 由对账计为 unknown、不告警;error 非零看同一时刻的 ERROR 日志。
+	playerInboxLedgerReadTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "player_inbox_ledger_read_total",
+		Help:      "GetPlayerInboxLedger outcomes: found (blob read, ledger returned) | absent (no PlayerAllData blob) | error (routing, Redis or corrupt blob).",
 	}, []string{"result"})
 
 	// ── 回档的帮会资产闸(docs/design/guild-phase2/07-rollback-fail-closed.md §7.9.1)──
@@ -376,11 +398,12 @@ func register() {
 			rollbackTotal, rollbackPlayersAffectedTotal, rollbackOrphansCleanedTotal,
 			kafkaConsumerUp, kafkaConsumerMessagesTotal,
 			kafkaConsumerFlushSeconds, kafkaConsumerBatchRows, kafkaConsumerMessageBytes,
-			kafkaConsumerLagMessages, kafkaConsumerRetentionGapMessages,
+			kafkaConsumerLagMessages, kafkaConsumerLagMaxPartitionMessages, kafkaConsumerRetentionGapMessages,
 			kafkaConsumerLagProbeTotal, kafkaConsumerIsolationTotal,
 			idSegmentAllocateTotal,
 			playerNameOpsTotal, playerNameOpSeconds, playerNameCacheTotal,
 			assetOpLedgerReadTotal,
+			playerInboxLedgerReadTotal,
 			rollbackGuildCheckTotal, rollbackGuildDivergenceRows, rollbackGuildCheckSeconds,
 			routeRegisterTotal, routePublishTotal,
 		)
@@ -557,10 +580,11 @@ func ObserveKafkaConsumerMessageBytes(consumer string, n int) {
 	kafkaConsumerMessageBytes.WithLabelValues(consumer).Observe(float64(n))
 }
 
-// SetKafkaConsumerLag 写 lag 探针的结果:积压条数与保留期已删掉的未消费条数。
-func SetKafkaConsumerLag(consumer string, lag, gap int64) {
+// SetKafkaConsumerLag 写 lag 探针的结果:全部分区合计的积压条数、单分区最大积压条数、保留期已删掉的未消费条数。
+func SetKafkaConsumerLag(consumer string, lag, maxPartitionLag, gap int64) {
 	register()
 	kafkaConsumerLagMessages.WithLabelValues(consumer).Set(float64(lag))
+	kafkaConsumerLagMaxPartitionMessages.WithLabelValues(consumer).Set(float64(maxPartitionLag))
 	kafkaConsumerRetentionGapMessages.WithLabelValues(consumer).Set(float64(gap))
 }
 
@@ -616,6 +640,14 @@ func ObservePlayerNameCache(result string, n int) {
 func ObserveAssetOpLedgerRead(result string) {
 	register()
 	assetOpLedgerReadTotal.WithLabelValues(result).Inc()
+}
+
+// ObservePlayerInboxLedgerRead 记一次 GetPlayerInboxLedger 的结果。
+// result 是 "found" | "absent" | "error",取值集合由调用方(logic 的 inboxLedgerRead* 常量)封闭,
+// 本函数不做校验。**不要**把 player_id 加成 label(AGENTS.md §9),排障信息进日志。
+func ObservePlayerInboxLedgerRead(result string) {
+	register()
+	playerInboxLedgerReadTotal.WithLabelValues(result).Inc()
 }
 
 // ── Observe helpers ─────────────────────────────────────────────────

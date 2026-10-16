@@ -4,20 +4,21 @@
 #include <muduo/net/EventLoop.h>
 #include "proto/scene_manager/scene_node_service.grpc.pb.h"
 
-// gRPC service implementation for SceneNodeGrpc.
-// All RPC methods dispatch to the muduo event loop via runInLoop + promise/future
-// (blocking the gRPC thread pool thread until the event loop processes the request).
-//
-// IMPORTANT: Handle* methods run on the event loop thread.
-//   - Do NOT perform blocking I/O or long-running operations.
-//   - Always return grpc::Status::OK; communicate errors via response fields.
-//   - Each RPC wrapper also has a WRITING YOUR CODE section that runs on the gRPC
-//     thread BEFORE dispatch (admission checks such as Agones permits); only that
-//     section may return a non-OK status.
+///<<< BEGIN WRITING YOUR CODE: grpc.header.includes
+///<<< END WRITING YOUR CODE
+
+// 由 proto 工具生成 SceneNodeGrpc 的 gRPC 骨架；自定义代码只写在守护段内。
+// gRPC 线程通过 runInLoop + promise/future 等待事件循环完成请求。
+// Handle* 在事件循环执行，不做阻塞 I/O；业务错误经响应字段返回。
+// 投递前段在 gRPC 线程运行，可取得准入许可并提前返回非 OK。
+// loop 内段在 Handle* 前复核状态：将 dispatchStatus 设为非 OK 即跳过业务委托。
+// 完成后段在 gRPC 线程运行；许可与捕获的栈引用存活到 future.get() 完成。
 class SceneNodeGrpcImpl final : public scene_node::SceneNodeGrpc::Service
 {
 public:
     explicit SceneNodeGrpcImpl(muduo::net::EventLoop& loop);
+    ///<<< BEGIN WRITING YOUR CODE: grpc.header.public
+    ///<<< END WRITING YOUR CODE
 
     grpc::Status CreateScene(grpc::ServerContext* context,
         const ::CreateSceneRequest* request,
@@ -52,8 +53,7 @@ public:
         ::AssetOpResponse* response) override;
 
 private:
-    // Handler functions -- run on the muduo event loop thread.
-    // WARNING: Must complete quickly. The gRPC thread is blocked waiting via promise/future.
+    // 业务委托在事件循环线程执行，gRPC 线程同步等待完成。
     static void HandleCreateScene(const ::CreateSceneRequest* request, ::CreateSceneResponse* response);
     static void HandleDestroyScene(const ::DestroySceneRequest* request);
     static void HandleReleasePlayer(const ::scene_node::ReleasePlayerRequest* request);
@@ -64,4 +64,6 @@ private:
     static void HandleAssetCredit(const ::AssetOpRequest* request, ::AssetOpResponse* response);
 
     muduo::net::EventLoop& loop_;
+    ///<<< BEGIN WRITING YOUR CODE: grpc.header.private
+    ///<<< END WRITING YOUR CODE
 };

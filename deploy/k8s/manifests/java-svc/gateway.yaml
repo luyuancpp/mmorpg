@@ -49,6 +49,9 @@ spec:
           ports:
             - containerPort: 8081
               name: http
+            # actuator 独立管理端口(只给探针用,Service 不暴露),由 gateway ConfigMap 的 management.server.port 打开,见下面探针注释。
+            - containerPort: 8082
+              name: management
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: k8s
@@ -66,23 +69,29 @@ spec:
           # 所有副本共享的 MySQL 或 Redis 一挂,两个副本会同时 NotReady 并被 liveness 反复杀。
           # 两个分组在 application.yaml 的 management.endpoint.health.group 里声明,都不含外部依赖。
           # startup 与 readiness 同口径(应用完成启动即可接流量);Redis 不可用不该挡住网关启动。
+          # 端口(2026-10-15):三个探针打独立管理端口 8082(tools/scripts/k8s_deploy.ps1 生成的 java-svc-gateway-config 写
+          # management.server.port: 8082,契约测试钉住两边一致)。原先与业务共用 8081 的 Tomcat 线程池:MySQL 慢 / 不可达
+          # (Hikari 取连接要等)、Redis 卡住或被不限流的端点刷时,业务线程耗尽,liveness 跟着超时,两个副本被一起杀掉,
+          # 重启时依赖还没恢复又起不来。代价:探针不再反映业务连接器能否接新连接,业务线程卡死时 liveness 仍是 UP。
+          # 不要跨越本改动做 kubectl rollout undo:它把探针退回 8081,ConfigMap 却仍把 actuator 放在 8082,探针全部失败;
+          # 回退一律用旧 commit 重跑 k8s_deploy.ps1(ConfigMap 与 Pod 模板同批生成)。
           startupProbe:
             httpGet:
               path: /actuator/health/readiness
-              port: 8081
+              port: 8082
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 60
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
-              port: 8081
+              port: 8082
             initialDelaySeconds: 15
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
-              port: 8081
+              port: 8082
             initialDelaySeconds: 30
             periodSeconds: 20
           resources:

@@ -68,6 +68,9 @@
 
 - `GameRpcMessage` 只有 type / request / response / error / message_id(`proto/common/base/rpc_message.proto`),**没有请求关联 id**。
 - C++ 侧收应答按 message_id 派发给固定 handler(`game_channel.cpp:372` `HandleResponseMessage` → `gRpcResponseDispatcher`),不是按请求回调。
+- **更正(2026-10-15)**:上两条在 [muduo-rpc-channel.md](./muduo-rpc-channel.md) 落地后不再成立 —— `GameRpcMessage` 加了调用号 `id = 6`,
+  C++ 侧改为每次调用的 lambda 回调(带超时、断连 / 关机失败、对端错误),服务端可经 `RpcDoneCallback::Adopt(done)` 延后完成;
+  `game_channel.cpp` 已改名 `rpc_channel.cpp`。仍缺生产级 Go RPC0 客户端,所以 §2.2 的排序与 D35 的结论不变,只是方案 2 的前置少了一项。
 - 不改信封只能靠业务键关联:`CreateBattleResponse` 有 battle_id 能配;`AddObserverResponse` 没有 battle_id / observer_player_id,`DestroyBattle` / `RemoveObserver` 回 Empty,配不上。
 - Go 侧现有的 RPC0 实现只有 robot 里 vendored 的 `luyuancpp/muduoclient`(Send / Recv,无超时、deadline、重连、派发),是压测机器人用的,不是服务端库。
 - RPC0 连接要先过 NodeHandshake,注册侧校验对端 node_type 在 `IsTcpNodeType`(`registration_manager.cpp:118`);Go match 要以节点身份握手。

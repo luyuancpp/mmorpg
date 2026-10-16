@@ -21,13 +21,14 @@ namespace
 	// 本函数因此对客户端路径是冗余的 —— 留着不是忘了删:分发入口那道闸只管客户端
 	// 消息,而 SceneHandler::InvokePlayerService(节点路由)同样能调到下面这四条,
 	// 那条路只有这里挡得住。
-	bool RejectGmCurrencyRpc(const char* rpcName)
+	template <typename Response>
+	bool RejectGmCurrencyRpc(const char* rpcName, Response& response)
 	{
 		if (!scene_gm_guard::RejectGmClientRpc(rpcName))
 		{
 			return false;
 		}
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(kFeatureUnavailable);
+		response.mutable_error_message()->set_id(kFeatureUnavailable);
 		return true;
 	}
 }
@@ -37,7 +38,7 @@ void SceneCurrencyClientPlayerHandler::GmAddCurrency(entt::entity player,const :
 	::GmAddCurrencyResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (RejectGmCurrencyRpc("GmAddCurrency")) return;
+	if (RejectGmCurrencyRpc("GmAddCurrency", *response)) return;
 	// Frozen check is enforced inside CurrencySystem::AddCurrency; falls
 	// through to error reporting via the err path below. Kept here as a
 	// reminder: GM can absolutely fire while a player is mid cross-zone
@@ -48,7 +49,7 @@ void SceneCurrencyClientPlayerHandler::GmAddCurrency(entt::entity player,const :
 	const auto err = CurrencySystem::AddCurrency(player, type, request->amount(), TX_GM_GRANT);
 	if (err != kSuccess)
 	{
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	response->set_balance_after(CurrencySystem::GetBalance(player, type));
@@ -60,14 +61,14 @@ void SceneCurrencyClientPlayerHandler::GmDeductCurrency(entt::entity player,cons
 	::GmDeductCurrencyResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (RejectGmCurrencyRpc("GmDeductCurrency")) return;
+	if (RejectGmCurrencyRpc("GmDeductCurrency", *response)) return;
 	// Frozen check is enforced inside CurrencySystem::DeductCurrency.
 	const auto type = static_cast<CurrencyType>(request->currency_type());
 	// 同上:GM 扣币记 TX_GM_DEDUCT,别混进玩法消费。
 	const auto err = CurrencySystem::DeductCurrency(player, type, request->amount(), TX_GM_DEDUCT);
 	if (err != kSuccess)
 	{
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 	response->set_balance_after(CurrencySystem::GetBalance(player, type));
@@ -92,7 +93,7 @@ void SceneCurrencyClientPlayerHandler::GmBlockCurrency(entt::entity player,const
 	::GmBlockCurrencyResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (RejectGmCurrencyRpc("GmBlockCurrency")) return;
+	if (RejectGmCurrencyRpc("GmBlockCurrency", *response)) return;
 	// Frozen check (cross-zone-readiness-audit.md §11.1): blocking a
 	// currency type writes to CurrencyComp.blocked_types, which the
 	// destination zone's marshalled snapshot already carries. A source-
@@ -104,14 +105,14 @@ void SceneCurrencyClientPlayerHandler::GmBlockCurrency(entt::entity player,const
 		LOG_WARN << "GmBlockCurrency rejected: player frozen for cross-zone migration. "
 		         << "currency_type=" << request->currency_type()
 		         << " entity=" << entt::to_integral(player);
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(kInvalidParameter);
+		response->mutable_error_message()->set_id(kInvalidParameter);
 		return;
 	}
 	const auto type = static_cast<CurrencyType>(request->currency_type());
 	const auto err = CurrencySystem::BlockCurrency(player, type);
 	if (err != kSuccess)
 	{
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 ///<<< END WRITING YOUR CODE
@@ -122,7 +123,7 @@ void SceneCurrencyClientPlayerHandler::GmUnblockCurrency(entt::entity player,con
 	::GmUnblockCurrencyResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (RejectGmCurrencyRpc("GmUnblockCurrency")) return;
+	if (RejectGmCurrencyRpc("GmUnblockCurrency", *response)) return;
 	// Frozen check (cross-zone-readiness-audit.md §11.1): same rationale
 	// as GmBlockCurrency above — unblocking on the source side would not
 	// reach the destination's snapshot. Reject early.
@@ -131,14 +132,14 @@ void SceneCurrencyClientPlayerHandler::GmUnblockCurrency(entt::entity player,con
 		LOG_WARN << "GmUnblockCurrency rejected: player frozen for cross-zone migration. "
 		         << "currency_type=" << request->currency_type()
 		         << " entity=" << entt::to_integral(player);
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(kInvalidParameter);
+		response->mutable_error_message()->set_id(kInvalidParameter);
 		return;
 	}
 	const auto type = static_cast<CurrencyType>(request->currency_type());
 	const auto err = CurrencySystem::UnblockCurrency(player, type);
 	if (err != kSuccess)
 	{
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
+		response->mutable_error_message()->set_id(err);
 		return;
 	}
 ///<<< END WRITING YOUR CODE

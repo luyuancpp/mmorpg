@@ -9,10 +9,10 @@
 
 ```yaml
 # robot/etc/robot.yaml
-RobotCount: 5000
-GatewayAddr: "http://127.0.0.1:8080"
-UseHttpLogin: true
-ZoneID: 1
+robot_count: 5000
+gateway_addr: "http://127.0.0.1:8081"
+use_http_login: true
+zone_id: 1
 # 用 1000 robot 当 baseline,5000 robot 触发排队
 ```
 
@@ -28,7 +28,9 @@ Queue:
     "1": 1000   # 强制 1000,5000 robot 一定会触发排队
 ```
 
-启动顺序:Redis → etcd → login → gate → Java Gateway → robot。
+> **合入门槛(2026-10-15)**:在 `docs/handoff/launch-readiness-20261013/spec_G4b.md` §7「合入门槛」的三项都满足、`docs/PROGRESS.md` 有记录之前,上面的 `Queue.Enabled: true` 只在本机验证时用(清门槛所需的真实 Redis 冒烟即下方「验证清单」第 2、3 步与 `spec_G4b-G.md` §8.4),写在 scratchpad 里的配置副本上,不改 `go/login/etc/login.yaml`。部署环境一律不打开排队:K8s 由 `tools/scripts/k8s_deploy.ps1` 的 `$script:LoginQueueMergeGateCleared` 机械拦截(未清时各档位排队都关、`-LoginQueue on` 拒绝),手改 ConfigMap 或 login.yaml 的 `Queue.Enabled` 同样违规。
+
+先按当前启动脚本或 [K8s 开服手册](k8s-open-server-runbook_zh.md) 启动完整依赖链,确认 login、gate 与 Java gateway 就绪后再起 robot;路由模式还要求先有 client-rpc-router。本页是判读清单,不替代根 AGENTS.md §6 的每轮基线、数据清理与三阶段采样门禁。
 
 ---
 
@@ -37,12 +39,25 @@ Queue:
 | 指标 | 健康范围 | 红线含义 |
 |---|---|---|
 | `q_entered` | 4000±200(总数 5000 − 容量 1000) | 远低于 4000 = 容量计算错了/排队判定没触发 |
-| `q_admitted` | 单调上升,最终 → q_entered | 上升停滞 = dispatcher 卡死 |
+| `q_admitted` | 单调上升,最终 → q_entered;增速受下方「放行节奏」的上界约束 | `在线 + login_queue_admitted_inflight ≥ capacity` 时不涨是**正常回压**;停滞且 `在线 + 在途 < capacity` 才是 dispatcher 卡死(模式 1) |
 | `q_expired` | < 1% of q_entered | > 5% = AdmitTTL 太短 OR 客户端轮询太慢 |
-| `q_avg_wait` | < 60s(1000/s admit 速率下) | > 5min = dispatcher 严重落后 EnterGame |
+| `q_avg_wait` | < 60s(1000/s admit 速率下;待 L-14 重新标定) | > 5min = dispatcher 严重落后 EnterGame |
 | `q_max_rank` | 单调下降到 0 | 长时间不变 = 该 robot 卡住,看 Redis 检查 |
-| `login_ok` 增速 | 接近 zone capacity / login_avg | login_ok 不涨但 q_admitted 涨 = gate 链路坏 |
+| `login_ok` 增速 | 不超过「放行节奏」的上界(G4b-G 之前写的是「接近 zone capacity / login_avg」,待 L-14 重新标定) | login_ok 不涨但 q_admitted 涨 = gate 链路坏 |
 | `recon_fb` | 接近 0 | > 5% = 重连豁免判定有 bug,看 player_locator 日志 |
+
+**放行节奏(G4b-G,2026-10-13 起)**:本节的节奏数字(上表的增速、下面的样例与「关键观察」)写于 G4b-G 之前,没有按修复后的上界标定,**待 L-14 重新标定**。修复后的上界:
+
+- 每次放行都以 `在线 + 在途 ≤ capacity` 为界。排队放行的人取走票后,名额 20s 内不放回(在途占位再留 20s,盖住 gate 人数的上报滞后;2026-10-15 起,此前是 15s);之后他若已在线,名额转给在线数,也不放回。
+- 只有拿了票没连 gate、或连上很快就走的那部分名额,每约 22~23s(取走延迟 + 20s)周转一次(15s 时是约 17~18s)。
+- 所以 `在线 + login_queue_admitted_inflight ≥ capacity` 时 `q_admitted` 不涨是**正常回压,不是模式 1**。robot 登录后保持在线时(未核实),放满 capacity 之后 `q_admitted` 只随 robot 下线而涨。
+- 推导见设计稿 §5「在途占位的生命周期」与 `docs/handoff/launch-readiness-20261013/spec_G4b-G.md` §5.2「放行节奏的上界」。
+
+**一拍的放行怎么分到 gate(2026-10-15 起;未编译、未测试)**:dispatcher 每个非空拍只读一次 gate 目录(etcd 前缀读 + 排空标记 MGET),算容量与挑 gate 共用这一份;批内按「gate 上报的 `PlayerCount` + 本拍已分给它的人数」挑最少的(同数取 NodeID 最小),一拍的放行先填最闲的 gate,填平之后在各台之间轮转。判读:
+
+- 排队放行期间,各 gate 的在线数应先把最闲的那台补上来,之后大致同步上涨。
+- 各台在线数已经相近、一拍放行的人数又多于台数时,放行仍全部落在同一台 gate 上(只有一台的 `PlayerCount` 在涨,其余不动)= 跑的是 10-15 之前的版本(那时每放一个人重读一次目录,只按 `PlayerCount` 挑,而它 10s 才上报一次,一拍之内不变)。某台明显比别的闲时,整批先去填它属正常。
+- 快速通道(直接签票)仍是每次单独挑一次,规则相同,不跨请求记账。
 
 ### 周期 report 示例(健康状态)
 
@@ -52,7 +67,7 @@ Queue:
 [stats 90s] conn=5000 login_ok=3050 login_fail=18 ... q_entered=4080 q_admitted=3050 q_expired=7 q_avg_wait=33.8s q_max_rank=4078
 ```
 
-**关键观察**:`q_admitted` 每 30s 涨 1000±10(zone capacity);`q_avg_wait` 稳定在 30s 附近(等于排队的平均位置 × 1s 出队节奏);`q_max_rank` 在第一波入队后就固定不变(没有新的"插队")。
+**关键观察**:`q_admitted` 的涨速以上面「放行节奏」为准。样例里每 30s 涨约 1000(一个 zone capacity)写于 G4b-G 之前,成立的前提是放行的人不长期占着名额;robot 保持在线时,放满 capacity 之后 `q_admitted` 不涨属正常回压(先核对在线 + 在途是否已到 capacity),这个数字待 L-14 重新标定。`q_avg_wait` 稳定在 30s 附近(等于排队的平均位置 × 1s 出队节奏);`q_max_rank` 在第一波入队后就固定不变(没有新的"插队")。
 
 ---
 
@@ -64,21 +79,31 @@ Queue:
 [stats 60s] ... q_entered=4080 q_admitted=20 q_avg_wait=22s q_max_rank=4078  ← admitted 不涨
 ```
 **排查**:
+- **先看是不是正常回压**:`login_queue_admitted_inflight` 与该 zone 各 gate 上报的 `PlayerCount` 之和是否已到 capacity(`ZoneCapacityOverride`)。到了就是正常回压(G4b-G 起取走后占位再留一段——2026-10-15 起 20s,此前 15s——之后名额转给在线数,见上方「放行节奏」),不往下查
 - `redis-cli ZCARD queue:zone:1` → 应该单调下降。不降 = ZPOPMIN 没在跑
 - 查 login 日志 `[loginqueue] elected dispatcher leader zone=<id>` 是否存在 + `[loginqueue] zone=1 admitted=N` 是否持续
 - 无 leader 日志 = `dispatcher:lock:login_queue:zone:<id>` 抢锁失败,看 Redis 连接。多 zone 共用 Redis 时每个 zone 各有一把锁(2026-10-12 G1b 起),某个 zone 没有锁键 = 该 zone 没有打开 Queue 的 login 副本
-- 有 leader 但无 admitted 日志 = `FreeSlots` 永远返回 0,查 `GateWatcher.FetchAllNodes()` 和 ZoneCapacityOverride
+- 有 leader 但无 admitted 日志,且在线 + 在途 < capacity(已按第一条排除正常回压)= `FreeSlots` 永远返回 0,查 `GateWatcher.FetchAllNodes()` 和 ZoneCapacityOverride
 - 有 leader、日志里持续出现 `[loginqueue] freeSlots zone=<id> queueLen=<n> err=no gates for zone` = 有人在排,但本 zone 一台可用 gate 都没有(G1b 之前这种情况是静默跳过的)
+- 有 leader、日志里持续出现 `[loginqueue] queueLen zone=<id> err=...` = 读不出队列键(WRONGTYPE / ACL / 单键异常),锁照常续期但每拍都不出队(2026-10-14 之前这种情况零日志)
+- 日志里有 `goroutine_panic` 且 `point=login.queue_dispatcher_term`(指标 `safego_panic_total{point="login.queue_dispatcher_term"}` 在涨)= 出队路径有代码缺陷。该任期已放锁,本副本退避 TTL/3 后再参选,同 zone 备机可以接手;每个副本都 panic 就是每轮当选即 panic,队列照样不出,按栈修代码
 
 ### 模式 2:over-issue(超发 gate token)
 ```
 [stats 30s] ... q_admitted=2000  (期望 920)
 gate 日志:VerifyGateToken 突然出现大量 token 过期 / 玩家被踢
 ```
-**根因**:`admitted:zone:{id}` SET 在 SREM 后没及时减少,FreeSlots 算少了
+**根因**:在途占位没有覆盖「票已交出、gate 还没上报」这一段:这个人既不在在途里,也还不在 gate 的在线数里,下一拍又放一批。G4b-G 之前取走即撤占位,就是这一段(设计稿 §5「在途占位的生命周期」Q2)。
+**判读**:G4b-G 起在途占位是 `admitted:zset:zone:{id}` ZSET,成员分数是到期 Unix 毫秒。排队领票后仍保留 `handoffGrace`(当前 20s,2026-10-15 起;此前 15s),覆盖客户端连 gate 到在线人数上报的窗口;不再在领票时 SREM。旧键 `admitted:zone:{id}` 不再读写,不能用它判断当前容量。
 **排查**:
-- `redis-cli SCARD admitted:zone:1` → 应等于"已收 admit 但还没 connect 的玩家数",通常 < 50
-- 持续 > 200 = `consumeAdmit` 的 SREM 路径有 bug,或者客户端拿了 admit 没去连 gate
+- 看成员:`redis-cli ZRANGE admitted:zset:zone:1 0 -1 WITHSCORES`。分数是占位到期的 Unix 毫秒,`fast:` 开头的是快速通道占位,其余是排队放行的 queueId。
+- 只读统计未到期成员:先用 `redis-cli TIME` 取 Redis 当前 Unix 毫秒,再 `redis-cli ZCOUNT admitted:zset:zone:1 '(<当前毫秒>' +inf`。裸 `ZCARD` 可能包含尚未被下一次容量查询清掉的过期成员。
+- 对照 `login_queue_admitted_inflight`、gate 在线数与 `ZoneCapacityOverride`;在途数还包含 fast-path 的 `fast:<uuid>` 成员,没有固定的 `<50` 正常阈值:稳态约等于交票速率 × 20s(加上等轮询的放行数;2026-10-15 之前是 × 15s)。长时间顶在 `capacity − online` 而 gate 人数不涨 = 客户端拿了放行没去连 gate。
+- 超发时检查占位键是否被删 / 淘汰、过早到期、login 与 Redis 的时钟偏差以及旧二进制是否仍在运行。占位偏高通常会压低放行量,不能直接归因为超发。
+
+**反方向(少放:在途偏高、放不出人)**:
+- `ZRANGE … WITHSCORES` 里有分数比当前毫秒时间戳大出 `AdmitTTL`(默认 60s)以上的成员 = 某个 login 副本的钟快过。合法分数最多是写入时刻 + `AdmitTTL`;钟快的副本写下的占位,在别的副本看来要到「真实时间 + 偏差」才到期,它恢复后这些占位还要留满偏差量才到期。只要该 zone 还有写入,整键 TTL 一直被续上、不兜底(`docs/handoff/launch-readiness-20261013/spec_G4b-G.md` §4.2)。同时查各 login 节点的时钟同步。
+- 止血:`redis-cli DEL admitted:zset:zone:<z>`,代价是在途清零,下一拍最多多放一批 `capacity − online`。能停准入时,按文末「清空堆积」末段的做法先停该 zone 的新准入再删。
 
 ### 模式 3:dispatcher 双 leader(同一 zone 的双副本同时出队)
 ```
@@ -102,6 +127,10 @@ G1b(2026-10-12)之后每个 zone 各有一个 leader,**不同 zone 各打印一�
 - 调大 `AdmitTTL` 到 120s,看 q_expired 是否回落
 - 不调 AdmitTTL,看是不是网络层 RTT 异常
 
+**调 `AdmitTTL`(2026-10-15 改写)**:排队开着时可以直接滚动调整 `AdmitTTL`,不必先关排队。在途占位键 `admitted:zset:zone:<z>` 的整键 TTL 只延长不缩短(各副本写占位时,剩余 TTL 不足自己的 `max(AdmitTTL, 20s) + 1min` 才续),新旧值并存时小值副本不会把整键 TTL 压到大值副本写的占位之前。调小之后,已续上的较大整键 TTL 要自然走完才收敛(`redis-cli PTTL admitted:zset:zone:<z>` 一段时间内仍大于新值 + 1min 属正常),只影响 zone 下线后键多留多久。
+- 10-15 上午这里写过「新旧值之差不要超过 1min,更大的先 `-LoginQueue off` 再滚」,那是整键 TTL 还在无条件续期时的约束,已作废。
+- 例外:10-15 之前的 G4b-G 镜像(无条件续期)还在跑、又要在排队开着时改 `AdmitTTL` 时,旧约束仍对那部分副本成立;先按「故障应急」的升级顺序把所有副本升到新版本(排队关着滚)。依据见 `docs/handoff/launch-readiness-20261013/spec_G4b-G.md` §4.1、§5.5。
+
 ### 模式 5:重连玩家被排队(豁免失效)
 ```
 [stats 30s] ... q_entered=4500 (期望 4080)
@@ -115,8 +144,7 @@ G1b(2026-10-12)之后每个 zone 各有一个 leader,**不同 zone 各打印一�
 ```
 Redis 监控:queries/sec > 50k,p99 命令延迟 > 50ms
 ```
-**根因**:`DispatchInterval=1s` × 20 个 zone × (ZCARD + SCARD + ZPOPMIN + HGET + N×SET + N×SADD)
-**估算**:1 个 zone 每秒 ~5 个 Redis 命令(空闲)+ N 个(N=admit 批量),20 zone 满载约 2000 QPS。**远低于** Redis 上限,如果打爆说明客户端轮询太频(QueryQueueStatus 的 GETDEL + HGET + ZRANK = 每个 robot 每 2s 3 命令 × 4000 robot = 6000 QPS,可以接受)
+**检查对象**:每个 zone 的 dispatcher tick、客户端轮询,以及 fast-path 预占。当前容量查询经 Lua 执行 `ZREMRANGEBYSCORE + ZCARD`,占位写入是一段 Lua `ZADD + PTTL`(剩余不足才 `PEXPIRE`,2026-10-15 起;放行时与 `SET` 放行槽同在一个 MULTI 里,以 `EVAL` 发出),不再是旧 SET 的 SCARD / SADD。dispatcher 每个非空拍只读一次 gate 目录(etcd),不再每放一个人读一次。不同路径的 Redis 命令数不同,用实测 QPS、延迟和调用占比定位,不沿用旧版固定命令数估算。
 **排查**:redis MONITOR 抽样 100 个命令,看哪类命令占比最大,反推哪层在打
 
 ### 模式 7:gate ephemeral port 耗尽回归
@@ -131,10 +159,15 @@ gate 机器 sysctl net.ipv4.ip_local_port_range 内 TIME_WAIT 占满
 
 ## 验证清单(每次改 loginqueue 都跑一遍)
 
+> **打开排队前的硬门槛(2026-10-15 负责人定)**:G4b-G 起的在途占位脚本(含 10-15 的条件续期)只有 miniredis 上的证据。G4b-2 打开排队之前,下面第 2、3 步必须在真实 Redis 7.x 上跑通一次,同时按 `docs/handoff/launch-readiness-20261013/spec_G4b-G.md` §8.4 核对 `admitted:zset:zone:1`(类型、分数、约 20s 消失、`PTTL` 在 (0, 120000] 内且不是 −1、手工调大的整键 TTL 不被后续写入压回),结果记进 `docs/PROGRESS.md`。没有这份记录,任何环境都不打开排队。
+> (2026-10-15 补)部署侧的机械拦截是 `tools/scripts/k8s_deploy.ps1` 的 `$script:LoginQueueMergeGateCleared`:三项门槛(见 `spec_G4b.md` §7「合入门槛」)都满足、PROGRESS 有记录之后,由负责人把它改为 `$true`,K8s 上才会按档位打开排队。
+
 ### 1. 单元 + 集成测试都过
 ```bash
 cd go/login && go test ./internal/logic/pkg/loginqueue/... -count=1
-# 期望:11 个 PASS,~1s
+# 期望:全部 PASS,耗时数秒(主备切换类用例要等 1s 的备机重试周期)。
+#       个数不写死:2026-10-14 为 59 个顶层用例,以后增删用例以 -v 实际列出的为准。
+#       G1b 的验收命令与通过标准见 docs/handoff/launch-readiness-20261013/spec_G1b.md §7.2
 ```
 
 ### 2. 单 robot 冒烟(zone 不饱和)
@@ -146,14 +179,17 @@ cd go/login && go test ./internal/logic/pkg/loginqueue/... -count=1
 ### 3. 多 robot 冒烟(zone 饱和)
 ```bash
 # RobotCount=200, ZoneCapacityOverride: "1": 100
-# 期望:前 100 fast-path,后 100 q_entered=100, q_admitted 在 100s 内涨到 100
+# 期望:前 100 fast-path,后 100 入队(q_entered=100)。q_admitted 的涨幅 ≤ 容量 − 在线:
+#       robot 保持在线时不涨属正常(先核对在线 + 在途是否已到 capacity),robot 下线后每腾出一个名额放行一个。
+#       G4b-G(2026-10-13)起不再写死「100s 内涨到 100」,见上方「放行节奏」
 ```
 
 ### 4. dispatcher 杀掉再起(故障演练)
 ```bash
 # 跑 5000 robot,排队中途 kill -9 该 zone 当前的 leader login pod
-# 期望:30s 内同 zone 的备份接管,q_admitted 短暂停顿后继续上涨,q_avg_wait 略升但无饿死;
-#       只有这个 zone 的放行暂停(≤ TTL),其它 zone 不受影响
+# 期望:约 20~40s 内同 zone 的备份接管(锁剩余 TTL 在 20~30s 之间,心跳每 TTL/3=10s 续到 30s;
+#       再加备机重试周期 TTL/3=10s),q_admitted 短暂停顿后继续上涨,q_avg_wait 略升但无饿死;
+#       只有这个 zone 的放行暂停(≤ TTL + TTL/3 ≈ 40s),其它 zone 不受影响
 ```
 
 ### 5. Redis 重启(灾难演练)
@@ -174,19 +210,31 @@ login 进程通过 go-zero 内置 `/metrics` endpoint(`login.yaml` 第 119 行 `
 | 指标 | 类型 | 标签 | 用途 |
 |---|---|---|---|
 | `login_queue_size` | Gauge | zone | ZCARD 实时长度,dispatcher 每 tick 刷 |
-| `login_queue_admitted_inflight` | Gauge | zone | SCARD admitted set,容量计算的 in-flight 项 |
+| `login_queue_admitted_inflight` | Gauge | zone | 在途占位数:容量查询清除过期成员后的 admitted ZSET 长度(ZCARD),即已放行未取 + 交票后 20s 之内(2026-10-15 起;此前 15s),含排队与 fast-path 两种占位。口径 2026-10-13(G4b-G)起变宽,前后曲线不可比;10-15 宽限加长后,稳态里「交票后」那部分约变为原来的 4/3 |
 | `login_queue_wait_seconds` | Histogram | zone | 入队到 admit 的端到端等待(buckets: 0.5/1/2/5/10/20/30/60/120/300/600s)|
 | `login_queue_admit_total` | Counter | zone | dispatcher 累计 admit 数,`rate(...[1m])` = drain QPS |
-| `login_queue_expired_total` | Counter | zone, reason | reason ∈ `bad_signature` / `ttl` / `meta_gone` / `queue_disabled` |
-| `login_queue_dispatcher_is_leader` | Gauge | pod, zone | 1=leader,0=standby;`sum by (zone) (...) == 1` 是稳态不变量(每 zone 一个 leader) |
+| `login_queue_expired_total` | Counter | zone, reason | reason ∈ `bad_signature` / `ttl` / `meta_gone` / `queue_disabled` / `admit_window_passed`(2026-10-15 起:放行槽已被取走或已按 AdmitTTL 过期后再查,回 EXPIRED;此前这类查询回名次 0、最长卡 1h。稳态里它主要来自客户端取票后的重复查询,偏高说明放行后没人来取) |
+| `login_queue_dispatcher_is_leader` | Gauge | pod, zone | 1=leader,0=standby;`sum by (zone) (...) == 1` 是稳态不变量(每 zone 一个 leader)。leader 每拍重发 1、备机每轮抢锁失败重发 0(2026-10-14 起),指标开关打开前写丢的样本下一拍就补上。**序列缺失不等于 0**:整 zone 没有副本上报时 `sum by (zone)` 根本不出这一组,发现不了整 zone 缺席,见下方 `absent` 告警 |
 
 ### 推荐告警(PromQL)
 
 ```promql
-# 某个 zone 没有 leader 或双 leader (Redis flap / 该 zone 全副本挂 / 同 zone 锁键配得不一样)
+# 某个 zone 双 leader,或有副本在上报但没有 leader(Redis flap / 同 zone 锁键配得不一样)。
+# 建规则时 for: 1m,盖过 leader 交接窗口:kill -9 时锁剩余 TTL ≤ 30s + 备机重试周期 10s ≈ 40s,
+# 优雅停机最长 10s;不带 for 的话每次滚动重启 / 切主都会响。
+# 「该 zone 全副本挂」这条发现不了:没有序列时 sum by (zone) 不出这一组,!= 1 永远不命中。
 sum by (zone) (login_queue_dispatcher_is_leader) != 1
 
-# 队列在涨但 admit 不涨(dispatcher 卡死)
+# 某个开了排队的 zone 一条序列都没有(全副本挂 / 没开排队 / 没抓到),只有这条能报。for: 2m。
+# absent 不能按标签自动分组,必须按开了排队的 zone 清单逐个写(下面是 zone 1)。
+# 也可以与上一条合成「sum by (zone) (...) > 1」加「absent(login_queue_dispatcher_is_leader{zone="<id>"} == 1)」
+# (后者同时覆盖全 0 与无序列),两种写法二选一。都依赖 leader / 备机按拍重发,否则冷启动后会一直报。
+absent(login_queue_dispatcher_is_leader{zone="1"})
+
+# 队列在涨但 admit 不涨(dispatcher 卡死)。
+# zone 满员(在线 + 在途 ≥ capacity)时这条同样成立,属正常回压(G4b-G 起取走后占位再留 20s(10-15 前 15s),之后名额转给在线数);
+# 判卡死要再加「在途 + 在线 < capacity」。上面 6 个排队指标里没有在线数与 capacity,这个条件先人工核对
+# gate PlayerCount 与 ZoneCapacityOverride。
 deriv(login_queue_size[5m]) > 0 and rate(login_queue_admit_total[5m]) == 0
 
 # p99 等待超过 5 分钟
@@ -218,14 +266,18 @@ rate(login_queue_expired_total{reason="bad_signature"}[5m]) > 10
 
 **立即关闭排队**:`login.yaml` 改 `Queue.Enabled: false`,重启 login pod(或者 hot-reload 如果 go-zero config watcher 已接好)。**所有玩家立刻走 fast path,等同于排队没存在过。**
 
+**升级顺序(G4b-G,2026-10-13)**:打开 `Queue.Enabled` 之前,所有 zone 的 login 先在排队关闭下升到含 G4b-G(含 G1b)的版本。排队开着混跑时,新旧两种在途占位键互不可见,旧版副本放行 / 取走的部分仍按旧版超发;不丢人、不重复放行。这与 `go/login/etc/login.yaml` 上线清单第 0 步是同一条要求,逐格推导见设计稿 §5「在途占位的生命周期」。
+
 **清空堆积**(与设计稿 §15 一致):
 
 > 不要用 `KEYS`:它会阻塞全服共用的那个 Redis 主。多 zone 共用 Redis 时,下面后三行(`admit:*` / `queue:meta:*` / `queue:token:*`)不分 zone,会清掉**全部 zone** 的放行槽和排队条目;只想清一个 zone 时只执行第一行,其余键按 TTL(60s / 1h)自然过期。
 
 ```
-redis-cli DEL queue:zone:1 admitted:zone:1
+redis-cli DEL queue:zone:1 admitted:zset:zone:1
 redis-cli --scan --pattern 'admit:*'        | xargs -r redis-cli DEL
 redis-cli --scan --pattern 'queue:meta:*'   | xargs -r redis-cli DEL
 redis-cli --scan --pattern 'queue:token:*'  | xargs -r redis-cli DEL
 ```
 玩家会自己重试 `/api/assign-gate` 重新入队(如果排队还开着)或直接进游戏(如果 Enabled=false)。
+
+删除占位会让尚未连上的有效 gate 票据暂时不计入容量,下一拍可能再次放行。应先停止该 zone 的新准入并等待有效票据窗口结束,再执行清理并恢复准入;不能在正常放行中把删键当成日常降队列手段。新旧二进制混跑时应先完成版本收口,不要靠同时删新旧键修复容量语义。旧键 `admitted:zone:*` 是 2026-10-13(G4b-G)之前版本的残留,最后一个旧版本停写后 60s 内自行过期,不用删。

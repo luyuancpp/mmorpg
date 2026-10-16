@@ -128,10 +128,98 @@ func TestNextAttemptMs(t *testing.T) {
 	}
 }
 
+// 停放档的判据(设计 §6.1):本地合成的 NOT_HERE 且没有位置 + 已投递次数达到门槛,缺一不停放;
+// 门槛或间隔为 0 都等于关闭。
+func TestOfflineParkingParks(t *testing.T) {
+	park := OfflineParking{AfterAttempts: 5, Backoff: 30 * time.Minute}
+	localNotHere := Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE, Local: true, Absent: true}
+	// 有位置记录却找不到持有节点(节点未注册、镜像未同步、等待跨 zone 落点):玩家多半在线,没有落地唤醒兜底。
+	noHolder := Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE, Local: true}
+
+	cases := []struct {
+		name     string
+		park     OfflineParking
+		res      Result
+		attempts uint32
+		want     bool
+	}{
+		{"刚好达到门槛", park, localNotHere, 5, true},
+		{"远超门槛", park, localNotHere, 1000, true},
+		{"差一次", park, localNotHere, 4, false},
+		{"从未投递过", park, localNotHere, 0, false},
+		{"有位置记录但无持有节点", park, noHolder, 1000, false},
+		// scene 自己回的 NOT_HERE 说明玩家刚换节点,下一次很可能就成,不能一停半小时。
+		{"scene 回的 NOT_HERE", park, Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE, Reason: ReasonPlayerNotHere}, 10, false},
+		{"RETRY(战斗中)", park, Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_RETRY, Reason: ReasonInBattle}, 10, false},
+		// 传输失败时 ProcessOne 拿到的是零值结果:那是 scene 或网络的问题,不是玩家不在。
+		{"传输失败(零值结果)", park, Result{}, 10, false},
+		{"门槛为 0 即关闭", OfflineParking{Backoff: 30 * time.Minute}, localNotHere, 1000, false},
+		{"间隔为 0 即关闭", OfflineParking{AfterAttempts: 5}, localNotHere, 1000, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := c.park.Parks(c.res, c.attempts); got != c.want {
+				t.Fatalf("Parks = %v,期望 %v", got, c.want)
+			}
+		})
+	}
+}
+
+// 停放档的下一次时刻 = now + Backoff × [0.8, 1.2],抖动口径与普通退避同一份;
+// 没进停放档时与 NextAttemptMs 逐值相同(seq.go 的事务退避仍直接用 NextAttemptMs)。
+//
+// 上界是闭区间:越界的 jitter 被夹成 math.Nextafter(1, 0),0.8 + 0.4×它在 float64 下舍入成恰好 1.2,
+// 30 分钟 × 1.2 算出来正好是 2160000ms(与 TestNextAttemptMs 的 `> 72000` 同一写法)。
+func TestNextRetryMs(t *testing.T) {
+	const now = 1_000_000
+	park := OfflineParking{AfterAttempts: 5, Backoff: 30 * time.Minute}
+	localNotHere := Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE, Local: true, Absent: true}
+	fixed := func(v float64) func() float64 { return func() float64 { return v } }
+
+	if delay := NextRetryMs(now, 5, localNotHere, time.Second, time.Minute, park, fixed(0)) - now; delay != 1_440_000 {
+		t.Fatalf("停放档 jitter=0 应为 30min×0.8=1440000ms,实际 %d", delay)
+	}
+	if delay := NextRetryMs(now, 5, localNotHere, time.Second, time.Minute, park, nil) - now; delay != 1_800_000 {
+		t.Fatalf("停放档无抖动应取中值 1800000ms,实际 %d", delay)
+	}
+	for _, jitter := range []float64{0.999999, 42, -3} {
+		delay := NextRetryMs(now, 5, localNotHere, time.Second, time.Minute, park, fixed(jitter)) - now
+		if delay < 1_440_000 || delay > 2_160_000 {
+			t.Fatalf("jitter=%v 时停放间隔 %dms 不在 [1440000, 2160000]", jitter, delay)
+		}
+	}
+
+	notParked := []struct {
+		name     string
+		attempts uint32
+		res      Result
+	}{
+		{"差一次", 4, localNotHere},
+		{"有位置记录但无持有节点", 20, Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE, Local: true}},
+		{"scene 回的 NOT_HERE", 20, Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE, Reason: ReasonPlayerNotHere}},
+		{"传输失败", 20, Result{}},
+	}
+	for _, c := range notParked {
+		t.Run(c.name, func(t *testing.T) {
+			got := NextRetryMs(now, c.attempts, c.res, time.Second, time.Minute, park, fixed(0))
+			want := NextAttemptMs(now, c.attempts, time.Second, time.Minute, fixed(0))
+			if got != want {
+				t.Fatalf("没进停放档时应与 NextAttemptMs 一致:期望 %d,实际 %d", want, got)
+			}
+		})
+	}
+}
+
 // 状态与动作的名字会进指标 label,写飘了告警规则就全废。
 func TestStatusAndActionNames(t *testing.T) {
 	if got := StatusAppliedPartial.String(); got != "applied_partial" {
 		t.Fatalf("StatusAppliedPartial 名字错: %q", got)
+	}
+	if got := StatusAbandoned.String(); got != "abandoned" {
+		t.Fatalf("StatusAbandoned 名字错: %q", got)
+	}
+	if got := statusCount.String(); got != "invalid" {
+		t.Fatalf("越过最后一个状态应为 invalid,实际 %q", got)
 	}
 	if got := Status(0).String(); got != "invalid" {
 		t.Fatalf("零值状态应为 invalid,实际 %q", got)

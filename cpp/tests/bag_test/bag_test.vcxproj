@@ -162,6 +162,8 @@
     <ClCompile Include="bag_remove_by_guid_test.cpp" />
     <ClCompile Include="bag_remove_exact_test.cpp" />
     <ClCompile Include="bag_instance_data_test.cpp" />
+    <ClCompile Include="bag_selection_order_test.cpp" />
+    <ClCompile Include="bag_java_parity_test.cpp" />
     <ClCompile Include="player_equip_test.cpp" />
     <ClCompile Include="player_equip_attribute_test.cpp" />
     <ClCompile Include="player_feature_snapshot_test.cpp" />
@@ -173,12 +175,14 @@
     <ClCompile Include="..\..\nodes\scene\handler\rpc\player\player_bag_handler.cpp" />
     <ClCompile Include="..\..\nodes\scene\handler\rpc\player\player_mission_handler.cpp" />
     <ClCompile Include="..\..\nodes\scene\handler\rpc\player\player_activity_handler.cpp" />
+    <ClCompile Include="..\..\nodes\scene\handler\rpc\player\player_attribute_handler.cpp" />
+    <ClCompile Include="..\..\nodes\scene\handler\rpc\player\player_pet_handler.cpp" />
   </ItemGroup>  <ItemGroup>
     <ClCompile Include="player_battle_settlement_test.cpp" />
     <ClCompile Include="player_mission_system_test.cpp" />
     <ClCompile Include="player_activity_schedule_test.cpp" />
     <ClCompile Include="player_feature_persistence_test.cpp" />
-    <ClCompile Include="..\..\nodes\scene\handler\event\mission_event_handler.cpp" />
+    <ClCompile Include="..\..\nodes\scene\handler\local_event\scene_local_events.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="scene_spawn_test.cpp" />

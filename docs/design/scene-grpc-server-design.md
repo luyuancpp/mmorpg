@@ -1,10 +1,10 @@
 # Scene Node gRPC Server Design
 
 **Date:** 2026-04-15
-**Last updated:** 2026-07-31
+**最近核对:** 2026-10-15，基线 `6281e4d27`；本次只修订文档，未执行构建或运行验证。
 **Status:** Implemented
 
-## Problem
+## 原始问题（双端口实现前）
 
 Go `scene_manager` connects to C++ Scene Node via `grpc.NewClient()`, but Scene Node only exposes a TCP port with RPC0 (ProtobufCodecLite) codec. The gRPC HTTP/2 connection preface (`PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n`) is misinterpreted by the RPC0 codec as a 1.3-billion-byte message length, triggering `kInvalidLength` errors. The scene_manager retries every few seconds, flooding Scene logs.
 
@@ -28,10 +28,10 @@ Scene Node exposes **two ports**:
 ```
 Scene Node (C++)
 ├── TCP  :N     ← Gate node (RPC0, node-to-node, ProtobufCodecLite)
-└── gRPC :N+1   ← Go services (scene_manager, future cross-server services)
+└── gRPC :N+30000 ← Go 服务（scene_manager 等控制面调用方）
 ```
 
-### Why scene_manager Connects TO Scene (Not the Reverse)
+### 双向调用按职责区分
 
 **Principle: whoever issues commands is the client.**
 
@@ -41,9 +41,11 @@ Scene Node (C++)
 | Agones | Allocator → GameServer | Allocator dials game server |
 | This project | scene_manager → Scene Node | Orchestrator dials executor |
 
-Scene does not need to RPC-call scene_manager:
-- Load reporting already uses Redis/etcd metadata
-- Player enters scene via Gate → scene_manager gRPC, not Scene → scene_manager
+创建、销毁场景由 SceneManager 经 gRPC 调 Scene；这不排除反向调用。场景内玩家换图由
+Gate 经 muduo TCP RPC 转到 Scene 的 `SceneSceneClientPlayerHandler::EnterScene`，再由
+`PlayerLifecycleSystem::RequestSceneChange` 调 SceneManager.EnterScene。镜像创建与紧急疏散
+也有 Scene → SceneManager 出站调用，分别见 `player_scene.cpp` 与 `player_lifecycle.cpp`。
+负载上报使用 Redis/etcd，与这些业务请求是不同职责。
 
 ### Why Not Bidirectional Streaming
 
@@ -73,7 +75,7 @@ Kafka remains appropriate for Gate's `RoutePlayer`/`KickPlayer` (notifications, 
                                     │                         │
   Gate Node ──── TCP (RPC0) ──────► │  TCP  :N   (RPC0)      │
                                     │                         │
-  scene_manager ── gRPC ──────────► │  gRPC :N+1 (HTTP/2)    │
+  scene_manager ── gRPC ──────────► │ gRPC :N+30000 (HTTP/2)│
                                     │                         │
   cross-zone    ── gRPC ──────────► │  (same gRPC port)       │
   scene_manager                     └─────────────────────────┘
@@ -127,7 +129,10 @@ This imports the existing Scene request/response messages from the legacy Scene 
 
 **File:** `cpp/libs/engine/core/node/system/node/node_allocator.cpp`
 
-After TCP port allocation, if node has gRPC services, allocates gRPC port = TCP port + 1 (with availability check and fallback scan). Sets `grpc_endpoint` in NodeInfo, which is then published to etcd as JSON.
+有注册 gRPC 服务的节点使用确定的端口对：`grpc_endpoint.port = endpoint.port + 30000`。
+`NodeAllocator` 先检查派生端口是否可用，不可用则本轮分配失败、不发布该端口对；扫描模式后续
+重试可换下一对 TCP/gRPC 端口，预设 TCP 端口则等待原端口对。没有脱离 TCP 端口单独扫描的
+gRPC fallback。最终两类 endpoint 都写入 NodeInfo 后发布到 etcd。
 
 ### 5. C++ Scene Node: gRPC service implementation
 
@@ -165,15 +170,17 @@ Because sync handlers may be waiting for EventLoop work, calling
 shutdown cycle. The required state flow is:
 
 ```text
-Running -> GrpcDraining -> Finalizing -> Done
+Running -> ClosingIngress -> (GrpcDraining || PersistenceDraining) -> Finalizing -> Done
 ```
 
-1. The EventLoop marks shutdown and runs the pre-shutdown business hook.
-2. A temporary, joinable worker calls `grpc::Server::Shutdown(deadline)`.
-3. The EventLoop continues servicing already queued handler work.
-4. When `Shutdown()` returns, the worker queues finalization to the EventLoop.
-5. The EventLoop joins the completed worker, releases the remaining resources,
-   and quits.
+1. EventLoop 封住 Kafka 入站后执行关机业务 hook；producer 保留，供退出存盘继续发送 DBTask。
+2. Node 持有的临时可 join worker 执行 `grpc::Server::Shutdown(deadline)`；EventLoop 同时处理
+   已排队的 handler 与存盘完成回调。
+3. gRPC worker 返回后，EventLoop join 已完成的 worker 并标记 gRPC drain 完成；Finalize 仍须
+   现场确认玩家实体、Redis ACK 与 Kafka flush 的业务 barrier。业务 drain 预算为 15 秒，超时
+   须记录未完成项，不能把此前一次短暂完成当作最终完成。
+4. 两条 drain 满足退出条件后，EventLoop 再释放 Redis、传输资源并排空
+   关闭队列。顺序与细节见 [scene-node-threading-model.md](scene-node-threading-model.md)。
 
 The deadline is a transport grace deadline. gRPC can cancel pending calls when
 it expires, but it does not forcibly terminate a C++ sync handler that has
@@ -201,9 +208,10 @@ Added `GrpcEndpoint` field to `sceneNodeRegistration` struct.
 - No Kafka topic routing or cross-zone stream management needed
 - Same `CreateScene` RPC works for local and cross-zone requests
 
-This does **not** make existing-player cross-node handoff safe. The player data
-path still needs a durable handoff epoch; SceneManager therefore rejects that
-flow by default even though the control-plane socket is reachable.
+控制面 socket 可达本身不保证玩家交接安全。当前已有 `owner_epoch` 与
+`player:{id}:handoff` 落盘标记：已有位置的跨节点/跨 zone 请求须先满足换手门，否则回
+可重试的 `ErrHandoffPending`。不再是等待 epoch 落地前的无条件拒绝；实现与剩余验证边界见
+[cross-zone-scene-travel.md](cross-zone-scene-travel.md) CZ-4、§12–§13。
 
 ## Files Changed
 
@@ -225,10 +233,10 @@ flow by default even though the control-plane socket is reachable.
 Each Scene node registers its own gRPC endpoint in etcd. No additional port mapping or service mesh is required.
 
 ```
-etcd keys (example):
-  SceneNodeService.rpc/zone/1/node_type/3/node_id/1 → {ip: x.x.x.x, port: 20000, grpc_port: 20001, zone_id: 1}
-  SceneNodeService.rpc/zone/1/node_type/3/node_id/2 → {ip: x.x.x.x, port: 20002, grpc_port: 20003, zone_id: 1}
-  SceneNodeService.rpc/zone/2/node_type/3/node_id/1 → {ip: y.y.y.y, port: 20000, grpc_port: 20001, zone_id: 2}
+etcd 注册中的端口值示意：
+  zone 1 / scene node 1 → endpoint=x.x.x.x:20000, grpc_endpoint=x.x.x.x:50000
+  zone 1 / scene node 2 → endpoint=x.x.x.x:20002, grpc_endpoint=x.x.x.x:50002
+  zone 2 / scene node 1 → endpoint=y.y.y.y:20000, grpc_endpoint=y.y.y.y:50000
 ```
 
 | Environment | Extra mapping? | Reason |
@@ -237,7 +245,7 @@ etcd keys (example):
 | K8s | No | Each Pod has unique IP, no port conflict |
 | Multi-zone | No | Each zone's Scene nodes register independently, scene_manager filters by zone |
 
-- gRPC port = TCP port + 1 (convention, unique per node via etcd CAS port allocation).
+- gRPC 端口 = TCP 端口 + 30000；以上为 endpoint 值示意，不是 etcd JSON 字段的字面格式。
 - scene_manager caches by `(zoneId,nodeId)`, because the same numeric node ID can
   exist in multiple zones. Endpoint resolution requires exactly one live etcd
   registration for that pair; duplicates fail closed, including cache hits.

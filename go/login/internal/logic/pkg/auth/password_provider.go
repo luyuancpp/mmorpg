@@ -52,6 +52,7 @@ var defaultArgon2idParams = argon2idParams{
 }
 
 var ErrPasswordKDFCapacity = errors.New("password KDF capacity unavailable")
+var ErrPasswordCredentialUnavailable = errors.New("password credential unavailable")
 
 // PasswordHashStore 是生产口令认证器唯一信任的账号存储接口。返回的
 // canonicalAccount 必须来自权威库，不能原样回显客户端输入。
@@ -141,20 +142,21 @@ func (s *SQLPasswordHashStore) LookupPasswordHash(ctx context.Context, account s
 // 一次同成本的 Argon2id，以降低账号枚举的时序信号。
 type ProductionPasswordProvider struct {
 	store          PasswordHashStore
+	quota          PasswordFailureQuota
 	dummyHash      string
 	kdfSlots       chan struct{}
 	kdfWaitTimeout time.Duration
 	verifyKDF      func(password, encoded string) (bool, error)
 }
 
-func NewProductionPasswordProvider(store PasswordHashStore) (*ProductionPasswordProvider, error) {
+func NewProductionPasswordProvider(store PasswordHashStore, quota PasswordFailureQuota) (*ProductionPasswordProvider, error) {
 	return NewProductionPasswordProviderWithLimits(
-		store, DefaultPasswordKDFConcurrency, DefaultPasswordKDFWaitTimeout)
+		store, quota, DefaultPasswordKDFConcurrency, DefaultPasswordKDFWaitTimeout)
 }
 
-func NewProductionPasswordProviderWithLimits(store PasswordHashStore, concurrency int, waitTimeout time.Duration) (*ProductionPasswordProvider, error) {
-	if store == nil {
-		return nil, fmt.Errorf("production password auth requires a hash store")
+func NewProductionPasswordProviderWithLimits(store PasswordHashStore, quota PasswordFailureQuota, concurrency int, waitTimeout time.Duration) (*ProductionPasswordProvider, error) {
+	if nilPasswordDependency(store) || nilPasswordDependency(quota) {
+		return nil, fmt.Errorf("production password auth requires a hash store and failure quota")
 	}
 	if concurrency == 0 {
 		concurrency = DefaultPasswordKDFConcurrency
@@ -174,6 +176,7 @@ func NewProductionPasswordProviderWithLimits(store PasswordHashStore, concurrenc
 	}
 	return &ProductionPasswordProvider{
 		store:          store,
+		quota:          quota,
 		dummyHash:      dummyHash,
 		kdfSlots:       make(chan struct{}, concurrency),
 		kdfWaitTimeout: waitTimeout,
@@ -182,6 +185,9 @@ func NewProductionPasswordProviderWithLimits(store PasswordHashStore, concurrenc
 }
 
 func (p *ProductionPasswordProvider) ValidatePassword(ctx context.Context, account, password string) (*AuthResult, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrPasswordKDFCapacity, err)
+	}
 	if ValidatePasswordAccount(account) != nil || password == "" || len(password) > passwordMaxBytes {
 		if _, err := p.verifyWithLimit(ctx, "invalid-input-dummy-password", p.dummyHash); err != nil {
 			return nil, err
@@ -193,14 +199,32 @@ func (p *ProductionPasswordProvider) ValidatePassword(ctx context.Context, accou
 	if err != nil {
 		return nil, fmt.Errorf("password credential store unavailable: %w", err)
 	}
-	if !found || encodedHash == "" {
-		if _, err := p.verifyWithLimit(ctx, password, p.dummyHash); err != nil {
-			return nil, err
-		}
-		return nil, ErrInvalidCredentials
+	if found && canonical == "" {
+		return nil, ErrPasswordCredentialUnavailable
 	}
-
-	match, err := p.verifyWithLimit(ctx, password, encodedHash)
+	kind, identity := KnownPasswordAccount, canonical
+	if !found {
+		kind, identity = UnknownPasswordAccount, account
+	}
+	attempt, err := p.quota.Begin(ctx, kind, identity)
+	if err != nil {
+		return nil, err
+	}
+	finishAttempted := false
+	defer func() {
+		if !finishAttempted {
+			// 仅未进入结算的失败才释放租约。Finish 结果未知不能换成 abort；
+			// 独立有界清理不继承已取消的父期限，失败则由 30s 租期恢复。
+			cleanup, cancel := context.WithTimeout(context.WithoutCancel(ctx), PasswordQuotaBudget)
+			defer cancel()
+			_ = p.quota.Finish(cleanup, attempt, PasswordAbort)
+		}
+	}()
+	verifyHash := encodedHash
+	if !found || encodedHash == "" {
+		verifyHash = p.dummyHash
+	}
+	match, err := p.verifyWithLimit(ctx, password, verifyHash)
 	if err != nil {
 		if errors.Is(err, ErrPasswordKDFCapacity) {
 			return nil, err
@@ -208,9 +232,26 @@ func (p *ProductionPasswordProvider) ValidatePassword(ctx context.Context, accou
 		if _, dummyErr := p.verifyWithLimit(ctx, password, p.dummyHash); dummyErr != nil {
 			return nil, dummyErr
 		}
-		return nil, ErrInvalidCredentials
+		return nil, ErrPasswordCredentialUnavailable
 	}
-	if !match || canonical == "" {
+	if found && encodedHash == "" {
+		return nil, ErrPasswordCredentialUnavailable
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	outcome := PasswordMismatch
+	if found && match {
+		outcome = PasswordSuccess
+	}
+	finishAttempted = true
+	if err := p.quota.Finish(ctx, attempt, outcome); err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if outcome == PasswordMismatch {
 		return nil, ErrInvalidCredentials
 	}
 	return &AuthResult{Account: canonical}, nil
@@ -230,7 +271,7 @@ func ValidatePasswordAccount(account string) error {
 
 func (p *ProductionPasswordProvider) verifyWithLimit(ctx context.Context, password, encoded string) (bool, error) {
 	if err := ctx.Err(); err != nil {
-		return false, fmt.Errorf("%w: %v", ErrPasswordKDFCapacity, err)
+		return false, fmt.Errorf("%w: %w", ErrPasswordKDFCapacity, err)
 	}
 	waitCtx, cancel := context.WithTimeout(ctx, p.kdfWaitTimeout)
 	defer cancel()
@@ -238,15 +279,15 @@ func (p *ProductionPasswordProvider) verifyWithLimit(ctx context.Context, passwo
 	case p.kdfSlots <- struct{}{}:
 		defer func() { <-p.kdfSlots }()
 		if err := ctx.Err(); err != nil {
-			return false, fmt.Errorf("%w: %v", ErrPasswordKDFCapacity, err)
+			return false, fmt.Errorf("%w: %w", ErrPasswordKDFCapacity, err)
 		}
 	case <-waitCtx.Done():
-		return false, fmt.Errorf("%w: %v", ErrPasswordKDFCapacity, waitCtx.Err())
+		return false, fmt.Errorf("%w: %w", ErrPasswordKDFCapacity, waitCtx.Err())
 	}
 
 	match, err := p.verifyKDF(password, encoded)
 	if ctx.Err() != nil {
-		return false, fmt.Errorf("%w: %v", ErrPasswordKDFCapacity, ctx.Err())
+		return false, fmt.Errorf("%w: %w", ErrPasswordKDFCapacity, ctx.Err())
 	}
 	return match, err
 }

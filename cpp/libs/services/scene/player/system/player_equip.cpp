@@ -1,10 +1,12 @@
 #include "player_equip.h"
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <limits>
 #include <map>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -47,8 +49,8 @@ using equiprules::AffixTier;
 using equiprules::EffectKind;
 
 uint64_t GuidForLog(entt::entity player) {
-	const auto* guid = tlsEcs.actorRegistry.try_get<Guid>(player);
-	return guid != nullptr ? *guid : 0;
+	const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
+	return guid != nullptr ? guid->value : 0;
 }
 
 // 等级 / 职业的取法与 player_attribute.cpp 的同名函数同口径(那两个是它的文件内私有函数,
@@ -63,7 +65,7 @@ uint32_t PlayerClassId(entt::entity player) {
 	return uint32Comp != nullptr ? uint32Comp->class_() : 0;
 }
 
-// 行指针只在下一次 Load() 之前有效:下面所有用法都是「现查现用」,不出函数、不进成员。
+// 表行借用只在下一次 Load() 之前有效:下面所有用法都是「现查现用」,不跨请求保存。
 const ItemTable* ItemRow(uint32_t configId) {
 	const auto [row, err] = ItemTableManager::Instance().FindByIdSilent(configId);
 	return row;
@@ -228,11 +230,11 @@ const EquipGem* FirstGemRecordOn(const ItemComp& item, uint32_t socket) {
 	return nullptr;
 }
 
-// 一颗此刻计入加成的宝石。attr 是表行指针,现查现用(不出调用它的那个函数)。
+// 一颗此刻计入加成的宝石。attr 是已校验的非空表行借用,现查现用(不出调用它的那个函数)。
 struct ResolvedGem {
 	uint32_t socket{0};
 	uint32_t gemConfigId{0};
-	const EquipAttributeTable* attr{nullptr};
+	std::reference_wrapper<const EquipAttributeTable> attr;
 	uint64_t value{0};
 };
 
@@ -277,12 +279,7 @@ std::vector<ResolvedGem> ResolveGemsNow(const ItemComp& item, const ItemTable& r
 		if (attr == nullptr || !IsEffectAccepted(*attr)) {
 			continue;
 		}
-		ResolvedGem one;
-		one.socket = gem.socket();
-		one.gemConfigId = gem.gem_config_id();
-		one.attr = attr;
-		one.value = gemRow->value();
-		resolved.push_back(one);
+		resolved.push_back(ResolvedGem{gem.socket(), gem.gem_config_id(), std::cref(*attr), gemRow->value()});
 	}
 	std::sort(resolved.begin(), resolved.end(),
 			  [](const ResolvedGem& lhs, const ResolvedGem& rhs) { return lhs.socket < rhs.socket; });
@@ -388,15 +385,15 @@ void OnEquipmentChanged(entt::entity player) {
 // 写入口按「付不起」拒,表校验报这一行。
 constexpr uint64_t kMaxPayableGold = static_cast<uint64_t>((std::numeric_limits<int64_t>::max)());
 
-// LocateEquipment 的结果。
+// LocateEquipment 的结果。仅成功后安装借用;默认空态和失败不改 out 的约定保持一致。
 struct LocatedEquipment {
-	Bag* bag{nullptr};             // 这件装备所在的包:人物背包或装备栏(指向 PlayerBagsComp 内部)
+	std::optional<std::reference_wrapper<Bag>> bag; // 所在的包:借用 PlayerBagsComp 内的人物背包或装备栏
 	bool worn{false};              // 在装备栏里(改它要重算属性)
-	const ItemTable* row{nullptr}; // 它的 Item 行;现查现用,不出调用它的那个函数
+	std::optional<std::reference_wrapper<const ItemTable>> row; // Item 行借用;现查现用,不出调用它的那个函数
 	// 实例。**只读,且只在本包下一次 Insert / Erase / 整理之前有效**:纯校验段用它读等级 / 宝石记录;
 	// 提交段一旦调过 AddItems / MergeAndCompact 就不得再碰,写实例一律走 RefetchInitializedInstance
-	// 重新按 guid 取(所以这里是 const 指针 —— 想写就必须重取)。
-	const ItemComp* item{nullptr};
+	// 重新按 guid 取(所以这里是 const 借用 —— 想写就必须重取)。
+	std::optional<std::reference_wrapper<const ItemComp>> item;
 	bool initialized{false};       // has_equip():实例已完成初始化
 };
 
@@ -424,10 +421,10 @@ uint32_t LocateEquipment(PlayerBagsComp& bags, Guid itemId, LocatedEquipment& ou
 	if (item->size() != 1) {
 		return kEquipItemNotFound;
 	}
-	out.bag = bag;
+	out.bag = std::ref(*bag);
 	out.worn = worn;
-	out.row = row;
-	out.item = item;
+	out.row = std::cref(*row);
+	out.item = std::cref(*item);
 	out.initialized = item->has_equip();
 	return kSuccess;
 }
@@ -541,7 +538,7 @@ void AccumulateWornItem(const ItemComp& item, uint64_t playerIdForLog, equiprule
 	// 宝石:只累加 ResolveGemsNow 认可的那几颗(它已经筛掉规则层不接受的 effect,所以这里不会被拒,
 	// 也不打日志 —— 读路径静默)。宝石不吃强化放大。
 	for (const ResolvedGem& gem : ResolveGemsNow(item, *row)) {
-		equiprules::ApplyEffect(out, gem.attr->effect(), gem.attr->effect_param(), gem.value);
+		equiprules::ApplyEffect(out, gem.attr.get().effect(), gem.attr.get().effect_param(), gem.value);
 	}
 }
 
@@ -1138,12 +1135,10 @@ uint32_t PlayerEquipSystem::GmGrantItem(entt::entity player, uint32_t configId, 
 
 	ItemCountMap items;
 	items[configId] = count;
-	const PlayerItemBlockList emptyBlockList;
-	const auto* blockList = tlsEcs.actorRegistry.try_get<PlayerItemBlockList>(player);
 	// 走正式发放入口:封禁闸、获得流水(TX_GM_GRANT,审计能一眼分出「GM 发的」)、异常检测都照常过;
 	// 新装备的掷属性挂在这条路上,不需要在这里再调 RollNewInstance。
 	const auto err = BagService::AddItems(player, bags->bags[kInventory],
-										  blockList == nullptr ? emptyBlockList : *blockList, items, TX_GM_GRANT);
+										  items, TX_GM_GRANT);
 	LOG_INFO << "[PlayerEquip] GM item grant: player_id=" << GuidForLog(player) << " config=" << configId
 			 << " count=" << count << " err=" << err;
 	return err;
@@ -1171,7 +1166,7 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 	if (const auto err = LocateEquipment(*bags, itemId, located); err != kSuccess) {
 		return err;
 	}
-	const uint32_t configId = located.item->config_id();
+	const uint32_t configId = located.item->get().config_id();
 	if (!located.initialized) {
 		LOG_WARN << "[PlayerEquip] 强化被拒,实例未初始化(没有 equip 段): player_id=" << GuidForLog(player)
 				 << " guid=" << itemId << " config=" << configId;
@@ -1183,7 +1178,7 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 		return kEquipEnhanceUnavailable;
 	}
 	// 4. 存档等级按表上限夹取(策划下调上限后,超出的那几级不洗存档、也不许再往上强化)
-	const uint32_t currentLevel = std::min<uint32_t>(located.item->equip().enhance_level(), maxLevel);
+	const uint32_t currentLevel = std::min<uint32_t>(located.item->get().equip().enhance_level(), maxLevel);
 	if (currentLevel >= maxLevel) {
 		return kEquipEnhanceMaxLevel;
 	}
@@ -1225,7 +1220,7 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 						 !CurrencySystem::CanAfford(player, kCurrencyGold, static_cast<int64_t>(costGold)))) {
 		return kEquipEnhanceGoldNotEnough;
 	}
-	Bag& holder = *located.bag;
+	Bag& holder = located.bag->get();
 	const bool worn = located.worn;
 
 	// ---- 提交:scene 单线程、冻结已被第 1 步挡掉、余额与持有量都问过,以下各步正常不会失败;
@@ -1260,7 +1255,7 @@ uint32_t PlayerEquipSystem::Enhance(entt::entity player, Guid itemId, EnhanceOut
 			return kEquipInternalError;
 		}
 	}
-	// 12. 写等级。一律重新按 guid 取:located.item 是纯校验段的指针,不带进提交段。
+	// 12. 写等级。一律重新按 guid 取:located.item 是纯校验段的借用,不带进提交段。
 	ItemComp* instance = RefetchInitializedInstance(holder, itemId);
 	if (instance == nullptr) {
 		LOG_ERROR << "[PlayerEquip][INSTANCE_LOST] 强化已扣费,但写等级时取不到这件装备,需人工补偿: player_id="
@@ -1309,7 +1304,7 @@ uint32_t PlayerEquipSystem::InlayGem(entt::entity player, Guid itemId, uint32_t 
 	if (const auto err = LocateEquipment(*bags, itemId, located); err != kSuccess) {
 		return err;
 	}
-	const uint32_t configId = located.item->config_id();
+	const uint32_t configId = located.item->get().config_id();
 	if (!located.initialized) {
 		LOG_WARN << "[PlayerEquip] 镶嵌被拒,实例未初始化(没有 equip 段): player_id=" << GuidForLog(player)
 				 << " guid=" << itemId << " config=" << configId << " socket=" << socket
@@ -1324,7 +1319,7 @@ uint32_t PlayerEquipSystem::InlayGem(entt::entity player, Guid itemId, uint32_t 
 	// 4. 孔位:存在 → 没被占 → 类型相符。「已占」看实例上的全部原始记录,不过滤 —— 一条此刻不生效的记录
 	//    照样占着孔(否则会在同一个孔上追加第二条,取下时后一颗被无声清掉)。
 	//    (gem_config_id == 0 的记录视同不存在,见 FirstGemRecordOn。)
-	const auto& storedGems = located.item->equip().gems();
+	const auto& storedGems = located.item->get().equip().gems();
 	std::vector<uint32_t> occupied;
 	occupied.reserve(static_cast<std::size_t>(storedGems.size()));
 	for (const auto& gem : storedGems) {
@@ -1333,11 +1328,11 @@ uint32_t PlayerEquipSystem::InlayGem(entt::entity player, Guid itemId, uint32_t 
 		}
 	}
 	const equiprules::GemFit fit =
-		equiprules::CheckGemFit(SocketRulesFor(located.row->equip_kind()), occupied, socket, gemRow->gem_type());
+		equiprules::CheckGemFit(SocketRulesFor(located.row->get().equip_kind()), occupied, socket, gemRow->gem_type());
 	if (const auto err = TipForGemFit(fit); err != kSuccess) {
-		if (fit == equiprules::GemFit::kSocketOccupied && !IsGemEffectiveOn(*located.item, *located.row, socket)) {
+		if (fit == equiprules::GemFit::kSocketOccupied && !IsGemEffectiveOn(located.item->get(), located.row->get(), socket)) {
 			// 玩家看到的是「已镶但未生效」:宝石行 / 属性行被改掉了,或同孔有重复记录。照常拒绝(先取下),留一条线索。
-			const EquipGem* occupant = FirstGemRecordOn(*located.item, socket);
+			const EquipGem* occupant = FirstGemRecordOn(located.item->get(), socket);
 			LOG_WARN << "[PlayerEquip] 镶嵌被拒,目标孔被一颗当前不生效的宝石占着: player_id=" << GuidForLog(player)
 					 << " guid=" << itemId << " config=" << configId << " socket=" << socket
 					 << " occupant_gem_config=" << (occupant != nullptr ? occupant->gem_config_id() : 0);
@@ -1360,7 +1355,7 @@ uint32_t PlayerEquipSystem::InlayGem(entt::entity player, Guid itemId, uint32_t 
 	if (inventory.GetTotalItemCount(gemConfigId) == 0) {
 		return kEquipGemNotOwned;
 	}
-	Bag& holder = *located.bag;
+	Bag& holder = located.bag->get();
 	const bool worn = located.worn;
 
 	// ---- 提交 ----
@@ -1415,10 +1410,10 @@ uint32_t PlayerEquipSystem::RemoveGem(entt::entity player, Guid itemId, uint32_t
 	if (const auto err = LocateEquipment(*bags, itemId, located); err != kSuccess) {
 		return err;
 	}
-	const uint32_t configId = located.item->config_id();
+	const uint32_t configId = located.item->get().config_id();
 	// 3. 该孔的第一条原始记录。不要求孔位仍在 EquipGemSocket 表里、也不要求宝石仍在 EquipGem 表里:
 	//    策划删孔 / 删宝石行之后,宝石照样取得下来。未初始化的实例读到的是默认实例(0 条),自然落进「没有」。
-	const EquipGem* record = FirstGemRecordOn(*located.item, socket);
+	const EquipGem* record = FirstGemRecordOn(located.item->get(), socket);
 	if (record == nullptr) {
 		if (!located.initialized) {
 			LOG_WARN << "[PlayerEquip] 取下被拒,实例未初始化(没有 equip 段): player_id=" << GuidForLog(player)
@@ -1447,8 +1442,8 @@ uint32_t PlayerEquipSystem::RemoveGem(entt::entity player, Guid itemId, uint32_t
 	// 取的这颗此刻是否计入加成(宝石行 / 孔位定义 / 属性行已不在表里,或记录排在遍历上限之外,就是不计入)。
 	// 不影响放行 —— 取下正是让玩家把它拿回来的出口;只为提交之后留一条线索。必须在第 5 步之前算:
 	// 之后 located.item 失效。
-	const bool wasEffective = IsGemEffectiveOn(*located.item, *located.row, socket);
-	Bag& holder = *located.bag;
+	const bool wasEffective = IsGemEffectiveOn(located.item->get(), located.row->get(), socket);
+	Bag& holder = located.bag->get();
 	const bool worn = located.worn;
 
 	// ---- 提交:先发物,成功后才抹宝石(照 PlayerMissionSystem::ClaimReward)。任何失败都不会凭空少宝石;
@@ -1458,10 +1453,7 @@ uint32_t PlayerEquipSystem::RemoveGem(entt::entity player, Guid itemId, uint32_t
 	const std::string extra = "{\"socket\":" + std::to_string(socket) + "}";
 	ItemCountMap refund;
 	refund[gemConfigId] = 1;
-	const PlayerItemBlockList emptyBlockList;
-	const auto* blockList = tlsEcs.actorRegistry.try_get<PlayerItemBlockList>(player);
-	const auto addErr = BagService::AddItems(player, inventory, blockList == nullptr ? emptyBlockList : *blockList,
-											 refund, TX_EQUIP_GEM_REMOVE, itemId, extra);
+	const auto addErr = BagService::AddItems(player, inventory, refund, TX_EQUIP_GEM_REMOVE, itemId, extra);
 	if (addErr == kBagItemNotStacked || addErr == kBagAddItemBagFull) {
 		return kEquipGemBagFull;  // 同种宝石的堆都满了、又没有空格
 	}
@@ -1708,7 +1700,7 @@ void PlayerEquipSystem::FillItemDisplay(const ItemComp& item, ::BagItemInfo& inf
 			std::find_if(effectiveGems.begin(), effectiveGems.end(),
 						 [socketRow](const ResolvedGem& gem) { return gem.socket == socketRow->socket(); });
 		if (effective != effectiveGems.end()) {
-			FillGemAttrLine(*effective->attr, effective->value, *socketInfo->mutable_attr());
+			FillGemAttrLine(effective->attr.get(), effective->value, *socketInfo->mutable_attr());
 		}
 	}
 }

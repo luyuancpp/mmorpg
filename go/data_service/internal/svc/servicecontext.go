@@ -327,7 +327,7 @@ func newPlayerRouteStore(c config.Config, mysqlCfg store.MySQLConfig, schemaRead
 		Writer:      store.NewRouteWriterID("data_service", host),
 	})
 	if err != nil {
-		logx.Errorf("[ServiceContext] route store init failed (RegisterPlayerZone will fail closed; run `data_service -f <yaml> -migrate` if route_meta is missing): %v", err)
+		logx.Errorf("[ServiceContext] route store init failed (RegisterPlayerZone will fail closed; %s): %v", store.OpenRouteStoreHint("<yaml>", err), err)
 		return nil
 	}
 	logx.Infof("[ServiceContext] route store ready (RouteStore.Mode=db_first): fence_shards=%d publish_attempts=%d waitaof_numlocal=%d waitaof_numreplicas=%d waitaof_timeout_ms=%d",

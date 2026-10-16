@@ -57,9 +57,7 @@ set(SOURCE_FILES
     handler/rpc/player/player_service_interface.cpp
     logic/battle_room_manager.cpp
     main.cpp
-    rpc_replies/player/player_rpc_response_handler.cpp
     rpc_replies/register_handler.cpp
-    rpc_replies/register_response_handler.cpp
 )
 
 find_package(absl CONFIG REQUIRED)
@@ -90,6 +88,8 @@ target_link_libraries(battle
     -lrpc
     -lproto
     -lthird_party
+    # muduo_h2 etcd 传输(core 的 muduo_etcd_transport,NODE_ETCD_TRANSPORT 选择;docs/design/grpc-muduo-transport.md §13.4)
+    -lmuduo_grpc
     -Wl,--end-group
     gRPC::grpc++
     gRPC::grpc++_reflection
@@ -97,6 +97,10 @@ target_link_libraries(battle
     gRPC::gpr
     CURL::libcurl
     protobuf::libprotobuf
+    # 静态链入的 nghttp2(1.70)不得导出到动态符号表:系统 libcurl.so 依赖旧版 libnghttp2.so,
+    # 导出后 libcurl 的 nghttp2_* 调用会绑到我们的副本、两个版本混用(docs/design/grpc-muduo-transport.md §9)。
+    -Wl,--exclude-libs,libnghttp2.a
+    nghttp2
     muduo_net
     muduo_base
     rdkafka++

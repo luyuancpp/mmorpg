@@ -29,6 +29,7 @@ import (
 	"guild/internal/data"
 	base "proto/common/base"
 	pb "proto/guild"
+	scenepb "proto/scene"
 	tablepb "shared/generated/pb/table"
 	"shared/generated/table"
 	"shared/safego"
@@ -385,17 +386,29 @@ func (l *GuildLogic) SetGuildMemberRole(ctx context.Context, req *pb.SetGuildMem
 		return &pb.SetGuildMemberRoleResponse{ErrorMessage: tipErr(constants.ErrNoPermission, "role not assignable")}, nil
 	}
 
-	guildID, tip, err := l.operatorGuild(ctx, actor)
+	// expected_guild_id 非 0 时只在该帮任免,不在该帮回 kGuildNotInGuild + 当前帮会快照(expected_guild.go)。
+	expected := req.GetExpectedGuildId()
+	who := caller{playerID: actor, fromClient: true}
+	guildID, tip, err := l.bindExpectedGuild(ctx, who, expected, expectedGuildMethodSetRole)
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodSetRole, err)
+		return &pb.SetGuildMemberRoleResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if err != nil || tip != nil {
 		return &pb.SetGuildMemberRoleResponse{ErrorMessage: tip}, err
 	}
 	res, err := l.repo.SetMemberRole(ctx, guildID, actor, target, req.GetRole(), officerCapFromTable)
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodSetRole, err)
+		return &pb.SetGuildMemberRoleResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if tip, err := l.mapWriteErr(ctx, actor, guildID, guildID, err); err != nil || tip != nil {
 		return &pb.SetGuildMemberRoleResponse{ErrorMessage: tip}, err
 	}
-	// Changed=false = 任免成同一职位,库里一个字节都没变;此时推送只会让全帮白拉一次。
+	// Changed=false = 任免成同一职位,库里一个字节都没变;此时推送只会让全帮白拉一次,摘要同理不 bump。
 	if res.Changed {
 		l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_ROLE_CHANGED, guildID, actor, target, membersExcept(res.Guild, actor))
+		l.bumpSync(membersPlus(res.Guild), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 	}
 	return &pb.SetGuildMemberRoleResponse{Guild: l.guildInfoFor(ctx, res.Guild, actor)}, nil
 }
@@ -414,12 +427,24 @@ func (l *GuildLogic) KickGuildMember(ctx context.Context, req *pb.KickGuildMembe
 		return &pb.KickGuildMemberResponse{ErrorMessage: tip}, nil
 	}
 
-	guildID, tip, err := l.operatorGuild(ctx, actor)
+	// expected_guild_id 非 0 时只在该帮踢人,不在该帮回 kGuildNotInGuild + 当前帮会快照(expected_guild.go)。
+	// 预检在 KickMember 的 G4 预读与事务外建行之前:不在预期帮的人碰不到那个帮的任何行。
+	expected := req.GetExpectedGuildId()
+	who := caller{playerID: actor, fromClient: true}
+	guildID, tip, err := l.bindExpectedGuild(ctx, who, expected, expectedGuildMethodKick)
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodKick, err)
+		return &pb.KickGuildMemberResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if err != nil || tip != nil {
 		return &pb.KickGuildMemberResponse{ErrorMessage: tip}, err
 	}
 	// now 显式传入(B5):事务内把被踢者未结算捐献的截止时间提前到"现在"。
 	res, err := l.repo.KickMember(ctx, guildID, actor, target, nowMs())
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodKick, err)
+		return &pb.KickGuildMemberResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if tip, err := l.mapWriteErr(ctx, actor, guildID, guildID, err); err != nil || tip != nil {
 		return &pb.KickGuildMemberResponse{ErrorMessage: tip}, err
 	}
@@ -427,6 +452,8 @@ func (l *GuildLogic) KickGuildMember(ctx context.Context, req *pb.KickGuildMembe
 	// "我还在帮里"的旧状态,直到下次手动刷新。
 	recipients := append(membersExcept(res.Guild, actor), target)
 	l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_MEMBER_KICKED, guildID, actor, target, recipients)
+	// 摘要:快照全体(含操作者)+ 已不在快照里的被踢者。
+	l.bumpSync(membersPlus(res.Guild, target), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 	return &pb.KickGuildMemberResponse{Guild: l.guildInfoFor(ctx, res.Guild, actor)}, nil
 }
 
@@ -444,15 +471,27 @@ func (l *GuildLogic) TransferGuildLeader(ctx context.Context, req *pb.TransferGu
 		return &pb.TransferGuildLeaderResponse{ErrorMessage: tip}, nil
 	}
 
-	guildID, tip, err := l.operatorGuild(ctx, actor)
+	// expected_guild_id 非 0 时只转让该帮,不在该帮回 kGuildNotInGuild + 当前帮会快照(expected_guild.go)。
+	expected := req.GetExpectedGuildId()
+	who := caller{playerID: actor, fromClient: true}
+	guildID, tip, err := l.bindExpectedGuild(ctx, who, expected, expectedGuildMethodTransfer)
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodTransfer, err)
+		return &pb.TransferGuildLeaderResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if err != nil || tip != nil {
 		return &pb.TransferGuildLeaderResponse{ErrorMessage: tip}, err
 	}
 	res, err := l.repo.TransferLeader(ctx, guildID, actor, target, officerCapFromTable)
+	if expectedGuildLost(expected, err) {
+		tip, view := l.rejectExpectedGuildWithView(ctx, actor, expected, expectedGuildMethodTransfer, err)
+		return &pb.TransferGuildLeaderResponse{ErrorMessage: tip, Guild: view}, nil
+	}
 	if tip, err := l.mapWriteErr(ctx, actor, guildID, guildID, err); err != nil || tip != nil {
 		return &pb.TransferGuildLeaderResponse{ErrorMessage: tip}, err
 	}
 	l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_LEADER_TRANSFERRED, guildID, actor, target, membersExcept(res.Guild, actor))
+	l.bumpSync(membersPlus(res.Guild), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 	return &pb.TransferGuildLeaderResponse{Guild: l.guildInfoFor(ctx, res.Guild, actor)}, nil
 }
 
@@ -468,6 +507,13 @@ func (l *GuildLogic) ApplyJoinGuild(ctx context.Context, req *pb.ApplyJoinGuildR
 	guildID := req.GetGuildId()
 	if guildID == 0 {
 		return &pb.ApplyJoinGuildResponse{ErrorMessage: tipErr(constants.ErrGuildNotFound, "guild id is zero")}, nil
+	}
+	allowed, err := l.applicationQuota.Allow(ctx, actor)
+	if err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
+	if !allowed {
+		return &pb.ApplyJoinGuildResponse{ErrorMessage: tipErr(uint32(tablepb.CommonError_kRateLimitExceeded), "too many guild applications, retry later")}, nil
 	}
 
 	// 缓存预检只是省一次事务,不是判据:缓存说他入了帮时先用 MySQL 复核,
@@ -501,10 +547,19 @@ func (l *GuildLogic) ApplyJoinGuild(ctx context.Context, req *pb.ApplyJoinGuildR
 	if res.Inserted && l.applyPushAllowed(ctx, guildID, actor) {
 		l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_APPLICATION_RECEIVED, guildID, actor, actor, res.ReviewerIDs)
 	}
+	// 摘要:申请人本人的申请列表总会变(新建一行,或刷新有效期 expire_ms)。
+	l.bumpSync([]uint64{actor}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_APPLICATION)
+	// 新建行时审批人的待审数(GuildInfo.pending_application_count)变了,给他们 bump GUILD。
+	// **不受 applyPushAllowed 的冷却限制**:冷却挡的是推送刷屏,而 bump 只是一次 Redis 计数、客户端落地才看,
+	// 被冷却挡掉的那次若不 bump,审批人落地后看到的待审数就会少一条且没有任何自愈信号。
+	if res.Inserted {
+		l.bumpSync(res.ReviewerIDs, scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
+	}
 	return &pb.ApplyJoinGuildResponse{}, nil
 }
 
-// CancelGuildApplication:撤回自己的一条申请。撤回从不推送(只影响申请人自己看得到的列表)。
+// CancelGuildApplication:撤回自己的一条申请。撤回从不推送(申请人手上有回包;审批人只是待审数少一条,
+// 不值得一条在线推送)。落地恢复摘要照常 bump,两边都给,见函数末尾。
 func (l *GuildLogic) CancelGuildApplication(ctx context.Context, req *pb.CancelGuildApplicationRequest) (*pb.CancelGuildApplicationResponse, error) {
 	actor, _, tip, err := l.clientWrite(ctx)
 	if err != nil {
@@ -526,7 +581,28 @@ func (l *GuildLogic) CancelGuildApplication(ctx context.Context, req *pb.CancelG
 	if tip, err := l.mapWriteErr(ctx, actor, guildID, 0, err); err != nil || tip != nil {
 		return &pb.CancelGuildApplicationResponse{ErrorMessage: tip}, err
 	}
+	// 摘要(landing-recovery-sync-digest.md §3.3 表第 6、7 行):申请人本人的申请列表少了一行 → GUILD_APPLICATION;
+	// 审批人(长老 / 帮主)的待审数(GuildInfo.pending_application_count)也少了一条 → GUILD。后者若不 bump,
+	// 审批人在传送 / 离线期间有人撤回,落地后 GUILD 没变、不会重拉,待审数与红点会一直多显示一条(违反 L-1)。
+	l.bumpSync([]uint64{actor}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_APPLICATION)
+	l.bumpCancelReviewers(ctx, guildID, actor)
 	return &pb.CancelGuildApplicationResponse{}, nil
+}
+
+// bumpCancelReviewers 在撤回申请提交之后给目标帮的审批人 bump GUILD(待审数少了一条)。
+//
+// CancelApplication 的事务不回审批人集合,这里在提交之后读一次帮会(GetGuild 走 cache-aside;撤回是低频操作,
+// 正常是一次缓存命中)。取不到就只记日志、不影响回包:撤回已经成功,漏掉的一次由审批人打开帮会界面时的拉取兜底
+// (§3.5 第 5 条)。帮会已不存在(并发解散)时 GetGuild 回 nil,reviewersIn(nil) 为空,什么都不发 —— 解散本身已给全帮 bump。
+func (l *GuildLogic) bumpCancelReviewers(ctx context.Context, guildID, applicant uint64) {
+	g, err := l.repo.GetGuild(ctx, guildID)
+	if err != nil {
+		// go-zero 的 logx 没有 Warn 级别:用 Error 级 + "WARN" 前缀(同 playersync 的写法)。
+		logx.WithContext(ctx).Errorf("[guild] WARN load guild %d after application cancel by %d failed, reviewers not bumped: %v",
+			guildID, applicant, err)
+		return
+	}
+	l.bumpSync(reviewersIn(g), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 }
 
 // ListMyGuildApplications:申请人视角的待审列表。读 RPC 要会话(列表是本人私有信息),但不查合服闸门 ——
@@ -758,7 +834,26 @@ func (l *GuildLogic) ReviewGuildApplication(ctx context.Context, req *pb.ReviewG
 		// 拒绝只通知申请人本人:告诉全帮"谁被拒了"没有任何价值,只有社交伤害。
 		l.notify(pb.GuildChangeKind_GUILD_CHANGE_KIND_APPLICATION_REJECTED, guildID, actor, applicant, []uint64{applicant})
 	}
+	l.bumpReviewed(res, applicant)
 	return &pb.ReviewGuildApplicationResponse{Guild: l.guildInfoFor(ctx, res.Guild, actor)}, nil
+}
+
+// bumpReviewed 是审批提交之后的摘要 bump(landing-recovery-sync-digest.md §3.3 表第 6、7 行)。
+// 拆出来只为可测:ReviewGuildApplication 的事务要 MySQL,这一段只看事务结果。
+//
+//   - 申请人:GUILD_APPLICATION 总会变(这条申请没了;通过时 I2 还清掉了他的全部申请)。
+//   - 通过:快照全体(已含申请人与审批人)的 GUILD 都变了(成员列表、待审数)。申请人显式再追加一次,
+//     不依赖快照一定含他。申请人在**别的**帮会的申请被 I2 一并删除,那些帮会审批人的待审数同样变了,
+//     但 ReviewResult 不回这组人(改 data 层不在本批范围),由他们打开帮会界面时的拉取覆盖。
+//   - 拒绝:只有审批人的待审数变了 —— 快照里的长老与帮主(reviewersIn,含操作者本人)bump GUILD。
+//     申请人不 bump GUILD:他仍不在任何帮,GetPlayerGuild 的结果没有变,多 bump 只会让他落地后白拉一次。
+func (l *GuildLogic) bumpReviewed(res data.ReviewResult, applicant uint64) {
+	l.bumpSync([]uint64{applicant}, scenepb.SyncDomain_SYNC_DOMAIN_GUILD_APPLICATION)
+	if res.Approved {
+		l.bumpSync(membersPlus(res.Guild, applicant), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
+		return
+	}
+	l.bumpSync(reviewersIn(res.Guild), scenepb.SyncDomain_SYNC_DOMAIN_GUILD)
 }
 
 // ── §12.4 GuildInfo 装配 ──────────────────────────────────────

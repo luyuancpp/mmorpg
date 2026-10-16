@@ -8,6 +8,10 @@
 //
 // 本批(聚宝斋 P2)只落**上架托管**这一条生产者路径;交付 / 回退(TRADE_CREDIT 流)与订单、
 // 支付属于 P3,位置在 data.AssetOpRepo.Finalize 的对侧账注释处。
+//
+// 落地恢复(docs/design/landing-recovery-sync-digest.md §5.3、§6)与 guild 同步补齐:离线读已落盘账本
+// (Deps.Ledger)、落地唤醒(WakePlayer,由 svc 的 assetopwake 订阅调用)、离线停放档、日对账与自动放弃
+// (RunMaintenance,由 svc 在 leader 选主下运行)。参数见 Recovery。
 package reconcile
 
 import (
@@ -25,7 +29,6 @@ import (
 	tradepb "proto/trade"
 
 	"shared/assetop"
-	"shared/safego"
 
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
@@ -110,7 +113,7 @@ type EscrowResult struct {
 
 // Deps 是本包的显式依赖。全部由调用方装配(AGENTS §11.2 显式依赖)。
 type Deps struct {
-	// Ops 是 outbox / seq 的存储实现,同时是 assetop.Store。
+	// Ops 是 outbox / seq 的存储实现,同时是 assetop.Store(以及落地恢复的三个可选能力)。
 	Ops *data.AssetOpRepo
 	// Caller 一次投递 + durable 重查;必须已带 Signer,否则本包拒绝构造。
 	Caller *assetop.Caller
@@ -120,6 +123,43 @@ type Deps struct {
 	Metrics *assetop.Metrics
 	// Now 注入时钟,单测可控;nil 时用 time.Now。
 	Now func() time.Time
+	// Ledger 可选:读玩家已落盘的资产账本(生产是 assetop.DataServiceLedger)。挂上之后,长期离线且已记账的行
+	// 可以提前终结;它也是自动放弃"账本确定未见"那条证据的唯一来源 —— 没有它自动放弃不运行(fail-closed)。
+	Ledger assetop.LedgerReader
+	// Locator 可选:自动放弃前重新解析玩家位置(生产与 Caller.Resolver 是同一个 scenenode.Locator)。
+	// 为 nil 时自动放弃不运行(fail-closed)。
+	Locator assetop.Resolver
+	// Recovery 是落地恢复的循环参数(停放档 / 自动放弃 / 日对账);零值 = 全部关闭。
+	Recovery Recovery
+}
+
+// Recovery 是落地恢复(docs/design/landing-recovery-sync-digest.md §6)在重投循环上的参数,
+// 一一对应 assetop.LoopConfig 的同名字段,零值语义也相同(0 = 关闭)。默认值的唯一事实源是
+// assetop.DefaultLoopConfig();trade 的配置项(config.AssetOpConf)与 guild 同名同默认,换算在 svc。
+//
+// 与本文件那组循环常量不同,这几项是**运维可调**的业务节律(停多久、放弃门槛、对账频率),不参与
+// "seq 窗口 / 租约 / 预算"那条正确性证明;它们各自的硬边界由 assetop.NewLoop 校验(放弃门槛 ≥ 30 天、
+// 安全间隔 ≥ max(10 分钟, Lease) 等),配错即拒启。
+type Recovery struct {
+	// OfflineAfterAttempts 连续投递几次之后,"玩家确实没有位置"的行进入停放档。0 = 关闭停放档。
+	OfflineAfterAttempts uint32
+	// OfflineBackoff 是停放档的间隔中值(±20% 抖动)。
+	OfflineBackoff time.Duration
+	// AbandonAfter 是自动放弃的年龄门槛。0 = 关闭自动放弃。
+	AbandonAfter time.Duration
+	// AbandonSafetyGap 是距最后一次可能的发送必须超过的安全间隔。
+	AbandonSafetyGap time.Duration
+	// AbandonBatch 是一轮放弃最多处理多少行。
+	AbandonBatch int
+	// AbandonInterval 是两轮放弃之间的间隔。
+	AbandonInterval time.Duration
+	// AuditInterval 是两轮日对账之间的间隔。0 = 不跑对账。
+	AuditInterval time.Duration
+}
+
+// maintenanceEnabled 报告 RunMaintenance 有没有活可干(对账或放弃至少开了一个)。
+func (r Recovery) maintenanceEnabled() bool {
+	return r.AuditInterval > 0 || r.AbandonAfter > 0
 }
 
 // IDSource 是 op_id 的来源(shared/idsegment.Client 满足它)。抽成接口只为单测能注入假发号器。
@@ -127,13 +167,15 @@ type IDSource interface {
 	Next(ctx context.Context) (uint64, error)
 }
 
-// Pipeline 是本包的门面:入队(生产者)与重投循环(消费者)。
+// Pipeline 是本包的门面:入队(生产者)与重投循环(消费者),外加落地恢复的两个入口
+// (WakePlayer 给唤醒订阅、RunMaintenance 给选主后的维护任务)。
 type Pipeline struct {
-	ops     *data.AssetOpRepo
-	loop    *assetop.Loop
-	ids     IDSource
-	now     func() time.Time
-	metrics *assetop.Metrics
+	ops      *data.AssetOpRepo
+	loop     *assetop.Loop
+	ids      IDSource
+	now      func() time.Time
+	metrics  *assetop.Metrics
+	recovery Recovery
 }
 
 // ErrSignerMissing:没有配 MMORPG_ASSET_OP_SECRET_TRADE(或密钥太短)。
@@ -162,7 +204,28 @@ func New(d Deps) (*Pipeline, error) {
 	if now == nil {
 		now = time.Now
 	}
-	loop, err := assetop.NewLoop(assetop.LoopConfig{
+	loop, err := assetop.NewLoop(loopConfig(d.Recovery), d.Ops, d.Caller, d.Metrics, now)
+	if err != nil {
+		return nil, fmt.Errorf("trade: 资产重投循环参数非法: %w", err)
+	}
+	// 人工终结通道(§4.38):UNKNOWN 每 60s 重排、玩家长期离线的行不会自己走到终局。
+	// 不挂它的话 Loop.ResolveManually 只会回"未配置人工终结通道",卡死的行无路可走。
+	// Manual 是 Loop 的可选字段(不在 LoopConfig 里),必须在 Run / ProcessOne 之前挂上。
+	loop.Manual = d.Ops
+	// Ledger / Locator 同为 Loop 的无锁可选字段,同样只能在这里(任何 goroutine 读它们之前)挂上。
+	// 只在非 nil 时赋值:把一个装着 nil 指针的接口挂上去,"功能没装配齐"的判断就会被骗过。
+	if d.Ledger != nil {
+		loop.Ledger = d.Ledger
+	}
+	if d.Locator != nil {
+		loop.Locator = d.Locator
+	}
+	return &Pipeline{ops: d.Ops, loop: loop, ids: d.OpIDs, now: now, metrics: d.Metrics, recovery: d.Recovery}, nil
+}
+
+// loopConfig 拼重投循环的完整参数:正确性证明那一组取本文件的常量,落地恢复那一组取 Recovery。
+func loopConfig(r Recovery) assetop.LoopConfig {
+	return assetop.LoopConfig{
 		Interval:              loopInterval,
 		Batch:                 loopBatch,
 		Workers:               loopWorkers,
@@ -174,30 +237,71 @@ func New(d Deps) (*Pipeline, error) {
 		PoisonDelay:           loopPoisonDelay,
 		LedgerReadMinAttempts: loopLedgerMinAttempts,
 		// 只报 trade 独占的两条流(不变量 I6):循环每 30s 按它们刷
-		// assetop_pending_oldest_age_seconds。漏写 = 积压告警永远没有序列。
+		// assetop_pending_oldest_age_seconds,日对账按它们给每一类置值。漏写 = 积压告警永远没有序列。
 		Streams: TradeStreams(),
-	}, d.Ops, d.Caller, d.Metrics, now)
-	if err != nil {
-		return nil, fmt.Errorf("trade: 资产重投循环参数非法: %w", err)
+
+		OfflineAfterAttempts: r.OfflineAfterAttempts,
+		OfflineBackoff:       r.OfflineBackoff,
+		AbandonAfter:         r.AbandonAfter,
+		AbandonSafetyGap:     r.AbandonSafetyGap,
+		AbandonBatch:         r.AbandonBatch,
+		AbandonInterval:      r.AbandonInterval,
+		AuditInterval:        r.AuditInterval,
 	}
-	// 人工终结通道(§4.38):UNKNOWN 每 60s 重排、玩家长期离线的行不会自己走到终局。
-	// 不挂它的话 Loop.ResolveManually 只会回"未配置人工终结通道",卡死的行无路可走。
-	// Manual 是 Loop 的可选字段(不在 LoopConfig 里),必须在 Run / ProcessOne 之前挂上。
-	loop.Manual = d.Ops
-	return &Pipeline{ops: d.Ops, loop: loop, ids: d.OpIDs, now: now, metrics: d.Metrics}, nil
 }
 
-// Start 起后台重投循环。ctx 取消即退出;调用方负责在停机收尾里取消它。
+// Run **阻塞**运行后台重投循环,直到 ctx 结束才返回。调用方(svc.AssetChannel.Start)用 safego.Go 起它,
+// 并在 WaitGroup 里记下这个 goroutine:停机时必须等 Run 返回之后才能关 scene 连接缓存、共享 Redis 与 MySQL。
 //
-// 空接收者直接返回:密钥缺失时 svc 把 Pipeline 留成 nil,启动路径照常调到这里。
-func (p *Pipeline) Start(ctx context.Context) {
+// 为什么必须等(与 guild 的 AssetPipeline.Stop 同一理由):assetop.Loop.Run 在 ctx 取消后要等当前这一轮 Tick 的 worker
+// 全部结束才返回,而每一行落库那一步用的是不继承取消的 settleContext(assetop)—— 取消 ctx 拦不住它。不等就去关连接,
+// 终局写不回 outbox,行留在 PENDING、下一轮再投一次:钱不丢(scene 对同一 seq 只读答复,不变量 I2),但 Finalize 报错、白投一轮。
+// 所以本方法不自己起 goroutine:"起"与"等"都归装配层,两者才对得上同一个 WaitGroup。
+//
+// 空接收者打 ERROR 后立刻返回:密钥缺失时 svc 把 Pipeline 留成 nil,启动路径照常调到这里。
+func (p *Pipeline) Run(ctx context.Context) {
 	if p == nil {
 		logx.Error("[trade] Asset channel disabled (missing key); redelivery loop not started")
 		return
 	}
-	safego.Go("trade.assetop.loop", func() { p.loop.Run(ctx) })
-	logx.Infof("[trade] Asset redelivery loop started: interval=%v batch=%d workers=%d lease=%v",
-		loopInterval, loopBatch, loopWorkers, loopLease)
+	logx.Infof("[trade] Asset redelivery loop started: interval=%v batch=%d workers=%d lease=%v "+
+		"offline_after_attempts=%d offline_backoff=%v abandon_after=%v audit_interval=%v ledger=%t",
+		loopInterval, loopBatch, loopWorkers, loopLease,
+		p.recovery.OfflineAfterAttempts, p.recovery.OfflineBackoff, p.recovery.AbandonAfter, p.recovery.AuditInterval,
+		p.loop.Ledger != nil)
+	p.loop.Run(ctx)
+	logx.Info("[trade] Asset redelivery loop stopped")
+}
+
+// WakePlayer 立即重投某个玩家的全部 PENDING 行(落地唤醒,docs/design/landing-recovery-sync-digest.md §5.3),
+// 返回实际领到并处理的行数。它满足 shared/assetopwake.Waker,由 svc 的唤醒订阅调用。
+//
+// 每一行走的是与退避重投完全相同的 Claim CAS + ProcessOne(assetop.Loop.WakePlayer),并发计入同一份
+// Workers 预算 —— 唤醒只加速,不引入任何新的状态迁移(设计 L-4)。ctx 是这次唤醒的总预算。
+// 空接收者回 ErrSignerMissing(与 EnqueueEscrowDebit 同一口径),不 panic。
+func (p *Pipeline) WakePlayer(ctx context.Context, playerID uint64) (int, error) {
+	if p == nil {
+		return 0, ErrSignerMissing
+	}
+	return p.loop.WakePlayer(ctx, playerID)
+}
+
+// MaintenanceEnabled 报告日对账与自动放弃是否至少开了一个。都关着时装配层不必为 RunMaintenance 去竞选领导权。
+func (p *Pipeline) MaintenanceEnabled() bool {
+	return p != nil && p.recovery.maintenanceEnabled()
+}
+
+// RunMaintenance 阻塞运行日对账(AuditOnce)与自动放弃(AbandonOnce),直到 ctx 结束。
+//
+// **只该在一个副本上跑**:svc 用 shared/leader 选主,当选时以领导权的 ctx 调用、卸任时取消
+// (设计 §6.2;多副本同时跑不会出错,只是按类 gauge 有多份、候选扫描重复)。
+// 自动放弃另需 Deps.Ledger 与 Deps.Locator 都挂上,缺一个 assetop 只打一次 INFO、不运行(fail-closed)。
+// 空接收者直接返回。
+func (p *Pipeline) RunMaintenance(ctx context.Context) {
+	if p == nil {
+		return
+	}
+	p.loop.RunMaintenance(ctx)
 }
 
 // EnqueueEscrowDebit 写入一行"上架托管"的 outbox 并立刻投一次。
@@ -367,6 +471,9 @@ func (p *Pipeline) ResolveManually(ctx context.Context, m assetop.ManualResoluti
 //
 // lease_until_ms / next_attempt_ms 都取 now + commitDeliveryDelay:提交后业务线程立刻自己投,
 // 这段时间里重投循环既领不到(租约未到期)也看不到(未到重投时刻)。
+//
+// last_send_ms 写插行时刻(LastSendMs 契约第 1 条):插行即持租约,提交后的同步投递紧接着就可能发出。
+// data.AssetOpRepo.InsertOp 另有兜底(不小于 created_ms),这里显式写出只为让记录与落库的值一致。
 func (p *Pipeline) newEscrowRecord(req EscrowRequest, opID uint64, alloc assetop.Alloc, payload []byte) *tradepb.TradeAssetOpRecord {
 	nowMs := p.nowMs()
 	dueMs := nowMs + uint64(commitDeliveryDelay/time.Millisecond)
@@ -390,6 +497,7 @@ func (p *Pipeline) newEscrowRecord(req EscrowRequest, opID uint64, alloc assetop
 		Payload:       payload,
 		CreatedMs:     nowMs,
 		UpdatedMs:     nowMs,
+		LastSendMs:    nowMs,
 	}
 }
 

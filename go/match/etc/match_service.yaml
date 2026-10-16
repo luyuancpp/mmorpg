@@ -1,6 +1,12 @@
 Name: matchservice.rpc
 ListenOn: 127.0.0.1:50500
-Timeout: 5000
+# zrpc 服务端超时(毫秒),对同一 server 上的 MatchService 与 ClientPlayerTeam 都生效。2026-10-14 由 5000 改为 4000
+# (docs/design/client-request-ordering.md O10 / §5):预算链要求「目标 Timeout + 1000 ≤ 路由服 ForwardTimeoutMs(5000)」。
+# 路由服先回超时、match handler 却还在跑,gate 会放行同一会话的下一条请求,这一条的写晚落地就会乱序。
+# 客户端请求路径上的写一律用请求 ctx(建票 / 入队 / 取消 / 挑战 / 观战绑定),截止之后不再发出;
+# WatchBattle 的 addObserver 也从请求 ctx 派生截止时间,不再在客户端收到失败之后继续绑定观战(原「保持 5000」的理由见
+# team-system.md §A.3 第 7 条及其 2026-10-14 更正)。K8s ConfigMap 从这里镜像;部署门禁 Assert-RouterForwardBudget 核对。
+Timeout: 4000
 Etcd:
   Hosts:
     - 127.0.0.1:2379
@@ -43,6 +49,11 @@ Kafka:
     - 127.0.0.1:9092
 
 # 挑战邀请/结果 S2C 走 Kafka gate-{id} 推送时 writer 侧的一次同步 produce 超时(秒)。
+# 推送不受请求截止约束(有意,2026-10-15 记):ChallengePlayer / RespondChallenge 在提交点(挑战记录已原子写入)
+# 之后才推,推送用独立的 pushTimeout(5s,push.go),与本值一样大于上面的 Timeout 4000。所以可能出现「路由服已向
+# 客户端回超时、邀请随后仍推到目标」,推送失败的 cleanup 也可能在截止之后执行。记录在截止前已合法提交,这只是
+# 回执与推送的先后不一致,不破坏数据;改成跟随请求 ctx 会让「已提交的挑战」反而推不出去,代价更大。
+# 见 docs/design/client-request-ordering.md §5。
 KafkaWriteTimeoutSeconds: 5
 
 # matcher loop 扫队列的间隔(毫秒)。
@@ -120,9 +131,9 @@ RatingToleranceMax: 1000
 # RatingToleranceMax 的两人不会永久饥饿。0 / 漏配按默认 90。
 RatingToleranceMaxWaitSeconds: 90
 # 回合打满按平局:C++ 引擎回合打满一律判 SIDE_B_WIN(PVE 规则),PVP 照胜负结算会让
-# 锚点 / 高分方系统性扣分;total_rounds ≥ 该值的胜负结果按 0.5 结算。默认 30 =
+# 锚点 / 高分方系统性扣分;total_rounds ≥ 该值的胜负结果按 0.5 结算。默认 300 =
 # C++ kDefaultMaxRounds;0 关闭。配了 DungeonTable.time_limit 的配置按下面的 map 覆盖。
-RatingDrawRoundCap: 30
+RatingDrawRoundCap: 300
 # RatingDrawRoundCapByConfigId:
 #   "1": 300
 
@@ -138,7 +149,8 @@ Team:
 # NonBlock: true 是硬要求:客户端在 ServiceContext 里构造,早于节点注册与起服;阻塞建连会让
 #   data_service 没起时整个 match(排队 / 切磋 / 观战)起不来。Go 侧对 false 也会强制改成 true。
 # Timeout: 1500 与 guild 的 home zone 查询预算同值,小于 team 自己的 3500ms 请求预算。
-# 注意:顶层 Timeout 保持 5000 不改(WatchBattle 同步链最坏 >4s,team-system.md §A.3 第 7 条)。
+# 注意:顶层 Timeout 原先「保持 5000 不改」(WatchBattle 同步链最坏 >4s,team-system.md §A.3 第 7 条);
+# 2026-10-14 已改为 4000,理由见文件顶部 Timeout 注释。
 # 本地 -Zone 派生会把 Key 改成 dataservice.rpc.z<N>(go_services.ps1),与同 zone 的 data_service 配对,
 #   和 guild / login 同一形态。
 DataServiceRpc:

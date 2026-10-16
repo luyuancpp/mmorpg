@@ -1,6 +1,6 @@
 module battle_art_gen
 
-go 1.26.5
+go 1.27.2
 
 require golang.org/x/image v0.45.0
 

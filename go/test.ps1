@@ -32,6 +32,18 @@
       * shared/placement           – key / value codec vectors (separate
                                      go module, run from go/shared).
 
+    db_task 分区契约(docs/design/db-task-kafka-partition-contract.md):
+
+      * shared/kafkautil           – CRC-32(key) mod N 的 golden 向量(与 C++
+                                     librdkafka 测试共读)、key 编码、上线抽样
+                                     解析器。broker 集成用例没有
+                                     KAFKA_INTEGRATION_BROKER 时 Skip,抽样复核
+                                     没有 DBTASK_AUDIT_DUMP 时 Skip。
+      * login/internal/kafka       – db_task 主生产者配置与分区器、key 契约校验、
+                                     db_task topic 拒绝、LeaderNotAvailable 自锁
+                                     回归(只用 sarama mocks;broker 集成用例没有
+                                     KAFKA_INTEGRATION_BROKER 时 Skip)。
+
     Anything that imports a real broker (sarama integration tests) is left
     out — those go in the chaos_test.ps1 path instead.
 
@@ -74,6 +86,13 @@ $L1Suites = @(
         Dir      = Join-Path $GoRoot 'shared'
         Packages = @(
             './placement/...'
+            './kafkautil/...'
+        )
+    }
+    @{
+        Dir      = Join-Path $GoRoot 'login'
+        Packages = @(
+            './internal/kafka/...'
         )
     }
 )

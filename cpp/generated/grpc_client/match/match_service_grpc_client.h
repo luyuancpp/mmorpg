@@ -2,7 +2,8 @@
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <boost/circular_buffer.hpp>
+#include <deque>
+#include "core/network/grpc_client_runtime.h"
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/match/match_service.grpc.pb.h"
@@ -27,6 +28,10 @@ struct AsyncMatchServiceJoinQueueGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::match::JoinQueueRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncMatchServiceJoinQueueHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::match::JoinQueueResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncMatchServiceJoinQueueHandlerFunctionType =
@@ -41,6 +46,9 @@ extern AsyncMatchServiceJoinQueueFailedHandlerFunctionType AsyncMatchServiceJoin
 void SendMatchServiceJoinQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::JoinQueueRequest& request);
 void SendMatchServiceJoinQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::JoinQueueRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendMatchServiceJoinQueue(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceJoinQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::JoinQueueRequest& request, GrpcDone<::match::JoinQueueResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceCancelQueue
 
@@ -54,6 +62,10 @@ struct AsyncMatchServiceCancelQueueGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::match::CancelQueueRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncMatchServiceCancelQueueHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::Empty> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncMatchServiceCancelQueueHandlerFunctionType =
@@ -68,6 +80,9 @@ extern AsyncMatchServiceCancelQueueFailedHandlerFunctionType AsyncMatchServiceCa
 void SendMatchServiceCancelQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::CancelQueueRequest& request);
 void SendMatchServiceCancelQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::CancelQueueRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendMatchServiceCancelQueue(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceCancelQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::CancelQueueRequest& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceGetQueueStatus
 
@@ -81,6 +96,10 @@ struct AsyncMatchServiceGetQueueStatusGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::match::GetQueueStatusRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncMatchServiceGetQueueStatusHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::match::GetQueueStatusResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncMatchServiceGetQueueStatusHandlerFunctionType =
@@ -95,6 +114,9 @@ extern AsyncMatchServiceGetQueueStatusFailedHandlerFunctionType AsyncMatchServic
 void SendMatchServiceGetQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::match::GetQueueStatusRequest& request);
 void SendMatchServiceGetQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::match::GetQueueStatusRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendMatchServiceGetQueueStatus(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceGetQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::match::GetQueueStatusRequest& request, GrpcDone<::match::GetQueueStatusResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceChallengePlayer
 
@@ -108,6 +130,10 @@ struct AsyncMatchServiceChallengePlayerGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::match::ChallengePlayerRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncMatchServiceChallengePlayerHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::match::ChallengePlayerResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncMatchServiceChallengePlayerHandlerFunctionType =
@@ -122,6 +148,9 @@ extern AsyncMatchServiceChallengePlayerFailedHandlerFunctionType AsyncMatchServi
 void SendMatchServiceChallengePlayer(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengePlayerRequest& request);
 void SendMatchServiceChallengePlayer(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendMatchServiceChallengePlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceChallengePlayer(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengePlayerRequest& request, GrpcDone<::match::ChallengePlayerResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceRespondChallenge
 
@@ -135,6 +164,10 @@ struct AsyncMatchServiceRespondChallengeGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::match::RespondChallengeRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncMatchServiceRespondChallengeHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::match::RespondChallengeResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncMatchServiceRespondChallengeHandlerFunctionType =
@@ -149,6 +182,9 @@ extern AsyncMatchServiceRespondChallengeFailedHandlerFunctionType AsyncMatchServ
 void SendMatchServiceRespondChallenge(entt::registry& registry, entt::entity nodeEntity, const ::match::RespondChallengeRequest& request);
 void SendMatchServiceRespondChallenge(entt::registry& registry, entt::entity nodeEntity, const ::match::RespondChallengeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendMatchServiceRespondChallenge(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceRespondChallenge(entt::registry& registry, entt::entity nodeEntity, const ::match::RespondChallengeRequest& request, GrpcDone<::match::RespondChallengeResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceNotifyChallengeInvite
 
@@ -162,6 +198,10 @@ struct AsyncMatchServiceNotifyChallengeInviteGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::match::ChallengeInviteS2C request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncMatchServiceNotifyChallengeInviteHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::Empty> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncMatchServiceNotifyChallengeInviteHandlerFunctionType =
@@ -176,6 +216,9 @@ extern AsyncMatchServiceNotifyChallengeInviteFailedHandlerFunctionType AsyncMatc
 void SendMatchServiceNotifyChallengeInvite(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeInviteS2C& request);
 void SendMatchServiceNotifyChallengeInvite(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeInviteS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendMatchServiceNotifyChallengeInvite(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceNotifyChallengeInvite(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeInviteS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceNotifyChallengeResult
 
@@ -189,6 +232,10 @@ struct AsyncMatchServiceNotifyChallengeResultGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::match::ChallengeResultS2C request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncMatchServiceNotifyChallengeResultHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::Empty> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncMatchServiceNotifyChallengeResultHandlerFunctionType =
@@ -203,6 +250,9 @@ extern AsyncMatchServiceNotifyChallengeResultFailedHandlerFunctionType AsyncMatc
 void SendMatchServiceNotifyChallengeResult(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeResultS2C& request);
 void SendMatchServiceNotifyChallengeResult(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeResultS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendMatchServiceNotifyChallengeResult(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceNotifyChallengeResult(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeResultS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceWatchBattle
 
@@ -216,6 +266,10 @@ struct AsyncMatchServiceWatchBattleGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::match::WatchBattleRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncMatchServiceWatchBattleHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::match::WatchBattleResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncMatchServiceWatchBattleHandlerFunctionType =
@@ -230,6 +284,9 @@ extern AsyncMatchServiceWatchBattleFailedHandlerFunctionType AsyncMatchServiceWa
 void SendMatchServiceWatchBattle(entt::registry& registry, entt::entity nodeEntity, const ::match::WatchBattleRequest& request);
 void SendMatchServiceWatchBattle(entt::registry& registry, entt::entity nodeEntity, const ::match::WatchBattleRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendMatchServiceWatchBattle(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceWatchBattle(entt::registry& registry, entt::entity nodeEntity, const ::match::WatchBattleRequest& request, GrpcDone<::match::WatchBattleResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceRequestBattleTicket
 
@@ -243,6 +300,10 @@ struct AsyncMatchServiceRequestBattleTicketGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::RequestBattleTicketRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncMatchServiceRequestBattleTicketHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::RequestBattleTicketResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncMatchServiceRequestBattleTicketHandlerFunctionType =
@@ -257,6 +318,9 @@ extern AsyncMatchServiceRequestBattleTicketFailedHandlerFunctionType AsyncMatchS
 void SendMatchServiceRequestBattleTicket(entt::registry& registry, entt::entity nodeEntity, const ::RequestBattleTicketRequest& request);
 void SendMatchServiceRequestBattleTicket(entt::registry& registry, entt::entity nodeEntity, const ::RequestBattleTicketRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendMatchServiceRequestBattleTicket(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceRequestBattleTicket(entt::registry& registry, entt::entity nodeEntity, const ::RequestBattleTicketRequest& request, GrpcDone<::RequestBattleTicketResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceListWatchableBattles
 
@@ -270,6 +334,10 @@ struct AsyncMatchServiceListWatchableBattlesGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::match::ListWatchableBattlesRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncMatchServiceListWatchableBattlesHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::match::ListWatchableBattlesResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncMatchServiceListWatchableBattlesHandlerFunctionType =
@@ -284,6 +352,9 @@ extern AsyncMatchServiceListWatchableBattlesFailedHandlerFunctionType AsyncMatch
 void SendMatchServiceListWatchableBattles(entt::registry& registry, entt::entity nodeEntity, const ::match::ListWatchableBattlesRequest& request);
 void SendMatchServiceListWatchableBattles(entt::registry& registry, entt::entity nodeEntity, const ::match::ListWatchableBattlesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendMatchServiceListWatchableBattles(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceListWatchableBattles(entt::registry& registry, entt::entity nodeEntity, const ::match::ListWatchableBattlesRequest& request, GrpcDone<::match::ListWatchableBattlesResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 void SetMatchServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetMatchServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -291,7 +362,7 @@ void SetMatchServiceFailedHandler(const std::function<void(const GrpcCallFailure
 void SetMatchServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 // 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
 void SetMatchServiceCallDeadline(std::chrono::milliseconds deadline);
-void HandleMatchServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+void HandleMatchServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
 void InitMatchServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace match

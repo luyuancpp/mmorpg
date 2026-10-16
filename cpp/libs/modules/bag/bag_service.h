@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 #include "engine/core/type_define/type_define.h"
@@ -9,24 +8,10 @@
 #include "bag_system.h"
 #include "proto/common/rollback/transaction_log.pb.h"
 
-// Per-player item block list (GM feature).
-// Stored separately from Bag — Bag is a pure container.
-struct PlayerItemBlockList
-{
-	void Block(uint32_t configId);
-	void Unblock(uint32_t configId);
-	bool IsBlocked(uint32_t configId) const;
-	const std::unordered_set<uint32_t> &All() const { return blocked_config_ids_; }
-
-private:
-	std::unordered_set<uint32_t> blocked_config_ids_;
-};
-
 // Orchestration layer for bag operations.
 //
 // Handles cross-cutting concerns that do NOT belong in the Bag container:
 //   - Global (server-wide) item block check  (GainBlockService)
-//   - Per-player GM item block check          (PlayerItemBlockList)
 //   - Transaction logging                     (TransactionLogSystem)
 //   - Anomaly detection                       (AnomalyDetector)
 //
@@ -34,8 +19,7 @@ private:
 // 临时格(kTemporary)配的是先进先出淘汰策略,满了会销毁最早进包的实例;
 // `item_uuid` 是外挂回收的关联键,不留痕追溯链就在这一步断掉。Bag 是纯容器
 // 不写流水,所以它把退役清单**回执**上来,由这里落 —— 形状与 MergeAndCompact
-// 那条路完全一致。批量入包因此必须走 `Bag::ReserveForBatchAdd` 而不是纯预测的
-// `CheckSpaceFor`,否则淘汰在批量路径上永远不会发生。
+// 那条路完全一致。批量入包走 Bag::AddItems 的候选提交；CheckSpaceFor 只做无淘汰预测。
 //
 // Bag itself is a pure container (grid / slot / stack management only).
 class BagService
@@ -62,31 +46,16 @@ public:
 	static uint32_t AddItem(
 		entt::entity playerEntity,
 		Bag &bag,
-		const PlayerItemBlockList &blockList,
 		const InitItemParam &param);
 
-	// Orchestrated batch AddItems (config_id → count):
-	//   per-config block check → Bag::ReserveForBatchAdd(全部纯预检 + 腾位)
-	//   → per-config Bag::AddItem → transaction log → anomaly detection.
-	//
-	//   原子性口径(2026-09-01 更正):所有**会拒绝**的判断都在 ReserveForBatchAdd
-	//   之前或之内完成;它返回成功之后,逐项写入不会再失败(失败即编程错误)。
-	//   但注意:临时格(kTemporary)上 reserve 本身可能**已经销毁**了最早的物品来
-	//   腾位 —— 那些实例已落 LogItemDestroy,且即使后续失败也不会复活。调用方不能
-	//   把"返回失败"理解为"包与调用前完全一致"。
-	// correlationId / extra 落进流水(战斗掉落传 battle_id 与来源 JSON)。
-	// TX_ITEM_AWARD 的 proto 注释要求 extra 带来源,否则回滚重放无法判断这笔奖励是否仍有效。
-	//
-	// mutated(可为 nullptr)回答一个上面那段"原子性口径"注释点破、却没法从返回值读出来的
-	// 问题:**这次失败,包到底动过没有**。返回失败有两种:一件没碰(预检拒),和
-	// "临时格已经挤掉旧物、或前几个 config 已经写进去了"。通用资产通道靠它区分
-	// RETRY(可重投)与 APPLIED+partial(已经改了一半,必须记账转人工补偿)——
-	// 把两者混为一谈就会重复发放或永久少发(guild-phase2.md §S4 4.33)。
-	// 函数开头一律先置 false。
+    // 批量入包：冻结/全服禁发预检 → Bag::AddItems 候选提交 → 每项流水与异常检测。
+    // 容器先完成最终空间规划和全部发号，任何拒绝都不修改原包、布局或回执，不发资产流水。
+    // 发号允许烧掉尚未入包的 ID；这不是跨 Kafka 或持久化存储的事务。
+    // correlationId / extra 继续关联获取流水（战斗掉落传 battle_id 与来源）。
+    // mutated 起始为 false；仅整批成功且请求非空时为 true，失败恒为 false。
 	static uint32_t AddItems(
 		entt::entity playerEntity,
 		Bag &bag,
-		const PlayerItemBlockList &blockList,
 		const ItemCountMap &itemsToAdd,
 		TransactionType txType = TX_SYSTEM_GRANT,
 		uint64_t correlationId = 0,
@@ -96,9 +65,7 @@ public:
 	// Orchestrated batch AddItems carrying full ItemComp per piece
 	//   (mail attachments mixing equipment + stackable items): preserves
 	//   each piece's preassigned guid / attributes.
-	//   per-piece block check → Bag::ReserveForBatchAdd(vector 重载:含预设 guid
-	//   撞车预检)→ per-piece Bag::AddItem → transaction log → anomaly detection.
-	//   原子性口径同上。
+    //   先逐项禁发/身份预检，再统一候选提交，最后按输入顺序记每项流水；原子性口径同上。
 	//
 	//   ⚠ 信任边界(docs/design/equipment-attributes.md §8):入参里已带 equip 段的实例**原样入库**
 	//   —— has_equip() 即视为「已初始化」,不重掷,也**不校验**它的随机属性(条数、同档是否重复、
@@ -111,7 +78,6 @@ public:
 	static uint32_t AddItems(
 		entt::entity playerEntity,
 		Bag &bag,
-		const PlayerItemBlockList &blockList,
 		const std::vector<InitItemParam> &itemsToAdd,
 		TransactionType txType = TX_SYSTEM_GRANT);
 
@@ -132,7 +98,8 @@ public:
 	//
 	// correlationId / extra 落进流水(战斗传 battle_id 与来源 JSON),否则事后
 	// 查不出这瓶药是哪一场战斗喝掉的,反刷追溯链断在这里。
-	// drainedOut(可为 nullptr)按抽取顺序给出被扣的 (guid, config, 数量);
+	// drainedOut(可为 nullptr)按 config_id 升序、同 config 内槽位号升序
+	// 给出被扣的 (guid, config, 数量),同槽位按实例序打破平局;
 	// 调用方把它的总量与请求量一比,就知道夹紧了多少、要不要告警。
 	//
 	// 返回:跨 zone 冻结期返回 kInvalidParameter(一件不扣);其余恒 kSuccess。
@@ -163,16 +130,15 @@ public:
 	//   * 跨 zone 冻结期返回 kInvalidParameter(一件不扣),理由同 RemoveItem。
 	//   * **不判战斗**(D48 红线):局中拦一切背包写的闸只许放在玩法入口层(scene 是
 	//     PlayerEquipSystem 的写入口),不许下沉到这里。
-	//   * 扣到 0 的堆会以 size == 0 **留在包里**(实例与槽位都还在)。本函数不整理背包:
-	//     调用方随后调 MergeAndCompact(kMergeOnly) 回收(同战斗结算)。整理会销毁实例、
-	//     让手里的实例指针失效,放在提交段的哪一步只有调用方排得对,所以不替它做。
+    //   * 被扣光的实例与槽位立即成对释放，其余实例不挪位；调用方不得跨写持有实例指针。
 	//   * 常规的"不够"请调用方先用静默的 Bag::GetTotalItemCount 预检。本函数内部的不足
 	//     分支会打 ERROR 与调用栈 —— 那是给"预检过了却还是不够"这种不该发生的情形留的,
 	//     不该被玩家随手点出来。
 	//   * 按 config 抽数量**不看是不是装备**(不查表,也不看 has_equip()):调用方必须保证
 	//     被扣的 config 不是装备。否则被抽成 0 的可能是一件带属性的装备实例(甚至就是正在
-	//     被强化的那一件),下一次整理它就没了。
-	//   * 抽哪一堆由实例层的遍历序决定,不保证是玩家点的那一堆。
+	//     被强化的那一件),它会立即退役。
+	//   * 逐条流水按 config_id 升序、同 config 内槽位号升序,同槽位按实例序。
+	//     按数量扣除不保证是玩家点的那一堆。
 	//
 	// txType 进流水,**刻意没有默认值**:加这条入口就是因为"销毁的原因"要在流水里分得开
 	// (强化传 TX_EQUIP_ENHANCE、镶嵌传 TX_EQUIP_INLAY),默认成 TX_ITEM_DESTROY 等于白加。
@@ -207,7 +173,7 @@ public:
 	// 释放槽位),不走 Drain 那条"只扣数量、留着实例"的路。
 	//
 	// **只支持 `max_stack_size == 1` 的不可叠加物品**(由 ReserveForBatchRemove 把关):
-	// 可叠加物品的预设 guid 在 AddStackableItem 里会被并堆重铸,发回来对不上。
+	// 可叠加物品的预设 guid 在合堆时会被重新铸造,发回来对不上。
 	//
 	// **不拦战斗**(D48 红线):局中拦一切背包写的闸只许放在资产 RPC 入口层。下沉到
 	// 这里,战斗结算自己的扣物就会被自己拦住,结算永久卡死。

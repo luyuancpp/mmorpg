@@ -65,6 +65,7 @@ var Faults = []Fault{
 	{Code: 27007, Group: "asset_error", Name: "AssetPartialApplied"},
 	{Code: 27008, Group: "asset_error", Name: "AssetAuthFailed"},
 	{Code: 28010, Group: "equip_error", Name: "EquipInternalError"},
+	{Code: 29014, Group: "player_inbox_error", Name: "PlayerInboxStoreUnavailable"},
 }
 
 // faultSet 由 Faults 派生,不单独生成一份字面量:

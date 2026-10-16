@@ -22,6 +22,7 @@ import (
 	dspb "proto/data_service"
 	loginpb "proto/login"
 	"shared/generated/pb/table"
+	"shared/idsegment"
 	"shared/ownerepoch"
 	"shared/playername"
 )
@@ -180,11 +181,19 @@ func TestCreatePlayer_SeedSurvivesLostAccountWrite(t *testing.T) {
 	}
 }
 
-// 父键已有真实存档:不覆盖、不加 TTL,建角照常成功,计 parent_exists(id 复用信号)。
-func TestCreatePlayer_SeedNeverOverwritesExistingParent(t *testing.T) {
-	setNewPlayerSeed(t, true)
-	fake := &fakeRegisterClient{}
-	h := newCreatePlayerHarnessWithNames(t, homezone.New(fake, 0, 0, 0), fake)
+// idProbeCount 读 login_create_player_id_probe_total{result} 的当前值,口径同 seedCount:只比增量,
+// 动作之前先取一次;result 写字面量,钉住告警表达式的契约。
+func idProbeCount(t *testing.T, result string) float64 {
+	t.Helper()
+	return createPlayerCounterValue(t, "login_create_player_id_probe_total", map[string]string{"result": result})
+}
+
+// seedResultLabels 是 login_create_player_seed_total 的全部 result 取值,用来断言「种子根本没跑」。
+var seedResultLabels = []string{"written", "idempotent", "parent_exists", "owner_epoch_exists", "error"}
+
+// existingParentBlob 是一份「真实存档」形状的父键(有等级、不是种子骨架)。
+func existingParentBlob(t *testing.T) []byte {
+	t.Helper()
 	existing, err := proto.Marshal(&pbdb.PlayerAllData{
 		PlayerDatabaseData: &pbdb.PlayerDatabase{
 			PlayerId:       hzPlayerID,
@@ -194,14 +203,82 @@ func TestCreatePlayer_SeedNeverOverwritesExistingParent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal existing parent: %v", err)
 	}
-	if err := h.rdb.Set(h.ctx, seedParentKeyFor(hzPlayerID), existing, 0).Err(); err != nil {
-		t.Fatalf("seed existing parent: %v", err)
+	return existing
+}
+
+// plantInSeedWindow 让 Reserve(6c)在回包之前执行 plant:状态出现在「6b' 探测之后、6d' 种子之前」的窗口里,
+// 探测看不到它,只有种子脚本的写时复核能拦下。Reserve 本身照常回成功。
+func plantInSeedWindow(t *testing.T, fake *fakeRegisterClient, plant func() error) {
+	t.Helper()
+	fake.reserve = func(int, *dspb.ReservePlayerNameRequest) (*dspb.ReservePlayerNameResponse, error) {
+		if err := plant(); err != nil {
+			t.Errorf("plant state in the probe→seed window: %v", err)
+		}
+		return &dspb.ReservePlayerNameResponse{Result: playername.ReserveOK}, nil
 	}
+}
+
+// requireRefusedAtSeedAndCompensated 是种子报 id 复用(设计 §10 P2,2026-10-15 定为拒绝)之后的共同断言:
+// 建角以 kLoginDataSerializeFailed 拒绝;名字(6c 确定已登记)按 reserve 时的 id / 名字释放恰好一次;
+// 账号 blob 没有新角色、反查映射不写;建角锁已释放。6d 的 player:zone 已登记(撤不掉,与第 7 步失败同类),
+// 体现在调用序列里的 register 上。
+func requireRefusedAtSeedAndCompensated(t *testing.T, h *createPlayerHarness, fake *fakeRegisterClient,
+	resp *loginpb.CreatePlayerResponse, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("CreatePlayer must fail via tip, not transport error: %v", err)
+	}
+	requireTip(t, resp, table.LoginError_kLoginDataSerializeFailed)
+	if got := strings.Join(fake.events, ","); got != "reserve,register,release" {
+		t.Fatalf("data_service call order = %q, want reserve,register,release", got)
+	}
+	reserved, released := fake.reserveReqs[0], fake.releaseReqs[0]
+	if released.GetPlayerId() != reserved.GetPlayerId() || released.GetName() != reserved.GetName() {
+		t.Fatalf("released %d/%q, want the reservation %d/%q",
+			released.GetPlayerId(), released.GetName(), reserved.GetPlayerId(), reserved.GetName())
+	}
+	if players := storedPlayers(t, h.ctx, h.rdb); len(players) != 0 {
+		t.Fatalf("account blob persisted %d player(s) although the create was refused", len(players))
+	}
+	if h.mr.Exists(constants.PlayerToAccountKey(hzPlayerID)) {
+		t.Fatal("reverse mapping written although the create was refused")
+	}
+	if h.mr.Exists(nameCreateKey) {
+		t.Fatal("create lock still held after a refused create")
+	}
+}
+
+// 回归(设计 §10 P2,负责人 2026-10-15 按「最标准」定为拒绝):父键在「6b' 探测之后、6d' 种子之前」才出现
+// (Reserve 回调里写入一份真实存档):种子脚本作为写时的原子复核,不覆盖、不加 TTL,计 parent_exists;
+// 建角随之拒绝,名字释放一次。
+//
+// 期望改写(2026-10-15),逐条:
+//   - 注入时机:原用例在建角之前就预置父键。现在 6b' 探测会在登记名字之前拒绝,种子根本跑不到,原写法测不到
+//     种子脚本的「不覆盖」;所以挪到窗口里注入。建角之前就在的情形见 TestCreatePlayer_IDProbeRefusesMintedIDWithExistingState;
+//   - 建角结果:原期望「建角照常成功」(只告警),改为 kLoginDataSerializeFailed 拒绝;
+//   - 新增补偿断言:名字释放恰好一次、账号 blob 不变、反查映射不写、锁已释放;
+//   - 保留不变:父键字节不变、TTL 仍为 0、seed_total{parent_exists} +1。
+//
+// 修复前:没有 6b' 探测,id_probe_total{clear} 不增长,前提断言处即红;即便去掉前提断言,种子报 parent_exists
+// 也只告警、建角成功,requireTip 处同样红。
+func TestCreatePlayer_SeedNeverOverwritesExistingParent(t *testing.T) {
+	setNewPlayerSeed(t, true)
+	fake := &fakeRegisterClient{}
+	h := newCreatePlayerHarnessWithNames(t, homezone.New(fake, 0, 0, 0), fake)
+	existing := existingParentBlob(t)
+	plantInSeedWindow(t, fake, func() error {
+		return h.rdb.Set(h.ctx, seedParentKeyFor(hzPlayerID), existing, 0).Err()
+	})
 	before := seedCount(t, "parent_exists")
+	probeClearBefore := idProbeCount(t, "clear")
 
 	resp, err := h.l.CreatePlayer(&loginpb.CreatePlayerRequest{})
-	requireCreated(t, resp, err)
 
+	// 先钉住前提:探测确实放行了,拒绝来自种子那一步。
+	if got := idProbeCount(t, "clear") - probeClearBefore; got != 1 {
+		t.Fatalf("id_probe_total{clear} delta = %v, want 1 (the parent key must appear after the probe)", got)
+	}
+	requireRefusedAtSeedAndCompensated(t, h, fake, resp, err)
 	if _, after := readSeededParent(t, h.ctx, h.rdb, hzPlayerID); !bytes.Equal(existing, after) {
 		t.Fatal("seed overwrote an existing parent key")
 	}
@@ -213,19 +290,34 @@ func TestCreatePlayer_SeedNeverOverwritesExistingParent(t *testing.T) {
 	}
 }
 
-// owner_epoch 已铸(玩家被派入过场景):父键此刻不在也不写,建角照常成功,计 owner_epoch_exists。
+// 回归(设计 §10 P2,同上):owner_epoch 在「6b' 探测之后、6d' 种子之前」才被铸出(玩家被派入过场景):
+// 父键此刻不在也不写,计 owner_epoch_exists;建角随之拒绝,名字释放一次。
+//
+// 期望改写(2026-10-15),逐条:
+//   - 注入时机:原用例在建角之前就预置 owner_epoch,现在会被 6b' 探测先拦下,挪到窗口里注入;
+//   - 建角结果:原期望「建角照常成功」,改为 kLoginDataSerializeFailed 拒绝;
+//   - 新增补偿断言:同 TestCreatePlayer_SeedNeverOverwritesExistingParent;
+//   - 保留不变:父键不存在、seed_total{owner_epoch_exists} +1。
+//
+// 修复前:没有 6b' 探测,前提断言处即红;即便去掉它,种子报 owner_epoch_exists 也只告警、建角成功,
+// requireTip 处同样红。
 func TestCreatePlayer_SeedRefusedAfterOwnerEpochMinted(t *testing.T) {
 	setNewPlayerSeed(t, true)
 	fake := &fakeRegisterClient{}
 	h := newCreatePlayerHarnessWithNames(t, homezone.New(fake, 0, 0, 0), fake)
-	if err := h.rdb.Set(h.ctx, ownerepoch.OwnerEpochKey(hzPlayerID), "3", 0).Err(); err != nil {
-		t.Fatalf("seed owner_epoch: %v", err)
-	}
+	plantInSeedWindow(t, fake, func() error {
+		return h.rdb.Set(h.ctx, ownerepoch.OwnerEpochKey(hzPlayerID), "3", 0).Err()
+	})
 	before := seedCount(t, "owner_epoch_exists")
+	probeClearBefore := idProbeCount(t, "clear")
 
 	resp, err := h.l.CreatePlayer(&loginpb.CreatePlayerRequest{})
-	requireCreated(t, resp, err)
 
+	// 先钉住前提:探测确实放行了,拒绝来自种子那一步。
+	if got := idProbeCount(t, "clear") - probeClearBefore; got != 1 {
+		t.Fatalf("id_probe_total{clear} delta = %v, want 1 (owner_epoch must appear after the probe)", got)
+	}
+	requireRefusedAtSeedAndCompensated(t, h, fake, resp, err)
 	if h.mr.Exists(seedParentKeyFor(hzPlayerID)) {
 		t.Fatal("seed written although player:{id}:owner_epoch exists")
 	}
@@ -234,16 +326,150 @@ func TestCreatePlayer_SeedRefusedAfterOwnerEpochMinted(t *testing.T) {
 	}
 }
 
-// 种子脚本报错(父键被预置成 list,脚本里的 GET 回 WRONGTYPE):建角照常成功,账号 blob 与反查索引照写,
+// 回归(设计 §10 P7,负责人 2026-10-15 按「最标准」定为采用):新铸 id 上建角之前就已有既有状态(父键 /
+// owner_epoch)时,建角在登记名字**之前**拒绝(fail-closed):名字不登记、player:zone 不登记、种子不跑、
+// 账号 blob 不变、反查映射不写,建角锁照常释放,计 id_probe_total{result} +1。种子开关开、关都要拒:
+// id 复用在关着种子时同样会让新账号首次入场读到那份旧缓存。
+//
+// 修复前:没有探测。关着种子时建角直接成功;开着种子时种子报 parent_exists / owner_epoch_exists 只告警、
+// 建角照常成功,名字与 player:zone 都已登记 —— 两种都在 requireTip 处即红。
+func TestCreatePlayer_IDProbeRefusesMintedIDWithExistingState(t *testing.T) {
+	plantParent := func(t *testing.T, h *createPlayerHarness) {
+		t.Helper()
+		if err := h.rdb.Set(h.ctx, seedParentKeyFor(hzPlayerID), existingParentBlob(t), 0).Err(); err != nil {
+			t.Fatalf("plant existing parent: %v", err)
+		}
+	}
+	plantOwnerEpoch := func(t *testing.T, h *createPlayerHarness) {
+		t.Helper()
+		if err := h.rdb.Set(h.ctx, ownerepoch.OwnerEpochKey(hzPlayerID), "3", 0).Err(); err != nil {
+			t.Fatalf("plant owner_epoch: %v", err)
+		}
+	}
+	cases := []struct {
+		name   string
+		seed   bool // NewPlayerSeed.Enabled
+		plant  func(*testing.T, *createPlayerHarness)
+		result string // id_probe_total 的 result
+	}{
+		{"父键已在,种子开", true, plantParent, "parent_exists"},
+		{"父键已在,种子关", false, plantParent, "parent_exists"},
+		{"owner_epoch 已在,种子开", true, plantOwnerEpoch, "owner_epoch_exists"},
+		{"owner_epoch 已在,种子关", false, plantOwnerEpoch, "owner_epoch_exists"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			setNewPlayerSeed(t, tc.seed)
+			fake := &fakeRegisterClient{}
+			h := newCreatePlayerHarnessWithNames(t, homezone.New(fake, 0, 0, 0), fake)
+			tc.plant(t, h)
+			seedKey := seedParentKeyFor(hzPlayerID)
+			parentBefore, parentErrBefore := h.mr.Get(seedKey)
+			probeBefore := idProbeCount(t, tc.result)
+			seedBefore := make(map[string]float64, len(seedResultLabels))
+			for _, label := range seedResultLabels {
+				seedBefore[label] = seedCount(t, label)
+			}
+
+			resp, err := h.l.CreatePlayer(&loginpb.CreatePlayerRequest{})
+
+			if err != nil {
+				t.Fatalf("CreatePlayer must fail via tip, not transport error: %v", err)
+			}
+			requireTip(t, resp, table.LoginError_kLoginDataSerializeFailed)
+			// 名字、player:zone 一个 RPC 都没发,也就没有释放。
+			if got := strings.Join(fake.events, ","); got != "" {
+				t.Fatalf("data_service calls = %q, want none (refused before reserving the name)", got)
+			}
+			if got := idProbeCount(t, tc.result) - probeBefore; got != 1 {
+				t.Fatalf("id_probe_total{%s} delta = %v, want 1", tc.result, got)
+			}
+			for _, label := range seedResultLabels {
+				if got := seedCount(t, label) - seedBefore[label]; got != 0 {
+					t.Fatalf("seed_total{%s} delta = %v, want 0 (the seed must not run)", label, got)
+				}
+			}
+			if parentAfter, parentErrAfter := h.mr.Get(seedKey); parentAfter != parentBefore ||
+				(parentErrBefore == nil) != (parentErrAfter == nil) {
+				t.Fatalf("parent key changed: %q/%v -> %q/%v", parentBefore, parentErrBefore, parentAfter, parentErrAfter)
+			}
+			if ttl := h.mr.TTL(seedKey); ttl != 0 {
+				t.Fatalf("parent TTL = %v after a refused create, want none", ttl)
+			}
+			if players := storedPlayers(t, h.ctx, h.rdb); len(players) != 0 {
+				t.Fatalf("account blob persisted %d player(s) although the create was refused", len(players))
+			}
+			if h.mr.Exists(constants.PlayerToAccountKey(hzPlayerID)) {
+				t.Fatal("reverse mapping written although the create was refused")
+			}
+			if h.mr.Exists(nameCreateKey) {
+				t.Fatal("create lock still held after a refused create")
+			}
+		})
+	}
+}
+
+// mintHookSegment 发出号之后立刻跑一次 after:把故障注入卡在「发号之后、6b' 探测之前」。
+type mintHookSegment struct {
+	id    uint64
+	after func()
+}
+
+func (s *mintHookSegment) Next(context.Context) (uint64, error) {
+	s.after()
+	return s.id, nil
+}
+
+// 回归(设计 §10 P7 的 fail-closed 一半):探测本身出错(Redis 在发号之后整个不可用)⇒ 拒绝建角,名字、
+// player:zone 一个都不登记,不记孤儿,计 id_probe_total{error} +1。探不清不等于没有:放行就可能把一个
+// 在役 id 交给新账号。
+//
+// 修复前:没有探测,名字与 player:zone 照常登记;随后围栏写与回读都失败,按「分不清」保留名字登记、记一个孤儿,
+// tip 是 kLoginRedisSetFailed —— requireTip 处即红(调用序列也会是 reserve,register)。
+func TestCreatePlayer_IDProbeErrorRefusesCreate(t *testing.T) {
+	n := newNameHarness(t)
+	n.l.svcCtx.PlayerIDMinter = &idsegment.Minter{Name: "player_id", Segment: &mintHookSegment{id: hzPlayerID, after: func() {
+		n.mr.SetError("simulated redis outage")
+	}}}
+	t.Cleanup(func() { n.mr.SetError("") })
+	errorsBefore := idProbeCount(t, "error")
+	orphansBefore := orphanCount(t)
+
+	resp := n.create(t, "云中君")
+	// 后面的断言要经 go-redis 读回账号 blob。建角锁的释放发生在故障期间,本用例不对它断言。
+	n.mr.SetError("")
+
+	requireTip(t, resp, table.LoginError_kLoginDataSerializeFailed)
+	if got := strings.Join(n.fake.events, ","); got != "" {
+		t.Fatalf("data_service calls = %q, want none (refused before reserving the name)", got)
+	}
+	if got := idProbeCount(t, "error") - errorsBefore; got != 1 {
+		t.Fatalf("id_probe_total{error} delta = %v, want 1", got)
+	}
+	if got := orphanCount(t) - orphansBefore; got != 0 {
+		t.Fatalf("orphan_total delta = %v, want 0 (no name was reserved)", got)
+	}
+	if players := storedPlayers(t, n.ctx, n.rdb); len(players) != 0 {
+		t.Fatalf("account blob persisted %d player(s) although the probe failed", len(players))
+	}
+	if n.mr.Exists(constants.PlayerToAccountKey(hzPlayerID)) || n.mr.Exists(seedParentKeyFor(hzPlayerID)) {
+		t.Fatal("reverse mapping or seed written although the probe failed")
+	}
+}
+
+// 种子脚本报错(父键是个 list,脚本里的 GET 回 WRONGTYPE):建角照常成功,账号 blob 与反查索引照写,
 // 计 error,父键原样不动。证明「种子结果不改变建角结果」对 error 分支同样成立。
+// 2026-10-15 改注入时机:list 键在 Reserve 回调里(6b' 探测之后)才写入。原先建角之前就预置,现在会被探测
+// 当成 parent_exists 拒在 6c 之前,种子根本跑不到;期望不变。
 func TestCreatePlayer_SeedErrorDoesNotFailCreate(t *testing.T) {
 	setNewPlayerSeed(t, true)
 	fake := &fakeRegisterClient{}
 	h := newCreatePlayerHarnessWithNames(t, homezone.New(fake, 0, 0, 0), fake)
 	key := seedParentKeyFor(hzPlayerID)
-	if _, err := h.mr.Lpush(key, "x"); err != nil {
-		t.Fatalf("seed list-typed parent key: %v", err)
-	}
+	plantInSeedWindow(t, fake, func() error {
+		_, err := h.mr.Lpush(key, "x")
+		return err
+	})
 	before := seedCount(t, "error")
 
 	resp, err := h.l.CreatePlayer(&loginpb.CreatePlayerRequest{})

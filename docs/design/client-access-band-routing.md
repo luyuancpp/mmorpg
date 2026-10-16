@@ -362,6 +362,13 @@ NODE 大区也在同一批里按 extent 重新发号（D52）。这样"legacy"�
   - `NotifySessionClosed` 不登记。
 - gate 只有一个 IO 线程，CQ 也在主 loop 里轮询，在途计数和桶都不需要加锁【码】`client_message_processor.cpp:545-549`、`grpc_init_client.cpp:358-365`。
 
+> **2026-10-15 修订**:按会话的在途记账已由 [client-request-ordering.md](./client-request-ordering.md) 的 gate 路由 lane 落码(未编译、未验证),本节以下几处按它修订:
+> - 每会话从「在途 ≤ 32」改为「**排队 + 在途 ≤ 32**」:lane 同一时刻只放 1 条在途,其余排队(`kMaxLaneDepth`,超限回带 id 的 1008、不计非法包,语义不变);
+> - 按次记账的键从 `(ClientContext*, seq)` 改为 gate 自己发的 `gate_call_seq`(SessionDetails 8 号字段,路由服原值回写)。生成的 Send* 返回 void,gate 拿不到 ctx 指针,原方案要改生成模板;
+> - D60 的 7 号字段 `session_incarnation` 已按本文预订启用;阶段 0b(player_id 归一)、0d(失败回执带请求 id)由 lane 批次承担;
+> - 过期从「惰性清理、不挂定时器」改为「**主动扫描 + 惰性清理**」(GateRuntimeContext 上的 TimerTaskComp,回调不捕获对象,符合 §11.7)。理由:队头卡住时客户端在等回包,不会再发新请求,纯惰性清理永远触发不到;
+> - 进程上限暂未做,在途数 ≤ 会话数。
+
 #### 12.5 转发前清洗
 
 - `ForwardRequest.request` 在 CopyFrom 之后清掉 `service` 和 `method`（F16）。

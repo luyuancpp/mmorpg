@@ -13,8 +13,8 @@ struct SceneRouteTarget;
 // gate 侧 RoutePlayerEvent 进场转发的补发与收口(CPP-2;设计与残余见 cross-zone-scene-travel.md 的
 // "CPP-2 gate 侧进场转发补发"一节)。
 //
-// 生成式 handler 的守护段(gate_event_handler.cpp 的 RoutePlayer / BindSession、
-// rpc_replies/scene_response_handler.cpp 的 SceneNodeHandshake 应答)只放一行委托,逻辑集中在本手写文件,
+// 生成式 handler 的守护段(gate_event_handler.cpp 的 RoutePlayer / BindSession)与 gate/main.cpp 装的握手成功钩子
+// (NodeHandshakeManager::SetHandshakeSucceededHook,原先写在已删除的 rpc_replies/scene_response_handler.cpp)只放一行委托,逻辑集中在本手写文件,
 // 重生成时不受影响(守护段只放委托的惯例)。判定逻辑本身是 scene_route_helper.h 里的纯函数,
 // 本文件只负责接注册表、连接、定时器与日志。
 //
@@ -45,10 +45,12 @@ struct SceneLinkHandshakeComp
 };
 
 // RoutePlayerEvent 到达:记下 lastSceneRoute,整体替换欠账(以最近一次路由决策为准,依据不是 epoch:
-// 同落点重连不铸造 epoch),并立即尝试一次。调用前调用方已写好 playerId / homeZoneId / ownerEpoch。
+// 同落点重连不铸造 epoch),并立即尝试一次。调用前调用方已用 scene_route_helper.h 的 ApplyRouteIdentity
+// 写好 playerId / homeZoneId / ownerEpoch / loginGeneration:转发同步发生,盖章从会话取值。
 void OnRouteDecision(SessionId sessionId, SessionInfo &session, const SceneRouteTarget &target, Clock::time_point now);
 
-// BindSession 带来了登录类型(调用方已写入 session.pendingEnterGsType):已有欠账则立即尝试一次;
+// BindSession 带来了登录类型(调用方已用 ApplyLoginBinding 写入 playerId / loginGeneration / pendingEnterGsType,
+// 代次必须先于本调用写入,见 scene-enter-session-fence.md §4):已有欠账则立即尝试一次;
 // 否则按 lastSceneRoute 建一笔有上限的欠账(还没收到路由时什么都不做,等路由自己到来)。
 void OnLoginTypeBound(SessionId sessionId, SessionInfo &session, Clock::time_point now);
 

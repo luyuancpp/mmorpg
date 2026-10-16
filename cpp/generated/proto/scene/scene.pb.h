@@ -984,6 +984,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerEnterGameNodeRequest final : 
     kEnterGsTypeFieldNumber = 4,
     kSceneIdFieldNumber = 5,
     kOwnerEpochFieldNumber = 7,
+    kLoginGenerationFieldNumber = 8,
     kHomeZoneIdFieldNumber = 6,
   };
   // uint64 player_id = 1;
@@ -1036,6 +1037,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerEnterGameNodeRequest final : 
   void _internal_set_owner_epoch(::uint64_t value);
 
   public:
+  // uint64 login_generation = 8;
+  void clear_login_generation() ;
+  [[nodiscard]] ::uint64_t login_generation() const;
+  void set_login_generation(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_login_generation() const;
+  void _internal_set_login_generation(::uint64_t value);
+
+  public:
   // uint32 home_zone_id = 6;
   void clear_home_zone_id() ;
   [[nodiscard]] ::uint32_t home_zone_id() const;
@@ -1050,7 +1061,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerEnterGameNodeRequest final : 
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 6,
+      ::google::protobuf::internal::TcParseTable<3, 7,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1084,6 +1095,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerEnterGameNodeRequest final : 
     ::uint32_t enter_gs_type_;
     ::uint64_t scene_id_;
     ::uint64_t owner_epoch_;
+    ::uint64_t login_generation_;
     ::uint32_t home_zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -3150,7 +3162,7 @@ inline void PlayerEnterGameNodeRequest::_internal_set_scene_id(::uint64_t value)
 inline void PlayerEnterGameNodeRequest::clear_home_zone_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.home_zone_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint32_t PlayerEnterGameNodeRequest::home_zone_id() const {
   // @@protoc_insertion_point(field_get:PlayerEnterGameNodeRequest.home_zone_id)
@@ -3158,7 +3170,7 @@ inline ::uint32_t PlayerEnterGameNodeRequest::home_zone_id() const {
 }
 inline void PlayerEnterGameNodeRequest::set_home_zone_id(::uint32_t value) {
   _internal_set_home_zone_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:PlayerEnterGameNodeRequest.home_zone_id)
 }
 inline ::uint32_t PlayerEnterGameNodeRequest::_internal_home_zone_id() const {
@@ -3192,6 +3204,30 @@ inline ::uint64_t PlayerEnterGameNodeRequest::_internal_owner_epoch() const {
 inline void PlayerEnterGameNodeRequest::_internal_set_owner_epoch(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.owner_epoch_ = value;
+}
+
+// uint64 login_generation = 8;
+inline void PlayerEnterGameNodeRequest::clear_login_generation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint64_t PlayerEnterGameNodeRequest::login_generation() const {
+  // @@protoc_insertion_point(field_get:PlayerEnterGameNodeRequest.login_generation)
+  return _internal_login_generation();
+}
+inline void PlayerEnterGameNodeRequest::set_login_generation(::uint64_t value) {
+  _internal_set_login_generation(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:PlayerEnterGameNodeRequest.login_generation)
+}
+inline ::uint64_t PlayerEnterGameNodeRequest::_internal_login_generation() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.login_generation_;
+}
+inline void PlayerEnterGameNodeRequest::_internal_set_login_generation(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = value;
 }
 
 // -------------------------------------------------------------------

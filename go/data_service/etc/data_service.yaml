@@ -169,9 +169,14 @@ GuildCheckBudgetSeconds: 120
 #   3) mapping Redis 为 noeviction + appendonly yes、版本 ≥ 7.2(WAITAOF);
 #   4) 建角压测已出 W1 p99 与发布未确认率(AGENTS.md §6)。
 # 非法值 = 拒启。WAITAOF 两项都显式写 0 = 不等落盘(只给没有 AOF 的环境 / 单测用);redis-ha 档 NumReplicas 要写 1。
+# FenceShards(围栏分片数,同一 zone 的建角分摊到几把围栏行锁上;与 player_route 的行片 64 无关):
+#   MySQL 档 16(本文件);TiDB 档 64(docs/design/capacity-model-hok-scale.md §4.1 的连带修正)。只改配置,
+#   任何时候都可以改,各副本取值也可以不同 —— 围栏持有者总是锁满 0..63 全部分片行(placement.MaxRouteFenceShards)。
+#   代码默认值是 8(不写这个键时)。K8s ConfigMap 目前不镜像这个键(RouteStore 段只有固定的 Mode: redis 和镜像来的
+#   两项连接池),K8s 上取代码默认 8;切 db_first 之前按档位补进 ConfigMap。
 RouteStore:
   Mode: redis
-  FenceShards: 8
+  FenceShards: 16
   MaxOpenConn: 20
   MaxIdleConn: 5
   PublishAttempts: 3
@@ -213,7 +218,7 @@ Schema:
 # max_id ≥ 消费表最大号,这是 ID 安全事件,不是普通的库恢复。
 IdSegment:
   AllowAutoSeed: true      # dev only;生产必须 false
-  BootstrapTags: [player, guild, item, txlog, snapshot, trade_listing, guild_asset_op]
+  BootstrapTags: [player, guild, item, txlog, snapshot, trade_listing, guild_asset_op, friend_request]
 
 # C++ scene 产出的交易流水 / 玩家快照落库消费者。Brokers 留空 = 不消费(本地无 Kafka 合法)。
 # Kafka 不可达不影响 Load/Save,只记日志并每 30s 后台重试。

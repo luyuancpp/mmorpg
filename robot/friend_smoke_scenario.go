@@ -8,8 +8,8 @@ package main
 //	1. A AddFriend(B) 受理,10s 内 B 收到 NotifyFriendEvent{REQUEST_RECEIVED, by=A}
 //	   —— 这一步验的是**跨区推送三步**:A 在 zone_a 发起 → friend 读 B 的 player:session
 //	   → gate-cmd_g<N> → zone_b 的 gate → B 的连接;
-//	2. B GetPendingRequests 看到 A 的 PENDING 申请(权威拉取路径);A 重发 → FriendRequestAlreadySent;
-//	3. B AcceptFriend(A) 受理,A 10s 内收到 NotifyFriendEvent{REQUEST_ACCEPTED, by=B};
+//	2. B GetPendingRequests 看到 A 的非零申请代次；A 重发成功并返回同一代次，原时间不变；
+//	3. B 按 request_id 接受申请，A 10s 内收到 NotifyFriendEvent{REQUEST_ACCEPTED, by=B};
 //	   双方 GetFriendList 互见,且 A 看到的 B 是 is_online=true / last_active_ms≠0
 //	   (验跨区读共享库的 player:session:{id});
 //	4. C Block(A) 受理、C ListBlocks 含 A;A→C 与 C→A 的 AddFriend **两个方向都**回 FriendBlocked;
@@ -68,6 +68,7 @@ import (
 //   - 9301-9304 team-smoke;9401-9403 trade-smoke;
 //   - **9501 已被帮会二期的资产通道冒烟占用**(guild-phase2/04-asset-channel.md 第 11 部分,
 //     且该文建议把整个 95xx 段划给它);9601 是 travel_smoke。
+//
 // 所以候选 9501/9502/9503 会与帮会二期撞号,整体后移到 97xx(两仓都未使用)。
 //
 // 归属区要求:A、C 必须**首次在 zone_a 建角**,B 必须**首次在 zone_b 建角**
@@ -103,7 +104,6 @@ const friendSmokeServerMaxRecommend = 20
 
 // tip id 一律读导表器生成的枚举,不写字面量(AGENTS.md §7 不变量 5)。
 var (
-	tipFriendRequestAlreadySent = uint32(tiptable.FriendError_kFriendRequestAlreadySent)
 	tipFriendBlocked            = uint32(tiptable.FriendError_kFriendBlocked)
 	tipFriendNoPendingRequest   = uint32(tiptable.FriendError_kFriendNoPendingRequest)
 	tipFriendInvalidParameter   = uint32(tiptable.CommonError_kInvalidParameter)
@@ -258,9 +258,13 @@ func RunFriendSmoke(cfg *config.Config) {
 
 	// ---- 步骤 1:A 加 B 为好友,B 必须收到推送 ----
 	b.resetPushes()
+	added := &friendpb.AddFriendResponse{}
 	if err := a.expect(game.ClientPlayerFriendAddFriendMessageId,
-		&friendpb.AddFriendRequest{TargetPlayerId: b.gc.PlayerId}, &friendpb.AddFriendResponse{}, 0); err != nil {
+		&friendpb.AddFriendRequest{TargetPlayerId: b.gc.PlayerId}, added, 0); err != nil {
 		fail("add-friend", "%v", err)
+	}
+	if added.GetRequestId() == 0 {
+		fail("add-friend", "申请成功却未返回非零 request_id")
 	}
 	evt, err := b.waitPush(friendpb.FriendEventReason_FRIEND_EVENT_REASON_REQUEST_RECEIVED, a.gc.PlayerId)
 	if err != nil {
@@ -275,19 +279,24 @@ func RunFriendSmoke(cfg *config.Config) {
 	zap.L().Info("[friend-smoke] step 1: request sent and pushed cross-zone",
 		zap.Uint64("by", evt.GetByPlayerId()), zap.Int64("ts_ms", evt.GetTsMs()))
 
-	// ---- 步骤 2:B 拉到权威申请列表;A 重发被拒 ----
+	// ---- 步骤 2:B 拉到权威申请列表；重复 pending 保留原代次与时间 ----
 	pending := &friendpb.GetPendingRequestsResponse{}
 	if err := b.expect(game.ClientPlayerFriendGetPendingRequestsMessageId,
 		&friendpb.GetPendingRequestsRequest{}, pending, 0); err != nil {
 		fail("pending-list", "%v", err)
 	}
 	found := false
+	var requestTime int64
 	for _, req := range pending.GetRequests() {
 		if req.GetFromPlayerId() == a.gc.PlayerId {
 			if req.GetStatus() != friendpb.FriendRequestStatus_FRIEND_REQUEST_PENDING {
 				fail("pending-list", "A(%d) request in B pending list has status=%s, expected PENDING",
 					a.gc.PlayerId, req.GetStatus())
 			}
+			if req.GetRequestId() != added.GetRequestId() {
+				fail("pending-list", "待审列表代次=%d，与申请响应=%d 不一致", req.GetRequestId(), added.GetRequestId())
+			}
+			requestTime = req.GetRequestTimeMs()
 			found = true
 			break
 		}
@@ -296,19 +305,38 @@ func RunFriendSmoke(cfg *config.Config) {
 		fail("pending-list", "B(%d) pending requests contain no A(%d): the push arrived but the authoritative fetch path has no entry; "+
 			"the push only triggers a notification badge; this fetch is authoritative", b.gc.PlayerId, a.gc.PlayerId)
 	}
-	// 重发同一条申请:必须被业务层挡住,而不是刷新时间或插第二行。
+	duplicate := &friendpb.AddFriendResponse{}
 	if err := a.expect(game.ClientPlayerFriendAddFriendMessageId,
-		&friendpb.AddFriendRequest{TargetPlayerId: b.gc.PlayerId}, &friendpb.AddFriendResponse{},
-		tipFriendRequestAlreadySent); err != nil {
+		&friendpb.AddFriendRequest{TargetPlayerId: b.gc.PlayerId}, duplicate, 0); err != nil {
 		fail("add-friend-duplicate", "%v", err)
 	}
-	zap.L().Info("[friend-smoke] step 2: authoritative pending list + duplicate rejected",
+	if duplicate.GetRequestId() != added.GetRequestId() {
+		fail("add-friend-duplicate", "重复 pending 更换了申请代次")
+	}
+	replayed := &friendpb.GetPendingRequestsResponse{}
+	if err := b.expect(game.ClientPlayerFriendGetPendingRequestsMessageId,
+		&friendpb.GetPendingRequestsRequest{}, replayed, 0); err != nil {
+		fail("pending-replay", "%v", err)
+	}
+	matches := 0
+	for _, request := range replayed.GetRequests() {
+		if request.GetFromPlayerId() == a.gc.PlayerId {
+			matches++
+			if request.GetRequestId() != added.GetRequestId() || request.GetRequestTimeMs() != requestTime {
+				fail("pending-replay", "重复 pending 改变了申请代次或原始时间")
+			}
+		}
+	}
+	if matches != 1 {
+		fail("pending-replay", "同一玩家对的待审申请数量=%d，期望1", matches)
+	}
+	zap.L().Info("[friend-smoke] step 2: authoritative pending list + stable request id",
 		zap.Int("pending_count", len(pending.GetRequests())))
 
 	// ---- 步骤 3:B 同意,A 收到推送,双方互见 ----
 	a.resetPushes()
 	if err := b.expect(game.ClientPlayerFriendAcceptFriendMessageId,
-		&friendpb.AcceptFriendRequest{FromPlayerId: a.gc.PlayerId}, &friendpb.AcceptFriendResponse{}, 0); err != nil {
+		&friendpb.AcceptFriendRequest{RequestId: added.GetRequestId(), FromPlayerId: a.gc.PlayerId}, &friendpb.AcceptFriendResponse{}, 0); err != nil {
 		fail("accept-friend", "%v", err)
 	}
 	if _, err := a.waitPush(friendpb.FriendEventReason_FRIEND_EVENT_REASON_REQUEST_ACCEPTED, b.gc.PlayerId); err != nil {
@@ -473,14 +501,11 @@ func friendSmokePreclean(a, b, c *friendSmokeBot) {
 		request   proto.Message
 		response  friendResponse
 	}
-	// 顺序有讲究:先断好友关系,再清掉可能残留的待处理申请,最后解除两个方向的拉黑。
-	// 拉黑放最后是因为 RemoveFriend / RejectFriend 本身不受拉黑影响,反过来
-	// 第 1 步的 AddFriend 受影响 —— 解黑必须发生在它之前。
+	// 先断好友并解除两方向拉黑，再按权威列表的当前代次清理残留申请。
+	// RemoveFriend / RejectFriend 不受拉黑影响；第1步 AddFriend 前必须已经解黑。
 	for _, o := range []op{
 		{a, game.ClientPlayerFriendRemoveFriendMessageId,
 			&friendpb.RemoveFriendRequest{TargetPlayerId: b.gc.PlayerId}, &friendpb.RemoveFriendResponse{}},
-		{b, game.ClientPlayerFriendRejectFriendMessageId,
-			&friendpb.RejectFriendRequest{FromPlayerId: a.gc.PlayerId}, &friendpb.RejectFriendResponse{}},
 		{c, game.ClientPlayerFriendUnblockMessageId,
 			&friendpb.UnblockRequest{TargetPlayerId: a.gc.PlayerId}, &friendpb.UnblockResponse{}},
 		{a, game.ClientPlayerFriendUnblockMessageId,
@@ -490,6 +515,21 @@ func friendSmokePreclean(a, b, c *friendSmokeBot) {
 		zap.L().Debug("[friend-smoke] preclean",
 			zap.String("account", o.bot.account), zap.Uint32("message_id", o.messageID),
 			zap.Uint32("tip", tip), zap.Error(err))
+	}
+	// 清理同样先拉权威代次，旧的按玩家对拒绝请求已经不再合法。
+	pending := &friendpb.GetPendingRequestsResponse{}
+	code, err := b.rpc(game.ClientPlayerFriendGetPendingRequestsMessageId, &friendpb.GetPendingRequestsRequest{}, pending)
+	if err != nil || code != 0 {
+		zap.L().Debug("[friend-smoke] 预清理拉取待审失败", zap.Uint32("tip", code), zap.Error(err))
+		return
+	}
+	for _, request := range pending.GetRequests() {
+		if request.GetFromPlayerId() != a.gc.PlayerId || request.GetRequestId() == 0 {
+			continue
+		}
+		code, err = b.rpc(game.ClientPlayerFriendRejectFriendMessageId,
+			&friendpb.RejectFriendRequest{RequestId: request.GetRequestId()}, &friendpb.RejectFriendResponse{})
+		zap.L().Debug("[friend-smoke] 按申请代次预清理", zap.Uint32("tip", code), zap.Error(err))
 	}
 }
 

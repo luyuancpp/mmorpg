@@ -8,8 +8,8 @@
 // 修复前前三个用例红(use_count==2 / 哨兵未释放),对照组绿。取红态时只构建本测试工程、链接修复前的
 // lib/muduo.lib,不重建 muduo。
 //
-// 与 rpc_controller_test.cpp 同一工程、同一个 main;InitReply 等链接桩已由 rpc_client_lifecycle_test.cpp
-// 定义,这里不要重复定义。
+// 与 rpc_controller_test.cpp 同一工程、同一个 main;链接桩(InitPlayerService /
+// InitServiceHandler)已由 rpc_client_lifecycle_test.cpp 定义,这里不要重复定义。
 
 #include <gtest/gtest.h>
 
@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <functional>
 #include <future>
 #include <memory>
 #include <optional>
@@ -61,7 +62,7 @@ class HiredisCommandLifecycle : public ::testing::Test
 protected:
     void SetUp() override
     {
-        loop_ = loopThread_.startLoop();
+        loop_.emplace(*loopThread_.startLoop());
         const uint16_t port = FindFreeLoopbackPort();
         ASSERT_NE(port, 0);
 
@@ -70,10 +71,10 @@ protected:
             // 假 Redis:TcpServer 的默认 messageCallback 只吞字节(retrieveAll),从不回 RESP,
             // 所以已入队的命令会一直挂着,直到 ~Hiredis 用空应答回调它。
             server_ = std::make_unique<muduo::net::TcpServer>(
-                loop_, muduo::net::InetAddress(port, /*loopbackOnly=*/true), "fake_redis");
+                &Loop(), muduo::net::InetAddress(port, /*loopbackOnly=*/true), "fake_redis");
             server_->start();   // 在 loop 线程上 runInLoop 即时 listen,下面的 connect 不会撞拒连
 
-            redis_ = std::make_unique<hiredis::Hiredis>(loop_, muduo::net::InetAddress("127.0.0.1", port));
+            redis_ = std::make_unique<hiredis::Hiredis>(&Loop(), muduo::net::InetAddress("127.0.0.1", port));
             // 各回调只捕获夹具 this 与值:redis_ 在 TearDown / DestroyRedis 里先于夹具销毁,
             // 属于 AGENTS.md §11.7 允许的同寿命例外。
             redis_->setConnectCallback([this](hiredis::Hiredis*, int status) {
@@ -100,11 +101,13 @@ protected:
         RunInLoopAndWait([] {});
     }
 
+    muduo::net::EventLoop& Loop() { return loop_->get(); }
+
     template <typename F>
     void RunInLoopAndWait(F&& fn)
     {
         muduo::CountDownLatch done(1);
-        loop_->runInLoop([&] { fn(); done.countDown(); });
+        Loop().runInLoop([&] { fn(); done.countDown(); });
         done.wait();
     }
 
@@ -128,7 +131,8 @@ protected:
 
     // loopThread_ 必须排第一:最后析构,保证其余成员(含 redis_ / server_)析构时 loop 仍在。
     muduo::net::EventLoopThread loopThread_;
-    muduo::net::EventLoop* loop_ = nullptr;
+    // 引用而非裸指针成员(裸指针成员门禁覆盖测试工程);SetUp 里绑定。
+    std::optional<std::reference_wrapper<muduo::net::EventLoop>> loop_;
     std::unique_ptr<muduo::net::TcpServer> server_;
     std::unique_ptr<hiredis::Hiredis> redis_;
     std::promise<int> connectStatus_;

@@ -1,6 +1,8 @@
 # 配置表 API 参考手册
 
-由 Data Table Exporter 自动生成。示例使用 C++ 语法；Go 和 Java 有等价 API。
+配置表生成接口的使用说明。示例使用 C++ 语法；Go 和 Java 有等价 API。
+
+结构定义以 [data/schema](../../data/schema/) 为准，xlsx 第 1 行列名、第 2–4 行空、第 5 行注释投影、第 6 行起数据。字段类型与选项写入 schema proto；完整修改流程见 [data/AGENTS.md](../../data/AGENTS.md)。
 
 ---
 
@@ -8,14 +10,14 @@
 
 - [1. 全局表加载器](#1-全局表加载器)
 - [2. Manager 基础查询](#2-manager-基础查询)
-- [3. 二级索引 (idx)](#3-二级索引-idx)
+- [3. 二级索引 (cfg_index)](#3-二级索引-cfg_index)
 - [4. 复合键](#4-复合键)
-- [5. 外键 (fk / gfk)](#5-外键-fk--gfk)
+- [5. 外键 (cfg_fk / cfg_gfk)](#5-外键-cfg_fk--cfg_gfk)
 - [6. 反向外键 (HasMany)](#6-反向外键-hasmany)
 - [7. 表达式列](#7-表达式列)
 - [8. 实用方法](#8-实用方法)
 - [9. 热更新](#9-热更新)
-- [10. Excel 选项行速查](#10-excel-选项行速查)
+- [10. Schema 选项速查](#10-schema-选项速查)
 - [11. 线程安全](#11-线程安全)
 
 ---
@@ -119,17 +121,14 @@ std::size_t n = XxxTableManager::Instance().CountByColumnName(keyValue);
 
 ---
 
-## 3. 二级索引 (idx)
+## 3. 二级索引 (cfg_index)
 
-在 Excel 第 4 行（选项行）对某列添加 `idx`。加载时构建 `unordered_map<K, vector<const T*>>`。
+在权威 schema 的字段上写 `(cfg_index) = true`。加载时生成对应的二级索引，xlsx 中只填写列名与数据。
 
-### Excel 配置
-
-| id | level | ... |
-|----|-------|-----|
-| uint32 | uint32 | ... |
-| common | common | ... |
-| **bit_index** | **idx** | ... |
+```proto
+// data/schema/testmultikey_table.proto 的字段片段
+uint32 level = 2 [(cfg_index) = true];
+```
 
 ### 生成的 API
 
@@ -150,15 +149,12 @@ std::size_t n = TestMultiKeyTableManager::Instance().CountByLevelIndex(5);
 
 ## 4. 复合键
 
-在 Excel 第 4 行对多个列添加 `composite:组名`。
+参与同一复合键的字段写相同的 `(cfg_composite)`。下面是示意字段，不是要求修改某张现有表的字段号；当前配置表是否使用该能力见 [全表索引](../../data/AGENTS.md#配置表索引)。
 
-### Excel 配置
-
-| id | zone_id | server_id |
-|----|---------|-----------|
-| uint32 | uint32 | uint32 |
-| common | common | common |
-| | **composite:ZoneServer** | **composite:ZoneServer** |
+```proto
+uint32 zone_id = 2 [(cfg_composite) = "ZoneServer"];
+uint32 server_id = 3 [(cfg_composite) = "ZoneServer"];
+```
 
 ### 生成的 API
 
@@ -172,22 +168,16 @@ bool exists = XxxTableManager::Instance().ExistsByZoneServer(zoneId, serverId);
 
 ---
 
-## 5. 外键 (fk / gfk)
+## 5. 外键 (cfg_fk / cfg_gfk)
 
-### Excel 配置
+在权威 schema 上声明 `(cfg_fk) = "表名"` 或 `"表名.列名"`；组外键使用 `(cfg_gfk)`。repeated 字段还须声明物理容量 `(cfg_slots)`。
 
-在第 4 行（选项行）：
-- 标量列: `fk:目标表` 或 `fk:目标表.列名`
-- repeated 列: `fk:目标表`（自动识别为 repeated）
-- 组字段列（repeated）: `gfk:目标表`
-
-### 示例: Mission.xlsx
-
-| id | condition_id | reward_id |
-|----|-------------|-----------|
-| uint32 | repeated uint32 | uint32 |
-| common | common | common |
-| bit_index | **gfk:Condition** | **fk:Reward** |
+```proto
+// data/schema/mission_table.proto 的字段片段
+uint32 id = 1 [(cfg_bit_index) = true];
+repeated uint32 condition_id = 2 [(cfg_slots) = 6, (cfg_gfk) = "Condition"];
+uint32 reward_id = 7 [(cfg_fk) = "Reward"];
+```
 
 ### 生成的 API (C++)
 
@@ -274,7 +264,7 @@ List<MissionTable> missions = MissionTableForeignKeys.findRowsByRewardId(2001);
 
 ## 7. 表达式列
 
-在 Excel 第 4 行添加 `expr:double` 或 `expr:int`。列值为表达式字符串（如 `"x*2+1"`）。
+在 schema 的字符串字段上写 `(cfg_expr_type) = "double"` 或 `"int"`，参数用 `(cfg_expr_param)` 逐项声明。xlsx 列值仍为表达式字符串（如 `"x*2+1"`）。
 
 ```cpp
 // 对指定行 id 求表达式值。
@@ -353,21 +343,23 @@ MissionTableManager::Instance().SetLoadSuccessCallback([]() {
 
 ---
 
-## 10. Excel 选项行速查
+## 10. Schema 选项速查
 
-Excel 第 4 行定义每列的选项（空格分隔）：
+选项词表在 [cfg_options.proto](../../data/schema/cfg_options.proto)。下表均写在 schema 字段选项中，不写入 xlsx 表头。
 
 | 选项 | 说明 | 示例 |
 |------|------|------|
-| `key` | 唯一键列（生成 FindByXxx, ExistsByXxx） | `key` |
-| `multi` | 多键列（允许重复，生成 CountByXxx） | `multi` |
-| `idx` | 二级索引（生成 GetByXxx，O(1) 向量查询） | `idx` |
-| `bit_index` | 位索引，用于领取状态追踪 | `bit_index` |
-| `fk:表名` | 外键，指向 表名.id | `fk:Reward` |
-| `fk:表名.列` | 外键，指向 表名.指定列 | `fk:BaseScene.scene_id` |
-| `gfk:表名` | 组外键（repeated 字段指向 表名.id） | `gfk:Condition` |
-| `composite:名称` | 复合键分组 | `composite:ZoneServer` |
-| `expr:类型` | 表达式列 | `expr:double` |
+| `cfg_key` | 唯一键；与 cfg_multi 合用时为多值键 | `(cfg_key) = true` |
+| `cfg_multi` | 主键可重复或二级键多值；重复主键不生成 FindById | `(cfg_multi) = true` |
+| `cfg_index` | 二级索引 | `(cfg_index) = true` |
+| `cfg_bit_index` | 存档领取状态位序，不能用于重复主键表 | `(cfg_bit_index) = true` |
+| `cfg_fk` | 外键表或指定列 | `(cfg_fk) = "BaseScene.scene_id"` |
+| `cfg_gfk` | 组外键 | `(cfg_gfk) = "Condition"` |
+| `cfg_composite` | 复合键组名 | `(cfg_composite) = "ZoneServer"` |
+| `cfg_expr_type` | 表达式结果类型 | `(cfg_expr_type) = "double"` |
+| `cfg_expr_param` | 表达式参数，可重复声明 | `(cfg_expr_param) = "x"` |
+| `cfg_slots` | 非标量字段的物理容量 | `(cfg_slots) = 6` |
+| `cfg_owner` | 产物归属；缺省 common | `(cfg_owner) = "server"` |
 
 ---
 

@@ -8,6 +8,7 @@
 // 不依赖真实墙钟、不连 Redis、不连 DataService。
 
 #include <gtest/gtest.h>
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -145,7 +146,7 @@ protected:
 		PlayerAssetOpSystem::SetSecretLookupForTest(&FakeSecretLookup);
 
 		player_ = tlsEcs.actorRegistry.create();
-		tlsEcs.actorRegistry.emplace<Guid>(player_, kTestPlayerId);
+		tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player_, kTestPlayerId);
 		tlsEcs.actorRegistry.emplace<CurrencyComp>(player_);
 		tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player_);
 		tlsEcs.actorRegistry.emplace<PlayerAssetOpLedgerComp>(player_);
@@ -685,7 +686,7 @@ TEST_F(AssetOpSystemTest, CreditUnknownItemRejected)
 TEST_F(AssetOpSystemTest, CreditWithDebtClawback)
 {
 	// 补缴:欠款先扣属于正常应用,记 APPLIED。
-	CurrencySystem::AttachDebt(player_, kCurrencyGold, 50, "test", "gm");
+	ASSERT_EQ(static_cast<uint32_t>(kSuccess), CurrencySystem::AttachDebt(player_, kCurrencyGold, 50, "test", "gm"));
 
 	const auto request = MakeCurrencyRequest(ASSET_OP_STREAM_GUILD_CREDIT, 1, 30, TX_GUILD_SHOP);
 	const auto response = CallCredit(request);
@@ -693,6 +694,44 @@ TEST_F(AssetOpSystemTest, CreditWithDebtClawback)
 	EXPECT_EQ(ASSET_OP_OUTCOME_APPLIED, response.outcome());
 	EXPECT_FALSE(response.partial());
 	EXPECT_EQ(0u, Gold()) << "30 全额抵扣欠款,到手 0";
+}
+
+// 缺运行时货币状态也属于加载未完成:混合包必须在校验包内容、加物品或发币之前整体重试。
+// 不依赖 Item 表、不跳过:有表时旧实现会先加物品再在发币处失败,无表时会误记成终局拒绝;
+// 两种旧路径都不满足本例要求的 RETRY / kAssetPlayerNotHere 和账本原样。
+TEST_F(AssetOpSystemTest, CreditMissingCurrencyRuntimeRetriesBeforeAnyMixedBundleMutation)
+{
+	GiveBags();
+	ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player_, kCurrencyGold, 100));
+	auto& inventory = tlsEcs.actorRegistry.get<PlayerBagsComp>(player_).bags[kInventory];
+	const auto occupiedBefore = inventory.OccupiedGridCount();
+	const auto itemCountBefore = inventory.GetTotalItemCount(10);
+	const auto currencyBefore = tlsEcs.actorRegistry.get<CurrencyComp>(player_).SerializeAsString();
+	const auto ledgerBefore = tlsEcs.actorRegistry.get<PlayerAssetOpLedgerComp>(player_).SerializeAsString();
+	const auto issuedBefore = tlsGuidSegmentRegistry.Get(GuidKind::kItem).GetStats().issued;
+	tlsEcs.actorRegistry.remove<PlayerCurrencyComp>(player_);
+	PlayerAssetOpSystem::SetAddCurrencyFnForTest(&FakeAddCurrency);
+
+	auto request = MakeCurrencyRequest(ASSET_OP_STREAM_GUILD_CREDIT, 1, 30, TX_GUILD_SHOP);
+	auto* item = request.mutable_bundle()->add_items();
+	item->set_config_id(10);
+	item->set_count(1);
+	const auto response = CallCredit(request);
+
+	EXPECT_EQ(ASSET_OP_OUTCOME_RETRY, response.outcome());
+	EXPECT_EQ(static_cast<uint32_t>(kAssetPlayerNotHere), response.reason().id());
+	EXPECT_FALSE(response.durable());
+	EXPECT_FALSE(response.partial());
+	EXPECT_EQ(occupiedBefore, inventory.OccupiedGridCount());
+	EXPECT_EQ(itemCountBefore, inventory.GetTotalItemCount(10));
+	EXPECT_EQ(currencyBefore, tlsEcs.actorRegistry.get<CurrencyComp>(player_).SerializeAsString());
+	EXPECT_EQ(ledgerBefore, tlsEcs.actorRegistry.get<PlayerAssetOpLedgerComp>(player_).SerializeAsString());
+	EXPECT_EQ(nullptr, Ledger(ASSET_OP_STREAM_GUILD_CREDIT));
+	EXPECT_EQ(issuedBefore, tlsGuidSegmentRegistry.Get(GuidKind::kItem).GetStats().issued);
+	EXPECT_EQ(0, g_addCurrencyCalls);
+	EXPECT_EQ(0, g_persistCalls);
+	EXPECT_EQ(0, g_persistSkippedCalls);
+	EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerCurrencyComp>(player_));
 }
 
 TEST_F(AssetOpSystemTest, CreditBlockedRejected)

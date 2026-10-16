@@ -9,10 +9,15 @@ import (
 
 // 默认配置的 golden 用例。
 //
-// **改这里的任何一个数字 = 改运维契约,必须同步改 docs/design/guild-phase2/90-consistency.md
-// 的 Y-06 表**(那张表把这批默认值写成了 `AssetOpConf` 的配置项默认值,帮会 / 聚宝斋的
-// yaml 与 §5.39 的 config_test 都照着它写)。没有这道断言时,顺手把某个数调一下,
-// 代码、文档、两个服务的 yaml 会分成三份真相,而且全程不会有任何测试变红。
+// **改这里的任何一个数字 = 改运维契约,必须同步改该项的事实源文档**(每条断言的名字里写了出处):
+//   - 前 8 项的事实源是 docs/design/guild-phase2/90-consistency.md 的 Y-06 表(那张表把这批默认值
+//     写成了 `AssetOpConf` 的配置项默认值,帮会 / 聚宝斋的 yaml 与 §5.39 的 config_test 都照着它写);
+//     BaseBackoff 与 AwaitDurableDelay 出自 S4 §4.19;
+//   - 落地恢复追加的 7 项(停放档、自动放弃、日对账)的事实源是
+//     docs/design/landing-recovery-sync-digest.md §6.1–§6.3,不在 Y-06 表里。
+//
+// 没有这道断言时,顺手把某个数调一下,代码、文档、两个服务的 yaml 会分成三份真相,
+// 而且全程不会有任何测试变红。
 //
 // 这些值不是随便取的,改之前先想清楚它压着什么:
 //   - Workers 8 压着 scene 的 sync server poller 上限(reconcile.go 的 LoopConfig.Workers
@@ -27,8 +32,12 @@ func TestDefaultLoopConfigGolden(t *testing.T) {
 
 	// 前 8 项就是 Y-06 表里的 8 个字段(名字按配置项写法:ReconcileIntervalMs、
 	// ReconcileBatch、Workers、LeaseMs、OpBudgetMs、MaxBackoffMs、PoisonDelayMs、
-	// LedgerReadMinAttempts);后 2 项不在那张表里:BaseBackoff 帮会用
+	// LedgerReadMinAttempts);接着 2 项不在那张表里:BaseBackoff 帮会用
 	// GuildRule.asset_op_retry_base_ms 覆盖,AwaitDurableDelay 由 S4 §4.19 固定。
+	// 最后 7 项是落地恢复设计 §6 的取值:
+	//   - OfflineBackoff 压着「唤醒丢失时离线玩家最多再等多久」(§12 残余风险 5);
+	//   - AbandonAfter 与 AbandonSafetyGap 是放弃不可逆这件事的两道时间闸(§6.3 条件 1、4),
+	//     validate 另有下限(30 天、max(10 分钟, Lease))。
 	checks := []struct {
 		name string
 		got  any
@@ -44,10 +53,17 @@ func TestDefaultLoopConfigGolden(t *testing.T) {
 		{"LedgerReadMinAttempts(Y-06 = 3)", cfg.LedgerReadMinAttempts, uint32(3)},
 		{"BaseBackoff(S4 §4.19,帮会按 GuildRule 覆盖)", cfg.BaseBackoff, time.Second},
 		{"AwaitDurableDelay(S4 §4.19)", cfg.AwaitDurableDelay, 500 * time.Millisecond},
+		{"OfflineAfterAttempts(落地恢复 §6.1 = 5)", cfg.OfflineAfterAttempts, uint32(5)},
+		{"OfflineBackoff(落地恢复 §6.1 = 30 分钟)", cfg.OfflineBackoff, 30 * time.Minute},
+		{"AbandonAfter(落地恢复 §6.3 条件 1 = 180 天)", cfg.AbandonAfter, 180 * 24 * time.Hour},
+		{"AbandonSafetyGap(落地恢复 §6.3 条件 4 = 1 小时)", cfg.AbandonSafetyGap, time.Hour},
+		{"AbandonBatch(落地恢复 §6.3 执行者 = 200)", cfg.AbandonBatch, 200},
+		{"AbandonInterval(落地恢复 §6.3 执行者 = 1 小时)", cfg.AbandonInterval, time.Hour},
+		{"AuditInterval(落地恢复 §6.2 = 24 小时)", cfg.AuditInterval, 24 * time.Hour},
 	}
 	for _, c := range checks {
 		if c.got != c.want {
-			t.Errorf("%s 应为 %v,实际 %v;要改就连 90-consistency.md 的 Y-06 表一起改", c.name, c.want, c.got)
+			t.Errorf("%s 应为 %v,实际 %v;要改就连括号里的事实源文档一起改", c.name, c.want, c.got)
 		}
 	}
 
@@ -57,8 +73,9 @@ func TestDefaultLoopConfigGolden(t *testing.T) {
 	}
 
 	// 字段数守卫:新增字段时本用例必须一起改,否则新默认值会无人认领地溜进运维契约。
+	// +1 是上面单独断言的 Streams。
 	if n := reflect.TypeOf(cfg).NumField(); n != len(checks)+1 {
-		t.Errorf("LoopConfig 现有 %d 个字段,本用例只钉了 %d 个;新增字段要同时补断言和 Y-06 表",
+		t.Errorf("LoopConfig 现有 %d 个字段,本用例只钉了 %d 个;新增字段要同时补断言,并写进它的事实源文档",
 			n, len(checks)+1)
 	}
 

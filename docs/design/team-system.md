@@ -156,6 +156,8 @@ flowchart LR
    - 没选 go-zero 的 `MethodTimeouts`(`zrpc/config.go:52`):要给 12 个方法各写一条，yaml 和 K8s 模板各重复一份。
    - 既有 MatchService 的"`Timeout` 5000 == `ForwardTimeoutMs` 5000"问题登记为 J-28 ⑤,不在本次处理。
 
+   > **2026-10-14 更正**:第 7 条「保持 5000」已推翻,`go/match/etc/match_service.yaml` 改为 `Timeout: 4000`([client-request-ordering.md](./client-request-ordering.md) O10 / §5,J-28 ⑤ 随之关闭)。原理由不成立:WatchBattle 的三段子调用都用 `context.Background()` 加各自 3s 超时(`spectate.go:332,343`),不受 handler 超时约束,5000 本来就没兜住。最坏约 9s 时,路由服在 5s 先回超时,链路随后仍把观战绑上,正是「battle 侧已绑定、客户端收到失败」。gate 改为按会话单飞之后,这种晚落地还会让同一会话的后续请求乱序。改法:客户端请求路径上的写一律用请求 ctx,其中 `addObserver` 的截止时间也从请求 ctx 派生,过了截止就不再发出绑定;清退类的 `removeObserver` 属于补偿,仍用独立 ctx。team 自己的 3500ms 预算不变,仍小于 4000。
+
 ### A.4 分批路线(详见 §I.2)
 
 批 0 契约与生成 → 批 1 名册核心 → 批 2 不补位整队开战 → 批 3 scene 同节点跟随与 AOI → 批 4 冒烟与收尾。补位装箱(v2)不在本次范围内。
@@ -1197,7 +1199,7 @@ ClientPlayerTeam.StartTeamMatch(battle_config_id, expected_team_id)
 | 20 | `go/match/internal/logic/push.go` | 改(`loadPlayerSession` / `isSessionOnline` / `pushToPlayer` 转调) |
 | 21 | `go/match/internal/logic/queue.go` | 改(`isPlayerBattleLocked`(`:206`)转调) |
 | 22 | `go/match/match_service.go` | 改(§A.3) |
-| 23 | `go/match/etc/match_service.yaml` | 改(`Team`、`DataServiceRpc{NonBlock: true, Timeout: 1500}`;**`Timeout` 保持 5000 不改**,见 §A.3 第 7 条) |
+| 23 | `go/match/etc/match_service.yaml` | 改(`Team`、`DataServiceRpc{NonBlock: true, Timeout: 1500}`;**`Timeout` 保持 5000 不改**,见 §A.3 第 7 条)〔2026-10-14 更正:已改为 4000,见 §A.3 第 7 条后的更正注〕 |
 | 24 | `go/match/internal/config/config.go` | 改(`Team` 子结构、`DataServiceRpc`) |
 | 25 | `go/match/internal/svc/servicecontext.go` | 改(data_service 客户端、BattleIDGen 注释) |
 | 26 | `go/match/internal/discovery/node_watcher.go` | 改(`EntryOf`) |

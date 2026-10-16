@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -18,7 +19,14 @@ import (
 // InitAuthProviders 按显式配置注册认证器。生产口令认证只读权威 MySQL 中的
 // Argon2id 哈希；没有显式启用时仍 fail-closed。开发共享密钥认证与生产认证
 // 互斥，避免配置合并时把弱入口带进生产。
-func InitAuthProviders() {
+func InitAuthProviders() (cleanup func()) {
+	cleanup = func() {}
+	initialized := false
+	defer func() {
+		if !initialized {
+			cleanup()
+		}
+	}()
 	if config.AppConfig.DevSkipAuth {
 		panic("DevSkipAuth has been removed because it trusted arbitrary accounts; use the guarded DevPasswordAuth block")
 	}
@@ -30,20 +38,11 @@ func InitAuthProviders() {
 	}
 
 	if productionPassword.Enabled {
-		dsn, err := passwordAuthDSNFromConfig(productionPassword, os.LookupEnv)
+		provider, closeProvider, err := productionPasswordProviderFromConfig(productionPassword, config.AppConfig.Node.RedisClient, os.LookupEnv)
 		if err != nil {
-			panic(fmt.Sprintf("invalid PasswordAuth configuration: %v", err))
-		}
-		store, err := auth.NewSQLPasswordHashStore(dsn, productionPassword.MaxOpenConns, productionPassword.MaxIdleConns)
-		if err != nil {
-			panic(fmt.Sprintf("initialize PasswordAuth store: %v", err))
-		}
-		provider, err := auth.NewProductionPasswordProviderWithLimits(
-			store, productionPassword.KDFConcurrency, productionPassword.KDFWaitTimeout)
-		if err != nil {
-			_ = store.Close()
 			panic(fmt.Sprintf("initialize PasswordAuth provider: %v", err))
 		}
+		cleanup = closeProvider
 		auth.RegisterPassword(provider)
 		logx.Info("Production password auth registered (authoritative MySQL Argon2id, read-only)")
 	}
@@ -118,6 +117,57 @@ func InitAuthProviders() {
 		})
 		logx.Info("Auth provider registered: netease")
 	}
+	initialized = true
+	return cleanup
+}
+
+// 专用小池使认证依赖具有独立硬上限；不继承主缓存池的重试/无界等待策略。
+func passwordQuotaRedisOptions(conf config.RedisConf) *redis.Options {
+	return &redis.Options{
+		Addr: conf.Host, Password: conf.Password, DB: int(conf.DB),
+		PoolSize: 4, MaxActiveConns: 4, MaxRetries: -1, DialerRetries: 1,
+		ContextTimeoutEnabled: true, DisableIndentity: true,
+		DialTimeout: auth.PasswordQuotaBudget, ReadTimeout: auth.PasswordQuotaBudget,
+		WriteTimeout: auth.PasswordQuotaBudget, PoolTimeout: auth.PasswordQuotaBudget,
+	}
+}
+
+func productionPasswordProviderFromConfig(conf config.PasswordAuthConf, redisConf config.RedisConf, lookup func(string) (string, bool)) (*auth.ProductionPasswordProvider, func(), error) {
+	if err := conf.ValidateFailureQuota(); err != nil {
+		return nil, nil, err
+	}
+	dsn, err := passwordAuthDSNFromConfig(conf, lookup)
+	if err != nil {
+		return nil, nil, err
+	}
+	store, err := auth.NewSQLPasswordHashStore(dsn, conf.MaxOpenConns, conf.MaxIdleConns)
+	if err != nil {
+		return nil, nil, err
+	}
+	rdb := redis.NewClient(passwordQuotaRedisOptions(redisConf))
+	var once sync.Once
+	cleanup := func() { once.Do(func() { _ = rdb.Close(); _ = store.Close() }) }
+	ready := false
+	defer func() {
+		if !ready {
+			cleanup()
+		}
+	}()
+	quota, err := auth.NewRedisPasswordFailureQuota(rdb, conf.FailureLimit, conf.FailureWindow, conf.FailureLock)
+	if err != nil {
+		return nil, nil, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), auth.PasswordQuotaBudget)
+	defer cancel()
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		return nil, nil, fmt.Errorf("password quota Redis startup unavailable")
+	}
+	provider, err := auth.NewProductionPasswordProviderWithLimits(store, quota, conf.KDFConcurrency, conf.KDFWaitTimeout)
+	if err != nil {
+		return nil, nil, err
+	}
+	ready = true
+	return provider, cleanup, nil
 }
 
 func passwordAuthDSNFromConfig(conf config.PasswordAuthConf, lookup func(string) (string, bool)) (string, error) {

@@ -27,4 +27,9 @@ void SetGrpcCallDeadline(uint32_t nodeType, std::chrono::milliseconds deadline);
 
 void HandleCompletedQueueMessage(entt::registry& registry);
 
+// 只在所属 EventLoop 线程调用；Begin 只标关闭并取消，不阻塞。
+// Poll 返回 true 才能销毁节点/CQ；false 时继续驱动 loop 和轮询。
+void BeginShutdownGrpcNode(entt::registry& registry, entt::entity entity);
+[[nodiscard]] bool PollGrpcNodeShutdown(entt::registry& registry, entt::entity entity);
+
 void InitGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);

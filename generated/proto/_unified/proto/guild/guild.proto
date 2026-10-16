@@ -75,8 +75,18 @@ message GetPlayerGuildResponse {
   GuildInfo guild = 2;
 }
 
+// ── expected_guild_id(LeaveGuild / DisbandGuild / SetGuildMemberRole / KickGuildMember / TransferGuildLeader)──
+// 客户端发出请求时**看到的本人帮会**(docs/design/client-request-ordering.md O14 / §6.4)。
+// 0 = 旧客户端:按服务端此刻查到的本人帮会执行,行为与加字段之前完全相同。
+// 非 0:只对该帮生效,与写入在同一个事务里复核。操作者此刻不在该帮(在别的帮、已离帮、该帮已解散)
+// 一律回 kGuildNotInGuild、不写入;回包有 guild 字段的方法附上操作者**当前**所在帮会的快照(不在任何帮则不填)。
+// 它防的是超时后晚到的旧请求作用到玩家新加入的帮会上(退出新帮、解散新帮、在新帮里踢人 / 转让 / 任免)。
+// 注意退帮:expected_guild_id 非 0 而玩家已不在任何帮时同样回 kGuildNotInGuild(它回答的是「你不在该帮」),
+// 不按幂等成功处理;客户端收到后拉 GetPlayerGuild 刷新即可。
+
 message LeaveGuildRequest {
   uint64 player_id = 1;
+  uint64 expected_guild_id = 2;  // 见上方 expected_guild_id 说明
 }
 
 message LeaveGuildResponse {
@@ -85,6 +95,7 @@ message LeaveGuildResponse {
 
 message DisbandGuildRequest {
   uint64 player_id = 1;
+  uint64 expected_guild_id = 2;  // 见上方 expected_guild_id 说明
 }
 
 message DisbandGuildResponse {
@@ -107,28 +118,32 @@ message SetAnnouncementResponse {
 // (go/guild/internal/logic)。把操作者放进请求体等于让客户端自报身份。
 
 message SetGuildMemberRoleRequest {
-  uint64 target_player_id = 1;
-  uint32 role             = 2;  // 只允许 0(成员)/ 1(长老)
+  uint64 target_player_id  = 1;
+  uint32 role              = 2;  // 只允许 0(成员)/ 1(长老)
+  uint64 expected_guild_id = 3;  // 见 LeaveGuildRequest 上方的 expected_guild_id 说明
 }
 message SetGuildMemberRoleResponse {
   TipInfoMessage error_message = 1;
-  GuildInfo guild = 2;  // 成功时为提交后的权威快照
+  // 成功时为提交后的权威快照;expected_guild_id 不符被拒(kGuildNotInGuild)时为操作者当前所在帮会的快照,不在任何帮则不填
+  GuildInfo guild = 2;
 }
 
 message KickGuildMemberRequest {
-  uint64 target_player_id = 1;
+  uint64 target_player_id  = 1;
+  uint64 expected_guild_id = 2;  // 见 LeaveGuildRequest 上方的 expected_guild_id 说明
 }
 message KickGuildMemberResponse {
   TipInfoMessage error_message = 1;
-  GuildInfo guild = 2;
+  GuildInfo guild = 2;  // 同 SetGuildMemberRoleResponse.guild
 }
 
 message TransferGuildLeaderRequest {
-  uint64 target_player_id = 1;
+  uint64 target_player_id  = 1;
+  uint64 expected_guild_id = 2;  // 见 LeaveGuildRequest 上方的 expected_guild_id 说明
 }
 message TransferGuildLeaderResponse {
   TipInfoMessage error_message = 1;
-  GuildInfo guild = 2;
+  GuildInfo guild = 2;  // 同 SetGuildMemberRoleResponse.guild
 }
 
 // ── 入帮申请(B2)────────────────────────────────────────────────

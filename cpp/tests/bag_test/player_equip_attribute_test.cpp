@@ -25,6 +25,7 @@
 // 不碰掷属性回调(用例不铸装备:装备实例都是手工构造后走搬运原语进包的)。
 
 #include <gtest/gtest.h>
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <cmath>
 #include <cstddef>
@@ -46,12 +47,20 @@
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"
 #include "modules/id_segment/guid_segment_registry.h"
+#include "modules/mission/comp/mission_comp.h" // MissionsContainerComp(存档往返用例补齐持久化组件)
+#include "services/scene/player/comp/player_frozen_comp.h"
 #include "muduo/base/Logging.h" // Logger::setOutput:数「推面板」留下的那条 WARN(见 PanelPushProbe)
 #include "proto/common/component/actor_attribute_state_comp.pb.h"
 #include "proto/common/component/actor_comp.pb.h"
+#include "proto/common/component/asset_op_ledger_comp.pb.h"
+#include "proto/common/component/battle_settlement_ledger_comp.pb.h"
+#include "proto/common/component/player_inbox_ledger_comp.pb.h"
 #include "proto/common/component/currency_comp.pb.h"
 #include "proto/common/component/item_base_comp.pb.h"
 #include "proto/common/component/player_attribute_comp.pb.h"
+#include "proto/common/component/player_comp.pb.h"
+#include "proto/common/component/player_pet_comp.pb.h"
+#include "proto/common/component/player_skill_comp.pb.h"
 #include "proto/scene/player_attribute.pb.h"
 #include "services/scene/player/system/equip_attribute_rules.h"
 #include "services/scene/player/system/player_attribute.h"
@@ -864,18 +873,19 @@ protected:
 		ASSERT_NO_FATAL_FAILURE(RequireSocketAccepting(kShoesKind, kSocketFirst, kGemSpeed));
 	}
 
-	// 最小可重算玩家:基础属性 + 等级 +(可选)背包,走一遍加载期的初始化。满血满蓝。
+	// 最小可重算玩家:基础属性、等级、职业和背包,走一遍加载期初始化。缺背包专供失败回归。
 	entt::entity NewPlayer(bool withBags = true)
 	{
 		const auto entity = tlsEcs.actorRegistry.create();
 		players.push_back(entity);
-		tlsEcs.actorRegistry.emplace<Guid>(entity, kPlayerIdBase + players.size());
+		tlsEcs.actorRegistry.emplace<PlayerGuidComp>(entity, kPlayerIdBase + players.size());
 		auto &base = tlsEcs.actorRegistry.emplace<BaseAttributesComp>(entity);
 		base.set_health(kFarAboveAnyMax);
 		base.set_mana(kFarAboveAnyMax);
 		base.set_critchance(kBaseCritChance);
 		base.set_resistance(kBaseResistance);
 		tlsEcs.actorRegistry.emplace<LevelComp>(entity).set_level(kLevel);
+		tlsEcs.actorRegistry.emplace<PlayerUint32Comp>(entity);
 		if (withBags)
 		{
 			tlsEcs.actorRegistry.emplace<PlayerBagsComp>(entity);
@@ -884,8 +894,115 @@ protected:
 		// (做法同 player_battle_settlement_test.cpp)。余额从 0 起,要强化的用例自己 FundEnhance。
 		tlsEcs.actorRegistry.emplace<CurrencyComp>(entity);
 		tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(entity);
+		// 与加载链路同序:存档组件由 Unmarshal 挂上(这里是一份空存档),InitializeOnLoad 只补默认方案、
+		// 挂二级属性缓存并重算 —— 它不再替调用方补建 PlayerAttributeComp。
+		tlsEcs.actorRegistry.emplace<PlayerAttributeComp>(entity);
 		PlayerAttributeSystem::InitializeOnLoad(entity);
 		return entity;
+	}
+
+	// 只挂基础属性与等级、不走加载期初始化的「半成品」实体:用来验证读写入口缺必需组件时
+	// 只取不建、fail-closed。登记进 players,由 TearDown 统一销毁。
+	entt::entity NewUnloadedEntity()
+	{
+		const auto entity = tlsEcs.actorRegistry.create();
+		players.push_back(entity);
+		tlsEcs.actorRegistry.emplace<PlayerGuidComp>(entity, kPlayerIdBase + players.size());
+		auto &base = tlsEcs.actorRegistry.emplace<BaseAttributesComp>(entity);
+		base.set_health(kFarAboveAnyMax);
+		base.set_mana(kFarAboveAnyMax);
+		tlsEcs.actorRegistry.emplace<LevelComp>(entity).set_level(kLevel);
+		tlsEcs.actorRegistry.emplace<PlayerUint32Comp>(entity);
+		tlsEcs.actorRegistry.emplace<PlayerBagsComp>(entity);
+		tlsEcs.actorRegistry.emplace<CurrencyComp>(entity);
+		tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(entity);
+		return entity;
+	}
+
+	// 把夹具玩家补成「加载创建点走完」的形状,只给存档往返的用例用:生产里这些持久化组件由
+	// PlayerDatabaseMessageFieldsUnmarshal 一次性挂上,存盘 Marshal 只取不建、缺一个就整份拒绝。
+	// 已挂(带用例数据)的保持原样,只补缺的空组件,不影响属性计算的任何输入。
+	template <typename Comp>
+	static void EmplaceIfAbsent(entt::entity entity)
+	{
+		if (!tlsEcs.actorRegistry.all_of<Comp>(entity))
+		{
+			tlsEcs.actorRegistry.emplace<Comp>(entity);
+		}
+	}
+	static void CompletePersistedComps(entt::entity entity)
+	{
+		EmplaceIfAbsent<Transform>(entity);
+		EmplaceIfAbsent<PlayerUint64Comp>(entity);
+		EmplaceIfAbsent<PlayerSkillListComp>(entity);
+		EmplaceIfAbsent<PlayerUint32Comp>(entity);
+		EmplaceIfAbsent<PlayerPetComp>(entity);
+		EmplaceIfAbsent<PlayerProfileComp>(entity);
+		EmplaceIfAbsent<MissionsContainerComp>(entity);
+		EmplaceIfAbsent<PlayerAssetOpLedgerComp>(entity);
+		EmplaceIfAbsent<BattleSettlementLedgerComp>(entity);
+		EmplaceIfAbsent<PlayerInboxLedgerComp>(entity);
+	}
+
+	template <typename Comp>
+	static std::string ProtoBytesIfPresent(entt::entity entity)
+	{
+		const auto* comp = tlsEcs.actorRegistry.try_get<Comp>(entity);
+		return comp != nullptr ? comp->SerializeAsString() : std::string{};
+	}
+
+	// 每次只摘一个真实输入,所有读写入口共用同一道完整性门。故意放一份超额分配,
+	// 确认重算拒绝发生在 ConvergeOverAllocation 清点和 HP/MP 夹取之前。
+	template <typename MissingComp>
+	void ExpectMissingInputRejected(const char* name)
+	{
+		SCOPED_TRACE(name);
+		const auto entity = NewPlayer();
+		SetGold(entity, 1000000000);
+		auto& attribute = tlsEcs.actorRegistry.get<PlayerAttributeComp>(entity);
+		ASSERT_GT(attribute.schemes_size(), 0);
+		(*attribute.mutable_schemes(0)->mutable_allocated())[kDimStrength] = UINT32_MAX;
+		Base(entity).set_health(kFarAboveAnyMax);
+		Base(entity).set_mana(kFarAboveAnyMax);
+		tlsEcs.actorRegistry.remove<MissingComp>(entity);
+		const auto baseBefore = ProtoBytesIfPresent<BaseAttributesComp>(entity);
+		const auto derivedBefore = ProtoBytesIfPresent<DerivedAttributesComp>(entity);
+		const auto attributeBefore = ProtoBytesIfPresent<PlayerAttributeComp>(entity);
+		const auto levelBefore = ProtoBytesIfPresent<LevelComp>(entity);
+		const auto classBefore = ProtoBytesIfPresent<PlayerUint32Comp>(entity);
+		const auto currencyBefore = ProtoBytesIfPresent<CurrencyComp>(entity);
+		BagAllData bagsBefore;
+		bag_marshal::Marshal(entity, bagsBefore);
+
+		AttributePanelInfo panel;
+		panel.set_level(99);
+		EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::BuildPanel(entity, panel));
+		EXPECT_EQ(0u, panel.ByteSizeLong());
+		PlayerAttributeSystem::Recalculate(entity, RecalcReason::kLevelChanged);
+		const auto poolId = PlayerPoolId();
+		EXPECT_EQ(kServiceUnavailable,
+			PlayerAttributeSystem::Allocate(entity, poolId, std::map<uint32_t, uint32_t>{{kDimStrength, 1}}));
+		EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::Reset(entity, poolId));
+		std::map<uint32_t, uint32_t> suggested{{kDimStrength, 1}};
+		EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::AutoAllocate(entity, poolId, suggested));
+		EXPECT_TRUE(suggested.empty());
+		uint32_t schemeId = 99;
+		EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::CreateScheme(entity, "", schemeId));
+		EXPECT_EQ(0u, schemeId);
+		EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::SwitchScheme(entity, 2));
+		EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::RenameScheme(entity, 1, "方案甲"));
+		EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::GmSetLevel(entity, 10));
+
+		EXPECT_FALSE(tlsEcs.actorRegistry.any_of<MissingComp>(entity));
+		EXPECT_EQ(baseBefore, ProtoBytesIfPresent<BaseAttributesComp>(entity));
+		EXPECT_EQ(derivedBefore, ProtoBytesIfPresent<DerivedAttributesComp>(entity));
+		EXPECT_EQ(attributeBefore, ProtoBytesIfPresent<PlayerAttributeComp>(entity));
+		EXPECT_EQ(levelBefore, ProtoBytesIfPresent<LevelComp>(entity));
+		EXPECT_EQ(classBefore, ProtoBytesIfPresent<PlayerUint32Comp>(entity));
+		EXPECT_EQ(currencyBefore, ProtoBytesIfPresent<CurrencyComp>(entity));
+		BagAllData bagsAfter;
+		bag_marshal::Marshal(entity, bagsAfter);
+		EXPECT_EQ(bagsBefore.SerializeAsString(), bagsAfter.SerializeAsString());
 	}
 
 	static Bag &Equipment(entt::entity entity)
@@ -1089,7 +1206,7 @@ protected:
 
 // ── 二级属性:六项的增量逐项等于手算值 ────────────────────────────────────
 
-// 空装备栏、以及压根没有背包组件(尚未完成加载)的实体:结果就是装备系统落地之前的那个数。
+// 完整玩家的空装备栏按无装备基线计算;缺背包表示加载故障,不能冒充空装备继续计算。
 TEST_F(PlayerEquipAttributeTest, EmptyEquipmentBarLeavesAttributesAtTheNoGearBaseline)
 {
 	const Six baseline = NoGearBaseline();
@@ -1104,23 +1221,21 @@ TEST_F(PlayerEquipAttributeTest, EmptyEquipmentBarLeavesAttributesAtTheNoGearBas
 	EXPECT_EQ(baseline.maxHealth, Base(player).health()) << "an equipment recalculation with nothing worn is a no-op";
 	EXPECT_EQ(baseline.maxMana, Base(player).mana());
 
-	// 没有背包组件的实体:加载期那次重算(NewPlayer 里)已经把它当成「什么都没穿」。
+	// 加载创建了派生缓存,但缺背包的玩家不能重算,HP/MP 与缓存均保留原值。
 	const auto withoutBags = NewPlayer(/*withBags=*/false);
 	ASSERT_EQ(nullptr, tlsEcs.actorRegistry.try_get<PlayerBagsComp>(withoutBags));
-	ExpectSix(baseline, ReadSix(Derived(withoutBags)));
-	ExpectCombat(CombatValues{}, Derived(withoutBags).combat());
+	EXPECT_EQ(kFarAboveAnyMax, Base(withoutBags).health());
+	EXPECT_EQ(0u, Derived(withoutBags).max_health());
+	const auto baseBefore = Base(withoutBags).SerializeAsString();
+	const auto derivedBefore = Derived(withoutBags).SerializeAsString();
 
-	// 再各走一遍会调 CollectBonus 的两条路(换装重算、建面板):结果不变,并且谁都不许顺手造出背包组件
-	// (属性同步路径禁 get_or_emplace;造出来的空背包会让「尚未完成加载」的玩家看起来像已加载)。
+	// 读和重算都拒绝缺失输入,不能补建一张空背包把加载故障藏起来。
 	PlayerAttributeSystem::Recalculate(withoutBags, RecalcReason::kEquipmentChanged);
 	AttributePanelInfo panel;
-	PlayerAttributeSystem::BuildPanel(withoutBags, panel);
-	ExpectSix(baseline, ReadSix(Derived(withoutBags)));
-	ExpectCombat(CombatValues{}, Derived(withoutBags).combat());
-	for (const auto dimensionId : kPlayerDimensions)
-	{
-		ASSERT_NO_FATAL_FAILURE(ExpectDimension(panel, dimensionId, 0, 0));
-	}
+	EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::BuildPanel(withoutBags, panel));
+	EXPECT_EQ(0u, panel.ByteSizeLong());
+	EXPECT_EQ(baseBefore, Base(withoutBags).SerializeAsString());
+	EXPECT_EQ(derivedBefore, Derived(withoutBags).SerializeAsString());
 	EXPECT_EQ(nullptr, tlsEcs.actorRegistry.try_get<PlayerBagsComp>(withoutBags))
 		<< "neither recalculating nor building the panel may create a bag component as a side effect";
 }
@@ -1640,8 +1755,10 @@ TEST_F(PlayerEquipAttributeTest, ReloadFromTheDatabaseRecordRecomputesTheEquipme
 	ASSERT_EQ(Derived(player).max_health(), Base(player).health());
 	ASSERT_GT(Derived(player).max_health(), NoGearBaseline().maxHealth);
 
+	// 存盘只认走完加载创建点的实体(缺任何持久化组件就整份拒绝、什么都不写):先把夹具没挂的补成空存档。
+	CompletePersistedComps(player);
 	PlayerAllData saved;
-	PlayerAllDataMessageFieldsMarshal(player, saved);
+	ASSERT_TRUE(PlayerAllDataMessageFieldsMarshal(player, saved));
 	std::string bytes;
 	ASSERT_TRUE(saved.player_database_data().SerializeToString(&bytes));
 	PlayerAllData coldSnapshot;
@@ -1649,7 +1766,7 @@ TEST_F(PlayerEquipAttributeTest, ReloadFromTheDatabaseRecordRecomputesTheEquipme
 
 	const auto restored = tlsEcs.actorRegistry.create();
 	players.push_back(restored);
-	tlsEcs.actorRegistry.emplace<Guid>(restored, kPlayerIdBase + players.size());
+	tlsEcs.actorRegistry.emplace<PlayerGuidComp>(restored, kPlayerIdBase + players.size());
 	PlayerAllDataMessageFieldsUnMarshal(restored, coldSnapshot);
 
 	const auto *bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
@@ -2375,8 +2492,10 @@ TEST_F(PlayerEquipAttributeTest, ReloadFromTheDatabaseRecordRecomputesEnhanceAnd
 	ExpectSix(expected, ReadSix(Derived(player)));
 	ASSERT_EQ(expected.maxHealth, Base(player).health());
 
+	// 存盘只认走完加载创建点的实体(缺任何持久化组件就整份拒绝、什么都不写):先把夹具没挂的补成空存档。
+	CompletePersistedComps(player);
 	PlayerAllData saved;
-	PlayerAllDataMessageFieldsMarshal(player, saved);
+	ASSERT_TRUE(PlayerAllDataMessageFieldsMarshal(player, saved));
 	std::string bytes;
 	ASSERT_TRUE(saved.player_database_data().SerializeToString(&bytes));
 	PlayerAllData coldSnapshot;
@@ -2384,7 +2503,7 @@ TEST_F(PlayerEquipAttributeTest, ReloadFromTheDatabaseRecordRecomputesEnhanceAnd
 
 	const auto restored = tlsEcs.actorRegistry.create();
 	players.push_back(restored);
-	tlsEcs.actorRegistry.emplace<Guid>(restored, kPlayerIdBase + players.size());
+	tlsEcs.actorRegistry.emplace<PlayerGuidComp>(restored, kPlayerIdBase + players.size());
 	PlayerAllDataMessageFieldsUnMarshal(restored, coldSnapshot);
 
 	const auto *bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
@@ -2493,6 +2612,142 @@ TEST_F(PlayerEquipAttributeTest, PanelBonusAndCombatLinesStayTheSameAfterEnhance
 	EXPECT_EQ(expected.physicalAttack, forged.derived().physical_attack());
 	EXPECT_EQ(expected.magicAttack, forged.derived().magic_attack());
 	EXPECT_EQ(expected.maxHealth, forged.derived().max_health());
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// 组件归属(docs/design/ecs-entt-misuse-audit-20261015.md F057):PlayerAttributeComp / LevelComp 由加载链路
+// (Unmarshal)挂上,DerivedAttributesComp 由 InitializeOnLoad 挂上;其余入口只取不建,缺了 fail-closed。
+// 修复前 EnsureComp / Recalculate / GmSetLevel 都用 get_or_emplace,下面除第一条外每条都会因为
+// 「组件被悄悄补建」或「返回码不是 kServiceUnavailable」而失败。错误码口径与 player_mission.cpp /
+// skill.cpp 一致:实体无效 → kEntityIsNull,实体有效但缺必需组件(加载链路故障)→ kServiceUnavailable。
+// ═════════════════════════════════════════════════════════════════════════
+
+// 默认方案的修补从「每次访问顺手修」挪到了「加载时修一次」,口径不能丢:空存档加载后有方案一且已激活,
+// next_scheme_id 接在后面,二级属性缓存也挂上了。(修复前后都应成立。)
+TEST_F(PlayerEquipAttributeTest, InitializeOnLoadFillsTheDefaultSchemeAndCreatesTheDerivedCache)
+{
+	const auto &comp = AttributeComp(player);
+	ASSERT_EQ(1, comp.schemes_size());
+	EXPECT_EQ(1u, comp.schemes(0).scheme_id());
+	EXPECT_EQ(comp.schemes(0).scheme_id(), comp.active_scheme_id());
+	EXPECT_EQ(2u, comp.next_scheme_id());
+	ASSERT_NE(nullptr, tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player));
+	EXPECT_GE(Derived(player).max_health(), 1u) << "InitializeOnLoad must recalculate right after creating the cache";
+}
+
+// 存档组件没挂上就进 InitializeOnLoad:只记错误,既不补建存档组件,也不挂二级属性缓存。
+// 补建出来的是一份带默认方案、看起来完全正常的空组件,下一次存盘就会把玩家的加点清零写回。
+TEST_F(PlayerEquipAttributeTest, InitializeOnLoadDoesNotCreateTheSaveComponentOnBehalfOfTheLoadPath)
+{
+	const auto entity = NewUnloadedEntity();
+	PlayerAttributeSystem::InitializeOnLoad(entity);
+	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerAttributeComp>(entity));
+	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<DerivedAttributesComp>(entity));
+}
+
+// 重算只写不建:缺存档组件、或缺二级属性缓存(没走 InitializeOnLoad)时整次跳过 ——
+// 不给实体添组件,也不按「旧上限 0」去夹当前血量。
+TEST_F(PlayerEquipAttributeTest, RecalculateSkipsAndCreatesNothingWhenARequiredComponentIsMissing)
+{
+	const auto unloaded = NewUnloadedEntity();
+	PlayerAttributeSystem::Recalculate(unloaded, RecalcReason::kEquipmentChanged);
+	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerAttributeComp>(unloaded));
+	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<DerivedAttributesComp>(unloaded));
+	EXPECT_EQ(kFarAboveAnyMax, Base(unloaded).health()) << "a skipped recalculation must not clamp the current health";
+
+	const auto noCache = NewUnloadedEntity();
+	tlsEcs.actorRegistry.emplace<PlayerAttributeComp>(noCache);
+	PlayerAttributeSystem::Recalculate(noCache, RecalcReason::kEquipmentChanged);
+	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<DerivedAttributesComp>(noCache))
+		<< "the derived cache is created only by InitializeOnLoad";
+	EXPECT_EQ(kFarAboveAnyMax, Base(noCache).health());
+}
+
+TEST_F(PlayerEquipAttributeTest, EveryRealInputIsRequiredBeforePanelRecalculationAndWrites)
+{
+	ExpectMissingInputRejected<BaseAttributesComp>("BaseAttributesComp");
+	ExpectMissingInputRejected<PlayerAttributeComp>("PlayerAttributeComp");
+	ExpectMissingInputRejected<LevelComp>("LevelComp");
+	ExpectMissingInputRejected<PlayerUint32Comp>("PlayerUint32Comp");
+	ExpectMissingInputRejected<PlayerBagsComp>("PlayerBagsComp");
+	ExpectMissingInputRejected<DerivedAttributesComp>("DerivedAttributesComp");
+}
+
+TEST_F(PlayerEquipAttributeTest, ReadOnlyQueriesDoNotInheritTheWriteFreezeRestriction)
+{
+	const auto poolId = PlayerPoolId();
+	AttributePanelInfo before;
+	ASSERT_EQ(kSuccess, PlayerAttributeSystem::BuildPanel(player, before));
+	std::map<uint32_t, uint32_t> beforeSuggested;
+	const auto beforeResult = PlayerAttributeSystem::AutoAllocate(player, poolId, beforeSuggested);
+	tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(player);
+
+	AttributePanelInfo frozenPanel;
+	EXPECT_EQ(kSuccess, PlayerAttributeSystem::BuildPanel(player, frozenPanel));
+	EXPECT_EQ(before.SerializeAsString(), frozenPanel.SerializeAsString());
+	std::map<uint32_t, uint32_t> frozenSuggested;
+	EXPECT_EQ(beforeResult, PlayerAttributeSystem::AutoAllocate(player, poolId, frozenSuggested));
+	EXPECT_EQ(beforeSuggested, frozenSuggested);
+}
+
+// 面板是只读路径:缺存档组件时返回故障码、面板清空(先清掉调用方传进来的旧内容),不改变实体的组件集合。
+// 返回码让 handler 回错误,而不是把空面板当成功发给客户端(客户端按整体覆盖,空面板等于抹掉真实数据)。
+// 修复前 BuildPanel 没有返回值,还会补建组件并填出完整面板。
+TEST_F(PlayerEquipAttributeTest, PanelOfAnUnloadedEntityIsEmptyAndCreatesNothing)
+{
+	const auto entity = NewUnloadedEntity();
+	AttributePanelInfo panel;
+	panel.set_level(99);
+	EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::BuildPanel(entity, panel));
+	EXPECT_EQ(0u, panel.level());
+	EXPECT_EQ(0, panel.pools_size());
+	EXPECT_EQ(0, panel.dimensions_size());
+	EXPECT_EQ(0, panel.schemes_size());
+	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerAttributeComp>(entity));
+}
+
+// 写入口(含只算不落的自动加点)缺存档组件:一律在扣费 / 改动之前拒绝,返回服务端故障码,不补建组件。
+TEST_F(PlayerEquipAttributeTest, WriteEntriesRejectAnEntityWithoutTheSaveComponent)
+{
+	const auto entity = NewUnloadedEntity();
+	const uint32_t poolId = PlayerPoolId();
+	ASSERT_NE(0u, poolId);
+
+	EXPECT_EQ(kServiceUnavailable,
+			  PlayerAttributeSystem::Allocate(entity, poolId, std::map<uint32_t, uint32_t>{{kDimStrength, 1}}));
+	EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::Reset(entity, poolId));
+	std::map<uint32_t, uint32_t> suggested{{kDimStrength, 1}};
+	EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::AutoAllocate(entity, poolId, suggested));
+	EXPECT_TRUE(suggested.empty());
+	uint32_t schemeId = 123;
+	EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::CreateScheme(entity, "", schemeId));
+	EXPECT_EQ(0u, schemeId);
+	EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::SwitchScheme(entity, 1));
+	EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::RenameScheme(entity, 1, "方案甲"));
+
+	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<PlayerAttributeComp>(entity));
+	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<DerivedAttributesComp>(entity));
+}
+
+// GM 设等级:LevelComp 是存档组件,缺了就拒绝,不补建一个再改(补建的等级会随下一次存盘写回)。
+TEST_F(PlayerEquipAttributeTest, GmSetLevelRejectsAnEntityWithoutALevelComponent)
+{
+	const auto entity = NewUnloadedEntity();
+	tlsEcs.actorRegistry.remove<LevelComp>(entity);
+	ASSERT_TRUE(playerlevel::IsValidLevel(10));
+	EXPECT_EQ(kServiceUnavailable, PlayerAttributeSystem::GmSetLevel(entity, 10));
+	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<LevelComp>(entity));
+}
+
+// 面板接口的另外两种结果:实体无效 → kEntityIsNull;走完加载的玩家 → kSuccess 且面板有内容。
+TEST_F(PlayerEquipAttributeTest, BuildPanelReportsInvalidEntityAndSucceedsForALoadedPlayer)
+{
+	AttributePanelInfo panel;
+	EXPECT_EQ(kEntityIsNull, PlayerAttributeSystem::BuildPanel(entt::null, panel));
+
+	EXPECT_EQ(kSuccess, PlayerAttributeSystem::BuildPanel(player, panel));
+	EXPECT_EQ(kLevel, panel.level());
+	EXPECT_GT(panel.pools_size(), 0);
 }
 
 } // namespace

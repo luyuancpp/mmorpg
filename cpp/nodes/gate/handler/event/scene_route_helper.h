@@ -45,16 +45,16 @@ inline constexpr uint32_t kSceneEntryMaxAttempts{16};
 //
 // 旧指向无效一律算 kChanged,不区分"从未绑定"与"绑定过、但节点已被摘除":scene 节点下线时
 // OnNodeRemoveEventHandler / ResolveSessionTargetNode(client_message_processor.cpp)会把指向置为
-// kInvalidEntityId,随后 node_gone 迁频道(沿用原 scene_id)或同 node_id 重启后的改派必须重新进场,
+// entt::null,随后 node_gone 迁频道(沿用原 scene_id)或同 node_id 重启后的改派必须重新进场,
 // 若把无效指向当"未变化",这条路由会被当成重复事件吞掉。首登(从未收到过路由)不会因此误转发:
 // ApplyRoute 要求 session.sceneId != 0。节点以新实体重新注册、而旧进程仍持有玩家实体时会多转发一次
 // enterType=0:scene 侧 PlayerEnterGameNode 对已有实体走 EnterScene 复用路径(player_lifecycle.cpp)——
 // session 重绑同号、HandleEnterScene 对"已在目标场景"幂等早退、3.2 交接就地收尾有 epoch 复核、
 // 0 不置登录态也不触发登录事件。唯一的状态副作用是 3.1 会顺带摘掉 PlayerSceneChangeInFlightComp,
 // 即提前放开一次在途换图的"切换中"闸;静态读下来迟到应答找不到在途组件是静默 no-op,未经运行验证。
-inline SceneNodeChange CompareSceneNode(const SessionInfo& session, const uint64_t targetNodeEntityId)
+inline SceneNodeChange CompareSceneNode(const SessionInfo& session, const entt::entity targetNodeEntityId)
 {
-    return session.GetEntityId(common::base::SceneNodeService) != targetNodeEntityId
+    return session.GetNodeEntity(common::base::SceneNodeService) != targetNodeEntityId
                ? SceneNodeChange::kChanged
                : SceneNodeChange::kUnchanged;
 }
@@ -63,10 +63,10 @@ inline SceneNodeChange CompareSceneNode(const SessionInfo& session, const uint64
 // 生产路径已改走 AttemptPendingSceneEntry(只在转发成功后提交指向);本函数保留供已有用例钉住原语语义,
 // 不要把它重新接回转发之前 —— 那样转发失败后同一路由再来时会被判成"节点未变化",同 scene_id 换节点
 // 这一支就再也补发不了(SceneRouteEntry.NodeChangeForwardFailureIsNotRecoveredByRedelivery)。
-inline SceneNodeChange RebindSceneNode(SessionInfo& session, const uint64_t targetNodeEntityId)
+inline SceneNodeChange RebindSceneNode(SessionInfo& session, const entt::entity targetNodeEntityId)
 {
     const auto change = CompareSceneNode(session, targetNodeEntityId);
-    session.SetEntityId(common::base::SceneNodeService, targetNodeEntityId);
+    session.SetNodeEntity(common::base::SceneNodeService, targetNodeEntityId);
     return change;
 }
 
@@ -110,6 +110,72 @@ bool ApplyRoute(SessionInfo& session, const uint64_t targetSceneId, const SceneN
     session.sceneId = targetSceneId;
     if (enterType.has_value()) session.pendingEnterGsType = 0;
     return true;
+}
+
+// ---------------------------------------------------------------------------
+// 登录代次盖章(docs/design/scene-enter-session-fence.md §4):只抬高、不丢弃。
+// 会话上的 loginGeneration 只供 ForwardPlayerToScene 盖章,判新旧是 scene 入场栅栏的事。两处写入
+// (BindSession / RoutePlayer)都必须先于调用方转发:OnLoginTypeBound 会同步按 lastSceneRoute 补发,
+// OnRouteDecision 会同步尝试转发,盖章都从会话取值。
+// ---------------------------------------------------------------------------
+
+// 新写入的身份相对会话原先绑定的角色有没有换人。用枚举而不是 bool,理由同 SceneNodeChange。
+enum class PlayerChange : uint8_t
+{
+    kSamePlayer,
+    kAnotherPlayer,
+};
+
+// 同一角色取 max:迟到的、不带代次(0)的消息都不能把会话已知的最高代次拉低。
+// 换了角色取新值,哪怕更小:沿用上一个角色的代次,会给新角色的入场盖上别人的章。
+inline uint64_t MergeLoginGeneration(const uint64_t current, const uint64_t incoming, const PlayerChange change)
+{
+    return change == PlayerChange::kSamePlayer ? (std::max)(current, incoming) : incoming;
+}
+
+// BindSession 到达:把会话绑到 playerId,写入会话版本号与本次登录链的代次;enterGsType 非 0 时记为待入场的
+// 登录类型(为 0 时不动,与改动前一致)。
+// 是否换了角色必须用**写之前**的 playerId 判定。会话还没绑过角色(kInvalidGuid)按同一角色处理:此前没有
+// 别的角色的代次可言,能记下代次的只有不带玩家的路由(带玩家的路由会先把玩家采用进会话)。
+// 返回 true = 写入了登录类型,调用方随后应调 OnLoginTypeBound 尝试补发。
+inline bool ApplyLoginBinding(SessionInfo& session, const Guid playerId, const uint32_t sessionVersion,
+                              const uint64_t loginGeneration, const uint32_t enterGsType)
+{
+    const auto change = (session.playerId == kInvalidGuid || session.playerId == playerId)
+                            ? PlayerChange::kSamePlayer
+                            : PlayerChange::kAnotherPlayer;
+    session.playerId = playerId;
+    session.sessionVersion = sessionVersion;
+    session.loginGeneration = MergeLoginGeneration(session.loginGeneration, loginGeneration, change);
+    if (enterGsType == 0)
+    {
+        return false;
+    }
+    session.pendingEnterGsType = enterGsType;
+    return true;
+}
+
+// RoutePlayer 到达:写入这次路由决策带来的身份字段,必须先于 OnRouteDecision。
+//   - routePlayerId 非 0 且会话还没绑角色(BindSession 可能尚未到达)时采用它;已绑角色时不改写。
+//   - homeZoneId / ownerEpoch 属于"本次路由决策",无条件覆盖:两次改派挨近时只有后到事件的 epoch 与
+//     Redis 相等;转发失败后的补发、晚到 BindSession 的补发都从会话取,所以不能等转发成功才提交。
+//   - 代次只在路由属于会话当前角色(或路由没带玩家)时取 max;属于别的角色时不动 —— 这条路由随后被
+//     AttemptPendingSceneEntry 的玩家围栏撤销,它的代次与当前角色无关。
+// 不据代次丢弃路由:scene 自发的换图路由带 0,由会话上的值盖章。
+inline void ApplyRouteIdentity(SessionInfo& session, const Guid routePlayerId, const uint32_t homeZoneId,
+                               const uint64_t ownerEpoch, const uint64_t loginGeneration)
+{
+    if (routePlayerId != 0 && session.playerId == kInvalidGuid)
+    {
+        session.playerId = routePlayerId;
+    }
+    session.homeZoneId = homeZoneId;
+    session.ownerEpoch = ownerEpoch;
+    if (routePlayerId == 0 || routePlayerId == session.playerId)
+    {
+        session.loginGeneration =
+            MergeLoginGeneration(session.loginGeneration, loginGeneration, PlayerChange::kSamePlayer);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -256,7 +322,7 @@ enum class SceneEntryAttempt : uint8_t
 };
 
 // 对会话上的欠账做一次尝试:比较、转发、成功后才提交(I5)。
-//   resolve(nodeId) -> std::optional<uint64_t>:按业务 node_id 解析 gate 上的节点实体号(I3,每次重解析);
+//   resolve(nodeId) -> std::optional<entt::entity>:按业务 node_id 解析 gate 上的节点实体号(I3,每次重解析);
 //   forward(enterType, nodeEntityId, sceneId) -> SceneForwardResult。
 // 失败窗口里会话的 sceneId 与节点指向都不动,所以重试时 CompareSceneNode 仍对着旧节点比,同 scene_id
 // 换节点照样判成 kChanged 并补发 0,不需要任何记忆位;放弃时断线 ExitGame 也落到旧节点,而不是一个
@@ -289,7 +355,7 @@ SceneEntryAttempt AttemptPendingSceneEntry(SessionInfo& session, const SceneEntr
         return SceneEntryAttempt::kGiveUp;
     }
 
-    const std::optional<uint64_t> nodeEntity = resolve(target.nodeId);
+    const std::optional<entt::entity> nodeEntity = resolve(target.nodeId);
     if (!nodeEntity.has_value())
     {
         return RecordSceneEntryFailure(entry, SceneForwardResult::kNodeNotFound, now) == SceneEntryRetryVerdict::kRetry
@@ -306,7 +372,7 @@ SceneEntryAttempt AttemptPendingSceneEntry(SessionInfo& session, const SceneEntr
     });
     if (applied)
     {
-        session.SetEntityId(common::base::SceneNodeService, *nodeEntity);
+        session.SetNodeEntity(common::base::SceneNodeService, *nodeEntity);
         session.pendingSceneEntry.reset();
         return SceneEntryAttempt::kApplied;
     }

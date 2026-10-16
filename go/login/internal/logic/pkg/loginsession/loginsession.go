@@ -43,6 +43,17 @@ func sessionTTL() time.Duration {
 	return time.Duration(config.AppConfig.Node.SessionExpireMin) * time.Minute
 }
 
+// Key 返回 login_session 的 Redis 键。导出给 sessionfence.CommitLogin 在同一段脚本里写入,
+// 键格式只在本包定义一处。
+func Key(sessionID uint32) string {
+	return sessionKey(sessionID)
+}
+
+// TTL 返回 login_session 的寿命(Node.SessionExpireMin)。与 Key 同理导出。
+func TTL() time.Duration {
+	return sessionTTL()
+}
+
 // Save stores the account for a session with a TTL.
 // Idempotent: overwrites if already present (same account, protected by account lock).
 func Save(ctx context.Context, rdb *redis.Client, sessionID uint32, account string) error {

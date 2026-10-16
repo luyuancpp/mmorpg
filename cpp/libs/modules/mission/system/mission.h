@@ -17,8 +17,8 @@ struct AbandonParam {
 	uint32_t missionId{ 0 };
 };
 
-class AcceptMissionEvent;
-class ConditionEvent;
+struct AcceptMissionEvent;
+struct ConditionEvent;
 class MissionComp;
 class MissionsComp;
 

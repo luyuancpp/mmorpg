@@ -90,6 +90,7 @@ set(SOURCE_FILES
     combat/skill/system/skill.cpp
     combat_state/system/combat_state.cpp
     core/config/config.cpp
+    actor/actor_net_id.cpp
     core/system/id_generator.cpp
     core/system/redis.cpp
     frame/manager/frame_time.cpp
@@ -109,10 +110,22 @@ set(SOURCE_FILES
     player/system/asset_op_system.cpp
     player/system/player_database_loader.cpp
     player/system/player_database_1_loader.cpp
+    # 玩家持久收件箱的 scene 消费端(docs/design/player-inbox-service.md §7):纯规则 + 类型注册表 / 执行器表 +
+    # GM 处置执行器 + 系统本体。player_landing.cpp 与 player_battle.cpp 各调一行,player_database_loader.cpp
+    # 调账本校验,漏登记会在 scene 静态库里缺定义,链接期报 undefined reference。
+    player/system/player_inbox_rules.cpp
+    player/system/player_inbox_registry.cpp
+    player/system/gm_sanction_inbox_executor.cpp
+    player/system/player_inbox_system.cpp
+    # DBTask 投递账本(纯数据结构)与它的粘合层;player_lifecycle.cpp 与 core/system/redis.cpp 都调它,
+    # 漏登记会在 scene 静态库里缺定义,链接期报 undefined reference。
+    player/system/db_task_dispatch_ledger.cpp
+    player/system/db_task_dispatch_system.cpp
     player/system/player_lifecycle.cpp
     player/system/player_scene.cpp
     player/system/player_team.cpp
     player/system/player_team_aoi.cpp
+    player/system/player_landing.cpp
     player/system/player_skill.cpp
     player/system/player_attribute.cpp
     player/system/player_pet.cpp
@@ -132,11 +145,9 @@ set(SOURCE_FILES
     spatial/system/grid.cpp
     spatial/system/interest.cpp
     spatial/system/movement.cpp
-    spatial/system/movement_acceleration.cpp
     spatial/system/nav_query.cpp
     spatial/system/navigation.cpp
     spatial/system/recast.cpp
-    spatial/system/scene_crowd.cpp
     spatial/system/scene_spawn.cpp
     spatial/system/view.cpp
     world/world.cpp

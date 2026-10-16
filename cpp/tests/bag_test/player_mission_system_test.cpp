@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
+#include "engine/core/type_define/player_guid_comp.h"
 
 #include <limits>
 #include <set>
 #include <utility>
-#include "../../nodes/scene/handler/event/mission_event_handler.h"
+#include "../../nodes/scene/handler/local_event/scene_local_events.h"
 #include "modules/bag/bag_service.h"
 #include "modules/bag/comp/player_bags_comp.h"
 #include "modules/condition/condition_type.h"
@@ -13,7 +14,7 @@
 #include "modules/mission/system/mission.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/database/bag_quest_mail_data.pb.h"
-#include "proto/common/event/mission_event.pb.h"
+#include "modules/mission/mission_events.h"
 #include "services/scene/player/comp/player_frozen_comp.h"
 #include "services/scene/player/system/bag_marshal.h"
 #include "services/scene/player/system/mission_marshal.h"
@@ -29,6 +30,23 @@
 #include "thread_context/ecs_context.h"
 
 namespace {
+class ScopedGlobalItemBlock {
+public:
+    explicit ScopedGlobalItemBlock(uint32_t configId)
+        : configId_(configId), wasBlocked_(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, configId)) {
+        GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, configId_);
+    }
+    ~ScopedGlobalItemBlock() {
+        if (wasBlocked_) GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, configId_);
+        else GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, configId_);
+    }
+    ScopedGlobalItemBlock(const ScopedGlobalItemBlock&) = delete;
+    ScopedGlobalItemBlock& operator=(const ScopedGlobalItemBlock&) = delete;
+private:
+    uint32_t configId_;
+    bool wasBlocked_;
+};
+
 // Tests temporarily alter already-owned snapshot rows/maps only; no table files are written.
 // Restore on every exit (including fatal assertions), before any later test sees the snapshot.
 template<class T>
@@ -62,19 +80,18 @@ protected:
         MonsterTableManager::Instance().Load();
         ASSERT_TRUE(ArmMissionTestItemSegment());
         player = tlsEcs.actorRegistry.create();
-        tlsEcs.actorRegistry.emplace<Guid>(player, Guid{424242});
+        tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, Guid{424242});
         auto& bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(player);
         for (auto& bag : bags.bags) bag.SetPlayerGuid(Guid{424242});
         ASSERT_EQ(kSuccess, PlayerMissionSystem::Initialize(player));
-        MissionEventHandler::Register();
+        scene_local_events::RegisterMission();
     }
     void TearDown() override {
-        MissionEventHandler::UnRegister();
+        scene_local_events::UnregisterMission();
         tlsEcs.dispatcher.clear<AcceptMissionEvent>();
         tlsEcs.dispatcher.clear<ConditionEvent>();
         tlsEcs.dispatcher.clear<OnAcceptedMissionEvent>();
         tlsEcs.dispatcher.clear<OnMissionAwardEvent>();
-        GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, 1);
         if (tlsEcs.actorRegistry.valid(player)) tlsEcs.actorRegistry.destroy(player);
         // 恢复其它背包测试使用的无 I/O 号段基线。
         EXPECT_TRUE(ArmMissionTestItemSegment(1, uint64_t{1} << 54));
@@ -86,32 +103,41 @@ protected:
     // monsters 3/4 with no dungeon spawn, but still exercise ordered and damaged progress handling.
     uint32_t AcceptForRuleTest(uint32_t id) {
         AcceptMissionEvent event;
-        event.set_entity(entt::to_integral(player));
-        event.set_mission_id(id);
+        event.player = player;
+        event.missionId = id;
         return MissionSystem::AcceptMission(event, Missions(), MissionConfig::GetSingleton());
     }
     ConditionEvent Kill(uint32_t monster, uint32_t count = 1) {
         ConditionEvent event;
-        event.set_entity(entt::to_integral(player));
-        event.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionKillMonster));
-        event.add_condition_ids(monster);
-        event.set_amount(count);
+        event.player = player;
+        event.conditionType = static_cast<uint32_t>(eConditionType::kConditionKillMonster);
+        event.conditionIds.push_back(monster);
+        event.amount = count;
         return event;
     }
     void Progress(uint32_t monster, uint32_t count = 1) {
-        MissionEventHandler::ConditionEventHandler(Kill(monster, count));
+        tlsEcs.dispatcher.trigger(Kill(monster, count));
     }
     uint32_t ItemCount() {
         uint32_t count = 0;
         Inventory().ForEachItem([&count](Guid, const ItemComp& item) { count += item.size(); });
         return count;
     }
+    // 销毁后立刻重建:entt 复用刚释放的槽位并把 version 加一,得到一个高 32 位非 0 的句柄。
+    void RecreatePlayerOnRecycledSlot() {
+        tlsEcs.actorRegistry.destroy(player);
+        player = tlsEcs.actorRegistry.create();
+        tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, Guid{424242});
+        auto& bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(player);
+        for (auto& bag : bags.bags) bag.SetPlayerGuid(Guid{424242});
+        ASSERT_EQ(kSuccess, PlayerMissionSystem::Initialize(player));
+    }
     entt::entity player{entt::null};
 };
 
 TEST_F(PlayerMissionSystemTest, ReadCheckDoesNotCreateStateAndRejectsArbitraryScope) {
     const auto other = tlsEcs.actorRegistry.create();
-    tlsEcs.actorRegistry.emplace<Guid>(other, Guid{123});
+    tlsEcs.actorRegistry.emplace<PlayerGuidComp>(other, Guid{123});
     EXPECT_EQ(kServiceUnavailable, PlayerMissionSystem::CheckAccept(other, 0, 4, 1000));
     EXPECT_EQ(nullptr, tlsEcs.actorRegistry.try_get<MissionsContainerComp>(other));
     EXPECT_EQ(kInvalidParameter, PlayerMissionSystem::Accept(player, 1, 4, 1000));
@@ -170,18 +196,21 @@ TEST_F(PlayerMissionSystemTest, FullBagRetainsEntireRewardAndRetrySucceeds) {
 
 TEST_F(PlayerMissionSystemTest, BlockedRewardAndFrozenPlayerPreserveClaimAndBag) {
     ReadyReward();
-    GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, 1);
-    EXPECT_NE(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
-    GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, 1);
-    auto& block = tlsEcs.actorRegistry.emplace<PlayerItemBlockList>(player);
-    block.Block(1);
-    EXPECT_NE(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
-    block.Unblock(1);
+    {
+        const ScopedGlobalItemBlock blocked(1);
+        EXPECT_NE(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
+        EXPECT_TRUE(Missions().IsClaimable(12));
+        EXPECT_EQ(0u, ItemCount());
+    }
     tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(player);
     EXPECT_NE(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
     EXPECT_NE(kSuccess, PlayerMissionSystem::Accept(player, 0, 4, 1000));
     EXPECT_TRUE(Missions().IsClaimable(12));
     EXPECT_EQ(0u, ItemCount());
+    tlsEcs.actorRegistry.remove<PlayerFrozenComp>(player);
+    EXPECT_EQ(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
+    EXPECT_EQ(4u, ItemCount());
+    EXPECT_FALSE(Missions().IsClaimable(12));
 }
 
 TEST_F(PlayerMissionSystemTest, SegmentTailCannotPartiallyGrantReward) {
@@ -213,9 +242,36 @@ TEST_F(PlayerMissionSystemTest, AutoRewardFailureRemainsClaimableAndDoesNotRepea
     Inventory().SetCapacityForRestore(4);
     ASSERT_EQ(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 4));
     OnMissionAwardEvent retry;
-    retry.set_entity(entt::to_integral(player));
-    retry.set_mission_id(4);
-    MissionEventHandler::OnMissionAwardEventHandler(retry);
+    retry.player = player;
+    retry.missionId = 4;
+    tlsEcs.dispatcher.trigger(retry);
+    EXPECT_EQ(4u, ItemCount());
+}
+
+// 生产代码里没有任何地方调用 dispatcher.update():任务完成的副作用必须在完成的那一次
+// 调用里落地。以前三类事件全部 enqueue,线上永远不派发,自动发奖与任务链全部失效。
+TEST_F(PlayerMissionSystemTest, AutoRewardIsGrantedWithoutDispatcherUpdate) {
+    Inventory().SetCapacityForRestore(4);
+    ASSERT_EQ(kSuccess, PlayerMissionSystem::Accept(player, 0, 4, 1000));
+    Progress(1);
+    ASSERT_TRUE(Missions().IsComplete(4));
+    EXPECT_FALSE(Missions().IsClaimable(4));
+    EXPECT_EQ(4u, ItemCount());
+    EXPECT_EQ(0u, tlsEcs.dispatcher.size<OnMissionAwardEvent>());
+    EXPECT_EQ(0u, tlsEcs.dispatcher.size<AcceptMissionEvent>());
+    EXPECT_EQ(0u, tlsEcs.dispatcher.size<ConditionEvent>());
+}
+
+// 任务事件里的实体整数曾被截成 uint32,丢掉 version:槽位复用过的玩家在 handler 里
+// valid() 判否,自动发奖被静默丢弃。
+TEST_F(PlayerMissionSystemTest, AutoRewardReachesPlayerOnRecycledEntitySlot) {
+    RecreatePlayerOnRecycledSlot();
+    ASSERT_NE(0u, entt::to_version(player));
+    Inventory().SetCapacityForRestore(4);
+    ASSERT_EQ(kSuccess, PlayerMissionSystem::Accept(player, 0, 4, 1000));
+    Progress(1);
+    ASSERT_TRUE(Missions().IsComplete(4));
+    EXPECT_FALSE(Missions().IsClaimable(4));
     EXPECT_EQ(4u, ItemCount());
 }
 
@@ -374,20 +430,20 @@ TEST_F(PlayerMissionSystemTest, OwnedLevelFactsReplaceProgressInsteadOfAccumulat
         uint32_t GetRewardId(uint32_t) const override { return 0; }
     } config;
     AcceptMissionEvent accept;
-    accept.set_entity(entt::to_integral(player));
-    accept.set_mission_id(4);
+    accept.player = player;
+    accept.missionId = 4;
     ASSERT_EQ(kSuccess, MissionSystem::AcceptMission(accept, Missions(), config));
     ConditionEvent level;
-    level.set_entity(entt::to_integral(player));
-    level.set_condition_type(static_cast<uint32_t>(eConditionType::kConditionLevelUp));
-    level.add_condition_ids(20);
-    level.set_amount(20);
+    level.player = player;
+    level.conditionType = static_cast<uint32_t>(eConditionType::kConditionLevelUp);
+    level.conditionIds.push_back(20);
+    level.amount = 20;
     MissionSystem::HandleConditionEvent(level, Missions(), config);
     MissionSystem::HandleConditionEvent(level, Missions(), config);
     ASSERT_TRUE(Missions().IsAccepted(4));
     EXPECT_EQ(20u, Missions().GetMissionList().missions().at(4).progress(0));
-    level.set_amount(40);
-    level.set_condition_ids(0, 40);
+    level.amount = 40;
+    level.conditionIds[0] = 40;
     MissionSystem::HandleConditionEvent(level, Missions(), config);
     EXPECT_TRUE(Missions().IsComplete(4));
 }

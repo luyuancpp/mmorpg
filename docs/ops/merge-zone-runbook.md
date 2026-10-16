@@ -86,6 +86,7 @@
 | `mmorpg_friend`(`-friend-schema`) | `friend` / `friend_request` | go/friend;合服只读审计 |
 | `mmorpg_guild`(`-guild-schema`) | `guild` / `guild_member` / `guild_player_state` / `guild_application` | go/guild |
 | `mmorpg_trade`(`-trade-schema`) | `trade_listing` | go/trade |
+| `mmorpg_player_inbox` | `player_inbox_stream` / `player_inbox_item` / `player_inbox_audit`(按 player_id 存,无 zone 列) | go/player_inbox;合服只读审计(PENDING 量级),不搬不改 |
 
 - **有效落点** = `player:placement:{id}` 记录的库 ?? home_zone 的 zone 库 ?? 处理任务的 go/db 所在 zone 库(设计 §1)。没有记录的玩家与以前完全一样;pin 合服、钉落点、搬库才写记录。
 - 一个 `-MergeMySqlDsn` 必须**同时**够得着上面这些库:工具按「库名.表名」访问帮会 / 聚宝斋 / 好友的表,并写 `zone_<src>_db.x → zone_<dst>_db.x` 的全限定名。所有 zone 库与落点库也必须和各 zone go/db 的 `Database.Hosts` 在**同一个 MySQL 实例 / TiDB 集群**,因为 go/db 会按需打开别区的库。
@@ -216,7 +217,7 @@ go run ./cmd/migrate -f <该 zone 的 db.yaml> -command up
 # 非 zone 落点库(player_store_<id>_db)用 -storage-id <id> 代替按 ZoneId 推导库名,见 §14.5
 ```
 
-顺序是 migrate → 重启 go/db → 重启 scene。同一条检查也适用于之后每一个加在 `player_database` 上的新列(如资产通道的 `asset_op_ledger`)。
+顺序是 migrate → 重启 go/db → 重启 scene。同一条检查也适用于之后每一个加在 `player_database` 上的新列(如资产通道的 `asset_op_ledger`、回合制战斗的 `settlement_ledger`、MySQL 行内围栏的 `fence_owner_epoch` / `fence_save_seq`(`player_database_1` 上也有这两列,一并查)、玩家收件箱的 `inbox_ledger`(20 号,2026-10-15 起);完整清单以 `docs/design/guild-phase2/90-consistency.md` G-03 为准)。
 
 漏跑迁移的兜底(2026-09-28 起):启动期 DDL 关闭时,go/db 在 `InitDB` 里对本 zone 库做一次**只读**核对(`proto_sql.assertSchemaUpToDate`,复用 `internal/migrate` 的 LoadColumns / Drift,不下发任何 DDL)。
 - **直接拒启的两种情况**,照提示对**同一份配置**跑上面的 `-command up` 后重启即可:
@@ -406,6 +407,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-audit `
 | `friend` / `friend_request` | 住独占库 `mmorpg_friend`,按 player_id 索引,合服后自然存活;只看量级。库 / 表查不到算 INFRA | info | 必须不是 INFRA |
 | `guild_member` | 按 player_id 索引,合服后自然存活;只看量级。库 / 表查不成或孤儿查询失败算 **INFRA**;同时给 `-MergeSkipGuildMySql -MergeSkipGuildRank` 时报 **SKIPPED(warn)** | info | 必须不是 INFRA |
 | `player.name (global)` | 角色名在 data_service 全局库 `player_name` 全服唯一,合服无冲突、不改名;不查库,只出说明行(§4.4) | info | — |
+| `player_inbox` | 源区与目标区 zone 库都有 `player_database.inbox_ledger` 列(缺 = **block**,先对该 zone 跑 go/db `cmd/migrate up`,否则拷贝步骤 SCHEMA MISMATCH);再报 `mmorpg_player_inbox.player_inbox_item` 的 PENDING 量。收件箱库 / 表不在报 NOT VERIFIED(warn),其余查询失败算 INFRA。见 `docs/ops/player-inbox-runbook.md` | info | 必须不是 block / INFRA |
 
 T-1 的通过口径:除了上表标「T-1 忽略」的在线类 block 之外,**没有 INFRA、没有别的 block**。完整的 exit 0 要等 T-0 停服之后(§8 Step 4.1 之前可再跑一次)。
 
@@ -655,7 +657,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up `
   - dst 以集群外入口运行:补 `-ClientEntryMode external`、`-GateServiceType`、`-GateNodePortBase`、`-ClientPublicHost` 或 `-GateClientHostTemplate`、`-GateExternalTrafficPolicy`
     (切 external 的窗口期还有 `-RequireClientEndpoint`);漏传会把 dst 重建成 podip,客户端拿到 PodIP,集群外玩家全部连不上且不报错。
   - dst 经 Ingress 对外:补 `-GatewayIngressHost` 与 `-GatewayTrustedProxies`(及 ClassName / TlsSecret);留空不会重建 Ingress。
-  - staging / prod:补 `-ReleaseProfile`(`dev_tools.ps1` 默认 dev 档),并设好 `MMORPG_GATEWAY_ADMIN_API_KEY` 等注入密钥的环境变量;dev 依赖开发口令登录时补 `-LoginDevPasswordAuth`。
+  - staging / prod:补 `-ReleaseProfile`(`dev_tools.ps1` 默认 dev 档),并设好 `MMORPG_GATEWAY_ADMIN_API_KEY` 等注入密钥的环境变量;dev 依赖开发口令登录时补 `-LoginDevPasswordAuth`。staging / prod 还需要 `MMORPG_LOGIN_QUEUE_TOKEN_SECRET`(排队缺省开;见 `deploy/k8s/README.md`)。(2026-10-15 更正:登录排队合入门槛未清时各档排队都关,不要求该变量;见 `deploy/k8s/README.md`「登录排队的合入门槛」。)
   - 指定集群:`-KubeContext` / `-KubeConfig`。
   - 先加 `-DryRun` 跑一遍同一条命令核对渲染结果(DryRun 只本地渲染、不调 kubectl),再去掉 `-DryRun` 执行。参数口径见 `deploy/k8s/README.md` Optional Flags。
   以上补充未经运行验证,待 Codex / 下一次合服彩排(§7)核对。
@@ -759,8 +761,9 @@ mapping Redis 整体丢失或被误删时(`player:zone:*`、`player:placement:*`
 
 **前置**:
 
-1. 全局库跑过迁移(`data_service -f <yaml> -migrate`,或 `Schema.AutoMigrate` 启动过),`route_meta(id=1)` 在。否则 route_tool 探针不过,退出码 2,提示先跑迁移。
+1. 全局库跑过迁移(`data_service -f <yaml> -migrate`,或 `Schema.AutoMigrate` 启动过),`route_meta(id=1)` 在。否则 route_tool 探针不过,退出码 2,提示先跑迁移。**若这个库跑过 2026-10-13 之前那一版(提交 `d5cbb8a8e`,行片模数还是 16)的迁移**:先 `SHOW CREATE TABLE player_route`,`chk_route_shard` 里是 `% 16` 就要在确认无数据后 DROP 全部五张路由表再迁移(提案 §11.2「行片 16 → 64」的前置)。这种旧表迁移不报错。2026-10-14 起 route_tool 与 db_first 的 data_service 建池时由探针 P5 认出(退出码 2,报错含 `route_shard modulus in CHECK chk_route_shard differs`),但 **redis 模式的 data_service 不建 route store、认不出**,所以这条人工核对仍要做。认出之后的处理同上(确认无数据后 DROP 五张路由表再迁移),不要改代码里的模数去迁就旧表;只重跑迁移修不好(`CREATE TABLE IF NOT EXISTS` 不改已有的表)。
 2. **冻结窗口已经开始**:不跑 merge / unmerge / relocate / pin-placement / backfill 任何写模式(提案 §7 P1)。工具只能检测 merge / unmerge 立的围栏(`merge:in_progress:*`);relocate、pin-placement、backfill 不立围栏,只能靠人保证。import 在 stderr 第一行打的 NOTE 就是提醒这一点。
+3. 账号对 `player_route` 有 INSERT 权限,且库上 `chk_route_shard` 生效(MySQL ≥ 8.0.16;TiDB ≥ 7.2 且建表前 `SET GLOBAL tidb_enable_check_constraint=ON`)。route_tool 的每个子命令(含 dry-run 与 audit)建池时都会跑探针 P4 与 P5:同一个必然回滚的事务里三次 `INSERT`(P4 一行必被 `chk_route_shard` 拒;P5 两行 `(0, 64)`、`(63, 63)` 核对模数),不留数据。P5 不需要额外权限;正确的库上它的两行会真的插入(未提交)到回滚为止,63 / 64 号玩家的建角可能短暂排队。反过来 63 / 64 号玩家的行被持锁超过 1s 时,这次建池以 1205 失败(退出码 2),重跑即可;多个建池方同时撞上还没有行的探针键时偶发的 1213 由建池自动有界重试(2026-10-15 补)。因此不能用只读账号(报错里写明 `INSERT privilege on player_route`),也不要连只读副本(只读实例拒绝这次 INSERT 时的报错未核实);不满足时同样是探针不过,退出码 2。
 
 **P1 操作**(工作目录 `go/data_service`):
 
@@ -806,7 +809,7 @@ go run ./cmd/route_tool -f etc/data_service.yaml audit
 
 stdout 只有一行:`route_import dry_run=… players_scanned=… inserted=… matched=… filled=… db_ahead=… rev_regression=… conflicts=… malformed=… merged_into_inserted=… merged_into_matched=… merged_into_conflicts=… merged_into_malformed=…`。stderr 是 NOTE、连接目标,以及 `MALFORMED` / `CONFLICT` / `REV_REGRESSION` / `MERGED_INTO_CONFLICT` 明细。
 
-**audit 做什么**(只读):方向 A 是库对 Redis(按主键键集翻页),方向 B 是 Redis 对库(SCAN 三族键;方向 A 没比过的 id 都在这里补比一次 —— 既包括库里没有行的,也包括方向 A 翻页扫过之后才提交的行,例如 db_first 下审计期间新登记的玩家),再全量对比 merged_into。有差异的玩家不超过 `-max-recheck` 时,等 `-recheck-delay` 后重读一次,只计两次都在的差异,被清掉的计入 `transient_cleared`;超过上限就全部计入并打 WARN。有生效围栏时只提示(`redis_fences_active` + WARN)。墓碑行(home 与落点都是 NULL)视为没有记录;maprev 缺席不算差异(本批 redis 模式下没有人写它)。stdout 一行 `route_audit …`,stderr 是 `DIFF kind=… player=… db=… redis=…` 明细。
+**audit 做什么**(只读;建池探针 P4 / P5 除外,见前置第 3 条):方向 A 是库对 Redis(按主键键集翻页),方向 B 是 Redis 对库(SCAN 三族键;方向 A 没比过的 id 都在这里补比一次 —— 既包括库里没有行的,也包括方向 A 翻页扫过之后才提交的行,例如 db_first 下审计期间新登记的玩家),再全量对比 merged_into。有差异的玩家不超过 `-max-recheck` 时,等 `-recheck-delay` 后重读一次,只计两次都在的差异,被清掉的计入 `transient_cleared`;超过上限就全部计入并打 WARN。有生效围栏时只提示(`redis_fences_active` + WARN)。墓碑行(home 与落点都是 NULL)视为没有记录;maprev 缺席不算差异(本批 redis 模式下没有人写它)。stdout 一行 `route_audit …`,stderr 是 `DIFF kind=… player=… db=… redis=…` 明细。
 
 | 计数 | 含义 |
 |---|---|
@@ -825,7 +828,7 @@ stdout 只有一行:`route_import dry_run=… players_scanned=… inserted=… m
 |---|---|---|
 | 0 | 完成,冲突、畸形、rev 倒退、merged_into 冲突与畸形都是 0 | 所有差异计数都是 0(`redis_fences_active`、`transient_cleared` 不算) |
 | 1 | 完成,但上面任一项非 0,需要人工处理 | 有差异,**`db_only_unpublished` 也算** |
-| 2 | 失败:参数、配置、连接、查询或写入出错(含锁等待超时 1205)、超时;探针不过(没跑迁移、会话变量不对、TiDB 不是悲观事务);yaml 是 db_first 而真导入没加 `-allow-db-first` | 同左(`-allow-db-first` 除外) |
+| 2 | 失败:参数、配置、连接、查询或写入出错(含锁等待超时 1205)、超时;探针不过(没跑迁移、会话变量不对、TiDB 不是悲观事务、`chk_route_shard` 不生效、账号没有 `player_route` 的 INSERT 权限、表是按另一个行片模数建的 —— 后者 stderr 带 `another route_shard modulus`,只重跑迁移修不好,按前置第 1 条处理);yaml 是 db_first 而真导入没加 `-allow-db-first` | 同左(`-allow-db-first` 除外) |
 | 3 | 开头或结尾 SCAN 到生效的 `merge:in_progress:*`,或结尾的 `merge:merged_into:*` 与开头不同,已中止。结尾的 3 不能原样重跑,见「重跑与恢复」 | 不用 |
 
 **P2 切换门禁**(切 `RouteStore.Mode=db_first` 之前,缺一不可;完整说明见提案 §11.2):
@@ -838,7 +841,7 @@ stdout 只有一行:`route_import dry_run=… players_scanned=… inserted=… m
 
 **db_first 下 Redis 整体丢失**:本批还没有把库推回 Redis 的工具(第 1b 批的预热),仍按 §9.2 手工重放。全局库的路由表这时是最完整的一份记录,重放之后可以用 audit 核对结果。
 
-**`tidb-prepare`(TiDB-only,2026-10-12 G1a,代码未编译、未测试)**:对全局库的路由表设防合并、按片 / 按 zone 预切 Region。`player_route` 改成聚簇 `(route_shard, player_id)` 之后,不预切的话 16 条写入尾部在开服首日仍压在同一个 Region 上(提案 §11.2「第 1a 批热点修复」)。
+**`tidb-prepare`(TiDB-only,2026-10-12 G1a,代码未编译、未测试)**:对全局库的路由表设防合并、按片 / 按 zone 预切 Region。`player_route` 改成聚簇 `(route_shard, player_id)` 之后,不预切的话 64 条写入尾部在开服首日仍压在同一个 Region 上(提案 §11.2「第 1a 批热点修复」)。行片数 2026-10-13 由 16 改为 64(提案 §11.2「行片 16 → 64」):行数据与 `idx_route_updated` 每片一段;`idx_route_home` / `idx_route_storage` 每个 zone / 落点值切 8 个点(每 8 片一段)。
 
 ```powershell
 # 默认 dry-run:判引擎、核对两张表是聚簇主键、列出将执行的语句(stderr 每条一行 PLAN)
@@ -849,9 +852,9 @@ go run ./cmd/route_tool -f etc/data_service.yaml tidb-prepare -zones=1,2 -storag
 
 - **何时跑**:TiDB 上建表之后;**开新 zone 时,在该 zone 开放(第一次建角)之前、低峰**跑一次(带上全部 zone 也行,幂等);BR / PITR 恢复之后;TRUNCATE 之后。两条 `ALTER … ATTRIBUTES` 是 DDL,在线重跑可能让在途建角以 8028 失败一次(提案 G1a HR9,未核实),所以挑开放前、低峰。
 - **MySQL 上自动跳过**:stderr 打 `SKIP: … is not TiDB`,退出码 0。
-- **只碰全局库**,不连 mapping Redis。它照样经过 route store 的建池探针:没跑迁移、会话变量不对、TiDB 不是悲观事务、**`chk_route_shard` 不生效**(TiDB 建表前没 `SET GLOBAL tidb_enable_check_constraint=ON`)都直接退出码 2。
+- **只碰全局库**,不连 mapping Redis。它照样经过 route store 的建池探针:没跑迁移、会话变量不对、TiDB 不是悲观事务、**`chk_route_shard` 不生效**(MySQL < 8.0.16,或 TiDB 建表前没 `SET GLOBAL tidb_enable_check_constraint=ON`)、表是按另一个行片模数建的(P5,处理见前置第 1 条)都直接退出码 2。探针先于判引擎,所以 MySQL < 8.0.16 上是退出码 2,不是上一条的跳过。
 - **前置核对**:`player_route`、`zone_merge_fence` 在 TiDB 上必须是 `CLUSTERED`(`information_schema.TABLES.TIDB_PK_TYPE`),不是就退出码 2、一条 ALTER / SPLIT 都不发 —— 只能趁表空 DROP 后用 `data_service -migrate` 重建。
-- **权限**:SPLIT / ATTRIBUTES 需要的权限【未核实】;应用账号不够时用运维账号的 yaml 副本跑(副本不进 git、口令不进日志)。另:建池探针 P4 是一次必然回滚的 `INSERT`,所以 route_tool 的任何子命令(含只读的 audit)都要 `player_route` 的 INSERT 权限。
+- **权限**:SPLIT / ATTRIBUTES 需要的权限【未核实】;应用账号不够时用运维账号的 yaml 副本跑(副本不进 git、口令不进日志)。另:建池探针 P4 / P5 是同一个必然回滚的事务里的 `INSERT`,所以 route_tool 的任何子命令(含只读的 audit)都要 `player_route` 的 INSERT 权限。
 - **退出码**:0 完成或 MySQL 跳过;2 参数非法(`-zones` 必填,每项 1..999999;`-storages` 每项 ≥ 1)、连接 / 探针失败、核对失败、某条语句失败(stderr 的 `FAILED` 行带第几步与语句;已执行的保留,重跑即可)。stdout 一行 `route_tidb_prepare engine=… skipped=… dry_run=… zones=… storages=… statements=… executed=… split_regions=…`。
 - **不许**为了「清干净」去关 `chk_route_shard`(`ALTER … NOT ENFORCED`)或把 `tidb_enable_check_constraint` 改回 OFF:`player_id` 的唯一性靠它。改过 DDL 或全局变量之后必跑一次 audit(方向 A 是唯一看得见错片行的检测器)。
 - K8s 上同样要等第 1b 批把 route_tool 并进主程序入口。

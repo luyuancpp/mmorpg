@@ -141,6 +141,10 @@ COPY third_party/redis/       third_party/redis/
 COPY third_party/librdkafka/  third_party/librdkafka/
 COPY third_party/yaml-cpp/    third_party/yaml-cpp/
 COPY third_party/zlib/        third_party/zlib/
+# nghttp2:muduo_grpc 的 HTTP/2 编解码核心库(docs/design/grpc-muduo-transport.md §9)。
+# setup_dependencies.sh 只编静态核心库并装到 /usr/local;Windows 的安装目录
+# third_party/nghttp2/install_vs2026_dbg/ 已被 .dockerignore 排除。
+COPY third_party/nghttp2/     third_party/nghttp2/
 
 COPY tools/archived/setup_dependencies.sh tools/archived/setup_dependencies.sh
 # Local deltas applied over the muduo submodule (see the overlay header for

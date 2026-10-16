@@ -59,11 +59,13 @@ const (
 	// 瞬时的信封 / 纪元问题;其它原因(玩家离线、背包满、战斗中)循环自己会收口,不该由人判结局。
 	// -force 只跳过这一条。
 	//
-	// **已知盲区**:last_outcome = 0 不只是"scene 回了 UNKNOWN",传输失败 / 超时也记 0(assetop 的 Caller
-	// 在出错时回 Result{},Reschedule 原样落库)。scene 不可达约 5 分钟后 attempts 就能过 10,这类行
-	// scene 可能已经应用过(只是回包丢了),恢复后循环会自己终结,恰恰不该由人判。列上分不出两者,
-	// 所以 printChecklist 第 0 步要求先确认 scene 可达、且 Loki 里循环仍在报 UNKNOWN 告警;
-	// 真正的区分要 assetop 在传输失败时不覆盖 last_outcome(属聚宝斋会话的文件,不在本工具里改)。
+	// **口径(落地恢复,docs/design/landing-recovery-sync-digest.md §6.2)**:传输失败 / 超时(没拿到 scene 任何答复)
+	// 现在按 RETRY、原因码 0 落库(go/shared/assetop/reconcile.go 的 rescheduleTransportFailure),last_outcome = 0
+	// 只剩"scene 回了 UNKNOWN / 坏流号 / 投过之后成了毒行"这类要人看的行。
+	// **残余盲区**:升级前由旧版写下的行,传输失败仍记 0,直到下一次投递把它改写 —— 只有这类旧行的 last_outcome = 0
+	// 才可能是传输失败(scene 可能已经应用过、只是回包丢了,恢复后循环会自己终结,恰恰不该由人判)。列上分不出新旧,
+	// 所以 printChecklist 第 0 步仍要求先确认 scene 可达、且 Loki 里循环仍在报 UNKNOWN 告警。
+	// 本工具的判定行为不随之改变:仍只认 last_outcome = 0 且 attempts >= 10。
 	resolveMinAttempts = 10
 
 	listDefaultMinAgeMin = 60
@@ -92,8 +94,9 @@ resolve 的前置条件(任一不满足即拒绝,不改任何数据):
   -confirm 与 -op 相同(二次确认);
   带 -txlog-checked(不带则打印核对清单后退出)。
 
-注意:last_outcome = 0 也包括传输失败 / 超时(scene 可能已应用、只是回包丢了)。list 里的 yes
-只说明列上的前置满足,动手前必须按核对清单第 0 步确认 scene 可达、循环仍在报 UNKNOWN 告警。
+注意:传输失败 / 超时按 RETRY 落库,last_outcome = 0 表示 scene 回了 UNKNOWN(或坏流号 / 毒行);
+只有升级前旧版写下的行,last_outcome = 0 才可能是传输失败(scene 可能已应用、只是回包丢了)。list 里的 yes
+只说明列上的前置满足,动手前仍须按核对清单第 0 步确认 scene 可达、循环仍在报 UNKNOWN 告警。
 
 退出码:0 成功;1 执行出错;2 参数 / 前置条件不满足;3 行已不在 PENDING,未做改动。
 `
@@ -278,8 +281,9 @@ func runList(ctx context.Context, store *data.GuildAssetStore, o listOptions, st
 	}
 	fmt.Fprintf(stdout, "\n%d rows total. resolvable: yes = all row-level resolve preconditions met; force = only missing "+
 		"the repeated UNKNOWN condition, add -force when manual intervention is required; no = cannot finalize manually.\n", len(rows))
-	// last_outcome=0 同时记录"scene 回 UNKNOWN"与"传输失败 / 超时",列上分不出来(见 resolveMinAttempts 注释)。
-	fmt.Fprintln(stdout, "Note: last_outcome=0 includes transport failure / timeout (scene may have applied the command but response was lost; loop will finalize after scene recovers)."+
+	// 传输失败按 RETRY 落库;只有升级前旧版写下的行,last_outcome=0 才可能是传输失败,列上分不出新旧(见 resolveMinAttempts 注释)。
+	fmt.Fprintln(stdout, "Note: transport failures / timeouts are stored as RETRY, so last_outcome=0 means scene returned UNKNOWN (or bad stream / poison row); "+
+		"only rows last written before the upgrade may still carry 0 for a transport failure (scene may have applied the command but response was lost; loop will finalize after scene recovers). "+
 		"yes does not mean manual finalization is appropriate: first confirm the scene node is reachable and Loki still reports \"Scene returned UNKNOWN; not finalizing ... op_id=<id>\".")
 	return exitOK
 }
@@ -451,10 +455,12 @@ func printChecklist(w io.Writer, r data.AssetOpRow) {
 	fmt.Fprintln(w, "-txlog-checked missing; no changes made. Complete these checks first:")
 	fmt.Fprintf(w, "  Row: op_id=%d player_id=%d guild_id=%d stream=%d(%s) epoch=%d seq=%d kind=%s attempts=%d last_outcome=%d last_reason=%d\n",
 		r.OpID, r.PlayerID, r.GuildID, r.Stream, r.Stream, r.StreamEpoch, r.Seq, r.Kind, r.Attempts, r.LastOutcome, r.LastReason)
-	// 第 0 步必须排在查流水之前:last_outcome=0 分不出"scene 回 UNKNOWN"与"传输失败 / 超时"(见 resolveMinAttempts 注释)。
+	// 第 0 步必须排在查流水之前:传输失败已按 RETRY 落库,但升级前旧版写下的行 last_outcome=0 仍可能是传输失败 / 超时,
+	// 列上分不出新旧(见 resolveMinAttempts 注释)。
 	fmt.Fprintf(w, "  0. Confirm scene actually returned UNKNOWN: the player's scene node is reachable and recent loop logs in Loki still report "+
-		"\"[AssetOp] Scene returned UNKNOWN; not finalizing op_id=%d\". last_outcome=0 also includes transport failure / timeout -- "+
-		"scene may have applied such rows but response was lost; the loop will finalize after scene recovery, do not finalize manually\n", r.OpID)
+		"\"[AssetOp] Scene returned UNKNOWN; not finalizing op_id=%d\". Transport failures / timeouts are stored as RETRY, but a row last written "+
+		"before the upgrade may still carry last_outcome=0 for one -- scene may have applied such rows but response was lost; "+
+		"the loop will finalize after scene recovery, do not finalize manually\n", r.OpID)
 	fmt.Fprintf(w, "  1. Check guild [AssetOp] logs in Loki: op_id=%d / corr=%d (included in every delivery, reschedule, and warning)\n", r.OpID, r.OpID)
 	fmt.Fprintf(w, "  2. Check transaction ledger for correlation_id=%d: record present = scene applied this command\n", r.OpID)
 	fmt.Fprintln(w, "  3. Conclusion: applied record found -> -as applied; confirmed never applied -> -as aborted")

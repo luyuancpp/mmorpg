@@ -895,10 +895,11 @@ func (x *GetPlayerGuildResponse) GetGuild() *GuildInfo {
 }
 
 type LeaveGuildRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId        uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	ExpectedGuildId uint64                 `protobuf:"varint,2,opt,name=expected_guild_id,json=expectedGuildId,proto3" json:"expected_guild_id,omitempty"` // 见上方 expected_guild_id 说明
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *LeaveGuildRequest) Reset() {
@@ -934,6 +935,13 @@ func (*LeaveGuildRequest) Descriptor() ([]byte, []int) {
 func (x *LeaveGuildRequest) GetPlayerId() uint64 {
 	if x != nil {
 		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *LeaveGuildRequest) GetExpectedGuildId() uint64 {
+	if x != nil {
+		return x.ExpectedGuildId
 	}
 	return 0
 }
@@ -983,10 +991,11 @@ func (x *LeaveGuildResponse) GetErrorMessage() *base.TipInfoMessage {
 }
 
 type DisbandGuildRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId        uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	ExpectedGuildId uint64                 `protobuf:"varint,2,opt,name=expected_guild_id,json=expectedGuildId,proto3" json:"expected_guild_id,omitempty"` // 见上方 expected_guild_id 说明
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *DisbandGuildRequest) Reset() {
@@ -1022,6 +1031,13 @@ func (*DisbandGuildRequest) Descriptor() ([]byte, []int) {
 func (x *DisbandGuildRequest) GetPlayerId() uint64 {
 	if x != nil {
 		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *DisbandGuildRequest) GetExpectedGuildId() uint64 {
+	if x != nil {
+		return x.ExpectedGuildId
 	}
 	return 0
 }
@@ -1183,11 +1199,12 @@ func (x *SetAnnouncementResponse) GetGuild() *GuildInfo {
 }
 
 type SetGuildMemberRoleRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	TargetPlayerId uint64                 `protobuf:"varint,1,opt,name=target_player_id,json=targetPlayerId,proto3" json:"target_player_id,omitempty"`
-	Role           uint32                 `protobuf:"varint,2,opt,name=role,proto3" json:"role,omitempty"` // 只允许 0(成员)/ 1(长老)
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TargetPlayerId  uint64                 `protobuf:"varint,1,opt,name=target_player_id,json=targetPlayerId,proto3" json:"target_player_id,omitempty"`
+	Role            uint32                 `protobuf:"varint,2,opt,name=role,proto3" json:"role,omitempty"`                                                // 只允许 0(成员)/ 1(长老)
+	ExpectedGuildId uint64                 `protobuf:"varint,3,opt,name=expected_guild_id,json=expectedGuildId,proto3" json:"expected_guild_id,omitempty"` // 见 LeaveGuildRequest 上方的 expected_guild_id 说明
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *SetGuildMemberRoleRequest) Reset() {
@@ -1234,10 +1251,18 @@ func (x *SetGuildMemberRoleRequest) GetRole() uint32 {
 	return 0
 }
 
+func (x *SetGuildMemberRoleRequest) GetExpectedGuildId() uint64 {
+	if x != nil {
+		return x.ExpectedGuildId
+	}
+	return 0
+}
+
 type SetGuildMemberRoleResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	Guild         *GuildInfo             `protobuf:"bytes,2,opt,name=guild,proto3" json:"guild,omitempty"` // 成功时为提交后的权威快照
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	ErrorMessage *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	// 成功时为提交后的权威快照;expected_guild_id 不符被拒(kGuildNotInGuild)时为操作者当前所在帮会的快照,不在任何帮则不填
+	Guild         *GuildInfo `protobuf:"bytes,2,opt,name=guild,proto3" json:"guild,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1287,10 +1312,11 @@ func (x *SetGuildMemberRoleResponse) GetGuild() *GuildInfo {
 }
 
 type KickGuildMemberRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	TargetPlayerId uint64                 `protobuf:"varint,1,opt,name=target_player_id,json=targetPlayerId,proto3" json:"target_player_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TargetPlayerId  uint64                 `protobuf:"varint,1,opt,name=target_player_id,json=targetPlayerId,proto3" json:"target_player_id,omitempty"`
+	ExpectedGuildId uint64                 `protobuf:"varint,2,opt,name=expected_guild_id,json=expectedGuildId,proto3" json:"expected_guild_id,omitempty"` // 见 LeaveGuildRequest 上方的 expected_guild_id 说明
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *KickGuildMemberRequest) Reset() {
@@ -1330,10 +1356,17 @@ func (x *KickGuildMemberRequest) GetTargetPlayerId() uint64 {
 	return 0
 }
 
+func (x *KickGuildMemberRequest) GetExpectedGuildId() uint64 {
+	if x != nil {
+		return x.ExpectedGuildId
+	}
+	return 0
+}
+
 type KickGuildMemberResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	Guild         *GuildInfo             `protobuf:"bytes,2,opt,name=guild,proto3" json:"guild,omitempty"`
+	Guild         *GuildInfo             `protobuf:"bytes,2,opt,name=guild,proto3" json:"guild,omitempty"` // 同 SetGuildMemberRoleResponse.guild
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1383,10 +1416,11 @@ func (x *KickGuildMemberResponse) GetGuild() *GuildInfo {
 }
 
 type TransferGuildLeaderRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	TargetPlayerId uint64                 `protobuf:"varint,1,opt,name=target_player_id,json=targetPlayerId,proto3" json:"target_player_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TargetPlayerId  uint64                 `protobuf:"varint,1,opt,name=target_player_id,json=targetPlayerId,proto3" json:"target_player_id,omitempty"`
+	ExpectedGuildId uint64                 `protobuf:"varint,2,opt,name=expected_guild_id,json=expectedGuildId,proto3" json:"expected_guild_id,omitempty"` // 见 LeaveGuildRequest 上方的 expected_guild_id 说明
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *TransferGuildLeaderRequest) Reset() {
@@ -1426,10 +1460,17 @@ func (x *TransferGuildLeaderRequest) GetTargetPlayerId() uint64 {
 	return 0
 }
 
+func (x *TransferGuildLeaderRequest) GetExpectedGuildId() uint64 {
+	if x != nil {
+		return x.ExpectedGuildId
+	}
+	return 0
+}
+
 type TransferGuildLeaderResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorMessage  *base.TipInfoMessage   `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	Guild         *GuildInfo             `protobuf:"bytes,2,opt,name=guild,proto3" json:"guild,omitempty"`
+	Guild         *GuildInfo             `protobuf:"bytes,2,opt,name=guild,proto3" json:"guild,omitempty"` // 同 SetGuildMemberRoleResponse.guild
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4638,13 +4679,15 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"x\n" +
 	"\x16GetPlayerGuildResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12(\n" +
-	"\x05guild\x18\x02 \x01(\v2\x12.guildpb.GuildInfoR\x05guild\"0\n" +
+	"\x05guild\x18\x02 \x01(\v2\x12.guildpb.GuildInfoR\x05guild\"\\\n" +
 	"\x11LeaveGuildRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"J\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12*\n" +
+	"\x11expected_guild_id\x18\x02 \x01(\x04R\x0fexpectedGuildId\"J\n" +
 	"\x12LeaveGuildResponse\x124\n" +
-	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"2\n" +
+	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"^\n" +
 	"\x13DisbandGuildRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"L\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12*\n" +
+	"\x11expected_guild_id\x18\x02 \x01(\x04R\x0fexpectedGuildId\"L\n" +
 	"\x14DisbandGuildResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"t\n" +
 	"\x16SetAnnouncementRequest\x12\x19\n" +
@@ -4653,20 +4696,23 @@ const file_proto_guild_guild_proto_rawDesc = "" +
 	"\fannouncement\x18\x03 \x01(\tR\fannouncement\"y\n" +
 	"\x17SetAnnouncementResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12(\n" +
-	"\x05guild\x18\x02 \x01(\v2\x12.guildpb.GuildInfoR\x05guild\"Y\n" +
+	"\x05guild\x18\x02 \x01(\v2\x12.guildpb.GuildInfoR\x05guild\"\x85\x01\n" +
 	"\x19SetGuildMemberRoleRequest\x12(\n" +
 	"\x10target_player_id\x18\x01 \x01(\x04R\x0etargetPlayerId\x12\x12\n" +
-	"\x04role\x18\x02 \x01(\rR\x04role\"|\n" +
+	"\x04role\x18\x02 \x01(\rR\x04role\x12*\n" +
+	"\x11expected_guild_id\x18\x03 \x01(\x04R\x0fexpectedGuildId\"|\n" +
 	"\x1aSetGuildMemberRoleResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12(\n" +
-	"\x05guild\x18\x02 \x01(\v2\x12.guildpb.GuildInfoR\x05guild\"B\n" +
+	"\x05guild\x18\x02 \x01(\v2\x12.guildpb.GuildInfoR\x05guild\"n\n" +
 	"\x16KickGuildMemberRequest\x12(\n" +
-	"\x10target_player_id\x18\x01 \x01(\x04R\x0etargetPlayerId\"y\n" +
+	"\x10target_player_id\x18\x01 \x01(\x04R\x0etargetPlayerId\x12*\n" +
+	"\x11expected_guild_id\x18\x02 \x01(\x04R\x0fexpectedGuildId\"y\n" +
 	"\x17KickGuildMemberResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12(\n" +
-	"\x05guild\x18\x02 \x01(\v2\x12.guildpb.GuildInfoR\x05guild\"F\n" +
+	"\x05guild\x18\x02 \x01(\v2\x12.guildpb.GuildInfoR\x05guild\"r\n" +
 	"\x1aTransferGuildLeaderRequest\x12(\n" +
-	"\x10target_player_id\x18\x01 \x01(\x04R\x0etargetPlayerId\"}\n" +
+	"\x10target_player_id\x18\x01 \x01(\x04R\x0etargetPlayerId\x12*\n" +
+	"\x11expected_guild_id\x18\x02 \x01(\x04R\x0fexpectedGuildId\"}\n" +
 	"\x1bTransferGuildLeaderResponse\x124\n" +
 	"\rerror_message\x18\x01 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\x12(\n" +
 	"\x05guild\x18\x02 \x01(\v2\x12.guildpb.GuildInfoR\x05guild\"2\n" +

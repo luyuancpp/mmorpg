@@ -904,6 +904,10 @@ namespace relocate_confirm
 	{
 		uint64_t playerId{0};
 		uint32_t sessionId{0};		// 票据里的 gate 会话:核实之后按它直推 tip + 34
+		// 派发时实体的登录代次(PlayerLoginIdentityComp,enter_fence.h);0 = 未知 / 上游未带。实体销毁之后、落回之前,
+		// 条目是本节点上唯一记着这名玩家的地方,入场会话栅栏把 (sessionId, loginGeneration) 当作他的一处当前身份
+		// (scene-enter-session-fence.md §5.1 第 3 处),否则陈旧入场会把条目误结成 superseded。本头不读它。
+		uint64_t loginGeneration{0};
 		uint32_t gateNodeId{0};
 		std::string gateInstanceId; // 发票时 gate 的实例号;空 = 推送时不比对实例
 		uint64_t ownerEpoch{0};		// 派发时实体缓存的 owner_epoch。可能落后于 Redis,**只进日志**

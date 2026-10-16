@@ -308,6 +308,60 @@ func TestProcessOneUnknownAlertsWithoutFinalizing(t *testing.T) {
 	}
 }
 
+// 传输失败(没拿到 scene 任何答复):落库写 RETRY,不写 UNKNOWN —— 否则日对账把它归进 alert 类,
+// scene 短暂不可达就误报一整天;27007 的粘性照旧。返回给同步路径的仍是本次真实结果(零值),
+// 走普通退避,不计 unknown。
+func TestProcessOneTransportFailurePersistsRetry(t *testing.T) {
+	for _, c := range []struct {
+		name       string
+		lastReason uint32
+	}{
+		{"普通行", 0},
+		{"曾见部分发放", ReasonPartialApplied},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			op := testOp(1)
+			op.Attempts = 3
+			op.LastReason = c.lastReason
+			store := newFakeStore(op)
+			applier := &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) {
+				return Result{}, errors.New("connection refused")
+			}}
+			loop, m := newTestLoop(t, store, applier, nil)
+
+			processed, err := loop.ProcessOne(context.Background(), op)
+			if err != nil {
+				t.Fatalf("ProcessOne 出错: %v", err)
+			}
+			if processed.Result != (Result{}) {
+				t.Fatalf("返回给同步路径的应是本次真实结果(零值),实际 %+v", processed.Result)
+			}
+			_, rescheduled := store.snapshot()
+			if len(rescheduled) != 1 {
+				t.Fatalf("应当重排一次,实际 %+v", rescheduled)
+			}
+			stored := rescheduled[0].Res
+			want := Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_RETRY, Reason: c.lastReason}
+			if stored != want {
+				t.Fatalf("落库结果应为 %+v,实际 %+v", want, stored)
+			}
+			if delay := rescheduled[0].NextMs - testNowMs; delay != 6_400 {
+				t.Fatalf("attempts=3 应走普通退避 8s × 0.8 = 6400ms,实际 %d", delay)
+			}
+			facts := PendingFacts{CreatedMs: testNowMs, Attempts: op.Attempts + 1, LastOutcome: stored.Outcome, LastReason: stored.Reason}
+			if got := ClassifyPending(facts, 0); got != PendingOnlineRetry {
+				t.Fatalf("传输失败的行在日对账里应归 online_retry,实际 %s", got)
+			}
+			if got := testutil.ToFloat64(m.rescheduleTotal.WithLabelValues("guild_debit", "retry")); got != 1 {
+				t.Fatalf("retry 重排指标应为 1,实际 %v", got)
+			}
+			if got := testutil.ToFloat64(m.unknownTotal.WithLabelValues("guild_debit")); got != 0 {
+				t.Fatalf("传输失败不是 UNKNOWN,不得计 unknown,实际 %v", got)
+			}
+		})
+	}
+}
+
 // 一行终结失败不该拖垮整批。
 func TestTickContinuesAfterFinalizeError(t *testing.T) {
 	store := newFakeStore(testOp(1), testOp(2))
@@ -482,6 +536,18 @@ func TestNewLoopRejectsBadConfig(t *testing.T) {
 		{"Interval 非正", func(c *LoopConfig) { c.Interval = 0 }},
 		// 毒行延迟为 0 会让解不开的行每一轮都被重领一次,白占名额。
 		{"毒行延迟非正", func(c *LoopConfig) { c.PoisonDelay = 0 }},
+		// 停放比普通退避还勤等于没有停放;超过一天多半是毫秒 / 秒配错了量级。
+		{"停放间隔短于 MaxBackoff", func(c *LoopConfig) { c.OfflineBackoff = 30 * time.Second }},
+		{"停放间隔超上限", func(c *LoopConfig) { c.OfflineBackoff = 25 * time.Hour }},
+		// 放弃不可逆:门槛、安全间隔、批量、节律任何一项配错都不许启动。
+		{"放弃门槛不足 30 天", func(c *LoopConfig) { c.AbandonAfter = 29 * 24 * time.Hour }},
+		{"放弃门槛为负", func(c *LoopConfig) { c.AbandonAfter = -time.Hour }},
+		{"放弃安全间隔不足 10 分钟", func(c *LoopConfig) { c.AbandonSafetyGap = 5 * time.Minute }},
+		{"放弃安全间隔短于租约", func(c *LoopConfig) { c.Lease = 2 * time.Hour }},
+		{"放弃批量为 0", func(c *LoopConfig) { c.AbandonBatch = 0 }},
+		{"放弃批量超上限", func(c *LoopConfig) { c.AbandonBatch = maxAbandonBatch + 1 }},
+		{"开启放弃却没有节律", func(c *LoopConfig) { c.AbandonInterval = 0 }},
+		{"对账间隔为负", func(c *LoopConfig) { c.AuditInterval = -time.Second }},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -491,6 +557,81 @@ func TestNewLoopRejectsBadConfig(t *testing.T) {
 				t.Fatal("非法配置必须被拒")
 			}
 		})
+	}
+}
+
+// 落地恢复的配置全部允许零值 = 关闭:guild / trade 现在直接写 LoopConfig 字面量,
+// 还没接这批配置时必须照常启动、行为不变。
+func TestNewLoopAcceptsLandingFeaturesOff(t *testing.T) {
+	store := newFakeStore()
+	applier := &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) { return Result{}, nil }}
+
+	cfg := DefaultLoopConfig()
+	cfg.OfflineAfterAttempts = 0
+	cfg.OfflineBackoff = 0
+	cfg.AbandonAfter = 0
+	cfg.AbandonSafetyGap = 0
+	cfg.AbandonBatch = 0
+	cfg.AbandonInterval = 0
+	cfg.AuditInterval = 0
+	if _, err := NewLoop(cfg, store, applier, nil, fixedNow); err != nil {
+		t.Fatalf("关闭停放 / 放弃 / 对账的配置应当合法,实际: %v", err)
+	}
+}
+
+// 长期拿不到位置的行进停放档:重排间隔按 OfflineBackoff 走,重排原因单列 offline。
+// 有位置记录却找不到持有节点(节点未注册、镜像未同步、等待跨 zone 落点)时玩家多半在线,不停放。
+func TestProcessOneParksLongOfflineRows(t *testing.T) {
+	for _, c := range []struct {
+		name     string
+		attempts uint32
+		absent   bool
+		wantNext uint64
+		reason   string
+	}{
+		{"刚好达到门槛:停放 30 分钟 × 0.8", 5, true, testNowMs + 1_440_000, "offline"},
+		{"差一次:普通退避 16s × 0.8", 4, true, testNowMs + 12_800, "retry"},
+		{"有位置记录但无持有节点:普通退避 32s × 0.8", 5, false, testNowMs + 25_600, "retry"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			op := testOp(1)
+			op.Attempts = c.attempts
+			store := newFakeStore(op)
+			applier := &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) {
+				return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE, Local: true, Absent: c.absent}, nil
+			}}
+			loop, m := newTestLoop(t, store, applier, nil)
+
+			if _, err := loop.ProcessOne(context.Background(), op); err != nil {
+				t.Fatalf("ProcessOne 出错: %v", err)
+			}
+			_, rescheduled := store.snapshot()
+			if len(rescheduled) != 1 || rescheduled[0].NextMs != c.wantNext {
+				t.Fatalf("下一次投递应为 %d,实际 %+v", c.wantNext, rescheduled)
+			}
+			if got := testutil.ToFloat64(m.rescheduleTotal.WithLabelValues("guild_debit", c.reason)); got != 1 {
+				t.Fatalf("%s 重排指标应为 1,实际 %v", c.reason, got)
+			}
+		})
+	}
+}
+
+// scene 自己回的 NOT_HERE(玩家刚换节点)不停放:下一次很可能就成。
+func TestProcessOneSceneNotHereNotParked(t *testing.T) {
+	op := testOp(1)
+	op.Attempts = 10
+	store := newFakeStore(op)
+	applier := &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) {
+		return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE, Reason: ReasonPlayerNotHere}, nil
+	}}
+	loop, _ := newTestLoop(t, store, applier, nil)
+
+	if _, err := loop.ProcessOne(context.Background(), op); err != nil {
+		t.Fatalf("ProcessOne 出错: %v", err)
+	}
+	_, rescheduled := store.snapshot()
+	if len(rescheduled) != 1 || rescheduled[0].NextMs != testNowMs+48_000 {
+		t.Fatalf("scene 的 NOT_HERE 应走普通退避封顶 60s × 0.8,实际 %+v", rescheduled)
 	}
 }
 

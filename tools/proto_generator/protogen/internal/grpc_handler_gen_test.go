@@ -26,7 +26,7 @@ func TestGrpcServiceHandlerCpp_PreservesPreDispatchSection(t *testing.T) {
 	methods := buildGrpcHandlerTestMethods()
 
 	fresh := GetGrpcServiceHandlerCppStr(writeParserTempFile(t, "")+".missing", methods, "", "")
-	if got, want := strings.Count(fresh, _config.Global.Naming.YourCodeBegin), 1+2*len(methods); got != want {
+	if got, want := strings.Count(fresh, _config.Global.Naming.YourCodeBegin), 1+4*len(methods); got != want {
 		t.Fatalf("fresh file section count mismatch: got=%d want=%d\n%s", got, want, fresh)
 	}
 
@@ -56,7 +56,7 @@ func TestGrpcServiceHandlerCpp_PreservesPreDispatchSection(t *testing.T) {
 	}
 	wrapperStart := strings.Index(first, "grpc::Status SceneNodeGrpcImpl::CreateScene(")
 	permitAt := strings.Index(first, "acquire_permit")
-	promiseAt := strings.Index(first[wrapperStart:], "std::promise<void> promise;")
+	promiseAt := strings.Index(first[wrapperStart:], "std::promise<grpc::Status> promise;")
 	if wrapperStart < 0 || permitAt < wrapperStart || promiseAt < 0 || permitAt > wrapperStart+promiseAt {
 		t.Fatalf("pre-dispatch code must sit inside CreateScene wrapper before dispatch:\n%s", first)
 	}

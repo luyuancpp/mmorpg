@@ -1,5 +1,8 @@
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
 #include "proto/scene/player_rollback.pb.h"
 
 #include "rpc/player_service_interface.h"
@@ -57,98 +60,110 @@ public:
         {
         case 0:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmAttachDebtResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmAttachDebt(player,
                 static_cast<const ::GmAttachDebtRequest*>(request),
                 static_cast<::GmAttachDebtResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmAttachDebtResponse*>(response));
 			}
             break;
         case 1:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmWaiveDebtResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmWaiveDebt(player,
                 static_cast<const ::GmWaiveDebtRequest*>(request),
                 static_cast<::GmWaiveDebtResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmWaiveDebtResponse*>(response));
 			}
             break;
         case 2:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmAdjustDebtResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmAdjustDebt(player,
                 static_cast<const ::GmAdjustDebtRequest*>(request),
                 static_cast<::GmAdjustDebtResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmAdjustDebtResponse*>(response));
 			}
             break;
         case 3:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmFreezeDebtResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmFreezeDebt(player,
                 static_cast<const ::GmFreezeDebtRequest*>(request),
                 static_cast<::GmFreezeDebtResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmFreezeDebtResponse*>(response));
 			}
             break;
         case 4:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmQueryDebtResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmQueryDebt(player,
                 static_cast<const ::GmQueryDebtRequest*>(request),
                 static_cast<::GmQueryDebtResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmQueryDebtResponse*>(response));
 			}
             break;
         case 5:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmCreateSnapshotResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmCreateSnapshot(player,
                 static_cast<const ::GmCreateSnapshotRequest*>(request),
                 static_cast<::GmCreateSnapshotResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmCreateSnapshotResponse*>(response));
 			}
             break;
         case 6:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmListSnapshotsResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmListSnapshots(player,
                 static_cast<const ::GmListSnapshotsRequest*>(request),
                 static_cast<::GmListSnapshotsResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmListSnapshotsResponse*>(response));
 			}
             break;
         case 7:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmPreviewRollbackResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmPreviewRollback(player,
                 static_cast<const ::GmPreviewRollbackRequest*>(request),
                 static_cast<::GmPreviewRollbackResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmPreviewRollbackResponse*>(response));
 			}
             break;
         case 8:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmExecuteRollbackResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmExecuteRollback(player,
                 static_cast<const ::GmExecuteRollbackRequest*>(request),
                 static_cast<::GmExecuteRollbackResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmExecuteRollbackResponse*>(response));
 			}
             break;
         case 9:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmQueryTransactionLogResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmQueryTransactionLog(player,
                 static_cast<const ::GmQueryTransactionLogRequest*>(request),
                 static_cast<::GmQueryTransactionLogResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmQueryTransactionLogResponse*>(response));
 			}
             break;
         case 10:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmTraceItemResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmTraceItem(player,
                 static_cast<const ::GmTraceItemRequest*>(request),
                 static_cast<::GmTraceItemResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmTraceItemResponse*>(response));
 			}
             break;
         case 11:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GmClawbackItemResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GmClawbackItem(player,
                 static_cast<const ::GmClawbackItemRequest*>(request),
                 static_cast<::GmClawbackItemResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GmClawbackItemResponse*>(response));
 			}
             break;
         default:

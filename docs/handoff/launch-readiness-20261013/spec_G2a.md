@@ -720,6 +720,21 @@ func (p *GroupLagProber) Close() error
 ```
 `GroupLag.Uncommitted` 不出指标(YAGNI),只在 >0 时随探针 Info 日志打出(新一代 topic / 新组刚起时可见)。
 
+> **核对结论(2026-10-15,sarama v1.43.1 API;正文不改)**:交接 `docs/handoff/handoff-launch-readiness-and-d1-20261013.md:105` 记的「sarama API 凭记忆写、本机没有模块缓存」已不成立 —— 本机模块缓存有与 `go/shared/go.mod:6` 同版本的源码(`C:\Users\luyua\go\pkg\mod\github.com\!i!b!m\sarama@v1.43.1`,下列路径相对它)。已把落地后的 `go/shared/kafkautil/group_lag.go`(连同 `group_lag_test.go` 的 fake)用到的 sarama 符号逐个对照源码:**签名与语义全部相符,没有需要改调用的不符项**;另有一点源码证实不了、一点源码里看到而正文没写的行为,见倒数第二条,kafka-go 的范围说明见最后一条。**这是只读静态对照,不是编译证据**:`go build` / `go vet` / `go test` 仍由 Codex 按 §9 跑。
+> - `Client` 接口 `client.go:23`;`GetOffset(topic string, partitionID int32, time int64) (int64, error)` `:88`(group_lag.go:32、:152-154)。实现 `:563-577`:出错时按 topic 刷新一次元数据再试一次;`getOffset` `:899-942`:V3_0_0_0 下发 ListOffsets v4(`:906-908`),响应缺 block 回 `ErrIncompleteResponse`(`:929-933`),block 带错回该 KError(`:934-936`)。`OffsetNewest int64 = -1`(`:131`,注释 `:127-130` 即「下一条要写的 offset」)、`OffsetOldest int64 = -2`(`:136`),对应 group_lag.go:83、:87。
+> - `NewClient(addrs []string, conf *Config) (Client, error)` `client.go:171`;`Metadata.Full` 默认 true(`config.go:523`),构造时拉一次全量元数据,失败即关 client 并返回 error(`client.go:215-226`)。例外:`ErrLeaderNotAvailable` / `ErrReplicaNotAvailable` / 两种授权错误只记日志、不算失败(`:219-221`),所以 group_lag.go:130 注释「失败即返回 error」对这几种部分失败不严格成立;紧接着的 `NewClusterAdminFromClient` 还要取到 controller,其余问题会在 `Probe` 时以 error 暴露,不影响正确性。
+> - `ClusterAdmin` 接口 `admin.go:16`;`ListConsumerGroupOffsets(group string, topicPartitions map[string][]int32) (*OffsetFetchResponse, error)` `:109`(group_lag.go:33、:157-159)。实现 `:1009-1018`:取 coordinator(优先用缓存,`client.go:636-656`)→ `NewOffsetFetchRequest(conf.Version, …)` → `Broker.FetchOffset`(`broker.go:532-542`,只在收发失败时回 error)。**它既不检查响应的顶层 Err 与分区 Err,也不在 NOT_COORDINATOR 时刷新 coordinator 缓存** —— 所以 group_lag.go:63-74 自己查两层 Err 是必要的;coordinator 迁移后靠「探失败就 Close、下一轮重建」(group_lag.go:124)恢复,与本节一致。
+> - `NewClusterAdminFromClient(client Client) (ClusterAdmin, error)` `admin.go:173-185`,注释 `:172` 写明 admin 的 `Close()` 会一并关底层 client;`Close` 实现 `:187-189` 就是 `ca.client.Close()`,group_lag.go:122、:166-168 成立。它先调 `client.Controller()`(`:175-178`),失败时直接返回 error、**不关 client** —— group_lag.go:143-146 自己 `client.Close()` 是对的。
+> - V3_0_0_0 下 OffsetFetch 请求是 v7(`offset_fetch_request.go:19-21`;`RequireStable` 默认 false,`:6`)。`OffsetFetchResponse` 定义在 `offset_fetch_response.go:78-83`(`Blocks map[string]map[int32]*OffsetFetchResponseBlock`、`Err KError`);顶层 `Err` 只在 version ≥ 2 时解码(`:208-214`),v7 有。`GetBlock(topic string, partition int32) *OffsetFetchResponseBlock` `:272-282`:Blocks、topic、分区任一缺失都回 nil(group_lag.go:68-71)。`OffsetFetchResponseBlock` `:5-10`(`Offset int64`、`Err KError`),Offset 原样解码(`:15`)、Err 在 `:38-42`。
+> - `type KError int16` `errors.go:172`;`ErrNoError KError = 0` `:177`;`func (err KError) Error() string` `:270` 是值接收者,KError 满足 `error`,group_lag.go:63-64、:72-73 的 `!=` 比较与 `%w` 都合法。测试用到的 `ErrUnknownTopicOrPartition` `:180`、`ErrNotCoordinatorForConsumer` `:193`。
+> - `NewConfig()` `config.go:506`;`Config.Version KafkaVersion` `:496`;`Net.DialTimeout / ReadTimeout / WriteTimeout time.Duration` `:51-53`,默认各 30s(`:514-516`),`Validate` 要求 > 0(`:625-630`);`Metadata.Retry.Max int` `:135-139`,默认 3(`:520`)。`V3_0_0_0` 在 `utils.go:184`(不设时默认 `V2_1_0_0`,`:266`)。与 group_lag.go:132-137 及本节「默认 30s」一致。
+> - 源码证实不了 / 正文没写的:①「没提交过的分区 Offset 回 -1」是 broker 协议语义,sarama 只原样解码(`offset_fetch_response.go:15`)、没有特殊处理,本注未核。②group_lag.go:132-137 用 `NewConfig` 默认值,`Metadata.AllowAutoTopicCreation` 为 true(`config.go:524`);`GetOffset` 遇到元数据缓存里没有的 topic 会按 topic 刷新元数据(`client.go:900`、`:496-510`),请求带上这个标志(`:1022-1031`;V3_0_0_0 下是 Metadata v10,`metadata_request.go:26-27`,标志在 v>3 时编码,`:95-96`)。broker 开着 `auto.create.topics.enable` 且 `num.partitions=1`(本文 :64、`deploy/k8s/README.md:828`),探针若打到一个尚不存在的 topic(例如换代时新 topic 尚未预建),有可能把它自动建成 1 分区 —— 与消费者已有的同类风险(`deploy/k8s/README.md:1193`)同源。broker 对这个标志的实际处理属 Kafka 语义,未核;要不要在 `NewGroupLagProber` 里加 `cfg.Metadata.AllowAutoTopicCreation = false` 由负责人 / 实现者定,本注不改代码。
+> - kafka-go v0.4.47 不在本注范围:§4.4 的 `ErrorLogger` 措辞与组模式分支已在 `docs/ops/audit-topic-generation-bump-runbook.md:197-203` 按 tag 源码核过(本注未复核);R-1 的并发 `CommitMessages` 本注未核。另:本机模块缓存现有 `C:\Users\luyua\go\pkg\mod\github.com\segmentio\kafka-go@v0.4.47`,R-1 与 §4.4 写的「本机没有模块源码」已不成立。
+
+> **待负责人定(2026-10-15;评审成立,不改代码)**:上面结论注倒数第二条的 ②(探针按 sarama 默认 `Metadata.AllowAutoTopicCreation = true` 拉元数据,在 broker 开着 auto.create、`num.partitions=1` 时可能把尚未预建的 topic 建成 1 分区)经评审确认成立,登记为待负责人定:建议在 `NewGroupLagProber`(`go/shared/kafkautil/group_lag.go:132-137`)加 `cfg.Metadata.AllowAutoTopicCreation = false`;要负责人定,是因为关掉后探针打到未预建的 topic 会改成报错(换代窗口里 LagProbeBlind / Error 日志会响),broker 对该标志的实际处理也未核,属于「误建 1 分区 topic」与「换代期间探针报盲」之间的取舍。
+
+> **已定(2026-10-15;已改代码,未经运行验证)**:上一条「待负责人定」—— 负责人 2026-10-15 按「最标准」定为关闭:只读的监控探针不得对被监控系统产生副作用,宁可 topic 缺失时探针报失明,也不冒把 topic 误建成 1 分区的风险。落地:探针的 sarama 配置抽成包内函数 `newGroupLagProberConfig()`(`go/shared/kafkautil/group_lag.go`),在原有 `Version = V3_0_0_0`、拨号 / 读 / 写超时 5s、`Metadata.Retry.Max = 1` 之外加 `cfg.Metadata.AllowAutoTopicCreation = false`,`NewGroupLagProber` 改用它;单测 `TestNewGroupLagProberConfig` 钉住该值与原有各项,`TestComputeGroupLagUnknownTopic` 钉住 topic 不存在时返回 error(`errors.Is(err, sarama.ErrUnknownTopicOrPartition)`)、不当成 0 lag。错误路径(sarama v1.43.1 源码核对):topic 不存在时 `GetOffset` 按 topic 刷新元数据,响应里该 topic 为 UNKNOWN_TOPIC_OR_PARTITION 时 sarama 按 `Metadata.Retry.Max` 重试后回 `ErrUnknownTopicOrPartition`(`client.go:1130-1133`、`:1048-1051`、`:563-577`);`ListConsumerGroupOffsets` 不拉 topic 元数据(`admin.go:1009-1018`),不受此标志影响。`computeGroupLag` 返回 error,`lag_probe.go` 记 `lag_probe_total{result="error"}`、关连接下一轮重建,持续 15 分钟即 `DataServiceAuditLagProbeBlind` —— 现有错误处理不会把它当 0 lag,调用方未改。适用面:data_service 的探针在启动时 `EnsureTopics` 成功之后才起(`go/data_service/internal/kafka/start.go` 的 `Start`),按 runbook 换代碰不到不存在的 topic;会碰到的是运行中 topic 缺失(误删,或删旧代 topic 时仍有实例按旧配置运行)—— 以前可能被探针重建成 1 分区,现在报失明。仍未核 / 未改:broker 收到 false 时对不存在的 topic 实际回哪个错误码(Kafka 语义,未实测);`deploy/k8s/data-service-audit-alerts.yaml` 里 `DataServiceAuditLagProbeBlind` 的 description 列举的失败原因未补「topic 不存在」;消费者(kafka-go)与 scene(librdkafka)的同类自动建 topic 风险不在本次范围,仍靠预建。runbook 同步见 `docs/ops/audit-topic-generation-bump-runbook.md` §2.7 末的注与修订历史。
+
 **`go/data_service/internal/kafka/lag_probe.go`(新):**
 ```go
 type lagTarget struct{ consumer, group, topic string; partitions int32 }
@@ -758,6 +773,8 @@ func runLagProbe(ctx context.Context, brokers []string, interval time.Duration, 
 全部加进 `register()`(`metrics.go:310-325`)。`messages_total` 的 Help(`:104`)不变。
 
 ### 4.7 告警规则(新文件 `deploy/k8s/data-service-audit-alerts.yaml`,PrometheusRule,格式照 `deploy/k8s/owner-epoch-alerts.yaml:1-40`)
+
+> **更正(2026-10-15,负责人「按最标准的去做」;正文不改)**:`DataServiceAuditRetentionGap` 已改为 `max by (consumer) (max_over_time(data_service_kafka_consumer_retention_gap_messages[15m])) > 0`、`for: 0m`,仍为 critical —— 丢数据类告警对探针采到的任何一次缺口都呼叫,不再要求缺口持续 2 分钟。下面代码块里该条的 `for: 2m`、「瞬时假阳性靠 for 滤掉」「消费者跳过并提交后告警随之 resolve」,以及 §4.5 注释、R-13、评审 I-2 里同一条告警的 `for: 2m`,一律按本注理解:瞬时假阳性现在也会呼叫,按丢数据处置后用日志确认条数(可能为 0);日志条数为 0 时多为消费者已读入、尚未提交的消息所在段被删(gauge 可持续多轮探针为正,积压已在删除线上,见 runbook §7);缺口消失后告警还会保持约 15 分钟;缺口整段短于一个探针间隔时仍可能漏,丢失条数仍以日志为准。窗口取值依据(≥ 规则评估间隔 + 探针间隔,待故障演练确认)见规则注释与 runbook §7。规则总数仍为 8 条。
 
 ```yaml
 spec:
@@ -1153,6 +1170,8 @@ data-service 先切到 g2 后不再消费 g1,而 scene 未滚完前仍在写 g1 
 | Q-8 | 一个分区停机是否只停该分区 | 维持全停 / 分区隔离 | 否 | 维持 |
 | Q-9 | 【评审补】data-service 内存护栏:Deployment 加 `GOMEMLIMIT` / 提 `limits.memory`(现 512Mi,`data-service.yaml:105-111`) | 加 GOMEMLIMIT(如 limits 的 80%)/ 提 limits / 都不做(批量保持关) | 否(但 OOMKill 会中断 Load/Save) | 按 §9 第 8 步实测 RSS 峰值定;不拍板就不打开批量 |
 
+> **更正(2026-10-15,针对 Q-1;正文不改)**:选项 c「维持 + 只告警」里的保留期丢失告警已按负责人「按最标准的去做」改口径(见 §4.7 更正注):探针采到的任何一次缺口都立即 critical 呼叫,原 `for: 2m` 的漏报窗口没有了。这只让丢失更难被漏看,不减少丢失;Q-1 的保留策略本身(retention.bytes 与 Kafka 盘量)不因此改变,开服速率下选 c 仍等于接受丢审计。
+
 ---
 
 ## 16. 「万一全服库成了瓶颈」—— 本项范围内的回答
@@ -1194,6 +1213,8 @@ snapshot_consumer_test.go / snapshot_store.go / mysql.go / config.go / data_serv
 kafkautil/topic_init.go / safego / k8s_deploy.ps1 / k8s_deploy_contract.tests.ps1 / gen_docs_index.py / deploy 清单 / C++ 生产端 / Java ConsumerLoop)。
 行号引用除个别 ±2 行外均准确;go-sql-driver v1.9.3(默认 maxAllowedPacket 64MiB、未开 interpolateParams → 大 blob 走 COM_STMT_SEND_LONG_DATA)、
 kafka-go v0.4.47、sarama v1.43.1、data_service `go 1.26.5`(双 `%w` 可用)均已确认。
+
+> **补注(2026-10-15;正文不改)**:上句对 sarama 的「已确认」没有列逐符号依据,交接 `handoff-launch-readiness-and-d1-20261013.md:105` 仍把 G2a 的 sarama / kafka-go API 记为凭记忆。sarama 一半现已对本机模块缓存里同版本源码逐符号核过:签名与语义全部相符,另记一处源码里看到的「探针可能触发自动建 topic」风险,依据见 §4.5 的核对结论注。那是静态对照,不是编译证据,`go build` / `go vet` 仍由 Codex 跑。kafka-go 一半本注未核(范围见同一结论注末条)。
 
 ### 必须改(已改进正文)
 

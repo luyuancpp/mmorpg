@@ -51,6 +51,15 @@ $optionalServices += 'trade'
 # 与 chat / guild / trade 一样只承诺路由服模式可达（D-12）。单独追加，不改上面两行数组。
 $services += 'friend'
 $optionalServices += 'friend'
+# 玩家持久收件箱 player_inbox（docs/design/player-inbox-service.md）：与 trade / friend 同形态的新服务，同样按可选处理，两种情况跳过它：
+#   1. 缺 exe（第 1 步，与 chat / guild / trade / friend 同一逻辑）；
+#   2. MySQL 独占库 mmorpg_player_inbox 未就绪（第 2 步 MySQL 健康后预检：库不存在或 appuser 无权限）。
+# 取舍依据与 trade 相同（AGENTS §11.3），且更强：收件箱本来就是弱依赖 —— scene 不等它（不进 DependencyGate，IB-7），
+# 缺席时只是 GM 处置不生效、scene 的拉取退避，登录 / 匹配 / 进场都不受影响。fail-closed 仍在 player_inbox 进程自身。
+# 调用方是 scene 与运维，不经路由服，与 -GateRouterMode 无关。它向 scene-cmd 发在线提醒，所以登记为 Kafka 命令契约生产者
+#（Test-UsesKafkaCommandContract）。单独追加，不改上面的数组。
+$services += 'player_inbox'
+$optionalServices += 'player_inbox'
 $skippedServices = @()
 $gatewayUrl = 'http://127.0.0.1:8081'
 $oldPath = $env:PATH
@@ -298,7 +307,8 @@ function Invoke-Dev([string]$Label, [string[]]$Arguments) {
 # chat v1 只读写 Redis 历史,trade 资产通道走 gRPC,db/router 也不生产命令主题;不纳入此契约。
 # 校验与落记录共用名单,防止服务被复用后才在第一次推送时暴露旧 generation。
 function Test-UsesKafkaCommandContract([string]$Name) {
-    return $Name -in @('gate','scene','battle','login','scene_manager','player_locator','match','guild','friend')
+    # player_inbox:在线提醒(PlayerInboxNotifyEvent)发往 scene-cmd,与 guild / friend 的推送同为命令主题生产者。
+    return $Name -in @('gate','scene','battle','login','scene_manager','player_locator','match','guild','friend','player_inbox')
 }
 # 已运行进程不会重新读取进程环境；记录本启动器实际拉起的 PID 与启动时间，防止换代后复用旧进程。
 function Assert-RunningCommandContract($Process) {
@@ -532,6 +542,32 @@ try {
                 Write-Host '  Rerun this startup script after creating the database.'
             }
         }
+        if ('player_inbox' -notin $skippedServices) {
+            # 玩家收件箱 player_inbox 的库预检，与上面 trade / friend 同一套做法（取舍依据见脚本顶部 $optionalServices 处）。
+            # 以 appuser 身份查 information_schema.SCHEMATA，一次覆盖「库存在」和「已授权」；密码只在容器内由 sh 展开。
+            $inboxDbProblem = ''
+            try {
+                $inboxDbProbe = Invoke-Docker @('exec','mysql','sh','-c','mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ''mmorpg_player_inbox''"')
+                if ($inboxDbProbe.Code -ne 0) {
+                    $inboxDbProblem = "Query failed (docker exec exit code $($inboxDbProbe.Code))"
+                } elseif ($inboxDbProbe.Out.Trim() -cne 'mmorpg_player_inbox') {
+                    $inboxDbProblem = 'Database missing or appuser lacks permission'
+                }
+            } catch {
+                $inboxDbProblem = "Query exception: $($_.Exception.Message)"
+            }
+            if ($inboxDbProblem) {
+                $skippedServices += 'player_inbox'
+                # 补建命令：PowerShell 7 里整行粘贴执行；root 密码取自容器环境变量，不回显。
+                $inboxDbFixCommand = @'
+  docker --context desktop-linux exec mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS mmorpg_player_inbox DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON mmorpg_player_inbox.* TO appuser@''%''; FLUSH PRIVILEGES;"'
+'@
+                Write-Warning "Player inbox database mmorpg_player_inbox is not ready ($inboxDbProblem); skipping player_inbox (GM sanctions stay pending; scenes back off and players enter normally). Other services will start normally."
+                Write-Host '  Existing MySQL volumes do not rerun deploy/mysql-init. Use root to create the missing database and grant access once (run the following command in PowerShell 7):' -ForegroundColor Yellow
+                Write-Host $inboxDbFixCommand -ForegroundColor Yellow
+                Write-Host '  Rerun this startup script after creating the database.'
+            }
+        }
         Write-Step '3/6 Start persistence services'
         # 命令生产者(含 friend / guild 推送)由 dev_tools 子进程继承与 C++ 消费者相同的契约。
         $env:KAFKA_COMMAND_TOPIC_PARTITIONS = [string]$kafkaContract.Partitions
@@ -598,6 +634,9 @@ try {
         # 好友 friend 单独一批，理由与 trade 同：被跳过（缺 exe，或上面预检发现 mmorpg_friend 未就绪）时不调用，
         # 避免把空列表传给 -GoServices（空 = 全部服务）。friend 不拨任何 Go 服务，起在这里即可。
         if ('friend' -notin $skippedServices) { Start-LocalGoServices @('friend') }
+        # 玩家收件箱 player_inbox 单独一批，理由同 trade / friend（空列表 = 全部服务）。它依赖第 3 步已起的 data_service
+        #（玩家存在校验 / 对账读账本，NonBlock 拨号）；scene 已在第 4 步起来，不等它（弱依赖，IB-7）。
+        if ('player_inbox' -notin $skippedServices) { Start-LocalGoServices @('player_inbox') }
         $gatewayProcess = Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'java.exe' -and $_.CommandLine -and $_.CommandLine.Contains($jar.FullName) } | Select-Object -First 1
         if (-not $gatewayProcess) {
             if (Test-Tcp 8081) { throw '8081 端口被其他程序占用，未启动重复网关。' }

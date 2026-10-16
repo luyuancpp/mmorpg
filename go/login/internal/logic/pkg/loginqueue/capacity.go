@@ -11,14 +11,14 @@
 // deployed zone (PlayerCount=0 across all gates) doesn't permanently lock
 // new players out of the queue.
 //
-// Free-slots calculation deliberately includes admitted-but-not-connected
-// players (the dispatcher's `admitted:zone:{zoneId}` set):
+// Free-slots calculation deliberately includes in-flight placeholders
+// (`admitted:zset:zone:{zoneId}`, see Queue.AdmittedCount):
 //
 //	freeSlots = capacity - online - admitted
 //
 // Without the `admitted` term, a single dispatcher tick would over-issue
-// gate tokens by a factor of (admitted / dispatch_interval) until the next
-// PlayerCount refresh propagates from gate → etcd → GateWatcher.
+// gate tokens until the next PlayerCount refresh propagates from
+// gate → etcd → GateWatcher (the C++ gate reports every 10s).
 package loginqueue
 
 import (
@@ -29,10 +29,12 @@ import (
 
 // CapacityProvider exposes the inputs capacity calculation needs. The
 // concrete implementation in svc wires GateWatcher + ZoneCapacityOverride
-// + the queue's admittedSetKey count.
+// + the queue's in-flight placeholder count.
 type CapacityProvider interface {
 	// CandidatesForZone returns all healthy gates serving zoneID, in
-	// arbitrary order. PickAndSignGateToken sorts by load.
+	// arbitrary order. PickGate / gatePicker choose by load.
+	// 生产实现(svc 的 gateWatcherCapacityProvider)每次都是一次 etcd 前缀读加一次排空标记 MGET,
+	// 不缓存:dispatcher 每个非空拍只调一次;快速通道每次 AssignGate 调一到两次(FreeSlots、签票各一次)。
 	CandidatesForZone(ctx context.Context, zoneID uint32) ([]GateCandidate, error)
 	// ZoneCapacity is the configured ceiling for zoneID, or 0 when
 	// unconfigured (caller falls back to softCap formula).
@@ -46,7 +48,7 @@ type CapacityProvider interface {
 //
 //	online    = sum(candidate.PlayerCount for candidate in zone)
 //	cap       = ZoneCapacity(zone) || ceil(max(online, 1) * softCapMultiplier)
-//	admitted  = SCARD admitted:zone:{zone}
+//	admitted  = live members of admitted:zset:zone:{zone} (expired ones dropped first)
 //	free      = max(0, cap - online - admitted)
 //
 // We use max(online, 1) in the fallback so a brand-new zone (online=0)
@@ -64,6 +66,20 @@ func FreeSlots(
 		err = fmt.Errorf("candidates: %w", cErr)
 		return
 	}
+	return freeSlotsFromCandidates(ctx, candidates, provider, queue, zoneID, softCapMultiplier)
+}
+
+// freeSlotsFromCandidates 是 FreeSlots 去掉取候选的那一步:按调用方已经取到的候选算,公式与错误同 FreeSlots,
+// provider 在这里只用来读 ZoneCapacity。dispatcher 每个非空拍只取一次候选,算容量与批内挑 gate 共用
+// 这一份(见 dispatchOnce);快速通道仍走 FreeSlots。
+func freeSlotsFromCandidates(
+	ctx context.Context,
+	candidates []GateCandidate,
+	provider CapacityProvider,
+	queue *Queue,
+	zoneID uint32,
+	softCapMultiplier float64,
+) (free uint32, capacity uint32, online uint32, admitted uint32, err error) {
 	if len(candidates) == 0 {
 		// No gates → no capacity. Caller surfaces this as an "error" rather
 		// than queueing, since the queue draining requires a healthy gate.

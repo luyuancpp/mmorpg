@@ -85,8 +85,7 @@ func (x *FriendEdgeRecord) GetSinceMs() uint64 {
 	return 0
 }
 
-// 好友请求。一对 (from,to) 只留一行,靠主键做幂等:重复点"加好友"是 REPLACE 语义,
-// 不会堆出多行待处理请求。
+// 好友请求。一对 (from,to) 保留当前代次；重复 pending 不刷新，终态重发换 request_id。
 type FriendRequestRecord struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FromPlayerId  uint64                 `protobuf:"varint,1,opt,name=from_player_id,json=fromPlayerId,proto3" json:"from_player_id,omitempty"`
@@ -100,12 +99,12 @@ type FriendRequestRecord struct {
 	// 不能复用 request_time_ms —— 那是发起时刻,一条刚被拒的老请求会被误判成该立刻清掉。
 	//
 	// 写入方已齐(F2 批,四条路径 / 五条语句,凡是改 status 的语句都同句写本列):
-	//  1. AddFriendRequest 的 upsert(INSERT ... ON DUPLICATE KEY UPDATE ... updated_ms=VALUES(updated_ms));
-	//  2. AcceptFriend 的正向 UPDATE(status=2);
-	//  3. AcceptFriend 的反向 UPDATE(把反向 pending 一并收敛成 accepted);
-	//  4. RejectFriend 的 CAS(status=3);
-	//  5. Block 取消两个方向的 pending(go/friend/internal/data/block_repo.go)。
-	//     前四条在 go/friend/internal/data/friend_repo.go。新增任何改 status 的写路径必须照此同句写本列。
+	//   1. AddFriendRequest 的 upsert(INSERT ... ON DUPLICATE KEY UPDATE ... updated_ms=VALUES(updated_ms));
+	//   2. AcceptFriend 的正向 UPDATE(status=2);
+	//   3. AcceptFriend 的反向 UPDATE(把反向 pending 一并收敛成 accepted);
+	//   4. RejectFriend 的 CAS(status=3);
+	//   5. Block 取消两个方向的 pending(go/friend/internal/data/block_repo.go)。
+	//   前四条在 go/friend/internal/data/friend_repo.go。新增任何改 status 的写路径必须照此同句写本列。
 	//
 	// ⚠ 把 Sweep.Mode 配成 delete 的**剩余前置只有一条**:从旧共享库 mmorpg 搬来的存量行。
 	// 旧表没有这一列,uint64 建出来是 bigint unsigned DEFAULT 0,搬过来的行 updated_ms 会是 0;
@@ -113,7 +112,10 @@ type FriendRequestRecord struct {
 	// request_time_ms(它至少不晚于状态最后一次变更)。
 	// SQL 侧已有保险:go/friend/internal/data/sweep_repo.go 的 SweepTerminalRequests 发现
 	// "终态且 updated_ms=0"的行时只统计不删,并打一条带存量修法 SQL 的错误日志。
-	UpdatedMs     uint64 `protobuf:"varint,5,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	UpdatedMs uint64 `protobuf:"varint,5,opt,name=updated_ms,json=updatedMs,proto3" json:"updated_ms,omitempty"`
+	// 唯一号源 data_service 的 friend_request 号段。历史 pending=0 由服务在同一容量守卫内
+	// 按需补号；补号保留请求时刻，已有非零代次不轮换。0 永远不能被客户端接受或拒绝。
+	RequestId     uint64 `protobuf:"varint,6,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -179,6 +181,13 @@ func (x *FriendRequestRecord) GetStatus() uint32 {
 func (x *FriendRequestRecord) GetUpdatedMs() uint64 {
 	if x != nil {
 		return x.UpdatedMs
+	}
+	return 0
+}
+
+func (x *FriendRequestRecord) GetRequestId() uint64 {
+	if x != nil {
+		return x.RequestId
 	}
 	return 0
 }
@@ -329,7 +338,7 @@ const file_proto_friend_friend_table_proto_rawDesc = "" +
 	"\x10FriendEdgeRecord\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12(\n" +
 	"\x10friend_player_id\x18\x02 \x01(\x04R\x0efriendPlayerId\x12\x19\n" +
-	"\bsince_ms\x18\x03 \x01(\x04R\asinceMs:N\x8a\x92\xf4\x01\x06friend\x92\x92\xf4\x01\x1aplayer_id,friend_player_idڒ\xf4\x01\x10friend_player_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xaa\x02\n" +
+	"\bsince_ms\x18\x03 \x01(\x04R\asinceMs:N\x8a\x92\xf4\x01\x06friend\x92\x92\xf4\x01\x1aplayer_id,friend_player_idڒ\xf4\x01\x10friend_player_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xd4\x02\n" +
 	"\x13FriendRequestRecord\x12$\n" +
 	"\x0efrom_player_id\x18\x01 \x01(\x04R\ffromPlayerId\x12 \n" +
 	"\fto_player_id\x18\x02 \x01(\x04R\n" +
@@ -337,7 +346,9 @@ const file_proto_friend_friend_table_proto_rawDesc = "" +
 	"\x0frequest_time_ms\x18\x03 \x01(\x04R\rrequestTimeMs\x12\x16\n" +
 	"\x06status\x18\x04 \x01(\rR\x06status\x12\x1d\n" +
 	"\n" +
-	"updated_ms\x18\x05 \x01(\x04R\tupdatedMs:l\x8a\x92\xf4\x01\x0efriend_request\x92\x92\xf4\x01\x1bfrom_player_id,to_player_idڒ\xf4\x01%to_player_id,status;status,updated_ms\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xc4\x01\n" +
+	"updated_ms\x18\x05 \x01(\x04R\tupdatedMs\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x06 \x01(\x04R\trequestId:w\x8a\x92\xf4\x01\x0efriend_request\x92\x92\xf4\x01\x1bfrom_player_id,to_player_idڒ\xf4\x010to_player_id,status;status,updated_ms;request_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xc4\x01\n" +
 	"\x14FriendCapacityRecord\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12!\n" +
 	"\ffriend_count\x18\x02 \x01(\rR\vfriendCount\x12\x1d\n" +

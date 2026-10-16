@@ -13,25 +13,6 @@
 #include "services/scene/player/system/player_lifecycle.h" // IsCrossZoneFrozen — cross-zone-readiness-audit.md §11.1
 
 // ---------------------------------------------------------------------------
-// PlayerItemBlockList
-// ---------------------------------------------------------------------------
-
-void PlayerItemBlockList::Block(uint32_t configId)
-{
-	blocked_config_ids_.insert(configId);
-}
-
-void PlayerItemBlockList::Unblock(uint32_t configId)
-{
-	blocked_config_ids_.erase(configId);
-}
-
-bool PlayerItemBlockList::IsBlocked(uint32_t configId) const
-{
-	return blocked_config_ids_.contains(configId);
-}
-
-// ---------------------------------------------------------------------------
 // BagService
 // ---------------------------------------------------------------------------
 
@@ -55,9 +36,7 @@ static Guid PrimaryWrittenGuid(const std::vector<Guid> &writtenGuids)
 // 一个关键区别:整理退役的实例 `size` 恒为 0(数量并进了别的堆,没有消失),
 // 而这里被销毁的实例**数量是真的没了**,所以 quantity 是它当时的真实 size。
 //
-// **无论本次入包最终成功与否都要落。** 淘汰是一次已经提交完成的销毁,
-// 它跟后面那件东西放没放进去无关;只在成功分支里记,就会漏掉"腾了位但入包
-// 仍然失败"那条路径上被销毁的实例 —— 那正是最需要能查的情形。
+// 容器成功提交后才会给出淘汰回执；拒绝的调用保持原包不变，也不产生销毁流水。
 static void LogEvictedInstances(entt::entity playerEntity,
 								const std::vector<DestroyedInstance> &evicted)
 {
@@ -80,9 +59,7 @@ static ItemInstanceInitializer &ItemInstanceInitializerSlot()
 
 // 传给 Bag::AddItem 的那个参数:没装就是 nullptr,Bag 侧一个分支都不用多判。
 //
-// **三个入包入口(AddItem / AddItems×2)各有一套自己的循环,都必须从这里取。**
-// 漏掉任何一套,那条入口发出去的装备就永远没有属性,而且不会有任何报错 ——
-// 新增第四个入包入口时同理。
+// 三个服务入口都把同一个安装回调显式交给容器的统一候选提交，不另造初始化循环。
 static const ItemInstanceInitializer *InstalledItemInstanceInitializer()
 {
 	const ItemInstanceInitializer &slot = ItemInstanceInitializerSlot();
@@ -97,7 +74,6 @@ void BagService::SetItemInstanceInitializer(ItemInstanceInitializer initializer)
 uint32_t BagService::AddItem(
 	entt::entity playerEntity,
 	Bag &bag,
-	const PlayerItemBlockList &blockList,
 	const InitItemParam &param)
 {
 	auto configId = param.itemPBComp.config_id();
@@ -126,14 +102,6 @@ uint32_t BagService::AddItem(
 		return PrintStackAndReturnError(kInvalidParameter);
 	}
 
-	// ── Per-player GM block check ────────────────────────────────────────
-	if (blockList.IsBlocked(configId))
-	{
-		LOG_WARN << "BagService::AddItem: item blocked by GM. config_id="
-				 << configId << " player=" << bag.PlayerGuid();
-		return PrintStackAndReturnError(kInvalidParameter);
-	}
-
 	// ── Delegate to pure container ───────────────────────────────────────
 	// writtenGuids 是 AddItem 的显式回执:本次真实写入的实例 guid。
 	// 不能再回读发号器的"上一个号"—— 同一个发号器还在铸 tx_id / snapshot_id,
@@ -141,11 +109,10 @@ uint32_t BagService::AddItem(
 	std::vector<Guid> writtenGuids;
 	// evicted:临时格满了时被先进先出挤掉的实例(其余包恒为空)。
 	std::vector<DestroyedInstance> evicted;
-	// 末参 = 新铸实例初始化回调(装备掷属性);三套入包循环都要传,见上面的取用函数。
+	// 三个服务入口都向同一候选提交传入装备初始化回调。
 	auto result = bag.AddItem(param, &writtenGuids, &evicted, InstalledItemInstanceInitializer());
 
-	// 先落淘汰流水,再落本次获得的流水 —— 顺序与实际发生顺序一致(腾位在写入
-	// 之前),而且它不看 result:销毁已经提交完成了。
+	// 成功后先记淘汰、再记获得；失败没有淘汰回执，不产生资产流水。
 	LogEvictedInstances(playerEntity, evicted);
 
 	// ── Post-success: transaction log + anomaly detection ────────────────
@@ -168,7 +135,6 @@ uint32_t BagService::AddItem(
 uint32_t BagService::AddItems(
 	entt::entity playerEntity,
 	Bag &bag,
-	const PlayerItemBlockList &blockList,
 	const ItemCountMap &itemsToAdd,
 	TransactionType txType,
 	uint64_t correlationId,
@@ -192,8 +158,9 @@ uint32_t BagService::AddItems(
 		return PrintStackAndReturnError(kInvalidParameter);
 	}
 
-	// ── Block checks first (transactional: reject whole batch if any blocked) ──
-	for (const auto &[configId, count] : itemsToAdd)
+	// 同一批按配置号升序预检、占格和记流水,不依赖请求哈希表的历史插入顺序。
+	const auto ordered = SortedByConfigId(itemsToAdd);
+	for (const auto &[configId, count] : ordered)
 	{
 		if (GainBlockService::IsGainBlocked(GainBlockService::GainType::kItem, configId))
 		{
@@ -202,58 +169,24 @@ uint32_t BagService::AddItems(
 			return PrintStackAndReturnError(kInvalidParameter);
 		}
 
-		if (blockList.IsBlocked(configId))
-		{
-			LOG_WARN << "BagService::AddItems: item blocked by GM. config_id="
-					 << configId << " player=" << bag.PlayerGuid();
-			return PrintStackAndReturnError(kInvalidParameter);
-		}
 	}
 
-	// ── All-or-nothing space check before any mutation ───────────────────
-	// 用 ReserveForBatchAdd 而不是 CheckSpaceFor:后者是纯预测,会抢在淘汰之前
-	// 把整批拒掉,临时格的先进先出在批量路径上就永远不生效了。
-	std::vector<DestroyedInstance> evicted;
-	const uint32_t reserved = bag.ReserveForBatchAdd(itemsToAdd, &evicted);
-	// 腾位可能已经发生(哪怕后面整批失败),销毁必须留痕。
-	LogEvictedInstances(playerEntity, evicted);
-	// 淘汰即"包动过了" —— 那些实例是真的没了,后面整批失败也不会复活。
-	if (mutated != nullptr && !evicted.empty())
-	{
-		*mutated = true;
-	}
-	RETURN_ON_ERROR(reserved);
-
-	// ── Apply per config: Bag::AddItem → transaction log + anomaly ───────
-	for (const auto &[configId, count] : itemsToAdd)
-	{
-		InitItemParam param;
-		param.itemPBComp.set_config_id(configId);
-		param.itemPBComp.set_size(count);
-
-		std::vector<Guid> writtenGuids;
-		// 位已经腾够,这里正常不会再淘汰;真淘汰了也要留痕(说明上面的规划漏了什么)。
-		std::vector<DestroyedInstance> lateEvicted;
-		// count = N 的不可叠加物品在 Bag 的逐件循环里各调一次初始化回调,每件属性各掷各的。
-		auto result = bag.AddItem(param, &writtenGuids, &lateEvicted,
-								  InstalledItemInstanceInitializer());
-		LogEvictedInstances(playerEntity, lateEvicted);
-		// 写出了 guid = 这一项真的落进包里了;迟到的淘汰同样是改动。
-		if (mutated != nullptr && (!writtenGuids.empty() || !lateEvicted.empty()))
-		{
-			*mutated = true;
-		}
-		if (result != kSuccess)
-		{
-			return result;
-		}
-
-		TransactionLogSystem::LogItemCreate(
-			playerEntity, PrimaryWrittenGuid(writtenGuids),
-			configId, count, txType, correlationId, extra);
-
-		AnomalyDetector::RecordItemGain(playerEntity, configId, count);
-	}
+    // 容器一次性提交整批，返回每项真实去处；失败不淘汰、不合堆，也不落任何资产流水。
+    std::vector<DestroyedInstance> evicted;
+    std::vector<GuidVector> written;
+    RETURN_ON_ERROR(bag.AddItems(itemsToAdd, &evicted, &written, InstalledItemInstanceInitializer()));
+    if (mutated != nullptr)
+    {
+        *mutated = !itemsToAdd.empty();
+    }
+    LogEvictedInstances(playerEntity, evicted);
+    for (std::size_t i = 0; i < ordered.size(); ++i)
+    {
+        const auto &[configId, count] = ordered[i];
+        TransactionLogSystem::LogItemCreate(
+            playerEntity, PrimaryWrittenGuid(written[i]), configId, count, txType, correlationId, extra);
+        AnomalyDetector::RecordItemGain(playerEntity, configId, count);
+    }
 
 	return kSuccess;
 }
@@ -261,7 +194,6 @@ uint32_t BagService::AddItems(
 uint32_t BagService::AddItems(
 	entt::entity playerEntity,
 	Bag &bag,
-	const PlayerItemBlockList &blockList,
 	const std::vector<InitItemParam> &itemsToAdd,
 	TransactionType txType)
 {
@@ -286,51 +218,20 @@ uint32_t BagService::AddItems(
 			return PrintStackAndReturnError(kInvalidParameter);
 		}
 
-		if (blockList.IsBlocked(configId))
-		{
-			LOG_WARN << "BagService::AddItems: item blocked by GM. config_id="
-					 << configId << " player=" << bag.PlayerGuid();
-			return PrintStackAndReturnError(kInvalidParameter);
-		}
 	}
 
-	// ── All-or-nothing space pre-check before any mutation ───────────────
-	// 走 **vector 重载**,不要自己汇总成 ItemCountMap 再调 —— 那样会丢掉"预设 guid
-	// 撞车"这道预检(它需要看到每一件的 guid),邮件附件重放时临时格会先挤掉旧物、
-	// 再在写到一半时撞 guid 失败。全部纯预检都在这个入口里、在腾位之前。
-	std::vector<DestroyedInstance> evicted;
-	const uint32_t reserved = bag.ReserveForBatchAdd(itemsToAdd, &evicted);
-	LogEvictedInstances(playerEntity, evicted);
-	RETURN_ON_ERROR(reserved);
-
-	// ── Apply per piece, interleaving the transaction log ────────────────
-	// 逐件添加,每件拿自己的写入回执,于是一条流水对应一件物品。
-	// 回执已经覆盖"沿用预设 guid"的情形(AddNonStackableItem 对沿用与新铸一视同仁地记录),
-	// 所以这里不必再单独判断 preassignedGuid —— 那个分支正是旧实现为了绕开残值不准而打的补丁。
-	for (const auto &param : itemsToAdd)
-	{
-		std::vector<Guid> writtenGuids;
-		std::vector<DestroyedInstance> lateEvicted;
-		// 这条路径的每一件都带着完整 ItemComp:已带 equip 段的(邮件回流的既有装备)
-		// 在 Bag 侧按 has_equip() 跳过、绝不重掷;没带的新装备照常初始化。
-		auto result = bag.AddItem(param, &writtenGuids, &lateEvicted,
-								  InstalledItemInstanceInitializer());
-		LogEvictedInstances(playerEntity, lateEvicted);
-		if (result != kSuccess)
-		{
-			return result;
-		}
-
-		TransactionLogSystem::LogItemCreate(
-			playerEntity, PrimaryWrittenGuid(writtenGuids),
-			param.itemPBComp.config_id(),
-			param.itemPBComp.size(),
-			txType);
-
-		AnomalyDetector::RecordItemGain(
-			playerEntity, param.itemPBComp.config_id(),
-			param.itemPBComp.size());
-	}
+    // 完整实例按输入顺序提交；预设身份、equip presence 与每项流水关联原样保留。
+    std::vector<DestroyedInstance> evicted;
+    std::vector<GuidVector> written;
+    RETURN_ON_ERROR(bag.AddItems(itemsToAdd, &evicted, &written, InstalledItemInstanceInitializer()));
+    LogEvictedInstances(playerEntity, evicted);
+    for (std::size_t i = 0; i < itemsToAdd.size(); ++i)
+    {
+        const auto &item = itemsToAdd[i].itemPBComp;
+        TransactionLogSystem::LogItemCreate(
+            playerEntity, PrimaryWrittenGuid(written[i]), item.config_id(), item.size(), txType);
+        AnomalyDetector::RecordItemGain(playerEntity, item.config_id(), item.size());
+    }
 
 	return kSuccess;
 }
@@ -432,7 +333,7 @@ uint32_t BagService::RemoveItemsExact(
 	// 0 数量的条目:底层的全或无预检(ItemStore::HasAll)只在遍历到同 config 的实例时才把
 	// 需求项划掉,于是 {X: 0} 在玩家持有 X 时放行、一个 X 都没有时报不足 —— 结果取决于
 	// 玩家恰好有什么,而不是取决于请求本身。入包侧为同一类问题加过前置拒绝
-	// (Bag::ReserveForBatchAdd 的零数量预检),这里同理:整批拒,不替调用方猜它想扣什么。
+	// (Bag::AddItems 的零数量预检),这里同理:整批拒,不替调用方猜它想扣什么。
 	for (const auto &[configId, count] : itemsToRemove)
 	{
 		if (count == 0)
@@ -470,8 +371,7 @@ uint32_t BagService::RemoveItemsExact(
 	// 追溯线索。注意 LogItemDestroy 的 txType 在**最后**(与 LogItemCreate 的顺序不同),
 	// 按 (correlationId, extra, txType) 传,别照着入包那边的顺序抄。
 	//
-	// 被抽光的堆以 size == 0 留在包里,**这里不整理**:整理会销毁实例、让调用方手里的
-	// 实例指针失效,放在提交段的哪一步由调用方决定(见头文件)。
+    // 被抽光的实例及其槽位已经释放，流水仍以扣除回执中的原 guid 关联；其余格位不重排。
 	for (const auto &entry : drained)
 	{
 		TransactionLogSystem::LogItemDestroy(

@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -68,16 +69,64 @@ func defaultTestLimits() testLimits {
 // 所以这里做一次显式转换,而不是把两个结构合并 —— 合并会让 AddFriendRequest 的签名
 // 多出一个它根本不看的字段。
 func callAddFriend(ctx context.Context, repo *FriendRepo, from, to uint64, lim testLimits) error {
-	return repo.AddFriendRequest(ctx, from, to, AddFriendLimits{
+	_, err := callAddFriendChange(ctx, repo, from, to, lim)
+	return err
+}
+
+func callAddFriendChange(ctx context.Context, repo *FriendRepo, from, to uint64, lim testLimits) (RequestChange, error) {
+	return repo.CreateRequest(ctx, from, to, AddFriendLimits{
 		MaxFriends:          lim.MaxFriends,
 		MaxPendingRequests:  lim.MaxPendingRequests,
 		MaxIncomingRequests: lim.MaxIncomingRequests,
 	})
 }
 
+// 既有锁序/容量用例的测试适配：先取得用户在列表中看到的真实代次，再调用唯一生产入口。
+// 此函数只在测试包内，生产不存在按玩家对接受的旁路。
+func callAcceptFriend(ctx context.Context, repo *FriendRepo, from, to uint64, max uint32) error {
+	_, err := callAcceptFriendChange(ctx, repo, from, to, max)
+	return err
+}
+
+func callAcceptFriendChange(ctx context.Context, repo *FriendRepo, from, to uint64, max uint32) (RequestChange, error) {
+	id, err := requestIDForTest(ctx, repo, from, to)
+	if err != nil {
+		return RequestChange{}, err
+	}
+	return repo.AcceptRequest(ctx, id, to, max)
+}
+
+func callRejectFriend(ctx context.Context, repo *FriendRepo, from, to uint64) error {
+	id, err := requestIDForTest(ctx, repo, from, to)
+	if err != nil {
+		return err
+	}
+	_, err = repo.RejectRequest(ctx, id, to)
+	return err
+}
+
+func requestIDForTest(ctx context.Context, repo *FriendRepo, from, to uint64) (uint64, error) {
+	var id uint64
+	err := repo.db.QueryRowContext(ctx, "SELECT request_id FROM friend_request WHERE from_player_id=? AND to_player_id=?", from, to).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	return id, err
+}
+
+var testRequestIDs atomic.Uint64
+
 // callBlock / callUnblock —— 规格 §3.4。Block 是 FriendRepo 的方法(block_repo.go 只是分文件):
 // 它要失效双方的好友缓存、要复用同一个容量守卫,与 FriendRepo 共用 db/rdb 是最省的形状。
+//
+// callBlock 丢掉 BlockEffect:并发锁序、容量行回收这类只关心"成没成"的用例不必每处都接两个返回值。
+// 要断言实际效果(落地摘要 §3.3 给被拉黑方 bump 的依据)的用例用 callBlockEffect。
 func callBlock(ctx context.Context, repo *FriendRepo, me, target uint64, lim testLimits) error {
+	_, err := callBlockEffect(ctx, repo, me, target, lim)
+	return err
+}
+
+func callBlockEffect(ctx context.Context, repo *FriendRepo, me, target uint64, lim testLimits) (BlockEffect, error) {
 	return repo.Block(ctx, me, target, lim.MaxBlocks)
 }
 
@@ -223,6 +272,7 @@ const testRecommendStatementTimeout = 30 * time.Second
 // 见 recommend_repo_tidb_test.go。
 func testFriendRepoOptions(listReadHardLimit uint32) FriendRepoOptions {
 	return FriendRepoOptions{
+		NextRequestID:             func(context.Context) (uint64, error) { return testRequestIDs.Add(1), nil },
 		DefaultTTL:                time.Minute,
 		ListReadHardLimit:         listReadHardLimit,
 		SQLDialect:                sqldialect.MySQL,
@@ -410,9 +460,11 @@ func resetFriendIntegrationSchema(t *testing.T, ctx context.Context, db *sql.DB)
             request_time_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
             status INT UNSIGNED NOT NULL DEFAULT 0,
             updated_ms BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            request_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
             PRIMARY KEY (from_player_id, to_player_id),
             KEY idx_to_player (to_player_id, status),
-            KEY idx_status_updated (status, updated_ms)
+            KEY idx_status_updated (status, updated_ms),
+            KEY idx_request_id (request_id)
         ) ENGINE=InnoDB`,
 		`CREATE TABLE friend_capacity (
             player_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
@@ -457,8 +509,8 @@ func seedPending(t *testing.T, ctx context.Context, db *sql.DB, from, to uint64)
 	t.Helper()
 	now := time.Now().UnixMilli()
 	_, err := db.ExecContext(ctx,
-		`INSERT INTO friend_request (from_player_id, to_player_id, request_time_ms, status, updated_ms)
-		 VALUES (?, ?, ?, 1, ?)`, from, to, now, now)
+		`INSERT INTO friend_request (from_player_id, to_player_id, request_time_ms, status, updated_ms, request_id)
+		 VALUES (?, ?, ?, 1, ?, ?)`, from, to, now, now, testRequestIDs.Add(1))
 	require.NoError(t, err)
 }
 
@@ -537,7 +589,7 @@ func TestAcceptFriend_ConcurrentHardLimit(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			<-start
-			results <- repo.AcceptFriend(ctx, fromID, targetID, maxFriends)
+			results <- callAcceptFriend(ctx, repo, fromID, targetID, maxFriends)
 		}()
 	}
 	close(start)
@@ -575,8 +627,9 @@ func TestAcceptFriend_ConcurrentHardLimit(t *testing.T) {
 	require.NoError(t, db.QueryRowContext(ctx,
 		"SELECT from_player_id FROM friend_request WHERE to_player_id = ? AND status = 2 LIMIT 1",
 		targetID).Scan(&acceptedFrom))
-	assert.ErrorIs(t, repo.AcceptFriend(ctx, acceptedFrom, targetID, 100), ErrRequestNotFound,
-		"已接受申请不能被二次消费")
+	replayed, replayErr := callAcceptFriendChange(ctx, repo, acceptedFrom, targetID, 100)
+	require.NoError(t, replayErr)
+	assert.False(t, replayed.Changed, "已接受申请的成功重放不能二次消费")
 
 	var rejectedFrom uint64
 	require.NoError(t, db.QueryRowContext(ctx,
@@ -586,11 +639,11 @@ func TestAcceptFriend_ConcurrentHardLimit(t *testing.T) {
 		"UPDATE friend_request SET status=3 WHERE from_player_id=? AND to_player_id=?",
 		rejectedFrom, targetID)
 	require.NoError(t, err)
-	assert.ErrorIs(t, repo.AcceptFriend(ctx, rejectedFrom, targetID, 100), ErrRequestNotFound,
+	assert.ErrorIs(t, callAcceptFriend(ctx, repo, rejectedFrom, targetID, 100), ErrRequestNotFound,
 		"已拒绝申请不能建立好友关系")
 
 	const neverRequested uint64 = 777777
-	assert.ErrorIs(t, repo.AcceptFriend(ctx, neverRequested, targetID, 100), ErrRequestNotFound,
+	assert.ErrorIs(t, callAcceptFriend(ctx, repo, neverRequested, targetID, 100), ErrRequestNotFound,
 		"从未申请的玩家不能建立好友关系")
 	assert.Zero(t, mustCount(t, ctx, db,
 		"SELECT COUNT(*) FROM friend_capacity WHERE player_id = ?", neverRequested),
@@ -704,12 +757,11 @@ func TestAddFriend_RejectsDuplicateAndExistingFriendship(t *testing.T) {
 
 	const a, b uint64 = 24001, 24002
 	require.NoError(t, callAddFriend(ctx, repo, a, b, lim))
-	assert.ErrorIs(t, callAddFriend(ctx, repo, a, b, lim), ErrRequestAlreadySent,
-		"同一方向的 pending 申请不得重复计一条")
+	require.NoError(t, callAddFriend(ctx, repo, a, b, lim), "同一pending成功重放，不重复计数")
 	assert.Equal(t, int64(1), mustCount(t, ctx, db,
 		"SELECT COUNT(*) FROM friend_request WHERE from_player_id=? AND to_player_id=?", a, b))
 
-	require.NoError(t, repo.AcceptFriend(ctx, a, b, lim.MaxFriends))
+	require.NoError(t, callAcceptFriend(ctx, repo, a, b, lim.MaxFriends))
 	assert.ErrorIs(t, callAddFriend(ctx, repo, a, b, lim), ErrAlreadyFriends)
 	assertFriendInvariants(t, ctx, db)
 }
@@ -732,7 +784,7 @@ func TestAddFriend_WritesUpdatedMs(t *testing.T) {
 	_, err := db.ExecContext(ctx,
 		"UPDATE friend_request SET updated_ms=0 WHERE from_player_id=? AND to_player_id=?", a, b)
 	require.NoError(t, err)
-	require.NoError(t, repo.AcceptFriend(ctx, a, b, lim.MaxFriends))
+	require.NoError(t, callAcceptFriend(ctx, repo, a, b, lim.MaxFriends))
 	assert.NotZero(t, readRequestUpdatedMs(t, ctx, db, a, b), "AcceptFriend 的 status=2 必须同时写 updated_ms")
 
 	const c, d uint64 = 25003, 25004
@@ -740,7 +792,7 @@ func TestAddFriend_WritesUpdatedMs(t *testing.T) {
 	_, err = db.ExecContext(ctx,
 		"UPDATE friend_request SET updated_ms=0 WHERE from_player_id=? AND to_player_id=?", c, d)
 	require.NoError(t, err)
-	require.NoError(t, repo.RejectFriend(ctx, c, d))
+	require.NoError(t, callRejectFriend(ctx, repo, c, d))
 	assert.NotZero(t, readRequestUpdatedMs(t, ctx, db, c, d), "RejectFriend 的 status=3 必须同时写 updated_ms")
 }
 
@@ -764,7 +816,7 @@ func TestAcceptFriend_AlsoResolvesReversePending(t *testing.T) {
 	require.NoError(t, err)
 	require.Zero(t, readRequestUpdatedMs(t, ctx, db, b, a), "前置条件:归零必须真的生效,否则下面的 NotZero 没有鉴别力")
 
-	require.NoError(t, repo.AcceptFriend(ctx, a, b, 100))
+	require.NoError(t, callAcceptFriend(ctx, repo, a, b, 100))
 
 	assert.Equal(t, int64(2), readRequestStatus(t, ctx, db, a, b), "正向申请必须变 accepted")
 	assert.Equal(t, int64(2), readRequestStatus(t, ctx, db, b, a), "反向 pending 必须被一并收敛,不能留孤儿")
@@ -786,7 +838,7 @@ func TestAcceptFriend_RejectsBlockedPair(t *testing.T) {
 	seedPending(t, ctx, db, a, b)
 	seedBlock(t, ctx, db, b, a)
 
-	assert.ErrorIs(t, repo.AcceptFriend(ctx, a, b, 100), ErrBlocked)
+	assert.ErrorIs(t, callAcceptFriend(ctx, repo, a, b, 100), ErrBlocked)
 	assert.Zero(t, mustCount(t, ctx, db, "SELECT COUNT(*) FROM friend"))
 
 	// 这里**不能**调 assertFriendInvariants:夹具直写 friend_block、绕过了 Block(),故意造出
@@ -813,7 +865,11 @@ func TestRemoveFriend_NonFriendDoesNotCreateCapacityRows(t *testing.T) {
 
 	const me, stranger uint64 = 28001, 28002
 	// 幂等语义:删一个本来就不是好友的人不报错(客户端重试、双击都会走到这里)。
-	require.NoError(t, repo.RemoveFriend(ctx, me, stranger))
+	removed, err := repo.RemoveFriend(ctx, me, stranger)
+	require.NoError(t, err)
+	// removed 是 logic 给双方 bump 落地摘要的唯一依据(设计 §3.3):删非好友报成 true,
+	// 客户端就能用任意 target 在核心 Redis 上造出 30 天的摘要键。
+	assert.False(t, removed, "删非好友必须报告「没删」")
 	assert.Zero(t, mustCount(t, ctx, db,
 		"SELECT COUNT(*) FROM friend_capacity WHERE player_id IN (?, ?)", me, stranger),
 		"对非好友调用 RemoveFriend 不得创建 friend_capacity 行(客户端可无界撑大该表)")
@@ -821,11 +877,18 @@ func TestRemoveFriend_NonFriendDoesNotCreateCapacityRows(t *testing.T) {
 	// 真是好友时照常工作,且计数要减回去。
 	lim := defaultTestLimits()
 	seedPending(t, ctx, db, me, stranger)
-	require.NoError(t, repo.AcceptFriend(ctx, me, stranger, lim.MaxFriends))
+	require.NoError(t, callAcceptFriend(ctx, repo, me, stranger, lim.MaxFriends))
 	require.Equal(t, int64(1), mustCount(t, ctx, db,
 		"SELECT friend_count FROM friend_capacity WHERE player_id=?", me))
-	require.NoError(t, repo.RemoveFriend(ctx, me, stranger))
+	removed, err = repo.RemoveFriend(ctx, me, stranger)
+	require.NoError(t, err)
+	assert.True(t, removed, "真删掉了好友边必须报告「删了」,否则双方的摘要漏 bump(违反 L-1)")
 	assert.Zero(t, mustCount(t, ctx, db, "SELECT COUNT(*) FROM friend WHERE player_id=?", me))
+
+	// 再删一次:边已经没了,幂等成功但必须报告「没删」(重试 / 双击不该让对方的摘要再变一次)。
+	removed, err = repo.RemoveFriend(ctx, me, stranger)
+	require.NoError(t, err)
+	assert.False(t, removed, "重复删除没有删掉任何边,不得报告「删了」")
 	assertFriendInvariants(t, ctx, db)
 }
 
@@ -1013,7 +1076,8 @@ func TestDeleteFriendEdges_RefreshesCreatedMsOnDecrement(t *testing.T) {
 		write func(ctx context.Context, repo *FriendRepo, a, b uint64) error
 	}{
 		{"RemoveFriend", 46101, 46102, func(ctx context.Context, repo *FriendRepo, a, b uint64) error {
-			return repo.RemoveFriend(ctx, a, b)
+			_, err := repo.RemoveFriend(ctx, a, b)
+			return err
 		}},
 		{"Block", 46103, 46104, func(ctx context.Context, repo *FriendRepo, a, b uint64) error {
 			return callBlock(ctx, repo, a, b, defaultTestLimits())
@@ -1137,11 +1201,13 @@ func TestGuardedWrites_SucceedAfterCapacityRowsWereReclaimed(t *testing.T) {
 	reclaim()
 	require.Zero(t, mustCount(t, ctx, db, "SELECT COUNT(*) FROM friend_capacity"), "前置条件:容量行确实被删光了")
 
-	require.NoError(t, repo.AcceptFriend(ctx, a, b, lim.MaxFriends), "AcceptFriend 必须自己把容量行补回来")
+	require.NoError(t, callAcceptFriend(ctx, repo, a, b, lim.MaxFriends), "AcceptFriend 必须自己把容量行补回来")
 	assert.Equal(t, int64(1), mustCount(t, ctx, db, "SELECT friend_count FROM friend_capacity WHERE player_id=?", a))
 	assert.Equal(t, int64(1), mustCount(t, ctx, db, "SELECT friend_count FROM friend_capacity WHERE player_id=?", b))
 
-	require.NoError(t, repo.RemoveFriend(ctx, a, b))
+	removed, err := repo.RemoveFriend(ctx, a, b)
+	require.NoError(t, err)
+	require.True(t, removed, "前置条件:a、b 刚由 AcceptFriend 结为好友,这次必须真删掉了边")
 	reclaim()
 	require.NoError(t, callBlock(ctx, repo, a, b, lim), "Block 必须自己把容量行补回来")
 	require.NoError(t, callUnblock(ctx, repo, a, b))
@@ -1153,11 +1219,13 @@ func TestGuardedWrites_SucceedAfterCapacityRowsWereReclaimed(t *testing.T) {
 	// 但 ensure 按权威边数补行的承诺对它同样成立)。
 	// a 另有一个无关好友在场:只有这样"按权威边数 2 补行再减 1"与"猜 0 补行、减法被下溢保护夹住"
 	// 才会得出不同的结果(1 对 0)。只有 a-b 一条边时两种实现都得 0,断言没有鉴别力。
-	require.NoError(t, repo.AcceptFriend(ctx, b, a, lim.MaxFriends))
+	require.NoError(t, callAcceptFriend(ctx, repo, b, a, lim.MaxFriends))
 	seedFriendEdges(t, ctx, db, a, 48101)
-	_, err := db.ExecContext(ctx, "DELETE FROM friend_capacity WHERE player_id IN (?, ?)", a, b)
+	_, err = db.ExecContext(ctx, "DELETE FROM friend_capacity WHERE player_id IN (?, ?)", a, b)
 	require.NoError(t, err)
-	require.NoError(t, repo.RemoveFriend(ctx, a, b), "RemoveFriend 必须按权威边数补行后再删边减计数")
+	removed, err = repo.RemoveFriend(ctx, a, b)
+	require.NoError(t, err, "RemoveFriend 必须按权威边数补行后再删边减计数")
+	assert.True(t, removed, "缺容量行时补行之后照常删边,必须报告「删了」")
 	assert.Zero(t, mustCount(t, ctx, db,
 		"SELECT COUNT(*) FROM friend WHERE (player_id=? AND friend_player_id=?) OR (player_id=? AND friend_player_id=?)",
 		a, b, b, a))
@@ -1314,7 +1382,11 @@ func TestCacheKeysAreClusterSafe(t *testing.T) {
 				"键与 generation 键的 hash tag 必须一致,否则两条 Lua 在 Cluster 上回 CROSSSLOT")
 			assert.Contains(t, tag, strconv.FormatUint(playerID, 10),
 				"hash tag 必须含 player_id,否则所有玩家的缓存挤在同一个 slot 上(热点)")
-			assert.Contains(t, key, ":v3",
+			version := ":v3"
+			if name == "pendingRequests" {
+				version = ":v4"
+			}
+			assert.Contains(t, key, version,
 				"键名改了就要抬版本:不抬版本会继续命中旧键名时代写进去的快照")
 		})
 	}

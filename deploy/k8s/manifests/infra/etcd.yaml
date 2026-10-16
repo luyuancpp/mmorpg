@@ -111,6 +111,11 @@ spec:
           # 到 bitnamilegacy 只读仓库)。bitnamilegacy/etcd 是同一套镜像的归档,
           # ALLOW_NONE_AUTHENTICATION / ETCD_* 环境变量语义与数据目录 /bitnami/etcd/data
           # 完全兼容;deploy/docker-compose.yml 已改同一镜像,这里保持口径一致。
+          # 钉 tag@摘要、加 ETCD_AUTO_COMPACTION_* / ETCD_QUOTA_BACKEND_BYTES env、加抓取注解都会改 Pod 模板、滚动 3 个成员,
+          # 属 P0-C 阶段 2:必须等 C++ etcd 流重建(docs/design/grpc-muduo-transport.md §10.2 第 2 批)验证通过之后,
+          # 与 etcd-maintenance.yaml、compose 同批改,步骤见 docs/ops/etcd-maintenance-runbook.md「阶段 2」。
+          # 在那之前 MVCC 压缩由 etcd-maintenance.yaml 的 CronJob etcd-compact 负责;
+          # tools/scripts/tests/etcd_maintenance_contract.tests.ps1 断言这里还没有压缩 / 配额 env,防止提前滚动。
           image: bitnamilegacy/etcd:latest
           imagePullPolicy: IfNotPresent
           env:
@@ -188,6 +193,8 @@ spec:
   # 每个成员一块盘。不写 storageClassName = 用集群默认 StorageClass(kind 的 local-path、
   # 云上的默认盘)。8Gi 对本项目的 key 量(节点注册、lease、发号水位、killswitch)是大冗余;
   # 真正要盯的是 etcd 自身 2GB 默认 quota 与 compaction,不是 PVC 大小。
+  # compaction 现由 etcd-maintenance.yaml 的 CronJob etcd-compact 做(P0-C 阶段 1);quota 仍是默认值,阶段 2 改成
+  # 3GiB 时要满足「quota × 2 + 1Gi ≤ 这里的 storage」(defrag 需要临时空间),见 docs/ops/etcd-maintenance-runbook.md。
   # 注意:删除 StatefulSet **不会**删这些 PVC(删 namespace 才会)。infra-down 是删 namespace,
   # 所以 infra-down → infra-up 之后是一套全新的空 etcd。
   volumeClaimTemplates:

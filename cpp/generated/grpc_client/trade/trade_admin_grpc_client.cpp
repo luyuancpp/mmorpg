@@ -31,9 +31,19 @@ using AsyncTradeAdminSeedListingHandlerFunctionType =
 AsyncTradeAdminSeedListingHandlerFunctionType AsyncTradeAdminSeedListingHandler;
 AsyncTradeAdminSeedListingFailedHandlerFunctionType AsyncTradeAdminSeedListingFailedHandler;
 
-void AsyncCompleteGrpcTradeAdminSeedListing(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<AsyncTradeAdminSeedListingGrpcClient*>(got_tag));
+void CompleteTradeAdminSeedListing(AsyncTradeAdminSeedListingGrpcClient* call) {
+    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
+    const auto release = [](AsyncTradeAdminSeedListingGrpcClient* completed) {
+        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
+        TradeAdminSeedListingPool.destroy(completed);
+    };
+    const std::unique_ptr<AsyncTradeAdminSeedListingGrpcClient, decltype(release)> owner(call, release);
+    if (call->done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
+        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
+        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+        return;
+    }
     if (call->status.ok()) {
         if (AsyncTradeAdminSeedListingHandler) {
             AsyncTradeAdminSeedListingHandler(call->context, call->reply);
@@ -55,36 +65,64 @@ void AsyncCompleteGrpcTradeAdminSeedListing(entt::registry& registry, entt::enti
                   << " msg=" << call->status.error_message();
     }
 
-	TradeAdminSeedListingPool.destroy(call);
+}
+
+void AsyncCompleteGrpcTradeAdminSeedListing(entt::registry&, entt::entity,
+                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
+    auto* call = static_cast<AsyncTradeAdminSeedListingGrpcClient*>(got_tag);
+    if (!ok && call->status.ok()) {
+        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
+    }
+    CompleteTradeAdminSeedListing(call);
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void StartTradeAdminSeedListingCall(entt::registry& registry, entt::entity nodeEntity, const ::trade::SeedListingRequest& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<::trade::SeedListingResponse> done) {
+    auto call(TradeAdminSeedListingPool.construct());
+    for (const auto& [key, value] : metadata) {
+        call->context.AddMetadata(key, Base64Encode(value));
+    }
+    call->sentMetadata = std::move(metadata);
+    call->request = request;
+    call->done = std::move(done);
+    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
+    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
+    auto* stub = registry.valid(nodeEntity) ? registry.try_get<TradeAdminStubPtr>(nodeEntity) : nullptr;
+    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
+    if (runtime != nullptr) call->runtime = *runtime;
+    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
+        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
+        QueueGrpcClientCompletion(call->runtime, [call] { CompleteTradeAdminSeedListing(call); });
+        return;
+    }
+    call->runtime->calls.insert(&call->context);
+    call->response_reader = (*stub)->PrepareAsyncSeedListing(&call->context, call->request, cq);
+    call->response_reader->StartCall();
+    GrpcTag* got_tag(tagPool.construct(TradeAdminSeedListingMessageId, (void*)call));
+    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+}
+
+void SendTradeAdminSeedListing(entt::registry& registry, entt::entity nodeEntity, const ::trade::SeedListingRequest& request,
+                                            GrpcDone<::trade::SeedListingResponse> done, const GrpcCallOptions& options) {
+    StartTradeAdminSeedListingCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
 void SendTradeAdminSeedListing(entt::registry& registry, entt::entity nodeEntity, const ::trade::SeedListingRequest& request) {
-
-    SendTradeAdminSeedListing(registry, nodeEntity, request, {}, {});
-
+    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    SendTradeAdminSeedListing(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
 void SendTradeAdminSeedListing(entt::registry& registry, entt::entity nodeEntity, const ::trade::SeedListingRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
 
-    auto call(TradeAdminSeedListingPool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<TradeAdminStubPtr>(nodeEntity)
-        ->PrepareAsyncSeedListing(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(TradeAdminSeedListingMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    StartTradeAdminSeedListingCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 
 }
 
@@ -94,11 +132,12 @@ void SendTradeAdminSeedListing(entt::registry& registry, entt::entity nodeEntity
 }
 #pragma endregion
 
-void HandleTradeAdminCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
+void HandleTradeAdminCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag) {
+        const auto releaseTag = [](GrpcTag* tag) { tagPool.destroy(tag); };
+        const std::unique_ptr<GrpcTag, decltype(releaseTag)> owner(grpcTag, releaseTag);
         switch (grpcTag->messageId) {
         case TradeAdminSeedListingMessageId:
-            AsyncCompleteGrpcTradeAdminSeedListing(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
+            AsyncCompleteGrpcTradeAdminSeedListing(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
             break;
         default:
             break;

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
 #include "proto/scene/player_scene.pb.h"
 
 #include "rpc/player_service_interface.h"
@@ -38,6 +41,12 @@ public:
     static void TravelToZone(entt::entity player,
         const ::TravelToZoneRequest* request,
         ::TravelToZoneResponse* response);
+    static void GetSyncDigest(entt::entity player,
+        const ::GetSyncDigestRequest* request,
+        ::Empty* response);
+    static void NotifySyncDigest(entt::entity player,
+        const ::SyncDigestS2C* request,
+        ::Empty* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         entt::entity player,
@@ -48,10 +57,11 @@ public:
         {
         case 0:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::EnterSceneC2SResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             EnterScene(player,
                 static_cast<const ::EnterSceneC2SRequest*>(request),
                 static_cast<::EnterSceneC2SResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::EnterSceneC2SResponse*>(response));
 			}
             break;
         case 1:
@@ -105,10 +115,25 @@ public:
             break;
         case 8:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::TravelToZoneResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             TravelToZone(player,
                 static_cast<const ::TravelToZoneRequest*>(request),
                 static_cast<::TravelToZoneResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::TravelToZoneResponse*>(response));
+			}
+            break;
+        case 9:
+			{
+            GetSyncDigest(player,
+                static_cast<const ::GetSyncDigestRequest*>(request),
+                static_cast<::Empty*>(response));
+			}
+            break;
+        case 10:
+			{
+            NotifySyncDigest(player,
+                static_cast<const ::SyncDigestS2C*>(request),
+                static_cast<::Empty*>(response));
 			}
             break;
         default:

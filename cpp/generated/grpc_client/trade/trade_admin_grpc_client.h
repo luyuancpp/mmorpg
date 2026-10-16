@@ -2,7 +2,8 @@
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <boost/circular_buffer.hpp>
+#include <deque>
+#include "core/network/grpc_client_runtime.h"
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
 #include "proto/trade/trade_admin.grpc.pb.h"
@@ -27,6 +28,10 @@ struct AsyncTradeAdminSeedListingGrpcClient {
     // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
     ::trade::SeedListingRequest request;
     GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncTradeAdminSeedListingHandler / FailedHandler。
+    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
+    GrpcDone<::trade::SeedListingResponse> done;
+    GrpcClientRuntimePtr runtime;
 };
 
 using AsyncTradeAdminSeedListingHandlerFunctionType =
@@ -41,6 +46,9 @@ extern AsyncTradeAdminSeedListingFailedHandlerFunctionType AsyncTradeAdminSeedLi
 void SendTradeAdminSeedListing(entt::registry& registry, entt::entity nodeEntity, const ::trade::SeedListingRequest& request);
 void SendTradeAdminSeedListing(entt::registry& registry, entt::entity nodeEntity, const ::trade::SeedListingRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendTradeAdminSeedListing(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendTradeAdminSeedListing(entt::registry& registry, entt::entity nodeEntity, const ::trade::SeedListingRequest& request, GrpcDone<::trade::SeedListingResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 void SetTradeAdminHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetTradeAdminIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -48,7 +56,7 @@ void SetTradeAdminFailedHandler(const std::function<void(const GrpcCallFailure&,
 void SetTradeAdminIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 // 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
 void SetTradeAdminCallDeadline(std::chrono::milliseconds deadline);
-void HandleTradeAdminCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag);
+void HandleTradeAdminCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
 void InitTradeAdminGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace trade

@@ -163,7 +163,7 @@ flowchart LR
 ### 环境要求
 
 - **C++**:Windows 上用 Visual Studio 2026(工具集 v145),Linux 上用支持 C++23 的编译器加 CMake
-- **Go**:1.26.5 或更新
+- **Go**:1.27.2 或更新
 - **Java**:JDK 23 与 Maven
 - **工具**:PowerShell 7、Python 3(导表器)、Docker Desktop
 - **子模块**:`git submodule update --init --recursive`

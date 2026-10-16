@@ -1,5 +1,7 @@
 # Guild & Friend Service Implementation Notes (2025-03-25)
 
+> 2026-10-15 修订：同步独占库、好友容量门禁退役与帮会号段发号。详细契约见 [friend-persistence-architecture.md](./friend-persistence-architecture.md) 与 [帮会二期交接](./guild-phase2/92-handoff.md)。
+
 ## Services Created
 
 ### Guild Service (`go/guild/`)
@@ -9,11 +11,11 @@
 - **Features**: Create/Get/Join/Leave/Disband/SetAnnouncement + Ranking (UpdateScore/GetRank/GetRankByGuild)
 - **Patterns**: cache-aside + singleflight (Redis → MySQL → write-back)
 - **Ranking**: Dual ZSET (global + per-zone), see `guild_ranking_architecture.md`
-- **ID gen**: bwmarrin/snowflake
+- **ID 生成**：默认通过 data_service 的 `AllocateIdSegment` 领取 `guild` 号段。当前 `IdSegment.Enabled=true`、`FallbackToSnowflake=false`，号段不可用时拒绝建帮；只有显式禁用号段或允许回退时才走 Snowflake，策略见 `go/guild/internal/svc/guild_id_minter.go`。
 
 ### Friend Service (`go/friend/`)
 - **Port**: 50400
-- **Redis**: Global Redis (cross-zone)
+- **Redis**：`SharedRedis` 读取跨运行时会话契约；`FriendRedis` 保存好友私有缓存/配额，未配置时回落共享实例。
 - **Node type**: FriendNodeService=27 (node.proto)
 - **Features**: AddFriend/AcceptFriend/RejectFriend/RemoveFriend/GetFriendList/GetPendingRequests
 - **Patterns**: cache-aside + singleflight
@@ -21,25 +23,19 @@
 
 ## Proto Integration
 - Both added to `tools/proto_generator/protogen/etc/proto_gen.yaml` under `domain_meta`, `rpc.type: grpc`
-- Proto-gen generates ~96 .pb.go files per service
+- 协议生成物统一位于 `go/proto/`；通过仓库 proto-gen 管线生成，不按服务维护另一份 `.pb.go`。
 - **Key gotcha**: `tip.proto` has NO package declaration — must use `TipInfoMessage` (not `common.base.TipInfoMessage`) in proto files
 - **Go import**: `proto/common/base` (not `proto/common`) because generated code lives at `proto/common/base/`
 
-## MySQL Tables (deploy/mysql-init/guild_friend_tables.sql)
-- `guild` (PK guild_id, UK name, zone_id)
-- `guild_member` (PK guild_id+player_id)
-- `friend` (PK player_id+friend_player_id)
-- `friend_request` (PK from_player_id+to_player_id, IDX to_player_id+status)
-- `friend_capacity` (authoritative hard-limit counter and lock row)
-- `guild_schema_migration` (durable data-migration readiness gates)
+## MySQL 库与表的事实源
 
-## Consistency and Authorization Gates (2026-08-03)
+- guild 使用独占库 `mmorpg_guild`，schema 源为 `proto/guild/guild_db.proto`，完整表清单由 `go/guild/internal/data/tables.go::Tables` 声明，涵盖关系、管理、资产与活动数据。
+- friend 使用独占库 `mmorpg_friend`，schema 源为 `proto/friend/friend_table.proto`，四张业务表为 `friend`、`friend_request`、`friend_capacity`、`friend_block`，清单见 `go/friend/internal/data/tables.go`。
+- 两者均经 `go/schemamigrate` 管理结构；旧共享库的 `deploy/mysql-init/guild_friend_tables.sql` 不是当前服务的 schema 事实源。迁移前按各服务的 `-migrate` 入口与配置操作。
 
-- `friend_capacity_backfill_v1` moves from `pending` to `ready`. Reset,
-  authoritative backfill from `friend`, and the ready marker commit in one
-  transaction. Startup and capacity-changing transactions fail closed when the
-  marker is missing/pending; a missing row is initialized from `COUNT(friend)`,
-  never an assumed zero.
+## 一致性与授权门禁
+
+- 好友的 `friend_capacity_backfill_v1` / `guild_schema_migration` 启动与写入门禁已于 2026-09-18 退役。friend 只连接 `mmorpg_friend`，不再查询旧共享库的 readiness 标记。写事务仍先补齐容量行，再按 player_id 升序锁定双方容量行；缺行从 `COUNT(friend)` 的权威边数初始化，绝不猜 0。退役原因与当前锁序见 [friend-persistence-architecture.md](./friend-persistence-architecture.md) 的“存量容量回填门禁”与“锁序纪律”。
 - Redis guild snapshots are display caches only. `SetAnnouncement` locks the
   `guild` row and the operator's authoritative `guild_member` row in one MySQL
   transaction, then permits only officer/leader roles before updating.

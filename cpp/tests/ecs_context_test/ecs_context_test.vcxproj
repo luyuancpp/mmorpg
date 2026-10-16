@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{4715982D-3D95-4339-83F4-49622DD724C0}</ProjectGuid>
+    <RootNamespace>ecs_context_test</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Debug'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Release'">false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <OutDir>$(MSBuildThisFileDirectory)..\..\..\build\cpp\tests\</OutDir>
+    <IntDir>$(MSBuildThisFileDirectory)..\..\..\build\cpp\intermediate\tests\$(ProjectName)\$(Configuration)\</IntDir>
+    <TargetName>ecs_context_test</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <WarningLevel>Level3</WarningLevel>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>ENTT_ID_TYPE=uint64_t;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\..\..\third_party;$(MSBuildThisFileDirectory)..\..\..\third_party\grpc\third_party\abseil-cpp;$(MSBuildThisFileDirectory)..\..\libs\engine;$(MSBuildThisFileDirectory)..\..\libs\engine\core;$(MSBuildThisFileDirectory)..\..\..\third_party\grpc\third_party\googletest\googletest\include;$(MSBuildThisFileDirectory)..\..\..\third_party\grpc\third_party\googletest\googletest;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreadedDLL</RuntimeLibrary>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug'">_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Release'">NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)%(Filename).obj</ObjectFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <!-- 直接编译实际上下文实现，不依赖传输层或尚未构建的业务静态库。 -->
+  <ItemGroup>
+    <ClCompile Include="ecs_context_test.cpp" />
+    <ClCompile Include="..\..\libs\engine\thread_context\ecs_context.cpp" />
+    <ClCompile Include="..\..\..\third_party\grpc\third_party\googletest\googletest\src\gtest-all.cc" />
+    <ClCompile Include="..\..\..\third_party\grpc\third_party\googletest\googletest\src\gtest_main.cc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

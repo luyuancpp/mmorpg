@@ -5,6 +5,8 @@ import (
 
 	"match/internal/constants"
 	"match/internal/metrics"
+	"match/internal/pkg/ctxkeys"
+	"match/internal/playercontract"
 	"match/internal/svc"
 
 	base "proto/common/base"
@@ -168,6 +170,24 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 		}, nil
 	}
 
+	// 跨会话栅栏:发起本次请求的会话必须仍是该玩家的当前会话。
+	stale, err := l.callerSessionStale(playerId)
+	if err != nil {
+		l.Errorf("[match] JoinQueue failed to read player session player=%d: %v", playerId, err)
+		metrics.ObserveJoinQueue(modeName, "internal")
+		return &matchpb.JoinQueueResponse{
+			ErrorCode:    constants.ErrInternal,
+			ErrorMessage: tipErr(constants.ErrInternal, "服务器繁忙,请稍后再试"),
+		}, nil
+	}
+	if stale {
+		metrics.ObserveJoinQueue(modeName, "stale_session")
+		return &matchpb.JoinQueueResponse{
+			ErrorCode:    constants.ErrNotInScene,
+			ErrorMessage: tipErr(constants.ErrNotInScene, "请先进入场景"),
+		}, nil
+	}
+
 	ticket := &queueTicket{
 		Ticket:       uuid.New().String(),
 		Mode:         int32(in.Mode),
@@ -208,9 +228,13 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 	if resp := l.createTicket(playerId, ticket, ticketTTLSeconds(l.svcCtx), modeName); resp != nil {
 		return resp, nil
 	}
-	if err := enqueueAtomic(l.svcCtx, ticket.QueueKey, playerId, ticket.Rating); err != nil {
+	// 入队用请求 ctx:截止之后不再发出(docs/design/client-request-ordering.md §6.1)。
+	if err := enqueueAtomicCtx(l.ctx, l.svcCtx, ticket.QueueKey, playerId, ticket.Rating); err != nil {
 		l.Errorf("[match] JoinQueue failed to enqueue player=%d queue=%s: %v", playerId, ticket.QueueKey, err)
-		deleteTicket(l.svcCtx, playerId)
+		// 补偿删票按 ticket id CAS(独立 ctx,不继承已取消的请求 ctx)。原先是无条件 DEL:
+		// 这条补偿可能晚于 gate 放行的同一会话下一条 JoinQueue 落地,无条件 DEL 会删掉新票,
+		// 留下「入队成功却没有票」的残留。
+		deleteTicketIfOwned(l.svcCtx, playerId, ticket.Ticket)
 		metrics.ObserveJoinQueue(modeName, "internal")
 		return &matchpb.JoinQueueResponse{
 			ErrorCode:    constants.ErrInternal,
@@ -222,6 +246,36 @@ func (l *JoinQueueLogic) JoinQueue(in *matchpb.JoinQueueRequest) (*matchpb.JoinQ
 		playerId, loc.ZoneId, modeName, in.BattleConfigId, required, formatRating(ticket.Rating), ticket.Ticket)
 	metrics.ObserveJoinQueue(modeName, "ok")
 	return &matchpb.JoinQueueResponse{QueueTicket: ticket.Ticket}, nil
+}
+
+// callerSessionStale 复核发起本次请求的会话仍是该玩家的当前会话
+// (docs/design/client-request-ordering.md §6.3 / O13)。返回 true 表示请求来自旧会话或玩家已不在线,应拒绝。
+//
+// 为什么要这一道:gate 只在同一个会话内保序。玩家断线重连(可能换了 gate)之后,旧会话上还在途的 JoinQueue
+// 与新会话上的 CancelQueue 互不排序,旧的 Join 晚落地会让玩家在新会话里「取消成功、实际仍在排队」。
+// player_locator 的会话记录随重连换成新的 session_id / gate_instance_id,旧会话的请求据此拒绝。
+//
+// 不原子:会话在 SharedRedis,票据在 MatchRedis,读完之后会话仍可能被替换。这一道只是缩小跨会话窗口,
+// 剩余的由票据 TTL、GetQueueStatus 权威查询与客户端重连后回源兜底。
+// 没有会话 metadata 的调用(内部调用、测试)不做这道复核。
+func (l *JoinQueueLogic) callerSessionStale(playerId uint64) (bool, error) {
+	detail, ok := ctxkeys.GetSessionDetails(l.ctx)
+	if !ok {
+		return false, nil
+	}
+	session, err := playercontract.LoadSession(l.ctx, l.svcCtx, playerId)
+	if err != nil {
+		return false, err
+	}
+	if session == nil || !playercontract.IsSessionOnline(session) {
+		return true, nil
+	}
+	if session.GetSessionId() != detail.GetSessionId() || session.GetGateInstanceId() != detail.GetGateInstanceId() {
+		l.Infof("[match] JoinQueue from a superseded session; rejecting player=%d request_session=%d current_session=%d",
+			playerId, detail.GetSessionId(), session.GetSessionId())
+		return true, nil
+	}
+	return false, nil
 }
 
 // healOrphanQueuedTicket JoinQueue 的票据自愈,实现收口在包级函数 healOrphanTicket
@@ -282,8 +336,20 @@ func healOrphanTicket(svcCtx *svc.ServiceContext, log logx.Logger, playerId uint
 
 // createTicket 不存在才创建票据(createTicketIfAbsent);已存在按 ErrAlreadyQueued
 // 返回(同一玩家并发 JoinQueue 的后来者,回现存票据 id)。返回非 nil 即错误应答。
+//
+// 建票是 JoinQueue 的提交点,受请求 ctx 约束:先检查 ctx,再用请求 ctx 发出建票脚本。
+// gate 对同一会话单飞,路由服回超时就放行下一条(例如 CancelQueue);截止之后才建出的票会晚于
+// 那条取消落地,玩家看到「取消成功」却仍在排队(docs/design/client-request-ordering.md §1.3、§6.1)。
 func (l *JoinQueueLogic) createTicket(playerId uint64, ticket *queueTicket, ttl int, modeName string) *matchpb.JoinQueueResponse {
-	created, err := createTicketIfAbsent(l.svcCtx, playerId, ticket, ttl)
+	if err := l.ctx.Err(); err != nil {
+		l.Errorf("[match] JoinQueue request deadline passed before writing ticket; not writing player=%d: %v", playerId, err)
+		metrics.ObserveJoinQueue(modeName, "internal")
+		return &matchpb.JoinQueueResponse{
+			ErrorCode:    constants.ErrInternal,
+			ErrorMessage: tipErr(constants.ErrInternal, "服务器繁忙,请稍后再试"),
+		}
+	}
+	created, err := createTicketIfAbsentCtx(l.ctx, l.svcCtx, playerId, ticket, ttl)
 	if err != nil {
 		l.Errorf("[match] JoinQueue failed to write ticket player=%d: %v", playerId, err)
 		metrics.ObserveJoinQueue(modeName, "internal")

@@ -43,6 +43,7 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 	runner.RunTask("cppGen.InitEventId", cppGen.InitEventId)
 	runner.RunTask("cppGen.WriteMessageIdFile", cppGen.WriteMessageIdFile)
 	runner.RunTask("cppGen.WriteEventIdFile", cppGen.WriteEventIdFile)
+	runner.RunTaskWithWG("prototools.PruneOrphanedLocalEventOutputs", prototools.PruneOrphanedLocalEventOutputs)
 
 	runner.RunParallelGroup("MethodFilesGeneration", []NamedTask{
 		{Name: "cppGen.WriteMethodFile", Run: cppGen.WriteMethodFile},

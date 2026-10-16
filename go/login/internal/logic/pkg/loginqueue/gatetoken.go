@@ -23,7 +23,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"sort"
 	"time"
 
 	commonpb "proto/common/base"
@@ -81,24 +80,60 @@ func PickAndSignGateToken(candidates []GateCandidate, secret []byte, ttl time.Du
 // Splitting selection from signing lets the queue dispatcher decide
 // "this entry is admitted to gate X" at admit time but defer the token
 // HMAC + expire until the client actually polls for it.
+//
+// 挑选规则只有一份,在 gatePicker 里:人数最少,同数取 NodeID 最小。PickGate 是在一份新快照上只挑一次,
+// 快速通道用它;dispatcher 一拍放一批,在同一份快照上连续挑并记账(见 gatePicker)。
 func PickGate(candidates []GateCandidate) (*GateCandidate, error) {
-	if len(candidates) == 0 {
+	return newGatePicker(candidates).pick()
+}
+
+// gatePicker 在一份候选快照上连续挑 gate,挑一次记一次账:负载 = PlayerCount + 本快照上已分给它的人数,
+// 取负载最少的,同负载取 NodeID 最小的。结果确定,看 dispatcher 日志时能推出为什么挑中了某台 gate;
+// 负载与 NodeID 都相同(重复候选)时取靠前的那个。
+//
+// 为什么要记账:PlayerCount 来自 etcd,gate 每 10s 才上报一次,一拍之内不变。只按 PlayerCount 挑,
+// 一拍放的 N 个人会全部落在同一台 gate 上;把本拍已分出去的人数算进负载,一拍的放行先填最闲的 gate,
+// 填平之后在各台之间轮转。账只记在这份快照里,不跨拍:下一拍重新取候选,从 gate 上报的人数重新算起。
+//
+// 构造时复制候选,之后调用方改原切片不影响记账。不是并发安全的:dispatcher 经 PopAdmit 逐条串行调用。
+type gatePicker struct {
+	candidates []GateCandidate
+	// assigned 与 candidates 同下标:本快照上已经分给该 gate 的人数。
+	assigned []uint64
+}
+
+func newGatePicker(candidates []GateCandidate) *gatePicker {
+	return &gatePicker{
+		candidates: append([]GateCandidate(nil), candidates...),
+		assigned:   make([]uint64, len(candidates)),
+	}
+}
+
+// pick 返回负载最少的 gate(副本),并给它记一人。没有候选时返回错误,不记账。
+func (p *gatePicker) pick() (*GateCandidate, error) {
+	if len(p.candidates) == 0 {
 		return nil, fmt.Errorf("no gate candidates")
 	}
-
-	// Stable sort by player count so ties resolve deterministically — useful
-	// when reading dispatcher logs to figure out why gate X kept getting
-	// picked. Cost is O(n log n) where n = #gates per zone (small).
-	sorted := make([]GateCandidate, len(candidates))
-	copy(sorted, candidates)
-	sort.SliceStable(sorted, func(i, j int) bool {
-		if sorted[i].PlayerCount != sorted[j].PlayerCount {
-			return sorted[i].PlayerCount < sorted[j].PlayerCount
+	best := 0
+	for i := 1; i < len(p.candidates); i++ {
+		if p.lighter(i, best) {
+			best = i
 		}
-		return sorted[i].NodeID < sorted[j].NodeID
-	})
-	best := sorted[0]
-	return &best, nil
+	}
+	p.assigned[best]++
+	gate := p.candidates[best]
+	return &gate, nil
+}
+
+// lighter 报告第 i 个候选是否严格排在第 j 个之前:负载少的在前,同负载 NodeID 小的在前。
+// 负载用 uint64 相加,PlayerCount 接近 uint32 上限时也不回绕。
+func (p *gatePicker) lighter(i, j int) bool {
+	loadI := uint64(p.candidates[i].PlayerCount) + p.assigned[i]
+	loadJ := uint64(p.candidates[j].PlayerCount) + p.assigned[j]
+	if loadI != loadJ {
+		return loadI < loadJ
+	}
+	return p.candidates[i].NodeID < p.candidates[j].NodeID
 }
 
 // SignGateToken builds + HMACs a GateTokenPayload for the chosen gate.

@@ -9,9 +9,12 @@ class SkillTable;
 class SkillSystem
 {
 public:
+	// 冷却列表唯一写入口:有效实体第一次启动冷却时创建;失效实体不创建。
 	static void StartCooldown(const entt::entity casterEntity, const SkillTable* skillTable);
 
 	static uint32_t ReleaseSkill(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
+	// 最先确认实体、持久数据与玩家派生属性;缺失时拒绝且不打断/加状态。
+	// 冷却和上下文按需存在,缺失不构成前置失败,写入口负责首次创建。
 	static uint32_t CheckSkillPrerequisites(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
 
 	static bool IsSkillOfType(const uint32_t skillTableId, const uint32_t skillType);
@@ -24,10 +27,10 @@ public:
 	static void HandleChannelThink(entt::entity casterEntity, uint64_t skillId);
 	static void HandleChannelFinish(entt::entity casterEntity, uint64_t skillId);
 
-    // Validate target
-    static uint32_t ValidateTarget(const ::ReleaseSkillRequest* request);
+    // 校验目标;指定目标类技能要求目标与施法者同场景,见 skill.cpp 的 ResolveSkillTarget
+    static uint32_t ValidateTarget(entt::entity casterEntity, const ::ReleaseSkillRequest* request);
 
-    // Check cooldown
+    // 只读检查冷却;活实体缺列表表示无冷却,不创建组件。
     static uint32_t CheckCooldown(entt::entity casterEntity, const SkillTable* skillTable);
 
     // Check cast timer

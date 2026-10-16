@@ -1,7 +1,7 @@
 module guild
 
-// go 1.26.5:schemamigrate(proto2mysql)要求 1.26.5(port-decisions D-14 理由 3)
-go 1.26.5
+// 仓库统一使用 Go 1.27.2；schemamigrate(proto2mysql)最低要求 1.26.5(port-decisions D-14 理由 3)。
+go 1.27.2
 
 require (
 	github.com/alicebob/miniredis/v2 v2.35.0

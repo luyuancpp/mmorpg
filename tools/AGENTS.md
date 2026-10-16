@@ -11,7 +11,7 @@
 |------|----------|-------|
 | Main script entrypoint | `scripts/dev_tools.ps1` | proto-gen (pbgen), k8s, tree, naming audit/apply |
 | proto-gen source | `proto_generator/protogen/` | Canonical generator project |
-| Compatibility proto-gen bundle | `proto/` | Retained for existing local toolchains |
+| 旧工具目录说明 | `proto/` | 仅保留弃用文档，不包含可运行的兼容生成器 |
 | Robot data-stress mode | 仓库根 `robot/data_stress.go` | L3 e2e: login→enter→play→logout cycles, publishes expected seq to Redis for verifier |
 | **配置表 schema（事实源）** | `data/schema/*.proto` | 类型/owner/键/索引/外键/位序/注释;词表在 `cfg_options.proto` |
 | **配置表全表索引** | `data/AGENTS.md` | 哪张表有主键/索引/外键/位序,由 `gen_schema_index.py` 生成 |
@@ -23,7 +23,7 @@
 - Put reports/dumps/snapshots under `docs/`.
 - Keep temp generation output under ignored paths like `generated/` and local binaries.
 - `tools/scripts/dev_tools.ps1` is the preferred shell entrypoint for routine commands.
-- `tools/proto_generator/protogen` is the canonical proto-gen project; `tools/proto/protogen` exists for compatibility.
+- 协议生成器源码只在 `tools/proto_generator/protogen`；`tools/proto/protogen` 已不存在。兼容名称 `pbgen-build` / `pbgen-run` 由 `scripts/dev_tools.ps1` 提供。
 - 配置表的 schema 事实源是 `data/schema/*.proto`,**不是 xlsx 表头**(5 行表头格式 2026-09-03 退休)。
   改表流程与禁忌见 `data/AGENTS.md`;导表器自身的说明见 `data_table_exporter/readme.md`。
 - Robot client logic assumes one client binds to exactly one goroutine.

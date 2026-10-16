@@ -2,7 +2,9 @@
 
 #include <limits>
 #include <map>
+#include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -252,6 +254,86 @@ namespace
     {
         SendSceneCommandTo(sceneNodeId, sceneInstanceId, playerId, BattleSettlementEventEventId,
                            payload, battleId);
+    }
+
+    // ---- 待结算积压报数(landing-recovery-sync-digest.md §7) ----
+    //
+    // 一轮三步,都发在同一条 zone Redis 连接上,回复按发送顺序回来(hiredis 单连接 FIFO):
+    //   1) ZRANGE 积压索引 [start, start+N):取一批成员(N = kSettlementBacklogSweepBatch,窗口由
+    //      PendingIndexSweepCursor 给出,头部与轮转交替;BattleRoomManager::ReportPendingSettlementBacklog 发出);
+    //   2) 每个成员一条 kSweepPendingIndexOrphanScript:pending:id 键不在就 ZREM(孤儿)。
+    //      孤儿来自滚动升级窗口:旧版 scene 销账不清索引;旧版 scene 暂存给新记录挂回 7 天 TTL 后到期;
+    //   3) kReadPendingBacklogScript:清理之后的 ZCARD 与最老分数,打一行 metric。
+    // 第 3 步在第 2 步全部发出之后才发,FIFO 保证它的回调晚于全部清理回调,orphans_removed 已数完。
+    // 先清理再读数,而不是 ZRANGE ... WITHSCORES 直接算年龄:头部若是孤儿,oldest_age_s 不会被它们抬高。
+    // 本函数做第 2、3 步。回调只捕获值(计数器的 shared_ptr),不碰 BattleRoomManager(AGENTS.md §11.7)。
+    // 多个 battle 节点各报一遍同一个全局数,无害(设计 §7)。
+    void SweepPendingIndexAndReport(const redisReply &rangeReply)
+    {
+        if (!RedisReady())
+        {
+            return;
+        }
+        auto orphansRemoved = std::make_shared<uint64_t>(0);
+        for (size_t i = 0; i < rangeReply.elements; ++i)
+        {
+            const redisReply *member = rangeReply.element[i];
+            if (member == nullptr || member->type != REDIS_REPLY_STRING)
+            {
+                continue;
+            }
+            uint64_t playerId = 0;
+            if (!battle_settlement::ParsePendingIndexMember(std::string_view(member->str, member->len), playerId))
+            {
+                // 成员只由写入脚本以 %llu 写入,解析不了只可能是索引被手工改过。它对应不到任何记录,
+                // 留着会一直占住一个位置(在头部时还会把 oldest_age_s 钉死),按孤儿删掉
+                // (%b 二进制安全,成员内容不拼进格式串)。
+                LOG_WARN << "battle settlement backlog index member is not a decimal player_id;removed: member_len=" << member->len;
+                tlsRedis.GetZoneRedis()->command(
+                    [orphansRemoved](hiredis::Hiredis *, redisReply *removeReply)
+                    {
+                        if (removeReply != nullptr && removeReply->type == REDIS_REPLY_INTEGER && removeReply->integer > 0)
+                        {
+                            *orphansRemoved += static_cast<uint64_t>(removeReply->integer);
+                        }
+                    },
+                    (std::string("ZREM ") + battle_settlement::kPendingSettlementIndexKey + " %b").c_str(),
+                    member->str, member->len);
+                continue;
+            }
+            tlsRedis.GetZoneRedis()->command(
+                [orphansRemoved](hiredis::Hiredis *, redisReply *sweepReply)
+                {
+                    if (sweepReply != nullptr && sweepReply->type == REDIS_REPLY_INTEGER && sweepReply->integer > 0)
+                    {
+                        *orphansRemoved += static_cast<uint64_t>(sweepReply->integer);
+                    }
+                },
+                (std::string("EVAL %s 2 ") + battle_settlement::kPendingSettlementIndexKey + " " +
+                 battle_settlement::kPendingSettlementIdKeyFmt + " %llu")
+                    .c_str(),
+                battle_settlement::kSweepPendingIndexOrphanScript, playerId, playerId);
+        }
+        tlsRedis.GetZoneRedis()->command(
+            [orphansRemoved](hiredis::Hiredis *, redisReply *countReply)
+            {
+                if (countReply == nullptr || countReply->type != REDIS_REPLY_ARRAY || countReply->elements < 2 ||
+                    countReply->element[0] == nullptr || countReply->element[0]->type != REDIS_REPLY_INTEGER ||
+                    countReply->element[1] == nullptr || countReply->element[1]->type != REDIS_REPLY_INTEGER)
+                {
+                    LOG_WARN << "battle settlement backlog report: backlog read failed;orphans_removed=" << *orphansRemoved;
+                    return;
+                }
+                const auto count = countReply->element[0]->integer;
+                const auto oldestMs = countReply->element[1]->integer;
+                const uint64_t oldestAgeSec = battle_settlement::PendingBacklogOldestAgeSec(
+                    oldestMs > 0 ? static_cast<uint64_t>(oldestMs) : 0, TimeSystem::NowMillisecondsUTC());
+                LOG_INFO << "metric=battle_settlement_pending_backlog count=" << count
+                         << " oldest_age_s=" << oldestAgeSec
+                         << " orphans_removed=" << *orphansRemoved;
+            },
+            (std::string("EVAL %s 1 ") + battle_settlement::kPendingSettlementIndexKey).c_str(),
+            battle_settlement::kReadPendingBacklogScript);
     }
 
     // 确认事件补发策略(与 scene 侧 player_battle.h 的锁保留期对齐):
@@ -1364,7 +1446,7 @@ void BattleRoomManager::AbortAllRooms(const std::string &reason)
 muduo::net::TcpConnectionPtr BattleRoomManager::LiveDirectConnOf(const BattleRoom &room,
                                                                  const uint64_t playerId) const
 {
-    if (edge_ == nullptr)
+    if (!edge_)
     {
         return nullptr;
     }
@@ -1403,7 +1485,7 @@ void BattleRoomManager::PushBattleFrame(const BattleRoom &room, const uint64_t p
     switch (battle_push_policy::Decide(battle_push_policy::PushCategory::kBattleFrame, conn != nullptr))
     {
     case battle_push_policy::PushRoute::kDirect:
-        SendOverDirect(*edge_, conn, messageId, message);
+        SendOverDirect(edge_->get(), conn, messageId, message);
         return;
     case battle_push_policy::PushRoute::kViaGate:
         // 战斗帧的判定不会产出 kViaGate(tests/battle_push_policy_test.cpp 钉住);
@@ -1423,7 +1505,7 @@ void BattleRoomManager::PushLobbyAnnouncement(const BattleRoom &room, const uint
                                        conn != nullptr))
     {
     case battle_push_policy::PushRoute::kDirect:
-        SendOverDirect(*edge_, conn, messageId, message);
+        SendOverDirect(edge_->get(), conn, messageId, message);
         return;
     case battle_push_policy::PushRoute::kViaGate:
         PushMessageViaGate(routing, playerId, messageId, message);
@@ -1453,8 +1535,8 @@ bool BattleRoomManager::BuildAssignment(const BattleRoom &room, const uint64_t p
     {
         return false;
     }
-    // 本函数只在 loop 线程执行(Handle* 经 runInLoop 投递):GetNodeInfo() 读 thread_local,
-    // 换到 gRPC 线程会拿到空 NodeInfo、整批静默拒签。
+    // NodeInfo 由 Node 持有、只在 loop 线程写;跨线程读取不与写入同步。
+    // 本函数仍只在 loop 线程执行(Handle* 经 runInLoop 投递)。
     const auto &self = gNode->GetNodeInfo();
     // 客户端可达地址(集群外入口 D76/D78,规则唯一权威实现在 client_endpoint::ClientFacing):
     // client_endpoint 可用就用它;否则 required=false 时回落 endpoint(podip 形态),
@@ -1679,6 +1761,10 @@ void BattleRoomManager::DispatchSettlementDurably(const ::BattleRouting &routing
     const uint32_t sceneNodeId = routing.scene_node_id();
     const std::string sceneInstanceId = routing.scene_instance_id();
 
+    // 本节点开始往积压里写了:报数定时器随之常驻(幂等)。放在 Redis 判活之前,
+    // 这一轮落不了库,下一轮 Redis 恢复后照样要报。
+    EnsureSettlementBacklogReporter();
+
     if (!RedisReady())
     {
         // 降级:落不了库就直接投一次。丢了只能靠 scene reaper 按 deadline 解冻
@@ -1690,7 +1776,9 @@ void BattleRoomManager::DispatchSettlementDurably(const ::BattleRouting &routing
         return;
     }
 
-    // EVAL 两键同 SET 同 TTL;成功回调里才投递,保证"记录先于命令存在"。
+    // EVAL 两键同 SET(不过期)+ 进积压索引;成功回调里才投递,保证"记录先于命令存在"。
+    // 积压索引的分数取本节点墙钟毫秒(kSetPendingSettlementScript 的说明)。
+    const uint64_t enqueuedAtMs = TimeSystem::NowMillisecondsUTC();
     tlsRedis.GetZoneRedis()->command(
         [this, battleId, playerId, payload, sceneNodeId, sceneInstanceId](hiredis::Hiredis *,
                                                                           redisReply *reply)
@@ -1707,11 +1795,66 @@ void BattleRoomManager::DispatchSettlementDurably(const ::BattleRouting &routing
             SendSettlementCommand(sceneNodeId, sceneInstanceId, playerId, battleId, payload);
             EnqueuePendingSettlement(battleId, playerId, payload, sceneNodeId);
         },
-        (std::string("EVAL %s 2 ") + battle_settlement::kPendingSettlementKeyFmt + " " +
-         battle_settlement::kPendingSettlementIdKeyFmt + " %b %llu %u")
+        (std::string("EVAL %s 3 ") + battle_settlement::kPendingSettlementKeyFmt + " " +
+         battle_settlement::kPendingSettlementIdKeyFmt + " " + battle_settlement::kPendingSettlementIndexKey +
+         " %b %llu %llu %llu")
             .c_str(),
         battle_settlement::kSetPendingSettlementScript, playerId, playerId,
-        payload.data(), payload.size(), battleId, kPendingSettlementTtlSec);
+        payload.data(), payload.size(), battleId, enqueuedAtMs, playerId);
+}
+
+void BattleRoomManager::EnsureSettlementBacklogReporter()
+{
+    if (settlementBacklogTimer_.IsActive())
+    {
+        return;
+    }
+    // 只绑 weak_ptr<自己>(AGENTS.md §11.7),与活动结果重发定时器同一写法。
+    settlementBacklogTimer_.RunEvery(kSettlementBacklogReportIntervalSec,
+                                     [weakSelf = WeakSelf()]
+                                     {
+                                         if (const auto self = weakSelf.lock())
+                                         {
+                                             self->ReportPendingSettlementBacklog();
+                                         }
+                                     });
+}
+
+void BattleRoomManager::ReportPendingSettlementBacklog()
+{
+    static_assert(kSettlementBacklogSweepBatch > 0, "ZRANGE [start, start+N) requires a positive sweep batch");
+    if (!RedisReady())
+    {
+        // 游标不动:Redis 恢复后从同一个窗口接着查。
+        LOG_WARN << "battle settlement backlog report skipped this round(Redis disconnected)";
+        return;
+    }
+    const uint64_t start = battle_settlement::PendingIndexSweepStart(settlementBacklogCursor_);
+    const uint64_t stop = start + kSettlementBacklogSweepBatch - 1;
+    const int rc = tlsRedis.GetZoneRedis()->command(
+        [weakSelf = WeakSelf()](hiredis::Hiredis *, redisReply *reply)
+        {
+            const auto self = weakSelf.lock();
+            if (!self)
+            {
+                return;
+            }
+            if (reply == nullptr || reply->type != REDIS_REPLY_ARRAY)
+            {
+                // 游标不动,下一轮重查同一个窗口。
+                LOG_WARN << "battle settlement backlog report: pending index read failed;skipping this round";
+                return;
+            }
+            battle_settlement::AdvancePendingIndexSweep(self->settlementBacklogCursor_, reply->elements,
+                                                        kSettlementBacklogSweepBatch);
+            SweepPendingIndexAndReport(*reply);
+        },
+        (std::string("ZRANGE ") + battle_settlement::kPendingSettlementIndexKey + " %llu %llu").c_str(),
+        static_cast<unsigned long long>(start), static_cast<unsigned long long>(stop));
+    if (rc != REDIS_OK)
+    {
+        LOG_WARN << "battle settlement backlog report: pending index read could not be sent;skipping this round";
+    }
 }
 
 void BattleRoomManager::EnqueuePendingSettlement(const uint64_t battleId, const uint64_t playerId,
@@ -1836,9 +1979,12 @@ void BattleRoomManager::ProbeAndRetryOne(const uint64_t battleId, const uint64_t
                                  << ",persistent record retained;login hook will apply when player enters a scene";
                         return;
                     case battle_settlement::RetryAction::kExhausted:
-                        // 响亮但不致命:记录仍在 Redis 里(TTL 7 天),玩家下次进场景补应用。
+                        // 响亮但不致命:记录仍在 Redis 里(不再过期),玩家下次进场景补应用。
+                        // reason 分两类(ClassifyUndelivered):no_target = 离线,预期内;not_acked = 在线却没销账,异常。
                         LOG_ERROR << "metric=battle_settlement_undelivered battle_id=" << battleId
                                   << " player_id=" << playerId << " attempts=" << entry.attempts
+                                  << " reason=" << battle_settlement::UndeliveredReasonName(
+                                                       battle_settlement::ClassifyUndelivered(input))
                                   << ",settlement redelivery retries exhausted without acknowledgment;pending settlement retained,"
                                   << "scene OnPlayerEnterScene login hook will apply it as a fallback";
                         settlementOutbox_.erase(entryIt);

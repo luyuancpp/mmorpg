@@ -99,6 +99,7 @@ LIB_PROJECTS=(
     "cpp/libs/engine/session"
     "cpp/libs/engine/infra"
     "cpp/libs/engine/thread_context"
+    "cpp/libs/engine/muduo_grpc"
     "cpp/libs/modules"
     "cpp/libs/services/battle"
     "cpp/libs/services/scene"
@@ -231,7 +232,7 @@ buildproject() {
 
 # ── 1. Submodules + third-party dependencies ────────────────────────────────
 # Skipped in Docker: the builder stage has no .git, and the deps stage already
-# compiled gRPC / muduo / librdkafka / redis / yaml-cpp / zlib into /usr/local.
+# compiled gRPC / muduo / librdkafka / redis / yaml-cpp / zlib / nghttp2 into /usr/local.
 if [ "$SKIP_DEPS" -eq 0 ]; then
     echo "[1] submodules + third-party dependencies"
     run git submodule update --init --recursive

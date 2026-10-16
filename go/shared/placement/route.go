@@ -50,17 +50,28 @@ func RouteFenceShard(playerID uint64, shards uint32) (uint32, error) {
 }
 
 // RouteRowShards 是 player_route 的固定分片数:route_shard = player_id % RouteRowShards,
-// 是聚簇主键 (route_shard, player_id) 的首列。目的是把单调递增的 player_id 在 TiDB 上拆成 16 条写入尾部
+// 是聚簇主键 (route_shard, player_id) 的首列。目的是把单调递增的 player_id 在 TiDB 上拆成 64 条写入尾部
 // (docs/design/player-route-mapping-durability-proposal.md §11.2「第 1a 批热点修复」):号段发号在每个 login 段内
 // 严格递增,只按 player_id 排序的主键 / 索引在开服首日始终只写同一个尾部 Region。
 //
-// **一旦任何环境建过 player_route 就不可改**:改模数 = 每一行换主键 = 整表重写;
-// data_service store 包 schema.go 的 chk_route_shard 里写死的 16 与这里必须一致(route_store_test.go 钉住)。
+// **模数建表后不可改**(任何环境建过 player_route 之后):改模数 = 每一行换主键 = 整表重写;
+// data_service store 包 schema.go 的 chk_route_shard 里写死的模数与这里必须一致(route_store_test.go 钉住)。
+// 上限 256:route_shard 列是 tinyint unsigned。
+//
+// 2026-10-13 按容量模型(docs/design/capacity-model-hok-scale.md §4.1)定为 64:单 Region 的写入上限没测过,
+// 而模数建表后改不了,取 64 是保险。此前 HEAD(d5cbb8a8e)按 16 提交过:**按 16 建过表的库必须先 DROP 五张路由表
+// (player_route、zone_merge_fence、zone_merged_into、route_meta、route_reconcile)再迁移**(提案 §11.2
+// 「行片 16 → 64」的前置,做法同 HR4)。不 DROP 的话旧表的 CHECK 仍是 % 16:建 route store 的入口(db_first 的
+// data_service、route_tool、debugutil)建池时由探针 P5 拒绝(store.ErrRouteShardModulusMismatch;data_service 不装配
+// route store、RegisterPlayerZone 一律 fail-closed,Store.Required=true 时拒启;route_tool 退出码 2);redis 模式的
+// data_service 不建 route store、认不出旧模数,所以人工 SHOW CREATE TABLE player_route 核对仍要做(提案 §11.2
+// 「正向探针 P5」)。
+//
 // 与 RouteFenceShard 无关:那是可配置的围栏分片数,只决定 W1 锁哪一个围栏行;两者同时出现的函数里不得同名。
-const RouteRowShards uint32 = 16
+const RouteRowShards uint32 = 64
 
 // RouteRowShard 返回 player_route.route_shard。写者与读者都只能经它计算(tools/merge_zone 已经 import
-// shared/placement,第 2 批写库时直接调它,不得自己再写一份 % 16 —— 算错片的写者在 CHECK 不生效的库上
+// shared/placement,第 2 批写库时直接调它,不得自己再写一份取模 —— 算错片的写者在 CHECK 不生效的库上
 // 能给同一个 player_id 写出两行,而按正确片点查的读者看不到另一行)。
 func RouteRowShard(playerID uint64) uint32 {
 	return uint32(playerID % uint64(RouteRowShards))

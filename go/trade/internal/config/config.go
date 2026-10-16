@@ -1,7 +1,17 @@
 // Package config 是 trade 服务的配置结构与启动期校验。
 //
-// 键名与 etc/trade.yaml、tools/scripts/k8s_deploy.ps1 的 trade ConfigMap 三处逐字一致;
-// 改名必须三处同改,否则 ConfigMap 里的值会被 go-zero 当未知键静默忽略。
+// 键名与 etc/trade.yaml 逐字一致;tools/scripts/k8s_deploy.ps1 的 trade ConfigMap 里**写出来的键**也与这里逐字一致。
+// 改名必须几处同改,否则 ConfigMap 里的值会被 go-zero 当未知键静默忽略。
+//
+// ConfigMap 并不镜像全部键。**刻意不镜像**的(K8s 上取 json default / 缺省值):
+//   - AssetOp 段只写 Enabled(所有档位固定 false,上线前置见 k8s_deploy.ps1 那段注释)与 SecretEnv;
+//   - 落地恢复的键(OfflineAfterAttempts / OfflineBackoffMs / Abandon* / AuditIntervalMs / Wake.*)不写:
+//     Enabled 固定 false 时它们没有消费者(validateRecovery 也只在 Enabled 时校验),段在、键缺时 go-zero 回填的 default
+//     与 etc/trade.yaml 同值;
+//   - 终态行清理的键(CleanupEnabled / CleanupIntervalMinutes / TerminalRetentionDays)不写:CleanupEnabled 缺省 false,
+//     K8s 上通道从未开过、trade_asset_op 没有行可清。
+// 打开 K8s 资产通道时,要把上面两组键连同 Enabled=true 一起补进 ConfigMap(与 etc/trade.yaml 逐字一致),
+// 否则清理在 K8s 上一直不跑、落地恢复的取值也只能靠代码默认值。
 package config
 
 import (
@@ -16,6 +26,7 @@ import (
 
 	tradepb "proto/trade"
 
+	"shared/assetopwake"
 	"shared/idsegment"
 
 	"github.com/zeromicro/go-zero/core/service"
@@ -92,9 +103,11 @@ type Config struct {
 	// Market:市场范围、分页与收藏上限。
 	Market MarketConf `json:"Market"`
 
-	// SharedRedis:**共享单库** Redis,只读一类跨运行时契约键 —— player:{id}:location
-	// (scene_manager 写,值是 PlayerLocation protobuf)。资产通道靠它找到玩家当前所在的
-	// scene 节点(go/shared/scenenode.Locator),没有它就发不出 AssetDebit / AssetCredit。
+	// SharedRedis:**共享单库** Redis。资产通道在这一实例上:
+	//   - 读跨运行时契约键 player:{id}:location(scene_manager 写,值是 PlayerLocation protobuf),据此找到玩家当前所在的
+	//     scene 节点(go/shared/scenenode.Locator),没有它就发不出 AssetDebit / AssetCredit;
+	//   - 订阅 scene 发布的落地唤醒频道 assetop:wake,另写两类本服务自己的键:唤醒的跨副本去重键
+	//     assetop:wake:trade:{player_id}(shared/assetopwake)与维护选主锁 trade:assetop:maintenance:leader(shared/leader)。
 	//
 	// 字段名**不能**叫 Redis:嵌入的 zrpc.RpcServerConf 已经有一个 Redis 字段
 	// (go-zero 的 RedisKeyConf,给 Auth 用),同名会在 conf.MustLoad 阶段直接报
@@ -122,15 +135,20 @@ type Config struct {
 // 本段**不含密钥值**:密钥只从 SecretEnv 指定的环境变量读(§4.32),由部署侧注入,
 // 绝不写进 yaml / ConfigMap / 仓库。
 //
-// **本批只落开关与密钥来源,没有落循环参数。** 规格 90-consistency.md 的 Y-06 要求 AssetOpConf
+// **Y-06 的 8 个重投循环字段仍未落。** 规格 90-consistency.md 的 Y-06 要求 AssetOpConf
 // 另带 8 个重投循环字段(ReconcileIntervalMs 2000 / ReconcileBatch 100 / Workers 8 / LeaseMs 10000 /
 // OpBudgetMs 2500 / MaxBackoffMs 60000 / PoisonDelayMs 3600000 / LedgerReadMinAttempts 3,
-// Validate 与 NewLoop 同约束)。它们的**唯一消费者**是 internal/reconcile 建 assetop.LoopConfig 的那处,
-// 不在本工作包的归属文件里。先加字段、等别人接线,会得到一份"改了没任何反应"的配置 ——
+// Validate 与 NewLoop 同约束)。先加字段、等别人接线,会得到一份"改了没任何反应"的配置 ——
 // 那比没有配置更危险:运维以为调小了 Workers,实际还是 8,且全程零报错。
 // 接线时连同 assetop.DefaultLoopConfig() 一起落,并同步 etc/trade.yaml 与 k8s ConfigMap 三处。
 // 在那之前,这些值由 internal/reconcile 的常量固定(规格 §4.37),与 scene 侧 1024 的 seq 窗口
 // 是同一条正确性证明。
+//
+// **落地恢复的参数已落且已接线**(docs/design/landing-recovery-sync-digest.md §6.4,2026-10-15):
+// 停放档 / 自动放弃 / 日对账 / 落地唤醒 / 终态行清理,键名与默认值与 guild 的 AssetOpConf 同名同值,
+// 默认值的唯一事实源是 assetop.DefaultLoopConfig() 与 shared/assetopwake 的 Default*(config_test.go 守住相等)。
+// 消费者:svc 的 recoveryFrom / wakeConfigFrom / cleanupConfFrom(换算成 reconcile.Recovery、assetopwake.Config、
+// data.CleanupConf)。这些键**刻意不镜像**进 k8s_deploy.ps1 的 trade ConfigMap(理由与打开通道时要补的内容见包头注释)。
 type AssetOpConf struct {
 	// Enabled 打开资产通道:拨共享 Redis、建 scene 节点镜像、起 outbox 重投循环。
 	//
@@ -152,6 +170,170 @@ type AssetOpConf struct {
 	// 当未知键静默忽略 —— 静默忽略的代价是密钥从此留在仓库与 etcd 里,且没人知道它没生效。
 	// 值不进日志、不进错误文本(AGENTS §11.3)。
 	Secret string `json:",optional"`
+
+	// ── 落地恢复(docs/design/landing-recovery-sync-digest.md §6;只在 Enabled 时校验,见 validateRecovery)──
+	//
+	// 段在、键缺时 go-zero 按下面的 default 回填;整段缺失时全是 0,而那时 Enabled 也是 false,没有消费者。
+
+	// OfflineAfterAttempts 连续投递几次之后,"玩家确实没有位置"(位置键不存在)的行进入离线停放档(§6.1)。
+	// 0 = 关闭停放档。默认 5:刚下线、正在过图的玩家几分钟内就回来,前几次仍按普通退避。
+	OfflineAfterAttempts int `json:",default=5"`
+	// OfflineBackoffMs 停放档的间隔中值(±20% 抖动)。停放档开启时必须不小于重投退避封顶 60000
+	// (reconcile 的 loopMaxBackoff,否则"停放"比普通退避还勤),且不超过 24 小时(唤醒丢失时的最坏延迟)。
+	OfflineBackoffMs int `json:",default=1800000"`
+	// AbandonAfterDays 自动放弃的年龄门槛(§6.3):PENDING 且创建早于 now − 本值才是候选。0 = 关闭;非 0 时 ≥ 30。
+	// **滚动升级**:新二进制全量上线之前必须写 0(混版窗口内旧实例的发送不推进 last_send_ms),全量之后再改回 180。
+	// trade 的对侧账尚未实现(P3),放弃只终结并留痕,且只处理 TRADE_DEBIT 行(CREDIT 由存储层挡在候选之外),
+	// 见 data.AssetOpRepo 的 abandonableStream 与 Abandon 的 TODO。
+	AbandonAfterDays int `json:",default=180"`
+	// AbandonSafetyGapMs 距该行最后一次**可能**的发送必须超过的安全间隔;自动放弃开启时 ≥ 600000(10 分钟,
+	// 且远大于 trade 的租约 10s)。
+	AbandonSafetyGapMs int `json:",default=3600000"`
+	// AbandonBatch 一轮放弃最多处理多少行,[1, 1000]。
+	AbandonBatch int `json:",default=200"`
+	// AbandonIntervalMs 两轮放弃之间的间隔。
+	AbandonIntervalMs int `json:",default=3600000"`
+	// AuditIntervalMs 两轮日对账之间的间隔(§6.2,只读,出按类 gauge 与汇总日志)。0 = 不跑对账。
+	AuditIntervalMs int `json:",default=86400000"`
+	// Wake 落地唤醒订阅(shared/assetopwake,§5.3)的参数。整段可缺失,缺失或填 0 的项取 assetopwake 的默认值。
+	Wake AssetOpWakeConf `json:"Wake,optional"`
+
+	// ── 终态行清理(对齐 guild 的同名三键;data.AssetOpRepo.CleanupTerminalOps)──
+
+	// CleanupEnabled 打开终态行清理(每个副本都跑,删除幂等,启动有随机初始延迟)。与 Enabled 独立(同 guild):
+	// 通道关着时历史终态行照样要清。PENDING 与 APPLIED_PARTIAL 永不删。
+	CleanupEnabled bool `json:",optional"`
+	// CleanupIntervalMinutes 两轮清理的间隔。
+	CleanupIntervalMinutes int `json:",default=10"`
+	// TerminalRetentionDays 终态行(APPLIED / REJECTED / ABORTED / ABANDONED)保留天数。
+	TerminalRetentionDays int `json:",default=30"`
+}
+
+// AssetOpWakeConf 是落地唤醒订阅的参数(shared/assetopwake.Config),与 guild 的同名结构同键同默认。
+//
+// 三个键都是 optional、默认值走方法(理由同 guild):整段可选的嵌套结构缺失时 go-zero 不下钻、不回填 default,
+// 要做到"Wake 段没写 = 开、并发 4、超时 10s",默认值只能由读取方法给出;Enabled 用 *bool 区分"没写"(nil = 开)
+// 与"显式写 false"(关)。默认值的唯一来源是 shared/assetopwake 的 DefaultConcurrency / DefaultWakeTimeout,
+// 这里不另抄数字。跨副本去重窗口不开放配置(固定 assetopwake.DefaultDedupTTL,对齐 scene 侧 5 秒合并窗口,同 guild)。
+// 订阅只在 AssetOp.Enabled 时装配(svc.newAssetChannel),订的是 SharedRedis 那一个实例(scene 发布在同一实例)。
+type AssetOpWakeConf struct {
+	// Enabled:nil(没写)或 true = 订阅;显式 false = 不订阅,PENDING 行只按原退避 / 停放档重投(只慢不错)。
+	Enabled *bool `json:",optional"`
+	// Concurrency 本副本同时在跑的唤醒数上限,满了直接丢(唤醒只是提示);0(没写)= assetopwake.DefaultConcurrency(4),
+	// 否则 [1, 64]。
+	Concurrency int `json:",optional"`
+	// TimeoutMs 每次唤醒的独立超时;0(没写)= assetopwake.DefaultWakeTimeout(10s),否则 [5000, 60000]。
+	// 下限必须大于单行预算 OpBudget(2500ms,reconcile 常量):剩余预算不够一整个 OpBudget 时唤醒不再开始新行,
+	// 配得比它小则每次唤醒都回错误、静默退化成"从不唤醒";上限是关停时最坏要等的时长。
+	TimeoutMs int `json:",optional"`
+}
+
+// On 报告是否订阅落地唤醒:没写 = 开。
+func (w AssetOpWakeConf) On() bool {
+	return w.Enabled == nil || *w.Enabled
+}
+
+// EffectiveConcurrency 是生效的并发上限;0(没写)取 assetopwake 的默认值。
+func (w AssetOpWakeConf) EffectiveConcurrency() int {
+	if w.Concurrency == 0 {
+		return assetopwake.DefaultConcurrency
+	}
+	return w.Concurrency
+}
+
+// EffectiveTimeout 是生效的单次唤醒预算;0(没写)取 assetopwake 的默认值。
+func (w AssetOpWakeConf) EffectiveTimeout() time.Duration {
+	if w.TimeoutMs == 0 {
+		return assetopwake.DefaultWakeTimeout
+	}
+	return time.Duration(w.TimeoutMs) * time.Millisecond
+}
+
+// 落地恢复与清理参数的合法区间。来历:
+//   - 停放间隔下限 60000 = reconcile 的 loopMaxBackoff,上限 24h = assetop 的 maxOfflineBackoff;
+//   - 放弃门槛下限 30 天、安全间隔下限 10 分钟、单轮上限 1000 与 assetop(abandon.go)同值 —— 这里先拦一道给出
+//     指名的报错,assetop.NewLoop 在装配期兜底;上限只为挡住"毫秒 / 秒 / 天"配错量级;
+//   - 清理的三项区间与 guild 的 validateCleanup 同值(保留期下限 7 天:太短会让运维追查拿不到近期记录)。
+const (
+	maxOfflineAfterAttempts   = 100
+	minOfflineBackoffMs       = 60000
+	maxOfflineBackoffMs       = 86400000
+	minAbandonAfterDays       = 30
+	maxAbandonAfterDays       = 3650
+	minAbandonSafetyGapMs     = 600000
+	maxAbandonSafetyGapMs     = 7 * 86400000
+	maxAbandonBatch           = 1000
+	minAbandonIntervalMs      = 60000
+	maxAbandonIntervalMs      = 86400000
+	minAuditIntervalMs        = 60000
+	maxAuditIntervalMs        = 7 * 86400000
+	maxWakeConcurrency        = 64
+	minWakeTimeoutMs          = 5000
+	maxWakeTimeoutMs          = 60000
+	minCleanupIntervalMinutes = 1
+	maxCleanupIntervalMinutes = 1440
+	minRetentionDays          = 7
+	maxRetentionDays          = 365
+)
+
+// validateRecovery 校验落地恢复参数;只在 Enabled 时调用(关着时整段可能缺失、全是 0,且没有消费者)。
+// 各功能关着(OfflineAfterAttempts / AbandonAfterDays 为 0)时,它的从属参数不校验,与 assetop 的口径一致。
+func (a AssetOpConf) validateRecovery() error {
+	if a.OfflineAfterAttempts < 0 || a.OfflineAfterAttempts > maxOfflineAfterAttempts {
+		return fmt.Errorf("AssetOp.OfflineAfterAttempts(%d)必须在 [0, %d] 内(0 = 关闭停放档)",
+			a.OfflineAfterAttempts, maxOfflineAfterAttempts)
+	}
+	if a.OfflineAfterAttempts > 0 && (a.OfflineBackoffMs < minOfflineBackoffMs || a.OfflineBackoffMs > maxOfflineBackoffMs) {
+		return fmt.Errorf("AssetOp.OfflineBackoffMs(%d)必须在 [%d, %d] 内:不得小于重投退避封顶,也不得超过 24 小时",
+			a.OfflineBackoffMs, minOfflineBackoffMs, maxOfflineBackoffMs)
+	}
+	if a.AbandonAfterDays != 0 {
+		if a.AbandonAfterDays < minAbandonAfterDays || a.AbandonAfterDays > maxAbandonAfterDays {
+			return fmt.Errorf("AssetOp.AbandonAfterDays(%d)必须为 0(关闭)或在 [%d, %d] 内:放弃不可逆",
+				a.AbandonAfterDays, minAbandonAfterDays, maxAbandonAfterDays)
+		}
+		if a.AbandonSafetyGapMs < minAbandonSafetyGapMs || a.AbandonSafetyGapMs > maxAbandonSafetyGapMs {
+			return fmt.Errorf("AssetOp.AbandonSafetyGapMs(%d)必须在 [%d, %d] 内",
+				a.AbandonSafetyGapMs, minAbandonSafetyGapMs, maxAbandonSafetyGapMs)
+		}
+		if a.AbandonBatch < 1 || a.AbandonBatch > maxAbandonBatch {
+			return fmt.Errorf("AssetOp.AbandonBatch(%d)必须在 [1, %d] 内", a.AbandonBatch, maxAbandonBatch)
+		}
+		if a.AbandonIntervalMs < minAbandonIntervalMs || a.AbandonIntervalMs > maxAbandonIntervalMs {
+			return fmt.Errorf("AssetOp.AbandonIntervalMs(%d)必须在 [%d, %d] 内",
+				a.AbandonIntervalMs, minAbandonIntervalMs, maxAbandonIntervalMs)
+		}
+	}
+	if a.AuditIntervalMs != 0 && (a.AuditIntervalMs < minAuditIntervalMs || a.AuditIntervalMs > maxAuditIntervalMs) {
+		return fmt.Errorf("AssetOp.AuditIntervalMs(%d)必须为 0(不跑对账)或在 [%d, %d] 内",
+			a.AuditIntervalMs, minAuditIntervalMs, maxAuditIntervalMs)
+	}
+	w := a.Wake
+	if !w.On() {
+		return nil // 不订阅时其余两项没有消费者,不校验(同 guild)
+	}
+	if w.Concurrency < 0 || w.Concurrency > maxWakeConcurrency {
+		return fmt.Errorf("AssetOp.Wake.Concurrency(%d)必须为 0(默认 %d)或在 [1, %d] 内",
+			w.Concurrency, assetopwake.DefaultConcurrency, maxWakeConcurrency)
+	}
+	if w.TimeoutMs != 0 && (w.TimeoutMs < minWakeTimeoutMs || w.TimeoutMs > maxWakeTimeoutMs) {
+		return fmt.Errorf("AssetOp.Wake.TimeoutMs(%d)必须为 0(默认)或在 [%d, %d] 内:必须大于单行预算 OpBudget",
+			w.TimeoutMs, minWakeTimeoutMs, maxWakeTimeoutMs)
+	}
+	return nil
+}
+
+// validateCleanup 校验终态行清理参数;只在 CleanupEnabled 时调用(与 guild 同口径)。
+func (a AssetOpConf) validateCleanup() error {
+	if a.CleanupIntervalMinutes < minCleanupIntervalMinutes || a.CleanupIntervalMinutes > maxCleanupIntervalMinutes {
+		return fmt.Errorf("AssetOp.CleanupIntervalMinutes(%d)必须在 [%d, %d] 内",
+			a.CleanupIntervalMinutes, minCleanupIntervalMinutes, maxCleanupIntervalMinutes)
+	}
+	if a.TerminalRetentionDays < minRetentionDays || a.TerminalRetentionDays > maxRetentionDays {
+		return fmt.Errorf("AssetOp.TerminalRetentionDays(%d)必须在 [%d, %d] 内",
+			a.TerminalRetentionDays, minRetentionDays, maxRetentionDays)
+	}
+	return nil
 }
 
 // RedisConf 是 go-redis 客户端的连接参数。
@@ -255,7 +437,9 @@ func (c *Config) ListenHostPort() (string, uint32, error) {
 //   - 页长 / 页数 / 收藏上限 ≤ 0,或默认页长大于上限;
 //   - AssetOp.Secret 非空:密钥写进了配置文件(泄漏),无论开关如何都拒;
 //   - AssetOp.Enabled=true 但 SecretEnv 不是合法环境变量名:密钥来源说不清,scene 会一律回 27008。
-//     "开着却签不出名"由装配层再拦一道(svc.NewServiceContext 读不到密钥即拒启)。
+//     "开着却签不出名"由装配层再拦一道(svc.NewServiceContext 读不到密钥即拒启);
+//   - AssetOp.Enabled=true 时落地恢复参数越界(停放间隔、放弃门槛 / 安全间隔 / 批量 / 间隔、对账间隔、唤醒参数);
+//   - AssetOp.CleanupEnabled=true 时清理间隔或保留期越界(与 Enabled 独立,同 guild)。
 func (c *Config) Validate() error {
 	if c.ZoneId == 0 {
 		return errors.New("ZoneId 必须非 0(K8s 全局服务用 ConfigMap 注入的 CurrentZoneId)")
@@ -348,6 +532,18 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("AssetOp.Enabled=true 时 AssetOp.SecretEnv 必须是形如 %sTRADE 的环境变量名"+
 			"(得到一个长度 %d 的值,形状不符;此处刻意不回显内容,因为它可能就是被误贴进来的密钥):"+
 			"它是密钥的来源声明,不是密钥值", AssetOpSecretEnvPrefix, len(c.AssetOp.SecretEnv))
+	}
+	// 落地恢复参数只在通道开着时有消费者(停放 / 放弃 / 对账 / 唤醒都挂在重投循环上),关着时一概不查。
+	if c.AssetOp.Enabled {
+		if err := c.AssetOp.validateRecovery(); err != nil {
+			return err
+		}
+	}
+	// 清理只依赖 MySQL,与通道开关独立(同 guild):关着通道时历史终态行照样要清。
+	if c.AssetOp.CleanupEnabled {
+		if err := c.AssetOp.validateCleanup(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

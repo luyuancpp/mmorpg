@@ -18,6 +18,7 @@ module**,各自有 `go.mod`,通过 `replace` 引用同目录下的公共库。
 | `guild/` | 50300 | 帮会 | MySQL、Redis、Kafka |
 | `friend/` | 50400 | 好友、黑名单、推荐 | MySQL、Redis、Kafka |
 | `trade/` | 50800 | 玩家寄售交易 | MySQL、Redis |
+| `player_inbox/` | 50950(指标 9270) | 玩家持久收件箱:GM 处置等 scene 待办的入箱、拉取、确认与对账([设计](../docs/design/player-inbox-service.md)、[运维](../docs/ops/player-inbox-runbook.md)) | MySQL、Redis、Kafka |
 
 所有服务都注册到 etcd。端口是各自 `etc/*.yaml` 里的本地默认值。
 
@@ -26,7 +27,7 @@ module**,各自有 `go.mod`,通过 `replace` 引用同目录下的公共库。
 | 目录 | 内容 |
 |------|------|
 | `shared/` | 各服务共用的包:雪花 ID、号段、节点注册、Kafka 寻址、gRPC 拦截器、选主、热关停等 |
-| `schemamigrate/` | 以 proto 为源的建表与迁移库,guild、friend、trade 使用 |
+| `schemamigrate/` | 以 proto 为源的建表与迁移库,guild、friend、trade、player_inbox 使用 |
 | `proto/` | 全部 `.pb.go`,由协议生成器产出,勿手改 |
 
 `battle/` 与 `team/` 下只有生成的消息号常量,不是服务:战斗是 C++ 节点(`cpp/nodes/battle`),

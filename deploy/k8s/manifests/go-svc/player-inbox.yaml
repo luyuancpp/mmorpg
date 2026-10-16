@@ -1,0 +1,154 @@
+# player-inbox:玩家持久收件箱(docs/design/player-inbox-service.md,D3 独立进程 / D14 端口 50950、metrics 9270)。
+# v1 只开放一个域 SCENE_GM_SANCTION(GM 处置:封锁 / 解封某货币获取、挂补缴欠款)。
+#
+# **全局池,只部署到 mmorpg-infra namespace 一次,不进任何 zone namespace。**
+# 每 (玩家, 域) 一条有序邮箱,按全局唯一的 player_id 存,合服不需要重映射(设计 §8 #17)。
+# k8s_deploy.ps1 的 $GoSvcCatalogue 里该条目标了 Global = $true,zone-up 会跳过它,infra-up / all-up 在基础设施阶段部署。
+# ConfigMap go-svc-player-inbox-config 由脚本生成(New-GoSvcConfigMapYaml 的 "player-inbox" 分支)。
+#
+# 调用方(都不是客户端,与 -GateRouterMode 无关):
+#   - C++ scene:按 etcd 前缀 PlayerInboxNodeService.rpc 直连 PlayerInbox.FetchItems / AckItems(node ConfigMap 的
+#     service_discovery_prefixes 已含该前缀);deadline 见 bin/etc/base_deploy_config.yaml 的 GrpcClient.CallDeadlineMs。
+#     收件箱不可用不阻断进场(不进 DependencyGate,IB-7),scene 只退避。
+#   - 运维:直连本 Service 的 PlayerInboxAdmin(GmSanctionPlayer / VoidItem / 查询 / ReconcilePlayer),
+#     每次调用带 x-admin-token。口令只经 Secret player-inbox-admin-token 注入(见下面 env 段的说明)。
+#
+# 库与表(D-14):
+#   - 独占库 mmorpg_player_inbox 由 mysql-init-sql ConfigMap 带入的 deploy/mysql-init/00_init_zone_dbs.sql 预建 + GRANT appuser
+#     (建库只登记那一处;initdb 只对空 PVC 生效,存量 PVC 手工补,见 deploy/k8s/README.md「玩家收件箱 player-inbox」)。
+#   - 表由同目录 player-inbox-migrate.yaml 这个 Job 建,k8s_deploy.ps1 在本 Deployment **之前** delete + apply 它;
+#     staging/prod 恒等 Job Complete,Failed / 超时即中断发布;dev 档只在 -WaitReady 下等。
+#   - staging/prod 的 ConfigMap 固定 Schema.AutoMigrate=false:Job 没跑成功时这里会 CrashLoop —— 这是预期,
+#     先看 `kubectl -n mmorpg-infra logs job/player-inbox-migrate`。
+#
+# 连接数:ConfigMap 的 MySQL.MaxOpenConn × replicas 已登记进 MySQL 连接总账(k8s_deploy.ps1 Get-MysqlConnectionLedgerInputs)。
+# 告警规则:deploy/k8s/player-inbox-alerts.yaml(安装步骤见 deploy/k8s/README.md)。
+# 运维手册:docs/ops/player-inbox-runbook.md(上线顺序、回滚下限、epoch-raise、库恢复、毒消息)。
+apiVersion: v1
+kind: Service
+metadata:
+  name: player-inbox
+  labels:
+    app: player-inbox
+    tier: go-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: player-inbox
+  ports:
+    - name: grpc
+      port: 50950
+      targetPort: 50950
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: player-inbox
+  labels:
+    app: player-inbox
+    tier: go-svc
+spec:
+  # 多实例安全(设计 §10):每个事务只碰一个 (player, domain),流行 FOR UPDATE 串行化同一条流;
+  # 清理 / 补发 / 扫描型 gauge / 对账四个后台循环只在 go/shared/leader 选出的领导者上跑(补发每步都是 CAS,
+  # 领导者切换期间重叠无害)。node_id 由 etcd CAS 分配(go/shared/noderegistry),scene 在全部实例间挑。
+  # 启动期迁移(仅 dev 档 AutoMigrate=true)由 go/schemamigrate 的 GET_LOCK 串行化,两副本同时起不会并发 DDL。
+  # replicas>=2 是「容错不降级」的最低冗余;改副本数要同步核对 MySQL 连接总账(Get-ManifestDeploymentReplicas 读这一行)。
+  replicas: 2
+  selector:
+    matchLabels:
+      app: player-inbox
+  template:
+    metadata:
+      labels:
+        app: player-inbox
+        tier: go-svc
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9270"
+        prometheus.io/path: "/metrics"
+        # 运维口令指纹(SHA-256 前 12 位,不可反推):k8s_deploy.ps1 的 Apply-OneGoSvc 替换占位,未注入口令时写 disabled。
+        # secretKeyRef 只在容器启动时读;只轮换 Secret 时 Pod 模板不变、apply 是 no-op,旧口令一直有效 ——
+        # 指纹进模板后,口令一变即滚动。不要手改这一行,也不要绕过脚本直接 apply 本文件。
+        mmorpg.io/player-inbox-admin-token-hash: "PLACEHOLDER_PLAYER_INBOX_ADMIN_TOKEN_HASH"
+    spec:
+      affinity:
+        podAntiAffinity:
+          # 两个副本尽量不落同一节点,否则单节点故障等于全池不可用(scene 只是退避,但 GM 处置与在线提醒会停摆)
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: player-inbox
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: player-inbox
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          # PLAYER_INBOX_ADMIN_TOKEN 不在这里手写:k8s_deploy.ps1 在口令已注入时经 Secret player-inbox-admin-token
+          # 追加 secretKeyRef(Add-GoSvcSecretEnv);手写同名变量会被脚本拒绝(一处真相)。
+          # KAFKA_COMMAND_TOPIC_* / KAFKA_TOPIC_REPLICATION_FACTOR 同样由脚本注入(在线提醒发往 scene-cmd 的分区契约)。
+          env:
+            - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
+              value: warn
+            # C++ 约定注册(PlayerInboxNodeService.rpc)写进 NodeInfo 的对外 IP:ListenOn 是 0.0.0.0,不能原样写;
+            # 不注入时退回第一块非 loopback 网卡,多网卡 / sidecar / 部分 CNI 下可能选错,scene 拨不通。
+            # 与 trade.yaml / data-service.yaml 同一写法。
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          args: ["-f", "/app/etc/player_inbox.yaml"]
+          ports:
+            - containerPort: 50950
+              name: grpc
+            # 与 ConfigMap 的 MetricsListenAddr ":9270" 及上面 prometheus.io/port 注解一致(9270 = player-inbox)
+            - containerPort: 9270
+              name: metrics
+          readinessProbe:
+            grpc:
+              port: 50950
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            grpc:
+              port: 50950
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          lifecycle:
+            preStop:
+              # 先留 5s 让 Service 摘掉 endpoint;etcd 注册(noderegistry.Close)由进程收到 SIGTERM 后在 grpc Stop 之前删除,
+              # scene watch 到删除后不再挑这个实例。之后进程先取消后台循环与领导者选举、有界等待退出,再关连接池(设计 §10)。
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+          volumeMounts:
+            - name: svc-config
+              mountPath: /app/etc
+              readOnly: true
+            # 不挂 snowflake-cache:seq 由流行显式分配(max(next_seq, now_ms<<12)),不发 snowflake 号。
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: svc-config
+          configMap:
+            name: go-svc-player-inbox-config
+---
+# PDB 与主 manifest 同文件:k8s_deploy.ps1 只 apply 目录条目里的主 manifest。
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: player-inbox-pdb
+  labels:
+    app: player-inbox
+    tier: go-svc
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: player-inbox

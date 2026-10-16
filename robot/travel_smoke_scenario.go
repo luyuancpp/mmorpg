@@ -63,6 +63,8 @@ import (
 	"robot/logic/handler"
 	"robot/metrics"
 	"robot/pkg"
+
+	tiptable "shared/generated/pb/table"
 )
 
 // 账号前缀必须是 robot_ 才会命中 login 侧 DevPasswordAuth。
@@ -229,9 +231,10 @@ func RunTravelSmoke(cfg *config.Config) {
 	goldHome := goldLogin + uint64(travelSmokeHomeGoldDelta)
 	gold, err := bot.addGold(travelSmokeHomeGoldDelta)
 	if err != nil {
-		// 这是全程第一条 GM 指令,环境没放行 GM 时就死在这里。gate 的 GM 闸拒绝时**不回包**、只推一条 SendTipToClient,
-		// 所以表现是等回包超时,而不是带 tip 的拒绝。
-		fail("home-gold-seed", "%v (if waiting for a response timed out, first check that the home-zone gate GATE_RUN_MODE is dev: its GM guard sends no response on rejection)", err)
+		// 这是全程第一条 GM 指令,环境没放行 GM 时就死在这里。2026-10-15 起 gate 的 GM 闸拒绝回带请求 id 的信封
+		// (message_id = GmAddCurrency,tip = kFeatureUnavailable 1006;client-request-ordering.md O6),
+		// replyRejection 会把它单独报成「gate GM 闸拒绝」;以前只推一条 23 号 tip,表现是等回包超时。
+		fail("home-gold-seed", "%v (an envelope tip 1006 from the gate GM guard means the home-zone gate GATE_RUN_MODE is not dev)", err)
 	}
 	if gold != goldHome {
 		fail("home-gold-seed", "Home-zone GmAddCurrency returned balance_after=%d, expected %d (login balance %d + %d)",
@@ -618,8 +621,11 @@ func (b *travelSmokeBot) replyRejection(since int, messageId uint32, reply trave
 		if r.messageId != messageId {
 			continue
 		}
+		if r.envelopeTip == uint32(tiptable.CommonError_kFeatureUnavailable) {
+			return fmt.Errorf("被 gate 的 GM 闸拒绝 tip=%d(请求没到 scene:gate 的 GATE_RUN_MODE 不是 dev)", r.envelopeTip)
+		}
 		if r.envelopeTip != 0 {
-			return fmt.Errorf("被 gate 信封拒绝 tip=%d(请求没到 scene:被限流了,检查 travelSmokeRequestSpacing)", r.envelopeTip)
+			return fmt.Errorf("被 gate 信封拒绝 tip=%d(请求没到 scene:多半是被限流了,检查 travelSmokeRequestSpacing)", r.envelopeTip)
 		}
 		if err := proto.Unmarshal(r.body, reply); err != nil {
 			return fmt.Errorf("decode reply(message_id=%d): %w", messageId, err)

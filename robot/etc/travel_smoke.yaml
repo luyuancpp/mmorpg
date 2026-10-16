@@ -30,7 +30,7 @@
 #   6. scene_config_id 非 0 时,这张图必须两个 zone 都有主世界场景(去程与回程共用这一个值)。
 #   7. 从 robot/ 目录运行(table_dir 是相对路径)。
 #   8. **两个** zone 的 gate / scene 都放行 GM 客户端指令(GATE_RUN_MODE=dev、SCENE_RUN_MODE=dev;本地启动脚本缺省就是 dev)。
-#      金币断言靠 GmAddCurrency:home 区出发前加一笔、访客区再加一笔。gate 的 GM 闸拒绝时不回包(只推一条 tip),表现是等回包超时。
+#      金币断言靠 GmAddCurrency:home 区出发前加一笔、访客区再加一笔。gate 的 GM 闸拒绝时回带请求 id 的信封 1006(2026-10-15 起;以前只推一条 23 号 tip、表现是等回包超时),robot 报「被 gate 的 GM 闸拒绝」。
 #
 # 用法(robot/ 目录下):
 #   .\robot.exe -c etc/travel_smoke.yaml

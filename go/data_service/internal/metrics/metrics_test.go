@@ -212,6 +212,48 @@ func TestPrimeKafkaConsumerCreatesAllSeries(t *testing.T) {
 	}
 }
 
+// TestSetKafkaConsumerLagWritesAllThreeGauges 锁死 lag 探针一次成功探测写出的三条 gauge:合计积压、单分区最大积压、
+// 保留期缺口,各落在自己的序列上(三个 int64 参数挨着,串位了编译器不会报)。DataServiceAuditLagHigh 比的是单分区最大值:
+// broker 的 retention.bytes 按分区执行,拿合计去比会在积压集中于一个分区时漏报。
+// 三条都不由 PrimeKafkaConsumer 预置:探针没成功过,就不该有一个看着像「积压为 0」的数。
+func TestSetKafkaConsumerLagWritesAllThreeGauges(t *testing.T) {
+	const consumer = "metrics_test_lag_consumer"
+	SetKafkaConsumerLag(consumer, 1751, 1750, 7)
+
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("gather: %v", err)
+	}
+	want := map[string]float64{
+		"data_service_kafka_consumer_lag_messages":               1751,
+		"data_service_kafka_consumer_lag_max_partition_messages": 1750,
+		"data_service_kafka_consumer_retention_gap_messages":     7,
+	}
+	found := map[string]bool{}
+	for _, mf := range families {
+		wantValue, ok := want[mf.GetName()]
+		if !ok {
+			continue
+		}
+		for _, m := range mf.GetMetric() {
+			for _, l := range m.GetLabel() {
+				if l.GetName() != "consumer" || l.GetValue() != consumer {
+					continue
+				}
+				found[mf.GetName()] = true
+				if got := m.GetGauge().GetValue(); got != wantValue {
+					t.Fatalf("%s{consumer=%q} = %v, want %v", mf.GetName(), consumer, got, wantValue)
+				}
+			}
+		}
+	}
+	for name := range want {
+		if !found[name] {
+			t.Fatalf("%s has no series for consumer=%q", name, consumer)
+		}
+	}
+}
+
 // TestSQLPoolCollectorDeclaresRouteOnlyUnderDBFirst 钉住 data_service 连接池类别的声明集合(G2b):
 // redis 模式(includeRoute=false)只声明四个 store 的池,db_first 才多出 player_route —— 理由同 PrimeRoute,
 // redis 模式下不装配 route store,不要一组恒为 0、看着像在跑的序列。常量 label sql_client="data_service"。

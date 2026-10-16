@@ -17,6 +17,10 @@ const char *GetNonEmptyEnv(const char *name)
     }
     return value;
 }
+
+// GameConfig.player_inbox.periodic_fetch_minutes 的缺省值(docs/design/player-inbox-service.md §7.3、D14)。
+// proto3 的 uint32 默认是 0,而 0 的含义是"关闭在线兜底",所以缺键时必须由加载器显式写入,不能依赖 proto 默认。
+constexpr uint32_t kDefaultPlayerInboxPeriodicFetchMinutes = 30;
 } // namespace
 
 bool readBaseDeployConfig(const std::string &filename, BaseDeployConfig &baseConfig)
@@ -279,6 +283,27 @@ bool readGameConfig(const std::string &filename, GameConfig &gameConfig)
 		}
 	}
 
+	// 玩家持久收件箱的 scene 消费端(docs/design/player-inbox-service.md §3.3、§7.3)。整段或单键缺失都取默认:
+	// consumer_enabled = false(上线顺序第 4 步的回滚下限:新字段只往返、不消费,§11.7);
+	// periodic_fetch_minutes = 30(显式写入,见 kDefaultPlayerInboxPeriodicFetchMinutes)。
+	// k8s ConfigMap 渲染的 game_config.yaml(tools/scripts/k8s_deploy.ps1)目前不带这一段,走的就是这里的默认。
+	{
+		auto *inboxConfig = gameConfig.mutable_player_inbox();
+		inboxConfig->set_consumer_enabled(false);
+		inboxConfig->set_periodic_fetch_minutes(kDefaultPlayerInboxPeriodicFetchMinutes);
+		if (const YAML::Node inboxNode = root["player_inbox"]; inboxNode)
+		{
+			if (inboxNode["consumer_enabled"])
+			{
+				inboxConfig->set_consumer_enabled(inboxNode["consumer_enabled"].as<bool>());
+			}
+			if (inboxNode["periodic_fetch_minutes"])
+			{
+				inboxConfig->set_periodic_fetch_minutes(inboxNode["periodic_fetch_minutes"].as<uint32_t>());
+			}
+		}
+	}
+
 	// Parse zone Redis config
 	if (root["zoneredis"])
 	{
@@ -299,6 +324,14 @@ bool readGameConfig(const std::string &filename, GameConfig &gameConfig)
 		if (zoneredisNode["db"])
 		{
 			gameConfig.mutable_zone_redis()->set_db(zoneredisNode["db"].as<uint32_t>());
+		}
+
+		// 口令的环境变量覆盖(后者生效,与上面 SCENE_NODE_TYPE / ZONE_ID 同一模式):带口令的环境从 Secret
+		// 注入,不写进 yaml;本机验收也不必改被跟踪的文件。口令值不进日志。
+		if (const char *envPassword = GetNonEmptyEnv("ZONE_REDIS_PASSWORD"))
+		{
+			gameConfig.mutable_zone_redis()->set_password(envPassword);
+			LOG_INFO << "ZONE_REDIS_PASSWORD env override applied (value hidden)";
 		}
 	}
 	else

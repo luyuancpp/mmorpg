@@ -1,0 +1,107 @@
+# 玩家持久收件箱 player_inbox 服务配置(docs/design/player-inbox-service.md §1.4、§3.3、§10;D-13 / D-14 / D14)
+# 全局服务:全服一份、多副本;调用方是 C++ scene(Fetch / Ack,经 etcd 前缀 PlayerInboxNodeService.rpc 发现)
+# 与运维工具(PlayerInboxAdmin,直连,带 x-admin-token)。
+# 本文件的键名与 internal/config/config.go(第 4 批起还有 k8s_deploy.ps1 的 ConfigMap)必须逐字一致。
+Name: player_inbox.rpc
+ListenOn: 127.0.0.1:50950
+
+# zrpc 服务端整体超时(毫秒),config.Validate 要求 [1000, 5000]。
+# scene 侧 base_deploy_config.yaml 的 GrpcClient.CallDeadlineMs.PlayerInboxNodeService 必须 ≥ 本值 + 2000(部署门禁)。
+# 逻辑层整请求 I/O 预算 = Timeout − 500ms(config.InBandReplyReserve):依赖变慢时先在预算内
+# in-band 回 kPlayerInboxStoreUnavailable,不让 go-zero 超时拦截器抢先回 DeadlineExceeded。
+Timeout: 3000
+
+# go-zero 的 Mode 默认是 pro;本地显式写 dev(只影响是否注册 gRPC reflection,方便 grpcurl)。
+Mode: dev
+
+# etcd:只给 shared/noderegistry 注册 PlayerInboxNodeService.rpc/...、scene 节点镜像(SceneNodeService.rpc/)
+# 与 shared/killswitch 用。Key 必须显式写空串(契约 D-13):填了会让 go-zero 额外注册 player_inbox.rpc。
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379
+  Key: ""
+
+# etcd 注册路径 <Prefix>/zone/<z>/... 用的 zone id;必填非 0。全局服务,zone 只影响注册路径。
+# ⚠ 顶层唯一一处 ZoneId,且必须写在任何嵌套段之前:go_services.ps1 -Zone 只改写文件里第一处 ZoneId。
+ZoneId: 1
+
+# etcd 节点注册租约 TTL(秒)= 崩溃场景的切换窗口。
+LeaseTTL: 60
+
+# Prometheus /metrics。端口分工:9210 chat / 9220 guild / 9230 trade / 9270 player_inbox(D14)。置空关闭。
+# 必须是顶层单行:-Zone 的端口位移正则只认这个形状。指标清单见 internal/metrics/metrics.go(前缀 player_inbox_)。
+MetricsListenAddr: ":9270"
+
+# RPC 级热关停(shared/killswitch)规则在 etcd 里的前缀。留空 = 默认 /mmorpg/killswitch/。
+KillSwitchPrefix: ""
+
+# ---- 独占库 mmorpg_player_inbox(D-14)----
+# 库由 deploy/mysql-init/00_init_zone_dbs.sql 预建(第 4 批登记);表由 schemamigrate 按
+# proto/player_inbox/player_inbox_table.proto 建。DBName 必须等于代码常量 mmorpg_player_inbox(config.Validate 断言)。
+# 连接池即设计 §10 的独立连接池:会话级 RC + innodb_lock_wait_timeout=1 由 svc.BuildDSN 固定。
+MySQL:
+  Host: 127.0.0.1:3306
+  User: appuser
+  Password: apppass123
+  DBName: mmorpg_player_inbox
+  MaxOpenConn: 20
+  MaxIdleConn: 5
+
+# 建表策略(D-14 第 4 条):不写或 true = 启动时跑 schemamigrate.Up;false = 只跑只读 plan,不一致即拒启,
+# 补救命令 player_inbox -f etc/player_inbox.yaml -migrate。K8s 非 dev 档由 ConfigMap 固定 false。
+Schema:
+  AutoMigrate: true
+
+# 核心 Redis(与 C++ scene / scene_manager 同一实例,DB 0):
+#   player:{id}:owner_epoch —— 围栏上界 R(IB-8);
+#   player:{id}:location    —— 在线提醒定位玩家所在 scene 节点;
+#   player_inbox:maintenance:leader —— 后台循环选主锁。
+# 段名不能叫 Redis:与 zrpc.RpcServerConf 的同名字段冲突,加载期报 conflict key Redis。
+CoreRedis:
+  Host: 127.0.0.1:6379
+  Password: ""
+  DB: 0
+
+# 在线提醒:SceneCommand{DispatchEvent, PlayerInboxNotifyEvent} 写 scene-cmd_g<N>(分区 = scene node_id % P),
+# key = player_id,target_instance_id = 目标 scene 节点 uuid(AGENTS §7 #2 #3)。
+Kafka:
+  Brokers:
+    - 127.0.0.1:9092
+  WriteTimeoutMs: 2000
+
+# data_service 客户端:玩家存在校验(GetPlayerHomeZone)与对账读已落盘账本(GetPlayerInboxLedger)。
+# 写 Key: dataservice.rpc 不违反 D-13(data_service 按 zone 部署,先例 go/trade/etc/trade.yaml)。
+# -Zone N 时本行会被改写为 dataservice.rpc.zN;data_service 按 home_zone 路由读玩家 blob,行为等价。
+DataServiceRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: dataservice.rpc
+  Timeout: 3000
+  NonBlock: true
+  Middlewares:
+    Breaker: false
+
+# 收件箱业务参数(D14)。
+PlayerInbox:
+  # 运维口令所在的**环境变量名**(PlayerInboxAdmin 全部方法要求 metadata x-admin-token)。口令值绝不写进本文件:
+  # K8s 由 Secret player-inbox-admin-token 注入同名变量(k8s_deploy.ps1,runbook §1);本机要调 GmSanctionPlayer 时
+  # 在启动本服务的终端里设置该变量(至少 16 字节)。变量未设置 / 为空 = 运维面停用(fail-closed)。
+  # 另有字面键 AdminToken(与本键二选一),仓库里的 yaml 永远不写它。
+  AdminTokenEnv: PLAYER_INBOX_ADMIN_TOKEN
+  # 允许入箱的类型白名单(PlayerInboxMessageType 枚举名)。默认空 = 全部停用,回 kPlayerInboxDisabled。
+  # 上线顺序(设计 §11.7):scene 全部打开 consumer_enabled 之后,才在所有实例上一次性填入,例如
+  #   EnqueueTypes:
+  #     - PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN
+  #     - PLAYER_INBOX_MSG_GM_UNBLOCK_CURRENCY_GAIN
+  #     - PLAYER_INBOX_MSG_GM_ATTACH_CURRENCY_DEBT
+  EnqueueTypes: []
+  # 终态行保留 30 天(必须大于签发窗 7 天);PENDING 行、流行、审计行永不自动删除(设计 §9.1)。
+  TerminalRetentionDays: 30
+  SweepIntervalSeconds: 600
+  # 提醒补发循环 30 秒一轮(设计 §6.3)。
+  NotifyResendIntervalSeconds: 30
+  GaugeIntervalSeconds: 60
+  # 对账(设计 §9.3):每小时一轮,看最近 24 小时内由消费方终结的行。0 = 不跑。
+  ReconcileIntervalMinutes: 60
+  ReconcileWindowHours: 24

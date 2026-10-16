@@ -107,7 +107,8 @@ message TradeAssetOpRecord {
   option(OptionTableName) = "trade_asset_op";
   option(OptionPrimaryKey) = "op_id";
   option(OptionUniqueKey) = "player_id,stream,stream_epoch,seq";
-  // idx_trade_asset_op_0 = 重投循环领取(ListDue);idx_..._1 = 分配 seq 时数本纪元未决行(I5);
+  // idx_trade_asset_op_0 = 重投循环领取(ListDue),也是终态行清理的候选读(status, next_attempt_ms);
+  // idx_..._1 = 分配 seq 时数本纪元未决行(I5),也是落地唤醒按玩家列未决行(ListPendingByPlayer);
   // idx_..._2 = 按商品 / 订单查它的资产指令(货架与客服排障)。
   option(OptionIndex) = "status,next_attempt_ms;player_id,stream,stream_epoch,status,seq;ref_kind,ref_id";
   option(OptionTiDBNonclusteredPK) = true;
@@ -123,7 +124,7 @@ message TradeAssetOpRecord {
   TradeAssetOpStatus status = 7;
   bool durable = 8;          // 终局是否已被 scene 确认落盘(APPLIED/REJECTED 都要 durable 才终结)
   uint32 attempts = 9;
-  uint64 next_attempt_ms = 10;
+  uint64 next_attempt_ms = 10;  // 未决行:下一次投递时刻;终态行:终结时刻(终结 / 人工终结 / 放弃同写,清理按它判龄)
   uint64 deadline_ms = 11;   // 到期后改发 AssetAbortDebit;0 = 永不中止(交付类不设截止)
   uint64 lease_until_ms = 12;
   uint64 lease_token = 13;
@@ -144,6 +145,14 @@ message TradeAssetOpRecord {
   // (operator ≤64 字、reason ≤191 字)。
   string resolved_by = 22;     // 操作人;空 = 这一行不是人工终结的
   string resolve_reason = 23;  // 人工判定依据
+
+  // 此前任何一次投递请求**可能**发出的最晚时刻(毫秒),自动放弃的安全依据
+  // (docs/design/landing-recovery-sync-digest.md §6.3「last_send_ms 契约」,实现以
+  // go/shared/assetop/abandon.go 文件头为准)。不能用 updated_ms 代替:领取与本地 NOT_HERE 的重排都写 updated_ms。
+  // 维护规则(go/trade/internal/data/asset_op_repo.go):插行写 created_ms;领取的 CAS 先把旧租约折进来;
+  // 重排只在确实发过请求(非本地 NOT_HERE)时推进;毒行推迟与归还租约不动它。
+  // 存量行(加列前插入)是 0,由领取时懒初始化为 GREATEST(created_ms, updated_ms),不做单独回填。
+  uint64 last_send_ms = 24;
 }
 
 // outbox 行做的是哪一步。与 stream 不是一回事:同为 TRADE_CREDIT 流,交付买家与退回卖家
@@ -164,6 +173,10 @@ enum TradeAssetOpStatus {
   TRADE_ASSET_OP_STATUS_REJECTED = 3;         // scene 判拒(终局)
   TRADE_ASSET_OP_STATUS_ABORTED = 4;          // 中止占位(AssetAbortDebit 回 REJECTED 且 reason=0)
   TRADE_ASSET_OP_STATUS_APPLIED_PARTIAL = 5;  // 部分发放:不入账、不退款,转人工补偿(§4.33)
+  // 自动放弃(docs/design/landing-recovery-sync-digest.md §6.3):PENDING 超过 AbandonAfterDays、玩家无位置、
+  // 距最后一次可能的发送超过安全间隔、已落盘账本确认 scene 从未见过这个 seq。只能由 Abandoner.Abandon 写入。
+  // 对侧账尚未实现(P3,见 AssetOpRepo.Abandon 的 TODO),v1 只终结并留痕。库内状态,不是客户端契约。
+  TRADE_ASSET_OP_STATUS_ABANDONED = 6;
 }
 
 // ref_id 指向哪张表。

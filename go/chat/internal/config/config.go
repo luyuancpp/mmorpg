@@ -7,6 +7,8 @@ import (
 	"net"
 	"strconv"
 
+	"chat/internal/textfilter"
+
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/zrpc"
 )
@@ -46,6 +48,10 @@ type Config struct {
 
 	// MaxContentBytes:单条内容的最大**字节**数(不是字符数:512 字节 ≈ 170 个汉字)。
 	MaxContentBytes int `json:",default=512"`
+
+	// SensitiveWords 为启动时加载的字面屏蔽词表；空表不过滤。
+	// 大小写敏感、按配置顺序替换，一个 Unicode 字符变为一个 *，与原 Go 聊天业务一致。
+	SensitiveWords []string `json:",optional"`
 
 	// RateLimitPerSecond:每玩家每秒最多发几条(chat:{rl:<pid>},1 秒固定窗口)。
 	RateLimitPerSecond int `json:",default=5"`
@@ -144,6 +150,9 @@ func (c *Config) Validate() error {
 	if c.HistoryDefaultLimit > c.HistoryMaxLimit {
 		return fmt.Errorf("HistoryDefaultLimit(%d)不能大于 HistoryMaxLimit(%d)",
 			c.HistoryDefaultLimit, c.HistoryMaxLimit)
+	}
+	if _, err := textfilter.New(c.SensitiveWords); err != nil {
+		return err
 	}
 	return nil
 }

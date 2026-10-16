@@ -21,14 +21,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// 节点间 RPC0 信封(C++ 节点内部,不是客户端契约)。语义见 docs/design/muduo-rpc-channel.md §4.1。
 type GameMessageType int32
 
 const (
-	GameMessageType_REQUEST            GameMessageType = 0
-	GameMessageType_RESPONSE           GameMessageType = 1
-	GameMessageType_RPC_CLIENT_REQUEST GameMessageType = 2 // Server-to-client
-	GameMessageType_NODE_ROUTE         GameMessageType = 3 // Inter-node forwarding
-	GameMessageType_RPC_ERROR          GameMessageType = 4 // not used
+	GameMessageType_REQUEST   GameMessageType = 0
+	GameMessageType_RESPONSE  GameMessageType = 1
+	GameMessageType_RPC_ERROR GameMessageType = 4 // 框架或 handler 拒绝本次调用;回显请求的 id 与 message_id
 )
 
 // Enum value maps for GameMessageType.
@@ -36,16 +35,12 @@ var (
 	GameMessageType_name = map[int32]string{
 		0: "REQUEST",
 		1: "RESPONSE",
-		2: "RPC_CLIENT_REQUEST",
-		3: "NODE_ROUTE",
 		4: "RPC_ERROR",
 	}
 	GameMessageType_value = map[string]int32{
-		"REQUEST":            0,
-		"RESPONSE":           1,
-		"RPC_CLIENT_REQUEST": 2,
-		"NODE_ROUTE":         3,
-		"RPC_ERROR":          4,
+		"REQUEST":   0,
+		"RESPONSE":  1,
+		"RPC_ERROR": 4,
 	}
 )
 
@@ -84,8 +79,10 @@ const (
 	GameErrorCode_NO_SERVICE       GameErrorCode = 2
 	GameErrorCode_NO_METHOD        GameErrorCode = 3
 	GameErrorCode_INVALID_REQUEST  GameErrorCode = 4
-	GameErrorCode_INVALID_RESPONSE GameErrorCode = 5
-	GameErrorCode_TIMEOUT          GameErrorCode = 6
+	GameErrorCode_INVALID_RESPONSE GameErrorCode = 5 // 线上不发;本地完成状态见 C++ RpcStatusCode
+	GameErrorCode_TIMEOUT          GameErrorCode = 6 // 线上不发;本地完成状态见 C++ RpcStatusCode
+	GameErrorCode_HANDLER_FAILED   GameErrorCode = 7 // handler 显式失败(controller->SetFailed / RpcDoneCallback::Fail):handler 已运行
+	GameErrorCode_REPLY_DROPPED    GameErrorCode = 8 // handler 接管 done 后未完成即释放:结果未知
 )
 
 // Enum value maps for GameErrorCode.
@@ -98,6 +95,8 @@ var (
 		4: "INVALID_REQUEST",
 		5: "INVALID_RESPONSE",
 		6: "TIMEOUT",
+		7: "HANDLER_FAILED",
+		8: "REPLY_DROPPED",
 	}
 	GameErrorCode_value = map[string]int32{
 		"RPC_NO_ERROR":     0,
@@ -107,6 +106,8 @@ var (
 		"INVALID_REQUEST":  4,
 		"INVALID_RESPONSE": 5,
 		"TIMEOUT":          6,
+		"HANDLER_FAILED":   7,
+		"REPLY_DROPPED":    8,
 	}
 )
 
@@ -138,12 +139,16 @@ func (GameErrorCode) EnumDescriptor() ([]byte, []int) {
 }
 
 type GameRpcMessage struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Type          GameMessageType        `protobuf:"varint,1,opt,name=type,proto3,enum=GameMessageType" json:"type,omitempty"`
-	Request       []byte                 `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
-	Response      []byte                 `protobuf:"bytes,3,opt,name=response,proto3" json:"response,omitempty"`
-	Error         GameErrorCode          `protobuf:"varint,4,opt,name=error,proto3,enum=GameErrorCode" json:"error,omitempty"`
-	MessageId     uint32                 `protobuf:"varint,5,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Type      GameMessageType        `protobuf:"varint,1,opt,name=type,proto3,enum=GameMessageType" json:"type,omitempty"`
+	Request   []byte                 `protobuf:"bytes,2,opt,name=request,proto3" json:"request,omitempty"`
+	Response  []byte                 `protobuf:"bytes,3,opt,name=response,proto3" json:"response,omitempty"`
+	Error     GameErrorCode          `protobuf:"varint,4,opt,name=error,proto3,enum=GameErrorCode" json:"error,omitempty"`
+	MessageId uint32                 `protobuf:"varint,5,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	// 调用号(= muduo RpcMessage.id):发起方 channel 内单调递增、从 1 开始;0 = 单向(调用方不要应答)。
+	// id != 0 的 REQUEST,服务端必须恰好回一帧 RESPONSE 或 RPC_ERROR(Empty / 0 字节响应也回)。
+	// uint64:按 5 万次/s 算 uint32 约 24 小时回绕;不用原版的 fixed64,小号 varint 只占 1-3 字节。
+	Id            uint64 `protobuf:"varint,6,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -213,25 +218,31 @@ func (x *GameRpcMessage) GetMessageId() uint32 {
 	return 0
 }
 
+func (x *GameRpcMessage) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 var File_proto_common_base_rpc_message_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_rpc_message_proto_rawDesc = "" +
 	"\n" +
-	"#proto/common/base/rpc_message.proto\"\xb1\x01\n" +
+	"#proto/common/base/rpc_message.proto\"\xc1\x01\n" +
 	"\x0eGameRpcMessage\x12$\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x10.GameMessageTypeR\x04type\x12\x18\n" +
 	"\arequest\x18\x02 \x01(\fR\arequest\x12\x1a\n" +
 	"\bresponse\x18\x03 \x01(\fR\bresponse\x12$\n" +
 	"\x05error\x18\x04 \x01(\x0e2\x0e.GameErrorCodeR\x05error\x12\x1d\n" +
 	"\n" +
-	"message_id\x18\x05 \x01(\rR\tmessageId*c\n" +
+	"message_id\x18\x05 \x01(\rR\tmessageId\x12\x0e\n" +
+	"\x02id\x18\x06 \x01(\x04R\x02id*g\n" +
 	"\x0fGameMessageType\x12\v\n" +
 	"\aREQUEST\x10\x00\x12\f\n" +
-	"\bRESPONSE\x10\x01\x12\x16\n" +
-	"\x12RPC_CLIENT_REQUEST\x10\x02\x12\x0e\n" +
-	"\n" +
-	"NODE_ROUTE\x10\x03\x12\r\n" +
-	"\tRPC_ERROR\x10\x04*\x89\x01\n" +
+	"\bRESPONSE\x10\x01\x12\r\n" +
+	"\tRPC_ERROR\x10\x04\"\x04\b\x02\x10\x02\"\x04\b\x03\x10\x03*\x12RPC_CLIENT_REQUEST*\n" +
+	"NODE_ROUTE*\xb0\x01\n" +
 	"\rGameErrorCode\x12\x10\n" +
 	"\fRPC_NO_ERROR\x10\x00\x12\x0f\n" +
 	"\vWRONG_PROTO\x10\x01\x12\x0e\n" +
@@ -240,7 +251,9 @@ const file_proto_common_base_rpc_message_proto_rawDesc = "" +
 	"\tNO_METHOD\x10\x03\x12\x13\n" +
 	"\x0fINVALID_REQUEST\x10\x04\x12\x14\n" +
 	"\x10INVALID_RESPONSE\x10\x05\x12\v\n" +
-	"\aTIMEOUT\x10\x06B\x13Z\x11proto/common/baseb\x06proto3"
+	"\aTIMEOUT\x10\x06\x12\x12\n" +
+	"\x0eHANDLER_FAILED\x10\a\x12\x11\n" +
+	"\rREPLY_DROPPED\x10\bB\x13Z\x11proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_rpc_message_proto_rawDescOnce sync.Once

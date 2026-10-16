@@ -299,13 +299,22 @@ S6 `ActivityDeps` 删 `Notifier`(用 `l.notify`),`OpIDs` 类型改 `data.OpIDMin
 - 字段号按 S3 规则"落码时下一个空闲号、声明在末尾"。按 91 的批次顺序:B3a-1 `profile_component = 15`,B4a-1 `asset_op_ledger = 16`;S4 4.3.4 原文"= 15"作废。
 - **`settlement_ledger = 17` 已被回合制战斗结算幂等占用**(2026-09-25 落码,见
   [turn-battle-gap-closure.md](../turn-battle-gap-closure.md) §9.3)。它不属于帮会二期批次,
-  但共用 `player_database` 这条数轴,所以登记在这里 —— **帮会剩余批次取号从 18 起**。
+  但共用 `player_database` 这条数轴,所以登记在这里 —— **帮会剩余批次取号从 18 起**(2026-10-15 补:18 / 19 已由 MySQL 行内围栏、20 已由玩家收件箱占用,**现从 21 起**,见本节下文两条)。
   与本节其余两批同一条纪律:生成物落地后、任何新 go/db / scene 启动前跑
   `cmd/migrate plan → up → SHOW COLUMNS`;若与帮会某批同日落地可合并为一次迁移,
   但 plan 必须只含这几条 ADD COLUMN。
-- 两批各自在生成物落地后、任何新 go/db / scene 启动前,对每份 zone 的 db 配置跑 `cmd/migrate plan → up → SHOW COLUMNS`(S3 §3.15a、S4 4.42 第 1b 步);若两批同一天连续落地,可合并为一次迁移。`-command up` 按 plan 整条执行、不能挑列,所以 15 / 16 / 17 这三列的迁移(B3a-1、B4a-1、回合制战斗 §9.3,不论哪一方先跑),plan 允许出现的只有 `profile_component` / `asset_op_ledger` / `settlement_ledger` 三条 ADD COLUMN 中尚未迁移的那几条(后者见上一条,属回合制战斗);三列都已迁移过时 plan 为空,up 可跳过。SHOW COLUMNS 三列各返回 1 行;出现这三条之外的任何语句先停下核对。
-- 上一条的放行清单截至 17 号。之后任何批次给 `player_database` 新增字段(18 起),须在同一次改动里把新列追加进上一条、03 §3.15a 与 92 步骤 4 的放行清单,否则那一批的 operator 会按上一条在自己的新列上停下。
-- 两处较早写下的单列清单作废,以上面的三列清单为准(原文暂未改):S4 4.42 第 1b 步"计划只含 `player_database` 加列 `asset_op_ledger`"及其只查 `asset_op_ledger` 一列的 SHOW COLUMNS;[turn-battle-gap-closure.md](../turn-battle-gap-closure.md) §9.3 验证清单第 1 步"计划应只含 `player_database` 加列 `settlement_ledger`"及其只查 `settlement_ledger` 一列的 SHOW COLUMNS。两边照三列清单放行、三列都查。
+- 两批各自在生成物落地后、任何新 go/db / scene 启动前,对每份 zone 的 db 配置跑 `cmd/migrate plan → up → SHOW COLUMNS`(S3 §3.15a、S4 4.42 第 1b 步);若两批同一天连续落地,可合并为一次迁移。`-command up` 按 plan 整条执行、不能挑列,所以 15 / 16 / 17 这三列的迁移(B3a-1、B4a-1、回合制战斗 §9.3,不论哪一方先跑),plan 允许出现的只有 `profile_component` / `asset_op_ledger` / `settlement_ledger` 三条 ADD COLUMN 中尚未迁移的那几条(后者见上一条,属回合制战斗);三列都已迁移过时 plan 为空,up 可跳过。SHOW COLUMNS 三列各返回 1 行;出现这三条之外的任何语句先停下核对。(2026-10-15 补:本条清单已由下文两条扩为 `player_database` 六条、`player_database_1` 两条,放行条数与 SHOW COLUMNS 核对条数以下文最新一条为准。)
+- 上一条的放行清单截至 17 号(2026-10-15 补:现截至 20 号,见下两条)。之后任何批次给 `player_database` 新增字段(18 起),须在同一次改动里把新列追加进上一条、03 §3.15a 与 92 步骤 4 的放行清单,否则那一批的 operator 会按上一条在自己的新列上停下。
+- **2026-10-15:MySQL 行内围栏占用 `player_database` 的 18 / 19 号**:`fence_owner_epoch = 18`、`fence_save_seq = 19`;同批给 `player_database_1` 加 `fence_owner_epoch = 3`、`fence_save_seq = 4`。来源是 [db-write-fencing-mysql.md](../db-write-fencing-mysql.md) §3.2。字段先于条件写落码声明,目的是让后续加列(玩家收件箱 `inbox_ledger` 取 20)保持新老库列序一致。在 go/db 条件写上线之前,这几列只被原样读写。**此后取号从 20 起**(20 已由玩家收件箱预定)。因此上一条的放行清单扩为:
+  - `player_database` 的 `profile_component` / `asset_op_ledger` / `settlement_ledger` / `fence_owner_epoch` / `fence_save_seq` 五条 ADD COLUMN;
+  - `player_database_1` 的 `fence_owner_epoch` / `fence_save_seq` 两条 ADD COLUMN。
+  - 只放行其中尚未迁移的那几条;SHOW COLUMNS 两张表的新列各查一次,各 1 行。
+- **2026-10-15:玩家收件箱占用 `player_database` 的 20 号**:`inbox_ledger = 20`(`PlayerInboxLedgerComp`,收件箱消费端账本)。来源是 [player-inbox-service.md](../player-inbox-service.md) §4.4 与附录 E。它必须在 18 / 19 已声明之后落码,新老库列序才一致;`player_database_1` 不加这一列。**放行清单截至 20 号,此后取号从 21 起**。上一条的放行清单再扩为:
+  - `player_database` 的 `profile_component` / `asset_op_ledger` / `settlement_ledger` / `fence_owner_epoch` / `fence_save_seq` / `inbox_ledger` 六条 ADD COLUMN;
+  - `player_database_1` 不变,仍是 `fence_owner_epoch` / `fence_save_seq` 两条 ADD COLUMN。
+  - 只放行其中尚未迁移的那几条;SHOW COLUMNS 两张表的新列各查一次,各 1 行(`player_database` 六列、`player_database_1` 两列)。
+  - 列序:plan 的语句按字母排序(`go/db/internal/migrate/plan.go:187`),ADD COLUMN 不带 `AFTER`,按执行顺序追加到末尾。`fence_*` 排在 `inbox_ledger` 前面,与 18 / 19 / 20 同序,这三列同一次迁移不会乱序。但这三列都排在 `profile_component`(15)/ `settlement_ledger`(17)前面:plan 里如果 15 或 17 号列与 18 起的列同时出现,迁移后的列序会和新库建表不一致,先停下核对。
+- 两处较早写下的单列清单作废,以上面的三列清单为准(原文暂未改):S4 4.42 第 1b 步"计划只含 `player_database` 加列 `asset_op_ledger`"及其只查 `asset_op_ledger` 一列的 SHOW COLUMNS;[turn-battle-gap-closure.md](../turn-battle-gap-closure.md) §9.3 验证清单第 1 步"计划应只含 `player_database` 加列 `settlement_ledger`"及其只查 `settlement_ledger` 一列的 SHOW COLUMNS。两边照三列清单放行、三列都查。2026-10-15 补:这两处原文已加注,改按上面最新的放行清单(`player_database` 六列、`player_database_1` 两列)放行和核对。
 - B3a-2 的 merge_zone"按列名拷贝"必须先于任何带新列的合服演练。
 
 ## G-04 本地启动脚本与运行环境
@@ -324,7 +333,7 @@ S6 `ActivityDeps` 删 `Notifier`(用 `l.notify`),`OpIDs` 类型改 `data.OpIDMin
 
 ## G-05 K8s 上线批 BK8s(本期不落地,单独授权;各节零散"上线项"汇总)
 
-guild:Deployment + ConfigMap(DSN 库 `mmorpg_guild`、appuser、`Schema.AutoMigrate=false`、`Timeout 4000`、`DataServiceRpc.Timeout 2000`、`AssetOp`、`MatchRpc`、`Activity`、`PlayerLocatorRedis` 指 SharedRedis)、`guild-migrate` Job(照 trade-migrate);密钥 `MMORPG_ASSET_OP_SECRET_GUILD/_TRADE`(`Resolve-InjectedSecret -MinLength 32`,注入 guild、trade、scene);NetworkPolicy(scene gRPC 只放 scene_manager/match/guild/trade;match gRPC 只放路由服与 guild);db migrate Job 先于 db/scene 滚动(帮会两条新列,加上回合制战斗的 `settlement_ledger` 共三条,见 G-03);data-service ConfigMap 的 BootstrapTags;mysql-init ConfigMap 含 `mmorpg_guild`;TiDB BR 按库恢复清单加 `mmorpg_guild`;scene 永不设 `MMORPG_ALLOW_CLIENT_GM`;告警规则上线(G-07,含 `deploy/k8s/owner-epoch-alerts.yaml`);**Loki ruler 接线**(挂载规则目录 + `alertmanager_url`;仓库里 ruler 已配 local 存储但未挂规则、未接告警),接上后把 `docs/ops/cross-zone-failure-test-runbook.md` §9 的三条 LogQL 转为规则(2026-09-21 B4c 补)。前置:B4c 已落地(D8;**2026-09-21 起为 [08](./08-save-owner-fence.md) §8.3 六条**)。
+guild:Deployment + ConfigMap(DSN 库 `mmorpg_guild`、appuser、`Schema.AutoMigrate=false`、`Timeout 4000`、`DataServiceRpc.Timeout 2000`、`AssetOp`、`MatchRpc`、`Activity`、`PlayerLocatorRedis` 指 SharedRedis)、`guild-migrate` Job(照 trade-migrate);密钥 `MMORPG_ASSET_OP_SECRET_GUILD/_TRADE`(`Resolve-InjectedSecret -MinLength 32`,注入 guild、trade、scene);NetworkPolicy(scene gRPC 只放 scene_manager/match/guild/trade;match gRPC 只放路由服与 guild);db migrate Job 先于 db/scene 滚动(`player_database` 上帮会两条新列,加上回合制战斗的 `settlement_ledger`、MySQL 行内围栏的 `fence_owner_epoch` / `fence_save_seq`、玩家收件箱的 `inbox_ledger` 共六条,另有 `player_database_1` 的围栏两条,见 G-03);data-service ConfigMap 的 BootstrapTags;mysql-init ConfigMap 含 `mmorpg_guild`;TiDB BR 按库恢复清单加 `mmorpg_guild`;scene 永不设 `MMORPG_ALLOW_CLIENT_GM`;告警规则上线(G-07,含 `deploy/k8s/owner-epoch-alerts.yaml`);**Loki ruler 接线**(挂载规则目录 + `alertmanager_url`;仓库里 ruler 已配 local 存储但未挂规则、未接告警),接上后把 `docs/ops/cross-zone-failure-test-runbook.md` §9 的三条 LogQL 转为规则(2026-09-21 B4c 补)。前置:B4c 已落地(D8;**2026-09-21 起为 [08](./08-save-owner-fence.md) §8.3 六条**)。
 
 ## G-06 proto-gen 容量
 
@@ -370,3 +379,21 @@ B2c = 65(S2);B3b +2 = 67;B5c +9(client)+5(window)−2(Unsupported 删两例)= 79
 ## G-11 字段与视图契约回写
 
 主设计把 part2 §1、X-15、Y-19 与各节偏差汇总回写到 `guild-phase2.md` 协议节,作为落码时唯一字段表;`00_contract.md` 不再修改(已被各节偏差与本清单覆盖)。
+
+## G-12 八域对齐：申请尝试配额（2026-10-15）
+
+源 `services/social/guild/internal/biz/guild.go` 在申请仓储之前通过 `allowAction("apply", playerID)` 消费每玩家的尝试配额；默认 10 次/分钟，源开发 TiDB yaml 显式覆盖为 60。本仓和 Java 原有 `applyPushAllowed` / `ApplyPushCooldown` 只限制通知，不能拦住申请→撤回→申请或同帮重复刷新造成的 SQL 写入。本批沿用源配额职责，默认选其 10 次/分钟，不用通知冷却或 pending 数量上限替代。
+
+Go `ApplicationQuotaPerMinute` 与 Java `game.guild.apply-per-minute` 缺省 10，启动严格校验 1..600；固定 60000ms，从首个尝试起计时，重复尝试不延长。身份/归属区/合服门及非零目标校验后、首次申请仓储读取前消费，同一玩家跨所有目标帮共享，业务拒绝和重复刷新也消耗；超额返回现有公共 `kRateLimitExceeded`，不执行申请仓储、通知或摘要 bump。取消及其他 RPC 不消费该配额，协议和客户端无新增字段。
+
+计数与过期是一段单键 Lua：INCR，首次或 PTTL<0 时 PEXPIRE60000，自愈无 TTL 的旧键。主仓键 `guild:{apply:<uint64规范十进制>}`；Java 经 RedisKeys 注入 `<ns>:` 前缀，两个版本独立部署和内部存储，不混用计数。最多等待父预算与 250ms 的较小者；父取消/过期或线程中断必须停止，不得借降级继续 SQL。Java 父期限较短时直接等待同一个纳秒 Deadline，避免毫秒向下取整导致提前降级。Go 使用同地址/DB、硬上限4连接、无命令自动重试、启用上下文超时的专用池，先停止服务再关闭池；Java使用现有异步客户端，超时取消本次等待。
+
+这里明确保留源的背压故障政策：Redis 错误、子预算到期、空/异常/非正计数时 fail-open，并计固定 allowed/rejected/error 指标，错误日志每实例至多一分钟一条。风险是故障期间暂时没有频率保护；权限、成员单归属、容量和 pending 硬上限继续由 SQL 事务 fail-closed 裁决。Redis 已执行但响应丢失可能多计，主从故障也不提供经济账本式不可回退承诺；配额不是关系权威、资产事务或业务幂等键。指标没有玩家/帮会ID标签。
+
+Go 当前整服 test/build/vet 已通过；原先独立的历练消费者启动日志中英文断言不匹配，仅修正生产日志为已有中文断言，保留原红日志，未削弱测试。10 个有测试包全部通过，JSON 1061 个通过事件、0 失败、123 个跳过事件（均含子用例；跳过不算通过）；新增配额的真实 Redis 跨实例并发、无 TTL 自愈、不续窗/恢复均实际执行。
+
+Java 交叉审查后的最终源码通过 96/96、零跳过（guild79＋RedisKeys17），10 reactor package 成功。含真实 MySQL `13316`＋Redis `13379` 的四项完整装配/派发用例：新增重复刷新第11次被拒且权威申请列表仍只一条、既有建帮到解散/重建，以及经济通道跨 Dubbo 验证；独立双客户端 Redis 配额另有1项。两处旧工厂调用点已同步实际配额工厂并补键清理，父短期限保留原纳秒 Deadline，Redis清理失败也保证客户端关闭。658 个构建输入与快照、当前工作树零漂移；专用随机 MySQL 库与 Redis 键清理审计为零。Go日志/摘要在 `build/guild-apply-quota-20261015/`，Java在 `build/guild-quota-java-20261015/` 的 `quota-reviewed-package.log`、`final-verification.json`、`final-cleanup-audit.json`。
+
+灰度时旧实例不会消费新计数，只有全部申请写者更新后才有跨副本统一配额；回退版本也会失去此背压。没有关系或资产 schema 迁移，SQL 硬不变量保持。客户端既有公共限流码可按普通业务失败重试，不清会话或停用模块；真实 gate/Unity 跨区、生产 Redis 故障和容量尚未验证。本批也没有补齐 guild 全部移植、邮件或通用排行榜。
+
+授权独立客户端已补公共限流码的申请提示“申请过于频繁，请稍后再试。”，并验证失败后清除忙碌状态、不要求重连、仍可发起下一次申请。隔离 Unity 的 `GuildClientTests` 140/140、零跳过，431 个运行时源码离线编译零错误；两处改动与被测快照 SHA 一致，证据为主仓 `build/guild-client-quota-20261015/summary.json`。重试用例使用受控服务替身，只证明客户端仍允许操作，不代表服务器的 60 秒配额已经恢复；本批未运行 `GuildWindowTests` 资源渲染、播放器构建或真实 gate 往返。最初隔离程序集装配失败及修正记录均保留，没有修改主客户端工程环境。

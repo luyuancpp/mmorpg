@@ -29,6 +29,7 @@ cd robot && go run . -c etc/robot.yaml     # 直接运行
 | `team-follow-smoke` | 组队跟随:入队即被带到队长身边、可见性重建、双向移动广播;`client_follower: true` 时由机器人当队长、真实客户端当队员,验走路跟随 |
 | `travel-smoke` | 跨区场景传送往返 |
 | `channel-smoke` | 玩家主动切线:列出分线、切到同图另一条线、冷却与拒绝(地图只有 1 条线时打印 SKIP,不算失败) |
+| `sync-smoke` | 落地恢复的按域版本摘要:登录取摘要、好友申请只让对应域 +1、短重连后摘要原样延续、实体就绪前发请求不致崩溃(跨区落地腿可选,缺省关) |
 | `currency-crash-snapshot` | 货币崩溃窗口验证用的单次登录快照 |
 
 每种模式在 `etc/` 下都有对应的配置样例。

@@ -117,6 +117,9 @@
     <ClCompile Include="common\component\player_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="common\component\player_inbox_ledger_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="common\component\player_login_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -159,40 +162,10 @@
     <ClCompile Include="common\database\player_cache.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="common\event\actor_combat_state_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\event\actor_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\event\buff_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\event\combat_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\event\mission_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\event\node_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\event\npc_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\event\player_event.pb.cc">
+    <ClCompile Include="common\event\player_inbox_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="common\event\player_migration_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\event\scene_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\event\server_event.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="common\event\skill_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="common\event\team_event.pb.cc">
@@ -321,6 +294,24 @@
     <ClCompile Include="trade\trade_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="player_inbox\player_inbox.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="player_inbox\player_inbox.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="player_inbox\player_inbox_admin.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="player_inbox\player_inbox_admin.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="player_inbox\player_inbox_table.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="player_inbox\player_inbox_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="scene\player_currency.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -334,6 +325,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="common\options\attribute_sync_option.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\options\event_ingress_option.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="common\rollback\player_snapshot.pb.cc">
@@ -467,6 +461,9 @@
     <ClInclude Include="common\component\player_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="common\component\player_inbox_ledger_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="common\component\player_login_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -509,40 +506,10 @@
     <ClInclude Include="common\database\player_cache.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="common\event\actor_combat_state_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\event\actor_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\event\buff_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\event\combat_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\event\mission_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\event\node_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\event\npc_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\event\player_event.pb.h">
+    <ClInclude Include="common\event\player_inbox_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\event\player_migration_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\event\scene_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\event\server_event.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\event\skill_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\event\team_event.pb.h">
@@ -668,6 +635,24 @@
     <ClInclude Include="trade\trade_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="player_inbox\player_inbox.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="player_inbox\player_inbox.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="player_inbox\player_inbox_admin.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="player_inbox\player_inbox_admin.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="player_inbox\player_inbox_table.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="player_inbox\player_inbox_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="scene\player_currency.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -681,6 +666,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\options\attribute_sync_option.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\options\event_ingress_option.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\rollback\player_snapshot.pb.h">

@@ -1382,11 +1382,11 @@ constexpr GuildAssetOpRecord::ParseTableT_ GuildAssetOpRecord::InternalGenerateP
     {
       PROTOBUF_FIELD_OFFSET(GuildAssetOpRecord, _impl_._has_bits_),
       0, // no _extensions_
-      28, 248,  // max_field_number, fast_idx_mask
+      29, 248,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4026531840,  // skipmap
+      3758096384,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      28,  // num_field_entries
+      29,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -1509,7 +1509,10 @@ constexpr GuildAssetOpRecord::ParseTableT_ GuildAssetOpRecord::InternalGenerateP
       {::_pbi::TcParser::FastUS2,
        {482, 2, 0,
         PROTOBUF_FIELD_OFFSET(GuildAssetOpRecord, _impl_.resolve_reason_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 last_send_ms = 29;
+      {::_pbi::TcParser::FastV64S2,
+       {488, 28, 0,
+        PROTOBUF_FIELD_OFFSET(GuildAssetOpRecord, _impl_.last_send_ms_)}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
     }}, {{
@@ -1571,6 +1574,8 @@ constexpr GuildAssetOpRecord::ParseTableT_ GuildAssetOpRecord::InternalGenerateP
       {PROTOBUF_FIELD_OFFSET(GuildAssetOpRecord, _impl_.resolved_by_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
       // string resolve_reason = 28;
       {PROTOBUF_FIELD_OFFSET(GuildAssetOpRecord, _impl_.resolve_reason_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 last_send_ms = 29;
+      {PROTOBUF_FIELD_OFFSET(GuildAssetOpRecord, _impl_.last_send_ms_), _Internal::kHasBitsOffset + 28, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     // no aux_entries
     {{
@@ -1620,7 +1625,8 @@ inline constexpr GuildAssetOpRecord::Impl_::Impl_(
         lease_token_{::uint64_t{0u}},
         last_outcome_{0u},
         last_reason_{0u},
-        stream_epoch_{::uint64_t{0u}} {}
+        stream_epoch_{::uint64_t{0u}},
+        last_send_ms_{::uint64_t{0u}} {}
 
 template <typename>
 constexpr GuildAssetOpRecord::GuildAssetOpRecord(::_pbi::ConstantInitialized,
@@ -2143,7 +2149,7 @@ const ::uint32_t
         3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildAssetOpRecord, _impl_._has_bits_),
-        31, // hasbit index offset
+        32, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildAssetOpRecord, _impl_.op_id_),
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildAssetOpRecord, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildAssetOpRecord, _impl_.stream_),
@@ -2172,6 +2178,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildAssetOpRecord, _impl_.stream_epoch_),
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildAssetOpRecord, _impl_.resolved_by_),
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildAssetOpRecord, _impl_.resolve_reason_),
+        PROTOBUF_FIELD_OFFSET(::guildpb::GuildAssetOpRecord, _impl_.last_send_ms_),
         3,
         4,
         6,
@@ -2200,6 +2207,7 @@ const ::uint32_t
         27,
         1,
         2,
+        28,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::guildpb::GuildDailyCounterRecord, _impl_._has_bits_),
         9, // hasbit index offset
@@ -2286,10 +2294,10 @@ static const ::_pbi::MigrationSchema
         {49, sizeof(::guildpb::GuildApplicationRecord)},
         {60, sizeof(::guildpb::GuildPlayerOpSeqRecord)},
         {73, sizeof(::guildpb::GuildAssetOpRecord)},
-        {132, sizeof(::guildpb::GuildDailyCounterRecord)},
-        {147, sizeof(::guildpb::GuildActivityProgressRecord)},
-        {164, sizeof(::guildpb::GuildTrialBattleRecord)},
-        {189, sizeof(::guildpb::GuildTrialRewardOwedRecord)},
+        {134, sizeof(::guildpb::GuildDailyCounterRecord)},
+        {149, sizeof(::guildpb::GuildActivityProgressRecord)},
+        {166, sizeof(::guildpb::GuildTrialBattleRecord)},
+        {191, sizeof(::guildpb::GuildTrialRewardOwedRecord)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -2333,7 +2341,7 @@ const char descriptor_table_protodef_proto_2fguild_2fguild_5fdb_2eproto[] ABSL_A
     "\006stream\030\002 \001(\r\022\020\n\010next_seq\030\003 \001(\004\022\022\n\nupdat"
     "ed_ms\030\004 \001(\004\022\r\n\005epoch\030\005 \001(\004:<\212\222\364\001\023guild_p"
     "layer_op_seq\222\222\364\001\020player_id,stream\250\223\364\001\001\260\223"
-    "\364\001\004\270\223\364\001\004\"\230\006\n\022GuildAssetOpRecord\022\r\n\005op_id"
+    "\364\001\004\270\223\364\001\004\"\256\006\n\022GuildAssetOpRecord\022\r\n\005op_id"
     "\030\001 \001(\004\022\021\n\tplayer_id\030\002 \001(\004\022\016\n\006stream\030\003 \001("
     "\r\022\013\n\003seq\030\004 \001(\004\022\020\n\010guild_id\030\005 \001(\004\022\'\n\004kind"
     "\030\006 \001(\0162\031.guildpb.GuildAssetOpKind\022+\n\006sta"
@@ -2348,69 +2356,70 @@ const char descriptor_table_protodef_proto_2fguild_2fguild_5fdb_2eproto[] ABSL_A
     "s\030\025 \001(\004\022\023\n\013lease_token\030\026 \001(\004\022\017\n\007tx_type\030"
     "\027 \001(\r\022\024\n\014last_outcome\030\030 \001(\r\022\023\n\013last_reas"
     "on\030\031 \001(\r\022\024\n\014stream_epoch\030\032 \001(\004\022\023\n\013resolv"
-    "ed_by\030\033 \001(\t\022\026\n\016resolve_reason\030\034 \001(\t:\245\001\212\222"
-    "\364\001\016guild_asset_op\222\222\364\001\005op_id\332\222\364\001Nstatus,n"
-    "ext_attempt_ms;guild_id,op_id;player_id,"
-    "stream,stream_epoch,status,seq\342\222\364\001!playe"
-    "r_id,stream,stream_epoch,seq\250\223\364\001\001\260\223\364\001\004\270\223"
-    "\364\001\004\"\223\002\n\027GuildDailyCounterRecord\022\021\n\tplaye"
-    "r_id\030\001 \001(\004\0224\n\014counter_kind\030\002 \001(\0162\036.guild"
-    "pb.GuildDailyCounterKind\022\016\n\006ref_id\030\003 \001(\r"
-    "\022\022\n\nperiod_key\030\004 \001(\r\022\022\n\nused_count\030\005 \001(\r"
-    "\022\022\n\nupdated_ms\030\006 \001(\004:c\212\222\364\001\023guild_daily_c"
-    "ounter\222\222\364\001(player_id,counter_kind,ref_id"
-    ",period_key\332\222\364\001\nperiod_key\250\223\364\001\001\260\223\364\001\004\270\223\364\001"
-    "\004\"\212\002\n\033GuildActivityProgressRecord\022\020\n\010gui"
-    "ld_id\030\001 \001(\004\022\023\n\013activity_id\030\002 \001(\r\022\022\n\nperi"
-    "od_key\030\003 \001(\r\022\026\n\016progress_count\030\004 \001(\r\022\034\n\024"
-    "threshold_reached_ms\030\005 \001(\004\022\025\n\rfunds_gran"
-    "ted\030\006 \001(\r\022\022\n\nupdated_ms\030\007 \001(\004:O\212\222\364\001\027guil"
-    "d_activity_progress\222\222\364\001\037guild_id,activit"
-    "y_id,period_key\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\236\003\n\026Guild"
-    "TrialBattleRecord\022\021\n\tbattle_id\030\001 \001(\004\022\020\n\010"
-    "guild_id\030\002 \001(\004\022\023\n\013activity_id\030\003 \001(\r\022\022\n\np"
-    "eriod_key\030\004 \001(\r\022\030\n\020guild_period_key\030\005 \001("
-    "\r\022\033\n\023initiator_player_id\030\006 \001(\004\022-\n\005state\030"
-    "\007 \001(\0162\036.guildpb.GuildTrialBattleState\0226\n"
-    "\rsettle_result\030\010 \001(\0162\037.guildpb.GuildTria"
-    "lSettleResult\022\026\n\016rewarded_count\030\t \001(\r\022\022\n"
-    "\ncreated_ms\030\n \001(\004\022\022\n\nsettled_ms\030\013 \001(\004:X\212"
-    "\222\364\001\022guild_trial_battle\222\222\364\001\tbattle_id\332\222\364\001"
-    "\037guild_id,state;state,created_ms\250\223\364\001\001\260\223\364"
-    "\001\004\270\223\364\001\004\"\210\002\n\032GuildTrialRewardOwedRecord\022\021"
-    "\n\tplayer_id\030\001 \001(\004\022\021\n\tbattle_id\030\002 \001(\004\022\020\n\010"
-    "guild_id\030\003 \001(\004\022\023\n\013activity_id\030\004 \001(\r\022\022\n\np"
-    "eriod_key\030\005 \001(\r\022\017\n\007payload\030\006 \001(\014\022\020\n\010atte"
-    "mpts\030\007 \001(\r\022\022\n\ncreated_ms\030\010 \001(\004:R\212\222\364\001\027gui"
-    "ld_trial_reward_owed\222\222\364\001\023player_id,battl"
-    "e_id\332\222\364\001\ncreated_ms\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004*\363\001\n\022G"
-    "uildAssetOpStatus\022%\n!GUILD_ASSET_OP_STAT"
-    "US_UNSPECIFIED\020\000\022!\n\035GUILD_ASSET_OP_STATU"
-    "S_PENDING\020\001\022!\n\035GUILD_ASSET_OP_STATUS_APP"
-    "LIED\020\002\022\"\n\036GUILD_ASSET_OP_STATUS_REJECTED"
-    "\020\003\022!\n\035GUILD_ASSET_OP_STATUS_ABORTED\020\004\022)\n"
-    "%GUILD_ASSET_OP_STATUS_APPLIED_PARTIAL\020\005"
-    "*\236\001\n\020GuildAssetOpKind\022#\n\037GUILD_ASSET_OP_"
-    "KIND_UNSPECIFIED\020\000\022\036\n\032GUILD_ASSET_OP_KIN"
-    "D_DONATE\020\001\022\034\n\030GUILD_ASSET_OP_KIND_SHOP\020\002"
-    "\022\'\n#GUILD_ASSET_OP_KIND_ACTIVITY_REWARD\020"
-    "\003*\260\001\n\025GuildDailyCounterKind\022(\n$GUILD_DAI"
-    "LY_COUNTER_KIND_UNSPECIFIED\020\000\022#\n\037GUILD_D"
-    "AILY_COUNTER_KIND_DONATE\020\001\022!\n\035GUILD_DAIL"
-    "Y_COUNTER_KIND_SHOP\020\002\022%\n!GUILD_DAILY_COU"
-    "NTER_KIND_ACTIVITY\020\003*\263\001\n\025GuildTrialBattl"
-    "eState\022(\n$GUILD_TRIAL_BATTLE_STATE_UNSPE"
-    "CIFIED\020\000\022$\n GUILD_TRIAL_BATTLE_STATE_STA"
-    "RTED\020\001\022$\n GUILD_TRIAL_BATTLE_STATE_SETTL"
-    "ED\020\002\022$\n GUILD_TRIAL_BATTLE_STATE_EXPIRED"
-    "\020\003*\210\002\n\026GuildTrialSettleResult\022)\n%GUILD_T"
-    "RIAL_SETTLE_RESULT_UNSPECIFIED\020\000\022!\n\035GUIL"
-    "D_TRIAL_SETTLE_RESULT_WIN\020\001\022\"\n\036GUILD_TRI"
-    "AL_SETTLE_RESULT_LOSS\020\002\022(\n$GUILD_TRIAL_S"
-    "ETTLE_RESULT_GUILD_GONE\020\003\022,\n(GUILD_TRIAL"
-    "_SETTLE_RESULT_CONFIG_MISSING\020\004\022$\n GUILD"
-    "_TRIAL_SETTLE_RESULT_POISON\020\005B\023Z\021guild/p"
-    "roto/guildb\006proto3"
+    "ed_by\030\033 \001(\t\022\026\n\016resolve_reason\030\034 \001(\t\022\024\n\014l"
+    "ast_send_ms\030\035 \001(\004:\245\001\212\222\364\001\016guild_asset_op\222"
+    "\222\364\001\005op_id\332\222\364\001Nstatus,next_attempt_ms;gui"
+    "ld_id,op_id;player_id,stream,stream_epoc"
+    "h,status,seq\342\222\364\001!player_id,stream,stream"
+    "_epoch,seq\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\223\002\n\027GuildDaily"
+    "CounterRecord\022\021\n\tplayer_id\030\001 \001(\004\0224\n\014coun"
+    "ter_kind\030\002 \001(\0162\036.guildpb.GuildDailyCount"
+    "erKind\022\016\n\006ref_id\030\003 \001(\r\022\022\n\nperiod_key\030\004 \001"
+    "(\r\022\022\n\nused_count\030\005 \001(\r\022\022\n\nupdated_ms\030\006 \001"
+    "(\004:c\212\222\364\001\023guild_daily_counter\222\222\364\001(player_"
+    "id,counter_kind,ref_id,period_key\332\222\364\001\npe"
+    "riod_key\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\212\002\n\033GuildActivit"
+    "yProgressRecord\022\020\n\010guild_id\030\001 \001(\004\022\023\n\013act"
+    "ivity_id\030\002 \001(\r\022\022\n\nperiod_key\030\003 \001(\r\022\026\n\016pr"
+    "ogress_count\030\004 \001(\r\022\034\n\024threshold_reached_"
+    "ms\030\005 \001(\004\022\025\n\rfunds_granted\030\006 \001(\r\022\022\n\nupdat"
+    "ed_ms\030\007 \001(\004:O\212\222\364\001\027guild_activity_progres"
+    "s\222\222\364\001\037guild_id,activity_id,period_key\250\223\364"
+    "\001\001\260\223\364\001\004\270\223\364\001\004\"\236\003\n\026GuildTrialBattleRecord\022"
+    "\021\n\tbattle_id\030\001 \001(\004\022\020\n\010guild_id\030\002 \001(\004\022\023\n\013"
+    "activity_id\030\003 \001(\r\022\022\n\nperiod_key\030\004 \001(\r\022\030\n"
+    "\020guild_period_key\030\005 \001(\r\022\033\n\023initiator_pla"
+    "yer_id\030\006 \001(\004\022-\n\005state\030\007 \001(\0162\036.guildpb.Gu"
+    "ildTrialBattleState\0226\n\rsettle_result\030\010 \001"
+    "(\0162\037.guildpb.GuildTrialSettleResult\022\026\n\016r"
+    "ewarded_count\030\t \001(\r\022\022\n\ncreated_ms\030\n \001(\004\022"
+    "\022\n\nsettled_ms\030\013 \001(\004:X\212\222\364\001\022guild_trial_ba"
+    "ttle\222\222\364\001\tbattle_id\332\222\364\001\037guild_id,state;st"
+    "ate,created_ms\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\210\002\n\032GuildT"
+    "rialRewardOwedRecord\022\021\n\tplayer_id\030\001 \001(\004\022"
+    "\021\n\tbattle_id\030\002 \001(\004\022\020\n\010guild_id\030\003 \001(\004\022\023\n\013"
+    "activity_id\030\004 \001(\r\022\022\n\nperiod_key\030\005 \001(\r\022\017\n"
+    "\007payload\030\006 \001(\014\022\020\n\010attempts\030\007 \001(\r\022\022\n\ncrea"
+    "ted_ms\030\010 \001(\004:R\212\222\364\001\027guild_trial_reward_ow"
+    "ed\222\222\364\001\023player_id,battle_id\332\222\364\001\ncreated_m"
+    "s\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004*\230\002\n\022GuildAssetOpStatus\022"
+    "%\n!GUILD_ASSET_OP_STATUS_UNSPECIFIED\020\000\022!"
+    "\n\035GUILD_ASSET_OP_STATUS_PENDING\020\001\022!\n\035GUI"
+    "LD_ASSET_OP_STATUS_APPLIED\020\002\022\"\n\036GUILD_AS"
+    "SET_OP_STATUS_REJECTED\020\003\022!\n\035GUILD_ASSET_"
+    "OP_STATUS_ABORTED\020\004\022)\n%GUILD_ASSET_OP_ST"
+    "ATUS_APPLIED_PARTIAL\020\005\022#\n\037GUILD_ASSET_OP"
+    "_STATUS_ABANDONED\020\006*\236\001\n\020GuildAssetOpKind"
+    "\022#\n\037GUILD_ASSET_OP_KIND_UNSPECIFIED\020\000\022\036\n"
+    "\032GUILD_ASSET_OP_KIND_DONATE\020\001\022\034\n\030GUILD_A"
+    "SSET_OP_KIND_SHOP\020\002\022\'\n#GUILD_ASSET_OP_KI"
+    "ND_ACTIVITY_REWARD\020\003*\260\001\n\025GuildDailyCount"
+    "erKind\022(\n$GUILD_DAILY_COUNTER_KIND_UNSPE"
+    "CIFIED\020\000\022#\n\037GUILD_DAILY_COUNTER_KIND_DON"
+    "ATE\020\001\022!\n\035GUILD_DAILY_COUNTER_KIND_SHOP\020\002"
+    "\022%\n!GUILD_DAILY_COUNTER_KIND_ACTIVITY\020\003*"
+    "\263\001\n\025GuildTrialBattleState\022(\n$GUILD_TRIAL"
+    "_BATTLE_STATE_UNSPECIFIED\020\000\022$\n GUILD_TRI"
+    "AL_BATTLE_STATE_STARTED\020\001\022$\n GUILD_TRIAL"
+    "_BATTLE_STATE_SETTLED\020\002\022$\n GUILD_TRIAL_B"
+    "ATTLE_STATE_EXPIRED\020\003*\210\002\n\026GuildTrialSett"
+    "leResult\022)\n%GUILD_TRIAL_SETTLE_RESULT_UN"
+    "SPECIFIED\020\000\022!\n\035GUILD_TRIAL_SETTLE_RESULT"
+    "_WIN\020\001\022\"\n\036GUILD_TRIAL_SETTLE_RESULT_LOSS"
+    "\020\002\022(\n$GUILD_TRIAL_SETTLE_RESULT_GUILD_GO"
+    "NE\020\003\022,\n(GUILD_TRIAL_SETTLE_RESULT_CONFIG"
+    "_MISSING\020\004\022$\n GUILD_TRIAL_SETTLE_RESULT_"
+    "POISON\020\005B\023Z\021guild/proto/guildb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fguild_2fguild_5fdb_2eproto_deps[1] = {
@@ -2420,7 +2429,7 @@ static ::absl::once_flag descriptor_table_proto_2fguild_2fguild_5fdb_2eproto_onc
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fguild_2fguild_5fdb_2eproto = {
     false,
     false,
-    4178,
+    4237,
     descriptor_table_protodef_proto_2fguild_2fguild_5fdb_2eproto,
     "proto/guild/guild_db.proto",
     &descriptor_table_proto_2fguild_2fguild_5fdb_2eproto_once,
@@ -2440,7 +2449,7 @@ GuildAssetOpStatus_descriptor() {
   return file_level_enum_descriptors_proto_2fguild_2fguild_5fdb_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t GuildAssetOpStatus_internal_data_[] = {
-    393216u, 0u, };
+    458752u, 0u, };
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 GuildAssetOpKind_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fguild_2fguild_5fdb_2eproto);
@@ -4116,9 +4125,9 @@ GuildAssetOpRecord::GuildAssetOpRecord(
                offsetof(Impl_, op_id_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, op_id_),
-           offsetof(Impl_, stream_epoch_) -
+           offsetof(Impl_, last_send_ms_) -
                offsetof(Impl_, op_id_) +
-               sizeof(Impl_::stream_epoch_));
+               sizeof(Impl_::last_send_ms_));
 
   // @@protoc_insertion_point(copy_constructor:guildpb.GuildAssetOpRecord)
 }
@@ -4135,9 +4144,9 @@ inline void GuildAssetOpRecord::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, op_id_),
            0,
-           offsetof(Impl_, stream_epoch_) -
+           offsetof(Impl_, last_send_ms_) -
                offsetof(Impl_, op_id_) +
-               sizeof(Impl_::stream_epoch_));
+               sizeof(Impl_::last_send_ms_));
 }
 GuildAssetOpRecord::~GuildAssetOpRecord() {
   // @@protoc_insertion_point(destructor:guildpb.GuildAssetOpRecord)
@@ -4216,10 +4225,10 @@ PROTOBUF_NOINLINE void GuildAssetOpRecord::Clear() {
         reinterpret_cast<char*>(&_impl_.lease_until_ms_) -
         reinterpret_cast<char*>(&_impl_.period_key_)) + sizeof(_impl_.lease_until_ms_));
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0f000000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x1f000000U)) {
     ::memset(&_impl_.lease_token_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.stream_epoch_) -
-        reinterpret_cast<char*>(&_impl_.lease_token_)) + sizeof(_impl_.stream_epoch_));
+        reinterpret_cast<char*>(&_impl_.last_send_ms_) -
+        reinterpret_cast<char*>(&_impl_.lease_token_)) + sizeof(_impl_.last_send_ms_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -4497,6 +4506,15 @@ PROTOBUF_NOINLINE void GuildAssetOpRecord::Clear() {
     }
   }
 
+  // uint64 last_send_ms = 29;
+  if (CheckHasBit(cached_has_bits, 0x10000000U)) {
+    if (this_._internal_last_send_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          29, this_._internal_last_send_ms(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -4696,7 +4714,7 @@ PROTOBUF_NOINLINE void GuildAssetOpRecord::Clear() {
       }
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0f000000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x1f000000U)) {
     // uint64 lease_token = 22;
     if (CheckHasBit(cached_has_bits, 0x01000000U)) {
       if (this_._internal_lease_token() != 0) {
@@ -4723,6 +4741,13 @@ PROTOBUF_NOINLINE void GuildAssetOpRecord::Clear() {
       if (this_._internal_stream_epoch() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt64Size(
                                         this_._internal_stream_epoch());
+      }
+    }
+    // uint64 last_send_ms = 29;
+    if (CheckHasBit(cached_has_bits, 0x10000000U)) {
+      if (this_._internal_last_send_ms() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::UInt64Size(
+                                        this_._internal_last_send_ms());
       }
     }
   }
@@ -4881,7 +4906,7 @@ void GuildAssetOpRecord::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0f000000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x1f000000U)) {
     if (CheckHasBit(cached_has_bits, 0x01000000U)) {
       if (from._internal_lease_token() != 0) {
         _this->_impl_.lease_token_ = from._impl_.lease_token_;
@@ -4900,6 +4925,11 @@ void GuildAssetOpRecord::MergeImpl(::google::protobuf::MessageLite& to_msg,
     if (CheckHasBit(cached_has_bits, 0x08000000U)) {
       if (from._internal_stream_epoch() != 0) {
         _this->_impl_.stream_epoch_ = from._impl_.stream_epoch_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x10000000U)) {
+      if (from._internal_last_send_ms() != 0) {
+        _this->_impl_.last_send_ms_ = from._impl_.last_send_ms_;
       }
     }
   }
@@ -4926,8 +4956,8 @@ void GuildAssetOpRecord::InternalSwap(GuildAssetOpRecord* PROTOBUF_RESTRICT PROT
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.resolved_by_, &other->_impl_.resolved_by_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.resolve_reason_, &other->_impl_.resolve_reason_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GuildAssetOpRecord, _impl_.stream_epoch_)
-      + sizeof(GuildAssetOpRecord::_impl_.stream_epoch_)
+      PROTOBUF_FIELD_OFFSET(GuildAssetOpRecord, _impl_.last_send_ms_)
+      + sizeof(GuildAssetOpRecord::_impl_.last_send_ms_)
       - PROTOBUF_FIELD_OFFSET(GuildAssetOpRecord, _impl_.op_id_)>(
           reinterpret_cast<char*>(&_impl_.op_id_),
           reinterpret_cast<char*>(&other->_impl_.op_id_));

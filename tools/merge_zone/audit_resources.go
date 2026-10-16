@@ -358,6 +358,7 @@ func runAuditMode(ctx context.Context, cfg auditConfig) []ResourceAudit {
 			auditOnlinePresence,  // player:session(DB 0);friend:online 已退役,见 audit_checks.go
 			auditPlayerLocks,     // lock:player:*(mapping DB) + player:{id}:__lock(data)
 			auditKafkaQueues,     // kafka:retry/processing/dead(DB 0)
+			auditPlayerInbox,     // 两个 zone 库都有 player_database.inbox_ledger 列 + 收件箱 PENDING 量(只读,见 player_inbox_audit.go)
 		)
 	}
 

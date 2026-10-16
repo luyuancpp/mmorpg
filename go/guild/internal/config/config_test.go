@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/zeromicro/go-zero/core/conf"
+
+	"shared/assetopwake"
 )
 
 // TestEtcYamlEnablesPrometheus 钉死 etc/guild.yaml 里的 Prometheus 段确实能被解析、
@@ -300,11 +302,32 @@ func TestAssetOpEnabledFillsY06Defaults(t *testing.T) {
 		{"CleanupIntervalMinutes", a.CleanupIntervalMinutes, 10},
 		{"TerminalRetentionDays", a.TerminalRetentionDays, 30},
 		{"CounterRetentionDays", a.CounterRetentionDays, 30},
+		// 落地恢复(docs/design/landing-recovery-sync-digest.md §6):与 assetop.DefaultLoopConfig 同值。
+		{"OfflineAfterAttempts", a.OfflineAfterAttempts, 5},
+		{"OfflineBackoffMs", a.OfflineBackoffMs, 1800000},
+		{"AbandonAfterDays", a.AbandonAfterDays, 180},
+		{"AbandonSafetyGapMs", a.AbandonSafetyGapMs, 3600000},
+		{"AbandonBatch", a.AbandonBatch, 200},
+		{"AbandonIntervalMs", a.AbandonIntervalMs, 3600000},
+		{"AuditIntervalMs", a.AuditIntervalMs, 86400000},
 	}
 	for _, ck := range checks {
 		if ck.got != ck.want {
 			t.Errorf("AssetOp.%s = %d,Y-06 默认值是 %d", ck.name, ck.got, ck.want)
 		}
+	}
+	// Wake 段没写:go-zero 不下钻整段 optional 的嵌套结构,字段全零;默认值由读取方法给出(AssetOpWakeConf 的说明)。
+	if a.Wake.Enabled != nil {
+		t.Errorf("Wake 段没写时 Enabled 应为 nil(= 开),得到 %v", *a.Wake.Enabled)
+	}
+	if !a.Wake.On() {
+		t.Error("Wake 段没写时落地唤醒应当是开的")
+	}
+	if got := a.Wake.EffectiveConcurrency(); got != assetopwake.DefaultConcurrency {
+		t.Errorf("Wake.EffectiveConcurrency = %d,默认应为 assetopwake.DefaultConcurrency(%d)", got, assetopwake.DefaultConcurrency)
+	}
+	if got := a.Wake.EffectiveTimeout(); got != assetopwake.DefaultWakeTimeout {
+		t.Errorf("Wake.EffectiveTimeout = %v,默认应为 assetopwake.DefaultWakeTimeout(%v)", got, assetopwake.DefaultWakeTimeout)
 	}
 	if a.CleanupEnabled {
 		t.Error("CleanupEnabled 没写时应为 false(只有显式打开才清理)")
@@ -339,7 +362,9 @@ func TestAssetOpLoopBounds(t *testing.T) {
 		{"批过大", func(a *AssetOpConf) { a.ReconcileBatch = 1001 }, "ReconcileBatch"},
 		{"预算下界", func(a *AssetOpConf) { a.OpBudgetMs = 1000 }, ""},
 		{"预算过小", func(a *AssetOpConf) { a.OpBudgetMs = 999 }, "OpBudgetMs"},
-		{"预算上界", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs = 10000, 12000 }, ""},
+		// 预算顶到上界时,落地唤醒的生效超时(默认 10000)不足 2 × OpBudgetMs,必须一起调大(validateLanding)。
+		{"预算上界", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs, a.Wake.TimeoutMs = 10000, 12000, 20000 }, ""},
+		{"预算上界而唤醒超时仍取默认", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs = 10000, 12000 }, "Wake.TimeoutMs"},
 		{"预算过大", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs = 10001, 20000 }, "OpBudgetMs"},
 		{"租约恰好等于预算加余量", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs = 2500, 4500 }, ""},
 		{"租约短于预算加余量", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs = 2500, 4499 }, "LeaseMs"},
@@ -469,6 +494,166 @@ func TestEtcYamlAssetOpBlock(t *testing.T) {
 	}
 	if a.CleanupIntervalMinutes != 10 || a.TerminalRetentionDays != 30 || a.CounterRetentionDays != 30 {
 		t.Errorf("etc/guild.yaml 的清理参数偏离默认值: %+v", a)
+	}
+	// 落地恢复(设计 §5.3 / §6):每个键显式写出且与默认值一致;键名拼错时字段会静默回落到 default,只有这里看得出来
+	// 「写了却没生效」。本项目尚未上线,dev 配置直接开启自动放弃(滚动升级提示见 yaml 注释)。
+	if a.OfflineAfterAttempts != 5 || a.OfflineBackoffMs != 1800000 {
+		t.Errorf("etc/guild.yaml 的停放档参数偏离默认值: %+v", a)
+	}
+	if a.AbandonAfterDays != 180 || a.AbandonSafetyGapMs != 3600000 || a.AbandonBatch != 200 || a.AbandonIntervalMs != 3600000 {
+		t.Errorf("etc/guild.yaml 的自动放弃参数偏离默认值: %+v", a)
+	}
+	if a.AuditIntervalMs != 86400000 {
+		t.Errorf("etc/guild.yaml 的 AuditIntervalMs = %d,期望 86400000(每天一次)", a.AuditIntervalMs)
+	}
+	if a.Wake.Enabled == nil || !*a.Wake.Enabled {
+		t.Error("etc/guild.yaml 应显式写 AssetOp.Wake.Enabled: true(本地演练落地唤醒)")
+	}
+	if a.Wake.Concurrency != assetopwake.DefaultConcurrency || a.Wake.EffectiveTimeout() != assetopwake.DefaultWakeTimeout {
+		t.Errorf("etc/guild.yaml 的唤醒参数偏离默认值: %+v", a.Wake)
+	}
+}
+
+// TestAssetOpLandingBounds:落地恢复四组参数(停放档 / 自动放弃 / 日对账 / 唤醒)越界各一例,以及每条边界的合法端点。
+// 边界与 assetop.LoopConfig.validate / validateAbandon、assetopwake 的约束同形(停放间隔 ∈ [MaxBackoff, 24h]、
+// 放弃门槛 0 或 ≥ 30 天、安全间隔 ≥ 10 分钟且 ≥ 租约、批 [1, 1000]、唤醒超时 ≥ 2 × OpBudget),这里放过的配置不该在
+// assetop.NewLoop 里才炸。每组都是"0 = 关闭"时从属参数不校验 —— 否则"改一个 0 止血"会因为别的键越界而起不来。
+func TestAssetOpLandingBounds(t *testing.T) {
+	cases := []struct {
+		name    string
+		mutate  func(a *AssetOpConf)
+		wantErr string // 空 = 应通过
+	}{
+		// 停放档
+		{"停放档关闭", func(a *AssetOpConf) { a.OfflineAfterAttempts = 0 }, ""},
+		{"停放档关闭时间隔不校验", func(a *AssetOpConf) { a.OfflineAfterAttempts, a.OfflineBackoffMs = 0, 1 }, ""},
+		{"停放次数为负", func(a *AssetOpConf) { a.OfflineAfterAttempts = -1 }, "OfflineAfterAttempts"},
+		{"停放次数上界", func(a *AssetOpConf) { a.OfflineAfterAttempts = 1000 }, ""},
+		{"停放次数过大", func(a *AssetOpConf) { a.OfflineAfterAttempts = 1001 }, "OfflineAfterAttempts"},
+		{"停放间隔恰好等于退避封顶", func(a *AssetOpConf) { a.OfflineBackoffMs = a.MaxBackoffMs }, ""},
+		{"停放间隔短于退避封顶", func(a *AssetOpConf) { a.OfflineBackoffMs = a.MaxBackoffMs - 1 }, "OfflineBackoffMs"},
+		{"停放间隔上界 24 小时", func(a *AssetOpConf) { a.OfflineBackoffMs = 86400000 }, ""},
+		{"停放间隔超过 24 小时", func(a *AssetOpConf) { a.OfflineBackoffMs = 86400001 }, "OfflineBackoffMs"},
+
+		// 自动放弃
+		{"放弃关闭", func(a *AssetOpConf) { a.AbandonAfterDays = 0 }, ""},
+		{"放弃关闭时从属参数不校验", func(a *AssetOpConf) {
+			a.AbandonAfterDays, a.AbandonSafetyGapMs, a.AbandonBatch, a.AbandonIntervalMs = 0, 0, 0, 0
+		}, ""},
+		{"放弃门槛为负", func(a *AssetOpConf) { a.AbandonAfterDays = -1 }, "AbandonAfterDays"},
+		{"放弃门槛下界 30 天", func(a *AssetOpConf) { a.AbandonAfterDays = 30 }, ""},
+		{"放弃门槛不足 30 天", func(a *AssetOpConf) { a.AbandonAfterDays = 29 }, "AbandonAfterDays"},
+		{"放弃门槛上界", func(a *AssetOpConf) { a.AbandonAfterDays = 3650 }, ""},
+		{"放弃门槛过大", func(a *AssetOpConf) { a.AbandonAfterDays = 3651 }, "AbandonAfterDays"},
+		{"安全间隔下界 10 分钟", func(a *AssetOpConf) { a.AbandonSafetyGapMs = 600000 }, ""},
+		{"安全间隔不足 10 分钟", func(a *AssetOpConf) { a.AbandonSafetyGapMs = 599999 }, "AbandonSafetyGapMs"},
+		{"安全间隔恰好等于租约", func(a *AssetOpConf) { a.LeaseMs, a.AbandonSafetyGapMs = 600000, 600000 }, ""},
+		{"安全间隔短于租约", func(a *AssetOpConf) { a.LeaseMs, a.AbandonSafetyGapMs = 600000, 599999 }, "AbandonSafetyGapMs"},
+		{"放弃批下界", func(a *AssetOpConf) { a.AbandonBatch = 1 }, ""},
+		{"放弃批为 0", func(a *AssetOpConf) { a.AbandonBatch = 0 }, "AbandonBatch"},
+		{"放弃批上界", func(a *AssetOpConf) { a.AbandonBatch = 1000 }, ""},
+		{"放弃批过大", func(a *AssetOpConf) { a.AbandonBatch = 1001 }, "AbandonBatch"},
+		{"放弃间隔下界", func(a *AssetOpConf) { a.AbandonIntervalMs = 60000 }, ""},
+		{"放弃间隔过小", func(a *AssetOpConf) { a.AbandonIntervalMs = 59999 }, "AbandonIntervalMs"},
+		{"放弃间隔上界", func(a *AssetOpConf) { a.AbandonIntervalMs = 86400000 }, ""},
+		{"放弃间隔过大", func(a *AssetOpConf) { a.AbandonIntervalMs = 86400001 }, "AbandonIntervalMs"},
+
+		// 日对账
+		{"对账关闭", func(a *AssetOpConf) { a.AuditIntervalMs = 0 }, ""},
+		{"对账间隔下界", func(a *AssetOpConf) { a.AuditIntervalMs = 60000 }, ""},
+		{"对账间隔过小", func(a *AssetOpConf) { a.AuditIntervalMs = 59999 }, "AuditIntervalMs"},
+		{"对账间隔为负", func(a *AssetOpConf) { a.AuditIntervalMs = -1 }, "AuditIntervalMs"},
+		{"对账间隔上界 7 天", func(a *AssetOpConf) { a.AuditIntervalMs = 7 * 86400000 }, ""},
+		{"对账间隔超过 7 天", func(a *AssetOpConf) { a.AuditIntervalMs = 7*86400000 + 1 }, "AuditIntervalMs"},
+
+		// 落地唤醒
+		{"唤醒并发上界", func(a *AssetOpConf) { a.Wake.Concurrency = 64 }, ""},
+		{"唤醒并发过大", func(a *AssetOpConf) { a.Wake.Concurrency = 65 }, "Wake.Concurrency"},
+		{"唤醒并发为负", func(a *AssetOpConf) { a.Wake.Concurrency = -1 }, "Wake.Concurrency"},
+		// 唤醒超时下界 = 2 × OpBudgetMs:先列行(Store 子预算 1000ms),剩余预算还要够一整个 OpBudget 才领行。
+		// 只比 OpBudget 多 1ms 的旧合法值必须拒绝 —— 列完行就不够一个 OpBudget,每次唤醒一行不领、静默退化。
+		{"唤醒超时恰好等于单行预算", func(a *AssetOpConf) { a.Wake.TimeoutMs = a.OpBudgetMs }, "Wake.TimeoutMs"},
+		{"唤醒超时比单行预算多 1ms", func(a *AssetOpConf) { a.Wake.TimeoutMs = a.OpBudgetMs + 1 }, "Wake.TimeoutMs"},
+		{"唤醒超时比两倍单行预算少 1ms", func(a *AssetOpConf) { a.Wake.TimeoutMs = 2*a.OpBudgetMs - 1 }, "Wake.TimeoutMs"},
+		{"唤醒超时恰好两倍单行预算", func(a *AssetOpConf) { a.Wake.TimeoutMs = 2 * a.OpBudgetMs }, ""},
+		{"预算下界时唤醒超时取两倍", func(a *AssetOpConf) { a.OpBudgetMs, a.Wake.TimeoutMs = 1000, 2000 }, ""},
+		{"预算下界时唤醒超时不足两倍", func(a *AssetOpConf) { a.OpBudgetMs, a.Wake.TimeoutMs = 1000, 1999 }, "Wake.TimeoutMs"},
+		{"预算上界时唤醒超时取两倍", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs, a.Wake.TimeoutMs = 10000, 12000, 20000 }, ""},
+		{"预算上界时唤醒超时不足两倍", func(a *AssetOpConf) { a.OpBudgetMs, a.LeaseMs, a.Wake.TimeoutMs = 10000, 12000, 19999 }, "Wake.TimeoutMs"},
+		{"唤醒超时上界", func(a *AssetOpConf) { a.Wake.TimeoutMs = 60000 }, ""},
+		{"唤醒超时过大", func(a *AssetOpConf) { a.Wake.TimeoutMs = 60001 }, "Wake.TimeoutMs"},
+		{"唤醒超时为负", func(a *AssetOpConf) { a.Wake.TimeoutMs = -1 }, "Wake.TimeoutMs"},
+		{"唤醒显式关闭时参数不校验", func(a *AssetOpConf) {
+			off := false
+			a.Wake.Enabled, a.Wake.Concurrency, a.Wake.TimeoutMs = &off, -1, -1
+		}, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := loadAssetOpEnabled(t)
+			tc.mutate(&c.AssetOp)
+			err := c.Validate()
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("应通过,得到 %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("错误 = %v,期望包含 %q", err, tc.wantErr)
+			}
+		})
+	}
+}
+
+// TestAssetOpLandingParamsIgnoredWhenDisabled:通道关着时落地恢复参数同样不校验(同 TestAssetOpLoopParamsIgnoredWhenDisabled:
+// "改一行 Enabled: false 止血"不能因为别的键越界而起不来)。
+func TestAssetOpLandingParamsIgnoredWhenDisabled(t *testing.T) {
+	c := loadAssetOpEnabled(t)
+	c.AssetOp.Enabled = false
+	c.AssetOp.AbandonAfterDays = 1
+	c.AssetOp.OfflineBackoffMs = 1
+	c.AssetOp.AuditIntervalMs = 1
+	c.AssetOp.Wake.TimeoutMs = 1
+	if err := c.Validate(); err != nil {
+		t.Fatalf("Enabled=false 时落地恢复参数不该被校验: %v", err)
+	}
+}
+
+// TestAssetOpWakeConfAccessors:显式写的值原样生效;显式 false 关闭;没写取 assetopwake 的默认值(唯一来源在那边)。
+func TestAssetOpWakeConfAccessors(t *testing.T) {
+	on, off := true, false
+	cases := []struct {
+		name        string
+		w           AssetOpWakeConf
+		wantOn      bool
+		wantConc    int
+		wantTimeout time.Duration
+	}{
+		{"没写", AssetOpWakeConf{}, true, assetopwake.DefaultConcurrency, assetopwake.DefaultWakeTimeout},
+		{"显式开", AssetOpWakeConf{Enabled: &on, Concurrency: 2, TimeoutMs: 5000}, true, 2, 5 * time.Second},
+		{"显式关", AssetOpWakeConf{Enabled: &off}, false, assetopwake.DefaultConcurrency, assetopwake.DefaultWakeTimeout},
+	}
+	for _, tc := range cases {
+		if got := tc.w.On(); got != tc.wantOn {
+			t.Errorf("%s: On() = %t,期望 %t", tc.name, got, tc.wantOn)
+		}
+		if got := tc.w.EffectiveConcurrency(); got != tc.wantConc {
+			t.Errorf("%s: EffectiveConcurrency() = %d,期望 %d", tc.name, got, tc.wantConc)
+		}
+		if got := tc.w.EffectiveTimeout(); got != tc.wantTimeout {
+			t.Errorf("%s: EffectiveTimeout() = %v,期望 %v", tc.name, got, tc.wantTimeout)
+		}
+	}
+
+	// yaml 里显式写 false 必须解析成非 nil 的 false(*bool 才分得清"没写"与"关"),整段配置照样能过校验。
+	var c Config
+	yaml := assetOpReadyYaml(t) + "AssetOp:\n  Enabled: true\n  Wake:\n    Enabled: false\n"
+	if err := conf.LoadFromYamlBytes([]byte(yaml), &c); err != nil {
+		t.Fatalf("Wake.Enabled: false 的配置必须能通过校验: %v", err)
+	}
+	if c.AssetOp.Wake.Enabled == nil || *c.AssetOp.Wake.Enabled || c.AssetOp.Wake.On() {
+		t.Fatalf("显式写 Wake.Enabled: false 必须关闭唤醒,得到 %+v", c.AssetOp.Wake)
 	}
 }
 
@@ -694,5 +879,33 @@ func TestShouldAutoMigrateDefaults(t *testing.T) {
 	c.Schema.AutoMigrate = &no
 	if c.ShouldAutoMigrate() {
 		t.Error("显式 false 时只做只读核对")
+	}
+}
+
+func TestApplicationQuotaConfig(t *testing.T) {
+	c := loadMinimal(t)
+	if c.ApplicationQuotaPerMinute != 10 {
+		t.Fatalf("省略配额配置时应默认 10，得到 %d", c.ApplicationQuotaPerMinute)
+	}
+	for _, limit := range []uint32{0, 1, 600, 601} {
+		c.ApplicationQuotaPerMinute = limit
+		err := c.Validate()
+		valid := limit >= 1 && limit <= MaxApplicationQuotaPerMinute
+		if valid != (err == nil) {
+			t.Errorf("阈值 %d，合法=%v，校验错误=%v", limit, valid, err)
+		}
+	}
+	var checked Config
+	if err := conf.Load("../../etc/guild.yaml", &checked); err != nil {
+		t.Fatal(err)
+	}
+	if checked.ApplicationQuotaPerMinute != 10 {
+		t.Fatalf("主配置应启用 10 次配额，得到 %d", checked.ApplicationQuotaPerMinute)
+	}
+	for _, raw := range []string{"0", "601", "-1"} {
+		var invalid Config
+		if err := conf.LoadFromYamlBytes([]byte(minimalGuildYaml+"\nApplicationQuotaPerMinute: "+raw+"\n"), &invalid); err == nil {
+			t.Errorf("显式配置阈值 %s 不得被默认值掩盖", raw)
+		}
 	}
 }

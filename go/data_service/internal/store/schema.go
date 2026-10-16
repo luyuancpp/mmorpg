@@ -165,9 +165,10 @@ const playerNameBootstrapDDL = "CREATE TABLE IF NOT EXISTS `player_name` (\n" +
 //
 // TiDB 热点(登记在 docs/design/global-data-layer-tidb-decision.md §4 / §6,MySQL 上不存在),2026-10-12 G1a
 // (提案 §11.2「第 1a 批热点修复」)在建表前改形:
-//   - player_route 主键改为聚簇 (route_shard, player_id),route_shard = player_id % 16;三条二级索引都带片前缀。
+//   - player_route 主键改为聚簇 (route_shard, player_id),route_shard = player_id % 64;三条二级索引都带片前缀。
 //     号段发的 player_id 在每个 login 段内严格递增,只按 player_id 排序的主键 / 索引在开服首日始终只写同一个尾部
-//     Region(首日数据量到不了按大小分裂的阈值);带片前缀之后每条索引是 16 条尾部(idx_route_home 每 zone 16 条)。
+//     Region(首日数据量到不了按大小分裂的阈值);带片前缀之后每条索引是 64 条尾部(idx_route_home 每 zone 64 条)。
+//     模数 2026-10-13 按容量模型(docs/design/capacity-model-hok-scale.md §4.1)由 16 改为 64,见 placement.RouteRowShards。
 //   - 只有片前缀、不预切,在 TiDB 上等于没做(空表只有 1 个 Region):预切由 `route_tool tidb-prepare` 显式执行,
 //     因为按 zone 预切需要真实 zone 清单,迁移拿不到;TRUNCATE / BR 恢复后也要重跑。
 //   - route_meta 拆成很少写的开关表 route_meta 与 1b leader 常写的对账表 route_reconcile:每次 W1 都普通读 writable,
@@ -185,10 +186,12 @@ const playerNameBootstrapDDL = "CREATE TABLE IF NOT EXISTS `player_name` (\n" +
 // 时间戳一律取库时钟(route_store.go 的 dbNowMsSQL)。
 //
 // route_shard 由应用按 placement.RouteRowShard 算出并绑定(不用生成列:TiDB 不支持 ALTER 加 STORED 生成列,
-// 生成列进聚簇主键与 Dumpling / Lightning 的行为都未核实)。chk_route_shard 把它钉成 player_id % 16:
+// 生成列进聚簇主键与 Dumpling / Lightning 的行为都未核实)。chk_route_shard 把它钉成 player_id % 64:
 // **player_id 的唯一性现在靠这条 CHECK**(主键 (route_shard, player_id) 只在 route_shard 由 player_id 唯一决定时
 // 才等价于「player_id 唯一」),所以 RouteStore 建池时实测它生效(probeRouteShardCheck),不生效就拒绝建 store。
-// 其中的 16 与 placement.RouteRowShards 必须一致(route_store_test.go 钉住);任何环境建过表之后都不可改。
+// 其中的 64 与 placement.RouteRowShards 必须一致(route_store_test.go 钉住);任何环境建过表之后都不可改。
+// HEAD(d5cbb8a8e)按 % 16 提交过:CREATE TABLE IF NOT EXISTS 不会改已有的表,按 16 建过表的库要先人工 DROP
+// 全部五张路由表再迁移(同 playerRouteG1aShapeHint 的做法;形状守卫只查列名与主键,认不出旧模数)。
 //
 // 三条二级索引显式写出尾部 player_id:InnoDB 本来就会追加主键列、TiDB 非唯一索引也带 handle,写出来是为了让
 // 键集翻页的游标 (route_shard, player_id) / (updated_at_ms, player_id) 在两种引擎上语义一致,不增加存储。
@@ -208,7 +211,7 @@ const playerRouteBootstrapDDL = "CREATE TABLE IF NOT EXISTS `player_route` (\n" 
 	"  KEY `idx_route_home` (`home_zone`, `route_shard`, `player_id`),\n" +
 	"  KEY `idx_route_storage` (`storage_id`, `route_shard`, `player_id`),\n" +
 	"  KEY `idx_route_updated` (`route_shard`, `updated_at_ms`, `player_id`),\n" +
-	"  CONSTRAINT `chk_route_shard` CHECK (`route_shard` = `player_id` % 16),\n" +
+	"  CONSTRAINT `chk_route_shard` CHECK (`route_shard` = `player_id` % 64),\n" +
 	"  CONSTRAINT `chk_route_home` CHECK (`home_zone` IS NULL OR `home_zone` BETWEEN 1 AND 999999),\n" +
 	"  CONSTRAINT `chk_route_place` CHECK ((`storage_id` IS NULL) = (`placement_version` IS NULL)),\n" +
 	"  CONSTRAINT `chk_route_ver` CHECK (`placement_version` IS NULL OR `placement_version` >= 1),\n" +

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/zeromicro/go-zero/zrpc"
@@ -134,7 +135,33 @@ type DatabaseConfig struct {
 
 	// Migration 是迁移入口(cmd/migrate)的超时与锁参数,业务服务不读。
 	Migration MigrationConfig `json:"Migration,optional"`
+
+	// 以下五个是业务连接池(本 zone 库与按需打开的落点库)的驱动级超时与会话级锁等待上限
+	// (docs/design/db-task-store-unavailable-deferral.md §8)。迁移入口与建库不用这组值:DDL 可能合法地跑几分钟。
+	//
+	// 写 0 或不写取默认值;写负数表示不设(驱动不加超时 / 不发对应的 SET)。
+	//
+	// 为什么要求会话级锁等待短于读超时:客户端读超时只关掉自己这一侧的连接,已经发给 MySQL 的语句不会被撤回,
+	// 可能在之后才生效,而此时排序锁已经释放、任务已经进了重试队列,先后顺序就乱了。让服务端先以 1205
+	// 自行中止排队中的语句,超时之后就不会留下在途语句(条件写落地之前,这是唯一能关掉这个窗口的办法)。
+	DialTimeoutSeconds  int `json:"DialTimeoutSeconds,optional"`
+	ReadTimeoutSeconds  int `json:"ReadTimeoutSeconds,optional"`
+	WriteTimeoutSeconds int `json:"WriteTimeoutSeconds,optional"`
+	// SessionLockWaitSeconds 对应 MySQL 的 lock_wait_timeout(元数据锁等待,默认一年)。
+	// TiDB 是否接受这个会话变量没有核实;切 TiDB 时若连接因它失败,写 -1 关掉。
+	SessionLockWaitSeconds int `json:"SessionLockWaitSeconds,optional"`
+	// SessionInnodbLockWaitSeconds 对应 innodb_lock_wait_timeout(行锁等待,MySQL 默认 50 秒)。
+	SessionInnodbLockWaitSeconds int `json:"SessionInnodbLockWaitSeconds,optional"`
 }
+
+// 业务连接池的超时与锁等待默认值(秒)。会话级锁等待必须短于读超时,理由见 DatabaseConfig 的注释。
+const (
+	DefaultDatabaseDialTimeoutSeconds           = 5
+	DefaultDatabaseReadTimeoutSeconds           = 30
+	DefaultDatabaseWriteTimeoutSeconds          = 30
+	DefaultDatabaseSessionLockWaitSeconds       = 10
+	DefaultDatabaseSessionInnodbLockWaitSeconds = 10
+)
 
 // MigrationConfig 是 DDL 迁移的安全阀参数。
 //
@@ -200,12 +227,28 @@ type RedisConfig struct {
 
 // KafkaConfig holds Kafka consumer settings.
 type KafkaConfig struct {
-	Brokers         []string `json:"Brokers"`                      // Broker addresses
-	GroupID         string   `json:"GroupID"`                      // Consumer group ID
-	Topic           string   `json:"Topic,optional"`               // Derived from ZoneId at startup
-	TopicGeneration uint32   `json:"TopicGeneration,default=1"`    // Immutable routing generation; partition changes require a new topic
-	PartitionCnt    int32    `json:"PartitionCnt"`                 // Partition count
-	RetentionMs     int64    `json:"RetentionMs,default=86400000"` // Topic retention in ms (default 24h; matches login)
+	Brokers []string `json:"Brokers"` // Broker addresses
+	// GroupID 是消费组名的**最终形状**键(docs/design/db-consumer-group-per-zone.md §2):本地 db.yaml,以及 K8s 上
+	// 不在交接中的 ConfigMap(final(L) = db_rpc_consumer_group、final(Z) = db_rpc_consumer_group_z<ZoneId>)都只写它。
+	// 交接闸之前的二进制把它当必填(`json:"GroupID"`),所以最终形状任何版本都能加载。
+	// 交接形状不写它,只写 ConsumerGroup + GroupHandoffFrom:旧二进制在 conf.MustLoad 就因缺本键拒启,
+	// 这是有意的能力证明 —— 没有交接闸的二进制不会以新组名从 Offsets.Initial(oldest)起步全量重放。
+	// 与 ConsumerGroup 二选一,见 ValidateConsumerGroup。
+	GroupID string `json:"GroupID,optional"`
+	// ConsumerGroup 是交接形状的组名键:handoff(X←Y) 写 ConsumerGroup=X、GroupHandoffFrom=Y,且不写 GroupID。
+	ConsumerGroup string `json:"ConsumerGroup,optional"`
+	// GroupHandoffFrom 非空时启用交接闸(go/db/internal/kafka/group_handoff.go):本组第一次入组前等对方组释放本 topic,
+	// 入组后用对方组的已提交位点给本组没有位点的分区播种。只能与 ConsumerGroup 一起用,且不能等于本组名。
+	GroupHandoffFrom string `json:"GroupHandoffFrom,optional"`
+	// 消费组会话 / 心跳 / 再平衡超时(毫秒)。0 或不写取默认值(= sarama v1.43.1 的默认值,见 DefaultKafka*);
+	// 约束见 ValidateConsumerGroup:HeartbeatIntervalMs×3 ≤ SessionTimeoutMs,RebalanceTimeoutMs ≥ MinKafkaRebalanceTimeoutMs。
+	SessionTimeoutMs    int    `json:"SessionTimeoutMs,optional"`
+	HeartbeatIntervalMs int    `json:"HeartbeatIntervalMs,optional"`
+	RebalanceTimeoutMs  int    `json:"RebalanceTimeoutMs,optional"`
+	Topic               string `json:"Topic,optional"`               // Derived from ZoneId at startup
+	TopicGeneration     uint32 `json:"TopicGeneration,default=1"`    // Immutable routing generation; partition changes require a new topic
+	PartitionCnt        int32  `json:"PartitionCnt"`                 // Partition count
+	RetentionMs         int64  `json:"RetentionMs,default=86400000"` // Topic retention in ms (default 24h; matches login)
 	// P1 数据安全加固 2026-06-03: 旧值 300000 (5min)
 	// db service 卡 5min+ 会丢数据,24h 给运维事故充足窗口
 	IsOfflineExpand bool `json:"IsOfflineExpand"` // Offline expansion: true = maintenance mode
@@ -276,6 +319,55 @@ const (
 	DefaultPlacementExtraStoreConnMaxIdleSeconds = 60
 )
 
+// 消费组超时默认值(毫秒),等于 sarama v1.43.1 的 NewConfig 默认值(Session 10s / Heartbeat 3s / Rebalance 60s),
+// 所以不写这三个键的部署与引入它们之前行为相同。
+//
+// MinKafkaRebalanceTimeoutMs = go/db/internal/kafka.claimDrainTimeout(10s)+ 5s 提交余量:再平衡时 ConsumeClaim
+// 最多等在途任务 10s 才返回,之后还要提交位点;再平衡超时短于它,协调者会在本成员还在收尾时把它踢出组,
+// 分区被别的成员拿走,本成员收尾的提交作废、任务重放。两处数值要同步改。
+const (
+	DefaultKafkaSessionTimeoutMs    = 10000
+	DefaultKafkaHeartbeatIntervalMs = 3000
+	DefaultKafkaRebalanceTimeoutMs  = 60000
+	MinKafkaRebalanceTimeoutMs      = 15000
+)
+
+// EffectiveGroupID 返回本进程实际加入的消费组:ConsumerGroup 非空取它(交接形状),否则取 GroupID(最终形状)。
+// go/db 运行时从不自己拼组名(没有 _z 推导函数):组名一律由配置给出字面量,K8s 由 k8s_deploy.ps1 渲染。
+func (k KafkaConfig) EffectiveGroupID() string {
+	if k.ConsumerGroup != "" {
+		return k.ConsumerGroup
+	}
+	return k.GroupID
+}
+
+// ValidateConsumerGroup 校验消费组相关键的组合与超时约束。调用方须先 Normalize(否则超时键为 0,必然报错)。
+//
+// 刻意不命名为 Validate:go-zero 的 conf.Load 会在 Normalize 之前自动调用根结构实现的 Validate(),
+// 那时超时键还没回填默认值;而且本方法挂在 KafkaConfig 上,也不该让它变成整份配置加载的隐式步骤。
+// 错误文本用英文(启动日志与 K8s 事件里直接看到)。
+func (k KafkaConfig) ValidateConsumerGroup() error {
+	switch {
+	case k.GroupID == "" && k.ConsumerGroup == "":
+		return errors.New("Kafka.GroupID or Kafka.ConsumerGroup must be set")
+	case k.GroupID != "" && k.ConsumerGroup != "":
+		return errors.New("set only one of Kafka.GroupID and Kafka.ConsumerGroup")
+	case k.GroupHandoffFrom != "" && k.ConsumerGroup == "":
+		return errors.New("Kafka.GroupHandoffFrom requires Kafka.ConsumerGroup (without Kafka.GroupID) so that binaries without the handoff gate refuse to start")
+	case k.GroupHandoffFrom != "" && k.GroupHandoffFrom == k.EffectiveGroupID():
+		return errors.New("Kafka.GroupHandoffFrom must differ from the consumer group")
+	}
+	if k.HeartbeatIntervalMs*3 > k.SessionTimeoutMs {
+		return fmt.Errorf("Kafka.HeartbeatIntervalMs (%d) x 3 must not exceed Kafka.SessionTimeoutMs (%d)",
+			k.HeartbeatIntervalMs, k.SessionTimeoutMs)
+	}
+	if k.RebalanceTimeoutMs < MinKafkaRebalanceTimeoutMs {
+		return fmt.Errorf("Kafka.RebalanceTimeoutMs (%d) must be at least %d (claim drain timeout 10s + 5s commit margin)",
+			k.RebalanceTimeoutMs, MinKafkaRebalanceTimeoutMs)
+	}
+	return nil
+}
+
 // Normalize 回填零值默认项。
 //
 // go-zero 对「标了 optional 且 yaml 里整段缺失」的嵌套结构不会走 default 标签,
@@ -294,6 +386,24 @@ func (c *Config) Normalize() {
 	}
 	if m.AdvisoryLockSeconds <= 0 {
 		m.AdvisoryLockSeconds = DefaultMigrationAdvisoryLockSeconds
+	}
+
+	// 业务连接池:0 取默认,负数保留(表示不设),所以这里只补 0。
+	d := &c.ServerConfig.Database
+	if d.DialTimeoutSeconds == 0 {
+		d.DialTimeoutSeconds = DefaultDatabaseDialTimeoutSeconds
+	}
+	if d.ReadTimeoutSeconds == 0 {
+		d.ReadTimeoutSeconds = DefaultDatabaseReadTimeoutSeconds
+	}
+	if d.WriteTimeoutSeconds == 0 {
+		d.WriteTimeoutSeconds = DefaultDatabaseWriteTimeoutSeconds
+	}
+	if d.SessionLockWaitSeconds == 0 {
+		d.SessionLockWaitSeconds = DefaultDatabaseSessionLockWaitSeconds
+	}
+	if d.SessionInnodbLockWaitSeconds == 0 {
+		d.SessionInnodbLockWaitSeconds = DefaultDatabaseSessionInnodbLockWaitSeconds
 	}
 
 	b := &c.ServerConfig.BlobGuard
@@ -331,6 +441,18 @@ func (c *Config) Normalize() {
 	}
 	if p.ExtraStoreConnMaxIdleSeconds <= 0 {
 		p.ExtraStoreConnMaxIdleSeconds = DefaultPlacementExtraStoreConnMaxIdleSeconds
+	}
+
+	// 消费组超时:≤0 视为没写,取默认值(约束由 ValidateConsumerGroup 检查,这里不改写显式值)。
+	k := &c.ServerConfig.Kafka
+	if k.SessionTimeoutMs <= 0 {
+		k.SessionTimeoutMs = DefaultKafkaSessionTimeoutMs
+	}
+	if k.HeartbeatIntervalMs <= 0 {
+		k.HeartbeatIntervalMs = DefaultKafkaHeartbeatIntervalMs
+	}
+	if k.RebalanceTimeoutMs <= 0 {
+		k.RebalanceTimeoutMs = DefaultKafkaRebalanceTimeoutMs
 	}
 }
 

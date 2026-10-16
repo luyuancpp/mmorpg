@@ -24,7 +24,7 @@
   - **C++ 共享逻辑**（`cpp/libs/services/scene/*`）：ECS 域逻辑（`system` / `comp`）
   - **Go 微服务**（`go/login` 等）：go-zero，login / db / scene_manager / friend / guild / chat
   - **Java 网关**（`java/gateway_node`）：Spring Boot，zone 目录 / gate 分配 / admin API
-- **协议**：gRPC（同步）+ Kafka（异步事件）
+- **协议**：C++ 节点间 muduo TCP RPC、Go/C++ 控制面 gRPC，以及 Kafka 异步命令与事件
 - **基础设施**：MySQL（→ 迁移中：TiDB 全区全服数据层，见 `docs/design/global-data-layer-tidb-decision.md`）+ Redis + Kafka + etcd
 
 ## 2. 中文回复
@@ -39,7 +39,7 @@
 
 ## 4. proto 同步流程
 
-1. proto 源契约在 `proto/`，改动后重生成：`cd go && build.bat`（Go 侧 rpc/proto 产物）
+1. proto 源契约在 `proto/`。在仓库根目录执行 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`（生成器源码变化或尚无工具时），再执行 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run`；共享 Go 绑定写入 `go/proto/`。仅需重生成 db/login 的 go-zero 包装与修正导入时才执行 `cd go && build.bat`，它不能代替完整 proto 生成。默认生成配置会写同级客户端仓；未获客户端任务授权时使用 `-ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`。
 2. 重新编译受影响的 C++ / Go / Java 服务
 3. 字段编号上线后**不复用**，只能 deprecate（`reserved N;` + 注释原因）；开发期已删字段可复用，但须重生并完整编译所有启用 module
 4. **tip 错误码不在 proto 里手写**：`generated/code/proto/tip/*.proto` 全部由导表器从 `data/tip/Tip.xlsx` 生成。
@@ -120,10 +120,10 @@
 1. **SnowFlake 节点隔离**：每种 SnowFlake ID 只能由一种 node 类型生产（不同 node 类型共享 node_id 范围会撞）。
    注意**全系统有两套互不兼容的位布局**，不要混用解析函数：
    - `shared/snowflake` 与 C++ `SnowFlake`：**17-bit** worker / 15-bit step / **秒**级 epoch（1773446400）。
-     scene_id、guild_id、instance_id、GuidId 等走这套，可以用 C++ `ParseGuid` 解。
-   - login 的 **PlayerId**：`bwmarrin/snowflake`，**13-bit** node / 9-bit step / **毫秒**级 epoch
+     仍由这套号源生成的 scene_id 等值可用 C++ `ParseGuid` 解；已切号段的种类不能仅凭字段名选择解析器，存量 SnowFlake 与新号段须按号源区分。
+   - login 的**存量及回退 SnowFlake PlayerId**：`bwmarrin/snowflake`，**13-bit** node / 9-bit step / **毫秒**级 epoch
      （见 `login/etc/login.yaml` 的 `Snowflake` 段）。**拿 `ParseGuid` 解 player_id 得到的是垃圾。**
-     改布局会作废存量 player_id，所以这是既成事实，不是待修项。
+     改布局会作废存量 player_id，所以这是既成事实，不是待修项。当前 `IdSegment.Enabled=true` 时新建角色优先使用 `data_service.AllocateIdSegment` 的 `player` 号段；号段 ID 没有 SnowFlake 位布局，也不能用 `ParseGuid` 解析。关闭号段或显式允许回退时才使用上述旧号源，失败语义见 `go/login/internal/svc/player_id_minter.go`。
 2. **Kafka 防僵尸**：发往 `{type}-{id}` topic 的消息必须填 `target_instance_id`（目标节点 UUID），空值则关闭过滤
 3. **kafka topic key = 业务实体 ID**（同一玩家 / 同一对局事件有序）
 4. **proto 字段编号上线后不复用**（见 §4）
@@ -136,13 +136,14 @@
    「这个码算不算服务端故障」同样是表的一列（`fault`），生成到 `tip.Faults` 供 `serverbase.TipVerdict` 消费；
    服务里不许再手写故障码集合——那会把「段和发号分家」的病在分类上重新制造一遍。
    详见 [docs/design/tip-code-axis.md](docs/design/tip-code-axis.md)。
-5. **ECS 组件访问**：per-tick 路径禁用 `get_or_emplace`；跨实体查询用 `try_get`，不用 `get`（见 copilot-instructions）
+5. **ECS 组件访问**：修改或评审组件创建、读取、存盘与快照前，先按 [组件访问规则](docs/design/ecs-component-access-rules.md) 区分持久数据、按需状态和派生运行时数据；创建职责与缺失语义以该文档为准，读路径只读，跨实体查询用 `try_get`。
 6. **保证修改代码的正确性、数据一致性**
 
 ## 8. 命名规范
 
 - RPC 请求 handler 是 `cpp/nodes/scene/handler/rpc/...` 下的 `*Handler` 类
-- 异步回复 handler 用 `On<Domain><Method>Reply`（`cpp/nodes/scene/rpc_replies`）
+- 节点间 muduo RPC（RPC0）的回包在调用点处理：`CallMethod` 的每次调用 lambda（`RpcStatus` + 响应），不再按 message_id 注册全局回包函数；服务端要等下游再回复用 `RpcDoneCallback::Adopt(done)`。见 `docs/design/muduo-rpc-channel.md`
+- `rpc_replies/` 只放 gRPC 异步应答适配（沿用 `On<Domain><Method>Reply` 命名）与玩家回包链
 - ECS/域逻辑放 `*System` 类与 `*Comp` 结构（`cpp/libs/services/scene/...`）
 - 用更清晰的动词式 RPC handler 名 + 薄包装委托模式（如 `ProcessClientPlayerMessage`）
 
@@ -267,13 +268,13 @@
 
 这是 2026-09-13 gate 在 `TcpConnection.cc:71 assert(state_ == kDisconnected)` 崩溃、随后又暴露 use-after-free 的完整教训，推导与证据见 `docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md` §8.0。所有坑的共同根源只有一个：应用层和 muduo 抢连接的所有权，或者把裸 `this` 交给 muduo 之后自己先死了。
 
-- **连接的所有权只在 muduo（`TcpServer` / `TcpClient`）手里。** 应用层任何寿命长于一次回调的地方——成员、ECS 组件、容器、定时器 / `queueInLoop` 闭包、thread_local——只能存 `std::weak_ptr<TcpConnection>`，用时 `lock()`，锁不住就当连接不存在。**禁止**长期持有 `TcpConnectionPtr` 强引用：它会让死连接连同 fd、缓冲区、`GameChannel` 一起钉在内存里（muduo 的 `handleClose` 不关 fd，留给析构），还会把 `TcpClient::~TcpClient` 的 `use_count()==1` 判断带偏、跳过 `forceClose()`。
+- **连接的所有权只在 muduo（`TcpServer` / `TcpClient`）手里。** 应用层任何寿命长于一次回调的地方——成员、ECS 组件、容器、定时器 / `queueInLoop` 闭包、thread_local——只能存 `std::weak_ptr<TcpConnection>`，用时 `lock()`，锁不住就当连接不存在。**禁止**长期持有 `TcpConnectionPtr` 强引用：它会让死连接连同 fd、缓冲区、`RpcChannel` 一起钉在内存里（muduo 的 `handleClose` 不关 fd，留给析构），还会把 `TcpClient::~TcpClient` 的 `use_count()==1` 判断带偏、跳过 `forceClose()`。
 - **绑进 muduo 回调（`set*Callback`、定时器、`queueInLoop`）的对象一律以 `weak_ptr<自己>` 捕获**（`enable_shared_from_this`），回调先 `lock()`，失败即返回。muduo 会把回调拷到 `TcpConnection` 上，且 `forceClose` 一律排队到下一轮，所以"对象已析构、回调才到"是必然而非偶然。**禁止**用裸 `this` / 裸指针 `std::bind` 进这些回调；与被绑对象同寿命的成员（如 `RpcServer` 自己的 `tcpServer`）除外。
 - **拆对象就是直接销毁。** 有了上两条，不需要析构函数摘回调，不需要"延迟关闭"兜底列表，不需要"DOWN 时记得清 X"的手动约定；剩下的 DOWN 清理只有记录卫生的意义。任何"为了不崩而不销毁"的写法都是在掩盖上两条的违例，必须回到根因。
 - **节点摘除只在 `queueInLoop` 里做**，不在连接自己的回调栈上。
 - **关机先排空再 `quit()`**：`quit()` 经**两跳 `queueInLoop`** 排到队列末尾，靠 FIFO 让排队的 `forceCloseInLoop`（第一趟）与 `connectDestroyed`（第二趟）都跑完；少一趟就是 `TcpConnection.cc:71` 或 `Channel.cc:43` 的 assert。关闭完成标记和通知必须在最后一跳的 `quit()` 之后、完成锁内发出，解锁后不再访问 Node，保证析构等待与 fallback 不会提前结束。**不要用定时器**：Windows 的 loop 是 `poll → handleEvents → timerQueue_->loop() → doPendingFunctors`，定时器恰在 N+1 趟到期时 `quit_` 先置位、只剩一趟——它"通常"能跑完，不是"必然"。
 
-新写或修改任何持有连接、绑进回调的类时只问两句：**"我存的是 weak 吗？""我绑的是 weak 吗？"** 两个都是，这一类问题与你无关。参考实现：`GameChannel::LockConnection`、`RpcClient::connect()`、`RpcSession::connection`、`BattleClientEdge::DirectSession`。回归测试：`cpp/tests/rpc_controller_test/rpc_client_lifecycle_test.cpp`。
+新写或修改任何持有连接、绑进回调的类时只问两句：**"我存的是 weak 吗？""我绑的是 weak 吗？"** 两个都是，这一类问题与你无关。参考实现：`RpcChannel`（只存 weak 连接，超时 tick 与消息回调只绑 `weak_ptr<RpcChannel>`）、`RpcClient::connect()`、`RpcSession`（只存 weak channel）、`RpcDoneCallback`（延后回复只持 weak channel）、`BattleClientEdge::DirectSession`。回归测试：`cpp/tests/rpc_controller_test/rpc_client_lifecycle_test.cpp`、`rpc_channel_loopback_test.cpp`。
 
 ## 12. 双版本服务器（C++/Go 版 + Java 版，强制）
 

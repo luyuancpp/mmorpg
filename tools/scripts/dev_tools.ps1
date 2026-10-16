@@ -81,6 +81,12 @@
     # (回退后果与前置见 k8s_deploy.ps1 -GateRouterMode 参数注释)。
     [ValidateSet("", "0", "1")]
     [string]$GateRouterMode = "",
+    # go/db 存盘消费组的渲染模式(keep | zone | legacy),透传给 k8s_deploy.ps1 同名参数,语义见那边的参数注释与
+    # docs/design/db-consumer-group-per-zone.md(zone / legacy 只许配 k8s-zone-up,由 k8s_deploy.ps1 在入口拒绝)。
+    # 默认留空 = 不透传,由 k8s_deploy.ps1 的默认值 keep 接管(写法同 -GateRouterMode:默认值只留在 k8s_deploy.ps1 一处)。
+    # k8s-release-* 不转发它(等于 keep);k8s-zone-rollback 不经本参数,回滚脚本的 Step 6 自己固定传 zone。
+    [ValidateSet("", "keep", "zone", "legacy")]
+    [string]$DbConsumerGroup = "",
     # 集群外客户端入口,透传给 k8s_deploy.ps1(k8s-infra-up / k8s-zone-up / k8s-all-up)、k8s_image.ps1(k8s-release-*)
     # 或 k8s_zone_rollback.ps1(k8s-zone-rollback,由它的 Step 6 转给 k8s-zone-up),语义见 k8s_deploy.ps1 同名参数与
     # docs/design/k8s-client-entry.md(集群外入口 D80 / D88 / D89 / D91)。
@@ -130,6 +136,10 @@
     # 只在维护窗口里显式加。k8s-zone-rollback 下它只转给 Step 6:Step 1 已删掉整个 zone namespace,这道闸通常无从触发,
     # 只在 namespace 没删净时由 k8s_deploy.ps1 按集群现状把关;它不豁免回滚脚本第 0 步的停服前核对(见 k8s_zone_rollback.ps1 同名参数)。
     [switch]$AllowDisruptiveSwitch,
+    # 确认本次 infra-up 可以重启共享 Redis(redis-0,全服登录中断并重放 AOF),透传给 k8s_deploy.ps1 / k8s_image.ps1 同名参数,
+    # 语义见 k8s_deploy.ps1 参数注释(P0-E 重启闸);switch 只在被指定时透传,只在维护窗口里显式加。
+    # 只对会 apply infra 的入口有意义:k8s-infra-up、k8s-all-up、k8s-release-all(均不带 -SkipInfra);k8s-zone-rollback 不 infra-up,不转发。
+    [switch]$ConfirmRedisCoreRestart,
     [switch]$SkipInfra,
     [switch]$SkipGoSvc,
     [string]$GoSvcRegistry = "ghcr.io/luyuancpp",
@@ -241,8 +251,11 @@
     [switch]$MergeAllowEmptySource,
     [string]$MergeTableListJson = "",
     # Kafka 积压门禁:有 CLI 就真查,没有就必须显式声明(不允许静默跳过)。
-    # GroupID / TopicGeneration 必须与 go/db/etc/db.yaml 一致 —— 查错 topic
-    # 等于「查了一个不存在的 topic,lag 恒 0」,门禁形同虚设。默认取 db.yaml 的值。
+    # TopicGeneration 必须与 go/db/etc/db.yaml 一致 —— 查错 topic 等于「查了一个不存在的 topic,lag 恒 0」,
+    # 门禁形同虚设;留空(-1)即现读 db.yaml。
+    # 消费组(-MergeKafkaGroup)留空 = 不转发,由 tools/merge_zone 按 zone 推导候选组(db_rpc_consumer_group_z<zone>
+    # 加 legacy 组 db_rpc_consumer_group),只认在本 topic 上有已提交位点的唯一权威组(docs/design/db-consumer-group-per-zone.md §7)。
+    # 只在需要显式指定实际在跑的组时才给(例如本机混用过单 zone 默认启动的裸名组与 -Zone N 启动的 _zN 组)。
     [string]$MergeKafkaConsumerGroupsCmd = "",
     [string]$MergeKafkaBootstrap = "127.0.0.1:9092",
     [string]$MergeKafkaGroup = "",
@@ -305,6 +318,10 @@
     [int]$KafkaPartitions = 0,
     [int]$KafkaReplicationFactor = 1,
     [string]$KafkaBin = "",
+    # 转给 kafka_offset_reset.ps1 -RetireGroup / -FinalizeHandoff(db_task 消费组交接收尾与回档退役旧组位点,
+    # 见 docs/design/db-consumer-group-per-zone.md §5)。都要配 -KafkaPartitions(> 0)。
+    [string]$KafkaRetireGroup = "",
+    [switch]$KafkaFinalizeHandoff,
     [switch]$KafkaApply,
 
     # ── k8s-zone-rollback ─────────────────────────────────────────
@@ -318,7 +335,11 @@
     # 留空 = 由 k8s_zone_rollback.ps1 按 -ZoneId 推导 db_task_zone_<id>。
     # 旧默认 "db_task_topic" 全仓不存在,会静默重置一个空 topic。
     [string]$RollbackKafkaTopic = "",
-    [string]$RollbackKafkaGroup = "db_rpc_consumer_group",
+    # 留空 = 由 k8s_zone_rollback.ps1 按 go/db/etc/db.yaml 的 GroupID 基名推导:-RollbackKafkaGroup 为 <基名>_z<ZoneId>
+    # (回档后的权威组,Step 5 重置它),-RollbackKafkaLegacyGroup 为 <基名>(Step 5 删除它在本 topic 上的位点)。
+    # 非空才转发。以前缺省是 legacy 共享组:别的 zone 在线时它不是 Empty,Step 5 的重置一定被拒。
+    [string]$RollbackKafkaGroup = "",
+    [string]$RollbackKafkaLegacyGroup = "",
     [switch]$RollbackSkipMySqlPause,
     # 转给 k8s_zone_rollback.ps1 -ConfirmNoGatewayIngress:显式声明回滚后该 zone 不要 Ingress gateway(Ingress 核对的显式决定,
     # 与 -GatewayIngressHost 互斥)。switch 不占位置参数,插在这里不影响后面参数的位置绑定。
@@ -326,7 +347,7 @@
     # 转给 k8s_zone_rollback.ps1 -ConfirmFlushSharedRedis:Step 4 FLUSHDB 的目标 DB 里有全局共享键
     # (player:zone / player:placement / player:maprev / merge:* / consumer:applied* / kafka:retry*)时仍然放行。默认拒绝。
     [switch]$RollbackConfirmFlushSharedRedis,
-    [int]$RollbackKafkaDrainTimeoutSec = 300,
+    # 原 -RollbackKafkaDrainTimeoutSec 已删除(2026-10-15):回滚脚本删掉了 zone-down 之后等 LAG 排空的 Step 2。
     [switch]$RollbackApply
 )
 
@@ -429,17 +450,20 @@ function Invoke-ProtoGenRun {
 
         if ($UseGoRun) {
             go run ./cmd
+            if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
             return
         }
 
         if ($UseBinary) {
             if (Test-Path $primaryProtoGenExePath) {
                 & $primaryProtoGenExePath
+                if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
                 return
             }
 
             if (Test-Path $legacyProtoGenExePath) {
                 & $legacyProtoGenExePath
+                if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
                 return
             }
 
@@ -456,6 +480,8 @@ function Invoke-ProtoGenRun {
         else {
             go run ./cmd
         }
+        # 外部命令非零退出不会自动抛异常；必须在 finally 清理之前把失败传给调用者。
+        if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
     }
     finally {
         if ($null -ne $previousConfigPath) {
@@ -655,6 +681,10 @@ function Invoke-K8sDeploy {
     if (-not [string]::IsNullOrWhiteSpace($GateRouterMode)) {
         $args.GateRouterMode = $GateRouterMode
     }
+    # 同上:留空不传,由 k8s_deploy.ps1 的默认值(keep)接管。
+    if (-not [string]::IsNullOrWhiteSpace($DbConsumerGroup)) {
+        $args.DbConsumerGroup = $DbConsumerGroup
+    }
     # 集群外入口参数同一口径:字符串非空才传,GateNodePortBase 非 -1 才传,switch 只在被指定时传。
     # 不抽成共用函数:契约测试按 AST 单独取出本函数执行,依赖外部函数会让它找不到命令。
     if (-not [string]::IsNullOrWhiteSpace($ClientEntryMode)) { $args.ClientEntryMode = $ClientEntryMode }
@@ -670,6 +700,8 @@ function Invoke-K8sDeploy {
     if ($LoginDevPasswordAuth) { $args.LoginDevPasswordAuth = $true }
     if (-not [string]::IsNullOrWhiteSpace($RequireClientEndpoint)) { $args.RequireClientEndpoint = $RequireClientEndpoint }
     if ($AllowDisruptiveSwitch) { $args.AllowDisruptiveSwitch = $true }
+    # 共享 Redis 重启闸的确认(P0-E),同一口径:switch 只在被指定时传。
+    if ($ConfirmRedisCoreRestart) { $args.ConfirmRedisCoreRestart = $true }
 
     if ($DryRun) {
         $args.DryRun = $true
@@ -868,6 +900,8 @@ function Invoke-K8sImage {
     if (-not [string]::IsNullOrWhiteSpace($BattleOrchestrator)) { $args.BattleOrchestrator = $BattleOrchestrator }
     # release-zone / release-all 同样重新生成 gate(release-all 还有 battle),切换形态的确认闸同一口径透传。
     if ($AllowDisruptiveSwitch) { $args.AllowDisruptiveSwitch = $true }
+    # release-all(不带 -SkipInfra)会 infra-up,共享 Redis 重启闸的确认同一口径透传。
+    if ($ConfirmRedisCoreRestart) { $args.ConfirmRedisCoreRestart = $true }
     # 留空不透传;k8s_image.ps1 不部署 login / scene_manager,给了由它告警"只参与预检、不改写 ConfigMap"。
     if (-not [string]::IsNullOrWhiteSpace($RequireClientEndpoint)) { $args.RequireClientEndpoint = $RequireClientEndpoint }
     if ($WaitReady) {
@@ -952,11 +986,13 @@ function Get-MergeMappingRedis {
 # "cannot find main module" —— 旧的 `go run ./tools/merge_zone` 从来没跑通过)。
 # 一旦切了工作目录,所有相对路径参数都必须先转成绝对路径。
 # Get-MergeDbKafka 现读 go/db/etc/db.yaml 的 Kafka 段,给合服的积压门禁用。
-# 为什么必须现读:门禁查的是 db_task_zone_<src>[_g<gen>] 的 consumer lag。GroupID
-# 或 TopicGeneration 与 go/db 实际用的不一致时,查的是一个**不存在的 topic** ——
+# 为什么必须现读:门禁查的是 db_task_zone_<src>[_g<gen>] 的 consumer lag。TopicGeneration
+# 与 go/db 实际用的不一致时,查的是一个**不存在的 topic** ——
 # lag 恒 0,门禁静默放行,于是在 go/db 还没消费完的时候就开始搬数据。
 # 解析不到就返回 GroupID="" / TopicGeneration=-1,由调用方决定是回落到工具默认值
 # 还是不转发(这里选择不转发,让工具用它自己文档化的默认值)。
+# 返回的 GroupID 保留但不再转发:db.yaml 里的裸名只是基名,go/db 按 zone 拆组之后(本机 -Zone N 启动为 _zN,
+# K8s 切组后为 _z<ZoneId>),实际组名由 tools/merge_zone 按 zone 推导并认定唯一权威组。
 function Get-MergeDbKafka {
     $result = @{ GroupID = ""; TopicGeneration = -1 }
     $yaml = Join-Path $ScriptDir "..\..\go\db\etc\db.yaml"
@@ -995,14 +1031,15 @@ function Get-MergeZoneArgs {
         "-scene-redis-db", $MergeSceneRedisDB
     )
 
-    # Kafka 积压门禁的三个参数必须一起转发。漏转 -kafka-group / -kafka-topic-generation
-    # 时工具会去查 db_task_zone_<src> 与默认 group,在 TopicGeneration != 1 或改过
-    # GroupID 的环境上那是一个**不存在的 topic**:lag 查出来恒 0,门禁静默放行。
-    $kGroup = if ($MergeKafkaGroup -ne "") { $MergeKafkaGroup } else { (Get-MergeDbKafka).GroupID }
+    # Kafka 积压门禁:-kafka-topic-generation 必须转发。漏转时工具会去查 db_task_zone_<src>,
+    # 在 TopicGeneration != 1 的环境上那是一个**不存在的 topic**:lag 查出来恒 0,门禁静默放行。
+    # -kafka-group 只在显式 -MergeKafkaGroup 时转发:db.yaml 的 GroupID 只是基名(go/db 按 zone 拆组,本机 -Zone N 启动为 _zN,
+    # K8s 切组后为 _z<ZoneId>),转发裸名会让门禁只查一个可能不存在、或已退役的组。不转发时由工具按 zone 推导候选组
+    # (zone 组 + legacy 组),只认在本 topic 上有已提交位点的唯一权威组,两组都有就拒绝(先跑 kafka_offset_reset.ps1 -FinalizeHandoff)。
     $kGen = if ($MergeKafkaTopicGeneration -ge 0) { $MergeKafkaTopicGeneration } else { (Get-MergeDbKafka).TopicGeneration }
     # 只在这里转发 group / generation:CLI 路径与 -assume-kafka-drained 由
     # merge-zone 命令块单独追加(审计不跑积压门禁,给了也无害但没必要)。
-    if ($kGroup -ne "") { $a += @("-kafka-group", $kGroup) }
+    if ($MergeKafkaGroup -ne "") { $a += @("-kafka-group", $MergeKafkaGroup) }
     if ($kGen -ge 0) { $a += @("-kafka-topic-generation", $kGen) }
     if ($MergeRedisPassword -ne "")      { $a += @("-redis-password", $MergeRedisPassword) }
     if ($mapPwd -ne "")                  { $a += @("-mapping-redis-password", $mapPwd) }
@@ -1547,23 +1584,35 @@ switch ($Command) {
     }
     "kafka-offset-reset" {
         # Wraps kafka_offset_reset.ps1 — see docs/design/zone_data_rollback.md §3 step 4.
-        # Used during zone rollback to reset db_task_zone_<id> offsets before restarting a zone.
-        $kArgs = @("-BootstrapServer", $KafkaBootstrapServer, "-Topic", $KafkaTopic)
-        if ($KafkaGroup -ne "")               { $kArgs += @("-Group", $KafkaGroup) }
-        if ($KafkaToDatetime -ne "")          { $kArgs += @("-ToDatetime", $KafkaToDatetime) }
-        if ($KafkaToEarliest)                 { $kArgs += "-ToEarliest" }
-        if ($KafkaToLatest)                   { $kArgs += "-ToLatest" }
-        if ($KafkaDeleteAndRecreate)          { $kArgs += "-DeleteAndRecreateTopic" }
-        if ($KafkaPartitions -gt 0)           { $kArgs += @("-Partitions", $KafkaPartitions) }
-        if ($KafkaReplicationFactor -ne 1)    { $kArgs += @("-ReplicationFactor", $KafkaReplicationFactor) }
-        if ($KafkaBin -ne "")                 { $kArgs += @("-KafkaBin", $KafkaBin) }
-        if ($KafkaApply)                      { $kArgs += "-Apply" }
+        # Used during zone rollback to reset db_task_zone_<id> offsets before restarting a zone,
+        # and to finalize a db_task consumer-group handoff (-KafkaFinalizeHandoff / -KafkaRetireGroup).
+        # 必须 hashtable splatting:以前是数组 splatting,PowerShell 把数组元素当**位置参数**依次绑定,
+        # "-Topic" 后面的 topic 名会撞上 [int]$Partitions 直接类型转换失败(与 k8s_zone_rollback.ps1 Step 5 注释里记录的是同一个 bug),
+        # 本地回档 / 重置路径因此从来跑不通。字符串非空才放,switch 只在被指定时放,数值只在偏离缺省时放。
+        $kArgs = @{
+            BootstrapServer = $KafkaBootstrapServer
+            Topic           = $KafkaTopic
+        }
+        if ($KafkaGroup -ne "")               { $kArgs.Group = $KafkaGroup }
+        if ($KafkaRetireGroup -ne "")         { $kArgs.RetireGroup = $KafkaRetireGroup }
+        if ($KafkaToDatetime -ne "")          { $kArgs.ToDatetime = $KafkaToDatetime }
+        if ($KafkaToEarliest)                 { $kArgs.ToEarliest = $true }
+        if ($KafkaToLatest)                   { $kArgs.ToLatest = $true }
+        if ($KafkaDeleteAndRecreate)          { $kArgs.DeleteAndRecreateTopic = $true }
+        if ($KafkaFinalizeHandoff)            { $kArgs.FinalizeHandoff = $true }
+        if ($KafkaPartitions -gt 0)           { $kArgs.Partitions = $KafkaPartitions }
+        if ($KafkaReplicationFactor -ne 1)    { $kArgs.ReplicationFactor = $KafkaReplicationFactor }
+        if ($KafkaBin -ne "")                 { $kArgs.KafkaBin = $KafkaBin }
+        if ($KafkaApply)                      { $kArgs.Apply = $true }
+        # 被调脚本以 exit 结束时(DeleteAndRecreateTopic / FinalizeHandoff)只设 $LASTEXITCODE、不抛,先清零再判,失败不得当成成功。
+        $global:LASTEXITCODE = 0
         & (Join-Path $ScriptDir "kafka_offset_reset.ps1") @kArgs
+        if ($LASTEXITCODE -ne 0) { throw "kafka_offset_reset.ps1 failed (exit code $LASTEXITCODE)" }
     }
     "k8s-zone-rollback" {
         # Wraps k8s_zone_rollback.ps1 — see docs/design/zone_data_rollback.md §3.
-        # Orchestrates: zone-down → Kafka drain → MySQL PITR (manual) → Redis FLUSHDB
-        #             → Kafka offset reset → zone-up → verification checklist.
+        # Orchestrates: preflight → zone-down → MySQL PITR (manual) → Redis FLUSHDB
+        #             → Kafka offset reset (zone group; retire legacy offsets) → zone-up → verification checklist.
         if ($RollbackTargetTime -eq "") {
             throw "k8s-zone-rollback requires -RollbackTargetTime (ISO 8601 UTC, e.g. '2026-05-15T14:23:00Z')"
         }
@@ -1581,11 +1630,12 @@ switch ($Command) {
             TargetTime           = $RollbackTargetTime
             KafkaBootstrap       = $KafkaBootstrapServer
             KafkaTopic           = $RollbackKafkaTopic
-            KafkaGroup           = $RollbackKafkaGroup
             NodeImage            = $NodeImage
             NamespacePrefix      = $NamespacePrefix
-            KafkaDrainTimeoutSec = $RollbackKafkaDrainTimeoutSec
         }
+        # 消费组留空不传,由回滚脚本按 go/db/etc/db.yaml 推导(zone 组 / legacy 组),默认值只在那一处。
+        if ($RollbackKafkaGroup -ne "")       { $rbArgs.KafkaGroup = $RollbackKafkaGroup }
+        if ($RollbackKafkaLegacyGroup -ne "") { $rbArgs.KafkaLegacyGroup = $RollbackKafkaLegacyGroup }
         if ($RollbackRedisHost -ne "")     { $rbArgs.RedisHost = $RollbackRedisHost }
         if ($RollbackRedisPort -ne "6379") { $rbArgs.RedisPort = $RollbackRedisPort }
         if ($RollbackRedisPassword -ne "") { $rbArgs.RedisPassword = $RollbackRedisPassword }

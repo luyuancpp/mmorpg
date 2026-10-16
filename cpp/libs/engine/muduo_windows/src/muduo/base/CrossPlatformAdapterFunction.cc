@@ -278,7 +278,50 @@ unsigned int sleep(unsigned int seconds)
 }
 int poll(struct pollfd *fds, size_t nfds, int timeout)
 {
-	return WSAPoll(fds, (ULONG)nfds, timeout);
+	// muduo 用负 fd 暂停槽位；WSAPoll 会把它当作无效 socket，必须先排除。
+	bool hasIgnored = false;
+	for (size_t i = 0; i < nfds; ++i)
+	{
+		if (static_cast<std::intptr_t>(fds[i].fd) < 0)
+		{
+			hasIgnored = true;
+			break;
+		}
+	}
+	if (nfds != 0 && !hasIgnored)
+	{
+		return WSAPoll(fds, static_cast<ULONG>(nfds), timeout);
+	}
+
+	std::vector<pollfd> active;
+	std::vector<size_t> indices;
+	active.reserve(nfds);
+	indices.reserve(nfds);
+	for (size_t i = 0; i < nfds; ++i)
+	{
+		fds[i].revents = 0;
+		if (static_cast<std::intptr_t>(fds[i].fd) >= 0)
+		{
+			active.push_back(fds[i]);
+			indices.push_back(i);
+		}
+	}
+	if (active.empty())
+	{
+		// 没有可监听的槽位时也遵守超时，避免暂停连接造成忙轮询。
+		::Sleep(timeout < 0 ? INFINITE : static_cast<DWORD>(timeout));
+		return 0;
+	}
+
+	const int result = WSAPoll(active.data(), static_cast<ULONG>(active.size()), timeout);
+	if (result >= 0)
+	{
+		for (size_t i = 0; i < active.size(); ++i)
+		{
+			fds[indices[i]].revents = active[i].revents;
+		}
+	}
+	return result;
 }
 
 uid_t geteuid()

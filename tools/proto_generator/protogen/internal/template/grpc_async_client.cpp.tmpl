@@ -2,109 +2,79 @@
 {{ $root := . }}
 
 #include "{{.GeneratorGrpcFileName}}.h"
-#include "proto/common/constants/etcd_grpc.pb.h"
-#include "core/utils/encode/base64.h"
+#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <boost/pool/object_pool.hpp>
-#include "grpc_call_tag.h"
+#include <memory>
+#include <string>
+#include <utility>
+#include "core/network/grpc_client_runtime.h"
+#include "core/utils/encode/base64.h"
+#include "muduo_grpc/channel.h"
 
-{{/* 空 package → 全局命名空间(匿名 namespace 会让公开函数跨编译单元不可见,LNK2019);
-     tagPool 无服务前缀,单独放真匿名 namespace 保持内部链接,避免多个无 package 服务撞名 */}}
+{{/* 传输:节点实体上的 muduo_grpc::Channel(docs/design/grpc-muduo-transport.md §14)。线上契约(§4):
+     :path = k<Svc><Method>GrpcPath;metadata 应用层先 Base64 一层,-bin 键再由传输层编一层;截止按 steady_clock。
+     空 package → 全局命名空间(匿名 namespace 会让公开函数跨编译单元不可见,LNK2019);
+     文件级状态单独放真匿名 namespace 保持内部链接,避免多个无 package 服务撞名。 */}}
 namespace {
-boost::object_pool<GrpcTag> tagPool;
 // 本文件所有 unary 调用的 deadline(毫秒)。启动时 Set{{.FileBaseNameCamel}}CallDeadline 按目标节点类型写入
 // (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
-std::chrono::system_clock::time_point NextCallDeadline() {
-    return std::chrono::system_clock::now() +
-        std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+std::chrono::milliseconds DefaultCallDeadline() {
+    return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+}
+
+GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+    GrpcCallOutcome outcome;
+    outcome.code = code;
+    outcome.message = std::move(message);
+    return outcome;
 }
 }
 
 {{if .Package}}namespace {{.Package}} {{"{"}}{{end}}
-struct {{.GrpcCompleteQueueName}} {
-    grpc::CompletionQueue cq;
-};
 
 {{- range $svc := .ServiceInfo }}
 {{- range $method := $svc.Methods }}
 #pragma region {{ $svc.Service }}{{ $method.Method }}
-boost::object_pool<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient> {{ $svc.Service }}{{ $method.Method }}Pool;
-using Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType =
-    std::function<void(const ClientContext&, const {{ $method.CppResponse }}&)>;
+{{- if or $method.ClientStreaming $method.ServerStreaming }}
+
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry&, entt::entity, const {{ $method.CppRequest }}&) {
+    LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }} is a streaming method; the generated client does not support it";
+}
+
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry&, entt::entity, const {{ $method.CppRequest }}&, const std::vector<std::string>&, const std::vector<std::string>&) {
+    LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }} is a streaming method; the generated client does not support it";
+}
+
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry&, entt::entity, const google::protobuf::Message&, const std::vector<std::string>&, const std::vector<std::string>&) {
+    LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }} is a streaming method; the generated client does not support it";
+}
+{{- else }}
 Async{{ $svc.Service }}{{ $method.Method }}HandlerFunctionType Async{{ $svc.Service }}{{ $method.Method }}Handler;
-{{- if not $method.ClientStreaming }}
 Async{{ $svc.Service }}{{ $method.Method }}FailedHandlerFunctionType Async{{ $svc.Service }}{{ $method.Method }}FailedHandler;
-{{- end }}
-{{ if $method.ClientStreaming }}
 
-void TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq) {
-    auto& writeInProgress = registry.get<{{ $method.RequestName }}WriteInProgress>(nodeEntity);
-    auto& pendingWritesBuffer = registry.get<{{ $method.RequestName }}Buffer>(nodeEntity).pendingWritesBuffer;
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct {{ $svc.Service }}{{ $method.Method }}Call {
+    {{ $method.CppRequest }} request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 Async{{ $svc.Service }}{{ $method.Method }}Handler / FailedHandler。
+    GrpcDone<{{ $method.CppResponse }}> done;
+};
 
-    if (writeInProgress.isInProgress || pendingWritesBuffer.empty()) {
+void Complete{{ $svc.Service }}{{ $method.Method }}(const {{ $svc.Service }}{{ $method.Method }}Call& call, const GrpcCallOutcome& outcome,
+                                                const {{ $method.CppResponse }}* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-
-    auto& client = registry.get<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient>(nodeEntity);
-    auto& request = pendingWritesBuffer.front();
-
-    writeInProgress.isInProgress = true;
-    GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId,  (void*)GrpcOperation::WRITE));
-    client.stream->Write(request, (void*)(got_tag));
-}
-void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto& client = registry.get<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient>(nodeEntity);
-    auto& writeInProgress = registry.get<{{ $method.RequestName }}WriteInProgress>(nodeEntity);
-
-    switch (static_cast<GrpcOperation>(reinterpret_cast<intptr_t>(got_tag))) {
-        case GrpcOperation::WRITE: {
-            auto& pendingWritesBuffer = registry.get<{{ $method.RequestName }}Buffer>(nodeEntity).pendingWritesBuffer;
-            if (!pendingWritesBuffer.empty()) {
-                pendingWritesBuffer.pop_front();
-            }
-            writeInProgress.isInProgress = false;
-            TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
-            break;
-        }
-        case GrpcOperation::WRITES_DONE: {
-            GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId,  (void*)GrpcOperation::READ));
-            client.stream->Finish(&client.status, (void*)(got_tag));
-            break;
-        }
-        case GrpcOperation::FINISH:
-            cq.Shutdown();
-            break;
-        case GrpcOperation::READ: {
-            auto& response = registry.get<{{ $method.CppResponse }}>(nodeEntity);
-            if (Async{{ $svc.Service }}{{ $method.Method }}Handler) {
-                Async{{ $svc.Service }}{{ $method.Method }}Handler(client.context, response);
-            }
-            GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId, (void*)GrpcOperation::READ));
-            client.stream->Read(&response, (void*)got_tag);
-            TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
-            break;
-        }
-        case GrpcOperation::INIT: {
-            GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId, (void*)GrpcOperation::READ));
-            auto& response = registry.get<{{ $method.CppResponse }}>(nodeEntity);
-            client.stream->Read(&response, (void*)got_tag);
-            TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
-            break;
-        }
-        default:
-            break;
-    }
-}
-{{ else }}
-void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& cq, void* got_tag) {
-    auto call(
-        static_cast<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient*>(got_tag));
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (Async{{ $svc.Service }}{{ $method.Method }}Handler) {
-            Async{{ $svc.Service }}{{ $method.Method }}Handler(call->context, call->reply);
+            Async{{ $svc.Service }}{{ $method.Method }}Handler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -116,168 +86,146 @@ void AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(entt::registry& reg
             }
         }
     } else if (Async{{ $svc.Service }}{{ $method.Method }}FailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "{{ $svc.Service }}.{{ $method.Method }}", call->context, call->status, call->sentMetadata};
-        Async{{ $svc.Service }}{{ $method.Method }}FailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ {{ $svc.Service }}{{ $method.Method }}MessageId, "{{ $svc.Service }}.{{ $method.Method }}", outcome, call.sentMetadata};
+        Async{{ $svc.Service }}{{ $method.Method }}FailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }} failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC {{ $svc.Service }}.{{ $method.Method }} failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
-	{{ $svc.Service }}{{ $method.Method }}Pool.destroy(call);
 }
 
-{{ end }}
+void QueueLocal{{ $svc.Service }}{{ $method.Method }}Failure(std::shared_ptr<{{ $svc.Service }}{{ $method.Method }}Call> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        Complete{{ $svc.Service }}{{ $method.Method }}(*call, outcome, nullptr);
+    });
+}
+}
+
+// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+void Start{{ $svc.Service }}{{ $method.Method }}Call(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request,
+                                             GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
+                                             GrpcDone<{{ $method.CppResponse }}> done) {
+    auto call = std::make_shared<{{ $svc.Service }}{{ $method.Method }}Call>();
+    call->request = request;
+    call->sentMetadata = std::move(metadata);
+    call->done = std::move(done);
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocal{{ $svc.Service }}{{ $method.Method }}Failure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(k{{ $svc.Service }}{{ $method.Method }}GrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocal{{ $svc.Service }}{{ $method.Method }}Failure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            Complete{{ $svc.Service }}{{ $method.Method }}(*call, outcome, nullptr);
+            return;
+        }
+        {{ $method.CppResponse }} reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the {{ $svc.Service }}.{{ $method.Method }} response";
+            Complete{{ $svc.Service }}{{ $method.Method }}(*call, outcome, nullptr);
+            return;
+        }
+        Complete{{ $svc.Service }}{{ $method.Method }}(*call, outcome, &reply);
+    });
+}
+
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request,
+                                            GrpcDone<{{ $method.CppResponse }}> done, const GrpcCallOptions& options) {
+    Start{{ $svc.Service }}{{ $method.Method }}Call(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
+}
 
 void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request) {
-{{ if $method.ClientStreaming }}
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto& pendingWritesBuffer = registry.get<{{ $method.RequestName }}Buffer>(nodeEntity).pendingWritesBuffer;
-    pendingWritesBuffer.push_back(request);
-    TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
-{{ else }}
-    Send{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, request, {}, {});
-{{ end }}
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    Send{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-{{ if $method.ClientStreaming }}
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-    auto& pendingWritesBuffer = registry.get<{{ $method.RequestName }}Buffer>(nodeEntity).pendingWritesBuffer;
-    pendingWritesBuffer.push_back(request);
-    TryWriteNextNext{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, cq);
-{{ else }}
-    auto call({{ $svc.Service }}{{ $method.Method }}Pool.construct());
-    auto& cq = registry.get<grpc::CompletionQueue>(nodeEntity);
-
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const {{ $method.CppRequest }}& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
-    call->sentMetadata.reserve(count);
+    GrpcSentMetadata metadata;
+    metadata.reserve(count);
     for (size_t i = 0; i < count; ++i) {
-        call->context.AddMetadata(metaKeys[i], Base64Encode(metaValues[i]));
-        call->sentMetadata.emplace_back(metaKeys[i], metaValues[i]);
+        metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
-    call->request = request;
-    call->context.set_deadline(NextCallDeadline());
-
-    call->response_reader = registry
-        .get<{{ $svc.Service }}StubPtr>(nodeEntity)
-        ->PrepareAsync{{ $method.Method }}(&call->context, call->request,
-                                           &cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
-{{ end }}
+    Start{{ $svc.Service }}{{ $method.Method }}Call(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
 }
 
-void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void Send{{ $svc.Service }}{{ $method.Method }}(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const {{ $method.CppRequest }}& derived = static_cast<const {{ $method.CppRequest }}&>(message);
     Send{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, derived, metaKeys, metaValues);
 }
+{{- end }}
 #pragma endregion
 {{- end }}
 {{- end }}
 
-{{ range $index, $m := .ServiceInfo }}
-  {{- if eq $index 0 }}
-void Handle{{ $m.FileBaseNameCamel }}CompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, GrpcTag* grpcTag) {
-  {{- end -}}
-{{- end }}
-        switch (grpcTag->messageId) {
+void Set{{ .FileBaseNameCamel }}Handler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
 {{- range $svc := .ServiceInfo }}
 {{- range $method := $svc.Methods }}
-        case {{ $svc.Service }}{{ $method.Method }}MessageId:
-            AsyncCompleteGrpc{{ $svc.Service }}{{ $method.Method }}(registry, nodeEntity, completeQueueComp, grpcTag->valuePtr);
-			tagPool.destroy(grpcTag);
-            break;
-{{- end }}
-{{- end }}
-        default:
-            break;
-        }
-}
-
-{{ range $index, $m := .ServiceInfo }}
-  {{- if eq $index 0 }}
-void Set{{ $m.FileBaseNameCamel }}Handler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-  {{- end }}
-{{ end }}
-{{- range $svc := .ServiceInfo }}
-{{- range $method := $svc.Methods }}
+{{- if not (or $method.ClientStreaming $method.ServerStreaming) }}
     Async{{ $svc.Service }}{{ $method.Method }}Handler = handler;
 {{- end }}
 {{- end }}
+{{- end }}
+    (void)handler;
 }
 
-{{ range $index, $m := .ServiceInfo }}
-  {{- if eq $index 0 }}
-void Set{{ $m.FileBaseNameCamel }}IfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-  {{- end }}
-{{ end }}
+void Set{{ .FileBaseNameCamel }}IfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
 {{- range $svc := .ServiceInfo }}
 {{- range $method := $svc.Methods }}
+{{- if not (or $method.ClientStreaming $method.ServerStreaming) }}
     if (!Async{{ $svc.Service }}{{ $method.Method }}Handler) {
         Async{{ $svc.Service }}{{ $method.Method }}Handler = handler;
     }
 {{- end }}
 {{- end }}
+{{- end }}
+    (void)handler;
 }
 
 void Set{{ .FileBaseNameCamel }}FailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
 {{- range $svc := .ServiceInfo }}
 {{- range $method := $svc.Methods }}
-{{- if not $method.ClientStreaming }}
+{{- if not (or $method.ClientStreaming $method.ServerStreaming) }}
     Async{{ $svc.Service }}{{ $method.Method }}FailedHandler = handler;
 {{- end }}
 {{- end }}
 {{- end }}
+    (void)handler;
 }
 
 void Set{{ .FileBaseNameCamel }}IfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
 {{- range $svc := .ServiceInfo }}
 {{- range $method := $svc.Methods }}
-{{- if not $method.ClientStreaming }}
+{{- if not (or $method.ClientStreaming $method.ServerStreaming) }}
     if (!Async{{ $svc.Service }}{{ $method.Method }}FailedHandler) {
         Async{{ $svc.Service }}{{ $method.Method }}FailedHandler = handler;
     }
 {{- end }}
 {{- end }}
 {{- end }}
+    (void)handler;
 }
 
 void Set{{ .FileBaseNameCamel }}CallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);
-}
-
-{{ range $index, $m := .ServiceInfo }}
-  {{- if eq $index 0 }}
-void Init{{ $m.FileBaseNameCamel }}GrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
-  {{- end }}
-{{ end }}
-{{- range $svc := .ServiceInfo }}
-    registry.emplace<{{ $svc.Service }}StubPtr>(nodeEntity, {{ $svc.Service }}::NewStub(channel));
-{{- end }}
-
-{{- range $svc := .ServiceInfo -}}
-{{- range $method := $svc.Methods -}}
-{{ if $method.ClientStreaming }}
-    {
-        GrpcTag* got_tag(tagPool.construct({{ $svc.Service }}{{ $method.Method }}MessageId, (void*)GrpcOperation::INIT));
-
-        auto& client = registry.emplace<Async{{ $svc.Service }}{{ $method.Method }}GrpcClient>(nodeEntity);
-        registry.emplace<{{ $method.RequestName }}Buffer>(nodeEntity);
-        registry.emplace<{{ $method.RequestName }}WriteInProgress>(nodeEntity);
-        registry.emplace<{{ $method.CppResponse }}>(nodeEntity);
-        registry.emplace<{{ $method.CppRequest }}>(nodeEntity);
-
-        client.stream = registry
-            .get<{{ $svc.Service }}StubPtr>(nodeEntity)
-            ->Async{{ $method.Method }}(&client.context,
-                                        &registry.get<grpc::CompletionQueue>(nodeEntity),
-                                        (void*)(got_tag));
-    }
-{{- end -}}
-{{- end -}}
-{{ end }}
-
 }
 
 {{if .Package}}{{"}"}}// namespace {{.Package}}{{end}}

@@ -10,13 +10,13 @@
 #include "core/utils/bit_index/bit_index_util.h"
 #include "table/code/bit_index/mission_table_id_bit_index.h"
 
-class AcceptMissionEvent;
-class ConditionEvent;
+struct AcceptMissionEvent;
+struct ConditionEvent;
 
 using MissionsBits = std::bitset<kMissionMaxBitIndex>;
 
 /// Per-scope container for active and completed missions.
-class MissionsComp : public EventOwner
+class MissionsComp
 {
 public:
     using EventMissionClassifyMap = std::unordered_map<uint32_t, UInt32Set>;

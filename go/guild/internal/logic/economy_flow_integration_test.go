@@ -49,6 +49,7 @@ import (
 	"guild/internal/data"
 	assetpb "proto/common/asset"
 	pb "proto/guild"
+	scenepb "proto/scene"
 	"schemamigrate"
 	"shared/assetop"
 	"shared/gameday"
@@ -247,9 +248,11 @@ type economyFlowEnv struct {
 	scene    *scriptedScene
 	clock    *flowClock
 	notifier *recordingNotifier
-	loopCfg  assetop.LoopConfig
-	loop     *assetop.Loop
-	logic    *GuildLogic
+	// syncBumps 记录落地恢复摘要的 bump(recordingSyncBumper 定义在 sync_digest_test.go)。
+	syncBumps *recordingSyncBumper
+	loopCfg   assetop.LoopConfig
+	loop      *assetop.Loop
+	logic     *GuildLogic
 }
 
 func newEconomyFlowEnv(t *testing.T, workers int) *economyFlowEnv {
@@ -284,10 +287,12 @@ func newEconomyFlowEnv(t *testing.T, workers int) *economyFlowEnv {
 	require.NoError(t, err)
 
 	notifier := &recordingNotifier{}
+	syncBumps := &recordingSyncBumper{}
 	minter := &sequenceMinter{}
 	minter.next.Store(900_000)
 	l := NewGuildLogic(repo, nil, nil, nil, &fakeHomeZones{zone: flowZone},
 		WithNotifier(notifier),
+		WithSyncBumper(syncBumps),
 		WithEconomy(EconomyDeps{
 			Repo:       economyRepo,
 			Loop:       loop,
@@ -300,14 +305,15 @@ func newEconomyFlowEnv(t *testing.T, workers int) *economyFlowEnv {
 	store.OnFinalized = l.OnAssetFinalized
 
 	return &economyFlowEnv{
-		db:       db,
-		store:    store,
-		scene:    scene,
-		clock:    clock,
-		notifier: notifier,
-		loopCfg:  cfg,
-		loop:     loop,
-		logic:    l,
+		db:        db,
+		store:     store,
+		scene:     scene,
+		clock:     clock,
+		notifier:  notifier,
+		syncBumps: syncBumps,
+		loopCfg:   cfg,
+		loop:      loop,
+		logic:     l,
 	}
 }
 
@@ -1014,4 +1020,148 @@ func TestEconomyFlowUpgradeRejectionsStillCarryGuild(t *testing.T) {
 	})
 
 	assert.Zero(t, env.notifier.total(), "拒绝不推送")
+}
+
+// ── 落地恢复摘要 bump(docs/design/landing-recovery-sync-digest.md §3.3)────────
+
+// TestEconomyFlowSyncDigestBumps(§3.3 表第 6、8、9 行):捐献预留提交后 bump 本人 GUILD_ECONOMY,同步投递当场终结时
+// 再 bump 一次(推送在同步投递路径上被压掉,摘要不压:回包可能在断线时丢);APPLIED 终结给本人记了帮贡,
+// 那一次同时带 GUILD,但资金是帮会级数值,捐献不扇出给其他成员。
+// 升级成功给全帮(含操作者本人)bump GUILD,并顺带 GUILD_ECONOMY / GUILD_ACTIVITY(捐献档位、商品、活动的等级门槛都随等级变)。
+// 资金在任何 RPC 读帮会之前备足(setFunds 的约定)。
+func TestEconomyFlowSyncDigestBumps(t *testing.T) {
+	const member uint64 = 6002
+	env := newEconomyFlowEnv(t, 8)
+	requireUpgradeTable(t)
+	env.seedGuild(t, flowGuildID, flowLeader, member)
+	env.setFunds(t, flowGuildID, flowUpgradeCostL1)
+	env.scene.answer(always(flowApplied))
+
+	resp := env.donate(t, flowLeader, 1)
+
+	require.Equal(t, pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED, resp.GetDonation().GetStatus())
+	assert.Equal(t, []uint64{flowLeader}, env.syncBumps.playersOf(syncEconomy), "只 bump 捐献者本人")
+	assert.Equal(t, 2, env.syncBumps.countOf(syncEconomy), "预留一次 + 同步投递终结一次")
+	assert.Equal(t, []uint64{flowLeader}, env.syncBumps.playersOf(syncGuild),
+		"只有捐献者本人 bump GUILD(他的帮贡变了);资金是帮会级数值,不扇出给 member")
+	assert.Equal(t, 1, env.syncBumps.countOf(syncGuild), "GUILD 只在终结那一次:预留不改 GuildInfo")
+	assert.Empty(t, env.notifier.pushesOf(pb.GuildChangeKind_GUILD_CHANGE_KIND_FUNDS_CHANGED), "推送仍按同步投递标记压掉")
+
+	env.syncBumps.reset()
+	upgraded, err := env.logic.UpgradeGuild(clientCtx(flowLeader), &pb.UpgradeGuildRequest{ExpectedLevel: constants.DefaultInitLevel})
+
+	require.NoError(t, err)
+	require.Nil(t, upgraded.GetErrorMessage())
+	assert.Equal(t, []uint64{flowLeader, member}, env.syncBumps.playersOf(syncGuild), "升级给全帮,含操作者本人")
+	assert.Equal(t, []uint64{flowLeader, member}, env.syncBumps.playersOf(syncEconomy), "捐献档位与商品的解锁随等级变")
+	assert.Equal(t, []uint64{flowLeader, member}, env.syncBumps.playersOf(syncActivity), "活动的等级门槛随等级变")
+	assert.Equal(t, 1, env.syncBumps.count(), "三个域搭同一次扇出,不多一批")
+
+	env.syncBumps.reset()
+	again, err := env.logic.UpgradeGuild(clientCtx(flowLeader), &pb.UpgradeGuildRequest{ExpectedLevel: constants.DefaultInitLevel})
+
+	require.NoError(t, err)
+	require.Nil(t, again.GetErrorMessage())
+	assert.Zero(t, env.syncBumps.count(), "expected_level 已过期 = 库里没变,不 bump")
+}
+
+// TestEconomyFlowSyncDigestBumpOnBackgroundFinalize:同步投递留下 PENDING,之后由重投循环终结 ——
+// 终结发生在 RPC 之外(玩家可能已经下线),摘要靠 OnAssetFinalized 这一处覆盖。
+func TestEconomyFlowSyncDigestBumpOnBackgroundFinalize(t *testing.T) {
+	env := newEconomyFlowEnv(t, 8)
+	env.seedGuild(t, flowGuildID, flowLeader)
+	env.scene.answer(always(flowInBattle))
+
+	resp := env.donate(t, flowLeader, 2)
+
+	require.Equal(t, pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_PENDING, resp.GetDonation().GetStatus())
+	require.Equal(t, 1, env.syncBumps.countOf(syncEconomy), "预留提交后 bump 一次;PENDING 不是终结")
+
+	env.scene.answer(always(flowApplied))
+	env.clock.Advance(5 * time.Second)
+	require.Equal(t, 1, env.loop.Tick(context.Background()))
+
+	assert.Equal(t, 2, env.syncBumps.countOf(syncEconomy), "后台终结再 bump 一次")
+	assert.Equal(t, []uint64{flowLeader}, env.syncBumps.playersOf(syncEconomy))
+}
+
+// TestEconomyFlowShopSyncDigestBumps(§3.3 表第 6、8 行):兑换预留提交即扣帮贡 —— 本人 GuildInfo.members[] 的
+// contribution_balance 当场就变了,所以预留这一次 bump 带上 GUILD,不等终结;只给兑换者本人,不扇出。
+// 行停在 PENDING(背包满)时没有终结,也就只有这一次。
+func TestEconomyFlowShopSyncDigestBumps(t *testing.T) {
+	const member uint64 = 6002
+	env := newEconomyFlowEnv(t, 8)
+	env.seedGuild(t, flowGuildID, flowLeader, member)
+	env.setContribution(t, flowGuildID, flowLeader, 1000)
+	env.scene.answer(always(flowBagFull))
+
+	resp, err := env.logic.BuyGuildShopGoods(clientCtx(flowLeader), &pb.BuyGuildShopGoodsRequest{GoodsId: 101, Count: 1})
+
+	require.NoError(t, err)
+	require.Equal(t, pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_PENDING, resp.GetOrder().GetStatus())
+	assert.Equal(t, 1, env.syncBumps.count(), "只有预留这一次:PENDING 不是终结")
+	assert.Equal(t, []uint64{flowLeader}, env.syncBumps.playersOf(syncEconomy))
+	assert.Equal(t, []uint64{flowLeader}, env.syncBumps.playersOf(syncGuild), "帮贡已扣:只 bump 兑换者本人")
+}
+
+// TestManagementFlowSyncDigestBumps(§3.3 表第 6、7 行):管理类写在提交之后给"拉取结果会变的所有人"bump GUILD ——
+// 含操作者本人与已不在快照里的当事人(被踢者、离帮者);申请 / 撤回 / 审批给申请人 bump GUILD_APPLICATION,
+// 新申请与撤回都给审批人 bump GUILD(待审数在他们的 GuildInfo 里),审批通过给全帮(含新成员)bump GUILD。
+func TestManagementFlowSyncDigestBumps(t *testing.T) {
+	const (
+		officer    uint64 = 6002
+		member     uint64 = 6003
+		leaver     uint64 = 6004
+		applicantA uint64 = 6100
+		applicantB uint64 = 6101
+	)
+	env := newEconomyFlowEnv(t, 1)
+	env.seedGuild(t, flowGuildID, flowLeader, officer, member, leaver)
+	env.setRole(t, flowGuildID, officer, constants.RoleOfficer)
+	// 审批通过会并行查审批人与申请人的归属 zone:换成加锁的 perPlayerZones,单值的 fakeHomeZones 在 -race 下会报竞争。
+	// 在任何 RPC 之前替换,之后只读。
+	zones := map[uint64]uint32{}
+	for _, id := range []uint64{flowLeader, officer, member, leaver, applicantA, applicantB} {
+		zones[id] = flowZone
+	}
+	env.logic.homeZones = &perPlayerZones{zones: zones}
+
+	kicked, err := env.logic.KickGuildMember(clientCtx(flowLeader), &pb.KickGuildMemberRequest{TargetPlayerId: member})
+	require.NoError(t, err)
+	require.Nil(t, kicked.GetErrorMessage())
+	assert.Equal(t, []uint64{flowLeader, officer, member, leaver}, env.syncBumps.playersOf(syncGuild),
+		"踢人:快照全体(含操作者)+ 被踢者")
+
+	env.syncBumps.reset()
+	left, err := env.logic.LeaveGuild(clientCtx(leaver), &pb.LeaveGuildRequest{})
+	require.NoError(t, err)
+	require.Nil(t, left.GetErrorMessage())
+	assert.Equal(t, []uint64{flowLeader, officer, leaver}, env.syncBumps.playersOf(syncGuild), "离帮:剩余全体 + 离帮者本人")
+
+	env.syncBumps.reset()
+	applied, err := env.logic.ApplyJoinGuild(clientCtx(applicantA), &pb.ApplyJoinGuildRequest{GuildId: flowGuildID})
+	require.NoError(t, err)
+	require.Nil(t, applied.GetErrorMessage())
+	assert.Equal(t, []uint64{applicantA}, env.syncBumps.playersOf(syncApplication))
+	assert.Equal(t, []uint64{flowLeader, officer}, env.syncBumps.playersOf(syncGuild), "新申请:审批人的待审数变了")
+
+	env.syncBumps.reset()
+	cancelled, err := env.logic.CancelGuildApplication(clientCtx(applicantA), &pb.CancelGuildApplicationRequest{GuildId: flowGuildID})
+	require.NoError(t, err)
+	require.Nil(t, cancelled.GetErrorMessage())
+	assert.Equal(t, []uint64{applicantA}, env.syncBumps.playersOf(syncApplication))
+	assert.Equal(t, []uint64{flowLeader, officer}, env.syncBumps.playersOf(syncGuild), "撤回:审批人的待审数少了一条")
+	assert.Equal(t, []scenepb.SyncDomain{syncApplication}, env.syncBumps.domainsOf(applicantA), "申请人不在帮,GetPlayerGuild 没变")
+
+	applyB, err := env.logic.ApplyJoinGuild(clientCtx(applicantB), &pb.ApplyJoinGuildRequest{GuildId: flowGuildID})
+	require.NoError(t, err)
+	require.Nil(t, applyB.GetErrorMessage())
+
+	env.syncBumps.reset()
+	reviewed, err := env.logic.ReviewGuildApplication(clientCtx(officer),
+		&pb.ReviewGuildApplicationRequest{ApplicantPlayerId: applicantB, Approve: true})
+	require.NoError(t, err)
+	require.Nil(t, reviewed.GetErrorMessage())
+	assert.Equal(t, []uint64{applicantB}, env.syncBumps.playersOf(syncApplication))
+	assert.Equal(t, []uint64{flowLeader, officer, applicantB}, env.syncBumps.playersOf(syncGuild), "通过:全帮含新成员与审批人")
 }

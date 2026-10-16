@@ -1,5 +1,6 @@
 #include <array>
 #include "rpc_event_registry.h"
+#include "kafka_command_event_whitelist.h"
 #include "proto/common/base/node.pb.h"
 #include "thread_context/ecs_context.h"
 
@@ -16,6 +17,8 @@
 #include "proto/login/login.pb.h"
 #include "proto/match/match_internal.pb.h"
 #include "proto/match/match_service.pb.h"
+#include "proto/player_inbox/player_inbox.pb.h"
+#include "proto/player_inbox/player_inbox_admin.pb.h"
 #include "proto/scene/client_player_common.pb.h"
 #include "proto/scene/player_activity.pb.h"
 #include "proto/scene/player_attribute.pb.h"
@@ -51,6 +54,8 @@
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "rpc/service_metadata/match_internal_service_metadata.h"
 #include "rpc/service_metadata/match_service_service_metadata.h"
+#include "rpc/service_metadata/player_inbox_service_metadata.h"
+#include "rpc/service_metadata/player_inbox_admin_service_metadata.h"
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "rpc/service_metadata/player_activity_service_metadata.h"
 #include "rpc/service_metadata/player_attribute_service_metadata.h"
@@ -73,40 +78,17 @@
 #include "rpc/service_metadata/jubaozhai_service_metadata.h"
 #include "rpc/service_metadata/trade_admin_service_metadata.h"
 
-#include "proto/common/event/mission_event.pb.h"
-#include "proto/common/event/scene_event.pb.h"
 #include "proto/common/event/battle_event.pb.h"
-#include "proto/common/event/combat_event.pb.h"
-#include "proto/common/event/buff_event.pb.h"
-#include "proto/common/event/actor_combat_state_event.pb.h"
-#include "proto/common/event/node_event.pb.h"
-#include "proto/contracts/kafka/match_event.pb.h"
 #include "proto/contracts/kafka/gate_event.pb.h"
-#include "proto/contracts/kafka/player_event.pb.h"
-#include "proto/common/event/actor_event.pb.h"
-#include "proto/common/event/npc_event.pb.h"
-#include "proto/common/event/player_event.pb.h"
-#include "proto/common/event/server_event.pb.h"
-#include "proto/common/event/player_migration_event.pb.h"
+#include "proto/common/event/player_inbox_event.pb.h"
 #include "proto/common/event/team_event.pb.h"
-#include "proto/common/event/skill_event.pb.h"
-#include "common_event_mission_event_event_id.h"
-#include "common_event_scene_event_event_id.h"
 #include "common_event_battle_event_event_id.h"
-#include "common_event_combat_event_event_id.h"
-#include "common_event_buff_event_event_id.h"
-#include "common_event_actor_combat_state_event_event_id.h"
-#include "common_event_node_event_event_id.h"
 #include "contracts_kafka_match_event_event_id.h"
 #include "contracts_kafka_gate_event_event_id.h"
 #include "contracts_kafka_player_event_event_id.h"
-#include "common_event_actor_event_event_id.h"
-#include "common_event_npc_event_event_id.h"
-#include "common_event_player_event_event_id.h"
-#include "common_event_server_event_event_id.h"
+#include "common_event_player_inbox_event_event_id.h"
 #include "common_event_player_migration_event_event_id.h"
 #include "common_event_team_event_event_id.h"
-#include "common_event_skill_event_event_id.h"
 
 class GateImpl final : public Gate {};
 class SceneClientPlayerCommonImpl final : public SceneClientPlayerCommon {};
@@ -169,6 +151,7 @@ namespace data_service{void SendDataServiceReservePlayerName(entt::registry& , e
 namespace data_service{void SendDataServiceReleasePlayerName(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceBatchGetPlayerName(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace data_service{void SendDataServiceGetPlayerAssetOpLedger(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace data_service{void SendDataServiceGetPlayerInboxLedger(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace etcdserverpb{void SendKVDeleteRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -240,6 +223,14 @@ namespace match{void SendMatchServiceNotifyChallengeResult(entt::registry& , ent
 namespace match{void SendMatchServiceWatchBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceRequestBattleTicket(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceListWatchableBattles(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxFetchItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAckItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminGmSanctionPlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminGetSummary(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminListItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminLookupByRequest(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminVoidItem(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace player_inbox{void SendPlayerInboxAdminReconcilePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -276,7 +267,7 @@ namespace trade{void SendTradeAdminSeedListing(entt::registry& , entt::entity , 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
 // InitMessageInfo 越界写导致节点启动断言)变成编译错误而不是运行期崩溃。
-static_assert(kMaxRpcMethodCount == 253,
+static_assert(kMaxRpcMethodCount == 264,
     "kMaxRpcMethodCount out of sync with this generation run - rerun the full proto generator");
 std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 
@@ -506,6 +497,11 @@ void InitMessageInfo()
         std::make_unique<::data_service::GetPlayerAssetOpLedgerRequest>(),
         std::make_unique<::data_service::GetPlayerAssetOpLedgerResponse>(),
         nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerAssetOpLedger};
+    gRpcMethodRegistry[DataServiceGetPlayerInboxLedgerMessageId] = RpcMethodMeta{
+        "DataService", "GetPlayerInboxLedger",
+        std::make_unique<::data_service::GetPlayerInboxLedgerRequest>(),
+        std::make_unique<::data_service::GetPlayerInboxLedgerResponse>(),
+        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerInboxLedger};
 
     // --- KV ---
     gRpcMethodRegistry[KVRangeMessageId] = RpcMethodMeta{
@@ -936,6 +932,50 @@ void InitMessageInfo()
         std::make_unique<::match::ListWatchableBattlesResponse>(),
         nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceListWatchableBattles};
 
+    // --- PlayerInbox ---
+    gRpcMethodRegistry[PlayerInboxFetchItemsMessageId] = RpcMethodMeta{
+        "PlayerInbox", "FetchItems",
+        std::make_unique<::player_inbox::FetchPlayerInboxRequest>(),
+        std::make_unique<::player_inbox::FetchPlayerInboxResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxFetchItems};
+    gRpcMethodRegistry[PlayerInboxAckItemsMessageId] = RpcMethodMeta{
+        "PlayerInbox", "AckItems",
+        std::make_unique<::player_inbox::AckPlayerInboxRequest>(),
+        std::make_unique<::player_inbox::AckPlayerInboxResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAckItems};
+
+    // --- PlayerInboxAdmin ---
+    gRpcMethodRegistry[PlayerInboxAdminGmSanctionPlayerMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "GmSanctionPlayer",
+        std::make_unique<::player_inbox::GmSanctionPlayerRequest>(),
+        std::make_unique<::player_inbox::GmSanctionPlayerResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGmSanctionPlayer};
+    gRpcMethodRegistry[PlayerInboxAdminGetSummaryMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "GetSummary",
+        std::make_unique<::player_inbox::GetPlayerInboxSummaryRequest>(),
+        std::make_unique<::player_inbox::GetPlayerInboxSummaryResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGetSummary};
+    gRpcMethodRegistry[PlayerInboxAdminListItemsMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "ListItems",
+        std::make_unique<::player_inbox::ListPlayerInboxItemsRequest>(),
+        std::make_unique<::player_inbox::ListPlayerInboxItemsResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminListItems};
+    gRpcMethodRegistry[PlayerInboxAdminLookupByRequestMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "LookupByRequest",
+        std::make_unique<::player_inbox::LookupPlayerInboxRequest>(),
+        std::make_unique<::player_inbox::LookupPlayerInboxResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminLookupByRequest};
+    gRpcMethodRegistry[PlayerInboxAdminVoidItemMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "VoidItem",
+        std::make_unique<::player_inbox::VoidPlayerInboxItemRequest>(),
+        std::make_unique<::player_inbox::VoidPlayerInboxItemResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminVoidItem};
+    gRpcMethodRegistry[PlayerInboxAdminReconcilePlayerMessageId] = RpcMethodMeta{
+        "PlayerInboxAdmin", "ReconcilePlayer",
+        std::make_unique<::player_inbox::ReconcilePlayerInboxRequest>(),
+        std::make_unique<::player_inbox::ReconcilePlayerInboxResponse>(),
+        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminReconcilePlayer};
+
     // --- SceneClientPlayerCommon ---
     gRpcMethodRegistry[SceneClientPlayerCommonSendTipToClientMessageId] = RpcMethodMeta{
         "SceneClientPlayerCommon", "SendTipToClient",
@@ -1301,6 +1341,16 @@ void InitMessageInfo()
         "SceneSceneClientPlayer", "TravelToZone",
         std::make_unique<::TravelToZoneRequest>(),
         std::make_unique<::TravelToZoneResponse>(),
+        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneSceneClientPlayerGetSyncDigestMessageId] = RpcMethodMeta{
+        "SceneSceneClientPlayer", "GetSyncDigest",
+        std::make_unique<::GetSyncDigestRequest>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneSceneClientPlayerNotifySyncDigestMessageId] = RpcMethodMeta{
+        "SceneSceneClientPlayer", "NotifySyncDigest",
+        std::make_unique<::SyncDigestS2C>(),
+        std::make_unique<::Empty>(),
         std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneSkillClientPlayer ---
@@ -1746,6 +1796,8 @@ bool IsClientMessageId(uint32_t messageId)
 	case SceneSceneClientPlayerNotifyActorListCreateMessageId:
 	case SceneSceneClientPlayerNotifyActorListDestroyMessageId:
 	case SceneSceneClientPlayerTravelToZoneMessageId:
+	case SceneSceneClientPlayerGetSyncDigestMessageId:
+	case SceneSceneClientPlayerNotifySyncDigestMessageId:
 	case SceneSkillClientPlayerReleaseSkillMessageId:
 	case SceneSkillClientPlayerNotifySkillUsedMessageId:
 	case SceneSkillClientPlayerNotifySkillInterruptedMessageId:
@@ -1780,386 +1832,124 @@ bool IsValidEventId(uint32_t eventId)
 	return eventId < kMaxEventCount;
 }
 
-bool DispatchProtoEvent(uint32_t eventId, const std::string& payload)
+KafkaEventDispatchResult DispatchSceneCommandEvent(uint32_t eventId, const std::string& payload)
 {
+	if (!IsSceneCommandEvent(eventId)) return KafkaEventDispatchResult::kNotAllowed;
 	switch (eventId) {
-	case AcceptMissionEventEventId: {
-		AcceptMissionEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case AfterEnterSceneEventId: {
-		AfterEnterScene event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case AfterLeaveSceneEventId: {
-		AfterLeaveScene event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
 	case BattleConfirmedEventEventId: {
 		BattleConfirmedEvent event;
 		if (!event.ParseFromString(payload)) {
-			return false;
+			return KafkaEventDispatchResult::kDecodeFailed;
 		}
 		tlsEcs.dispatcher.trigger(event);
-		return true;
+		return KafkaEventDispatchResult::kDispatched;
 	}
 	case BattleSettlementEventEventId: {
 		BattleSettlementEvent event;
 		if (!event.ParseFromString(payload)) {
-			return false;
+			return KafkaEventDispatchResult::kDecodeFailed;
 		}
 		tlsEcs.dispatcher.trigger(event);
-		return true;
+		return KafkaEventDispatchResult::kDispatched;
 	}
-	case BeKillEventEventId: {
-		BeKillEvent event;
+	case PlayerInboxNotifyEventEventId: {
+		PlayerInboxNotifyEvent event;
 		if (!event.ParseFromString(payload)) {
-			return false;
+			return KafkaEventDispatchResult::kDecodeFailed;
 		}
 		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case BeforeEnterSceneEventId: {
-		BeforeEnterScene event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case BeforeLeaveSceneEventId: {
-		BeforeLeaveScene event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case BuffTestEventEventId: {
-		BuffTestEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case CombatStateAddedEventEventId: {
-		CombatStateAddedEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case CombatStateRemovedEventEventId: {
-		CombatStateRemovedEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ConditionEventEventId: {
-		ConditionEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ConnectToNodeEventEventId: {
-		ConnectToNodeEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaBattleResultEventEventId: {
-		contracts::kafka::BattleResultEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaBattleResultTeamEventId: {
-		contracts::kafka::BattleResultTeam event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaBindSessionEventEventId: {
-		contracts::kafka::BindSessionEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaBroadcastToAllEventEventId: {
-		contracts::kafka::BroadcastToAllEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaBroadcastToPlayersEventEventId: {
-		contracts::kafka::BroadcastToPlayersEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaBroadcastToSceneEventEventId: {
-		contracts::kafka::BroadcastToSceneEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaKickPlayerEventEventId: {
-		contracts::kafka::KickPlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaPlayerDisconnectedEventEventId: {
-		contracts::kafka::PlayerDisconnectedEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaPlayerLeaseExpiredEventEventId: {
-		contracts::kafka::PlayerLeaseExpiredEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaPlayerLifecycleCommandEventId: {
-		contracts::kafka::PlayerLifecycleCommand event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaPushToPlayerEventEventId: {
-		contracts::kafka::PushToPlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaRedirectToGateEventEventId: {
-		contracts::kafka::RedirectToGateEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case ContractsKafkaRoutePlayerEventEventId: {
-		contracts::kafka::RoutePlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case InitializeActorCompsEventEventId: {
-		InitializeActorCompsEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case InitializeNpcCompsEventEventId: {
-		InitializeNpcCompsEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case InitializePlayerCompsEventEventId: {
-		InitializePlayerCompsEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case InterruptCurrentStateEventEventId: {
-		InterruptCurrentStateEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case OnAcceptedMissionEventEventId: {
-		OnAcceptedMissionEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case OnConnect2LoginEventId: {
-		OnConnect2Login event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case OnMissionAwardEventEventId: {
-		OnMissionAwardEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case OnNodeAddEventEventId: {
-		OnNodeAddEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case OnNodeConnectedEventEventId: {
-		OnNodeConnectedEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case OnNodeRemoveEventEventId: {
-		OnNodeRemoveEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case OnSceneCreatedEventId: {
-		OnSceneCreated event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case OnSceneDestroyedEventId: {
-		OnSceneDestroyed event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case OnServerStartEventId: {
-		OnServerStart event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case PlayerLoginEventEventId: {
-		PlayerLoginEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case PlayerMigrationAckEventEventId: {
-		PlayerMigrationAckEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case PlayerMigrationEventEventId: {
-		PlayerMigrationEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
+		return KafkaEventDispatchResult::kDispatched;
 	}
 	case PlayerTeamRefreshEventEventId: {
 		PlayerTeamRefreshEvent event;
 		if (!event.ParseFromString(payload)) {
-			return false;
+			return KafkaEventDispatchResult::kDecodeFailed;
 		}
 		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case PlayerUpgradeEventEventId: {
-		PlayerUpgradeEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case RegisterPlayerEventEventId: {
-		RegisterPlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case S2CEnterSceneEventId: {
-		S2CEnterScene event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
-	}
-	case SkillExecutedEventEventId: {
-		SkillExecutedEvent event;
-		if (!event.ParseFromString(payload)) {
-			return false;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return true;
+		return KafkaEventDispatchResult::kDispatched;
 	}
 	default:
-		return false;
+		return KafkaEventDispatchResult::kNotAllowed;
+	}
+}
+
+KafkaEventDispatchResult DispatchGateCommandEvent(uint32_t eventId, const std::string& payload)
+{
+	if (!IsGateCommandEvent(eventId)) return KafkaEventDispatchResult::kNotAllowed;
+	switch (eventId) {
+	case ContractsKafkaBindSessionEventEventId: {
+		contracts::kafka::BindSessionEvent event;
+		if (!event.ParseFromString(payload)) {
+			return KafkaEventDispatchResult::kDecodeFailed;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return KafkaEventDispatchResult::kDispatched;
+	}
+	case ContractsKafkaBroadcastToAllEventEventId: {
+		contracts::kafka::BroadcastToAllEvent event;
+		if (!event.ParseFromString(payload)) {
+			return KafkaEventDispatchResult::kDecodeFailed;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return KafkaEventDispatchResult::kDispatched;
+	}
+	case ContractsKafkaBroadcastToPlayersEventEventId: {
+		contracts::kafka::BroadcastToPlayersEvent event;
+		if (!event.ParseFromString(payload)) {
+			return KafkaEventDispatchResult::kDecodeFailed;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return KafkaEventDispatchResult::kDispatched;
+	}
+	case ContractsKafkaBroadcastToSceneEventEventId: {
+		contracts::kafka::BroadcastToSceneEvent event;
+		if (!event.ParseFromString(payload)) {
+			return KafkaEventDispatchResult::kDecodeFailed;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return KafkaEventDispatchResult::kDispatched;
+	}
+	case ContractsKafkaKickPlayerEventEventId: {
+		contracts::kafka::KickPlayerEvent event;
+		if (!event.ParseFromString(payload)) {
+			return KafkaEventDispatchResult::kDecodeFailed;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return KafkaEventDispatchResult::kDispatched;
+	}
+	case ContractsKafkaPlayerLeaseExpiredEventEventId: {
+		contracts::kafka::PlayerLeaseExpiredEvent event;
+		if (!event.ParseFromString(payload)) {
+			return KafkaEventDispatchResult::kDecodeFailed;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return KafkaEventDispatchResult::kDispatched;
+	}
+	case ContractsKafkaPushToPlayerEventEventId: {
+		contracts::kafka::PushToPlayerEvent event;
+		if (!event.ParseFromString(payload)) {
+			return KafkaEventDispatchResult::kDecodeFailed;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return KafkaEventDispatchResult::kDispatched;
+	}
+	case ContractsKafkaRedirectToGateEventEventId: {
+		contracts::kafka::RedirectToGateEvent event;
+		if (!event.ParseFromString(payload)) {
+			return KafkaEventDispatchResult::kDecodeFailed;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return KafkaEventDispatchResult::kDispatched;
+	}
+	case ContractsKafkaRoutePlayerEventEventId: {
+		contracts::kafka::RoutePlayerEvent event;
+		if (!event.ParseFromString(payload)) {
+			return KafkaEventDispatchResult::kDecodeFailed;
+		}
+		tlsEcs.dispatcher.trigger(event);
+		return KafkaEventDispatchResult::kDispatched;
+	}
+	default:
+		return KafkaEventDispatchResult::kNotAllowed;
 	}
 }

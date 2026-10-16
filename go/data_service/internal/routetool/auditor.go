@@ -16,7 +16,7 @@ import (
 // audit(只读):比对全局库路由表与 mapping Redis,分类计数差异。
 //
 //  1. 方向 A(库对 Redis):ScanRoutes 按聚簇键 (route_shard, player_id) 键集翻页(G1a;明细因此不按 player_id 升序),
-//     每页一次 MGET 三族键,逐名 classifyRoute。库里有错片行(route_shard ≠ player_id % 16)时 ScanRoutes 报错、
+//     每页一次 MGET 三族键,逐名 classifyRoute。库里有错片行(route_shard ≠ player_id % 64)时 ScanRoutes 报错、
 //     本次审计退出码 2 —— 方向 A 是真库上唯一看得见错片行的检测器,点读(GetRoutes)看不见它;
 //  2. 方向 B(Redis 对库):SCAN player:zone / player:placement / player:maprev 三族键,用集合去重
 //     (一名玩家在多族键里只算一次);**方向 A 没比过的** id 才 GetRoutes 并比对 —— 既包括库里没有行的,

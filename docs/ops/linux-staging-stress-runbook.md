@@ -4,6 +4,8 @@
 **目的:** 给运维一条**可复制粘贴**的命令序列,把"新登录链路"在 Linux staging 真跑 1k/2k/5k 阶梯。Windows dev 跑不了(`stress-test-2026-05-http-login.md` §四 #B-4),这份是它的对照。
 **前置阅读:** [release-checklist.md](./release-checklist.md), [gate-kernel-tuning-runbook.md](./gate-kernel-tuning-runbook.md)
 
+**2026-10-15 修订:** 本文的机器规格、阶梯阈值与表格来自 2026-05,不是当前版本容量证据。下面部署示例针对无真实玩家、已隔离的 Linux 联调环境;正式 staging / prod 走 [K8s 开服手册](k8s-open-server-runbook_zh.md)。本次只修订文档,未启动服务或执行压测。
+
 ---
 
 ## A. 必备 staging 环境
@@ -31,55 +33,80 @@
 | 组件 | 来源 |
 |---|---|
 | `gateway-node-0.0.1-SNAPSHOT.jar` | `mvn -DskipTests package spring-boot:repackage` 后 ship,~90 MB |
-| go-zero `login` / `player_locator` / 其他 | `dev.bat go-svc-build`(linux 上换成 `go build -o bin/go_services/<svc> ./cmd/<svc>`),~30-50 MB each |
-| cpp `gate` / `scene` | `dev.bat build`(linux 上跑 `cmake --build build --target gate scene -j`),~70 MB each |
+| go-zero `login` / `player_locator` / 其他 | 每个服务是独立 Go module,在 `go/<svc>` 中 `go build -o ../../bin/go_services/<svc> .`;入口名不同,不能假定都有 `./cmd/<svc>` |
+| cpp `gate` / `scene` | Linux 规范入口 `bash tools/scripts/build_linux.sh --release`;先按构建说明准备依赖,产物放在 `bin/` |
 | `robot` 压测客户端 | `cd robot && go build -o robot .`,~26 MB |
 
 ### A.3 配置(从 dev 同步,改这几项)
 
 | 文件 | 字段 | dev 值 | staging 值 |
 |---|---|---|---|
-| `go/login/etc/login.yaml` | `ListenOn` | `127.0.0.1:51000`(避 Win 保留段) | **`0.0.0.0:50000`** |
-| `go/player_locator/etc/player_locator.yaml` | `ListenOn` | `127.0.0.1:51200` | **`0.0.0.0:50200`** |
-| `java/gateway_node/.../application.yaml` | `login.grpc.endpoints` | `127.0.0.1:51000` | login 主机 IP `:50000` |
+| `go/login/etc/login.yaml` | `ListenOn` | `127.0.0.1:53000` | 隔离环境自定;下例为 `0.0.0.0:50000` |
+| `go/player_locator/etc/player_locator.yaml` | `ListenOn` | `127.0.0.1:53200` | 隔离环境自定;下例为 `0.0.0.0:50200` |
+| `java/gateway_node/src/main/resources/application.yaml` | `login.grpc.endpoints` | zone 1 为 `127.0.0.1:53000`,并启用 etcd 发现 | 与实际 login 地址、zone 和发现配置同步 |
 | `bin/etc/base_deploy_config.yaml` | `Kafka.Brokers` | `localhost:9092` | 3 个 broker host:port |
 | `bin/etc/base_deploy_config.yaml` | `etcd_hosts` | `localhost:2379` | etcd 集群地址 |
-| `bin/etc/base_deploy_config.yaml` | `gate_token_secret` | dev 值 | 用 `openssl rand -hex 32` 生成,**和 login.yaml 同步** |
-| `gate.token-secret` (application.yaml) | 同上 | | 同上 |
+| `bin/etc/base_deploy_config.yaml` / login 配置 | gate token HMAC | 开发配置 | 两端一致,通过各自支持的环境变量注入;Java gateway 不选 gate、不签票,无需复制此密钥 |
+
+修改的是该隔离环境自己的配置副本。同步更新所有服务间 RPC 地址、etcd、Redis、MySQL、Kafka 与区服数据,并确认 data_service 的建库 / 迁移已按其手册完成。开发共享口令认证只允许 go-zero `Mode: dev/test`:显式启用 `DevPasswordAuth`,保留 `robot_` / `dev_` 前缀,并从 `LOGIN_DEV_PASSWORD_SHARED_SECRET` 注入共享口令。正式 staging / prod 禁止带入这个开发入口,使用真实认证或已配置的第三方认证。
 
 ---
 
 ## B. 部署顺序(每次发版照做)
 
 ```bash
-# 1. infra(假设已是常驻)
-docker compose ps                    # 期望: redis / etcd / mysql / kafka × 3 都 healthy
+# 在仓库根目录。以下以本机隔离环境的配置为例。
+REPO_ROOT="$PWD"
+mkdir -p run/logs/go_services run/logs/cpp_nodes run/logs/java
+# 仅限显式启用 DevPasswordAuth 的隔离环境,必须在 login 启动前注入。
+read -rsp '隔离环境开发共享口令: ' LOGIN_DEV_PASSWORD_SHARED_SECRET
+echo
+export LOGIN_DEV_PASSWORD_SHARED_SECRET
+
+# 1. infra 已由运维按实际拓扑部署并验证;本地单 broker Compose 不等于三 broker staging。
+docker compose -f deploy/docker-compose.yml ps
 
 # 2. sysctl 一次性应用(只第一次)
-sudo cp docs/ops/99-gate.conf /etc/sysctl.d/         # 把 runbook §二 复制成文件
+# 先按 gate-kernel-tuning-runbook.md 审查并创建环境自己的 sysctl 文件;
+# 仓库没有可直接 cp 的 docs/ops/99-gate.conf。
 sudo sysctl --system
 
-# 3. 起 go 服务(staged: db -> data_service -> player_locator -> login -> scene_manager)
-for s in db data_service player_locator login scene_manager; do
-  ./bin/go_services/${s} -f go/${s}/etc/${s}.yaml >run/logs/go_services/${s}.log 2>&1 &
-  sleep 2
-done
+# 3. 定义启动映射,然后逐条执行,每条都先确认日志与真实健康 / RPC 探针再继续。
+#    配置内容须已按 A.3 对齐,不能用固定 sleep 当就绪证据。
+start_service() {
+  local service_name="$1" config_name="$2"
+  (cd "$REPO_ROOT/go/$service_name" && \
+    exec "$REPO_ROOT/bin/go_services/$service_name" -f "etc/$config_name") \
+    >"$REPO_ROOT/run/logs/go_services/$service_name.log" 2>&1 &
+}
+start_service db db.yaml
+# 确认 db 就绪后:
+start_service data_service data_service.yaml
+# 确认 data_service 就绪后:
+start_service scene_manager scene_manager_service.yaml
+# 确认 scene_manager 就绪后:
+start_service player_locator player_locator.yaml
+# 确认 player_locator 就绪后:
+start_service login login.yaml
 
 # 4. 起 cpp gate / scene
-./bin/scene >run/logs/cpp_nodes/scene.log 2>&1 &
-sleep 2
-./bin/gate  >run/logs/cpp_nodes/gate.log  2>&1 &
-sleep 5
+# 节点按 cwd 读取 etc/、脚本与资源,必须从 bin/ 启动。
+(cd "$REPO_ROOT/bin" && exec ./scene) >run/logs/cpp_nodes/scene.log 2>&1 &
+# 确认 scene 已就绪后再启动 gate;本例使用 C++ 默认的逐服务直连模式。
+(cd "$REPO_ROOT/bin" && GATE_CLIENT_RPC_ROUTER=0 exec ./gate) >run/logs/cpp_nodes/gate.log 2>&1 &
+# 若启用 GATE_CLIENT_RPC_ROUTER=1,必须先部署并验证 client_rpc_router,不能只改开关。
 # 验证 gate 在 etcd 注册:
 etcdctl get --prefix GateNodeService.rpc/zone --keys-only
 
 # 5. 起 Java Gateway
-java -jar gateway-node.jar >run/logs/java/gateway.log 2>&1 &
+java -jar java/gateway_node/target/gateway-node-0.0.1-SNAPSHOT.jar >run/logs/java/gateway.log 2>&1 &
 
 # 6. smoke
-curl -s -X POST http://${GATEWAY_HOST}:8081/api/login \
-     -H "Content-Type: application/json" \
-     -d '{"zone_id":1,"account":"smoke","password":"123456"}'
+# 仅限上文已显式启用开发认证的隔离环境,使用启动 login 时的同一份环境口令。
+: "${LOGIN_DEV_PASSWORD_SHARED_SECRET:?login 启动前必须已注入共享口令}"
+jq -nc '{zone_id:1,account:"robot_linux_smoke",password:env.LOGIN_DEV_PASSWORD_SHARED_SECRET}' | \
+  curl -s -X POST "http://${GATEWAY_HOST:-127.0.0.1}:8081/api/login" \
+    -H 'Content-Type: application/json' --data-binary @-
 # 期望: {"code":0,"access_token":"...","refresh_token":"..."}
 ```
 
@@ -87,16 +114,11 @@ curl -s -X POST http://${GATEWAY_HOST}:8081/api/login \
 
 ## C. 跑阶梯压测
 
-```bash
-# 在压测主机(可以是 gate 同机,也可以是单独 client 主机):
-cd /opt/mmorpg
-./tools/scripts/stress-linux-tier.sh                  # 默认 1000/2000/5000
-# 或自定义:
-./tools/scripts/stress-linux-tier.sh 100 500 1000 2000 5000
-PER_TIER_SEC=120 ./tools/scripts/stress-linux-tier.sh # 每档 2 分钟而非默认 60s
-```
+`tools/scripts/stress-linux-tier.sh` 是 2026-05 的历史辅助脚本:它从旧模板生成配置,只删部分 Redis 键,不完成当前 AGENTS.md §6 的 MySQL / etcd 清理、上一轮基线、三阶段 snapshot 与总结流程。模板认证口径也不能直接当成上文开发共享口令配置。它暂不能作为当前版本可直接执行的标准压测入口。
 
-输出:`run/logs/stress/results-linux-<TS>.csv`,每行一档:
+开始当前阶梯前,先按根 [AGENTS.md §6](../../AGENTS.md) 确定每档配置、认证方式、清理对象、采样计划与对比基线,再由 Codex / 运维执行。robot 配置使用 `gateway_addr / zone_id / robot_count / account_fmt / auth_type / use_http_login` 等真实小写键;口令若需写入临时配置,只能放受控的 Git 外文件并在结束后清理。不要把历史脚本生成的 CSV 当成已满足当前验收门禁。
+
+历史脚本的输出格式是 `run/logs/stress/results-linux-<TS>.csv`,每行一档:
 ```
 robot_count,login_ok,login_fail,login_stuck,enter_ok,avg_login_ms,max_login_ms,recon_ok,duration_s
 ```
@@ -109,7 +131,8 @@ while sleep 10; do
   echo "=== $(date +%T) ==="
   ss -s | head -2
   nstat | grep -E 'TcpExtListenOverflows|TcpExtListenDrops' | head
-  ps -p $(pgrep -f bin/gate) -o %cpu,rss --no-headers
+  gate_pids=$(pgrep -d, -x gate || true)
+  [ -z "$gate_pids" ] || ps -p "$gate_pids" -o %cpu,rss --no-headers
   redis-cli ZCARD player_locator:lease_zset 2>/dev/null
 done | tee run/logs/stress/gate-watch.log
 ```
@@ -144,7 +167,7 @@ done | tee run/logs/stress/gate-watch.log
 
 ## E. 数据回填位(等真实跑完填这里)
 
-> **TODO(staging-ops):** 跑完后,把 csv 第一行加进 [stress-test-2026-05-http-login.md §二](../stress/stress-test-2026-05-http-login.md) 的表格,新增一列 `env`(dev/Linux-staging),并把第一档拐点信号写到本文 §D 的"实测"列。
+> **历史占位:** 下表来自 2026-05,保留作当时基线。当前新测须在 `docs/stress/` 新复盘中登记环境、版本、配置与 `stress_summarize.ps1` 对比表,不把新版本结果混进旧轮次当作同口径数据。
 
 预填的占位结构:
 
@@ -160,11 +183,11 @@ done | tee run/logs/stress/gate-watch.log
 
 ---
 
-## F. 已知限制(同样适用于 staging)
+## F. 已知限制与历史边界
 
 1. **本压测不验证战斗内 RPC 性能**:robot 在 [stats] 看到的 `msg_sent/msg_recv` 是 stress profile 的低速心跳,不代表真实战斗压力。这个由另一套 robot mode(`profile: fighter` + 高 `action_interval`)覆盖,不在本文 scope。
-2. **本压测假设 Bucket4j limiter OFF**:T+0 灰度期默认行为,生产 staging 在切 T+1 后再补一轮 limiter ON 的对照测。
-3. **#B-1 修复后理论上不再需要 wipe**(robot defer Disconnect + cpp gate forward player_id 双层)。但 wipe 仍保留在 `stress-linux-tier.sh` 里,因为(a)兜底,(b)排除 redis 上其它服务残留干扰。
+2. **限流关闭是 2026-05 基线设置**:当前 K8s staging / prod 默认开启限流和登录排队。开 / 关削峰的结果必须分轮记录,不能沿用旧 T+0 / T+1 时间线推定当前配置。
+3. **清理仍是强制门禁**:即使旧 #B-1 缺陷已修,当前每轮登录压测仍须按 AGENTS.md §6 清理隔离测试环境的 Redis / MySQL / etcd 等残留并保存基线;历史脚本的部分 Redis wipe 不满足这一要求。
 
 ---
 

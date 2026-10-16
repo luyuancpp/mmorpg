@@ -1486,7 +1486,7 @@ func itPreflightDeps(t *testing.T, lag kafkaLagSource) preflightDeps {
 }
 
 func itPreflightParams(ids []uint64) preflightParams {
-	return preflightParams{zone: itSrcZone, scope: "source", kafkaGroup: defaultKafkaGroup, topicGeneration: 1, playerIDs: ids}
+	return preflightParams{zone: itSrcZone, scope: "source", kafkaGroups: []string{defaultKafkaGroup}, topicGeneration: 1, playerIDs: ids}
 }
 
 func TestIT_Preflight_PassesOnACleanZone(t *testing.T) {
@@ -1517,6 +1517,10 @@ func TestIT_Preflight_BlocksOnEachHazard(t *testing.T) {
 		{"dead queue not empty", fakeLagSource{}, func(t *testing.T) {
 			itRedis(t, itSharedRD).RPush(context.Background(), dbDeadQueueKey(topic), "payload")
 		}, "P4"},
+		// 按原始分区拆开的 ready(S1 ④,kafka:retry:queue:{topic}:p{N}):只能经 SCAN 发现,这里对真实 Redis 钉住 MATCH 口径。
+		{"partitioned retry queue not empty", fakeLagSource{}, func(t *testing.T) {
+			itRedis(t, itSharedRD).RPush(context.Background(), dbRetryPartitionQueuePrefix(topic)+"3", "payload")
+		}, "P4"},
 		{"player lock held", fakeLagSource{}, func(t *testing.T) {
 			itRedis(t, itMappingRD).Set(context.Background(), "lock:player:9711", "tok", time.Minute)
 		}, "P5"},
@@ -1541,6 +1545,19 @@ func TestIT_Preflight_BlocksOnEachHazard(t *testing.T) {
 				t.Errorf("expected %s in %q", c.expect, err)
 			}
 		})
+	}
+}
+
+// P4 的 p* SCAN 只认本 topic:别的 zone(topic 名是本 topic 加数字)与别的世代(_g2)的按分区 ready 列表不该挡本次合服。
+func TestIT_Preflight_IgnoresOtherTopicsPartitionedRetryLists(t *testing.T) {
+	itReset(t)
+	ctx := context.Background()
+	topic := dbTaskTopic(itSrcZone, 1)
+	shared := itRedis(t, itSharedRD)
+	shared.RPush(ctx, dbRetryPartitionQueuePrefix(topic+"1")+"0", "payload")
+	shared.RPush(ctx, dbRetryPartitionQueuePrefix(topic+"_g2")+"0", "payload")
+	if err := runPreflight(ctx, itPreflightDeps(t, fakeLagSource{}), itPreflightParams([]uint64{9731})); err != nil {
+		t.Fatalf("other topics' partitioned retry lists must not block the merge: %v", err)
 	}
 }
 

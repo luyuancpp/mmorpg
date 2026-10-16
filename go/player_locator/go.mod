@@ -1,6 +1,6 @@
 module player_locator
 
-go 1.24.5
+go 1.27.2
 
 require (
 	github.com/alicebob/miniredis/v2 v2.37.0

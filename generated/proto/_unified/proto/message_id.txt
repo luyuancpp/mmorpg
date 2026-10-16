@@ -248,3 +248,17 @@
 247=SceneBagClientPlayerGmGrantItem
 248=DataServiceGetPlayerAssetOpLedger
 249=SceneBagClientPlayerEquipItem
+250=SceneBagClientPlayerInlayGem
+251=SceneBagClientPlayerEnhanceEquip
+252=SceneBagClientPlayerRemoveGem
+253=SceneSceneClientPlayerGetSyncDigest
+254=SceneSceneClientPlayerNotifySyncDigest
+255=PlayerInboxAckItems
+256=PlayerInboxAdminGetSummary
+257=PlayerInboxFetchItems
+258=DataServiceGetPlayerInboxLedger
+259=PlayerInboxAdminGmSanctionPlayer
+260=PlayerInboxAdminListItems
+261=PlayerInboxAdminLookupByRequest
+262=PlayerInboxAdminVoidItem
+263=PlayerInboxAdminReconcilePlayer

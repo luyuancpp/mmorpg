@@ -19,8 +19,8 @@ import java.util.concurrent.ConcurrentMap;
  *   <li>Wave control: zones outside the current open-server wave -> queue.</li>
  *   <li>Zone bucket (distributed, Bucket4j+Redis): tokens/sec per zone.</li>
  *   <li>IP bucket (distributed): per-IP rate ceiling.</li>
- *   <li>Account cooldown (process-local, ConcurrentHashMap with TTL): blocks
- *       hyperactive retries from the same account.</li>
+ *   <li>账号冷却(进程内,带 TTL 的 ConcurrentHashMap):挡住同一客户端 IP 上同一账号的
+ *       高频重试。冷却键 = 端点 scope + 账号 + 客户端 IP,原因见下。</li>
  * </ol>
  *
  * <p>The local account cooldown intentionally is <b>not</b> distributed: it's
@@ -28,6 +28,14 @@ import java.util.concurrent.ConcurrentMap;
  * de-dup happens in go-zero login's {@code RedisLocker}. Multi-gateway
  * accuracy is fine because account spam is naturally bounded by the zone
  * bucket downstream.
+ *
+ * <p><b>冷却键为什么带客户端 IP(G4b-J2)。</b>{@code account} 在这一步未经认证。只按账号
+ * 计时的话,任何人每隔一个冷却窗口替别人的账号调一次接口,对方在同一副本上就一直拿
+ * {@code ACCOUNT_COOLDOWN} —— 限流一打开就多出一个定点封号面。键里带上 IP 之后,这样刷
+ * 只能挡住同一个 IP 上的这个账号,也就是刷的人自己。代价:同一账号换网络后不共享冷却窗口;
+ * 同一出口 IP(NAT)后面的人仍能互相挡;所有请求都解析成同一个 IP 时(部署在 LB 之后却没配
+ * 可信代理,见 {@link ClientIpResolver})退化为只按账号,即改动前的行为。对单个客户端防重试
+ * 风暴的作用不变。
  *
  * <p>Fail-open semantics: if Redis or Bucket4j throws, the limiter logs and
  * lets the request through. Reasoning: a broken limiter must not turn into a
@@ -77,6 +85,12 @@ public class AssignGateRateLimiter {
             return RateLimitDecision.queue(waitSec * 1000L, -1);
         }
 
+        // IP 桶键与账号冷却键共用同一个归一化后的 IP,所以放在 try 之外(纯本地运算,不会抛)。
+        // ClientIpResolver 约定永不返回 null;万一传进来 null / 空白,统一落到 "?" 这一个占位值:
+        // 这些请求共用一个 IP 桶,冷却退化为只按账号(J2 之前的行为)—— 既不抛异常,也不会因为
+        // 缺 IP 而绕过冷却或各得一个新键。
+        String ip = (clientIp == null || clientIp.isBlank()) ? "?" : clientIp;
+
         try {
             // 2. zone bucket (skip when zoneId=0, i.e. "any zone" — the auto
             //    selection still consumes downstream zone capacity once routed)
@@ -91,7 +105,6 @@ public class AssignGateRateLimiter {
             }
 
             // 3. ip bucket
-            String ip = (clientIp == null || clientIp.isBlank()) ? "?" : clientIp;
             BucketProxy ipBucket = proxyManager.builder().build(ipKey(ip), this::ipBucketConfig);
             if (!ipBucket.tryConsume(1)) {
                 return RateLimitDecision.deny("IP_RATE_LIMIT");
@@ -102,8 +115,13 @@ public class AssignGateRateLimiter {
         }
 
         // 4. account cooldown (best-effort, process-local, per-endpoint scope)
+        //    键带客户端 IP(G4b-J2,原因见类注释):account 未经认证,只按账号计时等于让任何人都能
+        //    替别人的账号触发冷却。IP 放在末尾:地址字面量与占位值都不含 '@',所以账号里带 '@'
+        //    (如邮箱)也不会和别的 (账号, IP) 拼成同一个键。唯一能含 '@' 的 IP 是 ClientIpResolver
+        //    在可信代理之后原样返回的非字面量 XFF 段;能把这种值送进来的一方本来就能填任意 IP,
+        //    键撞不撞都不多给它什么。
         if (account != null && !account.isBlank()) {
-            String cooldownKey = cooldownScope + ":" + account;
+            String cooldownKey = cooldownScope + ":" + account + "@" + ip;
             long now = System.currentTimeMillis();
             Long prev = accountCooldown.get(cooldownKey);
             if (prev != null && now - prev < props.getAccountCooldownMs()) {
