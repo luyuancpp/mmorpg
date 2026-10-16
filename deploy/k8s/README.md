@@ -1167,9 +1167,10 @@ kubectl -n <infra> exec deploy/redis-proxy -- sh -c 'echo "show servers state" |
 ### 已知限制
 
 - 代理多一跳(集群内通常 0.1 ms 量级,未压测);两个代理是无状态的,一个重启时它的客户端重连到另一个。
-- **残余风险(C++)**:代理 Pod 所在的机器整机消失时,C++ 节点那条唯一的 Redis 连接收不到 FIN / RST,而 `redis_manager` 没有应用层存活探测、hiredis 适配层没开 TCP keepalive,
-  这条连接会一直挂着直到进程重启(Go / Java 客户端有读超时,不受影响)。Redis 节点所在机器消失不受影响:代理会掐断客户端侧。修法单列为后续项
-  (Hiredis 适配层开 keepalive,或 RedisManager 加带截止时间的 PING)。
+- **代理整机消失(C++)**:代理 Pod 所在的机器整机消失时,C++ 节点那条唯一的 Redis 连接收不到 FIN / RST(Go / Java 客户端有读超时,不受影响;
+  Redis 节点所在机器消失也不受影响,代理会掐断客户端侧)。2026-10-16 起 `redis_manager` 每 5 秒发一条 PING,15 秒无应答就摘下连接、走既有重连,
+  最迟约 20 秒恢复,判定时打带 `metric=zone_redis_liveness_timeout` 的 ERROR,告警按这个标记抓。**未编译,待 Codex 验证**;
+  还在跑旧版 C++ 镜像的环境里,这种情况下该进程的 Redis 读写仍会一直卡到进程重启。
 - 脚本 ConfigMap 改了只滚动代理(注解 `mmorpg.io/redis-ha-scripts-digest`),redis Pod 的启动脚本要到下一次重启才生效 —— 为了改脚本去滚动 Redis 不值得。
 - 哨兵重新连上一个换了 IP 的 Pod 要约 15 秒(Redis 哨兵自身的重连节奏);停机钩子会等它看清所有从再交接,所以上一个 Pod 刚重启完时交接要多等十几秒。
 - 部署后等待用 `rollout status` 的 180 秒上限;数据量大时 1 → 3 的全量同步可能更久,超时只是等待失败,不影响已经 apply 的对象。

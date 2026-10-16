@@ -3,6 +3,8 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/EventLoop.h"
 
+#include <chrono>
+#include <memory>
 #include <string_view>
 
 namespace
@@ -55,6 +57,22 @@ namespace
 		connection->setDisconnectCallback({});
 		connection.reset();
 	}
+
+	// 非正数(含 NaN)回落到默认值并打 WARN。what 拼进日志:"Redis <what> <value>s is not positive, using <fallback>s"。
+	double PositiveOrDefault(double value, double fallback, const char *what)
+	{
+		if (value > 0)
+		{
+			return value;
+		}
+		LOG_WARN << "Redis " << what << " " << value << "s is not positive, using " << fallback << "s";
+		return fallback;
+	}
+
+	std::chrono::duration<double> Seconds(double seconds)
+	{
+		return std::chrono::duration<double>(seconds);
+	}
 }
 
 thread_local RedisManager tlsRedis;
@@ -69,22 +87,26 @@ void RedisManager::Connect(muduo::net::EventLoop *loop, const muduo::net::InetAd
 	if (loop_)
 	{
 		CancelReconnectTimer();
+		CancelLivenessTimer();
 	}
 	ResetConnections();
 	loop_ = ToLoopRef(loop);
 	redisAddr_ = addr;
 	options_ = std::move(options);
-	if (!(options_.reconnectIntervalSec > 0))
-	{
-		LOG_WARN << "Redis reconnect interval " << options_.reconnectIntervalSec << "s is not positive, using "
-				 << RedisConnectOptions::kDefaultReconnectIntervalSec << "s";
-		options_.reconnectIntervalSec = RedisConnectOptions::kDefaultReconnectIntervalSec;
-	}
+	options_.reconnectIntervalSec = PositiveOrDefault(
+		options_.reconnectIntervalSec, RedisConnectOptions::kDefaultReconnectIntervalSec, "reconnect interval");
+	options_.livenessProbeIntervalSec = PositiveOrDefault(
+		options_.livenessProbeIntervalSec, RedisConnectOptions::kDefaultLivenessProbeIntervalSec, "liveness probe interval");
+	options_.livenessTimeoutSec = PositiveOrDefault(
+		options_.livenessTimeoutSec, RedisConnectOptions::kDefaultLivenessTimeoutSec, "liveness timeout");
+	// 新的 Connect 周期换一枚令牌:上一周期排队的摘下任务与遗留的定时器闭包一律失效。
+	lifetimeToken_ = std::make_shared<LifetimeToken>();
 
 	// 占位对象:只构造、从不 connect()。它的 connected() 恒为 false、command() 直接返回 REDIS_ERR 且不调回调,
 	// context 为空,析构什么也不做(Hiredis.cc 的 connected() / command() / ~Hiredis)。有了它,GetZoneRedis()
 	// 在第一次握手完成前就非空,直接 `GetZoneRedis()->command(` 的调用点不会解引用空指针。
 	zoneRedis_ = std::make_unique<HiredisPtr::element_type>(loop, redisAddr_);
+	StartLivenessTimer();
 	StartHandshake();
 }
 
@@ -93,11 +115,14 @@ void RedisManager::Shutdown()
 	if (loop_)
 	{
 		CancelReconnectTimer();
+		CancelLivenessTimer();
 	}
 
 	// 先切断 RedisManager 自身的回调,否则 redisAsyncFree 触发 disconnect
 	// callback 时会在停机过程中重新挂一条重连定时器。
 	reconnectCb_ = {};
+	// 已排队、还没跑的摘下任务随令牌一起作废;连接由下面的 ResetConnections 当场释放。
+	lifetimeToken_.reset();
 	ResetConnections();
 	loop_.reset();
 }
@@ -199,6 +224,8 @@ void RedisManager::PromoteHandshake()
 	// unique_ptr 移动赋值:先让 zoneRedis_ 指向握手连接,再析构被替换的对象。被替换的只会是占位对象或已断开的旧连接
 	// (见头文件不变量),析构不触发任何回调。握手连接本身没有被销毁,所以在它自己的连接 / 命令回调栈里移交是安全的。
 	zoneRedis_ = std::move(handshakeRedis_);
+	// 新连接从零开始探测;旧连接上迟到的 PING 回调因代号不符被忽略。
+	ResetLivenessProbe();
 	if (reconnectCb_)
 	{
 		reconnectCb_();
@@ -251,6 +278,129 @@ void RedisManager::ResetConnections()
 	// 先拆握手连接(它的挂起 AUTH 以空应答回调,OnAuthReply 直接返回),再拆对业务可见的连接
 	// (挂起的业务命令以空应答回调,同改动前)。显式拆除不是握手失败,不报 AUTH 超时。
 	authAwaitingReply_ = false;
+	ResetLivenessProbe();
 	ReleaseConnection(handshakeRedis_);
 	ReleaseConnection(zoneRedis_);
+}
+
+void RedisManager::StartLivenessTimer()
+{
+	if (!loop_ || livenessTimerActive_)
+	{
+		return;
+	}
+	livenessTimerId_ = loop_->get().runEvery(
+		options_.livenessProbeIntervalSec,
+		[token = std::weak_ptr<LifetimeToken>(lifetimeToken_), this]
+		{
+			if (!token.lock())
+			{
+				return;
+			}
+			OnLivenessTick();
+		});
+	livenessTimerActive_ = true;
+}
+
+void RedisManager::CancelLivenessTimer()
+{
+	if (loop_ && livenessTimerActive_)
+	{
+		loop_->get().cancel(livenessTimerId_);
+		livenessTimerActive_ = false;
+	}
+}
+
+void RedisManager::OnLivenessTick()
+{
+	// 只探测对业务可见、仍连着的连接。握手中、断线待重连期间 zoneRedis_ 是占位对象或已断开的旧连接,
+	// 由 AUTH 截止与重连定时器负责;握手连接上绝不发 PING(AUTH 必须是它唯一的命令)。
+	if (!zoneRedis_ || !zoneRedis_->connected())
+	{
+		return;
+	}
+
+	const auto now = std::chrono::steady_clock::now();
+	if (livenessPingOutstanding_)
+	{
+		if (now - livenessPingSentAt_ >= Seconds(options_.livenessTimeoutSec))
+		{
+			QueueDropUnresponsive();
+		}
+		// 截止前继续等;不叠加第二条 PING —— 它只会排在第一条后面,不提供任何新信息。
+		return;
+	}
+
+	const std::uint64_t generation = livenessGeneration_;
+	const int ret = zoneRedis_->command(
+		[this, generation](hiredis::Hiredis *, redisReply *reply)
+		{ OnLivenessPingReply(generation, reply); },
+		"PING");
+	if (ret != REDIS_OK)
+	{
+		// connected() 为真时只在命令格式化失败或内存不足时发生;不算判定依据,下一跳再试。
+		LOG_WARN << "Redis liveness PING could not be sent to " << redisAddr_.toIpPort() << " (ret=" << ret
+				 << "), retrying in " << options_.livenessProbeIntervalSec << "s";
+		return;
+	}
+	livenessPingOutstanding_ = true;
+	livenessPingSentAt_ = now;
+}
+
+void RedisManager::OnLivenessPingReply(std::uint64_t generation, const redisReply *reply)
+{
+	// 空应答:连接正在释放或已断开(含本探测把它摘下),由断线 / 重连路径负责。
+	// 代号不符:已被替换掉的旧连接上的迟到回调。两种情况都不碰探测状态。
+	if (reply == nullptr || generation != livenessGeneration_)
+	{
+		return;
+	}
+	// 任何非空应答(+PONG,或 -BUSY / -LOADING 之类的错误应答)都说明这条连接仍在往返数据。
+	livenessPingOutstanding_ = false;
+}
+
+void RedisManager::QueueDropUnresponsive()
+{
+	// 不在这里摘下:本函数运行在定时器回调里,与 socket 事件同属一轮分发(Linux 的 timerfd 与 socket 在同一批
+	// activeChannels_ 里;Windows 在 I/O 之后、eventHandling_ 仍为真时跑定时器)。在这里销毁一条本轮也有 I/O 的连接,
+	// Linux 是释放后使用(Hiredis 的 Channel 回调绑的是裸指针),Windows Debug 撞 EventLoop::removeChannel 的断言。
+	// 排到本轮的 pending functor 阶段再做:那时本轮 Channel 事件已全部分发完。
+	loop_->get().queueInLoop(
+		[token = std::weak_ptr<LifetimeToken>(lifetimeToken_), this, generation = livenessGeneration_]
+		{
+			if (!token.lock())
+			{
+				return; // 已 Shutdown 或重新 Connect:连接已由它们释放
+			}
+			DropUnresponsive(generation);
+		});
+}
+
+void RedisManager::DropUnresponsive(std::uint64_t generation)
+{
+	// 排队期间情况可能已经变了:这条连接自己断开了(断线回调已接手重连),或已被移交 / 显式拆除替换。都不再处理。
+	if (!loop_ || generation != livenessGeneration_ || !zoneRedis_ || !zoneRedis_->connected())
+	{
+		return;
+	}
+
+	LOG_ERROR << "Redis liveness probe timed out on " << redisAddr_.toIpPort() << ": PING got no reply within "
+			  << options_.livenessTimeoutSec << "s -- dropping the connection (in-flight commands complete with null replies), "
+			  << "reconnecting every " << options_.reconnectIntervalSec << "s (metric=zone_redis_liveness_timeout)";
+	ResetLivenessProbe();
+
+	// 先换上占位对象再释放:释放时在途命令以空应答回调,回调里若再取 GetZoneRedis(),看到的是 connected()==false 的
+	// 占位对象,新命令当场 REDIS_ERR,不会发到正在释放的连接上。释放发生在本类的成员函数里、不在任何 hiredis 回调栈内;
+	// 被摘下连接的断线回调先被清掉,不会再走一遍断线日志与 ScheduleReconnect。
+	HiredisPtr unresponsive = std::move(zoneRedis_);
+	zoneRedis_ = std::make_unique<HiredisPtr::element_type>(&loop_->get(), redisAddr_);
+	ReleaseConnection(unresponsive);
+	// 走既有重连:此刻 zoneRedis_ 是占位对象,满足「重连定时器只在 zoneRedis_ 不可用时运行」。
+	ScheduleReconnect();
+}
+
+void RedisManager::ResetLivenessProbe()
+{
+	++livenessGeneration_;
+	livenessPingOutstanding_ = false;
 }

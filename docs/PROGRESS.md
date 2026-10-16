@@ -9101,3 +9101,47 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   两边主工作区中其他任务的未推送提交和 merchant 未提交生成物保持原样,不随本次补位交付发布。
 - 协议 / 配表 / 生成物未改;未重启服务、未清理数据库、未替换主仓二进制。Go -race、C++ 全量编译、Unity 内测试及三客户端联机尚未执行。
   Java 版仍待做,本机无约定 Java 仓库,PARITY 未登记(设计文档 §7.4)。
+
+## 2026-10-16 C++ zone Redis 连接加存活探测:补 redis-ha 代理整机消失的残余风险(Claude,未编译,待 Codex 验证)
+
+- **问题**:redis-ha 形态下代理 Pod 所在机器整机消失(没有 FIN / RST)时,C++ gate / scene / battle 每进程唯一的 zone Redis 连接一直显示 connected,
+  命令只进不出,该进程的 Redis 读写卡到进程重启(`docs/design/no-single-node-horizontal-scaling-20261001.md` §5.3)。
+- **修法(只做了 b:带截止时间的周期 PING)**:`RedisManager` 每 5 秒对已移交给业务的连接发一条 PING(同一时刻最多一条);PING 15 秒没有应答 →
+  打 ERROR `metric=zone_redis_liveness_timeout` → 换上占位对象、释放旧连接(在途命令以空应答回调)→ 走既有 `ScheduleReconnect`(有口令照常先 AUTH)。
+  最迟约 20 秒判定。契约写在 `redis_manager.h` Connect 注释「存活契约」;两个参数进了 `RedisConnectOptions`,只为测试可注入,生产用默认值,`node.cpp` 未改。
+- **P0-A 不变量保持**:握手连接、占位对象、已断开的旧连接上不发 PING,握手连接上 AUTH 仍是唯一的命令(fail-closed 不变);移交时被替换的仍只会是
+  占位对象或已断开的旧连接;连接只在 `RedisManager` 成员函数里释放,不在 hiredis 回调栈里。摘下不在定时器回调里做,而是 `queueInLoop` 到本轮的
+  pending functor 阶段:定时器与 socket 事件同属一轮分发,在定时器里销毁一条本轮也有 I/O 的连接,Linux 是释放后使用、Windows Debug 撞
+  `EventLoop::removeChannel` 断言。闭包用 `lifetimeToken_` 的 weak_ptr 守护,先 lock 再碰 this。本类由 thread_local 值持有、拿不到 `weak_ptr<自己>`,
+  这是 AGENTS §11.7 weak-self 的等价写法;Connect 换令牌、Shutdown 清令牌。
+- **没做 (a) TCP keepalive**,两份 `Hiredis.cc` 未改:① 连接上有未确认的数据(繁忙进程,或在途的 PING)时内核不发 keepalive 探测,要检测的场景里
+  它恰好不起作用;② PING 每 5 秒一次,连接从不空闲到 keepalive 的门槛;③ hiredis 1.2 的 `redisKeepAlive` 失败时会置 `c->err`,下一次读就断开连接,
+  纵深防御反而多一种失败模式。也没用 hiredis 自带的命令超时(`redisAsyncSetTimeout`):每发一条命令都会重置那个定时器,繁忙进程对着死连接永远不超时。
+- **误判与调用方**:误判(Redis 卡住超过 15 秒)的效果等同一次断线重连,与主切换时代理掐连接一样。子 agent 只读审计了约 55 处 zone Redis 回调对空应答的处理:
+  多数会重试或无副作用,但有 4 处把空应答当成业务结论 —— battle 外发箱第一跳把空应答当「已销账」并删条目(`battle_room_manager.cpp:1926`)、
+  登录钩子把空应答当「没有挂起结算」(`player_battle.cpp:2176`)、`RestoreBattleFreezeOnLogin` 把空应答当「无锁」(`player_battle.cpp:1582`)、
+  `DispatchSettlementDurably` 空应答时不进外发箱(`battle_room_manager.cpp:1786`);另有 2 处丢重投(外发箱第二跳空应答白烧次数,`:1952`;
+  活动结果 SET 空应答不进 outbox,`:2041`)。都是**既有缺陷**,今天任何一次断线都会触发;本次不顺手改,单列后续项。
+  另外,`MessageAsyncClient::OnReconnected` 注释假设在途 GET 断线后不回调,实际空回调先到,这类加载直接失败而不是重发(只影响活性)。
+- **测试**:`cpp/tests/rpc_controller_test/redis_manager_auth_test.cpp` 新增套件 `RedisManagerLiveness`,共 5 例:
+  1. 对端静默、不断开 → 摘下连接、在途命令空应答、PING 不叠加、重连后仍先 AUTH;
+  2. 健康连接周期探测,不误摘;
+  3. 慢应答(截止的一半)不误摘;
+  4. 握手连接从不被探测;
+  5. 非正数配置回落到默认值。
+
+  既有 10 例 `RedisManagerAuth` 默认用 30 秒探测间隔,命令序列不变。
+- **Codex 验证**(工作目录仓库根;先 `Remove-Item Env:ZONE_REDIS_PASSWORD -ErrorAction SilentlyContinue`;不需要真实 Redis;MSBuild 用
+  `run_cpp_tests.ps1` 里 `Resolve-MSBuild` 找到的那个,一律 `/m:1`)。`RedisManager` 成员布局变了,包含 `redis_manager.h` 的工程都要重编:
+  1. `& $msb cpp\libs\engine\thread_context\thread_context.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal`
+  2. `& $msb game.sln /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal`
+  3. `pwsh -NoProfile -File tools/scripts/run_cpp_tests.ps1 -Build -Filter rpc_controller_test`
+  4. `.\build\cpp\tests\rpc_controller_test.exe --gtest_filter=RedisManagerAuth.*:RedisManagerLiveness.* --gtest_repeat=20`
+
+  **通过标准**:`redis_manager.*` 与 `redis_manager_auth_test.cpp` 没有 `error C` / `LNK`;15 例在 repeat 20 下全过。第一条编译错误不在这几个文件里时,
+  记下文件名,视为其他会话的在途改动。工程整体链接不了时,只编测试文件:
+  `& $msb cpp\tests\rpc_controller_test\rpc_controller_test.vcxproj /t:ClCompile /p:SelectedFiles=redis_manager_auth_test.cpp /p:Configuration=Debug /p:Platform=x64 /m:1 /nologo /v:minimal`。
+
+  不要加 `--gtest_break_on_failure`:夹具超时路径会 abort。失败时保留 gtest 输出,用例打印的日志已遮掉口令。
+  Linux 构建(`build_linux.sh`)没有新文件、不需要改 CMake,可选择顺带编一次。
+- **Java 版(AGENTS §12)**:服务端内部实现,不涉及客户端契约;任务描述称 Java 客户端有读超时、不受这个问题影响。本次未核对 Java 仓与 `PARITY.md`,对应 Java 版本号:无。

@@ -282,9 +282,11 @@ kind 上:`zone-up` 后 `data-service-migrate` Job Complete、两个 Pod Ready;`k
 - 3 → 1 只能手工回退(README 有步骤)。`-RedisReplicas` 不经 `dev_tools.ps1` / `k8s_image.ps1` 透传(同 `-KafkaBrokers`)。
 - 没在真实多节点集群上做过网络分区与整机故障;大数据量下 1 → 3 的全量同步耗时未知(`rollout status` 等待上限 180 秒)。
 - C++ 侧:口令认证已由别的会话补上(P0-A,`redis_manager.cpp` 每条新连接先 AUTH、失败 fail-closed);高可用形态下主切换由代理掐断连接、C++ 走既有重连。
-  **残余风险**:代理 Pod 所在机器整机消失时,C++ 那条连接收不到 FIN / RST;`redis_manager` 没有应用层存活探测,hiredis 适配层也没开 TCP keepalive,
-  这条连接会一直挂着(该进程的 Redis 读写全部卡住)直到进程重启。Redis 节点所在机器消失不受影响(代理会掐断客户端侧)。修法是在 Hiredis 适配层开 keepalive,
-  或在 RedisManager 加带截止时间的 PING;`redis_manager` 是 P0-A 刚重写的文件(含细致的生命周期约束),本线没有改,单列为后续项。
+  **残余风险**:代理 Pod 所在机器整机消失时,C++ 那条连接收不到 FIN / RST,原先会一直挂着(该进程的 Redis 读写全部卡住)直到进程重启。
+  Redis 节点所在机器消失不受影响(代理会掐断客户端侧)。**2026-10-16 已补(未编译,待 Codex 验证)**:`RedisManager` 加了应用层存活探测 ——
+  每 5 秒对已移交给业务的连接发一条 PING,15 秒无应答就摘下连接、走既有重连,最迟约 20 秒判定;契约见 `redis_manager.h` Connect 注释「存活契约」。
+  没开 TCP keepalive:连接上有未确认的数据时内核不发 keepalive 探测,恰好覆盖不到这个场景(理由见 `docs/PROGRESS.md` 同日条目)。
+  摘下时在途命令以空应答结束,与主切换掐连接相同;有几处调用方把空应答当成业务结论(既有缺陷,同一条目里列了位置),单列为后续项。
 
 ### 5.4 验证(交 Codex)
 
