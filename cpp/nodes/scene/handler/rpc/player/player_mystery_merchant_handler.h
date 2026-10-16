@@ -1,5 +1,8 @@
 #pragma once
 
+#include <type_traits>
+#include <utility>
+
 #include "proto/scene/player_mystery_merchant.pb.h"
 
 #include "rpc/player_service_interface.h"
@@ -30,18 +33,20 @@ public:
         {
         case 0:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::GetMysteryMerchantInfoResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             GetMysteryMerchantInfo(player,
                 static_cast<const ::GetMysteryMerchantInfoRequest*>(request),
                 static_cast<::GetMysteryMerchantInfoResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::GetMysteryMerchantInfoResponse*>(response));
 			}
             break;
         case 1:
 			{
+            static_assert(std::is_same_v<decltype(std::declval<::BuyMysteryMerchantGoodsResponse&>().mutable_error_message()), ::TipInfoMessage*>,
+                "玩家 RPC 非 Empty 应答必须提供 TipInfoMessage error_message");
             BuyMysteryMerchantGoods(player,
                 static_cast<const ::BuyMysteryMerchantGoodsRequest*>(request),
                 static_cast<::BuyMysteryMerchantGoodsResponse*>(response));
-            TRANSFER_ERROR_MESSAGE(static_cast<::BuyMysteryMerchantGoodsResponse*>(response));
 			}
             break;
         case 2:

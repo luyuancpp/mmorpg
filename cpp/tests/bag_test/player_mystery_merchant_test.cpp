@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include "engine/core/type_define/player_guid_comp.h"
 #include "engine/core/type_define/type_define.h"
 #include "modules/bag/bag_service.h"
 #include "modules/bag/bag_system.h"
@@ -33,6 +34,7 @@
 #include "modules/currency/comp/player_currency_comp.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"
+#include "modules/gain_block/gain_block_service.h"
 #include "modules/id_segment/guid_segment_registry.h"
 #include "modules/scene/comp/scene_comp.h"
 #include "proto/common/component/actor_comp.pb.h"
@@ -436,7 +438,7 @@ protected:
 		PlayerMysteryMerchantSystem::ApplyStateForTest(&state, state.appear_at_ms() + 60000ULL);
 	}
 
-	entt::entity NewScene(uint64_t sceneId)
+	SceneEntity NewScene(uint64_t sceneId)
 	{
 		const auto entity = tlsEcs.sceneRegistry.create();
 		auto &info = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(entity);
@@ -445,11 +447,11 @@ protected:
 		return entity;
 	}
 
-	entt::entity NewPlayer(uint64_t guid, entt::entity sceneEntity, double x, double y, uint64_t gold)
+	entt::entity NewPlayer(uint64_t guid, SceneEntity sceneEntity, double x, double y, uint64_t gold)
 	{
 		const auto entity = tlsEcs.actorRegistry.create();
 		players.push_back(entity);
-		tlsEcs.actorRegistry.emplace<Guid>(entity, Guid{guid});
+		tlsEcs.actorRegistry.emplace<PlayerGuidComp>(entity, Guid{guid});
 		auto &bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(entity);
 		for (auto &bag : bags.bags)
 		{
@@ -538,8 +540,8 @@ protected:
 	}
 
 	entt::entity player{entt::null};
-	entt::entity scene{entt::null};
-	entt::entity otherScene{entt::null};
+	SceneEntity scene{entt::null};
+	SceneEntity otherScene{entt::null};
 	std::vector<entt::entity> players;
 	uint32_t stackGoods = 0;
 	uint32_t stackItem = 0;
@@ -810,10 +812,9 @@ TEST_F(PlayerMysteryMerchantTest, RejectsWhenBagIsFull)
 	// 人物背包里先放一件别的物品,再把容量收到恰好占满(与 player_equip_test.cpp 的背包满用例同一做法):
 	// 要买的那件是另一种物品,必须占一个新格子,于是放不下。
 	auto &inventory = Inventory(player);
-	const PlayerItemBlockList noBlocks;
 	ItemCountMap filler;
 	filler[GoodsRowOrNull(uniqueGoods)->item_id()] = 1;
-	ASSERT_EQ(kSuccess, BagService::AddItems(player, inventory, noBlocks, filler));
+	ASSERT_EQ(kSuccess, BagService::AddItems(player, inventory, filler));
 	inventory.SetCapacityForRestore(inventory.OccupiedGridCount());
 	ASSERT_TRUE(inventory.IsFull());
 
@@ -835,13 +836,16 @@ TEST_F(PlayerMysteryMerchantTest, RejectsWhileFrozenOrInBattle)
 	EXPECT_EQ(kSuccess, Buy(player, Request(stackGoods, 1, 60))) << "解冻、出战斗之后照常可买";
 }
 
-TEST_F(PlayerMysteryMerchantTest, RejectsBlockedItems)
+TEST_F(PlayerMysteryMerchantTest, RejectsGloballyBlockedItems)
 {
+	// 物品封禁只有全服这一种(个人封禁表已删除)。用例结束前解封,不影响其它用例。
 	const auto *row = GoodsRowOrNull(stackGoods);
-	tlsEcs.actorRegistry.emplace<PlayerItemBlockList>(player).Block(row->item_id());
+	ASSERT_FALSE(GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kItem, row->item_id()))
+		<< "fixture item must start unblocked";
+	GainBlockService::BlockGlobal(GainBlockService::GainType::kItem, row->item_id());
 	ExpectRejectedWithoutSideEffects(kMysteryMerchantItemBlocked, player, Request(stackGoods, 1, 60));
 
-	tlsEcs.actorRegistry.get<PlayerItemBlockList>(player).Unblock(row->item_id());
+	GainBlockService::UnblockGlobal(GainBlockService::GainType::kItem, row->item_id());
 	EXPECT_EQ(kSuccess, Buy(player, Request(stackGoods, 1, 60)));
 }
 

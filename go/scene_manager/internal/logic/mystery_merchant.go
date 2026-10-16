@@ -523,7 +523,7 @@ func scheduleMysteryMerchant(svcCtx *svc.ServiceContext, zoneID uint32, now time
 	// 这只可能发生在「改间隔」与「换领导者」撞在同一拍,下一拍就收敛(记录已是新间隔,回到正常路径)。
 	force := corrupt
 	if corrupt {
-		logMerchantProblem(zoneID, now, "现有记录解析失败或写的不是本 zone,按无记录处理并覆盖")
+		logMerchantProblem(zoneID, now, "existing record failed to parse or belongs to another zone; treating it as absent and overwriting")
 	}
 	// 这个分支在「改了间隔」到「新间隔下的第一轮开始」之间每一拍都会走到(那段时间没有东西可写),
 	// 所以这里只记下旧间隔,等真正覆盖写入时再打一条日志。
@@ -575,10 +575,10 @@ func scheduleMysteryMerchant(svcCtx *svc.ServiceContext, zoneID uint32, now time
 		return metrics.MerchantScheduleLostRace, nil
 	}
 	if replacedIntervalSeconds != 0 {
-		logx.Infof("[MysteryMerchant] zone=%d: 出现间隔从 %d 秒变成 %d 秒,按旧间隔排的记录已被覆盖",
+		logx.Infof("[MysteryMerchant] zone=%d: appearance interval changed from %ds to %ds; the record scheduled on the old interval was overwritten",
 			zoneID, replacedIntervalSeconds, tables.rule.intervalSeconds)
 	}
-	logx.Infof("[MysteryMerchant] zone=%d round=%d: 出现在地图 %d 的 %d 线(scene=%d, spot=%d),货架 %d 件,停留到 %s",
+	logx.Infof("[MysteryMerchant] zone=%d round=%d: appeared on map %d channel %d (scene=%d, spot=%d), shelf=%d goods, stays until %s",
 		zoneID, state.GetRoundId(), state.GetSceneConfigId(), state.GetChannelNo(), state.GetSceneId(), state.GetSpotId(),
 		len(shelf), time.Unix(round.expireAt, 0).Format(time.RFC3339))
 	return metrics.MerchantScheduleCreated, nil
@@ -662,7 +662,7 @@ func keepOrRelocateMerchant(svcCtx *svc.ServiceContext, zoneID uint32, now time.
 		return metrics.MerchantScheduleLostRace, nil
 	}
 	resetMerchantMissing(zoneID)
-	logx.Infof("[MysteryMerchant] zone=%d round=%d: 原来的线(scene=%d)已回收或销毁,改到地图 %d 的 %d 线(scene=%d, spot=%d),第 %d 次落位",
+	logx.Infof("[MysteryMerchant] zone=%d round=%d: previous channel (scene=%d) was reclaimed or destroyed; relocated to map %d channel %d (scene=%d, spot=%d), placement #%d",
 		zoneID, relocated.GetRoundId(), current.GetSceneId(), relocated.GetSceneConfigId(), relocated.GetChannelNo(),
 		relocated.GetSceneId(), relocated.GetSpotId(), relocated.GetRevision())
 	return metrics.MerchantScheduleRelocated, nil
@@ -689,7 +689,7 @@ func ScheduleMysteryMerchantForZone(svcCtx *svc.ServiceContext, zoneID uint32, n
 	tables, err := loadMerchantTables(svcCtx.Config.MysteryMerchant)
 	if err != nil {
 		metrics.ObserveMysteryMerchantSchedule(zoneID, metrics.MerchantScheduleInvalidTable)
-		logMerchantProblem(zoneID, now, fmt.Sprintf("配置表校验不过,本拍不调度: %v", err))
+		logMerchantProblem(zoneID, now, fmt.Sprintf("table validation failed; skipping this tick: %v", err))
 		return
 	}
 	outcome, err := scheduleMysteryMerchant(svcCtx, zoneID, now, globalMerchantRand{}, tables)
@@ -697,13 +697,13 @@ func ScheduleMysteryMerchantForZone(svcCtx *svc.ServiceContext, zoneID uint32, n
 	// 这三种结果在外面看都只是「商人不来」,只有指标在涨;各留一条限流日志,说清是哪一种。
 	switch {
 	case err != nil:
-		logMerchantProblem(zoneID, now, fmt.Sprintf("本拍调度失败: %v", err))
+		logMerchantProblem(zoneID, now, fmt.Sprintf("scheduling tick failed: %v", err))
 	case outcome == metrics.MerchantScheduleNoChannel:
-		logMerchantProblem(zoneID, now, "没有可落脚的线:候选地图的分线目录还没发布(ChannelSwitch.DirectoryRefreshSeconds < 0?),"+
-			"或线全在回收 / 不可用;下一拍再试")
+		logMerchantProblem(zoneID, now, "no channel to land on: the candidate maps' channel directory is not published yet (ChannelSwitch.DirectoryRefreshSeconds < 0?), "+
+			"or every channel is closing / unavailable; retrying next tick")
 	case outcome == metrics.MerchantScheduleLostRace:
-		logMerchantProblem(zoneID, now, "Redis 里已有同版本或更新的记录,本拍让出(领导权交接窗口里属正常;"+
-			"持续出现说明记录的版本号比当前时间还新,检查各副本的系统时钟)")
+		logMerchantProblem(zoneID, now, "Redis already holds a record of the same or newer version; yielding this tick (normal during a leadership handover; "+
+			"if it persists, the record version is ahead of the current time: check the replicas' system clocks)")
 	}
 }
 
@@ -741,11 +741,11 @@ func logMerchantProblem(zoneID uint32, now time.Time, message string) {
 func StartMysteryMerchantScheduler(ctx context.Context, svcCtx *svc.ServiceContext) {
 	cfg := svcCtx.Config.MysteryMerchant
 	if cfg.Disabled {
-		logx.Info("[MysteryMerchant] 未启动:MysteryMerchant.Disabled = true")
+		logx.Info("[MysteryMerchant] Not started: MysteryMerchant.Disabled = true")
 		return
 	}
 	tickSeconds := cfg.EffectiveTickSeconds()
-	logx.Infof("[MysteryMerchant] 已启动: tick=%ds interval_override=%ds stay_override=%ds spot_override=%d(0 = 以配置表为准)",
+	logx.Infof("[MysteryMerchant] Started: tick=%ds interval_override=%ds stay_override=%ds spot_override=%d (0 = use the table)",
 		tickSeconds, cfg.IntervalSecondsOverride, cfg.StaySecondsOverride, cfg.SpotIdOverride)
 
 	// safego.Loop:单拍 panic 只丢那一拍。调度停摆在外面看只是「商人不来了」,

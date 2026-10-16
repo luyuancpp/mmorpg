@@ -5,16 +5,6 @@
 #include "engine/core/time/system/time.h"
 #include "services/scene/player/system/player_mystery_merchant.h"
 #include "table/proto/tip/common_error_tip.pb.h"
-#include "thread_context/ecs_context.h"
-
-namespace
-{
-	// 失败码统一写全局 tip 实体,由生成层 TRANSFER_ERROR_MESSAGE 搬进响应并清空
-	void SetTip(uint32_t err)
-	{
-		tlsEcs.globalRegistry.get_or_emplace<TipInfoMessage>(tlsEcs.GlobalEntity()).set_id(err);
-	}
-} // namespace
 ///<<< END WRITING YOUR CODE
 
 void SceneMysteryMerchantClientPlayerHandler::GetMysteryMerchantInfo(entt::entity player,const ::GetMysteryMerchantInfoRequest* request,
@@ -32,11 +22,11 @@ void SceneMysteryMerchantClientPlayerHandler::BuyMysteryMerchantGoods(entt::enti
 {
 ///<<< BEGIN WRITING YOUR CODE
 	// 全部校验(同线 / 距离 / 时间窗 / 限购 / 余额 / 背包)与结算都在 PlayerMysteryMerchantSystem::Buy;
-	// 成功时它已经把最新货架与背包全量写进 response。
+	// 成功时它已经把最新货架与背包全量写进 response;失败时 response 里只有这里写的错误码。
 	if (const auto err = PlayerMysteryMerchantSystem::Buy(player, *request, TimeSystem::NowMillisecondsUTC(), *response);
 		err != kSuccess)
 	{
-		SetTip(err);
+		response->mutable_error_message()->set_id(err);
 	}
 ///<<< END WRITING YOUR CODE
 

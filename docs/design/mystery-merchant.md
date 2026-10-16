@@ -59,9 +59,10 @@ scene_manager 出任何错,最坏结果是「这一轮没有商人」,不会多�
 | `BuyMysteryMerchantGoods` | C2S 请求-应答 | 请求带 `round_id` + `goods_id` + `count` + 报价四项(`expected_price / currency_type / item_config_id / item_count`);成功应答带最新货架与人物背包全量 |
 | `NotifyMysteryMerchant` | S2C 推送 | 出现公告:新的一轮开始、或同一轮内换线时,各 scene 节点向自己的在线玩家各推一次 |
 
-消息号在本分支的 `proto/message_id.txt` 末尾**预留**了 250 / 251 / 252(生成器对已登记的 `服务名+方法名` 沿用旧号,
-`service_register_info.go` `InitMessageId`)。预留是为了让客户端的 `MessageIds.cs` 现在就能生成;
-**合并时如果这三个号已被占用,改成当时的下一个空号**,见 §9 第 0 步。
+消息号在本分支的 `proto/message_id.txt` 末尾**预留**了 264 / 265 / 266(生成器对已登记的 `服务名+方法名` 沿用旧号,
+`service_register_info.go` `InitMessageId`)。预留是为了让客户端的 `MessageIds.cs` 现在就能生成。
+最初预留的是 250–252;2026-10-15 把分支接到 `origin/main`(a105c3efdb)时,250–252 已正式发给装备强化镶嵌、
+253–263 已发给落地摘要与玩家收件箱,于是顺延到 264 起。**合并时如果这三个号又被占用,改成当时的下一个空号**,见 §9 第 0 步。
 
 要点:
 
@@ -74,7 +75,8 @@ scene_manager 出任何错,最坏结果是「这一轮没有商人」,不会多�
   服务端现算的有任何一项不一样就拒绝(`ShelfChanged`)并让客户端刷新。配表热更、scene 与 scene_manager 表版本不一致时,
   玩家付出的和拿到的永远是他点下购买时看到的那一份(只核价格的话,「价格没变、物品换了」会漏过去)。
 - 客户端零配表:商品名、图标、原价、折后价、限购、已购数全部由服务端下发。
-- 玩家存档:`player_database.mystery_merchant = 18`(`PlayerMysteryMerchantComp`:`round_id` + `purchases[]`)。
+- 玩家存档:`player_database.mystery_merchant = 21`(`PlayerMysteryMerchantComp`:`round_id` + `purchases[]`)。
+  18 / 19 / 20 已被存储围栏与收件箱账本占用;按加列纪律取 20 之后的下一个空闲号,声明在末尾。
   只记当前这一轮;轮次号不同 = 整份作废。轮次号不含 zone:跨 zone 访客在两个 zone 的同一个时间窗里共用这一份记录
   (同一个 `goods_id` 的名额共享,只会更严,不会多买)。
 
@@ -138,7 +140,9 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 六个点都在天墉城,每个点都用客户端的可走掩码核对过(与出生点连通,以它为中心的 14×14 单位全部可走):
 出生点旁 (176,206)、中央广场西侧 (161,159)、东侧 (161,243)、北广场 (255,201)、南大街 (101,201)、东南小广场 (113,297)。
 
-### 3.4 提示码(新域 `//mystery_merchant_error base=29000 width=1000`,12 个)
+### 3.4 提示码(新域 `//mystery_merchant_error base=30000 width=1000`,12 个,30000–30011)
+
+最初定的 29000 段在接到新 main 时已被 `player_inbox_error` 占用,改用下一个空闲整千段 30000(脚本里的 `TIP_BASE`)。
 
 `NotPresent`(不在场)、`NotHere`(不在这条线)、`TooFar`、`ShelfChanged`(货架 / 轮次 / 价格对不上)、`LimitReached`、
 `CurrencyNotEnough`、`BagFull`、`InBattle`、`Frozen`、`InvalidCount`、`ItemBlocked`、`InternalError`(fault)。
@@ -196,7 +200,8 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 
 ### 5.1 读记录与公告(`PlayerMysteryMerchantSystem`)
 
-- 节点启动后每 5 秒 `HGET mystery_merchant:zone:{zone} state` 一次,结果缓存在全局实体上(`tlsEcs` 线程局部)。
+- 节点启动后每 5 秒 `HGET mystery_merchant:zone:{zone} state` 一次,结果缓存在一个 `thread_local` 变量里
+  (属于 scene 的 EventLoop 线程,与 `tlsEcs` / `tlsRedis` 同一个所有权口径;它不是组件,不挂在任何实体上)。
 - 读失败 / 应答形状不对 / 解析失败 → **保留旧缓存**(购买的时间窗按记录自带的离开时刻判,旧缓存不会卖过点)。
   键不存在 → 清空缓存。读到比缓存更旧的版本 → 手里那一轮还没结束就丢弃,已经结束就采纳(§2.1)。
 - 发现一份版本号比「已公告过的」更大的记录,且此刻在停留期内 → 向**本节点**的在线玩家发 `NotifyMysteryMerchant`
@@ -214,19 +219,22 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 
 1. **只读预检**(任何一处 return 都保证什么都没改):实体有效 → 未冻结 → 不在战斗 → 份数 1..99 → 商人在场 →
    轮次号一致 → 同一条线 → 距离 → 商品在架 → 商品可售(按本节点此刻的表再核一遍,含「未下架」与「每份数量不超堆叠上限」)→
-   报价四项一致 → 限购 → 总价 / 总数量不溢出 → 物品未被封禁 → 余额够 → 背包放得下。
+   报价四项一致 → 限购 → 总价 / 总数量不溢出 → 物品未被全服封禁 → 余额够 → 背包放得下。
+   (物品封禁只有全服一种:个人封禁表 `PlayerItemBlockList` 已在 ECS 重构中删除。)
 2. **修改**:**发物 → 扣钱 → 记名额**。两条流水用 `TX_SHOP_BUY` + 同一个 `correlation_id`(轮次号)。
    - 发物被拒且背包没动(预检查不到的原因,主要是物品号段不可用)→ 钱还没动,直接返回 `kMysteryMerchantInternalError`。
      **没有退款路径**;
    - 发物成功后扣钱 —— 它会失败的条件(金额非正、币种未知、冻结、缺货币组件、余额不足)在预检里已经全部排除,
-     且从预检到这里是同一次同步调用。万一仍然失败(编程错误):货已发、名额照记,日志标签 `[UNPAID_GRANT]`,转人工追缴;
-   - 发物只发出一部分(人物背包不该出现)→ 照价扣钱、名额照记,日志标签 `[PARTIAL_GRANT]`,转人工补发。
+     且从预检到这里是同一次同步调用。万一仍然失败(编程错误):货已发、名额照记,日志标签 `[UNPAID_GRANT]`,转人工追缴。
+   - 「只发出一部分」不会发生:新的 `BagService::AddItems` 是候选提交,契约是「失败时原包一件没动、不发流水」。
 3. **组应答**:最新货架 + 人物背包全量。背包快照建不出来不改变「买到了」这个事实(应答不带背包,客户端自己重拉)。
 
 **为什么先发物、后扣钱**(与宝宝洗点「先扣费再改状态」相反):那里的「改状态」不会失败,这里的发物会 ——
 封禁与空间之外,还有号段不可用(data_service 故障时的既定 fail-closed)。先扣钱的话,发物失败就得把钱退回去,
 而仓里唯一的加钱入口 `AddCurrency` 会先抵扣补缴欠款、遇到币种封禁还会拒绝:有欠款的玩家会「钱扣了、货没到、退款也没拿到」。
-先发物则不需要退款:`BagService::AddItems` 自带完整预检,人物背包上「被拒 = 一件没动」。
+先发物则不需要退款:`BagService::AddItems` 自带完整预检并且是候选提交,「被拒 = 一件没动」。
+
+失败时由 handler 把错误码直接写进本次应答的 `error_message`(新 handler 模板不再有 `TRANSFER_ERROR_MESSAGE`,全局 tip 实体也已删除)。
 
 ### 5.3 限购记录为什么落在玩家存档里
 
@@ -237,6 +245,10 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 - 商人所在的线会换节点(节点判死后重建、空线被 rebalance 迁走)。放节点内存的话,换一次节点名额就清零一次。
 
 购买路径对这个组件用 `try_get`,缺失即拒绝(不现造一份空记录来放行)。它由 `PlayerDatabaseMessageFieldsUnmarshal` 无条件挂上。
+存盘路径按新 main 的「先查后写」:`PlayerDatabaseMessageFieldsMarshal` 用 `FindPersistedComp` 确认它在,缺了就整份拒存
+(补一份空记录落盘等于把这一轮已买的名额清零)。手搓玩家再存盘的测试夹具因此都补了这个组件:
+`bag_test.cpp`、`player_equip_attribute_test.cpp`、`player_feature_persistence_test.cpp`(含「缺哪个组件就拒存」清单)、
+`cross_zone_test.cpp`、`db_task_dispatch_test.cpp`。
 
 ### 5.4 纯规则(`mystery_merchant_rules.h`,namespace `merchantrules`)
 
@@ -314,25 +326,34 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 
 **现状:服务端全部未编译、未导表(只做过沙盒导表)、未 proto-gen、未运行。** 任何一步的通过标准不满足就停,保留该步写明的日志。
 
+**前置:main 本身要先能生成、能编译。** 2026-10-15 的 ECS 重构第 2–5 批只完成了源码,负责人要求暂缓生成器构建、统一重生成、
+编译与测试(`docs/handoff/ecs-refactor/README.md` §7)。本分支的源码已经按那批重构后的接口写(`PlayerGuidComp`、`SceneEntity`、
+新 handler 模板、无全局 registry、`AddItems` 新签名),所以**要和那次统一重生成、编译一起做**;在那之前单独编本分支没有意义。
+
 **总原则**(与 `equipment-attributes.md` §9 相同):生成与 C++ 编译都在主仓 `E:\work\xuanming-server-mmo` 做(子模块齐全),
 隔离工作树只是源改动的载体;MSBuild 一律串行 `/m:1 /p:Configuration=Debug /p:Platform=x64`。
 
 **0. 带入主仓**
-- 把分支 `feat/mystery-merchant` 合进 main(改动目前未提交,先在工作树里提交)。
-- **`proto/message_id.txt` 会冲突**(两边都在文件末尾追加):保留 main 的全部行,把本分支的三行接在后面;
-  **如果 250 / 251 / 252 已被 main 上别的方法占用,把这三行改成当时的下一个空号**(三行的方法名不变)。
+- 分支 `feat/mystery-merchant` 已提交、已接到 `origin/main` a105c3efdb(2026-10-15)之上,未推送。合进 main 时若 main 又前进了:
+- **`proto/message_id.txt` 可能冲突**(两边都在文件末尾追加):保留 main 的全部行,把本分支的三行接在后面;
+  **如果 264 / 265 / 266 已被 main 上别的方法占用,把这三行改成当时的下一个空号**(三行的方法名不变)。
+- **`player_database` 的字段号**:本分支用 21。main 若已用掉 21,改成下一个空闲号并同步本文 §2 与第 6 步。
 - `data/tip/Tip.xlsx` 是二进制:取 main 的版本,再跑第 1 步的 `tip-codes`(脚本只往空格子里追加)。
-  若 29000 段已被别的域占用,脚本会中止并提示改 `TIP_BASE`。
-- `docs/PROGRESS.md` 两边条目都保留。
+  若 30000 段已被别的域占用,脚本会中止并提示改 `TIP_BASE`。
+- `docs/PROGRESS.md` 配了 `merge=union`,两边条目都会保留。
 
 **1. xlsx 补丁确认**
 - `py tools/scripts/mystery_merchant_xlsx_patch.py new-tables --dry-run`、`... tip-codes --dry-run`
 - 通过标准:都报「已是目标状态」。否则去掉 `--dry-run` 重跑(幂等)。
 
-**2. 导表 + proto-gen**(`dev.bat gen`,或按 `equipment-attributes.md` §9 第 2–4 步用配置副本分两步跑)
+**2. 导表 + proto-gen**(在主仓根目录;与 ECS 重构的统一重生成同一次做)
+- 导表:`dev.bat gen`。
+- proto 生成(AGENTS §4):`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`(生成器源码变了或还没有工具时),
+  再 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`
+  (不写客户端仓;客户端在第 8 步单独生成 —— 客户端主工作区 `E:\work\mmorpg-client` 里有别人的在制改动)。
 - 通过标准:
   - `generated/tables/`:`mysterymerchantrule.json` 1 行、`mysterymerchantgoods.json` 12 行、`mysterymerchantspot.json` 6 行;
-  - tip 号只新增 29000–29011(`generated/code/proto/tip/mystery_merchant_error_tip.proto`);
+  - tip 号只新增 30000–30011(`generated/code/proto/tip/mystery_merchant_error_tip.proto`);
   - `proto/message_id.txt` 里本功能的三个方法保持第 0 步定下的号,其余行不变;
   - 新生成:`cpp/generated/proto/scene/player_mystery_merchant.pb.{h,cc}`、`cpp/generated/proto/common/component/player_mystery_merchant_comp.pb.{h,cc}`、
     `cpp/generated/rpc/service_metadata/player_mystery_merchant_service_metadata.h`、三张表的管理器与 `proto/tip/mystery_merchant_error_tip.pb.{h,cc}`;
@@ -342,7 +363,11 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
   - `robot/generated/pb/game/message_id.go`、`go/proto/scene/player_mystery_merchant.pb.go`、`go/shared/generated/table/mysterymerchant*_table.go` 出现。
 - 工程登记已经手工加好(`table.vcxproj` / `proto.vcxproj` / 两个 `scene.vcxproj` / `bag_test.vcxproj` 及各自的 filters 与 CMakeLists)。
   若生成物的实际文件名与登记的不一致,以生成物为准改登记。
-- 随后 `py tools/data_table_exporter/tools/gen_schema_index.py`。
+- `data/AGENTS.md` 的配表索引已用 `gen_schema_index.py` 刷新过(45 张表);导表后再跑一次应当无差异。
+- 2026-10-15 已在沙盒里按新 main 跑过一次完整导表(`tools/data_table_exporter/tools/sandbox_export.py --compare`):
+  三张表的 JSON / C++ / Go / C# 产物与 tip 段 30000–30011 都生成了;与仓内产物相比,「内容不同」的只有表注册清单
+  (`all_table.cpp`、`AllTable.cs`、`AllTable.java`、`all_table.py`、`ConfigSubsystem.*`)、`manifest.json` 与 `tip_text.json`,
+  既有表的产物逐字节相同。
 
 **3. C++ 编译(严格按序)**
 `table` → `proto` → `core` → `rpc` → `grpc_client` → `modules` → `battle` 库 → `scene` 库 → `cpp\nodes\gate`、`cpp\nodes\scene` → `bag_test`。
@@ -359,7 +384,10 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 |---|---|
 | `MysteryMerchantRulesTest.*` | 11 条 |
 | `PlayerMysteryMerchantTest.*` | 25 条 |
+| `PlayerFeaturePersistenceTest.*` | 全过(「缺哪个组件就拒存」清单多了 `PlayerMysteryMerchantComp`) |
 | 不带过滤 | 没有既有用例变红 |
+
+- `cross_zone_test` 也要跑:它的两个夹具补了 `PlayerMysteryMerchantComp`,漏了会让存盘被拒、用例变红。
 
 - `PlayerMysteryMerchantTest` 的 SetUp 报 "tables not exported yet" → 第 2 步没做或运行目录里的表是旧的。
 - 各条拒绝用例会按设计打 WARN / ERROR 日志,不算失败;看 `[  FAILED  ]` 行。
@@ -379,15 +407,18 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 
 **7. 起栈与冒烟**
 - `go/scene_manager/etc/scene_manager_service.yaml`:把 `MysteryMerchant` 块的五行注释去掉(间隔 120 / 停留 120 / 站位 1)。
-- 用同一批产物重启 Go 服务与 gate / scene。scene 启动日志里应有一行 `[MysteryMerchant] 配表核对完成: 可售商品 12 件, 站位 6 个, 购买距离 8`,
-  且没有 `[MysteryMerchant] MysteryMerchantGoods 行不可售`;scene_manager 日志里 5 秒内出现 `[MysteryMerchant] zone=1 round=…: 出现在地图 1 的 N 线`。
+- 用同一批产物重启 Go 服务与 gate / scene。scene 启动日志里应有一行
+  `[MysteryMerchant] Table check finished: sellable_goods=12 spots=6 interact_range=8`,
+  且没有 `[MysteryMerchant] MysteryMerchantGoods row is not sellable`;scene_manager 日志里 5 秒内出现
+  `[MysteryMerchant] zone=1 round=…: appeared on map 1 channel N`。(日志文案按仓库 10-13 的约定统一为英文。)
 - **先跑既有 login-test 基线**(健康栈 23/23),再在 `robot\` 下:`.\robot.exe -c etc/merchant_smoke.yaml`。
 - 通过标准:以 `MERCHANT_SMOKE_OK` 结尾、退出码 0。同一轮里再跑一遍应当改买下一件(或 `MERCHANT_SMOKE_SKIP reason=all_bought`)。
 - 失败时保留 `MERCHANT_SMOKE_FAIL` 行及其前 20 行、同时段 scene 日志的 `[MysteryMerchant]` 行、scene_manager 日志的 `[MysteryMerchant]` 行。
 - 跑完把 yaml 改回去。
 
 **8. 客户端(`E:\work\mmorpg-client-wt-merchant`)**
-- `pwsh -File tools/gen_proto.ps1 -ProtoRoot E:\work\xuanming-server-mmo`、`pwsh -File tools/gen_messageids.ps1 -ProtoRoot E:\work\xuanming-server-mmo`。
+- `pwsh -File tools/gen_proto.ps1 -ProtoRoot E:\work\xuanming-server-mmo`、`pwsh -File tools/gen_messageids.ps1 -ProtoRoot E:\work\xuanming-server-mmo`
+  (在客户端工作树里跑,`-ProtoRoot` 指向已合入本分支的服务端主仓)。
 - 通过标准:`PlayerMysteryMerchant.cs` / `MysteryMerchantErrorTip.cs` 无差异(或只有因 `player_bag.proto` 版本带来的描述符差异;
   `BuyMysteryMerchantGoodsRequest` 必须有 `ExpectedCurrencyType / ExpectedItemConfigId / ExpectedItemCount` 三个字段);
   `MessageIds.cs` 里三个常量的号与第 0 步定下的一致。
@@ -424,12 +455,34 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 
 评审修正之后**没有再做一轮评审**;修正涉及的 C++ / Go 代码同样未编译、未运行,以 §9 的结果为准。
 
+### 10.1 接到新 main 时的移植(2026-10-15)
+
+分支原本基于改写前的历史(8c2ac2c440)。`origin/main` 在 10-12 整体改写历史、之后又多了 ECS 重构第 2–5 批、
+gRPC / RPC 传输重构、玩家收件箱与存盘管线等提交。用 `git rebase --onto origin/main 8c2ac2c440` 把本分支唯一的提交接过去,
+解决了 12 个文件的冲突,再按新接口逐处移植:
+
+| 变化 | 本分支的处理 |
+|---|---|
+| 消息号 250–252 被装备占用,253–263 被落地摘要 / 收件箱占用 | 顺延到 264–266 |
+| `player_database` 字段 18–20 被围栏 / 收件箱占用 | 限购记录改用 21 |
+| tip 段 29000 被 `player_inbox_error` 占用 | 改用 30000(`TIP_BASE`),重跑 `tip-codes` |
+| handler 生成模板去掉 `TRANSFER_ERROR_MESSAGE`、非 Empty 应答加 `static_assert` | 头文件按新模板重写;购买失败码直接写 `response->mutable_error_message()`(原先写全局 tip 实体,新模板下会**静默丢失错误码**) |
+| `tlsEcs.globalRegistry` / `GlobalEntity()` 删除 | 记录缓存改为 `thread_local` 变量 |
+| `Guid` 组件改名 `PlayerGuidComp`,日志统一 `ActorLog` | 日志身份改用 `ActorLog(player)`;单测夹具改挂 `PlayerGuidComp` |
+| `SceneEntity` 成为独立句柄类型 | 单测夹具的场景句柄改为 `SceneEntity` |
+| `BagService::AddItems` 去掉个人封禁参数、改为候选提交(失败一件不动) | 去掉个人封禁预检与「部分发放」分支;封禁用例改用全服封禁入口 |
+| 存盘改为「先确认持久化组件都在,缺一个就整份拒存」 | 限购记录接进同一套检查;5 个测试夹具与拒存清单补上 |
+| 日志文案统一为英文(10-13) | C++ / Go / 机器人的日志改英文,注释与错误字符串保持中文(与那次提交同一口径) |
+
+这些都只做了静态核对(接口逐个对照新代码、沙盒导表、protoc 语法检查、gofmt),**没有编译**。
+
 ## 11. Java 版(AGENTS §12)
 
-**待做。** 本机没有 Java 仓(`D:\luyuan\wuxingqitan\xuanming-server-mmo-java` 不存在)。客户端可见契约的变化:
+**待做。** 本机没有 Java 仓:AGENTS §12 记的新路径 `D:\luyuan\xuanming-server-mmo` 与旧路径 `D:\luyuan\wuxingqitan\xuanming-server-mmo-java`
+在本机都不存在(2026-10-15 核对),也就无法登记 `PARITY.md`。客户端可见契约的变化:
 
 - `proto/scene/player_mystery_merchant.proto`(3 个 RPC 及其消息);
-- `mystery_merchant_error` tip 域(29000–29011);
+- `mystery_merchant_error` tip 域(30000–30011);消息号 264–266;
 - 三张配置表的数据;
 - 行为:§1.3 的 D1–D11、§5.2 的校验顺序(决定了负例拿到哪个提示码)。
 

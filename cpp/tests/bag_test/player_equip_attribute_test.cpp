@@ -55,6 +55,7 @@
 #include "proto/common/component/asset_op_ledger_comp.pb.h"
 #include "proto/common/component/battle_settlement_ledger_comp.pb.h"
 #include "proto/common/component/player_inbox_ledger_comp.pb.h"
+#include "proto/common/component/player_mystery_merchant_comp.pb.h"
 #include "proto/common/component/currency_comp.pb.h"
 #include "proto/common/component/item_base_comp.pb.h"
 #include "proto/common/component/player_attribute_comp.pb.h"
@@ -942,6 +943,7 @@ protected:
 		EmplaceIfAbsent<PlayerAssetOpLedgerComp>(entity);
 		EmplaceIfAbsent<BattleSettlementLedgerComp>(entity);
 		EmplaceIfAbsent<PlayerInboxLedgerComp>(entity);
+		EmplaceIfAbsent<PlayerMysteryMerchantComp>(entity);
 	}
 
 	template <typename Comp>

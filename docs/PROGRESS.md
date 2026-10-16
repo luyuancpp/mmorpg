@@ -8877,6 +8877,10 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **Codex 验证**:proto 重生成之后 `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64`(0 error);Java 仓 `./mvnw -B -pl game-gate,game-robot -am test`(重点 ClientDispatcherTest、ClientPipelineTest、BattleUplinkRejectedTest、ClientRedirectTest、MessageRoutesTest、GateConfigurationTest、MatchBackendForwardingTest,game-robot 的 TradeScenarioTest、GameConnectionTest、GameConnectionRedirectTest)。可选冒烟:路由模式一区下 `robot.exe -c etc/channel_smoke.yaml`、`etc/travel_smoke.yaml`。
 - **Java 版(AGENTS §12)**:同批已改(未提交),PARITY 已追加。
 ## 2026-10-09 神秘商人:每个整点随机落到一条分线、限时出售 6 / 5 / 4 折商品(Claude,服务端未编译)
+- **2026-10-15 接到新 main**:分支已提交并 `rebase --onto` 到 `origin/main` a105c3efdb(未推送)。250–252、字段 18–20、tip 29000 段
+  都已被别的功能正式占用,顺延为消息号 264–266、存档字段 21、tip 段 30000;按 ECS 重构第 2–5 批的新接口移植
+  (`PlayerGuidComp` / `SceneEntity` / 新 handler 模板 / 无全局 registry / `AddItems` 新签名 / 存盘先查后写),日志改英文。
+  逐项见设计文档 §10.1。main 本身在等 ECS 重构的统一重生成与编译,本分支要随那一次一起编。
 - 设计与验证清单:`docs/design/mystery-merchant.md`(§9 是给 Codex 的完整清单)。在隔离分支 `feat/mystery-merchant` 落码
   (服务端工作树 `xuanming-server-mmo-wt-merchant`,客户端工作树 `mmorpg-client-wt-merchant`),**两边都未提交、未并入 main**。
 - 用户拍板(2026-10-09):全部做完;整点出现、停留 30 分钟;每人每件每轮限购。其余 11 项默认决定见设计文档 §1.3(都可改表)。
@@ -8885,10 +8889,10 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   服务端没有 NPC 实体,商人的形象由客户端按下发的坐标自己画。
 - 协议:新文件 `proto/scene/player_mystery_merchant.proto`(service `SceneMysteryMerchantClientPlayer`:查询 / 购买 / 出现公告;
   轮次号 = 出现时刻的 Unix 秒;购买请求回传玩家看到的报价:单价、货币、物品、每份数量,任何一项对不上就拒绝);
-  玩家存档 `player_database.mystery_merchant = 18`(限购记录,与钱和背包同一次落盘)。消息号在 `proto/message_id.txt` 末尾预留了
-  250–252(生成器对已登记的方法沿用旧号);**合并时若被占用要改号**。只做过 protoc 语法校验,**未 proto-gen**。
+  玩家存档 `player_database.mystery_merchant = 21`(限购记录,与钱和背包同一次落盘)。消息号在 `proto/message_id.txt` 末尾预留了
+  264–266(生成器对已登记的方法沿用旧号);**合并时若被占用要改号**。只做过 protoc 语法校验,**未 proto-gen**。
 - 配表:新表 `MysteryMerchantRule`(1 行)/ `MysteryMerchantGoods`(12 行)/ `MysteryMerchantSpot`(6 行,天墉城,站位用客户端可走掩码核对过);
-  新 tip 域 `mystery_merchant_error`(29000 起 12 个码)。xlsx 由幂等脚本 `tools/scripts/mystery_merchant_xlsx_patch.py` 生成。
+  新 tip 域 `mystery_merchant_error`(30000 起 12 个码)。xlsx 由幂等脚本 `tools/scripts/mystery_merchant_xlsx_patch.py` 生成。
   **只做过沙盒导表(退出码 0),仓内 `generated/**` 未动。**
 - scene_manager:`internal/logic/mystery_merchant.go`(调度、换线、Lua 写入)、配置块 `MysteryMerchant`(全可缺省;
   三个覆盖项只用于联调)、指标 `scene_manager_mystery_merchant_schedule_total`、点位 `scene_manager.mystery_merchant`。

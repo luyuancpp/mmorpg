@@ -421,7 +421,7 @@ func (c ChannelSwitchConfig) EffectiveDirectoryRefreshSeconds() int64 {
 	return c.DirectoryRefreshSeconds
 }
 
-// MysteryMerchantConfig 控制神秘商人的调度(docs/design/mystery-merchant.md §4.4)。
+// MysteryMerchantConfig 控制神秘商人的调度(docs/design/mystery-merchant.md §4.1)。
 //
 // 玩法数值(间隔、停留、货架件数、折扣权重)在 MysteryMerchantRule 配置表里,不在这里:
 // 这个块只放「要不要调度」「多久看一眼」这类部署侧的开关,以及仅供联调用的时间覆盖。

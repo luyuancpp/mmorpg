@@ -46,7 +46,7 @@
 #   货架上每件都买满了就打印 MERCHANT_SMOKE_SKIP reason=all_bought —— 等下一轮(按上面的配置是两分钟)再跑。
 #   每跑一遍会给 robot_9901 加 100000 银两并留下买到的物品;背包满了会在 M6 报 kMysteryMerchantBagFull,
 #   那时换个账号或清库。
-# 撞上换轮:冒烟跑到一半恰好换了一轮,购买会被拒(kMysteryMerchantShelfChanged),失败原因里会写明「撞上换轮」,重跑即可;
+# 撞上换轮:冒烟跑到一半恰好换了一轮,购买会被拒(kMysteryMerchantShelfChanged),失败原因里会写明 "hit a round change",重跑即可;
 #   经常撞上就把 IntervalSecondsOverride / StaySecondsOverride 一起调大。
 # 两条线的环境才能验到「切到商人所在的线」;只有 1 条线时商人必然在机器人所在的线,M3 不切线(其余照常验证)。
 

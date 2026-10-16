@@ -7,6 +7,7 @@
 #include <muduo/base/Logging.h>
 #include <muduo/net/EventLoop.h>
 
+#include "core/utils/registry/actor_log.h"
 #include "engine/core/time/system/time.h"
 #include "network/node_utils.h"
 #include "network/player_message_utils.h"
@@ -60,8 +61,9 @@ constexpr double kRefreshIntervalSec = 5.0;
 constexpr uint32_t kDefaultInteractRange = 8;
 constexpr uint32_t kMaxInteractRange = 100;
 
-// 本节点缓存的那份记录。挂在全局实体上(tlsEcs 是线程局部的),只属于 scene 的 EventLoop 线程。
-struct MysteryMerchantCacheComp
+// 本节点缓存的那份记录。只属于 scene 的 EventLoop 线程:与 tlsEcs / tlsRedis 同一个所有权口径,用 thread_local 持有。
+// 它不是组件 —— 不挂在任何实体上,也就不受实体销毁、registry 清理的影响。
+struct MysteryMerchantCache
 {
 	bool hasState = false;
 	::MysteryMerchantState state;
@@ -69,23 +71,17 @@ struct MysteryMerchantCacheComp
 	uint64_t announcedVersion = 0;
 };
 
-// 取缓存。get_or_emplace 用在这里是「全局单例的惰性创建」(与全局 tip 实体同一个用法),
-// 不是在逐帧路径上给玩家实体补组件。
-MysteryMerchantCacheComp &Cache()
+thread_local MysteryMerchantCache tlsMerchantCache;
+
+MysteryMerchantCache &Cache()
 {
-	return tlsEcs.globalRegistry.get_or_emplace<MysteryMerchantCacheComp>(tlsEcs.GlobalEntity());
+	return tlsMerchantCache;
 }
 
 // 刷新定时器(单定时器形态:整个进程只有一个,Start / Stop 成对;与 PlayerBattleSystem 的 reaper 同一写法)。
 muduo::net::TimerId gRefreshTimerId;
 bool gRefreshActive = false;
 muduo::net::EventLoop *gRefreshLoop = nullptr;
-
-uint64_t GuidForLog(entt::entity player)
-{
-	const auto *guid = tlsEcs.actorRegistry.try_get<Guid>(player);
-	return guid != nullptr ? *guid : 0;
-}
 
 // 玩家当前所在场景的实例 id;不在任何场景时返回 0。
 uint64_t CurrentSceneId(entt::entity player)
@@ -138,50 +134,50 @@ bool ResolveGoods(const ::MysteryMerchantShelfEntry &entry, ResolvedGoods &out, 
 	const auto [goodsRow, goodsErr] = MysteryMerchantGoodsTableManager::Instance().FindByIdSilent(entry.goods_id());
 	if (goodsRow == nullptr)
 	{
-		reason = "商品不在 MysteryMerchantGoods 表里";
+		reason = "goods row not found in MysteryMerchantGoods";
 		return false;
 	}
 	// weight == 0 = 已下架。货架是 scene_manager 排这一轮时定的,这里再认一次,是为了给运营留一个**立即停售**的手段:
 	// 把这一行的 weight 改成 0 并热更 scene 的表,正在卖的这一轮里它马上买不了(不必等到下一轮)。
 	if (goodsRow->weight() == 0)
 	{
-		reason = "商品已下架(weight 为 0)";
+		reason = "goods delisted (weight is 0)";
 		return false;
 	}
 	if (!merchantrules::IsValidDiscountPercent(entry.discount_percent()))
 	{
-		reason = "折扣百分比不在 1..100";
+		reason = "discount percent not in 1..100";
 		return false;
 	}
 	if (goodsRow->price() == 0 || goodsRow->price() > merchantrules::kMaxGoodsPrice)
 	{
-		reason = "原价不在 1..1000000000";
+		reason = "original price not in 1..1000000000";
 		return false;
 	}
 	if (goodsRow->item_count() == 0)
 	{
-		reason = "每份物品数量为 0";
+		reason = "item count per bundle is 0";
 		return false;
 	}
 	if (goodsRow->limit_count() == 0 || goodsRow->limit_count() > merchantrules::kMaxBuyCountPerRequest)
 	{
-		reason = "限购份数不在 1..99";
+		reason = "limit count not in 1..99";
 		return false;
 	}
 	if (goodsRow->currency_type() >= kCurrencyMax)
 	{
-		reason = "货币类型未知";
+		reason = "unknown currency type";
 		return false;
 	}
 	const auto [itemRow, itemErr] = ItemTableManager::Instance().FindByIdSilent(goodsRow->item_id());
 	if (itemRow == nullptr)
 	{
-		reason = "物品不在 Item 表里";
+		reason = "item not found in Item table";
 		return false;
 	}
 	if (goodsRow->item_count() > itemRow->max_stack_size())
 	{
-		reason = "每份数量超过物品的堆叠上限";
+		reason = "item count per bundle exceeds the item max stack size";
 		return false;
 	}
 
@@ -244,7 +240,7 @@ void Announce(const ::MysteryMerchantState &state, uint64_t nowMs)
 	::MysteryMerchantNotify notify;
 	FillPublicInfo(state, nowMs, *notify.mutable_info());
 	BroadcastMessageToPlayers(SceneMysteryMerchantClientPlayerNotifyMysteryMerchantMessageId, notify, players);
-	LOG_INFO << "[MysteryMerchant] 出现公告已发出: round_id=" << state.round_id() << " revision=" << state.revision()
+	LOG_INFO << "[MysteryMerchant] Appearance announcement sent: round_id=" << state.round_id() << " revision=" << state.revision()
 			 << " scene_config_id=" << state.scene_config_id() << " channel_no=" << state.channel_no()
 			 << " scene_id=" << state.scene_id() << " players=" << players.size();
 }
@@ -257,7 +253,7 @@ void ApplyState(const ::MysteryMerchantState *incoming, uint64_t nowMs)
 	{
 		if (cache.hasState)
 		{
-			LOG_INFO << "[MysteryMerchant] 记录已从 Redis 消失(过期或功能关闭), 清空缓存: round_id="
+			LOG_INFO << "[MysteryMerchant] Record disappeared from Redis (expired or feature disabled); clearing cache: round_id="
 					 << cache.state.round_id();
 		}
 		cache.hasState = false;
@@ -271,7 +267,7 @@ void ApplyState(const ::MysteryMerchantState *incoming, uint64_t nowMs)
 		// 手里那一轮还没结束,却读到版本更旧的:只可能是 Redis 主从切换丢了最近的写。
 		// 保留手里较新的那份:它已经公告过、可能已经卖过东西,退回去会让同一轮出现两条线。
 		// 手里那一轮结束之后这道保护自动解除(见 ShouldDiscardAsStale),不会永久拒收。
-		LOG_WARN << "[MysteryMerchant] 读到比缓存更旧的记录, 本轮结束前不采纳: incoming_version=" << version
+		LOG_WARN << "[MysteryMerchant] Read a record older than the cache; not adopting it before the cached round ends: incoming_version=" << version
 				 << " cached_version=" << merchantrules::StateVersion(cache.state);
 		return;
 	}
@@ -310,7 +306,7 @@ void OnStateReply(const redisReply *reply, uint64_t nowMs)
 {
 	if (reply == nullptr)
 	{
-		LOG_WARN << "[MysteryMerchant] 读记录无应答(Redis 连接断开), 保留旧缓存";
+		LOG_WARN << "[MysteryMerchant] No reply when reading the record (Redis disconnected); keeping the cached record";
 		return;
 	}
 	if (reply->type == REDIS_REPLY_NIL)
@@ -320,25 +316,25 @@ void OnStateReply(const redisReply *reply, uint64_t nowMs)
 	}
 	if (reply->type == REDIS_REPLY_ERROR)
 	{
-		LOG_WARN << "[MysteryMerchant] 读记录被 Redis 拒绝, 保留旧缓存: err=" << (reply->str != nullptr ? reply->str : "");
+		LOG_WARN << "[MysteryMerchant] Redis rejected the record read; keeping the cached record: err=" << (reply->str != nullptr ? reply->str : "");
 		return;
 	}
 	// 先判 type 再读 str / len;长度保护是因为 ParseFromArray 只收 int。
 	if (reply->type != REDIS_REPLY_STRING || reply->str == nullptr ||
 		reply->len > static_cast<size_t>(std::numeric_limits<int>::max()))
 	{
-		LOG_ERROR << "[MysteryMerchant] 记录应答形状非法, 保留旧缓存: reply_type=" << reply->type;
+		LOG_ERROR << "[MysteryMerchant] Record reply has an invalid shape; keeping the cached record: reply_type=" << reply->type;
 		return;
 	}
 	::MysteryMerchantState parsed;
 	if (!parsed.ParseFromArray(reply->str, static_cast<int>(reply->len)))
 	{
-		LOG_ERROR << "[MysteryMerchant] 记录解析失败, 保留旧缓存: bytes=" << reply->len;
+		LOG_ERROR << "[MysteryMerchant] Failed to parse the record; keeping the cached record: bytes=" << reply->len;
 		return;
 	}
 	if (parsed.zone_id() != GetZoneId())
 	{
-		LOG_ERROR << "[MysteryMerchant] 记录写的不是本 zone, 保留旧缓存: record_zone_id=" << parsed.zone_id()
+		LOG_ERROR << "[MysteryMerchant] Record belongs to another zone; keeping the cached record: record_zone_id=" << parsed.zone_id()
 				  << " zone_id=" << GetZoneId();
 		return;
 	}
@@ -359,7 +355,7 @@ void RequestRefresh()
 		(std::string("HGET ") + kMysteryMerchantKeyFmt + " " + kMysteryMerchantStateField).c_str(), GetZoneId());
 	if (ret != REDIS_OK)
 	{
-		LOG_WARN << "[MysteryMerchant] 读记录的命令未发出, 保留旧缓存: ret=" << ret;
+		LOG_WARN << "[MysteryMerchant] Record read command was not sent; keeping the cached record: ret=" << ret;
 	}
 }
 
@@ -378,7 +374,7 @@ void PlayerMysteryMerchantSystem::Start(muduo::net::EventLoop *loop)
 {
 	if (loop == nullptr)
 	{
-		LOG_ERROR << "[MysteryMerchant] Start: loop 为空";
+		LOG_ERROR << "[MysteryMerchant] Start: loop is null";
 		return;
 	}
 	if (gRefreshActive)
@@ -392,7 +388,7 @@ void PlayerMysteryMerchantSystem::Start(muduo::net::EventLoop *loop)
 	gRefreshActive = true;
 	// 立即先读一次:不等第一个 5 秒,节点一启动就知道商人在不在。
 	RequestRefresh();
-	LOG_INFO << "[MysteryMerchant] 记录刷新已启动, interval=" << kRefreshIntervalSec << "s";
+	LOG_INFO << "[MysteryMerchant] Record refresh started, interval=" << kRefreshIntervalSec << "s";
 }
 
 void PlayerMysteryMerchantSystem::Stop()
@@ -403,7 +399,7 @@ void PlayerMysteryMerchantSystem::Stop()
 	}
 	gRefreshLoop->cancel(gRefreshTimerId);
 	gRefreshActive = false;
-	LOG_INFO << "[MysteryMerchant] 记录刷新已停止";
+	LOG_INFO << "[MysteryMerchant] Record refresh stopped";
 }
 
 void PlayerMysteryMerchantSystem::ValidateTables()
@@ -411,12 +407,12 @@ void PlayerMysteryMerchantSystem::ValidateTables()
 	const auto &ruleRows = MysteryMerchantRuleTableManager::Instance().FindAll().data();
 	if (ruleRows.empty())
 	{
-		LOG_ERROR << "[MysteryMerchant] MysteryMerchantRule 表为空: 购买距离将使用兜底值 " << kDefaultInteractRange;
+		LOG_ERROR << "[MysteryMerchant] MysteryMerchantRule table is empty; purchase range falls back to " << kDefaultInteractRange;
 	}
 	else if (ruleRows.begin()->interact_range() == 0 || ruleRows.begin()->interact_range() > kMaxInteractRange)
 	{
 		LOG_ERROR << "[MysteryMerchant] MysteryMerchantRule.interact_range=" << ruleRows.begin()->interact_range()
-				  << " 不在 1.." << kMaxInteractRange << ", 实际生效值 " << InteractRange();
+				  << " is not in 1.." << kMaxInteractRange << ", effective value " << InteractRange();
 	}
 
 	uint32_t sellable = 0;
@@ -434,14 +430,14 @@ void PlayerMysteryMerchantSystem::ValidateTables()
 		const char *reason = "";
 		if (!ResolveGoods(probe, resolved, reason))
 		{
-			LOG_ERROR << "[MysteryMerchant] MysteryMerchantGoods 行不可售, 上架后玩家将买不了: id=" << row.id()
+			LOG_ERROR << "[MysteryMerchant] MysteryMerchantGoods row is not sellable; players will not be able to buy it once shelved: id=" << row.id()
 					  << " reason=" << reason;
 			continue;
 		}
 		++sellable;
 	}
-	LOG_INFO << "[MysteryMerchant] 配表核对完成: 可售商品 " << sellable << " 件, 站位 "
-			 << MysteryMerchantSpotTableManager::Instance().Count() << " 个, 购买距离 " << InteractRange();
+	LOG_INFO << "[MysteryMerchant] Table check finished: sellable_goods=" << sellable << " spots="
+			 << MysteryMerchantSpotTableManager::Instance().Count() << " interact_range=" << InteractRange();
 }
 
 void PlayerMysteryMerchantSystem::FillInfo(entt::entity player, uint64_t nowMs, ::MysteryMerchantInfo &out)
@@ -545,7 +541,7 @@ uint32_t PlayerMysteryMerchantSystem::Buy(entt::entity player, const ::BuyMyster
 	const auto *transform = tlsEcs.actorRegistry.try_get<Transform>(player);
 	if (transform == nullptr)
 	{
-		LOG_ERROR << "[MysteryMerchant] 购买失败: 玩家没有 Transform 组件 player_id=" << GuidForLog(player);
+		LOG_ERROR << "[MysteryMerchant] Purchase failed: player has no Transform component " << ActorLog(player);
 		return kMysteryMerchantInternalError;
 	}
 	if (!merchantrules::WithinInteractRange(transform->location().x(), transform->location().y(),
@@ -563,7 +559,7 @@ uint32_t PlayerMysteryMerchantSystem::Buy(entt::entity player, const ::BuyMyster
 	const char *reason = "";
 	if (!ResolveGoods(*entry, goods, reason))
 	{
-		LOG_ERROR << "[MysteryMerchant] 购买失败: 货架上的商品此刻不可售 player_id=" << GuidForLog(player)
+		LOG_ERROR << "[MysteryMerchant] Purchase failed: shelved goods is not sellable right now " << ActorLog(player)
 				  << " round_id=" << state.round_id() << " goods_id=" << request.goods_id() << " reason=" << reason;
 		return kMysteryMerchantInternalError;
 	}
@@ -579,7 +575,7 @@ uint32_t PlayerMysteryMerchantSystem::Buy(entt::entity player, const ::BuyMyster
 	auto *record = tlsEcs.actorRegistry.try_get<PlayerMysteryMerchantComp>(player);
 	if (record == nullptr)
 	{
-		LOG_ERROR << "[MysteryMerchant] 购买失败: 玩家没有限购记录组件 player_id=" << GuidForLog(player);
+		LOG_ERROR << "[MysteryMerchant] Purchase failed: player has no purchase record component " << ActorLog(player);
 		return kMysteryMerchantInternalError;
 	}
 	const uint32_t bought = merchantrules::BoughtCount(*record, state.round_id(), goods.goodsId);
@@ -593,7 +589,7 @@ uint32_t PlayerMysteryMerchantSystem::Buy(entt::entity player, const ::BuyMyster
 	if (!merchantrules::TotalCost(goods.price, request.count(), totalCost) ||
 		totalItems > std::numeric_limits<uint32_t>::max())
 	{
-		LOG_ERROR << "[MysteryMerchant] 购买失败: 总价或总数量溢出 player_id=" << GuidForLog(player)
+		LOG_ERROR << "[MysteryMerchant] Purchase failed: total cost or total item count overflows " << ActorLog(player)
 				  << " goods_id=" << goods.goodsId << " unit_price=" << goods.price << " item_count=" << goods.itemCount
 				  << " count=" << request.count();
 		return kMysteryMerchantInternalError;
@@ -602,16 +598,12 @@ uint32_t PlayerMysteryMerchantSystem::Buy(entt::entity player, const ::BuyMyster
 	auto *bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player);
 	if (bags == nullptr)
 	{
-		LOG_ERROR << "[MysteryMerchant] 购买失败: 玩家没有背包组件 player_id=" << GuidForLog(player);
+		LOG_ERROR << "[MysteryMerchant] Purchase failed: player has no bag component " << ActorLog(player);
 		return kMysteryMerchantInternalError;
 	}
 	auto &inventory = bags->bags[kInventory];
-	const PlayerItemBlockList emptyBlockList;
-	const auto *playerBlockList = tlsEcs.actorRegistry.try_get<PlayerItemBlockList>(player);
-	const auto &blockList = playerBlockList != nullptr ? *playerBlockList : emptyBlockList;
 	// 封禁与余额先判,是为了给玩家一个看得懂的原因;发物自己还会再判一遍封禁与空间(见第二段)。
-	if (GainBlockService::IsGainBlocked(GainBlockService::GainType::kItem, goods.itemConfigId) ||
-		blockList.IsBlocked(goods.itemConfigId))
+	if (GainBlockService::IsGainBlocked(GainBlockService::GainType::kItem, goods.itemConfigId))
 	{
 		return kMysteryMerchantItemBlocked;
 	}
@@ -632,7 +624,7 @@ uint32_t PlayerMysteryMerchantSystem::Buy(entt::entity player, const ::BuyMyster
 	//
 	// 为什么先发物、后扣钱(与宝宝洗点「先扣费再改状态」相反):那里的「改状态」不会失败,这里的发物会 ——
 	// 封禁、背包空间之外,还有物品号段不可用(data_service 故障时的既定 fail-closed)、表数据异常等上面预检不到的原因。
-	//   - 先发物:它自带完整预检,人物背包上「被拒 = 一件没动」(BagService::AddItems 的原子性口径)。
+	//   - 先发物:BagService::AddItems 是候选提交,「被拒 = 原包一件没动、不发流水」(它的接口契约)。
 	//     所以发物失败时钱还没动,直接拒绝即可,**不需要退款路径**;
 	//   - 后扣钱:它会失败的条件上面已经全部排除,而且从那里到这里是同一次同步调用,余额不可能变。
 	// 反过来(先扣钱)的话,发物失败就得把钱退回去,而仓里唯一的加钱入口 AddCurrency 会先抵扣补缴欠款、
@@ -641,20 +633,18 @@ uint32_t PlayerMysteryMerchantSystem::Buy(entt::entity player, const ::BuyMyster
 	// 两条流水(发物、扣钱)用同一个 correlation_id 串起来。它在「这名玩家的这一轮」内唯一即可定位一笔购买:
 	// 流水本身带 player_id 与时间戳,发物那条的 extra 里有商品与份数。
 	const uint64_t correlationId = state.round_id();
-	bool bagMutated = false;
-	const auto grantErr = BagService::AddItems(player, inventory, blockList, items, TX_SHOP_BUY, correlationId,
-											   PurchaseExtra(state, goods, request.count()), &bagMutated);
-	if (grantErr != kSuccess && !bagMutated)
+	const auto grantErr = BagService::AddItems(player, inventory, items, TX_SHOP_BUY, correlationId,
+											   PurchaseExtra(state, goods, request.count()));
+	if (grantErr != kSuccess)
 	{
 		// 一件没发出去,钱也还没动:干净的拒绝。空间与封禁上面判过,走到这里多半是号段不可用。
-		LOG_ERROR << "[MysteryMerchant] 购买失败: 预检通过后发物被拒(钱未扣) player_id=" << GuidForLog(player)
+		LOG_ERROR << "[MysteryMerchant] Purchase failed: item grant rejected after precheck (nothing charged) " << ActorLog(player)
 				  << " round_id=" << state.round_id() << " goods_id=" << goods.goodsId
 				  << " item_config_id=" << goods.itemConfigId << " item_total=" << totalItems << " err=" << grantErr;
 		return kMysteryMerchantInternalError;
 	}
 
-	// 走到这里,货已经进包(grantErr != kSuccess 时是只进了一部分,人物背包不该出现)。
-	// 之后无论发生什么都照价扣钱、照记名额:少扣等于白送,不记名额等于还能再买一遍。
+	// 走到这里,货已经整批进包。之后无论发生什么都照价扣钱、照记名额:少扣等于白送,不记名额等于还能再买一遍。
 	const auto deductErr =
 		CurrencySystem::DeductCurrency(player, goods.currencyType, totalCost, TX_SHOP_BUY, correlationId);
 	merchantrules::RecordPurchase(*record, state.round_id(), goods.goodsId, request.count());
@@ -662,23 +652,14 @@ uint32_t PlayerMysteryMerchantSystem::Buy(entt::entity player, const ::BuyMyster
 	{
 		// 预检刚过就扣不动:不该发生(编程错误)。货已经给了,名额也记了 —— 损失以这件商品的限购份数为上限。
 		// 固定标签 [UNPAID_GRANT] 便于告警规则匹配,转人工追缴。
-		LOG_ERROR << "[MysteryMerchant][UNPAID_GRANT] 物品已发出但扣钱被拒, 需人工追缴: player_id=" << GuidForLog(player)
+		LOG_ERROR << "[MysteryMerchant][UNPAID_GRANT] Items granted but the charge was rejected; manual recovery required: " << ActorLog(player)
 				  << " round_id=" << state.round_id() << " goods_id=" << goods.goodsId
 				  << " item_config_id=" << goods.itemConfigId << " item_total=" << totalItems << " cost=" << totalCost
 				  << " currency_type=" << static_cast<uint32_t>(goods.currencyType) << " err=" << deductErr;
 		return kMysteryMerchantInternalError;
 	}
-	if (grantErr != kSuccess)
-	{
-		// 钱按整单扣了,物品只进了一部分:差额转人工补发。固定标签 [PARTIAL_GRANT]。
-		LOG_ERROR << "[MysteryMerchant][PARTIAL_GRANT] 钱已扣, 物品只发出一部分, 需人工核对补发: player_id="
-				  << GuidForLog(player) << " round_id=" << state.round_id() << " goods_id=" << goods.goodsId
-				  << " item_config_id=" << goods.itemConfigId << " item_total=" << totalItems << " cost=" << totalCost
-				  << " currency_type=" << static_cast<uint32_t>(goods.currencyType) << " err=" << grantErr;
-		return kMysteryMerchantInternalError;
-	}
 
-	LOG_INFO << "[MysteryMerchant] 购买成功: player_id=" << GuidForLog(player) << " round_id=" << state.round_id()
+	LOG_INFO << "[MysteryMerchant] Purchase succeeded: " << ActorLog(player) << " round_id=" << state.round_id()
 			 << " goods_id=" << goods.goodsId << " count=" << request.count() << " unit_price=" << goods.price
 			 << " discount_percent=" << goods.discountPercent << " cost=" << totalCost
 			 << " currency_type=" << static_cast<uint32_t>(goods.currencyType) << " item_config_id=" << goods.itemConfigId
@@ -691,7 +672,7 @@ uint32_t PlayerMysteryMerchantSystem::Buy(entt::entity player, const ::BuyMyster
 	{
 		// 背包快照建不出来不改变「买到了」这个事实:应答里不带背包,客户端发现缺失会自己重新拉一次。
 		response.clear_bag();
-		LOG_ERROR << "[MysteryMerchant] 购买成功但背包快照失败, 应答不带背包: player_id=" << GuidForLog(player)
+		LOG_ERROR << "[MysteryMerchant] Purchase succeeded but the bag snapshot failed; replying without the bag: " << ActorLog(player)
 				  << " err=" << snapshotErr;
 	}
 	return kSuccess;

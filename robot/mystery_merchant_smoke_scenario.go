@@ -283,7 +283,7 @@ func RunMerchantSmoke(cfg *config.Config) {
 	currentScene := bot.player.GetSceneID()
 	sceneConfigId := bot.player.GetSceneConfigID()
 	if currentScene == 0 || sceneConfigId == 0 {
-		fail("M1-login", "进场后 scene_id=%d scene_config_id=%d,两者都必须非 0", currentScene, sceneConfigId)
+		fail("M1-login", "After entering scene_id=%d scene_config_id=%d; both must be nonzero", currentScene, sceneConfigId)
 	}
 	pass("M1-login", "player_id=%d gate=%s scene_config_id=%d scene_id=%d", bot.gc.PlayerId, bot.gate, sceneConfigId, currentScene)
 
@@ -293,43 +293,43 @@ func RunMerchantSmoke(cfg *config.Config) {
 		fail("M2-info", "%v", err)
 	}
 	if !info.GetActive() {
-		nextIn := "未知"
+		nextIn := "unknown"
 		if info.GetNextAppearAtMs() > info.GetServerTimeMs() {
 			nextIn = (time.Duration(info.GetNextAppearAtMs()-info.GetServerTimeMs()) * time.Millisecond).Round(time.Second).String()
 		}
-		skipAll("merchant_away", "player_id=%d 商人此刻不在场(下一次出现:%s)。要让他一直在场,给 scene_manager 配 "+
-			"MysteryMerchant.IntervalSecondsOverride == StaySecondsOverride(见 etc/merchant_smoke.yaml);"+
-			"下一次出现时刻「未知」= scene_manager 从没排过一轮(没换新版 / 不是领导者 / 三张表没导出)",
+		skipAll("merchant_away", "player_id=%d the merchant is not present right now (next appearance: %s). To keep him present, configure scene_manager with "+
+			"MysteryMerchant.IntervalSecondsOverride == StaySecondsOverride (see etc/merchant_smoke.yaml); "+
+			"next appearance \"unknown\" = scene_manager never scheduled a round (old build / not the leader / the three tables were not exported)",
 			bot.gc.PlayerId, nextIn)
 		return
 	}
 	if err := merchantSmokeCheckActive(info); err != nil {
 		fail("M2-info", "%v", err)
 	}
-	pass("M2-info", "round_id=%d scene_config_id=%d channel_no=%d scene_id=%d here=%v position=(%.1f,%.1f) interact_range=%d 还剩 %s",
+	pass("M2-info", "round_id=%d scene_config_id=%d channel_no=%d scene_id=%d here=%v position=(%.1f,%.1f) interact_range=%d remaining=%s",
 		info.GetRoundId(), info.GetSceneConfigId(), info.GetChannelNo(), info.GetSceneId(), info.GetHere(),
 		info.GetPosition().GetX(), info.GetPosition().GetY(), info.GetInteractRange(),
 		(time.Duration(info.GetExpireAtMs()-info.GetServerTimeMs()) * time.Millisecond).Round(time.Second))
 
 	// ---- M3:到商人那条线 ----
 	if info.GetSceneConfigId() != sceneConfigId {
-		skipAll("merchant_on_another_map", "player_id=%d 商人在地图 %d,机器人在地图 %d;本冒烟只会同图切线",
+		skipAll("merchant_on_another_map", "player_id=%d the merchant is on map %d but the robot is on map %d; this smoke test only switches channels within one map",
 			bot.gc.PlayerId, info.GetSceneConfigId(), sceneConfigId)
 		return
 	}
 	if info.GetHere() != (info.GetSceneId() == currentScene) {
-		fail("M3-here", "here=%v 与 scene_id 对不上:商人 scene_id=%d,机器人 scene_id=%d", info.GetHere(), info.GetSceneId(), currentScene)
+		fail("M3-here", "here=%v does not match scene_id: merchant scene_id=%d, robot scene_id=%d", info.GetHere(), info.GetSceneId(), currentScene)
 	}
 	if !info.GetHere() {
 		if len(info.GetGoods()) != 0 {
-			fail("M3-here", "不在同一条线却下发了 %d 件货架商品", len(info.GetGoods()))
+			fail("M3-here", "not on the same channel, yet %d shelf goods were sent", len(info.GetGoods()))
 		}
 		rejectTip, err := bot.switchTo(sceneConfigId, info.GetSceneId(), arriveTimeout)
 		if err != nil {
-			fail("M3-switch", "切到商人所在的 %d 线(scene_id=%d)失败:%v", info.GetChannelNo(), info.GetSceneId(), err)
+			fail("M3-switch", "Switching to the merchant channel %d (scene_id=%d) failed: %v", info.GetChannelNo(), info.GetSceneId(), err)
 		}
 		if rejectTip != 0 {
-			fail("M3-switch", "切到商人所在的 %d 线被拒 tip=%d%s(那条线满了 / 上一轮冒烟留下的切线冷却还没过,等 10 秒重跑)",
+			fail("M3-switch", "Switching to the merchant channel %d was rejected tip=%d%s (that channel is full / the channel switch cooldown left by the previous run has not expired; rerun in 10 seconds)",
 				info.GetChannelNo(), rejectTip, channelSmokeTipHint(rejectTip))
 		}
 		targetRound := info.GetRoundId()
@@ -337,17 +337,17 @@ func RunMerchantSmoke(cfg *config.Config) {
 			fail("M3-info", "%v", err)
 		}
 		if info.GetRoundId() != targetRound {
-			fail("M3-info", "切线途中换了一轮(round_id %d -> %d):一轮的时长要远大于冒烟耗时,把 IntervalSecondsOverride 调大后重跑",
+			fail("M3-info", "A new round started during the channel switch (round_id %d -> %d): a round must last much longer than the smoke run; raise IntervalSecondsOverride and rerun",
 				targetRound, info.GetRoundId())
 		}
 	}
 	if !info.GetActive() || !info.GetHere() {
-		fail("M3-info", "到了商人所在的线,应答却是 active=%v here=%v", info.GetActive(), info.GetHere())
+		fail("M3-info", "Arrived on the merchant channel, but the reply says active=%v here=%v", info.GetActive(), info.GetHere())
 	}
 	if err := merchantSmokeCheckShelf(info); err != nil {
 		fail("M3-shelf", "%v", err)
 	}
-	pass("M3-arrive", "channel_no=%d 货架 %d 件", info.GetChannelNo(), len(info.GetGoods()))
+	pass("M3-arrive", "channel_no=%d shelf=%d goods", info.GetChannelNo(), len(info.GetGoods()))
 
 	// 挑一件还有名额的商品(同一轮里重跑时前面的可能已经买满)。
 	var target *scene.MysteryMerchantGoodsInfo
@@ -358,7 +358,7 @@ func RunMerchantSmoke(cfg *config.Config) {
 		}
 	}
 	if target == nil {
-		skipAll("all_bought", "player_id=%d round_id=%d 货架上 %d 件商品本账号都已买满(同一轮里跑了第二遍);等下一轮再跑",
+		skipAll("all_bought", "player_id=%d round_id=%d this account already bought out all %d shelf goods (second run within the same round); rerun next round",
 			bot.gc.PlayerId, info.GetRoundId(), len(info.GetGoods()))
 		return
 	}
@@ -376,7 +376,7 @@ func RunMerchantSmoke(cfg *config.Config) {
 		fail("M4-move", "%v", err)
 	}
 	time.Sleep(merchantSmokeSettle)
-	pass("M4-move", "已上报站位旁的点 (%.1f,%.1f)", stand.GetX(), stand.GetY())
+	pass("M4-move", "Reported a point next to the spot (%.1f,%.1f)", stand.GetX(), stand.GetY())
 
 	// ---- M5:负例(都不该动钱、不该占名额)----
 	expectReject := func(step string, wantTip uint32, tampered merchantQuote, count uint32) {
@@ -385,14 +385,14 @@ func RunMerchantSmoke(cfg *config.Config) {
 			fail(step, "%v", err)
 		}
 		if tip == tipMerchantTooFar {
-			fail(step, "购买被拒:太远(tip=%d)。机器人只会直线走到站位旁:确认 scene_manager 配了 MysteryMerchant.SpotIdOverride "+
-				"(钉在出生点旁的站位),且商人站位与出生点之间没有阻挡", tip)
+			fail(step, "Purchase rejected: too far (tip=%d). The robot only walks straight to the spot: make sure scene_manager sets MysteryMerchant.SpotIdOverride "+
+				"(pinned to the spot next to the spawn point) and nothing blocks the way between the spot and the spawn point", tip)
 		}
 		if tip != wantTip {
-			fail(step, "期望 tip=%d,实际 tip=%d%s", wantTip, tip, channelSmokeTipHint(tip))
+			fail(step, "expected tip=%d, got tip=%d%s", wantTip, tip, channelSmokeTipHint(tip))
 		}
 		if response.GetInfo() != nil || response.GetBag() != nil {
-			fail(step, "被拒的应答不该带 info / bag")
+			fail(step, "a rejected reply must not carry info / bag")
 		}
 	}
 	expectReject("M5-count-zero", tipMerchantInvalidCount, quote, 0)
@@ -408,20 +408,20 @@ func RunMerchantSmoke(cfg *config.Config) {
 	expectReject("M5-wrong-currency", tipMerchantShelfChanged, wrongCurrency, 1)
 	expectReject("M5-wrong-item", tipMerchantShelfChanged, wrongItem, 1)
 	expectReject("M5-wrong-item-count", tipMerchantShelfChanged, wrongItemCount, 1)
-	pass("M5-rejects", "份数 0 / 旧轮次 / 报价四项(单价、货币、物品、每份数量)各错一处 都被拒")
+	pass("M5-rejects", "count 0 / stale round / each of the four quote terms (price, currency, item, count per bundle) wrong: all rejected")
 
 	// ---- M6:加钱,买 1 份 ----
 	var grant scene.GmAddCurrencyResponse
 	if err := bot.merchantCall(game.SceneCurrencyClientPlayerGmAddCurrencyMessageId,
 		&scene.GmAddCurrencyRequest{CurrencyType: target.GetCurrencyType(), Amount: merchantSmokeGrantGold}, &grant); err != nil {
-		fail("M6-grant", "GM 加钱失败:%v(GM 指令只在 dev / test 环境放行,见 cpp/nodes/gate/SECURITY.md)", err)
+		fail("M6-grant", "GM currency grant failed: %v (GM commands are only allowed in dev / test, see cpp/nodes/gate/SECURITY.md)", err)
 	}
 	if tip := grant.GetErrorMessage().GetId(); tip != 0 {
-		fail("M6-grant", "GM 加钱被拒 tip=%d%s(scene 的 SCENE_RUN_MODE 不是 dev / test?)", tip, channelSmokeTipHint(tip))
+		fail("M6-grant", "GM currency grant rejected tip=%d%s (scene SCENE_RUN_MODE is not dev / test?)", tip, channelSmokeTipHint(tip))
 	}
 	balance := grant.GetBalanceAfter()
 	if balance < price {
-		fail("M6-grant", "加钱后余额 %d 仍不够单价 %d", balance, price)
+		fail("M6-grant", "balance %d after the grant still cannot cover unit price %d", balance, price)
 	}
 
 	tip, bought, err := bot.merchantBuy(quote, 1)
@@ -431,25 +431,25 @@ func RunMerchantSmoke(cfg *config.Config) {
 	switch tip {
 	case 0:
 	case tipMerchantTooFar:
-		fail("M6-buy", "购买被拒:太远(tip=%d)。见 M5 同一条说明:配 SpotIdOverride", tip)
+		fail("M6-buy", "Purchase rejected: too far (tip=%d). See the same note in M5: set SpotIdOverride", tip)
 	case tipMerchantShelfChanged, tipMerchantNotHere:
-		fail("M6-buy", "购买被拒 tip=%d:撞上换轮或商人换线了。一轮的时长要远大于冒烟耗时,把 IntervalSecondsOverride 调大后重跑", tip)
+		fail("M6-buy", "Purchase rejected tip=%d: hit a round change or the merchant moved channel. A round must last much longer than the smoke run; raise IntervalSecondsOverride and rerun", tip)
 	default:
-		fail("M6-buy", "购买被拒 tip=%d%s", tip, channelSmokeTipHint(tip))
+		fail("M6-buy", "Purchase rejected tip=%d%s", tip, channelSmokeTipHint(tip))
 	}
 	after := merchantSmokeFindGoods(bought.GetInfo(), goodsId)
 	if after == nil {
-		fail("M6-buy", "成功的应答里货架上没有 goods_id=%d", goodsId)
+		fail("M6-buy", "the success reply has no goods_id=%d on the shelf", goodsId)
 	}
 	if after.GetBoughtCount() != target.GetBoughtCount()+1 {
-		fail("M6-buy", "bought_count 应从 %d 变成 %d,实际 %d", target.GetBoughtCount(), target.GetBoughtCount()+1, after.GetBoughtCount())
+		fail("M6-buy", "bought_count should go from %d to %d, got %d", target.GetBoughtCount(), target.GetBoughtCount()+1, after.GetBoughtCount())
 	}
 	values := bought.GetBag().GetCurrency().GetValues()
 	if int(target.GetCurrencyType()) >= len(values) {
-		fail("M6-buy", "成功的应答里背包没有货币类型 %d 的余额(values 长度 %d)", target.GetCurrencyType(), len(values))
+		fail("M6-buy", "the success reply bag has no balance for currency type %d (values length %d)", target.GetCurrencyType(), len(values))
 	}
 	if got, want := values[target.GetCurrencyType()], balance-price; got != want {
-		fail("M6-buy", "余额应为 %d(%d − 单价 %d),实际 %d", want, balance, price, got)
+		fail("M6-buy", "balance should be %d (%d - unit price %d), got %d", want, balance, price, got)
 	}
 	var itemTotal uint64
 	for _, item := range bought.GetBag().GetItems() {
@@ -458,10 +458,10 @@ func RunMerchantSmoke(cfg *config.Config) {
 		}
 	}
 	if itemTotal < uint64(target.GetItemCount()) {
-		fail("M6-buy", "背包里 config_id=%d 的物品共 %d 个,少于这一份该给的 %d 个", target.GetItemConfigId(), itemTotal, target.GetItemCount())
+		fail("M6-buy", "the bag holds config_id=%d x%d, fewer than the %d this bundle grants", target.GetItemConfigId(), itemTotal, target.GetItemCount())
 	}
 	balance -= price
-	pass("M6-buy", "goods_id=%d 单价=%d 折扣=%d%% 余额=%d 背包里该物品共 %d 个", goodsId, price, target.GetDiscountPercent(), balance, itemTotal)
+	pass("M6-buy", "goods_id=%d unit_price=%d discount=%d%% balance=%d item_total_in_bag=%d", goodsId, price, target.GetDiscountPercent(), balance, itemTotal)
 
 	// ---- M7:买到上限,再买被拒 ----
 	if remaining := after.GetLimitCount() - after.GetBoughtCount(); remaining > 0 {
@@ -471,15 +471,15 @@ func RunMerchantSmoke(cfg *config.Config) {
 			fail("M7-fill", "%v", err)
 		}
 		if tip != 0 {
-			fail("M7-fill", "把剩余 %d 份名额一次买完被拒 tip=%d%s", remaining, tip, channelSmokeTipHint(tip))
+			fail("M7-fill", "buying the remaining %d bundles in one request was rejected tip=%d%s", remaining, tip, channelSmokeTipHint(tip))
 		}
 	}
 	if tip, _, err := bot.merchantBuy(quote, 1); err != nil {
 		fail("M7-limit", "%v", err)
 	} else if tip != tipMerchantLimitReached {
-		fail("M7-limit", "买满之后再买,期望 tip=%d(已达限购),实际 tip=%d%s", tipMerchantLimitReached, tip, channelSmokeTipHint(tip))
+		fail("M7-limit", "buying after reaching the limit: expected tip=%d (limit reached), got tip=%d%s", tipMerchantLimitReached, tip, channelSmokeTipHint(tip))
 	}
-	pass("M7-limit", "goods_id=%d 买满 %d 份后再买被拒", goodsId, after.GetLimitCount())
+	pass("M7-limit", "goods_id=%d rejected after buying all %d bundles", goodsId, after.GetLimitCount())
 
 	// ---- M8:再查一次,服务端记的已购数 == 限购 ----
 	final, err := bot.merchantInfo()
@@ -489,10 +489,10 @@ func RunMerchantSmoke(cfg *config.Config) {
 	if final.GetRoundId() == roundId {
 		recorded := merchantSmokeFindGoods(final, goodsId)
 		if recorded == nil || recorded.GetBoughtCount() != recorded.GetLimitCount() {
-			fail("M8-info", "买满之后查询,goods_id=%d 的 bought_count / limit_count 不相等:%v", goodsId, recorded)
+			fail("M8-info", "query after buying out: goods_id=%d bought_count / limit_count differ: %v", goodsId, recorded)
 		}
 	}
-	pass("M8-info", "round_id=%d(查询时的轮次 %d)", roundId, final.GetRoundId())
+	pass("M8-info", "round_id=%d (round at query time %d)", roundId, final.GetRoundId())
 
 	zap.L().Info(fmt.Sprintf("MERCHANT_SMOKE_OK player_id=%d zone=%d round_id=%d scene_config_id=%d channel_no=%d goods_id=%d "+
 		"price=%d discount_percent=%d limit_count=%d",
