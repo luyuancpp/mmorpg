@@ -8996,3 +8996,25 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   替换主仓 `bin/go_services/match.exe`;旧版(10-13)备份为 `bin/go_services/match.exe.bak-20261016`。替换时主仓那份 match 没在运行。
   主仓当时另有执行者在跑合并验证(run/merge-validation-20261015),本次没有在主仓源码目录里编译,也没有跑生成器或 MSBuild。
 - 仍未做:联机验收(team-backfill-matching.md §7.3)、robot vendor 编译、C++、Unity 内测试与界面目视;Java 版待做。
+## 2026-10-16 帮会 guild 上 K8s(BK8s 第一块:部署本体)(Claude,未编译、未测试,待 Codex 验证)
+
+用户 10-16 拍板「BK8s 全部做完」(`docs/design/guild-phase2/90-consistency.md` G-05);本条是第一块。总纲 §7,运维说明 `deploy/k8s/README.md`「帮会 guild」。
+
+- **K8s**:`deploy/k8s/manifests/go-svc/guild.yaml`(全局池,Service 50300 + Deployment 2 副本 RollingUpdate / 反亲和 / grpc 探针 / `POD_IP` / metrics 9220 + PDB;
+  资产密钥 `MMORPG_ASSET_OP_SECRET_GUILD` 预留为 optional 的 secretKeyRef)、`guild-migrate.yaml`(派生自 trade-migrate)。
+  `k8s_deploy.ps1`:`$GoSvcCatalogue.guild`(Global + MigrateJob);`go-svc-guild-config` 按 `go/guild/etc/guild.yaml` 生成,`AssetOp` / `Activity` 整块原样搬运、
+  `AssetOp.Enabled` 固定 false;生成期核对历练分区 == match `ResultTopicPartitions`;`go_svc_image.ps1` 登记镜像 `mmorpg-guild`。
+- **data-service 回档帮会闸**:K8s ConfigMap 补 `GuildInternalRpc`(`guild.<infra>:50300`)、`GuildClockSkewMarginMs`、`GuildCheckBudgetSeconds`、三个 `Rollback*` 的
+  `MethodTimeouts`(均镜像服务 yaml;三方法已在「C++ 不调用」名单)。以前不写 = 回档一律被拒。
+- **go/guild 两处修正**:① 注册进 etcd 的地址以前直接取 `ListenOn`,K8s 上是 0.0.0.0、路由服拨不通 → 新增 `advertisedHost`(POD_IP 优先,同 trade / chat);
+  ② MySQL 池以前不设上限 → `MySQL.MaxOpenConn / MaxIdleConn`(不写 = 20 / 5,`Validate` 拒负数与 idle > open),guild.yaml 显式写 20 / 5。
+- **连接总账**:Redis 总账加 guild 一行(3 个缺省池 + 订阅 + 两个 4 连接小池);MySQL 总账加 `GuildReplicas` / `GuildMaxOpen` ——
+  规划档峰值 1780 / `max_connections` 1800,**余量只剩 20**,再加任何全局池或调大池之前要先重做规划档(或等 TiDB 一期)。
+- **契约测试**:新增 4 条(部署形态、ConfigMap 镜像与整块搬运、data-service 回档帮会闸、镜像名一致);改 3 条(K8s 生成物 deadline 用例解析 data-service 的
+  MethodTimeouts、MySQL 总账自检的合成输入与期望值、「连 MySQL 的 ConfigMap 名单」加 guild)。
+- **已做的核对**:gofmt 通过;PowerShell 解析 0 错误;`infra-up` / `zone-up` 演练模式(不连集群)退出 0,帮会 ConfigMap 与清单逐项看过;新增与改动用例的
+  关键比对在真实演练输出上跑过(AssetOp / Activity 整块一致、deadline 违例 0、MySQL 自检新期望值逐项复算一致)。**契约测试与 Go 测试都没有运行。**
+- **验证(交 Codex)**:`cd go/guild && go build ./... && go vet ./... && go test -count=1 ./...`;
+  `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`;有集群时 guild 两 Pod Ready + `job/guild-migrate` Complete + robot `guild_smoke.yaml`。
+- **后续块**:资产通道开关与签名密钥(guild / trade / scene)、NetworkPolicy、告警与 Loki ruler。
+- **Java 版(AGENTS §12)**:帮会二期整体在 Java 版待做(92-handoff §13.2 ⑨);本条是部署形态,Java 版不共用本仓 K8s 清单。本机没有 Java 仓库,`PARITY.md` 未登记。

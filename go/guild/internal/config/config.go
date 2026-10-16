@@ -607,6 +607,13 @@ func (c *Config) Validate() error {
 	if dsn.ClientFoundRows {
 		return errors.New("MySQL.DataSource 不得设置 clientFoundRows=true:帮会计数 upsert 以 RowsAffected=0 判定已达上限,开启后会多发奖励(原文含口令,不打印)")
 	}
+	if c.MySQL.MaxOpenConn < 0 || c.MySQL.MaxIdleConn < 0 {
+		return fmt.Errorf("MySQL.MaxOpenConn(%d)/ MaxIdleConn(%d)不得为负(0 = 取缺省值 %d / %d)",
+			c.MySQL.MaxOpenConn, c.MySQL.MaxIdleConn, DefaultMySQLMaxOpenConn, DefaultMySQLMaxIdleConn)
+	}
+	if maxOpen, maxIdle := c.MySQL.EffectivePool(); maxIdle > maxOpen {
+		return fmt.Errorf("MySQL.MaxIdleConn(生效值 %d)不得大于 MaxOpenConn(生效值 %d)", maxIdle, maxOpen)
+	}
 
 	// 资产通道(B5b)。关着时一概不查,见 AssetOpConf 的说明。
 	if c.AssetOp.Enabled {
@@ -665,6 +672,30 @@ func (c MergeMarkerRedisConf) Enabled() bool {
 
 type MySQLConf struct {
 	DataSource string `json:"DataSource"`
+	// MaxOpenConn / MaxIdleConn 是连接池上限(2026-10-16,K8s 上线批 BK8s)。以前不设 = database/sql 默认不限,
+	// 多副本 × 突发并发可以把 MySQL 的 max_connections 吃光;部署脚本的 MySQL 连接总账按这里的值记账,
+	// K8s ConfigMap 从 etc/guild.yaml 的同名键镜像。不写(0)= DefaultMySQLMaxOpenConn / DefaultMySQLMaxIdleConn;
+	// 写了必须为正,且 MaxIdleConn ≤ MaxOpenConn(Validate 强制)。
+	MaxOpenConn int `json:",optional"`
+	MaxIdleConn int `json:",optional"`
+}
+
+// 连接池缺省值:与 trade / friend / player_inbox 的服务 yaml 同取 20 / 5。
+const (
+	DefaultMySQLMaxOpenConn = 20
+	DefaultMySQLMaxIdleConn = 5
+)
+
+// EffectivePool 返回生效的连接池上限:没写的项取缺省值。只在 Validate 通过之后用于建池。
+func (m MySQLConf) EffectivePool() (maxOpen, maxIdle int) {
+	maxOpen, maxIdle = m.MaxOpenConn, m.MaxIdleConn
+	if maxOpen == 0 {
+		maxOpen = DefaultMySQLMaxOpenConn
+	}
+	if maxIdle == 0 {
+		maxIdle = DefaultMySQLMaxIdleConn
+	}
+	return maxOpen, maxIdle
 }
 
 type NodeConf struct {

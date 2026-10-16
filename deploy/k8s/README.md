@@ -835,11 +835,48 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
   抓取前提:集群里要有指向 9270 的 ServiceMonitor / PodMonitor(或按注解抓取的 job),否则规则全部是哑的。
 - **合服**:收件箱表按全局唯一的 player_id 存,没有 zone 列,合服不搬不改;`tools/merge_zone` 的合服前审计多了 `player_inbox` 一行(见 `docs/ops/merge-zone-runbook.md`)。
 
+## 帮会 guild:全局池 + 独占库 `mmorpg_guild` + `guild-migrate` Job(2026-10-16,K8s 上线批 BK8s 第一块)
+
+> 状态:清单、ConfigMap 生成、建表 Job、镜像登记、连接总账、data-service 回档帮会闸已落码;**未编译、未跑契约测试、未上集群**,待 Codex。
+> 依据:`docs/design/guild-phase2/90-consistency.md` G-05(BK8s 汇总)、`92-handoff.md` §13.2 ⑧。资产通道开关与密钥、NetworkPolicy、告警与 Loki ruler 是 BK8s 的后续几块,见文末。
+
+guild 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue.guild`,`Global = $true`),`infra-up` / `all-up` 在基础设施阶段部署到 `mmorpg-infra` 一份,`zone-up` 跳过。
+共性(Job 门禁 / 等待预算 / 不删在途 Job / 退出码 / 重跑迁移)照「聚宝斋 trade」一节,这里只写不同的地方。
+
+- **可达性**:只经 gate → `client-rpc-router` 可达。路由服按 `GuildNodeService.rpc/` 前缀的 NodeInfo 找到它;guild **刻意不写 go-zero 的 `Etcd` 段**(D-13),
+  ConfigMap 里也没有。注册进 etcd 的地址是 Pod IP(Downward API `POD_IP`):以前 guild 直接把 `ListenOn` 写进 NodeInfo,K8s 上是 `0.0.0.0`,路由服拨不通 ——
+  同批在 `go/guild/guild.go` 补了 `advertisedHost`(与 trade / chat 同口径)。
+- **工作负载**:`manifests/go-svc/guild.yaml` = Service `guild`(50300)+ Deployment(`replicas: 2`、RollingUpdate maxSurge 1 / maxUnavailable 0、podAntiAffinity、
+  grpc 探针、`preStop sleep 5`、`POD_IP`、metrics 9220)+ 同文件 PDB `guild-pdb`。不挂 snowflake 卷(ConfigMap 里 `SnowflakeCacheDir: ""`)。
+  多副本安全性来自帮会二期的设计(资产指令行级租约、清理随机偏移、哨兵行 GET_LOCK、历练结果消费组 `guild-trial`、对账 / 放弃选主),**未在真实多副本下验证**。
+- **ConfigMap**:`go-svc-guild-config` 按 `go/guild/etc/guild.yaml` 生成,标量逐个镜像;`AssetOp`、`Activity` 两大块**逐行原样搬运**(含取值说明),
+  唯一改写的是 `AssetOp.Enabled`(部署决策,现固定 `false`)。三个 Redis 句柄都指向共享 Redis:`RedisClient`(DB 取服务 yaml,现为 2)、
+  `PlayerLocatorRedis`(DB 0,必须与 scene / scene_manager / battle 写在线、位置、历练结果的同一实例)、`MergeMarkerRedis`(DB 0,= data-service 的 MappingRedis)。
+  生成期核对 `Activity.TrialResult.Partitions` == match 的 `ResultTopicPartitions`(不等就拒绝生成:结算消费者漏读分区,玩家白打且无报错)。
+- **建库 / 建表**:`mmorpg_guild` 只登记在 `deploy/mysql-init/00_init_zone_dbs.sql`;**存量 PVC 要手工建库**(同 friend 一节的命令,把库名换成 `mmorpg_guild`)。
+  表由 `manifests/go-svc/guild-migrate.yaml`(派生自 trade-migrate,`args: ["-f", "/app/etc/guild.yaml", "-migrate"]`)按 `proto/guild/guild_db.proto` 建;
+  staging/prod 恒等它 Complete 才 apply Deployment,ConfigMap 固定 `Schema.AutoMigrate: false`。
+- **连接数**:guild 以前不设 MySQL 池上限(`database/sql` 默认不限),同批给 `go/guild` 加了 `MySQL.MaxOpenConn / MaxIdleConn`(不写 = 20 / 5),
+  ConfigMap 镜像、MySQL 连接总账按 2 × 20 记账 —— 加上它之后规划档余量只剩 20,见「MySQL 连接总账」。Redis 连接总账按每副本 3·10G + 9 记账。
+- **data-service 的回档帮会闸**(`docs/design/guild-phase2/07-rollback-fail-closed.md` §7.5):data-service ConfigMap 同批写了
+  `GuildInternalRpc`(Endpoints `guild.<infra>:50300`,按 Service 名直连)、`GuildClockSkewMarginMs`、`GuildCheckBudgetSeconds` 与三个 `Rollback*` 的 `MethodTimeouts`
+  (都从 `go/data_service/etc/data_service.yaml` 镜像;这三个方法已登记在 `Get-GrpcClientMethodsNotCalledFromCpp`,部署门禁放行)。
+  以前不写 = 回档一律被拒。注意回档 RPC 另要 `AdminToken`,ConfigMap 仍不写 = 回档整体停用;这几项只是让「维护窗口下发口令之后」回档能走完帮会闸。
+- **上线顺序**(`92-handoff.md` §13.3):battle → match → 路由服与 gate → guild(match 新而 battle 旧时结果不带活动上下文,玩家白打)。
+  首次上线前确认 data-service 已跑过一次 `-migrate`(号段 `guild`、`guild_asset_op` 两行,BootstrapTags 已含)。
+- **镜像**:`tools/scripts/go_svc_image.ps1` 登记 `guild`(ImageName `mmorpg-guild`,与本目录条目一致,契约测试钉住);与路由服成对发布。
+- **BK8s 后续块(未做,按批推进)**:资产通道开关 + 签名密钥 `MMORPG_ASSET_OP_SECRET_GUILD/_TRADE` 注入 guild / trade / scene(manifest 已预留 optional 的 secretKeyRef);
+  NetworkPolicy(scene 的资产 gRPC 只放 scene_manager / match / guild / trade,match 的内部服务只放路由服与 guild,guild 只放路由服 / match / data-service);
+  告警规则(G-07)与 Loki ruler 接线;TiDB 的 BR 按库恢复清单加 `mmorpg_guild`(随 TiDB 一期)。
+- **验证(交 Codex,未运行)**:`cd go/guild && go build ./... && go vet ./... && go test -count=1 ./...`(新增 `TestValidateMySQLPool`、`TestAdvertisedHost`);
+  `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`(新增 4 条帮会用例,并改了 deadline 用例、MySQL 总账自检与「连 MySQL 的 ConfigMap 名单」三条);
+  集群上:guild 两个 Pod Ready、`kubectl logs job/guild-migrate` 迁移报告正常、robot `guild_smoke.yaml` 输出 `GUILD_SMOKE_OK`。
+
 ## MySQL 连接总账(2026-10-13,G2b:docs/handoff/launch-readiness-20261013/spec_G2b.md)
 
 > 状态:已落码,**未编译、未测试**,待 Codex 验证。本节所有数值(1800、5Gi、各池大小、余量、告警阈值)都是按公式推算或凭经验取的,**待压测确认**,不能据此下容量结论(AGENTS §6)。
 
-所有 zone 的 go/db、data-service、Java gateway 与全局的 friend、trade、player-inbox(2026-10-15 起)**共用 infra namespace 里那一台 MySQL**(`manifests/infra/mysql.yaml`,单副本)。
+所有 zone 的 go/db、data-service、Java gateway 与全局的 friend、trade、player-inbox(2026-10-15 起)、guild(2026-10-16 起)**共用 infra namespace 里那一台 MySQL**(`manifests/infra/mysql.yaml`,单副本)。
 以前每个服务各自写一句「要算进 `max_connections`」,没有任何地方把它们加起来:`max_connections` 曾是 500,2 个 zone 的稳态恰好 500、零余量,4 个 zone 的稳态就要 920。
 超限的后果不只是变慢:go/db 把 1040(Too many connections)当普通错误,耗尽 3 次重试后进没有消费者的死信,存盘不会自动落库(读代码推断,未实测)。
 现在这笔账是部署脚本里的可执行函数,文档里不再手算。
@@ -863,14 +900,18 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
   gw 每实例 = 5                        # Java gateway 的 Hikari maximum-pool-size
   每 zone   = 2·db + 2·ds + 2·gw       # 各 2 副本
   全局      = 2·20(friend) + 2·20(trade) + 2·20(player-inbox,2026-10-15 起;池上限取 go/player_inbox/etc/player_inbox.yaml)
+            + 2·20(guild,2026-10-16 起;池上限取 go/guild/etc/guild.yaml 的 MySQL.MaxOpenConn,以前 guild 不设上限,同批补上)
   steady    = Z·每 zone + 全局
-  surge     = R·(db + ds + gw + 20 + 20 + 20)
+  surge     = R·(db + ds + gw + 20 + 20 + 20 + 20)
   peak      = steady + surge + 运维余量
   ```
 - **规划档**:Z=4、E_z=3(最坏情形:每个 go/db 实例都打开了其余全部 zone 的库,打开后常驻)、E_n=0(Phase 2 未开)、F=1(D1 第 2 阶段会切 db_first,提前计入)、R=2、
   运维余量 20(迁移 Job、备份、探针、merge_zone / route_tool、人工会话,估计值)。**峰值 1620,`max_connections = 1800`,余量 180(约 10%)**。
   (2026-10-15 更正:加入 player-inbox 两副本 × 20 后,按公式手算峰值为 1700、余量 100(约 6%),未运行;池上限以 player_inbox.yaml 的实际值为准,
   契约测试「规划档峰值 ≤ max_connections」会按实际值复核。余量收窄后再加全局池就要先重做规划档。)
+  (2026-10-16 再更正:guild 上 K8s,两副本 × 20 + 滚动 2 × 20,写路径实算(DryRun)规划档峰值 **1780、余量 20(约 1%)**。
+  这已经是「再加任何一个全局池就超限」的位置:下一个连这台 MySQL 的服务、或调大任何一个池之前,先重做规划档或调 `max_connections`
+  (改 mysql.yaml 会重启单副本 MySQL,按维护窗口处理);TiDB 一期(docs/design/tidb-phase1-and-launch-readiness.md)落地后这本账整体换口径。)
   上限刻意不抬到「不可能触发」:它要保留保护作用。
   - R=2 的含义:滚动发布时每个 Deployment 按多 2 个实例算 —— maxSurge 的 1 个新 Pod,加 1 个仍在优雅退出、连接还没释放的旧 Pod
     (Deployment 控制器算 surge 时不计退出中的 Pod;K8s 行为,未在本机核实)。
@@ -967,15 +1008,16 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
   data-service    每副本 = 20G         # MappingRedis + DevRedis 两个池(K8s 上都指向共享 Redis)
   gateway(Java)  每副本 = 2           # Lettuce 共享连接 + 限流专用连接(staging / prod 缺省开限流;dev 关时实际 1,按 2 记)
   match / chat / friend 每副本 = 10G;trade 每副本 = 10G + 1(资产通道 + 落地唤醒订阅;K8s 现在固定 AssetOp.Enabled=false,实际 0,按开计)
+  guild 每副本 = 3·10G + 1 + 8       # RedisClient / PlayerLocatorRedis / MergeMarkerRedis 三个缺省池 + 落地唤醒订阅 + 两个 4 连接的小池(申请配额、落地摘要)
   gate / scene / battle 每进程 = 1     # node.cpp 唯一的 tlsRedis.Connect:每进程一条,不是每线程
   每 zone = 2·(10G+1) + 2·10G + 2·20G + 2·10G + 2·10G + 2·2 + gate 台数 + scene 台数
-  全局    = 3·2·10G + 2·(10G+1) + battle 台数
+  全局    = 3·2·10G + 2·(10G+1) + 2·(3·10G + 9) + battle 台数   # match / chat / friend、trade、guild
   steady  = Z·每 zone(含各 zone 的 gate / scene)+ 全局
   surge   = R·(各客户端每副本之和 + 3)   # R = 2,同 MySQL 总账;C++ 按 gate / scene / battle 三个工作负载计
   peak    = steady + surge + 运维余量 50   # 探针、运维 redis-cli、merge_zone / route_tool 等一次性工具(估计值)
   ```
-  G=2、缺省台数(gate 2、scene 4、battle 1)时每 zone 252 条(其中 C++ 6 条),全局 163 条。
-  - 不计入(接上时在常数表加一行):player-inbox(配置有 `CoreRedis` 段,代码还没建客户端)、guild(没有 K8s 清单)、client-rpc-router(不连 Redis)、
+  G=2、缺省台数(gate 2、scene 4、battle 1)时每 zone 252 条(其中 C++ 6 条),全局 301 条(2026-10-16 起含 guild 138 条;此前 163 条)。
+  - 不计入(接上时在常数表加一行):player-inbox(配置有 `CoreRedis` 段,代码还没建客户端)、client-rpc-router(不连 Redis)、
     login 的 PasswordAuth 失败配额池(K8s 不写该段,启用后每 login 副本 +4)、match 的 MatchRedis 与 chat 的 ChatRedis(在 redis-match-cluster 上)。
   - 契约测试钉住「表里每个 Go 服务 manifest 的 CPU limit ≤ G 核」:调大 CPU limit 会悄悄放大连接池,那时测试变红,逼着重算这一列(或给该服务显式 PoolSize,第 3 批)。
 - **取值**:规划档(Z=4,来自 MySQL 规划档)峰值 1635;`MAXCLIENTS=40000` 时 80% 水位 32000,按每 zone 252 条约能承载 124 个 zone,需要 40032 个 fd。

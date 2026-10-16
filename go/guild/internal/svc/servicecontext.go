@@ -123,6 +123,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	if err != nil {
 		panic(fmt.Errorf("failed to connect MySQL: %w", err))
 	}
+	// 池上限(config.MySQLConf.EffectivePool):不设时 database/sql 不限,多副本突发可以吃光 MySQL 的 max_connections;
+	// 部署脚本的 MySQL 连接总账按同一组值记账。
+	maxOpen, maxIdle := c.MySQL.EffectivePool()
+	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxIdle)
 	if err := db.Ping(); err != nil {
 		panic(fmt.Errorf("failed to ping MySQL: %w", err))
 	}
