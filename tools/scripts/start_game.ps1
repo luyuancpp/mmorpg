@@ -392,7 +392,7 @@ try {
     foreach ($node in @('gate','scene','battle')) {
         if (-not (Test-Path -LiteralPath (Join-Path $serverRoot "bin/$node.exe"))) { throw "缺少 bin/$node.exe。" }
     }
-    if (-not $ClientPath) { $ClientPath = Join-Path (Split-Path -Parent $serverRoot) 'tmp/showcase_player/mmorpg.exe' }
+    if (-not $ClientPath) { $ClientPath = Join-Path (Split-Path -Parent $serverRoot) 'mmorpg-client/Builds/showcase_player/mmorpg.exe' }
     $ClientPath = [IO.Path]::GetFullPath($ClientPath)
     if ($OpenClient -and -not (Test-Path -LiteralPath $ClientPath -PathType Leaf)) { throw "找不到游戏客户端：$ClientPath，可用 -ClientPath 指定。" }
     if (-not $env:LOGIN_DEV_PASSWORD_SHARED_SECRET) {
