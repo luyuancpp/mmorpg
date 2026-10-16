@@ -58,6 +58,9 @@ type Config struct {
 	// FriendSmoke 是 "friend-smoke" 模式的子开关(见 FriendSmokeConfig / friend_smoke_scenario.go)。
 	FriendSmoke FriendSmokeConfig `yaml:"friend_smoke"`
 
+	// MailSmoke 是 "mail-smoke" 模式的子开关(见 MailSmokeConfig / mail_smoke_scenario.go)。
+	MailSmoke MailSmokeConfig `yaml:"mail_smoke"`
+
 	// TeamSmoke 是 "team-smoke" 模式的子开关(见 TeamSmokeConfig / team_smoke_scenario.go)。
 	TeamSmoke TeamSmokeConfig `yaml:"team_smoke"`
 
@@ -351,6 +354,29 @@ type FriendSmokeConfig struct {
 	PushTimeoutMs int `yaml:"push_timeout_ms"`
 }
 
+// MailSmokeConfig 配置 "mail-smoke" 模式(docs/design/mail-system.md §10 ⑦)。
+//
+// 旁观者 O 登 zone_a;cross_zone=true 时收件人 R 登 zone_b(否则也登 zone_a)。客户端请求全部经 gate → client_rpc_router
+// (mail 只承诺路由服模式可达,D-12);发件经 gRPC 直连 MailAdmin(admin_addr),令牌取自环境变量 MMORPG_MAIL_ADMIN_TOKEN,不进 yaml。
+type MailSmokeConfig struct {
+	CrossZone bool `yaml:"cross_zone"`
+
+	// ZoneA 必须非 0:0 会被 server-list 自动选区顶掉,两个机器人可能落进同一个 zone,跨区推送的结论就不成立了。
+	ZoneA uint32 `yaml:"zone_a"`
+	// ZoneB 仅 cross_zone=true 时使用,必须非 0 且与 ZoneA 不同。
+	ZoneB uint32 `yaml:"zone_b"`
+
+	// AdminAddr 是 mail 的 gRPC 监听地址(host:port),缺省 127.0.0.1:50900。
+	// mail 是全局服务、只有一份,直接写地址,不走 etcd 发现、也不做 zone 端口位移(同 trade-smoke)。
+	AdminAddr string `yaml:"admin_addr"`
+
+	// RequestIntervalMs 是同一机器人相邻两个经 gate 的请求的最小间隔,缺省 1100(推导见 chat_smoke_scenario.go)。
+	RequestIntervalMs int `yaml:"request_interval_ms"`
+
+	// PushTimeoutMs 是等一条 NotifyMailEvent 的预算,缺省 10000。推送是**弱断言**:超时只打印 push_received=false,不算失败。
+	PushTimeoutMs int `yaml:"push_timeout_ms"`
+}
+
 func (c *TradeSmokeConfig) validate() error {
 	if c.ZoneA == 0 {
 		return fmt.Errorf("zone_a must be set (non-zero)")
@@ -366,6 +392,31 @@ func (c *TradeSmokeConfig) validate() error {
 	}
 	if c.RequestIntervalMs <= 0 {
 		return fmt.Errorf("request_interval_ms must be > 0 (got %d)", c.RequestIntervalMs)
+	}
+	if !c.CrossZone {
+		return nil
+	}
+	if c.ZoneB == 0 {
+		return fmt.Errorf("zone_b must be set (non-zero) when cross_zone is true")
+	}
+	if c.ZoneA == c.ZoneB {
+		return fmt.Errorf("zone_a and zone_b must differ when cross_zone is true (got %d)", c.ZoneA)
+	}
+	return nil
+}
+
+func (c *MailSmokeConfig) validate() error {
+	if c.ZoneA == 0 {
+		return fmt.Errorf("zone_a must be set (non-zero)")
+	}
+	if c.AdminAddr == "" {
+		return fmt.Errorf("admin_addr must be set")
+	}
+	if c.RequestIntervalMs <= 0 {
+		return fmt.Errorf("request_interval_ms must be > 0 (got %d)", c.RequestIntervalMs)
+	}
+	if c.PushTimeoutMs <= 0 {
+		return fmt.Errorf("push_timeout_ms must be > 0 (got %d)", c.PushTimeoutMs)
 	}
 	if !c.CrossZone {
 		return nil
@@ -621,6 +672,8 @@ func Load(path string) (*Config, error) {
 		// trade-smoke 缺省:trade 本地 gRPC 端口 50800;间隔 1100ms 适配 gate 默认限流档。
 		TradeSmoke:  TradeSmokeConfig{AdminAddr: "127.0.0.1:50800", RequestIntervalMs: 1100},
 		FriendSmoke: FriendSmokeConfig{RequestIntervalMs: 1100, PushTimeoutMs: 10000},
+		// mail-smoke 缺省:mail 本地 gRPC 端口 50900;间隔 / 推送预算同 friend-smoke。
+		MailSmoke: MailSmokeConfig{AdminAddr: "127.0.0.1:50900", RequestIntervalMs: 1100, PushTimeoutMs: 10000},
 		// travel-smoke 缺省:停留 35s,大于 login 断线租约 30s(见 TravelSmokeConfig.DwellSeconds)。
 		TravelSmoke: TravelSmokeConfig{DwellSeconds: 35},
 		// channel-smoke 缺省:等到达 20s(同节点切线毫秒级,留足余量);冷却验证最多等 60s(服务端缺省冷却 10s)。
@@ -665,10 +718,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "team-backfill-smoke", "travel-smoke", "friend-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "features-smoke":
+	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "team-backfill-smoke", "travel-smoke", "friend-smoke", "mail-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "features-smoke":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, team-backfill-smoke, travel-smoke, friend-smoke, channel-smoke, ordering-smoke, sync-smoke, or features-smoke)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, team-backfill-smoke, travel-smoke, friend-smoke, mail-smoke, channel-smoke, ordering-smoke, sync-smoke, or features-smoke)", c.Mode)
 	}
 	if c.AuthType == "satoken" && c.SaTokenAddr == "" {
 		return fmt.Errorf("satoken_addr must be set when auth_type is satoken")
@@ -696,6 +749,11 @@ func (c *Config) validate() error {
 	if c.Mode == "friend-smoke" {
 		if err := c.FriendSmoke.validate(); err != nil {
 			return fmt.Errorf("friend_smoke: %w", err)
+		}
+	}
+	if c.Mode == "mail-smoke" {
+		if err := c.MailSmoke.validate(); err != nil {
+			return fmt.Errorf("mail_smoke: %w", err)
 		}
 	}
 	if c.Mode == "team-backfill-smoke" {

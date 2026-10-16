@@ -385,6 +385,18 @@ $script:PlayerInboxAdminTokenSecretKey = "admin-token"
 $script:PlayerInboxAdminTokenEnv = "PLAYER_INBOX_ADMIN_TOKEN"
 # 由 Initialize-InjectedSecrets 解析(只在本次部署全局 Go 服务时)。
 $script:PlayerInboxAdminToken = ""
+# 邮件运维令牌(MailAdmin,docs/design/mail-system.md §2.3 / §7.2):守 SendPersonalMail / SendSystemMail,调用方放在 gRPC metadata 的
+# x-mail-admin-token。部署侧从环境变量 MMORPG_MAIL_ADMIN_TOKEN 读入 infra namespace 的 Secret mail-admin-auth(key token),经 secretKeyRef
+# 注入容器的**同名**变量 MMORPG_MAIL_ADMIN_TOKEN(go/mail/internal/config 的 AdminTokenEnv 写死这个名字;ConfigMap 一个字都不写)。
+# 未注入(任何档位)= 不建 Secret、不注入 env,MailAdmin 停用(fail-closed,启动横幅 mail_admin=disabled),不挡 infra-up;
+# 注入了:含空白、去空白后短于 32 字节(Go 侧 MinAdminTokenBytes,短了被静默当成未配置)或与其它口令相同,一律在写操作之前拒绝。
+# 轮换:Pod 模板带令牌指纹注解(manifest 里的占位由 Apply-OneGoSvc 替换),令牌一变模板就变,重跑 infra-up 自动滚动。
+# 与 player-inbox 同一套做法(Add-GoSvcSecretEnv + 指纹占位 + 未注入时 Deployment 之后删残留 Secret),不写 secretKeyRef optional。
+$script:MailAdminTokenSecretName = "mail-admin-auth"
+$script:MailAdminTokenSecretKey = "token"
+$script:MailAdminTokenEnv = "MMORPG_MAIL_ADMIN_TOKEN"
+# 由 Initialize-InjectedSecrets 解析(只在本次部署全局 Go 服务时)。
+$script:MailAdminToken = ""
 # 通用资产通道签名密钥(-AssetOps,见参数处说明)。每个调用方一个单键 Secret,键名统一 secret;环境变量名与
 # C++ asset_op_auth.cpp 的 kAssetOpCallerRules、go/guild 与 go/trade 的 svc.AssetOpSecretEnv 逐字一致。
 # 指纹注解(Get-InjectedSecretFingerprint,以 Secret 名做域分隔)同时写在调用方(guild / trade)与 scene 的 Pod 模板上:
@@ -731,6 +743,45 @@ function Initialize-InjectedSecrets {
 		}
 	}
 
+	# 邮件运维令牌(见 $script:MailAdminTokenSecretName 处的说明)。与上面 player-inbox 同一口径:只在本次部署全局 Go 服务时解析,
+	# 各档位都没有回落值 —— 未注入就是停用 MailAdmin(fail-closed),不挡 infra-up(先判空再调 Resolve-InjectedSecret:
+	# 后者在非 dev 档对未设置的变量直接 throw)。注入了:非 dev 档的占位 / 长度由 Resolve-InjectedSecret 查;
+	# dev 档它不查长度,这里统一再查一遍 —— go/mail 把去首尾空白后不足 32 字节的令牌**静默**当成未配置(config.ResolveAdminToken),
+	# 部署方以为开了、实际全拒,宁可在写操作之前拒绝。PowerShell 的 .Length 是 UTF-16 码元数 ≤ UTF-8 字节数,这里过了 Go 侧必过。
+	# 报错只点环境变量名,不回显值。
+	$script:MailAdminToken = ""
+	if (Test-GlobalGoSvcDeployed) {
+		if ([string]::IsNullOrWhiteSpace([System.Environment]::GetEnvironmentVariable($script:MailAdminTokenEnv))) {
+			Write-Host "mail: MMORPG_MAIL_ADMIN_TOKEN unset (ReleaseProfile=$ReleaseProfile); MailAdmin stays disabled (fail-closed), no Secret is created."
+		}
+		else {
+			$script:MailAdminToken = Resolve-InjectedSecret -EnvName $script:MailAdminTokenEnv `
+				-DevFallback "" -ReleaseProfile $ReleaseProfile -Purpose "邮件运维令牌(MailAdmin / x-mail-admin-token)" -MinLength 32
+			if ($script:MailAdminToken -match '\s') {
+				throw "环境变量 MMORPG_MAIL_ADMIN_TOKEN 含空白字符,拒绝部署(值不回显):Secret 原样进容器,运维工具按字节比对 metadata,首尾空白只会制造对不上的令牌。"
+			}
+			if ($script:MailAdminToken.Length -lt 32) {
+				throw "MMORPG_MAIL_ADMIN_TOKEN 长度 $($script:MailAdminToken.Length) < 32:go/mail 把不足 32 字节的令牌当作未配置(config.MinAdminTokenBytes),MailAdmin 会静默停用。"
+			}
+			foreach ($other in @(
+				@{ Env = 'MMORPG_GATE_TOKEN_SECRET'; Value = $script:GateTokenSecret }
+				@{ Env = 'MMORPG_INTERNAL_AUTH_SECRET'; Value = $script:InternalAuthSecret }
+				@{ Env = 'MMORPG_MYSQL_PASSWORD'; Value = $script:MysqlPassword }
+				@{ Env = 'MMORPG_REDIS_PASSWORD'; Value = $script:RedisPassword }
+				@{ Env = 'MMORPG_GATEWAY_DB_PASSWORD'; Value = $script:GatewayDbPassword }
+				@{ Env = 'MMORPG_GATEWAY_ADMIN_API_KEY'; Value = $script:GatewayAdminApiKey }
+				@{ Env = 'MMORPG_PLAYER_INBOX_ADMIN_TOKEN'; Value = $script:PlayerInboxAdminToken }
+				@{ Env = 'MMORPG_LOGIN_QUEUE_TOKEN_SECRET'; Value = $script:LoginQueueTokenSecret }
+				@{ Env = 'MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET'; Value = $script:LoginDevPasswordSecret }
+				@{ Env = 'MMORPG_BATTLE_TOKEN_SECRET'; Value = [System.Environment]::GetEnvironmentVariable('MMORPG_BATTLE_TOKEN_SECRET') }
+			)) {
+				if (-not [string]::IsNullOrEmpty($other.Value) -and $script:MailAdminToken -ceq $other.Value) {
+					throw "MMORPG_MAIL_ADMIN_TOKEN 必须与 $($other.Env) 不同:运维令牌不得跨用途复用,泄露一处就等于两处同时失守。"
+				}
+			}
+		}
+	}
+
 	# 通用资产通道签名密钥(-AssetOps on,见参数处说明)。各档位都没有回落值:同一把密钥要在 infra-up(guild / trade 签名)与每一次
 	# zone-up(scene 验签)之间保持同值,生成器替运维随机出一个值只会让两次运行对不上。本机 dev 的随机值(lib/assetop_dev_secret.ps1)
 	# 只给本机进程用,部署链不读它。报错只点环境变量名,不回显值。
@@ -754,6 +805,7 @@ function Initialize-InjectedSecrets {
 			@{ Env = 'MMORPG_GATEWAY_DB_PASSWORD'; Value = $script:GatewayDbPassword }
 			@{ Env = 'MMORPG_GATEWAY_ADMIN_API_KEY'; Value = $script:GatewayAdminApiKey }
 			@{ Env = 'MMORPG_PLAYER_INBOX_ADMIN_TOKEN'; Value = $script:PlayerInboxAdminToken }
+			@{ Env = 'MMORPG_MAIL_ADMIN_TOKEN'; Value = $script:MailAdminToken }
 			@{ Env = 'MMORPG_LOGIN_QUEUE_TOKEN_SECRET'; Value = $script:LoginQueueTokenSecret }
 			@{ Env = 'MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET'; Value = $script:LoginDevPasswordSecret }
 			@{ Env = 'MMORPG_BATTLE_TOKEN_SECRET'; Value = [System.Environment]::GetEnvironmentVariable('MMORPG_BATTLE_TOKEN_SECRET') }
@@ -1437,7 +1489,8 @@ function Get-GrpcClientDeadlineBudgetViolations {
 	  LoginNodeService           ← go/login/etc/login.yaml(gate 直连模式)
 	  PlayerInboxNodeService     ← go/player_inbox/etc/player_inbox.yaml(scene 调 FetchItems / AckItems;
 	                                PlayerInboxAdmin 的方法同端口同 Timeout,C++ 不调用)
-	Battle / Etcd 没有 Go 服务端超时,不在表里;chat / friend / guild / team / trade 不在 C++ 节点白名单里,只经路由服到达。
+	Battle / Etcd 没有 Go 服务端超时,不在表里;chat / friend / guild / team / trade / mail 不在 C++ 节点白名单里,只经路由服到达
+	(mail 的 MailAdmin 是运维直连,同样没有 C++ 调用方)。
 	比对的是服务 yaml:scene-manager / match / 路由服 / login 的 go-svc ConfigMap 都从它镜像 Timeout
 	(New-GoSvcConfigMapYaml);data-service 的 ConfigMap 不写 Timeout(= go-zero 默认 2000)—— 生成物同样满足
 	这条不等式,由契约测试另外钉住(防镜像被改回常数、ConfigMap 键改名)。
@@ -1586,6 +1639,9 @@ function Assert-RouterForwardBudget {
 		FriendNodeService = 'go/friend/etc/friend.yaml'
 		GuildNodeService  = 'go/guild/etc/guild.yaml'
 		TradeNodeService  = 'go/trade/etc/trade.yaml'
+		# mail.yaml 的 Timeout 4000 + 1000 正好等于路由服 ForwardTimeoutMs 5000(go/mail 的 config.Validate 只收 [1000, 4000]);
+		# mail.yaml 不写 MethodTimeouts。
+		MailNodeService   = 'go/mail/etc/mail.yaml'
 	}
 
 	# 与 Assert-GrpcClientDeadlineBudget 同一条纪律:文件缺席就 throw,不替你猜一个超时。
@@ -1621,7 +1677,7 @@ function Assert-RouterForwardBudget {
 # ─────────────────────────────────────────────────────────────────
 # MySQL 连接总账(G2b;docs/PROGRESS.md 2026-10-12「落点多库连接拓扑核算」)
 # ─────────────────────────────────────────────────────────────────
-# 所有 zone 的 go/db、data_service、Java gateway 与全局的 friend、trade、player-inbox 共用 infra namespace 里同一台 MySQL。
+# 所有 zone 的 go/db、data_service、Java gateway 与全局的 friend、trade、player-inbox、guild、mail 共用 infra namespace 里同一台 MySQL。
 # 以前每个服务各写一句「要算进 max_connections」,没有任何地方把它们加起来。这里把这笔账写成可执行的函数:
 # 输入全部来自权威文件,写路径打印一行,契约测试钉住「规划峰值 ≤ max_connections」。
 # Get-MysqlConnectionPlan / Get-MysqlMaxConnectionsFromManifest / Get-ManifestDeploymentReplicas /
@@ -1686,8 +1742,8 @@ function Get-MysqlMaxConnectionsFromManifest {
 	读一份 manifest 里 Deployment 的副本数。文件缺席、或两格缩进的 replicas: 不是恰好出现一次即 throw。
 
 .DESCRIPTION
-	两格缩进 = Deployment 顶层 spec 下的那一行。总账用到的六份 manifest(go-svc 的 db / data-service / friend / trade /
-	player-inbox、java-svc 的 gateway)各只有一个 Deployment;以后某份里多出第二个带 replicas 的工作负载,这里会拒绝而不是随便取一个。
+	两格缩进 = Deployment 顶层 spec 下的那一行。总账用到的八份 manifest(go-svc 的 db / data-service / friend / trade /
+	player-inbox / guild / mail、java-svc 的 gateway)各只有一个 Deployment;以后某份里多出第二个带 replicas 的工作负载,这里会拒绝而不是随便取一个。
 #>
 function Get-ManifestDeploymentReplicas {
 	param(
@@ -1751,6 +1807,10 @@ function Get-MysqlConnectionLedgerInputs {
 		# guild ConfigMap 从同一个键镜像。
 		GuildReplicas         = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/guild.yaml'
 		GuildMaxOpen          = Get-AuthoritativeScalar -RelativePath 'go/guild/etc/guild.yaml' -KeyPath 'MySQL.MaxOpenConn'
+		# 邮件(docs/design/mail-system.md §7):独占库 mmorpg_mail 一个池,上限取服务 yaml 的 MySQL.MaxOpenConn,mail ConfigMap 从同一个键镜像。
+		# 加入后规划档峰值 1780 → 1860,超过旧的 max_connections 1800,同批把它调到 2100(manifests/infra/mysql.yaml 的说明)。
+		MailReplicas          = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/mail.yaml'
+		MailMaxOpen           = Get-AuthoritativeScalar -RelativePath 'go/mail/etc/mail.yaml' -KeyPath 'MySQL.MaxOpenConn'
 	}
 }
 
@@ -1764,9 +1824,9 @@ function Get-MysqlConnectionLedgerInputs {
 	  db 每实例 = DbHomeMaxOpen + E_z × DbZoneStoreMaxOpen + E_n × DbNonZoneStoreMaxOpen
 	  ds 每实例 = DsAuditStorePools × DsAuditMaxOpen + DsPlayerNameMaxOpen (+ DsRouteMaxOpen,F 为真时)
 	  每 zone   = 各自副本数 × (db、ds、gateway 每实例)之和
-	  全局      = friend、trade 与 player-inbox 的副本数 × 池上限
+	  全局      = friend、trade、player-inbox、guild 与 mail 的副本数 × 池上限
 	  稳态      = Z × 每 zone + 全局
-	  滚动余量  = R × (db + ds + gateway + friend + trade + player-inbox 每实例)
+	  滚动余量  = R × (db + ds + gateway + friend + trade + player-inbox + guild + mail 每实例)
 	  峰值      = 稳态 + 滚动余量 + 运维余量
 	纯函数,不读文件;输入不是正整数、形态参数越界即 throw(fail-closed:不替你猜一个连接数)。
 #>
@@ -1784,7 +1844,7 @@ function Get-MysqlConnectionLedger {
 	$required = @('MaxConnections', 'DbReplicas', 'DbHomeMaxOpen', 'DbZoneStoreMaxOpen', 'DbNonZoneStoreMaxOpen',
 		'DsReplicas', 'DsAuditStorePools', 'DsAuditMaxOpen', 'DsPlayerNameMaxOpen', 'DsRouteMaxOpen',
 		'GatewayReplicas', 'GatewayMaxPool', 'FriendReplicas', 'FriendMaxOpen', 'TradeReplicas', 'TradeMaxOpen',
-		'PlayerInboxReplicas', 'PlayerInboxMaxOpen', 'GuildReplicas', 'GuildMaxOpen')
+		'PlayerInboxReplicas', 'PlayerInboxMaxOpen', 'GuildReplicas', 'GuildMaxOpen', 'MailReplicas', 'MailMaxOpen')
 	$v = @{}
 	foreach ($key in $required) {
 		$n = 0
@@ -1803,13 +1863,13 @@ function Get-MysqlConnectionLedger {
 	$perZone = $v.DbReplicas * $dbPerInstance + $v.DsReplicas * $dsPerInstance + $v.GatewayReplicas * $gatewayPerInstance
 	# 变量名不用 $global:它是作用域修饰符的名字,读的人会以为在写全局作用域。
 	$globalPools = $v.FriendReplicas * $v.FriendMaxOpen + $v.TradeReplicas * $v.TradeMaxOpen + $v.PlayerInboxReplicas * $v.PlayerInboxMaxOpen +
-		$v.GuildReplicas * $v.GuildMaxOpen
+		$v.GuildReplicas * $v.GuildMaxOpen + $v.MailReplicas * $v.MailMaxOpen
 	$steady = $ZoneCount * $perZone + $globalPools
-	# 一个 zone 的三个 Deployment 与三个全局 Deployment 各多 RolloutExtraPodsPerDeployment 个实例
+	# 一个 zone 的三个 Deployment 与五个全局 Deployment(friend / trade / player-inbox / guild / mail)各多 RolloutExtraPodsPerDeployment 个实例
 	# (maxSurge 1 的新 Pod + 仍在优雅退出的旧 Pod;K8s 默认 25% 在 2 副本时 maxSurge 也是 1)。
 	# all-up 不带 -WaitReady 时各 zone 的滚动会重叠,不在这个余量里。
 	$surge = $RolloutExtraPodsPerDeployment * ($dbPerInstance + $dsPerInstance + $gatewayPerInstance + $v.FriendMaxOpen + $v.TradeMaxOpen + $v.PlayerInboxMaxOpen +
-		$v.GuildMaxOpen)
+		$v.GuildMaxOpen + $v.MailMaxOpen)
 	$peak = $steady + $surge + $OpsReserve
 	return [ordered]@{
 		DbPerInstance = $dbPerInstance; DsPerInstance = $dsPerInstance; GatewayPerInstance = $gatewayPerInstance
@@ -2140,6 +2200,9 @@ function Get-RedisConnectionLedgerInputs {
 		# 与落地恢复摘要专用池(servicecontext.go playerSyncRedisPoolSize = 4),记在 Fixed;Pub/Sub:落地唤醒订阅 assetop:wake(AssetOp.Wake
 		# 缺省开;K8s 上资产通道默认关时不订阅,按开计,偏保守)。三个池在 K8s 上都指向共享 Redis。
 		[ordered]@{ Name = 'guild'; Scope = 'global'; Manifest = "$goSvc/guild.yaml"; GoPools = 3; GoMaxProcs = $g; PubSub = 1; Fixed = 8 }
+		# mail:go/mail/internal/svc/servicecontext.go NewServiceContext 的 redis.NewRedis(go-zero,只读 player:session:{id},推送前找收件人
+		# 所在 gate);没有私有 key、没有 Pub/Sub。
+		[ordered]@{ Name = 'mail'; Scope = 'global'; Manifest = "$goSvc/mail.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
 	)
 	foreach ($client in $clients) {
 		$client['Replicas'] = Get-ManifestDeploymentReplicas -RelativePath $client.Manifest -LedgerName $ledgerName
@@ -2777,6 +2840,14 @@ $GoSvcCatalogue = @{
 	# 独占库 mmorpg_guild(D-14):库由 infra-up 的 mysql-init-sql(deploy/mysql-init/00_init_zone_dbs.sql)预建;
 	# 表由 MigrateJob 登记的 guild-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
 	guild           = @{ ConfigMap = "go-svc-guild-config";           Manifest = "guild.yaml";           Port = 50300; ConfigFlag = "-f";              ConfigFile = "guild.yaml";                    ImageName = "mmorpg-guild"; Global = $true; MigrateJob = "guild-migrate.yaml" }
+	# 邮件 mail(docs/design/mail-system.md;M1d,2026-10-16):邮件按全局唯一的 player_id / 号段 id 存,是全局池(Global),infra namespace 一份。
+	# 客户端只经 gate → client-rpc-router 可达(路由服按 MailNodeService.rpc/ 前缀发现,mail 的 go-zero Etcd.Key 留空,D-13);
+	# `-GateRouterMode 0` 时部署得起来但玩家够不着(与 chat / friend / trade 同口径)。MailAdmin(发件)由运维直连 Service mail:50900。
+	# 端口 50900 / metrics 9240 与 go/mail/etc/mail.yaml、go_services.ps1 一致;ImageName 与 go_svc_image.ps1 的 mail 条目一致。
+	# 独占库 mmorpg_mail(D-14):库由 infra-up 的 mysql-init-sql(deploy/mysql-init/00_init_zone_dbs.sql)预建;
+	# 表由 MigrateJob 登记的 mail-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
+	# 运维令牌只经 Secret mail-admin-auth 进容器(见 $script:MailAdminTokenSecretName 处的说明)。
+	mail            = @{ ConfigMap = "go-svc-mail-config";            Manifest = "mail.yaml";            Port = 50900; ConfigFlag = "-f";              ConfigFile = "mail.yaml";                     ImageName = "mmorpg-mail"; Global = $true; MigrateJob = "mail-migrate.yaml" }
 }
 
 # 目录里非全局(= 随 zone 部署)的服务名。两处 zone 循环共用,避免各写一遍过滤条件。
@@ -5597,6 +5668,79 @@ function New-GoSvcConfigMapYaml {
 		}
 	}
 
+	# 邮件 mail 的契约值(docs/design/mail-system.md §7.2 ③ / §7.3):键名与 go/mail/etc/mail.yaml、go/mail/internal/config 三处逐字一致,
+	# 值只从服务 yaml 取。与 trade / friend 同理**只在生成 mail 自己的 ConfigMap 时求值**。Sweep 是**顶层**段(不是 Mail.Sweep)。
+	$mailYaml                      = 'go/mail/etc/mail.yaml'
+	$mailName                      = ''
+	$mailTimeout                   = ''
+	$mailLeaseTTL                  = ''
+	$mailMysqlDBName               = ''
+	$mailMysqlMaxOpenConn          = ''
+	$mailMysqlMaxIdleConn          = ''
+	$mailDataServiceTimeout        = ''
+	$mailIdSegmentOptionalLines    = ''
+	$mailMaxPersonalMailsPerPlayer = ''
+	$mailMaxActiveSystemMails      = ''
+	$mailMaxPersonalMailTtlDays    = ''
+	$mailMaxSystemMailTtlDays      = ''
+	$mailAllowedCurrencyTypes      = ''
+	$mailSweepMode                 = ''
+	$mailSweepInterval             = ''
+	$mailSweepRetentionDays        = ''
+	$mailSweepBatchLimit           = ''
+	# 非 dev 档的固定值:Mode = pro(M-9:生产禁附件与 ROBOT 发件方都靠它,不能带着造数能力上线);
+	# AutoMigrate = false(表只由 mail-migrate Job 建,启动路径只跑一次只读 plan,不净即拒启并打印补救命令)。
+	$mailMode                      = 'pro'
+	$mailAutoMigrate               = 'false'
+	if ($SvcName -eq 'mail') {
+		$mailName                      = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Name'
+		# zrpc 服务端超时:路由服 ForwardTimeoutMs ≥ 本值 + 1000 由写路径入口的 Assert-RouterForwardBudget 核对服务 yaml,这里镜像同一个值。
+		$mailTimeout                   = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Timeout'
+		$mailLeaseTTL                  = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'LeaseTTL'
+		# 库名同样取服务 yaml:D-14 规定本地与 K8s 同名(mmorpg_mail),Go 侧 config.Validate 断言它等于代码常量。
+		$mailMysqlDBName               = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'MySQL.DBName'
+		$mailMysqlMaxOpenConn          = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'MySQL.MaxOpenConn'
+		$mailMysqlMaxIdleConn          = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'MySQL.MaxIdleConn'
+		$mailDataServiceTimeout        = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'DataServiceRpc.Timeout'
+		$mailMaxPersonalMailsPerPlayer = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mail.MaxPersonalMailsPerPlayer'
+		$mailMaxActiveSystemMails      = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mail.MaxActiveSystemMails'
+		$mailMaxPersonalMailTtlDays    = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mail.MaxPersonalMailTtlDays'
+		$mailMaxSystemMailTtlDays      = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mail.MaxSystemMailTtlDays'
+		$mailAllowedCurrencyTypes      = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mail.AllowedCurrencyTypes'
+		# 只认非空流式列表:块式写法在扁平解析器里取到空串,写进 ConfigMap 就是 null,Go 侧 Validate 拒启 → CrashLoop。
+		if ($mailAllowedCurrencyTypes -notmatch '^\[\s*\d+(\s*,\s*\d+)*\s*\]$') {
+			throw "生成 mail ConfigMap 失败:$mailYaml 的 Mail.AllowedCurrencyTypes='$mailAllowedCurrencyTypes' 必须写成非空流式列表(如 [0, 1, 2])"
+		}
+		# Sweep 四个键必须全写:整段标了 optional,go-zero 不下钻整段缺失的 optional 嵌套结构、default 标签不回填,
+		# 漏写会让 Mode 变空串并被 Validate 拒(照 friend)。
+		$mailSweepMode                 = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Sweep.Mode'
+		$mailSweepInterval             = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Sweep.Interval'
+		$mailSweepRetentionDays        = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Sweep.RetentionDays'
+		$mailSweepBatchLimit           = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Sweep.BatchLimit'
+		# IdSegment 的 Enabled / FallbackToSnowflake 是部署决策,在模板里写死;Step / MinStep / MaxStep 是调参值,
+		# yaml 里有就逐字镜像,没有就整行不写、交给 shared/idsegment 的默认(照 trade)。
+		$mailIdSegmentOptional = New-Object System.Collections.Generic.List[string]
+		$mailYamlFull = Join-Path $RepoRoot ($mailYaml -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+		foreach ($mailKey in @('Step', 'MinStep', 'MaxStep')) {
+			$mailScalar = Get-YamlScalar -Path $mailYamlFull -KeyPath "IdSegment.$mailKey"
+			if ($mailScalar.Found -and -not [string]::IsNullOrWhiteSpace($mailScalar.Value)) {
+				$mailIdSegmentOptional.Add("  ${mailKey}: $($mailScalar.Value)")
+			}
+		}
+		$mailIdSegmentOptionalLines = $mailIdSegmentOptional -join "`n"
+		# 下面这些键的**值**由模板按部署形态写死(集群内地址 / 固定决策),但键本身必须在服务 yaml 里出现:
+		# go-zero 对写错的键静默忽略,模板与 Go 侧键名一旦分家,现象是「集群里用的是默认值」而没有任何报错(照 player-inbox)。
+		foreach ($mailKey in @('ListenOn', 'ZoneId', 'MetricsListenAddr', 'KillSwitchPrefix', 'Etcd.Key', 'Redis.Host', 'Redis.Type', 'Redis.Key',
+				'MySQL.Host', 'Kafka.Brokers', 'DataServiceRpc.Etcd.Key', 'DataServiceRpc.NonBlock', 'IdSegment.Enabled',
+				'IdSegment.FallbackToSnowflake', 'Middlewares.StatConf.IgnoreContentMethods')) {
+			[void](Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath $mailKey)
+		}
+		if ($ReleaseProfile -eq 'dev') {
+			$mailMode        = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Mode'
+			$mailAutoMigrate = Get-AuthoritativeScalar -RelativePath $mailYaml -KeyPath 'Schema.AutoMigrate'
+		}
+	}
+
 	$mysqlUser = $script:MysqlUser
 	$mysqlPassword = $script:MysqlPassword
 	$redisPassword = $script:RedisPassword
@@ -6720,6 +6864,104 @@ ${playerInboxEnqueueTypesLines}
 ${playerInboxLoopLines}
 "@
 		}
+		"mail" {
+@"
+Name: ${mailName}
+ListenOn: 0.0.0.0:50900
+# zrpc 服务端超时(毫秒),必须 <= 路由服 ForwardTimeoutMs - 1000(契约 §3,写路径入口的 Assert-RouterForwardBudget 核对);
+# mail 的 config.Validate 只收 [1000, 4000]。
+Timeout: ${mailTimeout}
+# go-zero Mode(M-9):只有 dev / test 允许发带附件的邮件、接受 sender_kind=ROBOT。dev 档 = go/mail/etc/mail.yaml 的值;
+# staging/prod 固定 pro(见生成器注释),不能带着造数能力上线。显式写出,不赌 go-zero 缺省值。
+Mode: ${mailMode}
+# 全局池:ZoneId 只影响 etcd 注册路径(MailNodeService.rpc/zone/<z>/...),业务代码禁止读它做分支;取命令行 -ZoneId
+# (Apply-GlobalGoSvcManifests),与 trade / friend 同口径;Go 侧 Validate 拒 0。
+ZoneId: ${CurrentZoneId}
+# MailAdmin 的请求体(收件人 + 正文)不整包进 stat 日志;与 go/mail/etc/mail.yaml 同一段,两边必须一致(契约 §7)。只屏蔽内容,不关 Stat。
+Middlewares:
+  StatConf:
+    IgnoreContentMethods:
+      - /mailpb.MailAdmin/SendPersonalMail
+      - /mailpb.MailAdmin/SendSystemMail
+# Etcd 段 **Key 显式留空**(port-decisions D-13):mail 按 C++ 约定注册 MailNodeService.rpc/zone/<z>/...(go/shared/noderegistry),
+# 路由服按这个前缀发现它;没有任何 Go 调用方经 go-zero 发现键找 mail(config.Validate 拒非空 Key)。
+# ⚠ 不能整行省略 Key:go-zero 的 EtcdConf.Key 不是 optional,缺了 conf.MustLoad 直接 Fatal,Pod 会 CrashLoop。
+Etcd:
+  Hosts:
+    - "etcd.${InfraNamespace}:2379"
+  Key: ""
+# 共享 Redis(只读跨运行时契约 key player:session:{id},推送前找收件人所在 gate;mail 没有私有 key)。
+# 这是 zrpc.RpcServerConf 自带的 Redis(RedisKeyConf)段:Key 字段不是 optional,Redis 段存在时必须显式写空串;
+# 不写 DB(契约 §4,契约 key 由多个运行时共写,DB 号全仓一致 = 默认 0);config.Validate 拒 Type: cluster。
+# Pass 与 friend / chat / match 等共享库段同批写:redis-auth 注入的密码非空时 infra/redis.yaml 才加 --requirepass,
+# 本地 mail.yaml 没有 Pass 不代表这里可以省(省了全线 NOAUTH)。
+Redis:
+  Host: redis.${InfraNamespace}:6379
+  Type: node
+  Pass: "${redisPassword}"
+  Key: ""
+# 租约 TTL(秒)= 崩溃后路由服仍可能把请求打到死实例的最长窗口(PickRandom 不看连接状态)。
+LeaseTTL: ${mailLeaseTTL}
+# 与 manifests/go-svc/mail.yaml 的 metrics 容器端口 / prometheus.io/port 注解一致(9240 = mail,契约 §7)。
+# 告警规则见 deploy/k8s/mail-alerts.yaml(sweep 每个副本都跑,规则一律 max() / sum() 聚合)。
+MetricsListenAddr: ":9240"
+# 留空 = shared/killswitch 的 DefaultPrefix(/mmorpg/killswitch/),与其它服务共用同一棵规则树。
+KillSwitchPrefix: ""
+# 独占库(D-14):库 ${mailMysqlDBName} 由 infra-up 的 mysql-init-sql(原样带入 deploy/mysql-init/00_init_zone_dbs.sql)预建并 GRANT 给 appuser;
+# 账号沿用 db / data-service / trade 同一组注入值(MMORPG_MYSQL_USER / MMORPG_MYSQL_PASSWORD,dev 回落 root)。
+# MaxOpenConn × Deployment 副本数(2)已算进 MySQL 连接总账(Get-MysqlConnectionLedgerInputs 的 MailReplicas / MailMaxOpen)。
+MySQL:
+  Host: "mysql.${InfraNamespace}:3306"
+  User: "${mysqlUser}"
+  Password: "${mysqlPassword}"
+  DBName: "${mailMysqlDBName}"
+  MaxOpenConn: ${mailMysqlMaxOpenConn}
+  MaxIdleConn: ${mailMysqlMaxIdleConn}
+# 建表策略(D-14 第 4 条):dev = 服务 yaml 的值(启动期 schemamigrate.Up,GET_LOCK 保护多副本);
+# staging/prod = false:表只由 mail-migrate Job 建,启动路径只跑只读 plan,不净即拒启并打印补救命令。
+Schema:
+  AutoMigrate: ${mailAutoMigrate}
+# S2C 推送(NotifyMailEvent → gate-cmd_g<N>,至多一次;红点真相是 ListMails 的 unread_count)的 broker 地址。
+# 命令 topic 的分区数 / 代号由 Apply-OneGoSvc 注入的 KAFKA_COMMAND_TOPIC_* 环境变量给出,与 C++ gate 同一份契约。
+Kafka:
+  Brokers:
+    - "kafka.${InfraNamespace}:9092"
+# mail_id / sys_mail_id 号段(AllocateIdSegment,biz_tag = mail,已进本脚本 data-service ConfigMap 的 IdSegment.BootstrapTags)。
+# data-service 按 zone namespace 各部署一份,但 go-zero 发现键 dataservice.rpc 不分 zone、全局库只有一份,发现到哪个实例应答都一样。
+# 这是 mail 作为**调用方**的发现键,不是 D-13 禁止的「全局服务自己的 go-zero 注册 Key」(同 trade)。
+DataServiceRpc:
+  Etcd:
+    Hosts:
+      - "etcd.${InfraNamespace}:2379"
+    Key: dataservice.rpc
+  Timeout: ${mailDataServiceTimeout}
+  NonBlock: true
+  Middlewares:
+    Breaker: false
+# Enabled 必须**显式写 true**(go-zero 对缺席的 optional 块不填 default,go/mail 的 config.Validate 拒绝 false);
+# FallbackToSnowflake 固定 false:mail 没有 snowflake 回退,号段失败即本次发件回 kServiceUnavailable。
+# Step / MinStep / MaxStep 从服务 yaml 逐字镜像,缺席则整行不写。
+IdSegment:
+  Enabled: true
+${mailIdSegmentOptionalLines}
+  FallbackToSnowflake: false
+# 邮件业务硬上限,全部取自服务 yaml(AllowedCurrencyTypes 没有默认值,漏写即拒启;权威来源是 C++ currency.h,加货币类型时同批改服务 yaml)。
+Mail:
+  MaxPersonalMailsPerPlayer: ${mailMaxPersonalMailsPerPlayer}
+  MaxActiveSystemMails: ${mailMaxActiveSystemMails}
+  MaxPersonalMailTtlDays: ${mailMaxPersonalMailTtlDays}
+  MaxSystemMailTtlDays: ${mailMaxSystemMailTtlDays}
+  AllowedCurrencyTypes: ${mailAllowedCurrencyTypes}
+# 过期邮件物理清理(顶层段,每个副本都跑,不选主)。四个键必须全写:整段 optional,缺段时 go-zero 不回填 default,Validate 拒启。
+# Mode 镜像服务 yaml(仓内默认 report_only:只出指标不删);新环境先看 mail_sweep_candidate_rows 再改 delete。
+Sweep:
+  Mode: ${mailSweepMode}
+  Interval: ${mailSweepInterval}
+  RetentionDays: ${mailSweepRetentionDays}
+  BatchLimit: ${mailSweepBatchLimit}
+# 运维令牌不在这里:只经 Secret mail-admin-auth 注入环境变量(Apply-OneGoSvc);变量缺失 = MailAdmin 停用。
+"@
+		}
 		default {
 			throw "Unknown Go service: $SvcName"
 		}
@@ -7489,6 +7731,28 @@ function Apply-OneGoSvc {
 		}
 	}
 
+	# mail 运维令牌(见 $script:MailAdminTokenSecretName 处的说明):这里只做本地渲染;Secret 的写入放在下面建表门禁之后、Deployment 之前
+	# (与 player-inbox 的顺序不同,理由见那一处)。
+	#   - 令牌已解析:env MMORPG_MAIL_ADMIN_TOKEN 经 secretKeyRef 注入(不写 optional,Secret 缺失的 Pod 卡在 CreateContainerConfigError,
+	#     而不是带着空令牌起来),Pod 模板上的令牌指纹占位换成指纹,令牌一变即滚动;
+	#   - 未解析:不注入 env、不建 Secret,指纹写 disabled,Go 侧读到空串即停用 MailAdmin(横幅 mail_admin=disabled)。
+	# 指纹走 manifest 里的占位而不是 Add-PodTemplateAnnotation:mail.yaml 的 Pod 模板已有 prometheus 注解段。
+	# 条件里服务名判断留在 -and 左边(理由同上:k8s_migrate_gate.tests.ps1 按 AST 单独抽出本函数跑别的服务,右边变量在那里未定义)。
+	$isMailAdmin = ($SvcName -eq 'mail' -and -not [string]::IsNullOrEmpty($script:MailAdminToken))
+	if ($SvcName -eq 'mail') {
+		$mailAdminTokenHash = 'disabled'
+		if ($isMailAdmin) {
+			$manifestContent = Add-GoSvcSecretEnv -SvcName $SvcName -ManifestContent $manifestContent `
+				-EnvName $script:MailAdminTokenEnv `
+				-SecretName $script:MailAdminTokenSecretName -SecretKey $script:MailAdminTokenSecretKey
+			$mailAdminTokenHash = Get-InjectedSecretFingerprint -SecretName $script:MailAdminTokenSecretName -Value $script:MailAdminToken
+		}
+		if (-not $manifestContent.Contains('PLACEHOLDER_MAIL_ADMIN_TOKEN_HASH')) {
+			throw "服务 $SvcName 的 manifest 缺少令牌指纹占位 PLACEHOLDER_MAIL_ADMIN_TOKEN_HASH(Pod 模板注解 mmorpg.io/mail-admin-token-hash):没有它,只轮换令牌时 Pod 不会滚动,旧令牌一直有效。"
+		}
+		$manifestContent = $manifestContent.Replace('PLACEHOLDER_MAIL_ADMIN_TOKEN_HASH', $mailAdminTokenHash)
+	}
+
 	# 通用资产通道(-AssetOps,见参数处说明):guild / trade 各自只拿自己那把签名密钥。先本地渲染,再建 Secret(与上面 player-inbox 同一顺序)。
 	#   - on:env 经 secretKeyRef 注入(不写 optional),Pod 模板上的指纹占位换成指纹;
 	#   - off:不注入、不建 Secret,指纹占位整行删掉(Pod 模板与引入开关之前逐字相同,不触发滚动)。
@@ -7538,6 +7802,15 @@ function Apply-OneGoSvc {
 		Apply-GoSvcMigrateJob -SvcName $SvcName -Namespace $Namespace -SvcImage $svcImage -PullPolicy $svcPullPolicy
 	}
 
+	# mail 令牌 Secret 写在建表门禁之后、Deployment 之前:门禁失败(Job 没 Complete 即 throw)时 Secret 保持旧值。
+	# 反过来先写 Secret 的话,轮换令牌那次只要建表失败,Deployment(带新指纹的 Pod 模板)没 apply,旧 Pod 却会在
+	# OOM / 驱逐 / 探针重启时从 Secret 读到新令牌 —— 两个副本令牌不一致,运维经 Service 直连随机拿到 PermissionDenied,
+	# 下一次成功的 infra-up 之前都不会滚动收敛。渲染(注入 env、算指纹、核对占位)在上面、任何写操作之前已经完成。
+	if ($isMailAdmin) {
+		Apply-InjectedSecret -Namespace $Namespace -Name $script:MailAdminTokenSecretName `
+			-Key $script:MailAdminTokenSecretKey -Value $script:MailAdminToken -AppLabel $SvcName
+	}
+
 	if ($null -ne $grpcPolicyYaml) {
 		Invoke-KubectlWithInputFile -Args @("apply", "-n", $Namespace) -InputContent $grpcPolicyYaml
 	}
@@ -7554,6 +7827,11 @@ function Apply-OneGoSvc {
 		# 不粘滞 —— 上次带口令部署过、这次没带,运维接口随新 Pod 一起停用。
 		Invoke-Kubectl -Args @("delete", "secret", $script:PlayerInboxAdminTokenSecretName, "-n", $Namespace, "--ignore-not-found")
 	}
+	if ($SvcName -eq 'mail' -and -not $isMailAdmin) {
+		# 本次未注入令牌:新 Deployment 不再引用 Secret,删掉残留(必须在 Deployment apply 之后,否则新 Pod 卡 CreateContainerConfigError);
+		# 不粘滞 —— 上次带令牌部署过、这次没带,MailAdmin 随新 Pod 一起停用。
+		Invoke-Kubectl -Args @("delete", "secret", $script:MailAdminTokenSecretName, "-n", $Namespace, "--ignore-not-found")
+	}
 	if ($isAssetOpCaller -and -not $script:AssetOpsOn) {
 		# 资产通道关着:新 Deployment 不再引用签名密钥,删掉残留(放在 Deployment apply 之后,理由同上;不粘滞)。
 		Invoke-Kubectl -Args @("delete", "secret", $script:AssetOpCallers[$SvcName].SecretName, "-n", $Namespace, "--ignore-not-found")
@@ -7566,8 +7844,9 @@ function Apply-OneGoSvc {
 	Write-Host "  [applied] $SvcName -> $svcImage (port $($info.Port) pullPolicy=$svcPullPolicy)"
 }
 
-# 全局池 Go 服务(目录里 Global = $true,目前是 match / chat / client-rpc-router / trade / friend / player-inbox):部署到 $InfraNamespace 一次。
-# trade / friend / player-inbox 各带一个 MigrateJob(共三个 Job):trade-migrate / friend-migrate / player-inbox-migrate 在 Apply-OneGoSvc 里先于各自的 Deployment 跑
+# 全局池 Go 服务(目录里 Global = $true,目前是 match / chat / client-rpc-router / trade / friend / player-inbox / guild / mail):部署到 $InfraNamespace 一次。
+# trade / friend / player-inbox / guild / mail 各带一个 MigrateJob(共五个 Job):trade-migrate / friend-migrate / player-inbox-migrate /
+# guild-migrate / mail-migrate 在 Apply-OneGoSvc 里先于各自的 Deployment 跑
 # (staging/prod 恒等 Complete,dev 仅 -WaitReady 下等;D-14 第 4 条)。
 # 由 Apply-Infra 调用,所以 infra-up / all-up 都会带上;zone-up 不碰它。
 function Apply-GlobalGoSvcManifests {
@@ -8327,11 +8606,13 @@ function Get-InfraZoneIds {
 	仓库里 00_init_zone_dbs.sql 顺带建的 testdb 只服务本地 compose 的
 	go/data_service/etc/data_service.yaml,在 K8s 上是一个没人用的空库,无害。
 
-	新全局服务的独占库(port-decisions D-14 第 5 条,目前是聚宝斋 trade 的 mmorpg_trade、好友 friend 的 mmorpg_friend 与玩家收件箱
-	player-inbox 的 mmorpg_player_inbox)**只登记在 00_init_zone_dbs.sql**,由上面的循环原样带进本 ConfigMap;这里**不要**再生成第二份建库 sql。
+	新全局服务的独占库(port-decisions D-14 第 5 条,目前是聚宝斋 trade 的 mmorpg_trade、好友 friend 的 mmorpg_friend、玩家收件箱
+	player-inbox 的 mmorpg_player_inbox、帮会 guild 的 mmorpg_guild 与邮件 mail 的 mmorpg_mail)**只登记在 00_init_zone_dbs.sql**,
+	由上面的循环原样带进本 ConfigMap;这里**不要**再生成第二份建库 sql。
 	02_k8s_global_db.sql 是因为本地(testdb)与 K8s(mmorpg_global)库名不同才单独生成的,不是范式。
 	表不在 initdb 里建:trade 的表由 manifests/go-svc/trade-migrate.yaml、friend 的表由 manifests/go-svc/friend-migrate.yaml、
-	player-inbox 的表由 manifests/go-svc/player-inbox-migrate.yaml 这三个 Job 建(Apply-GoSvcMigrateJob)。
+	player-inbox 的表由 manifests/go-svc/player-inbox-migrate.yaml、guild 的表由 guild-migrate.yaml、mail 的表由 mail-migrate.yaml
+	这几个 Job 建(Apply-GoSvcMigrateJob)。
 
 	注意 initdb 只在数据目录为空的首次启动执行,PVC 已有数据时改 sql 不会重跑
 	(见 mysql.yaml 里 mysql-init 卷的注释)。
@@ -8807,8 +9088,9 @@ function Show-InfraStatus {
 	# `kubectl drain` 会挂在 etcd / kafka 上(kafka 的 PDB 是 minAvailable: 1,不允许自愿驱逐)。
 	# job:kafka-topic-init(审计 + 控制面命令 topic 预建)的 COMPLETIONS 0/1 = 分区契约没建成,
 	# scene 起来前必须先看它。
-	# job 一栏同样列出建表 Job trade-migrate / friend-migrate / player-inbox-migrate(D-14):失败须核对 status.conditions(Failed/FailureTarget),
-	# 看 `kubectl -n <infra> logs job/trade-migrate`(或 `job/friend-migrate`、`job/player-inbox-migrate`);删除前须确认该 Job UID 所属 Pod 均终态,ACTIVE=0 本身不代表安全。
+	# job 一栏同样列出建表 Job trade-migrate / friend-migrate / player-inbox-migrate / guild-migrate / mail-migrate(D-14):失败须核对
+	# status.conditions(Failed/FailureTarget),看 `kubectl -n <infra> logs job/trade-migrate`(或 `job/friend-migrate`、`job/player-inbox-migrate`、
+	# `job/guild-migrate`、`job/mail-migrate`);删除前须确认该 Job UID 所属 Pod 均终态,ACTIVE=0 本身不代表安全。
 	# cronjob:etcd-compact(etcd MVCC 压缩,P0-C)的 LAST SCHEDULE,加上 job 一栏里 etcd-compact-<时间戳> 的失败记录,
 	# 是目前唯一能看到压缩停了的地方(仓库里还没有 etcd 的抓取与告警);处置见 docs/ops/etcd-maintenance-runbook.md。
 	Invoke-Kubectl -Args @("get", "deploy,sts,po,pvc,pdb,job,cronjob,svc,cm", "-n", $InfraNamespace) -AllowFailure

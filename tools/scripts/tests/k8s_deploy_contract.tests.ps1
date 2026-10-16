@@ -2538,19 +2538,21 @@ Test-Case '自检:总账公式复现 2026-10-12 核算(Z=4 → 920、Z=2 → 500
             PlayerInboxReplicas = 2; PlayerInboxMaxOpen = 20
             # 2026-10-16 起又多了帮会(guild 上 K8s,池上限同批补上);同样不在当时的核算里。
             GuildReplicas = 2; GuildMaxOpen = 20
+            # 2026-10-16 邮件 mail 上 K8s(docs/design/mail-system.md §12.3);同样不在当时的核算里。
+            MailReplicas = 2; MailMaxOpen = 20
         }
     }
 
     # 当时的名义值:不算额外落点库(E_z = E_n = 0)、route store 不计(F = 0)、不含滚动余量与运维余量。
     # 每 zone = 2 × (db 60 + ds 35 + gateway 10) = 210;全局 = friend 2 × 20 + trade 2 × 20 = 80。
     # 收件箱(2 × 20 = 40)是后加的全局池:断言按「2026-10-12 的核算 + 40」比,历史那份核算本身仍逐项复现。
-    # 帮会(2 × 20 = 40)同理是 2026-10-16 后加的全局池,下面的断言一并加上。
-    $inboxGlobal = 2 * 20 + 2 * 20
+    # 帮会(2 × 20 = 40)同理是 2026-10-16 后加的全局池,下面的断言一并加上;邮件(2 × 20 = 40)同日加入,同样一并加上。
+    $inboxGlobal = 2 * 20 + 2 * 20 + 2 * 20
     $nominalShape = @{ ExtraZoneStores = 0; NonZoneStores = 0; RouteStoreDbFirst = $false; RolloutExtraPodsPerDeployment = 0; OpsReserve = 0 }
     foreach ($case in @(@{ Zones = 4; Steady = 920 }, @{ Zones = 2; Steady = 500 })) {
         $ledger = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) -ZoneCount $case.Zones @nominalShape
         Assert-Equal -Expected ('60/35/10/210/{0}' -f (80 + $inboxGlobal)) -Actual ('{0}/{1}/{2}/{3}/{4}' -f $ledger.DbPerInstance, $ledger.DsPerInstance, $ledger.GatewayPerInstance, $ledger.PerZone, $ledger.Global) -Because "Z=$($case.Zones):db / ds / gateway 每实例、每 zone、全局(friend + trade + 收件箱) 五项"
-        Assert-Equal -Expected ($case.Steady + $inboxGlobal) -Actual $ledger.Steady -Because "Z=$($case.Zones) 的稳态必须等于 2026-10-12 的核算加收件箱与帮会各 40"
+        Assert-Equal -Expected ($case.Steady + $inboxGlobal) -Actual $ledger.Steady -Because "Z=$($case.Zones) 的稳态必须等于 2026-10-12 的核算加收件箱、帮会、邮件各 40"
         Assert-Equal -Expected ($case.Steady + $inboxGlobal) -Actual $ledger.Peak -Because '不含滚动余量与运维余量时,峰值 = 稳态'
         Assert-Equal -Expected (500 - $case.Steady - $inboxGlobal) -Actual $ledger.Headroom -Because '余量 = max_connections − 峰值(当时 Z=2 恰好为 0,加上收件箱后两者都为负)'
     }
@@ -2564,20 +2566,20 @@ Test-Case '自检:总账公式复现 2026-10-12 核算(Z=4 → 920、Z=2 → 500
     $overLimit = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) @planShape
     Assert-True -Condition ($overLimit.Peak -gt 500 -and $overLimit.Headroom -lt 0) -Because ("规划档对旧上限 500 必须判超限,实际:{0}" -f (Format-MysqlConnectionLedger -Ledger $overLimit))
 
-    # 滚动口径:同一份输入,R=2 比 R=0 恰好多出 2 × 每实例之和(db 60 + ds 35 + gateway 10 + friend 20 + trade 20 + 收件箱 20 + 帮会 20 = 185)。
+    # 滚动口径:同一份输入,R=2 比 R=0 恰好多出 2 × 每实例之和(db 60 + ds 35 + gateway 10 + friend 20 + trade 20 + 收件箱 20 + 帮会 20 + 邮件 20 = 205)。
     # 多出来的是「实例」(maxSurge 的新 Pod + 仍在优雅退出、连接还没释放的旧 Pod),不乘副本数,也不乘 zone 数。
     $rolloutShape = @{ ZoneCount = 4; ExtraZoneStores = 0; NonZoneStores = 0; RouteStoreDbFirst = $false; OpsReserve = 0 }
     $withoutRollout = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) -RolloutExtraPodsPerDeployment 0 @rolloutShape
     $withRollout = Get-MysqlConnectionLedger -Inputs (& $newLegacyInputs) -RolloutExtraPodsPerDeployment 2 @rolloutShape
-    Assert-Equal -Expected (2 * 185) -Actual ($withRollout.Peak - $withoutRollout.Peak) -Because 'R=2 与 R=0 的峰值之差必须是 2 × (db + ds + gateway + friend + trade + 收件箱 + 帮会 每实例之和)'
-    Assert-Equal -Expected (2 * 185) -Actual $withRollout.RolloutSurge -Because '这个差值就是分项里的 RolloutSurge'
+    Assert-Equal -Expected (2 * 205) -Actual ($withRollout.Peak - $withoutRollout.Peak) -Because 'R=2 与 R=0 的峰值之差必须是 2 × (db + ds + gateway + friend + trade + 收件箱 + 帮会 + 邮件 每实例之和)'
+    Assert-Equal -Expected (2 * 205) -Actual $withRollout.RolloutSurge -Because '这个差值就是分项里的 RolloutSurge'
     Assert-Equal -Expected $withoutRollout.Steady -Actual $withRollout.Steady -Because '滚动余量不进稳态'
 
     # 逐项钉公式:副本数、池上限、形态参数各取互不相同的值,任何一项漏算、两个额外库旋钮接反、副本数错配,结果都对不上。
     #   db 每实例 = 60 + 2 × 7(zone 家族额外库)+ 1 × 11(非 zone 落点库)= 85
     #   ds 每实例 = 3 × 5 + 20 + 30(route store 按 db_first 计入)= 65
-    #   每 zone   = 2 × 85 + 3 × 65 + 4 × 10 = 405;全局 = 5 × 20 + 6 × 40 + 7 × 3(收件箱)+ 8 × 2(帮会)= 377;稳态 = 3 × 405 + 377 = 1592
-    #   滚动余量  = 1 × (85 + 65 + 10 + 20 + 40 + 3 + 2) = 225;峰值 = 1592 + 225 + 7 = 1824;余量 = 5000 − 1824 = 3176
+    #   每 zone   = 2 × 85 + 3 × 65 + 4 × 10 = 405;全局 = 5 × 20 + 6 × 40 + 7 × 3(收件箱)+ 8 × 2(帮会)+ 9 × 4(邮件)= 413;稳态 = 3 × 405 + 413 = 1628
+    #   滚动余量  = 1 × (85 + 65 + 10 + 20 + 40 + 3 + 2 + 4) = 229;峰值 = 1628 + 229 + 7 = 1864;余量 = 5000 − 1864 = 3136
     $distinctInputs = [ordered]@{
         MaxConnections = 5000
         DbReplicas = 2; DbHomeMaxOpen = 60; DbZoneStoreMaxOpen = 7; DbNonZoneStoreMaxOpen = 11
@@ -2586,9 +2588,10 @@ Test-Case '自检:总账公式复现 2026-10-12 核算(Z=4 → 920、Z=2 → 500
         FriendReplicas = 5; FriendMaxOpen = 20; TradeReplicas = 6; TradeMaxOpen = 40
         PlayerInboxReplicas = 7; PlayerInboxMaxOpen = 3
         GuildReplicas = 8; GuildMaxOpen = 2
+        MailReplicas = 9; MailMaxOpen = 4
     }
     $distinct = Get-MysqlConnectionLedger -Inputs $distinctInputs -ZoneCount 3 -ExtraZoneStores 2 -NonZoneStores 1 -RouteStoreDbFirst $true -RolloutExtraPodsPerDeployment 1 -OpsReserve 7
-    Assert-Equal -Expected '85/65/10/405/377/1592/225/7/1824/5000/3176' -Actual ('{0}/{1}/{2}/{3}/{4}/{5}/{6}/{7}/{8}/{9}/{10}' -f $distinct.DbPerInstance, $distinct.DsPerInstance, $distinct.GatewayPerInstance, $distinct.PerZone, $distinct.Global, $distinct.Steady, $distinct.RolloutSurge, $distinct.OpsReserve, $distinct.Peak, $distinct.MaxConnections, $distinct.Headroom) -Because '分项依次是 db / ds / gateway 每实例、每 zone、全局、稳态、滚动余量、运维余量、峰值、上限、余量'
+    Assert-Equal -Expected '85/65/10/405/413/1628/229/7/1864/5000/3136' -Actual ('{0}/{1}/{2}/{3}/{4}/{5}/{6}/{7}/{8}/{9}/{10}' -f $distinct.DbPerInstance, $distinct.DsPerInstance, $distinct.GatewayPerInstance, $distinct.PerZone, $distinct.Global, $distinct.Steady, $distinct.RolloutSurge, $distinct.OpsReserve, $distinct.Peak, $distinct.MaxConnections, $distinct.Headroom) -Because '分项依次是 db / ds / gateway 每实例、每 zone、全局、稳态、滚动余量、运维余量、峰值、上限、余量'
 
     # 输入非法一律 throw 并点名是哪个键(fail-closed:不能拿一个猜出来的连接数去和上限比)。
     $missingKey = & $newLegacyInputs
@@ -2615,7 +2618,7 @@ Test-Case '自检:总账公式复现 2026-10-12 核算(Z=4 → 920、Z=2 → 500
     Assert-Match -Text $message -Pattern 'RolloutExtraPodsPerDeployment=-1\b.*不能为负' -Because 'R 传 -1 必须 throw 并点名参数与值,不能把滚动余量算成负数去抵稳态'
 }
 
-Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、infra-up 四个:friend / trade / player-inbox / guild)' {
+Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、infra-up 五个:friend / trade / player-inbox / guild / mail)' {
     # 总账(Get-MysqlConnectionLedgerInputs)按服务逐个登记池上限。新增一个连这台 MySQL 的服务而不登记,它占的连接就不在账上,
     # 上面「峰值 ≤ max_connections」照样通过。这里把「谁在连」钉成名单:名单变了,先去总账加一项,再来改这里。
     $zoneExpected = @('go-svc-db-config', 'go-svc-data-service-config', 'java-svc-gateway-config' | Sort-Object) -join ','
@@ -2628,8 +2631,8 @@ Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、
     Assert-True -Condition (($infraArgs -contains '-DryRun') -and -not ($infraArgs -contains '-SkipGoSvc')) -Because '夹具前提:这次 infra-up 必须仍是 DryRun(不碰任何集群),且不再跳过 Go 服务'
     $infraRun = Invoke-DeployDryRun -Arguments $infraArgs -Env $BattleTestEnv
     Assert-Equal -Expected 0 -Actual $infraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($infraRun.Output)"
-    $infraExpected = @('go-svc-friend-config', 'go-svc-trade-config', 'go-svc-player-inbox-config', 'go-svc-guild-config' | Sort-Object) -join ','
-    Assert-Equal -Expected $infraExpected -Actual (@(Get-MysqlClientConfigMapNames -Output $infraRun.Output) -join ',') -Because 'infra-up 产物里连 MySQL 的 ConfigMap 必须恰好是 friend / trade / player-inbox 三个(总账的全局部分只算了它们)'
+    $infraExpected = @('go-svc-friend-config', 'go-svc-trade-config', 'go-svc-player-inbox-config', 'go-svc-guild-config', 'go-svc-mail-config' | Sort-Object) -join ','
+    Assert-Equal -Expected $infraExpected -Actual (@(Get-MysqlClientConfigMapNames -Output $infraRun.Output) -join ',') -Because 'infra-up 产物里连 MySQL 的 ConfigMap 必须恰好是 friend / trade / player-inbox / guild / mail 五个(总账的全局部分只算了它们)'
     $friendConfig = Select-ManifestByName -Output $infraRun.Output -Name 'go-svc-friend-config'
     Assert-Match -Text $friendConfig -Pattern 'RequireTiDB: false' -Because '开发 ConfigMap 必须显式说明未要求 TiDB'
 
@@ -2644,6 +2647,28 @@ Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、
     Assert-Match -Text $inboxConfig -Pattern 'Key: dataservice\.rpc' -Because '作为调用方经 dataservice.rpc 发现 data_service(玩家存在校验 / 对账读账本)'
     Assert-Match -Text $inboxConfig -Pattern 'EnqueueTypes:' -Because '入箱白名单必须显式写出(空也写 [])'
     Assert-Match -Text $inboxConfig -Pattern 'AutoMigrate: ' -Because '建表策略显式写出,staging/prod 固定 false'
+
+    # 邮件 mail 的 ConfigMap 形状(docs/design/mail-system.md §7.2 ③ / §7.3):值镜像 go/mail/etc/mail.yaml,令牌一个字都不写。
+    $mailConfig = Select-ManifestByName -Output $infraRun.Output -Name 'go-svc-mail-config'
+    Assert-True -Condition ($null -ne $mailConfig) -Because 'infra-up 产物里应当有 go-svc-mail-config'
+    $mailFlat = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block $mailConfig).Scalars -Prefix 'data.mail.yaml.'
+    foreach ($key in @('Name', 'Timeout', 'LeaseTTL', 'MySQL.DBName', 'MySQL.MaxOpenConn', 'MySQL.MaxIdleConn', 'DataServiceRpc.Timeout',
+            'IdSegment.Step', 'IdSegment.MinStep', 'IdSegment.MaxStep', 'Mail.MaxPersonalMailsPerPlayer', 'Mail.MaxActiveSystemMails',
+            'Mail.MaxPersonalMailTtlDays', 'Mail.MaxSystemMailTtlDays', 'Sweep.Mode', 'Sweep.Interval', 'Sweep.RetentionDays', 'Sweep.BatchLimit',
+            'Mode', 'Schema.AutoMigrate')) {
+        Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/mail/etc/mail.yaml' -KeyPath $key) -Actual ([string]$mailFlat[$key]).Trim('"') -Because "mail ConfigMap 的 $key 必须等于服务 yaml(dev 档,单一真相)"
+    }
+    Assert-Match -Text $mailConfig -Pattern 'ListenOn: 0\.0\.0\.0:50900' -Because '端口 50900 与 manifests/go-svc/mail.yaml、go_services.ps1 一致(契约 §7)'
+    Assert-Match -Text $mailConfig -Pattern 'MetricsListenAddr: ":9240"' -Because '指标端口 9240 与 manifest 的 prometheus.io/port 一致'
+    Assert-Match -Text $mailConfig -Pattern '(?m)^\s+Etcd:\s*\n\s+Hosts:\s*\n\s+- "etcd\.[^"]+:2379"\s*\n\s+Key: ""\s*$' -Because 'mail 自己的 go-zero 注册 Key 必须留空(D-13)'
+    Assert-Match -Text $mailConfig -Pattern 'Key: dataservice\.rpc' -Because '作为调用方经 dataservice.rpc 领号段'
+    Assert-Match -Text $mailConfig -Pattern '(?m)^\s+Redis:\s*\n\s+Host: redis\.[^:]+:6379\s*\n\s+Type: node\s*\n\s+Pass: "[^"]*"\s*\n\s+Key: ""\s*$' -Because '共享 Redis:node、带 Pass(redis-auth 开了 requirepass 时)、Key 显式空串'
+    Assert-Match -Text $mailConfig -Pattern '/mailpb\.MailAdmin/SendPersonalMail' -Because 'MailAdmin 请求体不进 stat 日志(IgnoreContentMethods)'
+    Assert-Match -Text $mailConfig -Pattern '/mailpb\.MailAdmin/SendSystemMail' -Because 'MailAdmin 请求体不进 stat 日志(IgnoreContentMethods)'
+    Assert-Match -Text $mailConfig -Pattern 'AllowedCurrencyTypes: \[\s*\d' -Because '附件货币白名单必须是非空流式列表(没有默认值)'
+    Assert-Match -Text $mailConfig -Pattern '(?m)^\s+Enabled: true\s*$' -Because 'IdSegment.Enabled 必须显式 true'
+    Assert-Match -Text $mailConfig -Pattern '(?m)^\s+FallbackToSnowflake: false\s*$' -Because 'mail 没有 snowflake 回退'
+    Assert-NotMatch -Text $mailConfig -Pattern '(?i)admintoken|admin_token|MMORPG_MAIL_ADMIN_TOKEN|x-mail-admin-token' -Because '令牌只经 Secret mail-admin-auth 注入环境变量,ConfigMap 里一个字都不写'
 }
 
 Test-Case '部署写路径打印 MySQL connection ledger(zone-up DryRun)' {
@@ -2999,7 +3024,7 @@ Test-Case 'Redis 总账输入:客户端表的副本数就是各 manifest 的 rep
     Assert-Equal -Expected 10 -Actual $inputs.GoPoolSizePerProc -Because 'go-redis v9 的 PoolSize 缺省 = 10 × GOMAXPROCS'
     Assert-Equal -Expected 1 -Actual $inputs.CppConnectionsPerProcess -Because 'C++ 每进程 1 条(node.cpp 唯一的 tlsRedis.Connect)'
     $names = @($inputs.Clients | ForEach-Object { $_.Name })
-    foreach ($expectedName in @('login', 'db', 'data-service', 'player-locator', 'scene-manager', 'gateway', 'match', 'chat', 'friend', 'trade')) {
+    foreach ($expectedName in @('login', 'db', 'data-service', 'player-locator', 'scene-manager', 'gateway', 'match', 'chat', 'friend', 'trade', 'mail')) {
         Assert-True -Condition ($names -contains $expectedName) -Because "客户端表里必须有 $expectedName(它连着共享 Redis;不连了要先改代码再删这一行)"
     }
     foreach ($client in $inputs.Clients) {
@@ -3532,6 +3557,155 @@ Test-Case 'go_svc_image.ps1 与 k8s_deploy.ps1 的 guild 镜像名一致(否则�
     $deployName = [regex]::Match($deployScript, '(?m)^\s*guild\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
     Assert-True -Condition ($imageName.Success -and $deployName.Success) -Because '两个脚本的服务表里都应当有 guild 条目'
     Assert-Equal -Expected $deployName.Groups['n'].Value -Actual $imageName.Groups['n'].Value -Because 'ImageName 必须一致'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 邮件 mail 上 K8s(M1d,docs/design/mail-system.md §7.2 / §12.3,2026-10-16)
+# ─────────────────────────────────────────────────────────────────
+# mail 是全局池(infra namespace 一份),带 mail-migrate Job 与运维令牌 Secret 注入(照 player-inbox)。
+# 复用上面带全局 Go 服务的 infra-up DryRun:$BattleTestEnv 不带 MMORPG_MAIL_ADMIN_TOKEN,但子进程会继承父进程环境,
+# 跑测试的 shell 若恰好 export 了它,「停用」分支就不成立 —— 所以停用断言单独起一次、显式把变量置空。
+Test-Case 'mail 部署形态:全局池 2 副本滚动 + PDB + 反亲和 + POD_IP;未注入令牌时不建 Secret、指纹 disabled 并删残留 Secret;迁移 Job 先于 Deployment' {
+    $mailOffEnv = @{} + $BattleTestEnv
+    $mailOffEnv['MMORPG_MAIL_ADMIN_TOKEN'] = ''
+    $run = Invoke-DeployDryRun -Arguments $guildInfraArgs -Env $mailOffEnv
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern 'mail: MMORPG_MAIL_ADMIN_TOKEN unset .*MailAdmin stays disabled' -Because '未注入令牌要打一行停用提示(不挡 infra-up)'
+    $block = @(Get-ManifestBlocks -Output $run.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: mail\s*$'
+    }) | Select-Object -First 1
+    Assert-True -Condition ($null -ne $block) -Because 'infra-up 产物里应当有 mail 的 Deployment'
+    Assert-Match -Text $block -Pattern '(?m)^  replicas: 2\s*$' -Because '单副本 = 全服邮件是单点'
+    Assert-Match -Text $block -Pattern 'type: RollingUpdate\s+rollingUpdate:\s+maxSurge: 1\s+maxUnavailable: 0' -Because '先起新的再停旧的'
+    Assert-Match -Text $block -Pattern 'podAntiAffinity' -Because '两个副本不该落在同一个节点上'
+    Assert-Match -Text $block -Pattern '(?s)kind: PodDisruptionBudget.*?name: mail-pdb.*?minAvailable: 1' -Because 'PDB 必须写在主 manifest 里'
+    Assert-Match -Text $block -Pattern 'name: POD_IP\s+valueFrom:\s+fieldRef:\s+fieldPath: status\.podIP' -Because 'ListenOn 是 0.0.0.0,注册进 etcd 的必须是 Pod IP(go/mail/mail.go advertisedHost)'
+    Assert-Match -Text $block -Pattern 'containerPort: 9240\s+name: metrics' -Because 'metrics 端口与 ConfigMap 的 MetricsListenAddr 一致'
+    Assert-Match -Text $block -Pattern 'mmorpg\.io/mail-admin-token-hash: "disabled"' -Because '未注入令牌时指纹写 disabled'
+    Assert-NotMatch -Text $block -Pattern '(?m)^\s*- name: MMORPG_MAIL_ADMIN_TOKEN' -Because '未注入令牌时不引用 Secret(manifest 也不手写这个变量)'
+    Assert-NotMatch -Text $block -Pattern '(?-i)__[A-Z][A-Z0-9_]*__|PLACEHOLDER_' -Because '占位必须全部替换'
+    Assert-Match -Text $run.Output -Pattern 'kubectl delete secret mail-admin-auth -n \S+ --ignore-not-found' -Because '本次未注入:删掉以前带令牌部署时留下的 Secret(不粘滞)'
+    Assert-NotMatch -Text $run.Output -Pattern 'Secret mail-admin-auth \(key token; value hidden\)' -Because '未注入令牌时不建 Secret'
+    $jobIndex = $run.Output.IndexOf('name: mail-migrate')
+    $deployIndex = $run.Output.IndexOf('name: mail-pdb')
+    Assert-True -Condition ($jobIndex -ge 0 -and $deployIndex -gt $jobIndex) -Because '建表 Job 必须先于 Deployment apply'
+    $job = Select-ManifestByName -Output $run.Output -Name 'mail-migrate'
+    Assert-Match -Text $job -Pattern 'args: \["-f", "/app/etc/mail\.yaml", "-migrate"\]' -Because 'Job 必须用与服务同一份配置跑 -migrate'
+    Assert-Match -Text $job -Pattern 'name: go-svc-mail-config' -Because 'Job 挂的是 mail 自己的 ConfigMap'
+    Assert-NotMatch -Text $job -Pattern '(?-i)__[A-Z][A-Z0-9_]*__|PLACEHOLDER_' -Because '占位必须全部替换'
+}
+
+Test-Case 'mail 令牌注入:infra-up 带 MMORPG_MAIL_ADMIN_TOKEN 时先建 Secret 再 apply Deployment,env 走 secretKeyRef,值不进任何产物;非法令牌在写操作之前拒绝' {
+    $token = 'contract-test-mail-admin-token-0123456789abcdef'
+    $mailOnEnv = @{} + $BattleTestEnv
+    $mailOnEnv['MMORPG_MAIL_ADMIN_TOKEN'] = $token
+    $run = Invoke-DeployDryRun -Arguments $guildInfraArgs -Env $mailOnEnv
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "带令牌的 infra-up DryRun 必须成功。输出: $($run.Output)"
+    $secretIndex = $run.Output.IndexOf('Secret mail-admin-auth (key token; value hidden)')
+    $deployIndex = $run.Output.IndexOf('name: mail-pdb')
+    Assert-True -Condition ($secretIndex -ge 0 -and $deployIndex -gt $secretIndex) -Because 'secretKeyRef 不是 optional:Secret 必须先于引用它的 Deployment 落地'
+    $block = @(Get-ManifestBlocks -Output $run.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: mail\s*$'
+    }) | Select-Object -First 1
+    Assert-Match -Text $block -Pattern '- name: MMORPG_MAIL_ADMIN_TOKEN\s+valueFrom:\s+secretKeyRef:\s+name: mail-admin-auth\s+key: token' -Because '令牌经 Secret mail-admin-auth(key token)注入同名环境变量'
+    Assert-Equal -Expected 1 -Actual ([regex]::Matches($block, 'name: MMORPG_MAIL_ADMIN_TOKEN')).Count -Because '变量只注入一次'
+    Assert-Match -Text $block -Pattern 'mmorpg\.io/mail-admin-token-hash: "[0-9a-f]{12}"' -Because 'Pod 模板带令牌指纹,轮换即滚动'
+    Assert-True -Condition (-not $run.Output.Contains($token)) -Because '令牌原文不得出现在任何产物或日志里(DryRun 只打一行 value hidden)'
+    Assert-NotMatch -Text $run.Output -Pattern 'kubectl delete secret mail-admin-auth' -Because '注入了令牌就不能再删它'
+
+    foreach ($bad in @(
+        @{ Why = '短于 32'; Value = 'short-mail-admin-token'; Pattern = 'MMORPG_MAIL_ADMIN_TOKEN 长度 \d+ < 32' }
+        @{ Why = '含空白'; Value = 'contract test mail admin token 0123456789abcdef'; Pattern = 'MMORPG_MAIL_ADMIN_TOKEN 含空白字符' }
+    )) {
+        $badEnv = @{} + $BattleTestEnv
+        $badEnv['MMORPG_MAIL_ADMIN_TOKEN'] = $bad.Value
+        $badRun = Invoke-DeployDryRun -Arguments $guildInfraArgs -Env $badEnv
+        Assert-True -Condition ($badRun.ExitCode -ne 0) -Because "$($bad.Why) 的令牌必须拒绝部署"
+        Assert-Match -Text $badRun.Output -Pattern $bad.Pattern -Because "$($bad.Why) 的令牌要点名原因"
+        Assert-NotMatch -Text $badRun.Output -Pattern '\[dry-run\] kubectl apply' -Because '令牌校验必须先于任何写操作'
+        Assert-True -Condition (-not $badRun.Output.Contains($bad.Value)) -Because '报错不得回显令牌值'
+    }
+}
+
+# 非 dev 档:上面三条都跑 dev($guildInfraArgs 不带 -ReleaseProfile),其余非 dev 的 infra-up 都带 -SkipGoSvc,mail 段一次都不执行。
+# 这里单独起 staging 的带全局 Go 服务 infra-up,钉住三条只在非 dev 档成立的安全属性:
+#   - 未设令牌**不挡** infra-up(先判空再调 Resolve-InjectedSecret;后者在非 dev 档对未设置的变量直接 throw —— §12.3 偏差 2 修掉的缺陷);
+#   - ConfigMap 固定 Mode: pro、Schema.AutoMigrate: false(pro 才拒 ROBOT 发件方与附件,M-9;建表只走 mail-migrate Job,D-14);
+#   - 令牌与其它密钥同值、或是占位串:在任何写操作之前拒绝。
+$mailStagingArgs = $guildInfraArgs + @('-ReleaseProfile', 'staging', '-BattleReplicas', '0', '-FriendTiDBHost', 'tidb.invalid:4000')
+$mailStagingEnv = @{} + $ProdEnv
+$mailStagingEnv['MMORPG_BATTLE_TOKEN_SECRET'] = $BattleTestEnv['MMORPG_BATTLE_TOKEN_SECRET']
+
+Test-Case 'mail 非 dev 档:未设令牌不挡 infra-up;ConfigMap 固定 Mode=pro、AutoMigrate=false' {
+    $offEnv = @{} + $mailStagingEnv
+    $offEnv['MMORPG_MAIL_ADMIN_TOKEN'] = ''
+    $run = Invoke-DeployDryRun -Arguments $mailStagingArgs -Env $offEnv
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "staging 档未设 MMORPG_MAIL_ADMIN_TOKEN 只停用 MailAdmin,不得挡整次 infra-up。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern 'mail: MMORPG_MAIL_ADMIN_TOKEN unset \(ReleaseProfile=staging\)' -Because '停用提示要带档位'
+    $config = @(Get-ManifestBlocks -Output $run.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: ConfigMap\s*$' -and $_ -cmatch '(?m)^  name: go-svc-mail-config\s*$'
+    }) | Select-Object -First 1
+    Assert-True -Condition ($null -ne $config) -Because 'staging infra-up 产物里应当有 go-svc-mail-config'
+    Assert-Match -Text $config -Pattern '(?m)^\s+Mode: pro\s*$' -Because '非 dev 档必须是 pro:dev / test 会放行 ROBOT 发件方与附件(M-9 的造数能力)'
+    Assert-NotMatch -Text $config -Pattern '(?m)^\s+Mode: (dev|test)\s*$' -Because '不得沿用服务 yaml 的 Mode: dev'
+    Assert-Match -Text $config -Pattern '(?m)^\s+AutoMigrate: false\s*$' -Because '非 dev 档建表只走 mail-migrate Job(D-14),服务进程不碰 DDL'
+    Assert-NotMatch -Text $config -Pattern '(?m)^\s+AutoMigrate: true\s*$' -Because '不得沿用服务 yaml 的 AutoMigrate: true'
+    $block = @(Get-ManifestBlocks -Output $run.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: mail\s*$'
+    }) | Select-Object -First 1
+    Assert-Match -Text $block -Pattern 'mmorpg\.io/mail-admin-token-hash: "disabled"' -Because '未注入令牌时指纹写 disabled'
+    Assert-NotMatch -Text $block -Pattern '(?m)^\s*- name: MMORPG_MAIL_ADMIN_TOKEN' -Because '未注入令牌时不引用 Secret'
+}
+
+Test-Case 'mail 非 dev 档:令牌与其它密钥同值、或是占位串,在任何写操作之前拒绝,且不回显值' {
+    foreach ($bad in @(
+        @{ Why = '与 MMORPG_GATE_TOKEN_SECRET 同值'; Value = $mailStagingEnv['MMORPG_GATE_TOKEN_SECRET']; Pattern = '必须与 MMORPG_GATE_TOKEN_SECRET 不同' }
+        @{ Why = '与 MMORPG_BATTLE_TOKEN_SECRET 同值'; Value = $mailStagingEnv['MMORPG_BATTLE_TOKEN_SECRET']; Pattern = '必须与 MMORPG_BATTLE_TOKEN_SECRET 不同' }
+        @{ Why = '占位串'; Value = 'change-me-in-production-use-a-strong-random-key'; Pattern = 'MMORPG_MAIL_ADMIN_TOKEN.*仍是占位串' }
+    )) {
+        $badEnv = @{} + $mailStagingEnv
+        $badEnv['MMORPG_MAIL_ADMIN_TOKEN'] = $bad.Value
+        $badRun = Invoke-DeployDryRun -Arguments $mailStagingArgs -Env $badEnv
+        Assert-True -Condition ($badRun.ExitCode -ne 0) -Because "$($bad.Why) 的令牌必须拒绝部署"
+        Assert-Match -Text $badRun.Output -Pattern $bad.Pattern -Because "$($bad.Why):报错要点名原因"
+        Assert-NotMatch -Text $badRun.Output -Pattern '\[dry-run\] kubectl apply' -Because '令牌校验必须先于任何写操作'
+        Assert-True -Condition (-not $badRun.Output.Contains($bad.Value)) -Because '报错不得回显令牌值'
+    }
+}
+
+Test-Case 'go_svc_image.ps1 与 k8s_deploy.ps1 的 mail 镜像名一致(否则发布的镜像与部署拉的镜像对不上)' {
+    $imageScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'go_svc_image.ps1'))
+    $deployScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'k8s_deploy.ps1'))
+    $imageName = [regex]::Match($imageScript, '(?m)^\s*mail\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
+    $deployName = [regex]::Match($deployScript, '(?m)^\s*mail\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
+    Assert-True -Condition ($imageName.Success -and $deployName.Success) -Because '两个脚本的服务表里都应当有 mail 条目'
+    Assert-Equal -Expected 'mmorpg-mail' -Actual $deployName.Groups['n'].Value -Because 'k8s_deploy.ps1 的 mail 镜像名'
+    Assert-Equal -Expected $deployName.Groups['n'].Value -Actual $imageName.Groups['n'].Value -Because 'ImageName 必须一致'
+}
+
+Test-Case 'mail-alerts.yaml:MailSweepStalled 阈值 = 3 × go/mail/etc/mail.yaml 的 Sweep.Interval;规则引用的 mail_* 指标都由 go/mail/internal/metrics 注册' {
+    $repo = Get-RepoRoot
+    $alerts = [IO.File]::ReadAllText((Join-Path $repo 'deploy/k8s/mail-alerts.yaml')) -replace "`r`n", "`n"
+    $svcYaml = [IO.File]::ReadAllText((Join-Path $repo 'go/mail/etc/mail.yaml')) -replace "`r`n", "`n"
+    $metricsGo = [IO.File]::ReadAllText((Join-Path $repo 'go/mail/internal/metrics/metrics.go'))
+
+    # 阈值与 sweep 周期只靠注释联动:Interval 调大(比如 30m)告警会常亮,调小会变迟钝。ConfigMap 的 Sweep.Interval 镜像服务 yaml,所以以服务 yaml 为准。
+    $interval = [regex]::Match((Get-TopLevelYamlBlockText -Text $svcYaml -Key 'Sweep'), '(?m)^\s+Interval:\s*(?<n>\d+)(?<u>[smh])\s*$')
+    Assert-True -Condition $interval.Success -Because 'go/mail/etc/mail.yaml 的 Sweep.Interval 应当写成 <整数><s|m|h>(换了写法要同步本用例)'
+    $intervalSeconds = [int]$interval.Groups['n'].Value * (@{ s = 1; m = 60; h = 3600 }[$interval.Groups['u'].Value])
+    $threshold = [regex]::Match($alerts, 'time\(\) - max\(mail_sweep_last_run_unixtime\) > (?<t>\d+)')
+    Assert-True -Condition $threshold.Success -Because 'MailSweepStalled 的表达式形状变了,要同步本用例'
+    Assert-Equal -Expected (3 * $intervalSeconds) -Actual ([int]$threshold.Groups['t'].Value) -Because 'MailSweepStalled 阈值必须等于 3 × Sweep.Interval(秒)'
+
+    # 指标名只靠人工核对:改名后告警永远不触发、也不报错。从 metrics.go 拼出全名(subsystem + "_" + Name),逐个核对规则里引用的 mail_* 名字。
+    $subsystem = [regex]::Match($metricsGo, '(?m)^const subsystem = "(?<s>[a-z_]+)"')
+    Assert-True -Condition $subsystem.Success -Because 'go/mail/internal/metrics/metrics.go 应当有 const subsystem = "..."(换了写法要同步本用例)'
+    $registered = @([regex]::Matches($metricsGo, '(?m)^\s*Name:\s*"(?<n>[a-z0-9_]+)"') | ForEach-Object { $subsystem.Groups['s'].Value + '_' + $_.Groups['n'].Value })
+    $referenced = @([regex]::Matches($alerts, '\bmail_[a-z0-9_]+') | ForEach-Object { $_.Value } | Sort-Object -Unique)
+    Assert-True -Condition ($referenced.Count -ge 3) -Because '夹具前提:告警文件至少引用 sweep 两个指标与列表截断计数器'
+    foreach ($name in $referenced) {
+        Assert-True -Condition ($registered -contains $name) -Because "告警引用的指标 $name 必须由 go/mail/internal/metrics 注册(改名后告警会静默失效)"
+    }
 }
 
 # ─────────────────────────────────────────────────────────────────

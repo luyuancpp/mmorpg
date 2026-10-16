@@ -238,6 +238,15 @@ func main() {
 		return
 	}
 
+	// Mail-smoke 模式:两个机器人做「全局邮件 go/mail」端到端冒烟
+	// (R 与 O 分登两个 zone → 直连 MailAdmin 发系统 / 定向 / 带附件三封 + 同键重放 → 两区都看到系统邮件、只有 R 看到定向邮件
+	//  → 新信推送(弱断言)→ 读信减未读 → 别人读不到 → 领取未开放 → 带附件的删不掉、无附件的可重复删 → S2C 方法与 MailAdmin 对客户端不可调)。
+	// 见 mail_smoke_scenario.go 与 docs/design/mail-system.md §10 ⑦;前置条件(含 MMORPG_MAIL_ADMIN_TOKEN)写在 etc/mail_smoke.yaml 文件头。
+	if cfg.Mode == "mail-smoke" {
+		RunMailSmoke(cfg)
+		return
+	}
+
 	// Channel-smoke 模式:单机器人做「玩家主动切线」端到端冒烟
 	// (登录 → 列线(SceneInfoC2S → NotifySceneInfo 带分线目录)→ 切到同图另一条线 → 再列线核对线号不变
 	//  → 冷却期内切回被拒、冷却过后切回成功 → 切到当前所在的线被同步拒绝)。

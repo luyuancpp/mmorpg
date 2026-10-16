@@ -1,0 +1,81 @@
+# mail-smoke 配置:两个机器人对全局邮件服务 go/mail 做端到端冒烟
+# (docs/design/mail-system.md §10 ⑦;M1 只读 / 删,领取短路回 MailClaimNotOpen)
+#
+# 流程(与 mail_smoke_scenario.go 文件头的步骤编号一致):
+#   0. 收件人 R 登 zone_b、旁观者 O 登 zone_a(断言两人**当前连着的** gate 地址不同)
+#   1. gRPC 直连 MailAdmin(不带会话 metadata,metadata 带 x-mail-admin-token / x-operator)发三封:
+#      1 封系统邮件、1 封无附件定向(给 R)、1 封带 1 条货币附件的定向(给 R,dev 档才允许)
+#      —— 每轮用新的 request_id,expire_ms = now + 15 分钟(带附件那封删不掉,只能等它过期);
+#      系统邮件再用同一个请求重放一次:必须 duplicated=true 且 sys_mail_id 相同
+#   2. R 在 push_timeout_ms 内收到 NotifyMailEvent{NEW_MAIL}(**弱断言**:没收到只打印 push_received=false,不算失败)
+#   3. R、O 都能在 ListMails 里翻到那封系统邮件(按 before_mail_id / has_more 翻页,不假定在第一页);只有 R 看到定向邮件;
+#      R 的带附件那封 claim_state = UNCLAIMED、claimable_count ≥ 1
+#   4. R ReadMail 无附件那封:它的已读位 false → true,unread_count 按两次列表之间的过期 / 新到逐封核账后恰好少 1;
+#      O ReadMail R 的定向邮件回 MailNotFound
+#   5. R ClaimMailAttachments 回 MailClaimNotOpen,再 ListMails 那封仍是 UNCLAIMED
+#   6. R DeleteMails 带附件那封:进 protected_mail_ids、deleted_count = 0;无附件那封删两次都成功,之后列表里看不到;
+#      R DeleteMails 系统邮件:deleted_count = 1,之后 R 看不到、O 仍看得到(系统邮件按人删)
+#   7. D-9 反向断言:O 经 gate 发 NotifyMailEvent 的消息号回信封 kServiceUnavailable(会话白名单拒);
+#      两个 MailAdmin 消息号经 gate 各发一次必须**超时**(gate 丢弃非客户端消息号;每个号只发一次,非法包计数满 50 会踢线)。
+#      同一时间窗口的 mail 日志里要能看到拒绝记录(信封不保留原始 gRPC code,只看机器人失败证明不了原因)。
+#
+# 前置(缺一条就会失败,原因写进 MAIL_SMOKE_FAIL 的 reason):
+#   1. 两个 zone 的 gate 都以 GATE_CLIENT_RPC_ROUTER=1 启动(路由服模式)。mail 只承诺路由服模式可达(D-12),
+#      直连模式下 gate 到不了 mail,冒烟会报 kServiceUnavailable。已在跑的 gate 不会换模式,要重启。
+#   2. zone_config 里有 zone 2 那一行(assign-gate 才能把 R 分到 zone 2 的 gate)。
+#   3. client_rpc_router、data_service、mail 已起(mail 全服一份即可,两个 zone 的路由服都能发现它):
+#      - data_service 号段 BootstrapTags 含 mail,且 id_segment 表里有 mail 行(缺行时发件回 kServiceUnavailable);
+#      - 库 mmorpg_mail 已建(deploy/mysql-init/00_init_zone_dbs.sql;存量卷手工补建,命令见 start_game.ps1 的提示),
+#        表已迁移(dev 档 Schema.AutoMigrate 启动即建;或手工 `mail -f etc/mail.yaml -migrate`);
+#      - mail.yaml 为 Mode: dev(或 test):pro 下 ROBOT 发件方回 kInvalidParameter、带附件回 MailAttachmentNotOpen;
+#      - mail 的 gRPC 地址与下面 admin_addr 一致(本地 127.0.0.1:50900);
+#      - 推送要能落地:两个 zone 的 gate 都在消费 gate-cmd_g<N>,mail 的 KAFKA_COMMAND_TOPIC_* 与 gate 同一代(start_game 统一注入)。
+#   4. proto 已按 mail 重生成并经 tools/scripts/mail_postgen.py vendor-robot 同步进 robot/vendor;
+#      gate、client_rpc_router 已换上同一次生成的二进制(docs/design/mail-system.md §9.5 的发布顺序)。
+#   5. MessageLimiter 已按 mail 第二次导表(mail_xlsx_patch.py message-limiter);没有的话保持 request_interval_ms = 1100。
+#   6. **mail 进程与 robot 进程拿到同一把 MMORPG_MAIL_ADMIN_TOKEN(≥ 32 字节)**。令牌不写进本文件:
+#      go_services.ps1 / start_game.ps1 / dev-start-zones 起 mail 时从 run/secrets/mail-admin-dev.env 注入(只给 mail,起完即在父 shell 里还原),
+#      所以跑 robot 的 shell 要自己取同一把(在 robot/ 目录下执行;库按自身位置定位仓库根,与当前目录无关):
+#        . ..\tools\scripts\lib\mail_admin_dev_token.ps1; Initialize-MailAdminDevToken | Out-Null
+#      令牌会留在这个 shell 里:**用另一个 shell 起栈**,否则从这里起的所有服务都会继承它。
+#      令牌不一致 / 缺失时 MailAdmin 回 PermissionDenied(mail 启动横幅 mail_admin=disabled 说明 mail 那边没拿到)。
+#   7. robot_9811 首次在 zone_b 建角、robot_9812 首次在 zone_a 建角(归属区在建角时登记,之后不随登录区变化)。
+#      不用 97xx(friend-smoke)、9801(channel-smoke)、99xx(ordering / merchant)、95xx(帮会资产通道整段)。
+#   8. 从 robot/ 目录运行(table_dir 是相对路径)。
+#   9. 两区起栈步骤见 docs/design/mail-system.md §12.3「给构建方的顺序」第 5 步(zone 1 用 start_game.ps1;mail 全服只起一份,
+#      zone 2 不要再起 —— 不经 start_game 起的 mail 拿不到命令主题契约,推送会静默丢失)。
+#      跨区推送以 MAIL_SMOKE_OK 行里的 push_received=true 为准(推送是弱断言,false 照样 OK)。
+#
+# 用法(robot/ 目录下,先按前置 6 在同一个 shell 里取到令牌):
+#   go build -mod=vendor -o robot.exe .      # 旧 robot.exe 的模式白名单里没有 mail-smoke,会以 unknown mode 退出
+#   .\robot.exe -c etc/mail_smoke.yaml
+# 退出码 0 = 全部断言通过(日志有 MAIL_SMOKE_OK … 一行);退出码 1 = 任一步失败(MAIL_SMOKE_FAIL step=… reason=…)。
+#
+# 可重复运行:邮件不可撤回,所以不做预清理;每轮用新的 request_id,expire_ms 只给 15 分钟。
+# 连跑上限:每轮在全服留 1 封系统邮件(R 只删自己的视图)、在 R 的邮箱留 1 封删不掉的带附件定向邮件;
+# 有效系统邮件上限 Mail.MaxActiveSystemMails、收件人邮箱上限 Mail.MaxPersonalMailsPerPlayer 默认都是 100(只数未删且未过期的),
+# 一轮至少约 30 秒(第 7 步两次 MailAdmin 经 gate 各等满 10 秒的回包超时),15 分钟内实际撞不到。
+
+gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
+zone_id: 1 # 本模式不用此字段选区(O 登 mail_smoke.zone_a,R 登 zone_b)
+robot_count: 2 # 语义占位:本模式固定 R / O 两个机器人
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号 robot_9811(收件人)/ robot_9812(旁观者)
+password: "123456"
+skill_ids: [] # 本模式不放技能
+table_dir: "../generated/tables"
+action_interval: 3 # 本模式不跑场景 AI 循环,保留默认
+report_interval: 5
+
+mode: "mail-smoke"
+
+# 子开关(见 config.MailSmokeConfig / mail_smoke_scenario.go)
+mail_smoke:
+  cross_zone: true # false = R 也登 zone_a,跳过 gate 不同的断言(同区弱验收,证明不了跨区推送)
+  zone_a: 1 # 旁观者 O 登录的 zone
+  zone_b: 2 # 收件人 R 登录的 zone;cross_zone=true 时必须与 zone_a 不同
+  admin_addr: "127.0.0.1:50900" # mail gRPC 地址,发件经它直连 MailAdmin(不带会话 metadata;令牌见文件头前置 6)
+  request_interval_ms: 1100 # 同一机器人相邻请求最小间隔;gate 默认限流档 3 次 / 窗口(窗口按秒粒度,实际 1~2s)
+  push_timeout_ms: 10000 # 等一条 NotifyMailEvent 的预算;推送多走一跳 Kafka,给得比 RPC 宽
+
+# 认证:password 模式(robot_ 前缀账号走 DevPasswordAuth)
+auth_type: "password"
