@@ -9094,3 +9094,14 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **下一步**:M1b + M1c(`go/mail` 服务全部代码)见下一条;编译要等 proto-gen 之后。
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做。mail.proto 的客户端协议与 8 个 tip 码是客户端可见契约,按规矩两版同批改;
   本机没有 Java 仓(`D:\luyuan\xuanming-server-mmo` 不存在),无法核对 `PARITY.md` 或改 Java 版,需在有 Java 仓的机器上补做并登记。
+
+## 2026-10-16 邮件 M1b + M1c:go/mail 服务全部代码落地(Claude,未编译、未跑测试)
+
+- **背景**:邮件 M1(设计 `docs/design/mail-system.md`)的第二、三批合成一批落地 —— 入口 `mail.go` 要注册 server、server 依赖 logic,单独先落 M1b 只能落一个起不来的半成品模块。`go/mail/` 下 45 个新文件 + CI 排除清单 + 文档,超过 30 文件门禁,登记在设计 §12.2。
+- **落了什么**:常驻服务 + `-migrate`(D-14 退出码、缺普通索引拒启);客户端 5 个方法(列表合并分页、已读、删除白名单、清理已读、领取短路)与内部发件 `MailAdmin` 两个方法(令牌只从环境变量 `MMORPG_MAIL_ADMIN_TOKEN` 读、≥32 字节、常量时间比较;先判重后校验;Mode 闸门);新定向邮件的 S2C 推送(只推 ONLINE,失败不影响结果);过期 sweep(默认 report_only,先删 state 行再删系统行);指标全部预建 0 值序列;运维 CLI `go/mail/cmd/mailadmin`。
+  真库集成测试(`MAIL_TEST_MYSQL_DSN` + `MAIL_REQUIRE_MYSQL_TESTS` 门控,库名白名单)覆盖 §10 ④ 全部条目与回修 ①–⑧,外加并发 20 路发件、号段不可达时重放、号段重发撞主键。
+- **CI**:`go/mail` 依赖 proto-gen 才会产出的 `go/proto/mail` 与 `go/mail/generated/pb/game`,所以先登记进 `.github/workflows/go-modules-ci.yml` 的排除清单(仍在 excluded-watch 里跑、不判红);构建方跑过含 mail 的 proto-gen、提交产物、`go mod tidy` 之后删掉那一条。
+- **评审**:三视角只读评审("人肉编译"逐个读完 41 个 .go 未见编译 / vet 问题;语义 1 P1 / 2 P2 / 5 P3;测试有效性 1 P0 / 2 P1 / 若干 P2·P3)。P0 / P1 是同一个问题 —— 系统邮件 state 行条件 upsert 的 ODKU 列名歧义(MySQL 1052,每次执行都失败),三个视角都抓到了,已改;其余(CLI 把故障码当业务拒绝、Kafka writer 的 BatchTimeout 默认 1s、sweep 告警重启误报、重放依赖号段、发件审计缺调用方、横幅判据、sweep 顺序用例写反也不红、没挡住 TiDB 假绿等)全部修完,逐条见设计 §12.2 的 15 条偏差。
+- **验证边界**:只跑了 gofmt;没有 `go build` / `go vet` / `go test` / `go mod tidy`(AGENTS §10.1 归构建方)。命令与通过标准在设计 §12.2。
+- **还没做(M1d)**:go_services.ps1 / go_svc_image.ps1 / k8s_deploy.ps1 / start_game.ps1 登记、令牌本机注入、K8s manifest 与 migrate Job、告警文件、robot `mail-smoke`、`data_consistency_check`、契约 §7 端口。在那之前 mail 只能手工起。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做(本机没有 Java 仓,同 M1a 条目)。

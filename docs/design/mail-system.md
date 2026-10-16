@@ -1,7 +1,7 @@
 # mail(邮件)M1:全局服务 + 系统邮件 / 定向邮件 + 领取短路
 
 **Created:** 2026-09-20
-**状态:** 〔2026-10-15 补、10-16 按评审修订:M1a 已落码,随 M1a 提交进 main —— 协议、生成器配置、Tip 段(已导表)、号段 tag、独占库与两个脚本;proto-gen 尚未跑(归构建方),落码记录、与本文的偏差和构建命令见 §12;M1b–M1d 未开工。下面这句是 09-20 的原文。〕**状态:** **本文只是设计,未落码、未编译、未运行任何测试;导表器与 proto-gen 都没跑过。** 本文提到的 `proto/mail/*`、`go/mail/*`、`mail_error` 段、`mmorpg_mail` 库、`biz_tag = mail` **今天全都不存在**。文中凡"应该 / 期望"都不是实测结论。§11.1 的各项已于 2026-09-20 全部由用户拍板(结果见 §11.1 拍板记录;§8 决策表里对应条目已改标〔已拍板〕)。2026-09-20 经三视角评审回修一轮,见文末「评审记录」。
+**状态:** 〔2026-10-15 补、10-16 修订:M1a(协议、生成器配置、Tip 段、号段 tag、独占库与两个脚本)与 M1b + M1c(`go/mail` 服务全部代码,合成一批)都已落码进 main;proto-gen、编译与测试都还没跑(归构建方),`go/mail` 在 CI 排除清单里等 proto-gen 产物入库;落码记录、与本文的偏差和构建命令见 §12.1 / §12.2;M1d 未开工。下面这句是 09-20 的原文。〕**状态:** **本文只是设计,未落码、未编译、未运行任何测试;导表器与 proto-gen 都没跑过。** 本文提到的 `proto/mail/*`、`go/mail/*`、`mail_error` 段、`mmorpg_mail` 库、`biz_tag = mail` **今天全都不存在**。文中凡"应该 / 期望"都不是实测结论。§11.1 的各项已于 2026-09-20 全部由用户拍板(结果见 §11.1 拍板记录;§8 决策表里对应条目已改标〔已拍板〕)。2026-09-20 经三视角评审回修一轮,见文末「评审记录」。
 **关联:** [friend-handoff-20260920.md](../handoff/friend-handoff-20260920.md) §4.1(mail 摸底)/ §4.4(A 仓对照)/ §5(坑);[friend-port-20260918.md](./friend-port-20260918.md)(结构样板);[leaderboard-system.md](./leaderboard-system.md)(发奖出口指向本服务);[microservice-zone-contract-20260914.md](./microservice-zone-contract-20260914.md)(契约 §2–§8);[xuanming-port-decisions-20260910.md](./xuanming-port-decisions-20260910.md) 的 D-9 / D-11 / D-12 / D-13 / D-14;[guild-phase2/04-asset-channel.md](./guild-phase2/04-asset-channel.md)(通用资产通道,I6 流独占);[tip-code-axis.md](./tip-code-axis.md);[snowflake-id-allocation.md](./snowflake-id-allocation.md);`AGENTS.md` §4 / §7 / §10.2 / §11(尤其 §11.6)。
 
 > **A 仓参考不可得,如实说明**:早期摸底稿(`port_plan_mail.json`,含 11 条待拍板)随会话临时目录丢失,A 仓 `services/social/mail` 的源码本轮也拿不到。本文**没有**参考 A 仓的任何做法,全部从 B 仓现有约束(D-14、契约、资产通道、friend / trade 先例、客户端现状)重新推导。凡是"A 仓怎么做的"一律不知道,也不编。
@@ -990,6 +990,81 @@ try { Step { ./mvnw.cmd -q -DskipTests package } } finally { Pop-Location }
 **客户端 handler 桩**:上面用的是不带客户端的配置,不会出 `ClientPlayerMail*Handler.cs`。要出桩,再用默认配置跑一次 `proto-gen-run`(用户 2026-09-20 已授权邮件改客户端仓)。前提:① 客户端仓已含本批的 `gen_proto.ps1` mail 行与 `Mail.cs`(见上面的落地顺序),否则 CS0246;② 第二次运行前后 `proto/message_id.txt` 与服务端生成物**零差异** —— 客户端桩与 gate / 路由表 / robot 必须出自同一套消息号(本文头部与 §9 闸门 1),有差异说明两次之间有人改了协议,停下来查。默认配置会把客户端所有落后的桩一起刷新,跑之前先看客户端仓的 `git status`。
 
 **Java 版(AGENTS §12)**:待做。mail.proto 的客户端协议与 8 个 tip 码属于客户端可见契约,按规矩要两版同批改;本机没有 Java 仓(`D:\luyuan\xuanming-server-mmo` 不存在,E:/work 下也找不到 `PARITY.md`),本批无法核对 `PARITY.md` 也无法改 Java 版,需要在有 Java 仓的机器上补做并登记 `PARITY.md`。服务端 C++/Go 版先行合入,是沿用本仓此前各功能"Java 版待做 + 原因"的交付口径;这一条是否要求暂缓合入,由用户定(已在交付说明里单列)。
+
+### 12.2 M1b + M1c(2026-10-16,Claude;未编译,未跑任何测试)
+
+**合成一批的原因**:§9 把服务骨架 + 存储(M1b)与业务 / 入口 / 推送 / CLI(M1c)分成两批,但入口 `mail.go` 要注册 server、server 依赖 logic —— 单独先落 M1b 只能落一个没有 `main` 包、启动不了的半成品模块(或者落一个之后注定被 M1c 回改 5 个文件的 `mail.go`)。所以两批一起落:`go/mail/` 下 45 个新文件,外加 CI 排除清单与两份文档,超过 §10.2 的 30 文件门禁,在此登记。
+
+**落了什么**(`go/mail/`,全部新文件):
+
+- 入口:`mail.go`(常驻 / `-migrate` / `-allow-modify` / `-version`,启动与停机次序照 friend;横幅 `  MAIL SERVICE STARTED SUCCESSFULLY`、去掉行首两格缩进后恰为 `mail_admin=enabled` / `mail_admin=disabled` 的一行 —— §10 ⑤ / ⑨ 按"去首尾空白后整行相等"判 —— 以及 `attachments` / `push` / `sweep` 行)、`mail_test.go`、`go.mod`、`go.sum`、`etc/mail.yaml`。
+- `internal/config`(含令牌解析 `ResolveAdminToken` 与 metadata 键 `x-mail-admin-token`)、`internal/constants`(8 个 mail 码 + 2 个 common 码,零手写数字)、`internal/session`(白名单 5 个 C2S)、`internal/lifecycle`(friend 那份的副本,第 5 个)、`internal/metrics`(§2.5 / §4.5 / §4.6 全部指标,预建 0 值序列,`Register` 幂等)、`internal/svc`、`internal/kafka/gate_command_builder.go`。
+- `internal/data`:`tables.go`、`mail_repo.go`(发件事务、列表 / 计数、已读 / 删除的条件写)、`sweep_repo.go`、`session_reader.go`,以及真库测试 `mail_repo_mysql_test.go` / `sweep_repo_test.go`。
+- `internal/logic`:`deps.go`(存储 / 会话 / 推送都是接口)、`mail_logic.go`(5 个客户端方法)、`admin_logic.go`(两个发件方法)、`attachments.go`(附件校验、`AssetBundle` 编码、请求摘要)、`push.go`、`sweep.go`,及其单测与接真库的 `mail_logic_mysql_test.go`。
+- `internal/server`:`mail_server.go`、`admin_server.go`(令牌校验在这里,常量时间比较)及其单测。
+- `internal/mailtest`:真库用例的公共门控(只给测试用,见偏差第 11 条)。
+- `cmd/mailadmin/main.go`:运维发件 CLI(`personal` / `system` 两个子命令)。
+
+**真库用例覆盖**(§10 ④,`MAIL_TEST_MYSQL_DSN` + `MAIL_REQUIRE_MYSQL_TESTS`):必过五项(20 路并发上限 5 恰好 5 封无 1213、同键重放同 id、同键异摘要冲突、删 / 读重复调用成功、未领附件受保护)、回修 ①–⑧ 每一条(⑧ 用"另一个事务锁住一条 state 行、让 sweep 删到一半失败,断言系统行还在"的写法,顺序写反就红)、并发首发撞 1062 的读回兜底(号段里加屏障保证真的走到)、号段不可达时重放、号段重发撞主键、state 行 `claim_state` 守卫;logic 接真库三条(跨两表合并翻页、未知 `claim_state` 的删除分类、带附件邮件从发件到"领不了删不掉"的整条链路)。
+
+**与本文设计的偏差**(以磁盘为准,正文不改):
+
+1. **go.mod 的 proto2mysql 是 v0.2.0**:§9 M1b 写的 `v0.1.1` 早已过时(09-28 全仓切到 v0.2.0,v0.1.0 是坏 tag);replace 行与 `go/schemamigrate`、`go/friend` 逐字相同。
+2. **go.sum 先用 friend 的**:mail 的依赖是 friend 的子集、版本线相同,indirect 块与 go.sum 起步时照抄 friend,由构建方第一次 `go mod tidy` 收敛(go.mod 末尾有注释)。
+3. **定向发件在领号之前先做一次不持锁的判重**(§4.2 的顺序是先领号、再在守卫锁内判重):唯一键行除了 sweep 没人改,命中即终局;它让"已成功的请求重放"不依赖号段可用、也不白耗一个号。锁内的当前读判重仍保留,并发首发靠它兜住。
+4. **请求摘要是手写的定长 / 带长度前缀编码**(`attachments.go` 的 `requestDigest`,版本前缀 `mail.request.v1`),不用 proto 序列化:摘要存在库里、跨版本比较,proto 的 Deterministic 只保证同一个二进制内稳定。摘要不含 `sent_ms`(服务端时刻),含 `expire_ms`(所以 CLI 先打印 `request_id` 与 `expire_ms`,重试必须原样带回;`mail_admin.proto` 的注释已写明)。附件写库前按 `currency_type` / `config_id` 排序,顺序不同的同一份附件得到同一摘要。
+5. **文本与附件的两条补充规则**:`sender_name` 与 `title` 不许为空(正文可以为空);物品 `config_id = 0` 判 `MailAttachmentInvalid`。§3.5 / §5.3 没写死这两条,取更严的一侧。
+6. **`ReadMail` 的系统邮件分支先按主键判可见性,再做条件 upsert**(§4.2 写的是"upsert 后 RowsAffected = 0 再点查"):两者用同一个 `now`,语义相同,只是对不存在 / 已过期的 id 省掉一次写语句;upsert 本身仍只认 `expire_ms > now`。
+7. **条件 upsert 的 ODKU 列一律带表名**(§4.2 的示例 SQL 没带):`INSERT … SELECT … ON DUPLICATE KEY UPDATE` 的取值表达式同时能看到来源表 `mail_system`,它也有 `updated_ms`,不带表名就是 MySQL 1052、每次执行都失败(评审抓到,已改)。附件判定写成 `COALESCE(LENGTH(attachments), 0)`:proto2mysql 把 bytes 生成为可空列,本层只写空串,万一出现 NULL 也按"无附件"处理。
+8. **撞主键与撞唯一键分开报**:1062 撞的是主键 = 号段把用过的 id 又发了一次(水位回退),报"re-issued"的存储故障并指向恢复手册;撞唯一键才走读回比摘要。
+9. **附件解不开按故障处理**(`ListMails` / `ReadMail` 回 `kServiceUnavailable` 并打 Error):库里的附件是发件时校验过才写入的,解不开只能是数据损坏,应当告警而不是悄悄不显示。
+10. **指标名 `mail_sweep_invalid_rows` 改为 `mail_sweep_invalid_rows_total`**:它是 counter,按 Prometheus 命名约定带 `_total`。§4.6 / §4.7 的表与告警 `MailSweepInvalidRows`(M1d 的 `mail-alerts.yaml`)按新名字写。
+11. **新增 `internal/mailtest`**:data 与 logic 两个包都有真库用例,测试文件之间不能互相 import,公共门控只能放成普通包。表名取自 proto 的 `OptionTableName`(与 schemamigrate 同源,不手抄清单);连上之后拒绝 TiDB / MariaDB(判红,不是跳过);不要求版本号以 8.4 开头(本机 compose 的 `mysql:latest` 已是新版本号),只要求是 MySQL。
+12. **`svc.NewServiceContext` 返回 error 而不是 panic**(friend 是 panic):已建的资源在返回前关闭,启动失败走同一条收尾。令牌 metadata 键常量放在 `internal/config`,服务端与 CLI 共用(CLI 不必 import server 包,那会把 MySQL / Kafka 依赖一起拖进运维工具)。
+13. **Kafka writer 显式 `BatchTimeout: 10ms`、`MaxAttempts: 1`**(照 guild / match / player_inbox;friend 漏了这两项):零值 1s 的批超时会让每封在线收件人的信在回包前白等一秒、并挤爆 1.5s 的推送预算。
+14. **sweep 首轮在抖动后立即跑,启动时先写一次 `mail_sweep_last_run_unixtime`**:`safego.Loop` 要先等满一个节拍,而 gauge 注册时是 0 —— 不这样做,每次全量重启后 `MailSweepStalled` 都会误报一阵。
+15. **发件成功的日志带调用方**(对端地址 / user-agent / `x-operator`):系统邮件不可撤回,事后要查得到是谁发的。CLI 的退出码把 in-band 的 `kServiceUnavailable` 归为"结果未知、原样重试"(退出 1),而不是"被拒绝"(退出 3)—— 否则运维会换新的 `request_id` 重发,多发一封。
+
+**评审**(三视角只读,对 M1b+M1c 草稿):"人肉编译"视角逐个读完 41 个 `.go` 文件,未发现编译 / vet 问题;语义视角 1 P1 / 2 P2 / 5 P3;测试有效性视角 1 P0 / 2 P1 / 若干 P2 / P3。P0 / P1 是同一个问题(上面偏差第 7 条的 1052),三个视角都抓到了;其余全部按上面各条修完,测试侧补了"能变红"的锁序用例、拒绝 TiDB、1062 读回屏障、state 行守卫、logic 接真库三条、指标预建序列与 mode 字面量的测试,删掉了两处恒为真的断言。修订后的增量另做了一轮复核(见 PROGRESS)。
+
+**CI**:CI(`.github/workflows/go-modules-ci.yml`)会自动发现 `go/*/go.mod`。`go/mail` 依赖 proto-gen 才会产出的 `go/proto/mail` 与 `go/mail/generated/pb/game`,在那之前编不过,所以本批把它登记进该文件的排除清单(仍在 excluded-watch 里跑、不判红;条目写明红因与复检命令)。构建方跑过含 mail 的 proto-gen、提交产物、`go mod tidy` 之后删掉那一条。
+
+**给构建方的命令**(必须在 §12.1 的 proto-gen 之后:`go/proto/mail` 与 `go/mail/generated/pb/game` 是本模块的编译前提;两者都要入库,`go/mail/generated` 与 friend 一样不被 .gitignore 忽略):
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+function Step([scriptblock]$b) { $global:LASTEXITCODE = 0; & $b; if ($LASTEXITCODE) { throw "失败(退出码 $LASTEXITCODE):$b" } }
+Push-Location go/mail
+try {
+    Step { go mod tidy }    # 本机官方代理拉不到旧组织名模块时先设:$env:GOPROXY='https://goproxy.cn,direct'
+    $unformatted = gofmt -l .
+    if ($unformatted) { throw "gofmt 未格式化:$unformatted" }
+    Step { go vet ./... }
+    Step { go build ./... }
+    Step { go test -count=1 ./... }
+} finally { Pop-Location }
+```
+
+真库集成(§10 ④,必须是 MySQL,不能拿 TiDB 代替):先用 root 建一次性库并授权(root 口令只在容器里取,不写进任何文件):
+
+```powershell
+docker exec mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS mail_test; GRANT ALL PRIVILEGES ON mail_test.* TO ''appuser''@''%'';"'
+$env:MAIL_TEST_MYSQL_DSN = 'appuser:<etc/mail.yaml 里的本地口令>@tcp(127.0.0.1:3306)/mail_test?parseTime=true'
+$env:MAIL_REQUIRE_MYSQL_TESTS = '1'
+Push-Location go/mail
+try { go test -count=1 -v ./internal/data/ ./internal/logic/ } finally { Pop-Location }
+```
+
+通过标准:
+
+- `go mod tidy` 之后直接依赖块里没有 `github.com/redis/go-redis/v9`(有就说明某处 import 写错了,先找那处)。
+- `go test -v` 里 `internal/data` 与 `internal/logic` 的真库用例是 **PASS 而不是 SKIP**(`MAIL_REQUIRE_MYSQL_TESTS=1` 下缺 DSN 会直接 FAIL;连到 TiDB / MariaDB 也直接 FAIL)。重点看 `TestSendPersonalConcurrentRespectsBoxLimit`(20 路并发、上限 5,恰好 5 封、无 1213 / 1205)、`TestSweepKeepsSystemRowWhenStateDeletionFails`(会等一次 2 秒的锁超时,正常)与回修 ①–⑧ 对应的用例。
+- 库名只能是 `mail_test` 或 `mail_it_<n>_<n>`:用例会 DROP mail 的四张表与 `schema_migrations`,指错库会被白名单拒绝。
+- 都过了之后删掉 CI 排除清单里的 `go/mail` 一条。
+- 失败时保留:`go test -v` 全文;并发用例失败时加 `SHOW ENGINE INNODB STATUS`。
+
+**还没做(M1d)**:`go_services.ps1` / `go_svc_image.ps1` / `k8s_deploy.ps1` / `start_game.ps1` 登记、令牌本机注入、K8s manifest 与 migrate Job、告警文件(按偏差第 10 条的新指标名)、robot `mail-smoke`、`data_consistency_check`、契约 §7 端口登记。在那之前 mail 只能手工起(归构建方)。
 
 ## 评审记录(2026-09-20,三视角评审 → 回修)
 
