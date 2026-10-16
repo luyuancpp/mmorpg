@@ -131,9 +131,10 @@ private:
 // 进程级在途索引:按 gate 序号认领,保证每个调用恰好被处理一次;另带一个按截止时刻排序的过期堆。
 // Call 由调用方定义,必须有 `SteadyTime expiresAt` 成员。
 //
-// 为什么要过期堆:路由服节点被摘除时,实体上的 CompletionQueue 随之析构,在途调用既不会触发成功回调也不会
-// 触发失败回调(client-access-band-routing.md F29)。队头卡住时客户端在等回包,不会再发新请求,所以必须有
-// 主动扫描,纯惰性清理永远触发不到(client-request-ordering.md §4.5)。
+// 为什么要过期堆:官方 CompletionQueue 时代,路由服节点被摘除时在途调用既不会触发成功回调也不会触发失败回调
+// (client-access-band-routing.md F29)。第 3 批改走 muduo_grpc 后 ~Channel 会以 UNAVAILABLE 补投失败
+// (grpc-muduo-transport.md §14),过期堆留作兜底:任何一条回调丢失时,队头卡住而客户端在等回包、不会再发新请求,
+// 纯惰性清理永远触发不到,所以必须有主动扫描(client-request-ordering.md §4.5)。
 //
 // 实现已上移到 engine/core(utils/data_structures/inflight_index.h),与节点间 RPC0 的 RpcChannel::outstandings_
 // 共用同一份(docs/design/muduo-rpc-channel.md §4.4)。语义不变:Insert 拒收 0 与重复;Extract 恰好一次;

@@ -84,20 +84,27 @@ func parsePartyMembers(raw string) []uint64 {
 }
 
 // pushMembersScript 把一批成员一次性挂进队列并保证队列在注册集里
-// (KEYS=[index, queue, rank],ARGV=[queueKey, front("1"=队首/"0"=队尾), member1, rating1, member2, rating2...])。
+// (KEYS=[index, queue, rank, versions, sequence],ARGV=[queueKey, front("1"=队首/"0"=队尾), member1, rating1, member2, rating2...])。
 // 队首:倒序 LPUSH,members[0] 最终在最前,保持原相对顺序;队尾:顺序 RPUSH。
 // 一条 Lua 完成是补位单「不可拆」在存储层的落点:同一单的成员要么都在 list 里,要么都不在。
-// 三 key 同 {mq} slot;与 enqueueScript / requeueScript 同样维护「list 成员集 == ZSET 成员集」。
-const pushMembersScript = `redis.call("SADD", KEYS[1], ARGV[1])
+// 所有 key 同 {mq} slot;与 enqueueScript / requeueScript 同样维护评分镜像和每次实际写入的新版本。
+// INCR 后 GET 使用整数的原始字符串,不把超过 Lua 精确整数范围的序列转成浮点版本。
+const pushMembersScript = `redis.call("INCR", KEYS[5])
+local version = redis.call("GET", KEYS[5])
+redis.call("SADD", KEYS[1], ARGV[1])
 local n = (#ARGV - 2) / 2
 if ARGV[2] == "1" then
 	for i = n, 1, -1 do
+		redis.call("HSET", KEYS[4], ARGV[1 + 2 * i], version)
 		redis.call("ZADD", KEYS[3], ARGV[2 + 2 * i], ARGV[1 + 2 * i])
+		redis.call("LREM", KEYS[2], 0, ARGV[1 + 2 * i])
 		redis.call("LPUSH", KEYS[2], ARGV[1 + 2 * i])
 	end
 else
 	for i = 1, n do
+		redis.call("HSET", KEYS[4], ARGV[1 + 2 * i], version)
 		redis.call("ZADD", KEYS[3], ARGV[2 + 2 * i], ARGV[1 + 2 * i])
+		redis.call("LREM", KEYS[2], 0, ARGV[1 + 2 * i])
 		redis.call("RPUSH", KEYS[2], ARGV[1 + 2 * i])
 	end
 end
@@ -127,7 +134,7 @@ func pushMembersRegistered(ctx context.Context, svcCtx *svc.ServiceContext, queu
 	for _, m := range members {
 		args = append(args, strconv.FormatUint(m.playerId, 10), formatRating(m.rating))
 	}
-	_, err = svcCtx.MatchRedis.EvalCtx(ctx, pushMembersScript, []string{matchQueueIndexKey, queueKey, rankKey}, args...)
+	_, err = svcCtx.MatchRedis.EvalCtx(ctx, pushMembersScript, []string{matchQueueIndexKey, queueKey, rankKey, queueVersionsKey(queueKey), matchQueueVersionSequenceKey}, args...)
 	return err
 }
 
@@ -287,10 +294,21 @@ func firstMissingPartyTicket(ctx context.Context, svcCtx *svc.ServiceContext, me
 //     否则是本队列的残留项,摘掉(与 groupPicker.validate 的「别的队列的残留成员」同口径)。
 //
 // 读票 / 删票出错的成员跳过(不摘 list):残留由 matcher 的票据校验与补位单完整性规则兜底。
-// 不持凑单锁也可以调用(CancelQueue 一直如此);所有写入都是按 ticket id 的 CAS。
+// 不持凑单锁也可以调用(CancelQueue 一直如此);删票按 ticket id CAS,摘队列按读票前的写入版本 CAS。
 func cancelParty(svcCtx *svc.ServiceContext, seed *queueTicket, reason uint32, culprit uint64) []uint64 {
 	if seed == nil || seed.PartyId == "" || len(seed.PartyMembers) == 0 {
 		return nil
+	}
+	// 先快照队列写入版本,再读/删票。成员旧票一旦删除,他的独立会话即可重排;
+	// 最终摘项只认这里的版本,新 push 即使是旧命令的自动重试也会生成另一版本。
+	var versions map[uint64]string
+	if seed.QueueKey != "" {
+		var err error
+		versions, err = loadQueueMemberVersions(svcCtx, seed.QueueKey, seed.PartyMembers)
+		if err != nil {
+			logx.Errorf("[match] Party cancel failed to snapshot queue versions; leaving remnants to matcher validation team=%d queue=%s: %v",
+				seed.TeamId, seed.QueueKey, err)
+		}
 	}
 	// 撤单原因先登记、后删票:收尾方(matcher 判不完整 / 回队首的完整性规则)要看到某张票被删了才会去通知,
 	// 先登记保证它沿用的是这里的原因 —— 否则名单变化会被它说成「某队员未就绪」,点名的还是个无关的人。
@@ -361,8 +379,8 @@ func cancelParty(svcCtx *svc.ServiceContext, seed *queueTicket, reason uint32, c
 			remove = append(remove, pid)
 		}
 	}
-	if len(remove) > 0 && seed.QueueKey != "" {
-		if _, err := removeQueueMembers(svcCtx, seed.QueueKey, remove); err != nil {
+	if len(remove) > 0 && seed.QueueKey != "" && versions != nil {
+		if _, err := removeQueueMembersVersionedCtx(context.Background(), svcCtx, seed.QueueKey, remove, versions); err != nil {
 			logx.Errorf("[match] Party cancel failed to dequeue (matcher ticket validation will handle remnants) team=%d queue=%s members=%v: %v",
 				seed.TeamId, seed.QueueKey, remove, err)
 		}

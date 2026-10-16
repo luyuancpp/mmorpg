@@ -1,0 +1,152 @@
+# guild:帮会(docs/design/guild-phase2/,K8s 上线批 BK8s = 90-consistency.md G-05;2026-10-16 补)。
+#
+# **全局池,只部署到 mmorpg-infra namespace 一次,不进任何 zone namespace。**
+# 帮会天然跨 zone(成员可以来自不同区),与 trade / friend 同形态;客户端经 gate → client-rpc-router 到达,
+# 路由服按 GuildNodeService.rpc/ 前缀的 NodeInfo 找到它(go/guild/internal/node)。guild 刻意不写 go-zero 的 Etcd.Key(D-13)。
+# k8s_deploy.ps1 的 $GoSvcCatalogue 里该条目标了 Global = $true,zone-up 会跳过它,infra-up / all-up 在基础设施阶段部署。
+# ConfigMap go-svc-guild-config 由脚本按 go/guild/etc/guild.yaml 生成(键名三处逐字一致)。
+#
+# 库与表(port-decisions D-14):
+#   - 独占库 mmorpg_guild 由 mysql-init-sql ConfigMap 带入的 deploy/mysql-init/00_init_zone_dbs.sql 预建 + GRANT appuser
+#     (initdb 只对空 PVC 生效,存量 PVC 手工补,见 deploy/k8s/README.md「帮会 guild」)。
+#   - 表由同目录 guild-migrate.yaml 这个 Job 建;k8s_deploy.ps1 在本 Deployment **之前**先 delete 再 apply 它,
+#     staging/prod 恒等它 Complete(D-14 第 4 条);ConfigMap 在 staging/prod 固定 Schema.AutoMigrate=false。
+#
+# 多副本(帮会二期 2026-10-01 的答复;**未在真实多副本下验证**):资产指令重投按行级租约(lease_token)互斥、清理任务随机起始偏移、
+# 启动建全局插入守卫哨兵行走 GET_LOCK、历练结果消费是 Kafka 消费组 guild-trial(topic match-results,全局、不带 _zN)、
+# 对账 / 放弃只在选主当选的一个副本上跑(锁在 RedisClient 里)。崩溃切换窗口 = ConfigMap 的 Node.LeaseTTL(60 秒)。
+#
+# 资产通道(捐献扣货币、商店兑换发物品)默认**关闭**:k8s_deploy.ps1 -AssetOps on 才打开,打开前要满足
+# docs/design/guild-phase2/08-save-owner-fence.md §8.3 的六条门禁(那是运行期验证,脚本替你核不了)。
+# 签名密钥只经 Secret 注入成环境变量 MMORPG_ASSET_OP_SECRET_GUILD(guild 只从这个变量读);optional —— 通道关着时没有它也能起,
+# 通道开着而缺它 guild 直接拒启(fail-closed)。
+#
+# 连接数:ConfigMap 的 MySQL.MaxOpenConn × replicas 进 MySQL 连接总账;Redis 的几个池进 Redis 连接总账。
+apiVersion: v1
+kind: Service
+metadata:
+  name: guild
+  labels:
+    app: guild
+    tier: go-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: guild
+  ports:
+    # data-service 的回档帮会闸(GuildInternalRpc)按这个 Service 名直连:guild.<infra>:50300(07-rollback-fail-closed.md §7.11-U10)。
+    - name: grpc
+      port: 50300
+      targetPort: 50300
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guild
+  labels:
+    app: guild
+    tier: go-svc
+spec:
+  replicas: 2
+  # 先起新的、Ready 之后再停旧的:滚动期间不出现零副本。
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: guild
+  template:
+    metadata:
+      labels:
+        app: guild
+        tier: go-svc
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9220"
+        prometheus.io/path: "/metrics"
+    spec:
+      affinity:
+        podAntiAffinity:
+          # 两个副本尽量不落同一节点,否则单节点故障等于全池不可用
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: guild
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: guild
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          env:
+            - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
+              value: warn
+            # 写进 NodeInfo 的对外 IP:ListenOn 是 0.0.0.0,不能原样写(go/guild/guild.go advertisedHost)。
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            # 资产签名密钥(见文件头)。Secret 由 k8s_deploy.ps1 在 -AssetOps on 时建;关着时不存在,optional 让容器照常起。
+            - name: MMORPG_ASSET_OP_SECRET_GUILD
+              valueFrom:
+                secretKeyRef:
+                  name: asset-op-secrets
+                  key: guild
+                  optional: true
+          args: ["-f", "/app/etc/guild.yaml"]
+          ports:
+            - containerPort: 50300
+              name: grpc
+            # 与 ConfigMap 的 Prometheus.Port 9220 及上面 prometheus.io/port 注解一致(9220 = guild)
+            - containerPort: 9220
+              name: metrics
+          readinessProbe:
+            grpc:
+              port: 50300
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            grpc:
+              port: 50300
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          lifecycle:
+            preStop:
+              # 先留 5s 让 Service 摘掉 endpoint、路由服 watch 到 etcd 注册删除。
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+          volumeMounts:
+            - name: svc-config
+              mountPath: /app/etc
+              readOnly: true
+            # 不挂 snowflake-cache:ConfigMap 里 SnowflakeCacheDir 留空(关闭缓存);guild_id 与资产 op_id 都由 data_service 号段发,
+            # FallbackToSnowflake 固定 false。
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: svc-config
+          configMap:
+            name: go-svc-guild-config
+---
+# PDB 与主 manifest 同文件:k8s_deploy.ps1 只 apply 目录条目里的主 manifest。
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: guild-pdb
+  labels:
+    app: guild
+    tier: go-svc
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: guild

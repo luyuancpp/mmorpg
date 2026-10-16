@@ -29,16 +29,17 @@ else
 	return 0
 end`
 
-// pruneQueueScript 空队列懒剔除(KEYS=[index, queue, rank],ARGV=[queueKey]):
+// pruneQueueScript 空队列懒剔除(KEYS=[index, queue, rank, versions],ARGV=[queueKey]):
 // LLEN==0 且 list key 不存在才 SREM;此时评分镜像若还有成员就是孤儿(每条改
 // list 的 Lua 都同步改镜像,list 为空镜像必空;例外只有异常数据),顺手 DEL 掉,
 // 剔除后 LLEN==0 且 ZCARD==0 成立。判定与剔除放同一条 Lua —— 分开做的话
 // JoinQueue 的 SADD+RPUSH+ZADD 若恰好落在 EXISTS 与 SREM 之间,刚登记的队列会被
-// 立刻摘掉;三 key 同 {mq} slot,集群下可用。幂等,多实例重复执行无害。
+// 立刻摘掉;四 key 同 {mq} slot,集群下可用。版本 hash 一并清理,全局写入序列不删除,避免 ABA。
 const pruneQueueScript = `if redis.call("LLEN", KEYS[2]) == 0 and redis.call("EXISTS", KEYS[2]) == 0 then
 	if redis.call("ZCARD", KEYS[3]) > 0 then
 		redis.call("DEL", KEYS[3])
 	end
+	redis.call("DEL", KEYS[4])
 	return redis.call("SREM", KEYS[1], ARGV[1])
 end
 return 0`
@@ -406,7 +407,7 @@ func pruneEmptyQueue(svcCtx *svc.ServiceContext, queueKey string, modeName strin
 		logx.Errorf("[matcher] Failed to remove empty queue %s: %v", queueKey, err)
 		return
 	}
-	removed, err := svcCtx.MatchRedis.Eval(pruneQueueScript, []string{matchQueueIndexKey, queueKey, rankKey}, queueKey)
+	removed, err := svcCtx.MatchRedis.Eval(pruneQueueScript, []string{matchQueueIndexKey, queueKey, rankKey, queueVersionsKey(queueKey)}, queueKey)
 	if err != nil {
 		logx.Errorf("[matcher] Failed to remove empty queue %s: %v", queueKey, err)
 		return
@@ -601,8 +602,9 @@ func (p *groupPicker) drop(idx int) {
 	p.dropped[idx] = true
 	e := p.entries[idx]
 	if e.playerId == 0 {
-		// 非法成员:ZSET 里不会有它,单独 LREM。
-		if _, err := p.svcCtx.MatchRedis.Lrem(p.queueKey, 0, e.raw); err != nil {
+		// 旧队列迁移会照搬非法原始值,其评分与版本镜像也必须随 list 一起清理。
+		if _, err := p.svcCtx.MatchRedis.Eval(removeQueueMembersScript,
+			[]string{p.queueKey, p.rankKey, queueVersionsKey(p.queueKey)}, "0", e.raw); err != nil {
 			logx.Errorf("[matcher] Failed to remove invalid member %q: %v", e.raw, err)
 		}
 		return

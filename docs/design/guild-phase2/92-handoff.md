@@ -1154,6 +1154,10 @@ U9 = "不可证明"可被合法放行覆盖、U10 = 静态 Endpoints(`127.0.0.1:
 
 ⑧ **K8s**:guild 的清单由「单点加固」会话写,照最终的 `go/guild/etc/guild.yaml` 抄(本期新增 `MatchRpc`、`Activity.TrialResult` 两段)。
    还欠:B5d Q1 要的 NetworkPolicy;k8s 里 data_service 没配 `GuildInternalRpc`(回档一律被拒,`07` §7.9.1)。
+   **2026-10-16 更新(「消除单节点」会话,未编译未测试)**:清单、ConfigMap(`AssetOp` / `Activity` 整块从 guild.yaml 原样搬运,`AssetOp.Enabled` 固定 false)、
+   `guild-migrate` Job、镜像登记已落码;data_service 的 K8s ConfigMap 已配 `GuildInternalRpc`(按 Service 名 `guild.<infra>:50300`)与三个 `Rollback*` 的 `MethodTimeouts`。
+   同批改了 go/guild 两处:注册进 etcd 的地址改走 `advertisedHost`(K8s 上 `ListenOn` 是 0.0.0.0,原样写进 NodeInfo 路由服拨不通)、
+   `MySQL.MaxOpenConn / MaxIdleConn`(以前不设上限)。NetworkPolicy 与资产通道开关在 BK8s 后续块。见 `deploy/k8s/README.md`「帮会 guild」。
 
 ⑨ **Java 版(AGENTS §12)**:帮会二期整体**待做**。Java 仓不在机器 A,`PARITY.md` 没有登记;客户端可见契约(guild.proto 的活动消息、
    消息号 239–243、tip 14032–14041、GuildActivity 表)已在本仓主干,Java 版对齐时以这些为准。

@@ -14,7 +14,9 @@
 #include "handler/rpc/gate_service_handler.h"
 #include "handler/rpc/client_message_processor.h"
 #include "handler/rpc/client_request_lane.h"
-#include "handler/rpc/router_muduo_forward.h"
+#include "muduo_grpc/channel.h"
+#include "node/system/node/muduo_grpc_channel_slot.h"
+#include "thread_context/node_context_manager.h"
 #include "handler/rpc/rpc_reply_bridge.h"
 #include "gate_codec.h"
 #include "gate_router_mode.h"
@@ -180,6 +182,23 @@ namespace
         }
     };
 
+    // 所有节点类型上的 gRPC 通道都没有未完成的调用(关机排空用:断线通知发出并拿到结果之后,才允许清掉通道)。
+    // 路由模式下通知走路由服通道,直连模式走 login 通道;两者都在这里,不按模式区分。
+    bool AllGrpcChannelsIdle()
+    {
+        for (auto &registry : tlsNodeContextManager.GetAllRegistries())
+        {
+            for (const auto &[entity, channel] : registry.view<MuduoGrpcChannelPtr>().each())
+            {
+                if (channel && channel->outstandingCalls() != 0)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -271,31 +290,27 @@ int main(int argc, char *argv[])
                                                             std::chrono::steady_clock::now());
                 });
 
-            // gate → 路由服的 gRPC 实现(GATE_ROUTER_TRANSPORT,docs/design/grpc-muduo-transport.md §8)。
-            // muduo_h2 时在路由服节点 registry 上装通道工厂:必须早于服务发现建连(那要等 loop 跑起来之后的 etcd 应答)。
+            // gate → 路由服的传输只剩 muduo_h2(docs/design/grpc-muduo-transport.md §14.1):通道由 NodeConnector
+            // 在服务发现时直接建,这里不再装工厂。GATE_ROUTER_TRANSPORT 只为兼容旧部署保留,显式设成 grpc 或
+            // 不认识的值都打一条 WARN 后照旧走 muduo_h2(与 NODE_ETCD_TRANSPORT 同一处理)。
             {
                 const auto &transport = gate_router_transport::ResolveOnce();
                 if (!transport.recognized)
                 {
-                    LOG_WARN << "Unrecognized " << gate_router_transport::kTransportEnv << "='" << transport.raw
-                             << "', falling back to grpc. Valid values: grpc|muduo_h2.";
+                    LOG_WARN << "Unknown " << gate_router_transport::kTransportEnv << "='" << transport.raw
+                             << "'; using muduo_h2";
                 }
-                const bool useMuduo = routerMode && transport.transport == gate_router_transport::Transport::kMuduoH2;
-                if (useMuduo)
+                else if (transport.transport == gate_router_transport::Transport::kOfficialGrpc && !transport.raw.empty())
                 {
-                    gate_router_muduo::InstallChannelFactory(*node.GetLoop());
+                    LOG_WARN << gate_router_transport::kTransportEnv
+                             << "=grpc is obsolete: the official gRPC client runtime was removed; using muduo_h2";
                 }
-                else if (transport.transport == gate_router_transport::Transport::kMuduoH2)
+                if (routerMode)
                 {
-                    LOG_WARN << gate_router_transport::kTransportEnv << "=muduo_h2 is ignored in direct mode: "
-                             << "the gate does not connect to the router.";
+                    LOG_INFO << "gate router transport="
+                             << gate_router_transport::TransportName(gate_router_transport::Transport::kMuduoH2)
+                             << " (muduo_grpc over nghttp2)";
                 }
-                LOG_INFO << "gate router transport="
-                         << gate_router_transport::TransportName(useMuduo ? gate_router_transport::Transport::kMuduoH2
-                                                                          : gate_router_transport::Transport::kOfficialGrpc)
-                         << (useMuduo ? " (muduo_grpc over nghttp2: router nodes get no grpc::Channel/CQ;"
-                                        " etcd still uses the official gRPC runtime)"
-                                      : " (official gRPC C++ runtime)");
             }
 
             // Disconnect all client sessions before shutdown (SIGTERM or conflict).
@@ -312,15 +327,15 @@ int main(int argc, char *argv[])
                 }
                 LOG_INFO << "All client sessions disconnected.";
             };
-            // muduo_h2 路由传输:关机阶段 0(node.cpp FinalizeShutdownInLoop)会同步清掉路由通道。gate 没有 gRPC server,
+            // 关机阶段 0(node.cpp FinalizeShutdownInLoop)会同步清掉全部 gRPC 通道。gate 没有 gRPC server,
             // beforeShutdown 之后同一调用栈就会走到 Finalize,而被 forceClose 的会话要到下一轮才进断线处理 ——
-            // 那时通道已经没了,Login.Disconnect 通知发不出去,login 侧会话停在 ONLINE。所以在 muduo_h2 下先等
-            // beforeShutdown 关掉的会话都走完断线处理、路由通道上没有在途调用,再放行 Finalize;节点的 15s 排空预算兜底。
-            // 只等 beforeShutdown 当时的那批会话被移除;但「路由通道无在途调用」不区分调用属于谁,关机期间新连进来
-            // 的会话的请求同样会推迟放行,上限仍是 15s 预算。官方 gRPC 模式不加这道等待,行为与改前一致。
-            const bool muduoRouterTransport =
-                routerMode && gate_router_transport::ResolveOnce().transport == gate_router_transport::Transport::kMuduoH2;
-            if (muduoRouterTransport)
+            // 那时通道已经没了,Login.Disconnect 通知发不出去,login 侧会话停在 ONLINE。所以先等 beforeShutdown
+            // 关掉的会话都走完断线处理、gRPC 通道上没有在途调用,再放行 Finalize;节点的 15s 排空预算兜底(gate 调用的
+            // deadline 最长 12s,在途调用必然先结束)。只等 beforeShutdown 当时的那批会话被移除;但「通道无在途调用」
+            // 不区分调用属于谁,关机期间新连进来的会话的请求同样会推迟放行,上限仍是 15s 预算。
+            // 第 3 批(docs/design/grpc-muduo-transport.md §14)以前这道等待只在 GATE_ROUTER_TRANSPORT=muduo_h2 时装,
+            // 官方客户端路径保持旧行为(Finalize 时封住 CQ 写入口,随后的通知同样发不出去)。传输只剩一种之后不再按
+            // 模式区分:直连模式(默认,通知走 login 通道)与路由模式(走路由服通道)都等。
             {
                 auto closingSessions = std::make_shared<std::vector<SessionId>>();
                 node.SetBeforeShutdown([disconnectAllClients, closingSessions](Node &n)
@@ -340,39 +355,35 @@ int main(int argc, char *argv[])
                             return false;
                         }
                     }
-                    return gate_router_muduo::AllChannelsIdle(); });
-            }
-            else
-            {
-                node.SetBeforeShutdown(disconnectAllClients);
+                    return AllGrpcChannelsIdle(); });
             }
             node.SetOnConflictShutdown([disconnectAllClients](Node &n, NodeIdConflictReason)
                                        { disconnectAllClients(n); });
 
             InitGateCodec(context.codec);
 
-            // gRPC response -> client TCP bridge(官方 gRPC 运行时的成功回调)。
+            // gRPC response -> client TCP bridge(生成客户端的全局成功回调;第 3 批起生成客户端走 muduo_grpc,docs/design/grpc-muduo-transport.md §14)。
             //
             // 回包怎样落到客户端(路由 lane 认领、MessageContent 原样下发、其余类型包一层)只有一份实现:
-            // handler/rpc/rpc_reply_bridge.cpp。muduo_grpc 路由路径(GATE_ROUTER_TRANSPORT=muduo_h2)调的是同一个函数,
-            // 两种传输对客户端的可见行为因此逐条相同(docs/design/grpc-muduo-transport.md §8)。
-            SetIfEmptyHandler([](const ClientContext &ctx, const ::google::protobuf::Message &reply)
+            // handler/rpc/rpc_reply_bridge.cpp。路由服 Forward 的手写路径(router_muduo_forward.cpp)调的是同一个函数,
+            // 直连与路由两种拓扑对客户端的可见行为因此逐条相同(docs/design/grpc-muduo-transport.md §8)。
+            SetIfEmptyHandler([](const GrpcReplyContext &ctx, const ::google::protobuf::Message &reply)
                               {
-                auto sd = GetSessionDetailsByClientContext(ctx);
+                auto sd = GetSessionDetailsByReplyContext(ctx);
                 if (!sd) return;
                 gate_rpc_reply_bridge::DeliverReply(*sd, reply); });
 
             // gRPC 调用失败 -> 客户端(docs/design/grpc-client-deadline-failure-callback.md §5 #8/#9)。
             //
-            // 失败时服务端没有回写 initial metadata,按 GetSessionDetailsByClientContext 找会话的路走不通;
+            // 失败时服务端没有回写 initial metadata,按 GetSessionDetailsByReplyContext 找会话的路走不通;
             // 会话从本次**发出**的 x-session-detail-bin 找回(生成的客户端保存了 Send 传入的原值,未经 Base64)。
             // 回 kServiceUnavailable 而不是具体业务码:传输失败 = 结果未知,下游可能已经执行(有副作用的 C2S
             // 靠 Go 侧幂等键兜重试)。采样日志、路由 lane 认领、找会话回 tip 的细节同样只在 rpc_reply_bridge 里。
             SetIfEmptyFailedHandler([](const GrpcCallFailure &failure, const ::google::protobuf::Message & /*request*/)
                                     {
                 gate_rpc_reply_bridge::NotifyCallFailure(failure.method,
-                                                         static_cast<int>(failure.status.error_code()),
-                                                         failure.status.error_message(),
+                                                         static_cast<int>(failure.code()),
+                                                         failure.message(),
                                                          failure.FindSentMetadata(kSessionBinMetaKey)); });
 
             // Post-startup: attach client TCP callbacks + initialize session ID generator.

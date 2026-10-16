@@ -119,7 +119,7 @@ thread_local std::size_t tlsExitReleaseMarksInFlight = 0;
 // tlsRelocateHandoffMarksInFlight 只覆盖"标记在写、EnterScene 还没发"这一段;发出之后改派有没有生效,由这张表盯到
 // 有结论为止(已在别处 / 已落回本节点 / 已踢线 / 已放弃)。
 // 线程模型:只在 scene 逻辑线程上读写 —— 登记(FinishExitAfterPersist → DispatchEmergencyRelocate)、写标记的 Redis
-// 回调、EnterScene 的应答 / 传输失败(主循环上的定时器轮询 CompletionQueue 后分发)、进场路由(PlayerEnterGameNode)、
+// 回调、EnterScene 的应答 / 传输失败(muduo_grpc 通道在本 EventLoop 上回调)、进场路由(PlayerEnterGameNode)、
 // 核实的 Redis 回调、RedisSystem 的重连回调与 1s 定时器,都跑在同一个 EventLoop 上,不需要锁。认领靠的 EnterScene
 // 关联号也是线程内发号(tlsEnterSceneCorrelationSeq),两者作用域一致:号只在发出它的线程上有意义。
 // 不随 tlsEcs.Clear() 清空;进程退出丢表无害(只是少踢,玩家自己重登)。
@@ -442,7 +442,7 @@ namespace
 
 	// ── EnterScene 关联号(EnterSceneRequest.correlation_id,契约见 player_lifecycle.h 的 enter_scene_reply)──
 	//
-	// 线程内计数器。应答只回到发出它的那个进程、那条线程的完成队列(生成的 gRPC 客户端在同一线程上发送与回调),
+	// 线程内计数器。应答只回到发出它的那个进程、那条线程的 EventLoop(生成的 gRPC 客户端在同一线程上发送与回调),
 	// 所以线程内唯一就够了;进程重启后从 1 重来无害 —— 旧进程发出的请求,其应答回不到新进程。
 	// 号只在进程内有意义,排障时要与 player_id 一起看。
 	thread_local uint64_t tlsEnterSceneCorrelationSeq = 0;

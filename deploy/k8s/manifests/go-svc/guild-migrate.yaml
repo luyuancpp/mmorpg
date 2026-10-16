@@ -1,0 +1,129 @@
+# guild-migrate:帮会 guild 独占库 mmorpg_guild 的建表 / 加列 Job(port-decisions D-14 第 4 条;K8s 上线批 BK8s,2026-10-16)。
+#
+# 由 trade-migrate.yaml 派生:Job 结构、等 MySQL 的 initContainer、退出码与 podFailurePolicy 规则逐字相同,只换服务名、
+# ConfigMap(go-svc-guild-config)与配置文件。改那边的公共部分(等待预算、退出码规则)时这里同步改。
+# 与 manifests/go-svc/guild.yaml 同一镜像、同一 ConfigMap,跑服务二进制自带的迁移入口:
+#   /app/service -f /app/etc/guild.yaml -migrate
+# 只连 MySQL 跑 go/schemamigrate 的 Up(go/guild/guild.go runMigration),打印报告后按退出码退出;不起 gRPC、不连 etcd / data_service。
+# 表结构以 proto/guild/guild_db.proto 为唯一事实源。库本身由 mysql-init-sql 预建,本 Job 不建库。
+# 首次在新库上跑会建出全部帮会表(含 B6 的 guild_activity_progress / guild_trial_battle / guild_trial_reward_owed);
+# 迁移前退出码 4(需人工)= 表结构与 proto 漂移,先看日志里的 MANUAL 行,不要反复重跑。
+#
+# 调用:k8s_deploy.ps1 的 $GoSvcCatalogue.guild 用 MigrateJob 字段登记本文件;Apply-OneGoSvc 在 apply 服务 ConfigMap 之后、
+# guild Deployment 之前调用 Apply-GoSvcMigrateJob(先删已终态的旧 Job 再 apply;在途的先等)。
+# 门禁(不受 -WaitReady 控制):staging/prod 恒等本 Job 结束,Complete 才 apply Deployment;dev 档只在 -WaitReady 下等。
+#
+# 退出码(go/schemamigrate 的 ExitCode)与 Job 语义:
+#   0 成功 → Complete;3 锁忙 → 按 backoffLimit 退避重试;1 失败 / 4 需人工 → podFailurePolicy FailJob,立刻 Failed;
+#   其余非 0 与 initContainer 失败 → 按 backoffLimit 重试。
+# ⚠ podFailurePolicy 需要 Kubernetes ≥ 1.26;Pod 模板必须 restartPolicy: Never。
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: guild-migrate
+  labels:
+    # 刻意不用 app: guild:guild Service / PDB 的 selector 是 app=guild,迁移 Pod 混进去会被当成 gRPC 后端。
+    app: guild-migrate
+    tier: go-svc
+spec:
+  # 只给"锁忙 / 意外崩溃 / MySQL 迟迟不可连"留重试余量:默认退避 10s → 20s → 40s → 80s,4 次后 Job Failed。
+  backoffLimit: 4
+  # 不设 ttlSecondsAfterFinished:完成记录与 Pod 日志留着,infra-status / `kubectl logs job/guild-migrate`
+  # 能看到上一次迁移报告;重跑由脚本先删再 apply(只删已终态的 Job,在途的先等)。
+  podFailurePolicy:
+    rules:
+      # 1 = 迁移失败(库不存在 / 连不上 / dirty 台账 / DDL 报错 / 库名断言不符 …),4 = 需人工:
+      # 重试不会自己变好,立即判 Job 失败,让发布停在 Deployment 之前。
+      - action: FailJob
+        onExitCodes:
+          containerName: guild-migrate
+          operator: In
+          values: [1, 4]
+      # 节点排空 / 抢占导致的驱逐不是迁移本身的问题,不计入 backoffLimit。
+      - action: Ignore
+        onPodConditions:
+          - type: DisruptionTarget
+  template:
+    metadata:
+      labels:
+        app: guild-migrate
+        tier: go-svc
+    spec:
+      restartPolicy: Never
+      initContainers:
+        # 等 MySQL 的 3306 真正可连再跑迁移。manifests/infra/mysql.yaml 的 readinessProbe 走 localhost socket,
+        # initdb 期间(临时实例 --skip-networking)Pod 就可能被判 Ready;而 -migrate 连不上会以 1 退出,
+        # 被上面的 FailJob 规则当成"不可重试"直接判 Job 失败(全新集群第一次 infra-up 必踩)。
+        # 所以这里只等 TCP 可连。上限按**时间预算**算,不用"轮数 × sleep"(AGENTS.md §11.3):
+        #   WAIT_MYSQL_TIMEOUT_SECONDS=150,截止时间取自 /proc/uptime(开机秒数,单调,不受 NTP 调时影响);
+        #   每轮 nc -w 3 + sleep 5,截止后最多再跑一轮 → 硬上限 = WAIT_MYSQL_TIMEOUT_SECONDS + 8s = 158s(不含调度 / 拉镜像)。
+        # ⚠ 这个上限要明显小于 k8s_deploy.ps1 的 $GoSvcMigrateJobMinWaitSeconds(300,脚本等本 Job 的预算下限):
+        #   staging/prod 恒等本 Job,预算装不下"拉镜像 + 本等待 + 迁移"时,正常等待会被脚本误判超时、中断发布。改其一必须核对另一个。
+        # 超时以 1 退出 —— 这是 initContainer 的退出码,不命中 FailJob 规则
+        # (规则限定 containerName: guild-migrate),走 backoffLimit 重试。
+        # 复用同一个 alpine 运行镜像里 busybox 的 nc,不引入新镜像;镜像里没有 nc 时只打印并放行
+        # (等待只是把竞态挡在迁移之外,迁移本身仍 fail-closed)。
+        - name: wait-mysql
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          env:
+            - name: MYSQL_ADDR
+              value: "mysql.__INFRA_NAMESPACE__"
+            # 等 3306 的总预算(秒)。约束见上面注释:与 k8s_deploy.ps1 的 $GoSvcMigrateJobMinWaitSeconds 联动。
+            - name: WAIT_MYSQL_TIMEOUT_SECONDS
+              value: "150"
+          command:
+            - sh
+            - -c
+            - |
+              if ! command -v nc >/dev/null 2>&1; then
+                echo "nc not found in image, skip waiting for $MYSQL_ADDR:3306"
+                exit 0
+              fi
+              uptime_s() { cut -d. -f1 /proc/uptime; }
+              deadline=$(( $(uptime_s) + $WAIT_MYSQL_TIMEOUT_SECONDS ))
+              while :; do
+                if nc -z -w 3 "$MYSQL_ADDR" 3306; then
+                  echo "$MYSQL_ADDR:3306 reachable"
+                  exit 0
+                fi
+                now=$(uptime_s)
+                if [ "$now" -ge "$deadline" ]; then
+                  echo "ERROR: $MYSQL_ADDR:3306 not reachable within ${WAIT_MYSQL_TIMEOUT_SECONDS}s" >&2
+                  exit 1
+                fi
+                echo "waiting for $MYSQL_ADDR:3306 ($(( deadline - now ))s left)..."
+                sleep 5
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      containers:
+        - name: guild-migrate
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          env:
+            - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
+              value: warn
+          # 与 guild.yaml 的 args 只差最后一个 -migrate:同一份 ConfigMap,库名 / 账号 / 超时与服务完全一致,
+          # 不会出现"Job 迁的库和服务连的库不是同一个"。
+          args: ["-f", "/app/etc/guild.yaml", "-migrate"]
+          volumeMounts:
+            - name: svc-config
+              mountPath: /app/etc
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: svc-config
+          configMap:
+            name: go-svc-guild-config

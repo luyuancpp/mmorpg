@@ -516,3 +516,32 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 - 摘节点时 done 在实体销毁**之后**才执行:回调不得捕获实体句柄或组件指针(现有调用方都按值捕获,已核对)。
 - 官方通道「空闲 30 分钟回 IDLE」「空闲也 ping」消失,改为截止触发探测(§4.4)。
 - 对端拒连立即进 TRANSIENT_FAILURE(连接失败回调落地后),退避 1s ×1.6 封顶 120s,期间调用立即失败(与官方 gRPC 一致)。
+
+### 14.3 手写调用方适配(2026-10-15,未编译)
+
+§14.1 落地时只改了模板与 core,手写调用方仍引用已删除的符号,重生成后编不过。本节补齐,**未编译、未测试**,
+验证步骤见 [grpc-client-deadline-failure-callback.md](grpc-client-deadline-failure-callback.md) §12。
+
+- **应答 / 失败处理器签名**:所有 `SetIfEmptyHandler` / `SetHandler` lambda 改收 `const GrpcReplyContext&`,
+  失败侧一律用 `failure.code()` / `failure.message()`(gate 失败桥、号段、收件箱、scene_manager 应答)。
+  `GetSessionDetailsByClientContext(const grpc::ClientContext&)` 改名为 `GetSessionDetailsByReplyContext(const GrpcReplyContext&)`
+  (`session.{h,cpp}`),按 `initialMetadata` 找 `x-session-detail-bin`,`-bin` 层语义与旧 `GetServerInitialMetadata` 相同。
+  号段的 `x-idseg-seq` 改用 `GrpcCallOutcome::FindInitialMetadata`。
+- **选点**:`node_utils.{h,cpp}`(`GetSceneManagerEntity` 分级)、`id_segment_bootstrap.cpp`、`player_inbox_system.cpp`
+  改按 `MuduoGrpcChannelPtr` + `muduo_grpc::ConnectivityState`,`GRPC_CHANNEL_*` 与新枚举一一对应,分级规则不变。
+- **gate 路由**:删 `gate_router_muduo::InstallChannelFactory`(工厂已删,通道由 `NodeConnector` 建);
+  `SendRawViaRouter` 去掉官方 CQ / Stub 回退,没挂通道按「没有路由服」fail-closed(返回 nullopt,lane 回 1003);
+  `GATE_ROUTER_TRANSPORT=grpc` / 不认识的值打 WARN 后照旧走 muduo_h2(与 `NODE_ETCD_TRANSPORT` 同一处理)。
+- **gate 关机排空门(行为变化)**:以前只在 `GATE_ROUTER_TRANSPORT=muduo_h2` 时装。CQ 删掉后若仍按开关判,
+  默认部署(开关未设 = 旧默认 grpc)会不装这道门,`FinalizeShutdownInLoop` 同步清掉通道,被 forceClose 的会话下一轮才发
+  `Login.Disconnect`,通知全部发不出去。现在两种拓扑都装:等 beforeShutdown 记下的会话都走完断线处理、**所有** node registry
+  上的 gRPC 通道都没有在途调用,再放行 Finalize;上限仍是节点的 15s 排空预算(gate 调用 deadline 最长 12s)。
+  直连模式(默认)因此关机时要等在途调用结束,换来断线通知能送达;关机期间若一直有新请求进来,会等满 15s 预算
+  (k8s 宽限 30s 覆盖得住)。`gate_router_muduo::AllChannelsIdle` 并入 gate main 的 `AllGrpcChannelsIdle`。
+  gate 的 `PickRandomNode`(各 gRPC 节点类型通用)改为只看 `HasUsableGrpcClient`(挂着通道且非 SHUTDOWN),`SendRawViaRouter` 的无通道分支是防御性守卫。
+- **测试**:`scene_manager_selector_test` 换新枚举;`cross_zone_test` 的假 scene_manager 节点自带 EventLoop 建真通道
+  (端口 1,不连);`grpc_client_lifecycle_test` 按新运行时改写,删掉 CQ 时代与 etcd 流用例(流由 `muduo_grpc_test` 覆盖)。
+  其中一条成功用例的对端仍是测试内的官方 C++ gRPC 服务端桩,第 5 批删官方运行时时要换成 muduo_grpc 服务端或回环桩。
+- **链接项**:本批改了源码的三个测试工程(`rpc_controller_test`、`cross_zone_test`、`routing_identity_test`)的 Debug|x64
+  已补 `muduo_grpc.lib;nghttp2.lib` 与 nghttp2 库目录(照 gate.vcxproj)。其余链 core / grpc_client 的测试工程(如 `bag_test`)
+  仍未补,按 §14.1 归第 5 批;在那之前编它们若报 LNK2019,按报错补同样两项即可。

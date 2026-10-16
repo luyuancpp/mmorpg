@@ -2,6 +2,8 @@
 
 > 状态(2026-09-28):两批均已落码,第一批 regen 已完成(897ac8241)。**全部未编译、未测试**,编译与单测交 Codex
 > (AGENTS.md §10.1),步骤见 §9.2。
+> 2026-10-15:传输换成 muduo_grpc([grpc-muduo-transport.md](grpc-muduo-transport.md) §14),本文的处理器 / 失败回调
+> 契约不变、签名去 grpc 化;手写调用方的适配见那边 §14.3,**未编译**,当前有效的验证步骤以 §12 为准。
 > 相关:`docs/design/microservice-zone-contract-20260914.md` §3「超时预算」、`docs/design/cross-zone-scene-travel.md` §12.2、
 > `tools/proto_generator/protogen/internal/template/grpc_async_client.{h,cpp}.tmpl`、`grpc_init_total.{h,cpp}.tmpl`。
 
@@ -315,6 +317,12 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
 实现上三个 unary 重载都汇到生成的 `Start<Svc><Method>Call`(唯一发送入口);`Complete<Svc><Method>` 先看 `done`,
 有就只交给它。生成代码没有 muduo_grpc 分支:两种传输都在 `grpc::ChannelInterface` 之下。
 
+> 2026-10-15 第 3 批后([grpc-muduo-transport.md](grpc-muduo-transport.md) §14.1):生成代码只走节点实体上的
+> `MuduoGrpcChannelPtr`(`muduo_grpc::Channel::StartUnaryCall`),上一段「两种传输都在 `grpc::ChannelInterface` 之下」作废。
+> 本地拒绝经 `QueueGrpcLocalCompletion` 延后;停机 / 摘节点改为清掉实体上的 `MuduoGrpcChannelPtr`,~Channel 把在途调用
+> 以 UNAVAILABLE 排队,`done` 在通道(摘节点时连同实体)析构之后执行;`InitGrpcNode`、`BeginShutdownGrpcNode`、
+> `PollGrpcNodeShutdown` 与调用对象池均已删除,调用状态放在随完成回调走的 `shared_ptr` 里。§11.2 末段与 §11.3 第 1、4、5 条按此理解。
+
 ### 11.4 regen 与验证(交 Codex / 用户)
 
 1. 仓库根:`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`,再
@@ -323,5 +331,31 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
    三参 `Send` 改为显式传空 `std::vector<std::string>{}`(避免与新重载的 `{}` 二义)。
 3. 串行编译(`/m:1`)所有启用 gRPC 客户端的工程:scene、gate、battle 与 `rpc_controller_test`。
 4. 单测(已写,未跑):`cpp/tests/rpc_controller_test/grpc_client_lifecycle_test.cpp` 的 `PerCallDone*` 三条 ——
-   成功一次且 options 生效、本地拒绝异步 UNAVAILABLE 一次、`BeginShutdownGrpcNode` 后在途与新调用各以非 OK 完成一次;
+   成功一次且 options 生效(对端是测试内的官方 C++ gRPC 服务端桩,并核对 metadata 的应用层 Base64)、本地拒绝异步 UNAVAILABLE 一次、
+   摘掉实体上的 `MuduoGrpcChannelPtr` 后在途调用与新调用各以 UNAVAILABLE 完成一次且 `done` 执行时通道已析构;
    三条都断言不触发全局处理器。跑法同 `rpc_controller_test` 其余用例(`--gtest_filter=GrpcClientLifecycleTest.*`)。
+   2026-10-15 第 3 批后改写为 muduo_grpc 运行时;原先针对官方 CQ 的 owner 寿命用例(`QueuedFailureKeepsOwnerAlive...`)与
+   etcd Watch 流两条用例随 §14.1 的删除一并删掉,流的缓冲 / 取消 / 析构由 `muduo_grpc_test` 的 `ChannelLoopbackTest.BidiStream*` /
+   `CancelledStream*` / `ChannelDestructionClosesStreams*` 覆盖。`rpc_controller_test` 的 Debug|x64 从此链 `muduo_grpc.lib` 与 `nghttp2.lib`。
+
+## 12. 第 3 批后的重生成与验证(2026-10-15,交 Codex / 负责人)
+
+前提:origin/main 已含第 3 批模板 / core 与 §14.3 的调用方适配。本节取代 §9.2 第 2、3 步与 §11.4 第 3 步;
+§9.2 第 1 步(生成器单测)与第 4 步(联机冒烟)仍然有效。工作目录仓库根,MSBuild **一律 `/m:1`**。
+
+1. 生成器:`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`,再
+   `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`。
+   `bin` 里的 proto-gen.exe 可能是旧的,`proto-gen-build` 不能省。生成后核对:`cpp/generated/grpc_client/` 下不再有
+   `.grpc.pb.h` / `CompletionQueue` / `ClientContext`,并按 §9.1 的老规矩核对 Agones 块没被吃掉。
+2. 生成器单测:`cd tools/proto_generator/protogen && go test ./internal/generator/cpp/ -count=1`
+   (含 `TestGrpcAsyncClientTemplatesUseMuduoChannelAndRejectStreaming`)。
+3. 全量编译:`MSBuild game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64`。通过标准 exit 0。
+   失败时先看是不是 §14.3 列出的文件;报错在别的手写文件里引用 `grpc::ClientContext` / `CompletionQueue` / `StubPtr` /
+   `GRPC_CHANNEL_*` 的,就是漏网的调用方,保留第一条 `error C` 及前后 20 行。
+4. 单测:`pwsh tools/scripts/run_cpp_tests.ps1 -Build -Filter rpc_controller_test`(`GrpcClientLifecycleTest.*` 全 PASS)、
+   `-Filter routing_identity_test`(`SceneManagerSelector*`)、`-Filter cross_zone_test`、`-Filter bag_test`。
+   前三个工程的 Debug|x64 已补链 `muduo_grpc.lib;nghttp2.lib`;`bag_test` 等其余工程还没补(第 5 批),报 LNK2019 时照
+   `rpc_controller_test.vcxproj` 的 Debug|x64 补上再编。
+5. 关机冒烟(有本地栈时,针对 §14.3 的 gate 排空门行为变化):直连模式(不设 `GATE_CLIENT_RPC_ROUTER`)登录一个客户端后
+   Ctrl+C 停 gate,login 侧该会话在租约到期**之前**就离线(说明 `Login.Disconnect` 送达);gate 日志不应出现
+   `Before-shutdown drain budget exceeded`(ERROR)。`Before-shutdown drain complete.` 是 INFO,`LogLevel` 为 0 / 1 时才看得到。

@@ -170,6 +170,10 @@ $Catalogue = [ordered]@{
     # 由 Dockerfile.go-svc 通用的 `COPY schemamigrate/` 带入。同一镜像既跑 player-inbox Deployment,也跑 player-inbox-migrate Job
     # (args 加 -migrate,D-14)。
     "player-inbox"  = @{ Dir = "player_inbox";    Entry = "player_inbox.go";        ImageName = "mmorpg-player-inbox" }
+    # 帮会 guild(K8s 上线批 BK8s,2026-10-16):与 k8s_deploy.ps1 $GoSvcCatalogue 的 guild 条目配对(ImageName 必须一致)。只经路由服可达,
+    # 与路由服成对发布。go.mod 的 replace schemamigrate => ../schemamigrate 与 trade 同形态,由 Dockerfile.go-svc 通用的 COPY schemamigrate/ 带入;
+    # proto2mysql 的 replace 是远程仓名映射(不是本地目录),不走 ExternalReplaceStages。同一镜像既跑 guild Deployment,也跑 guild-migrate Job。
+    guild           = @{ Dir = "guild";           Entry = "guild.go";               ImageName = "mmorpg-guild" }
 }
 
 # 先把每个元素再按逗号拆一次,兼容 "a,b"(单字符串)和 a,b(数组)两种传法。

@@ -163,7 +163,7 @@ param(
 	# gate 的客户端 RPC 路由模式:写进 gate Deployment 的环境变量 GATE_CLIENT_RPC_ROUTER
 	# (cpp/nodes/gate/gate_router_mode.h;docs/design/client-rpc-router.md D34)。
 	#   "1" = gate 只连路由服 client-rpc-router,chat / friend / trade 等只承诺路由模式的服务经它可达
-	#         (guild / team 等没登记进 $GoSvcCatalogue 的服务,K8s 上本来就不部署,与本开关无关);
+	#         (team 等没登记进 $GoSvcCatalogue 的服务,K8s 上本来就不部署,与本开关无关;guild 自 2026-10-16 起登记,是全局池);
 	#   "0" = 旧的逐服务直连,只作回退:chat / friend / trade 不可达(gate 直连白名单里没有它们)。
 	# 两种模式下战斗都只走客户端 ↔ battle 直连,gate 不中继战斗(turn-based §22 D66),所以本开关与战斗无关。
 	# **默认 "1"**(turn-based §22 D75,2026-09-29 用户拍板):豁免 D-12 / D36 / D37 的前提①
@@ -1374,6 +1374,10 @@ function Get-MysqlConnectionLedgerInputs {
 		# 会话级 RC + 锁等待 1s),池上限取服务 yaml 的 MySQL.MaxOpenConn,player-inbox ConfigMap 从同一个键镜像。
 		PlayerInboxReplicas   = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/player-inbox.yaml'
 		PlayerInboxMaxOpen    = Get-AuthoritativeScalar -RelativePath 'go/player_inbox/etc/player_inbox.yaml' -KeyPath 'MySQL.MaxOpenConn'
+		# 帮会(2026-10-16 起有 K8s 清单):独占库 mmorpg_guild 一个池,上限取服务 yaml 的 MySQL.MaxOpenConn(以前不设 = 不限,同批补上),
+		# guild ConfigMap 从同一个键镜像。
+		GuildReplicas         = Get-ManifestDeploymentReplicas -RelativePath 'deploy/k8s/manifests/go-svc/guild.yaml'
+		GuildMaxOpen          = Get-AuthoritativeScalar -RelativePath 'go/guild/etc/guild.yaml' -KeyPath 'MySQL.MaxOpenConn'
 	}
 }
 
@@ -1407,7 +1411,7 @@ function Get-MysqlConnectionLedger {
 	$required = @('MaxConnections', 'DbReplicas', 'DbHomeMaxOpen', 'DbZoneStoreMaxOpen', 'DbNonZoneStoreMaxOpen',
 		'DsReplicas', 'DsAuditStorePools', 'DsAuditMaxOpen', 'DsPlayerNameMaxOpen', 'DsRouteMaxOpen',
 		'GatewayReplicas', 'GatewayMaxPool', 'FriendReplicas', 'FriendMaxOpen', 'TradeReplicas', 'TradeMaxOpen',
-		'PlayerInboxReplicas', 'PlayerInboxMaxOpen')
+		'PlayerInboxReplicas', 'PlayerInboxMaxOpen', 'GuildReplicas', 'GuildMaxOpen')
 	$v = @{}
 	foreach ($key in $required) {
 		$n = 0
@@ -1425,12 +1429,14 @@ function Get-MysqlConnectionLedger {
 	$gatewayPerInstance = $v.GatewayMaxPool
 	$perZone = $v.DbReplicas * $dbPerInstance + $v.DsReplicas * $dsPerInstance + $v.GatewayReplicas * $gatewayPerInstance
 	# 变量名不用 $global:它是作用域修饰符的名字,读的人会以为在写全局作用域。
-	$globalPools = $v.FriendReplicas * $v.FriendMaxOpen + $v.TradeReplicas * $v.TradeMaxOpen + $v.PlayerInboxReplicas * $v.PlayerInboxMaxOpen
+	$globalPools = $v.FriendReplicas * $v.FriendMaxOpen + $v.TradeReplicas * $v.TradeMaxOpen + $v.PlayerInboxReplicas * $v.PlayerInboxMaxOpen +
+		$v.GuildReplicas * $v.GuildMaxOpen
 	$steady = $ZoneCount * $perZone + $globalPools
 	# 一个 zone 的三个 Deployment 与三个全局 Deployment 各多 RolloutExtraPodsPerDeployment 个实例
 	# (maxSurge 1 的新 Pod + 仍在优雅退出的旧 Pod;K8s 默认 25% 在 2 副本时 maxSurge 也是 1)。
 	# all-up 不带 -WaitReady 时各 zone 的滚动会重叠,不在这个余量里。
-	$surge = $RolloutExtraPodsPerDeployment * ($dbPerInstance + $dsPerInstance + $gatewayPerInstance + $v.FriendMaxOpen + $v.TradeMaxOpen + $v.PlayerInboxMaxOpen)
+	$surge = $RolloutExtraPodsPerDeployment * ($dbPerInstance + $dsPerInstance + $gatewayPerInstance + $v.FriendMaxOpen + $v.TradeMaxOpen + $v.PlayerInboxMaxOpen +
+		$v.GuildMaxOpen)
 	$peak = $steady + $surge + $OpsReserve
 	return [ordered]@{
 		DbPerInstance = $dbPerInstance; DsPerInstance = $dsPerInstance; GatewayPerInstance = $gatewayPerInstance
@@ -1715,7 +1721,7 @@ function Get-RedisMaxClientsFromManifest {
 	不计入(写在这里,接上时加一行):
 	  - player-inbox:配置有 CoreRedis 段,但 go/player_inbox 的代码还没有建 Redis 客户端;接上后按 1 个池计;
 	  - client-rpc-router:不连 Redis;
-	  - guild:没有 K8s 清单(go/guild/internal/svc 有多个 go-redis 客户端,外加落地唤醒的 Pub/Sub 订阅),接入 K8s 时按实际逐个计;
+	  - guild:2026-10-16 起有 K8s 清单,已在下表登记(三个缺省池 + 两个小池 + 落地唤醒订阅);
 	  - match 的 MatchRedis、chat 的 ChatRedis:K8s 上指向 redis-match-cluster,是另一套实例;
 	  - login 的 PasswordAuth 失败配额池(auth_init.go passwordQuotaRedisOptions,PoolSize 4)与 SaToken 客户端:K8s 的 login ConfigMap
 	    不写这两段;启用 PasswordAuth 后每个 login 副本 +4;
@@ -1756,6 +1762,11 @@ function Get-RedisConnectionLedgerInputs {
 		# Pub/Sub 连接(AssetOp.Wake 缺省开)。K8s 的 trade ConfigMap 现在固定 AssetOp.Enabled=false,通道不装配、不拨共享 Redis
 		# (实际 0 条);按打开计(偏保守),开关翻转时不必回来改账。
 		[ordered]@{ Name = 'trade'; Scope = 'global'; Manifest = "$goSvc/trade.yaml"; GoPools = 1; GoMaxProcs = $g; PubSub = 1; Fixed = 0 }
+		# guild:go/guild/internal/svc/servicecontext.go 的 RedisClient(DB 2,帮会缓存)、PlayerLocatorRedis(DB 0,在场 / 资产定位 / 历练结果)、
+		# MergeMarkerRedis(合服闸门,只读)三个缺省大小的池;另有两个固定小池:申请配额(go/guild/guild.go quotaRedis,PoolSize 4)
+		# 与落地恢复摘要专用池(servicecontext.go playerSyncRedisPoolSize = 4),记在 Fixed;Pub/Sub:落地唤醒订阅 assetop:wake(AssetOp.Wake
+		# 缺省开;K8s 上资产通道默认关时不订阅,按开计,偏保守)。三个池在 K8s 上都指向共享 Redis。
+		[ordered]@{ Name = 'guild'; Scope = 'global'; Manifest = "$goSvc/guild.yaml"; GoPools = 3; GoMaxProcs = $g; PubSub = 1; Fixed = 8 }
 	)
 	foreach ($client in $clients) {
 		$client['Replicas'] = Get-ManifestDeploymentReplicas -RelativePath $client.Manifest -LedgerName $ledgerName
@@ -2386,6 +2397,13 @@ $GoSvcCatalogue = @{
 	# 表由 MigrateJob 登记的 player-inbox-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
 	# 运维口令 PlayerInbox.AdminToken 只经 Secret 进容器(见 $script:PlayerInboxAdminTokenSecretName 处的说明)。
 	"player-inbox"  = @{ ConfigMap = "go-svc-player-inbox-config";    Manifest = "player-inbox.yaml";    Port = 50950; ConfigFlag = "-f";              ConfigFile = "player_inbox.yaml";             ImageName = "mmorpg-player-inbox"; Global = $true; MigrateJob = "player-inbox-migrate.yaml" }
+	# 帮会 guild(docs/design/guild-phase2/;K8s 上线批 BK8s = 90-consistency.md G-05,2026-10-16):帮会天然跨 zone,是全局池(Global),
+	# 与 trade / friend 同放 infra namespace 一份。客户端只经 gate → client-rpc-router 可达(路由服按 GuildNodeService.rpc/ 前缀发现,
+	# guild 刻意不写 go-zero 的 Etcd.Key,D-13);data-service 的回档帮会闸按 Service 名 guild.<infra>:50300 直连(GuildInternalRpc)。
+	# 端口 50300 / metrics 9220 与 go/guild/etc/guild.yaml、go_services.ps1 一致;ImageName 与 go_svc_image.ps1 的 guild 条目一致。
+	# 独占库 mmorpg_guild(D-14):库由 infra-up 的 mysql-init-sql(deploy/mysql-init/00_init_zone_dbs.sql)预建;
+	# 表由 MigrateJob 登记的 guild-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
+	guild           = @{ ConfigMap = "go-svc-guild-config";           Manifest = "guild.yaml";           Port = 50300; ConfigFlag = "-f";              ConfigFile = "guild.yaml";                    ImageName = "mmorpg-guild"; Global = $true; MigrateJob = "guild-migrate.yaml" }
 }
 
 # 目录里非全局(= 随 zone 部署)的服务名。两处 zone 循环共用,避免各写一遍过滤条件。
@@ -5276,6 +5294,93 @@ function New-GoSvcConfigMapYaml {
 		}
 	}
 
+	# 帮会 guild 的契约值(K8s 上线批 BK8s,2026-10-16):键名与 go/guild/etc/guild.yaml、go/guild/internal/config/config.go 逐字一致,
+	# 值只从服务 yaml 取。与 trade / friend 同理**只在生成 guild 自己的 ConfigMap 时求值**。
+	# AssetOp 与 Activity 两个大块由 Get-AuthoritativeYamlBlock 从服务 yaml 逐行原样搬运(含每个参数的取值说明):
+	# 单一真相在那份文件,这里不留可漂移的副本;唯一改写的是 AssetOp.Enabled —— 资产通道是部署决策(见 case 里的注释)。
+	$guildYaml                   = 'go/guild/etc/guild.yaml'
+	$guildName                   = ''
+	$guildTimeout                = ''
+	$guildApplicationQuota       = ''
+	$guildRedisDB                = ''
+	$guildMysqlDBName            = ''
+	$guildMysqlMaxOpenConn       = ''
+	$guildMysqlMaxIdleConn       = ''
+	$guildLeaseTTL               = ''
+	$guildCacheDefaultTTL        = ''
+	$guildCacheMaxMembers        = ''
+	$guildDataServiceTimeout     = ''
+	$guildMatchTimeout           = ''
+	$guildIdSegmentOptionalLines = ''
+	$guildAssetOpBlock           = ''
+	$guildActivityBlock          = ''
+	$guildAssetOpEnabled         = 'false'
+	# 非 dev 档固定 false:表只由 guild-migrate Job 建(D-14 第 4 条),启动路径只跑只读 plan。
+	$guildAutoMigrate            = 'false'
+	if ($SvcName -eq 'guild') {
+		$guildName               = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Name'
+		$guildTimeout            = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Timeout'
+		$guildApplicationQuota   = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'ApplicationQuotaPerMinute'
+		$guildRedisDB            = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'RedisClient.DB'
+		$guildMysqlMaxOpenConn   = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'MySQL.MaxOpenConn'
+		$guildMysqlMaxIdleConn   = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'MySQL.MaxIdleConn'
+		$guildLeaseTTL           = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Node.LeaseTTL'
+		$guildCacheDefaultTTL    = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Cache.DefaultTTL'
+		$guildCacheMaxMembers    = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Cache.MaxMembers'
+		$guildDataServiceTimeout = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'DataServiceRpc.Timeout'
+		$guildMatchTimeout       = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'MatchRpc.Timeout'
+		# 库名取服务 yaml 的 DSN(go/guild 的 config.Validate 断言它等于代码常量 data.DatabaseName = mmorpg_guild);库由 mysql-init-sql 预建。
+		$guildDsn = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'MySQL.DataSource'
+		$guildDsnDb = [regex]::Match($guildDsn, '\)/(?<db>[A-Za-z0-9_]+)(?:\?|$)')
+		if (-not $guildDsnDb.Success) {
+			throw "生成 guild ConfigMap 失败:读不出 $guildYaml 的 MySQL.DataSource 里的库名(原文含口令,不打印)"
+		}
+		$guildMysqlDBName = $guildDsnDb.Groups['db'].Value
+		# 历练结果的分区数必须等于 match 的结果 topic 分区数(guild config.Validate 只查 ≥ 1;两边不等时结算消费者漏读分区,
+		# 玩家白打,而且没有任何报错)。在生成期核对,不让它进集群。
+		$guildTrialPartitions = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Activity.TrialResult.Partitions'
+		$matchResultPartitions = Get-AuthoritativeScalar -RelativePath 'go/match/etc/match_service.yaml' -KeyPath 'ResultTopicPartitions'
+		if ([string]$guildTrialPartitions -ne [string]$matchResultPartitions) {
+			throw "生成 guild ConfigMap 失败:$guildYaml 的 Activity.TrialResult.Partitions=$guildTrialPartitions 与 go/match/etc/match_service.yaml 的 ResultTopicPartitions=$matchResultPartitions 不同(历练结算会漏读分区)"
+		}
+		$guildIdSegmentOptional = New-Object System.Collections.Generic.List[string]
+		$guildYamlFull = Join-Path $RepoRoot ($guildYaml -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+		foreach ($guildKey in @('Step', 'MinStep', 'MaxStep')) {
+			$guildScalar = Get-YamlScalar -Path $guildYamlFull -KeyPath "IdSegment.$guildKey"
+			if ($guildScalar.Found -and -not [string]::IsNullOrWhiteSpace($guildScalar.Value)) {
+				$guildIdSegmentOptional.Add("  ${guildKey}: $($guildScalar.Value)")
+			}
+		}
+		$guildIdSegmentOptionalLines = $guildIdSegmentOptional -join "`n"
+		# AssetOp 整块原样搬运,只改第一层的 Enabled(两格缩进;Wake 子块里四格缩进的 Enabled 不动)。
+		$assetOpLines = @((Get-AuthoritativeYamlBlock -RelativePath $guildYaml -Key 'AssetOp') -split "`r?`n")
+		$enabledHits = @(for ($i = 0; $i -lt $assetOpLines.Count; $i++) { if ($assetOpLines[$i] -match '^  Enabled:') { $i } })
+		if ($enabledHits.Count -ne 1) {
+			throw "生成 guild ConfigMap 失败:$guildYaml 的 AssetOp 块里两格缩进的 Enabled 应恰好 1 行,实际 $($enabledHits.Count) 行"
+		}
+		$assetOpLines[$enabledHits[0]] = "  Enabled: $guildAssetOpEnabled"
+		$guildAssetOpBlock = $assetOpLines -join "`n"
+		$guildActivityBlock = (Get-AuthoritativeYamlBlock -RelativePath $guildYaml -Key 'Activity') -replace "`r`n", "`n"
+		if ($ReleaseProfile -eq 'dev') {
+			$guildAutoMigrate = Get-AuthoritativeScalar -RelativePath $guildYaml -KeyPath 'Schema.AutoMigrate'
+		}
+	}
+
+	# data-service 的回档帮会闸(docs/design/guild-phase2/07-rollback-fail-closed.md §7.5.3 / §7.5.5;2026-10-16 随 guild 上 K8s 一并接上):
+	# GuildInternalRpc 不写 = 回档一律被拒;三个 Rollback* 的服务端超时(MethodTimeouts)不写 = 回档被 go-zero 默认 2000ms 截断。
+	# 取值与 MethodTimeouts 表都从服务 yaml 镜像;MethodTimeouts 里的三个方法已登记在 Get-GrpcClientMethodsNotCalledFromCpp。
+	# 回档 RPC 另要 AdminToken(本 ConfigMap 不写 = 整体停用),这几项只是让「运维在维护窗口下发口令之后」回档能真正走完帮会闸。
+	$dsGuildInternalTimeout     = ''
+	$dsGuildClockSkewMarginMs   = ''
+	$dsGuildCheckBudgetSeconds  = ''
+	$dsMethodTimeoutsBlock      = ''
+	if ($SvcName -eq 'data-service') {
+		$dsGuildInternalTimeout    = Get-AuthoritativeScalar -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'GuildInternalRpc.Timeout'
+		$dsGuildClockSkewMarginMs  = Get-AuthoritativeScalar -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'GuildClockSkewMarginMs'
+		$dsGuildCheckBudgetSeconds = Get-AuthoritativeScalar -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'GuildCheckBudgetSeconds'
+		$dsMethodTimeoutsBlock     = (Get-AuthoritativeYamlBlock -RelativePath 'go/data_service/etc/data_service.yaml' -Key 'MethodTimeouts') -replace "`r`n", "`n"
+	}
+
 	$svcConfig = switch ($SvcName) {
 		"db" {
 @"
@@ -5418,6 +5523,21 @@ RouteStore:
   MaxIdleConn: ${dsRouteStoreMaxIdleConn}
 # 与 manifest 的 9260 端口、prometheus 注解一致。多副本之后要能按 Pod 看消费者是否在跑。
 MetricsListenAddr: ":9260"
+# 回档的帮会资产闸(07-rollback-fail-closed.md §7.5.5):回档写任何玩家数据之前先问 guild「这些玩家自快照以来有没有已应用的帮会资产操作」。
+# 不写这一段 = 回档一律被拒。guild 是全局池,按 Service 名直连(guild 刻意不写 go-zero Etcd.Key,按 etcd 找不到它;§7.11-U10)。
+# NonBlock:guild 不在线不得阻塞 data-service 启动;Breaker 关:本链路不重试、一次失败即整体拒绝,熔断器帮不上忙。
+GuildInternalRpc:
+  Endpoints:
+    - "guild.${InfraNamespace}:50300"
+  Timeout: ${dsGuildInternalTimeout}
+  NonBlock: true
+  Middlewares:
+    Breaker: false
+GuildClockSkewMarginMs: ${dsGuildClockSkewMarginMs}
+GuildCheckBudgetSeconds: ${dsGuildCheckBudgetSeconds}
+# 三个 Rollback* 的服务端超时,从服务 yaml 原样搬运(取值推导见那份文件)。部署门禁逐条核对:这三个方法 C++ 从不调用
+# (Get-GrpcClientMethodsNotCalledFromCpp),所以可以高于 C++ 的 deadline。
+${dsMethodTimeoutsBlock}
 # id_segment 行播种策略(见生成器注释):dev = 服务 yaml 的值;staging/prod = false,缺行不自动播种,
 # 由人核对消费侧最大号后处理(README「恢复全局库前须先核对 id_segment.max_id」)。
 # BootstrapTags 与服务 yaml / DefaultIdSegmentBootstrapTags 同一份清单:迁移(AutoMigrate / -migrate)
@@ -5918,6 +6038,102 @@ SharedRedis:
 AssetOp:
   Enabled: false
   SecretEnv: MMORPG_ASSET_OP_SECRET_TRADE
+"@
+		}
+		"guild" {
+@"
+Name: ${guildName}
+ListenOn: 0.0.0.0:50300
+# zrpc 服务端整体超时(毫秒):不超过路由服 ForwardTimeoutMs − 1000,且 ≥ DataServiceRpc.Timeout + 归属区查询 + 回包余量(config.Validate 强制)。
+Timeout: ${guildTimeout}
+ApplicationQuotaPerMinute: ${guildApplicationQuota}
+# 刻意不写 go-zero 的 Etcd 段(D-13):guild 按 C++ 约定在 Registry.Etcd 下注册 GuildNodeService.rpc/(internal/node),
+# 路由服按这个前缀发现它;没有任何 Go 服务按 go-zero key 找 guild。
+#
+# 三个 Redis 句柄在 K8s 上都指向共享 Redis(写者含 C++ scene,不能集群化):
+#   RedisClient        帮会缓存与选主锁(DB 取服务 yaml 的值);
+#   PlayerLocatorRedis 在场查询、资产通道的 player:{id}:location、历练结果 battle:activity_result:{battle_id} ——
+#                      必须与 scene / scene_manager / battle 写这些键的 Redis 同实例同 DB(0),指错的表现是全员不在线、结算销不掉账,且不报错;
+#   MergeMarkerRedis   合服闸门 merge:in_progress:{zone},与 data-service 的 MappingRedis 同实例、DB 0(那份 ConfigMap 不写 DB)。
+RedisClient:
+  Host: "redis.${InfraNamespace}:6379"
+  Password: "${redisPassword}"
+  DB: ${guildRedisDB}
+PlayerLocatorRedis:
+  Host: "redis.${InfraNamespace}:6379"
+  Password: "${redisPassword}"
+  DB: 0
+MergeMarkerRedis:
+  Host: "redis.${InfraNamespace}:6379"
+  Pass: "${redisPassword}"
+  DB: 0
+# 独占库 ${guildMysqlDBName}(D-14):由 infra-up 的 mysql-init-sql(deploy/mysql-init/00_init_zone_dbs.sql)预建并 GRANT 给 appuser;
+# 账号沿用 db / data-service / trade 同一组注入值,换成别的账号要自己补 GRANT。不得加 clientFoundRows(config.Validate 拒启)。
+# 池上限 × Deployment 副本数进 MySQL 连接总账(Get-MysqlConnectionLedger)。
+MySQL:
+  DataSource: "${mysqlUser}:${mysqlPassword}@tcp(mysql.${InfraNamespace}:3306)/${guildMysqlDBName}?charset=utf8mb4&parseTime=true&loc=Local"
+  MaxOpenConn: ${guildMysqlMaxOpenConn}
+  MaxIdleConn: ${guildMysqlMaxIdleConn}
+# 建表策略:dev = 服务 yaml 的值;staging/prod = false,表只由 guild-migrate Job 建,启动路径只跑只读 plan。
+Schema:
+  AutoMigrate: ${guildAutoMigrate}
+# 全局池:ZoneId 只影响注册路径,业务代码不读它做分支;取命令行 -ZoneId(Apply-GlobalGoSvcManifests),与 trade / friend 同口径。
+Node:
+  ZoneId: ${CurrentZoneId}
+  LeaseTTL: ${guildLeaseTTL}
+Registry:
+  Etcd:
+    Hosts:
+      - "etcd.${InfraNamespace}:2379"
+    DialTimeout: 5s
+Cache:
+  DefaultTTL: ${guildCacheDefaultTTL}
+  MaxMembers: ${guildCacheMaxMembers}
+Kafka:
+  Brokers:
+    - "kafka.${InfraNamespace}:9092"
+# 查角色归属区与领号段(guild_id、资产 op_id)。data-service 每个 zone 都按 go-zero key 注册,全局库共用,拨到哪一个都行。
+DataServiceRpc:
+  Etcd:
+    Hosts:
+      - "etcd.${InfraNamespace}:2379"
+    Key: dataservice.rpc
+  Timeout: ${guildDataServiceTimeout}
+  NonBlock: true
+  Middlewares:
+    Breaker: false
+# guild_id 号段(biz_tag = guild,已在 data-service ConfigMap 的 IdSegment.BootstrapTags 里)。Enabled 显式 true;
+# FallbackToSnowflake 固定 false(号段失败即建帮失败,tip kGuildIdGenUnavailable,§6.4 的决定)。Step / MinStep / MaxStep 镜像服务 yaml。
+IdSegment:
+  Enabled: true
+${guildIdSegmentOptionalLines}
+  FallbackToSnowflake: false
+# 资产通道(捐献扣货币、商店兑换发物品):整块从服务 yaml 原样搬运,只有 Enabled 由部署决定。
+# 打开的前提是 docs/design/guild-phase2/08-save-owner-fence.md §8.3 的六条门禁(运行期验证,脚本核不了),
+# 另需签名密钥 MMORPG_ASSET_OP_SECRET_GUILD 经 Secret 注入、scene 的资产 gRPC 只放行 scene_manager / match / guild / trade。
+# 所有档位暂时固定 false(同 trade 的 AssetOp.Enabled);关着时捐献 / 兑换回 kGuildAssetPending,升级与读接口照常。
+${guildAssetOpBlock}
+# 历练开战调 match 的内部服务(MatchInternal.StartActivityBattle)。match 是全局池,按 go-zero key 注册。
+MatchRpc:
+  Etcd:
+    Hosts:
+      - "etcd.${InfraNamespace}:2379"
+    Key: matchservice.rpc
+  Timeout: ${guildMatchTimeout}
+  NonBlock: true
+  Middlewares:
+    Breaker: false
+# 历练节律与对局结果消费:整块从服务 yaml 原样搬运。TrialResult.Partitions 已在生成期核过等于 match 的 ResultTopicPartitions。
+${guildActivityBlock}
+KillSwitchPrefix: ""
+ClusterId: ${CurrentClusterId}
+# 不缓存 snowflake 槽位(容器里没有持久目录;guild_id 与资产 op_id 都由号段发,无 snowflake 回退)。
+SnowflakeCacheDir: ""
+# 与 manifests/go-svc/guild.yaml 的 metrics 端口 / prometheus.io/port 注解一致(9220 = guild);K8s 上绑 0.0.0.0 让 Prometheus 抓得到。
+Prometheus:
+  Host: 0.0.0.0
+  Port: 9220
+  Path: /metrics
 "@
 		}
 		"friend" {

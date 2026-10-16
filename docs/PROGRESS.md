@@ -9037,3 +9037,67 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **还没做 / 没验证**:界面入口与面板画面(Codex);Unity 里编译与运行;实机点击。实机要点出一次真正的强化,得先在服务器侧给账号补强化石与银两
   (客户端没有 GM 发物入口,`robot_9104` 跑完 equip_forge_smoke 后强化石为 0)。
 - **Java 版(AGENTS §12)**:不涉及(纯客户端改动,客户端契约不变);装备系统在 Java 版仍是待做。
+## 2026-10-16 队伍补位匹配:Go 1.27.2 复跑通过,主仓 match.exe 已替换(Claude)
+
+- 接 2026-10-15 条「待 Codex 用 1.27.2 复跑」:本机已装 Go 1.27.2(`C:\Users\luyua\AppData\Local\Programs\Go\1.27.2\go`,在用户 PATH 里;
+  10-15 条写「本机只有 1.26.5」时还没装上)。用户授权 Claude 编译测试 go/match。
+- 做法:从主仓本地 main `5a6404ffa682`(已包含补位提交 `bd0f9d1ae3`)用 `git archive` 导出 go/match、go/proto、go/shared 到临时目录,
+  `GOTOOLCHAIN=local GOFLAGS=-mod=readonly`,**不改 go.mod**:`go build`、`go vet ./...` 退出码 0,`go test ./... -count=1` 7 个包全部 ok。
+- 产物:按 `go_services.ps1` 同口径(`-trimpath`,buildinfo Version=dev / Commit=5a6404ffa682 / BuildTime=该提交时间)编出 `match.exe`,
+  替换主仓 `bin/go_services/match.exe`;旧版(10-13)备份为 `bin/go_services/match.exe.bak-20261016`。替换时主仓那份 match 没在运行。
+  主仓当时另有执行者在跑合并验证(run/merge-validation-20261015),本次没有在主仓源码目录里编译,也没有跑生成器或 MSBuild。
+- 仍未做:联机验收(team-backfill-matching.md §7.3)、robot vendor 编译、C++、Unity 内测试与界面目视;Java 版待做。
+## 2026-10-16 帮会 guild 上 K8s(BK8s 第一块:部署本体)(Claude,未编译、未测试,待 Codex 验证)
+
+用户 10-16 拍板「BK8s 全部做完」(`docs/design/guild-phase2/90-consistency.md` G-05);本条是第一块。总纲 §7,运维说明 `deploy/k8s/README.md`「帮会 guild」。
+
+- **K8s**:`deploy/k8s/manifests/go-svc/guild.yaml`(全局池,Service 50300 + Deployment 2 副本 RollingUpdate / 反亲和 / grpc 探针 / `POD_IP` / metrics 9220 + PDB;
+  资产密钥 `MMORPG_ASSET_OP_SECRET_GUILD` 预留为 optional 的 secretKeyRef)、`guild-migrate.yaml`(派生自 trade-migrate)。
+  `k8s_deploy.ps1`:`$GoSvcCatalogue.guild`(Global + MigrateJob);`go-svc-guild-config` 按 `go/guild/etc/guild.yaml` 生成,`AssetOp` / `Activity` 整块原样搬运、
+  `AssetOp.Enabled` 固定 false;生成期核对历练分区 == match `ResultTopicPartitions`;`go_svc_image.ps1` 登记镜像 `mmorpg-guild`。
+- **data-service 回档帮会闸**:K8s ConfigMap 补 `GuildInternalRpc`(`guild.<infra>:50300`)、`GuildClockSkewMarginMs`、`GuildCheckBudgetSeconds`、三个 `Rollback*` 的
+  `MethodTimeouts`(均镜像服务 yaml;三方法已在「C++ 不调用」名单)。以前不写 = 回档一律被拒。
+- **go/guild 两处修正**:① 注册进 etcd 的地址以前直接取 `ListenOn`,K8s 上是 0.0.0.0、路由服拨不通 → 新增 `advertisedHost`(POD_IP 优先,同 trade / chat);
+  ② MySQL 池以前不设上限 → `MySQL.MaxOpenConn / MaxIdleConn`(不写 = 20 / 5,`Validate` 拒负数与 idle > open),guild.yaml 显式写 20 / 5。
+- **连接总账**:Redis 总账加 guild 一行(3 个缺省池 + 订阅 + 两个 4 连接小池);MySQL 总账加 `GuildReplicas` / `GuildMaxOpen` ——
+  规划档峰值 1780 / `max_connections` 1800,**余量只剩 20**,再加任何全局池或调大池之前要先重做规划档(或等 TiDB 一期)。
+- **契约测试**:新增 4 条(部署形态、ConfigMap 镜像与整块搬运、data-service 回档帮会闸、镜像名一致);改 3 条(K8s 生成物 deadline 用例解析 data-service 的
+  MethodTimeouts、MySQL 总账自检的合成输入与期望值、「连 MySQL 的 ConfigMap 名单」加 guild)。
+- **已做的核对**:gofmt 通过;PowerShell 解析 0 错误;`infra-up` / `zone-up` 演练模式(不连集群)退出 0,帮会 ConfigMap 与清单逐项看过;新增与改动用例的
+  关键比对在真实演练输出上跑过(AssetOp / Activity 整块一致、deadline 违例 0、MySQL 自检新期望值逐项复算一致)。**契约测试与 Go 测试都没有运行。**
+- **验证(交 Codex)**:`cd go/guild && go build ./... && go vet ./... && go test -count=1 ./...`;
+  `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`;有集群时 guild 两 Pod Ready + `job/guild-migrate` Complete + robot `guild_smoke.yaml`。
+- **后续块**:资产通道开关与签名密钥(guild / trade / scene)、NetworkPolicy、告警与 Loki ruler。
+- **Java 版(AGENTS §12)**:帮会二期整体在 Java 版待做(92-handoff §13.2 ⑨);本条是部署形态,Java 版不共用本仓 K8s 清单。本机没有 Java 仓库,`PARITY.md` 未登记。
+
+## 2026-10-16 gRPC 传输第 3 批收尾:手写调用方适配 muduo_grpc(Claude,未编译、未测试,待 Codex 验证)
+
+- 背景:第 3 批([grpc-muduo-transport.md](design/grpc-muduo-transport.md) §14)把生成客户端模板与 core 换成 muduo_grpc,手写调用方没跟上,重生成后主干编不过。本条补齐,清单与理由见同文 §14.3。
+- **签名**:全部全局应答处理器改收 `const GrpcReplyContext&`,失败侧用 `failure.code()` / `failure.message()`;`GetSessionDetailsByClientContext` 改名 `GetSessionDetailsByReplyContext`(session.{h,cpp})。涉及 gate main、号段 `id_segment_bootstrap.cpp`、收件箱、scene_manager 应答。
+- **选点**:`node_utils`、号段、收件箱改按 `MuduoGrpcChannelPtr` + `muduo_grpc::ConnectivityState`,分级规则不变。
+- **gate**:删 `InstallChannelFactory`;路由发送去掉官方 CQ / Stub 回退,无通道 fail-closed;`GATE_ROUTER_TRANSPORT=grpc` 只打 WARN。**行为变化**:关机排空门改为直连 / 路由两种模式都装、等所有 gRPC 通道空闲(以前只在 muduo_h2 下装,按旧默认值判会让默认部署关机时丢掉 `Login.Disconnect`),直连模式关机要等在途调用结束,关机期间持续有新请求时等满 15s 预算。gate 的 `PickRandomNode` 改为只看 `HasUsableGrpcClient`。
+- **测试**:`scene_manager_selector_test` 换新枚举;`cross_zone_test` 假节点自带 EventLoop 建真通道;`grpc_client_lifecycle_test` 按新运行时改写(删 CQ 时代与 etcd 流用例);`rpc_controller_test` / `cross_zone_test` / `routing_identity_test` 的 Debug|x64 补链 `muduo_grpc.lib;nghttp2.lib`(这三个本批改了源码,不补就编不过);`bag_test` 等其余测试工程的链接项仍归第 5 批。
+- **没改**:生成模板与任何生成物(本批不需要再跑一次 proto-gen)。
+- **Codex 验证**:按 [grpc-client-deadline-failure-callback.md](design/grpc-client-deadline-failure-callback.md) §12 —— `proto-gen-build` → `proto-gen-run`(no-unity 配置)→ 生成器单测 → `MSBuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64` → `run_cpp_tests.ps1 -Build -Filter rpc_controller_test` / `routing_identity_test` / `cross_zone_test` / `bag_test`(bag_test 报 LNK2019 就照 rpc_controller_test 补两项链接)→ 直连模式关机冒烟。
+- **第 5 批注意**:`grpc_client_lifecycle_test` 有一条成功用例的对端仍是官方 C++ gRPC 服务端桩,删官方运行时时要换掉。
+- **Java 版(AGENTS §12)**:本批是 C++ 内部传输适配,不涉及客户端契约,Java 版无对应改动。此前 09-28 / 10-01 的失败回调与 tip 3028 的 Java 对齐仍**待做**:本机没有 Java 仓(`D:\luyuan` 不存在),未能核对 `PARITY.md`。
+
+## 2026-10-16 队伍补位匹配:修复撤单误删重新入队,完成隔离复验(Codex)
+
+- 确认问题:整队撤单删掉成员旧票后,该成员通过独立会话成功 JoinQueue;旧撤单随后按 player_id 摘队列,误删新项但留下 queued 新票。
+  用真实 JoinQueue 的确定性交错用例先复现失败,再修复;原断言严格要求队列只剩一份新成员项,未放宽。
+- 修复:队列增加同 `{mq}` slot 的版本 hash 与不回收的全局递增序列;所有单人 / 整队入队、回队首 Lua 每次执行刷新版本并去除同成员旧项。
+  cancelParty 在读 / 删成员票前快照版本,最终按版本摘项;快照失败不做无条件删除。摘项 / prune 清版本元数据,全局序列不随队列回收。
+  静态旧数据兼容,不支持旧写入实例混跑;不承诺 Redis 丢失已确认序列写入后的 ABA 安全。其他无条件删除路径的既存竞态不在此次修复范围。
+- Go 1.27.2(未改 go.mod):修复后 match build、vet 均通过;全量 339 个顶层测试(含子测试 512 条)、7 个包通过,0 失败 / 跳过。
+  定向 13 个顶层测试(含子测试 21 条)通过;robot `go build -p 4 -mod=vendor ./...` 通过。
+  覆盖整队不可拆、取消、成员变化、失败回队及新入队版本保护,独立静态终审无阻塞问题。
+- 客户端已推送 `35d1cf52` 快照(含 `a1732fd8`):441 个运行时 C# 文件及 Battle / Tianyong 测试程序集编译 0 error,NUnit 纯逻辑 181/181 通过;
+  5 字段 / 3 枚举 / 6 RPC 消息号契约一致。Unity 引擎相关执行与实机联机未做。
+- 部署契约完整运行仍为 150/152 通过,2 项失败已独立定位为 CRLF 文本断言与双区 ConfigMap 宽正则重复计数,未冒称全绿。
+  最新 `0b5b297673` 补位开关 false / true 定向渲染 2/2 通过且 battle ConfigMap 不变,两次 DryRun 均退出 0,无真实部署。
+  150/152 是旧基线一轮结果,最新基准未扩跑无关完整部署套件。详细命令、证据、范围边界见设计文档 §7.5。
+- 集成方式:在 TEMP 隔离工作树基于远端 main 修复,并保留其后 `0b5b297673` 的远端新提交;相关 Go / robot 源码相对验证基准 `43284eb0bd` 无差异。
+  两边主工作区中其他任务的未推送提交和 merchant 未提交生成物保持原样,不随本次补位交付发布。
+- 协议 / 配表 / 生成物未改;未重启服务、未清理数据库、未替换主仓二进制。Go -race、C++ 全量编译、Unity 内测试及三客户端联机尚未执行。
+  Java 版仍待做,本机无约定 Java 仓库,PARITY 未登记(设计文档 §7.4)。

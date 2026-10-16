@@ -16,6 +16,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/netx"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -150,7 +151,9 @@ func main() {
 		logx.Must(fmt.Errorf("parse listen address: %w", err))
 	}
 
-	n, err := node.NewNode(nodeType, host, port)
+	// 写进 NodeInfo 的是对外可拨的 IP,不是监听地址:K8s 上 ListenOn 是 0.0.0.0(监听所有网卡),原样写进去路由服拨不通
+	// (2026-10-16 补 K8s 清单时发现;本地 127.0.0.1 不受影响)。口径与 trade / chat / client_rpc_router 相同。
+	n, err := node.NewNode(nodeType, advertisedHost(host), port)
 	if err != nil {
 		logx.Must(fmt.Errorf("create node: %w", err))
 	}
@@ -825,6 +828,30 @@ func logReport(stage string, r schemamigrate.Report) {
 	for _, line := range reportLines(r) {
 		logx.Infof("[guild] %s%s", stage, line)
 	}
+}
+
+// isUnspecifiedHost:""、0.0.0.0、:: 这类"监听所有网卡"的 host,不能原样写进 NodeInfo。
+func isUnspecifiedHost(host string) bool {
+	if host == "" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsUnspecified()
+}
+
+// advertisedHost 决定写进 NodeInfo 的 IP(与 go/trade、go/chat 的 advertisedHost 同一口径):
+// POD_IP 优先(K8s 清单经 downward API 注入)→ ListenOn 的具体 host → 本机第一个非 loopback IP → 127.0.0.1。
+func advertisedHost(listenHost string) string {
+	if podIP := os.Getenv("POD_IP"); podIP != "" {
+		return podIP
+	}
+	if !isUnspecifiedHost(listenHost) {
+		return listenHost
+	}
+	if ip := netx.InternalIp(); ip != "" {
+		return ip
+	}
+	return "127.0.0.1"
 }
 
 func splitHostPort(address string) (string, uint32, error) {

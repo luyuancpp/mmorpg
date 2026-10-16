@@ -44,8 +44,8 @@ inline constexpr std::size_t kMaxLaneDepth = 32;
 // 排队等待上限:超过就不发出,回带请求 id 的 1003,明确「没有执行」,客户端重试安全。
 // 不变式 I4:gate deadline(路由服,8000)+ 本值 + 1000 ≤ 客户端超时 15000(client-request-ordering.md §5.2)。
 inline constexpr std::chrono::milliseconds kMaxLaneWait{5000};
-// 在途调用的本地截止 = 发出时刻 + 实际生效的 gRPC deadline + 本余量。余量覆盖 5ms 的 CQ 轮询与 loop 积压:
-// 正常情况下 gRPC 失败回调先到,本地截止只兜「回调丢失」(节点摘除 F29、CQ 轮询 !ok 时跳过剩余事件)。
+// 在途调用的本地截止 = 发出时刻 + 实际生效的 gRPC deadline + 本余量。余量覆盖 loop 积压:
+// 正常情况下 gRPC 失败回调先到,本地截止只兜「回调丢失」(官方 CQ 时代的节点摘除 F29 等;第 3 批起摘节点与关机都会补投失败)。
 inline constexpr std::chrono::milliseconds kInflightExpiryMargin{1000};
 // 主动过期扫描的间隔(秒)。必须主动扫:队头卡住时客户端在等回包,不会再发新请求触发惰性清理。
 inline constexpr double kSweepIntervalSeconds = 0.25;
@@ -84,8 +84,8 @@ bool OnRouterReply(const SessionDetails &echoed, const ::google::protobuf::Messa
 // (结果未知:下游可能已经执行,有副作用的请求靠业务侧栅栏与幂等兜底)。
 bool OnRouterCallFailed(const SessionDetails &sent);
 
-// 路由服节点摘除(OnNodeRemoveEvent 在 DestroyEntity 之前、同一 loop 线程触发):该节点上的在途调用永远不会再有回调,
-// 当作失败处理:回 1003,放行下一条。摘出在途项同步做(恰好一次),回执与放行下一条推到下一轮 loop,
+// 路由服节点摘除(OnNodeRemoveEvent 在 DestroyEntity 之前、同一 loop 线程触发):该节点上的在途调用当场按失败处理:
+// 回 1003,放行下一条。触发前通道已被摘掉,~Channel 排进队列的 UNAVAILABLE 失败回调在 OnRouterCallFailed 里认领不到,直接丢弃。摘出在途项同步做(恰好一次),回执与放行下一条推到下一轮 loop,
 // 那时被摘实体已销毁,下一条不会再选中它。
 void OnRouterNodeRemoved(entt::entity routerEntity);
 

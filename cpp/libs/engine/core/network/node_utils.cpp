@@ -7,8 +7,8 @@
 #include <iterator>
 #include <memory>
 #include <optional>
-#include <grpcpp/channel.h>
 #include "muduo/base/Logging.h"
+#include "muduo_grpc/channel.h"
 #include <thread_context/node_context_manager.h>
 
 namespace
@@ -51,17 +51,18 @@ namespace
 	//
 	// 为什么 ② 算可用,而不是像 PickReadyDataServiceNode 那样只认 READY:
 	// - 只认 READY 会在两种正常情形下一个都挑不到:
-	//   1) 通道创建后是 IDLE。ConnectToGrpcNode 只建通道不拨号,第一次调用(或 GetState(true))才去连;
-	//   2) 连着的通道 30 分钟没有调用会回 IDLE。GrpcChannelCache 没设 GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS,
-	//      gRPC 默认 30 分钟;keepalive ping 不算调用,挡不住它。
-	//   号段传输只认 READY 没事,因为它的调用方按退避重试;SceneManager 的调用方不能拿"刚启动 / 夜里没人换图"
+	//   1) 通道刚建好时在 CONNECTING。ConnectToGrpcNode 建好即 GetState(true) 预连,收到服务端首个 SETTINGS
+	//      才转 READY(grpc-muduo-transport.md §5),发现实例后的头一个往返里一个 READY 都没有;
+	//   2) READY 的连接断开(对端重启、GOAWAY、网络闪断)后通道回 IDLE,下一次调用或 GetState(true) 才重连
+	//      (与 pick_first 一致)。旧官方通道「空闲 30 分钟回 IDLE」已随第 3 批消失(§14.2),这一条仍在。
+	//   号段传输只认 READY 没事,因为它的调用方按退避重试;SceneManager 的调用方不能拿"刚启动 / 连接刚断"
 	//   当失败。
 	//
 	// 为什么 ③a 排在 ② 之后:实例崩溃后连接断开,通道先回 IDLE;这里的 GetState(true) 把它踢去重连,对端拒连
-	// 就进 TRANSIENT_FAILURE,并且 pick_first 在退避重连期间一直停在 TRANSIENT_FAILURE、不会回报 CONNECTING,
-	// 直到真的连上(third_party/grpc pick_first.cc)。这个状态下的调用立即以 UNAVAILABLE 失败(默认不
-	// wait_for_ready),有 ①② 时挑它等于白白失败;etcd 租约 60s 到期前死实例仍在注册表里,这正是要避开的窗口。
-	// 只有 ①② 全空时才兜底挑它,结果与改造前相同。
+	// (或建连超时)就进 TRANSIENT_FAILURE,并且 muduo_grpc::Channel 在退避重连期间对外一直报 TRANSIENT_FAILURE、
+	// 不会回报 CONNECTING,直到真的连上(muduo_grpc/channel.cpp 的 OnBackoffTimer,与 pick_first 一致)。这个状态下
+	// 的调用立即以 UNAVAILABLE 失败(Channel::Dispatch,不做 wait_for_ready),有 ①② 时挑它等于白白失败;
+	// etcd 租约 60s 到期前死实例仍在注册表里,这正是要避开的窗口。只有 ①② 全空时才兜底挑它,结果与改造前相同。
 	//
 	// 纯选择器仍能描述无通道输入，供独立排序用例使用；生产适配层只传有完整传输的候选。
 	// 无通道实体与真实连接暂时不可达不是同一状态：前者立即拒绝，后者仍走原有失败回调。
@@ -69,7 +70,9 @@ namespace
 	//
 	// 残余窗口:实例刚崩、还没被踢过时它显示 IDLE。只有在一个 READY 都没有时它才可能被挑中,那一次请求
 	// 以 UNAVAILABLE 走失败处理器,之后它就是 TRANSIENT_FAILURE。对端主机整个消失(没有 RST)时,重连要等到
-	// 连接超时,这段时间它停在 CONNECTING,同样排在 READY 之后。
+	// 连接超时(ChannelOptions::connectTimeout,默认 20s),这段时间它停在 CONNECTING,同样排在 READY 之后。
+	// muduo 的「连接失败」回调落地前(grpc-muduo-transport.md §5「已知差异」、§14.1),对端拒连也是这样:
+	// muduo Connector 在内部静默重试,要等到连接超时才进 TRANSIENT_FAILURE。
 	enum class SelectionTier : uint8_t
 	{
 		kReady,               // ①
@@ -98,13 +101,13 @@ namespace
 		}
 		switch (*candidate.channelState)
 		{
-		case GRPC_CHANNEL_READY:
+		case muduo_grpc::ConnectivityState::kReady:
 			return SelectionTier::kReady;
-		case GRPC_CHANNEL_IDLE:
-		case GRPC_CHANNEL_CONNECTING:
+		case muduo_grpc::ConnectivityState::kIdle:
+		case muduo_grpc::ConnectivityState::kConnecting:
 			return SelectionTier::kConnectable;
-		case GRPC_CHANNEL_TRANSIENT_FAILURE:
-		case GRPC_CHANNEL_SHUTDOWN:
+		case muduo_grpc::ConnectivityState::kTransientFailure:
+		case muduo_grpc::ConnectivityState::kShutdown:
 		default:
 			return SelectionTier::kLastResortFailed;
 		}
@@ -159,12 +162,12 @@ namespace
 	}
 
 	// 落到 ③a / ③b 时的告警:说明此刻没有任何能用的 SceneManager 通道,本次调用多半以 UNAVAILABLE 失败
-	// (挑中 ③b 则会在发送处断言,见上面分级说明)。全挂期间每次换图都会走到这里,所以要节流:
-	// 每 10s 最多一行,期间压掉的次数带在下一行里,排障时仍能看出频率。
+	// (③b 只出现在纯函数用例里:生产适配层不传无通道实体;真发给无通道实体,生成的 Send 也只是本地 UNAVAILABLE)。
+	// 全挂期间每次换图都会走到这里,所以要节流:每 10s 最多一行,期间压掉的次数带在下一行里,排障时仍能看出频率。
 	//
 	// 线程模型:GetSceneManagerEntity 读的是 thread_local 的 tlsNodeContextManager,只在拥有它的节点主循环线程上
-	// 调用(调用方都是 scene 主循环里的换图 / 跨 zone 交接 / 组队跟随 / RPC 应答处理;gRPC 应答也是主循环上的
-	// 定时器轮询 CompletionQueue 后分发的,见 etcd_service.cpp)。节流状态与注册表同样做成 thread_local,
+	// 调用(调用方都是 scene 主循环里的换图 / 跨 zone 交接 / 组队跟随 / RPC 应答处理;gRPC 应答由 muduo_grpc::Channel
+	// 在通道所属的主循环上 queueInLoop 投递,见 muduo_grpc/channel.h)。节流状态与注册表同样做成 thread_local,
 	// 不需要锁;每个进程只有这一个线程调它,"每线程 10s 一行"就是"每进程 10s 一行"。
 	// 用 steady_clock:节流间隔不能受墙钟跳变影响。
 	constexpr auto kLastResortWarnInterval = std::chrono::seconds(10);
@@ -196,11 +199,11 @@ namespace
 			{
 				++noChannel;
 			}
-			else if (*candidate.channelState == GRPC_CHANNEL_TRANSIENT_FAILURE)
+			else if (*candidate.channelState == muduo_grpc::ConnectivityState::kTransientFailure)
 			{
 				++transientFailure;
 			}
-			else if (*candidate.channelState == GRPC_CHANNEL_SHUTDOWN)
+			else if (*candidate.channelState == muduo_grpc::ConnectivityState::kShutdown)
 			{
 				++shutdown;
 			}
@@ -257,10 +260,9 @@ entt::entity GetSceneManagerEntity(Guid playerId)
 			continue;
 		}
 		scene_manager_selector::Candidate candidate{entity};
-		if (const auto *channel = smRegistry.try_get<std::shared_ptr<grpc::Channel>>(entity);
-			channel != nullptr && *channel != nullptr)
+		if (const auto channel = FindGrpcChannel(smRegistry, entity); channel != nullptr)
 		{
-			candidate.channelState = (*channel)->GetState(/*try_to_connect=*/true);
+			candidate.channelState = channel->GetState(/*tryToConnect=*/true);
 		}
 		else
 		{

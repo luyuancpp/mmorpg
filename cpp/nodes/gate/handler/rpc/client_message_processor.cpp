@@ -19,7 +19,6 @@
 #include "error_reporter/error_reporter.h"
 #include "node/system/node/node.h"
 #include "grpc_client/login/login_grpc_client.h"
-#include "grpc_client/client_rpc_router/client_rpc_router_grpc_client.h"
 #include "handler/rpc/router_muduo_forward.h"
 #include "node/system/node/muduo_grpc_channel_slot.h"
 #include "proto/client_rpc_router/client_rpc_router.pb.h"
@@ -109,8 +108,8 @@ static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)
 	const auto selfZoneId = GetNodeInfo().zone_id();
 	for (auto entity : view)
 	{
-		const auto *muduoChannel = registry.try_get<MuduoGrpcChannelPtr>(entity);
-		if (!(muduoChannel != nullptr && *muduoChannel) && !HasUsableGrpcClient(registry, entity))
+		// 第 3 批起只有 muduo_grpc 通道一种传输:没挂通道或通道已关的实体不参与选点(grpc-muduo-transport.md §14.1)。
+		if (!HasUsableGrpcClient(registry, entity))
 		{
 			continue;
 		}
@@ -207,38 +206,25 @@ static std::optional<entt::entity> SendRawViaRouter(const ClientRequest &request
 	// PickRandomNode 的 zone 过滤语义一致(D33)。
 	forwardRequest.set_zone_id(gNode->GetNodeInfo().zone_id());
 
-	// 传输由节点实体上挂的组件决定(GATE_ROUTER_TRANSPORT 启动时选定,docs/design/grpc-muduo-transport.md §8):
-	// 挂了 muduo_grpc 通道就只走它,否则走官方 gRPC。一次调用只走一种实现、只发一次。
+	// 第 3 批起只有 muduo_grpc 一种传输(docs/design/grpc-muduo-transport.md §14):通道挂在路由服节点实体上,
+	// 由 NodeConnector 在服务发现时建好。一次调用只发一次。
 	auto &routerRegistry = tlsNodeContextManager.GetRegistry(eNodeType::ClientRpcRouterNodeService);
-	if (const auto *muduoChannel = routerRegistry.try_get<MuduoGrpcChannelPtr>(*routerNode);
-		muduoChannel != nullptr && *muduoChannel)
+	const auto channel = FindGrpcChannel(routerRegistry, *routerNode);
+	if (!channel)
 	{
-		gate_router_muduo::SendForward(**muduoChannel, forwardRequest, sessionDetailsBin);
-		return *routerNode;
-	}
-	// 两种传输都不可用时按「没有路由服」处理(fail-closed)。muduo_h2 下 FinalizeShutdownInLoop 清掉 MuduoGrpcChannelPtr、
-	// NodeInfo 要到 Teardown 才清,这段时间 PickRandomNode 仍会选中这个实体;它从没建过官方 gRPC 的 CQ / Stub,
-	// 落进官方实现就是对不存在的组件 registry.get(Debug 断言,Release 未定义行为)。正常关机有排空门
-	// (main.cpp 的 SetShutdownDrainComplete:beforeShutdown 记下的会话都走完断线处理、通道都空闲才 Finalize),
-	// 本守卫兜的是剩下的窗口:排空预算到期后强行 Finalize、Finalize 之后才断开的会话、没走同一判定的关机路径。
-	// 返回 nullopt 后 lane 回带 id 的 1003,断线通知只留痕、由 login 租约兜底。
-	if (!routerRegistry.all_of<grpc::CompletionQueue, client_rpc_router::ClientRpcRouterStubPtr>(*routerNode))
-	{
-		static uint64_t noTransportCount = 0;
-		if ((noTransportCount++ & 0x3FF) == 0)
+		// 防御性守卫:PickRandomNode 已跳过没挂通道的实体,正常走不到这里。若将来选点与发送之间插进了会摘通道的步骤
+		// (FinalizeShutdownInLoop 清 MuduoGrpcChannelPtr、摘节点先 remove 通道),仍按「没有路由服」fail-closed:
+		// 返回 nullopt 后 lane 回带 id 的 1003,断线通知只留痕、由 login 租约兜底。
+		static uint64_t noChannelCount = 0;
+		if ((noChannelCount++ & 0x3FF) == 0)
 		{
-			LOG_WARN << "Router instance has neither a muduo channel nor a gRPC stub;message not forwarded(sampled)"
+			LOG_WARN << "Router instance has no gRPC channel;message not forwarded(sampled)"
 					 << ", router_entity=" << entt::to_integral(*routerNode)
-					 << ", latest_message_id=" << request.message_id() << ", no_transport_total=" << noTransportCount;
+					 << ", latest_message_id=" << request.message_id() << ", no_channel_total=" << noChannelCount;
 		}
 		return std::nullopt;
 	}
-	client_rpc_router::SendClientRpcRouterForward(
-		routerRegistry,
-		*routerNode,
-		forwardRequest,
-		{kSessionBinMetaKey},
-		{sessionDetailsBin});
+	gate_router_muduo::SendForward(*channel, forwardRequest, sessionDetailsBin);
 	return *routerNode;
 }
 
@@ -1237,8 +1223,9 @@ void RpcClientSessionHandler::DispatchTokenVerify(const muduo::net::TcpConnectio
 
 void RpcClientSessionHandler::OnNodeRemoveEventHandler(const OnNodeRemoveEvent &pb)
 {
-	// 路由服节点摘除:事件在 DestroyEntity 之前、同一 loop 线程触发;实体上的 CompletionQueue 随后析构,
-	// 其上的在途调用永远不会再有回调(F29)。当作失败处理,让这些会话的 lane 继续往下走。
+	// 路由服节点摘除:事件在 DestroyEntity 之前、同一 loop 线程触发。node.cpp 在触发事件前已先摘掉通道,~Channel
+	// 把在途调用以 UNAVAILABLE 排进了队列;lane 在这里就把发往该实例的在途请求当作失败处理,让这些会话继续往下走,
+	// 下一轮那些排队的失败回调在 OnRouterCallFailed 里认领不到,直接丢弃(F29)。
 	if (pb.nodeType == eNodeType::ClientRpcRouterNodeService)
 	{
 		gate_lane::OnRouterNodeRemoved(pb.node);
