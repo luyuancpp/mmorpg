@@ -6,8 +6,6 @@
 #include "config.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
-#include "grpc_client/grpc_init_client.h"
-#include "grpc_client/etcd/etcd_grpc_client.h"
 #include "log/constants/log_constants.h"
 #include "log/system/console_log.h"
 #include "muduo/base/TimeZone.h"
@@ -520,10 +518,6 @@ void Node::Initialize()
 	LoadAllConfigData();
 	InitKafka();
 	InitEtcdService();
-
-	LOG_INFO << "gRPC client config: ResourceQuota max threads=" << grpc_channel_cache::ConfiguredMaxThreads()
-			 << ", backup poll interval ms=" << grpc_channel_cache::ConfiguredBackupPollIntervalMs()
-			 << ", EventEngine pool=grpc internal (no public reserve/max setting)";
 
 	LOG_DEBUG << "Node initialization complete.";
 }
@@ -1197,12 +1191,10 @@ void Node::MaybeFinalizeShutdownInLoop()
 void Node::FinalizeShutdownInLoop()
 {
 	eventLoop.assertInLoopThread();
-	// 先发既有的租约释放与取消 watch，再封住全部官方客户端写入口。
-	// 释放请求也属于在途调用：关闭时仍由相同完成路径回收，不留下 CQ/tag。
+	// 先发既有的租约释放,再关 etcd 传输(LeaseRevoke 尽量送达,§13.7),然后关全部出站通道。
 	ReleaseNodeId();
 	serviceDiscoveryManager.Shutdown();
 
-	grpcHandlerTimer.Cancel();
 	serviceHealthMonitorTimer.Cancel();
 	conflictDrainTimer.Cancel();
 	shutdownDrainTimer.Cancel();
@@ -1215,64 +1207,12 @@ void Node::FinalizeShutdownInLoop()
 	NodeUtils::CloseAllRpcChannels();
 	for (auto &nodeRegistry : tlsNodeContextManager.GetAllRegistries())
 	{
-		const auto view = nodeRegistry.view<grpc::CompletionQueue>();
-		const std::vector<entt::entity> entities(view.begin(), view.end());
-		for (const auto entity : entities)
-		{
-			BeginShutdownGrpcNode(nodeRegistry, entity);
-		}
 		// muduo_grpc 通道按值持有 TcpClient;析构时把在途调用以 UNAVAILABLE 排进队列 —— 放在阶段 0 清,
 		// 那些回调也排在拆除之前、看得到活着的 ECS 与日志。~TcpClient 排进的 forceCloseInLoop /
-		// connectDestroyed 仍由拆除末尾的两跳覆盖。docs/design/grpc-muduo-transport.md §6。
+		// connectDestroyed 仍由拆除末尾的两跳覆盖。docs/design/grpc-muduo-transport.md §6、§14。
+		// 此后的 Send 找不到通道,以本地 UNAVAILABLE 延后完成(计入 GrpcClientLocalCompletionsDrained)。
 		nodeRegistry.clear<MuduoGrpcChannelPtr>();
 	}
-	DrainGrpcClientsInLoop();
-}
-
-bool Node::PollGrpcClientsInLoop()
-{
-	eventLoop.assertInLoopThread();
-	bool drained = true;
-	for (auto &registry : tlsNodeContextManager.GetAllRegistries())
-	{
-		const auto view = registry.view<grpc::CompletionQueue>();
-		const std::vector<entt::entity> entities(view.begin(), view.end());
-		for (const auto entity : entities)
-		{
-			if (!PollGrpcNodeShutdown(registry, entity))
-			{
-				drained = false;
-			}
-		}
-	}
-	// 轮询后面的节点时，其业务回调可能给前面已排空的节点追加本地失败完成。
-	// 最后一遍只读复核，不再派发回调，提交清理前不能只信之前缓存的 drained。
-	for (auto &registry : tlsNodeContextManager.GetAllRegistries())
-	{
-		for (const auto entity : registry.view<grpc::CompletionQueue, GrpcClientRuntimePtr>())
-		{
-			const auto &runtime = registry.get<GrpcClientRuntimePtr>(entity);
-			if (!runtime || !runtime->drained || !runtime->calls.empty() ||
-				runtime->queuedCompletions != 0 || runtime->activeCompletions != 0)
-			{
-				drained = false;
-			}
-		}
-	}
-	// 缺失/失效节点的 Send 也会异步失败，但没有 runtime/CQ 可供上面的遍历看见。
-	return drained && GrpcClientLocalCompletionsDrained();
-}
-
-void Node::DrainGrpcClientsInLoop()
-{
-	eventLoop.assertInLoopThread();
-	if (!PollGrpcClientsInLoop())
-	{
-		// 保持 loop 可运行；不在析构栈阻塞等 CQ，也不在未排空时强制释放。
-		grpcClientDrainTimer_.RunAfter(0.005, [this] { DrainGrpcClientsInLoop(); });
-		return;
-	}
-	grpcClientDrainTimer_.Cancel();
 	eventLoop.queueInLoop([this]
 	{
 		FinalizeTeardownInLoop();
@@ -1289,11 +1229,14 @@ void Node::FinalizeTeardownInLoop()
 	// Hiredis 持有 muduo Channel 和待回调命令;必须在 EventLoop 与 Scene
 	// MessageAsyncClient 回调目标都存活时释放。
 	tlsRedis.Shutdown();
-	// 阶段 0 与本函数之间、以及 Redis 取消回调里，都可能向已关闭节点 Send。
-	// 新增的是异步本地失败，CQ 的 SHUTDOWN 本身不能证明这些业务回调已经退栈。
-	if (!PollGrpcClientsInLoop())
+	// 阶段 0 与本函数之间、以及 Redis 取消回调里，都可能向已关闭节点 Send:那是排在本函数之后的异步本地失败。
+	// 让一轮,等它们在 ECS / 日志仍活着时执行完再拆(Kafka / Redis 的 Shutdown 可重入)。
+	if (!GrpcClientLocalCompletionsDrained())
 	{
-		DrainGrpcClientsInLoop();
+		eventLoop.queueInLoop([this]
+		{
+			FinalizeTeardownInLoop();
+		});
 		return;
 	}
 	// 节点 registry 里的出站 TCP 客户端必须趁 EventLoop 还活着释放:RpcClient 按值持有
@@ -1301,8 +1244,8 @@ void Node::FinalizeTeardownInLoop()
 	// tlsNodeContextManager,它们要等 thread_local 析构才释放,那时 RunNodeMain 栈上的
 	// EventLoop 早已析构(use-after-free)。这里释放后排进队列的 forceCloseInLoop /
 	// connectDestroyed 由下面的两跳 queueInLoop 排空(AGENTS.md §11.7)。
-	// 官方 CQ 已取消并排空，muduo/RPC0 在途也已失败完成；现在才允许清除整个节点池。
-	// 同时释放 protobuf、stub 与全局实体句柄，避免拖到 EventLoop/protobuf 关闭后的 TLS 析构。
+	// gRPC 与 RPC0 的在途调用都已失败完成；现在才允许清除整个节点池。
+	// 同时释放 protobuf 与全局实体句柄，避免拖到 EventLoop/protobuf 关闭后的 TLS 析构。
 	tlsNodeContextManager.Clear();
 	// Cleared by tlsEcs.Clear() below.
 	tlsEcs.Clear();
@@ -1597,43 +1540,21 @@ void Node::ExecuteNodeRemoval(const NodeInfo &stoppedNode)
 			OnNodeRemoveEvent nodeRemovedEvent;
 			nodeRemovedEvent.node = entity;
 			nodeRemovedEvent.nodeType = stoppedNodeType;
-			// 先封住官方发送入口；通知中的后续选点不能再挑中正在摘除的节点。
-			BeginShutdownGrpcNode(nodeRegistry, entity);
+			// 先摘掉 gRPC 通道:通知里的后续选点不能再挑中正在摘除的节点(HasUsableGrpcClient 看通道)。
+			// ~Channel 把在途调用以 UNAVAILABLE 排进队列,完成回调在实体销毁之后才执行,不捕获实体(§14.2)。
+			nodeRegistry.remove<MuduoGrpcChannelPtr>(entity);
 			tlsEcs.dispatcher.trigger(nodeRemovedEvent);
 
-			gNode->CompleteNodeRemoval(stoppedNodeType, entity, stoppedNodeUuid);
+			if (nodeRegistry.valid(entity))
+			{
+				DestroyEntity(nodeRegistry, entity);
+			}
 			return;
 		}
 		LOG_WARN << "Service node stop: entity not found for uuid=" << stoppedNodeUuid
 			<< ", node_type=" << stoppedNodeType
 			<< ", node_id=" << stoppedNodeId; });
 	LOG_INFO << "Service node stopped : " << stoppedNode.DebugString();
-}
-
-void Node::CompleteNodeRemoval(uint32_t nodeType, entt::entity entity, const std::string &nodeUuid)
-{
-	auto &registry = tlsNodeContextManager.GetRegistry(nodeType);
-	if (!registry.valid(entity))
-	{
-		return;
-	}
-	const auto *info = registry.try_get<NodeInfo>(entity);
-	if (info == nullptr || info->node_uuid() != nodeUuid)
-	{
-		return;
-	}
-	if (!PollGrpcNodeShutdown(registry, entity))
-	{
-		registry.get_or_emplace<TimerTaskComp>(entity).RunAfter(0.005, [nodeType, entity = entity, nodeUuid]
-		{
-			if (gNode != nullptr)
-			{
-				gNode->CompleteNodeRemoval(nodeType, entity, nodeUuid);
-			}
-		});
-		return;
-	}
-	DestroyEntity(registry, entity);
 }
 
 void Node::OnServerConnected(const OnConnected2TcpServerEvent &connectedEvent)
