@@ -173,6 +173,13 @@ func main() {
 		return
 	}
 
+	// Equip-forge-topup 模式:给一个开发账号补强化石 / 宝石 / 银两后退出,好在真实客户端里点强化与镶嵌
+	// (游戏里没有这些东西的产出,客户端也没有 GM 发物入口)。见 equip_forge_topup_scenario.go 与 etc/equip_forge_topup.yaml。
+	if cfg.Mode == "equip-forge-topup" {
+		RunEquipForgeTopup(cfg)
+		return
+	}
+
 	// Chat-smoke 模式:两个机器人做「全局聊天 go/chat v1」端到端冒烟
 	// (A/B 分登两个 zone → WORLD 发 + 拉 → PRIVATE 发 + 拉 → chat 侧超长拒绝 → 同 request_id 幂等)。
 	// 见 chat_smoke_scenario.go 与 zone 接入契约 v1 §9 冒烟段;前置条件写在 etc/chat_smoke.yaml 文件头。

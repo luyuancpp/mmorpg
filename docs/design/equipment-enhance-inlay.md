@@ -960,6 +960,8 @@ Codex 在 `0b40715d06` 上独立跑过同一组,也是 253 通过(见 `docs/PROG
   所以现在进游戏点不到强化与镶嵌,只能靠 robot 冒烟走通这三条协议。
   (10-16 更新:**按钮逻辑已经接好**,在客户端 main `db969ce4` 的 `EquipForgeUiState`;入口与面板画面交给 Codex,交接文档是客户端
   `Docs/EquipmentForgeUI-handoff-20261015.md`。在 Codex 接上界面之前,进游戏仍然点不到。见 `docs/PROGRESS.md` 10-16 那一条。)
+  实机点强化 / 镶嵌之前先补货:`robot\` 下 `.\robot.exe -c etc/equip_forge_topup.yaml`(模式 `equip-forge-topup`,
+  缺省给 `robot_9104` 补 40 万银两、60 颗强化石、四种一级宝石各 3 颗,够把一把装备从 +0 强化到满级;只发东西,发完核对到账)。
 - `AssetOpSystemTest.DebitBundleInvalidRecorded`:期望 `REJECTED` + `kAssetInvalidBundle`,实际 `RETRY` + 27006 ——
   `asset_op_system.cpp` 在校验 bundle 之前先查了 `PlayerBagsComp`。单独跑也失败,属于通用资产通道(帮会 / 聚宝斋)那条线,本线只登记、没有改。
 - §8 的已知缺口不变:强化石、宝石、装备本身都没有产出途径(只能 GM 发);洗练、宝石合成、强化保护没做。

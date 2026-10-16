@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
@@ -33,7 +34,8 @@ type Config struct {
 	// 冒烟(见 travel_smoke_scenario.go / TravelSmoke 块); "channel-smoke" —
 	// 单机器人玩家主动切线冒烟(见 channel_smoke_scenario.go / ChannelSmoke 块);
 	// "sync-smoke" — 落地恢复的按域版本摘要冒烟(见 sync_smoke_scenario.go / SyncSmoke 块);
-	// "merchant-smoke" — 单机器人神秘商人冒烟(见 mystery_merchant_smoke_scenario.go / MerchantSmoke 块)。
+	// "merchant-smoke" — 单机器人神秘商人冒烟(见 mystery_merchant_smoke_scenario.go / MerchantSmoke 块);
+	// "equip-forge-topup" — 给一个开发账号补强化石 / 宝石 / 银两,好在真实客户端里点强化与镶嵌(见 EquipForgeTopup 块)。
 	Mode string `yaml:"mode"`
 
 	// FeaturesSmoke only uses an explicitly selected existing account/character.
@@ -79,6 +81,9 @@ type Config struct {
 	// MerchantSmoke 是 "merchant-smoke" 模式的子开关(见 MerchantSmokeConfig / mystery_merchant_smoke_scenario.go)。
 	// 整块可缺省。
 	MerchantSmoke MerchantSmokeConfig `yaml:"merchant_smoke"`
+
+	// EquipForgeTopup 是 "equip-forge-topup" 模式的子开关(见 EquipForgeTopupConfig / equip_forge_topup_scenario.go)。
+	EquipForgeTopup EquipForgeTopupConfig `yaml:"equip_forge_topup"`
 
 	// CurrencyCrash configures the "currency-crash-snapshot" mode used by
 	// docs/notes/currency-crash-window-verification.md. Driven by an external
@@ -626,6 +631,8 @@ func Load(path string) (*Config, error) {
 		ChannelSmoke: ChannelSmokeConfig{ArriveTimeoutSeconds: 20, MaxCooldownWaitSeconds: 60},
 		// merchant-smoke 缺省:切到商人所在线时等到达 20s。
 		MerchantSmoke: MerchantSmokeConfig{ArriveTimeoutSeconds: 20},
+		// equip-forge-topup 缺省补给 equip-forge-smoke 用的那个账号。
+		EquipForgeTopup: EquipForgeTopupConfig{Account: "robot_9104"},
 	}
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, err
@@ -666,10 +673,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "travel-smoke", "friend-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "merchant-smoke":
+	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "travel-smoke", "friend-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "merchant-smoke", "equip-forge-topup":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, travel-smoke, friend-smoke, channel-smoke, ordering-smoke, sync-smoke, or merchant-smoke)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, travel-smoke, friend-smoke, channel-smoke, ordering-smoke, sync-smoke, merchant-smoke, or equip-forge-topup)", c.Mode)
 	}
 	if c.AuthType == "satoken" && c.SaTokenAddr == "" {
 		return fmt.Errorf("satoken_addr must be set when auth_type is satoken")
@@ -722,6 +729,11 @@ func (c *Config) validate() error {
 	if c.Mode == "merchant-smoke" {
 		if err := c.MerchantSmoke.validate(); err != nil {
 			return fmt.Errorf("merchant_smoke: %w", err)
+		}
+	}
+	if c.Mode == "equip-forge-topup" {
+		if err := c.EquipForgeTopup.Validate(); err != nil {
+			return fmt.Errorf("equip_forge_topup: %w", err)
 		}
 	}
 	return nil
@@ -791,4 +803,48 @@ func (c *Config) LoadTables() {
 		}
 		c.SkillIDs = valid
 	}
+}
+
+// EquipForgeTopupMaxCount 是一项物品单次能发的上限,与 GmGrantItem 的单次上限(equip-forge-smoke 的 equipForgeGrantMaxCount)一致。
+const EquipForgeTopupMaxCount = 99
+
+// EquipForgeTopupConfig 配置 "equip-forge-topup" 模式(docs/design/equipment-enhance-inlay.md §11.6):
+// 用 GM 指令给一个开发账号补强化石 / 宝石 / 银两,然后退出。游戏里没有这些东西的产出,客户端也没有 GM 发物入口,
+// 想在真实客户端里点一次强化 / 镶嵌,得先跑它。只发东西,不强化、不镶嵌、不改别的。
+type EquipForgeTopupConfig struct {
+	// Account 是要补货的账号,缺省 robot_9104(equip-forge-smoke 用的那个)。
+	// 必须以 robot_ 开头:login 侧只对这个前缀走开发期密码认证。账号没有角色时自动建角。
+	Account string `yaml:"account"`
+	// Gold 是要加的银两(kCurrencyGold),0 = 不加。
+	Gold int64 `yaml:"gold"`
+	// Items 是要发的物品,每项 config_id + 数量(1..EquipForgeTopupMaxCount);同一个 config 可以写多项。
+	Items []EquipForgeTopupItem `yaml:"items"`
+}
+
+// EquipForgeTopupItem 是 EquipForgeTopupConfig.Items 的一项。
+type EquipForgeTopupItem struct {
+	ConfigId uint32 `yaml:"config_id"`
+	Count    uint32 `yaml:"count"`
+}
+
+// Validate 在发任何东西之前把配置错误拦下来(导出,好让 package main 的用例直接测)。
+func (c *EquipForgeTopupConfig) Validate() error {
+	if !strings.HasPrefix(c.Account, "robot_") {
+		return fmt.Errorf("account must start with robot_ (got %q): login 只对这个前缀走开发期密码认证", c.Account)
+	}
+	if c.Gold < 0 {
+		return fmt.Errorf("gold must be >= 0 (got %d)", c.Gold)
+	}
+	if c.Gold == 0 && len(c.Items) == 0 {
+		return fmt.Errorf("nothing to grant: set gold and/or items")
+	}
+	for i, item := range c.Items {
+		if item.ConfigId == 0 {
+			return fmt.Errorf("items[%d].config_id must be set", i)
+		}
+		if item.Count == 0 || item.Count > EquipForgeTopupMaxCount {
+			return fmt.Errorf("items[%d].count must be in 1..%d (got %d)", i, EquipForgeTopupMaxCount, item.Count)
+		}
+	}
+	return nil
 }

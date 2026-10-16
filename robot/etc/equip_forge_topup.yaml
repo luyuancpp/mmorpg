@@ -1,0 +1,42 @@
+# equip-forge-topup 配置:给一个开发账号补强化石 / 宝石 / 银两,然后退出
+#
+# 用法(robot/ 目录下):
+#   .\robot.exe -c etc/equip_forge_topup.yaml
+# 退出码 0 = 都发到了(日志有 EQUIP_FORGE_TOPUP_OK 一行,带每样东西发之前 / 之后的数量);
+# 退出码 1 = 任一步失败(日志有 EQUIP_FORGE_TOPUP_FAIL step=… reason=…)。
+#
+# 为什么要有它:游戏里没有强化石、宝石的产出,客户端也没有 GM 发物入口;equip-forge-smoke 每次强化前只「缺多少补多少」,
+# 跑完之后账号上的强化石是 0。想在真实客户端里点一次强化 / 镶嵌,先跑这个,再用同一个账号登录客户端。
+# 它只发东西:不强化、不镶嵌、不卸装备。要一把能强化的装备,先跑一次 etc/equip_forge_smoke.yaml(它会发一把「新手木剑」并穿上)。
+#
+# 前置:与 equip-forge-smoke 相同(导表、全量 proto-gen、同批重编并重启 scene / gate / battle 与读表的 Go 服务,GM 闸为 dev / test,
+# 见 etc/equip_forge_smoke.yaml 的前置 1–5)。闸关着时:step=verify 报「GM 指令没有全部生效」。
+#
+# 下面的缺省量:强化表 +1 → +12 一共要银两 331000、强化石 49 颗(data/EquipEnhance.xlsx,2026-10 的数值),
+# 所以一次补 40 万银两、60 颗强化石够把一把装备从 +0 强化到满级(失败不掉级、但照扣,运气差时可能要再跑一次)。
+# 宝石四种各发 3 颗一级:攻击孔只收攻击宝石,通用孔什么都收,够把「类型不符」「镶满」「取下」都点一遍。
+# 每项数量 1..99(GmGrantItem 单次上限);同一账号反复跑会一直累加,背包满了 GM 发物会被拒(step=grant)。
+
+gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
+zone_id: 1 # 目标 zone(0 = 从 /api/server-list 自动选推荐 zone)
+robot_count: 1 # 语义占位:本模式固定单机器人
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用下面的 equip_forge_topup.account
+password: "123456"
+skill_ids: []
+table_dir: "../generated/tables"
+action_interval: 3
+report_interval: 5
+
+mode: "equip-forge-topup"
+
+auth_type: "password"
+
+equip_forge_topup:
+  account: "robot_9104" # 必须以 robot_ 开头;没有角色时自动建角
+  gold: 400000 # 银两(kCurrencyGold)
+  items:
+    - { config_id: 2001, count: 60 } # 强化石
+    - { config_id: 2101, count: 3 } # 攻击宝石·一级
+    - { config_id: 2201, count: 3 } # 防御宝石·一级
+    - { config_id: 2301, count: 3 } # 气血宝石·一级
+    - { config_id: 2401, count: 3 } # 迅捷宝石·一级
