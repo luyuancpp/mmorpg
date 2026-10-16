@@ -2,13 +2,13 @@
 
 #include <utility>
 
-#include "node/system/etcd/grpc_etcd_transport.h"
+#include "node/system/etcd/muduo_etcd_transport.h"
 
 namespace etcd_transport
 {
 namespace
 {
-// 进程级:一个进程一种 etcd 传输。只在 Node 构造前(main 线程,单线程)写,之后只读。
+// 进程级:只在 Node 构造前(main 线程,单线程)写,之后只读。生产不装,只给单测换替身。
 Factory &InstalledFactory()
 {
 	static Factory factory;
@@ -30,6 +30,6 @@ std::unique_ptr<EtcdTransport> Create(muduo::net::EventLoop &loop, const std::st
 			return transport;
 		}
 	}
-	return std::make_unique<GrpcEtcdTransport>(endpoint, sink);
+	return std::make_unique<MuduoEtcdTransport>(loop, endpoint, sink);
 }
 } // namespace etcd_transport

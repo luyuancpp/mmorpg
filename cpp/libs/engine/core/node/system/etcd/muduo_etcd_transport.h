@@ -30,7 +30,6 @@ public:
     MuduoEtcdTransport &operator=(const MuduoEtcdTransport &) = delete;
 
     const char *Name() const override { return "muduo_h2"; }
-    bool RebuildsStreams() const override { return true; }
 
     void Range(const etcdserverpb::RangeRequest &request) override;
     void Put(const etcdserverpb::PutRequest &request) override;

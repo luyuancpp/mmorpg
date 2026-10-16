@@ -7,9 +7,6 @@
 #include <boost/algorithm/string.hpp>
 #include "node/system/node/node.h"
 #include "node/system/node/node_allocator.h"
-#include "grpc_client/grpc_init_client.h"
-#include "grpc_client/etcd/etcd_grpc_client.h"
-#include "node/system/grpc_channel_cache.h"
 #include "thread_context/node_context_manager.h"
 #include <node_config_manager.h>
 
@@ -17,66 +14,20 @@ void EtcdService::Init() {
 	const std::string& etcdAddr = *tlsNodeConfigManager.GetBaseDeployConfig().etcd_hosts().begin();
 	// 传输在 Node 构造期建好(loop 线程,loop 尚未运行);新传输的地址解析也在这里做完(§13.6)。
 	transport_ = etcd_transport::Create(*gNode->GetLoop(), etcdAddr, *this);
-	streamAware_ = transport_->RebuildsStreams();
-	if (streamAware_)
-	{
-		LOG_INFO << "etcd transport=" << transport_->Name()
-				 << ": watch / keepalive streams are rebuilt with backoff, each prefix re-ranged and reconciled"
-				 << " (docs/design/grpc-muduo-transport.md §13.5)";
-	}
-	else
-	{
-		LOG_INFO << "etcd transport=" << transport_->Name()
-				 << ": official CQ client; watch / keepalive streams are NOT rebuilt after a break"
-				 << " (known defect, docs/design/grpc-muduo-transport.md §10.2). Set NODE_ETCD_TRANSPORT=muduo_h2 to switch.";
-	}
-
-	// 驱动进程里全部官方 gRPC 客户端的 CQ,与 etcd 用哪种传输无关。
-	grpcHandlerTimer.RunEvery(0.005, [] {
-		for (auto& registry : tlsNodeContextManager.GetAllRegistries()) {
-			HandleCompletedQueueMessage(registry);
-		}
-		});
-
+	LOG_INFO << "etcd transport=" << transport_->Name()
+			 << ": watch / keepalive streams are rebuilt with backoff, each prefix re-ranged and reconciled"
+			 << " (docs/design/grpc-muduo-transport.md §13.5)";
 	LOG_INFO << "EtcdService initialized with etcd: " << etcdAddr;
 }
 
 void EtcdService::OnRange(const etcdserverpb::RangeRequest* request, const etcdserverpb::RangeResponse& reply)
 {
-	if (!streamAware_ || request == nullptr)
+	if (request == nullptr)
 	{
-		OnLegacyRange(reply);
+		LOG_ERROR << "etcd range reply without its request; the transport must hand the request back for reconcile";
 		return;
 	}
 	OnPrefixRange(request->key(), reply);
-}
-
-void EtcdService::OnLegacyRange(const etcdserverpb::RangeResponse& reply)
-{
-	int64_t nextRevision = reply.header().revision() + 1;
-	std::unordered_map<std::string, bool> prefixSeen;
-
-	for (const auto& prefix : tlsNodeConfigManager.GetBaseDeployConfig().service_discovery_prefixes()) {
-		prefixSeen[prefix] = false;
-	}
-
-	for (const auto& kv : reply.kvs()) {
-		HandlePutEvent(kv.key(), kv.value());
-		for (auto& [prefix, seen] : prefixSeen) {
-			if (kv.key().rfind(prefix, 0) == 0) {
-				seen = true;
-			}
-		}
-	}
-
-	for (const auto& [prefix, _] : prefixSeen) {
-		revision[prefix] = nextRevision;
-	}
-
-	if (!hasSentRange) {
-		StartWatchingPrefixes();
-		hasSentRange = true;
-	}
 }
 
 bool EtcdService::IsAllocationKey(const std::string& key)
@@ -207,7 +158,6 @@ void EtcdService::OnPrefixRange(const std::string& prefix, const etcdserverpb::R
 	// 这个前缀在当前流上还没有 watch:从已应用快照之后的第一个 revision 建,快照与 watch 之间不漏事件,
 	// 也不从更旧的 revision 回放(重建前发出的旧 Range 晚到时同样如此)。
 	const int64_t watchFrom = std::max(snapshotRevision, appliedRevision) + 1;
-	revision[prefix] = watchFrom;
 	auto& watch = prefixWatches_[prefix];
 	if (!watch.createSent)
 	{
@@ -262,12 +212,7 @@ void EtcdService::OnKeepAlive(const etcdserverpb::LeaseKeepAliveResponse& reply)
 
 void EtcdService::OnWatch(const etcdserverpb::WatchResponse& reply)
 {
-	if (streamAware_)
-	{
-		OnStreamWatchResponse(reply);
-		return;
-	}
-	OnWatchResponse(reply);
+	OnStreamWatchResponse(reply);
 }
 
 void EtcdService::OnStreamWatchResponse(const etcdserverpb::WatchResponse& response)
@@ -557,15 +502,6 @@ void EtcdService::OnTxnFailed(const std::string &key)
 	acquirePortTimer.RunAfter(1, [this] { AcquirePortWithRetry(); });
 }
 
-void EtcdService::StartWatchingPrefixes()
-{
-	for (const auto &prefix : tlsNodeConfigManager.GetBaseDeployConfig().service_discovery_prefixes())
-	{
-		EtcdHelper::StartWatchingPrefix(prefix, revision[prefix]);
-		LOG_INFO << "Watching prefix: " << prefix << " from revision " << revision[prefix];
-	}
-}
-
 void EtcdService::HandlePutEvent(const std::string &key, const std::string &value)
 {
 	// Hijack detection: if another node overwrote our exact node_id key
@@ -628,59 +564,6 @@ void EtcdService::HandleDeleteEvent(const std::string &key, const std::string &v
 	gNode->HandleServiceNodeStop(key, value);
 }
 
-void EtcdService::OnWatchResponse(const etcdserverpb::WatchResponse &response)
-{
-	// Registration flow map:
-	// 1) Initial boot: Watch ready -> Lease -> Port CAS -> NodeId CAS -> StartRpcServer
-	// 2) Re-register: Health monitor detects missing snapshot -> Lease -> Port CAS -> NodeId CAS (same node_id)
-	//    If same node_id is already occupied, process exits via LOG_FATAL to protect identity invariants.
-	if (!hasSentWatch)
-	{
-		RequestNodeLease();
-		hasSentWatch = true;
-	}
-
-	if (response.canceled())
-	{
-		LOG_WARN << "Watch canceled: " << response.cancel_reason() << ", will re-establish watches";
-		ScheduleWatchReconnect();
-		return;
-	}
-
-	// Track revision for reconnect
-	if (response.header().revision() > 0)
-	{
-		for (auto &[prefix, rev] : revision)
-		{
-			if (response.header().revision() + 1 > rev)
-			{
-				rev = response.header().revision() + 1;
-			}
-		}
-	}
-
-	for (const auto &event : response.events())
-	{
-		if (event.type() == mvccpb::Event_EventType::Event_EventType_PUT)
-		{
-			HandlePutEvent(event.kv().key(), event.kv().value());
-		}
-		else if (event.type() == mvccpb::Event_EventType::Event_EventType_DELETE)
-		{
-			HandleDeleteEvent(event.kv().key(), event.prev_kv().value());
-		}
-	}
-}
-
-void EtcdService::ScheduleWatchReconnect()
-{
-	static constexpr double kWatchReconnectDelaySec = 2.0;
-	watchReconnectTimer.RunAfter(kWatchReconnectDelaySec, [this]
-								 {
-	LOG_INFO << "Re-establishing etcd watches after stream break";
-	StartWatchingPrefixes(); });
-}
-
 void EtcdService::RequestNodeLease()
 {
 	if (leaseRequestInFlight_)
@@ -723,24 +606,12 @@ void EtcdService::RegisterService()
 
 void EtcdService::Shutdown()
 {
-	grpcHandlerTimer.Cancel();
 	acquireNodeTimer.Cancel();
 	acquirePortTimer.Cancel();
-	watchReconnectTimer.Cancel();
 	txnTimeoutTimer.Cancel();
 	leaseGrantTimeoutTimer_.Cancel();
 	leaseRequestInFlight_ = false;
 	SetRegistrationMode(RegistrationMode::kInitialBoot, "service shutdown");
-
-	// 一次清空全部 11 个生成层的 etcd 应答 handler,而不是手列 6 个:此前漏掉的
-	// AsyncLeaseLeaseKeepAliveHandler(:101 以 [this] 绑定)会在 ~Node 之后仍持有悬空的
-	// EtcdService*;今天不可达(唯一的 CQ 轮询 grpcHandlerTimer 已在上面 Cancel,且
-	// EtcdService 随 Node 死在 loop 退出之后),但 AGENTS.md §11.7 的精神是"对象没了
-	// 回调自动失效",不该靠"恰好没人再轮询"。gate main.cpp:280 经 SetIfEmptyHandler
-	// 塞进 Revoke / TimeToLive / Leases 的 [&context] 闭包也一并清掉。
-	// 见 docs/ops/incident-gate-tcpconnection-dtor-assert-2026-09-13.md §7.13。
-	auto emptyHandler = [](const ClientContext &, const ::google::protobuf::Message &) {};
-	etcdserverpb::SetEtcdHandler(emptyHandler);
 
 	EtcdHelper::StopAllWatching();
 	gNode->GetEtcdManager().Shutdown();

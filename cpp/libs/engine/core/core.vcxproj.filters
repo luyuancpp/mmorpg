@@ -8,7 +8,6 @@
     <ClCompile Include="node\system\etcd\etcd_manager.cpp" />
     <ClCompile Include="node\system\etcd\etcd_service.cpp" />
     <ClCompile Include="node\system\etcd\etcd_transport.cpp" />
-    <ClCompile Include="node\system\etcd\grpc_etcd_transport.cpp" />
     <ClCompile Include="node\system\etcd\muduo_etcd_transport.cpp" />
     <ClCompile Include="node\system\node\node.cpp" />
     <ClCompile Include="node\system\node\node_allocator.cpp" />
@@ -57,7 +56,6 @@
     <ClInclude Include="node\system\etcd\etcd_manager.h" />
     <ClInclude Include="node\system\etcd\etcd_service.h" />
     <ClInclude Include="node\system\etcd\etcd_transport.h" />
-    <ClInclude Include="node\system\etcd\grpc_etcd_transport.h" />
     <ClInclude Include="node\system\etcd\muduo_etcd_transport.h" />
     <ClInclude Include="node\system\etcd\etcd_endpoint.h" />
     <ClInclude Include="node\system\etcd\etcd_stream_backoff.h" />
@@ -110,7 +108,6 @@
     <ClInclude Include="utils\registry\scene_entity.h" />
     <ClInclude Include="utils\stat\stat.h" />
     <ClInclude Include="utils\proto\message_util.h" />
-    <ClInclude Include="node\system\grpc_channel_cache.h" />
     <ClInclude Include="node\system\grpc_call_deadline.h" />
     <ClInclude Include="node\system\node\node_kafka_command_handler.h" />
     <ClInclude Include="node\system\node\node_entry.h" />

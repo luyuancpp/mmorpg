@@ -13,7 +13,7 @@
 #include "node/system/etcd/etcd_transport.h"
 
 // etcd 注册 / 发现 / 续租的状态机。应答经 EtcdResponseSink 从传输层回来(docs/design/grpc-muduo-transport.md §13.4);
-// 两种传输共用这一套处理,只在流重建相关的部分分叉(RebuildsStreams())。
+// 传输只有 muduo_h2 一种(2026-10-15 第 3 批删除官方实现):流断由传输重建,本类按前缀 Range → 对账 → watch(§13.5)。
 class EtcdService final : public EtcdResponseSink {
 public:
     // 重试回调捕获 this;已武装的定时器可移动,宿主地址仍必须固定。
@@ -25,7 +25,6 @@ public:
     EtcdService& operator=(EtcdService&&) = delete;
 
     void Init();
-    void StartWatchingPrefixes();
     void Shutdown();
     void RequestNodeLease();
 
@@ -97,7 +96,7 @@ private:
         kReRegisterExisting,
     };
 
-    // 新传输(RebuildsStreams)上每个发现前缀的 watch 状态(§13.5)。
+    // 每个发现前缀的 watch 状态(§13.5)。
     struct PrefixWatch {
         bool createSent = false;   // 当前流上已发 create(等 created 应答或已建立)
         int64_t watchId = -1;      // etcd 分配的 watch_id;-1 = 还没收到 created
@@ -107,10 +106,7 @@ private:
     void HandleDeleteEvent(const std::string& key, const std::string& value);
     void OnLeaseGranted(const ::etcdserverpb::LeaseGrantResponse& reply);
     void OnKeepAliveResponse(const ::etcdserverpb::LeaseKeepAliveResponse& reply);
-    void OnWatchResponse(const ::etcdserverpb::WatchResponse& response);
 
-    // 旧传输:改前 KV.Range handler 的原样逻辑(每次应答把全部前缀的 revision 推进到 R+1,首个应答发全部 watch)。
-    void OnLegacyRange(const etcdserverpb::RangeResponse& reply);
     // 新传输:一个前缀的 Range 快照 → 应用 PUT → 对账删除 → 该前缀在当前流上还没 watch 就从 R+1 建。
     void OnPrefixRange(const std::string& prefix, const etcdserverpb::RangeResponse& reply);
     // 新传输的 watch 应答:created 按发送顺序对回前缀;canceled(含 compact)只重建那一个前缀。
@@ -150,19 +146,14 @@ private:
     // (we activate Snowflake only after the per-zone publish succeeds).
     bool IsNodeAllocationKey(const std::string& key) const;
 
-    void ScheduleWatchReconnect();
 private:
     bool hasSentWatch = false;
-    bool hasSentRange = false;
-    // = transport_->RebuildsStreams(),Init 时定下;true 走 §13.5 的按前缀 watch / 对账路径。
-    bool streamAware_ = false;
     bool leaseRequestInFlight_ = false;
     bool registrationStopped_ = false;
     RegistrationMode registrationMode_ = RegistrationMode::kInitialBoot;
     int64_t leaseId = 0;
     int64_t leaseTtlSeconds_ = 0;
     std::chrono::steady_clock::time_point lastKeepAliveAckTime_{};
-    std::unordered_map<std::string, int64_t> revision;
     // 新传输专用(§13.5):前缀 → watch 状态;已发 create、等 created 应答的前缀(etcd 按发送顺序回 created);
     // watch_id → 前缀;发现键索引(DELETE 不依赖 prev_kv、对账、丢过时条目)。
     std::unordered_map<std::string, PrefixWatch> prefixWatches_;
@@ -171,11 +162,8 @@ private:
     DiscoveryKeyIndex discoveryKeys_;
     // 每个前缀已经应用过的最新 Range 快照的 revision:更旧的应答整条丢弃,watch 从它之后建(跨流重建保留)。
     std::unordered_map<std::string, int64_t> appliedSnapshotRevision_;
-    // 驱动进程里**全部**官方 gRPC 客户端的 CQ(不只 etcd),两种 etcd 传输下都要跑;第 3 批删 CQ 时一并删。
-    TimerTaskComp grpcHandlerTimer;
     TimerTaskComp acquireNodeTimer;
 	TimerTaskComp acquirePortTimer;
-	TimerTaskComp watchReconnectTimer;
 	TimerTaskComp txnTimeoutTimer;
 	TimerTaskComp leaseGrantTimeoutTimer_;
     // 放在最后:先于上面的状态析构(传输层的回调只经 weak_ptr 进来,析构后不再回调本对象)。

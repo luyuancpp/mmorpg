@@ -3,10 +3,8 @@
 // etcd 访问的传输接缝(docs/design/grpc-muduo-transport.md §13.4)。
 //
 // EtcdHelper 组好请求后只经 EtcdTransport 发出;应答交给 EtcdResponseSink(EtcdService 实现)。
-// 两个实现:
-//   * GrpcEtcdTransport  —— 官方生成客户端 + CQ,行为与改前完全一致(回退路径,默认);
-//   * MuduoEtcdTransport —— muduo_grpc 通道 + 双向流,流断按退避重建(§13.5)。只被各节点 main 的
-//     InstallFromEnv() 引用:静态库按需取目标文件,不调它的工程(测试)不必链 muduo_grpc / nghttp2。
+// 实现只有 MuduoEtcdTransport(muduo_grpc 通道 + 双向流,流断按退避重建,§13.5);官方 CQ 实现 GrpcEtcdTransport
+// 已随第 3 批删除(§14)。接口仍保留,单测可经 SetFactory 换成替身。
 //
 // 线程:全部接口只在节点 EventLoop 线程调用;sink 的回调也只在该线程、且永不在发起调用的栈内同步执行。
 
@@ -29,7 +27,7 @@ class EtcdResponseSink
 public:
     virtual ~EtcdResponseSink() = default;
 
-    // request:新传输带回原请求(对账要知道是哪个前缀);官方实现的成功回调拿不到请求,传 nullptr。
+    // request:传输带回原请求(对账要知道是哪个前缀),不为空。
     virtual void OnRange(const etcdserverpb::RangeRequest *request, const etcdserverpb::RangeResponse &reply) = 0;
     virtual void OnPut(const etcdserverpb::PutResponse &reply) = 0;
     virtual void OnDeleteRange(const etcdserverpb::DeleteRangeResponse &reply) = 0;
@@ -50,10 +48,6 @@ public:
     virtual ~EtcdTransport() = default;
 
     virtual const char *Name() const = 0;
-    // true:传输自己负责双向流断开后的重建,并在重建后回调 OnWatchStreamRestarted / OnKeepAliveStreamRestarted;
-    // EtcdService 据此走按前缀 Range → 对账 → watch 的新路径。false:沿用旧路径(watch canceled 后 2s 重发全部前缀)。
-    virtual bool RebuildsStreams() const = 0;
-
     virtual void Range(const etcdserverpb::RangeRequest &request) = 0;
     virtual void Put(const etcdserverpb::PutRequest &request) = 0;
     virtual void DeleteRange(const etcdserverpb::DeleteRangeRequest &request) = 0;
@@ -76,12 +70,12 @@ namespace etcd_transport
 using Factory = std::function<std::unique_ptr<EtcdTransport>(muduo::net::EventLoop &loop, const std::string &endpoint,
                                                              EtcdResponseSink &sink)>;
 
-// 进程级:必须在 Node 构造之前调用(EtcdService::Init 在 Node 构造函数里取工厂)。不设 = 官方实现。
+// 进程级:必须在 Node 构造之前调用(EtcdService::Init 在 Node 构造函数里取工厂)。只给单测换替身用;不设 = MuduoEtcdTransport。
 void SetFactory(Factory factory);
-// 按已装的工厂建传输;没装工厂(或工厂返回空)时建官方实现。
+// 按已装的工厂建传输;没装工厂(或工厂返回空)时建 MuduoEtcdTransport。
 std::unique_ptr<EtcdTransport> Create(muduo::net::EventLoop &loop, const std::string &endpoint, EtcdResponseSink &sink);
 
-// 读环境变量 NODE_ETCD_TRANSPORT:grpc(默认)| muduo_h2;不认识的值按 grpc 并打 WARN。
-// 定义在 muduo_etcd_transport.cpp —— 只有调用它的节点可执行文件才链入新传输。
+// 读环境变量 NODE_ETCD_TRANSPORT,只为兼容旧部署:不设或 muduo_h2 正常;grpc(官方实现已删除)与不认识的值打 WARN,
+// 一律走 muduo_h2。定义在 muduo_etcd_transport.cpp。
 void InstallFromEnv();
 } // namespace etcd_transport
