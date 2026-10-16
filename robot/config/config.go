@@ -32,7 +32,8 @@ type Config struct {
 	// 见 BattleSmoke 块); "travel-smoke" — 单机器人跨 zone 场景传送往返
 	// 冒烟(见 travel_smoke_scenario.go / TravelSmoke 块); "channel-smoke" —
 	// 单机器人玩家主动切线冒烟(见 channel_smoke_scenario.go / ChannelSmoke 块);
-	// "sync-smoke" — 落地恢复的按域版本摘要冒烟(见 sync_smoke_scenario.go / SyncSmoke 块)。
+	// "sync-smoke" — 落地恢复的按域版本摘要冒烟(见 sync_smoke_scenario.go / SyncSmoke 块);
+	// "merchant-smoke" — 单机器人神秘商人冒烟(见 mystery_merchant_smoke_scenario.go / MerchantSmoke 块)。
 	Mode string `yaml:"mode"`
 
 	// FeaturesSmoke only uses an explicitly selected existing account/character.
@@ -71,6 +72,10 @@ type Config struct {
 	// SyncSmoke 是 "sync-smoke" 模式的子开关(见 SyncSmokeConfig / sync_smoke_scenario.go)。
 	// 整块可缺省:缺省不做跨 zone 腿。
 	SyncSmoke SyncSmokeConfig `yaml:"sync_smoke"`
+
+	// MerchantSmoke 是 "merchant-smoke" 模式的子开关(见 MerchantSmokeConfig / mystery_merchant_smoke_scenario.go)。
+	// 整块可缺省。
+	MerchantSmoke MerchantSmokeConfig `yaml:"merchant_smoke"`
 
 	// CurrencyCrash configures the "currency-crash-snapshot" mode used by
 	// docs/notes/currency-crash-window-verification.md. Driven by an external
@@ -562,6 +567,22 @@ func (c *SyncSmokeConfig) validate(homeZone uint32) error {
 	return nil
 }
 
+// MerchantSmokeConfig 配置 "merchant-smoke" 模式(docs/design/mystery-merchant.md §9)。
+//
+// 单机器人登顶层 zone_id → 查询神秘商人 → 不在同一条线就切过去 → 走到站位旁 → 负例 → GM 加钱 → 购买 → 买到限购上限。
+type MerchantSmokeConfig struct {
+	// ArriveTimeoutSeconds 是切到商人所在线时等 NotifyEnterScene 的上限,缺省 20(含义同 ChannelSmokeConfig 的同名字段)。
+	ArriveTimeoutSeconds int `yaml:"arrive_timeout_seconds"`
+}
+
+func (c *MerchantSmokeConfig) validate() error {
+	if c.ArriveTimeoutSeconds <= 0 || c.ArriveTimeoutSeconds > channelSmokeMaxArriveTimeoutSeconds {
+		return fmt.Errorf("arrive_timeout_seconds must be in 1..%d (got %d)",
+			channelSmokeMaxArriveTimeoutSeconds, c.ArriveTimeoutSeconds)
+	}
+	return nil
+}
+
 type LLMConfig struct {
 	Enabled  bool   `yaml:"enabled"`
 	Endpoint string `yaml:"endpoint"` // e.g. "http://localhost:11434/v1/chat/completions"
@@ -589,6 +610,8 @@ func Load(path string) (*Config, error) {
 		TravelSmoke: TravelSmokeConfig{DwellSeconds: 35},
 		// channel-smoke 缺省:等到达 20s(同节点切线毫秒级,留足余量);冷却验证最多等 60s(服务端缺省冷却 10s)。
 		ChannelSmoke: ChannelSmokeConfig{ArriveTimeoutSeconds: 20, MaxCooldownWaitSeconds: 60},
+		// merchant-smoke 缺省:切到商人所在线时等到达 20s。
+		MerchantSmoke: MerchantSmokeConfig{ArriveTimeoutSeconds: 20},
 	}
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		return nil, err
@@ -629,10 +652,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "travel-smoke", "friend-smoke", "channel-smoke", "ordering-smoke", "sync-smoke":
+	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "travel-smoke", "friend-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "merchant-smoke":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, travel-smoke, friend-smoke, channel-smoke, ordering-smoke, or sync-smoke)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, travel-smoke, friend-smoke, channel-smoke, ordering-smoke, sync-smoke, or merchant-smoke)", c.Mode)
 	}
 	if c.AuthType == "satoken" && c.SaTokenAddr == "" {
 		return fmt.Errorf("satoken_addr must be set when auth_type is satoken")
@@ -680,6 +703,11 @@ func (c *Config) validate() error {
 	if c.Mode == "sync-smoke" {
 		if err := c.SyncSmoke.validate(c.ZoneID); err != nil {
 			return fmt.Errorf("sync_smoke: %w", err)
+		}
+	}
+	if c.Mode == "merchant-smoke" {
+		if err := c.MerchantSmoke.validate(); err != nil {
+			return fmt.Errorf("merchant_smoke: %w", err)
 		}
 	}
 	return nil

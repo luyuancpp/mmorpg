@@ -420,7 +420,10 @@ func channelSmokeIsRecorded(messageId uint32) bool {
 		game.SceneClientPlayerCommonKickPlayerMessageId:
 		return true
 	}
-	return false
+	// merchant-smoke 复用本文件的机器人会话,它另外要看的消息号由它自己登记(mystery_merchant_smoke_scenario.go)。
+	// 其中神秘商人的出现公告是发给全体在线玩家的,channel-smoke 运行期间也可能收到;多留底不影响本场景的断言 ——
+	// 本文件里每一处读留底的地方都是按消息号挑自己要的那几种,别的条目一律跳过。
+	return merchantSmokeIsRecorded(messageId)
 }
 
 // onMessage:先留底,再转发给通用分发 —— NotifyEnterScene 更新 Player 的当前场景、

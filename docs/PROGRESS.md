@@ -8876,3 +8876,36 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 客户端可见:scene 类请求(含应答为 Empty 的移动号)在 scene 未就绪时回错误信封,不再推 23;客户端仓未授权,未读未改,需要客户端负责人确认通用处理。
 - **Codex 验证**:proto 重生成之后 `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64`(0 error);Java 仓 `./mvnw -B -pl game-gate,game-robot -am test`(重点 ClientDispatcherTest、ClientPipelineTest、BattleUplinkRejectedTest、ClientRedirectTest、MessageRoutesTest、GateConfigurationTest、MatchBackendForwardingTest,game-robot 的 TradeScenarioTest、GameConnectionTest、GameConnectionRedirectTest)。可选冒烟:路由模式一区下 `robot.exe -c etc/channel_smoke.yaml`、`etc/travel_smoke.yaml`。
 - **Java 版(AGENTS §12)**:同批已改(未提交),PARITY 已追加。
+## 2026-10-09 神秘商人:每个整点随机落到一条分线、限时出售 6 / 5 / 4 折商品(Claude,服务端未编译)
+- 设计与验证清单:`docs/design/mystery-merchant.md`(§9 是给 Codex 的完整清单)。在隔离分支 `feat/mystery-merchant` 落码
+  (服务端工作树 `xuanming-server-mmo-wt-merchant`,客户端工作树 `mmorpg-client-wt-merchant`),**两边都未提交、未并入 main**。
+- 用户拍板(2026-10-09):全部做完;整点出现、停留 30 分钟;每人每件每轮限购。其余 11 项默认决定见设计文档 §1.3(都可改表)。
+- 分工:scene_manager 领导者每 5 秒一拍,新的一轮开始时从分线目录里随机挑线、挑站位、掷货架,整份写进 Redis
+  `mystery_merchant:zone:{z}`(HASH,Lua 保证版本只进不退);scene 节点每 5 秒读一次并缓存,负责查询、购买与出现公告。
+  服务端没有 NPC 实体,商人的形象由客户端按下发的坐标自己画。
+- 协议:新文件 `proto/scene/player_mystery_merchant.proto`(service `SceneMysteryMerchantClientPlayer`:查询 / 购买 / 出现公告;
+  轮次号 = 出现时刻的 Unix 秒;购买请求回传玩家看到的报价:单价、货币、物品、每份数量,任何一项对不上就拒绝);
+  玩家存档 `player_database.mystery_merchant = 18`(限购记录,与钱和背包同一次落盘)。消息号在 `proto/message_id.txt` 末尾预留了
+  250–252(生成器对已登记的方法沿用旧号);**合并时若被占用要改号**。只做过 protoc 语法校验,**未 proto-gen**。
+- 配表:新表 `MysteryMerchantRule`(1 行)/ `MysteryMerchantGoods`(12 行)/ `MysteryMerchantSpot`(6 行,天墉城,站位用客户端可走掩码核对过);
+  新 tip 域 `mystery_merchant_error`(29000 起 12 个码)。xlsx 由幂等脚本 `tools/scripts/mystery_merchant_xlsx_patch.py` 生成。
+  **只做过沙盒导表(退出码 0),仓内 `generated/**` 未动。**
+- scene_manager:`internal/logic/mystery_merchant.go`(调度、换线、Lua 写入)、配置块 `MysteryMerchant`(全可缺省;
+  三个覆盖项只用于联调)、指标 `scene_manager_mystery_merchant_schedule_total`、点位 `scene_manager.mystery_merchant`。
+- scene 节点:`player/system/mystery_merchant_rules.h`(纯规则)、`player_mystery_merchant.{h,cpp}`(读记录、公告、查询、购买:
+  预检 → 发物 → 扣钱 → 记名额,同步完成;先发物是为了不需要退款路径)、handler 按生成器骨架手写、存档装载 / 保存各一行、`main.cpp` 三个挂点;
+  新文件与生成物已登记进 `table` / `proto` / 两个 `scene` / `bag_test` 工程与 CMakeLists。
+- 测试(服务端全部未运行):C++ `MysteryMerchantRulesTest` 11 + `PlayerMysteryMerchantTest` 25;Go 调度 28 个测试函数;
+  robot 新模式 `merchant-smoke`(`etc/merchant_smoke.yaml`,账号 robot_9901,复用 channel-smoke 的机器人会话)。
+- 客户端:`MysteryMerchantModels` / `MysteryMerchantClient` / `MysteryMerchantWindow` / `MysteryMerchantUiRoot` / `MysteryMerchantNpc`
+  + 3 份 EditMode 测试 + 离线截图验收 + `Docs/mystery-merchant-ui.md`;`GameClient.cs`、`TianyongPlayerController.cs` 未改。
+- 评审:落码后三路只读评审(C++ / Go「人肉编译」+ 推演用例、跨语言契约),没有读出挡编译的问题;读出的 3 个主要逻辑缺口
+  (先扣钱后发物的退款漏洞、轮次号随间隔倒退、客户端按过期余额置灰)与十余个次要问题已修,逐条见设计文档 §10。
+  **修正之后没有再评审一轮。**
+- 证据边界:Go 只过了 gofmt;proto 只过了 protoc 语法校验;C++ 只做了静态核对与上述评审;客户端离线 Roslyn 编译三个程序集 0 error、
+  不依赖 Unity 的 70 条测试(纯规则 34 + 数据层 36)在离线 NUnit 替身里通过;
+  **Unity 内测试(含窗口的 23 条)、截图、联机购买都未跑**(本机 Unity 许可证离线有效期已过)。
+- 有意没做(设计文档 §8):服务端 NPC 实体与 AOI、给中途上线的玩家补公告、全服跑马灯、专属立绘、合服工具登记这把键、
+  限流表登记、k8s 告警与看板、一次买多份的界面;购买距离是软闸;k8s 模板没有 `MysteryMerchant` 块(止血步骤见 §8 第 13 条)。
+- **给 Codex**:按设计文档 §9 的 0→9 顺序执行;生成与 C++ 编译在主仓做;`go/db` 要先 `cmd/migrate up`(新增一列)。
+- **Java 版(AGENTS §12)**:未做(本机没有 Java 仓库);需同步上述协议、tip 域、三张表与购买校验顺序,登记 `PARITY.md` 待做。

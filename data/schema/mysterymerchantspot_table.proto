@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+// MysteryMerchantSpot 表的权威 schema。源表 data/MysteryMerchantSpot.xlsx。
+//
+// 本文件不参与 protoc 编译,也不进任何语言的构建;导表器直接文本解析它。
+// 字段号只增不改、删字段用 reserved(data/AGENTS.md)。
+//
+// 导表报"这些权威 schema 没有对应的源表:MysteryMerchantSpot"= 源表还没生成(schema 与 xlsx 必须成对):
+// 先跑 python tools/scripts/mystery_merchant_xlsx_patch.py new-tables。
+//
+// 神秘商人的候选站位:一行 = 某张大世界地图上的一个落脚点。
+// 这张表同时决定「商人会去哪些地图」:只有表里出现过的 scene_config_id 才参与每轮的选线。
+// 每轮由 go/scene_manager 先在这些地图的全部可进分线里均匀随机挑一条线,再在该地图的站位里
+// 均匀随机挑一个点。设计文档 docs/design/mystery-merchant.md §3.3。
+//
+// 坐标是**服务器坐标**(与 Transform.location 同一坐标系;天墉城出生点是 (180, 200, 0))。
+// 客户端 Unity 坐标的换轴:Unity.x = 服务器 y,Unity.z = 服务器 x,Unity.y = 服务器 z。
+// 落脚点必须是玩家走得到的地面:服务端只校验「玩家离它够近」,走不到就永远买不了。
+
+package mmorpg.cfgtable.v1;
+
+import "cfg_options.proto";
+
+message MysteryMerchantSpotTable {
+  option (cfg_sheet)       = "MysteryMerchantSpot";
+  option (cfg_source_file) = "MysteryMerchantSpot.xlsx";
+  option (cfg_primary_key) = "id";
+
+  // 站位 id
+  uint32 id = 1;
+  // 所在地图(World 表里的 scene_id,即 BaseScene.id);必须是大世界地图
+  uint32 scene_config_id = 2 [(cfg_index) = true];
+  // 服务器坐标 x
+  double x = 3;
+  // 服务器坐标 y
+  double y = 4;
+  // 服务器坐标 z
+  double z = 5;
+  // 位置说明(给策划看,不下发)
+  string desc = 6;
+}

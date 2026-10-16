@@ -751,5 +751,7 @@
     <ClInclude Include="scene\player_mission.pb.h" />
     <ClCompile Include="scene\player_activity.pb.cc" />
     <ClInclude Include="scene\player_activity.pb.h" />
+    <ClCompile Include="scene\player_mystery_merchant.pb.cc" />
+    <ClInclude Include="scene\player_mystery_merchant.pb.h" />
   </ItemGroup>
 </Project>

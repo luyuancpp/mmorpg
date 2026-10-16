@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+// MysteryMerchantGoods 表的权威 schema。源表 data/MysteryMerchantGoods.xlsx。
+//
+// 本文件不参与 protoc 编译,也不进任何语言的构建;导表器直接文本解析它。
+// 字段号只增不改、删字段用 reserved(data/AGENTS.md)。
+//
+// 导表报"这些权威 schema 没有对应的源表:MysteryMerchantGoods"= 源表还没生成(schema 与 xlsx 必须成对):
+// 先跑 python tools/scripts/mystery_merchant_xlsx_patch.py new-tables。
+//
+// 神秘商人的商品池:一行 = 一件可能上架的商品。每轮由 go/scene_manager 按 weight 不放回地抽出
+// MysteryMerchantRule.shelf_size 件,每件再独立掷一个折扣档(6 / 5 / 4 折)。
+// 设计文档 docs/design/mystery-merchant.md §3.2。
+//
+// 表里写的是**原价**;折后价 = ceil(price × 折扣百分比 / 100),由 C++ scene 在下发与结算时现算
+// (公式唯一出处:cpp/libs/services/scene/player/system/mystery_merchant_rules.h)。
+// 行 id 一经上线不要改义:玩家存档里的限购记录按它记账(只跨一轮,改义的影响最多持续一轮)。
+
+package mmorpg.cfgtable.v1;
+
+import "cfg_options.proto";
+
+message MysteryMerchantGoodsTable {
+  option (cfg_sheet)       = "MysteryMerchantGoods";
+  option (cfg_source_file) = "MysteryMerchantGoods.xlsx";
+  option (cfg_primary_key) = "id";
+
+  // 商品 id
+  uint32 id = 1;
+  // 展示名;留空则用物品表的名字
+  string name = 2;
+  // 发放的物品。FK -> Item.id
+  uint32 item_id = 3 [(cfg_fk) = "Item"];
+  // 每份物品数量(1..物品 max_stack_size;堆叠上限为 1 的物品必须填 1)
+  uint32 item_count = 4;
+  // 结算货币:0 银两 / 1 灵石 / 2 绑定灵石
+  uint32 currency_type = 5;
+  // 每份原价(1..1000000000);上限保证"折后价 × 单次最多 99 份"不溢出
+  uint64 price = 6;
+  // 上架权重(0 = 暂不上架;权重全为 0 则本轮没有货架)
+  uint32 weight = 7;
+  // 每人每轮限购份数(1..99)
+  uint32 limit_count = 8;
+}

@@ -97,6 +97,10 @@ set(SOURCE_FILES
     code/equipgem_table.cpp
     code/equipgem_table_fk.cpp
     code/equipgemsocket_table.cpp
+    code/mysterymerchantgoods_table.cpp
+    code/mysterymerchantgoods_table_fk.cpp
+    code/mysterymerchantrule_table.cpp
+    code/mysterymerchantspot_table.cpp
     code/item_table_fk.cpp
     proto/activityschedule_table.pb.cc
     proto/actoractioncombatstate_table.pb.cc
@@ -165,6 +169,10 @@ set(SOURCE_FILES
     proto/equipgemsocket_table.pb.cc
     proto/tip/equip_error_tip.pb.cc
     proto/tip/player_inbox_error_tip.pb.cc
+    proto/mysterymerchantgoods_table.pb.cc
+    proto/mysterymerchantrule_table.pb.cc
+    proto/mysterymerchantspot_table.pb.cc
+    proto/tip/mystery_merchant_error_tip.pb.cc
 )
 
 add_library(table STATIC ${SOURCE_FILES})

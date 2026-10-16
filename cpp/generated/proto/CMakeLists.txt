@@ -53,6 +53,7 @@ set(SOURCE_FILES
     common/component/actor_comp.pb.cc
     common/component/asset_op_ledger_comp.pb.cc
     common/component/battle_settlement_ledger_comp.pb.cc
+    common/component/player_mystery_merchant_comp.pb.cc
     common/component/buff_comp.pb.cc
     common/component/base_comp.pb.cc
     common/component/currency_comp.pb.cc
@@ -165,6 +166,7 @@ set(SOURCE_FILES
     match/match_internal.pb.cc
     match/match_internal.grpc.pb.cc
     scene/player_activity.pb.cc
+    scene/player_mystery_merchant.pb.cc
     scene/player_attribute.pb.cc
     scene/player_bag.pb.cc
     scene/player_mission.pb.cc

@@ -175,6 +175,10 @@ func main() {
 	// 与自动扩缩容开关无关,默认开;只有领导者真正发布。必须排在上面的选主接线之后。
 	logic.StartWorldChannelDirectoryPublisher(ctx, svcCtx)
 
+	// 神秘商人调度(每轮在可进的分线里随机挑一条、掷货架;docs/design/mystery-merchant.md §4)。
+	// 默认开;只有领导者真正调度。依赖上面发布的分线目录,必须排在选主接线之后。
+	logic.StartMysteryMerchantScheduler(ctx, svcCtx)
+
 	// RPC 级热关停(shared/killswitch):线上某个方法把依赖打爆时,往 etcd 写一个
 	// key 就能秒级把它短路掉,不必走一遍构建-发布-滚动更新。
 	//

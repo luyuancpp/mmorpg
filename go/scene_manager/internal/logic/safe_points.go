@@ -24,6 +24,10 @@ const (
 	// 它停摆的表现是客户端的线路列表在一个目录 TTL 后变成「暂不可用」,切线本身不受影响。
 	SafePointWorldChannelDirectory = "scene_manager.world_channel_directory"
 
+	// SafePointMysteryMerchant 是神秘商人的周期调度循环(每轮挑线、掷货架)。
+	// 它停摆的表现是「到点了商人不出现」,已经排好的那一轮不受影响。
+	SafePointMysteryMerchant = "scene_manager.mystery_merchant"
+
 	// SafePointAgonesReconcile 是 Agones rooms 计数与 Redis 映射的周期比对。
 	SafePointAgonesReconcile = "scene_manager.agones_reconcile"
 

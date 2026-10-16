@@ -250,6 +250,16 @@ func main() {
 		return
 	}
 
+	// merchant-smoke: 单机器人神秘商人冒烟
+	// (登录 → 查询商人在哪条线 → 不在同线就切过去 → 走到站位旁 → 份数 0 / 旧轮次 / 报价对不上被拒
+	//  → GM 加钱后买 1 份并核对余额、背包、已购数 → 买到限购上限后再买被拒)。
+	// 商人不在场 / 不在机器人所在的地图 / 本轮已买满时打印 MERCHANT_SMOKE_SKIP 并以退出码 0 结束。
+	// 见 mystery_merchant_smoke_scenario.go 与 docs/design/mystery-merchant.md;前置条件写在 etc/merchant_smoke.yaml 文件头。
+	if cfg.Mode == "merchant-smoke" {
+		RunMerchantSmoke(cfg)
+		return
+	}
+
 	stopReport := make(chan struct{})
 	reportInterval := time.Duration(cfg.ReportInterval) * time.Second
 	if reportInterval <= 0 {

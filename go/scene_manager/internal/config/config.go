@@ -219,6 +219,10 @@ type Config struct {
 	// 设计文档:docs/design/world-channel-switch.md §4.5。
 	ChannelSwitch ChannelSwitchConfig `json:",optional"`
 
+	// MysteryMerchant: 神秘商人的调度(每轮挑线、掷货架,写 Redis 读模型)。整块可缺省,缺省即启用。
+	// 设计文档:docs/design/mystery-merchant.md §4.4。
+	MysteryMerchant MysteryMerchantConfig `json:",optional"`
+
 	// SceneReentryBarrierSeconds: 节点判死之后,SceneManager 允许把它名下的
 	// 场景改派/销毁/清理之前必须等待的秒数。0(默认)= 用
 	// constants.SceneReentryBarrier(= C++ drain 预算 + 时钟余量)。
@@ -415,6 +419,50 @@ func (c ChannelSwitchConfig) EffectiveDirectoryRefreshSeconds() int64 {
 		return channelSwitchMaxSeconds
 	}
 	return c.DirectoryRefreshSeconds
+}
+
+// MysteryMerchantConfig 控制神秘商人的调度(docs/design/mystery-merchant.md §4.4)。
+//
+// 玩法数值(间隔、停留、货架件数、折扣权重)在 MysteryMerchantRule 配置表里,不在这里:
+// 这个块只放「要不要调度」「多久看一眼」这类部署侧的开关,以及仅供联调用的时间覆盖。
+// 字段全部 optional、零值即「用默认」,理由同 ChannelSwitchConfig:K8s ConfigMap 只镜像它认识的标量,
+// 整块缺省时嵌套字段的 `default=` 标签是否生效没有保证,所以默认值写在取值方法里。
+type MysteryMerchantConfig struct {
+	// Disabled: true = 不调度神秘商人。已经写下的那一轮到点自然结束,之后不再出现。
+	Disabled bool `json:",optional"`
+
+	// TickSeconds: 调度循环多久跑一拍(秒)。0 = 取默认 5;钳到 [1, 60]。
+	// 它决定「整点之后最晚几秒商人出现」和「线被回收后最晚几秒换线」,与出现间隔无关。
+	TickSeconds int64 `json:",optional"`
+
+	// IntervalSecondsOverride / StaySecondsOverride: 覆盖规则表的出现间隔 / 停留时长(秒)。0 = 以表为准。
+	// **只用于联调与冒烟**(例如都配 120 = 每两分钟换一轮且一直在场);生产不要配,数值以表为准。
+	// 覆盖后的值照样要过规则校验(间隔 60..86400,停留 30..间隔),不过则不调度。
+	IntervalSecondsOverride int64 `json:",optional"`
+	StaySecondsOverride     int64 `json:",optional"`
+
+	// SpotIdOverride: 把商人钉在 MysteryMerchantSpot 表里的这一个站位上(每轮只换线,不换位置)。0 = 不钉,照常随机。
+	// **只用于联调与冒烟**:冒烟机器人只会走直线,钉在出生点旁的那个站位(id 1)它才走得到。
+	// 表里没有这个 id 时不调度(记 invalid_table)。
+	SpotIdOverride uint32 `json:",optional"`
+}
+
+const (
+	defaultMysteryMerchantTickSeconds int64 = 5
+	maxMysteryMerchantTickSeconds     int64 = 60
+)
+
+// EffectiveTickSeconds 返回调度循环的周期(秒),恒在 [1, 60]。配置 0 取默认 5。
+func (c MysteryMerchantConfig) EffectiveTickSeconds() int64 {
+	switch {
+	case c.TickSeconds == 0:
+		return defaultMysteryMerchantTickSeconds
+	case c.TickSeconds < 1:
+		return 1
+	case c.TickSeconds > maxMysteryMerchantTickSeconds:
+		return maxMysteryMerchantTickSeconds
+	}
+	return c.TickSeconds
 }
 
 // ChannelMaxPlayers 返回玩家主动选线时的每线人数上限,恒为正。

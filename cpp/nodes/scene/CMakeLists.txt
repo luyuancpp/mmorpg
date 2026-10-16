@@ -109,6 +109,7 @@ set(SOURCE_FILES
     handler/event/battle_event_handler.cpp
     handler/grpc/scene_node_service.cpp
     handler/rpc/player/player_activity_handler.cpp
+    handler/rpc/player/player_mystery_merchant_handler.cpp
     handler/rpc/player/player_bag_handler.cpp
     handler/rpc/player/player_mission_handler.cpp
     handler/rpc/player/player_movement_handler.cpp

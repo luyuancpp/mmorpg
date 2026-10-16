@@ -350,6 +350,25 @@ var (
 		Help:      "World channel directory publish attempts (one per world map per round) by outcome (ok|empty|error).",
 	}, []string{"zone_id", "outcome"})
 
+	// mysteryMerchantScheduleTotal:神秘商人调度循环(internal/logic/mystery_merchant.go,
+	// mystery-merchant.md §4)对**每个 zone、每一拍**的结果。只有领导者会发出。
+	// outcome 取 MerchantSchedule* 常量:
+	//   created        进入新一轮,已挑线、掷货架并写入记录(每轮一次)
+	//   relocated      同一轮内商人所在的线被回收 / 销毁,已换到另一条线
+	//   kept           本轮已排好且线还在,什么都没写(稳态下绝大多数拍是它)
+	//   idle           本轮的停留期已过,等下一轮
+	//   no_channel     没有任何可落脚的线(目录未发布 / 线全在回收或不可用),下一拍再试
+	//   lost_race      别的副本已写下同一版本的记录(领导权交接窗口),本拍让出
+	//   invalid_table  MysteryMerchantRule / Goods / Spot 表校验不过,本拍不调度
+	//   error          读写 Redis 失败,本拍不调度
+	// 读数:created 每个 zone 每个间隔应当恰好 +1;一个间隔过去而 created 没动 = 这一轮没有商人,
+	// 此时看 no_channel / invalid_table / error 哪个在涨。只按 zone 与 outcome 分,轮次号、scene_id 都不进 label。
+	mysteryMerchantScheduleTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "mystery_merchant_schedule_total",
+		Help:      "Mystery merchant scheduling ticks by outcome (created|relocated|kept|idle|no_channel|lost_race|invalid_table|error).",
+	}, []string{"zone_id", "outcome"})
+
 	registerOnce sync.Once
 )
 
@@ -385,6 +404,7 @@ func register() {
 			homeZoneLookupTotal,
 			nodeDetachDeferredTotal,
 			worldChannelDirectoryPublishTotal,
+			mysteryMerchantScheduleTotal,
 		)
 	})
 }
@@ -401,6 +421,27 @@ const (
 func ObserveWorldChannelDirectoryPublish(zoneID uint32, outcome string) {
 	register()
 	worldChannelDirectoryPublishTotal.WithLabelValues(
+		strconv.FormatUint(uint64(zoneID), 10), outcome,
+	).Inc()
+}
+
+// mystery_merchant_schedule_total 的 outcome 标签取值。**必须是常量**:它们直接变成 Prometheus label。
+const (
+	MerchantScheduleCreated      = "created"
+	MerchantScheduleRelocated    = "relocated"
+	MerchantScheduleKept         = "kept"
+	MerchantScheduleIdle         = "idle"
+	MerchantScheduleNoChannel    = "no_channel"
+	MerchantScheduleLostRace     = "lost_race"
+	MerchantScheduleInvalidTable = "invalid_table"
+	MerchantScheduleError        = "error"
+)
+
+// ObserveMysteryMerchantSchedule 记一拍神秘商人调度的结果,outcome 取 MerchantSchedule*,
+// 含义见 mysteryMerchantScheduleTotal 的注释。
+func ObserveMysteryMerchantSchedule(zoneID uint32, outcome string) {
+	register()
+	mysteryMerchantScheduleTotal.WithLabelValues(
 		strconv.FormatUint(uint64(zoneID), 10), outcome,
 	).Inc()
 }
