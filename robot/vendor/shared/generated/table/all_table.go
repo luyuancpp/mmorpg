@@ -111,6 +111,15 @@ func LoadTables(configDir string, useBinary bool) {
     if err := MonsterTableManagerInstance.Load(configDir, useBinary); err != nil {
         log.Fatalf("failed to load Monster table: %v", err)
     }
+    if err := MysteryMerchantGoodsTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load MysteryMerchantGoods table: %v", err)
+    }
+    if err := MysteryMerchantRuleTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load MysteryMerchantRule table: %v", err)
+    }
+    if err := MysteryMerchantSpotTableManagerInstance.Load(configDir, useBinary); err != nil {
+        log.Fatalf("failed to load MysteryMerchantSpot table: %v", err)
+    }
     if err := PetTableManagerInstance.Load(configDir, useBinary); err != nil {
         log.Fatalf("failed to load Pet table: %v", err)
     }
@@ -148,7 +157,7 @@ func LoadTables(configDir string, useBinary bool) {
 // useBinary: true loads .pb (proto binary), false loads .json.
 func LoadTablesAsync(configDir string, useBinary bool) {
     var wg sync.WaitGroup
-    wg.Add(42)
+    wg.Add(45)
     go func() {
         defer wg.Done()
         if err := ActivityScheduleTableManagerInstance.Load(configDir, useBinary); err != nil {
@@ -345,6 +354,24 @@ func LoadTablesAsync(configDir string, useBinary bool) {
         defer wg.Done()
         if err := MonsterTableManagerInstance.Load(configDir, useBinary); err != nil {
             log.Fatalf("failed to load Monster table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
+        if err := MysteryMerchantGoodsTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load MysteryMerchantGoods table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
+        if err := MysteryMerchantRuleTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load MysteryMerchantRule table: %v", err)
+        }
+    }()
+    go func() {
+        defer wg.Done()
+        if err := MysteryMerchantSpotTableManagerInstance.Load(configDir, useBinary); err != nil {
+            log.Fatalf("failed to load MysteryMerchantSpot table: %v", err)
         }
     }()
     go func() {
@@ -549,6 +576,18 @@ func ReloadTables(configDir string, useBinary bool) error {
     if err := newMonster.Load(configDir, useBinary); err != nil {
         return fmt.Errorf("reload Monster failed: %w", err)
     }
+    newMysteryMerchantGoods := NewMysteryMerchantGoodsTableManager()
+    if err := newMysteryMerchantGoods.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload MysteryMerchantGoods failed: %w", err)
+    }
+    newMysteryMerchantRule := NewMysteryMerchantRuleTableManager()
+    if err := newMysteryMerchantRule.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload MysteryMerchantRule failed: %w", err)
+    }
+    newMysteryMerchantSpot := NewMysteryMerchantSpotTableManager()
+    if err := newMysteryMerchantSpot.Load(configDir, useBinary); err != nil {
+        return fmt.Errorf("reload MysteryMerchantSpot failed: %w", err)
+    }
     newPet := NewPetTableManager()
     if err := newPet.Load(configDir, useBinary); err != nil {
         return fmt.Errorf("reload Pet failed: %w", err)
@@ -620,6 +659,9 @@ func ReloadTables(configDir string, useBinary bool) error {
     MirrorTableManagerInstance = newMirror
     MissionTableManagerInstance = newMission
     MonsterTableManagerInstance = newMonster
+    MysteryMerchantGoodsTableManagerInstance = newMysteryMerchantGoods
+    MysteryMerchantRuleTableManagerInstance = newMysteryMerchantRule
+    MysteryMerchantSpotTableManagerInstance = newMysteryMerchantSpot
     PetTableManagerInstance = newPet
     PetRuleTableManagerInstance = newPetRule
     RewardTableManagerInstance = newReward

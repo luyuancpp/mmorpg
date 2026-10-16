@@ -73,6 +73,14 @@ extern const ::google::protobuf::internal::ClassDataFull GameConfig_class_data_;
 #else
 extern const GameConfigGlobalsTypeInternal GameConfig_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class GameConfig_PlayerInboxConfig;
+struct GameConfig_PlayerInboxConfigGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern GameConfig_PlayerInboxConfigGlobalsTypeInternal GameConfig_PlayerInboxConfig_globals_;
+extern const ::google::protobuf::internal::ClassDataFull GameConfig_PlayerInboxConfig_class_data_;
+#else
+extern const GameConfig_PlayerInboxConfigGlobalsTypeInternal GameConfig_PlayerInboxConfig_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class GameConfig_ZoneRedisConfig;
 struct GameConfig_ZoneRedisConfigGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -1242,6 +1250,219 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameConfig_ZoneRedisConfig final : 
 };
 // -------------------------------------------------------------------
 
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameConfig_PlayerInboxConfig final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:GameConfig.PlayerInboxConfig) */ {
+ public:
+  inline GameConfig_PlayerInboxConfig() : GameConfig_PlayerInboxConfig(nullptr) {}
+  ~GameConfig_PlayerInboxConfig() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GameConfig_PlayerInboxConfig* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GameConfig_PlayerInboxConfig));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr GameConfig_PlayerInboxConfig(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline GameConfig_PlayerInboxConfig(const GameConfig_PlayerInboxConfig& from) : GameConfig_PlayerInboxConfig(nullptr, from) {}
+  inline GameConfig_PlayerInboxConfig(GameConfig_PlayerInboxConfig&& from) noexcept : GameConfig_PlayerInboxConfig(nullptr, ::std::move(from)) {}
+  inline GameConfig_PlayerInboxConfig& operator=(const GameConfig_PlayerInboxConfig& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GameConfig_PlayerInboxConfig& operator=(GameConfig_PlayerInboxConfig&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const GameConfig_PlayerInboxConfig& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GameConfig_PlayerInboxConfig>(&GameConfig_PlayerInboxConfig_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 8;
+  friend void swap(GameConfig_PlayerInboxConfig& a, GameConfig_PlayerInboxConfig& b) { a.Swap(&b); }
+  inline void Swap(GameConfig_PlayerInboxConfig* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GameConfig_PlayerInboxConfig* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] GameConfig_PlayerInboxConfig* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GameConfig_PlayerInboxConfig>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GameConfig_PlayerInboxConfig& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GameConfig_PlayerInboxConfig& from) { GameConfig_PlayerInboxConfig::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GameConfig_PlayerInboxConfig* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "GameConfig.PlayerInboxConfig"; }
+
+  explicit GameConfig_PlayerInboxConfig(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GameConfig_PlayerInboxConfig(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GameConfig_PlayerInboxConfig& from);
+  GameConfig_PlayerInboxConfig(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GameConfig_PlayerInboxConfig&& from) noexcept
+      : GameConfig_PlayerInboxConfig(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kConsumerEnabledFieldNumber = 1,
+    kPeriodicFetchMinutesFieldNumber = 2,
+  };
+  // bool consumer_enabled = 1;
+  void clear_consumer_enabled() ;
+  [[nodiscard]] bool consumer_enabled() const;
+  void set_consumer_enabled(bool value);
+
+  private:
+  bool _internal_consumer_enabled() const;
+  void _internal_set_consumer_enabled(bool value);
+
+  public:
+  // uint32 periodic_fetch_minutes = 2;
+  void clear_periodic_fetch_minutes() ;
+  [[nodiscard]] ::uint32_t periodic_fetch_minutes() const;
+  void set_periodic_fetch_minutes(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_periodic_fetch_minutes() const;
+  void _internal_set_periodic_fetch_minutes(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:GameConfig.PlayerInboxConfig)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<1, 2,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GameConfig_PlayerInboxConfig& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    bool consumer_enabled_;
+    ::uint32_t periodic_fetch_minutes_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fbase_2fconfig_2eproto;
+};
+// -------------------------------------------------------------------
+
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED IdSegmentConfig final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:IdSegmentConfig) */ {
  public:
@@ -1717,7 +1938,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameConfig final : public ::google:
   [[nodiscard]] static const GameConfig& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<GameConfig>(&GameConfig_globals_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 9;
   friend void swap(GameConfig& a, GameConfig& b) { a.Swap(&b); }
   inline void Swap(GameConfig* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1807,10 +2028,12 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameConfig final : public ::google:
   [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
   // nested types ----------------------------------------------------
   using ZoneRedisConfig = GameConfig_ZoneRedisConfig;
+  using PlayerInboxConfig = GameConfig_PlayerInboxConfig;
 
   // accessors -------------------------------------------------------
   enum : int {
     kZoneRedisFieldNumber = 7,
+    kPlayerInboxFieldNumber = 8,
     kSceneNodeTypeFieldNumber = 1,
     kZoneIdFieldNumber = 2,
   };
@@ -1828,6 +2051,22 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameConfig final : public ::google:
   private:
   const ::GameConfig_ZoneRedisConfig& _internal_zone_redis() const;
   ::GameConfig_ZoneRedisConfig* PROTOBUF_NONNULL _internal_mutable_zone_redis();
+
+  public:
+  // .GameConfig.PlayerInboxConfig player_inbox = 8;
+  [[nodiscard]] bool has_player_inbox()
+      const;
+  void clear_player_inbox() ;
+  [[nodiscard]] const ::GameConfig_PlayerInboxConfig& player_inbox() const;
+  [[nodiscard]] ::GameConfig_PlayerInboxConfig* PROTOBUF_NULLABLE release_player_inbox();
+  ::GameConfig_PlayerInboxConfig* PROTOBUF_NONNULL mutable_player_inbox();
+  void set_allocated_player_inbox(::GameConfig_PlayerInboxConfig* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_player_inbox(::GameConfig_PlayerInboxConfig* PROTOBUF_NULLABLE value);
+  ::GameConfig_PlayerInboxConfig* PROTOBUF_NULLABLE unsafe_arena_release_player_inbox();
+
+  private:
+  const ::GameConfig_PlayerInboxConfig& _internal_player_inbox() const;
+  ::GameConfig_PlayerInboxConfig* PROTOBUF_NONNULL _internal_mutable_player_inbox();
 
   public:
   // uint32 scene_node_type = 1;
@@ -1854,8 +2093,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameConfig final : public ::google:
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 3,
-                          1, 0,
+      ::google::protobuf::internal::TcParseTable<2, 4,
+                          2, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -1884,6 +2123,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GameConfig final : public ::google:
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::GameConfig_ZoneRedisConfig* PROTOBUF_NULLABLE zone_redis_;
+    ::GameConfig_PlayerInboxConfig* PROTOBUF_NULLABLE player_inbox_;
     ::uint32_t scene_node_type_;
     ::uint32_t zone_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -4517,13 +4757,65 @@ inline void GameConfig_ZoneRedisConfig::_internal_set_db(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
+// GameConfig_PlayerInboxConfig
+
+// bool consumer_enabled = 1;
+inline void GameConfig_PlayerInboxConfig::clear_consumer_enabled() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.consumer_enabled_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline bool GameConfig_PlayerInboxConfig::consumer_enabled() const {
+  // @@protoc_insertion_point(field_get:GameConfig.PlayerInboxConfig.consumer_enabled)
+  return _internal_consumer_enabled();
+}
+inline void GameConfig_PlayerInboxConfig::set_consumer_enabled(bool value) {
+  _internal_set_consumer_enabled(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:GameConfig.PlayerInboxConfig.consumer_enabled)
+}
+inline bool GameConfig_PlayerInboxConfig::_internal_consumer_enabled() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.consumer_enabled_;
+}
+inline void GameConfig_PlayerInboxConfig::_internal_set_consumer_enabled(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.consumer_enabled_ = value;
+}
+
+// uint32 periodic_fetch_minutes = 2;
+inline void GameConfig_PlayerInboxConfig::clear_periodic_fetch_minutes() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.periodic_fetch_minutes_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint32_t GameConfig_PlayerInboxConfig::periodic_fetch_minutes() const {
+  // @@protoc_insertion_point(field_get:GameConfig.PlayerInboxConfig.periodic_fetch_minutes)
+  return _internal_periodic_fetch_minutes();
+}
+inline void GameConfig_PlayerInboxConfig::set_periodic_fetch_minutes(::uint32_t value) {
+  _internal_set_periodic_fetch_minutes(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:GameConfig.PlayerInboxConfig.periodic_fetch_minutes)
+}
+inline ::uint32_t GameConfig_PlayerInboxConfig::_internal_periodic_fetch_minutes() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.periodic_fetch_minutes_;
+}
+inline void GameConfig_PlayerInboxConfig::_internal_set_periodic_fetch_minutes(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.periodic_fetch_minutes_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // GameConfig
 
 // uint32 scene_node_type = 1;
 inline void GameConfig::clear_scene_node_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.scene_node_type_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint32_t GameConfig::scene_node_type() const {
   // @@protoc_insertion_point(field_get:GameConfig.scene_node_type)
@@ -4531,7 +4823,7 @@ inline ::uint32_t GameConfig::scene_node_type() const {
 }
 inline void GameConfig::set_scene_node_type(::uint32_t value) {
   _internal_set_scene_node_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:GameConfig.scene_node_type)
 }
 inline ::uint32_t GameConfig::_internal_scene_node_type() const {
@@ -4547,7 +4839,7 @@ inline void GameConfig::_internal_set_scene_node_type(::uint32_t value) {
 inline void GameConfig::clear_zone_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.zone_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint32_t GameConfig::zone_id() const {
   // @@protoc_insertion_point(field_get:GameConfig.zone_id)
@@ -4555,7 +4847,7 @@ inline ::uint32_t GameConfig::zone_id() const {
 }
 inline void GameConfig::set_zone_id(::uint32_t value) {
   _internal_set_zone_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:GameConfig.zone_id)
 }
 inline ::uint32_t GameConfig::_internal_zone_id() const {
@@ -4663,6 +4955,104 @@ inline void GameConfig::set_allocated_zone_redis(::GameConfig_ZoneRedisConfig* P
 
   _impl_.zone_redis_ = reinterpret_cast<::GameConfig_ZoneRedisConfig*>(value);
   // @@protoc_insertion_point(field_set_allocated:GameConfig.zone_redis)
+}
+
+// .GameConfig.PlayerInboxConfig player_inbox = 8;
+inline bool GameConfig::has_player_inbox() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  PROTOBUF_ASSUME(!value || _impl_.player_inbox_ != nullptr);
+  return value;
+}
+inline void GameConfig::clear_player_inbox() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.player_inbox_ != nullptr) _impl_.player_inbox_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::GameConfig_PlayerInboxConfig& GameConfig::_internal_player_inbox() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::GameConfig_PlayerInboxConfig* p = _impl_.player_inbox_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::GameConfig_PlayerInboxConfig>(&::GameConfig_PlayerInboxConfig_globals_);
+}
+inline const ::GameConfig_PlayerInboxConfig& GameConfig::player_inbox() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:GameConfig.player_inbox)
+  return _internal_player_inbox();
+}
+inline void GameConfig::unsafe_arena_set_allocated_player_inbox(
+    ::GameConfig_PlayerInboxConfig* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.player_inbox_);
+  }
+  _impl_.player_inbox_ = reinterpret_cast<::GameConfig_PlayerInboxConfig*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:GameConfig.player_inbox)
+}
+inline ::GameConfig_PlayerInboxConfig* PROTOBUF_NULLABLE GameConfig::release_player_inbox() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::GameConfig_PlayerInboxConfig* released = _impl_.player_inbox_;
+  _impl_.player_inbox_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::GameConfig_PlayerInboxConfig* PROTOBUF_NULLABLE GameConfig::unsafe_arena_release_player_inbox() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:GameConfig.player_inbox)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::GameConfig_PlayerInboxConfig* temp = _impl_.player_inbox_;
+  _impl_.player_inbox_ = nullptr;
+  return temp;
+}
+inline ::GameConfig_PlayerInboxConfig* PROTOBUF_NONNULL GameConfig::_internal_mutable_player_inbox() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.player_inbox_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::GameConfig_PlayerInboxConfig>(GetArena());
+    _impl_.player_inbox_ = reinterpret_cast<::GameConfig_PlayerInboxConfig*>(p);
+  }
+  return _impl_.player_inbox_;
+}
+inline ::GameConfig_PlayerInboxConfig* PROTOBUF_NONNULL GameConfig::mutable_player_inbox()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::GameConfig_PlayerInboxConfig* _msg = _internal_mutable_player_inbox();
+  // @@protoc_insertion_point(field_mutable:GameConfig.player_inbox)
+  return _msg;
+}
+inline void GameConfig::set_allocated_player_inbox(::GameConfig_PlayerInboxConfig* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.player_inbox_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+
+  _impl_.player_inbox_ = reinterpret_cast<::GameConfig_PlayerInboxConfig*>(value);
+  // @@protoc_insertion_point(field_set_allocated:GameConfig.player_inbox)
 }
 
 #ifdef __GNUC__

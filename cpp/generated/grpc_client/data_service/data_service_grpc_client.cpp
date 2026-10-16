@@ -1,52 +1,58 @@
 #include "muduo/base/Logging.h"
 
 #include "data_service_grpc_client.h"
-#include "proto/common/constants/etcd_grpc.pb.h"
-#include "core/utils/encode/base64.h"
+#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <boost/pool/object_pool.hpp>
-#include "grpc_call_tag.h"
+#include <memory>
+#include <string>
+#include <utility>
+#include "core/network/grpc_client_runtime.h"
+#include "core/utils/encode/base64.h"
+#include "muduo_grpc/channel.h"
 
 namespace {
-boost::object_pool<GrpcTag> tagPool;
 // 本文件所有 unary 调用的 deadline(毫秒)。启动时 SetDataServiceCallDeadline 按目标节点类型写入
 // (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
-std::chrono::system_clock::time_point NextCallDeadline() {
-    return std::chrono::system_clock::now() +
-        std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+std::chrono::milliseconds DefaultCallDeadline() {
+    return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+}
+
+GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+    GrpcCallOutcome outcome;
+    outcome.code = code;
+    outcome.message = std::move(message);
+    return outcome;
 }
 }
 
 namespace data_service {
-struct DataServiceCompleteQueue {
-    grpc::CompletionQueue cq;
-};
 #pragma region DataServiceLoadPlayerData
-boost::object_pool<AsyncDataServiceLoadPlayerDataGrpcClient> DataServiceLoadPlayerDataPool;
-using AsyncDataServiceLoadPlayerDataHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::LoadPlayerDataResponse&)>;
 AsyncDataServiceLoadPlayerDataHandlerFunctionType AsyncDataServiceLoadPlayerDataHandler;
 AsyncDataServiceLoadPlayerDataFailedHandlerFunctionType AsyncDataServiceLoadPlayerDataFailedHandler;
 
-void CompleteDataServiceLoadPlayerData(AsyncDataServiceLoadPlayerDataGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceLoadPlayerDataGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceLoadPlayerDataPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceLoadPlayerDataGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceLoadPlayerDataCall {
+    ::data_service::LoadPlayerDataRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceLoadPlayerDataHandler / FailedHandler。
+    GrpcDone<::data_service::LoadPlayerDataResponse> done;
+};
+
+void CompleteDataServiceLoadPlayerData(const DataServiceLoadPlayerDataCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::LoadPlayerDataResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceLoadPlayerDataHandler) {
-            AsyncDataServiceLoadPlayerDataHandler(call->context, call->reply);
+            AsyncDataServiceLoadPlayerDataHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -58,50 +64,65 @@ void CompleteDataServiceLoadPlayerData(AsyncDataServiceLoadPlayerDataGrpcClient*
             }
         }
     } else if (AsyncDataServiceLoadPlayerDataFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.LoadPlayerData", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceLoadPlayerDataFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceLoadPlayerDataMessageId, "DataService.LoadPlayerData", outcome, call.sentMetadata};
+        AsyncDataServiceLoadPlayerDataFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.LoadPlayerData failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.LoadPlayerData failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceLoadPlayerData(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceLoadPlayerDataGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceLoadPlayerData(call);
+void QueueLocalDataServiceLoadPlayerDataFailure(std::shared_ptr<DataServiceLoadPlayerDataCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceLoadPlayerData(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceLoadPlayerDataCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::LoadPlayerDataRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::LoadPlayerDataResponse> done) {
-    auto call(DataServiceLoadPlayerDataPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceLoadPlayerDataCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceLoadPlayerData(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceLoadPlayerDataFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncLoadPlayerData(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceLoadPlayerDataMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceLoadPlayerDataGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceLoadPlayerDataFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceLoadPlayerData(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::LoadPlayerDataResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.LoadPlayerData response";
+            CompleteDataServiceLoadPlayerData(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceLoadPlayerData(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::LoadPlayerDataRequest& request,
@@ -110,12 +131,11 @@ void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEn
 }
 
 void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::LoadPlayerDataRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceLoadPlayerData(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::LoadPlayerDataRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::LoadPlayerDataRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -123,37 +143,37 @@ void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEn
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceLoadPlayerDataCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::LoadPlayerDataRequest& derived = static_cast<const ::data_service::LoadPlayerDataRequest&>(message);
     SendDataServiceLoadPlayerData(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceSavePlayerData
-boost::object_pool<AsyncDataServiceSavePlayerDataGrpcClient> DataServiceSavePlayerDataPool;
-using AsyncDataServiceSavePlayerDataHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::SavePlayerDataResponse&)>;
 AsyncDataServiceSavePlayerDataHandlerFunctionType AsyncDataServiceSavePlayerDataHandler;
 AsyncDataServiceSavePlayerDataFailedHandlerFunctionType AsyncDataServiceSavePlayerDataFailedHandler;
 
-void CompleteDataServiceSavePlayerData(AsyncDataServiceSavePlayerDataGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceSavePlayerDataGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceSavePlayerDataPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceSavePlayerDataGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceSavePlayerDataCall {
+    ::data_service::SavePlayerDataRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceSavePlayerDataHandler / FailedHandler。
+    GrpcDone<::data_service::SavePlayerDataResponse> done;
+};
+
+void CompleteDataServiceSavePlayerData(const DataServiceSavePlayerDataCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::SavePlayerDataResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceSavePlayerDataHandler) {
-            AsyncDataServiceSavePlayerDataHandler(call->context, call->reply);
+            AsyncDataServiceSavePlayerDataHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -165,50 +185,65 @@ void CompleteDataServiceSavePlayerData(AsyncDataServiceSavePlayerDataGrpcClient*
             }
         }
     } else if (AsyncDataServiceSavePlayerDataFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.SavePlayerData", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceSavePlayerDataFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceSavePlayerDataMessageId, "DataService.SavePlayerData", outcome, call.sentMetadata};
+        AsyncDataServiceSavePlayerDataFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.SavePlayerData failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.SavePlayerData failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceSavePlayerData(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceSavePlayerDataGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceSavePlayerData(call);
+void QueueLocalDataServiceSavePlayerDataFailure(std::shared_ptr<DataServiceSavePlayerDataCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceSavePlayerData(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceSavePlayerDataCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SavePlayerDataRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::SavePlayerDataResponse> done) {
-    auto call(DataServiceSavePlayerDataPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceSavePlayerDataCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceSavePlayerData(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceSavePlayerDataFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncSavePlayerData(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceSavePlayerDataMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceSavePlayerDataGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceSavePlayerDataFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceSavePlayerData(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::SavePlayerDataResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.SavePlayerData response";
+            CompleteDataServiceSavePlayerData(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceSavePlayerData(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SavePlayerDataRequest& request,
@@ -217,12 +252,11 @@ void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEn
 }
 
 void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SavePlayerDataRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceSavePlayerData(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SavePlayerDataRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SavePlayerDataRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -230,37 +264,37 @@ void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEn
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceSavePlayerDataCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::SavePlayerDataRequest& derived = static_cast<const ::data_service::SavePlayerDataRequest&>(message);
     SendDataServiceSavePlayerData(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceGetPlayerField
-boost::object_pool<AsyncDataServiceGetPlayerFieldGrpcClient> DataServiceGetPlayerFieldPool;
-using AsyncDataServiceGetPlayerFieldHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::GetPlayerFieldResponse&)>;
 AsyncDataServiceGetPlayerFieldHandlerFunctionType AsyncDataServiceGetPlayerFieldHandler;
 AsyncDataServiceGetPlayerFieldFailedHandlerFunctionType AsyncDataServiceGetPlayerFieldFailedHandler;
 
-void CompleteDataServiceGetPlayerField(AsyncDataServiceGetPlayerFieldGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceGetPlayerFieldGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceGetPlayerFieldPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceGetPlayerFieldGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceGetPlayerFieldCall {
+    ::data_service::GetPlayerFieldRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerFieldHandler / FailedHandler。
+    GrpcDone<::data_service::GetPlayerFieldResponse> done;
+};
+
+void CompleteDataServiceGetPlayerField(const DataServiceGetPlayerFieldCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::GetPlayerFieldResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceGetPlayerFieldHandler) {
-            AsyncDataServiceGetPlayerFieldHandler(call->context, call->reply);
+            AsyncDataServiceGetPlayerFieldHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -272,50 +306,65 @@ void CompleteDataServiceGetPlayerField(AsyncDataServiceGetPlayerFieldGrpcClient*
             }
         }
     } else if (AsyncDataServiceGetPlayerFieldFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.GetPlayerField", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceGetPlayerFieldFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceGetPlayerFieldMessageId, "DataService.GetPlayerField", outcome, call.sentMetadata};
+        AsyncDataServiceGetPlayerFieldFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.GetPlayerField failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.GetPlayerField failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceGetPlayerField(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceGetPlayerFieldGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceGetPlayerField(call);
+void QueueLocalDataServiceGetPlayerFieldFailure(std::shared_ptr<DataServiceGetPlayerFieldCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceGetPlayerField(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceGetPlayerFieldCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerFieldRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::GetPlayerFieldResponse> done) {
-    auto call(DataServiceGetPlayerFieldPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceGetPlayerFieldCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceGetPlayerField(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceGetPlayerFieldFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetPlayerField(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceGetPlayerFieldMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceGetPlayerFieldGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceGetPlayerFieldFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceGetPlayerField(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::GetPlayerFieldResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.GetPlayerField response";
+            CompleteDataServiceGetPlayerField(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceGetPlayerField(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerFieldRequest& request,
@@ -324,12 +373,11 @@ void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEn
 }
 
 void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerFieldRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceGetPlayerField(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerFieldRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerFieldRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -337,37 +385,37 @@ void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEn
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceGetPlayerFieldCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::GetPlayerFieldRequest& derived = static_cast<const ::data_service::GetPlayerFieldRequest&>(message);
     SendDataServiceGetPlayerField(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceSetPlayerField
-boost::object_pool<AsyncDataServiceSetPlayerFieldGrpcClient> DataServiceSetPlayerFieldPool;
-using AsyncDataServiceSetPlayerFieldHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::SetPlayerFieldResponse&)>;
 AsyncDataServiceSetPlayerFieldHandlerFunctionType AsyncDataServiceSetPlayerFieldHandler;
 AsyncDataServiceSetPlayerFieldFailedHandlerFunctionType AsyncDataServiceSetPlayerFieldFailedHandler;
 
-void CompleteDataServiceSetPlayerField(AsyncDataServiceSetPlayerFieldGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceSetPlayerFieldGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceSetPlayerFieldPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceSetPlayerFieldGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceSetPlayerFieldCall {
+    ::data_service::SetPlayerFieldRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceSetPlayerFieldHandler / FailedHandler。
+    GrpcDone<::data_service::SetPlayerFieldResponse> done;
+};
+
+void CompleteDataServiceSetPlayerField(const DataServiceSetPlayerFieldCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::SetPlayerFieldResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceSetPlayerFieldHandler) {
-            AsyncDataServiceSetPlayerFieldHandler(call->context, call->reply);
+            AsyncDataServiceSetPlayerFieldHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -379,50 +427,65 @@ void CompleteDataServiceSetPlayerField(AsyncDataServiceSetPlayerFieldGrpcClient*
             }
         }
     } else if (AsyncDataServiceSetPlayerFieldFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.SetPlayerField", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceSetPlayerFieldFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceSetPlayerFieldMessageId, "DataService.SetPlayerField", outcome, call.sentMetadata};
+        AsyncDataServiceSetPlayerFieldFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.SetPlayerField failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.SetPlayerField failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceSetPlayerField(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceSetPlayerFieldGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceSetPlayerField(call);
+void QueueLocalDataServiceSetPlayerFieldFailure(std::shared_ptr<DataServiceSetPlayerFieldCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceSetPlayerField(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceSetPlayerFieldCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SetPlayerFieldRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::SetPlayerFieldResponse> done) {
-    auto call(DataServiceSetPlayerFieldPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceSetPlayerFieldCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceSetPlayerField(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceSetPlayerFieldFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncSetPlayerField(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceSetPlayerFieldMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceSetPlayerFieldGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceSetPlayerFieldFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceSetPlayerField(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::SetPlayerFieldResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.SetPlayerField response";
+            CompleteDataServiceSetPlayerField(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceSetPlayerField(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SetPlayerFieldRequest& request,
@@ -431,12 +494,11 @@ void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEn
 }
 
 void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SetPlayerFieldRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceSetPlayerField(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SetPlayerFieldRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SetPlayerFieldRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -444,37 +506,37 @@ void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEn
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceSetPlayerFieldCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::SetPlayerFieldRequest& derived = static_cast<const ::data_service::SetPlayerFieldRequest&>(message);
     SendDataServiceSetPlayerField(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceRegisterPlayerZone
-boost::object_pool<AsyncDataServiceRegisterPlayerZoneGrpcClient> DataServiceRegisterPlayerZonePool;
-using AsyncDataServiceRegisterPlayerZoneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::google::protobuf::Empty&)>;
 AsyncDataServiceRegisterPlayerZoneHandlerFunctionType AsyncDataServiceRegisterPlayerZoneHandler;
 AsyncDataServiceRegisterPlayerZoneFailedHandlerFunctionType AsyncDataServiceRegisterPlayerZoneFailedHandler;
 
-void CompleteDataServiceRegisterPlayerZone(AsyncDataServiceRegisterPlayerZoneGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceRegisterPlayerZoneGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceRegisterPlayerZonePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceRegisterPlayerZoneGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceRegisterPlayerZoneCall {
+    ::data_service::RegisterPlayerZoneRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceRegisterPlayerZoneHandler / FailedHandler。
+    GrpcDone<::google::protobuf::Empty> done;
+};
+
+void CompleteDataServiceRegisterPlayerZone(const DataServiceRegisterPlayerZoneCall& call, const GrpcCallOutcome& outcome,
+                                                const ::google::protobuf::Empty* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceRegisterPlayerZoneHandler) {
-            AsyncDataServiceRegisterPlayerZoneHandler(call->context, call->reply);
+            AsyncDataServiceRegisterPlayerZoneHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -486,50 +548,65 @@ void CompleteDataServiceRegisterPlayerZone(AsyncDataServiceRegisterPlayerZoneGrp
             }
         }
     } else if (AsyncDataServiceRegisterPlayerZoneFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.RegisterPlayerZone", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceRegisterPlayerZoneFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceRegisterPlayerZoneMessageId, "DataService.RegisterPlayerZone", outcome, call.sentMetadata};
+        AsyncDataServiceRegisterPlayerZoneFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.RegisterPlayerZone failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.RegisterPlayerZone failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceRegisterPlayerZone(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceRegisterPlayerZoneGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceRegisterPlayerZone(call);
+void QueueLocalDataServiceRegisterPlayerZoneFailure(std::shared_ptr<DataServiceRegisterPlayerZoneCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceRegisterPlayerZone(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceRegisterPlayerZoneCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RegisterPlayerZoneRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::google::protobuf::Empty> done) {
-    auto call(DataServiceRegisterPlayerZonePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceRegisterPlayerZoneCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceRegisterPlayerZone(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceRegisterPlayerZoneFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncRegisterPlayerZone(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceRegisterPlayerZoneMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceRegisterPlayerZoneGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceRegisterPlayerZoneFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceRegisterPlayerZone(*call, outcome, nullptr);
+            return;
+        }
+        ::google::protobuf::Empty reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.RegisterPlayerZone response";
+            CompleteDataServiceRegisterPlayerZone(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceRegisterPlayerZone(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RegisterPlayerZoneRequest& request,
@@ -538,12 +615,11 @@ void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity no
 }
 
 void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RegisterPlayerZoneRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceRegisterPlayerZone(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RegisterPlayerZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RegisterPlayerZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -551,37 +627,37 @@ void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity no
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceRegisterPlayerZoneCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::RegisterPlayerZoneRequest& derived = static_cast<const ::data_service::RegisterPlayerZoneRequest&>(message);
     SendDataServiceRegisterPlayerZone(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceGetPlayerHomeZone
-boost::object_pool<AsyncDataServiceGetPlayerHomeZoneGrpcClient> DataServiceGetPlayerHomeZonePool;
-using AsyncDataServiceGetPlayerHomeZoneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::GetPlayerHomeZoneResponse&)>;
 AsyncDataServiceGetPlayerHomeZoneHandlerFunctionType AsyncDataServiceGetPlayerHomeZoneHandler;
 AsyncDataServiceGetPlayerHomeZoneFailedHandlerFunctionType AsyncDataServiceGetPlayerHomeZoneFailedHandler;
 
-void CompleteDataServiceGetPlayerHomeZone(AsyncDataServiceGetPlayerHomeZoneGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceGetPlayerHomeZoneGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceGetPlayerHomeZonePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceGetPlayerHomeZoneGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceGetPlayerHomeZoneCall {
+    ::data_service::GetPlayerHomeZoneRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerHomeZoneHandler / FailedHandler。
+    GrpcDone<::data_service::GetPlayerHomeZoneResponse> done;
+};
+
+void CompleteDataServiceGetPlayerHomeZone(const DataServiceGetPlayerHomeZoneCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::GetPlayerHomeZoneResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceGetPlayerHomeZoneHandler) {
-            AsyncDataServiceGetPlayerHomeZoneHandler(call->context, call->reply);
+            AsyncDataServiceGetPlayerHomeZoneHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -593,50 +669,65 @@ void CompleteDataServiceGetPlayerHomeZone(AsyncDataServiceGetPlayerHomeZoneGrpcC
             }
         }
     } else if (AsyncDataServiceGetPlayerHomeZoneFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.GetPlayerHomeZone", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceGetPlayerHomeZoneFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceGetPlayerHomeZoneMessageId, "DataService.GetPlayerHomeZone", outcome, call.sentMetadata};
+        AsyncDataServiceGetPlayerHomeZoneFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.GetPlayerHomeZone failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.GetPlayerHomeZone failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceGetPlayerHomeZone(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceGetPlayerHomeZoneGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceGetPlayerHomeZone(call);
+void QueueLocalDataServiceGetPlayerHomeZoneFailure(std::shared_ptr<DataServiceGetPlayerHomeZoneCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceGetPlayerHomeZone(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceGetPlayerHomeZoneCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerHomeZoneRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::GetPlayerHomeZoneResponse> done) {
-    auto call(DataServiceGetPlayerHomeZonePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceGetPlayerHomeZoneCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceGetPlayerHomeZone(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceGetPlayerHomeZoneFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetPlayerHomeZone(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceGetPlayerHomeZoneMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceGetPlayerHomeZoneGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceGetPlayerHomeZoneFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceGetPlayerHomeZone(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::GetPlayerHomeZoneResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.GetPlayerHomeZone response";
+            CompleteDataServiceGetPlayerHomeZone(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceGetPlayerHomeZone(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerHomeZoneRequest& request,
@@ -645,12 +736,11 @@ void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nod
 }
 
 void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerHomeZoneRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceGetPlayerHomeZone(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerHomeZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerHomeZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -658,37 +748,37 @@ void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nod
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceGetPlayerHomeZoneCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::GetPlayerHomeZoneRequest& derived = static_cast<const ::data_service::GetPlayerHomeZoneRequest&>(message);
     SendDataServiceGetPlayerHomeZone(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceBatchGetPlayerHomeZone
-boost::object_pool<AsyncDataServiceBatchGetPlayerHomeZoneGrpcClient> DataServiceBatchGetPlayerHomeZonePool;
-using AsyncDataServiceBatchGetPlayerHomeZoneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::BatchGetPlayerHomeZoneResponse&)>;
 AsyncDataServiceBatchGetPlayerHomeZoneHandlerFunctionType AsyncDataServiceBatchGetPlayerHomeZoneHandler;
 AsyncDataServiceBatchGetPlayerHomeZoneFailedHandlerFunctionType AsyncDataServiceBatchGetPlayerHomeZoneFailedHandler;
 
-void CompleteDataServiceBatchGetPlayerHomeZone(AsyncDataServiceBatchGetPlayerHomeZoneGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceBatchGetPlayerHomeZoneGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceBatchGetPlayerHomeZonePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceBatchGetPlayerHomeZoneGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceBatchGetPlayerHomeZoneCall {
+    ::data_service::BatchGetPlayerHomeZoneRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceBatchGetPlayerHomeZoneHandler / FailedHandler。
+    GrpcDone<::data_service::BatchGetPlayerHomeZoneResponse> done;
+};
+
+void CompleteDataServiceBatchGetPlayerHomeZone(const DataServiceBatchGetPlayerHomeZoneCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::BatchGetPlayerHomeZoneResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceBatchGetPlayerHomeZoneHandler) {
-            AsyncDataServiceBatchGetPlayerHomeZoneHandler(call->context, call->reply);
+            AsyncDataServiceBatchGetPlayerHomeZoneHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -700,50 +790,65 @@ void CompleteDataServiceBatchGetPlayerHomeZone(AsyncDataServiceBatchGetPlayerHom
             }
         }
     } else if (AsyncDataServiceBatchGetPlayerHomeZoneFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.BatchGetPlayerHomeZone", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceBatchGetPlayerHomeZoneFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceBatchGetPlayerHomeZoneMessageId, "DataService.BatchGetPlayerHomeZone", outcome, call.sentMetadata};
+        AsyncDataServiceBatchGetPlayerHomeZoneFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.BatchGetPlayerHomeZone failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.BatchGetPlayerHomeZone failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceBatchGetPlayerHomeZone(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceBatchGetPlayerHomeZoneGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceBatchGetPlayerHomeZone(call);
+void QueueLocalDataServiceBatchGetPlayerHomeZoneFailure(std::shared_ptr<DataServiceBatchGetPlayerHomeZoneCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceBatchGetPlayerHomeZone(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceBatchGetPlayerHomeZoneCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerHomeZoneRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::BatchGetPlayerHomeZoneResponse> done) {
-    auto call(DataServiceBatchGetPlayerHomeZonePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceBatchGetPlayerHomeZoneCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceBatchGetPlayerHomeZone(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceBatchGetPlayerHomeZoneFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncBatchGetPlayerHomeZone(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceBatchGetPlayerHomeZoneMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceBatchGetPlayerHomeZoneGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceBatchGetPlayerHomeZoneFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceBatchGetPlayerHomeZone(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::BatchGetPlayerHomeZoneResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.BatchGetPlayerHomeZone response";
+            CompleteDataServiceBatchGetPlayerHomeZone(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceBatchGetPlayerHomeZone(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerHomeZoneRequest& request,
@@ -752,12 +857,11 @@ void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entit
 }
 
 void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerHomeZoneRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceBatchGetPlayerHomeZone(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerHomeZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerHomeZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -765,37 +869,37 @@ void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entit
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceBatchGetPlayerHomeZoneCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::BatchGetPlayerHomeZoneRequest& derived = static_cast<const ::data_service::BatchGetPlayerHomeZoneRequest&>(message);
     SendDataServiceBatchGetPlayerHomeZone(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceRemapHomeZoneForMerge
-boost::object_pool<AsyncDataServiceRemapHomeZoneForMergeGrpcClient> DataServiceRemapHomeZoneForMergePool;
-using AsyncDataServiceRemapHomeZoneForMergeHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::RemapHomeZoneForMergeResponse&)>;
 AsyncDataServiceRemapHomeZoneForMergeHandlerFunctionType AsyncDataServiceRemapHomeZoneForMergeHandler;
 AsyncDataServiceRemapHomeZoneForMergeFailedHandlerFunctionType AsyncDataServiceRemapHomeZoneForMergeFailedHandler;
 
-void CompleteDataServiceRemapHomeZoneForMerge(AsyncDataServiceRemapHomeZoneForMergeGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceRemapHomeZoneForMergeGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceRemapHomeZoneForMergePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceRemapHomeZoneForMergeGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceRemapHomeZoneForMergeCall {
+    ::data_service::RemapHomeZoneForMergeRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceRemapHomeZoneForMergeHandler / FailedHandler。
+    GrpcDone<::data_service::RemapHomeZoneForMergeResponse> done;
+};
+
+void CompleteDataServiceRemapHomeZoneForMerge(const DataServiceRemapHomeZoneForMergeCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::RemapHomeZoneForMergeResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceRemapHomeZoneForMergeHandler) {
-            AsyncDataServiceRemapHomeZoneForMergeHandler(call->context, call->reply);
+            AsyncDataServiceRemapHomeZoneForMergeHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -807,50 +911,65 @@ void CompleteDataServiceRemapHomeZoneForMerge(AsyncDataServiceRemapHomeZoneForMe
             }
         }
     } else if (AsyncDataServiceRemapHomeZoneForMergeFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.RemapHomeZoneForMerge", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceRemapHomeZoneForMergeFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceRemapHomeZoneForMergeMessageId, "DataService.RemapHomeZoneForMerge", outcome, call.sentMetadata};
+        AsyncDataServiceRemapHomeZoneForMergeFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.RemapHomeZoneForMerge failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.RemapHomeZoneForMerge failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceRemapHomeZoneForMerge(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceRemapHomeZoneForMergeGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceRemapHomeZoneForMerge(call);
+void QueueLocalDataServiceRemapHomeZoneForMergeFailure(std::shared_ptr<DataServiceRemapHomeZoneForMergeCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceRemapHomeZoneForMerge(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceRemapHomeZoneForMergeCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::RemapHomeZoneForMergeResponse> done) {
-    auto call(DataServiceRemapHomeZoneForMergePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceRemapHomeZoneForMergeCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceRemapHomeZoneForMerge(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceRemapHomeZoneForMergeFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncRemapHomeZoneForMerge(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceRemapHomeZoneForMergeMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceRemapHomeZoneForMergeGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceRemapHomeZoneForMergeFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceRemapHomeZoneForMerge(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::RemapHomeZoneForMergeResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.RemapHomeZoneForMerge response";
+            CompleteDataServiceRemapHomeZoneForMerge(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceRemapHomeZoneForMerge(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request,
@@ -859,12 +978,11 @@ void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity
 }
 
 void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceRemapHomeZoneForMerge(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -872,37 +990,37 @@ void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceRemapHomeZoneForMergeCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::RemapHomeZoneForMergeRequest& derived = static_cast<const ::data_service::RemapHomeZoneForMergeRequest&>(message);
     SendDataServiceRemapHomeZoneForMerge(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceDeletePlayerData
-boost::object_pool<AsyncDataServiceDeletePlayerDataGrpcClient> DataServiceDeletePlayerDataPool;
-using AsyncDataServiceDeletePlayerDataHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::DeletePlayerDataResponse&)>;
 AsyncDataServiceDeletePlayerDataHandlerFunctionType AsyncDataServiceDeletePlayerDataHandler;
 AsyncDataServiceDeletePlayerDataFailedHandlerFunctionType AsyncDataServiceDeletePlayerDataFailedHandler;
 
-void CompleteDataServiceDeletePlayerData(AsyncDataServiceDeletePlayerDataGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceDeletePlayerDataGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceDeletePlayerDataPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceDeletePlayerDataGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceDeletePlayerDataCall {
+    ::data_service::DeletePlayerDataRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceDeletePlayerDataHandler / FailedHandler。
+    GrpcDone<::data_service::DeletePlayerDataResponse> done;
+};
+
+void CompleteDataServiceDeletePlayerData(const DataServiceDeletePlayerDataCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::DeletePlayerDataResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceDeletePlayerDataHandler) {
-            AsyncDataServiceDeletePlayerDataHandler(call->context, call->reply);
+            AsyncDataServiceDeletePlayerDataHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -914,50 +1032,65 @@ void CompleteDataServiceDeletePlayerData(AsyncDataServiceDeletePlayerDataGrpcCli
             }
         }
     } else if (AsyncDataServiceDeletePlayerDataFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.DeletePlayerData", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceDeletePlayerDataFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceDeletePlayerDataMessageId, "DataService.DeletePlayerData", outcome, call.sentMetadata};
+        AsyncDataServiceDeletePlayerDataFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.DeletePlayerData failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.DeletePlayerData failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceDeletePlayerData(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceDeletePlayerDataGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceDeletePlayerData(call);
+void QueueLocalDataServiceDeletePlayerDataFailure(std::shared_ptr<DataServiceDeletePlayerDataCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceDeletePlayerData(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceDeletePlayerDataCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::DeletePlayerDataRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::DeletePlayerDataResponse> done) {
-    auto call(DataServiceDeletePlayerDataPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceDeletePlayerDataCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceDeletePlayerData(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceDeletePlayerDataFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncDeletePlayerData(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceDeletePlayerDataMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceDeletePlayerDataGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceDeletePlayerDataFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceDeletePlayerData(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::DeletePlayerDataResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.DeletePlayerData response";
+            CompleteDataServiceDeletePlayerData(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceDeletePlayerData(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::DeletePlayerDataRequest& request,
@@ -966,12 +1099,11 @@ void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity node
 }
 
 void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::DeletePlayerDataRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceDeletePlayerData(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::DeletePlayerDataRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::DeletePlayerDataRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -979,37 +1111,37 @@ void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity node
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceDeletePlayerDataCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::DeletePlayerDataRequest& derived = static_cast<const ::data_service::DeletePlayerDataRequest&>(message);
     SendDataServiceDeletePlayerData(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceCreatePlayerSnapshot
-boost::object_pool<AsyncDataServiceCreatePlayerSnapshotGrpcClient> DataServiceCreatePlayerSnapshotPool;
-using AsyncDataServiceCreatePlayerSnapshotHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::CreatePlayerSnapshotResponse&)>;
 AsyncDataServiceCreatePlayerSnapshotHandlerFunctionType AsyncDataServiceCreatePlayerSnapshotHandler;
 AsyncDataServiceCreatePlayerSnapshotFailedHandlerFunctionType AsyncDataServiceCreatePlayerSnapshotFailedHandler;
 
-void CompleteDataServiceCreatePlayerSnapshot(AsyncDataServiceCreatePlayerSnapshotGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceCreatePlayerSnapshotGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceCreatePlayerSnapshotPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceCreatePlayerSnapshotGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceCreatePlayerSnapshotCall {
+    ::data_service::CreatePlayerSnapshotRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceCreatePlayerSnapshotHandler / FailedHandler。
+    GrpcDone<::data_service::CreatePlayerSnapshotResponse> done;
+};
+
+void CompleteDataServiceCreatePlayerSnapshot(const DataServiceCreatePlayerSnapshotCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::CreatePlayerSnapshotResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceCreatePlayerSnapshotHandler) {
-            AsyncDataServiceCreatePlayerSnapshotHandler(call->context, call->reply);
+            AsyncDataServiceCreatePlayerSnapshotHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1021,50 +1153,65 @@ void CompleteDataServiceCreatePlayerSnapshot(AsyncDataServiceCreatePlayerSnapsho
             }
         }
     } else if (AsyncDataServiceCreatePlayerSnapshotFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.CreatePlayerSnapshot", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceCreatePlayerSnapshotFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceCreatePlayerSnapshotMessageId, "DataService.CreatePlayerSnapshot", outcome, call.sentMetadata};
+        AsyncDataServiceCreatePlayerSnapshotFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.CreatePlayerSnapshot failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.CreatePlayerSnapshot failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceCreatePlayerSnapshot(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceCreatePlayerSnapshotGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceCreatePlayerSnapshot(call);
+void QueueLocalDataServiceCreatePlayerSnapshotFailure(std::shared_ptr<DataServiceCreatePlayerSnapshotCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceCreatePlayerSnapshot(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceCreatePlayerSnapshotCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::CreatePlayerSnapshotResponse> done) {
-    auto call(DataServiceCreatePlayerSnapshotPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceCreatePlayerSnapshotCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceCreatePlayerSnapshot(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceCreatePlayerSnapshotFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncCreatePlayerSnapshot(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceCreatePlayerSnapshotMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceCreatePlayerSnapshotGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceCreatePlayerSnapshotFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceCreatePlayerSnapshot(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::CreatePlayerSnapshotResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.CreatePlayerSnapshot response";
+            CompleteDataServiceCreatePlayerSnapshot(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceCreatePlayerSnapshot(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request,
@@ -1073,12 +1220,11 @@ void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity 
 }
 
 void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceCreatePlayerSnapshot(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1086,37 +1232,37 @@ void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity 
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceCreatePlayerSnapshotCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::CreatePlayerSnapshotRequest& derived = static_cast<const ::data_service::CreatePlayerSnapshotRequest&>(message);
     SendDataServiceCreatePlayerSnapshot(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceListPlayerSnapshots
-boost::object_pool<AsyncDataServiceListPlayerSnapshotsGrpcClient> DataServiceListPlayerSnapshotsPool;
-using AsyncDataServiceListPlayerSnapshotsHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::ListPlayerSnapshotsResponse&)>;
 AsyncDataServiceListPlayerSnapshotsHandlerFunctionType AsyncDataServiceListPlayerSnapshotsHandler;
 AsyncDataServiceListPlayerSnapshotsFailedHandlerFunctionType AsyncDataServiceListPlayerSnapshotsFailedHandler;
 
-void CompleteDataServiceListPlayerSnapshots(AsyncDataServiceListPlayerSnapshotsGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceListPlayerSnapshotsGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceListPlayerSnapshotsPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceListPlayerSnapshotsGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceListPlayerSnapshotsCall {
+    ::data_service::ListPlayerSnapshotsRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceListPlayerSnapshotsHandler / FailedHandler。
+    GrpcDone<::data_service::ListPlayerSnapshotsResponse> done;
+};
+
+void CompleteDataServiceListPlayerSnapshots(const DataServiceListPlayerSnapshotsCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::ListPlayerSnapshotsResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceListPlayerSnapshotsHandler) {
-            AsyncDataServiceListPlayerSnapshotsHandler(call->context, call->reply);
+            AsyncDataServiceListPlayerSnapshotsHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1128,50 +1274,65 @@ void CompleteDataServiceListPlayerSnapshots(AsyncDataServiceListPlayerSnapshotsG
             }
         }
     } else if (AsyncDataServiceListPlayerSnapshotsFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.ListPlayerSnapshots", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceListPlayerSnapshotsFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceListPlayerSnapshotsMessageId, "DataService.ListPlayerSnapshots", outcome, call.sentMetadata};
+        AsyncDataServiceListPlayerSnapshotsFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.ListPlayerSnapshots failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.ListPlayerSnapshots failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceListPlayerSnapshots(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceListPlayerSnapshotsGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceListPlayerSnapshots(call);
+void QueueLocalDataServiceListPlayerSnapshotsFailure(std::shared_ptr<DataServiceListPlayerSnapshotsCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceListPlayerSnapshots(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceListPlayerSnapshotsCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::ListPlayerSnapshotsResponse> done) {
-    auto call(DataServiceListPlayerSnapshotsPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceListPlayerSnapshotsCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceListPlayerSnapshots(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceListPlayerSnapshotsFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncListPlayerSnapshots(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceListPlayerSnapshotsMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceListPlayerSnapshotsGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceListPlayerSnapshotsFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceListPlayerSnapshots(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::ListPlayerSnapshotsResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.ListPlayerSnapshots response";
+            CompleteDataServiceListPlayerSnapshots(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceListPlayerSnapshots(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request,
@@ -1180,12 +1341,11 @@ void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity n
 }
 
 void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceListPlayerSnapshots(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1193,37 +1353,37 @@ void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity n
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceListPlayerSnapshotsCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::ListPlayerSnapshotsRequest& derived = static_cast<const ::data_service::ListPlayerSnapshotsRequest&>(message);
     SendDataServiceListPlayerSnapshots(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceGetPlayerSnapshotDiff
-boost::object_pool<AsyncDataServiceGetPlayerSnapshotDiffGrpcClient> DataServiceGetPlayerSnapshotDiffPool;
-using AsyncDataServiceGetPlayerSnapshotDiffHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::GetPlayerSnapshotDiffResponse&)>;
 AsyncDataServiceGetPlayerSnapshotDiffHandlerFunctionType AsyncDataServiceGetPlayerSnapshotDiffHandler;
 AsyncDataServiceGetPlayerSnapshotDiffFailedHandlerFunctionType AsyncDataServiceGetPlayerSnapshotDiffFailedHandler;
 
-void CompleteDataServiceGetPlayerSnapshotDiff(AsyncDataServiceGetPlayerSnapshotDiffGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceGetPlayerSnapshotDiffGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceGetPlayerSnapshotDiffPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceGetPlayerSnapshotDiffGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceGetPlayerSnapshotDiffCall {
+    ::data_service::GetPlayerSnapshotDiffRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerSnapshotDiffHandler / FailedHandler。
+    GrpcDone<::data_service::GetPlayerSnapshotDiffResponse> done;
+};
+
+void CompleteDataServiceGetPlayerSnapshotDiff(const DataServiceGetPlayerSnapshotDiffCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::GetPlayerSnapshotDiffResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceGetPlayerSnapshotDiffHandler) {
-            AsyncDataServiceGetPlayerSnapshotDiffHandler(call->context, call->reply);
+            AsyncDataServiceGetPlayerSnapshotDiffHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1235,50 +1395,65 @@ void CompleteDataServiceGetPlayerSnapshotDiff(AsyncDataServiceGetPlayerSnapshotD
             }
         }
     } else if (AsyncDataServiceGetPlayerSnapshotDiffFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.GetPlayerSnapshotDiff", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceGetPlayerSnapshotDiffFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceGetPlayerSnapshotDiffMessageId, "DataService.GetPlayerSnapshotDiff", outcome, call.sentMetadata};
+        AsyncDataServiceGetPlayerSnapshotDiffFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.GetPlayerSnapshotDiff failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.GetPlayerSnapshotDiff failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceGetPlayerSnapshotDiff(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceGetPlayerSnapshotDiffGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceGetPlayerSnapshotDiff(call);
+void QueueLocalDataServiceGetPlayerSnapshotDiffFailure(std::shared_ptr<DataServiceGetPlayerSnapshotDiffCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceGetPlayerSnapshotDiff(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceGetPlayerSnapshotDiffCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::GetPlayerSnapshotDiffResponse> done) {
-    auto call(DataServiceGetPlayerSnapshotDiffPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceGetPlayerSnapshotDiffCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceGetPlayerSnapshotDiff(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceGetPlayerSnapshotDiffFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetPlayerSnapshotDiff(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceGetPlayerSnapshotDiffMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceGetPlayerSnapshotDiffGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceGetPlayerSnapshotDiffFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceGetPlayerSnapshotDiff(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::GetPlayerSnapshotDiffResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.GetPlayerSnapshotDiff response";
+            CompleteDataServiceGetPlayerSnapshotDiff(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceGetPlayerSnapshotDiff(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request,
@@ -1287,12 +1462,11 @@ void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity
 }
 
 void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceGetPlayerSnapshotDiff(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1300,37 +1474,37 @@ void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceGetPlayerSnapshotDiffCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::GetPlayerSnapshotDiffRequest& derived = static_cast<const ::data_service::GetPlayerSnapshotDiffRequest&>(message);
     SendDataServiceGetPlayerSnapshotDiff(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceRollbackPlayer
-boost::object_pool<AsyncDataServiceRollbackPlayerGrpcClient> DataServiceRollbackPlayerPool;
-using AsyncDataServiceRollbackPlayerHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::RollbackPlayerResponse&)>;
 AsyncDataServiceRollbackPlayerHandlerFunctionType AsyncDataServiceRollbackPlayerHandler;
 AsyncDataServiceRollbackPlayerFailedHandlerFunctionType AsyncDataServiceRollbackPlayerFailedHandler;
 
-void CompleteDataServiceRollbackPlayer(AsyncDataServiceRollbackPlayerGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceRollbackPlayerGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceRollbackPlayerPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceRollbackPlayerGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceRollbackPlayerCall {
+    ::data_service::RollbackPlayerRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceRollbackPlayerHandler / FailedHandler。
+    GrpcDone<::data_service::RollbackPlayerResponse> done;
+};
+
+void CompleteDataServiceRollbackPlayer(const DataServiceRollbackPlayerCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::RollbackPlayerResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceRollbackPlayerHandler) {
-            AsyncDataServiceRollbackPlayerHandler(call->context, call->reply);
+            AsyncDataServiceRollbackPlayerHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1342,50 +1516,65 @@ void CompleteDataServiceRollbackPlayer(AsyncDataServiceRollbackPlayerGrpcClient*
             }
         }
     } else if (AsyncDataServiceRollbackPlayerFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.RollbackPlayer", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceRollbackPlayerFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceRollbackPlayerMessageId, "DataService.RollbackPlayer", outcome, call.sentMetadata};
+        AsyncDataServiceRollbackPlayerFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.RollbackPlayer failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.RollbackPlayer failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceRollbackPlayer(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceRollbackPlayerGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceRollbackPlayer(call);
+void QueueLocalDataServiceRollbackPlayerFailure(std::shared_ptr<DataServiceRollbackPlayerCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceRollbackPlayer(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceRollbackPlayerCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::RollbackPlayerResponse> done) {
-    auto call(DataServiceRollbackPlayerPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceRollbackPlayerCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceRollbackPlayer(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceRollbackPlayerFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncRollbackPlayer(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceRollbackPlayerMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceRollbackPlayerGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceRollbackPlayerFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceRollbackPlayer(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::RollbackPlayerResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.RollbackPlayer response";
+            CompleteDataServiceRollbackPlayer(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceRollbackPlayer(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request,
@@ -1394,12 +1583,11 @@ void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEn
 }
 
 void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceRollbackPlayer(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1407,37 +1595,37 @@ void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEn
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceRollbackPlayerCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::RollbackPlayerRequest& derived = static_cast<const ::data_service::RollbackPlayerRequest&>(message);
     SendDataServiceRollbackPlayer(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceRollbackZone
-boost::object_pool<AsyncDataServiceRollbackZoneGrpcClient> DataServiceRollbackZonePool;
-using AsyncDataServiceRollbackZoneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::RollbackZoneResponse&)>;
 AsyncDataServiceRollbackZoneHandlerFunctionType AsyncDataServiceRollbackZoneHandler;
 AsyncDataServiceRollbackZoneFailedHandlerFunctionType AsyncDataServiceRollbackZoneFailedHandler;
 
-void CompleteDataServiceRollbackZone(AsyncDataServiceRollbackZoneGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceRollbackZoneGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceRollbackZonePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceRollbackZoneGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceRollbackZoneCall {
+    ::data_service::RollbackZoneRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceRollbackZoneHandler / FailedHandler。
+    GrpcDone<::data_service::RollbackZoneResponse> done;
+};
+
+void CompleteDataServiceRollbackZone(const DataServiceRollbackZoneCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::RollbackZoneResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceRollbackZoneHandler) {
-            AsyncDataServiceRollbackZoneHandler(call->context, call->reply);
+            AsyncDataServiceRollbackZoneHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1449,50 +1637,65 @@ void CompleteDataServiceRollbackZone(AsyncDataServiceRollbackZoneGrpcClient* cal
             }
         }
     } else if (AsyncDataServiceRollbackZoneFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.RollbackZone", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceRollbackZoneFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceRollbackZoneMessageId, "DataService.RollbackZone", outcome, call.sentMetadata};
+        AsyncDataServiceRollbackZoneFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.RollbackZone failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.RollbackZone failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceRollbackZone(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceRollbackZoneGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceRollbackZone(call);
+void QueueLocalDataServiceRollbackZoneFailure(std::shared_ptr<DataServiceRollbackZoneCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceRollbackZone(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceRollbackZoneCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::RollbackZoneResponse> done) {
-    auto call(DataServiceRollbackZonePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceRollbackZoneCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceRollbackZone(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceRollbackZoneFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncRollbackZone(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceRollbackZoneMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceRollbackZoneGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceRollbackZoneFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceRollbackZone(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::RollbackZoneResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.RollbackZone response";
+            CompleteDataServiceRollbackZone(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceRollbackZone(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request,
@@ -1501,12 +1704,11 @@ void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEnti
 }
 
 void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceRollbackZone(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1514,37 +1716,37 @@ void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEnti
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceRollbackZoneCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::RollbackZoneRequest& derived = static_cast<const ::data_service::RollbackZoneRequest&>(message);
     SendDataServiceRollbackZone(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceRollbackAll
-boost::object_pool<AsyncDataServiceRollbackAllGrpcClient> DataServiceRollbackAllPool;
-using AsyncDataServiceRollbackAllHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::RollbackAllResponse&)>;
 AsyncDataServiceRollbackAllHandlerFunctionType AsyncDataServiceRollbackAllHandler;
 AsyncDataServiceRollbackAllFailedHandlerFunctionType AsyncDataServiceRollbackAllFailedHandler;
 
-void CompleteDataServiceRollbackAll(AsyncDataServiceRollbackAllGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceRollbackAllGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceRollbackAllPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceRollbackAllGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceRollbackAllCall {
+    ::data_service::RollbackAllRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceRollbackAllHandler / FailedHandler。
+    GrpcDone<::data_service::RollbackAllResponse> done;
+};
+
+void CompleteDataServiceRollbackAll(const DataServiceRollbackAllCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::RollbackAllResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceRollbackAllHandler) {
-            AsyncDataServiceRollbackAllHandler(call->context, call->reply);
+            AsyncDataServiceRollbackAllHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1556,50 +1758,65 @@ void CompleteDataServiceRollbackAll(AsyncDataServiceRollbackAllGrpcClient* call)
             }
         }
     } else if (AsyncDataServiceRollbackAllFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.RollbackAll", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceRollbackAllFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceRollbackAllMessageId, "DataService.RollbackAll", outcome, call.sentMetadata};
+        AsyncDataServiceRollbackAllFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.RollbackAll failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.RollbackAll failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceRollbackAll(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceRollbackAllGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceRollbackAll(call);
+void QueueLocalDataServiceRollbackAllFailure(std::shared_ptr<DataServiceRollbackAllCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceRollbackAll(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceRollbackAllCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::RollbackAllResponse> done) {
-    auto call(DataServiceRollbackAllPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceRollbackAllCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceRollbackAll(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceRollbackAllFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncRollbackAll(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceRollbackAllMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceRollbackAllGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceRollbackAllFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceRollbackAll(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::RollbackAllResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.RollbackAll response";
+            CompleteDataServiceRollbackAll(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceRollbackAll(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request,
@@ -1608,12 +1825,11 @@ void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntit
 }
 
 void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceRollbackAll(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1621,37 +1837,37 @@ void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntit
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceRollbackAllCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::RollbackAllRequest& derived = static_cast<const ::data_service::RollbackAllRequest&>(message);
     SendDataServiceRollbackAll(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceBatchRecallItems
-boost::object_pool<AsyncDataServiceBatchRecallItemsGrpcClient> DataServiceBatchRecallItemsPool;
-using AsyncDataServiceBatchRecallItemsHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::BatchRecallItemsResponse&)>;
 AsyncDataServiceBatchRecallItemsHandlerFunctionType AsyncDataServiceBatchRecallItemsHandler;
 AsyncDataServiceBatchRecallItemsFailedHandlerFunctionType AsyncDataServiceBatchRecallItemsFailedHandler;
 
-void CompleteDataServiceBatchRecallItems(AsyncDataServiceBatchRecallItemsGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceBatchRecallItemsGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceBatchRecallItemsPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceBatchRecallItemsGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceBatchRecallItemsCall {
+    ::data_service::BatchRecallItemsRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceBatchRecallItemsHandler / FailedHandler。
+    GrpcDone<::data_service::BatchRecallItemsResponse> done;
+};
+
+void CompleteDataServiceBatchRecallItems(const DataServiceBatchRecallItemsCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::BatchRecallItemsResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceBatchRecallItemsHandler) {
-            AsyncDataServiceBatchRecallItemsHandler(call->context, call->reply);
+            AsyncDataServiceBatchRecallItemsHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1663,50 +1879,65 @@ void CompleteDataServiceBatchRecallItems(AsyncDataServiceBatchRecallItemsGrpcCli
             }
         }
     } else if (AsyncDataServiceBatchRecallItemsFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.BatchRecallItems", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceBatchRecallItemsFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceBatchRecallItemsMessageId, "DataService.BatchRecallItems", outcome, call.sentMetadata};
+        AsyncDataServiceBatchRecallItemsFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.BatchRecallItems failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.BatchRecallItems failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceBatchRecallItems(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceBatchRecallItemsGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceBatchRecallItems(call);
+void QueueLocalDataServiceBatchRecallItemsFailure(std::shared_ptr<DataServiceBatchRecallItemsCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceBatchRecallItems(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceBatchRecallItemsCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::BatchRecallItemsResponse> done) {
-    auto call(DataServiceBatchRecallItemsPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceBatchRecallItemsCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceBatchRecallItems(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceBatchRecallItemsFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncBatchRecallItems(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceBatchRecallItemsMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceBatchRecallItemsGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceBatchRecallItemsFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceBatchRecallItems(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::BatchRecallItemsResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.BatchRecallItems response";
+            CompleteDataServiceBatchRecallItems(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceBatchRecallItems(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request,
@@ -1715,12 +1946,11 @@ void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity node
 }
 
 void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceBatchRecallItems(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1728,37 +1958,37 @@ void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity node
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceBatchRecallItemsCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::BatchRecallItemsRequest& derived = static_cast<const ::data_service::BatchRecallItemsRequest&>(message);
     SendDataServiceBatchRecallItems(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceQueryTransactionLog
-boost::object_pool<AsyncDataServiceQueryTransactionLogGrpcClient> DataServiceQueryTransactionLogPool;
-using AsyncDataServiceQueryTransactionLogHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::QueryTransactionLogResponse&)>;
 AsyncDataServiceQueryTransactionLogHandlerFunctionType AsyncDataServiceQueryTransactionLogHandler;
 AsyncDataServiceQueryTransactionLogFailedHandlerFunctionType AsyncDataServiceQueryTransactionLogFailedHandler;
 
-void CompleteDataServiceQueryTransactionLog(AsyncDataServiceQueryTransactionLogGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceQueryTransactionLogGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceQueryTransactionLogPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceQueryTransactionLogGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceQueryTransactionLogCall {
+    ::data_service::QueryTransactionLogRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceQueryTransactionLogHandler / FailedHandler。
+    GrpcDone<::data_service::QueryTransactionLogResponse> done;
+};
+
+void CompleteDataServiceQueryTransactionLog(const DataServiceQueryTransactionLogCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::QueryTransactionLogResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceQueryTransactionLogHandler) {
-            AsyncDataServiceQueryTransactionLogHandler(call->context, call->reply);
+            AsyncDataServiceQueryTransactionLogHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1770,50 +2000,65 @@ void CompleteDataServiceQueryTransactionLog(AsyncDataServiceQueryTransactionLogG
             }
         }
     } else if (AsyncDataServiceQueryTransactionLogFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.QueryTransactionLog", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceQueryTransactionLogFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceQueryTransactionLogMessageId, "DataService.QueryTransactionLog", outcome, call.sentMetadata};
+        AsyncDataServiceQueryTransactionLogFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.QueryTransactionLog failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.QueryTransactionLog failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceQueryTransactionLog(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceQueryTransactionLogGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceQueryTransactionLog(call);
+void QueueLocalDataServiceQueryTransactionLogFailure(std::shared_ptr<DataServiceQueryTransactionLogCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceQueryTransactionLog(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceQueryTransactionLogCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::QueryTransactionLogResponse> done) {
-    auto call(DataServiceQueryTransactionLogPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceQueryTransactionLogCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceQueryTransactionLog(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceQueryTransactionLogFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncQueryTransactionLog(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceQueryTransactionLogMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceQueryTransactionLogGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceQueryTransactionLogFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceQueryTransactionLog(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::QueryTransactionLogResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.QueryTransactionLog response";
+            CompleteDataServiceQueryTransactionLog(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceQueryTransactionLog(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request,
@@ -1822,12 +2067,11 @@ void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity n
 }
 
 void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceQueryTransactionLog(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1835,37 +2079,37 @@ void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity n
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceQueryTransactionLogCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::QueryTransactionLogRequest& derived = static_cast<const ::data_service::QueryTransactionLogRequest&>(message);
     SendDataServiceQueryTransactionLog(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceCreateEventSnapshot
-boost::object_pool<AsyncDataServiceCreateEventSnapshotGrpcClient> DataServiceCreateEventSnapshotPool;
-using AsyncDataServiceCreateEventSnapshotHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::CreateEventSnapshotResponse&)>;
 AsyncDataServiceCreateEventSnapshotHandlerFunctionType AsyncDataServiceCreateEventSnapshotHandler;
 AsyncDataServiceCreateEventSnapshotFailedHandlerFunctionType AsyncDataServiceCreateEventSnapshotFailedHandler;
 
-void CompleteDataServiceCreateEventSnapshot(AsyncDataServiceCreateEventSnapshotGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceCreateEventSnapshotGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceCreateEventSnapshotPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceCreateEventSnapshotGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceCreateEventSnapshotCall {
+    ::data_service::CreateEventSnapshotRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceCreateEventSnapshotHandler / FailedHandler。
+    GrpcDone<::data_service::CreateEventSnapshotResponse> done;
+};
+
+void CompleteDataServiceCreateEventSnapshot(const DataServiceCreateEventSnapshotCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::CreateEventSnapshotResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceCreateEventSnapshotHandler) {
-            AsyncDataServiceCreateEventSnapshotHandler(call->context, call->reply);
+            AsyncDataServiceCreateEventSnapshotHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1877,50 +2121,65 @@ void CompleteDataServiceCreateEventSnapshot(AsyncDataServiceCreateEventSnapshotG
             }
         }
     } else if (AsyncDataServiceCreateEventSnapshotFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.CreateEventSnapshot", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceCreateEventSnapshotFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceCreateEventSnapshotMessageId, "DataService.CreateEventSnapshot", outcome, call.sentMetadata};
+        AsyncDataServiceCreateEventSnapshotFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.CreateEventSnapshot failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.CreateEventSnapshot failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceCreateEventSnapshot(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceCreateEventSnapshotGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceCreateEventSnapshot(call);
+void QueueLocalDataServiceCreateEventSnapshotFailure(std::shared_ptr<DataServiceCreateEventSnapshotCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceCreateEventSnapshot(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceCreateEventSnapshotCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::CreateEventSnapshotResponse> done) {
-    auto call(DataServiceCreateEventSnapshotPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceCreateEventSnapshotCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceCreateEventSnapshot(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceCreateEventSnapshotFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncCreateEventSnapshot(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceCreateEventSnapshotMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceCreateEventSnapshotGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceCreateEventSnapshotFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceCreateEventSnapshot(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::CreateEventSnapshotResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.CreateEventSnapshot response";
+            CompleteDataServiceCreateEventSnapshot(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceCreateEventSnapshot(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request,
@@ -1929,12 +2188,11 @@ void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity n
 }
 
 void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceCreateEventSnapshot(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1942,37 +2200,37 @@ void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity n
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceCreateEventSnapshotCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::CreateEventSnapshotRequest& derived = static_cast<const ::data_service::CreateEventSnapshotRequest&>(message);
     SendDataServiceCreateEventSnapshot(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceAllocateIdSegment
-boost::object_pool<AsyncDataServiceAllocateIdSegmentGrpcClient> DataServiceAllocateIdSegmentPool;
-using AsyncDataServiceAllocateIdSegmentHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::AllocateIdSegmentResponse&)>;
 AsyncDataServiceAllocateIdSegmentHandlerFunctionType AsyncDataServiceAllocateIdSegmentHandler;
 AsyncDataServiceAllocateIdSegmentFailedHandlerFunctionType AsyncDataServiceAllocateIdSegmentFailedHandler;
 
-void CompleteDataServiceAllocateIdSegment(AsyncDataServiceAllocateIdSegmentGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceAllocateIdSegmentGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceAllocateIdSegmentPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceAllocateIdSegmentGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceAllocateIdSegmentCall {
+    ::data_service::AllocateIdSegmentRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceAllocateIdSegmentHandler / FailedHandler。
+    GrpcDone<::data_service::AllocateIdSegmentResponse> done;
+};
+
+void CompleteDataServiceAllocateIdSegment(const DataServiceAllocateIdSegmentCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::AllocateIdSegmentResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceAllocateIdSegmentHandler) {
-            AsyncDataServiceAllocateIdSegmentHandler(call->context, call->reply);
+            AsyncDataServiceAllocateIdSegmentHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1984,50 +2242,65 @@ void CompleteDataServiceAllocateIdSegment(AsyncDataServiceAllocateIdSegmentGrpcC
             }
         }
     } else if (AsyncDataServiceAllocateIdSegmentFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.AllocateIdSegment", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceAllocateIdSegmentFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceAllocateIdSegmentMessageId, "DataService.AllocateIdSegment", outcome, call.sentMetadata};
+        AsyncDataServiceAllocateIdSegmentFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.AllocateIdSegment failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.AllocateIdSegment failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceAllocateIdSegment(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceAllocateIdSegmentGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceAllocateIdSegment(call);
+void QueueLocalDataServiceAllocateIdSegmentFailure(std::shared_ptr<DataServiceAllocateIdSegmentCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceAllocateIdSegment(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceAllocateIdSegmentCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::AllocateIdSegmentRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::AllocateIdSegmentResponse> done) {
-    auto call(DataServiceAllocateIdSegmentPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceAllocateIdSegmentCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceAllocateIdSegment(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceAllocateIdSegmentFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncAllocateIdSegment(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceAllocateIdSegmentMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceAllocateIdSegmentGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceAllocateIdSegmentFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceAllocateIdSegment(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::AllocateIdSegmentResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.AllocateIdSegment response";
+            CompleteDataServiceAllocateIdSegment(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceAllocateIdSegment(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const ::data_service::AllocateIdSegmentRequest& request,
@@ -2036,12 +2309,11 @@ void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nod
 }
 
 void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const ::data_service::AllocateIdSegmentRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceAllocateIdSegment(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const ::data_service::AllocateIdSegmentRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const ::data_service::AllocateIdSegmentRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2049,37 +2321,37 @@ void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nod
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceAllocateIdSegmentCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::AllocateIdSegmentRequest& derived = static_cast<const ::data_service::AllocateIdSegmentRequest&>(message);
     SendDataServiceAllocateIdSegment(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceReservePlayerName
-boost::object_pool<AsyncDataServiceReservePlayerNameGrpcClient> DataServiceReservePlayerNamePool;
-using AsyncDataServiceReservePlayerNameHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::ReservePlayerNameResponse&)>;
 AsyncDataServiceReservePlayerNameHandlerFunctionType AsyncDataServiceReservePlayerNameHandler;
 AsyncDataServiceReservePlayerNameFailedHandlerFunctionType AsyncDataServiceReservePlayerNameFailedHandler;
 
-void CompleteDataServiceReservePlayerName(AsyncDataServiceReservePlayerNameGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceReservePlayerNameGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceReservePlayerNamePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceReservePlayerNameGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceReservePlayerNameCall {
+    ::data_service::ReservePlayerNameRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceReservePlayerNameHandler / FailedHandler。
+    GrpcDone<::data_service::ReservePlayerNameResponse> done;
+};
+
+void CompleteDataServiceReservePlayerName(const DataServiceReservePlayerNameCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::ReservePlayerNameResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceReservePlayerNameHandler) {
-            AsyncDataServiceReservePlayerNameHandler(call->context, call->reply);
+            AsyncDataServiceReservePlayerNameHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2091,50 +2363,65 @@ void CompleteDataServiceReservePlayerName(AsyncDataServiceReservePlayerNameGrpcC
             }
         }
     } else if (AsyncDataServiceReservePlayerNameFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.ReservePlayerName", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceReservePlayerNameFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceReservePlayerNameMessageId, "DataService.ReservePlayerName", outcome, call.sentMetadata};
+        AsyncDataServiceReservePlayerNameFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.ReservePlayerName failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.ReservePlayerName failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceReservePlayerName(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceReservePlayerNameGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceReservePlayerName(call);
+void QueueLocalDataServiceReservePlayerNameFailure(std::shared_ptr<DataServiceReservePlayerNameCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceReservePlayerName(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceReservePlayerNameCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReservePlayerNameRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::ReservePlayerNameResponse> done) {
-    auto call(DataServiceReservePlayerNamePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceReservePlayerNameCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceReservePlayerName(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceReservePlayerNameFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncReservePlayerName(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceReservePlayerNameMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceReservePlayerNameGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceReservePlayerNameFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceReservePlayerName(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::ReservePlayerNameResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.ReservePlayerName response";
+            CompleteDataServiceReservePlayerName(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceReservePlayerName(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReservePlayerNameRequest& request,
@@ -2143,12 +2430,11 @@ void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nod
 }
 
 void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReservePlayerNameRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceReservePlayerName(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReservePlayerNameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReservePlayerNameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2156,37 +2442,37 @@ void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nod
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceReservePlayerNameCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::ReservePlayerNameRequest& derived = static_cast<const ::data_service::ReservePlayerNameRequest&>(message);
     SendDataServiceReservePlayerName(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceReleasePlayerName
-boost::object_pool<AsyncDataServiceReleasePlayerNameGrpcClient> DataServiceReleasePlayerNamePool;
-using AsyncDataServiceReleasePlayerNameHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::google::protobuf::Empty&)>;
 AsyncDataServiceReleasePlayerNameHandlerFunctionType AsyncDataServiceReleasePlayerNameHandler;
 AsyncDataServiceReleasePlayerNameFailedHandlerFunctionType AsyncDataServiceReleasePlayerNameFailedHandler;
 
-void CompleteDataServiceReleasePlayerName(AsyncDataServiceReleasePlayerNameGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceReleasePlayerNameGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceReleasePlayerNamePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceReleasePlayerNameGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceReleasePlayerNameCall {
+    ::data_service::ReleasePlayerNameRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceReleasePlayerNameHandler / FailedHandler。
+    GrpcDone<::google::protobuf::Empty> done;
+};
+
+void CompleteDataServiceReleasePlayerName(const DataServiceReleasePlayerNameCall& call, const GrpcCallOutcome& outcome,
+                                                const ::google::protobuf::Empty* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceReleasePlayerNameHandler) {
-            AsyncDataServiceReleasePlayerNameHandler(call->context, call->reply);
+            AsyncDataServiceReleasePlayerNameHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2198,50 +2484,65 @@ void CompleteDataServiceReleasePlayerName(AsyncDataServiceReleasePlayerNameGrpcC
             }
         }
     } else if (AsyncDataServiceReleasePlayerNameFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.ReleasePlayerName", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceReleasePlayerNameFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceReleasePlayerNameMessageId, "DataService.ReleasePlayerName", outcome, call.sentMetadata};
+        AsyncDataServiceReleasePlayerNameFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.ReleasePlayerName failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.ReleasePlayerName failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceReleasePlayerName(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceReleasePlayerNameGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceReleasePlayerName(call);
+void QueueLocalDataServiceReleasePlayerNameFailure(std::shared_ptr<DataServiceReleasePlayerNameCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceReleasePlayerName(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceReleasePlayerNameCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReleasePlayerNameRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::google::protobuf::Empty> done) {
-    auto call(DataServiceReleasePlayerNamePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceReleasePlayerNameCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceReleasePlayerName(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceReleasePlayerNameFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncReleasePlayerName(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceReleasePlayerNameMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceReleasePlayerNameGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceReleasePlayerNameFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceReleasePlayerName(*call, outcome, nullptr);
+            return;
+        }
+        ::google::protobuf::Empty reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.ReleasePlayerName response";
+            CompleteDataServiceReleasePlayerName(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceReleasePlayerName(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReleasePlayerNameRequest& request,
@@ -2250,12 +2551,11 @@ void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nod
 }
 
 void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReleasePlayerNameRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceReleasePlayerName(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReleasePlayerNameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReleasePlayerNameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2263,37 +2563,37 @@ void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nod
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceReleasePlayerNameCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::ReleasePlayerNameRequest& derived = static_cast<const ::data_service::ReleasePlayerNameRequest&>(message);
     SendDataServiceReleasePlayerName(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceBatchGetPlayerName
-boost::object_pool<AsyncDataServiceBatchGetPlayerNameGrpcClient> DataServiceBatchGetPlayerNamePool;
-using AsyncDataServiceBatchGetPlayerNameHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::BatchGetPlayerNameResponse&)>;
 AsyncDataServiceBatchGetPlayerNameHandlerFunctionType AsyncDataServiceBatchGetPlayerNameHandler;
 AsyncDataServiceBatchGetPlayerNameFailedHandlerFunctionType AsyncDataServiceBatchGetPlayerNameFailedHandler;
 
-void CompleteDataServiceBatchGetPlayerName(AsyncDataServiceBatchGetPlayerNameGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceBatchGetPlayerNameGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceBatchGetPlayerNamePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceBatchGetPlayerNameGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceBatchGetPlayerNameCall {
+    ::data_service::BatchGetPlayerNameRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceBatchGetPlayerNameHandler / FailedHandler。
+    GrpcDone<::data_service::BatchGetPlayerNameResponse> done;
+};
+
+void CompleteDataServiceBatchGetPlayerName(const DataServiceBatchGetPlayerNameCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::BatchGetPlayerNameResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceBatchGetPlayerNameHandler) {
-            AsyncDataServiceBatchGetPlayerNameHandler(call->context, call->reply);
+            AsyncDataServiceBatchGetPlayerNameHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2305,50 +2605,65 @@ void CompleteDataServiceBatchGetPlayerName(AsyncDataServiceBatchGetPlayerNameGrp
             }
         }
     } else if (AsyncDataServiceBatchGetPlayerNameFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.BatchGetPlayerName", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceBatchGetPlayerNameFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceBatchGetPlayerNameMessageId, "DataService.BatchGetPlayerName", outcome, call.sentMetadata};
+        AsyncDataServiceBatchGetPlayerNameFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.BatchGetPlayerName failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.BatchGetPlayerName failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceBatchGetPlayerName(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceBatchGetPlayerNameGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceBatchGetPlayerName(call);
+void QueueLocalDataServiceBatchGetPlayerNameFailure(std::shared_ptr<DataServiceBatchGetPlayerNameCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceBatchGetPlayerName(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceBatchGetPlayerNameCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerNameRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::BatchGetPlayerNameResponse> done) {
-    auto call(DataServiceBatchGetPlayerNamePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceBatchGetPlayerNameCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceBatchGetPlayerName(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceBatchGetPlayerNameFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncBatchGetPlayerName(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceBatchGetPlayerNameMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceBatchGetPlayerNameGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceBatchGetPlayerNameFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceBatchGetPlayerName(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::BatchGetPlayerNameResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.BatchGetPlayerName response";
+            CompleteDataServiceBatchGetPlayerName(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceBatchGetPlayerName(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerNameRequest& request,
@@ -2357,12 +2672,11 @@ void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity no
 }
 
 void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerNameRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceBatchGetPlayerName(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerNameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerNameRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2370,37 +2684,37 @@ void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity no
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceBatchGetPlayerNameCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::BatchGetPlayerNameRequest& derived = static_cast<const ::data_service::BatchGetPlayerNameRequest&>(message);
     SendDataServiceBatchGetPlayerName(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceGetPlayerAssetOpLedger
-boost::object_pool<AsyncDataServiceGetPlayerAssetOpLedgerGrpcClient> DataServiceGetPlayerAssetOpLedgerPool;
-using AsyncDataServiceGetPlayerAssetOpLedgerHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::GetPlayerAssetOpLedgerResponse&)>;
 AsyncDataServiceGetPlayerAssetOpLedgerHandlerFunctionType AsyncDataServiceGetPlayerAssetOpLedgerHandler;
 AsyncDataServiceGetPlayerAssetOpLedgerFailedHandlerFunctionType AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler;
 
-void CompleteDataServiceGetPlayerAssetOpLedger(AsyncDataServiceGetPlayerAssetOpLedgerGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceGetPlayerAssetOpLedgerGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceGetPlayerAssetOpLedgerPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceGetPlayerAssetOpLedgerGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceGetPlayerAssetOpLedgerCall {
+    ::data_service::GetPlayerAssetOpLedgerRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerAssetOpLedgerHandler / FailedHandler。
+    GrpcDone<::data_service::GetPlayerAssetOpLedgerResponse> done;
+};
+
+void CompleteDataServiceGetPlayerAssetOpLedger(const DataServiceGetPlayerAssetOpLedgerCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::GetPlayerAssetOpLedgerResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceGetPlayerAssetOpLedgerHandler) {
-            AsyncDataServiceGetPlayerAssetOpLedgerHandler(call->context, call->reply);
+            AsyncDataServiceGetPlayerAssetOpLedgerHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2412,50 +2726,65 @@ void CompleteDataServiceGetPlayerAssetOpLedger(AsyncDataServiceGetPlayerAssetOpL
             }
         }
     } else if (AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.GetPlayerAssetOpLedger", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceGetPlayerAssetOpLedgerMessageId, "DataService.GetPlayerAssetOpLedger", outcome, call.sentMetadata};
+        AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.GetPlayerAssetOpLedger failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.GetPlayerAssetOpLedger failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceGetPlayerAssetOpLedger(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceGetPlayerAssetOpLedgerGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceGetPlayerAssetOpLedger(call);
+void QueueLocalDataServiceGetPlayerAssetOpLedgerFailure(std::shared_ptr<DataServiceGetPlayerAssetOpLedgerCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceGetPlayerAssetOpLedger(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceGetPlayerAssetOpLedgerCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::GetPlayerAssetOpLedgerResponse> done) {
-    auto call(DataServiceGetPlayerAssetOpLedgerPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceGetPlayerAssetOpLedgerCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceGetPlayerAssetOpLedger(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceGetPlayerAssetOpLedgerFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetPlayerAssetOpLedger(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceGetPlayerAssetOpLedgerMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceGetPlayerAssetOpLedgerGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceGetPlayerAssetOpLedgerFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceGetPlayerAssetOpLedger(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::GetPlayerAssetOpLedgerResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.GetPlayerAssetOpLedger response";
+            CompleteDataServiceGetPlayerAssetOpLedger(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceGetPlayerAssetOpLedger(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request,
@@ -2464,12 +2793,11 @@ void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entit
 }
 
 void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceGetPlayerAssetOpLedger(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2477,37 +2805,37 @@ void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entit
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceGetPlayerAssetOpLedgerCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::GetPlayerAssetOpLedgerRequest& derived = static_cast<const ::data_service::GetPlayerAssetOpLedgerRequest&>(message);
     SendDataServiceGetPlayerAssetOpLedger(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region DataServiceGetPlayerInboxLedger
-boost::object_pool<AsyncDataServiceGetPlayerInboxLedgerGrpcClient> DataServiceGetPlayerInboxLedgerPool;
-using AsyncDataServiceGetPlayerInboxLedgerHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::GetPlayerInboxLedgerResponse&)>;
 AsyncDataServiceGetPlayerInboxLedgerHandlerFunctionType AsyncDataServiceGetPlayerInboxLedgerHandler;
 AsyncDataServiceGetPlayerInboxLedgerFailedHandlerFunctionType AsyncDataServiceGetPlayerInboxLedgerFailedHandler;
 
-void CompleteDataServiceGetPlayerInboxLedger(AsyncDataServiceGetPlayerInboxLedgerGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncDataServiceGetPlayerInboxLedgerGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        DataServiceGetPlayerInboxLedgerPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncDataServiceGetPlayerInboxLedgerGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct DataServiceGetPlayerInboxLedgerCall {
+    ::data_service::GetPlayerInboxLedgerRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerInboxLedgerHandler / FailedHandler。
+    GrpcDone<::data_service::GetPlayerInboxLedgerResponse> done;
+};
+
+void CompleteDataServiceGetPlayerInboxLedger(const DataServiceGetPlayerInboxLedgerCall& call, const GrpcCallOutcome& outcome,
+                                                const ::data_service::GetPlayerInboxLedgerResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncDataServiceGetPlayerInboxLedgerHandler) {
-            AsyncDataServiceGetPlayerInboxLedgerHandler(call->context, call->reply);
+            AsyncDataServiceGetPlayerInboxLedgerHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2519,50 +2847,65 @@ void CompleteDataServiceGetPlayerInboxLedger(AsyncDataServiceGetPlayerInboxLedge
             }
         }
     } else if (AsyncDataServiceGetPlayerInboxLedgerFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "DataService.GetPlayerInboxLedger", call->context, call->status, call->sentMetadata};
-        AsyncDataServiceGetPlayerInboxLedgerFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ DataServiceGetPlayerInboxLedgerMessageId, "DataService.GetPlayerInboxLedger", outcome, call.sentMetadata};
+        AsyncDataServiceGetPlayerInboxLedgerFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC DataService.GetPlayerInboxLedger failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC DataService.GetPlayerInboxLedger failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcDataServiceGetPlayerInboxLedger(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncDataServiceGetPlayerInboxLedgerGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteDataServiceGetPlayerInboxLedger(call);
+void QueueLocalDataServiceGetPlayerInboxLedgerFailure(std::shared_ptr<DataServiceGetPlayerInboxLedgerCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteDataServiceGetPlayerInboxLedger(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartDataServiceGetPlayerInboxLedgerCall(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::data_service::GetPlayerInboxLedgerResponse> done) {
-    auto call(DataServiceGetPlayerInboxLedgerPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<DataServiceGetPlayerInboxLedgerCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<DataServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteDataServiceGetPlayerInboxLedger(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalDataServiceGetPlayerInboxLedgerFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetPlayerInboxLedger(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(DataServiceGetPlayerInboxLedgerMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kDataServiceGetPlayerInboxLedgerGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalDataServiceGetPlayerInboxLedgerFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteDataServiceGetPlayerInboxLedger(*call, outcome, nullptr);
+            return;
+        }
+        ::data_service::GetPlayerInboxLedgerResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the DataService.GetPlayerInboxLedger response";
+            CompleteDataServiceGetPlayerInboxLedger(*call, outcome, nullptr);
+            return;
+        }
+        CompleteDataServiceGetPlayerInboxLedger(*call, outcome, &reply);
+    });
 }
 
 void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request,
@@ -2571,12 +2914,11 @@ void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity 
 }
 
 void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendDataServiceGetPlayerInboxLedger(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2584,98 +2926,15 @@ void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity 
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartDataServiceGetPlayerInboxLedgerCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::data_service::GetPlayerInboxLedgerRequest& derived = static_cast<const ::data_service::GetPlayerInboxLedgerRequest&>(message);
     SendDataServiceGetPlayerInboxLedger(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
-void HandleDataServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag) {
-        const auto releaseTag = [](GrpcTag* tag) { tagPool.destroy(tag); };
-        const std::unique_ptr<GrpcTag, decltype(releaseTag)> owner(grpcTag, releaseTag);
-        switch (grpcTag->messageId) {
-        case DataServiceLoadPlayerDataMessageId:
-            AsyncCompleteGrpcDataServiceLoadPlayerData(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceSavePlayerDataMessageId:
-            AsyncCompleteGrpcDataServiceSavePlayerData(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceGetPlayerFieldMessageId:
-            AsyncCompleteGrpcDataServiceGetPlayerField(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceSetPlayerFieldMessageId:
-            AsyncCompleteGrpcDataServiceSetPlayerField(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceRegisterPlayerZoneMessageId:
-            AsyncCompleteGrpcDataServiceRegisterPlayerZone(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceGetPlayerHomeZoneMessageId:
-            AsyncCompleteGrpcDataServiceGetPlayerHomeZone(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceBatchGetPlayerHomeZoneMessageId:
-            AsyncCompleteGrpcDataServiceBatchGetPlayerHomeZone(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceRemapHomeZoneForMergeMessageId:
-            AsyncCompleteGrpcDataServiceRemapHomeZoneForMerge(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceDeletePlayerDataMessageId:
-            AsyncCompleteGrpcDataServiceDeletePlayerData(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceCreatePlayerSnapshotMessageId:
-            AsyncCompleteGrpcDataServiceCreatePlayerSnapshot(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceListPlayerSnapshotsMessageId:
-            AsyncCompleteGrpcDataServiceListPlayerSnapshots(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceGetPlayerSnapshotDiffMessageId:
-            AsyncCompleteGrpcDataServiceGetPlayerSnapshotDiff(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceRollbackPlayerMessageId:
-            AsyncCompleteGrpcDataServiceRollbackPlayer(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceRollbackZoneMessageId:
-            AsyncCompleteGrpcDataServiceRollbackZone(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceRollbackAllMessageId:
-            AsyncCompleteGrpcDataServiceRollbackAll(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceBatchRecallItemsMessageId:
-            AsyncCompleteGrpcDataServiceBatchRecallItems(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceQueryTransactionLogMessageId:
-            AsyncCompleteGrpcDataServiceQueryTransactionLog(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceCreateEventSnapshotMessageId:
-            AsyncCompleteGrpcDataServiceCreateEventSnapshot(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceAllocateIdSegmentMessageId:
-            AsyncCompleteGrpcDataServiceAllocateIdSegment(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceReservePlayerNameMessageId:
-            AsyncCompleteGrpcDataServiceReservePlayerName(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceReleasePlayerNameMessageId:
-            AsyncCompleteGrpcDataServiceReleasePlayerName(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceBatchGetPlayerNameMessageId:
-            AsyncCompleteGrpcDataServiceBatchGetPlayerName(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceGetPlayerAssetOpLedgerMessageId:
-            AsyncCompleteGrpcDataServiceGetPlayerAssetOpLedger(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case DataServiceGetPlayerInboxLedgerMessageId:
-            AsyncCompleteGrpcDataServiceGetPlayerInboxLedger(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        default:
-            break;
-        }
-}
-
-void SetDataServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-
+void SetDataServiceHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
     AsyncDataServiceLoadPlayerDataHandler = handler;
     AsyncDataServiceSavePlayerDataHandler = handler;
     AsyncDataServiceGetPlayerFieldHandler = handler;
@@ -2700,10 +2959,10 @@ void SetDataServiceHandler(const std::function<void(const ClientContext&, const 
     AsyncDataServiceBatchGetPlayerNameHandler = handler;
     AsyncDataServiceGetPlayerAssetOpLedgerHandler = handler;
     AsyncDataServiceGetPlayerInboxLedgerHandler = handler;
+    (void)handler;
 }
 
-void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-
+void SetDataServiceIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
     if (!AsyncDataServiceLoadPlayerDataHandler) {
         AsyncDataServiceLoadPlayerDataHandler = handler;
     }
@@ -2776,6 +3035,7 @@ void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&,
     if (!AsyncDataServiceGetPlayerInboxLedgerHandler) {
         AsyncDataServiceGetPlayerInboxLedgerHandler = handler;
     }
+    (void)handler;
 }
 
 void SetDataServiceFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -2803,6 +3063,7 @@ void SetDataServiceFailedHandler(const std::function<void(const GrpcCallFailure&
     AsyncDataServiceBatchGetPlayerNameFailedHandler = handler;
     AsyncDataServiceGetPlayerAssetOpLedgerFailedHandler = handler;
     AsyncDataServiceGetPlayerInboxLedgerFailedHandler = handler;
+    (void)handler;
 }
 
 void SetDataServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -2878,16 +3139,11 @@ void SetDataServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallF
     if (!AsyncDataServiceGetPlayerInboxLedgerFailedHandler) {
         AsyncDataServiceGetPlayerInboxLedgerFailedHandler = handler;
     }
+    (void)handler;
 }
 
 void SetDataServiceCallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);
-}
-
-void InitDataServiceGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
-
-    registry.emplace<DataServiceStubPtr>(nodeEntity, DataService::NewStub(channel));
-
 }
 
 }// namespace data_service

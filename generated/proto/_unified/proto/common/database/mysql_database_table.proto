@@ -7,6 +7,7 @@ import "proto/common/component/asset_op_ledger_comp.proto";
 import "proto/common/component/battle_settlement_ledger_comp.proto";
 import "proto/common/component/player_inbox_ledger_comp.proto";
 import "proto/common/component/player_attribute_comp.proto";
+import "proto/common/component/player_mystery_merchant_comp.proto";
 import "proto/common/component/player_pet_comp.proto";
 import "proto/common/component/player_scene_comp.proto";
 import "proto/common/component/actor_comp.proto";
@@ -164,8 +165,13 @@ message player_database
   // 与 asset_op_ledger 同一条不变量 I3(收件箱侧记作 IB-3):必须与 currency / bag_component 同记录同一次落盘 ——
   // GM 处置的效果(封锁 / 欠款随 CurrencyComp 落盘)和它的账本要么一起在盘上,要么一起没有;
   // 否则「效果落了账本没落」会让不幂等的 AttachDebt 被重复执行,「账本落了效果没落」会把没生效的处置确认成已执行。
-  // 按加列纪律取 18/19 之后的下一个空闲号 20,声明在末尾、不留空洞;下一个新字段从 21 起。
+  // 按加列纪律取 18/19 之后的下一个空闲号 20,声明在末尾、不留空洞。
   PlayerInboxLedgerComp inbox_ledger = 20;
+  // 神秘商人的个人限购记录(docs/design/mystery-merchant.md §5.3)。与上面几本账本同一条不变量 I3:
+  // 必须与 currency / bag_component 同记录同一次落盘 —— 「钱、货、已购数」要么一起在盘上,要么一起回档,
+  // 否则回档后会出现「货没了名额却用掉了」或「货还在名额却清零可再买」。
+  // 按加列纪律取 20 之后的下一个空闲号 21,声明在末尾、不留空洞;下一个新字段从 22 起。
+  PlayerMysteryMerchantComp mystery_merchant = 21;
 }
 
 message player_database_1

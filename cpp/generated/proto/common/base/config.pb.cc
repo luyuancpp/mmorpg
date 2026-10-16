@@ -45,6 +45,8 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto, /* tracker*/ nullptr,},
         // ::GameConfig_ZoneRedisConfig
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto, /* tracker*/ nullptr,},
+        // ::GameConfig_PlayerInboxConfig
+        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto, /* tracker*/ nullptr,},
         // ::GameConfig
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto, /* tracker*/ nullptr,},
 };
@@ -897,6 +899,154 @@ const ::_pbi::ClassData* GameConfig_ZoneRedisConfig_get_class_data() {
 }
 }  // namespace
 #endif  // PROTOBUF_CUSTOM_VTABLE
+class GameConfig_PlayerInboxConfig::_Internal {
+ public:
+  using HasBits = decltype(::std::declval<GameConfig_PlayerInboxConfig>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GameConfig_PlayerInboxConfig, _impl_._has_bits_);
+};
+
+constexpr GameConfig_PlayerInboxConfig::ParseTableT_ GameConfig_PlayerInboxConfig::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
+  return ParseTableT_{
+    {
+      PROTOBUF_FIELD_OFFSET(GameConfig_PlayerInboxConfig, _impl_._has_bits_),
+      0, // no _extensions_
+      2, 8,  // max_field_number, fast_idx_mask
+      offsetof(ParseTableT_, field_lookup_table),
+      4294967292,  // skipmap
+      offsetof(ParseTableT_, field_entries),
+      2,  // num_field_entries
+      0,  // num_aux_entries
+      offsetof(ParseTableT_, field_names),  // no aux_entries
+      class_data,
+      nullptr,  // post_loop_handler
+      ::_pbi::TcParser::GenericFallback,  // fallback
+      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+      ::_pbi::TcParser::GetTable<::GameConfig_PlayerInboxConfig>(),  // to_prefetch
+      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+    }, {{
+      // uint32 periodic_fetch_minutes = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameConfig_PlayerInboxConfig, _impl_.periodic_fetch_minutes_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(GameConfig_PlayerInboxConfig, _impl_.periodic_fetch_minutes_)}},
+      // bool consumer_enabled = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GameConfig_PlayerInboxConfig, _impl_.consumer_enabled_), 0>(),
+       {8, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GameConfig_PlayerInboxConfig, _impl_.consumer_enabled_)}},
+    }}, {{
+      65535, 65535
+    }}, {{
+      // bool consumer_enabled = 1;
+      {PROTOBUF_FIELD_OFFSET(GameConfig_PlayerInboxConfig, _impl_.consumer_enabled_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+      // uint32 periodic_fetch_minutes = 2;
+      {PROTOBUF_FIELD_OFFSET(GameConfig_PlayerInboxConfig, _impl_.periodic_fetch_minutes_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+    }},
+    // no aux_entries
+    {{
+    }},
+  };
+}
+
+
+inline constexpr GameConfig_PlayerInboxConfig::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        consumer_enabled_{false},
+        periodic_fetch_minutes_{0u} {}
+
+template <typename>
+constexpr GameConfig_PlayerInboxConfig::GameConfig_PlayerInboxConfig(::_pbi::ConstantInitialized,
+                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
+    : ::google::protobuf::Message(
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          class_data
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          ),
+      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
+}
+inline void* PROTOBUF_NONNULL GameConfig_PlayerInboxConfig::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GameConfig_PlayerInboxConfig(arena);
+}
+constexpr auto GameConfig_PlayerInboxConfig::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GameConfig_PlayerInboxConfig), alignof(GameConfig_PlayerInboxConfig));
+}
+constexpr auto GameConfig_PlayerInboxConfig::InternalGenerateClassData_(
+    const MessageLite& prototype,
+    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &prototype,
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+          &_table_.header,
+#else
+          tc_table,
+#endif
+          nullptr,  // IsInitialized
+          &GameConfig_PlayerInboxConfig::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GameConfig_PlayerInboxConfig>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GameConfig_PlayerInboxConfig::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GameConfig_PlayerInboxConfig>(), &GameConfig_PlayerInboxConfig::ByteSizeLong,
+              &GameConfig_PlayerInboxConfig::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GameConfig_PlayerInboxConfig, _impl_._cached_size_),
+          false,
+      },
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+      &file_reflection_data[8],
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+      &::_pbi::kDescriptorMethods,
+      &descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto,
+      nullptr,  // tracker
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  };
+}
+struct GameConfig_PlayerInboxConfigGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
+  constexpr GameConfig_PlayerInboxConfigGlobalsTypeInternal()
+      :
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+        _default(::_pbi::ConstantInitialized{},
+                 GameConfig_PlayerInboxConfig_class_data_.base())
+#else   // !PROTOBUF_MESSAGE_GLOBALS
+        MessageGlobalsBase(GameConfig_PlayerInboxConfig::InternalGenerateClassData_(
+            _default, &GameConfig_PlayerInboxConfig_globals_._table.header)),
+        _default(::_pbi::ConstantInitialized{}, GetClassData()),
+        _table(::_pbi::PrivateAccess::GenerateParseTable<GameConfig_PlayerInboxConfig>(
+            GetClassData()))
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+  {
+  }
+  ~GameConfig_PlayerInboxConfigGlobalsTypeInternal() {}
+  union {
+    alignas(::_pbi::kMaxMessageAlignment) GameConfig_PlayerInboxConfig _default;
+  };
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  decltype(::_pbi::PrivateAccess::GenerateParseTable<GameConfig_PlayerInboxConfig>(
+      ::std::declval<const ::_pbi::ClassData*>())) _table;
+#endif
+};
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+static_assert(PROTOBUF_FIELD_OFFSET(GameConfig_PlayerInboxConfigGlobalsTypeInternal, _default) ==
+              ::_pbi::MessageGlobalsBase::OffsetToDefault());
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST GameConfig_PlayerInboxConfigGlobalsTypeInternal GameConfig_PlayerInboxConfig_globals_
+        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+namespace {
+const ::_pbi::ClassData* GameConfig_PlayerInboxConfig_get_class_data() {
+#ifdef PROTOBUF_MESSAGE_GLOBALS
+  return GameConfig_PlayerInboxConfig_globals_.GetClassData();
+#else
+  return GameConfig_PlayerInboxConfig_class_data_.base();
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+}
+}  // namespace
+#endif  // PROTOBUF_CUSTOM_VTABLE
 class IdSegmentConfig::_Internal {
  public:
   using HasBits = decltype(::std::declval<IdSegmentConfig>()._impl_._has_bits_);
@@ -1208,12 +1358,12 @@ constexpr GameConfig::ParseTableT_ GameConfig::InternalGenerateParseTable_(const
     {
       PROTOBUF_FIELD_OFFSET(GameConfig, _impl_._has_bits_),
       0, // no _extensions_
-      7, 24,  // max_field_number, fast_idx_mask
+      8, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967228,  // skipmap
+      4294967100,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      3,  // num_field_entries
-      1,  // num_aux_entries
+      4,  // num_field_entries
+      2,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
       nullptr,  // post_loop_handler
@@ -1222,14 +1372,17 @@ constexpr GameConfig::ParseTableT_ GameConfig::InternalGenerateParseTable_(const
       ::_pbi::TcParser::GetTable<::GameConfig>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      {::_pbi::TcParser::MiniParse, {}},
+      // .GameConfig.PlayerInboxConfig player_inbox = 8;
+      {::_pbi::TcParser::FastMtS1,
+       {66, 1, 1,
+        PROTOBUF_FIELD_OFFSET(GameConfig, _impl_.player_inbox_)}},
       // uint32 scene_node_type = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameConfig, _impl_.scene_node_type_), 1>(),
-       {8, 1, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameConfig, _impl_.scene_node_type_), 2>(),
+       {8, 2, 0,
         PROTOBUF_FIELD_OFFSET(GameConfig, _impl_.scene_node_type_)}},
       // uint32 zone_id = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameConfig, _impl_.zone_id_), 2>(),
-       {16, 2, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GameConfig, _impl_.zone_id_), 3>(),
+       {16, 3, 0,
         PROTOBUF_FIELD_OFFSET(GameConfig, _impl_.zone_id_)}},
       // .GameConfig.ZoneRedisConfig zone_redis = 7;
       {::_pbi::TcParser::FastMtS1,
@@ -1239,17 +1392,24 @@ constexpr GameConfig::ParseTableT_ GameConfig::InternalGenerateParseTable_(const
       65535, 65535
     }}, {{
       // uint32 scene_node_type = 1;
-      {PROTOBUF_FIELD_OFFSET(GameConfig, _impl_.scene_node_type_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(GameConfig, _impl_.scene_node_type_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 zone_id = 2;
-      {PROTOBUF_FIELD_OFFSET(GameConfig, _impl_.zone_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(GameConfig, _impl_.zone_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // .GameConfig.ZoneRedisConfig zone_redis = 7;
       {PROTOBUF_FIELD_OFFSET(GameConfig, _impl_.zone_redis_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // .GameConfig.PlayerInboxConfig player_inbox = 8;
+      {PROTOBUF_FIELD_OFFSET(GameConfig, _impl_.player_inbox_), _Internal::kHasBitsOffset + 1, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
         {::_pbi::TcParser::GetTable<::GameConfig_ZoneRedisConfig>()},
         #else
         {::_pbi::FieldAuxMessageGlobals(), &::GameConfig_ZoneRedisConfig_globals_},
+        #endif
+        #ifndef PROTOBUF_MESSAGE_GLOBALS
+        {::_pbi::TcParser::GetTable<::GameConfig_PlayerInboxConfig>()},
+        #else
+        {::_pbi::FieldAuxMessageGlobals(), &::GameConfig_PlayerInboxConfig_globals_},
         #endif
     }},
     {{
@@ -1263,6 +1423,7 @@ inline constexpr GameConfig::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         zone_redis_{nullptr},
+        player_inbox_{nullptr},
         scene_node_type_{0u},
         zone_id_{0u} {}
 
@@ -1307,7 +1468,7 @@ constexpr auto GameConfig::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[8],
+      &file_reflection_data[9],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto,
@@ -1833,14 +1994,23 @@ const ::uint32_t
         1,
         3,
         0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::GameConfig_PlayerInboxConfig, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::GameConfig_PlayerInboxConfig, _impl_.consumer_enabled_),
+        PROTOBUF_FIELD_OFFSET(::GameConfig_PlayerInboxConfig, _impl_.periodic_fetch_minutes_),
+        0,
+        1,
+        0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::GameConfig, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::GameConfig, _impl_.scene_node_type_),
         PROTOBUF_FIELD_OFFSET(::GameConfig, _impl_.zone_id_),
         PROTOBUF_FIELD_OFFSET(::GameConfig, _impl_.zone_redis_),
-        1,
+        PROTOBUF_FIELD_OFFSET(::GameConfig, _impl_.player_inbox_),
         2,
+        3,
         0,
+        1,
 };
 
 static const ::_pbi::MigrationSchema
@@ -1853,7 +2023,8 @@ static const ::_pbi::MigrationSchema
         {51, sizeof(::GrpcClientConfig)},
         {56, sizeof(::BaseDeployConfig)},
         {103, sizeof(::GameConfig_ZoneRedisConfig)},
-        {114, sizeof(::GameConfig)},
+        {114, sizeof(::GameConfig_PlayerInboxConfig)},
+        {121, sizeof(::GameConfig)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -1865,6 +2036,7 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
         &::GrpcClientConfig_globals_,
         &::BaseDeployConfig_globals_,
         &::GameConfig_ZoneRedisConfig_globals_,
+        &::GameConfig_PlayerInboxConfig_globals_,
         &::GameConfig_globals_,
 };
 const char descriptor_table_protodef_proto_2fcommon_2fbase_2fconfig_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
@@ -1901,24 +2073,27 @@ const char descriptor_table_protodef_proto_2fcommon_2fbase_2fconfig_2eproto[] AB
     "ent\030\023 \001(\0132\020.IdSegmentConfig\022\036\n\026audit_top"
     "ic_generation\030\024 \001(\r\022&\n\013grpc_client\030\025 \001(\013"
     "2\021.GrpcClientConfig\022 \n\030db_task_topic_gen"
-    "eration\030\026 \001(\r\"\264\001\n\nGameConfig\022\027\n\017scene_no"
+    "eration\030\026 \001(\r\"\270\002\n\nGameConfig\022\027\n\017scene_no"
     "de_type\030\001 \001(\r\022\017\n\007zone_id\030\002 \001(\r\022/\n\nzone_r"
-    "edis\030\007 \001(\0132\033.GameConfig.ZoneRedisConfig\032"
-    "K\n\017ZoneRedisConfig\022\014\n\004host\030\003 \001(\t\022\014\n\004port"
-    "\030\004 \001(\r\022\020\n\010password\030\005 \001(\t\022\n\n\002db\030\006 \001(\rB\rZ\013"
-    "common/baseb\006proto3"
+    "edis\030\007 \001(\0132\033.GameConfig.ZoneRedisConfig\022"
+    "3\n\014player_inbox\030\010 \001(\0132\035.GameConfig.Playe"
+    "rInboxConfig\032K\n\017ZoneRedisConfig\022\014\n\004host\030"
+    "\003 \001(\t\022\014\n\004port\030\004 \001(\r\022\020\n\010password\030\005 \001(\t\022\n\n"
+    "\002db\030\006 \001(\r\032M\n\021PlayerInboxConfig\022\030\n\020consum"
+    "er_enabled\030\001 \001(\010\022\036\n\026periodic_fetch_minut"
+    "es\030\002 \001(\rB\rZ\013common/baseb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto = {
     false,
     false,
-    1499,
+    1631,
     descriptor_table_protodef_proto_2fcommon_2fbase_2fconfig_2eproto,
     "proto/common/base/config.proto",
     &descriptor_table_proto_2fcommon_2fbase_2fconfig_2eproto_once,
     nullptr,
     0,
-    9,
+    10,
     schemas,
     file_message_globals,
     TableStruct_proto_2fcommon_2fbase_2fconfig_2eproto::offsets,
@@ -4598,6 +4773,233 @@ void GameConfig_ZoneRedisConfig::InternalSwap(GameConfig_ZoneRedisConfig* PROTOB
 }
 // ===================================================================
 
+GameConfig_PlayerInboxConfig::GameConfig_PlayerInboxConfig(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GameConfig_PlayerInboxConfig_get_class_data()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:GameConfig.PlayerInboxConfig)
+}
+GameConfig_PlayerInboxConfig::GameConfig_PlayerInboxConfig(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GameConfig_PlayerInboxConfig& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GameConfig_PlayerInboxConfig_get_class_data()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE GameConfig_PlayerInboxConfig::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void GameConfig_PlayerInboxConfig::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, consumer_enabled_),
+           0,
+           offsetof(Impl_, periodic_fetch_minutes_) -
+               offsetof(Impl_, consumer_enabled_) +
+               sizeof(Impl_::periodic_fetch_minutes_));
+}
+GameConfig_PlayerInboxConfig::~GameConfig_PlayerInboxConfig() {
+  // @@protoc_insertion_point(destructor:GameConfig.PlayerInboxConfig)
+  SharedDtor(*this);
+}
+inline void GameConfig_PlayerInboxConfig::SharedDtor(MessageLite& self) {
+  GameConfig_PlayerInboxConfig& this_ = static_cast<GameConfig_PlayerInboxConfig&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GameConfig_PlayerInboxConfig_class_data_ =
+        GameConfig_PlayerInboxConfig::InternalGenerateClassData_(GameConfig_PlayerInboxConfig_globals_._default);
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GameConfig_PlayerInboxConfig::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GameConfig_PlayerInboxConfig_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GameConfig_PlayerInboxConfig_class_data_.tc_table);
+  return GameConfig_PlayerInboxConfig_class_data_.base();
+}
+#else
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GameConfig_PlayerInboxConfig::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GameConfig_PlayerInboxConfig_globals_);
+  ::google::protobuf::internal::PrefetchToLocalCache(
+      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&GameConfig_PlayerInboxConfig_globals_));
+  return GameConfig_PlayerInboxConfig_globals_.GetClassData();
+}
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_CONSTINIT
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const GameConfig_PlayerInboxConfig::ParseTableT_
+    GameConfig_PlayerInboxConfig::_table_ =
+        GameConfig_PlayerInboxConfig::InternalGenerateParseTable_(GameConfig_PlayerInboxConfig_class_data_.base());
+#endif  // !PROTOBUF_MESSAGE_GLOBALS
+PROTOBUF_NOINLINE void GameConfig_PlayerInboxConfig::Clear() {
+// @@protoc_insertion_point(message_clear_start:GameConfig.PlayerInboxConfig)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    ::memset(&_impl_.consumer_enabled_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.periodic_fetch_minutes_) -
+        reinterpret_cast<char*>(&_impl_.consumer_enabled_)) + sizeof(_impl_.periodic_fetch_minutes_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GameConfig_PlayerInboxConfig::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GameConfig_PlayerInboxConfig& this_ = static_cast<const GameConfig_PlayerInboxConfig&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GameConfig_PlayerInboxConfig::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GameConfig_PlayerInboxConfig& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:GameConfig.PlayerInboxConfig)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // bool consumer_enabled = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_consumer_enabled() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          1, this_._internal_consumer_enabled(), target);
+    }
+  }
+
+  // uint32 periodic_fetch_minutes = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_periodic_fetch_minutes() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          2, this_._internal_periodic_fetch_minutes(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:GameConfig.PlayerInboxConfig)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GameConfig_PlayerInboxConfig::ByteSizeLong(const MessageLite& base) {
+  const GameConfig_PlayerInboxConfig& this_ = static_cast<const GameConfig_PlayerInboxConfig&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GameConfig_PlayerInboxConfig::ByteSizeLong() const {
+  const GameConfig_PlayerInboxConfig& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:GameConfig.PlayerInboxConfig)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // bool consumer_enabled = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_consumer_enabled() != 0) {
+        total_size += 2;
+      }
+    }
+    // uint32 periodic_fetch_minutes = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_periodic_fetch_minutes() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_periodic_fetch_minutes());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GameConfig_PlayerInboxConfig::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                      const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this = static_cast<GameConfig_PlayerInboxConfig*>(&to_msg);
+  auto& from = static_cast<const GameConfig_PlayerInboxConfig&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:GameConfig.PlayerInboxConfig)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_consumer_enabled() != 0) {
+        _this->_impl_.consumer_enabled_ = from._impl_.consumer_enabled_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_periodic_fetch_minutes() != 0) {
+        _this->_impl_.periodic_fetch_minutes_ = from._impl_.periodic_fetch_minutes_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GameConfig_PlayerInboxConfig::CopyFrom(const GameConfig_PlayerInboxConfig& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:GameConfig.PlayerInboxConfig)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GameConfig_PlayerInboxConfig::InternalSwap(GameConfig_PlayerInboxConfig* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GameConfig_PlayerInboxConfig, _impl_.periodic_fetch_minutes_)
+      + sizeof(GameConfig_PlayerInboxConfig::_impl_.periodic_fetch_minutes_)
+      - PROTOBUF_FIELD_OFFSET(GameConfig_PlayerInboxConfig, _impl_.consumer_enabled_)>(
+          reinterpret_cast<char*>(&_impl_.consumer_enabled_),
+          reinterpret_cast<char*>(&other->_impl_.consumer_enabled_));
+}
+
+::google::protobuf::Metadata GameConfig_PlayerInboxConfig::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
 GameConfig::GameConfig(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
     : ::google::protobuf::Message(arena, GameConfig_get_class_data()) {
@@ -4631,6 +5033,9 @@ GameConfig::GameConfig(
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
   _impl_.zone_redis_ = (CheckHasBit(cached_has_bits, 0x00000001U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.zone_redis_)
+                : nullptr;
+  _impl_.player_inbox_ = (CheckHasBit(cached_has_bits, 0x00000002U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.player_inbox_)
                 : nullptr;
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, scene_node_type_),
@@ -4668,6 +5073,7 @@ inline void GameConfig::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   delete this_._impl_.zone_redis_;
+  delete this_._impl_.player_inbox_;
   this_._impl_.~Impl_();
 }
 
@@ -4705,11 +5111,17 @@ PROTOBUF_NOINLINE void GameConfig::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    ABSL_DCHECK(_impl_.zone_redis_ != nullptr);
-    _impl_.zone_redis_->Clear();
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      ABSL_DCHECK(_impl_.zone_redis_ != nullptr);
+      _impl_.zone_redis_->Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(_impl_.player_inbox_ != nullptr);
+      _impl_.player_inbox_->Clear();
+    }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000006U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000cU)) {
     ::memset(&_impl_.scene_node_type_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.zone_id_) -
         reinterpret_cast<char*>(&_impl_.scene_node_type_)) + sizeof(_impl_.zone_id_));
@@ -4738,7 +5150,7 @@ PROTOBUF_NOINLINE void GameConfig::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint32 scene_node_type = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (this_._internal_scene_node_type() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -4747,7 +5159,7 @@ PROTOBUF_NOINLINE void GameConfig::Clear() {
   }
 
   // uint32 zone_id = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_zone_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -4759,6 +5171,13 @@ PROTOBUF_NOINLINE void GameConfig::Clear() {
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         7, *this_._impl_.zone_redis_, this_._impl_.zone_redis_->GetCachedSize(), target,
+        stream);
+  }
+
+  // .GameConfig.PlayerInboxConfig player_inbox = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        8, *this_._impl_.player_inbox_, this_._impl_.player_inbox_->GetCachedSize(), target,
         stream);
   }
 
@@ -4787,21 +5206,26 @@ PROTOBUF_NOINLINE void GameConfig::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     // .GameConfig.ZoneRedisConfig zone_redis = 7;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.zone_redis_);
     }
-    // uint32 scene_node_type = 1;
+    // .GameConfig.PlayerInboxConfig player_inbox = 8;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.player_inbox_);
+    }
+    // uint32 scene_node_type = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_scene_node_type() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_scene_node_type());
       }
     }
     // uint32 zone_id = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_zone_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_zone_id());
@@ -4826,7 +5250,7 @@ void GameConfig::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       ABSL_DCHECK(from._impl_.zone_redis_ != nullptr);
       if (_this->_impl_.zone_redis_ == nullptr) {
@@ -4836,11 +5260,19 @@ void GameConfig::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      ABSL_DCHECK(from._impl_.player_inbox_ != nullptr);
+      if (_this->_impl_.player_inbox_ == nullptr) {
+        _this->_impl_.player_inbox_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.player_inbox_);
+      } else {
+        _this->_impl_.player_inbox_->MergeFrom(*from._impl_.player_inbox_);
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_scene_node_type() != 0) {
         _this->_impl_.scene_node_type_ = from._impl_.scene_node_type_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_zone_id() != 0) {
         _this->_impl_.zone_id_ = from._impl_.zone_id_;
       }

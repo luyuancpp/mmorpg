@@ -83,6 +83,12 @@ public class AllTable {
 
         MonsterTableManager.getInstance().load(configDir, useBinary);
 
+        MysteryMerchantGoodsTableManager.getInstance().load(configDir, useBinary);
+
+        MysteryMerchantRuleTableManager.getInstance().load(configDir, useBinary);
+
+        MysteryMerchantSpotTableManager.getInstance().load(configDir, useBinary);
+
         PetTableManager.getInstance().load(configDir, useBinary);
 
         PetRuleTableManager.getInstance().load(configDir, useBinary);
@@ -116,7 +122,7 @@ public class AllTable {
      * @param useBinary true to load .pb (proto binary), false to load .json.
      */
     public static void loadTablesAsync(String configDir, boolean useBinary) throws Exception {
-        CountDownLatch latch = new CountDownLatch(42);
+        CountDownLatch latch = new CountDownLatch(45);
 
         new Thread(() -> {
             try {
@@ -450,6 +456,36 @@ public class AllTable {
 
         new Thread(() -> {
             try {
+                MysteryMerchantGoodsTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load MysteryMerchantGoods table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                MysteryMerchantRuleTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load MysteryMerchantRule table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                MysteryMerchantSpotTableManager.getInstance().load(configDir, useBinary);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load MysteryMerchantSpot table", e);
+            } finally {
+                latch.countDown();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
                 PetTableManager.getInstance().load(configDir, useBinary);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load Pet table", e);
@@ -623,6 +659,12 @@ public class AllTable {
         MissionTableManager.getInstance().load(configDir, useBinary);
 
         MonsterTableManager.getInstance().load(configDir, useBinary);
+
+        MysteryMerchantGoodsTableManager.getInstance().load(configDir, useBinary);
+
+        MysteryMerchantRuleTableManager.getInstance().load(configDir, useBinary);
+
+        MysteryMerchantSpotTableManager.getInstance().load(configDir, useBinary);
 
         PetTableManager.getInstance().load(configDir, useBinary);
 

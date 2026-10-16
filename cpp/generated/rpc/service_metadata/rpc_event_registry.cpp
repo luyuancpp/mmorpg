@@ -27,6 +27,7 @@
 #include "proto/scene/player_lifecycle.pb.h"
 #include "proto/scene/player_mission.pb.h"
 #include "proto/scene/player_movement.pb.h"
+#include "proto/scene/player_mystery_merchant.pb.h"
 #include "proto/scene/player_pet.pb.h"
 #include "proto/scene/player_rollback.pb.h"
 #include "proto/scene/player_scene.pb.h"
@@ -64,6 +65,7 @@
 #include "rpc/service_metadata/player_lifecycle_service_metadata.h"
 #include "rpc/service_metadata/player_mission_service_metadata.h"
 #include "rpc/service_metadata/player_movement_service_metadata.h"
+#include "rpc/service_metadata/player_mystery_merchant_service_metadata.h"
 #include "rpc/service_metadata/player_pet_service_metadata.h"
 #include "rpc/service_metadata/player_rollback_service_metadata.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
@@ -99,6 +101,7 @@ class SceneCurrencyClientPlayerImpl final : public SceneCurrencyClientPlayer {};
 class ScenePlayerImpl final : public ScenePlayer {};
 class SceneMissionClientPlayerImpl final : public SceneMissionClientPlayer {};
 class SceneMovementClientPlayerImpl final : public SceneMovementClientPlayer {};
+class SceneMysteryMerchantClientPlayerImpl final : public SceneMysteryMerchantClientPlayer {};
 class ScenePetClientPlayerImpl final : public ScenePetClientPlayer {};
 class SceneRollbackClientPlayerImpl final : public SceneRollbackClientPlayer {};
 class SceneSceneClientPlayerImpl final : public SceneSceneClientPlayer {};
@@ -267,7 +270,7 @@ namespace trade{void SendTradeAdminSeedListing(entt::registry& , entt::entity , 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
 // InitMessageInfo 越界写导致节点启动断言)变成编译错误而不是运行期崩溃。
-static_assert(kMaxRpcMethodCount == 264,
+static_assert(kMaxRpcMethodCount == 267,
     "kMaxRpcMethodCount out of sync with this generation run - rerun the full proto generator");
 std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 
@@ -1187,6 +1190,23 @@ void InitMessageInfo()
         std::make_unique<::Empty>(),
         std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
+    // --- SceneMysteryMerchantClientPlayer ---
+    gRpcMethodRegistry[SceneMysteryMerchantClientPlayerGetMysteryMerchantInfoMessageId] = RpcMethodMeta{
+        "SceneMysteryMerchantClientPlayer", "GetMysteryMerchantInfo",
+        std::make_unique<::GetMysteryMerchantInfoRequest>(),
+        std::make_unique<::GetMysteryMerchantInfoResponse>(),
+        std::make_unique<SceneMysteryMerchantClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneMysteryMerchantClientPlayerBuyMysteryMerchantGoodsMessageId] = RpcMethodMeta{
+        "SceneMysteryMerchantClientPlayer", "BuyMysteryMerchantGoods",
+        std::make_unique<::BuyMysteryMerchantGoodsRequest>(),
+        std::make_unique<::BuyMysteryMerchantGoodsResponse>(),
+        std::make_unique<SceneMysteryMerchantClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneMysteryMerchantClientPlayerNotifyMysteryMerchantMessageId] = RpcMethodMeta{
+        "SceneMysteryMerchantClientPlayer", "NotifyMysteryMerchant",
+        std::make_unique<::MysteryMerchantNotify>(),
+        std::make_unique<::Empty>(),
+        std::make_unique<SceneMysteryMerchantClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+
     // --- ScenePetClientPlayer ---
     gRpcMethodRegistry[ScenePetClientPlayerGetPetListMessageId] = RpcMethodMeta{
         "ScenePetClientPlayer", "GetPetList",
@@ -1778,6 +1798,9 @@ bool IsClientMessageId(uint32_t messageId)
 	case SceneMovementClientPlayerNotifyActorMoveMessageId:
 	case SceneMovementClientPlayerNotifyActorMoveListMessageId:
 	case SceneMovementClientPlayerNotifyTeleportMessageId:
+	case SceneMysteryMerchantClientPlayerGetMysteryMerchantInfoMessageId:
+	case SceneMysteryMerchantClientPlayerBuyMysteryMerchantGoodsMessageId:
+	case SceneMysteryMerchantClientPlayerNotifyMysteryMerchantMessageId:
 	case ScenePetClientPlayerGetPetListMessageId:
 	case ScenePetClientPlayerSummonPetMessageId:
 	case ScenePetClientPlayerRecallPetMessageId:

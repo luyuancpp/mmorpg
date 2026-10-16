@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "version": 25,
-  "content_digest": "35871b3ef881057588085eb675908d575f2ed5fd872dc85e485287d7c587be60",
-  "generated_at": "2026-10-13T14:07:53Z",
+  "version": 26,
+  "content_digest": "08e7971808c5f321f2fef7a532372820a3d4b6c4f3392ce08e2b82df03441e64",
+  "generated_at": "2026-10-16T03:50:14Z",
   "source_rev": {
-    "commit": "6e212616bfbf337ef0c179cd4553cf9325da883d",
-    "data_dirty": true
+    "commit": "5a6404ffa682df62793781d8d1b1d65a67a0b66e",
+    "data_dirty": false
   },
-  "table_count": 42,
+  "table_count": 45,
   "tables": [
     {
       "name": "ActivitySchedule",
@@ -765,6 +765,75 @@
           "file": "monster.pb",
           "size": 396,
           "sha256": "ea9cd6c871c57f871060cc0722072d6c008e941bd6767a8dadc1e53887c86888"
+        }
+      ]
+    },
+    {
+      "name": "MysteryMerchantGoods",
+      "rows": 12,
+      "source": {
+        "file": "MysteryMerchantGoods.xlsx",
+        "size": 5846,
+        "sha256": "dae118bc28c816778490077b02c4bc573bc7066db34b83f843c1856c69d11e4a"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "mysterymerchantgoods.json",
+          "size": 1910,
+          "sha256": "306cfbdae16eeb5bc65913caaacc9620271b93c5c5e38e42b6ac3e0bf91736b7"
+        },
+        {
+          "kind": "binary",
+          "file": "mysterymerchantgoods.pb",
+          "size": 304,
+          "sha256": "01ad6ccf78d984372ac0dc6375cc8363f63df259bd259a9198a59deeaca3696a"
+        }
+      ]
+    },
+    {
+      "name": "MysteryMerchantRule",
+      "rows": 1,
+      "source": {
+        "file": "MysteryMerchantRule.xlsx",
+        "size": 5420,
+        "sha256": "6d407d92337ebcc76002fb2a8fe2dc53000e78f519580cfe991763b753b05737"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "mysterymerchantrule.json",
+          "size": 265,
+          "sha256": "898547e83ba91dcf724ad34659cf06ac35bb4acc3fd43b29a2c257862546e584"
+        },
+        {
+          "kind": "binary",
+          "file": "mysterymerchantrule.pb",
+          "size": 54,
+          "sha256": "aaff379f7094ccc041ca77f5319abcf4e622b06c162727217585248df1b35cfa"
+        }
+      ]
+    },
+    {
+      "name": "MysteryMerchantSpot",
+      "rows": 6,
+      "source": {
+        "file": "MysteryMerchantSpot.xlsx",
+        "size": 5370,
+        "sha256": "05427b3bc455cfb4c7647a33047a794af48067c1f20eb6484022fc78b9bb697c"
+      },
+      "artifacts": [
+        {
+          "kind": "json",
+          "file": "mysterymerchantspot.json",
+          "size": 819,
+          "sha256": "56efa7627de774d3c9452c719dbedb9643d447c3e5405aa443b3394b419f1bc5"
+        },
+        {
+          "kind": "binary",
+          "file": "mysterymerchantspot.pb",
+          "size": 341,
+          "sha256": "b4a12c60ae23b84a10b1ce9a45f97f8bbb088d1cd136e1ec6fa7ccc5ff4fad37"
         }
       ]
     },

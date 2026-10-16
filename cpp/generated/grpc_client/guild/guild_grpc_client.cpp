@@ -1,52 +1,58 @@
 #include "muduo/base/Logging.h"
 
 #include "guild_grpc_client.h"
-#include "proto/common/constants/etcd_grpc.pb.h"
-#include "core/utils/encode/base64.h"
+#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <boost/pool/object_pool.hpp>
-#include "grpc_call_tag.h"
+#include <memory>
+#include <string>
+#include <utility>
+#include "core/network/grpc_client_runtime.h"
+#include "core/utils/encode/base64.h"
+#include "muduo_grpc/channel.h"
 
 namespace {
-boost::object_pool<GrpcTag> tagPool;
 // 本文件所有 unary 调用的 deadline(毫秒)。启动时 SetGuildCallDeadline 按目标节点类型写入
 // (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
-std::chrono::system_clock::time_point NextCallDeadline() {
-    return std::chrono::system_clock::now() +
-        std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+std::chrono::milliseconds DefaultCallDeadline() {
+    return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+}
+
+GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+    GrpcCallOutcome outcome;
+    outcome.code = code;
+    outcome.message = std::move(message);
+    return outcome;
 }
 }
 
 namespace guildpb {
-struct GuildCompleteQueue {
-    grpc::CompletionQueue cq;
-};
 #pragma region GuildServiceCreateGuild
-boost::object_pool<AsyncGuildServiceCreateGuildGrpcClient> GuildServiceCreateGuildPool;
-using AsyncGuildServiceCreateGuildHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::CreateGuildResponse&)>;
 AsyncGuildServiceCreateGuildHandlerFunctionType AsyncGuildServiceCreateGuildHandler;
 AsyncGuildServiceCreateGuildFailedHandlerFunctionType AsyncGuildServiceCreateGuildFailedHandler;
 
-void CompleteGuildServiceCreateGuild(AsyncGuildServiceCreateGuildGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceCreateGuildGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceCreateGuildPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceCreateGuildGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceCreateGuildCall {
+    ::guildpb::CreateGuildRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceCreateGuildHandler / FailedHandler。
+    GrpcDone<::guildpb::CreateGuildResponse> done;
+};
+
+void CompleteGuildServiceCreateGuild(const GuildServiceCreateGuildCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::CreateGuildResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceCreateGuildHandler) {
-            AsyncGuildServiceCreateGuildHandler(call->context, call->reply);
+            AsyncGuildServiceCreateGuildHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -58,50 +64,65 @@ void CompleteGuildServiceCreateGuild(AsyncGuildServiceCreateGuildGrpcClient* cal
             }
         }
     } else if (AsyncGuildServiceCreateGuildFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.CreateGuild", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceCreateGuildFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceCreateGuildMessageId, "GuildService.CreateGuild", outcome, call.sentMetadata};
+        AsyncGuildServiceCreateGuildFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.CreateGuild failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.CreateGuild failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceCreateGuild(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceCreateGuildGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceCreateGuild(call);
+void QueueLocalGuildServiceCreateGuildFailure(std::shared_ptr<GuildServiceCreateGuildCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceCreateGuild(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceCreateGuildCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::CreateGuildRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::CreateGuildResponse> done) {
-    auto call(GuildServiceCreateGuildPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceCreateGuildCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceCreateGuild(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceCreateGuildFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncCreateGuild(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceCreateGuildMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceCreateGuildGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceCreateGuildFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceCreateGuild(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::CreateGuildResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.CreateGuild response";
+            CompleteGuildServiceCreateGuild(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceCreateGuild(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceCreateGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::CreateGuildRequest& request,
@@ -110,12 +131,11 @@ void SendGuildServiceCreateGuild(entt::registry& registry, entt::entity nodeEnti
 }
 
 void SendGuildServiceCreateGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::CreateGuildRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceCreateGuild(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceCreateGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::CreateGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceCreateGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::CreateGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -123,37 +143,37 @@ void SendGuildServiceCreateGuild(entt::registry& registry, entt::entity nodeEnti
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceCreateGuildCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceCreateGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceCreateGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::CreateGuildRequest& derived = static_cast<const ::guildpb::CreateGuildRequest&>(message);
     SendGuildServiceCreateGuild(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceGetGuild
-boost::object_pool<AsyncGuildServiceGetGuildGrpcClient> GuildServiceGetGuildPool;
-using AsyncGuildServiceGetGuildHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::GetGuildResponse&)>;
 AsyncGuildServiceGetGuildHandlerFunctionType AsyncGuildServiceGetGuildHandler;
 AsyncGuildServiceGetGuildFailedHandlerFunctionType AsyncGuildServiceGetGuildFailedHandler;
 
-void CompleteGuildServiceGetGuild(AsyncGuildServiceGetGuildGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceGetGuildGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceGetGuildPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceGetGuildGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceGetGuildCall {
+    ::guildpb::GetGuildRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceGetGuildHandler / FailedHandler。
+    GrpcDone<::guildpb::GetGuildResponse> done;
+};
+
+void CompleteGuildServiceGetGuild(const GuildServiceGetGuildCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::GetGuildResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceGetGuildHandler) {
-            AsyncGuildServiceGetGuildHandler(call->context, call->reply);
+            AsyncGuildServiceGetGuildHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -165,50 +185,65 @@ void CompleteGuildServiceGetGuild(AsyncGuildServiceGetGuildGrpcClient* call) {
             }
         }
     } else if (AsyncGuildServiceGetGuildFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.GetGuild", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceGetGuildFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceGetGuildMessageId, "GuildService.GetGuild", outcome, call.sentMetadata};
+        AsyncGuildServiceGetGuildFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.GetGuild failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.GetGuild failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceGetGuild(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceGetGuildGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceGetGuild(call);
+void QueueLocalGuildServiceGetGuildFailure(std::shared_ptr<GuildServiceGetGuildCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceGetGuild(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceGetGuildCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::GetGuildResponse> done) {
-    auto call(GuildServiceGetGuildPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceGetGuildCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceGetGuild(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceGetGuildFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetGuild(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceGetGuildMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceGetGuildGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceGetGuildFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceGetGuild(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::GetGuildResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.GetGuild response";
+            CompleteGuildServiceGetGuild(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceGetGuild(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceGetGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRequest& request,
@@ -217,12 +252,11 @@ void SendGuildServiceGetGuild(entt::registry& registry, entt::entity nodeEntity,
 }
 
 void SendGuildServiceGetGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceGetGuild(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceGetGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceGetGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -230,37 +264,37 @@ void SendGuildServiceGetGuild(entt::registry& registry, entt::entity nodeEntity,
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceGetGuildCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceGetGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceGetGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::GetGuildRequest& derived = static_cast<const ::guildpb::GetGuildRequest&>(message);
     SendGuildServiceGetGuild(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceGetPlayerGuild
-boost::object_pool<AsyncGuildServiceGetPlayerGuildGrpcClient> GuildServiceGetPlayerGuildPool;
-using AsyncGuildServiceGetPlayerGuildHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::GetPlayerGuildResponse&)>;
 AsyncGuildServiceGetPlayerGuildHandlerFunctionType AsyncGuildServiceGetPlayerGuildHandler;
 AsyncGuildServiceGetPlayerGuildFailedHandlerFunctionType AsyncGuildServiceGetPlayerGuildFailedHandler;
 
-void CompleteGuildServiceGetPlayerGuild(AsyncGuildServiceGetPlayerGuildGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceGetPlayerGuildGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceGetPlayerGuildPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceGetPlayerGuildGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceGetPlayerGuildCall {
+    ::guildpb::GetPlayerGuildRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceGetPlayerGuildHandler / FailedHandler。
+    GrpcDone<::guildpb::GetPlayerGuildResponse> done;
+};
+
+void CompleteGuildServiceGetPlayerGuild(const GuildServiceGetPlayerGuildCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::GetPlayerGuildResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceGetPlayerGuildHandler) {
-            AsyncGuildServiceGetPlayerGuildHandler(call->context, call->reply);
+            AsyncGuildServiceGetPlayerGuildHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -272,50 +306,65 @@ void CompleteGuildServiceGetPlayerGuild(AsyncGuildServiceGetPlayerGuildGrpcClien
             }
         }
     } else if (AsyncGuildServiceGetPlayerGuildFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.GetPlayerGuild", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceGetPlayerGuildFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceGetPlayerGuildMessageId, "GuildService.GetPlayerGuild", outcome, call.sentMetadata};
+        AsyncGuildServiceGetPlayerGuildFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.GetPlayerGuild failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.GetPlayerGuild failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceGetPlayerGuild(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceGetPlayerGuildGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceGetPlayerGuild(call);
+void QueueLocalGuildServiceGetPlayerGuildFailure(std::shared_ptr<GuildServiceGetPlayerGuildCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceGetPlayerGuild(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceGetPlayerGuildCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetPlayerGuildRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::GetPlayerGuildResponse> done) {
-    auto call(GuildServiceGetPlayerGuildPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceGetPlayerGuildCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceGetPlayerGuild(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceGetPlayerGuildFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetPlayerGuild(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceGetPlayerGuildMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceGetPlayerGuildGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceGetPlayerGuildFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceGetPlayerGuild(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::GetPlayerGuildResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.GetPlayerGuild response";
+            CompleteGuildServiceGetPlayerGuild(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceGetPlayerGuild(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceGetPlayerGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetPlayerGuildRequest& request,
@@ -324,12 +373,11 @@ void SendGuildServiceGetPlayerGuild(entt::registry& registry, entt::entity nodeE
 }
 
 void SendGuildServiceGetPlayerGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetPlayerGuildRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceGetPlayerGuild(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceGetPlayerGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetPlayerGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceGetPlayerGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetPlayerGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -337,37 +385,37 @@ void SendGuildServiceGetPlayerGuild(entt::registry& registry, entt::entity nodeE
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceGetPlayerGuildCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceGetPlayerGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceGetPlayerGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::GetPlayerGuildRequest& derived = static_cast<const ::guildpb::GetPlayerGuildRequest&>(message);
     SendGuildServiceGetPlayerGuild(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceLeaveGuild
-boost::object_pool<AsyncGuildServiceLeaveGuildGrpcClient> GuildServiceLeaveGuildPool;
-using AsyncGuildServiceLeaveGuildHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::LeaveGuildResponse&)>;
 AsyncGuildServiceLeaveGuildHandlerFunctionType AsyncGuildServiceLeaveGuildHandler;
 AsyncGuildServiceLeaveGuildFailedHandlerFunctionType AsyncGuildServiceLeaveGuildFailedHandler;
 
-void CompleteGuildServiceLeaveGuild(AsyncGuildServiceLeaveGuildGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceLeaveGuildGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceLeaveGuildPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceLeaveGuildGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceLeaveGuildCall {
+    ::guildpb::LeaveGuildRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceLeaveGuildHandler / FailedHandler。
+    GrpcDone<::guildpb::LeaveGuildResponse> done;
+};
+
+void CompleteGuildServiceLeaveGuild(const GuildServiceLeaveGuildCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::LeaveGuildResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceLeaveGuildHandler) {
-            AsyncGuildServiceLeaveGuildHandler(call->context, call->reply);
+            AsyncGuildServiceLeaveGuildHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -379,50 +427,65 @@ void CompleteGuildServiceLeaveGuild(AsyncGuildServiceLeaveGuildGrpcClient* call)
             }
         }
     } else if (AsyncGuildServiceLeaveGuildFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.LeaveGuild", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceLeaveGuildFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceLeaveGuildMessageId, "GuildService.LeaveGuild", outcome, call.sentMetadata};
+        AsyncGuildServiceLeaveGuildFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.LeaveGuild failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.LeaveGuild failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceLeaveGuild(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceLeaveGuildGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceLeaveGuild(call);
+void QueueLocalGuildServiceLeaveGuildFailure(std::shared_ptr<GuildServiceLeaveGuildCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceLeaveGuild(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceLeaveGuildCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::LeaveGuildRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::LeaveGuildResponse> done) {
-    auto call(GuildServiceLeaveGuildPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceLeaveGuildCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceLeaveGuild(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceLeaveGuildFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncLeaveGuild(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceLeaveGuildMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceLeaveGuildGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceLeaveGuildFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceLeaveGuild(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::LeaveGuildResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.LeaveGuild response";
+            CompleteGuildServiceLeaveGuild(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceLeaveGuild(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceLeaveGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::LeaveGuildRequest& request,
@@ -431,12 +494,11 @@ void SendGuildServiceLeaveGuild(entt::registry& registry, entt::entity nodeEntit
 }
 
 void SendGuildServiceLeaveGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::LeaveGuildRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceLeaveGuild(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceLeaveGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::LeaveGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceLeaveGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::LeaveGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -444,37 +506,37 @@ void SendGuildServiceLeaveGuild(entt::registry& registry, entt::entity nodeEntit
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceLeaveGuildCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceLeaveGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceLeaveGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::LeaveGuildRequest& derived = static_cast<const ::guildpb::LeaveGuildRequest&>(message);
     SendGuildServiceLeaveGuild(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceDisbandGuild
-boost::object_pool<AsyncGuildServiceDisbandGuildGrpcClient> GuildServiceDisbandGuildPool;
-using AsyncGuildServiceDisbandGuildHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::DisbandGuildResponse&)>;
 AsyncGuildServiceDisbandGuildHandlerFunctionType AsyncGuildServiceDisbandGuildHandler;
 AsyncGuildServiceDisbandGuildFailedHandlerFunctionType AsyncGuildServiceDisbandGuildFailedHandler;
 
-void CompleteGuildServiceDisbandGuild(AsyncGuildServiceDisbandGuildGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceDisbandGuildGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceDisbandGuildPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceDisbandGuildGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceDisbandGuildCall {
+    ::guildpb::DisbandGuildRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceDisbandGuildHandler / FailedHandler。
+    GrpcDone<::guildpb::DisbandGuildResponse> done;
+};
+
+void CompleteGuildServiceDisbandGuild(const GuildServiceDisbandGuildCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::DisbandGuildResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceDisbandGuildHandler) {
-            AsyncGuildServiceDisbandGuildHandler(call->context, call->reply);
+            AsyncGuildServiceDisbandGuildHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -486,50 +548,65 @@ void CompleteGuildServiceDisbandGuild(AsyncGuildServiceDisbandGuildGrpcClient* c
             }
         }
     } else if (AsyncGuildServiceDisbandGuildFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.DisbandGuild", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceDisbandGuildFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceDisbandGuildMessageId, "GuildService.DisbandGuild", outcome, call.sentMetadata};
+        AsyncGuildServiceDisbandGuildFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.DisbandGuild failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.DisbandGuild failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceDisbandGuild(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceDisbandGuildGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceDisbandGuild(call);
+void QueueLocalGuildServiceDisbandGuildFailure(std::shared_ptr<GuildServiceDisbandGuildCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceDisbandGuild(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceDisbandGuildCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::DisbandGuildRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::DisbandGuildResponse> done) {
-    auto call(GuildServiceDisbandGuildPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceDisbandGuildCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceDisbandGuild(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceDisbandGuildFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncDisbandGuild(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceDisbandGuildMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceDisbandGuildGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceDisbandGuildFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceDisbandGuild(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::DisbandGuildResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.DisbandGuild response";
+            CompleteGuildServiceDisbandGuild(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceDisbandGuild(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceDisbandGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::DisbandGuildRequest& request,
@@ -538,12 +615,11 @@ void SendGuildServiceDisbandGuild(entt::registry& registry, entt::entity nodeEnt
 }
 
 void SendGuildServiceDisbandGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::DisbandGuildRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceDisbandGuild(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceDisbandGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::DisbandGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceDisbandGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::DisbandGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -551,37 +627,37 @@ void SendGuildServiceDisbandGuild(entt::registry& registry, entt::entity nodeEnt
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceDisbandGuildCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceDisbandGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceDisbandGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::DisbandGuildRequest& derived = static_cast<const ::guildpb::DisbandGuildRequest&>(message);
     SendGuildServiceDisbandGuild(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceSetAnnouncement
-boost::object_pool<AsyncGuildServiceSetAnnouncementGrpcClient> GuildServiceSetAnnouncementPool;
-using AsyncGuildServiceSetAnnouncementHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::SetAnnouncementResponse&)>;
 AsyncGuildServiceSetAnnouncementHandlerFunctionType AsyncGuildServiceSetAnnouncementHandler;
 AsyncGuildServiceSetAnnouncementFailedHandlerFunctionType AsyncGuildServiceSetAnnouncementFailedHandler;
 
-void CompleteGuildServiceSetAnnouncement(AsyncGuildServiceSetAnnouncementGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceSetAnnouncementGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceSetAnnouncementPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceSetAnnouncementGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceSetAnnouncementCall {
+    ::guildpb::SetAnnouncementRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceSetAnnouncementHandler / FailedHandler。
+    GrpcDone<::guildpb::SetAnnouncementResponse> done;
+};
+
+void CompleteGuildServiceSetAnnouncement(const GuildServiceSetAnnouncementCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::SetAnnouncementResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceSetAnnouncementHandler) {
-            AsyncGuildServiceSetAnnouncementHandler(call->context, call->reply);
+            AsyncGuildServiceSetAnnouncementHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -593,50 +669,65 @@ void CompleteGuildServiceSetAnnouncement(AsyncGuildServiceSetAnnouncementGrpcCli
             }
         }
     } else if (AsyncGuildServiceSetAnnouncementFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.SetAnnouncement", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceSetAnnouncementFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceSetAnnouncementMessageId, "GuildService.SetAnnouncement", outcome, call.sentMetadata};
+        AsyncGuildServiceSetAnnouncementFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.SetAnnouncement failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.SetAnnouncement failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceSetAnnouncement(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceSetAnnouncementGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceSetAnnouncement(call);
+void QueueLocalGuildServiceSetAnnouncementFailure(std::shared_ptr<GuildServiceSetAnnouncementCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceSetAnnouncement(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceSetAnnouncementCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetAnnouncementRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::SetAnnouncementResponse> done) {
-    auto call(GuildServiceSetAnnouncementPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceSetAnnouncementCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceSetAnnouncement(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceSetAnnouncementFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncSetAnnouncement(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceSetAnnouncementMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceSetAnnouncementGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceSetAnnouncementFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceSetAnnouncement(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::SetAnnouncementResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.SetAnnouncement response";
+            CompleteGuildServiceSetAnnouncement(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceSetAnnouncement(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetAnnouncementRequest& request,
@@ -645,12 +736,11 @@ void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity node
 }
 
 void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetAnnouncementRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceSetAnnouncement(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetAnnouncementRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetAnnouncementRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -658,37 +748,37 @@ void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity node
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceSetAnnouncementCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceSetAnnouncement(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::SetAnnouncementRequest& derived = static_cast<const ::guildpb::SetAnnouncementRequest&>(message);
     SendGuildServiceSetAnnouncement(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceSetGuildMemberRole
-boost::object_pool<AsyncGuildServiceSetGuildMemberRoleGrpcClient> GuildServiceSetGuildMemberRolePool;
-using AsyncGuildServiceSetGuildMemberRoleHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::SetGuildMemberRoleResponse&)>;
 AsyncGuildServiceSetGuildMemberRoleHandlerFunctionType AsyncGuildServiceSetGuildMemberRoleHandler;
 AsyncGuildServiceSetGuildMemberRoleFailedHandlerFunctionType AsyncGuildServiceSetGuildMemberRoleFailedHandler;
 
-void CompleteGuildServiceSetGuildMemberRole(AsyncGuildServiceSetGuildMemberRoleGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceSetGuildMemberRoleGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceSetGuildMemberRolePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceSetGuildMemberRoleGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceSetGuildMemberRoleCall {
+    ::guildpb::SetGuildMemberRoleRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceSetGuildMemberRoleHandler / FailedHandler。
+    GrpcDone<::guildpb::SetGuildMemberRoleResponse> done;
+};
+
+void CompleteGuildServiceSetGuildMemberRole(const GuildServiceSetGuildMemberRoleCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::SetGuildMemberRoleResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceSetGuildMemberRoleHandler) {
-            AsyncGuildServiceSetGuildMemberRoleHandler(call->context, call->reply);
+            AsyncGuildServiceSetGuildMemberRoleHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -700,50 +790,65 @@ void CompleteGuildServiceSetGuildMemberRole(AsyncGuildServiceSetGuildMemberRoleG
             }
         }
     } else if (AsyncGuildServiceSetGuildMemberRoleFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.SetGuildMemberRole", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceSetGuildMemberRoleFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceSetGuildMemberRoleMessageId, "GuildService.SetGuildMemberRole", outcome, call.sentMetadata};
+        AsyncGuildServiceSetGuildMemberRoleFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.SetGuildMemberRole failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.SetGuildMemberRole failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceSetGuildMemberRole(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceSetGuildMemberRoleGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceSetGuildMemberRole(call);
+void QueueLocalGuildServiceSetGuildMemberRoleFailure(std::shared_ptr<GuildServiceSetGuildMemberRoleCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceSetGuildMemberRole(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceSetGuildMemberRoleCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetGuildMemberRoleRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::SetGuildMemberRoleResponse> done) {
-    auto call(GuildServiceSetGuildMemberRolePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceSetGuildMemberRoleCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceSetGuildMemberRole(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceSetGuildMemberRoleFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncSetGuildMemberRole(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceSetGuildMemberRoleMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceSetGuildMemberRoleGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceSetGuildMemberRoleFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceSetGuildMemberRole(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::SetGuildMemberRoleResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.SetGuildMemberRole response";
+            CompleteGuildServiceSetGuildMemberRole(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceSetGuildMemberRole(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceSetGuildMemberRole(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetGuildMemberRoleRequest& request,
@@ -752,12 +857,11 @@ void SendGuildServiceSetGuildMemberRole(entt::registry& registry, entt::entity n
 }
 
 void SendGuildServiceSetGuildMemberRole(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetGuildMemberRoleRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceSetGuildMemberRole(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceSetGuildMemberRole(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetGuildMemberRoleRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceSetGuildMemberRole(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::SetGuildMemberRoleRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -765,37 +869,37 @@ void SendGuildServiceSetGuildMemberRole(entt::registry& registry, entt::entity n
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceSetGuildMemberRoleCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceSetGuildMemberRole(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceSetGuildMemberRole(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::SetGuildMemberRoleRequest& derived = static_cast<const ::guildpb::SetGuildMemberRoleRequest&>(message);
     SendGuildServiceSetGuildMemberRole(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceKickGuildMember
-boost::object_pool<AsyncGuildServiceKickGuildMemberGrpcClient> GuildServiceKickGuildMemberPool;
-using AsyncGuildServiceKickGuildMemberHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::KickGuildMemberResponse&)>;
 AsyncGuildServiceKickGuildMemberHandlerFunctionType AsyncGuildServiceKickGuildMemberHandler;
 AsyncGuildServiceKickGuildMemberFailedHandlerFunctionType AsyncGuildServiceKickGuildMemberFailedHandler;
 
-void CompleteGuildServiceKickGuildMember(AsyncGuildServiceKickGuildMemberGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceKickGuildMemberGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceKickGuildMemberPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceKickGuildMemberGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceKickGuildMemberCall {
+    ::guildpb::KickGuildMemberRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceKickGuildMemberHandler / FailedHandler。
+    GrpcDone<::guildpb::KickGuildMemberResponse> done;
+};
+
+void CompleteGuildServiceKickGuildMember(const GuildServiceKickGuildMemberCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::KickGuildMemberResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceKickGuildMemberHandler) {
-            AsyncGuildServiceKickGuildMemberHandler(call->context, call->reply);
+            AsyncGuildServiceKickGuildMemberHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -807,50 +911,65 @@ void CompleteGuildServiceKickGuildMember(AsyncGuildServiceKickGuildMemberGrpcCli
             }
         }
     } else if (AsyncGuildServiceKickGuildMemberFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.KickGuildMember", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceKickGuildMemberFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceKickGuildMemberMessageId, "GuildService.KickGuildMember", outcome, call.sentMetadata};
+        AsyncGuildServiceKickGuildMemberFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.KickGuildMember failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.KickGuildMember failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceKickGuildMember(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceKickGuildMemberGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceKickGuildMember(call);
+void QueueLocalGuildServiceKickGuildMemberFailure(std::shared_ptr<GuildServiceKickGuildMemberCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceKickGuildMember(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceKickGuildMemberCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::KickGuildMemberRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::KickGuildMemberResponse> done) {
-    auto call(GuildServiceKickGuildMemberPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceKickGuildMemberCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceKickGuildMember(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceKickGuildMemberFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncKickGuildMember(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceKickGuildMemberMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceKickGuildMemberGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceKickGuildMemberFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceKickGuildMember(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::KickGuildMemberResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.KickGuildMember response";
+            CompleteGuildServiceKickGuildMember(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceKickGuildMember(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceKickGuildMember(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::KickGuildMemberRequest& request,
@@ -859,12 +978,11 @@ void SendGuildServiceKickGuildMember(entt::registry& registry, entt::entity node
 }
 
 void SendGuildServiceKickGuildMember(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::KickGuildMemberRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceKickGuildMember(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceKickGuildMember(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::KickGuildMemberRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceKickGuildMember(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::KickGuildMemberRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -872,37 +990,37 @@ void SendGuildServiceKickGuildMember(entt::registry& registry, entt::entity node
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceKickGuildMemberCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceKickGuildMember(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceKickGuildMember(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::KickGuildMemberRequest& derived = static_cast<const ::guildpb::KickGuildMemberRequest&>(message);
     SendGuildServiceKickGuildMember(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceTransferGuildLeader
-boost::object_pool<AsyncGuildServiceTransferGuildLeaderGrpcClient> GuildServiceTransferGuildLeaderPool;
-using AsyncGuildServiceTransferGuildLeaderHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::TransferGuildLeaderResponse&)>;
 AsyncGuildServiceTransferGuildLeaderHandlerFunctionType AsyncGuildServiceTransferGuildLeaderHandler;
 AsyncGuildServiceTransferGuildLeaderFailedHandlerFunctionType AsyncGuildServiceTransferGuildLeaderFailedHandler;
 
-void CompleteGuildServiceTransferGuildLeader(AsyncGuildServiceTransferGuildLeaderGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceTransferGuildLeaderGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceTransferGuildLeaderPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceTransferGuildLeaderGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceTransferGuildLeaderCall {
+    ::guildpb::TransferGuildLeaderRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceTransferGuildLeaderHandler / FailedHandler。
+    GrpcDone<::guildpb::TransferGuildLeaderResponse> done;
+};
+
+void CompleteGuildServiceTransferGuildLeader(const GuildServiceTransferGuildLeaderCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::TransferGuildLeaderResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceTransferGuildLeaderHandler) {
-            AsyncGuildServiceTransferGuildLeaderHandler(call->context, call->reply);
+            AsyncGuildServiceTransferGuildLeaderHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -914,50 +1032,65 @@ void CompleteGuildServiceTransferGuildLeader(AsyncGuildServiceTransferGuildLeade
             }
         }
     } else if (AsyncGuildServiceTransferGuildLeaderFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.TransferGuildLeader", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceTransferGuildLeaderFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceTransferGuildLeaderMessageId, "GuildService.TransferGuildLeader", outcome, call.sentMetadata};
+        AsyncGuildServiceTransferGuildLeaderFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.TransferGuildLeader failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.TransferGuildLeader failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceTransferGuildLeader(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceTransferGuildLeaderGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceTransferGuildLeader(call);
+void QueueLocalGuildServiceTransferGuildLeaderFailure(std::shared_ptr<GuildServiceTransferGuildLeaderCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceTransferGuildLeader(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceTransferGuildLeaderCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::TransferGuildLeaderRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::TransferGuildLeaderResponse> done) {
-    auto call(GuildServiceTransferGuildLeaderPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceTransferGuildLeaderCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceTransferGuildLeader(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceTransferGuildLeaderFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncTransferGuildLeader(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceTransferGuildLeaderMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceTransferGuildLeaderGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceTransferGuildLeaderFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceTransferGuildLeader(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::TransferGuildLeaderResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.TransferGuildLeader response";
+            CompleteGuildServiceTransferGuildLeader(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceTransferGuildLeader(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceTransferGuildLeader(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::TransferGuildLeaderRequest& request,
@@ -966,12 +1099,11 @@ void SendGuildServiceTransferGuildLeader(entt::registry& registry, entt::entity 
 }
 
 void SendGuildServiceTransferGuildLeader(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::TransferGuildLeaderRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceTransferGuildLeader(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceTransferGuildLeader(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::TransferGuildLeaderRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceTransferGuildLeader(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::TransferGuildLeaderRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -979,37 +1111,37 @@ void SendGuildServiceTransferGuildLeader(entt::registry& registry, entt::entity 
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceTransferGuildLeaderCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceTransferGuildLeader(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceTransferGuildLeader(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::TransferGuildLeaderRequest& derived = static_cast<const ::guildpb::TransferGuildLeaderRequest&>(message);
     SendGuildServiceTransferGuildLeader(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceApplyJoinGuild
-boost::object_pool<AsyncGuildServiceApplyJoinGuildGrpcClient> GuildServiceApplyJoinGuildPool;
-using AsyncGuildServiceApplyJoinGuildHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::ApplyJoinGuildResponse&)>;
 AsyncGuildServiceApplyJoinGuildHandlerFunctionType AsyncGuildServiceApplyJoinGuildHandler;
 AsyncGuildServiceApplyJoinGuildFailedHandlerFunctionType AsyncGuildServiceApplyJoinGuildFailedHandler;
 
-void CompleteGuildServiceApplyJoinGuild(AsyncGuildServiceApplyJoinGuildGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceApplyJoinGuildGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceApplyJoinGuildPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceApplyJoinGuildGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceApplyJoinGuildCall {
+    ::guildpb::ApplyJoinGuildRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceApplyJoinGuildHandler / FailedHandler。
+    GrpcDone<::guildpb::ApplyJoinGuildResponse> done;
+};
+
+void CompleteGuildServiceApplyJoinGuild(const GuildServiceApplyJoinGuildCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::ApplyJoinGuildResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceApplyJoinGuildHandler) {
-            AsyncGuildServiceApplyJoinGuildHandler(call->context, call->reply);
+            AsyncGuildServiceApplyJoinGuildHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1021,50 +1153,65 @@ void CompleteGuildServiceApplyJoinGuild(AsyncGuildServiceApplyJoinGuildGrpcClien
             }
         }
     } else if (AsyncGuildServiceApplyJoinGuildFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.ApplyJoinGuild", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceApplyJoinGuildFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceApplyJoinGuildMessageId, "GuildService.ApplyJoinGuild", outcome, call.sentMetadata};
+        AsyncGuildServiceApplyJoinGuildFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.ApplyJoinGuild failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.ApplyJoinGuild failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceApplyJoinGuild(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceApplyJoinGuildGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceApplyJoinGuild(call);
+void QueueLocalGuildServiceApplyJoinGuildFailure(std::shared_ptr<GuildServiceApplyJoinGuildCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceApplyJoinGuild(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceApplyJoinGuildCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ApplyJoinGuildRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::ApplyJoinGuildResponse> done) {
-    auto call(GuildServiceApplyJoinGuildPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceApplyJoinGuildCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceApplyJoinGuild(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceApplyJoinGuildFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncApplyJoinGuild(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceApplyJoinGuildMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceApplyJoinGuildGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceApplyJoinGuildFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceApplyJoinGuild(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::ApplyJoinGuildResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.ApplyJoinGuild response";
+            CompleteGuildServiceApplyJoinGuild(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceApplyJoinGuild(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceApplyJoinGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ApplyJoinGuildRequest& request,
@@ -1073,12 +1220,11 @@ void SendGuildServiceApplyJoinGuild(entt::registry& registry, entt::entity nodeE
 }
 
 void SendGuildServiceApplyJoinGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ApplyJoinGuildRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceApplyJoinGuild(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceApplyJoinGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ApplyJoinGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceApplyJoinGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ApplyJoinGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1086,37 +1232,37 @@ void SendGuildServiceApplyJoinGuild(entt::registry& registry, entt::entity nodeE
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceApplyJoinGuildCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceApplyJoinGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceApplyJoinGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::ApplyJoinGuildRequest& derived = static_cast<const ::guildpb::ApplyJoinGuildRequest&>(message);
     SendGuildServiceApplyJoinGuild(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceCancelGuildApplication
-boost::object_pool<AsyncGuildServiceCancelGuildApplicationGrpcClient> GuildServiceCancelGuildApplicationPool;
-using AsyncGuildServiceCancelGuildApplicationHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::CancelGuildApplicationResponse&)>;
 AsyncGuildServiceCancelGuildApplicationHandlerFunctionType AsyncGuildServiceCancelGuildApplicationHandler;
 AsyncGuildServiceCancelGuildApplicationFailedHandlerFunctionType AsyncGuildServiceCancelGuildApplicationFailedHandler;
 
-void CompleteGuildServiceCancelGuildApplication(AsyncGuildServiceCancelGuildApplicationGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceCancelGuildApplicationGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceCancelGuildApplicationPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceCancelGuildApplicationGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceCancelGuildApplicationCall {
+    ::guildpb::CancelGuildApplicationRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceCancelGuildApplicationHandler / FailedHandler。
+    GrpcDone<::guildpb::CancelGuildApplicationResponse> done;
+};
+
+void CompleteGuildServiceCancelGuildApplication(const GuildServiceCancelGuildApplicationCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::CancelGuildApplicationResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceCancelGuildApplicationHandler) {
-            AsyncGuildServiceCancelGuildApplicationHandler(call->context, call->reply);
+            AsyncGuildServiceCancelGuildApplicationHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1128,50 +1274,65 @@ void CompleteGuildServiceCancelGuildApplication(AsyncGuildServiceCancelGuildAppl
             }
         }
     } else if (AsyncGuildServiceCancelGuildApplicationFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.CancelGuildApplication", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceCancelGuildApplicationFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceCancelGuildApplicationMessageId, "GuildService.CancelGuildApplication", outcome, call.sentMetadata};
+        AsyncGuildServiceCancelGuildApplicationFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.CancelGuildApplication failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.CancelGuildApplication failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceCancelGuildApplication(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceCancelGuildApplicationGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceCancelGuildApplication(call);
+void QueueLocalGuildServiceCancelGuildApplicationFailure(std::shared_ptr<GuildServiceCancelGuildApplicationCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceCancelGuildApplication(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceCancelGuildApplicationCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::CancelGuildApplicationRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::CancelGuildApplicationResponse> done) {
-    auto call(GuildServiceCancelGuildApplicationPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceCancelGuildApplicationCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceCancelGuildApplication(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceCancelGuildApplicationFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncCancelGuildApplication(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceCancelGuildApplicationMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceCancelGuildApplicationGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceCancelGuildApplicationFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceCancelGuildApplication(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::CancelGuildApplicationResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.CancelGuildApplication response";
+            CompleteGuildServiceCancelGuildApplication(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceCancelGuildApplication(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceCancelGuildApplication(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::CancelGuildApplicationRequest& request,
@@ -1180,12 +1341,11 @@ void SendGuildServiceCancelGuildApplication(entt::registry& registry, entt::enti
 }
 
 void SendGuildServiceCancelGuildApplication(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::CancelGuildApplicationRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceCancelGuildApplication(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceCancelGuildApplication(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::CancelGuildApplicationRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceCancelGuildApplication(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::CancelGuildApplicationRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1193,37 +1353,37 @@ void SendGuildServiceCancelGuildApplication(entt::registry& registry, entt::enti
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceCancelGuildApplicationCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceCancelGuildApplication(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceCancelGuildApplication(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::CancelGuildApplicationRequest& derived = static_cast<const ::guildpb::CancelGuildApplicationRequest&>(message);
     SendGuildServiceCancelGuildApplication(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceListMyGuildApplications
-boost::object_pool<AsyncGuildServiceListMyGuildApplicationsGrpcClient> GuildServiceListMyGuildApplicationsPool;
-using AsyncGuildServiceListMyGuildApplicationsHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::ListMyGuildApplicationsResponse&)>;
 AsyncGuildServiceListMyGuildApplicationsHandlerFunctionType AsyncGuildServiceListMyGuildApplicationsHandler;
 AsyncGuildServiceListMyGuildApplicationsFailedHandlerFunctionType AsyncGuildServiceListMyGuildApplicationsFailedHandler;
 
-void CompleteGuildServiceListMyGuildApplications(AsyncGuildServiceListMyGuildApplicationsGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceListMyGuildApplicationsGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceListMyGuildApplicationsPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceListMyGuildApplicationsGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceListMyGuildApplicationsCall {
+    ::guildpb::ListMyGuildApplicationsRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceListMyGuildApplicationsHandler / FailedHandler。
+    GrpcDone<::guildpb::ListMyGuildApplicationsResponse> done;
+};
+
+void CompleteGuildServiceListMyGuildApplications(const GuildServiceListMyGuildApplicationsCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::ListMyGuildApplicationsResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceListMyGuildApplicationsHandler) {
-            AsyncGuildServiceListMyGuildApplicationsHandler(call->context, call->reply);
+            AsyncGuildServiceListMyGuildApplicationsHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1235,50 +1395,65 @@ void CompleteGuildServiceListMyGuildApplications(AsyncGuildServiceListMyGuildApp
             }
         }
     } else if (AsyncGuildServiceListMyGuildApplicationsFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.ListMyGuildApplications", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceListMyGuildApplicationsFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceListMyGuildApplicationsMessageId, "GuildService.ListMyGuildApplications", outcome, call.sentMetadata};
+        AsyncGuildServiceListMyGuildApplicationsFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.ListMyGuildApplications failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.ListMyGuildApplications failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceListMyGuildApplications(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceListMyGuildApplicationsGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceListMyGuildApplications(call);
+void QueueLocalGuildServiceListMyGuildApplicationsFailure(std::shared_ptr<GuildServiceListMyGuildApplicationsCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceListMyGuildApplications(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceListMyGuildApplicationsCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ListMyGuildApplicationsRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::ListMyGuildApplicationsResponse> done) {
-    auto call(GuildServiceListMyGuildApplicationsPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceListMyGuildApplicationsCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceListMyGuildApplications(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceListMyGuildApplicationsFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncListMyGuildApplications(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceListMyGuildApplicationsMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceListMyGuildApplicationsGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceListMyGuildApplicationsFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceListMyGuildApplications(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::ListMyGuildApplicationsResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.ListMyGuildApplications response";
+            CompleteGuildServiceListMyGuildApplications(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceListMyGuildApplications(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceListMyGuildApplications(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ListMyGuildApplicationsRequest& request,
@@ -1287,12 +1462,11 @@ void SendGuildServiceListMyGuildApplications(entt::registry& registry, entt::ent
 }
 
 void SendGuildServiceListMyGuildApplications(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ListMyGuildApplicationsRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceListMyGuildApplications(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceListMyGuildApplications(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ListMyGuildApplicationsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceListMyGuildApplications(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ListMyGuildApplicationsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1300,37 +1474,37 @@ void SendGuildServiceListMyGuildApplications(entt::registry& registry, entt::ent
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceListMyGuildApplicationsCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceListMyGuildApplications(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceListMyGuildApplications(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::ListMyGuildApplicationsRequest& derived = static_cast<const ::guildpb::ListMyGuildApplicationsRequest&>(message);
     SendGuildServiceListMyGuildApplications(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceListGuildApplications
-boost::object_pool<AsyncGuildServiceListGuildApplicationsGrpcClient> GuildServiceListGuildApplicationsPool;
-using AsyncGuildServiceListGuildApplicationsHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::ListGuildApplicationsResponse&)>;
 AsyncGuildServiceListGuildApplicationsHandlerFunctionType AsyncGuildServiceListGuildApplicationsHandler;
 AsyncGuildServiceListGuildApplicationsFailedHandlerFunctionType AsyncGuildServiceListGuildApplicationsFailedHandler;
 
-void CompleteGuildServiceListGuildApplications(AsyncGuildServiceListGuildApplicationsGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceListGuildApplicationsGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceListGuildApplicationsPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceListGuildApplicationsGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceListGuildApplicationsCall {
+    ::guildpb::ListGuildApplicationsRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceListGuildApplicationsHandler / FailedHandler。
+    GrpcDone<::guildpb::ListGuildApplicationsResponse> done;
+};
+
+void CompleteGuildServiceListGuildApplications(const GuildServiceListGuildApplicationsCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::ListGuildApplicationsResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceListGuildApplicationsHandler) {
-            AsyncGuildServiceListGuildApplicationsHandler(call->context, call->reply);
+            AsyncGuildServiceListGuildApplicationsHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1342,50 +1516,65 @@ void CompleteGuildServiceListGuildApplications(AsyncGuildServiceListGuildApplica
             }
         }
     } else if (AsyncGuildServiceListGuildApplicationsFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.ListGuildApplications", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceListGuildApplicationsFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceListGuildApplicationsMessageId, "GuildService.ListGuildApplications", outcome, call.sentMetadata};
+        AsyncGuildServiceListGuildApplicationsFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.ListGuildApplications failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.ListGuildApplications failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceListGuildApplications(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceListGuildApplicationsGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceListGuildApplications(call);
+void QueueLocalGuildServiceListGuildApplicationsFailure(std::shared_ptr<GuildServiceListGuildApplicationsCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceListGuildApplications(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceListGuildApplicationsCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ListGuildApplicationsRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::ListGuildApplicationsResponse> done) {
-    auto call(GuildServiceListGuildApplicationsPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceListGuildApplicationsCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceListGuildApplications(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceListGuildApplicationsFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncListGuildApplications(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceListGuildApplicationsMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceListGuildApplicationsGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceListGuildApplicationsFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceListGuildApplications(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::ListGuildApplicationsResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.ListGuildApplications response";
+            CompleteGuildServiceListGuildApplications(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceListGuildApplications(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceListGuildApplications(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ListGuildApplicationsRequest& request,
@@ -1394,12 +1583,11 @@ void SendGuildServiceListGuildApplications(entt::registry& registry, entt::entit
 }
 
 void SendGuildServiceListGuildApplications(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ListGuildApplicationsRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceListGuildApplications(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceListGuildApplications(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ListGuildApplicationsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceListGuildApplications(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ListGuildApplicationsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1407,37 +1595,37 @@ void SendGuildServiceListGuildApplications(entt::registry& registry, entt::entit
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceListGuildApplicationsCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceListGuildApplications(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceListGuildApplications(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::ListGuildApplicationsRequest& derived = static_cast<const ::guildpb::ListGuildApplicationsRequest&>(message);
     SendGuildServiceListGuildApplications(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceReviewGuildApplication
-boost::object_pool<AsyncGuildServiceReviewGuildApplicationGrpcClient> GuildServiceReviewGuildApplicationPool;
-using AsyncGuildServiceReviewGuildApplicationHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::ReviewGuildApplicationResponse&)>;
 AsyncGuildServiceReviewGuildApplicationHandlerFunctionType AsyncGuildServiceReviewGuildApplicationHandler;
 AsyncGuildServiceReviewGuildApplicationFailedHandlerFunctionType AsyncGuildServiceReviewGuildApplicationFailedHandler;
 
-void CompleteGuildServiceReviewGuildApplication(AsyncGuildServiceReviewGuildApplicationGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceReviewGuildApplicationGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceReviewGuildApplicationPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceReviewGuildApplicationGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceReviewGuildApplicationCall {
+    ::guildpb::ReviewGuildApplicationRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceReviewGuildApplicationHandler / FailedHandler。
+    GrpcDone<::guildpb::ReviewGuildApplicationResponse> done;
+};
+
+void CompleteGuildServiceReviewGuildApplication(const GuildServiceReviewGuildApplicationCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::ReviewGuildApplicationResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceReviewGuildApplicationHandler) {
-            AsyncGuildServiceReviewGuildApplicationHandler(call->context, call->reply);
+            AsyncGuildServiceReviewGuildApplicationHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1449,50 +1637,65 @@ void CompleteGuildServiceReviewGuildApplication(AsyncGuildServiceReviewGuildAppl
             }
         }
     } else if (AsyncGuildServiceReviewGuildApplicationFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.ReviewGuildApplication", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceReviewGuildApplicationFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceReviewGuildApplicationMessageId, "GuildService.ReviewGuildApplication", outcome, call.sentMetadata};
+        AsyncGuildServiceReviewGuildApplicationFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.ReviewGuildApplication failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.ReviewGuildApplication failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceReviewGuildApplication(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceReviewGuildApplicationGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceReviewGuildApplication(call);
+void QueueLocalGuildServiceReviewGuildApplicationFailure(std::shared_ptr<GuildServiceReviewGuildApplicationCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceReviewGuildApplication(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceReviewGuildApplicationCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ReviewGuildApplicationRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::ReviewGuildApplicationResponse> done) {
-    auto call(GuildServiceReviewGuildApplicationPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceReviewGuildApplicationCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceReviewGuildApplication(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceReviewGuildApplicationFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncReviewGuildApplication(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceReviewGuildApplicationMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceReviewGuildApplicationGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceReviewGuildApplicationFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceReviewGuildApplication(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::ReviewGuildApplicationResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.ReviewGuildApplication response";
+            CompleteGuildServiceReviewGuildApplication(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceReviewGuildApplication(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceReviewGuildApplication(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ReviewGuildApplicationRequest& request,
@@ -1501,12 +1704,11 @@ void SendGuildServiceReviewGuildApplication(entt::registry& registry, entt::enti
 }
 
 void SendGuildServiceReviewGuildApplication(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ReviewGuildApplicationRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceReviewGuildApplication(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceReviewGuildApplication(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ReviewGuildApplicationRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceReviewGuildApplication(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ReviewGuildApplicationRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1514,37 +1716,37 @@ void SendGuildServiceReviewGuildApplication(entt::registry& registry, entt::enti
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceReviewGuildApplicationCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceReviewGuildApplication(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceReviewGuildApplication(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::ReviewGuildApplicationRequest& derived = static_cast<const ::guildpb::ReviewGuildApplicationRequest&>(message);
     SendGuildServiceReviewGuildApplication(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceNotifyGuildChanged
-boost::object_pool<AsyncGuildServiceNotifyGuildChangedGrpcClient> GuildServiceNotifyGuildChangedPool;
-using AsyncGuildServiceNotifyGuildChangedHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncGuildServiceNotifyGuildChangedHandlerFunctionType AsyncGuildServiceNotifyGuildChangedHandler;
 AsyncGuildServiceNotifyGuildChangedFailedHandlerFunctionType AsyncGuildServiceNotifyGuildChangedFailedHandler;
 
-void CompleteGuildServiceNotifyGuildChanged(AsyncGuildServiceNotifyGuildChangedGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceNotifyGuildChangedGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceNotifyGuildChangedPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceNotifyGuildChangedGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceNotifyGuildChangedCall {
+    ::guildpb::GuildChangedS2C request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceNotifyGuildChangedHandler / FailedHandler。
+    GrpcDone<::Empty> done;
+};
+
+void CompleteGuildServiceNotifyGuildChanged(const GuildServiceNotifyGuildChangedCall& call, const GrpcCallOutcome& outcome,
+                                                const ::Empty* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceNotifyGuildChangedHandler) {
-            AsyncGuildServiceNotifyGuildChangedHandler(call->context, call->reply);
+            AsyncGuildServiceNotifyGuildChangedHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1556,50 +1758,65 @@ void CompleteGuildServiceNotifyGuildChanged(AsyncGuildServiceNotifyGuildChangedG
             }
         }
     } else if (AsyncGuildServiceNotifyGuildChangedFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.NotifyGuildChanged", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceNotifyGuildChangedFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceNotifyGuildChangedMessageId, "GuildService.NotifyGuildChanged", outcome, call.sentMetadata};
+        AsyncGuildServiceNotifyGuildChangedFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.NotifyGuildChanged failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.NotifyGuildChanged failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceNotifyGuildChanged(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceNotifyGuildChangedGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceNotifyGuildChanged(call);
+void QueueLocalGuildServiceNotifyGuildChangedFailure(std::shared_ptr<GuildServiceNotifyGuildChangedCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceNotifyGuildChanged(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceNotifyGuildChangedCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GuildChangedS2C& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call(GuildServiceNotifyGuildChangedPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceNotifyGuildChangedCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceNotifyGuildChanged(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceNotifyGuildChangedFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncNotifyGuildChanged(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceNotifyGuildChangedMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceNotifyGuildChangedGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceNotifyGuildChangedFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceNotifyGuildChanged(*call, outcome, nullptr);
+            return;
+        }
+        ::Empty reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.NotifyGuildChanged response";
+            CompleteGuildServiceNotifyGuildChanged(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceNotifyGuildChanged(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceNotifyGuildChanged(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GuildChangedS2C& request,
@@ -1608,12 +1825,11 @@ void SendGuildServiceNotifyGuildChanged(entt::registry& registry, entt::entity n
 }
 
 void SendGuildServiceNotifyGuildChanged(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GuildChangedS2C& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceNotifyGuildChanged(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceNotifyGuildChanged(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GuildChangedS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceNotifyGuildChanged(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GuildChangedS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1621,37 +1837,37 @@ void SendGuildServiceNotifyGuildChanged(entt::registry& registry, entt::entity n
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceNotifyGuildChangedCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceNotifyGuildChanged(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceNotifyGuildChanged(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::GuildChangedS2C& derived = static_cast<const ::guildpb::GuildChangedS2C&>(message);
     SendGuildServiceNotifyGuildChanged(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceUpdateGuildScore
-boost::object_pool<AsyncGuildServiceUpdateGuildScoreGrpcClient> GuildServiceUpdateGuildScorePool;
-using AsyncGuildServiceUpdateGuildScoreHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::UpdateGuildScoreResponse&)>;
 AsyncGuildServiceUpdateGuildScoreHandlerFunctionType AsyncGuildServiceUpdateGuildScoreHandler;
 AsyncGuildServiceUpdateGuildScoreFailedHandlerFunctionType AsyncGuildServiceUpdateGuildScoreFailedHandler;
 
-void CompleteGuildServiceUpdateGuildScore(AsyncGuildServiceUpdateGuildScoreGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceUpdateGuildScoreGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceUpdateGuildScorePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceUpdateGuildScoreGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceUpdateGuildScoreCall {
+    ::guildpb::UpdateGuildScoreRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceUpdateGuildScoreHandler / FailedHandler。
+    GrpcDone<::guildpb::UpdateGuildScoreResponse> done;
+};
+
+void CompleteGuildServiceUpdateGuildScore(const GuildServiceUpdateGuildScoreCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::UpdateGuildScoreResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceUpdateGuildScoreHandler) {
-            AsyncGuildServiceUpdateGuildScoreHandler(call->context, call->reply);
+            AsyncGuildServiceUpdateGuildScoreHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1663,50 +1879,65 @@ void CompleteGuildServiceUpdateGuildScore(AsyncGuildServiceUpdateGuildScoreGrpcC
             }
         }
     } else if (AsyncGuildServiceUpdateGuildScoreFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.UpdateGuildScore", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceUpdateGuildScoreFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceUpdateGuildScoreMessageId, "GuildService.UpdateGuildScore", outcome, call.sentMetadata};
+        AsyncGuildServiceUpdateGuildScoreFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.UpdateGuildScore failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.UpdateGuildScore failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceUpdateGuildScore(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceUpdateGuildScoreGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceUpdateGuildScore(call);
+void QueueLocalGuildServiceUpdateGuildScoreFailure(std::shared_ptr<GuildServiceUpdateGuildScoreCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceUpdateGuildScore(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceUpdateGuildScoreCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpdateGuildScoreRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::UpdateGuildScoreResponse> done) {
-    auto call(GuildServiceUpdateGuildScorePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceUpdateGuildScoreCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceUpdateGuildScore(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceUpdateGuildScoreFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncUpdateGuildScore(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceUpdateGuildScoreMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceUpdateGuildScoreGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceUpdateGuildScoreFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceUpdateGuildScore(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::UpdateGuildScoreResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.UpdateGuildScore response";
+            CompleteGuildServiceUpdateGuildScore(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceUpdateGuildScore(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpdateGuildScoreRequest& request,
@@ -1715,12 +1946,11 @@ void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nod
 }
 
 void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpdateGuildScoreRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceUpdateGuildScore(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpdateGuildScoreRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpdateGuildScoreRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1728,37 +1958,37 @@ void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nod
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceUpdateGuildScoreCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceUpdateGuildScore(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::UpdateGuildScoreRequest& derived = static_cast<const ::guildpb::UpdateGuildScoreRequest&>(message);
     SendGuildServiceUpdateGuildScore(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceGetGuildRank
-boost::object_pool<AsyncGuildServiceGetGuildRankGrpcClient> GuildServiceGetGuildRankPool;
-using AsyncGuildServiceGetGuildRankHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::GetGuildRankResponse&)>;
 AsyncGuildServiceGetGuildRankHandlerFunctionType AsyncGuildServiceGetGuildRankHandler;
 AsyncGuildServiceGetGuildRankFailedHandlerFunctionType AsyncGuildServiceGetGuildRankFailedHandler;
 
-void CompleteGuildServiceGetGuildRank(AsyncGuildServiceGetGuildRankGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceGetGuildRankGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceGetGuildRankPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceGetGuildRankGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceGetGuildRankCall {
+    ::guildpb::GetGuildRankRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceGetGuildRankHandler / FailedHandler。
+    GrpcDone<::guildpb::GetGuildRankResponse> done;
+};
+
+void CompleteGuildServiceGetGuildRank(const GuildServiceGetGuildRankCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::GetGuildRankResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceGetGuildRankHandler) {
-            AsyncGuildServiceGetGuildRankHandler(call->context, call->reply);
+            AsyncGuildServiceGetGuildRankHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1770,50 +2000,65 @@ void CompleteGuildServiceGetGuildRank(AsyncGuildServiceGetGuildRankGrpcClient* c
             }
         }
     } else if (AsyncGuildServiceGetGuildRankFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.GetGuildRank", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceGetGuildRankFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceGetGuildRankMessageId, "GuildService.GetGuildRank", outcome, call.sentMetadata};
+        AsyncGuildServiceGetGuildRankFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.GetGuildRank failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.GetGuildRank failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceGetGuildRank(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceGetGuildRankGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceGetGuildRank(call);
+void QueueLocalGuildServiceGetGuildRankFailure(std::shared_ptr<GuildServiceGetGuildRankCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceGetGuildRank(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceGetGuildRankCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::GetGuildRankResponse> done) {
-    auto call(GuildServiceGetGuildRankPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceGetGuildRankCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceGetGuildRank(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceGetGuildRankFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetGuildRank(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceGetGuildRankMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceGetGuildRankGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceGetGuildRankFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceGetGuildRank(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::GetGuildRankResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.GetGuildRank response";
+            CompleteGuildServiceGetGuildRank(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceGetGuildRank(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankRequest& request,
@@ -1822,12 +2067,11 @@ void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEnt
 }
 
 void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceGetGuildRank(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1835,37 +2079,37 @@ void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEnt
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceGetGuildRankCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceGetGuildRank(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::GetGuildRankRequest& derived = static_cast<const ::guildpb::GetGuildRankRequest&>(message);
     SendGuildServiceGetGuildRank(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceGetGuildRankByGuild
-boost::object_pool<AsyncGuildServiceGetGuildRankByGuildGrpcClient> GuildServiceGetGuildRankByGuildPool;
-using AsyncGuildServiceGetGuildRankByGuildHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::GetGuildRankByGuildResponse&)>;
 AsyncGuildServiceGetGuildRankByGuildHandlerFunctionType AsyncGuildServiceGetGuildRankByGuildHandler;
 AsyncGuildServiceGetGuildRankByGuildFailedHandlerFunctionType AsyncGuildServiceGetGuildRankByGuildFailedHandler;
 
-void CompleteGuildServiceGetGuildRankByGuild(AsyncGuildServiceGetGuildRankByGuildGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceGetGuildRankByGuildGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceGetGuildRankByGuildPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceGetGuildRankByGuildGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceGetGuildRankByGuildCall {
+    ::guildpb::GetGuildRankByGuildRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceGetGuildRankByGuildHandler / FailedHandler。
+    GrpcDone<::guildpb::GetGuildRankByGuildResponse> done;
+};
+
+void CompleteGuildServiceGetGuildRankByGuild(const GuildServiceGetGuildRankByGuildCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::GetGuildRankByGuildResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceGetGuildRankByGuildHandler) {
-            AsyncGuildServiceGetGuildRankByGuildHandler(call->context, call->reply);
+            AsyncGuildServiceGetGuildRankByGuildHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1877,50 +2121,65 @@ void CompleteGuildServiceGetGuildRankByGuild(AsyncGuildServiceGetGuildRankByGuil
             }
         }
     } else if (AsyncGuildServiceGetGuildRankByGuildFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.GetGuildRankByGuild", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceGetGuildRankByGuildFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceGetGuildRankByGuildMessageId, "GuildService.GetGuildRankByGuild", outcome, call.sentMetadata};
+        AsyncGuildServiceGetGuildRankByGuildFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.GetGuildRankByGuild failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.GetGuildRankByGuild failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceGetGuildRankByGuild(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceGetGuildRankByGuildGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceGetGuildRankByGuild(call);
+void QueueLocalGuildServiceGetGuildRankByGuildFailure(std::shared_ptr<GuildServiceGetGuildRankByGuildCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceGetGuildRankByGuild(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceGetGuildRankByGuildCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankByGuildRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::GetGuildRankByGuildResponse> done) {
-    auto call(GuildServiceGetGuildRankByGuildPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceGetGuildRankByGuildCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceGetGuildRankByGuild(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceGetGuildRankByGuildFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetGuildRankByGuild(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceGetGuildRankByGuildMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceGetGuildRankByGuildGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceGetGuildRankByGuildFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceGetGuildRankByGuild(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::GetGuildRankByGuildResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.GetGuildRankByGuild response";
+            CompleteGuildServiceGetGuildRankByGuild(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceGetGuildRankByGuild(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankByGuildRequest& request,
@@ -1929,12 +2188,11 @@ void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity 
 }
 
 void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankByGuildRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceGetGuildRankByGuild(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankByGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildRankByGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1942,37 +2200,37 @@ void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity 
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceGetGuildRankByGuildCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceGetGuildRankByGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::GetGuildRankByGuildRequest& derived = static_cast<const ::guildpb::GetGuildRankByGuildRequest&>(message);
     SendGuildServiceGetGuildRankByGuild(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceGetGuildDonateOptions
-boost::object_pool<AsyncGuildServiceGetGuildDonateOptionsGrpcClient> GuildServiceGetGuildDonateOptionsPool;
-using AsyncGuildServiceGetGuildDonateOptionsHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::GetGuildDonateOptionsResponse&)>;
 AsyncGuildServiceGetGuildDonateOptionsHandlerFunctionType AsyncGuildServiceGetGuildDonateOptionsHandler;
 AsyncGuildServiceGetGuildDonateOptionsFailedHandlerFunctionType AsyncGuildServiceGetGuildDonateOptionsFailedHandler;
 
-void CompleteGuildServiceGetGuildDonateOptions(AsyncGuildServiceGetGuildDonateOptionsGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceGetGuildDonateOptionsGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceGetGuildDonateOptionsPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceGetGuildDonateOptionsGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceGetGuildDonateOptionsCall {
+    ::guildpb::GetGuildDonateOptionsRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceGetGuildDonateOptionsHandler / FailedHandler。
+    GrpcDone<::guildpb::GetGuildDonateOptionsResponse> done;
+};
+
+void CompleteGuildServiceGetGuildDonateOptions(const GuildServiceGetGuildDonateOptionsCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::GetGuildDonateOptionsResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceGetGuildDonateOptionsHandler) {
-            AsyncGuildServiceGetGuildDonateOptionsHandler(call->context, call->reply);
+            AsyncGuildServiceGetGuildDonateOptionsHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1984,50 +2242,65 @@ void CompleteGuildServiceGetGuildDonateOptions(AsyncGuildServiceGetGuildDonateOp
             }
         }
     } else if (AsyncGuildServiceGetGuildDonateOptionsFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.GetGuildDonateOptions", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceGetGuildDonateOptionsFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceGetGuildDonateOptionsMessageId, "GuildService.GetGuildDonateOptions", outcome, call.sentMetadata};
+        AsyncGuildServiceGetGuildDonateOptionsFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.GetGuildDonateOptions failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.GetGuildDonateOptions failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceGetGuildDonateOptions(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceGetGuildDonateOptionsGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceGetGuildDonateOptions(call);
+void QueueLocalGuildServiceGetGuildDonateOptionsFailure(std::shared_ptr<GuildServiceGetGuildDonateOptionsCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceGetGuildDonateOptions(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceGetGuildDonateOptionsCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildDonateOptionsRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::GetGuildDonateOptionsResponse> done) {
-    auto call(GuildServiceGetGuildDonateOptionsPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceGetGuildDonateOptionsCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceGetGuildDonateOptions(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceGetGuildDonateOptionsFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetGuildDonateOptions(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceGetGuildDonateOptionsMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceGetGuildDonateOptionsGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceGetGuildDonateOptionsFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceGetGuildDonateOptions(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::GetGuildDonateOptionsResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.GetGuildDonateOptions response";
+            CompleteGuildServiceGetGuildDonateOptions(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceGetGuildDonateOptions(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceGetGuildDonateOptions(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildDonateOptionsRequest& request,
@@ -2036,12 +2309,11 @@ void SendGuildServiceGetGuildDonateOptions(entt::registry& registry, entt::entit
 }
 
 void SendGuildServiceGetGuildDonateOptions(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildDonateOptionsRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceGetGuildDonateOptions(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceGetGuildDonateOptions(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildDonateOptionsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceGetGuildDonateOptions(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildDonateOptionsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2049,37 +2321,37 @@ void SendGuildServiceGetGuildDonateOptions(entt::registry& registry, entt::entit
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceGetGuildDonateOptionsCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceGetGuildDonateOptions(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceGetGuildDonateOptions(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::GetGuildDonateOptionsRequest& derived = static_cast<const ::guildpb::GetGuildDonateOptionsRequest&>(message);
     SendGuildServiceGetGuildDonateOptions(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceDonateToGuild
-boost::object_pool<AsyncGuildServiceDonateToGuildGrpcClient> GuildServiceDonateToGuildPool;
-using AsyncGuildServiceDonateToGuildHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::DonateToGuildResponse&)>;
 AsyncGuildServiceDonateToGuildHandlerFunctionType AsyncGuildServiceDonateToGuildHandler;
 AsyncGuildServiceDonateToGuildFailedHandlerFunctionType AsyncGuildServiceDonateToGuildFailedHandler;
 
-void CompleteGuildServiceDonateToGuild(AsyncGuildServiceDonateToGuildGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceDonateToGuildGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceDonateToGuildPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceDonateToGuildGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceDonateToGuildCall {
+    ::guildpb::DonateToGuildRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceDonateToGuildHandler / FailedHandler。
+    GrpcDone<::guildpb::DonateToGuildResponse> done;
+};
+
+void CompleteGuildServiceDonateToGuild(const GuildServiceDonateToGuildCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::DonateToGuildResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceDonateToGuildHandler) {
-            AsyncGuildServiceDonateToGuildHandler(call->context, call->reply);
+            AsyncGuildServiceDonateToGuildHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2091,50 +2363,65 @@ void CompleteGuildServiceDonateToGuild(AsyncGuildServiceDonateToGuildGrpcClient*
             }
         }
     } else if (AsyncGuildServiceDonateToGuildFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.DonateToGuild", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceDonateToGuildFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceDonateToGuildMessageId, "GuildService.DonateToGuild", outcome, call.sentMetadata};
+        AsyncGuildServiceDonateToGuildFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.DonateToGuild failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.DonateToGuild failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceDonateToGuild(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceDonateToGuildGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceDonateToGuild(call);
+void QueueLocalGuildServiceDonateToGuildFailure(std::shared_ptr<GuildServiceDonateToGuildCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceDonateToGuild(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceDonateToGuildCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::DonateToGuildRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::DonateToGuildResponse> done) {
-    auto call(GuildServiceDonateToGuildPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceDonateToGuildCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceDonateToGuild(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceDonateToGuildFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncDonateToGuild(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceDonateToGuildMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceDonateToGuildGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceDonateToGuildFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceDonateToGuild(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::DonateToGuildResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.DonateToGuild response";
+            CompleteGuildServiceDonateToGuild(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceDonateToGuild(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceDonateToGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::DonateToGuildRequest& request,
@@ -2143,12 +2430,11 @@ void SendGuildServiceDonateToGuild(entt::registry& registry, entt::entity nodeEn
 }
 
 void SendGuildServiceDonateToGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::DonateToGuildRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceDonateToGuild(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceDonateToGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::DonateToGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceDonateToGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::DonateToGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2156,37 +2442,37 @@ void SendGuildServiceDonateToGuild(entt::registry& registry, entt::entity nodeEn
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceDonateToGuildCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceDonateToGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceDonateToGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::DonateToGuildRequest& derived = static_cast<const ::guildpb::DonateToGuildRequest&>(message);
     SendGuildServiceDonateToGuild(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceUpgradeGuild
-boost::object_pool<AsyncGuildServiceUpgradeGuildGrpcClient> GuildServiceUpgradeGuildPool;
-using AsyncGuildServiceUpgradeGuildHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::UpgradeGuildResponse&)>;
 AsyncGuildServiceUpgradeGuildHandlerFunctionType AsyncGuildServiceUpgradeGuildHandler;
 AsyncGuildServiceUpgradeGuildFailedHandlerFunctionType AsyncGuildServiceUpgradeGuildFailedHandler;
 
-void CompleteGuildServiceUpgradeGuild(AsyncGuildServiceUpgradeGuildGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceUpgradeGuildGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceUpgradeGuildPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceUpgradeGuildGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceUpgradeGuildCall {
+    ::guildpb::UpgradeGuildRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceUpgradeGuildHandler / FailedHandler。
+    GrpcDone<::guildpb::UpgradeGuildResponse> done;
+};
+
+void CompleteGuildServiceUpgradeGuild(const GuildServiceUpgradeGuildCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::UpgradeGuildResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceUpgradeGuildHandler) {
-            AsyncGuildServiceUpgradeGuildHandler(call->context, call->reply);
+            AsyncGuildServiceUpgradeGuildHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2198,50 +2484,65 @@ void CompleteGuildServiceUpgradeGuild(AsyncGuildServiceUpgradeGuildGrpcClient* c
             }
         }
     } else if (AsyncGuildServiceUpgradeGuildFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.UpgradeGuild", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceUpgradeGuildFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceUpgradeGuildMessageId, "GuildService.UpgradeGuild", outcome, call.sentMetadata};
+        AsyncGuildServiceUpgradeGuildFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.UpgradeGuild failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.UpgradeGuild failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceUpgradeGuild(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceUpgradeGuildGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceUpgradeGuild(call);
+void QueueLocalGuildServiceUpgradeGuildFailure(std::shared_ptr<GuildServiceUpgradeGuildCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceUpgradeGuild(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceUpgradeGuildCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpgradeGuildRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::UpgradeGuildResponse> done) {
-    auto call(GuildServiceUpgradeGuildPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceUpgradeGuildCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceUpgradeGuild(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceUpgradeGuildFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncUpgradeGuild(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceUpgradeGuildMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceUpgradeGuildGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceUpgradeGuildFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceUpgradeGuild(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::UpgradeGuildResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.UpgradeGuild response";
+            CompleteGuildServiceUpgradeGuild(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceUpgradeGuild(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceUpgradeGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpgradeGuildRequest& request,
@@ -2250,12 +2551,11 @@ void SendGuildServiceUpgradeGuild(entt::registry& registry, entt::entity nodeEnt
 }
 
 void SendGuildServiceUpgradeGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpgradeGuildRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceUpgradeGuild(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceUpgradeGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpgradeGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceUpgradeGuild(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::UpgradeGuildRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2263,37 +2563,37 @@ void SendGuildServiceUpgradeGuild(entt::registry& registry, entt::entity nodeEnt
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceUpgradeGuildCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceUpgradeGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceUpgradeGuild(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::UpgradeGuildRequest& derived = static_cast<const ::guildpb::UpgradeGuildRequest&>(message);
     SendGuildServiceUpgradeGuild(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceGetGuildShop
-boost::object_pool<AsyncGuildServiceGetGuildShopGrpcClient> GuildServiceGetGuildShopPool;
-using AsyncGuildServiceGetGuildShopHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::GetGuildShopResponse&)>;
 AsyncGuildServiceGetGuildShopHandlerFunctionType AsyncGuildServiceGetGuildShopHandler;
 AsyncGuildServiceGetGuildShopFailedHandlerFunctionType AsyncGuildServiceGetGuildShopFailedHandler;
 
-void CompleteGuildServiceGetGuildShop(AsyncGuildServiceGetGuildShopGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceGetGuildShopGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceGetGuildShopPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceGetGuildShopGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceGetGuildShopCall {
+    ::guildpb::GetGuildShopRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceGetGuildShopHandler / FailedHandler。
+    GrpcDone<::guildpb::GetGuildShopResponse> done;
+};
+
+void CompleteGuildServiceGetGuildShop(const GuildServiceGetGuildShopCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::GetGuildShopResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceGetGuildShopHandler) {
-            AsyncGuildServiceGetGuildShopHandler(call->context, call->reply);
+            AsyncGuildServiceGetGuildShopHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2305,50 +2605,65 @@ void CompleteGuildServiceGetGuildShop(AsyncGuildServiceGetGuildShopGrpcClient* c
             }
         }
     } else if (AsyncGuildServiceGetGuildShopFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.GetGuildShop", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceGetGuildShopFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceGetGuildShopMessageId, "GuildService.GetGuildShop", outcome, call.sentMetadata};
+        AsyncGuildServiceGetGuildShopFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.GetGuildShop failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.GetGuildShop failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceGetGuildShop(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceGetGuildShopGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceGetGuildShop(call);
+void QueueLocalGuildServiceGetGuildShopFailure(std::shared_ptr<GuildServiceGetGuildShopCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceGetGuildShop(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceGetGuildShopCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildShopRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::GetGuildShopResponse> done) {
-    auto call(GuildServiceGetGuildShopPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceGetGuildShopCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceGetGuildShop(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceGetGuildShopFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetGuildShop(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceGetGuildShopMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceGetGuildShopGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceGetGuildShopFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceGetGuildShop(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::GetGuildShopResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.GetGuildShop response";
+            CompleteGuildServiceGetGuildShop(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceGetGuildShop(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceGetGuildShop(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildShopRequest& request,
@@ -2357,12 +2672,11 @@ void SendGuildServiceGetGuildShop(entt::registry& registry, entt::entity nodeEnt
 }
 
 void SendGuildServiceGetGuildShop(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildShopRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceGetGuildShop(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceGetGuildShop(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildShopRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceGetGuildShop(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildShopRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2370,37 +2684,37 @@ void SendGuildServiceGetGuildShop(entt::registry& registry, entt::entity nodeEnt
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceGetGuildShopCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceGetGuildShop(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceGetGuildShop(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::GetGuildShopRequest& derived = static_cast<const ::guildpb::GetGuildShopRequest&>(message);
     SendGuildServiceGetGuildShop(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceBuyGuildShopGoods
-boost::object_pool<AsyncGuildServiceBuyGuildShopGoodsGrpcClient> GuildServiceBuyGuildShopGoodsPool;
-using AsyncGuildServiceBuyGuildShopGoodsHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::BuyGuildShopGoodsResponse&)>;
 AsyncGuildServiceBuyGuildShopGoodsHandlerFunctionType AsyncGuildServiceBuyGuildShopGoodsHandler;
 AsyncGuildServiceBuyGuildShopGoodsFailedHandlerFunctionType AsyncGuildServiceBuyGuildShopGoodsFailedHandler;
 
-void CompleteGuildServiceBuyGuildShopGoods(AsyncGuildServiceBuyGuildShopGoodsGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceBuyGuildShopGoodsGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceBuyGuildShopGoodsPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceBuyGuildShopGoodsGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceBuyGuildShopGoodsCall {
+    ::guildpb::BuyGuildShopGoodsRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceBuyGuildShopGoodsHandler / FailedHandler。
+    GrpcDone<::guildpb::BuyGuildShopGoodsResponse> done;
+};
+
+void CompleteGuildServiceBuyGuildShopGoods(const GuildServiceBuyGuildShopGoodsCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::BuyGuildShopGoodsResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceBuyGuildShopGoodsHandler) {
-            AsyncGuildServiceBuyGuildShopGoodsHandler(call->context, call->reply);
+            AsyncGuildServiceBuyGuildShopGoodsHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2412,50 +2726,65 @@ void CompleteGuildServiceBuyGuildShopGoods(AsyncGuildServiceBuyGuildShopGoodsGrp
             }
         }
     } else if (AsyncGuildServiceBuyGuildShopGoodsFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.BuyGuildShopGoods", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceBuyGuildShopGoodsFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceBuyGuildShopGoodsMessageId, "GuildService.BuyGuildShopGoods", outcome, call.sentMetadata};
+        AsyncGuildServiceBuyGuildShopGoodsFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.BuyGuildShopGoods failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.BuyGuildShopGoods failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceBuyGuildShopGoods(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceBuyGuildShopGoodsGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceBuyGuildShopGoods(call);
+void QueueLocalGuildServiceBuyGuildShopGoodsFailure(std::shared_ptr<GuildServiceBuyGuildShopGoodsCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceBuyGuildShopGoods(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceBuyGuildShopGoodsCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::BuyGuildShopGoodsRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::BuyGuildShopGoodsResponse> done) {
-    auto call(GuildServiceBuyGuildShopGoodsPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceBuyGuildShopGoodsCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceBuyGuildShopGoods(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceBuyGuildShopGoodsFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncBuyGuildShopGoods(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceBuyGuildShopGoodsMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceBuyGuildShopGoodsGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceBuyGuildShopGoodsFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceBuyGuildShopGoods(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::BuyGuildShopGoodsResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.BuyGuildShopGoods response";
+            CompleteGuildServiceBuyGuildShopGoods(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceBuyGuildShopGoods(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceBuyGuildShopGoods(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::BuyGuildShopGoodsRequest& request,
@@ -2464,12 +2793,11 @@ void SendGuildServiceBuyGuildShopGoods(entt::registry& registry, entt::entity no
 }
 
 void SendGuildServiceBuyGuildShopGoods(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::BuyGuildShopGoodsRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceBuyGuildShopGoods(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceBuyGuildShopGoods(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::BuyGuildShopGoodsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceBuyGuildShopGoods(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::BuyGuildShopGoodsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2477,37 +2805,37 @@ void SendGuildServiceBuyGuildShopGoods(entt::registry& registry, entt::entity no
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceBuyGuildShopGoodsCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceBuyGuildShopGoods(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceBuyGuildShopGoods(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::BuyGuildShopGoodsRequest& derived = static_cast<const ::guildpb::BuyGuildShopGoodsRequest&>(message);
     SendGuildServiceBuyGuildShopGoods(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceGetGuildActivities
-boost::object_pool<AsyncGuildServiceGetGuildActivitiesGrpcClient> GuildServiceGetGuildActivitiesPool;
-using AsyncGuildServiceGetGuildActivitiesHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::GetGuildActivitiesResponse&)>;
 AsyncGuildServiceGetGuildActivitiesHandlerFunctionType AsyncGuildServiceGetGuildActivitiesHandler;
 AsyncGuildServiceGetGuildActivitiesFailedHandlerFunctionType AsyncGuildServiceGetGuildActivitiesFailedHandler;
 
-void CompleteGuildServiceGetGuildActivities(AsyncGuildServiceGetGuildActivitiesGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceGetGuildActivitiesGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceGetGuildActivitiesPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceGetGuildActivitiesGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceGetGuildActivitiesCall {
+    ::guildpb::GetGuildActivitiesRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceGetGuildActivitiesHandler / FailedHandler。
+    GrpcDone<::guildpb::GetGuildActivitiesResponse> done;
+};
+
+void CompleteGuildServiceGetGuildActivities(const GuildServiceGetGuildActivitiesCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::GetGuildActivitiesResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceGetGuildActivitiesHandler) {
-            AsyncGuildServiceGetGuildActivitiesHandler(call->context, call->reply);
+            AsyncGuildServiceGetGuildActivitiesHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2519,50 +2847,65 @@ void CompleteGuildServiceGetGuildActivities(AsyncGuildServiceGetGuildActivitiesG
             }
         }
     } else if (AsyncGuildServiceGetGuildActivitiesFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.GetGuildActivities", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceGetGuildActivitiesFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceGetGuildActivitiesMessageId, "GuildService.GetGuildActivities", outcome, call.sentMetadata};
+        AsyncGuildServiceGetGuildActivitiesFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.GetGuildActivities failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.GetGuildActivities failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceGetGuildActivities(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceGetGuildActivitiesGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceGetGuildActivities(call);
+void QueueLocalGuildServiceGetGuildActivitiesFailure(std::shared_ptr<GuildServiceGetGuildActivitiesCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceGetGuildActivities(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceGetGuildActivitiesCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildActivitiesRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::GetGuildActivitiesResponse> done) {
-    auto call(GuildServiceGetGuildActivitiesPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceGetGuildActivitiesCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceGetGuildActivities(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceGetGuildActivitiesFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetGuildActivities(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceGetGuildActivitiesMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceGetGuildActivitiesGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceGetGuildActivitiesFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceGetGuildActivities(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::GetGuildActivitiesResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.GetGuildActivities response";
+            CompleteGuildServiceGetGuildActivities(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceGetGuildActivities(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceGetGuildActivities(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildActivitiesRequest& request,
@@ -2571,12 +2914,11 @@ void SendGuildServiceGetGuildActivities(entt::registry& registry, entt::entity n
 }
 
 void SendGuildServiceGetGuildActivities(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildActivitiesRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceGetGuildActivities(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceGetGuildActivities(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildActivitiesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceGetGuildActivities(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::GetGuildActivitiesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2584,37 +2926,37 @@ void SendGuildServiceGetGuildActivities(entt::registry& registry, entt::entity n
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceGetGuildActivitiesCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceGetGuildActivities(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceGetGuildActivities(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::GetGuildActivitiesRequest& derived = static_cast<const ::guildpb::GetGuildActivitiesRequest&>(message);
     SendGuildServiceGetGuildActivities(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceLightGuildLantern
-boost::object_pool<AsyncGuildServiceLightGuildLanternGrpcClient> GuildServiceLightGuildLanternPool;
-using AsyncGuildServiceLightGuildLanternHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::LightGuildLanternResponse&)>;
 AsyncGuildServiceLightGuildLanternHandlerFunctionType AsyncGuildServiceLightGuildLanternHandler;
 AsyncGuildServiceLightGuildLanternFailedHandlerFunctionType AsyncGuildServiceLightGuildLanternFailedHandler;
 
-void CompleteGuildServiceLightGuildLantern(AsyncGuildServiceLightGuildLanternGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceLightGuildLanternGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceLightGuildLanternPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceLightGuildLanternGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceLightGuildLanternCall {
+    ::guildpb::LightGuildLanternRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceLightGuildLanternHandler / FailedHandler。
+    GrpcDone<::guildpb::LightGuildLanternResponse> done;
+};
+
+void CompleteGuildServiceLightGuildLantern(const GuildServiceLightGuildLanternCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::LightGuildLanternResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceLightGuildLanternHandler) {
-            AsyncGuildServiceLightGuildLanternHandler(call->context, call->reply);
+            AsyncGuildServiceLightGuildLanternHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2626,50 +2968,65 @@ void CompleteGuildServiceLightGuildLantern(AsyncGuildServiceLightGuildLanternGrp
             }
         }
     } else if (AsyncGuildServiceLightGuildLanternFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.LightGuildLantern", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceLightGuildLanternFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceLightGuildLanternMessageId, "GuildService.LightGuildLantern", outcome, call.sentMetadata};
+        AsyncGuildServiceLightGuildLanternFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.LightGuildLantern failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.LightGuildLantern failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceLightGuildLantern(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceLightGuildLanternGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceLightGuildLantern(call);
+void QueueLocalGuildServiceLightGuildLanternFailure(std::shared_ptr<GuildServiceLightGuildLanternCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceLightGuildLantern(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceLightGuildLanternCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::LightGuildLanternRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::LightGuildLanternResponse> done) {
-    auto call(GuildServiceLightGuildLanternPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceLightGuildLanternCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceLightGuildLantern(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceLightGuildLanternFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncLightGuildLantern(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceLightGuildLanternMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceLightGuildLanternGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceLightGuildLanternFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceLightGuildLantern(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::LightGuildLanternResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.LightGuildLantern response";
+            CompleteGuildServiceLightGuildLantern(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceLightGuildLantern(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceLightGuildLantern(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::LightGuildLanternRequest& request,
@@ -2678,12 +3035,11 @@ void SendGuildServiceLightGuildLantern(entt::registry& registry, entt::entity no
 }
 
 void SendGuildServiceLightGuildLantern(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::LightGuildLanternRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceLightGuildLantern(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceLightGuildLantern(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::LightGuildLanternRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceLightGuildLantern(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::LightGuildLanternRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2691,37 +3047,37 @@ void SendGuildServiceLightGuildLantern(entt::registry& registry, entt::entity no
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceLightGuildLanternCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceLightGuildLantern(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceLightGuildLantern(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::LightGuildLanternRequest& derived = static_cast<const ::guildpb::LightGuildLanternRequest&>(message);
     SendGuildServiceLightGuildLantern(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceClaimGuildReunion
-boost::object_pool<AsyncGuildServiceClaimGuildReunionGrpcClient> GuildServiceClaimGuildReunionPool;
-using AsyncGuildServiceClaimGuildReunionHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::ClaimGuildReunionResponse&)>;
 AsyncGuildServiceClaimGuildReunionHandlerFunctionType AsyncGuildServiceClaimGuildReunionHandler;
 AsyncGuildServiceClaimGuildReunionFailedHandlerFunctionType AsyncGuildServiceClaimGuildReunionFailedHandler;
 
-void CompleteGuildServiceClaimGuildReunion(AsyncGuildServiceClaimGuildReunionGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceClaimGuildReunionGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceClaimGuildReunionPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceClaimGuildReunionGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceClaimGuildReunionCall {
+    ::guildpb::ClaimGuildReunionRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceClaimGuildReunionHandler / FailedHandler。
+    GrpcDone<::guildpb::ClaimGuildReunionResponse> done;
+};
+
+void CompleteGuildServiceClaimGuildReunion(const GuildServiceClaimGuildReunionCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::ClaimGuildReunionResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceClaimGuildReunionHandler) {
-            AsyncGuildServiceClaimGuildReunionHandler(call->context, call->reply);
+            AsyncGuildServiceClaimGuildReunionHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2733,50 +3089,65 @@ void CompleteGuildServiceClaimGuildReunion(AsyncGuildServiceClaimGuildReunionGrp
             }
         }
     } else if (AsyncGuildServiceClaimGuildReunionFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.ClaimGuildReunion", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceClaimGuildReunionFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceClaimGuildReunionMessageId, "GuildService.ClaimGuildReunion", outcome, call.sentMetadata};
+        AsyncGuildServiceClaimGuildReunionFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.ClaimGuildReunion failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.ClaimGuildReunion failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceClaimGuildReunion(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceClaimGuildReunionGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceClaimGuildReunion(call);
+void QueueLocalGuildServiceClaimGuildReunionFailure(std::shared_ptr<GuildServiceClaimGuildReunionCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceClaimGuildReunion(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceClaimGuildReunionCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ClaimGuildReunionRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::ClaimGuildReunionResponse> done) {
-    auto call(GuildServiceClaimGuildReunionPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceClaimGuildReunionCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceClaimGuildReunion(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceClaimGuildReunionFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncClaimGuildReunion(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceClaimGuildReunionMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceClaimGuildReunionGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceClaimGuildReunionFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceClaimGuildReunion(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::ClaimGuildReunionResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.ClaimGuildReunion response";
+            CompleteGuildServiceClaimGuildReunion(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceClaimGuildReunion(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceClaimGuildReunion(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ClaimGuildReunionRequest& request,
@@ -2785,12 +3156,11 @@ void SendGuildServiceClaimGuildReunion(entt::registry& registry, entt::entity no
 }
 
 void SendGuildServiceClaimGuildReunion(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ClaimGuildReunionRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceClaimGuildReunion(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceClaimGuildReunion(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ClaimGuildReunionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceClaimGuildReunion(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::ClaimGuildReunionRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2798,37 +3168,37 @@ void SendGuildServiceClaimGuildReunion(entt::registry& registry, entt::entity no
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceClaimGuildReunionCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceClaimGuildReunion(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceClaimGuildReunion(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::ClaimGuildReunionRequest& derived = static_cast<const ::guildpb::ClaimGuildReunionRequest&>(message);
     SendGuildServiceClaimGuildReunion(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceStartGuildTrial
-boost::object_pool<AsyncGuildServiceStartGuildTrialGrpcClient> GuildServiceStartGuildTrialPool;
-using AsyncGuildServiceStartGuildTrialHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::StartGuildTrialResponse&)>;
 AsyncGuildServiceStartGuildTrialHandlerFunctionType AsyncGuildServiceStartGuildTrialHandler;
 AsyncGuildServiceStartGuildTrialFailedHandlerFunctionType AsyncGuildServiceStartGuildTrialFailedHandler;
 
-void CompleteGuildServiceStartGuildTrial(AsyncGuildServiceStartGuildTrialGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceStartGuildTrialGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceStartGuildTrialPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceStartGuildTrialGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceStartGuildTrialCall {
+    ::guildpb::StartGuildTrialRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceStartGuildTrialHandler / FailedHandler。
+    GrpcDone<::guildpb::StartGuildTrialResponse> done;
+};
+
+void CompleteGuildServiceStartGuildTrial(const GuildServiceStartGuildTrialCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::StartGuildTrialResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceStartGuildTrialHandler) {
-            AsyncGuildServiceStartGuildTrialHandler(call->context, call->reply);
+            AsyncGuildServiceStartGuildTrialHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2840,50 +3210,65 @@ void CompleteGuildServiceStartGuildTrial(AsyncGuildServiceStartGuildTrialGrpcCli
             }
         }
     } else if (AsyncGuildServiceStartGuildTrialFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.StartGuildTrial", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceStartGuildTrialFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceStartGuildTrialMessageId, "GuildService.StartGuildTrial", outcome, call.sentMetadata};
+        AsyncGuildServiceStartGuildTrialFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.StartGuildTrial failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.StartGuildTrial failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceStartGuildTrial(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceStartGuildTrialGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceStartGuildTrial(call);
+void QueueLocalGuildServiceStartGuildTrialFailure(std::shared_ptr<GuildServiceStartGuildTrialCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceStartGuildTrial(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceStartGuildTrialCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::StartGuildTrialRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::StartGuildTrialResponse> done) {
-    auto call(GuildServiceStartGuildTrialPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceStartGuildTrialCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceStartGuildTrial(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceStartGuildTrialFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncStartGuildTrial(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceStartGuildTrialMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceStartGuildTrialGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceStartGuildTrialFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceStartGuildTrial(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::StartGuildTrialResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.StartGuildTrial response";
+            CompleteGuildServiceStartGuildTrial(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceStartGuildTrial(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceStartGuildTrial(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::StartGuildTrialRequest& request,
@@ -2892,12 +3277,11 @@ void SendGuildServiceStartGuildTrial(entt::registry& registry, entt::entity node
 }
 
 void SendGuildServiceStartGuildTrial(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::StartGuildTrialRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceStartGuildTrial(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceStartGuildTrial(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::StartGuildTrialRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceStartGuildTrial(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::StartGuildTrialRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -2905,37 +3289,37 @@ void SendGuildServiceStartGuildTrial(entt::registry& registry, entt::entity node
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceStartGuildTrialCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceStartGuildTrial(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceStartGuildTrial(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::StartGuildTrialRequest& derived = static_cast<const ::guildpb::StartGuildTrialRequest&>(message);
     SendGuildServiceStartGuildTrial(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region GuildServiceRespondGuildTrialInvite
-boost::object_pool<AsyncGuildServiceRespondGuildTrialInviteGrpcClient> GuildServiceRespondGuildTrialInvitePool;
-using AsyncGuildServiceRespondGuildTrialInviteHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::guildpb::RespondGuildTrialInviteResponse&)>;
 AsyncGuildServiceRespondGuildTrialInviteHandlerFunctionType AsyncGuildServiceRespondGuildTrialInviteHandler;
 AsyncGuildServiceRespondGuildTrialInviteFailedHandlerFunctionType AsyncGuildServiceRespondGuildTrialInviteFailedHandler;
 
-void CompleteGuildServiceRespondGuildTrialInvite(AsyncGuildServiceRespondGuildTrialInviteGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncGuildServiceRespondGuildTrialInviteGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        GuildServiceRespondGuildTrialInvitePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncGuildServiceRespondGuildTrialInviteGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct GuildServiceRespondGuildTrialInviteCall {
+    ::guildpb::RespondGuildTrialInviteRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncGuildServiceRespondGuildTrialInviteHandler / FailedHandler。
+    GrpcDone<::guildpb::RespondGuildTrialInviteResponse> done;
+};
+
+void CompleteGuildServiceRespondGuildTrialInvite(const GuildServiceRespondGuildTrialInviteCall& call, const GrpcCallOutcome& outcome,
+                                                const ::guildpb::RespondGuildTrialInviteResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncGuildServiceRespondGuildTrialInviteHandler) {
-            AsyncGuildServiceRespondGuildTrialInviteHandler(call->context, call->reply);
+            AsyncGuildServiceRespondGuildTrialInviteHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -2947,50 +3331,65 @@ void CompleteGuildServiceRespondGuildTrialInvite(AsyncGuildServiceRespondGuildTr
             }
         }
     } else if (AsyncGuildServiceRespondGuildTrialInviteFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "GuildService.RespondGuildTrialInvite", call->context, call->status, call->sentMetadata};
-        AsyncGuildServiceRespondGuildTrialInviteFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ GuildServiceRespondGuildTrialInviteMessageId, "GuildService.RespondGuildTrialInvite", outcome, call.sentMetadata};
+        AsyncGuildServiceRespondGuildTrialInviteFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC GuildService.RespondGuildTrialInvite failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC GuildService.RespondGuildTrialInvite failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcGuildServiceRespondGuildTrialInvite(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncGuildServiceRespondGuildTrialInviteGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteGuildServiceRespondGuildTrialInvite(call);
+void QueueLocalGuildServiceRespondGuildTrialInviteFailure(std::shared_ptr<GuildServiceRespondGuildTrialInviteCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteGuildServiceRespondGuildTrialInvite(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartGuildServiceRespondGuildTrialInviteCall(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::RespondGuildTrialInviteRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::guildpb::RespondGuildTrialInviteResponse> done) {
-    auto call(GuildServiceRespondGuildTrialInvitePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<GuildServiceRespondGuildTrialInviteCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<GuildServiceStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteGuildServiceRespondGuildTrialInvite(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalGuildServiceRespondGuildTrialInviteFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncRespondGuildTrialInvite(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(GuildServiceRespondGuildTrialInviteMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kGuildServiceRespondGuildTrialInviteGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalGuildServiceRespondGuildTrialInviteFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteGuildServiceRespondGuildTrialInvite(*call, outcome, nullptr);
+            return;
+        }
+        ::guildpb::RespondGuildTrialInviteResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the GuildService.RespondGuildTrialInvite response";
+            CompleteGuildServiceRespondGuildTrialInvite(*call, outcome, nullptr);
+            return;
+        }
+        CompleteGuildServiceRespondGuildTrialInvite(*call, outcome, &reply);
+    });
 }
 
 void SendGuildServiceRespondGuildTrialInvite(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::RespondGuildTrialInviteRequest& request,
@@ -2999,12 +3398,11 @@ void SendGuildServiceRespondGuildTrialInvite(entt::registry& registry, entt::ent
 }
 
 void SendGuildServiceRespondGuildTrialInvite(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::RespondGuildTrialInviteRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendGuildServiceRespondGuildTrialInvite(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendGuildServiceRespondGuildTrialInvite(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::RespondGuildTrialInviteRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendGuildServiceRespondGuildTrialInvite(entt::registry& registry, entt::entity nodeEntity, const ::guildpb::RespondGuildTrialInviteRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -3012,110 +3410,15 @@ void SendGuildServiceRespondGuildTrialInvite(entt::registry& registry, entt::ent
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartGuildServiceRespondGuildTrialInviteCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendGuildServiceRespondGuildTrialInvite(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendGuildServiceRespondGuildTrialInvite(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::guildpb::RespondGuildTrialInviteRequest& derived = static_cast<const ::guildpb::RespondGuildTrialInviteRequest&>(message);
     SendGuildServiceRespondGuildTrialInvite(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
-void HandleGuildCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag) {
-        const auto releaseTag = [](GrpcTag* tag) { tagPool.destroy(tag); };
-        const std::unique_ptr<GrpcTag, decltype(releaseTag)> owner(grpcTag, releaseTag);
-        switch (grpcTag->messageId) {
-        case GuildServiceCreateGuildMessageId:
-            AsyncCompleteGrpcGuildServiceCreateGuild(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceGetGuildMessageId:
-            AsyncCompleteGrpcGuildServiceGetGuild(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceGetPlayerGuildMessageId:
-            AsyncCompleteGrpcGuildServiceGetPlayerGuild(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceLeaveGuildMessageId:
-            AsyncCompleteGrpcGuildServiceLeaveGuild(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceDisbandGuildMessageId:
-            AsyncCompleteGrpcGuildServiceDisbandGuild(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceSetAnnouncementMessageId:
-            AsyncCompleteGrpcGuildServiceSetAnnouncement(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceSetGuildMemberRoleMessageId:
-            AsyncCompleteGrpcGuildServiceSetGuildMemberRole(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceKickGuildMemberMessageId:
-            AsyncCompleteGrpcGuildServiceKickGuildMember(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceTransferGuildLeaderMessageId:
-            AsyncCompleteGrpcGuildServiceTransferGuildLeader(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceApplyJoinGuildMessageId:
-            AsyncCompleteGrpcGuildServiceApplyJoinGuild(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceCancelGuildApplicationMessageId:
-            AsyncCompleteGrpcGuildServiceCancelGuildApplication(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceListMyGuildApplicationsMessageId:
-            AsyncCompleteGrpcGuildServiceListMyGuildApplications(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceListGuildApplicationsMessageId:
-            AsyncCompleteGrpcGuildServiceListGuildApplications(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceReviewGuildApplicationMessageId:
-            AsyncCompleteGrpcGuildServiceReviewGuildApplication(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceNotifyGuildChangedMessageId:
-            AsyncCompleteGrpcGuildServiceNotifyGuildChanged(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceUpdateGuildScoreMessageId:
-            AsyncCompleteGrpcGuildServiceUpdateGuildScore(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceGetGuildRankMessageId:
-            AsyncCompleteGrpcGuildServiceGetGuildRank(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceGetGuildRankByGuildMessageId:
-            AsyncCompleteGrpcGuildServiceGetGuildRankByGuild(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceGetGuildDonateOptionsMessageId:
-            AsyncCompleteGrpcGuildServiceGetGuildDonateOptions(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceDonateToGuildMessageId:
-            AsyncCompleteGrpcGuildServiceDonateToGuild(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceUpgradeGuildMessageId:
-            AsyncCompleteGrpcGuildServiceUpgradeGuild(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceGetGuildShopMessageId:
-            AsyncCompleteGrpcGuildServiceGetGuildShop(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceBuyGuildShopGoodsMessageId:
-            AsyncCompleteGrpcGuildServiceBuyGuildShopGoods(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceGetGuildActivitiesMessageId:
-            AsyncCompleteGrpcGuildServiceGetGuildActivities(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceLightGuildLanternMessageId:
-            AsyncCompleteGrpcGuildServiceLightGuildLantern(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceClaimGuildReunionMessageId:
-            AsyncCompleteGrpcGuildServiceClaimGuildReunion(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceStartGuildTrialMessageId:
-            AsyncCompleteGrpcGuildServiceStartGuildTrial(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case GuildServiceRespondGuildTrialInviteMessageId:
-            AsyncCompleteGrpcGuildServiceRespondGuildTrialInvite(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        default:
-            break;
-        }
-}
-
-void SetGuildHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-
+void SetGuildHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
     AsyncGuildServiceCreateGuildHandler = handler;
     AsyncGuildServiceGetGuildHandler = handler;
     AsyncGuildServiceGetPlayerGuildHandler = handler;
@@ -3144,10 +3447,10 @@ void SetGuildHandler(const std::function<void(const ClientContext&, const ::goog
     AsyncGuildServiceClaimGuildReunionHandler = handler;
     AsyncGuildServiceStartGuildTrialHandler = handler;
     AsyncGuildServiceRespondGuildTrialInviteHandler = handler;
+    (void)handler;
 }
 
-void SetGuildIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-
+void SetGuildIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
     if (!AsyncGuildServiceCreateGuildHandler) {
         AsyncGuildServiceCreateGuildHandler = handler;
     }
@@ -3232,6 +3535,7 @@ void SetGuildIfEmptyHandler(const std::function<void(const ClientContext&, const
     if (!AsyncGuildServiceRespondGuildTrialInviteHandler) {
         AsyncGuildServiceRespondGuildTrialInviteHandler = handler;
     }
+    (void)handler;
 }
 
 void SetGuildFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -3263,6 +3567,7 @@ void SetGuildFailedHandler(const std::function<void(const GrpcCallFailure&, cons
     AsyncGuildServiceClaimGuildReunionFailedHandler = handler;
     AsyncGuildServiceStartGuildTrialFailedHandler = handler;
     AsyncGuildServiceRespondGuildTrialInviteFailedHandler = handler;
+    (void)handler;
 }
 
 void SetGuildIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -3350,16 +3655,11 @@ void SetGuildIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure
     if (!AsyncGuildServiceRespondGuildTrialInviteFailedHandler) {
         AsyncGuildServiceRespondGuildTrialInviteFailedHandler = handler;
     }
+    (void)handler;
 }
 
 void SetGuildCallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);
-}
-
-void InitGuildGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
-
-    registry.emplace<GuildServiceStubPtr>(nodeEntity, GuildService::NewStub(channel));
-
 }
 
 }// namespace guildpb

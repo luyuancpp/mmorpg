@@ -264,3 +264,6 @@ const PlayerInboxAdminListItemsMessageId = 260
 const PlayerInboxAdminLookupByRequestMessageId = 261
 const PlayerInboxAdminVoidItemMessageId = 262
 const PlayerInboxAdminReconcilePlayerMessageId = 263
+const SceneMysteryMerchantClientPlayerGetMysteryMerchantInfoMessageId = 264
+const SceneMysteryMerchantClientPlayerBuyMysteryMerchantGoodsMessageId = 265
+const SceneMysteryMerchantClientPlayerNotifyMysteryMerchantMessageId = 266

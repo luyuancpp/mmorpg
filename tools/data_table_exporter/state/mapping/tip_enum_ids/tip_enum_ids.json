@@ -438,6 +438,24 @@
         "PlayerInboxItemStateConflict": 29013,
         "PlayerInboxStoreUnavailable": 29014
       }
+    },
+    "mystery_merchant_error": {
+      "base": 30000,
+      "width": 1000,
+      "ids": {
+        "MysteryMerchantNotPresent": 30000,
+        "MysteryMerchantNotHere": 30001,
+        "MysteryMerchantTooFar": 30002,
+        "MysteryMerchantShelfChanged": 30003,
+        "MysteryMerchantLimitReached": 30004,
+        "MysteryMerchantCurrencyNotEnough": 30005,
+        "MysteryMerchantBagFull": 30006,
+        "MysteryMerchantInBattle": 30007,
+        "MysteryMerchantFrozen": 30008,
+        "MysteryMerchantInvalidCount": 30009,
+        "MysteryMerchantItemBlocked": 30010,
+        "MysteryMerchantInternalError": 30011
+      }
     }
   },
   "legacy_ids": {

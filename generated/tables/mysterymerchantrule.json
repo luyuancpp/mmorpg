@@ -1,0 +1,15 @@
+{
+ "data": [
+  {
+   "desc": "神秘商人全局规则(单行)",
+   "id": 1,
+   "interact_range": 8,
+   "interval_seconds": 3600,
+   "shelf_size": 6,
+   "stay_seconds": 1800,
+   "weight_discount40": 15,
+   "weight_discount50": 35,
+   "weight_discount60": 50
+  }
+ ]
+}

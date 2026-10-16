@@ -37,6 +37,9 @@
 #include "mirror_table.h"
 #include "mission_table.h"
 #include "monster_table.h"
+#include "mysterymerchantgoods_table.h"
+#include "mysterymerchantrule_table.h"
+#include "mysterymerchantspot_table.h"
 #include "pet_table.h"
 #include "petrule_table.h"
 #include "reward_table.h"
@@ -117,6 +120,12 @@ void LoadTables() {
     MissionTableManager::Instance().Load();
 
     MonsterTableManager::Instance().Load();
+
+    MysteryMerchantGoodsTableManager::Instance().Load();
+
+    MysteryMerchantRuleTableManager::Instance().Load();
+
+    MysteryMerchantSpotTableManager::Instance().Load();
 
     PetTableManager::Instance().Load();
 
@@ -204,6 +213,12 @@ void LoadTables() {
 
     MonsterTableManager::Instance().LoadSuccess();
 
+    MysteryMerchantGoodsTableManager::Instance().LoadSuccess();
+
+    MysteryMerchantRuleTableManager::Instance().LoadSuccess();
+
+    MysteryMerchantSpotTableManager::Instance().LoadSuccess();
+
     PetTableManager::Instance().LoadSuccess();
 
     PetRuleTableManager::Instance().LoadSuccess();
@@ -229,7 +244,7 @@ void LoadTables() {
 }
 
 void LoadTablesAsync() {
-    static muduo::CountDownLatch latch(42);
+    static muduo::CountDownLatch latch(45);
 
     std::thread ActivityScheduleLoadThread([]() {
         void InitThreadLocalConfig();
@@ -495,6 +510,30 @@ void LoadTablesAsync() {
     });
     MonsterLoadThread.detach();
 
+    std::thread MysteryMerchantGoodsLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        MysteryMerchantGoodsTableManager::Instance().Load();
+        latch.countDown();
+    });
+    MysteryMerchantGoodsLoadThread.detach();
+
+    std::thread MysteryMerchantRuleLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        MysteryMerchantRuleTableManager::Instance().Load();
+        latch.countDown();
+    });
+    MysteryMerchantRuleLoadThread.detach();
+
+    std::thread MysteryMerchantSpotLoadThread([]() {
+        void InitThreadLocalConfig();
+        InitThreadLocalConfig();
+        MysteryMerchantSpotTableManager::Instance().Load();
+        latch.countDown();
+    });
+    MysteryMerchantSpotLoadThread.detach();
+
     std::thread PetLoadThread([]() {
         void InitThreadLocalConfig();
         InitThreadLocalConfig();
@@ -635,6 +674,12 @@ void LoadTablesAsync() {
     MissionTableManager::Instance().LoadSuccess();
 
     MonsterTableManager::Instance().LoadSuccess();
+
+    MysteryMerchantGoodsTableManager::Instance().LoadSuccess();
+
+    MysteryMerchantRuleTableManager::Instance().LoadSuccess();
+
+    MysteryMerchantSpotTableManager::Instance().LoadSuccess();
 
     PetTableManager::Instance().LoadSuccess();
 

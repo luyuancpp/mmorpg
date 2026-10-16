@@ -1,0 +1,24 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+option java_outer_classname = "MysteryMerchantGoodsTableOuterClass";
+option java_multiple_files = true;
+
+
+message MysteryMerchantGoodsTable {
+	uint32 id = 1;
+	string name = 2;
+	uint32 item_id = 3;
+	uint32 item_count = 4;
+	uint32 currency_type = 5;
+	uint64 price = 6;
+	uint32 weight = 7;
+	uint32 limit_count = 8;
+}
+
+message MysteryMerchantGoodsTableData {
+	repeated MysteryMerchantGoodsTable data = 1;
+}

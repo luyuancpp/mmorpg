@@ -1,52 +1,58 @@
 #include "muduo/base/Logging.h"
 
 #include "jubaozhai_grpc_client.h"
-#include "proto/common/constants/etcd_grpc.pb.h"
-#include "core/utils/encode/base64.h"
+#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <boost/pool/object_pool.hpp>
-#include "grpc_call_tag.h"
+#include <memory>
+#include <string>
+#include <utility>
+#include "core/network/grpc_client_runtime.h"
+#include "core/utils/encode/base64.h"
+#include "muduo_grpc/channel.h"
 
 namespace {
-boost::object_pool<GrpcTag> tagPool;
 // 本文件所有 unary 调用的 deadline(毫秒)。启动时 SetJubaozhaiCallDeadline 按目标节点类型写入
 // (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
-std::chrono::system_clock::time_point NextCallDeadline() {
-    return std::chrono::system_clock::now() +
-        std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+std::chrono::milliseconds DefaultCallDeadline() {
+    return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+}
+
+GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+    GrpcCallOutcome outcome;
+    outcome.code = code;
+    outcome.message = std::move(message);
+    return outcome;
 }
 }
 
 namespace trade {
-struct JubaozhaiCompleteQueue {
-    grpc::CompletionQueue cq;
-};
 #pragma region ClientPlayerJubaozhaiBrowseListings
-boost::object_pool<AsyncClientPlayerJubaozhaiBrowseListingsGrpcClient> ClientPlayerJubaozhaiBrowseListingsPool;
-using AsyncClientPlayerJubaozhaiBrowseListingsHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::trade::BrowseListingsResponse&)>;
 AsyncClientPlayerJubaozhaiBrowseListingsHandlerFunctionType AsyncClientPlayerJubaozhaiBrowseListingsHandler;
 AsyncClientPlayerJubaozhaiBrowseListingsFailedHandlerFunctionType AsyncClientPlayerJubaozhaiBrowseListingsFailedHandler;
 
-void CompleteClientPlayerJubaozhaiBrowseListings(AsyncClientPlayerJubaozhaiBrowseListingsGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerJubaozhaiBrowseListingsGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerJubaozhaiBrowseListingsPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerJubaozhaiBrowseListingsGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerJubaozhaiBrowseListingsCall {
+    ::trade::BrowseListingsRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerJubaozhaiBrowseListingsHandler / FailedHandler。
+    GrpcDone<::trade::BrowseListingsResponse> done;
+};
+
+void CompleteClientPlayerJubaozhaiBrowseListings(const ClientPlayerJubaozhaiBrowseListingsCall& call, const GrpcCallOutcome& outcome,
+                                                const ::trade::BrowseListingsResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerJubaozhaiBrowseListingsHandler) {
-            AsyncClientPlayerJubaozhaiBrowseListingsHandler(call->context, call->reply);
+            AsyncClientPlayerJubaozhaiBrowseListingsHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -58,50 +64,65 @@ void CompleteClientPlayerJubaozhaiBrowseListings(AsyncClientPlayerJubaozhaiBrows
             }
         }
     } else if (AsyncClientPlayerJubaozhaiBrowseListingsFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerJubaozhai.BrowseListings", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerJubaozhaiBrowseListingsFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerJubaozhaiBrowseListingsMessageId, "ClientPlayerJubaozhai.BrowseListings", outcome, call.sentMetadata};
+        AsyncClientPlayerJubaozhaiBrowseListingsFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.BrowseListings failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.BrowseListings failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerJubaozhaiBrowseListings(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerJubaozhaiBrowseListingsGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerJubaozhaiBrowseListings(call);
+void QueueLocalClientPlayerJubaozhaiBrowseListingsFailure(std::shared_ptr<ClientPlayerJubaozhaiBrowseListingsCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerJubaozhaiBrowseListings(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerJubaozhaiBrowseListingsCall(entt::registry& registry, entt::entity nodeEntity, const ::trade::BrowseListingsRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::trade::BrowseListingsResponse> done) {
-    auto call(ClientPlayerJubaozhaiBrowseListingsPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerJubaozhaiBrowseListingsCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerJubaozhaiStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerJubaozhaiBrowseListings(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerJubaozhaiBrowseListingsFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncBrowseListings(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerJubaozhaiBrowseListingsMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerJubaozhaiBrowseListingsGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerJubaozhaiBrowseListingsFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerJubaozhaiBrowseListings(*call, outcome, nullptr);
+            return;
+        }
+        ::trade::BrowseListingsResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerJubaozhai.BrowseListings response";
+            CompleteClientPlayerJubaozhaiBrowseListings(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerJubaozhaiBrowseListings(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerJubaozhaiBrowseListings(entt::registry& registry, entt::entity nodeEntity, const ::trade::BrowseListingsRequest& request,
@@ -110,12 +131,11 @@ void SendClientPlayerJubaozhaiBrowseListings(entt::registry& registry, entt::ent
 }
 
 void SendClientPlayerJubaozhaiBrowseListings(entt::registry& registry, entt::entity nodeEntity, const ::trade::BrowseListingsRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerJubaozhaiBrowseListings(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerJubaozhaiBrowseListings(entt::registry& registry, entt::entity nodeEntity, const ::trade::BrowseListingsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerJubaozhaiBrowseListings(entt::registry& registry, entt::entity nodeEntity, const ::trade::BrowseListingsRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -123,37 +143,37 @@ void SendClientPlayerJubaozhaiBrowseListings(entt::registry& registry, entt::ent
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerJubaozhaiBrowseListingsCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerJubaozhaiBrowseListings(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerJubaozhaiBrowseListings(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::trade::BrowseListingsRequest& derived = static_cast<const ::trade::BrowseListingsRequest&>(message);
     SendClientPlayerJubaozhaiBrowseListings(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerJubaozhaiGetListingDetail
-boost::object_pool<AsyncClientPlayerJubaozhaiGetListingDetailGrpcClient> ClientPlayerJubaozhaiGetListingDetailPool;
-using AsyncClientPlayerJubaozhaiGetListingDetailHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::trade::GetListingDetailResponse&)>;
 AsyncClientPlayerJubaozhaiGetListingDetailHandlerFunctionType AsyncClientPlayerJubaozhaiGetListingDetailHandler;
 AsyncClientPlayerJubaozhaiGetListingDetailFailedHandlerFunctionType AsyncClientPlayerJubaozhaiGetListingDetailFailedHandler;
 
-void CompleteClientPlayerJubaozhaiGetListingDetail(AsyncClientPlayerJubaozhaiGetListingDetailGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerJubaozhaiGetListingDetailGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerJubaozhaiGetListingDetailPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerJubaozhaiGetListingDetailGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerJubaozhaiGetListingDetailCall {
+    ::trade::GetListingDetailRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerJubaozhaiGetListingDetailHandler / FailedHandler。
+    GrpcDone<::trade::GetListingDetailResponse> done;
+};
+
+void CompleteClientPlayerJubaozhaiGetListingDetail(const ClientPlayerJubaozhaiGetListingDetailCall& call, const GrpcCallOutcome& outcome,
+                                                const ::trade::GetListingDetailResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerJubaozhaiGetListingDetailHandler) {
-            AsyncClientPlayerJubaozhaiGetListingDetailHandler(call->context, call->reply);
+            AsyncClientPlayerJubaozhaiGetListingDetailHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -165,50 +185,65 @@ void CompleteClientPlayerJubaozhaiGetListingDetail(AsyncClientPlayerJubaozhaiGet
             }
         }
     } else if (AsyncClientPlayerJubaozhaiGetListingDetailFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerJubaozhai.GetListingDetail", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerJubaozhaiGetListingDetailFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerJubaozhaiGetListingDetailMessageId, "ClientPlayerJubaozhai.GetListingDetail", outcome, call.sentMetadata};
+        AsyncClientPlayerJubaozhaiGetListingDetailFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetListingDetail failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetListingDetail failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerJubaozhaiGetListingDetail(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerJubaozhaiGetListingDetailGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerJubaozhaiGetListingDetail(call);
+void QueueLocalClientPlayerJubaozhaiGetListingDetailFailure(std::shared_ptr<ClientPlayerJubaozhaiGetListingDetailCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerJubaozhaiGetListingDetail(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerJubaozhaiGetListingDetailCall(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetListingDetailRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::trade::GetListingDetailResponse> done) {
-    auto call(ClientPlayerJubaozhaiGetListingDetailPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerJubaozhaiGetListingDetailCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerJubaozhaiStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerJubaozhaiGetListingDetail(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerJubaozhaiGetListingDetailFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetListingDetail(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerJubaozhaiGetListingDetailMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerJubaozhaiGetListingDetailGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerJubaozhaiGetListingDetailFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerJubaozhaiGetListingDetail(*call, outcome, nullptr);
+            return;
+        }
+        ::trade::GetListingDetailResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerJubaozhai.GetListingDetail response";
+            CompleteClientPlayerJubaozhaiGetListingDetail(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerJubaozhaiGetListingDetail(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerJubaozhaiGetListingDetail(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetListingDetailRequest& request,
@@ -217,12 +252,11 @@ void SendClientPlayerJubaozhaiGetListingDetail(entt::registry& registry, entt::e
 }
 
 void SendClientPlayerJubaozhaiGetListingDetail(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetListingDetailRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerJubaozhaiGetListingDetail(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerJubaozhaiGetListingDetail(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetListingDetailRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerJubaozhaiGetListingDetail(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetListingDetailRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -230,37 +264,37 @@ void SendClientPlayerJubaozhaiGetListingDetail(entt::registry& registry, entt::e
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerJubaozhaiGetListingDetailCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerJubaozhaiGetListingDetail(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerJubaozhaiGetListingDetail(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::trade::GetListingDetailRequest& derived = static_cast<const ::trade::GetListingDetailRequest&>(message);
     SendClientPlayerJubaozhaiGetListingDetail(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerJubaozhaiSetFavorite
-boost::object_pool<AsyncClientPlayerJubaozhaiSetFavoriteGrpcClient> ClientPlayerJubaozhaiSetFavoritePool;
-using AsyncClientPlayerJubaozhaiSetFavoriteHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::trade::SetFavoriteResponse&)>;
 AsyncClientPlayerJubaozhaiSetFavoriteHandlerFunctionType AsyncClientPlayerJubaozhaiSetFavoriteHandler;
 AsyncClientPlayerJubaozhaiSetFavoriteFailedHandlerFunctionType AsyncClientPlayerJubaozhaiSetFavoriteFailedHandler;
 
-void CompleteClientPlayerJubaozhaiSetFavorite(AsyncClientPlayerJubaozhaiSetFavoriteGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerJubaozhaiSetFavoriteGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerJubaozhaiSetFavoritePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerJubaozhaiSetFavoriteGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerJubaozhaiSetFavoriteCall {
+    ::trade::SetFavoriteRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerJubaozhaiSetFavoriteHandler / FailedHandler。
+    GrpcDone<::trade::SetFavoriteResponse> done;
+};
+
+void CompleteClientPlayerJubaozhaiSetFavorite(const ClientPlayerJubaozhaiSetFavoriteCall& call, const GrpcCallOutcome& outcome,
+                                                const ::trade::SetFavoriteResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerJubaozhaiSetFavoriteHandler) {
-            AsyncClientPlayerJubaozhaiSetFavoriteHandler(call->context, call->reply);
+            AsyncClientPlayerJubaozhaiSetFavoriteHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -272,50 +306,65 @@ void CompleteClientPlayerJubaozhaiSetFavorite(AsyncClientPlayerJubaozhaiSetFavor
             }
         }
     } else if (AsyncClientPlayerJubaozhaiSetFavoriteFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerJubaozhai.SetFavorite", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerJubaozhaiSetFavoriteFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerJubaozhaiSetFavoriteMessageId, "ClientPlayerJubaozhai.SetFavorite", outcome, call.sentMetadata};
+        AsyncClientPlayerJubaozhaiSetFavoriteFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.SetFavorite failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.SetFavorite failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerJubaozhaiSetFavorite(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerJubaozhaiSetFavoriteGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerJubaozhaiSetFavorite(call);
+void QueueLocalClientPlayerJubaozhaiSetFavoriteFailure(std::shared_ptr<ClientPlayerJubaozhaiSetFavoriteCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerJubaozhaiSetFavorite(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerJubaozhaiSetFavoriteCall(entt::registry& registry, entt::entity nodeEntity, const ::trade::SetFavoriteRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::trade::SetFavoriteResponse> done) {
-    auto call(ClientPlayerJubaozhaiSetFavoritePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerJubaozhaiSetFavoriteCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerJubaozhaiStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerJubaozhaiSetFavorite(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerJubaozhaiSetFavoriteFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncSetFavorite(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerJubaozhaiSetFavoriteMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerJubaozhaiSetFavoriteGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerJubaozhaiSetFavoriteFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerJubaozhaiSetFavorite(*call, outcome, nullptr);
+            return;
+        }
+        ::trade::SetFavoriteResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerJubaozhai.SetFavorite response";
+            CompleteClientPlayerJubaozhaiSetFavorite(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerJubaozhaiSetFavorite(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerJubaozhaiSetFavorite(entt::registry& registry, entt::entity nodeEntity, const ::trade::SetFavoriteRequest& request,
@@ -324,12 +373,11 @@ void SendClientPlayerJubaozhaiSetFavorite(entt::registry& registry, entt::entity
 }
 
 void SendClientPlayerJubaozhaiSetFavorite(entt::registry& registry, entt::entity nodeEntity, const ::trade::SetFavoriteRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerJubaozhaiSetFavorite(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerJubaozhaiSetFavorite(entt::registry& registry, entt::entity nodeEntity, const ::trade::SetFavoriteRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerJubaozhaiSetFavorite(entt::registry& registry, entt::entity nodeEntity, const ::trade::SetFavoriteRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -337,37 +385,37 @@ void SendClientPlayerJubaozhaiSetFavorite(entt::registry& registry, entt::entity
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerJubaozhaiSetFavoriteCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerJubaozhaiSetFavorite(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerJubaozhaiSetFavorite(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::trade::SetFavoriteRequest& derived = static_cast<const ::trade::SetFavoriteRequest&>(message);
     SendClientPlayerJubaozhaiSetFavorite(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerJubaozhaiGetMyShelf
-boost::object_pool<AsyncClientPlayerJubaozhaiGetMyShelfGrpcClient> ClientPlayerJubaozhaiGetMyShelfPool;
-using AsyncClientPlayerJubaozhaiGetMyShelfHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::trade::GetMyShelfResponse&)>;
 AsyncClientPlayerJubaozhaiGetMyShelfHandlerFunctionType AsyncClientPlayerJubaozhaiGetMyShelfHandler;
 AsyncClientPlayerJubaozhaiGetMyShelfFailedHandlerFunctionType AsyncClientPlayerJubaozhaiGetMyShelfFailedHandler;
 
-void CompleteClientPlayerJubaozhaiGetMyShelf(AsyncClientPlayerJubaozhaiGetMyShelfGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerJubaozhaiGetMyShelfGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerJubaozhaiGetMyShelfPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerJubaozhaiGetMyShelfGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerJubaozhaiGetMyShelfCall {
+    ::trade::GetMyShelfRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerJubaozhaiGetMyShelfHandler / FailedHandler。
+    GrpcDone<::trade::GetMyShelfResponse> done;
+};
+
+void CompleteClientPlayerJubaozhaiGetMyShelf(const ClientPlayerJubaozhaiGetMyShelfCall& call, const GrpcCallOutcome& outcome,
+                                                const ::trade::GetMyShelfResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerJubaozhaiGetMyShelfHandler) {
-            AsyncClientPlayerJubaozhaiGetMyShelfHandler(call->context, call->reply);
+            AsyncClientPlayerJubaozhaiGetMyShelfHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -379,50 +427,65 @@ void CompleteClientPlayerJubaozhaiGetMyShelf(AsyncClientPlayerJubaozhaiGetMyShel
             }
         }
     } else if (AsyncClientPlayerJubaozhaiGetMyShelfFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerJubaozhai.GetMyShelf", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerJubaozhaiGetMyShelfFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerJubaozhaiGetMyShelfMessageId, "ClientPlayerJubaozhai.GetMyShelf", outcome, call.sentMetadata};
+        AsyncClientPlayerJubaozhaiGetMyShelfFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetMyShelf failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetMyShelf failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerJubaozhaiGetMyShelf(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerJubaozhaiGetMyShelfGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerJubaozhaiGetMyShelf(call);
+void QueueLocalClientPlayerJubaozhaiGetMyShelfFailure(std::shared_ptr<ClientPlayerJubaozhaiGetMyShelfCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerJubaozhaiGetMyShelf(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerJubaozhaiGetMyShelfCall(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetMyShelfRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::trade::GetMyShelfResponse> done) {
-    auto call(ClientPlayerJubaozhaiGetMyShelfPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerJubaozhaiGetMyShelfCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerJubaozhaiStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerJubaozhaiGetMyShelf(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerJubaozhaiGetMyShelfFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetMyShelf(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerJubaozhaiGetMyShelfMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerJubaozhaiGetMyShelfGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerJubaozhaiGetMyShelfFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerJubaozhaiGetMyShelf(*call, outcome, nullptr);
+            return;
+        }
+        ::trade::GetMyShelfResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerJubaozhai.GetMyShelf response";
+            CompleteClientPlayerJubaozhaiGetMyShelf(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerJubaozhaiGetMyShelf(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerJubaozhaiGetMyShelf(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetMyShelfRequest& request,
@@ -431,12 +494,11 @@ void SendClientPlayerJubaozhaiGetMyShelf(entt::registry& registry, entt::entity 
 }
 
 void SendClientPlayerJubaozhaiGetMyShelf(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetMyShelfRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerJubaozhaiGetMyShelf(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerJubaozhaiGetMyShelf(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetMyShelfRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerJubaozhaiGetMyShelf(entt::registry& registry, entt::entity nodeEntity, const ::trade::GetMyShelfRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -444,46 +506,23 @@ void SendClientPlayerJubaozhaiGetMyShelf(entt::registry& registry, entt::entity 
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerJubaozhaiGetMyShelfCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerJubaozhaiGetMyShelf(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerJubaozhaiGetMyShelf(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::trade::GetMyShelfRequest& derived = static_cast<const ::trade::GetMyShelfRequest&>(message);
     SendClientPlayerJubaozhaiGetMyShelf(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
-void HandleJubaozhaiCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag) {
-        const auto releaseTag = [](GrpcTag* tag) { tagPool.destroy(tag); };
-        const std::unique_ptr<GrpcTag, decltype(releaseTag)> owner(grpcTag, releaseTag);
-        switch (grpcTag->messageId) {
-        case ClientPlayerJubaozhaiBrowseListingsMessageId:
-            AsyncCompleteGrpcClientPlayerJubaozhaiBrowseListings(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerJubaozhaiGetListingDetailMessageId:
-            AsyncCompleteGrpcClientPlayerJubaozhaiGetListingDetail(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerJubaozhaiSetFavoriteMessageId:
-            AsyncCompleteGrpcClientPlayerJubaozhaiSetFavorite(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerJubaozhaiGetMyShelfMessageId:
-            AsyncCompleteGrpcClientPlayerJubaozhaiGetMyShelf(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        default:
-            break;
-        }
-}
-
-void SetJubaozhaiHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-
+void SetJubaozhaiHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
     AsyncClientPlayerJubaozhaiBrowseListingsHandler = handler;
     AsyncClientPlayerJubaozhaiGetListingDetailHandler = handler;
     AsyncClientPlayerJubaozhaiSetFavoriteHandler = handler;
     AsyncClientPlayerJubaozhaiGetMyShelfHandler = handler;
+    (void)handler;
 }
 
-void SetJubaozhaiIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-
+void SetJubaozhaiIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
     if (!AsyncClientPlayerJubaozhaiBrowseListingsHandler) {
         AsyncClientPlayerJubaozhaiBrowseListingsHandler = handler;
     }
@@ -496,6 +535,7 @@ void SetJubaozhaiIfEmptyHandler(const std::function<void(const ClientContext&, c
     if (!AsyncClientPlayerJubaozhaiGetMyShelfHandler) {
         AsyncClientPlayerJubaozhaiGetMyShelfHandler = handler;
     }
+    (void)handler;
 }
 
 void SetJubaozhaiFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -503,6 +543,7 @@ void SetJubaozhaiFailedHandler(const std::function<void(const GrpcCallFailure&, 
     AsyncClientPlayerJubaozhaiGetListingDetailFailedHandler = handler;
     AsyncClientPlayerJubaozhaiSetFavoriteFailedHandler = handler;
     AsyncClientPlayerJubaozhaiGetMyShelfFailedHandler = handler;
+    (void)handler;
 }
 
 void SetJubaozhaiIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -518,16 +559,11 @@ void SetJubaozhaiIfEmptyFailedHandler(const std::function<void(const GrpcCallFai
     if (!AsyncClientPlayerJubaozhaiGetMyShelfFailedHandler) {
         AsyncClientPlayerJubaozhaiGetMyShelfFailedHandler = handler;
     }
+    (void)handler;
 }
 
 void SetJubaozhaiCallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);
-}
-
-void InitJubaozhaiGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
-
-    registry.emplace<ClientPlayerJubaozhaiStubPtr>(nodeEntity, ClientPlayerJubaozhai::NewStub(channel));
-
 }
 
 }// namespace trade

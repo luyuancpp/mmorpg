@@ -1,40 +1,19 @@
 #pragma once
 #include <chrono>
 #include <functional>
-#include <memory>
-#include <deque>
-#include "core/network/grpc_client_runtime.h"
+#include <string>
+#include <string_view>
+#include <vector>
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
-#include "proto/battle/player_battle.grpc.pb.h"
 
 #include "rpc/service_metadata/player_battle_service_metadata.h"
 
-using grpc::ClientContext;
-using grpc::Status;
-using grpc::ClientAsyncResponseReader;
-
-using BattleClientPlayerStubPtr = std::unique_ptr<BattleClientPlayer::Stub>;
 #pragma region BattleClientPlayerSubmitBattleAction
-
-struct AsyncBattleClientPlayerSubmitBattleActionGrpcClient {
-    uint32_t messageId{ BattleClientPlayerSubmitBattleActionMessageId };
-    ClientContext context;
-    Status status;
-    ::SubmitBattleActionResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::SubmitBattleActionResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::SubmitBattleActionRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerSubmitBattleActionHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::SubmitBattleActionResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerSubmitBattleActionGrpcPath = "/BattleClientPlayer/SubmitBattleAction";
 using AsyncBattleClientPlayerSubmitBattleActionHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::SubmitBattleActionResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::SubmitBattleActionResponse&)>;
 extern AsyncBattleClientPlayerSubmitBattleActionHandlerFunctionType AsyncBattleClientPlayerSubmitBattleActionHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -50,25 +29,10 @@ void SendBattleClientPlayerSubmitBattleAction(entt::registry& registry, entt::en
 void SendBattleClientPlayerSubmitBattleAction(entt::registry& registry, entt::entity nodeEntity, const ::SubmitBattleActionRequest& request, GrpcDone<::SubmitBattleActionResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerGetBattleState
-
-struct AsyncBattleClientPlayerGetBattleStateGrpcClient {
-    uint32_t messageId{ BattleClientPlayerGetBattleStateMessageId };
-    ClientContext context;
-    Status status;
-    ::BattleStateS2C reply;
-    std::unique_ptr<ClientAsyncResponseReader<::BattleStateS2C>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::GetBattleStateRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerGetBattleStateHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::BattleStateS2C> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerGetBattleStateGrpcPath = "/BattleClientPlayer/GetBattleState";
 using AsyncBattleClientPlayerGetBattleStateHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::BattleStateS2C&)>;
+    std::function<void(const GrpcReplyContext&, const ::BattleStateS2C&)>;
 extern AsyncBattleClientPlayerGetBattleStateHandlerFunctionType AsyncBattleClientPlayerGetBattleStateHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -84,25 +48,10 @@ void SendBattleClientPlayerGetBattleState(entt::registry& registry, entt::entity
 void SendBattleClientPlayerGetBattleState(entt::registry& registry, entt::entity nodeEntity, const ::GetBattleStateRequest& request, GrpcDone<::BattleStateS2C> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerNotifyBattleStart
-
-struct AsyncBattleClientPlayerNotifyBattleStartGrpcClient {
-    uint32_t messageId{ BattleClientPlayerNotifyBattleStartMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::BattleStartS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerNotifyBattleStartHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerNotifyBattleStartGrpcPath = "/BattleClientPlayer/NotifyBattleStart";
 using AsyncBattleClientPlayerNotifyBattleStartHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncBattleClientPlayerNotifyBattleStartHandlerFunctionType AsyncBattleClientPlayerNotifyBattleStartHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -118,25 +67,10 @@ void SendBattleClientPlayerNotifyBattleStart(entt::registry& registry, entt::ent
 void SendBattleClientPlayerNotifyBattleStart(entt::registry& registry, entt::entity nodeEntity, const ::BattleStartS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerNotifyTurnResult
-
-struct AsyncBattleClientPlayerNotifyTurnResultGrpcClient {
-    uint32_t messageId{ BattleClientPlayerNotifyTurnResultMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::TurnResultS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerNotifyTurnResultHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerNotifyTurnResultGrpcPath = "/BattleClientPlayer/NotifyTurnResult";
 using AsyncBattleClientPlayerNotifyTurnResultHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncBattleClientPlayerNotifyTurnResultHandlerFunctionType AsyncBattleClientPlayerNotifyTurnResultHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -152,25 +86,10 @@ void SendBattleClientPlayerNotifyTurnResult(entt::registry& registry, entt::enti
 void SendBattleClientPlayerNotifyTurnResult(entt::registry& registry, entt::entity nodeEntity, const ::TurnResultS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerNotifyBattleEnd
-
-struct AsyncBattleClientPlayerNotifyBattleEndGrpcClient {
-    uint32_t messageId{ BattleClientPlayerNotifyBattleEndMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::BattleEndS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerNotifyBattleEndHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerNotifyBattleEndGrpcPath = "/BattleClientPlayer/NotifyBattleEnd";
 using AsyncBattleClientPlayerNotifyBattleEndHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncBattleClientPlayerNotifyBattleEndHandlerFunctionType AsyncBattleClientPlayerNotifyBattleEndHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -186,25 +105,10 @@ void SendBattleClientPlayerNotifyBattleEnd(entt::registry& registry, entt::entit
 void SendBattleClientPlayerNotifyBattleEnd(entt::registry& registry, entt::entity nodeEntity, const ::BattleEndS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerNotifyBattleReconnect
-
-struct AsyncBattleClientPlayerNotifyBattleReconnectGrpcClient {
-    uint32_t messageId{ BattleClientPlayerNotifyBattleReconnectMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::BattleReconnectS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerNotifyBattleReconnectHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerNotifyBattleReconnectGrpcPath = "/BattleClientPlayer/NotifyBattleReconnect";
 using AsyncBattleClientPlayerNotifyBattleReconnectHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncBattleClientPlayerNotifyBattleReconnectHandlerFunctionType AsyncBattleClientPlayerNotifyBattleReconnectHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -220,25 +124,10 @@ void SendBattleClientPlayerNotifyBattleReconnect(entt::registry& registry, entt:
 void SendBattleClientPlayerNotifyBattleReconnect(entt::registry& registry, entt::entity nodeEntity, const ::BattleReconnectS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerStopWatchBattle
-
-struct AsyncBattleClientPlayerStopWatchBattleGrpcClient {
-    uint32_t messageId{ BattleClientPlayerStopWatchBattleMessageId };
-    ClientContext context;
-    Status status;
-    ::StopWatchBattleResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::StopWatchBattleResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::StopWatchBattleRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerStopWatchBattleHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::StopWatchBattleResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerStopWatchBattleGrpcPath = "/BattleClientPlayer/StopWatchBattle";
 using AsyncBattleClientPlayerStopWatchBattleHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::StopWatchBattleResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::StopWatchBattleResponse&)>;
 extern AsyncBattleClientPlayerStopWatchBattleHandlerFunctionType AsyncBattleClientPlayerStopWatchBattleHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -254,25 +143,10 @@ void SendBattleClientPlayerStopWatchBattle(entt::registry& registry, entt::entit
 void SendBattleClientPlayerStopWatchBattle(entt::registry& registry, entt::entity nodeEntity, const ::StopWatchBattleRequest& request, GrpcDone<::StopWatchBattleResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerSetAutoBattle
-
-struct AsyncBattleClientPlayerSetAutoBattleGrpcClient {
-    uint32_t messageId{ BattleClientPlayerSetAutoBattleMessageId };
-    ClientContext context;
-    Status status;
-    ::SetAutoBattleResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::SetAutoBattleResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::SetAutoBattleRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerSetAutoBattleHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::SetAutoBattleResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerSetAutoBattleGrpcPath = "/BattleClientPlayer/SetAutoBattle";
 using AsyncBattleClientPlayerSetAutoBattleHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::SetAutoBattleResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::SetAutoBattleResponse&)>;
 extern AsyncBattleClientPlayerSetAutoBattleHandlerFunctionType AsyncBattleClientPlayerSetAutoBattleHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -288,25 +162,10 @@ void SendBattleClientPlayerSetAutoBattle(entt::registry& registry, entt::entity 
 void SendBattleClientPlayerSetAutoBattle(entt::registry& registry, entt::entity nodeEntity, const ::SetAutoBattleRequest& request, GrpcDone<::SetAutoBattleResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerNotifySpectateState
-
-struct AsyncBattleClientPlayerNotifySpectateStateGrpcClient {
-    uint32_t messageId{ BattleClientPlayerNotifySpectateStateMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::SpectateStateS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerNotifySpectateStateHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerNotifySpectateStateGrpcPath = "/BattleClientPlayer/NotifySpectateState";
 using AsyncBattleClientPlayerNotifySpectateStateHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncBattleClientPlayerNotifySpectateStateHandlerFunctionType AsyncBattleClientPlayerNotifySpectateStateHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -322,25 +181,10 @@ void SendBattleClientPlayerNotifySpectateState(entt::registry& registry, entt::e
 void SendBattleClientPlayerNotifySpectateState(entt::registry& registry, entt::entity nodeEntity, const ::SpectateStateS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerNotifySpectateTurnResult
-
-struct AsyncBattleClientPlayerNotifySpectateTurnResultGrpcClient {
-    uint32_t messageId{ BattleClientPlayerNotifySpectateTurnResultMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::TurnResultS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerNotifySpectateTurnResultHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerNotifySpectateTurnResultGrpcPath = "/BattleClientPlayer/NotifySpectateTurnResult";
 using AsyncBattleClientPlayerNotifySpectateTurnResultHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncBattleClientPlayerNotifySpectateTurnResultHandlerFunctionType AsyncBattleClientPlayerNotifySpectateTurnResultHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -356,25 +200,10 @@ void SendBattleClientPlayerNotifySpectateTurnResult(entt::registry& registry, en
 void SendBattleClientPlayerNotifySpectateTurnResult(entt::registry& registry, entt::entity nodeEntity, const ::TurnResultS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerNotifySpectateEnd
-
-struct AsyncBattleClientPlayerNotifySpectateEndGrpcClient {
-    uint32_t messageId{ BattleClientPlayerNotifySpectateEndMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::SpectateEndS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerNotifySpectateEndHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerNotifySpectateEndGrpcPath = "/BattleClientPlayer/NotifySpectateEnd";
 using AsyncBattleClientPlayerNotifySpectateEndHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncBattleClientPlayerNotifySpectateEndHandlerFunctionType AsyncBattleClientPlayerNotifySpectateEndHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -390,25 +219,10 @@ void SendBattleClientPlayerNotifySpectateEnd(entt::registry& registry, entt::ent
 void SendBattleClientPlayerNotifySpectateEnd(entt::registry& registry, entt::entity nodeEntity, const ::SpectateEndS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region BattleClientPlayerNotifyBattleAssigned
-
-struct AsyncBattleClientPlayerNotifyBattleAssignedGrpcClient {
-    uint32_t messageId{ BattleClientPlayerNotifyBattleAssignedMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::BattleAssignedS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncBattleClientPlayerNotifyBattleAssignedHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kBattleClientPlayerNotifyBattleAssignedGrpcPath = "/BattleClientPlayer/NotifyBattleAssigned";
 using AsyncBattleClientPlayerNotifyBattleAssignedHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncBattleClientPlayerNotifyBattleAssignedHandlerFunctionType AsyncBattleClientPlayerNotifyBattleAssignedHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -423,11 +237,9 @@ void SendBattleClientPlayerNotifyBattleAssigned(entt::registry& registry, entt::
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendBattleClientPlayerNotifyBattleAssigned(entt::registry& registry, entt::entity nodeEntity, const ::BattleAssignedS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
-void SetPlayerBattleHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void SetPlayerBattleIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetPlayerBattleHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetPlayerBattleIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetPlayerBattleFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 void SetPlayerBattleIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
+// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。
 void SetPlayerBattleCallDeadline(std::chrono::milliseconds deadline);
-void HandlePlayerBattleCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
-void InitPlayerBattleGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);

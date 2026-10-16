@@ -1,41 +1,20 @@
 #pragma once
 #include <chrono>
 #include <functional>
-#include <memory>
-#include <deque>
-#include "core/network/grpc_client_runtime.h"
+#include <string>
+#include <string_view>
+#include <vector>
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
-#include "proto/data_service/data_service.grpc.pb.h"
 
 #include "rpc/service_metadata/data_service_service_metadata.h"
 
-using grpc::ClientContext;
-using grpc::Status;
-using grpc::ClientAsyncResponseReader;
-
 namespace data_service {
-using DataServiceStubPtr = std::unique_ptr<DataService::Stub>;
 #pragma region DataServiceLoadPlayerData
-
-struct AsyncDataServiceLoadPlayerDataGrpcClient {
-    uint32_t messageId{ DataServiceLoadPlayerDataMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::LoadPlayerDataResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::LoadPlayerDataResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::LoadPlayerDataRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceLoadPlayerDataHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::LoadPlayerDataResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceLoadPlayerDataGrpcPath = "/data_service.DataService/LoadPlayerData";
 using AsyncDataServiceLoadPlayerDataHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::LoadPlayerDataResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::LoadPlayerDataResponse&)>;
 extern AsyncDataServiceLoadPlayerDataHandlerFunctionType AsyncDataServiceLoadPlayerDataHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -51,25 +30,10 @@ void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEn
 void SendDataServiceLoadPlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::LoadPlayerDataRequest& request, GrpcDone<::data_service::LoadPlayerDataResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceSavePlayerData
-
-struct AsyncDataServiceSavePlayerDataGrpcClient {
-    uint32_t messageId{ DataServiceSavePlayerDataMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::SavePlayerDataResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::SavePlayerDataResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::SavePlayerDataRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceSavePlayerDataHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::SavePlayerDataResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceSavePlayerDataGrpcPath = "/data_service.DataService/SavePlayerData";
 using AsyncDataServiceSavePlayerDataHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::SavePlayerDataResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::SavePlayerDataResponse&)>;
 extern AsyncDataServiceSavePlayerDataHandlerFunctionType AsyncDataServiceSavePlayerDataHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -85,25 +49,10 @@ void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEn
 void SendDataServiceSavePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SavePlayerDataRequest& request, GrpcDone<::data_service::SavePlayerDataResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceGetPlayerField
-
-struct AsyncDataServiceGetPlayerFieldGrpcClient {
-    uint32_t messageId{ DataServiceGetPlayerFieldMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::GetPlayerFieldResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::GetPlayerFieldResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::GetPlayerFieldRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerFieldHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::GetPlayerFieldResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceGetPlayerFieldGrpcPath = "/data_service.DataService/GetPlayerField";
 using AsyncDataServiceGetPlayerFieldHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::GetPlayerFieldResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::GetPlayerFieldResponse&)>;
 extern AsyncDataServiceGetPlayerFieldHandlerFunctionType AsyncDataServiceGetPlayerFieldHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -119,25 +68,10 @@ void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEn
 void SendDataServiceGetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerFieldRequest& request, GrpcDone<::data_service::GetPlayerFieldResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceSetPlayerField
-
-struct AsyncDataServiceSetPlayerFieldGrpcClient {
-    uint32_t messageId{ DataServiceSetPlayerFieldMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::SetPlayerFieldResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::SetPlayerFieldResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::SetPlayerFieldRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceSetPlayerFieldHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::SetPlayerFieldResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceSetPlayerFieldGrpcPath = "/data_service.DataService/SetPlayerField";
 using AsyncDataServiceSetPlayerFieldHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::SetPlayerFieldResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::SetPlayerFieldResponse&)>;
 extern AsyncDataServiceSetPlayerFieldHandlerFunctionType AsyncDataServiceSetPlayerFieldHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -153,25 +87,10 @@ void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEn
 void SendDataServiceSetPlayerField(entt::registry& registry, entt::entity nodeEntity, const ::data_service::SetPlayerFieldRequest& request, GrpcDone<::data_service::SetPlayerFieldResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceRegisterPlayerZone
-
-struct AsyncDataServiceRegisterPlayerZoneGrpcClient {
-    uint32_t messageId{ DataServiceRegisterPlayerZoneMessageId };
-    ClientContext context;
-    Status status;
-    ::google::protobuf::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::google::protobuf::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::RegisterPlayerZoneRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceRegisterPlayerZoneHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::google::protobuf::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceRegisterPlayerZoneGrpcPath = "/data_service.DataService/RegisterPlayerZone";
 using AsyncDataServiceRegisterPlayerZoneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::google::protobuf::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::google::protobuf::Empty&)>;
 extern AsyncDataServiceRegisterPlayerZoneHandlerFunctionType AsyncDataServiceRegisterPlayerZoneHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -187,25 +106,10 @@ void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity no
 void SendDataServiceRegisterPlayerZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RegisterPlayerZoneRequest& request, GrpcDone<::google::protobuf::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceGetPlayerHomeZone
-
-struct AsyncDataServiceGetPlayerHomeZoneGrpcClient {
-    uint32_t messageId{ DataServiceGetPlayerHomeZoneMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::GetPlayerHomeZoneResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::GetPlayerHomeZoneResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::GetPlayerHomeZoneRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerHomeZoneHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::GetPlayerHomeZoneResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceGetPlayerHomeZoneGrpcPath = "/data_service.DataService/GetPlayerHomeZone";
 using AsyncDataServiceGetPlayerHomeZoneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::GetPlayerHomeZoneResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::GetPlayerHomeZoneResponse&)>;
 extern AsyncDataServiceGetPlayerHomeZoneHandlerFunctionType AsyncDataServiceGetPlayerHomeZoneHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -221,25 +125,10 @@ void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nod
 void SendDataServiceGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerHomeZoneRequest& request, GrpcDone<::data_service::GetPlayerHomeZoneResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceBatchGetPlayerHomeZone
-
-struct AsyncDataServiceBatchGetPlayerHomeZoneGrpcClient {
-    uint32_t messageId{ DataServiceBatchGetPlayerHomeZoneMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::BatchGetPlayerHomeZoneResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::BatchGetPlayerHomeZoneResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::BatchGetPlayerHomeZoneRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceBatchGetPlayerHomeZoneHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::BatchGetPlayerHomeZoneResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceBatchGetPlayerHomeZoneGrpcPath = "/data_service.DataService/BatchGetPlayerHomeZone";
 using AsyncDataServiceBatchGetPlayerHomeZoneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::BatchGetPlayerHomeZoneResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::BatchGetPlayerHomeZoneResponse&)>;
 extern AsyncDataServiceBatchGetPlayerHomeZoneHandlerFunctionType AsyncDataServiceBatchGetPlayerHomeZoneHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -255,25 +144,10 @@ void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entit
 void SendDataServiceBatchGetPlayerHomeZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerHomeZoneRequest& request, GrpcDone<::data_service::BatchGetPlayerHomeZoneResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceRemapHomeZoneForMerge
-
-struct AsyncDataServiceRemapHomeZoneForMergeGrpcClient {
-    uint32_t messageId{ DataServiceRemapHomeZoneForMergeMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::RemapHomeZoneForMergeResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::RemapHomeZoneForMergeResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::RemapHomeZoneForMergeRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceRemapHomeZoneForMergeHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::RemapHomeZoneForMergeResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceRemapHomeZoneForMergeGrpcPath = "/data_service.DataService/RemapHomeZoneForMerge";
 using AsyncDataServiceRemapHomeZoneForMergeHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::RemapHomeZoneForMergeResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::RemapHomeZoneForMergeResponse&)>;
 extern AsyncDataServiceRemapHomeZoneForMergeHandlerFunctionType AsyncDataServiceRemapHomeZoneForMergeHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -289,25 +163,10 @@ void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity
 void SendDataServiceRemapHomeZoneForMerge(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RemapHomeZoneForMergeRequest& request, GrpcDone<::data_service::RemapHomeZoneForMergeResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceDeletePlayerData
-
-struct AsyncDataServiceDeletePlayerDataGrpcClient {
-    uint32_t messageId{ DataServiceDeletePlayerDataMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::DeletePlayerDataResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::DeletePlayerDataResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::DeletePlayerDataRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceDeletePlayerDataHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::DeletePlayerDataResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceDeletePlayerDataGrpcPath = "/data_service.DataService/DeletePlayerData";
 using AsyncDataServiceDeletePlayerDataHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::DeletePlayerDataResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::DeletePlayerDataResponse&)>;
 extern AsyncDataServiceDeletePlayerDataHandlerFunctionType AsyncDataServiceDeletePlayerDataHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -323,25 +182,10 @@ void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity node
 void SendDataServiceDeletePlayerData(entt::registry& registry, entt::entity nodeEntity, const ::data_service::DeletePlayerDataRequest& request, GrpcDone<::data_service::DeletePlayerDataResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceCreatePlayerSnapshot
-
-struct AsyncDataServiceCreatePlayerSnapshotGrpcClient {
-    uint32_t messageId{ DataServiceCreatePlayerSnapshotMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::CreatePlayerSnapshotResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::CreatePlayerSnapshotResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::CreatePlayerSnapshotRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceCreatePlayerSnapshotHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::CreatePlayerSnapshotResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceCreatePlayerSnapshotGrpcPath = "/data_service.DataService/CreatePlayerSnapshot";
 using AsyncDataServiceCreatePlayerSnapshotHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::CreatePlayerSnapshotResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::CreatePlayerSnapshotResponse&)>;
 extern AsyncDataServiceCreatePlayerSnapshotHandlerFunctionType AsyncDataServiceCreatePlayerSnapshotHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -357,25 +201,10 @@ void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity 
 void SendDataServiceCreatePlayerSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreatePlayerSnapshotRequest& request, GrpcDone<::data_service::CreatePlayerSnapshotResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceListPlayerSnapshots
-
-struct AsyncDataServiceListPlayerSnapshotsGrpcClient {
-    uint32_t messageId{ DataServiceListPlayerSnapshotsMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::ListPlayerSnapshotsResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::ListPlayerSnapshotsResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::ListPlayerSnapshotsRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceListPlayerSnapshotsHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::ListPlayerSnapshotsResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceListPlayerSnapshotsGrpcPath = "/data_service.DataService/ListPlayerSnapshots";
 using AsyncDataServiceListPlayerSnapshotsHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::ListPlayerSnapshotsResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::ListPlayerSnapshotsResponse&)>;
 extern AsyncDataServiceListPlayerSnapshotsHandlerFunctionType AsyncDataServiceListPlayerSnapshotsHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -391,25 +220,10 @@ void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity n
 void SendDataServiceListPlayerSnapshots(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ListPlayerSnapshotsRequest& request, GrpcDone<::data_service::ListPlayerSnapshotsResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceGetPlayerSnapshotDiff
-
-struct AsyncDataServiceGetPlayerSnapshotDiffGrpcClient {
-    uint32_t messageId{ DataServiceGetPlayerSnapshotDiffMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::GetPlayerSnapshotDiffResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::GetPlayerSnapshotDiffResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::GetPlayerSnapshotDiffRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerSnapshotDiffHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::GetPlayerSnapshotDiffResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceGetPlayerSnapshotDiffGrpcPath = "/data_service.DataService/GetPlayerSnapshotDiff";
 using AsyncDataServiceGetPlayerSnapshotDiffHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::GetPlayerSnapshotDiffResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::GetPlayerSnapshotDiffResponse&)>;
 extern AsyncDataServiceGetPlayerSnapshotDiffHandlerFunctionType AsyncDataServiceGetPlayerSnapshotDiffHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -425,25 +239,10 @@ void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity
 void SendDataServiceGetPlayerSnapshotDiff(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerSnapshotDiffRequest& request, GrpcDone<::data_service::GetPlayerSnapshotDiffResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceRollbackPlayer
-
-struct AsyncDataServiceRollbackPlayerGrpcClient {
-    uint32_t messageId{ DataServiceRollbackPlayerMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::RollbackPlayerResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::RollbackPlayerResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::RollbackPlayerRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceRollbackPlayerHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::RollbackPlayerResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceRollbackPlayerGrpcPath = "/data_service.DataService/RollbackPlayer";
 using AsyncDataServiceRollbackPlayerHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::RollbackPlayerResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::RollbackPlayerResponse&)>;
 extern AsyncDataServiceRollbackPlayerHandlerFunctionType AsyncDataServiceRollbackPlayerHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -459,25 +258,10 @@ void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEn
 void SendDataServiceRollbackPlayer(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackPlayerRequest& request, GrpcDone<::data_service::RollbackPlayerResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceRollbackZone
-
-struct AsyncDataServiceRollbackZoneGrpcClient {
-    uint32_t messageId{ DataServiceRollbackZoneMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::RollbackZoneResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::RollbackZoneResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::RollbackZoneRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceRollbackZoneHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::RollbackZoneResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceRollbackZoneGrpcPath = "/data_service.DataService/RollbackZone";
 using AsyncDataServiceRollbackZoneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::RollbackZoneResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::RollbackZoneResponse&)>;
 extern AsyncDataServiceRollbackZoneHandlerFunctionType AsyncDataServiceRollbackZoneHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -493,25 +277,10 @@ void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEnti
 void SendDataServiceRollbackZone(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackZoneRequest& request, GrpcDone<::data_service::RollbackZoneResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceRollbackAll
-
-struct AsyncDataServiceRollbackAllGrpcClient {
-    uint32_t messageId{ DataServiceRollbackAllMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::RollbackAllResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::RollbackAllResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::RollbackAllRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceRollbackAllHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::RollbackAllResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceRollbackAllGrpcPath = "/data_service.DataService/RollbackAll";
 using AsyncDataServiceRollbackAllHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::RollbackAllResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::RollbackAllResponse&)>;
 extern AsyncDataServiceRollbackAllHandlerFunctionType AsyncDataServiceRollbackAllHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -527,25 +296,10 @@ void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntit
 void SendDataServiceRollbackAll(entt::registry& registry, entt::entity nodeEntity, const ::data_service::RollbackAllRequest& request, GrpcDone<::data_service::RollbackAllResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceBatchRecallItems
-
-struct AsyncDataServiceBatchRecallItemsGrpcClient {
-    uint32_t messageId{ DataServiceBatchRecallItemsMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::BatchRecallItemsResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::BatchRecallItemsResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::BatchRecallItemsRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceBatchRecallItemsHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::BatchRecallItemsResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceBatchRecallItemsGrpcPath = "/data_service.DataService/BatchRecallItems";
 using AsyncDataServiceBatchRecallItemsHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::BatchRecallItemsResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::BatchRecallItemsResponse&)>;
 extern AsyncDataServiceBatchRecallItemsHandlerFunctionType AsyncDataServiceBatchRecallItemsHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -561,25 +315,10 @@ void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity node
 void SendDataServiceBatchRecallItems(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchRecallItemsRequest& request, GrpcDone<::data_service::BatchRecallItemsResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceQueryTransactionLog
-
-struct AsyncDataServiceQueryTransactionLogGrpcClient {
-    uint32_t messageId{ DataServiceQueryTransactionLogMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::QueryTransactionLogResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::QueryTransactionLogResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::QueryTransactionLogRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceQueryTransactionLogHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::QueryTransactionLogResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceQueryTransactionLogGrpcPath = "/data_service.DataService/QueryTransactionLog";
 using AsyncDataServiceQueryTransactionLogHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::QueryTransactionLogResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::QueryTransactionLogResponse&)>;
 extern AsyncDataServiceQueryTransactionLogHandlerFunctionType AsyncDataServiceQueryTransactionLogHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -595,25 +334,10 @@ void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity n
 void SendDataServiceQueryTransactionLog(entt::registry& registry, entt::entity nodeEntity, const ::data_service::QueryTransactionLogRequest& request, GrpcDone<::data_service::QueryTransactionLogResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceCreateEventSnapshot
-
-struct AsyncDataServiceCreateEventSnapshotGrpcClient {
-    uint32_t messageId{ DataServiceCreateEventSnapshotMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::CreateEventSnapshotResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::CreateEventSnapshotResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::CreateEventSnapshotRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceCreateEventSnapshotHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::CreateEventSnapshotResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceCreateEventSnapshotGrpcPath = "/data_service.DataService/CreateEventSnapshot";
 using AsyncDataServiceCreateEventSnapshotHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::CreateEventSnapshotResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::CreateEventSnapshotResponse&)>;
 extern AsyncDataServiceCreateEventSnapshotHandlerFunctionType AsyncDataServiceCreateEventSnapshotHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -629,25 +353,10 @@ void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity n
 void SendDataServiceCreateEventSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::data_service::CreateEventSnapshotRequest& request, GrpcDone<::data_service::CreateEventSnapshotResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceAllocateIdSegment
-
-struct AsyncDataServiceAllocateIdSegmentGrpcClient {
-    uint32_t messageId{ DataServiceAllocateIdSegmentMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::AllocateIdSegmentResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::AllocateIdSegmentResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::AllocateIdSegmentRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceAllocateIdSegmentHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::AllocateIdSegmentResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceAllocateIdSegmentGrpcPath = "/data_service.DataService/AllocateIdSegment";
 using AsyncDataServiceAllocateIdSegmentHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::AllocateIdSegmentResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::AllocateIdSegmentResponse&)>;
 extern AsyncDataServiceAllocateIdSegmentHandlerFunctionType AsyncDataServiceAllocateIdSegmentHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -663,25 +372,10 @@ void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nod
 void SendDataServiceAllocateIdSegment(entt::registry& registry, entt::entity nodeEntity, const ::data_service::AllocateIdSegmentRequest& request, GrpcDone<::data_service::AllocateIdSegmentResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceReservePlayerName
-
-struct AsyncDataServiceReservePlayerNameGrpcClient {
-    uint32_t messageId{ DataServiceReservePlayerNameMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::ReservePlayerNameResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::ReservePlayerNameResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::ReservePlayerNameRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceReservePlayerNameHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::ReservePlayerNameResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceReservePlayerNameGrpcPath = "/data_service.DataService/ReservePlayerName";
 using AsyncDataServiceReservePlayerNameHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::ReservePlayerNameResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::ReservePlayerNameResponse&)>;
 extern AsyncDataServiceReservePlayerNameHandlerFunctionType AsyncDataServiceReservePlayerNameHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -697,25 +391,10 @@ void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nod
 void SendDataServiceReservePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReservePlayerNameRequest& request, GrpcDone<::data_service::ReservePlayerNameResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceReleasePlayerName
-
-struct AsyncDataServiceReleasePlayerNameGrpcClient {
-    uint32_t messageId{ DataServiceReleasePlayerNameMessageId };
-    ClientContext context;
-    Status status;
-    ::google::protobuf::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::google::protobuf::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::ReleasePlayerNameRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceReleasePlayerNameHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::google::protobuf::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceReleasePlayerNameGrpcPath = "/data_service.DataService/ReleasePlayerName";
 using AsyncDataServiceReleasePlayerNameHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::google::protobuf::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::google::protobuf::Empty&)>;
 extern AsyncDataServiceReleasePlayerNameHandlerFunctionType AsyncDataServiceReleasePlayerNameHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -731,25 +410,10 @@ void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nod
 void SendDataServiceReleasePlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::ReleasePlayerNameRequest& request, GrpcDone<::google::protobuf::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceBatchGetPlayerName
-
-struct AsyncDataServiceBatchGetPlayerNameGrpcClient {
-    uint32_t messageId{ DataServiceBatchGetPlayerNameMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::BatchGetPlayerNameResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::BatchGetPlayerNameResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::BatchGetPlayerNameRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceBatchGetPlayerNameHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::BatchGetPlayerNameResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceBatchGetPlayerNameGrpcPath = "/data_service.DataService/BatchGetPlayerName";
 using AsyncDataServiceBatchGetPlayerNameHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::BatchGetPlayerNameResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::BatchGetPlayerNameResponse&)>;
 extern AsyncDataServiceBatchGetPlayerNameHandlerFunctionType AsyncDataServiceBatchGetPlayerNameHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -765,25 +429,10 @@ void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity no
 void SendDataServiceBatchGetPlayerName(entt::registry& registry, entt::entity nodeEntity, const ::data_service::BatchGetPlayerNameRequest& request, GrpcDone<::data_service::BatchGetPlayerNameResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceGetPlayerAssetOpLedger
-
-struct AsyncDataServiceGetPlayerAssetOpLedgerGrpcClient {
-    uint32_t messageId{ DataServiceGetPlayerAssetOpLedgerMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::GetPlayerAssetOpLedgerResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::GetPlayerAssetOpLedgerResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::GetPlayerAssetOpLedgerRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerAssetOpLedgerHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::GetPlayerAssetOpLedgerResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceGetPlayerAssetOpLedgerGrpcPath = "/data_service.DataService/GetPlayerAssetOpLedger";
 using AsyncDataServiceGetPlayerAssetOpLedgerHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::GetPlayerAssetOpLedgerResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::GetPlayerAssetOpLedgerResponse&)>;
 extern AsyncDataServiceGetPlayerAssetOpLedgerHandlerFunctionType AsyncDataServiceGetPlayerAssetOpLedgerHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -799,25 +448,10 @@ void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entit
 void SendDataServiceGetPlayerAssetOpLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerAssetOpLedgerRequest& request, GrpcDone<::data_service::GetPlayerAssetOpLedgerResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region DataServiceGetPlayerInboxLedger
-
-struct AsyncDataServiceGetPlayerInboxLedgerGrpcClient {
-    uint32_t messageId{ DataServiceGetPlayerInboxLedgerMessageId };
-    ClientContext context;
-    Status status;
-    ::data_service::GetPlayerInboxLedgerResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::data_service::GetPlayerInboxLedgerResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::data_service::GetPlayerInboxLedgerRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncDataServiceGetPlayerInboxLedgerHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::data_service::GetPlayerInboxLedgerResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kDataServiceGetPlayerInboxLedgerGrpcPath = "/data_service.DataService/GetPlayerInboxLedger";
 using AsyncDataServiceGetPlayerInboxLedgerHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::data_service::GetPlayerInboxLedgerResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::data_service::GetPlayerInboxLedgerResponse&)>;
 extern AsyncDataServiceGetPlayerInboxLedgerHandlerFunctionType AsyncDataServiceGetPlayerInboxLedgerHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -832,13 +466,11 @@ void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity 
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendDataServiceGetPlayerInboxLedger(entt::registry& registry, entt::entity nodeEntity, const ::data_service::GetPlayerInboxLedgerRequest& request, GrpcDone<::data_service::GetPlayerInboxLedgerResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
-void SetDataServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void SetDataServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetDataServiceHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetDataServiceIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetDataServiceFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 void SetDataServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
+// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。
 void SetDataServiceCallDeadline(std::chrono::milliseconds deadline);
-void HandleDataServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
-void InitDataServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace data_service

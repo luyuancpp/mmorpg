@@ -1,52 +1,58 @@
 #include "muduo/base/Logging.h"
 
 #include "team_grpc_client.h"
-#include "proto/common/constants/etcd_grpc.pb.h"
-#include "core/utils/encode/base64.h"
+#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <boost/pool/object_pool.hpp>
-#include "grpc_call_tag.h"
+#include <memory>
+#include <string>
+#include <utility>
+#include "core/network/grpc_client_runtime.h"
+#include "core/utils/encode/base64.h"
+#include "muduo_grpc/channel.h"
 
 namespace {
-boost::object_pool<GrpcTag> tagPool;
 // 本文件所有 unary 调用的 deadline(毫秒)。启动时 SetTeamCallDeadline 按目标节点类型写入
 // (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
-std::chrono::system_clock::time_point NextCallDeadline() {
-    return std::chrono::system_clock::now() +
-        std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+std::chrono::milliseconds DefaultCallDeadline() {
+    return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+}
+
+GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+    GrpcCallOutcome outcome;
+    outcome.code = code;
+    outcome.message = std::move(message);
+    return outcome;
 }
 }
 
 namespace teampb {
-struct TeamCompleteQueue {
-    grpc::CompletionQueue cq;
-};
 #pragma region ClientPlayerTeamCreateTeam
-boost::object_pool<AsyncClientPlayerTeamCreateTeamGrpcClient> ClientPlayerTeamCreateTeamPool;
-using AsyncClientPlayerTeamCreateTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamCreateTeamHandlerFunctionType AsyncClientPlayerTeamCreateTeamHandler;
 AsyncClientPlayerTeamCreateTeamFailedHandlerFunctionType AsyncClientPlayerTeamCreateTeamFailedHandler;
 
-void CompleteClientPlayerTeamCreateTeam(AsyncClientPlayerTeamCreateTeamGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamCreateTeamGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamCreateTeamPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamCreateTeamGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamCreateTeamCall {
+    ::teampb::CreateTeamRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamCreateTeamHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamCreateTeam(const ClientPlayerTeamCreateTeamCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamCreateTeamHandler) {
-            AsyncClientPlayerTeamCreateTeamHandler(call->context, call->reply);
+            AsyncClientPlayerTeamCreateTeamHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -58,50 +64,65 @@ void CompleteClientPlayerTeamCreateTeam(AsyncClientPlayerTeamCreateTeamGrpcClien
             }
         }
     } else if (AsyncClientPlayerTeamCreateTeamFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.CreateTeam", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamCreateTeamFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamCreateTeamMessageId, "ClientPlayerTeam.CreateTeam", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamCreateTeamFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.CreateTeam failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.CreateTeam failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamCreateTeam(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamCreateTeamGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamCreateTeam(call);
+void QueueLocalClientPlayerTeamCreateTeamFailure(std::shared_ptr<ClientPlayerTeamCreateTeamCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamCreateTeam(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamCreateTeamCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::CreateTeamRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamCreateTeamPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamCreateTeamCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamCreateTeam(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamCreateTeamFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncCreateTeam(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamCreateTeamMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamCreateTeamGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamCreateTeamFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamCreateTeam(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.CreateTeam response";
+            CompleteClientPlayerTeamCreateTeam(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamCreateTeam(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamCreateTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::CreateTeamRequest& request,
@@ -110,12 +131,11 @@ void SendClientPlayerTeamCreateTeam(entt::registry& registry, entt::entity nodeE
 }
 
 void SendClientPlayerTeamCreateTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::CreateTeamRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamCreateTeam(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamCreateTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::CreateTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamCreateTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::CreateTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -123,37 +143,37 @@ void SendClientPlayerTeamCreateTeam(entt::registry& registry, entt::entity nodeE
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamCreateTeamCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamCreateTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamCreateTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::CreateTeamRequest& derived = static_cast<const ::teampb::CreateTeamRequest&>(message);
     SendClientPlayerTeamCreateTeam(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamGetMyTeam
-boost::object_pool<AsyncClientPlayerTeamGetMyTeamGrpcClient> ClientPlayerTeamGetMyTeamPool;
-using AsyncClientPlayerTeamGetMyTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamGetMyTeamHandlerFunctionType AsyncClientPlayerTeamGetMyTeamHandler;
 AsyncClientPlayerTeamGetMyTeamFailedHandlerFunctionType AsyncClientPlayerTeamGetMyTeamFailedHandler;
 
-void CompleteClientPlayerTeamGetMyTeam(AsyncClientPlayerTeamGetMyTeamGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamGetMyTeamGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamGetMyTeamPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamGetMyTeamGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamGetMyTeamCall {
+    ::teampb::GetMyTeamRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamGetMyTeamHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamGetMyTeam(const ClientPlayerTeamGetMyTeamCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamGetMyTeamHandler) {
-            AsyncClientPlayerTeamGetMyTeamHandler(call->context, call->reply);
+            AsyncClientPlayerTeamGetMyTeamHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -165,50 +185,65 @@ void CompleteClientPlayerTeamGetMyTeam(AsyncClientPlayerTeamGetMyTeamGrpcClient*
             }
         }
     } else if (AsyncClientPlayerTeamGetMyTeamFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.GetMyTeam", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamGetMyTeamFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamGetMyTeamMessageId, "ClientPlayerTeam.GetMyTeam", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamGetMyTeamFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.GetMyTeam failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.GetMyTeam failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamGetMyTeam(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamGetMyTeamGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamGetMyTeam(call);
+void QueueLocalClientPlayerTeamGetMyTeamFailure(std::shared_ptr<ClientPlayerTeamGetMyTeamCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamGetMyTeam(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamGetMyTeamCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::GetMyTeamRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamGetMyTeamPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamGetMyTeamCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamGetMyTeam(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamGetMyTeamFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncGetMyTeam(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamGetMyTeamMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamGetMyTeamGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamGetMyTeamFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamGetMyTeam(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.GetMyTeam response";
+            CompleteClientPlayerTeamGetMyTeam(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamGetMyTeam(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamGetMyTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::GetMyTeamRequest& request,
@@ -217,12 +252,11 @@ void SendClientPlayerTeamGetMyTeam(entt::registry& registry, entt::entity nodeEn
 }
 
 void SendClientPlayerTeamGetMyTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::GetMyTeamRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamGetMyTeam(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamGetMyTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::GetMyTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamGetMyTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::GetMyTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -230,37 +264,37 @@ void SendClientPlayerTeamGetMyTeam(entt::registry& registry, entt::entity nodeEn
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamGetMyTeamCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamGetMyTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamGetMyTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::GetMyTeamRequest& derived = static_cast<const ::teampb::GetMyTeamRequest&>(message);
     SendClientPlayerTeamGetMyTeam(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamApplyJoinTeam
-boost::object_pool<AsyncClientPlayerTeamApplyJoinTeamGrpcClient> ClientPlayerTeamApplyJoinTeamPool;
-using AsyncClientPlayerTeamApplyJoinTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamApplyJoinTeamHandlerFunctionType AsyncClientPlayerTeamApplyJoinTeamHandler;
 AsyncClientPlayerTeamApplyJoinTeamFailedHandlerFunctionType AsyncClientPlayerTeamApplyJoinTeamFailedHandler;
 
-void CompleteClientPlayerTeamApplyJoinTeam(AsyncClientPlayerTeamApplyJoinTeamGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamApplyJoinTeamGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamApplyJoinTeamPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamApplyJoinTeamGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamApplyJoinTeamCall {
+    ::teampb::ApplyJoinTeamRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamApplyJoinTeamHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamApplyJoinTeam(const ClientPlayerTeamApplyJoinTeamCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamApplyJoinTeamHandler) {
-            AsyncClientPlayerTeamApplyJoinTeamHandler(call->context, call->reply);
+            AsyncClientPlayerTeamApplyJoinTeamHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -272,50 +306,65 @@ void CompleteClientPlayerTeamApplyJoinTeam(AsyncClientPlayerTeamApplyJoinTeamGrp
             }
         }
     } else if (AsyncClientPlayerTeamApplyJoinTeamFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.ApplyJoinTeam", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamApplyJoinTeamFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamApplyJoinTeamMessageId, "ClientPlayerTeam.ApplyJoinTeam", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamApplyJoinTeamFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.ApplyJoinTeam failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.ApplyJoinTeam failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamApplyJoinTeam(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamApplyJoinTeamGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamApplyJoinTeam(call);
+void QueueLocalClientPlayerTeamApplyJoinTeamFailure(std::shared_ptr<ClientPlayerTeamApplyJoinTeamCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamApplyJoinTeam(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamApplyJoinTeamCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ApplyJoinTeamRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamApplyJoinTeamPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamApplyJoinTeamCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamApplyJoinTeam(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamApplyJoinTeamFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncApplyJoinTeam(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamApplyJoinTeamMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamApplyJoinTeamGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamApplyJoinTeamFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamApplyJoinTeam(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.ApplyJoinTeam response";
+            CompleteClientPlayerTeamApplyJoinTeam(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamApplyJoinTeam(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamApplyJoinTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ApplyJoinTeamRequest& request,
@@ -324,12 +373,11 @@ void SendClientPlayerTeamApplyJoinTeam(entt::registry& registry, entt::entity no
 }
 
 void SendClientPlayerTeamApplyJoinTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ApplyJoinTeamRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamApplyJoinTeam(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamApplyJoinTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ApplyJoinTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamApplyJoinTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ApplyJoinTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -337,37 +385,37 @@ void SendClientPlayerTeamApplyJoinTeam(entt::registry& registry, entt::entity no
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamApplyJoinTeamCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamApplyJoinTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamApplyJoinTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::ApplyJoinTeamRequest& derived = static_cast<const ::teampb::ApplyJoinTeamRequest&>(message);
     SendClientPlayerTeamApplyJoinTeam(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamHandleApplication
-boost::object_pool<AsyncClientPlayerTeamHandleApplicationGrpcClient> ClientPlayerTeamHandleApplicationPool;
-using AsyncClientPlayerTeamHandleApplicationHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamHandleApplicationHandlerFunctionType AsyncClientPlayerTeamHandleApplicationHandler;
 AsyncClientPlayerTeamHandleApplicationFailedHandlerFunctionType AsyncClientPlayerTeamHandleApplicationFailedHandler;
 
-void CompleteClientPlayerTeamHandleApplication(AsyncClientPlayerTeamHandleApplicationGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamHandleApplicationGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamHandleApplicationPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamHandleApplicationGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamHandleApplicationCall {
+    ::teampb::HandleApplicationRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamHandleApplicationHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamHandleApplication(const ClientPlayerTeamHandleApplicationCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamHandleApplicationHandler) {
-            AsyncClientPlayerTeamHandleApplicationHandler(call->context, call->reply);
+            AsyncClientPlayerTeamHandleApplicationHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -379,50 +427,65 @@ void CompleteClientPlayerTeamHandleApplication(AsyncClientPlayerTeamHandleApplic
             }
         }
     } else if (AsyncClientPlayerTeamHandleApplicationFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.HandleApplication", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamHandleApplicationFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamHandleApplicationMessageId, "ClientPlayerTeam.HandleApplication", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamHandleApplicationFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.HandleApplication failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.HandleApplication failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamHandleApplication(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamHandleApplicationGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamHandleApplication(call);
+void QueueLocalClientPlayerTeamHandleApplicationFailure(std::shared_ptr<ClientPlayerTeamHandleApplicationCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamHandleApplication(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamHandleApplicationCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::HandleApplicationRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamHandleApplicationPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamHandleApplicationCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamHandleApplication(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamHandleApplicationFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncHandleApplication(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamHandleApplicationMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamHandleApplicationGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamHandleApplicationFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamHandleApplication(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.HandleApplication response";
+            CompleteClientPlayerTeamHandleApplication(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamHandleApplication(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamHandleApplication(entt::registry& registry, entt::entity nodeEntity, const ::teampb::HandleApplicationRequest& request,
@@ -431,12 +494,11 @@ void SendClientPlayerTeamHandleApplication(entt::registry& registry, entt::entit
 }
 
 void SendClientPlayerTeamHandleApplication(entt::registry& registry, entt::entity nodeEntity, const ::teampb::HandleApplicationRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamHandleApplication(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamHandleApplication(entt::registry& registry, entt::entity nodeEntity, const ::teampb::HandleApplicationRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamHandleApplication(entt::registry& registry, entt::entity nodeEntity, const ::teampb::HandleApplicationRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -444,37 +506,37 @@ void SendClientPlayerTeamHandleApplication(entt::registry& registry, entt::entit
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamHandleApplicationCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamHandleApplication(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamHandleApplication(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::HandleApplicationRequest& derived = static_cast<const ::teampb::HandleApplicationRequest&>(message);
     SendClientPlayerTeamHandleApplication(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamInviteToTeam
-boost::object_pool<AsyncClientPlayerTeamInviteToTeamGrpcClient> ClientPlayerTeamInviteToTeamPool;
-using AsyncClientPlayerTeamInviteToTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamInviteToTeamHandlerFunctionType AsyncClientPlayerTeamInviteToTeamHandler;
 AsyncClientPlayerTeamInviteToTeamFailedHandlerFunctionType AsyncClientPlayerTeamInviteToTeamFailedHandler;
 
-void CompleteClientPlayerTeamInviteToTeam(AsyncClientPlayerTeamInviteToTeamGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamInviteToTeamGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamInviteToTeamPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamInviteToTeamGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamInviteToTeamCall {
+    ::teampb::InviteToTeamRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamInviteToTeamHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamInviteToTeam(const ClientPlayerTeamInviteToTeamCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamInviteToTeamHandler) {
-            AsyncClientPlayerTeamInviteToTeamHandler(call->context, call->reply);
+            AsyncClientPlayerTeamInviteToTeamHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -486,50 +548,65 @@ void CompleteClientPlayerTeamInviteToTeam(AsyncClientPlayerTeamInviteToTeamGrpcC
             }
         }
     } else if (AsyncClientPlayerTeamInviteToTeamFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.InviteToTeam", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamInviteToTeamFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamInviteToTeamMessageId, "ClientPlayerTeam.InviteToTeam", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamInviteToTeamFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.InviteToTeam failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.InviteToTeam failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamInviteToTeam(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamInviteToTeamGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamInviteToTeam(call);
+void QueueLocalClientPlayerTeamInviteToTeamFailure(std::shared_ptr<ClientPlayerTeamInviteToTeamCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamInviteToTeam(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamInviteToTeamCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::InviteToTeamRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamInviteToTeamPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamInviteToTeamCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamInviteToTeam(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamInviteToTeamFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncInviteToTeam(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamInviteToTeamMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamInviteToTeamGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamInviteToTeamFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamInviteToTeam(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.InviteToTeam response";
+            CompleteClientPlayerTeamInviteToTeam(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamInviteToTeam(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamInviteToTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::InviteToTeamRequest& request,
@@ -538,12 +615,11 @@ void SendClientPlayerTeamInviteToTeam(entt::registry& registry, entt::entity nod
 }
 
 void SendClientPlayerTeamInviteToTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::InviteToTeamRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamInviteToTeam(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamInviteToTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::InviteToTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamInviteToTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::InviteToTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -551,37 +627,37 @@ void SendClientPlayerTeamInviteToTeam(entt::registry& registry, entt::entity nod
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamInviteToTeamCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamInviteToTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamInviteToTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::InviteToTeamRequest& derived = static_cast<const ::teampb::InviteToTeamRequest&>(message);
     SendClientPlayerTeamInviteToTeam(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamRespondInvite
-boost::object_pool<AsyncClientPlayerTeamRespondInviteGrpcClient> ClientPlayerTeamRespondInvitePool;
-using AsyncClientPlayerTeamRespondInviteHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamRespondInviteHandlerFunctionType AsyncClientPlayerTeamRespondInviteHandler;
 AsyncClientPlayerTeamRespondInviteFailedHandlerFunctionType AsyncClientPlayerTeamRespondInviteFailedHandler;
 
-void CompleteClientPlayerTeamRespondInvite(AsyncClientPlayerTeamRespondInviteGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamRespondInviteGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamRespondInvitePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamRespondInviteGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamRespondInviteCall {
+    ::teampb::RespondInviteRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamRespondInviteHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamRespondInvite(const ClientPlayerTeamRespondInviteCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamRespondInviteHandler) {
-            AsyncClientPlayerTeamRespondInviteHandler(call->context, call->reply);
+            AsyncClientPlayerTeamRespondInviteHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -593,50 +669,65 @@ void CompleteClientPlayerTeamRespondInvite(AsyncClientPlayerTeamRespondInviteGrp
             }
         }
     } else if (AsyncClientPlayerTeamRespondInviteFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.RespondInvite", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamRespondInviteFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamRespondInviteMessageId, "ClientPlayerTeam.RespondInvite", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamRespondInviteFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.RespondInvite failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.RespondInvite failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamRespondInvite(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamRespondInviteGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamRespondInvite(call);
+void QueueLocalClientPlayerTeamRespondInviteFailure(std::shared_ptr<ClientPlayerTeamRespondInviteCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamRespondInvite(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamRespondInviteCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::RespondInviteRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamRespondInvitePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamRespondInviteCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamRespondInvite(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamRespondInviteFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncRespondInvite(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamRespondInviteMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamRespondInviteGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamRespondInviteFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamRespondInvite(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.RespondInvite response";
+            CompleteClientPlayerTeamRespondInvite(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamRespondInvite(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamRespondInvite(entt::registry& registry, entt::entity nodeEntity, const ::teampb::RespondInviteRequest& request,
@@ -645,12 +736,11 @@ void SendClientPlayerTeamRespondInvite(entt::registry& registry, entt::entity no
 }
 
 void SendClientPlayerTeamRespondInvite(entt::registry& registry, entt::entity nodeEntity, const ::teampb::RespondInviteRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamRespondInvite(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamRespondInvite(entt::registry& registry, entt::entity nodeEntity, const ::teampb::RespondInviteRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamRespondInvite(entt::registry& registry, entt::entity nodeEntity, const ::teampb::RespondInviteRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -658,37 +748,37 @@ void SendClientPlayerTeamRespondInvite(entt::registry& registry, entt::entity no
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamRespondInviteCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamRespondInvite(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamRespondInvite(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::RespondInviteRequest& derived = static_cast<const ::teampb::RespondInviteRequest&>(message);
     SendClientPlayerTeamRespondInvite(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamListMyInvites
-boost::object_pool<AsyncClientPlayerTeamListMyInvitesGrpcClient> ClientPlayerTeamListMyInvitesPool;
-using AsyncClientPlayerTeamListMyInvitesHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::ListMyInvitesResponse&)>;
 AsyncClientPlayerTeamListMyInvitesHandlerFunctionType AsyncClientPlayerTeamListMyInvitesHandler;
 AsyncClientPlayerTeamListMyInvitesFailedHandlerFunctionType AsyncClientPlayerTeamListMyInvitesFailedHandler;
 
-void CompleteClientPlayerTeamListMyInvites(AsyncClientPlayerTeamListMyInvitesGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamListMyInvitesGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamListMyInvitesPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamListMyInvitesGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamListMyInvitesCall {
+    ::teampb::ListMyInvitesRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamListMyInvitesHandler / FailedHandler。
+    GrpcDone<::teampb::ListMyInvitesResponse> done;
+};
+
+void CompleteClientPlayerTeamListMyInvites(const ClientPlayerTeamListMyInvitesCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::ListMyInvitesResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamListMyInvitesHandler) {
-            AsyncClientPlayerTeamListMyInvitesHandler(call->context, call->reply);
+            AsyncClientPlayerTeamListMyInvitesHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -700,50 +790,65 @@ void CompleteClientPlayerTeamListMyInvites(AsyncClientPlayerTeamListMyInvitesGrp
             }
         }
     } else if (AsyncClientPlayerTeamListMyInvitesFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.ListMyInvites", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamListMyInvitesFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamListMyInvitesMessageId, "ClientPlayerTeam.ListMyInvites", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamListMyInvitesFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.ListMyInvites failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.ListMyInvites failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamListMyInvites(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamListMyInvitesGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamListMyInvites(call);
+void QueueLocalClientPlayerTeamListMyInvitesFailure(std::shared_ptr<ClientPlayerTeamListMyInvitesCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamListMyInvites(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamListMyInvitesCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ListMyInvitesRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::ListMyInvitesResponse> done) {
-    auto call(ClientPlayerTeamListMyInvitesPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamListMyInvitesCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamListMyInvites(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamListMyInvitesFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncListMyInvites(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamListMyInvitesMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamListMyInvitesGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamListMyInvitesFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamListMyInvites(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::ListMyInvitesResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.ListMyInvites response";
+            CompleteClientPlayerTeamListMyInvites(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamListMyInvites(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamListMyInvites(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ListMyInvitesRequest& request,
@@ -752,12 +857,11 @@ void SendClientPlayerTeamListMyInvites(entt::registry& registry, entt::entity no
 }
 
 void SendClientPlayerTeamListMyInvites(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ListMyInvitesRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamListMyInvites(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamListMyInvites(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ListMyInvitesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamListMyInvites(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ListMyInvitesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -765,37 +869,37 @@ void SendClientPlayerTeamListMyInvites(entt::registry& registry, entt::entity no
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamListMyInvitesCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamListMyInvites(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamListMyInvites(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::ListMyInvitesRequest& derived = static_cast<const ::teampb::ListMyInvitesRequest&>(message);
     SendClientPlayerTeamListMyInvites(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamLeaveTeam
-boost::object_pool<AsyncClientPlayerTeamLeaveTeamGrpcClient> ClientPlayerTeamLeaveTeamPool;
-using AsyncClientPlayerTeamLeaveTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamLeaveTeamHandlerFunctionType AsyncClientPlayerTeamLeaveTeamHandler;
 AsyncClientPlayerTeamLeaveTeamFailedHandlerFunctionType AsyncClientPlayerTeamLeaveTeamFailedHandler;
 
-void CompleteClientPlayerTeamLeaveTeam(AsyncClientPlayerTeamLeaveTeamGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamLeaveTeamGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamLeaveTeamPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamLeaveTeamGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamLeaveTeamCall {
+    ::teampb::LeaveTeamRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamLeaveTeamHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamLeaveTeam(const ClientPlayerTeamLeaveTeamCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamLeaveTeamHandler) {
-            AsyncClientPlayerTeamLeaveTeamHandler(call->context, call->reply);
+            AsyncClientPlayerTeamLeaveTeamHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -807,50 +911,65 @@ void CompleteClientPlayerTeamLeaveTeam(AsyncClientPlayerTeamLeaveTeamGrpcClient*
             }
         }
     } else if (AsyncClientPlayerTeamLeaveTeamFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.LeaveTeam", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamLeaveTeamFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamLeaveTeamMessageId, "ClientPlayerTeam.LeaveTeam", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamLeaveTeamFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.LeaveTeam failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.LeaveTeam failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamLeaveTeam(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamLeaveTeamGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamLeaveTeam(call);
+void QueueLocalClientPlayerTeamLeaveTeamFailure(std::shared_ptr<ClientPlayerTeamLeaveTeamCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamLeaveTeam(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamLeaveTeamCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::LeaveTeamRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamLeaveTeamPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamLeaveTeamCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamLeaveTeam(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamLeaveTeamFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncLeaveTeam(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamLeaveTeamMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamLeaveTeamGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamLeaveTeamFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamLeaveTeam(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.LeaveTeam response";
+            CompleteClientPlayerTeamLeaveTeam(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamLeaveTeam(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamLeaveTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::LeaveTeamRequest& request,
@@ -859,12 +978,11 @@ void SendClientPlayerTeamLeaveTeam(entt::registry& registry, entt::entity nodeEn
 }
 
 void SendClientPlayerTeamLeaveTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::LeaveTeamRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamLeaveTeam(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamLeaveTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::LeaveTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamLeaveTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::LeaveTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -872,37 +990,37 @@ void SendClientPlayerTeamLeaveTeam(entt::registry& registry, entt::entity nodeEn
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamLeaveTeamCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamLeaveTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamLeaveTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::LeaveTeamRequest& derived = static_cast<const ::teampb::LeaveTeamRequest&>(message);
     SendClientPlayerTeamLeaveTeam(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamKickMember
-boost::object_pool<AsyncClientPlayerTeamKickMemberGrpcClient> ClientPlayerTeamKickMemberPool;
-using AsyncClientPlayerTeamKickMemberHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamKickMemberHandlerFunctionType AsyncClientPlayerTeamKickMemberHandler;
 AsyncClientPlayerTeamKickMemberFailedHandlerFunctionType AsyncClientPlayerTeamKickMemberFailedHandler;
 
-void CompleteClientPlayerTeamKickMember(AsyncClientPlayerTeamKickMemberGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamKickMemberGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamKickMemberPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamKickMemberGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamKickMemberCall {
+    ::teampb::KickMemberRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamKickMemberHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamKickMember(const ClientPlayerTeamKickMemberCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamKickMemberHandler) {
-            AsyncClientPlayerTeamKickMemberHandler(call->context, call->reply);
+            AsyncClientPlayerTeamKickMemberHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -914,50 +1032,65 @@ void CompleteClientPlayerTeamKickMember(AsyncClientPlayerTeamKickMemberGrpcClien
             }
         }
     } else if (AsyncClientPlayerTeamKickMemberFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.KickMember", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamKickMemberFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamKickMemberMessageId, "ClientPlayerTeam.KickMember", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamKickMemberFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.KickMember failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.KickMember failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamKickMember(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamKickMemberGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamKickMember(call);
+void QueueLocalClientPlayerTeamKickMemberFailure(std::shared_ptr<ClientPlayerTeamKickMemberCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamKickMember(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamKickMemberCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::KickMemberRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamKickMemberPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamKickMemberCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamKickMember(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamKickMemberFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncKickMember(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamKickMemberMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamKickMemberGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamKickMemberFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamKickMember(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.KickMember response";
+            CompleteClientPlayerTeamKickMember(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamKickMember(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamKickMember(entt::registry& registry, entt::entity nodeEntity, const ::teampb::KickMemberRequest& request,
@@ -966,12 +1099,11 @@ void SendClientPlayerTeamKickMember(entt::registry& registry, entt::entity nodeE
 }
 
 void SendClientPlayerTeamKickMember(entt::registry& registry, entt::entity nodeEntity, const ::teampb::KickMemberRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamKickMember(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamKickMember(entt::registry& registry, entt::entity nodeEntity, const ::teampb::KickMemberRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamKickMember(entt::registry& registry, entt::entity nodeEntity, const ::teampb::KickMemberRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -979,37 +1111,37 @@ void SendClientPlayerTeamKickMember(entt::registry& registry, entt::entity nodeE
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamKickMemberCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamKickMember(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamKickMember(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::KickMemberRequest& derived = static_cast<const ::teampb::KickMemberRequest&>(message);
     SendClientPlayerTeamKickMember(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamTransferLeader
-boost::object_pool<AsyncClientPlayerTeamTransferLeaderGrpcClient> ClientPlayerTeamTransferLeaderPool;
-using AsyncClientPlayerTeamTransferLeaderHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamTransferLeaderHandlerFunctionType AsyncClientPlayerTeamTransferLeaderHandler;
 AsyncClientPlayerTeamTransferLeaderFailedHandlerFunctionType AsyncClientPlayerTeamTransferLeaderFailedHandler;
 
-void CompleteClientPlayerTeamTransferLeader(AsyncClientPlayerTeamTransferLeaderGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamTransferLeaderGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamTransferLeaderPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamTransferLeaderGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamTransferLeaderCall {
+    ::teampb::TransferLeaderRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamTransferLeaderHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamTransferLeader(const ClientPlayerTeamTransferLeaderCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamTransferLeaderHandler) {
-            AsyncClientPlayerTeamTransferLeaderHandler(call->context, call->reply);
+            AsyncClientPlayerTeamTransferLeaderHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1021,50 +1153,65 @@ void CompleteClientPlayerTeamTransferLeader(AsyncClientPlayerTeamTransferLeaderG
             }
         }
     } else if (AsyncClientPlayerTeamTransferLeaderFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.TransferLeader", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamTransferLeaderFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamTransferLeaderMessageId, "ClientPlayerTeam.TransferLeader", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamTransferLeaderFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.TransferLeader failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.TransferLeader failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamTransferLeader(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamTransferLeaderGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamTransferLeader(call);
+void QueueLocalClientPlayerTeamTransferLeaderFailure(std::shared_ptr<ClientPlayerTeamTransferLeaderCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamTransferLeader(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamTransferLeaderCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TransferLeaderRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamTransferLeaderPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamTransferLeaderCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamTransferLeader(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamTransferLeaderFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncTransferLeader(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamTransferLeaderMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamTransferLeaderGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamTransferLeaderFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamTransferLeader(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.TransferLeader response";
+            CompleteClientPlayerTeamTransferLeader(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamTransferLeader(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamTransferLeader(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TransferLeaderRequest& request,
@@ -1073,12 +1220,11 @@ void SendClientPlayerTeamTransferLeader(entt::registry& registry, entt::entity n
 }
 
 void SendClientPlayerTeamTransferLeader(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TransferLeaderRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamTransferLeader(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamTransferLeader(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TransferLeaderRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamTransferLeader(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TransferLeaderRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1086,37 +1232,37 @@ void SendClientPlayerTeamTransferLeader(entt::registry& registry, entt::entity n
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamTransferLeaderCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamTransferLeader(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamTransferLeader(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::TransferLeaderRequest& derived = static_cast<const ::teampb::TransferLeaderRequest&>(message);
     SendClientPlayerTeamTransferLeader(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamDisbandTeam
-boost::object_pool<AsyncClientPlayerTeamDisbandTeamGrpcClient> ClientPlayerTeamDisbandTeamPool;
-using AsyncClientPlayerTeamDisbandTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamDisbandTeamHandlerFunctionType AsyncClientPlayerTeamDisbandTeamHandler;
 AsyncClientPlayerTeamDisbandTeamFailedHandlerFunctionType AsyncClientPlayerTeamDisbandTeamFailedHandler;
 
-void CompleteClientPlayerTeamDisbandTeam(AsyncClientPlayerTeamDisbandTeamGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamDisbandTeamGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamDisbandTeamPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamDisbandTeamGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamDisbandTeamCall {
+    ::teampb::DisbandTeamRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamDisbandTeamHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamDisbandTeam(const ClientPlayerTeamDisbandTeamCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamDisbandTeamHandler) {
-            AsyncClientPlayerTeamDisbandTeamHandler(call->context, call->reply);
+            AsyncClientPlayerTeamDisbandTeamHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1128,50 +1274,65 @@ void CompleteClientPlayerTeamDisbandTeam(AsyncClientPlayerTeamDisbandTeamGrpcCli
             }
         }
     } else if (AsyncClientPlayerTeamDisbandTeamFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.DisbandTeam", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamDisbandTeamFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamDisbandTeamMessageId, "ClientPlayerTeam.DisbandTeam", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamDisbandTeamFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.DisbandTeam failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.DisbandTeam failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamDisbandTeam(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamDisbandTeamGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamDisbandTeam(call);
+void QueueLocalClientPlayerTeamDisbandTeamFailure(std::shared_ptr<ClientPlayerTeamDisbandTeamCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamDisbandTeam(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamDisbandTeamCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::DisbandTeamRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamDisbandTeamPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamDisbandTeamCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamDisbandTeam(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamDisbandTeamFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncDisbandTeam(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamDisbandTeamMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamDisbandTeamGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamDisbandTeamFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamDisbandTeam(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.DisbandTeam response";
+            CompleteClientPlayerTeamDisbandTeam(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamDisbandTeam(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamDisbandTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::DisbandTeamRequest& request,
@@ -1180,12 +1341,11 @@ void SendClientPlayerTeamDisbandTeam(entt::registry& registry, entt::entity node
 }
 
 void SendClientPlayerTeamDisbandTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::DisbandTeamRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamDisbandTeam(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamDisbandTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::DisbandTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamDisbandTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::DisbandTeamRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1193,37 +1353,37 @@ void SendClientPlayerTeamDisbandTeam(entt::registry& registry, entt::entity node
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamDisbandTeamCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamDisbandTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamDisbandTeam(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::DisbandTeamRequest& derived = static_cast<const ::teampb::DisbandTeamRequest&>(message);
     SendClientPlayerTeamDisbandTeam(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamStartTeamMatch
-boost::object_pool<AsyncClientPlayerTeamStartTeamMatchGrpcClient> ClientPlayerTeamStartTeamMatchPool;
-using AsyncClientPlayerTeamStartTeamMatchHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
 AsyncClientPlayerTeamStartTeamMatchHandlerFunctionType AsyncClientPlayerTeamStartTeamMatchHandler;
 AsyncClientPlayerTeamStartTeamMatchFailedHandlerFunctionType AsyncClientPlayerTeamStartTeamMatchFailedHandler;
 
-void CompleteClientPlayerTeamStartTeamMatch(AsyncClientPlayerTeamStartTeamMatchGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamStartTeamMatchGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamStartTeamMatchPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamStartTeamMatchGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamStartTeamMatchCall {
+    ::teampb::StartTeamMatchRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamStartTeamMatchHandler / FailedHandler。
+    GrpcDone<::teampb::TeamResponse> done;
+};
+
+void CompleteClientPlayerTeamStartTeamMatch(const ClientPlayerTeamStartTeamMatchCall& call, const GrpcCallOutcome& outcome,
+                                                const ::teampb::TeamResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamStartTeamMatchHandler) {
-            AsyncClientPlayerTeamStartTeamMatchHandler(call->context, call->reply);
+            AsyncClientPlayerTeamStartTeamMatchHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1235,50 +1395,65 @@ void CompleteClientPlayerTeamStartTeamMatch(AsyncClientPlayerTeamStartTeamMatchG
             }
         }
     } else if (AsyncClientPlayerTeamStartTeamMatchFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.StartTeamMatch", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamStartTeamMatchFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamStartTeamMatchMessageId, "ClientPlayerTeam.StartTeamMatch", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamStartTeamMatchFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.StartTeamMatch failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.StartTeamMatch failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamStartTeamMatch(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamStartTeamMatchGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamStartTeamMatch(call);
+void QueueLocalClientPlayerTeamStartTeamMatchFailure(std::shared_ptr<ClientPlayerTeamStartTeamMatchCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamStartTeamMatch(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamStartTeamMatchCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::StartTeamMatchRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::teampb::TeamResponse> done) {
-    auto call(ClientPlayerTeamStartTeamMatchPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamStartTeamMatchCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamStartTeamMatch(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamStartTeamMatchFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncStartTeamMatch(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamStartTeamMatchMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamStartTeamMatchGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamStartTeamMatchFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamStartTeamMatch(*call, outcome, nullptr);
+            return;
+        }
+        ::teampb::TeamResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.StartTeamMatch response";
+            CompleteClientPlayerTeamStartTeamMatch(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamStartTeamMatch(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamStartTeamMatch(entt::registry& registry, entt::entity nodeEntity, const ::teampb::StartTeamMatchRequest& request,
@@ -1287,12 +1462,11 @@ void SendClientPlayerTeamStartTeamMatch(entt::registry& registry, entt::entity n
 }
 
 void SendClientPlayerTeamStartTeamMatch(entt::registry& registry, entt::entity nodeEntity, const ::teampb::StartTeamMatchRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamStartTeamMatch(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamStartTeamMatch(entt::registry& registry, entt::entity nodeEntity, const ::teampb::StartTeamMatchRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamStartTeamMatch(entt::registry& registry, entt::entity nodeEntity, const ::teampb::StartTeamMatchRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1300,37 +1474,37 @@ void SendClientPlayerTeamStartTeamMatch(entt::registry& registry, entt::entity n
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamStartTeamMatchCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamStartTeamMatch(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamStartTeamMatch(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::StartTeamMatchRequest& derived = static_cast<const ::teampb::StartTeamMatchRequest&>(message);
     SendClientPlayerTeamStartTeamMatch(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamNotifyTeamSnapshot
-boost::object_pool<AsyncClientPlayerTeamNotifyTeamSnapshotGrpcClient> ClientPlayerTeamNotifyTeamSnapshotPool;
-using AsyncClientPlayerTeamNotifyTeamSnapshotHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncClientPlayerTeamNotifyTeamSnapshotHandlerFunctionType AsyncClientPlayerTeamNotifyTeamSnapshotHandler;
 AsyncClientPlayerTeamNotifyTeamSnapshotFailedHandlerFunctionType AsyncClientPlayerTeamNotifyTeamSnapshotFailedHandler;
 
-void CompleteClientPlayerTeamNotifyTeamSnapshot(AsyncClientPlayerTeamNotifyTeamSnapshotGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamNotifyTeamSnapshotGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamNotifyTeamSnapshotPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamNotifyTeamSnapshotGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamNotifyTeamSnapshotCall {
+    ::teampb::TeamSnapshotS2C request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamNotifyTeamSnapshotHandler / FailedHandler。
+    GrpcDone<::Empty> done;
+};
+
+void CompleteClientPlayerTeamNotifyTeamSnapshot(const ClientPlayerTeamNotifyTeamSnapshotCall& call, const GrpcCallOutcome& outcome,
+                                                const ::Empty* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamNotifyTeamSnapshotHandler) {
-            AsyncClientPlayerTeamNotifyTeamSnapshotHandler(call->context, call->reply);
+            AsyncClientPlayerTeamNotifyTeamSnapshotHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1342,50 +1516,65 @@ void CompleteClientPlayerTeamNotifyTeamSnapshot(AsyncClientPlayerTeamNotifyTeamS
             }
         }
     } else if (AsyncClientPlayerTeamNotifyTeamSnapshotFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.NotifyTeamSnapshot", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamNotifyTeamSnapshotFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamNotifyTeamSnapshotMessageId, "ClientPlayerTeam.NotifyTeamSnapshot", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamNotifyTeamSnapshotFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamSnapshot failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamSnapshot failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamNotifyTeamSnapshot(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamNotifyTeamSnapshotGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamNotifyTeamSnapshot(call);
+void QueueLocalClientPlayerTeamNotifyTeamSnapshotFailure(std::shared_ptr<ClientPlayerTeamNotifyTeamSnapshotCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamNotifyTeamSnapshot(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamNotifyTeamSnapshotCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamSnapshotS2C& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call(ClientPlayerTeamNotifyTeamSnapshotPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamNotifyTeamSnapshotCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamNotifyTeamSnapshot(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamNotifyTeamSnapshotFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncNotifyTeamSnapshot(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamNotifyTeamSnapshotMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamNotifyTeamSnapshotGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamNotifyTeamSnapshotFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamNotifyTeamSnapshot(*call, outcome, nullptr);
+            return;
+        }
+        ::Empty reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.NotifyTeamSnapshot response";
+            CompleteClientPlayerTeamNotifyTeamSnapshot(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamNotifyTeamSnapshot(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamSnapshotS2C& request,
@@ -1394,12 +1583,11 @@ void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& registry, entt::enti
 }
 
 void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamSnapshotS2C& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamNotifyTeamSnapshot(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamSnapshotS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamSnapshotS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1407,37 +1595,37 @@ void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& registry, entt::enti
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamNotifyTeamSnapshotCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::TeamSnapshotS2C& derived = static_cast<const ::teampb::TeamSnapshotS2C&>(message);
     SendClientPlayerTeamNotifyTeamSnapshot(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamNotifyTeamInvite
-boost::object_pool<AsyncClientPlayerTeamNotifyTeamInviteGrpcClient> ClientPlayerTeamNotifyTeamInvitePool;
-using AsyncClientPlayerTeamNotifyTeamInviteHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncClientPlayerTeamNotifyTeamInviteHandlerFunctionType AsyncClientPlayerTeamNotifyTeamInviteHandler;
 AsyncClientPlayerTeamNotifyTeamInviteFailedHandlerFunctionType AsyncClientPlayerTeamNotifyTeamInviteFailedHandler;
 
-void CompleteClientPlayerTeamNotifyTeamInvite(AsyncClientPlayerTeamNotifyTeamInviteGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamNotifyTeamInviteGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamNotifyTeamInvitePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamNotifyTeamInviteGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamNotifyTeamInviteCall {
+    ::teampb::TeamInviteS2C request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamNotifyTeamInviteHandler / FailedHandler。
+    GrpcDone<::Empty> done;
+};
+
+void CompleteClientPlayerTeamNotifyTeamInvite(const ClientPlayerTeamNotifyTeamInviteCall& call, const GrpcCallOutcome& outcome,
+                                                const ::Empty* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamNotifyTeamInviteHandler) {
-            AsyncClientPlayerTeamNotifyTeamInviteHandler(call->context, call->reply);
+            AsyncClientPlayerTeamNotifyTeamInviteHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1449,50 +1637,65 @@ void CompleteClientPlayerTeamNotifyTeamInvite(AsyncClientPlayerTeamNotifyTeamInv
             }
         }
     } else if (AsyncClientPlayerTeamNotifyTeamInviteFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.NotifyTeamInvite", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamNotifyTeamInviteFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamNotifyTeamInviteMessageId, "ClientPlayerTeam.NotifyTeamInvite", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamNotifyTeamInviteFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamInvite failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamInvite failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamNotifyTeamInvite(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamNotifyTeamInviteGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamNotifyTeamInvite(call);
+void QueueLocalClientPlayerTeamNotifyTeamInviteFailure(std::shared_ptr<ClientPlayerTeamNotifyTeamInviteCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamNotifyTeamInvite(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamNotifyTeamInviteCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamInviteS2C& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call(ClientPlayerTeamNotifyTeamInvitePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamNotifyTeamInviteCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamNotifyTeamInvite(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamNotifyTeamInviteFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncNotifyTeamInvite(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamNotifyTeamInviteMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamNotifyTeamInviteGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamNotifyTeamInviteFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamNotifyTeamInvite(*call, outcome, nullptr);
+            return;
+        }
+        ::Empty reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.NotifyTeamInvite response";
+            CompleteClientPlayerTeamNotifyTeamInvite(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamNotifyTeamInvite(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamNotifyTeamInvite(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamInviteS2C& request,
@@ -1501,12 +1704,11 @@ void SendClientPlayerTeamNotifyTeamInvite(entt::registry& registry, entt::entity
 }
 
 void SendClientPlayerTeamNotifyTeamInvite(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamInviteS2C& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamNotifyTeamInvite(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamNotifyTeamInvite(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamInviteS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamNotifyTeamInvite(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamInviteS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1514,37 +1716,37 @@ void SendClientPlayerTeamNotifyTeamInvite(entt::registry& registry, entt::entity
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamNotifyTeamInviteCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamNotifyTeamInvite(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamNotifyTeamInvite(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::TeamInviteS2C& derived = static_cast<const ::teampb::TeamInviteS2C&>(message);
     SendClientPlayerTeamNotifyTeamInvite(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region ClientPlayerTeamNotifyTeamEvent
-boost::object_pool<AsyncClientPlayerTeamNotifyTeamEventGrpcClient> ClientPlayerTeamNotifyTeamEventPool;
-using AsyncClientPlayerTeamNotifyTeamEventHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncClientPlayerTeamNotifyTeamEventHandlerFunctionType AsyncClientPlayerTeamNotifyTeamEventHandler;
 AsyncClientPlayerTeamNotifyTeamEventFailedHandlerFunctionType AsyncClientPlayerTeamNotifyTeamEventFailedHandler;
 
-void CompleteClientPlayerTeamNotifyTeamEvent(AsyncClientPlayerTeamNotifyTeamEventGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncClientPlayerTeamNotifyTeamEventGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        ClientPlayerTeamNotifyTeamEventPool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncClientPlayerTeamNotifyTeamEventGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct ClientPlayerTeamNotifyTeamEventCall {
+    ::teampb::TeamEventS2C request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamNotifyTeamEventHandler / FailedHandler。
+    GrpcDone<::Empty> done;
+};
+
+void CompleteClientPlayerTeamNotifyTeamEvent(const ClientPlayerTeamNotifyTeamEventCall& call, const GrpcCallOutcome& outcome,
+                                                const ::Empty* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncClientPlayerTeamNotifyTeamEventHandler) {
-            AsyncClientPlayerTeamNotifyTeamEventHandler(call->context, call->reply);
+            AsyncClientPlayerTeamNotifyTeamEventHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -1556,50 +1758,65 @@ void CompleteClientPlayerTeamNotifyTeamEvent(AsyncClientPlayerTeamNotifyTeamEven
             }
         }
     } else if (AsyncClientPlayerTeamNotifyTeamEventFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "ClientPlayerTeam.NotifyTeamEvent", call->context, call->status, call->sentMetadata};
-        AsyncClientPlayerTeamNotifyTeamEventFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ ClientPlayerTeamNotifyTeamEventMessageId, "ClientPlayerTeam.NotifyTeamEvent", outcome, call.sentMetadata};
+        AsyncClientPlayerTeamNotifyTeamEventFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamEvent failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamEvent failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcClientPlayerTeamNotifyTeamEvent(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncClientPlayerTeamNotifyTeamEventGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteClientPlayerTeamNotifyTeamEvent(call);
+void QueueLocalClientPlayerTeamNotifyTeamEventFailure(std::shared_ptr<ClientPlayerTeamNotifyTeamEventCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteClientPlayerTeamNotifyTeamEvent(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartClientPlayerTeamNotifyTeamEventCall(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamEventS2C& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call(ClientPlayerTeamNotifyTeamEventPool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<ClientPlayerTeamNotifyTeamEventCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<ClientPlayerTeamStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteClientPlayerTeamNotifyTeamEvent(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalClientPlayerTeamNotifyTeamEventFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncNotifyTeamEvent(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(ClientPlayerTeamNotifyTeamEventMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kClientPlayerTeamNotifyTeamEventGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalClientPlayerTeamNotifyTeamEventFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteClientPlayerTeamNotifyTeamEvent(*call, outcome, nullptr);
+            return;
+        }
+        ::Empty reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the ClientPlayerTeam.NotifyTeamEvent response";
+            CompleteClientPlayerTeamNotifyTeamEvent(*call, outcome, nullptr);
+            return;
+        }
+        CompleteClientPlayerTeamNotifyTeamEvent(*call, outcome, &reply);
+    });
 }
 
 void SendClientPlayerTeamNotifyTeamEvent(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamEventS2C& request,
@@ -1608,12 +1825,11 @@ void SendClientPlayerTeamNotifyTeamEvent(entt::registry& registry, entt::entity 
 }
 
 void SendClientPlayerTeamNotifyTeamEvent(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamEventS2C& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendClientPlayerTeamNotifyTeamEvent(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendClientPlayerTeamNotifyTeamEvent(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamEventS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendClientPlayerTeamNotifyTeamEvent(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamEventS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -1621,71 +1837,15 @@ void SendClientPlayerTeamNotifyTeamEvent(entt::registry& registry, entt::entity 
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartClientPlayerTeamNotifyTeamEventCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendClientPlayerTeamNotifyTeamEvent(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendClientPlayerTeamNotifyTeamEvent(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::teampb::TeamEventS2C& derived = static_cast<const ::teampb::TeamEventS2C&>(message);
     SendClientPlayerTeamNotifyTeamEvent(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
-void HandleTeamCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag) {
-        const auto releaseTag = [](GrpcTag* tag) { tagPool.destroy(tag); };
-        const std::unique_ptr<GrpcTag, decltype(releaseTag)> owner(grpcTag, releaseTag);
-        switch (grpcTag->messageId) {
-        case ClientPlayerTeamCreateTeamMessageId:
-            AsyncCompleteGrpcClientPlayerTeamCreateTeam(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamGetMyTeamMessageId:
-            AsyncCompleteGrpcClientPlayerTeamGetMyTeam(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamApplyJoinTeamMessageId:
-            AsyncCompleteGrpcClientPlayerTeamApplyJoinTeam(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamHandleApplicationMessageId:
-            AsyncCompleteGrpcClientPlayerTeamHandleApplication(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamInviteToTeamMessageId:
-            AsyncCompleteGrpcClientPlayerTeamInviteToTeam(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamRespondInviteMessageId:
-            AsyncCompleteGrpcClientPlayerTeamRespondInvite(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamListMyInvitesMessageId:
-            AsyncCompleteGrpcClientPlayerTeamListMyInvites(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamLeaveTeamMessageId:
-            AsyncCompleteGrpcClientPlayerTeamLeaveTeam(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamKickMemberMessageId:
-            AsyncCompleteGrpcClientPlayerTeamKickMember(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamTransferLeaderMessageId:
-            AsyncCompleteGrpcClientPlayerTeamTransferLeader(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamDisbandTeamMessageId:
-            AsyncCompleteGrpcClientPlayerTeamDisbandTeam(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamStartTeamMatchMessageId:
-            AsyncCompleteGrpcClientPlayerTeamStartTeamMatch(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamNotifyTeamSnapshotMessageId:
-            AsyncCompleteGrpcClientPlayerTeamNotifyTeamSnapshot(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamNotifyTeamInviteMessageId:
-            AsyncCompleteGrpcClientPlayerTeamNotifyTeamInvite(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case ClientPlayerTeamNotifyTeamEventMessageId:
-            AsyncCompleteGrpcClientPlayerTeamNotifyTeamEvent(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        default:
-            break;
-        }
-}
-
-void SetTeamHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-
+void SetTeamHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
     AsyncClientPlayerTeamCreateTeamHandler = handler;
     AsyncClientPlayerTeamGetMyTeamHandler = handler;
     AsyncClientPlayerTeamApplyJoinTeamHandler = handler;
@@ -1701,10 +1861,10 @@ void SetTeamHandler(const std::function<void(const ClientContext&, const ::googl
     AsyncClientPlayerTeamNotifyTeamSnapshotHandler = handler;
     AsyncClientPlayerTeamNotifyTeamInviteHandler = handler;
     AsyncClientPlayerTeamNotifyTeamEventHandler = handler;
+    (void)handler;
 }
 
-void SetTeamIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-
+void SetTeamIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
     if (!AsyncClientPlayerTeamCreateTeamHandler) {
         AsyncClientPlayerTeamCreateTeamHandler = handler;
     }
@@ -1750,6 +1910,7 @@ void SetTeamIfEmptyHandler(const std::function<void(const ClientContext&, const 
     if (!AsyncClientPlayerTeamNotifyTeamEventHandler) {
         AsyncClientPlayerTeamNotifyTeamEventHandler = handler;
     }
+    (void)handler;
 }
 
 void SetTeamFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -1768,6 +1929,7 @@ void SetTeamFailedHandler(const std::function<void(const GrpcCallFailure&, const
     AsyncClientPlayerTeamNotifyTeamSnapshotFailedHandler = handler;
     AsyncClientPlayerTeamNotifyTeamInviteFailedHandler = handler;
     AsyncClientPlayerTeamNotifyTeamEventFailedHandler = handler;
+    (void)handler;
 }
 
 void SetTeamIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -1816,16 +1978,11 @@ void SetTeamIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&
     if (!AsyncClientPlayerTeamNotifyTeamEventFailedHandler) {
         AsyncClientPlayerTeamNotifyTeamEventFailedHandler = handler;
     }
+    (void)handler;
 }
 
 void SetTeamCallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);
-}
-
-void InitTeamGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
-
-    registry.emplace<ClientPlayerTeamStubPtr>(nodeEntity, ClientPlayerTeam::NewStub(channel));
-
 }
 
 }// namespace teampb

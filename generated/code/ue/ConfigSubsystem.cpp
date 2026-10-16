@@ -66,6 +66,9 @@ void UConfigSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	MirrorTable = NewObject<UMirrorTable>(this);
 	MissionTable = NewObject<UMissionTable>(this);
 	MonsterTable = NewObject<UMonsterTable>(this);
+	MysteryMerchantGoodsTable = NewObject<UMysteryMerchantGoodsTable>(this);
+	MysteryMerchantRuleTable = NewObject<UMysteryMerchantRuleTable>(this);
+	MysteryMerchantSpotTable = NewObject<UMysteryMerchantSpotTable>(this);
 	PetTable = NewObject<UPetTable>(this);
 	PetRuleTable = NewObject<UPetRuleTable>(this);
 	RewardTable = NewObject<URewardTable>(this);
@@ -112,6 +115,9 @@ void UConfigSubsystem::Deinitialize()
 	MirrorTable = nullptr;
 	MissionTable = nullptr;
 	MonsterTable = nullptr;
+	MysteryMerchantGoodsTable = nullptr;
+	MysteryMerchantRuleTable = nullptr;
+	MysteryMerchantSpotTable = nullptr;
 	PetTable = nullptr;
 	PetRuleTable = nullptr;
 	RewardTable = nullptr;
@@ -163,6 +169,9 @@ TArray<FString> UConfigSubsystem::TableFileNames()
 		UMirrorTable::FileName(),
 		UMissionTable::FileName(),
 		UMonsterTable::FileName(),
+		UMysteryMerchantGoodsTable::FileName(),
+		UMysteryMerchantRuleTable::FileName(),
+		UMysteryMerchantSpotTable::FileName(),
 		UPetTable::FileName(),
 		UPetRuleTable::FileName(),
 		URewardTable::FileName(),
@@ -637,6 +646,48 @@ bool UConfigSubsystem::LoadAll(const FString& InConfigDir)
 		bAllOk = false;
 	}
 	else if (!MonsterTable->LoadFromDir(InConfigDir, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	if (MysteryMerchantGoodsTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[MysteryMerchantGoods] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!MysteryMerchantGoodsTable->LoadFromDir(InConfigDir, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	if (MysteryMerchantRuleTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[MysteryMerchantRule] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!MysteryMerchantRuleTable->LoadFromDir(InConfigDir, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	if (MysteryMerchantSpotTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[MysteryMerchantSpot] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!MysteryMerchantSpotTable->LoadFromDir(InConfigDir, Error))
 	{
 		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
 		bAllOk = false;
@@ -1456,6 +1507,66 @@ bool UConfigSubsystem::LoadAllWithProvider(TFunctionRef<bool(const TCHAR*, FStri
 		bAllOk = false;
 	}
 	else if (!MonsterTable->LoadFromJson(JsonText, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	JsonText.Reset();
+	if (MysteryMerchantGoodsTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[MysteryMerchantGoods] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!TextProvider(UMysteryMerchantGoodsTable::FileName(), JsonText))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[MysteryMerchantGoods] 取不到 %s"), UMysteryMerchantGoodsTable::FileName());
+		bAllOk = false;
+	}
+	else if (!MysteryMerchantGoodsTable->LoadFromJson(JsonText, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	JsonText.Reset();
+	if (MysteryMerchantRuleTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[MysteryMerchantRule] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!TextProvider(UMysteryMerchantRuleTable::FileName(), JsonText))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[MysteryMerchantRule] 取不到 %s"), UMysteryMerchantRuleTable::FileName());
+		bAllOk = false;
+	}
+	else if (!MysteryMerchantRuleTable->LoadFromJson(JsonText, Error))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
+		bAllOk = false;
+	}
+	else
+	{
+		bAnySwapped = true;
+	}
+	JsonText.Reset();
+	if (MysteryMerchantSpotTable == nullptr)
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[MysteryMerchantSpot] 管理器未创建"));
+		bAllOk = false;
+	}
+	else if (!TextProvider(UMysteryMerchantSpotTable::FileName(), JsonText))
+	{
+		UE_LOG(LogConfigTable, Error, TEXT("[MysteryMerchantSpot] 取不到 %s"), UMysteryMerchantSpotTable::FileName());
+		bAllOk = false;
+	}
+	else if (!MysteryMerchantSpotTable->LoadFromJson(JsonText, Error))
 	{
 		UE_LOG(LogConfigTable, Error, TEXT("%s"), *Error);
 		bAllOk = false;

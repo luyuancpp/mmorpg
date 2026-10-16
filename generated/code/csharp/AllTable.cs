@@ -22,7 +22,7 @@ namespace MmorpgClient.Table
     public static class AllTable
     {
         /// <summary>Number of generated tables.</summary>
-        public const int TableCount = 42;
+        public const int TableCount = 45;
 
         private static Action s_loadSuccessCallback;
 
@@ -71,6 +71,9 @@ namespace MmorpgClient.Table
                 MirrorTableManager.FileName(useBinary),
                 MissionTableManager.FileName(useBinary),
                 MonsterTableManager.FileName(useBinary),
+                MysteryMerchantGoodsTableManager.FileName(useBinary),
+                MysteryMerchantRuleTableManager.FileName(useBinary),
+                MysteryMerchantSpotTableManager.FileName(useBinary),
                 PetTableManager.FileName(useBinary),
                 PetRuleTableManager.FileName(useBinary),
                 RewardTableManager.FileName(useBinary),
@@ -120,6 +123,9 @@ namespace MmorpgClient.Table
             MirrorTableManager.Instance.Load(configDir, useBinary);
             MissionTableManager.Instance.Load(configDir, useBinary);
             MonsterTableManager.Instance.Load(configDir, useBinary);
+            MysteryMerchantGoodsTableManager.Instance.Load(configDir, useBinary);
+            MysteryMerchantRuleTableManager.Instance.Load(configDir, useBinary);
+            MysteryMerchantSpotTableManager.Instance.Load(configDir, useBinary);
             PetTableManager.Instance.Load(configDir, useBinary);
             PetRuleTableManager.Instance.Load(configDir, useBinary);
             RewardTableManager.Instance.Load(configDir, useBinary);
@@ -219,6 +225,12 @@ namespace MmorpgClient.Table
                 MissionTableManager.Instance.LoadFromBytes, MissionTableManager.Instance.LoadFromJson);
             LoadOne(MonsterTableManager.FileName(useBinary), byteProvider, useBinary,
                 MonsterTableManager.Instance.LoadFromBytes, MonsterTableManager.Instance.LoadFromJson);
+            LoadOne(MysteryMerchantGoodsTableManager.FileName(useBinary), byteProvider, useBinary,
+                MysteryMerchantGoodsTableManager.Instance.LoadFromBytes, MysteryMerchantGoodsTableManager.Instance.LoadFromJson);
+            LoadOne(MysteryMerchantRuleTableManager.FileName(useBinary), byteProvider, useBinary,
+                MysteryMerchantRuleTableManager.Instance.LoadFromBytes, MysteryMerchantRuleTableManager.Instance.LoadFromJson);
+            LoadOne(MysteryMerchantSpotTableManager.FileName(useBinary), byteProvider, useBinary,
+                MysteryMerchantSpotTableManager.Instance.LoadFromBytes, MysteryMerchantSpotTableManager.Instance.LoadFromJson);
             LoadOne(PetTableManager.FileName(useBinary), byteProvider, useBinary,
                 PetTableManager.Instance.LoadFromBytes, PetTableManager.Instance.LoadFromJson);
             LoadOne(PetRuleTableManager.FileName(useBinary), byteProvider, useBinary,

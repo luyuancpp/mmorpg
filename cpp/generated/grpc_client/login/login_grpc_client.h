@@ -1,41 +1,20 @@
 #pragma once
 #include <chrono>
 #include <functional>
-#include <memory>
-#include <deque>
-#include "core/network/grpc_client_runtime.h"
+#include <string>
+#include <string_view>
+#include <vector>
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
-#include "proto/login/login.grpc.pb.h"
 
 #include "rpc/service_metadata/login_service_metadata.h"
 
-using grpc::ClientContext;
-using grpc::Status;
-using grpc::ClientAsyncResponseReader;
-
 namespace loginpb {
-using ClientPlayerLoginStubPtr = std::unique_ptr<ClientPlayerLogin::Stub>;
 #pragma region ClientPlayerLoginLogin
-
-struct AsyncClientPlayerLoginLoginGrpcClient {
-    uint32_t messageId{ ClientPlayerLoginLoginMessageId };
-    ClientContext context;
-    Status status;
-    ::loginpb::LoginResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::loginpb::LoginResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::loginpb::LoginRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginLoginHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::loginpb::LoginResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerLoginLoginGrpcPath = "/loginpb.ClientPlayerLogin/Login";
 using AsyncClientPlayerLoginLoginHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::loginpb::LoginResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::loginpb::LoginResponse&)>;
 extern AsyncClientPlayerLoginLoginHandlerFunctionType AsyncClientPlayerLoginLoginHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -51,25 +30,10 @@ void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntit
 void SendClientPlayerLoginLogin(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginRequest& request, GrpcDone<::loginpb::LoginResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerLoginCreatePlayer
-
-struct AsyncClientPlayerLoginCreatePlayerGrpcClient {
-    uint32_t messageId{ ClientPlayerLoginCreatePlayerMessageId };
-    ClientContext context;
-    Status status;
-    ::loginpb::CreatePlayerResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::loginpb::CreatePlayerResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::loginpb::CreatePlayerRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginCreatePlayerHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::loginpb::CreatePlayerResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerLoginCreatePlayerGrpcPath = "/loginpb.ClientPlayerLogin/CreatePlayer";
 using AsyncClientPlayerLoginCreatePlayerHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::loginpb::CreatePlayerResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::loginpb::CreatePlayerResponse&)>;
 extern AsyncClientPlayerLoginCreatePlayerHandlerFunctionType AsyncClientPlayerLoginCreatePlayerHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -85,25 +49,10 @@ void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity no
 void SendClientPlayerLoginCreatePlayer(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::CreatePlayerRequest& request, GrpcDone<::loginpb::CreatePlayerResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerLoginEnterGame
-
-struct AsyncClientPlayerLoginEnterGameGrpcClient {
-    uint32_t messageId{ ClientPlayerLoginEnterGameMessageId };
-    ClientContext context;
-    Status status;
-    ::loginpb::EnterGameResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::loginpb::EnterGameResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::loginpb::EnterGameRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginEnterGameHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::loginpb::EnterGameResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerLoginEnterGameGrpcPath = "/loginpb.ClientPlayerLogin/EnterGame";
 using AsyncClientPlayerLoginEnterGameHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::loginpb::EnterGameResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::loginpb::EnterGameResponse&)>;
 extern AsyncClientPlayerLoginEnterGameHandlerFunctionType AsyncClientPlayerLoginEnterGameHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -119,25 +68,10 @@ void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeE
 void SendClientPlayerLoginEnterGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::EnterGameRequest& request, GrpcDone<::loginpb::EnterGameResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerLoginLeaveGame
-
-struct AsyncClientPlayerLoginLeaveGameGrpcClient {
-    uint32_t messageId{ ClientPlayerLoginLeaveGameMessageId };
-    ClientContext context;
-    Status status;
-    ::loginpb::LoginEmptyResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::loginpb::LoginEmptyResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::loginpb::LeaveGameRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginLeaveGameHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::loginpb::LoginEmptyResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerLoginLeaveGameGrpcPath = "/loginpb.ClientPlayerLogin/LeaveGame";
 using AsyncClientPlayerLoginLeaveGameHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::loginpb::LoginEmptyResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::loginpb::LoginEmptyResponse&)>;
 extern AsyncClientPlayerLoginLeaveGameHandlerFunctionType AsyncClientPlayerLoginLeaveGameHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -153,25 +87,10 @@ void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeE
 void SendClientPlayerLoginLeaveGame(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LeaveGameRequest& request, GrpcDone<::loginpb::LoginEmptyResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerLoginDisconnect
-
-struct AsyncClientPlayerLoginDisconnectGrpcClient {
-    uint32_t messageId{ ClientPlayerLoginDisconnectMessageId };
-    ClientContext context;
-    Status status;
-    ::loginpb::LoginEmptyResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::loginpb::LoginEmptyResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::loginpb::LoginNodeDisconnectRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginDisconnectHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::loginpb::LoginEmptyResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerLoginDisconnectGrpcPath = "/loginpb.ClientPlayerLogin/Disconnect";
 using AsyncClientPlayerLoginDisconnectHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::loginpb::LoginEmptyResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::loginpb::LoginEmptyResponse&)>;
 extern AsyncClientPlayerLoginDisconnectHandlerFunctionType AsyncClientPlayerLoginDisconnectHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -187,25 +106,10 @@ void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity node
 void SendClientPlayerLoginDisconnect(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::LoginNodeDisconnectRequest& request, GrpcDone<::loginpb::LoginEmptyResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerLoginRefreshToken
-
-struct AsyncClientPlayerLoginRefreshTokenGrpcClient {
-    uint32_t messageId{ ClientPlayerLoginRefreshTokenMessageId };
-    ClientContext context;
-    Status status;
-    ::loginpb::RefreshTokenResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::loginpb::RefreshTokenResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::loginpb::RefreshTokenRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerLoginRefreshTokenHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::loginpb::RefreshTokenResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerLoginRefreshTokenGrpcPath = "/loginpb.ClientPlayerLogin/RefreshToken";
 using AsyncClientPlayerLoginRefreshTokenHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::loginpb::RefreshTokenResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::loginpb::RefreshTokenResponse&)>;
 extern AsyncClientPlayerLoginRefreshTokenHandlerFunctionType AsyncClientPlayerLoginRefreshTokenHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -220,27 +124,11 @@ void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity no
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendClientPlayerLoginRefreshToken(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RefreshTokenRequest& request, GrpcDone<::loginpb::RefreshTokenResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
-using LoginPreGateStubPtr = std::unique_ptr<LoginPreGate::Stub>;
 #pragma region LoginPreGateAssignGate
-
-struct AsyncLoginPreGateAssignGateGrpcClient {
-    uint32_t messageId{ LoginPreGateAssignGateMessageId };
-    ClientContext context;
-    Status status;
-    ::loginpb::AssignGateResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::loginpb::AssignGateResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::loginpb::AssignGateRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncLoginPreGateAssignGateHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::loginpb::AssignGateResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kLoginPreGateAssignGateGrpcPath = "/loginpb.LoginPreGate/AssignGate";
 using AsyncLoginPreGateAssignGateHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::loginpb::AssignGateResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::loginpb::AssignGateResponse&)>;
 extern AsyncLoginPreGateAssignGateHandlerFunctionType AsyncLoginPreGateAssignGateHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -256,25 +144,10 @@ void SendLoginPreGateAssignGate(entt::registry& registry, entt::entity nodeEntit
 void SendLoginPreGateAssignGate(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::AssignGateRequest& request, GrpcDone<::loginpb::AssignGateResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region LoginPreGateQueryQueueStatus
-
-struct AsyncLoginPreGateQueryQueueStatusGrpcClient {
-    uint32_t messageId{ LoginPreGateQueryQueueStatusMessageId };
-    ClientContext context;
-    Status status;
-    ::loginpb::QueryQueueStatusResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::loginpb::QueryQueueStatusResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::loginpb::QueryQueueStatusRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncLoginPreGateQueryQueueStatusHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::loginpb::QueryQueueStatusResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kLoginPreGateQueryQueueStatusGrpcPath = "/loginpb.LoginPreGate/QueryQueueStatus";
 using AsyncLoginPreGateQueryQueueStatusHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::loginpb::QueryQueueStatusResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::loginpb::QueryQueueStatusResponse&)>;
 extern AsyncLoginPreGateQueryQueueStatusHandlerFunctionType AsyncLoginPreGateQueryQueueStatusHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -289,27 +162,11 @@ void SendLoginPreGateQueryQueueStatus(entt::registry& registry, entt::entity nod
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendLoginPreGateQueryQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::QueryQueueStatusRequest& request, GrpcDone<::loginpb::QueryQueueStatusResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
-using LoginAdminStubPtr = std::unique_ptr<LoginAdmin::Stub>;
 #pragma region LoginAdminRemovePlayersFromAccounts
-
-struct AsyncLoginAdminRemovePlayersFromAccountsGrpcClient {
-    uint32_t messageId{ LoginAdminRemovePlayersFromAccountsMessageId };
-    ClientContext context;
-    Status status;
-    ::loginpb::RemovePlayersFromAccountsResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::loginpb::RemovePlayersFromAccountsResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::loginpb::RemovePlayersFromAccountsRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncLoginAdminRemovePlayersFromAccountsHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::loginpb::RemovePlayersFromAccountsResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kLoginAdminRemovePlayersFromAccountsGrpcPath = "/loginpb.LoginAdmin/RemovePlayersFromAccounts";
 using AsyncLoginAdminRemovePlayersFromAccountsHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::loginpb::RemovePlayersFromAccountsResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::loginpb::RemovePlayersFromAccountsResponse&)>;
 extern AsyncLoginAdminRemovePlayersFromAccountsHandlerFunctionType AsyncLoginAdminRemovePlayersFromAccountsHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -324,13 +181,11 @@ void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::ent
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendLoginAdminRemovePlayersFromAccounts(entt::registry& registry, entt::entity nodeEntity, const ::loginpb::RemovePlayersFromAccountsRequest& request, GrpcDone<::loginpb::RemovePlayersFromAccountsResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
-void SetLoginHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void SetLoginIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetLoginHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetLoginIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetLoginFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 void SetLoginIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
+// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。
 void SetLoginCallDeadline(std::chrono::milliseconds deadline);
-void HandleLoginCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
-void InitLoginGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace loginpb

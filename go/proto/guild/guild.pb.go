@@ -110,7 +110,8 @@ func (GuildChangeKind) EnumDescriptor() ([]byte, []int) {
 }
 
 // 客户端可见的资产订单状态。guild_db.proto 的 GuildAssetOpStatus 是库内状态、不下发客户端,
-// 这里另起一个;两者数值逐项相同,服务端按值直接转换(新增状态必须两边同加)。
+// 这里另起一个;数值 1..5 与库内逐项相同。库内 ABANDONED(6,自动放弃)是库内专用状态,
+// 由 logic.orderViewOf 显式映射为 ABORTED,不新增客户端枚举;服务端不按值转换,库内新增状态时在那里显式补映射。
 type GuildAssetOrderStatus int32
 
 const (
