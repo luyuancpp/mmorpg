@@ -88,9 +88,20 @@ const insertSnapshotSQL = `INSERT INTO player_snapshot
 // 列清单只在 insertSnapshotSQL 里写一次。
 const snapshotValuesTupleSQL = `(?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-// onDuplicateKeepIDSQL 是唯一键形态的 ODKU 尾巴:撞 uk_snapshot_guid_nz 时一列不改,只把已存在那行的 id 回带。
-// 单行(insertSnapshotOnDuplicateKeepSQL)与多行(insertSnapshotsOnDuplicateKeepSQL)共用,取舍见前者的注释。
+// onDuplicateKeepIDSQL 是唯一键形态**单行**语句的 ODKU 尾巴:撞 uk_snapshot_guid_nz 时一列不改,只把已存在那行的 id 回带。
+// 取舍见 insertSnapshotOnDuplicateKeepSQL 的注释。多行语句不能用它,见 onDuplicateKeepRowSQL。
 const onDuplicateKeepIDSQL = "\n\t ON DUPLICATE KEY UPDATE `id` = LAST_INSERT_ID(`id`)"
+
+// onDuplicateKeepRowSQL 是**多行**语句的 ODKU 尾巴:撞键时同样一列不改、affected 记 0,但不回带 id、也不碰自增列。
+//
+// 多行语句里给自增列赋值(哪怕赋回原值,`id = id` 也一样),只要撞上的是**同一条语句前面刚插入**的行(批内重复 guid),
+// MySQL 就报 1869 ER_AUTO_INCREMENT_CONFLICT("Auto-increment value in UPDATE conflicts with internally generated
+// values"):那行的 id 落在本语句刚生成的自增区间里。撞库里早已存在的行不报 —— 那些 id 在区间之外。
+// 2026-10-16 在 MySQL 26.7.0(innodb_autoinc_lock_mode=2)上实测:`id = LAST_INSERT_ID(id)` 与 `id = id` 在批内重复时
+// 都是 1869、整条回滚;本常量批内重复时先出现的那条落库,新插 2 行 + 撞键 2 行记 affected=2,整批重放记 0。
+// 加锁不受影响:ODKU 撞键取 X 由"语句是 ODKU"决定,与 UPDATE 子句写什么无关。
+// 批量路径本来就不回带每行 id(见 InsertSnapshotsIfGuidAbsent),所以这里换掉的只有那个副作用。
+const onDuplicateKeepRowSQL = "\n\t ON DUPLICATE KEY UPDATE `snapshot_guid` = `snapshot_guid`"
 
 // insertSnapshotOnDuplicateKeepSQL 是按 guid 去重的**唯一键**形态:撞 uk_snapshot_guid_nz 时一列都不改,
 // 只把已存在那行的 id 回带给调用方。
@@ -132,17 +143,18 @@ const insertSnapshotOnDuplicateKeepSQL = insertSnapshotSQL + onDuplicateKeepIDSQ
 // 9×256 = 2304 个占位符,远低于预处理语句 65535 的上限;与 config.MaxSnapshotBatchMaxRows 相等,单测钉住。
 const MaxSnapshotBatchRows = 256
 
-// insertSnapshotsOnDuplicateKeepSQL 拼 n(>=1)行的 ODKU;n==1 时与 insertSnapshotOnDuplicateKeepSQL 逐字相同。
+// insertSnapshotsOnDuplicateKeepSQL 拼 n(>=1)行的 ODKU;INSERT 主体与 insertSnapshotOnDuplicateKeepSQL 逐字相同,
+// 只是尾巴换成不碰自增列的 onDuplicateKeepRowSQL(原因见该常量)。
 // 每行一组 snapshotValuesTupleSQL,实参 = 各行 snapshotInsertArgs 依次拼接。
 func insertSnapshotsOnDuplicateKeepSQL(n int) string {
 	var b strings.Builder
-	b.Grow(len(insertSnapshotSQL) + (n-1)*(len(snapshotValuesTupleSQL)+4) + len(onDuplicateKeepIDSQL))
+	b.Grow(len(insertSnapshotSQL) + (n-1)*(len(snapshotValuesTupleSQL)+4) + len(onDuplicateKeepRowSQL))
 	b.WriteString(insertSnapshotSQL)
 	for i := 1; i < n; i++ {
 		b.WriteString(",\n\t ")
 		b.WriteString(snapshotValuesTupleSQL)
 	}
-	b.WriteString(onDuplicateKeepIDSQL)
+	b.WriteString(onDuplicateKeepRowSQL)
 	return b.String()
 }
 

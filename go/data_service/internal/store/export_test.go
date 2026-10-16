@@ -151,6 +151,13 @@ func BootstrapRouteTablesOnlyForTest(ctx context.Context, db *sql.DB, dbName str
 // LockRetriesForTest 返回本 store 因 1213 / 9007 重来的累计次数。
 func (s *RouteStore) LockRetriesForTest() uint64 { return s.lockRetries.Load() }
 
+// RouteProbeGuardSQLForTest / RouteProbeShardModulusSQLForTest 让真库用例用**同一段生产文本**扮演另一个正在探针的副本
+// (TestRouteStore_ProbesQueueOnMetaGuard)。
+const (
+	RouteProbeGuardSQLForTest        = routeLockProbeGuardSQL
+	RouteProbeShardModulusSQLForTest = routeProbeShardModulusSQL
+)
+
 // NewRouteStoreFromDBForTest 在调用方给的池上跑探针并装出 store(失败时关掉 db)。
 // 真库用例拿一个**没有**会话变量的池(storetest 的 Raw)来证明探针 fail-closed。
 func NewRouteStoreFromDBForTest(ctx context.Context, db *sql.DB, opts RouteStoreOptions) (*RouteStore, error) {

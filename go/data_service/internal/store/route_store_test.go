@@ -263,6 +263,7 @@ func allRouteSQLForTest() map[string]string {
 		"R14":             routeListMergedIntoSQL,
 		"R15":             routeMetaSeedSQL,
 		"R16":             routeReconcileSeedSQL,
+		"P0":              routeLockProbeGuardSQL,
 		"P4":              routeProbeShardCheckSQL,
 		"P5":              routeProbeShardModulusSQL,
 		"T1":              routeTiDBPKTypeSQL,

@@ -962,6 +962,51 @@ func TestRouteStore_ProbeKeysHeldByRealPlayers(t *testing.T) {
 	requireSeedUntouched(t)
 }
 
+// TestRouteStore_ProbesQueueOnMetaGuard(2026-10-16,R4):建池探针先锁 route_meta(id=1) 这行已提交的守卫,
+// 才去插必然回滚的探针行。于是并发探针在守卫上排成一列,不会两个以上排在别人必然回滚的探针行后面 —— 那是
+// 事故文档 docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md §9.1 现场二(先到者回滚,任何写法 10/10 成环;
+// 2026-10-16 在本表 RC 下复现 10/10,加守卫后 0/10)。
+//
+// 编排:holder 用**同一段生产文本**按探针的顺序持守卫、插下 P5 的第一行 (0, N) 不提交,扮演正在探针的另一个副本;
+// 这时建池必须排在 route_meta 上,player_route 上一个等待者都没有。holder 回滚后建池通过、表里不留探针行。
+// 只放一个建池者:探针会话的锁等待封顶 1s,多个等待者在慢机器上会让编排本身抖;「守卫先于插入」成立,
+// 就不可能有两个后到者排在一条未提交的探针行后面。
+func TestRouteStore_ProbesQueueOnMetaGuard(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	skipUnlessMySQLEnforcesCheck(t, db)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	holder, err := db.Raw.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	require.NoError(t, err)
+	defer func() { _ = holder.Rollback() }()
+	var writable uint64
+	require.NoError(t, holder.QueryRowContext(ctx, store.RouteProbeGuardSQLForTest).Scan(&writable))
+	n := uint64(placement.RouteRowShards)
+	_, err = holder.ExecContext(ctx, store.RouteProbeShardModulusSQLForTest, uint64(placement.RouteRowShard(n)), n)
+	require.NoError(t, err, "空表上 P5 的第一行应当插得进去(未提交)")
+
+	done := make(chan error, 1)
+	go func() {
+		st, err := store.NewRouteStore(db.Cfg, routeTestOpts())
+		if st != nil {
+			_ = st.Close()
+		}
+		done <- err
+	}()
+
+	if err := awaitLockWaiters(ctx, db.Raw, store.RouteMetaTableName, 1, 5*time.Second); err != nil {
+		skipOrFailOnLockWait(t, err, "建池应当排在 route_meta(id=1) 的守卫上")
+	}
+	var onRoute int
+	require.NoError(t, db.Raw.QueryRowContext(ctx, lockWaitersQuery, store.PlayerRouteTableName).Scan(&onRoute))
+	require.Zero(t, onRoute, "建池排到了 player_route 的未提交探针行后面:守卫没有先于探针插入")
+
+	require.NoError(t, holder.Rollback())
+	require.NoError(t, <-done, "holder 回滚之后建池应当通过")
+	assert.EqualValues(t, 0, db.Count(t, store.PlayerRouteTableName, ""), "探针行必须全部回滚")
+}
+
 // TestRouteStore_ShardMismatchRowFailsClosed(评审 M1):CHECK 关掉期间被写进来的错片行 (3, 6) ——
 //
 //	① 全表键集扫描 ScanRoutes 看得见它,报 ErrRouteShardMismatch;

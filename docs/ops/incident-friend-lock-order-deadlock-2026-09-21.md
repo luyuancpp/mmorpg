@@ -246,27 +246,29 @@ innodb_deadlock_detect=ON)跑出来的受控实验;标"推演"的没有真库证
 `zone_config` / `trade_favorite` / friend 各表争抢的键就是聚簇主键,安全;
 `guild`(主键 `guild_id` + `uk_guild(name_norm)`)形状与 `player_name` 相同,**安全性依赖 `guild_id` 单调递增**
 —— 一旦改成号段分配,这个环立刻回来(已知会帮会会话)。
+〔2026-10-16 更正:帮会会话已用全局插入守卫根治 —— `CreateGuild` 与审批通过的第一把锁是 `guild_player_state` 主键 0 那行哨兵 `S(0)`,
+`uk_guild` / `uk_guild_member` 的查重插入者都在它上面排成一列,**不再依赖 `guild_id` 单调**(复查见 §9.6.2)。〕
 
 ### 9.3 18 条的处置与验证状态
 
 | # | 位置 | 处置 | 真库 |
 |---|---|---|---|
 | 1 | friend 拉黑写入 | ODKU | ✅ 全套 124s 零 SKIP |
-| 2/3/5/6/10 | guild 申请表 / 捐献截止 / 建帮重名 | 主键点锁 + `FORCE INDEX(PRIMARY)`,帮会会话落码 | 归帮会会话 |
-| 4/7/8/14/15 | `assetop.AllocateSeq` 未决行加锁读 | 改普通读,对 op 表不再持锁 | ✅(09-29 早,现被 proto 缺口挡住重验) |
+| 2/3/5/6/10 | guild 申请表 / 捐献截止 / 建帮重名 | 主键点锁 + `FORCE INDEX(PRIMARY)`,帮会会话落码 | 归帮会会话〔10-16:已落地,EXPLAIN 回归在;真库新增死锁 0,见 §9.6.1〕 |
+| 4/7/8/14/15 | `assetop.AllocateSeq` 未决行加锁读 | 改普通读,对 op 表不再持锁 | ✅〔10-16 HEAD 重验:267 PASS / 0 FAIL / 0 SKIP〕 |
 | 9 | `trade_favorite` 收藏 | ODKU(聚簇主键,安全) | ✅ |
-| 11 | 快照 guid 去重 | 生成列 + `uk_snapshot_guid_nz`,写入改普通 INSERT + 1062 回查,配去重迁移 | ✅ |
+| 11 | 快照 guid 去重 | 生成列 + `uk_snapshot_guid_nz`,写入改普通 INSERT + 1062 回查,配去重迁移〔10-16 更正:单行路径实际是 ODKU `id = LAST_INSERT_ID(id)`,1062 只在退路形态当「已存在」〕 | ✅〔审计后新增的批量路径另有 #19 / #20,见 §9.6.3〕 |
 | 12 | `player_name` 抢注 | **根治:主键改 `name_norm`、`player_id` 转唯一键、保持 ODKU**,配幂等可回滚迁移 | ✅ |
 | 13 | `debug_import` | 事务改 RC + 表遍历定序 | ✅ |
-| 16 | seq 行首次创建 | trade:守卫哨兵行 + `EnsureSeqRowTx`;guild 同法自行落 | ⏳ 被 proto 缺口挡住 |
-| 17 | merge_zone 整区改写 | 按主键升序点更新 + RC + 有界重试;TiDB 悲观短事务由搬迁会话落 | 未跑 |
+| 16 | seq 行首次创建 | trade:守卫哨兵行 + `EnsureSeqRowTx`;guild 同法自行落 | ✅〔10-16:trade 133 PASS / 0 / 0;guild 以成员行为守卫落地〕 |
+| 17 | merge_zone 整区改写 | 按主键升序点更新 + RC + 有界重试;TiDB 悲观短事务由搬迁会话落 | 未跑〔10-16 仍未跑:集成测试写死 3306 / 6379 与口令,且会清 Redis 9/10/11 号库;代码复查修复仍在〕 |
 | 18 | gateway 白名单 | ODKU(自增主键,安全) | ✅ 12/12 |
 
 ### 9.4 留下的口子
 
-1. **`go/trade`、`go/shared/assetop` 的真库回归没跑完**:HEAD 编不过(`ledger_dataservice.go` 调的
+1. 〔2026-10-16:✅ 已关闭 —— 缺口由 `d3c2fca3c`(10-08)补齐,两套在 HEAD `a105c3efd` 上验收模式全绿,见 §9.6.1〕**`go/trade`、`go/shared/assetop` 的真库回归没跑完**:HEAD 编不过(`ledger_dataservice.go` 调的
    `GetPlayerAssetOpLedger` 没有 proto 生成产物,2026-09-29 `ccafe300c` 带入),要先按 §4 重生成。
-2. **`TestMigrateSchema_UpgradesLegacyHandWrittenTables` 在干净 HEAD 上就失败**(`transaction_log` 列默认值与
+2. 〔2026-10-16:仍失败,报错相同〕**`TestMigrateSchema_UpgradesLegacyHandWrittenTables` 在干净 HEAD 上就失败**(`transaction_log` 列默认值与
    proto 声明不符),与本批无关,单独处置。
 3. **TiDB 一次都没实测**:上面全部结论只对 InnoDB 成立。TiDB 没有间隙锁,现场一/二本来就不存在,
    但 `#11` 的唯一键在 TiDB 上建不出来(不支持 ALTER 加 STORED 生成列、不支持 NULLIF),
@@ -280,3 +282,74 @@ innodb_deadlock_detect=ON)跑出来的受控实验;标"推演"的没有真库证
    分别用来证明"ODKU 能消环"和"ODKU 消不掉",两次都只对一半现场成立。三类现场各有各的成因。
 6. **推演能把断言写反。** `#12` 的注释翻过三次、`#11` 的断言翻过两次,每次都有手册引用撑着,
    直到真库一跑才定案。**凡是"某某锁会不会与某某锁互等"的判断,在真库上摆一次交错的成本远低于反复推演。**
+
+## 9.6 两周后复查(2026-10-16)
+
+审计修复随 09-29 起的批量提交入库后,其他会话又在同一批表和服务上改了两周代码。本节核对三件事:修复是否仍在、
+真库回归是否仍绿、审计之后新增的加锁 SQL 有没有带进同类问题。代码一律读干净 HEAD `a105c3efd` 的 worktree;
+新发现每条交独立复核员反驳,能在真库上摆交错的都摆了(MySQL 26.7.0,全局 RR,`innodb_deadlock_detect=ON`,
+`innodb_autoinc_lock_mode=2`)。
+
+### 9.6.1 真库重跑
+
+| 套件 | 结果 | 说明 |
+|---|---|---|
+| `go/shared/assetop` | 267 PASS / 0 FAIL / 0 SKIP | 验收模式(`ASSETOP_REQUIRE_MYSQL_TESTS=1`) |
+| `go/trade/internal/data` | 133 PASS / 0 / 0 | 验收模式,含 #9 / #16 的红对照与绿用例 |
+| `go/friend`(MySQL) | 407 PASS / 0 FAIL / 5 SKIP | 4 个是另设门控的 TiDB 用例;1 个是回收竞态用例本轮没撞上窗口(用例自报 SKIP),单独重跑 PASS |
+| `go/friend`(TiDB v8.5.2) | 9 PASS | 推荐计划与申请代次的 TiDB 用例 |
+| `go/data_service/internal/store` | 365 PASS / 1 FAIL / 1 SKIP | FAIL 是 §9.4-2 那条既有失败;SKIP 要 TiDB。修 #19 之前还多一条 1869(见 §9.6.3) |
+| `go/guild`(data + logic) | logic 全绿;data 两轮共 9 条失败,单独重跑剩 3 条 | 失败**全部**是 1 / 1.5 / 2 秒事务预算到点的 `context deadline exceeded`(含一条不加锁的一致性读和一次建表 DDL);两轮 InnoDB `lock_deadlocks` 增量为 **0**。当时机器上同时跑着两套 TiDB、Kafka、Redis 集群,不满足帮会交接 92 §12.6 要求的「独占实例」,须在独占实例重验 |
+| `java/gateway_node` | 锁序相关全绿 | `ZoneConfigUpsertLockOrderMySqlTest` 2、`ZoneWhitelistUpsertLockOrderMySqlTest` 2、`InnoDbDeadlockRetryTest` 8;另一条 `LoginRpcClientRetryTest` 期望 `UNAVAILABLE` 得到 `DEADLINE_EXCEEDED`,与锁无关 |
+| `go/player_inbox` | 未跑成 | HEAD 编不过:`go.sum` 从未入库(模块正被别的会话改,未提交) |
+| `tools/merge_zone` | 未跑 | 集成测试写死 `127.0.0.1:3306`、`6379` 与口令,并会清 Redis 9/10/11 号库,本机没有对应实例 |
+
+### 9.6.2 18 条修复:全部仍在
+
+逐条定位到 HEAD 的代码行,并读了审计后每次改动的 diff:没有一条被改回。值得记一笔的变化:
+`#6` 帮会改用全局插入守卫 `S(0)`,不再依赖 `guild_id` 单调(§9.2 已更正);`#11` 的部署前提从
+`replicas=1 + Recreate` 变成 2 副本 `RollingUpdate`(`1bc9d4899`),单写者不再成立 —— 这正是 #20 / #21 暴露的原因。
+
+### 9.6.3 审计之后新增代码里的新发现
+
+| # | 位置 | 问题 | 证据 | 处置 |
+|---|---|---|---|---|
+| 19 | `data_service` `snapshot_store.go` 批量路径(`d5cbb8a8e`,10-13) | 多行 ODKU 尾巴 `id = LAST_INSERT_ID(id)` 给自增列赋值,批内同 guid 重复时 MySQL 报 **1869** 整条回滚 | 真库:`id = LAST_INSERT_ID(id)` 与 `id = id` 都 1869;`snapshot_guid = snapshot_guid` 正确(先出现者落库,affected 只计新插入) | ✅ 已修:批量尾巴改 `onDuplicateKeepRowSQL`,单行路径不变;`TestSnapshotStore_BatchDedupsAgainstStoredAndWithinBatch` 由红转绿 |
+| 20 | 同上 | 多行 ODKU 撞到**已存在**的行时,先在自增主键末尾试插、回滚后留下 **PRIMARY supremum 上的 X 间隙锁直到语句结束**;rebalance 重叠时与另一实例在唯一键上的等待成环 | 两名复核员真库复现:HEAD 尾巴 3/3、#19 修复后的尾巴 3/3、**两批都按 guid 升序也 3/3**;对照「批里没有撞键行」0/3 | **未修,待拍板**。只在 `Kafka.SnapshotBatchMaxRows > 1` 时走到(默认 1)。建议:保持 1,撤掉 `go/data_service/etc/data_service.yaml` 里「建议开服值 16」的注释(该文件在别的会话手里,本次没改);要开批量须先重新设计(例如先普通读剔除已存在的 guid,只把确定缺席的行拼进多行语句),再按本节方法上真库摆交错 |
+| 21 | `data_service` `transaction_log_store.go` `InsertBatchIgnore` | 消费者跨分区混拼的一批按到达序写 VALUES;rebalance 重叠时两实例对重叠行顺序相反,主键查重 S,REC_NOT_GAP 互等(RC 下同样成立) | 复核员真库:两条 200 行语句同时放行,到达序全重叠 4/10、半重叠 3/10 成环,**都按 `tx_id` 升序 0/10** | ✅ 已修:拼语句前按 `tx_id` 升序稳定排序(副本,不改调用方切片);`TestTxLogRowsInLockOrder` |
+| 22 | `data_service` `route_store.go` 建池探针 P4 + P5 | 空表上 ≥3 个建池方并发插同一个缺席的探针键,先插者(探针必然回滚)回滚后落入 §9.1 现场二,原来只靠 `retryRouteTx` 吸收 | 两名复核员真库(RC)10/10、11/11 成环;加守卫 0/10 | ✅ 已修:探针事务第一句 `route_meta(id=1) FOR UPDATE`(`lockRouteProbeGuard`),有界重试降为最后防线;真库回归 `TestRouteStore_ProbesQueueOnMetaGuard`(去掉守卫的红对照已确认变红)、契约用例「探针守卫缺行」。当前生产 `Mode: redis` 不建 route store,切 db_first 前生效 |
+| 23 | `player_inbox` `store.go` `ensureStream` | 流行缺失时无守卫 `INSERT IGNORE`,与 #16 修复前同形(R4);设计文档 §6.2 第 6 步把有界重试当消环论证 | 复核员真库(RC):两个后到者真排在未提交行后 18/18 成环;另一名复核员证当前**不可达**(v1 唯一生产方是运维手调的 GM 处置,逐玩家串行),并更正「至少 3 个并发者才成环」 | **转交**(模块在别的会话手里):第 5 批开放外部生产方之前必须改成「普通读探针 + 守卫行」,并改设计文档论证 |
+| 24 | `go/db` `internal/kafka/player_row_fence.go:49`(**在途、未提交**,落地围栏那条线) | 新号首次存盘在全局 RR 事务里先 `FOR UPDATE` 一个不存在的主键(取间隙锁 / supremum next-key),未命中再 `Save`(UPDATE 0 行 → INSERT);两个**不同**新号的首存互挡插入意向锁 → 跨玩家 1213 | 复核员真库(RR):空表与非空表两种形态都按代码语句顺序复现 1213;**当前可达**(建角只写 Redis 种子,每个新号两张表首存都走未命中分支;登录压测每轮清库)。HEAD 的旧路径是自动提交的单条 Save,不受影响 | **已转交**落地围栏会话:未命中分支改为「普通读 → 普通 INSERT,撞 1062 回滚整体重跑」或显式 RC;两种都不许用 Save 的「1062 后按主键 UPDATE」兜底(会绕过围栏);补「不同新号并发首存」真库回归。〔10-16 落地围栏会话已按方案①修:先非锁定 `ExistsByPK`,无行即自动提交 INSERT(不同主键的插入意向锁互相兼容),撞 1062 才进事务对已提交行 `FOR UPDATE` 再按 (epoch, seq) 裁决,事务内仍未命中返回可重试的 `errPlayerRowVanished`;新增 `TestIntegrationPlayerSQLFenceConcurrentFirstSavesOfDifferentPlayersDoNotDeadlock` 等两条回归。**已修,未编译,待真库验证**〕 |
+
+**未复核、只登记的线索**(额度原因没有派复核员;都不在当前 MySQL 生产路径上):
+
+- **TiDB 语义(5 条,并入 TiDB Phase 1 的 P1-0 待核)**:friend 的 `Unblock`、终态申请清理、容量行回收,player_inbox 的 `ClearNotifyDue`,
+  trade 的 `Reschedule` / `markPoison`(代码注释已自认「迁 TiDB 前必须对齐 guild」)——都是「自动提交(TiDB 下走乐观事务)写行 / 改索引列」
+  与悲观点锁事务在行 key 与索引 key 上反向互等的推演。处方同 guild `asset_store.go` 的 TiDB 附加规则:改成显式 RC 短事务,首句完整主键 `FOR UPDATE`。
+- **在途的交易 commerce(`go/trade/internal/commerce`,未提交)**:`market.go:34` 撮合守卫与 `auction.go:41` 竞拍守卫在同一业务事务里先
+  `INSERT IGNORE` 守卫行再 `FOR UPDATE`;复核员在 MySQL RC 下实测 S→X 升级环与首插回滚环都成立(1/1、5/5、3/3),但 commerce 只在
+  `AssetOp.Enabled` 时装配,而它被 `config.Validate` 与 `authoritysql.Open` 强制只连 TiDB 悲观事务 —— **当前不可达**,属「放开 TiDB 门禁或照搬到
+  MySQL 服务之前必修」的潜伏写法(处方:守卫行启动期预建或在已提交哨兵下独立短事务建,业务事务只留完整主键 `FOR UPDATE`)。`engine.go:377`
+  取消交易走二级索引多行改 `trade_asset_op`,绕过「先主键点锁再 CAS」:TiDB 上与 Finalize / ResolveManually 在唯一键上互等(推演,未实测),
+  并入 TiDB 待核。
+- **在途代码(3 条,转交写 `go/match/internal/authority` 的会话)**:`match_authority_ticket` 与 `match_direct_intent` 在事务内先 `INSERT IGNORE`
+  再 `FOR UPDATE`(InnoDB 下 S→X 升级与 R4,`RequireTiDB=false` 时才走到);`Finish` 按成员入队顺序逐条更新票据,与 `claimTx` 的 `player_id` 升序反序。
+
+### 9.6.4 新的实测结论(补 §9.1)
+
+**现场四:多行 ODKU + 自增主键。** 多行语句里只要有一行撞到已存在的记录,该行会先在自增主键末尾试插一条聚簇记录,回滚后那把锁被继承成
+PRIMARY supremum 上的 X 间隙锁,一直持有到整条语句结束 —— 于是这条语句挡住全表**所有**并发插入者,而不只是同 guid 的。它与
+「本语句稍后在唯一键上等别人的未提交行」组合即成环;排序只能消掉记录锁上的环,消不掉这一个。不相交的两批不成环,但后到者要等前一条
+整条语句结束。单行语句不受影响(撞键时它没有「稍后」)。
+
+**1869 ER_AUTO_INCREMENT_CONFLICT。** 多行 INSERT 的 ODKU 子句只要给自增列赋值(哪怕赋回原值),批内重复撞上本语句刚生成的 id 就报错;
+撞库里早已存在的行不报。
+
+### 9.6.5 教训(补 §9.5)
+
+7. **共用别人的容器跑真库会被中途撤掉。** 本次复查用的 Codex 会话的 MySQL 在 03:38 收到停机信号,随后整套换成别的演示栈;紧接着的一轮全部
+   挂在连接上。真库验收要用**自己起、自己删**的一次性容器(端口错开),并在报告里写明实例。
+8. **在负载机上,紧时间预算用例的失败不能当锁序证据。** 判死锁看 InnoDB 计数(`information_schema.INNODB_METRICS` 的 `lock_deadlocks`)
+   与 `LATEST DETECTED DEADLOCK`,不看「写冲突」类返回值 —— `inTx` 会把 1213 和预算超时都包成同一个错误。
+9. **审计结论有保质期。** #20 / #21 都不是修复被改回,而是部署前提(单副本)在审计之后被别的提交改掉。改副本数、改消费模型的提交,
+   要把本文 §9.2 的判据和「多行语句的行序即取锁序」一起过一遍。

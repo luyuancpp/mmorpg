@@ -131,6 +131,8 @@ func routeStmtLabel(query string) string {
 		return "R15"
 	case routeReconcileSeedSQL:
 		return "R16"
+	case routeLockProbeGuardSQL:
+		return "PROBE_GUARD"
 	case routeProbeShardCheckSQL:
 		return "PROBE_CHECK"
 	case routeProbeShardModulusSQL:
@@ -162,6 +164,11 @@ func (f *fakeRouteDB) next(label, query string, args []driver.Value) (fakeRouteR
 	}
 	q := f.script.replies[label]
 	if len(q) == 0 {
+		if label == "PROBE_GUARD" {
+			// 探针守卫(route_meta(id=1) FOR UPDATE):没脚本化时默认拿到锁、行在 —— 每次探针尝试都发一次,
+			// 逐个用例排队应答只是噪音;发没发、在哪发由各用例的 wantLabels 钉住,缺行分支单独脚本化。
+			return replyWritable, nil
+		}
 		return fakeRouteReply{}, fmt.Errorf("%w: %s %q", errFakeRouteScriptExhausted, label, query)
 	}
 	f.script.replies[label] = q[1:]
@@ -1423,8 +1430,8 @@ func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 		return out
 	}
 	// P4 没通过时停在 P4、不发 P5;通过时 P5 在同一个事务里接着发两条,最后照样回滚。
-	probeCheckLabels := []string{"PROBE", "VERSION", "R1", "BEGIN", "PROBE_CHECK", "ROLLBACK"}
-	probePassedLabels := []string{"PROBE", "VERSION", "R1", "BEGIN", "PROBE_CHECK", "PROBE_MODULUS", "PROBE_MODULUS", "ROLLBACK"}
+	probeCheckLabels := []string{"PROBE", "VERSION", "R1", "BEGIN", "PROBE_GUARD", "PROBE_CHECK", "ROLLBACK"}
+	probePassedLabels := []string{"PROBE", "VERSION", "R1", "BEGIN", "PROBE_GUARD", "PROBE_CHECK", "PROBE_MODULUS", "PROBE_MODULUS", "ROLLBACK"}
 
 	for _, tc := range []struct {
 		name       string
@@ -1437,6 +1444,16 @@ func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 		// 只断言错误号的话删掉这两个分支用例照样绿,钉不住给人看的处理提示。
 		wantErrContains string
 	}{
+		{
+			// 探针守卫 route_meta(id=1) FOR UPDATE 读不到行(R1 之后、探针事务里行被删了):fail-closed,不发 P4。
+			name: "探针守卫缺行",
+			opts: goodOpts,
+			replies: map[string][]fakeRouteReply{
+				"PROBE": {sessionOK}, "VERSION": {mysqlVersion}, "R1": {replyWritable}, "PROBE_GUARD": {{rows: [][]driver.Value{}}},
+			},
+			wantErr:    ErrRouteMetaMissing,
+			wantLabels: []string{"PROBE", "VERSION", "R1", "BEGIN", "PROBE_GUARD", "ROLLBACK"},
+		},
 		{
 			name:       "隔离级别不对",
 			opts:       goodOpts,
@@ -1499,7 +1516,7 @@ func TestNewRouteStoreProbeFailClosed(t *testing.T) {
 				"PROBE": {sessionOK}, "VERSION": {tidbVersion}, "TXN_MODE": {{rows: [][]driver.Value{{"pessimistic"}}}},
 				"R1": {replyWritable}, "PROBE_CHECK": {checkEnforced}, "PROBE_MODULUS": modulusOK,
 			},
-			wantLabels: []string{"PROBE", "VERSION", "TXN_MODE", "R1", "BEGIN", "PROBE_CHECK", "PROBE_MODULUS", "PROBE_MODULUS", "ROLLBACK"},
+			wantLabels: []string{"PROBE", "VERSION", "TXN_MODE", "R1", "BEGIN", "PROBE_GUARD", "PROBE_CHECK", "PROBE_MODULUS", "PROBE_MODULUS", "ROLLBACK"},
 		},
 		{
 			name: "writable为0不拒建store",
@@ -1610,7 +1627,7 @@ func TestNewRouteStoreShardModulusProbeContract(t *testing.T) {
 	// 64 片下的两行写成字面量(片 0 / id 64、片 63 / id 63),故意不经 placement.RouteRowShards 算:被测代码用的就是它。
 	wantArgs := [][]driver.Value{{uint64(0), uint64(64)}, {uint64(63), uint64(63)}}
 	wantLabels := func(modulusCalls int) []string {
-		out := []string{"PROBE", "VERSION", "R1", "BEGIN", "PROBE_CHECK"}
+		out := []string{"PROBE", "VERSION", "R1", "BEGIN", "PROBE_GUARD", "PROBE_CHECK"}
 		for i := 0; i < modulusCalls; i++ {
 			out = append(out, "PROBE_MODULUS")
 		}
@@ -1750,7 +1767,7 @@ func TestNewRouteStoreProbeRetriesLockConflict(t *testing.T) {
 	}
 	// attempt 是一次尝试的语句序列:p5Calls 是这次发出的 P5 条数(冲突的那一行之后不再发),一律以 ROLLBACK 收尾。
 	attempt := func(p5Calls int) []string {
-		out := []string{"BEGIN", "PROBE_CHECK"}
+		out := []string{"BEGIN", "PROBE_GUARD", "PROBE_CHECK"}
 		for i := 0; i < p5Calls; i++ {
 			out = append(out, "PROBE_MODULUS")
 		}

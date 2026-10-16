@@ -1,9 +1,11 @@
 package store
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"fmt"
+	"slices"
 	"strings"
 
 	dbpb "proto/common/database"
@@ -91,10 +93,17 @@ func (s *TransactionLogStore) Close() error {
 // InsertBatchIgnore 一条多行 `INSERT IGNORE` 落一批流水,返回真正插入的行数。
 // tx_id 是主键,重放同一批(消费者提交 offset 前崩溃)只会被 IGNORE,天然幂等。
 // 200 行 × 15 列 = 3000 个占位符,远低于 MySQL 65535 的上限,不分块。
+//
+// 行按 tx_id 升序拼(txLogRowsInLockOrder),不按调用方的到达序。消费者的一批是跨分区混拼的,rebalance 重叠时
+// 旧属主手里没落的半批会被新属主从已提交 offset 重读,两边对同一组行的分区交错顺序不同:各自先插了对方后面要碰的
+// 那一行,主键查重对未提交记录请求 S,REC_NOT_GAP 互等 → 1213(RC 下同样成立,与间隙锁无关)。
+// 2026-10-16 真库实测(MySQL 26.7.0,两条 200 行语句同时放行):到达序全重叠 4/10、半重叠 3/10 成环,
+// 两边都按 tx_id 升序 0/10。tx_id 不是自增列、流水没有插入序语义,排序不改变任何结果。
 func (s *TransactionLogStore) InsertBatchIgnore(ctx context.Context, rows []*TransactionLogRow) (int64, error) {
 	if len(rows) == 0 {
 		return 0, nil
 	}
+	rows = txLogRowsInLockOrder(rows)
 	colCount := len(txLogInsertColumns)
 	placeholder := "(" + strings.TrimSuffix(strings.Repeat("?,", colCount), ",") + ")"
 
@@ -128,6 +137,14 @@ func (s *TransactionLogStore) InsertBatchIgnore(ctx context.Context, rows []*Tra
 		return 0, fmt.Errorf("insert ignore transaction_log rows affected: %w", err)
 	}
 	return n, nil
+}
+
+// txLogRowsInLockOrder 返回按 tx_id 升序稳定排序的**副本**,即多行 INSERT 在主键上的取锁顺序。
+// 不就地排序:调用方(消费者)手里的批还要按原样参与 offset 提交与日志。
+func txLogRowsInLockOrder(rows []*TransactionLogRow) []*TransactionLogRow {
+	sorted := slices.Clone(rows)
+	slices.SortStableFunc(sorted, func(a, b *TransactionLogRow) int { return cmp.Compare(a.TxID, b.TxID) })
+	return sorted
 }
 
 // QueryLog retrieves transaction log entries matching the filter criteria.

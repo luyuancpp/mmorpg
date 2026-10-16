@@ -8876,3 +8876,20 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 客户端可见:scene 类请求(含应答为 Empty 的移动号)在 scene 未就绪时回错误信封,不再推 23;客户端仓未授权,未读未改,需要客户端负责人确认通用处理。
 - **Codex 验证**:proto 重生成之后 `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64`(0 error);Java 仓 `./mvnw -B -pl game-gate,game-robot -am test`(重点 ClientDispatcherTest、ClientPipelineTest、BattleUplinkRejectedTest、ClientRedirectTest、MessageRoutesTest、GateConfigurationTest、MatchBackendForwardingTest,game-robot 的 TradeScenarioTest、GameConnectionTest、GameConnectionRedirectTest)。可选冒烟:路由模式一区下 `robot.exe -c etc/channel_smoke.yaml`、`etc/travel_smoke.yaml`。
 - **Java 版(AGENTS §12)**:同批已改(未提交),PARITY 已追加。
+
+## 2026-10-16 数据层死锁审计两周后复查与三处新修复(Claude;真库验证见下,未提交)
+
+- **背景**:09-29 审计的 18 条修复已随批量提交入库;上次留下的「`go/trade` / `go/shared/assetop` 真库回归被 proto 缺口挡住」已由 `d3c2fca3c`(10-08)补齐。本次在干净 HEAD `a105c3efd` 的 worktree 上重跑真库、复查修复是否被改回,并审了审计之后新增 / 在途的加锁 SQL(两轮工作流,每条发现交独立复核员,能上真库的都摆了交错)。
+- **真库重跑**(MySQL 26.7.0,全局 RR):assetop 267 / 0 / 0、trade 133 / 0 / 0(都开验收开关);friend MySQL 407 PASS(1 条竞态用例未撞窗口自报 SKIP,单跑 PASS)、TiDB v8.5.2 9 PASS;data_service store 365 PASS,仅剩既有的 `TestMigrateSchema_UpgradesLegacyHandWrittenTables`;gateway 锁序类全绿;guild 失败全部是 1~2 秒事务预算超时(负载机),两轮 InnoDB 新增死锁 0,需独占实例重验;player_inbox(HEAD 缺 go.sum)与 merge_zone(写死 3306 / 6379)未跑成。
+- **18 条修复全部仍在**,无退化;帮会 #6 已改用全局插入守卫 `S(0)`,不再依赖 `guild_id` 单调。
+- **本次修复(都在 `go/data_service/internal/store`,未提交)**:
+  - **#19** 快照批量路径批内同 guid 报 MySQL 1869(多行 ODKU 给自增列赋值):批量尾巴改 `snapshot_guid = snapshot_guid`(`onDuplicateKeepRowSQL`),单行路径不变;同步 `docs/design/data_service_role_and_scope.md` 与 `docs/ops/audit-topic-generation-bump-runbook.md`。
+  - **#21** `transaction_log` 多行 `INSERT IGNORE` 按跨分区到达序拼批,2 副本 rebalance 重叠时反序成环(复核员真库 4/10 → 升序 0/10):拼语句前按 `tx_id` 升序稳定排序;`TestTxLogRowsInLockOrder`。
+  - **#22** route store 建池探针 P5 是「必然回滚的首插者」(§9.1 现场二,RC 真库 10/10):探针事务首句锁已提交的 `route_meta(id=1)`(`lockRouteProbeGuard`),有界重试降为最后防线;真库回归 `TestRouteStore_ProbesQueueOnMetaGuard`(去掉守卫的红对照已确认变红)+ 契约用例「探针守卫缺行」。
+  - 验证:上述改动拷入 HEAD worktree 后 `gofmt` / `go vet -tags integration` 干净,`Route|TxLog|TransactionLog|SnapshotStore_Batch|InsertSnapshotsOnDuplicateKeepSQLShape` 共 108 PASS / 0 FAIL / 1 SKIP(TiDB 用例);整包另跑过一遍(含 #19)365 PASS,仅既有 1 FAIL。
+- **未修、待拍板**:**#20** 快照批量多行 ODKU 撞已存在行会在自增主键末尾(PRIMARY supremum)留 X 间隙锁直到语句结束,rebalance 重叠时成环,**按 guid 排序也 3/3 成环**;只在 `Kafka.SnapshotBatchMaxRows > 1` 时走到(默认 1)。建议保持 1 并撤掉 `go/data_service/etc/data_service.yaml` 里「建议开服值 16」(该文件在别的会话手里,本次没改);开批量前须重新设计。
+- **已转交**:**#24** 在途 `go/db/internal/kafka/player_row_fence.go`:新号首存在 RR 事务里锁定读不存在的主键,两个不同新号互持间隙锁 → 跨玩家 1213,真库复现、**当前可达**(登录压测清库后全是新号)→ 已发「落地恢复与围栏」会话;**#23** player_inbox `ensureStream` 与 #16 修复前同形(机理成立、当前不可达,第 5 批开放外部生产方前必修)+ HEAD 缺 `go.sum` → 已发「收件箱」会话。
+- **只登记的线索**:TiDB 语义 5 条(friend Unblock / 终态清理 / 容量回收、player_inbox ClearNotifyDue、trade Reschedule / markPoison)与在途 commerce `engine.go:377` → 并入 TiDB Phase 1 待核;在途 commerce 撮合 / 竞拍守卫(InnoDB 下成环但被强制只跑 TiDB)与 match authority 3 条 → 未找到对应会话,见事故文档。
+- **文档**:`docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md` §9.2 / §9.3 / §9.4 补 10-16 状态,新增 §9.6(真库表、新发现 #19–#24、现场四「多行 ODKU + 自增主键」、环境教训)。
+- **环境**:本机 Codex 会话的 MySQL 在跑测中途被撤,后半程改用自起的一次性容器 `cc-deadlock-mysql-1016` / `cc-deadlock-verify-mysql-1016`(已删除);被撤容器 `codex-friend-request-mysql-20261015` 里留有本次的一次性库 `cc_assetop_it_1015`、`cc_trade_it_1015`、`cc_inbox_1016_it`、`cc_gateway_1016_it` 与 guild 用例未删净的 `guild_it_44740_*`,容器已停,未去启动它清理。
+- **Java 版(AGENTS §12)**:不涉及客户端契约;本批是 data_service 内部存储写法,Java 版存储实现不同,是否有「多行语句按到达序拼批」「必然回滚的首插探针」同形写法未核,登记为待 Java 侧按事故文档 §9.2 / §9.6.4 判据自查。

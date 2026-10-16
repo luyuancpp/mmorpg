@@ -161,7 +161,7 @@ data-service 的分区契约随即永久失败。最好也晚于 2.6(先看到�
 
 - 越界 = data_service 拒启(exit 1,日志 `invalid Kafka consumer config`)。K8s ConfigMap 从服务 yaml 镜像这五个键,改服务 yaml 即可。
 - 并发上限留一条连接给 GM 快照 / 回档读;本旋钮**不新增任何 MySQL 连接**(连接预算已超)。
-- 批量路径:多行 `INSERT ... ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)` 一条语句,按 snapshot_guid 去重,语义与逐条相同;
+- 批量路径:多行 `INSERT ... ON DUPLICATE KEY UPDATE snapshot_guid = snapshot_guid` 一条语句,按 snapshot_guid 去重,语义与逐条相同(〔2026-10-16 更正:原写 `id = LAST_INSERT_ID(id)`,批内重复 guid 时报 1869,已改,见 `snapshot_store.go` 的 `onDuplicateKeepRowSQL`〕);
   批量失败自动逐条兜底(`isolation_total{result="recovered"}`),兜底也插不进去的那一行让消费者停在那里(与逐条消费同结局)。
 - **打开批量(1 → 16 等)的前置**(G2a 规格 Q-7 / Q-9):
   1. 压测对比表:AGENTS §6 全流程,同一环境「逐条」与「批量」各跑一轮,用 `stress_summarize.ps1` 出审计段(lag、flush p50/p99、

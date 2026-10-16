@@ -465,14 +465,22 @@ func TestIsDupEntryMySQL(t *testing.T) {
 
 // ── G2a 批量落库(InsertSnapshotsIfGuidAbsent)的纯逻辑部分;真库行为见 snapshot_store_integration_test.go ──
 
-// TestInsertSnapshotsOnDuplicateKeepSQLShape 钉住多行 ODKU 的三件事:
-//   - n=1 与单行 ODKU **逐字相同**:默认配置(批 1 条)下消费者走的是单行接口,但两条路径对同一行必须是同一条语句,
-//     否则「批量开关打开前后语义等价」这句话没有依据;
+// TestInsertSnapshotsOnDuplicateKeepSQLShape 钉住多行 ODKU 的四件事:
+//   - n=1 与单行 ODKU 的 **INSERT 主体逐字相同**、都是 ODKU、尾巴都不改数据列:默认配置(批 1 条)下消费者走的是
+//     单行接口,两条路径对同一行的去重与加锁必须相同,否则「批量开关打开前后语义等价」这句话没有依据;
+//   - 批量尾巴**不碰自增列 `id`**:多行语句里给自增列赋值,批内重复 guid 时 MySQL 报 1869 整条回滚
+//     (2026-10-16 真库复现,见 onDuplicateKeepRowSQL);真库回归是 TestSnapshotStore_BatchDedupsAgainstStoredAndWithinBatch;
 //   - n 行就有 9n 个占位符、恰一个 ON DUPLICATE KEY UPDATE、以 insertSnapshotSQL 开头(列清单只定义一次);
 //   - 行数上限的占位符总数低于预处理语句 65535 的硬上限 —— 越过它是运行期的 Prepared statement 错误,且只在大批时出现。
 func TestInsertSnapshotsOnDuplicateKeepSQLShape(t *testing.T) {
-	if got := insertSnapshotsOnDuplicateKeepSQL(1); got != insertSnapshotOnDuplicateKeepSQL {
-		t.Fatalf("n=1 的批量语句必须与单行 ODKU 逐字相同:\n%s\n---\n%s", got, insertSnapshotOnDuplicateKeepSQL)
+	if got, want := insertSnapshotsOnDuplicateKeepSQL(1), insertSnapshotSQL+onDuplicateKeepRowSQL; got != want {
+		t.Fatalf("n=1 的批量语句必须是单行 INSERT 主体 + 批量尾巴:\n%s\n---\n%s", got, want)
+	}
+	if insertSnapshotOnDuplicateKeepSQL != insertSnapshotSQL+onDuplicateKeepIDSQL {
+		t.Fatalf("单行 ODKU 必须是同一个 INSERT 主体 + 回带 id 的尾巴:\n%s", insertSnapshotOnDuplicateKeepSQL)
+	}
+	if strings.Contains(onDuplicateKeepRowSQL, "`id`") {
+		t.Fatalf("批量尾巴不许给自增列 id 赋值(批内重复时 MySQL 1869):%s", onDuplicateKeepRowSQL)
 	}
 	stmt := insertSnapshotsOnDuplicateKeepSQL(3)
 	if !strings.HasPrefix(stmt, insertSnapshotSQL) {
@@ -484,8 +492,8 @@ func TestInsertSnapshotsOnDuplicateKeepSQLShape(t *testing.T) {
 	if got := strings.Count(stmt, "ON DUPLICATE KEY UPDATE"); got != 1 {
 		t.Fatalf("多行 ODKU 只能有一个 ON DUPLICATE KEY UPDATE 尾巴,got %d:\n%s", got, stmt)
 	}
-	if !strings.HasSuffix(stmt, onDuplicateKeepIDSQL) {
-		t.Fatalf("尾巴必须是 `id` = LAST_INSERT_ID(`id`)(值不变,快照保持不可变):\n%s", stmt)
+	if !strings.HasSuffix(stmt, onDuplicateKeepRowSQL) {
+		t.Fatalf("尾巴必须是 `snapshot_guid` = `snapshot_guid`(值不变,快照保持不可变;不碰自增列):\n%s", stmt)
 	}
 	if MaxSnapshotBatchRows*9 >= 65535 {
 		t.Fatalf("MaxSnapshotBatchRows=%d 时占位符 %d 个,超过预处理语句 65535 的上限", MaxSnapshotBatchRows, MaxSnapshotBatchRows*9)

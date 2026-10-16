@@ -176,6 +176,8 @@ const (
 
 	// R1 读可写开关(普通一致读,提案 §4.1-2 第 1 步)。建 store 的探针也用它确认 meta 行在。
 	routeReadWritableSQL = "SELECT writable FROM route_meta WHERE id = 1"
+	// 建池探针的守卫(lockRouteProbeGuard):同一行,加锁读。
+	routeLockProbeGuardSQL = routeReadWritableSQL + " FOR UPDATE"
 
 	// R2 锁围栏分片行。active 为 NULL 也当生效(fail-closed):只有 CHECK 不生效的库上才可能出现
 	// run_id 非空而 expires_at_ms 为 NULL 的行。
@@ -466,9 +468,9 @@ func newRouteStoreFromDB(ctx context.Context, db *sql.DB, opts RouteStoreOptions
 // 实测在两种引擎上是同一个判据。它只证明「CHECK 生效」,不证明模数是 64(探针行 (片 1, player_id 0) 对任何模数都违例,
 // 按旧模数 16 建的表也过得了这一步):P4 通过之后,在同一个事务里接着跑第 5 步 probeRouteShardModulus 核对模数。
 //
-// 无论哪种结果事务都回滚,CHECK 没生效时那行也不会留下。CHECK 生效时语句在写索引前就被拒、不取锁;
-// 不生效时多副本同时探针,后到的最多等 1s 行锁(会话锁等待封顶)后同样回滚(三方以上并发时可能 1213,
-// 由 newRouteStoreFromDB 整事务有界重跑,见 probeRouteShardModulus 的「锁」)。
+// 无论哪种结果事务都回滚,CHECK 没生效时那行也不会留下。CHECK 生效时语句在写索引前就被拒、不取锁。
+// 整个探针事务的第一句是 lockRouteProbeGuard(route_meta(id=1) FOR UPDATE):多副本同时探针时在这行已提交的守卫上
+// 排队、逐个探针,后到的最多等 1s(会话锁等待封顶),不会排在别人必然回滚的探针行后面(见 probeRouteShardModulus 的「锁」)。
 func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -476,6 +478,9 @@ func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 	}
 	defer func() { _ = tx.Rollback() }()
 
+	if err := lockRouteProbeGuard(ctx, tx); err != nil {
+		return err
+	}
 	_, err = tx.ExecContext(ctx, routeProbeShardCheckSQL)
 	if err == nil {
 		return fmt.Errorf("%w: a row violating it was accepted (rolled back)", ErrRouteCheckNotEnforced)
@@ -535,10 +540,13 @@ func probeRouteShardCheck(ctx context.Context, db *sql.DB) error {
 // 锁:这两行不存在且模数一致时真的插进去(未提交);已存在时撞键会在那一行上取共享锁(评审按 mysql-server 8.0.36
 // 源码 row0ins.cc 核对,未实跑;真库用例 TestRouteStore_ProbeKeysHeldByRealPlayers 取证)。两种都持到回滚(毫秒级),
 // 所以 63 / 64 号玩家的 W1 可能在探针期间短暂排队;反过来探针最多等会话锁等待 1s,等满即 1205、这次建池失败
-// (不重试,重启即可)。各副本都按聚簇键升序插这两行,两行之间不成环;但三个及以上会话并发插同一个**缺席**的探针键时
-// (空表、首次部署,或 63 / 64 号还没建角),先插入者回滚后,其余等待者查重取的 S 锁会被继承成 gap 锁(MySQL 8.0 在
-// RC 下同样继承;评审按源码 lock0lock.cc 推断,未实跑),它们重新插入要插入意向锁,互等成 1213。所以 newRouteStoreFromDB
-// 对 P4 + P5 整个事务按 1213 / 9007 有界重跑(retryRouteTx;InnoDB 遇 1213 已整事务回滚、探针不留数据,重跑安全)。
+// (不重试,重启即可)。各副本都按聚簇键升序插这两行,两行之间不成环。
+// 三个及以上会话并发插同一个**缺席**的探针键时(空表、首次部署,或 63 / 64 号还没建角),先插入者(探针**必然**回滚)
+// 回滚后,其余等待者查重取的 S 锁被继承成 gap 锁,重新插入要插入意向锁,互等成 1213 —— 事故文档
+// docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md §9.1 现场二,写法与隔离级别都消不掉(2026-10-16 真库在 RC 下
+// 复现 10/10)。唯一的消法是让首次插入者先排在一行已提交的守卫行上:所以 P4 之前先 lockRouteProbeGuard 锁住
+// route_meta(id=1),并发探针在它上面串成一列,任何时刻至多一个探针持有未提交的探针行(同一真库编排 0/10)。
+// newRouteStoreFromDB 对 P4 + P5 的 1213 / 9007 有界重跑(retryRouteTx)只剩最后防线的意义,不再是正确性论证。
 // P4 被拒之后事务继续用:MySQL 只回滚失败的那条语句;TiDB 是否同样只回滚语句【未核实】,
 // 由真 TiDB 用例(TestRouteStore_TiDBClusteredShardsAndPresplit)取证。
 //
@@ -625,6 +633,28 @@ func probeRouteSession(ctx context.Context, db *sql.DB) error {
 type routeQueryer interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+// lockRouteProbeGuard 是探针事务(P4 + P5)的第一句:对 route_meta(id=1) 完整主键等值 FOR UPDATE。
+// 这一行由迁移种好、从不删除,所以并发建池的探针排在一行**已提交**的记录上,而不是排在别人必然回滚的探针行后面
+// (原因见 probeRouteShardModulus 的「锁」)。与全局锁序 route_meta → zone_merge_fence → player_route 同向;
+// W1 对 route_meta 只做一致读(requireRouteWritable),不受它影响;冻结写者(1b 把 writable 置 0)最多等一个探针事务。
+// 需要对 route_meta 的 UPDATE(或 DELETE / LOCK TABLES)权限 —— MySQL 对 FOR UPDATE 的要求;部署给 appuser 的是库级 ALL。
+func lockRouteProbeGuard(ctx context.Context, tx *sql.Tx) error {
+	var writable uint64
+	err := tx.QueryRowContext(ctx, routeLockProbeGuardSQL).Scan(&writable)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrRouteMetaMissing
+	}
+	var me *mysql.MySQLError
+	if errors.As(err, &me) && me.Number == mysqlErrTableAccessDenied {
+		return fmt.Errorf("route store: the probe guard needs SELECT ... FOR UPDATE on route_meta "+
+			"(UPDATE privilege), including for read-only uses such as route_tool audit: %w", err)
+	}
+	if err != nil {
+		return fmt.Errorf("route store: lock route_meta(id=1) as the probe guard: %w", err)
+	}
+	return nil
 }
 
 // readRouteWritable 读 route_meta.writable(R1)。没有 id=1 那一行时回 ErrRouteMetaMissing。
