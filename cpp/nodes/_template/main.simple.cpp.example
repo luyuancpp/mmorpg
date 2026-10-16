@@ -21,7 +21,7 @@ struct YourNodeContext {};
 
 int main(int argc, char* argv[])
 {
-    // Pick the etcd transport (NODE_ETCD_TRANSPORT=grpc default | muduo_h2) before the Node is constructed:
+    // Validate the legacy NODE_ETCD_TRANSPORT variable (etcd always uses muduo_h2 now) before the Node is constructed:
     // EtcdService::Init reads the installed factory inside the Node constructor.
     // See docs/design/grpc-muduo-transport.md section 13.4.
     etcd_transport::InstallFromEnv();

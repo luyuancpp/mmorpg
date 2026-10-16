@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
         ? Node::CanConnectNodeTypeList{SceneNodeService, eNodeType::ClientRpcRouterNodeService}
         : Node::CanConnectNodeTypeList{SceneNodeService, LoginNodeService, SceneManagerNodeService, MatchNodeService};
 
-    // etcd 传输(NODE_ETCD_TRANSPORT=grpc 默认 / muduo_h2)必须在 Node 构造前装好:EtcdService::Init 在 Node 构造函数里取工厂。
+    // 检查旧的 NODE_ETCD_TRANSPORT 环境变量(etcd 只剩 muduo_h2 传输;设成 grpc 会打 WARN),须在 Node 构造前调用。
     etcd_transport::InstallFromEnv();
     return node::entry::RunSimpleNodeMainWithOwnedContext<GateHandler, GateRuntimeContext, GateNodeHooks>(
         GateNodeService,

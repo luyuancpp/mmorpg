@@ -503,19 +503,18 @@ namespace etcd_transport
 {
 void InstallFromEnv()
 {
+	// 只为兼容旧部署的环境变量:传输只剩 muduo_h2 一种(官方实现随第 3 批删除,§14),这里不装任何工厂。
 	const char *raw = std::getenv("NODE_ETCD_TRANSPORT");
 	const std::string value = raw != nullptr ? raw : "";
-	if (value.empty() || value == "grpc")
+	if (value.empty() || value == "muduo_h2")
 	{
-		return; // 默认:官方实现(EtcdService::Init 打出当前选择)
-	}
-	if (value == "muduo_h2")
-	{
-		SetFactory([](muduo::net::EventLoop &loop, const std::string &endpoint,
-					  EtcdResponseSink &sink) -> std::unique_ptr<EtcdTransport>
-				   { return std::make_unique<MuduoEtcdTransport>(loop, endpoint, sink); });
 		return;
 	}
-	LOG_WARN << "Unknown NODE_ETCD_TRANSPORT='" << value << "' (expected grpc | muduo_h2); using grpc";
+	if (value == "grpc")
+	{
+		LOG_WARN << "NODE_ETCD_TRANSPORT=grpc is obsolete: the official gRPC etcd client was removed; using muduo_h2";
+		return;
+	}
+	LOG_WARN << "Unknown NODE_ETCD_TRANSPORT='" << value << "'; using muduo_h2";
 }
 } // namespace etcd_transport
