@@ -2,9 +2,9 @@
 
 // 出站 gRPC 调用的结果怎样落到客户端 —— gate 唯一的一份事实源。
 //
-// 官方 gRPC 桥(main.cpp 的 SetIfEmptyHandler / SetIfEmptyFailedHandler)与 muduo_grpc 路由路径
-// (router_muduo_forward.cpp)都只调这里,所以两种传输对客户端的可见行为逐条相同,路由 lane 的保序认领
-// (client_request_lane.h,docs/design/client-request-ordering.md §4.5)也对两种传输同样生效。
+// 生成客户端的全局处理器(main.cpp 的 SetIfEmptyHandler / SetIfEmptyFailedHandler)与路由服 Forward 的手写路径
+// (router_muduo_forward.cpp)都只调这里,所以两条路径对客户端的可见行为逐条相同,路由 lane 的保序认领
+// (client_request_lane.h,docs/design/client-request-ordering.md §4.5)也对两条路径同样生效。
 // 参见 docs/design/grpc-muduo-transport.md §8、docs/design/grpc-client-deadline-failure-callback.md §5。
 //
 // 只在 gate 的 EventLoop 线程调用(会话表是 thread_local)。

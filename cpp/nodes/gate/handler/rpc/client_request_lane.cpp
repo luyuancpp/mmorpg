@@ -330,7 +330,8 @@ void OnRouterNodeRemoved(entt::entity routerEntity)
 	LOG_WARN << "[lane] Router node removed with in-flight calls; failing them with 1003 so their sessions can proceed"
 			 << " router_entity=" << entt::to_integral(routerEntity) << " in_flight=" << removed.size();
 	// 摘出(恰好一次)同步做,回执与 Pump 推到下一轮:本回调在 DestroyEntity 之前触发(node.cpp OnNodeRemoveEvent),
-	// 被摘实体的 NodeInfo / 通道都还在,同步 Pump 会让 PickRandomNode 以 1/N 概率把下一条又发给它。
+	// 被摘实体的 NodeInfo 还在。官方 CQ 时代通道也还在,同步 Pump 会让 PickRandomNode 以 1/N 概率把下一条又发给它;
+	// 第 3 批起 node.cpp 先摘通道再触发事件、选点已不会选中它,推到下一轮保留为不依赖这一顺序的写法。
 	// 中间这一轮 lane 的在途序号保持不变,新请求只会排队;会话断线 / 换代 / 重定向由 FindLiveSession 与 Complete(seq) 兜住。
 	// 闭包只捕获数据(AGENTS.md §11.7)。
 	auto finish = [removed = std::move(removed)]()
@@ -354,7 +355,7 @@ void ExpireDue(std::chrono::steady_clock::time_point now)
 	if (!expired.empty())
 	{
 		tlsCounters.expired += expired.size();
-		// 本地截止到期说明 gRPC 回调丢了(节点摘除宽限前的 F29、CQ 轮询 !ok),正常运行时不该出现。
+		// 本地截止到期说明 gRPC 回调丢了(官方 CQ 时代的 F29 等;第 3 批起摘节点与关机都会补投失败),正常运行时不该出现。
 		std::ostringstream message;
 		message << "in_flight_expired=" << expired.size() << " total=" << tlsCounters.expired;
 		error_reporter::Record(kServiceUnavailable, "router_lane_expired", message.str());

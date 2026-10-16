@@ -1,11 +1,12 @@
 #pragma once
 
-// gate → 路由服(ClientRpcRouter.Forward)用哪套 gRPC 实现:环境变量 GATE_ROUTER_TRANSPORT
-// (docs/design/grpc-muduo-transport.md §8)。
+// 环境变量 GATE_ROUTER_TRANSPORT 的解析(docs/design/grpc-muduo-transport.md §8)。
 //
-//   * grpc(默认):官方 gRPC C++ 运行时,与改前完全一致;
-//   * muduo_h2:muduo 驱动的 HTTP/2 + 自有 gRPC 语义(cpp/libs/engine/muduo_grpc),路由服节点不再创建
-//     官方 grpc::Channel / Stub / CompletionQueue。线上协议不变,路由服与业务服务一行不改。
+// 第 3 批(§14.1)起开关失效:官方 gRPC 客户端已删除,gate → 路由服只走 muduo_h2。解析器只为兼容旧部署保留,
+// 调用点(gate main.cpp)对显式设成 grpc 或不认识的值打 WARN 后照旧走 muduo_h2。下面是开关当初的语义:
+//
+//   * grpc(当初的默认):官方 gRPC C++ 运行时;
+//   * muduo_h2:muduo 驱动的 HTTP/2 + 自有 gRPC 语义(cpp/libs/engine/muduo_grpc)。线上协议不变。
 //
 // 它只决定**传输**,与 GATE_CLIENT_RPC_ROUTER(业务拓扑:直连业务服务还是经路由服)是两回事:
 // 直连模式下 gate 根本不连路由服,本开关不生效。启动时解析一次;改它要滚动重启 gate。
@@ -33,7 +34,7 @@ enum class Transport
 struct Resolution
 {
     Transport transport{Transport::kOfficialGrpc};
-    // false = 设了一个不认识的值:按默认 grpc 处理,调用点必须打 WARN(拼错时落在旧实现,而不是悄悄切到新路径)。
+    // false = 设了一个不认识的值:解析结果按默认 grpc 填,调用点必须打 WARN。第 3 批起调用点不论解析结果都走 muduo_h2。
     bool recognized{true};
     std::string raw;
 };

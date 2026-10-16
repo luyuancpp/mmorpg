@@ -20,15 +20,14 @@ namespace
 {
     std::string DescribeGrpcFailure(const GrpcCallFailure& failure)
     {
-        return std::string(failure.method) + " code=" + std::to_string(static_cast<int>(failure.status.error_code())) +
-               " msg=" + failure.status.error_message();
+        return std::string(failure.method) + " code=" + std::to_string(failure.code()) + " msg=" + failure.message();
     }
 } // namespace
 
 void InitSceneManagerReply()
 {
     scene_manager::AsyncSceneManagerEnterSceneHandler =
-        [](const grpc::ClientContext& /*ctx*/, const ::scene_manager::EnterSceneResponse& resp)
+        [](const GrpcReplyContext& /*ctx*/, const ::scene_manager::EnterSceneResponse& resp)
     {
         // 应答回调里没有请求上下文:按 correlation_id 分发,见 PlayerLifecycleSystem::DispatchEnterSceneReply
         // (player_id 只用来找实体;player_id == 0 / correlation_id == 0 的旧版 scene_manager 应答也在里面处理)。
@@ -82,7 +81,7 @@ void InitSceneManagerReply()
     // (system bootstrapping, admin tools, etc.) creator_ids is empty and the
     // handler is a no-op — those callers don't expect an auto-enter.
     scene_manager::AsyncSceneManagerCreateSceneHandler =
-        [](const grpc::ClientContext& /*ctx*/, const ::scene_manager::CreateSceneResponse& resp)
+        [](const GrpcReplyContext& /*ctx*/, const ::scene_manager::CreateSceneResponse& resp)
     {
         if (resp.error_code() != 0)
         {

@@ -1,9 +1,6 @@
 #include <gtest/gtest.h>
 #include <thread>
 #include "hexagons_grid.h"
-#include "grpc_client/grpc_init_client.h"
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
 #include "actor/actor_net_id.h"
 #include "core/system/id_generator.h"
 #include "engine/core/type_define/player_guid_comp.h"
@@ -186,7 +183,8 @@ class LocalNodeInfoResetListener : public ::testing::EmptyTestEventListener
 //     ConcludeHandoffAfterMarkSent) and the conditional evacuation mark write in
 //     DispatchEmergencyRelocate — runbook B4a / B4b / B5 and the evacuation drill only.
 //   - Relocate confirmation (section 14) pieces the host cannot reach — the send
-//     needs a real CompletionQueue and the verify needs a zone Redis, so these are
+//     needs a live muduo_grpc channel on a running EventLoop and the verify needs
+//     a zone Redis, so these are
 //     covered by the pure-function / Table cases and runbook scenario V only:
 //       * anything past kAwaitingReply at the ECS level;
 //       * the kVerify branches of the correlated reply claim and the transport-failure
@@ -1731,6 +1729,7 @@ TEST(ExitReleaseEcs, FailingClearKeepsTheLoadThenRefusesWhenExhausted)
 #include "network/node_utils.h" // 节点身份由测试宿主安装,不属于线程 ECS 上下文
 #include "time/system/time.h"   // TimeSystem::NowMillisecondsUTC:在途换图组件的 sentAtMs
 #include "thread_context/node_context_manager.h" // 假 scene_manager 节点(StartTravelHandoff 的 SM 预检)
+#include "core/network/grpc_client_runtime.h"       // 假 scene_manager 节点的通道:MuduoGrpcChannelPtr / muduo_grpc::Channel / EventLoop
 
 namespace esr = enter_scene_reply;
 
@@ -1800,8 +1799,10 @@ TEST(EnterSceneReplyRoute, RouteNamesCoverEveryValue)
 }
 
 // ── ECS 级接缝:直接驱动 PlayerLifecycleSystem::DispatchEnterSceneReply ──
-// 宿主里没有 zone Redis(tlsRedis.GetZoneRedis() 为空)也没有 EventLoop:ResolveTravelOutcome 判不清就保持冻结、
+// 宿主里没有 zone Redis(tlsRedis.GetZoneRedis() 为空),默认也没有 EventLoop:ResolveTravelOutcome 判不清就保持冻结、
 // 计 verify_rearmed,看门狗挂不上(只打 WARN)。所以"应答进了交接裁决"的可观察结果是证据被记下 + verify_rearmed +1。
+// 例外:用了 ScopedFakeSceneManagerNode 的用例,夹具在测试线程自建 EventLoop,期间统计 / 冻结上限定时器会挂到它上面;
+// 控制它们的 static thread_local armed 置位后不复位,之后的用例即使有 loop 也不会再挂。现有用例都不依赖这些定时器。
 namespace
 {
 constexpr uint32_t kReplyTestZone = 7;
@@ -1843,8 +1844,13 @@ void AttachSceneChange(entt::entity player, uint64_t sceneId, bool playerRequest
 }
 
 // StartTravelHandoff 在冻结之前预检 scene_manager 是否可达(冻结上限:SET 之后才发现没有 SM 只能销毁 + 踢线,
-// 所以要在改状态之前挡住)。夹具安装真实客户端运行时与通道,满足生产筛选契约;
-// 这些用例在 epoch / Redis 检查处终止,不发真实 RPC。退出时关闭并排空空 CQ,不能裸销毁运行时。
+// 所以要在改状态之前挡住)。夹具挂一条真实的 muduo_grpc 通道,满足生产筛选契约(HasUsableGrpcClient:挂着通道且
+// 非 SHUTDOWN;没挂通道的实体选点不认,GetSceneManagerEntity 返回 null)。目标 127.0.0.1:1 没人监听,选点的
+// GetState(true) 会发起一次建连;这些用例在 epoch / Redis 检查处终止,不发真实 RPC。
+// 通道只能在构造它的 EventLoop 线程上用(GetState 断言),所以夹具在测试线程上自带一个 EventLoop,只活在夹具寿命内:
+// 期间本线程"有 loop",StartTravelHandoff 的统计(30s)/ 冻结上限扫描(1s)定时器会挂到它上面,但 loop 只在析构时
+// 转 100ms,用例本身不超过约 0.9s 就碰不到它们。退出时先在 loop 线程上析构通道、再转一小会儿 loop 让连接释放跑完,
+// 最后才析构 loop,不能裸销毁。
 class ScopedFakeSceneManagerNode
 {
 public:
@@ -1852,23 +1858,41 @@ public:
     {
         auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
         entity_ = registry.create();
-        auto channel = grpc::CreateChannel("127.0.0.1:1", grpc::InsecureChannelCredentials());
-        registry.emplace<std::shared_ptr<grpc::Channel>>(entity_, channel);
-        InitGrpcNode(channel, registry, entity_);
+        auto channel = muduo_grpc::Channel::Create(loop_, "127.0.0.1", 1);
+        EXPECT_NE(channel, nullptr);
+        registry.emplace<MuduoGrpcChannelPtr>(entity_, std::move(channel));
         registry.emplace<NodeInfo>(entity_);
     }
     ~ScopedFakeSceneManagerNode()
     {
         auto& registry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
-        BeginShutdownGrpcNode(registry, entity_);
-        const bool drained = PollGrpcNodeShutdown(registry, entity_);
-        EXPECT_TRUE(drained) << "夹具不得发起真实 RPC";
-        if (drained) registry.destroy(entity_);
+        if (const auto channel = FindGrpcChannel(registry, entity_))
+        {
+            // 在途 = 排着等连接的调用。TRANSIENT_FAILURE 下发出的调用当场失败、不计在内,
+            // 它会在下面转 loop 时以失败完成(没装失败处理器时打 ERROR)。
+            EXPECT_EQ(channel->outstandingCalls(), 0u) << "夹具不得发起真实 RPC";
+        }
+        // 组件持有通道的唯一强引用:销毁实体即在 loop 线程上析构通道,连接释放排进 loop 队列。
+        registry.destroy(entity_);
+        DrainLoop();
     }
     ScopedFakeSceneManagerNode(const ScopedFakeSceneManagerNode&) = delete;
     ScopedFakeSceneManagerNode& operator=(const ScopedFakeSceneManagerNode&) = delete;
 
 private:
+    // ~Channel 排进的连接释放 → ~TcpClient 排进的 Connector::stopInLoop → 它再排的 resetChannel(后两个绑裸 this),
+    // 至少三跳,都要在 loop 析构前跑完。Windows 版 muduo 的 wakeup() 是空操作、poll 超时取最近的定时器,挂一个
+    // 5ms 的空定时器保证每 5ms 转一圈(与 tests/muduo_grpc_test/muduo_test_loop.cpp 的 RunLoopFor 同一写法)。
+    void DrainLoop()
+    {
+        const muduo::net::TimerId tick = loop_.runEvery(0.005, [] {});
+        loop_.runAfter(0.1, [this] { loop_.quit(); });
+        loop_.loop();
+        loop_.cancel(tick);
+    }
+
+    // 必须是第一个成员:最先构造、最后析构。
+    muduo::net::EventLoop loop_;
     entt::entity entity_{entt::null};
 };
 

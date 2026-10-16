@@ -9018,3 +9018,15 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`;有集群时 guild 两 Pod Ready + `job/guild-migrate` Complete + robot `guild_smoke.yaml`。
 - **后续块**:资产通道开关与签名密钥(guild / trade / scene)、NetworkPolicy、告警与 Loki ruler。
 - **Java 版(AGENTS §12)**:帮会二期整体在 Java 版待做(92-handoff §13.2 ⑨);本条是部署形态,Java 版不共用本仓 K8s 清单。本机没有 Java 仓库,`PARITY.md` 未登记。
+
+## 2026-10-16 gRPC 传输第 3 批收尾:手写调用方适配 muduo_grpc(Claude,未编译、未测试,待 Codex 验证)
+
+- 背景:第 3 批([grpc-muduo-transport.md](design/grpc-muduo-transport.md) §14)把生成客户端模板与 core 换成 muduo_grpc,手写调用方没跟上,重生成后主干编不过。本条补齐,清单与理由见同文 §14.3。
+- **签名**:全部全局应答处理器改收 `const GrpcReplyContext&`,失败侧用 `failure.code()` / `failure.message()`;`GetSessionDetailsByClientContext` 改名 `GetSessionDetailsByReplyContext`(session.{h,cpp})。涉及 gate main、号段 `id_segment_bootstrap.cpp`、收件箱、scene_manager 应答。
+- **选点**:`node_utils`、号段、收件箱改按 `MuduoGrpcChannelPtr` + `muduo_grpc::ConnectivityState`,分级规则不变。
+- **gate**:删 `InstallChannelFactory`;路由发送去掉官方 CQ / Stub 回退,无通道 fail-closed;`GATE_ROUTER_TRANSPORT=grpc` 只打 WARN。**行为变化**:关机排空门改为直连 / 路由两种模式都装、等所有 gRPC 通道空闲(以前只在 muduo_h2 下装,按旧默认值判会让默认部署关机时丢掉 `Login.Disconnect`),直连模式关机要等在途调用结束,关机期间持续有新请求时等满 15s 预算。gate 的 `PickRandomNode` 改为只看 `HasUsableGrpcClient`。
+- **测试**:`scene_manager_selector_test` 换新枚举;`cross_zone_test` 假节点自带 EventLoop 建真通道;`grpc_client_lifecycle_test` 按新运行时改写(删 CQ 时代与 etcd 流用例);`rpc_controller_test` / `cross_zone_test` / `routing_identity_test` 的 Debug|x64 补链 `muduo_grpc.lib;nghttp2.lib`(这三个本批改了源码,不补就编不过);`bag_test` 等其余测试工程的链接项仍归第 5 批。
+- **没改**:生成模板与任何生成物(本批不需要再跑一次 proto-gen)。
+- **Codex 验证**:按 [grpc-client-deadline-failure-callback.md](design/grpc-client-deadline-failure-callback.md) §12 —— `proto-gen-build` → `proto-gen-run`(no-unity 配置)→ 生成器单测 → `MSBuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64` → `run_cpp_tests.ps1 -Build -Filter rpc_controller_test` / `routing_identity_test` / `cross_zone_test` / `bag_test`(bag_test 报 LNK2019 就照 rpc_controller_test 补两项链接)→ 直连模式关机冒烟。
+- **第 5 批注意**:`grpc_client_lifecycle_test` 有一条成功用例的对端仍是官方 C++ gRPC 服务端桩,删官方运行时时要换掉。
+- **Java 版(AGENTS §12)**:本批是 C++ 内部传输适配,不涉及客户端契约,Java 版无对应改动。此前 09-28 / 10-01 的失败回调与 tip 3028 的 Java 对齐仍**待做**:本机没有 Java 仓(`D:\luyuan` 不存在),未能核对 `PARITY.md`。

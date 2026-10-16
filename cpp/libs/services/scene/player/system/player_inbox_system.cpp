@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 
-#include <grpcpp/grpcpp.h>
 #include <hiredis/hiredis.h>
 #include <muduo/contrib/hiredis/Hiredis.h>
 #include "muduo/base/Logging.h"
@@ -16,9 +15,12 @@
 #include <node_config_manager.h>
 #include "battle/system/player_battle.h"
 #include "engine/core/type_define/player_guid_comp.h"
+#include "grpc_client/grpc_call_tag.h"          // kGrpcStatusUnimplemented(与 grpc::StatusCode 同值)
 #include "grpc_client/player_inbox/player_inbox_grpc_client.h"
+#include "muduo_grpc/channel.h"                 // 选点读 muduo_grpc::Channel::GetState / ConnectivityState
 #include "network/node_utils.h"                 // GetNodeInfo:Fetch 带上本节点 node_id(只用于对端日志)
 #include "node/system/grpc_call_deadline.h"     // 在途超时从 PlayerInboxNodeService 的 gRPC deadline 派生
+#include "node/system/node/muduo_grpc_channel_slot.h" // MuduoGrpcChannelPtr:节点实体上的 gRPC 通道组件
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/comp/player_inbox_runtime_comp.h"
 #include "player/comp/player_ownership_comp.h"
@@ -41,7 +43,7 @@ namespace
 	using player_inbox_rules::DeliveryClass;
 	using player_inbox_rules::Durability;
 
-	constexpr uint32_t kGrpcUnimplemented = static_cast<uint32_t>(grpc::StatusCode::UNIMPLEMENTED);
+	constexpr uint32_t kGrpcUnimplemented = kGrpcStatusUnimplemented; // 12,与 grpc::StatusCode::UNIMPLEMENTED 同值
 	// 在途请求的兜底期限 = 该类节点的 gRPC deadline + 5s(上游比下游宽,grpc-client-deadline-failure-callback.md §4.2)。
 	// 生成的客户端保证每次调用在 deadline 内以应答或失败之一收场,正常走不到这里;它只防"完成通知永远不来"。
 	constexpr uint64_t kInflightSlackMs = 5000;
@@ -56,18 +58,19 @@ namespace
 										 .count());
 	}
 
-	// 只在候选里挑**已经建好 gRPC stub 且通道 READY** 的节点(照 id_segment_bootstrap.cpp 的 PickReadyDataServiceNode):
-	// ConnectToGrpcNode 先 emplace channel / stub 再 emplace NodeInfo,三者同在才是可用连接。
+	// 只在候选里挑**挂着 gRPC 通道且通道 READY** 的节点(照 id_segment_bootstrap.cpp 的 PickReadyDataServiceNode):
+	// ConnectToGrpcNode 先 emplace MuduoGrpcChannelPtr 再 emplace NodeInfo,两者同在才是可用连接(第 3 批起没有 stub
+	// 组件,grpc-muduo-transport.md §14);摘节点 / 关机阶段 0 先摘通道组件,正在拆的节点不会被挑中。
 	// 通道不 READY 时发出去也只会换回一次 UNAVAILABLE,直接回"发不出去",由调用方退避。
-	// try_to_connect=true 顺手把空闲超时后 IDLE 的通道踢回 CONNECTING。收件箱是全局服务,不比对 zone。
+	// tryToConnect=true 顺手把 IDLE 的通道(连接断开后回 IDLE;muduo 通道没有空闲超时)踢去重连。收件箱是全局服务,不比对 zone。
 	entt::entity PickReadyPlayerInboxNode()
 	{
 		auto &registry = tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService);
 		std::vector<entt::entity> ready;
-		for (auto entity : registry.view<NodeInfo, player_inbox::PlayerInboxStubPtr, std::shared_ptr<grpc::Channel>>())
+		for (auto entity : registry.view<NodeInfo, MuduoGrpcChannelPtr>())
 		{
-			const auto &channel = registry.get<std::shared_ptr<grpc::Channel>>(entity);
-			if (channel && channel->GetState(/*try_to_connect=*/true) == GRPC_CHANNEL_READY)
+			const auto &channel = registry.get<MuduoGrpcChannelPtr>(entity);
+			if (channel && channel->GetState(/*tryToConnect=*/true) == muduo_grpc::ConnectivityState::kReady)
 			{
 				ready.push_back(entity);
 			}

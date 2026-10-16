@@ -18,7 +18,7 @@
 //                           在途超时。
 //
 // 契约:
-//   * **线程**:全部入口只在 scene 的 loop 线程上调用(落地钩子、tick、Kafka 事件、gRPC 完成队列都在这个线程,
+//   * **线程**:全部入口只在 scene 的 loop 线程上调用(落地钩子、tick、Kafka 事件、gRPC 完成回调都在这个线程,
 //     设计 §10)。状态在 thread_local 的 ECS 组件里,没有锁。
 //   * **回调只认 player_id**:gRPC 回包与 PING 回调都按 player_id 重新找实体,再核对 domain 与 correlation_id
 //     (节点级单调计数器);对不上就丢弃。不捕获实体句柄。
