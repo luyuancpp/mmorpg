@@ -324,7 +324,8 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 
 ## 9. 交接给 Codex 的验证清单(AGENTS §10.1)
 
-**现状:服务端全部未编译、未导表(只做过沙盒导表)、未 proto-gen、未运行。** 任何一步的通过标准不满足就停,保留该步写明的日志。
+**现状(2026-10-16):第 0–7 步已在主仓实跑通过,结果见 §9.1;第 8 步(客户端)只有离线编译与离线用例,Unity 未运行。**
+下面的清单保留作复验用。任何一步的通过标准不满足就停,保留该步写明的日志。
 
 **前置:main 本身要先能生成、能编译。** 2026-10-15 的 ECS 重构第 2–5 批只完成了源码,负责人要求暂缓生成器构建、统一重生成、
 编译与测试(`docs/handoff/ecs-refactor/README.md` §7)。本分支的源码已经按那批重构后的接口写(`PlayerGuidComp`、`SceneEntity`、
@@ -394,7 +395,7 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 - `PlayerMysteryMerchantTest.GrantRefusedAfterThePrecheckChargesNothing` 会故意把物品号段置为不可用
   (日志里有号段相关的 ERROR,属预期);夹具的 TearDown 会恢复号段,它后面的用例不受影响。
 
-**5. Go**(Go 1.26.5 在模块缓存里、不在 PATH;`GOTOOLCHAIN=local`)
+**5. Go**(2026-10-16 起主干要 Go 1.27.2:`%LOCALAPPDATA%\Programs\Go\1.27.2\go\bin\go.exe`;`GOTOOLCHAIN=local`)
 - 工作目录 `go\scene_manager`:`go build ./...`、`go vet ./internal/...`、
   `go test ./internal/logic/ -run "Merchant" -count=1`、`go test ./internal/logic/ -run TestIntegration_ -count=1`(既有集成用例不回归)。
 - 通过标准:退出码 0;`mystery_merchant_test.go` 的 28 个测试函数全过(函数名都含 `Merchant`)。
@@ -425,6 +426,44 @@ schema 在 `data/schema/mysterymerchant{rule,goods,spot}_table.proto`。
 - 之后按客户端 `Docs/mystery-merchant-ui.md`「还没验证的」跑 EditMode 用例、截图与联机。
 
 **9. 收尾**:在 `docs/PROGRESS.md` 的条目里补上实跑结果;Java 仓 `PARITY.md` 登记(§11)。
+
+### 9.1 实跑结果(2026-10-16,主仓本机 main,Claude 获用户授权执行)
+
+证据目录:`E:\work-archive-20261015\output\mystery-merchant-build-20261015\`(各步日志、`run*/results.json`)。
+
+| 步骤 | 结果 |
+|---|---|
+| 0–2 带入 / 导表 / proto-gen | 已随 main 的统一重生成完成;生成物逐项核对 26 项全符合第 2 步的通过标准,手写 handler 与生成器输出逐字节相同 |
+| 3 C++ 编译 | 21 个工程(`third_party` 到三个节点)全部 0 错误。中途修了三处与本功能无关的既有问题,见下表 |
+| 4 C++ 单测 | 本功能 57/57:`MysteryMerchantRulesTest` 11、`PlayerMysteryMerchantTest` 25、`PlayerFeaturePersistenceTest` 21。`bag_test` 全量 606/622,挂的 16 条见下表(去掉本功能的用例同样是这 16 条);`cross_zone_test` 240/240 |
+| 5 Go | `scene_manager` build / vet 通过,`Merchant` 28 个测试函数全过,`go test ./...` 三个包全 ok;robot vendor / build / vet / test 通过 |
+| 6 迁移 | `zone_1_db` 补 6 列(含 `mystery_merchant`,`pb:21`) |
+| 7 起栈冒烟 | scene 启动日志 `Table check finished: sellable_goods=12 spots=6 interact_range=8`;scene_manager 首拍即排出一轮。login-test 基线 23/23。`merchant-smoke` 连跑三遍全部 `MERCHANT_SMOKE_OK`(见下) |
+| 8 客户端 | 已在客户端本机 main;离线编译 0 错误、离线用例 70 条通过。**Unity EditMode / 截图 / 联机未做** |
+
+`merchant-smoke` 三遍(本机主城 16 条线,商人每轮随机落线,三遍机器人都不在商人那条线,M3 都真的切了线):
+
+| 遍次 | 轮次 / 线 | 结果 |
+|---|---|---|
+| 1 | 1792137000 / 9 线,6 折 | 买商品 1:1 份 + 剩余 4 份,第 6 份被拒 `LimitReached` |
+| 2(同一轮、重新登录) | 同上 | 商品 1 已买满被跳过,改买商品 2 并买满 —— 限购记录跨登录保留 |
+| 3(换到下一轮) | 1792137120 / 16 线,5 折 | 商品 1 名额重置、再次买满 —— 「每人每件每轮」按轮次重置 |
+
+scene 日志里每笔购买一条 `Purchase succeeded`(份数、单价、折扣、扣款与背包合计都与机器人断言一致),本功能没有 WARN / ERROR。
+
+编译与起栈过程中遇到的、**与本功能无关**的既有问题:
+
+| 问题 | 处理 |
+|---|---|
+| 目录整理后 `lib/` 缺 `hiredisd.lib` 等,三个节点 LNK1356 | 从 `third_party/grpc/install_vs2026_dbg/lib/` 拷回 4 个库(`lib/` 不进 git) |
+| scene 节点没登记 `rpc_replies/player_inbox_response_handler.cpp`,LNK2019 `InitPlayerInboxReply` | 登记进 `scene.vcxproj` / filters / CMakeLists(18bcc8f603) |
+| `bag_test` 缺 `muduo_grpc.lib` / `nghttp2.lib`(gRPC 传输换到 muduo_grpc 之后) | 补进链接(18bcc8f603) |
+| `cross_zone_test` 一处 `EXPECT_EQ(…, entt::null)` 编不过 | 改成 `EXPECT_TRUE(… == entt::null)`(18bcc8f603) |
+| `bag_test` 16 条既有失败:`BagTest.DelItem`、`BagTest.LayerConsistencyPredicateActuallyDetectsBreakage`、`GuidSourcePolicyTest.*` 1、`BagSegmentNotReadyTest.*` 1、`BagRemoveExactTest.*` 2、`BagSelectionOrderTest.*` 5、`PendingSettlementContract.*` 1、`PlayerMissionSystemTest.*` 4 | 未处理。去掉本功能的用例后同样是这 16 条,属 ECS 重构第 3 批之后背包 / 任务 / 结算的既有问题,交对应负责人 |
+| `go_services` 构建时 `player_inbox` 因 `go.sum` 缺条目编不出来(`GOPROXY=off`) | 未处理;启动器把它当可选服务跳过 |
+| 本机 `mmorpg_friend.friend_request` 缺 proto 新声明的 `idx_friend_request_2(request_id)`,friend 拒启、启动器中止在网关之前 | 按 friend 报错给的修法在本机开发库补了这条普通索引(只加索引,不动数据) |
+
+冒烟用的三个覆盖值只在 scene_manager 启动读配置期间临时打开,读入后立即还原,yaml 没有进任何提交。
 
 ## 10. 评审记录
 
@@ -474,12 +513,12 @@ gRPC / RPC 传输重构、玩家收件箱与存盘管线等提交。用 `git reb
 | 存盘改为「先确认持久化组件都在,缺一个就整份拒存」 | 限购记录接进同一套检查;5 个测试夹具与拒存清单补上 |
 | 日志文案统一为英文(10-13) | C++ / Go / 机器人的日志改英文,注释与错误字符串保持中文(与那次提交同一口径) |
 
-这些都只做了静态核对(接口逐个对照新代码、沙盒导表、protoc 语法检查、gofmt),**没有编译**。
+这些当时只做了静态核对(接口逐个对照新代码、沙盒导表、protoc 语法检查、gofmt),没有编译;2026-10-16 的编译、单测与起栈冒烟结果见 §9.1。
 
 ## 11. Java 版(AGENTS §12)
 
 **待做。** 本机没有 Java 仓:AGENTS §12 记的新路径 `D:\luyuan\xuanming-server-mmo` 与旧路径 `D:\luyuan\wuxingqitan\xuanming-server-mmo-java`
-在本机都不存在(2026-10-15 核对),也就无法登记 `PARITY.md`。客户端可见契约的变化:
+在本机都不存在(2026-10-15 核对,10-16 复核仍不存在),也就无法登记 `PARITY.md`。客户端可见契约的变化:
 
 - `proto/scene/player_mystery_merchant.proto`(3 个 RPC 及其消息);
 - `mystery_merchant_error` tip 域(30000–30011);消息号 264–266;

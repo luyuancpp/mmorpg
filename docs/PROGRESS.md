@@ -9180,3 +9180,18 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   有集群(网络插件支持 NetworkPolicy)时按 README 该节末尾的三项验收。
 - **后续块**:db migrate Job、scene 不设 `MMORPG_ALLOW_CLIENT_GM` 的契约断言、告警(G-07)与 Loki ruler;随后 TiDB 一期。
 - **Java 版(AGENTS §12)**:部署形态,Java 版不共用本仓 K8s 清单;帮会二期整体在 Java 版待做。本机没有 Java 仓库,`PARITY.md` 未登记。
+## 2026-10-16 神秘商人:主仓编译、单测与起栈冒烟全部跑完(Claude,获用户授权执行编译测试)
+
+接 2026-10-09 那条。代码已在本机 main(未推送);完整结果与证据目录见 `docs/design/mystery-merchant.md` §9.1。
+
+- **C++**:21 个工程串行 `/m:1` 全部 0 错误。本功能单测 57/57(规则 11、`PlayerMysteryMerchantTest` 25、`PlayerFeaturePersistenceTest` 21);
+  `bag_test` 全量 606/622,16 条失败与本功能无关(去掉本功能用例后同样这 16 条,背包 / 任务 / 结算,名单在 §9.1);`cross_zone_test` 240/240。
+- **编译中顺手修的三处既有问题**(18bcc8f603):scene 节点登记 `rpc_replies/player_inbox_response_handler.cpp`;`bag_test` 补 `muduo_grpc.lib` / `nghttp2.lib`;
+  `cross_zone_test` 一处 `entt::null` 断言。另从 grpc 安装目录拷回 `lib/` 下 4 个库(不进 git)。
+- **Go**(1.27.2):`scene_manager` build / vet、`Merchant` 28 个测试函数、`go test ./...` 全过;robot build / vet / test 通过。`zone_1_db` 已迁移(`mystery_merchant` 列 `pb:21`)。
+- **起栈**:login-test 基线 23/23;`merchant-smoke` 连跑三遍全 `MERCHANT_SMOKE_OK` —— 三遍都真的切了线(本机主城 16 条线);同一轮重登后已买满的商品被跳过、
+  换一轮后名额重置。冒烟用的 scene_manager 覆盖值只在启动读配置时临时打开,已还原、未进提交。
+- **起栈时碰到的本机环境问题**:`mmorpg_friend.friend_request` 缺 proto 新声明的 `idx_friend_request_2(request_id)`,friend 拒启、启动器停在网关之前 —— 已在本机开发库补索引;
+  `player_inbox` 因 `go.sum` 缺条目编不出来(`GOPROXY=off`),启动器按可选服务跳过,未处理。
+- **没做**:客户端只有离线编译(0 错误)与离线用例(70 条),Unity EditMode / 截图 / 联机未做;没有推送。
+- **Java 版(AGENTS §12)**:待做。本机仍没有 Java 仓库(两条路径 10-16 复核都不存在),`PARITY.md` 未登记;对应 Java 版本号:无。
