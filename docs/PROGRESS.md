@@ -9030,3 +9030,23 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **Codex 验证**:按 [grpc-client-deadline-failure-callback.md](design/grpc-client-deadline-failure-callback.md) §12 —— `proto-gen-build` → `proto-gen-run`(no-unity 配置)→ 生成器单测 → `MSBuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64` → `run_cpp_tests.ps1 -Build -Filter rpc_controller_test` / `routing_identity_test` / `cross_zone_test` / `bag_test`(bag_test 报 LNK2019 就照 rpc_controller_test 补两项链接)→ 直连模式关机冒烟。
 - **第 5 批注意**:`grpc_client_lifecycle_test` 有一条成功用例的对端仍是官方 C++ gRPC 服务端桩,删官方运行时时要换掉。
 - **Java 版(AGENTS §12)**:本批是 C++ 内部传输适配,不涉及客户端契约,Java 版无对应改动。此前 09-28 / 10-01 的失败回调与 tip 3028 的 Java 对齐仍**待做**:本机没有 Java 仓(`D:\luyuan` 不存在),未能核对 `PARITY.md`。
+
+## 2026-10-16 队伍补位匹配:修复撤单误删重新入队,完成隔离复验(Codex)
+
+- 确认问题:整队撤单删掉成员旧票后,该成员通过独立会话成功 JoinQueue;旧撤单随后按 player_id 摘队列,误删新项但留下 queued 新票。
+  用真实 JoinQueue 的确定性交错用例先复现失败,再修复;原断言严格要求队列只剩一份新成员项,未放宽。
+- 修复:队列增加同 `{mq}` slot 的版本 hash 与不回收的全局递增序列;所有单人 / 整队入队、回队首 Lua 每次执行刷新版本并去除同成员旧项。
+  cancelParty 在读 / 删成员票前快照版本,最终按版本摘项;快照失败不做无条件删除。摘项 / prune 清版本元数据,全局序列不随队列回收。
+  静态旧数据兼容,不支持旧写入实例混跑;不承诺 Redis 丢失已确认序列写入后的 ABA 安全。其他无条件删除路径的既存竞态不在此次修复范围。
+- Go 1.27.2(未改 go.mod):修复后 match build、vet 均通过;全量 339 个顶层测试(含子测试 512 条)、7 个包通过,0 失败 / 跳过。
+  定向 13 个顶层测试(含子测试 21 条)通过;robot `go build -p 4 -mod=vendor ./...` 通过。
+  覆盖整队不可拆、取消、成员变化、失败回队及新入队版本保护,独立静态终审无阻塞问题。
+- 客户端已推送 `35d1cf52` 快照(含 `a1732fd8`):441 个运行时 C# 文件及 Battle / Tianyong 测试程序集编译 0 error,NUnit 纯逻辑 181/181 通过;
+  5 字段 / 3 枚举 / 6 RPC 消息号契约一致。Unity 引擎相关执行与实机联机未做。
+- 部署契约完整运行仍为 150/152 通过,2 项失败已独立定位为 CRLF 文本断言与双区 ConfigMap 宽正则重复计数,未冒称全绿。
+  最新 `0b5b297673` 补位开关 false / true 定向渲染 2/2 通过且 battle ConfigMap 不变,两次 DryRun 均退出 0,无真实部署。
+  150/152 是旧基线一轮结果,最新基准未扩跑无关完整部署套件。详细命令、证据、范围边界见设计文档 §7.5。
+- 集成方式:在 TEMP 隔离工作树基于远端 main 修复,并保留其后 `0b5b297673` 的远端新提交;相关 Go / robot 源码相对验证基准 `43284eb0bd` 无差异。
+  两边主工作区中其他任务的未推送提交和 merchant 未提交生成物保持原样,不随本次补位交付发布。
+- 协议 / 配表 / 生成物未改;未重启服务、未清理数据库、未替换主仓二进制。Go -race、C++ 全量编译、Unity 内测试及三客户端联机尚未执行。
+  Java 版仍待做,本机无约定 Java 仓库,PARITY 未登记(设计文档 §7.4)。

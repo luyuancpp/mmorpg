@@ -325,7 +325,7 @@ func TestPopGroupDedupesDuplicateEntries(t *testing.T) {
 	setPlayerLocation(t, mr, 8502, 1)
 	queueKey := matchQueueKey(int32(matchpb.MatchMode_MATCH_MODE_1V1), 0)
 	require.Zero(t, joinQueue1v1(t, svcCtx, 8501).ErrorCode)
-	require.NoError(t, enqueueAtomic(svcCtx, queueKey, 8501, defaultRating)) // 多余的一份
+	mr.Push(queueKey, "8501") // 人工构造遗留重复项;生产入队现在会去重。
 	require.Zero(t, joinQueue1v1(t, svcCtx, 8502).ErrorCode)
 
 	members, tickets, ok := popGroup(svcCtx, queueKey, 2)

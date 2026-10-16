@@ -85,33 +85,60 @@ type queueTicket struct {
 }
 
 // enqueueScript / requeueScript:注册集 SADD、队列 push 与评分镜像 ZADD 一条 Lua
-// 原子完成(KEYS=[index, queue, rank],ARGV=[queueKey, playerId, rating];三 key
+// 原子完成(KEYS=[index, queue, rank, versions, sequence],ARGV=[queueKey, playerId, rating];所有 key
 // 同 {mq} slot)。分步做会留下"队列存在但不在注册集"的窗口:matcher 的空队列
 // 剔除若恰好落在中间,该队列就再也不会被扫到;list 与 ZSET 分步写则任一步
 // 崩溃 / 故障切换都会让两者脱节。回队首用 LPUSH 保持原相对顺序,ZADD 写回
-// 原评分(ZSET 不表达顺序,只表达评分)。
+// 原评分(ZSET 不表达顺序,只表达评分)。每次实际执行都分配新版本并 LREM 同 pid 的旧项,
+// 透明重试也刷新版本且不留重复项。INCR 后 GET 保留原始十进制字符串,避免 Lua 浮点舍入。
 const (
-	enqueueScript = `redis.call("SADD", KEYS[1], ARGV[1])
+	enqueueScript = `redis.call("INCR", KEYS[5])
+local version = redis.call("GET", KEYS[5])
+redis.call("HSET", KEYS[4], ARGV[2], version)
+redis.call("SADD", KEYS[1], ARGV[1])
 redis.call("ZADD", KEYS[3], ARGV[3], ARGV[2])
+redis.call("LREM", KEYS[2], 0, ARGV[2])
 return redis.call("RPUSH", KEYS[2], ARGV[2])`
-	requeueScript = `redis.call("SADD", KEYS[1], ARGV[1])
+	requeueScript = `redis.call("INCR", KEYS[5])
+local version = redis.call("GET", KEYS[5])
+redis.call("HSET", KEYS[4], ARGV[2], version)
+redis.call("SADD", KEYS[1], ARGV[1])
 redis.call("ZADD", KEYS[3], ARGV[3], ARGV[2])
+redis.call("LREM", KEYS[2], 0, ARGV[2])
 return redis.call("LPUSH", KEYS[2], ARGV[2])`
 )
 
-// removeQueueMembersScript 把一批成员从队列 list 与评分镜像 ZSET 原子摘出
-// (KEYS=[queue, rank],ARGV=[member...]):逐个 LREM 0(同一玩家的重复项一并
+// removeQueueMembersScript 把一批成员从队列 list、评分镜像与版本 hash 原子摘出。
+// KEYS=[queue, rank, versions],ARGV=[guarded, member...] 或 ["1", member, expectedVersion...]。
+// guarded=1 时仅摘版本仍等于快照的项:撤单删票后成员可能已成功重排,不能摘掉新项。
+// 无版本的静态遗留项以空字符串比较,新 push 一定写非空版本;不支持旧实例继续无版本写入。
+// 逐个 LREM 0(同一玩家的重复项一并
 // 清掉,组内只留一份)+ ZREM,返回**实际从 list 摘出**的成员列表 —— 校验与
 // 摘出之间被 CancelQueue 摘走的人不在其中,调用方据此判断组是否凑齐。
-// 取消出队 / 无效成员剔除 / 弹组摘出三处共用,两 key 同 {mq} slot。
+// 取消出队 / 无效成员剔除 / 弹组摘出三处共用,三 key 同 {mq} slot。
 const removeQueueMembersScript = `local removed = {}
-for i = 1, #ARGV do
-	if redis.call("LREM", KEYS[1], 0, ARGV[i]) > 0 then
-		removed[#removed + 1] = ARGV[i]
+local guarded = ARGV[1] == "1"
+local step = guarded and 2 or 1
+for i = 2, #ARGV, step do
+	local member = ARGV[i]
+	if not guarded or (redis.call("HGET", KEYS[3], member) or "") == ARGV[i + 1] then
+		if redis.call("LREM", KEYS[1], 0, member) > 0 then
+			removed[#removed + 1] = member
+		end
+		redis.call("ZREM", KEYS[2], member)
+		redis.call("HDEL", KEYS[3], member)
 	end
-	redis.call("ZREM", KEYS[2], ARGV[i])
 end
 return removed`
+
+// queueMemberVersionsScript 必须在撤单读/删任何成员票据之前执行;票据与队列不在同一 slot,
+// 因此只快照队列侧版本,不把 ticket key 放进这条 Lua。每次实际 push 都用 INCR 分配新版本,
+// 包括 Redis 客户端重试原 Lua 的执行,避免复用 Go 调用参数里的版本产生 ABA。
+const queueMemberVersionsScript = `local versions = {}
+for i = 1, #ARGV do
+	versions[#versions + 1] = redis.call("HGET", KEYS[1], ARGV[i]) or ""
+end
+return versions`
 
 // queueSnapshotScript 读队列前 N 个成员及其在评分镜像里的 score
 // (KEYS=[queue, rank],ARGV=[limit]),返回扁平数组 [member, score, member, score...],
@@ -488,7 +515,7 @@ func enqueueAtomicCtx(ctx context.Context, svcCtx *svc.ServiceContext, queueKey 
 	if err != nil {
 		return err
 	}
-	_, err = svcCtx.MatchRedis.EvalCtx(ctx, enqueueScript, []string{matchQueueIndexKey, queueKey, rankKey},
+	_, err = svcCtx.MatchRedis.EvalCtx(ctx, enqueueScript, []string{matchQueueIndexKey, queueKey, rankKey, queueVersionsKey(queueKey), matchQueueVersionSequenceKey},
 		queueKey, strconv.FormatUint(playerId, 10), formatRating(rating))
 	return err
 }
@@ -501,7 +528,7 @@ func pushFrontRegistered(svcCtx *svc.ServiceContext, queueKey string, raw string
 	if err != nil {
 		return err
 	}
-	_, err = svcCtx.MatchRedis.Eval(requeueScript, []string{matchQueueIndexKey, queueKey, rankKey},
+	_, err = svcCtx.MatchRedis.Eval(requeueScript, []string{matchQueueIndexKey, queueKey, rankKey, queueVersionsKey(queueKey), matchQueueVersionSequenceKey},
 		queueKey, raw, formatRating(rating))
 	return err
 }
@@ -514,15 +541,57 @@ func removeQueueMembers(svcCtx *svc.ServiceContext, queueKey string, members []u
 
 // removeQueueMembersCtx 同 removeQueueMembers,Redis 往返受调用方 ctx 约束。
 func removeQueueMembersCtx(ctx context.Context, svcCtx *svc.ServiceContext, queueKey string, members []uint64) ([]uint64, error) {
-	rankKey, err := rankKeyForQueue(queueKey)
-	if err != nil {
-		return nil, err
-	}
+	return removeQueueMembersVersionedCtx(ctx, svcCtx, queueKey, members, nil)
+}
+
+// loadQueueMemberVersions 读取撤单的队列版本快照。失败时调用方只能放弃主动摘项,不能降级成无条件删除。
+func loadQueueMemberVersions(svcCtx *svc.ServiceContext, queueKey string, members []uint64) (map[uint64]string, error) {
 	args := make([]any, 0, len(members))
 	for _, pid := range members {
 		args = append(args, strconv.FormatUint(pid, 10))
 	}
-	res, err := svcCtx.MatchRedis.EvalCtx(ctx, removeQueueMembersScript, []string{queueKey, rankKey}, args...)
+	res, err := svcCtx.MatchRedis.Eval(queueMemberVersionsScript, []string{queueVersionsKey(queueKey)}, args...)
+	if err != nil {
+		return nil, err
+	}
+	raws, ok := res.([]any)
+	if !ok || len(raws) != len(members) {
+		return nil, fmt.Errorf("队列版本快照数量不符: want=%d result=%v", len(members), res)
+	}
+	versions := make(map[uint64]string, len(members))
+	for i, pid := range members {
+		version, ok := raws[i].(string)
+		if !ok {
+			return nil, fmt.Errorf("队列版本类型无效 player=%d", pid)
+		}
+		versions[pid] = version
+	}
+	return versions, nil
+}
+
+// removeQueueMembersVersionedCtx 的 versions 非 nil 时按快照摘项,未出现在快照里的成员不删除。
+func removeQueueMembersVersionedCtx(ctx context.Context, svcCtx *svc.ServiceContext, queueKey string, members []uint64, versions map[uint64]string) ([]uint64, error) {
+	rankKey, err := rankKeyForQueue(queueKey)
+	if err != nil {
+		return nil, err
+	}
+	args := make([]any, 0, 1+2*len(members))
+	if versions == nil {
+		args = append(args, "0")
+	} else {
+		args = append(args, "1")
+	}
+	for _, pid := range members {
+		if versions != nil {
+			version, present := versions[pid]
+			if present {
+				args = append(args, strconv.FormatUint(pid, 10), version)
+			}
+			continue
+		}
+		args = append(args, strconv.FormatUint(pid, 10))
+	}
+	res, err := svcCtx.MatchRedis.EvalCtx(ctx, removeQueueMembersScript, []string{queueKey, rankKey, queueVersionsKey(queueKey)}, args...)
 	if err != nil {
 		return nil, err
 	}

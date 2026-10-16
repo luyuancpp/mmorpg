@@ -95,7 +95,7 @@ func TestRedisHashSlotReference(t *testing.T) {
 	require.NotEqual(t, redisHashSlot("foo"), redisHashSlot("{}foo"))
 }
 
-// 队列三类 key 与每条多 key Lua 的 KEYS 列表必须同 slot。
+// 队列相关 key 与每条多 key Lua 的 KEYS 列表必须同 slot。
 func TestQueueKeysShareOneSlot(t *testing.T) {
 	want := redisHashSlot(matchQueueIndexKey)
 	require.Equal(t, redisHashSlot(strings.Trim(matchQueueHashTag, "{}")), want, "注册集 slot 必须由 {mq} 决定")
@@ -119,11 +119,13 @@ func TestQueueKeysShareOneSlot(t *testing.T) {
 
 		// 多 key Lua 的 KEYS 列表(与 queue.go / matcher.go 的调用点一一对应)。
 		for name, keys := range map[string][]string{
-			"enqueueScript":            {matchQueueIndexKey, queueKey, rankKey},
-			"requeueScript":            {matchQueueIndexKey, queueKey, rankKey},
-			"pruneQueueScript":         {matchQueueIndexKey, queueKey, rankKey},
-			"removeQueueMembersScript": {queueKey, rankKey},
-			"queueSnapshotScript":      {queueKey, rankKey},
+			"enqueueScript":             {matchQueueIndexKey, queueKey, rankKey, queueVersionsKey(queueKey), matchQueueVersionSequenceKey},
+			"requeueScript":             {matchQueueIndexKey, queueKey, rankKey, queueVersionsKey(queueKey), matchQueueVersionSequenceKey},
+			"pushMembersScript":         {matchQueueIndexKey, queueKey, rankKey, queueVersionsKey(queueKey), matchQueueVersionSequenceKey},
+			"pruneQueueScript":          {matchQueueIndexKey, queueKey, rankKey, queueVersionsKey(queueKey)},
+			"removeQueueMembersScript":  {queueKey, rankKey, queueVersionsKey(queueKey)},
+			"queueMemberVersionsScript": {queueVersionsKey(queueKey)},
+			"queueSnapshotScript":       {queueKey, rankKey},
 		} {
 			for _, k := range keys {
 				require.Equal(t, want, redisHashSlot(k), fmt.Sprintf("%s KEYS=%v 出现跨 slot key %s", name, keys, k))

@@ -146,7 +146,16 @@ scene 侧「锁值 = battle_id、非空」因此是 match 依赖的契约(C++ �
 
 ### 4.3 撤单(`logic/party.go cancelParty`)
 
-先登记撤单原因 → 逐人「票据属于这一单且仍是 queued 才删」→ 一条 Lua 把成员从 list 摘掉 → 通知 team。
+先快照全体成员的队列写入版本 → 登记撤单原因 → 逐人「票据属于这一单且仍是 queued 才删」→ 一条 Lua 只摘版本仍与快照相同的成员 → 通知 team。
+
+版本保存在同一 `{mq}` slot 的 `queueKey + ":versions"` hash,字段为 player_id。单人 / 整队入队与回队首的每次实际 Lua 执行,
+都从永久计数器 `match:{mq}:write_sequence` 分配新版本,与 list、评分镜像、注册集一起原子写入;先 LREM 同成员旧项再 push,
+确保重排或透明重试后仍严格只有一个队列位置。INCR 后用 GET 取十进制字符串,避免 Lua 浮点精度把大于 2^53 的相邻版本混为一谈。
+
+快照必须在 `cancelParty` 读 / 删任何成员票据之前完成:某成员的旧票一旦删除,其独立会话就能成功重新入队,
+若收尾仍只按 player_id 做 LREM,会把新队列项删掉而留下 queued 新票。版本变化时保留新项及其评分、版本字段。
+快照失败时继续按票据 CAS 撤旧单,但跳过主动摘队列,由既有 matcher 校验 / 自愈清残留,不降级为无条件删除。
+普通摘项同时清对应版本字段,空队列 prune 清版本 hash,但永不删除全局计数器,避免清空后重排复用版本。
 读票 / 删票出错的成员跳过(不摘 list),由下面的自愈兜底。五个入口:
 
 - **队员取消**:`CancelQueue` 发现调用者的票带 `party_id` → 先删自己的票(既有的 queued CAS;失败 = 太迟,什么都不做),成功后撤其余人。
@@ -295,6 +304,10 @@ matcher 在校验(票据缺失 → 单不完整)或推进 matched(CAS 失败 →
 - 连续战斗开关与队伍的既有交互(打完按上次单人排队参数自动重排)没有动。
 - 怪物数量成倍仍取决于 battle 节点重编(见 pve-team-size-matching.md);只换 match 时凑满 N 人进同一场,怪物是固定一组。
 
+- 撤单版本保护兼容没有版本的静态旧队列项,但不支持旧实例继续无版本写入;仍须按 §4.6 整批升级 match。
+  保护依赖 Redis 不丢失已确认的序列写入,不保证故障切换导致计数器回退后的 ABA 安全。
+  此次只修 `cancelParty` 的旧撤单误删新入队项,普通 matcher 与既存入队 / 回队失败收尾的无条件删除竞态未扩修。
+
 ## 7. 验证
 
 ### 7.1 已有的运行证据(2026-10-13,用户授权 Claude 对 `go\match` 执行,Go 1.26.5,`GOTOOLCHAIN=local`)
@@ -349,6 +362,33 @@ matcher 在校验(票据缺失 → 单不完整)或推进 matched(CAS 失败 →
 Java 版在实现之前**不要**置 `match_fill_supported`:客户端据此不给出目标人数选项,行为退回到「只能直接开战」,不会出错。
 内部实现(票据字段、选人算法)不照抄。**`PARITY.md` 尚未登记**:落码这台机器上没有 Java 仓库
 (AGENTS §12 写的 `D:/luyuan/xuanming-server-mmo` 在这台机器上不存在),需要在有该仓库的机器上补登一行。
+
+### 7.5 Codex 隔离复验与撤单修复(2026-10-16)
+
+- 基准:服务端远端 `43284eb0bd` 上复现并修复,随后隔离工作树快进至最新远端 `0b5b297673`。
+  两个基准的 `go/match`、`go/proto`、`go/shared`、`robot` 完全相同,沿用以下编译 / 测试证据。
+  客户端使用已推送的 `35d1cf52` 快照,包含最终补位修订 `a1732fd8`;两边主工作区的其他任务改动未纳入本次交付。
+- 工具链:官方 Go 1.27.2 Windows amd64,`GOTOOLCHAIN=local`、`GOPROXY=off`、`GOWORK=off`、`-mod=readonly`,没有修改 go.mod。
+  原版 `go build ./...`、`go vet ./...` 通过,全量 331 个顶层测试通过。
+- 先红后绿:原版上真实 `JoinQueue` 成功后,旧整队撤单清掉新队列项,新增回归断言期望 `[32902]`、实际 `[]`。
+  修复后定向 13 个顶层测试通过(含子测试 21 条);`go build -p 4 -mod=readonly ./...`、`go vet -p 4 -mod=readonly ./...` 均退出 0;
+  `go test -p 4 -mod=readonly ./... -count=1 -timeout=10m -json` 全量 **339 个顶层测试 / 512 条含子测试、7 个测试包通过,0 失败、0 跳过**。
+  新用例覆盖单排 / 整队重入、真实回队刷新、无版本旧项、快照失败、同参数 Lua 重放、大整数精度、prune 后重排及非法原始值清理;
+  已有整队不可拆、取消太迟、成员变化、开局失败回队测试同轮通过。两条重复项测试改为直接注入遗留重复项,仍保留原断言。
+- `robot`:在 `43284eb0bd` 隔离树执行 `go build -p 4 -mod=vendor ./...`,退出 0。
+- 客户端:441 个运行时 C# 文件与 Battle / Tianyong 完整测试程序集离线 Roslyn 编译 0 error;
+  7 个所选纯逻辑测试类由 NUnit 实跑 **181/181 通过**,覆盖最终 `a1732fd8` 的回归。
+  5 个字段、3 个枚举、6 个 RPC 消息号与服务端契约一致。依赖引擎贴图的用例仅编译,未算入 181 条。
+- K8s:本机当时的完整部署契约测试 **152 条中 150 通过、2 失败**,不能记为全绿。
+  独立复核确认分别是 CRLF 导致 zoneredis 空口令的严格文本断言不匹配,以及双区 all-up 的宽正则把 Deployment 中的 ConfigMap 引用也计数;
+  对照旧基线与实际清单确认配置语义正确。补位 `Team.FillQueueDisabled` 默认 false / 配置 true 的定向渲染 2/2 通过,
+  切换时 battle ConfigMap 内容不变;所有操作均为 DryRun,没有连接或修改集群。
+  最新 `0b5b297673`(含 guild 部署改动)另跑上述 false / true 两次 infra-up DryRun,2/2 通过、均退出 0;两份 battle ConfigMap 逐字相同且与旧基线一致。
+  最新基准未扩跑无关的完整部署套件;150/152 是旧基线那一轮的结果。
+- 证据目录:本机 TEMP 的 `codex-team-backfill-20261016`(原版失败、修复后定向与全量 JSON、build / vet / robot 日志)、
+  `codex-team-backfill-final-35d1cf52`(客户端编译及 NUnit XML)、`codex-fillqueue-k8s-5a6404ff`(部署断言独立核查)。
+- 尚未执行:Go `-race`、Unity 内 EditMode / UI 目视、三客户端联机、C++ 全量编译。C++ 字段按 §7.2 随后续全量构建验证;
+  Java 版及 PARITY 登记仍见 §7.4。本次修复未改协议、配表或生成物,也未替换运行中的二进制、重启服务或清库。
 
 ## 8. 评审记录
 
