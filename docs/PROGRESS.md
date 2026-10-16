@@ -8985,3 +8985,14 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **验证(交 Codex)**:`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`、`pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1`;
   有集群条件时在 staging 按 README 做一次 1 → 3 与删主 / 杀主进程。
 - **Java 版(AGENTS §12)**:不适用(纯部署形态,Java 版不共用本仓的 K8s 清单);本机没有 Java 仓库(`D:\luyuan\xuanming-server-mmo` 不存在),`PARITY.md` 未登记。
+
+## 2026-10-16 队伍补位匹配:Go 1.27.2 复跑通过,主仓 match.exe 已替换(Claude)
+
+- 接 2026-10-15 条「待 Codex 用 1.27.2 复跑」:本机已装 Go 1.27.2(`C:\Users\luyua\AppData\Local\Programs\Go\1.27.2\go`,在用户 PATH 里;
+  10-15 条写「本机只有 1.26.5」时还没装上)。用户授权 Claude 编译测试 go/match。
+- 做法:从主仓本地 main `5a6404ffa682`(已包含补位提交 `bd0f9d1ae3`)用 `git archive` 导出 go/match、go/proto、go/shared 到临时目录,
+  `GOTOOLCHAIN=local GOFLAGS=-mod=readonly`,**不改 go.mod**:`go build`、`go vet ./...` 退出码 0,`go test ./... -count=1` 7 个包全部 ok。
+- 产物:按 `go_services.ps1` 同口径(`-trimpath`,buildinfo Version=dev / Commit=5a6404ffa682 / BuildTime=该提交时间)编出 `match.exe`,
+  替换主仓 `bin/go_services/match.exe`;旧版(10-13)备份为 `bin/go_services/match.exe.bak-20261016`。替换时主仓那份 match 没在运行。
+  主仓当时另有执行者在跑合并验证(run/merge-validation-20261015),本次没有在主仓源码目录里编译,也没有跑生成器或 MSBuild。
+- 仍未做:联机验收(team-backfill-matching.md §7.3)、robot vendor 编译、C++、Unity 内测试与界面目视;Java 版待做。
