@@ -439,6 +439,20 @@
         "PlayerInboxStoreUnavailable": 29014
       }
     },
+    "mail_error": {
+      "base": 17000,
+      "width": 1000,
+      "ids": {
+        "MailClaimNotOpen": 17000,
+        "MailNotFound": 17001,
+        "MailExpired": 17002,
+        "MailRecipientBoxFull": 17003,
+        "MailAttachmentNotOpen": 17004,
+        "MailAttachmentInvalid": 17005,
+        "MailRequestConflict": 17006,
+        "MailSystemMailLimit": 17007
+      }
+    },
     "mystery_merchant_error": {
       "base": 30000,
       "width": 1000,

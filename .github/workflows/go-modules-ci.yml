@@ -85,7 +85,13 @@ jobs:
           #   )
           # 被排除的模块仍会在下面的 excluded-watch job 里跑（不判红），
           # 转绿了能直接从日志看见，然后把条目删掉即可收回门禁。
-          EXCLUDED=()
+          EXCLUDED=(
+            # go/mail —— 2026-10-16 起 go build 红,原因:邮件服务代码(M1b + M1c)先于它依赖的 proto-gen 产物进了 main;
+            #           go/proto/mail 与 go/mail/generated/pb/game 要等构建方跑含 mail 的全量 proto-gen 并提交
+            #           (docs/design/mail-system.md §12.1 / §12.2)。产物入库、go mod tidy 之后删掉本条。
+            #           复检:cd go/mail && go build ./... && go test -count=1 ./...
+            "go/mail"
+          )
 
           # ── 自动发现 ──────────────────────────────────────────────────
           # 排除 vendor/ 下的嵌套（robot/vendor 目前不含 go.mod，但 go mod

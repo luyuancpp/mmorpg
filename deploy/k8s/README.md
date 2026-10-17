@@ -619,9 +619,11 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
   - `Kafka.TopicGeneration`:同样从服务 yaml 镜像(当前 `1`),有效 topic 名 = `<基名>_g<N>`,当前集群消费第几代 topic 在 ConfigMap 里一眼可见;
     改分区数 = 这个数 +1,绝不原地扩分区,见下面「Kafka 审计 topic 预建」。
   - `IdSegment`:`AllowAutoSeed` dev 档取服务 yaml 的值(`true`),staging / prod 固定 `false`(与 `Schema.AutoMigrate` 同一条纪律;为什么见下面「恢复全局库」一条);
-    `BootstrapTags: [player, guild, item, txlog, snapshot, trade_listing, guild_asset_op]` 与服务 yaml / Go 的 `DefaultIdSegmentBootstrapTags` 同一份清单,新增永久身份两边同加
+    `BootstrapTags: [player, guild, item, txlog, snapshot, trade_listing, guild_asset_op, friend_request, mail]` 与服务 yaml / Go 的 `DefaultIdSegmentBootstrapTags` 同一份清单,新增永久身份两边同加
     (`trade_listing` = 聚宝斋 listing_id,2026-09-14 加,见下面「聚宝斋 trade」;`guild_asset_op` = 帮会资产指令 op_id,2026-09-20 帮会二期 B5a 加,
-    消费表在独占库 `mmorpg_guild`。**存量集群要先让 data-service 跑一次 `-migrate` 建出这一行,再上 guild 的经济功能**,否则 guild 取不到号、经济写 RPC 全部失败)。
+    消费表在独占库 `mmorpg_guild`。**存量集群要先让 data-service 跑一次 `-migrate` 建出这一行,再上 guild 的经济功能**,否则 guild 取不到号、经济写 RPC 全部失败;
+    `friend_request` = 好友申请代次号(go/friend);`mail` = 邮件 mail_id / sys_mail_id(go/mail,邮件 M1a 加,消费表在独占库 `mmorpg_mail`,
+    同样要先让 data-service `-migrate` 建出这一行再上 mail,否则发件全部回 `kServiceUnavailable`)。
   - `manifests/go-svc/data-service.yaml` 的 Deployment **2026-10-08 起是 2 副本 + RollingUpdate(maxSurge 1 / maxUnavailable 0)+ 反亲和 + 同文件 PDB**
     (docs/design/no-single-node-horizontal-scaling-20261001.md §4)。以前钉成 `Recreate` + `replicas: 1` 的理由(快照去重靠「单条语句 + 间隙锁」,
     两个实例互相等锁)已经过时:去重现在是唯一键 `uk_snapshot_guid_nz` + ON DUPLICATE KEY;消费者是 consumer group,分区在实例间独占分配;
@@ -639,7 +641,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
   否则 data-service 只剩 `schema auto-migrate failed`,login 建角全部失败。
   本地 compose 的对应物是 `deploy/mysql-init/00_init_zone_dbs.sql` 顺带建的 `testdb`(`go/data_service/etc/data_service.yaml` 用),同样只对空数据卷生效。
 - **恢复全局库前须先核对 `id_segment.max_id` ≥ 消费表最大号(这是 ID 安全事件,不是普通的库恢复)**:`id_segment` 每行是一种永久身份的发号水位
-  (`biz_tag` = `player` / `guild` / `item` / `txlog` / `snapshot` / `trade_listing` / `guild_asset_op`;`max_id` 是下一个要发出去的号,领段 = `SELECT ... FOR UPDATE` 后 `max_id += step`)。
+  (`biz_tag` = `player` / `guild` / `item` / `txlog` / `snapshot` / `trade_listing` / `guild_asset_op` / `friend_request` / `mail`;`max_id` 是下一个要发出去的号,领段 = `SELECT ... FOR UPDATE` 后 `max_id += step`)。
   把 `mmorpg_global` 从备份恢复,就是把水位倒回备份时刻,而备份之后领走的号早已成了消费侧的真实主键(各 zone 库 `player_database.player_id`、
   `guild.guild_id`、玩家 blob 里 bag 的 item guid、Kafka 两个 topic 里的 tx_id / snapshot_id)—— 水位一回退,下一次领段就把这些号**再发一遍**:
   login 的 `INSERT ... ON DUPLICATE KEY UPDATE` 会静默覆盖别人的角色行,流水表的 `INSERT IGNORE` 会静默丢掉**新**流水。顺序必须是:
@@ -648,9 +650,13 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
      `item` = 各 zone 库玩家 blob 里 bag 的最大 guid;`txlog` / `snapshot` = Kafka `transaction_log_topic_g<N>` / `player_snapshot_topic_g<N>` 里的最大 tx_id / snapshot_id
      (`transaction_log` / `player_snapshot` 表与 `id_segment` 同库,恢复后同库 `MAX()` 不是独立证据);
      `trade_listing` = `SELECT MAX(listing_id) FROM mmorpg_trade.trade_listing`(独占库,不在全局库里,`-migrate` 不会替你查);
-     `guild_asset_op` = `SELECT MAX(op_id) FROM mmorpg_guild.guild_asset_op`(同样是独占库;op_id 重发会撞 `guild_asset_op` 主键,捐献 / 兑换写不进去)。
-     登记 / 核对 / 恢复这些库时,聚宝斋独占库 `mmorpg_trade`、好友独占库 `mmorpg_friend` 与 `mmorpg_global` 要分开处理,别只恢复其中一个
-     (`mmorpg_friend` 不产号、没有 `id_segment` 水位问题,但它与各 zone 库的 `player_database` 有引用关系:
+     `guild_asset_op` = `SELECT MAX(op_id) FROM mmorpg_guild.guild_asset_op`(同样是独占库;op_id 重发会撞 `guild_asset_op` 主键,捐献 / 兑换写不进去);
+     `friend_request` = `SELECT MAX(request_id) FROM mmorpg_friend.friend_request`(申请代次号;只有普通索引,重发不会撞键,但同一个号会落到两行申请上,
+     按号定位的同意 / 拒绝可能落到错误的那一行);
+     `mail` = `SELECT GREATEST((SELECT COALESCE(MAX(mail_id), 0) FROM mmorpg_mail.mail_personal), (SELECT COALESCE(MAX(sys_mail_id), 0) FROM mmorpg_mail.mail_system))`
+     (定向与系统邮件共用这一个 tag;重发会撞主键,发件回 `kServiceUnavailable`,而两张表的号一旦重叠,按 id 定位邮件会命中错的那张表)。
+     登记 / 核对 / 恢复这些库时,聚宝斋独占库 `mmorpg_trade`、好友独占库 `mmorpg_friend`、邮件独占库 `mmorpg_mail` 与 `mmorpg_global` 要分开处理,别只恢复其中一个
+     (`mmorpg_friend` 还与各 zone 库的 `player_database` 有引用关系:
      只恢复好友库会留下指向已不存在玩家的好友边 —— 那是 `tools/data_consistency_check` 的 `checkFriendOrphans` 要查的东西)。
   3. `SELECT biz_tag, max_id FROM id_segment`,凡 `max_id` ≤ 对应最大号的:`UPDATE id_segment SET max_id = <最大号> + 1 + 余量 WHERE biz_tag = '<tag>'`(余量 ≥ 一个 step)。
   4. 然后才跑 `-migrate` / 起 data-service。`-migrate` 自带的地板校验(`raiseIdSegmentFloor`)只在**同一个库**里查得到 `player_database` / `guild` 时才抬水位 ——

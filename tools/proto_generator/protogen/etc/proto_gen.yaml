@@ -446,6 +446,24 @@ domain_meta:
         handler: "go/generated/friend/handler"
         grpc: "go/generated/friend/grpc"
 
+  # mail(移植批次 M1,docs/design/mail-system.md §7.4、§12):全局 Go 服务 go/mail。形状照 friend / player_inbox:只写 Go outputs,
+  # C++ 的 pb / grpc_client / service_metadata 由全量生成照常产出(rpc_event_registry / grpc_init_client 会引用它们)。
+  # 生成器不会把新域的 C++ 产物登记进工程文件、也不同步 robot/vendor:dev_tools.ps1 proto-gen-run 成功后自动跑
+  # tools/scripts/mail_postgen.py register-cpp / vendor-robot($ProtoGenPostHooks,幂等);绕开 dev_tools 直接跑生成器时要手工补这两步。
+  # 客户端门禁:默认配置(enable_unity_client: true)会给客户端写 ClientPlayerMail*Handler.cs,引用 Mailpb.*;
+  # 客户端 gen_proto.ps1 收录 proto/mail/mail.proto 之前不得用默认配置跑(见下方 team 块的门禁说明)。
+  # 上面 proto_directories / proto_dirs 里早先留的 "mail/" 占位不用动:生成器收集文件只走本表,
+  # 且按绝对路径去重,两处并存不会把 mail 处理两次。
+  mail:
+    source: "{{proto_dir}}mail/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto: "go/generated/mail/proto"
+        handler: "go/generated/mail/handler"
+        grpc: "go/generated/mail/grpc"
+
   slg:
     source: "{{proto_dir}}slg/"
     rpc:
@@ -512,7 +530,7 @@ domain_meta:
   # 门禁状态(2026-09-20):客户端 main(120e2d8 起)的 gen_proto.ps1 已收录 team / jubaozhai;friend 一行
   # 由 friend 收尾批补在客户端工作区(用户授权,截至本注释写下时未提交)。**客户端清单不随本仓走**:
   # 跑默认配置之前先确认你手上的客户端 gen_proto.ps1 同时有 proto/team/team.proto、proto/trade/jubaozhai.proto、
-  # proto/friend/friend.proto 三行(缺哪个就是哪个域的 handler 桩 CS0246);缺了就仍按上一行用副本跑。
+  # proto/friend/friend.proto、proto/mail/mail.proto 四行(缺哪个就是哪个域的 handler 桩 CS0246);缺了就仍按上一行用副本跑。
   # 不要为规避而删掉本块(DV-5:未解析的域会丢号),也不要在本文件关掉 enable_unity_client(其他域的客户端 handler 会失去同步)。
   team:
     source: "{{proto_dir}}team/"

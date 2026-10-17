@@ -9206,3 +9206,67 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   新包上真实客户端跟随验收连跑 4 遍全过(24 段,停下间距 1.26~1.87,0 异常)。
   新客户端包 `E:\work-archive-20261015\builds\wuxing-client-20261016-follow-regroup\client\Start-Client.cmd`;运行目录的 `bin/go_services/match.exe` 已换成带归队的版本(旧的留作 `match.before-regroup.exe`)。
 - **没做 / 待定**:真实客户端里的暂离 → 走远 → 归队、跟随中走散自动归队交给用户冒烟;Java 版待做(对应 Java 版本号:无,本机没有 Java 仓);没有 push。
+## 2026-10-15 邮件 M1a:协议、Tip 段、号段与登记落地,proto-gen 交构建方(Claude,未编译)
+
+- **背景**:移植剩余服务的下一个是邮件(设计 `docs/design/mail-system.md`,2026-09-20 全部拍板,分 M1a–M1d 四批)。本条是 M1a。
+  10-13 曾在旧主干上做过一遍,两天里主干又进了几十个提交、试跑分到的消息号被别的服务用掉、生成器也大改,那次的产物全部作废没有进主干;本条是在新主干上重做的(10-16 按三视角评审修订后合入)。
+- **落了什么**:`proto/mail/{mail,mail_admin,mail_table}.proto`;生成器两份配置(带 / 不带客户端)的 `domain_meta` 加 mail;
+  `Tip.xlsx` 表尾开 `//mail_error base=17000 width=1000` 8 个码并已导表(17000–17007,无 fault 码),C++ table 工程已登记 `mail_error_tip.pb.{h,cc}`;
+  号段 tag `mail`(data_service 两处默认清单、服务 yaml、k8s ConfigMap,另两份文档副本顺带补上此前漏掉的 `friend_request`);`mmorpg_mail` 建库授权;
+  脚本 `tools/scripts/mail_xlsx_patch.py`(开段 / 限频行)与 `tools/scripts/mail_postgen.py`(生成后核对、四个 C++ 工程登记、robot vendor 同步);
+  `tools/scripts/dev_tools.ps1` 的 `proto-gen-run` 成功后自动跑后两步(`$ProtoGenPostHooks`,幂等),做统一重生成的人不必记得。
+  客户端仓:`gen_proto.ps1` 收录 mail 两份协议,`Mail.cs` / `MailErrorTip.cs` 已生成入库。
+- **没跑 proto-gen**:本机 `proto-gen.exe` 早于 10-15 改过的生成器源码,先要 `proto-gen-build`(`go build`),按 AGENTS §10.1 归构建方。
+  所以 mail 的 8 个消息号还没发,proto / grpc_client / rpc 三个 C++ 工程也故意没提前登记(登记不存在的文件会编不过)。
+  命令与通过标准在设计文档 §12.1「给构建方的命令」:proto-gen-build → proto-gen-run(no-unity)→ `mail_postgen.py verify` → `mail_xlsx_patch.py message-limiter` → 第二次导表 → `mail_postgen.py register-cpp` → `vendor-robot` → msbuild / Go 编译。
+- **验证边界**:三份 proto 用 protoc 35.1 解析通过;导表前先在未改动的主干上空跑一次导表,确认没有积压被顺带产出;
+  两个脚本的写路径在草稿区副本树上实跑(正常两遍第二遍零改动、缺文件中止不写盘、补回后无重复条目、未知产物中止、表被整表覆盖后补回与原表逐格相同);
+  副本树里的 mail 生成物来自 10-13 旧生成器那次作废的试跑,新生成器的真实产物要等构建方跑过才知道。
+  Go / C++ 一行都没编译。与设计文档的 10 条偏差(生成物路径、号段第 9 项、预留说明三行共用、两份生成器配置、MailAdmin 也占号、tip_message 口径、
+  cc_generic_services、C++ 要登记四个工程、robot vendor、消息号未定)登记在 §12.1。
+- **顺带发现、没有处理**:客户端有 6 个生成的 C# 落后于服务端协议(Guild / PlayerMovement / PlayerScene / PlayerSkill / RpcMessage / Session),
+  不属于邮件,本批没有提交它们的变化;下次跑客户端 `gen_proto.ps1` 时会一并刷新。
+- **两仓落地顺序**:客户端仓的 `gen_proto.ps1` mail 行与 `Mail.cs` / `MailErrorTip.cs` 与本条同时推到客户端 main(否则有人用默认配置跑 proto-gen 时客户端 CS0246)。
+- **下一步**:M1b + M1c(`go/mail` 服务全部代码)见下一条;编译要等 proto-gen 之后。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做。mail.proto 的客户端协议与 8 个 tip 码是客户端可见契约,按规矩两版同批改;
+  本机没有 Java 仓(`D:\luyuan\xuanming-server-mmo` 不存在),无法核对 `PARITY.md` 或改 Java 版,需在有 Java 仓的机器上补做并登记。
+
+## 2026-10-16 邮件 M1b + M1c:go/mail 服务全部代码落地(Claude,未编译、未跑测试)
+
+- **背景**:邮件 M1(设计 `docs/design/mail-system.md`)的第二、三批合成一批落地 —— 入口 `mail.go` 要注册 server、server 依赖 logic,单独先落 M1b 只能落一个起不来的半成品模块。`go/mail/` 下 45 个新文件 + CI 排除清单 + 文档,超过 30 文件门禁,登记在设计 §12.2。
+- **落了什么**:常驻服务 + `-migrate`(D-14 退出码、缺普通索引拒启);客户端 5 个方法(列表合并分页、已读、删除白名单、清理已读、领取短路)与内部发件 `MailAdmin` 两个方法(令牌只从环境变量 `MMORPG_MAIL_ADMIN_TOKEN` 读、≥32 字节、常量时间比较;先判重后校验;Mode 闸门);新定向邮件的 S2C 推送(只推 ONLINE,失败不影响结果);过期 sweep(默认 report_only,先删 state 行再删系统行);指标全部预建 0 值序列;运维 CLI `go/mail/cmd/mailadmin`。
+  真库集成测试(`MAIL_TEST_MYSQL_DSN` + `MAIL_REQUIRE_MYSQL_TESTS` 门控,库名白名单)覆盖 §10 ④ 全部条目与回修 ①–⑧,外加并发 20 路发件、号段不可达时重放、号段重发撞主键。
+- **CI**:`go/mail` 依赖 proto-gen 才会产出的 `go/proto/mail` 与 `go/mail/generated/pb/game`,所以先登记进 `.github/workflows/go-modules-ci.yml` 的排除清单(仍在 excluded-watch 里跑、不判红);构建方跑过含 mail 的 proto-gen、提交产物、`go mod tidy` 之后删掉那一条。
+- **评审**:三视角只读评审("人肉编译"逐个读完 41 个 .go 未见编译 / vet 问题;语义 1 P1 / 2 P2 / 5 P3;测试有效性 1 P0 / 2 P1 / 若干 P2·P3)。P0 / P1 是同一个问题 —— 系统邮件 state 行条件 upsert 的 ODKU 列名歧义(MySQL 1052,每次执行都失败),三个视角都抓到了,已改;其余(CLI 把故障码当业务拒绝、Kafka writer 的 BatchTimeout 默认 1s、sweep 告警重启误报、重放依赖号段、发件审计缺调用方、横幅判据、sweep 顺序用例写反也不红、没挡住 TiDB 假绿等)全部修完,逐条见设计 §12.2 的 15 条偏差。
+- **验证边界**:只跑了 gofmt;没有 `go build` / `go vet` / `go test` / `go mod tidy`(AGENTS §10.1 归构建方)。命令与通过标准在设计 §12.2。
+- **还没做(M1d)**:go_services.ps1 / go_svc_image.ps1 / k8s_deploy.ps1 / start_game.ps1 登记、令牌本机注入、K8s manifest 与 migrate Job、告警文件、robot `mail-smoke`、`data_consistency_check`、契约 §7 端口。在那之前 mail 只能手工起。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做(本机没有 Java 仓,同 M1a 条目)。
+
+## 2026-10-16 邮件 M1d:部署链 / 冒烟 / 一致性检查落码,分「部署件」与「启用」两个提交(Claude,Go 未编译)
+
+- **背景**:邮件 M1 的最后一批(设计 `docs/design/mail-system.md` §9 M1d、§12.3)。把 mail 接进本机起服、镜像、K8s 部署、robot 冒烟与一致性检查。
+- **为什么拆两个提交**:一旦进了 `go_services.ps1` / `go_svc_image.ps1` / `k8s_deploy.ps1` 的服务目录,所有不带 `-Services` 的构建(`dev.bat` start 等)、
+  `build-all` 与 K8s 部署都会带上 mail;在 mail 的 proto-gen 产物入库之前它一定编不过,会让所有人的一键起服以 `Build failed for: mail` 中止。所以:
+  - **部署件提交(本条,进 main)**:`tools/data_consistency_check` 加 `mail_system_state` 孤儿检查(`-mail-mysql-dsn`;按 `sys_mail_id` 去重后反连接,
+    大库也在单项 60s 预算内;连不上报 warn「NOT CHECKED」不退出);契约 §7 指标端口表补全(9230 trade / 9240 mail / 9260 data_service / 9270 player_inbox,
+    9250 预留排行榜);设计 §12.3 与 §2.3 / §7.2 / §10 ⑦ / 评审记录第 7 条的更正标注。
+  - **同批独立小提交(进 main)**:robot 既有缺陷 —— `robot/config/config.go` 的模式白名单漏了 `team-backfill-smoke` 与 `features-smoke`
+    (`main.go` 有分发,却在 `config.Load` 就以 unknown mode 退出);新加 `robot/config/config_test.go` 从 `main.go` 抽出全部分发模式逐个核对白名单(未运行)。
+  - **「M1d 启用」提交(分支 `feat/mail-m1d-enable`,等构建方合入)**:本机令牌库 `tools/scripts/lib/mail_admin_dev_token.ps1` 与测试、
+    `go_services.ps1` / `go_svc_image.ps1` / `start_game.ps1` 登记、K8s manifest 与 `mail-migrate` Job、`mail-alerts.yaml`、`k8s_deploy.ps1`(令牌 Secret 注入、
+    ConfigMap、MySQL / Redis 连接总账、路由服预算表)、MySQL `max_connections` 1800 → 2100、契约 / 迁移门禁 / 端口测试、README 邮件一节与总账数字、
+    `deploy/k8s/AGENTS.md` mail 一条、robot `mail-smoke`(场景、配置、模式登记)、CI 删掉 `go/mail` 排除条目并给部署契约 workflow 补路径过滤。合入前提与顺序在设计 §12.3「给构建方的顺序」。
+- **几处与设计不同**(详见 §12.3 十条):本机令牌改由 `go_services.ps1` 只给 mail 注入(库按自身位置定位仓库根,不像仓库根的目录拒绝生成);
+  K8s 令牌不写 `optional`、带指纹注解、未设令牌不挡 infra-up,Secret 写在建表门禁之后(门禁失败时保持旧值);mail 是 Kafka 命令主题生产者(设计漏写,
+  已登记进 `start_game.ps1` 的契约名单);加入 mail 后 MySQL 规划档峰值 1860 超过 1800,同批调到 2100,**运行中的 mysqld 要在维护窗口 rollout restart 或
+  `SET GLOBAL` 才拿到新值**;冒烟的未读数按两次列表之间的过期 / 新到逐封核账,另加「系统邮件按人删」。
+- **评审**:两轮只读评审。第一轮四视角(1 个 P1:测试对有序字典调了不存在的 `ContainsKey`;P2 七条、P3 若干),第二轮复审(P2 两条:CI 路径过滤、
+  两区起栈步骤缺前提),全部修完,逐条记在设计 §12.3「评审」一段。
+- **实际跑过的(Claude 执行)**:改动的全部 `.ps1` 过 `Parser::ParseFile`;`mail_admin_dev_token.tests.ps1` 9/9;`go_services_stop.tests.ps1` 13/13;
+  `go_services_ports.tests.ps1` 19/19;`start_game_command_contract.tests.ps1` 26/26;`k8s_migrate_gate.tests.ps1` 41 条中 40 过
+  (唯一失败的「trade 资产通道关着」在未改动的主干上同样失败:trade.yaml 文件头注释里写了注解名,用例对整份内容 NotMatch,BK8s 那批自带);
+  `k8s_deploy_contract.tests.ps1`:177 条中 173 过;失败的 4 条(zone Redis 口令 dev 基线 / all-up 多 zone prod 的 login 锁键 / guild ConfigMap 镜像 / 资产通道默认关)在未改动的主干上同样失败,新增的 6 条 mail 用例全过。staging `infra-up` DryRun 实测总账:MySQL 规划档 peak=1860 / headroom=240,Redis 规划档 peak=1991。
+  全部 `.go` 过 gofmt。**Go(go/mail、robot、data_consistency_check)一行未编译,`robot/config/config_test.go` 未运行,冒烟未跑**。
+- **下一步(构建方)**:proto-gen(§12.1)→ go/mail 编译与真库测试(§12.2)→ 合入 `feat/mail-m1d-enable` → 脚本测试 → `dev-start-zones` 两区起栈跑
+  `robot/etc/mail_smoke.yaml` → §10 ⑧ sweep 验证与孤儿检查。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做(本机没有 Java 仓 `D:\luyuan\xuanming-server-mmo`)。部署链是本仓专有,Java 版按自己的部署方式做。
