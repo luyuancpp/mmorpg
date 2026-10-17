@@ -14,6 +14,7 @@
     <ClCompile Include="player_inbox\player_inbox_grpc_client.cpp" />
     <ClCompile Include="player_inbox\player_inbox_admin_grpc_client.cpp" />
     <ClCompile Include="friend\friend_grpc_client.cpp" />
+    <ClCompile Include="rank\rank_grpc_client.cpp" />
     <ClCompile Include="mail\mail_grpc_client.cpp" />
     <ClCompile Include="mail\mail_admin_grpc_client.cpp" />
     <ClCompile Include="scene_manager\scene_node_service_grpc_client.cpp" />
@@ -36,6 +37,7 @@
     <ClInclude Include="player_inbox\player_inbox_grpc_client.h" />
     <ClInclude Include="player_inbox\player_inbox_admin_grpc_client.h" />
     <ClInclude Include="friend\friend_grpc_client.h" />
+    <ClInclude Include="rank\rank_grpc_client.h" />
     <ClInclude Include="mail\mail_grpc_client.h" />
     <ClInclude Include="mail\mail_admin_grpc_client.h" />
     <ClInclude Include="scene_manager\scene_node_service_grpc_client.h" />

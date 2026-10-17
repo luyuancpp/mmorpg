@@ -264,6 +264,12 @@
     <ClCompile Include="friend\friend.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="rank\rank.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rank\rank.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="mail\mail.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -621,6 +627,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="friend\friend.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rank\rank.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rank\rank.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="mail\mail.grpc.pb.h">

@@ -75,7 +75,10 @@ function Invoke-CapturedPwsh {
     }
 
     try {
-        $output = & pwsh -NoProfile -NonInteractive -File $ScriptPath @Arguments 2>&1 | Out-String
+        # 终止异常按原始 Message 输出,不让子进程的 ConciseView 按控制台宽度插入换行和 `|`。
+        # 驱动同时保留显式 exit N,负向测试仍检查真实退出码和完整原因。
+        $captureDriver = Join-Path $PSScriptRoot 'captured_script_driver.ps1'
+        $output = & pwsh -NoProfile -NonInteractive -File $captureDriver $ScriptPath @Arguments 2>&1 | Out-String
         return @{ ExitCode = $LASTEXITCODE; Output = $output }
     }
     finally {

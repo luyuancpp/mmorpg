@@ -3318,7 +3318,7 @@ function Assert-ClientEntryClusterState {
 				-KubeContext $KubeContext -KubeConfig $KubeConfig
 			$problems += @($probe.Refusals)
 		}
-		$drifts += @(Get-BattleEntryDrift -AgonesFleetCrdPresent $AgonesFleetCrdPresent)
+		$drifts += (Get-BattleEntryDrift -AgonesFleetCrdPresent $AgonesFleetCrdPresent)
 	}
 
 	# 不传 -Settings 的 New-GatewayRateLimitYaml 为空 = 本次 gateway ConfigMap 不含 trusted-proxies。只看 trusted-proxies 是否为空;削峰阈值(G4b)另由 -Settings 写,不参与本判定。
@@ -3333,7 +3333,7 @@ function Assert-ClientEntryClusterState {
 			$problems += @($probe.Refusals)
 		}
 		if ($ClientEntryMode -eq "external") {
-			$drifts += @(Get-GateAddressDrift -Zone $zone -Namespace $namespace)
+			$drifts += (Get-GateAddressDrift -Zone $zone -Namespace $namespace)
 		}
 		if ($gatewayLosesTrustedProxies) {
 			$ingress = Invoke-ClientEntryKubectl -KubectlArgs @("get", "ingress", "gateway", "-n", $namespace, "--ignore-not-found", "-o", "name") `

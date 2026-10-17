@@ -275,3 +275,4 @@ const MailAdminSendPersonalMailMessageId = 271
 const MailAdminSendSystemMailMessageId = 272
 const ClientPlayerMailListMailsMessageId = 273
 const ClientPlayerMailDeleteMailsMessageId = 274
+const ClientPlayerRankGetRankPageMessageId = 275

@@ -117,6 +117,9 @@
     <ClInclude Include="service_metadata\friend_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="service_metadata\rank_service_metadata.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="service_metadata\mail_service_metadata.h">
       <Filter>头文件</Filter>
     </ClInclude>

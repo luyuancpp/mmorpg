@@ -106,15 +106,25 @@ def cmd_verify(_dry_run: bool) -> None:
             if not p.is_file():
                 problems.append(f"缺 {rel(p)}")
 
-    # match_event.proto 新增的快照事件:生成器给 contracts/kafka 下的每个 message 发事件号(event_id.txt 的 `<号>=ContractsKafka<名>` 行),
-    # 并出 C++ 常量头。
-    event_ids = REPO / "generated" / "proto" / "_unified" / "proto" / "event_id.txt"
+    # 事件号的权威账本在 proto/event_id.txt;_unified 是生成前拷贝的暂存输入,本轮新号不会回写那里。
+    # 同时核对 C++ 与 rank Go 常量的数字,避免仅检查符号存在却漏掉跨语言号值漂移。
+    event_ids = REPO / "proto" / "event_id.txt"
     event_key = "ContractsKafka" + SNAPSHOT_EVENT
-    if not event_ids.is_file() or not re.search(r"(?m)^\d+=" + re.escape(event_key) + r"\s*$", event_ids.read_text(encoding="utf-8")):
-        problems.append(f"{rel(event_ids)} 里没有 {SNAPSHOT_EVENT}(match_event.proto 的新 message 没被全量生成处理)")
-    event_h = REPO / "cpp" / "generated" / "rpc" / "service_metadata" / "contracts_kafka_match_event_event_id.h"
-    if not event_h.is_file() or ("ContractsKafka" + SNAPSHOT_EVENT + "EventId") not in event_h.read_text(encoding="utf-8"):
-        problems.append(f"{rel(event_h)} 里没有 ContractsKafka{SNAPSHOT_EVENT}EventId")
+    event_text = event_ids.read_text(encoding="utf-8") if event_ids.is_file() else ""
+    event_numbers = re.findall(r"(?m)^(\d+)=" + re.escape(event_key) + r"\s*$", event_text)
+    if len(event_numbers) != 1:
+        problems.append(f"{rel(event_ids)} 必须恰有一条 {event_key} 的事件号记录")
+    else:
+        expected_number = int(event_numbers[0])
+        event_outputs = (
+            REPO / "cpp" / "generated" / "rpc" / "service_metadata" / "contracts_kafka_match_event_event_id.h",
+            REPO / "go" / "rank" / "generated" / "pb" / "game" / "event_id.go",
+        )
+        for output in event_outputs:
+            output_text = output.read_text(encoding="utf-8") if output.is_file() else ""
+            numbers = re.findall(r"\b" + re.escape(event_key + "EventId") + r"\s*=\s*(\d+)\b", output_text)
+            if len(numbers) != 1 or int(numbers[0]) != expected_number:
+                problems.append(f"{rel(output)} 的 {event_key}EventId 必须恰有一项且等于权威事件号 {expected_number}")
 
     if problems:
         print("[FAIL] proto-gen output check (rank):")

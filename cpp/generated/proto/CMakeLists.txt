@@ -109,6 +109,8 @@ set(SOURCE_FILES
     etcd/version.pb.cc
     friend/friend.grpc.pb.cc
     friend/friend.pb.cc
+    rank/rank.grpc.pb.cc
+    rank/rank.pb.cc
     mail/mail.grpc.pb.cc
     mail/mail.pb.cc
     mail/mail_admin.grpc.pb.cc

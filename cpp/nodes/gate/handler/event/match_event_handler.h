@@ -10,4 +10,5 @@ public:
     static void UnRegister();
     static void BattleResultTeamHandler(const contracts::kafka::BattleResultTeam& event);
     static void BattleResultEventHandler(const contracts::kafka::BattleResultEvent& event);
+    static void PlayerRatingSnapshotEventHandler(const contracts::kafka::PlayerRatingSnapshotEvent& event);
 };

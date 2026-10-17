@@ -1038,7 +1038,7 @@ Test-Case '端到端 external:先删 Deployment 形态(带确认提示)与 gate-
     Assert-True -Condition (($order -notcontains -1) -and (($order | Sort-Object) -join ',') -eq ($order -join ',')) -Because "Service 先于 StatefulSet:Service 被集群拒绝时 gate 还没按冲突端口发布进 etcd(实际顺序 $($order -join ','))"
     Assert-Match -Text $out -Pattern "\[dry-run\] kubectl delete service -l mmorpg\.io/gate-ordinal -n $TestZoneNs .*ordinal >= 2" -Because '缩容后多出来的每序号 Service 要回收(否则继续占着 nodePort)'
     Assert-Match -Text $out -Pattern "\[dry-run\] wait statefulset/gate -n ${TestZoneNs}: poll \.status\.readyReplicas >= 2" -Because 'OnDelete 的 StatefulSet 不能用 rollout status 等'
-    Assert-NotMatch -Text $out -Pattern 'rollout status deployment/gate' -Because 'external 下没有 gate Deployment'
+    Assert-NotMatch -Text $out -Pattern 'rollout status deployment/gate(?:\s|$)' -Because 'external 下没有 gate Deployment(gateway 是不同的 Deployment)'
     Assert-Match -Text $out -Pattern 'Gate \(external\): StatefulSet replicas=2 service_type=NodePort etp=Local host=127\.0\.0\.1 nodePort=30000\+ordinal' -Because '写路径要打出 gate 地址来源摘要'
 }
 
@@ -1511,6 +1511,25 @@ foreach ($case in $ClusterStateCases) {
     }
 }
 
+# 空漂移列表必须放行:用假的首个 apply 主动终止,证明通过只读预检,且不会执行后续部署。
+$NoDriftCases = @(
+    @{ Label = 'gate 地址与集群一致'; DeployArgs = (New-FakeDeployArgs -Base $ExternalZoneFake -Extra @{ GateNodePortBase = 30000 })
+        Rules = @(@{ Pattern = '^get statefulset gate .*-o json$'; ExitCode = 0; Stdout = $LiveGateStsJson }); Env = @{} },
+    @{ Label = 'battle 入口与集群一致'; DeployArgs = (New-FakeDeployArgs -Base $InfraUpFake -Extra @{ ClientEntryMode = 'external' })
+        Rules = @(@{ Pattern = '^get --raw /apis/agones\.dev/v1$'; ExitCode = 0; Stdout = $AgonesAbsentJson },
+            @{ Pattern = '^get deployment battle .*-o json$'; ExitCode = 0; Stdout = $LiveBattleStaticJson }); Env = $BattleTestEnv }
+)
+foreach ($case in $NoDriftCases) {
+    Test-Case "非 DryRun 无漂移:$($case.Label),只读预检放行到假的首个 Namespace apply" {
+        $stopAfterPreflight = @{ Pattern = '^apply\b'; ExitCode = 17; Stdout = 'CONTRACT-PREFLIGHT-PASSED-STOP-BEFORE-APPLY' }
+        $run = Invoke-DeployWithFakeKubectl -DeployArgs $case.DeployArgs -Rules (@($case.Rules) + @($stopAfterPreflight)) -Env $case.Env
+        Assert-True -Condition ($run.ExitCode -ne 0) -Because '假的 apply 必须终止后续路径'
+        Assert-Match -Text $run.Output -Pattern 'CONTRACT-PREFLIGHT-PASSED-STOP-BEFORE-APPLY' -Because '没有漂移时必须通过预检并到达下一边界'
+        Assert-NotMatch -Text $run.Output -Pattern '集群现状预检失败|System\.Object\[\]' -Because '空数组不能被当成一个问题,也不能丢失真实问题文本'
+        Assert-NoClusterWrites -Run $run -Label $case.Label -AllowedApplyKinds @('Namespace')
+        Assert-Equal -Expected 1 -Actual @($run.Calls | Where-Object { $_.Args -match '^apply\b' }).Count -Because '只到假的首个 Namespace apply,没有后续部署'
+    }
+}
 # gateway 管理面口令(MMORPG_GATEWAY_ADMIN_API_KEY → Secret gateway-admin-api-key → 容器 env ADMIN_APIKEY):
 # 非 dev 档缺失 / 占位 / 过短,在任何集群写操作之前拒绝(k8s_deploy.ps1 Initialize-InjectedSecrets → Resolve-InjectedSecret)。
 # 走假 kubectl 的非 DryRun:拒绝落在集群现状预检(只读)之后、任何写操作之前;驱动用 Write-Host 打出完整异常原文,

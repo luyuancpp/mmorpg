@@ -131,6 +131,14 @@ namespace player_inbox {
     void SetPlayerInboxAdminCallDeadline(std::chrono::milliseconds deadline);
 }
 
+namespace rankpb {
+    void SetRankHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetRankIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetRankFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetRankIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetRankCallDeadline(std::chrono::milliseconds deadline);
+}
+
 namespace scene_manager {
     void SetSceneManagerServiceHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
     void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -205,6 +213,8 @@ void SetIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const :
 
     player_inbox::SetPlayerInboxAdminIfEmptyHandler(handler);
 
+    rankpb::SetRankIfEmptyHandler(handler);
+
     scene_manager::SetSceneManagerServiceIfEmptyHandler(handler);
 
     scene_node::SetSceneNodeServiceIfEmptyHandler(handler);
@@ -250,6 +260,8 @@ void SetHandler(const std::function<void(const GrpcReplyContext&, const ::google
     player_inbox::SetPlayerInboxHandler(handler);
 
     player_inbox::SetPlayerInboxAdminHandler(handler);
+
+    rankpb::SetRankHandler(handler);
 
     scene_manager::SetSceneManagerServiceHandler(handler);
 
@@ -297,6 +309,8 @@ void SetIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, co
 
     player_inbox::SetPlayerInboxAdminIfEmptyFailedHandler(handler);
 
+    rankpb::SetRankIfEmptyFailedHandler(handler);
+
     scene_manager::SetSceneManagerServiceIfEmptyFailedHandler(handler);
 
     scene_node::SetSceneNodeServiceIfEmptyFailedHandler(handler);
@@ -342,6 +356,8 @@ void SetFailedHandler(const std::function<void(const GrpcCallFailure&, const ::g
     player_inbox::SetPlayerInboxFailedHandler(handler);
 
     player_inbox::SetPlayerInboxAdminFailedHandler(handler);
+
+    rankpb::SetRankFailedHandler(handler);
 
     scene_manager::SetSceneManagerServiceFailedHandler(handler);
 
@@ -403,6 +419,9 @@ void SetGrpcCallDeadline(uint32_t nodeType, std::chrono::milliseconds deadline){
     }
     if (static_cast<uint32_t>(common::base::eNodeType::PlayerInboxNodeService) == nodeType) {
         player_inbox::SetPlayerInboxAdminCallDeadline(deadline);
+    }
+    if (static_cast<uint32_t>(common::base::eNodeType::RankNodeService) == nodeType) {
+        rankpb::SetRankCallDeadline(deadline);
     }
     if (static_cast<uint32_t>(common::base::eNodeType::SceneManagerNodeService) == nodeType) {
         scene_manager::SetSceneManagerServiceCallDeadline(deadline);

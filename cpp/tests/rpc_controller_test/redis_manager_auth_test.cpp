@@ -368,8 +368,20 @@ protected:
                     manager_->Shutdown();
                     manager_.reset();
                 }
-                server_.reset();
             });
+            // 客户端释放 socket 后,先让服务端处理 EOF 并报告 DOWN。AUTH 后主动半关的连接仍是
+            // kDisconnecting,在同一闭包内立刻析构 server 会抢在读事件之前移除仍启用的 Channel。
+            if (!WaitUntil([this] { return static_cast<std::size_t>(serverDowns_) == connections_.size(); },
+                           kSettleTimeout))
+            {
+                const Snapshot snap = TakeSnapshot();
+                ADD_FAILURE() << "fake Redis did not observe all client disconnects before teardown; connections="
+                              << snap.connections.size() << ", serverDowns=" << snap.serverDowns
+                              << "; aborting before unsafe server destruction\n" << MaskPassword(CapturedLog());
+                std::fflush(stdout);
+                std::abort();
+            }
+            RunInLoopAndWait([this] { server_.reset(); });
             // 再转一圈:让 removeChannel 排队的 dummy(持有 Channel)等 functor 在 loop 停下前跑完,
             // 而不是留给 ~EventLoop 随 pendingFunctors_ 一起丢弃(同 hiredis_command_lifecycle_test)。
             RunInLoopAndWait([] {});
@@ -864,7 +876,7 @@ TEST_F(RedisManagerAuth, ReauthenticatesAfterServerDisconnect)
     StartManager(kTestPassword, kReconnectIntervalSec);
     // 第 1 条连接上的 PING 撞上服务端半关,只会以空应答释放;所以非空的 PING 应答只可能来自重连后的连接。
     ASSERT_TRUE(WaitUntil([this] { return reconnectCalls_ >= 2 && pingReplies_ >= 1; }, kSettleTimeout))
-        << "no successful reconnect within the deadline";
+        << "no successful reconnect within the deadline\n" << MaskPassword(CapturedLog());
 
     const Snapshot snap = TakeSnapshot();
     EXPECT_EQ(snap.reconnectCalls, 2);

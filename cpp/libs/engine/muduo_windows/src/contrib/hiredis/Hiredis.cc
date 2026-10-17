@@ -89,6 +89,10 @@ void Hiredis::setChannel()
   channel_.reset(new Channel(loop_, fd()));
   channel_->setReadCallback(std::bind(&Hiredis::handleRead, this, _1));
   channel_->setWriteCallback(std::bind(&Hiredis::handleWrite, this));
+  // Windows 的纯 HUP 不走读回调,仍须让 hiredis 读取 EOF、释放挂起命令并通知断线。
+  // Channel 由本对象拥有,沿用读写回调的同寿命约束;这里不析构 Hiredis,
+  // 注销 Channel 后仍由 removeChannel 排队持有到本轮事件分发结束。
+  channel_->setCloseCallback([this] { handleRead(muduo::Timestamp::now()); });
 }
 
 void Hiredis::removeChannel()
@@ -108,12 +112,21 @@ void Hiredis::removeChannel()
 
 void Hiredis::handleRead(muduo::Timestamp receiveTime)
 {
+  // 同批 HUP / READ / WRITE 事件可能在上一回调里已释放 context,后续事件直接失效。
+  if (!context_) return;
   LOG_TRACE << "receiveTime = " << receiveTime.toString();
+  // HUP 也可能是建连阶段的首个事件;与写路径一致,让连接回调重新建立 Channel。
+  if (!(context_->c.flags & REDIS_CONNECTED))
+  {
+    removeChannel();
+  }
   ::redisAsyncHandleRead(context_);
 }
 
 void Hiredis::handleWrite()
 {
+  // Linux 的 HUP 分支之后仍会派发同批 OUT;EOF 回调可能已清空 context。
+  if (!context_) return;
   if (!(context_->c.flags & REDIS_CONNECTED))
   {
     removeChannel();

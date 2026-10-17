@@ -21,6 +21,7 @@
 #include "proto/match/match_service.pb.h"
 #include "proto/player_inbox/player_inbox.pb.h"
 #include "proto/player_inbox/player_inbox_admin.pb.h"
+#include "proto/rank/rank.pb.h"
 #include "proto/scene/client_player_common.pb.h"
 #include "proto/scene/player_activity.pb.h"
 #include "proto/scene/player_attribute.pb.h"
@@ -61,6 +62,7 @@
 #include "rpc/service_metadata/match_service_service_metadata.h"
 #include "rpc/service_metadata/player_inbox_service_metadata.h"
 #include "rpc/service_metadata/player_inbox_admin_service_metadata.h"
+#include "rpc/service_metadata/rank_service_metadata.h"
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "rpc/service_metadata/player_activity_service_metadata.h"
 #include "rpc/service_metadata/player_attribute_service_metadata.h"
@@ -246,6 +248,7 @@ namespace player_inbox{void SendPlayerInboxAdminListItems(entt::registry& , entt
 namespace player_inbox{void SendPlayerInboxAdminLookupByRequest(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace player_inbox{void SendPlayerInboxAdminVoidItem(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace player_inbox{void SendPlayerInboxAdminReconcilePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace rankpb{void SendClientPlayerRankGetRankPage(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -282,7 +285,7 @@ namespace trade{void SendTradeAdminSeedListing(entt::registry& , entt::entity , 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
 // InitMessageInfo 越界写导致节点启动断言)变成编译错误而不是运行期崩溃。
-static_assert(kMaxRpcMethodCount == 275,
+static_assert(kMaxRpcMethodCount == 276,
     "kMaxRpcMethodCount out of sync with this generation run - rerun the full proto generator");
 std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 
@@ -1034,6 +1037,13 @@ void InitMessageInfo()
         std::make_unique<::player_inbox::ReconcilePlayerInboxRequest>(),
         std::make_unique<::player_inbox::ReconcilePlayerInboxResponse>(),
         nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminReconcilePlayer};
+
+    // --- ClientPlayerRank ---
+    gRpcMethodRegistry[ClientPlayerRankGetRankPageMessageId] = RpcMethodMeta{
+        "ClientPlayerRank", "GetRankPage",
+        std::make_unique<::rankpb::GetRankPageRequest>(),
+        std::make_unique<::rankpb::GetRankPageResponse>(),
+        nullptr, 1, common::base::eNodeType::RankNodeService, rankpb::SendClientPlayerRankGetRankPage};
 
     // --- SceneClientPlayerCommon ---
     gRpcMethodRegistry[SceneClientPlayerCommonSendTipToClientMessageId] = RpcMethodMeta{
@@ -1823,6 +1833,7 @@ bool IsClientMessageId(uint32_t messageId)
 	case MatchServiceWatchBattleMessageId:
 	case MatchServiceRequestBattleTicketMessageId:
 	case MatchServiceListWatchableBattlesMessageId:
+	case ClientPlayerRankGetRankPageMessageId:
 	case SceneClientPlayerCommonSendTipToClientMessageId:
 	case SceneClientPlayerCommonKickPlayerMessageId:
 	case SceneClientPlayerCommonRedirectToGateMessageId:

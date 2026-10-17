@@ -113,6 +113,8 @@
     <ClCompile Include="etcd\version.pb.cc" />
     <ClCompile Include="friend\friend.grpc.pb.cc" />
     <ClCompile Include="friend\friend.pb.cc" />
+    <ClCompile Include="rank\rank.grpc.pb.cc" />
+    <ClCompile Include="rank\rank.pb.cc" />
     <ClCompile Include="mail\mail.grpc.pb.cc" />
     <ClCompile Include="mail\mail.pb.cc" />
     <ClCompile Include="mail\mail_admin.grpc.pb.cc" />
@@ -237,6 +239,8 @@
     <ClInclude Include="etcd\version.pb.h" />
     <ClInclude Include="friend\friend.grpc.pb.h" />
     <ClInclude Include="friend\friend.pb.h" />
+    <ClInclude Include="rank\rank.grpc.pb.h" />
+    <ClInclude Include="rank\rank.pb.h" />
     <ClInclude Include="mail\mail.grpc.pb.h" />
     <ClInclude Include="mail\mail.pb.h" />
     <ClInclude Include="mail\mail_admin.grpc.pb.h" />

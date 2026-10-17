@@ -1,0 +1,71 @@
+syntax = "proto3";
+package rankpb;
+
+option go_package = "login/proto/rank";
+// 显式写 false(未设置时同为 false):照 chat / trade / team / player_inbox / mail。生成器据它决定注册形状与
+// 路由表是否收录本服务,写成 true 会让注册形状、路由表和协议号对不上。
+option cc_generic_services = false;
+
+import "proto/db/proto_option.proto";
+import "proto/common/base/tip.proto";
+
+// NODE_RANK = 18 已在 proto_option.proto 里(friend 不写本 option 是因为没有 NODE_FRIEND,rank 没有这个问题)。
+option (OptionFileDefaultNode) = NODE_RANK;
+
+// 排行榜(leaderboard)客户端协议,工程名 rank(设计 docs/design/leaderboard-system.md §4,2026-09-20 已拍板)。
+//
+// 目录必须叫 proto/rank/:protogen 的 NodeServiceForCpp(tools/proto_generator/protogen/internal/model.go)三级回落
+// (服务名 → proto package 名 → 目录名)最终按目录名 Rank 派生成 RankNodeService(proto/common/base/node.proto 里 = 13)。
+// 目录若叫 leaderboard,会生成不存在的 ENodeType_LeaderboardNodeService,路由表编不过。
+//
+// 链路:客户端 → gate → 客户端 RPC 路由服 → rank 服务(D-12 只承诺路由服模式,不开 gate 直连白名单)。
+// 本文件改完必须重跑 proto-gen 才生效;gate 的 rpc_event_registry、路由表、robot 与 Unity 的生成物必须出自**同一次**
+// proto-gen 并同批发布(混用两次生成物不报错,只会错解包)。
+//
+// **只有读方法**:写分只经 Kafka 消费 match 发布的评分快照(contracts/kafka 的 PlayerRatingSnapshotEvent,§2.4),
+// 客户端没有任何写入口。服务名必须含 ClientPlayer(生成器只给 ClientPlayer / GamePlayer 服务出 robot / Unity handler);
+// 服务级客户端开关会把同 service 的所有方法带进 gate 白名单与路由表,所以**将来任何内部写 RPC 都不得加到这个
+// service 上**(要加就另建不带开关的 service,照 proto/trade/trade_admin.proto,设计 L-12)。
+//
+// 身份口径(port-decisions D-9):请求体**没有** player_id,"我是谁"只取 gate 注入的会话 metadata;也没有 zone_id(v1 只有全服榜)。
+//
+// 消息号:由 proto-gen 按 "<Service><Method>" 发号,**不要手改 proto/message_id.txt**。
+
+// 榜类型。v1 只有 match 评分全服榜;**不预留** GUILD(公会榜在 go/guild 里另有实现、不计划搬,留一个永不实现的值
+// 会让人以为它可用,设计 L-15)。追加新榜只许 append 枚举值。
+enum RankBoard {
+  RANK_BOARD_UNSPECIFIED = 0;
+  RANK_BOARD_MATCH_RATING = 1;   // match 的 Elo 评分(不分模式、不分 zone,§1.3)
+}
+
+message GetRankPageRequest {
+  RankBoard board = 1;
+  uint32 page = 2;        // 从 1 起;0 视为 1;超过末页按末页(照 jubaozhai BrowseListingsRequest)
+  uint32 page_size = 3;   // 0 取默认 20;超过上限按上限 50
+}
+
+message RankEntry {
+  uint32 rank = 1;           // 从 1 起,连续名次(同分先达到者在前,不做并列名次,§3.3)
+  uint64 player_id = 2;
+  string name = 3;           // 展示名;名字补全失败时为空(fail-open,§4.3)
+  uint32 rating_centi = 4;   // 分 × 100;客户端自己格式化两位小数
+  uint64 games = 5;          // 累计排位局数
+}
+
+message GetRankPageResponse {
+  TipInfoMessage error_message = 1;
+  repeated RankEntry entries = 2;
+  uint32 total_count = 3;
+  uint32 page = 4;           // 钳制后的页码
+  uint32 page_size = 5;      // 钳制后的页长
+  uint32 page_count = 6;     // 至少为 1(空榜时也是 1)
+  // 调用者自己的名次。未上榜时 self.rank = 0、其余字段为空 —— **不是错误**,error_message 为空,entries 照常返回
+  // (一页数据正常而自己未上榜,回 tip 会让客户端把整页当失败,§4.2)。
+  RankEntry self = 7;
+}
+
+service ClientPlayerRank {
+  option (OptionIsClientProtocolService) = true;
+  // 拉一页 + 顺带"我的名次":合成一个 RPC,因为客户端 gRPC 回包按 message_id FIFO 匹配、同一功能只能单请求在途(§4.2)。
+  rpc GetRankPage (GetRankPageRequest) returns (GetRankPageResponse);
+}
