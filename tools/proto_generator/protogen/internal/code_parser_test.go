@@ -64,7 +64,14 @@ func TestReadCodeSections_MethodBlocksNotMisclassifiedAsGlobal(t *testing.T) {
 	}
 }
 
-// 旧模板 gRPC 包装函数的"投递前"守护段(现只供 checkLegacyGrpcSections 检测):按旧包装函数键解析只取包装函数里的段,不串到 Handle* 的段,
+// legacyGrpcWrapperKey 是旧模板 gRPC 包装函数形状的查找键,只在本文件里回归 codeParser 的取段边界:
+// 带上 "(grpc::ServerContext" 不与 Handle* 键、以及同名前缀方法(如 Create / CreateScene)互相命中。
+// 生成器的旧段检查已不用它,改为按签名形状扫描(checkLegacyGrpcSections / legacyGrpcWrapperPattern)。
+func legacyGrpcWrapperKey(info *MethodInfo, _ string) string {
+	return info.Service() + "Impl::" + info.Method() + "(grpc::ServerContext"
+}
+
+// 旧模板 gRPC 包装函数的"投递前"守护段(codeParser 取段边界回归):按旧包装函数键解析只取包装函数里的段,不串到 Handle* 的段,
 // 同名前缀方法(Create / CreateScene)不互相命中,没有守护段的包装函数回落默认空段。
 func TestReadCodeSections_GrpcWrapperPreDispatchSections(t *testing.T) {
 	setParserTestNaming(t)

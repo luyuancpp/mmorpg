@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 
+	"player_inbox/internal/constants"
 	"player_inbox/internal/metrics"
 
 	inboxpb "proto/player_inbox"
+
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // 后台循环用到的存储操作(设计 §6.3、§9.1、§9.3、§9.4)。全部在事务之外逐条 autocommit,
-// 不持流行锁:清理只删终态行(Ack 不改终态行,两者不会反向抢锁);提醒清零是 next_seq CAS。
+// 不持流行锁:清理只删终态行(Ack 不改终态行,两者不会反向抢锁);提醒清零 / 推迟都是 next_seq CAS。
 
 // SweepTerminal 删除保留期外的终态行,本轮最多 budget 行(设计 §9.1:每轮最多 500 行)。
 // 按分片走 (shard, state, updated_ms) 索引普通读出候选,再按主键逐行带条件删除;
@@ -60,17 +63,23 @@ func (s *Store) SweepTerminal(ctx context.Context, cutoffMs uint64, budget int) 
 	return deleted, nil
 }
 
-// NotifyDue 是一条待补发的提醒:读出当时的 next_seq 作 CAS 令牌。
+// NotifyDue 是一条待补发的提醒:读出当时的 next_seq 作 CAS 令牌,流行的 updated_ms 作退避起算点。
 type NotifyDue struct {
 	PlayerID uint64
 	Domain   inboxpb.PlayerInboxDomain
 	NextSeq  uint64
+	// PendingSinceMs 是流行最后一次写入的时刻(updated_ms),即这条提醒至少从何时起就没落定(见 notifyRetryDueMs)。
+	PendingSinceMs uint64
 }
 
+// resendNotifyTimeout 是补发里单次提醒(读 location、写 Kafka、落定时的 CAS 清零)的预算。
+// 没落定时的推迟 CAS 不吃它,用本轮的 ctx:提醒耗尽预算(典型是 Kafka 写超时)之后照样能推迟。
+const resendNotifyTimeout = constants.NotifyTimeout * 5
+
 // DueNotifications 读一个分片里到期的提醒:notify_due_ms ∈ [1, dueBeforeMs],最多 limit 条
-// (走 (shard, notify_due_ms) 索引,设计 §6.3)。
+// (走 (shard, notify_due_ms) 索引,设计 §6.3)。补发没落定的提醒已被推到未来(ResendNotify),到点之前不会再被读到。
 func (s *Store) DueNotifications(ctx context.Context, shard uint32, dueBeforeMs uint64, limit int) ([]NotifyDue, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT `player_id`, `domain`, `next_seq` FROM "+streamTable+
+	rows, err := s.db.QueryContext(ctx, "SELECT `player_id`, `domain`, `next_seq`, `updated_ms` FROM "+streamTable+
 		" WHERE `shard` = ? AND `notify_due_ms` BETWEEN 1 AND ? LIMIT ?", shard, dueBeforeMs, limit)
 	if err != nil {
 		return nil, fmt.Errorf("inbox: scan due notifications shard=%d: %w", shard, err)
@@ -80,7 +89,7 @@ func (s *Store) DueNotifications(ctx context.Context, shard uint32, dueBeforeMs 
 	for rows.Next() {
 		var d NotifyDue
 		var domain uint32
-		if err := rows.Scan(&d.PlayerID, &domain, &d.NextSeq); err != nil {
+		if err := rows.Scan(&d.PlayerID, &domain, &d.NextSeq, &d.PendingSinceMs); err != nil {
 			return nil, err
 		}
 		if RowShard(d.PlayerID) != shard {
@@ -92,35 +101,84 @@ func (s *Store) DueNotifications(ctx context.Context, shard uint32, dueBeforeMs 
 	return out, rows.Err()
 }
 
-// ResendNotify 给一条到期提醒补发一次;落定(送达 / 离线 / 等待落点)后按读出时的 next_seq 做 CAS 置 0,
-// 失败就保持原值,下一轮再试(设计 §6.3)。
+// ResendNotify 给一条到期提醒补发一次(设计 §6.3、评审 L6)。ctx 是本轮补发的 ctx,单次提醒的预算由本函数加。
+//   - 落定(送达 / 离线 / 等待落点 / 不可恢复的无节点):按读出时的 next_seq 做 CAS 置 0;
+//   - 没落定(Kafka / Redis 故障、镜像未同步、节点身份歧义、uuid 为空):在同一个 next_seq CAS 里把 notify_due_ms
+//     推到 notifyRetryDueMs 给出的时刻,到点之前不再被 DueNotifications 读到,不再每轮占着分片队头。
+//
+// 两种 CAS 失败都无害:这期间又有新的入箱,notify_due_ms 已被它写成 now,补发循环照常尽快处理。
 func (s *Store) ResendNotify(ctx context.Context, d NotifyDue) NotifyResult {
-	return s.notifyAndClear(ctx, d.PlayerID, d.Domain, d.NextSeq)
+	notifyCtx, cancel := context.WithTimeout(ctx, resendNotifyTimeout)
+	result := s.notifyAndClear(notifyCtx, d.PlayerID, d.Domain, d.NextSeq)
+	cancel()
+	if result.Settled() {
+		return result
+	}
+	dueMs := notifyRetryDueMs(s.nowMs(), d.PendingSinceMs)
+	if _, err := s.DeferNotifyDue(ctx, d.PlayerID, d.Domain, d.NextSeq, dueMs); err != nil {
+		// 推迟失败只是这一行下一轮还会被扫到(退避前的行为),不丢提醒。
+		logx.WithContext(ctx).Errorf("[player_inbox] Notify resend not settled (result=%s) and deferring notify_due failed "+
+			"player=%d domain=%d: %v (resend loop retries it next round)", result, d.PlayerID, d.Domain, err)
+	}
+	return result
 }
 
-// ScanGauges 扫一遍全部分片,算出扫描型 gauge(设计 §9.4,只由领导者调用)。
-// notifyOverdueBeforeMs:notify_due_ms 早于它的流计入 notify_backlog(提醒积压超过 5 分钟)。
+// DeferNotifyDue 把一条没落定的提醒推迟到 dueMs 再补发,与 ClearNotifyDue 用同一个 next_seq CAS 令牌(评审 L6):
+// 这期间只要又有新的入箱,next_seq 就变了,CAS 失败,notify_due_ms 保持入箱写下的 now。
+// **不碰 updated_ms**:它是退避的起算点(notifyRetryDueMs),提醒的簿记不算流的业务写入(ClearNotifyDue 同样不碰)。
+// 返回是否真的改了。
+func (s *Store) DeferNotifyDue(ctx context.Context, playerID uint64, domain inboxpb.PlayerInboxDomain, expectNextSeq, dueMs uint64) (bool, error) {
+	res, err := s.db.ExecContext(ctx, "UPDATE "+streamTable+" SET `notify_due_ms` = ? WHERE "+streamPK+
+		" AND `next_seq` = ? AND `notify_due_ms` <> 0", dueMs, RowShard(playerID), playerID, uint32(domain), expectNextSeq)
+	if err != nil {
+		return false, fmt.Errorf("inbox: defer notify_due player=%d domain=%d: %w", playerID, domain, err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return n == 1, nil
+}
+
+// GaugeCutoffs 是一次扫描型 gauge 用到的时间截止(Unix 毫秒,由后台循环按 now 算出,见 gaugeCutoffs)。
+type GaugeCutoffs struct {
+	// NotifyOverdueBeforeMs:notify_due_ms 非 0、且流行最后一次写入(updated_ms)不晚于它的流计入 notify_backlog
+	// (提醒悬了 5 分钟以上)。按 updated_ms 而不按 notify_due_ms 算:补发没落定时 notify_due_ms 被推到了未来(评审 L6),
+	// 按它算的话,Kafka 长时间写不进时积压反而一条都不剩。
+	NotifyOverdueBeforeMs uint64
+	// DeliveredStaleBeforeMs:已投递未确认、最后一次投递(last_delivered_ms)早于它的行算陈旧,只进
+	// delivered_unacked_stale,不进告警口径的三项(评审 M4)。0 = 全部算近期。
+	DeliveredStaleBeforeMs uint64
+}
+
+// ScanGauges 扫一遍全部分片,算出扫描型 gauge(设计 §9.4,只由领导者调用);截止见 GaugeCutoffs。
 // 每个分片两条只读聚合(PENDING 行走 (shard, state, updated_ms) 索引);跨分片怎么折见 foldScanGauges。
 // 任何一个分片读失败整轮作废(返回错误、不更新 gauge),不拿半套分片的数去刷新看板。
-func (s *Store) ScanGauges(ctx context.Context, nowMs, notifyOverdueBeforeMs uint64) (metrics.ScanGauges, error) {
+func (s *Store) ScanGauges(ctx context.Context, nowMs uint64, cut GaugeCutoffs) (metrics.ScanGauges, error) {
+	stale := cut.DeliveredStaleBeforeMs
 	shards := make([]shardGaugeScan, 0, ShardCount)
 	for shard := uint32(0); shard < ShardCount; shard++ {
 		if err := ctx.Err(); err != nil {
 			return metrics.ScanGauges{}, err
 		}
 		var sc shardGaugeScan
+		// 「近期已投递」= delivery_count > 0 且 last_delivered_ms ≥ 截止;陈旧 = delivery_count > 0 且早于截止。
+		// max_delivery_count 只取近期行:没投递过的行 delivery_count 为 0,本来就不影响最大值。
 		err := s.db.QueryRowContext(ctx, "SELECT COUNT(*),"+
-			" COALESCE(SUM(CASE WHEN `delivery_count` > 0 THEN 1 ELSE 0 END), 0),"+
-			" COALESCE(MAX(`delivery_count`), 0), COALESCE(MIN(`created_ms`), 0),"+
-			" COALESCE(MIN(CASE WHEN `delivery_count` > 0 THEN `last_delivered_ms` END), 0)"+
+			" COALESCE(SUM(CASE WHEN `delivery_count` > 0 AND `last_delivered_ms` >= ? THEN 1 ELSE 0 END), 0),"+
+			" COALESCE(SUM(CASE WHEN `delivery_count` > 0 AND `last_delivered_ms` < ? THEN 1 ELSE 0 END), 0),"+
+			" COALESCE(MAX(CASE WHEN `delivery_count` > 0 AND `last_delivered_ms` >= ? THEN `delivery_count` END), 0),"+
+			" COALESCE(MIN(`created_ms`), 0),"+
+			" COALESCE(MIN(CASE WHEN `delivery_count` > 0 AND `last_delivered_ms` >= ? THEN `last_delivered_ms` END), 0)"+
 			" FROM "+itemTable+" WHERE `shard` = ? AND `state` = ?",
-			shard, uint32(inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING)).
-			Scan(&sc.openItems, &sc.deliveredUnacked, &sc.maxDeliveryCount, &sc.minCreatedMs, &sc.minDeliveredMs)
+			stale, stale, stale, stale, shard, uint32(inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING)).
+			Scan(&sc.openItems, &sc.deliveredUnacked, &sc.deliveredUnackedStale, &sc.maxDeliveryCount, &sc.minCreatedMs, &sc.minDeliveredMs)
 		if err != nil {
 			return metrics.ScanGauges{}, fmt.Errorf("inbox: gauge scan shard=%d: %w", shard, err)
 		}
+		// 走 (shard, notify_due_ms) 索引取出 notify_due_ms 非 0 的流(健康时几乎为空),再按 updated_ms 过滤。
 		if err := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+streamTable+
-			" WHERE `shard` = ? AND `notify_due_ms` BETWEEN 1 AND ?", shard, notifyOverdueBeforeMs).Scan(&sc.notifyBacklog); err != nil {
+			" WHERE `shard` = ? AND `notify_due_ms` >= 1 AND `updated_ms` <= ?", shard, cut.NotifyOverdueBeforeMs).Scan(&sc.notifyBacklog); err != nil {
 			return metrics.ScanGauges{}, fmt.Errorf("inbox: notify backlog scan shard=%d: %w", shard, err)
 		}
 		shards = append(shards, sc)

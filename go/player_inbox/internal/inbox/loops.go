@@ -50,6 +50,11 @@ const (
 	notifyGrace = 5 * time.Second
 	// notifyOverdue:提醒积压超过 5 分钟计入 player_inbox_notify_backlog(设计 §9.4 warning)。
 	notifyOverdue = 5 * time.Minute
+	// deliveredStaleAfter:最后一次投递早于 now − 24h 的已投递未确认行算陈旧(评审 M4):不进 delivered_unacked /
+	// delivered_unacked_oldest_seconds / max_delivery_count(告警口径),只进 info 级的 delivered_unacked_stale。
+	// 典型来源是 GM 处置后紧接着封号踢下线:实体销毁时 ackQueue 跟着丢,玩家不再上线,这一行就永远已投递未确认。
+	// 取 24h:「卡住」告警(> 1h 持续 10 分钟)仍有约 23 小时可见;玩家一天内回来,落地 Fetch 会再投递、刷新它。
+	deliveredStaleAfter = 24 * time.Hour
 	// roundBudgetCap:单轮的整体上限,避免一轮拖到下一轮之后;关停时 ctx 取消立即生效。
 	roundBudgetCap = 2 * time.Minute
 	// reconcileFirstDelayMin / reconcileFirstDelaySpread:当选后第一轮对账在 [1, 5) 分钟内随机起跑(评审 L4)。
@@ -74,8 +79,9 @@ type Campaign func(ctx context.Context, whileLeader func(ctx context.Context))
 type MaintenanceStore interface {
 	SweepTerminal(ctx context.Context, cutoffMs uint64, budget int) (int, error)
 	DueNotifications(ctx context.Context, shard uint32, dueBeforeMs uint64, limit int) ([]NotifyDue, error)
+	// ResendNotify 补发一条;ctx 是本轮的 ctx,单次提醒的预算由实现自己加(没落定时的推迟不能被提醒耗尽的预算拖累)。
 	ResendNotify(ctx context.Context, d NotifyDue) NotifyResult
-	ScanGauges(ctx context.Context, nowMs, notifyOverdueBeforeMs uint64) (metrics.ScanGauges, error)
+	ScanGauges(ctx context.Context, nowMs uint64, cut GaugeCutoffs) (metrics.ScanGauges, error)
 	ReconcileRecent(ctx context.Context, sinceMs uint64, startShard uint32, ledgers LedgerReader) (ReconcileRoundResult, error)
 }
 
@@ -275,11 +281,22 @@ func (l *Loops) notifyRound(ctx context.Context) {
 			if ctx.Err() != nil {
 				return
 			}
-			notifyCtx, cancel := context.WithTimeout(ctx, constants.NotifyTimeout*5)
-			l.store.ResendNotify(notifyCtx, d)
-			cancel()
+			// 单次提醒的预算在 ResendNotify 里加;没落定的行被推到 now + 退避,不会下一轮又排在队头(评审 L6)。
+			l.store.ResendNotify(ctx, d)
 		}
 	}
+}
+
+// gaugeCutoffs 按 now 算出一次扫描型 gauge 的截止:提醒积压 = 悬了 notifyOverdue 以上;
+// 已投递未确认的陈旧截止 = now − deliveredStaleAfter(评审 M4)。now 早于对应时长时截止取 0。
+func gaugeCutoffs(nowMs uint64) GaugeCutoffs {
+	before := func(d time.Duration) uint64 {
+		if ms := uint64(d.Milliseconds()); nowMs > ms {
+			return nowMs - ms
+		}
+		return 0
+	}
+	return GaugeCutoffs{NotifyOverdueBeforeMs: before(notifyOverdue), DeliveredStaleBeforeMs: before(deliveredStaleAfter)}
 }
 
 // gaugeRound 刷新扫描型 gauge(设计 §9.4)。
@@ -289,7 +306,7 @@ func (l *Loops) gaugeRound(ctx context.Context) {
 	if nowMs <= overdue {
 		return
 	}
-	g, err := l.store.ScanGauges(ctx, nowMs, nowMs-overdue)
+	g, err := l.store.ScanGauges(ctx, nowMs, gaugeCutoffs(nowMs))
 	if err != nil {
 		if !errors.Is(err, context.Canceled) {
 			logx.Errorf("[player_inbox] Gauge scan failed: %v", err)

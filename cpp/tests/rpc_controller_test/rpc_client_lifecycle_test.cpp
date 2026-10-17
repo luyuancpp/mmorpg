@@ -758,3 +758,102 @@ TEST_F(RpcClientLoopback, DestroyingTcpClientOnItsConnectStackKeepsConnectorAliv
             << "对端没看到 DOWN:接住的连接没有正常关掉";
     }
 }
+
+// ---------------------------------------------------------------------------
+// 9. 出站链路断开一律 WARN,没有「启动宽限」(rpc_client.h onConnection 的 DOWN 分支)
+//    旧实现把连上后 5s 内的断开降为 INFO(kStartupGraceSeconds),依据是旧 win_connect 阻塞 select、无条件返回 0
+//    造成的假阳性连接。d27176e04 起 win_connect 非阻塞,Connector::handleWrite 以 SO_ERROR 确认连接完成才回调 UP,
+//    依据已不存在;而宽限每条连接重新计时,对端反复「接受后立刻关」的抖动会永远停在 INFO,告警看不到。
+//    判据:连上后立即由对端关闭(远在旧的 5s 窗口之内),截获到恰好一条 WARN 级的
+//    "Disconnected from server at <对端>"。旧代码这里只打 INFO → 0 条 → 红。
+//    日志输出函数与级别是进程级全局变量:装、卸都在 loop 线程上做(本例只有 loop 线程打日志),
+//    计数只由 loop 线程写,测试线程经 RunInLoopAndWait 读取,不与打日志的线程竞争。
+// ---------------------------------------------------------------------------
+
+namespace
+{
+
+// 只在 loop 线程上读写(日志从 loop 线程打出,装卸与读取都经 RunInLoopAndWait)。
+std::string gDisconnectWarnNeedle;
+int gDisconnectWarnLines = 0;
+
+void CountDisconnectWarn(const char* msg, int len)
+{
+    // muduo 每次调用输出函数恰好交出一整行;级别字段是定宽的 "WARN  "(Logging.cc LogLevelName)。
+    const std::string_view line(msg, static_cast<std::size_t>(len));
+    if (line.find("WARN  ") != std::string_view::npos && line.find(gDisconnectWarnNeedle) != std::string_view::npos)
+    {
+        ++gDisconnectWarnLines;
+    }
+    std::fwrite(msg, 1, static_cast<std::size_t>(len), stdout);   // 照常输出,失败时便于排查
+}
+
+// muduo 的默认输出函数在 Logging.cc 的匿名作用域里,不可取址;恢复成等价实现(同 redis_manager_auth_test.cpp)。
+void WriteLogToStdout(const char* msg, int len)
+{
+    std::fwrite(msg, 1, static_cast<std::size_t>(len), stdout);
+}
+
+} // namespace
+
+TEST_F(RpcClientLoopback, OutboundDisconnectRightAfterConnectLogsWarn)
+{
+    muduo::Logger::LogLevel savedLevel = muduo::Logger::WARN;
+    RunInLoopAndWait([&] {
+        savedLevel = muduo::Logger::logLevel();
+        muduo::Logger::setLogLevel(muduo::Logger::WARN);   // 判据是 WARN 行:级别不得高于 WARN
+        gDisconnectWarnNeedle = "Disconnected from server at " + serverAddr_.toIpPort();
+        gDisconnectWarnLines = 0;
+        muduo::Logger::setOutput(&CountDisconnectWarn);
+    });
+
+    RpcClientPtr client = ConnectClient();
+
+    // 服务端 accept 与客户端 UP 同在一个 loop 上、先后不定:等服务端连接出现再关。截止时间只作活性上限。
+    // forceClose 与停服放在同一个 functor 里:重连要等 Connector 至少 500ms 的退避,赶不上停服。
+    const auto acceptDeadline = std::chrono::steady_clock::now() + 5s;
+    bool forceCloseRequested = false;
+    bool gaveUp = false;
+    while (!forceCloseRequested && !gaveUp)
+    {
+        gaveUp = std::chrono::steady_clock::now() >= acceptDeadline;
+        RunInLoopAndWait([&] {
+            if (const auto connection = serverConnWeak_.lock())
+            {
+                connection->forceClose();
+                forceCloseRequested = true;
+            }
+            if (forceCloseRequested || gaveUp)
+            {
+                server_.reset();   // 停止接受重连:本例只有一条连接、恰好一次 DOWN
+            }
+        });
+        if (!forceCloseRequested && !gaveUp)
+        {
+            std::this_thread::sleep_for(10ms);
+        }
+    }
+    EXPECT_TRUE(forceCloseRequested) << "真实服务端连接不存在";
+
+    // 观察者在 DOWN 分支打完日志之后才被调用:看到 DOWN 计数时,那条断开日志已经过了输出函数。
+    const auto downDeadline = std::chrono::steady_clock::now() + 5s;   // 只作活性上限,判据是 DOWN 事件本身
+    while (events_->down.load() == 0 && std::chrono::steady_clock::now() < downDeadline)
+    {
+        std::this_thread::sleep_for(10ms);
+    }
+    EXPECT_EQ(events_->down.load(), 1) << "client 应恰好收到一次 DOWN";
+
+    // EXPECT 失败也走 loop 内的恢复与拆除,不把截获函数留给后面的用例。
+    int warnLines = -1;
+    RunInLoopAndWait([&] {
+        warnLines = gDisconnectWarnLines;
+        muduo::Logger::setOutput(&WriteLogToStdout);
+        muduo::Logger::setLogLevel(savedLevel);
+        client.reset();   // 此时 client_.connection() 已空,~TcpClient 走 connector 分支
+    });
+    PumpLoop(2);
+
+    EXPECT_EQ(warnLines, 1)
+        << "连上后立刻断开没有打出 WARN 级的 \"Disconnected from server at\":断开日志又被按连接时长降级了"
+           "(旧的 kStartupGraceSeconds 启动宽限会把 5s 内的断开降为 INFO)";
+}

@@ -237,7 +237,21 @@ TestH2Client::TestH2Client(TestH2ClientOptions options)
         return;
     }
     session_.reset(rawSession);
-    SendSettings(options.initialSettings);
+    if (!SendSettings(options.initialSettings))
+    {
+        return;
+    }
+    if (options.localConnectionWindowBytes > 0)
+    {
+        const int rv = nghttp2_session_set_local_window_size(session_.get(), NGHTTP2_FLAG_NONE, 0,
+                                                             options.localConnectionWindowBytes);
+        if (rv != 0)
+        {
+            Fail(LibError("nghttp2_session_set_local_window_size", rv));
+            return;
+        }
+        Flush(); // 与其余脚本调用一致:立即序列化进输出缓冲
+    }
 }
 
 TestH2Client::~TestH2Client() = default;

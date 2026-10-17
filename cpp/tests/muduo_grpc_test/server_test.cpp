@@ -61,6 +61,7 @@ using muduo_grpc::UnaryCallRequest;
 using muduo_grpc::UnaryCallResult;
 using muduo_grpc_test::HeaderList;
 using muduo_grpc_test::TestH2Client;
+using muduo_grpc_test::TestH2ClientOptions;
 using muduo_grpc_test::TestH2Peer;
 using H2Stream = muduo_grpc_test::ClientStream;
 using namespace std::chrono_literals;
@@ -77,6 +78,9 @@ constexpr char kOrderPath[] = "/test.Echo/Order";                   // 记录派
 constexpr char kSessionAppValue[] = "CgQIARABEgIIAQ==";
 // battle 守护段的跨语言契约文案:服务端自己产生的 UNAVAILABLE 永远不能等于它(server.h 线上不变量)。
 constexpr char kBattleNotAllocatable[] = "battle_not_allocatable";
+// 背压用例的应答大小(见夹具 StartBackpressuredCalls)与 HTTP/2 流控窗口上限(RFC 9113 §6.9.1:2^31-1)。
+constexpr size_t kBackpressureResponseBytes = 64 * 1024 * 1024;
+constexpr int32_t kMaxWindowBytes = 0x7fffffff;
 
 // ── 被测服务 ─────────────────────────────────────────────────────────────
 
@@ -162,8 +166,10 @@ public:
         kBytes, // 什么都不自动发;收到的字节原样累计
     };
 
-    RawConnection(muduo::net::EventLoop &loop, uint16_t port, Mode mode)
-        : client_(&loop, muduo::net::InetAddress("127.0.0.1", port), "server_test_raw_client"), mode_(mode)
+    RawConnection(muduo::net::EventLoop &loop, uint16_t port, Mode mode, TestH2ClientOptions h2Options = {})
+        : client_(&loop, muduo::net::InetAddress("127.0.0.1", port), "server_test_raw_client"),
+          mode_(mode),
+          h2_(std::move(h2Options))
     {
     }
 
@@ -245,6 +251,29 @@ public:
         }
     }
 
+    // 停止 / 恢复从 socket 读(背压用例:对端不读,服务端写满内核缓冲后输出积在自己的输出缓冲里)。
+    void StopReading()
+    {
+        if (const auto conn = connection_.lock())
+        {
+            conn->stopRead();
+        }
+    }
+
+    void StartReading()
+    {
+        if (const auto conn = connection_.lock())
+        {
+            conn->startRead();
+        }
+    }
+
+    // 断连(读到 EOF 或连接被关)那一刻把这些流与连接级 GOAWAY 拍下来:TCP 有序,拍到的就是 FIN 之前到达的全部帧,
+    // 用来证明服务端是先把帧写完、再写半关的。
+    void SnapshotAtDisconnect(std::vector<int32_t> streamIds) { snapshotStreamIds_ = std::move(streamIds); }
+    const std::map<int32_t, H2Stream> &streamsAtDisconnect() const { return streamsAtDisconnect_; }
+    const std::vector<muduo_grpc_test::ReceivedGoaway> &goawaysAtDisconnect() const { return goawaysAtDisconnect_; }
+
 private:
     void HandleConnection(const muduo::net::TcpConnectionPtr &conn)
     {
@@ -259,6 +288,14 @@ private:
             }
             return;
         }
+        for (const int32_t streamId : snapshotStreamIds_)
+        {
+            if (const H2Stream *stream = h2_.FindStream(streamId))
+            {
+                streamsAtDisconnect_[streamId] = *stream;
+            }
+        }
+        goawaysAtDisconnect_ = h2_.goawaysReceived();
         disconnected_ = true;
         connection_.reset();
     }
@@ -291,6 +328,9 @@ private:
     bool h2Failed_{false};
     size_t bytesReceived_{0};
     std::string raw_;
+    std::vector<int32_t> snapshotStreamIds_;
+    std::map<int32_t, H2Stream> streamsAtDisconnect_;
+    std::vector<muduo_grpc_test::ReceivedGoaway> goawaysAtDisconnect_;
 };
 
 using RawConnectionPtr = std::shared_ptr<RawConnection>;
@@ -493,9 +533,9 @@ protected:
         return channel;
     }
 
-    RawConnectionPtr MakeRaw(RawConnection::Mode mode, bool waitConnected = true)
+    RawConnectionPtr MakeRaw(RawConnection::Mode mode, bool waitConnected = true, TestH2ClientOptions h2Options = {})
     {
-        auto raw = std::make_shared<RawConnection>(loop_, port_, mode);
+        auto raw = std::make_shared<RawConnection>(loop_, port_, mode, std::move(h2Options));
         raw->Connect();
         if (waitConnected)
         {
@@ -513,6 +553,48 @@ protected:
         EXPECT_TRUE(raw.h2().SendData(streamId, TestH2Peer::Frame(payload), true)) << raw.h2().lastError();
         raw.Flush();
         return streamId;
+    }
+
+    // 背压用例(§15.16 第 2 条)的共同准备。客户端把流级与连接级接收窗口都开到 2^31-1,否则服务端先被 HTTP/2
+    // 流控卡住、到不了输出缓冲;三个调用都派发之后客户端停止读取,再完成一个 64MiB 的应答 —— 远超回环上两端
+    // 内核缓冲(Linux tcp_wmem / tcp_rmem 上限默认 4MiB / 6MiB)加 1MiB 背压阈值,服务端输出缓冲必然到达阈值,
+    // 剩余的 DATA 积在 nghttp2 里。之后排空到期提交的 REFUSED / UNAVAILABLE / 最终 GOAWAY 都排在它们后面。
+    struct BackpressuredCalls
+    {
+        RawConnectionPtr raw;
+        int32_t big{0};      // 业务已完成,64MiB 应答大部分还积在服务端
+        int32_t waiting{0};  // 业务未开始:排空到期回 REFUSED_STREAM
+        int32_t started{0};  // 业务已开始:排空到期回 UNAVAILABLE "server shutting down"
+    };
+
+    BackpressuredCalls StartBackpressuredCalls()
+    {
+        BackpressuredCalls calls;
+        ServerOptions options = QuietOptions();
+        options.maxSendMessageBytes = kBackpressureResponseBytes;
+        if (StartServer(options) == nullptr)
+        {
+            return calls;
+        }
+        TestH2ClientOptions h2Options;
+        h2Options.initialSettings = {{h2::kSettingsInitialWindowSize, static_cast<uint32_t>(kMaxWindowBytes)}};
+        h2Options.localConnectionWindowBytes = kMaxWindowBytes;
+        calls.raw = MakeRaw(RawConnection::Mode::kHttp2, true, std::move(h2Options));
+        RunFor(100ms); // SETTINGS / ACK 往返完成:服务端已按客户端的大窗口发数据,客户端也已按大窗口收
+        calls.big = SendRawRequest(*calls.raw, kHoldPath, std::nullopt);
+        calls.waiting = SendRawRequest(*calls.raw, kHoldNotStartedPath, std::nullopt);
+        calls.started = SendRawRequest(*calls.raw, kHoldPath, std::nullopt);
+        EXPECT_TRUE(RunUntil([&] { return state_->held.size() == 3; }, 5s));
+        if (state_->held.size() != 3)
+        {
+            calls.raw.reset();
+            return calls;
+        }
+        calls.raw->StopReading();
+        // 派发按请求收完的先后(先进先出):held[0] 是 big。
+        state_->held.front().FinishOk(std::string(kBackpressureResponseBytes, 'x'));
+        RunFor(200ms); // 服务端写满内核缓冲,输出缓冲到阈值后停止从 nghttp2 取帧
+        return calls;
     }
 
     bool RunUntil(const std::function<bool()> &done, std::chrono::milliseconds timeout)
@@ -991,6 +1073,7 @@ TEST_F(ServerLoopbackTest, DrainTimeoutRefusesUnstartedAndFailsStartedCalls)
     const int32_t waiting = SendRawRequest(*raw, kHoldNotStartedPath, std::nullopt);
     const int32_t started = SendRawRequest(*raw, kHoldPath, std::nullopt);
     ASSERT_TRUE(RunUntil([&] { return state_->held.size() == 2; }, 5s));
+    raw->SnapshotAtDisconnect({waiting, started});
 
     auto drained = std::make_shared<int>(0);
     ServerShutdownOptions shutdown;
@@ -1025,6 +1108,126 @@ TEST_F(ServerLoopbackTest, DrainTimeoutRefusesUnstartedAndFailsStartedCalls)
     ASSERT_TRUE(RunUntil([&] { return raw->disconnected(); }, 2s));
     RunFor(100ms);
     EXPECT_EQ(*drained, 1);
+
+    // 对端正常读取:REFUSED / UNAVAILABLE / 最终 GOAWAY 都在 EOF 之前到达(服务端先冲出、再写半关)。
+    const auto &atEof = raw->streamsAtDisconnect();
+    ASSERT_EQ(atEof.count(waiting), 1u);
+    ASSERT_EQ(atEof.count(started), 1u);
+    EXPECT_TRUE(atEof.at(waiting).rstReceived);
+    EXPECT_EQ(atEof.at(waiting).rstErrorCode, h2::kRefusedStream);
+    EXPECT_EQ(GrpcStatusOf(atEof.at(started)).value_or(""), "14");
+    EXPECT_EQ(GrpcMessageOf(atEof.at(started)), "server shutting down");
+    ASSERT_FALSE(raw->goawaysAtDisconnect().empty());
+    EXPECT_EQ(raw->goawaysAtDisconnect().back().lastStreamId, started) << "the final GOAWAY precedes the EOF";
+    EXPECT_EQ(raw->goawaysAtDisconnect().back().errorCode, h2::kNoError);
+}
+
+TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureForceClosesAfterCloseGrace)
+{
+    // 对端停止读取、服务端输出被背压时排空到期:不 assert,onDrained 恰好一次;写半关之后输出缓冲写不空、
+    // 对端也不关,连接由 closeGrace 硬上限 forceClose。
+    const BackpressuredCalls calls = StartBackpressuredCalls();
+    ASSERT_NE(calls.raw, nullptr);
+
+    struct DrainRecord
+    {
+        int count{0};
+        std::chrono::steady_clock::time_point firstAt{};
+    };
+    auto drained = std::make_shared<DrainRecord>();
+    ServerShutdownOptions shutdown;
+    shutdown.drainTimeout = 300ms;
+    shutdown.goawayPingTimeout = 100ms; // 对端不读,PING ACK 不会来:满时长后直接提交第二段
+    shutdown.closeGrace = 300ms;
+    const auto shutdownAt = std::chrono::steady_clock::now();
+    server_->BeginShutdown(shutdown, [drained]
+                           {
+        if (drained->count++ == 0)
+        {
+            drained->firstAt = std::chrono::steady_clock::now();
+        } });
+    ASSERT_TRUE(RunUntil([&] { return drained->count > 0; }, 5s));
+    RunFor(200ms);
+
+    EXPECT_EQ(drained->count, 1) << "onDrained exactly once";
+    // 宽限从排空到期时的写半关起算(steady 复核,不会早到):连接只能是 closeGrace 到期被强关的。
+    EXPECT_GE(drained->firstAt - shutdownAt, shutdown.drainTimeout + shutdown.closeGrace);
+    EXPECT_EQ(server_->connectionCount(), 0u);
+    EXPECT_EQ(Stats().refusedOnShutdown, 1u);
+    EXPECT_EQ(Stats().unavailableOnShutdown, 1u);
+    EXPECT_EQ(Stats().inFlight, 0u);
+    EXPECT_EQ(Stats().dropped, 0u);
+    EXPECT_FALSE(calls.raw->h2Failed()) << calls.raw->h2().lastError();
+}
+
+TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureFlushesEverythingBeforeTheHalfClose)
+{
+    // §15.16 第 2 条的回归用例:排空到期时输出被背压,排在积压 DATA 之后的 REFUSED / UNAVAILABLE / 最终 GOAWAY
+    // 也必须在写半关之前交给输出缓冲。修复前它们留在 nghttp2 里,写半关之后再也写不出去,对端读完积压只看到 EOF。
+    const BackpressuredCalls calls = StartBackpressuredCalls();
+    ASSERT_NE(calls.raw, nullptr);
+    calls.raw->SnapshotAtDisconnect({calls.big, calls.waiting, calls.started});
+
+    struct DrainRecord
+    {
+        int count{0};
+        std::chrono::steady_clock::time_point firstAt{};
+    };
+    auto drained = std::make_shared<DrainRecord>();
+    ServerShutdownOptions shutdown;
+    shutdown.drainTimeout = 300ms;
+    shutdown.goawayPingTimeout = 100ms;
+    shutdown.closeGrace = 20000ms; // 只作硬上限:冲完之后发 FIN,对端读到 EOF 即关,远早于宽限
+    const auto shutdownAt = std::chrono::steady_clock::now();
+    server_->BeginShutdown(shutdown, [drained]
+                           {
+        if (drained->count++ == 0)
+        {
+            drained->firstAt = std::chrono::steady_clock::now();
+        } });
+    // 排空到期:两个调用已收口,应答已提交;客户端此前一直没读,什么都还没看到。
+    ASSERT_TRUE(RunUntil([&] { return Stats().refusedOnShutdown == 1 && Stats().unavailableOnShutdown == 1; }, 5s));
+    EXPECT_FALSE(calls.raw->h2().FindStream(calls.waiting)->rstReceived);
+    EXPECT_EQ(drained->count, 0);
+
+    calls.raw->StartReading();
+    ASSERT_TRUE(RunUntil([&] { return calls.raw->disconnected(); }, 15s));
+    EXPECT_FALSE(calls.raw->h2Failed()) << calls.raw->h2().lastError();
+
+    const auto &atEof = calls.raw->streamsAtDisconnect();
+    ASSERT_EQ(atEof.size(), 3u);
+    EXPECT_TRUE(atEof.at(calls.waiting).rstReceived) << "REFUSED_STREAM must reach the peer before the EOF";
+    EXPECT_EQ(atEof.at(calls.waiting).rstErrorCode, h2::kRefusedStream);
+    EXPECT_EQ(GrpcStatusOf(atEof.at(calls.started)).value_or(""), "14") << "UNAVAILABLE must reach the peer before the EOF";
+    EXPECT_EQ(GrpcMessageOf(atEof.at(calls.started)), "server shutting down");
+    EXPECT_NE(GrpcMessageOf(atEof.at(calls.started)), kBattleNotAllocatable);
+    // 业务已完成的应答同样完整送达(DATA + trailers),而不是被 EOF 截断。
+    EXPECT_EQ(GrpcStatusOf(atEof.at(calls.big)).value_or(""), "0");
+    EXPECT_EQ(atEof.at(calls.big).body.size(), kBackpressureResponseBytes + 5);
+    const auto &goaways = calls.raw->goawaysAtDisconnect();
+    ASSERT_GE(goaways.size(), 2u);
+    EXPECT_EQ(goaways.front().lastStreamId, h2::kMaxStreamId);
+    EXPECT_EQ(goaways.back().lastStreamId, calls.started);
+    EXPECT_EQ(goaways.back().errorCode, h2::kNoError);
+
+    ASSERT_TRUE(RunUntil([&] { return drained->count > 0; }, 5s));
+    // 早于宽限到期:连接是对端读到 EOF 后关闭的,不是 forceClose。
+    EXPECT_LT(drained->firstAt - shutdownAt, shutdown.drainTimeout + shutdown.closeGrace);
+    RunFor(100ms);
+    EXPECT_EQ(drained->count, 1) << "onDrained exactly once";
+    EXPECT_EQ(server_->connectionCount(), 0u);
+    EXPECT_EQ(Stats().dropped, 0u);
+}
+
+TEST_F(ServerLoopbackTest, ChannelSharesTheServerAddressRule)
+{
+    // channel.cpp 以前有一份私有校验,用有符号 from_chars 解析每段,会接受 "-1.2.3.4" / "1.2.3.-0"
+    // (muduo InetAddress 随后落成 0.0.0.0,Linux 上会连到本机);现在客户端与服务端共用 address.h 的规则。
+    for (const char *ip : {"-1.2.3.4", "1.2.3.-0", "+1.2.3.4", "127.0.0.01", "localhost"})
+    {
+        EXPECT_EQ(Channel::Create(loop_, ip, port_), nullptr) << ip;
+        EXPECT_EQ(Server::Create(loop_, ip, port_), nullptr) << ip;
+    }
 }
 
 TEST_F(ServerLoopbackTest, ShutdownWithoutConnectionsDrainsAsynchronously)

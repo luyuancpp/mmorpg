@@ -247,19 +247,25 @@ func rejectStreamingGrpcMethods(methods RPCMethods) error {
 }
 
 // validateGrpcHandlerCppSections 是 .h 预检与 .cpp 生成共用的 cpp 守护段检查,返回 cpp 的命名守护段:
-// 先报全部非空旧段(checkLegacyGrpcSections),再拒绝损坏或未识别的命名段。
+// 先拒绝结构损坏(嵌套 / 未闭合 / 重名),再报全部新骨架没有位置的非空段(checkLegacyGrpcSections),最后拒绝未识别的命名段。
 func validateGrpcHandlerCppSections(cppPath string, methods RPCMethods) (map[string]string, error) {
-	if err := checkLegacyGrpcSections(cppPath, methods); err != nil {
-		return nil, err
-	}
 	sections, err := readNamedGrpcCodeSections(cppPath)
 	if err != nil {
 		return nil, err
 	}
-	var guardNames, legacyNames []string
+	if err := checkLegacyGrpcSections(cppPath, methods); err != nil {
+		return nil, err
+	}
+	guardNames := make([]string, 0, len(methods))
 	for _, method := range methods {
 		guardNames = append(guardNames, grpcGuardSectionName(method))
-		legacyNames = append(legacyNames, grpcLegacyNamedSectionNames(method)...)
+	}
+	// 走到这里旧命名段必然全空(checkLegacyGrpcSections):不论方法是否还在 proto 里,一律按空段接受并丢弃。
+	var legacyNames []string
+	for name := range sections {
+		if legacyGrpcNamedSectionPattern.MatchString(name) {
+			legacyNames = append(legacyNames, name)
+		}
 	}
 	if err := validateNamedGrpcCodeSections(sections, guardNames, legacyNames); err != nil {
 		return nil, err
@@ -267,44 +273,86 @@ func validateGrpcHandlerCppSections(cppPath string, methods RPCMethods) (map[str
 	return sections, nil
 }
 
-// checkLegacyGrpcSections 检查 cppPath 里旧模板(官方 grpc::Server + runInLoop/promise)留下的三类手写段:
-// 包装函数里的无名投递前段、grpc.<M>.in_loop、grpc.<M>.post_dispatch。新模板没有它们的位置,
-// 任一段非空就返回 error,逐行列出「文件:方法:旧段名」—— 宁可拒绝生成,也不吞代码(commit 6c4021ae5 事故)。
+// checkLegacyGrpcSections 检查 cppPath 里新骨架没有位置、重生成会被丢掉的手写段:任一段非空就返回 error,
+// 逐行列出「文件:方法:段名」;全部为空才由生成静默丢弃 —— 宁可拒绝生成,也不吞代码(commit 6c4021ae5 事故)。
+// 检测不依赖当前 proto 的方法列表,已从 proto 删掉的方法、折行的签名同样覆盖:
+//   - 旧模板(官方 grpc::Server + runInLoop/promise)的 grpc::Status 包装函数按签名形状识别(legacyGrpcWrapperPattern),
+//     其中的无名段记为「无名投递前段」;
+//   - 旧命名段 grpc.<M>.in_loop / grpc.<M>.post_dispatch 不论位置、不论方法是否还在 proto 里,按名字识别;
+//   - 新生成只带走当前方法 Handle* 里的第一个段(codeParser 按 GenerateGrpcHandlerNameWrapper 取段,签名必须逐字含该键):
+//     proto 已删除的方法、签名里找不到查找键的 Handle*、以及 Handle* 里第一个段之后的无名段,记为「Handle<M> 体」;
+//   - 其余函数(构造函数、<M>()、RegisterMethods)里本来没有无名段的位置,出现即记为「无名段」。
+//
+// 函数外的无名段(FirstCode)由 codeParser 读取,其余命名段由 validateNamedGrpcCodeSections 按名字判定,不在此列。
 // 文件不存在视为没有旧段。
 func checkLegacyGrpcSections(cppPath string, methods RPCMethods) error {
-	named, err := readNamedGrpcCodeSections(cppPath)
+	signatures, sections, err := scanGrpcCppSections(cppPath)
 	if err != nil {
 		return err
 	}
-	unnamed, _, err := ReadCodeSectionsFromFile(cppPath, &methods, legacyGrpcWrapperKey, "")
-	if err != nil {
-		return err
+	handleKeys := make(map[string]bool, len(methods))
+	for _, method := range methods {
+		handleKeys[GenerateGrpcHandlerNameWrapper(method, "")] = true
 	}
 	var found []string
-	for _, method := range methods {
-		// 包装函数缺无名段时解析器会读到下一个段(in_loop):以命名标记开头即串段,按「不存在」处理,
-		// 那个命名段由下面按名字检查,不重复列出。
-		code := unnamed[legacyGrpcWrapperKey(method, "")]
-		if !startsWithNamedGrpcMarker(code) && !isEmptyGrpcCodeSection(code) {
-			found = append(found, cppPath+":"+method.Method()+":"+legacyGrpcPreDispatchSectionName)
+	listed := make(map[string]bool)
+	// 函数下标 → 该函数里已出现的段数(命名段、空段都算):codeParser 只取 Handle* 查找键之后的第一个段。
+	ordinals := make(map[int]int)
+	for _, section := range sections {
+		ordinal := ordinals[section.Function]
+		ordinals[section.Function]++
+		if isEmptyGrpcCodeSection(section.Code) {
+			continue
 		}
-		for _, name := range grpcLegacyNamedSectionNames(method) {
-			if code, exists := named[name]; exists && !isEmptyGrpcCodeSection(code) {
-				found = append(found, cppPath+":"+method.Method()+":"+name)
+		var method, name string
+		switch {
+		case section.Name != "":
+			match := legacyGrpcNamedSectionPattern.FindStringSubmatch(section.Name)
+			if match == nil {
+				continue
 			}
+			method, name = match[1], section.Name
+		case section.Function >= 0:
+			var lost bool
+			method, name, lost = lostUnnamedGrpcSection(signatures[section.Function], ordinal, handleKeys)
+			if !lost {
+				continue
+			}
+		default:
+			continue
+		}
+		if entry := cppPath + ":" + method + ":" + name; !listed[entry] {
+			listed[entry] = true
+			found = append(found, entry)
 		}
 	}
 	if len(found) == 0 {
 		return nil
 	}
-	return fmt.Errorf("%d 个旧 gRPC 守护段非空，拒绝生成(宁可拒绝也不吞代码)；请按 docs/design/grpc-muduo-transport.md §15.8.4 手工迁到 grpc.<M>.guard 后再生成：\n  %s",
+	return fmt.Errorf("%d 个守护段非空但新骨架没有它们的位置，拒绝生成(宁可拒绝也不吞代码)：旧模板的投递前 / in_loop / post_dispatch 段请按 docs/design/grpc-muduo-transport.md §15.8.4 手工迁到 grpc.<M>.guard；"+
+		"proto 已删除方法的 Handle* 体与其余位置的无名段请先手工移走或删除，再生成：\n  %s",
 		len(found), strings.Join(found, "\n  "))
 }
 
-// startsWithNamedGrpcMarker 判断一段代码的首行是不是命名守护段的开始标记。
-func startsWithNamedGrpcMarker(code string) bool {
-	firstLine, _, _ := strings.Cut(code, "\n")
-	return strings.HasPrefix(strings.TrimSpace(firstLine), _config.Global.Naming.YourCodeBegin+":")
+// lostUnnamedGrpcSection 判断签名为 signature 的函数里第 ordinal 个段(从 0 计)——一个非空无名段——在新生成里有没有去处;
+// 没有去处时返回报错清单里的方法名与段名(规则见 checkLegacyGrpcSections)。
+func lostUnnamedGrpcSection(signature string, ordinal int, handleKeys map[string]bool) (method, name string, lost bool) {
+	if match := legacyGrpcWrapperPattern.FindStringSubmatch(signature); match != nil {
+		return match[2], legacyGrpcPreDispatchSectionName, true
+	}
+	if match := grpcHandleDefinitionPattern.FindStringSubmatch(signature); match != nil {
+		key := match[1] + "Impl::Handle" + match[2] + "("
+		if ordinal == 0 && handleKeys[key] && strings.Contains(signature, key) {
+			return "", "", false
+		}
+		return match[2], orphanGrpcHandleSectionName(match[2]), true
+	}
+	// 签名的起始行必含 "<Svc>Impl::<Name>"(isGrpcCppFunctionStart),取不到函数名只是防御,退回签名首行。
+	function, _, _ := strings.Cut(signature, "\n")
+	if match := grpcImplFunctionPattern.FindStringSubmatch(signature); match != nil {
+		function = match[2]
+	}
+	return function, strayGrpcUnnamedSectionName, true
 }
 
 // isEmptyGrpcCodeSection:去掉标记行(整行恰为开始 / 命名开始 / 结束标记)后不剩任何非空白字符才算空。

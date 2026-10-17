@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"time"
 
 	"player_inbox/internal/constants"
 	"player_inbox/internal/metrics"
@@ -528,26 +529,31 @@ func summarizeStreams(playerID uint64, streams []*inboxpb.PlayerInboxStream, agg
 // ── 后台循环 ─────────────────────────────────────────────────────────────
 
 // shardGaugeScan 是 ScanGauges 在一个分片上的读数。「最老」类读数为 0 表示该分片没有对应的行。
+// deliveredUnacked / maxDeliveryCount / minDeliveredMs 只算最后投递不早于 GaugeCutoffs.DeliveredStaleBeforeMs 的行,
+// 更早的已投递未确认行只计入 deliveredUnackedStale(评审 M4,由 SQL 一侧分好)。
 type shardGaugeScan struct {
-	openItems        uint64
-	deliveredUnacked uint64
-	maxDeliveryCount uint64
-	minCreatedMs     uint64 // PENDING 行最早的 created_ms
-	minDeliveredMs   uint64 // 已投递 PENDING 行最早的 last_delivered_ms
-	notifyBacklog    uint64
+	openItems             uint64
+	deliveredUnacked      uint64
+	deliveredUnackedStale uint64
+	maxDeliveryCount      uint64
+	minCreatedMs          uint64 // PENDING 行最早的 created_ms
+	minDeliveredMs        uint64 // 近期已投递 PENDING 行最早的 last_delivered_ms
+	notifyBacklog         uint64
 }
 
 // foldScanGauges 把各分片读数折成全局扫描型 gauge(设计 §9.4):计数相加,max_delivery_count 取最大,
 // 两个「最老」取各分片非 0 的最小时刻再换算成距 nowMs 的秒数(全部为 0 = 没有这类行,gauge 为 0)。
 //
 // 已投递未确认的「最老」按最后一次投递时刻算:被反复重投的行会刷新它,崩溃循环另由 max_delivery_count 告警;
-// 消费方 halt 之后不再拉取,它就一直变老 —— 这正是要抓的「卡住」信号。
+// 消费方 halt 之后不再拉取,它就一直变老 —— 这正是要抓的「卡住」信号。但它只在 24 小时窗口内变老(评审 M4):
+// 玩家被踢下线后再没回来的行,滑出窗口后进 delivered_unacked_stale,不再把告警永久顶住。
 func foldScanGauges(nowMs uint64, shards []shardGaugeScan) metrics.ScanGauges {
 	var g metrics.ScanGauges
 	var oldestCreated, oldestDelivered uint64
 	for _, s := range shards {
 		g.OpenItems += s.openItems
 		g.DeliveredUnacked += s.deliveredUnacked
+		g.DeliveredUnackedStale += s.deliveredUnackedStale
 		g.NotifyBacklog += s.notifyBacklog
 		g.MaxDeliveryCount = max(g.MaxDeliveryCount, s.maxDeliveryCount)
 		oldestCreated = minNonZero(oldestCreated, s.minCreatedMs)
@@ -576,6 +582,29 @@ func ageSeconds(nowMs, sinceMs uint64) float64 {
 		return 0
 	}
 	return float64(nowMs-sinceMs) / 1000
+}
+
+// 补发没落定时的退避区间(评审 L6)。
+const (
+	notifyRetryMin = 30 * time.Second
+	notifyRetryMax = 30 * time.Minute
+)
+
+// notifyRetryDueMs 是一次补发没落定之后 notify_due_ms 的新值:nowMs + 退避,退避 = 这条提醒已经悬了多久
+// (nowMs − pendingSinceMs),钳到 [30s, 30min]。每次没落定都把「已悬时长」再等一遍,重试间隔因此按 2 倍递增
+// (指数退避),不需要新增列记退避级数。
+//
+// pendingSinceMs 是流行的 updated_ms。它不晚于这条提醒真正开始悬着的时刻:notify_due_ms 只由入箱置成 now,
+// 入箱同一条语句把 updated_ms 也写成同一个 now;之后 Fetch / Ack / 作废只会把 updated_ms 往后推(退避回落到下限,
+// 只是多试几次),清零与推迟都不碰它。所以退避永远不超过按真实悬挂时长算出的值。
+// pendingSinceMs 为 0 或不早于 nowMs(时钟回拨)时取下限。
+func notifyRetryDueMs(nowMs, pendingSinceMs uint64) uint64 {
+	minMs, maxMs := uint64(notifyRetryMin.Milliseconds()), uint64(notifyRetryMax.Milliseconds())
+	backoff := minMs
+	if pendingSinceMs != 0 && pendingSinceMs < nowMs {
+		backoff = min(max(nowMs-pendingSinceMs, minMs), maxMs)
+	}
+	return nowMs + backoff
 }
 
 // ── 对账 ─────────────────────────────────────────────────────────────────

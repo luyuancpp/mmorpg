@@ -2,8 +2,8 @@
 
 // 地址字面量校验(docs/design/grpc-muduo-transport.md §15.3 Q8、§15.4.2)。
 //
-// 服务端 bind 与客户端拨号共用的规则放在这里。channel.cpp 里还有一份私有副本,等第 3 批落定后改调这里
-// (§15.4.2)。注意那份副本用有符号的 from_chars 解析每段,会把 "-1" 这类段当成合法;本实现逐字符校验。
+// 服务端 bind(server.cpp)与客户端拨号(channel.cpp)共用这一份规则(§15.4.2)。channel.cpp 以前的私有副本
+// 用有符号的 from_chars 解析每段,会把 "-1.2.3.4"、"1.2.3.-0" 当成合法,已删除;本实现逐字符校验。
 
 #include <string>
 

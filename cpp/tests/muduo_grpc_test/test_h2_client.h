@@ -80,6 +80,9 @@ struct TestH2ClientOptions
 {
     // 构造时提交的 SETTINGS 项;空 = 一个不带任何项的 SETTINGS 帧(client magic 由 nghttp2 自动先发)。
     std::vector<SettingEntry> initialSettings;
+    // > 0:构造时把本端连接级接收窗口设成这个值(nghttp2_session_set_local_window_size,随 SETTINGS 之后发
+    // WINDOW_UPDATE);0 = 保持 65535。流级窗口用 initialSettings 里的 INITIAL_WINDOW_SIZE。
+    int32_t localConnectionWindowBytes{0};
 };
 
 class TestH2Client

@@ -10115,3 +10115,11 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **尚未执行**：本轮新 C++ 测试工程的独立编译与测试、Go shared assetop / grpcinterop 测试及真实互通、Linux 构建、冒烟 / 线程核对 / 带流量关机 / 100 次探针。交接的 `run_cpp_tests.ps1 -Filter battle_admission` 无匹配工程，应按 `battle_admission_gate_test.cpp` 文件头独立编译命令执行。
 - **日志**：`build/verification/grpc-muduo-codex-20261016/`；原构建 `04-game-*`，资源中止 `04b-game-*`，串行续跑 `04c-game-*`；首错上下文 `04c-first-failure.txt`。构建检测到首错后仍继续其他独立项目，因此取到了 muduo_grpc 成功产物；发现首错后已主动终止剩余构建，不将其视为全解成功。
 - **Java 版（AGENTS.md §12）**：本轮仅验证 C++ 内部传输替换，无客户端契约变更，Java 不适用；对应 Java 版本号：无。7 项待定取舍未由本轮修改。
+
+## 2026-10-16 本机 Docker 试玩环境重启恢复（Codex）
+
+- **范围**：恢复原 `codex-visual-demo-20261016` 与客户端 `visual-demo-20261016-6c918801`，沿用已验收冻结镜像和成品；没有重编当前已继续演进的工作区，也未清库、重跑初始化或迁移。
+- **恢复与根因**：启动既有 Docker Desktop；Kafka 原容器退出 255、无 OOM/存储损坏证据，原地启动一次后，四个 topic 的 ID、分区和保留配置与旧证据一致，521 个分区可用。DataService 在 MySQL 开始监听前启动，四个 store 各因 connection refused 初始化失败，冻结代码不会运行期重新装配。确认 MySQL healthy 后，仅原地重启 DataService 一次；四类 SQL 池从 0 恢复为 1，scene 原进程自行领到 item/txlog/snapshot 号段并进入 dependency ready，无需重启 scene。
+- **验证**：只读场景探针先红后绿；最终两快照相隔 75.1 秒、exit 0、失败 0，11 个业务服务镜像匹配且重启增量 0，7 个 go-zero 与 10 类 NodeInfo 有效，网关三项 health UP、zone-1 OPEN、DB metrics 与 28000/28010 连通。证据：`build/codex-visual-demo-20261016/runtime-reboot-readiness-20261017-033730-030.json`（SHA256 `cfab2bfbe5320c2d495c474bc5a4b9856767e9aef5154839028e3215b8069b3b`）；相关 Kafka、号段红绿诊断也保留在同目录。
+- **用户手测**：用户要求自行进游戏，已打开既有试玩登录窗口；本次没有启动自动 PVE、移动或导航测试，不以重启健康检查替代游戏与画面验收。旧完整 moveTest 失败和视觉未验收状态保留。
+- **剩余项与 Java 版**：本次恢复运行态，未改冷启动时 store 初始化失败后的自动恢复逻辑；再次整机重启应核对存储能力。已恢复同仓 Java 网关；独立 Java 整版本轮未构建，没有新增玩法功能，对应 Java 版本号无。未 commit、push 或 tag。
