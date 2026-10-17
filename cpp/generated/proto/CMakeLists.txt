@@ -109,6 +109,10 @@ set(SOURCE_FILES
     etcd/version.pb.cc
     friend/friend.grpc.pb.cc
     friend/friend.pb.cc
+    mail/mail.grpc.pb.cc
+    mail/mail.pb.cc
+    mail/mail_admin.grpc.pb.cc
+    mail/mail_admin.pb.cc
     gate/gate_service.pb.cc
     guild/guild.grpc.pb.cc
     guild/guild.pb.cc

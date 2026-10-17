@@ -1053,14 +1053,18 @@ try {
 } finally { Pop-Location }
 ```
 
-真库集成(§10 ④,必须是 MySQL,不能拿 TiDB 代替):先用 root 建一次性库并授权(root 口令只在容器里取,不写进任何文件):
+真库集成(§10 ④,必须是 MySQL,不能拿 TiDB 代替):先用 root 建全新的一次性库并授权(root 口令只在容器里取,不写进任何文件)。两个测试包都会删表重建,共享 DSN 时必须用 `-p 1` 串行执行,且不能另开进程使用同一测试库;不要复用已有的 `mail_test` 或业务库:
 
 ```powershell
-docker exec mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS mail_test; GRANT ALL PRIVILEGES ON mail_test.* TO ''appuser''@''%'';"'
-$env:MAIL_TEST_MYSQL_DSN = 'appuser:<etc/mail.yaml 里的本地口令>@tcp(127.0.0.1:3306)/mail_test?parseTime=true'
+$testDatabase = 'mail_it_' + [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() + '_' + (Get-Random -Minimum 100000 -Maximum 999999)
+$grantDatabase = $testDatabase.Replace('_','\_')
+$sql = 'CREATE DATABASE `' + $testDatabase + '`; GRANT ALL PRIVILEGES ON `' + $grantDatabase + '`.* TO ''appuser''@''%'';'
+$sql | docker exec -i mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --protocol=socket --user=root --batch'
+if ($LASTEXITCODE -ne 0) { throw '测试库创建失败,禁止继续运行删表测试' }
+$env:MAIL_TEST_MYSQL_DSN = 'appuser:<etc/mail.yaml 里的本地口令>@tcp(127.0.0.1:3306)/' + $testDatabase + '?parseTime=true'
 $env:MAIL_REQUIRE_MYSQL_TESTS = '1'
 Push-Location go/mail
-try { go test -count=1 -v ./internal/data/ ./internal/logic/ } finally { Pop-Location }
+try { go test -p 1 -count=1 -v ./internal/data/ ./internal/logic/ } finally { Pop-Location }
 ```
 
 通过标准:

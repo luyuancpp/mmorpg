@@ -15,6 +15,8 @@
 #include "proto/guild/guild.pb.h"
 #include "proto/guild/guild_internal.pb.h"
 #include "proto/login/login.pb.h"
+#include "proto/mail/mail.pb.h"
+#include "proto/mail/mail_admin.pb.h"
 #include "proto/match/match_internal.pb.h"
 #include "proto/match/match_service.pb.h"
 #include "proto/player_inbox/player_inbox.pb.h"
@@ -53,6 +55,8 @@
 #include "rpc/service_metadata/guild_service_metadata.h"
 #include "rpc/service_metadata/guild_internal_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
+#include "rpc/service_metadata/mail_service_metadata.h"
+#include "rpc/service_metadata/mail_admin_service_metadata.h"
 #include "rpc/service_metadata/match_internal_service_metadata.h"
 #include "rpc/service_metadata/match_service_service_metadata.h"
 #include "rpc/service_metadata/player_inbox_service_metadata.h"
@@ -215,6 +219,14 @@ namespace loginpb{void SendClientPlayerLoginRefreshToken(entt::registry& , entt:
 namespace loginpb{void SendLoginPreGateAssignGate(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginPreGateQueryQueueStatus(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginAdminRemovePlayersFromAccounts(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailListMails(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailReadMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailDeleteMails(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailDeleteReadMails(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailClaimMailAttachments(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailNotifyMailEvent(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendMailAdminSendPersonalMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendMailAdminSendSystemMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchInternalStartActivityBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceJoinQueue(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceCancelQueue(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -270,7 +282,7 @@ namespace trade{void SendTradeAdminSeedListing(entt::registry& , entt::entity , 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
 // InitMessageInfo 越界写导致节点启动断言)变成编译错误而不是运行期崩溃。
-static_assert(kMaxRpcMethodCount == 267,
+static_assert(kMaxRpcMethodCount == 275,
     "kMaxRpcMethodCount out of sync with this generation run - rerun the full proto generator");
 std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 
@@ -875,6 +887,50 @@ void InitMessageInfo()
         std::make_unique<::loginpb::RemovePlayersFromAccountsRequest>(),
         std::make_unique<::loginpb::RemovePlayersFromAccountsResponse>(),
         nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginAdminRemovePlayersFromAccounts};
+
+    // --- ClientPlayerMail ---
+    gRpcMethodRegistry[ClientPlayerMailListMailsMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "ListMails",
+        std::make_unique<::mailpb::ListMailsRequest>(),
+        std::make_unique<::mailpb::ListMailsResponse>(),
+        nullptr, 1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailListMails};
+    gRpcMethodRegistry[ClientPlayerMailReadMailMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "ReadMail",
+        std::make_unique<::mailpb::ReadMailRequest>(),
+        std::make_unique<::mailpb::ReadMailResponse>(),
+        nullptr, 1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailReadMail};
+    gRpcMethodRegistry[ClientPlayerMailDeleteMailsMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "DeleteMails",
+        std::make_unique<::mailpb::DeleteMailsRequest>(),
+        std::make_unique<::mailpb::DeleteMailsResponse>(),
+        nullptr, 1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailDeleteMails};
+    gRpcMethodRegistry[ClientPlayerMailDeleteReadMailsMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "DeleteReadMails",
+        std::make_unique<::mailpb::DeleteReadMailsRequest>(),
+        std::make_unique<::mailpb::DeleteReadMailsResponse>(),
+        nullptr, 1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailDeleteReadMails};
+    gRpcMethodRegistry[ClientPlayerMailClaimMailAttachmentsMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "ClaimMailAttachments",
+        std::make_unique<::mailpb::ClaimMailAttachmentsRequest>(),
+        std::make_unique<::mailpb::ClaimMailAttachmentsResponse>(),
+        nullptr, 1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailClaimMailAttachments};
+    gRpcMethodRegistry[ClientPlayerMailNotifyMailEventMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "NotifyMailEvent",
+        std::make_unique<::mailpb::MailEventS2C>(),
+        std::make_unique<::Empty>(),
+        nullptr, 1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailNotifyMailEvent};
+
+    // --- MailAdmin ---
+    gRpcMethodRegistry[MailAdminSendPersonalMailMessageId] = RpcMethodMeta{
+        "MailAdmin", "SendPersonalMail",
+        std::make_unique<::mailpb::SendPersonalMailRequest>(),
+        std::make_unique<::mailpb::SendPersonalMailResponse>(),
+        nullptr, 1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendPersonalMail};
+    gRpcMethodRegistry[MailAdminSendSystemMailMessageId] = RpcMethodMeta{
+        "MailAdmin", "SendSystemMail",
+        std::make_unique<::mailpb::SendSystemMailRequest>(),
+        std::make_unique<::mailpb::SendSystemMailResponse>(),
+        nullptr, 1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendSystemMail};
 
     // --- MatchInternal ---
     gRpcMethodRegistry[MatchInternalStartActivityBattleMessageId] = RpcMethodMeta{
@@ -1751,6 +1807,12 @@ bool IsClientMessageId(uint32_t messageId)
 	case ClientPlayerLoginLeaveGameMessageId:
 	case ClientPlayerLoginDisconnectMessageId:
 	case ClientPlayerLoginRefreshTokenMessageId:
+	case ClientPlayerMailListMailsMessageId:
+	case ClientPlayerMailReadMailMessageId:
+	case ClientPlayerMailDeleteMailsMessageId:
+	case ClientPlayerMailDeleteReadMailsMessageId:
+	case ClientPlayerMailClaimMailAttachmentsMessageId:
+	case ClientPlayerMailNotifyMailEventMessageId:
 	case MatchServiceJoinQueueMessageId:
 	case MatchServiceCancelQueueMessageId:
 	case MatchServiceGetQueueStatusMessageId:

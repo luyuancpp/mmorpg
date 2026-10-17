@@ -19,7 +19,7 @@ proto/
 ├── contracts/kafka/     经 Kafka 投递的命令与事件(gate、scene、match、player)
 ├── <service>/           一个服务一个目录:login、scene、scene_manager、data_service、
 │                        db、player_locator、gate、battle、match、team、chat、guild、
-│                        friend、trade、client_rpc_router、instance、etcd
+│                        friend、mail、trade、client_rpc_router、instance、etcd
 ├── message_id.txt       消息号注册表(生成器读写)
 └── event_id.txt         事件号注册表(生成器读写)
 ```
@@ -27,7 +27,7 @@ proto/
 ## 哪些是客户端能看到的
 
 带 `option (OptionIsClientProtocolService) = true` 的服务是客户端契约,改动要和客户端同批发布:
-`login`、`match`、`team`、`chat`、`friend`、`guild`、`trade`、`battle/player_battle.proto`,
+`login`、`match`、`team`、`chat`、`friend`、`mail/mail.proto`、`guild`、`trade`、`battle/player_battle.proto`,
 以及 `scene/` 下面向玩家的那一组(`client_player_common` 与 `player_*`)。其余都是服务端内部接口。
 
 ## 改协议的流程

@@ -264,6 +264,18 @@
     <ClCompile Include="friend\friend.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="mail\mail.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail_admin.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail_admin.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="guild\guild.grpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -609,6 +621,18 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="friend\friend.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail_admin.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail_admin.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="guild\guild.grpc.pb.h">

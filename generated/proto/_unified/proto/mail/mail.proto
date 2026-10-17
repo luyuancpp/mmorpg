@@ -1,0 +1,162 @@
+syntax = "proto3";
+package mailpb;
+
+option go_package = "proto/mail";
+// 显式写 false(未设置时同为 false):照 chat / trade / team / player_inbox。生成器据它决定注册形状与
+// 路由表是否收录本服务(docs/design/team-system.md 协议一节),写成 true 会让注册形状、路由表和协议号对不上。
+option cc_generic_services = false;
+
+import "proto/db/proto_option.proto";
+import "proto/common/base/empty.proto";
+import "proto/common/base/tip.proto";
+// 刻意不 import proto/common/asset/asset_op.proto(docs/design/mail-system.md §3.5 / §11.1 第 3 条):
+// 客户端 gen_proto.ps1 不收 common/asset,import 它会把资产通道的内部 schema 带进客户端包。
+// 附件用下面 mail 自有的 MailCurrency / MailItem,与通道侧 CurrencyAmount / ItemGrant 的逐字段对齐由 Go 单测守。
+
+// mail 客户端协议(移植批次 M1,设计与拍板记录见 docs/design/mail-system.md)。
+//
+// 链路:客户端 → gate → 客户端 RPC 路由服 → mail 服务(D-12 只承诺路由服模式,不开 gate 直连白名单)。
+// 路由表由 protogen 按 OptionIsClientProtocolService + 节点类型生成到 client_rpc_router/generated,
+// 本文件改完必须重跑 proto-gen 才生效;gate 的 rpc_event_registry、路由表、robot 与 Unity 的生成物
+// 必须出自**同一次** proto-gen 并同批发布(混用两次生成物不报错,只会错解包,设计 §9 闸门 1)。
+//
+// 节点类型:照 friend.proto 不写 `option (OptionFileDefaultNode)`。protogen 的三级回落
+// (tools/proto_generator/protogen/internal/model.go 的 NodeServiceForCpp:服务名 → proto package 名 → 目录名)
+// 按目录名 mail 派生成 MailNodeService(proto/common/base/node.proto 里 = 8)。该 option 只被生成器用来判
+// "文件属不属于 gate / scene / db 节点",对 mail 写不写都一样;不写是为了与已拍板的设计草案逐字一致。
+//
+// 身份口径(port-decisions D-9):本文件任何请求体都**没有** player_id,"我是谁"只取 gate 注入的会话 metadata
+// (go/mail/internal/session)。请求体里的 player_id 是客户端可伪造的字段。
+//
+// 时间一律 uint64 毫秒。客户端用响应里的 server_now_ms 判过期,不信本地钟(聚宝斋 BrowseListings 同一口径)。
+//
+// 消息号:由 proto-gen 按 "<Service><Method>" 发号,**不要手改 proto/message_id.txt**。
+
+enum MailKind {
+  MAIL_KIND_UNSPECIFIED = 0;
+  MAIL_KIND_SYSTEM = 1;     // 全服邮件:一封对所有人可见
+  MAIL_KIND_PERSONAL = 2;   // 定向邮件:系统 / 运维发给某一个玩家(不是玩家发玩家,那是 M4)
+}
+
+// 领取状态。库表里 claim_state 列(uint32)的取值**只在这里定义**(设计 §3.3):
+// 表 proto 不引用本枚举作列类型 —— enum 列被写入未知值时扫行会落到 0,分不清"未知"与"无附件"。
+enum MailClaimState {
+  MAIL_CLAIM_STATE_NONE = 0;        // 无附件。只表示这个,不表示"这一列还没启用"
+  MAIL_CLAIM_STATE_UNCLAIMED = 1;   // 有附件、未领
+  // M2 追加 CLAIMING = 2 / CLAIMED = 3 / NEEDS_MANUAL = 4(状态机待 M2 拍板)。值号现在就占住,不得挪作他用:
+  // M1 的行里只会出现 0 / 1,M2 滚动升级窗口里新旧 pod 并存时这三个值号不能有第二种含义。
+  reserved 2 to 4;
+}
+
+// 附件:实例层只描述"是什么、多少"(AGENTS §11.6),没有位置 / 槽位 / 展示名 / 图标。
+// 两个列表的顺序都**没有业务含义**:客户端按 currency_type / config_id 自行排序展示,不得依赖下标。
+// 将来要"按运营指定的顺序展示"必须新增显式的 display_order 字段。
+message MailAttachments {
+  repeated MailCurrency currencies = 1;   // ≤ 4 条,currency_type 不重复且在服务端白名单内
+  repeated MailItem items = 2;            // ≤ 16 条,config_id 不重复
+}
+
+// 与 proto/common/asset/asset_op.proto 的 CurrencyAmount / ItemGrant 逐字段对应;
+// 领取(M2)时由 Go 侧唯一一处转换函数拼成 AssetBundle。
+message MailCurrency {
+  uint32 currency_type = 1;
+  uint64 amount = 2;        // 1 ≤ amount ≤ INT64_MAX
+}
+
+message MailItem {
+  uint32 config_id = 1;
+  uint32 count = 2;         // ≥ 1
+}
+
+message MailSummary {
+  uint64 mail_id = 1;       // 定向与系统邮件出自同一个号段,全局不撞号;客户端只凭它定位,不必回传 kind
+  MailKind kind = 2;
+  string sender_name = 3;   // 展示用署名,不是身份
+  string title = 4;
+  uint64 sent_ms = 5;
+  uint64 expire_ms = 6;
+  bool read = 7;
+  MailClaimState claim_state = 8;
+  // 摘要里就带附件(合计 ≤ 20 条,很小):客户端据此做"有未领附件的不让删"的置灰,不必为每封再读一次正文。
+  MailAttachments attachments = 9;
+}
+
+message ListMailsRequest {
+  uint64 before_mail_id = 1;   // 0 = 从最新开始;游标分页,只返回 mail_id 小于它的
+  uint32 page_size = 2;        // 0 取服务端默认(20);超过服务端上限(50)按上限钳制,不报错
+}
+
+message ListMailsResponse {
+  TipInfoMessage error_message = 1;
+  repeated MailSummary mails = 2;   // 按 mail_id 降序。这是协议承诺的排序,不是"下标有含义"
+  bool has_more = 3;
+  uint32 unread_count = 4;          // 服务端对**全集**算(不是本页),红点以它为准
+  // 有附件且未过期的封数。M1 领取尚未开放(ClaimMailAttachments 恒回 MailClaimNotOpen),
+  // 这个数照算:客户端据此提示"有附件暂不可领"。
+  uint32 claimable_count = 5;
+  uint64 server_now_ms = 6;
+}
+
+message ReadMailRequest {
+  uint64 mail_id = 1;
+}
+
+message ReadMailResponse {
+  TipInfoMessage error_message = 1;
+  MailSummary summary = 2;      // 已是"读过"之后的状态(read = true)
+  string body = 3;
+  uint64 server_now_ms = 4;
+}
+
+message DeleteMailsRequest {
+  repeated uint64 mail_ids = 1;   // 1..20 个
+}
+
+message DeleteMailsResponse {
+  TipInfoMessage error_message = 1;
+  uint32 deleted_count = 2;
+  // 因带着未领且未过期的附件而没有删的邮件(服务端拒删,整请求仍算成功)。删不存在 / 已删的邮件算成功、不在这里。
+  repeated uint64 protected_mail_ids = 3;
+}
+
+message DeleteReadMailsRequest {
+}
+
+message DeleteReadMailsResponse {
+  TipInfoMessage error_message = 1;
+  uint32 deleted_count = 2;
+}
+
+message ClaimMailAttachmentsRequest {
+  repeated uint64 mail_ids = 1;   // 1..20 个;与 all 二选一
+  bool all = 2;
+}
+
+message ClaimMailAttachmentsResponse {
+  // M1:形状合法的请求恒回 MailClaimNotOpen(不触库);形状非法回 kInvalidParameter。
+  // 方法在 M1 就定义,是为了让客户端与消息号在 M2 开放领取时不必再变。
+  TipInfoMessage error_message = 1;
+}
+
+enum MailEventReason {
+  MAIL_EVENT_REASON_UNSPECIFIED = 0;
+  MAIL_EVENT_REASON_NEW_MAIL = 1;   // 收到一封新的定向邮件;系统(全服)邮件不推
+}
+
+// S2C 提示。at-most-once:推送丢了不补,客户端下次 ListMails 自然看到;所以这里只带"有变化"的信号,不带邮件内容。
+message MailEventS2C {
+  MailEventReason reason = 1;
+  uint64 ts_ms = 2;
+}
+
+service ClientPlayerMail {
+  option (OptionIsClientProtocolService) = true;
+  rpc ListMails (ListMailsRequest) returns (ListMailsResponse);
+  rpc ReadMail (ReadMailRequest) returns (ReadMailResponse);
+  rpc DeleteMails (DeleteMailsRequest) returns (DeleteMailsResponse);
+  rpc DeleteReadMails (DeleteReadMailsRequest) returns (DeleteReadMailsResponse);
+  rpc ClaimMailAttachments (ClaimMailAttachmentsRequest) returns (ClaimMailAttachmentsResponse);
+  // S2C:服务端不实现,也不在会话白名单里;客户端只作接收方。
+  // 必须与 C2S 方法放在同一个名字含 ClientPlayer 的 service 里,生成器才出客户端下行 handler(friend F1 同理)。
+  rpc NotifyMailEvent (MailEventS2C) returns (Empty);
+}

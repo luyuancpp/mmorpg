@@ -83,6 +83,22 @@ namespace loginpb {
     void SetLoginCallDeadline(std::chrono::milliseconds deadline);
 }
 
+namespace mailpb {
+    void SetMailHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetMailIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetMailFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetMailIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetMailCallDeadline(std::chrono::milliseconds deadline);
+}
+
+namespace mailpb {
+    void SetMailAdminHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetMailAdminIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+    void SetMailAdminFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetMailAdminIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
+    void SetMailAdminCallDeadline(std::chrono::milliseconds deadline);
+}
+
 namespace match {
     void SetMatchInternalHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
     void SetMatchInternalIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
@@ -177,6 +193,10 @@ void SetIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const :
 
     loginpb::SetLoginIfEmptyHandler(handler);
 
+    mailpb::SetMailIfEmptyHandler(handler);
+
+    mailpb::SetMailAdminIfEmptyHandler(handler);
+
     match::SetMatchInternalIfEmptyHandler(handler);
 
     match::SetMatchServiceIfEmptyHandler(handler);
@@ -218,6 +238,10 @@ void SetHandler(const std::function<void(const GrpcReplyContext&, const ::google
     guildpb::SetGuildInternalHandler(handler);
 
     loginpb::SetLoginHandler(handler);
+
+    mailpb::SetMailHandler(handler);
+
+    mailpb::SetMailAdminHandler(handler);
 
     match::SetMatchInternalHandler(handler);
 
@@ -261,6 +285,10 @@ void SetIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, co
 
     loginpb::SetLoginIfEmptyFailedHandler(handler);
 
+    mailpb::SetMailIfEmptyFailedHandler(handler);
+
+    mailpb::SetMailAdminIfEmptyFailedHandler(handler);
+
     match::SetMatchInternalIfEmptyFailedHandler(handler);
 
     match::SetMatchServiceIfEmptyFailedHandler(handler);
@@ -302,6 +330,10 @@ void SetFailedHandler(const std::function<void(const GrpcCallFailure&, const ::g
     guildpb::SetGuildInternalFailedHandler(handler);
 
     loginpb::SetLoginFailedHandler(handler);
+
+    mailpb::SetMailFailedHandler(handler);
+
+    mailpb::SetMailAdminFailedHandler(handler);
 
     match::SetMatchInternalFailedHandler(handler);
 
@@ -353,6 +385,12 @@ void SetGrpcCallDeadline(uint32_t nodeType, std::chrono::milliseconds deadline){
     }
     if (static_cast<uint32_t>(common::base::eNodeType::LoginNodeService) == nodeType) {
         loginpb::SetLoginCallDeadline(deadline);
+    }
+    if (static_cast<uint32_t>(common::base::eNodeType::MailNodeService) == nodeType) {
+        mailpb::SetMailCallDeadline(deadline);
+    }
+    if (static_cast<uint32_t>(common::base::eNodeType::MailNodeService) == nodeType) {
+        mailpb::SetMailAdminCallDeadline(deadline);
     }
     if (static_cast<uint32_t>(common::base::eNodeType::MatchNodeService) == nodeType) {
         match::SetMatchInternalCallDeadline(deadline);

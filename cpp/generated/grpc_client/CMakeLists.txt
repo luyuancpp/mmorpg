@@ -42,6 +42,8 @@ set(SOURCE_FILES
     db/db_grpc_client.cpp
     etcd/etcd_grpc_client.cpp
     friend/friend_grpc_client.cpp
+    mail/mail_grpc_client.cpp
+    mail/mail_admin_grpc_client.cpp
     grpc_init_client.cpp
     guild/guild_grpc_client.cpp
     guild/guild_internal_grpc_client.cpp
