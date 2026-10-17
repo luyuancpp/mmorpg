@@ -9283,3 +9283,28 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **边界**:未重启运行服务、未清理业务数据库、未部署 K8s、未更新运行中 MySQL 的 max_connections。MySQL 规划峰值 1860 / 配置上限 2100、Redis 规划峰值 1991 为公式与 DryRun 契约结果,不是容量压测结论。两区 mail-smoke、实际 S2C 推送与运行环境 sweep / 孤儿检查尚未执行;M1 领取附件仍按设计返回未开放,不代表资产发放链路已上线。
 - **证据**:本机 `run/mail-merge-20261016/` 留有正式生成日志、`validation-core.json`、`mail-unit.jsonl`、`mail-mysql.log`、关联模块日志、`robot-final-summary.json`、`final-launcher-tests-summary.json`、`final-k8s-deploy-contract.log`、`cpp-game-debug-x64-final.log`、`cpp-affected-tests-results.json`、Java 打包日志及负向夹具记录。此目录被忽略,未提交日志或令牌。
 - **Java 独立服务器版(AGENTS §12)**:待做,对应 Java 版本号:无。本机 `D:\luyuan\xuanming-server-mmo` 不存在,无法核对或更新其 `PARITY.md`;本仓 Java config_node 打包通过不能代替独立 Java 版邮件实现对账。
+
+## 2026-10-17 排行榜 R1p / R1 / R2a:match 评分快照出口 + go/rank 服务(读 + 写)落码(Claude,Go 未编译)
+
+- **背景**:排行榜 v1(设计 `docs/design/leaderboard-system.md`,09-20 已拍板)= match 评分全服榜。写分只经 Kafka:match 每局评分入账后发全员快照,
+  rank 消费写榜;客户端只有一个读方法 `GetRankPage`。落码记录与偏差见设计 §12。
+- **R1p 契约**:`proto/rank/rank.proto`(新)、`match_event.proto` 加 `PlayerRatingSnapshotEvent`、`proto_gen*.yaml` 加 rank 域、
+  `tools/scripts/rank_postgen.py`(新,复用 mail_postgen 机制)+ `dev_tools.ps1` 生成后钩子。只对 `match_event.proto` 做了窄面 protoc 重生成
+  (go/match 在服务目录里,不能等全量 proto-gen);rank 自己的产物归构建方的全量 proto-gen。
+- **R1 match 出口**:评分 Lua 返回 5 元素 + `rating_gen` 代际;快照精确解析与一次批量发布(发布失败保持 applying 重试);
+  `RatingSnapshotPublishEnabled` 默认 false(唯一上线闸门);开关打开时结果消费者在快照 topic 声明成功之后才起;
+  K8s `-MatchRatingSnapshotPublish 0|1`(不粘滞,写进 match Pod 模板注解,翻值即滚动)。
+- **R2a go/rank**:一页 + self 的只读 Lua、名字补全 fail-open(800ms)、无会话 / 未知榜回 kInvalidParameter 且不查 Redis;快照消费者
+  (组 `rank-rating`,保留期只由 match 声明;永久错误跳过、瞬时错误指数退避不跳过);RankRedis 没配回落共享库并 WARN;指标全套。
+  **还不在任何服务目录里**(R2b 才登记),所以合入后一键起服与 K8s 部署都不碰它;`go/rank` 进 CI 排除清单,等 proto-gen 产物入库。
+- **评审**:R1 四视角评审的问题已全部修完(topic 声明先后、快照解析严格 / 宽松两态、哨兵错误、K8s 开关不滚动等);R1 + R2a 三视角复审(正确性 / 编译与测试 / match 与脚本文档,逐文件对照 go-zero v1.10.0、kafka-go、client_golang、miniredis 的真实签名,未发现编译问题)的 1 个 P2(永久跳过类消息不进告警)与 8 个 P3 已修,修法记在设计 §12.2 偏差第 3 条的子项与 §12.3 偏差第 7–9 条;修补后又做了一轮复核(代码 / 文档两视角),找出的 1 个 P2(Redis 变慢时重试偏差的方向写反)与 6 个 P3 已全修(停机等消费者改为按收尾截止点算上限等)。
+- **实际跑过的(Claude 执行)**:gofmt;改动的 `.ps1` 解析;`rank_postgen.py` 仿真两次(第二次零改动);窄面重生成的基线逐字节一致;
+  变基到 `1af63ad54c`(邮件启用链合入后)之后:`k8s_deploy_contract.tests.ps1` 178/178 全过(主干 177 条 + 本批 1 条);
+  `k8s_client_entry_contract.tests.ps1` 102 条中 92 过,失败的 10 条在同一提交 `1af63ad54c` 的干净检出上逐条相同(既有,与本批无关)。
+  **Go(go/match、go/rank)一行未编译、未跑任何 Go 测试**。
+- **下一步(构建方)**:设计 §12.4 —— 含 rank 的全量 proto-gen(邮件那次 Codex 已跑,本批进 main 之后要再跑一次,rank 的消息号排在邮件之后)
+  → `rank_postgen.py verify` → go/match、go/rank 编译与测试 → 删 CI 排除条目。
+- **R2b / R3 在分支上**(设计 §12.5):服务端 `feat/rank-r2b-enable`(部署登记、专用 noeviction Redis、告警、`rank-smoke`、MessageLimiter 脚本)、
+  客户端 `feat/rank-r3`(第一个提交收录 `rank.proto` 生成 `Rank.cs`,本批进 main 后即可合;第二个提交 RankClient / 论剑榜窗口 / 入口 / EditMode 用例,
+  等 proto-gen 后重跑 `gen_messageids.ps1` 再合)。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做(本机没有 Java 仓 `D:\luyuan\xuanming-server-mmo`)。
