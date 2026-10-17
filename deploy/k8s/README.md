@@ -983,6 +983,48 @@ mail 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue.mail`,`Global = 
   K8s 上**不期望**推送到达或能发信:默认不注入令牌(`mail_admin=disabled`),推送受 g1 / g2 命令主题存量缺口影响(设计 §4.5)。
 - **剩余联机验证(未运行)**:见设计 §12.3「给构建方的顺序」;集群上:mail 两个 Pod Ready、`kubectl logs job/mail-migrate` 迁移报告恰好 4 张表、横幅 `mail_admin=disabled`。
 
+## 排行榜 rank:全局池 + 专用 noeviction Redis `redis-rank` + 告警(2026-10-17,docs/design/leaderboard-system.md R2b)
+
+> 状态(2026-10-17):含 rank 的全量 proto-gen 已入库,go/rank 在 `5778ccae92` 由构建方编译测试通过;其后 `eaa41b7e24` 的指标语义改动
+> (本节告警依赖它)未编译,待构建方复跑(设计 §12.6「还要构建方做的」第 1 步)。本节的部署登记随后合入 main。
+> **robot 的 rank-smoke 未编译未跑、未上集群**;MessageLimiter 已给 `GetRankPage` 配每秒 5 次。
+
+rank 与 chat 同形:全局池服务(`$GoSvcCatalogue.rank`,`Global = $true`),`infra-up` / `all-up` 在基础设施阶段部署到 `mmorpg-infra` 一份,`zone-up` 跳过。
+**零 MySQL**(没有建表 Job、不进 MySQL 连接总账、`mysql-backup-cronjob` 与它无关)。
+
+- **可达性**:客户端只有一个读方法 `ClientPlayerRank.GetRankPage`,只经 gate → `client-rpc-router` 可达(路由服按 `RankNodeService.rpc/` 前缀发现,
+  rank 的 go-zero `Etcd.Key` 留空,D-13);`-GateRouterMode 0` 时部署得起来、探针绿,但玩家够不着(与 chat / friend / mail 同口径)。没有运维直连入口。
+- **工作负载**:`manifests/go-svc/rank.yaml` = Service `rank` + Deployment(`replicas: 2`、RollingUpdate maxSurge 1 / maxUnavailable 0、podAntiAffinity、grpc 探针、
+  `preStop sleep 5` 配进程 24s 硬截止、`POD_IP`)+ 同文件 PDB `rank-pdb`。两个副本同属消费组 `rank-rating`、分摊快照 topic 的分区;读是只读 Lua,不选主。
+- **端口登记必须逐字一致**:`go/rank/etc/rank.yaml` 的 `ListenOn` / `MetricsListenAddr` 是真源,`go_services.ps1` 与 `$GoSvcCatalogue` 的 `Port`、生成的 ConfigMap、
+  本 manifest 的 Service / `containerPort` / 探针 / `prometheus.io/port` 与它对齐(契约 §7;契约测试从服务 yaml 取端口逐处核对)。镜像名 `mmorpg-rank` 与 `go_svc_image.ps1` 一致。
+- **ConfigMap**:`go-svc-rank-config` 按 `go/rank/etc/rank.yaml` 生成:`Name` / `Timeout` / `LeaseTTL` / `RatingSnapshotTopic` / `RatingSnapshotTopicPartitions` /
+  `RatingConsumerGroup` / `DataServiceRpc.Timeout` / `BoardSizeSampleInterval`;`Mode` dev 档镜像服务 yaml、staging / prod **固定 `pro`**(只决定是否注册 gRPC reflection)。
+  **快照 topic 的名字与分区数必须与 `go/match/etc/match_service.yaml` 同值**(两边共享的不可变契约,§2.4),生成期核对、不一致即拒绝部署 —— 否则 rank 会消费一个
+  match 不写的 topic,或在分区校验上起不来,都是零报错的静默停更。
+- **专用 Redis `redis-rank`**(`manifests/infra/redis-rank.yaml`,§3.5 / §9.1#4 已拍板):单副本 StatefulSet + PVC + AOF,`--maxmemory 512mb --maxmemory-policy noeviction`。
+  榜键 `lb:{rating}:z` / `lb:{rating}:v` **无 TTL**,放在会淘汰的共享库 / `redis-match-cluster` 上会被静默驱逐,所以单独一台;写满时写命令报错
+  (rank 退避重试、不跳过,榜停更但可读,告警 `RankWriteFailing`)。口令复用共享库的可选 Secret `redis-auth`,ConfigMap 的 `RankRedis.Pass` 取同一个注入值。
+  `infra-up` 里排在共享 Redis 之后(那一步建 / 删 `redis-auth`)、全局 Go 服务之前。刻意**不写 PDB**:停一下只影响榜展示,不该挂住 `kubectl drain`。
+  rank 的 ConfigMap **不写共享 Redis 段**:`RankRedis` 被误删时 Validate 直接拒启,而不是把榜写进会淘汰的共享库;所以 rank 也**不进**共享 Redis 连接总账。
+- **写分来源**:只消费 match 发布的评分快照(topic `match-rating-snapshot`,保留期只由 match 声明)。match 的 `-MatchRatingSnapshotPublish` 默认 `0`:
+  rank 部署了、榜可读,但**不会更新**,直到按下面的上线顺序打开开关(见本文后面「排行榜评分快照开关」一节)。
+  `KAFKA_TOPIC_REPLICATION_FACTOR` / `KAFKA_COMMAND_TOPIC_*` 由脚本统一注入,manifest 不写(rank 先于 match 起时会按契约分区数建出快照 topic,副本数必须拿部署级契约)。
+- **告警**:`deploy/k8s/rank-alerts.yaml`(PrometheusRule,与 mail / player-inbox 同法安装):
+  ```bash
+  kubectl apply -n observability -f deploy/k8s/rank-alerts.yaml
+  ```
+  `RankConsumerStalled`(match 15 分钟内发过快照、所有副本却都没消费到;消费者启动时先写一次最后消费时刻,滚动发布后不会从 0 起算误报)、
+  `RankWriteFailing`(瞬时写失败 error 持续 10 分钟)、`RankWriteSkipped`(invalid / out_of_range / malformed_version 永久跳过,出现一次就报)、`MatchRatingGenReset`
+  (match 评分键被重建过)、`MatchRatingSnapshotPublishFailing`、`RankBoardShrunk`(条目数比 1 小时峰值少 10% 以上 = redis-rank 丢了数据)、`RankReadFaults`。
+  规则引用的指标名由契约测试与 `go/rank/internal/metrics`、`go/match/internal/metrics` 逐个核对。抓取前提:集群里要有按注解抓取 rank 指标端口的 job 或 PodMonitor。
+- **丢榜恢复**:redis-rank 的数据丢了(`RankBoardShrunk` 响)按设计 §3.5 的 runbook 走 Kafka offset 重放(先确认两个榜键一起清空,再停消费者、把 `rank-rating` 重置到 earliest);
+  快照 topic 保留 7 天,超过保留期的玩家要等下一局才回到榜上。
+- **合服**:榜按全局唯一的 player_id 存、没有 zone 维度,合服不搬不改;audit auditor 不适用(结论不是遗漏)。
+- **上线顺序**(设计 §12.6):全量 proto-gen + `rank_postgen.py verify`(已完成)→ MessageLimiter 给 `GetRankPage` 配每秒 5 次(已完成)→ 路由服 / gate 换上同一次生成的二进制
+  → `infra-up`(落 `redis-rank` 与 rank,`-MatchRatingSnapshotPublish 0`)→ rank 两个 Pod Ready、横幅 `consumer: topic=... group=rank-rating`
+  → 用 `-MatchRatingSnapshotPublish 1` 重跑 `infra-up`(match 滚动)。回滚 = 用 `0` 重跑,评分链不受影响,榜停更但仍可读。
+
 ## MySQL 连接总账(2026-10-13,G2b:docs/handoff/launch-readiness-20261013/spec_G2b.md)
 
 > 状态(2026-10-17):已完成本地 DryRun 与连接总账契约验证,结果见 `docs/PROGRESS.md` 的邮件合并验证条目。**未在运行集群应用配置**;本节所有数值(`max_connections` 2100(2026-10-16 起,此前 1800)、5Gi、各池大小、余量、告警阈值)都是按公式推算或凭经验取的,**待压测确认**,不能据此下容量结论(AGENTS §6)。

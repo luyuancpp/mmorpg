@@ -254,6 +254,15 @@ func main() {
 		return
 	}
 
+	// Rank-smoke 模式:三个机器人做「全服排行榜 go/rank」端到端冒烟
+	// (A、N 登 zone_a、B 登 zone_b → A、B 各读一次榜 → A、B 跨区打一局 1V1 → 轮询到两人都新记一局
+	//  → 分数方向 / 名次先后 / 跨区名字补全 / 页形状 / 未上榜的 self.rank = 0 →(可选)gate 限流)。
+	// 见 rank_smoke_scenario.go 与 docs/design/leaderboard-system.md §8.2;前置条件(含 match 的快照发布开关)写在 etc/rank_smoke.yaml 文件头。
+	if cfg.Mode == "rank-smoke" {
+		RunRankSmoke(cfg)
+		return
+	}
+
 	// Channel-smoke 模式:单机器人做「玩家主动切线」端到端冒烟
 	// (登录 → 列线(SceneInfoC2S → NotifySceneInfo 带分线目录)→ 切到同图另一条线 → 再列线核对线号不变
 	//  → 冷却期内切回被拒、冷却过后切回成功 → 切到当前所在的线被同步拒绝)。

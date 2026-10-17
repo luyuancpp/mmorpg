@@ -1503,7 +1503,7 @@ function Get-GrpcClientDeadlineBudgetViolations {
 	  LoginNodeService           ← go/login/etc/login.yaml(gate 直连模式)
 	  PlayerInboxNodeService     ← go/player_inbox/etc/player_inbox.yaml(scene 调 FetchItems / AckItems;
 	                                PlayerInboxAdmin 的方法同端口同 Timeout,C++ 不调用)
-	Battle / Etcd 没有 Go 服务端超时,不在表里;chat / friend / guild / team / trade / mail 不在 C++ 节点白名单里,只经路由服到达
+	Battle / Etcd 没有 Go 服务端超时,不在表里;chat / friend / guild / team / trade / mail / rank 不在 C++ 节点白名单里,只经路由服到达
 	(mail 的 MailAdmin 是运维直连,同样没有 C++ 调用方)。
 	比对的是服务 yaml:scene-manager / match / 路由服 / login 的 go-svc ConfigMap 都从它镜像 Timeout
 	(New-GoSvcConfigMapYaml);data-service 的 ConfigMap 不写 Timeout(= go-zero 默认 2000)—— 生成物同样满足
@@ -1656,6 +1656,9 @@ function Assert-RouterForwardBudget {
 		# mail.yaml 的 Timeout 4000 + 1000 正好等于路由服 ForwardTimeoutMs 5000(go/mail 的 config.Validate 只收 [1000, 4000]);
 		# mail.yaml 不写 MethodTimeouts。
 		MailNodeService   = 'go/mail/etc/mail.yaml'
+		# rank.yaml 的 Timeout 4000 + 1000 正好等于路由服 ForwardTimeoutMs 5000(go/rank 的 config.Validate 只收 [1000, 4000]);
+		# rank.yaml 不写 MethodTimeouts(只有一个读方法 GetRankPage)。
+		RankNodeService   = 'go/rank/etc/rank.yaml'
 	}
 
 	# 与 Assert-GrpcClientDeadlineBudget 同一条纪律:文件缺席就 throw,不替你猜一个超时。
@@ -2170,6 +2173,8 @@ function Get-RedisMaxClientsFromManifest {
 	  - client-rpc-router:不连 Redis;
 	  - guild:2026-10-16 起有 K8s 清单,已在下表登记(三个缺省池 + 两个小池 + 落地唤醒订阅);
 	  - match 的 MatchRedis、chat 的 ChatRedis:K8s 上指向 redis-match-cluster,是另一套实例;
+	  - rank:K8s 的 rank ConfigMap 只写 RankRedis(专用实例 redis-rank,manifests/infra/redis-rank.yaml,maxclients 自管),
+	    不写共享 Redis 段,不连这台;
 	  - login 的 PasswordAuth 失败配额池(auth_init.go passwordQuotaRedisOptions,PoolSize 4)与 SaToken 客户端:K8s 的 login ConfigMap
 	    不写这两段;启用 PasswordAuth 后每个 login 副本 +4;
 	  - 探针、运维 redis-cli 与一次性工具:进规划档的 OpsReserve。
@@ -2862,6 +2867,12 @@ $GoSvcCatalogue = @{
 	# 表由 MigrateJob 登记的 mail-migrate Job 建(Apply-OneGoSvc 在 ConfigMap 之后、Deployment 之前跑它)。
 	# 运维令牌只经 Secret mail-admin-auth 进容器(见 $script:MailAdminTokenSecretName 处的说明)。
 	mail            = @{ ConfigMap = "go-svc-mail-config";            Manifest = "mail.yaml";            Port = 50900; ConfigFlag = "-f";              ConfigFile = "mail.yaml";                     ImageName = "mmorpg-mail"; Global = $true; MigrateJob = "mail-migrate.yaml" }
+	# 排行榜 rank(docs/design/leaderboard-system.md §5.4;R2b):榜按全局唯一的 player_id 存,是全局池(Global),infra namespace 一份。
+	# 客户端只经 gate → client-rpc-router 可达(路由服按 RankNodeService.rpc/ 前缀发现,rank 的 go-zero Etcd.Key 留空,D-13);
+	# `-GateRouterMode 0` 时部署得起来但玩家够不着(与 chat / friend / mail 同口径)。端口与 go/rank/etc/rank.yaml、go_services.ps1 一致;
+	# ImageName 与 go_svc_image.ps1 的 rank 条目一致。零 MySQL,没有 MigrateJob;榜键只在专用 Redis redis-rank(Apply-Infra 先于全局 Go 服务 apply)。
+	# 写分只经 match 的评分快照:match 的 -MatchRatingSnapshotPublish 默认 0,不打开时 rank 起得来、榜可读但不更新(上线顺序见设计 §12.6)。
+	rank            = @{ ConfigMap = "go-svc-rank-config";            Manifest = "rank.yaml";            Port = 51100; ConfigFlag = "-f";              ConfigFile = "rank.yaml";                     ImageName = "mmorpg-rank"; Global = $true }
 }
 
 # 目录里非全局(= 随 zone 部署)的服务名。两处 zone 循环共用,避免各写一遍过滤条件。
@@ -5762,6 +5773,48 @@ function New-GoSvcConfigMapYaml {
 		}
 	}
 
+	# 排行榜 rank 的契约值(docs/design/leaderboard-system.md §5.4):键名与 go/rank/etc/rank.yaml、go/rank/internal/config 三处逐字一致,
+	# 值只从服务 yaml 取。与 mail 同理**只在生成 rank 自己的 ConfigMap 时求值**。
+	$rankYaml                    = 'go/rank/etc/rank.yaml'
+	$rankName                    = ''
+	$rankTimeout                 = ''
+	$rankLeaseTTL                = ''
+	$rankSnapshotTopic           = ''
+	$rankSnapshotTopicPartitions = ''
+	$rankConsumerGroup           = ''
+	$rankDataServiceTimeout      = ''
+	$rankBoardSizeSampleInterval = ''
+	# staging / prod 固定 pro:rank 只用 Mode 决定是否注册 gRPC reflection,线上不开;dev 档 = 服务 yaml 的值。
+	$rankMode                    = 'pro'
+	if ($SvcName -eq 'rank') {
+		$rankName                    = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'Name'
+		$rankTimeout                 = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'Timeout'
+		$rankLeaseTTL                = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'LeaseTTL'
+		$rankSnapshotTopic           = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'RatingSnapshotTopic'
+		$rankSnapshotTopicPartitions = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'RatingSnapshotTopicPartitions'
+		$rankConsumerGroup           = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'RatingConsumerGroup'
+		$rankDataServiceTimeout      = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'DataServiceRpc.Timeout'
+		$rankBoardSizeSampleInterval = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'BoardSizeSampleInterval'
+		# 快照 topic 的名字与分区数是 match 与 rank 共享的不可变契约(§2.4;match 的 ConfigMap 从 match_service.yaml 取同名键)。
+		# 两份服务 yaml 不一致时,rank 要么去消费一个 match 不写的 topic(榜永远不更新),要么在分区校验上起不来(后台每 30s 重试):
+		# 都是零报错的静默停更。部署前就拒绝。
+		$rankMatchYaml = 'go/match/etc/match_service.yaml'
+		foreach ($rankPair in @(@('RatingSnapshotTopic', $rankSnapshotTopic), @('RatingSnapshotTopicPartitions', $rankSnapshotTopicPartitions))) {
+			$rankMatchValue = Get-AuthoritativeScalar -RelativePath $rankMatchYaml -KeyPath $rankPair[0]
+			if ([string]$rankMatchValue -cne [string]$rankPair[1]) {
+				throw "生成 rank ConfigMap 失败:$rankYaml 的 $($rankPair[0])='$($rankPair[1])' 与 $rankMatchYaml 的 '$rankMatchValue' 不一致(评分快照 topic 是两边共享的契约,docs/design/leaderboard-system.md §2.4)"
+			}
+		}
+		# 下面这些键的**值**由模板按部署形态写死(集群内地址 / 固定决策),但键本身必须在服务 yaml 里出现(理由同 mail)。
+		foreach ($rankKey in @('ListenOn', 'ZoneId', 'MetricsListenAddr', 'KillSwitchPrefix', 'Etcd.Key', 'RankRedis.Host', 'RankRedis.Type',
+				'Kafka.Brokers', 'DataServiceRpc.Etcd.Key', 'DataServiceRpc.NonBlock')) {
+			[void](Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath $rankKey)
+		}
+		if ($ReleaseProfile -eq 'dev') {
+			$rankMode = Get-AuthoritativeScalar -RelativePath $rankYaml -KeyPath 'Mode'
+		}
+	}
+
 	$mysqlUser = $script:MysqlUser
 	$mysqlPassword = $script:MysqlPassword
 	$redisPassword = $script:RedisPassword
@@ -6991,6 +7044,64 @@ Sweep:
 # 运维令牌不在这里:只经 Secret mail-admin-auth 注入环境变量(Apply-OneGoSvc);变量缺失 = MailAdmin 停用。
 "@
 		}
+		"rank" {
+@"
+Name: ${rankName}
+ListenOn: 0.0.0.0:51100
+# zrpc 服务端超时(毫秒),必须 <= 路由服 ForwardTimeoutMs - 1000(契约 §3,写路径入口的 Assert-RouterForwardBudget 核对);
+# rank 的 config.Validate 只收 [1000, 4000];逻辑层整请求预算 = Timeout − 500ms。
+Timeout: ${rankTimeout}
+# go-zero Mode:rank 只用它决定是否注册 gRPC reflection。dev 档 = go/rank/etc/rank.yaml 的值;staging/prod 固定 pro。
+# 显式写出,不赌 go-zero 缺省值。
+Mode: ${rankMode}
+# 全局池:ZoneId 只影响 etcd 注册路径(RankNodeService.rpc/zone/<z>/...),业务代码禁止读它做分支;取命令行 -ZoneId
+# (Apply-GlobalGoSvcManifests),与 chat / mail 同口径;Go 侧 Validate 拒 0。
+ZoneId: ${CurrentZoneId}
+# Etcd 段 **Key 显式留空**(port-decisions D-13):rank 按 C++ 约定注册 RankNodeService.rpc/zone/<z>/...(go/shared/noderegistry),
+# 路由服按这个前缀发现它;没有任何 Go 调用方经 go-zero 发现键找 rank(config.Validate 拒非空 Key)。
+# ⚠ 不能整行省略 Key:go-zero 的 EtcdConf.Key 不是 optional,缺了 conf.MustLoad 直接 Fatal,Pod 会 CrashLoop。
+Etcd:
+  Hosts:
+    - "etcd.${InfraNamespace}:2379"
+  Key: ""
+# 租约 TTL(秒)= 崩溃后路由服仍可能把请求打到死实例的最长窗口(PickRandom 不看连接状态)。
+LeaseTTL: ${rankLeaseTTL}
+# 与 manifests/go-svc/rank.yaml 的 metrics 容器端口 / prometheus.io/port 注解一致(契约 §7)。
+# 告警规则见 deploy/k8s/rank-alerts.yaml(每个副本都报,规则一律 max() / sum() 聚合)。
+MetricsListenAddr: ":9250"
+# 留空 = shared/killswitch 的 DefaultPrefix(/mmorpg/killswitch/),与其它服务共用同一棵规则树。
+KillSwitchPrefix: ""
+# 榜键 lb:{rating}:z / lb:{rating}:v 只放专用实例 redis-rank(manifests/infra/redis-rank.yaml:noeviction + AOF,§3.5 / §9.1#4)。
+# **刻意不写共享 Redis 段**:rank 不读任何跨运行时契约 key,共享段只是本地的回落目标;不写它,RankRedis 被误删时
+# config.Validate 直接拒启,而不是静默把无 TTL 的榜键写进会淘汰的共享库。Pass 与共享库同一个注入值(redis-rank.yaml 用同一个可选
+# Secret redis-auth)。go-zero redis.RedisConf 形状,不写 DB。
+RankRedis:
+  Host: redis-rank.${InfraNamespace}:6379
+  Type: node
+  Pass: "${redisPassword}"
+# 评分快照(§2.4):topic 名与分区数是与 match 共享的不可变契约(上面的生成器已核对两份服务 yaml 同值);保留期只由 match 声明。
+# 消费组键刻意不叫 GroupID(本地 -Zone 会给 GroupID 加后缀);rank 的多个副本同属一个组、分摊分区。
+Kafka:
+  Brokers:
+    - "kafka.${InfraNamespace}:9092"
+RatingSnapshotTopic: ${rankSnapshotTopic}
+RatingSnapshotTopicPartitions: ${rankSnapshotTopicPartitions}
+RatingConsumerGroup: ${rankConsumerGroup}
+# 名字补全(BatchGetPlayerName,fail-open)。data-service 按 zone namespace 各部署一份,但 go-zero 发现键 dataservice.rpc 不分 zone、
+# 名字表是全局库,发现到哪个实例应答都一样;这是 rank 作为**调用方**的发现键,不是 D-13 禁止的「全局服务自己的注册 Key」(同 trade / mail)。
+DataServiceRpc:
+  Etcd:
+    Hosts:
+      - "etcd.${InfraNamespace}:2379"
+    Key: dataservice.rpc
+  Timeout: ${rankDataServiceTimeout}
+  NonBlock: true
+  Middlewares:
+    Breaker: false
+# rank_board_size 的 ZCARD 采样间隔(每个副本各自采样;告警 RankBoardShrunk 用 max() 聚合)。
+BoardSizeSampleInterval: ${rankBoardSizeSampleInterval}
+"@
+		}
 		default {
 			throw "Unknown Go service: $SvcName"
 		}
@@ -7883,7 +7994,7 @@ function Apply-OneGoSvc {
 	Write-Host "  [applied] $SvcName -> $svcImage (port $($info.Port) pullPolicy=$svcPullPolicy)"
 }
 
-# 全局池 Go 服务(目录里 Global = $true,目前是 match / chat / client-rpc-router / trade / friend / player-inbox / guild / mail):部署到 $InfraNamespace 一次。
+# 全局池 Go 服务(目录里 Global = $true,目前是 match / chat / client-rpc-router / trade / friend / player-inbox / guild / mail / rank):部署到 $InfraNamespace 一次。
 # trade / friend / player-inbox / guild / mail 各带一个 MigrateJob(共五个 Job):trade-migrate / friend-migrate / player-inbox-migrate /
 # guild-migrate / mail-migrate 在 Apply-OneGoSvc 里先于各自的 Deployment 跑
 # (staging/prod 恒等 Complete,dev 仅 -WaitReady 下等;D-14 第 4 条)。
@@ -8942,7 +9053,9 @@ function Apply-Infra {
 	# 走下面的通用替换。有真实存档的环境不要为了它跑 infra-up(会连带 apply mysql.yaml,L-04 约束见
 	# docs/handoff/godb-pipeline-handoff-20261013.md §2.4),按 runbook 单独 apply 这一个清单。
 	# 共享 Redis 那一项按拓扑取 redis.yaml 或 redis-ha.yaml(见上)。
-	$infraManifests = @("etcd.yaml", "etcd-maintenance.yaml", $redisTopology.Manifest, "redis-match-cluster.yaml", "kafka.yaml", "mysql.yaml")
+	# redis-rank.yaml:排行榜专用 Redis(noeviction + AOF,docs/design/leaderboard-system.md §3.5)。排在共享 Redis 之后:它复用同一个
+	# 可选 Secret redis-auth,而那个 Secret 在处理共享 Redis 那一项时才建或删;全局 Go 服务(含 rank)在本循环之后才 apply。
+	$infraManifests = @("etcd.yaml", "etcd-maintenance.yaml", $redisTopology.Manifest, "redis-match-cluster.yaml", "redis-rank.yaml", "kafka.yaml", "mysql.yaml")
 	if ($script:CppLogSidecarEnabled -and [string]::IsNullOrWhiteSpace($LokiPushUrl)) {
 		$infraManifests += "loki.yaml"
 	}

@@ -3758,6 +3758,256 @@ Test-Case 'match ConfigMap:RatingSnapshotPublishEnabled 由 -MatchRatingSnapshot
 }
 
 # ─────────────────────────────────────────────────────────────────
+# 排行榜 rank 上 K8s(R2b,docs/design/leaderboard-system.md §5.4 / §12.6)
+# ─────────────────────────────────────────────────────────────────
+# rank 是全局池(infra namespace 一份),零 MySQL、没有建表 Job;榜键只在专用 noeviction 实例 redis-rank。
+# 本节断言不写端口字面量:gRPC / metrics 端口一律从 go/rank/etc/rank.yaml 取,与 manifest、ConfigMap 三处互相核对(契约 §7)。
+$rankYamlPath = 'go/rank/etc/rank.yaml'
+$rankGrpcPort = [regex]::Match([string](Get-EtcValue -RelativePath $rankYamlPath -KeyPath 'ListenOn'), ':(?<p>\d+)\s*$').Groups['p'].Value
+$rankMetricsPort = [regex]::Match([string](Get-EtcValue -RelativePath $rankYamlPath -KeyPath 'MetricsListenAddr'), ':(?<p>\d+)"?\s*$').Groups['p'].Value
+
+# DryRun 把一个 manifest 文件整份打成一个块(rank.yaml = Service + Deployment + PDB,redis-rank.yaml = 两个 Service + StatefulSet)。
+# 按 --- 切成单份文档,再按 kind + 顶层 metadata.name 精确取(照 Select-RedisStatefulSetDocument):只按块筛选时,
+# 块里别的文档带着同一个名字就能把断言带过去(删掉 ClusterIP Service redis-rank,headless 那份照样让"有 Service"成立)。
+# 恰好 1 份才返回;-AllowMissing 时 0 份返回 $null;其余一律 throw。
+function Select-RankManifestDocument {
+    param(
+        [Parameter(Mandatory = $true)][string]$Output,
+        [Parameter(Mandatory = $true)][string]$Kind,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [switch]$AllowMissing
+    )
+    $kindPattern = '(?m)^kind:[ \t]*{0}[ \t]*$' -f [regex]::Escape($Kind)
+    $namePattern = '(?m)^  name:[ \t]*{0}[ \t]*$' -f [regex]::Escape($Name)
+    $docs = @(foreach ($block in (Get-ManifestBlocks -Output $Output)) {
+            foreach ($doc in (($block -replace "`r`n", "`n") -split '(?m)^---[ \t]*$')) {
+                if ($doc -cmatch $kindPattern -and $doc -cmatch $namePattern) { $doc }
+            }
+        })
+    if ($docs.Count -eq 0 -and $AllowMissing) { return $null }
+    if ($docs.Count -ne 1) { throw "DryRun 输出里 $Kind $Name 应当恰好 1 份,实际 $($docs.Count) 份" }
+    return $docs[0]
+}
+
+# 同一种切分,返回某个 kind 的全部单份文档(用来断言"不存在"时按内容筛,不靠名字)。
+function Get-RankManifestDocumentsOfKind {
+    param(
+        [Parameter(Mandatory = $true)][string]$Output,
+        [Parameter(Mandatory = $true)][string]$Kind
+    )
+    $kindPattern = '(?m)^kind:[ \t]*{0}[ \t]*$' -f [regex]::Escape($Kind)
+    return @(foreach ($block in (Get-ManifestBlocks -Output $Output)) {
+            foreach ($doc in (($block -replace "`r`n", "`n") -split '(?m)^---[ \t]*$')) {
+                if ($doc -cmatch $kindPattern) { $doc }
+            }
+        })
+}
+
+Test-Case 'rank 部署形态:全局池 2 副本滚动 + PDB + 反亲和 + POD_IP;gRPC / metrics 端口与服务 yaml 一致;没有建表 Job' {
+    Assert-True -Condition ($rankGrpcPort -match '^\d+$' -and $rankMetricsPort -match '^\d+$') -Because "夹具前提:$rankYamlPath 的 ListenOn / MetricsListenAddr 能解析出端口"
+    Assert-Equal -Expected 0 -Actual $guildInfraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($guildInfraRun.Output)"
+    $deploy = Select-RankManifestDocument -Output $guildInfraRun.Output -Kind 'Deployment' -Name 'rank'
+    $svc = Select-RankManifestDocument -Output $guildInfraRun.Output -Kind 'Service' -Name 'rank'
+    $pdb = Select-RankManifestDocument -Output $guildInfraRun.Output -Kind 'PodDisruptionBudget' -Name 'rank-pdb'
+    Assert-Match -Text $deploy -Pattern '(?m)^  replicas: 2\s*$' -Because '单副本 = 全服排行榜是单点'
+    Assert-Match -Text $deploy -Pattern 'type: RollingUpdate\s+rollingUpdate:\s+maxSurge: 1\s+maxUnavailable: 0' -Because '先起新的再停旧的'
+    Assert-Match -Text $deploy -Pattern 'podAntiAffinity' -Because '两个副本不该落在同一个节点上'
+    Assert-Match -Text $pdb -Pattern '(?m)^  minAvailable: 1\s*$' -Because 'PDB 必须写在主 manifest 里,至少留一个副本'
+    Assert-Match -Text $deploy -Pattern 'name: POD_IP\s+valueFrom:\s+fieldRef:\s+fieldPath: status\.podIP' -Because 'ListenOn 是 0.0.0.0,注册进 etcd 的必须是 Pod IP(go/rank/rank.go advertisedHost)'
+    Assert-Match -Text $deploy -Pattern ('containerPort: {0}\s+name: grpc' -f $rankGrpcPort) -Because 'gRPC 容器端口 == 服务 yaml 的 ListenOn'
+    Assert-Match -Text $deploy -Pattern ('readinessProbe:\s+grpc:\s+port: {0}\s' -f $rankGrpcPort) -Because 'readiness 探针端口 == 服务 yaml 的 ListenOn'
+    Assert-Match -Text $deploy -Pattern ('livenessProbe:\s+grpc:\s+port: {0}\s' -f $rankGrpcPort) -Because 'liveness 探针端口 == 服务 yaml 的 ListenOn'
+    Assert-Match -Text $svc -Pattern ('(?m)^\s+port: {0}\s*\n\s+targetPort: {0}\s*$' -f $rankGrpcPort) -Because 'Service rank 的 port / targetPort == 服务 yaml 的 ListenOn'
+    Assert-Match -Text $deploy -Pattern ('containerPort: {0}\s+name: metrics' -f $rankMetricsPort) -Because 'metrics 容器端口 == 服务 yaml 的 MetricsListenAddr'
+    Assert-Match -Text $deploy -Pattern ('prometheus\.io/port: "{0}"' -f $rankMetricsPort) -Because '抓取注解 == 服务 yaml 的 MetricsListenAddr'
+    Assert-Match -Text $deploy -Pattern 'image: registry\.invalid/test/mmorpg-rank:' -Because '镜像名 mmorpg-rank(与 go_svc_image.ps1 一致)'
+    Assert-Match -Text $deploy -Pattern '- name: KAFKA_TOPIC_REPLICATION_FACTOR' -Because 'rank 可能先于 match 建出快照 topic,副本数必须拿部署级契约(脚本注入)'
+    foreach ($doc in @($deploy, $svc, $pdb)) {
+        Assert-NotMatch -Text $doc -Pattern '(?-i)__[A-Z][A-Z0-9_]*__|PLACEHOLDER_' -Because '占位必须全部替换'
+    }
+    Assert-NotMatch -Text $guildInfraRun.Output -Pattern 'name: rank-migrate' -Because 'rank 零 MySQL,没有建表 Job'
+}
+
+Test-Case 'rank ConfigMap:值镜像 go/rank/etc/rank.yaml;RankRedis 指向专用 redis-rank、不写共享 Redis 段;快照 topic 与 match 同值' {
+    $cm = @(Get-ManifestBlocks -Output $guildInfraRun.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: ConfigMap\s*$' -and $_ -cmatch '(?m)^  name: go-svc-rank-config\s*$'
+    }) | Select-Object -First 1
+    Assert-True -Condition ($null -ne $cm) -Because 'infra-up 产物里应当有 go-svc-rank-config'
+    $flat = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block $cm).Scalars -Prefix 'data.rank.yaml.'
+    foreach ($key in @('Name', 'Timeout', 'LeaseTTL', 'RatingSnapshotTopic', 'RatingSnapshotTopicPartitions', 'RatingConsumerGroup',
+            'DataServiceRpc.Timeout', 'BoardSizeSampleInterval', 'Mode')) {
+        Assert-Equal -Expected (Get-EtcValue -RelativePath $rankYamlPath -KeyPath $key) -Actual ([string]$flat[$key]).Trim('"') -Because "rank ConfigMap 的 $key 必须等于服务 yaml(dev 档,单一真相)"
+    }
+    foreach ($key in @('RatingSnapshotTopic', 'RatingSnapshotTopicPartitions')) {
+        Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/match/etc/match_service.yaml' -KeyPath $key) -Actual ([string]$flat[$key]) -Because "rank 的 $key 必须等于 match 的同名键(快照 topic 是两边共享的不可变契约,§2.4)"
+    }
+    Assert-Match -Text $cm -Pattern ('ListenOn: 0\.0\.0\.0:{0}\s' -f $rankGrpcPort) -Because 'ConfigMap 的监听端口 == 服务 yaml'
+    Assert-Match -Text $cm -Pattern ('MetricsListenAddr: ":{0}"' -f $rankMetricsPort) -Because 'ConfigMap 的指标端口 == 服务 yaml(== manifest 的 prometheus.io/port)'
+    Assert-Match -Text $cm -Pattern '(?m)^\s+RankRedis:\s*\n\s+Host: redis-rank\.contract-battle-infra:6379\s*\n\s+Type: node\s*\n\s+Pass: "[^"]*"\s*$' -Because '榜键只放专用实例 redis-rank(noeviction,§3.5),带 Pass'
+    Assert-NotMatch -Text $cm -Pattern '(?m)^    Redis:\s*$' -Because '不写共享 Redis 段:RankRedis 被误删时 Validate 直接拒启,而不是把无 TTL 的榜键写进会淘汰的共享库'
+    Assert-Match -Text $cm -Pattern '(?m)^\s+Etcd:\s*\n\s+Hosts:\s*\n\s+- "etcd\.[^"]+:2379"\s*\n\s+Key: ""\s*$' -Because 'rank 自己的 go-zero 注册 Key 必须留空(D-13)'
+    Assert-Match -Text $cm -Pattern 'Key: dataservice\.rpc' -Because '作为调用方经 dataservice.rpc 补全名字'
+    Assert-Match -Text $cm -Pattern '(?m)^\s+Brokers:\s*\n\s+- "kafka\.contract-battle-infra:9092"\s*$' -Because '消费评分快照的 broker 地址'
+    Assert-NotMatch -Text $cm -Pattern '(?m)^\s+GroupID:' -Because '消费组键是 RatingConsumerGroup,不是 GroupID(本地 -Zone 会给 GroupID 加后缀,全局 topic 会被各 zone 各消费一遍)'
+}
+
+Test-Case 'rank 非 dev 档:ConfigMap 固定 Mode=pro;RankRedis.Pass 与共享库同一个注入值' {
+    $stagingEnv = @{} + $mailStagingEnv
+    $stagingEnv['MMORPG_MAIL_ADMIN_TOKEN'] = ''
+    $run = Invoke-DeployDryRun -Arguments $mailStagingArgs -Env $stagingEnv
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "staging 档带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($run.Output)"
+    $cm = @(Get-ManifestBlocks -Output $run.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: ConfigMap\s*$' -and $_ -cmatch '(?m)^  name: go-svc-rank-config\s*$'
+    }) | Select-Object -First 1
+    Assert-True -Condition ($null -ne $cm) -Because 'staging infra-up 产物里应当有 go-svc-rank-config'
+    Assert-Match -Text $cm -Pattern '(?m)^\s+Mode: pro\s*$' -Because '非 dev 档必须是 pro(dev / test 会注册 gRPC reflection)'
+    Assert-NotMatch -Text $cm -Pattern '(?m)^\s+Mode: (dev|test)\s*$' -Because '不得沿用服务 yaml 的 Mode: dev'
+    $password = [string]$mailStagingEnv['MMORPG_REDIS_PASSWORD']
+    Assert-True -Condition (-not [string]::IsNullOrEmpty($password)) -Because '夹具前提:staging 档注入了 Redis 口令'
+    Assert-Match -Text $cm -Pattern ('(?m)^\s+RankRedis:\s*\n\s+Host: redis-rank\.[^:]+:6379\s*\n\s+Type: node\s*\n\s+Pass: "{0}"\s*$' -f [regex]::Escape($password)) -Because 'redis-rank 与共享库共用 redis-auth:开了 requirepass 而 ConfigMap 不带口令 = 读写榜全部 NOAUTH'
+}
+
+Test-Case 'redis-rank:infra-up 落专用实例(noeviction + AOF + maxmemory、复用可选 Secret redis-auth、不写 PDB),排在共享 Redis 之后、rank 之前' {
+    foreach ($run in @($battleInfraRun, $guildInfraRun)) {
+        Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "infra-up DryRun 必须成功。输出: $($run.Output)"
+        # infra-up(不论带不带全局 Go 服务)都要落 redis-rank StatefulSet;取不到(或不止一份)直接 throw。
+        $sts = Select-RankManifestDocument -Output $run.Output -Kind 'StatefulSet' -Name 'redis-rank'
+        Assert-Match -Text $sts -Pattern '--maxmemory-policy noeviction' -Because '榜键无 TTL:会淘汰的策略会静默丢人(§3.5)'
+        Assert-NotMatch -Text $sts -Pattern '--maxmemory-policy (allkeys|volatile)-' -Because '不得出现任何淘汰策略'
+        Assert-Match -Text $sts -Pattern '--appendonly yes' -Because 'AOF:重启不丢榜'
+        Assert-Match -Text $sts -Pattern '--maxmemory \d+mb' -Because '显式容量上限(写满时报错而不是 OOMKill)'
+        Assert-Match -Text $sts -Pattern 'secretKeyRef:\s+name: redis-auth\s+key: password\s+optional: true' -Because '口令与共享库同一个可选 Secret'
+        Assert-Match -Text $sts -Pattern 'volumeClaimTemplates:' -Because '数据在 PVC 上'
+        # 刻意不写 PDB:停一下只影响榜展示,不该挂住 drain。按"选中谁"判断而不是按名字(仓内 PDB 惯例叫 <app>-pdb):
+        # 任何一份 PodDisruptionBudget 提到 app: redis-rank、或名字以 redis-rank 开头,都算违例。
+        $pdbDocs = @(Get-RankManifestDocumentsOfKind -Output $run.Output -Kind 'PodDisruptionBudget')
+        $rankRedisPdbs = @($pdbDocs | Where-Object { $_ -cmatch '(?m)^\s+app:[ \t]*redis-rank[ \t]*$' -or $_ -cmatch '(?m)^  name:[ \t]*redis-rank' })
+        Assert-Equal -Expected 0 -Actual $rankRedisPdbs.Count -Because '不得有任何 PodDisruptionBudget 选中 redis-rank 的 Pod'
+        # rank ConfigMap 的 RankRedis.Host 指向 ClusterIP Service redis-rank:它必须单独存在、不是 headless、端口 6379。
+        $svc = Select-RankManifestDocument -Output $run.Output -Kind 'Service' -Name 'redis-rank'
+        Assert-NotMatch -Text $svc -Pattern '(?m)^\s+clusterIP:\s*None\s*$' -Because 'RankRedis.Host 指向的 Service 不能是 headless'
+        Assert-Match -Text $svc -Pattern '(?m)^\s+port: 6379\s*\n\s+targetPort: 6379\s*$' -Because 'Service redis-rank 端口 6379(与 ConfigMap 的 RankRedis.Host 一致)'
+        # selector 恰好只有 app: redis-rank 一个键(StatefulSet 模板只带这一个标签;多一个 Pod 上没有的键,Service 就一个 endpoint 都没有)。
+        Assert-Match -Text $svc -Pattern '(?m)^  selector:[ \t]*\n[ \t]+app:[ \t]*redis-rank[ \t]*\n(?![ \t]{4,}\S)' -Because 'Service redis-rank 的 selector 恰好是 app: redis-rank(只看 selector 段,metadata.labels 不算)'
+        $headless = Select-RankManifestDocument -Output $run.Output -Kind 'Service' -Name 'redis-rank-headless'
+        Assert-Match -Text $headless -Pattern '(?m)^\s+clusterIP:\s*None\s*$' -Because 'StatefulSet 的 governing service 必须是 headless'
+        Assert-Match -Text $headless -Pattern '(?m)^  selector:[ \t]*\n[ \t]+app:[ \t]*redis-rank[ \t]*\n(?![ \t]{4,}\S)' -Because 'headless Service 的 selector 恰好是 app: redis-rank'
+        Assert-Match -Text $sts -Pattern '(?m)^\s+serviceName: redis-rank-headless\s*$' -Because 'StatefulSet 挂在 headless Service 上'
+        foreach ($doc in @($sts, $svc, $headless)) {
+            Assert-NotMatch -Text $doc -Pattern '(?-i)__[A-Z][A-Z0-9_]*__' -Because '占位必须全部替换'
+        }
+    }
+    # 夹具前提:按 kind 收文档的辅助函数在带全局 Go 服务的产物里确实收得到 PDB(rank-pdb),上面的"0 份"才不是空转。
+    $guildPdbs = @(Get-RankManifestDocumentsOfKind -Output $guildInfraRun.Output -Kind 'PodDisruptionBudget')
+    Assert-True -Condition (@($guildPdbs | Where-Object { $_ -cmatch '(?m)^  name:[ \t]*rank-pdb[ \t]*$' }).Count -eq 1) -Because '夹具前提:能从 DryRun 产物里收出 PodDisruptionBudget 文档(rank-pdb)'
+    $out = $guildInfraRun.Output
+    $sharedRedisAt = $out.IndexOf('name: redis-auth')
+    $rankRedisAt = $out.IndexOf('name: redis-rank-headless')
+    $rankConfigAt = $out.IndexOf('name: go-svc-rank-config')
+    Assert-True -Condition ($rankRedisAt -ge 0 -and $rankConfigAt -gt $rankRedisAt) -Because 'redis-rank 必须先于 rank 的 ConfigMap / Deployment apply'
+    if ($sharedRedisAt -ge 0) {
+        Assert-True -Condition ($rankRedisAt -gt $sharedRedisAt) -Because 'redis-rank 复用 redis-auth:Secret 建好之后才 apply 它'
+    }
+}
+
+Test-Case 'go_svc_image.ps1 与 k8s_deploy.ps1 的 rank 镜像名一致(否则发布的镜像与部署拉的镜像对不上)' {
+    $imageScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'go_svc_image.ps1'))
+    $deployScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'k8s_deploy.ps1'))
+    $imageName = [regex]::Match($imageScript, '(?m)^\s*rank\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
+    $deployName = [regex]::Match($deployScript, '(?m)^\s*rank\s*=\s*@\{[^}]*ImageName\s*=\s*"(?<n>[^"]+)"')
+    Assert-True -Condition ($imageName.Success -and $deployName.Success) -Because '两个脚本的服务表里都应当有 rank 条目'
+    Assert-Equal -Expected 'mmorpg-rank' -Actual $deployName.Groups['n'].Value -Because 'k8s_deploy.ps1 的 rank 镜像名'
+    Assert-Equal -Expected $deployName.Groups['n'].Value -Actual $imageName.Groups['n'].Value -Because 'ImageName 必须一致'
+    $deployPort = [regex]::Match($deployScript, '(?m)^\s*rank\s*=\s*@\{[^}]*Port\s*=\s*(?<p>\d+)')
+    $localScript = [IO.File]::ReadAllText((Join-Path (Get-ToolsScriptsDir) 'go_services.ps1'))
+    $localPort = [regex]::Match($localScript, '(?m)^\s*rank\s*=\s*@\{[^}]*Port\s*=\s*(?<p>\d+)')
+    Assert-Equal -Expected $rankGrpcPort -Actual $deployPort.Groups['p'].Value -Because 'k8s_deploy.ps1 目录里的 rank 端口 == 服务 yaml 的 ListenOn'
+    Assert-Equal -Expected $rankGrpcPort -Actual $localPort.Groups['p'].Value -Because 'go_services.ps1 目录里的 rank 端口 == 服务 yaml 的 ListenOn'
+}
+
+Test-Case 'rank-alerts.yaml:规则引用的 rank_* / match_* 指标都由各自的 metrics.go 注册;永久跳过三档出现一次就报,瞬时 error 只在持续时报' {
+    $repo = Get-RepoRoot
+    $alerts = [IO.File]::ReadAllText((Join-Path $repo 'deploy/k8s/rank-alerts.yaml')) -replace "`r`n", "`n"
+    # 指标名只靠人工核对:改名后告警永远不触发、也不报错。从 metrics.go 拼出全名(subsystem + "_" + Name),逐个核对规则引用的名字。
+    foreach ($svc in @(@{ Prefix = 'rank'; Path = 'go/rank/internal/metrics/metrics.go' }, @{ Prefix = 'match'; Path = 'go/match/internal/metrics/metrics.go' })) {
+        $metricsGo = [IO.File]::ReadAllText((Join-Path $repo $svc.Path))
+        $subsystem = [regex]::Match($metricsGo, '(?m)^const subsystem = "(?<s>[a-z_]+)"')
+        Assert-True -Condition ($subsystem.Success -and $subsystem.Groups['s'].Value -ceq $svc.Prefix) -Because "$($svc.Path) 应当有 const subsystem = `"$($svc.Prefix)`"(换了写法要同步本用例)"
+        $registered = @([regex]::Matches($metricsGo, '(?m)^\s*Name:\s*"(?<n>[a-z0-9_]+)"') | ForEach-Object { $svc.Prefix + '_' + $_.Groups['n'].Value })
+        $referenced = @([regex]::Matches($alerts, ('\b{0}_[a-z0-9_]+' -f $svc.Prefix)) | ForEach-Object { $_.Value } | Sort-Object -Unique)
+        Assert-True -Condition ($referenced.Count -ge 1) -Because "夹具前提:告警文件至少引用一个 $($svc.Prefix)_* 指标"
+        foreach ($name in $referenced) {
+            Assert-True -Condition ($registered -contains $name) -Because "告警引用的指标 $name 必须由 $($svc.Path) 注册(改名后告警会静默失效)"
+        }
+    }
+    # 设计 §3.7 ② / ②b:消费者永久跳过的三档(invalid / out_of_range / malformed_version)由 RankWriteSkipped 出现一次就报
+    # (跳过会推进 rank_last_consume_unixtime,RankConsumerStalled 看不见;写成 rate + for 10m 时,不足 5 分钟的一阵跳过永远触发不了);
+    # 瞬时的 error 只由 RankWriteFailing 在持续时报。outcome 的值从 metrics.go 的常量取,不抄字面量。
+    $rankMetricsGo = [IO.File]::ReadAllText((Join-Path $repo 'go/rank/internal/metrics/metrics.go'))
+    $outcomeOf = {
+        param([string]$Const)
+        $value = [regex]::Match($rankMetricsGo, ('(?m)^\s*{0}\s*=\s*"(?<v>[a-z_]+)"' -f $Const))
+        Assert-True -Condition $value.Success -Because "go/rank/internal/metrics 应当定义 $Const"
+        return $value.Groups['v'].Value
+    }
+    $rule = {
+        param([string]$Name)
+        $m = [regex]::Match($alerts, ('(?m)^\s+- alert: {0}\s*\n(?<body>(?:^\s{{10,}}.*\n?)+)' -f [regex]::Escape($Name)))
+        Assert-True -Condition $m.Success -Because "rank-alerts.yaml 应当有规则 $Name"
+        $body = $m.Groups['body'].Value
+        $expr = [regex]::Match($body, '(?m)^\s+expr: \|\s*\n(?<e>(?:^\s{12,}\S.*\n?)+)').Groups['e'].Value
+        $for = [regex]::Match($body, '(?m)^\s+for:\s*(?<f>\S+)\s*$').Groups['f'].Value
+        Assert-True -Condition ($expr.Trim().Length -gt 0 -and $for.Length -gt 0) -Because "规则 $Name 应当有 expr 与 for(写法变了要同步本用例)"
+        return [pscustomobject]@{ Expr = $expr; For = $for }
+    }
+    $skip = & $rule 'RankWriteSkipped'
+    Assert-Equal -Expected '0m' -Actual $skip.For -Because 'RankWriteSkipped 出现一次就报(for: 0m)'
+    Assert-Match -Text $skip.Expr -Pattern 'increase\(rank_write_total\{outcome=~"' -Because 'RankWriteSkipped 用 increase 窗口,不用 rate + for'
+    foreach ($const in @('WriteInvalid', 'WriteOutOfRange', 'WriteMalformedVersion')) {
+        $value = & $outcomeOf $const
+        Assert-Match -Text $skip.Expr -Pattern ('outcome=~"[^"]*\b{0}\b[^"]*"' -f [regex]::Escape($value)) -Because "RankWriteSkipped 必须覆盖永久跳过的 outcome=$value"
+    }
+    $errorOutcome = & $outcomeOf 'WriteError'
+    Assert-NotMatch -Text $skip.Expr -Pattern ('\b{0}\b' -f [regex]::Escape($errorOutcome)) -Because 'RankWriteSkipped 不看瞬时的 error(Redis 抖一下不该报)'
+    # "出现一次就报"的两条都要补进程刚起的窗口:新 Pod 第一次被抓取之前就涨了的,increase() 看不到(第一个样本已不是 0)。
+    $genReset = & $rule 'MatchRatingGenReset'
+    foreach ($r in @(@{ Name = 'RankWriteSkipped'; Rule = $skip }, @{ Name = 'MatchRatingGenReset'; Rule = $genReset })) {
+        Assert-Match -Text $r.Rule.Expr -Pattern 'and on\(instance\) \(time\(\) - process_start_time_seconds\) < 900' -Because "$($r.Name) 要覆盖进程起来不到 15 分钟就涨了的情况"
+    }
+    # 两句(increase 窗口 / 进程刚起的窗口)各自的 outcome 过滤都要核:只核整条表达式时,前半句就能让断言通过,
+    # 后半句丢了 outcome 选择器(每次滚动发布、新 Pod 写一条快照就报)也看不出来。
+    $exprParts = {
+        param([string]$Expr)
+        return @($Expr -split '(?m)^[ \t]+or[ \t]*$' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    }
+    $selectorOf = {
+        param([string]$Part)
+        $m = [regex]::Match($Part, 'rank_write_total\{(?<sel>[^}]*)\}')
+        Assert-True -Condition $m.Success -Because "表达式片段应当带 rank_write_total{...} 选择器: $Part"
+        return $m.Groups['sel'].Value
+    }
+    $skipParts = & $exprParts $skip.Expr
+    Assert-Equal -Expected 2 -Actual $skipParts.Count -Because 'RankWriteSkipped 由 increase 窗口与进程刚起的窗口两句 or 起来'
+    foreach ($part in $skipParts) {
+        $sel = & $selectorOf $part
+        foreach ($const in @('WriteInvalid', 'WriteOutOfRange', 'WriteMalformedVersion')) {
+            $value = & $outcomeOf $const
+            Assert-Match -Text $sel -Pattern ('outcome=~"[^"]*\b{0}\b[^"]*"' -f [regex]::Escape($value)) -Because "RankWriteSkipped 的每一句都要覆盖 outcome=$value"
+        }
+        Assert-NotMatch -Text $sel -Pattern ('\b{0}\b' -f [regex]::Escape($errorOutcome)) -Because 'RankWriteSkipped 的每一句都不看瞬时的 error'
+    }
+    $genResetOutcome = & $outcomeOf 'WriteGenReset'
+    $genResetParts = & $exprParts $genReset.Expr
+    Assert-Equal -Expected 2 -Actual $genResetParts.Count -Because 'MatchRatingGenReset 由 increase 窗口与进程刚起的窗口两句 or 起来'
+    foreach ($part in $genResetParts) {
+        Assert-Equal -Expected ('outcome="{0}"' -f $genResetOutcome) -Actual (& $selectorOf $part) -Because 'MatchRatingGenReset 的每一句都只看 gen_reset'
+    }
+    $failing = & $rule 'RankWriteFailing'
+    Assert-Match -Text $failing.Expr -Pattern ('rank_write_total\{{outcome="{0}"\}}' -f [regex]::Escape($errorOutcome)) -Because 'RankWriteFailing 只看瞬时的 error'
+    Assert-Equal -Expected '10m' -Actual $failing.For -Because 'RankWriteFailing 持续 10 分钟才报'
+}
+
+# ─────────────────────────────────────────────────────────────────
 # 资产通道开关 + gRPC 口准入(BK8s 第二块:-AssetOps / -NetworkPolicies;docs/design/guild-phase2/90-consistency.md G-05,2026-10-16)
 # ─────────────────────────────────────────────────────────────────
 # 默认两个开关都关,产物与开关引入之前相同(只多「不粘滞」的删除行);打开时 guild / trade / scene 拿签名密钥、三份 NetworkPolicy 落地。

@@ -705,6 +705,8 @@ R2b(部署登记、`rank-smoke`、告警文件、MessageLimiter)与 R3(客户端
 
 ### 12.5 R2b / R3:在分支上,等 proto-gen 之后合入
 
+〔2026-10-17 更新:proto-gen 已由构建方完成(`5778ccae92`),R2b 与 R3 均已合入 main,见 §12.6 的合入记录。〕
+
 与邮件 M1d 同一做法(`docs/design/mail-system.md` §12.3「为什么拆成两个提交」):rank 一旦写进 `go_services.ps1` / `go_svc_image.ps1` / `k8s_deploy.ps1`
 的服务目录,所有不带 `-Services` 的一键构建都会编 `go/rank`,而它在 `go/proto/rank` 入库之前一定编不过;客户端的 `RankClient` 引用的
 `MessageIds.GetRankPage` 也要等服务端 proto-gen 之后由 `gen_messageids.ps1` 生成。所以:
@@ -716,3 +718,47 @@ R2b(部署登记、`rank-smoke`、告警文件、MessageLimiter)与 R3(客户端
 - **客户端分支 `feat/rank-r3`**(客户端仓):第一个提交只收录 `rank.proto` 并生成 `Rank.cs`(服务端 main 有 `proto/rank/rank.proto` 之后即可合入客户端 main);
   第二个提交是 `gen_messageids.ps1` 白名单、`RankClient`、论剑榜窗口与入口(左栏 `论剑榜 [K]`)、EditMode 测试,要等服务端 proto-gen 之后
   重跑 `gen_messageids.ps1` 生成 `MessageIds.GetRankPage` 再合入。
+  〔2026-10-17 更新:两个提交都已合入客户端 main(`ca8ee046`;第二个提交补上 gen_messageids 生成的常量后以 `04012dd3` 合入)。评审后入口挪到左栏帮会入口右侧
+  (左栏 y 288–468 是任务追踪面板),客户端按 gate 的整秒限流窗口本地节流(0.4s 间隔、2.5s 内最多 5 次,同 TeamClient),被限频(1008)时退避、不自动重试。〕
+
+### 12.6 R2b 部署登记(2026-10-17 合入 main;robot 未编译、rank-smoke 未跑)
+
+**改了什么**:
+
+- 本机:`go_services.ps1` 目录条目(Tier 1,`AllowMultiInstance`;双 zone 时两份 rank 同属一个消费组、写同一个共享 Redis,分摊分区);
+  `go_svc_image.ps1` 镜像条目 `mmorpg-rank`(只有 replace proto / shared,不改 Dockerfile);`start_game.ps1` 可选服务(只在缺 exe 时跳过,零 MySQL 没有库预检;
+  不是命令主题生产者,不进 `Test-UsesKafkaCommandContract`)、单独启动行。
+- K8s:`manifests/go-svc/rank.yaml`(2 副本滚动 + PDB + 反亲和 + POD_IP)、`manifests/infra/redis-rank.yaml`(专用 noeviction + AOF,§3.5;复用可选 Secret `redis-auth`,
+  不写 PDB)、`rank-alerts.yaml`(§3.7 七条,含 2026-10-17 拆出的 ②b `RankWriteSkipped`);`k8s_deploy.ps1`:目录条目(`Global`,无 MigrateJob)、路由服预算表 `RankNodeService`、ConfigMap 生成器
+  (值镜像 `go/rank/etc/rank.yaml`,staging / prod 固定 `Mode: pro`;**只写 `RankRedis` 不写共享 Redis 段**;快照 topic 名与分区数和 `match_service.yaml` 不一致即拒绝部署)、
+  基础设施清单加 `redis-rank.yaml`(排在共享 Redis 之后)、Redis 连接总账注明 rank 不连共享库。
+- robot:`rank_smoke_scenario.go` + `etc/rank_smoke.yaml`(§8.2 的 A / B / N 三账号流程)、`config.RankSmokeConfig`(含 validate 与缺省值)、模式白名单与 `main.go` 分发、README 一行。
+- `tools/scripts/rank_xlsx_patch.py`:给 `GetRankPage` 在 `data/MessageLimiter.xlsx` 登记每秒 5 次(复用 `mail_xlsx_patch.py` 的并发安全写表机制;proto-gen 之前跑会在写任何文件之前中止)。
+- 测试:`k8s_deploy_contract.tests.ps1` 加 6 条(部署形态、ConfigMap 镜像与 topic 契约、staging 的 `Mode` 与 `RankRedis.Pass`、redis-rank 形态与先后、镜像名与端口三处一致、
+  告警引用的指标名都已注册、`RankWriteSkipped` 覆盖永久跳过三档且 for 0m、`RankWriteFailing` 只看持续的 error);`go_services_stop.tests.ps1` 加 rank 的停机时限。
+  **端口不写字面量**:测试一律从 `go/rank/etc/rank.yaml` 取端口去核对 manifest / ConfigMap / 两份目录。
+- 文档与 CI:`deploy/k8s/README.md`「排行榜 rank」一节、`deploy/k8s/AGENTS.md` 一条;`deploy-config-tests.yml` 路径过滤加
+  `go/rank/internal/metrics/**` 与 `go/match/internal/metrics/**`(告警指标名用例直接读这两个文件)。
+
+**合入记录**(2026-10-17):构建方完成 §12.4(`5778ccae92`:含 rank 的全量 proto-gen,GetRankPage = 275;`rank_postgen.py verify`;
+go/match、go/rank、robot 的 build / vet / test 全过;CI 收回 go/rank)之后,原先"等 proto-gen"的理由不复存在,本批直接合入 main:
+- 变基到 main 后由编译级静态核对抓到并修掉一处 robot 编译错误(生成的消息号是无类型常量,绑定到变量时推成 int,四处要 uint32 的地方编不过);
+- `rank_xlsx_patch.py message-limiter` 已执行(MessageLimiter 新增 id=275 一行 —— 第 87 条数据、表格第 92 行 —— 每秒 5 次 / tip 1000,幂等复跑报 ALREADY CURRENT),
+  导出物用导表器的沙盒模式生成(对仓库只读):先证明未改动时 1262 个产物与仓内逐字节一致、内容不同 0 个,改表后与基线相比只有
+  `generated/tables/messagelimiter.json`、`messagelimiter.pb`、`manifest.json`(version 27 → 28)三个文件变化,只拷回这三个;
+- 客户端两个提交都已进客户端 main(`ca8ee046`、`04012dd3`,后者含 gen_messageids 生成的 `MessageIds.GetRankPage`)。
+
+**还要构建方做的**(前一步不过不做下一步):
+
+1. robot:`cd robot; go vet -mod=vendor ./... ; go build -mod=vendor ./... ; go test -mod=vendor -count=1 ./config/...`(模式白名单用例会核对 `rank-smoke` 已放行);
+   go/rank 复跑一次(`eaa41b7e24` 改了指标语义:启动先写最后消费时刻、版本值坏了单独记 malformed_version)。
+2. 脚本测试复跑(仓库根目录):`k8s_deploy_contract.tests.ps1`(全过,含本批 6 条)、`go_services_stop`、`go_services_ports`、`start_game_command_contract`、
+   `k8s_migrate_gate` 与主干同结果;`k8s_client_entry_contract.tests.ps1` 只允许主干既有的那 1 条 `DbConsumerGroup` 失败(构建方 10-17 已修掉其余 9 条)。
+3. 本机冒烟(两区栈、路由服模式,前置条件全写在 `robot/etc/rank_smoke.yaml` 文件头):本机把 `go/match/etc/match_service.yaml` 的 `RatingSnapshotPublishEnabled` 临时改成 true
+   并重启 match(**跑完改回、不要提交**),`start_game.ps1` 起栈后 rank 横幅显示 `consumer: topic=match-rating-snapshot ... group=rank-rating`;
+   `robot.exe -c etc/rank_smoke.yaml` 退出码 0、日志有 `RANK_SMOKE_OK`。MessageLimiter 已配,可把 `rate_limit_check` 打开再跑一遍;
+   gate 要用导过表之后的配置重载 MessageLimiter。
+4. 客户端:Unity EditMode 跑 `RankClientTests`(Unity 之外已实跑 23/23,见客户端提交说明)→ 主城截图目视入口位置(左栏帮会右侧)与窗口。
+5. K8s:按 `deploy/k8s/README.md`「排行榜 rank」的上线顺序 —— 先 `-MatchRatingSnapshotPublish 0` 部署 rank 与 redis-rank,两个 Pod Ready 后再用 `1` 重跑 `infra-up`。
+
+失败时保留:脚本测试全文;robot 冒烟日志里 `RANK_SMOKE_FAIL` 那一行与 rank / match 的日志。

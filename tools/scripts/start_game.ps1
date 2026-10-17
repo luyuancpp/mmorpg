@@ -7,9 +7,9 @@
     运行日志：run/logs/game-launcher。服务在后台运行，关闭启动窗口不影响服务。
 .PARAMETER GateRouterMode
     gate 的客户端 RPC 路由模式（环境变量 GATE_CLIENT_RPC_ROUTER，cpp/nodes/gate/gate_router_mode.h），
-    默认 '1' = 开：gate 只连 client_rpc_router，登录 / 匹配 / 聊天 / 帮会 / 好友 / 聚宝斋 / 邮件都经路由服转发。
-    '0' = 回退到旧的逐服务直连：**直连模式下 chat / guild / friend / trade / mail 不可达**——gate 直连白名单（cpp/nodes/gate/main.cpp）里没有
-    Chat / Guild / Friend / Trade / Mail，进程照样在跑，但任何玩家的这些请求都到不了它们（docs/design/client-rpc-router.md D34）。
+    默认 '1' = 开：gate 只连 client_rpc_router，登录 / 匹配 / 聊天 / 帮会 / 好友 / 聚宝斋 / 邮件 / 排行榜都经路由服转发。
+    '0' = 回退到旧的逐服务直连：**直连模式下 chat / guild / friend / trade / mail / rank 不可达**——gate 直连白名单（cpp/nodes/gate/main.cpp）里没有
+    Chat / Guild / Friend / Trade / Mail / Rank，进程照样在跑，但任何玩家的这些请求都到不了它们（docs/design/client-rpc-router.md D34）。
     只用于排障回退，回退前先 killswitch 关这些方法并公告。
     战斗与本开关无关：两种模式下战斗都只走客户端 ↔ battle 直连，gate 不再中继战斗（turn-based §22 D66）。
     翻转落在部署层、不改 C++ 默认值：gate 进程启动时读一次该变量并缓存，所以只对本次新拉起的 gate 生效；
@@ -68,6 +68,13 @@ $optionalServices += 'player_inbox'
 # 依赖第 3 步已起的 data_service（号段）；MailAdmin 令牌由 go_services.ps1 的 Start-ServiceInstance 只给 mail 注入。单独追加，不改上面的数组。
 $services += 'mail'
 $optionalServices += 'mail'
+# 排行榜 rank（docs/design/leaderboard-system.md）：与 chat 同形态的新服务（零 MySQL，没有库预检），只在缺 exe 时跳过
+#（第 1 步，与 chat / guild / trade / friend 同一逻辑）——为排行榜拖垮登录 / 匹配不可接受（AGENTS §11.3）。
+# Kafka / Redis 起不来时它自己降级为只读并后台重试，不会让一键启动中止。客户端请求只承诺路由服模式可达（D-12）。
+# 它只消费 match 的评分快照、不生产命令主题，所以**不**登记为 Kafka 命令契约生产者（Test-UsesKafkaCommandContract）。
+# 依赖第 3 步已起的 data_service（名字补全，fail-open）。单独追加，不改上面的数组。
+$services += 'rank'
+$optionalServices += 'rank'
 $skippedServices = @()
 $gatewayUrl = 'http://127.0.0.1:8081'
 $oldPath = $env:PATH
@@ -647,7 +654,7 @@ try {
         if ($GateRouterMode -eq '1') {
             Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=1 (forward through client_rpc_router; battle uses direct battle connections only)'
         } else {
-            Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=0 (direct mode: chat / guild / friend / trade / mail are unreachable; battle still uses direct battle connections)' -ForegroundColor Yellow
+            Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=0 (direct mode: chat / guild / friend / trade / mail / rank are unreachable; battle still uses direct battle connections)' -ForegroundColor Yellow
         }
         Invoke-Dev 'gate' @('-Command','cpp-node-start','-CppNodes','gate','-GateCount','1','-SceneCount','0','-BattleCount','0','-Zone','1','-NodeIp','loopback')
         Assert-NodeStartup 'gate'
@@ -676,6 +683,9 @@ try {
         # 邮件 mail 单独一批，理由同 trade / friend（被跳过时不调用，空列表 = 全部服务）。它依赖第 3 步已起的 data_service
         #（mail_id / sys_mail_id 号段，NonBlock 拨号）；MailAdmin 令牌由 go_services.ps1 的 Start-ServiceInstance 只给 mail 注入。
         if ('mail' -notin $skippedServices) { Start-LocalGoServices @('mail') }
+        # 排行榜 rank 单独一批，理由同 trade / friend（被跳过时不调用，空列表 = 全部服务）。它依赖第 3 步已起的 data_service
+        #（名字补全，NonBlock 拨号）；本机 match 默认不发评分快照，榜只读不更新，打开方法见 leaderboard-system.md §5.4。
+        if ('rank' -notin $skippedServices) { Start-LocalGoServices @('rank') }
         $gatewayProcess = Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'java.exe' -and $_.CommandLine -and $_.CommandLine.Contains($jar.FullName) } | Select-Object -First 1
         if (-not $gatewayProcess) {
             if (Test-Tcp 8081) { throw '8081 端口被其他程序占用，未启动重复网关。' }

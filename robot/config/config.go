@@ -64,6 +64,9 @@ type Config struct {
 	// MailSmoke 是 "mail-smoke" 模式的子开关(见 MailSmokeConfig / mail_smoke_scenario.go)。
 	MailSmoke MailSmokeConfig `yaml:"mail_smoke"`
 
+	// RankSmoke 是 "rank-smoke" 模式的子开关(见 RankSmokeConfig / rank_smoke_scenario.go)。
+	RankSmoke RankSmokeConfig `yaml:"rank_smoke"`
+
 	// TeamSmoke 是 "team-smoke" 模式的子开关(见 TeamSmokeConfig / team_smoke_scenario.go)。
 	TeamSmoke TeamSmokeConfig `yaml:"team_smoke"`
 
@@ -415,6 +418,47 @@ func (c *TradeSmokeConfig) validate() error {
 	return nil
 }
 
+// RankSmokeConfig 配置 "rank-smoke" 模式(docs/design/leaderboard-system.md §8.2)。
+//
+// A、N 登 zone_a,B 登 zone_b(必须不同:跨区名字补全是本冒烟要验的一条)。A、B 跨区打一局 1V1,
+// 读榜请求全部经 gate → client_rpc_router(rank 只承诺路由服模式可达,D-12)。
+type RankSmokeConfig struct {
+	// ZoneA / ZoneB 必须非 0 且不同:0 会被 server-list 自动选区顶掉,两个机器人可能落进同一个 zone。
+	ZoneA uint32 `yaml:"zone_a"`
+	ZoneB uint32 `yaml:"zone_b"`
+
+	// RequestIntervalMs 是同一机器人相邻两次读榜的最小间隔,缺省 1100(gate 默认限流档 3 次 / 窗口,推导见 chat_smoke_scenario.go)。
+	RequestIntervalMs int `yaml:"request_interval_ms"`
+
+	// UpdateTimeoutMs 是打完一局之后等榜更新的预算,缺省 30000(match 发快照 → rank 消费都是异步的,含 Kafka 再均衡余量)。
+	UpdateTimeoutMs int `yaml:"update_timeout_ms"`
+
+	// RateLimitCheck 打开时,N 在一个窗口内连发 RateLimitPerSecond + 1 次读榜,断言最后一次被 gate 限流。
+	// 只在 data/MessageLimiter.xlsx 按 rank 导过表(tools/scripts/rank_xlsx_patch.py)之后打开。
+	RateLimitCheck bool `yaml:"rate_limit_check"`
+	// RateLimitPerSecond 与 MessageLimiter 里 GetRankPage 那一行的每秒次数一致,缺省 5。
+	RateLimitPerSecond int `yaml:"rate_limit_per_second"`
+}
+
+func (c *RankSmokeConfig) validate() error {
+	if c.ZoneA == 0 || c.ZoneB == 0 {
+		return fmt.Errorf("zone_a and zone_b must both be set (non-zero) (got %d / %d)", c.ZoneA, c.ZoneB)
+	}
+	if c.ZoneA == c.ZoneB {
+		return fmt.Errorf("zone_a and zone_b must differ (got %d): cross-zone name lookup is part of the smoke", c.ZoneA)
+	}
+	if c.RequestIntervalMs <= 0 {
+		return fmt.Errorf("request_interval_ms must be > 0 (got %d)", c.RequestIntervalMs)
+	}
+	if c.UpdateTimeoutMs <= 0 {
+		return fmt.Errorf("update_timeout_ms must be > 0 (got %d)", c.UpdateTimeoutMs)
+	}
+	if c.RateLimitCheck && c.RateLimitPerSecond <= 0 {
+		return fmt.Errorf("rate_limit_per_second must be > 0 when rate_limit_check is true (got %d)", c.RateLimitPerSecond)
+	}
+	return nil
+}
+
 func (c *MailSmokeConfig) validate() error {
 	if c.ZoneA == 0 {
 		return fmt.Errorf("zone_a must be set (non-zero)")
@@ -700,6 +744,8 @@ func Load(path string) (*Config, error) {
 		FriendSmoke: FriendSmokeConfig{RequestIntervalMs: 1100, PushTimeoutMs: 10000},
 		// mail-smoke 缺省:mail 本地 gRPC 端口 50900;间隔 / 推送预算同 friend-smoke。
 		MailSmoke: MailSmokeConfig{AdminAddr: "127.0.0.1:50900", RequestIntervalMs: 1100, PushTimeoutMs: 10000},
+		// rank-smoke 缺省:读榜间隔同 friend-smoke;等写榜 30s;限流断言默认关(MessageLimiter 按 rank 导表之后再开)。
+		RankSmoke: RankSmokeConfig{RequestIntervalMs: 1100, UpdateTimeoutMs: 30000, RateLimitPerSecond: 5},
 		// travel-smoke 缺省:停留 35s,大于 login 断线租约 30s(见 TravelSmokeConfig.DwellSeconds)。
 		TravelSmoke: TravelSmokeConfig{DwellSeconds: 35},
 		// channel-smoke 缺省:等到达 20s(同节点切线毫秒级,留足余量);冷却验证最多等 60s(服务端缺省冷却 10s)。
@@ -748,10 +794,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("account_fmt must be set")
 	}
 	switch c.Mode {
-	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "team-backfill-smoke", "travel-smoke", "friend-smoke", "mail-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "features-smoke", "merchant-smoke", "equip-forge-topup":
+	case "", "stress", "login-test", "data-stress", "currency-crash-snapshot", "battle-smoke", "attribute-smoke", "pet-smoke", "equip-smoke", "equip-forge-smoke", "chat-smoke", "guild-smoke", "trade-smoke", "team-smoke", "team-follow-smoke", "team-backfill-smoke", "travel-smoke", "friend-smoke", "mail-smoke", "rank-smoke", "channel-smoke", "ordering-smoke", "sync-smoke", "features-smoke", "merchant-smoke", "equip-forge-topup":
 		// valid
 	default:
-		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, team-backfill-smoke, travel-smoke, friend-smoke, mail-smoke, channel-smoke, ordering-smoke, sync-smoke, features-smoke, merchant-smoke, or equip-forge-topup)", c.Mode)
+		return fmt.Errorf("unknown mode %q (expected stress, login-test, data-stress, currency-crash-snapshot, battle-smoke, attribute-smoke, pet-smoke, equip-smoke, equip-forge-smoke, chat-smoke, guild-smoke, trade-smoke, team-smoke, team-follow-smoke, team-backfill-smoke, travel-smoke, friend-smoke, mail-smoke, rank-smoke, channel-smoke, ordering-smoke, sync-smoke, features-smoke, merchant-smoke, or equip-forge-topup)", c.Mode)
 	}
 	if c.AuthType == "satoken" && c.SaTokenAddr == "" {
 		return fmt.Errorf("satoken_addr must be set when auth_type is satoken")
@@ -784,6 +830,11 @@ func (c *Config) validate() error {
 	if c.Mode == "mail-smoke" {
 		if err := c.MailSmoke.validate(); err != nil {
 			return fmt.Errorf("mail_smoke: %w", err)
+		}
+	}
+	if c.Mode == "rank-smoke" {
+		if err := c.RankSmoke.validate(); err != nil {
+			return fmt.Errorf("rank_smoke: %w", err)
 		}
 	}
 	if c.Mode == "team-backfill-smoke" {

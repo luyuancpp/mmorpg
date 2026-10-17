@@ -9414,3 +9414,20 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   三类永久跳过由 R2b 分支上新拆出的告警 RankWriteSkipped 出现一次就报。设计 §3.6 / §3.7 / §12.3 偏差第 7、10 条已同步。
 - 测试:`TestConsumerSkipsPermanentErrors` 断言 malformed_version +1、error 不变;新增 `TestConsumerMarksStartTimeBeforeFirstMessage`。
 - **实际跑过的(Claude)**:gofmt。**Go 未编译、未跑测试**(构建方按设计 §12.4 一并跑 go/rank)。Java 版:待做(本机无 Java 仓)。
+
+## 2026-10-17 排行榜 R2b 部署登记合入 main + 客户端 R3 合入 + MessageLimiter(Claude,robot 未编译)
+
+- **服务端**(设计 `docs/design/leaderboard-system.md` §12.6):本机 / 镜像 / K8s 全局池登记、专用 noeviction Redis `redis-rank`、
+  七条告警(永久跳过一次就报的 RankWriteSkipped、进程刚起的窗口也覆盖)、robot `rank-smoke`、6 条部署契约用例。ConfigMap 只写 `RankRedis`、
+  不写共享 Redis 段;快照 topic 名与分区数和 match 不一致时部署前拒绝。原计划等全量 proto-gen 后再合;构建方 `5778ccae92` 已完成 proto-gen
+  与 go/rank 编译测试,所以直接合入。MessageLimiter:`GetRankPage` 每秒 5 次(`rank_xlsx_patch.py` + 导表器沙盒导出,
+  新增 id=275 一行;只有 messagelimiter.json / .pb / manifest.json 三个产物变化,manifest version 28)。
+- **客户端**:`ca8ee046`(Rank.cs)与 `04012dd3`(RankClient、论剑榜窗口、入口在左栏帮会右侧、23 条 EditMode 用例、MessageIds.GetRankPage)都已进客户端 main。
+- **实际跑过的(Claude 执行,都在合入前的最终树上)**:全部改动的 `.ps1` 解析;`k8s_deploy_contract` 184/184(主干 178 + 本批 6);
+  `k8s_client_entry_contract` 103/104(唯一失败是主干既有的 `DbConsumerGroup` 透传,与构建方 10-17 的主干基线相同);`deploy_capture_contract` 6/6;
+  `go_services_stop` 13/13、`start_game_command_contract` 26/26、`go_services_ports` 19/19、`k8s_migrate_gate` 41/41;
+  `rank_xlsx_patch.py` dry-run / 执行 / 幂等复跑;导表沙盒基线逐字节复现;51100 / 9250 端口字面量验收;robot 冒烟脚本两次编译级静态核对
+  (第一次抓到并修掉一处无类型常量导致的编译错误,第二次判定可编译)。客户端离线编译 463 文件 0 错误,RankClientTests 在 Unity 之外实跑 23/23。
+  评审两视角 + 四轮修补核验,P2 与 P3 均已修(告警根因修在 go/rank,见上一条)。
+  **robot 未编译、rank-smoke 未跑,Unity 里未跑 EditMode、未截图;剩余步骤见设计 §12.6「还要构建方做的」**。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做(本机没有 Java 仓 `D:\luyuan\xuanming-server-mmo`)。

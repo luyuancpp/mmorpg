@@ -180,6 +180,11 @@ $Catalogue = [ordered]@{
     # 同一镜像既跑 mail Deployment,也跑 mail-migrate Job(args 加 -migrate,D-14)。镜像只编 mail.go;cmd/mailadmin 不进镜像。
     # ⚠ 镜像里要编得过:本条目只能在 mail 的 proto-gen 产物(go/proto/mail、go/mail/generated)入库之后存在(mail-system.md §12.3)。
     mail            = @{ Dir = "mail";            Entry = "mail.go";                ImageName = "mmorpg-mail" }
+    # 排行榜 rank(docs/design/leaderboard-system.md §5.4):与 k8s_deploy.ps1 $GoSvcCatalogue 的 rank 条目配对(ImageName 必须一致)。
+    # 客户端请求只经路由服可达,与路由服成对发布。go/rank/go.mod 只有 replace proto / shared,都在 go/ 之内,由 Dockerfile.go-svc 通用的
+    # COPY 带入,**不需要改 Dockerfile**,也不走 ExternalReplaceStages。零 MySQL,没有 migrate Job。
+    # ⚠ 镜像里要编得过:本条目只能在 rank 的 proto-gen 产物(go/proto/rank)入库之后存在(leaderboard-system.md §12.6)。
+    rank            = @{ Dir = "rank";            Entry = "rank.go";                ImageName = "mmorpg-rank" }
 }
 
 # 先把每个元素再按逗号拆一次,兼容 "a,b"(单字符串)和 a,b(数组)两种传法。

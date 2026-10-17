@@ -135,7 +135,7 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 #               upgrades / hot updates / canary releases are unaffected).
 #               Tier 0 = infra-adjacent (db, data_service)
 #               Tier 1 = scene_manager (depended by player_locator), client_rpc_router (gate 的唯一 gRPC 目标),
-#                        chat (只依赖 etcd + Redis,经路由服可达),以及 trade / friend / player_inbox / mail 等全局服务
+#                        chat (只依赖 etcd + Redis,经路由服可达),以及 trade / friend / player_inbox / mail / rank 等全局服务
 #                        (依赖 Tier 0 的 data_service 号段 / 归属区查询时都是 NonBlock 拨号)
 #               Tier 2 = player_locator (depended by login)
 #               Tier 3 = login (top of the dial chain)
@@ -240,6 +240,21 @@ $ServiceCatalogue = [ordered]@{
     # ⚠ 本条目只能在 mail 的 proto-gen 产物入库、go/mail 编译变绿之后存在:所有不带 -Services 的 build(dev.bat start 等)都会编它,
     #   编不过时整批 build 以 "Build failed for: mail" 中止(docs/design/mail-system.md §12.3「M1d 启用」)。
     mail              = @{ Dir = "mail"; Entry = "mail.go"; Port = 50900; Desc = "Mail (全局邮件,路由服可达)"; ConfigFlag = "-f"; ConfigFile = "etc/mail.yaml"; AllowMultiInstance = $true; Tier = 1 }
+    # 排行榜 rank(docs/design/leaderboard-system.md):全局一份(RankNodeService),榜按全局唯一的 player_id 存,业务代码禁止读 ZoneId 做分支;
+    # 客户端只有一个读方法 GetRankPage,与 chat / guild / trade / friend / mail 一样**只承诺路由服模式可达**(GATE_CLIENT_RPC_ROUTER=1)。
+    # 与 friend 一样本目录不写 Global:K8s 侧由 k8s_deploy.ps1 $GoSvcCatalogue 的 Global = $true 表达,本地双 zone 仍每 zone 起一份。
+    # Tier 1:零 MySQL;依赖 Redis(本机 RankRedis.Host 留空 = 回落共享库并打 WARN,线上是专用 noeviction 实例)、etcd、Kafka
+    # (消费 match 的评分快照,消费组 rank-rating)与 data_service(Tier 0;名字补全,fail-open,NonBlock 拨号),不拨 login 等服务。
+    # 写分只经 Kafka:本机 match_service.yaml 的 RatingSnapshotPublishEnabled 仓内是 false,不打开时榜不会更新(只读,不是故障)。
+    # 双 zone 时两份 rank 同属一个消费组(键名刻意叫 RatingConsumerGroup,不吃 -Zone 的 GroupID 后缀)、写同一个共享 Redis,分摊分区而不是各消费一遍。
+    # 多开安全:读是一条只读 Lua,写是单键条件写 Lua(版本比较在 Lua 里原子完成),消费组保证每条快照只被一个实例处理,不引入 leader。
+    # 不写 StopTimeoutSeconds:rank 的 lifecycle 硬截止 24s,默认 25s 正好盖住。
+    # 端口与 go/rank/etc/rank.yaml 的 ListenOn、k8s_deploy.ps1 的 $GoSvcCatalogue、manifests/go-svc/rank.yaml 逐字一致(契约 §7);
+    # -Zone 2 位移 +1000,不在已观测的 Windows 保留区间内。rank.yaml 形状满足本脚本 -Zone 改写:顶层单行 ListenOn / MetricsListenAddr、
+    # 顶层 ZoneId 写在所有嵌套段之前;自己的 Etcd.Key 是空串(D-13),DataServiceRpc.Etcd.Key: dataservice.rpc 会被加 .z<N>(照 trade)。
+    # ⚠ 本条目只能在 rank 的 proto-gen 产物(go/proto/rank)入库、go/rank 编译变绿之后存在:所有不带 -Services 的 build 都会编它,
+    #   编不过时整批 build 以 "Build failed for: rank" 中止(docs/design/leaderboard-system.md §12.6)。
+    rank              = @{ Dir = "rank"; Entry = "rank.go"; Port = 51100; Desc = "Rank (全服排行榜,路由服可达)"; ConfigFlag = "-f"; ConfigFile = "etc/rank.yaml"; AllowMultiInstance = $true; Tier = 1 }
 }
 
 # Derived per-instance config files live here so the source tree stays clean.
