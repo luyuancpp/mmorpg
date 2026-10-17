@@ -85,7 +85,12 @@ jobs:
           #   )
           # 被排除的模块仍会在下面的 excluded-watch job 里跑（不判红），
           # 转绿了能直接从日志看见，然后把条目删掉即可收回门禁。
-          EXCLUDED=()
+          EXCLUDED=(
+            # go/rank —— 2026-10-16 起 go build 红,原因:排行榜服务代码(R2a)先于它依赖的 proto-gen 产物 go/proto/rank 进了 main
+            #           (docs/design/leaderboard-system.md §12)。产物入库、go mod tidy 之后删掉本条。
+            #           复检:cd go/rank && go build ./... && go test -count=1 ./...
+            "go/rank"
+          )
 
           # ── 自动发现 ──────────────────────────────────────────────────
           # 排除 vendor/ 下的嵌套（robot/vendor 目前不含 go.mod，但 go mod

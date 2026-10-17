@@ -1,0 +1,83 @@
+# rank 排行榜服务配置(设计 docs/design/leaderboard-system.md §3 / §4 / §5;契约 microservice-zone-contract-20260914 §2/§3/§4/§7;D-9/D-11/D-12/D-13)
+# 全局服务:全服一份、多副本、进程无状态;客户端只经 gate → 路由服到达(路由模式,D-12),只有读方法 GetRankPage。
+# 写分只经 Kafka:消费 match 发布的评分快照(topic match-rating-snapshot,消费组 rank-rating),写进 RankRedis 的 ZSET。
+# 本文件的键名与 internal/config/config.go、k8s_deploy.ps1 的 rank ConfigMap(R2b)三处必须逐字一致 ——
+# 键名写错 go-zero 当未知键静默忽略,现象是"线上跑的还是默认值",没有任何报错。
+Name: rank.rpc
+ListenOn: 127.0.0.1:51100
+
+# zrpc 服务端整体超时(毫秒)。必须 ≤ 路由服 ForwardTimeoutMs(5000)− 1000(契约 §3),config.Validate 拒绝 <1000 与 >4000。
+# 逻辑层整请求预算 = Timeout − 500ms:依赖变慢时先在预算内 in-band 回 kServiceUnavailable,不让 go-zero 的超时拦截器抢先回 DeadlineExceeded。
+Timeout: 4000
+
+# go-zero 的 Mode 默认是 pro。本地显式写 dev(只决定是否注册 gRPC reflection);K8s staging / prod 由 ConfigMap 固定 pro。
+Mode: dev
+
+# etcd 注册路径 <Prefix>/zone/<z>/... 用的 zone id;必填非 0(config.Validate 拒 0)。rank 是全局服务,zone **只影响注册路径**,
+# 业务代码禁止读它做分支(v1 只有全服榜,§3.4)。
+# ⚠ 顶层唯一一处 ZoneId,且必须写在任何嵌套段之前:go_services.ps1 -Zone 只改写文件里第一处 ZoneId。行尾不能加注释。
+ZoneId: 1
+
+# etcd 节点注册租约 TTL(秒)= 崩溃场景的切换窗口(路由服 PickRandom 不看连接状态)。
+LeaseTTL: 60
+
+# Prometheus /metrics 监听地址(设计 §5.1:9250 系列与现有服务不重叠)。置空关闭。必须是顶层单行:-Zone 的端口位移正则只认这个形状
+# (**不能**写成 login / guild 那种嵌套 Prometheus.Port,否则双 zone 撞同一指标端口)。
+# 指标(设计 §3.6):rank_write_total{outcome} / rank_consume_errors_total / rank_last_consume_unixtime / rank_consume_lag_seconds /
+#   rank_read_total{method,outcome} / rank_read_duration_seconds{method} / rank_name_lookup_total{outcome} / rank_board_size{board},
+#   以及 shared/serverbase 的 rpc_inband_*、shared/killswitch 的 killswitch_blocked_total。
+MetricsListenAddr: ":9250"
+
+# RPC 级热关停(shared/killswitch)规则在 etcd 里的前缀。留空 = 默认前缀 /mmorpg/killswitch/,前缀下没有 key 时全部放行。
+# 关停读榜:etcdctl put /mmorpg/killswitch/rankpb.ClientPlayerRank/GetRankPage true;恢复:etcdctl del 对应的 key。
+KillSwitchPrefix: ""
+
+# etcd:只给 shared/noderegistry 注册 RankNodeService.rpc/... 与 shared/killswitch 用。
+# Key 必须显式写空串(契约 D-13):整行省略会让 conf.MustLoad 直接 Fatal(K8s 上 Pod CrashLoop);
+# 填了 Key 会额外注册 rank.rpc 并被 -Zone 按 .z<N> 切分,与"全服一份"冲突。config.Validate 拒绝非空 Key。
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379
+  Key: ""
+
+# RankRedis:排行榜私有键 lb:{rating}:z / lb:{rating}:v 的句柄(设计 §3.2;契约 §4 的独立句柄,不占用 zrpc 自带的 Redis 段名)。
+# 本地 compose 没有独立实例:Host 留空 = 回落到下面的共享库并在启动时打 WARN(照 go/chat)。
+# staging / prod 必须是独立实例且 maxmemory-policy=noeviction(§3.5 / §9.1#4 已拍板):这两个键无 TTL,在会淘汰的共享库上会被静默驱逐。
+# 不写 DB(契约 §4)。Type 可以是 node 或 cluster:两个键带 {rating} hash tag,落在同一 slot。
+RankRedis:
+  Host: ""
+  Type: node
+
+# 共享 Redis(zrpc.RpcServerConf 自带的 RedisKeyConf 段):rank 不读任何跨运行时契约 key,只在 RankRedis 没配时作为回落目标。
+# Key 字段不是 optional:Redis 段存在时必须显式写(空串即可),否则加载期 "Redis.Key" is not set。
+Redis:
+  Host: 127.0.0.1:6379
+  Type: node
+  Key: ""
+
+# 评分快照的消费(设计 §2.4):topic 与分区数是与 match 共享的不可变契约(go/match/etc/match_service.yaml 的
+# RatingSnapshotTopic / RatingSnapshotTopicPartitions 必须同值);**保留期只由 match 声明**,rank 启动时 EnsureTopics 传
+# RetentionMs: -1(只校验分区,不改写保留期)。消费组键刻意不叫 GroupID:go_services.ps1 -Zone 会给 GroupID 加 _z<N>,
+# 全局 topic 就会被各 zone 的 rank 各消费一遍(§5.2)。Brokers 为空 = 不消费(只读,横幅会显示),合法但榜不会更新。
+Kafka:
+  Brokers:
+    - 127.0.0.1:9092
+RatingSnapshotTopic: match-rating-snapshot
+RatingSnapshotTopicPartitions: 3
+RatingConsumerGroup: rank-rating
+
+# data_service 客户端:页内玩家 + 自己的展示名一次 BatchGetPlayerName(fail-open,800ms,§4.3)。
+# 这里写 Key: dataservice.rpc 不违反 D-13:D-13 禁止的是指向**全局服务**的 RpcClient Key,data_service 按 zone 部署
+# (同 go/trade/etc/trade.yaml)。-Zone N 时本行会被改写为 dataservice.rpc.zN;名字表是全局库,连哪个 zone 结果都一样。
+DataServiceRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: dataservice.rpc
+  Timeout: 3000
+  NonBlock: true
+  Middlewares:
+    Breaker: false
+
+# 榜的规模采样间隔(rank_board_size 的 ZCARD,每个副本各自采样;告警 RankBoardShrunk 用 max() 聚合)。
+BoardSizeSampleInterval: 30s

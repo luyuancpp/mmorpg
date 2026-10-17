@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -124,6 +126,27 @@ type Config struct {
 	// 一个实例消费;入账幂等由 match:rating:applied:{battle_id} 兜底。
 	ResultConsumerGroup string `json:",default=match-rating"`
 
+	// ---- 排行榜评分快照(docs/design/leaderboard-system.md §2.4,2026-09-20 已拍板)----
+
+	// RatingSnapshotPublishEnabled:一局评分入账后,是否把全员的当前评分快照(contracts.kafka.PlayerRatingSnapshotEvent)
+	// 发到 RatingSnapshotTopic,供 rank 写排行榜。**v1 默认 false,是排行榜上线的唯一闸门**:rank 部署好之后再翻 true
+	// 滚动重启;回滚 = 翻回 false,评分链本身不受影响,榜停止更新但仍可读。
+	// K8s 上不镜像本 yaml:由 k8s_deploy.ps1 的 -MatchRatingSnapshotPublish '0'|'1' 显式给值(设计 §5.4)。
+	// 打开时要求 RatingEnabled=true(不消费对局结果就没有快照可发)且 Kafka.Brokers 非空,Validate 守。
+	RatingSnapshotPublishEnabled bool `json:",default=false"`
+
+	// RatingSnapshotTopic:快照 topic,全局无 zone 段,key = player_id,不套信封;rank 的消费组 rank-rating 读它。
+	RatingSnapshotTopic string `json:",default=match-rating-snapshot"`
+
+	// RatingSnapshotTopicPartitions:快照 topic 的分区数,不可变契约(EnsureTopics 拒绝与 broker 不一致的值);
+	// 真要改走"代号 +1"换 topic(deploy/k8s/README.md「改分区数 = 代号 +1,绝不原地扩分区」)。
+	RatingSnapshotTopicPartitions int32 `json:",default=3"`
+
+	// RatingSnapshotRetentionHours:快照 topic 的保留期。**保留期只由 match 声明**(rank 在 EnsureTopics 时传
+	// RetentionMs: -1、不改写):两边各写一份数,保留期会随重启顺序来回改(db_task_zone_<N> 的同一个坑)。
+	// 它也是排行榜丢失后 offset 重放的恢复窗口(设计 §3.5)。默认 168h = 7 天,与 match-results 对齐。
+	RatingSnapshotRetentionHours int64 `json:",default=168"`
+
 	// RatingTolerance*:评分容差曲线 tol = min(Max, Base + floor(wait/StepSeconds) × StepDelta)。
 	// 默认 100 起、每 5s 放宽 100、上限 1000:两个新号(都 1500)第一轮就互配,
 	// 分差 300 的两人等 10s、分差 900 等 40s。0 / 漏配按默认值。
@@ -181,6 +204,40 @@ type TeamConf struct {
 	// 直接开战(不带目标人数或等于当前人数)也不受影响。用「Disabled」而不是「Enabled」是为了让
 	// 直接构造 Config 的测试取到的零值与缺省一致。
 	FillQueueDisabled bool `json:",default=false"`
+}
+
+// Validate 由 conf.MustLoad 自动调用(go-zero v1.10.0)。只校验排行榜快照这一组新字段;
+// 其余字段沿用各自的"0 / 漏配按默认"约定,不在这里收紧(收紧会让既有部署在升级时启动失败)。
+// 先调内嵌 RpcServerConf 的 Validate:本方法会遮蔽那个被提升的方法,不显式调用的话加载期就少了它那项校验
+// (Auth=true 时要求 Redis),失败时间点会推迟到 zrpc.NewServer、而那时 matcher 与消费者都已经起来了。
+func (c *Config) Validate() error {
+	if err := c.RpcServerConf.Validate(); err != nil {
+		return err
+	}
+	if c.RatingSnapshotTopic == "" {
+		return errors.New("RatingSnapshotTopic 不能为空")
+	}
+	if c.RatingSnapshotTopicPartitions <= 0 {
+		return fmt.Errorf("RatingSnapshotTopicPartitions 必须为正数,得到 %d", c.RatingSnapshotTopicPartitions)
+	}
+	if c.RatingSnapshotRetentionHours <= 0 {
+		return fmt.Errorf("RatingSnapshotRetentionHours 必须为正数,得到 %d(保留期只由 match 声明,不能交给 broker 默认值)",
+			c.RatingSnapshotRetentionHours)
+	}
+	if c.RatingSnapshotPublishEnabled {
+		if !c.RatingEnabled {
+			return errors.New("RatingSnapshotPublishEnabled=true 需要 RatingEnabled=true:不消费对局结果就没有评分快照可发")
+		}
+		if len(c.Kafka.Brokers) == 0 {
+			return errors.New("RatingSnapshotPublishEnabled=true 需要 Kafka.Brokers:快照经 Kafka 发给 rank")
+		}
+	}
+	return nil
+}
+
+// RatingSnapshotRetentionMs 是快照 topic 声明给 broker 的保留期(毫秒)。
+func (c *Config) RatingSnapshotRetentionMs() int64 {
+	return c.RatingSnapshotRetentionHours * 3600 * 1000
 }
 
 // RatingDrawRoundCapFor 返回 battle_config_id 对应的"回合打满按平局"阈值:

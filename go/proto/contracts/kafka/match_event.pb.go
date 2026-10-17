@@ -209,6 +209,119 @@ func (x *BattleResultEvent) GetDeadPlayerIds() []uint64 {
 	return nil
 }
 
+// match -> rank(排行榜写分,docs/design/leaderboard-system.md §2.4,2026-09-20 已拍板方案 (a))。
+// Kafka 投递:topic = match-rating-snapshot(全局,无 zone 段,3 分区,保留 7 天;保留期只由 match 在 EnsureTopics 时声明,
+// rank 侧 Ensure 传 RetentionMs: -1),key = player_id(同一玩家有序,AGENTS §7 #3);不套信封;无目标实例语义。
+// 发布开关 match_service.yaml 的 RatingSnapshotPublishEnabled(v1 默认 false,是 rank 上线的唯一闸门)。
+//
+// 这是**快照**不是增量:match 在一局全员评分写完、把入账标记置 done 之前,对每个参赛玩家各发一条当前评分。
+// 续写路径(写到一半失败后重投)上 Lua 返回 written=0 也照发 —— 分数没"变",发的是当前状态,所以刻意不叫 RatingChanged。
+// 丢一条会被该玩家下一局的快照覆盖(自愈);消费方按 (rating_gen, games) 字典序比较版本,旧的拒掉。
+//
+// match 对外承诺(rank 的幂等与乱序处理依赖它):
+//   - 同一 rating_gen 内 games 严格单调递增(games 由 match 的 Lua HINCRBY 维护);
+//   - rating_gen 只增不减(评分 hash 被淘汰 / 清空后首次写入时以当时的毫秒时间重建,比旧值大)。
+//
+// rating_centi / games / updated_at_ms / rating_gen 四个值由同一次 Lua 原子读出,彼此同源。
+//
+// 刻意没有的字段(字段号上线后不复用,AGENTS §4,所以无消费方的字段一律不加):
+//   - zone:match 入账路径拿不到归属 zone,合服还会改写归属(§3.4),v1 只有全服榜;
+//   - Δ:0 分下限使实际变化可能小于 Δ,续写路径拿不到可靠的赛前分,快照语义不需要它;
+//   - match_mode:评分跨模式累计(1V1 / 5V5 共用一个分),带上会让消费者误以为是"该模式的分"。
+type PlayerRatingSnapshotEvent struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	// 分 × 100 的**精确**整数:match 存的是 "%.2f" 字符串,按十进制字符串解析,禁止 uint32(f*100) 截断
+	// ("0.29" 截断成 28,展示少 0.01 并与真差 0.01 的玩家变成同分)。
+	RatingCenti   uint32 `protobuf:"varint,2,opt,name=rating_centi,json=ratingCenti,proto3" json:"rating_centi,omitempty"`
+	Games         uint64 `protobuf:"varint,3,opt,name=games,proto3" json:"games,omitempty"`                                     // 累计排位局数,> 0
+	UpdatedAtMs   uint64 `protobuf:"varint,4,opt,name=updated_at_ms,json=updatedAtMs,proto3" json:"updated_at_ms,omitempty"`    // 评分 hash 的 updated_at_ms(与 rating / games 同一次 Lua 读出),不是发布时刻
+	RatingGen     uint64 `protobuf:"varint,5,opt,name=rating_gen,json=ratingGen,proto3" json:"rating_gen,omitempty"`            // 评分 hash 的代际(首次写入时 HSETNX 的毫秒时间);键丢失重建后变大
+	BattleId      uint64 `protobuf:"varint,6,opt,name=battle_id,json=battleId,proto3" json:"battle_id,omitempty"`               // 诊断:触发这次发布的对局;不参与版本判定
+	FinishedAtMs  uint64 `protobuf:"varint,7,opt,name=finished_at_ms,json=finishedAtMs,proto3" json:"finished_at_ms,omitempty"` // 诊断:该局结束时刻(BattleResultEvent.finished_at_ms),rank 用它算消费延迟
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlayerRatingSnapshotEvent) Reset() {
+	*x = PlayerRatingSnapshotEvent{}
+	mi := &file_proto_contracts_kafka_match_event_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlayerRatingSnapshotEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlayerRatingSnapshotEvent) ProtoMessage() {}
+
+func (x *PlayerRatingSnapshotEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_contracts_kafka_match_event_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlayerRatingSnapshotEvent.ProtoReflect.Descriptor instead.
+func (*PlayerRatingSnapshotEvent) Descriptor() ([]byte, []int) {
+	return file_proto_contracts_kafka_match_event_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *PlayerRatingSnapshotEvent) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *PlayerRatingSnapshotEvent) GetRatingCenti() uint32 {
+	if x != nil {
+		return x.RatingCenti
+	}
+	return 0
+}
+
+func (x *PlayerRatingSnapshotEvent) GetGames() uint64 {
+	if x != nil {
+		return x.Games
+	}
+	return 0
+}
+
+func (x *PlayerRatingSnapshotEvent) GetUpdatedAtMs() uint64 {
+	if x != nil {
+		return x.UpdatedAtMs
+	}
+	return 0
+}
+
+func (x *PlayerRatingSnapshotEvent) GetRatingGen() uint64 {
+	if x != nil {
+		return x.RatingGen
+	}
+	return 0
+}
+
+func (x *PlayerRatingSnapshotEvent) GetBattleId() uint64 {
+	if x != nil {
+		return x.BattleId
+	}
+	return 0
+}
+
+func (x *PlayerRatingSnapshotEvent) GetFinishedAtMs() uint64 {
+	if x != nil {
+		return x.FinishedAtMs
+	}
+	return 0
+}
+
 var File_proto_contracts_kafka_match_event_proto protoreflect.FileDescriptor
 
 const file_proto_contracts_kafka_match_event_proto_rawDesc = "" +
@@ -232,7 +345,16 @@ const file_proto_contracts_kafka_match_event_proto_rawDesc = "" +
 	"\x10activity_context\x18\t \x01(\v2\x16.BattleActivityContextR\x0factivityContext\x12&\n" +
 	"\x0ffled_player_ids\x18\n" +
 	" \x03(\x04R\rfledPlayerIds\x12&\n" +
-	"\x0fdead_player_ids\x18\v \x03(\x04R\rdeadPlayerIdsB\x17Z\x15proto/contracts/kafkab\x06proto3"
+	"\x0fdead_player_ids\x18\v \x03(\x04R\rdeadPlayerIds\"\xf7\x01\n" +
+	"\x19PlayerRatingSnapshotEvent\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12!\n" +
+	"\frating_centi\x18\x02 \x01(\rR\vratingCenti\x12\x14\n" +
+	"\x05games\x18\x03 \x01(\x04R\x05games\x12\"\n" +
+	"\rupdated_at_ms\x18\x04 \x01(\x04R\vupdatedAtMs\x12\x1d\n" +
+	"\n" +
+	"rating_gen\x18\x05 \x01(\x04R\tratingGen\x12\x1b\n" +
+	"\tbattle_id\x18\x06 \x01(\x04R\bbattleId\x12$\n" +
+	"\x0efinished_at_ms\x18\a \x01(\x04R\ffinishedAtMsB\x17Z\x15proto/contracts/kafkab\x06proto3"
 
 var (
 	file_proto_contracts_kafka_match_event_proto_rawDescOnce sync.Once
@@ -246,17 +368,18 @@ func file_proto_contracts_kafka_match_event_proto_rawDescGZIP() []byte {
 	return file_proto_contracts_kafka_match_event_proto_rawDescData
 }
 
-var file_proto_contracts_kafka_match_event_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_contracts_kafka_match_event_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_contracts_kafka_match_event_proto_goTypes = []any{
 	(*BattleResultTeam)(nil),             // 0: contracts.kafka.BattleResultTeam
 	(*BattleResultEvent)(nil),            // 1: contracts.kafka.BattleResultEvent
-	(battle.EBattleOutcome)(0),           // 2: eBattleOutcome
-	(*battle.BattleActivityContext)(nil), // 3: BattleActivityContext
+	(*PlayerRatingSnapshotEvent)(nil),    // 2: contracts.kafka.PlayerRatingSnapshotEvent
+	(battle.EBattleOutcome)(0),           // 3: eBattleOutcome
+	(*battle.BattleActivityContext)(nil), // 4: BattleActivityContext
 }
 var file_proto_contracts_kafka_match_event_proto_depIdxs = []int32{
-	2, // 0: contracts.kafka.BattleResultEvent.outcome:type_name -> eBattleOutcome
+	3, // 0: contracts.kafka.BattleResultEvent.outcome:type_name -> eBattleOutcome
 	0, // 1: contracts.kafka.BattleResultEvent.teams:type_name -> contracts.kafka.BattleResultTeam
-	3, // 2: contracts.kafka.BattleResultEvent.activity_context:type_name -> BattleActivityContext
+	4, // 2: contracts.kafka.BattleResultEvent.activity_context:type_name -> BattleActivityContext
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -275,7 +398,7 @@ func file_proto_contracts_kafka_match_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_contracts_kafka_match_event_proto_rawDesc), len(file_proto_contracts_kafka_match_event_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

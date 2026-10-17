@@ -299,6 +299,20 @@ param(
 	# 需要集群网络插件支持 NetworkPolicy(Calico / Cilium 等);不支持的插件上策略不生效(不断流,也不设防)。
 	[ValidateSet("off", "on")]
 	[string]$NetworkPolicies = "off",
+	# 排行榜评分快照的发布开关(docs/design/leaderboard-system.md §2.4 / §5.4,L-20;参数形态 2026-09-20 用户拍板,§9.1#7)。
+	# 写进 match ConfigMap 的 RatingSnapshotPublishEnabled,**不镜像** go/match/etc/match_service.yaml(仓内那一行只管本地,默认 false),
+	# 写法照 trade 的 AssetOp.Enabled:所有档位都由本参数给值。
+	#   "0"(默认):match 不发快照,评分入账路径与排行榜上线前一致(rating_gen 字段照常补写,快照 topic 照常在后台声明,分区不一致只记错误日志、不影响评分);
+	#   "1":一局评分入账后,把全员当前评分发到 match-rating-snapshot(key = player_id),rank 消费写榜。
+	# 这是排行榜上线的**唯一闸门**:rank 消费者就绪之后,才用 "1" 重跑 infra-up;回滚 = 用 "0" 重跑,评分链不受影响,榜停止更新但仍可读。
+	# 取值同时写进 match Pod 模板的注解 mmorpg.io/rating-snapshot-publish,所以翻值必然让 match 滚动重启(ConfigMap 只在启动时读)。
+	# 快照 topic 在 RatingEnabled=true 时由 match 启动声明(保留期只由 match 声明,分区数 match 与 rank 共同校验);
+	# 开关为 "1" 时 match 先声明成功才起结果消费者,不会让 broker 按默认分区数自动建 topic。
+	# 不粘滞(与 -AssetOps 同一口径):以 "1" 运行的环境,下一次 infra-up / all-up 不传就落回 "0"(榜停止更新),
+	# 部署输出会打一行本次取值;dev_tools.ps1 的 k8s-infra-up / k8s-all-up 同名参数留空不透传 = 落回 "0"。
+	# 本次不部署全局 Go 服务(zone-up、-SkipGoSvc、没给 -GoSvcRegistry)时显式传它没有效果,写路径入口会告警。
+	[ValidateSet("0", "1")]
+	[string]$MatchRatingSnapshotPublish = "0",
 
 	[switch]$SkipInfra,
 	[switch]$SkipGoSvc,
@@ -3041,7 +3055,8 @@ function Assert-KafkaTopologyChangeIsSafe {
 # 迁移窗口里 auto-create 出来的 per-node topic gate-<id> / scene-<id>、game-events)
 # 一律 ≥ 2 × 900s;$KafkaDbTaskRetentionMs 按"能容忍多长的 DB 故障"给,不是按 poll 间隔给。
 # 有自己契约的 topic 不吃这两个值:审计 topic 30 天(data_service.yaml)、
-# 控制面命令 topic 1 小时(kafka-topic-init)、match-results 7 天(match 侧常量)。
+# 控制面命令 topic 1 小时(kafka-topic-init)、match-results 7 天(match 侧常量)、
+# match-rating-snapshot 7 天(match_service.yaml 的 RatingSnapshotRetentionHours,只由 match 声明)。
 function Apply-KafkaProfileDefaults {
 	switch ($KafkaProfile) {
 		"dev" {
@@ -5422,6 +5437,12 @@ function New-GoSvcConfigMapYaml {
 	if ($matchMatchedTicketTTL.Found) {
 		$matchMatchedTicketTTLLine = "MatchedTicketTTLSeconds: $($matchMatchedTicketTTL.Value)"
 	}
+	# 排行榜评分快照(docs/design/leaderboard-system.md §2.4 / §5.4):开关由参数 -MatchRatingSnapshotPublish 给值、不镜像服务 yaml;
+	# topic 名 / 分区数 / 保留期从服务 yaml 取(分区数是与 rank 共享的不可变契约,保留期只由 match 声明)。
+	$matchRatingSnapshotPublishEnabled  = if ($MatchRatingSnapshotPublish -eq '1') { 'true' } else { 'false' }
+	$matchRatingSnapshotTopic           = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'RatingSnapshotTopic'
+	$matchRatingSnapshotTopicPartitions = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'RatingSnapshotTopicPartitions'
+	$matchRatingSnapshotRetentionHours  = Get-AuthoritativeScalar -RelativePath $matchYaml -KeyPath 'RatingSnapshotRetentionHours'
 	# MatchRedis:六个 StatefulSet pod 的 headless DNS 逗号串,go-zero 的 cluster 客户端按逗号拆
 	# (core/stores/redis/redisclustermanager.go splitClusterAddrs)。
 	$matchRedisClusterHosts = @(0..5 | ForEach-Object { "redis-match-cluster-$_.redis-match-cluster.${InfraNamespace}.svc.cluster.local:6379" }) -join ','
@@ -6406,6 +6427,14 @@ DataServiceRpc:
   NonBlock: ${matchDataServiceRpcNonBlock}
   Middlewares:
     Breaker: false
+# 排行榜评分快照(docs/design/leaderboard-system.md §2.4):RatingSnapshotPublishEnabled 来自 k8s_deploy.ps1 -MatchRatingSnapshotPublish
+# (默认 "0" → false,是排行榜上线的唯一闸门),**不镜像** go/match/etc/match_service.yaml;其余三项从服务 yaml 取。
+# RatingEnabled=true 时 topic 不论开关都在 match 启动时 Ensure;保留期只由 match 声明(rank 侧 Ensure 传 -1 不改写)。
+# 分区数与 broker 不一致时 match 记错误日志并每 30s 后台重试、进程照常运行(开关为 1 时评分入账一起停住,不会带着错分区发快照)。
+RatingSnapshotPublishEnabled: ${matchRatingSnapshotPublishEnabled}
+RatingSnapshotTopic: ${matchRatingSnapshotTopic}
+RatingSnapshotTopicPartitions: ${matchRatingSnapshotTopicPartitions}
+RatingSnapshotRetentionHours: ${matchRatingSnapshotRetentionHours}
 # 与 match.yaml 里的 metrics 容器端口一致
 MetricsListenAddr: ":9170"
 "@
@@ -7704,6 +7733,16 @@ function Apply-OneGoSvc {
 			-EnvName (Get-ClientEntryContract).LoginDevPasswordSecretEnv `
 			-SecretName $script:LoginDevPasswordSecretName -SecretKey $script:LoginDevPasswordSecretKey
 		Apply-LoginDevPasswordSecret -Namespace $Namespace
+	}
+
+	# match 的排行榜快照开关(-MatchRatingSnapshotPublish)写进 Pod 模板注解:ConfigMap 只在进程启动时读,开关值必须改变模板,
+	# 翻值才会滚动 match。走 manifest 里的占位而不是 Add-PodTemplateAnnotation(match.yaml 的 Pod 模板已有 prometheus 注解段)。
+	# 条件里服务名判断留在 -and 左边的同一理由:k8s_migrate_gate.tests.ps1 按 AST 单独抽出本函数跑别的服务。
+	if ($SvcName -eq 'match') {
+		if (-not $manifestContent.Contains('PLACEHOLDER_MATCH_RATING_SNAPSHOT_PUBLISH')) {
+			throw "服务 $SvcName 的 manifest 缺少占位 PLACEHOLDER_MATCH_RATING_SNAPSHOT_PUBLISH(Pod 模板注解 mmorpg.io/rating-snapshot-publish):没有它,只翻 -MatchRatingSnapshotPublish 时 match 不会滚动,开关不生效。"
+		}
+		$manifestContent = $manifestContent.Replace('PLACEHOLDER_MATCH_RATING_SNAPSHOT_PUBLISH', $MatchRatingSnapshotPublish)
 	}
 
 	# player-inbox 运维口令(见 $script:PlayerInboxAdminTokenSecretName 处的说明):先本地渲染,再建 Secret,与上面 login 同一顺序。
@@ -9139,6 +9178,14 @@ if ($Command -in @("zone-up", "all-up", "infra-up")) {
 	Show-PeakShavingPlan
 	# -AssetOps / -NetworkPolicies 的组合校验(资产通道打开必须同时设 gRPC 口准入),排在密钥解析之前:报的是组合原因而不是「缺环境变量」。
 	Assert-AssetOpsSwitchPreflight
+	# 排行榜评分快照开关(-MatchRatingSnapshotPublish,不粘滞):只在本次部署全局 Go 服务(match 在其中)时打一行本次取值,
+	# 「榜为什么停更」先对照这一行。只打印、不阻断。本次不部署全局 Go 服务却显式传了它:参数没有效果,告警而不是静默接受。
+	if (Test-GlobalGoSvcDeployed) {
+		Write-Host "MatchRatingSnapshotPublish: $MatchRatingSnapshotPublish (match RatingSnapshotPublishEnabled; leaderboard snapshots are published only when 1; the value is in the match pod template, so a change rolls match)"
+	}
+	elseif ($PSBoundParameters.ContainsKey('MatchRatingSnapshotPublish')) {
+		Write-Warning "-MatchRatingSnapshotPublish $MatchRatingSnapshotPublish has no effect: this run does not deploy global Go services (match). Use infra-up / all-up with -GoSvcRegistry and without -SkipGoSvc."
+	}
 	Initialize-InjectedSecrets
 	# 资产通道签名方(guild / trade)与验签方(scene)的跨命令核对:顺序反了、密钥对不上就在任何写操作之前拒绝(只读 kubectl;DryRun 跳过)。
 	Assert-AssetOpClusterConsistency

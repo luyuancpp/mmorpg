@@ -35,7 +35,7 @@ func withZeroRatingWriteBackoff(t *testing.T) {
 	t.Cleanup(func() { ratingWriteBackoff = prev })
 }
 
-// 写到一半失败(B 队第 2 人的评分 key 是 string,Lua HGET 报 WRONGTYPE):返回 error、
+// 写到一半失败(B 队第 2 人的评分 key 是 string,Lua 报 WRONGTYPE):返回 error、
 // outcome=partial,标记留 applying|Δ;已写的人不回滚。修好后再投递同一局 → 续写只补
 // 那个人,其余人不再算第二次,标记改 done,总分零和;第三次投递 duplicate。
 func TestApplyBattleResultResumesAfterPartialWrite(t *testing.T) {

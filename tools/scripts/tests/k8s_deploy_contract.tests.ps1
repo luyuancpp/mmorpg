@@ -3716,6 +3716,48 @@ Test-Case 'mail-alerts.yaml:MailSweepStalled 阈值 = 3 × go/mail/etc/mail.yaml
 }
 
 # ─────────────────────────────────────────────────────────────────
+# 排行榜评分快照开关(-MatchRatingSnapshotPublish;docs/design/leaderboard-system.md §2.4 / §5.4,L-20)
+# ─────────────────────────────────────────────────────────────────
+# 开关是排行榜上线的唯一闸门:K8s 上由部署参数给值、不镜像 go/match/etc/match_service.yaml;topic 三项是与 rank 共享的契约,从服务 yaml 取。
+Test-Case 'match ConfigMap:RatingSnapshotPublishEnabled 由 -MatchRatingSnapshotPublish 给值(缺省 false、不镜像服务 yaml),快照 topic 三项 == 服务 yaml' {
+    Assert-Equal -Expected 0 -Actual $guildInfraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($guildInfraRun.Output)"
+    $cm = Select-ManifestByName -Output $guildInfraRun.Output -Name 'go-svc-match-config'
+    Assert-True -Condition ($null -ne $cm) -Because 'infra-up 产物里应当有 go-svc-match-config'
+    $flat = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block $cm).Scalars -Prefix 'data.match_service.yaml.'
+    Assert-Equal -Expected 'false' -Actual ([string]$flat['RatingSnapshotPublishEnabled']) -Because '不传 -MatchRatingSnapshotPublish 时快照发布必须关着(rank 就绪之前不能发)'
+    foreach ($key in @('RatingSnapshotTopic', 'RatingSnapshotTopicPartitions', 'RatingSnapshotRetentionHours')) {
+        Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/match/etc/match_service.yaml' -KeyPath $key) -Actual ([string]$flat[$key]) -Because "ConfigMap 的 $key 必须等于服务 yaml(分区数是与 rank 共享的不可变契约,保留期只由 match 声明)"
+    }
+    Assert-Match -Text $guildInfraRun.Output -Pattern '(?m)^MatchRatingSnapshotPublish: 0 ' -Because '部署输出要打一行本次取值(不粘滞,「榜为什么停更」先对照它)'
+    $matchDeploy = @(Get-ManifestBlocks -Output $guildInfraRun.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: match\s*$'
+    }) | Select-Object -First 1
+    Assert-True -Condition ($null -ne $matchDeploy) -Because 'infra-up 产物里应当有 match 的 Deployment'
+    Assert-Match -Text $matchDeploy -Pattern 'mmorpg\.io/rating-snapshot-publish: "0"' -Because '开关值写进 Pod 模板注解:翻值必须改变模板、让 match 滚动(ConfigMap 只在启动时读)'
+    Assert-NotMatch -Text $matchDeploy -Pattern 'PLACEHOLDER_' -Because '占位必须全部替换'
+
+    $on = Invoke-DeployDryRun -Arguments ($guildInfraArgs + @('-MatchRatingSnapshotPublish', '1')) -Env $BattleTestEnv
+    Assert-Equal -Expected 0 -Actual $on.ExitCode -Because "-MatchRatingSnapshotPublish 1 的 infra-up DryRun 必须成功。输出: $($on.Output)"
+    $onCm = Select-ManifestByName -Output $on.Output -Name 'go-svc-match-config'
+    $onFlat = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block $onCm).Scalars -Prefix 'data.match_service.yaml.'
+    Assert-Equal -Expected 'true' -Actual ([string]$onFlat['RatingSnapshotPublishEnabled']) -Because '参数为 1 时 ConfigMap 写 true,与服务 yaml 仓内的 false 无关(不镜像)'
+    Assert-Match -Text $on.Output -Pattern '(?m)^MatchRatingSnapshotPublish: 1 ' -Because '部署输出打出本次取值'
+    $onDeploy = @(Get-ManifestBlocks -Output $on.Output | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: match\s*$'
+    }) | Select-Object -First 1
+    Assert-Match -Text $onDeploy -Pattern 'mmorpg\.io/rating-snapshot-publish: "1"' -Because '开关为 1 时模板注解随之变化,0 → 1 / 1 → 0 都会滚动 match'
+
+    # 本次不部署全局 Go 服务(zone-up)却显式传了开关:没有效果,必须告警而不是静默接受。
+    $zoneRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-MatchRatingSnapshotPublish', '1'))
+    Assert-Equal -Expected 0 -Actual $zoneRun.ExitCode -Because "zone-up DryRun 必须成功。输出: $($zoneRun.Output)"
+    Assert-Match -Text $zoneRun.Output -Pattern 'MatchRatingSnapshotPublish 1 has no effect' -Because 'zone-up 不部署 match,显式传开关要告警'
+
+    $bad = Invoke-DeployDryRun -Arguments ($guildInfraArgs + @('-MatchRatingSnapshotPublish', 'on')) -Env $BattleTestEnv
+    Assert-True -Condition ($bad.ExitCode -ne 0) -Because '-MatchRatingSnapshotPublish 只接受 0 / 1'
+    Assert-NotMatch -Text $bad.Output -Pattern '\[dry-run\] kubectl apply' -Because '参数错误必须先于任何写操作'
+}
+
+# ─────────────────────────────────────────────────────────────────
 # 资产通道开关 + gRPC 口准入(BK8s 第二块:-AssetOps / -NetworkPolicies;docs/design/guild-phase2/90-consistency.md G-05,2026-10-16)
 # ─────────────────────────────────────────────────────────────────
 # 默认两个开关都关,产物与开关引入之前相同(只多「不粘滞」的删除行);打开时 guild / trade / scene 拿签名密钥、三份 NetworkPolicy 落地。
