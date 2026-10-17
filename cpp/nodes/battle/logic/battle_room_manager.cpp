@@ -32,6 +32,7 @@
 #include "data/battle_table_fingerprint.h"
 // 结算发件箱的纯判定 + Redis key/Lua 契约(R07)。
 #include "settlement/settlement_outbox.h"
+#include "settlement/settlement_reply_shape.h"
 // 活动局结果的回显组装 + 持久记录键/重发判定(帮会同道历练,guild-phase2 §6.19–§6.21)。
 #include "system/battle_result_activity.h"
 
@@ -1776,24 +1777,33 @@ void BattleRoomManager::DispatchSettlementDurably(const ::BattleRouting &routing
         return;
     }
 
-    // EVAL 两键同 SET(不过期)+ 进积压索引;成功回调里才投递,保证"记录先于命令存在"。
+    // EVAL 两键同 SET(不过期)+ 进积压索引;回调里才投递,保证"记录先于命令存在"。
     // 积压索引的分数取本节点墙钟毫秒(kSetPendingSettlementScript 的说明)。
     const uint64_t enqueuedAtMs = TimeSystem::NowMillisecondsUTC();
-    tlsRedis.GetZoneRedis()->command(
-        [this, battleId, playerId, payload, sceneNodeId, sceneInstanceId](hiredis::Hiredis *,
-                                                                          redisReply *reply)
+    const int rc = tlsRedis.GetZoneRedis()->command(
+        [weakSelf = WeakSelf(), battleId, playerId, payload, sceneNodeId, sceneInstanceId](hiredis::Hiredis *,
+                                                                                         redisReply *reply)
         {
-            const bool stored = reply != nullptr && reply->type != REDIS_REPLY_ERROR;
-            if (!stored)
+            // 应答没确认落库(空应答 / ERROR / 意外形状)也照样登记发件箱(ClassifyPersistReply 的说明):
+            // 空应答只说明连接断了,EVAL 可能已经执行;脚本 ERROR 时前两个 SET 也可能已经执行。
+            // 以前这里只投一次、不登记 —— 记录其实落了而这一次投递又丢了,在线玩家要等到下次登录才拿到奖励。
+            // 登记之后由第一跳探测裁决:伴生 id 键不在(NIL)= 没落库或已销账,摘掉;仍指向本局 = 按原字节重投。
+            const auto shape = battle_settlement::ReplyShapeOf(reply);
+            if (battle_settlement::ClassifyPersistReply(shape, battle_settlement::ReplyShape::kInteger) !=
+                battle_settlement::PersistVerdict::kStored)
             {
                 LOG_ERROR << "metric=battle_settlement_not_durable battle_id=" << battleId
-                          << " player_id=" << playerId
-                          << ",pending settlement persistence failed;attempting one delivery(lost delivery means lost rewards)";
-                SendSettlementCommand(sceneNodeId, sceneInstanceId, playerId, battleId, payload);
-                return;
+                          << " player_id=" << playerId << " reply=" << battle_settlement::ReplyShapeName(shape)
+                          << " redis_error=" << std::string(battle_settlement::ReplyText(reply))
+                          << ",pending settlement persistence unconfirmed;delivering and tracking in outbox(the ack probe decides whether the record exists)";
             }
             SendSettlementCommand(sceneNodeId, sceneInstanceId, playerId, battleId, payload);
-            EnqueuePendingSettlement(battleId, playerId, payload, sceneNodeId);
+            // 本类是进程级单例,寿命覆盖 tlsRedis.Shutdown()(停机时在途回调以空应答进来,本对象仍在):
+            // lock 失败只在理论上发生,那时投递已经做了,只是没有重投。
+            if (const auto self = weakSelf.lock())
+            {
+                self->EnqueuePendingSettlement(battleId, playerId, payload, sceneNodeId);
+            }
         },
         (std::string("EVAL %s 3 ") + battle_settlement::kPendingSettlementKeyFmt + " " +
          battle_settlement::kPendingSettlementIdKeyFmt + " " + battle_settlement::kPendingSettlementIndexKey +
@@ -1801,6 +1811,15 @@ void BattleRoomManager::DispatchSettlementDurably(const ::BattleRouting &routing
             .c_str(),
         battle_settlement::kSetPendingSettlementScript, playerId, playerId,
         payload.data(), payload.size(), battleId, enqueuedAtMs, playerId);
+    if (rc != REDIS_OK)
+    {
+        // 命令没发出去(连接恰在断开 / 释放中,Hiredis::command 在登记回调前就返回):回调永远不会来,
+        // 不在这里投递这笔结算就静默丢了。记录肯定没写,登记发件箱也探测不到什么:与 Redis 未连接同样降级,只投一次。
+        LOG_ERROR << "metric=battle_settlement_not_durable battle_id=" << battleId
+                  << " player_id=" << playerId
+                  << ",pending settlement EVAL could not be sent;delivering once without persistence(lost delivery means lost rewards)";
+        SendSettlementCommand(sceneNodeId, sceneInstanceId, playerId, battleId, payload);
+    }
 }
 
 void BattleRoomManager::EnsureSettlementBacklogReporter()
@@ -1915,23 +1934,40 @@ void BattleRoomManager::RetryPendingSettlements()
 void BattleRoomManager::ProbeAndRetryOne(const uint64_t battleId, const uint64_t playerId)
 {
     // 第一跳:读伴生 id 键探测销账。
+    // 回调只绑 weak_ptr<自己>(AGENTS.md §11.7)。本类是进程级单例,寿命覆盖 tlsRedis.Shutdown()(核对见 WeakSelf 的说明),
+    // 这里不是在修已知的悬垂,而是让发件箱与活动结果发件箱同一写法。
     tlsRedis.GetZoneRedis()->command(
-        [this, battleId, playerId](hiredis::Hiredis *, redisReply *reply)
+        [weakSelf = WeakSelf(), battleId, playerId](hiredis::Hiredis *, redisReply *reply)
         {
-            const auto it = settlementOutbox_.find({battleId, playerId});
-            if (it == settlementOutbox_.end())
+            const auto self = weakSelf.lock();
+            if (!self)
+            {
+                return;
+            }
+            auto &outbox = self->settlementOutbox_;
+            const auto it = outbox.find({battleId, playerId});
+            if (it == outbox.end())
             {
                 return; // 回调期间已被别的路径摘掉
             }
-            const bool stillOurs = reply != nullptr && reply->type == REDIS_REPLY_STRING &&
-                                   std::string(reply->str, reply->len) == std::to_string(battleId);
-            if (!stillOurs)
+            // 只有 NIL,或 STRING 且不等于本局,才算销账(ClassifyAckProbe)。空应答 / ERROR 什么都没问到:
+            // 以前把它们当「已销账」并摘条目,一次断线(主切换掐连接、存活探测摘连接)就让在线玩家收不到重投。
+            const auto shape = battle_settlement::ReplyShapeOf(reply);
+            switch (battle_settlement::ClassifyAckProbe(shape, battle_settlement::ReplyText(reply), battleId))
             {
-                LOG_INFO << "battle settlement acknowledged: battle_id=" << battleId << " player_id=" << playerId
-                         << " attempts=" << it->second.attempts;
-                settlementOutbox_.erase(it);
-                StopSettlementRetryTimerIfIdle();
+            case battle_settlement::AckProbeVerdict::kUndetermined:
+                // 不消耗重投次数,下一轮再探(与 RetryPendingSettlements 里 Redis 未连接时同一取舍);
+                // 没问到的轮次单独计数、有上限(NoteUndeterminedSettlementProbe)。
+                self->NoteUndeterminedSettlementProbe(battleId, playerId, "ack", shape);
                 return;
+            case battle_settlement::AckProbeVerdict::kAcknowledged:
+                LOG_INFO << "battle settlement acknowledged(record settled, superseded, or never persisted): battle_id="
+                         << battleId << " player_id=" << playerId << " attempts=" << it->second.attempts;
+                outbox.erase(it);
+                self->StopSettlementRetryTimerIfIdle();
+                return;
+            case battle_settlement::AckProbeVerdict::kStillOurs:
+                break;
             }
 
             // 第二跳:重新解析玩家当前所在的 scene。**绝不复用**开局时抓的 uuid ——
@@ -1941,14 +1977,28 @@ void BattleRoomManager::ProbeAndRetryOne(const uint64_t battleId, const uint64_t
                 return;
             }
             tlsRedis.GetZoneRedis()->command(
-                [this, battleId, playerId](hiredis::Hiredis *, redisReply *locationReply)
+                [weakSelf, battleId, playerId](hiredis::Hiredis *, redisReply *locationReply)
                 {
-                    const auto entryIt = settlementOutbox_.find({battleId, playerId});
-                    if (entryIt == settlementOutbox_.end())
+                    const auto self = weakSelf.lock();
+                    if (!self)
+                    {
+                        return;
+                    }
+                    auto &outbox = self->settlementOutbox_;
+                    const auto entryIt = outbox.find({battleId, playerId});
+                    if (entryIt == outbox.end())
                     {
                         return;
                     }
                     auto &entry = entryIt->second;
+                    // 空应答 / ERROR 没问到位置:在 ClassifyRetry 之前返回,不消耗次数(IsLocationReplyDecisive)。
+                    // 以前解析成 0 走 kSkipNoTarget 并 ++attempts,一次断线白烧一轮,耗尽时还会误记成 reason=no_target。
+                    const auto locationShape = battle_settlement::ReplyShapeOf(locationReply);
+                    if (!battle_settlement::IsLocationReplyDecisive(locationShape))
+                    {
+                        self->NoteUndeterminedSettlementProbe(battleId, playerId, "location", locationShape);
+                        return;
+                    }
                     const uint32_t resolvedNodeId = ParseSceneNodeIdFromLocationReply(locationReply);
 
                     battle_settlement::RetryInput input;
@@ -1987,18 +2037,49 @@ void BattleRoomManager::ProbeAndRetryOne(const uint64_t battleId, const uint64_t
                                                        battle_settlement::ClassifyUndelivered(input))
                                   << ",settlement redelivery retries exhausted without acknowledgment;pending settlement retained,"
                                   << "scene OnPlayerEnterScene login hook will apply it as a fallback";
-                        settlementOutbox_.erase(entryIt);
-                        StopSettlementRetryTimerIfIdle();
+                        outbox.erase(entryIt);
+                        self->StopSettlementRetryTimerIfIdle();
                         return;
                     case battle_settlement::RetryAction::kDone:
-                        settlementOutbox_.erase(entryIt);
-                        StopSettlementRetryTimerIfIdle();
+                        outbox.erase(entryIt);
+                        self->StopSettlementRetryTimerIfIdle();
                         return;
                     }
                 },
                 "GET player:%llu:location", playerId);
         },
         (std::string("GET ") + battle_settlement::kPendingSettlementIdKeyFmt).c_str(), playerId);
+}
+
+void BattleRoomManager::NoteUndeterminedSettlementProbe(const uint64_t battleId, const uint64_t playerId,
+                                                        const char *stage, const battle_settlement::ReplyShape shape)
+{
+    const auto it = settlementOutbox_.find({battleId, playerId});
+    if (it == settlementOutbox_.end())
+    {
+        return;
+    }
+    auto &entry = it->second;
+    ++entry.undeterminedRounds;
+    if (battle_settlement::ClassifyUndeterminedProbeRound(entry.undeterminedRounds,
+                                                          kSettlementProbeUndeterminedMaxRounds) ==
+        battle_settlement::UndeterminedProbeAction::kWaitNextRound)
+    {
+        LOG_WARN << "metric=battle_settlement_probe_undetermined battle_id=" << battleId << " player_id=" << playerId
+                 << " stage=" << stage << " reply=" << battle_settlement::ReplyShapeName(shape)
+                 << " attempts=" << entry.attempts << " undetermined_rounds=" << entry.undeterminedRounds
+                 << ",settlement probe got no usable reply;entry kept without consuming an attempt";
+        return;
+    }
+    // 响亮但不致命:与次数用尽同一个 metric,reason 单列,告警可以分开设阈值。
+    LOG_ERROR << "metric=battle_settlement_undelivered battle_id=" << battleId << " player_id=" << playerId
+              << " attempts=" << entry.attempts << " undetermined_rounds=" << entry.undeterminedRounds
+              << " stage=" << stage << " reply=" << battle_settlement::ReplyShapeName(shape) << " reason="
+              << battle_settlement::UndeliveredReasonName(battle_settlement::UndeliveredReason::kProbeUndetermined)
+              << ",settlement probe got no usable reply for too many rounds;outbox entry dropped,pending settlement (if persisted) retained,"
+              << "scene OnPlayerEnterScene login hook will apply it as a fallback";
+    settlementOutbox_.erase(it);
+    StopSettlementRetryTimerIfIdle();
 }
 
 // ---- 活动局结果持久化 + 有界重发(帮会同道历练,guild-phase2 §6.19–§6.21) ----
@@ -2009,6 +2090,7 @@ void BattleRoomManager::ProbeAndRetryOne(const uint64_t battleId, const uint64_t
 //   R4 Kafka 投递失败 → 本类每 10s 重发,最多 30 次,之后巡检器兜底;
 //   R5 guild 已结算但 DEL 失败 → 继续重发,guild 按 battle_id 判重后再 DEL;最坏 TTL 7 天自然过期;
 //   R6 Redis 不可用 → 降级只发一次,metric=battle_activity_result_not_durable,须告警。
+//      SET 发出去了但应答没确认落库(空应答 / ERROR)不属于 R6:照发并登记重发,由 EXISTS 裁决(2026-10-16)。
 // 同一 battle_id 可能被投递多次(重发 / R5),match-results 的消费方必须按 battle_id 幂等(proto 注释已写明)。
 
 void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::BattleResultEvent &result)
@@ -2038,18 +2120,18 @@ void BattleRoomManager::DispatchActivityResultDurably(const contracts::kafka::Ba
     const int rc = tlsRedis.GetZoneRedis()->command(
         [weakSelf = WeakSelf(), battleId, payload](hiredis::Hiredis *, redisReply *reply)
         {
-            const bool stored = reply != nullptr && reply->type != REDIS_REPLY_ERROR;
-            if (!stored)
+            // 应答没确认落库(空应答 / ERROR / 意外形状)也照样登记重发(ClassifyPersistReply 的说明)。
+            // 以前的理由是「没有记录就没有是否已销账可探测」,可空应答时 SET 可能已经执行:记录落了而这一次
+            // Kafka 投递又丢了,就只能等 guild 巡检器超期兜底。登记之后每轮 EXISTS 裁决:记录不在(没落库,或
+            // guild 已销账)就按已送达摘掉,在就按原字节重发 —— 与 ProbeActivityResultOne 对空应答的处理同一纪律。
+            const auto shape = battle_settlement::ReplyShapeOf(reply);
+            if (battle_settlement::ClassifyPersistReply(shape, battle_settlement::ReplyShape::kStatus) !=
+                battle_settlement::PersistVerdict::kStored)
             {
-                // 回复为空(连接断开 / 停机释放)或出错:记录可能落了也可能没落,都不登记重发 ——
-                // 没有记录就没有"是否已销账"可探测。发一次,剩下交给 guild 巡检器(有记录则结算,无则 EXPIRED)。
                 LOG_ERROR << "metric=battle_activity_result_not_durable battle_id=" << battleId
-                          << " redis_error="
-                          << (reply != nullptr && reply->str != nullptr ? std::string(reply->str, reply->len)
-                                                                        : std::string("null reply"))
-                          << ",activity battle result persistence failed;delivering once(lost delivery means lost guild rewards for this battle)";
-                SendMatchResultPayload(battleId, payload);
-                return;
+                          << " reply=" << battle_settlement::ReplyShapeName(shape)
+                          << " redis_error=" << std::string(battle_settlement::ReplyText(reply))
+                          << ",activity battle result persistence unconfirmed;delivering and tracking for resend(the EXISTS probe decides whether the record exists)";
             }
             SendMatchResultPayload(battleId, payload);
             if (const auto self = weakSelf.lock())

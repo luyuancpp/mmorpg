@@ -42,6 +42,13 @@ struct MessageAsyncClientTestPeer
         client.OnLoaded(nullptr, reply, element);
     }
 
+    // 该 key 当前在载入重试队列里的那份;没有则返回 nullptr。
+    static ElementPtr PendingLoad(Client& client, const MessageKey& key)
+    {
+        const auto it = client.pending_retry_queue_.find(client.full_name() + ":" + std::to_string(key));
+        return it == client.pending_retry_queue_.end() ? nullptr : it->second;
+    }
+
     // 模拟一条带 guard 的存盘已经发出、正在等回包(不连 Redis,直接登记进 saving_queue_)。
     static ElementPtr TrackGuardedSave(Client& client, const MessageKey& key,
                                        const std::string& guardKey, const std::string& guardExpected)
@@ -480,6 +487,103 @@ TEST(CurrencyTest, RedisLoadOversizePayloadFailsClosed)
     EXPECT_EQ(0u, client.in_flight_load_count());
     EXPECT_EQ(0u, client.pending_load_count());
     EXPECT_FALSE(element->message_value);
+}
+
+// 2026-10-16:在途 GET 收到空应答(连接断开 / 被释放时 hiredis 的一次性回调)不是读失败。
+// 以前直接 FailLoad(RedisError),玩家被踢回登录界面;现在放回重试队列等重连重发,且不消耗 NIL 重试次数。
+TEST(CurrencyTest, RedisLoadNullReplyRequeuesInsteadOfFailing)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+
+    Client::HiredisPtr hiredis;
+    Client client(hiredis);
+    int successCount = 0;
+    int failureCount = 0;
+    client.SetLoadCallback([&](Guid, CurrencyComp&) { ++successCount; });
+    client.SetLoadFailedCallback([&](Guid, Client::LoadFailureReason) { ++failureCount; });
+
+    constexpr Guid kPlayerId = 10003;
+    const auto element = Peer::TrackLoad(client, kPlayerId);
+    element->retry_count = 3; // 已经因 NIL 退避过 3 次
+    ASSERT_EQ(1u, client.in_flight_load_count());
+
+    Peer::Deliver(client, nullptr, element);
+
+    EXPECT_EQ(0, successCount);
+    EXPECT_EQ(0, failureCount);
+    EXPECT_EQ(0u, client.in_flight_load_count());
+    ASSERT_EQ(1u, client.pending_load_count());
+    const auto requeued = Peer::PendingLoad(client, kPlayerId);
+    ASSERT_NE(nullptr, requeued);
+    EXPECT_EQ(element, requeued);
+    EXPECT_EQ(3, requeued->retry_count); // 空应答不计入 NIL 重试预算
+
+    // 同一份在途的重复空回调(已不在在途表里)按陈旧回调丢弃:不重复入队,也不判失败。
+    Peer::Deliver(client, nullptr, element);
+    EXPECT_EQ(0, failureCount);
+    EXPECT_EQ(1u, client.pending_load_count());
+}
+
+// 断线期间又调过 AsyncLoad、同 key 已有排队项时,迟到的空回调不覆盖那一项,
+// 只把它的重试次数抬到两者较大者(NIL 退避预算不被外部重触发重置)。
+TEST(CurrencyTest, RedisLoadNullReplyKeepsExistingPendingEntry)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+
+    Client::HiredisPtr hiredis; // 未连接:AsyncLoad 只会排队
+    Client client(hiredis);
+    int failureCount = 0;
+    client.SetLoadFailedCallback([&](Guid, Client::LoadFailureReason) { ++failureCount; });
+
+    constexpr Guid kPlayerId = 10004;
+    const auto inFlight = Peer::TrackLoad(client, kPlayerId);
+    inFlight->retry_count = 2;
+    client.AsyncLoad(kPlayerId); // retry_count = 0
+    const auto queued = Peer::PendingLoad(client, kPlayerId);
+    ASSERT_NE(nullptr, queued);
+    ASSERT_NE(inFlight, queued);
+    ASSERT_EQ(0, queued->retry_count);
+
+    Peer::Deliver(client, nullptr, inFlight);
+
+    EXPECT_EQ(0, failureCount);
+    EXPECT_EQ(0u, client.in_flight_load_count());
+    EXPECT_EQ(1u, client.pending_load_count());
+    EXPECT_EQ(queued, Peer::PendingLoad(client, kPlayerId));
+    EXPECT_EQ(2, queued->retry_count);
+}
+
+// ERROR 是服务端的答复,重发也是同一个答复:仍按 RedisError fail-closed,不进重试队列。
+TEST(CurrencyTest, RedisLoadErrorReplyStillFailsClosed)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+
+    Client::HiredisPtr hiredis;
+    Client client(hiredis);
+    int failureCount = 0;
+    auto failureReason = Client::LoadFailureReason::DataNotFound;
+    client.SetLoadFailedCallback([&](Guid, Client::LoadFailureReason reason) {
+        ++failureCount;
+        failureReason = reason;
+    });
+
+    constexpr Guid kPlayerId = 10005;
+    const auto element = Peer::TrackLoad(client, kPlayerId);
+    char errorText[] = "WRONGTYPE Operation against a key holding the wrong kind of value";
+    redisReply reply{};
+    reply.type = REDIS_REPLY_ERROR;
+    reply.str = errorText;
+    reply.len = sizeof(errorText) - 1;
+
+    Peer::Deliver(client, &reply, element);
+
+    EXPECT_EQ(1, failureCount);
+    EXPECT_EQ(Client::LoadFailureReason::RedisError, failureReason);
+    EXPECT_EQ(0u, client.in_flight_load_count());
+    EXPECT_EQ(0u, client.pending_load_count());
 }
 
 // ---------------------------------------------------------------------------

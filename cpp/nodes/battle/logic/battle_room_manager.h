@@ -194,6 +194,12 @@ public:
     // 原来的 kPendingSettlementTtlSec(与 scene 侧同值的 7 天)随 TTL 一起删除。
     static constexpr double kSettlementRetryIntervalSec = 10.0;
     static constexpr uint32_t kSettlementRetryMaxAttempts = 12;
+    // 探测「没问到」(命令发出去了,应答是空应答 / ERROR)的轮次上限:这类轮次不消耗 kSettlementRetryMaxAttempts
+    // (一次断线不该烧掉重投窗口),但也不能无限挂着 —— 持续 ERROR(口令轮换后 NOAUTH、ACL 拒绝、长时间 LOADING)时,
+    // 每局结算都会进 outbox 却永远到不了次数用尽,payload 随对局数无界增长(AGENTS §11.3 重试必须有上限)。
+    // 60 轮 × 10s = 10 分钟,远大于一次主切换;Redis 未连接的轮次 RetryPendingSettlements 直接跳过,不计在内。
+    // 到上限摘条目并打 metric=battle_settlement_undelivered reason=probe_undetermined;记录若已落库仍由登录钩子兜底。
+    static constexpr uint32_t kSettlementProbeUndeterminedMaxRounds = 60;
 
     // ---- 待结算积压报数(landing-recovery-sync-digest.md §7)----
     //
@@ -367,6 +373,8 @@ private:
         // 开局时抓到的 scene 落点,只用于日志对照:重投**一律**用重新解析出来的 node_id。
         uint32_t originalSceneNodeId = 0;
         uint32_t attempts = 0;
+        // 探测没问到的轮次(不计入 attempts,上限 kSettlementProbeUndeterminedMaxRounds)。
+        uint32_t undeterminedRounds = 0;
     };
 
     // 结算的**唯一**出口(R07)。顺序是硬要求:
@@ -374,17 +382,24 @@ private:
     // 不能反过来先投再落库:投递可能比 Redis 的 SET 先到,scene 应用结算后销账
     // (此刻记录还不存在,销账是空操作),随后迟到的 SET 落地就留下一条孤儿记录,
     // 玩家下次登录会被**重复发一次奖励**。
-    // Redis 不可用时降级为"直接投递"并报 ERROR —— 那是既有行为,不是本次引入的退化。
+    // Redis 不可用(或 EVAL 没发出去)时降级为"直接投递"并报 ERROR —— 那是既有行为,不是本次引入的退化。
+    // EVAL 发出去了但应答没确认落库(空应答 / ERROR)时照样投递并登记 outbox,由第一跳探测裁决记录在不在
+    // (settlement_outbox.h 的 ClassifyPersistReply)。
     void DispatchSettlementDurably(const ::BattleRouting &routing, uint64_t playerId,
                                    const ::BattleSettlementData &settlement);
 
-    // 落库成功后登记一条待销账记录并保证重投定时器已装填。
+    // 落库回调里登记一条待销账记录并保证重投定时器已装填(落库应答没确认时也登记,见上)。
     void EnqueuePendingSettlement(uint64_t battleId, uint64_t playerId, std::string payload,
                                   uint32_t originalSceneNodeId);
     // 定时器回调:对每条未销账的记录探测 ACK、重新解析目标、按判定重投或收尾。
     void RetryPendingSettlements();
     // 单条记录的一轮处理(Redis 回调链的入口)。
     void ProbeAndRetryOne(uint64_t battleId, uint64_t playerId);
+    // 一轮探测没问到(两跳任一跳的应答是空应答 / ERROR / 意外类型):不动 attempts,undeterminedRounds 加一;
+    // 到 kSettlementProbeUndeterminedMaxRounds 摘条目并响一声。stage 只进日志("ack" / "location")。
+    // 只改 outbox,不发 Redis 命令(会在 hiredis 释放连接的回调栈里被调到)。
+    void NoteUndeterminedSettlementProbe(uint64_t battleId, uint64_t playerId, const char *stage,
+                                         battle_settlement::ReplyShape shape);
     // outbox 空了就停表:battle 常态下没有未销账记录,不该留一个每 10s 空转的定时器。
     void StopSettlementRetryTimerIfIdle();
     // 保证积压报数定时器已装填(幂等)。由 DispatchSettlementDurably 在本节点第一次结算时装填,
@@ -411,9 +426,10 @@ private:
     // 活动局结果的唯一出口。顺序是硬要求:SET 记录 → (成功回调里)发 Kafka → 登记待销账。
     // 反过来先发后写,guild 可能先结算并 DEL(此刻记录还不存在,DEL 是空操作),迟到的 SET
     // 落地后就留下一条孤儿记录,battle 会对一局已结算的对局一直重发到次数用尽。
-    // Redis 不可用 / SET 失败:降级为只发一次并报 ERROR(§6.21 R6,与改造前行为一致)。
+    // Redis 不可用 / SET 没发出去:降级为只发一次并报 ERROR(§6.21 R6,与改造前行为一致)。
+    // SET 发出去了但应答没确认落库(空应答 / ERROR):照发、照样登记,由 EXISTS 探测裁决(2026-10-16)。
     void DispatchActivityResultDurably(const contracts::kafka::BattleResultEvent &result);
-    // SET 成功后登记一条待销账记录,并保证重发定时器已装填。
+    // SET 回调里登记一条待销账记录,并保证重发定时器已装填。
     void EnqueuePendingActivityResult(uint64_t battleId, std::string payload);
     // 定时器回调:对每条未销账的记录探测一次。
     void RetryPendingActivityResults();
@@ -426,7 +442,11 @@ private:
     // 本类是进程级单例(Instance() 里的函数静态对象),不由 shared_ptr 持有,拿不到 weak_from_this();
     // 这里用别名构造把 this 挂在 lifeToken_ 的控制块上:lifeToken_ 随本对象析构,之后 lock() 必然失败。
     // 实际上单例寿命覆盖整个 loop(tlsRedis 是 thread_local,先于静态对象析构),这层是按 §11.7
-    // "只绑 weak_ptr<自己>"写的防线,不是在修某个已知的悬垂路径。R07 结算发件箱沿用裸 this,本批不动。
+    // "只绑 weak_ptr<自己>"写的防线,不是在修某个已知的悬垂路径。
+    // 2026-10-16 核对过停机顺序:tlsRedis.Shutdown() 在 Node::FinalizeTeardownInLoop 里执行(入口兜底在
+    // RunNodeMain 返回前),都早于本函数静态对象析构,所以停机时以空应答进来的在途回调看到的本对象仍然活着。
+    // R07 结算发件箱的三个 hiredis 回调同日改绑 weak(与活动结果发件箱同一写法);重投定时器 settlementRetryTimer_
+    // 仍绑裸 this:TimerTaskComp 是本类成员,析构时取消定时器,属于 §11.7 的同寿命成员例外。
     std::weak_ptr<BattleRoomManager> WeakSelf() { return std::shared_ptr<BattleRoomManager>(lifeToken_, this); }
 
     // 仅借用运行时上下文持有的直连面；清空借用不销毁对象。
