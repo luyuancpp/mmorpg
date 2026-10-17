@@ -1843,9 +1843,23 @@ C++ 节点(gate / scene / battle)连共享 Redis(`redis.<InfraNamespace>:6379`)�
 | `transaction_log_topic_g<N>` / `player_snapshot_topic_g<N>` | 同上 + data-service `EnsureTopics` | **显式 30d** | data-service | ✅ |
 | `db_task_zone_<N>` | login / db 启动时 `EnsureTopics` | **显式**,见下 | go/db | ✅(本轮修复) |
 | `match-results` | match `StartResultConsumer` | 显式 7d(match 侧常量) | match | ✅ |
+| `match-rating-snapshot` | match 启动时 `EnsureRatingSnapshotTopic`(`RatingEnabled=true` 时,不论发布开关;开关为 1 时先声明成功才起结果消费者);rank 启动时 Ensure 传 `RetentionMs: -1`:topic 已存在只校验分区、不改写保留期,不存在时以 broker 默认保留期建出(随后 match 一起来就按 7d 写正) | 显式 7d(**只由 match 声明**,`RatingSnapshotRetentionHours`) | rank(组 `rank-rating`) | ✅ 排行榜(docs/design/leaderboard-system.md §2.4 / §3.5);7 天也是榜丢失后 offset 重放的恢复窗口。发布开关见下面「排行榜评分快照开关」 |
 | `gate-<id>` / `scene-<id>`(迁移窗口残留) | broker auto-create | broker 默认值 | C++ legacy group 订阅(只剩本机;K8s 自 2026-10-15 起 `DisableLegacyPerNodeTopic: true`,不再订阅也不再 auto-create) | ⚠️ 只能靠 broker 默认值兜底,本轮把它抬到 900s 以上 |
 | `game-events` | compose(K8s 侧从不建) | 本轮改为显式 1h | **无**(没有节点为它注册消费回调;`KafkaManager::Init` 自 2026-10-15 起不做任何顶层 subscribe,与 `Kafka.GroupID` 无关。K8s node ConfigMap 的 GroupID 同日改为镜像 bin/etc 的空串) | ✅ |
 | `__mmorpg_partition_contract_*` | `kafkautil.EnsureTopics` | `cleanup.policy=compact`,只是个标记 | 无 | ✅ 不受保留期影响 |
+
+### 排行榜评分快照开关(`-MatchRatingSnapshotPublish`,2026-10-16,docs/design/leaderboard-system.md §5.4)
+
+- **它是排行榜上线的唯一闸门**:`k8s_deploy.ps1 -MatchRatingSnapshotPublish 0|1`(默认 `0`)写进 match ConfigMap 的 `RatingSnapshotPublishEnabled`,
+  **不镜像** `go/match/etc/match_service.yaml`(那一行只管本地,仓内是 `false`)。rank 消费者就绪之后用 `1` 重跑 `infra-up`;回滚 = 用 `0` 重跑,
+  评分链不受影响,榜停止更新但仍可读。
+- **翻值即滚动 match**:取值同时写进 match Pod 模板注解 `mmorpg.io/rating-snapshot-publish`,所以 0 → 1、1 → 0 都会让 match 滚动重启
+  (ConfigMap 只在进程启动时读;没有这行注解时只翻开关 match 不重启、开关不生效,之后单个 Pod 被驱逐时还会出现半开)。
+- **不粘滞**(与 `-AssetOps` 同口径):以 `1` 运行的环境,下一次 `infra-up` / `all-up` 不传就落回 `0`、榜停止更新,部署输出有一行
+  `MatchRatingSnapshotPublish: 0`。`dev_tools.ps1 -Command k8s-infra-up / k8s-all-up` 有同名参数,**留空不透传 = 落回 0**,例行发版记得带上;
+  `k8s-release-*`(`k8s_image.ps1`)与 `k8s_zone_rollback.ps1` 不部署全局 Go 服务,碰不到 match。
+  注意:设计 §3.7 的告警 `RankConsumerStalled` 以「match 15 分钟内确实发过」为前提,开关被落回 0 时它刻意不响 —— 这种静默关榜只能看那一行部署输出。
+- 本次不部署全局 Go 服务(`zone-up`、`-SkipGoSvc`、没给 `-GoSvcRegistry`)时显式传它没有效果,写路径入口打一条 WARNING。
 
 ### 本轮改了什么
 

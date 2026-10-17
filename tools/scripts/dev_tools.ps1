@@ -87,6 +87,12 @@
     # k8s-release-* 不转发它(等于 keep);k8s-zone-rollback 不经本参数,回滚脚本的 Step 6 自己固定传 zone。
     [ValidateSet("", "keep", "zone", "legacy")]
     [string]$DbConsumerGroup = "",
+    # 排行榜评分快照发布开关(k8s-infra-up / k8s-all-up),透传给 k8s_deploy.ps1 -MatchRatingSnapshotPublish(docs/design/leaderboard-system.md §5.4)。
+    # 默认留空 = 不透传,由 k8s_deploy.ps1 的默认值 "0" 接管(写法同 -GateRouterMode)。⚠ 那边**不粘滞**:以 "1" 运行的环境用本入口
+    # 发版却不传,会落回 "0"、榜停止更新(部署输出有一行 MatchRatingSnapshotPublish: 0)。k8s-release-*(k8s_image.ps1)不部署全局
+    # Go 服务、碰不到 match,不转发它。
+    [ValidateSet("", "0", "1")]
+    [string]$MatchRatingSnapshotPublish = "",
     # 集群外客户端入口,透传给 k8s_deploy.ps1(k8s-infra-up / k8s-zone-up / k8s-all-up)、k8s_image.ps1(k8s-release-*)
     # 或 k8s_zone_rollback.ps1(k8s-zone-rollback,由它的 Step 6 转给 k8s-zone-up),语义见 k8s_deploy.ps1 同名参数与
     # docs/design/k8s-client-entry.md(集群外入口 D80 / D88 / D89 / D91)。
@@ -516,6 +522,8 @@ function Invoke-ProtoGenRun {
 # 新增一个这样的域 = 在 $ProtoGenPostHooks 里加一项(脚本照 tools/scripts/mail_postgen.py 的子命令约定)。
 $ProtoGenPostHooks = @(
     @{ Domain = "mail"; Script = "tools\scripts\mail_postgen.py"; Marker = "cpp\generated\proto\mail"; Commands = @("register-cpp", "vendor-robot") }
+    # 排行榜 rank(docs/design/leaderboard-system.md §5.3):新域,同一个问题;rank_postgen.py 复用 mail_postgen.py 的登记机制。
+    @{ Domain = "rank"; Script = "tools\scripts\rank_postgen.py"; Marker = "cpp\generated\proto\rank"; Commands = @("register-cpp", "vendor-robot") }
 )
 
 # 钩子用的 Python 3:与 dev.bat :export 同一顺序(PYTHON_EXE → py -3 → python)。每个候选都实跑一次,
@@ -732,6 +740,10 @@ function Invoke-K8sDeploy {
     # 同上:留空不传,由 k8s_deploy.ps1 的默认值(keep)接管。
     if (-not [string]::IsNullOrWhiteSpace($DbConsumerGroup)) {
         $args.DbConsumerGroup = $DbConsumerGroup
+    }
+    # 同上:留空不传,由 k8s_deploy.ps1 的默认值("0")接管。
+    if (-not [string]::IsNullOrWhiteSpace($MatchRatingSnapshotPublish)) {
+        $args.MatchRatingSnapshotPublish = $MatchRatingSnapshotPublish
     }
     # 集群外入口参数同一口径:字符串非空才传,GateNodePortBase 非 -1 才传,switch 只在被指定时传。
     # 不抽成共用函数:契约测试按 AST 单独取出本函数执行,依赖外部函数会让它找不到命令。

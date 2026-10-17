@@ -141,7 +141,8 @@ func rankKeyForQueue(queueKey string) (string, error) {
 	return strings.Join(parts, ":"), nil
 }
 
-// matchRatingKey 玩家评分 hash(§11):字段 rating / games / updated_at_ms,
+// matchRatingKey 玩家评分 hash(§11):字段 rating / games / updated_at_ms / recent_battles,以及排行榜用的代际 rating_gen
+// (首次写入时 HSETNX,docs/design/leaderboard-system.md §2.4),
 // 无 TTL,按玩家分布(不带 {mq})。缺失即默认 defaultRating。
 func matchRatingKey(playerId uint64) string {
 	return fmt.Sprintf("match:rating:%d", playerId)

@@ -13,6 +13,7 @@ package logic
 //   - 5v5 分队 assignBalancedTeams:按评分排序后蛇形分配 0/1。
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -21,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	matchkafka "match/internal/kafka"
 	"match/internal/metrics"
 	"match/internal/svc"
 
@@ -47,6 +49,10 @@ const (
 	ratingFieldGames         = "games"
 	ratingFieldUpdatedAt     = "updated_at_ms"
 	ratingFieldRecentBattles = "recent_battles" // 最近入账的 battle_id,逗号分隔,头插,最多 ratingRecentBattlesKeep 个
+	// ratingFieldGen 评分 hash 的代际:首次写入(HSETNX)时的毫秒时间。键被淘汰 / 清空后重建会得到更大的代际,
+	// 排行榜据此用 (rating_gen, games) 字典序判版本 —— 没有它,键丢失后 games 从 1 重计,榜会永久拒写这个玩家
+	// (docs/design/leaderboard-system.md §2.4 / §3.2)。存量 hash 在升级后第一次写入时补上。
+	ratingFieldGen = "rating_gen"
 )
 
 // ratingRecentBattlesKeep 每人 hash 里保留的最近入账 battle_id 个数:逐人幂等的
@@ -54,19 +60,29 @@ const (
 const ratingRecentBattlesKeep = 8
 
 // ratingApplyScript 逐人**增量**写一局评分(KEYS=[ratingKey],
-// ARGV=[delta, nowMs, battleId, defaultRating, recentKeep]),返回 {是否写入(0/1), 新评分, 累计局数}:
-//   - recent_battles 已含本局 battle_id → 不写,返回 {0, 当前评分, 当前局数}(逐人幂等:
-//     写到一半失败后续写,已落账的人不会再算一次);
+// ARGV=[delta, nowMs, battleId, defaultRating, recentKeep]),两条分支统一返回
+// {是否写入(0/1), 评分(存储串), 累计局数, updated_at_ms, rating_gen} —— 后四项是同一次 Lua 原子读出的**当前快照**
+// (排行榜的评分快照事件就取它们,docs/design/leaderboard-system.md §2.4):
+//   - 开头 HSETNX rating_gen = ARGV[2]:新键 / 存量键(升级前写的,没有代际)在这里补上代际,已有的不动;
+//   - recent_battles 已含本局 battle_id → 不写,返回 {0, 当前快照}(逐人幂等:写到一半失败后续写,
+//     已落账的人不会再算一次;续写读到的快照可能已含该玩家后来的对局,那正是"当前状态");
 //   - 否则 rating = max(0, 当前评分(缺省 ARGV[4]) + delta)、games+1、updated_at_ms、
 //     recent_battles 头插本局并截到 ARGV[5](ratingRecentBattlesKeep)个。
+//
+// 局数两条分支都以**整数**返回(续写分支 tonumber(HGET),写入分支 HINCRBY):早先续写分支回的是 HGET 的字符串,
+// Go 侧按 int64 取会得到 0。Go 侧仍同时接受整数与字符串(纵深防御,parseRatingSnapshot)。
 //
 // 增量而不是"Go 侧读旧值 + HSET 绝对值":同一玩家连续两局按 battle_id 落在不同
 // 分区、被两个 match 实例并发入账时,两份增量可交换、都落账;读旧值再覆盖写会丢
 // 其中一局。单 key,集群下可用;评分保留两位小数,与 formatRating 同口径。
-const ratingApplyScript = `local recent = redis.call("HGET", KEYS[1], "` + ratingFieldRecentBattles + `") or ""
+const ratingApplyScript = `redis.call("HSETNX", KEYS[1], "` + ratingFieldGen + `", ARGV[2])
+local recent = redis.call("HGET", KEYS[1], "` + ratingFieldRecentBattles + `") or ""
 for id in string.gmatch(recent, "[^,]+") do
 	if id == ARGV[3] then
-		return {0, redis.call("HGET", KEYS[1], "` + ratingFieldRating + `") or "", redis.call("HGET", KEYS[1], "` + ratingFieldGames + `") or 0}
+		return {0, redis.call("HGET", KEYS[1], "` + ratingFieldRating + `") or "",
+			tonumber(redis.call("HGET", KEYS[1], "` + ratingFieldGames + `") or "") or 0,
+			tonumber(redis.call("HGET", KEYS[1], "` + ratingFieldUpdatedAt + `") or "") or 0,
+			tonumber(redis.call("HGET", KEYS[1], "` + ratingFieldGen + `") or "") or 0}
 	end
 end
 local cur = tonumber(redis.call("HGET", KEYS[1], "` + ratingFieldRating + `") or "") or tonumber(ARGV[4])
@@ -86,7 +102,7 @@ redis.call("HSET", KEYS[1], "` + ratingFieldRating + `", rating)
 redis.call("HSET", KEYS[1], "` + ratingFieldUpdatedAt + `", ARGV[2])
 redis.call("HSET", KEYS[1], "` + ratingFieldRecentBattles + `", table.concat(kept, ","))
 local games = redis.call("HINCRBY", KEYS[1], "` + ratingFieldGames + `", 1)
-return {1, rating, games}`
+return {1, rating, games, tonumber(ARGV[2]), tonumber(redis.call("HGET", KEYS[1], "` + ratingFieldGen + `") or "") or 0}`
 
 // isRatedMode 报告该队列模式是否按评分凑组 / 更新评分:只有 PVP 队列模式
 // (1V1 / 5V5)。PVE 组队不看评分沿用等待序(容差 ∞);切磋点名成局、PVE 单人
@@ -323,6 +339,10 @@ var ratingWriteBackoff = 50 * time.Millisecond
 // 入账同一玩家的另一局"插进中间,证明增量写不丢更新。
 var ratingAfterLoadHook func(battleId uint64)
 
+// ratingNowMs 入账用的时钟(写进 updated_at_ms 与新代际 rating_gen)。包级变量只为测试替换:
+// 排行榜快照的用例要让"重试时刻"与"首次写入时刻"不同,才能证明续写重发的 updated_at_ms 取的是 Lua 读出的原值。
+var ratingNowMs = nowMs
+
 // eloExpected A 对 B 的期望得分:1 / (1 + 10^((B-A)/400))。
 func eloExpected(ratingA, ratingB float64) float64 {
 	return 1 / (1 + math.Pow(10, (ratingB-ratingA)/400))
@@ -340,10 +360,117 @@ func teamAverageRating(ratings map[uint64]float64, playerIds []uint64) float64 {
 	return sum / float64(len(playerIds))
 }
 
+// ratingSnapshot 是 ratingApplyScript 原子读出的一名玩家的当前评分快照(排行榜快照事件的内容)。
+type ratingSnapshot struct {
+	raw         string // 存储形态的评分("1516.29"),日志用
+	ratingCenti uint32 // 分 × 100 的精确整数
+	games       uint64 // 累计局数,> 0
+	updatedAtMs uint64 // 评分 hash 的 updated_at_ms(与 rating / games 同源)
+	ratingGen   uint64 // 评分 hash 的代际
+}
+
+// parseRatingCenti 把存储形态的评分("%.2f",非负)按**十进制字符串**解析成分 × 100 的精确整数:
+// "1516.29" → 151629、"0.29" → 29、"1500" → 150000、"1500.5" → 150050。
+// 禁止走 float 截断(uint32(f*100) 会把 "0.29" 变成 28,展示少 0.01 并与真差 0.01 的玩家变成同分,零报错)。
+// 负数、空串、多于两位小数、非数字、超出 uint32 一律报错。
+func parseRatingCenti(raw string) (uint32, error) {
+	intPart, fracPart, _ := strings.Cut(raw, ".")
+	if intPart == "" || len(fracPart) > 2 {
+		return 0, fmt.Errorf("评分 %q 不是非负的两位小数", raw)
+	}
+	for _, c := range intPart + fracPart {
+		if c < '0' || c > '9' {
+			return 0, fmt.Errorf("评分 %q 含非数字字符", raw)
+		}
+	}
+	for len(fracPart) < 2 {
+		fracPart += "0"
+	}
+	whole, err := strconv.ParseUint(intPart, 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("评分 %q 整数部分越界: %w", raw, err)
+	}
+	frac, _ := strconv.ParseUint(fracPart, 10, 32) // 两位纯数字,不会出错
+	centi := whole*100 + frac
+	if centi > math.MaxUint32 {
+		return 0, fmt.Errorf("评分 %q 超出 uint32 分×100 的范围", raw)
+	}
+	return uint32(centi), nil
+}
+
+// luaUint 解析 Lua 返回的一个非负整数元素:整数回复是 int64,字符串回复(老脚本 / 续写分支的 HGET)是 string。
+func luaUint(v any) (uint64, bool) {
+	switch x := v.(type) {
+	case int64:
+		if x < 0 {
+			return 0, false
+		}
+		return uint64(x), true
+	case string:
+		n, err := strconv.ParseUint(x, 10, 64)
+		return n, err == nil
+	default:
+		return 0, false
+	}
+}
+
+// luaWrittenFlag 取 ratingApplyScript 返回值的第 1 个元素(本次是否写入);形态不对按"未写入"。
+func luaWrittenFlag(res any) bool {
+	arr, _ := res.([]any)
+	if len(arr) == 0 {
+		return false
+	}
+	written, _ := arr[0].(int64)
+	return written == 1
+}
+
+// luaRatingString 取 ratingApplyScript 返回值的第 2 个元素(存储形态的评分串),只用于日志;取不到返回空串。
+func luaRatingString(res any) string {
+	arr, _ := res.([]any)
+	if len(arr) < 2 {
+		return ""
+	}
+	raw, _ := arr[1].(string)
+	return raw
+}
+
+// parseRatingSnapshot 解析 ratingApplyScript 的 5 元素返回值。局数为 0 或任何元素解析失败都报错
+// (不回落成 0:续写路径发出 games=0 会让已在榜的玩家被当成旧版本拒掉、新玩家以 0 局入榜,§2.4)。
+func parseRatingSnapshot(playerId uint64, res any) (bool, ratingSnapshot, error) {
+	arr, _ := res.([]any)
+	if len(arr) < 5 {
+		return false, ratingSnapshot{}, fmt.Errorf("写评分脚本返回形态异常 player=%d: %v", playerId, res)
+	}
+	written, _ := arr[0].(int64)
+	raw, _ := arr[1].(string)
+	centi, err := parseRatingCenti(raw)
+	if err != nil {
+		return false, ratingSnapshot{}, fmt.Errorf("写评分脚本返回的评分无法解析 player=%d: %w", playerId, err)
+	}
+	games, ok := luaUint(arr[2])
+	if !ok || games == 0 {
+		return false, ratingSnapshot{}, fmt.Errorf("写评分脚本返回的局数非法 player=%d games=%v", playerId, arr[2])
+	}
+	updatedAt, ok := luaUint(arr[3])
+	if !ok {
+		return false, ratingSnapshot{}, fmt.Errorf("写评分脚本返回的 updated_at_ms 非法 player=%d: %v", playerId, arr[3])
+	}
+	gen, ok := luaUint(arr[4])
+	if !ok || gen == 0 {
+		return false, ratingSnapshot{}, fmt.Errorf("写评分脚本返回的 rating_gen 非法 player=%d: %v", playerId, arr[4])
+	}
+	return written == 1, ratingSnapshot{raw: raw, ratingCenti: centi, games: games, updatedAtMs: updatedAt, ratingGen: gen}, nil
+}
+
 // applyRatingDelta 给一名玩家写本局增量(ratingApplyScript,有界重试)。
-// 返回 (本次是否实际写入, 写后评分的存储形态, err);written=false 且 err=nil 表示
-// 这个人本局已入账(续写路径)。
-func applyRatingDelta(svcCtx *svc.ServiceContext, battleId uint64, playerId uint64, delta float64, now uint64) (bool, string, error) {
+// 返回 (本次是否实际写入, 写后的当前快照, err);written=false 且 err=nil 表示这个人本局已入账(续写路径),
+// 快照仍是当前值(排行榜续写重发就靠它)。
+//
+// strictSnapshot = 排行榜快照发布开关:
+//   - 打开时快照字段解析失败按错误返回(不能拿残缺快照去发布,标记留 applying,重试走续写);
+//   - 关闭时快照字段只是附带读出的、没人用,解析失败(评分 hash 被人工改坏这类)只记一行错误日志、按 Lua 的
+//     written 位照常入账 —— 与加快照之前的行为一致,不让一个纯展示用的字段阻断评分。
+func applyRatingDelta(svcCtx *svc.ServiceContext, battleId uint64, playerId uint64, delta float64, now uint64, strictSnapshot bool) (bool, ratingSnapshot, error) {
 	args := []any{
 		strconv.FormatFloat(delta, 'f', -1, 64),
 		strconv.FormatUint(now, 10),
@@ -355,20 +482,60 @@ func applyRatingDelta(svcCtx *svc.ServiceContext, battleId uint64, playerId uint
 	for attempt := 1; attempt <= ratingWriteAttempts; attempt++ {
 		res, err := svcCtx.MatchRedis.Eval(ratingApplyScript, []string{matchRatingKey(playerId)}, args...)
 		if err == nil {
-			arr, _ := res.([]any)
-			if len(arr) < 2 {
-				return false, "", fmt.Errorf("写评分脚本返回形态异常 player=%d: %v", playerId, res)
+			// 解析失败不重试:脚本已经执行(可能已写入),再跑一次也只会走续写分支拿到同样的返回值。
+			written, snap, perr := parseRatingSnapshot(playerId, res)
+			if perr != nil && !strictSnapshot {
+				logx.Errorf("[rating] Rating applied but its snapshot fields are unparseable (snapshot publishing disabled, so ignored) battle=%d player=%d: %v",
+					battleId, playerId, perr)
+				return luaWrittenFlag(res), ratingSnapshot{raw: luaRatingString(res)}, nil
 			}
-			written, _ := arr[0].(int64)
-			rating, _ := arr[1].(string)
-			return written == 1, rating, nil
+			return written, snap, perr
 		}
 		lastErr = err
 		if attempt < ratingWriteAttempts && ratingWriteBackoff > 0 {
 			time.Sleep(ratingWriteBackoff)
 		}
 	}
-	return false, "", lastErr
+	return false, ratingSnapshot{}, lastErr
+}
+
+// ---- 排行榜评分快照(docs/design/leaderboard-system.md §2.4)----
+
+// ratingSnapshotPublishTimeout 一局快照批量写 Kafka 的上限。ApplyBattleResult 没有调用方 ctx(消费者回调只传事件),
+// 用自带上限的 ctx;writer 自己的 WriteTimeout 取 KafkaWriteTimeoutSeconds(仓内默认也是 5s),哪个先到算哪个。
+// 发布失败会被结果消费者的串行重试放大(3 次 × 续写全员 Lua + 本上限 + 1s 退避,每局最坏约 17s),
+// 快照 topic 长时间写不进去时评分入账整体变慢 —— 应急手段是把发布开关翻回 false(k8s_deploy.ps1 -MatchRatingSnapshotPublish 0)。
+const ratingSnapshotPublishTimeout = 5 * time.Second
+
+// ratingSnapshotPublishFn 发布一局全员的评分快照(一次批量写)。包级接缝:测试照 ratingAfterLoadHook 的写法替换它,
+// 发布类用例只用 miniredis + 替身、不连 Kafka;生产实现见 publishRatingSnapshots。
+var ratingSnapshotPublishFn = publishRatingSnapshots
+
+// publishRatingSnapshots 经 svcCtx.Kafka(同步、MaxAttempts=1、RequireOne)把快照批量写到快照 topic。
+// 构造在 kafka 包(只做 proto 构造与写入,不 import svc / logic,避免 svc → kafka → logic → svc 成环)。
+func publishRatingSnapshots(ctx context.Context, svcCtx *svc.ServiceContext, events []*kafkapb.PlayerRatingSnapshotEvent) error {
+	if svcCtx.Kafka == nil { // 先判具体指针:装进 SnapshotWriter 接口之后的 nil 指针 != nil
+		return errors.New("Kafka writer 未配置(Kafka.Brokers 为空),无法发布评分快照")
+	}
+	return matchkafka.WriteRatingSnapshots(ctx, svcCtx.Kafka, svcCtx.Config.RatingSnapshotTopic, events)
+}
+
+// buildRatingSnapshotEvents 把一局全员的快照组成事件(顺序 = teamA 再 teamB,与写分顺序一致)。
+func buildRatingSnapshotEvents(event *kafkapb.BattleResultEvent, players []uint64, snaps map[uint64]ratingSnapshot) []*kafkapb.PlayerRatingSnapshotEvent {
+	out := make([]*kafkapb.PlayerRatingSnapshotEvent, 0, len(players))
+	for _, pid := range players {
+		snap := snaps[pid]
+		out = append(out, &kafkapb.PlayerRatingSnapshotEvent{
+			PlayerId:     pid,
+			RatingCenti:  snap.ratingCenti,
+			Games:        snap.games,
+			UpdatedAtMs:  snap.updatedAtMs,
+			RatingGen:    snap.ratingGen,
+			BattleId:     event.GetBattleId(),
+			FinishedAtMs: event.GetFinishedAtMs(),
+		})
+	}
+	return out
 }
 
 // ApplyBattleResult 消费一条对局结果并更新 Elo(§11.5)。返回 outcome 与错误:
@@ -459,14 +626,15 @@ func ApplyBattleResult(svcCtx *svc.ServiceContext, event *kafkapb.BattleResultEv
 		logx.Infof("[rating] Resuming battle result updates for unapplied members battle=%d mode=%s deltaA=%+.2f", battleId, modeName, deltaA)
 	}
 	deltaB := -deltaA
-	now := nowMs()
+	now := ratingNowMs()
 
 	var missing []uint64 // 本次没写成的玩家(留给重试续写)
 	var firstErr error
 	written := 0
+	snaps := make(map[uint64]ratingSnapshot, len(all)) // 全员的当前快照(含续写路径上已入账的人)
 	applyTeam := func(team []uint64, delta float64) {
 		for _, pid := range team {
-			ok, rating, err := applyRatingDelta(svcCtx, battleId, pid, delta, now)
+			ok, snap, err := applyRatingDelta(svcCtx, battleId, pid, delta, now, svcCtx.Config.RatingSnapshotPublishEnabled)
 			if err != nil {
 				// 不中断:把其他人先写完,让重试要补的人最少。
 				missing = append(missing, pid)
@@ -475,13 +643,14 @@ func ApplyBattleResult(svcCtx *svc.ServiceContext, event *kafkapb.BattleResultEv
 				}
 				continue
 			}
+			snaps[pid] = snap
 			if !ok {
-				logx.Infof("[rating] Player's battle result already applied; skipping battle=%d player=%d rating=%s", battleId, pid, rating)
+				logx.Infof("[rating] Player's battle result already applied; skipping battle=%d player=%d rating=%s", battleId, pid, snap.raw)
 				continue
 			}
 			written++
 			logx.Infof("[rating] Rating updated battle=%d mode=%s player=%d %s -> %s (delta=%+.2f)",
-				battleId, modeName, pid, formatRating(ratings[pid]), rating, delta)
+				battleId, modeName, pid, formatRating(ratings[pid]), snap.raw, delta)
 		}
 	}
 	applyTeam(teamA, deltaA)
@@ -495,6 +664,23 @@ func ApplyBattleResult(svcCtx *svc.ServiceContext, event *kafkapb.BattleResultEv
 			battleId, modeName, missing, written, firstErr)
 		finish(outcome)
 		return outcome, fmt.Errorf("写评分失败 battle=%d 未落账玩家=%v: %w", battleId, missing, firstErr)
+	}
+	// 排行榜快照:全员写完之后、置 done 之前一次批量发出。发布失败 → 返回 error、标记仍是 applying →
+	// 消费者重试走续写路径,所有人 written=0 但带回当前快照 → 重新批量发布(§2.4)。置 done 之后再发就没有重试机会了。
+	// 开关关闭时不调用接缝,行为与加快照之前逐字一致。
+	if svcCtx.Config.RatingSnapshotPublishEnabled {
+		events := buildRatingSnapshotEvents(event, all, snaps)
+		publishCtx, cancel := context.WithTimeout(context.Background(), ratingSnapshotPublishTimeout)
+		err := ratingSnapshotPublishFn(publishCtx, svcCtx, events)
+		cancel()
+		if err != nil {
+			metrics.ObserveRatingSnapshotPublish(metrics.RatingSnapshotPublishError, len(events))
+			logx.Errorf("[rating] Failed to publish rating snapshots; marker remains applying so the retry republishes current snapshots battle=%d players=%d: %v",
+				battleId, len(events), err)
+			finish(ratingOutcomeError)
+			return ratingOutcomeError, fmt.Errorf("发布评分快照失败 battle=%d: %w", battleId, err)
+		}
+		metrics.ObserveRatingSnapshotPublish(metrics.RatingSnapshotPublishOK, len(events))
 	}
 	if err := svcCtx.MatchRedis.Setex(appliedKey, encodeRatingAppliedMarker(ratingAppliedStateDone, 0), ratingAppliedTTLSeconds); err != nil {
 		// 全员已落账;标记没改成 done 只影响重投的路径 —— 会走续写并被逐人幂等全部跳过,不会算两次。

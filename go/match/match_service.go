@@ -129,10 +129,31 @@ func main() {
 				return err
 			})
 		}
+		// 排行榜评分快照 topic(docs/design/leaderboard-system.md §2.4):RatingEnabled=true 时不论发布开关开没开,都由 match
+		// 声明分区契约与保留期 —— rank 先起时 topic 以 broker 默认保留期建出(rank Ensure 传 RetentionMs: -1 不改写),
+		// match 一起来就按配置写正。
+		ensureSnapshotTopic := func() error {
+			return matchkafka.EnsureRatingSnapshotTopic(c.Kafka.Brokers, c.RatingSnapshotTopic,
+				c.RatingSnapshotTopicPartitions, c.RatingSnapshotRetentionMs())
+		}
+		// 发布开关打开时,结果消费者必须在快照 topic 声明成功**之后**才起:共享 writer 开着 AllowAutoTopicCreation,
+		// 声明失败期间消费到的对局一发布,broker 就会按默认分区数(本地 compose 与 K8s 都是 1)自动建 topic,
+		// 3 分区契约从此永久破坏,match 与 rank 的 Ensure 都永远失败,只能手工删 topic(R1 评审)。
+		// 所以两步串成一步重试:声明不成功,评分入账就停在当前值(排队 / 凑单照常),日志每 30s 报一次原因。
+		// 开关关闭时两者各自重试:快照 topic 的问题(比如分区数与 broker 不一致)不能连带停掉评分入账。
+		startRating := startResults
+		if c.RatingSnapshotPublishEnabled {
+			startRating = func() error {
+				if err := ensureSnapshotTopic(); err != nil {
+					return fmt.Errorf("快照发布已打开,必须先声明评分快照 topic %s 才能起结果消费者: %w", c.RatingSnapshotTopic, err)
+				}
+				return startResults()
+			}
+		}
 		// 评分是软数据:Kafka 暂不可达(EnsureTopics / 建 reader 失败)不能拖死匹配本身
 		// (复审:RatingEnabled=true 让 match 启动硬依赖 Kafka)。降级为告警 + 30s 后台重试,
 		// 期间排队/凑单照常、评分停在当前值;重试成功后从最早 offset 补消费,不丢结果。
-		if err := startResults(); err != nil {
+		if err := startRating(); err != nil {
 			logx.Errorf("[rating] Failed to start battle result consumer; rating updates paused, retrying in the background after 30s: %v", err)
 			safego.Go("match.kafka.results.retry", func() {
 				for {
@@ -141,7 +162,7 @@ func main() {
 						return
 					case <-time.After(30 * time.Second):
 					}
-					if err := startResults(); err != nil {
+					if err := startRating(); err != nil {
 						logx.Errorf("[rating] Failed to restart battle result consumer; retrying after 30s: %v", err)
 						continue
 					}
@@ -150,6 +171,30 @@ func main() {
 				}
 			})
 		}
+
+		// 开关关闭:快照 topic 只在后台声明、失败每 30s 重试(开关打开时已经在 startRating 里先于结果消费者同步声明)。
+		// 不在这里同步试第一次:Kafka 能建连却不回包时一次 admin 调用最坏要几十秒,叠在 startRating 之后会把 gRPC 起服推迟一倍,
+		// 被 liveness 探针杀掉重启 —— 而开关关着时没有任何东西等这个 topic。
+		if !c.RatingSnapshotPublishEnabled {
+			safego.Go("match.kafka.rating_snapshot_topic", func() {
+				for {
+					err := ensureSnapshotTopic()
+					if err == nil {
+						logx.Infof("[rating] Rating snapshot topic %s declared (publish disabled)", c.RatingSnapshotTopic)
+						return
+					}
+					logx.Errorf("[rating] Failed to declare rating snapshot topic %s (publish disabled); retrying after 30s: %v",
+						c.RatingSnapshotTopic, err)
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(30 * time.Second):
+					}
+				}
+			})
+		}
+		logx.Infof("[rating] Leaderboard rating snapshot publish enabled=%t topic=%s partitions=%d retention=%dh",
+			c.RatingSnapshotPublishEnabled, c.RatingSnapshotTopic, c.RatingSnapshotTopicPartitions, c.RatingSnapshotRetentionHours)
 	}
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {

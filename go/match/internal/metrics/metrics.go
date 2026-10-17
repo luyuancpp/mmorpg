@@ -106,8 +106,17 @@ var (
 	ratingUpdateTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "rating_update_total",
-		Help:      "Battle result events consumed from Kafka by mode and outcome (applied|duplicate|ignored|partial|error|decode_error).",
+		Help:      "Battle result events consumed from Kafka by mode and outcome (applied|duplicate|ignored|partial|error|decode_error); error also covers a failed leaderboard snapshot publish (all members applied, marker left applying for retry).",
 	}, []string{"mode", "outcome"})
+
+	// ratingSnapshotPublishTotal 排行榜评分快照的发布结果(docs/design/leaderboard-system.md §3.6),**按消息条数**计:
+	// 一局 N 人的批量写成功记 ok += N,失败记 error += N(失败的那一局会走续写重试,重发当前快照)。
+	// rank 的告警 RankConsumerStalled 以 "match 15 分钟内确实发过(ok 增长)" 为前提,所以 ok / error 两条序列在注册时预建为 0。
+	ratingSnapshotPublishTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "rating_snapshot_publish_total",
+		Help:      "Leaderboard rating snapshot events published to Kafka, counted per message, by outcome (ok|error).",
+	}, []string{"outcome"})
 
 	// groupRatingSpread 每次凑组成功时组内最高分与最低分之差:分布右移说明
 	// 容差放宽得太快或某段位人太少。
@@ -236,6 +245,7 @@ func register() {
 			watchBattleTotal,
 			requestBattleTicketTotal,
 			ratingUpdateTotal,
+			ratingSnapshotPublishTotal,
 			groupRatingSpread,
 			waitSeconds,
 			starvedAnchorWait,
@@ -250,6 +260,9 @@ func register() {
 			teamCrossZoneAllowed,
 			teamFillQueueDisabled,
 		)
+		for _, outcome := range []string{RatingSnapshotPublishOK, RatingSnapshotPublishError} {
+			ratingSnapshotPublishTotal.WithLabelValues(outcome)
+		}
 	})
 }
 
@@ -257,6 +270,20 @@ func register() {
 // teamSize 是 PVE 人数档("2".."5";没有人数档的队列传 "0"),见 SetQueueDepth。
 func SetStarvedAnchorWait(mode string, config string, teamSize string, seconds float64) {
 	starvedAnchorWait.WithLabelValues(mode, config, teamSize).Set(seconds)
+}
+
+// 评分快照发布的 outcome label(有限枚举)。
+const (
+	RatingSnapshotPublishOK    = "ok"
+	RatingSnapshotPublishError = "error"
+)
+
+// ObserveRatingSnapshotPublish 记录一次批量发布涉及的消息条数(outcome 取 RatingSnapshotPublish* 之一)。
+func ObserveRatingSnapshotPublish(outcome string, messages int) {
+	if messages <= 0 {
+		return
+	}
+	ratingSnapshotPublishTotal.WithLabelValues(outcome).Add(float64(messages))
 }
 
 // ObserveRatingRoundCapDraw 记录一局回合打满被改按平局结算。
@@ -282,6 +309,15 @@ func ObserveRatingUpdate(mode string, outcome string) {
 func RatingUpdateValue(mode string, outcome string) float64 {
 	var m dto.Metric
 	if err := ratingUpdateTotal.WithLabelValues(mode, outcome).Write(&m); err != nil {
+		return 0
+	}
+	return m.GetCounter().GetValue()
+}
+
+// RatingSnapshotPublishValue 读评分快照发布计数(测试与诊断用)。
+func RatingSnapshotPublishValue(outcome string) float64 {
+	var m dto.Metric
+	if err := ratingSnapshotPublishTotal.WithLabelValues(outcome).Write(&m); err != nil {
 		return 0
 	}
 	return m.GetCounter().GetValue()
