@@ -202,7 +202,7 @@ func TestGaugeRoundCutoffs(t *testing.T) {
 	}
 	// 时钟早于窗口(只可能是测试或时钟错乱):截止取 0,不下溢成一个巨大的数。
 	if got := gaugeCutoffs(uint64((time.Hour).Milliseconds())); got.DeliveredStaleBeforeMs != 0 ||
-		got.NotifyOverdueBeforeMs != uint64((55 * time.Minute).Milliseconds()) {
+		got.NotifyOverdueBeforeMs != uint64((55*time.Minute).Milliseconds()) {
 		t.Fatalf("gaugeCutoffs(1h) = %+v", got)
 	}
 }

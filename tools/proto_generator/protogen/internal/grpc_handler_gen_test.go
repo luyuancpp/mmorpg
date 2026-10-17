@@ -151,6 +151,77 @@ func TestIsEmptyGrpcCodeSection(t *testing.T) {
 	}
 }
 
+// 扫描器的切分边界:守护段里顶格的手写函数与大括号不参与切分(FirstCode 里常见),函数体内缩进的大括号也不算;
+// 折行签名(返回类型独占一行、"(" 后换行)整体收进一项;函数外的段 Function 为 -1;CRLF 与 LF 结果相同。
+func TestScanGrpcCppSections_Boundaries(t *testing.T) {
+	setParserTestNaming(t)
+	begin := _config.Global.Naming.YourCodeBegin
+	end := _config.Global.Naming.YourCodeEnd
+	lines := []string{
+		"#include \"battle_node.h\"",
+		begin,
+		"bool BattleNodeImpl::OpenAdmission()",
+		"{",
+		"    return true;",
+		"}",
+		end,
+		"",
+		"void BattleNodeImpl::HandleDestroyBattle(const ::DestroyBattleRequest* request)",
+		"{",
+		begin,
+		"    destroy_impl(*request);",
+		end,
+		"}",
+		"",
+		"grpc::Status",
+		"BattleNodeImpl::DestroyBattle(",
+		"    grpc::ServerContext* /*context*/,",
+		"    const ::DestroyBattleRequest* request,",
+		"    ::Empty* /*response*/)",
+		"{",
+		"    loop_.runInLoop([&]",
+		"                    {",
+		"        " + begin + ": grpc.DestroyBattle.in_loop",
+		"        " + end,
+		"        promise.set_value(dispatchStatus); });",
+		"    " + begin,
+		"    // 迁移前的说明",
+		"    " + end,
+		"    return status;",
+		"}",
+	}
+	want := []struct {
+		name     string
+		function int
+	}{{"", -1}, {"", 0}, {"grpc.DestroyBattle.in_loop", 1}, {"", 1}}
+	for _, newline := range []string{"\n", "\r\n"} {
+		path := writeParserTempFile(t, strings.Join(lines, newline)+newline)
+		signatures, sections, err := scanGrpcCppSections(path)
+		if err != nil {
+			t.Fatalf("扫描失败(换行 %q): %v", newline, err)
+		}
+		if len(signatures) != 2 {
+			t.Fatalf("应只切出 Handle* 与旧包装函数两个函数,FirstCode 里的手写函数不算(换行 %q): %q", newline, signatures)
+		}
+		if !legacyGrpcWrapperPattern.MatchString(signatures[1]) {
+			t.Fatalf("折行签名应整体收进一项并被识别为旧包装函数(换行 %q): %q", newline, signatures[1])
+		}
+		if len(sections) != len(want) {
+			t.Fatalf("守护段数量不对(换行 %q): got=%d want=%d", newline, len(sections), len(want))
+		}
+		for i, w := range want {
+			if sections[i].Name != w.name || sections[i].Function != w.function {
+				t.Fatalf("第 %d 个段归属不对(换行 %q): got=(%q,%d) want=(%q,%d)", i, newline, sections[i].Name, sections[i].Function, w.name, w.function)
+			}
+		}
+		err = checkLegacyGrpcSections(path, buildBattleGrpcPreservationMethods())
+		if err == nil {
+			t.Fatalf("折行签名旧包装函数里的非空无名段必须拒绝(换行 %q)", newline)
+		}
+		assertLegacyGrpcSectionListing(t, err.Error(), path, []string{"DestroyBattle:" + legacyGrpcPreDispatchSectionName}, nil)
+	}
+}
+
 // buildGrpcHandlerTestMethods 照 proto/scene_manager/scene_node_service.proto 的 SceneNodeGrpc(package scene_node,9 个 unary)。
 func buildGrpcHandlerTestMethods() RPCMethods {
 	fd := &descriptorpb.FileDescriptorProto{

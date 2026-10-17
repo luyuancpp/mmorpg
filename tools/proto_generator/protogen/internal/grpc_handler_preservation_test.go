@@ -721,6 +721,94 @@ func legacyGrpcHandlerCpp(methods RPCMethods, firstCode string, sections map[str
 	return b.String()
 }
 
+// foldLegacyGrpcWrapperSignatures 把 legacyGrpcHandlerCpp 产出的旧包装函数签名改成折行形状,按 names 的顺序轮流用三种写法:
+// "(" 后换行再写 grpc::ServerContext;返回类型独占一行且 "(" 前有空格;"(" 后换行并写成 ::grpc::ServerContext。
+func foldLegacyGrpcWrapperSignatures(t *testing.T, code, service string, names ...string) string {
+	t.Helper()
+	for i, name := range names {
+		qualified := service + "Impl::" + name
+		folded := [...]string{
+			"grpc::Status " + qualified + "(\n    grpc::ServerContext*",
+			"grpc::Status\n" + qualified + " (grpc::ServerContext*",
+			"grpc::Status " + qualified + "(\n    ::grpc::ServerContext*",
+		}[i%3]
+		code = replaceGrpcFixtureOnce(t, code, "grpc::Status "+qualified+"(grpc::ServerContext*", folded)
+	}
+	return code
+}
+
+// replaceGrpcFixtureOnce 改写夹具;from 必须恰好出现一次,防止用例空转。
+func replaceGrpcFixtureOnce(t *testing.T, code, from, to string) string {
+	t.Helper()
+	if got := strings.Count(code, from); got != 1 {
+		t.Fatalf("夹具里 %q 应恰好出现一次: got=%d", from, got)
+	}
+	return strings.Replace(code, from, to, 1)
+}
+
+// withGrpcTestMethod 在 methods 之后追加一个同服务的 unary 方法,返回新表(不改 methods):模拟旧文件里有、proto 里已删除的方法。
+func withGrpcTestMethod(methods RPCMethods, name, request, response string) RPCMethods {
+	extended := append(RPCMethods{}, methods...)
+	return append(extended, &MethodInfo{
+		ProtoFileInfo: methods[0].ProtoFileInfo,
+		MethodDescriptorProto: &descriptorpb.MethodDescriptorProto{
+			Name: proto.String(name), InputType: proto.String(request), OutputType: proto.String(response),
+		},
+	})
+}
+
+// grpcGuardedBlocks 按标记行切出 code 里的每个守护段(含首尾标记行,LF 换行),规则同 readNamedGrpcCodeSections。
+func grpcGuardedBlocks(code string) []string {
+	begin := _config.Global.Naming.YourCodeBegin
+	end := _config.Global.Naming.YourCodeEnd
+	var blocks, current []string
+	for _, line := range strings.Split(code, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if current == nil {
+			if trimmed == begin || strings.HasPrefix(trimmed, begin+":") {
+				current = []string{line}
+			}
+			continue
+		}
+		current = append(current, line)
+		if trimmed == end {
+			blocks = append(blocks, strings.Join(current, "\n"))
+			current = nil
+		}
+	}
+	return blocks
+}
+
+// readGrpcFileLF 读文件并把 CRLF 统一成 LF:工作区按 core.autocrlf 可能检出成 CRLF,生成器逐行读取,产物本就不带 CR。
+func readGrpcFileLF(t *testing.T, path string) string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("读取 %s 失败: %v", path, err)
+	}
+	return strings.ReplaceAll(string(data), "\r\n", "\n")
+}
+
+// grpcWorkspaceRoot 自包目录向上找仓库根(以 scene 的 gRPC handler 文件为准);生成器脱离仓库单独运行测试时跳过。
+func grpcWorkspaceRoot(t *testing.T) string {
+	t.Helper()
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("取工作目录失败: %v", err)
+	}
+	marker := filepath.Join("cpp", "nodes", "scene", "handler", "grpc", "scene_node_service.cpp")
+	for {
+		if _, err := os.Stat(filepath.Join(dir, marker)); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Skip("未找到仓库里的 cpp/nodes/*/handler/grpc,跳过工作区真实文件回归")
+		}
+		dir = parent
+	}
+}
+
 func buildBattleGrpcPreservationMethods() RPCMethods {
 	fd := &descriptorpb.FileDescriptorProto{Name: proto.String("proto/battle/battle_node.proto")}
 	svc := &descriptorpb.ServiceDescriptorProto{Name: proto.String("BattleNode")}

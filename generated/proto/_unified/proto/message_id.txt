@@ -1,5 +1,5 @@
 0=KVCompact
-1=SceneSendMessageToPlayer
+1=reserved:SceneSendMessageToPlayer
 2=ClientPlayerFriendListBlocks
 3=dbTest
 4=LeaseLeaseLeases
@@ -38,9 +38,9 @@
 37=SceneCurrencyClientPlayerGmAddCurrency
 38=GuildServiceDisbandGuild
 39=GuildServiceSetAnnouncement
-40=SceneInvokePlayerService
+40=reserved:SceneInvokePlayerService
 41=reserved:GateRouteNodeMessage
-42=GatePlayerEnterGameNode
+42=reserved:GatePlayerEnterGameNode
 43=SceneSceneClientPlayerSceneInfoC2S
 44=SceneManagerCreateScene
 45=GateNodeHandshake
@@ -54,7 +54,7 @@
 53=GuildServiceDonateToGuild
 54=SceneCurrencyClientPlayerGetCurrencyList
 55=ScenePlayerSyncSyncAttribute5Frames
-56=GateBindSessionToGate
+56=reserved:GateBindSessionToGate
 57=GateBroadcastToScene
 58=ClientPlayerLoginDisconnect
 59=KVRange
@@ -305,3 +305,10 @@
 304=ClientPlayerJubaozhaiBrowseCommerceOffers
 305=ClientPlayerJubaozhaiListTradeMarkets
 306=SceneSceneGmDescribeEntity
+307=PlayerLocatorSetLocation
+308=PlayerLocatorGetLocation
+309=PlayerLocatorMarkOffline
+310=PlayerLocatorSetSession
+311=PlayerLocatorGetSession
+312=PlayerLocatorSetDisconnecting
+313=PlayerLocatorReconnect

@@ -4,7 +4,8 @@
 // 不起线程、不死循环。客户端两种:
 //   * muduo_grpc::Channel —— 标准 gRPC 客户端(与生产上 Go 调用方同一套线上字节);
 //   * RawConnection —— muduo TcpClient + 内存 nghttp2 客户端(TestH2Client)或裸字节:发 Channel 永远不会发的东西
-//     (RST_STREAM、grpc-timeout 0、HTTP/1.1、只连不发、只发 magic),并直接观察线上的 GOAWAY / RST。
+//     (RST_STREAM、grpc-timeout 0、HTTP/1.1、只连不发、只发 magic、停止读取造成背压),并直接观察线上的 GOAWAY / RST
+//     以及 EOF 之前到达了哪些帧。
 //
 // 生命周期(AGENTS.md §11.7):RawConnection 只存 weak_ptr<TcpConnection>,绑进 TcpClient 回调的是 weak_ptr<自己>。
 // handler 只捕获 shared_ptr<HandlerState> 与 loop 引用;保存的 ServerCall 只弱引用 Server。
@@ -79,7 +80,7 @@ constexpr char kSessionAppValue[] = "CgQIARABEgIIAQ==";
 // battle 守护段的跨语言契约文案:服务端自己产生的 UNAVAILABLE 永远不能等于它(server.h 线上不变量)。
 constexpr char kBattleNotAllocatable[] = "battle_not_allocatable";
 // 背压用例的应答大小(见夹具 StartBackpressuredCalls)与 HTTP/2 流控窗口上限(RFC 9113 §6.9.1:2^31-1)。
-constexpr size_t kBackpressureResponseBytes = 64 * 1024 * 1024;
+constexpr size_t kBackpressureResponseBytes = 32 * 1024 * 1024;
 constexpr int32_t kMaxWindowBytes = 0x7fffffff;
 
 // ── 被测服务 ─────────────────────────────────────────────────────────────
@@ -575,13 +576,13 @@ protected:
     }
 
     // 背压用例(§15.16 第 2 条)的共同准备。客户端把流级与连接级接收窗口都开到 2^31-1,否则服务端先被 HTTP/2
-    // 流控卡住、到不了输出缓冲;三个调用都派发之后客户端停止读取,再完成一个 64MiB 的应答 —— 远超回环上两端
+    // 流控卡住、到不了输出缓冲;三个调用都派发之后客户端停止读取,再完成一个 32MiB 的应答 —— 远超回环上两端
     // 内核缓冲(Linux tcp_wmem / tcp_rmem 上限默认 4MiB / 6MiB)加 1MiB 背压阈值,服务端输出缓冲必然到达阈值,
     // 剩余的 DATA 积在 nghttp2 里。之后排空到期提交的 REFUSED / UNAVAILABLE / 最终 GOAWAY 都排在它们后面。
     struct BackpressuredCalls
     {
         RawConnectionPtr raw;
-        int32_t big{0};      // 业务已完成,64MiB 应答大部分还积在服务端
+        int32_t big{0};      // 业务已完成,32MiB 应答大部分还积在服务端
         int32_t waiting{0};  // 业务未开始:排空到期回 REFUSED_STREAM
         int32_t started{0};  // 业务已开始:排空到期回 UNAVAILABLE "server shutting down"
     };

@@ -1006,10 +1006,10 @@ func TestIntegrationScanGauges(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := metrics.ScanGauges{
-		OpenItems:                     4, // A 两条 + B 一条 + C 一条 PENDING
-		DeliveredUnacked:              1, // 只有 A 的第一条在截止之后投递过
-		DeliveredUnackedStale:         1, // C:最后投递 T0 < 截止 T0+0.5s
-		MaxDeliveryCount:              2, // C 投了 3 次,但它是陈旧行,不进 PoisonSuspect 的口径
+		OpenItems:                     4,  // A 两条 + B 一条 + C 一条 PENDING
+		DeliveredUnacked:              1,  // 只有 A 的第一条在截止之后投递过
+		DeliveredUnackedStale:         1,  // C:最后投递 T0 < 截止 T0+0.5s
+		MaxDeliveryCount:              2,  // C 投了 3 次,但它是陈旧行,不进 PoisonSuspect 的口径
 		OldestOpenAgeSeconds:          10, // A / C created_ms = T0
 		DeliveredUnackedOldestSeconds: 8,  // A 最后投递 T0+2s(C 的 T0 不算)
 		NotifyBacklog:                 1,  // B 的流 notify_due_ms 非 0,最后一次写入 T0+3s ≤ 截止
