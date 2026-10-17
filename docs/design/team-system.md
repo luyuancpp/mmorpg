@@ -2406,6 +2406,43 @@ V.7 第 4 条的第一轮修复(游标)上真机后,真实客户端连跑 8 遍�
   10-16 00:20 那次「能登录、进不了场景、顶号不踢」就是 runbook 第 20 条的节点坏状态,停三个 C++ 节点后重跑启动器即恢复。
 - 10-15 夜里 `E:\work` 被别的任务整理,出包快照、旧包与证据都挪到了 `E:\work-archive-20261015`(`output\team-follow-20261010\claude-build\` 下)。
 
+### V.9 2026-10-16 归队瞬移:点「归队」/ 跟随中看不到队长时,服务端把人带到队长身边(Claude)
+
+**问题**:用户问「归队的时候,队员在同一个场景的别处,是不是得直接传送到队长旁边」。改前只有三处会把同场景的队员瞬移到队长脚下:
+入队(组队服务的刷新信号)、自己进场(登录 / 换图)、战斗冻结解除。客户端的「暂离 / 归队」是纯本地开关,服务端不知道 ——
+暂离后走远(出了视野)再点「归队」,按钮变成灰的「寻找队长」,人就停在原地;跟随中被挡住掉队、走出视野,同样没人拉。
+
+**方案**:`GetMyTeamRequest` 加 `bool regroup = 2`(不占消息号)。组队服务收到 `regroup` 且调用者在队里、不是队长时,
+给他所在的 scene 发一次 `PlayerTeamRefreshEvent`(与入队同一条信号);scene 收到后走既有的 `CheckFollowLeader` →
+`RegroupToLeader`,**C++ 一行没改**,规则也不变:同一场景实例里互相看不见或相距超过 8 → 瞬移到队长脚下;队长在本节点的另一个场景 → 换过去;
+跨节点 / 跨 zone / 战斗中 / 换图在途 → 不动。
+
+- 为什么不新加一个 RPC:新消息号要全量 proto-gen,gate / scene 按消息号建 `gRpcMethodRegistry`,所有 C++ 节点都得重编;
+  `GetMyTeam` 已有 `notify_online` 这种「读 + 副作用开关」的先例,归队请求本身是幂等的(离得近不动、离得远至多瞬移一次)。
+- 旧 gate 收到带新字段的请求时 `ParseFromString` 保留未知字段并原样转发(proto3 C++),所以 10-13 那批 C++ 程序不用重编;
+  不认识这个字段的组队服务按普通 `GetMyTeam` 处理,只是不归队。
+- 频率:客户端合并进静默 `GetMyTeam`(TeamClient 的单飞 / 0.4 秒间隔 / 每 2.5 秒 5 次的本地窗口),gate 的 MessageLimiter 再兜一层。
+
+**客户端**(`mmorpg-client`):
+- `TeamClient.RequestRegroup()`:排一次带 `regroup` 的静默拉取;限流(1008)或回包不带视图时随重拉再带一次;队长自己 / 不在队里是空操作;会话重置时丢掉。
+- `TeamRegroupPolicy`(纯逻辑):点「归队」立刻请求(1 秒内连点只算一次);跟随中看不到队长、本地角色已就绪且队长在线时,
+  先等 1.5 秒(进场 / 瞬移后的视野重建、队长在视野边缘进出都在这段时间里自己恢复),仍看不到就请求,之后每 5 秒再请求一次。
+- `TeamFollowDriver` 每帧问一次策略,要请求时发 `RegroupRequested`,`TeamFollowUiRoot` 交给 `TeamClient.RequestRegroup`。
+- 看不到队长时按钮从灰的「寻找队长」改成可点的「暂离」:会自动请求归队之后,想自己走的人得能先点暂离。
+
+**验证**:
+- Go:`go/match/internal/team` 全部单测通过(新增 `TestGetMyTeamRegroupSignalsOnlyTheCallingMember`、`TestGetMyTeamRegroupWithoutLocationSendsNothing`),vet / gofmt 干净;
+  运行目录(07f9ec3ca9 源码 + 本补丁)同一个包的单测也全过。
+- robot `team-follow-smoke` 新增 F6:B 在 A 身边请求归队 → 2 秒内不瞬移;B 自己走开 16 → 不请求就没有瞬移;请求归队 → 收到 TeleportS2C(reason=5)、落点就是 A 的位置。
+  在运行目录栈上连跑 5 遍全过,scene 日志每遍两条 `metric=team_regroup`(入队一次、F6 一次,`distance=16`)。
+- 客户端:Unity EditMode(出包快照工程)`TeamRegroupPolicyTests` 6 条 + `TeamClientTests`(含新增 5 条)+ 跟随规划 / 轨迹,共 94 条 0 失败。
+- 生成物是 protoc 窄面重生成(Go / C++ / robot vendor / 客户端 C#),先用改前的 proto 生成一遍,与仓里现有产物逐字节一致后才换。
+- 新客户端包(`E:\work-archive-20261015\builds\wuxing-client-20261016-follow-regroup\client\`,含 V.8 第四轮修复 + 本节)上真实客户端跟随验收
+  (机器人队长 + 真实客户端队员,每遍 6 段)连跑 4 遍全过,24 段停下时离队长 1.26~1.87、0 异常 —— V.8 第四轮修复由此也有了真机证据。
+  期间出包把物理内存压满后栈进过一次 runbook 第 20 条的节点坏状态(gate 反复「Node already registered」、机器人进不了场景),停三个 C++ 节点后重跑启动器恢复。
+- **没做**:真实客户端里点「暂离 → 走远 → 归队」与「跟随中走散自动归队」没有自动化联机验收(交给用户冒烟);C++ 没有重编(没改)。
+- Java 版(AGENTS §12):待做。这是客户端契约变化(`GetMyTeamRequest` 新字段),Java 版的 GetMyTeam 要同批支持;不支持时客户端照常工作,只是不归队。
+
 ---
 
 ## 定案理由复核与扩展路径(2026-10-12)

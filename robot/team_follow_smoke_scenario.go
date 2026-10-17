@@ -11,6 +11,8 @@ package main
 //	F3 可见性重建:B 收到 guid == A 的 ActorCreate,A 收到 guid == B 的 ActorCreate;
 //	F4 移动广播:A MoveStart(带速度)→ B 收到 entity == A、move_state=1、速度非零的 ActorMoveS2C;
 //	   A MoveStop → B 收到 move_state=0。反过来 B 动一次,A 同样收到;
+//	F6 请求归队(GetMyTeam{regroup},V.9):B 在 A 身边请求 → 2s 内不应瞬移;B 自己走开 >= 12 → 不请求就没有瞬移;
+//	   B 请求归队 → 15s 内收到 TeleportS2C(reason=5)、落点在 A 的位置 1 以内,在落点上报不被拉走;
 //	F5 A 解散。
 //
 // 结果约定(供外层脚本消费):
@@ -82,6 +84,8 @@ const (
 	teamFollowSmokeMoveTimeout = 3 * time.Second
 	// F4 上报的速度(只为让 move_state = 1,远低于服务端信任上限 10)。
 	teamFollowSmokeProbeSpeed = 2.0
+	// F6 断言「不该瞬移」时观察的窗口:同一条刷新链(Kafka → scene 三跳 Redis)平时在 1 秒内走完。
+	teamFollowSmokeQuietWindow = 2 * time.Second
 
 	// ---- client_follower=true(真实客户端跟随验收)----
 	// C3 等客户端出现的缺省预算:播放器冷启动 + 登录 + 被带到队长的线。
@@ -319,6 +323,55 @@ func RunTeamFollowSmoke(cfg *config.Config) {
 		fail("F4-broadcast-member", "%v", err)
 	}
 	zap.L().Info("[team-follow-smoke] F4: movement is broadcast both ways")
+
+	// ---- F6:请求归队(GetMyTeam{regroup},组队跟随 v1.1 V.9) ----
+	// 近处:两人互相可见、相距不到 8,请求归队不应瞬移。
+	nearMark := b.recordMark()
+	if err := b.expect(game.ClientPlayerTeamGetMyTeamMessageId, &teampb.GetMyTeamRequest{Regroup: true}, &teampb.TeamResponse{}, 0); err != nil {
+		fail("F6-regroup-near", "%v", err)
+	}
+	if _, err := teamFollowSmokeWait(b, nearMark, game.SceneMovementClientPlayerNotifyTeleportMessageId, teamFollowSmokeQuietWindow,
+		func() *scene.TeleportS2C { return &scene.TeleportS2C{} }, nil); err == nil {
+		fail("F6-regroup-near", "B 就在 A 身边(%.2f)请求归队却被瞬移了", teamFollowSmokeDistance(posB, posA))
+	}
+	// 走远:B 自己走开 12 以上;不请求归队就没人拉他(这正是要补的缺口)。
+	posB, err = teamFollowSmokeWalkAway(b, posB, posA)
+	if err != nil {
+		fail("F6-walk-away", "%v", err)
+	}
+	awayMark := b.recordMark()
+	if _, err := teamFollowSmokeWait(b, awayMark, game.SceneMovementClientPlayerNotifyTeleportMessageId, teamFollowSmokeQuietWindow,
+		func() *scene.TeleportS2C { return &scene.TeleportS2C{} }, nil); err == nil {
+		fail("F6-walk-away", "B 走开后没请求归队就被瞬移了:本步要证明瞬移是归队请求触发的")
+	}
+	// 请求归队:B 在 15s 内收到 TeleportS2C(reason=5),落点在 A 的位置 1 以内,在落点上报不被拉走。
+	if err := b.expect(game.ClientPlayerTeamGetMyTeamMessageId, &teampb.GetMyTeamRequest{Regroup: true}, &teampb.TeamResponse{}, 0); err != nil {
+		fail("F6-regroup-request", "%v", err)
+	}
+	rejoin, err := teamFollowSmokeWait(b, awayMark, game.SceneMovementClientPlayerNotifyTeleportMessageId, teamFollowSmokeTeleportTimeout,
+		func() *scene.TeleportS2C { return &scene.TeleportS2C{} },
+		func(t *scene.TeleportS2C) bool { return t.GetReason() == teamFollowSmokeRegroupReason })
+	if err != nil {
+		fail("F6-regroup-teleport", "B 在 %s(离 A %.2f)请求归队后没有收到 TeleportS2C(reason=%d):%v"+
+			"(match 是否换上了认识 GetMyTeamRequest.regroup 的新二进制?match 日志搜 Regroup requested,scene 日志搜 team_regroup)",
+			teamFollowSmokeFormat(posB), teamFollowSmokeDistance(posB, posA), teamFollowSmokeRegroupReason, err)
+	}
+	rejoinAt := teamFollowSmokeFromVector(rejoin.GetTransform().GetLocation())
+	if d := teamFollowSmokeDistance(rejoinAt, posA); d > teamFollowSmokeArriveTolerance {
+		fail("F6-regroup-landing", "B 的落点 %s 离 A 的位置 %s 有 %.2f,期望 <= %.1f",
+			teamFollowSmokeFormat(rejoinAt), teamFollowSmokeFormat(posA), d, teamFollowSmokeArriveTolerance)
+	}
+	walkedAway := teamFollowSmokeDistance(posB, posA)
+	posB, err = b.reportPosition(rejoinAt)
+	if err != nil {
+		fail("F6-report-after-teleport", "%v", err)
+	}
+	if d := teamFollowSmokeDistance(posB, rejoinAt); d > teamFollowSmokeArriveTolerance {
+		fail("F6-report-after-teleport", "B 在落点 %s 上报后被服务器改到 %s(差 %.2f)",
+			teamFollowSmokeFormat(rejoinAt), teamFollowSmokeFormat(posB), d)
+	}
+	zap.L().Info("[team-follow-smoke] F6: regroup request brought B back to the leader",
+		zap.Float64("walked_away", walkedAway), zap.String("landing", teamFollowSmokeFormat(rejoinAt)))
 
 	// ---- F5:A 解散 ----
 	if err := a.expect(game.ClientPlayerTeamDisbandTeamMessageId, &teampb.DisbandTeamRequest{ExpectedTeamId: tid}, &teampb.TeamResponse{}, 0); err != nil {

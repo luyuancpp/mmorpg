@@ -9195,3 +9195,14 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   `player_inbox` 因 `go.sum` 缺条目编不出来(`GOPROXY=off`),启动器按可选服务跳过,未处理。
 - **没做**:客户端只有离线编译(0 错误)与离线用例(70 条),Unity EditMode / 截图 / 联机未做;没有推送。
 - **Java 版(AGENTS §12)**:待做。本机仍没有 Java 仓库(两条路径 10-16 复核都不存在),`PARITY.md` 未登记;对应 Java 版本号:无。
+
+## 2026-10-16 组队跟随:点「归队」/ 跟随中走散时服务端把人带回队长身边(Claude,用户授权执行编译与起栈)
+
+- **起因**:用户问归队时同场景的队员是不是该直接传到队长旁边。改前只有入队 / 进场 / 战斗结束会瞬移,客户端「归队」只是本机开关,走远后点了没用。
+- **改动**:`GetMyTeamRequest.regroup = 2`(不占消息号,C++ 不改不重编);`go/match/internal/team` 收到后给调用者所在 scene 发组队刷新信号,scene 走既有归队规则;
+  robot `team-follow-smoke` 加 F6;客户端 `TeamClient.RequestRegroup` + `TeamRegroupPolicy`(点归队立即、走散 1.5 秒后自动、之后每 5 秒),看不到队长时按钮改为可点的「暂离」。
+  细节与取舍见 `docs/design/team-system.md`「组队跟随 v1.1」V.9。
+- **验证**:Go team 包单测全过(新增 2 条);运行目录栈上 robot team-follow-smoke(含 F6)连跑 6 遍全过;客户端 Unity EditMode 组队相关 94 条 0 失败;
+  新包上真实客户端跟随验收连跑 4 遍全过(24 段,停下间距 1.26~1.87,0 异常)。
+  新客户端包 `E:\work-archive-20261015\builds\wuxing-client-20261016-follow-regroup\client\Start-Client.cmd`;运行目录的 `bin/go_services/match.exe` 已换成带归队的版本(旧的留作 `match.before-regroup.exe`)。
+- **没做 / 待定**:真实客户端里的暂离 → 走远 → 归队、跟随中走散自动归队交给用户冒烟;Java 版待做(对应 Java 版本号:无,本机没有 Java 仓);没有 push。
