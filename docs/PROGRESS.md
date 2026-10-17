@@ -9308,3 +9308,15 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   客户端 `feat/rank-r3`(第一个提交收录 `rank.proto` 生成 `Rank.cs`,本批进 main 后即可合;第二个提交 RankClient / 论剑榜窗口 / 入口 / EditMode 用例,
   等 proto-gen 后重跑 `gen_messageids.ps1` 再合)。
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做(本机没有 Java 仓 `D:\luyuan\xuanming-server-mmo`)。
+
+## 2026-10-17 邮件后续验收：MySQL 8.4、真实清理循环与孤儿检查
+
+- **范围**：继续已合并邮件 M1 的剩余验证。本批仅新增 `tools/data_consistency_check/mail_orphans_mysql_test.go` 并追加本记录，不修改生成物和业务代码。主工作区正在由另一个任务处理资产通道、背包与排行榜合并验证；本批从实际远端 main `4144eb5533` 建立独立工作树，只提交邮件验证文件，保留其他任务的提交与未提交改动。
+- **MySQL 支持版本**：新建完全隔离的 MySQL **8.4.11** 容器（镜像 `mysql:8.4`，摘要 `sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70`），使用新建 `mail_it_<数字>_<数字>` 测试库。Go 1.27.2 执行 `go test -mod=readonly -p 1 -count=1 -json -timeout=10m ./internal/data/ ./internal/logic/`，强制 `MAIL_REQUIRE_MYSQL_TESTS=1`：**89 个顶层测试通过，0 失败、0 跳过**。这是对上一条实际 MySQL 26.7.0 证据的补充，不回改旧结果。
+- **真实进程与正式迁移**：显式构建独立 `mail.exe`、`data_service.exe`，使用新 MySQL / Redis 7.2 / etcd、新端口及新运行目录。正式 `data_service -migrate` 执行两遍均成功，`mail -migrate` 成功；常驻配置关闭自动迁移和自动补号段，号段预热由真实 data_service RPC + SQL 完成，`mail` 的 max_id 最终为 201。Kafka 显式关闭，管理员发件令牌关闭，不把这组运行当作推送验收。
+- **真实 sweep**：独立 `mmorpg_mail` 内建立 A（过期 8 天）与 B（过期 1 天）的定向/系统邮件及关联 state，保留期保持 7 天，测试配置仅把节拍缩短为 2 秒。`report_only` 两轮指标推进、候选 1/1/2、删除量 0，行数保持 2/2/3；仅停止本任务创建的报告实例，再启动本任务的 `delete` 实例，真实删除 1/1/2，B 及其 state 保留，后续轮候选归零、指标继续推进，日志无 Sweep failed，孤儿 sys_mail_id=0。此结果不覆盖默认 5 分钟节拍下的容量或进程优雅退出。
+- **一致性 CLI 实跑**：现有工具显式连接新主库/邮件库/Redis，并清空好友 DSN，避免使用默认业务地址。清理后邮件项实际返回 `severity=info / bad=0 / total=1`，说明为 `0 orphan sys_mail_id among 1 distinct ids referenced by state rows`；不能只靠工具退出码 0 判绿。隔离环境缺其他业务表的检查结果仍按日志保留，不声称全业务一致性通过。
+- **新增真实 MySQL 回归**：测试直接调用生产 `checkMailSystemStateOrphans`，只在独占空库创建会话临时表，不复制生产查询。正常多 state 去重计数、真实孤儿去重、有序前 5 样例、state 缺表、系统表缺失导致反连接失败、查询开始前取消均覆盖；缺句柄单测另测。MySQL 8.4.11 下 **2 个顶层测试 + 6 个真库子用例全过，0 失败/跳过，go vet 通过**，清理后持久表数仍为 0。DSN 必须匹配 `mail_consistency_it_<数字>_<数字>` 且为空库；`MAIL_CONSISTENCY_REQUIRE_MYSQL_TESTS=1` 时缺 DSN 的负向运行确实失败，防止验收假绿。
+- **运行边界**：没有重启原有游戏服务、没有清理业务库、没有部署 K8s。现有游戏栈仍是归档目录中的旧协议单区栈，缺邮件路由及第二区服务；完整两区 `mail-smoke` 与真实 Kafka S2C 推送尚未执行，需完整隔离游戏栈或经用户允许的维护窗口。主工作区的货币/背包修复属于并发任务，本批不代报其验证结果。
+- **证据**：本机 `run/mail-followup-20261017/` 中的 `mail-mysql84-summary.json`、`sweep-runtime-summary.json`、四份 sweep 指标快照、迁移/独立进程日志、`orphan-cli-runtime-summary.json`、`orphan-mysql-summary.json` 与完整日志。凭据仅用于临时隔离资源，不提交日志、DSN、配置或令牌。
+- **Java 独立服务器版**：本批只新增 C++/Go 版内部运维检查测试，没有变更客户端契约；邮件功能 Java 对齐仍待做，对应版本号无，本机 `D:\luyuan\xuanming-server-mmo` 缺失，不能核对 `PARITY.md`。
