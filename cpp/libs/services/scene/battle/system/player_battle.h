@@ -85,6 +85,8 @@ public:
 	//   1) 查 Redis 挂起结算,有则应用并清理(先应用挂起结算再放开排队,§3.2);
 	//      没有挂起结算且无 InBattleComp -> 读 battle:lock + ctx,锁在则重建 InBattleComp,
 	//      FIGHTING 时推 BattleReconnectS2C;
+	//      任一步没问到(空应答 / 读记录时 ERROR / 命令没发出去 / Redis 不可用)-> 记入登录复查,
+	//      reaper 节拍重跑这一步,复查完成前不按锁重建(2026-10-16,CheckPendingSettlementOnEnter);
 	//   2) RECONNECT / REPLACE 且仍有 InBattleComp -> 推 BattleReconnectS2C。
 	//   只推提示(turn-based §22 D72):客户端凭 battle_id 补签票据、重建直连后 GetBattleState 补拉。
 	static void OnPlayerEnterScene(entt::entity player, uint32_t enterGsType);
@@ -94,7 +96,8 @@ public:
 
 	// reaper:30s 低频定时器,扫描 InBattleComp:PREPARING 按 prepare_deadline_ms 过期只摘组件、
 	// 锁保留到 TTL(prepare_deadline+60s)自然过期给迟到确认留重建余量;FIGHTING 按 deadline_ms
-	// 过期摘组件 + 条件删锁,并对仍在本节点的实体补读一次待结算记录(RecoverPendingSettlementAfterFreezeExpiry)。
+	// 过期摘组件 + 条件删锁,并对仍在本节点的实体补读一次待结算记录(RecoverPendingSettlementAfterFreezeExpiry);
+	// 之后排空已应用未销账的账本条目,最后重跑登录复查(RunLoginRechecks)。
 	// 结构化日志 metric=battle_prepare_expired / battle_freeze_expired。
 	// 不进 20FPS 帧循环;在 main.cpp 里随节点启动注册、随节点停止注销。
 	static void StartReaper(muduo::net::EventLoop* loop);
@@ -148,6 +151,7 @@ private:
 	// 改造前这类奖励要等玩家下一次 EnterScene 才补:battle 发件箱只重投 120 秒,
 	// 玩家一直在线就一直等不到登录钩子。命中走 ApplyPendingSettlement —— 与 OnPlayerEnterScene
 	// 同一个函数、同一种身份复核(回调里实体仍有效且 Guid 仍是这个 player_id);未命中什么都不做。
+	// 没读到(Redis 不可用 / 空应答 / ERROR / 意外类型 / 命令没发出去)记入登录复查(2026-10-16),不再只留痕等下次进场。
 	// 解不开的记录不在这里删:留给登录钩子按原有规则清理,补读路径不扩大删除面。
 	static void RecoverPendingSettlementAfterFreezeExpiry(entt::entity player, uint64_t playerId);
 
@@ -158,5 +162,19 @@ private:
 
 	// 登录重建:读 battle:lock + ctx(不预设 battle_id),锁在则按 ctx 重建 InBattleComp;
 	// FIGHTING 时推重连提示(不要求 battle_node_id 已知)。只在无挂起结算且无 InBattleComp 时调用。
+	// 读不了锁(Redis 不可用 / 命令没发出去 / 空应答)记入登录复查;EVAL 的 ERROR 仍按无锁处理(既有取舍,
+	// 见 settlement_outbox.h 的 ClassifyLoginLockRead)。
 	static void RestoreBattleFreezeOnLogin(entt::entity player, uint64_t playerId);
+
+	// 登录钩子第一步(读挂起结算 → 没有再按锁重建冻结)。OnPlayerEnterScene 与登录复查共用。
+	// 没问到时记入登录复查(player_battle.cpp 的 BattleLoginRecheckComp),不按锁重建。
+	static void CheckPendingSettlementOnEnter(entt::entity player, uint64_t playerId);
+
+	// reaper 第三遍:Redis 可用时,对记入登录复查的玩家逐个摘标记并重跑 CheckPendingSettlementOnEnter;
+	// Redis 不可用时标记保留。退出中(UnregisterPlayer)的实体摘标记不重跑,留给下次进场;
+	// 跨 zone 冻结 / 交接中的实体标记保留、本轮不跑(交接完成随实体销毁,撤销则下个节拍再跑)。
+	static void RunLoginRechecks();
+
+	// 是否记着登录复查(只读;单测与排障用)。
+	static bool IsLoginRecheckPending(entt::entity player);
 };

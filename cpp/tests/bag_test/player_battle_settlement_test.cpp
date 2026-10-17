@@ -22,6 +22,7 @@
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/actor_attribute_state_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
+#include "proto/common/component/player_login_comp.pb.h" // LOGIN_FIRST
 #include "proto/common/component/player_pet_comp.pb.h"
 #include "proto/common/component/player_skill_comp.pb.h"
 #include "proto/common/component/battle_comp.pb.h"
@@ -57,6 +58,12 @@ public:
     }
     static void RecoverAfterFreezeExpiry(entt::entity player, uint64_t playerId) {
         PlayerBattleSystem::RecoverPendingSettlementAfterFreezeExpiry(player, playerId);
+    }
+    static bool LoginRecheckPending(entt::entity player) {
+        return PlayerBattleSystem::IsLoginRecheckPending(player);
+    }
+    static void RunLoginRechecks() {
+        PlayerBattleSystem::RunLoginRechecks();
     }
 };
 
@@ -825,13 +832,86 @@ TEST_F(PlayerBattleSettlementTest, PendingAppliedAfterFreezeExpiryPaysOnceWithou
     }
 }
 
-// 补读入口在 Redis 不可用时只打日志:不应用、不改实体,pending 留给登录钩子。
-TEST_F(PlayerBattleSettlementTest, FreezeExpiryRecoveryWithoutRedisLeavesPlayerUntouched) {
+// 补读入口在 Redis 不可用时不应用、不改资产;2026-10-16 起记入登录复查(以前只打日志、等下次进场,
+// 在线玩家一直拿不到奖励),由 reaper 节拍在 Redis 恢复后重读。
+TEST_F(PlayerBattleSettlementTest, FreezeExpiryRecoveryWithoutRedisAppliesNothingAndSchedulesRecheck) {
     PlayerBattleSettlementTestAccess::RecoverAfterFreezeExpiry(player, playerId);
     EXPECT_TRUE(tlsEcs.actorRegistry.valid(player));
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
     EXPECT_TRUE(kills.empty());
     EXPECT_EQ(gPersistCalls, 0);
+    EXPECT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+}
+
+// ---- 2026-10-16:登录钩子「没问到」进复查(单测里没有 Redis 连接,RedisReady() 恒为 false)----
+//
+// 空应答与 Redis 不可用是同一类「没问到」;回调里按应答形状分流的判定由 routing_identity_test 的
+// SettlementLoginHook.* 盯住,这里盯调用点:没问到时挂复查标记、不当结论、不被 reaper 节拍丢掉。
+
+// 缺陷 3:以前只打一条 WARN「等下一次登录」,玩家一直在线就一直拿不到挂起结算,冻结也不重建。
+TEST_F(PlayerBattleSettlementTest, EnterSceneWithoutRedisSchedulesLoginRecheck) {
+    ASSERT_FALSE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    PlayerBattleSystem::OnPlayerEnterScene(player, LOGIN_FIRST);
+    EXPECT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    // 没问到就不是结论:不补应用、不凭空冻结。
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
+    EXPECT_EQ(gPersistCalls, 0);
+}
+
+// reaper 节拍遇到 Redis 仍不可用:标记原样保留,等 Redis 恢复后的节拍再跑;重复节拍不叠加副作用。
+TEST_F(PlayerBattleSettlementTest, LoginRecheckSurvivesReaperTicksWhileRedisIsDown) {
+    PlayerBattleSystem::OnPlayerEnterScene(player, LOGIN_FIRST);
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    for (int tick = 0; tick < 3; ++tick) {
+        PlayerBattleSettlementTestAccess::RunLoginRechecks();
+        EXPECT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player)) << "tick " << tick;
+    }
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
+}
+
+// 缺陷 4:挂起结算补应用之后按锁重建冻结,读不了锁时以前直接 return(当「无锁」)。
+// 现在补应用照常只发一次,读锁那一步进复查。
+TEST_F(PlayerBattleSettlementTest, PendingAppliedButLockUnreadableSchedulesRecheck) {
+    ASSERT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+    PlayerBattleSettlementTestAccess::ApplyPending(player, settlement);
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
+    EXPECT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    // 复查重跑时同一份记录再补应用一次由账本挡住(PendingAppliedAfterFreezeExpiryPaysOnceWithoutRefreezing 同理)。
+    PlayerBattleSettlementTestAccess::ApplyPending(player, settlement);
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
+}
+
+// 退出中的实体视同离线:节拍摘掉标记、不重跑(不论 Redis 是否可用),挂起结算留给下次进场。
+TEST_F(PlayerBattleSettlementTest, ExitingPlayerLoginRecheckIsDroppedWithoutRerun) {
+    PlayerBattleSystem::OnPlayerEnterScene(player, LOGIN_FIRST);
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    tlsEcs.actorRegistry.emplace<UnregisterPlayer>(player);
+    PlayerBattleSettlementTestAccess::RunLoginRechecks();
+    EXPECT_FALSE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
+}
+
+// 跨 zone 交接中:标记保留、本轮不跑 —— 重跑会在即将销毁的源实体上按锁重建冻结并推重连提示。
+// 交接完成随实体销毁;交接撤销后下一个节拍再跑。
+TEST_F(PlayerBattleSettlementTest, TravelHandoffKeepsLoginRecheckForLater) {
+    PlayerBattleSystem::OnPlayerEnterScene(player, LOGIN_FIRST);
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    tlsEcs.actorRegistry.emplace<PlayerTravelHandoffComp>(player);
+    PlayerBattleSettlementTestAccess::RunLoginRechecks();
+    EXPECT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+}
+
+// 标记只挂在实体上:实体销毁即随之消失(下次进场登录钩子会重跑),不会留下指向已销毁实体的复查。
+TEST_F(PlayerBattleSettlementTest, LoginRecheckDiesWithTheEntity) {
+    PlayerBattleSystem::OnPlayerEnterScene(player, LOGIN_FIRST);
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    tlsEcs.actorRegistry.destroy(player);
+    EXPECT_FALSE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    PlayerBattleSettlementTestAccess::RunLoginRechecks();  // 无标记可跑,也不碰已销毁实体
+    player = entt::null;  // TearDown 不再 destroy
 }
 
 }  // namespace

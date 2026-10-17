@@ -9283,3 +9283,63 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **边界**:未重启运行服务、未清理业务数据库、未部署 K8s、未更新运行中 MySQL 的 max_connections。MySQL 规划峰值 1860 / 配置上限 2100、Redis 规划峰值 1991 为公式与 DryRun 契约结果,不是容量压测结论。两区 mail-smoke、实际 S2C 推送与运行环境 sweep / 孤儿检查尚未执行;M1 领取附件仍按设计返回未开放,不代表资产发放链路已上线。
 - **证据**:本机 `run/mail-merge-20261016/` 留有正式生成日志、`validation-core.json`、`mail-unit.jsonl`、`mail-mysql.log`、关联模块日志、`robot-final-summary.json`、`final-launcher-tests-summary.json`、`final-k8s-deploy-contract.log`、`cpp-game-debug-x64-final.log`、`cpp-affected-tests-results.json`、Java 打包日志及负向夹具记录。此目录被忽略,未提交日志或令牌。
 - **Java 独立服务器版(AGENTS §12)**:待做,对应 Java 版本号:无。本机 `D:\luyuan\xuanming-server-mmo` 不存在,无法核对或更新其 `PARITY.md`;本仓 Java config_node 打包通过不能代替独立 Java 版邮件实现对账。
+## 2026-10-16 zone Redis 空应答 / ERROR 不再被当成业务结论:battle 结算外发箱、scene 登录钩子、玩家数据加载(Claude,未编译,待 Codex 验证)
+
+- **背景**:C++ gate / scene / battle 每进程一条 zone Redis 连接。连接断开或被释放时,hiredis 把所有在途命令的回调以**空应答**(`redisReply* == nullptr`)调用一次:
+  主切换时代理掐连接、同日新加的存活探测(15 秒无应答摘连接,见上面「C++ zone Redis 连接加存活探测」条)、停机 `Shutdown` 都会触发。空应答的意思是「这次没问到」,
+  命令可能执行了也可能没执行;它不是 NIL,更不是「已销账 / 没有挂起结算 / 没有锁」。同日只读审计约 55 处回调,下列都是**既有缺陷**,任何一次断线都会触发。
+- **改动**(分支 `fix/zone-redis-null-reply`,隔离 worktree `E:\work\xuanming-server-mmo-wt-redisnull`,基于 `1684a44ee7`):
+  1. **高** `battle_room_manager.cpp` `ProbeAndRetryOne` 第一跳:以前空应答 / ERROR 被当「已销账」并删外发箱条目,在线玩家从此收不到重投。现在只有 NIL、或 STRING 且 ≠ battle_id 才算销账;
+     其余本轮返回、不动 attempts(与 `RetryPendingSettlements`「探测不了销账就不能判定」同一原则),打 `metric=battle_settlement_probe_undetermined stage=ack`。
+  2. **中** 同函数第二跳:读 `player:{id}:location` 空应答 / ERROR 以前解析成 0 走 `kSkipNoTarget` 并 ++attempts,白烧一轮,耗尽时还误记成 `reason=no_target`。现在在 `ClassifyRetry` 之前返回(`stage=location`)。
+     两跳「没问到」的轮次单独计数(`PendingSettlement::undeterminedRounds`),上限 `kSettlementProbeUndeterminedMaxRounds = 60`(10 分钟,Redis 未连接的轮次不计),
+     到上限摘条目并打 `metric=battle_settlement_undelivered reason=probe_undetermined`(新 reason,告警可单设阈值):不设上限时持续 ERROR(NOAUTH、ACL、长时间 LOADING)会让 outbox 随对局数无界增长(独立评审指出)。
+  3. **高** `player_battle.cpp` 登录钩子读挂起结算:以前空应答与 NIL 同分支,当「没有挂起结算」转去按锁重建,这次登录漏补发奖励(记录不过期,但一直在线就一直拿不到)。
+     现在空应答 / ERROR / 意外类型 / 命令没发出去 / Redis 不可用 → 挂运行时标记 `BattleLoginRecheckComp`(`metric=battle_login_recheck_scheduled reason=...`),
+     由 reaper 第三遍 `RunLoginRechecks`(30 秒节拍)在 Redis 可用时摘标记、重跑整个第一步;**复查完成前不调 `RestoreBattleFreezeOnLogin`**(重建依赖「确实没有挂起结算」)。
+     第一步抽成 `CheckPendingSettlementOnEnter`,登录与复查共用。标记不入库、随实体销毁;退出中(`UnregisterPlayer`)的实体摘标记不重跑,留给下次进场;
+     跨 zone 冻结 / 交接中(`IsSettlementApplicable` 为假)标记保留、本轮不跑,免得在即将销毁的源实体上按锁重建冻结并推重连提示。没用 Redis 重连回调:那是 `RedisSystem` 独占的单槽。
+     读挂起结算收到 ERROR 也进复查(与读锁时相反):读不到记录就不知道锁指向的那一局结束没有,按锁重建可能把玩家冻进一场已结算的战斗;
+     代价是 GET 持续 ERROR 时每 30 秒复查一次、冻结一直不重建(写在 `ClassifyLoginPendingRead`)。
+     同类调用点 `RecoverPendingSettlementAfterFreezeExpiry`(冻结到期后唯一一次主动补读)没读到时以前只留痕、等下次进场,现在同样记入复查(独立评审指出)。
+  4. **中低** `RestoreBattleFreezeOnLogin`:读锁空应答以前当「无锁」,战斗在途时战斗闸(资产通道、收件箱 `requiresOutOfBattle`)失效;`!RedisReady()` 与命令没发出去同理。三者现在进同一个复查。
+     **EVAL 的 ERROR 仍按无锁**(既有取舍,锁是咨询性的;代价写在 `settlement_outbox.h` 的 `ClassifyLoginLockRead`)。校验顺序改为先核实体身份 / InBattleComp、再看应答形状,成功路径语义不变。
+  5. **中** `DispatchSettlementDurably`:EVAL 应答没确认落库(空应答 / ERROR / 意外形状)时以前只投一次、不进外发箱 —— 记录其实落了而投递又丢了,奖励要等下次登录。
+     现在照样投递并 `EnqueuePendingSettlement`,由第一跳探测裁决(NIL = 没落库或已销账 → 摘;仍指向本局 → 原字节重投),依赖第 1 条。另补:`command()` 返回非 `REDIS_OK`(回调永远不会来)时以前**一次都不投**,现在按 Redis 未连接同样降级投一次。
+  6. **中低** 活动局结果 SET:同第 5 条,应答没确认也照发并 `EnqueuePendingActivityResult`,由 `ProbeActivityResultOne` 的 EXISTS 裁决;Redis 不可用 / 没发出去仍是 §6.21 R6 的只发一次。
+  7. **低(活性)** `redis_client.h` `MessageAsyncClient::OnLoaded`:空应答以前 `FailLoad(RedisError)`,玩家被踢回登录界面;现在放回 `pending_retry_queue_`(同 key 已有排队项时保留那一项,重试次数取两者较大者),
+     不计 NIL 重试次数,重连后 `OnReconnected` 立刻重发 —— 与 `AsyncLoad` 在未连接时排队同一语义。ERROR 仍 fail-closed。`OnReconnected` 注释「断线后在途回调不会再来」与 hiredis 实际行为不符,已改正。
+  8. **核实** battle 回调捕获裸 this:`BattleRoomManager` 是函数静态单例,`tlsRedis.Shutdown()` 在 `Node::FinalizeTeardownInLoop`(兜底在 `RunNodeMain` 返回前)执行,都早于静态对象析构,**不存在先析构的窗口**。
+     仍按 §11.7 把结算外发箱的三个 hiredis 回调改绑 `WeakSelf()`(与活动结果发件箱同一写法);重投定时器 `settlementRetryTimer_` 是本类成员、析构即取消,属同寿命例外,未动。
+- **判定集中成纯函数**:`cpp/libs/services/battle/settlement/settlement_outbox.h` 新增 `ReplyShape`、`ClassifyAckProbe`、`IsLocationReplyDecisive`、`ClassifyPersistReply`、`ClassifyLoginPendingRead`、`ClassifyLoginLockRead`(仍零依赖);
+  `redisReply` → `ReplyShape` 的唯一适配在新头 `settlement_reply_shape.h`(登记进 `cpp/libs/services/battle/battle.vcxproj`,header-only,CMake 不用改)。
+  `docs/design/ecs-component-access-rules.md` 按需组件表登记了 `BattleLoginRecheckComp`。未改 `redis_manager.{h,cpp}` 与两份 `Hiredis.cc`。
+- **回归测试**(纯函数优先;单测进程没有 Redis 连接,`RedisReady()` 恒为 false):
+  - `routing_identity_test`:`SettlementReplyShape.NullReplyIsNoReplyNotNil`;`SettlementOutbox.AckProbeWithoutUsableReplyIsUndeterminedNotAcknowledged` / `AckProbeOnlyNilOrForeignIdCountsAsAcknowledged` /
+    `AckProbeChainTreatsHiredisNullCallbackAsUndetermined`(第 1 条)、`LocationReadWithoutUsableReplyIsNotADecision`(第 2 条)、`UndeterminedProbeRoundsAreBoundedSeparately`(第 1/2 条的上限)、
+    `PersistReplyWithoutConfirmationIsUnconfirmedNotFailed`(第 5/6 条);`SettlementLoginHook.PendingReadWithoutUsableReplyIsRecheckNotNoPending`(第 3 条)、`LockReadNoReplyIsRecheckWhileErrorKeepsLegacyNoLock`(第 4 条)。
+  - `bag_test`(`PlayerBattleSettlementTest.*`):新增 `EnterSceneWithoutRedisSchedulesLoginRecheck`、`LoginRecheckSurvivesReaperTicksWhileRedisIsDown`、`PendingAppliedButLockUnreadableSchedulesRecheck`、
+    `ExitingPlayerLoginRecheckIsDroppedWithoutRerun`、`TravelHandoffKeepsLoginRecheckForLater`、`LoginRecheckDiesWithTheEntity`;
+    既有 `FreezeExpiryRecoveryWithoutRedisLeavesPlayerUntouched` 按新契约改名为 `FreezeExpiryRecoveryWithoutRedisAppliesNothingAndSchedulesRecheck`,多一条「已记入复查」的断言。
+  - `currency_test`:`CurrencyTest.RedisLoadNullReplyRequeuesInsteadOfFailing`、`RedisLoadNullReplyKeepsExistingPendingEntry`、`RedisLoadErrorReplyStillFailsClosed`(第 7 条)。
+  - 回调里「拿到空应答走哪条分支」由纯函数用例盯住;回调本身的接线(空应答真的走到 `MarkLoginRecheck` / 不摘条目)没有带假 Redis 的端到端用例,靠评审。
+- **Codex 验证**(未编译,待 Codex 验证)。本 worktree 的 `third_party/redis` 等子目录为空,**不能在 worktree 里直接编**:分支提交后合入主工作区再执行。工作目录仓库根;
+  `$msb` 用 `tools/scripts/run_cpp_tests.ps1` 里 `Resolve-MSBuild` 找到的那个;一律串行 `/m:1`,并发会报假的 C1041 / LNK1104;不需要真实 Redis,先 `Remove-Item Env:ZONE_REDIS_PASSWORD -ErrorAction SilentlyContinue`。
+  1. `& $msb game.sln /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal`(battle 节点、scene 库与节点都要重编:`settlement_outbox.h` / `redis_client.h` / `player_battle.h` 变了)
+  2. `& $msb cpp\tests\routing_identity_test\routing_identity_test.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal`(它不在 `run_cpp_tests.ps1` 的工程表里)
+  3. `pwsh -NoProfile -File tools/scripts/run_cpp_tests.ps1 -Build -Filter bag_test`,再 `-Filter currency_test`,再 `-Filter cross_zone_test`(后者经 `EnterScene` 走到登录钩子,验行为改变不碰坏既有用例)
+  4. `.\build\cpp\tests\routing_identity_test.exe`(全量;新增的在 `--gtest_filter=SettlementReplyShape.*:SettlementOutbox.*:SettlementLoginHook.*`)
+  5. `.\build\cpp\tests\bag_test.exe --gtest_filter=PlayerBattleSettlementTest.*:BattleSettlementLedgerRule.*:SettlementBacklog.*`,随后全量跑一次;`.\build\cpp\tests\currency_test.exe --gtest_filter=CurrencyTest.RedisLoad*`,随后全量。
+  **通过标准**:本次改动的文件没有 `error C` / `LNK`;上列新增 18 例与改名的 1 例全过,四个测试二进制里既有用例照旧全过。
+  `bag_test` 若报 `muduo_grpc` / `nghttp2` 符号的 LNK2019,是 gRPC 第 3 批遗留的链接项缺口(见本文件同日 gRPC 条目),记下后停在该工程,不算本次失败;第一条编译错误不在本次文件里时记下文件名,视为其他会话的在途改动。
+  失败时保留 gtest 输出与第一条编译错误原文。Linux(`build_linux.sh`)没有新 .cpp,可选顺带编一次。
+- **残余风险 / 没做**:
+  - 复查窗口内(Redis 恢复后最多一个 30 秒节拍)冻结仍未重建,`IsInBattle` 不看复查标记,战斗闸在这段时间仍放行;要 fail-closed 需改 `IsInBattle` 的十余个调用方语义,单列后续项。
+  - 空应答而 EVAL 晚于投递落地(连接已摘、命令仍在途)时,scene 销账可能先于记录写入,留下孤儿记录;这是改造前就有的窗口,本次登记外发箱后玩家在线时重投会触发条件销账把它清掉,没有加重。
+  - `ProbeActivityResultOne` 对 ERROR 按「仍在」重发、耗次数的既有取舍未动(guild 按 battle_id 判重,有界);
+    `RebuildBattleFreezeFromLock` 读锁失败只打日志(battle 侧周期补发确认兜底),未动。
+  - 独立评审(只读子 agent,一轮):未发现编译错误或会挂的既有测试;提出的 4 条里,「没问到无上限」「冻结到期补读漏改」「交接中复查」已按上文修掉,
+    「读挂起结算 ERROR 无限复查」按任务要求保留并写明理由。修改后没有再跑第二轮评审。
+  - `OnLoaded` 空应答重排后,Redis 长时间不可用时玩家停在载入界面直到重连(与断线时 `AsyncLoad` 排队一致,没有时间上限);`player_lifecycle.cpp` `HandlePlayerAsyncLoadFailed` 注释里「RedisError 含 connection lost」未改。
+- **Java 版(AGENTS §12)**:服务端内部实现,不涉及客户端契约(协议、消息号、tip、配表均未动)。本机没有 Java 仓(`D:\luyuan\xuanming-server-mmo` 不存在),是否有同类「把断线空结果当结论」未核对,待在 Java 仓单独审计;
+  `PARITY.md` 未登记,对应 Java 版本号:无。
