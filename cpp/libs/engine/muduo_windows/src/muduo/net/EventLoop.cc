@@ -249,21 +249,24 @@ size_t EventLoop::queueSize() const
   return pendingFunctors_.size();
 }
 
+// 本仓库改动:TimerQueue 按单调时钟到期(见 TimerQueue::monotonicNow)。runAt 的墙钟时刻在这里一次性
+// 换算成单调截止时刻;runAfter / runEvery 直接用单调 now 加时长,不经墙钟往返。
 TimerId EventLoop::runAt(Timestamp time, TimerCallback cb)
 {
-  return timerQueue_->addTimer(std::move(cb), time, 0.0);
+  const Timestamp when = TimerQueue::monotonicFromWall(time, Timestamp::now(), TimerQueue::monotonicNow());
+  return timerQueue_->addTimer(std::move(cb), when, 0.0);
 }
 
 TimerId EventLoop::runAfter(double delay, TimerCallback cb)
 {
-  Timestamp time(addTime(Timestamp::now(), delay));
-  return runAt(time, std::move(cb));
+  const Timestamp when(addTime(TimerQueue::monotonicNow(), delay));
+  return timerQueue_->addTimer(std::move(cb), when, 0.0);
 }
 
 TimerId EventLoop::runEvery(double interval, TimerCallback cb)
 {
-  Timestamp time(addTime(Timestamp::now(), interval));
-  return timerQueue_->addTimer(std::move(cb), time, interval);
+  const Timestamp when(addTime(TimerQueue::monotonicNow(), interval));
+  return timerQueue_->addTimer(std::move(cb), when, interval);
 }
 
 void EventLoop::cancel(TimerId timerId)

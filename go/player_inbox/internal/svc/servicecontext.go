@@ -36,6 +36,13 @@ const (
 	etcdDialTimeout      = 5 * time.Second
 	mysqlPingTimeout     = 5 * time.Second
 	coreRedisPingTimeout = 3 * time.Second
+	// coreRedisReadTimeout / coreRedisWriteTimeout:核心 Redis 单次 socket 读 / 写的兜底上限(评审 L7)。
+	// 客户端开了 ContextTimeoutEnabled,带截止时间的 ctx(请求预算 Timeout − 500ms、OwnerEpochReadTimeout 500ms、
+	// 提醒预算、选主续期 2s)取两者较早者;不带截止时间的调用(选主竞选的 SETNX 用的是循环 ctx)靠它封顶。
+	// 只用到 GET / SET NX / EVAL 这类单键命令,正常往返是毫秒级,1s 足够宽。必须为正:-1 / -2 会关掉 socket 截止,
+	// 连 ctx 截止也一起失效(shared/leader GoRedisMaxCallDuration 的注释)。
+	coreRedisReadTimeout  = time.Second
+	coreRedisWriteTimeout = time.Second
 	// loopsStopTimeout:关停时等后台循环退出的上限(设计 §10:有界等待,再关连接池)。
 	// 单轮各自有超时、所有 SQL 都带 ctx,取消即返回;卸任释放选主锁自带 2s 预算。取 2s 是为了让
 	// 注销 15s + 排空 5s + 本项 2s + 框架收尾 2s 不超过 lifecycle.HardTimeout(24s);超时只告警,
@@ -126,16 +133,32 @@ func productionDeps() externalDeps {
 	}
 }
 
+// coreRedisOptions 是核心 Redis 客户端的选项(评审 L7):
+//   - ContextTimeoutEnabled:go-redis 缺省用 context.Background() 做 socket 读写,只受读写超时(缺省 3s + 3s)约束,
+//     500ms 的 owner_epoch 预算、整请求预算都管不住 socket 读,依赖变慢时 go-zero 超时拦截器会抢先回 DeadlineExceeded,
+//     in-band 回 kPlayerInboxStoreUnavailable 的契约被击穿。开了之后 socket 截止时间取 ctx 截止与读写超时的较早者;
+//   - 读 / 写超时显式写出(见 coreRedisReadTimeout),不赌 go-redis 缺省;
+//   - PoolSize 取配置(config.Validate 要求正整数):k8s_deploy.ps1 的 Redis 连接总账镜像同一个键。
+//
+// 选主心跳(shared/leader,经 GoRedisMaxCallDuration 读这套选项)的单次续期最坏耗时因此从 2s + 读写超时之和(8s)
+// 降到续期 ctx 本身的 2s,FenceAfter 门槛仍是 20s、降级最晚在 22s 完成(TTL 30s),不必调选主参数
+// (servicecontext_test 的 TestCoreRedisOptionsBoundEveryCall 钉住)。
+func coreRedisOptions(c config.RedisConf) *redis.Options {
+	return &redis.Options{
+		Addr:                  c.Host,
+		Password:              c.Password,
+		DB:                    c.DB,
+		PoolSize:              c.PoolSize,
+		ContextTimeoutEnabled: true,
+		ReadTimeout:           coreRedisReadTimeout,
+		WriteTimeout:          coreRedisWriteTimeout,
+	}
+}
+
 // openCoreRedis 建核心 Redis 客户端并 Ping。探不通就不起服:R 读不到时所有需要上界的 Fetch / Ack 都回
 // StoreUnavailable,提醒也发不出。错误里的地址只含 host:port,不含密码。
 func openCoreRedis(c config.RedisConf) (*redis.Client, error) {
-	client := redis.NewClient(&redis.Options{
-		Addr:     c.Host,
-		Password: c.Password,
-		DB:       c.DB,
-		// 共享 Redis 连接总账按它记账(0 = go-redis 缺省 10 × GOMAXPROCS;负数已被 config.Validate 拒绝)。
-		PoolSize: c.PoolSize,
-	})
+	client := redis.NewClient(coreRedisOptions(c))
 	pingCtx, cancel := context.WithTimeout(context.Background(), coreRedisPingTimeout)
 	err := client.Ping(pingCtx).Err()
 	cancel()
@@ -144,8 +167,10 @@ func openCoreRedis(c config.RedisConf) (*redis.Client, error) {
 		return nil, fmt.Errorf("ping core Redis %s (DB %d) failed (owner_epoch / location live there and "+
 			"must be the same instance as C++ scene / scene_manager): %w", c.Host, c.DB, err)
 	}
-	// 生效值(缺省时是 go-redis 算出来的 10 × GOMAXPROCS):核对 ConfigMap 镜像的 PoolSize 是否真的被加载。
-	logx.Infof("Core Redis client %s DB=%d pool_size=%d", c.Host, c.DB, client.Options().PoolSize)
+	// 生效值:核对 ConfigMap 镜像的 PoolSize 是否真的被加载,以及超时契约是否生效。
+	opts := client.Options()
+	logx.Infof("Core Redis client %s DB=%d pool_size=%d read_timeout=%v write_timeout=%v context_timeout_enabled=%v",
+		c.Host, c.DB, opts.PoolSize, opts.ReadTimeout, opts.WriteTimeout, opts.ContextTimeoutEnabled)
 	return client, nil
 }
 

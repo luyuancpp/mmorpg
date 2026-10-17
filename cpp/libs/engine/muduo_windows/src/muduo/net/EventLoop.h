@@ -77,10 +77,15 @@ class EventLoop : noncopyable
   size_t queueSize() const;
 
   // timers
+  //
+  // 本仓库改动:定时器按单调时钟到期(TimerQueue::monotonicNow),墙钟回拨 / 前跳不改变到期时刻。
 
   ///
   /// Runs callback at 'time'.
   /// Safe to call from other threads.
+  ///
+  /// 'time' 是墙钟时刻,调用时一次性换算成单调时钟上的截止时刻,等价于 runAfter(time - Timestamp::now());
+  /// 之后墙钟再跳也不改变它何时到期。需要"墙钟到某一刻才触发"的整点类任务,到点后自己按墙钟复核。
   ///
   TimerId runAt(Timestamp time, TimerCallback cb);
   ///

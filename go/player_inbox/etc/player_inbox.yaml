@@ -14,6 +14,17 @@ Timeout: 3000
 # go-zero 的 Mode 默认是 pro;本地显式写 dev(只影响是否注册 gRPC reflection,方便 grpcurl)。
 Mode: dev
 
+# ⚠ 必配,且由 config.Validate 强制(评审 L12,照 go/client_rpc_router):go-zero 的 Stat 拦截器默认开启,
+# 对每个非慢调用把请求体整包 JSON 按 INFO 打日志。FetchItems / AckItems 每次落地、每次确认各一条,
+# 量随在线人数线性涨,请求体对排障没有增量(异常结局另有带 player_id 的 ERROR 日志),所以只屏蔽它们的内容:
+# 方法名、对端、耗时照常记,慢调用(缺省 500ms)照样打 slowcall。
+# PlayerInboxAdmin(GM 处置 / 作废等)的请求体是审计线索,**不**列进来。K8s 的 player-inbox ConfigMap 必须写出同一段。
+Middlewares:
+  StatConf:
+    IgnoreContentMethods:
+      - /player_inbox.PlayerInbox/FetchItems
+      - /player_inbox.PlayerInbox/AckItems
+
 # etcd:只给 shared/noderegistry 注册 PlayerInboxNodeService.rpc/...、scene 节点镜像(SceneNodeService.rpc/)
 # 与 shared/killswitch 用。Key 必须显式写空串(契约 D-13):填了会让 go-zero 额外注册 player_inbox.rpc。
 Etcd:
@@ -61,10 +72,11 @@ CoreRedis:
   Host: 127.0.0.1:6379
   Password: ""
   DB: 0
-  # go-redis 连接池上限(P0-E 第 3 批,共享 Redis 连接总账)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
-  # 随 CPU limit 漂移(本机 Windows 上是 10 × 核数);负数 config.Validate 拒启。20 = K8s 上 GOMAXPROCS 按 2 时的缺省值。
+  # go-redis 连接池上限(P0-E 第 3 批,共享 Redis 连接总账)。必须显式写正整数(评审 L7,config.Validate 拒绝 ≤ 0):
+  # 0 在 go-redis 里是缺省 10 × GOMAXPROCS,随 CPU limit 漂移。20 = K8s 上 GOMAXPROCS 按 2 时的缺省值。
   # tools/scripts/k8s_deploy.ps1 把它镜像进 player-inbox ConfigMap(要求正整数),Redis 连接总账读同一个键:
   # 改它看部署时打印的 "Redis connection ledger" 一行。
+  # 读 / 写超时(各 1s 兜底)与 ContextTimeoutEnabled 写在代码里(svc.coreRedisOptions),不是配置项。
   PoolSize: 20
 
 # 在线提醒:SceneCommand{DispatchEvent, PlayerInboxNotifyEvent} 写 scene-cmd_g<N>(分区 = scene node_id % P),
@@ -95,11 +107,13 @@ PlayerInbox:
   # 另有字面键 AdminToken(与本键二选一),仓库里的 yaml 永远不写它。
   AdminTokenEnv: PLAYER_INBOX_ADMIN_TOKEN
   # 允许入箱的类型白名单(PlayerInboxMessageType 枚举名)。默认空 = 全部停用,回 kPlayerInboxDisabled。
-  # 上线顺序(设计 §11.7):scene 全部打开 consumer_enabled 之后,才在所有实例上一次性填入,例如
+  # 上线顺序(设计 §11.7):scene 全部打开 consumer_enabled 之后,才在所有实例上一次性填入。v1 只放封锁 / 解封两种:
   #   EnqueueTypes:
   #     - PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN
   #     - PLAYER_INBOX_MSG_GM_UNBLOCK_CURRENCY_GAIN
-  #     - PLAYER_INBOX_MSG_GM_ATTACH_CURRENCY_DEBT
+  # v1 **不开** PLAYER_INBOX_MSG_GM_ATTACH_CURRENCY_DEBT(用户拍板 2026-10-16,交接 §6 M2 / M3):scene 挂欠款会合并
+  # 同币种旧欠款、并用后来那单覆盖到期时间,挂错之后也没有撤销路径。合并语义、撤销类型与单笔上限做完之前,
+  # 把它列进来 config.Validate 拒启;GmSanctionPlayer 对它回 kPlayerInboxDisabled。
   EnqueueTypes: []
   # 终态行保留 30 天(必须大于签发窗 7 天);PENDING 行、流行、审计行永不自动删除(设计 §9.1)。
   TerminalRetentionDays: 30

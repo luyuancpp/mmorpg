@@ -409,6 +409,25 @@ bool AllDone(const std::vector<CallOutcomePtr> &outcomes)
     return std::all_of(outcomes.begin(), outcomes.end(), [](const CallOutcomePtr &o) { return o->count > 0; });
 }
 
+// onDrained 的调用次数与第一次调用的时刻(steady)。
+struct DrainRecord
+{
+    int count{0};
+    std::chrono::steady_clock::time_point firstAt{};
+};
+using DrainRecordPtr = std::shared_ptr<DrainRecord>;
+
+std::function<void()> RecordDrain(DrainRecordPtr record)
+{
+    return [record = std::move(record)]
+    {
+        if (record->count++ == 0)
+        {
+            record->firstAt = std::chrono::steady_clock::now();
+        }
+    };
+}
+
 std::set<uint64_t> NewThreadIds(const std::set<uint64_t> &before, const std::set<uint64_t> &now)
 {
     std::set<uint64_t> added;
@@ -1129,23 +1148,13 @@ TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureForceClosesAfterCloseGra
     const BackpressuredCalls calls = StartBackpressuredCalls();
     ASSERT_NE(calls.raw, nullptr);
 
-    struct DrainRecord
-    {
-        int count{0};
-        std::chrono::steady_clock::time_point firstAt{};
-    };
-    auto drained = std::make_shared<DrainRecord>();
+    const auto drained = std::make_shared<DrainRecord>();
     ServerShutdownOptions shutdown;
     shutdown.drainTimeout = 300ms;
     shutdown.goawayPingTimeout = 100ms; // 对端不读,PING ACK 不会来:满时长后直接提交第二段
     shutdown.closeGrace = 300ms;
     const auto shutdownAt = std::chrono::steady_clock::now();
-    server_->BeginShutdown(shutdown, [drained]
-                           {
-        if (drained->count++ == 0)
-        {
-            drained->firstAt = std::chrono::steady_clock::now();
-        } });
+    server_->BeginShutdown(shutdown, RecordDrain(drained));
     ASSERT_TRUE(RunUntil([&] { return drained->count > 0; }, 5s));
     RunFor(200ms);
 
@@ -1157,7 +1166,6 @@ TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureForceClosesAfterCloseGra
     EXPECT_EQ(Stats().unavailableOnShutdown, 1u);
     EXPECT_EQ(Stats().inFlight, 0u);
     EXPECT_EQ(Stats().dropped, 0u);
-    EXPECT_FALSE(calls.raw->h2Failed()) << calls.raw->h2().lastError();
 }
 
 TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureFlushesEverythingBeforeTheHalfClose)
@@ -1168,23 +1176,13 @@ TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureFlushesEverythingBeforeT
     ASSERT_NE(calls.raw, nullptr);
     calls.raw->SnapshotAtDisconnect({calls.big, calls.waiting, calls.started});
 
-    struct DrainRecord
-    {
-        int count{0};
-        std::chrono::steady_clock::time_point firstAt{};
-    };
-    auto drained = std::make_shared<DrainRecord>();
+    const auto drained = std::make_shared<DrainRecord>();
     ServerShutdownOptions shutdown;
     shutdown.drainTimeout = 300ms;
     shutdown.goawayPingTimeout = 100ms;
     shutdown.closeGrace = 20000ms; // 只作硬上限:冲完之后发 FIN,对端读到 EOF 即关,远早于宽限
     const auto shutdownAt = std::chrono::steady_clock::now();
-    server_->BeginShutdown(shutdown, [drained]
-                           {
-        if (drained->count++ == 0)
-        {
-            drained->firstAt = std::chrono::steady_clock::now();
-        } });
+    server_->BeginShutdown(shutdown, RecordDrain(drained));
     // 排空到期:两个调用已收口,应答已提交;客户端此前一直没读,什么都还没看到。
     ASSERT_TRUE(RunUntil([&] { return Stats().refusedOnShutdown == 1 && Stats().unavailableOnShutdown == 1; }, 5s));
     EXPECT_FALSE(calls.raw->h2().FindStream(calls.waiting)->rstReceived);

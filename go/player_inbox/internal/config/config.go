@@ -122,6 +122,7 @@ type PlayerInboxConf struct {
 	// EnqueueTypes:允许入箱的消息类型白名单,写 PlayerInboxMessageType 的枚举名
 	// (如 PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN)。**默认空 = 全部停用**,是入箱开关的唯一来源(设计 §3.3);
 	// 不在白名单里的类型回 kPlayerInboxDisabled。上线顺序见设计 §11.7:scene 全部打开消费之后才填它。
+	// v1 只放封锁 / 解封两种,v1DisabledEnqueueTypes 里的类型(挂欠款)列进来即拒启。
 	EnqueueTypes []string `json:",optional"`
 
 	// TerminalRetentionDays:终态行保留天数,超过后由清理循环物理删除。必须大于签发窗 7 天(设计 §9.1)。
@@ -146,9 +147,10 @@ type RedisConf struct {
 	Host     string `json:"Host"`
 	Password string `json:"Password,optional"`
 	DB       int    `json:"DB,optional"`
-	// PoolSize 是 go-redis 连接池上限(共享 Redis 连接总账,P0-E 第 3 批)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
-	// 随 CPU limit 漂移;负数由 Validate 拒绝。K8s 上 tools/scripts/k8s_deploy.ps1 从 etc/player_inbox.yaml 镜像
-	// CoreRedis.PoolSize 并要求正整数,Redis 连接总账读同一个键。围栏上界、在线提醒与选主锁共用这一个池。
+	// PoolSize 是 go-redis 连接池上限(共享 Redis 连接总账,P0-E 第 3 批)。**必须显式写正整数**(评审 L7,Validate 拒绝 ≤ 0):
+	// 0 在 go-redis 里是缺省 10 × GOMAXPROCS,随 CPU limit 漂移,总账就不是集群的账。K8s 上 tools/scripts/k8s_deploy.ps1
+	// 从 etc/player_inbox.yaml 镜像 CoreRedis.PoolSize 并要求正整数,Redis 连接总账读同一个键。
+	// 围栏上界、在线提醒与选主锁共用这一个池。
 	PoolSize int `json:"PoolSize,optional"`
 }
 
@@ -226,8 +228,19 @@ func (c *Config) ListenHostPort() (string, uint32, error) {
 	return host, uint32(port), nil
 }
 
-// ParseEnqueueTypes 把白名单里的枚举名解析成类型集合。未知名、UNSPECIFIED、重复都报错:
-// 写错的名字若被静默忽略,运维会以为打开了某个类型,实际一直回 Disabled。
+// v1DisabledEnqueueTypes 是 v1 不许进白名单的类型及原因(用户拍板 2026-10-16,交接 §6 M2 / M3)。
+//
+// GM_ATTACH_CURRENCY_DEBT:scene 侧挂欠款会把同币种的新单合并进旧欠款,并用后来那单覆盖到期时间 / 原因 / 操作人
+// (一张小单就能让大额欠款提前失效,过期欠款的剩余部分也会被复活);挂错之后也没有任何撤销类型。合并语义、
+// 撤销类型(按金额减少)与单笔上限一起做完之前,白名单里出现它就拒启。GmSanctionPlayer 对它照常回
+// kPlayerInboxDisabled(不在白名单里);类型注册与 scene 执行器不动,解禁时删掉这一项即可。
+var v1DisabledEnqueueTypes = map[inboxpb.PlayerInboxMessageType]string{
+	inboxpb.PlayerInboxMessageType_PLAYER_INBOX_MSG_GM_ATTACH_CURRENCY_DEBT: "欠款合并语义与撤销路径未就绪(交接 §6 M2 / M3)",
+}
+
+// ParseEnqueueTypes 把白名单里的枚举名解析成类型集合。未知名、UNSPECIFIED、重复、v1 未开放的类型都报错:
+// 写错的名字若被静默忽略,运维会以为打开了某个类型,实际一直回 Disabled。Validate 与装配层(svc)都经它解析,
+// 所以任何一条启动路径都拒绝 v1 未开放的类型。
 func ParseEnqueueTypes(names []string) (map[inboxpb.PlayerInboxMessageType]struct{}, error) {
 	out := make(map[inboxpb.PlayerInboxMessageType]struct{}, len(names))
 	for _, name := range names {
@@ -238,6 +251,9 @@ func ParseEnqueueTypes(names []string) (map[inboxpb.PlayerInboxMessageType]struc
 		t := inboxpb.PlayerInboxMessageType(v)
 		if t == inboxpb.PlayerInboxMessageType_PLAYER_INBOX_MSG_UNSPECIFIED {
 			return nil, errors.New("PlayerInbox.EnqueueTypes 不能含 PLAYER_INBOX_MSG_UNSPECIFIED")
+		}
+		if why, disabled := v1DisabledEnqueueTypes[t]; disabled {
+			return nil, fmt.Errorf("PlayerInbox.EnqueueTypes 不能含 %s:v1 不开放,%s;v1 只放封锁 / 解封两种", name, why)
 		}
 		if _, dup := out[t]; dup {
 			return nil, fmt.Errorf("PlayerInbox.EnqueueTypes 重复列出 %q", name)
@@ -272,6 +288,9 @@ func (c *Config) Validate() error {
 	if c.LeaseTTL <= 0 {
 		return fmt.Errorf("LeaseTTL 必须为正数,得到 %d", c.LeaseTTL)
 	}
+	if err := c.validateStatContentSuppressed(); err != nil {
+		return err
+	}
 
 	if c.MySQL.Host == "" || c.MySQL.User == "" || c.MySQL.DBName == "" {
 		return errors.New("MySQL.Host / MySQL.User / MySQL.DBName 都不能为空")
@@ -289,8 +308,9 @@ func (c *Config) Validate() error {
 		return errors.New("CoreRedis.Host 不能为空:围栏上界读 player:{id}:owner_epoch、在线提醒读 player:{id}:location," +
 			"两者都在与 C++ scene 相同的核心 Redis 上")
 	}
-	if c.CoreRedis.PoolSize < 0 {
-		return fmt.Errorf("CoreRedis.PoolSize(%d)不能为负:0 = go-redis 缺省 10 × GOMAXPROCS", c.CoreRedis.PoolSize)
+	if c.CoreRedis.PoolSize <= 0 {
+		return fmt.Errorf("CoreRedis.PoolSize(%d)必须显式写正整数:0 在 go-redis 里是缺省 10 × GOMAXPROCS,"+
+			"随 CPU limit 漂移,Redis 连接总账(k8s_deploy.ps1 镜像同一个键)就对不上", c.CoreRedis.PoolSize)
 	}
 	if len(c.Kafka.Brokers) == 0 {
 		return errors.New("Kafka.Brokers 不能为空:在线提醒经 scene-cmd 写 Kafka")
@@ -355,6 +375,37 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("PlayerInbox.ReconcileWindowHours(%d 小时)必须至少覆盖两轮对账间隔"+
 				"(%d×60 ≥ 2×%d 分钟):否则一轮失败或易主就会有终结的行一次都没被核对就滑出窗口",
 				p.ReconcileWindowHours, p.ReconcileWindowHours, p.ReconcileIntervalMinutes)
+		}
+	}
+	return nil
+}
+
+// statContentSuppressedMethods 是必须列进 Middlewares.StatConf.IgnoreContentMethods 的方法(评审 L12)。
+//
+// go-zero 的 Stat 拦截器(Middlewares.Stat 缺省 true)对每个非慢调用把请求体整包 JSON 按 INFO 打日志。
+// FetchItems / AckItems 每次落地、每次确认各一条,量随在线人数线性涨,请求体对排障没有增量(异常结局另有带
+// player_id 的 ERROR 日志),所以只屏蔽它们的**内容**:方法名、对端、耗时照常记,慢调用照样打 slowcall。
+// PlayerInboxAdmin(GM 处置、作废等)**不**在这里:它们的请求体是审计线索。
+var statContentSuppressedMethods = []string{
+	inboxpb.PlayerInbox_FetchItems_FullMethodName,
+	inboxpb.PlayerInbox_AckItems_FullMethodName,
+}
+
+// validateStatContentSuppressed 确认 Fetch / Ack 的请求内容不会被 Stat 拦截器打进日志:要么整体关掉 Stat,
+// 要么把它们全部列进 IgnoreContentMethods(照 go/client_rpc_router)。K8s ConfigMap 漏了这一段时拒启,
+// 而不是安静地把每次落地的请求体灌进 Loki。
+func (c *Config) validateStatContentSuppressed() error {
+	if !c.Middlewares.Stat {
+		return nil
+	}
+	listed := make(map[string]bool, len(c.Middlewares.StatConf.IgnoreContentMethods))
+	for _, m := range c.Middlewares.StatConf.IgnoreContentMethods {
+		listed[m] = true
+	}
+	for _, m := range statContentSuppressedMethods {
+		if !listed[m] {
+			return fmt.Errorf("Middlewares.StatConf.IgnoreContentMethods 必须包含 %q(全部应列:%v):否则 go-zero Stat 拦截器"+
+				"会把每次落地 / 确认的请求体整包按 INFO 打进日志;或显式设 Middlewares.Stat=false", m, statContentSuppressedMethods)
 		}
 	}
 	return nil

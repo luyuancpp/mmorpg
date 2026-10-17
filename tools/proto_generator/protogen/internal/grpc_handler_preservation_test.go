@@ -199,22 +199,24 @@ func TestGrpcServiceHandler_RegenerationPreservesBattleCustomSections(t *testing
 	}
 }
 
-// 旧模板文件里的旧段全部为空时照常迁入新骨架:FirstCode 与 Handle* 逐字保留,旧包装函数与空旧段丢弃。
-// 包装函数缺无名段(更早的旧文件,解析器会串到 in_loop 段)也按「不存在」处理。
+// 旧模板文件里新骨架没有位置的段全部为空时照常迁入新骨架:FirstCode 与当前方法的 Handle* 逐字保留,旧包装函数与空旧段丢弃。
+// 同时覆盖不依赖当前 proto 方法表的几种形状:包装函数缺无名段(更早的旧文件)、包装函数签名折行、
+// proto 已删除的方法 Create(与 CreateScene 同名前缀;它的 Handle* 体、包装函数无名段与两个命名段都为空)。
 func TestGrpcServiceHandler_LegacyEmptySectionsMigrateToNewSkeleton(t *testing.T) {
 	setGrpcPreservationTestConfig(t)
 	methods := buildGrpcHandlerTestMethods()
+	fileMethods := withGrpcTestMethod(methods, "Create", ".CreateRequest", ".CreateResponse")
 	dir := t.TempDir()
 	headerPath := filepath.Join(dir, "scene_node_service.h")
 	cppPath := filepath.Join(dir, "scene_node_service.cpp")
 	firstCode := grpcLegacyPair("#include \"infra/agones/agones_gameserver_lifecycle.h\"")
 	createBody := grpcLegacyPair("    create_scene_impl(*request, *response);")
 	releaseBody := grpcLegacyPair("    release_player_impl(*request);")
-	legacy := legacyGrpcHandlerCpp(methods, firstCode, map[string]string{
+	legacy := foldLegacyGrpcWrapperSignatures(t, legacyGrpcHandlerCpp(fileMethods, firstCode, map[string]string{
 		"handle:CreateScene":    createBody,
 		"handle:ReleasePlayer":  releaseBody,
 		"omit_pre:DestroyScene": "",
-	})
+	}), "SceneNodeGrpc", "CreateScene", "PrepareBattle", "Create")
 	writeGrpcPreservationFile(t, cppPath, legacy)
 	writeGrpcPreservationFile(t, headerPath, grpcPreservationBegin("grpc.header.includes")+"\n"+_config.Global.Naming.YourCodeEnd+"\n")
 
@@ -234,22 +236,34 @@ func TestGrpcServiceHandler_LegacyEmptySectionsMigrateToNewSkeleton(t *testing.T
 	for _, method := range methods {
 		assertGrpcPreservedOnce(t, generated, grpcPreservationBegin(grpcGuardSectionName(method)), "迁移后补默认 guard 段")
 	}
+	for _, removed := range []string{"SceneNodeGrpcImpl::HandleCreate(", "grpc.Create.", "kCreatePath", "CreateCall"} {
+		if strings.Contains(generated, removed) || strings.Contains(header, removed) {
+			t.Fatalf("proto 已删除的方法(各段全空)迁移后应整体丢弃,仍出现 %q", removed)
+		}
+	}
 	writeGrpcPreservationFile(t, cppPath, generated)
 	if next := GetGrpcServiceHandlerCppStr(cppPath, methods, "", ""); next != generated {
 		t.Fatal("旧 scene 文件迁入新骨架后再次生成发生字节漂移")
 	}
 }
 
-// 固件取自 2026-10-16 工作区 cpp/nodes/{scene,battle}/handler/grpc/*.cpp 的真实非空旧段(scene 1 段、battle 4 段,
-// 逐字照抄)。生成器必须拒绝,并恰好列出这几段;.h 预检先于渲染,两份文件都不改。
+// 前三例的固件取自 2026-10-16 工作区 cpp/nodes/{scene,battle}/handler/grpc/*.cpp 的真实非空旧段(scene 1 段、battle 4 段,
+// 逐字照抄)。后三例钉住检测不依赖当前 proto 的方法表:proto 已删除的方法(fileMethods 比 methods 多一个)与折行签名。
+// 生成器必须拒绝,并恰好列出这几段;.h 预检先于渲染,两份文件都不改。
 func TestGrpcServiceHandler_LegacyNonEmptySectionsRefuseGeneration(t *testing.T) {
+	setGrpcPreservationTestConfig(t) // 表里的 grpcLegacyPair 在子测试之前求值,需要先有标记配置
+	begin := _config.Global.Naming.YourCodeBegin
+	end := _config.Global.Naming.YourCodeEnd
+	sceneWithDeletedCreate := withGrpcTestMethod(buildGrpcHandlerTestMethods(), "Create", ".CreateRequest", ".CreateResponse")
 	for _, tc := range []struct {
-		name     string
-		methods  RPCMethods
-		base     string
-		sections map[string]string
-		want     []string
-		notWant  []string
+		name        string
+		methods     RPCMethods // 当前 proto 的方法表
+		fileMethods RPCMethods // 拼旧文件用的方法表,为空时同 methods
+		fold        []string   // 签名改成折行形状的旧包装函数(foldLegacyGrpcWrapperSignatures)
+		base        string
+		sections    map[string]string
+		want        []string
+		notWant     []string
 	}{
 		{
 			name:     "scene",
@@ -278,7 +292,7 @@ func TestGrpcServiceHandler_LegacyNonEmptySectionsRefuseGeneration(t *testing.T)
 			notWant: []string{"DestroyBattle:" + legacyGrpcPreDispatchSectionName, "DestroyBattle:grpc.DestroyBattle.post_dispatch", "QueryBattleCreation:"},
 		},
 		{
-			// 包装函数缺无名段时解析器串到 in_loop:只按命名段列一次,不重复记成无名投递前段。
+			// 包装函数缺无名段(更早的旧文件):命名段只按名字列一次,不凭空记成无名投递前段。
 			name:     "battle 包装函数缺无名段",
 			methods:  buildBattleGrpcPreservationMethods(),
 			base:     "battle_node",
@@ -286,13 +300,65 @@ func TestGrpcServiceHandler_LegacyNonEmptySectionsRefuseGeneration(t *testing.T)
 			want:     []string{"DestroyBattle:grpc.DestroyBattle.in_loop"},
 			notWant:  []string{"DestroyBattle:" + legacyGrpcPreDispatchSectionName},
 		},
+		{
+			// 已删方法 Create 与当前方法 CreateScene 同名前缀:段按签名精确归属,不串到 CreateScene。
+			name:        "proto 已删除方法的旧段",
+			methods:     buildGrpcHandlerTestMethods(),
+			fileMethods: sceneWithDeletedCreate,
+			base:        "scene_node_service",
+			sections: map[string]string{
+				"pre:Create":           grpcLegacyPair("    auto permit = acquire_create_permit();"),
+				"in_loop:Create":       "        " + begin + ": grpc.Create.in_loop\n        dispatchStatus = reject_create();\n        " + end,
+				"post_dispatch:Create": "    " + begin + ": grpc.Create.post_dispatch\n    // 迁移前的说明\n    " + end,
+			},
+			want: []string{
+				"Create:" + legacyGrpcPreDispatchSectionName,
+				"Create:grpc.Create.in_loop",
+				"Create:grpc.Create.post_dispatch",
+			},
+			notWant: []string{"CreateScene:", "Create:" + orphanGrpcHandleSectionName("Create")},
+		},
+		{
+			name:        "proto 已删除方法的 Handle* 体",
+			methods:     buildGrpcHandlerTestMethods(),
+			fileMethods: sceneWithDeletedCreate,
+			base:        "scene_node_service",
+			sections:    map[string]string{"handle:Create": grpcLegacyPair("    create_impl(*request, *response);")},
+			want:        []string{"Create:" + orphanGrpcHandleSectionName("Create")},
+			notWant:     []string{"Create:" + legacyGrpcPreDispatchSectionName, "CreateScene:"},
+		},
+		{
+			// 旧实现按 "<Svc>Impl::<M>(grpc::ServerContext" 逐行查找,这三种折行签名里的无名段都会被静默丢弃。
+			name:    "折行签名的旧包装函数",
+			methods: buildGrpcHandlerTestMethods(),
+			fold:    []string{"CreateScene", "DestroyScene", "PrepareBattle"},
+			base:    "scene_node_service",
+			sections: map[string]string{
+				"pre:CreateScene":   workspaceSceneCreateScenePreDispatch,
+				"pre:DestroyScene":  grpcLegacyPair("    // 迁移前的说明"),
+				"pre:PrepareBattle": grpcLegacyPair("    check_prepare(*request);"),
+			},
+			want: []string{
+				"CreateScene:" + legacyGrpcPreDispatchSectionName,
+				"DestroyScene:" + legacyGrpcPreDispatchSectionName,
+				"PrepareBattle:" + legacyGrpcPreDispatchSectionName,
+			},
+			notWant: []string{"ReleasePlayer:", "CreateScene:grpc.CreateScene.in_loop"},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			setGrpcPreservationTestConfig(t)
 			dir := t.TempDir()
 			headerPath := filepath.Join(dir, tc.base+".h")
 			cppPath := filepath.Join(dir, tc.base+".cpp")
-			legacyCpp := legacyGrpcHandlerCpp(tc.methods, _config.Global.Naming.YourCodePair, tc.sections)
+			fileMethods := tc.fileMethods
+			if fileMethods == nil {
+				fileMethods = tc.methods
+			}
+			legacyCpp := legacyGrpcHandlerCpp(fileMethods, _config.Global.Naming.YourCodePair, tc.sections)
+			if len(tc.fold) > 0 {
+				legacyCpp = foldLegacyGrpcWrapperSignatures(t, legacyCpp, tc.methods[0].Service(), tc.fold...)
+			}
 			legacyHeader := grpcPreservationBegin("grpc.header.includes") + "\n" + _config.Global.Naming.YourCodeEnd + "\n"
 			writeGrpcPreservationFile(t, cppPath, legacyCpp)
 			writeGrpcPreservationFile(t, headerPath, legacyHeader)
@@ -307,6 +373,124 @@ func TestGrpcServiceHandler_LegacyNonEmptySectionsRefuseGeneration(t *testing.T)
 			}), cppPath, tc.want, tc.notWant)
 			assertGrpcFileContent(t, cppPath, legacyCpp)
 			assertGrpcFileContent(t, headerPath, legacyHeader)
+		})
+	}
+}
+
+// 新骨架文件里新生成带不走的非空无名段同样拒绝生成(checkLegacyGrpcSections 不只看旧模板):
+// proto 已删除方法的 Handle* 体(先于该方法遗留的 grpc.<M>.guard「未识别」报出)、签名里找不到查找键的 Handle*、
+// Handle* 里第一个段之后的无名段、<M>() 里的无名段。
+func TestGrpcServiceHandler_UnconsumedUnnamedSectionsRefuseGeneration(t *testing.T) {
+	setGrpcPreservationTestConfig(t)
+	methods := buildGrpcHandlerTestMethods()
+	begin := _config.Global.Naming.YourCodeBegin
+	end := _config.Global.Naming.YourCodeEnd
+	for _, tc := range []struct {
+		name        string
+		fileMethods RPCMethods // 生成初始骨架用的方法表,为空时同 methods
+		edit        func(t *testing.T, cpp string) string
+		want        string
+	}{
+		{
+			name:        "proto 已删除方法的 Handle* 体",
+			fileMethods: withGrpcTestMethod(methods, "Create", ".CreateRequest", ".CreateResponse"),
+			edit: func(t *testing.T, cpp string) string {
+				return fillGrpcPreservationSection(t, cpp, "void SceneNodeGrpcImpl::HandleCreate(", "", "    create_impl(*request, *response);")
+			},
+			want: "Create:" + orphanGrpcHandleSectionName("Create"),
+		},
+		{
+			name: "Handle* 签名里找不到查找键",
+			edit: func(t *testing.T, cpp string) string {
+				cpp = fillGrpcPreservationSection(t, cpp, "void SceneNodeGrpcImpl::HandleDestroyScene(", "", "    destroy_impl(*request);")
+				return replaceGrpcFixtureOnce(t, cpp, "void SceneNodeGrpcImpl::HandleDestroyScene(", "void SceneNodeGrpcImpl::HandleDestroyScene (")
+			},
+			want: "DestroyScene:" + orphanGrpcHandleSectionName("DestroyScene"),
+		},
+		{
+			name: "Handle* 里第一个段之后的无名段",
+			edit: func(t *testing.T, cpp string) string {
+				cpp = fillGrpcPreservationSection(t, cpp, "void SceneNodeGrpcImpl::HandleCreateScene(", "", "    create_impl();")
+				return replaceGrpcFixtureOnce(t, cpp, "    create_impl();\n"+end+"\n",
+					"    create_impl();\n"+end+"\n"+begin+"\n    extra_impl();\n"+end+"\n")
+			},
+			want: "CreateScene:" + orphanGrpcHandleSectionName("CreateScene"),
+		},
+		{
+			name: "<M>() 里的无名段",
+			edit: func(t *testing.T, cpp string) string {
+				anchor := "    [[maybe_unused]] const ::PrepareBattleRequest* request = &call->request();\n"
+				return replaceGrpcFixtureOnce(t, cpp, anchor, anchor+"    "+begin+"\n    reject_early();\n    "+end+"\n")
+			},
+			want: "PrepareBattle:" + strayGrpcUnnamedSectionName,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			setGrpcPreservationTestConfig(t)
+			dir := t.TempDir()
+			headerPath := filepath.Join(dir, "scene_node_service.h")
+			cppPath := filepath.Join(dir, "scene_node_service.cpp")
+			fileMethods := tc.fileMethods
+			if fileMethods == nil {
+				fileMethods = methods
+			}
+			cpp := tc.edit(t, GetGrpcServiceHandlerCppStr(cppPath, fileMethods, "", ""))
+			writeGrpcPreservationFile(t, cppPath, cpp)
+
+			if header, err := GetGrpcServiceHandlerHeadFromFileStr(headerPath, methods); err == nil {
+				t.Fatalf("新生成带不走的非空无名段必须让头文件预检拒绝生成:\n%s", header)
+			} else {
+				assertLegacyGrpcSectionListing(t, err.Error(), cppPath, []string{tc.want}, nil)
+			}
+			assertLegacyGrpcSectionListing(t, recoverGrpcGenerationPanic(t, func() {
+				GetGrpcServiceHandlerCppStr(cppPath, methods, "", "")
+			}), cppPath, []string{tc.want}, nil)
+			assertGrpcFileContent(t, cppPath, cpp)
+		})
+	}
+}
+
+// 当前工作区 4 个已迁移的 handler 文件(只读,不写回):更严的扫描不得误报;两份文件照常生成,
+// 文件里的每个守护段(FirstCode、Handle* 体、grpc.<M>.guard、头文件三段)都逐字出现在生成结果里,且不多不少。
+// 方法表是照抄 proto 的夹具(buildGrpcHandlerTestMethods / buildBattleGrpcPreservationMethods):proto 增删方法后须同步夹具。
+func TestGrpcServiceHandler_WorkspaceHandlersRegenerateWithoutFalsePositive(t *testing.T) {
+	root := grpcWorkspaceRoot(t)
+	for _, tc := range []struct {
+		name    string
+		dir     string
+		base    string
+		methods RPCMethods
+	}{
+		{"scene", "cpp/nodes/scene/handler/grpc", "scene_node_service", buildGrpcHandlerTestMethods()},
+		{"battle", "cpp/nodes/battle/handler/grpc", "battle_node", buildBattleGrpcPreservationMethods()},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			setGrpcPreservationTestConfig(t)
+			headerPath := filepath.Join(root, filepath.FromSlash(tc.dir), tc.base+".h")
+			cppPath := filepath.Join(root, filepath.FromSlash(tc.dir), tc.base+".cpp")
+			if err := checkLegacyGrpcSections(cppPath, tc.methods); err != nil {
+				t.Fatalf("已迁移的工作区文件不应报旧段(若 proto 增删了方法,先同步方法表夹具): %v", err)
+			}
+			header, err := GetGrpcServiceHandlerHeadFromFileStr(headerPath, tc.methods)
+			if err != nil {
+				t.Fatalf("工作区头文件应照常生成: %v", err)
+			}
+			cpp := GetGrpcServiceHandlerCppStr(cppPath, tc.methods, "", "")
+			for path, generated := range map[string]string{headerPath: header, cppPath: cpp} {
+				source := readGrpcFileLF(t, path)
+				blocks := grpcGuardedBlocks(source)
+				if len(blocks) == 0 {
+					t.Fatalf("%s 里没有守护段,夹具路径可能已变", path)
+				}
+				if got := len(grpcGuardedBlocks(generated)); got != len(blocks) {
+					t.Fatalf("%s 重生成后守护段数量变了: got=%d want=%d", path, got, len(blocks))
+				}
+				for _, block := range blocks {
+					if got, want := strings.Count(generated, block), strings.Count(source, block); got != want {
+						t.Fatalf("%s 的守护段重生成后未逐字保留: got=%d want=%d\n%s", path, got, want, block)
+					}
+				}
+			}
 		})
 	}
 }
