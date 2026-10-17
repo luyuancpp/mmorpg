@@ -540,13 +540,14 @@ TEST(BagTest, DelItem)
     EXPECT_EQ(0, bag.GetTotalItemCount(kNonStack2));
     EXPECT_EQ(0, bag.GetTotalItemCount(kStack11));
 
-    // Grid slots remain (empty)
-    EXPECT_EQ(5, bag.OccupiedGridCount());
-    EXPECT_EQ(5, bag.GridSlotCount());
+    // 扣空立即成对释放实例与槽位，不留下需要额外整理的零数量物品。
+    EXPECT_EQ(0u, bag.OccupiedGridCount());
+    EXPECT_EQ(0u, bag.GridSlotCount());
     for (uint32_t p : {0u, 1u, 2u, 3u, 4u})
     {
-        EXPECT_TRUE(bag.GridSlots().find(p) != bag.GridSlots().end());
+        EXPECT_EQ(nullptr, bag.GetItemCompByPos(p));
     }
+    EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
 TEST(BagTest, Del)
@@ -2566,7 +2567,7 @@ TEST(BagTest, LayerConsistencyHoldsAcrossEveryMutator)
 //   ① 加固:缩容被拒绝,容量不变、仍一致;
 //   ② 谓词:绕过 Bag、直接在自己注入的布局上缩容(FlatLayout::Resize 不设防),必须报得出来。
 // 布局要在空包时注入(SetLayout 对非空包会拒绝,见 SetLayoutRefusedWhileBagHoldsItems),
-// 注入前留住裸指针,Bag 只是接管所有权、对象仍是同一个。
+// 还原入口不替换布局；不能跨 AddItem 的候选提交保留布局借用。
 TEST(BagTest, LayerConsistencyPredicateActuallyDetectsBreakage)
 {
     Bag bag;
@@ -2574,7 +2575,8 @@ TEST(BagTest, LayerConsistencyPredicateActuallyDetectsBreakage)
     FlatLayout* layout = injected.get();
     bag.SetLayout(std::move(injected));
 
-    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1)));
+    bag.InsertItemForRestore(257001, kNonStack1, 1, 0);
+    ASSERT_EQ(layout, &bag.Layout());
     ASSERT_TRUE(bag.IsLayerConsistent());
     ASSERT_EQ(1u, bag.GridSlotCount());
 
@@ -3806,12 +3808,16 @@ TEST(GuidSourcePolicyTest, BatchLargerThanRemainingSegmentIsRefusedBeforeAnyWrit
     // 5 件不可叠加要 5 个号:库存 3 个,必须在写第一件之前整体拒绝,不能写 3 件后中途铸出哨兵
     EXPECT_EQ(kBagAddItemInvalidParam, bag.AddItem(MakeItem(kNonStack1, 5)));
     EXPECT_EQ(0u, bag.OccupiedGridCount());
+    EXPECT_EQ(0u, bag.GridSlotCount());
+    EXPECT_TRUE(bag.IsLayerConsistent());
 
-    EXPECT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1, 3)));
+    // 候选提交允许未发布的预留号作废；补入新段后仍能整批成功，不能复用作废号。
+    EXPECT_EQ(0u, item.item().Available());
+    item.item().OnResponse(0, 4, 7);
+    ASSERT_EQ(kSuccess, bag.AddItem(MakeItem(kNonStack1, 3)));
     EXPECT_EQ(3u, bag.OccupiedGridCount());
-    EXPECT_NE(nullptr, bag.GetItemCompByGuid(1));
-    EXPECT_NE(nullptr, bag.GetItemCompByGuid(2));
-    EXPECT_NE(nullptr, bag.GetItemCompByGuid(3));
+    for (const Guid guid : {1u, 2u, 3u}) EXPECT_EQ(nullptr, bag.GetItemCompByGuid(guid));
+    for (const Guid guid : {4u, 5u, 6u}) EXPECT_NE(nullptr, bag.GetItemCompByGuid(guid));
     EXPECT_TRUE(bag.IsLayerConsistent());
     EXPECT_FALSE(ItemStore::CanMintGuid()) << "库存用光、下一段没到";
 }
@@ -4061,8 +4067,8 @@ TEST(BagSegmentNotReadyTest, StackableSpillNeverEvictsWhenSegmentIsUnavailable)
     EXPECT_EQ(maxStack10, bag.GetItemCompByGuid(930001)->size());
 }
 
-// vector 重载的三种形状:需铸号 / 全预设但放不下 / 全预设且放得下。
-TEST(BagSegmentNotReadyTest, VectorBatchNeverEvictsWhenSegmentIsUnavailable)
+// vector 重载的三种形状:需铸号拒绝 / 全预设可按最终规划淘汰 / 全预设且放得下。
+TEST(BagSegmentNotReadyTest, VectorBatchEvictsOnlyWhenNoMintingIsNeeded)
 {
     ASSERT_FALSE(ItemStore::CanMintGuid()) << "本用例依赖前面的用例已把 item 号段置为不可用";
 
@@ -4079,22 +4085,27 @@ TEST(BagSegmentNotReadyTest, VectorBatchNeverEvictsWhenSegmentIsUnavailable)
               bag.AddItems(std::vector<InitItemParam>{MakeItem(kNonStack1, 1)}, &evicted));
     EXPECT_TRUE(evicted.empty());
 
-    // ② 全部沿用预设 guid、但现状放不下:发号源不可用时**不许靠腾位解决** ——
-    //    腾位后重规划可能把纯并堆变成要铸号的溢出,那就成了"先销毁、再铸不了号"。
+    // ② 最终淘汰规划完成后无需铸号：候选内腾位并原子发布，不误伤预设实例。
     InitItemParam preassigned = MakeItem(kNonStack1, 1);
     preassigned.itemPBComp.set_item_id(940003);
-    EXPECT_EQ(kBagAddItemInvalidParam,
+    EXPECT_EQ(kSuccess,
               bag.AddItems(std::vector<InitItemParam>{preassigned}, &evicted));
-    EXPECT_TRUE(evicted.empty());
+    ASSERT_EQ(1u, evicted.size());
+    EXPECT_EQ(940001u, evicted.front().guid);
     EXPECT_EQ(2u, bag.OccupiedGridCount());
-    EXPECT_NE(nullptr, bag.GetItemCompByGuid(940001));
+    EXPECT_EQ(nullptr, bag.GetItemCompByGuid(940001));
+    EXPECT_NE(nullptr, bag.GetItemCompByGuid(940002));
+    EXPECT_NE(nullptr, bag.GetItemCompByGuid(940003));
+    EXPECT_TRUE(bag.IsLayerConsistent());
 
     // ③ 对照:全部预设 guid 且放得下 —— 照常成功,不误伤邮件附件的典型形状。
+    evicted.clear();
+    preassigned.itemPBComp.set_item_id(940004);
     bag.SetCapacityForRestore(3);
     EXPECT_EQ(kSuccess, bag.AddItems(std::vector<InitItemParam>{preassigned}, &evicted));
     EXPECT_TRUE(evicted.empty());
     EXPECT_EQ(3u, bag.OccupiedGridCount());
-    EXPECT_NE(nullptr, bag.GetItemCompByGuid(940003));
+    EXPECT_NE(nullptr, bag.GetItemCompByGuid(940004));
     EXPECT_TRUE(bag.IsLayerConsistent());
 }
 

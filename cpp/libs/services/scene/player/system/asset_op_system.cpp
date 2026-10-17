@@ -779,7 +779,10 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);
 		return;
 	}
-	if (request.bundle().items_size() > 0 && tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player) == nullptr)
+	// 只有 Credit 会写物品。Debit 携带物品属于确定性坏包,应在下一步记终局拒绝,
+	// 不能因无关的背包加载状态返回 RETRY,让同 seq 后来的合法包重新获得扣款机会。
+	if (rpc == AssetOpRpc::kCredit && request.bundle().items_size() > 0 &&
+		tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player) == nullptr)
 	{
 		LOG_WARN << "[AssetOp] Player lacks PlayerBagsComp(still loading) player_id=" << request.player_id();
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);

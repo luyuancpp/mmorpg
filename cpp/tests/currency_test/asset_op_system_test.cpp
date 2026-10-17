@@ -574,9 +574,11 @@ TEST_F(AssetOpSystemTest, RetryDoesNotResetEpoch)
 
 TEST_F(AssetOpSystemTest, DebitBundleInvalidRecorded)
 {
+	// 本例验证背包已加载的玩家;缺背包的 Debit 与 Credit 行为由后续用例分别覆盖。
+	GiveBags();
 	ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player_, kCurrencyGold, 100));
 
-	// Debit v1 只收恰好 1 条货币、0 件物品
+	// Debit v1 只收恰好 1 条货币、0 件物品。
 	auto withItem = MakeCurrencyRequest(ASSET_OP_STREAM_GUILD_DEBIT, 1, 30, TX_GUILD_DONATE);
 	auto* item = withItem.mutable_bundle()->add_items();
 	item->set_config_id(10);
@@ -608,6 +610,56 @@ TEST_F(AssetOpSystemTest, DebitBundleInvalidRecorded)
 	EXPECT_EQ(100u, Gold());
 	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, CallDebit(2, 30).outcome()) << "已记账";
 	EXPECT_EQ(100u, Gold());
+}
+
+TEST_F(AssetOpSystemTest, DebitWithItemWithoutBagsRejectedAndRecorded)
+{
+	ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player_, kCurrencyGold, 100));
+	ASSERT_FALSE(tlsEcs.actorRegistry.any_of<PlayerBagsComp>(player_));
+
+	// Debit 不写物品,非法物品包应固定为拒绝,不能因缺背包先返回未记账的 RETRY。
+	auto request = MakeCurrencyRequest(ASSET_OP_STREAM_GUILD_DEBIT, 1, 30, TX_GUILD_DONATE);
+	auto* item = request.mutable_bundle()->add_items();
+	item->set_config_id(10);
+	item->set_count(1);
+	SignForTest("debit", request);
+	::AssetOpResponse response;
+	PlayerAssetOpSystem::Debit(request, response);
+
+	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, response.outcome());
+	EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), response.reason().id());
+	EXPECT_EQ(1, g_persistCalls);
+	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, CallDebit(1, 30).outcome()) << "同 seq 的合法重投也不能扣款";
+	EXPECT_EQ(100u, Gold());
+	EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerBagsComp>(player_));
+}
+
+// Credit 确实需要写物品,缺持久背包时仍须整体重试,不能为了修复 Debit 而放开这道门禁。
+// 不依赖 Item 表:缺背包应在校验配表、分配物品号或修改资产之前返回。
+TEST_F(AssetOpSystemTest, CreditMissingBagsRetriesBeforeAnyMixedBundleMutation)
+{
+	ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player_, kCurrencyGold, 100));
+	ASSERT_FALSE(tlsEcs.actorRegistry.any_of<PlayerBagsComp>(player_));
+	const auto ledgerBefore = tlsEcs.actorRegistry.get<PlayerAssetOpLedgerComp>(player_).SerializeAsString();
+	const auto issuedBefore = tlsGuidSegmentRegistry.Get(GuidKind::kItem).GetStats().issued;
+	PlayerAssetOpSystem::SetAddCurrencyFnForTest(&FakeAddCurrency);
+
+	auto request = MakeCurrencyRequest(ASSET_OP_STREAM_GUILD_CREDIT, 1, 30, TX_GUILD_SHOP);
+	auto* item = request.mutable_bundle()->add_items();
+	item->set_config_id(10);
+	item->set_count(1);
+	const auto response = CallCredit(request);
+
+	EXPECT_EQ(ASSET_OP_OUTCOME_RETRY, response.outcome());
+	EXPECT_EQ(static_cast<uint32_t>(kAssetPlayerNotHere), response.reason().id());
+	EXPECT_FALSE(response.durable());
+	EXPECT_FALSE(response.partial());
+	EXPECT_EQ(100u, Gold());
+	EXPECT_EQ(ledgerBefore, tlsEcs.actorRegistry.get<PlayerAssetOpLedgerComp>(player_).SerializeAsString());
+	EXPECT_EQ(issuedBefore, tlsGuidSegmentRegistry.Get(GuidKind::kItem).GetStats().issued);
+	EXPECT_EQ(0, g_addCurrencyCalls);
+	EXPECT_EQ(0, g_persistCalls);
+	EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerBagsComp>(player_));
 }
 
 // v1 不支持的 P2 字段(item_uuids / pet_id)现在是**记账式终局拒绝**(§4.9 第 8 步)。

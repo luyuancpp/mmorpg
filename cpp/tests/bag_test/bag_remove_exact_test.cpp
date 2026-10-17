@@ -194,8 +194,10 @@ TEST_F(BagRemoveExactTest, DeductsExactlyTheRequestedAmountAndLogsOncePerDrained
 	EXPECT_EQ(2u, bag.GetTotalItemCount(kMaterial)) << "exactly 6 gone, no more and no less";
 	EXPECT_EQ(2u, LogAttempts() - logsBefore)
 		<< "one entry per drained instance: a deduction spanning two stacks leaves two";
-	EXPECT_EQ(3u, bag.OccupiedGridCount()) << "draining never destroys an instance by itself";
-	EXPECT_EQ(0u, bag.GetItemPosByGuid(kGuidA));
+	EXPECT_EQ(2u, bag.OccupiedGridCount()) << "扣光的实例与槽位立即释放";
+	EXPECT_EQ(2u, bag.GridSlotCount());
+	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA));
+	EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
 	EXPECT_EQ(1u, bag.GetItemPosByGuid(kGuidB));
 	EXPECT_EQ(before.at(kGuidC), Capture(bag).at(kGuidC))
 		<< "a config that was not asked for is not touched at all";
@@ -222,7 +224,12 @@ TEST_F(BagRemoveExactTest, DeductsEveryConfigOfAMultiConfigRequest)
 	EXPECT_EQ(1u, bag.GetTotalItemCount(kPlainNonStack));
 	// 1(一堆里扣 2)+ 1(另一种整堆抽光)+ 2(不可叠加的两件各一条)。
 	EXPECT_EQ(4u, LogAttempts() - logsBefore);
-	EXPECT_EQ(5u, bag.OccupiedGridCount()) << "emptied instances stay until the caller compacts";
+	EXPECT_EQ(2u, bag.OccupiedGridCount()) << "只保留未扣光的两件实例";
+	EXPECT_EQ(2u, bag.GridSlotCount());
+	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidB));
+	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidC));
+	EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidD));
+	EXPECT_EQ(4u, bag.GetItemPosByGuid(kGuidE)) << "扣除不重排幸存实例";
 	EXPECT_TRUE(bag.IsLayerConsistent());
 }
 

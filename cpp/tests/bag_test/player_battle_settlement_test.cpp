@@ -688,7 +688,9 @@ TEST(PendingSettlementContract, AckRemovesIndexMemberOnlyTogetherWithPending) {
     EXPECT_GT(zrem, pendingBranch);
     EXPECT_LT(zrem, script.find(" end ", pendingBranch));
     EXPECT_LT(zrem, lockBranch);
-    EXPECT_EQ(script.find("'ZREM'", zrem + 1), std::string::npos);
+    // zrem 指向 redis.call 开头，必须跳过整条调用再查，否则会再次命中自身的 ZREM。
+    EXPECT_EQ(script.find("'ZREM'", zrem + std::string("redis.call('ZREM', KEYS[5], ARGV[2])").size()),
+              std::string::npos);
 }
 
 TEST(PendingSettlementContract, CorruptRecordCleanupAlsoRemovesIndexMember) {

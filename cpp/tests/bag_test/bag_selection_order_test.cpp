@@ -146,8 +146,11 @@ protected:
         EXPECT_EQ(kStackConfig, drained[1].configId);
         EXPECT_EQ(2u, drained[1].amount);
         EXPECT_EQ(5u, StackSize(bag, kGuidA));
-        EXPECT_EQ(0u, StackSize(bag, kGuidB));
+        EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidB));
+        EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
         EXPECT_EQ(3u, StackSize(bag, kGuidC));
+        EXPECT_EQ(1u, bag.GetItemPosByGuid(kGuidC));
+        EXPECT_EQ(2u, bag.GetItemPosByGuid(kGuidA));
         EXPECT_TRUE(bag.IsLayerConsistent());
     }
 };
@@ -211,14 +214,18 @@ TEST_F(BagSelectionOrderTest, DrainWithoutReceiptUsesTheSameSlotOrder)
     PlaceDrainFixture(bag);
     ASSERT_EQ(kSuccess, bag.RemoveItems({{kStackConfig, 7}}));
     EXPECT_EQ(5u, StackSize(bag, kGuidA));
-    EXPECT_EQ(0u, StackSize(bag, kGuidB));
+    EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidB));
+    EXPECT_EQ(nullptr, bag.GetItemCompByPos(0));
     EXPECT_EQ(3u, StackSize(bag, kGuidC));
 }
 
 TEST_F(BagSelectionOrderTest, DrainSkipsEmptyStackWithoutReceipt)
 {
     Bag bag;
-    bag.InsertItemForRestore(kGuidA, kStackConfig, 0, 0, 1);
+    bag.InsertItemForRestore(kGuidA, kStackConfig, 1, 0, 1);
+    // 加载已拒绝零堆；这里专门注入内存损坏，验证抽取不把空堆写入回执。
+    ASSERT_NE(nullptr, bag.GetItemCompByGuid(kGuidA));
+    bag.GetItemCompByGuid(kGuidA)->set_size(0);
     bag.InsertItemForRestore(kGuidB, kStackConfig, 5, 1, 2);
     std::vector<DrainedInstance> drained;
     ASSERT_EQ(kSuccess, bag.RemoveItemsClamped({{kStackConfig, 3}}, &drained));
@@ -251,7 +258,10 @@ TEST_F(BagSelectionOrderTest, MergeNeverPicksAnEmptyStackAsSurvivor)
     Bag bag;
     bag.InsertItemForRestore(kGuidC, kStackConfig, 4, 2, 3);
     bag.InsertItemForRestore(kGuidB, kStackConfig, 3, 1, 2);
-    bag.InsertItemForRestore(kGuidA, kStackConfig, 0, 0, 1);
+    bag.InsertItemForRestore(kGuidA, kStackConfig, 1, 0, 1);
+    // 负向夹具绕过加载的零堆过滤，保留对整理幸存者选择与空堆回收的覆盖。
+    ASSERT_NE(nullptr, bag.GetItemCompByGuid(kGuidA));
+    bag.GetItemCompByGuid(kGuidA)->set_size(0);
     std::vector<DestroyedInstance> destroyed;
     ASSERT_TRUE(bag.MergeAndCompact(&destroyed, CompactPolicy::kMergeOnly));
     EXPECT_EQ(7u, StackSize(bag, kGuidB));
