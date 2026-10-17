@@ -32,6 +32,9 @@ func SnapshotInsertArgsForTest(row *SnapshotRow) []any { return snapshotInsertAr
 // DeadlockRetriesForTest 返回本 store 因 1213 就地重跑 InsertSnapshotIfGuidAbsent / InsertSnapshotsIfGuidAbsent 的累计次数。
 func (s *SnapshotStore) DeadlockRetriesForTest() uint64 { return s.deadlockRetries.Load() }
 
+// BatchFallbacksForTest 返回批量路径撞 1062、整批转逐行的累计次数(钉住「先预读」:常态必须为 0)。
+func (s *SnapshotStore) BatchFallbacksForTest() uint64 { return s.batchFallbacks.Load() }
+
 // UniqueGuidKeyForTest 返回建 store 时探到的结构能力(uk_snapshot_guid_nz 在不在)。
 func (s *SnapshotStore) UniqueGuidKeyForTest() bool { return s.uniqueGuidKey }
 

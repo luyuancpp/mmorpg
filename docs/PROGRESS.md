@@ -8893,3 +8893,19 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **文档**:`docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md` §9.2 / §9.3 / §9.4 补 10-16 状态,新增 §9.6(真库表、新发现 #19–#24、现场四「多行 ODKU + 自增主键」、环境教训)。
 - **环境**:本机 Codex 会话的 MySQL 在跑测中途被撤,后半程改用自起的一次性容器 `cc-deadlock-mysql-1016` / `cc-deadlock-verify-mysql-1016`(已删除);被撤容器 `codex-friend-request-mysql-20261015` 里留有本次的一次性库 `cc_assetop_it_1015`、`cc_trade_it_1015`、`cc_inbox_1016_it`、`cc_gateway_1016_it` 与 guild 用例未删净的 `guild_it_44740_*`,容器已停,未去启动它清理。
 - **Java 版(AGENTS §12)**:不涉及客户端契约;本批是 data_service 内部存储写法,Java 版存储实现不同,是否有「多行语句按到达序拼批」「必然回滚的首插探针」同形写法未核,登记为待 Java 侧按事故文档 §9.2 / §9.6.4 判据自查。
+
+## 2026-10-16 死锁复查收尾:#20 快照批量重新设计、#24 / guild / merge_zone 真库验证(Claude;真库验证见下,未提交)
+
+- **接上一条**(`4d87229aa`):当时留下的 #20、#24 待验证、guild 只能在负载机上判、merge_zone 与 player_inbox 没跑成,本次处理前四项。
+- **#20 已修**(`go/data_service/internal/store/snapshot_store.go`):批量落库不再用多行 ODKU。改为 ① 普通读按 `uk_snapshot_guid_nz` 预读剔除已存在的 guid 与批内重复;② 剩下的按 **snapshot_guid 升序**拼**普通**多行 INSERT;③ 撞 1062(预读后并发写者落了同一 guid)整条自动回滚、转逐行单行 ODKU(新增 `batchFallbacks` 计数)。普通 INSERT 撞已提交重复立刻 1062,不会再带着 PRIMARY supremum 间隙锁去等别人,#20 的环被拆掉;#19 的 1869 也随之消失(`4d87229aa` 里的过渡尾巴已被取代)。
+  - **按 guid 升序的原因**(第二名复核员真库实测,把我原来的「同分区按 offset 序记录锁上成不了环」推翻了):普通 INSERT 撞未提交重复 x 时,**等待中**的 S next-key 请求也罩住 (pred(x), x),持有 x 的写者往这个间隙插后续行就被挡住;按 offset 序 guid 不单调,两写者 10/10 成环、流式重叠 7/279。排序后同组实验全部 0。代价:同一玩家同一秒跨节点的快照,列表里 id 并列次序随 guid。
+  - 回归:新增真库 `TestSnapshotStore_BatchOutOfGuidOrderOverlapDoesNotDeadlock`(倒序 + 无隔离种子;去掉排序的红对照已确认 1213 变红)、`TestSnapshotStore_BatchOverlapDoesNotDeadlock`(照搬复核员复现旧实现成环的编排;旧实现上 1213 重跑 1 次 → 红,新实现 0 次)、`TestSnapshotTableUniqueIndexesAreOnlyGuidKey`(守住「表上只有 PRIMARY 与 uk_snapshot_guid_nz 两个唯一索引」);`TestInsertSnapshotsSQLShape` 改钉「普通 INSERT、不带 ODKU / IGNORE、预读不加锁」;`BatchIdsFollowRowOrder` 改为 `BatchIdsFollowGuidOrder`;批量去重 / 重放用例断言回退次数为 0(去掉预读的红对照已确认变红)。
+  - 验证:改动置于 HEAD `4d87229aa` 的干净 worktree,`gofmt` / `go vet -tags integration ./internal/store ./internal/kafka` 干净;store 整包 371 PASS / 1 FAIL(既有 `TestMigrateSchema_UpgradesLegacyHandWrittenTables`)/ 1 SKIP(TiDB);kafka 包单测 PASS。
+  - 复核(工作流两名反驳式复核员):真库攻击视角判 flawed(即上面的第二个环,已按其建议排序修掉);语义 / 调用方视角判 sound,手工编排旧 3/3 成环、新 3/3 不成环,3 写者 600 次调用压测新 0 次 1213(旧 59 次),预读 256 参数走覆盖索引 range;其指出的注释错误(「单行路径会把别的唯一键的 1062 报出来」不成立 —— 单行 ODKU 会静默吸收任何唯一键重复)已改正并加上述守卫。
+  - 同步:`docs/design/data_service_role_and_scope.md`、`docs/ops/audit-topic-generation-bump-runbook.md`、`go/data_service/internal/kafka/snapshot_worker.go` 注释。`go/data_service/internal/config/config.go:485` 注释仍写「多行 ODKU」,该文件在别的会话手里,**未改**,留给它的持有者。
+- **#24 真库验证通过**:落地围栏会话修好的 `go/db/internal/kafka/player_row_fence.go`(在途)4 条集成用例全 PASS,含「不同新号并发首存不死锁」;死锁 / 锁等待超时计数均为 0。已回告该会话。
+- **guild 定案**:data 339 PASS / 0 / 0、logic 690 PASS(1 SKIP 要真 Redis),死锁增量 0。前几轮的失败查明是本机 Docker MySQL 每次提交约 42 ms,两条经济锁序用例 30 轮 × 200 次逐行清理跑不进 120 秒总预算;换内存盘、放宽刷盘(锁语义不变,每次提交 1 ms)后全绿。
+- **merge_zone(#17)**:临时起占 3306 / 6379 的一次性 MySQL 与 Redis(用后即删),273 PASS / 0 / 0。
+- **仍未做**:player_inbox 真库(HEAD 缺 `go.sum`,模块在收件箱会话手里)与 #23(第 5 批前必修,已转交);TiDB 语义 6 条与在途 commerce / match 线索只登记未复核;`TestMigrateSchema_UpgradesLegacyHandWrittenTables` 既有失败;快照批量的回退 / 重跑次数还没有接 Prometheus 指标(只有日志与测试计数)。
+- **文档**:`docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md` §9.3 #17、§9.6.1 guild / merge_zone 行、§9.6.3 #19 / #20 / #24 与「单行 ODKU 吞任意唯一键重复」补记。
+- **Java 版(AGENTS §12)**:同上一条,内部存储写法、不涉及客户端契约;Java 版是否有「多行 ODKU 批量去重」同形写法未核,待 Java 侧按事故文档 §9.6.4 自查。

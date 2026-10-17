@@ -261,7 +261,7 @@ innodb_deadlock_detect=ON)跑出来的受控实验;标"推演"的没有真库证
 | 12 | `player_name` 抢注 | **根治:主键改 `name_norm`、`player_id` 转唯一键、保持 ODKU**,配幂等可回滚迁移 | ✅ |
 | 13 | `debug_import` | 事务改 RC + 表遍历定序 | ✅ |
 | 16 | seq 行首次创建 | trade:守卫哨兵行 + `EnsureSeqRowTx`;guild 同法自行落 | ✅〔10-16:trade 133 PASS / 0 / 0;guild 以成员行为守卫落地〕 |
-| 17 | merge_zone 整区改写 | 按主键升序点更新 + RC + 有界重试;TiDB 悲观短事务由搬迁会话落 | 未跑〔10-16 仍未跑:集成测试写死 3306 / 6379 与口令,且会清 Redis 9/10/11 号库;代码复查修复仍在〕 |
+| 17 | merge_zone 整区改写 | 按主键升序点更新 + RC + 有界重试;TiDB 悲观短事务由搬迁会话落 | ✅〔10-16:用自起的一次性 MySQL 3306 / Redis 6379 跑通 273 PASS / 0 / 0,含 `TestIT_MySQLSessionIsReadCommitted`、`TestIT_MigrateGuildZone_ConcurrentDisbandDoesNotDeadlock`〕 |
 | 18 | gateway 白名单 | ODKU(自增主键,安全) | ✅ 12/12 |
 
 ### 9.4 留下的口子
@@ -299,10 +299,10 @@ innodb_deadlock_detect=ON)跑出来的受控实验;标"推演"的没有真库证
 | `go/friend`(MySQL) | 407 PASS / 0 FAIL / 5 SKIP | 4 个是另设门控的 TiDB 用例;1 个是回收竞态用例本轮没撞上窗口(用例自报 SKIP),单独重跑 PASS |
 | `go/friend`(TiDB v8.5.2) | 9 PASS | 推荐计划与申请代次的 TiDB 用例 |
 | `go/data_service/internal/store` | 365 PASS / 1 FAIL / 1 SKIP | FAIL 是 §9.4-2 那条既有失败;SKIP 要 TiDB。修 #19 之前还多一条 1869(见 §9.6.3) |
-| `go/guild`(data + logic) | logic 全绿;data 两轮共 9 条失败,单独重跑剩 3 条 | 失败**全部**是 1 / 1.5 / 2 秒事务预算到点的 `context deadline exceeded`(含一条不加锁的一致性读和一次建表 DDL);两轮 InnoDB `lock_deadlocks` 增量为 **0**。当时机器上同时跑着两套 TiDB、Kafka、Redis 集群,不满足帮会交接 92 §12.6 要求的「独占实例」,须在独占实例重验 |
+| `go/guild`(data + logic) | 〔定案〕logic 690 PASS / 0 / 1 SKIP(要真 Redis);data **339 PASS / 0 FAIL / 0 SKIP**(快实例) | 前几轮的失败**全部**是预算到点的 `context deadline exceeded`,死锁增量始终为 0。定位:本机 Docker 上的 MySQL 每次提交约 **42 ms**(`sync_binlog=1`、`flush_log_at_trx_commit=1`、Windows 虚拟盘),两条经济锁序用例(`TestEconomyLockOrder_LeaveVersusCleanupVersusFinalize` / `…ReserveVersusCleanupSameStream`)每轮要逐行提交 200 次清理,30 轮跑不进 `econLockOrderBudget` 的 120 秒总预算(两次都在 121~122 秒、第 25 / 29 轮断)。换成数据目录在内存盘、`flush_log_at_trx_commit=2`、`sync_binlog=0` 的实例(每次提交 1 ms,**锁语义不变**)后两条各 22~23 秒通过,整包 339 全绿。lock_timeouts 两种实例都是 +7,来自专测 1205 的用例 |
 | `java/gateway_node` | 锁序相关全绿 | `ZoneConfigUpsertLockOrderMySqlTest` 2、`ZoneWhitelistUpsertLockOrderMySqlTest` 2、`InnoDbDeadlockRetryTest` 8;另一条 `LoginRpcClientRetryTest` 期望 `UNAVAILABLE` 得到 `DEADLINE_EXCEEDED`,与锁无关 |
 | `go/player_inbox` | 未跑成 | HEAD 编不过:`go.sum` 从未入库(模块正被别的会话改,未提交) |
-| `tools/merge_zone` | 未跑 | 集成测试写死 `127.0.0.1:3306`、`6379` 与口令,并会清 Redis 9/10/11 号库,本机没有对应实例 |
+| `tools/merge_zone` | **273 PASS / 0 / 0** | 集成测试写死 `127.0.0.1:3306`、`6379` 与仓库开发口令;临时起了占这两个端口的一次性 MySQL(内存盘)与 Redis,跑完即删(用例碰到非空的 Redis 库会 SKIP 而不是清库) |
 
 ### 9.6.2 18 条修复:全部仍在
 
@@ -314,12 +314,14 @@ innodb_deadlock_detect=ON)跑出来的受控实验;标"推演"的没有真库证
 
 | # | 位置 | 问题 | 证据 | 处置 |
 |---|---|---|---|---|
-| 19 | `data_service` `snapshot_store.go` 批量路径(`d5cbb8a8e`,10-13) | 多行 ODKU 尾巴 `id = LAST_INSERT_ID(id)` 给自增列赋值,批内同 guid 重复时 MySQL 报 **1869** 整条回滚 | 真库:`id = LAST_INSERT_ID(id)` 与 `id = id` 都 1869;`snapshot_guid = snapshot_guid` 正确(先出现者落库,affected 只计新插入) | ✅ 已修:批量尾巴改 `onDuplicateKeepRowSQL`,单行路径不变;`TestSnapshotStore_BatchDedupsAgainstStoredAndWithinBatch` 由红转绿 |
-| 20 | 同上 | 多行 ODKU 撞到**已存在**的行时,先在自增主键末尾试插、回滚后留下 **PRIMARY supremum 上的 X 间隙锁直到语句结束**;rebalance 重叠时与另一实例在唯一键上的等待成环 | 两名复核员真库复现:HEAD 尾巴 3/3、#19 修复后的尾巴 3/3、**两批都按 guid 升序也 3/3**;对照「批里没有撞键行」0/3 | **未修,待拍板**。只在 `Kafka.SnapshotBatchMaxRows > 1` 时走到(默认 1)。建议:保持 1,撤掉 `go/data_service/etc/data_service.yaml` 里「建议开服值 16」的注释(该文件在别的会话手里,本次没改);要开批量须先重新设计(例如先普通读剔除已存在的 guid,只把确定缺席的行拼进多行语句),再按本节方法上真库摆交错 |
+| 19 | `data_service` `snapshot_store.go` 批量路径(`d5cbb8a8e`,10-13) | 多行 ODKU 尾巴 `id = LAST_INSERT_ID(id)` 给自增列赋值,批内同 guid 重复时 MySQL 报 **1869** 整条回滚 | 真库:`id = LAST_INSERT_ID(id)` 与 `id = id` 都 1869;`snapshot_guid = snapshot_guid` 正确(先出现者落库,affected 只计新插入) | ✅ 已修(随 #20 的重新设计,批量路径不再用 ODKU,1869 一并消失;`4d87229aa` 里的过渡写法 `snapshot_guid = snapshot_guid` 已被取代);`TestSnapshotStore_BatchDedupsAgainstStoredAndWithinBatch` 由红转绿 |
+| 20 | 同上 | 多行 ODKU 撞到**已存在**的行时,先在自增主键末尾试插、回滚后留下 **PRIMARY supremum 上的 X 间隙锁直到语句结束**;rebalance 重叠时与另一实例在唯一键上的等待成环 | 两名复核员真库复现:HEAD 尾巴 3/3、#19 修复后的尾巴 3/3、**两批都按 guid 升序也 3/3**;对照「批里没有撞键行」0/3 | ✅ **已修(10-16 重新设计)**:① 普通读按 `uk_snapshot_guid_nz` 预读剔除已存在的 guid 与批内重复;② 剩下的按 **snapshot_guid 升序**拼**普通**多行 INSERT(不带 ODKU / IGNORE);③ 撞 1062(预读之后并发写者落了同一 guid)整条自动回滚、转逐行单行 ODKU。普通 INSERT 撞已提交重复立刻 1062,不会带着间隙锁继续,环的一半被拆掉。真库:新用例 `TestSnapshotStore_BatchOverlapDoesNotDeadlock` 在旧实现上 1213 重跑 1 次(红)、新实现 0 次;复核员手工编排旧 3/3 成环、新 3/3 不成环,3 写者 600 次调用压测新 0 次 1213(旧 59 次);预读 256 参数走 `uk_snapshot_guid_nz` 覆盖索引 range。回退计数 `batchFallbacks` 在常态用例里断言为 0(去掉预读的红对照已确认变红)。残余同单行路径(≥3 写者同 guid 且首插回滚,复核员实测 6/6,由有界重试吸收)。**复核还抓到第二个环**:普通 INSERT 撞未提交重复 x 时,**等待中**的 S next-key 请求也罩住 (pred(x), x),持有 x 的领先写者往这个间隙插后续行会被挡住 —— 按 offset 序拼批 guid 不单调,两写者 [5000, 6000..6149, 4999] 10/10 成环、流式重叠 7/279,所以剔重后改为**按 guid 升序**插(逐行回退同序),同组实验全部 0;新增 `TestSnapshotStore_BatchOutOfGuidOrderOverlapDoesNotDeadlock`(不排序的红对照已确认变红),`BatchIdsFollowRowOrder` 改为 `BatchIdsFollowGuidOrder`(代价:同一玩家同一秒跨节点的快照,列表并列次序随 guid)。`data_service.yaml` 的「建议开服值 16」不再需要撤 |
 | 21 | `data_service` `transaction_log_store.go` `InsertBatchIgnore` | 消费者跨分区混拼的一批按到达序写 VALUES;rebalance 重叠时两实例对重叠行顺序相反,主键查重 S,REC_NOT_GAP 互等(RC 下同样成立) | 复核员真库:两条 200 行语句同时放行,到达序全重叠 4/10、半重叠 3/10 成环,**都按 `tx_id` 升序 0/10** | ✅ 已修:拼语句前按 `tx_id` 升序稳定排序(副本,不改调用方切片);`TestTxLogRowsInLockOrder` |
 | 22 | `data_service` `route_store.go` 建池探针 P4 + P5 | 空表上 ≥3 个建池方并发插同一个缺席的探针键,先插者(探针必然回滚)回滚后落入 §9.1 现场二,原来只靠 `retryRouteTx` 吸收 | 两名复核员真库(RC)10/10、11/11 成环;加守卫 0/10 | ✅ 已修:探针事务第一句 `route_meta(id=1) FOR UPDATE`(`lockRouteProbeGuard`),有界重试降为最后防线;真库回归 `TestRouteStore_ProbesQueueOnMetaGuard`(去掉守卫的红对照已确认变红)、契约用例「探针守卫缺行」。当前生产 `Mode: redis` 不建 route store,切 db_first 前生效 |
 | 23 | `player_inbox` `store.go` `ensureStream` | 流行缺失时无守卫 `INSERT IGNORE`,与 #16 修复前同形(R4);设计文档 §6.2 第 6 步把有界重试当消环论证 | 复核员真库(RC):两个后到者真排在未提交行后 18/18 成环;另一名复核员证当前**不可达**(v1 唯一生产方是运维手调的 GM 处置,逐玩家串行),并更正「至少 3 个并发者才成环」 | **转交**(模块在别的会话手里):第 5 批开放外部生产方之前必须改成「普通读探针 + 守卫行」,并改设计文档论证 |
-| 24 | `go/db` `internal/kafka/player_row_fence.go:49`(**在途、未提交**,落地围栏那条线) | 新号首次存盘在全局 RR 事务里先 `FOR UPDATE` 一个不存在的主键(取间隙锁 / supremum next-key),未命中再 `Save`(UPDATE 0 行 → INSERT);两个**不同**新号的首存互挡插入意向锁 → 跨玩家 1213 | 复核员真库(RR):空表与非空表两种形态都按代码语句顺序复现 1213;**当前可达**(建角只写 Redis 种子,每个新号两张表首存都走未命中分支;登录压测每轮清库)。HEAD 的旧路径是自动提交的单条 Save,不受影响 | **已转交**落地围栏会话:未命中分支改为「普通读 → 普通 INSERT,撞 1062 回滚整体重跑」或显式 RC;两种都不许用 Save 的「1062 后按主键 UPDATE」兜底(会绕过围栏);补「不同新号并发首存」真库回归。〔10-16 落地围栏会话已按方案①修:先非锁定 `ExistsByPK`,无行即自动提交 INSERT(不同主键的插入意向锁互相兼容),撞 1062 才进事务对已提交行 `FOR UPDATE` 再按 (epoch, seq) 裁决,事务内仍未命中返回可重试的 `errPlayerRowVanished`;新增 `TestIntegrationPlayerSQLFenceConcurrentFirstSavesOfDifferentPlayersDoNotDeadlock` 等两条回归。**已修,未编译,待真库验证**〕 |
+| 24 | `go/db` `internal/kafka/player_row_fence.go:49`(**在途、未提交**,落地围栏那条线) | 新号首次存盘在全局 RR 事务里先 `FOR UPDATE` 一个不存在的主键(取间隙锁 / supremum next-key),未命中再 `Save`(UPDATE 0 行 → INSERT);两个**不同**新号的首存互挡插入意向锁 → 跨玩家 1213 | 复核员真库(RR):空表与非空表两种形态都按代码语句顺序复现 1213;**当前可达**(建角只写 Redis 种子,每个新号两张表首存都走未命中分支;登录压测每轮清库)。HEAD 的旧路径是自动提交的单条 Save,不受影响 | **已转交**落地围栏会话:未命中分支改为「普通读 → 普通 INSERT,撞 1062 回滚整体重跑」或显式 RC;两种都不许用 Save 的「1062 后按主键 UPDATE」兜底(会绕过围栏);补「不同新号并发首存」真库回归。〔10-16 落地围栏会话已按方案①修:先非锁定 `ExistsByPK`,无行即自动提交 INSERT(不同主键的插入意向锁互相兼容),撞 1062 才进事务对已提交行 `FOR UPDATE` 再按 (epoch, seq) 裁决,事务内仍未命中返回可重试的 `errPlayerRowVanished`;新增 `TestIntegrationPlayerSQLFenceConcurrentFirstSavesOfDifferentPlayersDoNotDeadlock` 等两条回归。**已修;10-16 真库验证 4 条用例全 PASS,死锁 / 锁等待超时计数均为 0**〕 |
+
+补记(#20 复核员,真库实测):**单行 ODKU 会就地吸收任何唯一键上的重复**,不只 `uk_snapshot_guid_nz` —— 表上若多出别的唯一键,撞它的快照会以 affected=0、`LAST_INSERT_ID` 回带别的行 id 的形态被当成「已存在」静默丢弃,原注释「还能撞出 1062 只说明撞的是别的唯一约束」不成立。现网 `player_snapshot` 只有 PRIMARY 与 `uk_snapshot_guid_nz`,无影响;已改正注释,并加守卫 `TestSnapshotTableUniqueIndexesAreOnlyGuidKey`(多出唯一索引即红)。
 
 **未复核、只登记的线索**(额度原因没有派复核员;都不在当前 MySQL 生产路径上):
 
