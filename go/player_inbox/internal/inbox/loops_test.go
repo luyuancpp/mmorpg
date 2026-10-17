@@ -22,6 +22,8 @@ type fakeMaintenance struct {
 	dueBefore      []uint64
 	resends        []NotifyDue
 	gaugeScans     int
+	gaugeNow       []uint64
+	gaugeCuts      []GaugeCutoffs
 	reconcileArg   []uint64 // sinceMs
 	reconcileStart []uint32 // startShard
 	due            map[uint32][]NotifyDue
@@ -53,11 +55,13 @@ func (f *fakeMaintenance) ResendNotify(_ context.Context, d NotifyDue) NotifyRes
 	return NotifySent
 }
 
-func (f *fakeMaintenance) ScanGauges(_ context.Context, _, _ uint64) (metrics.ScanGauges, error) {
+func (f *fakeMaintenance) ScanGauges(_ context.Context, nowMs uint64, cut GaugeCutoffs) (metrics.ScanGauges, error) {
 	f.calls.Add(1)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.gaugeScans++
+	f.gaugeNow = append(f.gaugeNow, nowMs)
+	f.gaugeCuts = append(f.gaugeCuts, cut)
 	return metrics.ScanGauges{OpenItems: 3}, nil
 }
 
@@ -177,6 +181,29 @@ func TestNotifyRoundScansAllShardsWithGrace(t *testing.T) {
 	// 令牌必须是读出时的 next_seq,原样传给 CAS。
 	if store.resends[1].NextSeq != 20 || store.resends[2].NextSeq != 30 {
 		t.Fatalf("补发令牌 = %+v", store.resends)
+	}
+}
+
+// TestGaugeRoundCutoffs:扫描型 gauge 的两个截止都按 now 算 —— 提醒积压 = 悬了 5 分钟以上;
+// 已投递未确认的告警口径只看最后投递在 24 小时内的行,更早的归入 delivered_unacked_stale(评审 M4)。
+func TestGaugeRoundCutoffs(t *testing.T) {
+	store := &fakeMaintenance{}
+	l, err := NewLoops(store, nopLedgers{}, testLoopConfig(), func(context.Context, func(context.Context)) {}, fixedNow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l.gaugeRound(context.Background())
+	want := GaugeCutoffs{
+		NotifyOverdueBeforeMs:  testNowMs - uint64((5 * time.Minute).Milliseconds()),
+		DeliveredStaleBeforeMs: testNowMs - uint64((24 * time.Hour).Milliseconds()),
+	}
+	if len(store.gaugeCuts) != 1 || store.gaugeCuts[0] != want || store.gaugeNow[0] != testNowMs {
+		t.Fatalf("ScanGauges(now=%v, cut=%+v), want now=%d cut=%+v", store.gaugeNow, store.gaugeCuts, testNowMs, want)
+	}
+	// 时钟早于窗口(只可能是测试或时钟错乱):截止取 0,不下溢成一个巨大的数。
+	if got := gaugeCutoffs(uint64((time.Hour).Milliseconds())); got.DeliveredStaleBeforeMs != 0 ||
+		got.NotifyOverdueBeforeMs != uint64((55 * time.Minute).Milliseconds()) {
+		t.Fatalf("gaugeCutoffs(1h) = %+v", got)
 	}
 }
 

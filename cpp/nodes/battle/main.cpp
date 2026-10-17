@@ -350,7 +350,8 @@ int main(int argc, char *argv[])
             //      解冻,设计文档 §3.2)。每个房间经 EraseRoom 通知 lifecycle 单元销毁;
             //   2) 断开全部客户端直连;
             //   3) 停 Agones lifecycle worker 并 join(Stop 幂等)。放在最后,让单元计数先归零;
-            //      归零可能让 worker 发一次 POST /ready,Stop 至多等这一次 HTTP 的超时(默认 2s)。
+            //      归零可能让 worker 发一次 POST /ready;Stop 经取消令牌中止它(以及在途的 allocate / health 等),
+            //      不等满超时,通常毫秒级、最坏约 1s(libcurl 空闲期进度回调粒度;grpc-muduo-transport.md §15.16)。
             //      Stop 同时把还在等许可的 CreateBattle 以「拒绝」投进 loop 队列(本任务之后执行,回 battle_not_allocatable)。
             //      刻意**不**调 /shutdown:SIGTERM 通常就是 Agones 删 Pod 发来的,再回敬 /shutdown 是递归删除。
             // 框架随后进入 gRPC 排空(全部在 loop 内:停听、两段 GOAWAY、已收完的调用照常派发,约 3s 硬上限;

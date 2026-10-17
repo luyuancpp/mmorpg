@@ -40,6 +40,7 @@ func TestCompletionValidationRejectsIncompleteOrInconsistentSources(t *testing.T
 		name string
 		edit func(*kafkapb.BattleResultEvent)
 	}{
+		{"空原字节", func(e *kafkapb.BattleResultEvent) { *e = kafkapb.BattleResultEvent{} }},
 		{"未知版本", func(e *kafkapb.BattleResultEvent) { e.SettlementFormatVersion = 2 }},
 		{"旧版携带新个人原件", func(e *kafkapb.BattleResultEvent) { e.SettlementFormatVersion = 0 }},
 		{"无对局", func(e *kafkapb.BattleResultEvent) { e.BattleId = 0 }},
@@ -59,6 +60,7 @@ func TestCompletionValidationRejectsIncompleteOrInconsistentSources(t *testing.T
 			e.Settlements[0].Outcome = battlepb.EBattleOutcome_BATTLE_OUTCOME_DRAW
 		}},
 		{"个人队伍不符", func(e *kafkapb.BattleResultEvent) { e.Settlements[0].PlayerTeamIndex = 1 }},
+		{"个人回合数不符", func(e *kafkapb.BattleResultEvent) { e.Settlements[0].TotalRounds++ }},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {

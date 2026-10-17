@@ -74,6 +74,28 @@ func TestEtcYamlContractValues(t *testing.T) {
 		t.Errorf("AdminTokenEnv = %q, want PLAYER_INBOX_ADMIN_TOKEN(与 k8s_deploy.ps1 的 PlayerInboxAdminTokenEnv 一致)",
 			c.PlayerInbox.AdminTokenEnv)
 	}
+	// 评审 L12:Stat 拦截器照开(慢调用记录保留),只屏蔽 Fetch / Ack 的请求体;GM 运维接口的请求体是审计线索,不屏蔽。
+	if !c.Middlewares.Stat || c.Middlewares.StatConf.SlowThreshold <= 0 {
+		t.Errorf("Middlewares.Stat = %v SlowThreshold = %v:Stat 必须开着、慢调用阈值有效", c.Middlewares.Stat, c.Middlewares.StatConf.SlowThreshold)
+	}
+	ignored := map[string]bool{}
+	for _, m := range c.Middlewares.StatConf.IgnoreContentMethods {
+		ignored[m] = true
+	}
+	for _, m := range []string{inboxpb.PlayerInbox_FetchItems_FullMethodName, inboxpb.PlayerInbox_AckItems_FullMethodName} {
+		if !ignored[m] {
+			t.Errorf("IgnoreContentMethods 缺 %s", m)
+		}
+	}
+	for _, m := range []string{
+		inboxpb.PlayerInboxAdmin_GmSanctionPlayer_FullMethodName, inboxpb.PlayerInboxAdmin_VoidItem_FullMethodName,
+		inboxpb.PlayerInboxAdmin_GetSummary_FullMethodName, inboxpb.PlayerInboxAdmin_ListItems_FullMethodName,
+		inboxpb.PlayerInboxAdmin_LookupByRequest_FullMethodName, inboxpb.PlayerInboxAdmin_ReconcilePlayer_FullMethodName,
+	} {
+		if ignored[m] {
+			t.Errorf("IgnoreContentMethods 不得含运维接口 %s:它的请求体是审计线索", m)
+		}
+	}
 	p := c.PlayerInbox
 	if p.TerminalRetentionDays != 30 || p.NotifyResendIntervalSeconds != 30 || p.ReconcileIntervalMinutes != 60 || p.ReconcileWindowHours != 24 {
 		t.Errorf("PlayerInbox = %+v, want 保留 30 天 / 补发 30s / 对账 60min / 窗口 24h(D14、§6.3、§9.3)", p)
@@ -112,7 +134,7 @@ func validConfig() Config {
 		MySQL: MySQLConf{
 			Host: "127.0.0.1:3306", User: "appuser", DBName: data.DatabaseName, MaxOpenConn: 20, MaxIdleConn: 5,
 		},
-		CoreRedis:      RedisConf{Host: "127.0.0.1:6379"},
+		CoreRedis:      RedisConf{Host: "127.0.0.1:6379", PoolSize: 20},
 		Kafka:          KafkaConf{Brokers: []string{"127.0.0.1:9092"}, WriteTimeoutMs: 2000},
 		DataServiceRpc: zrpc.RpcClientConf{Target: "127.0.0.1:9000"},
 		PlayerInbox: PlayerInboxConf{
@@ -151,6 +173,8 @@ func TestValidate(t *testing.T) {
 		{"连接池非正", func(c *Config) { c.MySQL.MaxOpenConn = 0 }},
 		{"CoreRedis 为空", func(c *Config) { c.CoreRedis.Host = "" }},
 		{"CoreRedis.PoolSize 为负", func(c *Config) { c.CoreRedis.PoolSize = -1 }},
+		// 评审 L7:0 = go-redis 缺省 10 × GOMAXPROCS,随 CPU limit 漂移,Redis 连接总账就不是集群的账。
+		{"CoreRedis.PoolSize 为 0(必须显式)", func(c *Config) { c.CoreRedis.PoolSize = 0 }},
 		{"Kafka 为空", func(c *Config) { c.Kafka.Brokers = nil }},
 		{"Kafka 超时非正", func(c *Config) { c.Kafka.WriteTimeoutMs = 0 }},
 		{"DataServiceRpc 没有目标", func(c *Config) { c.DataServiceRpc = zrpc.RpcClientConf{} }},
@@ -162,6 +186,16 @@ func TestValidate(t *testing.T) {
 		{"AdminTokenEnv 不是变量名(疑似贴了口令)", func(c *Config) { c.PlayerInbox.AdminTokenEnv = "s3cr3t-token-value" }},
 		{"EnqueueTypes 未知名", func(c *Config) { c.PlayerInbox.EnqueueTypes = []string{"PLAYER_INBOX_MSG_NOPE"} }},
 		{"EnqueueTypes 含 UNSPECIFIED", func(c *Config) { c.PlayerInbox.EnqueueTypes = []string{"PLAYER_INBOX_MSG_UNSPECIFIED"} }},
+		// 用户拍板 2026-10-16(交接 §6 M2 / M3):v1 不开挂欠款。
+		{"EnqueueTypes 含 v1 未开放的 ATTACH_DEBT", func(c *Config) {
+			c.PlayerInbox.EnqueueTypes = []string{"PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN", "PLAYER_INBOX_MSG_GM_ATTACH_CURRENCY_DEBT"}
+		}},
+		// 评审 L12:Stat 开着却没屏蔽 Fetch / Ack 的内容(ConfigMap 漏了这一段)= 拒启。
+		{"Stat 开启但未屏蔽 Fetch / Ack 内容", func(c *Config) { c.Middlewares.Stat = true }},
+		{"Stat 开启但只屏蔽了 Fetch", func(c *Config) {
+			c.Middlewares.Stat = true
+			c.Middlewares.StatConf.IgnoreContentMethods = []string{inboxpb.PlayerInbox_FetchItems_FullMethodName}
+		}},
 		{"保留期不大于签发窗", func(c *Config) { c.PlayerInbox.TerminalRetentionDays = 7 }},
 		{"清理间隔越界", func(c *Config) { c.PlayerInbox.SweepIntervalSeconds = 1 }},
 		{"补发间隔越界", func(c *Config) { c.PlayerInbox.NotifyResendIntervalSeconds = 0 }},
@@ -196,9 +230,22 @@ func TestValidate(t *testing.T) {
 	}
 	ok = validConfig()
 	ok.PlayerInbox.AdminToken = strings.Repeat("k", MinAdminTokenBytes)
-	ok.PlayerInbox.EnqueueTypes = []string{"PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN", "PLAYER_INBOX_MSG_GM_ATTACH_CURRENCY_DEBT"}
+	ok.PlayerInbox.EnqueueTypes = []string{"PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN", "PLAYER_INBOX_MSG_GM_UNBLOCK_CURRENCY_GAIN"}
 	if err := ok.Validate(); err != nil {
-		t.Errorf("合法口令与白名单应通过: %v", err)
+		t.Errorf("合法口令与白名单(v1:封锁 / 解封)应通过: %v", err)
+	}
+	ok = validConfig()
+	ok.Middlewares.Stat = true
+	ok.Middlewares.StatConf.IgnoreContentMethods = []string{
+		inboxpb.PlayerInbox_AckItems_FullMethodName, inboxpb.PlayerInbox_FetchItems_FullMethodName,
+	}
+	if err := ok.Validate(); err != nil {
+		t.Errorf("Stat 开启且已屏蔽 Fetch / Ack 内容应通过: %v", err)
+	}
+	ok = validConfig()
+	ok.Middlewares.Stat = false
+	if err := ok.Validate(); err != nil {
+		t.Errorf("Stat 整体关闭时不要求屏蔽列表: %v", err)
 	}
 }
 
@@ -228,6 +275,11 @@ func TestParseEnqueueTypes(t *testing.T) {
 	}
 	if _, err := ParseEnqueueTypes([]string{"PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN", "PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN"}); err == nil {
 		t.Error("重复列出应报错")
+	}
+	// v1 不开挂欠款(交接 §6 M2 / M3):装配层也经这个函数解析白名单,这里拒绝即两条启动路径都拒启。
+	if _, err := ParseEnqueueTypes([]string{"PLAYER_INBOX_MSG_GM_ATTACH_CURRENCY_DEBT"}); err == nil ||
+		!strings.Contains(err.Error(), "PLAYER_INBOX_MSG_GM_ATTACH_CURRENCY_DEBT") {
+		t.Errorf("ATTACH_DEBT 在 v1 应被拒绝且点名类型: %v", err)
 	}
 }
 

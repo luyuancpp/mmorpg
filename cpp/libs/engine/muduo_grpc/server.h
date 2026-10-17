@@ -2,7 +2,9 @@
 
 // muduo 驱动的 gRPC 服务端(h2c,只支持 unary):docs/design/grpc-muduo-transport.md §15。
 //
-// 线程:所有 API 只在构造时给定的 loop 线程调用(断言);不创建线程,不加锁,不构造任何官方 grpc 对象。
+// 线程:Create / 构造不碰 loop;listenAddress() 构造后不变,任何线程可读。其余公开成员(含析构与只读 getter)
+// 只能在构造时给定的 loop 线程调用,一律 loop.assertInLoopThread()(muduo 的这个断言在 release 下同样生效,LOG_FATAL)。
+// 不创建线程,不加锁,不构造任何官方 grpc 对象。
 // 接入、HTTP/2 协议(ServerSession)、派发泵、截止定时器、排空状态机、统计全部跑在这个 loop 上。
 //
 // 所有权(AGENTS §11.7):本类是 muduo 层的连接所有者(TcpServer 的等价物),连接表里按值持有
@@ -76,7 +78,8 @@ struct ServerOptions
     std::string name{"grpc"};                           // 只用于连接名与日志
     ServerSessionOptions session;
     size_t maxSendMessageBytes{4 * 1024 * 1024};
-    size_t maxPendingOutputBytes{1024 * 1024};          // 输出缓冲超过就暂停从 nghttp2 取帧,writeComplete 后继续
+    size_t maxPendingOutputBytes{1024 * 1024};          // 输出缓冲超过就暂停从 nghttp2 取帧,writeComplete 后继续;
+                                                        // 写半关之前的最终冲出不受它限制(见 ServerShutdownOptions::closeGrace)
     size_t maxInFlightCalls{1024};                      // 全节点在途(排队 + 已派发未完成);超限回 RESOURCE_EXHAUSTED
     size_t maxDispatchPerTurn{64};                      // 派发泵每轮最多派发几个(至少 1 个)
     std::chrono::microseconds dispatchTurnBudget{2000}; // 派发泵每轮累计耗时上限(至少派发 1 个)
@@ -88,7 +91,10 @@ struct ServerShutdownOptions
 {
     std::chrono::milliseconds drainTimeout{2000};       // 从 BeginShutdown 起算
     std::chrono::milliseconds goawayPingTimeout{1000};  // 第二段 GOAWAY:收到 PING ACK 或满这个时长,取先到者
-    std::chrono::milliseconds closeGrace{1000};         // 写半关之后等对端关闭的宽限,到期 forceClose
+    // 优雅关闭 = 先把 nghttp2 里已提交的帧全部交给输出缓冲(这一次不看 maxPendingOutputBytes),再写半关
+    // (muduo 在输出缓冲写空之后才发 FIN);从写半关起算这个宽限,是硬上限:对端不读导致写不空、或对端迟迟不关,
+    // 到期一律 forceClose。
+    std::chrono::milliseconds closeGrace{1000};
 };
 
 // 纯值类型(§15.11)。计数从 Server 构造起单调累加;conns / inflight 是当前值。
@@ -163,10 +169,12 @@ public:
     // d 上弦 drainTimeout 排空定时器(steady 复核);e 已满足排空条件 → queueInLoop(onDrained)。
     void BeginShutdown(ServerShutdownOptions options, std::function<void()> onDrained);
 
+    // 以下四个读的是 loop 独占的可变状态:同样断言在 loop 线程(见文件头「线程」)。
     bool draining() const;
-    size_t inFlightCalls() const { return calls_.size(); }
-    size_t connectionCount() const { return connections_.size(); }
+    size_t inFlightCalls() const;
+    size_t connectionCount() const;
     ServerStatsSnapshot Stats() const;
+    // 构造后不变:任何线程可读,不断言。
     const std::string &listenAddress() const { return listenAddress_; }
 
 private:

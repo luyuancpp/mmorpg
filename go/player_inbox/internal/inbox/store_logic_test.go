@@ -274,6 +274,8 @@ func TestSummarizeStreams(t *testing.T) {
 
 // TestFoldScanGauges 钉住扫描型 gauge 的跨分片折叠(设计 §9.4):计数相加、最大投递次数取最大、
 // 「最老」取各分片非 0 的最小时刻 —— 0 表示该分片没有这类行,绝不能被当成最老的时刻。
+// 陈旧的已投递未确认行(评审 M4)只在 delivered_unacked_stale 里相加:分片读数里它们已被 SQL 排除在
+// deliveredUnacked / maxDeliveryCount / minDeliveredMs 之外,折叠不得把它们加回告警口径。
 func TestFoldScanGauges(t *testing.T) {
 	const now = testNowMs
 	shards := []shardGaugeScan{
@@ -281,10 +283,13 @@ func TestFoldScanGauges(t *testing.T) {
 		{openItems: 3, deliveredUnacked: 1, maxDeliveryCount: 2, minCreatedMs: now - 10_000, minDeliveredMs: now - 4_000, notifyBacklog: 1},
 		{openItems: 2, deliveredUnacked: 2, maxDeliveryCount: 6, minCreatedMs: now - 60_000, minDeliveredMs: 0, notifyBacklog: 0},
 		{openItems: 1, deliveredUnacked: 1, maxDeliveryCount: 1, minCreatedMs: now - 5_000, minDeliveredMs: now - 7_000, notifyBacklog: 2},
+		// 只有陈旧行的分片:不影响告警口径的三项。
+		{openItems: 4, deliveredUnackedStale: 4, minCreatedMs: now - 30_000},
+		{openItems: 2, deliveredUnacked: 1, deliveredUnackedStale: 1, maxDeliveryCount: 3, minCreatedMs: now - 20_000, minDeliveredMs: now - 1_000},
 	}
 	got := foldScanGauges(now, shards)
 	want := metrics.ScanGauges{
-		OpenItems: 6, DeliveredUnacked: 4, MaxDeliveryCount: 6, NotifyBacklog: 3,
+		OpenItems: 12, DeliveredUnacked: 5, DeliveredUnackedStale: 5, MaxDeliveryCount: 6, NotifyBacklog: 3,
 		OldestOpenAgeSeconds: 60, DeliveredUnackedOldestSeconds: 7,
 	}
 	if got != want {
@@ -304,6 +309,46 @@ func TestMinNonZero(t *testing.T) {
 	for _, c := range cases {
 		if got := minNonZero(c[0], c[1]); got != c[2] {
 			t.Errorf("minNonZero(%d, %d) = %d, want %d", c[0], c[1], got, c[2])
+		}
+	}
+}
+
+// TestNotifyRetryDueMs 钉住补发没落定时的退避(评审 L6):下一次 = now + 「已悬时长」,钳到 [30s, 30min]。
+// 每次没落定都把已悬时长再等一遍,重试时刻按 2 倍递增;起算点为 0 或晚于 now(时钟回拨)时取下限。
+func TestNotifyRetryDueMs(t *testing.T) {
+	const now = testNowMs
+	sec := func(n uint64) uint64 { return n * 1000 }
+	cases := []struct {
+		name  string
+		since uint64
+		want  uint64
+	}{
+		{"刚悬 5s:取下限 30s", now - sec(5), now + sec(30)},
+		{"恰好 30s", now - sec(30), now + sec(30)},
+		{"悬了 100s:再等 100s", now - sec(100), now + sec(100)},
+		{"恰好 30min", now - sec(1800), now + sec(1800)},
+		{"悬了 3 小时:封顶 30min", now - sec(3*3600), now + sec(1800)},
+		{"起算点为 0:取下限", 0, now + sec(30)},
+		{"起算点等于 now:取下限", now, now + sec(30)},
+		{"时钟回拨(起算点晚于 now):取下限", now + sec(60), now + sec(30)},
+	}
+	for _, tc := range cases {
+		if got := notifyRetryDueMs(now, tc.since); got != tc.want {
+			t.Errorf("%s: notifyRetryDueMs = now%+d ms, want now%+d ms", tc.name, int64(got-now), int64(tc.want-now))
+		}
+	}
+	// 连续失败的节拍:入箱 T0 起悬,补发循环第一次在 T0+5s 看到它,之后每次都在上次定下的时刻重试。
+	since, at := now, now+sec(5)
+	var gaps []uint64
+	for i := 0; i < 8; i++ {
+		next := notifyRetryDueMs(at, since)
+		gaps = append(gaps, (next-at)/1000)
+		at = next
+	}
+	want := []uint64{30, 35, 70, 140, 280, 560, 1120, 1800}
+	for i := range want {
+		if gaps[i] != want[i] {
+			t.Fatalf("连续失败的退避(秒) = %v, want %v(按 2 倍递增、封顶 30 分钟)", gaps, want)
 		}
 	}
 }

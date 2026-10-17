@@ -96,6 +96,7 @@ func TestRegisterExposesEveryMetric(t *testing.T) {
 		"player_inbox_sweep_deleted_total", "player_inbox_fetch_scanned_rows",
 		"player_inbox_delivered_unacked", "player_inbox_delivered_unacked_oldest_seconds", "player_inbox_open_items",
 		"player_inbox_oldest_open_age_seconds", "player_inbox_max_delivery_count", "player_inbox_notify_backlog",
+		"player_inbox_delivered_unacked_stale",
 	} {
 		if _, ok := families[name]; !ok {
 			t.Errorf("默认注册表里没有 %s", name)
@@ -103,9 +104,13 @@ func TestRegisterExposesEveryMetric(t *testing.T) {
 	}
 
 	// 零值序列:「从未发生」与「指标不存在」在告警规则里必须分得开。
+	// 评审 L6 拆出 nodes_unsynced / node_ambiguous(会自愈、留给补发),no_node 只剩不可恢复、已落定的两种。
 	if got := labelValues(families["player_inbox_notify_total"], "result"); !hasAll(got,
-		"sent", "offline", "awaiting_placement", "no_node", "empty_uuid", "error") {
+		"sent", "offline", "awaiting_placement", "no_node", "empty_uuid", "error", "nodes_unsynced", "node_ambiguous") {
 		t.Errorf("notify_total 的预建序列 = %v", got)
+	}
+	if got := NotifyResultLabels(); len(got) != 8 {
+		t.Errorf("NotifyResultLabels = %v, want 8 个(与 inbox.NotifyResult 逐一对应,见 TestNotifyResultLabelsArePreregistered)", got)
 	}
 	if got := labelValues(families["player_inbox_reconcile_ledger_read_total"], "result"); !hasAll(got, "found", "absent", "error", "invalid") {
 		t.Errorf("reconcile_ledger_read_total 的预建序列 = %v", got)
@@ -142,9 +147,10 @@ func TestRegisterExposesEveryMetric(t *testing.T) {
 }
 
 // TestScanGaugesSetAndReset:领导者写入一次扫描结果;卸任归零,免得 max() 聚合里留着卸任副本的旧值(设计 §9.4)。
+// 陈旧的已投递未确认 gauge(评审 M4)走同一条写入与归零路径。
 func TestScanGaugesSetAndReset(t *testing.T) {
 	SetScanGauges(ScanGauges{
-		DeliveredUnacked: 4, DeliveredUnackedOldestSeconds: 7.5, OpenItems: 9,
+		DeliveredUnacked: 4, DeliveredUnackedStale: 3, DeliveredUnackedOldestSeconds: 7.5, OpenItems: 9,
 		OldestOpenAgeSeconds: 60, MaxDeliveryCount: 6, NotifyBacklog: 2,
 	})
 	checks := []struct {
@@ -153,6 +159,7 @@ func TestScanGaugesSetAndReset(t *testing.T) {
 		want float64
 	}{
 		{"delivered_unacked", deliveredUnacked, 4},
+		{"delivered_unacked_stale", deliveredUnackedStale, 3},
 		{"delivered_unacked_oldest_seconds", deliveredUnackedOldestSeconds, 7.5},
 		{"open_items", openItems, 9},
 		{"oldest_open_age_seconds", oldestOpenAgeSeconds, 60},

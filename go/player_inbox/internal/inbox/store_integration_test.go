@@ -970,14 +970,22 @@ func TestIntegrationNotifyCASSameMillisecond(t *testing.T) {
 }
 
 // TestIntegrationScanGauges 钉住扫描型 gauge 的 SQL 一侧(设计 §9.4;跨分片折叠另见 TestFoldScanGauges):
-// 只数 PENDING 行;已投递未确认按最后投递时刻算最老;提醒积压只数 notify_due_ms 早于给定时刻的流。
+// 只数 PENDING 行;已投递未确认按最后投递时刻算最老;提醒积压数「notify_due_ms 非 0 且流行最后一次写入不晚于截止」的流。
+// 评审 M4:最后投递早于 DeliveredStaleBeforeMs 的已投递未确认行(玩家被踢下线后再没回来,ackQueue 随实体丢了)
+// 不进 delivered_unacked / 最老时长 / max_delivery_count,只进 delivered_unacked_stale。
 func TestIntegrationScanGauges(t *testing.T) {
 	e := openIntegration(t)
 	// 玩家 A:两条 PENDING,投递其中一条两次后不确认。
-	const pa, pb = uint64(9001), uint64(9066) // 9001 % 64 = 41,9066 % 64 = 42:两个不同分片,覆盖跨分片折叠
+	// 玩家 C:一条 PENDING,在 T0 被投递三次后不确认 —— 截止取 T0+0.5s 时它是陈旧行。
+	const pa, pb, pc = uint64(9001), uint64(9066), uint64(9067) // % 64 = 41 / 42 / 43:三个分片,覆盖跨分片折叠
 	e.mustEnqueue(t, pa, 1)
 	e.mustEnqueue(t, pa, 2)
 	e.epochs.set(pa, 1)
+	e.mustEnqueue(t, pc, 1)
+	e.epochs.set(pc, 1)
+	for i := 0; i < 3; i++ {
+		e.fetch(t, pc, 1, 0, 0) // delivery_count 1→3,last_delivered = T0
+	}
 	e.clock.advance(1_000)
 	e.fetch(t, pa, 1, 0, 1) // 第一条 delivery_count=1,last_delivered=T0+1s
 	e.clock.advance(1_000)
@@ -992,23 +1000,120 @@ func TestIntegrationScanGauges(t *testing.T) {
 	e.mustEnqueue(t, pb, 2) // created_ms = T0+3s,notify_due_ms = T0+3s
 
 	now := testNowMs + 10_000
-	g, err := e.store.ScanGauges(itCtx(t), now, testNowMs+3_000)
+	cut := GaugeCutoffs{NotifyOverdueBeforeMs: testNowMs + 3_000, DeliveredStaleBeforeMs: testNowMs + 500}
+	g, err := e.store.ScanGauges(itCtx(t), now, cut)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := metrics.ScanGauges{
-		OpenItems:                     3, // A 两条 + B 一条 PENDING
-		DeliveredUnacked:              1, // 只有 A 的第一条投递过
-		MaxDeliveryCount:              2,
-		OldestOpenAgeSeconds:          10, // A 的两条 created_ms = T0
-		DeliveredUnackedOldestSeconds: 8,  // 最后投递 T0+2s
-		NotifyBacklog:                 1,  // B 的流 notify_due_ms = T0+3s ≤ 截止
+		OpenItems:                     4, // A 两条 + B 一条 + C 一条 PENDING
+		DeliveredUnacked:              1, // 只有 A 的第一条在截止之后投递过
+		DeliveredUnackedStale:         1, // C:最后投递 T0 < 截止 T0+0.5s
+		MaxDeliveryCount:              2, // C 投了 3 次,但它是陈旧行,不进 PoisonSuspect 的口径
+		OldestOpenAgeSeconds:          10, // A / C created_ms = T0
+		DeliveredUnackedOldestSeconds: 8,  // A 最后投递 T0+2s(C 的 T0 不算)
+		NotifyBacklog:                 1,  // B 的流 notify_due_ms 非 0,最后一次写入 T0+3s ≤ 截止
 	}
 	if g != want {
 		t.Fatalf("ScanGauges = %+v, want %+v", g, want)
 	}
-	if g, err := e.store.ScanGauges(itCtx(t), now, testNowMs+2_999); err != nil || g.NotifyBacklog != 0 {
-		t.Fatalf("截止早于 notify_due_ms 时不算积压: %+v %v", g, err)
+	// 截止就是陈旧判定的边界:last_delivered_ms ≥ 截止算近期。
+	edge := cut
+	edge.DeliveredStaleBeforeMs = testNowMs + 2_000
+	if g, err := e.store.ScanGauges(itCtx(t), now, edge); err != nil || g.DeliveredUnacked != 1 || g.DeliveredUnackedStale != 1 {
+		t.Fatalf("A 最后投递恰好等于截止时仍算近期: %+v %v", g, err)
+	}
+	edge.DeliveredStaleBeforeMs = testNowMs + 2_001
+	if g, err := e.store.ScanGauges(itCtx(t), now, edge); err != nil || g.DeliveredUnacked != 0 || g.DeliveredUnackedStale != 2 ||
+		g.MaxDeliveryCount != 0 || g.DeliveredUnackedOldestSeconds != 0 {
+		t.Fatalf("全部已投递行都陈旧时告警口径三项应为 0: %+v %v", g, err)
+	}
+	// 截止为 0(时钟早于 24h 窗口):全部算近期。
+	edge.DeliveredStaleBeforeMs = 0
+	if g, err := e.store.ScanGauges(itCtx(t), now, edge); err != nil || g.DeliveredUnacked != 2 || g.DeliveredUnackedStale != 0 ||
+		g.MaxDeliveryCount != 3 || g.DeliveredUnackedOldestSeconds != 10 {
+		t.Fatalf("截止为 0 时全部算近期: %+v %v", g, err)
+	}
+	edge = cut
+	edge.NotifyOverdueBeforeMs = testNowMs + 2_999
+	if g, err := e.store.ScanGauges(itCtx(t), now, edge); err != nil || g.NotifyBacklog != 0 {
+		t.Fatalf("截止早于流行最后一次写入时不算积压: %+v %v", g, err)
+	}
+}
+
+// TestIntegrationNotifyResendBackoff 钉住补发没落定时的退避与不可恢复结局的落定(评审 L6):
+//   - 失败(Error 一类)时以同一条 next_seq CAS 把 notify_due_ms 推到 now + 退避,不再每轮占着分片队头;
+//   - 退避从流行最后一次写入起算,按 2 倍递增、封顶 30 分钟;
+//   - 推迟之后积压 gauge 照样数它(按流行最后一次写入算,不看被推后的 notify_due_ms);
+//   - 期间又有入箱(next_seq 变了),旧令牌的推迟什么都不改;
+//   - 不可恢复的结局(NoNode)落定清零,交给落地拉取。
+func TestIntegrationNotifyResendBackoff(t *testing.T) {
+	e := openIntegration(t)
+	const pid = uint64(6003)
+	sec := func(n uint64) uint64 { return n * 1000 }
+	e.notifier.setResult(NotifyError) // 入箱后那次提醒失败;补发也一直失败
+	e.mustEnqueue(t, pid, 1)          // T0:notify_due_ms = updated_ms = T0
+
+	resendAt := func(at uint64) NotifyDue {
+		t.Helper()
+		e.clock.set(at)
+		due, err := e.store.DueNotifications(itCtx(t), RowShard(pid), at-sec(5), 100)
+		if err != nil || len(due) != 1 {
+			t.Fatalf("at=T0+%dms: due = %+v err=%v", at-testNowMs, due, err)
+		}
+		if due[0].PendingSinceMs != testNowMs {
+			t.Fatalf("退避起算点应是流行最后一次写入 T0,got %d", due[0].PendingSinceMs)
+		}
+		if got := e.store.ResendNotify(itCtx(t), due[0]); got != NotifyError {
+			t.Fatalf("ResendNotify = %s, want error", got)
+		}
+		return due[0]
+	}
+	expectDue := func(want uint64, what string) {
+		t.Helper()
+		if st := e.stream(t, pid); st.GetNotifyDueMs() != want || st.GetUpdatedMs() != testNowMs {
+			t.Fatalf("%s: notify_due_ms = T0%+dms updated_ms = %d, want T0%+dms 且 updated_ms 不动",
+				what, int64(st.GetNotifyDueMs()-testNowMs), st.GetUpdatedMs(), int64(want-testNowMs))
+		}
+	}
+
+	resendAt(testNowMs + sec(10))
+	expectDue(testNowMs+sec(40), "悬了 10s:退避取下限 30s")
+	if due, err := e.store.DueNotifications(itCtx(t), RowShard(pid), testNowMs+sec(39), 100); err != nil || len(due) != 0 {
+		t.Fatalf("推迟之后到点之前不应再被扫到: %+v %v", due, err)
+	}
+	resendAt(testNowMs + sec(100))
+	expectDue(testNowMs+sec(200), "悬了 100s:再等 100s")
+	stale := resendAt(testNowMs + sec(3*3600))
+	expectDue(testNowMs+sec(3*3600+1800), "悬了 3 小时:封顶 30 分钟")
+
+	// 推迟到未来的提醒仍算积压:它从 T0 起就没落定。
+	now := testNowMs + sec(3*3600)
+	if g, err := e.store.ScanGauges(itCtx(t), now, GaugeCutoffs{NotifyOverdueBeforeMs: now - sec(300)}); err != nil || g.NotifyBacklog != 1 {
+		t.Fatalf("推迟后的提醒应计入积压: %+v %v", g, err)
+	}
+
+	// 又入箱一条(next_seq 变了、notify_due_ms 回到 now):拿旧令牌的推迟不改它。
+	second := e.mustEnqueue(t, pid, 2)
+	if ok, err := e.store.DeferNotifyDue(itCtx(t), pid, gmDomain, stale.NextSeq, now+sec(999)); err != nil || ok {
+		t.Fatalf("旧令牌的推迟应 CAS 失败: ok=%v err=%v", ok, err)
+	}
+	if st := e.stream(t, pid); st.GetNotifyDueMs() != now || st.GetNextSeq() != second.Seq+1 {
+		t.Fatalf("新入箱的提醒应保持 notify_due_ms = now: %+v", st)
+	}
+
+	// 不可恢复的结局落定清零。
+	e.notifier.setResult(NotifyNoNode)
+	e.clock.set(now + sec(10))
+	due, err := e.store.DueNotifications(itCtx(t), RowShard(pid), now+sec(5), 100)
+	if err != nil || len(due) != 1 || due[0].NextSeq != second.Seq+1 {
+		t.Fatalf("due = %+v err=%v", due, err)
+	}
+	if got := e.store.ResendNotify(itCtx(t), due[0]); got != NotifyNoNode || !got.Settled() {
+		t.Fatalf("ResendNotify = %s, want no_node(落定)", got)
+	}
+	if st := e.stream(t, pid); st.GetNotifyDueMs() != 0 {
+		t.Fatalf("不可恢复的结局应落定清零: %+v", st)
 	}
 }
 

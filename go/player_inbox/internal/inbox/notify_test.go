@@ -3,8 +3,11 @@ package inbox
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"testing"
+
+	"player_inbox/internal/metrics"
 
 	event "proto/common/event"
 	kafkapb "proto/contracts/kafka"
@@ -60,9 +63,12 @@ func locationBytes(t *testing.T, loc *smpb.PlayerLocation) []byte {
 const notifyEventID = 49
 
 // TestKafkaNotifierOutcomes 钉住提醒的每种结局与「是否可以清 notify_due_ms」(设计 §6.3)。
+// 评审 L6:不可恢复的两种(位置记录既无节点也无 epoch;镜像已同步却查不到节点)落定,交给落地拉取;
+// 镜像未同步、节点身份歧义会自愈,留给补发(退避重试)。
 func TestKafkaNotifierOutcomes(t *testing.T) {
 	online := locationBytes(t, &smpb.PlayerLocation{NodeId: "7", ZoneId: 2, OwnerEpoch: 3})
 	node := scenenode.NodeEntry{NodeId: 7, ZoneId: 2, NodeUuid: "uuid-7", Endpoint: "10.0.0.7:7000"}
+	ambiguous := fmt.Errorf("%w zone=2 node=7: 2 条注册", scenenode.ErrNodeAmbiguous)
 	cases := []struct {
 		name    string
 		loc     fakeLocations
@@ -77,10 +83,13 @@ func TestKafkaNotifierOutcomes(t *testing.T) {
 		{"location 写坏", fakeLocations{raw: []byte{0xff}}, fakeNodes{synced: true}, nil, NotifyError, false, 0},
 		{"等待跨 zone 落点:视为成功", fakeLocations{raw: locationBytes(t, &smpb.PlayerLocation{ZoneId: 2, OwnerEpoch: 4})},
 			fakeNodes{synced: true}, nil, NotifyAwaitingPlacement, true, 0},
-		{"无节点也无 epoch", fakeLocations{raw: locationBytes(t, &smpb.PlayerLocation{ZoneId: 2})},
-			fakeNodes{synced: true}, nil, NotifyNoNode, false, 0},
-		{"镜像未同步", fakeLocations{raw: online}, fakeNodes{synced: false}, nil, NotifyNoNode, false, 0},
-		{"节点查不到", fakeLocations{raw: online}, fakeNodes{synced: true, err: errors.New("not registered")}, nil, NotifyNoNode, false, 0},
+		{"无节点也无 epoch:不可恢复,落定交给落地拉取", fakeLocations{raw: locationBytes(t, &smpb.PlayerLocation{ZoneId: 2})},
+			fakeNodes{synced: true}, nil, NotifyNoNode, true, 0},
+		{"镜像未同步:留给补发", fakeLocations{raw: online}, fakeNodes{synced: false}, nil, NotifyNodesUnsynced, false, 0},
+		{"镜像已同步却查不到节点:不可恢复,落定交给落地拉取", fakeLocations{raw: online},
+			fakeNodes{synced: true, err: errors.New("节点未注册 zone=2 node=7")}, nil, NotifyNoNode, true, 0},
+		{"节点身份歧义:租约过期后自愈,留给补发", fakeLocations{raw: online}, fakeNodes{synced: true, err: ambiguous},
+			nil, NotifyNodeAmbiguous, false, 0},
 		{"uuid 为空:不发(防僵尸)", fakeLocations{raw: online}, fakeNodes{synced: true, entry: scenenode.NodeEntry{NodeId: 7, ZoneId: 2}},
 			nil, NotifyEmptyUUID, false, 0},
 		{"写 Kafka 失败", fakeLocations{raw: online}, fakeNodes{synced: true, entry: node}, errors.New("broker down"), NotifyError, false, 0},
@@ -146,5 +155,30 @@ func TestKafkaNotifierIncompleteIsError(t *testing.T) {
 	}
 	if got := (&KafkaNotifier{}).Notify(context.Background(), 1, gmDomain); got != NotifyError || got.Settled() {
 		t.Fatalf("空 notifier = %s", got)
+	}
+}
+
+// TestNotifyResultLabelsArePreregistered:每种结局的 notify_total{result} 标签互不相同,且与 metrics 启动时预建的
+// 零值序列逐一对应 —— 新增结局忘了预建,告警的 increase(...) 会漏掉它第一次出现(metrics.Register 的注释)。
+func TestNotifyResultLabelsArePreregistered(t *testing.T) {
+	all := []NotifyResult{NotifyError, NotifySent, NotifyOffline, NotifyAwaitingPlacement, NotifyNoNode,
+		NotifyEmptyUUID, NotifyNodesUnsynced, NotifyNodeAmbiguous}
+	pre := map[string]bool{}
+	for _, l := range metrics.NotifyResultLabels() {
+		pre[l] = true
+	}
+	seen := map[string]bool{}
+	for _, r := range all {
+		label := r.String()
+		if seen[label] {
+			t.Errorf("标签 %q 被两种结局共用", label)
+		}
+		seen[label] = true
+		if !pre[label] {
+			t.Errorf("结局 %d 的标签 %q 没有在 metrics.NotifyResultLabels 里预建", r, label)
+		}
+	}
+	if len(pre) != len(seen) {
+		t.Errorf("预建标签 %v 与结局标签 %v 数目不一致(有多余或遗漏)", pre, seen)
 	}
 }

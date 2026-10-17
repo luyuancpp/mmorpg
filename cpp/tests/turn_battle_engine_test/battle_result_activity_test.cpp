@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <google/protobuf/unknown_field_set.h>
 
 #include <cstdint>
 #include <limits>
@@ -186,6 +187,7 @@ namespace
         contracts::kafka::BattleResultEvent event;
         event.set_battle_id(851);
         event.set_outcome(::BATTLE_OUTCOME_DRAW);
+        event.set_total_rounds(7);
         event.set_finished_at_ms(123456);
         auto* team = event.add_teams();
         team->set_team_index(0);
@@ -222,6 +224,7 @@ namespace
         defeated->set_count(2);
         ::BattleSettlementData second;
         second.set_player_id(93);
+        second.set_total_rounds(7);
         return {second, first};
     }
 }
@@ -274,7 +277,16 @@ TEST(BattleResultCommit, InvalidSourceFailsBeforeChangingTheResult)
     invalid = sources;
     invalid.at(0).set_battle_id(852);
     EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, invalid));
+    invalid = sources;
+    invalid.at(0).set_total_rounds(8);
+    EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, invalid));
     EXPECT_EQ(event.SerializeAsString(), original.SerializeAsString());
+    auto duplicateTeam = original;
+    duplicateTeam.add_teams()->set_team_index(0);
+    EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(duplicateTeam, sources));
+    auto emptyTeam = original;
+    emptyTeam.add_teams()->set_team_index(1);
+    EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(emptyTeam, sources));
     ASSERT_TRUE(turnbattle::FreezeBattleSettlementSource(event, sources));
     const auto once = event.SerializeAsString();
     EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, sources));

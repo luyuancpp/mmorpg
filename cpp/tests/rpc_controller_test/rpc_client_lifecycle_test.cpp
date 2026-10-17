@@ -37,10 +37,13 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <functional>
 #include <future>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <google/protobuf/util/json_util.h>
@@ -50,9 +53,11 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 
 #include "muduo/base/CountDownLatch.h"
+#include "muduo/base/Logging.h"                              // Logger::setOutput / setLogLevel:截获断开日志的级别(第 9 节)
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/EventLoopThread.h"
 #include "muduo/net/InetAddress.h"
+#include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpConnection.h"
 #include "muduo/net/TcpServer.h"
 
@@ -695,3 +700,61 @@ TEST(RpcSessionDeathTest, NullConnectionIsFatal)
 }
 
 #endif // GTEST_HAS_DEATH_TEST
+
+// ---------------------------------------------------------------------------
+// 8. muduo Connector 排队的 resetChannel 不得悬空(Connector.cc LOCAL DELTA,AGENTS.md §11.7)
+//    连上的那一刻,Connector::handleWrite 先排队 resetChannel,再同步调 TcpClient::newConnection → UP 回调。
+//    在这条栈上拆掉 TcpClient:有连接时 ~TcpClient 不给 Connector 续命,上游的 resetChannel 又绑裸 this,
+//    Connector 当场带着未释放的 channel_ 析构 —— Debug 下 ~Connector 的 assert(!channel_) 直接中止(红),
+//    Release 下 handleEvent 余下部分与排队的 resetChannel 都踩已释放内存。现在 resetChannel 持
+//    shared_from_this(),Connector 活到 channel_ 释放。判据:不崩,接住的连接随后能正常关掉、对端看到 DOWN。
+//    拆 TcpClient 时连接非独占(newConnection 栈上还有一份),~TcpClient 不会 forceClose,所以本例在测试里
+//    临时强持 TcpConnectionPtr 接住连接,最后自己 forceClose、等 connectDestroyed 跑完再释放;
+//    生产代码不得这样持有连接(§11.7)。
+// ---------------------------------------------------------------------------
+
+TEST_F(RpcClientLoopback, DestroyingTcpClientOnItsConnectStackKeepsConnectorAliveUntilChannelReset)
+{
+    // 只在 loop 线程上读写(回调与 RunInLoopAndWait 内),不需要原子。
+    struct State
+    {
+        std::unique_ptr<muduo::net::TcpClient> client;
+        muduo::net::TcpConnectionPtr heldConn;
+        std::promise<void> destroyedOnUp;
+        bool signalled{ false };
+    };
+    const auto state = std::make_shared<State>();
+    auto destroyedFuture = state->destroyedOnUp.get_future();
+    auto serverDownFuture = serverDown_.get_future();
+    RunInLoopAndWait([&] {
+        state->client = std::make_unique<muduo::net::TcpClient>(&Loop(), serverAddr_, "connector_lifetime_client");
+        // 回调会被拷到连接上、可能在本例之后才被调用:只捕获 weak,不借用本例栈变量。
+        state->client->setConnectionCallback(
+            [weakState = std::weak_ptr<State>(state)](const muduo::net::TcpConnectionPtr& conn) {
+                const auto live = weakState.lock();
+                if (!live || !conn->connected() || live->signalled) return;
+                live->signalled = true;
+                live->heldConn = conn;
+                // 仍在 Connector::handleWrite → TcpClient::newConnection 栈上,resetChannel 已排队、尚未执行。
+                live->client.reset();
+                live->destroyedOnUp.set_value();
+            });
+        state->client->connect();
+    });
+    const bool destroyed = destroyedFuture.wait_for(5s) == std::future_status::ready;
+    EXPECT_TRUE(destroyed) << "TcpClient never reported UP";
+    // 排队的 resetChannel 在 UP 那一轮的 pending functor 里就会执行,这里只确保它已跑完。
+    PumpLoop(3);
+    RunInLoopAndWait([&] {
+        if (state->heldConn) state->heldConn->forceClose();
+        state->client.reset();   // 没连上时的兜底拆除;连上时已在 UP 回调里拆掉
+    });
+    PumpLoop(3);   // forceCloseInLoop → handleClose → ~TcpClient 换上的 removeConnection 排的 connectDestroyed
+    // handleClose 不关 fd(留给析构):释放最后一份引用才关 socket,对端随后看到 DOWN。
+    RunInLoopAndWait([&] { state->heldConn.reset(); });
+    if (destroyed)
+    {
+        EXPECT_EQ(serverDownFuture.wait_for(5s), std::future_status::ready)
+            << "对端没看到 DOWN:接住的连接没有正常关掉";
+    }
+}

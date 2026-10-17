@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,7 +15,7 @@
 namespace turnbattle
 {
 // 小于Kafka默认单消息约1MB，给键和协议开销留空间；两版消费者同一上限。
-inline constexpr size_t kMaxCompleteResultBytes = 960 * 1024;
+inline constexpr std::size_t kMaxCompleteResultBytes = 960 * 1024;
 
 // 从首次引擎结算固定完整来源。先校验全部成员，失败不修改event；强制DRAW统一盖章。
 // 仅归档来源，不能以这个格式版本代替玩家归属、源存档版本或资产SQL收据。
@@ -26,9 +27,13 @@ inline bool FreezeBattleSettlementSource(contracts::kafka::BattleResultEvent& ev
         event.settlement_format_version() != 0 || event.settlements_size() != 0)
         return false;
     std::map<uint64_t, uint32_t> members;
+    std::set<uint32_t> teams;
     for (const auto& team : event.teams())
+    {
+        if (team.player_ids().empty() || !teams.insert(team.team_index()).second) return false;
         for (const auto playerId : team.player_ids())
             if (playerId == 0 || !members.emplace(playerId, team.team_index()).second) return false;
+    }
     if (members.size() != settlements.size()) return false;
     std::sort(settlements.begin(), settlements.end(), [](const auto& a, const auto& b)
     { return a.player_id() < b.player_id(); });
@@ -38,6 +43,7 @@ inline bool FreezeBattleSettlementSource(contracts::kafka::BattleResultEvent& ev
         const auto member = members.find(settlement.player_id());
         if (member == members.end() || settlement.player_id() == previous ||
             member->second != settlement.player_team_index() ||
+            settlement.total_rounds() != event.total_rounds() ||
             (settlement.battle_id() != 0 && settlement.battle_id() != event.battle_id())) return false;
         previous = settlement.player_id();
     }

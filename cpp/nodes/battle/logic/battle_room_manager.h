@@ -284,12 +284,12 @@ private:
     // 整场 deadline 到期:引擎仍未分出胜负按平局强制收尾(battle_node.proto 契约)。
     void OnBattleDeadline(uint64_t battleId);
 
-    // 战斗收尾:每参与者 BattleEndS2C(战斗帧,只走直连)→ BattleSettlementEvent(先落库后投递);
+    // 战斗收尾:确认模式先固定含全部个人结算的结果并取得Kafka all ACK，随后
+    // 每参与者 BattleEndS2C(战斗帧,只走直连)→ 旧R07 BattleSettlementEvent。
     // 观众按 spectateReason 推 SpectateEndS2C(§10.5);终局包排队后关闭房间全部直连;
-    // 最后向 match-results 发一条 BattleResultEvent(评分回流;带活动上下文的局改走
-    // DispatchActivityResultDurably 的持久化通道)。
-    // 只组装与发送,不动 rooms_(房间由调用方随后 EraseRoom)。
-    void FinishBattle(BattleRoom &room, ::eBattleOutcome outcome,
+    // 旧模式最后发送评分事件；确认模式复用ACK前原件，不重新计算个人奖励。
+    // 只组装与发送,不动 rooms_；返回true才能由调用方EraseRoom，校验失败保留房间。
+    bool FinishBattle(BattleRoom &room, ::eBattleOutcome outcome,
                       ::eSpectateEndReason spectateReason,
                       const contracts::kafka::BattleResultEvent* committedResult = nullptr);
     contracts::kafka::BattleResultEvent BuildResult(const BattleRoom&, ::eBattleOutcome) const;

@@ -189,14 +189,6 @@ public:
     const RpcChannelPtr& channel() const { return channel_; }
 
 private:
-    // Disconnects within this window after the initial successful connect are
-    // treated as benign startup-race noise and logged at INFO instead of WARN.
-    // Typical cause on Windows: win_connect() reports the socket writable via
-    // select() before the peer's TCP listen backlog is fully ready, producing
-    // a "false-positive" connect that the OS reaps within ~1s. muduo's
-    // enableRetry() then reconnects successfully on the very next attempt.
-    static constexpr int kStartupGraceSeconds = 5;
-
     // 节点间发送缓冲的高水位保护。客户端-facing 连接早就有(gate 2MB forceClose),
     // 节点间之前**完全没有**:对端节点消费慢(卡在日志 IO / 停机半途 / 网络退化)时,
     // muduo 输出缓冲无界增长 —— scene 向 gate 的 AOI 推送是全系统最大流量路径,
@@ -231,10 +223,6 @@ private:
             {
                 channel_->Close();   // 节点已进入关机阶段 0(见 CloseChannel)
             }
-            if (connectedAt_ == muduo::Timestamp::invalid())
-            {
-                connectedAt_ = muduo::Timestamp::now();
-            }
             LOG_INFO << "Connected to server at " << conn->peerAddress().toIpPort() << ".";
         }
         else
@@ -246,19 +234,12 @@ private:
                 channel_->OnDisconnect();
                 channel_.reset();
             }
-            const double sinceConnect = (connectedAt_ == muduo::Timestamp::invalid())
-                                            ? -1.0
-                                            : muduo::timeDifference(muduo::Timestamp::now(), connectedAt_);
-            if (sinceConnect >= 0.0 && sinceConnect < kStartupGraceSeconds)
-            {
-                LOG_INFO << "Disconnected from server at " << conn->peerAddress().toIpPort()
-                         << " within startup grace (" << sinceConnect << "s); will auto-reconnect.";
-            }
-            else
-            {
-                LOG_WARN << "Disconnected from server at " << conn->peerAddress().toIpPort() << ".";
-            }
-            connectedAt_ = muduo::Timestamp::invalid();
+            // 断开一律 WARN,不按连接存活时长降级。这里曾有 5s「启动宽限」(kStartupGraceSeconds),把连上后 5s 内的
+            // 断开降为 INFO,依据是旧 win_connect 在 loop 里阻塞 select、无条件返回 0 造成的假阳性连接。
+            // d27176e04(2026-05-05)起 win_connect 非阻塞,Connector::handleWrite 以 SO_ERROR 确认连接完成后才回调 UP,
+            // UP 就是真实的连接建立(握手是否完成另由节点注册流程判定),这条依据已不存在。宽限又是每条连接重新计时的:
+            // 对端反复「接受后立刻关」的抖动会永远停在 INFO、告警看不到。回归测试:rpc_client_lifecycle_test 第 9 节。
+            LOG_WARN << "Disconnected from server at " << conn->peerAddress().toIpPort() << ".";
         }
 
         if (connectionObserver_)
@@ -267,7 +248,6 @@ private:
         }
     }
 
-    muduo::Timestamp connectedAt_{};
     muduo::net::TcpClient client_;
     muduo::net::InetAddress serverAddr_;
     RpcServiceMap services_;

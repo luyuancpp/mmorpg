@@ -14,6 +14,8 @@ import (
 	"player_inbox/generated/pb/game"
 	"player_inbox/internal/config"
 
+	"shared/leader"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx/logtest"
@@ -70,6 +72,44 @@ func testConfig() config.Config {
 		ReconcileWindowHours:        24,
 	}
 	return c
+}
+
+// TestCoreRedisOptionsBoundEveryCall 钉住核心 Redis 客户端的超时契约(评审 L7):
+//   - 开 ContextTimeoutEnabled:请求预算(Timeout − 500ms)、OwnerEpochReadTimeout、提醒预算才真正管得住 socket 读写,
+//     否则 go-redis 用 context.Background() 读写,只受 3s 缺省读超时约束,in-band 回故障的契约会被击穿;
+//   - 读 / 写超时显式为正:不带截止时间的调用(选主竞选的 SETNX 用的是循环 ctx)靠它封顶;-1 / -2 会关掉 socket 截止,
+//     连 ctx 截止也一起失效(go/shared/leader GoRedisMaxCallDuration 的注释);
+//   - PoolSize 原样取配置(Redis 连接总账读同一个键),不落回 go-redis 缺省。
+//
+// 并核对选主心跳在这套选项下仍能保证「key 过期之前自我降级」:收件箱用 leader 的缺省 TTL(30s),
+// 节拍 = TTL/3、续期 ctx = min(2s, TTL/8)(go/shared/leader/leader.go startHeartbeat)。
+func TestCoreRedisOptionsBoundEveryCall(t *testing.T) {
+	opts := coreRedisOptions(config.RedisConf{Host: "127.0.0.1:1", DB: 0, PoolSize: 20})
+	if !opts.ContextTimeoutEnabled {
+		t.Fatal("核心 Redis 必须开 ContextTimeoutEnabled")
+	}
+	if opts.ReadTimeout <= 0 || opts.WriteTimeout <= 0 || opts.ReadTimeout != coreRedisReadTimeout || opts.WriteTimeout != coreRedisWriteTimeout {
+		t.Fatalf("ReadTimeout = %v WriteTimeout = %v, want 显式正值 %v / %v", opts.ReadTimeout, opts.WriteTimeout,
+			coreRedisReadTimeout, coreRedisWriteTimeout)
+	}
+	if opts.PoolSize != 20 || opts.Addr != "127.0.0.1:1" {
+		t.Fatalf("PoolSize = %d Addr = %q, want 取自配置", opts.PoolSize, opts.Addr)
+	}
+
+	client := redis.NewClient(opts) // 不发命令就不连
+	defer client.Close()
+	effective := client.Options()
+	if effective.ReadTimeout != coreRedisReadTimeout || effective.WriteTimeout != coreRedisWriteTimeout || effective.PoolSize != 20 {
+		t.Fatalf("初始化后的选项被改写: read=%v write=%v pool=%d", effective.ReadTimeout, effective.WriteTimeout, effective.PoolSize)
+	}
+	if got := leader.GoRedisMaxCallDuration(effective); got != 0 {
+		t.Fatalf("GoRedisMaxCallDuration = %v, want 0(客户端认 ctx 截止时间)", got)
+	}
+	const ttl = 30 * time.Second
+	maxCall := leader.CallBudget(min(2*time.Second, ttl/8), leader.GoRedisMaxCallDuration(effective))
+	if fence, ok := leader.FenceAfter(ttl, ttl/3, maxCall); !ok || fence != 2*(ttl/3) || 2*(ttl/3)+maxCall >= ttl {
+		t.Fatalf("FenceAfter(ttl=%v, maxCall=%v) = (%v, %v):选主心跳必须能在 key 过期前自我降级", ttl, maxCall, fence, ok)
+	}
 }
 
 // recordingDeps 是不连任何真实外部依赖的 externalDeps:记录每个入口被调了几次,产物留给断言。

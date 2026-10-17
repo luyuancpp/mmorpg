@@ -10104,3 +10104,14 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **负责人决定**:mail 附件发奖与商城到账(含 trade 合同 ORDER 终结)上线前,先把对应 zone 的 go/db 按 [db-write-fencing-mysql.md](design/db-write-fencing-mysql.md) §8.3 切到 `dual`;在此之前这两项保持关闭。原因:两者强制要求资产 SQL 提交证据,而证据只在 `Fencing.Mode=dual` 时发布(缺省 legacy)。
 - **已写入**:设计 v0.4 §8.7「上线门禁」段、`docs/design/mail-system.md` 末节、`docs/design/jubaozhai-market.md` §15.1、交接 [landing-fencing-takeover-20261016/README.md](handoff/landing-fencing-takeover-20261016/README.md) §7。只改文档。
 - **Java 版**:门禁本身是部署顺序约束;Java 版 mail / 商城的到账判定口径待 Java 线对照(PARITY.md 已有对应行)。
+
+## 2026-10-16 C++ gRPC muduo 第 3–5 批：Codex 验证续跑，scene 构建阻断（未提交）
+
+- **已通过**：`proto-gen-build`；生成器 `go test ./internal/... ./cmd`（所有包成功）；scene / battle 定向 `--grpc-handler` 连续两轮，4 份 handler 与生成前逐字节一致，`proto/message_id.txt` 未变化；handler 正负向检索通过。生成客户端无官方 gRPC 类型或头文件依赖，只有注释提及 CompletionQueue。
+- **续跑说明**：电脑重启中断首轮构建，无最终退出码。恢复后发现 scene 的 CreateScene 守护段已由其他工作新增「等待许可时停机」拒绝分支，保留该修改并保存快照；此前两轮生成幂等证据针对修改前版本，修改后的定向生成尚未重核。
+- **构建资源**：`/p:MultiProcessorCompilation=false` 未覆盖工程写死的 `/MP`，曾观察到可用内存约 0.9 GiB，主动停止该次构建。随后改用 `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1`；MSBuild 求值 ProcessorNumber=1，实际编译命令 `/MP1` 已确认，无修改工程配置或关闭检查。
+- **已构建的相关库**：proto、infra、core、config、rpc、thread_context、table、grpc_client、muduo、proto_helpers、session、muduo_grpc；infra / core / config / thread_context / session / muduo_grpc 的裸指针检查通过。全解未通过。
+- **首个阻断**：`cpp/libs/services/scene/world/world.cpp:30` 的 `actor_net_id::Install(tlsEcs.actorRegistry)` 使用未声明的 `tlsEcs`；scene 的裸指针检查解析失败（exit 2），触发 `Directory.Build.targets:59` 的 MSB3073。`tlsEcs` 声明在 `cpp/libs/engine/thread_context/ecs_context.h:50`，建议在 world.cpp 显式包含该头。按 AGENTS.md §10.2 停止本轮构建与后续验证，未修改代码、未重试该错误，等待负责人决策。
+- **尚未执行**：本轮新 C++ 测试工程的独立编译与测试、Go shared assetop / grpcinterop 测试及真实互通、Linux 构建、冒烟 / 线程核对 / 带流量关机 / 100 次探针。交接的 `run_cpp_tests.ps1 -Filter battle_admission` 无匹配工程，应按 `battle_admission_gate_test.cpp` 文件头独立编译命令执行。
+- **日志**：`build/verification/grpc-muduo-codex-20261016/`；原构建 `04-game-*`，资源中止 `04b-game-*`，串行续跑 `04c-game-*`；首错上下文 `04c-first-failure.txt`。构建检测到首错后仍继续其他独立项目，因此取到了 muduo_grpc 成功产物；发现首错后已主动终止剩余构建，不将其视为全解成功。
+- **Java 版（AGENTS.md §12）**：本轮仅验证 C++ 内部传输替换，无客户端契约变更，Java 不适用；对应 Java 版本号：无。7 项待定取舍未由本轮修改。

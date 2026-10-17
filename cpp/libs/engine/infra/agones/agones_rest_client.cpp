@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <mutex>
 #include <string>
+#include <utility>
 
 #include "muduo/base/Logging.h"
 
@@ -25,6 +26,19 @@ namespace agones
 			return value;
 		}
 	} // namespace
+
+	HttpResponse HttpTransport::Post(const std::string& url,
+		const std::string& body,
+		const HttpTimeouts& timeouts,
+		std::stop_token /*cancel*/)
+	{
+		return Post(url, body, timeouts);
+	}
+
+	HttpResponse HttpTransport::Get(const std::string& url, const HttpTimeouts& timeouts, std::stop_token /*cancel*/)
+	{
+		return Get(url, timeouts);
+	}
 
 	std::string AgonesEnv::BaseUrl() const
 	{
@@ -101,6 +115,13 @@ namespace agones
 			out->append(ptr, total);
 			return total;
 		}
+
+		// CURLOPT_XFERINFOFUNCTION:取消令牌置位即返回非 0,libcurl 以 CURLE_ABORTED_BY_CALLBACK 中止本次传输。
+		int AbortTransferWhenCancelled(void* clientp, curl_off_t, curl_off_t, curl_off_t, curl_off_t)
+		{
+			const auto* cancel = static_cast<const std::stop_token*>(clientp);
+			return cancel->stop_requested() ? 1 : 0;
+		}
 	} // namespace
 
 	CurlAgonesHttpTransport::CurlAgonesHttpTransport()
@@ -112,9 +133,17 @@ namespace agones
 
 	HttpResponse CurlAgonesHttpTransport::Perform(const std::string& url,
 		const std::string* body,
-		const HttpTimeouts& timeouts)
+		const HttpTimeouts& timeouts,
+		std::stop_token cancel)
 	{
 		HttpResponse result;
+
+		// 发起前已取消:不建连接,直接按传输失败返回。
+		if (cancel.stop_requested())
+		{
+			result.error = "request cancelled before start";
+			return result;
+		}
 
 		CURL* handle = curl_easy_init();
 		if (handle == nullptr)
@@ -139,6 +168,15 @@ namespace agones
 		curl_easy_setopt(handle, CURLOPT_TIMEOUT_MS, static_cast<long>(timeouts.total.count()));
 		// sidecar 在 127.0.0.1,不需要也不应该走代理。
 		curl_easy_setopt(handle, CURLOPT_PROXY, "");
+		if (cancel.stop_possible())
+		{
+			// 在途取消:传输期间 libcurl 周期性调用进度回调(NOPROGRESS=0 才会调),令牌置位即中止。
+			// 粒度:有数据收发时很密;空闲时(如 sidecar 收下请求迟迟不回)约每秒一次 ——
+			// 因此中止最坏约 1s 生效,且不晚于本次请求自己的超时。cancel 是本函数的局部副本,活过 curl_easy_perform。
+			curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, &AbortTransferWhenCancelled);
+			curl_easy_setopt(handle, CURLOPT_XFERINFODATA, &cancel);
+			curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+		}
 
 		if (body != nullptr)
 		{
@@ -174,12 +212,27 @@ namespace agones
 		const std::string& body,
 		const HttpTimeouts& timeouts)
 	{
-		return Perform(url, &body, timeouts);
+		return Perform(url, &body, timeouts, std::stop_token{});
 	}
 
 	HttpResponse CurlAgonesHttpTransport::Get(const std::string& url, const HttpTimeouts& timeouts)
 	{
-		return Perform(url, nullptr, timeouts);
+		return Perform(url, nullptr, timeouts, std::stop_token{});
+	}
+
+	HttpResponse CurlAgonesHttpTransport::Post(const std::string& url,
+		const std::string& body,
+		const HttpTimeouts& timeouts,
+		std::stop_token cancel)
+	{
+		return Perform(url, &body, timeouts, std::move(cancel));
+	}
+
+	HttpResponse CurlAgonesHttpTransport::Get(const std::string& url,
+		const HttpTimeouts& timeouts,
+		std::stop_token cancel)
+	{
+		return Perform(url, nullptr, timeouts, std::move(cancel));
 	}
 
 #endif // MMORPG_AGONES_CURL
@@ -201,29 +254,30 @@ namespace agones
 	}
 
 	// Agones REST SDK 的这几个端点都接受空 JSON 对象作为 body。
-	HttpResponse AgonesRestClient::Ready()
+	HttpResponse AgonesRestClient::Ready(std::stop_token cancel)
 	{
-		return transport_.Post(baseUrl_ + "/ready", "{}", timeouts_);
+		return transport_.Post(baseUrl_ + "/ready", "{}", timeouts_, std::move(cancel));
 	}
 
-	HttpResponse AgonesRestClient::Health()
+	HttpResponse AgonesRestClient::Health(std::stop_token cancel)
 	{
-		return transport_.Post(baseUrl_ + "/health", "{}", timeouts_);
+		return transport_.Post(baseUrl_ + "/health", "{}", timeouts_, std::move(cancel));
 	}
 
-	HttpResponse AgonesRestClient::Allocate()
+	HttpResponse AgonesRestClient::Allocate(std::stop_token cancel)
 	{
-		return transport_.Post(baseUrl_ + "/allocate", "{}", timeouts_);
+		return transport_.Post(baseUrl_ + "/allocate", "{}", timeouts_, std::move(cancel));
 	}
 
 	HttpResponse AgonesRestClient::Shutdown()
 	{
-		return transport_.Post(baseUrl_ + "/shutdown", "{}", timeouts_);
+		// 显式传空令牌(不可取消),理由见头文件。
+		return transport_.Post(baseUrl_ + "/shutdown", "{}", timeouts_, std::stop_token{});
 	}
 
-	HttpResponse AgonesRestClient::GameServer()
+	HttpResponse AgonesRestClient::GameServer(std::stop_token cancel)
 	{
-		return GameServer(timeouts_);
+		return transport_.Get(baseUrl_ + "/gameserver", timeouts_, std::move(cancel));
 	}
 
 	HttpResponse AgonesRestClient::GameServer(const HttpTimeouts& timeouts)

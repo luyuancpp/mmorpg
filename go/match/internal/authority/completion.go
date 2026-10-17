@@ -90,6 +90,9 @@ func validateCompletion(event *kafkapb.BattleResultEvent, raw []byte) error {
 	if event == nil {
 		return errors.New("对局结果缺失")
 	}
+	if len(raw) == 0 {
+		return errors.New("对局结果原字节缺失")
+	}
 	decoded := &kafkapb.BattleResultEvent{}
 	if err := proto.Unmarshal(raw, decoded); err != nil || !proto.Equal(decoded, event) {
 		return errors.New("结算来源原字节与解析结果不符")
@@ -130,8 +133,8 @@ func validateCompletion(event *kafkapb.BattleResultEvent, raw []byte) error {
 			return errors.New("个人结算缺失或玩家重复")
 		}
 		team, exists := members[settlement.PlayerId]
-		if !exists || settlement.BattleId != event.BattleId || settlement.Outcome != event.Outcome || settlement.PlayerTeamIndex != team {
-			return errors.New("个人结算与对局、终局或队伍不符")
+		if !exists || settlement.BattleId != event.BattleId || settlement.Outcome != event.Outcome || settlement.PlayerTeamIndex != team || settlement.TotalRounds != event.TotalRounds {
+			return errors.New("个人结算与对局、终局、队伍或总回合数不符")
 		}
 		seen[settlement.PlayerId] = true
 	}

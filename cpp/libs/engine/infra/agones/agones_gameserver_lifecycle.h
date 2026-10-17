@@ -9,6 +9,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <stop_token>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -170,6 +171,15 @@ namespace agones
 		// 停止并 join worker。幂等。刻意**不**调用 /shutdown ——
 		// 在 SIGTERM 路径里调 /shutdown 会反过来触发 Pod 删除,形成递归。
 		// 先在锁内摘下全部异步许可等待者,锁外经各自的 loop 投递拒绝(见 AcquireAllocationPermitAsync)。
+		//
+		// 有界、快速返回(scene / battle 在 beforeShutdown hook 里于 loop 线程上调用,loop 冻结期间 gRPC 排空推后):
+		// 置停止标志并唤醒 worker,同时经取消令牌中止 worker 在途的可放弃请求(/ready、/health、/allocate、
+		// GET /gameserver);退避与重试立即退出,不再发起新的 allocate。join 只等这次中止生效:通常为毫秒级;
+		// sidecar 收下请求迟迟不回时,libcurl 空闲期的进度回调约每秒一次,最坏约 1s(不超过 timeouts.total)。
+		// 返回即 worker 已结束。
+		// 唯一不中止的是 /shutdown:进程已 RequestShutdown() 且 /shutdown 在途时,等它送达(最多 timeouts.total)。
+		// 停机时这些可放弃请求不必送达:Pod 正在被删除,/ready /health /allocate 的结果都不再有意义;
+		// 被中止的 /allocate 可能已被 sidecar 处理,同样随 GameServer 删除而作废。
 		void Stop();
 
 		// 第一个单元真正创建之前调用,阻塞调用线程直到 Allocated 或超时。
@@ -291,6 +301,8 @@ namespace agones
 		void DeliverPermits(std::vector<PermitDelivery> deliveries);
 		// Stop() = StopImpl(true);~GameServerLifecycle = StopImpl(false)(只丢弃等待者,不投递)。
 		void StopImpl(bool deliverRejections);
+		// worker 线程用:可放弃请求失败且停止令牌已置位,即"被 Stop() 中止或不必再管",调用方不按故障处理。
+		bool AbandonedByStop(const HttpResponse& response) const;
 		void FinishAllocationPermit();
 		// 调用方须持有 mutex_:Allocated、零单元、无在途许可时请求回 Ready,返回是否发起了请求。
 		bool RequestReadyIfIdleLocked();
@@ -346,6 +358,13 @@ namespace agones
 		std::unique_ptr<HttpTransport> transport_;
 		std::unique_ptr<AgonesRestClient> client_;
 		std::thread worker_;
+
+		// Stop() 的取消源。worker 发出的可放弃请求(/ready、/health、/allocate、GET /gameserver)都带
+		// workerStopToken_,Stop() 置位即中止在途请求,让 join 有界、快速;/shutdown 刻意不带(见 DoShutdown)。
+		// stop_source 单次有效,Start() 在创建 worker 之前换新并取出令牌;worker 只读 workerStopToken_,
+		// 与 stopRequested_ 并存:后者是锁内谓词(等待 / 退避 / 主循环),令牌只管锁外的在途 HTTP。
+		std::stop_source workerStopSource_;
+		std::stop_token workerStopToken_;
 	};
 
 } // namespace agones

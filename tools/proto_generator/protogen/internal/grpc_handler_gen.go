@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -21,6 +22,19 @@ var grpcServiceHandlerCppTemplate string
 
 // legacyGrpcPreDispatchSectionName 是旧模板包装函数里无名投递前段在报错清单里的名字。
 const legacyGrpcPreDispatchSectionName = "无名投递前段"
+
+// strayGrpcUnnamedSectionName 是新骨架里本来没有无名段位置的函数(构造函数、<M>()、RegisterMethods)中出现的无名段在报错清单里的名字。
+const strayGrpcUnnamedSectionName = "无名段"
+
+// legacyGrpcWrapperPattern 匹配旧模板 grpc::Status 包装函数的签名(第 2 组是方法名):"<Svc>Impl::<M>(" 之后允许任意空白与换行,
+// 紧跟 grpc::ServerContext(可带前导 ::)。不依赖当前 proto 的方法列表,已从 proto 删掉的方法与折行签名同样命中。
+var legacyGrpcWrapperPattern = regexp.MustCompile(`(\w+)Impl::(\w+)\s*\(\s*(?:::)?grpc::ServerContext\b`)
+
+// grpcHandleDefinitionPattern 匹配 Handle* 定义的签名(第 1 组服务名、第 2 组方法名),"(" 前允许空白。
+var grpcHandleDefinitionPattern = regexp.MustCompile(`(\w+)Impl::Handle(\w+)\s*\(`)
+
+// legacyGrpcNamedSectionPattern 匹配旧模板的命名段 grpc.<M>.in_loop / grpc.<M>.post_dispatch(任意方法名,第 1 组)。
+var legacyGrpcNamedSectionPattern = regexp.MustCompile(`^grpc\.(\w+)\.(?:in_loop|post_dispatch)$`)
 
 // GrpcHandlerMethod holds data for a gRPC handler method.
 type GrpcHandlerMethod struct {
@@ -178,20 +192,14 @@ func GenerateGrpcHandlerNameWrapper(info *MethodInfo, _ string) string {
 	return info.Service() + "Impl::Handle" + info.Method() + "("
 }
 
-// legacyGrpcWrapperKey 是旧模板 grpc::Status 包装函数的查找键,只用于 checkLegacyGrpcSections 检测旧的无名投递前段。
-// 带上 "(grpc::ServerContext" 是为了不与 Handle* 键、以及同名前缀方法(如 Create / CreateScene)互相命中。
-func legacyGrpcWrapperKey(info *MethodInfo, _ string) string {
-	return info.Service() + "Impl::" + info.Method() + "(grpc::ServerContext"
-}
-
 // grpcGuardSectionName 是 <M>() 里唯一的命名守护段。
 func grpcGuardSectionName(info *MethodInfo) string {
 	return "grpc." + info.Method() + ".guard"
 }
 
-// grpcLegacyNamedSectionNames 是旧模板的两个命名段;只在为空时接受,然后丢弃。
-func grpcLegacyNamedSectionNames(info *MethodInfo) []string {
-	return []string{"grpc." + info.Method() + ".in_loop", "grpc." + info.Method() + ".post_dispatch"}
+// orphanGrpcHandleSectionName 是新生成带不走的 Handle* 体(proto 已删除该方法,或签名里找不到查找键)在报错清单里的名字。
+func orphanGrpcHandleSectionName(method string) string {
+	return "Handle" + method + " 体"
 }
 
 // grpcServerMethodPath 返回 gRPC :path(线上契约):有 package 时为 "/pkg.Svc/Method",否则 "/Svc/Method"。

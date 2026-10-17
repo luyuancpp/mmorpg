@@ -1,11 +1,11 @@
 #include "channel.h"
 
 #include <algorithm>
-#include <charconv>
 
 #include "muduo/base/Logging.h"
 #include "muduo/net/EventLoop.h"
 
+#include "address.h"
 #include "grpc_timeout.h"
 #include "message_framing.h"
 
@@ -16,37 +16,6 @@ namespace
 {
 
 constexpr uint32_t kHttp2Cancel = 0x8;
-
-// 只接受规范的点分十进制 IPv4(不接受前导零、空段、主机名)。muduo 的 InetAddress 遇到非法 IP
-// 只打一行日志并留下 0.0.0.0 —— 在 Linux 上那会连到本机,所以必须先校验。
-bool IsCanonicalIpv4(const std::string &ip)
-{
-    int parts = 0;
-    size_t pos = 0;
-    while (pos <= ip.size())
-    {
-        const size_t dot = ip.find('.', pos);
-        const size_t end = dot == std::string::npos ? ip.size() : dot;
-        const size_t len = end - pos;
-        if (len == 0 || len > 3 || (len > 1 && ip[pos] == '0'))
-        {
-            return false;
-        }
-        int value = 0;
-        const auto [ptr, ec] = std::from_chars(ip.data() + pos, ip.data() + end, value);
-        if (ec != std::errc{} || ptr != ip.data() + end || value > 255)
-        {
-            return false;
-        }
-        ++parts;
-        if (dot == std::string::npos)
-        {
-            break;
-        }
-        pos = dot + 1;
-    }
-    return parts == 4;
-}
 
 double ToSeconds(std::chrono::steady_clock::duration duration)
 {

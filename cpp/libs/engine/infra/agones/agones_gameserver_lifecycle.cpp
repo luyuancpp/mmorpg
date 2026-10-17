@@ -105,6 +105,9 @@ namespace agones
 			client_ = std::make_unique<AgonesRestClient>(std::move(baseUrl), *transport_, options_.timeouts);
 			state_ = LifecycleState::Starting;
 			stopRequested_ = false;
+			// stop_source 单次有效:每次启动换新的取消源。worker 线程尚未创建,这里写 workerStopToken_ 没有竞争。
+			workerStopSource_ = std::stop_source{};
+			workerStopToken_ = workerStopSource_.get_token();
 			draining_ = false;
 			// 心跳记为"刚更新":EventLoop 的定时 Touch 还没开始跑,给它 loopStaleAfter 的宽限。
 			// worker 线程尚未创建,这里写 worker 专属的 loopStaleReported_ 没有竞争。
@@ -150,8 +153,13 @@ namespace agones
 		{
 			return;
 		}
+		// 中止 worker 在途的可放弃 HTTP(见 workerStopSource_),/shutdown 不受影响;等待、退避与主循环由
+		// stopRequested_ + notify 唤醒。放在锁外:request_stop() 会同步执行传输层登记的 stop_callback,
+		// 不在持有 mutex_ 时调用外部代码。
+		workerStopSource_.request_stop();
 		cv_.notify_all();
 
+		// 有界:在途请求被中止、重试与退避立即退出,join 不再等满 allocate 的重试链(见头文件 Stop())。
 		worker_.join();
 
 		std::lock_guard<std::mutex> lock(mutex_);
@@ -608,6 +616,13 @@ namespace agones
 		return !stopRequested_;
 	}
 
+	bool GameServerLifecycle::AbandonedByStop(const HttpResponse& response) const
+	{
+		// workerStopToken_ 只在 Start() 里、worker 线程创建之前写,worker 读它无需加锁。
+		// 成功的响应照常处理(中止前已完成);只有失败且已停才算被放弃。
+		return !response.Ok() && workerStopToken_.stop_requested();
+	}
+
 	bool GameServerLifecycle::LoopHeartbeatFresh() const
 	{
 		// options_ 只在 Start() 里、worker 线程创建之前写,worker 读它无需加锁。
@@ -633,7 +648,12 @@ namespace agones
 				}
 			}
 
-			const HttpResponse response = client_->Ready();
+			const HttpResponse response = client_->Ready(workerStopToken_);
+			if (AbandonedByStop(response))
+			{
+				// 被 Stop() 中止:留在 Starting,不重试,也不按失败打日志。
+				return;
+			}
 			if (response.Ok())
 			{
 				std::lock_guard<std::mutex> lock(mutex_);
@@ -666,13 +686,20 @@ namespace agones
 	void GameServerLifecycle::DoAllocate(bool nonBlockingRetryExpected)
 	{
 		bool allocated = false;
+		// 停机放弃:在途的 /allocate 被 Stop() 的取消令牌中止,或退避被 Stop() 打断。之后不再发起新的 allocate。
+		bool abandoned = false;
 
 		for (int attempt = 1; attempt <= options_.allocateMaxAttempts && !allocated; ++attempt)
 		{
-			const HttpResponse response = client_->Allocate();
+			const HttpResponse response = client_->Allocate(workerStopToken_);
 			if (response.Ok())
 			{
 				allocated = true;
+				break;
+			}
+			if (AbandonedByStop(response))
+			{
+				abandoned = true;
 				break;
 			}
 
@@ -682,6 +709,7 @@ namespace agones
 
 			if (attempt < options_.allocateMaxAttempts && !SleepInterruptible(options_.allocateRetryBackoff))
 			{
+				abandoned = true;
 				break;
 			}
 		}
@@ -725,6 +753,11 @@ namespace agones
 							 << "ms), zero units and no permit in flight; returning to Ready";
 				}
 			}
+			else if (abandoned)
+			{
+				// 停机路径:异步等待方已由 Stop() 摘表拒绝,阻塞等待方随 stopRequested_ 醒来拒绝;不按故障报错。
+				LOG_WARN << "[Agones] allocate abandoned: lifecycle stopping";
+			}
 			else
 			{
 				LOG_ERROR << "[Agones] allocate failed, staying Ready; unit creation will fail closed";
@@ -736,7 +769,8 @@ namespace agones
 
 	void GameServerLifecycle::DoBackToReady()
 	{
-		const HttpResponse response = client_->Ready();
+		const HttpResponse response = client_->Ready(workerStopToken_);
+		const bool abandoned = AbandonedByStop(response);
 
 		std::vector<PermitDelivery> deliveries;
 		{
@@ -746,8 +780,16 @@ namespace agones
 				// /ready 没成功,sidecar 仍是 Allocated。恢复本地状态并唤醒
 				// 等待中的创建;它们无需再发一次 /allocate。
 				state_ = LifecycleState::Allocated;
-				LOG_ERROR << "[Agones] POST /ready (drain) failed status=" << response.statusCode
-						  << " error=" << response.error << "; staying " << ToString(state_);
+				if (abandoned)
+				{
+					// 被 Stop() 中止:停机时回不回 Ready 已无意义(Pod 正在删除),不按故障报错。
+					LOG_WARN << "[Agones] POST /ready (drain) abandoned: lifecycle stopping";
+				}
+				else
+				{
+					LOG_ERROR << "[Agones] POST /ready (drain) failed status=" << response.statusCode
+							  << " error=" << response.error << "; staying " << ToString(state_);
+				}
 			}
 			else
 			{
@@ -767,6 +809,8 @@ namespace agones
 			std::lock_guard<std::mutex> lock(mutex_);
 			state_ = LifecycleState::ShuttingDown;
 		}
+		// 刻意不带停止令牌:/shutdown 是进程决定自我终止时必须送达的最终请求,Stop() 不中止它,
+		// 在途时 Stop() 的 join 等它完成(最多 timeouts.total)。
 		const HttpResponse response = client_->Shutdown();
 		if (!response.Ok())
 		{
@@ -799,8 +843,8 @@ namespace agones
 			LOG_WARN << "[Agones] EventLoop heartbeat recovered; resuming /health";
 		}
 
-		const HttpResponse response = client_->Health();
-		if (!response.Ok())
+		const HttpResponse response = client_->Health(workerStopToken_);
+		if (!response.Ok() && !AbandonedByStop(response))
 		{
 			LOG_WARN << "[Agones] POST /health failed status=" << response.statusCode
 					 << " error=" << response.error;
@@ -809,7 +853,11 @@ namespace agones
 
 	void GameServerLifecycle::DoPollDrain()
 	{
-		const HttpResponse response = client_->GameServer();
+		const HttpResponse response = client_->GameServer(workerStopToken_);
+		if (AbandonedByStop(response))
+		{
+			return; // 被 Stop() 中止:不翻转判定,也不按读取失败打日志
+		}
 		if (!response.Ok())
 		{
 			// 读失败不翻转判定:sidecar 抖一下不应该让正在排空的实例重新接单元,

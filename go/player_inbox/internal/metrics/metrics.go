@@ -49,7 +49,9 @@ var (
 
 	notifyTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace, Name: "notify_total",
-		Help: "Online notify attempts by result (sent|offline|awaiting_placement|no_node|empty_uuid|error).",
+		Help: "Online notify attempts by result. Settled (notify_due cleared): sent|offline|awaiting_placement|no_node " +
+			"(no_node = location node not in the synced scene node mirror, or location has neither node nor epoch; left to the landing fetch). " +
+			"Retried with backoff: error|empty_uuid|nodes_unsynced|node_ambiguous.",
 	}, []string{"result"})
 
 	cursorAheadTotal = prometheus.NewCounter(prometheus.CounterOpts{
@@ -106,13 +108,23 @@ var (
 		Buckets: []float64{0, 1, 2, 4, 8, 17, 32, 64, 128, 256, 512, 1024},
 	})
 
+	// 已投递未确认的告警口径(delivered_unacked / delivered_unacked_oldest_seconds / max_delivery_count)只算最后一次投递
+	// 在最近 24 小时内的行(评审 M4):GM 处置后紧接着封号踢下线,实体销毁时 ackQueue 跟着丢,这一行就永远已投递未确认;
+	// 玩家不再上线,它会把告警永久顶住、掩盖之后真正的卡住。更早的行只进 info 级的 delivered_unacked_stale。
 	deliveredUnacked = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace, Name: "delivered_unacked",
-		Help: "PENDING items delivered at least once (leader-only scan; aggregate with max()).",
+		Help: "PENDING items delivered at least once whose last delivery is within the last 24h (leader-only scan; aggregate with max()). " +
+			"Older ones are counted in delivered_unacked_stale.",
+	})
+	deliveredUnackedStale = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace, Name: "delivered_unacked_stale",
+		Help: "PENDING items delivered at least once whose last delivery is older than 24h (leader-only scan; info only, not alerted): " +
+			"typically the owner was kicked right after the delivery and never came back, so the ack queue died with the entity.",
 	})
 	deliveredUnackedOldestSeconds = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace, Name: "delivered_unacked_oldest_seconds",
-		Help: "Age since last delivery of the oldest delivered-but-unacked item (leader-only; the real 'stuck' signal).",
+		Help: "Age since last delivery of the oldest delivered-but-unacked item among those delivered within the last 24h " +
+			"(leader-only; the real 'stuck' signal).",
 	})
 	openItems = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace, Name: "open_items",
@@ -124,11 +136,14 @@ var (
 	})
 	maxDeliveryCount = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace, Name: "max_delivery_count",
-		Help: "Highest delivery_count among PENDING items (leader-only; >= 5 suggests a poison message).",
+		Help: "Highest delivery_count among PENDING items last delivered within the last 24h (leader-only; >= 5 suggests a poison message).",
 	})
+	// 补发失败会把 notify_due_ms 推到未来(退避,评审 L6),所以积压按「流行最后一次写入」起算,不看 notify_due_ms 本身:
+	// Kafka 长时间写不进时,退避中的流照样计入。
 	notifyBacklog = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace, Name: "notify_backlog",
-		Help: "Streams whose online notify has been due for more than 5 minutes (leader-only scan).",
+		Help: "Streams whose online notify has stayed unsettled for more than 5 minutes since the stream's last write, " +
+			"backed-off retries included (leader-only scan).",
 	})
 
 	registerOnce sync.Once
@@ -151,6 +166,13 @@ func ObserveVoid(domain, reason, path string) { voidTotal.WithLabelValues(domain
 
 // ObserveNotify 记一次在线提醒尝试。
 func ObserveNotify(result string) { notifyTotal.WithLabelValues(result).Inc() }
+
+// notifyResults 是 notify_total{result} 的全部取值(Register 预建零值序列),与 inbox.NotifyResult.String 逐一对应
+// (inbox 的 TestNotifyResultLabelsArePreregistered 钉住两边不脱节)。
+var notifyResults = []string{"sent", "offline", "awaiting_placement", "no_node", "empty_uuid", "error", "nodes_unsynced", "node_ambiguous"}
+
+// NotifyResultLabels 返回 notify_total{result} 的全部取值(副本,调用方改了也不影响预建)。
+func NotifyResultLabels() []string { return append([]string(nil), notifyResults...) }
 
 // IncCursorAhead / IncFenceRegressed / IncEpochAhead 是 critical 级计数。
 func IncCursorAhead()    { cursorAheadTotal.Inc() }
@@ -182,9 +204,11 @@ func AddSweepDeleted(n int) {
 	}
 }
 
-// ScanGauges 是一次扫描型 gauge 的结果。
+// ScanGauges 是一次扫描型 gauge 的结果。DeliveredUnacked / DeliveredUnackedOldestSeconds / MaxDeliveryCount 只算
+// 最后投递在最近 24 小时内的行;更早的已投递未确认行只计入 DeliveredUnackedStale(评审 M4)。
 type ScanGauges struct {
 	DeliveredUnacked              uint64
+	DeliveredUnackedStale         uint64
 	DeliveredUnackedOldestSeconds float64
 	OpenItems                     uint64
 	OldestOpenAgeSeconds          float64
@@ -195,6 +219,7 @@ type ScanGauges struct {
 // SetScanGauges 写入领导者的一次扫描结果。
 func SetScanGauges(g ScanGauges) {
 	deliveredUnacked.Set(float64(g.DeliveredUnacked))
+	deliveredUnackedStale.Set(float64(g.DeliveredUnackedStale))
 	deliveredUnackedOldestSeconds.Set(g.DeliveredUnackedOldestSeconds)
 	openItems.Set(float64(g.OpenItems))
 	oldestOpenAgeSeconds.Set(g.OldestOpenAgeSeconds)
@@ -213,14 +238,15 @@ func Register(db *sql.DB) {
 			cursorAheadTotal, fenceRegressedTotal, epochAheadTotal,
 			reconcileInconsistentRows, reconcileTruncatedTotal, reconcileRoundsTotal, reconcileReadTotal,
 			sweepDeletedTotal, fetchScannedRows,
-			deliveredUnacked, deliveredUnackedOldestSeconds, openItems, oldestOpenAgeSeconds, maxDeliveryCount, notifyBacklog,
+			deliveredUnacked, deliveredUnackedStale, deliveredUnackedOldestSeconds, openItems, oldestOpenAgeSeconds,
+			maxDeliveryCount, notifyBacklog,
 		)
 		if db != nil {
 			// 连接池单独出池指标(设计 §9.4):go_sql_* 带 db_name="player_inbox"。
 			prometheus.MustRegister(collectors.NewDBStatsCollector(db, namespace))
 		}
 		// 预建 critical 计数器的零值序列:否则「从未发生」与「指标不存在」在告警规则里长得一样。
-		for _, r := range []string{"sent", "offline", "awaiting_placement", "no_node", "empty_uuid", "error"} {
+		for _, r := range notifyResults {
 			notifyTotal.WithLabelValues(r)
 		}
 		for _, r := range []string{"found", "absent", "error", "invalid"} {

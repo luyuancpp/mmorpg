@@ -1240,8 +1240,7 @@ void BattleRoomManager::ResolveRound(const uint64_t battleId)
 
     if (outcome != ::BATTLE_OUTCOME_ONGOING)
     {
-        FinishBattle(*room, outcome, ::SPECTATE_END_BATTLE_FINISHED);
-        EraseRoom(battleId);
+        if (FinishBattle(*room, outcome, ::SPECTATE_END_BATTLE_FINISHED)) EraseRoom(battleId);
     }
 }
 
@@ -1273,8 +1272,7 @@ void BattleRoomManager::OnBattleDeadline(const uint64_t battleId)
     }
     // 观众侧 deadline 强制收尾归 ABORTED(player_battle.proto 枚举注释口径);
     // outcome 带上强制盖章结果,观众端可与参战者的平局结算对齐展示
-    FinishBattle(*room, outcome, ::SPECTATE_END_BATTLE_ABORTED);
-    EraseRoom(battleId);
+    if (FinishBattle(*room, outcome, ::SPECTATE_END_BATTLE_ABORTED)) EraseRoom(battleId);
 }
 
 void BattleRoomManager::ResendBattleConfirmed(const uint64_t battleId)
@@ -1386,8 +1384,14 @@ void BattleRoomManager::PumpResultCommits()
             continue;
         }
         // listener 只登记；所有副作用均在 poll 返回之后同一逻辑线程执行。
-        if (room->pendingFinalTurn) BroadcastTurnResult(*room, *room->pendingFinalTurn);
-        FinishBattle(*room, room->pendingResult.outcome(), room->pendingSpectateReason, &room->pendingResult);
+        contracts::kafka::BattleResultEvent committed;
+        if (!committed.ParseFromString(room->resultCommit->Payload()) || committed.battle_id() != battleId)
+        {
+            LOG_ERROR << "metric=battle_settlement_source_corrupt;no terminal dispatched";
+            continue;
+        }
+        if (!FinishBattle(*room, committed.outcome(), room->pendingSpectateReason, &committed))
+            continue;
         resultRooms_.erase(battleId);
         EraseRoom(battleId);
     }
@@ -1423,7 +1427,7 @@ void BattleRoomManager::StopResultCommits()
     resultAttempts_.clear(); resultReports_.clear(); resultRooms_.clear();
 }
 
-void BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome outcome,
+bool BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome outcome,
                                      const ::eSpectateEndReason spectateReason,
                                      const contracts::kafka::BattleResultEvent* committedResult)
 {
@@ -1440,14 +1444,15 @@ void BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome ou
         if (settlements.size() != room.routingByPlayer.size())
         {
             LOG_ERROR << "metric=battle_settlement_source_missing;no terminal dispatched";
-            return;
+            return false;
         }
         for (const auto& [playerId, routing] : room.routingByPlayer)
             if (!settlements.contains(playerId))
             {
                 LOG_ERROR << "metric=battle_settlement_source_member_mismatch;no terminal dispatched";
-                return;
+                return false;
             }
+        if (room.pendingFinalTurn) BroadcastTurnResult(room, *room.pendingFinalTurn);
     }
 
     for (const auto &[playerId, routing] : room.routingByPlayer)
@@ -1496,6 +1501,7 @@ void BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome ou
              << " fled=" << result.fled_player_ids_size()
              << " dead=" << result.dead_player_ids_size()
              << " activity_kind=" << ::eBattleActivityKind_Name(room.activityContext.kind());
+    return true;
 }
 
 void BattleRoomManager::BroadcastTurnResult(const BattleRoom &room, const ::TurnResultS2C &result)

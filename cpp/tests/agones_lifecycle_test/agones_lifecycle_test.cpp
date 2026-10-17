@@ -6,10 +6,12 @@
 #include <chrono>
 #include <condition_variable>
 #include <functional>
+#include <future>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <stop_token>
 #include <string>
 #include <thread>
 #include <vector>
@@ -32,6 +34,7 @@
 //
 // 2026-10-16:新增异步许可(AcquireAllocationPermitAsync,grpc-muduo-transport.md §15.9)用例,
 // 测试线程自建 muduo EventLoop,用 runAfter 收尾,不起额外线程、不写死循环。
+// 同日补 Stop() 有界返回(§15.16 第 1 条)用例:可取消的 fake 传输把 /allocate 卡到取消令牌置位为止。
 
 namespace
 {
@@ -2278,4 +2281,291 @@ TEST(AgonesAsyncPermitTest, DroppedPermitWithZeroUnitsReturnsToReady)
 	EXPECT_EQ(0, h.lifecycle.UnitCount());
 	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
 	EXPECT_EQ(1, sidecar->CallCount("/allocate"));
+}
+
+// ---------------------------------------------------------------------------
+// 2026-10-16 §15.16 第 1 条:Stop() 有界、快速返回 ——
+// 在途的可放弃请求随取消令牌中止,退避与重试立即退出;/shutdown 不中止。
+// ---------------------------------------------------------------------------
+
+namespace
+{
+	struct CancellableCounts
+	{
+		int allocateCalls = 0;
+		int allocateCancelled = 0;
+		int shutdownCalls = 0;
+		int shutdownCompleted = 0;
+		// /shutdown 收到的令牌是否可取消。必须恒为 false:Stop() 不得中止它。
+		bool shutdownTokenCancellable = false;
+		// 可放弃请求(/ready、/health、/allocate、GET /gameserver)收到不可取消令牌的次数。必须为 0。
+		int abandonableWithoutToken = 0;
+	};
+
+	// 可取消 sidecar 的共享状态。cv 用 condition_variable_any:它的 wait 接 stop_token,令牌置位即醒(C++20),
+	// 用来模拟 libcurl 进度回调中止在途请求 —— 卡住点完全由令牌或测试放行控制,不靠墙钟长等待。
+	struct CancellableSidecarState
+	{
+		std::mutex mutex;
+		std::condition_variable_any cv;
+		// /allocate:failAllocate 时立即返回传输失败;否则 holdAllocate 时卡到令牌置位或测试放行。
+		bool failAllocate = false;
+		bool holdAllocate = false;
+		bool allocateEntered = false;
+		// /shutdown:holdShutdown 时卡到测试放行。等待同样监听收到的令牌:实现若误带了可取消令牌,Stop() 会把它中止。
+		bool holdShutdown = false;
+		bool shutdownEntered = false;
+		CancellableCounts counts;
+	};
+
+	// 卡住点的兜底上限,只防实现回退(没把令牌传下来)时用例挂死:到点即返回失败,用例随后在耗时断言上失败。
+	constexpr auto kFakeHoldSafetyCap = 10s;
+
+	class CancellableTransport final : public agones::HttpTransport
+	{
+	public:
+		explicit CancellableTransport(std::shared_ptr<CancellableSidecarState> state)
+			: state_(std::move(state))
+		{
+		}
+
+		// 不可取消版本按空令牌处理:可放弃请求若走到这里,会被记为"没带令牌"。
+		agones::HttpResponse Post(const std::string& url,
+			const std::string& body,
+			const agones::HttpTimeouts& timeouts) override
+		{
+			return Post(url, body, timeouts, std::stop_token{});
+		}
+
+		agones::HttpResponse Get(const std::string& url, const agones::HttpTimeouts& timeouts) override
+		{
+			return Get(url, timeouts, std::stop_token{});
+		}
+
+		agones::HttpResponse Post(const std::string& url,
+			const std::string&,
+			const agones::HttpTimeouts&,
+			std::stop_token cancel) override
+		{
+			std::unique_lock<std::mutex> lock(state_->mutex);
+			CancellableCounts& counts = state_->counts;
+			if (url.find("/shutdown") != std::string::npos)
+			{
+				++counts.shutdownCalls;
+				counts.shutdownTokenCancellable = counts.shutdownTokenCancellable || cancel.stop_possible();
+				if (state_->holdShutdown)
+				{
+					state_->shutdownEntered = true;
+					state_->cv.notify_all();
+					if (!state_->cv.wait_for(lock, cancel, kFakeHoldSafetyCap, [this] { return !state_->holdShutdown; }))
+					{
+						return Failed("fake: shutdown aborted");
+					}
+				}
+				++counts.shutdownCompleted;
+				return Succeeded();
+			}
+
+			if (!cancel.stop_possible())
+			{
+				++counts.abandonableWithoutToken;
+			}
+			if (url.find("/allocate") != std::string::npos)
+			{
+				++counts.allocateCalls;
+				if (state_->failAllocate)
+				{
+					return Failed("fake: allocate rejected");
+				}
+				if (state_->holdAllocate)
+				{
+					state_->allocateEntered = true;
+					state_->cv.notify_all();
+					if (!state_->cv.wait_for(lock, cancel, kFakeHoldSafetyCap, [this] { return !state_->holdAllocate; }))
+					{
+						if (cancel.stop_requested())
+						{
+							++counts.allocateCancelled;
+							return Failed("fake: allocate cancelled");
+						}
+						return Failed("fake: hold safety cap reached");
+					}
+				}
+			}
+			return Succeeded();
+		}
+
+		agones::HttpResponse Get(const std::string&, const agones::HttpTimeouts&, std::stop_token cancel) override
+		{
+			std::lock_guard<std::mutex> lock(state_->mutex);
+			if (!cancel.stop_possible())
+			{
+				++state_->counts.abandonableWithoutToken;
+			}
+			return Failed("fake: no gameserver");
+		}
+
+	private:
+		static agones::HttpResponse Succeeded()
+		{
+			agones::HttpResponse response;
+			response.transportOk = true;
+			response.statusCode = 200;
+			return response;
+		}
+
+		static agones::HttpResponse Failed(const char* error)
+		{
+			agones::HttpResponse response;
+			response.error = error;
+			return response;
+		}
+
+		std::shared_ptr<CancellableSidecarState> state_;
+	};
+
+	CancellableCounts Counts(CancellableSidecarState& state)
+	{
+		std::lock_guard<std::mutex> lock(state.mutex);
+		return state.counts;
+	}
+
+	// 等 /allocate 卡在 sidecar 里。等不到就放行,免得断言失败后 worker 卡住。
+	bool WaitCancellableAllocateEntered(CancellableSidecarState& state)
+	{
+		std::unique_lock<std::mutex> lock(state.mutex);
+		const bool entered = state.cv.wait_for(lock, 3000ms, [&state] { return state.allocateEntered; });
+		if (!entered)
+		{
+			state.holdAllocate = false;
+			state.cv.notify_all();
+		}
+		return entered;
+	}
+
+	// 等 /shutdown 卡在 sidecar 里。等不到就放行。
+	bool WaitShutdownEntered(CancellableSidecarState& state)
+	{
+		std::unique_lock<std::mutex> lock(state.mutex);
+		const bool entered = state.cv.wait_for(lock, 3000ms, [&state] { return state.shutdownEntered; });
+		if (!entered)
+		{
+			state.holdShutdown = false;
+			state.cv.notify_all();
+		}
+		return entered;
+	}
+
+	void ReleaseShutdown(CancellableSidecarState& state)
+	{
+		{
+			std::lock_guard<std::mutex> lock(state.mutex);
+			state.holdShutdown = false;
+		}
+		state.cv.notify_all();
+	}
+
+} // namespace
+
+// allocate 在途时于 loop 线程上 Stop():在途请求随取消令牌中止,Stop 远早于 allocate 最坏耗时返回
+// (本例不中止就要等 fake 的 10s 兜底上限,再加 10s 退避);异步等待者恰好被拒绝一次,在途许可归零,不再重试。
+TEST(AgonesStopCancelTest, StopAbortsInFlightAllocateAndRefusesWaiterOnce)
+{
+	auto state = std::make_shared<CancellableSidecarState>();
+	state->holdAllocate = true;
+	auto options = FastOptions();
+	options.allocateMaxAttempts = 3;
+	options.allocateRetryBackoff = 10000ms;
+	options.allocateWaitTimeout = 30000ms; // 等待者只能由 Stop 裁决,不让超时定时器抢先
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<CancellableTransport>(state), "http://127.0.0.1:9358", options);
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+
+	auto outcome = std::make_shared<PermitOutcome>();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(outcome));
+	ASSERT_TRUE(WaitCancellableAllocateEntered(*state));
+	EXPECT_EQ(agones::LifecycleState::Allocating, h.lifecycle.State());
+
+	const auto begin = std::chrono::steady_clock::now();
+	h.lifecycle.Stop();
+	const long long stopMs = ElapsedMs(begin);
+	EXPECT_EQ(0, outcome->calls); // 拒绝排进 loop 队列,不在 Stop 栈内回调
+
+	ASSERT_TRUE(RunLoopUntil(h.loop, [&] { return outcome->calls > 0; }, 3000ms));
+	RunLoopFor(h.loop, 30ms);
+
+	EXPECT_LT(stopMs, 1000);
+	EXPECT_EQ(1, outcome->calls);
+	EXPECT_FALSE(outcome->granted);
+	EXPECT_EQ(agones::LifecycleState::Stopped, h.lifecycle.State());
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+	const CancellableCounts counts = Counts(*state);
+	EXPECT_EQ(1, counts.allocateCalls);
+	EXPECT_EQ(1, counts.allocateCancelled);
+	EXPECT_EQ(0, counts.abandonableWithoutToken);
+}
+
+// allocate 失败、进入重试退避时 Stop():退避立即被打断,不再发起新的 /allocate;等待者恰好被拒绝一次。
+// Stop 落在"失败返回之后、进入退避之前"还是"退避之中"取决于调度,两种情况结论相同。
+TEST(AgonesStopCancelTest, StopDuringAllocateBackoffDoesNotRetry)
+{
+	auto state = std::make_shared<CancellableSidecarState>();
+	state->failAllocate = true;
+	auto options = FastOptions();
+	options.allocateMaxAttempts = 3;
+	options.allocateRetryBackoff = 10000ms; // 远长于断言窗口:只有被 Stop 打断才回得来
+	options.allocateWaitTimeout = 30000ms;
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<CancellableTransport>(state), "http://127.0.0.1:9358", options);
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+
+	auto outcome = std::make_shared<PermitOutcome>();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(outcome));
+	ASSERT_TRUE(WaitUntil([&] { return Counts(*state).allocateCalls >= 1; }, 3000ms));
+
+	const auto begin = std::chrono::steady_clock::now();
+	h.lifecycle.Stop();
+	const long long stopMs = ElapsedMs(begin);
+
+	ASSERT_TRUE(RunLoopUntil(h.loop, [&] { return outcome->calls > 0; }, 3000ms));
+	RunLoopFor(h.loop, 30ms);
+
+	EXPECT_LT(stopMs, 1000);
+	EXPECT_EQ(1, outcome->calls);
+	EXPECT_FALSE(outcome->granted);
+	EXPECT_EQ(agones::LifecycleState::Stopped, h.lifecycle.State());
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+	const CancellableCounts counts = Counts(*state);
+	EXPECT_EQ(1, counts.allocateCalls);
+	EXPECT_EQ(0, counts.abandonableWithoutToken);
+}
+
+// /shutdown 是进程决定自我终止时必须送达的最终请求:不带可取消令牌,Stop() 不中止它,等它完成才返回。
+TEST(AgonesStopCancelTest, StopDoesNotAbortInFlightShutdown)
+{
+	auto state = std::make_shared<CancellableSidecarState>();
+	state->holdShutdown = true;
+	agones::GameServerLifecycle lifecycle;
+	lifecycle.Start(std::make_unique<CancellableTransport>(state), "http://127.0.0.1:9358", FastOptions());
+	ASSERT_TRUE(lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+
+	lifecycle.RequestShutdown();
+	const bool entered = WaitShutdownEntered(*state);
+
+	std::future<void> stopped = std::async(std::launch::async, [&lifecycle] { lifecycle.Stop(); });
+	// /shutdown 卡住期间 Stop 不得返回。实现若误给它挂上可取消令牌,fake 的等待会随令牌醒来,Stop 很快就回来;
+	// 正确实现在这个窗口里必然还在 join,窗口长短只影响能否抓到回退,不会让正确实现失败。
+	const bool stopReturnedWhileHeld = stopped.wait_for(100ms) == std::future_status::ready;
+	ReleaseShutdown(*state);
+	const bool stopReturned = stopped.wait_for(5000ms) == std::future_status::ready;
+
+	ASSERT_TRUE(entered);
+	EXPECT_FALSE(stopReturnedWhileHeld);
+	ASSERT_TRUE(stopReturned);
+	EXPECT_EQ(agones::LifecycleState::Stopped, lifecycle.State());
+	const CancellableCounts counts = Counts(*state);
+	EXPECT_EQ(1, counts.shutdownCalls);
+	EXPECT_EQ(1, counts.shutdownCompleted);
+	EXPECT_FALSE(counts.shutdownTokenCancellable);
+	EXPECT_EQ(0, counts.abandonableWithoutToken);
 }
