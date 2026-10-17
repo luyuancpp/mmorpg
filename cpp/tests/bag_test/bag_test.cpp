@@ -4070,7 +4070,10 @@ TEST(BagSegmentNotReadyTest, StackableSpillNeverEvictsWhenSegmentIsUnavailable)
 // vector 重载的三种形状:需铸号拒绝 / 全预设可按最终规划淘汰 / 全预设且放得下。
 TEST(BagSegmentNotReadyTest, VectorBatchEvictsOnlyWhenNoMintingIsNeeded)
 {
-    ASSERT_FALSE(ItemStore::CanMintGuid()) << "本用例依赖前面的用例已把 item 号段置为不可用";
+    // 自己建立未领段状态,退出时恢复基线,单独运行也不依赖其他用例。
+    ScopedItemSegmentOverride item;
+    item.item().Warm();
+    ASSERT_FALSE(ItemStore::CanMintGuid());
 
     Bag bag;
     bag.SetProfile(BagProfile::Temporary(2));
