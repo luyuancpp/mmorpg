@@ -230,9 +230,9 @@ compositeScore = rating_centi × 2^32 + (2^32 − 1 − (updated_sec − EPOCH))
 
 | 指标 | label | 用途 |
 |---|---|---|
-| `rank_write_total` | `outcome` ∈ written / stale(版本不新) / gen_reset(match 侧代际变了,覆盖写) / out_of_range / invalid(反序列化失败或快照字段为 0,永久跳过;2026-10-16 落码补,§12.3 偏差第 7 条) / error | 写入健康;`stale` 比例反映重放 / 乱序程度;`gen_reset` 非零说明 match 评分键丢过(§3.5)。⚠ Redis 变慢时 go-zero 客户端会重发已生效的写 Lua,重发那次读到新版本、记成 stale:此时 written / gen_reset 偏低、stale 偏高,只作趋势 |
+| `rank_write_total` | `outcome` ∈ written / stale(版本不新) / gen_reset(match 侧代际变了,覆盖写) / out_of_range / invalid(反序列化失败或快照字段为 0,永久跳过;2026-10-16 落码补,§12.3 偏差第 7 条) / malformed_version(某个玩家的版本值被手写坏,永久跳过;2026-10-17 补,同上) / error(瞬时写失败,每次失败的尝试记一次,重试不跳过) | 写入健康;`stale` 比例反映重放 / 乱序程度;`gen_reset` 非零说明 match 评分键丢过(§3.5)。⚠ Redis 变慢时 go-zero 客户端会重发已生效的写 Lua,重发那次读到新版本、记成 stale:此时 written / gen_reset 偏低、stale 偏高,只作趋势 |
 | `rank_consume_errors_total` | 无 | 消费失败(反序列化 / Redis 写失败)次数 |
-| `rank_last_consume_unixtime` | 无 | gauge,每**成功处理**一条消息写入 `time.Now().Unix()`;消费者卡死 / 再均衡卡住时它停住,告警①靠它 |
+| `rank_last_consume_unixtime` | 无 | gauge,每条消息处理到终态(写入 / stale / 永久跳过)写入 `time.Now().Unix()`,**消费循环启动时先写一次启动时刻**(2026-10-17 补,§12.3 偏差第 10 条);消费者卡死 / 再均衡卡住时它停住,告警①靠它 |
 | `rank_consume_lag_seconds` | 无 | `now − finished_at_ms`,榜的新鲜度。**只在收到消息时更新**,卡死时停在最后一次正常值,**不能**用来发现卡死 |
 | `rank_read_total` | `method`、`outcome` | 读路径 |
 | `rank_read_duration_seconds` | `method` | 读延迟 |
@@ -248,11 +248,12 @@ match 侧新增 `match_rating_snapshot_publish_total{outcome}`(ok / error;**按�
 | # | 名称 | 表达式(草案) | 级别 | 说明 |
 |---|---|---|---|---|
 | ① | RankConsumerStalled | `sum(increase(match_rating_snapshot_publish_total{outcome="ok"}[15m])) > 0 and (time() - max(rank_last_consume_unixtime)) > 900` | critical | **必须以"match 这 15 分钟确实发过"为前提**:只看 `time() - rank_last_consume_unixtime` 会在深夜没人打排位、或开关为 false 时误报。rank 看不到 match 的开关,用 match 的发布计数代替"开关打开且有流量" |
-| ② | RankWriteFailing | `sum(rate(rank_write_total{outcome=~"error\|out_of_range\|invalid"}[5m])) > 0` | warning | out_of_range 理论上不可能出现,出现即 bug;invalid 是上游契约被破坏、整片消息被永久跳过 —— 跳过时 `rank_last_consume_unixtime` 照常前进,告警①看不见,只能靠这一条(2026-10-16 落码补) |
+| ② | RankWriteFailing | `sum(rate(rank_write_total{outcome="error"}[5m])) > 0`,`for: 10m` | warning | 只看瞬时的 error(RankRedis 不可达、写满):持续 10 分钟才报,一次抖动不报。〔2026-10-17 拆分:永久跳过的三档挪到 ②b,原因见 ②b〕 |
+| ②b | RankWriteSkipped | `sum(increase(rank_write_total{outcome=~"invalid\|out_of_range\|malformed_version"}[15m])) > 0 or sum(rank_write_total{outcome=~"invalid\|out_of_range\|malformed_version"} and on(instance) (time() - process_start_time_seconds) < 900) > 0`,`for: 0m` | warning | 永久跳过出现一次就报:out_of_range 理论上不可能出现,出现即 bug;invalid 是上游契约被破坏;malformed_version 是版本表被手写坏、要人修。跳过时 `rank_last_consume_unixtime` 照常前进,告警①看不见。写成 `rate > 0` + `for: 10m` 时,不足 5 分钟的一阵跳过永远满足不了 `for`(2026-10-17 复审补)。`or` 后半句补进程刚起的窗口:预建的 0 值序列只有在第一次被抓取之前没涨过才有用,新 Pod 起来几秒内就跳过的话第一个样本已是 1,`increase()` 看不到(2026-10-17 复审补) |
 | ③ | MatchRatingSnapshotPublishFailing | `sum(rate(match_rating_snapshot_publish_total{outcome="error"}[5m])) / sum(rate(match_rating_snapshot_publish_total[5m])) > 0.05` | warning | 发布失败会被重试吸收,持续 >5% 说明 Kafka 侧有问题 |
 | ④ | RankBoardShrunk | `max(rank_board_size) < 0.9 * max_over_time(max(rank_board_size)[1h:1m])` | critical | 榜只增不减(v1 无删除),缩水 = Redis 丢失 / 淘汰。注意 PromQL 子查询必须写 `[1h:1m]`,`[1h]` 对聚合结果是语法错误 |
 | ⑤ | RankReadFaults | `sum(rate(rank_read_total{outcome="fault"}[5m])) / sum(rate(rank_read_total[5m])) > 0.05` | warning | outcome 取值落码时与 `serverbase.TipVerdict` 的分类对齐 |
-| ⑥ | MatchRatingGenReset | `sum(increase(rank_write_total{outcome="gen_reset"}[15m])) > 0` | warning | match 评分键丢过;非压测环境出现即查 MatchRedis 的淘汰策略。Redis 变慢时 gen_reset 可能被记成 stale(见 §3.6;那次连 ERROR 日志也不打),本条可能漏报 |
+| ⑥ | MatchRatingGenReset | `sum(increase(rank_write_total{outcome="gen_reset"}[15m])) > 0 or sum(rank_write_total{outcome="gen_reset"} and on(instance) (time() - process_start_time_seconds) < 900) > 0` | warning | match 评分键丢过;非压测环境出现即查 MatchRedis 的淘汰策略。Redis 变慢时 gen_reset 可能被记成 stale(见 §3.6;那次连 ERROR 日志也不打),本条可能漏报 |
 
 ---
 
@@ -670,13 +671,17 @@ R2b(部署登记、`rank-smoke`、告警文件、MessageLimiter)与 R3(客户端
 5. **永久错误多了"版本值被手写坏"一类**(`data.ErrMalformedVersion`):只坏一个成员时跳过,不卡整个分区;整键类型错(WRONGTYPE)不归这类,卡住等人修。
 6. **瞬时写错误不跳过**(match 的结果消费者是重试 3 次后跳过):投影消费者跳过 = 这条快照要等该玩家下一局才自愈,而 Redis 宕机期间每条都会被跳过;
    卡住由 RankConsumerStalled 告警兜着。
-7. **`rank_write_total` 多一档 `invalid`**(§3.6 原表没有):反序列化失败与快照字段为 0 都记它(永久跳过);某个玩家的版本值被手写坏记 `error`(也永久跳过,
-   需要人修)。告警②的表达式相应加上 `invalid`(复审补:跳过会推进 `rank_last_consume_unixtime`,只靠告警①看不见整片坏消息)。
+7. **`rank_write_total` 多两档 `invalid` / `malformed_version`**(§3.6 原表没有):反序列化失败与快照字段为 0 记 `invalid`;某个玩家的版本值被手写坏记
+   `malformed_version`(2026-10-17 复审改:原先记 `error`,与瞬时写失败混在一起,告警分不出"跳过了一条"与"Redis 一直写不进")。三类永久跳过由告警 ②b
+   出现一次就报(跳过会推进 `rank_last_consume_unixtime`,只靠告警①看不见),瞬时的 `error` 由告警②持续 10 分钟才报。
 8. **gen_reset 一律按新代际的时刻重写时间分量**(§3.2 第 3 步原文没限定"同代际"):旧代际的"达到时刻"属于评分键丢失前的历史,新代际从这一刻重新算。
 9. **停机时有上限地等消费 goroutine 离组**(复审补):不等的话进程先退出、broker 收不到离组,其余副本要等会话超时(30s)才接管分区。
    上限取 min(4s, 从开始收尾算起的截止点 − 当前),截止点 = HardTimeout − FinishTimeout − 2s:消费者从 ctx 取消起就与注销、排空并行退出,
    前两步用满时 wait 不再阻塞,串行最坏仍在 24s 硬截止之内(`consumer_handle_test.go` 钉住)。后台重试在声明 topic 期间遇上停机时不再建 reader 入组
    (admin 调用不认 ctx;建 reader 会立刻 JoinGroup、触发全组再均衡)。
+10. **`rank_last_consume_unixtime` 在消费循环启动时先写一次**(2026-10-17 复审补,照 mail 的 sweep 指标):不写的话新进程在第一条消息之前一直是 0,
+   安静期里滚动发布一次(两个副本都换掉),`max()` 就从 0 起算,告警①在 match 15 分钟内发过快照时误报 critical;写了之后,起来就卡住或一直没起来的
+   消费者照样在 15 分钟后被报出来。
 
 **本批实际跑过的**(Claude 执行,如实):全部 `.go` 过 gofmt;改动的 `.ps1` 过 `Parser::ParseFile`;`rank_postgen.py` 在 scratchpad 的仿真目录里连跑两次
 (第二次零改动,幂等);`match_event.proto` 窄面重生成前的基线逐字节一致。变基到 `1af63ad54c`(邮件启用链合入后)之后重跑:

@@ -123,6 +123,26 @@ func counterValue(t *testing.T, name string, labels map[string]string) float64 {
 	return 0
 }
 
+// gaugeValue 从默认 registry 读一个无 label 的 gauge 的当前值。
+func gaugeValue(t *testing.T, name string) float64 {
+	t.Helper()
+	metrics.Register()
+	families, err := prometheus.DefaultGatherer.Gather()
+	require.NoError(t, err)
+	for _, f := range families {
+		if f.GetName() != name {
+			continue
+		}
+		for _, m := range f.GetMetric() {
+			if g := m.GetGauge(); g != nil {
+				return g.GetValue()
+			}
+		}
+	}
+	t.Fatalf("metric %s not found", name)
+	return 0
+}
+
 func runOnce(t *testing.T, msgs []kafkago.Message, w *fakeWriter, sl *recordingSleep) *fakeSource {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -165,11 +185,14 @@ func TestConsumerWritesAndCommits(t *testing.T) {
 	require.Equal(t, reset0+1, counterValue(t, "rank_write_total", map[string]string{"outcome": metrics.WriteGenReset}))
 }
 
-// 永久错误(反序列化失败 / 快照非法 / 越界 / 版本值坏了):跳过并提交,不重试、不卡分区;每种按各自 outcome 计数。
-// 反序列化失败与快照非法同记 invalid:告警 RankWriteFailing 靠它发现"上游契约被破坏、整片消息被跳过"。
+// 永久错误(反序列化失败 / 快照非法 / 越界 / 版本值坏了):跳过并提交,不重试、不卡分区;每种按各自 outcome 计数,
+// 都不记进瞬时的 error(告警 RankWriteSkipped 按这三档出现一次就报,RankWriteFailing 只看持续的 error)。
+// 反序列化失败与快照非法同记 invalid。
 func TestConsumerSkipsPermanentErrors(t *testing.T) {
 	invalid0 := counterValue(t, "rank_write_total", map[string]string{"outcome": metrics.WriteInvalid})
 	oor0 := counterValue(t, "rank_write_total", map[string]string{"outcome": metrics.WriteOutOfRange})
+	malformed0 := counterValue(t, "rank_write_total", map[string]string{"outcome": metrics.WriteMalformedVersion})
+	error0 := counterValue(t, "rank_write_total", map[string]string{"outcome": metrics.WriteError})
 	errs0 := counterValue(t, "rank_consume_errors_total", nil)
 	w := &fakeWriter{results: []writeResult{
 		{data.WriteStale, fmt.Errorf("%w: player_id=0", data.ErrInvalidSnapshot)},
@@ -189,7 +212,28 @@ func TestConsumerSkipsPermanentErrors(t *testing.T) {
 	require.Empty(t, sl.waits, "永久错误不退避")
 	require.Equal(t, invalid0+2, counterValue(t, "rank_write_total", map[string]string{"outcome": metrics.WriteInvalid}), "反序列化失败 1 + 快照非法 1")
 	require.Equal(t, oor0+1, counterValue(t, "rank_write_total", map[string]string{"outcome": metrics.WriteOutOfRange}))
+	require.Equal(t, malformed0+1, counterValue(t, "rank_write_total", map[string]string{"outcome": metrics.WriteMalformedVersion}))
+	require.Equal(t, error0, counterValue(t, "rank_write_total", map[string]string{"outcome": metrics.WriteError}), "永久跳过不记进瞬时的 error")
 	require.Equal(t, errs0+4, counterValue(t, "rank_consume_errors_total", nil), "反序列化 1 + 三种永久写错误各 1")
+}
+
+// 消费循环一开始就写"最后消费时刻":新进程在第一条消息之前不能报 0(安静期滚动发布会让 RankConsumerStalled 误报)。
+func TestConsumerMarksStartTimeBeforeFirstMessage(t *testing.T) {
+	started := time.Unix(1_900_000_000, 0)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	src := &fakeSource{afterLast: cancel} // 一条消息都没有
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		runConsumer(ctx, src, &fakeWriter{results: []writeResult{{data.WriteWritten, nil}}}, func() time.Time { return started }, (&recordingSleep{}).sleep)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("消费循环没有退出")
+	}
+	require.Equal(t, float64(started.Unix()), gaugeValue(t, "rank_last_consume_unixtime"))
 }
 
 // 瞬时错误(RankRedis 不可达):不跳过,指数退避重试到成功,只提交一次。

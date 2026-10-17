@@ -125,6 +125,8 @@ func StartSnapshotConsumer(ctx context.Context, cfg ConsumerConfig, writer Snaps
 
 // runConsumer 拉取 → 处理到终态 → 提交,直到 ctx 结束。处理不到终态(ctx 在重试中结束)就不提交,下次从这条重来。
 func runConsumer(ctx context.Context, src messageSource, writer SnapshotWriter, now func() time.Time, sleep func(context.Context, time.Duration) bool) {
+	// 消费者起来就先写一次"最后消费时刻":否则新进程在第一条消息之前一直报 0,安静期里的一次滚动发布就会让 RankConsumerStalled 误报。
+	metrics.MarkConsumerStarted(now())
 	for {
 		msg, err := src.FetchMessage(ctx)
 		if err != nil {
@@ -158,7 +160,7 @@ func runConsumer(ctx context.Context, src messageSource, writer SnapshotWriter, 
 func handleMessage(ctx context.Context, msg kafkago.Message, writer SnapshotWriter, now func() time.Time, sleep func(context.Context, time.Duration) bool) bool {
 	event := &kafkapb.PlayerRatingSnapshotEvent{}
 	if err := proto.Unmarshal(msg.Value, event); err != nil {
-		// 与快照字段非法同记 invalid:一个计数器覆盖全部"上游契约被破坏、永久跳过"的消息,告警 RankWriteFailing 看得见
+		// 与快照字段非法同记 invalid:"上游契约被破坏、永久跳过"的消息出现一条就由告警 RankWriteSkipped 报出
 		// (跳过也推进 rank_last_consume_unixtime,只靠 RankConsumerStalled 会漏掉整片坏消息)。
 		metrics.ObserveWrite(metrics.WriteInvalid)
 		metrics.ObserveConsumeError()
@@ -221,8 +223,10 @@ func handleMessage(ctx context.Context, msg kafkago.Message, writer SnapshotWrit
 
 // permanentWriteError 判定写榜错误是否"再试也一样",是的话返回对应的 rank_write_total outcome。
 //   - ErrInvalidSnapshot:快照字段违反 match 的对外承诺(player_id / games / rating_gen 为 0);
-//   - ErrOutOfRange:分数或时间超出编码范围(理论上不可能,出现即缺陷,告警 RankWriteFailing);
+//   - ErrOutOfRange:分数或时间超出编码范围(理论上不可能,出现即缺陷);
 //   - ErrMalformedVersion:版本表里这一个玩家的值被手写坏了,只坏一个成员,要人修但不该卡住其他玩家。
+//
+// 三者各有自己的 outcome(不与瞬时的 error 混记),告警 RankWriteSkipped 出现一次就报。
 func permanentWriteError(err error) (string, bool) {
 	switch {
 	case errors.Is(err, data.ErrInvalidSnapshot):
@@ -230,7 +234,7 @@ func permanentWriteError(err error) (string, bool) {
 	case errors.Is(err, data.ErrOutOfRange):
 		return metrics.WriteOutOfRange, true
 	case errors.Is(err, data.ErrMalformedVersion):
-		return metrics.WriteError, true
+		return metrics.WriteMalformedVersion, true
 	}
 	return "", false
 }

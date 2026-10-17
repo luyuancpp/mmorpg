@@ -9406,3 +9406,11 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **证据与边界**：本机 `run/merge-validation-20261017/` 的 `cpp-final-summary.json`、`cpp-final-build-results.json`、`cpp-final-test-results.json`、XML/日志、资产和 Redis 红绿记录、生成保护报告、`post-generation/go-resume-summary.json`、`go-postgen-reuse-audit.json`、`related-go/summary.json`、rank/PowerShell 汇总均保留；首次失败和修复前结果独立备份。运行日志、临时文件及二进制不入库。未重启原有游戏服务、未清理业务数据库、未部署 K8s、未进行压测；邮件隔离两区验收由上面的独立记录说明，不混作本批精确构建证据。`git diff --check` 通过。
 - **Java 独立服务器版（AGENTS.md §12）**：待做，对应版本号无。本机 `D:\luyuan\xuanming-server-mmo` 不存在，无法核对或更新 `PARITY.md`；本批 Windows C++/Go 通过不代表独立 Java 版已对齐。
 - **提交检查补充**：上面的 `git diff --check` 针对已跟踪工作区差异通过；将新生成文件纳入暂存后，`git diff --cached --check` 仅报告 `cpp/generated/proto/rank/rank.grpc.pb.cc:88` 的文件末尾空行，这是正式 gRPC 生成器输出，未手改生成物，也不把暂存检查记为无告警。`git add -A` 因 third_party/grpc 嵌套 bloaty/abseil 的 Git 元数据仍引用旧 `D:/work/` 路径而中止，随后按已审查的 71 个文件精确暂存成功；没有修改或丢弃子模块内容及引用。
+## 2026-10-17 排行榜 go/rank 指标语义两处修正(R2b 告警复审发现;Claude,Go 未编译)
+
+- `rank_last_consume_unixtime` 在消费循环启动时先写一次启动时刻(照 mail 的 sweep 指标):原先新进程在第一条消息之前一直是 0,
+  安静期里滚动发布一次,告警 RankConsumerStalled 就会在 match 15 分钟内发过快照时误报 critical。
+- 版本值被手写坏(永久跳过)单独记 `rank_write_total{outcome="malformed_version"}`,不再与瞬时写失败 `error` 混记;
+  三类永久跳过由 R2b 分支上新拆出的告警 RankWriteSkipped 出现一次就报。设计 §3.6 / §3.7 / §12.3 偏差第 7、10 条已同步。
+- 测试:`TestConsumerSkipsPermanentErrors` 断言 malformed_version +1、error 不变;新增 `TestConsumerMarksStartTimeBeforeFirstMessage`。
+- **实际跑过的(Claude)**:gofmt。**Go 未编译、未跑测试**(构建方按设计 §12.4 一并跑 go/rank)。Java 版:待做(本机无 Java 仓)。

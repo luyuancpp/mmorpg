@@ -25,20 +25,23 @@ import (
 // subsystem 决定指标名前缀:rank_write_total / rank_read_total / …改它等于改全部指标名(告警按这些名字写)。
 const subsystem = "rank"
 
-// 写榜的 outcome label(§3.6;invalid 是落码时补的一档,见设计 §12.3 偏差第 7 条):
+// 写榜的 outcome label(§3.6;invalid / malformed_version 是落码时补的档,见设计 §12.3 偏差第 7 条):
 //   - written:同代际 games 更大或首次上榜;stale:版本不新(重放 / 乱序 / 旧代际残留;Redis 慢时 go-zero 的命令重试
 //     会把一次已生效的写重发一遍,重发那次读到新版本、返回 stale —— 此时 written / gen_reset 偏低、stale 偏高,只作趋势);
 //   - gen_reset:match 侧评分键丢过、新代际覆盖;out_of_range:分数 / 时间超出编码范围(理论上不可能,出现即 bug);
-//   - invalid:消息反序列化失败,或 player_id / games / rating_gen 为 0(match 的对外承诺被违反;都是永久跳过,
-//     告警 RankWriteFailing 覆盖它 —— 跳过时 rank_last_consume_unixtime 照常前进,RankConsumerStalled 看不见这类问题);
-//   - error:Redis 写失败(瞬时,退避重试)或某个玩家的版本值被手写坏(永久跳过)。
+//   - invalid:消息反序列化失败,或 player_id / games / rating_gen 为 0(match 的对外承诺被违反);
+//   - malformed_version:版本表里某一个玩家的值被手写坏了(要人修,只坏这一个成员,不卡其他玩家);
+//   - invalid / out_of_range / malformed_version 都是**永久跳过**:出现一次就由告警 RankWriteSkipped 报出 ——
+//     跳过时 rank_last_consume_unixtime 照常前进,RankConsumerStalled 看不见这类问题;
+//   - error:写榜的瞬时错误(RankRedis 不可达、写满等),每次失败的尝试记一次,退避重试、不跳过,持续出现由 RankWriteFailing 报。
 const (
-	WriteWritten    = "written"
-	WriteStale      = "stale"
-	WriteGenReset   = "gen_reset"
-	WriteOutOfRange = "out_of_range"
-	WriteInvalid    = "invalid"
-	WriteError      = "error"
+	WriteWritten          = "written"
+	WriteStale            = "stale"
+	WriteGenReset         = "gen_reset"
+	WriteOutOfRange       = "out_of_range"
+	WriteInvalid          = "invalid"
+	WriteMalformedVersion = "malformed_version"
+	WriteError            = "error"
 )
 
 // 读路径的 method / outcome label。outcome 与 serverbase.TipVerdict 的分类对齐:ok / rejected(业务拒绝)/ fault(故障)。
@@ -63,7 +66,7 @@ var (
 	writeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "write_total",
-		Help:      "Leaderboard snapshot writes by outcome (written|stale|gen_reset|out_of_range|invalid|error).",
+		Help:      "Leaderboard snapshot writes by outcome (written|stale|gen_reset|out_of_range|invalid|malformed_version|error).",
 	}, []string{"outcome"})
 
 	consumeErrorsTotal = prometheus.NewCounter(prometheus.CounterOpts{
@@ -75,7 +78,7 @@ var (
 	lastConsumeUnixtime = prometheus.NewGauge(prometheus.GaugeOpts{
 		Subsystem: subsystem,
 		Name:      "last_consume_unixtime",
-		Help:      "Unix time of the last successfully processed rating snapshot message; stops advancing when the consumer is stuck.",
+		Help:      "Unix time of the last rating snapshot message processed to a final state (written, stale or skipped); set to the start time when the consumer starts. Stops advancing when the consumer is stuck.",
 	})
 
 	consumeLagSeconds = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -118,7 +121,12 @@ func ObserveWrite(outcome string) { writeTotal.WithLabelValues(outcome).Inc() }
 // ObserveConsumeError 记一次消费失败(反序列化 / 写榜失败的一次尝试)。
 func ObserveConsumeError() { consumeErrorsTotal.Inc() }
 
-// MarkConsumed 在一条消息被成功处理(写入或判定 stale)后写当前时刻与消费延迟。finishedAtMs = 0 时不更新延迟。
+// MarkConsumerStarted 在消费循环开始时把 rank_last_consume_unixtime 写成当前时刻(照 mail 的 sweep 指标:进程启动先写一次)。
+// 不写的话新起的进程在第一条消息之前一直是 0:安静期里滚动发布一次,max() 就从 0 起算,告警 RankConsumerStalled 误报;
+// 写了之后,起来就卡住(或一直没起来)的消费者照样在一个告警窗口之后被报出来。
+func MarkConsumerStarted(now time.Time) { lastConsumeUnixtime.Set(float64(now.Unix())) }
+
+// MarkConsumed 在一条消息处理到终态(写入 / 判定 stale / 永久跳过)后写当前时刻与消费延迟。finishedAtMs = 0 时不更新延迟。
 func MarkConsumed(now time.Time, finishedAtMs uint64) {
 	lastConsumeUnixtime.Set(float64(now.Unix()))
 	if finishedAtMs == 0 {
@@ -148,7 +156,7 @@ func Register() {
 	registerOnce.Do(func() {
 		prometheus.MustRegister(writeTotal, consumeErrorsTotal, lastConsumeUnixtime, consumeLagSeconds,
 			readTotal, readDuration, nameLookupTotal, boardSize)
-		for _, outcome := range []string{WriteWritten, WriteStale, WriteGenReset, WriteOutOfRange, WriteInvalid, WriteError} {
+		for _, outcome := range []string{WriteWritten, WriteStale, WriteGenReset, WriteOutOfRange, WriteInvalid, WriteMalformedVersion, WriteError} {
 			writeTotal.WithLabelValues(outcome)
 		}
 		for _, outcome := range []string{ReadOK, ReadRejected, ReadFault} {
