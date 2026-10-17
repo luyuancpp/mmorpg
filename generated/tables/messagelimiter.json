@@ -515,6 +515,12 @@
    "max_requests": 3,
    "time_window": 1,
    "tip_message": 1000
+  },
+  {
+   "id": 275,
+   "max_requests": 5,
+   "time_window": 1,
+   "tip_message": 1000
   }
  ]
 }
