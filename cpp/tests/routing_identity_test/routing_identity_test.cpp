@@ -340,8 +340,9 @@ TEST(NodeEntityLookup, ZoneScopedLookupDoesNotAliasAcrossZones)
 // ===========================================================================
 //
 // 审计时 gate RoutePlayerMessage、scene RoutePlayerStringMsg、NodeHandshakeManager 的握手应答处理
-// 都拿对端带来的 node_type 选 registry(2026-10-15 起这三处都已不再这样做:Route 一族改为显式拒绝,
-// 握手应答按本端发起时的 nodeType 选 registry,见 docs/design/muduo-rpc-channel.md §8.3 / §9.3;
+// 都拿对端带来的 node_type 选 registry(2026-10-15 起这三处都已不再这样做:Route 一族已在批 7 从 proto 删除
+// (41/74/78/81 留墓碑,见 docs/design/muduo-rpc-channel.md §20),
+// 握手应答按本端发起时的 nodeType 选 registry,见 docs/design/muduo-rpc-channel.md §8.3;
 // 下面的用例锁的是 NodeContextManager 本身的边界,不依赖这些入口)。以前 NodeContextManager::GetRegistry 只有 assert,
 // Release 下 NDEBUG 抹掉它,越界读写 registries_ 之外的内存。
 // 现在分两类:外部输入走 TryGetRegistry(越界返回 nullptr,由入口拒绝);GetRegistry 只给可信内部调用方,
@@ -386,11 +387,11 @@ namespace
 	}
 } // namespace
 
-// GetRegistry 与全局实体三件套只给可信内部调用方用:越界是编程错误,任何构建下都必须当场终止,
+// GetRegistry 只给可信内部调用方用:越界是编程错误,任何构建下都必须当场终止,
 // 不能返回替身 registry 让调用方带着它照常往下跑(建 RpcClient、发起连接这类副作用照样会发生)。
 // NodeUtils 的节点查找内部走 GetRegistry,同样不接受未校验的 node_type:这正是对端输入的入口
 // 必须先 TryGetRegistry、再做查找的原因。
-// 修复前为红:Release 下 NDEBUG 抹掉 assert,越界读写 registries_ / globalEntities_ 之外的内存,子进程不死;
+// 修复前为红:Release 下 NDEBUG 抹掉 assert,越界读写 registries_ 之外的内存,子进程不死;
 // Debug 下子进程死于 assert,但 assert 文本里没有「NodeContextManager::<函数名>:」,正则不匹配。
 TEST(NodeContextManagerBoundsDeathTest, OutOfRangeNodeTypeIsFatalInEveryBuild)
 {
@@ -401,12 +402,6 @@ TEST(NodeContextManagerBoundsDeathTest, OutOfRangeNodeTypeIsFatalInEveryBuild)
 					 "NodeContextManager::GetRegistry: nodeType=")
 			<< "node_type=" << nodeType;
 	}
-	EXPECT_DEATH({ RouteMuduoLogToStderr(); manager->SetGlobalEntity(UINT32_MAX, entt::null); },
-				 "NodeContextManager::SetGlobalEntity: nodeType=");
-	EXPECT_DEATH({ RouteMuduoLogToStderr(); (void)manager->GetGlobalEntity(UINT32_MAX); },
-				 "NodeContextManager::GetGlobalEntity: nodeType=");
-	EXPECT_DEATH({ RouteMuduoLogToStderr(); (void)manager->GetOrCreateGlobalEntity(UINT32_MAX); },
-				 "NodeContextManager::GetOrCreateGlobalEntity: nodeType=");
 	EXPECT_DEATH({ RouteMuduoLogToStderr(); (void)NodeUtils::FindNodeEntityByZoneAndNodeId(kNodeTypeCount, 1, 1); },
 				 "NodeContextManager::GetRegistry: nodeType=");
 }
@@ -640,6 +635,7 @@ TEST(SceneRouteEntry, RebindSceneNodeAfterNodeRemovalCountsAsChanged)
     EXPECT_EQ((std::vector<uint32_t>{0}), forwarded);
 }
 
+// 类型契约固定用例：F033 为纯类型重构，改造前 64 位存储同样判 kChanged；守护将来收窄为 index/uint32 的回退，无修复前红。
 TEST(SceneRouteEntry, RecycledNodeIndexWithAnotherVersionCountsAsChanged)
 {
     entt::registry nodes;
@@ -1576,6 +1572,112 @@ TEST(LoginGeneration, LowerGenerationRouteIsStillForwarded)
               gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
     EXPECT_EQ((std::vector<StampedForward>{StampedForward{0u, kNewLoginGeneration}}), stamped);
     EXPECT_EQ(2001u, session.sceneId);
+}
+
+// ===========================================================================
+// 踢线身份栅栏 ClassifyKick(docs/design/scene-enter-chain-residuals.md §2.2 ④,余项 a)
+// ===========================================================================
+//
+// login 在 ReplaceLogin 提交之后经 KickPlayerEvent{session_id, player_id, login_generation} 踢旧会话。
+// 先过 ClassifyPush(玩家维度,未绑定 fail-closed),再比代次:会话已见过不小于踢线者的代次时不踢。
+
+namespace
+{
+    constexpr uint64_t kKickerGeneration = 1'760'000'000'200ull;
+} // namespace
+
+TEST(KickFence, MatchingPlayerKicks)
+{
+    EXPECT_EQ(gate_session_fence::KickVerdict::kKick,
+              gate_session_fence::ClassifyKick(kPlayerA, kKickerGeneration - 1, kPlayerA, kKickerGeneration));
+}
+
+// T3:会话号回绕 / node_id 复用后同号会话已属于别的玩家,旧 gate 只按 session_id 会踢到它。
+TEST(KickFence, OtherPlayerSkips)
+{
+    EXPECT_EQ(gate_session_fence::KickVerdict::kSkipOtherPlayer,
+              gate_session_fence::ClassifyKick(kPlayerB, 0, kPlayerA, kKickerGeneration));
+}
+
+// 未绑定玩家的会话 fail-closed,与 ClassifyPush 的 R13 口径一致(kInvalidGuid 与 0 都算未绑定)。
+TEST(KickFence, UnboundSessionSkips)
+{
+    EXPECT_EQ(gate_session_fence::KickVerdict::kSkipOtherPlayer,
+              gate_session_fence::ClassifyKick(kUnbound, 0, kPlayerA, kKickerGeneration));
+    EXPECT_EQ(gate_session_fence::KickVerdict::kSkipOtherPlayer,
+              gate_session_fence::ClassifyKick(0, 0, kPlayerA, kKickerGeneration));
+}
+
+// 旧版 login 的踢线不带 player_id:按 session_id 踢(旧行为),不比代次。
+TEST(KickFence, LegacyKickWithoutPlayerIsUnfenced)
+{
+    EXPECT_EQ(gate_session_fence::KickVerdict::kKickUnfenced,
+              gate_session_fence::ClassifyKick(kPlayerB, kKickerGeneration + 5, 0, 0));
+    EXPECT_EQ(gate_session_fence::KickVerdict::kKickUnfenced,
+              gate_session_fence::ClassifyKick(kUnbound, 0, 0, kKickerGeneration));
+}
+
+// T4:同一连接上更新的重登已经 Bind(会话代次更大),迟到的旧踢线不得踢掉它。等号只会出现在同一会话上,判不踢是安全方向。
+TEST(KickFence, SessionHostingNewerOrEqualLoginSkips)
+{
+    EXPECT_EQ(gate_session_fence::KickVerdict::kSkipNewerLogin,
+              gate_session_fence::ClassifyKick(kPlayerA, kKickerGeneration + 1, kPlayerA, kKickerGeneration));
+    EXPECT_EQ(gate_session_fence::KickVerdict::kSkipNewerLogin,
+              gate_session_fence::ClassifyKick(kPlayerA, kKickerGeneration, kPlayerA, kKickerGeneration));
+}
+
+TEST(KickFence, OlderSessionGenerationKicks)
+{
+    EXPECT_EQ(gate_session_fence::KickVerdict::kKick,
+              gate_session_fence::ClassifyKick(kPlayerA, 1, kPlayerA, kKickerGeneration));
+}
+
+// 踢线者代次为 0(只带 player_id 的版本):不比代次,玩家相符即踢。
+TEST(KickFence, ZeroKickerGenerationSkipsComparison)
+{
+    EXPECT_EQ(gate_session_fence::KickVerdict::kKick,
+              gate_session_fence::ClassifyKick(kPlayerA, kKickerGeneration, kPlayerA, 0));
+}
+
+// 会话没见过代次(旧版 login 的 Bind):0 ≥ gen 不成立,照踢。
+TEST(KickFence, LegacySessionGenerationZeroKicks)
+{
+    EXPECT_EQ(gate_session_fence::KickVerdict::kKick,
+              gate_session_fence::ClassifyKick(kPlayerA, 0, kPlayerA, kKickerGeneration));
+}
+
+// 不变量 4:loginGeneration 只经 ApplyLoginBinding / ApplyRouteIdentity 写入。ClassifyKick 按值读会话字段,
+// 判完之后会话的代次与玩家都不变,也不会被「抬高到踢线者的代次」。
+TEST(KickFence, ClassifyDoesNotTouchSessionGeneration)
+{
+    SessionInfo session;
+    session.playerId = kPlayerA;
+    session.loginGeneration = kKickerGeneration - 1;
+
+    const auto kicked = gate_session_fence::ClassifyKick(session.playerId, session.loginGeneration,
+                                                         kPlayerA, kKickerGeneration);
+    EXPECT_EQ(gate_session_fence::KickVerdict::kKick, kicked);
+    EXPECT_EQ(kKickerGeneration - 1, session.loginGeneration);
+    EXPECT_EQ(kPlayerA, session.playerId);
+
+    session.loginGeneration = kKickerGeneration + 1;
+    const auto skipped = gate_session_fence::ClassifyKick(session.playerId, session.loginGeneration,
+                                                          kPlayerA, kKickerGeneration);
+    EXPECT_EQ(gate_session_fence::KickVerdict::kSkipNewerLogin, skipped);
+    EXPECT_EQ(kKickerGeneration + 1, session.loginGeneration);
+}
+
+// 日志名互不相同,也不落进兜底的 "unknown"。
+TEST(KickFence, VerdictNamesAreDistinct)
+{
+    const std::set<std::string> names{
+        gate_session_fence::KickVerdictName(gate_session_fence::KickVerdict::kKick),
+        gate_session_fence::KickVerdictName(gate_session_fence::KickVerdict::kKickUnfenced),
+        gate_session_fence::KickVerdictName(gate_session_fence::KickVerdict::kSkipOtherPlayer),
+        gate_session_fence::KickVerdictName(gate_session_fence::KickVerdict::kSkipNewerLogin),
+    };
+    EXPECT_EQ(4u, names.size());
+    EXPECT_EQ(0u, names.count("unknown"));
 }
 
 int main(int argc, char **argv)

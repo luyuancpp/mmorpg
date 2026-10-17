@@ -84,4 +84,12 @@ const (
 	// ErrChannelSwitchCooldown: 距上一次主动切线还没过冷却(player:{id}:channel_switch_cooldown 仍在)。
 	// 被它拒绝不会刷新冷却,等键过期后重试即可。
 	ErrChannelSwitchCooldown uint32 = 24
+	// ErrPlacementSessionSuperseded: 落点会话身份已被更新的登录取代(docs/design/scene-enter-chain-residuals.md §5.2):
+	// 请求的 (session_id, login_generation) 比 location 记的身份旧(stale),或代次相等而会话不同(conflict,违反 G2)。
+	// 一个字节都没改;陈旧请求方不应以同一会话重试 —— 它所属的会话已被更新的登录取代。
+	// **只许在任何落点写之前返回**:唯一出处是 EnterScene 读完 location / epoch 之后、任何预占 / 补种 / 写入 / 路由
+	// 之前的 decidePlacementIdentity。C++ player_lifecycle.h 手抄为 kSmErrPlacementSessionSuperseded 并列入
+	// SmRejectedBeforeAnyPlacementWrite,依赖的正是这一点;在别处返回它之前先改那边的白名单。
+	// 与本文件其它码一样是 scene_manager 私有数轴,不是 tip 码。
+	ErrPlacementSessionSuperseded uint32 = 25
 )

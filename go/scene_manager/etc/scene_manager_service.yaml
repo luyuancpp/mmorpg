@@ -211,6 +211,9 @@ RebalanceCheckIntervalSeconds: 300
 # Drop world_channels:* sets for confIds no longer in World.json on every
 # fullSync. Refuses to run when the table looks empty (defensive). Disable
 # only if you share a Redis cluster across incompatible World.json versions.
+# 2026-10-16 起不再全库 SCAN:候选 zone 取 zone 登记集合 scene_manager:zones ∪ 有活节点的 zone,
+# 候选地图取 world_channels:desired:zone:{z} 的字段,全部点查。升级前遗留、从未登记的 zone 需要
+# 一次性补登记,命令见 docs/ops/scene-node-role-split.md §6.1。
 CleanupOrphanChannelsOnStartup: true
 
 # RPC 级热关停(shared/killswitch)规则在 etcd 里的前缀。

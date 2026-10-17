@@ -505,9 +505,23 @@ func TestIT_InvalidatePlayerCaches_DeletesLoginAndDbCacheKeys(t *testing.T) {
 			}
 		}
 	}
-	// 别人的键不能被误删。
+	// 别人的键不能被误删。资产 SQL 提交证据是 go/db 写的 hash,按真实类型造一把。
 	if err := shared.Set(ctx, "PlayerAllData:99999", "someone-else", 0).Err(); err != nil {
 		t.Fatal(err)
+	}
+	if err := shared.HSet(ctx, "player:{99999}:asset_sql_commit", "version", "v", "data", "d").Err(); err != nil {
+		t.Fatal(err)
+	}
+	// 本批玩家的证据键必须在删除清单里(db-write-fencing-mysql.md §6.6)。
+	for _, id := range ids {
+		evidence := fmt.Sprintf("player:{%d}:asset_sql_commit", id)
+		listed := false
+		for _, k := range playerCacheKeys(id, tables) {
+			listed = listed || k == evidence
+		}
+		if !listed {
+			t.Fatalf("删除清单漏了资产 SQL 提交证据键 %s", evidence)
+		}
 	}
 	n, err := invalidatePlayerCaches(ctx, shared, ids, tables, false)
 	if err != nil {
@@ -525,6 +539,9 @@ func TestIT_InvalidatePlayerCaches_DeletesLoginAndDbCacheKeys(t *testing.T) {
 	}
 	if v, _ := shared.Exists(ctx, "PlayerAllData:99999").Result(); v != 1 {
 		t.Error("an unrelated player's cache was deleted")
+	}
+	if v, _ := shared.Exists(ctx, "player:{99999}:asset_sql_commit").Result(); v != 1 {
+		t.Error("an unrelated player's asset SQL commit evidence was deleted")
 	}
 }
 
@@ -2891,5 +2908,46 @@ func TestIT_Gap_ClearHotState_SweepsZoneZeroLocationsBeforeDeletingScenes(t *tes
 	}
 	if n, _ := scene.Exists(ctx, "scene:502:zone").Result(); n != 1 {
 		t.Error("a target-zone scene key was deleted")
+	}
+}
+
+// TestIT_ClearHotState_RemovesZoneFromSceneManagerRegistry(2026-10-16):清热状态的最后一步把源 zone 从
+// scene_manager 的 zone 登记集合 scene_manager:zones 里摘掉;dry-run 只计数不动,别的 zone 一个不碰。
+func TestIT_ClearHotState_RemovesZoneFromSceneManagerRegistry(t *testing.T) {
+	itReset(t)
+	ctx := context.Background()
+	scene := itRedis(t, itSceneRD)
+	src := sourceZoneRegistryMember(itSrcZone)
+	if err := scene.SAdd(ctx, sceneManagerZonesKey, src, "999").Err(); err != nil {
+		t.Fatal(err)
+	}
+	isMember := func(m string) bool {
+		ok, err := scene.SIsMember(ctx, sceneManagerZonesKey, m).Result()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return ok
+	}
+
+	rep, err := clearSourceZoneHotState(ctx, scene, itSrcZone, nil, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.ZoneRegistryFound != 1 || rep.ZoneRegistryRemoved != 0 || !isMember(src) {
+		t.Fatalf("dry-run = %s, want found=1 removed=0 and the source zone still registered", rep)
+	}
+
+	rep, err = clearSourceZoneHotState(ctx, scene, itSrcZone, nil, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.ZoneRegistryFound != 1 || rep.ZoneRegistryRemoved != 1 {
+		t.Errorf("report = %s, want zone_registry(found=1 removed=1)", rep)
+	}
+	if isMember(src) {
+		t.Error("the source zone is still registered")
+	}
+	if !isMember("999") {
+		t.Error("another zone was removed from the registry")
 	}
 }

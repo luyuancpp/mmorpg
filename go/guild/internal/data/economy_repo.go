@@ -13,7 +13,8 @@ package data
 //  1. **写事务只走 GuildRepo.inTx**(90 part2 §2 第 1 条):READ COMMITTED、1213 / 9007 整事务重跑、
 //     1205 与子预算到期归一成 ErrWriteConflict、COMMIT 结果不明归一成 ErrWriteConflict。本文件不另写重试助手。
 //  2. **锁序**(guild_db.proto 文件头的全序,tables.go 同序):guild → guild_player_state → guild_member →
-//     guild_application → guild_player_op_seq → guild_asset_op → guild_daily_counter;同表多行按主键升序逐行取锁。
+//     guild_application → guild_player_op_seq → guild_asset_op → guild_daily_counter(→ T-D / T-S 最后插
+//     guild_client_request,全序末尾);同表多行按主键升序逐行取锁。
 //     guild 行在 T-D / T-S 里只做非锁定读:它只提供 zone 与等级,锁它会让同帮所有捐献在一把行锁上排队。
 //     锁定语句一律是**完整主键等值点操作**(2026-09-21 死锁修复契约 P3):
 //     - guild_member 上的锁定读与 UPDATE 带 `FORCE INDEX (PRIMARY)`:WHERE 同时钉死了 uk_guild_member(player_id),
@@ -55,8 +56,9 @@ import (
 // 资产两表的表名。唯一事实源是 proto/guild/guild_db.proto 的 OptionTableName;这里是手写 SQL 需要的字面量,
 // 改表名要两边同改(schemamigrate 按 proto 建表,漏改的表现是运行期 "table doesn't exist")。
 const (
-	guildPlayerOpSeqTable = "guild_player_op_seq"
-	guildAssetOpTable     = "guild_asset_op"
+	guildPlayerOpSeqTable   = "guild_player_op_seq"
+	guildAssetOpTable       = "guild_asset_op"
+	guildClientRequestTable = "guild_client_request"
 )
 
 // assetOpColumns 是 guild_asset_op 的全列,**顺序 = GuildAssetOpRecord 的 proto 字段序**(1..29)。
@@ -154,6 +156,14 @@ const (
 	// 改调 assetop.EnsureSeqRowTx(前置普通读保留)。在那之前两边不许悄悄分叉:
 	// TestEnsureSeqRowTx_MatchesAssetopEnsureSeqRow 在真库上逐列比对两条路径建出的行。
 	sqlEnsureSeqRow = "INSERT IGNORE INTO " + guildPlayerOpSeqTable + " (player_id, stream, next_seq, epoch, updated_ms) VALUES (?, ?, 1, ?, ?)"
+
+	// 客户端幂等键(guild_client_request,锁序位置 11;语义见 guild_db.proto 的 GuildClientRequestRecord)。两条都是完整主键等值。
+	// sqlSelectClientRequest 是**普通读**,事务前查重(ClientRequest)与事务内复核(checkClientRequestTx)共用:
+	// 事务内它排在锁住本人成员行之后,同一玩家的插入者都在那把锁上串行,RC 语句级快照看得见前一个持锁者已提交的行。
+	sqlSelectClientRequest = "SELECT `op_id` FROM " + guildClientRequestTable +
+		" WHERE `player_id` = ? AND `client_request_id` = ?"
+	sqlInsertClientRequest = "INSERT INTO " + guildClientRequestTable +
+		" (`player_id`, `client_request_id`, `op_id`, `created_ms`) VALUES (?, ?, ?, ?)"
 )
 
 // FenceFunc:合服闸门。nil = 不设闸;返回 ErrZoneMerging(或包它)= 拒绝。zone 一律取事务内读到的 guild.zone_id。
@@ -495,6 +505,8 @@ type DonationReserve struct {
 	NowMs                       uint64
 	Payload                     []byte // proto.Marshal(AssetBundle{Currencies:[{currency, cost}]}),非空
 	Fence                       FenceFunc
+	// ClientRequestID 是客户端幂等键;0 = 旧客户端,不查也不写去重记录(checkClientRequestTx / insertClientRequestTx)。
+	ClientRequestID uint64
 }
 
 // Reserved 是捐献预留的结果:本次分到的 (纪元, 流水号),同步投递要原样带给 scene。
@@ -522,12 +534,13 @@ func (in DonationReserve) validate() error {
 
 // ReserveDonation 捐献预留事务 T-D(05 §5.16,X-13 upsert 订正)。
 //
-// 事务 op=donate,锁序 guild(普通读)→ guild_member → seq(缺行先在事务内插)→ seq FOR UPDATE → op → counter:
-// 读帮会 zone / 等级 → 等级门槛 → 合服闸门 → 锁本人成员行 → 按需建 seq 行(GUILD_DEBIT,ensureSeqRowTx)→ 分 seq →
-// 写 PENDING 行(28 列全写)→ 占今日次数。
-// 错误语义:ErrGuildGone / ErrGuildLevelTooLow / ErrZoneMerging / ErrNotGuildMember /
+// 事务 op=donate,锁序 guild(普通读)→ guild_member → seq(缺行先在事务内插)→ seq FOR UPDATE → op → counter
+// → guild_client_request:
+// 读帮会 zone / 等级 → 等级门槛 → 合服闸门 → 锁本人成员行 → 复核去重记录(ClientRequestID 非 0 时)→
+// 按需建 seq 行(GUILD_DEBIT,ensureSeqRowTx)→ 分 seq → 写 PENDING 行(28 列全写)→ 占今日次数 → 写去重记录。
+// 错误语义:ErrGuildGone / ErrGuildLevelTooLow / ErrZoneMerging / ErrNotGuildMember / ErrClientRequestReplayed /
 // 包了 assetop.ErrTooManyPending 的错误(errors.Is 可判)/ ErrDonateLimit / ErrWriteConflict;其余为内部错误。
-// 任何拒绝都整体回滚:seq 不前进、行不落、次数不占(首次建出的 seq 行也随之回滚,下次再建,纪元取那一次的时刻)。
+// 任何拒绝都整体回滚:seq 不前进、行不落、次数不占、去重记录不写(首次建出的 seq 行也随之回滚,下次再建,纪元取那一次的时刻)。
 func (r *EconomyRepo) ReserveDonation(ctx context.Context, in DonationReserve) (Reserved, error) {
 	if err := in.validate(); err != nil {
 		return Reserved{}, err
@@ -557,6 +570,9 @@ func (r *EconomyRepo) ReserveDonation(ctx context.Context, in DonationReserve) (
 		}
 		if err != nil {
 			return fmt.Errorf("lock donating member %d of guild %d: %w", in.PlayerID, in.GuildID, err)
+		}
+		if err := checkClientRequestTx(ctx, tx, in.PlayerID, in.ClientRequestID); err != nil {
+			return err
 		}
 		// seq 行在成员行锁之下建(C2):同一 (p, DEBIT) 的建行者都已在这把锁上串行,见 ensureSeqRowTx。
 		if err := ensureSeqRowTx(ctx, tx, in.PlayerID, stream, in.NowMs); err != nil {
@@ -600,6 +616,9 @@ func (r *EconomyRepo) ReserveDonation(ctx context.Context, in DonationReserve) (
 		if limited {
 			return ErrDonateLimit
 		}
+		if err := insertClientRequestTx(ctx, tx, in.PlayerID, in.ClientRequestID, in.OpID, in.NowMs); err != nil {
+			return err
+		}
 		out = Reserved{Seq: alloc.Seq, StreamEpoch: alloc.Epoch}
 		return nil
 	})
@@ -623,6 +642,7 @@ type ShopReserve struct {
 	LeaseUntilMs, LeaseToken, NowMs uint64
 	Payload                         []byte // AssetBundle{Items:[{item_id, item_count*Count}]}
 	Fence                           FenceFunc
+	ClientRequestID                 uint64 // 客户端幂等键;0 = 旧客户端,不去重(同 DonationReserve.ClientRequestID)
 }
 
 // ShopReserved 是兑换预留的结果;BalanceAfter 是扣帮贡之后的可用余额(回包直接用,不再读一次)。
@@ -651,9 +671,10 @@ func (in ShopReserve) validate() error {
 // ReserveShopOrder 兑换预留事务 T-S(05 §5.17,X-13 upsert 订正)。
 //
 // 事务 op=shop,锁序 guild(普通读)→ guild_member → seq(缺行先在事务内插,GUILD_CREDIT,ensureSeqRowTx)→
-// seq FOR UPDATE → op → counter,最后回到已锁的成员行扣帮贡(同一行再次 UPDATE 不算新加锁)。
+// seq FOR UPDATE → op → counter,回到已锁的成员行扣帮贡(同一行再次 UPDATE 不算新加锁),最后写去重记录。
+// 去重记录的复核紧跟成员行锁、排在余额判断之前:首次请求刚把帮贡扣到不够第二份,放在后面重发会被误拒成"帮贡不足"。
 // 商店指令 deadline_ms 恒 0:物品属于玩家,永不中止。
-// 错误语义:ErrShopLimit / ErrGuildGone / ErrGuildLevelTooLow / ErrZoneMerging / ErrNotGuildMember /
+// 错误语义:ErrShopLimit / ErrGuildGone / ErrGuildLevelTooLow / ErrZoneMerging / ErrNotGuildMember / ErrClientRequestReplayed /
 // ErrContributionInsufficient / 包了 assetop.ErrTooManyPending 的错误 / ErrWriteConflict;其余为内部错误。
 func (r *EconomyRepo) ReserveShopOrder(ctx context.Context, in ShopReserve) (ShopReserved, error) {
 	if err := in.validate(); err != nil {
@@ -685,6 +706,9 @@ func (r *EconomyRepo) ReserveShopOrder(ctx context.Context, in ShopReserve) (Sho
 		}
 		if err != nil {
 			return fmt.Errorf("lock buying member %d of guild %d: %w", in.PlayerID, in.GuildID, err)
+		}
+		if err := checkClientRequestTx(ctx, tx, in.PlayerID, in.ClientRequestID); err != nil {
+			return err
 		}
 		if balance < in.Cost {
 			return ErrContributionInsufficient
@@ -744,6 +768,9 @@ func (r *EconomyRepo) ReserveShopOrder(ctx context.Context, in ShopReserve) (Sho
 		if affected != 1 {
 			return ErrContributionInsufficient
 		}
+		if err := insertClientRequestTx(ctx, tx, in.PlayerID, in.ClientRequestID, in.OpID, in.NowMs); err != nil {
+			return err
+		}
 		out = ShopReserved{Seq: alloc.Seq, StreamEpoch: alloc.Epoch, BalanceAfter: balance - in.Cost}
 		return nil
 	})
@@ -791,6 +818,51 @@ func ensureSeqRowTx(ctx context.Context, tx *sql.Tx, playerID uint64, stream ass
 	}
 	if _, err := tx.ExecContext(ctx, sqlEnsureSeqRow, playerID, uint32(stream), nowMs, nowMs); err != nil {
 		return fmt.Errorf("ensure %s row (player=%d stream=%d): %w", guildPlayerOpSeqTable, playerID, int32(stream), err)
+	}
+	return nil
+}
+
+// checkClientRequestTx 在 T-D / T-S 事务内、**已持本人成员行 X 锁之后**复核去重记录(客户端幂等键)。key 为 0(旧客户端)不查。
+// 读到 = 首次请求已提交 → ErrClientRequestReplayed,调用方整体回滚。
+//
+// 位置有两条硬约束:
+//   - 在成员行锁之后:同一玩家的去重记录插入者都先持他唯一的那一行成员行(uk_guild_member),
+//     拿到锁之后的 RC 普通读一定看得见前一个持锁者已提交的记录 —— 与 ensureSeqRowTx 同一条守卫论证;
+//   - 在任何"会被首次请求改变判定"的步骤之前(兑换的余额判断、seq 守卫、计数上限):首次请求刚把帮贡扣到不够、
+//     把次数占满,排在它们后面,重发就会被误拒成"帮贡不足 / 次数已满",而不是拿回首次结果。
+func checkClientRequestTx(ctx context.Context, tx *sql.Tx, playerID, clientRequestID uint64) error {
+	if clientRequestID == 0 {
+		return nil
+	}
+	var opID uint64
+	switch err := tx.QueryRowContext(ctx, sqlSelectClientRequest, playerID, clientRequestID).Scan(&opID); {
+	case err == nil:
+		return fmt.Errorf("%w (player=%d client_request_id=%d op=%d)", ErrClientRequestReplayed, playerID, clientRequestID, opID)
+	case errors.Is(err, sql.ErrNoRows):
+		return nil
+	default:
+		return fmt.Errorf("read %s (player=%d client_request_id=%d): %w", guildClientRequestTable, playerID, clientRequestID, err)
+	}
+}
+
+// insertClientRequestTx 是 T-D / T-S 的最后一步:登记 (玩家, 键) → op_id,与指令行、计数、扣帮贡同一个事务提交或回滚。
+// key 为 0 不写。created_ms 取预留事务的 now(= 指令行的 created_ms),清理按它判龄。
+//
+// 撞主键(1062)按 ErrClientRequestReplayed 处理:InnoDB 对未提交的同键插入是**等它结束**而不是报 1062,
+// 报 1062 说明对方已提交 —— 首次请求确实已写成。正常情况下到不了这里(checkClientRequestTx 在同一把成员行锁之下刚查过),
+// 出现即说明有不持成员行锁的插入者破坏了守卫;宁可整体回滚、让调用方回读首次结果,也不提交第二笔。
+// 驱动错误只以文本带上(%v),不让 inTx 把它当成可重跑的错误分类。
+func insertClientRequestTx(ctx context.Context, tx *sql.Tx, playerID, clientRequestID, opID, nowMs uint64) error {
+	if clientRequestID == 0 {
+		return nil
+	}
+	if _, err := tx.ExecContext(ctx, sqlInsertClientRequest, playerID, clientRequestID, opID, nowMs); err != nil {
+		if isDuplicateKey(err) {
+			return fmt.Errorf("%w: insert %s collided (player=%d client_request_id=%d op=%d): %v",
+				ErrClientRequestReplayed, guildClientRequestTable, playerID, clientRequestID, opID, err)
+		}
+		return fmt.Errorf("insert %s (player=%d client_request_id=%d op=%d): %w",
+			guildClientRequestTable, playerID, clientRequestID, opID, err)
 	}
 	return nil
 }
@@ -1038,4 +1110,44 @@ func (r *EconomyRepo) OpState(ctx context.Context, opID uint64) (OpState, bool, 
 	}
 	state.Status = pb.GuildAssetOpStatus(status)
 	return state, true, nil
+}
+
+// ClientRequestHit 是一条去重记录与它指向的指令行。
+type ClientRequestHit struct {
+	OpID uint64
+	// OpFound=false:去重记录在、指令行不在。清理保证去重记录先于(至多同时于)指令行过期,所以只可能是人工删库
+	// 或清理恰好删了指令行、还没来得及删去重记录(下一轮就删)。调用方不能据此重新执行,只能拒绝。
+	OpFound bool
+	Op      AssetOpRow
+}
+
+// ClientRequest 按 (玩家, 客户端幂等键) 查首次请求的去重记录,再按主键读它指向的整行指令。两次都是主键等值普通读。
+// found=false = 没有去重记录:首次请求没有写成指令(被拒绝 / 还没提交),或记录已过保留期被清理。
+// clientRequestID 为 0 时不查库,恒回 found=false(旧客户端不去重)。
+func (r *EconomyRepo) ClientRequest(ctx context.Context, playerID, clientRequestID uint64) (ClientRequestHit, bool, error) {
+	if clientRequestID == 0 {
+		return ClientRequestHit{}, false, nil
+	}
+	ctx, cancel := context.WithTimeout(ctx, economyReadBudget)
+	defer cancel()
+	var hit ClientRequestHit
+	err := r.db.QueryRowContext(ctx, sqlSelectClientRequest, playerID, clientRequestID).Scan(&hit.OpID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ClientRequestHit{}, false, nil
+	}
+	if err != nil {
+		return ClientRequestHit{}, false, fmt.Errorf("read %s (player=%d client_request_id=%d): %w",
+			guildClientRequestTable, playerID, clientRequestID, err)
+	}
+	rec, err := scanAssetOpRecord(r.db.QueryRowContext(ctx, sqlSelectAssetOpByID, hit.OpID))
+	if errors.Is(err, sql.ErrNoRows) {
+		return hit, true, nil
+	}
+	if err != nil {
+		return ClientRequestHit{}, false, fmt.Errorf("read %s %d of client request (player=%d client_request_id=%d): %w",
+			guildAssetOpTable, hit.OpID, playerID, clientRequestID, err)
+	}
+	hit.OpFound = true
+	hit.Op = assetOpRowFrom(rec)
+	return hit, true, nil
 }

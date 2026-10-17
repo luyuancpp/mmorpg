@@ -4,7 +4,7 @@
 #include "thread_context/ecs_context.h"
 #include "muduo/base/LogStream.h"
 
-// 日志中统一同时标识业务玩家号与完整 actor 句柄;两者不能冒充或相互截断。
+// 日志标识 actor 的唯一写法，同时记录业务玩家号与完整句柄；两者不能冒充或相互截断。
 struct ActorLogTag
 {
     Guid playerId{0};
@@ -13,15 +13,7 @@ struct ActorLogTag
 
 [[nodiscard]] inline ActorLogTag ActorLog(entt::entity actor)
 {
-    Guid playerId = 0;
-    if (tlsEcs.actorRegistry.valid(actor))
-    {
-        if (const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(actor))
-        {
-            playerId = guid->value;
-        }
-    }
-    return {playerId, actor};
+    return {tlsEcs.GetPlayerId(actor), actor};
 }
 
 inline muduo::LogStream& operator<<(muduo::LogStream& stream, const ActorLogTag& actor)

@@ -31,6 +31,7 @@ ServerConfig:
     TopicGeneration: 1
     PartitionCnt: 10 # ⚠️ MIRROR of go/login/etc/login.yaml Kafka.PartitionCnt.
                      # 两边不一致或 broker 已漂移时启动直接 fail-closed。
+    # RetentionBytes: 0  # 0/不写 = 沿用 broker 的 log.retention.bytes;K8s 由 k8s_deploy.ps1 按 Kafka 盘预算渲染(与 login 同值)
     IsOfflineExpand: false # Default false; dynamic expansion mode
     SubShardCount: 8 # 2026-05-28 stress §5: partition=10 × 1 worker per
                      # partition was the real throughput cap (not MySQL
@@ -46,6 +47,16 @@ ServerConfig:
                      # MaxOpenConn 30→60 below so MySQL pool stays the
                      # limiter we WANT (linear scaling) rather than the
                      # per-partition goroutine count.
+    # ── 重试路由(docs/design/db-retry-owner-routing.md)────────────────────────────
+    # shared(缺省):任一实例都可认领共享 ready 里的重试并执行;另外每拍兜底排空按原始分区拆开的
+    #   kafka:retry:queue:{topic}:p{N}(从 owner 回滚时靠它把 p* 清空)。
+    # owner:重试只在持有原始分区 claim 的实例执行,与该分区的新消息同子 shard 串行;拿不到分区的副本是热备,
+    #   只把共享收件箱按原始分区分拣进 p{N}、回收孤儿收据,不执行重试。
+    # 取值大小写敏感,拼错拒启。环境变量 DB_RETRY_ROUTING 优先于本键,只用于单 zone 金丝雀;每个实例的启动日志
+    # "retry routing: mode=… source=…" 与指标 db_retry_routing_mode 是核对依据。K8s 上改值后必须 rollout restart。
+    # 切 owner 之前该 zone 的每个 db 都必须已是新版本;回滚到不认识 p* 的旧镜像之前,先切回 shared 并等 p* 归零
+    # (go run ./cmd/retry_requeue -check),已经回滚的立即执行 go run ./cmd/retry_requeue 搬回。
+    RetryRouting: shared
   Database:
     Hosts: "127.0.0.1:3306"
     User: "root"
@@ -112,6 +123,21 @@ ServerConfig:
     DefaultTTLSeconds: 3600
     Password: ""
     DB: 0
+    # go-redis 连接池上限(P0-E 第 3 批,共享 Redis 连接总账)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+    # 随 CPU limit 漂移(本机 Windows 上是 10 × 核数)。20 = K8s 上 GOMAXPROCS 按 2 时的缺省值,显式写出后不再随 CPU limit 变。
+    # 存盘工人(PartitionCnt × SubShardCount = 80)多于本池时取连接会排队:看 db_redis_pool_wait_total / db_redis_pool_timeouts_total。
+    # tools/scripts/k8s_deploy.ps1 把它镜像进 db ConfigMap(要求正整数),Redis 连接总账读同一个键:改它看部署时打印的
+    # "Redis connection ledger" 一行。下面 Placement.Redis 不写时落点句柄复用本客户端,不另开池。
+    PoolSize: 20
+    # ── 重试 / 死信 / 毒消息入队的落盘确认(WAITAOF,docs/design/db-retry-owner-routing.md §7)──
+    # Kafka 位点提交之前,入队的这份副本是任务唯一的副本:组提交 LPUSH 之后发 WAITAOF,确认不足就不提交位点
+    # (fail-closed,该 claim 失败、消息重投,靠 seq 游标幂等)。确认走专用小连接池(每实例 2 条),不占上面的 PoolSize。
+    # 启动时先探一次 WAITAOF,失败拒启:需要 Redis >= 7.2 且 appendonly yes(本机 compose 与 K8s 的 redis 都已开 AOF)。
+    # 只有确实没开 AOF 的环境才把两项都写 0(关闭确认,启动打一行 ERROR);redis-ha(有副本)接入时 NumReplicas 写 1。
+    # K8s 上改值后必须 rollout restart。
+    WaitAOFNumLocal: 1     # 0 | 1;不写 = 1
+    WaitAOFNumReplicas: 0  # [0, 16];不写 = 0
+    WaitAOFTimeoutMs: 1500 # [1, 2000];不写 = 1500(专用客户端读超时 = 本值 + 1s)
   # ── 大字段三档闸(db_task 落库路径)──────────────────────────────
   # 上限按**设计期望**定,不是按 MEDIUMBLOB 的 16MB 定 —— 按 16MB 设等于没设,
   # 等它触发时单次存盘早就把 MySQL 往返 + Redis 写回一起拖垮了。
@@ -129,6 +155,12 @@ ServerConfig:
       player_snapshot:
         MaxColumnBytes: 8388608
         MaxRowBytes: 8388608
+  # MySQL 行内围栏(docs/design/db-write-fencing-mysql.md §4.7、§8)。整段可缺省,缺省 = legacy。
+  #   legacy:玩家两张表照旧普通 Save,不判围栏、不发布资产 SQL 提交证据(C++ 回滚到旧版时不丢盘)。
+  #   dual  :按 DBTask 的 (owner_epoch, save_seq) 做行内围栏条件写,并发布资产 SQL 提交证据。逐 zone 切换,门禁见设计 §8.3。
+  # 启动日志 "player row fencing: mode=" 一行是核对依据。K8s 的 db ConfigMap 由 k8s_deploy.ps1 原样镜像本键(没有逐 zone 覆盖)。
+  Fencing:
+    Mode: legacy
 
 # ── 玩家存储落点(docs/design/player-storage-placement.md §6)────────────────
 # 每条读 / 写任务按 player:placement:{id}(落点记录)与 player:zone:{id}(home_zone)选库:
@@ -167,6 +199,7 @@ Placement:
   #   Hosts: "127.0.0.1:6379"
   #   Password: ""
   #   DB: 0
+  #   PoolSize: 20   # 同 ServerConfig.RedisClient.PoolSize;另开的落点客户端要进 Redis 连接总账
 
 # Prometheus /metrics endpoint. Dev default; disable for prod by setting
 # empty string. Exposes:

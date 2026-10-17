@@ -17,4 +17,28 @@ enum trade_error {
 
   kTradeFeatureDisabled = 20003;
 
+  kTradeOrderNotFound = 20004;
+
+  kTradeOrderStateConflict = 20005;
+
+  kTradeRequestConflict = 20006;
+
+  kTradeOrderLimit = 20007;
+
+  kTradeCannotTradeSelf = 20008;
+
+  kTradeCounterpartyUnknown = 20009;
+
+  kTradeInsufficientAsset = 20010;
+
+  kTradeBidTooLow = 20011;
+
+  kTradeAuctionEnded = 20012;
+
+  kTradeAssetDeliveryPending = 20013;
+
+  kTradeManualReview = 20014;
+
+  kTradeAssetNotTradable = 20015;
+
 };

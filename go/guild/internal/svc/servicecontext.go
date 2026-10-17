@@ -17,6 +17,7 @@ import (
 	guildkafka "guild/internal/kafka"
 	dspb "proto/data_service"
 	matchpb "proto/match"
+	"shared/authoritysql"
 	"shared/generated/table"
 	"shared/idsegment"
 	"shared/kafkacmd"
@@ -81,10 +82,12 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	table.LoadTables(c.TableDir, false)
 
+	// PoolSize:0 = go-redis 缺省 10 × GOMAXPROCS,负数已被 config.Validate 拒绝(见 config.RedisConf.PoolSize)。
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     c.RedisClient.Host,
 		Password: c.RedisClient.Password,
 		DB:       c.RedisClient.DB,
+		PoolSize: c.RedisClient.PoolSize,
 	})
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
@@ -100,6 +103,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Addr:     plRedisConf.Host,
 		Password: plRedisConf.Password,
 		DB:       plRedisConf.DB,
+		PoolSize: plRedisConf.PoolSize,
 	})
 	if err := plRdb.Ping(context.Background()).Err(); err != nil {
 		panic(fmt.Errorf("failed to connect player locator Redis: %w", err))
@@ -112,19 +116,12 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	//
 	// 钉在代码里而不是 yaml:K8s ConfigMap 与本地 yaml 各改一遍,等于给"某个环境忘了改"留后门,
 	// 而这是正确性约束、不是部署偏好。解析失败一律拒启,且错误里不含 DSN 原文(它带口令)。
-	// -migrate 走 guild.go 里另一条不经过 ServiceContext 的路径,刻意不加该参数:
-	// DDL 等的是元数据锁(lock_wait_timeout),与行锁另有语义。
-	dsn, err := data.WithLockWaitTimeout(c.MySQL.DataSource)
+	// 迁移使用独立强会话池；DDL的元数据锁与socket预算由迁移器单独约束。
+	dbCtx, dbCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	db, err := OpenMySQL(dbCtx, c.MySQL)
+	dbCancel()
 	if err != nil {
-		panic(fmt.Errorf("failed to build MySQL DSN: %w", err))
-	}
-
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		panic(fmt.Errorf("failed to connect MySQL: %w", err))
-	}
-	if err := db.Ping(); err != nil {
-		panic(fmt.Errorf("failed to ping MySQL: %w", err))
+		panic(fmt.Errorf("failed to connect authoritative SQL: %w", err))
 	}
 
 	var w *kafkago.Writer
@@ -173,6 +170,25 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	sc.initAssetOpIDSegment()
 	sc.initMatchInternalClient()
 	return sc
+}
+
+// OpenMySQL 只接受帮会独占库，逐物理连接初始化强会话；TiDB不满足时拒启。
+// WithLockWaitTimeout继续强制clientFoundRows=false并去掉旧隔离别名。
+func OpenMySQL(ctx context.Context, c config.MySQLConf) (*sql.DB, error) {
+	dsn, err := data.WithLockWaitTimeout(c.DataSource)
+	if err != nil {
+		return nil, err
+	}
+	return authoritysql.Open(ctx, dsn, data.DatabaseName, c.RequiresTiDB(), c.MaxOpenConn)
+}
+
+// OpenSchemaMySQL 只用于启动检查与显式迁移，不能交给在线仓储。
+func OpenSchemaMySQL(ctx context.Context, c config.MySQLConf) (*sql.DB, error) {
+	dsn, err := data.WithLockWaitTimeout(c.DataSource)
+	if err != nil {
+		return nil, err
+	}
+	return authoritysql.OpenForMigration(ctx, dsn, data.DatabaseName, c.RequiresTiDB())
 }
 
 // initMatchInternalClient 按 MatchRpc 建 match 内部服务客户端;没配目标时保持 nil 接口(历练未开放)。
@@ -238,6 +254,7 @@ func newMergeMarkerRedis(c config.Config) *redis.Client {
 		Addr:     c.MergeMarkerRedis.Host,
 		Password: c.MergeMarkerRedis.Pass,
 		DB:       c.MergeMarkerRedis.DB,
+		PoolSize: c.MergeMarkerRedis.PoolSize,
 	})
 	if err := cli.Ping(context.Background()).Err(); err != nil {
 		logx.Errorf("[ServiceContext] Merge gate Redis %s DB=%d temporarily unreachable (client retained, automatic reconnect); CreateGuild will reject fail-closed until recovery: %v",

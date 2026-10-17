@@ -1,17 +1,15 @@
 #include "spatial/system/view.h"
 #include "proto/common/component/actor_comp.pb.h"
+#include "proto/scene/player_scene.pb.h"
 #include "engine/core/type_define/type_define.h"
 #include <thread_context/ecs_context.h>
-
-extern EntityUnorderedMap entitiesToNotifyEntry;
-extern EntityUnorderedMap entitiesToNotifyExit;
 
 bool ViewSystem::ShouldSendNpcEnterMessage(entt::entity observer, entt::entity entity) {
     return true; // Mock behavior
 }
 
-void ViewSystem::FillActorCreateMessageInfo(entt::entity observer, entt::entity entity, ActorCreateS2C& actorCreateMessage) {
-    entitiesToNotifyEntry.emplace(observer, entity);
+void ViewSystem::FillActorCreateMessageInfo(entt::entity entity, uint64_t netId, ActorCreateS2C& actorCreateMessage) {
+    actorCreateMessage.set_entity(netId);
 }
 
 bool ViewSystem::IsWithinViewRadius(entt::entity observer, entt::entity entrant, double view_radius)

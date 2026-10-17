@@ -150,6 +150,7 @@ set(SOURCE_FILES
     spatial/system/recast.cpp
     spatial/system/scene_spawn.cpp
     spatial/system/view.cpp
+    world/scene_lifecycle.cpp
     world/world.cpp
 )
 

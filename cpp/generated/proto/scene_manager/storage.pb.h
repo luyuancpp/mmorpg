@@ -492,6 +492,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerLocation final : public ::goo
     kOwnerEpochFieldNumber = 5,
     kPendingSceneConfIdFieldNumber = 6,
     kZoneIdFieldNumber = 4,
+    kSessionIdFieldNumber = 8,
+    kLoginGenerationFieldNumber = 9,
   };
   // string node_id = 2;
   void clear_node_id() ;
@@ -573,12 +575,32 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerLocation final : public ::goo
   void _internal_set_zone_id(::uint32_t value);
 
   public:
+  // uint32 session_id = 8;
+  void clear_session_id() ;
+  [[nodiscard]] ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
+
+  public:
+  // uint64 login_generation = 9;
+  void clear_login_generation() ;
+  [[nodiscard]] ::uint64_t login_generation() const;
+  void set_login_generation(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_login_generation() const;
+  void _internal_set_login_generation(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:storage.PlayerLocation)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 7,
-                          0, 54,
+      ::google::protobuf::internal::TcParseTable<4, 9,
+                          0, 62,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -613,6 +635,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerLocation final : public ::goo
     ::uint64_t owner_epoch_;
     ::uint64_t pending_scene_conf_id_;
     ::uint32_t zone_id_;
+    ::uint32_t session_id_;
+    ::uint64_t login_generation_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1045,6 +1069,54 @@ inline void PlayerLocation::set_allocated_rollback_receipt(::std::string* PROTOB
     _impl_.rollback_receipt_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:storage.PlayerLocation.rollback_receipt)
+}
+
+// uint32 session_id = 8;
+inline void PlayerLocation::clear_session_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint32_t PlayerLocation::session_id() const {
+  // @@protoc_insertion_point(field_get:storage.PlayerLocation.session_id)
+  return _internal_session_id();
+}
+inline void PlayerLocation::set_session_id(::uint32_t value) {
+  _internal_set_session_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:storage.PlayerLocation.session_id)
+}
+inline ::uint32_t PlayerLocation::_internal_session_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.session_id_;
+}
+inline void PlayerLocation::_internal_set_session_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_ = value;
+}
+
+// uint64 login_generation = 9;
+inline void PlayerLocation::clear_login_generation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint64_t PlayerLocation::login_generation() const {
+  // @@protoc_insertion_point(field_get:storage.PlayerLocation.login_generation)
+  return _internal_login_generation();
+}
+inline void PlayerLocation::set_login_generation(::uint64_t value) {
+  _internal_set_login_generation(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:storage.PlayerLocation.login_generation)
+}
+inline ::uint64_t PlayerLocation::_internal_login_generation() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.login_generation_;
+}
+inline void PlayerLocation::_internal_set_login_generation(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = value;
 }
 
 #ifdef __GNUC__

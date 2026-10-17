@@ -35,7 +35,7 @@
 #include "proto/scene_manager/storage.pb.h"
 
 // PlayerTeamRefreshEvent:全局命名空间(team_event.proto 无 package),event_id=48,
-// 由 rpc_event_registry.cpp 的 DispatchProtoEvent 解包后进程内分发到 TeamEventHandler。
+// 由 scene_kafka_command_router.cpp 的 DispatchSceneKafkaCommand 白名单解包后直接调用 TeamEventHandler。
 #include "proto/common/event/team_event.pb.h"
 
 namespace
@@ -119,7 +119,6 @@ namespace
 		{
 			return 0;
 		}
-		// SceneEntityComp::sceneEntity 是 sceneRegistry 的句柄,SceneInfoComp 只挂在 sceneRegistry 上
 		const auto* sceneInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneEntity->sceneEntity);
 		return sceneInfo != nullptr ? sceneInfo->scene_id() : 0;
 	}

@@ -6,7 +6,9 @@
 #include <utility>
 
 #include "agones/agones_gameserver_status.h"
+// muduo 头放在最后:Windows 适配头会 #define pid_t / off_t 等名字(见 muduo_test_loop.h 的说明)。
 #include "muduo/base/Logging.h"
+#include "muduo/net/EventLoop.h"
 
 namespace agones
 {
@@ -19,6 +21,13 @@ namespace agones
 				std::chrono::steady_clock::now().time_since_epoch())
 				.count();
 		}
+
+		// 把不可拷贝的 permit 随回调一起装进 shared_ptr 盒子,让 queueInLoop 的闭包可拷贝(muduo Functor 是 std::function)。
+		struct PermitDeliveryBox
+		{
+			std::shared_ptr<GameServerLifecycle::AllocationPermit> permit;
+			GameServerLifecycle::AllocationPermitCallback done;
+		};
 	} // namespace
 
 	const char* ToString(LifecycleState state)
@@ -58,7 +67,10 @@ namespace agones
 
 	GameServerLifecycle::~GameServerLifecycle()
 	{
-		Stop();
+		// 先让超时定时器的弱引用失效:此后到点的定时器不再回到本对象。
+		aliveToken_.reset();
+		// 静态析构时 loop 多半已经不在:只丢弃等待者,不投递。
+		StopImpl(false);
 	}
 
 	void GameServerLifecycle::StartDisabled()
@@ -112,13 +124,31 @@ namespace agones
 
 	void GameServerLifecycle::Stop()
 	{
+		StopImpl(true);
+	}
+
+	void GameServerLifecycle::StopImpl(bool deliverRejections)
+	{
+		std::vector<PermitDelivery> rejections;
+		bool workerRunning = false;
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
-			if (!worker_.joinable())
+			// 与 worker 结算点竞争:谁先在锁内摘下等待者谁裁决,每个等待者只裁决一次。
+			ResolveAsyncWaitersLocked(rejections, true);
+			workerRunning = worker_.joinable();
+			if (workerRunning)
 			{
-				return;
+				stopRequested_ = true;
 			}
-			stopRequested_ = true;
+		}
+		if (deliverRejections)
+		{
+			DeliverPermits(std::move(rejections));
+		}
+		// 不投递时 rejections 随作用域析构:回调不被调用,拒绝的 permit 也还没构造,不涉及记账。
+		if (!workerRunning)
+		{
+			return;
 		}
 		cv_.notify_all();
 
@@ -136,10 +166,8 @@ namespace agones
 		return EnsureAllocatedBlockingImpl(false);
 	}
 
-	bool GameServerLifecycle::EnsureAllocatedBlockingImpl(bool reservePermit)
+	std::optional<bool> GameServerLifecycle::DecideWithoutWaitLocked(bool reservePermit)
 	{
-		std::unique_lock<std::mutex> lock(mutex_);
-
 		if (state_ == LifecycleState::Disabled)
 		{
 			if (reservePermit)
@@ -173,23 +201,19 @@ namespace agones
 			LOG_WARN << "[Agones] refusing allocation permit: process is shutting down";
 			return false;
 		}
+		return std::nullopt;
+	}
 
-		const std::uint64_t startGeneration = allocateResultGeneration_;
-		allocateRequested_ = true;
-		cv_.notify_all();
+	bool GameServerLifecycle::WaitSatisfiedLocked(std::uint64_t startGeneration) const
+	{
+		return state_ == LifecycleState::Allocated
+			|| allocateResultGeneration_ != startGeneration
+			|| stopRequested_
+			|| draining_;
+	}
 
-		// 有界等待。超时不是"假设成功",是拒绝这次创建让调用方重试。
-		// 等待期间计入 allocateWaiters_(加减都在 mutex_ 内,wait_for 返回时已重新持锁):
-		// DoAllocate 据此判断结果落地时是否还有人来取;超时离开后 allocate 才晚到的,由它收口回 Ready。
-		++allocateWaiters_;
-		cv_.wait_for(lock, options_.allocateWaitTimeout, [this, startGeneration] {
-			return state_ == LifecycleState::Allocated
-				|| allocateResultGeneration_ != startGeneration
-				|| stopRequested_
-				|| draining_;
-		});
-		--allocateWaiters_;
-
+	bool GameServerLifecycle::FinishWaitLocked(bool reservePermit)
+	{
 		if (draining_)
 		{
 			// 等待期间进入排空:通常是 worker 在处理挂起的 allocate 之前先读到了标签(allocate 随后被
@@ -211,6 +235,32 @@ namespace agones
 			readyRequested_ = false;
 		}
 		return true;
+	}
+
+	bool GameServerLifecycle::EnsureAllocatedBlockingImpl(bool reservePermit)
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+
+		const std::optional<bool> verdict = DecideWithoutWaitLocked(reservePermit);
+		if (verdict.has_value())
+		{
+			return *verdict;
+		}
+
+		const std::uint64_t startGeneration = allocateResultGeneration_;
+		allocateRequested_ = true;
+		cv_.notify_all();
+
+		// 有界等待。超时不是"假设成功",是拒绝这次创建让调用方重试。
+		// 等待期间计入 allocateWaiters_(加减都在 mutex_ 内,wait_for 返回时已重新持锁):
+		// DoAllocate 据此判断结果落地时是否还有人来取;超时离开后 allocate 才晚到的,由它收口回 Ready。
+		++allocateWaiters_;
+		cv_.wait_for(lock, options_.allocateWaitTimeout, [this, startGeneration] {
+			return WaitSatisfiedLocked(startGeneration);
+		});
+		--allocateWaiters_;
+
+		return FinishWaitLocked(reservePermit);
 	}
 
 	bool GameServerLifecycle::EnsureAllocatedNonBlocking()
@@ -270,6 +320,144 @@ namespace agones
 	{
 		const bool granted = EnsureAllocatedNonBlockingImpl(true);
 		return AllocationPermit(*this, granted);
+	}
+
+	void GameServerLifecycle::AcquireAllocationPermitAsync(muduo::net::EventLoop& loop, AllocationPermitCallback done)
+	{
+		loop.assertInLoopThread();
+		if (!done)
+		{
+			LOG_ERROR << "[Agones] AcquireAllocationPermitAsync called with an empty callback; ignored";
+			return;
+		}
+
+		std::vector<PermitDelivery> immediate;
+		std::uint64_t waiterId = 0;
+		std::chrono::steady_clock::duration waitTimeout{};
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			const std::optional<bool> verdict = DecideWithoutWaitLocked(true);
+			if (verdict.has_value())
+			{
+				// 当场可判定的结论也经 queueInLoop 投递,保证永不在调用方栈内回调。
+				immediate.push_back(PermitDelivery{ loop, *verdict, std::move(done) });
+			}
+			else
+			{
+				// 与阻塞版相同:踢一次 allocate,计入 allocateWaiters_,由结算点 / 超时定时器 / Stop() 裁决。
+				allocateRequested_ = true;
+				waiterId = nextAsyncWaiterId_++;
+				waitTimeout = options_.allocateWaitTimeout;
+				asyncWaiters_.emplace(waiterId, AsyncPermitWaiter{ loop, allocateResultGeneration_,
+					std::chrono::steady_clock::now() + waitTimeout, std::move(done) });
+				++allocateWaiters_;
+				cv_.notify_all();
+			}
+		}
+
+		if (!immediate.empty())
+		{
+			DeliverPermits(std::move(immediate));
+			return;
+		}
+		ArmAsyncWaiterTimer(loop, waiterId, waitTimeout);
+	}
+
+	void GameServerLifecycle::ResolveAsyncWaitersLocked(std::vector<PermitDelivery>& out, bool rejectAll)
+	{
+		if (asyncWaiters_.empty())
+		{
+			return;
+		}
+		if (rejectAll)
+		{
+			LOG_WARN << "[Agones] refusing " << asyncWaiters_.size()
+					 << " pending async allocation permit(s): lifecycle stopping";
+		}
+		for (auto it = asyncWaiters_.begin(); it != asyncWaiters_.end();)
+		{
+			AsyncPermitWaiter& waiter = it->second;
+			if (!rejectAll && !WaitSatisfiedLocked(waiter.startGeneration))
+			{
+				++it;
+				continue;
+			}
+			--allocateWaiters_;
+			// 放行时 FinishWaitLocked 已在本临界区内 ++pendingPermits_:随后的晚到收口复核自然看到在途许可。
+			const bool granted = !rejectAll && FinishWaitLocked(true);
+			out.push_back(PermitDelivery{ waiter.loop, granted, std::move(waiter.done) });
+			it = asyncWaiters_.erase(it);
+		}
+	}
+
+	void GameServerLifecycle::ArmAsyncWaiterTimer(muduo::net::EventLoop& loop,
+		std::uint64_t waiterId,
+		std::chrono::steady_clock::duration delay)
+	{
+		// muduo 定时器按墙钟到期,ExpireAsyncWaiter 再按 steady 复核;下限 1ms,避免两种时钟的舍入差让定时器空转。
+		const std::chrono::steady_clock::duration clamped =
+			std::max<std::chrono::steady_clock::duration>(delay, std::chrono::milliseconds(1));
+		loop.runAfter(std::chrono::duration<double>(clamped).count(),
+			[alive = std::weak_ptr<int>(aliveToken_), this, waiterId] {
+				// 只弱持有 aliveToken_:lifecycle 已析构时 lock 失败,不碰 this。
+				if (alive.lock())
+				{
+					ExpireAsyncWaiter(waiterId);
+				}
+			});
+	}
+
+	void GameServerLifecycle::ExpireAsyncWaiter(std::uint64_t waiterId)
+	{
+		AllocationPermitCallback done;
+		std::chrono::milliseconds::rep waitTimeoutMs = 0;
+		LifecycleState stateAtExpiry = LifecycleState::Disabled;
+		{
+			std::unique_lock<std::mutex> lock(mutex_);
+			const auto it = asyncWaiters_.find(waiterId);
+			if (it == asyncWaiters_.end())
+			{
+				return; // 已被结算点或 Stop() 裁决,结果已投递
+			}
+			const auto now = std::chrono::steady_clock::now();
+			if (now < it->second.deadline)
+			{
+				// 墙钟比 steady 先到点(墙钟被向前调或舍入):按剩余 steady 时长重新上弦。
+				muduo::net::EventLoop& loop = it->second.loop.get();
+				const std::chrono::steady_clock::duration remaining = it->second.deadline - now;
+				lock.unlock();
+				ArmAsyncWaiterTimer(loop, waiterId, remaining);
+				return;
+			}
+			done = std::move(it->second.done);
+			asyncWaiters_.erase(it);
+			--allocateWaiters_;
+			waitTimeoutMs = options_.allocateWaitTimeout.count();
+			stateAtExpiry = state_;
+		}
+
+		// 出表后 allocate 才晚到成功的,由 DoAllocate 的晚到收口送回 Ready(allocateWaiters_ 已减)。
+		LOG_ERROR << "[Agones] allocate not confirmed within " << waitTimeoutMs
+				  << "ms (async), state=" << ToString(stateAtExpiry);
+		done(AllocationPermit(*this, false));
+	}
+
+	void GameServerLifecycle::DeliverPermits(std::vector<PermitDelivery> deliveries)
+	{
+		for (PermitDelivery& delivery : deliveries)
+		{
+			// 私有构造只能在成员函数里调用;先在锁外构造,再经公开的移动构造装盒。
+			AllocationPermit permit(*this, delivery.granted);
+			auto box = std::make_shared<PermitDeliveryBox>(PermitDeliveryBox{
+				std::make_shared<AllocationPermit>(std::move(permit)), std::move(delivery.done) });
+			// 本线程(可能是 worker)交出盒子后不再持有回调的引用:回调只在 loop 线程上被调用与析构。
+			// 闭包没执行就随 ~EventLoop 销毁时,permit 照常析构记账。
+			delivery.loop.get().queueInLoop([box = std::move(box)] {
+				AllocationPermitCallback callback;
+				callback.swap(box->done);
+				callback(std::move(*box->permit));
+			});
+		}
 	}
 
 	bool GameServerLifecycle::RequestReadyIfIdleLocked()
@@ -401,6 +589,12 @@ namespace agones
 		return static_cast<int>(activeUnits_.size());
 	}
 
+	std::size_t GameServerLifecycle::PendingPermitCount() const
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		return pendingPermits_;
+	}
+
 	bool GameServerLifecycle::WaitForState(LifecycleState expected, std::chrono::milliseconds timeout)
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
@@ -492,10 +686,14 @@ namespace agones
 			}
 		}
 
+		std::vector<PermitDelivery> deliveries;
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
 			state_ = allocated ? LifecycleState::Allocated : LifecycleState::Ready;
 			++allocateResultGeneration_;
+			// 结算点:必须在 ++allocateResultGeneration_ 之后、晚到收口复核之前。放行的异步等待方已在此
+			// ++pendingPermits_,下面的 RequestReadyIfIdleLocked 自然返回假;失败结果按拒绝出表。
+			ResolveAsyncWaitersLocked(deliveries, false);
 			// 这里不需要排空分支:draining_ 只可能由 worker 在 DoPollDrain 里置为 true,worker 取
 			// allocate 时已判过未排空才走到这里,而 DoAllocate 同在 worker 上执行,期间 draining_ 不会变。
 			if (allocated)
@@ -533,26 +731,34 @@ namespace agones
 			}
 		}
 		cv_.notify_all();
+		DeliverPermits(std::move(deliveries));
 	}
 
 	void GameServerLifecycle::DoBackToReady()
 	{
 		const HttpResponse response = client_->Ready();
 
-		std::lock_guard<std::mutex> lock(mutex_);
-		if (!response.Ok())
+		std::vector<PermitDelivery> deliveries;
 		{
-			// /ready 没成功,sidecar 仍是 Allocated。恢复本地状态并唤醒
-			// 等待中的创建;它们无需再发一次 /allocate。
-			state_ = LifecycleState::Allocated;
-			LOG_ERROR << "[Agones] POST /ready (drain) failed status=" << response.statusCode
-					  << " error=" << response.error << "; staying " << ToString(state_);
+			std::lock_guard<std::mutex> lock(mutex_);
+			if (!response.Ok())
+			{
+				// /ready 没成功,sidecar 仍是 Allocated。恢复本地状态并唤醒
+				// 等待中的创建;它们无需再发一次 /allocate。
+				state_ = LifecycleState::Allocated;
+				LOG_ERROR << "[Agones] POST /ready (drain) failed status=" << response.statusCode
+						  << " error=" << response.error << "; staying " << ToString(state_);
+			}
+			else
+			{
+				state_ = LifecycleState::Ready;
+				LOG_INFO << "[Agones] back to READY (0 units)";
+			}
+			// 结算点(两个分支都有):回到 Allocated 时放行异步等待方;回到 Ready 时谓词不成立,等待方继续等挂起的 allocate。
+			ResolveAsyncWaitersLocked(deliveries, false);
 			cv_.notify_all();
-			return;
 		}
-		state_ = LifecycleState::Ready;
-		LOG_INFO << "[Agones] back to READY (0 units)";
-		cv_.notify_all();
+		DeliverPermits(std::move(deliveries));
 	}
 
 	void GameServerLifecycle::DoShutdown()
@@ -630,30 +836,36 @@ namespace agones
 
 		// draining_ 置位与下面"排空且零单元即回 Ready"的复核必须在同一临界区内:
 		// 许可等待方看到 draining_ 时,零单元收口已经做过,它自己不用再收口。
-		std::lock_guard<std::mutex> lock(mutex_);
-		if (labelPresent != draining_)
+		std::vector<PermitDelivery> deliveries;
 		{
-			draining_ = labelPresent;
-			if (draining_)
+			std::lock_guard<std::mutex> lock(mutex_);
+			if (labelPresent != draining_)
 			{
-				LOG_WARN << "[Agones] drain label '" << options_.drainLabelKey
-						 << "' present: refusing new units; unit_count=" << activeUnits_.size()
-						 << " state=" << ToString(state_);
+				draining_ = labelPresent;
+				if (draining_)
+				{
+					LOG_WARN << "[Agones] drain label '" << options_.drainLabelKey
+							 << "' present: refusing new units; unit_count=" << activeUnits_.size()
+							 << " state=" << ToString(state_);
+					// 结算点:排空开始,异步等待方一律按"等待期间进入排空"拒绝。
+					ResolveAsyncWaitersLocked(deliveries, false);
+				}
+				else
+				{
+					LOG_INFO << "[Agones] drain label '" << options_.drainLabelKey
+							 << "' cleared: accepting new units again; state=" << ToString(state_);
+				}
+				// 唤醒 EnsureAllocatedBlocking 的等待方(谓词含 draining_)。
+				cv_.notify_all();
 			}
-			else
-			{
-				LOG_INFO << "[Agones] drain label '" << options_.drainLabelKey
-						 << "' cleared: accepting new units again; state=" << ToString(state_);
-			}
-			// 唤醒 EnsureAllocatedBlocking 的等待方(谓词含 draining_)。
-			cv_.notify_all();
-		}
 
-		// 每轮都复核一次"排空且零单元":上一次 /ready 失败留在 Allocated 时,在这里收敛。
-		if (draining_ && RequestReadyIfIdleLocked())
-		{
-			LOG_INFO << "[Agones] draining with zero units, returning to Ready";
+			// 每轮都复核一次"排空且零单元":上一次 /ready 失败留在 Allocated 时,在这里收敛。
+			if (draining_ && RequestReadyIfIdleLocked())
+			{
+				LOG_INFO << "[Agones] draining with zero units, returning to Ready";
+			}
 		}
+		DeliverPermits(std::move(deliveries));
 	}
 
 	void GameServerLifecycle::WorkerMain()
@@ -732,6 +944,11 @@ namespace agones
 						// 典型来源:回 Ready 途中被踢、随后 /ready 失败留在 Allocated。请求就此满足,
 						// 不会有 DoAllocate 结果,标记同 Starting / 排空分支一并清掉。
 						nonBlockingAllocateKicked_ = false;
+						// 结算点:异步等待方通常已在 DoBackToReady 里放行,这里兜底;解锁后再投递。
+						std::vector<PermitDelivery> deliveries;
+						ResolveAsyncWaitersLocked(deliveries, false);
+						lock.unlock();
+						DeliverPermits(std::move(deliveries));
 						continue;
 					}
 					// 标记转存为本次在途的快照并清零:此后成员里只剩 HTTP 在途期间新踢的。

@@ -104,7 +104,11 @@ P1  preflight   zone_<src>_db / zone_<dst>_db 都存在;从表清单 JSON 发现
 0   collect     扫一次 mapping 拿源区玩家 id(或从既有清单 RESUME);之后所有步骤复用这一份
 G   guard       0 个玩家 / 源库行数 > 映射数 / 与 -expected-src-players 不符 → 拒绝
 P2  preflight   scene_nodes:zone:{src}:load 必须空(源区无活节点)
-P3  preflight   db_task_zone_{src}[_g{gen}] 在 db_rpc_consumer_group 上 LAG=0
+P3  preflight   db_task_zone_{src}[_g{gen}] 在唯一权威组上 LAG=0(2026-10-15 起;已落码,未编译、未测试,待 Codex 验证):
+                候选 = zone 组 db_rpc_consumer_group_z{src} + legacy 组 db_rpc_consumer_group(-kafka-legacy-group),
+                或 -kafka-group 显式指定的一个;恰好一个组在本 topic 上有已提交位点才只对它算 LAG,
+                两组都有(交接没收尾,先 kafka_offset_reset.ps1 -FinalizeHandoff)/ 都没有 / CLI 读不出一律拒绝
+                (preflight.go::resolveAuthoritativeLag;设计 db-consumer-group-per-zone.md §7)
 P4  preflight   kafka:{retry,processing,dead}:queue:<topic> 三个列表都空
 P5  preflight   源区玩家没有在持的 lock:player:{id}
 P6  preflight   源区玩家没有 player:session:{id}
@@ -356,7 +360,9 @@ Step 4:第二次 dry-run(与 T-1 彩排的 players_in_source 必须一致)
 pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone `
   -MergeSourceZone <src> -MergeTargetZone <dst> -MergeExpectedSrcPlayers <N> -DryRun
 # Kafka 积压门禁必须给来源:-MergeKafkaConsumerGroupsCmd(真查)或 -MergeAssumeKafkaDrained(声明)
-# 工具查的 topic 是 db_task_zone_<src>[_g<gen>],消费组 db_rpc_consumer_group
+# 工具查的 topic 是 db_task_zone_<src>[_g<gen>];消费组(2026-10-15 起)由工具按 zone 推导:候选为 zone 组 db_rpc_consumer_group_z<src>
+#   与 legacy 组 db_rpc_consumer_group,只认在本 topic 上有已提交位点的唯一权威组,两组都有位点就拒绝(先 -FinalizeHandoff 收尾);
+#   dev_tools 不再缺省转发组名,-MergeKafkaGroup 只用于显式覆盖(docs/ops/merge-zone-runbook.md §2.3)
 
 Step 5:正式执行(一条命令跑完 §3.1a 的全部步骤,顺序由工具保证)
 ─────────────────────────────────────────────────────────────────

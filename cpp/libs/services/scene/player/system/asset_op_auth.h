@@ -6,11 +6,13 @@
 // 签名写进 AssetOpRequest.auth;scene 在 loop 线程上用同一份规则重算并常数时间比对,
 // 不一致一律回 UNKNOWN + kAssetAuthFailed、**不记账**(§4.9 第 1b 步)。
 //
-// 为什么签名放在**请求体**里而不是 gRPC metadata:gRPC 包装函数由生成器产出,context 参数
-// 被注释掉(grpc_handler_gen.go:125 `grpc::ServerContext* /*context*/`),守护段里根本读不到
-// metadata;要读就得改生成器并重生成全部 gRPC 包装。而 scene 的 gRPC 端口用的是明文不安全
-// 凭据(node.cpp:623 InsecureServerCredentials),集群内任何进程都能连、都能发 AssetCredit
-// 凭空发币。签名是这条通道的**主防线**,NetworkPolicy 只是纵深防御(仓库内暂无该清单)。
+// 为什么签名放在**请求体**里而不是 gRPC metadata:定这条规则时,旧 gRPC 包装函数的 context 参数
+// 被生成器注释掉,守护段里读不到 metadata。服务端改走 muduo_grpc 之后,守护段可经
+// call->server_call().metadata() 只读访问 metadata(docs/design/grpc-muduo-transport.md §15.3 Q10),
+// 但签名仍留在请求体:换位置是跨语言协议变更(Go 侧 auth.go 要同批改),传输迁移不夹带。
+// scene 的 gRPC 端口是明文 h2c、不做 TLS 也不鉴权(muduo_grpc::Server,§15.3 Q8),集群内任何进程
+// 都能连、都能发 AssetCredit 凭空发币。签名是这条通道的**主防线**,NetworkPolicy 只是纵深防御
+// (仓库内暂无该清单)。
 //
 // 为什么不要 nonce:同一 (player, stream, epoch, seq) 重放要么只读答复、要么就是那唯一一次
 // 应用(不变量 I2 结局固定),Go 总以 scene 的结局为准。时间窗只用来限制截获包的寿命
@@ -22,7 +24,7 @@
 // 否则线上表现是"全部资产 RPC 验签失败",帮会捐献与聚宝斋寄售整体卡死。
 // 改 canonical 必须两边同批改、两边 golden 同批更新。
 //
-// 线程模型:三个资产 RPC 入口都已 runInLoop 投递,本文件的函数只在 scene 的 **loop 线程**上
+// 线程模型:四个资产 RPC 入口(Debit / AbortDebit / Credit / AckReceipt)都在 loop 线程上派发(muduo_grpc 服务端),本文件的函数只在 scene 的 **loop 线程**上
 // 被调用;默认密钥来源的缓存因此不加锁。纯函数层(AssetOpCanonical)无任何全局状态。
 //
 // 依赖:标准库 + engine/core/security/token_security.h(header-only,内部 include OpenSSL)。

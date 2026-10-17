@@ -8,67 +8,12 @@
 #include "macros/return_define.h"
 #include "proto/common/component/actor_attribute_state_comp.pb.h"
 
-#include "table/code/buff_table.h"
 #include "actor/attribute/constants/actor_state_attribute_calculator_constants.h"
-#include "combat/buff/comp/buff_comp.h"
 #include "player/comp/player_frozen_comp.h"  // cross-zone-readiness-audit.md §11.2
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
 #include <generated/attribute/actorbaseattributess2c_attribute_sync.h>
 #include <thread_context/ecs_context.h>  // tlsEcs + entt::exclude (see movement.cpp pattern)
-
-namespace {
-// 初始化和后续重算共用同一投影规则;是否需要同步由各自调用入口决定。
-void ProjectCombatStateFlags(CombatStateFlagsComp& projection, const CombatStateCollectionComp* combatStates)
-{
-    auto* stateFlags = projection.mutable_state_flags();
-    stateFlags->clear();
-    if (combatStates == nullptr) return;
-    for (const auto& stateKey : combatStates->states() | std::views::keys)
-    {
-        stateFlags->emplace(stateKey, true);
-    }
-}
-} // namespace
-
-// 重算移速**属性**(标量)。
-//
-// 旧实现把 buff 的加减速标量灌进 Velocity 的 x/y/z 三轴 —— 而 MovementSystem
-// 把 Velocity 当运动学矢量每 tick 积分进 Transform,于是挂移速 buff 的角色
-// 沿 (1,1,1) 方向匀速漂移(减速则为负、钻入地下),几秒内被 AOI 划出所有
-// 观察者视野,漂移后的位置还会随存盘落库。属性写进独立的 MoveSpeedComp,
-// Velocity 留给真实的运动矢量(由未来的移动输入/AI 写入)。
-// 移速属性目前无 S2C 通道(ActorBaseAttributesS2C.velocity 语义是运动矢量,
-// 不能复用),接通道时再补脏位。
-//
-// MoveSpeedComp 是 actor 必需组件,唯一创建点是 InitializeOnCreate 的直接调用。
-// 这里只取不建:缺了说明 actor 没走初始化(或组件被误删),补建一个 0 移速的组件只会把这个缺口藏起来。
-void UpdateMoveSpeed(entt::entity entity) {
-    auto* moveSpeedComp = tlsEcs.actorRegistry.try_get<MoveSpeedComp>(entity);
-    if (moveSpeedComp == nullptr) {
-        LOG_ERROR << "[ActorAttribute] MoveSpeedComp missing (actor not initialized?); move speed recalculation skipped: entity="
-                  << entt::to_integral(entity);
-        return;
-    }
-
-    // BuffListComp 是按需状态(契约见 buff.h:AddOrUpdateBuff 第一次插入条目时创建,BuffSystem::Update
-    // 在帧末发现列表空了就摘掉),没有它就是身上没有 buff,移速加成按 0 算,不是缺组件故障。
-    // 最后一条移速 buff 到期时 OnBuffRemove 标脏、同一帧列表被摘;以前这里直接 return,
-    // 到期前的那份加成就会一直留在 MoveSpeedComp 里。
-    double moveSpeed = 0.0;
-    if (const auto* buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(entity)) {
-        for (const auto &buffCompPb : *buffList | std::views::values)
-        {
-            LookupBuffOrContinue(buffCompPb.buffPb.buff_table_id());
-
-            moveSpeed += buffRow->movement_speed_boost();
-            moveSpeed -= buffRow->movement_speed_reduction();
-        }
-    }
-
-    // 减速叠满也不能变成倒着走。
-    moveSpeedComp->moveSpeed = std::max(moveSpeed, 0.0);
-}
 
 void UpdateHealth(entt::entity actorEntity) {
     // TODO: Implement health recalculation from base stats + buff modifiers
@@ -98,41 +43,28 @@ void ResetCombatStateFlags(entt::entity actorEntity) {
                   << entt::to_integral(actorEntity);
         return;
     }
-    ProjectCombatStateFlags(*stateFlagsComp,
-        tlsEcs.actorRegistry.try_get<CombatStateCollectionComp>(actorEntity));
+    auto* stateFlags = stateFlagsComp->mutable_state_flags();
+    stateFlags->clear();
+    if (const auto* combatStates = tlsEcs.actorRegistry.try_get<CombatStateCollectionComp>(actorEntity))
+    {
+        for (const auto& stateKey : combatStates->states() | std::views::keys)
+        {
+            stateFlags->emplace(stateKey, true);
+        }
+    }
 
     SetActorBaseAttributesS2CAttrDirtyBit(actorEntity, static_cast<std::size_t>(ActorBaseAttributesS2C::kCombatStateFlagsFieldNumber));
-    // entity_id 是这条消息里唯一的归属标识(信封层不带主体 actor):
-    // 不一并置位的话,观察者会收到一条不知道是谁的状态更新。
-    // 序列化器从 Guid(uint64_t)组件取值,客户端在 ActorCreateS2C.guid
-    // 建立过 guid → actor 的映射,能够归属。
-    SetActorBaseAttributesS2CAttrDirtyBit(actorEntity, static_cast<std::size_t>(ActorBaseAttributesS2C::kEntityIdFieldNumber));
 }
 
 std::array<AttributeCalculatorConfig, kAttributeCalculatorMax> kAttributeConfigs = { {
-    {kMoveSpeed, UpdateMoveSpeed},
     {kHealth, UpdateHealth},
     {kEnergy, UpdateEnergy},
     {kCombatState, ResetCombatStateFlags}
 } };
 
-bool ActorAttributeCalculatorSystem::InitializeOnCreate(entt::entity actorEntity)
+void ActorAttributeCalculatorSystem::InitializeOnCreate(entt::entity actorEntity)
 {
-    auto& registry = tlsEcs.actorRegistry;
-    if (!registry.valid(actorEntity))
-    {
-        LOG_ERROR << "[ActorAttribute] Invalid actor; initialization refused: entity="
-                  << entt::to_integral(actorEntity);
-        return false;
-    }
-
-    // 必需派生组件只在这个显式创建入口建立;可选来源缺失代表无加成/无状态。
-    // 这里只确保组件存在，移速统一由下方 UpdateMoveSpeed 重算。
-    static_cast<void>(registry.get_or_emplace<MoveSpeedComp>(actorEntity));
-    auto& stateFlags = registry.get_or_emplace<CombatStateFlagsComp>(actorEntity);
-    UpdateMoveSpeed(actorEntity);
-    ProjectCombatStateFlags(stateFlags, registry.try_get<CombatStateCollectionComp>(actorEntity));
-    return true;
+    tlsEcs.actorRegistry.emplace<CombatStateFlagsComp>(actorEntity);
 }
 
 // AttributeDirtyFlagsComp 是按需状态:标脏(这里)时挂上,Update 消费后摘掉。

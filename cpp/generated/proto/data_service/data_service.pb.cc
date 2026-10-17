@@ -4591,11 +4591,11 @@ constexpr GetPlayerAssetOpLedgerRequest::ParseTableT_ GetPlayerAssetOpLedgerRequ
     {
       PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_._has_bits_),
       0, // no _extensions_
-      1, 0,  // max_field_number, fast_idx_mask
+      2, 8,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967294,  // skipmap
+      4294967292,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      1,  // num_field_entries
+      2,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -4605,6 +4605,10 @@ constexpr GetPlayerAssetOpLedgerRequest::ParseTableT_ GetPlayerAssetOpLedgerRequ
       ::_pbi::TcParser::GetTable<::data_service::GetPlayerAssetOpLedgerRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
+      // bool require_sql_commit = 2;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GetPlayerAssetOpLedgerRequest, _impl_.require_sql_commit_), 1>(),
+       {16, 1, 0,
+        PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_.require_sql_commit_)}},
       // uint64 player_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetPlayerAssetOpLedgerRequest, _impl_.player_id_), 0>(),
        {8, 0, 0,
@@ -4614,6 +4618,8 @@ constexpr GetPlayerAssetOpLedgerRequest::ParseTableT_ GetPlayerAssetOpLedgerRequ
     }}, {{
       // uint64 player_id = 1;
       {PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // bool require_sql_commit = 2;
+      {PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_.require_sql_commit_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     }},
     // no aux_entries
     {{
@@ -4626,7 +4632,8 @@ inline constexpr GetPlayerAssetOpLedgerRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        player_id_{::uint64_t{0u}} {}
+        player_id_{::uint64_t{0u}},
+        require_sql_commit_{false} {}
 
 template <typename>
 constexpr GetPlayerAssetOpLedgerRequest::GetPlayerAssetOpLedgerRequest(::_pbi::ConstantInitialized,
@@ -9023,11 +9030,11 @@ constexpr GetPlayerAssetOpLedgerResponse::ParseTableT_ GetPlayerAssetOpLedgerRes
     {
       PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_._has_bits_),
       0, // no _extensions_
-      2, 8,  // max_field_number, fast_idx_mask
+      3, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967292,  // skipmap
+      4294967288,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      2,  // num_field_entries
+      3,  // num_field_entries
       1,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -9037,14 +9044,19 @@ constexpr GetPlayerAssetOpLedgerResponse::ParseTableT_ GetPlayerAssetOpLedgerRes
       ::_pbi::TcParser::GetTable<::data_service::GetPlayerAssetOpLedgerResponse>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // .PlayerAssetOpLedgerComp ledger = 2;
-      {::_pbi::TcParser::FastMtS1,
-       {18, 0, 0,
-        PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.ledger_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // bool found = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GetPlayerAssetOpLedgerResponse, _impl_.found_), 1>(),
        {8, 1, 0,
         PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.found_)}},
+      // .PlayerAssetOpLedgerComp ledger = 2;
+      {::_pbi::TcParser::FastMtS1,
+       {18, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.ledger_)}},
+      // bool sql_committed = 3;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GetPlayerAssetOpLedgerResponse, _impl_.sql_committed_), 2>(),
+       {24, 2, 0,
+        PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.sql_committed_)}},
     }}, {{
       65535, 65535
     }}, {{
@@ -9052,6 +9064,8 @@ constexpr GetPlayerAssetOpLedgerResponse::ParseTableT_ GetPlayerAssetOpLedgerRes
       {PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.found_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
       // .PlayerAssetOpLedgerComp ledger = 2;
       {PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.ledger_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // bool sql_committed = 3;
+      {PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.sql_committed_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -9071,7 +9085,8 @@ inline constexpr GetPlayerAssetOpLedgerResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         ledger_{nullptr},
-        found_{false} {}
+        found_{false},
+        sql_committed_{false} {}
 
 template <typename>
 constexpr GetPlayerAssetOpLedgerResponse::GetPlayerAssetOpLedgerResponse(::_pbi::ConstantInitialized,
@@ -9712,16 +9727,20 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerRequest, _impl_._has_bits_),
-        4, // hasbit index offset
+        5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerRequest, _impl_.require_sql_commit_),
         0,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerResponse, _impl_._has_bits_),
-        5, // hasbit index offset
+        6, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerResponse, _impl_.found_),
         PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerResponse, _impl_.ledger_),
+        PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerAssetOpLedgerResponse, _impl_.sql_committed_),
         1,
         0,
+        2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::data_service::GetPlayerInboxLedgerRequest, _impl_._has_bits_),
         4, // hasbit index offset
@@ -9790,9 +9809,9 @@ static const ::_pbi::MigrationSchema
         {525, sizeof(::data_service::BatchGetPlayerNameResponse_NamesEntry_DoNotUse)},
         {532, sizeof(::data_service::BatchGetPlayerNameResponse)},
         {537, sizeof(::data_service::GetPlayerAssetOpLedgerRequest)},
-        {542, sizeof(::data_service::GetPlayerAssetOpLedgerResponse)},
-        {549, sizeof(::data_service::GetPlayerInboxLedgerRequest)},
-        {554, sizeof(::data_service::GetPlayerInboxLedgerResponse)},
+        {544, sizeof(::data_service::GetPlayerAssetOpLedgerResponse)},
+        {553, sizeof(::data_service::GetPlayerInboxLedgerRequest)},
+        {558, sizeof(::data_service::GetPlayerInboxLedgerResponse)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -10005,85 +10024,87 @@ const char descriptor_table_protodef_proto_2fdata_5fservice_2fdata_5fservice_2ep
     "layerNameResponse\022B\n\005names\030\001 \003(\01323.data_"
     "service.BatchGetPlayerNameResponse.Names"
     "Entry\032,\n\nNamesEntry\022\013\n\003key\030\001 \001(\004\022\r\n\005valu"
-    "e\030\002 \001(\t:\0028\001\"2\n\035GetPlayerAssetOpLedgerReq"
-    "uest\022\021\n\tplayer_id\030\001 \001(\004\"Y\n\036GetPlayerAsse"
-    "tOpLedgerResponse\022\r\n\005found\030\001 \001(\010\022(\n\006ledg"
-    "er\030\002 \001(\0132\030.PlayerAssetOpLedgerComp\"0\n\033Ge"
-    "tPlayerInboxLedgerRequest\022\021\n\tplayer_id\030\001"
-    " \001(\004\"U\n\034GetPlayerInboxLedgerResponse\022\r\n\005"
-    "found\030\001 \001(\010\022&\n\006ledger\030\002 \001(\0132\026.PlayerInbo"
-    "xLedgerComp*\207\001\n\014SnapshotType\022\023\n\017SNAPSHOT"
-    "_MANUAL\020\000\022\025\n\021SNAPSHOT_PERIODIC\020\001\022\034\n\030SNAP"
-    "SHOT_PRE_MAINTENANCE\020\002\022\031\n\025SNAPSHOT_PRE_R"
-    "OLLBACK\020\003\022\022\n\016SNAPSHOT_LOGIN\020\004*8\n\rRollbac"
-    "kScope\022\021\n\rROLLBACK_FULL\020\000\022\024\n\020ROLLBACK_PA"
-    "RTIAL\020\001*\212\001\n\021SnapshotEventType\022\033\n\027EVENT_L"
-    "ARGE_TRANSACTION\020\000\022\022\n\016EVENT_RECHARGE\020\001\022\031"
-    "\n\025EVENT_PRE_MAINTENANCE\020\002\022\022\n\016EVENT_LEVEL"
-    "_UP\020\003\022\025\n\021EVENT_FIRST_LOGIN\020\0042\266\023\n\013DataSer"
-    "vice\022]\n\016LoadPlayerData\022#.data_service.Lo"
-    "adPlayerDataRequest\032$.data_service.LoadP"
-    "layerDataResponse\"\000\022]\n\016SavePlayerData\022#."
-    "data_service.SavePlayerDataRequest\032$.dat"
-    "a_service.SavePlayerDataResponse\"\000\022]\n\016Ge"
-    "tPlayerField\022#.data_service.GetPlayerFie"
-    "ldRequest\032$.data_service.GetPlayerFieldR"
-    "esponse\"\000\022]\n\016SetPlayerField\022#.data_servi"
-    "ce.SetPlayerFieldRequest\032$.data_service."
-    "SetPlayerFieldResponse\"\000\022W\n\022RegisterPlay"
-    "erZone\022\'.data_service.RegisterPlayerZone"
-    "Request\032\026.google.protobuf.Empty\"\000\022f\n\021Get"
-    "PlayerHomeZone\022&.data_service.GetPlayerH"
-    "omeZoneRequest\032\'.data_service.GetPlayerH"
-    "omeZoneResponse\"\000\022u\n\026BatchGetPlayerHomeZ"
-    "one\022+.data_service.BatchGetPlayerHomeZon"
-    "eRequest\032,.data_service.BatchGetPlayerHo"
-    "meZoneResponse\"\000\022r\n\025RemapHomeZoneForMerg"
-    "e\022*.data_service.RemapHomeZoneForMergeRe"
-    "quest\032+.data_service.RemapHomeZoneForMer"
-    "geResponse\"\000\022c\n\020DeletePlayerData\022%.data_"
-    "service.DeletePlayerDataRequest\032&.data_s"
-    "ervice.DeletePlayerDataResponse\"\000\022o\n\024Cre"
-    "atePlayerSnapshot\022).data_service.CreateP"
-    "layerSnapshotRequest\032*.data_service.Crea"
-    "tePlayerSnapshotResponse\"\000\022l\n\023ListPlayer"
-    "Snapshots\022(.data_service.ListPlayerSnaps"
-    "hotsRequest\032).data_service.ListPlayerSna"
-    "pshotsResponse\"\000\022r\n\025GetPlayerSnapshotDif"
-    "f\022*.data_service.GetPlayerSnapshotDiffRe"
-    "quest\032+.data_service.GetPlayerSnapshotDi"
-    "ffResponse\"\000\022]\n\016RollbackPlayer\022#.data_se"
-    "rvice.RollbackPlayerRequest\032$.data_servi"
-    "ce.RollbackPlayerResponse\"\000\022W\n\014RollbackZ"
-    "one\022!.data_service.RollbackZoneRequest\032\""
-    ".data_service.RollbackZoneResponse\"\000\022T\n\013"
-    "RollbackAll\022 .data_service.RollbackAllRe"
-    "quest\032!.data_service.RollbackAllResponse"
-    "\"\000\022c\n\020BatchRecallItems\022%.data_service.Ba"
-    "tchRecallItemsRequest\032&.data_service.Bat"
-    "chRecallItemsResponse\"\000\022l\n\023QueryTransact"
-    "ionLog\022(.data_service.QueryTransactionLo"
-    "gRequest\032).data_service.QueryTransaction"
-    "LogResponse\"\000\022l\n\023CreateEventSnapshot\022(.d"
-    "ata_service.CreateEventSnapshotRequest\032)"
-    ".data_service.CreateEventSnapshotRespons"
-    "e\"\000\022f\n\021AllocateIdSegment\022&.data_service."
-    "AllocateIdSegmentRequest\032\'.data_service."
-    "AllocateIdSegmentResponse\"\000\022f\n\021ReservePl"
-    "ayerName\022&.data_service.ReservePlayerNam"
-    "eRequest\032\'.data_service.ReservePlayerNam"
-    "eResponse\"\000\022U\n\021ReleasePlayerName\022&.data_"
-    "service.ReleasePlayerNameRequest\032\026.googl"
-    "e.protobuf.Empty\"\000\022i\n\022BatchGetPlayerName"
-    "\022\'.data_service.BatchGetPlayerNameReques"
-    "t\032(.data_service.BatchGetPlayerNameRespo"
-    "nse\"\000\022u\n\026GetPlayerAssetOpLedger\022+.data_s"
-    "ervice.GetPlayerAssetOpLedgerRequest\032,.d"
-    "ata_service.GetPlayerAssetOpLedgerRespon"
-    "se\"\000\022o\n\024GetPlayerInboxLedger\022).data_serv"
-    "ice.GetPlayerInboxLedgerRequest\032*.data_s"
-    "ervice.GetPlayerInboxLedgerResponse\"\000B\033Z"
-    "\031data_service/data_serviceb\006proto3"
+    "e\030\002 \001(\t:\0028\001\"N\n\035GetPlayerAssetOpLedgerReq"
+    "uest\022\021\n\tplayer_id\030\001 \001(\004\022\032\n\022require_sql_c"
+    "ommit\030\002 \001(\010\"p\n\036GetPlayerAssetOpLedgerRes"
+    "ponse\022\r\n\005found\030\001 \001(\010\022(\n\006ledger\030\002 \001(\0132\030.P"
+    "layerAssetOpLedgerComp\022\025\n\rsql_committed\030"
+    "\003 \001(\010\"0\n\033GetPlayerInboxLedgerRequest\022\021\n\t"
+    "player_id\030\001 \001(\004\"U\n\034GetPlayerInboxLedgerR"
+    "esponse\022\r\n\005found\030\001 \001(\010\022&\n\006ledger\030\002 \001(\0132\026"
+    ".PlayerInboxLedgerComp*\207\001\n\014SnapshotType\022"
+    "\023\n\017SNAPSHOT_MANUAL\020\000\022\025\n\021SNAPSHOT_PERIODI"
+    "C\020\001\022\034\n\030SNAPSHOT_PRE_MAINTENANCE\020\002\022\031\n\025SNA"
+    "PSHOT_PRE_ROLLBACK\020\003\022\022\n\016SNAPSHOT_LOGIN\020\004"
+    "*8\n\rRollbackScope\022\021\n\rROLLBACK_FULL\020\000\022\024\n\020"
+    "ROLLBACK_PARTIAL\020\001*\212\001\n\021SnapshotEventType"
+    "\022\033\n\027EVENT_LARGE_TRANSACTION\020\000\022\022\n\016EVENT_R"
+    "ECHARGE\020\001\022\031\n\025EVENT_PRE_MAINTENANCE\020\002\022\022\n\016"
+    "EVENT_LEVEL_UP\020\003\022\025\n\021EVENT_FIRST_LOGIN\020\0042"
+    "\266\023\n\013DataService\022]\n\016LoadPlayerData\022#.data"
+    "_service.LoadPlayerDataRequest\032$.data_se"
+    "rvice.LoadPlayerDataResponse\"\000\022]\n\016SavePl"
+    "ayerData\022#.data_service.SavePlayerDataRe"
+    "quest\032$.data_service.SavePlayerDataRespo"
+    "nse\"\000\022]\n\016GetPlayerField\022#.data_service.G"
+    "etPlayerFieldRequest\032$.data_service.GetP"
+    "layerFieldResponse\"\000\022]\n\016SetPlayerField\022#"
+    ".data_service.SetPlayerFieldRequest\032$.da"
+    "ta_service.SetPlayerFieldResponse\"\000\022W\n\022R"
+    "egisterPlayerZone\022\'.data_service.Registe"
+    "rPlayerZoneRequest\032\026.google.protobuf.Emp"
+    "ty\"\000\022f\n\021GetPlayerHomeZone\022&.data_service"
+    ".GetPlayerHomeZoneRequest\032\'.data_service"
+    ".GetPlayerHomeZoneResponse\"\000\022u\n\026BatchGet"
+    "PlayerHomeZone\022+.data_service.BatchGetPl"
+    "ayerHomeZoneRequest\032,.data_service.Batch"
+    "GetPlayerHomeZoneResponse\"\000\022r\n\025RemapHome"
+    "ZoneForMerge\022*.data_service.RemapHomeZon"
+    "eForMergeRequest\032+.data_service.RemapHom"
+    "eZoneForMergeResponse\"\000\022c\n\020DeletePlayerD"
+    "ata\022%.data_service.DeletePlayerDataReque"
+    "st\032&.data_service.DeletePlayerDataRespon"
+    "se\"\000\022o\n\024CreatePlayerSnapshot\022).data_serv"
+    "ice.CreatePlayerSnapshotRequest\032*.data_s"
+    "ervice.CreatePlayerSnapshotResponse\"\000\022l\n"
+    "\023ListPlayerSnapshots\022(.data_service.List"
+    "PlayerSnapshotsRequest\032).data_service.Li"
+    "stPlayerSnapshotsResponse\"\000\022r\n\025GetPlayer"
+    "SnapshotDiff\022*.data_service.GetPlayerSna"
+    "pshotDiffRequest\032+.data_service.GetPlaye"
+    "rSnapshotDiffResponse\"\000\022]\n\016RollbackPlaye"
+    "r\022#.data_service.RollbackPlayerRequest\032$"
+    ".data_service.RollbackPlayerResponse\"\000\022W"
+    "\n\014RollbackZone\022!.data_service.RollbackZo"
+    "neRequest\032\".data_service.RollbackZoneRes"
+    "ponse\"\000\022T\n\013RollbackAll\022 .data_service.Ro"
+    "llbackAllRequest\032!.data_service.Rollback"
+    "AllResponse\"\000\022c\n\020BatchRecallItems\022%.data"
+    "_service.BatchRecallItemsRequest\032&.data_"
+    "service.BatchRecallItemsResponse\"\000\022l\n\023Qu"
+    "eryTransactionLog\022(.data_service.QueryTr"
+    "ansactionLogRequest\032).data_service.Query"
+    "TransactionLogResponse\"\000\022l\n\023CreateEventS"
+    "napshot\022(.data_service.CreateEventSnapsh"
+    "otRequest\032).data_service.CreateEventSnap"
+    "shotResponse\"\000\022f\n\021AllocateIdSegment\022&.da"
+    "ta_service.AllocateIdSegmentRequest\032\'.da"
+    "ta_service.AllocateIdSegmentResponse\"\000\022f"
+    "\n\021ReservePlayerName\022&.data_service.Reser"
+    "vePlayerNameRequest\032\'.data_service.Reser"
+    "vePlayerNameResponse\"\000\022U\n\021ReleasePlayerN"
+    "ame\022&.data_service.ReleasePlayerNameRequ"
+    "est\032\026.google.protobuf.Empty\"\000\022i\n\022BatchGe"
+    "tPlayerName\022\'.data_service.BatchGetPlaye"
+    "rNameRequest\032(.data_service.BatchGetPlay"
+    "erNameResponse\"\000\022u\n\026GetPlayerAssetOpLedg"
+    "er\022+.data_service.GetPlayerAssetOpLedger"
+    "Request\032,.data_service.GetPlayerAssetOpL"
+    "edgerResponse\"\000\022o\n\024GetPlayerInboxLedger\022"
+    ").data_service.GetPlayerInboxLedgerReque"
+    "st\032*.data_service.GetPlayerInboxLedgerRe"
+    "sponse\"\000B\033Z\031data_service/data_serviceb\006p"
+    "roto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_deps[3] = {
@@ -10095,7 +10116,7 @@ static ::absl::once_flag descriptor_table_proto_2fdata_5fservice_2fdata_5fservic
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto = {
     false,
     false,
-    9194,
+    9245,
     descriptor_table_protodef_proto_2fdata_5fservice_2fdata_5fservice_2eproto,
     "proto/data_service/data_service.proto",
     &descriptor_table_proto_2fdata_5fservice_2fdata_5fservice_2eproto_once,
@@ -24133,7 +24154,12 @@ PROTOBUF_NDEBUG_INLINE GetPlayerAssetOpLedgerRequest::Impl_::Impl_(
 
 inline void GetPlayerAssetOpLedgerRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.player_id_ = {};
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, player_id_),
+           0,
+           offsetof(Impl_, require_sql_commit_) -
+               offsetof(Impl_, player_id_) +
+               sizeof(Impl_::require_sql_commit_));
 }
 GetPlayerAssetOpLedgerRequest::~GetPlayerAssetOpLedgerRequest() {
   // @@protoc_insertion_point(destructor:data_service.GetPlayerAssetOpLedgerRequest)
@@ -24182,7 +24208,12 @@ PROTOBUF_NOINLINE void GetPlayerAssetOpLedgerRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.player_id_ = ::uint64_t{0u};
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.require_sql_commit_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.require_sql_commit_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -24215,6 +24246,15 @@ PROTOBUF_NOINLINE void GetPlayerAssetOpLedgerRequest::Clear() {
     }
   }
 
+  // bool require_sql_commit = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_require_sql_commit() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          2, this_._internal_require_sql_commit(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -24238,13 +24278,20 @@ PROTOBUF_NOINLINE void GetPlayerAssetOpLedgerRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-   {
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
     // uint64 player_id = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
+      }
+    }
+    // bool require_sql_commit = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_require_sql_commit() != 0) {
+        total_size += 2;
       }
     }
   }
@@ -24265,9 +24312,16 @@ void GetPlayerAssetOpLedgerRequest::MergeImpl(::google::protobuf::MessageLite& t
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (from._internal_player_id() != 0) {
-      _this->_impl_.player_id_ = from._impl_.player_id_;
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_require_sql_commit() != 0) {
+        _this->_impl_.require_sql_commit_ = from._impl_.require_sql_commit_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -24287,7 +24341,12 @@ void GetPlayerAssetOpLedgerRequest::InternalSwap(GetPlayerAssetOpLedgerRequest* 
   using ::std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  swap(_impl_.player_id_, other->_impl_.player_id_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_.require_sql_commit_)
+      + sizeof(GetPlayerAssetOpLedgerRequest::_impl_.require_sql_commit_)
+      - PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerRequest, _impl_.player_id_)>(
+          reinterpret_cast<char*>(&_impl_.player_id_),
+          reinterpret_cast<char*>(&other->_impl_.player_id_));
 }
 
 ::google::protobuf::Metadata GetPlayerAssetOpLedgerRequest::GetMetadata() const {
@@ -24334,7 +24393,13 @@ GetPlayerAssetOpLedgerResponse::GetPlayerAssetOpLedgerResponse(
   _impl_.ledger_ = (CheckHasBit(cached_has_bits, 0x00000001U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.ledger_)
                 : nullptr;
-  _impl_.found_ = from._impl_.found_;
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, found_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, found_),
+           offsetof(Impl_, sql_committed_) -
+               offsetof(Impl_, found_) +
+               sizeof(Impl_::sql_committed_));
 
   // @@protoc_insertion_point(copy_constructor:data_service.GetPlayerAssetOpLedgerResponse)
 }
@@ -24348,9 +24413,9 @@ inline void GetPlayerAssetOpLedgerResponse::SharedCtor(::_pb::Arena* PROTOBUF_NU
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, ledger_),
            0,
-           offsetof(Impl_, found_) -
+           offsetof(Impl_, sql_committed_) -
                offsetof(Impl_, ledger_) +
-               sizeof(Impl_::found_));
+               sizeof(Impl_::sql_committed_));
 }
 GetPlayerAssetOpLedgerResponse::~GetPlayerAssetOpLedgerResponse() {
   // @@protoc_insertion_point(destructor:data_service.GetPlayerAssetOpLedgerResponse)
@@ -24405,7 +24470,9 @@ PROTOBUF_NOINLINE void GetPlayerAssetOpLedgerResponse::Clear() {
     ABSL_DCHECK(_impl_.ledger_ != nullptr);
     _impl_.ledger_->Clear();
   }
-  _impl_.found_ = false;
+  ::memset(&_impl_.found_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.sql_committed_) -
+      reinterpret_cast<char*>(&_impl_.found_)) + sizeof(_impl_.sql_committed_));
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -24445,6 +24512,15 @@ PROTOBUF_NOINLINE void GetPlayerAssetOpLedgerResponse::Clear() {
         stream);
   }
 
+  // bool sql_committed = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_sql_committed() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          3, this_._internal_sql_committed(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -24470,7 +24546,7 @@ PROTOBUF_NOINLINE void GetPlayerAssetOpLedgerResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     // .PlayerAssetOpLedgerComp ledger = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1 +
@@ -24479,6 +24555,12 @@ PROTOBUF_NOINLINE void GetPlayerAssetOpLedgerResponse::Clear() {
     // bool found = 1;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (this_._internal_found() != 0) {
+        total_size += 2;
+      }
+    }
+    // bool sql_committed = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_sql_committed() != 0) {
         total_size += 2;
       }
     }
@@ -24501,7 +24583,7 @@ void GetPlayerAssetOpLedgerResponse::MergeImpl(::google::protobuf::MessageLite& 
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       ABSL_DCHECK(from._impl_.ledger_ != nullptr);
       if (_this->_impl_.ledger_ == nullptr) {
@@ -24513,6 +24595,11 @@ void GetPlayerAssetOpLedgerResponse::MergeImpl(::google::protobuf::MessageLite& 
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (from._internal_found() != 0) {
         _this->_impl_.found_ = from._impl_.found_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_sql_committed() != 0) {
+        _this->_impl_.sql_committed_ = from._impl_.sql_committed_;
       }
     }
   }
@@ -24534,8 +24621,8 @@ void GetPlayerAssetOpLedgerResponse::InternalSwap(GetPlayerAssetOpLedgerResponse
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.found_)
-      + sizeof(GetPlayerAssetOpLedgerResponse::_impl_.found_)
+      PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.sql_committed_)
+      + sizeof(GetPlayerAssetOpLedgerResponse::_impl_.sql_committed_)
       - PROTOBUF_FIELD_OFFSET(GetPlayerAssetOpLedgerResponse, _impl_.ledger_)>(
           reinterpret_cast<char*>(&_impl_.ledger_),
           reinterpret_cast<char*>(&other->_impl_.ledger_));

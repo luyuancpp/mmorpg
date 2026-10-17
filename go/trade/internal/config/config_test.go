@@ -75,6 +75,11 @@ func TestEtcYamlContractValues(t *testing.T) {
 	if c.SharedRedis.DB != 0 {
 		t.Errorf("SharedRedis.DB = %d, want 0(位置键所在库)", c.SharedRedis.DB)
 	}
+	// 连接池上限要显式写正整数:k8s_deploy.ps1 把它镜像进 ConfigMap 并要求正整数,Redis 连接总账读同一个键。
+	// 写成 0 / 漏写 = go-redis 缺省 10 × GOMAXPROCS,随 CPU limit 漂移,部署在镜像时就会拒绝。
+	if c.SharedRedis.PoolSize <= 0 {
+		t.Errorf("SharedRedis.PoolSize = %d, want > 0(共享 Redis 连接总账按它记账)", c.SharedRedis.PoolSize)
+	}
 	// 资产通道默认关闭,本地这份也不例外 —— 这份 yaml 是最容易被整份抄去别的环境的一份。
 	// 要在本机验托管时才临时改 true,并先让 start_game.ps1 注入两把开发密钥;
 	// 改完记得改回来,否则这条断言会红(这就是它存在的目的:让"开着"必须是一次自觉的决定)。
@@ -181,7 +186,7 @@ func validConfig() Config {
 		},
 		DataServiceRpc: zrpc.RpcClientConf{Target: "127.0.0.1:9000"},
 		Market: MarketConf{
-			Scope: ScopeZone, DefaultPageSize: 20, MaxPageSize: 20, MaxPage: 100, MaxFavoritesPerPlayer: 100,
+			Scope: ScopeGlobal, DefaultPageSize: 20, MaxPageSize: 20, MaxPage: 100, MaxFavoritesPerPlayer: 100,
 		},
 		// 共享 Redis 必填:资产通道靠 player:{id}:location 找玩家所在 scene。
 		SharedRedis: RedisConf{Host: "127.0.0.1:6379"},
@@ -228,6 +233,7 @@ func TestValidate(t *testing.T) {
 		{"MaxFavoritesPerPlayer=0", func(c *Config) { c.Market.MaxFavoritesPerPlayer = 0 }},
 		{"DefaultPageSize>MaxPageSize", func(c *Config) { c.Market.DefaultPageSize = 21 }},
 		{"SharedRedis.Host 为空", func(c *Config) { c.SharedRedis.Host = "" }},
+		{"SharedRedis.PoolSize 为负", func(c *Config) { c.SharedRedis.PoolSize = -1 }},
 		// 密钥写进配置文件 = 泄漏,不看开关一律拒。
 		{"AssetOp.Secret 非空(通道关着也拒)", func(c *Config) { c.AssetOp.Secret = "any-value-at-all" }},
 		{"AssetOp.Secret 非空(通道开着)", func(c *Config) {
@@ -259,9 +265,39 @@ func TestValidate(t *testing.T) {
 // 配置对象读不到环境变量,把两件事混在一处会让单测被跑测机器的环境左右。
 func TestAssetOpEnabledAcceptsSecretEnv(t *testing.T) {
 	c := validConfig()
+	c.Market.Scope = ScopeGlobal
 	c.AssetOp = AssetOpConf{Enabled: true, SecretEnv: AssetOpSecretEnvPrefix + "TRADE"}
 	if err := c.Validate(); err != nil {
 		t.Fatalf("开关打开 + 合法变量名应通过校验: %v", err)
+	}
+}
+
+func TestCommerceWriteRequiresGlobalTiDBAndTrustedTitles(t *testing.T) {
+	c := validConfig()
+	c.Market.Scope = ScopeZone
+	c.AssetOp = AssetOpConf{Enabled: true, SecretEnv: AssetOpSecretEnvPrefix + "TRADE"}
+	if c.Validate() == nil {
+		t.Fatal("分区市场不得启用全服经济写面")
+	}
+	c.Market.Scope = ScopeGlobal
+	c.Commerce.ItemConfigs = []uint32{10}
+	if c.Validate() == nil {
+		t.Fatal("无可信名称的模板不得开放")
+	}
+	c.Commerce.ItemTitles = map[string]string{"10": "玄铁"}
+	// 合同终结只认玩家 SQL 提交证据:证据开关没开时不得开放合同(db-write-fencing-mysql.md §6.6)。
+	if c.Validate() == nil {
+		t.Fatal("RequireSQLCommit 关闭时不得开放交易合同")
+	}
+	c.AssetOp.RequireSQLCommit = true
+	if err := c.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	c.Commerce = CommerceConf{}
+	c.AssetOp.RequireSQLCommit = false
+	c.Mall.URL = "https://mall.invalid/api"
+	if c.Validate() == nil {
+		t.Fatal("RequireSQLCommit 关闭时不得接商城到账")
 	}
 }
 

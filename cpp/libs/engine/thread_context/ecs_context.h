@@ -40,6 +40,7 @@ struct EcsContext
 
     // --- Player Lookup ---
     entt::entity GetPlayer(Guid playerUid);
+    [[nodiscard]] Guid GetPlayerId(entt::entity player) const;
 
     // --- Lifecycle ---
     void Clear();

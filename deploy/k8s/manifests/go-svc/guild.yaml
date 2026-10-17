@@ -1,0 +1,83 @@
+# 全球帮会池：所有副本使用同一 Secret DSN，服务启动强制验证 TiDB 与强读会话。
+apiVersion: v1
+kind: Service
+metadata:
+  name: guild
+  labels: {app: guild, tier: go-svc}
+spec:
+  selector: {app: guild}
+  ports:
+    - {name: grpc, port: 50300, targetPort: 50300}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guild
+  labels: {app: guild, tier: go-svc}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: guild}
+  template:
+    metadata:
+      labels: {app: guild, tier: go-svc}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9220"
+        prometheus.io/path: /metrics
+    spec:
+      terminationGracePeriodSeconds: 35
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels: {app: guild}
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: guild
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          args: ["-f", "/app/etc/guild.yaml"]
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef: {fieldPath: status.podIP}
+            - name: MMORPG_GUILD_SQL_DSN
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: guild-sql-dsn, optional: false}
+            - name: MMORPG_ASSET_OP_SECRET_GUILD
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: asset-guild, optional: false}
+          ports:
+            - {name: grpc, containerPort: 50300}
+            - {name: metrics, containerPort: 9220}
+          readinessProbe:
+            tcpSocket: {port: grpc}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: grpc}
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 1000m, memory: 512Mi}
+          volumeMounts:
+            - {name: svc-config, mountPath: /app/etc, readOnly: true}
+            - {name: snowflake-cache, mountPath: /run/snowflake}
+      volumes:
+        - name: svc-config
+          configMap: {name: go-svc-guild-config}
+        - name: snowflake-cache
+          emptyDir: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: guild-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: guild}

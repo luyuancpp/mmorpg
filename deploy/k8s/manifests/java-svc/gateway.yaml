@@ -75,6 +75,9 @@ spec:
           # 重启时依赖还没恢复又起不来。代价:探针不再反映业务连接器能否接新连接,业务线程卡死时 liveness 仍是 UP。
           # 不要跨越本改动做 kubectl rollout undo:它把探针退回 8081,ConfigMap 却仍把 actuator 放在 8082,探针全部失败;
           # 回退一律用旧 commit 重跑 k8s_deploy.ps1(ConfigMap 与 Pod 模板同批生成)。
+          # 2026-10-16 补注:readiness 同样打 8082、只看 readinessState,业务线程被占满或死锁时仍是 Ready —— 这个副本不会被摘出
+          # Service 的 Endpoints,PDB 也照样算它健康。gateway 没有导出指标,仓库里也没有它的错误率告警;发现与人工处置(含 MySQL
+          # 不可达时不要删 Pod)见 deploy/k8s/README.md「gateway 探针、管理端口与回退口径」一节的 2026-10-16 补注。
           startupProbe:
             httpGet:
               path: /actuator/health/readiness

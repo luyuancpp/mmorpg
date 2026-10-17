@@ -1,0 +1,81 @@
+# SQL榜代次/封榜/奖励意图权威；两副本共享SQL并靠逐行租约投递邮件。
+apiVersion: v1
+kind: Service
+metadata:
+  name: rank
+  labels: {app: rank, tier: go-svc}
+spec:
+  selector: {app: rank}
+  ports:
+    - {name: grpc, port: 51100, targetPort: 51100}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rank
+  labels: {app: rank, tier: go-svc}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: rank}
+  template:
+    metadata:
+      labels: {app: rank, tier: go-svc}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9250"
+        prometheus.io/path: /metrics
+    spec:
+      terminationGracePeriodSeconds: 35
+      containers:
+        - name: rank
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          args: ["-f", "/app/etc/rank.yaml"]
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef: {fieldPath: status.podIP}
+            - name: MMORPG_RANK_SQL_DSN
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: rank-sql-dsn, optional: false}
+            - name: RANK_PRODUCER_SECRET_ADMIN
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: rank-producer-admin, optional: false}
+            - name: RANK_PRODUCER_SECRET_MATCH
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: rank-producer-match, optional: false}
+            - name: MAIL_PRODUCER_SECRET_RANK
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: mail-producer-rank, optional: false}
+          ports:
+            - {name: grpc, containerPort: 51100}
+            - {name: metrics, containerPort: 9250}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          lifecycle:
+            preStop:
+              exec: {command: [sh, -c, "sleep 5"]}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 1000m, memory: 512Mi}
+          volumeMounts:
+            - {name: svc-config, mountPath: /app/etc, readOnly: true}
+      volumes:
+        - name: svc-config
+          configMap: {name: go-svc-rank-config}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rank-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: rank}

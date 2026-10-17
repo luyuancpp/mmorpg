@@ -43,7 +43,6 @@ struct TestItem
 struct TestCall
 {
 	SteadyTime expiresAt;
-	uint32_t routerEntity{0};
 	std::string name;
 };
 
@@ -171,7 +170,7 @@ TEST(InflightIndex, InsertRejectsZeroAndDuplicate)
 TEST(InflightIndex, ExtractIsExactlyOnce)
 {
 	InflightIndex<TestCall> index;
-	ASSERT_TRUE(index.Insert(7, {At(100), 0, "a"}));
+	ASSERT_TRUE(index.Insert(7, {At(100), "a"}));
 	auto first = index.Extract(7);
 	ASSERT_TRUE(first.has_value());
 	EXPECT_EQ("a", first->name);
@@ -182,9 +181,9 @@ TEST(InflightIndex, ExtractIsExactlyOnce)
 TEST(InflightIndex, ExtractExpiredInDeadlineOrderAndSkipsCompleted)
 {
 	InflightIndex<TestCall> index;
-	index.Insert(1, {At(300), 0, "late"});
-	index.Insert(2, {At(100), 0, "early"});
-	index.Insert(3, {At(200), 0, "completed"});
+	index.Insert(1, {At(300), "late"});
+	index.Insert(2, {At(100), "early"});
+	index.Insert(3, {At(200), "completed"});
 	ASSERT_TRUE(index.Extract(3).has_value()) << "已认领的调用留在堆里,弹出时必须跳过";
 
 	auto expired = index.ExtractExpired(At(250));
@@ -198,20 +197,6 @@ TEST(InflightIndex, ExtractExpiredInDeadlineOrderAndSkipsCompleted)
 	EXPECT_EQ(1u, rest[0].first);
 	EXPECT_EQ(0u, index.Size());
 	EXPECT_EQ(0u, index.ExpiryHeapSize());
-}
-
-TEST(InflightIndex, ExtractIfSelectsByRouterEntityForNodeRemoval)
-{
-	InflightIndex<TestCall> index;
-	index.Insert(1, {At(100), 11, "on-removed"});
-	index.Insert(2, {At(100), 22, "on-other"});
-	index.Insert(3, {At(100), 11, "on-removed-too"});
-
-	auto removed = index.ExtractIf([](const TestCall &c) { return c.routerEntity == 11; });
-	EXPECT_EQ(2u, removed.size());
-	EXPECT_EQ(1u, index.Size());
-	EXPECT_TRUE(index.Extract(2).has_value());
-	EXPECT_TRUE(index.ExtractExpired(At(1000)).empty()) << "ExtractIf 取走的条目在堆里被惰性跳过";
 }
 
 TEST(QueueWait, ExceededOnlyStrictlyAfterLimit)

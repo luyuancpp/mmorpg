@@ -1,13 +1,15 @@
 syntax = "proto3";
 option go_package = "robot/proto/common/base";
 
+// 节点间 RPC0 信封(C++ 节点内部,不是客户端契约)。语义见 docs/design/muduo-rpc-channel.md §4.1。
 enum GameMessageType
 {
   REQUEST = 0;
   RESPONSE = 1;
-  RPC_CLIENT_REQUEST = 2;// Server-to-client
-  NODE_ROUTE = 3;// Inter-node forwarding
-  RPC_ERROR = 4; // not used
+  // 2026-10 删除:RPC_CLIENT_REQUEST 从未发送,NODE_ROUTE 的接收端是空函数。不得复用。
+  reserved 2, 3;
+  reserved "RPC_CLIENT_REQUEST", "NODE_ROUTE";
+  RPC_ERROR = 4; // 框架或 handler 拒绝本次调用;回显请求的 id 与 message_id
 }
 
 enum GameErrorCode
@@ -17,8 +19,10 @@ enum GameErrorCode
   NO_SERVICE = 2;
   NO_METHOD = 3;
   INVALID_REQUEST = 4;
-  INVALID_RESPONSE = 5;
-  TIMEOUT = 6;
+  INVALID_RESPONSE = 5; // 线上不发;本地完成状态见 C++ RpcStatusCode
+  TIMEOUT = 6;          // 线上不发;本地完成状态见 C++ RpcStatusCode
+  HANDLER_FAILED = 7;   // handler 显式失败(controller->SetFailed / RpcDoneCallback::Fail):handler 已运行
+  REPLY_DROPPED = 8;    // handler 接管 done 后未完成即释放:结果未知
 }
 
 message GameRpcMessage
@@ -28,4 +32,8 @@ message GameRpcMessage
   bytes response = 3;
   GameErrorCode error = 4;
   uint32 message_id = 5;
+  // 调用号(= muduo RpcMessage.id):发起方 channel 内单调递增、从 1 开始;0 = 单向(调用方不要应答)。
+  // id != 0 的 REQUEST,服务端必须恰好回一帧 RESPONSE 或 RPC_ERROR(Empty / 0 字节响应也回)。
+  // uint64:按 5 万次/s 算 uint32 约 24 小时回绕;不用原版的 fixed64,小号 varint 只占 1-3 字节。
+  uint64 id = 6;
 }

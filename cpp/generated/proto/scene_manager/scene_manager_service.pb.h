@@ -591,6 +591,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED LeaveSceneRequest final : public ::
     kPlayerIdFieldNumber = 1,
     kSceneIdFieldNumber = 2,
     kZoneIdFieldNumber = 4,
+    kSessionIdFieldNumber = 5,
+    kLoginGenerationFieldNumber = 6,
   };
   // string request_id = 3;
   void clear_request_id() ;
@@ -637,11 +639,31 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED LeaveSceneRequest final : public ::
   void _internal_set_zone_id(::uint32_t value);
 
   public:
+  // uint32 session_id = 5;
+  void clear_session_id() ;
+  [[nodiscard]] ::uint32_t session_id() const;
+  void set_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_session_id() const;
+  void _internal_set_session_id(::uint32_t value);
+
+  public:
+  // uint64 login_generation = 6;
+  void clear_login_generation() ;
+  [[nodiscard]] ::uint64_t login_generation() const;
+  void set_login_generation(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_login_generation() const;
+  void _internal_set_login_generation(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_manager.LeaveSceneRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 4,
+      ::google::protobuf::internal::TcParseTable<3, 6,
                           0, 50,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -674,6 +696,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED LeaveSceneRequest final : public ::
     ::uint64_t player_id_;
     ::uint64_t scene_id_;
     ::uint32_t zone_id_;
+    ::uint32_t session_id_;
+    ::uint64_t login_generation_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -3662,6 +3686,54 @@ inline ::uint32_t LeaveSceneRequest::_internal_zone_id() const {
 inline void LeaveSceneRequest::_internal_set_zone_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.zone_id_ = value;
+}
+
+// uint32 session_id = 5;
+inline void LeaveSceneRequest::clear_session_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint32_t LeaveSceneRequest::session_id() const {
+  // @@protoc_insertion_point(field_get:scene_manager.LeaveSceneRequest.session_id)
+  return _internal_session_id();
+}
+inline void LeaveSceneRequest::set_session_id(::uint32_t value) {
+  _internal_set_session_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:scene_manager.LeaveSceneRequest.session_id)
+}
+inline ::uint32_t LeaveSceneRequest::_internal_session_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.session_id_;
+}
+inline void LeaveSceneRequest::_internal_set_session_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_id_ = value;
+}
+
+// uint64 login_generation = 6;
+inline void LeaveSceneRequest::clear_login_generation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint64_t LeaveSceneRequest::login_generation() const {
+  // @@protoc_insertion_point(field_get:scene_manager.LeaveSceneRequest.login_generation)
+  return _internal_login_generation();
+}
+inline void LeaveSceneRequest::set_login_generation(::uint64_t value) {
+  _internal_set_login_generation(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:scene_manager.LeaveSceneRequest.login_generation)
+}
+inline ::uint64_t LeaveSceneRequest::_internal_login_generation() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.login_generation_;
+}
+inline void LeaveSceneRequest::_internal_set_login_generation(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.login_generation_ = value;
 }
 
 #ifdef __GNUC__

@@ -74,7 +74,18 @@ type TrialResultConsumerConfig struct {
 	GroupID string
 	// Partitions 必须与 match 的 ResultTopicPartitions 相同。topic 由先起的一方建出来,分区数建后不可变;
 	// 与 broker 现状不一致时 EnsureTopics 报错,消费者不启动(每 30s 重试并打 ERROR),让部署问题暴露出来。
-	Partitions int32
+	Partitions        int32
+	RequireDurability bool
+}
+
+// TopicSpec同时供启动门禁和后台消费者使用，防止先启动的Guild创建弱耐久topic。
+func (c TrialResultConsumerConfig) TopicSpec() kafkautil.TopicSpec {
+	spec := kafkautil.TopicSpec{Name: c.Topic, Partitions: c.Partitions, RetentionMs: trialResultTopicRetentionMs}
+	if c.RequireDurability {
+		spec.ReplicaFactor = 3
+		spec.RequireDurability = true
+	}
+	return spec
 }
 
 // TrialResultHandler 处理一条帮会历练的对局结果。
@@ -255,11 +266,7 @@ func (c *TrialResultConsumer) waitForTopic(ctx context.Context) bool {
 // 它最迟在套接字超时后返回(写法同 logic 的 lockedBattleID)。
 func (c *TrialResultConsumer) ensureTopicWithin(ctx context.Context) error {
 	done := make(chan error, 1)
-	specs := []kafkautil.TopicSpec{{
-		Name:        c.cfg.Topic,
-		Partitions:  c.cfg.Partitions,
-		RetentionMs: trialResultTopicRetentionMs,
-	}}
+	specs := []kafkautil.TopicSpec{c.cfg.TopicSpec()}
 	safego.Go(trialResultEnsureTopicPoint, func() {
 		// 先放一个兜底值:ensureTopics 若 panic,defer 仍把它送出去,等的一方不会永远等下去。
 		err := errors.New("ensure topics panicked (see goroutine_panic log)")

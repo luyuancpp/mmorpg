@@ -37,6 +37,14 @@
 // 只是让客户端重新入队」,实际 Lookup 回的是「排队中、名次 0」,客户端一直轮询到 meta 按 QueueEntryTTL
 // (1h)过期。PopAdmit 在写放行槽之前丢掉的条目(写放行槽的 MULTI 失败等)没有 admitted_at,仍回名次 0
 // 直到 meta 过期,这是既有边角(login-queue-2026-05.md §14 第 7 条)。queue:meta TTL is the global ceiling.
+//
+// (2026-10-15 更正)上文「PopAdmit 把它与在途占位排进同一个 MULTI」「admitted_at 与放行槽同一个 MULTI 写入」
+// 已不成立:放行槽、admitted_at、在途占位改由 admitEntryScript 一段脚本写,先判 meta 在不在、admitted_at
+// 有没有。meta 不在(条目在队里待满 QueueEntryTTL,token 索引与排队令牌同时失效,查询本来就回 EXPIRED)
+// 的条目整条丢弃,不写放行槽、不占名额、不计入放行数。ZPOPMIN 之后的写入也不再随调用方 ctx 取消(停服、
+// 丢租约),见 popAdmitWriteBudget。仍会丢条目、停在名次 0 的路径只剩:取消之后写入超出这个预算(预算自
+// PopAdmit 看到取消时起算,没有取消时不截断)、Redis 出错(含 noeviction 写满)、进程被强杀,以及 pickFn
+// 回 (nil, nil)、Marshal 失败;写入出错每批汇总一行 ERROR。
 package loginqueue
 
 import (
@@ -159,7 +167,13 @@ type Queue struct {
 
 	// afterAdmitMiss:只给同包测试用的注入点,生产恒为 nil(New 不设它)。Lookup 第一次取放行槽落空之后、
 	// 读 meta 之前调用,用来确定地模拟「dispatcher 写放行槽的 MULTI 恰好落在这两步之间」。
+	// (2026-10-15 更正)写放行槽的已是 admitEntryScript 一段脚本,不再是 MULTI;模拟的时序不变。
 	afterAdmitMiss func(queueID string)
+
+	// popAdmitWriteBudget:PopAdmit 看到调用方 ctx 已取消之后,写完已弹出条目最多再用多久(2026-10-15)。
+	// 生产恒为同名常量 popAdmitWriteBudget(理由见该常量);只有同包测试会改它(New 不收这个参数),
+	// 设成 0 即「取消一被看到预算就到期」,不依赖墙钟。
+	popAdmitWriteBudget time.Duration
 }
 
 // New constructs a Queue. hmacSecret is used to sign opaque queue tokens —
@@ -167,6 +181,8 @@ type Queue struct {
 // useless to a gate (different message shape) and useless to login without
 // a matching queueId entry, so the threat model is just "client tampering",
 // which HMAC over (queueId|expire) defeats.
+//
+// entryTTL、admitTTL 必须为正,New 本身不校验;生产路径应先调 ValidateTTLs(2026-10-15)。
 func New(rdb *redis.Client, entryTTL, admitTTL time.Duration, hmacSecret []byte) *Queue {
 	return &Queue{
 		rdb:          rdb,
@@ -175,7 +191,35 @@ func New(rdb *redis.Client, entryTTL, admitTTL time.Duration, hmacSecret []byte)
 		hmacSecret:   hmacSecret,
 		handoffGrace: defaultHandoffGrace,
 		now:          time.Now,
+
+		popAdmitWriteBudget: popAdmitWriteBudget,
 	}
+}
+
+// ValidateTTLs 校验 New 的两个时长参数(2026-10-15)。应由起服装配在 New 之前调用、失败即起服失败,
+// 与 NewDispatcher 对 interval / lockTTL 的校验同级;配置的 default 只在键缺省时生效,显式写 0s 不回落。
+// 两者都必须为正:
+//   - admitTTL <= 0:放行脚本的 SET PX 报错,弹出的条目会全部丢失(PopAdmit 因此在弹出之前也调本函数,
+//     不出队);旧写法(go-redis 的 Set(..., 0))则是写出永不过期的放行槽。在途占位一写即到期,FreeSlots 看不到
+//     已放行、未取走的人,超发。
+//   - entryTTL <= 0:go-redis 的 Expire(..., <=0) 当场删键,每次 Enqueue 都把整个 zone 的队列与 meta 删掉,
+//     token 索引却不带 TTL、永久残留;排队令牌签发即过期。
+//
+// 不要求 admitTTL < entryTTL:放行槽写在放行时刻、自带 TTL,排队久的条目本来就可能比 meta 晚到期,
+// 没有不变量依赖这个大小关系;Java 版 QueueSettings 同样只校验为正。
+//
+// (2026-10-15 补注)admitTTL 还须不小于 1ms:admitEntryScript 以 admitTTL.Milliseconds() 作 SET PX,
+// 不足 1ms 取整为 0,Redis 拒绝 SET PX 0,弹出的条目全部丢失、停在名次 0 直到 meta 过期;旧写法经 go-redis
+// 的 formatMs 截为 1ms,不受影响。entryTTL 不加这条下界:Enqueue 走 go-redis 的 Expire / Set,不足 1s / 1ms
+// 会被截成 1s / 1ms。报错串仍含 "ttl must be positive",起服装配与用例按这个子串匹配。
+func ValidateTTLs(entryTTL, admitTTL time.Duration) error {
+	if entryTTL <= 0 {
+		return fmt.Errorf("loginqueue: queue entry ttl must be positive, got %v", entryTTL)
+	}
+	if admitTTL < time.Millisecond {
+		return fmt.Errorf("loginqueue: admit ttl must be positive and at least 1ms, got %v", admitTTL)
+	}
+	return nil
 }
 
 // ── Key helpers ────────────────────────────────────────────────────────
@@ -279,6 +323,8 @@ type SignAdmitFn func(slot *AdmitSlot) (*AdmitToken, error)
 //   - 没取到、没有 admitted_at:ZRANK 命中回名次;落空是在途窗口(dispatcher 已 ZPOPMIN、写放行槽的
 //     MULTI 还没落地,亚秒级),回 StatusQueueing、名次 0,客户端照常再查。
 //   - token 索引或 meta 不在、meta 损坏:StatusExpired(原因 meta_gone)。
+//
+// (2026-10-15 更正)上面两处「MULTI」现为 admitEntryScript 一段脚本(放行槽、admitted_at、占位同时可见),判定顺序不变。
 func (q *Queue) Lookup(ctx context.Context, token string, signFn SignAdmitFn) (*QueueState, error) {
 	queueID, err := q.rdb.Get(ctx, tokenIndexKey(token)).Result()
 	if errors.Is(err, redis.Nil) {
@@ -330,6 +376,7 @@ func (q *Queue) Lookup(ctx context.Context, token string, signFn SignAdmitFn) (*
 	if admittedAt != "" {
 		// 放行过。PopAdmit 把放行槽与 admitted_at 写在同一个 MULTI 里,对其它客户端同时可见,所以看得到
 		// admitted_at 就说明放行槽写过;第一次 GETDEL 落空可能只是它早于那个 MULTI,再取一次。
+		// (2026-10-15 更正)「同一个 MULTI」现为 admitEntryScript 一段脚本,同样原子可见,推理不变。
 		// 复用 consumeAdmitAndSign:签票与改占位只有一份实现,取到时与第一次取到完全相同。
 		admit, err := q.consumeAdmitAndSign(ctx, queueID, signFn)
 		if err != nil {
@@ -368,6 +415,9 @@ func (q *Queue) Lookup(ctx context.Context, token string, signFn SignAdmitFn) (*
 		// (2026-10-15)走到这里时 meta 没有 admitted_at:dispatcher 已 ZPOPMIN、写放行槽的 MULTI 还没落地
 		// (亚秒级在途窗口),下一次轮询就能取到。放行槽被取走或过期之后不会再走到这里(上面回 EXPIRED)。
 		// 例外是 PopAdmit 在写放行槽之前丢掉的条目(MULTI 失败等,既有边角),它仍停在名次 0 直到 meta 过期。
+		// (2026-10-15 补注)上面两处「MULTI」现为 admitEntryScript。停服或丢租约发出的取消已不再造成这类丢条目
+		// (见 popAdmitWriteBudget);剩下的是取消之后写入超出预算、Redis 出错(含 noeviction 写满)与进程被强杀,
+		// 写入出错时 PopAdmit 每批汇总一行 ERROR(见 PopAdmit 末尾)。
 		return &QueueState{Status: StatusQueueing, Rank: 0}, nil
 	}
 	if err != nil {
@@ -381,6 +431,10 @@ func (q *Queue) Lookup(ctx context.Context, token string, signFn SignAdmitFn) (*
 // invokes signFn on the stored AdmitSlot to mint a fresh-TTL gate
 // token, and returns the resulting AdmitToken. Returns (nil, nil) if no
 // admit slot exists yet (caller treats as "still queueing").
+// (2026-10-15 更正)上一句「caller treats as "still queueing"」已不成立:(nil, nil) 只表示这次 GETDEL 没取到
+// 放行槽——可能还没放行,也可能已被取走或已按 AdmitTTL 过期。由 Lookup 读 meta 的 admitted_at 再下结论:
+// 没有 admitted_at 才算仍在排队(ZRANK 命中回名次,落空回名次 0 的在途窗口);有 admitted_at 则再取一次,
+// 仍取不到回 StatusExpired(原因 admit_window_passed)。见 Lookup 的判定顺序。
 //
 // The signFn argument is what makes this fix work: the gate token's
 // HMAC + expire are computed HERE, at consume time, so the 5-min
@@ -393,6 +447,9 @@ func (q *Queue) consumeAdmitAndSign(ctx context.Context, queueID string, signFn 
 	// GETDEL is single-RTT; if the admit was issued under SET NX it still
 	// resolves cleanly. If admit:{queueId} didn't exist, GETDEL returns
 	// redis.Nil and we treat it as "still queueing".
+	// (2026-10-15 更正)「we treat it as "still queueing"」不在这里决定:这里只回 (nil, nil),由 Lookup 按
+	// meta 的 admitted_at 分「仍在排队」与「放行窗口已过」(回 EXPIRED)。另:放行槽现在不是 SET NX 写的
+	// (此前是 MULTI 里的普通 SET,现为 admitEntryScript 里的 SET PX),GETDEL 对两者结果相同。
 	val, err := q.rdb.GetDel(ctx, admitKey(queueID)).Bytes()
 	if errors.Is(err, redis.Nil) {
 		return nil, nil
@@ -484,6 +541,7 @@ type PickAdmitSlotFn func(zoneID uint32, queueID string) (*AdmitSlot, error)
 //
 // Returns the number of entries actually admitted (may be < n if the
 // queue is shorter than expected, or if some pickFn calls fail).
+// (2026-10-15 补注)meta 已过期的条目不写、不计入;写入出错的条目也不计入,每批汇总一行 ERROR。
 func (q *Queue) PopAdmit(
 	ctx context.Context,
 	zoneID uint32,
@@ -493,6 +551,12 @@ func (q *Queue) PopAdmit(
 	if n <= 0 {
 		return 0, nil
 	}
+	// (2026-10-15)TTL 不合法(非正,或 AdmitTTL 不足 1ms)时一个都不弹出,条目原样留在队列,由 dispatcher 每拍记 ERROR。
+	// 起服装配(initLoginQueue)已在 New 之前调 ValidateTTLs、失败即起服失败,这里是纵深防御,挡住绕过装配
+	// 直接 New 的调用方:否则放行脚本的 SET PX 0 报错,弹出的整批全部丢失(旧写法则是写出永不过期的放行槽)。
+	if err := ValidateTTLs(q.entryTTL, q.admitTTL); err != nil {
+		return 0, err
+	}
 	zs, err := q.rdb.ZPopMin(ctx, zoneZSetKey(zoneID), int64(n)).Result()
 	if err != nil {
 		return 0, fmt.Errorf("zpopmin: %w", err)
@@ -501,7 +565,31 @@ func (q *Queue) PopAdmit(
 		return 0, nil
 	}
 
-	admitted := 0
+	// 弹出之后的写入不随调用方 ctx 取消,只受 popAdmitWriteBudget 约束(理由见该常量)。ZPOPMIN 本身仍用 ctx:
+	// 停服或丢租约之后不再弹出新的一批。
+	// (2026-10-15 更正)预算不自弹出时起算,自本批第一次看到调用方 ctx 已结束时起算;没有取消时一批写多久都照写,
+	// 与改动前(写入沿用没有截止的 drainCtx)一致。自弹出起算会在没有取消时截断开区大批次:例如 batch=5000、
+	// 逐条往返只要超过 0.6ms 就超出 3s,尾部条目丢失、停在名次 0 约 1h;它们也不占在途名额,下一拍 free 不降,
+	// 每拍的尾部都会这样丢。检查放在每次写之前(不在循环开头),pickFn 期间发生的取消在本条就生效。
+	writeCtx := context.WithoutCancel(ctx)
+	var cancelWrite context.CancelFunc
+	defer func() {
+		if cancelWrite != nil {
+			cancelWrite()
+		}
+	}()
+	armWriteBudget := func() {
+		if cancelWrite != nil || ctx.Err() == nil {
+			return
+		}
+		writeCtx, cancelWrite = context.WithTimeout(writeCtx, q.popAdmitWriteBudget)
+	}
+
+	var (
+		admitted, metaGone, dropped int
+		firstDroppedID              string
+		firstDroppedErr             error
+	)
 	for _, z := range zs {
 		queueID, ok := z.Member.(string)
 		if !ok || queueID == "" {
@@ -512,7 +600,14 @@ func (q *Queue) PopAdmit(
 			// Couldn't pick a gate — the entry is gone from ZSET. Best-effort
 			// re-add at the front so the next dispatcher tick retries. Score
 			// = 0 to put it ahead of newcomers.
-			q.rdb.ZAdd(ctx, zoneZSetKey(zoneID), redis.Z{Score: 0, Member: queueID})
+			// (2026-10-15 补注)回填失败时这个条目同样丢了,记进循环后的汇总 ERROR(此前错误被忽略、零日志)。
+			armWriteBudget()
+			if err := q.rdb.ZAdd(writeCtx, zoneZSetKey(zoneID), redis.Z{Score: 0, Member: queueID}).Err(); err != nil {
+				dropped++
+				if firstDroppedErr == nil {
+					firstDroppedID, firstDroppedErr = queueID, fmt.Errorf("requeue after pick failure: %w", err)
+				}
+			}
 			continue
 		}
 		if slot == nil {
@@ -525,23 +620,65 @@ func (q *Queue) PopAdmit(
 			continue
 		}
 
-		pipe := q.rdb.TxPipeline()
-		pipe.Set(ctx, admitKey(queueID), blob, q.admitTTL)
-		// 放行时刻记进 meta(admitted_at),与放行槽在同一个 MULTI 里:对其它客户端两者同时可见,Lookup 据此
-		// 把「放行槽已被取走或已过期」(回 EXPIRED)与「在途窗口」(回名次 0)分开。脚本只在 meta 还在时写,
-		// 不凭空建出没有 TTL 的 meta(见 markAdmittedScript)。值用墙钟,与 meta 的 createdAt 同源。
-		markAdmitted(ctx, pipe, queueID, time.Now())
-		// 在途占位:没人来取时与放行槽同寿(AdmitTTL),按自己的分数到期;取走时改成再留 handoffGrace。
-		// 占位与整键续期是一段脚本(见 holdAdmitted),和放行槽的 SET 一起排进同一个 MULTI。
-		// 任一条出错 Exec 即回 error,这个条目不计入放行数(既有的丢条目路径,spec_G4b-G §5.3)。
-		q.holdAdmitted(ctx, pipe, zoneID, queueID, q.admitTTL)
-		if _, err := pipe.Exec(ctx); err != nil {
+		// (2026-10-15 改)放行槽、admitted_at、在途占位由 admitEntryScript 一段脚本写,此前是一个
+		// MULTI{SET, markAdmittedScript, admittedHoldScript}。三者对其它客户端同时可见,Lookup 据 admitted_at
+		// 把「放行槽已被取走或已过期」(回 EXPIRED)与「在途窗口」(回名次 0)分开;占位没人来取时与放行槽同寿
+		// (AdmitTTL),取走时改成再留 handoffGrace。meta 不在的条目什么都不写、不计入放行数(见脚本注释)。
+		// pickFn 在脚本之前调用,这类条目仍让本拍批内的 gate 本地计数 +1,只影响一拍之内的分配均衡。
+		// 出错不回填队列(见 popAdmitWriteBudget),条目不计入放行数(既有的丢条目路径,spec_G4b-G §5.3),
+		// 循环结束后汇总一行 ERROR。
+		armWriteBudget()
+		res, err := q.admitEntry(writeCtx, zoneID, queueID, blob)
+		if err != nil {
+			dropped++
+			if firstDroppedErr == nil {
+				firstDroppedID, firstDroppedErr = queueID, err
+			}
 			continue
 		}
+		if res == admitEntryMetaGone {
+			metaGone++
+			continue
+		}
+		// admitEntryWritten,或 admitEntryAlreadyAdmitted(go-redis 重发了同一次脚本,第一次已写成):都算放行。
 		admitted++
+	}
+	if dropped > 0 {
+		// 每批一行,不逐条打:Redis 写满(noeviction)时每拍整批失败,逐条打会一拍刷几千行。
+		logx.Errorf("[loginqueue] PopAdmit dropped entries after zpopmin zone=%d reason=write_failed popped=%d admitted=%d dropped=%d firstQueueId=%s firstErr=%v",
+			zoneID, len(zs), admitted, dropped, firstDroppedID, firstDroppedErr)
+	}
+	if metaGone > 0 {
+		logx.Infof("[loginqueue] PopAdmit dropped entries after zpopmin zone=%d reason=meta_gone dropped=%d",
+			zoneID, metaGone)
 	}
 	return admitted, nil
 }
+
+// popAdmitWriteBudget:PopAdmit 在 ZPOPMIN 之后写放行(含 pickFn 出错时的回填)最多用多久(2026-10-15)。
+//
+// ZPOPMIN 之后,这批条目只存在于本进程的内存里:不在队列,也还没有放行槽、admitted_at 和占位。调用方传入的
+// 是 dispatcher 的 drainCtx,停服(Stop → cancel)与丢租约(onLost → drainCancel)都会取消它;沿用它写,
+// 剩下每一条都在 go-redis 取连接时(pool 的 waitTurn)就以 context.Canceled 返回、命令根本没发出,整批剩余
+// 条目丢失,玩家停在名次 0 直到 meta 过期(1h)。开区时一拍放上千人,串行写与 1s 的拍长同一量级,滚动重启
+// 或丢租约落在一个非空拍上并不罕见。所以这一段改用不随取消结束、但有上限的 ctx:
+//   - 3s:go-zero 收到 SIGTERM 后先等 1s 收尾,到 5.5s 强杀;cancel 在收尾之后才发出,3s 落在剩余窗口里。
+//     截止只在取连接时生效(客户端没开 ContextTimeoutEnabled),正在等回包的那一条另受 ReadTimeout
+//     (默认 3s)约束。Stop 因此最多多等约一个预算。超出预算的条目照旧丢失,记进汇总的 ERROR。
+//   - 丢租约后继续写自己已弹出的条目是安全的:ZPOPMIN 让每个条目只被一个副本弹出一次,不会重复写槽、重复签票;
+//     新 leader 算空位时暂时看不到这些占位,最多多放一批,与 login-queue-2026-05.md §14 第 7 条的在途上界同类。
+//   - 不要改成「写入出错就回填队列」:回填用的 ZADD 在 noeviction 写满时同样被拒;队列被弹空之后,普通 ZADD
+//     还会建出没有 TTL 的队列键;读超时这类结果不确定的错误下脚本可能已经执行,回填只会让已放行的条目再被
+//     弹出一次。
+//
+// (2026-10-15 更正)预算自 PopAdmit 第一次看到调用方 ctx 已结束时起算,不自弹出时起算(原因见 PopAdmit 里
+// armWriteBudget 前的注释);没有取消时不设截止,与改动前一致。上文「cancel 在收尾之后才发出,3s 落在剩余窗口里」
+// 也不严谨:go-zero 约在 SIGTERM 后 1s 通知 shutdown listener,服务退出后 defer 的 ctx.Stop 才取消 drainCtx,
+// PopAdmit 要到下一次写之前才看到,预算通常在 SIGTERM 后约 4s 走完,落在 5.5s 强杀之前;但到期时正在等回包的
+// 那一条还会再等到 ReadTimeout(默认 3s)。所以 Stop 最多多等「预算 + 一条命令的 ReadTimeout」,Redis 慢到这种
+// 程度时会越过强杀点,被强杀时尾部条目照样丢失,也打不出汇总 ERROR。生产取值经 Queue.popAdmitWriteBudget 读取
+// (New 设为本常量),只有同包测试会改。
+const popAdmitWriteBudget = 3 * time.Second
 
 // admittedKeyTTL 是本副本每次写在途占位之后,整键至少还要剩的 TTL(记作 W)。只做垃圾回收,
 // 见 admittedKeyGCSlack。
@@ -564,6 +701,8 @@ func (q *Queue) admittedKeyTTL() time.Duration {
 // admittedHoldScript 把一个成员的在途占位记到给定的到期毫秒(成员已在则覆盖分数),并保证整键剩余
 // TTL 不少于 W(只增不减,见 admittedKeyTTL)。放行与取走共用,写法与 reserveFastPathSlotScript 的
 // 后两步相同,改一处要同步改另一处。
+// (2026-10-15 更正)放行改由 admitEntryScript 写占位,本脚本只剩取走一处在用;admitEntryScript 的后两步
+// 也是同一写法,现在是三处同步改。
 //
 //	KEYS[1] = admitted:zset:zone:{zone}
 //	ARGV[1] = 占位到期毫秒   ARGV[2] = member(queueId)   ARGV[3] = W 毫秒
@@ -583,6 +722,7 @@ return 1
 // Script.Run:Run 先发 EVALSHA,遇到 NOSCRIPT 才回退 EVAL,而排在 pipeline 里的命令要到 Exec 才知道
 // 结果,回退来不及;MULTI 里的 EVALSHA 若撞上 NOSCRIPT(Redis 重启、SCRIPT FLUSH 之后),放行槽照样
 // 写进去、占位却没写。脚本只有几行,每次带上全文的开销可以忽略。
+// (2026-10-15 补注)放行改用 admitEntryScript 之后,只剩取走路径调用,传的是 q.rdb(当场执行)。
 func (q *Queue) holdAdmitted(ctx context.Context, c redis.Scripter, zoneID uint32, member string, hold time.Duration) *redis.Cmd {
 	return admittedHoldScript.Eval(ctx, c,
 		[]string{admittedZSetKey(zoneID)},
@@ -590,29 +730,57 @@ func (q *Queue) holdAdmitted(ctx context.Context, c redis.Scripter, zoneID uint3
 	)
 }
 
-// markAdmittedScript 在 meta 里记下放行时刻,只在 meta 还在时写。
+// admitEntryScript 的返回值。
+const (
+	admitEntryMetaGone        = 0 // meta 不在,什么都没写
+	admitEntryWritten         = 1 // 已写放行槽、admitted_at、在途占位
+	admitEntryAlreadyAdmitted = 2 // admitted_at 已在,什么都没写(同一次放行被 go-redis 重发)
+)
+
+// admitEntryScript 写一个条目的放行:放行槽、meta 的 admitted_at、在途占位,一段脚本内对其它客户端同时可见
+// (2026-10-15 起,替代原来的 MULTI{SET, markAdmittedScript, admittedHoldScript})。
 //
-// 不能直接 HSET:HSET 遇到不存在的键会建出一个新 hash,而 meta 的 TTL 只由 Enqueue 设一次,这样建出的键
-// 没有 TTL、永不过期。meta 先于队列成员消失是走得到的:成员在队里待满 QueueEntryTTL(整个队列键的 TTL
-// 每次入队都续,meta 不续),或 meta 被内存淘汰。meta 不在时 Lookup 本来就回 EXPIRED(meta_gone),
-// 不需要这个字段。键在时 HSET 不改它的 TTL,meta 仍按入队时的 QueueEntryTTL 过期。
+//	KEYS[1] = admit:{queueId}   KEYS[2] = queue:meta:{queueId}   KEYS[3] = admitted:zset:zone:{zone}
+//	ARGV[1] = AdmitSlot JSON    ARGV[2] = AdmitTTL 毫秒          ARGV[3] = 字段名(metaFieldAdmittedAt)
+//	ARGV[4] = 放行时刻 unix 毫秒(墙钟,与 meta 的 createdAt 同源)
+//	ARGV[5] = 占位到期毫秒(Queue.now + AdmitTTL)   ARGV[6] = member(queueId)   ARGV[7] = W 毫秒(admittedKeyTTL)
+//	返回 admitEntryMetaGone / admitEntryWritten / admitEntryAlreadyAdmitted,从不回 nil。
 //
-//	KEYS[1] = queue:meta:{queueId}
-//	ARGV[1] = 字段名(metaFieldAdmittedAt)   ARGV[2] = 放行时刻 unix 毫秒
-//	返回 1 = 已写,0 = meta 不在。不能回 nil:排在 MULTI 里会让 Exec 回 error(同 admittedHoldScript)。
-var markAdmittedScript = redis.NewScript(`
-if redis.call('EXISTS', KEYS[1]) == 0 then return 0 end
-redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
+// 两道前置判定都只读,不过时一个键都不动:
+//   - meta 不在:条目在队里待满了 QueueEntryTTL(整个队列键的 TTL 每次入队都续,meta 不续)。token 索引与 meta
+//     由 Enqueue 在同一个 MULTI 里用同一个 TTL 设下、同时过期,排队令牌的 HMAC 也已到期,部署不淘汰键,
+//     再没有人能取到这个放行槽;写了只是白占一个 AdmitTTL 的在途名额、虚增 admit_total。也不能直接 HSET:
+//     会建出一个没有 TTL、永不过期的 meta。
+//   - admitted_at 已在:这个条目已经放行过。ZPOPMIN 只弹出一次,走到这里只可能是 go-redis 重发了同一次脚本
+//     (单条命令在读超时、连接断开后自动重发;原来的 MULTI 读失败不重发)。第一次已经执行,期间客户端可能已经
+//     取走放行槽;再写一次就会签出第二张 gate 票,占位分数也会被拨回「放行时刻 + AdmitTTL」。
+//
+// meta 在时 HSET 不改它的 TTL,meta 仍按入队时的 QueueEntryTTL 到期。占位两步(先 ZADD,剩余 PTTL < W 才
+// PEXPIRE W)与 admittedHoldScript、reserveFastPathSlotScript 同一写法,改一处要三处同步(两个陷阱见
+// admittedKeyTTL)。脚本中途某条命令出错(占位键被写成别的类型、AdmitTTL 不足 1ms 时的 SET PX 0)时,
+// 已执行的写不回滚,与原来 MULTI 里单条命令出错相同;SET 是第一条写,它出错时什么都没写。
+// (2026-10-15 补注)AdmitTTL 不足 1ms 的情形已由 ValidateTTLs 挡在起服与弹出之前(见该函数)。
+var admitEntryScript = redis.NewScript(`
+if redis.call('EXISTS', KEYS[2]) == 0 then return 0 end
+if redis.call('HEXISTS', KEYS[2], ARGV[3]) == 1 then return 2 end
+redis.call('SET', KEYS[1], ARGV[1], 'PX', ARGV[2])
+redis.call('HSET', KEYS[2], ARGV[3], ARGV[4])
+redis.call('ZADD', KEYS[3], ARGV[5], ARGV[6])
+if redis.call('PTTL', KEYS[3]) < tonumber(ARGV[7]) then
+	redis.call('PEXPIRE', KEYS[3], ARGV[7])
+end
 return 1
 `)
 
-// markAdmitted 把放行时刻记进 queueID 的 meta(见 markAdmittedScript)。只由 PopAdmit 排进写放行槽的
-// MULTI;用 EVAL 而不是 Script.Run 的理由同 holdAdmitted。
-func markAdmitted(ctx context.Context, c redis.Scripter, queueID string, at time.Time) *redis.Cmd {
-	return markAdmittedScript.Eval(ctx, c,
-		[]string{metaKey(queueID)},
-		metaFieldAdmittedAt, at.UnixMilli(),
-	)
+// admitEntry 对 queueID 跑一次 admitEntryScript,返回值见该脚本。只由 PopAdmit 调用。
+// 不在 pipeline 里,用 Script.Run(先 EVALSHA,NOSCRIPT 时回退 EVAL):EVALSHA 撞上 NOSCRIPT 时脚本没有执行,
+// 当场就能回退,不存在 holdAdmitted 注释里「排在 MULTI 里来不及回退」的问题。三个键都在排队族同一个实例上。
+func (q *Queue) admitEntry(ctx context.Context, zoneID uint32, queueID string, blob []byte) (int64, error) {
+	return admitEntryScript.Run(ctx, q.rdb,
+		[]string{admitKey(queueID), metaKey(queueID), admittedZSetKey(zoneID)},
+		blob, q.admitTTL.Milliseconds(), metaFieldAdmittedAt, time.Now().UnixMilli(),
+		q.now().Add(q.admitTTL).UnixMilli(), queueID, q.admittedKeyTTL().Milliseconds(),
+	).Int64()
 }
 
 // admittedCountScript 清掉已到期的占位再计数,两步在同一段脚本里。

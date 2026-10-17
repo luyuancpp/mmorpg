@@ -18,6 +18,8 @@ ListenOn: 127.0.0.1:53000
 # 还牵连同名重试的 1s 门槛),由 login 负责人定(client-request-ordering.md §5.3)。
 # 2026-10-15 补:名字登记之前还有一次新铸 id 的只读探测(6b',1s ctx 预算,见下方 Locker 注释),上面的名义之和
 # 再 +1s(10~11s);它同样派生自 handler ctx,结论不变。
+# (2026-10-16 更正)探测已删去 1s 子预算,直接用 handler ctx(子预算还会截断连接池排队与拨号,探测又 fail-closed,
+# 会在 Redis 停顿 1~3s 时单独拒绝建角);上面名义之和不再 +1s,结论不变。见 new-player-first-enter-no-cold-read.md §9。
 # EnterGame 的预加载链在 RPC 返回之后后台跑(chainBudget 5min),不受本值约束。
 # 上限约束(上游比下游宽):gate 直连 login 的 C++ deadline = bin/etc/base_deploy_config.yaml 的
 # GrpcClient.CallDeadlineMs.LoginNodeService(12000),必须 >= 本值 + 2000,由 Assert-GrpcClientDeadlineBudget 核对。
@@ -58,6 +60,11 @@ Node:
     DialTimeout: 3s
     ReadTimeout: 3s
     WriteTimeout: 3s
+    # go-redis 连接池上限(P0-E 第 3 批,共享 Redis 连接总账)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+    # 随 CPU limit 漂移(本机 Windows 上是 10 × 核数)。20 = K8s 上 GOMAXPROCS 按 2 时的缺省值,显式写出后不再随 CPU limit 变。
+    # 任务结果 Pub/Sub 专用连接不占池名额。tools/scripts/k8s_deploy.ps1 把它镜像进 login ConfigMap(要求正整数),
+    # Redis 连接总账读同一个键:改它看部署时打印的 "Redis connection ledger" 一行。池等满会排队(go-redis PoolTimeout)。
+    PoolSize: 20
 
 # Snowflake ID config
 Snowflake:
@@ -94,6 +101,8 @@ Locker:
   #     各步预算直接相加是 21s(开种子 24s)。探测的 ctx 派生自 handler ctx、排在围栏写之前,所以上面「围栏写最晚在
   #     handler 起算 4s 内发出、合计约 10s、20 仍盖得住」的推导不变;上调 Timeout 按 P6 重算时把这一次算进去
   #     (同文 §10 P7)。
+  #     (2026-10-16 更正)探测已不另设 1s 子预算,直接用 handler ctx;「ctx 预算只掐重发」不准确,ctx 截止还会截断
+  #     连接池排队与拨号。「围栏写最晚在 handler 起算 4s 内发出」的结论不变。
   # 原值 10 是名字登记加入之前定的,已经盖不住;20 盖住「gRPC 三步全部拖满 + Redis 慢但还在回包」。
   # **20 不是硬上界**,不要把它读成「有余量的保证」:
   #   - Redis 那个 3s 是 go-redis 默认的**单次** socket 读超时。svc/servicecontext.go 构造客户端时
@@ -492,6 +501,7 @@ AuthProviders:
 #
 # Enabled=true 时 DispatchInterval、DispatcherLockTTL 必须为正(loginqueue.NewDispatcher 校验),否则起服失败;
 # 代码里的默认值(1s / 30s)只在键缺省时生效,显式写 0s 不会回落到默认值,也不是「关掉」。
+# (2026-10-15 补注)QueueEntryTTL 同样必须为正,AdmitTTL 不小于 1ms(loginqueue.ValidateTTLs),否则起服失败。
 Queue:
   Enabled: false
   DispatchInterval: 1s
@@ -544,6 +554,7 @@ Kafka:
                         # 旧值 300000 (5min) 会让 db service 卡住超过 5 分钟时丢数据,
                         # 24h 给运维处理事故留出充足窗口。详见
                         # docs/notes/redis-oom-data-safety-qa-record.md P1 章节。
+  # RetentionBytes: 0  # 0/不写 = 沿用 broker 的 log.retention.bytes;K8s 由 k8s_deploy.ps1 按 Kafka 盘预算渲染(与 db 同值)
 
 # 下发 gate 地址时是否必须用 gate 自报的客户端可达地址(NodeInfo.clientEndpoint,集群外入口 D78)。
 # false = gate 没自报就回落 endpoint(PodIP),本地开发 / podip 模式用它;

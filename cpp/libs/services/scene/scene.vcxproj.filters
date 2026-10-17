@@ -40,6 +40,9 @@
     <ClInclude Include="player\system\travel_freeze_cap.h" />
     <ClInclude Include="player\system\relocate_confirm.h" />
     <ClInclude Include="player\system\enter_fence.h" />
+    <ClInclude Include="player\system\release_fence.h" />
+    <ClInclude Include="player\system\save_seq.h" />
+    <ClInclude Include="player\system\save_seq_floor.h" />
     <ClInclude Include="player\system\player_data_loader.h" />
     <ClInclude Include="player\system\db_task_dispatch_ledger.h" />
     <ClInclude Include="player\system\db_task_dispatch_system.h" />
@@ -73,9 +76,11 @@
     <ClInclude Include="spatial\system\recast.h" />
     <ClInclude Include="spatial\system\scene_spawn.h" />
     <ClInclude Include="spatial\system\view.h" />
+    <ClInclude Include="world\scene_lifecycle.h" />
     <ClInclude Include="world\world.h" />
     <ClInclude Include="player\comp\afk_comp.h" />
     <ClInclude Include="player\comp\player_ownership_comp.h" />
+    <ClInclude Include="player\comp\player_save_seq_floor_comp.h" />
     <ClInclude Include="player\comp\player_landing_comp.h" />
     <ClInclude Include="player\system\afk.h" />
     <ClInclude Include="player\system\asset_op_auth.h" />
@@ -128,6 +133,7 @@
     <ClCompile Include="spatial\system\recast.cpp" />
     <ClCompile Include="spatial\system\scene_spawn.cpp" />
     <ClCompile Include="spatial\system\view.cpp" />
+    <ClCompile Include="world\scene_lifecycle.cpp" />
     <ClCompile Include="world\world.cpp" />
     <ClCompile Include="player\system\db_task_dispatch_ledger.cpp" />
     <ClCompile Include="player\system\db_task_dispatch_system.cpp" />
@@ -157,8 +163,5 @@
     <ClInclude Include="player\system\player_activity_schedule.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="actor\actor_events.h" />
-    <ClInclude Include="combat\combat_events.h" />
-    <ClInclude Include="player\player_events.h" />
   </ItemGroup>
 </Project>

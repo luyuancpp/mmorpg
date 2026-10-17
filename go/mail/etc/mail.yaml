@@ -1,0 +1,28 @@
+Name: mail.rpc
+ListenOn: 127.0.0.1:50900
+AdvertiseHost: 127.0.0.1
+Mode: dev
+Timeout: 3500
+ZoneId: 1
+Etcd:
+  Hosts: [127.0.0.1:2379]
+MetricsListenAddr: 127.0.0.1:9240
+DSNEnv: MMORPG_MAIL_SQL_DSN
+RequireTiDB: true
+MaxOpenConns: 16
+AutoMigrate: false
+TableDir: ../../generated/tables
+SharedRedisAddr: 127.0.0.1:6379
+KafkaBrokers: [127.0.0.1:9092]
+AssetSecretEnv: MMORPG_ASSET_OP_SECRET_MAIL
+DataServiceRpc:
+  Endpoints: [127.0.0.1:9000]
+  Timeout: 2000
+Producers:
+  admin: MAIL_PRODUCER_SECRET_ADMIN
+  rank: MAIL_PRODUCER_SECRET_RANK
+  guild: MAIL_PRODUCER_SECRET_GUILD
+Log:
+  ServiceName: mail
+  Mode: console
+  Level: info

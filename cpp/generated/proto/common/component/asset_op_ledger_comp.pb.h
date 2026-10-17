@@ -54,6 +54,14 @@ struct TableStruct_proto_2fcommon_2fcomponent_2fasset_5fop_5fledger_5fcomp_2epro
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fcommon_2fcomponent_2fasset_5fop_5fledger_5fcomp_2eproto;
 }  // extern "C"
+class AssetOpReceipt;
+struct AssetOpReceiptGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern AssetOpReceiptGlobalsTypeInternal AssetOpReceipt_globals_;
+extern const ::google::protobuf::internal::ClassDataFull AssetOpReceipt_class_data_;
+#else
+extern const AssetOpReceiptGlobalsTypeInternal AssetOpReceipt_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 class AssetOpRejection;
 struct AssetOpRejectionGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -302,6 +310,254 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetOpRejection final : public ::g
 };
 // -------------------------------------------------------------------
 
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetOpReceipt final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:AssetOpReceipt) */ {
+ public:
+  inline AssetOpReceipt() : AssetOpReceipt(nullptr) {}
+  ~AssetOpReceipt() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(AssetOpReceipt* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(AssetOpReceipt));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr AssetOpReceipt(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline AssetOpReceipt(const AssetOpReceipt& from) : AssetOpReceipt(nullptr, from) {}
+  inline AssetOpReceipt(AssetOpReceipt&& from) noexcept : AssetOpReceipt(nullptr, ::std::move(from)) {}
+  inline AssetOpReceipt& operator=(const AssetOpReceipt& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline AssetOpReceipt& operator=(AssetOpReceipt&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const AssetOpReceipt& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<AssetOpReceipt>(&AssetOpReceipt_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 1;
+  friend void swap(AssetOpReceipt& a, AssetOpReceipt& b) { a.Swap(&b); }
+  inline void Swap(AssetOpReceipt* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(AssetOpReceipt* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] AssetOpReceipt* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<AssetOpReceipt>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const AssetOpReceipt& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const AssetOpReceipt& from) { AssetOpReceipt::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(AssetOpReceipt* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "AssetOpReceipt"; }
+
+  explicit AssetOpReceipt(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  AssetOpReceipt(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const AssetOpReceipt& from);
+  AssetOpReceipt(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, AssetOpReceipt&& from) noexcept
+      : AssetOpReceipt(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRequestDigestFieldNumber = 2,
+    kSnapshotFieldNumber = 3,
+    kSeqFieldNumber = 1,
+    kCorrelationIdFieldNumber = 4,
+  };
+  // bytes request_digest = 2;
+  void clear_request_digest() ;
+  [[nodiscard]] const ::std::string& request_digest() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_digest(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_digest();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_digest();
+  void set_allocated_request_digest(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_digest() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_digest(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_digest();
+
+  public:
+  // .AssetSnapshot snapshot = 3;
+  [[nodiscard]] bool has_snapshot()
+      const;
+  void clear_snapshot() ;
+  [[nodiscard]] const ::AssetSnapshot& snapshot() const;
+  [[nodiscard]] ::AssetSnapshot* PROTOBUF_NULLABLE release_snapshot();
+  ::AssetSnapshot* PROTOBUF_NONNULL mutable_snapshot();
+  void set_allocated_snapshot(::AssetSnapshot* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_snapshot(::AssetSnapshot* PROTOBUF_NULLABLE value);
+  ::AssetSnapshot* PROTOBUF_NULLABLE unsafe_arena_release_snapshot();
+
+  private:
+  const ::AssetSnapshot& _internal_snapshot() const;
+  ::AssetSnapshot* PROTOBUF_NONNULL _internal_mutable_snapshot();
+
+  public:
+  // uint64 seq = 1;
+  void clear_seq() ;
+  [[nodiscard]] ::uint64_t seq() const;
+  void set_seq(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_seq() const;
+  void _internal_set_seq(::uint64_t value);
+
+  public:
+  // uint64 correlation_id = 4;
+  void clear_correlation_id() ;
+  [[nodiscard]] ::uint64_t correlation_id() const;
+  void set_correlation_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_correlation_id() const;
+  void _internal_set_correlation_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:AssetOpReceipt)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<2, 4,
+                          1, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const AssetOpReceipt& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr request_digest_;
+    ::AssetSnapshot* PROTOBUF_NULLABLE snapshot_;
+    ::uint64_t seq_;
+    ::uint64_t correlation_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fcomponent_2fasset_5fop_5fledger_5fcomp_2eproto;
+};
+// -------------------------------------------------------------------
+
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetOpStreamLedger final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:AssetOpStreamLedger) */ {
  public:
@@ -358,7 +614,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetOpStreamLedger final : public 
   [[nodiscard]] static const AssetOpStreamLedger& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<AssetOpStreamLedger>(&AssetOpStreamLedger_globals_);
   }
-  static constexpr int kIndexInFileMessages = 1;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(AssetOpStreamLedger& a, AssetOpStreamLedger& b) { a.Swap(&b); }
   inline void Swap(AssetOpStreamLedger* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -454,6 +710,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetOpStreamLedger final : public 
     kAppliedBitsFieldNumber = 4,
     kRejectionsFieldNumber = 5,
     kPartialSeqsFieldNumber = 8,
+    kReceiptsFieldNumber = 9,
     kWatermarkFieldNumber = 2,
     kMaxSeqFieldNumber = 6,
     kStreamEpochFieldNumber = 7,
@@ -540,6 +797,27 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetOpStreamLedger final : public 
   ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_partial_seqs();
 
   public:
+  // repeated .AssetOpReceipt receipts = 9;
+  [[nodiscard]] int receipts_size()
+      const;
+  private:
+  int _internal_receipts_size() const;
+
+  public:
+  void clear_receipts() ;
+  [[nodiscard]] const ::AssetOpReceipt& receipts(int index) const;
+  [[nodiscard]] ::AssetOpReceipt* PROTOBUF_NONNULL mutable_receipts(int index);
+  ::AssetOpReceipt* PROTOBUF_NONNULL add_receipts();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::AssetOpReceipt>&
+  receipts() const;
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::AssetOpReceipt>* PROTOBUF_NONNULL
+  mutable_receipts();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::AssetOpReceipt>& _internal_receipts() const;
+  ::google::protobuf::RepeatedPtrField<::AssetOpReceipt>* PROTOBUF_NONNULL _internal_mutable_receipts();
+
+  public:
   // uint64 watermark = 2;
   void clear_watermark() ;
   [[nodiscard]] ::uint64_t watermark() const;
@@ -584,8 +862,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetOpStreamLedger final : public 
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 8,
-                          1, 0,
+      ::google::protobuf::internal::TcParseTable<4, 9,
+                          2, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -618,6 +896,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetOpStreamLedger final : public 
     ::google::protobuf::RepeatedPtrField< ::AssetOpRejection > rejections_;
     ::google::protobuf::RepeatedField<::uint64_t> partial_seqs_;
     ::google::protobuf::internal::CachedSize _partial_seqs_cached_byte_size_;
+    ::google::protobuf::RepeatedPtrField< ::AssetOpReceipt > receipts_;
     ::uint64_t watermark_;
     ::uint64_t max_seq_;
     ::uint64_t stream_epoch_;
@@ -685,7 +964,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerAssetOpLedgerComp final : pub
   [[nodiscard]] static const PlayerAssetOpLedgerComp& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<PlayerAssetOpLedgerComp>(&PlayerAssetOpLedgerComp_globals_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(PlayerAssetOpLedgerComp& a, PlayerAssetOpLedgerComp& b) { a.Swap(&b); }
   inline void Swap(PlayerAssetOpLedgerComp* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -906,13 +1185,222 @@ inline void AssetOpRejection::_internal_set_reason_tip_id(::uint32_t value) {
 
 // -------------------------------------------------------------------
 
+// AssetOpReceipt
+
+// uint64 seq = 1;
+inline void AssetOpReceipt::clear_seq() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.seq_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t AssetOpReceipt::seq() const {
+  // @@protoc_insertion_point(field_get:AssetOpReceipt.seq)
+  return _internal_seq();
+}
+inline void AssetOpReceipt::set_seq(::uint64_t value) {
+  _internal_set_seq(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:AssetOpReceipt.seq)
+}
+inline ::uint64_t AssetOpReceipt::_internal_seq() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.seq_;
+}
+inline void AssetOpReceipt::_internal_set_seq(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.seq_ = value;
+}
+
+// bytes request_digest = 2;
+inline void AssetOpReceipt::clear_request_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_digest_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& AssetOpReceipt::request_digest() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:AssetOpReceipt.request_digest)
+  return _internal_request_digest();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void AssetOpReceipt::set_request_digest(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.request_digest_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:AssetOpReceipt.request_digest)
+}
+inline ::std::string* PROTOBUF_NONNULL AssetOpReceipt::mutable_request_digest()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_request_digest();
+  // @@protoc_insertion_point(field_mutable:AssetOpReceipt.request_digest)
+  return _s;
+}
+inline const ::std::string& AssetOpReceipt::_internal_request_digest() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_digest_.Get();
+}
+inline void AssetOpReceipt::_internal_set_request_digest(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_digest_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL AssetOpReceipt::_internal_mutable_request_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_digest_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE AssetOpReceipt::release_request_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:AssetOpReceipt.request_digest)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.request_digest_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_digest_.Set("", GetArena());
+  }
+  return released;
+}
+inline void AssetOpReceipt::set_allocated_request_digest(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.request_digest_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_digest_.IsDefault()) {
+    _impl_.request_digest_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:AssetOpReceipt.request_digest)
+}
+
+// .AssetSnapshot snapshot = 3;
+inline bool AssetOpReceipt::has_snapshot() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  PROTOBUF_ASSUME(!value || _impl_.snapshot_ != nullptr);
+  return value;
+}
+inline const ::AssetSnapshot& AssetOpReceipt::_internal_snapshot() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::AssetSnapshot* p = _impl_.snapshot_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::AssetSnapshot>(&::AssetSnapshot_globals_);
+}
+inline const ::AssetSnapshot& AssetOpReceipt::snapshot() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:AssetOpReceipt.snapshot)
+  return _internal_snapshot();
+}
+inline void AssetOpReceipt::unsafe_arena_set_allocated_snapshot(
+    ::AssetSnapshot* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.snapshot_);
+  }
+  _impl_.snapshot_ = reinterpret_cast<::AssetSnapshot*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:AssetOpReceipt.snapshot)
+}
+inline ::AssetSnapshot* PROTOBUF_NULLABLE AssetOpReceipt::release_snapshot() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::AssetSnapshot* released = _impl_.snapshot_;
+  _impl_.snapshot_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::AssetSnapshot* PROTOBUF_NULLABLE AssetOpReceipt::unsafe_arena_release_snapshot() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:AssetOpReceipt.snapshot)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::AssetSnapshot* temp = _impl_.snapshot_;
+  _impl_.snapshot_ = nullptr;
+  return temp;
+}
+inline ::AssetSnapshot* PROTOBUF_NONNULL AssetOpReceipt::_internal_mutable_snapshot() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.snapshot_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::AssetSnapshot>(GetArena());
+    _impl_.snapshot_ = reinterpret_cast<::AssetSnapshot*>(p);
+  }
+  return _impl_.snapshot_;
+}
+inline ::AssetSnapshot* PROTOBUF_NONNULL AssetOpReceipt::mutable_snapshot()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::AssetSnapshot* _msg = _internal_mutable_snapshot();
+  // @@protoc_insertion_point(field_mutable:AssetOpReceipt.snapshot)
+  return _msg;
+}
+inline void AssetOpReceipt::set_allocated_snapshot(::AssetSnapshot* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.snapshot_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+
+  _impl_.snapshot_ = reinterpret_cast<::AssetSnapshot*>(value);
+  // @@protoc_insertion_point(field_set_allocated:AssetOpReceipt.snapshot)
+}
+
+// uint64 correlation_id = 4;
+inline void AssetOpReceipt::clear_correlation_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.correlation_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t AssetOpReceipt::correlation_id() const {
+  // @@protoc_insertion_point(field_get:AssetOpReceipt.correlation_id)
+  return _internal_correlation_id();
+}
+inline void AssetOpReceipt::set_correlation_id(::uint64_t value) {
+  _internal_set_correlation_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:AssetOpReceipt.correlation_id)
+}
+inline ::uint64_t AssetOpReceipt::_internal_correlation_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.correlation_id_;
+}
+inline void AssetOpReceipt::_internal_set_correlation_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.correlation_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // AssetOpStreamLedger
 
 // .AssetOpStream stream = 1;
 inline void AssetOpStreamLedger::clear_stream() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.stream_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::AssetOpStream AssetOpStreamLedger::stream() const {
   // @@protoc_insertion_point(field_get:AssetOpStreamLedger.stream)
@@ -920,7 +1408,7 @@ inline ::AssetOpStream AssetOpStreamLedger::stream() const {
 }
 inline void AssetOpStreamLedger::set_stream(::AssetOpStream value) {
   _internal_set_stream(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:AssetOpStreamLedger.stream)
 }
 inline ::AssetOpStream AssetOpStreamLedger::_internal_stream() const {
@@ -936,7 +1424,7 @@ inline void AssetOpStreamLedger::_internal_set_stream(::AssetOpStream value) {
 inline void AssetOpStreamLedger::clear_watermark() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.watermark_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint64_t AssetOpStreamLedger::watermark() const {
   // @@protoc_insertion_point(field_get:AssetOpStreamLedger.watermark)
@@ -944,7 +1432,7 @@ inline ::uint64_t AssetOpStreamLedger::watermark() const {
 }
 inline void AssetOpStreamLedger::set_watermark(::uint64_t value) {
   _internal_set_watermark(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:AssetOpStreamLedger.watermark)
 }
 inline ::uint64_t AssetOpStreamLedger::_internal_watermark() const {
@@ -1117,7 +1605,7 @@ AssetOpStreamLedger::_internal_mutable_rejections() {
 inline void AssetOpStreamLedger::clear_max_seq() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_seq_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint64_t AssetOpStreamLedger::max_seq() const {
   // @@protoc_insertion_point(field_get:AssetOpStreamLedger.max_seq)
@@ -1125,7 +1613,7 @@ inline ::uint64_t AssetOpStreamLedger::max_seq() const {
 }
 inline void AssetOpStreamLedger::set_max_seq(::uint64_t value) {
   _internal_set_max_seq(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:AssetOpStreamLedger.max_seq)
 }
 inline ::uint64_t AssetOpStreamLedger::_internal_max_seq() const {
@@ -1141,7 +1629,7 @@ inline void AssetOpStreamLedger::_internal_set_max_seq(::uint64_t value) {
 inline void AssetOpStreamLedger::clear_stream_epoch() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.stream_epoch_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint64_t AssetOpStreamLedger::stream_epoch() const {
   // @@protoc_insertion_point(field_get:AssetOpStreamLedger.stream_epoch)
@@ -1149,7 +1637,7 @@ inline ::uint64_t AssetOpStreamLedger::stream_epoch() const {
 }
 inline void AssetOpStreamLedger::set_stream_epoch(::uint64_t value) {
   _internal_set_stream_epoch(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:AssetOpStreamLedger.stream_epoch)
 }
 inline ::uint64_t AssetOpStreamLedger::_internal_stream_epoch() const {
@@ -1210,6 +1698,61 @@ inline ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL
 AssetOpStreamLedger::_internal_mutable_partial_seqs() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.partial_seqs_;
+}
+
+// repeated .AssetOpReceipt receipts = 9;
+inline int AssetOpStreamLedger::_internal_receipts_size() const {
+  return _internal_receipts().size();
+}
+inline int AssetOpStreamLedger::receipts_size() const {
+  return _internal_receipts_size();
+}
+inline void AssetOpStreamLedger::clear_receipts() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.receipts_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline const ::AssetOpReceipt& AssetOpStreamLedger::receipts(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:AssetOpStreamLedger.receipts)
+  return _internal_receipts().Get(index);
+}
+inline ::AssetOpReceipt* PROTOBUF_NONNULL AssetOpStreamLedger::mutable_receipts(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:AssetOpStreamLedger.receipts)
+  return _internal_mutable_receipts()->Mutable(index);
+}
+inline ::AssetOpReceipt* PROTOBUF_NONNULL AssetOpStreamLedger::add_receipts()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::AssetOpReceipt* _add =
+      _internal_mutable_receipts()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_add:AssetOpStreamLedger.receipts)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::AssetOpReceipt>& AssetOpStreamLedger::receipts() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:AssetOpStreamLedger.receipts)
+  return _internal_receipts();
+}
+inline ::google::protobuf::RepeatedPtrField<::AssetOpReceipt>* PROTOBUF_NONNULL
+AssetOpStreamLedger::mutable_receipts() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_mutable_list:AssetOpStreamLedger.receipts)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_receipts();
+}
+inline const ::google::protobuf::RepeatedPtrField<::AssetOpReceipt>&
+AssetOpStreamLedger::_internal_receipts() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.receipts_;
+}
+inline ::google::protobuf::RepeatedPtrField<::AssetOpReceipt>* PROTOBUF_NONNULL
+AssetOpStreamLedger::_internal_mutable_receipts() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.receipts_;
 }
 
 // -------------------------------------------------------------------

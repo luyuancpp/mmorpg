@@ -3,7 +3,8 @@
 // gate 路由 lane 的装配层(docs/design/client-request-ordering.md §4)。
 //
 // 职责:同一会话经路由服转发的 gRPC 类请求,按收包顺序单飞。上一条观察到完成之后才发下一条;
-// 完成有四个来源:成功回包 / gRPC 失败回调 / 路由服节点摘除 / 本地截止到期。不同会话之间互不影响,
+// 完成有三个来源:成功回包 / gRPC 失败回调 / 本地截止到期。路由服节点摘除不再是单独的来源:node.cpp 先摘
+// MuduoGrpcChannelPtr,~Channel 把在途调用以 UNAVAILABLE 排进下一轮,走的就是失败回调。不同会话之间互不影响,
 // 路由服与业务服保持无状态、随机分配(client-rpc-router.md D29 不变)。
 //
 // 只在路由模式(GATE_CLIENT_RPC_ROUTER=1)、只对 PROTOCOL_GRPC 消息启用(O2):
@@ -20,7 +21,6 @@
 #include <chrono>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <string>
 
 #include "muduo/net/TcpConnection.h"
@@ -44,8 +44,10 @@ inline constexpr std::size_t kMaxLaneDepth = 32;
 // 排队等待上限:超过就不发出,回带请求 id 的 1003,明确「没有执行」,客户端重试安全。
 // 不变式 I4:gate deadline(路由服,8000)+ 本值 + 1000 ≤ 客户端超时 15000(client-request-ordering.md §5.2)。
 inline constexpr std::chrono::milliseconds kMaxLaneWait{5000};
-// 在途调用的本地截止 = 发出时刻 + 实际生效的 gRPC deadline + 本余量。余量覆盖 5ms 的 CQ 轮询与 loop 积压:
-// 正常情况下 gRPC 失败回调先到,本地截止只兜「回调丢失」(节点摘除 F29、CQ 轮询 !ok 时跳过剩余事件)。
+// 在途调用的本地截止 = 发出时刻 + 实际生效的 gRPC deadline + 本余量。余量覆盖 loop 积压:
+// 正常情况下通道先以 DEADLINE_EXCEEDED / UNAVAILABLE 回调失败,本地截止只是纵深防御,兜「完成没被认领」:
+// 传输层回调丢失(第 3 批前的两个来源 —— 节点摘除 F29、CQ 轮询 !ok —— 已随官方 CQ 删除),或路由服回显缺失 /
+// 解析失败 / 不带 gate_call_seq(见 router_lane.h 过期堆一段)。
 inline constexpr std::chrono::milliseconds kInflightExpiryMargin{1000};
 // 主动过期扫描的间隔(秒)。必须主动扫:队头卡住时客户端在等回包,不会再发新请求触发惰性清理。
 inline constexpr double kSweepIntervalSeconds = 0.25;
@@ -65,8 +67,8 @@ SessionInfo *FindLiveSession(SessionId sessionId, uint64_t incarnation);
 
 // 发往路由服的发送函数,由 client_message_processor.cpp 在启动时注入(它持有挑路由服副本与生成 sender 的细节)。
 // sessionDetailsBin 是序列化好的 SessionDetails,原样作为 x-session-detail-bin。
-// 返回被选中的路由服节点实体整数;本地还没发现任何路由服时返回 nullopt(lane 据此回 1003)。
-using RouterSendFn = std::optional<entt::entity> (*)(const ClientRequest &request, const std::string &sessionDetailsBin);
+// 返回是否已发出;本地还没发现任何可用的路由服时返回 false(lane 据此回 1003)。
+using RouterSendFn = bool (*)(const ClientRequest &request, const std::string &sessionDetailsBin);
 void SetRouterSender(RouterSendFn fn);
 
 // 准入。前置条件:会话存在且已验证;白名单 / 体积 / 限流 / GM / battle 几道闸都已通过;协议是 PROTOCOL_GRPC;路由模式。
@@ -82,12 +84,10 @@ bool OnRouterReply(const SessionDetails &echoed, const ::google::protobuf::Messa
 
 // 失败桥:sent 是本次发出时的 SessionDetails。语义同 OnRouterReply;认领成功时回带请求 id 的 1003
 // (结果未知:下游可能已经执行,有副作用的请求靠业务侧栅栏与幂等兜底)。
+// 路由服节点摘除也走这里:node.cpp 先 remove<MuduoGrpcChannelPtr>(~Channel 把在途调用以 UNAVAILABLE 排进下一轮),
+// 再触发 OnNodeRemoveEvent、DestroyEntity;下一轮失败回调到达时被摘实体已销毁,放行下一条时 PickRandomNode
+// 要求实体挂着通道,不会再选中它。
 bool OnRouterCallFailed(const SessionDetails &sent);
-
-// 路由服节点摘除(OnNodeRemoveEvent 在 DestroyEntity 之前、同一 loop 线程触发):该节点上的在途调用永远不会再有回调,
-// 当作失败处理:回 1003,放行下一条。摘出在途项同步做(恰好一次),回执与放行下一条推到下一轮 loop,
-// 那时被摘实体已销毁,下一条不会再选中它。
-void OnRouterNodeRemoved(entt::entity routerEntity);
 
 // 主动过期扫描(GateRuntimeContext 上的 TimerTaskComp 驱动,回调不捕获对象)。顺带每 30s 打一行 [lane] 汇总。
 void ExpireDue(std::chrono::steady_clock::time_point now);

@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="handler\event\scene_entry_dispatch.cpp" />
-    <ClCompile Include="handler\event\event_handler.cpp" />
     <ClCompile Include="handler\event\gate_event_handler.cpp" />
     <ClCompile Include="handler\event\match_event_handler.cpp" />
     <ClCompile Include="handler\event\gate_kafka_command_router.cpp" />
@@ -43,7 +42,6 @@
     <ClInclude Include="handler\event\scene_route_helper.h" />
     <ClInclude Include="handler\event\scene_entry_dispatch.h" />
     <ClInclude Include="handler\event\match_event_handler.h" />
-    <ClInclude Include="handler\event\event_handler.h" />
     <ClInclude Include="handler\event\gate_event_handler.h" />
     <ClInclude Include="handler\event\gate_kafka_command_router.h" />
     <ClInclude Include="handler\event\player_event_handler.h" />
@@ -51,7 +49,6 @@
     <ClInclude Include="handler\rpc\client_request_lane.h" />
     <ClInclude Include="handler\rpc\router_muduo_forward.h" />
     <ClInclude Include="handler\rpc\rpc_reply_bridge.h" />
-    <ClInclude Include="gate_router_transport.h" />
     <ClInclude Include="handler\rpc\gate_service_handler.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

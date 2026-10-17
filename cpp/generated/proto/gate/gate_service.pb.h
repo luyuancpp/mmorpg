@@ -58,22 +58,6 @@ struct TableStruct_proto_2fgate_2fgate_5fservice_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto;
 }  // extern "C"
-class BindSessionToGateRequest;
-struct BindSessionToGateRequestGlobalsTypeInternal;
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-extern BindSessionToGateRequestGlobalsTypeInternal BindSessionToGateRequest_globals_;
-extern const ::google::protobuf::internal::ClassDataFull BindSessionToGateRequest_class_data_;
-#else
-extern const BindSessionToGateRequestGlobalsTypeInternal BindSessionToGateRequest_globals_;
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-class BindSessionToGateResponse;
-struct BindSessionToGateResponseGlobalsTypeInternal;
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-extern BindSessionToGateResponseGlobalsTypeInternal BindSessionToGateResponse_globals_;
-extern const ::google::protobuf::internal::ClassDataFull BindSessionToGateResponse_class_data_;
-#else
-extern const BindSessionToGateResponseGlobalsTypeInternal BindSessionToGateResponse_globals_;
-#endif  // PROTOBUF_MESSAGE_GLOBALS
 class BroadcastToAllRequest;
 struct BroadcastToAllRequestGlobalsTypeInternal;
 #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -107,456 +91,6 @@ namespace protobuf {
 // ===================================================================
 
 
-// -------------------------------------------------------------------
-
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BindSessionToGateResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BindSessionToGateResponse) */ {
- public:
-  inline BindSessionToGateResponse() : BindSessionToGateResponse(nullptr) {}
-  ~BindSessionToGateResponse() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(BindSessionToGateResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(BindSessionToGateResponse));
-  }
-#endif
-
-  template <typename = void>
-  explicit constexpr BindSessionToGateResponse(::google::protobuf::internal::ConstantInitialized,
-                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-                               class_data);
-
-  inline BindSessionToGateResponse(const BindSessionToGateResponse& from) : BindSessionToGateResponse(nullptr, from) {}
-  inline BindSessionToGateResponse(BindSessionToGateResponse&& from) noexcept : BindSessionToGateResponse(nullptr, ::std::move(from)) {}
-  inline BindSessionToGateResponse& operator=(const BindSessionToGateResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline BindSessionToGateResponse& operator=(BindSessionToGateResponse&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
-  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
-  GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  [[nodiscard]] static const BindSessionToGateResponse& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BindSessionToGateResponse>(&BindSessionToGateResponse_globals_);
-  }
-  static constexpr int kIndexInFileMessages = 1;
-  friend void swap(BindSessionToGateResponse& a, BindSessionToGateResponse& b) { a.Swap(&b); }
-  inline void Swap(BindSessionToGateResponse* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(BindSessionToGateResponse* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  [[nodiscard]] BindSessionToGateResponse* PROTOBUF_NONNULL
-  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<BindSessionToGateResponse>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BindSessionToGateResponse& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BindSessionToGateResponse& from) { BindSessionToGateResponse::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  [[nodiscard]] bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] ::size_t ByteSizeLong() const final;
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] int GetCachedSize() const {
-    return _impl_._cached_size_.Get();
-  }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(BindSessionToGateResponse* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "BindSessionToGateResponse"; }
-
-  explicit BindSessionToGateResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  BindSessionToGateResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BindSessionToGateResponse& from);
-  BindSessionToGateResponse(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BindSessionToGateResponse&& from) noexcept
-      : BindSessionToGateResponse(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_(
-      const MessageLite& prototype,
-      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
-
-  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kPlayerIdFieldNumber = 2,
-    kSessionIdFieldNumber = 1,
-    kSessionVersionFieldNumber = 3,
-  };
-  // uint64 player_id = 2;
-  void clear_player_id() ;
-  [[nodiscard]] ::uint64_t player_id() const;
-  void set_player_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_player_id() const;
-  void _internal_set_player_id(::uint64_t value);
-
-  public:
-  // uint32 session_id = 1;
-  void clear_session_id() ;
-  [[nodiscard]] ::uint32_t session_id() const;
-  void set_session_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_session_id() const;
-  void _internal_set_session_id(::uint32_t value);
-
-  public:
-  // uint32 session_version = 3;
-  void clear_session_version() ;
-  [[nodiscard]] ::uint32_t session_version() const;
-  void set_session_version(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_session_version() const;
-  void _internal_set_session_version(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:BindSessionToGateResponse)
- private:
-  class _Internal;
-  using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 3,
-                          0, 0,
-                          2>;
-  static constexpr ParseTableT_ InternalGenerateParseTable_(
-      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
-  friend class ::google::protobuf::internal::TcParser;
-  #ifndef PROTOBUF_MESSAGE_GLOBALS
-  static const ParseTableT_ _table_;
-  #endif
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  friend ::google::protobuf::internal::PrivateAccess;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const BindSessionToGateResponse& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t player_id_;
-    ::uint32_t session_id_;
-    ::uint32_t session_version_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fgate_2fgate_5fservice_2eproto;
-};
-// -------------------------------------------------------------------
-
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BindSessionToGateRequest final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:BindSessionToGateRequest) */ {
- public:
-  inline BindSessionToGateRequest() : BindSessionToGateRequest(nullptr) {}
-  ~BindSessionToGateRequest() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(BindSessionToGateRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(BindSessionToGateRequest));
-  }
-#endif
-
-  template <typename = void>
-  explicit constexpr BindSessionToGateRequest(::google::protobuf::internal::ConstantInitialized,
-                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-                               class_data);
-
-  inline BindSessionToGateRequest(const BindSessionToGateRequest& from) : BindSessionToGateRequest(nullptr, from) {}
-  inline BindSessionToGateRequest(BindSessionToGateRequest&& from) noexcept : BindSessionToGateRequest(nullptr, ::std::move(from)) {}
-  inline BindSessionToGateRequest& operator=(const BindSessionToGateRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline BindSessionToGateRequest& operator=(BindSessionToGateRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
-  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
-  GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  [[nodiscard]] static const BindSessionToGateRequest& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BindSessionToGateRequest>(&BindSessionToGateRequest_globals_);
-  }
-  static constexpr int kIndexInFileMessages = 0;
-  friend void swap(BindSessionToGateRequest& a, BindSessionToGateRequest& b) { a.Swap(&b); }
-  inline void Swap(BindSessionToGateRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(BindSessionToGateRequest* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  [[nodiscard]] BindSessionToGateRequest* PROTOBUF_NONNULL
-  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<BindSessionToGateRequest>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const BindSessionToGateRequest& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const BindSessionToGateRequest& from) { BindSessionToGateRequest::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  [[nodiscard]] bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] ::size_t ByteSizeLong() const final;
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] int GetCachedSize() const {
-    return _impl_._cached_size_.Get();
-  }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(BindSessionToGateRequest* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "BindSessionToGateRequest"; }
-
-  explicit BindSessionToGateRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  BindSessionToGateRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BindSessionToGateRequest& from);
-  BindSessionToGateRequest(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, BindSessionToGateRequest&& from) noexcept
-      : BindSessionToGateRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_(
-      const MessageLite& prototype,
-      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
-
-  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kPlayerIdFieldNumber = 2,
-    kSessionIdFieldNumber = 1,
-    kSessionVersionFieldNumber = 3,
-  };
-  // uint64 player_id = 2;
-  void clear_player_id() ;
-  [[nodiscard]] ::uint64_t player_id() const;
-  void set_player_id(::uint64_t value);
-
-  private:
-  ::uint64_t _internal_player_id() const;
-  void _internal_set_player_id(::uint64_t value);
-
-  public:
-  // uint32 session_id = 1;
-  void clear_session_id() ;
-  [[nodiscard]] ::uint32_t session_id() const;
-  void set_session_id(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_session_id() const;
-  void _internal_set_session_id(::uint32_t value);
-
-  public:
-  // uint32 session_version = 3;
-  void clear_session_version() ;
-  [[nodiscard]] ::uint32_t session_version() const;
-  void set_session_version(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_session_version() const;
-  void _internal_set_session_version(::uint32_t value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:BindSessionToGateRequest)
- private:
-  class _Internal;
-  using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 3,
-                          0, 0,
-                          2>;
-  static constexpr ParseTableT_ InternalGenerateParseTable_(
-      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
-  friend class ::google::protobuf::internal::TcParser;
-  #ifndef PROTOBUF_MESSAGE_GLOBALS
-  static const ParseTableT_ _table_;
-  #endif
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  friend ::google::protobuf::internal::PrivateAccess;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const BindSessionToGateRequest& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint64_t player_id_;
-    ::uint32_t session_id_;
-    ::uint32_t session_version_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fgate_2fgate_5fservice_2eproto;
-};
 // -------------------------------------------------------------------
 
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BroadcastToSceneRequest final : public ::google::protobuf::Message
@@ -615,7 +149,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BroadcastToSceneRequest final : pub
   [[nodiscard]] static const BroadcastToSceneRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BroadcastToSceneRequest>(&BroadcastToSceneRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 1;
   friend void swap(BroadcastToSceneRequest& a, BroadcastToSceneRequest& b) { a.Swap(&b); }
   inline void Swap(BroadcastToSceneRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -834,7 +368,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BroadcastToPlayersRequest final : p
   [[nodiscard]] static const BroadcastToPlayersRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BroadcastToPlayersRequest>(&BroadcastToPlayersRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 0;
   friend void swap(BroadcastToPlayersRequest& a, BroadcastToPlayersRequest& b) { a.Swap(&b); }
   inline void Swap(BroadcastToPlayersRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1116,7 +650,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED BroadcastToAllRequest final : publi
   [[nodiscard]] static const BroadcastToAllRequest& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<BroadcastToAllRequest>(&BroadcastToAllRequest_globals_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(BroadcastToAllRequest& a, BroadcastToAllRequest& b) { a.Swap(&b); }
   inline void Swap(BroadcastToAllRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1285,21 +819,9 @@ class Gate : public ::google::protobuf::Service {
 
   static const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL descriptor();
 
-  virtual void PlayerEnterGameNode(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::RegisterGameNodeSessionRequest* PROTOBUF_NONNULL request,
-                        ::RegisterGameNodeSessionResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void SendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void RouteNodeMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::RouteMessageRequest* PROTOBUF_NONNULL request,
-                        ::RouteMessageResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void RoutePlayerMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::RoutePlayerMessageRequest* PROTOBUF_NONNULL request,
-                        ::RoutePlayerMessageResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void BroadcastToPlayers(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::BroadcastToPlayersRequest* PROTOBUF_NONNULL request,
@@ -1316,10 +838,6 @@ class Gate : public ::google::protobuf::Service {
   virtual void NodeHandshake(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::NodeHandshakeRequest* PROTOBUF_NONNULL request,
                         ::NodeHandshakeResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
-  virtual void BindSessionToGate(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::BindSessionToGateRequest* PROTOBUF_NONNULL request,
-                        ::BindSessionToGateResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done);
   virtual void GmGracefulShutdown(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL request,
@@ -1357,21 +875,9 @@ class Gate_Stub final : public Gate {
   inline ::google::protobuf::RpcChannel* PROTOBUF_NULLABLE channel() { return channel_; }
 
   // implements Gate ------------------------------------------
-  void PlayerEnterGameNode(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::RegisterGameNodeSessionRequest* PROTOBUF_NONNULL request,
-                        ::RegisterGameNodeSessionResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void SendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request,
                         ::Empty* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void RouteNodeMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::RouteMessageRequest* PROTOBUF_NONNULL request,
-                        ::RouteMessageResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void RoutePlayerMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::RoutePlayerMessageRequest* PROTOBUF_NONNULL request,
-                        ::RoutePlayerMessageResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void BroadcastToPlayers(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::BroadcastToPlayersRequest* PROTOBUF_NONNULL request,
@@ -1388,10 +894,6 @@ class Gate_Stub final : public Gate {
   void NodeHandshake(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::NodeHandshakeRequest* PROTOBUF_NONNULL request,
                         ::NodeHandshakeResponse* PROTOBUF_NONNULL response,
-                        ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
-  void BindSessionToGate(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                        const ::BindSessionToGateRequest* PROTOBUF_NONNULL request,
-                        ::BindSessionToGateResponse* PROTOBUF_NONNULL response,
                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) override;
   void GmGracefulShutdown(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                         const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL request,
@@ -1413,158 +915,6 @@ class Gate_Stub final : public Gate {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
-// -------------------------------------------------------------------
-
-// BindSessionToGateRequest
-
-// uint32 session_id = 1;
-inline void BindSessionToGateRequest::clear_session_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
-}
-inline ::uint32_t BindSessionToGateRequest::session_id() const {
-  // @@protoc_insertion_point(field_get:BindSessionToGateRequest.session_id)
-  return _internal_session_id();
-}
-inline void BindSessionToGateRequest::set_session_id(::uint32_t value) {
-  _internal_set_session_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  // @@protoc_insertion_point(field_set:BindSessionToGateRequest.session_id)
-}
-inline ::uint32_t BindSessionToGateRequest::_internal_session_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.session_id_;
-}
-inline void BindSessionToGateRequest::_internal_set_session_id(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = value;
-}
-
-// uint64 player_id = 2;
-inline void BindSessionToGateRequest::clear_player_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-}
-inline ::uint64_t BindSessionToGateRequest::player_id() const {
-  // @@protoc_insertion_point(field_get:BindSessionToGateRequest.player_id)
-  return _internal_player_id();
-}
-inline void BindSessionToGateRequest::set_player_id(::uint64_t value) {
-  _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  // @@protoc_insertion_point(field_set:BindSessionToGateRequest.player_id)
-}
-inline ::uint64_t BindSessionToGateRequest::_internal_player_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.player_id_;
-}
-inline void BindSessionToGateRequest::_internal_set_player_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = value;
-}
-
-// uint32 session_version = 3;
-inline void BindSessionToGateRequest::clear_session_version() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_version_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
-}
-inline ::uint32_t BindSessionToGateRequest::session_version() const {
-  // @@protoc_insertion_point(field_get:BindSessionToGateRequest.session_version)
-  return _internal_session_version();
-}
-inline void BindSessionToGateRequest::set_session_version(::uint32_t value) {
-  _internal_set_session_version(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
-  // @@protoc_insertion_point(field_set:BindSessionToGateRequest.session_version)
-}
-inline ::uint32_t BindSessionToGateRequest::_internal_session_version() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.session_version_;
-}
-inline void BindSessionToGateRequest::_internal_set_session_version(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_version_ = value;
-}
-
-// -------------------------------------------------------------------
-
-// BindSessionToGateResponse
-
-// uint32 session_id = 1;
-inline void BindSessionToGateResponse::clear_session_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
-}
-inline ::uint32_t BindSessionToGateResponse::session_id() const {
-  // @@protoc_insertion_point(field_get:BindSessionToGateResponse.session_id)
-  return _internal_session_id();
-}
-inline void BindSessionToGateResponse::set_session_id(::uint32_t value) {
-  _internal_set_session_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  // @@protoc_insertion_point(field_set:BindSessionToGateResponse.session_id)
-}
-inline ::uint32_t BindSessionToGateResponse::_internal_session_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.session_id_;
-}
-inline void BindSessionToGateResponse::_internal_set_session_id(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_id_ = value;
-}
-
-// uint64 player_id = 2;
-inline void BindSessionToGateResponse::clear_player_id() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-}
-inline ::uint64_t BindSessionToGateResponse::player_id() const {
-  // @@protoc_insertion_point(field_get:BindSessionToGateResponse.player_id)
-  return _internal_player_id();
-}
-inline void BindSessionToGateResponse::set_player_id(::uint64_t value) {
-  _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  // @@protoc_insertion_point(field_set:BindSessionToGateResponse.player_id)
-}
-inline ::uint64_t BindSessionToGateResponse::_internal_player_id() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.player_id_;
-}
-inline void BindSessionToGateResponse::_internal_set_player_id(::uint64_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.player_id_ = value;
-}
-
-// uint32 session_version = 3;
-inline void BindSessionToGateResponse::clear_session_version() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_version_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
-}
-inline ::uint32_t BindSessionToGateResponse::session_version() const {
-  // @@protoc_insertion_point(field_get:BindSessionToGateResponse.session_version)
-  return _internal_session_version();
-}
-inline void BindSessionToGateResponse::set_session_version(::uint32_t value) {
-  _internal_set_session_version(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
-  // @@protoc_insertion_point(field_set:BindSessionToGateResponse.session_version)
-}
-inline ::uint32_t BindSessionToGateResponse::_internal_session_version() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.session_version_;
-}
-inline void BindSessionToGateResponse::_internal_set_session_version(::uint32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.session_version_ = value;
-}
-
 // -------------------------------------------------------------------
 
 // BroadcastToPlayersRequest

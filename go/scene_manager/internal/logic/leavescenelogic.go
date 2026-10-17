@@ -6,6 +6,7 @@ import (
 
 	"proto/common/base"
 	"proto/scene_manager"
+	"scene_manager/internal/metrics"
 	"scene_manager/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -107,12 +108,16 @@ func NewLeaveSceneLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LeaveS
 // 同步调用失败才入租约队列,cleanup-pending 屏障随之生效)。旧行为是「Redis 抖一下 → ACK →
 // location 永久残留」。
 //
-// 挡不住的两类(被删之后,下一次换图会被当成首次落点):
-//   - samePlacement 重连(enterscenelogic.go)不写 location,值没变,照样会被删;
-//   - 同一场景的新落点在本次 GET 之前就已经写进去了。
-//
-// 根治在 player_locator(MarkOffline 的同步 LeaveScene 也处在 cleanup-pending 屏障之下),或在
-// proto 里记会话 / 落点代际,不在本函数范围。
+// 会话身份(scene-enter-chain-residuals.md §3.2):SceneId 比对之后按 decideLeaveIdentity 比较 location 记的
+// 身份与请求带的被删会话身份。location 已属于更新的登录(keep_newer)或代次相等而会话冲突(keep_conflict)时
+// 不删、不扣人数、回成功;legacy(任一侧无代次)与 deleted 照旧原文 CAS 删除。判定读的是 GET 到的同一份原文,
+// 随后的删除 Lua 仍以它为期望值,判定与提交之间没有窗口。以前挡不住的两类因此收口:
+//   - samePlacement 重连:新登录在 samePlacement 时已把自己的身份写进 location(enterscenelogic.go 第 4 步),
+//     迟到的旧会话 LeaveScene 判 keep_newer;
+//   - 同一场景的新落点在本次 GET 之前就已写入:新落点带着新登录的身份,同样判 keep_newer;GET 之后写入的
+//     由原文 CAS 挡住。
+// 剩下的只有混版窗口:旧版 scene_manager 副本写出的无身份 location、旧版 player_locator 发来的无身份请求,
+// 都按 legacy 退回旧行为(§3.5、§3.8)。
 func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base.Empty, error) {
 	raw, err := l.svcCtx.Redis.Get(getPlayerLocationKey(in.PlayerId))
 	if err != nil {
@@ -140,6 +145,31 @@ func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base
 		return &base.Empty{}, nil
 	}
 
+	locIdentity, reqIdentity := identityOfLocation(currentLoc), identityOfLeaveRequest(in)
+	identityVerdict := decideLeaveIdentity(locIdentity, reqIdentity)
+	metrics.ObservePlacementIdentity(metrics.PlacementIdentitySiteLeave, identityVerdict.String())
+	switch identityVerdict {
+	case leaveVerdictKeepNewer:
+		// b1–b4 的合法拦截:离场的会话早已被更新的登录取代,这条 location 属于那次新登录。
+		l.Logger.Infof("[PlacementIdentity] LeaveScene kept location owned by a newer login: player=%d scene=%d node=%s request_session=%d request_generation=%d location_session=%d location_generation=%d",
+			in.PlayerId, in.SceneId, currentLoc.NodeId, reqIdentity.sessionID, reqIdentity.loginGeneration,
+			locIdentity.sessionID, locIdentity.loginGeneration)
+		return &base.Empty{}, nil
+	case leaveVerdictKeepConflict:
+		// 代次相等而会话不同 = 违反 G2(非 0 代次与会话一一对应)。删错会让在线玩家丢 location,后果比泄漏重,
+		// 所以不删;有泄漏风险,以 Error 日志与 keep_conflict 计数观察。
+		l.Logger.Errorf("[PlacementIdentity] LeaveScene kept location: equal login generation with different sessions (G2 violated): player=%d scene=%d node=%s request_session=%d location_session=%d login_generation=%d",
+			in.PlayerId, in.SceneId, currentLoc.NodeId, reqIdentity.sessionID, locIdentity.sessionID, locIdentity.loginGeneration)
+		return &base.Empty{}, nil
+	}
+	// legacy / deleted:照旧原文 CAS 删除并在同一段 Lua 里扣人数。
+	if !identityVerdict.deletes() {
+		// 按构造不可达:switch 已处理全部 keep 结论。防将来新增结论漏改上面的分支时静默删除。
+		l.Logger.Errorf("[PlacementIdentity] LeaveScene unexpected identity verdict %s; keeping location: player=%d scene=%d",
+			identityVerdict, in.PlayerId, in.SceneId)
+		return &base.Empty{}, nil
+	}
+
 	outcome, err := deletePlayerLocationIfUnchanged(l.svcCtx, in.PlayerId, raw, currentLoc.ZoneId, in.SceneId)
 	if err != nil {
 		l.Logger.Errorf("Player %d leave scene %d: conditional delete failed, returning error for retry: %v",
@@ -148,7 +178,8 @@ func (l *LeaveSceneLogic) LeaveScene(in *scene_manager.LeaveSceneRequest) (*base
 	}
 	if outcome != leaveOutcomeDeleted {
 		// already_gone:别的调用(或 go-redis 重发的首发)已经删过并在同一段脚本里减过人数;
-		// superseded:GET 之后有 EnterScene 写入了新落点,它已减过旧场景人数。两种都不动人数。
+		// superseded:GET 之后有 EnterScene 写入了新落点(它已减过旧场景人数),或同落点重连写了新身份
+		// (玩家仍在这个场景里,人数本就不该减)。两种都不动人数。
 		l.Logger.Infof("Player %d leave scene %d: location not deleted by this call (outcome=%s), player counts untouched",
 			in.PlayerId, in.SceneId, outcome)
 		return &base.Empty{}, nil

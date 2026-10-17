@@ -166,9 +166,9 @@ Channel::~Channel()
         transport->Shutdown();
         if (loopIsCurrent)
         {
-            // 连接对象也排到队尾再析构:本轮若刚有连接建立,muduo Connector 已排队一个绑裸 this 的
-            // resetChannel,~TcpClient(有连接时不给 Connector 续命)必须在它之后。FIFO 保证这一点,
-            // 关机时也仍在两跳排空之内。
+            // 连接对象也排到队尾再析构,与 ReleaseTransport 一致,不就地释放(§11.7);关机时也仍在两跳排空之内。
+            // 以前这里还要靠 FIFO 让 ~TcpClient 排在 muduo Connector 排队的 resetChannel 之后(上游绑裸 this);
+            // 那处已改持 shared_from_this()(muduo LOCAL DELTA),Connector 自己活到 channel_ 释放,不再依赖这里的顺序。
             loop_.queueInLoop([released = std::move(transport)]() mutable { released.reset(); });
         }
     }

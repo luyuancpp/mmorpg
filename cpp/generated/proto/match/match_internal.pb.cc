@@ -205,11 +205,11 @@ constexpr StartActivityBattleRequest::ParseTableT_ StartActivityBattleRequest::I
     {
       PROTOBUF_FIELD_OFFSET(StartActivityBattleRequest, _impl_._has_bits_),
       0, // no _extensions_
-      3, 24,  // max_field_number, fast_idx_mask
+      4, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967288,  // skipmap
+      4294967280,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      3,  // num_field_entries
+      4,  // num_field_entries
       1,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -219,10 +219,13 @@ constexpr StartActivityBattleRequest::ParseTableT_ StartActivityBattleRequest::I
       ::_pbi::TcParser::GetTable<::match::StartActivityBattleRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 request_id = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(StartActivityBattleRequest, _impl_.request_id_), 2>(),
+       {32, 2, 0,
+        PROTOBUF_FIELD_OFFSET(StartActivityBattleRequest, _impl_.request_id_)}},
       // uint32 battle_config_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(StartActivityBattleRequest, _impl_.battle_config_id_), 2>(),
-       {8, 2, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(StartActivityBattleRequest, _impl_.battle_config_id_), 3>(),
+       {8, 3, 0,
         PROTOBUF_FIELD_OFFSET(StartActivityBattleRequest, _impl_.battle_config_id_)}},
       // repeated uint64 member_player_ids = 2;
       {::_pbi::TcParser::FastV64P1,
@@ -236,11 +239,13 @@ constexpr StartActivityBattleRequest::ParseTableT_ StartActivityBattleRequest::I
       65535, 65535
     }}, {{
       // uint32 battle_config_id = 1;
-      {PROTOBUF_FIELD_OFFSET(StartActivityBattleRequest, _impl_.battle_config_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(StartActivityBattleRequest, _impl_.battle_config_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // repeated uint64 member_player_ids = 2;
       {PROTOBUF_FIELD_OFFSET(StartActivityBattleRequest, _impl_.member_player_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
       // .BattleActivityContext activity_context = 3;
       {PROTOBUF_FIELD_OFFSET(StartActivityBattleRequest, _impl_.activity_context_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint64 request_id = 4;
+      {PROTOBUF_FIELD_OFFSET(StartActivityBattleRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -266,6 +271,7 @@ inline constexpr StartActivityBattleRequest::Impl_::Impl_(
         ,
         _member_player_ids_cached_byte_size_{0},
         activity_context_{nullptr},
+        request_id_{::uint64_t{0u}},
         battle_config_id_{0u} {}
 
 template <typename>
@@ -370,13 +376,15 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::match::StartActivityBattleRequest, _impl_._has_bits_),
-        6, // hasbit index offset
+        7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::match::StartActivityBattleRequest, _impl_.battle_config_id_),
         PROTOBUF_FIELD_OFFSET(::match::StartActivityBattleRequest, _impl_.member_player_ids_),
         PROTOBUF_FIELD_OFFSET(::match::StartActivityBattleRequest, _impl_.activity_context_),
-        2,
+        PROTOBUF_FIELD_OFFSET(::match::StartActivityBattleRequest, _impl_.request_id_),
+        3,
         0,
         1,
+        2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::match::StartActivityBattleResponse, _impl_._has_bits_),
         6, // hasbit index offset
@@ -391,7 +399,7 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::match::StartActivityBattleRequest)},
-        {9, sizeof(::match::StartActivityBattleResponse)},
+        {11, sizeof(::match::StartActivityBattleResponse)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -402,24 +410,24 @@ const char descriptor_table_protodef_proto_2fmatch_2fmatch_5finternal_2eproto[] 
     protodesc_cold) = {
     "\n proto/match/match_internal.proto\022\005matc"
     "h\032\033proto/db/proto_option.proto\032\036proto/ba"
-    "ttle/battle_data.proto\"\203\001\n\032StartActivity"
+    "ttle/battle_data.proto\"\227\001\n\032StartActivity"
     "BattleRequest\022\030\n\020battle_config_id\030\001 \001(\r\022"
     "\031\n\021member_player_ids\030\002 \003(\004\0220\n\020activity_c"
-    "ontext\030\003 \001(\0132\026.BattleActivityContext\"y\n\033"
-    "StartActivityBattleResponse\022+\n\006reject\030\001 "
-    "\001(\0162\033.match.ActivityBattleReject\022\032\n\022offe"
-    "nder_player_id\030\002 \001(\004\022\021\n\tbattle_id\030\003 \001(\004*"
-    "\216\002\n\024ActivityBattleReject\022\037\n\033ACTIVITY_BAT"
-    "TLE_REJECT_NONE\020\000\022+\n\'ACTIVITY_BATTLE_REJ"
-    "ECT_INVALID_ARGUMENT\020\001\022)\n%ACTIVITY_BATTL"
-    "E_REJECT_MEMBER_OFFLINE\020\002\022+\n\'ACTIVITY_BA"
-    "TTLE_REJECT_MEMBER_IN_BATTLE\020\003\022+\n\'ACTIVI"
-    "TY_BATTLE_REJECT_MEMBER_NOT_READY\020\004\022#\n\037A"
-    "CTIVITY_BATTLE_REJECT_INTERNAL\020\0052m\n\rMatc"
-    "hInternal\022\\\n\023StartActivityBattle\022!.match"
-    ".StartActivityBattleRequest\032\".match.Star"
-    "tActivityBattleResponseB\024Z\013match/match\200\001"
-    "\000\230\324a\025b\006proto3"
+    "ontext\030\003 \001(\0132\026.BattleActivityContext\022\022\n\n"
+    "request_id\030\004 \001(\004\"y\n\033StartActivityBattleR"
+    "esponse\022+\n\006reject\030\001 \001(\0162\033.match.Activity"
+    "BattleReject\022\032\n\022offender_player_id\030\002 \001(\004"
+    "\022\021\n\tbattle_id\030\003 \001(\004*\216\002\n\024ActivityBattleRe"
+    "ject\022\037\n\033ACTIVITY_BATTLE_REJECT_NONE\020\000\022+\n"
+    "\'ACTIVITY_BATTLE_REJECT_INVALID_ARGUMENT"
+    "\020\001\022)\n%ACTIVITY_BATTLE_REJECT_MEMBER_OFFL"
+    "INE\020\002\022+\n\'ACTIVITY_BATTLE_REJECT_MEMBER_I"
+    "N_BATTLE\020\003\022+\n\'ACTIVITY_BATTLE_REJECT_MEM"
+    "BER_NOT_READY\020\004\022#\n\037ACTIVITY_BATTLE_REJEC"
+    "T_INTERNAL\020\0052m\n\rMatchInternal\022\\\n\023StartAc"
+    "tivityBattle\022!.match.StartActivityBattle"
+    "Request\032\".match.StartActivityBattleRespo"
+    "nseB\024Z\013match/match\200\001\000\230\324a\025b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fmatch_2fmatch_5finternal_2eproto_deps[2] = {
@@ -430,7 +438,7 @@ static ::absl::once_flag descriptor_table_proto_2fmatch_2fmatch_5finternal_2epro
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fmatch_2fmatch_5finternal_2eproto = {
     false,
     false,
-    773,
+    793,
     descriptor_table_protodef_proto_2fmatch_2fmatch_5finternal_2eproto,
     "proto/match/match_internal.proto",
     &descriptor_table_proto_2fmatch_2fmatch_5finternal_2eproto_once,
@@ -500,7 +508,13 @@ StartActivityBattleRequest::StartActivityBattleRequest(
   _impl_.activity_context_ = (CheckHasBit(cached_has_bits, 0x00000002U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.activity_context_)
                 : nullptr;
-  _impl_.battle_config_id_ = from._impl_.battle_config_id_;
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, request_id_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, request_id_),
+           offsetof(Impl_, battle_config_id_) -
+               offsetof(Impl_, request_id_) +
+               sizeof(Impl_::battle_config_id_));
 
   // @@protoc_insertion_point(copy_constructor:match.StartActivityBattleRequest)
 }
@@ -582,7 +596,11 @@ PROTOBUF_NOINLINE void StartActivityBattleRequest::Clear() {
       _impl_.activity_context_->Clear();
     }
   }
-  _impl_.battle_config_id_ = 0u;
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000cU)) {
+    ::memset(&_impl_.request_id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.battle_config_id_) -
+        reinterpret_cast<char*>(&_impl_.request_id_)) + sizeof(_impl_.battle_config_id_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -607,7 +625,7 @@ PROTOBUF_NOINLINE void StartActivityBattleRequest::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint32 battle_config_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_battle_config_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -631,6 +649,15 @@ PROTOBUF_NOINLINE void StartActivityBattleRequest::Clear() {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         3, *this_._impl_.activity_context_, this_._impl_.activity_context_->GetCachedSize(), target,
         stream);
+  }
+
+  // uint64 request_id = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_request_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          4, this_._internal_request_id(), target);
+    }
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -658,7 +685,7 @@ PROTOBUF_NOINLINE void StartActivityBattleRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     // repeated uint64 member_player_ids = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size +=
@@ -671,8 +698,15 @@ PROTOBUF_NOINLINE void StartActivityBattleRequest::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.activity_context_);
     }
-    // uint32 battle_config_id = 1;
+    // uint64 request_id = 4;
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_request_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_request_id());
+      }
+    }
+    // uint32 battle_config_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_battle_config_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_battle_config_id());
@@ -697,7 +731,7 @@ void StartActivityBattleRequest::MergeImpl(::google::protobuf::MessageLite& to_m
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_member_player_ids()->MergeFrom(from._internal_member_player_ids());
     }
@@ -710,6 +744,11 @@ void StartActivityBattleRequest::MergeImpl(::google::protobuf::MessageLite& to_m
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_request_id() != 0) {
+        _this->_impl_.request_id_ = from._impl_.request_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_battle_config_id() != 0) {
         _this->_impl_.battle_config_id_ = from._impl_.battle_config_id_;
       }

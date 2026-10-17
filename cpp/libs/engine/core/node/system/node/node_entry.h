@@ -21,10 +21,6 @@
 #include <type_traits>
 #include <utility>
 
-// Every node executable must define this function (typically generated
-// in handler/event/event_handler.cpp by the code generator).
-void RegisterNodeEvents();
-
 namespace node {
 namespace entry {
 
@@ -82,7 +78,6 @@ void ApplyPreConstructionHooks()
 template <typename THooks>
 void ApplyPostConstructionHooks(Node& node)
 {
-    ::RegisterNodeEvents();
     if constexpr (!std::is_void_v<THooks> && has_kafka_command_type<THooks>::value) {
         static_assert(std::is_convertible_v<decltype(&THooks::DispatchKafkaCommand),
             void (*)(const std::string&, const typename THooks::KafkaCommandType&)>,
@@ -141,9 +136,9 @@ namespace detail
                                 {
         if (ctrlType == CTRL_C_EVENT || ctrlType == CTRL_CLOSE_EVENT ||
             ctrlType == CTRL_SHUTDOWN_EVENT) {
-            // Node::Shutdown() 会在 gRPC drain 与其余 teardown 都完成后 quit。
-            // 这里不能紧接着提前 quit,否则 loop 不再消费在途 gRPC handler 的
-            // runInLoop 任务,关机协调线程会重新卡住。
+            // Node::Shutdown() 会在 gRPC 排空与其余 teardown 都完成后 quit(本回调在
+            // 控制台线程上,Shutdown 只做有界等待)。这里不能紧接着提前 quit:gRPC 排空、
+            // 业务 drain 与收尾全部是 loop 内的定时器 / 排队任务,loop 一退它们就停在半路。
             if (gNode) {
                 gNode->Shutdown();
             } else if (sLoop) {

@@ -40,16 +40,16 @@ type httpLoginRequest struct {
 // success/queue/deny via the {@code code} field. We return:
 //
 //   - resp.Code == 0          : success — caller uses access_token to skip
-//                               the Login RPC on the gate TCP path.
+//     the Login RPC on the gate TCP path.
 //   - resp.Code == 100        : queueing — caller honours retry_after_ms
-//                               and tries again.
+//     and tries again.
 //   - resp.Code == 101        : queue timeout — caller bubbles up to the
-//                               normal exponential backoff loop.
+//     normal exponential backoff loop.
 //   - resp.Code == 401        : auth rejected — bubble up.
 //   - resp.Code == 429        : rate limited — same as queue but no
-//                               retry_after_ms.
+//     retry_after_ms.
 //   - other / network error   : returned via err so the caller can log and
-//                               fall back to the legacy gate path.
+//     fall back to the legacy gate path.
 func httpLogin(gatewayAddr string, req *httpLoginRequest, timeout time.Duration) (*httpLoginResponse, error) {
 	if gatewayAddr == "" {
 		return nil, fmt.Errorf("gateway_addr empty")
@@ -78,12 +78,13 @@ func httpLogin(gatewayAddr string, req *httpLoginRequest, timeout time.Duration)
 		return nil, fmt.Errorf("read login resp: %w", err)
 	}
 	if httpResp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d: %s", httpResp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("HTTP %d: response_bytes=%d", httpResp.StatusCode, len(respBody))
 	}
 
 	var out httpLoginResponse
 	if err := json.Unmarshal(respBody, &out); err != nil {
-		return nil, fmt.Errorf("decode login resp: %w (body=%s)", err, string(respBody))
+		// 只保留安全元信息，损坏的响应也可能已经含有完整登录凭据。
+		return nil, fmt.Errorf("decode login resp: status=%d response_bytes=%d error_type=%T", httpResp.StatusCode, len(respBody), err)
 	}
 	return &out, nil
 }
@@ -116,11 +117,11 @@ func httpRefreshToken(gatewayAddr, refreshToken string, timeout time.Duration) (
 		return nil, err
 	}
 	if httpResp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d: %s", httpResp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("HTTP %d: response_bytes=%d", httpResp.StatusCode, len(respBody))
 	}
 	var out httpLoginResponse
 	if err := json.Unmarshal(respBody, &out); err != nil {
-		return nil, fmt.Errorf("decode refresh resp: %w", err)
+		return nil, fmt.Errorf("decode refresh resp: status=%d response_bytes=%d error_type=%T", httpResp.StatusCode, len(respBody), err)
 	}
 	return &out, nil
 }

@@ -1,5 +1,4 @@
 #include "battle_node.h"
-#include <future>
 ///<<< BEGIN WRITING YOUR CODE
 #include "infra/agones/agones_gameserver_lifecycle.h"
 #include "logic/battle_room_manager.h"
@@ -14,24 +13,32 @@ namespace
 // 的 battleNotAllocatableMessage)。两边必须同改。
 constexpr char kBattleNotAllocatableMessage[] = "battle_not_allocatable";
 
-grpc::Status NotAllocatable()
+muduo_grpc::Status NotAllocatable()
 {
-    return grpc::Status(grpc::StatusCode::UNAVAILABLE, kBattleNotAllocatableMessage);
+    return muduo_grpc::Status(muduo_grpc::StatusCode::kUnavailable, kBattleNotAllocatableMessage);
+}
+
+// 第 3 道:许可回到 loop 后复核建房准入闸(grpc.CreateBattle.guard)。许可回调只弱持有闸、不捕获 this;
+// 闸已随 BattleNodeImpl 销毁(lock 失败)或不在 kOpen,都按「不接新房间」处理(fail-closed)。
+bool AdmissionOpen(const std::weak_ptr<battle_admission::AdmissionGate>& gate)
+{
+    const auto admission = gate.lock();
+    return admission != nullptr && admission->Phase() == battle_admission::AdmissionPhase::kOpen;
 }
 
 } // namespace
 
 bool BattleNodeImpl::OpenAdmission()
 {
-    const bool opened = admission_.Open();
+    const bool opened = admission_->Open();
     LOG_INFO << "battle room admission gate: " << (opened ? "opened" : "not opened(shutdown started or repeated call)")
-             << " phase=" << battle_admission::ToString(admission_.Phase());
+             << " phase=" << battle_admission::ToString(admission_->Phase());
     return opened;
 }
 
 void BattleNodeImpl::CloseAdmission()
 {
-    admission_.Close();
+    admission_->Close();
     LOG_INFO << "battle room admission gate closed: subsequent CreateBattle calls return UNAVAILABLE " << kBattleNotAllocatableMessage;
 }
 ///<<< END WRITING YOUR CODE
@@ -39,6 +46,14 @@ void BattleNodeImpl::CloseAdmission()
 BattleNodeImpl::BattleNodeImpl(muduo::net::EventLoop& loop)
     : loop_(loop)
 {
+}
+
+void BattleNodeImpl::HandleQueryBattleCreation(const ::QueryBattleCreationRequest* request,
+    ::QueryBattleCreationResponse* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+    BattleRoomManager::Instance().HandleQueryBattleCreation(*request,*response);
+///<<< END WRITING YOUR CODE
 }
 
 void BattleNodeImpl::HandleCreateBattle(const ::CreateBattleRequest* request,
@@ -84,190 +99,160 @@ void BattleNodeImpl::HandleIssueBattleTicket(const ::IssueBattleTicketRequest* r
     ///<<< END WRITING YOUR CODE
 }
 
-grpc::Status BattleNodeImpl::CreateBattle(grpc::ServerContext* /*context*/,
-    const ::CreateBattleRequest* request,
-    ::CreateBattleResponse* response)
+void BattleNodeImpl::QueryBattleCreation(const std::shared_ptr<QueryBattleCreationCall>& call)
 {
-    ///<<< BEGIN WRITING YOUR CODE
+    [[maybe_unused]] const ::QueryBattleCreationRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.QueryBattleCreation.guard
+    ///<<< END WRITING YOUR CODE
+    call->Proceed();
+}
+
+void BattleNodeImpl::CreateBattle(const std::shared_ptr<CreateBattleCall>& call)
+{
+    [[maybe_unused]] const ::CreateBattleRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.CreateBattle.guard
     // 节点级准入分三道,全部在任何副作用之前;任一道不过即回 UNAVAILABLE battle_not_allocatable,
     // match 据此跳过 DestroyBattle、换节点重试一次。
-    // 顺序:准入闸(本线程)→ 许可(本线程)→ 准入闸复核(loop 内)→ 预签票据(loop 内,BuildAssignment)
-    // → 插表(EmplaceRoom)。
-    // NodeInfo 由 Node 持有、只在 loop 线程写;跨线程读写不同步,这里不能读取它或调用 ClientFacing。
-
-    // 1) 建房准入闸(battle_admission_gate.h):启动完成之前(lifecycle 还没启动,Disabled 默认值会
-    //    不经 allocate 放行许可)与停机开始之后都不接新房间。闸没开就连许可都不取。
-    if (const auto phase = admission_.Phase(); phase != battle_admission::AdmissionPhase::kOpen)
+    // 顺序:准入闸 → 分配许可(异步:HTTP 在 lifecycle worker,结果经 queueInLoop 回 loop)→ 许可回到 loop 后复核准入闸
+    // → 预签票据(HandleCreateBattle 内 BuildAssignment)→ 插表(EmplaceRoom)。全部在 loop 线程。
+    // 1) 建房准入闸(battle_admission_gate.h):启动完成之前与停机开始之后都不接新房间。闸没开就连许可都不取。
+    if (const auto phase = admission_->Phase(); phase != battle_admission::AdmissionPhase::kOpen)
     {
         LOG_WARN << "CreateBattle rejected: this node is not accepting new rooms, battle_id=" << request->battle_id()
                  << " admission=" << battle_admission::ToString(phase)
                  << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
-        return NotAllocatable();
+        call->Reject(NotAllocatable());
+        return;
     }
+    // 2) 分配许可(集群外入口 D82)。拿不到(排空标签在、allocate 未确认、lifecycle 已停 / 仍在 Starting、等待超时)即拒绝:
+    //    此刻还没进 Handle*,房间、定时器、推送、Kafka 事件一概没有发生。非 Agones 环境许可恒放行(启停窗口由第 1、3 道兜住)。
+    //    回调只捕获 call 与 weak 闸,不捕获 this(AGENTS §11.7)。
+    agones::GameServerLifecycle::Instance().AcquireAllocationPermitAsync(
+        loop_,
+        [call, gate = std::weak_ptr<battle_admission::AdmissionGate>(admission_)](
+            agones::GameServerLifecycle::AllocationPermit permit)
+        {
+            auto &lifecycle = agones::GameServerLifecycle::Instance();
+            if (!permit)
+            {
+                LOG_WARN << "CreateBattle rejected: this instance is not allocatable, battle_id=" << call->request().battle_id()
+                         << " agones_state=" << agones::ToString(lifecycle.State())
+                         << " draining=" << (lifecycle.IsDraining() ? 1 : 0)
+                         << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
+                call->Reject(NotAllocatable());
+                return;
+            }
+            // 3) 许可回到 loop 后复核准入闸:等许可期间 SetBeforeShutdown 可能已关闸并作废全部房间(关闸与 AbortAllRooms
+            //    在同一个 loop 任务里,排在后面的本回调必然看到 kClosed);放行的话房间会在进程退出时无声丢失。
+            if (!AdmissionOpen(gate))
+            {
+                LOG_WARN << "CreateBattle rejected: shutdown started during dispatch(rechecked in loop), battle_id="
+                         << call->request().battle_id() << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
+                call->Reject(NotAllocatable());
+                return;   // permit 随回调返回析构:零房间时自动收口回 Ready
+            }
+            // permit 活到 Proceed() 返回:在途创建计入 lifecycle,防止"最后一个旧房间刚移除"时 worker 抢先回 Ready;
+            // 调用已失效 / 幂等命中而零房间时,析构自动收口回 Ready。
+            call->Proceed();
+        });
+    return;
+    ///<<< END WRITING YOUR CODE
+    call->Proceed();
+}
 
-    // 2) 分配许可(集群外入口 D82):必须在 gRPC 线程上、runInLoop 之前取 ——
-    //    AcquireAllocationPermitBlocking 会有界阻塞调用线程等 Agones allocate(上限
-    //    LifecycleOptions.allocateWaitTimeout),绝不能进 EventLoop。
-    //    拿不到(排空标签在、allocate 未确认、lifecycle 已停 / 仍在 Starting)即拒绝:
-    //    此刻还没投递 loop,房间、定时器、推送、Kafka 事件一概没有发生。
-    //    非 Agones 环境 lifecycle 为 Disabled,许可恒放行(启动 / 停机窗口由第 1、3 道兜住)。
-    auto &lifecycle = agones::GameServerLifecycle::Instance();
-    auto permit = lifecycle.AcquireAllocationPermitBlocking();
-    if (!permit)
+void BattleNodeImpl::DestroyBattle(const std::shared_ptr<DestroyBattleCall>& call)
+{
+    [[maybe_unused]] const ::DestroyBattleRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.DestroyBattle.guard
+    if(!BattleRoomManager::Instance().AcceptsPlacementOperation(request->battle_id(),request->placement_operation_id(),request->target_instance_id()))
     {
-        LOG_WARN << "CreateBattle rejected: this instance is not allocatable, battle_id=" << request->battle_id()
-                 << " agones_state=" << agones::ToString(lifecycle.State())
-                 << " draining=" << (lifecycle.IsDraining() ? 1 : 0)
-                 << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
-        return NotAllocatable();
-    }
-    // permit 活到本函数返回(覆盖 future.get()):在途创建计入 lifecycle,
-    // 防止"最后一个旧房间刚移除"时 worker 抢先回 Ready;析构时若零房间(拒绝 / 幂等命中)自动收口回 Ready。
-
-    bool closedInLoop = false;
-
-    // 捕获的全是本栈帧与本对象的引用:本线程阻塞在 future.get() 直到任务跑完,寿命覆盖任务
-    // (与其余 RPC 的 &promise 同理);任务若因 loop 退出而永不执行,也就不会解引用。
-    auto &admission = admission_;
-    ///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.CreateBattle.in_loop
-        // 3) loop 内复核准入闸:第 1 道之后、任务排队期间,SetBeforeShutdown 可能已经关闸并作废全部
-        //    房间(关闸与 AbortAllRooms 在同一个 loop 任务里,排在它后面的任务必然看到 kClosed)。
-        //    此刻还没进 HandleCreateBattle,没有任何副作用;放行的话房间会在进程退出时无声丢失。
-        if (admission.Phase() != battle_admission::AdmissionPhase::kOpen)
-        {
-            closedInLoop = true;
-            dispatchStatus = NotAllocatable();
-        }
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandleCreateBattle(request, response);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.CreateBattle.post_dispatch
-    if (closedInLoop)
-    {
-        LOG_WARN << "CreateBattle rejected: shutdown started during dispatch(rechecked in loop), battle_id=" << request->battle_id()
-                 << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
+        call->Reject(muduo_grpc::Status(muduo_grpc::StatusCode::kFailedPrecondition,"placement_operation_mismatch"));
+        return;
     }
     ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status BattleNodeImpl::DestroyBattle(grpc::ServerContext* /*context*/,
-    const ::DestroyBattleRequest* request,
-    ::Empty* /*response*/)
+void BattleNodeImpl::AddObserver(const std::shared_ptr<AddObserverCall>& call)
 {
-    ///<<< BEGIN WRITING YOUR CODE
+    [[maybe_unused]] const ::AddObserverRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AddObserver.guard
     ///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.DestroyBattle.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandleDestroyBattle(request);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.DestroyBattle.post_dispatch
-    ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status BattleNodeImpl::AddObserver(grpc::ServerContext* /*context*/,
-    const ::AddObserverRequest* request,
-    ::AddObserverResponse* response)
+void BattleNodeImpl::RemoveObserver(const std::shared_ptr<RemoveObserverCall>& call)
 {
-    ///<<< BEGIN WRITING YOUR CODE
+    [[maybe_unused]] const ::RemoveObserverRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.RemoveObserver.guard
     ///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.AddObserver.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandleAddObserver(request, response);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.AddObserver.post_dispatch
-    ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status BattleNodeImpl::RemoveObserver(grpc::ServerContext* /*context*/,
-    const ::RemoveObserverRequest* request,
-    ::Empty* /*response*/)
+void BattleNodeImpl::IssueBattleTicket(const std::shared_ptr<IssueBattleTicketCall>& call)
 {
-    ///<<< BEGIN WRITING YOUR CODE
+    [[maybe_unused]] const ::IssueBattleTicketRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.IssueBattleTicket.guard
     ///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.RemoveObserver.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandleRemoveObserver(request);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.RemoveObserver.post_dispatch
-    ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status BattleNodeImpl::IssueBattleTicket(grpc::ServerContext* /*context*/,
-    const ::IssueBattleTicketRequest* request,
-    ::IssueBattleTicketResponse* response)
+void BattleNodeImpl::RegisterMethods(muduo_grpc::MethodTable& table)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-    ///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.IssueBattleTicket.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
+    table.AddUnary(std::string(kQueryBattleCreationPath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
         {
-            HandleIssueBattleTicket(request, response);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.IssueBattleTicket.post_dispatch
-    ///<<< END WRITING YOUR CODE
-    return status;
+            const auto call = QueryBattleCreationCall::Create(std::move(serverCall), &HandleQueryBattleCreation);
+            if (call->ParseRequest(requestBytes))
+            {
+                QueryBattleCreation(call);
+            }
+        });
+    table.AddUnary(std::string(kCreateBattlePath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = CreateBattleCall::Create(std::move(serverCall), &HandleCreateBattle);
+            if (call->ParseRequest(requestBytes))
+            {
+                CreateBattle(call);
+            }
+        });
+    table.AddUnary(std::string(kDestroyBattlePath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = DestroyBattleCall::Create(std::move(serverCall),
+                [](const ::DestroyBattleRequest* request, ::Empty* /*response*/) { HandleDestroyBattle(request); });
+            if (call->ParseRequest(requestBytes))
+            {
+                DestroyBattle(call);
+            }
+        });
+    table.AddUnary(std::string(kAddObserverPath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = AddObserverCall::Create(std::move(serverCall), &HandleAddObserver);
+            if (call->ParseRequest(requestBytes))
+            {
+                AddObserver(call);
+            }
+        });
+    table.AddUnary(std::string(kRemoveObserverPath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = RemoveObserverCall::Create(std::move(serverCall),
+                [](const ::RemoveObserverRequest* request, ::Empty* /*response*/) { HandleRemoveObserver(request); });
+            if (call->ParseRequest(requestBytes))
+            {
+                RemoveObserver(call);
+            }
+        });
+    table.AddUnary(std::string(kIssueBattleTicketPath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = IssueBattleTicketCall::Create(std::move(serverCall), &HandleIssueBattleTicket);
+            if (call->ParseRequest(requestBytes))
+            {
+                IssueBattleTicket(call);
+            }
+        });
 }

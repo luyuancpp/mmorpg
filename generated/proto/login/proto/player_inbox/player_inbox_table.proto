@@ -23,6 +23,9 @@ enum PlayerInboxAuditAction {
   PLAYER_INBOX_AUDIT_UNSPECIFIED = 0;
   PLAYER_INBOX_AUDIT_SANCTION = 1;    // GmSanctionPlayer 入箱
   PLAYER_INBOX_AUDIT_VOID = 2;        // VoidItem(未投递直接 VOIDED,或已投递挂 VOID 指令)
+  // VoidItem 强制模式:经已落盘账本证明后终结已投递的行。与 VOID 分列:同一条目常先挂过指令再强制终结,
+  // 审计主键含 action 且 INSERT IGNORE,共用 VOID 会让这次终结的审计行被静默吞掉。
+  PLAYER_INBOX_AUDIT_FORCE_VOID = 3;
 }
 
 // 每 (玩家, 域) 一行。锁序第 1:seq 分配、Fetch、Ack、作废都先对它 FOR UPDATE(IB-6)。
@@ -92,7 +95,7 @@ message player_inbox_audit {
   uint64 player_id = 2;
   uint32 domain = 3;                  // PlayerInboxDomain
   uint64 seq = 4;
-  uint32 action = 5;                  // PlayerInboxAuditAction:SANCTION / VOID
+  uint32 action = 5;                  // PlayerInboxAuditAction:SANCTION / VOID / FORCE_VOID
   string operator = 6;                // 调用方自报,≤ 64B
   string peer_addr = 7;               // gRPC 对端地址,唯一不可伪造的部分(设计 §1.6)
   string reason = 8;                  // ≤ 256B

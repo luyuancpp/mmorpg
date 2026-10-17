@@ -207,6 +207,11 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 			ErrorMessage: tipErr(constants.ErrInternal, "缺少玩家身份"),
 		}, nil
 	}
+	if l.svcCtx.Authority != nil {
+		if response, found := globalChallengeReplay(l.ctx, l.svcCtx, responderId, in); found {
+			return response, nil
+		}
+	}
 
 	fields, err := l.svcCtx.MatchRedis.Hgetall(challengeKey(in.ChallengeId))
 	if err != nil {
@@ -247,6 +252,9 @@ func (l *ChallengeLogic) RespondChallenge(in *matchpb.RespondChallengeRequest) (
 		}, nil
 	}
 
+	if l.svcCtx.Authority != nil {
+		return l.decideGlobalChallenge(in, challengerId, responderId, uint32(configId), expiresAtMs)
+	}
 	// 挑战记录一次性消费:应战/拒战/过期都作废(TTL 是兜底,这里显式删)。
 	deleteChallengeRecord(l.svcCtx, in.ChallengeId, targetId)
 

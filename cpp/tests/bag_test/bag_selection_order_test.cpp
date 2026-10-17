@@ -146,7 +146,9 @@ protected:
         EXPECT_EQ(kStackConfig, drained[1].configId);
         EXPECT_EQ(2u, drained[1].amount);
         EXPECT_EQ(5u, StackSize(bag, kGuidA));
-        EXPECT_EQ(0u, StackSize(bag, kGuidB));
+        EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidB));
+        EXPECT_EQ(kInvalidSlot, bag.GetItemPosByGuid(kGuidB));
+        EXPECT_EQ(2u, bag.OccupiedGridCount());
         EXPECT_EQ(3u, StackSize(bag, kGuidC));
         EXPECT_TRUE(bag.IsLayerConsistent());
     }
@@ -211,22 +213,11 @@ TEST_F(BagSelectionOrderTest, DrainWithoutReceiptUsesTheSameSlotOrder)
     PlaceDrainFixture(bag);
     ASSERT_EQ(kSuccess, bag.RemoveItems({{kStackConfig, 7}}));
     EXPECT_EQ(5u, StackSize(bag, kGuidA));
-    EXPECT_EQ(0u, StackSize(bag, kGuidB));
+    EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidB));
+    EXPECT_EQ(kInvalidSlot, bag.GetItemPosByGuid(kGuidB));
+    EXPECT_EQ(2u, bag.OccupiedGridCount());
     EXPECT_EQ(3u, StackSize(bag, kGuidC));
-}
-
-TEST_F(BagSelectionOrderTest, DrainSkipsEmptyStackWithoutReceipt)
-{
-    Bag bag;
-    bag.InsertItemForRestore(kGuidA, kStackConfig, 0, 0, 1);
-    bag.InsertItemForRestore(kGuidB, kStackConfig, 5, 1, 2);
-    std::vector<DrainedInstance> drained;
-    ASSERT_EQ(kSuccess, bag.RemoveItemsClamped({{kStackConfig, 3}}, &drained));
-    ASSERT_EQ(1u, drained.size());
-    EXPECT_EQ(kGuidB, drained[0].guid);
-    EXPECT_EQ(3u, drained[0].amount);
-    EXPECT_EQ(0u, StackSize(bag, kGuidA));
-    EXPECT_EQ(2u, StackSize(bag, kGuidB));
+    EXPECT_TRUE(bag.IsLayerConsistent());
 }
 
 TEST_F(BagSelectionOrderTest, MergeKeepsEarliestAcquiredStackAndRetiresLaterOnes)
@@ -244,23 +235,6 @@ TEST_F(BagSelectionOrderTest, MergeKeepsEarliestAcquiredStackAndRetiresLaterOnes
     EXPECT_EQ(kStackConfig, destroyed[0].configId);
     EXPECT_EQ(0u, destroyed[0].size);
     EXPECT_TRUE(bag.IsLayerConsistent());
-}
-
-TEST_F(BagSelectionOrderTest, MergeNeverPicksAnEmptyStackAsSurvivor)
-{
-    Bag bag;
-    bag.InsertItemForRestore(kGuidC, kStackConfig, 4, 2, 3);
-    bag.InsertItemForRestore(kGuidB, kStackConfig, 3, 1, 2);
-    bag.InsertItemForRestore(kGuidA, kStackConfig, 0, 0, 1);
-    std::vector<DestroyedInstance> destroyed;
-    ASSERT_TRUE(bag.MergeAndCompact(&destroyed, CompactPolicy::kMergeOnly));
-    EXPECT_EQ(7u, StackSize(bag, kGuidB));
-    EXPECT_EQ(1u, bag.GetItemPosByGuid(kGuidB));
-    ASSERT_EQ(2u, destroyed.size());
-    EXPECT_EQ(kGuidA, destroyed[0].guid);
-    EXPECT_EQ(kGuidC, destroyed[1].guid);
-    EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidA));
-    EXPECT_EQ(nullptr, bag.GetItemCompByGuid(kGuidC));
 }
 
 TEST_F(BagSelectionOrderTest, ReorderBreaksTiesByAcquireOrder)
@@ -351,6 +325,20 @@ TEST_F(BagSelectionOrderTest, SnapshotReplayKeepsIterationOrder)
     }
     EXPECT_EQ(snapshot, Capture(restored));
     EXPECT_EQ(3u, restored.OccupiedGridCount());
+}
+
+TEST(ItemStoreTest, MergeNeverPicksAnEmptyStackAsSurvivor)
+{
+    ItemTableManager::Instance().Load();
+    ItemStore store;
+    ASSERT_NE(nullptr, store.Insert(MakeInstance(kGuidA, 0, 1)));
+    ASSERT_NE(nullptr, store.Insert(MakeInstance(kGuidB, 3, 2)));
+    ASSERT_NE(nullptr, store.Insert(MakeInstance(kGuidC, 4, 3)));
+    store.MergePartialStacks();
+    EXPECT_EQ(7u, store.Find(kGuidB)->size());
+    EXPECT_EQ(0u, store.Find(kGuidA)->size());
+    EXPECT_EQ(0u, store.Find(kGuidC)->size());
+    EXPECT_EQ((GuidVector{kGuidA, kGuidC}), store.CollectEmptyInstances());
 }
 
 TEST(ItemStoreTest, DuplicateInsertDoesNotAdvanceWatermark)

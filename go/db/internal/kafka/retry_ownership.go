@@ -37,6 +37,12 @@ import (
 //
 // 回退到旧版二进制时的注意事项:旧版看不到按实例的列表。正常停机(SIGTERM)时 release 已把收据还回 ready;
 // 若新版是崩溃退出,回退前要先起一个新版实例让它回收,或手工把 kafka:retry:processing:{topic}:* 搬回 ready。
+//
+// 重试只交给分区属主(RetryRouting=owner,retry_routing.go)之后,ready 拆成共享「未分拣收件箱」
+// kafka:retry:queue:{topic} 与按原始分区的 kafka:retry:queue:{topic}:p{N}。认领可以从任一列表来(claimFrom),
+// 但回收、停机归还、旧共享列表仍一律搬回共享收件箱,由 owner 实例分拣到 p{origin}:回收与路由解耦,本文件的回收脚本
+// 不认识 p 键,也不需要认识。回退到不认识 p* 的旧版之前,须先切 RetryRouting=shared 并等 p* 归零,或执行
+// go/db/cmd/retry_requeue 把 p* 搬回共享收件箱(docs/design/db-retry-owner-routing.md §10)。
 
 const (
 	// defaultRetryLeaseSeconds 是 Kafka.RetryLeaseSeconds 未配置(0)时的租约时长;
@@ -179,18 +185,10 @@ func (o *retryOwnership) renewLease(ctx context.Context) error {
 	return o.rc.Eval(ctx, retryLeaseScript, []string{o.instancesKey}, o.instanceID, o.lease.Milliseconds()).Err()
 }
 
-// claim 认领一条重试收据。ready 为空时返回 redis.Nil。
+// claim 从共享 ready(readyKey)认领一条重试收据。ready 为空时返回 redis.Nil。
+// 与 claimFrom(retry_routing.go)同一个脚本,先续租再认领的不变量不变;owner 模式从 p{P} 认领时直接调 claimFrom。
 func (o *retryOwnership) claim(ctx context.Context) ([]byte, error) {
-	value, err := o.rc.Eval(ctx, retryClaimScript,
-		[]string{o.readyKey, o.processingKey, o.instancesKey}, o.instanceID, o.lease.Milliseconds()).Result()
-	if err != nil {
-		return nil, err
-	}
-	payload, ok := value.(string)
-	if !ok {
-		return nil, fmt.Errorf("retry claim script returned %T, want a bulk string", value)
-	}
-	return []byte(payload), nil
+	return o.claimFrom(ctx, o.readyKey)
 }
 
 // drainInstance 把某个实例名下的收据搬回 ready。requireExpired=true 时由脚本复核租约,

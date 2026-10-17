@@ -44,6 +44,9 @@ func NewRouter(c config.Config, opts ...RouterOption) *Router {
 	if err := routeCfg.Validate(); err != nil {
 		panic(fmt.Sprintf("data_service router: invalid RouteStore config: %v", err))
 	}
+	if c.DevRedis.PoolSize < 0 {
+		panic(fmt.Sprintf("data_service router: DevRedis.PoolSize=%d must be >= 0 (0 = go-redis default 10 x GOMAXPROCS)", c.DevRedis.PoolSize))
+	}
 	r := &Router{
 		mappingRedis: redis.MustNewRedis(c.MappingRedis),
 		zoneToClient: make(map[uint32]*goredis.ClusterClient),
@@ -61,8 +64,11 @@ func NewRouter(c config.Config, opts ...RouterOption) *Router {
 			Addr:     c.DevRedis.Host,
 			Password: c.DevRedis.Password,
 			DB:       c.DevRedis.DB,
+			// 共享 Redis 连接总账按它记账(0 = go-redis 缺省 10 × GOMAXPROCS),见 config.DevRedisConfig.PoolSize。
+			PoolSize: c.DevRedis.PoolSize,
 		})
-		logx.Infof("[Router] Dev mode: all zones → %s DB=%d", c.DevRedis.Host, c.DevRedis.DB)
+		// pool_size 是生效值(缺省时是 go-redis 算出来的 10 × GOMAXPROCS):核对 ConfigMap 镜像的 PoolSize 是否真的被加载。
+		logx.Infof("[Router] Dev mode: all zones → %s DB=%d pool_size=%d", c.DevRedis.Host, c.DevRedis.DB, r.devClient.Options().PoolSize)
 		return r
 	}
 

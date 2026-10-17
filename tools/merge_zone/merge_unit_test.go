@@ -528,6 +528,8 @@ func TestPlayerCacheKeys_CoversParentSubAndDiscoveredTables(t *testing.T) {
 		"player_database:42":        true,
 		"player_database_1:42":      true,
 		"player_centre_database:42": true,
+		// 资产 SQL 提交证据(不是缓存,但同在 DB 0、同样不带 zone;字面量必须与 go/shared/assetop.SQLCommitKey 一致)。
+		"player:{42}:asset_sql_commit": true,
 	}
 	if len(keys) != len(want) {
 		t.Fatalf("got %d keys %v, want %d", len(keys), keys, len(want))

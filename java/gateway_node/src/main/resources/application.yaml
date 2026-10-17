@@ -8,7 +8,9 @@ spring:
   jackson:
     property-naming-strategy: SNAKE_CASE
   datasource:
-    url: jdbc:mysql://localhost:3306/mmorpg?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    # 2026-10-16:URL 末尾的 connectTimeout / socketTimeout(毫秒)是 Connector/J 的连接级超时,K8s ConfigMap 从这里镜像
+    # (k8s_deploy.ps1 读本键的查询串,缺一项即生成失败;契约测试钉住两边一致)。理由见下面 hikari 段的 2026-10-16 补注(续)。
+    url: jdbc:mysql://localhost:3306/mmorpg?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&connectTimeout=3000&socketTimeout=10000
     username: appuser
     password: apppass123
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -24,6 +26,15 @@ spring:
     # 部署侧镜像时按下限 250 核对。同样由 ConfigMap 镜像、契约测试与 GatewayDataSourcePoolConfigTest 钉住。
     # 2026-10-15 更正:上面「服务器列表与公告每次请求查一次(不缓存)」对服务器列表已过时 —— ServerListService 改为 zone_config
     # 行 1s 短缓存,过期瞬间的并发请求合并成一次 findAll,查库失败不缓存(G2b §9 第 7 条);公告仍每次查库。
+    # 2026-10-16 补注:合并查库时等待方的时间预算 ServerListService.ZONE_ROWS_LOAD_WAIT_MILLIS 与本段 connection-timeout
+    # 同口径写死 3000(Hikari 把 0 当无限等,不能直接照搬),改 connection-timeout 时同步改它。connection-timeout 只限取连接:
+    # 两份 JDBC URL(这里与 K8s ConfigMap)都没配 socketTimeout、也没配查询超时,已取到连接后的查询本身没有上限,登记为后续。
+    # 2026-10-16 补注(续):已补。URL 带 socketTimeout=10000:单次 socket 读最多等 10s,半开 TCP、zone_config 上的 MDL 排队时
+    # 查库方 10s 后以通信异常失败、连接被丢弃,ServerListService / AssignGateService 的合并查询随之摘掉在途 future;此前要等内核
+    # 重传放弃(约 15 分钟)或 keepalive(约 2 小时),这期间该副本上同 zone 的准入与 server-list 请求全部 3s 后回 5xx。取 10s:
+    # 网关的语句都是单表小查询(毫秒级),10s 留足余量;代价是管理接口的写若在行锁 / MDL 上等超过 10s,会以通信异常回 5xx,
+    # 而不是等到 innodb_lock_wait_timeout(默认 50s)——管理写偶发、可重试,接受。connectTimeout=3000 与 connection-timeout
+    # 同口径,限住池补连接时的 TCP 建连(Connector/J 默认 0 = 交给操作系统,约 2 分钟)。改值时 ConfigMap 自动跟随。
     hikari:
       maximum-pool-size: 5
       minimum-idle: 2
@@ -141,6 +152,8 @@ management:
   # 被不限流的端点刷时,业务线程耗尽不再连带 liveness 超时、把所有副本一起杀掉。这里(jar 内)刻意不写:本机只跑一个进程、
   # 没有 liveness,start_game.ps1 与排障文档都按 8081 取 /actuator/health,改端口只会把它们弄坏。
   # 代价:探针不再反映业务连接器是否还能接新连接 —— 业务线程卡死时 liveness 仍是 UP,要靠日志与上游错误率发现。
+  # 2026-10-16 补注:readiness 同理 —— 业务线程被占满或卡死时这个副本仍是 Ready,不会被摘流;gateway 目前不导出指标、也没有
+  # 错误率告警,「上游错误率」尚无落地手段。K8s 上的发现与处置见 deploy/k8s/README.md「gateway 探针、管理端口与回退口径」2026-10-16 补注。
   endpoint:
     health:
       probes:

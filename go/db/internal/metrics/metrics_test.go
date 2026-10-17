@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redis/go-redis/v9"
@@ -373,5 +374,207 @@ func TestPipelineCountersPrecreated(t *testing.T) {
 				t.Fatalf("%s{%s} was not pre-created", family, s)
 			}
 		}
+	}
+}
+
+// seriesValues 从默认注册表取 family 的全部序列,键是按 labels 顺序取出的 label 值用 "|" 连接(无 label 时为 ""),
+// 值取计数器或仪表。family 不存在时 found=false。
+func seriesValues(t *testing.T, family string, labels ...string) (values map[string]float64, found bool) {
+	t.Helper()
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("gather: %v", err)
+	}
+	for _, mf := range families {
+		if mf.GetName() != family {
+			continue
+		}
+		values = map[string]float64{}
+		for _, m := range mf.GetMetric() {
+			byName := map[string]string{}
+			for _, l := range m.GetLabel() {
+				byName[l.GetName()] = l.GetValue()
+			}
+			if len(byName) != len(labels) {
+				t.Fatalf("%s has a series with labels %v, want exactly %v", family, byName, labels)
+			}
+			key := ""
+			for i, name := range labels {
+				v, ok := byName[name]
+				if !ok {
+					t.Fatalf("%s has a series without label %q: %v", family, name, byName)
+				}
+				if i > 0 {
+					key += "|"
+				}
+				key += v
+			}
+			switch {
+			case m.GetCounter() != nil:
+				values[key] = m.GetCounter().GetValue()
+			case m.GetGauge() != nil:
+				values[key] = m.GetGauge().GetValue()
+			}
+		}
+		return values, true
+	}
+	return nil, false
+}
+
+// assertExactSeries 断言 family 恰好有 want 这些序列(按 seriesValues 的键);requireZero 时每条都必须是 0
+// (本包里没有别的用例会动它)。
+func assertExactSeries(t *testing.T, family string, labels []string, want []string, requireZero bool) {
+	t.Helper()
+	got, found := seriesValues(t, family, labels...)
+	if !found {
+		t.Fatalf("%s was not registered", family)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("%s has %d series %v, want exactly %d: %v", family, len(got), got, len(want), want)
+	}
+	for _, key := range want {
+		v, ok := got[key]
+		if !ok {
+			t.Fatalf("%s{%s} was not pre-created", family, key)
+		}
+		if requireZero && v != 0 {
+			t.Fatalf("%s{%s} = %v, want a pre-created 0", family, key, v)
+		}
+	}
+}
+
+// TestRetryRoutingSeriesPrecreated 钉住重试路由与入队落盘确认的预建序列(docs/design/db-retry-owner-routing.md §11):
+// 告警用 increase(),序列从无到 1 时会漏掉第一次,所以 register() 之后这些序列必须已经以 0 存在;
+// 取值集合用字面量写死 —— deploy/k8s/db-task-retry-alerts.yaml 与 stress_summarize.ps1 的 2f 段按这些字符串匹配,
+// 常量一改名,这里先红。数量:retry_route 2×6=12、ordering_lock_busy 2、durable_enqueue 2×4=8、retry_routing_mode 2。
+func TestRetryRoutingSeriesPrecreated(t *testing.T) {
+	register()
+
+	var routes []string
+	for _, mode := range []string{"shared", "owner"} {
+		for _, action := range []string{"executed", "executed_nonowner", "forwarded", "requeued_revoked", "misrouted", "dead"} {
+			routes = append(routes, mode+"|"+action)
+		}
+	}
+	assertExactSeries(t, "db_retry_route_total", []string{"mode", "action"}, routes, true)
+	assertExactSeries(t, "db_ordering_lock_busy_total", []string{"origin"}, []string{"kafka", "retry"}, true)
+
+	var enqueues []string
+	for _, target := range []string{"retry", "dead"} {
+		for _, result := range []string{"ok", "not_durable", "error", "canceled"} {
+			enqueues = append(enqueues, target+"|"+result)
+		}
+	}
+	// 只断言存在:TestObserveDurableEnqueueSkipsCanceledInHistogram 会往这里记数(用例顺序不固定,如 -shuffle)。
+	assertExactSeries(t, "db_durable_enqueue_total", []string{"target", "result"}, enqueues, false)
+	// 两条都要存在(DbZoneNoPartitionClaims 数 mode="owner" 序列的条数);没人调 SetRetryRoutingMode 时都是 0。
+	assertExactSeries(t, "db_retry_routing_mode", []string{"mode"}, []string{"shared", "owner"}, true)
+	assertExactSeries(t, "db_claim_acquired_total", nil, []string{""}, true)
+	if _, found := seriesValues(t, "db_owned_partitions"); !found {
+		t.Fatal("db_owned_partitions was not registered")
+	}
+
+	// 常量与上面的字面量一一对应(用切片而不是 map:几个常量取值相同,作 map 键会编译不过)。
+	for _, pin := range [][2]string{
+		{RetryModeShared, "shared"}, {RetryModeOwner, "owner"},
+		{RetryRouteExecuted, "executed"}, {RetryRouteExecutedNonOwner, "executed_nonowner"},
+		{RetryRouteForwarded, "forwarded"}, {RetryRouteRequeuedRevoked, "requeued_revoked"},
+		{RetryRouteMisrouted, "misrouted"}, {RetryRouteDead, "dead"},
+		{OriginKafka, "kafka"}, {OriginRetry, "retry"},
+		{DurableTargetRetry, "retry"}, {DurableTargetDead, "dead"},
+		{DurableOK, "ok"}, {DurableNotDurable, "not_durable"}, {DurableError, "error"}, {DurableCanceled, "canceled"},
+		{RetryQueueReady, "ready"}, {RetryQueuePartitioned, "partitioned"},
+		{RetryQueueProcessing, "processing"}, {RetryQueueDead, "dead"},
+	} {
+		if pin[0] != pin[1] {
+			t.Fatalf("alert / stress_summarize pinned label value changed: got %q, want %q", pin[0], pin[1])
+		}
+	}
+}
+
+// TestRetryRoutingNamesMatchStressSummarize 读 stress_summarize.ps1 2f 段的 $retryQueues / $retryActions,与本包常量
+// 逐项比对:两边不一致时脚本整列静默变成 n/a,只有这里能先红。
+func TestRetryRoutingNamesMatchStressSummarize(t *testing.T) {
+	path := filepath.Join("..", "..", "..", "..", "tools", "scripts", "stress_summarize.ps1")
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	listOf := func(variable string) []string {
+		t.Helper()
+		block := regexp.MustCompile(`(?s)\$` + variable + `\s*=\s*@\(([^)]*)\)`).FindSubmatch(raw)
+		if block == nil {
+			t.Fatalf("$%s list not found in %s", variable, path)
+		}
+		var names []string
+		for _, m := range regexp.MustCompile(`'([a-z_]+)'`).FindAllSubmatch(block[1], -1) {
+			names = append(names, string(m[1]))
+		}
+		return names
+	}
+	for _, tc := range []struct {
+		variable string
+		want     []string
+	}{
+		{"retryQueues", []string{RetryQueueReady, RetryQueuePartitioned, RetryQueueProcessing, RetryQueueDead}},
+		{"retryActions", retryRouteActions},
+	} {
+		got := listOf(tc.variable)
+		if len(got) != len(tc.want) {
+			t.Fatalf("stress_summarize.ps1 $%s = %v, want %v", tc.variable, got, tc.want)
+		}
+		for i := range got {
+			if got[i] != tc.want[i] {
+				t.Fatalf("stress_summarize.ps1 $%s[%d] = %q, want %q", tc.variable, i, got[i], tc.want[i])
+			}
+		}
+	}
+	for _, mode := range retryModes {
+		if !regexp.MustCompile(`'db_retry_routing_mode'\s+'mode="` + mode + `"'`).Match(raw) {
+			t.Fatalf("stress_summarize.ps1 does not read db_retry_routing_mode{mode=%q}", mode)
+		}
+	}
+}
+
+// canceled 只计数、不进直方图;其余结果两边都记。
+func TestObserveDurableEnqueueSkipsCanceledInHistogram(t *testing.T) {
+	register()
+	histogramCount := func() uint64 {
+		t.Helper()
+		families, err := prometheus.DefaultGatherer.Gather()
+		if err != nil {
+			t.Fatalf("gather: %v", err)
+		}
+		for _, mf := range families {
+			if mf.GetName() != "db_durable_enqueue_seconds" {
+				continue
+			}
+			for _, m := range mf.GetMetric() {
+				for _, l := range m.GetLabel() {
+					if l.GetName() == "target" && l.GetValue() == DurableTargetDead {
+						return m.GetHistogram().GetSampleCount()
+					}
+				}
+			}
+		}
+		return 0
+	}
+	counter := func(result string) float64 {
+		t.Helper()
+		got, _ := seriesValues(t, "db_durable_enqueue_total", "target", "result")
+		return got[DurableTargetDead+"|"+result]
+	}
+
+	beforeHist, beforeCanceled, beforeOK := histogramCount(), counter(DurableCanceled), counter(DurableOK)
+	ObserveDurableEnqueue(DurableTargetDead, DurableCanceled, 3*time.Second)
+	if histogramCount() != beforeHist {
+		t.Fatal("a canceled enqueue must not be observed in db_durable_enqueue_seconds")
+	}
+	if counter(DurableCanceled) != beforeCanceled+1 {
+		t.Fatal("a canceled enqueue must still be counted")
+	}
+	ObserveDurableEnqueue(DurableTargetDead, DurableOK, 10*time.Millisecond)
+	if histogramCount() != beforeHist+1 || counter(DurableOK) != beforeOK+1 {
+		t.Fatal("an ok enqueue must be counted and observed")
 	}
 }

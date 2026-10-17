@@ -194,7 +194,7 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
 - **已知差异**:muduo `Connector` 没有「连接失败」回调(上游 `TcpClient.cc` 自己标了 `FIXME setConnectFailedCallback`),
   被拒绝的连接在我们看来一直是 CONNECTING,直到 `connect_timeout`;官方 gRPC 会立即进 TRANSIENT_FAILURE。
   后果只是失败来得晚(调用按自己的截止时间失败,gate 照样回 1003),不影响正确性。第 3 批要用连接状态做选点前,
-  在三份 muduo 树里补这个回调(见 §10)。
+  在三份 muduo 树里补这个回调(见 §10)。**2026-10-16 已补(未编译、Windows revents 未实测),见 §14.3。**
 
 ## 6. 线程、生命周期与关机(AGENTS §11.7)
 
@@ -234,7 +234,8 @@ Go 侧没有任何服务配置 `KeepaliveEnforcementPolicy`,即 grpc-go 默认:�
 - 只覆盖路由模式(`GATE_CLIENT_RPC_ROUTER=1`)下 gate 的唯一 gRPC 出站 `ClientRpcRouter.Forward`:业务请求与断线通知
   共用 `SendViaRouter` 这一个接缝(`client_message_processor.cpp`)。
 - 开关 `GATE_ROUTER_TRANSPORT`,启动时读一次:`grpc`(默认,旧实现)| `muduo_h2`(新实现)。不认识的值按 `grpc`
-  并 WARN。它与 `GATE_CLIENT_RPC_ROUTER`(业务拓扑:直连还是经路由服)是两回事;直连模式下这个开关不生效。
+  并 WARN。**第 3 批起失效**:官方客户端已删,任何非 `muduo_h2` 值只打 WARN 后照走 muduo_h2,本节下文的通道工厂、
+  `InstallChannelFactory` 与回退方式都已删除(§14.1、§14.3)。它与 `GATE_CLIENT_RPC_ROUTER`(业务拓扑:直连还是经路由服)是两回事;直连模式下这个开关不生效。
 - **地址要求**:`muduo_h2` 要求路由服在 `NodeInfo.grpc_endpoint.ip` 里登记 **IPv4 字面量**(K8s 注入的 POD_IP、
   或配置的具体 IP;仓库交付的配置都满足)。路由服 `ListenOn` 写主机名又没有 POD_IP 时不能用 `muduo_h2`:
   建通道失败、节点不进候选,服务发现每 2s 重试一次并记 ERROR。不在 loop 线程上做阻塞 DNS 解析,也不为这种节点
@@ -475,7 +476,10 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 ## 14. 第 3 批:生成客户端全部改走 muduo_grpc、删 CQ(设计,2026-10-15)
 
 负责人 10-15「不用管验证,全部做完」:第 3–5 批不再等上一批验证,连续落地;全部**未编译、未重生成**,交负责人统一构建。
-现状调查(五个子系统只读调查)的结论按需引用,不另存文档。
+**当前状态**:第 3 批做到一半后按负责人要求转交其他会话,进度、剩余清单与五份现状调查见
+[handoff/grpc-muduo-batch3-5/README.md](../handoff/grpc-muduo-batch3-5/README.md)。
+2026-10-16 接手会话已补完第 3 批代码(仍未编译),落地记录见 §14.3。负责人同日澄清目标:**不是删 gRPC 库,而是运行期
+不起任何 gRPC 线程、线程数可控**;第 5 批据此改为「无 gRPC 线程守卫 + 清理」,不换依赖、不删 grpc 子模块(见交接 README)。
 
 ### 14.1 决定
 
@@ -508,7 +512,8 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
   Linux overlay),`Http2Transport` 收到即进 TRANSIENT_FAILURE、不再等 20s;修 Windows `EventLoop::wakeup()` 空操作
   (删 5ms 轮询后它不再被掩盖)。
 - **依赖面**:core 与 grpc_client 从此链 muduo_grpc + nghttp2;所有链 core / grpc_client 的工程在第 5 批统一改链接项
-  (同时去掉 grpc)。
+  (同时去掉 grpc)。**2026-10-16 订正**:第 5 批改口径后不去掉 grpc 链接项 —— core 的 `grpc_runtime_probe.cpp` 调
+  `grpc_is_initialized()`,链进 node.obj 的工程必须继续链 grpc.lib / gpr.lib;muduo_grpc + nghttp2 链接项已在第 3 批补齐(§14.3)。
 
 ### 14.2 行为变化(调用方须知)
 
@@ -516,3 +521,992 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 - 摘节点时 done 在实体销毁**之后**才执行:回调不得捕获实体句柄或组件指针(现有调用方都按值捕获,已核对)。
 - 官方通道「空闲 30 分钟回 IDLE」「空闲也 ping」消失,改为截止触发探测(§4.4)。
 - 对端拒连立即进 TRANSIENT_FAILURE(连接失败回调落地后),退避 1s ×1.6 封顶 120s,期间调用立即失败(与官方 gRPC 一致)。
+
+### 14.3 落地记录(2026-10-16,未编译)
+
+10-15 22:27 负责人 / 另一会话已按新模板跑过 proto-gen,`cpp/generated/grpc_client/**` 不再有 CQ / `ClientContext` / grpcpp。
+接手会话据此补完调用方与其余项,七组并行落码、每组一轮语义评审。全部**未编译、未运行**。
+
+- 同一次 regen 把 mail / rank 两组客户端加进了 `grpc_init_client.cpp`。它们的 `*_grpc_client.cpp` 与 `*.pb.cc` 已由另一会话
+  登记:Windows 在 `grpc_client.vcxproj` / `proto.vcxproj` 末尾 `Microsoft.Cpp.targets` 导入之后的 `ProtoGeneratorSources`
+  段,Linux 在两份 CMakeLists。构建日志里要确认这几个文件确实被编译(项在导入之后,按 MSBuild 求值顺序应生效)。
+- **调用方**:
+  - session:`GetSessionDetailsByClientContext` 改名并改签名为 `GetSessionDetailsByReplyContext(const GrpcReplyContext&)`,
+    用 `FindInitialMetadata("x-session-detail-bin")` 取值,值语义不变(§4.2)。
+  - gate main:全局处理器换新签名;`GATE_ROUTER_TRANSPORT` 不设或 `muduo_h2` 时静默,其余值(含 `grpc`)打一条 WARN 后照走
+    muduo_h2;`gate_router_transport.h` 与 6 条 `GateRouterTransport.*` 用例删除。关机排空判定(beforeShutdown 关掉的会话
+    走完断线处理 + 路由通道 `AllChannelsIdle`,上限 15s)改为**路由模式一律安装**,以前只在 muduo_h2 下;直连模式不变。
+  - `router_muduo_forward`:删 `InstallChannelFactory`;`SendForward` 保留(第 1 批路径,本身无单测),线上字节按代码核对
+    与生成的 `SendClientRpcRouterForward` 一致(`:path`、应用层一层 Base64、同一份截止配置、解析失败 INTERNAL)。
+  - `client_message_processor`:`SendRawViaRouter` 只剩 muduo 通道一条路,缺通道守卫改为 `try_get<MuduoGrpcChannelPtr>`
+    (采样 WARN 后返回空,与原守卫失败时一致);`PickRandomNode` 只看 `HasUsableGrpcClient`。
+  - 号段 `id_segment_bootstrap`、收件箱、scene_manager 应答适配:只迁签名(没有改成每次调用回调);`x-idseg-seq` 回显比对
+    同时认原文与 Base64,语义不变;收件箱用 `kGrpcStatusUnimplemented` 代替 grpc 枚举。
+- **选点**:`Candidate.channelState` 改为 `std::optional<muduo_grpc::ConnectivityState>`;`node_utils.h` 只前向声明枚举
+  (`enum class ConnectivityState : uint8_t`,该头经 `node.h` 进入大量翻译单元)。号段 / 收件箱选点改为
+  `view<NodeInfo, MuduoGrpcChannelPtr>` 且只认 `GetState(true) == kReady`。
+- **muduo 连接失败回调**(两份 Windows 树逐字一致 + Linux 新增 overlay,均标 LOCAL DELTA):
+  - `Connector::setConnectFailedCallback`:`retry()` 关 socket、回到 kDisconnected 之后、排下一次重试之前回调;`connect()` 的
+    致命分支与 default 分支也回调;只在 `connect_` 为真时回调,回调返回后重读 `connect_`。回调里**不得同步 start / restart**
+    (`removeAndResetChannel` 已排了绑裸 this 的 `resetChannel`)。`stop()` 改绑 `shared_from_this()`。
+  - `TcpClient` 只加 out-of-line 转发与一个嵌套 typedef,**无数据成员**,布局不变。
+  - Windows `Channel.cc`:设了 errorCallback、没设 closeCallback 的 channel(本仓只有 Connector)遇 POLLHUP 不再提前返回,
+    先投 error 再投 write;其余 channel 逐字不变。前提是 WSAPoll 对拒连报 POLLHUP|POLLERR,**未实测**;只报 POLLWRNORM 时
+    走 handleWrite 读 SO_ERROR,同样到失败回调。
+  - `Http2Transport`:失败回调只绑 weak,先 `client_.stop()` 停掉 Connector 内部重试,再经 `queueInLoop`(绑 weak)
+    `CloseWithError(UNAVAILABLE)`,不在 Connector 回调栈或 `CreateTransport` 栈上关闭;与 connect_timeout、Shutdown、`~Channel`
+    由 `closed_` 收口,恰好关闭一次。§5「已知差异」随之消除。
+- **Windows 唤醒**:`EventLoop.cc` 的 WIN32 分支改为自连接回环 UDP socket(`EventLoop.h` 不变),`wakeup()` 发 1 字节、
+  缓冲满忽略;`handleRead()` 读到 EWOULDBLOCK 为止(WSAPoll 水平触发,不读干净会空转)。每个 EventLoop 占一个
+  127.0.0.1 UDP 临时端口。修复后 Windows 上「pending functor 里再排」也立即唤醒,任何自我重排的写法会从每 100ms 一次变成忙等
+  (生产代码只查到 `FinalizeTeardownInLoop` 自我重排,有界)。
+- **测试**:
+  - 删 `grpc_client_lifecycle_test.cpp`;新增 `grpc_client_local_reject_test.cpp`(无通道 → done 异步恰好一次 UNAVAILABLE、
+    不触发全局处理器、`GrpcClientLocalCompletionsDrained` 判据)。PerCallDone 成功 / 停机两条与「快照 / 已关闭实体不能被选中」
+    的适配层用例待第 4 批或选点组补。
+  - `cross_zone_test`:假 SceneManager 节点改挂不连的 `MuduoGrpcChannelPtr`,夹具自带 EventLoop。
+  - 选点用例换五态;muduo_grpc_test 新增 `RefusedConnectionEntersTransientFailureWithoutWaitingForConnectTimeout`
+    (connectTimeout 20s、断言 5s 内失败;Windows 协议栈对回环拒连还会重试 SYN,经验值 1~2s)与 `event_loop_wakeup_test.cpp` 三条。
+- **构建**:23 个测试工程与 rpc_controller_test、cross_zone_test 的 Debug|x64 加 `muduo_grpc.lib;nghttp2.lib` 与 nghttp2 库目录;
+  `game.sln` 给链 core / grpc_client 的测试加对 muduo_grpc 的依赖。rpc_controller_test、aoi_delivery_test、
+  consistent_hash_node_test 不在 sln 里,要先编 sln 再单编(consistent_hash_node_test 本来就是死工程,`run_cpp_tests.ps1` 已排除)。
+  Release / Win32 配置未动(gate 的 Release 链接项第 1 批起就缺 muduo_grpc / nghttp2)。
+- **行为变化补充**(在 §14.2 基础上):
+  - 路由模式 gate 关机最多多等 15s,换来断线通知能发出、login 侧会话转离线。
+  - 拒连后只剩 Channel 自己的退避(1s×1.6,业务通道封顶 120s),对端重启后的恢复可能比原来慢;是否下调业务通道
+    `backoff.max` 待负责人定。
+  - Windows 上 RPC0 的 `RpcClient` 拒连也会真正走 `Connector::handleError` 按 0.5s 起翻倍重试并打 ERROR(以前推断停在
+    kConnecting 空转)。
+  - Windows 本地压测数据与旧轮次不再可比(跨线程投递与 scene / battle 同步服务端的 runInLoop + future 等待都变快)。
+- **未做**:muduo TimerQueue 单调时钟(可选项);Connector 其余绑裸 this 的上游 FIXME(start / connecting / resetChannel,
+  当前用法到达不了,是否一并改待定)。`client_request_lane.{h,cpp}` 的过时注释已由遗漏检查改准;随后 ECS 审查转交的 W1-45 删掉了 lane 里重复的摘节点机制(`OnRouterNodeRemoved` / `routerEntity` / `nodeRemoved` / `InflightIndex::ExtractIf`),路由服摘除改由 `~Channel` 的 UNAVAILABLE 经失败桥认领,见 client-request-ordering.md §4.5。
+
+## 15. 第 4 批:服务端改走 muduo + nghttp2(设计,2026-10-16)
+
+负责人 10-15 对第 4 批 11 个待定问题选「按最标准做法由你定」。本节由三份独立设计(正确性与生命周期 / 最简单可审 / 线上契约与运维)经裁决综合而成,裁决时逐条对照代码核实论据。**状态:2026-10-16 已按本节落码(七组并行 + 每组语义评审 + 全仓遗漏检查),未编译、未重生成;实现与本节的偏离和待拍板的取舍见 §15.16。**
+
+### 15.1 目标、范围与验收
+
+负责人原话:「grpc 库还是可以用,但是不要启动 grpc 任何线程……我需要的是线程数量可控」。本批据此做到以下几点:
+
+- **不再构造官方服务端对象。** scene / battle 不再构造 `grpc::Server`、`ServerBuilder`、`ServerContext`、`CompletionQueue`。服务端的接入、HTTP/2 协议、派发、定时器、关机,全部跑在节点 EventLoop 上,**新增线程数为 0**。第 3 批之后客户端也不再构造官方对象,所以官方运行时不会被 `grpc_init` 拉起。
+- **线上字节与 Go 依赖的状态码契约不变。** 三条手写文案逐字保留:
+  - scene `CreateScene` 回 `UNAVAILABLE "agones allocate not confirmed"`;
+  - battle `CreateBattle` 回 `UNAVAILABLE "battle_not_allocatable"`。这是跨语言契约,`go/match/internal/logic/gather.go:66/677` 按状态码加文案精确匹配;
+  - battle `DestroyBattle` 回 `FAILED_PRECONDITION "placement_operation_mismatch"`。
+  - 其余业务错误照旧放在应答字段里,status 为 OK。
+- **不删依赖。** grpc 库和 `*.grpc.pb.*` 都保留,服务端只是不再 include 它们。
+- **不设回退开关**(见 §15.3 Q1)。
+- 本节只是静态设计,未编译;验证按 §15.14 交 Codex 执行。
+
+### 15.2 现状核对(以 2026-10-16 工作区为准,survey 中过时的说法在此更正)
+
+| # | survey / README 的说法 | 现状 | 影响 |
+|---|---|---|---|
+| 1 | 13 个 unary 方法 | **15 个**:scene 9 个(新增 `AssetAckReceipt`),battle 6 个(新增 `QueryBattleCreation`,排在第一)。全部 unary,全部是同步的 `Handle*` | 方法表和测试都按 15 个做 |
+| 2 | 手写的非 OK 只有两处 UNAVAILABLE | battle 的 `grpc.DestroyBattle.in_loop` 已有手写的 FAILED_PRECONDITION(`battle_node.cpp:215-218`,另一会话未提交) | 非空手写段共 5 段(§15.8.4)。迁移以**工作区**为准,不得 `git show HEAD:` |
+| 3 | 关机链里有 `DrainGrpcClientsInLoop` | 第 3 批已删。阶段 0 清 `MuduoGrpcChannelPtr`;拆除开头按 `GrpcClientLocalCompletionsDrained()` 让一轮(`node.cpp:1191-1241`) | 关机按 §15.10 |
+| 4 | node.cpp 有并行改动 | node.{h,cpp} 当前没有未提交改动。行号:`~Node` :436,`RegisterGrpcService` :730,`StartGrpcServer` :740,`ShutdownGrpcServer` :816,`ShutdownInLoop` :1113,`MaybeFinalize` :1161,`Finalize` :1191,`Teardown` :1222 | — |
+| 5 | Windows 的 wakeup 是空操作 | 第 3 批已改成自连接 UDP(未提交,§14.3) | 派发泵与 Agones 投递依赖它,算前置条件 |
+| 6 | README §4 写的是 TcpServer | 本批改用 Acceptor 自管连接(§15.4.1) | README 要同步改 |
+| 7 | 需求 12「回退开关」 | 与目标、§14.1 冲突 | 删除这条需求 |
+| 8 | 需要配 nghttp2 防洪选项 | 1.70 默认已全部开启(`nghttp2_session.h:96-111`) | 本批把默认值显式写出,锁住将来的漂移 |
+| 9 | 超过 MAX_CONCURRENT_STREAMS 会怎样 | 对端 ACK 我方 SETTINGS 之前:REFUSED_STREAM;ACK 之后:连接级 PROTOCOL_ERROR(`nghttp2_session.c:3891-3909`) | — |
+| 10 | GOAWAY 之后的新流 | shutdown notice 不置 GOAWAY_SENT,新流照常收(`nghttp2_submit.c:205-215`)。最终 GOAWAY 之后新流被忽略(`:3897`),客户端按 last_stream_id 判为未处理 | 两段式见 §15.5.6 |
+| 11 | 探针要静默处理 | Linux 上游 `TcpServer.cc:80/109` 每次建连 / 断连各打一行 INFO。服务端先写 SETTINGS、对端再 RST,会触发 `handleError` ERROR | Acceptor 加「推迟写 SETTINGS」 |
+| 12 | 服务端要配 keepalive | `TcpConnection` 构造时已经 `setKeepAlive(true)`(两份树的 `TcpConnection.cc:63`) | 不做 HTTP/2 层 keepalive |
+| 13 | — | 除 muduo_windows 与 third_party 外,所有 vcxproj 都跑 no-raw-pointer-member 检查(`Directory.Build.targets:57`,`fieldDecl(hasType(pointerType()))`,函数指针也算) | 新类型**不得有 `T*` 字段** |
+| 14 | 要改 handlers.go / grpc_handler_target.go | 路由和输出文件都不变,这两个文件不用改。但通用管线是**先写 .h、再生成 .cpp**(`handler.go:41-75`) | 旧段检查必须在写 .h 之前做(§15.8.3) |
+| 15 | — | Go 调用方都没配 grpc keepalive(已 grep `scene_manager` / `match` / `shared/scenenode`) | 服务端不做 PING strike |
+
+### 15.3 决定(11 个待定问题,按「最标准做法」裁决)
+
+| 题 | 决定 | 依据 | 代价 |
+|---|---|---|---|
+| Q1 回退开关 | **不设**。模板只生成新形态。回滚就是换回上一版镜像;灰度先发 1 个 scene 和 1 个 battle | 回到官方服务端就会重新拉起 poller 和 EventEngine 线程;§14.1 已定不保留官方分支;线上协议不变,新旧节点可以与同一批 Go 调用方并存 | 只能整版回滚 |
+| Q2 在途上限 | 两层:<br>① 每连接 SETTINGS `MAX_CONCURRENT_STREAMS=256`;<br>② 全节点在途 **1024**,超限在业务之前回 trailers-only `RESOURCE_EXHAUSTED "server in-flight call limit (1024) reached"`。<br>派发泵每轮 ≤64 个且 ≤2ms(至少 1 个)。每连接未收完的请求体 ≤16MiB。<br>Go `reconcile.go` 的 `Workers=8` 不动,只改注释 | MCS 是 HTTP/2 原生背压(RFC 9113 §6.5.2 建议 ≥100;Go net/http2 默认 250):grpc-go 在客户端排队,没发出的请求必定没执行。<br>RESOURCE_EXHAUSTED 是规范里的资源耗尽码,grpc C++ sync server 线程配额耗尽时也回它。<br>不用 REFUSED_STREAM:grpc-go 会立刻在同一连接透明重试。<br>每轮 2ms 是 50ms 帧预算的 4% | 极端突发时出现 RESOURCE_EXHAUSTED(业务未执行,调用方按失败重试) |
+| Q3 停接新连接 | 用 `Acceptor` 加自管 `TcpConnection`;停止监听就是经 queueInLoop 销毁 Acceptor;三份 muduo 树都不改。etcd 发现键**不提前撤**,仍在 `ReleaseNodeId` 随租约撤销 | grpc-go `GracefulStop` 和 grpc C++ `Shutdown` 都是先关监听。提前删键会让 scene_manager 改派,与本节点还在落地的存盘竞争(回档) | 排空窗口里 Go 仍能发现本节点,但拨号立刻 ECONNREFUSED、fail-fast,与今天一致 |
+| Q4 排空 | `kGrpcDrainTimeout=2s`,从 BeginShutdown 起算(在 hook 之后)。<br>第二段 GOAWAY 在收到 PING ACK 或满 1s 时发,取先到者。<br>最终 GOAWAY 之前收到的流照常处理。<br>2s 到期:业务未开始的回 `RST_STREAM(REFUSED_STREAM)`;已开始的回 `UNAVAILABLE "server shutting down"`。<br>之后半关,宽限 1s 再 forceClose,总上限约 3s | hook 里的 `Stop()` 已在排空之前拒掉所有许可等待者,Handle* 又都是同步的,所以通常一个 RTT 就排空。<br>grpc-go 在第一段 GOAWAY 后照常接受新流(`http2_server.go:1404-1407`)。<br>REFUSED_STREAM 是 RFC 9113 §8.7 的「未处理」;UNAVAILABLE 属于 Go 的「结果未知」(`spectate.go:387-392`) | 旧路径到期多是 CANCELLED,现在是 UNAVAILABLE 或 REFUSED |
+| Q5 截止 | 服务端用单一截止定时器(照 `Channel` 的 `deadlines_` 有序集合 + steady 复核):<br>投递前到期 → DEADLINE_EXCEEDED,不派发;<br>等许可时到期 → DEADLINE_EXCEEDED 完成调用,许可回来后不进业务;<br>业务已开始 → 立即回 DEADLINE_EXCEEDED,业务不打断,迟到的完成丢弃并计数 | grpc core 服务端的行为就是这样(今天线上跑的就是它);中途打断会制造半完成 | 多一个定时器加一个有序集合 |
+| Q6 延后完成 | 框架支持(ServerCall 可拷贝、只持 weak);**`Handle*` 签名和函数体都不变** | 异步许可本来就需要延后完成;目前没有 handler 需要接管(YAGNI) | 将来再加带 call 参数的变体 |
+| Q7 异步许可 | `GameServerLifecycle::AcquireAllocationPermitAsync(EventLoop&, cb)`:结果一律 queueInLoop 回 loop;超时由该 loop 的定时器兑现;`Stop()` 拒绝全部等待者;析构只丢弃、不投递。`SceneHandler::CreateScene`(RPC0)的 NonBlocking 不动 | 等待者能否拿到结果,必须与写 Allocated、晚到收口在同一把 mutex 里裁决;infra 本来就依赖 muduo,测试本来就链 `muduo.lib` | Blocking 版保留,只给测试和非 loop 线程用 |
+| Q8 bind | 绑注册 IPv4(`grpc_endpoint.ip`),启动时校验必须是规范 IPv4 字面量,否则 `LOG_FATAL`;`reuseport=false`;不读 `BIND_IP` | 暴露面与今天官方服务端完全一样;资产 RPC 只靠请求体签名(`asset_op_auth.h:9-13`);muduo `InetAddress` 遇到非法 IP 会静默落成 0.0.0.0 | IPv6 的 POD_IP 会启动失败(与 §8 的客户端侧同一限制) |
+| Q9 scene 停机准入 | **只给 CreateScene 补**。框架提供 `ServerCall::ServerDraining()`;守护段在取许可前、许可回到 loop 后各查一次,为真就回 `UNAVAILABLE "scene_node_shutting_down"` | 排空时拒绝新的变更型工作是标准做法(与 battle 准入闸同理);SceneManager 收到任何错误都会回滚(`createscenelogic.go:297-309`) | 多一条文案(不是跨语言契约) |
+| Q10 metadata | `ServerCall::metadata()` 只读,只含自定义键,`-bin` 已解掉线上那层;不提供回写 | 等价于 `ServerContext::client_metadata()`;会话层本来就要解 `-bin` 来回 400 | 无 |
+| Q11 CreateScene 零值校验 | 本批不改,另立任务 | 传输迁移不夹带业务语义变化(§11.2) | 暂时与 RPC0 口径不一致 |
+
+另外两条约束:
+
+- **关机顺序保持现状**:StopConsumers → hook → 看门狗 → BeginShutdown → MaybeFinalize。同一个 loop 任务里,hook 与 BeginShutdown 之间不可能派发任何调用,所以先后对语义等价;而保持现序可以让 hook 的阻塞时间不吃排空预算。
+- **握手超时 120s**(grpc 两家的默认值)。**不做 PING strike**。
+
+### 15.4 结构
+
+#### 15.4.1 TcpServer 还是 Acceptor
+
+| | muduo `TcpServer` | **`Acceptor` + 自管 `TcpConnection`(采用)** |
+|---|---|---|
+| 停止监听 | 没有接口。要么三份树逐字同步补一个,要么接入后立刻 GOAWAY 再关(排空期间探针仍报就绪,grpc-go 会空转重连) | 销毁 Acceptor:`~Acceptor` 先 `disableAll + remove`,监听 fd 随之关闭 |
+| 改 muduo | 要改三份树,而第 3 批正在改它们 | 不改;只用公开的 `Acceptor.h`(三份树内容相同)、`TcpConnection`、`sockets::getLocalAddr / close` |
+| 回调安全 | `closeCallback` 绑裸 this(上游标了 FIXME) | 一律绑 `weak_ptr<Server>` |
+| 探针日志 | Linux 每次建连和断连各一行 INFO | 自己控制:握手前断开只打 DEBUG |
+| 代价 | 几乎不用写新代码 | 约 60 行,逐行照抄 `TcpServer::newConnection / removeConnectionInLoop / ~TcpServer` 的时序,用 §15.14 的生命周期用例锁住 |
+
+关于 AGENTS §11.7:`muduo_grpc::Server` 就是 muduo 层的连接所有者(TcpServer 的等价物),是 `TcpConnectionPtr` 的唯一强持有者;应用层(ServerCall、生成代码、Node)只经 weak 触达。这一点写进 `server.h` 头注释。建议负责人在 §11.7 的参考实现列表里补上 `muduo_grpc::Server` 和 `ServerCall`。**这需要负责人同意**,实施组不改 AGENTS.md。
+
+#### 15.4.2 分层与文件
+
+```
+Go(grpc-go,h2c) ─TCP→ muduo::net::Acceptor ─(新连接,回调绑 weak<Server>)→ muduo_grpc::Server
+  Server:连接表(唯一强持有 TcpConnectionPtr)/ 方法表 / 调用表 calls_(恰好一次的唯一裁决点)/
+          派发泵 / 截止定时器 / 排空状态机 / 统计
+  └ detail::ServerConnection(每连接,定义在 server.cpp;只存 weak<TcpConnection>、weak<Server>)
+      └ ServerSession(纯协议的 nghttp2 server 会话:不碰 I/O,不碰定时器)
+生成的 <Svc>Impl : muduo_grpc::Service  ── GrpcUnaryCall<Req,Resp>(core 里的 protobuf 胶水)
+  grpc.<M>.guard 段(在 loop 上:同步拒绝,或发起异步许可后 Proceed)→ Handle<M>(同步,函数体不变)
+agones::GameServerLifecycle::AcquireAllocationPermitAsync(worker 线程发 HTTP,结果 queueInLoop 回 loop)
+```
+
+| 文件 | 内容 |
+|---|---|
+| `muduo_grpc/address.{h,cpp}`(新) | `bool IsCanonicalIpv4(const std::string&)`。`channel.cpp:22` 里的私有副本等第 3 批落定后改调这里;本批不碰 channel.cpp |
+| `muduo_grpc/method_table.{h,cpp}`(新) | `UnaryMethodHandler`、`SplitMethodPath`、`MethodTable`、`Service` |
+| `muduo_grpc/server_call.h`(新) | `ServerCall`、`detail::CallToken`(实现放在 server.cpp) |
+| `muduo_grpc/server_session.{h,cpp}`(新) | `ServerSession`;只有 .cpp include `nghttp2.h` |
+| `muduo_grpc/server.{h,cpp}`(新) | `Server`、`ServerOptions`、`ServerShutdownOptions`、`ServerStatsSnapshot`、`FormatServerStats`;内部的 `detail::ServerConnection`、`CallRecord` |
+| `muduo_grpc/message_framing.cpp`(改 1 行) | `body_.reserve(length)` 改为 `reserve(std::min<size_t>(length, 64 * 1024))`,防止对端只报长度不发数据造成预分配放大 |
+| `core/network/grpc_unary_call.h`(新,只有头文件) | `GrpcUnaryCall<Req, Resp>` |
+| `infra/agones/agones_gameserver_lifecycle.{h,cpp}`(改) | 新增 `AcquireAllocationPermitAsync` |
+
+muduo_grpc 仍然不依赖 protobuf / grpc / core / entt。
+
+#### 15.4.3 API 草稿
+
+```cpp
+// ===== method_table.h =====
+namespace muduo_grpc {
+class ServerCall;
+// requestBytes 只在本次调用内有效。只在 loop 线程、Server 的派发泵里调用,绝不在 nghttp2 回调栈里;
+// 调用前框架已确认调用仍有效、未到期。handler 必须让 call 恰好完成一次(同步 Finish*,或留着句柄稍后完成)。
+using UnaryMethodHandler = std::function<void(ServerCall call, std::string_view requestBytes)>;
+// "/pkg.Service/Method" -> {"pkg.Service","Method"};必须以 '/' 开头、恰好两段、两段都非空。
+std::optional<std::pair<std::string_view, std::string_view>> SplitMethodPath(std::string_view path);
+class MethodTable {
+public:
+    bool AddUnary(std::string path, UnaryMethodHandler handler);   // 非法或重复:LOG_ERROR,valid_ 置 false,返回 false
+    const UnaryMethodHandler *Find(std::string_view path) const;   // Start 之后只读
+    bool HasService(std::string_view fullServiceName) const;       // 用来区分两种 UNIMPLEMENTED 文案
+    bool valid() const { return valid_; }
+private:
+    std::unordered_map<std::string, UnaryMethodHandler> methods_;
+    std::unordered_set<std::string> services_;
+    bool valid_{true};
+};
+class Service {
+public:
+    virtual ~Service() = default;
+    virtual void RegisterMethods(MethodTable &table) = 0;
+};
+} // namespace muduo_grpc
+```
+
+```cpp
+// ===== server_call.h =====
+namespace muduo_grpc {
+class Server;
+namespace detail { struct CallToken; }
+// 一次入站 unary 调用的完成句柄(形状照 RpcDoneCallback,见 muduo-rpc-channel.md §5)。
+//  * 可拷贝:所有副本共享一个 CallToken。token 只持 weak_ptr<Server> + callId + loop 线程 id + 只读信息,
+//    绝不持有 TcpConnectionPtr,也不持有 Server 的强引用(AGENTS §11.7)。
+//  * 除只读访问外,只能在 loop 线程调用(断言)。
+//  * 恰好一次:第一个完成源生效(handler、截止、对端 RST / 断连、排空到期、句柄全部丢弃、服务端析构);
+//    之后的 Finish 一律吞掉,计入 late_finish。
+//  * 最后一个副本析构时仍未完成:
+//    - 在 loop 线程:回 UNAVAILABLE "server dropped the call without completing it"(业务可能已执行,
+//      所以只能用「结果未知」码),计入 dropped,打限频 ERROR;
+//    - 不在 loop 线程(与 loopThread 不符):只累加进程级原子计数 dropped_off_loop,绝不 lock Server。
+class ServerCall {
+public:
+    ServerCall() = default;
+    explicit operator bool() const;
+    uint64_t id() const;
+    const std::string &method() const;   // :path
+    const std::string &peer() const;     // 只用于日志
+    const Metadata &metadata() const;    // 只含自定义键;-bin 已解掉线上那一层
+    std::optional<std::chrono::steady_clock::time_point> deadline() const;
+    bool IsActive() const;               // 调用记录还在
+    bool ServerDraining() const;         // 已 BeginShutdown,或服务端已销毁
+    // 业务开始前调用(只给 GrpcUnaryCall::Proceed 用)。
+    //   记录不在 → false;
+    //   已到期(steady 复核)→ 以 DEADLINE_EXCEEDED 完成后返回 false;
+    //   否则标记「业务已开始」,返回 true。
+    // 不检查排空:排空期间已接受的调用照常处理。
+    bool TryStartBusiness() const;
+    void FinishOk(std::string responseBytes) const;   // 超过 maxSendMessageBytes → 改回 RESOURCE_EXHAUSTED
+    void FinishError(Status status) const;            // status.ok() 视为编程错误 → 回 INTERNAL 并 LOG_ERROR
+private:
+    friend class Server;
+    explicit ServerCall(std::shared_ptr<detail::CallToken> token);
+    std::shared_ptr<detail::CallToken> token_;
+};
+namespace detail {
+struct CallToken {   // 没有任何 T* 字段
+    std::weak_ptr<Server> server;
+    uint64_t callId{0};
+    std::thread::id loopThread;
+    std::string method, peer;
+    Metadata metadata;
+    std::optional<std::chrono::steady_clock::time_point> deadline;
+    ~CallToken();    // 析构规则见上
+};
+} // namespace detail
+} // namespace muduo_grpc
+```
+
+```cpp
+// ===== server_session.h =====(纯协议;约定与 ClientSession 相同:单线程,Observer 回调里不得销毁本对象、不得调业务)
+struct ServerSessionOptions {
+    size_t maxReceiveMessageBytes{4 * 1024 * 1024};
+    uint32_t maxHeaderListBytes{16 * 1024};
+    uint32_t maxConcurrentStreams{256};
+    uint32_t initialStreamWindowBytes{1024 * 1024};
+    uint32_t connectionWindowBytes{16 * 1024 * 1024};
+    size_t maxBufferedRequestBytes{16 * 1024 * 1024};   // 本连接所有未收完请求体之和
+};
+struct RequestHeaders {
+    std::string path;                                 // :path 原值
+    Metadata metadata;                                // 只含自定义键,-bin 已解一层
+    std::optional<std::chrono::nanoseconds> timeout;  // 没有 grpc-timeout = 无截止
+};
+class ServerSession {
+public:
+    struct Verdict {
+        enum class Kind : uint8_t { kAccept, kReject, kRefuse };
+        Kind kind{Kind::kAccept};
+        Status status;   // kReject:回 :status 200 + 该状态的 trailers-only;kRefuse:回 RST_STREAM(REFUSED_STREAM)
+    };
+    class Observer {     // 全部在 Receive / DrainOutput 的 nghttp2 回调栈里同步触发;实现里只查表、登记、入队
+    public:
+        virtual ~Observer() = default;
+        virtual void OnClientSettings() = 0;                                                  // 收到首个非 ACK SETTINGS
+        virtual Verdict OnRequestHeaders(int32_t streamId, const RequestHeaders &headers) = 0; // 路由 / 排空到期判定
+        virtual Verdict OnRequestComplete(int32_t streamId, RequestHeaders headers, std::string message) = 0; // 在途上限检查 / 登记
+        virtual void OnStreamAborted(int32_t streamId, uint32_t http2ErrorCode) = 0;          // 已登记、本端尚未回完时流被关闭
+        virtual void OnShutdownPingAck() = 0;
+    };
+    ServerSession(ServerSessionOptions options, Observer &observer);
+    ~ServerSession();
+    Status Start();                              // 建会话、设 nghttp2 选项、提交 SETTINGS 与连接窗口;字节要等 DrainOutput 才写出
+    Status Receive(const uint8_t *data, size_t len);   // 非 OK = 连接级错误(坏 magic / 协议错误 / 洪泛)
+    Status DrainOutput(const std::function<bool(std::string_view chunk)> &write);
+    bool SubmitResponse(int32_t streamId, std::string message);   // HEADERS(200) + DATA + trailers(grpc-status 0)
+    bool SubmitStatus(int32_t streamId, const Status &status);    // 非 OK 的 trailers-only
+    bool RefuseStream(int32_t streamId);                          // RST_STREAM(REFUSED_STREAM)
+    void SubmitShutdownNotice();                                  // GOAWAY(2^31-1, NO_ERROR) + PING
+    void SubmitFinalGoaway();                                     // GOAWAY(nghttp2_session_get_last_proc_stream_id, NO_ERROR)
+    bool receivedAnyBytes() const;
+    bool handshakeComplete() const;
+    bool finalGoawaySubmitted() const;
+    size_t OpenStreamCount() const;
+    bool ShouldClose() const;                                     // 既不想读也不想写
+};
+```
+
+```cpp
+// ===== server.h =====
+struct ServerOptions {
+    std::string name{"grpc"};
+    ServerSessionOptions session;
+    size_t maxSendMessageBytes{4 * 1024 * 1024};
+    size_t maxPendingOutputBytes{1024 * 1024};          // 输出缓冲超过就暂停从 nghttp2 取帧,writeComplete 后继续
+    size_t maxInFlightCalls{1024};
+    size_t maxDispatchPerTurn{64};
+    std::chrono::microseconds dispatchTurnBudget{2000};
+    std::chrono::milliseconds handshakeTimeout{120000};
+    std::chrono::seconds statsLogInterval{30};          // 0 = 不打汇总(单测用)
+};
+struct ServerShutdownOptions {
+    std::chrono::milliseconds drainTimeout{2000};
+    std::chrono::milliseconds goawayPingTimeout{1000};
+    std::chrono::milliseconds closeGrace{1000};
+};
+struct ServerStatsSnapshot { /* 纯值类型,字段见 §15.11 */ };
+std::string FormatServerStats(const ServerStatsSnapshot &stats);   // 字段顺序由单测锁住
+
+// 线程:所有 API 只在构造时给定的 loop 线程调用(断言);不创建线程,不加锁。
+// 所有权:muduo 层的连接所有者(TcpServer 的等价物),连接表里按值持有 TcpConnectionPtr;
+//   Acceptor / 连接 / 定时器 / queueInLoop 的回调一律绑 weak_ptr<Server>。
+// 析构前置:在 loop 线程上,且不在 I/O 事件处理期间 —— 只在 queueInLoop 的任务里或 loop 外析构。
+//   原因:Acceptor 的 channel 在 eventHandling_ 期间 remove 会撞上 EventLoop.cc:212-216 的断言。
+class Server : public std::enable_shared_from_this<Server> {
+    struct PrivateTag { explicit PrivateTag() = default; };
+public:
+    // ipv4 不是规范 IPv4 字面量,或 port == 0:LOG_ERROR 后返回 nullptr。
+    static std::shared_ptr<Server> Create(muduo::net::EventLoop &loop, const std::string &ipv4, uint16_t port,
+                                          ServerOptions options = {});
+    Server(PrivateTag, muduo::net::EventLoop &loop, const muduo::net::InetAddress &listenAddress, ServerOptions options);
+    ~Server();   // 取消所有定时器;剩余调用静默收口;剩余连接逐条 forceClose(排进的两趟由两跳 quit 覆盖);不调 onDrained
+    Server(const Server &) = delete;
+    Server &operator=(const Server &) = delete;
+    bool RegisterService(Service &service);   // 只能在 Start 之前;路径非法或重复 → false
+    void Start();                              // 建 Acceptor(bind 失败按 muduo LOG_SYSFATAL)并 listen;只调一次
+    // 幂等。onDrained 恰好调用一次,一律经 queueInLoop 投递,永不在本调用栈内执行。可以从 handler 内调用。
+    void BeginShutdown(ServerShutdownOptions options, std::function<void()> onDrained);
+    bool draining() const;
+    size_t inFlightCalls() const;
+    size_t connectionCount() const;
+    ServerStatsSnapshot Stats() const;
+    const std::string &listenAddress() const;
+private:
+    friend class ServerCall;
+    friend struct detail::CallToken;
+    // 内部状态:loop_(引用);methods_(vector<UnaryMethodHandler> + path→下标);
+    //   acceptor_(shared_ptr<Acceptor>,便于 move 进 queueInLoop 闭包销毁);
+    //   connections_(id → {TcpConnectionPtr, shared_ptr<detail::ServerConnection>});
+    //   calls_(callId → CallRecord);ready_(deque<callId>);deadlines_(set<{tp, callId}>);
+    //   deadline / drain / stats 三个 TimerId;phase_;onDrained_;统计
+};
+```
+
+```cpp
+// ===== core/network/grpc_unary_call.h =====(只有头文件;生成代码使用;只在 loop 线程)
+template <typename Request, typename Response>
+class GrpcUnaryCall final {
+    struct PrivateTag { explicit PrivateTag() = default; };
+public:
+    using Handler = std::function<void(const Request *request, Response *response)>;   // 不用函数指针字段(§15.2 #13)
+    static std::shared_ptr<GrpcUnaryCall> Create(muduo_grpc::ServerCall call, Handler handler);
+    GrpcUnaryCall(PrivateTag, muduo_grpc::ServerCall call, Handler handler);
+    bool ParseRequest(std::string_view bytes);   // 失败时已回 INTERNAL "grpc: error unmarshalling request"
+    const Request &request() const { return request_; }
+    const muduo_grpc::ServerCall &server_call() const { return call_; }
+    bool IsActive() const { return call_.IsActive(); }
+    bool ServerDraining() const { return call_.ServerDraining(); }
+    void Reject(muduo_grpc::Status status);      // 不进 Handle*;status 必须非 OK
+    // TryStartBusiness 为真时:handler_(&request_, &response_) → SerializeToString → FinishOk
+    //   (序列化失败回 INTERNAL "grpc: error while marshaling")。
+    // 调用已被截止 / 取消 / 排空收口时什么都不做。重复调用没有副作用。
+    void Proceed();
+private:
+    muduo_grpc::ServerCall call_;
+    Handler handler_;
+    Request request_;
+    Response response_;
+};
+```
+
+#### 15.4.4 所有权、线程与 §11.7 对照
+
+| 对象 | 谁强持有 | 绑进回调的是 | 何时销毁 |
+|---|---|---|---|
+| `Acceptor` | `Server::acceptor_`(shared_ptr) | 新连接回调绑 `weak_ptr<Server>`;lock 失败或已在排空时 `sockets::close(fd)` | BeginShutdown 里移进 `queueInLoop` 闭包销毁 |
+| `TcpConnection` | **只有** `Server::connections_`,以及 muduo 自己排进队列的闭包 | `connectionCallback` 必须设(`TcpConnection.cc:331` 无条件调用,空的 std::function 会抛异常),设成空 lambda;message / writeComplete 回调绑 `weak<ServerConnection>`,lock 失败就 `retrieveAll`;close 回调绑 `weak<Server>`:Server 还在就摘表,然后**无条件** `queueInLoop([conn]{ conn->connectDestroyed(); })` | 摘表后 ServerConnection 也移进同一个闭包一起释放;`~Server` 对剩余连接一律 `forceClose`,由 close 回调补 `connectDestroyed` |
+| `detail::ServerConnection` | `Server::connections_` | 握手 / GOAWAY-PING / 关闭宽限定时器绑 `weak<ServerConnection>`;只存 `weak<TcpConnection>`、`weak<Server>` | 同上,不在它自己的回调栈上析构 |
+| `CallRecord` | `Server::calls_`(按值) | — | 完成即删除,这是恰好一次的唯一裁决点 |
+| `CallToken` / `ServerCall` | handler 侧的各个副本 | 不进 muduo 回调 | 最后一个副本析构,规则见 §15.4.3 |
+| `GrpcUnaryCall` | 生成代码与守护段的异步回调(shared_ptr) | 只经 ServerCall 弱引用服务端 | 回调结束即释放 |
+| 生成的 `<Svc>Impl` | scene `SceneRuntimeContext`(值成员)/ battle `unique_ptr`;**所有权不变** | 方法表闭包捕获 `this`:由 Server 同步调用,不是 muduo 回调;Server 在 Node 析构前已销毁,而 Impl 活过 Node(注册契约同今天)。**异步续跑不得捕获 this** | — |
+| `Server` | `Node::grpcServer_`(shared_ptr) | 所有定时器 / 闭包只绑 weak | `Node::OnGrpcServerDrained`(排队任务)里 reset,早于两跳 quit |
+
+### 15.5 线上契约(服务端方向)
+
+#### 15.5.1 连接、握手与探针
+
+- 只支持 h2c prior-knowledge。nghttp2 server 会话校验 24 字节 magic,坏 magic 时 `Receive` 返回错误:尽力冲出后 `forceClose`,计入 `protocol_errors`,打限频 WARN。
+- **本端 SETTINGS 推迟到收到对端首字节才写出**。`Start()` 只把它提交进 nghttp2;收到首字节之前,`ServerConnection::FlushOutput` 直接返回。
+  - RFC 9113 §3.4 只要求 SETTINGS 是服务端发出的第一帧;grpc-go 客户端连上就先发 preface,所以不增加往返。
+  - 效果:kubelet tcpSocket 探针连上就关,本端一个字节都不写,不会出现 EPIPE / RST 引发的 `handleError` ERROR。断开时只打 DEBUG,计入 `closed_before_preface`。
+- 握手超时 120s:accept 时上弦,收到首个非 ACK SETTINGS 时作废;到期 `forceClose`,打 DEBUG,计入 `handshake_timeout`。
+- 不做 HTTP/2 层 keepalive,死对端由 SO_KEEPALIVE 发现。连接数不设上限:未握手的连接有握手超时兜底,已握手的空闲连接与 grpc 默认一致,不限。
+
+#### 15.5.2 SETTINGS 与 nghttp2 选项(`ServerSession::Start`)
+
+- 本端 SETTINGS:`MAX_CONCURRENT_STREAMS=256`、`INITIAL_WINDOW_SIZE=1MiB`、`MAX_HEADER_LIST_SIZE=16KiB`;连接级接收窗口用 `nghttp2_session_set_local_window_size` 放大到 16MiB。不发 `ENABLE_PUSH`(服务端只能省略或发 0)。
+- 显式写出的选项(取值等于 1.70 的默认值,目的是锁住将来的漂移):
+
+| 选项 | 值 |
+|---|---|
+| `max_outbound_ack` | 1000 |
+| `max_settings` | 32 |
+| `stream_reset_rate_limit` | 1000 / 33 每秒(rapid-reset) |
+| `max_continuations` | 8 |
+| `glitch_rate_limit` | 10000 / 330 每秒 |
+| `no_rfc9113_leading_and_trailing_ws_validation` | 1(与 ClientSession 一致,不新增对 grpc-go metadata 的拒绝) |
+
+- 自动 ACK PING / SETTINGS、自动 WINDOW_UPDATE、HTTP 语义校验:全部保持默认开启。
+
+#### 15.5.3 请求校验(按顺序;全部在业务之前)
+
+请求没收完时,回完紧跟一个 `RST_STREAM(NO_ERROR)`。依据 RFC 9113 §8.1、grpc-go `writeEarlyAbort(rst=!eos)`;nghttp2 不会自动补,由本层在 `on_frame_send` 里看到 END_STREAM 且对端未关闭时补发。
+
+| 情况 | 回应 | 依据 |
+|---|---|---|
+| 伪头缺失 / 连接级头 / `te`≠trailers / 头名大写 | nghttp2 自动发 `RST_STREAM(PROTOCOL_ERROR)` | RFC 9113 §8.2 |
+| 头部块 >16KiB(名+值+32 累计) | 200 + `RESOURCE_EXHAUSTED "received header list larger than max (16384)"`;超限后的头不再存储 | 与 §4.7 客户端同口径 |
+| `:method`≠POST | 405 + INTERNAL `method must be POST` | grpc-go `http2_server.go:554` |
+| content-type 不是 `application/grpc` 开头,或其后不是结束 / `+` / `;` | 415 + INVALID_ARGUMENT `invalid gRPC request content-type "<v>"` | grpc-go `:496` |
+| `grpc-timeout` 非法(`ParseGrpcTimeout` 返回 nullopt) | 400 + INTERNAL `malformed grpc-timeout` | grpc-go `:482/:500` |
+| `-bin` 值 base64 非法 | 400 + INTERNAL `malformed binary metadata "<key>"` | grpc-go `:464` |
+| `grpc-encoding` 存在且不是 `identity` | 200 + UNIMPLEMENTED `unsupported grpc-encoding "<x>"`,并附 `grpc-accept-encoding: identity` | gRPC compression 规范 |
+| `:path` 拆不成两段 | 200 + UNIMPLEMENTED `malformed method name: "<path>"` | grpc-go 同文案 |
+| 服务未知 / 方法未知 | 200 + UNIMPLEMENTED `unknown service <svc>` / `unknown method <m> for service <svc>` | grpc-go 同文案 |
+| 压缩标志为 1 或非法 | 200 + INTERNAL(沿用 MessageDeframer 的文案) | — |
+| 声明长度 >4MiB | 200 + `RESOURCE_EXHAUSTED "received message larger than max (N vs. 4194304)"`,立即回 | — |
+| 本连接未收完请求体之和 >16MiB | 200 + `RESOURCE_EXHAUSTED "request buffer limit exceeded"` | 防止 256 × 4MiB 的内存放大 |
+| END_STREAM 时消息数≠1,或有残留的半条 | 200 + INTERNAL `unary request must contain exactly one message` | — |
+| timeout ≤ 0 | 200 + `DEADLINE_EXCEEDED "deadline exceeded before dispatch"` | — |
+| 全节点在途 ≥1024 | 200 + `RESOURCE_EXHAUSTED "server in-flight call limit (1024) reached"` | Q2 |
+| 排空到期之后才开或才收完的流 | `RST_STREAM(REFUSED_STREAM)` | Q4 |
+
+- 不校验 `:scheme`、`:authority`、`user-agent`;未知的 `grpc-*` 头一律忽略,不进 metadata。
+- 派发之后可能出现的状态码:
+  - protobuf 解析失败:INTERNAL `grpc: error unmarshalling request`;
+  - 应答序列化失败:INTERNAL;
+  - 应答 >4MiB:RESOURCE_EXHAUSTED `grpc: trying to send message larger than max`;
+  - 句柄全部丢弃:UNAVAILABLE。
+  - 后三种发生在业务之后,风险见 §15.13。
+
+#### 15.5.4 路由、metadata、grpc-timeout
+
+- **路由**:按 `:path` 精确匹配。scene 是 `/scene_node.SceneNodeGrpc/<M>`,battle 是 `/BattleNode/<M>`(无 package)。不提供反射和健康检查服务。
+- **metadata**:自定义键收进 `RequestHeaders.metadata`。`-bin` 键用 `DecodeBinaryHeaderValue` 解掉线上那一层,有无 padding、逗号分隔的多值都接受。不收的头:伪头,以及 `te / content-type / user-agent / grpc-timeout / grpc-encoding / grpc-accept-encoding`,其余 `grpc-` 前缀的头也不收。
+- **截止**:截止时间 = 头部收完时的 `steady_clock::now()` 加上 timeout,做饱和加法:timeout 大于 `time_point::max() - now` 就视为无截止。原因是 `99999999H` 会被钳到 `nanoseconds::max()`,直接相加会溢出。没有这个头就是无截止(scene_manager 的 DestroyScene 循环就不带)。
+
+#### 15.5.5 应答
+
+- **成功**:`nghttp2_submit_response2(:status 200, content-type: application/grpc)`。数据提供者产出「5 字节前缀 + 消息」,最后一块置 `EOF | NO_END_STREAM`,并在读回调里 `nghttp2_submit_trailer(grpc-status: 0)`。这是 nghttp2 规定的 trailers 写法,保证 trailers 不会插到 DATA 前面。成功时不发 `grpc-message`。
+- **非 OK 一律 trailers-only**:单个 HEADERS 带 END_STREAM,含 `:status`、`content-type`、`grpc-status`,以及非空时的 `grpc-message`(用 `PercentEncodeGrpcMessage` 编码,逐字节透传,不加前缀)。
+- **输出背压**:连接输出缓冲达到 1MiB 时暂停从 nghttp2 取帧,`writeComplete` 后继续。照抄 `Http2Transport::FlushOutput` 的 `sessionDepth_ / flushDeferred_`。派发泵里产生的应答在本轮泵结束时统一冲出。
+
+#### 15.5.6 RST 与两段 GOAWAY
+
+- **对端 RST**:请求还没交出的,直接丢弃;已登记的,触发 `OnStreamAborted`,调用被撤销,计数。业务已开始的,之后的 Finish 被丢弃。
+- **GOAWAY 第一段**:`nghttp2_submit_shutdown_notice`(必须先于任何 GOAWAY 调用),外加一个 PING。新流照常接收和处理。
+- **GOAWAY 第二段**:收到 PING ACK 或满 1s,`nghttp2_submit_goaway(last_proc_stream_id, NO_ERROR)`。之后的新流被 nghttp2 忽略,grpc-go 把它们标为未处理,透明重试到新连接,被拒后得到 UNAVAILABLE。grpc-go 自己是 5s 计时器,本端取 1s,以落在 2s 的排空预算之内。
+- **没收到过字节的连接**:排空开始时直接 `forceClose`。
+- **协议错误**:nghttp2 发 GOAWAY,本端尽力冲出后 `forceClose`,打限频 WARN。
+
+#### 15.5.7 PING
+
+对端的 PING(含 grpc-go 的 BDP ping)全部由 nghttp2 自动 ACK。本端只在 GOAWAY 第一段时发一次 PING。**不做** too_many_pings 强制:Go 调用方都没配 keepalive,洪泛由 `max_outbound_ack` 和 glitch 限额兜住。
+
+#### 15.5.8 状态码与 Go 语义
+
+| 场景 | 线上 | 业务是否执行 | gather(CreateBattle) | spectate(AddObserver) |
+|---|---|---|---|---|
+| 准入 / 许可拒绝 | `UNAVAILABLE "battle_not_allocatable"` | 否 | 跳过 DestroyBattle,换节点 | — |
+| 协议 / 路由 / 解析错误、过载 | INTERNAL / UNIMPLEMENTED / RESOURCE_EXHAUSTED | 否 | 发 DestroyBattle(幂等) | 判为没挂上,正确 |
+| 截止(投递前 / 等许可) | DEADLINE_EXCEEDED | 否 | 发 DestroyBattle | 结果未知,补发 RemoveObserver |
+| 排空到期(未开始) | REFUSED → 透明重试 → UNAVAILABLE | 否 | 发 DestroyBattle | 结果未知 |
+| 排空到期(已开始)、句柄丢弃 | UNAVAILABLE | **可能已执行** | 发 DestroyBattle ✓ | 结果未知 ✓ |
+
+不变量(写进 server.h 注释,并由测试锁住):
+
+- 服务端自己产生的 UNAVAILABLE,文案永远不等于 `battle_not_allocatable`。
+- 「可能已执行」的失败只能用 DEADLINE_EXCEEDED / UNAVAILABLE / CANCELLED。
+
+### 15.6 并发与背压
+
+- **数据流**:读事件 → `ServerConnection::HandleMessage` → `session.Receive`。muduo 一次 readv;nghttp2 同步解完,这一步只做分帧和 HPACK。
+  - `OnRequestComplete` 检查在途上限 → 登记 `CallRecord`、登记截止 → `ready_.push_back` → `ScheduleDispatch()`。泵任务经 `queueInLoop` 排队,同一时刻至多一个。
+- **派发泵**:每轮最多 64 个且累计 ≤2ms,至少派发 1 个。剩余的再排一次:泵内再排时 `callingPendingFunctors_` 为真,会触发唤醒,落到下一轮,中间让出给定时器和 I/O。每个调用的处理:
+  1. 记录已不在(被取消)就跳过;
+  2. 已到期就回 DEADLINE_EXCEEDED;
+  3. 否则建 token,**先把 message 移出记录**(handler 可能同步完成并删掉记录),再调 handler。
+- **顺序**:全节点一个先进先出队列,按请求收完的先后派发。今天 8 个 poller 并发,没有顺序保证;没有调用方依赖那种乱序。这只是改进,不写成契约。
+- **输入背压**由三层上限构成:每连接 256 条流(HTTP/2 层强制,客户端排队)、每连接未收完请求体 16MiB、全节点在途 1024。不另做 stopRead。
+- **Go 侧**:`reconcile.go` 的 `Workers=8` 不变,Y-06 golden 不变。只改 `reconcile.go:259-271` 和 `:662`、`config_test.go:23` 的注释。新理由:每条资产 RPC 都在 scene 的 EventLoop 上同步执行(含 durable 探测和 Redis 写),后台补偿不能挤占逻辑帧;副本数 × Workers 才是 scene 看到的补偿并发,而且远小于服务端的 256 / 1024。
+
+### 15.7 截止、取消与恰好一次
+
+| 时刻 | 截止到期 | 对端 RST / 断连 | 排空到期 | `lifecycle.Stop()` |
+|---|---|---|---|---|
+| 排队中(kQueued) | DEADLINE_EXCEEDED,不派发 | 静默撤销,计 `cancelled_before_start` | REFUSED_STREAM | — |
+| 已派发、等许可 | DEADLINE_EXCEEDED,完成调用;许可回来后 `Proceed` 里的 `TryStartBusiness` 为假,不进业务,permit 随回调析构,零单元时收口 | 撤销,不回应答;许可回来后同左 | REFUSED_STREAM;许可回来后同左 | 回调收到拒绝,由守护段 `Reject(...)` |
+| 业务已开始 | 同步的 Handle* 不可能处在这一状态。延后的:立即回 DEADLINE_EXCEEDED,业务继续,计 `deadline_after_start` | 不回应答,之后的 Finish 计 `late_finish` | UNAVAILABLE `server shutting down` | 无影响 |
+
+恰好一次靠以下几条保证:
+
+1. 所有完成源都只在 loop 线程,汇到 `Server::CompleteCall(callId, outcome)`。完成源包括:handler、截止定时器、`OnStreamAborted`、连接移除、排空定时器、token 析构(在 loop 线程时)、`~Server`(静默)。
+2. `CompleteCall` 的第一步是在 `calls_` 里找记录,找到即 erase,找不到就计 late 后返回。
+3. 释放顺序:先把记录移出并从表中删除,再递减在途计数、提交应答、标记连接需要冲出;最后才释放可能进入其他锁的对象。
+4. 业务只在 `TryStartBusiness()` 为真之后才开始;判定「有效且未到期」与标记「已开始」在同一次 loop 调用里完成。截止和取消只决定回什么,永不打断业务。
+5. 连接移除时,遍历该连接的 `streamId → callId` 表,逐个撤销。所以连接表为空就意味着调用表为空。
+
+### 15.8 生成代码形状与守护段迁移
+
+#### 15.8.1 新的头文件(以 battle 为例)
+
+```cpp
+#pragma once
+
+#include <memory>
+#include <string_view>
+#include <muduo/net/EventLoop.h>
+#include "muduo_grpc/method_table.h"
+#include "network/grpc_unary_call.h"
+#include "proto/battle/battle_node.pb.h"
+///<<< BEGIN WRITING YOUR CODE: grpc.header.includes
+///<<< END WRITING YOUR CODE
+
+// 由 proto 工具生成 BattleNode 的 gRPC 服务端骨架(muduo_grpc,docs/design/grpc-muduo-transport.md §15);自定义代码只写在守护段内。
+// 全部在节点 EventLoop 线程执行,不创建线程。每个 RPC:解析请求 → <M>()(守护段 grpc.<M>.guard)→ Handle<M>(同步)→ 回包。
+// 守护段:同步拒绝写 `call->Reject(status); return;`;异步决定时先发起异步操作再 `return;`,在回调里调
+// `call->Proceed()` 或 `call->Reject(...)`。回调只捕获 call 与 weak 引用,不得捕获 this(AGENTS §11.7)。
+// 要活到业务完成的对象(如 Agones 许可)作为回调参数,活到 Proceed() 返回即可(Handle* 同步)。不得阻塞;业务错误经响应字段返回。
+class BattleNodeImpl final : public muduo_grpc::Service
+{
+public:
+    explicit BattleNodeImpl(muduo::net::EventLoop& loop);
+    ///<<< BEGIN WRITING YOUR CODE: grpc.header.public
+    ///<<< END WRITING YOUR CODE
+
+    // 方法表(按 :path 精确路由)。处理函数捕获 this:本对象必须活过注册它的 Node。
+    void RegisterMethods(muduo_grpc::MethodTable& table) override;
+
+    static constexpr std::string_view kQueryBattleCreationPath = "/BattleNode/QueryBattleCreation";
+    static constexpr std::string_view kCreateBattlePath = "/BattleNode/CreateBattle";
+    // ……每个方法一个
+
+private:
+    using QueryBattleCreationCall = GrpcUnaryCall<::QueryBattleCreationRequest, ::QueryBattleCreationResponse>;
+    using CreateBattleCall = GrpcUnaryCall<::CreateBattleRequest, ::CreateBattleResponse>;
+    using DestroyBattleCall = GrpcUnaryCall<::DestroyBattleRequest, ::Empty>;
+    // ……
+    void QueryBattleCreation(const std::shared_ptr<QueryBattleCreationCall>& call);
+    void CreateBattle(const std::shared_ptr<CreateBattleCall>& call);
+    // ……
+    static void HandleCreateBattle(const ::CreateBattleRequest* request, ::CreateBattleResponse* response); // 签名不变
+    static void HandleDestroyBattle(const ::DestroyBattleRequest* request);                                  // 签名不变
+    // ……
+    muduo::net::EventLoop& loop_;
+    ///<<< BEGIN WRITING YOUR CODE: grpc.header.private
+    ///<<< END WRITING YOUR CODE
+};
+```
+
+#### 15.8.2 新的 cpp
+
+文件中的顺序依次是:FirstCode → 构造函数 → `Handle*`(位置、格式、查找键都不变)→ 每个方法的 `<M>()` → `RegisterMethods`。
+
+```cpp
+#include "battle_node.h"
+///<<< BEGIN WRITING YOUR CODE
+// ……FirstCode……
+///<<< END WRITING YOUR CODE
+// ……构造函数、Handle* 原样……
+
+void BattleNodeImpl::CreateBattle(const std::shared_ptr<CreateBattleCall>& call)
+{
+    [[maybe_unused]] const ::CreateBattleRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.CreateBattle.guard
+    ///<<< END WRITING YOUR CODE
+    call->Proceed();
+}
+
+void BattleNodeImpl::RegisterMethods(muduo_grpc::MethodTable& table)
+{
+    table.AddUnary(std::string(kCreateBattlePath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = CreateBattleCall::Create(std::move(serverCall), &HandleCreateBattle);
+            if (call->ParseRequest(requestBytes))
+            {
+                CreateBattle(call);
+            }
+        });
+    table.AddUnary(std::string(kDestroyBattlePath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = DestroyBattleCall::Create(std::move(serverCall),
+                [](const ::DestroyBattleRequest* request, ::Empty* /*response*/) { HandleDestroyBattle(request); });
+            if (call->ParseRequest(requestBytes))
+            {
+                DestroyBattle(call);
+            }
+        });
+    // ……
+}
+```
+
+- **调用 Handle 不带类名前缀**:`Handle*` 体的解析键就是 `<Svc>Impl::Handle<M>(`,这个字面量在生成正文里只能出现在定义行,所以 `RegisterMethods` 里写 `&HandleCreateBattle` / `HandleDestroyBattle(request)`。
+- **守护段末尾的 `return;`**:会让段后的 `call->Proceed()` 变成不可达代码。对应的 C4702 是 4 级警告,scene / battle 都是 Level3,GCC 的 `-Wall -Wextra` 也不报。
+- **生成物里不得出现**:`grpc::`、`grpcpp`、`<future>`、`promise`、`.grpc.pb.h`、`runInLoop`。
+
+#### 15.8.3 生成器改动(只动 `internal/` 下的模板、`grpc_handler_gen.go`、`grpc_code_sections.go` 和三个测试;`model.go` 有他人改动,一行不动)
+
+- **数据结构**:`GrpcHandlerMethod` 删掉 `PreDispatchCode / InLoopCode / PostDispatchCode`,新增 `GuardCode`、`Path`。`GrpcHandlerHeadData` 把 `GrpcInclude` 换成 `PbInclude`。
+- **本文件内的新 helper**:
+  - `grpcServerMethodPath(m)`:有 package 时为 `"/"+pkg+"."+svc+"/"+method`,否则 `"/"+svc+"/"+method`,与 `grpc_async_client.h.tmpl` 的 `k<Svc><Method>GrpcPath` 同一规则;
+  - `grpcHandlerPbInclude(m)`:与 `MethodInfo.IncludeName()` 的 cc_generic 分支同式,产出 `.pb.h`;
+  - `isEmptyGrpcCodeSection(code)`;
+  - `checkLegacyGrpcSections(cppPath, methods) error`。
+- `grpcHandlerIncludeName` 去掉 `<future>`。
+- 服务里有任何流式方法:头文件返回 error,cpp panic。服务端只支持 unary,fail-closed。
+- **允许的命名段**:头文件仍是三个;cpp 每个方法 `grpc.<M>.guard`。`grpc.<M>.in_loop`、`grpc.<M>.post_dispatch` 只在**为空时**接受,然后丢弃。其余未识别的段照旧拒绝。
+- **旧段检查**(`checkLegacyGrpcSections`):
+  - 旧的无名投递前段,用 `legacyGrpcWrapperKey(m) = Svc+"Impl::"+M+"(grpc::ServerContext"` 读取(即原来的 `GenerateGrpcWrapperNameWrapper` 改名,只用于检测)。读到的段如果以命名标记开头,说明串到了下一个段,按「不存在」处理。
+  - 「空」的判定:去掉标记行后不剩任何非空白字符。注释也算非空。
+  - 只要有非空的旧段,就返回 error,列出 `文件:方法:旧段名`,并提示「按 grpc-muduo-transport.md §15.8.4 手工迁到 grpc.<M>.guard」。**宁可拒绝生成,也不吞代码**。
+- **调用时机**:`GetGrpcServiceHandlerHeadFromFileStr` 在渲染头文件之前,先对同名 .cpp(把 `GrpcHandlerH` 后缀换成 `GrpcHandlerCpp`)跑这项检查,出错就返回 error。`handler.go` 据此 Fatal,两份文件都不写。`GetGrpcServiceHandlerCppStr` 里同样检查,出错 panic。
+- `handlers.go`、`grpc_handler_target.go`、`proto_gen*.yaml` 都不改。
+
+#### 15.8.4 手写段迁移(以工作区为准,一行不丢)
+
+| 旧位置 | 去向 |
+|---|---|
+| scene FirstCode(`scene_node_service.cpp:3-12`) | 原样保留,末尾加 `#include <memory>` 和 `namespace { constexpr char kSceneNodeShuttingDownMessage[] = "scene_node_shutting_down"; }` |
+| scene CreateScene 无名投递前段(`:269-289`) | 迁到 `grpc.CreateScene.guard`(代码见下),文案逐字不变,保留 6c4021ae5 的恢复说明 |
+| battle FirstCode(`battle_node.cpp:3-37`) | 原有注释逐行保留。`NotAllocatable()` 改为返回 `muduo_grpc::Status(muduo_grpc::StatusCode::kUnavailable, kBattleNotAllocatableMessage)`;`Open/CloseAdmission` 改用 `admission_->`;新增 `bool AdmissionOpen(const std::weak_ptr<battle_admission::AdmissionGate>&)`(lock 失败或 Phase≠kOpen 返回 false) |
+| battle `grpc.header.private`(`battle_node.h:67-69`) | 改为 `std::shared_ptr<battle_admission::AdmissionGate> admission_ = std::make_shared<battle_admission::AdmissionGate>();`,注释写明「许可回调只弱持有它」 |
+| battle CreateBattle 无名段(`:126-167`) + `in_loop`(`:175-184`) + `post_dispatch`(`:192-198`) | 合并进 `grpc.CreateBattle.guard`:第 1 道闸 → 异步许可 → 回调里复核闸(原 in_loop),拒绝分支的日志用原 post_dispatch 那一行。原来的 `closedInLoop` 和 `auto &admission` 不再需要 |
+| battle `grpc.DestroyBattle.in_loop`(`:215-218`) | 迁到 `grpc.DestroyBattle.guard`,执行时机仍是在 loop 内、`Handle*` 之前 |
+| 15 个 `Handle*` 体 | **一字不改**。其中过时的注释(scene `:212`、`:231` 的「外层已 runInLoop」)在单独一步里改 |
+
+scene 的 `grpc.CreateScene.guard`:
+
+```cpp
+    // 停机已开始(Node 在 beforeShutdown 之后进入 gRPC 排空):不再建新场景 —— 建出的场景会随进程退出丢失,
+    // SceneManager 却以为它在。回 UNAVAILABLE 让 SceneManager 回滚(它对任何错误都回滚,不匹配文案)。
+    if (call->ServerDraining())
+    {
+        LOG_WARN << "[gRPC] CreateScene rejected: scene node is shutting down, scene_id=" << request->scene_id();
+        call->Reject(muduo_grpc::Status(muduo_grpc::StatusCode::kUnavailable, kSceneNodeShuttingDownMessage));
+        return;
+    }
+    // Agones 高密度模式:进程必须先被 Allocate,才能创建第一个场景。
+    // POST /allocate 在 lifecycle worker 线程,结果经 queueInLoop 回 loop,不阻塞逻辑帧;等待上限
+    // LifecycleOptions::allocateWaitTimeout。失败一律 fail-closed:不建实体,回非 OK,让 SceneManager 回滚重试,
+    // 而不是留下一个 Agones 不知道的房间。createPermit 是回调参数,活到 Proceed() 返回(Handle* 同步建完场景),
+    // 在途创建才能阻止提前回到 Ready。回调只捕获 call,不捕获 this(AGENTS §11.7)。
+    //
+    // 2026-09-15 恢复:原块在 commit 6c4021ae5 被 proto 重生成吞掉(当时位于守护段外)。
+    agones::GameServerLifecycle::Instance().AcquireAllocationPermitAsync(
+        loop_,
+        [call](agones::GameServerLifecycle::AllocationPermit createPermit)
+        {
+            if (!createPermit)
+            {
+                LOG_ERROR << "[gRPC] CreateScene rejected: Agones allocate not confirmed, scene_id="
+                          << call->request().scene_id() << " state="
+                          << agones::ToString(agones::GameServerLifecycle::Instance().State());
+                call->Reject(muduo_grpc::Status(muduo_grpc::StatusCode::kUnavailable, "agones allocate not confirmed"));
+                return;
+            }
+            if (call->ServerDraining())   // 等许可期间停机开始
+            {
+                LOG_WARN << "[gRPC] CreateScene rejected after permit: scene node is shutting down, scene_id="
+                         << call->request().scene_id();
+                call->Reject(muduo_grpc::Status(muduo_grpc::StatusCode::kUnavailable, kSceneNodeShuttingDownMessage));
+                return;
+            }
+            call->Proceed();
+        });
+    return;
+```
+
+battle 的 `grpc.CreateBattle.guard`:
+
+```cpp
+    // 节点级准入分三道,全部在任何副作用之前;任一道不过即回 UNAVAILABLE battle_not_allocatable,
+    // match 据此跳过 DestroyBattle、换节点重试一次。
+    // 顺序:准入闸 → 分配许可(异步:HTTP 在 lifecycle worker,结果经 queueInLoop 回 loop)→ 许可回到 loop 后复核准入闸
+    // → 预签票据(HandleCreateBattle 内 BuildAssignment)→ 插表(EmplaceRoom)。全部在 loop 线程。
+    // 1) 建房准入闸(battle_admission_gate.h):启动完成之前与停机开始之后都不接新房间。闸没开就连许可都不取。
+    if (const auto phase = admission_->Phase(); phase != battle_admission::AdmissionPhase::kOpen)
+    {
+        LOG_WARN << "CreateBattle rejected: this node is not accepting new rooms, battle_id=" << request->battle_id()
+                 << " admission=" << battle_admission::ToString(phase)
+                 << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
+        call->Reject(NotAllocatable());
+        return;
+    }
+    // 2) 分配许可(集群外入口 D82)。拿不到(排空标签在、allocate 未确认、lifecycle 已停 / 仍在 Starting、等待超时)即拒绝:
+    //    此刻还没进 Handle*,房间、定时器、推送、Kafka 事件一概没有发生。非 Agones 环境许可恒放行(启停窗口由第 1、3 道兜住)。
+    //    回调只捕获 call 与 weak 闸,不捕获 this(AGENTS §11.7)。
+    agones::GameServerLifecycle::Instance().AcquireAllocationPermitAsync(
+        loop_,
+        [call, gate = std::weak_ptr<battle_admission::AdmissionGate>(admission_)](
+            agones::GameServerLifecycle::AllocationPermit permit)
+        {
+            auto &lifecycle = agones::GameServerLifecycle::Instance();
+            if (!permit)
+            {
+                LOG_WARN << "CreateBattle rejected: this instance is not allocatable, battle_id=" << call->request().battle_id()
+                         << " agones_state=" << agones::ToString(lifecycle.State())
+                         << " draining=" << (lifecycle.IsDraining() ? 1 : 0)
+                         << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
+                call->Reject(NotAllocatable());
+                return;
+            }
+            // 3) 许可回到 loop 后复核准入闸:等许可期间 SetBeforeShutdown 可能已关闸并作废全部房间(关闸与 AbortAllRooms
+            //    在同一个 loop 任务里,排在后面的本回调必然看到 kClosed);放行的话房间会在进程退出时无声丢失。
+            if (!AdmissionOpen(gate))
+            {
+                LOG_WARN << "CreateBattle rejected: shutdown started during dispatch(rechecked in loop), battle_id="
+                         << call->request().battle_id() << ",returning UNAVAILABLE " << kBattleNotAllocatableMessage;
+                call->Reject(NotAllocatable());
+                return;   // permit 随回调返回析构:零房间时自动收口回 Ready
+            }
+            // permit 活到 Proceed() 返回:在途创建计入 lifecycle,防止"最后一个旧房间刚移除"时 worker 抢先回 Ready;
+            // 调用已失效 / 幂等命中而零房间时,析构自动收口回 Ready。
+            call->Proceed();
+        });
+    return;
+```
+
+battle 的 `grpc.DestroyBattle.guard`:
+
+```cpp
+    if(!BattleRoomManager::Instance().AcceptsPlacementOperation(request->battle_id(),request->placement_operation_id(),request->target_instance_id()))
+    {
+        call->Reject(muduo_grpc::Status(muduo_grpc::StatusCode::kFailedPrecondition,"placement_operation_mismatch"));
+        return;
+    }
+```
+
+#### 15.8.5 迁移步骤
+
+1. 新生成器的 go test 全绿。其中「旧段非空拒绝生成」用例的固件取自工作区真实内容:scene 1 段,battle 4 段,共 5 段。
+2. 手改 4 个文件,改成与新模板逐字一致的骨架,把 §15.8.4 的内容填进 guard 段;`Handle*` 段**不动**。
+3. 定向生成两个 proto(§15.14 第 2 步),要求以下检查全部通过:
+   - 这 4 个文件零 diff,或只有骨架空白差异;
+   - 每个 `Handle*` 段与迁移前逐字节相同;
+   - 正向 grep 必须命中;
+   - 负向 grep 不得命中。
+4. 再生成一次,diff 必须为空(幂等)。
+5. 单独一步改 `Handle*` 体里过时的注释。
+
+### 15.9 Agones 异步许可
+
+```cpp
+namespace muduo { namespace net { class EventLoop; } }
+// GameServerLifecycle 新增(public):
+using AllocationPermitCallback = std::function<void(AllocationPermit permit)>;
+// EventLoop 上的调用方(scene / battle 的 gRPC 守护段)用的有界异步许可。
+//  * 只能在 loop 线程调用(断言);done 非空。
+//  * done 恰好一次,永不在本函数栈内执行:
+//    - 当场可判定的(Disabled / Allocated → 放行;已停 / 排空 / ShuttingDown → 拒绝)也经 loop.queueInLoop 投递;
+//    - 有结果时由 worker 线程经 queueInLoop 投递;
+//    - 等待超时由该 loop 上的定时器裁决并就地调用。
+//  * 判定谓词与 Blocking 版相同,共用私有判定函数,日志原样。放行时已 ++pendingPermits_,permit 析构即释放。
+//  * 等待期间计入 allocateWaiters_,晚到分配收口的语义不变。
+//  * 等待上限 options.allocateWaitTimeout;muduo 定时器走墙钟,到点按 steady 复核,未到就重新上弦。
+//  * Stop() 在锁内摘下全部等待者,锁外经各自的 loop 投递拒绝;之后的调用立即(仍经投递)拒绝。
+//    Stop() 必须在等待者所属 loop 仍存活时调用:scene / battle 都在 beforeShutdown hook 里调用。
+//    析构(静态析构)只丢弃等待者,不投递。
+void AcquireAllocationPermitAsync(muduo::net::EventLoop &loop, AllocationPermitCallback done);
+```
+
+私有部分(受 `mutex_` 保护,没有 `T*` 字段):
+
+```cpp
+struct AsyncPermitWaiter { std::reference_wrapper<muduo::net::EventLoop> loop; std::uint64_t startGeneration;
+                           std::chrono::steady_clock::time_point deadline; AllocationPermitCallback done; };
+struct PermitDelivery { std::reference_wrapper<muduo::net::EventLoop> loop; bool granted; AllocationPermitCallback done; };
+std::unordered_map<std::uint64_t, AsyncPermitWaiter> asyncWaiters_;
+std::uint64_t nextAsyncWaiterId_ = 1;
+std::shared_ptr<int> aliveToken_ = std::make_shared<int>(0);    // 超时定时器只弱持有
+std::optional<bool> DecideWithoutWaitLocked(bool reservePermit); // 抽自 EnsureAllocatedBlockingImpl 前半,日志原样
+bool WaitSatisfiedLocked(std::uint64_t startGeneration) const;   // 即 Blocking 的 wait_for 谓词
+bool FinishWaitLocked(bool reservePermit);                       // 抽自后半:排空 / 非 Allocated → false,否则预占
+void ResolveAsyncWaitersLocked(std::vector<PermitDelivery> &out, bool rejectAll); // 谓词成立者出表、--allocateWaiters_
+void ExpireAsyncWaiter(std::uint64_t waiterId);                  // loop 定时器到点
+void DeliverPermits(std::vector<PermitDelivery> deliveries);     // 只在锁外调用
+void StopImpl(bool deliverRejections);                           // Stop() = StopImpl(true);~GameServerLifecycle = StopImpl(false)
+```
+
+**算法**:
+
+- **Acquire**(loop 线程):
+  - 持锁调用 `DecideWithoutWaitLocked(true)`。有结论就解锁并投递。
+  - 否则:`allocateRequested_ = true`,登记等待者,`++allocateWaiters_`,`notify_all`;解锁后 `loop.runAfter(timeout, [alive = std::weak_ptr<int>(aliveToken_), this, id]{ if (alive.lock()) ExpireAsyncWaiter(id); })`。
+- **结算点**:凡是改状态之后 `notify_all` 的地方,都先在同一临界区里调用 `ResolveAsyncWaitersLocked(out, false)`。包括:
+  - `DoAllocate`:必须在 `++allocateResultGeneration_` 之后、晚到收口检查之前。放行者已经计入 `pendingPermits_`,`RequestReadyIfIdleLocked` 自然返回假;等待者全部超时离开时照常收口;
+  - `DoBackToReady` 的两个分支;
+  - `DoPollDrain` 中 `draining_` 翻转为真时;
+  - worker 丢弃 allocate 时的 Allocated 分支。
+  - 解锁后再 `DeliverPermits`。
+- **ExpireAsyncWaiter**(loop 线程):持锁查找。不在表里就什么都不做(结果已投递)。steady 时间还没到就重新上弦。否则出表、`--allocateWaiters_`;解锁后打 `LOG_ERROR "allocate not confirmed within Xms (async)"`,然后就地 `done(AllocationPermit(*this, false))`。
+- **Stop / StopImpl**:锁内摘下全部等待者作为拒绝,worker 存在时置 `stopRequested_`;锁外投递拒绝,再 `notify` 和 `join`,其余与现有实现相同。worker 与 Stop 竞争时,谁先摘下等待者谁裁决。已放行、还在 loop 队列里的回调会在 hook 之后执行:battle 被复核闸拒绝,scene 被 `ServerDraining()` 拒绝。
+- **不可拷贝的 permit 怎么随回调传递**:
+  - 锁外先构造 `AllocationPermit p(*this, granted)`(私有构造函数只能在成员函数内调用),再 `std::make_shared<AllocationPermit>(std::move(p))`(走公开的移动构造),连同回调一起放进 `shared_ptr` 盒子;
+  - `loop.queueInLoop([box = std::move(box)]{ AllocationPermitCallback done; done.swap(box->done); done(std::move(*box->permit)); })`;
+  - worker 线程**从不持有**回调的最后一个引用。闭包没执行就随 `~EventLoop` 销毁时,permit 析构照常记账,ServerCall 走「服务端已不在」的分支。
+  - 有结论的 permit 一律在锁外析构,避免与 `FinishAllocationPermit` 自锁。
+- **Blocking 版**保留,改为调用同一组私有函数,行为逐字不变,现有用例照旧通过;注释改为「仅非 EventLoop 线程 / 测试使用」。`agones_gameserver_lifecycle.h` 头注释第 2 条硬约束与 `cpp/AGENTS.md:68` 同步改。
+- **`SceneHandler::CreateScene`(RPC0)**:NonBlocking 保持不动,只改 `scene_handler.cpp:479-485` 守护段内那句「SceneManager 走 gRPC 用阻塞版」的注释。
+
+### 15.10 关机(全部在 loop 内)
+
+```
+ShutdownInLoop(loop 任务 T0,顺序不变)
+  1 kafkaManager.StopConsumers()
+  2 beforeShutdownFn_
+      battle:CloseAdmission → AbortAllRooms → DisconnectAll → lifecycle.Stop()
+      scene :guid 号段停 → lifecycle.Stop() → 停定时器 → HandleExitGameNode(全部在线玩家)
+      Stop() 把等许可的调用以「拒绝」投进队列(T0 之后执行)
+  3 StartShutdownDrainWatchdog()(15s,100ms,不变)
+  4 ShutdownGrpcServer() → grpcServer_->BeginShutdown({2s, 1s, 1s}, [this]{ OnGrpcServerDrained(); })
+      a draining_ = true(此后 ServerDraining() 为真)
+      b Acceptor 移进 queueInLoop 闭包销毁(停听);销毁前到达的接入一律 sockets::close
+      c 每条连接:收到过字节 → SubmitShutdownNotice(GOAWAY 2^31-1 + PING),冲出,上弦 1s;没收到过 → forceClose
+      d 上弦 2s 排空定时器(steady 复核)
+      e 已满足排空条件 → queueInLoop(onDrained)(永不在本栈内回调)
+  5 MaybeFinalizeShutdownInLoop()(gRPC 还没排空,直接返回)
+之后的若干轮:
+  - 已收完的调用照常派发:CreateBattle 被闸拒(battle_not_allocatable),CreateScene 被 ServerDraining 拒
+    (scene_node_shutting_down),其余方法照常执行(与 grpc::Server::Shutdown「在途调用照常完成」同义)
+  - 许可拒绝回调:CreateScene → "agones allocate not confirmed";CreateBattle → battle_not_allocatable
+  - PING ACK 或满 1s → SubmitFinalGoaway;没有打开的流、最终 GOAWAY 已写出、输出已排空 → shutdown()(写半关),上弦 1s 宽限
+  - 2s 到期:未开始的调用回 REFUSED_STREAM,已开始的回 UNAVAILABLE "server shutting down";所有连接补最终 GOAWAY 并 shutdown()
+  - 宽限到期:剩余连接 forceClose(排进 forceCloseInLoop,close 回调再排 connectDestroyed)
+  - 连接表为空 → queueInLoop(onDrained),按 FIFO 排在最后一个 connectDestroyed 之后
+OnGrpcServerDrained(排队任务;不在 Server 自己的栈上,也不在 I/O 事件处理期间)
+  → 打 "gRPC server drained. drain_ms=… <FormatServerStats>" → grpcServer_.reset() → shutdownGrpcDrainComplete_ = true → MaybeFinalize
+FinalizeShutdownInLoop(阶段 0)
+  防御:grpcServer_ 仍在 → LOG_ERROR 后 queueInLoop([s = std::move(grpcServer_)]{})
+       不能同步 reset:可能是从看门狗定时器进入的,Linux 的定时器回调就跑在事件处理期间
+  然后照旧:ReleaseNodeId(撤销租约与发现键)→ … → queueInLoop(FinalizeTeardownInLoop)(FIFO 排在防御销毁之后)→ … → 两跳 quit
+```
+
+- **删除**:`grpcShutdownThread_`、`ShutdownGrpcServer` 里的线程、`~Node` 里的 join(`node.cpp:473-476`)、`node.h:27` 的 `<grpcpp/grpcpp.h>`、`node.h:20` 的 `<thread>`(先确认没有别的成员在用)。
+- **保留** `~Node` 的兜底循环,注释改为「loop 异常退出时重新驱动 loop 内的 gRPC 排空与收尾」。
+- **改注释**:`node.h:184-186`(RequestShutdown:handler 不能同步等待 drain,否则 drain 永远等不到 loop)、`node.h:202`(删掉「gRPC 线程上的许可阶段」)、`node_entry.h:144-147`、scene `main.cpp:202-203 / :287-288`(以 OnGrpcServerDrained 为界)、battle `main.cpp:341-353`(「框架随后关 gRPC」改为本节语义)。
+- **与看门狗的关系**:并行运行;`MaybeFinalize` 仍要求「gRPC 已排空」且「业务已排空或已超时」。gRPC 排空完成之后不会再有 gRPC 来源的新工作。
+
+### 15.11 运维与可观测
+
+- **启动日志**:`gRPC server (muduo_grpc) listening on <ip:port> services=[…] methods=N max_streams_per_conn=256 max_in_flight=1024 dispatch_per_turn=64/2ms threads=0`。
+- **`GRPC_SERVER_MAX_POLLERS` 退役**(行号以动手时 grep 为准,这几个文件都有他人改动,只做局部替换):
+  - `node.cpp`:删掉解析。设了这个变量就打**一次** `LOG_WARN "GRPC_SERVER_MAX_POLLERS 已退役(第 4 批起服务端无 poller 线程),忽略 value=…"`。
+  - `tools/scripts/k8s_deploy.ps1`:
+    - `:153` 保留参数,默认值改为 0,传入大于 0 的值时 `Write-Warning`;
+    - 删掉 `:3439-3441` 与 `:4035-4041` / `:4112` 的注入;
+    - `:4330` 的透传保留,值为 0;
+    - tcpSocket 探针注释(`:3466` 附近)补一句「新服务端对不发 preface 的连接静默处理;排空期间监听已关,探针失败属预期」。
+  - `tools/scripts/lib/k8s_client_entry.ps1`:参数 `:619-620` 保留并标注已退役(未跟踪的 `lobby_authority_render.tests.ps1` 还在传它);删掉 `:692-693` 的注入;`:13 / :60` 注释同步。
+  - 文档:`deploy/k8s/README.md:348/371`、`.github/copilot-instructions.md:105`、`docs/design/thread-count-monitoring{,_en,_zh}.md`、`scene-node-threading-model.md`、`scene-grpc-server-design.md`(抬头注明已被本节取代)、`battle-transport-decision.md:60`。
+- **低基数统计**:C++ 节点没有 Prometheus 出口,沿用 `[RpcChannel] summary` 的口径:Server 自己每 30s 检查一次,有变化才打一行。
+
+```
+[GrpcServer] summary listen=<ip:port> conns=<cur>/<peak> accepted= closed_before_preface= handshake_timeout= protocol_errors=
+ inflight=<cur>/<peak> dispatched= max_backlog= max_dispatched_per_turn= rejected_overload= rejected_protocol= unimplemented=
+ deadline_before_start= deadline_after_start= cancelled_before_start= aborted_after_start= refused_on_shutdown=
+ unavailable_on_shutdown= late_finish= dropped= dropped_off_loop= codes=<code:n,…> methods={<Method>:<code>=<n>,…}
+```
+
+  维度只有方法(≤15 个)乘状态码(≤17 个);不出现 player_id 和 peer。
+- **日志限频**:规则同 `ShouldLogRpcEvent`(前 8 条逐条打,之后每 1024 条打一条),在 server.cpp 本地实现,因为 muduo_grpc 不依赖 core。
+  - ERROR:dropped(程序缺陷信号);
+  - WARN:坏 magic、协议错误、过载、未知方法、排空到期强制收口(每次停机汇总一行);
+  - DEBUG:探针断开、握手超时、late_finish。
+
+### 15.12 行为变化(调用方须知)
+
+- 节点上不再有 gRPC poller / EventEngine / 关机线程;`GRPC_SERVER_MAX_POLLERS` 不再生效。
+- 同一节点上的请求按「收完」的顺序进入业务(以前没有顺序)。不写成契约。
+- 过载时:每连接超过 256 条流,在 grpc-go 客户端排队(可能以没发出去的 DeadlineExceeded 结束);全节点超过 1024 条,回 RESOURCE_EXHAUSTED(以前是 poller 争抢加超时)。
+- 服务端执行截止,到期回 DEADLINE_EXCEEDED,与 grpc C++ 一致。
+- 排空到期:未开始的回 REFUSED,经透明重试后表现为 UNAVAILABLE;已开始的回 UNAVAILABLE。旧路径多为 CANCELLED。
+- 停机期间 scene 的 CreateScene 回 `UNAVAILABLE "scene_node_shutting_down"`(新增)。
+- UNIMPLEMENTED、415、405、400 的文案和状态码改为 grpc-go 口径,只有畸形客户端会遇到。
+- 服务端不再做 too_many_pings 强制,对客户端更宽松。
+- bind 不再开 SO_REUSEPORT,误重复 bind 时 fail-fast。
+- K8s 探针连接不再产生日志。
+
+### 15.13 风险
+
+| 风险 | 缓解 |
+|---|---|
+| 守护段丢代码(6c4021ae5 同类事故) | 旧段非空即拒绝生成,且在写 .h 之前检查;固件用真实内容;正向和负向 grep;`Handle*` 段逐字节比对;二次生成幂等 |
+| 自管连接的时序错误(`TcpConnection.cc:71` / `Channel.cc:43` 断言,`removeChannel` 断言) | 逐行照抄 TcpServer;必须设 `connectionCallback`;close 回调无条件排 `connectDestroyed`;Acceptor 和 Server 只在排队任务里销毁;回环用例覆盖「定时器回调里 BeginShutdown 同时有并发连入」和「带活连接析构」 |
+| 恰好一次被破坏(重复完成 / 在途计数泄漏 / 排空收不拢) | 唯一裁决点 `CompleteCall`;各完成源组合的单测都断言在途计数归零、只发一次 trailers;排空有约 3s 的硬上限 |
+| battle 准入语义被打破 | 闸 → 异步许可 → 复核 weak 闸;Stop 拒绝全部等待者;用例覆盖「放行回调排在关闸之后」 |
+| 许可泄漏或重复回调 | 等待者在 mutex 内只摘一次;Agones 用例断言 `pendingPermits_` 最终为 0、没有 unbalanced 日志 |
+| 业务之后才发生的非「未知」码(序列化失败 INTERNAL、应答超过 4MiB 的 RESOURCE_EXHAUSTED) | proto3 下前者实际不会发生;后者 Go 客户端收包时本来也报同一个码;打 ERROR |
+| 删掉 node.h 里的 grpcpp / thread 之后,依赖传递 include 的翻译单元编不过 | 非生成代码里的 `grpc::` 只剩 node.{h,cpp} 和两对 handler(已 git grep);编不过就在该翻译单元补它自己需要的 include |
+| Windows wakeup 修复(第 3 批)没落地 | 派发和许可投递会退化为最多 100ms 延迟;第 4 批编译与验证以第 3 批合入为前提 |
+| 进程里仍有别的路径构造官方 grpc 对象,线程照样起来 | §15.14 第 8 步按线程名和 thread baseline 核对;第 5 批运行期守卫已落地(`grpc_runtime_probe` + ThreadMonitor 采样时核对 `grpc_is_initialized()`,见 thread-count-monitoring「gRPC Runtime Guard」) |
+| 并行会话冲突(battle main.cpp、reconcile.go、k8s_deploy.ps1、muduo_grpc_test.vcxproj、rpc_controller_test.vcxproj、本文档) | 按组的文件清单操作;注释只做局部替换;vcxproj 等第 3 批提交后再追加 |
+| 2ms 的每轮预算与 1024 的在途上限没有压测数据 | 统计里有 `max_dispatched_per_turn`、`max_backlog`;按 AGENTS §6 跑一轮 ReleasePlayer 突发压测并做对比表之后再调,没有对比表之前不宣称任何性能结论 |
+
+### 15.14 验证(交 Codex;Claude 未执行,全部未编译)
+
+1. **生成器**:在仓库根目录执行 `pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`;然后在 `tools/proto_generator/protogen` 下执行 `go test ./internal/... ./cmd`。要求全绿,包括 `LegacyNonEmptySectionsRefuseGeneration` 和头文件预检用例。
+2. **迁移前的拒绝验证**:在 `tools/proto_generator/protogen` 下设 `$env:PROTO_GEN_CONFIG_PATH=(Resolve-Path etc/proto_gen.no-unity.yaml)`,执行 `./proto-gen.exe --grpc-handler proto/battle/battle_node.proto`。期望:非零退出,报错恰好列出 battle 的 4 段;4 个 handler 文件的 `git diff` 为空。保留完整报错文本。
+3. **迁移后的定向生成**:按 §15.8.4 手改之后,对 `proto/scene_manager/scene_node_service.proto`、`proto/battle/battle_node.proto` 各跑一次 `--grpc-handler`。要求:
+   - 4 个文件零 diff(或只有骨架空白差异);
+   - 正向 grep 必须命中:`AcquireAllocationPermitAsync`(两份 cpp)、`battle_not_allocatable`、`agones allocate not confirmed`、`placement_operation_mismatch`、`scene_node_shutting_down`、`2026-09-15 恢复`;
+   - 负向 grep `rg -n "grpc::|grpcpp|<future>|promise|\.grpc\.pb\.h|AcquireAllocationPermitBlocking" cpp/nodes/scene/handler/grpc cpp/nodes/battle/handler/grpc` 不得命中;
+   - `runInLoop` 在改完 `Handle*` 注释之后也不得命中;
+   - 再跑一次,diff 为空。
+4. **Windows 构建**:`msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64`,退出码 0,no-raw-pointer 检查通过。rpc_controller_test 不在 sln 里,要单独编译。失败时保留第一个出错工程的名字和前 50 行输出。
+5. **C++ 单测**:依次执行 `pwsh tools/scripts/run_cpp_tests.ps1 -Filter muduo_grpc`、`-Filter agones`、`-Filter rpc_controller`、`-Filter battle_admission`,全绿;muduo_grpc_test 的线程快照用例必须通过。
+6. **Go**:在 `go/shared` 下执行 `go test ./assetop/... ./grpcinterop/...`(互通用例在没有环境变量时跳过)。互通步骤:先后台启动 `muduo_grpc_test.exe --gtest_filter=ServerInterop.*`,设 `MUDUO_GRPC_SERVER_INTEROP_PORT=50999`;再执行 `MUDUO_GRPC_SERVER_INTEROP_ADDR=127.0.0.1:50999 go test ./grpcinterop/ -run TestMuduoServerInterop -count=1 -v`。要求两边都通过,C++ 退出时打出的 `[GrpcServer]` 行里 `dropped=0`。
+7. **Linux**:`tools/scripts/build_linux.sh`,确认 muduo_grpc 的 CMake 包含新增源文件,muduo_grpc、infra、core、scene、battle 都能编过。
+8. **冒烟与线程核对**(环境:etcd + Go 服务 + gate + scene + battle;先 `redis-cli FLUSHALL`、清日志):
+   - 业务流程:登录进场(CreateScene)、换图(ReleasePlayer)、资产 Debit / Credit / AckReceipt、匹配 PrepareBattle / CreateBattle / QueryBattleCreation / AddObserver / IssueBattleTicket / DestroyBattle、缩容 DestroyScene。
+   - 日志里应有 `listening` 行和 `[GrpcServer] summary`,不应再有 `gRPC server config: max_pollers`。
+   - 对比改前改后的 `thread baseline (stable window reached): total_threads=`。
+   - Linux 上 `for t in /proc/<pid>/task/*; do cat $t/comm; done | sort | uniq -c` 不得出现 grpc 相关线程名(名单以改前采样为准)。不满足就不宣称「线程归零」。
+9. **关机**:有流量时分别对 scene / battle 按 Ctrl+C(K8s 下为 SIGTERM)。
+   - 无断言;
+   - 日志依次出现 `gRPC server draining`、`gRPC server drained. drain_ms=`、`Before-shutdown drain complete`;
+   - 停机窗口里 CreateBattle 只出现 `battle_not_allocatable` 或连接被拒,CreateScene 只出现 `scene_node_shutting_down` 或连接被拒。
+10. **探针**:对 gRPC 端口执行 `nc -z` 100 次。不得出现 WARN / ERROR,`closed_before_preface` 递增,`protocol_errors` 为 0。
+
+### 15.15 实施分组(文件互不重叠)
+
+| 组 | 内容 | 依赖 |
+|---|---|---|
+| G1 | muduo_grpc 服务端库 + muduo_grpc_test 新用例 + Go 互通用例 | 无。测试工程的 vcxproj 等第 3 批提交后再追加 |
+| G2 | Agones 异步许可 + agones_lifecycle_test | 无 |
+| G3 | 生成器模板、`grpc_handler_gen.go`、`grpc_code_sections.go` 与三个测试 | 无(只约定接口名) |
+| G4 | core 的 `grpc_unary_call.h`、Node 接线与关机、可选的 rpc_controller_test 回环用例 | 编译依赖 G1 |
+| G5 | scene / battle 手写段迁移、相关注释、定向重生成 | G1–G4 |
+| G6 | 部署脚本、文档、Go 注释、PROGRESS | 定稿跟随 G1–G5 |
+
+先后:G1、G2、G3 并行 → G4 → G5 → G6 → Codex 按 §15.14 验证。
+
+双版本(AGENTS §12):本批只替换 C++ 服务端的内部传输,客户端契约、proto、tip 码、配置表都不变。Java 版不适用,PARITY 不登记功能行;PROGRESS 条目里注明这一点。
+
+### 15.16 落地记录(2026-10-16,未编译、未重生成)
+
+七组并行落码(服务端协议层 / Agones 异步许可 / 生成器 / 服务端主体 / core 胶水与 Node / 守护段迁移 / 运维文档),第 5 批守卫另成一组;
+每组一轮语义评审,最后一轮全仓遗漏检查。遗漏检查用只读模板渲染器把 4 个 handler 文件按新模板逐字节比对,全部一致,
+15 个 `Handle*` 体与迁移前一致(HEAD 没有的方法以别的会话的工作区版本为准)。唯一一条 high(最终 GOAWAY 已提交、尚未写出时到达的
+新流仍会被派发)已由评审当场修复。
+
+**新增 / 主要改动文件**:`cpp/libs/engine/muduo_grpc/{address,method_table,server_session,server}.{h,cpp}`、`server_call.h`、
+`message_framing.cpp`(预分配封顶);`cpp/libs/engine/core/network/grpc_unary_call.h`;`node.{h,cpp}`、`node_allocator.cpp`、
+`node_entry.h`、scene / battle `main.cpp`;`infra/agones/agones_gameserver_lifecycle.{h,cpp}`;生成器 `grpc_service_handler.{h,cpp}.tmpl`、
+`grpc_handler_gen.go`、`grpc_code_sections.go` 与测试;scene / battle 4 个 handler 文件;`core/node/system/node/grpc_runtime_probe.{h,cpp}`、
+`thread_observability.h`;测试 `muduo_grpc_test` 的 `test_h2_client` / `server_session_test` / `server_test` / `server_interop_test`、
+`go/shared/grpcinterop/muduo_server_interop_test.go`、`agones_lifecycle_test` 异步用例、`rpc_controller_test` 的 `grpc_client_loopback_test` /
+`grpc_runtime_not_initialized_test`;部署脚本与文档见 PROGRESS 条目。
+
+**与本节的偏离(已核实,均有理由)**:
+- `ServerSession` 的帧级协议错误、rapid reset、glitch 由 `DrainOutput` 报告(nghttp2 对这些违约只排带错误码的 GOAWAY,`mem_recv2` 仍返回成功);
+  `Receive` 只报坏 magic / FLOODED / 内部失败,且粘滞。
+- 首字节之前不写任何字节,在会话层强制;shutdown notice 的 PING 推迟到 GOAWAY 写出之后才提交(先 GOAWAY 后 PING,ACK 才能证明对端处理过 GOAWAY)。
+- `Observer` 多一个带默认空实现的 `OnRequestRejected`,供统计;`MethodTable` 多只读 `size()` / 透明哈希,空 handler 也算非法。
+- `IsCanonicalIpv4` 逐字符校验,比 `channel.cpp` 的私有副本更严(那份会接受 `-1.2.3.4`);`channel.cpp` 本批未动,后续改调 `address.h` 并删副本。
+- `dropped_off_loop` 统计每一次 loop 外析构句柄(loop 外无法判断调用是否已完成),正常路径恒为 0。
+- 启动日志 `services=` 打个数;`node.cpp` 用临时 `MethodTable` 数方法数。
+- `ThreadMonitor` 每小时指标行的哨兵改为 `std::optional`(原 `time_point::min()` 相减溢出,这行从来没打出来过);现在启动后第一次采样就多打一行 INFO。
+- Windows 上 muduo `Acceptor` 无条件 `SO_REUSEADDR`,§15.12「误重复 bind fail-fast」只在 Linux 成立。
+
+**待负责人拍板的取舍(现状均安全,只报告未改)**:
+1. Agones `Stop()` 在 beforeShutdown hook 里于 loop 线程上 join worker,最坏约 6.4s(allocate HTTP 重试),期间 loop 冻结、gRPC 排空推后。
+2. 排空到期时连接输出被背压(>1MiB),排队的 REFUSED / UNAVAILABLE / 最终 GOAWAY 可能写不出去,对端只看到 EOF(UNAVAILABLE,结果未知,安全)。修法是「冲完再半关、宽限作硬上限」。
+3. Agones 形态停机时,`Stop()` 先于 BeginShutdown 拒掉等许可的 CreateScene,打 ERROR 且回 `agones allocate not confirmed` 而非 `scene_node_shutting_down`(SceneManager 都回滚,只是日志误导)。
+4. `StartGrpcServer` 不检查 `shutdownStarted`(沿用旧行为):etcd 端口分配晚于关机时,服务端会在排空之后才起,由 Finalize 的防御分支销毁。
+5. `checkLegacyGrpcSections` 只检出「签名行含旧字面量、方法仍在 proto」的旧无名段;已删方法或折行签名会静默丢弃(当前工作区已迁完,无实际风险)。
+6. 守卫是 fail-open(只记日志 / 指标);CI 或冒烟环境要不要做成 fail-closed(例如设环境变量即 LOG_FATAL)。
+7. AGENTS.md §11.7 参考实现列表补 `muduo_grpc::Server`(TcpServer 等价物)与 `ServerCall`。
+
+**风险补记**:进入排空(GOAWAY_SUBMITTED)后 nghttp2 的 rapid-reset 令牌桶不再生效(约 3s 窗口,glitch 与 max_outbound_ack 仍有效);
+`ServerCall` 最后一个副本若在 loop 外析构而调用未完成,记录要等截止 / 断连 / 排空到期才清,期间占着在途与流名额;
+`rpc_controller_test` 工程内今后不得有用例构造官方 grpc 对象或调 `grpc_init`(否则 `GrpcRuntimeNotInitializedTest` 依执行顺序失败)。
+

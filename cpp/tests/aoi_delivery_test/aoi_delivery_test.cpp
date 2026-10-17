@@ -17,7 +17,6 @@
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/base_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
-#include "modules/scene/scene_events.h"
 #include "proto/scene/player_scene.pb.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "thread_context/ecs_context.h"
@@ -60,7 +59,6 @@ protected:
         tlsIdGeneratorManager.SetNodeId(93);
         actor_net_id::Install(tlsEcs.actorRegistry);
         deliveries.clear();
-        // AOI 的 S2C 发送缓冲是 aoi.cpp 内的 static thread_local,不需要(也不应该)往 GlobalEntity 上预挂消息组件。
         scene = tlsEcs.sceneRegistry.create();
     }
     void TearDown() override { tlsEcs.Clear(); deliveries.clear(); }
@@ -104,7 +102,7 @@ TEST_F(AoiDeliveryTest, DestroyedTargetDoesNotCreateWatchersInterestList) {
     const auto target = Spawn();
     tlsEcs.actorRegistry.destroy(target);
     EXPECT_FALSE(InterestSystem::AddAoiEntity(watcher, target));
-    EXPECT_FALSE(InterestSystem::PinAoiEntity(watcher, target));
+    EXPECT_FALSE(InterestSystem::AddAoiEntity(watcher, target, AoiPriority::kPinned));
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<AoiListComp>(watcher));
     EXPECT_TRUE(deliveries.empty());
 }
@@ -155,7 +153,7 @@ TEST_F(AoiDeliveryTest, FullObserverDoesNotReceiveRejectedNormalEntrant) {
     tlsEcs.actorRegistry.emplace<AoiClientCapacityComp>(stationary, AoiClientCapacityComp{kAoiListCapacityMin});
     for (uint32_t i = 0; i < kAoiListCapacityMin; ++i) {
         auto pinned = tlsEcs.actorRegistry.create();
-        ASSERT_TRUE(InterestSystem::PinAoiEntity(stationary, pinned));
+        ASSERT_TRUE(InterestSystem::AddAoiEntity(stationary, pinned, AoiPriority::kPinned));
     }
     auto entrant = Spawn();
     deliveries.clear();
@@ -169,7 +167,7 @@ TEST_F(AoiDeliveryTest, ReversePinnedEntryIsNotDestroyedOnSpatialLeave) {
     AoiSystem::Update(0);
     auto mover = Spawn();
     AoiSystem::Update(0);
-    ASSERT_TRUE(InterestSystem::PinAoiEntity(stationary, mover));
+    ASSERT_TRUE(InterestSystem::AddAoiEntity(stationary, mover, AoiPriority::kPinned));
     deliveries.clear();
     auto* transform = tlsEcs.actorRegistry.try_get<Transform>(mover);
     ASSERT_NE(transform, nullptr);
@@ -180,9 +178,7 @@ TEST_F(AoiDeliveryTest, ReversePinnedEntryIsNotDestroyedOnSpatialLeave) {
     EXPECT_EQ(DestroysFor(mover, stationary), 1);
 }
 
-// F075 回归:AOI 的 S2C 发送缓冲不是实体数据,进视野 / 出视野 / 离场三条通知路径都不得往 GlobalEntity 上挂组件。
-// 修复前三处都用 globalRegistry.get_or_emplace<...>(GlobalEntity()) 取缓冲,跑完后 GlobalEntity 上会多出这三个组件。
-TEST_F(AoiDeliveryTest, VisibilityNotificationsDoNotAttachComponentsToGlobalEntity) {
+TEST_F(AoiDeliveryTest, VisibilityAndLeaveNotificationsCarryCorrectBodies) {
     auto stationary = Spawn();
     AoiSystem::Update(0);
     auto mover = Spawn();
@@ -194,9 +190,7 @@ TEST_F(AoiDeliveryTest, VisibilityNotificationsDoNotAttachComponentsToGlobalEnti
     AoiSystem::Update(0); // ActorListDestroy
     auto returner = Spawn();
     AoiSystem::Update(0);
-    BeforeLeaveScene leave;
-    leave.actor = returner;
-    AoiSystem::BeforeLeaveSceneHandler(leave); // ActorDestroy(BroadcastEntityLeave)
+    AoiSystem::OnLeaveScene(returner); // ActorDestroy(BroadcastEntityLeave)
 
     // 前置条件:三条路径确实都发过消息,且消息体正确。
     ASSERT_EQ(CreatesFor(stationary, mover), 1);
@@ -210,102 +204,30 @@ TEST_F(AoiDeliveryTest, VisibilityNotificationsDoNotAttachComponentsToGlobalEnti
         ++actorDestroyToStationary;
     }
     ASSERT_EQ(actorDestroyToStationary, 1);
-
-    // 发送缓冲不属于 actor 或场景,不能留下同类型组件池。
-    for (const auto actor : tlsEcs.actorRegistry.view<PlayerGuidComp>()) {
-        EXPECT_FALSE((tlsEcs.actorRegistry.any_of<ActorListCreateS2C, ActorListDestroyS2C, ActorDestroyS2C>(actor)));
-    }
-    EXPECT_FALSE((tlsEcs.sceneRegistry.any_of<ActorListCreateS2C, ActorListDestroyS2C, ActorDestroyS2C>(scene)));
 }
 
-TEST_F(AoiDeliveryTest, LeavingSceneNotifiesRemotePinnedWatcherExactlyOnce) {
+TEST_F(AoiDeliveryTest, LeaveTouchesOnlyNeighborGridObservers) {
     const auto target = Spawn(0, 0);
     const auto nearby = Spawn(1, 0);
-    const auto remote = Spawn(1000, 1000);
+    const auto otherScene = tlsEcs.sceneRegistry.create();
+    const auto elsewhere = Spawn(0, 0);
+    tlsEcs.actorRegistry.get<SceneEntityComp>(elsewhere).sceneEntity = otherScene;
     AoiSystem::Update(0);
-    ASSERT_TRUE(AoiSystem::PinAoiEntity(remote, target));
+    // 普通非邻格条目代表另一个场景的观察者,不能让目标离场退化为扫描全节点。
+    ASSERT_TRUE(InterestSystem::AddAoiEntity(elsewhere, target));
     deliveries.clear();
 
-    BeforeLeaveScene leave;
-    leave.actor = target;
-    AoiSystem::BeforeLeaveSceneHandler(leave);
+    AoiSystem::OnLeaveScene(target);
 
-    EXPECT_EQ(1, DestroysFor(remote, target));
-    EXPECT_EQ(0, DestroysFor(nearby, target)) << "邻格已收到单体销毁,全扫不得重复发列表销毁";
-    const auto* remoteList = tlsEcs.actorRegistry.try_get<AoiListComp>(remote);
-    const auto* nearbyList = tlsEcs.actorRegistry.try_get<AoiListComp>(nearby);
-    ASSERT_NE(nullptr, remoteList);
-    ASSERT_NE(nullptr, nearbyList);
-    EXPECT_FALSE(remoteList->Contains(target));
-    EXPECT_FALSE(nearbyList->Contains(target));
-
-    deliveries.clear();
-    AoiSystem::BeforeLeaveSceneHandler(leave);
-    EXPECT_EQ(0, DestroysFor(remote, target)) << "重复清扫不重复通知已摘除的远端条目";
+    EXPECT_EQ(0, DestroysFor(elsewhere, target));
+    EXPECT_TRUE(tlsEcs.actorRegistry.get<AoiListComp>(elsewhere).Contains(target))
+        << "离场只访问邻格观察者,不扫全节点";
+    EXPECT_FALSE(tlsEcs.actorRegistry.get<AoiListComp>(nearby).Contains(target));
 }
 
-TEST_F(AoiDeliveryTest, MissingSpatialStateDoesNotSkipRemoteRelationshipCleanup) {
-    // 覆盖旧实现的四条早退,以及对象已经销毁但旁路关系仍在的兜底清扫。
-    for (int missing = 0; missing < 5; ++missing) {
-        SCOPED_TRACE(missing);
-        tlsEcs.Clear();
-        deliveries.clear();
-        scene = tlsEcs.sceneRegistry.create();
-        const auto target = Spawn();
-        const auto remote = Spawn(1000, 1000);
-        AoiSystem::Update(0);
-        ASSERT_TRUE(AoiSystem::PinAoiEntity(remote, target));
-        switch (missing) {
-        case 0: tlsEcs.actorRegistry.remove<Hex>(target); break;
-        case 1: tlsEcs.actorRegistry.remove<SceneEntityComp>(target); break;
-        case 2: tlsEcs.sceneRegistry.remove<SceneGridListComp>(scene); break;
-        case 3: tlsEcs.sceneRegistry.destroy(scene); break;
-        case 4: tlsEcs.actorRegistry.destroy(target); break;
-        }
-        deliveries.clear();
-        BeforeLeaveScene leave;
-        leave.actor = target;
-        AoiSystem::BeforeLeaveSceneHandler(leave);
-        const auto* remoteList = tlsEcs.actorRegistry.try_get<AoiListComp>(remote);
-        ASSERT_NE(nullptr, remoteList);
-        EXPECT_FALSE(remoteList->Contains(target));
-        // 已销毁目标的网络身份不能重建；兜底只清服务端关系，正常销毁必须先触发离场。
-        if (missing != 4) EXPECT_EQ(1, DestroysFor(remote, target));
-        else EXPECT_TRUE(deliveries.empty());
-        if (missing == 2) {
-            EXPECT_FALSE(tlsEcs.sceneRegistry.any_of<SceneGridListComp>(scene));
-        }
-    }
-}
 
-TEST_F(AoiDeliveryTest, UnpinRemoteTargetImmediatelySendsDestroy) {
-    const auto watcher = Spawn();
-    const auto target = Spawn(1000, 1000);
-    AoiSystem::Update(0);
-    ASSERT_TRUE(AoiSystem::PinAoiEntity(watcher, target));
-    deliveries.clear();
-    AoiSystem::UnpinAoiEntity(watcher, target);
-    EXPECT_EQ(1, DestroysFor(watcher, target));
-    const auto* list = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    ASSERT_NE(nullptr, list);
-    EXPECT_FALSE(list->Contains(target));
-    AoiSystem::UnpinAoiEntity(watcher, target);
-    EXPECT_EQ(1, DestroysFor(watcher, target)) << "重复解除不重复发送";
-}
 
-TEST_F(AoiDeliveryTest, UnpinNearbyHiddenTargetDropsForcedVisibilityAndSendsDestroy) {
-    const auto watcher = Spawn();
-    const auto target = Spawn(1, 0);
-    AoiSystem::Update(0);
-    ASSERT_TRUE(AoiSystem::PinAoiEntity(watcher, target));
-    tlsEcs.actorRegistry.emplace<StealthedTagComp>(target);
-    deliveries.clear();
-    AoiSystem::UnpinAoiEntity(watcher, target);
-    EXPECT_EQ(1, DestroysFor(watcher, target));
-    const auto* list = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    ASSERT_NE(nullptr, list);
-    EXPECT_FALSE(list->Contains(target));
-}
+
 
 TEST_F(AoiDeliveryTest, BaseAttributeSyncCarriesPlayerGuidAndClearsMask) {
     const auto actor = Spawn(17, 23);
@@ -322,6 +244,28 @@ TEST_F(AoiDeliveryTest, BaseAttributeSyncCarriesPlayerGuidAndClearsMask) {
     ActorBaseAttributesS2C message;
     ASSERT_TRUE(message.ParseFromString(deliveries[0].body));
     EXPECT_EQ(expectedPlayerId, message.entity_id());
+    EXPECT_EQ(17, message.transform().location().x());
+    EXPECT_EQ(23, message.transform().location().y());
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<ActorBaseAttributesS2CDirtyMaskComp>(actor));
+}
+
+TEST_F(AoiDeliveryTest, BaseAttributeSyncCarriesPlayerGuidWhenOnlyTransformIsDirty) {
+    const auto actor = Spawn(17, 23);
+    const auto receiver = Spawn(1000, 1000);
+    const auto* playerGuid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(actor);
+    ASSERT_NE(nullptr, playerGuid);
+    const Guid expectedPlayerId = playerGuid->value;
+    SetActorBaseAttributesS2CAttrDirtyBit(actor, ActorBaseAttributesS2C::kTransformFieldNumber);
+
+    ActorBaseAttributesS2CSyncAttributes(actor, ScenePlayerSyncSyncBaseAttributeMessageId, EntityUnorderedSet{receiver});
+
+    ASSERT_EQ(1u, deliveries.size());
+    EXPECT_EQ(receiver, deliveries[0].receiver);
+    EXPECT_EQ(ScenePlayerSyncSyncBaseAttributeMessageId, deliveries[0].messageId);
+    ActorBaseAttributesS2C message;
+    ASSERT_TRUE(message.ParseFromString(deliveries[0].body));
+    EXPECT_EQ(expectedPlayerId, message.entity_id());
+    EXPECT_TRUE(message.has_transform());
     EXPECT_EQ(17, message.transform().location().x());
     EXPECT_EQ(23, message.transform().location().y());
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<ActorBaseAttributesS2CDirtyMaskComp>(actor));

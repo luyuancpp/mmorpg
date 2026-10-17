@@ -117,15 +117,22 @@
 |---|---|---|---|---|
 | `PlayerDatabase:{id}`、`PlayerDatabase_1:{id}`(键名 = proto 全名) | go/db:写任务落库后回写;读任务回写 | login 进场(父键缺失时)、data_service `debug_fetch` | `DefaultTTLSeconds`:K8s 3600s(`k8s_deploy.ps1:3458`),缺省 24h | `key_ordered_consumer.go:54-64`、`:369`、`:846-857`;`go/login/internal/logic/pkg/dataloader/ensure_player_all_data_async.go:83-84` |
 | `task:result:{taskID}` LIST + 频道 `task:result:notify` | go/db 写 LIST,再 PUBLISH | login 结果分发器 | 5min | `key_ordered_consumer.go:37`、`:42`、`:393-411`;`go/login/internal/dispatcher/task_result_dispatcher.go:32`、`:324`、`:370`。**单频道,PUBLISH 会扇出到所有 login 实例** |
+| `player:{id}:asset_sql_commit`(2026-10-16 登记;hash:`version` = `%020d:%020d` 的 (owner_epoch, save_seq),`data` = `PlayerAssetSQLCommit`)**不是缓存,见表下说明** | go/db `RedisClient`:玩家行 SQL 提交之后发布,单键 Lua 只升不降(`assetop.PublishSQLCommit`);计划并入写路径令牌发布脚本,与排序锁、子表缓存同一次 EVAL | data_service `GetPlayerAssetOpLedger(require_sql_commit=true)`,经 `Router.ClientForPlayer`(home_zone 集群或 DevRedis);guild / trade / mail 的资产通道据此终结 | **无**,与父键同寿命:设了 TTL,已离线玩家的资产待办会永远等不到证据。回收只靠合服 / 撤销删除与回档清理;每玩家常驻一份账本(含托管收据里的完整实例字节),计入核心容量 | `go/shared/assetop/sql_commit.go`;`go/data_service/internal/logic/asset_sql_commit.go`;设计见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md) §6.6 |
 
-merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows.go:718-745`;`merge_run.go:455`;`unmerge.go:259`)。
+merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows.go:718-745`;`merge_run.go:455`;`unmerge.go:259`)。2026-10-16 起删除清单含资产 SQL 提交证据键(`playerCacheKeys` 的 `assetSQLCommitKey`)。
+
+**资产 SQL 提交证据键的拆分约束(2026-10-16 登记)**:
+- 它是资产通道「SQL 已提交」的证据,不是可丢的缓存:**不能**随第 3 批当缓存拆到 `redis-cache`,也不能被清缓存类操作顺手删掉而不知会(删了方向安全,但资产待办要等玩家下一次存盘才能终结)。
+- **G4a 拆分时必须与写方同实例**:证据键只能放在 go/db 发布它所用的那个 Redis 上,同时读方 data_service 的 `Router.ClientForPlayer` 必须指向同一实例。今天本地与 K8s 两边都落在共享实例 DB 0;启用 Regions 集群或拆分后两边可能分家,分家即读不到证据(终结卡住)或读到旧证据。
+- 证据发布并入令牌发布脚本之后,它还要与排序锁(存盘控制面,第 2 批)、子表缓存(第 3 批)同实例、同 `{player_id}` hash tag(db-write-fencing-mysql.md §6.4、§14 第 19 条);在那之前第 2 批、第 3 批不得把它们拆开。
+- 回档 / PITR 必须删除受影响玩家的这把键(db-write-fencing-mysql.md §9.2;`docs/ops/mysql-backup-pitr-runbook.md` §4.1),否则证据指向已被回滚的提交。
 
 **F. 核心:玩家归属与运行时(全部留在 `redis`)**
 
 | 键 | 写 | 读 | TTL | 证据 |
 |---|---|---|---|---|
-| `PlayerAllData:{id}` 父键 | C++ 存盘 Lua(写入后**无 TTL**);login 组装父键(24h);login 身份补齐 Lua(KEEPTTL) | C++ 载入;login;data_service 资产账本;match 组队在线判定 | 见左 | `cpp/libs/engine/infra/storage/redis_client/redis_client.h:42-52`、`:212`、`:491`;`dataloader/data_loader.go:44-45`;`sync_loader.go:125`;`go/data_service/internal/logic/asset_op_ledger_logic.go:25`、`:79-89`;`go/match/internal/team/presence.go:50-52` |
-| `dirty_keys_set` | C++ 每次存盘 SADD | **没有读者** | 无 | `redis_client.h:22`、`:50` |
+| `PlayerAllData:{id}` 父键 | C++ 存盘 Lua(写入后**无 TTL**);login 组装父键(24h);login 身份补齐 Lua(KEEPTTL) | C++ 载入;login;data_service 资产账本;match 组队在线判定 | 见左 | `cpp/libs/engine/infra/storage/redis_client/redis_client.h:42-52`、`:212`、`:491`(落码前行号;2026-10-16 起该文件行号整体后移 6 行,依次按 `kSaveIfGuardLuaScript`、`AsyncLoad`、`EnqueueSave` 的键拼法定位);`dataloader/data_loader.go:44-45`;`sync_loader.go:125`;`go/data_service/internal/logic/asset_op_ledger_logic.go:25`、`:79-89`;`go/match/internal/team/presence.go:50-52` |
+| `dirty_keys_set` | C++ 每次存盘 SADD(2026-10-16:两段存盘脚本的写入已在代码中删除(已落码,未编译、未测试;全部 scene 换成新镜像前生产仍在写)) | **没有读者** | 无(存量待全部 scene 升级后按 [release-checklist.md](../ops/release-checklist.md) §6.1 一次性 UNLINK) | `redis_client.h:22`、`:50`(落码前行号) |
 | `player:{id}:owner_epoch` / `:handoff` / `:location` | scene_manager(铸造、CAS、回滚);C++(交接标记、取证) | C++、scene_manager、player_locator、match、trade、login(Lua)、battle 节点、merge_zone | owner_epoch 永不删;handoff 300s | `go/shared/ownerepoch/ownerepoch.go:14-56`;`cpp/libs/services/scene/player/comp/player_ownership_comp.h:54-66`;`go/shared/scenenode/locator.go:18-36`(列了这个格式的 7 处实现) |
 | `player:session:{id}`、`player:location:{id}`(旧)、`player:leases`、`player:leases:processing`、`player:leases:claim_tokens`、`player:leases:claim_payloads` | player_locator 的 9 段 Lua | friend、guild、match、merge_zone、login(Lua) | 断线后 session 带 PX | `go/player_locator/internal/logic/keys.go:5-27`;`session_cas.go:29-215` |
 | `account:{account}` | login,写时带建角锁做围栏 | login | **无;权威数据只有这一份,没有库可以回源** | `go/login/internal/logic/clientplayerlogin/loginlogic.go:318-345`;`createplayerlogic.go:62-73` |
@@ -134,7 +141,7 @@ merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows
 | `account_lock:create\|login:{account}`、`player_locker:{id}` | login | login | 有;玩家锁 120s(`login.yaml:88`) | `createplayerlogic.go:118`;`loginlogic.go:55`;`entergamelogic.go:103` |
 | `player:{id}:login_generation`(2026-10-14 新增) | login 登录链持锁铸造(一段 Lua) | **只有铸造脚本自己读**;校验方比的是会话记录里的值 | 7 天;**可丢**:重建以毫秒时间与会话记录代次为下限,不回退,不必进清库 / 回档 / 合服清单 | `go/login/internal/logic/pkg/sessionmanager/login_generation.go`;设计见 [scene-enter-session-fence.md](scene-enter-session-fence.md) §3 |
 | `player_merge_notice:{id}`、`player_force_rename:{id}` | merge_zone | login | — | `tools/merge_zone/post_merge_stamp.go:65-66`;`entergamelogic.go:494-531` |
-| 场景路由:`scene:{id}:node\|zone\|mirror\|source\|mirrors\|draining\|agones_gs`、`instances:zone:{z}:active`、`instance:{id}:player_count`、`node:zone:{z}:{node}:scenes\|death_at`、`scene_nodes:zone:{z}:load`、`world_channels:*`、`world_channel_directory:zone:*`、`world_channel_lineno:*`、`world_init:lock:zone:{z}`、`enter_scene:dedup:{id}:{req}`、`player:{id}:channel_switch_cooldown`、`scene_manager:leader:lock` | scene_manager | scene_manager;C++ 读频道目录(`cpp/libs/services/scene/player/system/player_scene.cpp:39`);merge_zone | 部分有 | `go/scene_manager/internal/logic/createscenelogic.go:19-40`;`load_reporter.go:23`;`reentry_barrier.go:39`;`channel_pick.go:50`;`agones_binding.go:25`;`enterscenelogic.go:204`;`world_*.go`;`go/scene_manager/scene_manager_service.go:94-96` |
+| 场景路由:`scene:{id}:node\|zone\|mirror\|source\|mirrors\|draining\|agones_gs`、`instances:zone:{z}:active`、`instance:{id}:player_count`、`node:zone:{z}:{node}:scenes\|death_at`、`scene_nodes:zone:{z}:load`、`world_channels:*`、`world_channel_directory:zone:*`、`world_channel_lineno:*`、`world_init:lock:zone:{z}`、`enter_scene:dedup:{id}:{req}`、`player:{id}:channel_switch_cooldown`、`scene_manager:leader:lock`、`scene_manager:zones`(2026-10-16 新增:zone 登记集合,只加不减,merge_zone 摘除;见 `go/scene_manager/internal/logic/zone_registry.go`) | scene_manager | scene_manager;C++ 读频道目录(`cpp/libs/services/scene/player/system/player_scene.cpp:39`);merge_zone | 部分有 | `go/scene_manager/internal/logic/createscenelogic.go:19-40`;`load_reporter.go:23`;`reentry_barrier.go:39`;`channel_pick.go:50`;`agones_binding.go:25`;`enterscenelogic.go:204`;`world_*.go`;`go/scene_manager/scene_manager_service.go:94-96` |
 | 战斗:`battle:lock:{id}`、`battle:ctx:{id}`、`battle:settlement:pending[:id]:{id}`、`battle:activity_result:*` | C++ scene;battle 节点 | match、C++ | 有;**2026-10-15 起 `battle:settlement:pending[:id]:{id}` 不再过期**(去掉 7 天 TTL,保留到应用为止,每玩家单槽) | `cpp/libs/services/scene/battle/system/player_battle.cpp:94-95`;`cpp/libs/services/battle/settlement/settlement_outbox.h:98-111`;`battle/system/battle_result_activity.h:30`;保留期改动见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §7 |
 | `battle:settlement:pending:index`(2026-10-15 新增,全局一把 ZSET) | battle 节点、C++ scene(与写入 / 销账同一段 Lua 内 ZADD / ZREM) | battle 节点报数(积压数、最老年龄)与孤儿清理 | 无;**可丢**:只用于监控,丢了只影响报数,不影响结算 | `cpp/libs/services/battle/settlement/settlement_outbox.h`;设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §7 |
 | `player:{id}:sync_digest`(2026-10-15 新增,hash) | friend / match(team)/ guild 在业务提交后 bump(一段单键 Lua) | C++ scene(`HGETALL`,`player_landing.cpp`) | 30 天,每次 bump 续期;**可丢**:丢失或过期即代次 `g` 改变,客户端全量拉一次;不必进清库 / 回档 / 合服清单,但回档 Go 域权威数据(friend / guild 库)的工具应删除受影响玩家的这把键 | `go/shared/playersync/digest.go`;`cpp/libs/services/scene/player/system/player_landing.h`;设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §3 |
@@ -149,8 +156,8 @@ merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows
 
 | 脚本 | 位置 | 碰到的族 | 对拆分的含义 |
 |---|---|---|---|
-| C++ `kSaveIfGuardLuaScript` | `redis_client.h:42-52` | 父键 + `owner_epoch` + `dirty_keys_set` | 父键必须与归属 epoch 同实例 |
-| C++ `kSaveAndMarkLuaScript` | `redis_client.h:20-24` | 父键 + `dirty_keys_set` | 同上 |
+| C++ `kSaveIfGuardLuaScript` | `redis_client.h:42-52`(落码前行号) | 父键 + `owner_epoch` + `dirty_keys_set`(2026-10-16:对 `dirty_keys_set` 的写入已在代码中删除,只剩父键 + `owner_epoch`;已落码,未编译、未测试;全部 scene 换成新镜像前生产仍在写) | 父键必须与归属 epoch 同实例 |
+| C++ `kSaveLuaScript`(2026-10-16 更正:此处原写改名前的旧常量名,旧名带 AndMark 后缀;同日删 SADD 并改名) | `redis_client.h:20-24`(落码前行号) | 父键 + `dirty_keys_set`(2026-10-16:对 `dirty_keys_set` 的写入已在代码中删除,只剩父键;已落码,未编译、未测试;全部 scene 换成新镜像前生产仍在写) | 同上 |
 | scene_manager 落点 CAS | `go/scene_manager/internal/logic/changesceneutil.go:153-155` | `owner_epoch` + `location` + `handoff` | 位置与 epoch 同实例 |
 | scene_manager 路由失败回滚 | `owner_epoch.go:480-482` | `location` + `owner_epoch` + `handoff` | 同上 |
 | scene_manager 离场 | `leavescenelogic.go:65-70` | `location` + 场景人数 + 节点人数 | 位置与场景路由同实例 |
@@ -207,9 +214,17 @@ merge_zone 合服与撤销时会按玩家删缓存(`tools/merge_zone/player_rows
 ### 2.5 顺带发现的既有问题(本稿不修,只登记)
 
 1. **`dirty_keys_set` 只写不读**。C++ 每次存盘都 SADD,全仓 grep 找不到任何读、SREM 或 DEL(只有 `redis_client.h:22`、`:50` 和 `cpp/tests/currency_test`)。结果是一个随「累计存过盘的玩家数」无限增长的大 SET。
+   - **(2026-10-16 更正,上面一行原文保留)写入已在代码中删除(已落码,未编译、未测试;全部 scene 换成新镜像前生产仍在写)**:
+     - 两段存盘脚本(`kSaveLuaScript`、`kSaveIfGuardLuaScript`)都删了 SADD,只访问 KEYS[] 声明的键。
+     - 回归用例在 currency_test:
+       - `RedisSaveScriptsTouchOnlyDeclaredKeys` 不连 Redis,断言三点:每条 redis.call 的首参整串恰好是 KEYS[n];除命令名外没有字符串字面量;脚本不含旧集合名。
+       - `RedisSaveLeavesNoGlobalDirtySetAgainstRealRedis` 连真 Redis。
+     - 写频口径:周期存盘 + 进退场约 7.8 万/s(推算),另加战斗结算、资产提交、收件箱、跨节点交接触发的事件驱动存盘(未量化)。
+     - 存量键的一次性清理写在 [release-checklist.md](../ops/release-checklist.md) §6.1:门禁是版本盘点,只核对业务容器,快照镜像按 /app/BUILD_INFO 的 commit 判定;IDLETIME 只作辅助;先 ROLE 确认是主;UNLINK 不用 DEL;24 小时后 EXISTS 复查;从备份恢复后重做。
+     - 删掉它不等于核心可上 Redis Cluster:守卫脚本的父键与 owner_epoch 键仍无共享 hash tag,C++ 也没有 MOVED/ASK 处理。
 2. **核心内存无上界**:
    - `PlayerAllData:{id}` 一经 C++ 存盘就没有 TTL,全仓也 grep 不到删除点。
-   - `owner_epoch` 按设计永不删除(`redis_client.h:31-37` 的注释)。
+   - `owner_epoch` 按设计永不删除(`redis_client.h:31-37` 的注释;2026-10-16:落码前行号,现见 `kSaveIfGuardLuaScript` 上方注释)。
    - 所以核心的内存随「累计进过场景的玩家数」线性增长。
    - redis-oom 问答记录里规划的「冷玩家主动卸载」没有实现(`docs/notes/redis-oom-data-safety-qa-record.md:314-316`)。
 3. **C++ 不发 AUTH / SELECT**:
@@ -614,7 +629,7 @@ type Family struct {
   | 用途 | 拷贝 | 不拷 | 必须为空 |
   |---|---|---|---|
   | mapping | `player:zone:*`、`player:placement:*`、`player:maprev:*`、`merge:in_progress:*`、`merge:merged_into:*` | `db:capability:zone:*`(go/db 30s 内会重写)、`player:name:*`(缓存)、`mapping:route:ready`(见下) | 源与目标上的 `lock:player:*` |
-  | dbctl | 按 `-topics` 给出的**完整 topic 名**逐个拼出精确前缀:`consumer:applied:<topic>:*`、`consumer:applied_epoch:<topic>:*`、`kafka:retry:queue:<topic>`、`kafka:retry:processing:<topic>` 与 `kafka:retry:processing:<topic>:*`、`kafka:retry:instances:<topic>`、`kafka:dead:queue:<topic>`、`kafka:expand:status:<topic>` | — | `distributed:lock:kafka:ordering:<topic>:*`;全服的 `distributed:lock:kafka:consumer:lock:*`(不含 topic,§3.2.3) |
+  | dbctl | 按 `-topics` 给出的**完整 topic 名**逐个拼出精确前缀:`consumer:applied:<topic>:*`、`consumer:applied_epoch:<topic>:*`、`kafka:retry:queue:<topic>`,以及按 SCAN 列出的 `kafka:retry:queue:<topic>:p*`(2026-10-16 补,④ 重试只交给分区属主后按原始分区拆开的 ready 列表,键由 `go/db/internal/kafka/retry_routing.go::retryPartitionReadyKey` 拼成 `kafka:retry:queue:<topic>:p<N>`;topic 先做 glob 转义,同 `tools/merge_zone/preflight.go::dbRetryPartitionQueuePattern`;p* 不能按精确键拼,否则搬迁时这些列表里的存盘滞留在旧实例)、`kafka:retry:processing:<topic>` 与 `kafka:retry:processing:<topic>:*`、`kafka:retry:instances:<topic>`、`kafka:dead:queue:<topic>`、`kafka:expand:status:<topic>` | — | `distributed:lock:kafka:ordering:<topic>:*`;全服的 `distributed:lock:kafka:consumer:lock:*`(不含 topic,§3.2.3) |
   | queue | — | `rl:*` | `gate:*:draining`、`queue:*`、`admit:*`、`admitted:*`(排队开着时要带 `-allow-drop-queue`) |
   | cache | — | 全部 | **目标上**的 `PlayerDatabase*:*`、`task:result:*`(§3.2.4) |
 
@@ -705,6 +720,7 @@ type Family struct {
 前提:
 - 从第一个 zone 开始到最后一个 zone 切完,**全服禁止在线扩分区**(§3.2.3),也禁止运行 merge_zone(它的 `-dbctl-redis` 句柄只能指向一个实例)。
 - **与 L-09 的关系**:K8s 上所有 zone 的 go/db 共用一个消费组 `db_rpc_consumer_group`(`tidb-phase1-and-launch-readiness.md` L-09,`k8s_deploy.ps1:3437`)。缩容和扩回各触发一次全组 rebalance,**全服**存盘各停几秒,Z 个 zone 一共 2Z 次。建议先做 L-09(消费组按 zone 命名)再做第 2 批;做不到就把每个 zone 的两次 rebalance 都排进维护窗口,并在 robot / 监控里确认每次之后各 zone 的 lag 都追平。
+  - (2026-10-16 更新,③;上文不删)L-09 已落码,未编译、未测试,待 Codex 验证(设计见 [db-consumer-group-per-zone.md](db-consumer-group-per-zone.md))。各 zone 逐个从共享组 `db_rpc_consumer_group` 交接到本 zone 组 `db_rpc_consumer_group_z<ZoneId>`:`k8s_deploy.ps1 -Command zone-up -DbConsumerGroup zone` → `kafka_offset_reset.ps1 -FinalizeHandoff` → 以缺省 keep 再跑一次 zone-up(去掉 `GroupHandoffFrom`)。切组并收尾之后,该 zone 第 2 步的缩容与扩回只让本 zone 组再平衡,不再让全服存盘停顿。线上 db ConfigMap 仍是 `GroupID: "db_rpc_consumer_group"` 的 zone 照旧会触发全组 rebalance。所以「先做 L-09」现在的含义是:先把要做第 2 批的 zone 切组并收尾;交接没收尾的 zone,go/db 每个新进程入组前都要过交接闸并读 legacy 组,不要在这种 zone 上做第 2 批。
 
 步骤:
 1. 部署第 2 批代码。此时 `CacheRedis` 缺省等于 `RedisClient`,行为不变。
@@ -800,7 +816,7 @@ type Family struct {
 | redis-queue | 每个排队玩家:ZSET 成员 + meta HASH + token 键,约 0.5–1KB;每个 IP 桶约 0.2KB | 与在途排队人数、活跃 IP 数成正比,带 TTL | 10 万人排队约 100MB |
 | redis-mapping | 每个玩家的 `player:zone`(加上 placement、maprev)约 0.1–0.3KB;第 2 批起,每个存过盘的玩家再加「表数(2)× 2 个游标键」约 0.5KB | **随累计注册 / 存过盘的玩家数增长,无 TTL,不会回落** | 1000 万玩家约 3–8GB |
 | redis-cache | 最近一个 TTL 内(K8s 为 1h)写过的玩家 × 子表大小 | 与近 1h 活跃玩家数成正比 | 待压测 |
-| redis(核心) | `PlayerAllData` 父键(2026-06 实测每玩家约 21KB / 17 个键,`docs/notes/redis-oom-data-safety-qa-record.md:21`)+ `owner_epoch`(永不删)+ 账号 + `dirty_keys_set` 成员 | **随累计进过场景的玩家数增长**(§2.5 第 1、2 条) | 累计 100 万玩家约 20GB |
+| redis(核心) | `PlayerAllData` 父键(2026-06 实测每玩家约 21KB / 17 个键,`docs/notes/redis-oom-data-safety-qa-record.md:21`)+ `owner_epoch`(永不删)+ 账号 + `dirty_keys_set` 成员(2026-10-16:写入已在代码中删除(已落码,未编译、未测试;全部 scene 换成新镜像前生产仍在写),存量待按 release-checklist §6.1 清理) | **随累计进过场景的玩家数增长**(§2.5 第 1、2 条) | 累计 100 万玩家约 20GB |
 
 **核心内存没有上界,这是比拆分更急的容量问题**:
 - 核心一旦设了 maxmemory + noeviction,满了就拒写,全服存盘和登录都会失败。

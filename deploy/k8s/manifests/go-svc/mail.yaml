@@ -1,0 +1,88 @@
+# 全区全服邮箱；生产DSN和调用方密钥只引用已有Secret，缺失时拒启。
+apiVersion: v1
+kind: Service
+metadata:
+  name: mail
+  labels: {app: mail, tier: go-svc}
+spec:
+  selector: {app: mail}
+  ports:
+    - {name: grpc, port: 50900, targetPort: 50900}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail
+  labels: {app: mail, tier: go-svc}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: mail}
+  template:
+    metadata:
+      labels: {app: mail, tier: go-svc}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9240"
+        prometheus.io/path: /metrics
+    spec:
+      terminationGracePeriodSeconds: 35
+      containers:
+        - name: mail
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          args: ["-f", "/app/etc/mail.yaml"]
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef: {fieldPath: status.podIP}
+            - name: MMORPG_MAIL_SQL_DSN
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: mail-sql-dsn, optional: false}
+            # 与现有Redis部署相同：dev无口令时Secret缺席，非dev由共享部署门禁保证存在。
+            - name: MMORPG_MAIL_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: redis-auth, key: password, optional: true}
+            - name: MAIL_PRODUCER_SECRET_ADMIN
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: mail-producer-admin, optional: false}
+            - name: MAIL_PRODUCER_SECRET_RANK
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: mail-producer-rank, optional: false}
+            - name: MAIL_PRODUCER_SECRET_GUILD
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: mail-producer-guild, optional: false}
+            - name: MMORPG_ASSET_OP_SECRET_MAIL
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: asset-mail, optional: false}
+          ports:
+            - {name: grpc, containerPort: 50900}
+            - {name: metrics, containerPort: 9240}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          lifecycle:
+            preStop:
+              exec: {command: [sh, -c, "sleep 5"]}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 1000m, memory: 512Mi}
+          volumeMounts:
+            - {name: svc-config, mountPath: /app/etc, readOnly: true}
+      volumes:
+        - name: svc-config
+          configMap: {name: go-svc-mail-config}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mail-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: mail}

@@ -82,7 +82,7 @@ private:
 	void CancelReconnectTimer();
 	void DoReconnect();
 	void StartHandshake();
-	void OnHandshakeConnected(int status);
+	void OnHandshakeConnected(hiredis::Hiredis *me, int status);
 	void SendAuth();
 	void OnAuthReply(hiredis::Hiredis *me, const redisReply *reply);
 	void PromoteHandshake();

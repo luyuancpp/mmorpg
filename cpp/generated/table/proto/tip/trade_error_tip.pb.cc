@@ -35,18 +35,27 @@ static constexpr ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const* PROTOBUF_NU
     file_message_globals = nullptr;
 const char descriptor_table_protodef_trade_5ferror_5ftip_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\025trade_error_tip.proto*\232\001\n\013trade_error\022"
+    "\n\025trade_error_tip.proto*\362\003\n\013trade_error\022"
     "\022\n\016kTrade_errorOK\020\000\022\033\n\025kTradeListingNotF"
     "ound\020\240\234\001\022\033\n\025kTradeHomeZoneUnknown\020\241\234\001\022 \n"
     "\032kTradeFavoriteLimitReached\020\242\234\001\022\033\n\025kTrad"
-    "eFeatureDisabled\020\243\234\001B$\n\016com.game.tableZ\022"
-    "generated/pb/tableb\006proto3"
+    "eFeatureDisabled\020\243\234\001\022\031\n\023kTradeOrderNotFo"
+    "und\020\244\234\001\022\036\n\030kTradeOrderStateConflict\020\245\234\001\022"
+    "\033\n\025kTradeRequestConflict\020\246\234\001\022\026\n\020kTradeOr"
+    "derLimit\020\247\234\001\022\033\n\025kTradeCannotTradeSelf\020\250\234"
+    "\001\022\037\n\031kTradeCounterpartyUnknown\020\251\234\001\022\035\n\027kT"
+    "radeInsufficientAsset\020\252\234\001\022\025\n\017kTradeBidTo"
+    "oLow\020\253\234\001\022\030\n\022kTradeAuctionEnded\020\254\234\001\022 \n\032kT"
+    "radeAssetDeliveryPending\020\255\234\001\022\030\n\022kTradeMa"
+    "nualReview\020\256\234\001\022\034\n\026kTradeAssetNotTradable"
+    "\020\257\234\001B$\n\016com.game.tableZ\022generated/pb/tab"
+    "leb\006proto3"
 };
 static ::absl::once_flag descriptor_table_trade_5ferror_5ftip_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_trade_5ferror_5ftip_2eproto = {
     false,
     false,
-    226,
+    570,
     descriptor_table_protodef_trade_5ferror_5ftip_2eproto,
     "trade_error_tip.proto",
     &descriptor_table_trade_5ferror_5ftip_2eproto_once,
@@ -65,7 +74,7 @@ trade_error_descriptor() {
   return file_level_enum_descriptors_trade_5ferror_5ftip_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t trade_error_internal_data_[] = {
-    65536u, 262144u, 20002u, 20001u, 20003u, 20000u, };
+    65536u, 1048576u, 20008u, 20004u, 20012u, 20002u, 20006u, 20010u, 20014u, 20001u, 20003u, 20005u, 20007u, 20009u, 20011u, 20013u, 20015u, 20000u, };
 // @@protoc_insertion_point(namespace_scope)
 namespace google {
 namespace protobuf {

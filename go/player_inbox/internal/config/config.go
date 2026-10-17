@@ -133,17 +133,23 @@ type PlayerInboxConf struct {
 	// GaugeIntervalSeconds:扫描型 gauge 的刷新间隔(设计 §9.4,只由领导者产出)。
 	GaugeIntervalSeconds int `json:",default=60"`
 	// ReconcileIntervalMinutes:对账作业间隔(设计 §9.3:每小时一轮)。0 = 不跑。
+	// 当选领导者后第一轮只等 1–5 分钟(随机),之后按本间隔跑。
 	ReconcileIntervalMinutes int `json:",default=60"`
 	// ReconcileWindowHours:对账只看最近这么多小时内由消费方终结的行(设计 §9.3:24 小时)。
+	// 必须覆盖至少两轮间隔(ReconcileWindowHours×60 ≥ 2×ReconcileIntervalMinutes),见 Validate。
 	ReconcileWindowHours int `json:",default=24"`
 }
 
 // RedisConf 是 go-redis 客户端的连接参数。刻意不用 go-zero 的 redis.RedisConf:那份结构没有 DB 字段
-// (填了会被静默忽略)。形状与 go/trade 的 SharedRedis 逐字一致。
+// (填了会被静默忽略),也设不了连接池上限。形状与 go/trade 的 SharedRedis 逐字一致。
 type RedisConf struct {
 	Host     string `json:"Host"`
 	Password string `json:"Password,optional"`
 	DB       int    `json:"DB,optional"`
+	// PoolSize 是 go-redis 连接池上限(共享 Redis 连接总账,P0-E 第 3 批)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+	// 随 CPU limit 漂移;负数由 Validate 拒绝。K8s 上 tools/scripts/k8s_deploy.ps1 从 etc/player_inbox.yaml 镜像
+	// CoreRedis.PoolSize 并要求正整数,Redis 连接总账读同一个键。围栏上界、在线提醒与选主锁共用这一个池。
+	PoolSize int `json:"PoolSize,optional"`
 }
 
 // KafkaConf 是在线提醒用的 Kafka 生产者参数。
@@ -283,6 +289,9 @@ func (c *Config) Validate() error {
 		return errors.New("CoreRedis.Host 不能为空:围栏上界读 player:{id}:owner_epoch、在线提醒读 player:{id}:location," +
 			"两者都在与 C++ scene 相同的核心 Redis 上")
 	}
+	if c.CoreRedis.PoolSize < 0 {
+		return fmt.Errorf("CoreRedis.PoolSize(%d)不能为负:0 = go-redis 缺省 10 × GOMAXPROCS", c.CoreRedis.PoolSize)
+	}
 	if len(c.Kafka.Brokers) == 0 {
 		return errors.New("Kafka.Brokers 不能为空:在线提醒经 scene-cmd 写 Kafka")
 	}
@@ -339,6 +348,13 @@ func (c *Config) Validate() error {
 		if p.ReconcileWindowHours < minReconcileWindowHours || p.ReconcileWindowHours > maxReconcileWindowHours {
 			return fmt.Errorf("PlayerInbox.ReconcileWindowHours(%d)必须在 [%d, %d] 内",
 				p.ReconcileWindowHours, minReconcileWindowHours, maxReconcileWindowHours)
+		}
+		if p.ReconcileWindowHours*60 < 2*p.ReconcileIntervalMinutes {
+			// 窗口短于一个间隔时,两轮之间终结的行可能一轮都没被核对就滑出窗口;要求两倍,
+			// 是给一轮失败 / 超时 / 易主留余量 —— 每一行至少有两次被核对的机会(评审 L4)。
+			return fmt.Errorf("PlayerInbox.ReconcileWindowHours(%d 小时)必须至少覆盖两轮对账间隔"+
+				"(%d×60 ≥ 2×%d 分钟):否则一轮失败或易主就会有终结的行一次都没被核对就滑出窗口",
+				p.ReconcileWindowHours, p.ReconcileWindowHours, p.ReconcileIntervalMinutes)
 		}
 	}
 	return nil

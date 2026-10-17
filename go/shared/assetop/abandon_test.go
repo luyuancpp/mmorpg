@@ -250,6 +250,110 @@ func TestAbandonOnceSkipsWhenAnyConditionFails(t *testing.T) {
 	}
 }
 
+// newSQLAbandonRig 打开 RequireSQLCommit:Redis 父键 blob 用 rig.ledger,SQL 提交证据另给一份。
+// 默认两份都「确定未见」(同纪元只见过 seq 99),即可以放弃。
+func newSQLAbandonRig(t *testing.T, op Op) (*abandonRig, *splitLedger) {
+	t.Helper()
+	rig := newAbandonRig(t, op)
+	rig.loop.cfg.RequireSQLCommit = true
+	split := &splitLedger{blob: rig.ledger, sql: &fakeLedger{ledger: ledgerWithApplied(op.Stream, op.StreamEpoch, 99, false)}}
+	rig.loop.Ledger = split
+	return rig, split
+}
+
+// 开关打开时的条件 5(db-write-fencing-mysql.md §6.6):两份账本都确定未见才放弃;证据已见按证据终结;
+// 证据未见而父键 blob 已见(证据落后,fence-inflight.md F6 的一物两得场景)不放弃也不终结;任一侧读失败不放弃。
+func TestAbandonWithSQLCommitEvidence(t *testing.T) {
+	cases := []struct {
+		name         string
+		setup        func(op Op, split *splitLedger)
+		reason       string // 空 = 应当放弃
+		wantFinalize bool
+		wantBlobRead bool
+	}{
+		{name: "两份都未见才放弃", reason: "", wantBlobRead: true},
+		{name: "证据落后于父键不得放弃", setup: func(op Op, s *splitLedger) {
+			s.blob.ledger = ledgerWithApplied(op.Stream, op.StreamEpoch, op.Seq, false)
+		}, reason: "sql_evidence_behind", wantBlobRead: true},
+		{name: "证据已见按证据终结且不读父键", setup: func(op Op, s *splitLedger) {
+			s.sql.ledger = ledgerWithApplied(op.Stream, op.StreamEpoch, op.Seq, false)
+		}, reason: "ledger_seen", wantFinalize: true},
+		{name: "证据读失败", setup: func(_ Op, s *splitLedger) { s.sql.err = errors.New("data_service 超时") },
+			reason: "ledger_error"},
+		{name: "证据缺失", setup: func(_ Op, s *splitLedger) { s.sql.ledger = nil },
+			reason: "ledger_unknown"},
+		{name: "证据纪元比请求新", setup: func(op Op, s *splitLedger) {
+			s.sql.ledger = ledgerWithApplied(op.Stream, op.StreamEpoch+1, 99, false)
+		}, reason: "ledger_unknown"},
+		{name: "证据未见但父键读失败", setup: func(_ Op, s *splitLedger) { s.blob.err = errors.New("data_service 超时") },
+			reason: "ledger_error", wantBlobRead: true},
+		{name: "证据未见但父键缺失", setup: func(_ Op, s *splitLedger) { s.blob.ledger = nil },
+			reason: "ledger_unknown", wantBlobRead: true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			op := abandonableOp()
+			rig, split := newSQLAbandonRig(t, op)
+			if c.setup != nil {
+				c.setup(op, split)
+			}
+
+			n, err := rig.loop.AbandonOnce(context.Background(), testNowMs)
+			if err != nil {
+				t.Fatalf("逐行跳过不该让整轮出错: %v", err)
+			}
+			if c.reason == "" {
+				if n != 1 || len(rig.store.abandoned) != 1 {
+					t.Fatalf("两份账本都确定未见应放弃,实际 n=%d abandoned=%+v", n, rig.store.abandoned)
+				}
+				return
+			}
+			if n != 0 || len(rig.store.abandoned) != 0 {
+				t.Fatalf("不得放弃,实际 n=%d abandoned=%+v", n, rig.store.abandoned)
+			}
+			if got := rig.skipped(c.reason); got != 1 {
+				t.Fatalf("跳过原因 %s 应计 1,实际 %v", c.reason, got)
+			}
+			finalized, _ := rig.store.snapshot()
+			if c.wantFinalize {
+				if len(finalized) != 1 || finalized[0].Status != StatusApplied || !finalized[0].Res.Durable || !finalized[0].Res.SQLCommitted {
+					t.Fatalf("证据已见应按证据终结为 Applied 并带 SQLCommitted,实际 %+v", finalized)
+				}
+				if len(rig.store.released) != 0 {
+					t.Fatalf("终结后不该再还租约,实际 %+v", rig.store.released)
+				}
+			} else {
+				if len(finalized) != 0 {
+					t.Fatalf("不该终结,实际 %+v", finalized)
+				}
+				if len(rig.store.released) != 1 {
+					t.Fatalf("持租约的跳过必须还租约,实际 %+v", rig.store.released)
+				}
+			}
+			if read := split.blob.reads.Load() != 0; read != c.wantBlobRead {
+				t.Fatalf("父键 blob 是否读取:期望 %t,实际读了 %d 次", c.wantBlobRead, split.blob.reads.Load())
+			}
+			if rig.applier.calls.Load() != 0 {
+				t.Fatalf("放弃路径不得投递,实际 %d 次", rig.applier.calls.Load())
+			}
+		})
+	}
+}
+
+// 开关打开却只挂了 blob 读取器:自动放弃整体不运行(连候选都不列),不退回只看 blob。
+func TestAbandonNotRunningWithoutSQLLedgerWhenSwitchOn(t *testing.T) {
+	rig := newAbandonRig(t, abandonableOp())
+	rig.loop.cfg.RequireSQLCommit = true
+	rig.loop.Ledger = blobOnlyLedger{inner: rig.ledger}
+	n, err := rig.loop.AbandonOnce(context.Background(), testNowMs)
+	if err != nil || n != 0 {
+		t.Fatalf("装配不齐应回 (0, nil),实际 (%d, %v)", n, err)
+	}
+	if len(rig.store.listCalls) != 0 {
+		t.Fatalf("装配不齐不该列候选,实际 %+v", rig.store.listCalls)
+	}
+}
+
 // 没领到租约时不该去读位置与账本:那些读只在持租约之后才有意义。
 func TestAbandonOnceLeaseLostReadsNothing(t *testing.T) {
 	rig := newAbandonRig(t, abandonableOp())
@@ -398,6 +502,8 @@ func TestAbandonSkipNames(t *testing.T) {
 		abandonSkipLeaseLost:   "lease_lost",
 		abandonSkip(0):         "invalid",
 		abandonSkipCount:       "invalid",
+
+		abandonSkipSQLEvidenceBehind: "sql_evidence_behind",
 	}
 	for r, name := range want {
 		if got := r.String(); got != name {

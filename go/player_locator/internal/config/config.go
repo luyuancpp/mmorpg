@@ -27,6 +27,10 @@ type RedisConf struct {
 	Host     string `json:"Host"`
 	Password string `json:"Password"`
 	DB       int    `json:"DB"`
+	// PoolSize 是 go-redis 连接池上限(共享 Redis 连接总账,P0-E 第 3 批)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+	// 随 CPU limit 漂移;负数起服即失败(svc.NewServiceContext)。K8s 上 tools/scripts/k8s_deploy.ps1 从
+	// etc/player_locator.yaml 镜像 RedisClient.PoolSize 并要求正整数,Redis 连接总账读同一个键。
+	PoolSize int `json:"PoolSize,optional"`
 }
 
 type KafkaConf struct {

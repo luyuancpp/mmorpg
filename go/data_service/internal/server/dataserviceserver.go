@@ -681,6 +681,13 @@ func (s *DataServiceServer) BatchGetPlayerName(ctx context.Context, req *data_se
 // 本 RPC 没有 in-band error_code,契约就是 gRPC code;语义表与 code 全在 logic 里一处定义,
 // logic 返回的 error 已经是 status,这里只做搬运 —— 不要在这里再包一层映射。
 func (s *DataServiceServer) GetPlayerAssetOpLedger(ctx context.Context, req *data_service.GetPlayerAssetOpLedgerRequest) (*data_service.GetPlayerAssetOpLedgerResponse, error) {
+	if req.GetRequireSqlCommit() {
+		ledger, found, err := logic.GetSQLCommittedAssetLedger(ctx, s.svcCtx, req.GetPlayerId())
+		if err != nil {
+			return nil, err
+		}
+		return &data_service.GetPlayerAssetOpLedgerResponse{Found: found, Ledger: ledger, SqlCommitted: true}, nil
+	}
 	ledger, found, err := logic.GetPlayerAssetOpLedger(ctx, s.svcCtx, req.GetPlayerId())
 	if err != nil {
 		return nil, err

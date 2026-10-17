@@ -1,0 +1,37 @@
+# 只迁移结构，与常驻实例使用同一份权威 DSN；不需要资产签名密钥。
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: guild-migrate
+  labels: {app: guild-migrate, tier: go-svc}
+spec:
+  backoffLimit: 4
+  podFailurePolicy:
+    rules:
+      - action: FailJob
+        onExitCodes: {containerName: guild-migrate, operator: In, values: [1, 4]}
+      - action: Ignore
+        onPodConditions:
+          - {type: DisruptionTarget}
+  template:
+    metadata:
+      labels: {app: guild-migrate, tier: go-svc}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: guild-migrate
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          args: ["-f", "/app/etc/guild.yaml", "-migrate"]
+          env:
+            - name: MMORPG_GUILD_SQL_DSN
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: guild-sql-dsn, optional: false}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 1000m, memory: 512Mi}
+          volumeMounts:
+            - {name: svc-config, mountPath: /app/etc, readOnly: true}
+      volumes:
+        - name: svc-config
+          configMap: {name: go-svc-guild-config}

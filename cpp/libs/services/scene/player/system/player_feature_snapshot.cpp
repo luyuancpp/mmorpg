@@ -5,6 +5,7 @@
 #include <set>
 #include <utility>
 
+#include "muduo/base/Logging.h"
 #include "thread_context/ecs_context.h"
 #include "modules/bag/bag_service.h"
 #include "modules/bag/comp/player_bags_comp.h"
@@ -30,11 +31,6 @@ namespace {
 bool CanSortBagType(uint32_t bagType)
 {
     return bagType == kInventory || bagType == kWarehouse;
-}
-
-const MissionsComp* FindScope(const MissionsContainerComp* container, uint32_t scope)
-{
-    return container == nullptr ? nullptr : container->Get(scope);
 }
 
 void FillMission(entt::entity player, uint64_t nowMs, uint32_t missionId, uint32_t scope, const MissionsComp* missions,
@@ -189,26 +185,29 @@ uint32_t PlayerMissionReadSystem::BuildList(entt::entity player, GetMissionListR
     out.Clear();
     if (!tlsEcs.actorRegistry.valid(player)) return kThisEntityIsInvalid;
     const auto* container = tlsEcs.actorRegistry.try_get<MissionsContainerComp>(player);
+    if (container == nullptr)
+    {
+        LOG_ERROR << "[PlayerMission] 缺少持久 MissionsContainerComp，拒绝任务列表读取，entity="
+                  << entt::to_integral(player);
+        return kServiceUnavailable;
+    }
     std::set<std::pair<uint32_t, uint32_t>> keys;
     for (const auto& row : MissionTableManager::Instance().FindAll().data())
         keys.emplace(MissionListComp::kPlayerMission, row.id());
-    if (container != nullptr)
+    for (const auto& [scope, missions] : container->map)
     {
-        for (const auto& [scope, missions] : container->map)
-        {
-            for (const auto& [id, mission] : missions.GetMissionList().missions()) keys.emplace(scope, id);
-            for (const auto& [id, bitIndex] : MissionBitMap)
-                if (missions.IsComplete(id) || missions.IsClaimable(id)) keys.emplace(scope, id);
-            for (const auto id : missions.GetUnmappedCompletedIds()) keys.emplace(scope, id);
-            for (const auto id : missions.GetUnmappedClaimableIds()) keys.emplace(scope, id);
-        }
+        for (const auto& [id, mission] : missions.GetMissionList().missions()) keys.emplace(scope, id);
+        for (const auto& [id, bitIndex] : MissionBitMap)
+            if (missions.IsComplete(id) || missions.IsClaimable(id)) keys.emplace(scope, id);
+        for (const auto id : missions.GetUnmappedCompletedIds()) keys.emplace(scope, id);
+        for (const auto id : missions.GetUnmappedClaimableIds()) keys.emplace(scope, id);
     }
     for (const auto& [scope, id] : keys)
     {
         const auto [row, lookupResult] = MissionTableManager::Instance().FindByIdSilent(id);
-        FillMission(player, TimeSystem::NowMillisecondsUTC(), id, scope, FindScope(container, scope), row, *out.add_missions());
+        FillMission(player, TimeSystem::NowMillisecondsUTC(), id, scope, container->Get(scope), row, *out.add_missions());
     }
-    out.set_state_persistent(container != nullptr);
+    out.set_state_persistent(true);
     return kSuccess;
 }
 
@@ -217,6 +216,12 @@ uint32_t PlayerActivityReadSystem::BuildList(entt::entity player, uint64_t serve
 {
     out.Clear();
     if (!tlsEcs.actorRegistry.valid(player)) return kThisEntityIsInvalid;
+    if (!tlsEcs.actorRegistry.all_of<MissionsContainerComp>(player))
+    {
+        LOG_ERROR << "[PlayerActivity] 缺少持久 MissionsContainerComp，拒绝活动列表读取，entity="
+                  << entt::to_integral(player);
+        return kServiceUnavailable;
+    }
     out.set_server_time_ms(serverTimeMs);
     for (const auto& row : MissionTableManager::Instance().FindAll().data())
     {

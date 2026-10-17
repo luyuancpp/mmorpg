@@ -180,8 +180,10 @@ kafka-topics.sh --delete --topic db_task_topic --bootstrap-server <broker>
 kafka-topics.sh --create --topic db_task_topic --partitions 5 --bootstrap-server <broker>
 
 # 方式 B: 重置 consumer group offset 到指定时间戳
+# (2026-10-15 更正:组名是本 zone 的 db_rpc_consumer_group_z<id>,topic 是 db_task_zone_<id>,TopicGeneration ≥ 2 时
+#  带 _g<gen> 后缀;重置之后还要删掉 legacy 组 db_rpc_consumer_group 在本 topic 上的位点。一键脚本的做法见下方「2026-10-15 修订」)
 kafka-consumer-groups.sh --reset-offsets --to-datetime 2026-03-26T10:00:00.000 \
-  --group db_rpc_consumer_group --topic db_task_topic --bootstrap-server <broker> --execute
+  --group db_rpc_consumer_group_z<id> --topic db_task_zone_<id> --bootstrap-server <broker> --execute
 
 步骤 5: 重新拉起 zone
 ─────────────────────
@@ -249,6 +251,93 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
 DryRun 冒烟:`pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-rollback -ZoneName e2e -ZoneId 101 -RollbackTargetTime 2026-05-15T14:23:00Z -NodeImage registry.invalid/test/mmorpg-node:0123456789ab -KubeContext kind-mmorpg -LoginDevPasswordAuth`,
 期望 Step 1、预检 kubectl、Step 6 三行都带上 context,Step 6 还带 `-LoginDevPasswordAuth`。
 
+### 2026-10-15 修订:存盘消费组按 zone 拆分后的 Kafka 步骤(删 Step 2、第 0 步 c / d、Step 5 退役 legacy 位点、Step 6 落到 final(Z))
+
+**状态:已落码,未编译、未测试,待 Codex 验证。** 本节按 2026-10-16 工作区的代码写(`tools/scripts/k8s_zone_rollback.ps1`、`tools/scripts/kafka_offset_reset.ps1`、
+`tools/scripts/lib/kafka_consumer_groups.ps1`、`tools/scripts/k8s_deploy.ps1`、`tools/scripts/dev_tools.ps1`),与规格不一致处以代码为准,见本节末尾。
+设计见 [db-consumer-group-per-zone.md](./db-consumer-group-per-zone.md)(§5 收尾、§6 回档、§11 未核实项)。上文「2026-09-29 修订」里「原先的 7 步」
+含 Kafka drain、第 0 步只有两部分,这两处以本节为准(脚本头 `.DESCRIPTION` 已同步改写)。
+
+起因:go/db 的存盘消费组从 K8s 上全 zone 共用的 `db_rpc_consumer_group`(下称 legacy 组)逐 zone 换成 `db_rpc_consumer_group_z<ZoneId>`(下称 zone 组)。
+旧脚本 Step 5 重置的是 legacy 组:只要别的 zone 在线,这个组就不是 Empty,重置一定被 Kafka 拒绝。旧 Step 2 在 zone-down 之后等 LAG 排空,
+可本 zone 的 db 已经停了,必然等满超时再 `proceeding anyway`。
+
+**组名与分区数**:脚本入口用 `Get-YamlScalar` 现读 `go/db/etc/db.yaml` 的 `ServerConfig.Kafka.GroupID`(基名)与 `ServerConfig.Kafka.PartitionCnt`(必须是正整数),
+读不到即拒绝,此时尚未产生任何改动。`-KafkaGroup` 留空推导为 `<基名>_z<ZoneId>`;新增 `-KafkaLegacyGroup`,留空推导为 `<基名>`;两者相同(区分大小写比较)入口即拒。
+摘要行 `kafka` 一栏变为 `<bootstrap> topic=<topic> group=<zone 组> retire=<legacy 组> partitions=<N>`。
+
+**第 0 步由两部分扩为 a–d**(上文「第 0 步」的 1 / 2 即脚本里的 a / b)。a、b、d 都过才进 Step 1,c 只告警:
+
+- **c. Kafka LAG 只读快照**(`Show-KafkaTopicLagSnapshot`):只在 `-Apply` 下执行,dry-run 只打印两条 `kafka-consumer-groups.sh --describe --group <组>` 命令。
+  - 对 zone 组与 legacy 组各 describe 一次,只打印本 topic 的分区 / current / end / lag 与 LAG 合计,别的 topic 的行不计入;组不存在时打印 `(group does not exist)`。
+  - 任何失败只 `Write-Warning`,绝不拒绝。它取代原 Step 2,用途只是停服前看一眼两组在本 topic 上的进度。
+- **d. Step 5 预演**(`Invoke-Step5Rehearsal`):只在 `-Apply` 下、Step 1 之前执行。
+  - 先 describe zone 组。它在本 topic 上已有数值位点就跳过,打印 `zone group already holds offsets on <topic>; Step 5 rehearsal skipped`。
+  - 组不存在或没有位点(从未切过组的 zone)时,以 hashtable splatting 调 `kafka_offset_reset.ps1 -BootstrapServer … -Topic … -Group <zone 组> -ToDatetime <TargetTime> -Partitions <N>`,
+    即 dry-run,不带 `-Apply` 与 `-RetireGroup`。计划不完整、抛错或退出码非 0,都在停服之前拒绝。
+  - describe 本身失败同样拒绝:判不出就无法证明 Step 5 走得通。
+  - 已知局限(未处理):zone 组在本 topic 上没有已提交位点、却仍有活跃成员时(例如以 final(Z) 运行、但从未写入过的 zone),dry-run 重置会因组不是 Empty 被 Kafka 拒绝,回档在停服前被拒。
+- c / d 直接调用 PATH 上的 `kafka-consumer-groups.sh`(本脚本没有 `-KafkaBin`),执行机必须装有 Kafka CLI 且连得到 `-KafkaBootstrap`。
+
+**Step 2 已删除**,编号 3–7 不变。`k8s_zone_rollback.ps1` 的 `-KafkaDrainTimeoutSec` 与 `dev_tools.ps1` 的 `-RollbackKafkaDrainTimeoutSec` 一并删除。
+理由:Step 5 本来就把位点拨回 TargetTime,排空没有意义。
+
+**Step 5:重置 zone 组,复核通过后退役 legacy 组在本 topic 上的位点。** 脚本以 hashtable splatting 调用
+`kafka_offset_reset.ps1 -BootstrapServer <b> -Topic db_task_zone_<id> -Group db_rpc_consumer_group_z<id> -RetireGroup db_rpc_consumer_group -ToDatetime <TargetTime> -Partitions <N> [-Apply]`:
+
+1. 解析 `--reset-offsets` 输出的 GROUP / TOPIC / PARTITION / NEW-OFFSET 计划表(`ConvertFrom-KafkaResetPlan`)。计划必须恰好覆盖 0..N-1,NEW-OFFSET 都是数值;dry-run 与 `-Apply` 都检查。
+2. `-Apply` 时,`--execute` 之后再 describe zone 组,逐分区断言 CURRENT-OFFSET 等于计划的 NEW-OFFSET;不符即抛出「重置后复核失败,没有删除 db_rpc_consumer_group 的位点」。
+   这个抛出在删除之前。
+3. 复核通过才执行 `Remove-RetiredGroupTopicOffsets`:
+   - legacy 组在本 topic 上没有数值位点时打印 `nothing to retire`(幂等,可重跑);
+   - 否则执行 `kafka-consumer-groups.sh --delete-offsets --group db_rpc_consumer_group --topic db_task_zone_<id>`,输出含 `GROUP_SUBSCRIBED_TO_TOPIC` 即抛出;删完再 describe 一次,仍有数值位点也抛出。
+   - 回档是有意回退,这条路不做「新组 ≥ 旧组」检查(那是 `-FinalizeHandoff` 的前置条件)。
+
+- legacy 组即使还有别的 zone 的成员,只要没有成员订阅本 topic,broker 就允许删除。这一点是推断,待 Codex 在钉版的 Kafka 4.3.1 上实测(设计文档 §11 V3(d))。
+- 仍有订阅者时(本 zone 的 namespace 没删干净、留有 db 实例),Step 5 失败。这时 zone 已停、MySQL 已回档、Redis 已清:清掉残留实例后,**单独重跑脚本打印的那条
+  `kafka_offset_reset.ps1` 命令**(带 `-Apply`;重跑时旧组若已没有本 topic 的位点,退役一步打印 `nothing to retire`),再单独跑 Step 6。
+- `-RetireGroup` 必须配 `-Partitions > 0`,不能等于 `-Group`,不能与 `-DeleteAndRecreateTopic` 同用,违反任一条即在入口拒绝。
+
+**Step 6:显式 `-DbConsumerGroup zone`,真跑时落到最终形状 final(Z)。** `$upArgs.DbConsumerGroup = 'zone'`,第 0 步 b 的静态预检用的是同一份参数。
+
+- 真跑时,`k8s_deploy.ps1` 在写路径入口(`Initialize-DbConsumerGroupPlans`)kubectl exec 进 infra namespace 的 `kafka-0`,读两组在本 topic 上的位点(`Read-DbGroupTopicFacts`)。
+  命令经 `/bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group <组>"` 执行,
+  避免 CLI 继承 broker 的大堆参数、把 kafka-0 撑到 OOMKilled。
+- Step 5 之后 zone 组有位点、legacy 组在本 topic 上没有,`Resolve-DbConsumerGroupPlan` 落到 `Shape=final`、`Source=explicit-already-authoritative`:
+  db ConfigMap 只写 `GroupID: "db_rpc_consumer_group_z<id>"`,不带 `GroupHandoffFrom`,交接闸之前的旧镜像也能起。
+  db Pod 模板注解 `mmorpg.io/db-consumer-group` 为 zone 组,`mmorpg.io/db-group-handoff-from` 为 `none`。
+- 第 0 步 b 的静态预检带 `-DryRun`、不读集群,渲染的是交接形状的预览(`ConsumerGroup` + `GroupHandoffFrom`,`Source=dryrun-preview`,另有一行告警)。它只校验参数组合,不代表真跑的形状。
+- **回档之后,该 zone 一律以 zone 组为权威**:仍在 legacy 组上的 zone 借回档迁到 zone 组。这是行为变化。
+- 剩余风险:Kafka 位点直到 Step 6 才读,第 0 步不读。部署账号缺 `pods/exec` 权限或 kafka-0 未就绪时,`k8s_deploy.ps1` 会在任何写操作之前拒绝,但这时 zone 已停服、数据已回档;
+  修好之后,按脚本打印的 Step 6 那一行单独重跑 `dev_tools.ps1 -Command k8s-zone-up … -DbConsumerGroup zone`。
+- Step 5 的退役没做成(两组在本 topic 上都有位点)时,显式 zone 模式同样拒绝,并打印两种 `-FinalizeHandoff` 收尾命令。回档场景下应重跑 Step 5,不要照那条提示收尾。
+- Step 6 必须部署 db:`dev_tools.ps1` 的 `-GoSvcRegistry` 缺省非空。显式 `-DbConsumerGroup` 配上不部署 db 的运行(没给 `-GoSvcRegistry`,或带了 `-SkipGoSvc`)时,`k8s_deploy.ps1` 在写路径入口拒绝。
+
+**`dev_tools.ps1` 入口**:
+- `-RollbackKafkaGroup` 缺省改为空串(由回滚脚本推导);新增 `-RollbackKafkaLegacyGroup`。两者都只在非空时转发。
+- `k8s-zone-rollback` 显式给了 `-DbConsumerGroup` 就在调用回滚脚本之前拒绝,因为 Step 6 固定用 zone。
+- `kafka-offset-reset` 分支改为 hashtable splatting,新增 `-KafkaRetireGroup` / `-KafkaFinalizeHandoff` 透传(都要配 `-KafkaPartitions > 0`)。
+
+**与规格的差异(以代码为准)**:
+- 原规格写「新增脚本常量 `$DbConsumerGroupBase`」;代码改为入口现读 db.yaml,没有这个常量。
+- 原规格写 Step 6 渲染 zone 的交接形状(`ConsumerGroup` + `GroupHandoffFrom`);代码按修订稿渲染最终形状 final(Z),只有 `-DryRun` 预览才是交接形状。
+- 原规格只有第 0 步 c;代码按修订稿另加第 0 步 d(Step 5 预演),并要求 `-Partitions` 参与计划覆盖与 `-Apply` 后复核。
+- 原规格风险 8 写「漏删 legacy 位点时由 go/db 的 R7 拦住」;final(Z) 下 go/db 不配 `GroupHandoffFrom`、没有交接闸,实际兜底是 `k8s_deploy.ps1` 显式模式的「两组都有位点即拒绝」。
+
+**未核实项**(待 Codex 在 `apache/kafka:4.3.1` 上实测,设计文档 §11):
+- 对不存在的组执行 `--reset-offsets --to-datetime --execute` 能否建出位点(V3(c));
+- 组 Stable、但无人订阅本 topic 时 `--delete-offsets` 能否成功(V3(d));
+- 不存在组 / Empty 组 describe 的原文,以及 `--execute` 是否打印 NEW-OFFSET 表(V3(b)(f)(h)(i))。
+
+脚本按推定的文案 fail-closed。若 V3(c) 证实建不出位点,回档改动不得发布,交负责人决策。
+
+**Codex 验证**(Claude 未执行):在仓库根逐个执行 `pwsh -NoProfile -NonInteractive -File tools/scripts/tests/<名>.tests.ps1`,名字为
+`k8s_zone_rollback_gate_router_mode`、`k8s_zone_rollback_flush_guard`、`kafka_offset_reset_output_guard`、`dev_tools_kafka_offset_reset`、`dev_tools_merge_zone_contract`、
+`k8s_deploy_contract`、`k8s_client_entry_contract`,通过标准 `fail=0`,失败时保留全部 `[FAIL]` 行。dry-run 冒烟:
+`pwsh -NoProfile -File tools/scripts/k8s_zone_rollback.ps1 -ZoneName t1 -ZoneId 101 -TargetTime 2026-05-15T14:23:00Z -NodeImage ghcr.io/luyuancpp/mmorpg-node:0123456789ab -SkipMySqlPause`,
+期望摘要含 `group=db_rpc_consumer_group_z101 retire=db_rpc_consumer_group partitions=10`,Step 5 行含 `-RetireGroup db_rpc_consumer_group` 与 `-Partitions 10`,
+Step 6 行含 `-DbConsumerGroup zone`,输出里没有 Step 2 的排空等待。
+
 ---
 
 ## 3. 当前缺失基建
@@ -258,7 +347,7 @@ DryRun 冒烟:`pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-rollback
 | MySQL 定时备份 + binlog 归档 | ✅ **已落地 (2026-05-15)** | `deploy/k8s/manifests/infra/mysql.yaml`(PVC + binlog on)+ `mysql-backup-cronjob.yaml`(每天 03:17 UTC dump + binlog 复制),SOP 见 [`docs/ops/mysql-backup-pitr-runbook.md`](../ops/mysql-backup-pitr-runbook.md) | ~~高~~ |
 | Redis RDB/AOF 定期快照归档 | 未做 | 当前 `--appendonly yes` 保证持久化，但无历史时间点恢复能力 | 低（可 FLUSHDB） |
 | Kafka offset 回档工具 | ✅ **已落地 (2026-05-15)** | `tools/scripts/kafka_offset_reset.ps1`(支持 to-datetime / to-earliest / to-latest / delete-and-recreate-topic 4 种模式,默认 dry-run),注册为 `dev_tools.ps1 -Command kafka-offset-reset` | ~~中~~ |
-| 一键 zone 回档脚本 | ✅ **已落地 (2026-05-15)** | `tools/scripts/k8s_zone_rollback.ps1`(7 步:zone-down / Kafka drain / MySQL PITR 提示暂停 / Redis FLUSHDB / kafka-offset-reset / zone-up / 验证清单),注册为 `dev_tools.ps1 -Command k8s-zone-rollback`,默认 dry-run。**2026-09-29 更正**:现为「第 0 步预检 + 7 步」,见上文「## 3. 整 Zone 灾难恢复级回档」下的「2026-09-29 修订:第 0 步预检与不粘滞的部署参数」(本文有两个「## 3.」标题,指的是前一个) | ~~中~~ |
+| 一键 zone 回档脚本 | ✅ **已落地 (2026-05-15)** | `tools/scripts/k8s_zone_rollback.ps1`(7 步:zone-down / Kafka drain / MySQL PITR 提示暂停 / Redis FLUSHDB / kafka-offset-reset / zone-up / 验证清单),注册为 `dev_tools.ps1 -Command k8s-zone-rollback`,默认 dry-run。**2026-09-29 更正**:现为「第 0 步预检 + 7 步」,见上文「## 3. 整 Zone 灾难恢复级回档」下的「2026-09-29 修订:第 0 步预检与不粘滞的部署参数」(本文有两个「## 3.」标题,指的是前一个)。**2026-10-15 更正**:Step 2(Kafka drain)已删除,第 0 步增加 c(LAG 只读快照)/ d(Step 5 预演),Step 5 重置 zone 组 `db_rpc_consumer_group_z<id>` 并退役 legacy 组在本 topic 上的位点,Step 6 落到 final(Z),见同处「2026-10-15 修订」(已落码,未编译、未测试,待 Codex 验证) | ~~中~~ |
 | 备份异地归档(S3/OSS) | 未做 | PVC 只防 pod 重启,不防整个集群 / 机房挂 | 高(生产前必做) |
 | 跨服务离线 epoch 回档栅栏 | 未做（应用级回档 fail-closed） | login/player_locator 阻断新会话，Scene 排空存盘，Kafka/db 携带并校验 epoch | P0（重启应用级回档前） |
 

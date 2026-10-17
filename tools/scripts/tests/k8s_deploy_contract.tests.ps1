@@ -250,6 +250,7 @@ Test-Case "db 是多副本形态:2 副本滚动更新 + PDB + 反亲和" {
     Assert-Match -Text $block -Pattern 'podAntiAffinity' -Because '两个副本不该落在同一个节点上'
     Assert-Match -Text $block -Pattern '(?s)kind: PodDisruptionBudget.*?name: db-pdb.*?minAvailable: 1' -Because 'PDB 必须写在主 manifest 里,独立文件不会被 apply'
     Assert-Match -Text $block -Pattern 'terminationGracePeriodSeconds: 45' -Because '停机要留出把重试收据还回 ready 的时间'
+    Assert-Match -Text $block -Pattern '(?m)^  minReadySeconds: 20\s*$' -Because '新 Pod Ready 后至少等完一次入组再停旧 Pod(G6)'
 }
 
 Test-Case 'db 指标端口:ConfigMap MetricsListenAddr ":9160" 与 manifest 9160 metrics 端口 + prometheus 注解一致' {
@@ -1620,7 +1621,7 @@ Test-Case 'all-up 多 zone(prod):每个 zone 的 login 锁键与 ZoneCapacityOve
     Assert-True -Condition ($expectedZoneIds.Count -ge 2) -Because "夹具前提:deploy/k8s/zones.sample.json 至少有两个 zone(实际 $($expectedZoneIds.Count) 个)"
     Assert-Equal -Expected 0 -Actual $peakAllUpRun.ExitCode -Because "多 zone 的 prod all-up DryRun 应当成功。输出: $($peakAllUpRun.Output)"
     $lockKeyBase = Get-EtcValue -RelativePath 'go/login/etc/login.yaml' -KeyPath 'Queue.DispatcherLockKey'
-    $blocks = @(Get-ManifestBlocks -Output $peakAllUpRun.Output | Where-Object { $_ -match '(?m)^\s*name:\s*go-svc-login-config\s*$' })
+    $blocks = @(Get-ManifestBlocks -Output $peakAllUpRun.Output | Where-Object { $_ -match '(?m)^kind: ConfigMap\s*$' -and $_ -match '(?m)^  name:\s*go-svc-login-config\s*$' })
     Assert-Equal -Expected $expectedZoneIds.Count -Actual $blocks.Count -Because '每个 zone 各有一份 go-svc-login-config'
     $zoneIds = @()
     $lockKeys = @()
@@ -2894,8 +2895,8 @@ Test-Case 'mysql-connection-alerts.yaml:PrometheusRule 形状,额外库数阈值
 # Assert-RedisCoreRestartConfirmed 读集群的那一步(Get-LiveRedisCoreTemplateDigest)在用例里给替身;写路径打印与 DryRun 产物用
 # $devOut(zone-up)/ $battleInfraRun(infra-up)核对;包装入口的透传照上面 GateRouterMode 的做法。全部不碰任何集群。
 $redisLedgerFunctionNames = @(
-    'Get-RedisConnectionPlan', 'Get-RedisMaxClientsFromManifest', 'Get-RedisConnectionLedgerInputs', 'Get-RedisConnectionLedger',
-    'Get-RedisPodTemplateDigest', 'Get-RedisCoreRestartVerdict', 'Assert-RedisCoreRestartConfirmed'
+    'Get-RedisConnectionPlan', 'Get-RedisMaxClientsFromManifest', 'Get-RedisPoolMirror', 'Get-RedisConnectionLedgerInputs', 'Get-RedisConnectionLedger',
+    'Get-RedisPodTemplateDigest', 'Get-RedisCoreRestartVerdict', 'Assert-RedisCoreRestartConfirmed', 'Get-LiveRedisCoreTemplateDigest'
 )
 foreach ($redisLedgerFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
     if ($redisLedgerFunctionNames -contains $redisLedgerFnAst.Name) {
@@ -2958,24 +2959,62 @@ Test-Case 'Redis 连接总账:规划档峰值 ≤ 80% × redis.yaml 的 MAXCLIEN
     Assert-True -Condition ($ledger.Peak -le $line80) -Because ("规划档(zones={0})峰值 {1} 超过 80% × maxclients = {2}:要么收紧连接(显式 PoolSize、减副本),要么在维护窗口抬高 redis.yaml 的 MAXCLIENTS(先在线 CONFIG SET)。分项:{3}" -f $plan.ZoneCount, $ledger.Peak, $line80, (Format-RedisConnectionLedger -Ledger $ledger))
 }
 
-Test-Case 'Redis 总账输入:客户端表的副本数就是各 manifest 的 replicas;每个 Go 服务 manifest 的 CPU limit ≤ 表里的 GOMAXPROCS(按 2 记的前提)' {
+Test-Case 'Redis 总账输入:客户端表的副本数就是各 manifest 的 replicas;显式 PoolSize 的行等于服务 yaml 的值;有缺省池的 Go 服务 manifest 的 CPU limit ≤ 表里的 GOMAXPROCS(按 2 记的前提)' {
     $RepoRoot = Get-RepoRoot
     $inputs = Get-RedisConnectionLedgerInputs
-    Assert-Equal -Expected 10 -Actual $inputs.GoPoolSizePerProc -Because 'go-redis v9 的 PoolSize 缺省 = 10 × GOMAXPROCS'
+    Assert-Equal -Expected 10 -Actual $inputs.GoPoolSizePerProc -Because 'go-redis v9 的 PoolSize 缺省 = 10 × GOMAXPROCS(只用于还没显式池上限的 DefaultPools)'
     Assert-Equal -Expected 1 -Actual $inputs.CppConnectionsPerProcess -Because 'C++ 每进程 1 条(node.cpp 唯一的 tlsRedis.Connect)'
     $names = @($inputs.Clients | ForEach-Object { $_.Name })
-    foreach ($expectedName in @('login', 'db', 'data-service', 'player-locator', 'scene-manager', 'gateway', 'match', 'chat', 'friend', 'trade')) {
+    foreach ($expectedName in @('login', 'db', 'data-service', 'player-locator', 'scene-manager', 'gateway', 'match', 'chat', 'friend', 'trade', 'guild', 'player-inbox')) {
         Assert-True -Condition ($names -contains $expectedName) -Because "客户端表里必须有 $expectedName(它连着共享 Redis;不连了要先改代码再删这一行)"
     }
+    # player-inbox(go/player_inbox/internal/svc/servicecontext.go openCoreRedis):全局一份、核心 Redis 一个 go-redis 池(CoreRedis.PoolSize,
+    # 池上限的出处在下面 $explicitPools 里核)、没有 Pub/Sub;围栏上界、在线提醒与选主锁共用这一个客户端。改成多个池或加订阅时这里先变红,逼着同改总账那一行。
+    $inbox = @($inputs.Clients | Where-Object { $_.Name -eq 'player-inbox' })
+    Assert-Equal -Expected 1 -Actual $inbox.Count -Because '客户端表里 player-inbox 只能有一行'
+    Assert-Equal -Expected 'global/0/0/0' -Actual ('{0}/{1}/{2}/{3}' -f $inbox[0].Scope, $inbox[0].DefaultPools, $inbox[0].PubSub, $inbox[0].Fixed) `
+        -Because 'player-inbox 每副本 = 1 个显式 PoolSize 的 go-redis 池,没有缺省大小的池、Pub/Sub 与固定连接,按全局计'
+
+    # 显式 PoolSize 的 go-redis 直连池(P0-E 第 3 批):ConfiguredPoolConns 必须等于服务 yaml 里那个键的值(这里独立读,不经被测函数),
+    # 且是正整数;这几个服务剩下的缺省大小池只有 data-service 的 go-zero MappingRedis。换键名、拆成多个池、或删掉显式值时这里先变红。
+    $explicitPools = @(
+        @{ Name = 'login'; Source = 'go/login/etc/login.yaml'; KeyPath = 'Node.RedisClient.PoolSize'; DefaultPools = 0 }
+        @{ Name = 'db'; Source = 'go/db/etc/db.yaml'; KeyPath = 'ServerConfig.RedisClient.PoolSize'; DefaultPools = 0 }
+        @{ Name = 'data-service'; Source = 'go/data_service/etc/data_service.yaml'; KeyPath = 'DevRedis.PoolSize'; DefaultPools = 1 }
+        @{ Name = 'player-locator'; Source = 'go/player_locator/etc/player_locator.yaml'; KeyPath = 'RedisClient.PoolSize'; DefaultPools = 0 }
+        @{ Name = 'trade'; Source = 'go/trade/etc/trade.yaml'; KeyPath = 'SharedRedis.PoolSize'; DefaultPools = 0 }
+        @{ Name = 'guild'; Source = 'go/guild/etc/guild.yaml'; KeyPath = @('RedisClient.PoolSize', 'PlayerLocatorRedis.PoolSize', 'MergeMarkerRedis.PoolSize'); DefaultPools = 0 }
+        @{ Name = 'player-inbox'; Source = 'go/player_inbox/etc/player_inbox.yaml'; KeyPath = 'CoreRedis.PoolSize'; DefaultPools = 0 }
+    )
+    $explicitNames = @($explicitPools | ForEach-Object { $_.Name })
+    foreach ($pool in $explicitPools) {
+        $row = @($inputs.Clients | Where-Object { $_.Name -eq $pool.Name })
+        Assert-Equal -Expected 1 -Actual $row.Count -Because "客户端表里 $($pool.Name) 只能有一行"
+        $expected = 0
+        foreach ($poolKey in @($pool.KeyPath)) {
+            $raw = Get-EtcValue -RelativePath $pool.Source -KeyPath $poolKey
+            $poolValue = 0
+            Assert-True -Condition ([int]::TryParse([string]$raw, [ref]$poolValue) -and $poolValue -gt 0) -Because "$($pool.Source) 的 $poolKey='$raw' 必须显式写正整数(0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,随 CPU limit 漂)"
+            $expected += $poolValue
+        }
+        Assert-Equal -Expected $expected -Actual $row[0].ConfiguredPoolConns -Because "$($pool.Name) 的显式池上限必须读自 $($pool.Source) 的 $($pool.KeyPath)(ConfigMap 镜像同一个键)"
+        Assert-Equal -Expected $pool.DefaultPools -Actual $row[0].DefaultPools -Because "$($pool.Name) 剩下的缺省大小池个数(data-service 只剩 go-zero 的 MappingRedis)"
+    }
+    foreach ($client in $inputs.Clients) {
+        if ($explicitNames -contains $client.Name) { continue }
+        Assert-Equal -Expected 0 -Actual $client.ConfiguredPoolConns -Because "$($client.Name) 没有 PoolMirror,ConfiguredPoolConns 只能是 0(显式池上限必须有服务 yaml 出处)"
+    }
+
     foreach ($client in $inputs.Clients) {
         $manifestText = [IO.File]::ReadAllText((Join-Path (Get-RepoRoot) $client.Manifest)) -replace "`r`n", "`n"
         $replicas = [regex]::Matches($manifestText, '(?m)^  replicas:[ \t]*(\d+)[ \t]*$')
         Assert-Equal -Expected 1 -Actual $replicas.Count -Because "$($client.Manifest) 里两格缩进的 replicas 行应恰好 1 处"
         Assert-Equal -Expected $replicas[0].Groups[1].Value -Actual $client.Replicas -Because "$($client.Name) 的副本数必须读自 $($client.Manifest)"
-        if ($client.GoPools -le 0) { continue }
+        if ($client.DefaultPools -le 0) { continue }
 
         # G(GOMAXPROCS)按 2 记的前提:Go 1.25+ 容器感知按 CPU limit 向上取整、下限 2(外部常识,待 S6 实测)。limit 超过 G 核,
-        # 这一列就低估了池上限 —— 在这里变红,逼着重算总账(或给该服务显式 PoolSize,第 3 批)。
+        # 缺省池这一列就低估了池上限 —— 在这里变红,逼着重算总账(或给该服务显式 PoolSize,见上面的 $explicitPools)。
+        # 显式 PoolSize 的池不随 CPU limit 变,不在这里核。
         $lines = $manifestText -split "`n"
         $cpuLimits = New-Object System.Collections.Generic.List[double]
         for ($i = 0; $i -lt $lines.Count; $i++) {
@@ -2998,8 +3037,9 @@ Test-Case 'Redis 总账输入:客户端表的副本数就是各 manifest 的 rep
 }
 
 Test-Case '自检:Redis 总账公式逐项可复现,滚动余量只按「每副本之和」计,输入非法即 throw 并点名' {
-    # 合成输入:每一项取互不相同的值,任何一项漏算、zone / global 接反、PubSub 或 Fixed 漏加,结果都对不上。不读仓库文件。
-    #   zoneA 每副本 = 1 × 10 × 2 + 1 = 21;zoneB = 2 × 10 × 3 = 60;zoneJ(非 Go)= 2;globalA = 1 × 10 × 1 = 10;globalB = 1 × 10 × 2 + 1 = 21
+    # 合成输入:每一项取互不相同的值,任何一项漏算、zone / global 接反、显式池 / PubSub / Fixed 漏加,结果都对不上。不读仓库文件。
+    #   zoneA(只有显式池,GOMAXPROCS 写 0 也合法)每副本 = 20 + 1 = 21;zoneB = 2 × 10 × 3 = 60;zoneJ(非 Go)= 2;
+    #   globalA = 1 × 10 × 1 = 10;globalB(显式池 + 缺省池混合)= 10 + 1 × 10 × 1 + 1 = 21
     #   每 zone = 2 × 21 + 3 × 60 + 4 × 2 = 230;全局 = 5 × 10 + 2 × 21 + battle 3 × 1 = 95
     #   稳态 = 3 × 230 + C++ 20 × 1 + 95 = 805;滚动余量 = 2 × (21 + 60 + 2 + 10 + 21 + 3 × 1) = 234
     #   峰值 = 805 + 234 + 运维 7 = 1046;告警水位 = ⌊1000 × 0.8⌋ = 800;余量 = 1000 − 1046 = −46
@@ -3007,11 +3047,11 @@ Test-Case '自检:Redis 总账公式逐项可复现,滚动余量只按「每副�
         [ordered]@{
             MaxClients = 1000; GoPoolSizePerProc = 10; CppConnectionsPerProcess = 1
             Clients = @(
-                [ordered]@{ Name = 'zoneA'; Scope = 'zone'; Replicas = 2; GoPools = 1; GoMaxProcs = 2; PubSub = 1; Fixed = 0 }
-                [ordered]@{ Name = 'zoneB'; Scope = 'zone'; Replicas = 3; GoPools = 2; GoMaxProcs = 3; PubSub = 0; Fixed = 0 }
-                [ordered]@{ Name = 'zoneJ'; Scope = 'zone'; Replicas = 4; GoPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 2 }
-                [ordered]@{ Name = 'globalA'; Scope = 'global'; Replicas = 5; GoPools = 1; GoMaxProcs = 1; PubSub = 0; Fixed = 0 }
-                [ordered]@{ Name = 'globalB'; Scope = 'global'; Replicas = 2; GoPools = 1; GoMaxProcs = 2; PubSub = 1; Fixed = 0 }
+                [ordered]@{ Name = 'zoneA'; Scope = 'zone'; Replicas = 2; ConfiguredPoolConns = 20; DefaultPools = 0; GoMaxProcs = 0; PubSub = 1; Fixed = 0 }
+                [ordered]@{ Name = 'zoneB'; Scope = 'zone'; Replicas = 3; ConfiguredPoolConns = 0; DefaultPools = 2; GoMaxProcs = 3; PubSub = 0; Fixed = 0 }
+                [ordered]@{ Name = 'zoneJ'; Scope = 'zone'; Replicas = 4; ConfiguredPoolConns = 0; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 2 }
+                [ordered]@{ Name = 'globalA'; Scope = 'global'; Replicas = 5; ConfiguredPoolConns = 0; DefaultPools = 1; GoMaxProcs = 1; PubSub = 0; Fixed = 0 }
+                [ordered]@{ Name = 'globalB'; Scope = 'global'; Replicas = 2; ConfiguredPoolConns = 10; DefaultPools = 1; GoMaxProcs = 1; PubSub = 1; Fixed = 0 }
             )
         }
     }
@@ -3035,6 +3075,10 @@ Test-Case '自检:Redis 总账公式逐项可复现,滚动余量只按「每副�
     $zeroConnections.Clients[2]['Fixed'] = 0
     $poolWithoutProcs = & $newInputs
     $poolWithoutProcs.Clients[3]['GoMaxProcs'] = 0
+    $negativeConfiguredPool = & $newInputs
+    $negativeConfiguredPool.Clients[0]['ConfiguredPoolConns'] = -1
+    $missingConfiguredPool = & $newInputs
+    $missingConfiguredPool.Clients[4].Remove('ConfiguredPoolConns')
     $noClients = & $newInputs
     $noClients['Clients'] = @()
     foreach ($bad in @(
@@ -3042,7 +3086,9 @@ Test-Case '自检:Redis 总账公式逐项可复现,滚动余量只按「每副�
         @{ Why = '副本数为负'; Inputs = $negativeReplicas; Pattern = 'Redis 连接总账.*客户端 zoneA 的 Replicas=' }
         @{ Why = 'Scope 大小写不对'; Inputs = $badScope; Pattern = "Redis 连接总账.*客户端 zoneB 的 Scope='Zone'" }
         @{ Why = '每副本 0 条'; Inputs = $zeroConnections; Pattern = 'Redis 连接总账.*客户端 zoneJ 每副本 0 条连接' }
-        @{ Why = '有 Go 池却没有 GOMAXPROCS'; Inputs = $poolWithoutProcs; Pattern = 'Redis 连接总账.*客户端 globalA .*GoMaxProcs 必须为正' }
+        @{ Why = '有缺省大小的 Go 池却没有 GOMAXPROCS'; Inputs = $poolWithoutProcs; Pattern = 'Redis 连接总账.*客户端 globalA .*GoMaxProcs 必须为正' }
+        @{ Why = '显式池上限为负'; Inputs = $negativeConfiguredPool; Pattern = 'Redis 连接总账.*客户端 zoneA 的 ConfiguredPoolConns=' }
+        @{ Why = '缺 ConfiguredPoolConns(不能当成 0)'; Inputs = $missingConfiguredPool; Pattern = 'Redis 连接总账.*客户端 globalB 的 ConfiguredPoolConns=' }
         @{ Why = '客户端表为空'; Inputs = $noClients; Pattern = 'Redis 连接总账.*Clients 为空' }
     )) {
         $message = ''
@@ -3054,6 +3100,111 @@ Test-Case '自检:Redis 总账公式逐项可复现,滚动余量只按「每副�
     $message = ''
     try { Get-RedisConnectionLedger -Inputs (& $newInputs) @badRatio | Out-Null } catch { $message = $_.Exception.Message }
     Assert-Match -Text $message -Pattern 'WarnRatio=1\.5 必须在 \(0, 1\] 内' -Because '告警比例越界必须 throw'
+}
+
+Test-Case 'ConfigMap 镜像 go-redis 池上限 PoolSize == 服务 yaml(zone-up:login / db / data-service / player-locator;infra-up:trade / player-inbox),Redis 连接总账读同一个键' {
+    # P0-E 第 3 批:这几个 go-redis 直连客户端以前不设 PoolSize,池上限 = 10 × GOMAXPROCS,跟着 CPU limit 漂,总账只能按 G=2 估。
+    # 现在服务 yaml 写显式值,ConfigMap 镜像同一个键(Get-RedisPoolMirror),总账读同一个键。镜像漏写时 go-zero 按 0 加载 =
+    # 回到缺省池,集群跑的就不是账上的数,而且没有任何报错。
+    $zoneMirrors = @(
+        @{ ConfigMap = 'go-svc-login-config'; Prefix = 'data.login.yaml.'; Source = 'go/login/etc/login.yaml'; KeyPath = 'Node.RedisClient.PoolSize' }
+        @{ ConfigMap = 'go-svc-db-config'; Prefix = 'data.db.yaml.'; Source = 'go/db/etc/db.yaml'; KeyPath = 'ServerConfig.RedisClient.PoolSize' }
+        @{ ConfigMap = 'go-svc-data-service-config'; Prefix = 'data.data_service.yaml.'; Source = 'go/data_service/etc/data_service.yaml'; KeyPath = 'DevRedis.PoolSize' }
+        @{ ConfigMap = 'go-svc-player-locator-config'; Prefix = 'data.player_locator.yaml.'; Source = 'go/player_locator/etc/player_locator.yaml'; KeyPath = 'RedisClient.PoolSize' }
+    )
+    foreach ($mirror in $zoneMirrors) {
+        $block = Select-ManifestByName -Output $devOut -Name $mirror.ConfigMap
+        Assert-True -Condition ($null -ne $block) -Because "DryRun 输出里应当有 $($mirror.ConfigMap)"
+        $flat = ConvertTo-FlatManifest -Block $block
+        $expected = Get-EtcValue -RelativePath $mirror.Source -KeyPath $mirror.KeyPath
+        $actual = Get-FlatValue -Flat $flat -KeyPath ($mirror.Prefix + $mirror.KeyPath)
+        Assert-Equal -Expected $expected -Actual $actual -Because "$($mirror.ConfigMap) 的 $($mirror.KeyPath) 必须与 $($mirror.Source) 一致(生成器不得自带常数;Redis 连接总账读的是同一个键)"
+    }
+
+    # trade 是全局服务,只在 infra-up / all-up 的基础设施阶段生成:做法同上面「连 MySQL 的 ConfigMap 只有总账认识的那些」那次 infra-up
+    # (去掉 -SkipGoSvc / -WaitReady、补 -GoSvcRegistry,仍是 DryRun)。
+    $infraArgs = @($BattleInfraArgs | Where-Object { $_ -notin @('-SkipGoSvc', '-WaitReady') }) + @('-GoSvcRegistry', 'registry.invalid/test')
+    Assert-True -Condition (($infraArgs -contains '-DryRun') -and -not ($infraArgs -contains '-SkipGoSvc')) -Because '夹具前提:这次 infra-up 必须仍是 DryRun(不碰任何集群),且不再跳过 Go 服务'
+    $infraRun = Invoke-DeployDryRun -Arguments $infraArgs -Env $BattleTestEnv
+    Assert-Equal -Expected 0 -Actual $infraRun.ExitCode -Because "带全局 Go 服务的 infra-up DryRun 必须成功。输出: $($infraRun.Output)"
+    $tradeBlock = Select-ManifestByName -Output $infraRun.Output -Name 'go-svc-trade-config'
+    Assert-True -Condition ($null -ne $tradeBlock) -Because 'infra-up DryRun 输出里应当有 go-svc-trade-config'
+    $tradeFlat = ConvertTo-FlatManifest -Block $tradeBlock
+    Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/trade/etc/trade.yaml' -KeyPath 'SharedRedis.PoolSize') `
+        -Actual (Get-FlatValue -Flat $tradeFlat -KeyPath 'data.trade.yaml.SharedRedis.PoolSize') `
+        -Because 'go-svc-trade-config 的 SharedRedis.PoolSize 必须与 go/trade/etc/trade.yaml 一致(Redis 连接总账读的是同一个键)'
+    $inboxBlock = Select-ManifestByName -Output $infraRun.Output -Name 'go-svc-player-inbox-config'
+    Assert-True -Condition ($null -ne $inboxBlock) -Because 'infra-up DryRun 输出里应当有 go-svc-player-inbox-config'
+    $inboxFlat = ConvertTo-FlatManifest -Block $inboxBlock
+    Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/player_inbox/etc/player_inbox.yaml' -KeyPath 'CoreRedis.PoolSize') `
+        -Actual (Get-FlatValue -Flat $inboxFlat -KeyPath 'data.player_inbox.yaml.CoreRedis.PoolSize') `
+        -Because 'go-svc-player-inbox-config 的 CoreRedis.PoolSize 必须与 go/player_inbox/etc/player_inbox.yaml 一致(Redis 连接总账读的是同一个键)'
+}
+
+# go-redis 池上限镜像(Get-RedisPoolMirror)读的服务配置。夹具用例把它们拷到临时目录再逐项改坏,不碰仓库。
+$redisPoolMirrorFixtureFiles = @(
+    'go/login/etc/login.yaml'
+    'go/db/etc/db.yaml'
+    'go/data_service/etc/data_service.yaml'
+    'go/player_locator/etc/player_locator.yaml'
+    'go/trade/etc/trade.yaml'
+    'go/guild/etc/guild.yaml'
+    'go/player_inbox/etc/player_inbox.yaml'
+)
+
+Test-Case '负向:服务 yaml 的 go-redis PoolSize 不是正整数时 Get-RedisPoolMirror throw 并点名文件与键路径,总账输入同样 throw(夹具是临时目录里的副本,不碰仓库)' {
+    # 0 在 Go 侧 = go-redis 缺省 10 × GOMAXPROCS(负数拒启):镜像一个 0 进 ConfigMap,集群里生效的就不是写出来的值,总账也不是集群的账。
+    # 总账输入(Get-RedisConnectionLedgerInputs)由写路径入口的 Write-RedisConnectionLedger 先于任何集群写操作调用,它 throw 就不留半截部署。
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('redis-pool-mirror-' + [guid]::NewGuid().ToString('N'))
+    $resetFixture = {
+        foreach ($rel in $redisPoolMirrorFixtureFiles) {
+            $dst = Join-Path $tempRoot $rel
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dst) | Out-Null
+            Copy-Item -LiteralPath (Join-Path (Get-RepoRoot) $rel) -Destination $dst -Force
+        }
+    }
+    try {
+        # 总账输入还要读各 manifest 的副本数与 redis.yaml 的 MAXCLIENTS:整棵 deploy/k8s/manifests 拷一次(夹具只改服务 yaml)。
+        $k8sDir = Join-Path $tempRoot 'deploy/k8s'
+        New-Item -ItemType Directory -Force -Path $k8sDir | Out-Null
+        Copy-Item -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/manifests') -Destination $k8sDir -Recurse -Force
+        # Get-AuthoritativeScalar / Get-ManifestDeploymentReplicas 按动态作用域读 $RepoRoot(在 k8s_deploy.ps1 里是脚本级变量)。
+        $RepoRoot = $tempRoot
+        # 前提:副本不改就该放行,且每个目标恰好一个正整数池上限。否则下面几条负向断言分不清是谁造成的失败。
+        & $resetFixture
+        foreach ($target in @('login', 'db', 'data-service', 'player-locator', 'trade', 'guild', 'player-inbox')) {
+            $values = Get-RedisPoolMirror -Target $target
+            $expectedPoolCount = if ($target -eq 'guild') { 3 } else { 1 }
+            Assert-Equal -Expected $expectedPoolCount -Actual $values.Count -Because "前提:$target 的显式池数量必须与真实客户端匹配"
+            foreach ($poolSize in $values.Values) { Assert-True -Condition ($poolSize -gt 0) -Because "前提:仓库里 $target 的 PoolSize 是正整数" }
+        }
+        [void](Get-RedisConnectionLedgerInputs)
+
+        foreach ($bad in @(
+            @{ Why = 'login 写 0(= go-redis 缺省池)'; Target = 'login'; File = 'go/login/etc/login.yaml'; KeyPath = 'Node.RedisClient.PoolSize'; Value = '0' }
+            @{ Why = 'db 写负数'; Target = 'db'; File = 'go/db/etc/db.yaml'; KeyPath = 'ServerConfig.RedisClient.PoolSize'; Value = '-1' }
+            @{ Why = 'data-service 写非数字'; Target = 'data-service'; File = 'go/data_service/etc/data_service.yaml'; KeyPath = 'DevRedis.PoolSize'; Value = 'twenty' }
+            @{ Why = 'player-locator 写小数'; Target = 'player-locator'; File = 'go/player_locator/etc/player_locator.yaml'; KeyPath = 'RedisClient.PoolSize'; Value = '20.5' }
+            @{ Why = 'trade 写 0'; Target = 'trade'; File = 'go/trade/etc/trade.yaml'; KeyPath = 'SharedRedis.PoolSize'; Value = '0' }
+            @{ Why = 'guild 全局池写0'; Target = 'guild'; File = 'go/guild/etc/guild.yaml'; KeyPath = 'RedisClient.PoolSize'; Value = '0' }
+            @{ Why = 'guild 在线池写负数'; Target = 'guild'; File = 'go/guild/etc/guild.yaml'; KeyPath = 'PlayerLocatorRedis.PoolSize'; Value = '-1' }
+            @{ Why = 'guild 合服标记池写非数字'; Target = 'guild'; File = 'go/guild/etc/guild.yaml'; KeyPath = 'MergeMarkerRedis.PoolSize'; Value = 'twenty' }
+            @{ Why = 'player-inbox 写 0'; Target = 'player-inbox'; File = 'go/player_inbox/etc/player_inbox.yaml'; KeyPath = 'CoreRedis.PoolSize'; Value = '0' }
+        )) {
+            & $resetFixture
+            Set-FixtureYamlScalar -Path (Join-Path $tempRoot $bad.File) -KeyPath $bad.KeyPath -Value $bad.Value
+            $message = ''
+            try { Get-RedisPoolMirror -Target $bad.Target | Out-Null } catch { $message = $_.Exception.Message }
+            Assert-Match -Text $message -Pattern 'Redis 连接池镜像' -Because "$($bad.Why):必须 throw(fail-closed),不能把非法池值镜像进 ConfigMap"
+            Assert-Match -Text $message -Pattern ([regex]::Escape("$($bad.File) 的 $($bad.KeyPath)='$($bad.Value)'")) -Because "$($bad.Why):错误必须点名文件、键路径与值"
+            $message = ''
+            try { Get-RedisConnectionLedgerInputs | Out-Null } catch { $message = $_.Exception.Message }
+            Assert-Match -Text $message -Pattern 'Redis 连接池镜像' -Because "$($bad.Why):总账输入同样必须 throw(写路径入口先于任何集群写操作读它)"
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 Test-Case '部署写路径打印 Redis connection ledger:zone-up 的数字可按同一组函数重算,zones= 与 MySQL 那一行相同,先于任何 kubectl 写操作;infra-up 同样打印一行' {
@@ -3105,10 +3256,14 @@ Test-Case '部署写路径打印 Redis connection ledger:zone-up 的数字可按
     }
 }
 
-Test-Case '重启闸纯判定:线上不存在 → absent(放行),摘要相同 → unchanged(放行),摘要不同或线上没有注解 → restart(要确认)' {
+Test-Case '重启闸纯判定:线上不存在 → absent(放行),只剩旧 Deployment → legacy-deployment(要确认),摘要相同 → unchanged(放行),摘要不同或线上没有注解 → restart(要确认)' {
     foreach ($case in @(
         @{ Exists = $false; Live = ''; Desired = 'abcdef0123456789'; Verdict = 'absent' }
         @{ Exists = $false; Live = '0000000000000000'; Desired = 'abcdef0123456789'; Verdict = 'absent' }
+        @{ Exists = $false; Legacy = $false; Live = ''; Desired = 'abcdef0123456789'; Verdict = 'absent' }
+        @{ Exists = $false; Legacy = $true; Live = ''; Desired = 'abcdef0123456789'; Verdict = 'legacy-deployment' }
+        # 有 sts 时旧 Deployment 那一项不参与判定(不该同时出现;出现了也按 sts 的摘要判)。
+        @{ Exists = $true; Legacy = $true; Live = 'abcdef0123456789'; Desired = 'abcdef0123456789'; Verdict = 'unchanged' }
         @{ Exists = $true; Live = 'abcdef0123456789'; Desired = 'abcdef0123456789'; Verdict = 'unchanged' }
         @{ Exists = $true; Live = ' abcdef0123456789 '; Desired = 'abcdef0123456789'; Verdict = 'unchanged' }
         @{ Exists = $true; Live = '0000000000000000'; Desired = 'abcdef0123456789'; Verdict = 'restart' }
@@ -3117,7 +3272,14 @@ Test-Case '重启闸纯判定:线上不存在 → absent(放行),摘要相同 �
         @{ Exists = $true; Live = $null; Desired = 'abcdef0123456789'; Verdict = 'restart' }
     )) {
         $liveText = if ($null -eq $case.Live) { '<null>' } else { "'$($case.Live)'" }
-        Assert-Equal -Expected $case.Verdict -Actual (Get-RedisCoreRestartVerdict -LiveExists $case.Exists -LiveDigest $case.Live -DesiredDigest $case.Desired) -Because "线上存在=$($case.Exists) 注解=$liveText → 本次 $($case.Desired):没有注解按「要确认」处理(P0-E 之前部署的实例,第一次 apply 一定重启)"
+        # 不带 Legacy 键的行:不传 -LegacyDeployment,同时钉住它的缺省值(旧调用方不受影响)。
+        $verdict = if ($case.ContainsKey('Legacy')) {
+            Get-RedisCoreRestartVerdict -LiveExists $case.Exists -LiveDigest $case.Live -DesiredDigest $case.Desired -LegacyDeployment $case.Legacy
+        }
+        else {
+            Get-RedisCoreRestartVerdict -LiveExists $case.Exists -LiveDigest $case.Live -DesiredDigest $case.Desired
+        }
+        Assert-Equal -Expected $case.Verdict -Actual $verdict -Because "线上存在=$($case.Exists) 旧 Deployment=$($case.Legacy) 注解=$liveText → 本次 $($case.Desired):没有注解按「要确认」处理(P0-E 之前部署的实例,第一次 apply 一定重启);只剩旧 Deployment 时 apply 会删它(停机、数据不迁移),同样要确认"
     }
 }
 
@@ -3169,6 +3331,89 @@ Test-Case '负向:重启闸要确认时 throw,错误写明「apply 会重启 red
     $stubLive = [pscustomobject]@{ Exists = $true; Digest = '0000000000000000' }
     Assert-RedisCoreRestartConfirmed -DesiredDigest $desired
     Assert-Equal -Expected 5 -Actual $queries.Value -Because 'DryRun 不连集群,重启闸只打一行说明'
+}
+
+Test-Case '负向:线上只剩旧 Deployment redis(2026-09-19 之前的形态)时重启闸拒绝,写明停机切换、数据不迁移并点名 -ConfirmRedisCoreRestart;给了开关只告警放行' {
+    # 以前这种集群被判成「全新集群」放行,随后 Apply-Infra 无确认地 delete deployment redis(emptyDir,数据清空)。
+    $InfraNamespace = 'contract-redis-gate'
+    $desired = 'abcdef0123456789'
+    $DryRun = $false
+    function Get-LiveRedisCoreTemplateDigest {
+        param([string]$Namespace)
+        return [pscustomobject]@{ Exists = $false; Digest = ''; LegacyDeployment = $true }
+    }
+
+    $ConfirmRedisCoreRestart = $false
+    $message = ''
+    try { Assert-RedisCoreRestartConfirmed -DesiredDigest $desired } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern '还有旧的 deployment/redis' -Because '拒绝文本必须点明线上是旧 Deployment,不是「摘要不同」'
+    Assert-Match -Text $message -Pattern '不迁移' -Because '切 StatefulSet 时 emptyDir 里的数据不迁移,拒绝文本必须说清'
+    Assert-Match -Text $message -Pattern '本次未做任何写操作' -Because '闸在 Apply-Infra 的任何写操作(含 delete deployment redis)之前'
+    Assert-Match -Text $message -Pattern '-ConfirmRedisCoreRestart' -Because '拒绝文本必须点名确认开关'
+    Assert-Match -Text $message -Pattern ([regex]::Escape("namespace=$InfraNamespace")) -Because '拒绝文本必须点名 namespace'
+
+    $ConfirmRedisCoreRestart = $true
+    $warning = (Assert-RedisCoreRestartConfirmed -DesiredDigest $desired 3>&1 | Out-String)
+    Assert-Match -Text $warning -Pattern '\[RedisCoreRestart\]Confirmed:[^\n]*legacy deployment/redis' -Because '给了开关放行,但要留一条告警说明这次会删旧 Deployment'
+}
+
+Test-Case '重启闸读线上(Get-LiveRedisCoreTemplateDigest):kubectl 失败一律 throw(fail-closed);没有 sts 时再查旧 Deployment;有 sts 时读出摘要注解、不查 Deployment' {
+    # 被测函数按 AST 抽出(见本节开头),它读 $script:RedisPodTemplateDigestAnnotation:键名同样按 AST 取,不抄字面量。
+    $annotationAssign = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.AssignmentStatementAst] -and $a.Left.Extent.Text -eq '$script:RedisPodTemplateDigestAnnotation' }, $true)
+    Assert-True -Condition ($null -ne $annotationAssign) -Because 'k8s_deploy.ps1 里应当有 $script:RedisPodTemplateDigestAnnotation'
+    $script:RedisPodTemplateDigestAnnotation = $annotationAssign.Right.Extent.Text.Trim().Trim("'", '"')
+    $digest = 'abcdef0123456789'
+    $stsJson = '{"metadata":{"name":"redis","annotations":{"' + $script:RedisPodTemplateDigestAnnotation + '":"' + $digest + '"}}}'
+
+    # 假 kubectl:函数优先于外部程序,被测函数里的 `& kubectl` 解析到这里(按动态作用域)。按资源种类回应 $fake 里的
+    # { Exit; Out },退出码经 $global:LASTEXITCODE 交回(被测函数读它)。每次调用记一行参数。
+    function Build-KubectlBaseArgs { return , @() }
+    $kubectlCalls = [System.Collections.Generic.List[string]]::new()
+    function kubectl {
+        $line = $args -join ' '
+        $kubectlCalls.Add($line)
+        $reply = if ($line -match '\bstatefulset\b') { $fake.Sts } elseif ($line -match '\bdeployment\b') { $fake.Deploy } else { throw "假 kubectl:意料之外的调用 kubectl $line" }
+        $global:LASTEXITCODE = [int]$reply.Exit
+        return $reply.Out
+    }
+    try {
+        # 查 sts 失败:throw,不再往下查(查不到不等于不存在)。
+        $fake = @{ Sts = @{ Exit = 1; Out = '' }; Deploy = @{ Exit = 0; Out = '' } }
+        $kubectlCalls.Clear(); $message = ''
+        try { Get-LiveRedisCoreTemplateDigest -Namespace 'contract-ns' | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '查询线上 StatefulSet redis 失败' -Because 'kubectl 失败按 fail-closed 处理;当成「不存在」会把要重启误判成全新集群放行'
+        Assert-Equal -Expected 1 -Actual $kubectlCalls.Count -Because '查 sts 失败就停,不再查 Deployment'
+        Assert-Match -Text $kubectlCalls[0] -Pattern 'get statefulset redis -n contract-ns --ignore-not-found -o json' -Because '读的是指定 namespace 的 sts/redis,不存在时输出为空而不是报错'
+
+        # 没有 sts,查 Deployment 失败:同样 throw。
+        $fake = @{ Sts = @{ Exit = 0; Out = '' }; Deploy = @{ Exit = 1; Out = '' } }
+        $kubectlCalls.Clear(); $message = ''
+        try { Get-LiveRedisCoreTemplateDigest -Namespace 'contract-ns' | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '查询线上 Deployment redis 失败' -Because '查旧 Deployment 失败同样 fail-closed'
+        Assert-Match -Text ($kubectlCalls -join "`n") -Pattern 'get deployment redis -n contract-ns --ignore-not-found' -Because '没有 sts 时要再查旧 Deployment'
+
+        # 没有 sts,有旧 Deployment → LegacyDeployment。
+        $fake = @{ Sts = @{ Exit = 0; Out = '' }; Deploy = @{ Exit = 0; Out = 'deployment.apps/redis' } }
+        $live = Get-LiveRedisCoreTemplateDigest -Namespace 'contract-ns'
+        Assert-True -Condition (-not $live.Exists -and $live.LegacyDeployment) -Because '线上只剩旧 Deployment redis 时必须报 LegacyDeployment,不能当成全新集群'
+
+        # 两样都没有 → 全新集群。
+        $fake = @{ Sts = @{ Exit = 0; Out = '' }; Deploy = @{ Exit = 0; Out = '' } }
+        $live = Get-LiveRedisCoreTemplateDigest -Namespace 'contract-ns'
+        Assert-True -Condition (-not $live.Exists -and -not $live.LegacyDeployment) -Because '两样都没有才是全新集群'
+
+        # 有 sts:读出注解里的摘要,不查 Deployment。
+        $fake = @{ Sts = @{ Exit = 0; Out = $stsJson }; Deploy = @{ Exit = 1; Out = '' } }
+        $kubectlCalls.Clear()
+        $live = Get-LiveRedisCoreTemplateDigest -Namespace 'contract-ns'
+        Assert-True -Condition ($live.Exists -and -not $live.LegacyDeployment) -Because '有 sts/redis 时存在、不是旧形态'
+        Assert-Equal -Expected $digest -Actual $live.Digest -Because '摘要取自 sts 自己 metadata 上的注解'
+        Assert-Equal -Expected 1 -Actual $kubectlCalls.Count -Because '有 sts 时不必再查 Deployment'
+    }
+    finally {
+        # 假 kubectl 改过全局退出码;复位,免得影响后面按 $LASTEXITCODE 判断的用例。
+        $global:LASTEXITCODE = 0
+    }
 }
 
 Test-Case 'Redis Pod 模板摘要只跟 Pod 模板走:改 YAML 注释、模板外的对象、换行风格都不变;改 MAXCLIENTS 或启动薄壳里的一行 shell 注释就变;没有 StatefulSet redis 即 throw' {
@@ -3224,6 +3469,36 @@ Test-Case 'infra-up DryRun:sts/redis 自己的 metadata 带 16 位模板摘要�
     $gateAt = $battleInfraRun.Output.IndexOf('Redis restart gate:')
     $firstWrite = [regex]::Match($battleInfraRun.Output, '\[dry-run\] kubectl [^\r\n]*\b(?:apply|delete|create|patch|replace)\b')
     Assert-True -Condition ($gateAt -ge 0 -and (-not $firstWrite.Success -or $gateAt -lt $firstWrite.Index)) -Because '重启闸必须先于 Apply-Infra 的任何写操作(Ensure-Namespace、删旧 Deployment、建 Secret、apply)'
+}
+
+Test-Case 'Apply-Infra 只读一次 redis.yaml:过闸算摘要、循环里 apply、-WaitReady 部署后核对的 MAXCLIENTS 都用同一份内容(AST 契约)' {
+    # DryRun 产物测不出「读了两次」:跑测期间文件不变,两次读的结果相同。这里按代码形状钉住修复(2026-10-16 审查 P0-E E3):
+    # 以前过闸读一次、循环里又 Get-Content 一次,两次之间文件被改时闸按旧内容放行而实际 apply 新模板。
+    $applyInfra = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Apply-Infra' }, $true)
+    Assert-True -Condition ($null -ne $applyInfra) -Because 'k8s_deploy.ps1 里应当有 Apply-Infra'
+    $commands = @($applyInfra.Body.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] }, $true))
+    $redisReads = @($commands | Where-Object { $_.GetCommandName() -eq 'Get-Content' -and $_.Extent.Text -match '\$redisManifestPath\b' })
+    Assert-Equal -Expected 1 -Actual $redisReads.Count -Because 'Apply-Infra 里只能有一处 Get-Content 读 redis.yaml($redisManifestPath)'
+    $loopUsesRendered = $applyInfra.Body.Find({ param($a) $a -is [System.Management.Automation.Language.AssignmentStatementAst] -and $a.Left.Extent.Text -eq '$manifestContent' -and $a.Right.Extent.Text.Trim() -eq '$redisManifestRendered' }, $true)
+    Assert-True -Condition ($null -ne $loopUsesRendered) -Because '循环里 redis.yaml 分支必须直接用过闸那一份($manifestContent = $redisManifestRendered),不重读文件'
+    # 修复前的第二次读就是循环里的 `Get-Content -Path $path`。只数 $redisManifestPath 看不见它,所以再钉住:循环里每一处读 $path 的
+    # Get-Content 都必须落在「redis.yaml 且已有 $redisManifestRendered」那个 if 的 else 分支里,redis.yaml 走不到它。
+    $loopReads = @($commands | Where-Object { $_.GetCommandName() -eq 'Get-Content' -and $_.Extent.Text -match '\$path\b' })
+    Assert-True -Condition ($loopReads.Count -ge 1) -Because '夹具前提:循环里其余 infra 清单仍按 $path 读文件'
+    foreach ($read in $loopReads) {
+        $guarded = $false
+        for ($node = $read.Parent; $null -ne $node -and -not [object]::ReferenceEquals($node, $applyInfra); $node = $node.Parent) {
+            if ($node -isnot [System.Management.Automation.Language.IfStatementAst] -or $null -eq $node.ElseClause) { continue }
+            $condition = $node.Clauses[0].Item1.Extent.Text
+            $inElse = $read.Extent.StartOffset -ge $node.ElseClause.Extent.StartOffset -and $read.Extent.EndOffset -le $node.ElseClause.Extent.EndOffset
+            if ($inElse -and $condition -match 'redis\.yaml' -and $condition -match '\$redisManifestRendered') { $guarded = $true; break }
+        }
+        Assert-True -Condition $guarded -Because "循环里的 $($read.Extent.Text) 必须只在「不是 redis.yaml 或开头没读到它」的 else 分支里执行,否则 redis.yaml 会被重读"
+    }
+    $digestFromRendered = @($commands | Where-Object { $_.GetCommandName() -eq 'Get-RedisPodTemplateDigest' -and $_.Extent.Text -match '-ManifestContent\s+\$redisManifestRendered\b' })
+    Assert-Equal -Expected 1 -Actual $digestFromRendered.Count -Because '重启闸的摘要必须对同一份 $redisManifestRendered 计算'
+    $maxFromRendered = @($commands | Where-Object { $_.GetCommandName() -eq 'Get-RedisMaxClientsFromManifest' -and $_.Extent.Text -match '-ManifestContent\s+\$redisManifestRendered\b' })
+    Assert-True -Condition ($maxFromRendered.Count -ge 1) -Because '-WaitReady 部署后核对的期望 MAXCLIENTS 必须取自同一份内容,不重新读盘'
 }
 
 # 包装入口透传 -ConfirmRedisCoreRestart:照上面 Invoke-GateRouterModePassthrough 的做法,只从 AST 取出透传函数,
@@ -3361,6 +3636,28 @@ Test-Case 'Java gateway 探针走独立管理端口:ConfigMap 的 management.ser
         Assert-Equal -Expected $managementPort -Actual (($probePort -split '=')[1]) -Because "gateway 的 $(($probePort -split '=')[0]) 必须打 ConfigMap 的 management.server.port"
     }
     Assert-Match -Text $block -Pattern ('containerPort: {0}\s+name: management' -f $managementPort) -Because '管理端口要在容器 ports 里声明(名 management),与探针端口一致'
+}
+Test-Case 'Java gateway JDBC 连接级超时:jar 内 URL 带正整数 connectTimeout / socketTimeout,ConfigMap 的 URL 原样镜像' {
+    # 2026-10-16:Hikari connection-timeout 只限取连接;没有 socketTimeout 时,已取到连接后的查询在半开 TCP / MDL 排队上
+    # 可以挂到内核重传放弃(约 15 分钟)。ServerListService / AssignGateService 的合并查询只有查库方自己能摘在途 future,
+    # 查库方挂住期间该副本上同类请求全部 3s 后回 5xx。修复前红:两份 URL 都不带这两个参数。
+    $paramsOf = {
+        param([string]$Url)
+        $params = @{}
+        $query = ($Url -split '\?', 2) | Select-Object -Skip 1 -First 1
+        foreach ($pair in @("$query" -split '&')) {
+            $kv = $pair -split '=', 2
+            if ($kv.Count -eq 2) { $params[$kv[0]] = $kv[1] }
+        }
+        return $params
+    }
+    $jarParams = & $paramsOf (Get-EtcValue -RelativePath 'java/gateway_node/src/main/resources/application.yaml' -KeyPath 'spring.datasource.url')
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'java-svc-gateway-config')
+    $cmParams = & $paramsOf (Get-FlatValue -Flat $flat -KeyPath 'data.application.yaml.spring.datasource.url')
+    foreach ($key in @('connectTimeout', 'socketTimeout')) {
+        Assert-Match -Text "$($jarParams[$key])" -Pattern '^[1-9][0-9]*$' -Because "jar 内 spring.datasource.url 必须带正整数的 $key(单一真相)"
+        Assert-Equal -Expected $jarParams[$key] -Actual $cmParams[$key] -Because "gateway ConfigMap 的 JDBC URL 的 $key 必须与 jar 内一致(生成器不得自带常数)"
+    }
 }
 Test-Case 'Java gateway 必须显式限制 JVM 堆并为 native 内存保留容器预算' {
     $block = Select-ManifestByName -Output $devOut -Name 'gateway'
@@ -3593,6 +3890,1640 @@ Test-Case '全服好友生产缺 TiDB 入口或入口非法时拒绝生成' {
         catch { $rejected = $_.Exception.Message -match 'FriendTiDBHost' }
         Assert-True -Condition $rejected -Because '不能把非法地址、凭据或额外配置写入 ConfigMap'
     }
+}
+
+# ─────────────────────────────────────────────────────────────────
+# ③ db 消费组按 zone 拆(S2;docs/design/db-consumer-group-per-zone.md §2 / §4,
+#    规格:docs/handoff/godb-pipeline-impl-20261015/S2-consumer-group-per-zone-addendum.md §2 / §3 / §12)
+# ─────────────────────────────────────────────────────────────────
+# go-svc-db-config 的组名键只有四种形状:final(G) 只写 GroupID;handoff(X←Y) 只写 ConsumerGroup + GroupHandoffFrom
+# (不写 GroupID:交接闸之前的 go/db 二进制在 MustLoad 拒启,这就是能力证明)。G、X、Y ∈ {L, Z}:L = go/db/etc/db.yaml 的
+# ServerConfig.Kafka.GroupID,Z = L + "_z" + ZoneId。复用 $devOut(基线 DryRun,缺省 keep),另起 5 个 DryRun 子进程:
+# zone、legacy 两次预览,all-up / zone-down 两次入口拒绝,一次多 zone all-up(keep)。决策表、形状解析、读集群的两个函数与写路径入口函数按 AST 从
+# k8s_deploy.ps1 抽出来直接调用(与上文 deadline 守卫同一做法);读集群的唯一出口 Invoke-ClientEntryKubectl 由本节的同名假函数
+# 顶替(函数先于外部命令解析,被抽函数按动态作用域找到它),没有规则命中的调用一律 throw,不碰任何集群。
+# DryRun 告警只断不含空格的片段(DbConsumerGroup=keep、dryrun-preview):Write-Warning 可能在空格处折行。
+# 前置:deploy/k8s/manifests/go-svc/db.yaml 的 Pod 模板带 PLACEHOLDER_DB_CONSUMER_GROUP / PLACEHOLDER_DB_GROUP_HANDOFF_FROM 两个占位
+# (缺占位时 Apply-OneGoSvc 对 db 拒绝部署,文件头的基线 DryRun 会先失败)。
+. (Join-Path (Get-ToolsScriptsDir) 'lib' 'kafka_consumer_groups.ps1')
+$DbGroupLegacy = Get-EtcValue -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.GroupID'
+$DbGroupZone = "${DbGroupLegacy}_z101"
+$DbGroupTopic = Get-DbTaskTopicName -ZoneId 101 -Generation ([int](Get-EtcValue -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.TopicGeneration'))
+$DbGroupPartitions = [int](Get-EtcValue -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.PartitionCnt')
+$DbGroupComment = '    # 消费组由 k8s_deploy.ps1 按 -DbConsumerGroup 与 Kafka 位点决定(docs/design/db-consumer-group-per-zone.md)'
+$DbGroupDescribeHeader = 'GROUP TOPIC PARTITION CURRENT-OFFSET LOG-END-OFFSET LAG CONSUMER-ID HOST CLIENT-ID'
+$DbGroupExecShell = "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group"
+
+$dbGroupFunctionNames = @(
+    'Assert-DbConsumerGroupName', 'ConvertFrom-LiveDbConsumerGroup', 'Test-DbConsumerGroupNeedsKafkaFacts', 'Resolve-DbConsumerGroupPlan',
+    'New-DbConsumerGroupYaml', 'Get-DbConsumerGroupPlan', 'Read-LiveDbConfigMapYaml', 'Read-DbGroupTopicFacts',
+    'Initialize-DbConsumerGroupPlans', 'Test-ZoneDbDeployed', 'Get-AuthoritativeScalar', 'Get-ZoneNamespace',
+    # all-up 分支取 zone 列表用(与 switch ($Command) 里的 Apply-Zone 同一来源)。
+    'Get-ZonesFromJson', 'Resolve-ZonesConfigPath'
+)
+foreach ($dbGroupFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($dbGroupFunctionNames -contains $dbGroupFnAst.Name) {
+        Set-Item -Path "Function:script:$($dbGroupFnAst.Name)" -Value $dbGroupFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($dbGroupFnName in $dbGroupFunctionNames) {
+    if (-not (Test-Path "Function:$dbGroupFnName")) { throw "k8s_deploy.ps1 缺少函数 ${dbGroupFnName}(db 消费组的决策 / 读集群被删了?后续断言无意义)" }
+}
+
+# 读集群出口的假函数:按规则表(Pattern 对 KubectlArgs 以空格拼接的串)第一条命中回应 { ExitCode; Stdout; Stderr },
+# 没命中即 throw —— 本节任何意料之外的集群读(例如 DryRun 下读了集群)都要变红。每次调用记下参数与集群选择参数。
+$script:DbGroupKubectlRules = @()
+$script:DbGroupKubectlCalls = [System.Collections.Generic.List[object]]::new()
+function Invoke-ClientEntryKubectl {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$KubectlArgs,
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$KubeContext,
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$KubeConfig,
+        [switch]$AllowFailure,
+        [switch]$CaptureOutput
+    )
+    $line = $KubectlArgs -join ' '
+    $script:DbGroupKubectlCalls.Add([pscustomobject]@{
+            Args = @($KubectlArgs); Line = $line; KubeContext = $KubeContext; KubeConfig = $KubeConfig
+            AllowFailure = $AllowFailure.IsPresent; CaptureOutput = $CaptureOutput.IsPresent
+        })
+    foreach ($rule in $script:DbGroupKubectlRules) {
+        if ($line -match $rule.Pattern) {
+            return [pscustomobject]@{ ExitCode = [int]$rule.ExitCode; Stdout = [string]$rule.Stdout; Stderr = [string]$rule.Stderr }
+        }
+    }
+    throw "假 kubectl:没有规则命中这次调用(本不该读集群?):kubectl $line"
+}
+
+# 被抽函数读的脚本级变量一次给全(同名参数在 k8s_deploy.ps1 里的含义),规则表与调用记录清空。
+function Reset-DbGroupFixture {
+    param([object[]]$Rules = @())
+    $script:DbGroupKubectlRules = @($Rules)
+    $script:DbGroupKubectlCalls.Clear()
+    $script:InfraNamespace = 'contract-infra'
+    $script:NamespacePrefix = 'mmorpg-zone'
+    $script:KubeContext = 'contract-db-group-ctx'
+    $script:KubeConfig = ''
+    $script:RepoRoot = Get-RepoRoot
+    $script:GoSvcCatalogue = @{ db = @{ ConfigMap = 'go-svc-db-config'; ConfigFile = 'db.yaml' } }
+    $script:Command = 'zone-up'
+    $script:ZoneName = 'contract-test'
+    $script:ZoneId = 101
+    $script:SkipGoSvc = $false
+    $script:GoSvcRegistry = 'registry.invalid/test'
+    $script:DryRun = $false
+    $script:DbConsumerGroup = 'keep'
+    $script:DbConsumerGroupPlans = @{}
+    # all-up 用例才用到:-SkipInfra 决定是否探测 infra namespace,-ZonesConfigPath 给 zone 列表(用例里显式设置)。
+    $script:SkipInfra = $false
+    $script:ZonesConfigPath = ''
+}
+
+# 一次 kafka-0 里 describe 的回应。missing 走 stderr(证明 stdout / stderr 合并后才分类),exec-failed 是 kubectl exec 本身失败。
+function New-DbGroupDescribeRule {
+    param(
+        [Parameter(Mandatory = $true)][string]$Group,
+        [Parameter(Mandatory = $true)][ValidateSet('offsets', 'no-offsets', 'missing', 'exec-failed', 'error-line')][string]$State
+    )
+    $pattern = '^exec .* --group ' + [regex]::Escape($Group) + '$'
+    switch ($State) {
+        'offsets' { return @{ Pattern = $pattern; ExitCode = 0; Stdout = "`n$DbGroupDescribeHeader`n$Group $DbGroupTopic 0 42 50 8 - - -`n$Group $DbGroupTopic 1 7 7 0 - - -"; Stderr = '' } }
+        'no-offsets' { return @{ Pattern = $pattern; ExitCode = 0; Stdout = "`n$DbGroupDescribeHeader`n$Group other_topic 0 5 5 0 - - -`n$Group $DbGroupTopic 0 - 50 - - - -"; Stderr = '' } }
+        'missing' { return @{ Pattern = $pattern; ExitCode = 0; Stdout = ''; Stderr = "Error: Consumer group '$Group' does not exist." } }
+        'exec-failed' { return @{ Pattern = $pattern; ExitCode = 1; Stdout = ''; Stderr = 'Error from server (NotFound): pods "kafka-0" not found' } }
+        'error-line' { return @{ Pattern = $pattern; ExitCode = 0; Stdout = 'Error: Executing consumer group command failed due to org.apache.kafka.common.errors.TimeoutException: Timed out waiting for a node assignment.'; Stderr = '' } }
+    }
+}
+
+# 线上 go-svc-db-config 的回应:-DbYaml 为空 = ConfigMap 不存在(--ignore-not-found 无输出);-ExitCode 非 0 = 读失败。
+# -Namespace 缺省是 zone-up 夹具的 zone namespace;all-up 用例按 zone 各给一条。
+function New-DbGroupConfigMapRule {
+    param([AllowEmptyString()][string]$DbYaml = '', [int]$ExitCode = 0, [string]$RawStdout = $null, [string]$Namespace = 'mmorpg-zone-contract-test')
+    $stdout = ''
+    if ($PSBoundParameters.ContainsKey('RawStdout')) { $stdout = $RawStdout }
+    elseif (-not [string]::IsNullOrEmpty($DbYaml)) {
+        $stdout = [ordered]@{ apiVersion = 'v1'; kind = 'ConfigMap'; metadata = @{ name = 'go-svc-db-config' }; data = @{ 'db.yaml' = $DbYaml } } | ConvertTo-Json -Depth 5
+    }
+    $stderr = if ($ExitCode -ne 0) { 'Unable to connect to the server: dial tcp 10.0.0.1:6443: i/o timeout' } else { '' }
+    return @{ Pattern = ('^get configmap go-svc-db-config -n ' + [regex]::Escape($Namespace) + ' --ignore-not-found -o json$'); ExitCode = $ExitCode; Stdout = $stdout; Stderr = $stderr }
+}
+
+# all-up(不带 -SkipInfra)对 infra namespace 的只读探测:-Exists = 已存在(输出 namespace/<名>);缺省 = 不存在(无输出);
+# -ExitCode 非 0 = 探测失败。
+function New-DbGroupInfraNamespaceRule {
+    param([switch]$Exists, [int]$ExitCode = 0)
+    $stdout = if ($Exists -and $ExitCode -eq 0) { 'namespace/contract-infra' } else { '' }
+    $stderr = if ($ExitCode -ne 0) { 'Error from server (Forbidden): namespaces "contract-infra" is forbidden' } else { '' }
+    return @{ Pattern = '^get namespace contract-infra --ignore-not-found -o name$'; ExitCode = $ExitCode; Stdout = $stdout; Stderr = $stderr }
+}
+
+# 一份 db.yaml 文本,ServerConfig.Kafka 下的组名键由调用方给(各行已带 4 格缩进)。
+function New-DbGroupLiveYaml {
+    param([Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$KafkaLines)
+    return (@('Name: db.rpc', 'ZoneId: 101', 'ServerConfig:', '  Kafka:', '    Brokers:', '      - "kafka.contract-infra:9092"') + $KafkaLines +
+        @('    TopicGeneration: 1', '    PartitionCnt: 10', '  Database:', '    MaxOpenConn: 60')) -join "`n"
+}
+
+function Format-DbGroupPlan {
+    param([Parameter(Mandatory = $true)]$Plan)
+    return ('{0}:{1}<-{2}' -f $Plan.Shape, $Plan.Group, $Plan.HandoffFrom)
+}
+
+# DryRun 产物里 db 的 ConfigMap(原文 + 拍平)与 Deployment。
+function Get-DbGroupRendering {
+    param([Parameter(Mandatory = $true)][string]$Output, [Parameter(Mandatory = $true)][string]$Label)
+    $block = Select-ManifestByName -Output $Output -Name 'go-svc-db-config'
+    if ($null -eq $block) { throw "${Label}:DryRun 输出里没有 go-svc-db-config" }
+    $deployment = @(Get-ManifestBlocks -Output $Output | Where-Object {
+            $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: db\s*$'
+        }) | Select-Object -First 1
+    if ($null -eq $deployment) { throw "${Label}:DryRun 输出里没有 db 的 Deployment" }
+    return [pscustomobject]@{ Block = $block; Flat = (ConvertTo-FlatManifest -Block $block); Deployment = $deployment }
+}
+
+# db Pod 模板上的两条消费组注解:各恰好一处(按行首锚定,注释里提到注解名不算),值等于计划;不残留任何占位。
+function Assert-DbGroupAnnotations {
+    param(
+        [Parameter(Mandatory = $true)]$Rendering,
+        [Parameter(Mandatory = $true)][string]$Group,
+        [Parameter(Mandatory = $true)][string]$HandoffFrom,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+    foreach ($pair in @(@{ Key = 'mmorpg.io/db-consumer-group'; Value = $Group }, @{ Key = 'mmorpg.io/db-group-handoff-from'; Value = $HandoffFrom })) {
+        $keyPattern = '(?m)^[ ]+' + [regex]::Escape($pair.Key) + ':'
+        Assert-Equal -Expected 1 -Actual ([regex]::Matches($Rendering.Deployment, $keyPattern).Count) -Because "${Label}:Pod 模板上 $($pair.Key) 必须恰好一处"
+        Assert-Match -Text $Rendering.Deployment -Pattern ($keyPattern + ' "' + [regex]::Escape($pair.Value) + '"\s*$') -Because "${Label}:$($pair.Key) 必须等于本 zone 的消费组计划($($pair.Value)),组名或交接对方组一变 db 才会滚动"
+    }
+    Assert-NotMatch -Text $Rendering.Deployment -Pattern 'PLACEHOLDER_' -Because "${Label}:db Deployment 不得残留占位"
+}
+
+$DbGroupZoneRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SkipJavaSvc', '-DbConsumerGroup', 'Zone'))
+$DbGroupLegacyRun = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SkipJavaSvc', '-DbConsumerGroup', 'legacy'))
+$DbGroupAllUpRun = Invoke-DeployDryRun -Arguments @('-Command', 'all-up', '-DryRun', '-GoSvcRegistry', 'registry.invalid/test', '-DbConsumerGroup', 'zone')
+$DbGroupZoneDownRun = Invoke-DeployDryRun -Arguments @('-Command', 'zone-down', '-ZoneName', 'contract-test', '-DryRun', '-DbConsumerGroup', 'legacy')
+# 多 zone:zones.sample.json 的全部 zone(至少两个,zoneId 各不相同;下面的用例先核对这个前提)。-ZonesConfigPath 给绝对路径
+# (子进程的工作目录不保证是仓库根);-SkipInfra 不装配 battle 全局池,-SkipJavaSvc:本次只看 db。
+$DbGroupSampleZonesPath = Join-Path (Get-RepoRoot) 'deploy/k8s/zones.sample.json'
+$DbGroupSampleZones = @((Get-Content -LiteralPath $DbGroupSampleZonesPath -Raw | ConvertFrom-Json).zones)
+$DbGroupMultiZoneRun = Invoke-DeployDryRun -Arguments @('-Command', 'all-up', '-DryRun', '-SkipInfra', '-SkipJavaSvc', '-ZonesConfigPath', $DbGroupSampleZonesPath, '-GoSvcRegistry', 'registry.invalid/test')
+
+Test-Case '③ 基线 DryRun(keep):db ConfigMap 是 final(Z),只有 GroupID=<db.yaml 的 GroupID>_z101,没有 ConsumerGroup / GroupHandoffFrom;注解 handoff-from 为 none' {
+    $r = Get-DbGroupRendering -Output $devOut -Label 'keep DryRun'
+    Assert-Equal -Expected 'db_rpc_consumer_group_z101' -Actual (Get-FlatValue -Flat $r.Flat -KeyPath 'data.db.yaml.ServerConfig.Kafka.GroupID') -Because 'DryRun 不读集群,keep 预览最终形状 final(Z)(修订稿 §2 DryRun 第一行)'
+    Assert-Equal -Expected $DbGroupZone -Actual (Get-FlatValue -Flat $r.Flat -KeyPath 'data.db.yaml.ServerConfig.Kafka.GroupID') -Because '跨文件:按 zone 的组名 = go/db/etc/db.yaml 的 ServerConfig.Kafka.GroupID + _z<ZoneId>(与 go_services.ps1 / 回档 / merge_zone 同一推导)'
+    foreach ($key in @('ConsumerGroup', 'GroupHandoffFrom')) {
+        Assert-True -Condition (-not $r.Flat.Scalars.Contains("data.db.yaml.ServerConfig.Kafka.$key")) -Because "最终形状不写 $key(写了就成了交接形状,交接闸之前的二进制会拒启)"
+    }
+    # 注释行紧跟在 GroupID 上方:替换的是模板里原来那一行,组名键只此一处。中间只容许空行:CRLF 的 here-string 经 ConfigMap 包装
+    # 与子进程输出捕获之后,行间可能多出空行(与本节无关的既有现象),不能因此误红。
+    Assert-Match -Text $r.Block -Pattern ('(?m)^[ ]+' + [regex]::Escape($DbGroupComment.Trim()) + '[ \t\r]*\n(?:[ \t\r]*\n)*[ ]+GroupID: "' + [regex]::Escape($DbGroupZone) + '"[ \t\r]*$') -Because '组名键前面先一行说明注释(New-DbConsumerGroupYaml)'
+    Assert-Equal -Expected 1 -Actual ([regex]::Matches($r.Block, '(?m)^[ ]+GroupID:').Count) -Because 'db ConfigMap 里 GroupID 只能出现一次'
+    Assert-Match -Text $devOut -Pattern 'DbConsumerGroup=keep' -Because 'DryRun 加 keep 必须告警:这次没读集群,真跑时按线上 ConfigMap 与 Kafka 位点决定'
+    Assert-Match -Text $devOut -Pattern 'dryrun-preview' -Because '告警与计划行都要点明 dryrun-preview'
+    $planLine = "DB consumer group: zone=contract-test\(101\) mode=keep shape=final group=$([regex]::Escape($DbGroupZone)) handoff_from=none source=dryrun-preview topic=$([regex]::Escape($DbGroupTopic))"
+    Assert-Match -Text $devOut -Pattern $planLine -Because '写路径入口每个 zone 打一行消费组计划'
+    $planAt = $devOut.IndexOf('DB consumer group:')
+    $firstKubectlAt = $devOut.IndexOf('[dry-run] kubectl')
+    Assert-True -Condition ($planAt -ge 0 -and ($firstKubectlAt -lt 0 -or $planAt -lt $firstKubectlAt)) -Because '消费组计划在写路径入口算好,先于任何 kubectl 写操作(F2 / F4 的拒绝不留半截部署)'
+    Assert-DbGroupAnnotations -Rendering $r -Group $DbGroupZone -HandoffFrom 'none' -Label 'keep DryRun'
+}
+
+Test-Case '③ 基线 DryRun:login ConfigMap 的 GroupID 仍是共享组名(死配置,值不随切组变化),上方带一行说明注释' {
+    $login = Select-ManifestByName -Output $devOut -Name 'go-svc-login-config'
+    Assert-Equal -Expected $DbGroupLegacy -Actual (Get-FlatValue -Flat (ConvertTo-FlatManifest -Block $login) -KeyPath 'data.login.yaml.Kafka.GroupID') -Because 'login 只生产不消费、代码不读,本轮只把它改成 optional,值不动;删除留给 Step 7'
+    Assert-Match -Text $login -Pattern '(?m)^[ ]+#[^\n]*死配置[^\n]*\n(?:[ \t\r]*\n)*[ ]+GroupID: "db_rpc_consumer_group"[ \t\r]*$' -Because 'GroupID 上方要写明它是死配置、不是 db 的消费组(中间只容许空行)'
+}
+
+Test-Case '③ -DbConsumerGroup zone 的 DryRun(参数大小写不敏感):handoff(Z←L) —— ConsumerGroup=Z、GroupHandoffFrom=L、不写 GroupID;注解随之变' {
+    Assert-Equal -Expected 0 -Actual $DbGroupZoneRun.ExitCode -Because "zone 模式的 DryRun 必须成功。输出: $($DbGroupZoneRun.Output)"
+    $r = Get-DbGroupRendering -Output $DbGroupZoneRun.Output -Label 'zone DryRun'
+    Assert-Equal -Expected $DbGroupZone -Actual (Get-FlatValue -Flat $r.Flat -KeyPath 'data.db.yaml.ServerConfig.Kafka.ConsumerGroup') -Because '交接形状的组名键是 ConsumerGroup'
+    Assert-Equal -Expected $DbGroupLegacy -Actual (Get-FlatValue -Flat $r.Flat -KeyPath 'data.db.yaml.ServerConfig.Kafka.GroupHandoffFrom') -Because '正向交接的对方组是 legacy 组'
+    Assert-True -Condition (-not $r.Flat.Scalars.Contains('data.db.yaml.ServerConfig.Kafka.GroupID')) -Because '交接形状不写 GroupID:交接闸之前的二进制因缺必填键拒启(能力证明)'
+    Assert-Match -Text $DbGroupZoneRun.Output -Pattern 'DbConsumerGroup=zone' -Because 'DryRun 预览要告警'
+    Assert-Match -Text $DbGroupZoneRun.Output -Pattern "mode=zone shape=handoff group=$([regex]::Escape($DbGroupZone)) handoff_from=$([regex]::Escape($DbGroupLegacy)) source=dryrun-preview" -Because '计划行(模式规范成小写)'
+    Assert-DbGroupAnnotations -Rendering $r -Group $DbGroupZone -HandoffFrom $DbGroupLegacy -Label 'zone DryRun'
+}
+
+Test-Case '③ -DbConsumerGroup legacy 的 DryRun:handoff(L←Z) —— ConsumerGroup=L、GroupHandoffFrom=Z、不写 GroupID' {
+    Assert-Equal -Expected 0 -Actual $DbGroupLegacyRun.ExitCode -Because "legacy 模式的 DryRun 必须成功。输出: $($DbGroupLegacyRun.Output)"
+    $r = Get-DbGroupRendering -Output $DbGroupLegacyRun.Output -Label 'legacy DryRun'
+    Assert-Equal -Expected $DbGroupLegacy -Actual (Get-FlatValue -Flat $r.Flat -KeyPath 'data.db.yaml.ServerConfig.Kafka.ConsumerGroup') -Because '反向交接回共享组'
+    Assert-Equal -Expected $DbGroupZone -Actual (Get-FlatValue -Flat $r.Flat -KeyPath 'data.db.yaml.ServerConfig.Kafka.GroupHandoffFrom') -Because '反向交接的对方组是 zone 组'
+    Assert-True -Condition (-not $r.Flat.Scalars.Contains('data.db.yaml.ServerConfig.Kafka.GroupID')) -Because '交接形状不写 GroupID'
+    Assert-Match -Text $DbGroupLegacyRun.Output -Pattern 'DbConsumerGroup=legacy' -Because 'DryRun 预览要告警'
+    Assert-DbGroupAnnotations -Rendering $r -Group $DbGroupLegacy -HandoffFrom $DbGroupZone -Label 'legacy DryRun'
+}
+
+Test-Case '③ 多 zone all-up DryRun(keep):每个 zone 一行计划、一份 go-svc-db-config,GroupID 是 L_z<本 zone 的 ZoneId>;db 注解按 zone 各自的组' {
+    $sampleIds = @($DbGroupSampleZones | ForEach-Object { [int]$_.zoneId })
+    Assert-True -Condition ($sampleIds.Count -ge 2 -and @($sampleIds | Sort-Object -Unique).Count -eq $sampleIds.Count) -Because "夹具前提:zones.sample.json 至少两个 zone 且 zoneId 各不相同(实际: $($sampleIds -join ','))"
+    Assert-Equal -Expected 0 -Actual $DbGroupMultiZoneRun.ExitCode -Because "多 zone all-up DryRun 必须成功。输出: $($DbGroupMultiZoneRun.Output)"
+    $out = $DbGroupMultiZoneRun.Output
+    $blocks = @(Get-ManifestBlocks -Output $out | Where-Object { $_ -cmatch '(?m)^kind: ConfigMap\s*$' -and $_ -cmatch '(?m)^  name: go-svc-db-config\s*$' })
+    Assert-Equal -Expected $sampleIds.Count -Actual $blocks.Count -Because '每个 zone 恰好一份 go-svc-db-config'
+    $groupByZone = @{}
+    foreach ($block in $blocks) {
+        $flat = ConvertTo-FlatManifest -Block $block
+        $groupByZone[[int](Get-FlatValue -Flat $flat -KeyPath 'data.db.yaml.ZoneId')] = Get-FlatValue -Flat $flat -KeyPath 'data.db.yaml.ServerConfig.Kafka.GroupID'
+        Assert-True -Condition (-not $flat.Scalars.Contains('data.db.yaml.ServerConfig.Kafka.ConsumerGroup')) -Because 'keep 的 DryRun 预览是最终形状,不写 ConsumerGroup'
+    }
+    $generation = [int](Get-EtcValue -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.TopicGeneration')
+    foreach ($zone in $DbGroupSampleZones) {
+        $zoneId = [int]$zone.zoneId
+        $want = "${DbGroupLegacy}_z$zoneId"
+        Assert-Equal -Expected $want -Actual $groupByZone[$zoneId] -Because "zone $zoneId 的 ConfigMap(按 data.db.yaml.ZoneId 认 zone)GroupID 必须是本 zone 的组:计划键与 Apply-Zone 传的 zoneId 一致,不串 zone"
+        $topic = Get-DbTaskTopicName -ZoneId $zoneId -Generation $generation
+        Assert-Match -Text $out -Pattern ("DB consumer group: zone=$([regex]::Escape([string]$zone.name))\($zoneId\) mode=keep shape=final group=$([regex]::Escape($want)) handoff_from=none source=dryrun-preview topic=$([regex]::Escape($topic))") -Because "zone $zoneId 打一行计划,topic 按本 zone 推导"
+    }
+    $annotationGroups = @(Get-ManifestBlocks -Output $out | Where-Object { $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: db\s*$' } | ForEach-Object {
+            $m = [regex]::Match($_, '(?m)^[ ]+mmorpg\.io/db-consumer-group: "(?<g>[^"]*)"')
+            if ($m.Success) { $m.Groups['g'].Value } else { '<missing>' }
+        } | Sort-Object)
+    $expectedGroups = @($sampleIds | ForEach-Object { "${DbGroupLegacy}_z$_" } | Sort-Object)
+    Assert-Equal -Expected ($expectedGroups -join ',') -Actual ($annotationGroups -join ',') -Because '每个 zone 的 db Deployment 注解 db-consumer-group 是本 zone 的组(与同 zone 的 ConfigMap 同一份计划)'
+}
+
+Test-Case '③ 负向:-DbConsumerGroup zone|legacy 只许配 zone-up —— all-up / zone-down 在入口拒绝,报错点名原因,不渲染任何清单' {
+    foreach ($case in @(@{ Label = 'all-up + zone'; Run = $DbGroupAllUpRun; Mode = 'zone'; Command = 'all-up' }, @{ Label = 'zone-down + legacy'; Run = $DbGroupZoneDownRun; Mode = 'legacy'; Command = 'zone-down' })) {
+        Assert-True -Condition ($case.Run.ExitCode -ne 0) -Because "$($case.Label) 必须被拒。输出: $($case.Run.Output)"
+        Assert-Match -Text $case.Run.Output -Pattern '只允许与 -Command zone-up 一起用' -Because "$($case.Label):错误文本要写明只许 zone-up"
+        Assert-Match -Text $case.Run.Output -Pattern ([regex]::Escape("-DbConsumerGroup $($case.Mode)")) -Because "$($case.Label):错误文本要点名本次的模式"
+        Assert-NotMatch -Text $case.Run.Output -Pattern 'BEGIN MANIFEST|DB consumer group:' -Because "$($case.Label):入口拒绝早于任何渲染与集群操作"
+    }
+}
+
+Test-Case '③ 写路径入口:-DbConsumerGroup 的入口拒绝早于 Ensure-KubectlAvailable;Initialize-DbConsumerGroupPlans 紧跟 Assert-ClientEntryDeployPreflight,先于 switch ($Command)' {
+    $top = @($deadlineDeployAst.EndBlock.Statements)
+    $rejectAt = -1
+    $ensureAt = -1
+    $switchAt = -1
+    for ($i = 0; $i -lt $top.Count; $i++) {
+        $s = $top[$i]
+        if ($s -is [System.Management.Automation.Language.IfStatementAst] -and $s.Clauses[0].Item1.Extent.Text -match '^\$DbConsumerGroup\s+-ne\s+"keep"\s+-and\s+\$Command\s+-ne\s+"zone-up"$') { $rejectAt = $i }
+        if ($s.Extent.Text.Trim() -ceq 'Ensure-KubectlAvailable' -and $ensureAt -lt 0) { $ensureAt = $i }
+        if ($s -is [System.Management.Automation.Language.SwitchStatementAst] -and $s.Condition.Extent.Text -match '^\(?\s*\$Command\s*\)?$') { $switchAt = $i }
+    }
+    Assert-True -Condition ($rejectAt -ge 0) -Because '顶层要有 if ($DbConsumerGroup -ne "keep" -and $Command -ne "zone-up") 入口拒绝'
+    Assert-True -Condition ($ensureAt -gt $rejectAt) -Because '入口拒绝必须早于 Ensure-KubectlAvailable 与任何 kubectl'
+    $writeGates = @($top | Where-Object {
+            $_ -is [System.Management.Automation.Language.IfStatementAst] -and
+            $_.Clauses[0].Item1.Extent.Text -match '^\$Command\s+-in\s+@\(\s*"zone-up"\s*,\s*"all-up"\s*,\s*"infra-up"\s*\)$'
+        })
+    Assert-Equal -Expected 1 -Actual $writeGates.Count -Because '顶层恰好一个写路径门禁块'
+    $statements = @($writeGates[0].Clauses[0].Item2.Statements)
+    $assertAt = -1
+    for ($i = 0; $i -lt $statements.Count; $i++) {
+        if ($statements[$i].Extent.Text.Trim() -ceq 'Assert-ClientEntryDeployPreflight') { $assertAt = $i }
+    }
+    Assert-True -Condition ($assertAt -ge 0 -and $assertAt + 1 -lt $statements.Count) -Because '写路径门禁块里要有 Assert-ClientEntryDeployPreflight'
+    Assert-Equal -Expected 'Initialize-DbConsumerGroupPlans' -Actual $statements[$assertAt + 1].Extent.Text.Trim() -Because '消费组计划紧跟集群外入口预检(修订稿 §3.4),早于密钥解析'
+    Assert-True -Condition ($switchAt -ge 0 -and $writeGates[0].Extent.StartOffset -lt $top[$switchAt].Extent.StartOffset) -Because '写路径门禁块先于 switch ($Command)(Apply-Infra / Apply-Zone 的写操作都在它的分支里)'
+}
+
+Test-Case '③ 读集群只在写路径入口、只在非 DryRun:Read-LiveDbConfigMapYaml / Read-DbGroupTopicFacts 只由 Initialize-DbConsumerGroupPlans 调用,且包在 if (-not $DryRun) 里' {
+    $initAst = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Initialize-DbConsumerGroupPlans' }, $false)
+    Assert-True -Condition ($null -ne $initAst) -Because '要有 Initialize-DbConsumerGroupPlans'
+    foreach ($readerName in @('Read-LiveDbConfigMapYaml', 'Read-DbGroupTopicFacts')) {
+        $allCalls = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $a.GetCommandName() -eq $readerName }, $true))
+        Assert-Equal -Expected 1 -Actual $allCalls.Count -Because "$readerName 全脚本只能有一处调用(Invoke-ClientEntryKubectl 不看 DryRun,判断集中在写路径入口)"
+        $call = $allCalls[0]
+        Assert-True -Condition ($call.Extent.StartOffset -gt $initAst.Extent.StartOffset -and $call.Extent.EndOffset -lt $initAst.Extent.EndOffset) -Because "$readerName 只能在 Initialize-DbConsumerGroupPlans 里调用"
+        $guarded = $false
+        $parent = $call.Parent
+        while ($null -ne $parent -and -not [object]::ReferenceEquals($parent, $initAst)) {
+            if ($parent -is [System.Management.Automation.Language.IfStatementAst]) {
+                foreach ($clause in $parent.Clauses) {
+                    if ($clause.Item1.Extent.Text -match '^-not\s+\$DryRun$' -and $call.Extent.StartOffset -ge $clause.Item2.Extent.StartOffset -and $call.Extent.EndOffset -le $clause.Item2.Extent.EndOffset) {
+                        $guarded = $true
+                    }
+                }
+            }
+            $parent = $parent.Parent
+        }
+        Assert-True -Condition $guarded -Because "$readerName 必须包在 if (-not `$DryRun) 里:DryRun 不碰集群"
+    }
+}
+
+Test-Case '③ Apply-OneGoSvc:db 注解块(服务名判断在最外层)先于本函数任何集群写操作,替换两个占位、对方组为空写 none' {
+    $applyAst = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Apply-OneGoSvc' }, $false)
+    Assert-True -Condition ($null -ne $applyAst) -Because '要有 Apply-OneGoSvc'
+    $dbBlocks = @($applyAst.Body.FindAll({ param($a)
+                $a -is [System.Management.Automation.Language.IfStatementAst] -and $a.Clauses[0].Item1.Extent.Text -ceq "`$SvcName -eq 'db'" -and
+                $a.Extent.Text.Contains('Get-DbConsumerGroupPlan')
+            }, $true))
+    Assert-Equal -Expected 1 -Actual $dbBlocks.Count -Because "Apply-OneGoSvc 里恰好一个 if (`$SvcName -eq 'db') 块取消费组计划(k8s_migrate_gate.tests.ps1 按 AST 抽本函数跑别的服务,服务名判断必须在最外层)"
+    $blockText = $dbBlocks[0].Extent.Text
+    foreach ($needle in @('PLACEHOLDER_DB_CONSUMER_GROUP', 'PLACEHOLDER_DB_GROUP_HANDOFF_FROM', "'none'", 'PLACEHOLDER_DB_')) {
+        Assert-True -Condition $blockText.Contains($needle) -Because "db 注解块要处理 $needle"
+    }
+    $writeNames = @('Invoke-KubectlWithInputFile', 'Invoke-Kubectl', 'Apply-InjectedSecret', 'Apply-LoginDevPasswordSecret', 'Apply-GoSvcMigrateJob')
+    $writes = @($applyAst.Body.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $writeNames -contains $a.GetCommandName() }, $true))
+    Assert-True -Condition ($writes.Count -gt 0) -Because 'Apply-OneGoSvc 里应当有集群写操作(取写操作的逻辑空转了?)'
+    $firstWrite = ($writes | ForEach-Object { $_.Extent.StartOffset } | Measure-Object -Minimum).Minimum
+    Assert-True -Condition ($dbBlocks[0].Extent.EndOffset -lt $firstWrite) -Because 'db 注解在任何集群写操作之前渲染完,缺占位的 throw 不留半截部署'
+}
+
+Test-Case '③ deploy/k8s/manifests/go-svc/db.yaml 的 Pod 模板带两条消费组注解占位(Apply-OneGoSvc 缺占位即拒绝部署 db)' {
+    $manifest = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/go-svc/db.yaml') -Raw
+    foreach ($pair in @(@{ Key = 'mmorpg.io/db-consumer-group'; Placeholder = 'PLACEHOLDER_DB_CONSUMER_GROUP' }, @{ Key = 'mmorpg.io/db-group-handoff-from'; Placeholder = 'PLACEHOLDER_DB_GROUP_HANDOFF_FROM' })) {
+        Assert-Match -Text $manifest -Pattern ('(?m)^[ ]+' + [regex]::Escape($pair.Key) + ': "' + $pair.Placeholder + '"[ \t\r]*$') -Because "db.yaml 的 Pod 模板要有 $($pair.Key): `"$($pair.Placeholder)`"(只改 ConfigMap 时靠它滚动 db)"
+    }
+}
+
+Test-Case '③ ConvertFrom-LiveDbConsumerGroup:四种合法形状(含生成器注释行、CRLF、行尾注释、被注释掉的同名键)' {
+    $L = $DbGroupLegacy
+    $Z = $DbGroupZone
+    $legal = @(
+        @{ Label = 'final(L) 旧 ConfigMap 原样'; Lines = @("    GroupID: `"$L`""); Want = "final:$L<-" }
+        @{ Label = 'final(Z) 带生成器注释行与行尾注释'; Lines = @($DbGroupComment, "    GroupID: `"$Z`" # zone group"); Want = "final:$Z<-" }
+        @{ Label = 'handoff(Z←L)'; Lines = @($DbGroupComment, "    ConsumerGroup: `"$Z`"", "    GroupHandoffFrom: `"$L`""); Want = "handoff:$Z<-$L" }
+        @{ Label = 'handoff(L←Z)'; Lines = @("    ConsumerGroup: `"$L`"", "    GroupHandoffFrom: `"$Z`""); Want = "handoff:$L<-$Z" }
+        @{ Label = 'final(L) 下方有 db.yaml 那样被注释掉的交接键'; Lines = @("    GroupID: `"$L`"", "    # ConsumerGroup: `"$Z`"", "    # GroupHandoffFrom: `"$L`""); Want = "final:$L<-" }
+        @{ Label = 'final(Z) 单引号 / 裸值同样认'; Lines = @("    GroupID: '$Z'"); Want = "final:$Z<-" }
+        @{ Label = 'final(Z) 裸值'; Lines = @("    GroupID: $Z"); Want = "final:$Z<-" }
+    )
+    foreach ($case in $legal) {
+        foreach ($newline in @("`n", "`r`n")) {
+            $yaml = (New-DbGroupLiveYaml -KafkaLines $case.Lines) -replace "`n", $newline
+            $live = ConvertFrom-LiveDbConsumerGroup -DbYaml $yaml -LegacyGroup $L -ZoneGroup $Z
+            Assert-Equal -Expected $case.Want -Actual (Format-DbGroupPlan $live) -Because "$($case.Label)(行尾 $(if ($newline -eq "`n") { 'LF' } else { 'CRLF' }))"
+        }
+    }
+}
+
+Test-Case '③ ConvertFrom-LiveDbConsumerGroup:四种之外一律 throw(GroupID+交接键、只有 ConsumerGroup、只有对方组、三键全无、未知组名、重复键、X=Y、空值)' {
+    $L = $DbGroupLegacy
+    $Z = $DbGroupZone
+    $illegal = @(
+        @{ Label = 'GroupID 配 GroupHandoffFrom(go/db 拒启)'; Lines = @("    GroupID: `"$Z`"", "    GroupHandoffFrom: `"$L`""); Pattern = 'GroupID 配 GroupHandoffFrom' }
+        @{ Label = 'GroupID 与 ConsumerGroup 同时出现'; Lines = @("    GroupID: `"$L`"", "    ConsumerGroup: `"$Z`""); Pattern = '同时写了 GroupID 与 ConsumerGroup' }
+        @{ Label = '只有 ConsumerGroup、没有 GroupHandoffFrom'; Lines = @("    ConsumerGroup: `"$Z`""); Pattern = '只有 ConsumerGroup' }
+        @{ Label = '只有 GroupHandoffFrom'; Lines = @("    GroupHandoffFrom: `"$L`""); Pattern = '只有 GroupHandoffFrom' }
+        @{ Label = '三个键都没有'; Lines = @(); Pattern = '一个都没有' }
+        @{ Label = '未知组名'; Lines = @('    GroupID: "db_rpc_consumer_group_manual_test"'); Pattern = '不猜它的归属' }
+        @{ Label = 'GroupID 出现两次'; Lines = @("    GroupID: `"$L`"", "    GroupID: `"$Z`""); Pattern = '出现了 2 次' }
+        @{ Label = '交接给自己(X = Y)'; Lines = @("    ConsumerGroup: `"$Z`"", "    GroupHandoffFrom: `"$Z`""); Pattern = '不是 .+ 之一' }
+        @{ Label = '交接对方是未知组'; Lines = @("    ConsumerGroup: `"$Z`"", '    GroupHandoffFrom: "someone_else"'); Pattern = '不是 .+ 之一' }
+        @{ Label = '空值'; Lines = @('    GroupID: ""'); Pattern = '不是合法的消费组名' }
+        @{ Label = '含非法字符'; Lines = @('    GroupID: "db rpc"'); Pattern = '不是合法的消费组名' }
+    )
+    foreach ($case in $illegal) {
+        $message = ''
+        try { $null = ConvertFrom-LiveDbConsumerGroup -DbYaml (New-DbGroupLiveYaml -KafkaLines $case.Lines) -LegacyGroup $L -ZoneGroup $Z }
+        catch { $message = $_.Exception.Message }
+        Assert-True -Condition ($message -ne '') -Because "$($case.Label):必须 throw(fail-closed,不把未知形状当成已知)"
+        Assert-Match -Text $message -Pattern $case.Pattern -Because "$($case.Label):错误文本要点明哪里不合法"
+        Assert-Match -Text $message -Pattern '合法形状只有四种' -Because "$($case.Label):错误文本要列出四种合法形状"
+    }
+    $empty = ''
+    try { $null = ConvertFrom-LiveDbConsumerGroup -DbYaml '' -LegacyGroup $L -ZoneGroup $Z } catch { $empty = $_.Exception.Message }
+    Assert-Match -Text $empty -Pattern '一个都没有' -Because '空文本同样拒绝'
+}
+
+Test-Case '③ ConvertFrom-LiveDbConsumerGroup:按路径只认 ServerConfig.Kafka 的直接子键 —— 别的段的同名键忽略、不算重复;组名键只在别的段即拒绝;Kafka 段写两遍算重复' {
+    $L = $DbGroupLegacy
+    $Z = $DbGroupZone
+    $base = New-DbGroupLiveYaml -KafkaLines @("    GroupID: `"$L`"")
+    # New-DbGroupLiveYaml 以 '  Database:' / '    MaxOpenConn: 60' 收尾:追加的 4 格缩进行落在 ServerConfig.Database 下,与 Kafka 子键同缩进。
+    $ignored = @(
+        @{ Label = 'ServerConfig.Database 下的同名键(4 格缩进)'; Yaml = $base + "`n    GroupID: `"$Z`"`n    ConsumerGroup: `"$Z`"`n    GroupHandoffFrom: `"$Z`"" }
+        @{ Label = '顶层同名键'; Yaml = $base + "`nGroupID: `"someone_else`"`nConsumerGroup: `"$Z`"" }
+        @{ Label = 'Kafka 下更深一层的同名键'; Yaml = (New-DbGroupLiveYaml -KafkaLines @("    GroupID: `"$L`"", '    Retry:', "      GroupID: `"$Z`"", "      GroupHandoffFrom: `"$Z`"")) }
+    )
+    foreach ($case in $ignored) {
+        foreach ($newline in @("`n", "`r`n")) {
+            $live = ConvertFrom-LiveDbConsumerGroup -DbYaml ($case.Yaml -replace "`n", $newline) -LegacyGroup $L -ZoneGroup $Z
+            Assert-Equal -Expected "final:$L<-" -Actual (Format-DbGroupPlan $live) -Because "$($case.Label):go/db 只读 ServerConfig.Kafka 下的三个键,别处的同名键不改变形状,也不触发「出现了 2 次」或「同时写了」的拒绝"
+        }
+    }
+
+    # 组名键被手改写到别的段(顶层与 Database 下各一处):go/db 实际读不到,不能当成有效形状。
+    $misplaced = @('Name: db.rpc', 'ZoneId: 101', "GroupID: `"$L`"", 'ServerConfig:', '  Kafka:', '    Brokers:', '      - "kafka.contract-infra:9092"',
+        '    PartitionCnt: 10', '  Database:', "    GroupID: `"$L`"", '    MaxOpenConn: 60') -join "`n"
+    $message = ''
+    try { $null = ConvertFrom-LiveDbConsumerGroup -DbYaml $misplaced -LegacyGroup $L -ZoneGroup $Z } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern 'ServerConfig\.Kafka 下 .*一个都没有' -Because '组名键只在别的段时必须拒绝(fail-closed),文案点明要的是 ServerConfig.Kafka 下的键'
+
+    # 同一路径两处才算重复:Kafka 段写了两遍,两处都是 ServerConfig.Kafka.GroupID。扁平表会静默取后一处,所以必须另数。
+    $twice = @('ServerConfig:', '  Kafka:', "    GroupID: `"$L`"", '  Database:', '    MaxOpenConn: 60', '  Kafka:', "    GroupID: `"$Z`"") -join "`n"
+    $message = ''
+    try { $null = ConvertFrom-LiveDbConsumerGroup -DbYaml $twice -LegacyGroup $L -ZoneGroup $Z } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern 'ServerConfig\.Kafka\.GroupID 出现了 2 次' -Because 'Kafka 段重复时同一路径出现两次,不猜哪一处生效'
+}
+
+Test-Case '③ New-DbConsumerGroupYaml:先一行注释,final 一行 GroupID、handoff 两行;非四种形状即 throw;渲染结果能被 ConvertFrom-LiveDbConsumerGroup 原样读回' {
+    $L = $DbGroupLegacy
+    $Z = $DbGroupZone
+    $cases = @(
+        @{ Plan = [pscustomobject]@{ Shape = 'final'; Group = $L; HandoffFrom = '' }; Want = @($DbGroupComment, "    GroupID: `"$L`"") }
+        @{ Plan = [pscustomobject]@{ Shape = 'final'; Group = $Z; HandoffFrom = '' }; Want = @($DbGroupComment, "    GroupID: `"$Z`"") }
+        @{ Plan = [pscustomobject]@{ Shape = 'handoff'; Group = $Z; HandoffFrom = $L }; Want = @($DbGroupComment, "    ConsumerGroup: `"$Z`"", "    GroupHandoffFrom: `"$L`"") }
+        @{ Plan = [pscustomobject]@{ Shape = 'handoff'; Group = $L; HandoffFrom = $Z }; Want = @($DbGroupComment, "    ConsumerGroup: `"$L`"", "    GroupHandoffFrom: `"$Z`"") }
+    )
+    foreach ($case in $cases) {
+        $yaml = New-DbConsumerGroupYaml -Plan $case.Plan
+        Assert-True -Condition ($yaml -ceq ($case.Want -join "`n")) -Because "$(Format-DbGroupPlan $case.Plan) 的渲染必须逐字等于期望。实际: $yaml"
+        $back = ConvertFrom-LiveDbConsumerGroup -DbYaml (New-DbGroupLiveYaml -KafkaLines ($yaml -split "`n")) -LegacyGroup $L -ZoneGroup $Z
+        Assert-Equal -Expected (Format-DbGroupPlan $case.Plan) -Actual (Format-DbGroupPlan $back) -Because '生成器写出的形状必须能被 keep 原样读回'
+    }
+    foreach ($bad in @(
+            [pscustomobject]@{ Shape = 'bogus'; Group = $Z; HandoffFrom = '' }
+            [pscustomobject]@{ Shape = 'final'; Group = $Z; HandoffFrom = $L }
+            [pscustomobject]@{ Shape = 'handoff'; Group = $Z; HandoffFrom = $Z }
+            [pscustomobject]@{ Shape = 'handoff'; Group = $Z; HandoffFrom = '' }
+            [pscustomobject]@{ Shape = 'final'; Group = 'bad"name'; HandoffFrom = '' }
+        )) {
+        $message = ''
+        try { $null = New-DbConsumerGroupYaml -Plan $bad } catch { $message = $_.Exception.Message }
+        Assert-True -Condition ($message -ne '') -Because "$(Format-DbGroupPlan $bad) 不是四种形状之一,必须 throw、不渲染半截配置"
+    }
+    $script:DbConsumerGroupPlans = @{}
+    $missing = ''
+    try { $null = Get-DbConsumerGroupPlan -CurrentZoneId 101 } catch { $missing = $_.Exception.Message }
+    Assert-Match -Text $missing -Pattern '内部错误' -Because '没算过计划就生成 db ConfigMap 必须 throw,不回落任何默认组'
+}
+
+Test-Case '③ Test-DbConsumerGroupNeedsKafkaFacts:DryRun 从不读;keep 只在线上没有 ConfigMap 或是交接形状时读;显式模式非 DryRun 一律读' {
+    $final = [pscustomobject]@{ Shape = 'final'; Group = $DbGroupLegacy; HandoffFrom = '' }
+    $handoff = [pscustomobject]@{ Shape = 'handoff'; Group = $DbGroupZone; HandoffFrom = $DbGroupLegacy }
+    foreach ($case in @(
+            @{ Mode = 'keep'; DryRun = $true; Live = $null; Want = $false }
+            @{ Mode = 'zone'; DryRun = $true; Live = $null; Want = $false }
+            @{ Mode = 'legacy'; DryRun = $true; Live = $handoff; Want = $false }
+            @{ Mode = 'keep'; DryRun = $false; Live = $final; Want = $false }
+            @{ Mode = 'keep'; DryRun = $false; Live = $handoff; Want = $true }
+            @{ Mode = 'keep'; DryRun = $false; Live = $null; Want = $true }
+            @{ Mode = 'zone'; DryRun = $false; Live = $final; Want = $true }
+            @{ Mode = 'legacy'; DryRun = $false; Live = $null; Want = $true }
+        )) {
+        $liveText = if ($null -eq $case.Live) { 'null' } else { $case.Live.Shape }
+        Assert-Equal -Expected $case.Want -Actual (Test-DbConsumerGroupNeedsKafkaFacts -Mode $case.Mode -IsDryRun $case.DryRun -Live $case.Live) -Because "mode=$($case.Mode) dryrun=$($case.DryRun) live=$liveText"
+    }
+}
+
+Test-Case '③ 决策表(Resolve-DbConsumerGroupPlan):修订稿 §2 每一行(含回档行);F2 / F4 拒绝附收尾命令;Kafka 事实缺失或读不到一律 fail-closed' {
+    $L = $DbGroupLegacy
+    $Z = $DbGroupZone
+    $finalL = [pscustomobject]@{ Shape = 'final'; Group = $L; HandoffFrom = '' }
+    $finalZ = [pscustomobject]@{ Shape = 'final'; Group = $Z; HandoffFrom = '' }
+    $zFromL = [pscustomobject]@{ Shape = 'handoff'; Group = $Z; HandoffFrom = $L }
+    $lFromZ = [pscustomobject]@{ Shape = 'handoff'; Group = $L; HandoffFrom = $Z }
+    $both = @{ ZoneHasOffsets = $true; LegacyHasOffsets = $true }
+    $zOnly = @{ ZoneHasOffsets = $true; LegacyHasOffsets = $false }
+    $lOnly = @{ ZoneHasOffsets = $false; LegacyHasOffsets = $true }
+    $none = @{ ZoneHasOffsets = $false; LegacyHasOffsets = $false }
+    $finalizeZ = "-Group $Z -RetireGroup $L -Partitions $DbGroupPartitions -FinalizeHandoff"
+    $finalizeL = "-Group $L -RetireGroup $Z -Partitions $DbGroupPartitions -FinalizeHandoff"
+    $rows = @(
+        # DryRun:不读集群,只看模式。
+        @{ Label = 'DryRun keep'; Mode = 'keep'; DryRun = $true; Live = $finalL; Want = "final:$Z<-"; Source = 'dryrun-preview'; Warning = @('DbConsumerGroup=keep', 'dryrun-preview') }
+        @{ Label = 'DryRun zone'; Mode = 'zone'; DryRun = $true; Want = "handoff:$Z<-$L"; Source = 'dryrun-preview'; Warning = @('DbConsumerGroup=zone', 'dryrun-preview') }
+        @{ Label = 'DryRun legacy'; Mode = 'legacy'; DryRun = $true; Want = "handoff:$L<-$Z"; Source = 'dryrun-preview'; Warning = @('DbConsumerGroup=legacy', 'dryrun-preview') }
+        # keep:线上最终形状原样保留,不需要 Kafka 事实。
+        @{ Label = 'keep + final(L)'; Mode = 'keep'; Live = $finalL; Want = "final:$L<-"; Source = 'live-configmap' }
+        @{ Label = 'keep + final(Z)'; Mode = 'keep'; Live = $finalZ; Want = "final:$Z<-"; Source = 'live-configmap' }
+        # keep:线上交接形状。
+        @{ Label = 'keep + handoff(Z←L) + 读不到 Kafka'; Mode = 'keep'; Live = $zFromL; FactsError = 'kafka-0 unreachable'; Want = "handoff:$Z<-$L"; Source = 'live-configmap'; Warning = @('unreadable', 'kafka-0 unreachable') }
+        @{ Label = 'keep + handoff(Z←L) + L 已收尾'; Mode = 'keep'; Live = $zFromL; Facts = $zOnly; Want = "final:$Z<-"; Source = 'handoff-finalized'; Notice = @('handoff finalized', 'GroupHandoffFrom') }
+        @{ Label = 'keep + handoff(Z←L) + L 仍有位点'; Mode = 'keep'; Live = $zFromL; Facts = $both; Want = "handoff:$Z<-$L"; Source = 'live-configmap'; Warning = @($finalizeZ, '-BootstrapServer kafka.contract-infra:9092', "-Topic $DbGroupTopic") }
+        @{ Label = 'keep + handoff(L←Z) + Z 已收尾'; Mode = 'keep'; Live = $lFromZ; Facts = $lOnly; Want = "final:$L<-"; Source = 'handoff-finalized'; Notice = @('handoff finalized') }
+        @{ Label = 'keep + handoff(L←Z) + Z 仍有位点'; Mode = 'keep'; Live = $lFromZ; Facts = $both; Want = "handoff:$L<-$Z"; Source = 'live-configmap'; Warning = @($finalizeL) }
+        # keep:全新 namespace,以 Kafka 为准,只渲染最终形状。
+        @{ Label = 'keep + 全新 namespace + 两组都有位点(F4)'; Mode = 'keep'; Facts = $both; Want = 'throw'; Throws = @('全新 namespace', $finalizeZ, $finalizeL, '尚未做任何写操作') }
+        @{ Label = 'keep + 全新 namespace + 只有 Z'; Mode = 'keep'; Facts = $zOnly; Want = "final:$Z<-"; Source = 'fresh-namespace-kafka' }
+        @{ Label = 'keep + 全新 namespace + 只有 L(保留反向决定)'; Mode = 'keep'; Facts = $lOnly; Want = "final:$L<-"; Source = 'fresh-namespace-kafka'; Notice = @('no implicit group switch') }
+        @{ Label = 'keep + 全新 namespace + 都没有(新 zone)'; Mode = 'keep'; Facts = $none; Want = "final:$Z<-"; Source = 'fresh-namespace-kafka' }
+        @{ Label = 'keep + 全新 namespace + 读不到 Kafka'; Mode = 'keep'; FactsError = 'boom'; Want = 'throw'; Throws = @('读不到 Kafka 位点', 'boom', 'pods/exec') }
+        # 显式 zone(X = Z,Y = L)。
+        @{ Label = 'zone + 两组都有 + 线上已是 handoff(Z←L)(幂等重跑)'; Mode = 'zone'; Live = $zFromL; Facts = $both; Want = "handoff:$Z<-$L"; Source = 'explicit-handoff'; Warning = @($finalizeZ) }
+        @{ Label = 'zone + 两组都有 + 线上 final(L)(F2)'; Mode = 'zone'; Live = $finalL; Facts = $both; Want = 'throw'; Throws = @('-DbConsumerGroup zone 被拒绝', $finalizeL, '尚未做任何写操作') }
+        @{ Label = 'zone + 两组都有 + 线上 final(Z)(F2)'; Mode = 'zone'; Live = $finalZ; Facts = $both; Want = 'throw'; Throws = @('-DbConsumerGroup zone 被拒绝', $finalizeZ) }
+        @{ Label = 'zone + 两组都有 + 线上没有(F2,两种写法)'; Mode = 'zone'; Facts = $both; Want = 'throw'; Throws = @('线上没有 go-svc-db-config', $finalizeZ, $finalizeL) }
+        @{ Label = 'zone + 只有 Z + 线上没有(回档 Step 6)'; Mode = 'zone'; Facts = $zOnly; Want = "final:$Z<-"; Source = 'explicit-already-authoritative' }
+        @{ Label = 'zone + 只有 Z + 线上 final(L)'; Mode = 'zone'; Live = $finalL; Facts = $zOnly; Want = "final:$Z<-"; Source = 'explicit-already-authoritative' }
+        @{ Label = 'zone + 只有 L(正向交接)'; Mode = 'zone'; Live = $finalL; Facts = $lOnly; Want = "handoff:$Z<-$L"; Source = 'explicit-handoff'; Notice = @($finalizeZ) }
+        @{ Label = 'zone + 都没有'; Mode = 'zone'; Facts = $none; Want = "final:$Z<-"; Source = 'explicit-nothing-to-inherit' }
+        @{ Label = 'zone + 读不到 Kafka'; Mode = 'zone'; Live = $finalL; FactsError = 'forbidden'; Want = 'throw'; Throws = @('读不到 Kafka 位点', 'forbidden') }
+        # 显式 legacy(X = L,Y = Z)。
+        @{ Label = 'legacy + 两组都有 + 线上已是 handoff(L←Z)(幂等重跑)'; Mode = 'legacy'; Live = $lFromZ; Facts = $both; Want = "handoff:$L<-$Z"; Source = 'explicit-handoff'; Warning = @($finalizeL) }
+        @{ Label = 'legacy + 两组都有 + 线上 final(Z)(F2:正向没收尾就反向)'; Mode = 'legacy'; Live = $finalZ; Facts = $both; Want = 'throw'; Throws = @('-DbConsumerGroup legacy 被拒绝', $finalizeZ) }
+        @{ Label = 'legacy + 两组都有 + 线上 handoff(Z←L)(方向相反,不是幂等重跑)'; Mode = 'legacy'; Live = $zFromL; Facts = $both; Want = 'throw'; Throws = @('-DbConsumerGroup legacy 被拒绝', $finalizeZ) }
+        @{ Label = 'legacy + 只有 L'; Mode = 'legacy'; Live = $finalL; Facts = $lOnly; Want = "final:$L<-"; Source = 'explicit-already-authoritative' }
+        @{ Label = 'legacy + 只有 Z(反向交接)'; Mode = 'legacy'; Live = $finalZ; Facts = $zOnly; Want = "handoff:$L<-$Z"; Source = 'explicit-handoff'; Notice = @($finalizeL) }
+        @{ Label = 'legacy + 都没有'; Mode = 'legacy'; Facts = $none; Want = "final:$L<-"; Source = 'explicit-nothing-to-inherit' }
+        # Kafka 事实缺字段 / 不是布尔:不按「没有位点」猜。
+        @{ Label = 'zone + 事实缺 LegacyHasOffsets'; Mode = 'zone'; Facts = @{ ZoneHasOffsets = $true }; Want = 'throw'; Throws = @('内部错误', 'LegacyHasOffsets') }
+        @{ Label = 'keep + 全新 namespace + 事实不是布尔'; Mode = 'keep'; Facts = @{ ZoneHasOffsets = 'yes'; LegacyHasOffsets = $false }; Want = 'throw'; Throws = @('内部错误', 'ZoneHasOffsets') }
+        @{ Label = 'keep + 全新 namespace + 没有事实'; Mode = 'keep'; Want = 'throw'; Throws = @('内部错误') }
+    )
+    foreach ($row in $rows) {
+        $planArgs = @{
+            Mode = $row.Mode; LegacyGroup = $L; ZoneGroup = $Z; IsDryRun = [bool]$row.DryRun
+            Live = $row.Live; Facts = $row.Facts; FactsError = [string]$row.FactsError
+            Topic = $DbGroupTopic; Partitions = $DbGroupPartitions; BootstrapServer = 'kafka.contract-infra:9092'
+        }
+        if ($row.Want -ceq 'throw') {
+            $message = ''
+            try { $null = Resolve-DbConsumerGroupPlan @planArgs } catch { $message = $_.Exception.Message }
+            Assert-True -Condition ($message -ne '') -Because "$($row.Label):必须在任何写操作之前拒绝"
+            foreach ($needle in @($row.Throws)) {
+                Assert-True -Condition $message.Contains($needle) -Because "$($row.Label):拒绝文案要含「$needle」。实际: $message"
+            }
+            continue
+        }
+        $plan = Resolve-DbConsumerGroupPlan @planArgs
+        Assert-Equal -Expected $row.Want -Actual (Format-DbGroupPlan $plan) -Because "$($row.Label) 的形状"
+        Assert-Equal -Expected $row.Source -Actual $plan.Source -Because "$($row.Label) 的 Source"
+        foreach ($field in @('Notice', 'Warning')) {
+            $actual = [string]$plan.$field
+            if ($row.ContainsKey($field)) {
+                foreach ($needle in @($row[$field])) {
+                    Assert-True -Condition $actual.Contains($needle) -Because "$($row.Label):$field 要含「$needle」。实际: $actual"
+                }
+            }
+            else {
+                Assert-Equal -Expected '' -Actual $actual -Because "$($row.Label):不该有 $field"
+            }
+        }
+    }
+
+    # 回档行(修订稿 §2「只有 X 有」与 §12):Step 5 收尾后 Live=null、Zc=true、Lc=false → final(Z),渲染恰好是注释行加一行 GroupID,
+    # 交接闸之前的旧镜像也能加载(config_test 的 TestPreHandoffBinaryLoadsFinalZoneShape 用同一行)。
+    $rollback = Resolve-DbConsumerGroupPlan -Mode 'zone' -LegacyGroup $L -ZoneGroup $Z -IsDryRun $false -Live $null -Facts $zOnly -Topic $DbGroupTopic -Partitions $DbGroupPartitions
+    $rollbackYaml = New-DbConsumerGroupYaml -Plan $rollback
+    Assert-True -Condition ($rollbackYaml -ceq ($DbGroupComment + "`n" + '    GroupID: "db_rpc_consumer_group_z101"')) -Because "回档 Step 6 的 db ConfigMap 必须恰好是注释行加 ``    GroupID: `"db_rpc_consumer_group_z101`"``。实际: $rollbackYaml"
+}
+
+Test-Case '③ Read-DbGroupTopicFacts:exec 进 kafka-0 的 kafka 容器(小堆 KAFKA_HEAP_OPTS、localhost:9092、--group <组>),stdout / stderr 合并后分类;读不到一律 throw' {
+    Reset-DbGroupFixture -Rules @((New-DbGroupDescribeRule -Group $DbGroupZone -State 'offsets'), (New-DbGroupDescribeRule -Group $DbGroupLegacy -State 'missing'))
+    $facts = Read-DbGroupTopicFacts -Topic $DbGroupTopic -ZoneGroup $DbGroupZone -LegacyGroup $DbGroupLegacy
+    Assert-True -Condition ($facts.ZoneHasOffsets -eq $true) -Because 'zone 组在本 topic 上有数值 CURRENT-OFFSET'
+    Assert-True -Condition ($facts.LegacyHasOffsets -eq $false) -Because 'legacy 组不存在(文案在 stderr)= 没有位点'
+    Assert-Equal -Expected 2 -Actual $script:DbGroupKubectlCalls.Count -Because '两组各 describe 一次'
+    $expectedArgs = @('exec', '-n', 'contract-infra', 'kafka-0', '-c', 'kafka', '--', '/bin/sh', '-c', "$DbGroupExecShell $DbGroupZone")
+    Assert-Equal -Expected ($expectedArgs -join '|') -Actual ($script:DbGroupKubectlCalls[0].Args -join '|') -Because '命令形状:infra namespace 的 kafka-0、kafka 容器、/bin/sh -c 里覆盖 KAFKA_HEAP_OPTS(容器 env 的大堆会被 CLI 继承,把 broker 撑到 OOMKilled)'
+    Assert-Equal -Expected 'contract-db-group-ctx' -Actual $script:DbGroupKubectlCalls[0].KubeContext -Because '显式带上 -KubeContext,不落到本机默认 context'
+    Assert-True -Condition ($script:DbGroupKubectlCalls[0].CaptureOutput -and $script:DbGroupKubectlCalls[0].AllowFailure) -Because '捕获输出、退出码交给分类函数判'
+
+    Reset-DbGroupFixture -Rules @((New-DbGroupDescribeRule -Group $DbGroupZone -State 'no-offsets'), (New-DbGroupDescribeRule -Group $DbGroupLegacy -State 'offsets'))
+    $facts = Read-DbGroupTopicFacts -Topic $DbGroupTopic -ZoneGroup $DbGroupZone -LegacyGroup $DbGroupLegacy
+    Assert-True -Condition ($facts.ZoneHasOffsets -eq $false -and $facts.LegacyHasOffsets -eq $true) -Because '本 topic 只有 "-" 行(别的 topic 有位点也不算)= 没有位点'
+
+    foreach ($state in @('exec-failed', 'error-line')) {
+        Reset-DbGroupFixture -Rules @((New-DbGroupDescribeRule -Group $DbGroupZone -State $state), (New-DbGroupDescribeRule -Group $DbGroupLegacy -State 'missing'))
+        $message = ''
+        try { $null = Read-DbGroupTopicFacts -Topic $DbGroupTopic -ZoneGroup $DbGroupZone -LegacyGroup $DbGroupLegacy } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern 'kafka-consumer-groups --describe 失败' -Because "${state}:读不到必须 throw,不当成「没有位点」"
+    }
+}
+
+Test-Case '③ Read-LiveDbConfigMapYaml:不存在返回 $null;kubectl 失败、输出不是 JSON、缺 data.db.yaml 一律 throw(读不到不等于没有)' {
+    $text = New-DbGroupLiveYaml -KafkaLines @("    GroupID: `"$DbGroupLegacy`"")
+    Reset-DbGroupFixture -Rules @(New-DbGroupConfigMapRule -DbYaml $text)
+    Assert-Equal -Expected $text -Actual (Read-LiveDbConfigMapYaml -Namespace 'mmorpg-zone-contract-test') -Because '返回 data.db.yaml 原文'
+    Assert-Equal -Expected 'get|configmap|go-svc-db-config|-n|mmorpg-zone-contract-test|--ignore-not-found|-o|json' -Actual ($script:DbGroupKubectlCalls[0].Args -join '|') -Because '只读,--ignore-not-found 区分「不存在」与「读失败」'
+
+    Reset-DbGroupFixture -Rules @(New-DbGroupConfigMapRule -DbYaml '')
+    Assert-True -Condition ($null -eq (Read-LiveDbConfigMapYaml -Namespace 'mmorpg-zone-contract-test')) -Because 'ConfigMap 不存在(含 namespace 已删)返回 $null'
+
+    foreach ($case in @(
+            @{ Label = 'kubectl 失败'; Rule = (New-DbGroupConfigMapRule -ExitCode 1); Pattern = '读取线上 ConfigMap go-svc-db-config 失败' }
+            @{ Label = '输出不是 JSON'; Rule = (New-DbGroupConfigMapRule -RawStdout 'not json'); Pattern = '不是合法 JSON' }
+            @{ Label = '缺 data.db.yaml'; Rule = (New-DbGroupConfigMapRule -RawStdout '{"apiVersion":"v1","kind":"ConfigMap","data":{"other.yaml":"x"}}'); Pattern = '没有 data\.db\.yaml' }
+        )) {
+        Reset-DbGroupFixture -Rules @($case.Rule)
+        $message = ''
+        try { $null = Read-LiveDbConfigMapYaml -Namespace 'mmorpg-zone-contract-test' } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern $case.Pattern -Because "$($case.Label):必须 throw"
+        Assert-Match -Text $message -Pattern '尚未做任何写操作' -Because "$($case.Label):报错要说明还没有写集群"
+    }
+}
+
+Test-Case '③ Initialize-DbConsumerGroupPlans(非 DryRun,假 kubectl):keep + 线上最终形状只读 ConfigMap、不 exec;每个 zone 打一行计划' {
+    Reset-DbGroupFixture -Rules @(New-DbGroupConfigMapRule -DbYaml (New-DbGroupLiveYaml -KafkaLines @("    GroupID: `"$DbGroupLegacy`"")))
+    $out = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String
+    Assert-Equal -Expected "final:$DbGroupLegacy<-" -Actual (Format-DbGroupPlan $script:DbConsumerGroupPlans[101]) -Because '线上 final(L) 原样保留'
+    Assert-Equal -Expected 'live-configmap' -Actual $script:DbConsumerGroupPlans[101].Source -Because 'Source 记明来自线上 ConfigMap'
+    Assert-Equal -Expected 1 -Actual $script:DbGroupKubectlCalls.Count -Because '最终形状不读 Kafka(日常发布不依赖 kafka-0 的 exec 权限)'
+    Assert-Match -Text $out -Pattern ("DB consumer group: zone=contract-test\(101\) mode=keep shape=final group=$([regex]::Escape($DbGroupLegacy)) handoff_from=none source=live-configmap topic=$([regex]::Escape($DbGroupTopic))") -Because '计划行'
+}
+
+Test-Case '③ Initialize-DbConsumerGroupPlans:keep + 线上交接形状 —— 对方组已收尾即落到最终形状;读不到 Kafka 保持线上形状并告警' {
+    $handoffYaml = New-DbGroupLiveYaml -KafkaLines @($DbGroupComment, "    ConsumerGroup: `"$DbGroupZone`"", "    GroupHandoffFrom: `"$DbGroupLegacy`"")
+    Reset-DbGroupFixture -Rules @((New-DbGroupConfigMapRule -DbYaml $handoffYaml), (New-DbGroupDescribeRule -Group $DbGroupZone -State 'offsets'), (New-DbGroupDescribeRule -Group $DbGroupLegacy -State 'missing'))
+    $out = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String
+    Assert-Equal -Expected "final:$DbGroupZone<-" -Actual (Format-DbGroupPlan $script:DbConsumerGroupPlans[101]) -Because 'legacy 组在本 topic 上已没有位点(FinalizeHandoff 删过),去掉 GroupHandoffFrom'
+    Assert-Equal -Expected 'handoff-finalized' -Actual $script:DbConsumerGroupPlans[101].Source -Because 'Source=handoff-finalized'
+    Assert-Match -Text $out -Pattern 'handoff finalized' -Because 'Notice 要打出来(db 将滚动一次)'
+    Assert-Equal -Expected 3 -Actual $script:DbGroupKubectlCalls.Count -Because '读一次 ConfigMap、两组各 describe 一次'
+
+    Reset-DbGroupFixture -Rules @((New-DbGroupConfigMapRule -DbYaml $handoffYaml), (New-DbGroupDescribeRule -Group $DbGroupZone -State 'exec-failed'))
+    $out = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String
+    Assert-Equal -Expected "handoff:$DbGroupZone<-$DbGroupLegacy" -Actual (Format-DbGroupPlan $script:DbConsumerGroupPlans[101]) -Because '读不到 Kafka 时原样保留线上交接形状(永远安全),不 throw'
+    Assert-Match -Text $out -Pattern 'unreadable' -Because '要告警说明这次没能判断收尾'
+}
+
+Test-Case '③ Initialize-DbConsumerGroupPlans:显式 zone + 全新 namespace —— 回档 Step 6 落到 final(Z);读不到 Kafka 在写操作之前拒绝;ConfigMap 读失败同样拒绝' {
+    Reset-DbGroupFixture -Rules @((New-DbGroupConfigMapRule -DbYaml ''), (New-DbGroupDescribeRule -Group $DbGroupZone -State 'offsets'), (New-DbGroupDescribeRule -Group $DbGroupLegacy -State 'no-offsets'))
+    $script:DbConsumerGroup = 'zone'
+    $null = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String
+    $plan = Get-DbConsumerGroupPlan -CurrentZoneId 101
+    Assert-Equal -Expected "final:$DbGroupZone<-" -Actual (Format-DbGroupPlan $plan) -Because 'Step 5 收尾后只有 zone 组有位点 → final(Z),任何镜像都能起'
+    Assert-Equal -Expected 'explicit-already-authoritative' -Actual $plan.Source -Because '回档行的 Source'
+    Assert-True -Condition ((New-DbConsumerGroupYaml -Plan $plan) -ceq ($DbGroupComment + "`n" + "    GroupID: `"$DbGroupZone`"")) -Because 'ConfigMap 里恰好注释行加一行 GroupID'
+
+    Reset-DbGroupFixture -Rules @((New-DbGroupConfigMapRule -DbYaml ''), (New-DbGroupDescribeRule -Group $DbGroupZone -State 'exec-failed'))
+    $script:DbConsumerGroup = 'zone'
+    $message = ''
+    try { $null = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern '读不到 Kafka 位点,无法判定 db 消费组归属' -Because '显式模式读不到 Kafka 必须 throw(此时还没有任何写操作)'
+    Assert-Match -Text $message -Pattern 'pods/exec' -Because '报错提示检查 kafka-0 与 exec 权限'
+
+    Reset-DbGroupFixture -Rules @(New-DbGroupConfigMapRule -ExitCode 1)
+    $message = ''
+    try { $null = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern '读取线上 ConfigMap go-svc-db-config 失败' -Because 'keep 读不到 ConfigMap 不能当成全新 namespace'
+    Assert-Equal -Expected 1 -Actual $script:DbGroupKubectlCalls.Count -Because 'ConfigMap 读失败就停,不再 exec 进 kafka-0'
+
+    Reset-DbGroupFixture -Rules @(New-DbGroupConfigMapRule -DbYaml (New-DbGroupLiveYaml -KafkaLines @("    GroupID: `"$DbGroupZone`"", "    GroupHandoffFrom: `"$DbGroupLegacy`"")))
+    $message = ''
+    try { $null = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern 'GroupID 配 GroupHandoffFrom' -Because '线上形状不合法即拒绝'
+    Assert-Equal -Expected 1 -Actual $script:DbGroupKubectlCalls.Count -Because '形状不合法时不再读 Kafka'
+}
+
+Test-Case '③ Initialize-DbConsumerGroupPlans:DryRun 一次集群都不读;不部署 db 时 keep 没有计划,显式模式在任何写操作之前拒绝' {
+    Reset-DbGroupFixture
+    $script:DryRun = $true
+    $script:DbConsumerGroup = 'legacy'
+    $out = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String
+    Assert-Equal -Expected 0 -Actual $script:DbGroupKubectlCalls.Count -Because 'DryRun 不碰集群(Invoke-ClientEntryKubectl 不看 DryRun,判断在调用方)'
+    Assert-Equal -Expected "handoff:$DbGroupLegacy<-$DbGroupZone" -Actual (Format-DbGroupPlan $script:DbConsumerGroupPlans[101]) -Because 'DryRun legacy 预览 handoff(L←Z)'
+    Assert-Match -Text $out -Pattern 'dryrun-preview' -Because 'DryRun 要告警'
+
+    Reset-DbGroupFixture
+    $script:SkipGoSvc = $true
+    $out = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String
+    Assert-Equal -Expected 0 -Actual $script:DbConsumerGroupPlans.Count -Because 'keep + -SkipGoSvc:不部署 db,不算计划,也不拒绝'
+    Assert-Equal -Expected 0 -Actual $script:DbGroupKubectlCalls.Count -Because '不部署 db 就不读集群'
+
+    # 显式切组配在不部署 db 的运行上:原来只告警「no effect」、C++ 节点照常重部署、退出码 0,运维会以为切过了(修订稿 §14 步骤 3 的金丝雀命令
+    # 不带 -GoSvcRegistry 就会踩中)。DryRun 也拒绝:这是参数组合错误,预览同样要红。
+    foreach ($case in @(
+            @{ Label = 'zone + -SkipGoSvc'; Mode = 'zone'; SkipGoSvc = $true; Registry = 'registry.invalid/test'; DryRun = $false }
+            @{ Label = 'legacy + 没给 -GoSvcRegistry'; Mode = 'legacy'; SkipGoSvc = $false; Registry = ''; DryRun = $false }
+            @{ Label = 'zone + 没给 -GoSvcRegistry + DryRun'; Mode = 'zone'; SkipGoSvc = $false; Registry = ''; DryRun = $true }
+        )) {
+        Reset-DbGroupFixture
+        $script:DbConsumerGroup = $case.Mode
+        $script:SkipGoSvc = $case.SkipGoSvc
+        $script:GoSvcRegistry = $case.Registry
+        $script:DryRun = $case.DryRun
+        $message = ''
+        try { $null = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern ([regex]::Escape("-DbConsumerGroup $($case.Mode) 需要本次部署 db")) -Because "$($case.Label):必须 throw 并点名模式,不能只告警后照常部署"
+        Assert-Match -Text $message -Pattern '尚未做任何写操作' -Because "$($case.Label):报错要说明还没有写集群"
+        Assert-Equal -Expected 0 -Actual $script:DbGroupKubectlCalls.Count -Because "$($case.Label):拒绝前不读集群"
+        Assert-Equal -Expected 0 -Actual $script:DbConsumerGroupPlans.Count -Because "$($case.Label):不留计划"
+    }
+}
+
+Test-Case '③ Initialize-DbConsumerGroupPlans(all-up,-SkipInfra,假 kubectl):zones 配置里每个 zone 各读一次自己的 ConfigMap、各算一份计划,计划键是各自的 zoneId' {
+    $sampleZones = @($DbGroupSampleZones)
+    Assert-True -Condition ($sampleZones.Count -ge 2) -Because '夹具前提:zones.sample.json 至少两个 zone'
+    $rules = @($sampleZones | ForEach-Object {
+            New-DbGroupConfigMapRule -Namespace "mmorpg-zone-$($_.name)" -DbYaml (New-DbGroupLiveYaml -KafkaLines @("    GroupID: `"$DbGroupLegacy`""))
+        })
+    Reset-DbGroupFixture -Rules $rules
+    $script:Command = 'all-up'
+    $script:SkipInfra = $true
+    $script:ZonesConfigPath = $DbGroupSampleZonesPath
+    $out = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String
+    $wantKeys = @($sampleZones | ForEach-Object { [int]$_.zoneId } | Sort-Object)
+    Assert-Equal -Expected ($wantKeys -join ',') -Actual (@($script:DbConsumerGroupPlans.Keys | ForEach-Object { [int]$_ } | Sort-Object) -join ',') -Because '计划键恰好是 zones 配置里的各个 zoneId([int],与 Apply-Zone 传入的 $zone.zoneId 一致)'
+    $generation = [int](Get-EtcValue -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.TopicGeneration')
+    foreach ($zone in $sampleZones) {
+        $zoneId = [int]$zone.zoneId
+        Assert-Equal -Expected "final:$DbGroupLegacy<-" -Actual (Format-DbGroupPlan (Get-DbConsumerGroupPlan -CurrentZoneId $zoneId)) -Because "zone ${zoneId}:线上 final(L) 原样保留"
+        $topic = Get-DbTaskTopicName -ZoneId $zoneId -Generation $generation
+        Assert-Match -Text $out -Pattern ("DB consumer group: zone=$([regex]::Escape([string]$zone.name))\($zoneId\) mode=keep shape=final group=$([regex]::Escape($DbGroupLegacy)) handoff_from=none source=live-configmap topic=$([regex]::Escape($topic))") -Because "zone $zoneId 一行计划,topic 按本 zone 推导"
+    }
+    $configMapReads = @($script:DbGroupKubectlCalls | Where-Object { $_.Line -match '^get configmap ' })
+    Assert-Equal -Expected $sampleZones.Count -Actual $configMapReads.Count -Because '每个 zone 读一次自己 namespace 的 ConfigMap'
+    Assert-Equal -Expected $sampleZones.Count -Actual $script:DbGroupKubectlCalls.Count -Because '最终形状不 exec;-SkipInfra 不探测 infra namespace'
+}
+
+Test-Case '③ Initialize-DbConsumerGroupPlans(all-up,不带 -SkipInfra):infra namespace 不存在 = 本次新建空 Kafka,不 exec、按两组都没有位点判定;探测失败即拒绝;namespace 在则照旧 exec' {
+    $sampleZones = @($DbGroupSampleZones)
+    Assert-True -Condition ($sampleZones.Count -ge 2) -Because '夹具前提:zones.sample.json 至少两个 zone'
+    $first = $sampleZones[0]
+    $second = $sampleZones[1]
+    $firstZ = "${DbGroupLegacy}_z$([int]$first.zoneId)"
+    $secondZ = "${DbGroupLegacy}_z$([int]$second.zoneId)"
+    # 第一个 zone 没有 ConfigMap(全新);第二个 zone 线上是未收尾的交接形状(infra-down 之后 zone namespace 还在的情形);其余 zone 没有 ConfigMap。
+    $configMapRules = @($sampleZones | ForEach-Object {
+            if ([int]$_.zoneId -eq [int]$second.zoneId) {
+                New-DbGroupConfigMapRule -Namespace "mmorpg-zone-$($_.name)" -DbYaml (New-DbGroupLiveYaml -KafkaLines @("    ConsumerGroup: `"$secondZ`"", "    GroupHandoffFrom: `"$DbGroupLegacy`""))
+            }
+            else {
+                New-DbGroupConfigMapRule -Namespace "mmorpg-zone-$($_.name)" -DbYaml ''
+            }
+        })
+    Reset-DbGroupFixture -Rules (@(New-DbGroupInfraNamespaceRule) + $configMapRules)
+    $script:Command = 'all-up'
+    $script:ZonesConfigPath = $DbGroupSampleZonesPath
+    $out = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String
+    $firstPlan = Get-DbConsumerGroupPlan -CurrentZoneId ([int]$first.zoneId)
+    Assert-Equal -Expected "final:$firstZ<-" -Actual (Format-DbGroupPlan $firstPlan) -Because '全新 zone + 新建的空 Kafka → final(Z)'
+    Assert-Equal -Expected 'fresh-namespace-kafka' -Actual $firstPlan.Source -Because 'Source 与「全新 namespace、两组都没有位点」同一行'
+    $secondPlan = Get-DbConsumerGroupPlan -CurrentZoneId ([int]$second.zoneId)
+    Assert-Equal -Expected "final:$secondZ<-" -Actual (Format-DbGroupPlan $secondPlan) -Because '线上 handoff(Z←L) + 新建的空 Kafka:对方组不可能有位点,收尾成 final(Z)'
+    Assert-Equal -Expected 'handoff-finalized' -Actual $secondPlan.Source -Because '走 keep + 交接形状 + 对方组无位点那一行'
+    Assert-Equal -Expected 0 -Actual @($script:DbGroupKubectlCalls | Where-Object { $_.Line -match '^exec ' }).Count -Because 'infra namespace 不存在时不 exec 进 kafka-0(它还没建)'
+    Assert-Equal -Expected 'get|namespace|contract-infra|--ignore-not-found|-o|name' -Actual ($script:DbGroupKubectlCalls[0].Args -join '|') -Because '先只读探测 infra namespace(--ignore-not-found 区分「不存在」与「读失败」)'
+    Assert-Equal -Expected 'contract-db-group-ctx' -Actual $script:DbGroupKubectlCalls[0].KubeContext -Because '探测同样显式带 -KubeContext'
+    Assert-Equal -Expected (1 + $sampleZones.Count) -Actual $script:DbGroupKubectlCalls.Count -Because '一次探测 + 每个 zone 一次 ConfigMap'
+    Assert-Match -Text $out -Pattern 'creates Kafka from scratch' -Because '要打一行说明这次按空 Kafka 判定'
+
+    # 探测失败(退出码 1):读不到不等于没有,不按全新判定,也不再往下读。
+    Reset-DbGroupFixture -Rules (@(New-DbGroupInfraNamespaceRule -ExitCode 1) + $configMapRules)
+    $script:Command = 'all-up'
+    $script:ZonesConfigPath = $DbGroupSampleZonesPath
+    $message = ''
+    try { $null = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern '读取 infra namespace contract-infra 失败' -Because '探测失败必须 throw(fail-closed)'
+    Assert-Match -Text $message -Pattern '尚未做任何写操作' -Because '报错要说明还没有写集群'
+    Assert-Equal -Expected 1 -Actual $script:DbGroupKubectlCalls.Count -Because '探测失败就停,不再读 ConfigMap、不 exec'
+
+    # namespace 已在(例如上一次 Apply-Infra 半途失败、kafka-0 还没起来):照旧 exec,读不到由决策表拒绝,文案给出新集群的两步走法。
+    Reset-DbGroupFixture -Rules (@((New-DbGroupInfraNamespaceRule -Exists), (New-DbGroupDescribeRule -Group $firstZ -State 'exec-failed')) + $configMapRules)
+    $script:Command = 'all-up'
+    $script:ZonesConfigPath = $DbGroupSampleZonesPath
+    $message = ''
+    try { $null = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern '读不到 Kafka 位点,无法判定 db 消费组归属' -Because 'infra namespace 在就不能假定 Kafka 是空的(PVC 可能还在)'
+    Assert-Match -Text $message -Pattern 'infra-up -WaitReady,再跑 all-up -SkipInfra' -Because 'keep + 全新 namespace 读不到 Kafka 时,提示新集群先 infra-up -WaitReady 再 all-up -SkipInfra'
+    Assert-True -Condition (@($script:DbGroupKubectlCalls | Where-Object { $_.Line -match '^exec ' }).Count -ge 1) -Because 'namespace 在时确实去 exec 了'
+
+    # -SkipInfra 或 DryRun 都不探测(前者不建 Kafka,后者不读集群)。
+    Reset-DbGroupFixture
+    $script:Command = 'all-up'
+    $script:ZonesConfigPath = $DbGroupSampleZonesPath
+    $script:DryRun = $true
+    $null = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String
+    Assert-Equal -Expected 0 -Actual $script:DbGroupKubectlCalls.Count -Because 'DryRun 的 all-up 一次集群都不读(含 infra namespace 探测)'
+}
+
+Test-Case '③ -DbConsumerGroup 只经 dev_tools.ps1::Invoke-K8sDeploy 透传(给了才传);k8s-image-* / k8s-release-* 与 k8s-zone-rollback 不透传,显式给了即拒绝' {
+    $readFunction = {
+        param([string]$RelativePath, [string]$FunctionName)
+        $parseErrors = $null
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path (Get-ToolsScriptsDir) $RelativePath), [ref]$null, [ref]$parseErrors)
+        if ($parseErrors.Count -gt 0) { throw "$RelativePath 解析失败:$($parseErrors[0].Message)" }
+        $fnAst = $ast.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq $FunctionName }, $true)
+        if ($null -eq $fnAst) { throw "$RelativePath 里找不到函数 $FunctionName" }
+        return $fnAst.Extent.Text
+    }
+    $devDeploy = & $readFunction 'dev_tools.ps1' 'Invoke-K8sDeploy'
+    Assert-Match -Text $devDeploy -Pattern 'if \(-not \[string\]::IsNullOrWhiteSpace\(\$DbConsumerGroup\)\)\s*\{\s*\$args\.DbConsumerGroup = \$DbConsumerGroup\s*\}' -Because 'dev_tools 的 k8s-zone-up 等入口留空不透传、给了才透传(回档 Step 6 经它传 zone)'
+    Assert-NotMatch -Text (& $readFunction 'k8s_image.ps1' 'Invoke-K8sDeploy') -Pattern 'DbConsumerGroup' -Because 'k8s_image.ps1::Invoke-K8sDeploy 不透传 -DbConsumerGroup:release 流程等于 keep,切组只许显式的单 zone zone-up(原规格 F4)'
+    $devImage = & $readFunction 'dev_tools.ps1' 'Invoke-K8sImage'
+    Assert-NotMatch -Text $devImage -Pattern '\$args(\.|\[\s*[''"])DbConsumerGroup|DbConsumerGroup\s*=' -Because 'dev_tools.ps1::Invoke-K8sImage 不把 -DbConsumerGroup 转给 k8s_image.ps1(它不部署 db)'
+    Assert-Match -Text $devImage -Pattern 'if \(-not \[string\]::IsNullOrWhiteSpace\(\$DbConsumerGroup\)\)\s*\{\s*\$notForwarded \+= ''-DbConsumerGroup''\s*\}' -Because 'dev_tools.ps1::Invoke-K8sImage 显式给了 -DbConsumerGroup 要拒绝,不静默吞掉(同 -LoginDevPasswordAuth 等)'
+
+    # 行为:按 AST 取出 Invoke-K8sImage 的函数体直接调用(不起子进程,不碰 docker / 集群)。$ScriptDir 指向不存在的目录:
+    # 守卫一旦失效,函数在「k8s_image.ps1 not found」处停下,也不会真的执行发布。
+    $parseErrors = $null
+    $devAst = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path (Get-ToolsScriptsDir) 'dev_tools.ps1'), [ref]$null, [ref]$parseErrors)
+    $imageBody = $devAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Invoke-K8sImage' }, $true).Body.GetScriptBlock()
+    $ScriptDir = Join-Path ([System.IO.Path]::GetTempPath()) ('db-group-no-such-dir-' + [guid]::NewGuid().ToString('N'))
+    $AgonesHighDensity = $false; $AgonesAutoscale = $false; $LoginDevPasswordAuth = $false
+    $GatewayIngressHost = ''; $GatewayIngressClassName = ''; $GatewayIngressTlsSecret = ''; $GatewayTrustedProxies = ''
+    foreach ($case in @(@{ Value = 'zone'; Rejected = $true }, @{ Value = 'keep'; Rejected = $true }, @{ Value = ''; Rejected = $false })) {
+        $DbConsumerGroup = $case.Value
+        $message = ''
+        try { & $imageBody -ImageCommand 'release-zone' } catch { $message = $_.Exception.Message }
+        if ($case.Rejected) {
+            Assert-Match -Text $message -Pattern 'k8s-image-\* / k8s-release-\* 不支持 -DbConsumerGroup' -Because "k8s-release-zone 给 -DbConsumerGroup '$($case.Value)' 必须在任何副作用之前拒绝并点名参数(给 keep 也不生效:k8s_image 不部署 db)"
+        }
+        else {
+            Assert-NotMatch -Text $message -Pattern 'DbConsumerGroup' -Because '留空不拒绝(函数走到找 k8s_image.ps1 那一步才停)'
+        }
+    }
+
+    # k8s-zone-rollback:回档 Step 6 固定传 zone,外层给的 -DbConsumerGroup 不生效 —— 拒绝必须排在调用回档脚本之前。
+    $rollbackClause = $null
+    foreach ($switchAst in $devAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.SwitchStatementAst] }, $true)) {
+        foreach ($clause in $switchAst.Clauses) {
+            if ($clause.Item1 -is [System.Management.Automation.Language.StringConstantExpressionAst] -and $clause.Item1.Value -ceq 'k8s-zone-rollback') { $rollbackClause = $clause.Item2.Extent.Text }
+        }
+    }
+    Assert-True -Condition ($null -ne $rollbackClause) -Because 'dev_tools.ps1 要有 k8s-zone-rollback 分支'
+    $guardAt = $rollbackClause.IndexOf('if (-not [string]::IsNullOrWhiteSpace($DbConsumerGroup))')
+    # 按调用表达式找(分支开头的注释里也提到 k8s_zone_rollback.ps1)。
+    $invokeAt = $rollbackClause.IndexOf('(Join-Path $ScriptDir "k8s_zone_rollback.ps1")')
+    Assert-True -Condition ($guardAt -ge 0 -and $invokeAt -gt $guardAt) -Because 'k8s-zone-rollback 分支在调用 k8s_zone_rollback.ps1 之前拒绝非空的 -DbConsumerGroup'
+    Assert-Match -Text $rollbackClause.Substring([Math]::Max($guardAt, 0)) -Pattern '^if \(-not \[string\]::IsNullOrWhiteSpace\(\$DbConsumerGroup\)\)\s*\{\s*throw "k8s-zone-rollback 不支持 -DbConsumerGroup' -Because '拒绝文案点名参数'
+}
+
+Remove-Item -Path Function:Invoke-ClientEntryKubectl -ErrorAction SilentlyContinue
+foreach ($dbGroupVar in @('InfraNamespace', 'NamespacePrefix', 'KubeContext', 'KubeConfig', 'GoSvcCatalogue', 'Command', 'ZoneName', 'ZoneId', 'SkipGoSvc', 'GoSvcRegistry', 'DryRun', 'DbConsumerGroup', 'DbConsumerGroupPlans', 'SkipInfra', 'ZonesConfigPath')) {
+    Remove-Variable -Name $dbGroupVar -Scope Script -ErrorAction SilentlyContinue
+}
+
+# ─────────────────────────────────────────────────────────────────
+# S5b 保留期与 Kafka 盘预算(规格:docs/handoff/godb-pipeline-impl-20261015/S5-dirty-snapshot-retention-spec.md
+#    B-10 / B-11 / B-15 / B-16 / B-17;deploy/k8s/README.md「Kafka 磁盘预算与 db_task retention.bytes」)
+# ─────────────────────────────────────────────────────────────────
+# db_task 的 topic 级 retention.bytes 与每个 broker 的 PVC 在同一个公式里对账(k8s_deploy.ps1 的 Get-KafkaDiskPlan):
+# 新集群按公式建盘,已有集群沿用线上 PVC、盘不够就按盘收缩 retention.bytes 并告警,连 2 个 segment 都放不下才 throw;
+# 显式 -KafkaStorageGi 与线上不同即拒绝(volumeClaimTemplates 不可变)。生效值同时渲染进 db 与 login 两个 ConfigMap(B-15)。
+# 纯函数与胶水函数按 AST 抽出来直接调用(与上文 Kafka 拓扑、③ 同一做法);读集群的唯一出口是 & kubectl,由本节的同名假函数顶替
+# (函数先于外部命令解析),只在测 Get-LiveKafkaStorageGi / Get-LiveKafkaPvcMinGi / Get-LiveZoneNamespaceNames / Resolve-KafkaDiskPlan
+# 的非 DryRun 路径时用到;假函数按「get pvc」「get namespace」与其余(StatefulSet)分三路回应。
+# 缺省值表(负责人 2026-10-13 拍板:prod 2h / 3 MiB/s,prod-like 2h / 1 MiB/s,dev 1h / 256 KiB/s;其它预留 4 / 2 / 1 GiB)
+# 以 db_task 10 个分区、审计 6 + 3 个分区、zones.json 两个 zone 为前提,下面第一条用例先核对这个前提。
+$S5bFunctionNames = @(
+    'Get-KafkaDiskBudgetConstants', 'Get-KafkaDbTaskRetentionBytesTarget', 'Get-KafkaDiskPlan', 'Get-KafkaStorageChangeVerdict',
+    'Get-LiveKafkaStorageGi', 'Get-LiveKafkaPvcMinGi', 'Get-LiveZoneNamespaceNames', 'Resolve-KafkaDiskPlan', 'Write-KafkaDiskLedger', 'Assert-KafkaStorageChangeIsSafe',
+    # Resolve-KafkaDiskPlan 的依赖(与 k8s_deploy.ps1 里同一份函数体)。
+    'Build-KubectlBaseArgs', 'Get-KafkaTopologyFor', 'Get-KafkaTopology', 'Get-AuthoritativeScalar', 'Get-ZonesFromJson', 'Resolve-ZonesConfigPath'
+)
+foreach ($s5bFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($S5bFunctionNames -contains $s5bFnAst.Name) {
+        Set-Item -Path "Function:script:$($s5bFnAst.Name)" -Value $s5bFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($s5bFnName in $S5bFunctionNames) {
+    if (-not (Test-Path "Function:$s5bFnName")) { throw "k8s_deploy.ps1 缺少函数 ${s5bFnName}(Kafka 盘预算被删了?后续断言无意义)" }
+}
+
+$S5bGiB = [decimal]1073741824
+$S5bDbTaskPartitions = [int](Get-EtcValue -RelativePath 'go/db/etc/db.yaml' -KeyPath 'ServerConfig.Kafka.PartitionCnt')
+$S5bAuditPartitions = [int](Get-EtcValue -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'Kafka.TransactionLogPartitions') +
+    [int](Get-EtcValue -RelativePath 'go/data_service/etc/data_service.yaml' -KeyPath 'Kafka.SnapshotPartitions')
+# 三个档位的缺省输入(与 Apply-KafkaProfileDefaults 同值;改档位缺省值时这张表、README 与本节的期望值一起改)。
+$S5bProfiles = @{
+    'prod'      = @{ DesignBytesPerSec = 3145728; BufferTargetMs = 7200000; RetentionMs = 86400000; SegmentBytes = 33554432; BrokerRetentionBytes = 536870912; ReserveGi = 4 }
+    'prod-like' = @{ DesignBytesPerSec = 1048576; BufferTargetMs = 7200000; RetentionMs = 21600000; SegmentBytes = 33554432; BrokerRetentionBytes = 536870912; ReserveGi = 2 }
+    'dev'       = @{ DesignBytesPerSec = 262144;  BufferTargetMs = 3600000; RetentionMs = 3600000;  SegmentBytes = 16777216; BrokerRetentionBytes = 134217728; ReserveGi = 1 }
+}
+
+# 按档位缺省值调 Get-KafkaDiskPlan;-Overrides 覆盖任意一个参数(例如 LiveStorageGi / ExplicitStorageGi / ZoneCount)。
+function New-S5bDiskPlan {
+    param(
+        # 不叫 -Profile:$PROFILE 是自动变量。
+        [ValidateSet('prod', 'prod-like', 'dev')][string]$Tier = 'prod',
+        [hashtable]$Overrides = @{}
+    )
+    $d = $S5bProfiles[$Tier]
+    $target = Get-KafkaDbTaskRetentionBytesTarget -DesignBytesPerSec $d.DesignBytesPerSec -BufferTargetMs $d.BufferTargetMs `
+        -RetentionMs $d.RetentionMs -Partitions $S5bDbTaskPartitions -SegmentBytes $d.SegmentBytes
+    $p = @{
+        Brokers = 3; ReplicationFactor = 3; ZoneCount = 2; DbTaskPartitions = $S5bDbTaskPartitions
+        DbTaskRetentionBytesTarget = $target; SegmentBytes = $d.SegmentBytes; BrokerRetentionBytes = $d.BrokerRetentionBytes
+        AuditPartitions = $S5bAuditPartitions; OtherTopicsReserveGi = $d.ReserveGi; LiveStorageGi = $null; LivePvcGi = $null; ExplicitStorageGi = 0
+        DesignBytesPerSec = $d.DesignBytesPerSec; DbTaskRetentionMs = $d.RetentionMs
+    }
+    foreach ($k in $Overrides.Keys) { $p[$k] = $Overrides[$k] }
+    return Get-KafkaDiskPlan @p
+}
+
+# 规格的保证(B-17):生效的 retention.bytes 下,1.3 × Σ(各 topic 每分区上限 + segment)≤ 实际 PVC。
+# 每个 broker 按「持有每个分区各一份副本」的最坏情形算(3 → N 扩容后、reassign 之前老 broker 就是这样),不乘 RF ÷ broker 数。
+function Assert-S5bPlanFitsDisk {
+    param([Parameter(Mandatory = $true)]$Plan, [Parameter(Mandatory = $true)][string]$Label)
+    $seg = [decimal]$Plan.SegmentBytes
+    $used = [decimal]1.3 * (
+        [decimal]$Plan.ZoneCount * [decimal]$Plan.DbTaskPartitions * ([decimal]$Plan.DbTaskRetentionBytes + $seg) +
+        [decimal]$Plan.AuditPartitions * ([decimal]$Plan.BrokerRetentionBytes + $seg) +
+        [decimal]$Plan.OtherTopicsReserveGi * $S5bGiB)
+    Assert-True -Condition ($used -le [decimal]$Plan.EffectiveGi * $S5bGiB) -Because "${Label}:按生效的 retention.bytes=$($Plan.DbTaskRetentionBytes) 算,最坏的 broker 要 $used 字节(含 1.3 余量),超过了 $($Plan.EffectiveGi)Gi 的盘 —— 收缩没有把 Σ 压到 PVC ÷ 1.3 以内"
+}
+
+# DryRun 输出里的账本行(到紧随其后的 note 行为止;Write-Host 折行时 token 里没有空格,仍能断言)。
+function Get-S5bLedgerText {
+    param([Parameter(Mandatory = $true)][string]$Output)
+    $m = [regex]::Match($Output, '(?s)Kafka disk ledger: brokers=.*?(?=Kafka disk ledger note:)')
+    if (-not $m.Success) { throw "DryRun 输出里没有「Kafka disk ledger: brokers=…」一行(写路径入口没打盘预算?)" }
+    return $m.Value
+}
+
+# 读集群出口的假 kubectl:「get pvc」回应 $script:S5bKubectlPvcReply,「get namespace」回应 $script:S5bKubectlNamespaceReply,
+# 其余(StatefulSet 模板)回应 $script:S5bKubectlReply;记下每次调用的参数。
+$script:S5bKubectlReply = @{ ExitCode = 0; Stdout = '' }
+$script:S5bKubectlPvcReply = @{ ExitCode = 0; Stdout = '' }
+$script:S5bKubectlNamespaceReply = @{ ExitCode = 0; Stdout = '' }
+$script:S5bKubectlCalls = [System.Collections.Generic.List[string]]::new()
+function kubectl {
+    $joined = ($args -join ' ')
+    $script:S5bKubectlCalls.Add($joined)
+    $reply = $script:S5bKubectlReply
+    if ($joined -match '(^| )get pvc( |$)') { $reply = $script:S5bKubectlPvcReply }
+    elseif ($joined -match '(^| )get namespace( |$)') { $reply = $script:S5bKubectlNamespaceReply }
+    $global:LASTEXITCODE = [int]$reply.ExitCode
+    return [string]$reply.Stdout
+}
+
+# 被抽函数读的脚本级变量一次给全(取值 = prod 档缺省、dev 发布档单 broker、zones.json 两个 zone、DryRun)。
+# 三路假 kubectl 缺省都是「成功、无输出」:没有 StatefulSet、没有 PVC、没有 zone namespace。
+function Reset-S5bFixture {
+    param(
+        [hashtable]$Reply = @{ ExitCode = 0; Stdout = '' },
+        [hashtable]$PvcReply = @{ ExitCode = 0; Stdout = '' },
+        [hashtable]$NamespaceReply = @{ ExitCode = 0; Stdout = '' }
+    )
+    $script:S5bKubectlReply = $Reply
+    $script:S5bKubectlPvcReply = $PvcReply
+    $script:S5bKubectlNamespaceReply = $NamespaceReply
+    $script:S5bKubectlCalls.Clear()
+    $script:NamespacePrefix = 'contract-zone'
+    $script:ZoneName = 'yesterday'
+    $script:RepoRoot = Get-RepoRoot
+    $script:KafkaBrokers = 0
+    $script:ReleaseProfile = 'dev'
+    $script:OpsProfile = 'custom'
+    $script:InfraNamespace = 'contract-infra'
+    $script:KubeContext = ''
+    $script:KubeConfig = ''
+    $script:ZoneId = 101
+    $script:ZonesConfigPath = Join-Path (Get-RepoRoot) 'deploy/k8s/zones.json'
+    $script:DryRun = $true
+    $script:KafkaSegmentBytes = [long]33554432
+    $script:KafkaRetentionBytes = [long]536870912
+    $script:KafkaDbTaskRetentionMs = 86400000
+    $script:KafkaDbTaskDesignBytesPerSec = [long]3145728
+    $script:KafkaDbTaskBufferTargetMs = [long]7200000
+    $script:KafkaOtherTopicsReserveGi = 4
+    $script:KafkaStorageGi = 0
+    $script:KafkaDbTaskRetentionBytes = [long]0
+    $script:KafkaDiskPlan = $null
+}
+
+Test-Case 'S5b 夹具前提:db_task 10 个分区、审计 6 + 3 个分区、zones.json 恰好两个 zone(缺省值表按这组数算;变了就重算 README 与本节期望值)' {
+    Assert-Equal -Expected 10 -Actual $S5bDbTaskPartitions -Because 'go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt'
+    Assert-Equal -Expected 9 -Actual $S5bAuditPartitions -Because 'data_service.yaml 的 TransactionLogPartitions + SnapshotPartitions'
+    $zoneIds = @((Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/zones.json') -Raw | ConvertFrom-Json).zones | ForEach-Object { [int]$_.zoneId } | Sort-Object -Unique)
+    Assert-Equal -Expected '101,102' -Actual ($zoneIds -join ',') -Because 'DryRun 用例的 zone 数 = zones.json ∪ -ZoneId 101 = 2'
+}
+
+Test-Case 'S5b 目标 retention.bytes(Get-KafkaDbTaskRetentionBytesTarget):三个档位的缺省值,T 取 min(缓冲目标, retention.ms),非正输入即 throw' {
+    foreach ($case in @(
+        @{ Profile = 'prod'; Want = 2785017856 }
+        @{ Profile = 'prod-like'; Want = 973078528 }
+        @{ Profile = 'dev'; Want = 150994944 }
+    )) {
+        $d = $S5bProfiles[$case.Profile]
+        $got = Get-KafkaDbTaskRetentionBytesTarget -DesignBytesPerSec $d.DesignBytesPerSec -BufferTargetMs $d.BufferTargetMs -RetentionMs $d.RetentionMs -Partitions $S5bDbTaskPartitions -SegmentBytes $d.SegmentBytes
+        Assert-Equal -Expected $case.Want -Actual $got -Because "$($case.Profile) 档:roundUp(R × T × 1.2 ÷ P, 64MiB) + segment(负责人拍板的缺省值表)"
+        Assert-Equal -Expected 0 -Actual (([long]$got - $d.SegmentBytes) % 67108864) -Because "$($case.Profile) 档:去掉一个 segment 后是 64MiB 的整数倍"
+    }
+    $dev = $S5bProfiles['dev']
+    $longBuffer = Get-KafkaDbTaskRetentionBytesTarget -DesignBytesPerSec $dev.DesignBytesPerSec -BufferTargetMs 7200000 -RetentionMs 3600000 -Partitions $S5bDbTaskPartitions -SegmentBytes $dev.SegmentBytes
+    Assert-Equal -Expected 150994944 -Actual $longBuffer -Because '缓冲目标 2h 但 retention.ms 只有 1h:按 1h 算(时间先到先删,多留只占盘)'
+    foreach ($bad in @(@{ Partitions = 0; BufferTargetMs = 3600000 }, @{ Partitions = 10; BufferTargetMs = 0 })) {
+        $thrown = ''
+        try { $null = Get-KafkaDbTaskRetentionBytesTarget -DesignBytesPerSec 262144 -BufferTargetMs $bad.BufferTargetMs -RetentionMs 3600000 -Partitions $bad.Partitions -SegmentBytes 16777216 } catch { $thrown = $_.Exception.Message }
+        Assert-Match -Text $thrown -Pattern '必须全部为正' -Because "partitions=$($bad.Partitions) buffer=$($bad.BufferTargetMs):不替你猜一个保留量"
+    }
+}
+
+Test-Case 'S5b 盘预算(Get-KafkaDiskPlan):新集群按公式建盘 —— prod 3 broker / RF3 与 1 broker / RF1 都是 80Gi,prod-like 40Gi,dev 取下限 20Gi;不收缩' {
+    foreach ($case in @(
+        @{ Label = 'prod 3 broker RF3'; Profile = 'prod'; Overrides = @{}; Gi = 80; Target = 2785017856 }
+        @{ Label = 'prod 1 broker RF1'; Profile = 'prod'; Overrides = @{ Brokers = 1; ReplicationFactor = 1 }; Gi = 80; Target = 2785017856 }
+        @{ Label = 'prod-like'; Profile = 'prod-like'; Overrides = @{}; Gi = 40; Target = 973078528 }
+        @{ Label = 'dev'; Profile = 'dev'; Overrides = @{ Brokers = 1; ReplicationFactor = 1 }; Gi = 20; Target = 150994944 }
+    )) {
+        $plan = New-S5bDiskPlan -Tier $case.Profile -Overrides $case.Overrides
+        Assert-Equal -Expected $case.Target -Actual $plan.TargetRetentionBytes -Because "$($case.Label):目标值"
+        Assert-Equal -Expected $case.Gi -Actual $plan.RequiredGi -Because "$($case.Label):1.3 × RF × Σ ÷ broker 数,取到 10Gi、下限 20Gi"
+        Assert-Equal -Expected 'computed' -Actual $plan.Source -Because "$($case.Label):线上没有、也没显式给"
+        Assert-Equal -Expected $case.Gi -Actual $plan.EffectiveGi -Because "$($case.Label):新集群直接按公式建盘"
+        Assert-Equal -Expected $case.Target -Actual $plan.DbTaskRetentionBytes -Because "$($case.Label):按公式建出来的盘装得下目标值,不得收缩(哪怕一个 64MiB 粒度)"
+        Assert-True -Condition (-not $plan.FitLimited) -Because "$($case.Label):FitLimited 为假"
+        Assert-S5bPlanFitsDisk -Plan $plan -Label $case.Label
+    }
+    $prod = New-S5bDiskPlan -Tier 'prod'
+    Assert-True -Condition ([double]$prod.ImpliedBufferSec -ge 7200) -Because "prod 新集群按设计速率至少缓冲 2 小时(实际 $($prod.ImpliedBufferSec)s)"
+}
+
+Test-Case 'S5b 盘预算:已有集群沿用线上 PVC,盘不够就按盘收缩并标 FitLimited —— prod、线上 20Gi、2 个 zone → 268435456,约 622s;显式更大的目标同样收缩' {
+    $plan = New-S5bDiskPlan -Tier 'prod' -Overrides @{ LiveStorageGi = 20 }
+    Assert-Equal -Expected 20 -Actual $plan.EffectiveGi -Because '自动模式沿用线上大小(volumeClaimTemplates 不可变,渲染值 = 线上值才不会 apply 冲突)'
+    Assert-Equal -Expected 'live' -Actual $plan.Source -Because 'pvc_source=live'
+    Assert-Equal -Expected 80 -Actual $plan.RequiredGi -Because '需求照算,FitLimited 告警里给出要扩到多大'
+    Assert-Equal -Expected 2785017856 -Actual $plan.TargetRetentionBytes -Because '目标值不变'
+    Assert-Equal -Expected 268435456 -Actual $plan.DbTaskRetentionBytes -Because '按盘收缩到 floor(capacity, 64MiB)(B-17:不会写爆盘)'
+    Assert-True -Condition $plan.FitLimited -Because 'FitLimited 为真'
+    Assert-True -Condition ([Math]::Abs([double]$plan.ImpliedBufferSec - 622) -le 1) -Because "按设计速率约 622s 的缓冲(实际 $($plan.ImpliedBufferSec))"
+    Assert-S5bPlanFitsDisk -Plan $plan -Label 'prod 线上 20Gi'
+
+    $explicitTarget = New-S5bDiskPlan -Tier 'prod' -Overrides @{ LiveStorageGi = 20; DbTaskRetentionBytesTarget = [long]10770972672 }
+    Assert-Equal -Expected 10770972672 -Actual $explicitTarget.TargetRetentionBytes -Because '显式的 -KafkaDbTaskRetentionBytes 只是目标'
+    Assert-Equal -Expected 268435456 -Actual $explicitTarget.DbTaskRetentionBytes -Because '显式目标大于可容纳值时同样按盘收缩'
+    Assert-True -Condition $explicitTarget.FitLimited -Because '显式目标放不下同样标 FitLimited'
+    Assert-S5bPlanFitsDisk -Plan $explicitTarget -Label '显式目标 + 线上 20Gi'
+
+    $explicitDisk = New-S5bDiskPlan -Tier 'prod' -Overrides @{ ExplicitStorageGi = 40 }
+    Assert-Equal -Expected 'explicit/40' -Actual ('{0}/{1}' -f $explicitDisk.Source, $explicitDisk.EffectiveGi) -Because '显式 -KafkaStorageGi 优先于公式(线上没有时)'
+    Assert-Equal -Expected 1140850688 -Actual $explicitDisk.DbTaskRetentionBytes -Because '显式的盘小于需求:按 40Gi 收缩'
+    Assert-True -Condition $explicitDisk.FitLimited -Because '显式的盘装不下目标值同样标 FitLimited'
+    Assert-S5bPlanFitsDisk -Plan $explicitDisk -Label '显式 40Gi'
+}
+
+Test-Case 'S5b 盘预算(R5a 复核):每个 broker 按「每个分区各一份副本」取上界,5 broker / RF3 / 线上 20Gi 与 3 broker 同为 268435456;线上模板与最小实际 PVC 取小,StatefulSet 不在时按 PVC(live-pvc)' {
+    # [1] 3 → N 扩容是放行的,kafka-reassign-partitions 之前老的 3 个 broker 仍持有全部 db_task 与审计分区:
+    #     按 RF ÷ broker 数均摊会算成 805306368,老 broker 上约 20×(805306368+33554432)+9428795392 ≈ 26.2GB,超过 20Gi。
+    $three = New-S5bDiskPlan -Tier 'prod' -Overrides @{ LiveStorageGi = 20 }
+    $five = New-S5bDiskPlan -Tier 'prod' -Overrides @{ Brokers = 5; ReplicationFactor = 3; LiveStorageGi = 20 }
+    Assert-Equal -Expected 268435456 -Actual $five.DbTaskRetentionBytes -Because '5 broker、RF 3、线上 20Gi:不按 RF ÷ broker 数均摊(否则是 805306368,写爆还没 reassign 的老 broker)'
+    Assert-Equal -Expected $three.DbTaskRetentionBytes -Actual $five.DbTaskRetentionBytes -Because '5 broker 与 3 broker 的生效值相同'
+    Assert-Equal -Expected $three.RequiredGi -Actual $five.RequiredGi -Because 'RequiredGi 同样不随 broker 数变小'
+    Assert-Equal -Expected '5/3' -Actual ('{0}/{1}' -f $five.Brokers, $five.ReplicationFactor) -Because 'broker 数与 RF 仍原样带回,账本行照打'
+    Assert-S5bPlanFitsDisk -Plan $five -Label '5 broker 线上 20Gi'
+    Assert-Equal -Expected 80 -Actual (New-S5bDiskPlan -Tier 'prod' -Overrides @{ Brokers = 5; ReplicationFactor = 3 }).RequiredGi -Because '新集群 5 broker 同样按上界建 80Gi'
+
+    # [0] 线上盘 = min(StatefulSet 模板, 最小的实际 PVC);StatefulSet 不在、PVC 在时按 PVC,不按公式值。
+    $pvcOnly = New-S5bDiskPlan -Tier 'prod' -Overrides @{ LivePvcGi = 20 }
+    Assert-Equal -Expected 'live-pvc/20/20/268435456' -Actual ('{0}/{1}/{2}/{3}' -f $pvcOnly.Source, $pvcOnly.EffectiveGi, $pvcOnly.StorageTemplateGi, $pvcOnly.DbTaskRetentionBytes) -Because '--cascade=orphan 之后 StatefulSet 不在:按最小的实际 PVC 算并以它为模板,不按公式值 80Gi(B-17)'
+    Assert-S5bPlanFitsDisk -Plan $pvcOnly -Label 'StatefulSet 不在、PVC 20Gi'
+    $templateBigger = New-S5bDiskPlan -Tier 'prod' -Overrides @{ LiveStorageGi = 80; LivePvcGi = 20 }
+    Assert-Equal -Expected 'live/20/80/268435456' -Actual ('{0}/{1}/{2}/{3}' -f $templateBigger.Source, $templateBigger.EffectiveGi, $templateBigger.StorageTemplateGi, $templateBigger.DbTaskRetentionBytes) -Because '模板 80Gi、有一块 PVC 只有 20Gi:retention.bytes 按 20Gi 算,kafka.yaml 照旧渲染线上模板 80Gi(不可变字段,不同即 apply 被拒)'
+    Assert-S5bPlanFitsDisk -Plan $templateBigger -Label '模板 80Gi、实际 20Gi'
+    $pvcBigger = New-S5bDiskPlan -Tier 'prod' -Overrides @{ LiveStorageGi = 20; LivePvcGi = 80 }
+    Assert-Equal -Expected 'live/20/20/268435456' -Actual ('{0}/{1}/{2}/{3}' -f $pvcBigger.Source, $pvcBigger.EffectiveGi, $pvcBigger.StorageTemplateGi, $pvcBigger.DbTaskRetentionBytes) -Because '只 patch 了 PVC、没重建 StatefulSet:按旧模板(更小的)算,方向保守'
+    $explicitWithPvc = New-S5bDiskPlan -Tier 'prod' -Overrides @{ LivePvcGi = 80; ExplicitStorageGi = 80 }
+    Assert-Equal -Expected 'explicit/80/80' -Actual ('{0}/{1}/{2}' -f $explicitWithPvc.Source, $explicitWithPvc.EffectiveGi, $explicitWithPvc.StorageTemplateGi) -Because '显式值优先(与线上是否相符由 Assert-KafkaStorageChangeIsSafe 判)'
+    $thrown = ''
+    try { $null = New-S5bDiskPlan -Tier 'prod' -Overrides @{ LivePvcGi = 0 } } catch { $thrown = $_.Exception.Message }
+    Assert-Match -Text $thrown -Pattern 'fail-closed' -Because '最小实际 PVC 为 0:不替你猜一块盘'
+}
+
+Test-Case 'S5b 盘预算:连 2 个 segment 都放不下即 throw(线上 5Gi、prod、3 个 zone),错误写明「放不下」与所需的 Gi;非法输入一律 throw' {
+    $thrown = ''
+    try { $null = New-S5bDiskPlan -Tier 'prod' -Overrides @{ LiveStorageGi = 5; ZoneCount = 3 } } catch { $thrown = $_.Exception.Message }
+    Assert-Match -Text $thrown -Pattern '放不下' -Because '每分区缓冲约等于零时不能只告警'
+    Assert-Match -Text $thrown -Pattern '-KafkaStorageGi 120' -Because '错误里给出按目标值所需的盘(3 个 zone 需要 120Gi)与扩盘后的重跑参数'
+    foreach ($bad in @(
+        @{ Label = 'RF 大于 broker 数'; Overrides = @{ Brokers = 1; ReplicationFactor = 3 } }
+        @{ Label = 'zone 数为 0'; Overrides = @{ ZoneCount = 0 } }
+        @{ Label = '线上 0Gi'; Overrides = @{ LiveStorageGi = 0 } }
+        @{ Label = '目标值为 0'; Overrides = @{ DbTaskRetentionBytesTarget = [long]0 } }
+    )) {
+        $thrown = ''
+        try { $null = New-S5bDiskPlan -Tier 'prod' -Overrides $bad.Overrides } catch { $thrown = $_.Exception.Message }
+        Assert-Match -Text $thrown -Pattern 'fail-closed' -Because "$($bad.Label):不替你猜一块盘"
+    }
+}
+
+Test-Case 'S5b PVC 变更判定(Get-KafkaStorageChangeVerdict):absent / auto / unchanged 放行,扩、缩与「显式值大于最小的实际 PVC」一律拒绝' {
+    foreach ($case in @(
+        @{ Live = $null; Pvc = $null; Explicit = 0; Verdict = 'absent' }
+        @{ Live = $null; Pvc = $null; Explicit = 80; Verdict = 'absent' }
+        @{ Live = 20; Pvc = $null; Explicit = 0; Verdict = 'auto' }
+        @{ Live = 20; Pvc = $null; Explicit = 20; Verdict = 'unchanged' }
+        @{ Live = 20; Pvc = $null; Explicit = 80; Verdict = 'expand-refused' }
+        @{ Live = 80; Pvc = $null; Explicit = 20; Verdict = 'shrink-refused' }
+        # --cascade=orphan 之后:StatefulSet 不在、PVC 在,判定不再是 absent(R5a 复核 [0])。
+        @{ Live = $null; Pvc = 20; Explicit = 0; Verdict = 'auto' }
+        @{ Live = $null; Pvc = 20; Explicit = 20; Verdict = 'unchanged' }
+        @{ Live = $null; Pvc = 20; Explicit = 80; Verdict = 'pvc-not-expanded' }
+        @{ Live = $null; Pvc = 80; Explicit = 40; Verdict = 'shrink-refused' }
+        # StatefulSet 在:先按模板判(不等即 apply 被拒),再按最小的实际 PVC 判。
+        @{ Live = 20; Pvc = 80; Explicit = 20; Verdict = 'unchanged' }
+        @{ Live = 20; Pvc = 80; Explicit = 80; Verdict = 'expand-refused' }
+        @{ Live = 80; Pvc = 20; Explicit = 80; Verdict = 'pvc-not-expanded' }
+        @{ Live = 80; Pvc = 20; Explicit = 0; Verdict = 'auto' }
+    )) {
+        $liveText = if ($null -eq $case.Live) { '<不存在>' } else { "$($case.Live)Gi" }
+        $pvcText = if ($null -eq $case.Pvc) { '<没有>' } else { "$($case.Pvc)Gi" }
+        Assert-Equal -Expected $case.Verdict -Actual (Get-KafkaStorageChangeVerdict -LiveStorageGi $case.Live -LivePvcGi $case.Pvc -ExplicitStorageGi $case.Explicit) -Because "模板 $liveText、最小 PVC $pvcText、显式 $($case.Explicit):volumeClaimTemplates 不可变、PVC 不能缩、不按不存在的盘算"
+    }
+}
+
+Test-Case 'S5b Get-LiveKafkaStorageGi(假 kubectl):DryRun 不查;不存在返回 $null;只认 kafka:<整数>Gi,别的单位、没有大小、kubectl 失败一律 throw' {
+    Reset-S5bFixture
+    Assert-True -Condition ($null -eq (Get-LiveKafkaStorageGi)) -Because 'DryRun 一律当线上没有'
+    Assert-Equal -Expected 0 -Actual $script:S5bKubectlCalls.Count -Because 'DryRun 一次集群都不读'
+
+    Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = 'kafka:20Gi' }
+    $script:DryRun = $false
+    Assert-Equal -Expected 20 -Actual (Get-LiveKafkaStorageGi) -Because '读出线上 volumeClaimTemplates 的大小'
+    Assert-Match -Text ([string]$script:S5bKubectlCalls[0]) -Pattern '^get statefulset kafka -n contract-infra --ignore-not-found -o jsonpath=\{\.metadata\.name\}:\{\.spec\.volumeClaimTemplates\[0\]\.spec\.resources\.requests\.storage\}$' -Because '名字与大小一起取,两种「空」分得开'
+
+    Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = '' }
+    $script:DryRun = $false
+    Assert-True -Condition ($null -eq (Get-LiveKafkaStorageGi)) -Because 'StatefulSet 不存在(--ignore-not-found 无输出)返回 $null'
+
+    foreach ($bad in @(
+        @{ Label = '别的单位'; Reply = @{ ExitCode = 0; Stdout = 'kafka:1Ti' }; Pattern = '只认 Gi' }
+        @{ Label = '没有大小'; Reply = @{ ExitCode = 0; Stdout = 'kafka:' }; Pattern = '只认 Gi' }
+        @{ Label = 'kubectl 失败'; Reply = @{ ExitCode = 1; Stdout = '' }; Pattern = 'fail-closed' }
+    )) {
+        Reset-S5bFixture -Reply $bad.Reply
+        $script:DryRun = $false
+        $thrown = ''
+        try { $null = Get-LiveKafkaStorageGi } catch { $thrown = $_.Exception.Message }
+        Assert-Match -Text $thrown -Pattern $bad.Pattern -Because "$($bad.Label):不知道线上盘多大,就算不出不会写爆盘的 retention.bytes"
+    }
+}
+
+Test-Case 'S5b Get-LiveKafkaPvcMinGi(假 kubectl):DryRun 不查;只数 kafka-data-kafka-<序号>、取最小的实际容量;没绑定的取 requests;别的单位、列数不对、kubectl 失败一律 throw' {
+    Reset-S5bFixture
+    Assert-True -Condition ($null -eq (Get-LiveKafkaPvcMinGi)) -Because 'DryRun 一律当没有'
+    Assert-Equal -Expected 0 -Actual $script:S5bKubectlCalls.Count -Because 'DryRun 一次集群都不读'
+
+    # kafka-data-kafka-1 停在扩容途中(requests 已是 80Gi、实际仍是 20Gi);别的 PVC 与名字不完全匹配的不算。
+    Reset-S5bFixture -PvcReply @{ ExitCode = 0; Stdout = "kafka-data-kafka-0   80Gi   80Gi`nkafka-data-kafka-1   20Gi   80Gi`nkafka-data-kafka-2   80Gi   80Gi`nmysql-data   5Gi   5Gi`nkafka-data-kafka-old   1Gi   1Gi" }
+    $script:DryRun = $false
+    Assert-Equal -Expected 20 -Actual (Get-LiveKafkaPvcMinGi) -Because '取最小的 status.capacity,不读 requests(patch 之后立刻就变,扩容没做完时比实际盘大)'
+    Assert-Match -Text ([string]$script:S5bKubectlCalls[0]) -Pattern '^get pvc -n contract-infra --no-headers -o custom-columns=NAME:\.metadata\.name,CAPACITY:\.status\.capacity\.storage,REQUEST:\.spec\.resources\.requests\.storage$' -Because '名字、实际容量、申请量一起取'
+
+    Reset-S5bFixture -PvcReply @{ ExitCode = 0; Stdout = "kafka-data-kafka-0   20Gi   20Gi`nkafka-data-kafka-3   <none>   80Gi" }
+    $script:DryRun = $false
+    Assert-Equal -Expected 20 -Actual (Get-LiveKafkaPvcMinGi) -Because '还没绑定的 PVC 取它的 requests(绑定时至少这么大、盘上还没数据),不拦下部署'
+
+    Reset-S5bFixture -PvcReply @{ ExitCode = 0; Stdout = '' }
+    $script:DryRun = $false
+    Assert-True -Condition ($null -eq (Get-LiveKafkaPvcMinGi)) -Because '一块都没有返回 $null'
+
+    foreach ($bad in @(
+        @{ Label = '别的单位'; Reply = @{ ExitCode = 0; Stdout = 'kafka-data-kafka-0   20G   20Gi' }; Pattern = '只认 Gi' }
+        @{ Label = '列数不对'; Reply = @{ ExitCode = 0; Stdout = 'kafka-data-kafka-0   20Gi' }; Pattern = '三列' }
+        @{ Label = 'kubectl 失败'; Reply = @{ ExitCode = 1; Stdout = '' }; Pattern = 'fail-closed' }
+    )) {
+        Reset-S5bFixture -PvcReply $bad.Reply
+        $script:DryRun = $false
+        $thrown = ''
+        try { $null = Get-LiveKafkaPvcMinGi } catch { $thrown = $_.Exception.Message }
+        Assert-Match -Text $thrown -Pattern $bad.Pattern -Because "$($bad.Label):不知道每块盘实际多大,就算不出不会写爆盘的 retention.bytes"
+    }
+}
+
+Test-Case 'S5b Get-LiveZoneNamespaceNames(假 kubectl):DryRun 返回 $null;只认「前缀-」开头的 namespace、去掉前缀、排除 infra;空列表返回空数组;kubectl 失败 throw' {
+    Reset-S5bFixture
+    Assert-True -Condition ($null -eq (Get-LiveZoneNamespaceNames)) -Because 'DryRun 不读,返回 $null(账本行印 unread)'
+    Assert-Equal -Expected 0 -Actual $script:S5bKubectlCalls.Count -Because 'DryRun 一次集群都不读'
+
+    Reset-S5bFixture -NamespaceReply @{ ExitCode = 0; Stdout = "default`nkube-system`ncontract-infra`ncontract-zone-yesterday`ncontract-zone-today`ncontract-zone-z103`ncontract-zonex`ncontract-zone-" }
+    $script:DryRun = $false
+    $names = Get-LiveZoneNamespaceNames
+    Assert-Equal -Expected 'today,yesterday,z103' -Actual ((@($names) | Sort-Object) -join ',') -Because '只要「contract-zone-」开头且前缀后非空的 namespace'
+    Assert-Match -Text ([string]$script:S5bKubectlCalls[0]) -Pattern '^get namespace --no-headers -o custom-columns=NAME:\.metadata\.name$' -Because '列 namespace 名'
+
+    Reset-S5bFixture -NamespaceReply @{ ExitCode = 0; Stdout = "contract-zone-infra`ncontract-zone-yesterday" }
+    $script:DryRun = $false
+    $script:InfraNamespace = 'contract-zone-infra'
+    Assert-Equal -Expected 'yesterday' -Actual (@(Get-LiveZoneNamespaceNames) -join ',') -Because 'infra namespace 恰好带同一前缀时不算 zone'
+
+    Reset-S5bFixture -NamespaceReply @{ ExitCode = 0; Stdout = "default`nkube-system" }
+    $script:DryRun = $false
+    $empty = Get-LiveZoneNamespaceNames
+    Assert-True -Condition ($null -ne $empty -and @($empty).Count -eq 0) -Because '读了但没有 zone namespace:空数组,不是 $null(否则账本行误印 unread)'
+
+    Reset-S5bFixture -NamespaceReply @{ ExitCode = 1; Stdout = '' }
+    $script:DryRun = $false
+    $thrown = ''
+    try { $null = Get-LiveZoneNamespaceNames } catch { $thrown = $_.Exception.Message }
+    Assert-Match -Text $thrown -Pattern 'fail-closed' -Because '读不到不等于没有'
+}
+
+Test-Case 'S5b Resolve-KafkaDiskPlan:按 prod 档与 zones.json 解出 80Gi / 2785017856 并缓存;线上 20Gi 时按盘收缩;-KafkaDbTaskRetentionBytes 负数或不到 2 个 segment 即拒绝' {
+    Reset-S5bFixture
+    $plan = Resolve-KafkaDiskPlan
+    Assert-Equal -Expected '1/1/2' -Actual ('{0}/{1}/{2}' -f $plan.Brokers, $plan.ReplicationFactor, $plan.ZoneCount) -Because 'dev 发布档单 broker;zone = zones.json ∪ -ZoneId'
+    Assert-Equal -Expected 'computed/80/2785017856' -Actual ('{0}/{1}/{2}' -f $plan.Source, $plan.EffectiveGi, $plan.DbTaskRetentionBytes) -Because 'DryRun 按公式建盘、不收缩'
+    Assert-Equal -Expected $S5bAuditPartitions -Actual $plan.AuditPartitions -Because '审计分区数取自 data_service.yaml'
+    Assert-True -Condition (-not $plan.ZonesConfigMissing) -Because 'zones 配置在场'
+    Assert-True -Condition ([object]::ReferenceEquals($plan, $script:KafkaDiskPlan)) -Because '结果缓存进 $script:KafkaDiskPlan,kafka.yaml 与两个 ConfigMap 读同一份'
+
+    Reset-S5bFixture
+    $script:ZonesConfigPath = Join-Path ([System.IO.Path]::GetTempPath()) ('s5b-zones-missing-' + [guid]::NewGuid().ToString('N') + '.json')
+    $missing = Resolve-KafkaDiskPlan 3>&1 | Where-Object { $_ -isnot [System.Management.Automation.WarningRecord] }
+    Assert-Equal -Expected 1 -Actual @($missing)[0].ZoneCount -Because 'zones 配置缺席时只数 -ZoneId'
+    Assert-True -Condition @($missing)[0].ZonesConfigMissing -Because '缺席要标出来(账本行尾 zones_config=missing)'
+    # R5a 复核 [2]:缺席不能只在行尾标一个 token,要告警(dev 档);告警措辞不得撞上 Get-InfraZoneIds 那条讲预建库的 WARNING。
+    $missingLines = @(Write-KafkaDiskLedger -Plan @($missing)[0] 6>&1 3>&1 | ForEach-Object { [string]$_ })
+    Assert-Match -Text ($missingLines -join "`n") -Pattern '\[KafkaDiskLedger\]ZonesConfigMissing:' -Because 'zones 配置缺席时 Z 不可信,要打告警'
+    Assert-NotMatch -Text ($missingLines -join "`n") -Pattern 'Zones configuration missing' -Because '与 Get-InfraZoneIds 的预建库告警区分开(MySQL 总账用例断言 zone-up 输出里没有那一条)'
+    Assert-Match -Text ([string]@($missingLines | Where-Object { $_ -like 'Kafka disk ledger: brokers=*' })[0]) -Pattern 'live_extra_zones=unread zones_config=missing$' -Because 'DryRun 没读线上 zone;行尾仍标 zones_config=missing'
+
+    Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = 'kafka:20Gi' }
+    $script:DryRun = $false
+    $live = Resolve-KafkaDiskPlan
+    Assert-Equal -Expected 'live/20/268435456' -Actual ('{0}/{1}/{2}' -f $live.Source, $live.EffectiveGi, $live.DbTaskRetentionBytes) -Because '已有集群沿用线上 20Gi,按盘收缩'
+
+    foreach ($bad in @(@{ Value = [long]-1; Pattern = '必须 ≥ 0' }, @{ Value = [long]1000; Pattern = '不到 2 个 segment' })) {
+        Reset-S5bFixture
+        $script:KafkaDbTaskRetentionBytes = $bad.Value
+        $thrown = ''
+        try { $null = Resolve-KafkaDiskPlan } catch { $thrown = $_.Exception.Message }
+        Assert-Match -Text $thrown -Pattern $bad.Pattern -Because "-KafkaDbTaskRetentionBytes $($bad.Value) 必须在写路径入口被拒"
+    }
+}
+
+Test-Case 'S5b Assert-KafkaStorageChangeIsSafe 与 Write-KafkaDiskLedger:扩盘拒绝附 runbook、缩盘拒绝;账本行字段齐全,收缩时打 FitLimited 告警' {
+    Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = 'kafka:20Gi' }
+    $script:DryRun = $false
+    $script:KafkaStorageGi = 80
+    $expand = Resolve-KafkaDiskPlan
+    $thrown = ''
+    try { Assert-KafkaStorageChangeIsSafe -Plan $expand } catch { $thrown = $_.Exception.Message }
+    foreach ($fragment in @('volumeClaimTemplates 不可变', 'patch pvc kafka-data-kafka-<i>', 'delete statefulset kafka --cascade=orphan', '-KafkaStorageGi 80', 'allowVolumeExpansion')) {
+        Assert-Match -Text $thrown -Pattern ([regex]::Escape($fragment)) -Because "expand-refused 的错误要带完整 runbook(缺「$fragment」)"
+    }
+
+    Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = 'kafka:80Gi' }
+    $script:DryRun = $false
+    $script:KafkaStorageGi = 40
+    $thrown = ''
+    try { Assert-KafkaStorageChangeIsSafe -Plan (Resolve-KafkaDiskPlan) } catch { $thrown = $_.Exception.Message }
+    Assert-Match -Text $thrown -Pattern 'PVC 不能缩' -Because 'shrink-refused'
+
+    foreach ($ok in @(@{ Live = 'kafka:20Gi'; Explicit = 0 }, @{ Live = 'kafka:20Gi'; Explicit = 20 }, @{ Live = ''; Explicit = 80 })) {
+        Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = $ok.Live }
+        $script:DryRun = $false
+        $script:KafkaStorageGi = $ok.Explicit
+        Assert-KafkaStorageChangeIsSafe -Plan (Resolve-KafkaDiskPlan)
+    }
+
+    Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = 'kafka:20Gi' }
+    $script:DryRun = $false
+    $lines = @(Write-KafkaDiskLedger -Plan (Resolve-KafkaDiskPlan) 6>&1 3>&1 | ForEach-Object { [string]$_ })
+    $ledger = @($lines | Where-Object { $_ -like 'Kafka disk ledger: brokers=*' })
+    Assert-Equal -Expected 1 -Actual $ledger.Count -Because '恰好一行账本'
+    $want = 'Kafka disk ledger: brokers=1 rf=1 zones=2 db_task_partitions=10 segment_bytes=33554432 db_task_retention_bytes=268435456 target_retention_bytes=2785017856 pvc_gib=20 pvc_source=live required_gib=80 implied_db_task_buffer_min=10 db_task_retention_ms_min=1440 design_bytes_per_sec=3145728 audit_partitions=9 other_topics_reserve_gib=4 live_sts_gib=20 live_pvc_min_gib=none live_extra_zones=0'
+    Assert-Equal -Expected $want -Actual $ledger[0] -Because '账本行字段与顺序(README「Kafka 磁盘预算」一节照抄这一行;改字段要两边一起改)'
+    Assert-True -Condition (@($lines | Where-Object { $_ -like 'Kafka disk ledger note:*' }).Count -eq 1) -Because '提醒 retention.bytes 是 topic 级设置、先部署的 zone 在下次 zone-up 前保留旧值'
+    Assert-Match -Text ($lines -join "`n") -Pattern '\[KafkaDiskLedger\]FitLimited:' -Because '按盘收缩要告警(只告警不阻断)'
+    # R5a 复核 [3]:收缩后的值低于 topic 现值时,发布瞬间 Kafka 就删掉超出部分的未消费积压,告警要求先看 lag。
+    Assert-Match -Text ($lines -join "`n") -Pattern ([regex]::Escape('confirm the db consumer lag is ~0 for every partition before rolling db / login')) -Because 'FitLimited 告警要提醒发布前确认 db 消费 lag 为 0'
+    Assert-Match -Text ($lines -join "`n") -Pattern ([regex]::Escape('the broker default 536870912')) -Because '告警里给出 broker 缺省值,便于判断是否低于 topic 现值'
+    Assert-Match -Text ($lines -join "`n") -Pattern '\[KafkaDiskLedger\]BufferBelowRetention:' -Because '按设计速率约 10 分钟的缓冲短于 24 小时的 retention.ms'
+    Assert-NotMatch -Text ($lines -join "`n") -Pattern '\[KafkaDiskLedger\](ZonesConfigMissing|LiveZonesNotInConfig):' -Because 'zones 配置在场、线上没有配置外的 zone,不该告警'
+}
+
+Test-Case 'S5b R5a 复核 [0]:--cascade=orphan 之后(StatefulSet 不在、PVC 20Gi)不带参数按 live-pvc/20 算,显式 80 被拒;模板 80Gi 而 PVC 20Gi 时按 20Gi 算、渲染模板仍是 80Gi' {
+    Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = '' } -PvcReply @{ ExitCode = 0; Stdout = "kafka-data-kafka-0   20Gi   20Gi" }
+    $script:DryRun = $false
+    $orphan = Resolve-KafkaDiskPlan
+    Assert-Equal -Expected 'live-pvc/20/20/268435456' -Actual ('{0}/{1}/{2}/{3}' -f $orphan.Source, $orphan.EffectiveGi, $orphan.StorageTemplateGi, $orphan.DbTaskRetentionBytes) -Because 'StatefulSet 不在、PVC 20Gi、不带 -KafkaStorageGi:按实际盘 20Gi 算,不按公式值 80Gi(否则 retention.bytes 2785017856 写爆 20Gi 的盘)'
+    Assert-KafkaStorageChangeIsSafe -Plan $orphan
+
+    Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = '' } -PvcReply @{ ExitCode = 0; Stdout = "kafka-data-kafka-0   20Gi   80Gi" }
+    $script:DryRun = $false
+    $script:KafkaStorageGi = 80
+    $thrown = ''
+    try { Assert-KafkaStorageChangeIsSafe -Plan (Resolve-KafkaDiskPlan) } catch { $thrown = $_.Exception.Message }
+    foreach ($fragment in @('20Gi', '先完成', '第 ② 步', 'CAPACITY', 'FileSystemResizePending')) {
+        Assert-Match -Text $thrown -Pattern ([regex]::Escape($fragment)) -Because "StatefulSet 不在 + PVC 实际 20Gi + 显式 80 必须拒绝(pvc-not-expanded),错误要带「$fragment」"
+    }
+
+    Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = '' } -PvcReply @{ ExitCode = 0; Stdout = "kafka-data-kafka-0   80Gi   80Gi`nkafka-data-kafka-1   80Gi   80Gi" }
+    $script:DryRun = $false
+    $script:KafkaStorageGi = 80
+    $adopt = Resolve-KafkaDiskPlan
+    Assert-KafkaStorageChangeIsSafe -Plan $adopt
+    Assert-Equal -Expected 'explicit/80/80' -Actual ('{0}/{1}/{2}' -f $adopt.Source, $adopt.EffectiveGi, $adopt.StorageTemplateGi) -Because 'runbook 第 ④ 步:每块都已扩到 80Gi,带 -KafkaStorageGi 80 放行'
+
+    Reset-S5bFixture -Reply @{ ExitCode = 0; Stdout = 'kafka:80Gi' } -PvcReply @{ ExitCode = 0; Stdout = "kafka-data-kafka-0   20Gi   80Gi" }
+    $script:DryRun = $false
+    $stale = Resolve-KafkaDiskPlan
+    Assert-Equal -Expected 'live/20/80/268435456' -Actual ('{0}/{1}/{2}/{3}' -f $stale.Source, $stale.EffectiveGi, $stale.StorageTemplateGi, $stale.DbTaskRetentionBytes) -Because '模板 80Gi、实际 20Gi:retention.bytes 按 20Gi 算,kafka.yaml 渲染线上模板 80Gi(不可变字段)'
+    Assert-KafkaStorageChangeIsSafe -Plan $stale
+    $staleLedger = @(Write-KafkaDiskLedger -Plan $stale 6>&1 3>&1 | ForEach-Object { [string]$_ } | Where-Object { $_ -like 'Kafka disk ledger: brokers=*' })
+    Assert-Match -Text ([string]$staleLedger[0]) -Pattern 'pvc_gib=20 pvc_source=live .* live_sts_gib=80 live_pvc_min_gib=20 ' -Because '账本行同时给出模板与最小实际 PVC'
+}
+
+Test-Case 'S5b R5a 复核 [2]:线上 zone namespace 并入 Z(配置外的 z103 多算一个并告警);zones 配置缺席时非 dev 档拒绝、dev 档按线上 zone 数;列 namespace 失败 throw' {
+    Reset-S5bFixture -NamespaceReply @{ ExitCode = 0; Stdout = "contract-infra`ncontract-zone-yesterday`ncontract-zone-today`ncontract-zone-z103" }
+    $script:DryRun = $false
+    $extra = Resolve-KafkaDiskPlan
+    Assert-Equal -Expected 3 -Actual $extra.ZoneCount -Because 'zones.json 只有 101 / 102,线上还有 zone-up -ZoneId 单独部署的 z103:Z = 2 + 1'
+    Assert-Equal -Expected 'z103' -Actual (@($extra.LiveExtraZoneNames) -join ',') -Because '配置里的 yesterday / today 不重复算'
+    $twoZones = New-S5bDiskPlan -Tier 'prod' -Overrides @{ ZoneCount = 2; LiveStorageGi = 80 }
+    $threeZones = New-S5bDiskPlan -Tier 'prod' -Overrides @{ ZoneCount = 3; LiveStorageGi = 80 }
+    Assert-True -Condition ($threeZones.DbTaskRetentionBytes -lt $twoZones.DbTaskRetentionBytes) -Because '多一个 zone,同一块盘上每分区可容纳值要变小(否则 2 个 zone 拿到不收缩的 2785017856,1.3 余量被吃光)'
+    $extraLines = @(Write-KafkaDiskLedger -Plan $extra 6>&1 3>&1 | ForEach-Object { [string]$_ })
+    Assert-Match -Text ($extraLines -join "`n") -Pattern '\[KafkaDiskLedger\]LiveZonesNotInConfig:' -Because '线上有配置外的 zone 要告警'
+    Assert-Match -Text ([string]@($extraLines | Where-Object { $_ -like 'Kafka disk ledger: brokers=*' })[0]) -Pattern '(?<![\w])zones=3 .* live_extra_zones=1$' -Because '账本行 zones 已含线上配置外的 zone'
+
+    Reset-S5bFixture -NamespaceReply @{ ExitCode = 0; Stdout = "contract-zone-yesterday`ncontract-zone-today" }
+    $script:DryRun = $false
+    $script:ZonesConfigPath = Join-Path ([System.IO.Path]::GetTempPath()) ('s5b-zones-missing-' + [guid]::NewGuid().ToString('N') + '.json')
+    $missingLive = Resolve-KafkaDiskPlan
+    Assert-Equal -Expected 2 -Actual $missingLive.ZoneCount -Because 'zones 配置缺席(dev 档):-ZoneId 101(-ZoneName yesterday)+ 线上的 today'
+
+    Reset-S5bFixture
+    $script:ZonesConfigPath = Join-Path ([System.IO.Path]::GetTempPath()) ('s5b-zones-missing-' + [guid]::NewGuid().ToString('N') + '.json')
+    foreach ($profileName in @('staging', 'prod')) {
+        $script:ReleaseProfile = $profileName
+        $thrown = ''
+        try { $null = Resolve-KafkaDiskPlan } catch { $thrown = $_.Exception.Message }
+        Assert-Match -Text $thrown -Pattern 'Z 不可信' -Because "-ReleaseProfile ${profileName}:zones 配置缺席时 retention.bytes 可能超量,拒绝部署"
+        Assert-Match -Text $thrown -Pattern '尚未做任何写操作' -Because '拒绝早于任何写操作'
+    }
+
+    Reset-S5bFixture -NamespaceReply @{ ExitCode = 1; Stdout = '' }
+    $script:DryRun = $false
+    $thrown = ''
+    try { $null = Resolve-KafkaDiskPlan } catch { $thrown = $_.Exception.Message }
+    Assert-Match -Text $thrown -Pattern 'fail-closed' -Because '数不清线上 zone 就不算盘预算'
+}
+
+Test-Case 'S5b zone-up DryRun:db 与 login 两个 ConfigMap 的 RetentionMs / RetentionBytes 同值(86400000 / 2785017856),账本行 pvc_source=computed required_gib=80' {
+    $dbFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-db-config')
+    $loginFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-login-config')
+    foreach ($key in @('RetentionMs', 'RetentionBytes')) {
+        $dbVal = Get-FlatValue -Flat $dbFlat -KeyPath "data.db.yaml.ServerConfig.Kafka.$key"
+        $loginVal = Get-FlatValue -Flat $loginFlat -KeyPath "data.login.yaml.Kafka.$key"
+        Assert-Equal -Expected $loginVal -Actual $dbVal -Because "两个服务启动时都对同一个 db_task topic 设置 $key,值一不同就随重启顺序横跳(B-15)"
+    }
+    Assert-Equal -Expected '86400000' -Actual (Get-FlatValue -Flat $dbFlat -KeyPath 'data.db.yaml.ServerConfig.Kafka.RetentionMs') -Because 'prod 档 db_task retention.ms 24h(以前 db 不写、只靠 Go 默认值碰巧相等)'
+    Assert-Equal -Expected '2785017856' -Actual (Get-FlatValue -Flat $dbFlat -KeyPath 'data.db.yaml.ServerConfig.Kafka.RetentionBytes') -Because 'prod 档按公式建盘时不收缩'
+    Assert-Equal -Expected 1 -Actual ([regex]::Matches($devOut, 'Kafka disk ledger: brokers=').Count) -Because '写路径入口恰好打一行盘预算'
+    $ledger = Get-S5bLedgerText -Output $devOut
+    foreach ($token in @('pvc_source=computed', 'required_gib=80', 'pvc_gib=80', 'zones=2', 'db_task_retention_bytes=2785017856')) {
+        Assert-Match -Text $ledger -Pattern ('(?<![\w])' + [regex]::Escape($token) + '(?![\w])') -Because "账本行要有 $token"
+    }
+    Assert-NotMatch -Text $devOut -Pattern '\[KafkaDiskLedger\]FitLimited:' -Because '按公式建盘不会收缩'
+    Assert-Match -Text $devOut -Pattern '\[KafkaDiskLedger\]BufferBelowRetention:' -Because 'prod 档 retention.bytes 按 2h 算,先于 24h 的 retention.ms 生效,要告警'
+}
+
+Test-Case 'S5b infra-up DryRun:kafka 清单的 PVC 是 80Gi(prod 档),-KafkaProfile dev 是 20Gi;没有残留的 __KAFKA_STORAGE_SIZE__' {
+    Assert-Equal -Expected 0 -Actual $battleInfraRun.ExitCode -Because "infra-up DryRun 必须成功。输出: $($battleInfraRun.Output)"
+    $kafka = Select-ManifestByName -Output $battleInfraRun.Output -Name 'kafka'
+    Assert-Match -Text $kafka -Pattern '(?m)^\s+storage: 80Gi\s*$' -Because 'prod 档、2 个 zone、单 broker:RequiredGi 80'
+    Assert-NotMatch -Text $battleInfraRun.Output -Pattern '__KAFKA_STORAGE_SIZE__' -Because '占位必须替换'
+
+    $devRunS5b = Invoke-DeployDryRun -Arguments ($BattleInfraArgs + @('-KafkaProfile', 'dev')) -Env $BattleTestEnv
+    Assert-Equal -Expected 0 -Actual $devRunS5b.ExitCode -Because "-KafkaProfile dev 的 infra-up DryRun 必须成功。输出: $($devRunS5b.Output)"
+    Assert-Match -Text (Select-ManifestByName -Output $devRunS5b.Output -Name 'kafka') -Pattern '(?m)^\s+storage: 20Gi\s*$' -Because 'dev 档按公式约 7Gi,取下限 20Gi'
+    Assert-NotMatch -Text $devRunS5b.Output -Pattern '__KAFKA_STORAGE_SIZE__' -Because '占位必须替换'
+    $ledger = Get-S5bLedgerText -Output $devRunS5b.Output
+    foreach ($token in @('segment_bytes=16777216', 'db_task_retention_bytes=150994944', 'required_gib=20', 'pvc_source=computed')) {
+        Assert-Match -Text $ledger -Pattern ('(?<![\w])' + [regex]::Escape($token) + '(?![\w])') -Because "dev 档账本行要有 $token"
+    }
+    Assert-NotMatch -Text $devRunS5b.Output -Pattern '\[KafkaDiskLedger\]BufferBelowRetention:' -Because 'dev 档缓冲目标 = retention.ms = 1h,按设计速率约 71 分钟,不该告警'
+
+    $kafkaYaml = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/infra/kafka.yaml') -Raw
+    Assert-Match -Text $kafkaYaml -Pattern '(?m)^\s+storage: __KAFKA_STORAGE_SIZE__\s*$' -Because 'kafka.yaml 的 PVC 大小只能来自 Get-KafkaDiskPlan'
+    Assert-NotMatch -Text $kafkaYaml -Pattern '(?m)^\s+storage: \d+Gi' -Because '不得再写死尺寸'
+}
+
+Test-Case 'S5b zone-up DryRun -KafkaStorageGi 40:显式的盘装不下目标值 → 两个 ConfigMap 同为收缩后的 1140850688,账本行 pvc_source=explicit 并打 FitLimited' {
+    $run = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SkipJavaSvc', '-KafkaStorageGi', '40'))
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "盘不够只告警、不阻断。输出: $($run.Output)"
+    $dbVal = Get-FlatValue -Flat (ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $run.Output -Name 'go-svc-db-config')) -KeyPath 'data.db.yaml.ServerConfig.Kafka.RetentionBytes'
+    $loginVal = Get-FlatValue -Flat (ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $run.Output -Name 'go-svc-login-config')) -KeyPath 'data.login.yaml.Kafka.RetentionBytes'
+    Assert-Equal -Expected '1140850688' -Actual $dbVal -Because 'db 渲染的是按 40Gi 收缩后的值'
+    Assert-Equal -Expected $dbVal -Actual $loginVal -Because 'login 与 db 同值'
+    $ledger = Get-S5bLedgerText -Output $run.Output
+    foreach ($token in @('pvc_source=explicit', 'pvc_gib=40', 'required_gib=80', 'db_task_retention_bytes=1140850688')) {
+        Assert-Match -Text $ledger -Pattern ('(?<![\w])' + [regex]::Escape($token) + '(?![\w])') -Because "账本行要有 $token"
+    }
+    Assert-Match -Text $run.Output -Pattern '\[KafkaDiskLedger\]FitLimited:' -Because '按盘收缩要告警'
+}
+
+Test-Case 'S5b 负向:-KafkaDbTaskRetentionBytes -1 在任何 apply 之前拒绝(错误含「必须 ≥ 0」);-KafkaStorageGi -1 被参数校验拒绝' {
+    # 冒号写法:pwsh -File 下 "-1" 单独作为一个参数时可能被当成参数名,冒号把值钉在参数上(about_Pwsh 的 -File 一节)。
+    $run = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SkipJavaSvc', '-KafkaDbTaskRetentionBytes:-1'))
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because 'Kafka 里 -1 = 不限,磁盘无界'
+    Assert-Match -Text $run.Output -Pattern '必须 ≥ 0' -Because "错误文本要点名原因,而不是别的执行错误。输出: $($run.Output)"
+    Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl apply' -Because '拒绝必须先于任何资源变更'
+
+    $run = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-SkipJavaSvc', '-KafkaStorageGi:-1'))
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because '负的 PVC 大小必须由入口参数校验拒绝'
+    Assert-Match -Text $run.Output -Pattern 'KafkaStorageGi' -Because '不能把其他执行错误误判为参数校验成功'
+    Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl apply' -Because '参数校验必须先于任何资源变更'
+}
+
+Test-Case 'S5b 写路径门禁块:Write-MysqlConnectionLedger 之后依次 Resolve-KafkaDiskPlan → Write-KafkaDiskLedger → Assert-KafkaStorageChangeIsSafe;Apply-Infra 替换 __KAFKA_STORAGE_SIZE__' {
+    $writeGates = @($deadlineDeployAst.EndBlock.Statements | Where-Object {
+            $_ -is [System.Management.Automation.Language.IfStatementAst] -and
+            $_.Clauses[0].Item1.Extent.Text -match '^\$Command\s+-in\s+@\(\s*"zone-up"\s*,\s*"all-up"\s*,\s*"infra-up"\s*\)$'
+        })
+    Assert-Equal -Expected 1 -Actual $writeGates.Count -Because '顶层恰好一个写路径门禁块'
+    $statements = @($writeGates[0].Clauses[0].Item2.Statements | ForEach-Object { $_.Extent.Text.Trim() })
+    $at = @{}
+    foreach ($pair in @(
+        @{ Name = 'mysql'; Pattern = '^Write-MysqlConnectionLedger$' }
+        @{ Name = 'resolve'; Pattern = '^\$null = Resolve-KafkaDiskPlan$' }
+        @{ Name = 'ledger'; Pattern = '^Write-KafkaDiskLedger -Plan \$script:KafkaDiskPlan$' }
+        @{ Name = 'assert'; Pattern = '^Assert-KafkaStorageChangeIsSafe -Plan \$script:KafkaDiskPlan$' }
+    )) {
+        $at[$pair.Name] = -1
+        for ($i = 0; $i -lt $statements.Count; $i++) { if ($statements[$i] -match $pair.Pattern) { $at[$pair.Name] = $i; break } }
+        Assert-True -Condition ($at[$pair.Name] -ge 0) -Because "写路径门禁块里要有 /$($pair.Pattern)/"
+    }
+    Assert-True -Condition ($at.mysql -lt $at.resolve -and $at.resolve -lt $at.ledger -and $at.ledger -lt $at.assert) -Because '先算、再打账本、最后判盘变更;全部在门禁块里,早于 switch ($Command) 的任何写操作'
+    $applyInfra = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Apply-Infra' }, $true)
+    Assert-Match -Text $applyInfra.Extent.Text -Pattern ([regex]::Escape('.Replace("__KAFKA_STORAGE_SIZE__"')) -Because 'Apply-Infra 的 kafka.yaml 分支替换 PVC 大小占位'
+    Assert-Match -Text $applyInfra.Extent.Text -Pattern ([regex]::Escape('$infraDiskPlan.StorageTemplateGi')) -Because '渲染的是线上模板(StorageTemplateGi),不是按实际盘取小的 EffectiveGi:模板不可变,不同即 apply 被拒'
+    Assert-NotMatch -Text $applyInfra.Extent.Text -Pattern ([regex]::Escape('$infraDiskPlan.EffectiveGi')) -Because 'EffectiveGi 只用于算 retention.bytes'
+}
+
+Remove-Item -Path Function:kubectl -ErrorAction SilentlyContinue
+foreach ($s5bVar in @('RepoRoot', 'KafkaBrokers', 'ReleaseProfile', 'OpsProfile', 'InfraNamespace', 'KubeContext', 'KubeConfig', 'ZoneId', 'ZonesConfigPath', 'DryRun',
+        'KafkaSegmentBytes', 'KafkaRetentionBytes', 'KafkaDbTaskRetentionMs', 'KafkaDbTaskDesignBytesPerSec', 'KafkaDbTaskBufferTargetMs',
+        'KafkaOtherTopicsReserveGi', 'KafkaStorageGi', 'KafkaDbTaskRetentionBytes', 'KafkaDiskPlan', 'S5bKubectlReply', 'S5bKubectlCalls',
+        'S5bKubectlPvcReply', 'S5bKubectlNamespaceReply', 'NamespacePrefix', 'ZoneName')) {
+    Remove-Variable -Name $s5bVar -Scope Script -ErrorAction SilentlyContinue
+}
+
+# ─────────────────────────────────────────────────────────────────
+# ④ 重试只交给分区属主 + WAITAOF(S1;规格:docs/handoff/godb-pipeline-impl-20261015/S1-retry-owner-waitaof-spec.md
+#    「[modify] tools/scripts/k8s_deploy.ps1」「[modify] tools/scripts/tests/k8s_deploy_contract.tests.ps1」与修订稿 §8;
+#    设计:docs/design/db-retry-owner-routing.md §7 / §8)
+# ─────────────────────────────────────────────────────────────────
+# 部署侧只有三件事:db ConfigMap 原样镜像 go/db/etc/db.yaml 的 Kafka.RetryRouting 与 RedisClient.WaitAOF* 三项;
+# 写路径入口的副本数门禁(manifest 的 replicas 与同一份 manifest 里 HPA 的 maxReplicas ≤ PartitionCnt);
+# Redis 连接总账 db 行计入 WAITAOF 专用客户端的 2 条连接。门禁函数按 AST 抽出直接调用(与上文 MySQL 总账同一做法),
+# 依赖再抽一次,本节不依赖前文各节的执行顺序;读文件的函数经 $RepoRoot 定位仓库,由各用例自己设(S5b 一节收尾时删了脚本级的 $RepoRoot)。
+$S1FunctionNames = @(
+    'Test-DbReplicaPartitionBudget', 'Assert-DbReplicasWithinPartitionContract',
+    # 依赖(与 k8s_deploy.ps1 里同一份函数体)。
+    'Get-AuthoritativeScalar', 'Get-ManifestDeploymentReplicas',
+    'Get-RedisPoolMirror', 'Get-RedisMaxClientsFromManifest', 'Get-RedisConnectionLedgerInputs'
+)
+foreach ($s1FnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($S1FunctionNames -contains $s1FnAst.Name) {
+        Set-Item -Path "Function:script:$($s1FnAst.Name)" -Value $s1FnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($s1FnName in $S1FunctionNames) {
+    if (-not (Test-Path "Function:$s1FnName")) { throw "k8s_deploy.ps1 缺少函数 ${s1FnName}(go/db 副本数门禁 / Redis 总账被删了?后续断言无意义)" }
+}
+
+$S1DbYaml = 'go/db/etc/db.yaml'
+$S1DbManifest = 'deploy/k8s/manifests/go-svc/db.yaml'
+$S1PartitionCnt = [int](Get-EtcValue -RelativePath $S1DbYaml -KeyPath 'ServerConfig.Kafka.PartitionCnt')
+
+# 夹具:把临时副本 db manifest 里 Deployment 顶层的 replicas(两格缩进,恰好一处)改成 $Replicas,改完读回核对;不成立即 throw(没改成的负向断言是空转)。
+function Set-S1FixtureDbReplicas {
+    param([Parameter(Mandatory = $true)][string]$Path, [Parameter(Mandatory = $true)][int]$Replicas)
+    $text = [System.IO.File]::ReadAllText($Path)
+    $pattern = '(?m)^  replicas:[ \t]*\d+'
+    if ([regex]::Matches($text, $pattern).Count -ne 1) { throw "夹具:$Path 里两格缩进的 replicas 行应恰好 1 处" }
+    [System.IO.File]::WriteAllText($Path, [regex]::Replace($text, $pattern, "  replicas: $Replicas"), [System.Text.UTF8Encoding]::new($false))
+    if ([regex]::Match([System.IO.File]::ReadAllText($Path), '(?m)^  replicas:[ \t]*(\d+)').Groups[1].Value -ne [string]$Replicas) { throw "夹具:$Path 的 replicas 没有改成 $Replicas" }
+}
+
+# 夹具:在临时副本 db manifest 末尾追加一份 HPA 文档。$MaxReplicas 为 $null 时不写 maxReplicas 行(负向用例)。
+function Add-S1FixtureDbHpa {
+    param([Parameter(Mandatory = $true)][string]$Path, [AllowNull()]$MaxReplicas)
+    $hpa = @(
+        '---'
+        'apiVersion: autoscaling/v2'
+        'kind: HorizontalPodAutoscaler'
+        'metadata:'
+        '  name: db'
+        'spec:'
+        '  scaleTargetRef:'
+        '    apiVersion: apps/v1'
+        '    kind: Deployment'
+        '    name: db'
+        '  minReplicas: 1'
+    )
+    if ($null -ne $MaxReplicas) { $hpa += "  maxReplicas: $MaxReplicas" }
+    $text = [System.IO.File]::ReadAllText($Path).TrimEnd() + "`n" + ($hpa -join "`n") + "`n"
+    [System.IO.File]::WriteAllText($Path, $text, [System.Text.UTF8Encoding]::new($false))
+}
+
+Test-Case '④ zone-up DryRun:db ConfigMap 的 Kafka.RetryRouting 与 RedisClient.WaitAOFNumLocal / WaitAOFNumReplicas / WaitAOFTimeoutMs == go/db/etc/db.yaml(生成器不得自带常数)' {
+    # 切 owner(rollout 第 4 步)、redis-ha 接入时把 NumReplicas 改 1,都只改 db.yaml:ConfigMap 必须跟着走,不得留一份生成器常数。
+    # 四个键在 db.yaml 里必须显式写出(Get-AuthoritativeScalar 查不到即 throw,基线 DryRun 就会失败):这里先核前提再比对。
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-db-config')
+    # ServerConfig.Fencing.Mode(MySQL 行内围栏开关)同一口径镜像,一并核对。
+    foreach ($keyPath in @('ServerConfig.Kafka.RetryRouting', 'ServerConfig.RedisClient.WaitAOFNumLocal', 'ServerConfig.RedisClient.WaitAOFNumReplicas', 'ServerConfig.RedisClient.WaitAOFTimeoutMs', 'ServerConfig.Fencing.Mode')) {
+        $expected = Get-EtcValue -RelativePath $S1DbYaml -KeyPath $keyPath
+        Assert-True -Condition (-not [string]::IsNullOrWhiteSpace($expected)) -Because "前提:$S1DbYaml 必须显式写出 $keyPath 的值(不写 = go/db 代码默认值,ConfigMap 镜像不出来)"
+        $actual = Get-FlatValue -Flat $flat -KeyPath ('data.db.yaml.' + $keyPath)
+        Assert-Equal -Expected $expected -Actual $actual -Because "go-svc-db-config 的 $keyPath 必须与 $S1DbYaml 一致(生成器不得自带常数)"
+    }
+}
+
+Test-Case '④ Test-DbReplicaPartitionBudget 负向:replicas 11 > PartitionCnt 10 即 throw,文本含「replicas ≤ PartitionCnt」、点名两份文件与热备;HPA 用同一判定,文本点名 maxReplicas' {
+    $message = ''
+    try { Test-DbReplicaPartitionBudget -Replicas 11 -PartitionCnt 10 } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern 'replicas ≤ PartitionCnt' -Because '副本数超过分区数必须 throw,并写明不变量'
+    Assert-Match -Text $message -Pattern ([regex]::Escape('go/db 副本数门禁:deploy/k8s/manifests/go-svc/db.yaml 的 replicas=11')) -Because '错误必须点名 manifest 与副本数'
+    Assert-Match -Text $message -Pattern ([regex]::Escape('go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt=10')) -Because '错误必须点名分区数出处'
+    Assert-Match -Text $message -Pattern '热备' -Because '错误要说明多出的副本只做热备(拿不到分区)'
+
+    $message = ''
+    try { Test-DbReplicaPartitionBudget -Replicas 11 -PartitionCnt 10 -ReplicasSource 'HorizontalPodAutoscaler 的 maxReplicas' } catch { $message = $_.Exception.Message }
+    Assert-Match -Text $message -Pattern ([regex]::Escape('HorizontalPodAutoscaler 的 maxReplicas=11')) -Because 'HPA 越界时错误点名 maxReplicas,而不是 replicas'
+    Assert-Match -Text $message -Pattern 'replicas ≤ PartitionCnt' -Because 'HPA 与 Deployment 是同一条不变量'
+}
+
+Test-Case '④ Test-DbReplicaPartitionBudget 正向与参数校验:10 == 10、1 < 10 放行且不往管道输出任何东西;PartitionCnt 0 / -1 即 throw(fail-closed)' {
+    foreach ($replicas in @(10, 1)) {
+        $out = @(Test-DbReplicaPartitionBudget -Replicas $replicas -PartitionCnt 10)
+        Assert-Equal -Expected 0 -Actual $out.Count -Because "replicas=$replicas ≤ PartitionCnt=10 必须放行;门禁在写路径入口调用,放行时不得往输出里漏一个 True"
+    }
+    foreach ($partitionCnt in @(0, -1)) {
+        $message = ''
+        try { Test-DbReplicaPartitionBudget -Replicas 0 -PartitionCnt $partitionCnt } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern ([regex]::Escape("ServerConfig.Kafka.PartitionCnt=$partitionCnt 必须是正整数")) -Because "PartitionCnt=${partitionCnt}:分区数不明就判不了副本数是否越界,必须 throw(副本数 0 也不放行)"
+    }
+}
+
+Test-Case '④ 仓库现状:db manifest 的副本数 ≤ go/db/etc/db.yaml 的 PartitionCnt(独立读两份文件核对),Assert-DbReplicasWithinPartitionContract 对仓库放行' {
+    $RepoRoot = Get-RepoRoot
+    $manifestText = [System.IO.File]::ReadAllText((Join-Path $RepoRoot $S1DbManifest)) -replace "`r`n", "`n"
+    $replicas = [regex]::Matches($manifestText, '(?m)^  replicas:[ \t]*(\d+)[ \t]*$')
+    Assert-Equal -Expected 1 -Actual $replicas.Count -Because "$S1DbManifest 里两格缩进的 replicas 行应恰好 1 处"
+    Assert-True -Condition ([int]$replicas[0].Groups[1].Value -le $S1PartitionCnt) -Because ("{0} 的 replicas={1} 超过 {2} 的 PartitionCnt={3}:多出的副本只能做热备" -f $S1DbManifest, $replicas[0].Groups[1].Value, $S1DbYaml, $S1PartitionCnt)
+    $out = @(Assert-DbReplicasWithinPartitionContract)
+    Assert-Equal -Expected 0 -Actual $out.Count -Because '仓库现状必须放行,且门禁不往输出里写东西'
+}
+
+Test-Case '④ 负向(夹具):replicas 超过 PartitionCnt、PartitionCnt 为 0 或非整数、HPA maxReplicas 越界或缺失、manifest 缺席时 Assert-DbReplicasWithinPartitionContract throw 并点名;HPA 在上界内放行(夹具是临时目录里的副本,不碰仓库)' {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('db-replica-gate-' + [guid]::NewGuid().ToString('N'))
+    $fixtureManifest = Join-Path $tempRoot $S1DbManifest
+    $resetFixture = {
+        foreach ($rel in @($S1DbYaml, $S1DbManifest)) {
+            $dst = Join-Path $tempRoot $rel
+            New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dst) | Out-Null
+            Copy-Item -LiteralPath (Join-Path (Get-RepoRoot) $rel) -Destination $dst -Force
+        }
+    }
+    $over = $S1PartitionCnt + 1
+    try {
+        # Get-AuthoritativeScalar / Get-ManifestDeploymentReplicas 按动态作用域读 $RepoRoot(在 k8s_deploy.ps1 里是脚本级变量)。
+        $RepoRoot = $tempRoot
+        # 前提:副本不改就该放行。否则下面几条负向断言分不清是谁造成的失败。
+        & $resetFixture
+        Assert-DbReplicasWithinPartitionContract
+
+        $cases = @(
+            @{ Why = "replicas=$over 超过 PartitionCnt=$S1PartitionCnt"; Arrange = { Set-S1FixtureDbReplicas -Path $fixtureManifest -Replicas $over }
+               Patterns = @('replicas ≤ PartitionCnt', [regex]::Escape("db.yaml 的 replicas=$over 超过")) }
+            @{ Why = 'PartitionCnt=0'; Arrange = { Set-FixtureYamlScalar -Path (Join-Path $tempRoot $S1DbYaml) -KeyPath 'ServerConfig.Kafka.PartitionCnt' -Value '0' }
+               Patterns = @([regex]::Escape('ServerConfig.Kafka.PartitionCnt=0 必须是正整数')) }
+            @{ Why = 'PartitionCnt 不是整数'; Arrange = { Set-FixtureYamlScalar -Path (Join-Path $tempRoot $S1DbYaml) -KeyPath 'ServerConfig.Kafka.PartitionCnt' -Value 'ten' }
+               Patterns = @([regex]::Escape("go/db 副本数门禁:go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt='ten' 不是整数")) }
+            @{ Why = "HPA maxReplicas=$over 超过 PartitionCnt"; Arrange = { Add-S1FixtureDbHpa -Path $fixtureManifest -MaxReplicas $over }
+               Patterns = @('replicas ≤ PartitionCnt', [regex]::Escape("HorizontalPodAutoscaler 的 maxReplicas=$over 超过")) }
+            @{ Why = 'HPA 没写 maxReplicas'; Arrange = { Add-S1FixtureDbHpa -Path $fixtureManifest -MaxReplicas $null }
+               Patterns = @([regex]::Escape('HorizontalPodAutoscaler 两格缩进的 maxReplicas 行应恰好出现 1 次,实际 0 次')) }
+            @{ Why = 'manifest 缺席'; Arrange = { Remove-Item -LiteralPath $fixtureManifest -Force }
+               Patterns = @([regex]::Escape("go/db 副本数门禁:找不到 $S1DbManifest")) }
+        )
+        foreach ($case in $cases) {
+            & $resetFixture
+            & $case.Arrange
+            $message = ''
+            try { Assert-DbReplicasWithinPartitionContract } catch { $message = $_.Exception.Message }
+            Assert-Match -Text $message -Pattern '^go/db 副本数门禁:' -Because "$($case.Why):必须以本门禁的名义 throw(fail-closed),不能放行或报别的执行错误"
+            foreach ($pattern in $case.Patterns) {
+                Assert-Match -Text $message -Pattern $pattern -Because "$($case.Why):错误文本必须点名原因"
+            }
+        }
+
+        # 对照:HPA 的 maxReplicas 等于 PartitionCnt 放行(上界是 ≤,不是 <);注释里提到 HPA 不算 HPA 文档。
+        & $resetFixture
+        Add-S1FixtureDbHpa -Path $fixtureManifest -MaxReplicas $S1PartitionCnt
+        Assert-DbReplicasWithinPartitionContract
+    }
+    finally {
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Case '④ 写路径入口:Assert-DbReplicasWithinPartitionContract 在 zone-up / all-up / infra-up 门禁块里恰好调用一次,排在 Write-MysqlConnectionLedger 之后、switch ($Command) 之前' {
+    # 规格:门禁静态比较仓库的两份文件,先于任何集群写操作(写操作都在 switch ($Command) 的分支里)。基线 zone-up DryRun 成功即证明仓库现状放行。
+    $writeGates = @($deadlineDeployAst.EndBlock.Statements | Where-Object {
+            $_ -is [System.Management.Automation.Language.IfStatementAst] -and
+            $_.Clauses[0].Item1.Extent.Text -match '^\$Command\s+-in\s+@\(\s*"zone-up"\s*,\s*"all-up"\s*,\s*"infra-up"\s*\)$'
+        })
+    Assert-Equal -Expected 1 -Actual $writeGates.Count -Because '顶层恰好一个写路径门禁块'
+    $gateCalls = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $a.GetCommandName() -eq 'Assert-DbReplicasWithinPartitionContract' }, $true))
+    Assert-Equal -Expected 1 -Actual $gateCalls.Count -Because '整个脚本只在写路径门禁块里调用一次 Assert-DbReplicasWithinPartitionContract'
+    $statements = @($writeGates[0].Clauses[0].Item2.Statements | ForEach-Object { $_.Extent.Text.Trim() })
+    $mysqlAt = [Array]::IndexOf($statements, 'Write-MysqlConnectionLedger')
+    $gateAt = [Array]::IndexOf($statements, 'Assert-DbReplicasWithinPartitionContract')
+    Assert-True -Condition ($mysqlAt -ge 0 -and $gateAt -gt $mysqlAt) -Because "门禁块的直接语句里要有 Assert-DbReplicasWithinPartitionContract,且排在 Write-MysqlConnectionLedger 之后(实际下标 mysql=$mysqlAt gate=$gateAt)"
+    $commandSwitches = @($deadlineDeployAst.EndBlock.Statements | Where-Object {
+            $_ -is [System.Management.Automation.Language.SwitchStatementAst] -and $_.Condition.Extent.Text -match '^\(?\s*\$Command\s*\)?$'
+        })
+    Assert-Equal -Expected 1 -Actual $commandSwitches.Count -Because '顶层恰好一个 switch ($Command)'
+    Assert-True -Condition ($gateCalls[0].Extent.StartOffset -lt $commandSwitches[0].Extent.StartOffset) -Because '门禁必须先于 switch ($Command)(Apply-Infra / Apply-Zone 的集群写操作都在它的分支里)'
+}
+
+Test-Case '④ Redis 连接总账:db 行 Fixed == go/db/internal/kafka/durable_enqueue.go 的 durableClientPoolSize(WAITAOF 专用客户端,不占 PoolSize 主池,按开启计)' {
+    # 专用客户端在 db.yaml 两项 WAITAOF 都写 0 时不建;总账按开启计(仓库 db.yaml 缺省开启),偏保守。源码改了池大小,这里先变红,逼着同改总账那一行。
+    $RepoRoot = Get-RepoRoot
+    $dbRow = @((Get-RedisConnectionLedgerInputs).Clients | Where-Object { $_.Name -eq 'db' })
+    Assert-Equal -Expected 1 -Actual $dbRow.Count -Because 'Redis 连接总账里 db 只能有一行'
+    $source = [System.IO.File]::ReadAllText((Join-Path $RepoRoot 'go/db/internal/kafka/durable_enqueue.go'))
+    $poolSize = [regex]::Matches($source, '(?m)^\s*(?:const\s+)?durableClientPoolSize\s*=\s*(\d+)\s*$')
+    Assert-Equal -Expected 1 -Actual $poolSize.Count -Because 'durable_enqueue.go 里 durableClientPoolSize 应恰好定义一次(字面量整数)'
+    Assert-Equal -Expected ([int]$poolSize[0].Groups[1].Value) -Actual $dbRow[0].Fixed -Because 'db 行的 Fixed 就是 WAITAOF 专用客户端的池大小'
+    Assert-Equal -Expected 'zone/0/0/db' -Actual ('{0}/{1}/{2}/{3}' -f $dbRow[0].Scope, $dbRow[0].DefaultPools, $dbRow[0].PubSub, $dbRow[0].PoolMirror) -Because 'db 行其余形状不变:按 zone 计、主池由 ServerConfig.RedisClient.PoolSize 镜像、没有缺省池与 Pub/Sub'
 }
 
 exit (Complete-TestRun -SuiteName "k8s_deploy contract")

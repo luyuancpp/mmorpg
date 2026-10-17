@@ -303,7 +303,7 @@ bool NodeAllocator::AcquireNodePort()
 	// match 因 battle 池为空永远不凑单(2026-09-04 实测:杀掉 battle 后立刻重拉,旧进程的
 	// 50100 还没释放,新进程就这样带病注册了)。改为不发布、让调用方退避重试:预设端口
 	// 会等到端口释放,扫描路径则因游标已推进而换下一个 TCP/gRPC 端口对。
-	if (!gNode->GetGrpcServices().empty())
+	if (gNode->HasGrpcServices())
 	{
 		const uint32_t grpcPort = assignedPort + kGrpcPortOffset;
 		if (!IsLocalPortAvailable(static_cast<uint16_t>(grpcPort)))

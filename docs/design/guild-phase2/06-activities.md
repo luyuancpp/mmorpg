@@ -2428,3 +2428,9 @@ TEST(BattleResultActivity, ClassifyRetryOrder)             // (false,99,30)→kD
 - **导表 FK 预案删除**:核实 `foreign_key.py:13` 对 0 值跳过,原 Codex 验证里"FK=0 报错则去掉 cfg_fk"的预案删去。
 - **原偏差 6(outbox 状态数值)关闭**:S4 E1 与 S5 §5.6 已统一为 1 PENDING … 4 ABORTED,S6 SQL 一律绑定 `assetop.Status*` 常量。
 - **多玩家结算的锁序交错**:按 `(player_id, 表位置)` 全序加锁并给出不成环理由(part2 §6.5 末尾;契约偏差 21)。
+
+## 2026-10-16：全球历练结果topic的耐久启动门禁
+
+本节覆盖正文中“Kafka首次不可用仍先开放历练、后台每30秒恢复”的全球模式行为。`MySQL.RequireTiDB=true` 且历练结果消费启用时，Guild在创建依赖、注册节点和开放RPC之前，同步核验结果topic的严格策略：显式至少三副本、每分区副本分配完整、`min.insync.replicas>=2`、禁止非同步副本选主。核验或配置失败即拒启，已有RF1不自动重分配，也不能由Guild先创建单副本topic后等待match修复。
+
+启动门禁与后续消费者复用 `TrialResultConsumerConfig.TopicSpec()` 和 `shared/kafkautil` 的同一严格策略。副本下限直接写入TopicSpec，不依赖非法 `KAFKA_TOPIC_REPLICATION_FACTOR` 回落到1的兼容逻辑。只有显式dev/test旧MySQL模式保留原后台首次恢复路径；结果消费关闭时不创建结果topic。此项验证了装配策略与失败传播，尚未以真实三broker故障注入验证整个历练结算链。

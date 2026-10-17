@@ -10,7 +10,7 @@
 	设计与模式矩阵见 docs/design/k8s-client-entry.md(ingress_final D80 / D81 / D86–D91)。
 
 	约定:
-	  1. **不读任何脚本级变量**。k8s_deploy.ps1 的 $NodeImage / $GrpcServerMaxPollers / 日志 sidecar
+	  1. **不读任何脚本级变量**。k8s_deploy.ps1 的 $NodeImage / $SnowflakeCacheDir / 日志 sidecar
 	     等一律经参数传入(公共容器参数先用 New-ClientEntryPodCommon 打包),本文件可以单独 dot-source 测试。
 	  2. 生成函数是纯函数:只拼 YAML 字符串,不调 kubectl、不写文件、不打日志;返回值一律是 LF 换行(本文件按
 	     .gitattributes 以 CRLF 检出,here-string 会带 CR,返回前经 ConvertTo-ClientEntryLf 统一)。YAML 一律用**空格**缩进
@@ -57,7 +57,7 @@
 
 	  生成器(纯函数,返回 YAML 字符串)
 	    New-ClientEntryPodCommon        -Image -ImagePullPolicy -SnowflakeCacheDir -LogVolumeSizeLimit
-	                                    [-LogPrunerCommand ''] [-GrpcServerMaxPollers 0]
+	                                    [-LogPrunerCommand ''] [-GrpcServerMaxPollers 0(已退役,取值被忽略)]
 	                                    [-SidecarContainerYaml ''] [-SidecarVolumeYaml ''] [-SidecarConfigHash '']
 	                                    [-PodAnnotations $null]
 	    New-GateStatefulSetYaml         -PodCommon -Plan -RpcPort -StartCommand -ConfigMapName -GateRouterMode
@@ -599,7 +599,7 @@ function Resolve-BattleFleetHealth {
 	-ItemIndent 是必填且不收空串,传两个空格即可):
 	    $podCommon = New-ClientEntryPodCommon -Image $NodeImage -ImagePullPolicy $ImagePullPolicy `
 	        -SnowflakeCacheDir $SnowflakeCacheDir -LogVolumeSizeLimit $CppLogVolumeSizeLimit `
-	        -LogPrunerCommand $CppLogPrunerCommand -GrpcServerMaxPollers $GrpcServerMaxPollers `
+	        -LogPrunerCommand $CppLogPrunerCommand `
 	        -SidecarContainerYaml (New-CppLogSidecarContainerYaml -ItemIndent '  ' -CurrentZoneName <zone|global> -AsNativeSidecar) `
 	        -SidecarVolumeYaml (New-CppLogSidecarVolumeYaml -ItemIndent '  ') `
 	        -SidecarConfigHash (Get-CppLogSidecarConfigHash)
@@ -616,7 +616,9 @@ function New-ClientEntryPodCommon {
 		[Parameter(Mandatory = $true)][string]$LogVolumeSizeLimit,
 		# 形如 "(while true; ...; done &) && ",拼在 mkdir 与启动命令之间;不得含双引号。
 		[AllowEmptyString()][string]$LogPrunerCommand = '',
-		# 0 = 不注入 GRPC_SERVER_MAX_POLLERS,由进程默认值接管(同 k8s_deploy.ps1 口径)。
+		# 已退役(docs/design/grpc-muduo-transport.md §15.11):第 4 批起 C++ gRPC 服务端没有 poller 线程,
+		# 进程不再读 GRPC_SERVER_MAX_POLLERS。参数只为兼容旧调用方保留,取值被忽略,任何生成器都不再注入该 env;
+		# 提示由 k8s_deploy.ps1 在参数入口打(本库的生成函数不打日志,约定 2),它固定传 0。
 		[ValidateRange(0, 1024)][int]$GrpcServerMaxPollers = 0,
 		[AllowEmptyString()][string]$SidecarContainerYaml = '',
 		[AllowEmptyString()][string]$SidecarVolumeYaml = '',
@@ -646,7 +648,6 @@ function New-ClientEntryPodCommon {
 		SnowflakeCacheDir    = $SnowflakeCacheDir
 		LogVolumeSizeLimit   = $LogVolumeSizeLimit
 		LogPrunerCommand     = $LogPrunerCommand
-		GrpcServerMaxPollers = $GrpcServerMaxPollers
 		SidecarEnabled       = ($given.Count -eq 3)
 		SidecarContainerYaml = $SidecarContainerYaml
 		SidecarVolumeYaml    = $SidecarVolumeYaml
@@ -678,7 +679,8 @@ function Get-ClientEntryEnvYaml {
 	return ($lines -join "`n")
 }
 
-# C++ 节点共有的 env:集群内身份(POD_IP + RPC_PORT)、gRPC poller 上限、发号槽缓存目录。
+# C++ 节点共有的 env:集群内身份(POD_IP + RPC_PORT)、发号槽缓存目录。
+# GRPC_SERVER_MAX_POLLERS 已退役(grpc-muduo-transport.md §15.11),不再注入。
 # 与 New-NodeDeploymentYaml 同口径,只是不写 D92 禁用的第二个端口变量(RPC_PORT 优先,行为不变)。
 function Get-ClientEntryNodeBaseEnv {
 	param(
@@ -689,9 +691,6 @@ function Get-ClientEntryNodeBaseEnv {
 		@{ Name = 'POD_IP'; FieldPath = 'status.podIP' },
 		@{ Name = 'RPC_PORT'; Value = [string]$RpcPort }
 	)
-	if ($PodCommon.GrpcServerMaxPollers -gt 0) {
-		$entries += @{ Name = 'GRPC_SERVER_MAX_POLLERS'; Value = [string]$PodCommon.GrpcServerMaxPollers }
-	}
 	$entries += @{ Name = 'SNOWFLAKE_CACHE_DIR'; Value = $PodCommon.SnowflakeCacheDir }
 	return ,$entries
 }
@@ -1180,6 +1179,8 @@ $volumeBlock
 	- CLIENT_ENDPOINT_SOURCE=static,端口 = hostPort;主机取 -ClientPublicHost,留空则取 $(HOST_IP)
 	  (kubelet 依赖展开,HOST_IP 必须排在它之前)。REQUIRED=1:拿不到地址就拒签票,不回落 PodIP。
 	- 探针沿用 New-NodeDeploymentYaml 的 battle 分支(startup 探客户端口 2s × 150,readiness 探 gRPC 口)。
+	  gRPC 服务端(muduo_grpc)对不发 preface 的探针连接静默处理;停机排空期间监听已关,readiness 失败属预期
+	  (grpc-muduo-transport.md §15.5.1 / §15.10)。
 #>
 function New-BattleHostPortDeploymentYaml {
 	param(

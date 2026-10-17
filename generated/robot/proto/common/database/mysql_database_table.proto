@@ -3,11 +3,17 @@ option go_package = "robot/proto/common/database";
 
 import "proto/db/proto_option.proto";
 import "proto/common/base/user_accounts.proto";
+import "proto/common/component/asset_op_ledger_comp.proto";
+import "proto/common/component/battle_settlement_ledger_comp.proto";
+import "proto/common/component/player_inbox_ledger_comp.proto";
+import "proto/common/component/player_attribute_comp.proto";
+import "proto/common/component/player_pet_comp.proto";
 import "proto/common/component/player_scene_comp.proto";
 import "proto/common/component/actor_comp.proto";
 import "proto/common/component/player_comp.proto";
 import "proto/common/component/player_skill_comp.proto";
 import "proto/common/component/currency_comp.proto";
+import "proto/common/database/bag_quest_mail_data.proto";
 
 // ------------------- User basic info table -------------------
 message user
@@ -81,6 +87,10 @@ message player_centre_database
   option(OptionTableName) = "player_centre_database";
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";
+  // 雪花主键 + TiDB 聚簇表 = 写热点,按 §D3 处方打散(global-data-layer-tidb-decision.md)
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
   uint64 player_id = 1;
   PlayerSceneContextComp scene_info = 2;
 }
@@ -93,6 +103,10 @@ message player_database
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";
   option (OptionIsPlayerDatabase) = true;
+  // 雪花主键 + TiDB 聚簇表 = 写热点,按 §D3 处方打散(global-data-layer-tidb-decision.md)
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
   uint64 player_id = 1;
   Transform transform = 2;
   PlayerUint64Comp uint64_pb_component = 3;
@@ -101,6 +115,57 @@ message player_database
   BaseAttributesComp derived_attributes_component = 6;
   LevelComp level_component = 7;
   CurrencyComp currency = 8;
+  // Stress-test instrumentation. Empty during normal play. See
+  // PlayerStressTestProbe for the verification contract.
+  PlayerStressTestProbe stress_test_probe = 9;
+  // Server-merge transient state (force_rename_required +
+  // post_merge_notice_seen_ms). Default-zero during normal play; stamped
+  // by tools/merge_zone/ during a maintenance-window merge and cleared
+  // on the first qualifying post-merge action. See player_comp.proto's
+  // PlayerMergeStateComp comment for the full contract.
+  PlayerMergeStateComp merge_state = 10;
+  // 属性加点(方案/已分配点/额外点/外部加成),设计文档 player-attribute-allocation.md
+  PlayerAttributeComp attribute_component = 11;
+  // 宝宝(宠物):实例列表 + 出战中的宝宝,设计文档 player-pet.md
+  PlayerPetComp pet_component = 12;
+  // 背包资产与任务领取权同属一条玩家数据库记录，随同一 DBTask 保存。
+  BagAllData bag_component = 13;
+  QuestAllData mission_component = 14;
+  // 角色名副本,见 player_comp.proto PlayerProfileComp。
+  // 真源是 data_service 全局库的 player_name 表(全服唯一);这里只是随 player_database
+  // 走的只读副本 —— login 首次入场补齐,scene 只读、只原样存回。副本允许"缺失"
+  // (entergame self-heal 恢复出的空记录、早于首次入场的回档快照),读侧一律回源
+  // BatchGetPlayerName,不要把空名当成"这个角色没有名字"。
+  //
+  // 【加列纪律】player_database 新字段一律取"落码当时的下一个空闲号",并声明在 message 末尾:
+  // 新库 CREATE TABLE 按声明顺序建列,老库 cmd/migrate 只会 ADD COLUMN 追加到末尾,
+  // 两者列序必须一致(tools/merge_zone 按列名拷贝依赖这个)。
+  // 字段号归属由 docs/design/guild-phase2/90-consistency.md G-03 裁决:
+  // 按 91-batches-and-codex.md 的批次顺序 B3a-1 取 15、B4a-1 取 16,
+  // S4 4.3.4 原文的"= 15"已作废。15 与 16 的声明顺序必须与字段号一致、中间不留空洞:
+  // 两列都是 MEDIUMBLOB,列序错位会让 `INSERT … SELECT *` 静默串档。
+  PlayerProfileComp profile_component = 15;
+  // 通用资产通道账本(每流 seq 窗口),docs/design/guild-phase2/04-asset-channel.md §4.3.4。
+  // 必须与 currency / bag_component 同记录同 DBTask:账本与资产一起落盘、一起丢,
+  // 否则会出现"资产落了账本没落"的中间态,同一笔指令被重复应用(不变量 I3)。
+  PlayerAssetOpLedgerComp asset_op_ledger = 16;
+  // 回合制战斗结算幂等账本(§9.3)。与 asset_op_ledger 同一条不变量 I3:必须与
+  // currency / bag_component 同记录同一次落盘 —— 标记和它产生的资产要么一起在盘上,
+  // 要么一起没有,不允许"资产落了标记没落"(重复发奖)或"标记落了资产没落"(白丢奖励)。
+  BattleSettlementLedgerComp settlement_ledger = 17;
+  // MySQL 行内围栏(docs/design/db-write-fencing-mysql.md §3.2):存储版本元数据,按 (fence_owner_epoch, fence_save_seq)
+  // 字典序比较。只由 go/db 按 DBTask 的 (owner_epoch, save_seq) 盖章写入;C++ 只在加载时读来给存盘发号器播种(§7.2),
+  // 存盘时不以它为业务数据。存量行默认 (0,0) 表示"还没见过带版本的写",不回填。
+  // 2026-10-15 先于条件写落码声明(只占号、加列),让后续加列(收件箱 inbox_ledger 取 20)保持新老库列序一致;
+  // 在 go/db 条件写上线前,这两列只被原样读写,不参与任何判定。
+  uint64 fence_owner_epoch = 18;
+  uint64 fence_save_seq = 19;
+  // 玩家收件箱消费端账本(docs/design/player-inbox-service.md §4.4):每域「已按 seq 处理到哪」+ 最近 32 条结局。
+  // 与 asset_op_ledger 同一条不变量 I3(收件箱侧记作 IB-3):必须与 currency / bag_component 同记录同一次落盘 ——
+  // GM 处置的效果(封锁 / 欠款随 CurrencyComp 落盘)和它的账本要么一起在盘上,要么一起没有;
+  // 否则「效果落了账本没落」会让不幂等的 AttachDebt 被重复执行,「账本落了效果没落」会把没生效的处置确认成已执行。
+  // 按加列纪律取 18/19 之后的下一个空闲号 20,声明在末尾、不留空洞;下一个新字段从 21 起。
+  PlayerInboxLedgerComp inbox_ledger = 20;
 }
 
 message player_database_1
@@ -109,45 +174,22 @@ message player_database_1
   option(OptionPrimaryKey) = "player_id";
   option(OptionAutoIncrementKey) = "player_id";
   option (OptionIsPlayerDatabase) = true;
+  // 同 player_database:雪花主键防写热点(§D3)
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
   uint64 player_id = 1;
+  // Same instrumentation surface as player_database; the data_stress driver
+  // and robot data-stress mode write to whichever table the test addresses.
+  PlayerStressTestProbe stress_test_probe = 2;
+  // MySQL 行内围栏,语义同 player_database 的 18 / 19 号(db-write-fencing-mysql.md §3.2)。
+  uint64 fence_owner_epoch = 3;
+  uint64 fence_save_seq = 4;
 }
 
-// ─── Player snapshot table (for rollback) ────────────────────
-message player_snapshot
-{
-  option(OptionTableName) = "player_snapshot";
-  option(OptionPrimaryKey) = "id";
-  option(OptionAutoIncrementKey) = "id";
-  option(OptionIndex) = "player_id";
+// player_snapshot / rollback_audit_log 已移到 rollback_database_table.proto:导表器按本文件的 message 成员生成 zone 库建表清单(generated/data/mysql_database_table_list.json),而这两张表只该存在于全局库(data_service)一处。
 
-  uint64 id = 1;             // Auto-increment snapshot ID
-  uint64 player_id = 2;      // Player this snapshot belongs to
-  uint32 zone_id = 3;        // Player's home zone at snapshot time
-  uint32 snapshot_type = 4;  // SnapshotType enum value
-  uint64 created_at = 5;     // Unix timestamp of snapshot creation
-  string reason = 6;         // Reason / description
-  string operator = 7;       // GM operator who created it
-  bytes  data = 8;           // Serialized snapshot data (proto SnapshotData)
-}
-
-// ─── Rollback audit log ──────────────────────────────────────
-message rollback_audit_log
-{
-  option(OptionTableName) = "rollback_audit_log";
-  option(OptionPrimaryKey) = "id";
-  option(OptionAutoIncrementKey) = "id";
-
-  uint64 id = 1;
-  uint64 player_id = 2;          // 0 for zone/server rollback
-  uint32 zone_id = 3;            // 0 for server-wide rollback
-  uint32 rollback_type = 4;      // 1=player, 2=zone, 3=server
-  uint64 snapshot_id_used = 5;   // Which snapshot was restored (single-player only)
-  uint64 pre_rollback_snapshot_id = 6;  // Safety snapshot before rollback
-  uint64 target_time = 7;        // Target rollback timestamp
-  uint32 players_affected = 8;
-  uint32 players_failed = 9;
-  string reason = 10;
-  string operator = 11;          // GM operator
-  uint64 created_at = 12;        // When the rollback was executed
-}
+// id_segment(号段表)同样刻意不放本文件:导表器按本文件的 message 成员生成
+// generated/data/mysql_database_table_list.json,go/db 据此在每个 zone 库建表;
+// 号段表只该存在于全局库一处,所以定义在 rollback_database_table.proto(与 transaction_log 同处)。
 

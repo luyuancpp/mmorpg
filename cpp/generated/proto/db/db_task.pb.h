@@ -485,6 +485,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DBTask final : public ::google::pro
     kTaskIdFieldNumber = 6,
     kKeyFieldNumber = 1,
     kOwnerEpochFieldNumber = 8,
+    kSaveSeqFieldNumber = 9,
     kRetryCountFieldNumber = 7,
   };
   // string where_case = 2;
@@ -582,6 +583,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DBTask final : public ::google::pro
   void _internal_set_owner_epoch(::uint64_t value);
 
   public:
+  // uint64 save_seq = 9;
+  void clear_save_seq() ;
+  [[nodiscard]] ::uint64_t save_seq() const;
+  void set_save_seq(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_save_seq() const;
+  void _internal_set_save_seq(::uint64_t value);
+
+  public:
   // int32 retry_count = 7;
   void clear_retry_count() ;
   [[nodiscard]] ::int32_t retry_count() const;
@@ -596,7 +607,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DBTask final : public ::google::pro
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 8,
+      ::google::protobuf::internal::TcParseTable<4, 9,
                           0, 57,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -632,6 +643,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED DBTask final : public ::google::pro
     ::google::protobuf::internal::ArenaStringPtr task_id_;
     ::uint64_t key_;
     ::uint64_t owner_epoch_;
+    ::uint64_t save_seq_;
     ::int32_t retry_count_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1003,7 +1015,7 @@ inline void DBTask::set_allocated_task_id(::std::string* PROTOBUF_NULLABLE value
 inline void DBTask::clear_retry_count() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.retry_count_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::int32_t DBTask::retry_count() const {
   // @@protoc_insertion_point(field_get:taskpb.DBTask.retry_count)
@@ -1011,7 +1023,7 @@ inline ::int32_t DBTask::retry_count() const {
 }
 inline void DBTask::set_retry_count(::int32_t value) {
   _internal_set_retry_count(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:taskpb.DBTask.retry_count)
 }
 inline ::int32_t DBTask::_internal_retry_count() const {
@@ -1045,6 +1057,30 @@ inline ::uint64_t DBTask::_internal_owner_epoch() const {
 inline void DBTask::_internal_set_owner_epoch(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.owner_epoch_ = value;
+}
+
+// uint64 save_seq = 9;
+inline void DBTask::clear_save_seq() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.save_seq_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint64_t DBTask::save_seq() const {
+  // @@protoc_insertion_point(field_get:taskpb.DBTask.save_seq)
+  return _internal_save_seq();
+}
+inline void DBTask::set_save_seq(::uint64_t value) {
+  _internal_set_save_seq(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:taskpb.DBTask.save_seq)
+}
+inline ::uint64_t DBTask::_internal_save_seq() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.save_seq_;
+}
+inline void DBTask::_internal_set_save_seq(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.save_seq_ = value;
 }
 
 // -------------------------------------------------------------------

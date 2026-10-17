@@ -6984,6 +6984,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetPlayerAssetOpLedgerRequest final
   // accessors -------------------------------------------------------
   enum : int {
     kPlayerIdFieldNumber = 1,
+    kRequireSqlCommitFieldNumber = 2,
   };
   // uint64 player_id = 1;
   void clear_player_id() ;
@@ -6995,11 +6996,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetPlayerAssetOpLedgerRequest final
   void _internal_set_player_id(::uint64_t value);
 
   public:
+  // bool require_sql_commit = 2;
+  void clear_require_sql_commit() ;
+  [[nodiscard]] bool require_sql_commit() const;
+  void set_require_sql_commit(bool value);
+
+  private:
+  bool _internal_require_sql_commit() const;
+  void _internal_set_require_sql_commit(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:data_service.GetPlayerAssetOpLedgerRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 1,
+      ::google::protobuf::internal::TcParseTable<1, 2,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -7029,6 +7040,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetPlayerAssetOpLedgerRequest final
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t player_id_;
+    bool require_sql_commit_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -13092,6 +13104,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetPlayerAssetOpLedgerResponse fina
   enum : int {
     kLedgerFieldNumber = 2,
     kFoundFieldNumber = 1,
+    kSqlCommittedFieldNumber = 3,
   };
   // .PlayerAssetOpLedgerComp ledger = 2;
   [[nodiscard]] bool has_ledger()
@@ -13119,11 +13132,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetPlayerAssetOpLedgerResponse fina
   void _internal_set_found(bool value);
 
   public:
+  // bool sql_committed = 3;
+  void clear_sql_committed() ;
+  [[nodiscard]] bool sql_committed() const;
+  void set_sql_committed(bool value);
+
+  private:
+  bool _internal_sql_committed() const;
+  void _internal_set_sql_committed(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:data_service.GetPlayerAssetOpLedgerResponse)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
+      ::google::protobuf::internal::TcParseTable<2, 3,
                           1, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -13154,6 +13177,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED GetPlayerAssetOpLedgerResponse fina
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::PlayerAssetOpLedgerComp* PROTOBUF_NULLABLE ledger_;
     bool found_;
+    bool sql_committed_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -19478,6 +19502,30 @@ inline void GetPlayerAssetOpLedgerRequest::_internal_set_player_id(::uint64_t va
   _impl_.player_id_ = value;
 }
 
+// bool require_sql_commit = 2;
+inline void GetPlayerAssetOpLedgerRequest::clear_require_sql_commit() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.require_sql_commit_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline bool GetPlayerAssetOpLedgerRequest::require_sql_commit() const {
+  // @@protoc_insertion_point(field_get:data_service.GetPlayerAssetOpLedgerRequest.require_sql_commit)
+  return _internal_require_sql_commit();
+}
+inline void GetPlayerAssetOpLedgerRequest::set_require_sql_commit(bool value) {
+  _internal_set_require_sql_commit(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:data_service.GetPlayerAssetOpLedgerRequest.require_sql_commit)
+}
+inline bool GetPlayerAssetOpLedgerRequest::_internal_require_sql_commit() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.require_sql_commit_;
+}
+inline void GetPlayerAssetOpLedgerRequest::_internal_set_require_sql_commit(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.require_sql_commit_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // GetPlayerAssetOpLedgerResponse
@@ -19597,6 +19645,30 @@ inline void GetPlayerAssetOpLedgerResponse::set_allocated_ledger(::PlayerAssetOp
 
   _impl_.ledger_ = reinterpret_cast<::PlayerAssetOpLedgerComp*>(value);
   // @@protoc_insertion_point(field_set_allocated:data_service.GetPlayerAssetOpLedgerResponse.ledger)
+}
+
+// bool sql_committed = 3;
+inline void GetPlayerAssetOpLedgerResponse::clear_sql_committed() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.sql_committed_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline bool GetPlayerAssetOpLedgerResponse::sql_committed() const {
+  // @@protoc_insertion_point(field_get:data_service.GetPlayerAssetOpLedgerResponse.sql_committed)
+  return _internal_sql_committed();
+}
+inline void GetPlayerAssetOpLedgerResponse::set_sql_committed(bool value) {
+  _internal_set_sql_committed(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:data_service.GetPlayerAssetOpLedgerResponse.sql_committed)
+}
+inline bool GetPlayerAssetOpLedgerResponse::_internal_sql_committed() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.sql_committed_;
+}
+inline void GetPlayerAssetOpLedgerResponse::_internal_set_sql_committed(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.sql_committed_ = value;
 }
 
 // -------------------------------------------------------------------

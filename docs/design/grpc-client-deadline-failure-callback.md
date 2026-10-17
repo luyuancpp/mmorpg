@@ -273,6 +273,13 @@ GrpcClient:
 ## 11. 每次调用回调(2026-10-15)
 
 > 状态:模板与 `grpc_call_tag.h` 已改,**未 regen、未编译**(regen 与编译交 Codex / 用户,见 §11.4)。
+>
+> **2026-10-16 更新**:第 3 批(`docs/design/grpc-muduo-transport.md` §14)起生成客户端只走 `muduo_grpc::Channel`,
+> 官方 CQ / Stub / `ClientContext` 全部删除;10-15 22:27 已按新模板 regen(仍未编译)。本节的 `done` / `GrpcCallOptions`
+> 契约不变,下面 §11.3 中关于 CQ、`BeginShutdownGrpcNode`、对象池的条目已按新传输改写。`GrpcCallFailure` 新形状为
+> `{messageId, method, const GrpcCallOutcome& outcome, sentMetadata}`,另有 `code()` / `message()` / `FindSentMetadata()`;
+> 全局应答处理器的第一个参数由 `grpc::ClientContext` 改为 `GrpcReplyContext`(= `GrpcCallOutcome`,带响应头 / trailers
+> 的 metadata)。§3.2 的代码块是 09 月的历史形状,以 `cpp/generated/grpc_client/grpc_call_tag.h` 为准。
 > 接口与 muduo HTTP/2 gRPC 会话(`docs/design/grpc-muduo-transport.md`)共同商定;RPC0 侧的同类能力见
 > `docs/design/muduo-rpc-channel.md`(`RpcChannel::CallMethod` 的每次调用 lambda)。
 
@@ -301,19 +308,21 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
 
 ### 11.3 契约
 
-- `done` **恰好调用一次**,只在节点所属 EventLoop 线程调用,**从不在 `Send` 栈内同步调用**:缺组件 / 节点关闭的本地拒绝
-  与真实 CQ 完成一样经 `QueueGrpcClientCompletion` 延后(UNAVAILABLE)。
+- `done` **恰好调用一次**,只在节点所属 EventLoop 线程调用,**从不在 `Send` 栈内同步调用**:实体没挂通道 / 序列化失败的
+  本地拒绝经 `QueueGrpcLocalCompletion` 延后(UNAVAILABLE / INTERNAL),真实应答由 `muduo_grpc::Channel` 经 `queueInLoop` 投递。
 - `reply` 只在 `ok()` 时非空,只在回调期间有效。
 - 带 `done` 的调用**不再**触发该方法的全局应答 / 失败处理器;`done` 为空等同于不带回调的 `Send`。
-- 节点摘除 / 停机:`BeginShutdownGrpcNode` 取消在途调用,`done` 以非 OK(官方 CQ 为 CANCELLED)在拆节点之前完成;
-  `PollGrpcNodeShutdown` 的排空判据不变(调用对象与本地完成都计数),所以停机阶段 0 的 FIFO 保证照旧成立。
-- 每次调用状态在 `boost::object_pool` 的调用对象里(地址不移动),不进 ECS 组件(ECS 审计 C008)。
+- 节点摘除 / 停机(第 3 批起):先摘 / 清 `MuduoGrpcChannelPtr`,`~Channel` 把在途调用以 UNAVAILABLE 排队投递,
+  所以 `done` 在实体销毁**之后**才执行,回调不得捕获实体句柄或组件指针。停机阶段 0 之后的拆除经 `queueInLoop` 排在这些
+  完成之后;拆除开头若 `GrpcClientLocalCompletionsDrained()` 为假(拆除中又有人 Send),让一轮再进。
+- 每次调用状态放在 `shared_ptr` 里随完成回调走(请求副本、metadata 原值、done),不进 ECS 组件(ECS 审计 C008)。
 - 非 OK 仍是**结果未知**(§3.3)。**调用方不得按 `code` 区分「停机」与「传输失败」**:同一停机场景,官方 CQ 取消给
   CANCELLED,`muduo_grpc::Channel` 析构给 UNAVAILABLE("channel shut down"),muduo HTTP/2 传输换上后 code 会变。
   非 OK 一律只释放本地在途状态,需要裁决对端的仍走各自的看门狗 / 权威数据。
 
 实现上三个 unary 重载都汇到生成的 `Start<Svc><Method>Call`(唯一发送入口);`Complete<Svc><Method>` 先看 `done`,
-有就只交给它。生成代码没有 muduo_grpc 分支:两种传输都在 `grpc::ChannelInterface` 之下。
+有就只交给它。第 3 批起 `Start<Svc><Method>Call` 从节点实体取 `MuduoGrpcChannelPtr`,序列化后调
+`muduo_grpc::Channel::StartUnaryCall`;没有官方 `grpc::ChannelInterface` 分支(设计见 grpc-muduo-transport.md §14)。
 
 ### 11.4 regen 与验证(交 Codex / 用户)
 
@@ -325,3 +334,6 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
 4. 单测(已写,未跑):`cpp/tests/rpc_controller_test/grpc_client_lifecycle_test.cpp` 的 `PerCallDone*` 三条 ——
    成功一次且 options 生效、本地拒绝异步 UNAVAILABLE 一次、`BeginShutdownGrpcNode` 后在途与新调用各以非 OK 完成一次;
    三条都断言不触发全局处理器。跑法同 `rpc_controller_test` 其余用例(`--gtest_filter=GrpcClientLifecycleTest.*`)。
+   **2026-10-16**:该文件建在 CQ / Stub / `grpc::ServerBuilder` 上,第 3 批已删除。本地拒绝那条改由
+   `cpp/tests/rpc_controller_test/grpc_client_local_reject_test.cpp`(`GrpcClientLocalRejectTest.*`)覆盖;成功与停机两条
+   等第 4 批有 muduo 服务端后用回环重写(注意新语义下回调在实体销毁之后执行,不能照抄旧断言)。

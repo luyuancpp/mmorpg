@@ -2,7 +2,6 @@
 
 #include "proto/common/base/session.pb.h"
 #include <muduo/base/Logging.h>
-#include <grpcpp/grpcpp.h>
 #include <limits>
 #include "core/utils/encode/base64.h"
 
@@ -10,18 +9,14 @@ constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
 
 using SessionDetailsPtr = std::unique_ptr<SessionDetails>;
 
-SessionDetailsPtr GetSessionDetailsByClientContext(const grpc::ClientContext& context)
+SessionDetailsPtr GetSessionDetailsByReplyContext(const GrpcReplyContext& context)
 {
-    auto& trailingMetadata = context.GetServerInitialMetadata();
-    for (const auto& pair : trailingMetadata) {
-        if (pair.first == kSessionBinMetaKey) {
-            return ParseSessionDetailsMetadataValue(std::string_view(pair.second.data(), pair.second.size()));
-        }
-        else {
-            LOG_DEBUG << "Skipping metadata key: " << pair.first.data();
-        }
+    // 回显在响应头(初始 metadata)里,不在 trailers:路由服用 grpc.SetHeader 回写(设计 §4.2)。
+    const std::string* applicationValue = context.FindInitialMetadata(kSessionBinMetaKey);
+    if (applicationValue == nullptr) {
+        return nullptr;
     }
-    return nullptr;
+    return ParseSessionDetailsMetadataValue(*applicationValue);
 }
 
 SessionDetailsPtr ParseSessionDetailsMetadataValue(std::string_view applicationValue)

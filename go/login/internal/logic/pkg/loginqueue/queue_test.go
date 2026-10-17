@@ -1108,31 +1108,29 @@ func signMustNotRun(t *testing.T) SignAdmitFn {
 // miniredis 的 TTL 只在 FastForward 里递减,拨 AdmitTTL 正好让放行槽过期,meta 与 token 索引(1h)还在。
 // 计数器要指标开关打开才写(go-zero metric.update);开关是进程级、打开后关不回去,本包其余用例不依赖它关着
 // (dispatcher_test 的 leader gauge 用例自己也会打开它)。
+// (2026-10-15 补注)存储布局(admitted_at 字段、meta TTL 不变)挪到 TestPopAdmit_MarksAdmittedAtKeepingMetaTTL;本用例只断言行为:
+// EXPIRED、admit_window_passed 计数 +1、这次查询不给在途占位续期(假时钟与 FastForward 同拨 AdmitTTL 后计数为 0)。
+// 修复前红在 EXPIRED 断言上(回 QUEUEING、名次 0)。EXPIRED 分支若误把占位改成「现在 + handoffGrace」,红在最后的计数上。
 func TestLookup_AdmitSlotExpiredUnclaimed_ReturnsExpired(t *testing.T) {
 	gzprom.Enable()
 	q, rdb, mr, cleanup := newTestQueue(t)
 	defer cleanup()
+	// newClockedQueue 不返回 mr,这里手工换成假时钟:放行槽(miniredis TTL)与占位(假时钟分数)要一起拨。
+	clk := newFakeClock()
+	q.now = clk.Now
 	ctx := context.Background()
 
 	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
 	if err != nil {
 		t.Fatalf("enqueue: %v", err)
 	}
-	if v, err := rdb.HGet(ctx, metaKey(res.QueueID), metaFieldAdmittedAt).Result(); !errors.Is(err, redis.Nil) {
-		t.Fatalf("meta %s before admit = (%q, %v), want absent", metaFieldAdmittedAt, v, err)
-	}
 	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
 		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
 	}
-	if v, err := rdb.HGet(ctx, metaKey(res.QueueID), metaFieldAdmittedAt).Result(); err != nil || v == "" {
-		t.Fatalf("meta %s after admit = (%q, %v), want the admit time", metaFieldAdmittedAt, v, err)
-	}
-	metaTTL, err := rdb.TTL(ctx, metaKey(res.QueueID)).Result()
-	if err != nil || metaTTL <= 0 || metaTTL > q.entryTTL {
-		t.Fatalf("meta TTL after admit = %v err=%v, want (0, %v]: writing admitted_at must keep the entry TTL", metaTTL, err, q.entryTTL)
-	}
 
+	// 放行槽(miniredis TTL)与占位(假时钟分数)一起走到「放行时刻 + AdmitTTL」。
 	mr.FastForward(q.admitTTL)
+	clk.Advance(q.admitTTL)
 	if n, err := rdb.Exists(ctx, admitKey(res.QueueID)).Result(); err != nil || n != 0 {
 		t.Fatalf("admit slot exists=%d err=%v after AdmitTTL, want gone", n, err)
 	}
@@ -1145,6 +1143,8 @@ func TestLookup_AdmitSlotExpiredUnclaimed_ReturnsExpired(t *testing.T) {
 	if got := expiredTotalValue(t, "1", ExpireReasonAdmitWindowPassed) - before; got != 1 {
 		t.Fatalf(`login_queue_expired_total{zone="1",reason="admit_window_passed"} grew by %v, want 1`, got)
 	}
+	// 占位按「放行时刻 + AdmitTTL」到期(计数的清理含端点);回 EXPIRED 的这次查询不能把它续成「现在 + handoffGrace」。
+	mustAdmittedCount(t, q, 0, "at AdmitTTL after an EXPIRED lookup")
 }
 
 // (ii) 取走之后同一令牌再查(回包丢失后的重试):EXPIRED,记一次 admit_window_passed;签票只在第一次。
@@ -1186,6 +1186,8 @@ func TestLookup_PollAfterConsume_ReturnsExpired(t *testing.T) {
 // (iii) 在途窗口:dispatcher 已 ZPOPMIN、写放行槽的 MULTI 还没落地。手工模拟:只从队列 ZSET 删掉成员,
 // 不写放行槽、不写 admitted_at。仍回「排队中、名次 0」,让客户端照常再查,不能判成 EXPIRED。
 // 修复前后都绿:钉住修复没有把在途窗口一并判成终态。
+// (2026-10-15 更正)放行写入现为 admitEntryScript 一段脚本(放行槽、admitted_at、占位同时可见),不再是 MULTI;
+// 模拟的时序与断言不变。
 func TestLookup_InFlightPop_StillQueueingRankZero(t *testing.T) {
 	q, rdb, _ := newClockedQueue(t)
 	ctx := context.Background()
@@ -1209,6 +1211,8 @@ func TestLookup_InFlightPop_StillQueueingRankZero(t *testing.T) {
 // 回 ADMITTED、只签一次票,占位改为「取走时刻 + handoffGrace」。
 // 修复前红(注入点照样放进旧代码):读 meta 只拿 zone_id,ZRANK 落空回「排队中、名次 0」。只加 admitted_at
 // 判定、不做二次 GETDEL 的写法也红:把一个刚放行、还没取走的条目判成 EXPIRED,放行槽白白等到 AdmitTTL。
+// (2026-10-15 更正)上文两处「MULTI」现为 admitEntryScript 一段脚本(放行槽、admitted_at、占位同时可见);
+// 模拟的时序与断言不变。
 func TestLookup_AdmitLandsBetweenGetDelAndMetaRead_Admits(t *testing.T) {
 	q, rdb, clk := newClockedQueue(t)
 	ctx := context.Background()
@@ -1253,9 +1257,48 @@ func TestLookup_AdmitLandsBetweenGetDelAndMetaRead_Admits(t *testing.T) {
 	}
 }
 
+// PopAdmit 在 meta 里记下 admitted_at(包注释 Redis 布局:Lookup 据此区分「放行窗口已过」与「在途窗口」),
+// 且不动 meta 的 TTL:仍按入队时的 QueueEntryTTL 到期。miniredis 的 TTL 只在 FastForward 里递减,入队后先拨
+// waited,meta 剩 entryTTL-waited;写 admitted_at 时被抹掉(-1)、被续期(回到 entryTTL)、被缩短都在等式处红。
+// 不拨时间的区间断言 (0, entryTTL] 分不出「保持」与「续期到 entryTTL」。
+// 这是存储布局用例,行为由 TestLookup_AdmitSlotExpiredUnclaimed_ReturnsExpired 钉住;修复前红在 admitted_at 断言上。
+func TestPopAdmit_MarksAdmittedAtKeepingMetaTTL(t *testing.T) {
+	q, rdb, mr, cleanup := newTestQueue(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if v, err := rdb.HGet(ctx, metaKey(res.QueueID), metaFieldAdmittedAt).Result(); !errors.Is(err, redis.Nil) {
+		t.Fatalf("meta %s before admit = (%q, %v), want absent", metaFieldAdmittedAt, v, err)
+	}
+	const waited = 10 * time.Minute // 在队里等过的时间,须小于 entryTTL(1h)
+	mr.FastForward(waited)
+	want := q.entryTTL - waited
+	if ttl, err := rdb.PTTL(ctx, metaKey(res.QueueID)).Result(); err != nil || ttl != want {
+		t.Fatalf("meta PTTL before admit = %v err=%v, want %v", ttl, err, want)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	}
+	if v, err := rdb.HGet(ctx, metaKey(res.QueueID), metaFieldAdmittedAt).Result(); err != nil || v == "" {
+		t.Fatalf("meta %s after admit = (%q, %v), want the admit time", metaFieldAdmittedAt, v, err)
+	}
+	if ttl, err := rdb.PTTL(ctx, metaKey(res.QueueID)).Result(); err != nil || ttl != want {
+		t.Fatalf("meta PTTL after admit = %v err=%v, want %v: writing admitted_at must neither drop, renew nor shorten the entry TTL", ttl, err, want)
+	}
+}
+
 // 写 admitted_at 不凭空建出 meta:meta 已不在(在队里待满 QueueEntryTTL 或被内存淘汰)时 PopAdmit 照常写放行槽,
 // 但不建出一个没有 TTL、永不过期的 meta。直接 HSET 的写法在这里红(meta 存在且 TTL = -1)。
 // 修复前也绿(那时不写 meta),钉住的是新写入的安全性。
+// (2026-10-15 补注)后半段断言翻转:meta 不在时 PopAdmit 整条丢弃——不写放行槽、不占在途名额、不计入放行数,
+// 条目也不回队列。生产里 meta 不在时 token 索引同时不在(Enqueue 同一个 MULTI、同一个 TTL 设下,部署不淘汰键),
+// 没有人能取到放行槽,写了只是白占一个 AdmitTTL 的名额。本用例手工只删 meta、留下 token 索引,这个形状生产里
+// 只有人工删键才造得出;此时查询回 EXPIRED(meta_gone),客户端重新入队。修复前红在 n == 0 上(回 1)。
+// 走真实到期路径的版本见 TestPopAdmit_EntryOlderThanQueueEntryTTL_NotAdmitted。
 func TestPopAdmit_MetaGone_DoesNotRecreateMeta(t *testing.T) {
 	q, rdb, _ := newClockedQueue(t)
 	ctx := context.Background()
@@ -1267,14 +1310,361 @@ func TestPopAdmit_MetaGone_DoesNotRecreateMeta(t *testing.T) {
 	if err := rdb.Del(ctx, metaKey(res.QueueID)).Err(); err != nil {
 		t.Fatalf("del meta: %v", err)
 	}
-	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
-		t.Fatalf("popadmit = (%d, %v), want (1, nil)", n, err)
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 0 {
+		t.Fatalf("popadmit = (%d, %v), want (0, nil): an entry whose meta is gone is not admitted", n, err)
 	}
 	if n, err := rdb.Exists(ctx, metaKey(res.QueueID)).Result(); err != nil || n != 0 {
 		t.Fatalf("meta exists=%d err=%v after admit, want still gone", n, err)
 	}
-	// 放行槽照常可取:第一次 GETDEL 不依赖 meta。
-	if st, err := q.Lookup(ctx, res.QueueToken, stubSignFn); err != nil || st.Status != StatusAdmitted {
-		t.Fatalf("lookup = (%+v, %v), want ADMITTED", st, err)
+	if n, err := rdb.Exists(ctx, admitKey(res.QueueID)).Result(); err != nil || n != 0 {
+		t.Fatalf("admit slot exists=%d err=%v, want none written for an orphan", n, err)
+	}
+	mustAdmittedCount(t, q, 0, "orphan not held")
+	if n, err := rdb.ZCard(ctx, zoneZSetKey(1)).Result(); err != nil || n != 0 {
+		t.Fatalf("queue length = %d err=%v, want 0 (the orphan is popped and dropped, not re-queued)", n, err)
+	}
+	if st, err := q.Lookup(ctx, res.QueueToken, signMustNotRun(t)); err != nil || st.Status != StatusExpired {
+		t.Fatalf("lookup = (%+v, %v), want EXPIRED (meta_gone)", st, err)
+	}
+}
+
+// 真实到期路径:A 在队里待满 QueueEntryTTL,meta 与 token 索引同时过期(Enqueue 同一个 MULTI、同一个 TTL);
+// 队列键因 B 入队续了 TTL,A 仍是队首成员。同一批弹出 A、B:A 不写放行槽、不占在途名额、不计入放行数,
+// B 照常放行并能取走。修复前红在 n == 1 上(回 2:孤儿 A 也写了放行槽和占位,白占一个 AdmitTTL 的名额)。
+// miniredis 的 TTL 只在 FastForward 里递减;占位走假时钟。
+func TestPopAdmit_EntryOlderThanQueueEntryTTL_NotAdmitted(t *testing.T) {
+	q, rdb, mr, cleanup := newTestQueue(t)
+	defer cleanup()
+	q.now = newFakeClock().Now
+	ctx := context.Background()
+
+	a, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue A: %v", err)
+	}
+	mr.FastForward(q.entryTTL / 2)
+	b, err := q.Enqueue(ctx, 1, "bob", "dev2") // 给队列键续上 entryTTL;A 的 meta 与 token 索引不续
+	if err != nil {
+		t.Fatalf("enqueue B: %v", err)
+	}
+	mr.FastForward(q.entryTTL - q.entryTTL/2)
+	if n, err := rdb.Exists(ctx, metaKey(a.QueueID), tokenIndexKey(a.QueueToken)).Result(); err != nil || n != 0 {
+		t.Fatalf("A's meta + token index exist=%d err=%v after QueueEntryTTL, want both expired", n, err)
+	}
+	if n, err := rdb.ZCard(ctx, zoneZSetKey(1)).Result(); err != nil || n != 2 {
+		t.Fatalf("queue length = %d err=%v, want 2 (A is still a member)", n, err)
+	}
+
+	if n, err := q.PopAdmit(ctx, 1, 2, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil): only B is admitted", n, err)
+	}
+	if n, err := rdb.Exists(ctx, admitKey(a.QueueID)).Result(); err != nil || n != 0 {
+		t.Fatalf("A's admit slot exists=%d err=%v, want none", n, err)
+	}
+	mustAdmittedCount(t, q, 1, "only B holds a slot")
+	if st, err := q.Lookup(ctx, a.QueueToken, signMustNotRun(t)); err != nil || st.Status != StatusExpired {
+		t.Fatalf("lookup A = (%+v, %v), want EXPIRED", st, err)
+	}
+	if st, err := q.Lookup(ctx, b.QueueToken, stubSignFn); err != nil || st.Status != StatusAdmitted {
+		t.Fatalf("lookup B = (%+v, %v), want ADMITTED", st, err)
+	}
+}
+
+// 停服(Stop → cancel)或丢租约(onLost → drainCancel)取消的是 dispatcher 传进来的 ctx。ZPOPMIN 之后这批条目
+// 只在本进程内存里,取消不能让剩下的写入作废:否则它们既不在队列、也没有放行槽和 admitted_at,玩家停在名次 0
+// 直到 meta 过期(1h)。用 pickFn 在批中途取消 ctx,确定地落在「已弹出、未写完」之间。
+// 修复前红在 n == 3 上(回 1:第 2、3 条的写入在 go-redis 取连接时就以 context.Canceled 返回)。
+func TestPopAdmit_CtxCanceledMidBatch_StillWritesPoppedEntries(t *testing.T) {
+	q, rdb, _ := newClockedQueue(t)
+	bg := context.Background()
+
+	var queued []*EnqueueResult
+	for _, account := range []string{"alice", "bob", "carol"} {
+		res, err := q.Enqueue(bg, 1, account, "dev")
+		if err != nil {
+			t.Fatalf("enqueue %s: %v", account, err)
+		}
+		queued = append(queued, res)
+	}
+
+	ctx, cancel := context.WithCancel(bg)
+	defer cancel()
+	picks := 0
+	cancelOnSecondPick := func(zoneID uint32, queueID string) (*AdmitSlot, error) {
+		picks++
+		if picks == 2 {
+			cancel() // 第 1 条已写完,第 2、3 条已弹出、还没写
+		}
+		return pickZone1Gate(zoneID, queueID)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 3, cancelOnSecondPick); err != nil || n != 3 {
+		t.Fatalf("popadmit = (%d, %v), want (3, nil): every popped entry must still be written after the caller ctx is canceled", n, err)
+	}
+	if picks != 3 {
+		t.Fatalf("pickFn ran %d times, want 3", picks)
+	}
+	if n, err := rdb.ZCard(bg, zoneZSetKey(1)).Result(); err != nil || n != 0 {
+		t.Fatalf("queue length = %d err=%v, want 0", n, err)
+	}
+	mustAdmittedCount(t, q, 3, "all three popped entries hold a slot")
+	for _, res := range queued {
+		if st, err := q.Lookup(bg, res.QueueToken, stubSignFn); err != nil || st.Status != StatusAdmitted {
+			t.Fatalf("lookup %s = (%+v, %v), want ADMITTED", res.QueueID, st, err)
+		}
+	}
+}
+
+// 调用方 ctx 在弹出之前就已取消:ZPOPMIN 仍随它失败,一个条目都不弹出、不写。钉住「只有弹出之后的写入不随
+// 调用方取消」:把 ZPOPMIN 也换成不可取消 ctx 的写法在这里红(停服或丢租约之后还会弹出新的一批)。修复前后都绿。
+func TestPopAdmit_CtxCanceledBeforePop_PopsNothing(t *testing.T) {
+	q, rdb, _ := newClockedQueue(t)
+	bg := context.Background()
+
+	res, err := q.Enqueue(bg, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	ctx, cancel := context.WithCancel(bg)
+	cancel()
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err == nil || n != 0 {
+		t.Fatalf("popadmit with a canceled ctx = (%d, %v), want (0, error)", n, err)
+	}
+	if n, err := rdb.ZCard(bg, zoneZSetKey(1)).Result(); err != nil || n != 1 {
+		t.Fatalf("queue length = %d err=%v, want 1 (nothing popped)", n, err)
+	}
+	if n, err := rdb.Exists(bg, admitKey(res.QueueID)).Result(); err != nil || n != 0 {
+		t.Fatalf("admit slot exists=%d err=%v, want none", n, err)
+	}
+}
+
+// enqueueAccounts 往 zone 1 依次入队,返回 queueId → 排队令牌。入队分数是毫秒墙钟,同一毫秒内的条目按 queueId
+// 字典序出队,用例不能假定出队顺序等于入队顺序,要按 pickFn 实际看到的 queueId 对号。
+func enqueueAccounts(t *testing.T, q *Queue, accounts ...string) map[string]string {
+	t.Helper()
+	tokens := make(map[string]string, len(accounts))
+	for _, account := range accounts {
+		res, err := q.Enqueue(context.Background(), 1, account, "dev")
+		if err != nil {
+			t.Fatalf("enqueue %s: %v", account, err)
+		}
+		tokens[res.QueueID] = res.QueueToken
+	}
+	return tokens
+}
+
+// 没有取消时写入预算不起算:一批写多久都照写,与改动前写入沿用 drainCtx(没有截止)一致。开区首拍一批可达数千条,
+// 串行写可能超过 3s;预算若自弹出时起算,尾部条目会丢失、停在名次 0 约 1h,且不占在途名额、下一拍 free 不降,
+// 每拍的尾部都这样丢。q.popAdmitWriteBudget = 0 让「自弹出起算」的写法当场到期,确定地代表「这一批写超了预算」,
+// 不依赖墙钟。修复前(预算自 ZPOPMIN 返回时起算的写法)红在 n == 3 上:回 (0, nil),三条都已弹出、都没写成。
+// HEAD(写入沿用 drainCtx)本来就绿,这条钉住的是「不随取消结束」的改动不引入截断。
+func TestPopAdmit_NoCancel_LongBatchNotCutByWriteBudget(t *testing.T) {
+	q, rdb, _ := newClockedQueue(t)
+	q.popAdmitWriteBudget = 0
+	ctx := context.Background()
+
+	tokens := enqueueAccounts(t, q, "alice", "bob", "carol")
+	if n, err := q.PopAdmit(ctx, 1, 3, pickZone1Gate); err != nil || n != 3 {
+		t.Fatalf("popadmit = (%d, %v), want (3, nil): without a cancel the write budget must not start", n, err)
+	}
+	if n, err := rdb.ZCard(ctx, zoneZSetKey(1)).Result(); err != nil || n != 0 {
+		t.Fatalf("queue length = %d err=%v, want 0", n, err)
+	}
+	mustAdmittedCount(t, q, 3, "all three popped entries hold a slot")
+	for queueID, token := range tokens {
+		if st, err := q.Lookup(ctx, token, stubSignFn); err != nil || st.Status != StatusAdmitted {
+			t.Fatalf("lookup %s = (%+v, %v), want ADMITTED", queueID, st, err)
+		}
+	}
+}
+
+// 预算有上限:批中途取消、预算为 0(取消一被看到就到期)时,取消之前写成的第 1 条照常放行,其余两条照旧丢失——
+// 不在队列、没有放行槽、不占在途名额,查询停在名次 0。这是登记过的残余丢条目路径(停服时预算内写不完的尾部,
+// 汇总 ERROR 记下),钉住「取消之后不会无限写下去」,也钉住预算从看到取消时才起算。
+// 会红的写法:取消之后也不设截止,红在 n == 1 上(回 3);预算自弹出时起算,同样红在 n == 1 上(回 0:第 1 条在取消
+// 之前也写不成)。HEAD(写入沿用 drainCtx)这里是绿的。
+func TestPopAdmit_CtxCanceledMidBatch_WriteBudgetExhausted_DropsRest(t *testing.T) {
+	q, rdb, _ := newClockedQueue(t)
+	q.popAdmitWriteBudget = 0
+	bg := context.Background()
+
+	tokens := enqueueAccounts(t, q, "alice", "bob", "carol")
+	ctx, cancel := context.WithCancel(bg)
+	defer cancel()
+	var picked []string
+	cancelOnSecondPick := func(zoneID uint32, queueID string) (*AdmitSlot, error) {
+		picked = append(picked, queueID)
+		if len(picked) == 2 {
+			cancel() // 第 1 条已写完,第 2、3 条已弹出、还没写
+		}
+		return pickZone1Gate(zoneID, queueID)
+	}
+	if n, err := q.PopAdmit(ctx, 1, 3, cancelOnSecondPick); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil): only the entry written before the cancel is admitted", n, err)
+	}
+	if len(picked) != 3 {
+		t.Fatalf("pickFn ran %d times, want 3", len(picked))
+	}
+	if n, err := rdb.ZCard(bg, zoneZSetKey(1)).Result(); err != nil || n != 0 {
+		t.Fatalf("queue length = %d err=%v, want 0 (dropped entries are not re-queued)", n, err)
+	}
+	mustAdmittedCount(t, q, 1, "only the entry written before the cancel holds a slot")
+	if st, err := q.Lookup(bg, tokens[picked[0]], stubSignFn); err != nil || st.Status != StatusAdmitted {
+		t.Fatalf("lookup %s = (%+v, %v), want ADMITTED", picked[0], st, err)
+	}
+	for _, queueID := range picked[1:] {
+		if n, err := rdb.Exists(bg, admitKey(queueID)).Result(); err != nil || n != 0 {
+			t.Fatalf("admit slot of %s exists=%d err=%v, want none", queueID, n, err)
+		}
+		st, err := q.Lookup(bg, tokens[queueID], signMustNotRun(t))
+		if err != nil || st.Status != StatusQueueing || st.Rank != 0 {
+			t.Fatalf("lookup %s = (%+v, %v), want QUEUEING at rank 0 (dropped after the budget ran out)", queueID, st, err)
+		}
+	}
+}
+
+// replayAdmitScriptHook 模拟 go-redis 对单条命令的自动重发:第一次发给 admit:{queueID} 的脚本(EVAL / EVALSHA)
+// 执行成功之后,先跑 between(回包丢失期间发生的事),再把同一条命令原样再发一次,以第二次的结果作为这条命令的结果。
+// go-redis 对单条命令在读超时、连接断开后会重发(baseClient.process),对 MULTI 读失败不重发(txPipelineProcessCmds)。
+type replayAdmitScriptHook struct {
+	admitKey string
+	between  func()
+	replays  *int
+}
+
+func (h replayAdmitScriptHook) DialHook(next redis.DialHook) redis.DialHook { return next }
+
+func (h replayAdmitScriptHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
+	return func(ctx context.Context, cmd redis.Cmder) error {
+		if err := next(ctx, cmd); err != nil || *h.replays > 0 {
+			return err
+		}
+		if name := cmd.Name(); name != "eval" && name != "evalsha" {
+			return nil
+		}
+		// EVAL / EVALSHA 的参数:命令名、脚本或 sha、键数、键...
+		if args := cmd.Args(); len(args) < 4 || args[3] != h.admitKey {
+			return nil
+		}
+		*h.replays++
+		h.between()
+		return next(ctx, cmd)
+	}
+}
+
+func (h replayAdmitScriptHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+	return next
+}
+
+// 放行脚本被重发:第一次已执行、回包丢了,期间客户端取走了放行槽,随后 go-redis 重发同一次脚本。重发不能再写
+// 一个放行槽(同一排队票会被签出第二张 gate 票),也不能把占位分数拨回「放行时刻 + AdmitTTL」;这次放行照常计数。
+// 修复前(MULTI 写法)红在钩子没有触发:go-redis 不重发 MULTI,这条风险是改成单条脚本之后才有的;
+// 脚本去掉 admitted_at 守卫的写法红在「放行槽被重写」上(再往下,第二次 Lookup 会回 ADMITTED、签出第二张票)。
+func TestPopAdmit_AdmitScriptReplayedAfterConsume_DoesNotReissue(t *testing.T) {
+	q, rdb, clk := newClockedQueue(t)
+	ctx := context.Background()
+
+	res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+	if err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	signs := 0
+	countingSign := func(slot *AdmitSlot) (*AdmitToken, error) {
+		signs++
+		return stubSignFn(slot)
+	}
+	replays := 0
+	var consumedAt time.Time
+	rdb.AddHook(replayAdmitScriptHook{
+		admitKey: admitKey(res.QueueID),
+		replays:  &replays,
+		between: func() {
+			clk.Advance(2 * time.Second) // 客户端的下一次轮询
+			consumedAt = clk.Now()
+			if st, err := q.Lookup(ctx, res.QueueToken, countingSign); err != nil || st.Status != StatusAdmitted {
+				t.Fatalf("lookup between the two runs = (%+v, %v), want ADMITTED", st, err)
+			}
+		},
+	})
+
+	if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err != nil || n != 1 {
+		t.Fatalf("popadmit = (%d, %v), want (1, nil): the replayed admit still counts once", n, err)
+	}
+	if replays != 1 {
+		t.Fatalf("admit script replayed %d times, want 1: the retry window was not exercised", replays)
+	}
+	if n, err := rdb.Exists(ctx, admitKey(res.QueueID)).Result(); err != nil || n != 0 {
+		t.Fatalf("admit slot exists=%d err=%v after the replay, want none: the replay must not write a second slot", n, err)
+	}
+	score, err := rdb.ZScore(ctx, admittedZSetKey(1), res.QueueID).Result()
+	if want := float64(consumedAt.Add(q.handoffGrace).UnixMilli()); err != nil || score != want {
+		t.Fatalf("placeholder score = %.0f err=%v, want %.0f (consume time + handoff grace, not reset by the replay)",
+			score, err, want)
+	}
+	if st, err := q.Lookup(ctx, res.QueueToken, countingSign); err != nil || st.Status != StatusExpired {
+		t.Fatalf("lookup after the replay = (%+v, %v), want EXPIRED, not a second ADMITTED", st, err)
+	}
+	if signs != 1 {
+		t.Fatalf("signFn ran %d times, want exactly 1", signs)
+	}
+}
+
+// AdmitTTL 配成 0(显式写 0s 不回落默认值)时 PopAdmit 一个都不弹出、回错误,条目原样留在队列,不写放行槽。
+// 修复前红在「回错误」上:回 (1, nil),写出一个不带 TTL、永不过期的放行槽(go-redis 的 Set(..., 0) 不设过期)。
+// 只改放行脚本、不加这道拦截的写法也红,红在回 (0, nil) 上:SET PX 0 报错,条目已弹出、丢失(队列长度 0)。
+// (2026-10-15 补注)加了 500µs 一组:放行脚本以 AdmitTTL.Milliseconds() 作 SET PX,不足 1ms 取整为 0,
+// miniredis 与 Redis 一样拒绝 SET PX 0。ValidateTTLs 只拒 <=0 的写法红在这一组的「回错误」上(回 (0, nil):
+// 条目已弹出、脚本报错、丢失);HEAD 同样红在这里(回 (1, nil),go-redis 的 Set 把 500µs 截成 PX 1)。
+func TestPopAdmit_NonPositiveAdmitTTL_PopsNothing(t *testing.T) {
+	for _, admitTTL := range []time.Duration{0, 500 * time.Microsecond} {
+		t.Run(admitTTL.String(), func(t *testing.T) {
+			_, rdb, _, cleanup := newTestQueue(t)
+			defer cleanup()
+			q := New(rdb, time.Hour, admitTTL, []byte("test-secret"))
+			ctx := context.Background()
+
+			res, err := q.Enqueue(ctx, 1, "alice", "dev1")
+			if err != nil {
+				t.Fatalf("enqueue: %v", err)
+			}
+			if n, err := q.PopAdmit(ctx, 1, 1, pickZone1Gate); err == nil || n != 0 {
+				t.Fatalf("popadmit with AdmitTTL=%v = (%d, %v), want (0, error)", admitTTL, n, err)
+			}
+			if n, err := rdb.ZCard(ctx, zoneZSetKey(1)).Result(); err != nil || n != 1 {
+				t.Fatalf("queue length = %d err=%v, want 1 (the entry stays queued)", n, err)
+			}
+			if n, err := rdb.Exists(ctx, admitKey(res.QueueID)).Result(); err != nil || n != 0 {
+				t.Fatalf("admit slot exists=%d err=%v, want none", n, err)
+			}
+		})
+	}
+}
+
+// AdmitTTL、QueueEntryTTL 非正时排队照样能起,但放行槽写不进(SET PX 报错)或写成永不过期、EXPIRE ≤0 当场删掉
+// 整个队列、token 索引不带 TTL。起服装配据 ValidateTTLs 拒绝。不要求 admitTTL < entryTTL(最后一组钉住)。
+// 修复前没有这个函数(编不过即红)。
+// (2026-10-15 补注)AdmitTTL 另有 1ms 下界(放行脚本的 SET PX 取整到毫秒,见 ValidateTTLs):500µs 一组在只拒 <=0
+// 的写法下红,1ms 一组钉住下界本身可用。
+func TestValidateTTLs_RejectsNonPositive(t *testing.T) {
+	cases := []struct {
+		entryTTL, admitTTL time.Duration
+		wantErr            bool
+	}{
+		{0, 60 * time.Second, true},
+		{-time.Second, 60 * time.Second, true},
+		{time.Hour, 0, true},
+		{time.Hour, -time.Second, true},
+		{time.Hour, 60 * time.Second, false},
+		{time.Hour, 2 * time.Hour, false},
+		{time.Hour, 500 * time.Microsecond, true},
+		{time.Hour, time.Millisecond, false},
+	}
+	for _, c := range cases {
+		err := ValidateTTLs(c.entryTTL, c.admitTTL)
+		if (err != nil) != c.wantErr {
+			t.Errorf("ValidateTTLs(entry=%v, admit=%v) = %v, want error=%v", c.entryTTL, c.admitTTL, err, c.wantErr)
+		}
+		if err != nil && !strings.Contains(err.Error(), "ttl must be positive") {
+			t.Errorf("ValidateTTLs(entry=%v, admit=%v) error = %q, want it to say the ttl must be positive", c.entryTTL, c.admitTTL, err)
+		}
 	}
 }

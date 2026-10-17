@@ -104,6 +104,13 @@ Loop:
 
 **重要:** `queue_pos` 不能是真实位次(开销太大),用 token 桶可用 token 数 / 平均消耗速率估算即可,玩家感觉"在前进"就行。
 
+> **(2026-10-15 更正,上面的循环原文保留)** 上面的循环只描述不持有 `queue_token` 的请求。拿到 `queue_token`(login 真排队,`queue_source="login"`)之后,客户端不再按此循环重调 assign-gate:
+> - 一律轮询 `/api/queue-status`,每次等待 = max(`retry_after_ms`, 2s) + [0, 20%] 抖动。
+> - 只有 queue-status 本身失败(网络错误 / HTTP 非 200 / `code=500`)时才带 token 重调一次 assign-gate 作恢复;连续失败时下限按指数退避,封顶 30s。
+> - `503 zone_*` 与 `404 zone_not_found` 是终态,不重试。
+>
+> 现行口径以 §11.5 的 2026-10-15 更正与补注为准。
+
 ---
 
 ## 四、按 zone 分批放人(开服特化)
@@ -374,6 +381,7 @@ zone 级配额 2000 RPS:
 > **负责人 2026-10-15 按「最标准」定**:J0 的 fail-closed 取舍与服务端回包格式都不变,改客户端契约。持有 `queue_token` 一律轮询 `/api/queue-status`(不过限流器);
 > 带 token 重调 assign-gate 只作为 queue-status 本身失败后的恢复手段;重入被限流就回到 queue-status 轮询。逐条见 §11.5 的 2026-10-15 更正。
 > login 侧同批改为放行窗口过后对该 token 回 EXPIRED(gateway 回 410;另一项改动,落在 `go/login/internal/logic/pkg/loginqueue/queue.go`,本注未核对其实现)。
+> (2026-10-16 核对补注:login 侧实现已经过交错复查与对抗核实;同日放行写入改为单段脚本 `admitEntryScript`,见 `login-queue-2026-05.md` §5 决策树后的补注。仍未编译、未运行。)
 > 所以仍按旧口径退避重调的客户端,窗口过后也会拿到确定的 410、重新入队,不会再卡在名次 0 一小时。链条与依据见规格 `spec_G4b.md` §4.10 J0「客户端契约」与 §8 #10 的 2026-10-15 注。
 
 ### 11.4 gateway 代码改动(G4b-J)
@@ -412,6 +420,36 @@ zone 级配额 2000 RPS:
 > - 落地状态:gateway 只改注释(`AssignGateRequest.java` 的 `queueToken`、`AssignGateController.java`),代码不变。
 >   本仓库 robot 已按此实现(`robot/http_assign_gate.go` 的 `AssignGateWithQueue`,用例 `robot/http_assign_gate_test.go`),**未编译、未运行**,待 Codex 验证。
 >   独立客户端 `../mmorpg-client` 待客户端任务跟进(本批未读取);Java 版的对齐由主会话登记 `PARITY.md`(AGENTS §12)。
+
+> **(2026-10-15 补注:轮询间隔下限、连续失败退避、恢复重入的触发范围。负责人 2026-10-15 按「最标准」定,主会话定细则;上面的更正原文保留)**
+> 上面更正有两处不够:第 1 条「间隔取 `retry_after_ms`,为 0 时取 2s」没有下限也没有抖动;第 2 条「本身失败(网络错误 / 5xx)」把 `503 zone_*` 也算成了失败。
+> 评审发现,queue-status 回 `500` 且 zone 桶耗尽时,按旧写法客户端会以毫秒级间隔循环「查询失败 → 恢复重入被限流 → 立即再查」,把 login 故障放大。
+> 本补注是持有 `queue_token` 时的权威口径(其他文档只写摘要并指向这里),上面更正的其余各条不变:
+>
+> - **轮询间隔**:每次调 `/api/queue-status` 之前等待 = 基础间隔 + 抖动。
+>   - 基础间隔 = max(`retry_after_ms`, 下限),`retry_after_ms` 取最近一次回包里的值(未带或为 0 时即取下限)。
+>   - 抖动在 [0, 基础间隔的 20%] 内均匀取,随机源可注入,便于测试。
+>   - 下限平时为 2s,与本节原第 1 条「为 0 时取 2s」同值;区别是现在对小于 2s 的非 0 值同样生效。
+> - **连续失败退避**:`/api/queue-status` 本身失败(只指下一条的三类)时,连续失败次数 n 加 1。
+>   - n ≥ 1 时下限改为 2s·2^(n−1),即 2s、4s、8s、16s,之后封顶 30s。30s 不超过 AdmitTTL 60s 的一半:加满 20% 抖动也只等 36s,放行窗口里至少还能再查一次。
+>   - queue-status 回一次非失败回包即把 n 清零;恢复重入的回包不清零 n。
+> - **恢复重入的触发范围**:只有三类算「queue-status 本身失败」:网络错误、HTTP 状态非 200、回包 `code=500`。此时带同一 token 调一次 `/api/assign-gate` 作恢复,重入回包按下面处理:
+>   - `code=0`:放行。
+>   - `code=100`(`queue_source="login"` 续上原排队条目,或 `"ratelimit"` 被波次 / zone 桶挡住)或 `code=429`:保留 token,按上两条等待后回到 queue-status 轮询。**不**按 429 的 30/60/120s 退避重调 assign-gate,否则已被放行的玩家会错过 login 的放行窗口(AdmitTTL 60s)。
+>   - `410`:按下面 410 那条处理。
+>   - 重入本身也失败(网络错误 / HTTP 非 200),或回其他码(`500`、`503 zone_*`、`404`):按错误结束,交外层。robot 的外层从头重来,token 随之丢弃(压测可接受)。
+> - **终态不重入**:queue-status 回 `503`(`zone_maintenance` / `zone_closed` / `zone_not_open`,zone 不可进)或 `404 zone_not_found`,不发恢复重入,按错误结束,交外层(UI 显示对应文案)。
+>   gateway 的 queue-status 先过区服准入(`AssignGateService.queryQueueStatus` → `checkZoneAdmission`),这两类是确定的业务结果;按旧写法「5xx 都重入」,维护中的 zone 会被持 token 的客户端反复打 assign-gate。
+> - **410 与预算**:任一端点回 `410`,丢掉 token、不带 token 重调 assign-gate(同上面更正第 3 条)。排队预算(客户端的总等待上限,robot 是 ctx)耗尽即停,不再发请求。
+> - **不持有 `queue_token` 的请求不变**:`code=100`(ratelimit)按本节原第 1 条重调 assign-gate,`code=429` 按原第 2 条 30/60/120s 退避。
+>   robot 在这一支按 `retry_after_ms`(缺省 2s)重调、不加抖动;遇 429 直接返回错误,交外层重试(§11.7 R2)。两者都是压测工具的既有口径,本次不变。
+> - **前提(gateway 事实)**:`/api/assign-gate` 与 `/api/queue-status` 的业务回包一律 HTTP 200 + JSON `code`(`AssignGateService`)。所以「HTTP 非 200」只来自业务回包之外(代理、网关进程异常、请求体不合法等),与回包 `code` 是两个维度。
+> - **落地状态**:
+>   - gateway 只改注释:`AssignGateRequest.java` 的 `queueToken` 注释已改成本口径,`AssignGateController.java` 与 `QueueStatusController.java` 的相关注释同步。
+>   - robot 由另一名代理同批修改(`robot/http_assign_gate.go`、`robot/http_assign_gate_test.go`),本注写下时未核对其实现;**未编译、未运行**,待 Codex 验证。
+>     (2026-10-16 核对补注)主会话已逐条静态核对 robot 实现与本补注一致:持 token 的等待只经 `heldTokenWait`(下限 2s、抖动 20%、退避封顶 30s 均为具名常量),失败分类只在 `pollQueueStatus`(网络错误 / 非 200 / `code==500`),503 / 404 不重入;两路语义评审与对抗核实未发现契约偏差。仍**未编译、未运行**。
+>     契约未规定、robot 的取法:连续失败次数 n 只在 queue-status 回一次非失败回包时清零,410 丢 token 换新 token 时**不清零**(410 若来自恢复重入,说明 login 刚失败过,保留退避更保守;新 token 首次轮询最多等 30s 加抖动,仍在 AdmitTTL 60s 内)。独立客户端可照此实现。
+>   - 独立客户端 `../mmorpg-client` 需另开客户端任务跟进(客户端可见契约,AGENTS §12 两版同批)。
 
 ### 11.6 运行期改阈值要清桶
 

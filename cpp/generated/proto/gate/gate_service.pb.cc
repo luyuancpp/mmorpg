@@ -29,10 +29,6 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 namespace {
 PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
     file_reflection_data[] = {
-        // ::BindSessionToGateRequest
-        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fgate_2fgate_5fservice_2eproto, /* tracker*/ nullptr,},
-        // ::BindSessionToGateResponse
-        {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fgate_2fgate_5fservice_2eproto, /* tracker*/ nullptr,},
         // ::BroadcastToPlayersRequest
         {&::_pbi::kDescriptorMethods, &::descriptor_table_proto_2fgate_2fgate_5fservice_2eproto, /* tracker*/ nullptr,},
         // ::BroadcastToSceneRequest
@@ -42,318 +38,6 @@ PROTOBUF_CONSTINIT ::google::protobuf::internal::ReflectionData
 };
 }  // namespace
 #endif
-class BindSessionToGateResponse::_Internal {
- public:
-  using HasBits = decltype(::std::declval<BindSessionToGateResponse>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_._has_bits_);
-};
-
-constexpr BindSessionToGateResponse::ParseTableT_ BindSessionToGateResponse::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
-  return ParseTableT_{
-    {
-      PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_._has_bits_),
-      0, // no _extensions_
-      3, 24,  // max_field_number, fast_idx_mask
-      offsetof(ParseTableT_, field_lookup_table),
-      4294967288,  // skipmap
-      offsetof(ParseTableT_, field_entries),
-      3,  // num_field_entries
-      0,  // num_aux_entries
-      offsetof(ParseTableT_, field_names),  // no aux_entries
-      class_data,
-      nullptr,  // post_loop_handler
-      ::_pbi::TcParser::GenericFallback,  // fallback
-      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::BindSessionToGateResponse>(),  // to_prefetch
-      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-    }, {{
-      {::_pbi::TcParser::MiniParse, {}},
-      // uint32 session_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionToGateResponse, _impl_.session_id_), 1>(),
-       {8, 1, 0,
-        PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_id_)}},
-      // uint64 player_id = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionToGateResponse, _impl_.player_id_), 0>(),
-       {16, 0, 0,
-        PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.player_id_)}},
-      // uint32 session_version = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionToGateResponse, _impl_.session_version_), 2>(),
-       {24, 2, 0,
-        PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_version_)}},
-    }}, {{
-      65535, 65535
-    }}, {{
-      // uint32 session_id = 1;
-      {PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint64 player_id = 2;
-      {PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // uint32 session_version = 3;
-      {PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_version_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    }},
-    // no aux_entries
-    {{
-    }},
-  };
-}
-
-
-inline constexpr BindSessionToGateResponse::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        player_id_{::uint64_t{0u}},
-        session_id_{0u},
-        session_version_{0u} {}
-
-template <typename>
-constexpr BindSessionToGateResponse::BindSessionToGateResponse(::_pbi::ConstantInitialized,
-                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::Message(
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          class_data
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          ),
-      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
-}
-inline void* PROTOBUF_NONNULL BindSessionToGateResponse::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) BindSessionToGateResponse(arena);
-}
-constexpr auto BindSessionToGateResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(BindSessionToGateResponse), alignof(BindSessionToGateResponse));
-}
-constexpr auto BindSessionToGateResponse::InternalGenerateClassData_(
-    const MessageLite& prototype,
-    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &prototype,
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-          &_table_.header,
-#else
-          tc_table,
-#endif
-          nullptr,  // IsInitialized
-          &BindSessionToGateResponse::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<BindSessionToGateResponse>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &BindSessionToGateResponse::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<BindSessionToGateResponse>(), &BindSessionToGateResponse::ByteSizeLong,
-              &BindSessionToGateResponse::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_._cached_size_),
-          false,
-      },
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[1],
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-      &::_pbi::kDescriptorMethods,
-      &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto,
-      nullptr,  // tracker
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  };
-}
-struct BindSessionToGateResponseGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr BindSessionToGateResponseGlobalsTypeInternal()
-      :
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-        _default(::_pbi::ConstantInitialized{},
-                 BindSessionToGateResponse_class_data_.base())
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(BindSessionToGateResponse::InternalGenerateClassData_(
-            _default, &BindSessionToGateResponse_globals_._table.header)),
-        _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<BindSessionToGateResponse>(
-            GetClassData()))
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  {
-  }
-  ~BindSessionToGateResponseGlobalsTypeInternal() {}
-  union {
-    alignas(::_pbi::kMaxMessageAlignment) BindSessionToGateResponse _default;
-  };
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<BindSessionToGateResponse>(
-      ::std::declval<const ::_pbi::ClassData*>())) _table;
-#endif
-};
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(BindSessionToGateResponseGlobalsTypeInternal, _default) ==
-              ::_pbi::MessageGlobalsBase::OffsetToDefault());
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST BindSessionToGateResponseGlobalsTypeInternal BindSessionToGateResponse_globals_
-        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-namespace {
-const ::_pbi::ClassData* BindSessionToGateResponse_get_class_data() {
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  return BindSessionToGateResponse_globals_.GetClassData();
-#else
-  return BindSessionToGateResponse_class_data_.base();
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-}
-}  // namespace
-#endif  // PROTOBUF_CUSTOM_VTABLE
-class BindSessionToGateRequest::_Internal {
- public:
-  using HasBits = decltype(::std::declval<BindSessionToGateRequest>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_._has_bits_);
-};
-
-constexpr BindSessionToGateRequest::ParseTableT_ BindSessionToGateRequest::InternalGenerateParseTable_(const ::_pbi::ClassData* class_data) {
-  return ParseTableT_{
-    {
-      PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_._has_bits_),
-      0, // no _extensions_
-      3, 24,  // max_field_number, fast_idx_mask
-      offsetof(ParseTableT_, field_lookup_table),
-      4294967288,  // skipmap
-      offsetof(ParseTableT_, field_entries),
-      3,  // num_field_entries
-      0,  // num_aux_entries
-      offsetof(ParseTableT_, field_names),  // no aux_entries
-      class_data,
-      nullptr,  // post_loop_handler
-      ::_pbi::TcParser::GenericFallback,  // fallback
-      #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-      ::_pbi::TcParser::GetTable<::BindSessionToGateRequest>(),  // to_prefetch
-      #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-    }, {{
-      {::_pbi::TcParser::MiniParse, {}},
-      // uint32 session_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionToGateRequest, _impl_.session_id_), 1>(),
-       {8, 1, 0,
-        PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_id_)}},
-      // uint64 player_id = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(BindSessionToGateRequest, _impl_.player_id_), 0>(),
-       {16, 0, 0,
-        PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.player_id_)}},
-      // uint32 session_version = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindSessionToGateRequest, _impl_.session_version_), 2>(),
-       {24, 2, 0,
-        PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_version_)}},
-    }}, {{
-      65535, 65535
-    }}, {{
-      // uint32 session_id = 1;
-      {PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-      // uint64 player_id = 2;
-      {PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // uint32 session_version = 3;
-      {PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_version_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
-    }},
-    // no aux_entries
-    {{
-    }},
-  };
-}
-
-
-inline constexpr BindSessionToGateRequest::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        player_id_{::uint64_t{0u}},
-        session_id_{0u},
-        session_version_{0u} {}
-
-template <typename>
-constexpr BindSessionToGateRequest::BindSessionToGateRequest(::_pbi::ConstantInitialized,
-                       const ::_pbi::ClassData* PROTOBUF_NONNULL class_data)
-    : ::google::protobuf::Message(
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          class_data
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          ),
-      _impl_(internal_visibility(), ::_pbi::ConstantInitialized()) {
-}
-inline void* PROTOBUF_NONNULL BindSessionToGateRequest::PlacementNew_(
-    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
-  return ::new (mem) BindSessionToGateRequest(arena);
-}
-constexpr auto BindSessionToGateRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(BindSessionToGateRequest), alignof(BindSessionToGateRequest));
-}
-constexpr auto BindSessionToGateRequest::InternalGenerateClassData_(
-    const MessageLite& prototype,
-    const ::google::protobuf::internal::TcParseTableBase* tc_table) {
-  return ::google::protobuf::internal::ClassDataFull{
-      ::google::protobuf::internal::ClassData{
-          &prototype,
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-          &_table_.header,
-#else
-          tc_table,
-#endif
-          nullptr,  // IsInitialized
-          &BindSessionToGateRequest::MergeImpl,
-          ::google::protobuf::Message::GetNewImpl<BindSessionToGateRequest>(),
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-          &BindSessionToGateRequest::SharedDtor,
-          ::google::protobuf::Message::GetClearImpl<BindSessionToGateRequest>(), &BindSessionToGateRequest::ByteSizeLong,
-              &BindSessionToGateRequest::_InternalSerialize,
-#endif  // PROTOBUF_CUSTOM_VTABLE
-          PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_._cached_size_),
-          false,
-      },
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[0],
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-      &::_pbi::kDescriptorMethods,
-      &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto,
-      nullptr,  // tracker
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  };
-}
-struct BindSessionToGateRequestGlobalsTypeInternal : ::_pbi::MessageGlobalsBase {
-  constexpr BindSessionToGateRequestGlobalsTypeInternal()
-      :
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-        _default(::_pbi::ConstantInitialized{},
-                 BindSessionToGateRequest_class_data_.base())
-#else   // !PROTOBUF_MESSAGE_GLOBALS
-        MessageGlobalsBase(BindSessionToGateRequest::InternalGenerateClassData_(
-            _default, &BindSessionToGateRequest_globals_._table.header)),
-        _default(::_pbi::ConstantInitialized{}, GetClassData()),
-        _table(::_pbi::PrivateAccess::GenerateParseTable<BindSessionToGateRequest>(
-            GetClassData()))
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-  {
-  }
-  ~BindSessionToGateRequestGlobalsTypeInternal() {}
-  union {
-    alignas(::_pbi::kMaxMessageAlignment) BindSessionToGateRequest _default;
-  };
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  decltype(::_pbi::PrivateAccess::GenerateParseTable<BindSessionToGateRequest>(
-      ::std::declval<const ::_pbi::ClassData*>())) _table;
-#endif
-};
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-static_assert(PROTOBUF_FIELD_OFFSET(BindSessionToGateRequestGlobalsTypeInternal, _default) ==
-              ::_pbi::MessageGlobalsBase::OffsetToDefault());
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PROTOBUF_MESSAGE_GLOBALS_CONST BindSessionToGateRequestGlobalsTypeInternal BindSessionToGateRequest_globals_
-        PROTOBUF_MESSAGE_GLOBALS_SECTION(.data.rel.ro);
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-namespace {
-const ::_pbi::ClassData* BindSessionToGateRequest_get_class_data() {
-#ifdef PROTOBUF_MESSAGE_GLOBALS
-  return BindSessionToGateRequest_globals_.GetClassData();
-#else
-  return BindSessionToGateRequest_class_data_.base();
-#endif  // PROTOBUF_MESSAGE_GLOBALS
-}
-}  // namespace
-#endif  // PROTOBUF_CUSTOM_VTABLE
 class BroadcastToSceneRequest::_Internal {
  public:
   using HasBits = decltype(::std::declval<BroadcastToSceneRequest>()._impl_._has_bits_);
@@ -457,7 +141,7 @@ constexpr auto BroadcastToSceneRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[3],
+      &file_reflection_data[1],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto,
@@ -647,7 +331,7 @@ constexpr auto BroadcastToPlayersRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[2],
+      &file_reflection_data[0],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto,
@@ -794,7 +478,7 @@ constexpr auto BroadcastToAllRequest::InternalGenerateClassData_(
           false,
       },
 #ifdef PROTOBUF_MESSAGE_GLOBALS
-      &file_reflection_data[4],
+      &file_reflection_data[2],
 #else   // !PROTOBUF_MESSAGE_GLOBALS
       &::_pbi::kDescriptorMethods,
       &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto,
@@ -853,24 +537,6 @@ const ::uint32_t
     TableStruct_proto_2fgate_2fgate_5fservice_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::BindSessionToGateRequest, _impl_._has_bits_),
-        6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::BindSessionToGateRequest, _impl_.session_id_),
-        PROTOBUF_FIELD_OFFSET(::BindSessionToGateRequest, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::BindSessionToGateRequest, _impl_.session_version_),
-        1,
-        0,
-        2,
-        0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::BindSessionToGateResponse, _impl_._has_bits_),
-        6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::BindSessionToGateResponse, _impl_.session_id_),
-        PROTOBUF_FIELD_OFFSET(::BindSessionToGateResponse, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::BindSessionToGateResponse, _impl_.session_version_),
-        1,
-        0,
-        2,
-        0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::BroadcastToPlayersRequest, _impl_._has_bits_),
         8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::BroadcastToPlayersRequest, _impl_.session_list_),
@@ -899,16 +565,12 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::BindSessionToGateRequest)},
-        {9, sizeof(::BindSessionToGateResponse)},
-        {18, sizeof(::BroadcastToPlayersRequest)},
-        {31, sizeof(::BroadcastToSceneRequest)},
-        {38, sizeof(::BroadcastToAllRequest)},
+        {0, sizeof(::BroadcastToPlayersRequest)},
+        {13, sizeof(::BroadcastToSceneRequest)},
+        {20, sizeof(::BroadcastToAllRequest)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
-        &::BindSessionToGateRequest_globals_,
-        &::BindSessionToGateResponse_globals_,
         &::BroadcastToPlayersRequest_globals_,
         &::BroadcastToSceneRequest_globals_,
         &::BroadcastToAllRequest_globals_,
@@ -918,38 +580,25 @@ const char descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto[] ABS
     "\n\035proto/gate/gate_service.proto\032\033proto/d"
     "b/proto_option.proto\032\035proto/common/base/"
     "empty.proto\032\037proto/common/base/message.p"
-    "roto\032 proto/common/base/gm_admin.proto\"Z"
-    "\n\030BindSessionToGateRequest\022\022\n\nsession_id"
-    "\030\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\022\027\n\017session_ver"
-    "sion\030\003 \001(\r\"[\n\031BindSessionToGateResponse\022"
-    "\022\n\nsession_id\030\001 \001(\r\022\021\n\tplayer_id\030\002 \001(\004\022\027"
-    "\n\017session_version\030\003 \001(\r\"\245\001\n\031BroadcastToP"
-    "layersRequest\022\024\n\014session_list\030\001 \003(\r\022(\n\017m"
-    "essage_content\030\002 \001(\0132\017.MessageContent\022\033\n"
-    "\023session_bitmap_base\030\003 \001(\r\022\026\n\016session_bi"
-    "tmap\030\004 \001(\014\022\023\n\013player_list\030\005 \003(\004\"U\n\027Broad"
-    "castToSceneRequest\022\020\n\010scene_id\030\001 \001(\004\022(\n\017"
-    "message_content\030\002 \001(\0132\017.MessageContent\"A"
-    "\n\025BroadcastToAllRequest\022(\n\017message_conte"
-    "nt\030\001 \001(\0132\017.MessageContent2\246\005\n\004Gate\022X\n\023Pl"
-    "ayerEnterGameNode\022\037.RegisterGameNodeSess"
-    "ionRequest\032 .RegisterGameNodeSessionResp"
-    "onse\0227\n\023SendMessageToPlayer\022\030.NodeRouteM"
-    "essageRequest\032\006.Empty\022\?\n\020RouteNodeMessag"
-    "e\022\024.RouteMessageRequest\032\025.RouteMessageRe"
-    "sponse\022M\n\022RoutePlayerMessage\022\032.RoutePlay"
-    "erMessageRequest\032\033.RoutePlayerMessageRes"
-    "ponse\0228\n\022BroadcastToPlayers\022\032.BroadcastT"
-    "oPlayersRequest\032\006.Empty\0224\n\020BroadcastToSc"
-    "ene\022\030.BroadcastToSceneRequest\032\006.Empty\0220\n"
-    "\016BroadcastToAll\022\026.BroadcastToAllRequest\032"
-    "\006.Empty\022>\n\rNodeHandshake\022\025.NodeHandshake"
-    "Request\032\026.NodeHandshakeResponse\022J\n\021BindS"
-    "essionToGate\022\031.BindSessionToGateRequest\032"
-    "\032.BindSessionToGateResponse\022M\n\022GmGracefu"
-    "lShutdown\022\032.GmGracefulShutdownRequest\032\033."
-    "GmGracefulShutdownResponseB\rZ\004gate\200\001\001\230\324a"
-    "\002b\006proto3"
+    "roto\032 proto/common/base/gm_admin.proto\"\245"
+    "\001\n\031BroadcastToPlayersRequest\022\024\n\014session_"
+    "list\030\001 \003(\r\022(\n\017message_content\030\002 \001(\0132\017.Me"
+    "ssageContent\022\033\n\023session_bitmap_base\030\003 \001("
+    "\r\022\026\n\016session_bitmap\030\004 \001(\014\022\023\n\013player_list"
+    "\030\005 \003(\004\"U\n\027BroadcastToSceneRequest\022\020\n\010sce"
+    "ne_id\030\001 \001(\004\022(\n\017message_content\030\002 \001(\0132\017.M"
+    "essageContent\"A\n\025BroadcastToAllRequest\022("
+    "\n\017message_content\030\001 \001(\0132\017.MessageContent"
+    "2\360\002\n\004Gate\0227\n\023SendMessageToPlayer\022\030.NodeR"
+    "outeMessageRequest\032\006.Empty\0228\n\022BroadcastT"
+    "oPlayers\022\032.BroadcastToPlayersRequest\032\006.E"
+    "mpty\0224\n\020BroadcastToScene\022\030.BroadcastToSc"
+    "eneRequest\032\006.Empty\0220\n\016BroadcastToAll\022\026.B"
+    "roadcastToAllRequest\032\006.Empty\022>\n\rNodeHand"
+    "shake\022\025.NodeHandshakeRequest\032\026.NodeHands"
+    "hakeResponse\022M\n\022GmGracefulShutdown\022\032.GmG"
+    "racefulShutdownRequest\032\033.GmGracefulShutd"
+    "ownResponseB\rZ\004gate\200\001\001\230\324a\002b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps[4] = {
@@ -962,517 +611,19 @@ static ::absl::once_flag descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgate_2fgate_5fservice_2eproto = {
     false,
     false,
-    1369,
+    874,
     descriptor_table_protodef_proto_2fgate_2fgate_5fservice_2eproto,
     "proto/gate/gate_service.proto",
     &descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_once,
     descriptor_table_proto_2fgate_2fgate_5fservice_2eproto_deps,
     4,
-    5,
+    3,
     schemas,
     file_message_globals,
     TableStruct_proto_2fgate_2fgate_5fservice_2eproto::offsets,
     file_level_enum_descriptors_proto_2fgate_2fgate_5fservice_2eproto,
     file_level_service_descriptors_proto_2fgate_2fgate_5fservice_2eproto,
 };
-// ===================================================================
-
-BindSessionToGateRequest::BindSessionToGateRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BindSessionToGateRequest_get_class_data()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:BindSessionToGateRequest)
-}
-BindSessionToGateRequest::BindSessionToGateRequest(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BindSessionToGateRequest& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BindSessionToGateRequest_get_class_data()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-}
-PROTOBUF_NDEBUG_INLINE BindSessionToGateRequest::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
-
-inline void BindSessionToGateRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, player_id_),
-           0,
-           offsetof(Impl_, session_version_) -
-               offsetof(Impl_, player_id_) +
-               sizeof(Impl_::session_version_));
-}
-BindSessionToGateRequest::~BindSessionToGateRequest() {
-  // @@protoc_insertion_point(destructor:BindSessionToGateRequest)
-  SharedDtor(*this);
-}
-inline void BindSessionToGateRequest::SharedDtor(MessageLite& self) {
-  BindSessionToGateRequest& this_ = static_cast<BindSessionToGateRequest&>(self);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.~Impl_();
-}
-
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull BindSessionToGateRequest_class_data_ =
-        BindSessionToGateRequest::InternalGenerateClassData_(BindSessionToGateRequest_globals_._default);
-
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-BindSessionToGateRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&BindSessionToGateRequest_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(BindSessionToGateRequest_class_data_.tc_table);
-  return BindSessionToGateRequest_class_data_.base();
-}
-#else
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-BindSessionToGateRequest::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&BindSessionToGateRequest_globals_);
-  ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&BindSessionToGateRequest_globals_));
-  return BindSessionToGateRequest_globals_.GetClassData();
-}
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const BindSessionToGateRequest::ParseTableT_
-    BindSessionToGateRequest::_table_ =
-        BindSessionToGateRequest::InternalGenerateParseTable_(BindSessionToGateRequest_class_data_.base());
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_NOINLINE void BindSessionToGateRequest::Clear() {
-// @@protoc_insertion_point(message_clear_start:BindSessionToGateRequest)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.session_version_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.session_version_));
-  }
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL BindSessionToGateRequest::_InternalSerialize(
-    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const BindSessionToGateRequest& this_ = static_cast<const BindSessionToGateRequest&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL BindSessionToGateRequest::_InternalSerialize(
-    ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const BindSessionToGateRequest& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  // @@protoc_insertion_point(serialize_to_array_start:BindSessionToGateRequest)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = this_._impl_._has_bits_[0];
-  // uint32 session_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-    if (this_._internal_session_id() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          1, this_._internal_session_id(), target);
-    }
-  }
-
-  // uint64 player_id = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (this_._internal_player_id() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          2, this_._internal_player_id(), target);
-    }
-  }
-
-  // uint32 session_version = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-    if (this_._internal_session_version() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          3, this_._internal_session_version(), target);
-    }
-  }
-
-  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:BindSessionToGateRequest)
-  return target;
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t BindSessionToGateRequest::ByteSizeLong(const MessageLite& base) {
-  const BindSessionToGateRequest& this_ = static_cast<const BindSessionToGateRequest&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::size_t BindSessionToGateRequest::ByteSizeLong() const {
-  const BindSessionToGateRequest& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:BindSessionToGateRequest)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
-
-  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
-  cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    // uint64 player_id = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (this_._internal_player_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_player_id());
-      }
-    }
-    // uint32 session_id = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
-    // uint32 session_version = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      if (this_._internal_session_version() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_session_version());
-      }
-    }
-  }
-  return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                             &this_._impl_._cached_size_);
-}
-
-void BindSessionToGateRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
-                      const ::google::protobuf::MessageLite& from_msg) {
-   auto* const _this = static_cast<BindSessionToGateRequest*>(&to_msg);
-  auto& from = static_cast<const BindSessionToGateRequest&>(from_msg);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    from.CheckHasBitConsistency();
-  }
-  // @@protoc_insertion_point(class_specific_merge_from_start:BindSessionToGateRequest)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (from._internal_player_id() != 0) {
-        _this->_impl_.player_id_ = from._impl_.player_id_;
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      if (from._internal_session_version() != 0) {
-        _this->_impl_.session_version_ = from._impl_.session_version_;
-      }
-    }
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-}
-
-void BindSessionToGateRequest::CopyFrom(const BindSessionToGateRequest& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:BindSessionToGateRequest)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void BindSessionToGateRequest::InternalSwap(BindSessionToGateRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
-  using ::std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.session_version_)
-      + sizeof(BindSessionToGateRequest::_impl_.session_version_)
-      - PROTOBUF_FIELD_OFFSET(BindSessionToGateRequest, _impl_.player_id_)>(
-          reinterpret_cast<char*>(&_impl_.player_id_),
-          reinterpret_cast<char*>(&other->_impl_.player_id_));
-}
-
-::google::protobuf::Metadata BindSessionToGateRequest::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-BindSessionToGateResponse::BindSessionToGateResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BindSessionToGateResponse_get_class_data()) {
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena) {
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:BindSessionToGateResponse)
-}
-BindSessionToGateResponse::BindSessionToGateResponse(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const BindSessionToGateResponse& from)
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, BindSessionToGateResponse_get_class_data()),
-#else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
-#endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-}
-PROTOBUF_NDEBUG_INLINE BindSessionToGateResponse::Impl_::Impl_(
-    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
-    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
-
-inline void BindSessionToGateResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, player_id_),
-           0,
-           offsetof(Impl_, session_version_) -
-               offsetof(Impl_, player_id_) +
-               sizeof(Impl_::session_version_));
-}
-BindSessionToGateResponse::~BindSessionToGateResponse() {
-  // @@protoc_insertion_point(destructor:BindSessionToGateResponse)
-  SharedDtor(*this);
-}
-inline void BindSessionToGateResponse::SharedDtor(MessageLite& self) {
-  BindSessionToGateResponse& this_ = static_cast<BindSessionToGateResponse&>(self);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  ABSL_DCHECK(this_.GetArena() == nullptr);
-  this_._impl_.~Impl_();
-}
-
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
-    ::google::protobuf::internal::ClassDataFull BindSessionToGateResponse_class_data_ =
-        BindSessionToGateResponse::InternalGenerateClassData_(BindSessionToGateResponse_globals_._default);
-
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-BindSessionToGateResponse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&BindSessionToGateResponse_class_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(BindSessionToGateResponse_class_data_.tc_table);
-  return BindSessionToGateResponse_class_data_.base();
-}
-#else
-PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-BindSessionToGateResponse::GetClassData() const {
-  ::google::protobuf::internal::PrefetchToLocalCache(&BindSessionToGateResponse_globals_);
-  ::google::protobuf::internal::PrefetchToLocalCache(
-      ::google::protobuf::internal::MessageGlobalsBase::ToParseTableBase(&BindSessionToGateResponse_globals_));
-  return BindSessionToGateResponse_globals_.GetClassData();
-}
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_CONSTINIT
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const BindSessionToGateResponse::ParseTableT_
-    BindSessionToGateResponse::_table_ =
-        BindSessionToGateResponse::InternalGenerateParseTable_(BindSessionToGateResponse_class_data_.base());
-#endif  // !PROTOBUF_MESSAGE_GLOBALS
-PROTOBUF_NOINLINE void BindSessionToGateResponse::Clear() {
-// @@protoc_insertion_point(message_clear_start:BindSessionToGateResponse)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.session_version_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.session_version_));
-  }
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::uint8_t* PROTOBUF_NONNULL BindSessionToGateResponse::_InternalSerialize(
-    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
-  const BindSessionToGateResponse& this_ = static_cast<const BindSessionToGateResponse&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::uint8_t* PROTOBUF_NONNULL BindSessionToGateResponse::_InternalSerialize(
-    ::uint8_t* PROTOBUF_NONNULL target,
-    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-  const BindSessionToGateResponse& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    this_.CheckHasBitConsistency();
-  }
-  // @@protoc_insertion_point(serialize_to_array_start:BindSessionToGateResponse)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = this_._impl_._has_bits_[0];
-  // uint32 session_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-    if (this_._internal_session_id() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          1, this_._internal_session_id(), target);
-    }
-  }
-
-  // uint64 player_id = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (this_._internal_player_id() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
-          2, this_._internal_player_id(), target);
-    }
-  }
-
-  // uint32 session_version = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-    if (this_._internal_session_version() != 0) {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
-          3, this_._internal_session_version(), target);
-    }
-  }
-
-  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:BindSessionToGateResponse)
-  return target;
-}
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-::size_t BindSessionToGateResponse::ByteSizeLong(const MessageLite& base) {
-  const BindSessionToGateResponse& this_ = static_cast<const BindSessionToGateResponse&>(base);
-#else   // PROTOBUF_CUSTOM_VTABLE
-::size_t BindSessionToGateResponse::ByteSizeLong() const {
-  const BindSessionToGateResponse& this_ = *this;
-#endif  // PROTOBUF_CUSTOM_VTABLE
-  // @@protoc_insertion_point(message_byte_size_start:BindSessionToGateResponse)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void)cached_has_bits;
-
-  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
-  cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    // uint64 player_id = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (this_._internal_player_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
-            this_._internal_player_id());
-      }
-    }
-    // uint32 session_id = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (this_._internal_session_id() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_session_id());
-      }
-    }
-    // uint32 session_version = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      if (this_._internal_session_version() != 0) {
-        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
-            this_._internal_session_version());
-      }
-    }
-  }
-  return this_.MaybeComputeUnknownFieldsSize(total_size,
-                                             &this_._impl_._cached_size_);
-}
-
-void BindSessionToGateResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
-                      const ::google::protobuf::MessageLite& from_msg) {
-   auto* const _this = static_cast<BindSessionToGateResponse*>(&to_msg);
-  auto& from = static_cast<const BindSessionToGateResponse&>(from_msg);
-  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
-    from.CheckHasBitConsistency();
-  }
-  // @@protoc_insertion_point(class_specific_merge_from_start:BindSessionToGateResponse)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      if (from._internal_player_id() != 0) {
-        _this->_impl_.player_id_ = from._impl_.player_id_;
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      if (from._internal_session_id() != 0) {
-        _this->_impl_.session_id_ = from._impl_.session_id_;
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
-      if (from._internal_session_version() != 0) {
-        _this->_impl_.session_version_ = from._impl_.session_version_;
-      }
-    }
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-}
-
-void BindSessionToGateResponse::CopyFrom(const BindSessionToGateResponse& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:BindSessionToGateResponse)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void BindSessionToGateResponse::InternalSwap(BindSessionToGateResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
-  using ::std::swap;
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.session_version_)
-      + sizeof(BindSessionToGateResponse::_impl_.session_version_)
-      - PROTOBUF_FIELD_OFFSET(BindSessionToGateResponse, _impl_.player_id_)>(
-          reinterpret_cast<char*>(&_impl_.player_id_),
-          reinterpret_cast<char*>(&other->_impl_.player_id_));
-}
-
-::google::protobuf::Metadata BindSessionToGateResponse::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
 // ===================================================================
 
 void BroadcastToPlayersRequest::clear_message_content() {
@@ -2317,32 +1468,11 @@ const ::google::protobuf::ServiceDescriptor* PROTOBUF_NONNULL Gate::GetDescripto
   return descriptor();
 }
 
-void Gate::PlayerEnterGameNode(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::RegisterGameNodeSessionRequest* PROTOBUF_NONNULL,
-                         ::RegisterGameNodeSessionResponse* PROTOBUF_NONNULL,
-                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method PlayerEnterGameNode() not implemented.");
-  done->Run();
-}
 void Gate::SendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                          const ::NodeRouteMessageRequest* PROTOBUF_NONNULL,
                          ::Empty* PROTOBUF_NONNULL,
                          ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   controller->SetFailed("Method SendMessageToPlayer() not implemented.");
-  done->Run();
-}
-void Gate::RouteNodeMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::RouteMessageRequest* PROTOBUF_NONNULL,
-                         ::RouteMessageResponse* PROTOBUF_NONNULL,
-                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method RouteNodeMessage() not implemented.");
-  done->Run();
-}
-void Gate::RoutePlayerMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::RoutePlayerMessageRequest* PROTOBUF_NONNULL,
-                         ::RoutePlayerMessageResponse* PROTOBUF_NONNULL,
-                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method RoutePlayerMessage() not implemented.");
   done->Run();
 }
 void Gate::BroadcastToPlayers(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
@@ -2373,13 +1503,6 @@ void Gate::NodeHandshake(::google::protobuf::RpcController* PROTOBUF_NULLABLE co
   controller->SetFailed("Method NodeHandshake() not implemented.");
   done->Run();
 }
-void Gate::BindSessionToGate(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::BindSessionToGateRequest* PROTOBUF_NONNULL,
-                         ::BindSessionToGateResponse* PROTOBUF_NONNULL,
-                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method BindSessionToGate() not implemented.");
-  done->Run();
-}
 void Gate::GmGracefulShutdown(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                          const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL,
                          ::GmGracefulShutdownResponse* PROTOBUF_NONNULL,
@@ -2396,42 +1519,26 @@ void Gate::CallMethod(
   ABSL_DCHECK_EQ(method->service(), file_level_service_descriptors_proto_2fgate_2fgate_5fservice_2eproto[0]);
   switch (method->index()) {
     case 0:
-      this->PlayerEnterGameNode(controller, ::google::protobuf::DownCastMessage<::RegisterGameNodeSessionRequest>(request),
-                   ::google::protobuf::DownCastMessage<::RegisterGameNodeSessionResponse>(response), done);
-      break;
-    case 1:
       this->SendMessageToPlayer(controller, ::google::protobuf::DownCastMessage<::NodeRouteMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
-    case 2:
-      this->RouteNodeMessage(controller, ::google::protobuf::DownCastMessage<::RouteMessageRequest>(request),
-                   ::google::protobuf::DownCastMessage<::RouteMessageResponse>(response), done);
-      break;
-    case 3:
-      this->RoutePlayerMessage(controller, ::google::protobuf::DownCastMessage<::RoutePlayerMessageRequest>(request),
-                   ::google::protobuf::DownCastMessage<::RoutePlayerMessageResponse>(response), done);
-      break;
-    case 4:
+    case 1:
       this->BroadcastToPlayers(controller, ::google::protobuf::DownCastMessage<::BroadcastToPlayersRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
-    case 5:
+    case 2:
       this->BroadcastToScene(controller, ::google::protobuf::DownCastMessage<::BroadcastToSceneRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
-    case 6:
+    case 3:
       this->BroadcastToAll(controller, ::google::protobuf::DownCastMessage<::BroadcastToAllRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
-    case 7:
+    case 4:
       this->NodeHandshake(controller, ::google::protobuf::DownCastMessage<::NodeHandshakeRequest>(request),
                    ::google::protobuf::DownCastMessage<::NodeHandshakeResponse>(response), done);
       break;
-    case 8:
-      this->BindSessionToGate(controller, ::google::protobuf::DownCastMessage<::BindSessionToGateRequest>(request),
-                   ::google::protobuf::DownCastMessage<::BindSessionToGateResponse>(response), done);
-      break;
-    case 9:
+    case 5:
       this->GmGracefulShutdown(controller, ::google::protobuf::DownCastMessage<::GmGracefulShutdownRequest>(request),
                    ::google::protobuf::DownCastMessage<::GmGracefulShutdownResponse>(response), done);
       break;
@@ -2447,24 +1554,16 @@ const ::google::protobuf::Message& Gate::GetRequestPrototype(
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
-      return ::RegisterGameNodeSessionRequest::default_instance();
-    case 1:
       return ::NodeRouteMessageRequest::default_instance();
-    case 2:
-      return ::RouteMessageRequest::default_instance();
-    case 3:
-      return ::RoutePlayerMessageRequest::default_instance();
-    case 4:
+    case 1:
       return ::BroadcastToPlayersRequest::default_instance();
-    case 5:
+    case 2:
       return ::BroadcastToSceneRequest::default_instance();
-    case 6:
+    case 3:
       return ::BroadcastToAllRequest::default_instance();
-    case 7:
+    case 4:
       return ::NodeHandshakeRequest::default_instance();
-    case 8:
-      return ::BindSessionToGateRequest::default_instance();
-    case 9:
+    case 5:
       return ::GmGracefulShutdownRequest::default_instance();
 
     default:
@@ -2479,24 +1578,16 @@ const ::google::protobuf::Message& Gate::GetResponsePrototype(
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
-      return ::RegisterGameNodeSessionResponse::default_instance();
+      return ::Empty::default_instance();
     case 1:
       return ::Empty::default_instance();
     case 2:
-      return ::RouteMessageResponse::default_instance();
+      return ::Empty::default_instance();
     case 3:
-      return ::RoutePlayerMessageResponse::default_instance();
+      return ::Empty::default_instance();
     case 4:
-      return ::Empty::default_instance();
-    case 5:
-      return ::Empty::default_instance();
-    case 6:
-      return ::Empty::default_instance();
-    case 7:
       return ::NodeHandshakeResponse::default_instance();
-    case 8:
-      return ::BindSessionToGateResponse::default_instance();
-    case 9:
+    case 5:
       return ::GmGracefulShutdownResponse::default_instance();
 
     default:
@@ -2519,74 +1610,46 @@ Gate_Stub::~Gate_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void Gate_Stub::PlayerEnterGameNode(
-    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::RegisterGameNodeSessionRequest* PROTOBUF_NONNULL request, ::RegisterGameNodeSessionResponse* PROTOBUF_NONNULL response,
-    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(0), controller,
-                       request, response, done);
-}
 void Gate_Stub::SendMessageToPlayer(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(1), controller,
-                       request, response, done);
-}
-void Gate_Stub::RouteNodeMessage(
-    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::RouteMessageRequest* PROTOBUF_NONNULL request, ::RouteMessageResponse* PROTOBUF_NONNULL response,
-    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(2), controller,
-                       request, response, done);
-}
-void Gate_Stub::RoutePlayerMessage(
-    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::RoutePlayerMessageRequest* PROTOBUF_NONNULL request, ::RoutePlayerMessageResponse* PROTOBUF_NONNULL response,
-    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(3), controller,
+  channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
 void Gate_Stub::BroadcastToPlayers(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::BroadcastToPlayersRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(4), controller,
+  channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
 void Gate_Stub::BroadcastToScene(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::BroadcastToSceneRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(5), controller,
+  channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
 void Gate_Stub::BroadcastToAll(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::BroadcastToAllRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(6), controller,
+  channel_->CallMethod(descriptor()->method(3), controller,
                        request, response, done);
 }
 void Gate_Stub::NodeHandshake(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::NodeHandshakeRequest* PROTOBUF_NONNULL request, ::NodeHandshakeResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(7), controller,
-                       request, response, done);
-}
-void Gate_Stub::BindSessionToGate(
-    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::BindSessionToGateRequest* PROTOBUF_NONNULL request, ::BindSessionToGateResponse* PROTOBUF_NONNULL response,
-    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(8), controller,
+  channel_->CallMethod(descriptor()->method(4), controller,
                        request, response, done);
 }
 void Gate_Stub::GmGracefulShutdown(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::GmGracefulShutdownRequest* PROTOBUF_NONNULL request, ::GmGracefulShutdownResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(9), controller,
+  channel_->CallMethod(descriptor()->method(5), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -64,6 +64,15 @@ class TcpClient : noncopyable
   void setWriteCompleteCallback(WriteCompleteCallback cb)
   { writeCompleteCallback_ = std::move(cb); }
 
+  // LOCAL DELTA:连接失败回调(补上游 TcpClient.cc 的 FIXME setConnectFailedCallback).
+  // 每次连接尝试失败都在 loop 线程回调一次(参数是 errno 或 SO_ERROR),语义见 Connector.h.
+  // 只转存到 connector_,本类不加数据成员:使用方 include 的是 third_party/muduo 的头副本,
+  // 与编 muduo.lib 用的头只要布局不同就是静默 ABI 错配(两份头必须逐字一致).
+  // 在 connect() 之前设置(与上面几个 setter 一样不是线程安全的).
+  // 注释行一律以 ASCII 字符结尾:不带 /utf-8 编译的使用方工程按 GBK 读本头时不会吞掉换行.
+  typedef std::function<void (int savedErrno)> ConnectFailedCallback;
+  void setConnectFailedCallback(ConnectFailedCallback cb);
+
  private:
   /// Not thread safe, but in loop
   void newConnection(int sockfd);

@@ -1,6 +1,6 @@
 # 全服跨 Zone 匹配(Cross-Zone Matchmaking)
 
-> **状态**: v1 — 2026-09-02
+> **状态**: v1 历史基线；2026-10-16 全球 SQL 权威实现、客户端同步与验收边界见 §13
 > **需求**: zone1 / zone2 …… 所有大区的玩家互相匹配(排队 / 切磋 / 观战),match 服务**标准水平扩展**(多实例、无单点),排队状态放 **Redis Cluster**,**容错不降级**(不设"退回单 zone"开关,故障由冗余与自愈吸收)。
 > **审计深度**: 直接读 go/match、cpp 节点发现 / etcd 分配 / Kafka 路由、scene_manager 位置契约、部署脚本;所有结论带 file:line。
 > **核心结论**: 快照战斗模型让跨 zone 匹配**在链路上已经通了**(玩家不搬家,只有快照进全局 battle 池;node_id 全局唯一所以 Kafka topic 不撞)。真正的缺口在 **Redis Cluster 就绪度**(SCAN / 多 key DEL / C++ hiredis 不支持集群)与 **实例崩溃后的票据自愈**。本文把这两块补成生产形态。
@@ -485,3 +485,70 @@ B 胜、PVE / 未结束 / 空队伍忽略不写标记不计局数、`applied` TT
 原仓静态对比：services/matchmaking/matchmaker/internal/biz/match.go 的 formMatchesInPool 已有同区优先和超时溢出；ticketRegion 依队长逻辑归属，不能当成物理 RTT。battlePlacement 结果当前仅记录日志（:2689），分配协议闭环未完成。其单写者/租约/全局队列布局也需结合真实分片键审查，算法存在不能证明多地域接线或故障安全。
 
 本仓现有跨 zone 快照战斗、票据 CAS、Redis hash tag、双存储和会话/资产防护继续保留；本次不迁移被排除的 scene_manager。机房放置所需最小接口适配须与已有 battle 池责任边界一致，不能借匹配重写场景管理。等待、成局、逐成员延迟、扩区比例与依赖故障须留低基数指标和同口径压测证据，player_id 不作指标 label。当前尚无该策略的地域端到端或 2000 万 CCU 验收证据。
+
+## 13. 全球权威成局与未知结果恢复（2026-10-16）
+
+本节为第 12 节的实现补充，覆盖第 1～11 节 Redis 票据/成局作为生产权威的旧口径。生产模式必须启用 `GlobalMatch.Enabled` 并连接同一逻辑 TiDB 数据库；本机兼容配置仍显式关闭，不能据此认定生产已切换。故障时拒绝新提交并查询原意图，不回落 Redis 建票/随机机房。队伍名单、邀请展示、在线位置继续使用既有服务；成局票据、全员占用、原业务意图、执行目标和创建请求以 SQL 为权威。
+
+### 13.1 逐成员延迟与调度
+
+客户端取得绑定玩家、连接代次、机房与过期时间的签名探测计划，直连 battle 探测端执行三次随机挑战/回显。battle 按服务端单调时钟测 RTT，签名完整回执；客户端提交原回执，不提供自报延迟。match 校验签名域、连接绑定、机房唯一性、样本数和有效期。逻辑 zone 不能代替物理机房。
+
+排队先选择全体成员共同合格的本区候选；只有全体成员从最初入队时刻达到 `CrossRegionWaitSeconds` 后才允许跨区候选，每个成员仍受 `HardLatencyMs` 硬上限约束。默认分别为 30 秒、180 毫秒，配置值是策略而非容量证明。预组队不拆开；候选采用有界分页游标。重试保留原票号、入队时间和等待窗口。指定整队、活动和点名切磋已有完整名单，直接选择全员可达的共同机房；这些入口不会假造一个排队成功的 Redis 票据。
+
+### 13.2 原请求与提交点
+
+- 排队与一人档：客户端发包前将完整 Join 请求原子写入本机单槽，再使用完整规范 UUID 的两段 uint64 作为 SQL 意图主键。重复请求回原票，不能因为旧票已结束而生成新票。未知 Join 的 `NOT_QUEUED` 不能证明没有迟到写入；Cancel 携带原 UUID，在与 Join 相同玩家行锁事务内写永久撤销墓碑。客户端必须查询到 `request_cancelled=true` 且不在队列后才放弃原请求。
+- 整队：`StartTeamMatch.request_id` 为发起端落盘的稳定 UUID。源队伍开战 CAS 后，在成功回包前，将原始请求、全员 SQL 占用和固定 formation 一次事务提交；GetMyTeam 携原 UUID 补拉 `TeamMatchIntent`。空/非法 UUID 明确拒绝，不能按旧客户端空请求号假成功。后台布尔 gather 结果不构成未知成局失败的证据：SQL 终态 4/5 才清源开战锁并推送最终结果，1～3 或查询失败保留原意图。
+- 活动：原持久 guild lobby_id 作为 `StartActivityBattle.request_id`，同 guild/同 lobby 重试返回原 formation；不能在后台才发号建票。
+- 切磋：原 challenge_id 与应战者组成稳定业务键，同一 SQL 决策锁中争抢接受/拒绝。接受包含全员占用和成局，拒绝写永久决策墓碑；迟到另一决定不能反转。邀请 Redis 投影在 SQL 决定之后清理，投影故障不能改写 SQL 结局。
+
+上述直接入口的规范原始请求保留在 `match_direct_intent.payload`（Java 为 native 同义表），重复键但不同参数拒绝。SQL 多行锁按玩家 ID 排序；任何成员已被占用时整组回滚。成功回包先于后台执行只表示同一 formation 已提交，不表示 battle 已完成创建。
+
+### 13.3 多副本恢复、租约与执行端围栏
+
+`match_formation.retry_at_ms`（Java `retry_ms`）同时承载工作租约的代次与到期时间。各副本通过 SQL 行锁领取 120 秒工作代次；Prepared、SaveIntent、Unknown、Finish 均复核同代次且尚未到期。Unknown 不提前释放原租约；到期接管的原 state=1 只恢复/中止原操作，不再次备战。不是仅靠进程内 running 集合或随机 operation 去重。
+
+冻结 RPC 前先持久精确 scene 端点。PrepareBattle 与 CreateBattle 准入期限不晚于原工作租约截止减 1 秒；scene 在入口和冻结提交点拒过期备战，Java 异步写锁回来后也复核。battle 在插房之前完成确定性原请求序列化并复核准入期限。跨进程绝对期限依赖数据库和节点时钟偏差小于这 1 秒保护间隔，部署必须监控校时与偏差；它不等于已完成跨洲时钟/分区故障演练。
+
+创建意图持久完整 seed、快照、物理机房、battle_id、operation UUID、node instance 和端点。恢复只查询/重发这份原请求。执行端实例不符、内容不同、原准入已过期或已撤销墓碑均拒绝。恢复撤销使用 `DestroyBattle.reason=global_match_abort_if_absent`：在 battle 逻辑线程内仅对尚无房间的精确原操作立墓碑；已经存在的同操作房间保持原成功结局。match 随后查询到 ABORTED 才取消已记录冻结、回队或结束票据；PRESENT 按成功恢复，UNKNOWN 保留。这个条件避免旧 worker 在暂停后误杀另一副本已经建成的同一房间。
+
+### 13.4 评级与连续投榜
+
+评级、对局摘要去重和连续来源 outbox 游标同一 SQL 事务；同对局不同内容拒绝。来源停止与新评级争同一 source 行锁，返回真实最终游标；停写后不再产生该代新 outbox。发送只从已确认游标的下一项顺发，重启沿原 request_id 重投。封榜前同时要求来源已停止且 committed_cursor=produced_cursor，再交通用排行榜验证预期游标。Java 使用原生 RankAdminService / Triple 20917、group rank 和按 full method 绑定的服务签名；不借用 Go gRPC 地址。
+
+全球模式的 Kafka 结果位点只在 SQL 入账确认之后推进。Go 每轮最多重试原消息三次，仍未确认则关闭 reader、退避重建并从 broker 原提交位点恢复；损坏协议同样保留位点。Java 数据错误（含 SQLState 22/23）暂停分区并重试原记录，损坏协议关闭该轮，由既有监督器恢复。提交前崩溃由同一 SQL 入账摘要收据去重。显式旧兼容测试保留原“软评分跳过”语义，生产默认不可选择该策略；不能因一条未入账记录失败而提交后面的位点。
+
+执行端创建收据在房间存活期间不能清理，包括超过原 deadline 仍等待结果确认的房间；离房后至少保留到 `max(deadline_ms, admit_before_ms) + 60秒`，两版同口径。原准入窗口结束不表示房间已结束，下一次准入清理不能遗忘仍活房间的 operation 和实例身份。
+
+### 13.5 已有运行证据与明确边界
+
+Go 全包真实 TiDB 运行见 `build/match-client-global-20261015/go-match-lease-5.log`（authority 57.481 秒、logic 54.996 秒、team 38.369 秒均通过）；包括原请求墓碑、Join/Cancel 并发、全组占用、原直接意图重放、失租后所有提交拒绝、评级事务与停写屏障。后续接受/拒绝并发和 Team 未知结果收尾的增量证据另附最终日志。
+
+Java 隔离快照 `D:/luyuan/xuanming-server-mmo/build/match-global-20261015/tests-lease-focused-6.log`：16 模块构建通过，真 TiDB 9/9、PrepareBattle 45/45、CreationLedger 3/3，无跳过这些指定用例；完整模块回归单独登记，不把指定测试替代整包。客户端 `unity-team-file-3-results.xml`：59/59、0 跳过，包含 RegionProbe 7、真实 loopback GateTcp 生命周期 10、原子 Join 恢复文件 3、TeamClient 35、Commerce 恢复文件 4。恢复文件使用同目录原子提交、WriteThrough/Flush(true)、按原字符串 CAS 转换/删除；坏记录保留保护态。
+
+这些是本机隔离依赖与确定性故障用例。尚未执行跨洲多进程完整匹配/发奖链、实机逐成员 RTT/断网恢复、持久数据升级灰度、机房容量/分区故障或两千万 CCU 压测；不据单元测试宣称全球上线容量或完整端到端强一致性已验收。首次切换须升级两版服务和客户端契约、明确停旧写者/排空旧 Redis 队列与评级迁移方案，旧权威与新 SQL 权威不能混写。
+
+结果源的旧缺陷是 `BattleRoomManager::DispatchActivityResultDurably` 在 Redis 不可用或持久化失败时只尝试投递一次，Java 普通结果失败也只有兜底日志。第 13.6 节为全球模式增加独立于 Redis 投影的 broker 确认屏障；显式本地旧兼容模式不作为全球生产端口。Kafka 保留期仍为 7 天，须在保留窗口内消除消费积压；消费侧不跳位点和单元测试不能替代完整多进程发奖恢复验收。
+
+
+2026-10-16 后续验证补充：Java最终指定真TiDB `tests-match-sql-final-9.log` 共12/12、0跳过，其中SQL10/10（含接受/拒绝并发互斥与失租写拒绝）、规范UUID128校验2/2；Go `go-authority-team-final-7.log` authority124.395秒、team50.382秒均通过，`go-global-entry-validation-8.log` 在入口SQL读取前拒绝空/非法/nil UUID，`go-vet-entry-final-8.log` 无诊断。两版源码默认生产端口保持SQL权威；原Redis故障模型的既有测试显式选择兼容端口，保留原断言，另增默认durable分支终态/UNKNOWN回归。
+
+直接活动的客户端探测接线：GuildClient.StartTrial 与 RespondTrialInvite(accept=true) 都先经 GuildUiRoot 注入的 RegionProbe.Prepare 提交本人实测回执；发起者与每位同意者均不依赖曾打开排队页或加入普通队伍。换连接/Reset后的旧探测完成不会发业务RPC。普通队伍成员已有 TeamClient 后台探测，挑战发起/同意两侧均显式探测；GameClient每帧驱动测量。两版match均在全员profile有效前拒绝直接成局；过期或缺失不能用队长延迟顶替。Java帮会五活动原占位接缝由独立续批补齐，match入口本身的SQL验收不能替代该源端链路。
+
+
+客户端直接活动补验：`unity-guild-final-5-results.xml` 实际201/201、0跳过（GuildClient142含新增2条，及前述匹配/Team/文件59）。相同轮次编译当前隔离runtime无错误；前一轮复制过程中遇到共享工作区SyncDigest构造接缝的中间快照，保留`unity-guild-final-4.log`，仅刷新外部最新原源后绿，没有覆盖/回退外部工作。
+
+### 13.6 战斗结果提交点（2026-10-16，结果源修复实施中）
+
+全球对局的结果日志提交点是 Kafka `acks=all` 的逐消息成功回执，不是客户端收到了胜负、producer 本地入队成功或 Redis SET 返回。结果 topic 部署必须三副本、`min.insync.replicas=2`，producer 幂等及 all ACK 不得静默降级；Kafka 提交只确认耐久结果日志，评级与帮会账本仍分别由 TiDB 事务和原 battle_id 摘要收据负责。
+
+最终回合一次计算并固定原事件（包括 finished_at_ms）及原终局帧。成功回执之前保留原房间、拒绝新行动、按有限退避重试同一份字节；139/150、观战终态、个人结算、房间删除均延后。GetState/新观众首帧只能读取上一个非终态快照。回合终局和 deadline DRAW 共用此提交接缝，不能只修活动分支。未确认的旧发送可能实际已落 broker，重投允许重复但不能改结果；丢失响应不是输赢失败证明。
+
+明确销毁不能在结果未知时先推 ABORTED 后再让原结果生效；停机断开待提交房间的连接，保留客户端 UNKNOWN 语义。进程在结果提交前崩溃仍可按未完成战斗处置；broker 已确认的原事件由 SQL 消费者幂等恢复。Redis 活动副本作为补拉投影保留，但单次无耐久投递不能构成生产成功。跨洲完整进程链和超过 Kafka 保留窗口的运营恢复仍须另验。
+
+Go 全球启动在 matcher 和 RPC 准入之前同步核对结果 topic，独立于 RatingEnabled，失败拒启。Java match 在装配阶段做相同强核验，关闭评分消费也不绕过；battle 生产者只有核验后才发送。既有 RF1 topic 拒绝启用并要求人工迁副本，不自动降低要求；owner 显式固定 topic 级 minISR 至少 2（保留更高值）和 unclean election=false。Guild 消费者只验证既有 topic，不抢先建 RF1。
+
+本机结果源回归：`tests-global-result-red-16.log` 在真实 Java RoomService+引擎上稳定复现“未确认已删房”（1条失败），`tests-global-result-focused-17.log` 46/46通过；扩展 `tests-global-result-policy-18.log` 85/85、0跳过，包括真实房间4条、Kafka传输29条、活动投影19条、topic策略15条、消费运行时18条。Go `go-match-topic-final-12.log` 全包及对应 build/vet 通过，覆盖生产入口预检；完整 Java 模块和 C++ 构建另附最终证据。个人 BattleSettlementData 的完整资产载荷不在 BattleResultEvent 中，这个结果确认屏障不等于普通掉落与玩家存盘整链的原子提交证明。
+
+2026-10-16 Java最终模块补验：隔离副本 `tests-global-result-all-final-26.log` 的12模块test reactor成功，5313总项中4862实际通过、0失败/错误，451项既有门控集成未运行；match为1468通过/303未运行，battle为525通过/19未运行。结果屏障4、活房创建收据5、topic策略15、消费运行时19、Kafka发送29、活动投影19共91项实际通过，952源文件与当前Java主仓SHA对账一致。`java-match-result-final-proof-20261016.json`记录逐模块数字与源码摘要。前序完整回归保留RF1旧fixture、API fork异常和EVALSHA旧mock的红日志；API最小5/5、四个mock夹具37/37绿后才恢复完整回归，没有放宽生产RF3/ISR或请求截止断言。本轮没有执行真实3broker战斗结果完整进程链，默认门控未运行不算通过；普通R07个人结算与多区域故障、容量边界维持本节上述限制。

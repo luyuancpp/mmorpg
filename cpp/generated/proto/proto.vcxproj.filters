@@ -752,4 +752,224 @@
     <ClCompile Include="scene\player_activity.pb.cc" />
     <ClInclude Include="scene\player_activity.pb.h" />
   </ItemGroup>
+  <ItemGroup Label="ProtoGeneratorSources">
+    <ClCompile Include="battle\battle_data.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="battle\battle_data.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="battle\battle_node.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="battle\battle_node.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="battle\player_battle.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="battle\player_battle.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="client_rpc_router\client_rpc_router.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="client_rpc_router\client_rpc_router.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\base\service_call_auth.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\component\battle_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\component\battle_settlement_ledger_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\component\player_attribute_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\component\player_pet_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\database\bag_quest_mail_data.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\event\battle_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="contracts\kafka\match_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="friend\friend_table.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="friend\friend_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="guild\guild_db.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail_admin.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail_admin.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail_table.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mail\mail_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="match\match_authority.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="match\match_authority.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="match\match_network.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="match\match_network.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="match\match_service.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="match\match_service.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rank\rank.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rank\rank.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rank\rank_admin.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rank\rank_admin.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rank\rank_table.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="rank\rank_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\player_attribute.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\player_pet.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="trade\commerce.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="trade\commerce.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClInclude Include="common\base\service_call_auth.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\component\battle_settlement_ledger_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\component\player_attribute_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\component\player_pet_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="friend\friend_table.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="friend\friend_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="guild\guild_db.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail_admin.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail_admin.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail_table.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mail\mail_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="match\match_authority.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="match\match_authority.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="match\match_network.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="match\match_network.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rank\rank.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rank\rank.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rank\rank_admin.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rank\rank_admin.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rank\rank_table.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="rank\rank_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\player_attribute.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="scene\player_pet.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="trade\commerce.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="trade\commerce.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup Label="ProtoGeneratorSources">
+    <ClCompile Include="player_locator\player_locator.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="player_locator\player_locator.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClInclude Include="player_locator\player_locator.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="player_locator\player_locator.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

@@ -258,7 +258,7 @@ func TestListingRepoIntegration(t *testing.T) {
 //
 // 真正的前提是 MySQL 手册 "Locks Set by Different SQL Statements" 三会话例的形状:**有第三方正持着这条删除标记
 // 记录的 X,至少两个收藏语句同时排在它后面**。本调用路径上的第三方只有两种(favoriteLockHolder):
-//   - 取消收藏(DeleteFavorite)的 DELETE 删了活行、尚未提交(自动提交语句从取锁到提交之间同样持着 X);
+//   - 取消收藏(DeleteFavorite)的 DELETE 删了活行、尚未提交(它的单语句事务从取锁到 COMMIT 之间持着 X);
 //   - 先到的收藏已经把删除标记记录复活、随后回滚(ctx 超时、连接断开、被选为死锁牺牲者)。
 //
 // 第三方一放锁:
@@ -283,9 +283,9 @@ func TestListingRepoIntegration(t *testing.T) {
 // **只**给红对照用:证明编排确实走到了会成环的形状,绿用例的"不死锁"才有证明力。
 const legacyInsertIgnoreFavoriteSQL = "INSERT IGNORE INTO trade_favorite (`player_id`, `listing_id`, `created_ms`) VALUES (?, ?, ?)"
 
-// favoriteDeleteSQL 与 DeleteFavorite 的语句逐字一致(生产代码里是内联字面量)。DeleteFavorite 自动提交,停不在提交之前,
-// 所以扮演"未提交的取消收藏"时只能把同一条语句放进显式事务;主键等值删除的锁行为与语句所在的事务形态无关。
-const favoriteDeleteSQL = "DELETE FROM trade_favorite WHERE `player_id` = ? AND `listing_id` = ?"
+// favoriteDeleteSQL 就是 DeleteFavorite 执行的生产常量。DeleteFavorite 的单语句事务在提交前没有可停的钩子,
+// 所以扮演"未提交的取消收藏"时把同一条语句放进本测试自己控制的显式事务;主键等值删除的锁行为与由谁开事务无关。
+const favoriteDeleteSQL = deleteFavoriteSQL
 
 const (
 	// favoriteRaceBudget 是一次编排的总时间预算:集成测试不许无界等待,真卡住时在这里超时判红,而不是挂住 go test。

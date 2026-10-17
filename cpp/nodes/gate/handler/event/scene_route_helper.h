@@ -88,7 +88,7 @@ inline SceneNodeChange RebindSceneNode(SessionInfo& session, const entt::entity 
 // 挑回已迁到新节点的同一个 scene_id。此时只按 scene_id 判定会把这条路由当成重复事件吞掉:会话指向了
 // 新节点,新节点上却没有该玩家的实体,旧节点上的也已销毁,玩家在线但哪里都不存在,只能重登。
 // 目标节点上无实体时,enterType=0 的进场请求走异步加载后 EnterScene(scene_handler.cpp PlayerEnterGameNode),
-// 0 只表示"不置登录态、不触发 PlayerLoginEvent",与跨节点换图是同一条路径。
+// 0 只表示"不置登录态",与跨节点换图是同一条路径。
 //
 // 2、3 两条都要求 session.sceneId != 0:会话从未收到过路由时没有"已入场的玩家"可言,仍等登录类型
 // 到达后按第 1 条入场。注意 sceneId != 0 只表示"此前收到过路由",不保证已入场:路由先于 BindSession

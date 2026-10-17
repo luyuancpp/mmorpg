@@ -18,6 +18,7 @@
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "rpc/service_metadata/gate_service_service_metadata.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
+#include "thread_context/ecs_context.h"
 #include "thread_context/redis_manager.h"
 #include "time/system/time.h"
 #include "core/utils/debug/stacktrace_system.h"
@@ -35,21 +36,28 @@
 #include "node/system/node/muduo_grpc_channel_slot.h"
 #include "node/system/node/client_endpoint.h"
 #include "thread_context/node_context_manager.h"
+#include "muduo_grpc/address.h"
+#include "muduo_grpc/method_table.h"
+#include "muduo_grpc/server.h"
 #include <node_config_manager.h>
 #include <atomic>
-#include <future>
 #include <chrono>
 #include <cassert>
 #include <cerrno>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 #include <optional>
 
 namespace
 {
 	std::atomic<Node *> gNodeAtomic{nullptr};
-	constexpr std::chrono::seconds kGrpcDrainTimeout{2};
+	// gRPC 服务端排空预算(docs/design/grpc-muduo-transport.md §15.3 Q4、§15.10):从 BeginShutdown 起算 2s;
+	// 第二段 GOAWAY 在 PING ACK 或满 1s 时发;排空到期后半关,再宽限 1s 强制关闭。总上限约 3s。
+	constexpr std::chrono::milliseconds kGrpcDrainTimeout{2000};
+	constexpr std::chrono::milliseconds kGrpcGoawayPingTimeout{1000};
+	constexpr std::chrono::milliseconds kGrpcCloseGrace{1000};
 	constexpr std::chrono::seconds kShutdownDrainBudget{15};
 	constexpr std::chrono::seconds kShutdownCompletionWaitTimeout{20};
 
@@ -283,6 +291,20 @@ namespace
 		return value;
 	}
 
+	// GRPC_SERVER_MAX_POLLERS 已退役(docs/design/grpc-muduo-transport.md §15.11):第 4 批起 gRPC 服务端跑在节点
+	// EventLoop 上,没有 poller 线程,这个变量不再生效。部署里残留的设置只提示一次,免得它看起来仍在起作用。
+	void WarnRetiredGrpcServerMaxPollersOnce()
+	{
+		static std::atomic<bool> warned{false};
+		const char *value = GetNonEmptyEnv("GRPC_SERVER_MAX_POLLERS");
+		if (value == nullptr || warned.exchange(true))
+		{
+			return;
+		}
+		LOG_WARN << "GRPC_SERVER_MAX_POLLERS is retired (the gRPC server has no poller threads since batch 4); ignoring value="
+				 << value;
+	}
+
 	std::string ResolveNodeIp()
 	{
 		// 这里返回的是节点的**集群内**身份地址:写进 NodeInfo.endpoint、发布到 etcd,
@@ -437,11 +459,12 @@ Node::~Node()
 {
 	Shutdown();
 
-	// Node 通常在 loop.loop() 返回后离开作用域。若该返回不是由正常
-	// FinalizeShutdownInLoop() 触发,Shutdown() 会在本线程启动异步 gRPC drain,
-	// 但已经退出的 loop 不会再消费 worker 投递回来的完成回调。此时重新驱动
-	// 同一个 loop,直到既有 finalizer 调 quit(),避免析构 joinable thread 或让
-	// 捕获 this 的完成回调落到已销毁对象上。
+	// Node 通常在 loop.loop() 返回后离开作用域。若该返回不是由正常收尾
+	// (FinalizeTeardownInLoop 的两跳 quit)触发,loop 已异常退出:Shutdown() 只在本线程把
+	// gRPC 排空(BeginShutdown)与业务 drain 启动起来,而排空、OnGrpcServerDrained 与收尾全部是
+	// loop 内的定时器 / 排队任务,已经退出的 loop 不会再推进它们。此时重新驱动同一个 loop,
+	// 跑完 loop 内的 gRPC 排空与收尾,直到既有 finalizer 调 quit(),避免捕获 this 的排队任务
+	// 落到已销毁对象上。
 	if (eventLoop.isInLoopThread())
 	{
 		eventLoop.assertInLoopThread();
@@ -469,10 +492,6 @@ Node::~Node()
 		std::unique_lock<std::mutex> lock(shutdownCompletionMutex_);
 		shutdownCompletionCv_.wait(lock, [this]
 								   { return shutdownComplete_; });
-	}
-	if (grpcShutdownThread_.joinable())
-	{
-		grpcShutdownThread_.join();
 	}
 
 	if (gNode == this)
@@ -508,7 +527,6 @@ void Node::Initialize()
 	// the dump file appearing, slow enough to be free CPU overhead.
 	eventLoop.runEvery(0.25, &DrainPendingDiagnosticWork);
 	RegisterHandlers();
-	RegisterEventHandlers();
 	LoadConfigs();
 	InitLogSystem();
 	// 生成的 gRPC 客户端的 deadline 必须在发出第一个请求(InitEtcdService 里的 etcd Range / LeaseGrant)之前就位;
@@ -727,18 +745,28 @@ void Node::InitEtcdService()
 	serviceDiscoveryManager.Init();
 }
 
-void Node::RegisterGrpcService(grpc::Service *service)
+void Node::RegisterGrpcService(muduo_grpc::Service &service)
 {
-	if (service == nullptr)
+	if (grpcServer_)
 	{
-		LOG_WARN << "Attempted to register null gRPC service, skipping.";
+		// 方法表在 Server::Start 之前定型;启动之后再注册不会生效,不能静默接受。
+		LOG_ERROR << "RegisterGrpcService called after the gRPC server started; ignored.";
 		return;
 	}
-	grpcServices_.push_back(service);
+	grpcServices_.push_back(std::ref(service));
 }
 
 void Node::StartGrpcServer()
 {
+	eventLoop.assertInLoopThread();
+	// etcd 端口分配可能晚于关机开始。此时不再启动服务端,也不发布发现键:ShutdownInLoop 调 ShutdownGrpcServer 时还没有
+	// 服务端,已把 gRPC 排空记为完成;这里再起服务端,它会在排空之后才开始监听,只能被 Finalize 的防御分支不发 GOAWAY
+	// 地销毁,而发布发现键会让 Go 侧在收尾期间拨号进来(docs/design/grpc-muduo-transport.md §15.16 第 4 条)。
+	if (shutdownStarted.load(std::memory_order_acquire))
+	{
+		LOG_WARN << "Shutdown already started; not starting the gRPC server and not publishing discovery.";
+		return;
+	}
 	if (grpcServices_.empty())
 	{
 		// No gRPC server to start. The discovery publish was deferred from
@@ -758,55 +786,48 @@ void Node::StartGrpcServer()
 		return;
 	}
 
+	// 以前这里按 GRPC_SERVER_MAX_POLLERS 配官方 sync server 的 poller 线程数;第 4 批起服务端
+	// (muduo_grpc::Server,docs/design/grpc-muduo-transport.md §15)整个跑在本节点 EventLoop 上,
+	// 接入、HTTP/2、派发、定时器、关机都不创建线程。变量已退役,设了只提示一次。
+	WarnRetiredGrpcServerMaxPollersOnce();
+
 	const std::string serverAddress = grpcEp.ip() + ":" + std::to_string(grpcEp.port());
-
-	grpc::ServerBuilder builder;
-	builder.AddListeningPort(serverAddress, grpc::InsecureServerCredentials());
-
-	// gRPC sync server thread pool size.
-	// Round 14: bumped default 2 -> 8. Under 45k-bot stress with high reconnect
-	// churn, scene_manager.EnterScene -> scene-node ReleasePlayer was hitting a
-	// 500ms cliff because only 2 pollers were available to drain incoming RPCs
-	// while gRPC handlers waited on the muduo loop dispatch round-trip
-	// (runInLoop + promise/future). 8 pollers give enough slack for burst
-	// reconnect handling without measurable thread overhead on idle nodes.
-	// Override via GRPC_SERVER_MAX_POLLERS env if needed.
-	int maxPollers = 8;
-	if (const char *env = GetNonEmptyEnv("GRPC_SERVER_MAX_POLLERS"))
+	if (grpcEp.port() > std::numeric_limits<uint16_t>::max())
 	{
-		const int parsed = std::atoi(env);
-		if (parsed >= 1)
-		{
-			maxPollers = parsed;
-		}
+		LOG_FATAL << "gRPC server port out of range: " << serverAddress;
 	}
-	builder.SetSyncServerOption(grpc::ServerBuilder::NUM_CQS, 1);
-	builder.SetSyncServerOption(grpc::ServerBuilder::MIN_POLLERS, 1);
-	builder.SetSyncServerOption(grpc::ServerBuilder::MAX_POLLERS, maxPollers);
-	LOG_INFO << "gRPC server config: max_pollers=" << maxPollers;
-
-	for (auto *svc : grpcServices_)
+	// 只 bind 注册的 IPv4(grpc_endpoint.ip),不读 BIND_IP、不开 SO_REUSEPORT(§15.3 Q8):暴露面与旧的官方
+	// 服务端一致。muduo InetAddress 遇到非法 IP 会静默落成 0.0.0.0(监听全部网卡),所以必须先校验;
+	// IPv6 的 POD_IP 在这里启动失败,与客户端侧(§8)同一限制。
+	if (!muduo_grpc::IsCanonicalIpv4(grpcEp.ip()))
 	{
-		builder.RegisterService(svc);
+		LOG_FATAL << "gRPC server bind address must be a canonical IPv4 literal: " << serverAddress;
 	}
 
-	grpcServer_ = builder.BuildAndStart();
-	if (!grpcServer_)
+	const muduo_grpc::ServerOptions serverOptions{};
+	auto server = muduo_grpc::Server::Create(eventLoop, grpcEp.ip(), static_cast<uint16_t>(grpcEp.port()),
+											 serverOptions);
+	if (!server)
 	{
-		LOG_FATAL << "Failed to start gRPC server on " << serverAddress;
+		LOG_FATAL << "Failed to create gRPC server on " << serverAddress;
 		return;
 	}
+	for (auto &service : grpcServices_)
+	{
+		// 路径非法或与已注册的方法重复:fail-closed,不带着残缺的方法表上线。
+		if (!server->RegisterService(service.get()))
+		{
+			LOG_FATAL << "Failed to register gRPC service methods on " << serverAddress;
+			return;
+		}
+	}
+	// Start 建 Acceptor 并 listen;bind 失败由 muduo 按 LOG_SYSFATAL 退出(与旧服务端 BuildAndStart 失败同样 fail-fast)。
+	// §15.11 的启动日志("gRPC server (muduo_grpc) listening on ... threads=0")由 Server::Start 自己打,这里不重复。
+	grpcServer_ = std::move(server);
+	grpcServer_->Start();
 
-	// 这里刻意**不**起线程调 grpcServer_->Wait()。
-	// BuildAndStart() 返回时 sync server 的 ThreadManager 已经在自己的线程上收请求了,
-	// Wait() 本身不干活 —— 它的实现只是 `while (started_ && !shutdown_notified_)
-	// shutdown_cv_.Wait(&mu_);`(src/cpp/server/server_cc.cc),真正的排空全部发生在
-	// Shutdown() 内部(逐个 ThreadManager Shutdown + Wait)。
-	// 所以那条专职线程整个生命周期只是躺在条件变量上,纯粹是白占一个线程。
-	LOG_INFO << "gRPC server started on " << serverAddress;
-
-	// gRPC port is now bound and accepting connections (BuildAndStart returns
-	// after listener bind per grpc docs). Safe to advertise this node in etcd
+	// gRPC port is now bound and accepting connections (Start() returns after
+	// the listener is bound and listening). Safe to advertise this node in etcd
 	// so peers can discover and dial us. Without this deferral, scene_manager
 	// would see the node via etcd watch and dial gRPC before the port is open,
 	// triggering "connection refused" + dead-node markings during cold start.
@@ -823,51 +844,46 @@ void Node::ShutdownGrpcServer()
 		return;
 	}
 
-	LOG_INFO << "Shutting down gRPC server...";
+	// 排空全部在 loop 内完成(docs/design/grpc-muduo-transport.md §15.10),不再起关机线程:Handle* 都是同步的,
+	// 没有谁阻塞着等 loop。BeginShutdown 依次:置排空标志(此后 ServerCall::ServerDraining() 为真)→ 把 Acceptor
+	// 移进排队任务销毁(停听)→ 每条连接发第一段 GOAWAY + PING(没收到过字节的直接关)→ 上弦排空定时器。
+	// 已收完的调用照常派发;PING ACK 或满 1s 发最终 GOAWAY;2s 到期未开始的回 REFUSED_STREAM、已开始的回
+	// UNAVAILABLE,再宽限 1s 强制关闭。连接表为空时 onDrained 经 queueInLoop 投递,按 FIFO 排在最后一个
+	// connectDestroyed 之后。
+	// onDrained 恰好一次、永不在本调用栈内执行,所以 ShutdownInLoop 随后的 MaybeFinalize 必然看到「未排空」直接返回。
+	// 回调捕获 this:与本类其它排队任务同理,shutdownComplete_ 只在收尾的两跳 quit 之后置位,~Node 会等它
+	// (loop 异常退出时重新驱动 loop),所以投递到时 Node 一定还在。
+	// "gRPC server draining: ..." 由 BeginShutdown 自己打;这里只记起点,给 "gRPC server drained. drain_ms=" 用。
+	grpcDrainStart_ = std::chrono::steady_clock::now();
 
-	// Server::Shutdown() 最后会同步 ThreadManager::Wait()。不能在 muduo loop
-	// 线程上直接调用:Scene gRPC handler 正阻塞在 future.get(),等的就是该 loop
-	// 执行 runInLoop 任务。两边互等会永久死锁。
-	//
-	// 仅给 Shutdown() 加 deadline 仍不够。gRPC 在 grace deadline 到期后会
-	// cancel_all_calls(),但随后照样 ThreadManager::Wait();取消 call 不会把正在
-	// 执行且卡在 std::future 上的用户 handler 强行弹栈。
-	//
-	// 因此只在关机窗口临时起一条协调线程跑同步 Shutdown(),muduo loop 继续消费
-	// 已排队的 handler。Shutdown 返回后再 queueInLoop 回来完成其余 teardown。
-	grpc::Server *const server = grpcServer_.get();
+	muduo_grpc::ServerShutdownOptions shutdownOptions;
+	shutdownOptions.drainTimeout = kGrpcDrainTimeout;
+	shutdownOptions.goawayPingTimeout = kGrpcGoawayPingTimeout;
+	shutdownOptions.closeGrace = kGrpcCloseGrace;
+	grpcServer_->BeginShutdown(shutdownOptions, [this]
+							   { OnGrpcServerDrained(); });
+}
 
-	grpcShutdownThread_ = std::thread([this, server]
-									 {
-		const auto drainStart = std::chrono::steady_clock::now();
-		server->Shutdown(std::chrono::system_clock::now() + kGrpcDrainTimeout);
-		const auto drainElapsed = std::chrono::steady_clock::now() - drainStart;
+void Node::OnGrpcServerDrained()
+{
+	eventLoop.assertInLoopThread();
+	if (shutdownGrpcDrainComplete_ || !grpcServer_)
+	{
+		// 已记为排空,或收尾已防御销毁了 Server(FinalizeShutdownInLoop 开头):迟到 / 重复的通知,忽略。
+		return;
+	}
 
-		eventLoop.queueInLoop([this, drainElapsed]
-							   {
-			eventLoop.assertInLoopThread();
+	const auto drainMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+							 std::chrono::steady_clock::now() - grpcDrainStart_)
+							 .count();
+	LOG_INFO << "gRPC server drained. drain_ms=" << drainMs << " "
+			 << muduo_grpc::FormatServerStats(grpcServer_->Stats());
+	// 这里是排队任务:不在 Server 自己的栈上,也不在 I/O 事件处理期间,可以同步销毁(server.h 的析构前置条件)。
+	// 此时连接表已空、Acceptor 早已销毁;~Server 万一再排进 forceClose / connectDestroyed,由收尾末尾的两跳 quit 覆盖。
+	grpcServer_.reset();
 
-			// gRPC 不返回"是否打到 grace deadline"的布尔值。耗时达到预算时只能
-			// 诚实记录为"预算已耗尽或 handler 自身退场更慢",不能断言取消一定发生。
-			if (drainElapsed >= kGrpcDrainTimeout)
-			{
-				LOG_WARN << "gRPC drain consumed its grace budget; calls may have been cancelled. timeout_ms="
-						 << std::chrono::duration_cast<std::chrono::milliseconds>(kGrpcDrainTimeout).count();
-			}
-
-			// queueInLoop 已经由协调线程发出;join 只等它从 queueInLoop 返回并退栈,
-			// 不再等待任何 gRPC handler,所以不会重新制造 loop/poller 互等。
-			if (grpcShutdownThread_.joinable())
-			{
-				grpcShutdownThread_.join();
-			}
-			grpcServer_.reset();
-			LOG_INFO << "gRPC server shut down. drain_ms="
-					 << std::chrono::duration_cast<std::chrono::milliseconds>(drainElapsed).count();
-
-			shutdownGrpcDrainComplete_ = true;
-			MaybeFinalizeShutdownInLoop(); });
-	});
+	shutdownGrpcDrainComplete_ = true;
+	MaybeFinalizeShutdownInLoop();
 }
 
 void Node::OnNodeIdConflictShutdown(NodeIdConflictReason reason)
@@ -1131,8 +1147,10 @@ void Node::ShutdownInLoop()
 		beforeShutdownFn_(*this);
 	}
 
-	// 业务 barrier 与 gRPC drain 并行推进。先执行 hook 生成待落地工作,随后立刻
-	// 关闭 gRPC 入口;EventLoop 保持运行,让在途 handler 与 Redis 回调完成。
+	// 业务 barrier 与 gRPC 排空并行推进。先执行 hook 生成待落地工作,随后立刻进入
+	// gRPC 排空(停听、两段 GOAWAY,已收完的调用照常派发);EventLoop 保持运行,让这些调用
+	// 与 Redis 回调完成。同一个 loop 任务里 hook 与 BeginShutdown 之间不可能派发任何调用,
+	// 保持这个顺序是为了不让 hook 的阻塞时间吃掉排空预算(grpc-muduo-transport.md §15.3)。
 	StartShutdownDrainWatchdog();
 	ShutdownGrpcServer();
 	MaybeFinalizeShutdownInLoop();
@@ -1152,8 +1170,8 @@ void Node::StartShutdownDrainWatchdog()
 	LOG_INFO << "Waiting for before-shutdown work to drain. timeout_s="
 			 << std::chrono::duration_cast<std::chrono::seconds>(kShutdownDrainBudget).count();
 
-	// 即使 predicate 暂时为 true 也不能锁存:在 gRPC 完全退场前,某个在途
-	// handler 仍可能向业务侧追加工作。每 100ms 都现场重查,grpc 回调也会重查。
+	// 即使 predicate 暂时为 true 也不能锁存:在 gRPC 排空完成前,排空期间派发的
+	// 调用仍可能向业务侧追加工作。每 100ms 都现场重查,OnGrpcServerDrained 也会重查。
 	shutdownDrainTimer.RunEvery(kDrainPollIntervalSec, [this]
 								{ MaybeFinalizeShutdownInLoop(); });
 }
@@ -1191,6 +1209,18 @@ void Node::MaybeFinalizeShutdownInLoop()
 void Node::FinalizeShutdownInLoop()
 {
 	eventLoop.assertInLoopThread();
+	// 防御(grpc-muduo-transport.md §15.10):正常路径下 gRPC 服务端已在 OnGrpcServerDrained 里销毁,
+	// 仍在说明它没走完排空就进了收尾。不能在这里同步 reset:本函数可能从看门狗定时器进入,Linux 的定时器
+	// 回调就跑在事件处理期间,此时销毁 Acceptor 会撞上 EventLoop removeChannel 的断言。移进排队任务销毁,
+	// FIFO 排在下面的 FinalizeTeardownInLoop 之前;~Server 排进的 forceClose / connectDestroyed 由拆除末尾的
+	// 两跳 quit 覆盖。
+	if (grpcServer_)
+	{
+		LOG_ERROR << "gRPC server still alive at shutdown finalization; destroying it in a queued task. listen="
+				  << grpcServer_->listenAddress();
+		eventLoop.queueInLoop([server = std::move(grpcServer_)]() mutable
+							  { server.reset(); });
+	}
 	// 先发既有的租约释放,再关 etcd 传输(LeaseRevoke 尽量送达,§13.7),然后关全部出站通道。
 	ReleaseNodeId();
 	serviceDiscoveryManager.Shutdown();
@@ -1245,7 +1275,7 @@ void Node::FinalizeTeardownInLoop()
 	// EventLoop 早已析构(use-after-free)。这里释放后排进队列的 forceCloseInLoop /
 	// connectDestroyed 由下面的两跳 queueInLoop 排空(AGENTS.md §11.7)。
 	// gRPC 与 RPC0 的在途调用都已失败完成；现在才允许清除整个节点池。
-	// 同时释放 protobuf 与全局实体句柄，避免拖到 EventLoop/protobuf 关闭后的 TLS 析构。
+	// 同时释放 protobuf，避免拖到 EventLoop/protobuf 关闭后的 TLS 析构。
 	tlsNodeContextManager.Clear();
 	// Cleared by tlsEcs.Clear() below.
 	tlsEcs.Clear();
@@ -1300,12 +1330,6 @@ void Node::InitLogSystem()
 	auto logLevel = static_cast<muduo::Logger::LogLevel>(
 		tlsNodeConfigManager.GetBaseDeployConfig().log_level());
 	muduo::Logger::setLogLevel(logLevel);
-}
-
-void Node::RegisterEventHandlers()
-{
-	nodeConnectedSubscription_.release();
-	nodeConnectedSubscription_ = tlsEcs.dispatcher.sink<OnConnected2TcpServerEvent>().connect<&Node::OnServerConnected>(*this);
 }
 
 void Node::LoadConfigs()
@@ -1555,27 +1579,6 @@ void Node::ExecuteNodeRemoval(const NodeInfo &stoppedNode)
 			<< ", node_type=" << stoppedNodeType
 			<< ", node_id=" << stoppedNodeId; });
 	LOG_INFO << "Service node stopped : " << stoppedNode.DebugString();
-}
-
-void Node::OnServerConnected(const OnConnected2TcpServerEvent &connectedEvent)
-{
-	eventLoop.assertInLoopThread();
-	if (rpcServer == nullptr)
-	{
-		return;
-	}
-
-	auto &connection = connectedEvent.conn_;
-	if (!connection->connected())
-	{
-		LOG_INFO << "Client disconnected: " << connection->peerAddress().toIpPort();
-		return;
-	}
-	LOG_INFO << "Connected to server: " << connection->peerAddress().toIpPort();
-	for (uint32_t nodeType = 0; nodeType < eNodeType_ARRAYSIZE; ++nodeType)
-	{
-		nodeRegistrationManager.TryRegisterNodeSession(nodeType, connection);
-	}
 }
 
 void Node::StartNodeRegistrationHealthMonitor()

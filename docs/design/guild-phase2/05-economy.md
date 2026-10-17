@@ -1318,7 +1318,7 @@ private void MaybeAutoRequest()
 1. **前置核对**:逐条运行 §5.2 的核对命令;再运行 §5.10 的断言核对命令并记录命中。
 2. **导表**:`dev.bat gen`(或 `py tools/data_table_exporter/run.py tools/data_table_exporter/exporter_config.yaml`,protoc-gen-go 须在 PATH)。通过标准:`generated/tables/guilddonate.json` 3 行、`guildshop.json` 11 行、`guildlevel.json` 中 id=1 的 `upgrade_cost_funds` 为 20000;`go/shared/generated/table/guildshop_table.go` 存在;`guild_error_tip.proto` 含 `kGuildShopLimit`;运行 `py tools/data_table_exporter/tools/gen_schema_index.py` 后,`data/AGENTS.md` 索引出现两张新表。
 3. **proto-gen**:`cd go; .\build.bat`。通过标准:`rg -n "GuildServiceDonateToGuild|GuildServiceGetGuildDonateOptions" proto/message_id.txt` 各 1 行;`go/proto/guild/guild.pb.go` 含 `GuildShopOrderView` 与 `RecentOrders`;`transaction_log.pb.go` 含 `TX_GUILD_DONATE_REFUND`。记下新消息号,补 MessageLimiter 行后重跑第 2 步。
-4. **C++**:MSBuild Debug x64 `/m:1` 先编 `cpp/generated/table/table.vcxproj`,再编 scene 与 `currency_test`;运行 `currency_test.exe --gtest_filter=AssetOp*:CurrencyTest*` 全绿;`Select-String cpp/nodes/scene/handler/grpc/scene_node_service.cpp -Pattern AcquireCreatePermitBlocking` 必须命中(S4 E13);启动一个 scene,确认没有缺表的 `LOG_FATAL`。Linux:`build_linux.sh` 只编 table 目标。
+4. **C++**:MSBuild Debug x64 `/m:1` 先编 `cpp/generated/table/table.vcxproj`,再编 scene 与 `currency_test`;运行 `currency_test.exe --gtest_filter=AssetOp*:CurrencyTest*` 全绿;`Select-String cpp/nodes/scene/handler/grpc/scene_node_service.cpp -Pattern AcquireCreatePermitBlocking` 必须命中(S4 E13;2026-10-16 更正:今后改为 `-Pattern AcquireAllocationPermitAsync` 必须命中,见 grpc-muduo-transport.md §15.14 第 3 步);启动一个 scene,确认没有缺表的 `LOG_FATAL`。Linux:`build_linux.sh` 只编 table 目标。
 5. **data_service 与 gameday**:`cd go/data_service; go test ./internal/config/... ./internal/store/... -count=1`;`cd go/shared; go test ./gameday/... -count=1`。
 6. **开发库重建**:`SELECT @@global.binlog_format` 必须为 `ROW`(否则停下报告,RC 事务依赖它);停 guild;root 执行 `DROP DATABASE mmorpg_guild;` 与 S1 §3 的两句;data_service `-migrate`;启动 guild。通过标准:`SHOW CREATE TABLE mmorpg_guild.guild_asset_op` 含 `lease_token`、`last_reason`、`KEY idx_guild_asset_op_3 (player_id,stream,status,seq)`;全局库 `SELECT biz_tag FROM id_segment WHERE biz_tag='guild_asset_op'` 返回 1 行;guild 日志无表校验 panic,并出现 `guild.asset_op_reconcile`、`guild.asset_op_cleanup` 启动日志。
 7. **Go**(**2026-09-21 订正:B5b 的 Go 验证以 92-handoff.md §12 为准**;下面的正则已随 B5b 落码改过 —— 原文的 `ClaimDue` 选不中 ListDue / Claim / Resolve 的 5 个真库用例):`cd go/guild; go vet ./...; go test ./... -count=1`(DSN 用例应为 SKIP);`go build ./cmd/assetopfix`;设 `$env:GUILD_TEST_MYSQL_DSN`(本地 dev 账号,不写进文件)后运行 `go test ./internal/data -run "Reserve|Finalize|TooMany|ListDue|Claim|UpgradeGuild|Accelerate|Cleanup|Recent|Resolve" -count=1 -v`,以及 `go test -tags integration ./internal/logic -run EconomyFlow -count=1 -v`。字面量守卫:`rg -n "\b2700[0-8]\b" go/guild/internal --glob "!*_test.go"` 为 0 行;`rg -n "status\s*=\s*[0-5]\b" go/guild/internal/data` 为 0 行。
@@ -1381,3 +1381,15 @@ private void MaybeAutoRequest()
 | 18 | 次要 | 传输失败后重试会重复捐献/兑换 | **已采纳**。重连后窗口自动重拉(`MaybeAutoRequest` 在重连状态下清除标记);两页页脚显示"最近一笔/一单"。按 D-14 每表至多一个 UNIQUE 的约定,不加客户端幂等键;残余风险写入 W14 | §5.32 W14、§5.35 |
 
 **新增的跨批影响**(已写进 §5.43,需主设计确认):S1 枚举加 kind 4、列 25;B4a 的 TransactionType 与 scene 白名单;B2 的 `guild_manage_repo.go`、`guild_manage_logic.go`、`push.go`、`GuildClient.HandleGuildChanged/DrainQueued`;S6 的计数行被 30 天清理;批次拆为 B5a/B5b/B5c(21/23/12 个手改文件)。
+
+## 5.44 2026-10-16：全球权威连接与客户端原请求恢复
+
+本节覆盖 §5.32 W14 与附录第18项中“不加客户端幂等键”的旧结论。捐献与商店兑换均已接入 `client_request_id`：非零键在同一玩家的两个RPC之间共用命名空间，在预留事务内将键绑定唯一 `op_id`；同键同参数重放读取原指令的当前视图，同键更改种类、商品、数量或非零 `expected_guild_id` 拒绝。零键仅供旧客户端兼容，不承诺客户端请求去重。
+
+新客户端在发包之前持久化原请求和原帮会，断线后重发同一请求。`expected_guild_id` 非零时，仓储在原帮会与成员锁内完成提交复核，不重新选取玩家后来加入的帮会，避免重接期间换帮造成再次扣款。去重记录默认保留30天、配置下限7天；客户端自动恢复窗为6天，过期请求保留待核状态，不自动换新键重扣。
+
+Go Guild 的运行池与显式 `-migrate` 均复用 `shared/authoritysql`。`MySQL.RequireTiDB` 未写时为true，预发/生产关闭即拒启；只有dev/test可显式设false保留本地旧MySQL兼容。每条新物理TiDB连接固定悲观事务、READ COMMITTED、strict当前读、无历史快照/陈旧读/低精度TSO、leader读取；客户端计数器要求的 `clientFoundRows=false` 与1秒行锁等待继续保持。运行池上限默认20、允许1–128，运行socket预算仍为5秒。迁移使用独立的两连接池，保留持锁连接之外的KILL QUERY通道，DDL socket预算2分钟，具体语句仍受迁移器截止时间限制，不能据此放宽1.5秒业务事务或资产投递预算。
+
+部署可只配置 `MySQL.DataSourceEnv`，从对应Secret环境变量解析唯一SQL连接串；显式环境来源缺失或为空时拒启，禁止回退样例DSN。所有副本必须指向同一权威帮会库。K8s监听通配地址时注册必须使用显式非通配 `POD_IP`，否则拒绝将0.0.0.0/::写入发现目录；本地127.0.0.1监听兼容。Java版同一Guild Druid池已有对应逐连接强会话初始化；2026-10-16核对时仍允许生产显式关闭require-tidb，且Guild结果topic的同步耐久门禁正在补齐，这两项按PARITY独立跟踪，不据此声称整版已完全对齐。
+
+SQL事务仅负责帮会侧预留与终态记账；跨Scene资产操作仍保留PENDING与独立SQL提交证明，不能把RPC的durable位单独当作到账证明。2026-10-16关键真TiDB组已验证：原帮会拒绝、重放不可换帮、三条物理连接强会话、双worker十二笔只终结一次、并发同键只产生一条指令，5/5且无跳过，证据 `build/commerce-contracts-20261015/guild-authority-tidb-critical-final.log`。其中Scene为提交账本替身，不能作为真实C++资产到账或跨区域容灾验收。

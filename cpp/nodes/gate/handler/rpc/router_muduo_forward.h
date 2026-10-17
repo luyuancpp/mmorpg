@@ -1,20 +1,16 @@
 #pragma once
 
-// gate → 路由服的 muduo_grpc 路径(GATE_ROUTER_TRANSPORT=muduo_h2,docs/design/grpc-muduo-transport.md §8)。
+// gate → 路由服的 ClientRpcRouter.Forward(路由模式唯一的 gRPC 出站,docs/design/grpc-muduo-transport.md §8、§14)。
 //
-// 对客户端的可见行为与官方 gRPC 路径逐条相同:两条路径都只调 gate_rpc_reply_bridge(含路由 lane 的认领)。
+// 第 3 批起生成客户端也走 muduo_grpc;这条手写 Forward 是第 1 批落地的路径,第 3 批原样保留,没有改用生成的
+// SendClientRpcRouterForward(…, GrpcDone, GrpcCallOptions)。它不经全局处理器,在自己的完成回调里直接进桥。
+// 线上字节(:path、metadata 两层 base64、截止取值)与生成客户端一致,改其中任一项须两处同改。对客户端的可见行为
+// 与直连模式的生成客户端路径逐条相同:两条路径都只调 gate_rpc_reply_bridge(含路由 lane 的认领)。
 //   成功 → 按响应初始 metadata 里回显的 x-session-detail-bin 解出会话,交成功桥;
-//   失败 → 按发出的 SessionDetails 原始字节交失败桥;不重试,更不改走官方实现重发。
+//   失败 → 按发出的 SessionDetails 原始字节交失败桥;不重试。
+// 通道由 NodeConnector::ConnectToGrpcNode 统一建在路由服节点实体上(MuduoGrpcChannelPtr),这里不建通道。
 
 #include <string>
-
-namespace muduo
-{
-namespace net
-{
-class EventLoop;
-} // namespace net
-} // namespace muduo
 
 namespace muduo_grpc
 {
@@ -28,10 +24,6 @@ class ForwardRequest;
 
 namespace gate_router_muduo
 {
-
-// 在 ClientRpcRouterNodeService 的节点 registry 上下文里装通道工厂:此后发现的路由服节点只建
-// muduo_grpc::Channel。必须在服务发现开始之前调用(gate main 的配置回调里)。
-void InstallChannelFactory(muduo::net::EventLoop &loop);
 
 // 经 muduo_grpc 通道发一次 ClientRpcRouter.Forward。只能在 gate 的 EventLoop 线程调用。
 // sessionDetailsBin 是序列化好的 SessionDetails(含路由 lane 的 gate_call_seq 等字段),原样作为

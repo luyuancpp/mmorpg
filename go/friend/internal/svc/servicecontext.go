@@ -194,8 +194,9 @@ func NewRedisHandles(c config.Config) (friendRds, sharedRds *redis.Redis, target
 		// go-zero 的 logx 没有 Warn 级别;用 Error 级打出来,保证在默认日志级别下一定可见
 		// (Info 级在 staging/prod 常被调掉,这条正是那里最需要看到的)。
 		// 回落本身不是故障(本地单库形态就是这样),但在 staging/prod 出现就是部署缺陷:
-		// 共享库是 allkeys-lfu,好友缓存会被当缓存淘汰,还要和契约 key 抢内存 ——
-		// 而契约 key 被淘汰的后果是"玩家明明在线却判成离线",推送静默丢。
+		// 好友私有 key 要和契约 key 抢内存。2026-10-12 起本地 compose 也改为 noeviction(K8s 一直是
+		// noeviction),共享库设了 maxmemory 时写满会连带拒写契约 key;共享库一旦被配成淘汰型,
+		// 契约 key 也可能被淘汰,后果是"玩家明明在线却判成离线",推送静默丢。
 		logx.Errorf("[friend] WARN FriendRedis not configured; friend private keys falling back to shared database host=%s type=%s -- "+
 			"local single-database deployments only; staging/prod require separate FriendRedis with maxmemory-policy=noeviction (contract section 4)",
 			c.Redis.Host, c.Redis.Type)
@@ -216,7 +217,8 @@ func NewRedisHandles(c config.Config) (friendRds, sharedRds *redis.Redis, target
 //
 // transaction_isolation=%27READ-COMMITTED%27 把**整个连接池**的会话隔离级别设成 RC(驱动在建连时
 // 发 SET)。显式写事务本来就用 BeginTx(RC)(data.friendWriteTxIsolation);这一项管的是
-// **事务之外**的自动提交语句 —— Unblock 的 DELETE、sweep / 回收的逐行 DELETE、ensure 的 INSERT ——
+// **事务之外**的自动提交语句 —— sweep / 回收的逐行 DELETE、ensure 的 INSERT(Unblock 的 DELETE 2026-10-16 起
+// 改在单语句 RC 事务里,见 data.FriendRepo.Unblock)——
 // 它们原先落在服务器全局默认的 REPEATABLE-READ 上,会拿间隙锁 / next-key 锁:
 //   - 排队中的间隙锁请求会挡住别人的插入意向锁,是 RR 下经典的插入死锁源;
 //   - ensure 的"主键重复 → ODKU 取 X"在 RR 下拿的是 next-key,两个并发 ensure 撞上刚被回收的行时

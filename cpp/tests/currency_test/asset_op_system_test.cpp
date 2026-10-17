@@ -8,6 +8,7 @@
 // 不依赖真实墙钟、不连 Redis、不连 DataService。
 
 #include <gtest/gtest.h>
+#include <google/protobuf/unknown_field_set.h>
 #include "engine/core/type_define/player_guid_comp.h"
 
 #include <cstdint>
@@ -847,20 +848,20 @@ TEST_F(AssetOpSystemTest, ResaveThrottle)
 	EXPECT_EQ(2, g_persistCalls) << "过了限频窗口才允许再请求一次存盘";
 }
 
-// 快照已含该结局时,重查直接从快照答 durable,**不**再请求存盘。
-TEST_F(AssetOpSystemTest, AlreadyDurableSkipsPersist)
+// Redis快照已含结局仍不能证明SQL提交；重查必须有机会补发强制保存来重建SQL证据。
+TEST_F(AssetOpSystemTest, RedisDurableCanRebuildSQLCommitProof)
 {
 	ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player_, kCurrencyGold, 100));
 	ASSERT_EQ(ASSET_OP_OUTCOME_APPLIED, CallDebit(1, 30).outcome());
 	CompleteFakeSave();
 
-	g_fakeNowMs += kAssetOpResaveMinIntervalMs; // 限频窗口已过,仍不该触发存盘
+	g_fakeNowMs += kAssetOpResaveMinIntervalMs;
 	const int before = g_persistCalls;
 
 	const auto response = CallDebit(1, 30);
 	EXPECT_EQ(ASSET_OP_OUTCOME_APPLIED, response.outcome());
 	EXPECT_TRUE(response.durable());
-	EXPECT_EQ(before, g_persistCalls) << "已 durable 就不该再请求存盘";
+	EXPECT_EQ(before + 1, g_persistCalls) << "Redis durable不应阻止SQL证据修复";
 }
 
 // 脏比较判定"与上次落盘逐字段相等"→ SavePlayerToRedis 返回 false。
@@ -977,5 +978,64 @@ TEST_F(AssetOpSystemTest, OwnerEpochMintedLaterAppliesSameSeq)
 	EXPECT_EQ(ASSET_OP_OUTCOME_APPLIED, applied.outcome());
 	EXPECT_EQ(70u, Gold());
 	EXPECT_EQ(1, g_persistCalls);
+}
+TEST_F(AssetOpSystemTest, ReceiptAckRequiresMatchingCorrelationAndKeepsOriginalOutcome)
+{
+	auto& comp = tlsEcs.actorRegistry.get<PlayerAssetOpLedgerComp>(player_);
+	auto& stream = MutableAssetOpStream(comp, ASSET_OP_STREAM_TRADE_DEBIT);
+	ASSERT_TRUE(RecordAssetOpOutcome(stream, kTestEpoch, 1, AssetOpRecordKind::kApplied, 0));
+	auto* receipt = stream.add_receipts();
+	receipt->set_seq(1); receipt->set_correlation_id(77); receipt->set_request_digest(std::string(32, 'd'));
+	receipt->mutable_snapshot()->add_items()->set_item_uuid(123);
+	::AssetOpRequest ack;
+	ack.set_player_id(kTestPlayerId); ack.set_stream(ASSET_OP_STREAM_TRADE_DEBIT);
+	ack.set_seq(1); ack.set_stream_epoch(kTestEpoch); ack.set_correlation_id(78);
+	SignForTest("ack_receipt", ack, "trade");
+	::AssetOpResponse response;
+	PlayerAssetOpSystem::AckReceipt(ack, response);
+	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, response.outcome());
+	EXPECT_EQ(1, stream.receipts_size());
+	EXPECT_EQ(0, g_persistCalls);
+	ack.set_correlation_id(77); SignForTest("ack_receipt", ack, "trade");
+	PlayerAssetOpSystem::AckReceipt(ack, response);
+	EXPECT_EQ(ASSET_OP_OUTCOME_APPLIED, response.outcome());
+	EXPECT_EQ(0, stream.receipts_size());
+	EXPECT_EQ(AssetOpSeqState::kApplied, ClassifyAssetOpSeq(&stream, kTestEpoch, 1));
+	EXPECT_EQ(1, g_persistCalls);
+}
+
+TEST_F(AssetOpSystemTest, CompleteItemEscrowReplayAndCreditKeepIdentityGrowthAndUnknownFields)
+{
+	ASSERT_TRUE(ItemTableAvailable()) << "真实物品配置是本用例的前置，不能跳过托管验证";
+	ASSERT_NE(nullptr, ItemTableManager::Instance().FindByIdSilent(1).first);
+	GiveBags();
+	auto& inventory = tlsEcs.actorRegistry.get<PlayerBagsComp>(player_).bags[kInventory];
+	ItemComp original;
+	original.set_item_id(950199999); original.set_config_id(1); original.set_size(1);
+	original.mutable_equip()->set_enhance_level(7);
+	auto* affix = original.mutable_equip()->add_affixes(); affix->set_attr_id(3); affix->set_value(123); affix->set_tier(2); affix->set_seq(1);
+	original.GetReflection()->MutableUnknownFields(&original)->AddVarint(100, 456);
+	ASSERT_EQ(kSuccess, inventory.PutInstance(original));
+	::AssetOpRequest debit = MakeCurrencyRequest(ASSET_OP_STREAM_TRADE_DEBIT, 1, 1, TX_TRADE);
+	debit.clear_bundle(); debit.mutable_bundle()->add_item_uuids(original.item_id()); SignForTest("debit", debit, "trade");
+	::AssetOpResponse removed;
+	PlayerAssetOpSystem::Debit(debit, removed);
+	ASSERT_EQ(ASSET_OP_OUTCOME_APPLIED, removed.outcome());
+	ASSERT_EQ(1, removed.snapshot().items_size());
+	EXPECT_EQ(nullptr, inventory.GetItemCompByGuid(original.item_id()));
+	::AssetOpResponse replay;
+	PlayerAssetOpSystem::Debit(debit, replay);
+	EXPECT_EQ(removed.snapshot().SerializeAsString(), replay.snapshot().SerializeAsString()) << "重查必须返回同一份托管原件";
+	::AssetOpRequest credit = MakeCurrencyRequest(ASSET_OP_STREAM_TRADE_CREDIT, 1, 1, TX_TRADE);
+	credit.clear_bundle(); credit.mutable_bundle()->add_item_instances()->CopyFrom(removed.snapshot().items(0)); SignForTest("credit", credit, "trade");
+	::AssetOpResponse delivered;
+	PlayerAssetOpSystem::Credit(credit, delivered);
+	ASSERT_EQ(ASSET_OP_OUTCOME_APPLIED, delivered.outcome());
+	const auto* restored = inventory.GetItemCompByGuid(original.item_id());
+	ASSERT_NE(nullptr, restored);
+	auto compared = *restored; compared.clear_acquire_seq();
+	EXPECT_EQ(original.SerializeAsString(), compared.SerializeAsString());
+	PlayerAssetOpSystem::Credit(credit, delivered);
+	EXPECT_EQ(1u, inventory.GetTotalItemCount(1)) << "同一入账请求不能复制实例";
 }
 } // namespace

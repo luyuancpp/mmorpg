@@ -123,7 +123,7 @@ public:
 	//   4. ParseSyncDigestFields 解析,应答畸形 → UNAVAILABLE 并打 ERROR;
 	//   5. 推 NotifySyncDigest。
 	// 除"实体无效 / 回调时玩家已不在本节点"外,每次调用都恰好推一条 NotifySyncDigest,客户端靠它结束等待。
-	// 应答类型是 Empty:本函数不写 TipInfoMessage(全局 tip 会污染同节点下一条非 Empty 请求)。
+	// 应答类型是 Empty，没有 error_message 字段，结果只经 NotifySyncDigest 传达。
 	static void SendSyncDigest(entt::entity player);
 
 	// ---- 场景生命周期入口 ----

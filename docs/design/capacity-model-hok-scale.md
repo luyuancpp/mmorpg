@@ -102,7 +102,7 @@
    - 切场景：每次约 10 条命令，即 10×λ_sw。
    - SM 负载刷新：每个副本都读，`load_reporter.go:231-233` 的读不门控，`:240` 只对写按 `isLeader` 门控（本次抽查）。
 4. **存盘与快照漏了跨节点换场景**，即参数 t。
-5. **task:result 稳态不能按「每次登录 1 次冷读」算**：父键首存后不带 TTL（`redis_client.h:20-24`、`:42-52`），老玩家几乎不冷读。
+5. **task:result 稳态不能按「每次登录 1 次冷读」算**：父键首存后不带 TTL（`redis_client.h:20-24`、`:42-52`；2026-10-16：落码前行号，同日该文件删 SADD、加注释，行号整体后移，现按 `kSaveLuaScript` / `kSaveIfGuardLuaScript` 定位），老玩家几乎不冷读。
 6. **K8s 的 Kafka broker 数**：只要不是 dev+custom 档，缺省就是 3 个（`k8s_deploy.ps1:1076-1082`）。`deploy/k8s/AGENTS.md:86` 的「刻意 replicas 1」已过时。
 7. **Kafka 的 512 MiB retention.bytes 是生效的**：segment.bytes 是 32 MiB（`k8s_deploy.ps1:1188`、`:1200`）。
 8. **快照消费的现状**：工作区有未提交的 G2a 改动，改成按分区并发、可配批量，但默认仍逐条（`data_service.yaml:248-251`）。并行度仍被 3 个分区封顶。
@@ -179,7 +179,7 @@
 
 1. etcd：自动压缩、配额、定期 defrag，并钉住镜像版本（A0-1）。
 2. gate / scene / battle 容器补 RLIMIT_NOFILE，并加启动断言（A0-2）。
-3. SessionReconciler 去掉全键 SCAN；删除 `dirty_keys_set` 的写入（A0-4）。
+3. SessionReconciler 去掉全键 SCAN；删除 `dirty_keys_set` 的写入（A0-4）。（2026-10-16：`dirty_keys_set` 的写入已在代码中删除（已落码，未编译、未测试；全部 scene 换成新镜像前生产仍在写）；存量键一次性清理见 [release-checklist.md](../ops/release-checklist.md) §6.1。SessionReconciler 一项不在该次改动内。）
 4. 每个 Kafka topic 显式设 retention.bytes，按公式定 PVC；关掉旧的「一节点一 topic」路径（A0-3）。
 5. 补测量（§5 的 V0）。没有测量就不下容量结论。
 
@@ -219,6 +219,8 @@
 | scene 到 SM / DS 的 gRPC 网状连接 | scene 连全服所有 SM 和 DS 实例（`cpp/nodes/scene/main.cpp:86`；二者不是 zone-scoped，`node_util.cpp:112-127`），两类每 zone 各 2 副本。连接总数 4Z·N_s；每个 scene 出连 4Z 条 | 3.6k~4.1 万条；每个 scene 40~92 条 | 8.9 万~99.5 万；200~448 | 35.6 万~396 万；400~892 | 代码注释假设「实例数是个位数」（`node_utils.cpp:246`）；fd soft 可能 1024（推断与 G4 同） | 每个 scene 的 fd：0.05~0.1 / 0.2~0.45 / 0.4~0.88 倍 |
 | Kafka 控制面 gate-cmd / scene-cmd（P=256，不可变，`control-plane-topic-partitioning-20260908.md:82`） | 速率 ≈ 2E + λ_sw：每次 EnterGame 一条 BindSession（`entergamelogic.go:712`），每次 EnterScene 一条 RoutePlayer（`enterscenelogic.go:1338`）；读放大 = N_g/256、N_s/256 | 4,444 条/s；读放大 0.2~0.9 / 0.3~1.7 | 2.2 万；1~4.3 / 1.7~8.7 | 4.4 万；2~8.7 / 3.5~17.4 | 设计预算 500 条/s、读放大约 390（同文 :167-178），预算本身是假设；broker 数见 §0.6 第 6 条 | 读放大不到 0.05 倍，P=256 够用；消息速率对预算 9 / 44 / 89 倍 |
 | Kafka 旧的一节点一 topic | `DisableLegacyPerNodeTopic=false`（`base_deploy_config.yaml:104`），每个 gate / scene 各一个 topic 和一个消费组，共 N_cpp 个 | 139~666 | 694~3,333 | 1,389~6,666 | 设计文档自己判定撑不住（同文 :44-52） | 目标是 0 |
+
+> 状态注（2026-10-16，B0-5）：上表「scene_manager 负载刷新」一行已用「领导者按 zone 批量刷新 + 登记集合替代 SCAN」缓解，已落码，未编译、未测试。按 §7 的 2000 万在线口径（N_s 取旧 S3 的两倍，1,778~8,888）推算、未实测：刷新读降到 0.4·N_s GET/s，约 711~3,556；跟随者为 0；领导者每拍约 8~29 次 pipeline 往返（读 ⌈N_s/512⌉ 批 + 写 ⌈(N_s+Z)/1024⌉ 批 + 1 条 SADD；有读失败时每 zone 多一条 ZADD NX）；每节点序列 3·N_s，只由领导者导出；nodes_by_role 约 12·Z。字面的「每个副本只读本 zone」、按 zone 选主与 watch 收窄仍归 A1。详见 scene-creation-architecture.md「负载刷新与 zone 登记集合(2026-10-16)」。
 
 ### 2.3 存盘管线
 
@@ -270,7 +272,7 @@
 | 全服重连浪涌 | N/120×35：假设全服在 120 秒内重新进场，只算进场链路 | 29 万 | 146 万 | 292 万 | 同核心 | 2.9 / 15 / 29 倍 |
 | WAITAOF 建角上限（D1 db_first） | ≈ 映射连接池总数 ÷ 0.5 秒 = 2Z×10/0.5 = 40Z。每 Pod 池 10 的来历：data-service CPU limit 500m（`data-service.yaml:110`），automaxprocs（`go.mod:94`）使 GOMAXPROCS=1，go-redis 缺省 PoolSize=10；go-zero 是否另行覆盖未核实 | 400~920/s | 2,000~4,480 | 4,000~8,920 | appendfsync everysec 下平均等约 0.5 秒 | 开服 C_p 对此上限 1.1~12.5 倍；WAITAOF 阻塞的是同一个池，同实例的路由 MGET 会一起被饿住 |
 | 连接数 | C++ 每进程 1 条，加上 Go 各服务的连接池（仓库里没设 PoolSize） | 2.5k~6.2k | 1.2 万~3 万 | 2.5 万~6 万 | maxclients 没配，缺省 10000 | 0.25~0.6 / 1.2~3 / 2.5~6 倍 |
-| 核心常驻内存 | P_cum×(V+0.3 KB)：父键首次存盘后不再过期、owner_epoch 永不删除、dirty_keys_set 只写不读（`redis_client.h:20-24`、`:42-52`） | 至少 0.1~0.2 TB；30 天 0.2~0.6 TB | 至少 0.5~1 TB | 至少 1~2 TB | 没设 maxmemory；requests 512Mi，PVC 8Gi（`redis.yaml:136-155`）；单实例经验上限是几十 GB | 对 8Gi：13~25 / 64~127 / 129~254 倍 |
+| 核心常驻内存 | P_cum×(V+0.3 KB)：父键首次存盘后不再过期、owner_epoch 永不删除、dirty_keys_set 只写不读（`redis_client.h:20-24`、`:42-52`；2026-10-16：写入已在代码中删除（已落码，未编译、未测试；全部 scene 换成新镜像前生产仍在写），存量待按 release-checklist §6.1 清理；行号为落码前快照，现按 `kSaveLuaScript` / `kSaveIfGuardLuaScript` 定位） | 至少 0.1~0.2 TB；30 天 0.2~0.6 TB | 至少 0.5~1 TB | 至少 1~2 TB | 没设 maxmemory；requests 512Mi，PVC 8Gi（`redis.yaml:136-155`）；单实例经验上限是几十 GB | 对 8Gi：13~25 / 64~127 / 129~254 倍 |
 | 子表缓存（1 小时 TTL，`k8s_deploy.ps1:3458`） | ≈3N×V | 30~60 GB | 150~300 GB | 300~600 GB | 与核心同实例 | 叠加在核心之上 |
 | AOF 重放 | 数据集 ÷ 重放速率（按 0.2~0.5 GB/s 假设） | 3~17 分钟 | 更长 | 更长 | startupProbe 只给 300 秒（`redis.yaml:111-120`） | S1 已超过探针时间，有重启循环风险 |
 | C++ 客户端 | 每进程 1 条 muduo hiredis 异步连接（`node.cpp:557`；`redis_manager.h:25-28`）。不处理 MOVED/ASK，不发 AUTH，地址只在启动时解析一次；业务依赖同一连接上的执行顺序：存盘后紧跟一条 PING，PING 回来就判定已落盘（`player_battle.cpp:385-393`） | — | — | — | — | 集群化和托管 Redis 的硬阻塞 |
@@ -412,8 +414,9 @@
    - message.max.bytes 在生产者、topic、broker 三处对齐。
 4. **Redis**：
    - SessionReconciler 改成全服单例（etcd 选主），并在 SetOnline / SetDisconnecting 的 Lua 里维护 `gate:{uuid}:sessions` 索引，对账只读死 gate 的那个集合，存活集限定范围。
-   - 删除 `dirty_keys_set` 的 SADD（没有读者，`redis_client.h:22`、`:50`）。
+   - 删除 `dirty_keys_set` 的 SADD（没有读者，`redis_client.h:22`、`:50`）。（2026-10-16：写入已在代码中删除（已落码，未编译、未测试；全部 scene 换成新镜像前生产仍在写）。两段存盘脚本都删了 SADD，普通脚本改名 `kSaveLuaScript`，脚本只访问 KEYS[] 声明的键；上面的行号是落码前快照。写频口径：周期存盘 + 进退场约 7.8 万/s（推算），另加战斗结算、资产提交、收件箱、跨节点交接触发的事件驱动存盘（未量化）。存量清理见 [release-checklist.md](../ops/release-checklist.md) §6.1。）
    - scene_manager fullSync 的 `SCAN scene_nodes:zone:*:load`（`load_reporter.go:750`）改成显式的 zone 注册集合。
+     - （2026-10-16 状态，B0-5）已落码，未编译、未测试：fullSync 里两处全库 SCAN（另一处是孤儿清理的 `SCAN world_channels:zone:*`）都换成了登记集合 `scene_manager:zones` + 期望数 Hash 点查；有历史数据的长期环境升级时按 docs/ops/scene-node-role-split.md §6.1 一次性补登记；见 PROGRESS 同日条目。
    - friend 在线目录的 SCAN（`online_directory.go:23-26`）改走索引。
    - 显式设置 go-redis / go-zero 的 PoolSize 和 Redis 的 maxclients，按 Z 记总账。
      - （2026-10-15 补，P0-E）maxclients 与总账已落码、未经 Codex 验证：`redis.yaml` 显式 `MAXCLIENTS=40000`，总账在 `tools/scripts/k8s_deploy.ps1`「Redis 连接总账」（C++ 每进程一条，G 按 2 记，待实测），§2.5「连接数」一行的现有上限以它为准；PoolSize 仍未做。按用途拆分后，每个拆出的实例都要显式 `--maxclients`，并按用途重算总账。
@@ -435,6 +438,7 @@
   - **C++ 发现**：Gate、Scene、Login、PlayerLocator 这些 zone-scoped 类型只 watch `<Svc>.rpc/zone/<本 zone>/`。去掉每 2 秒一次的全前缀 Range，改为依赖 watch revision，只在断流或压缩后重拉；兜底周期拉长到 60 秒以上并加抖动。分配键移出发现前缀。
   - **gate 计数**：player_count 不再写 etcd，由 login 本地累加，或走 SM 已有的负载路径。
   - **scene_manager**：按 zone 选主（`scene_manager:leader:lock:zone:{z}`）；每个副本只 watch、只刷新本 zone 的节点，用 MGET 或 pipeline；每个节点的序列只由本 zone 的副本导出。
+    - （2026-10-16 状态，B0-5）负载刷新已改为领导者按 zone 批量 pipeline，保留单写者，跟随者不再读，每节点序列只由领导者导出（已落码，未编译、未测试）。按 zone 选主、只 watch 本 zone、每节点序列由本 zone 副本导出仍待做；到时可直接复用 `load_refresh.go` 的按 zone 分批形状。
   - **scene 只连本 zone 的 SM / DS**，或用一致性哈希固定连 k=2~4 个实例。
   - 跨 zone 资源（MainWorldCross / InstanceCross，`load_reporter.go:28`）保留一个全局协调者。
 - **为什么**：§2.2 里五处平方项。
@@ -548,7 +552,7 @@
     - **路线 R**：把区域单元的规模压到单主能承受（3.0），单元内维持「按用途各一个单主」。
     - **路线 C**：核心上 Redis Cluster。需要：
       - 闭包内的键统一加 `{player_id}` hash tag：PlayerAllData、`player:{id}:owner_epoch` / handoff / location、player:session、player_locker。
-      - Lua 里去掉全局键：dirty_keys_set 删掉，`player:leases*` 按 slot 分桶。
+      - Lua 里去掉全局键：dirty_keys_set 删掉，`player:leases*` 按 slot 分桶。（2026-10-16：dirty_keys_set 的写入已在代码中删除（已落码，未编译、未测试；全部 scene 换成新镜像前生产仍在写）；`player:leases*` 分桶未做。删它只是必要条件之一：守卫脚本的父键与 `owner_epoch` 键仍无共享 hash tag，C++ 也没有 MOVED/ASK 处理，不能据此称「已可上 Cluster」。）
       - 拆开跨实体的 Lua：账号外观修复、组队 S_COMMIT、离场计数；场景生命周期改按 `{zone}` 打 tag。
       - 围栏键不能在脚本里拼（`router.go:299-324`）。
       - SCAN 逐节点执行。
@@ -565,7 +569,7 @@
   - 路线 C：核心随分片数线性扩。
   - 路线 R：每单元不超过 50 万 PCU 时，拆分后核心约 3.3~4.1 万 ops/s。
 - **依赖**：
-  - A0-4 先行：去掉 SCAN、删 dirty_keys_set。
+  - A0-4 先行：去掉 SCAN、删 dirty_keys_set。（2026-10-16：dirty_keys_set 的写入已在代码中删除（已落码，未编译、未测试；全部 scene 换成新镜像前生产仍在写）；去掉 SCAN 未做。）
   - C++ 客户端替换：scene 侧任何多实例改动都以它为前置（`redis_manager.h:25-28`）。
   - 和 `db-task-pipeline-bottlenecks.md:341`「不为 Redis Cluster 改 hash tag 键名」冲突，由负责人裁决。
   - `shared-redis-split-by-purpose.md` §3.3 否决的「核心上 Cluster」要在 S2/S3 重开讨论。
@@ -659,9 +663,10 @@
 
 - **新增第 0 批**：
   - SessionReconciler 去掉全键 SCAN；
-  - 删除 dirty_keys_set；
+  - 删除 dirty_keys_set（2026-10-16：写入已在代码中删除（已落码，未编译、未测试；全部 scene 换成新镜像前生产仍在写）；存量清理见 release-checklist §6.1）；
   - task:result 分频道（从第 1 批提前）；
   - SM 负载刷新只读本 zone（属于 A1）。
+    - （2026-10-16 状态，B0-5）已用「领导者按 zone 批量刷新 + 登记集合替代 SCAN」缓解，已落码，未编译、未测试；字面的「每个副本只读本 zone」、按 zone 选主和 watch 收窄仍归 A1。
 - **第 2 批**：控制面的键都带 topic，也就是带 zone，应该按 zone 组分实例，不并进全服唯一的 redis-mapping。在线扩分区的锁是全服共享键，先删 expand 死代码再拆。
 - **第 3 批 redis-cache**：从「可选」改为必做，子表缓存要 30~600 GB。
 - **第 1c 批的映射拷贝**：这是唯一一次全量搬键的停写窗口。
@@ -824,7 +829,7 @@ S2/S3 不做全量演练，按「单元容量 × 单元数」线性外推，前�
 **读档**
 - [C] `go/login/internal/logic/pkg/dataloader/ensure_player_all_data_async.go:56-93`、`:157-207`；`go/login/internal/logic/clientplayerlogin/entergamelogic.go:380`、`:712`
 - [C] `go/login/internal/dispatcher/task_result_dispatcher.go:26-32`、`:226-232`
-- [C] `cpp/libs/engine/infra/storage/redis_client/redis_client.h:20-24`、`:42-52`
+- [C] `cpp/libs/engine/infra/storage/redis_client/redis_client.h:20-24`、`:42-52`（2026-10-16：落码前行号；同日该文件删 SADD、加注释，行号整体后移，现按 `kSaveLuaScript` / `kSaveIfGuardLuaScript` 定位）
 - [D] `docs/design/new-player-first-enter-no-cold-read.md` §1、§13（本次抽查：开关默认关，已按默认值落码，未验证）
 
 **共享 Redis**

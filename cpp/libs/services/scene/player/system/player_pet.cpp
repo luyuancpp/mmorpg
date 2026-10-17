@@ -42,10 +42,6 @@ namespace {
 using attributerules::AllocError;
 using attributerules::PoolRule;
 
-uint64_t GuidForLog(entt::entity player) {
-	const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-	return guid != nullptr ? guid->value : 0;
-}
 
 // 依赖主人等级的初始化、重算、召唤、加点、洗点和发放入口必须先取到 LevelComp,
 // 再执行任何持久数据修补、扣费或铸号。列表与交易快照还原只读宠物已存等级,不加此依赖。
@@ -53,7 +49,7 @@ std::optional<uint32_t> OwnerLevel(entt::entity player) {
 	const auto* levelComp = tlsEcs.actorRegistry.try_get<LevelComp>(player);
 	if (levelComp == nullptr) {
 		LOG_ERROR << "[PlayerPet] LevelComp missing (load invariant broken); owner-level operation skipped: entity="
-				  << entt::to_integral(player) << " player_id=" << GuidForLog(player);
+				  << entt::to_integral(player) << " player_id=" << tlsEcs.GetPlayerId(player);
 		return std::nullopt;
 	}
 	// 新角色加载期间的零等级仍按既有规则归一成1;组件缺失不能走这条存量兼容分支。
@@ -226,7 +222,7 @@ PlayerPetComp* FindComp(entt::entity player) {
 	auto* comp = tlsEcs.actorRegistry.try_get<PlayerPetComp>(player);
 	if (comp == nullptr) {
 		LOG_ERROR << "[PlayerPet] PlayerPetComp missing (load path incomplete?): entity=" << entt::to_integral(player)
-				  << " player_id=" << GuidForLog(player);
+				  << " player_id=" << tlsEcs.GetPlayerId(player);
 	}
 	return comp;
 }
@@ -250,7 +246,7 @@ uint32_t CheckWritable(entt::entity player) {
 		return kEntityIsNull;
 	}
 	if (tlsEcs.actorRegistry.any_of<PlayerFrozenComp>(player)) {
-		LOG_WARN << "[PlayerPet] Rejected: cross-zone freeze in progress player_id=" << GuidForLog(player);
+		LOG_WARN << "[PlayerPet] Rejected: cross-zone freeze in progress player_id=" << tlsEcs.GetPlayerId(player);
 		return kInvalidParameter;
 	}
 	if (PlayerBattleSystem::IsInBattle(player)) {
@@ -335,23 +331,22 @@ bool RecalculateOne(entt::entity player, uint32_t ownerLevel, PetInstance& pet, 
 	const auto* row = PetRow(pet.pet_table_id());
 	if (row == nullptr) {
 		// 种类行被删/改表:保留实例(玩家资产不能悄悄没),召唤时拒绝,这里只告警
-		LOG_WARN << "[PlayerPet] Species row missing;recalculation skipped: player_id=" << GuidForLog(player)
+		LOG_WARN << "[PlayerPet] Species row missing;recalculation skipped: player_id=" << tlsEcs.GetPlayerId(player)
 				 << " pet_id=" << pet.pet_id() << " pet_table_id=" << pet.pet_table_id();
 		return false;
 	}
 
 	const auto oldLevel = pet.level();
-	const auto newLevel = petrules::EffectiveLevel(ownerLevel, row->level_cap());
+	// 成长属于实例，换低级主人或主人降级不能删除已获得等级与加点。
+	const auto newLevel = std::max(oldLevel, petrules::EffectiveLevel(ownerLevel, row->level_cap()));
 	const auto oldDerived = previous != nullptr ? *previous : ComputeDerived(pet, *row, pool.id());
 	pet.set_level(newLevel);
 
-	// 已分配 > 总量的收敛(等级下降 / 改表缩点):整池清零返还,口径与角色一致。
-	// ⚠ 跨等级交易(聚宝斋 P2)会撞上这条:高级卖家的宝宝还原给低级买家后,下一次重算
-	// 就会清空全部加点。RestorePetFromSnapshot 只保住了还原那一刻,产品口径待定(J-O2)。
+	// 配表缩点造成的非法分配仍按池规则收敛；主人的等级下降不会降低宝宝等级。
 	const auto total = attributerules::TotalPoints(ToRule(pool), newLevel, 0);
 	if (UsedPoints(pet) > total) {
 		pet.mutable_allocated()->clear();
-		LOG_WARN << "[PlayerPet] Allocation exceeds total;reset and refunded: player_id=" << GuidForLog(player)
+		LOG_WARN << "[PlayerPet] Allocation exceeds total;reset and refunded: player_id=" << tlsEcs.GetPlayerId(player)
 				 << " pet_id=" << pet.pet_id() << " total=" << total;
 	}
 
@@ -454,7 +449,7 @@ void PetSystem::InitializeOnLoad(entt::entity player) {
 	auto& comp = *petComp;
 	// 出战指向一只已不存在的宝宝(异常存档 / 二期放生后的残留):就地纠正为未出战
 	if (comp.active_pet_id() != 0 && FindPet(comp, comp.active_pet_id()) == nullptr) {
-		LOG_WARN << "[PlayerPet] active_pet_id points to nonexistent pet;cleared: player_id=" << GuidForLog(player)
+		LOG_WARN << "[PlayerPet] active_pet_id points to nonexistent pet;cleared: player_id=" << tlsEcs.GetPlayerId(player)
 				 << " active_pet_id=" << comp.active_pet_id();
 		comp.set_active_pet_id(0);
 	}
@@ -487,6 +482,9 @@ void PetSystem::RecalculateAll(entt::entity player, RecalcReason reason) {
 	}
 	for (auto& pet : *comp.mutable_pets()) {
 		RecalculateOne(player, *ownerLevel, pet, *pool, reason);
+	}
+	if (const auto* active = FindPet(comp, comp.active_pet_id()); active != nullptr && *ownerLevel < active->level()) {
+		comp.set_active_pet_id(0);
 	}
 }
 
@@ -541,11 +539,11 @@ uint32_t PetSystem::Summon(entt::entity player, uint64_t petId) {
 	if (row == nullptr) {
 		return kPetTableRowMissing;
 	}
-	if (*ownerLevel < row->unlock_level()) {
+	if (*ownerLevel < row->unlock_level() || *ownerLevel < pet->level()) {
 		return kPetOwnerLevelNotEnough;
 	}
 	comp.set_active_pet_id(petId);
-	LOG_INFO << "[PlayerPet] Deployed: player_id=" << GuidForLog(player) << " pet_id=" << petId
+	LOG_INFO << "[PlayerPet] Deployed: player_id=" << tlsEcs.GetPlayerId(player) << " pet_id=" << petId
 			 << " pet_table_id=" << pet->pet_table_id();
 	return kSuccess;
 }
@@ -562,7 +560,7 @@ uint32_t PetSystem::Recall(entt::entity player) {
 	if (comp.active_pet_id() == 0) {
 		return kPetNotActive;
 	}
-	LOG_INFO << "[PlayerPet] Recalled: player_id=" << GuidForLog(player)
+	LOG_INFO << "[PlayerPet] Recalled: player_id=" << tlsEcs.GetPlayerId(player)
 			 << " pet_id=" << comp.active_pet_id();
 	comp.set_active_pet_id(0);
 	return kSuccess;
@@ -615,7 +613,7 @@ uint32_t PetSystem::Allocate(entt::entity player, uint64_t petId,
 		(*pet->mutable_allocated())[dimensionId] = want;
 	}
 	RecalculateOne(player, *ownerLevel, *pet, *pool, RecalcReason::kAllocate, &before);
-	LOG_INFO << "[PlayerPet] Points allocated: player_id=" << GuidForLog(player) << " pet_id=" << petId
+	LOG_INFO << "[PlayerPet] Points allocated: player_id=" << tlsEcs.GetPlayerId(player) << " pet_id=" << petId
 			 << " delta=" << delta << " remaining=" << (remaining - delta);
 	return kSuccess;
 }
@@ -663,7 +661,7 @@ uint32_t PetSystem::Reset(entt::entity player, uint64_t petId) {
 	const auto before = ComputeDerived(*pet, *row, pool->id());
 	pet->mutable_allocated()->clear();
 	RecalculateOne(player, *ownerLevel, *pet, *pool, RecalcReason::kReset, &before);
-	LOG_INFO << "[PlayerPet] Points reset: player_id=" << GuidForLog(player) << " pet_id=" << petId
+	LOG_INFO << "[PlayerPet] Points reset: player_id=" << tlsEcs.GetPlayerId(player) << " pet_id=" << petId
 			 << " cost_gold=" << cost;
 	return kSuccess;
 }
@@ -795,7 +793,7 @@ uint32_t PetSystem::GrantPet(entt::entity player, uint32_t petTableId, uint64_t&
 	Guid petId = kInvalidGuid;
 	if (!tlsGuidSegmentRegistry.Get(GuidKind::kItem).TryNext(petId)) {
 		LOG_ERROR << "[PlayerPet] Failed to allocate pet_id(item segment not ready or exhausted): player_id="
-				  << GuidForLog(player);
+				  << tlsEcs.GetPlayerId(player);
 		return kPetIdGenerateFailed;
 	}
 
@@ -836,7 +834,7 @@ uint32_t PetSystem::GrantPet(entt::entity player, uint32_t petTableId, uint64_t&
 	// 停在发放那一刻的技能表。实例里的 skill_table_ids 只留给二期的技能书学习。
 
 	petIdOut = petId;
-	LOG_INFO << "[PlayerPet] Pet granted: player_id=" << GuidForLog(player) << " pet_id=" << petId
+	LOG_INFO << "[PlayerPet] Pet granted: player_id=" << tlsEcs.GetPlayerId(player) << " pet_id=" << petId
 			 << " pet_table_id=" << petTableId << " level=" << pet->level();
 	return kSuccess;
 }
@@ -874,7 +872,7 @@ uint32_t PetSystem::RemovePetForTrade(entt::entity player, uint64_t petId, PetIn
 	// 先整条拷出再删:删完就没有第二次机会取快照了,而快照是托管期间唯一的权威副本。
 	snapshotOut = comp.pets(index);
 	comp.mutable_pets()->DeleteSubrange(index, 1);
-	LOG_INFO << "[PlayerPet] Pet removed for trade: player_id=" << GuidForLog(player) << " pet_id=" << petId
+	LOG_INFO << "[PlayerPet] Pet removed for trade: player_id=" << tlsEcs.GetPlayerId(player) << " pet_id=" << petId
 			 << " pet_table_id=" << snapshotOut.pet_table_id() << " level=" << snapshotOut.level()
 			 << " left=" << comp.pets_size();
 	return kSuccess;
@@ -886,7 +884,7 @@ uint32_t PetSystem::RestorePetFromSnapshot(entt::entity player, const PetInstanc
 		return kEntityIsNull;
 	}
 	if (snapshot.pet_id() == 0 || snapshot.pet_table_id() == 0) {
-		LOG_ERROR << "[PlayerPet] Restore rejected: snapshot fields missing, player_id=" << GuidForLog(player)
+		LOG_ERROR << "[PlayerPet] Restore rejected: snapshot fields missing, player_id=" << tlsEcs.GetPlayerId(player)
 				  << " pet_id=" << snapshot.pet_id() << " pet_table_id=" << snapshot.pet_table_id();
 		return kInvalidParameter;
 	}
@@ -898,7 +896,7 @@ uint32_t PetSystem::RestorePetFromSnapshot(entt::entity player, const PetInstanc
 	// 撞号:同一 pet_id 已在名下。资产通道的 seq 账本负责幂等,所以走到这里的重复只可能是
 	// 数据事故(号段回退 / 快照被复制过),必须拒绝而不是覆盖 —— 覆盖会静默吃掉一只宝宝。
 	if (FindPet(comp, snapshot.pet_id()) != nullptr) {
-		LOG_ERROR << "[PlayerPet] Restore rejected: ID collision, player_id=" << GuidForLog(player)
+		LOG_ERROR << "[PlayerPet] Restore rejected: ID collision, player_id=" << tlsEcs.GetPlayerId(player)
 				  << " pet_id=" << snapshot.pet_id();
 		return kInvalidParameter;
 	}
@@ -910,48 +908,12 @@ uint32_t PetSystem::RestorePetFromSnapshot(entt::entity player, const PetInstanc
 	auto* pet = comp.add_pets();
 	*pet = snapshot;
 
-	// **不调用 RecalculateOne**:它会把 level 同步成 min(新主人等级, level_cap),
-	// 随后发现 UsedPoints > TotalPoints(新等级) 就整池 clear() —— 85 级卖家的宝宝还原给
-	// 10 级买家会当场清空全部加点。这里按"不收敛"口径原样保留 level 与 allocated 分布。
-	// 注意这只挡住了还原这一刻:下次 InitializeOnLoad / 主人升级触发的 RecalculateAll 仍会
-	// 按现有口径清池(跨等级交易的产品口径待定,交付说明记为 J-O2)。
-	//
-	// 防御性处理,顺序不能反:**先**把 level 夹回种类上限,**再**算上限夹当前 HP/MP。
-	//
-	// 反过来(直接拿快照现算)那一夹是恒等式:ComputeDerived 把 pet.level() 喂给
-	// petrules::ComputeDerived,level=999 的快照算出的也是 999 级的 maxHealth,
-	// std::min 恒成立,等于什么都没挡住。快照在托管期间存在交易库里(不在 scene 的
-	// 玩家存档里),写坏或被改时它是唯一的输入,这里是仓库里唯一不设界的宠物写入口 ——
-	// GrantPet 走 EffectiveLevel(主人等级, level_cap),RecalculateOne 每次重算也走它。
-	//
-	// level_cap 缺配(0)时不夹,与 petrules::EffectiveLevel 同口径。
-	// 合法快照不受影响:卖家侧的 level 本来就 = EffectiveLevel(…) <= level_cap,夹一次是恒等。
-	//
-	// **资质没有夹**:GrantPet 是"出生即定终身",策划事后改窄 [aptitude_min, aptitude_max]
-	// 之后,夹一次就等于交易本身悄悄改了这只宝宝的资质,和没交易过的同类宝宝分叉。
-	// 宁可不动。也就是说这道防线只覆盖 level,不覆盖资质 —— 交付说明里记为开放项。
-	if (const auto* row = PetRow(pet->pet_table_id()); row != nullptr) {
-		if (row->level_cap() > 0 && pet->level() > row->level_cap()) {
-			LOG_ERROR << "[PlayerPet] Restored snapshot level exceeds species limit;clamped: player_id=" << GuidForLog(player)
-					  << " pet_id=" << pet->pet_id() << " pet_table_id=" << pet->pet_table_id()
-					  << " snapshot_level=" << pet->level() << " level_cap=" << row->level_cap();
-			pet->set_level(row->level_cap());
-		}
-		if (const auto* pool = PetPool(); pool != nullptr) {
-			const auto derived = ComputeDerived(*pet, *row, pool->id());
-			pet->set_health(std::min(pet->health(), derived.maxHealth));
-			if (derived.maxMana > 0) {
-				pet->set_mana(std::min(pet->mana(), derived.maxMana));
-			}
-		}
-	} else {
-		// 种类行缺失只告警不拒绝:拒绝等于这只宝宝既回不到卖家也到不了买家(玩家资产不能悄悄没),
-		// 与 RecalculateOne 对缺表行的处置同口径。
-		LOG_WARN << "[PlayerPet] Species row missing during restore;pet restored anyway: player_id=" << GuidForLog(player)
-				 << " pet_id=" << pet->pet_id() << " pet_table_id=" << pet->pet_table_id();
-	}
+	// 还原不触发升级或重掷；后续重算也不会因主人等级较低而降低既有成长。
+	// 召唤和战斗入口独立复核主人等级，不能借交易让低级主人使用高级宝宝。
+	// 这里是已有实例移动，不是创建。配置调低cap不能把托管的合法资产改写成另一只。
+	// 身份、配置存在、字节上限等不可信输入校验由AssetOp在任何副作用前完成。
 
-	LOG_INFO << "[PlayerPet] Traded pet restored: player_id=" << GuidForLog(player)
+	LOG_INFO << "[PlayerPet] Traded pet restored: player_id=" << tlsEcs.GetPlayerId(player)
 			 << " pet_id=" << pet->pet_id() << " pet_table_id=" << pet->pet_table_id()
 			 << " level=" << pet->level()
 			 << " total=" << comp.pets_size();
@@ -962,7 +924,8 @@ bool PetSystem::BuildBattleSnapshot(entt::entity player, ::BattlePetSnapshot& sn
 	if (!tlsEcs.actorRegistry.valid(player)) {
 		return false;
 	}
-	// 只读路径:缺组件按「没有出战宝宝」处理(FindComp 已记错误),玩家本人照常进战斗。
+	// 缺 PlayerPetComp 是加载故障(FindComp 已记 ERROR)。本函数的 false 分不清缺组件和没有出战宝宝，
+	// 调用方须先确认组件存在；唯一调用方 PlayerBattleSystem::BuildBattleSnapshot 已在 all_of 中拒绝缺失。
 	const auto* petComp = FindComp(player);
 	if (petComp == nullptr) {
 		return false;
@@ -975,10 +938,12 @@ bool PetSystem::BuildBattleSnapshot(entt::entity player, ::BattlePetSnapshot& sn
 	if (pet == nullptr) {
 		return false;
 	}
+	const auto ownerLevel = OwnerLevel(player);
+	if (!ownerLevel.has_value() || *ownerLevel < pet->level()) return false;
 	const auto* row = PetRow(pet->pet_table_id());
 	const auto* pool = PetPool();
 	if (row == nullptr || pool == nullptr) {
-		LOG_WARN << "[PlayerPet] Deployed pet has no table row;pet excluded from this battle: player_id=" << GuidForLog(player)
+		LOG_WARN << "[PlayerPet] Deployed pet has no table row;pet excluded from this battle: player_id=" << tlsEcs.GetPlayerId(player)
 				 << " pet_id=" << pet->pet_id() << " pet_table_id=" << pet->pet_table_id();
 		return false;
 	}
@@ -989,7 +954,7 @@ bool PetSystem::BuildBattleSnapshot(entt::entity player, ::BattlePetSnapshot& sn
 
 	const auto derived = ComputeDerived(*pet, *row, pool->id());
 	snapshot.set_pet_id(pet->pet_id());
-	snapshot.set_owner_player_id(GuidForLog(player));
+	snapshot.set_owner_player_id(tlsEcs.GetPlayerId(player));
 	snapshot.set_pet_name(!pet->name().empty() ? pet->name() : row->name());
 	snapshot.set_pet_table_id(pet->pet_table_id());
 	snapshot.set_level(pet->level());
@@ -1021,7 +986,7 @@ void PetSystem::ApplyBattleSettlement(entt::entity player, const ::BattlePetSett
 	auto& comp = *petComp;
 	auto* pet = FindPet(comp, settlement.pet_id());
 	if (pet == nullptr) {
-		LOG_WARN << "[PlayerPet] Settlement pet_id does not belong to player;ignored: player_id=" << GuidForLog(player)
+		LOG_WARN << "[PlayerPet] Settlement pet_id does not belong to player;ignored: player_id=" << tlsEcs.GetPlayerId(player)
 				 << " pet_id=" << settlement.pet_id();
 		return;
 	}
@@ -1038,7 +1003,7 @@ void PetSystem::ApplyBattleSettlement(entt::entity player, const ::BattlePetSett
 	if (settlement.is_dead() || pet->health() == 0) {
 		pet->set_health(derived.maxHealth);
 		pet->set_mana(derived.maxMana);
-		LOG_INFO << "[PlayerPet] Dead pet restored to full health: player_id=" << GuidForLog(player)
+		LOG_INFO << "[PlayerPet] Dead pet restored to full health: player_id=" << tlsEcs.GetPlayerId(player)
 				 << " pet_id=" << pet->pet_id();
 	}
 }

@@ -21,59 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Routing node info
-type RoutingNodeInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeInfo      *NodeInfo              `protobuf:"bytes,1,opt,name=node_info,json=nodeInfo,proto3" json:"node_info,omitempty"`     // Node info
-	MessageId     uint32                 `protobuf:"varint,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"` // Message ID
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RoutingNodeInfo) Reset() {
-	*x = RoutingNodeInfo{}
-	mi := &file_proto_common_base_message_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RoutingNodeInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RoutingNodeInfo) ProtoMessage() {}
-
-func (x *RoutingNodeInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RoutingNodeInfo.ProtoReflect.Descriptor instead.
-func (*RoutingNodeInfo) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *RoutingNodeInfo) GetNodeInfo() *NodeInfo {
-	if x != nil {
-		return x.NodeInfo
-	}
-	return nil
-}
-
-func (x *RoutingNodeInfo) GetMessageId() uint32 {
-	if x != nil {
-		return x.MessageId
-	}
-	return 0
-}
-
 // Message content
 type MessageContent struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
@@ -87,7 +34,7 @@ type MessageContent struct {
 
 func (x *MessageContent) Reset() {
 	*x = MessageContent{}
-	mi := &file_proto_common_base_message_proto_msgTypes[1]
+	mi := &file_proto_common_base_message_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -99,7 +46,7 @@ func (x *MessageContent) String() string {
 func (*MessageContent) ProtoMessage() {}
 
 func (x *MessageContent) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[1]
+	mi := &file_proto_common_base_message_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -112,7 +59,7 @@ func (x *MessageContent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageContent.ProtoReflect.Descriptor instead.
 func (*MessageContent) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{1}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *MessageContent) GetSerializedMessage() []byte {
@@ -166,7 +113,7 @@ type NodeMessageHeader struct {
 
 func (x *NodeMessageHeader) Reset() {
 	*x = NodeMessageHeader{}
-	mi := &file_proto_common_base_message_proto_msgTypes[2]
+	mi := &file_proto_common_base_message_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -178,7 +125,7 @@ func (x *NodeMessageHeader) String() string {
 func (*NodeMessageHeader) ProtoMessage() {}
 
 func (x *NodeMessageHeader) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[2]
+	mi := &file_proto_common_base_message_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -191,7 +138,7 @@ func (x *NodeMessageHeader) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeMessageHeader.ProtoReflect.Descriptor instead.
 func (*NodeMessageHeader) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{2}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *NodeMessageHeader) GetNodeId() uint32 {
@@ -226,7 +173,7 @@ type NodeRouteMessageRequest struct {
 
 func (x *NodeRouteMessageRequest) Reset() {
 	*x = NodeRouteMessageRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[3]
+	mi := &file_proto_common_base_message_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -238,7 +185,7 @@ func (x *NodeRouteMessageRequest) String() string {
 func (*NodeRouteMessageRequest) ProtoMessage() {}
 
 func (x *NodeRouteMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[3]
+	mi := &file_proto_common_base_message_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -251,7 +198,7 @@ func (x *NodeRouteMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeRouteMessageRequest.ProtoReflect.Descriptor instead.
 func (*NodeRouteMessageRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{3}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *NodeRouteMessageRequest) GetMessageContent() *MessageContent {
@@ -268,59 +215,6 @@ func (x *NodeRouteMessageRequest) GetHeader() *NodeMessageHeader {
 	return nil
 }
 
-// Node route message response
-type NodeRouteMessageResponse struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	MessageContent *MessageContent        `protobuf:"bytes,1,opt,name=message_content,json=messageContent,proto3" json:"message_content,omitempty"` // Message content
-	Header         *NodeMessageHeader     `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`                                       // Node message header
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *NodeRouteMessageResponse) Reset() {
-	*x = NodeRouteMessageResponse{}
-	mi := &file_proto_common_base_message_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *NodeRouteMessageResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NodeRouteMessageResponse) ProtoMessage() {}
-
-func (x *NodeRouteMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NodeRouteMessageResponse.ProtoReflect.Descriptor instead.
-func (*NodeRouteMessageResponse) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *NodeRouteMessageResponse) GetMessageContent() *MessageContent {
-	if x != nil {
-		return x.MessageContent
-	}
-	return nil
-}
-
-func (x *NodeRouteMessageResponse) GetHeader() *NodeMessageHeader {
-	if x != nil {
-		return x.Header
-	}
-	return nil
-}
-
 // Player info (external)
 type PlayerInfoExternal struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -331,7 +225,7 @@ type PlayerInfoExternal struct {
 
 func (x *PlayerInfoExternal) Reset() {
 	*x = PlayerInfoExternal{}
-	mi := &file_proto_common_base_message_proto_msgTypes[5]
+	mi := &file_proto_common_base_message_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -343,7 +237,7 @@ func (x *PlayerInfoExternal) String() string {
 func (*PlayerInfoExternal) ProtoMessage() {}
 
 func (x *PlayerInfoExternal) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[5]
+	mi := &file_proto_common_base_message_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -356,7 +250,7 @@ func (x *PlayerInfoExternal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerInfoExternal.ProtoReflect.Descriptor instead.
 func (*PlayerInfoExternal) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{5}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PlayerInfoExternal) GetPlayerId() uint64 {
@@ -377,7 +271,7 @@ type PlayerNodeServiceRequest struct {
 
 func (x *PlayerNodeServiceRequest) Reset() {
 	*x = PlayerNodeServiceRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[6]
+	mi := &file_proto_common_base_message_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -389,7 +283,7 @@ func (x *PlayerNodeServiceRequest) String() string {
 func (*PlayerNodeServiceRequest) ProtoMessage() {}
 
 func (x *PlayerNodeServiceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[6]
+	mi := &file_proto_common_base_message_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -402,7 +296,7 @@ func (x *PlayerNodeServiceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerNodeServiceRequest.ProtoReflect.Descriptor instead.
 func (*PlayerNodeServiceRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{6}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PlayerNodeServiceRequest) GetMessageContent() *MessageContent {
@@ -430,7 +324,7 @@ type PlayerMessageResponse struct {
 
 func (x *PlayerMessageResponse) Reset() {
 	*x = PlayerMessageResponse{}
-	mi := &file_proto_common_base_message_proto_msgTypes[7]
+	mi := &file_proto_common_base_message_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -442,7 +336,7 @@ func (x *PlayerMessageResponse) String() string {
 func (*PlayerMessageResponse) ProtoMessage() {}
 
 func (x *PlayerMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[7]
+	mi := &file_proto_common_base_message_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -455,7 +349,7 @@ func (x *PlayerMessageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerMessageResponse.ProtoReflect.Descriptor instead.
 func (*PlayerMessageResponse) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{7}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *PlayerMessageResponse) GetMessageContent() *MessageContent {
@@ -482,7 +376,7 @@ type NodeRoutingMessageBody struct {
 
 func (x *NodeRoutingMessageBody) Reset() {
 	*x = NodeRoutingMessageBody{}
-	mi := &file_proto_common_base_message_proto_msgTypes[8]
+	mi := &file_proto_common_base_message_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -494,7 +388,7 @@ func (x *NodeRoutingMessageBody) String() string {
 func (*NodeRoutingMessageBody) ProtoMessage() {}
 
 func (x *NodeRoutingMessageBody) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[8]
+	mi := &file_proto_common_base_message_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -507,110 +401,12 @@ func (x *NodeRoutingMessageBody) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeRoutingMessageBody.ProtoReflect.Descriptor instead.
 func (*NodeRoutingMessageBody) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{8}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *NodeRoutingMessageBody) GetNodeInfo() *NodeInfo {
 	if x != nil {
 		return x.NodeInfo
-	}
-	return nil
-}
-
-// Register scene node session request
-type RegisterGameNodeSessionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"`    // Session details
-	SceneNodeId   uint32                 `protobuf:"varint,2,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"` // Scene node ID
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RegisterGameNodeSessionRequest) Reset() {
-	*x = RegisterGameNodeSessionRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RegisterGameNodeSessionRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RegisterGameNodeSessionRequest) ProtoMessage() {}
-
-func (x *RegisterGameNodeSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RegisterGameNodeSessionRequest.ProtoReflect.Descriptor instead.
-func (*RegisterGameNodeSessionRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *RegisterGameNodeSessionRequest) GetSessionInfo() *SessionDetails {
-	if x != nil {
-		return x.SessionInfo
-	}
-	return nil
-}
-
-func (x *RegisterGameNodeSessionRequest) GetSceneNodeId() uint32 {
-	if x != nil {
-		return x.SceneNodeId
-	}
-	return 0
-}
-
-// Register scene node session response
-type RegisterGameNodeSessionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionInfo   *SessionDetails        `protobuf:"bytes,1,opt,name=session_info,json=sessionInfo,proto3" json:"session_info,omitempty"` // Session details
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RegisterGameNodeSessionResponse) Reset() {
-	*x = RegisterGameNodeSessionResponse{}
-	mi := &file_proto_common_base_message_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RegisterGameNodeSessionResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RegisterGameNodeSessionResponse) ProtoMessage() {}
-
-func (x *RegisterGameNodeSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RegisterGameNodeSessionResponse.ProtoReflect.Descriptor instead.
-func (*RegisterGameNodeSessionResponse) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *RegisterGameNodeSessionResponse) GetSessionInfo() *SessionDetails {
-	if x != nil {
-		return x.SessionInfo
 	}
 	return nil
 }
@@ -625,7 +421,7 @@ type RegisterGateNodeSessionResponse struct {
 
 func (x *RegisterGateNodeSessionResponse) Reset() {
 	*x = RegisterGateNodeSessionResponse{}
-	mi := &file_proto_common_base_message_proto_msgTypes[11]
+	mi := &file_proto_common_base_message_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -637,7 +433,7 @@ func (x *RegisterGateNodeSessionResponse) String() string {
 func (*RegisterGateNodeSessionResponse) ProtoMessage() {}
 
 func (x *RegisterGateNodeSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[11]
+	mi := &file_proto_common_base_message_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -650,7 +446,7 @@ func (x *RegisterGateNodeSessionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterGateNodeSessionResponse.ProtoReflect.Descriptor instead.
 func (*RegisterGateNodeSessionResponse) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{11}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RegisterGateNodeSessionResponse) GetSessionInfo() *SessionDetails {
@@ -670,7 +466,7 @@ type GateSessionDisconnectRequest struct {
 
 func (x *GateSessionDisconnectRequest) Reset() {
 	*x = GateSessionDisconnectRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[12]
+	mi := &file_proto_common_base_message_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -682,7 +478,7 @@ func (x *GateSessionDisconnectRequest) String() string {
 func (*GateSessionDisconnectRequest) ProtoMessage() {}
 
 func (x *GateSessionDisconnectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[12]
+	mi := &file_proto_common_base_message_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -695,288 +491,12 @@ func (x *GateSessionDisconnectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GateSessionDisconnectRequest.ProtoReflect.Descriptor instead.
 func (*GateSessionDisconnectRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{12}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GateSessionDisconnectRequest) GetSessionInfo() *SessionDetails {
 	if x != nil {
 		return x.SessionInfo
-	}
-	return nil
-}
-
-// Route message request (bytes form)
-type RouteMessageRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // Message body (bytes)
-	RouteNodes    []*RoutingNodeInfo     `protobuf:"bytes,2,rep,name=route_nodes,json=routeNodes,proto3" json:"route_nodes,omitempty"` // Routing node list
-	SessionId     uint32                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`   // Session ID
-	Id            uint64                 `protobuf:"varint,4,opt,name=id,proto3" json:"id,omitempty"`                                  // Unique message ID
-	IsClient      bool                   `protobuf:"varint,5,opt,name=is_client,json=isClient,proto3" json:"is_client,omitempty"`      // Whether from client
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RouteMessageRequest) Reset() {
-	*x = RouteMessageRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RouteMessageRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RouteMessageRequest) ProtoMessage() {}
-
-func (x *RouteMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RouteMessageRequest.ProtoReflect.Descriptor instead.
-func (*RouteMessageRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *RouteMessageRequest) GetBody() []byte {
-	if x != nil {
-		return x.Body
-	}
-	return nil
-}
-
-func (x *RouteMessageRequest) GetRouteNodes() []*RoutingNodeInfo {
-	if x != nil {
-		return x.RouteNodes
-	}
-	return nil
-}
-
-func (x *RouteMessageRequest) GetSessionId() uint32 {
-	if x != nil {
-		return x.SessionId
-	}
-	return 0
-}
-
-func (x *RouteMessageRequest) GetId() uint64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-func (x *RouteMessageRequest) GetIsClient() bool {
-	if x != nil {
-		return x.IsClient
-	}
-	return false
-}
-
-// Route message response (bytes form)
-type RouteMessageResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // Message body (bytes)
-	RouteNodes    []*RoutingNodeInfo     `protobuf:"bytes,2,rep,name=route_nodes,json=routeNodes,proto3" json:"route_nodes,omitempty"` // Routing node list
-	SessionId     uint32                 `protobuf:"varint,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`   // Session ID
-	Id            uint64                 `protobuf:"varint,4,opt,name=id,proto3" json:"id,omitempty"`                                  // Unique message ID
-	IsClient      bool                   `protobuf:"varint,5,opt,name=is_client,json=isClient,proto3" json:"is_client,omitempty"`      // Whether from client
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RouteMessageResponse) Reset() {
-	*x = RouteMessageResponse{}
-	mi := &file_proto_common_base_message_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RouteMessageResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RouteMessageResponse) ProtoMessage() {}
-
-func (x *RouteMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RouteMessageResponse.ProtoReflect.Descriptor instead.
-func (*RouteMessageResponse) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *RouteMessageResponse) GetBody() []byte {
-	if x != nil {
-		return x.Body
-	}
-	return nil
-}
-
-func (x *RouteMessageResponse) GetRouteNodes() []*RoutingNodeInfo {
-	if x != nil {
-		return x.RouteNodes
-	}
-	return nil
-}
-
-func (x *RouteMessageResponse) GetSessionId() uint32 {
-	if x != nil {
-		return x.SessionId
-	}
-	return 0
-}
-
-func (x *RouteMessageResponse) GetId() uint64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-func (x *RouteMessageResponse) GetIsClient() bool {
-	if x != nil {
-		return x.IsClient
-	}
-	return false
-}
-
-// Route player message request (bytes form)
-type RoutePlayerMessageRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // Message body (bytes)
-	NodeList      []*NodeInfo            `protobuf:"bytes,2,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`       // Node list
-	PlayerInfo    *PlayerInfoExternal    `protobuf:"bytes,3,opt,name=player_info,json=playerInfo,proto3" json:"player_info,omitempty"` // Player info
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RoutePlayerMessageRequest) Reset() {
-	*x = RoutePlayerMessageRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RoutePlayerMessageRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RoutePlayerMessageRequest) ProtoMessage() {}
-
-func (x *RoutePlayerMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RoutePlayerMessageRequest.ProtoReflect.Descriptor instead.
-func (*RoutePlayerMessageRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{15}
-}
-
-func (x *RoutePlayerMessageRequest) GetBody() []byte {
-	if x != nil {
-		return x.Body
-	}
-	return nil
-}
-
-func (x *RoutePlayerMessageRequest) GetNodeList() []*NodeInfo {
-	if x != nil {
-		return x.NodeList
-	}
-	return nil
-}
-
-func (x *RoutePlayerMessageRequest) GetPlayerInfo() *PlayerInfoExternal {
-	if x != nil {
-		return x.PlayerInfo
-	}
-	return nil
-}
-
-// Route player message response (bytes form)
-type RoutePlayerMessageResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Body          []byte                 `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`                               // Message body (bytes)
-	NodeList      []*NodeInfo            `protobuf:"bytes,2,rep,name=node_list,json=nodeList,proto3" json:"node_list,omitempty"`       // Node list
-	PlayerInfo    *PlayerInfoExternal    `protobuf:"bytes,3,opt,name=player_info,json=playerInfo,proto3" json:"player_info,omitempty"` // Player info
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RoutePlayerMessageResponse) Reset() {
-	*x = RoutePlayerMessageResponse{}
-	mi := &file_proto_common_base_message_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RoutePlayerMessageResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RoutePlayerMessageResponse) ProtoMessage() {}
-
-func (x *RoutePlayerMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RoutePlayerMessageResponse.ProtoReflect.Descriptor instead.
-func (*RoutePlayerMessageResponse) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *RoutePlayerMessageResponse) GetBody() []byte {
-	if x != nil {
-		return x.Body
-	}
-	return nil
-}
-
-func (x *RoutePlayerMessageResponse) GetNodeList() []*NodeInfo {
-	if x != nil {
-		return x.NodeList
-	}
-	return nil
-}
-
-func (x *RoutePlayerMessageResponse) GetPlayerInfo() *PlayerInfoExternal {
-	if x != nil {
-		return x.PlayerInfo
 	}
 	return nil
 }
@@ -995,7 +515,7 @@ type RegisterGameNodeRequest struct {
 
 func (x *RegisterGameNodeRequest) Reset() {
 	*x = RegisterGameNodeRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[17]
+	mi := &file_proto_common_base_message_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1007,7 +527,7 @@ func (x *RegisterGameNodeRequest) String() string {
 func (*RegisterGameNodeRequest) ProtoMessage() {}
 
 func (x *RegisterGameNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[17]
+	mi := &file_proto_common_base_message_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1020,7 +540,7 @@ func (x *RegisterGameNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterGameNodeRequest.ProtoReflect.Descriptor instead.
 func (*RegisterGameNodeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{17}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RegisterGameNodeRequest) GetRpcClient() *NetworkAddress {
@@ -1069,7 +589,7 @@ type RegisterGateNodeRequest struct {
 
 func (x *RegisterGateNodeRequest) Reset() {
 	*x = RegisterGateNodeRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[18]
+	mi := &file_proto_common_base_message_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1081,7 +601,7 @@ func (x *RegisterGateNodeRequest) String() string {
 func (*RegisterGateNodeRequest) ProtoMessage() {}
 
 func (x *RegisterGateNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[18]
+	mi := &file_proto_common_base_message_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1094,7 +614,7 @@ func (x *RegisterGateNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterGateNodeRequest.ProtoReflect.Descriptor instead.
 func (*RegisterGateNodeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{18}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RegisterGateNodeRequest) GetRpcClient() *NetworkAddress {
@@ -1121,7 +641,7 @@ type UnregisterGameNodeRequest struct {
 
 func (x *UnregisterGameNodeRequest) Reset() {
 	*x = UnregisterGameNodeRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[19]
+	mi := &file_proto_common_base_message_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1133,7 +653,7 @@ func (x *UnregisterGameNodeRequest) String() string {
 func (*UnregisterGameNodeRequest) ProtoMessage() {}
 
 func (x *UnregisterGameNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[19]
+	mi := &file_proto_common_base_message_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1146,7 +666,7 @@ func (x *UnregisterGameNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterGameNodeRequest.ProtoReflect.Descriptor instead.
 func (*UnregisterGameNodeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{19}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *UnregisterGameNodeRequest) GetSceneNodeId() uint32 {
@@ -1165,7 +685,7 @@ type ProtoFieldCheckerTestSubPB struct {
 
 func (x *ProtoFieldCheckerTestSubPB) Reset() {
 	*x = ProtoFieldCheckerTestSubPB{}
-	mi := &file_proto_common_base_message_proto_msgTypes[20]
+	mi := &file_proto_common_base_message_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1177,7 +697,7 @@ func (x *ProtoFieldCheckerTestSubPB) String() string {
 func (*ProtoFieldCheckerTestSubPB) ProtoMessage() {}
 
 func (x *ProtoFieldCheckerTestSubPB) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[20]
+	mi := &file_proto_common_base_message_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1190,7 +710,7 @@ func (x *ProtoFieldCheckerTestSubPB) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProtoFieldCheckerTestSubPB.ProtoReflect.Descriptor instead.
 func (*ProtoFieldCheckerTestSubPB) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{20}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ProtoFieldCheckerTestSubPB) GetItems() []string {
@@ -1209,7 +729,7 @@ type ProtoFieldCheckerTestPB struct {
 
 func (x *ProtoFieldCheckerTestPB) Reset() {
 	*x = ProtoFieldCheckerTestPB{}
-	mi := &file_proto_common_base_message_proto_msgTypes[21]
+	mi := &file_proto_common_base_message_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1221,7 +741,7 @@ func (x *ProtoFieldCheckerTestPB) String() string {
 func (*ProtoFieldCheckerTestPB) ProtoMessage() {}
 
 func (x *ProtoFieldCheckerTestPB) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[21]
+	mi := &file_proto_common_base_message_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1234,7 +754,7 @@ func (x *ProtoFieldCheckerTestPB) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProtoFieldCheckerTestPB.ProtoReflect.Descriptor instead.
 func (*ProtoFieldCheckerTestPB) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{21}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ProtoFieldCheckerTestPB) GetSubMessage() *ProtoFieldCheckerTestSubPB {
@@ -1258,7 +778,7 @@ type MyProtoMessage struct {
 
 func (x *MyProtoMessage) Reset() {
 	*x = MyProtoMessage{}
-	mi := &file_proto_common_base_message_proto_msgTypes[22]
+	mi := &file_proto_common_base_message_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1270,7 +790,7 @@ func (x *MyProtoMessage) String() string {
 func (*MyProtoMessage) ProtoMessage() {}
 
 func (x *MyProtoMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[22]
+	mi := &file_proto_common_base_message_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1283,7 +803,7 @@ func (x *MyProtoMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MyProtoMessage.ProtoReflect.Descriptor instead.
 func (*MyProtoMessage) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{22}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *MyProtoMessage) GetSingleInt32Field() int32 {
@@ -1332,7 +852,7 @@ type MyNestedMessage struct {
 
 func (x *MyNestedMessage) Reset() {
 	*x = MyNestedMessage{}
-	mi := &file_proto_common_base_message_proto_msgTypes[23]
+	mi := &file_proto_common_base_message_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1344,7 +864,7 @@ func (x *MyNestedMessage) String() string {
 func (*MyNestedMessage) ProtoMessage() {}
 
 func (x *MyNestedMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[23]
+	mi := &file_proto_common_base_message_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1357,7 +877,7 @@ func (x *MyNestedMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MyNestedMessage.ProtoReflect.Descriptor instead.
 func (*MyNestedMessage) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{23}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *MyNestedMessage) GetNestedInt32Field() int32 {
@@ -1387,7 +907,7 @@ type ClientRequest struct {
 
 func (x *ClientRequest) Reset() {
 	*x = ClientRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[24]
+	mi := &file_proto_common_base_message_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1399,7 +919,7 @@ func (x *ClientRequest) String() string {
 func (*ClientRequest) ProtoMessage() {}
 
 func (x *ClientRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[24]
+	mi := &file_proto_common_base_message_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1412,7 +932,7 @@ func (x *ClientRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientRequest.ProtoReflect.Descriptor instead.
 func (*ClientRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{24}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ClientRequest) GetId() uint64 {
@@ -1461,7 +981,7 @@ type NodeHandshakeRequest struct {
 
 func (x *NodeHandshakeRequest) Reset() {
 	*x = NodeHandshakeRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[25]
+	mi := &file_proto_common_base_message_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1473,7 +993,7 @@ func (x *NodeHandshakeRequest) String() string {
 func (*NodeHandshakeRequest) ProtoMessage() {}
 
 func (x *NodeHandshakeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[25]
+	mi := &file_proto_common_base_message_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1486,7 +1006,7 @@ func (x *NodeHandshakeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeHandshakeRequest.ProtoReflect.Descriptor instead.
 func (*NodeHandshakeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{25}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *NodeHandshakeRequest) GetVersion() string {
@@ -1520,7 +1040,7 @@ type NodeHandshakeResponse struct {
 
 func (x *NodeHandshakeResponse) Reset() {
 	*x = NodeHandshakeResponse{}
-	mi := &file_proto_common_base_message_proto_msgTypes[26]
+	mi := &file_proto_common_base_message_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1532,7 +1052,7 @@ func (x *NodeHandshakeResponse) String() string {
 func (*NodeHandshakeResponse) ProtoMessage() {}
 
 func (x *NodeHandshakeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[26]
+	mi := &file_proto_common_base_message_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1545,7 +1065,7 @@ func (x *NodeHandshakeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeHandshakeResponse.ProtoReflect.Descriptor instead.
 func (*NodeHandshakeResponse) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{26}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *NodeHandshakeResponse) GetErrorMessage() *TipInfoMessage {
@@ -1591,7 +1111,7 @@ type GateTokenPayload struct {
 
 func (x *GateTokenPayload) Reset() {
 	*x = GateTokenPayload{}
-	mi := &file_proto_common_base_message_proto_msgTypes[27]
+	mi := &file_proto_common_base_message_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1603,7 +1123,7 @@ func (x *GateTokenPayload) String() string {
 func (*GateTokenPayload) ProtoMessage() {}
 
 func (x *GateTokenPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[27]
+	mi := &file_proto_common_base_message_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1616,7 +1136,7 @@ func (x *GateTokenPayload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GateTokenPayload.ProtoReflect.Descriptor instead.
 func (*GateTokenPayload) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{27}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GateTokenPayload) GetGateNodeId() uint32 {
@@ -1672,7 +1192,7 @@ type ClientTokenVerifyRequest struct {
 
 func (x *ClientTokenVerifyRequest) Reset() {
 	*x = ClientTokenVerifyRequest{}
-	mi := &file_proto_common_base_message_proto_msgTypes[28]
+	mi := &file_proto_common_base_message_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1684,7 +1204,7 @@ func (x *ClientTokenVerifyRequest) String() string {
 func (*ClientTokenVerifyRequest) ProtoMessage() {}
 
 func (x *ClientTokenVerifyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[28]
+	mi := &file_proto_common_base_message_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1697,7 +1217,7 @@ func (x *ClientTokenVerifyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientTokenVerifyRequest.ProtoReflect.Descriptor instead.
 func (*ClientTokenVerifyRequest) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{28}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ClientTokenVerifyRequest) GetPayload() []byte {
@@ -1725,7 +1245,7 @@ type ClientTokenVerifyResponse struct {
 
 func (x *ClientTokenVerifyResponse) Reset() {
 	*x = ClientTokenVerifyResponse{}
-	mi := &file_proto_common_base_message_proto_msgTypes[29]
+	mi := &file_proto_common_base_message_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1737,7 +1257,7 @@ func (x *ClientTokenVerifyResponse) String() string {
 func (*ClientTokenVerifyResponse) ProtoMessage() {}
 
 func (x *ClientTokenVerifyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_base_message_proto_msgTypes[29]
+	mi := &file_proto_common_base_message_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1750,7 +1270,7 @@ func (x *ClientTokenVerifyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientTokenVerifyResponse.ProtoReflect.Descriptor instead.
 func (*ClientTokenVerifyResponse) Descriptor() ([]byte, []int) {
-	return file_proto_common_base_message_proto_rawDescGZIP(), []int{29}
+	return file_proto_common_base_message_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ClientTokenVerifyResponse) GetSuccess() bool {
@@ -1771,11 +1291,7 @@ var File_proto_common_base_message_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_message_proto_rawDesc = "" +
 	"\n" +
-	"\x1fproto/common/base/message.proto\x1a\x1eproto/common/base/common.proto\x1a\x1fproto/common/base/session.proto\x1a\x1bproto/common/base/tip.proto\"X\n" +
-	"\x0fRoutingNodeInfo\x12&\n" +
-	"\tnode_info\x18\x01 \x01(\v2\t.NodeInfoR\bnodeInfo\x12\x1d\n" +
-	"\n" +
-	"message_id\x18\x02 \x01(\rR\tmessageId\"\xa4\x01\n" +
+	"\x1fproto/common/base/message.proto\x1a\x1eproto/common/base/common.proto\x1a\x1fproto/common/base/session.proto\x1a\x1bproto/common/base/tip.proto\"\xa4\x01\n" +
 	"\x0eMessageContent\x12-\n" +
 	"\x12serialized_message\x18\x01 \x01(\fR\x11serializedMessage\x12\x1d\n" +
 	"\n" +
@@ -1789,9 +1305,6 @@ const file_proto_common_base_message_proto_rawDesc = "" +
 	"\x10target_player_id\x18\x03 \x01(\x04R\x0etargetPlayerId\"\x7f\n" +
 	"\x17NodeRouteMessageRequest\x128\n" +
 	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12*\n" +
-	"\x06header\x18\x02 \x01(\v2\x12.NodeMessageHeaderR\x06header\"\x80\x01\n" +
-	"\x18NodeRouteMessageResponse\x128\n" +
-	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12*\n" +
 	"\x06header\x18\x02 \x01(\v2\x12.NodeMessageHeaderR\x06header\"1\n" +
 	"\x12PlayerInfoExternal\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"\x81\x01\n" +
@@ -1802,42 +1315,11 @@ const file_proto_common_base_message_proto_rawDesc = "" +
 	"\x0fmessage_content\x18\x01 \x01(\v2\x0f.MessageContentR\x0emessageContent\x12+\n" +
 	"\x06header\x18\x02 \x01(\v2\x13.PlayerInfoExternalR\x06header\"@\n" +
 	"\x16NodeRoutingMessageBody\x12&\n" +
-	"\tnode_info\x18\x02 \x01(\v2\t.NodeInfoR\bnodeInfo\"x\n" +
-	"\x1eRegisterGameNodeSessionRequest\x122\n" +
-	"\fsession_info\x18\x01 \x01(\v2\x0f.SessionDetailsR\vsessionInfo\x12\"\n" +
-	"\rscene_node_id\x18\x02 \x01(\rR\vsceneNodeId\"U\n" +
-	"\x1fRegisterGameNodeSessionResponse\x122\n" +
-	"\fsession_info\x18\x01 \x01(\v2\x0f.SessionDetailsR\vsessionInfo\"U\n" +
+	"\tnode_info\x18\x02 \x01(\v2\t.NodeInfoR\bnodeInfo\"U\n" +
 	"\x1fRegisterGateNodeSessionResponse\x122\n" +
 	"\fsession_info\x18\x01 \x01(\v2\x0f.SessionDetailsR\vsessionInfo\"R\n" +
 	"\x1cGateSessionDisconnectRequest\x122\n" +
-	"\fsession_info\x18\x01 \x01(\v2\x0f.SessionDetailsR\vsessionInfo\"\xa8\x01\n" +
-	"\x13RouteMessageRequest\x12\x12\n" +
-	"\x04body\x18\x01 \x01(\fR\x04body\x121\n" +
-	"\vroute_nodes\x18\x02 \x03(\v2\x10.RoutingNodeInfoR\n" +
-	"routeNodes\x12\x1d\n" +
-	"\n" +
-	"session_id\x18\x03 \x01(\rR\tsessionId\x12\x0e\n" +
-	"\x02id\x18\x04 \x01(\x04R\x02id\x12\x1b\n" +
-	"\tis_client\x18\x05 \x01(\bR\bisClient\"\xa9\x01\n" +
-	"\x14RouteMessageResponse\x12\x12\n" +
-	"\x04body\x18\x01 \x01(\fR\x04body\x121\n" +
-	"\vroute_nodes\x18\x02 \x03(\v2\x10.RoutingNodeInfoR\n" +
-	"routeNodes\x12\x1d\n" +
-	"\n" +
-	"session_id\x18\x03 \x01(\rR\tsessionId\x12\x0e\n" +
-	"\x02id\x18\x04 \x01(\x04R\x02id\x12\x1b\n" +
-	"\tis_client\x18\x05 \x01(\bR\bisClient\"\x8d\x01\n" +
-	"\x19RoutePlayerMessageRequest\x12\x12\n" +
-	"\x04body\x18\x01 \x01(\fR\x04body\x12&\n" +
-	"\tnode_list\x18\x02 \x03(\v2\t.NodeInfoR\bnodeList\x124\n" +
-	"\vplayer_info\x18\x03 \x01(\v2\x13.PlayerInfoExternalR\n" +
-	"playerInfo\"\x8e\x01\n" +
-	"\x1aRoutePlayerMessageResponse\x12\x12\n" +
-	"\x04body\x18\x01 \x01(\fR\x04body\x12&\n" +
-	"\tnode_list\x18\x02 \x03(\v2\t.NodeInfoR\bnodeList\x124\n" +
-	"\vplayer_info\x18\x03 \x01(\v2\x13.PlayerInfoExternalR\n" +
-	"playerInfo\"\xe6\x01\n" +
+	"\fsession_info\x18\x01 \x01(\v2\x0f.SessionDetailsR\vsessionInfo\"\xe6\x01\n" +
 	"\x17RegisterGameNodeRequest\x12.\n" +
 	"\n" +
 	"rpc_client\x18\x01 \x01(\v2\x0f.NetworkAddressR\trpcClient\x12.\n" +
@@ -1909,78 +1391,59 @@ func file_proto_common_base_message_proto_rawDescGZIP() []byte {
 	return file_proto_common_base_message_proto_rawDescData
 }
 
-var file_proto_common_base_message_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_proto_common_base_message_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_proto_common_base_message_proto_goTypes = []any{
-	(*RoutingNodeInfo)(nil),                 // 0: RoutingNodeInfo
-	(*MessageContent)(nil),                  // 1: MessageContent
-	(*NodeMessageHeader)(nil),               // 2: NodeMessageHeader
-	(*NodeRouteMessageRequest)(nil),         // 3: NodeRouteMessageRequest
-	(*NodeRouteMessageResponse)(nil),        // 4: NodeRouteMessageResponse
-	(*PlayerInfoExternal)(nil),              // 5: PlayerInfoExternal
-	(*PlayerNodeServiceRequest)(nil),        // 6: PlayerNodeServiceRequest
-	(*PlayerMessageResponse)(nil),           // 7: PlayerMessageResponse
-	(*NodeRoutingMessageBody)(nil),          // 8: NodeRoutingMessageBody
-	(*RegisterGameNodeSessionRequest)(nil),  // 9: RegisterGameNodeSessionRequest
-	(*RegisterGameNodeSessionResponse)(nil), // 10: RegisterGameNodeSessionResponse
-	(*RegisterGateNodeSessionResponse)(nil), // 11: RegisterGateNodeSessionResponse
-	(*GateSessionDisconnectRequest)(nil),    // 12: GateSessionDisconnectRequest
-	(*RouteMessageRequest)(nil),             // 13: RouteMessageRequest
-	(*RouteMessageResponse)(nil),            // 14: RouteMessageResponse
-	(*RoutePlayerMessageRequest)(nil),       // 15: RoutePlayerMessageRequest
-	(*RoutePlayerMessageResponse)(nil),      // 16: RoutePlayerMessageResponse
-	(*RegisterGameNodeRequest)(nil),         // 17: RegisterGameNodeRequest
-	(*RegisterGateNodeRequest)(nil),         // 18: RegisterGateNodeRequest
-	(*UnregisterGameNodeRequest)(nil),       // 19: UnregisterGameNodeRequest
-	(*ProtoFieldCheckerTestSubPB)(nil),      // 20: ProtoFieldCheckerTestSubPB
-	(*ProtoFieldCheckerTestPB)(nil),         // 21: ProtoFieldCheckerTestPB
-	(*MyProtoMessage)(nil),                  // 22: MyProtoMessage
-	(*MyNestedMessage)(nil),                 // 23: MyNestedMessage
-	(*ClientRequest)(nil),                   // 24: ClientRequest
-	(*NodeHandshakeRequest)(nil),            // 25: NodeHandshakeRequest
-	(*NodeHandshakeResponse)(nil),           // 26: NodeHandshakeResponse
-	(*GateTokenPayload)(nil),                // 27: GateTokenPayload
-	(*ClientTokenVerifyRequest)(nil),        // 28: ClientTokenVerifyRequest
-	(*ClientTokenVerifyResponse)(nil),       // 29: ClientTokenVerifyResponse
-	(*NodeInfo)(nil),                        // 30: NodeInfo
-	(*TipInfoMessage)(nil),                  // 31: TipInfoMessage
-	(*SessionDetails)(nil),                  // 32: SessionDetails
-	(*NetworkAddress)(nil),                  // 33: NetworkAddress
+	(*MessageContent)(nil),                  // 0: MessageContent
+	(*NodeMessageHeader)(nil),               // 1: NodeMessageHeader
+	(*NodeRouteMessageRequest)(nil),         // 2: NodeRouteMessageRequest
+	(*PlayerInfoExternal)(nil),              // 3: PlayerInfoExternal
+	(*PlayerNodeServiceRequest)(nil),        // 4: PlayerNodeServiceRequest
+	(*PlayerMessageResponse)(nil),           // 5: PlayerMessageResponse
+	(*NodeRoutingMessageBody)(nil),          // 6: NodeRoutingMessageBody
+	(*RegisterGateNodeSessionResponse)(nil), // 7: RegisterGateNodeSessionResponse
+	(*GateSessionDisconnectRequest)(nil),    // 8: GateSessionDisconnectRequest
+	(*RegisterGameNodeRequest)(nil),         // 9: RegisterGameNodeRequest
+	(*RegisterGateNodeRequest)(nil),         // 10: RegisterGateNodeRequest
+	(*UnregisterGameNodeRequest)(nil),       // 11: UnregisterGameNodeRequest
+	(*ProtoFieldCheckerTestSubPB)(nil),      // 12: ProtoFieldCheckerTestSubPB
+	(*ProtoFieldCheckerTestPB)(nil),         // 13: ProtoFieldCheckerTestPB
+	(*MyProtoMessage)(nil),                  // 14: MyProtoMessage
+	(*MyNestedMessage)(nil),                 // 15: MyNestedMessage
+	(*ClientRequest)(nil),                   // 16: ClientRequest
+	(*NodeHandshakeRequest)(nil),            // 17: NodeHandshakeRequest
+	(*NodeHandshakeResponse)(nil),           // 18: NodeHandshakeResponse
+	(*GateTokenPayload)(nil),                // 19: GateTokenPayload
+	(*ClientTokenVerifyRequest)(nil),        // 20: ClientTokenVerifyRequest
+	(*ClientTokenVerifyResponse)(nil),       // 21: ClientTokenVerifyResponse
+	(*TipInfoMessage)(nil),                  // 22: TipInfoMessage
+	(*NodeInfo)(nil),                        // 23: NodeInfo
+	(*SessionDetails)(nil),                  // 24: SessionDetails
+	(*NetworkAddress)(nil),                  // 25: NetworkAddress
 }
 var file_proto_common_base_message_proto_depIdxs = []int32{
-	30, // 0: RoutingNodeInfo.node_info:type_name -> NodeInfo
-	31, // 1: MessageContent.error_message:type_name -> TipInfoMessage
-	1,  // 2: NodeRouteMessageRequest.message_content:type_name -> MessageContent
-	2,  // 3: NodeRouteMessageRequest.header:type_name -> NodeMessageHeader
-	1,  // 4: NodeRouteMessageResponse.message_content:type_name -> MessageContent
-	2,  // 5: NodeRouteMessageResponse.header:type_name -> NodeMessageHeader
-	1,  // 6: PlayerNodeServiceRequest.message_content:type_name -> MessageContent
-	5,  // 7: PlayerNodeServiceRequest.header:type_name -> PlayerInfoExternal
-	1,  // 8: PlayerMessageResponse.message_content:type_name -> MessageContent
-	5,  // 9: PlayerMessageResponse.header:type_name -> PlayerInfoExternal
-	30, // 10: NodeRoutingMessageBody.node_info:type_name -> NodeInfo
-	32, // 11: RegisterGameNodeSessionRequest.session_info:type_name -> SessionDetails
-	32, // 12: RegisterGameNodeSessionResponse.session_info:type_name -> SessionDetails
-	32, // 13: RegisterGateNodeSessionResponse.session_info:type_name -> SessionDetails
-	32, // 14: GateSessionDisconnectRequest.session_info:type_name -> SessionDetails
-	0,  // 15: RouteMessageRequest.route_nodes:type_name -> RoutingNodeInfo
-	0,  // 16: RouteMessageResponse.route_nodes:type_name -> RoutingNodeInfo
-	30, // 17: RoutePlayerMessageRequest.node_list:type_name -> NodeInfo
-	5,  // 18: RoutePlayerMessageRequest.player_info:type_name -> PlayerInfoExternal
-	30, // 19: RoutePlayerMessageResponse.node_list:type_name -> NodeInfo
-	5,  // 20: RoutePlayerMessageResponse.player_info:type_name -> PlayerInfoExternal
-	33, // 21: RegisterGameNodeRequest.rpc_client:type_name -> NetworkAddress
-	33, // 22: RegisterGameNodeRequest.rpc_server:type_name -> NetworkAddress
-	33, // 23: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
-	20, // 24: ProtoFieldCheckerTestPB.sub_message:type_name -> ProtoFieldCheckerTestSubPB
-	23, // 25: MyProtoMessage.nested_message:type_name -> MyNestedMessage
-	30, // 26: NodeHandshakeRequest.self_node:type_name -> NodeInfo
-	31, // 27: NodeHandshakeResponse.error_message:type_name -> TipInfoMessage
-	30, // 28: NodeHandshakeResponse.peer_node:type_name -> NodeInfo
-	29, // [29:29] is the sub-list for method output_type
-	29, // [29:29] is the sub-list for method input_type
-	29, // [29:29] is the sub-list for extension type_name
-	29, // [29:29] is the sub-list for extension extendee
-	0,  // [0:29] is the sub-list for field type_name
+	22, // 0: MessageContent.error_message:type_name -> TipInfoMessage
+	0,  // 1: NodeRouteMessageRequest.message_content:type_name -> MessageContent
+	1,  // 2: NodeRouteMessageRequest.header:type_name -> NodeMessageHeader
+	0,  // 3: PlayerNodeServiceRequest.message_content:type_name -> MessageContent
+	3,  // 4: PlayerNodeServiceRequest.header:type_name -> PlayerInfoExternal
+	0,  // 5: PlayerMessageResponse.message_content:type_name -> MessageContent
+	3,  // 6: PlayerMessageResponse.header:type_name -> PlayerInfoExternal
+	23, // 7: NodeRoutingMessageBody.node_info:type_name -> NodeInfo
+	24, // 8: RegisterGateNodeSessionResponse.session_info:type_name -> SessionDetails
+	24, // 9: GateSessionDisconnectRequest.session_info:type_name -> SessionDetails
+	25, // 10: RegisterGameNodeRequest.rpc_client:type_name -> NetworkAddress
+	25, // 11: RegisterGameNodeRequest.rpc_server:type_name -> NetworkAddress
+	25, // 12: RegisterGateNodeRequest.rpc_client:type_name -> NetworkAddress
+	12, // 13: ProtoFieldCheckerTestPB.sub_message:type_name -> ProtoFieldCheckerTestSubPB
+	15, // 14: MyProtoMessage.nested_message:type_name -> MyNestedMessage
+	23, // 15: NodeHandshakeRequest.self_node:type_name -> NodeInfo
+	22, // 16: NodeHandshakeResponse.error_message:type_name -> TipInfoMessage
+	23, // 17: NodeHandshakeResponse.peer_node:type_name -> NodeInfo
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_base_message_proto_init() }
@@ -1997,7 +1460,7 @@ func file_proto_common_base_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_base_message_proto_rawDesc), len(file_proto_common_base_message_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   30,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

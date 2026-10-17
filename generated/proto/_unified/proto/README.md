@@ -19,9 +19,9 @@ proto/
 ├── contracts/kafka/     经 Kafka 投递的命令与事件(gate、scene、match、player)
 ├── <service>/           一个服务一个目录:login、scene、scene_manager、data_service、
 │                        db、player_locator、gate、battle、match、team、chat、guild、
-│                        friend、trade、client_rpc_router、instance、etcd
-├── message_id.txt       消息号注册表(生成器读写)
-└── event_id.txt         事件号注册表(生成器读写)
+│                        friend、trade、client_rpc_router、etcd
+├── message_id.txt       消息号注册表(生成器读写;删掉的方法留 `N=reserved:<原名>` 墓碑,号永不复用)
+└── event_id.txt         事件号注册表(生成器读写;墓碑格式同上)
 ```
 
 ## 哪些是客户端能看到的

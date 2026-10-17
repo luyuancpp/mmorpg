@@ -35,7 +35,6 @@
 #include "combat/buff/constants/buff.h"
 #include "combat/buff/system/buff.h"
 #include "proto/common/component/actor_combat_state_comp.pb.h"
-#include "services/scene/actor/actor_events.h"
 #include "muduo/base/CurrentThread.h"
 #include "macros/return_define.h"
 #include <thread_context/ecs_context.h>
@@ -78,7 +77,7 @@ protected:
         tlsEcs.sceneRegistry.clear();
     }
 
-    // 放进指定场景的玩家:ResolveSkillTarget 要求目标是 Player/Npc 且与施法者同场景。
+    // 放进指定场景的玩家：ValidateSkillTargetEntity 要求目标是 Player/Npc 且与施法者同场景。
     static entt::entity CreatePlayerInScene(SceneEntity scene) {
         const auto player = CreateSkillActor();
         tlsEcs.actorRegistry.emplace<Player>(player);
@@ -206,7 +205,6 @@ protected:
         ASSERT_TRUE(WriteTable("buff.json", "{\"data\":[{\"id\":9001,\"buff_type\":" +
             std::to_string(kBuffTypeSilence) + ",\"duration\":-1,\"max_layer\":1}]}"));
         BuffTableManager::Instance().Load();
-        tlsEcs.dispatcher.sink<CombatStateAddedEvent>().connect<&CombatStateSystem::AddCombatState>();
 
         const auto scene = tlsEcs.sceneRegistry.create();
         caster = CreateLoadedPlayerInScene(scene);
@@ -223,7 +221,6 @@ protected:
     }
 
     void TearDown() override {
-        tlsEcs.dispatcher.sink<CombatStateAddedEvent>().disconnect<&CombatStateSystem::AddCombatState>();
         SkillUtilTest::TearDown();
         auto& config = tlsNodeConfigManager.GetBaseDeployConfig();
         config.set_table_data_directory(previousDirectory);
@@ -236,7 +233,7 @@ protected:
     }
 
     void ExpectRejectionPreservesOldCast() {
-        const auto cooldownBefore = tlsEcs.actorRegistry.get<CooldownTimeListComp>(caster).SerializeAsString();
+        EXPECT_FALSE(tlsEcs.actorRegistry.any_of<CooldownTimeListComp>(caster));
         const auto statesBefore = tlsEcs.actorRegistry.get<ActorStateComp>(caster).SerializeAsString();
         const auto* immediate = SkillTableManager::Instance().FindById(1).first;
         ASSERT_NE(nullptr, immediate);
@@ -254,7 +251,7 @@ protected:
         ASSERT_TRUE(contexts->contains(oldSkillId));
         EXPECT_EQ(oldContext, contexts->at(oldSkillId));
         EXPECT_FALSE(tlsEcs.actorRegistry.all_of<SkillContextCompMap>(target));
-        EXPECT_EQ(cooldownBefore, tlsEcs.actorRegistry.get<CooldownTimeListComp>(caster).SerializeAsString());
+        EXPECT_FALSE(tlsEcs.actorRegistry.any_of<CooldownTimeListComp>(caster));
         EXPECT_EQ(statesBefore, tlsEcs.actorRegistry.get<ActorStateComp>(caster).SerializeAsString());
     }
 
@@ -291,7 +288,7 @@ TEST_F(SkillUtilTest, ValidateTarget_InvalidTarget_ReturnsError) {
         .WillRepeatedly(Return(nullptr)); // Mock implementation
 
     const entt::entity caster = CreateSkillActor();
-    uint32_t result = skillUtil->ValidateTarget(caster, &request);
+    uint32_t result = skillUtil->ValidateTarget(caster, &request, entt::null);
     EXPECT_EQ(result, kSkillInvalidTargetId);
 }
 
@@ -300,49 +297,48 @@ TEST_F(SkillUtilTest, ValidateTarget_ValidTarget_ReturnsOk) {
     const auto caster = CreatePlayerInScene(scene);
     const auto target = CreatePlayerInScene(scene);
     const auto request = TargetedRequest(target);
-    EXPECT_EQ(kSuccess, skillUtil->ValidateTarget(caster, &request));
+    EXPECT_EQ(kSuccess, skillUtil->ValidateTarget(caster, &request, target));
 }
 
-TEST_F(SkillUtilTest, ValidateTarget_RejectsLocalEntityIntegerAndPreviousNetworkIdentity) {
+TEST_F(SkillUtilTest, ReleaseSkill_RejectsLocalEntityIntegerAndPreviousNetworkIdentity) {
     const auto scene = tlsEcs.sceneRegistry.create();
-    const auto caster = CreatePlayerInScene(scene);
-    const auto target = CreatePlayerInScene(scene);
+    const auto caster = CreateLoadedPlayerInScene(scene);
+    const auto target = CreateLoadedPlayerInScene(scene);
     auto request = TargetedRequest(target);
     const auto previousNetId = request.target_id();
-    ASSERT_EQ(kSuccess, skillUtil->ValidateTarget(caster, &request));
+    ASSERT_NE(0u, previousNetId);
     request.set_target_id(entt::to_integral(target));
-    EXPECT_EQ(kSkillInvalidTargetId, skillUtil->ValidateTarget(caster, &request));
+    EXPECT_EQ(kSkillInvalidTargetId, SkillSystem::ReleaseSkill(caster, &request));
     tlsEcs.actorRegistry.destroy(target);
-    const auto replacement = CreatePlayerInScene(scene);
+    const auto replacement = CreateLoadedPlayerInScene(scene);
     request.set_target_id(previousNetId);
-    EXPECT_EQ(kSkillInvalidTargetId, skillUtil->ValidateTarget(caster, &request));
+    EXPECT_EQ(kSkillInvalidTargetId, SkillSystem::ReleaseSkill(caster, &request));
     request = TargetedRequest(replacement);
-    EXPECT_EQ(kSuccess, skillUtil->ValidateTarget(caster, &request));
+    EXPECT_EQ(kSuccess, SkillSystem::ReleaseSkill(caster, &request));
 }
 
-// actorRegistry 由本节点所有场景共用:网络身份能解析也不能越过同场景约束。
-TEST_F(SkillUtilTest, ValidateTarget_TargetInAnotherScene_ReturnsError) {
+// actorRegistry 由本节点所有场景共用：真实施法入口仍不能越过同场景约束。
+TEST_F(SkillUtilTest, ReleaseSkill_TargetInAnotherScene_ReturnsError) {
     const auto casterScene = tlsEcs.sceneRegistry.create();
     const auto otherScene = tlsEcs.sceneRegistry.create();
-    const auto caster = CreatePlayerInScene(casterScene);
-    const auto sameSceneTarget = CreatePlayerInScene(casterScene);
-    const auto otherSceneTarget = CreatePlayerInScene(otherScene);
-
-    auto sameSceneRequest = TargetedRequest(sameSceneTarget);
-    EXPECT_EQ(kSuccess, skillUtil->ValidateTarget(caster, &sameSceneRequest));
+    const auto caster = CreateLoadedPlayerInScene(casterScene);
+    const auto sameSceneTarget = CreateLoadedPlayerInScene(casterScene);
+    const auto otherSceneTarget = CreateLoadedPlayerInScene(otherScene);
 
     auto otherSceneRequest = TargetedRequest(otherSceneTarget);
-    EXPECT_EQ(kSkillInvalidTargetId, skillUtil->ValidateTarget(caster, &otherSceneRequest));
+    EXPECT_EQ(kSkillInvalidTargetId, SkillSystem::ReleaseSkill(caster, &otherSceneRequest));
+    auto sameSceneRequest = TargetedRequest(sameSceneTarget);
+    EXPECT_EQ(kSuccess, SkillSystem::ReleaseSkill(caster, &sameSceneRequest));
 }
 
-TEST_F(SkillUtilTest, ValidateTarget_FrozenTarget_ReturnsError) {
+TEST_F(SkillUtilTest, ReleaseSkill_FrozenTarget_ReturnsError) {
     const auto scene = tlsEcs.sceneRegistry.create();
-    const auto caster = CreatePlayerInScene(scene);
-    const auto target = CreatePlayerInScene(scene);
+    const auto caster = CreateLoadedPlayerInScene(scene);
+    const auto target = CreateLoadedPlayerInScene(scene);
     tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(target);
 
     auto request = TargetedRequest(target);
-    EXPECT_EQ(kSkillInvalidTargetId, skillUtil->ValidateTarget(caster, &request));
+    EXPECT_EQ(kSkillInvalidTargetId, SkillSystem::ReleaseSkill(caster, &request));
 }
 
 // 对自己施放的技能结束时,施法者表里的这一条只能删一次(以前先按 key 删、再用失效迭代器删)。
@@ -535,7 +531,7 @@ TEST_F(SkillUtilTest, BroadcastSkillUsedMessage_CreatesMessage) {
     EXPECT_CALL(*mockSkillTable, GetSkillTable(request.skill_table_id()))
         .WillRepeatedly(Return(nullptr)); // Mock implementation
 
-    EXPECT_NO_THROW(skillUtil->BroadcastSkillUsedMessage(caster, &request));
+    EXPECT_NO_THROW(skillUtil->BroadcastSkillUsedMessage(caster, &request, entt::null));
 }
 
 TEST_F(SkillUtilTest, SetupCastingTimer_SetsTimer) {
@@ -707,7 +703,7 @@ TEST_F(SkillUtilTest, CheckSkillPrerequisites_MissingBaseAttributes_RejectsBefor
     ASSERT_TRUE(recovery.timer.IsActive());
 
     auto request = TargetedRequest(target);
-    EXPECT_EQ(kServiceUnavailable, SkillSystem::CheckSkillPrerequisites(caster, &request));
+    EXPECT_EQ(kServiceUnavailable, SkillSystem::CheckSkillPrerequisites(caster, &request, target));
 
     const auto* stillRecovering = tlsEcs.actorRegistry.try_get<RecoveryTimerComp>(caster);
     ASSERT_NE(nullptr, stillRecovering) << "缺持久组件时不应先打断在途后摇";
@@ -723,7 +719,7 @@ TEST_F(SkillUtilTest, CheckSkillPrerequisites_MissingPlayerDerivedAttributes_Rej
     tlsEcs.actorRegistry.remove<DerivedAttributesComp>(caster);
     auto request = TargetedRequest(target);
 
-    EXPECT_EQ(kServiceUnavailable, SkillSystem::CheckSkillPrerequisites(caster, &request));
+    EXPECT_EQ(kServiceUnavailable, SkillSystem::CheckSkillPrerequisites(caster, &request, target));
     EXPECT_FALSE((tlsEcs.actorRegistry.any_of<DerivedAttributesComp, CooldownTimeListComp,
         SkillContextCompMap, ActorStateComp>(caster)));
 }
@@ -738,24 +734,6 @@ TEST_F(SkillUtilTest, DelayedImpactMissingLevelDoesNotDealBonusDamageOrConsumeBu
 
 TEST_F(SkillUtilTest, DelayedImpactMissingDerivedAttributesDoesNotDealBonusDamageOrConsumeBuff) {
     ExpectDelayedCastWithMissingDataHasNoDamageOrBuffSideEffects<DerivedAttributesComp>();
-}
-
-TEST_F(SkillUtilTest, DirectEffectDispatchMissingRequiredDataEndsCastWithoutApplyingBuffs) {
-    const auto scene = tlsEcs.sceneRegistry.create();
-    const auto caster = CreateLoadedPlayerInScene(scene);
-    const auto target = CreateLoadedPlayerInScene(scene);
-    auto request = TargetedRequest(target);
-    request.set_skill_table_id(13); // 真表效果包括仍会存活的Buff19/20,能观察派发副作用。
-    ASSERT_EQ(kSuccess, SkillSystem::ReleaseSkill(caster, &request));
-    const auto skillId = tlsEcs.actorRegistry.get<SkillContextCompMap>(caster).begin()->first;
-    tlsEcs.actorRegistry.remove<DerivedAttributesComp>(caster);
-
-    SkillSystem::TriggerSkillEffect(caster, skillId);
-
-    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<BuffListComp>(target));
-    EXPECT_FALSE(tlsEcs.actorRegistry.get<SkillContextCompMap>(caster).contains(skillId));
-    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<SkillContextCompMap>(target));
-    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<CastingTimerComp>(caster));
 }
 
 TEST_F(SkillUtilTest, ImpactOnTargetMissingDerivedAttributesDoesNotDamageOrConsumeBonusBuff) {
@@ -944,6 +922,133 @@ TEST_F(SkillUtilTest, GeneralSkill_PhaseComponentsEndWithTheirPhase) {
     ASSERT_TRUE(skillFinished()) << "5 秒内技能没走完:前摇 / 后摇定时器没有按预期触发";
     EXPECT_FALSE(tlsEcs.actorRegistry.all_of<CastingTimerComp>(caster)) << "前摇结束后相位组件仍挂着";
     EXPECT_FALSE(tlsEcs.actorRegistry.all_of<RecoveryTimerComp>(caster)) << "后摇结束后相位组件仍挂着";
+}
+
+TEST_F(SkillUtilTest, GeneralSkillOnDeadTarget_StillEntersRecovery) {
+    constexpr uint64_t kSkillInstanceId = 91;
+    const auto* skillRow = SkillTableManager::Instance().FindById(1).first;
+    ASSERT_NE(nullptr, skillRow);
+    ASSERT_TRUE(SkillSystem::IsSkillOfType(1, kGeneralSkill));
+    ASSERT_GT(skillRow->recovery_time(), 0.0);
+
+    const auto scene = tlsEcs.sceneRegistry.create();
+    const auto caster = CreateLoadedPlayerInScene(scene);
+    const auto target = CreateLoadedPlayerInScene(scene);
+    tlsEcs.actorRegistry.get<BaseAttributesComp>(target).set_health(0);
+    {
+        auto context = std::make_shared<SkillContextComp>();
+        context->set_skillid(kSkillInstanceId);
+        context->set_skilltableid(1);
+        context->set_caster(entt::to_integral(caster));
+        context->set_target(entt::to_integral(target));
+        tlsEcs.actorRegistry.emplace<SkillContextCompMap>(caster).emplace(kSkillInstanceId, context);
+    }
+
+    // 尸体命中只应落成零伤害，不能连同施法效果与后摇一起中止。
+    SkillSystem::HandleGeneralSkillSpell(caster, kSkillInstanceId);
+
+    const auto* recovery = tlsEcs.actorRegistry.try_get<RecoveryTimerComp>(caster);
+    EXPECT_NE(nullptr, recovery);
+    if (recovery != nullptr) {
+        EXPECT_EQ(kSkillInstanceId, recovery->skillId);
+    }
+    const auto* contexts = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+    ASSERT_NE(nullptr, contexts);
+    EXPECT_TRUE(contexts->contains(kSkillInstanceId));
+    EXPECT_EQ(0u, tlsEcs.actorRegistry.get<BaseAttributesComp>(target).health());
+}
+
+TEST_F(SkillUtilTest, ReleaseNoCastPhaseSkillLeavesNoContext) {
+    const auto* skillRow = SkillTableManager::Instance().FindById(4).first;
+    ASSERT_NE(nullptr, skillRow);
+    ASSERT_FALSE(SkillSystem::IsSkillOfType(4, kGeneralSkill) ||
+        SkillSystem::IsSkillOfType(4, kChannelSkill));
+
+    const auto scene = tlsEcs.sceneRegistry.create();
+    const auto caster = CreateLoadedPlayerInScene(scene);
+    const auto target = CreateLoadedPlayerInScene(scene);
+    auto request = TargetedRequest(target);
+    request.set_skill_table_id(4);
+
+    ASSERT_EQ(kSuccess, SkillSystem::ReleaseSkill(caster, &request));
+
+    EXPECT_FALSE((tlsEcs.actorRegistry.any_of<SkillContextCompMap, CastingTimerComp>(caster)));
+}
+
+TEST_F(SkillUtilTest, StartCooldown_NoCooldownSkillCreatesNothing) {
+    const auto* noCooldownRow = SkillTableManager::Instance().FindById(2).first;
+    const auto* cooldownRow = SkillTableManager::Instance().FindById(1).first;
+    ASSERT_NE(nullptr, noCooldownRow);
+    ASSERT_NE(nullptr, cooldownRow);
+    ASSERT_EQ(0u, noCooldownRow->cooldown_id());
+    ASSERT_NE(0u, cooldownRow->cooldown_id());
+
+    const auto caster = CreateSkillActor();
+    SkillSystem::StartCooldown(caster, noCooldownRow);
+    EXPECT_FALSE(tlsEcs.actorRegistry.all_of<CooldownTimeListComp>(caster));
+
+    const auto casterWithCooldown = CreateSkillActor();
+    SkillSystem::StartCooldown(casterWithCooldown, cooldownRow);
+    SkillSystem::StartCooldown(casterWithCooldown, noCooldownRow);
+    const auto* cooldowns = tlsEcs.actorRegistry.try_get<CooldownTimeListComp>(casterWithCooldown);
+    ASSERT_NE(nullptr, cooldowns);
+    EXPECT_FALSE(cooldowns->cooldown_list().contains(0));
+}
+
+TEST_F(SkillUtilTest, FinishedCastIsNotRetainedByTargetBuffs) {
+    const auto* skillRow = SkillTableManager::Instance().FindById(13).first;
+    ASSERT_NE(nullptr, skillRow);
+    ASSERT_TRUE(SkillSystem::IsSkillOfType(13, kGeneralSkill));
+    ASSERT_GT(skillRow->cast_point(), 0.0);
+    for (const uint32_t buffTableId : {19u, 20u}) {
+        const auto* buffRow = BuffTableManager::Instance().FindById(buffTableId).first;
+        ASSERT_NE(nullptr, buffRow);
+        ASSERT_GT(buffRow->duration(), 0.0);
+    }
+
+    const auto scene = tlsEcs.sceneRegistry.create();
+    const auto caster = CreateLoadedPlayerInScene(scene);
+    const auto target = CreateLoadedPlayerInScene(scene);
+    auto request = TargetedRequest(target);
+    request.set_skill_table_id(13);
+    ASSERT_EQ(kSuccess, SkillSystem::ReleaseSkill(caster, &request));
+
+    uint64_t skillId = 0;
+    std::weak_ptr<SkillContextComp> observer;
+    {
+        const auto* contexts = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+        ASSERT_NE(nullptr, contexts);
+        ASSERT_EQ(1u, contexts->size());
+        skillId = contexts->begin()->first;
+        observer = contexts->at(skillId);
+    }
+    // 技能13的真实持续 Buff 跨过施法结束，能检出目标偷持施法者上下文的强引用。
+    ASSERT_TRUE(RunUntil([caster = caster, skillId = skillId] {
+        const auto* contexts = tlsEcs.actorRegistry.try_get<SkillContextCompMap>(caster);
+        return contexts == nullptr || !contexts->contains(skillId);
+    }));
+
+    const auto* buffs = tlsEcs.actorRegistry.try_get<BuffListComp>(target);
+    ASSERT_NE(nullptr, buffs);
+    ASSERT_FALSE(buffs->empty());
+    bool hasLongLivedEffect = false;
+    for (const auto& [buffId, buff] : *buffs) {
+        if (buff.buffPb.buff_table_id() == 19 || buff.buffPb.buff_table_id() == 20) {
+            hasLongLivedEffect = true;
+        }
+    }
+    ASSERT_TRUE(hasLongLivedEffect);
+    EXPECT_TRUE(observer.expired());
+}
+
+TEST(PlayerSkillSystemTest, RegisterPlayerDoesNotCreateMissingSkillList)
+{
+    const auto player = tlsEcs.actorRegistry.create();
+
+    PlayerSkillSystem::RegisterPlayer(player);
+
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerSkillListComp>(player));
+    tlsEcs.actorRegistry.destroy(player);
 }
 
 TEST(PlayerSkillSystemTest, SanitizeSkillListRemovesUnknownAndDuplicateSkills)

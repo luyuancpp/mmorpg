@@ -16,15 +16,15 @@ struct SessionInfo
 
 	SessionInfo() = default;
 
-	void SetNodeEntity(uint32_t nodeType, entt::entity entityId)
+	void SetNodeEntity(uint32_t nodeType, entt::entity node)
 	{
-		entityIds[nodeType] = entityId;
+		nodeEntities[nodeType] = node;
 	}
 
 	entt::entity GetNodeEntity(uint32_t nodeType) const
 	{
-		auto it = entityIds.find(nodeType);
-		if (it != entityIds.end())
+		auto it = nodeEntities.find(nodeType);
+		if (it != nodeEntities.end())
 		{
 			return it->second;
 		}
@@ -33,8 +33,8 @@ struct SessionInfo
 
 	bool HasNodeEntity(uint32_t nodeType) const
 	{
-		auto it = entityIds.find(nodeType);
-		if (it == entityIds.end())
+		auto it = nodeEntities.find(nodeType);
+		if (it == nodeEntities.end())
 		{
 			return false;
 		}
@@ -63,10 +63,13 @@ struct SessionInfo
 
 	// 登录代次(docs/design/scene-enter-session-fence.md §4):本会话、本角色见过的最高代次。来源是
 	// BindSessionEvent 与 RoutePlayerEvent,同一角色取 max;同一条连接上换了角色时以新角色的值为准(上一个
-	// 角色的代次与新角色无关)。只用于给 PlayerEnterGameNodeRequest 盖章,新旧由 scene 入场栅栏判;gate 不据此
+	// 角色的代次与新角色无关)。用于给 PlayerEnterGameNodeRequest 盖章,新旧由 scene 入场栅栏判;另由踢线身份栅栏
+	// (session_identity_fence.h ClassifyKick)只读比较:会话已见过不小于踢线者的代次时不踢
+	// (docs/design/scene-enter-chain-residuals.md §2.2 ④)。gate 不据此
 	// 拒绝或丢弃任何路由:一次失败的重登(Bind 已到、scene_manager 拒绝)会把会话代次抬高,之后同连接上
-	// scene 自发的换图路由带的是 0(由本字段盖章),按代次丢会把它们全吞掉。0 = 上游未带(旧版),原样透传。
-	// 写入只经 scene_route_helper.h 的 ApplyLoginBinding / ApplyRouteIdentity,且都必须先于转发:
+	// scene 自发的换图路由带实体代次(≤ 会话值),旧版 scene 为 0(都由本字段盖章),按代次丢会把它们全吞掉。
+	// 0 = 上游未带(旧版),原样透传。
+	// 写入仍只经 scene_route_helper.h 的 ApplyLoginBinding / ApplyRouteIdentity,且都必须先于转发:
 	// 转发从会话取值盖章。会话销毁即随之消失。
 	uint64_t loginGeneration{0};
 
@@ -124,5 +127,5 @@ struct SessionInfo
 	// for the exact lines that activate this field.
 	std::string hmacSessionKey;
 private:
-	NodeEntityMap entityIds; // Sparse map, only stores assigned node entities
+	NodeEntityMap nodeEntities; // Sparse map, only stores assigned node entities
 };

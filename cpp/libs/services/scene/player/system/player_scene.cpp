@@ -6,7 +6,6 @@
 
 #include "muduo/base/Logging.h"
 
-#include "modules/scene/scene_events.h"
 #include "hexagons_grid.h"
 
 #include "rpc/service_metadata/player_scene_service_metadata.h"
@@ -45,13 +44,6 @@ namespace {
 // 与 Go 侧 go/scene_manager/internal/logic/world_channel_directory.go 的 WorldChannelDirectoryKeyFmt 是同一份契约,改一边必须改另一边。
 constexpr char kWorldChannelDirectoryKeyFmt[] = "world_channel_directory:zone:%u:%u";
 
-// Best-effort player guid for logging (0 if the Guid component is absent).
-uint64_t GuidForLog(entt::entity player)
-{
-	const auto* g = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-	return g ? g->value : 0;
-}
-
 bool ZoneRedisReady()
 {
 	auto& redis = tlsRedis.GetZoneRedis();
@@ -62,7 +54,7 @@ bool ZoneRedisReady()
 // playerId 为 0 一律不算同一人:拿不到 Guid 就无从核对,调用方不得带着 0 走异步路径。
 bool IsSamePlayer(entt::entity player, uint64_t playerId)
 {
-	return playerId != 0 && tlsEcs.actorRegistry.valid(player) && GuidForLog(player) == playerId;
+	return playerId != 0 && tlsEcs.GetPlayerId(player) == playerId;
 }
 
 // 玩家当前所在场景的 SceneInfoComp;不在任何场景、或场景实体上没有该组件时返回 nullptr。
@@ -74,7 +66,6 @@ const SceneInfoComp* CurrentSceneInfo(entt::entity player)
 	{
 		return nullptr;
 	}
-	// SceneEntityComp::sceneEntity 是 sceneRegistry 的句柄,SceneInfoComp 只挂在 sceneRegistry 上。
 	return tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneEntityComp->sceneEntity);
 }
 
@@ -193,8 +184,6 @@ uint32_t PlayerSceneSystem::CheckEnterScene(Guid playerId, SceneEntity scene)
 	if (!tlsEcs.sceneRegistry.valid(scene)) return kEnterSceneNotFound;
 	const auto* info = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(scene);
 	if (info == nullptr) return kEnterSceneNotFound;
-	if (!info->creators().empty() && (playerId == 0 || !info->creators().contains(playerId)))
-		return kCheckEnterSceneCreator;
 	return playerId != 0 ? kSuccess : kInvalidParameter;
 }
 
@@ -218,13 +207,17 @@ bool PlayerSceneSystem::HandleEnterScene(entt::entity player, SceneEntity scene)
 		LOG_ERROR << "入场预检拒绝 entity=" << entt::to_integral(player) << " tip=" << result;
 		return false;
 	}
+	if (!tlsEcs.actorRegistry.all_of<Transform>(player))
+	{
+		LOG_ERROR << "HandleEnterScene: 持久组件 Transform 缺失，" << ActorLog(player);
+		return false;
+	}
 	const auto sceneInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(scene);
 	if (sceneInfo == nullptr)
 	{
 		LOG_ERROR << "HandleEnterScene: scene info missing, " << ActorLog(player);
 		return false;
 	}
-	// 通知可以同步搬移组件存储;回包和日志使用值副本,不跨通知保留场景组件指针。
 	SceneInfoComp targetSceneInfo(*sceneInfo);
 
 	// 0. Idempotency: if player is already in the target scene, skip.
@@ -232,7 +225,7 @@ bool PlayerSceneSystem::HandleEnterScene(entt::entity player, SceneEntity scene)
 	const auto oldScene = oldSceneComp != nullptr ? oldSceneComp->sceneEntity : SceneEntity{entt::null};
 	if (oldScene == scene)
 	{
-		LOG_INFO << "HandleEnterScene: player " << GuidForLog(player)
+		LOG_INFO << "HandleEnterScene: player " << tlsEcs.GetPlayerId(player)
 		         << " already in scene_id=" << targetSceneInfo.scene_id() << ", skipping";
 		return true;
 	}
@@ -246,28 +239,9 @@ bool PlayerSceneSystem::HandleEnterScene(entt::entity player, SceneEntity scene)
 	}
 
 	// 1. Leave old scene if player is already in one.
-	if (oldScene != entt::null && oldScene != scene)
+	if (oldScene != entt::null)
 	{
-		// 必需清理由实际入口显式执行;先解绑再发通知,不依赖是否注册事件监听者。
-		BeforeLeaveScene leaveEvent;
-		leaveEvent.actor = player;
-		AoiSystem::BeforeLeaveSceneHandler(leaveEvent);
-		if (!tlsEcs.actorRegistry.valid(player))
-		{
-			return false;
-		}
-		tlsEcs.actorRegistry.remove<SceneEntityComp, Hex>(player);
-		tlsEcs.dispatcher.trigger(leaveEvent);
-		if (!ownership.IsCurrent() || CheckEnterScene(player, scene) != kSuccess)
-		{
-			return false;
-		}
-		if (tlsEcs.actorRegistry.all_of<SceneEntityComp>(player))
-		{
-			return false; // 通知中已经完成了另一次入场,不覆盖其新绑定。
-		}
-		// 重新取得值副本,允许通知合法更新仍可入场的目标元数据,不使用旧借用。
-		targetSceneInfo.CopyFrom(*tlsEcs.sceneRegistry.try_get<SceneInfoComp>(scene));
+		LeaveCurrentScene(player);
 	}
 
 	// 2. Bind player to the new scene entity.
@@ -291,9 +265,10 @@ bool PlayerSceneSystem::HandleEnterScene(entt::entity player, SceneEntity scene)
 	// 客户端将收不到任何 ActorCreate,本地角色/相机绑定/移动控制器全部
 	// 无法建立。客户端靠 guid == player_id 识别并绑定本地角色。
 	ActorCreateS2C selfCreate;
-	if (actor_net_id::Of(tlsEcs.actorRegistry, player) != 0)
+	const auto netId = actor_net_id::Of(tlsEcs.actorRegistry, player);
+	if (netId != 0)
 	{
-		ViewSystem::FillActorCreateMessageInfo(player, player, selfCreate);
+		ViewSystem::FillActorCreateMessageInfo(player, netId, selfCreate);
 		SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorCreateMessageId, selfCreate, player);
 	}
 	else
@@ -301,9 +276,19 @@ bool PlayerSceneSystem::HandleEnterScene(entt::entity player, SceneEntity scene)
 		LOG_ERROR << "HandleEnterScene: self actor notification skipped, network id missing";
 	}
 
-	LOG_INFO << "HandleEnterScene: player " << GuidForLog(player)
+	LOG_INFO << "HandleEnterScene: player " << tlsEcs.GetPlayerId(player)
 			 << " entered scene_id=" << targetSceneInfo.scene_id();
 	return true;
+}
+
+void PlayerSceneSystem::LeaveCurrentScene(entt::entity player)
+{
+	if (!tlsEcs.actorRegistry.valid(player) || !tlsEcs.actorRegistry.all_of<SceneEntityComp>(player))
+	{
+		return;
+	}
+	AoiSystem::OnLeaveScene(player);
+	tlsEcs.actorRegistry.remove<SceneEntityComp, Hex>(player);
 }
 
 bool PlayerSceneSystem::RequestEnterMirrorScene(entt::entity player, uint32_t mirrorConfigId)
@@ -325,7 +310,7 @@ bool PlayerSceneSystem::RequestEnterMirrorScene(entt::entity player, uint32_t mi
 	if (PlayerBattleSystem::IsInBattle(player))
 	{
 		LOG_WARN << "[PlayerBattle] RequestEnterMirrorScene rejected: player battle in progress, player_id="
-				 << GuidForLog(player);
+				 << tlsEcs.GetPlayerId(player);
 		return false;
 	}
 
@@ -395,7 +380,7 @@ void PlayerSceneSystem::SendSceneInfo(entt::entity player, bool withChannelDirec
 		LOG_WARN << "SendSceneInfo: invalid player entity;push skipped, entity=" << entt::to_integral(player);
 		return;
 	}
-	const uint64_t playerId = GuidForLog(player);
+	const uint64_t playerId = tlsEcs.GetPlayerId(player);
 
 	const auto* sceneInfo = CurrentSceneInfo(player);
 	if (sceneInfo == nullptr)

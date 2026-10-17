@@ -1,0 +1,55 @@
+syntax = "proto3";
+package scene_node;
+
+import "proto/common/asset/asset_op.proto";
+import "proto/common/base/empty.proto";
+import "proto/scene/scene.proto";
+
+option go_package = "robot/proto/scene_manager";
+
+// Dedicated gRPC-only control plane for Scene nodes.
+// This avoids the C++ grpc plugin limitation with cc_generic_services=true
+// on the legacy Scene RPC proto.
+service SceneNodeGrpc {
+  rpc CreateScene(CreateSceneRequest) returns (CreateSceneResponse) {}
+  rpc DestroyScene(DestroySceneRequest) returns (Empty) {}
+  // ReleasePlayer is called by SceneManager on the player's previous scene node
+  // when the player is being routed to a different scene node (cross-node scene
+  // change). The old node persists the player to Redis, drops the entity, and
+  // frees the session mapping so the new node can load fresh from Redis.
+  // 释放栅栏(docs/design/scene-enter-chain-residuals.md §4):
+  // - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
+  // - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
+  //   落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
+  rpc ReleasePlayer(ReleasePlayerRequest) returns (Empty) {}
+
+  // ---- 回合制战斗 gather 管线(docs/design/turn-based-battle-server.md §3.1/§5.3)----
+  // 消息定义共用 proto/scene/scene.proto 里的那一份(全局包,与 CreateSceneRequest
+  // 同款双服务共享模式):muduo Scene 服务与本 gRPC 控制面同签名,match(Go)走本面。
+  // match 对每个参战者调用:冻结玩家(挂 InBattleComp)+ 返回战斗快照;
+  // error_message.id != 0 即拒绝,且不留任何冻结痕迹。
+  rpc PrepareBattle(PrepareBattleRequest) returns (PrepareBattleResponse) {}
+  // gather 失败的逐人回滚:battle_id 匹配才解冻,迟到/重复取消幂等忽略。
+  rpc CancelBattlePrepare(CancelBattlePrepareRequest) returns (Empty) {}
+
+  // ---- 通用资产通道(docs/design/guild-phase2/04-asset-channel.md §S4)----
+  // 结局写在 response.outcome;gRPC status 恒为 OK。同 seq 重复调用只读答复。
+  rpc AssetDebit(AssetOpRequest) returns (AssetOpResponse) {}
+  // 未见过的 seq 记 REJECTED 占位(reason=0);见过则回原结局。允许用于任何流。
+  rpc AssetAbortDebit(AssetOpRequest) returns (AssetOpResponse) {}
+  rpc AssetCredit(AssetOpRequest) returns (AssetOpResponse) {}
+  // 交易库已持久保存托管快照后释放场景收据；幂等，不改变玩家资产与原始结局。
+  rpc AssetAckReceipt(AssetOpRequest) returns (AssetOpResponse) {}
+}
+
+message ReleasePlayerRequest {
+  uint64 player_id = 1;
+  // Optional: target scene id the player is moving to (for logging only).
+  uint64 target_scene_id = 2;
+  // Optional: target node id the player is moving to (for logging only).
+  string target_node_id = 3;
+  // SM 本次 EnterScene 观察到、并用于落点 CAS 的 owner_epoch,即旧节点在提交时刻应持有的那一代。
+  // scene 只在本地缓存 PlayerOwnerEpochComp.epoch 与它相等时释放;缓存为 0 时按旧行为释放并计数;其余忽略。
+  // 0 = 旧版调用方或尚未铸造,按旧行为释放并计数。不进存盘,不与 login_generation 混用。
+  uint64 expected_owner_epoch = 4;
+}

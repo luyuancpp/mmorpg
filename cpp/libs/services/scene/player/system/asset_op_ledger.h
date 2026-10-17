@@ -44,7 +44,11 @@ constexpr int kAssetOpMaxRejections = 64;
 //      `go/shared/assetop/decide.go:92` 判 `res.Partial || op.LastReason == ReasonPartialApplied`,
 //      所以"曾见 partial"不会因为这里被挤掉而丢失。
 // 真正要丢,得是"首次答复没送到 Go" 且 "同纪元同窗口内又攒了 64 条以上部分发放"同时成立。
-constexpr int kAssetOpMaxPartialSeqs = 64;
+// 全局到账不能依赖首次回包必达：整个窗口保留 partial，未决操作由 MaxSpan<=512 保护。
+constexpr int kAssetOpMaxPartialSeqs = static_cast<int>(kAssetOpWindowBits);
+constexpr size_t kAssetOpMaxInstanceBytes = 16 * 1024;
+constexpr size_t kAssetOpMaxSnapshotBytes = 64 * 1024;
+constexpr size_t kAssetOpMaxPlayerReceiptBytes = 256 * 1024;
 
 // 同纪元内允许的跳号上限:seq <= max_seq + 1024。超过一律 fail-closed(调用方回 UNKNOWN、
 // 不记账、打 ERROR),证明见 §4.29。它同时兜住"Redis 回退到旧 blob 让 max_seq 变小"的情况。

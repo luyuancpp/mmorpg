@@ -457,6 +457,8 @@ leader 由 `route_meta` 租约选出（10s 租期，3s 续一次）。每拍 1s�
 
 **已知未改**:chat、friend、match、scene_manager 共 9 处代码注释仍写「共享库是 allkeys-lfu」(如 `go/chat/etc/chat.yaml:44`、`go/friend/internal/svc/servicecontext.go:157`、`go/scene_manager/internal/logic/enterscenelogic.go:596`),现已过时。注释本身的结论(staging/prod 要用独立的 noeviction 实例)仍然成立,留作后续统一更正。
 
+*(2026-10-16 更正:实际 go 下 10 处,另有 tools/scripts/k8s_deploy.ps1、deploy/k8s/README.md 各 1 处,共 12 处。chat、friend、match 的 internal/logic/keys.go、scene_manager 共 9 处已更正(只改注释,未编译);go/match/etc/match_service.yaml、k8s_deploy.ps1、README 3 处待对应会话收尾。见 docs/PROGRESS.md 同日「共享 Redis 淘汰策略过时注释更正」条目。)*
+
 ---
 
 **第 1a 批(2026-10-12):存储底座 + W1 的 db_first 开关 + 导入 / 审计工具 + W2 / W3 停用**

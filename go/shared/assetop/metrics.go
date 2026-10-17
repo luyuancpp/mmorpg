@@ -103,8 +103,9 @@ func NewMetrics(reg prometheus.Registerer, service string) *Metrics {
 			ConstLabels: labels,
 		}, []string{"result"}),
 		ledgerReadTotal: f.NewCounterVec(prometheus.CounterOpts{
-			Name:        "assetop_ledger_read_total",
-			Help:        "离线读已落盘账本的结果:finalized / unseen / absent / error",
+			Name: "assetop_ledger_read_total",
+			Help: "读已落盘账本的结果:finalized / unseen / absent / error;RequireSQLCommit 打开时还有 unwired" +
+				"(没挂 SQL 证据读取器,CheckWiring 本应拒启)",
 			ConstLabels: labels,
 		}, []string{"result"}),
 		manualResolveTotal: f.NewCounterVec(prometheus.CounterOpts{
@@ -149,7 +150,7 @@ func NewMetrics(reg prometheus.Registerer, service string) *Metrics {
 		abandonSkippedTotal: f.NewCounterVec(prometheus.CounterOpts{
 			Name: "assetop_abandon_skipped_total",
 			Help: "放弃候选被跳过的次数:located / locate_error / recent / ledger_seen / ledger_error / ledger_unknown" +
-				" / lease_lost / store_error / not_candidate",
+				" / lease_lost / store_error / not_candidate / sql_evidence_behind(SQL 提交证据落后于父键,须告警)",
 			ConstLabels: labels,
 		}, []string{"reason"}),
 	}

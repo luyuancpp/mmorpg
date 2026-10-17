@@ -2,6 +2,9 @@ package logic
 
 import (
 	"context"
+	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"match/internal/svc"
 
@@ -40,6 +43,44 @@ func (l *GetQueueStatusLogic) GetQueueStatus(in *matchpb.GetQueueStatusRequest) 
 		}, nil
 	}
 
+	if l.svcCtx.Authority != nil {
+		if in.RequestId != "" {
+			if parsed, e := uuid.Parse(in.RequestId); e != nil || parsed == uuid.Nil || parsed.String() != in.RequestId {
+				return nil, status.Error(codes.InvalidArgument, "匹配请求编号无效")
+			}
+		}
+		cancelled, e := l.svcCtx.Authority.RequestCancelled(l.ctx, playerId, in.RequestId)
+		if e != nil {
+			return nil, e
+		}
+		t, e := l.svcCtx.Authority.Ticket(l.ctx, playerId)
+		if e != nil {
+			return nil, e
+		}
+		if t != nil && t.State == 3 {
+			released, e := releaseGlobalFinished(l.ctx, l.svcCtx, t)
+			if e != nil {
+				return nil, e
+			}
+			if released {
+				t.State = 4
+			}
+		}
+		if t == nil || t.State == 0 || t.State == 4 {
+			return &matchpb.GetQueueStatusResponse{State: matchpb.QueueState_QUEUE_STATE_NOT_QUEUED, RequestCancelled: cancelled}, nil
+		}
+		n, e := l.svcCtx.Authority.Now(l.ctx)
+		if e != nil {
+			return nil, e
+		}
+		state := matchpb.QueueState_QUEUE_STATE_MATCHED
+		if t.State == 1 {
+			state = matchpb.QueueState_QUEUE_STATE_QUEUED
+		} else if t.State == 3 {
+			state = matchpb.QueueState_QUEUE_STATE_READY
+		}
+		return &matchpb.GetQueueStatusResponse{State: state, QueueTicket: t.Ticket, BattleId: t.FormationId, SelectedRegion: t.SelectedRegion, QueuedSeconds: uint32((n - min(n, t.EnqueuedMs)) / 1000), RetryAfterMs: 3000, RequestCancelled: cancelled}, nil
+	}
 	ticket, err := loadTicket(l.svcCtx, playerId)
 	if err != nil {
 		l.Errorf("[match] GetQueueStatus failed to read ticket player=%d: %v", playerId, err)

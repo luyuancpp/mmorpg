@@ -83,7 +83,9 @@ func NewRedisHandles(c config.Config) (chatRds, sharedRds *redis.Redis, target s
 	if c.ChatRedis.Host == "" {
 		// go-zero logx 没有 Warn 级别;用 Error 级打出来,保证在默认日志级别下一定可见。
 		// 回落本身不是故障(本地单库形态就是这样),但在 staging/prod 出现就是部署缺陷:
-		// 共享库是 allkeys-lfu,聊天历史会被当缓存淘汰,且与契约 key 抢内存。
+		// 聊天历史带 TTL(缺省 7 天、每次写入续期,每频道只留最近 200 条),回落后仍与契约 key 争内存;
+		// 共享库设了 maxmemory 时写满会连带拒写契约 key;共享库若被配成 volatile-* 淘汰型,历史会被
+		// 优先淘汰(2026-10-12 起本地 compose 也改为 noeviction,K8s 一直是 noeviction)。
 		logx.Errorf("[chat] WARN ChatRedis not configured; chat:* private keys falling back to shared database host=%s type=%s -- "+
 			"local single-database deployments only; staging/prod require separate ChatRedis with maxmemory-policy=noeviction (contract section 4)",
 			c.Redis.Host, c.Redis.Type)

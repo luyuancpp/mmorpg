@@ -292,3 +292,106 @@ func TestBindSessionFence_BindErrorPlacesDisconnectLeaseEvenIfChainCanceled(t *t
 	require.Equal(t, []uint64{fenceWiringPlayerID}, locator.disconnectingPlayers())
 	require.Empty(t, locator.markedOffline)
 }
+
+// ── gate 实例号透传(docs/design/scene-enter-chain-residuals.md §6,余项 e) ─────────────────────────────
+//
+// player_locator 只有拿到发起清理的 gate 实例号,才能忽略旧实例迟到的同号上报。四条清理路径都要带:
+// Disconnect / LeaveGame 取 SessionDetails.gate_instance_id;绑定失败补偿取 state.gateInstanceID。
+// sessionPlayersToSettle 里栅栏绑定的玩家来自同一个含实例号的栅栏键,同样带这一个实例号。
+
+func requireSetDisconnectingInstances(t *testing.T, f *fenceLocator, want string) {
+	t.Helper()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	require.NotEmpty(t, f.disconnecting)
+	for _, r := range f.disconnecting {
+		require.Equal(t, want, r.GetGateInstanceId(), "SetDisconnecting(player=%d) 必须带发起清理的 gate 实例号", r.GetPlayerId())
+	}
+}
+
+func requireMarkOfflineInstances(t *testing.T, f *fenceLocator, want string) {
+	t.Helper()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	require.NotEmpty(t, f.markedOffline)
+	for _, r := range f.markedOffline {
+		require.Equal(t, want, r.GetExpectedGateInstanceId(), "MarkOffline(player=%d) 必须带发起清理的 gate 实例号", r.GetPlayerId())
+	}
+}
+
+func TestDisconnect_CarriesGateInstanceForEverySettledPlayer(t *testing.T) {
+	svcCtx, rdb, locator := newFenceWiring(t)
+	ctx := fenceWiringCtx(fenceWiringStalePlayerID)
+	bindNewRoleAfterLeave(t, ctx, rdb)
+
+	_, err := NewDisconnectLogic(ctx, svcCtx).Disconnect(&login_proto.LoginNodeDisconnectRequest{SessionId: fenceWiringSessionID})
+	require.NoError(t, err)
+	require.ElementsMatch(t, []uint64{fenceWiringStalePlayerID, fenceWiringPlayerID}, locator.disconnectingPlayers())
+	requireSetDisconnectingInstances(t, locator, fenceWiringGate)
+}
+
+func TestLeaveGame_CarriesGateInstanceForEverySettledPlayer(t *testing.T) {
+	svcCtx, rdb, locator := newFenceWiring(t)
+	ctx := fenceWiringCtx(fenceWiringStalePlayerID)
+	bindNewRoleAfterLeave(t, ctx, rdb)
+	// 两个角色都还有记录,两次 MarkOffline 都要带实例号(login 本地不比实例号,交给 player_locator)。
+	locator.byPlayer = map[uint64]*plpb.PlayerSession{
+		fenceWiringStalePlayerID: {SessionId: fenceWiringSessionID, SessionVersion: 6},
+		fenceWiringPlayerID:      {SessionId: fenceWiringSessionID, SessionVersion: 7},
+	}
+
+	_, err := NewLeaveGameLogic(ctx, svcCtx).LeaveGame(&login_proto.LeaveGameRequest{})
+	require.NoError(t, err)
+	require.ElementsMatch(t, []uint64{fenceWiringStalePlayerID, fenceWiringPlayerID}, locator.markedOfflinePlayers())
+	requireMarkOfflineInstances(t, locator, fenceWiringGate)
+}
+
+func TestLeaveGame_CrossInstanceReportLeftToLocator(t *testing.T) {
+	// 同号跨实例:记录属于新实例,本次 LeaveGame 来自旧实例(SessionDetails 的实例号不同)。login 照发 MarkOffline,
+	// 带的是发起登出的实例号而不是记录里的;忽略与计数在 player_locator(gate_instance_fence_test.go 的
+	// TestMarkOffline_StaleGateInstanceIgnored),login 本地不短路,否则那一面的日志和计数走不到(§6.2)。
+	svcCtx, rdb, locator := newFenceWiring(t)
+	ctx := fenceWiringCtx(0)
+	_, gen, err := sessionfence.CheckEnterGame(ctx, rdb, fenceWiringKey, fenceWiringPlayerID, sessionFenceTTL)
+	require.NoError(t, err)
+	_, err = sessionfence.BindPlayer(ctx, rdb, fenceWiringKey, fenceWiringPlayerID, gen, sessionFenceTTL)
+	require.NoError(t, err)
+	locator.current = &plpb.PlayerSession{SessionId: fenceWiringSessionID, SessionVersion: 5, GateInstanceId: "gate-uuid-newer"}
+
+	_, err = NewLeaveGameLogic(ctx, svcCtx).LeaveGame(&login_proto.LeaveGameRequest{})
+	require.NoError(t, err)
+	require.Equal(t, []uint64{fenceWiringPlayerID}, locator.markedOfflinePlayers())
+	require.Equal(t, uint32(5), locator.markedOffline[0].GetExpectedSessionVersion())
+	requireMarkOfflineInstances(t, locator, fenceWiringGate)
+}
+
+func TestCompensateFenceBind_CarriesChainGateInstance(t *testing.T) {
+	t.Run("lease", func(t *testing.T) {
+		ctx := context.Background()
+		svcCtx, rdb, locator := newFenceWiring(t)
+		_, gen, err := sessionfence.CheckEnterGame(ctx, rdb, fenceWiringKey, fenceWiringPlayerID, sessionFenceTTL)
+		require.NoError(t, err)
+		_, err = sessionfence.Close(ctx, rdb, fenceWiringKey, sessionFenceTTL)
+		require.NoError(t, err)
+
+		err = NewEnterGameLogic(ctx, svcCtx).bindSessionFence(ctx, fenceWiringState(true, gen))
+		require.Error(t, err)
+		require.Equal(t, []uint64{fenceWiringPlayerID}, locator.disconnectingPlayers())
+		requireSetDisconnectingInstances(t, locator, fenceWiringGate)
+	})
+	t.Run("delete", func(t *testing.T) {
+		ctx := context.Background()
+		svcCtx, rdb, locator := newFenceWiring(t)
+		_, gen, err := sessionfence.CheckEnterGame(ctx, rdb, fenceWiringKey, fenceWiringPlayerID, sessionFenceTTL)
+		require.NoError(t, err)
+		_, err = sessionfence.Leave(ctx, rdb, fenceWiringKey, sessionFenceTTL)
+		require.NoError(t, err)
+		// 本链刚写下的记录就是本链实例号,player_locator 的实例号校验放行。
+		locator.current = &plpb.PlayerSession{SessionId: fenceWiringSessionID, SessionVersion: 3, GateInstanceId: fenceWiringGate}
+
+		err = NewEnterGameLogic(ctx, svcCtx).bindSessionFence(ctx, fenceWiringState(true, gen))
+		require.Error(t, err)
+		require.Equal(t, []uint64{fenceWiringPlayerID}, locator.markedOfflinePlayers())
+		requireMarkOfflineInstances(t, locator, fenceWiringGate)
+	})
+}

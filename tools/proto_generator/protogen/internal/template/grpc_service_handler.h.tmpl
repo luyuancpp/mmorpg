@@ -1,30 +1,32 @@
 #pragma once
 
-#include <grpcpp/grpcpp.h>
+#include <memory>
+#include <string_view>
 #include <muduo/net/EventLoop.h>
-{{.GrpcInclude}}
-{{.IncludesCode}}
+#include "muduo_grpc/method_table.h"
+#include "network/grpc_unary_call.h"
+{{.PbInclude}}{{.IncludesCode}}
 
-// 由 proto 工具生成 {{.Service}} 的 gRPC 骨架；自定义代码只写在守护段内。
-// gRPC 线程通过 runInLoop + promise/future 等待事件循环完成请求。
-// Handle* 在事件循环执行，不做阻塞 I/O；业务错误经响应字段返回。
-// 投递前段在 gRPC 线程运行，可取得准入许可并提前返回非 OK。
-// loop 内段在 Handle* 前复核状态：将 dispatchStatus 设为非 OK 即跳过业务委托。
-// 完成后段在 gRPC 线程运行；许可与捕获的栈引用存活到 future.get() 完成。
-class {{.Service}}Impl final : public {{.Package}}{{.Service}}::Service
+// 由 proto 工具生成 {{.Service}} 的 gRPC 服务端骨架(muduo_grpc,docs/design/grpc-muduo-transport.md §15);自定义代码只写在守护段内。
+// 全部在节点 EventLoop 线程执行,不创建线程。每个 RPC:解析请求 → <M>()(守护段 grpc.<M>.guard)→ Handle<M>(同步)→ 回包。
+// 守护段:同步拒绝写 `call->Reject(status); return;`;异步决定时先发起异步操作再 `return;`,在回调里调
+// `call->Proceed()` 或 `call->Reject(...)`。回调只捕获 call 与 weak 引用,不得捕获 this(AGENTS §11.7)。
+// 要活到业务完成的对象(如 Agones 许可)作为回调参数,活到 Proceed() 返回即可(Handle* 同步)。不得阻塞;业务错误经响应字段返回。
+class {{.Service}}Impl final : public muduo_grpc::Service
 {
 public:
     explicit {{.Service}}Impl(muduo::net::EventLoop& loop);
 {{.PublicCode}}
-{{range .Methods}}
-    grpc::Status {{.Method}}(grpc::ServerContext* context,
-        const {{.CppRequest}}* request,
-        {{.CppResponse}}* response) override;
-{{end}}
-private:
-    // 业务委托在事件循环线程执行，gRPC 线程同步等待完成。{{range .Methods}}
-    static void Handle{{.Method}}(const {{.CppRequest}}* request{{handleResponseParam .}});{{end}}
 
+    // 方法表(按 :path 精确路由)。处理函数捕获 this:本对象必须活过注册它的 Node。
+    void RegisterMethods(muduo_grpc::MethodTable& table) override;
+{{range .Methods}}
+    static constexpr std::string_view k{{.Method}}Path = "{{grpcServerMethodPath .}}";{{end}}
+
+private:{{range .Methods}}
+    using {{.Method}}Call = GrpcUnaryCall<{{.CppRequest}}, {{.CppResponse}}>;{{end}}{{range .Methods}}
+    void {{.Method}}(const std::shared_ptr<{{.Method}}Call>& call);{{end}}{{range .Methods}}
+    static void Handle{{.Method}}(const {{.CppRequest}}* request{{handleResponseParam .}});{{end}}
     muduo::net::EventLoop& loop_;
 {{.PrivateCode}}
 };

@@ -1,5 +1,10 @@
 ﻿#pragma once
 
+#include <cstdint>
+
+// 0 = 无施法者，依赖 EcsContext 已退役 0 号句柄。
+inline constexpr uint64_t kNoBuffCaster = 0;
+
 enum eBuffType {
     // Control buffs
     kBuffTypeMovementSpeedReduction = 0,           // Movement speed reduction

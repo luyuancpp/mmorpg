@@ -101,6 +101,9 @@ func (l *StartActivityBattleLogic) StartActivityBattle(in *matchpb.StartActivity
 		l.Errorf("[match] Invalid activity battle start parameters: %s config=%d members=%v ctx={%s}", reason, configId, members, formatActivityContext(actx))
 		return l.reject(kind, matchpb.ActivityBattleReject_ACTIVITY_BATTLE_REJECT_INVALID_ARGUMENT, 0), nil
 	}
+	if l.svcCtx.Authority != nil {
+		return l.startGlobalActivity(in)
+	}
 
 	// 3. 逐成员只读预检(名单顺序,第一个不满足即返回)。
 	zones := make(map[uint64]uint32, len(members))

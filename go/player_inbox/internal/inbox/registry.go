@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -210,12 +211,13 @@ func (r *Registry) Domain(d inboxpb.PlayerInboxDomain) (*inboxpb.PlayerInboxDoma
 	return s, ok
 }
 
-// Domains 返回全部已登记域(无序)。
+// Domains 返回全部已登记域,按域号升序(运维对账的输出顺序因此稳定,不随 map 遍历变)。
 func (r *Registry) Domains() []inboxpb.PlayerInboxDomain {
 	out := make([]inboxpb.PlayerInboxDomain, 0, len(r.domains))
 	for d := range r.domains {
 		out = append(out, d)
 	}
+	slices.Sort(out)
 	return out
 }
 

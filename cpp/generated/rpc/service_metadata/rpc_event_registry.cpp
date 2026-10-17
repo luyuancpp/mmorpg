@@ -1,8 +1,6 @@
 #include <array>
 #include "rpc_event_registry.h"
-#include "kafka_command_event_whitelist.h"
 #include "proto/common/base/node.pb.h"
-#include "thread_context/ecs_context.h"
 
 #include "proto/battle/player_battle.pb.h"
 #include "proto/battle/battle_node.pb.h"
@@ -15,10 +13,15 @@
 #include "proto/guild/guild.pb.h"
 #include "proto/guild/guild_internal.pb.h"
 #include "proto/login/login.pb.h"
+#include "proto/mail/mail.pb.h"
+#include "proto/mail/mail_admin.pb.h"
 #include "proto/match/match_internal.pb.h"
 #include "proto/match/match_service.pb.h"
 #include "proto/player_inbox/player_inbox.pb.h"
 #include "proto/player_inbox/player_inbox_admin.pb.h"
+#include "proto/player_locator/player_locator.pb.h"
+#include "proto/rank/rank.pb.h"
+#include "proto/rank/rank_admin.pb.h"
 #include "proto/scene/client_player_common.pb.h"
 #include "proto/scene/player_activity.pb.h"
 #include "proto/scene/player_attribute.pb.h"
@@ -52,10 +55,15 @@
 #include "rpc/service_metadata/guild_service_metadata.h"
 #include "rpc/service_metadata/guild_internal_service_metadata.h"
 #include "rpc/service_metadata/login_service_metadata.h"
+#include "rpc/service_metadata/mail_service_metadata.h"
+#include "rpc/service_metadata/mail_admin_service_metadata.h"
 #include "rpc/service_metadata/match_internal_service_metadata.h"
 #include "rpc/service_metadata/match_service_service_metadata.h"
 #include "rpc/service_metadata/player_inbox_service_metadata.h"
 #include "rpc/service_metadata/player_inbox_admin_service_metadata.h"
+#include "rpc/service_metadata/player_locator_service_metadata.h"
+#include "rpc/service_metadata/rank_service_metadata.h"
+#include "rpc/service_metadata/rank_admin_service_metadata.h"
 #include "rpc/service_metadata/client_player_common_service_metadata.h"
 #include "rpc/service_metadata/player_activity_service_metadata.h"
 #include "rpc/service_metadata/player_attribute_service_metadata.h"
@@ -78,10 +86,6 @@
 #include "rpc/service_metadata/jubaozhai_service_metadata.h"
 #include "rpc/service_metadata/trade_admin_service_metadata.h"
 
-#include "proto/common/event/battle_event.pb.h"
-#include "proto/contracts/kafka/gate_event.pb.h"
-#include "proto/common/event/player_inbox_event.pb.h"
-#include "proto/common/event/team_event.pb.h"
 #include "common_event_battle_event_event_id.h"
 #include "contracts_kafka_match_event_event_id.h"
 #include "contracts_kafka_gate_event_event_id.h"
@@ -89,24 +93,6 @@
 #include "common_event_player_inbox_event_event_id.h"
 #include "common_event_player_migration_event_event_id.h"
 #include "common_event_team_event_event_id.h"
-
-class GateImpl final : public Gate {};
-class SceneClientPlayerCommonImpl final : public SceneClientPlayerCommon {};
-class SceneActivityClientPlayerImpl final : public SceneActivityClientPlayer {};
-class SceneAttributeClientPlayerImpl final : public SceneAttributeClientPlayer {};
-class SceneBagClientPlayerImpl final : public SceneBagClientPlayer {};
-class SceneCurrencyClientPlayerImpl final : public SceneCurrencyClientPlayer {};
-class ScenePlayerImpl final : public ScenePlayer {};
-class SceneMissionClientPlayerImpl final : public SceneMissionClientPlayer {};
-class SceneMovementClientPlayerImpl final : public SceneMovementClientPlayer {};
-class ScenePetClientPlayerImpl final : public ScenePetClientPlayer {};
-class SceneRollbackClientPlayerImpl final : public SceneRollbackClientPlayer {};
-class SceneSceneClientPlayerImpl final : public SceneSceneClientPlayer {};
-class SceneSkillClientPlayerImpl final : public SceneSkillClientPlayer {};
-class ScenePlayerSyncImpl final : public ScenePlayerSync {};
-class SceneScenePlayerImpl final : public SceneScenePlayer {};
-class SceneImpl final : public Scene {};
-class SceneSceneImpl final : public SceneScene {};
 
 void SendBattleClientPlayerSubmitBattleAction(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
 void SendBattleClientPlayerGetBattleState(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
@@ -120,6 +106,7 @@ void SendBattleClientPlayerNotifySpectateState(entt::registry& , entt::entity , 
 void SendBattleClientPlayerNotifySpectateTurnResult(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
 void SendBattleClientPlayerNotifySpectateEnd(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
 void SendBattleClientPlayerNotifyBattleAssigned(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
+void SendBattleNodeQueryBattleCreation(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
 void SendBattleNodeCreateBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
 void SendBattleNodeDestroyBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
 void SendBattleNodeAddObserver(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
@@ -212,7 +199,20 @@ namespace loginpb{void SendClientPlayerLoginRefreshToken(entt::registry& , entt:
 namespace loginpb{void SendLoginPreGateAssignGate(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginPreGateQueryQueueStatus(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace loginpb{void SendLoginAdminRemovePlayersFromAccounts(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailListMails(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailReadMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailClaimMailAttachments(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailDeleteMails(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailClearReadMails(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendClientPlayerMailNotifyMailChanged(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendMailAdminSendPersonalMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendMailAdminSendSystemMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendMailAdminSendGuildMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendMailAdminImportMailRecipients(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace mailpb{void SendMailAdminSealMailCampaign(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchInternalStartActivityBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace match{void SendMatchServiceGetNetworkProbePlan(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace match{void SendMatchServiceCommitNetworkProbe(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceJoinQueue(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceCancelQueue(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace match{void SendMatchServiceGetQueueStatus(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -231,6 +231,20 @@ namespace player_inbox{void SendPlayerInboxAdminListItems(entt::registry& , entt
 namespace player_inbox{void SendPlayerInboxAdminLookupByRequest(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace player_inbox{void SendPlayerInboxAdminVoidItem(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace player_inbox{void SendPlayerInboxAdminReconcilePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace playerlocator{void SendPlayerLocatorSetLocation(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace playerlocator{void SendPlayerLocatorGetLocation(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace playerlocator{void SendPlayerLocatorMarkOffline(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace playerlocator{void SendPlayerLocatorSetSession(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace playerlocator{void SendPlayerLocatorGetSession(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace playerlocator{void SendPlayerLocatorSetDisconnecting(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace playerlocator{void SendPlayerLocatorReconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace rankpb{void SendClientPlayerRankGetRankPage(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace rankpb{void SendClientPlayerRankGetRankAround(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace rankpb{void SendRankAdminOpenRankGeneration(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace rankpb{void SendRankAdminSubmitRankScores(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace rankpb{void SendRankAdminFreezeRankGeneration(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace rankpb{void SendRankAdminRemoveRankEntry(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace rankpb{void SendRankAdminDeleteRankGeneration(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -243,6 +257,7 @@ namespace scene_node{void SendSceneNodeGrpcCancelBattlePrepare(entt::registry& ,
 namespace scene_node{void SendSceneNodeGrpcAssetDebit(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcAssetAbortDebit(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace scene_node{void SendSceneNodeGrpcAssetCredit(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace scene_node{void SendSceneNodeGrpcAssetAckReceipt(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace teampb{void SendClientPlayerTeamCreateTeam(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace teampb{void SendClientPlayerTeamGetMyTeam(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace teampb{void SendClientPlayerTeamApplyJoinTeam(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
@@ -262,12 +277,32 @@ namespace trade{void SendClientPlayerJubaozhaiBrowseListings(entt::registry& , e
 namespace trade{void SendClientPlayerJubaozhaiGetListingDetail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace trade{void SendClientPlayerJubaozhaiSetFavorite(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace trade{void SendClientPlayerJubaozhaiGetMyShelf(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiListOfficialSkus(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiCreateOfficialOrder(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiGetCommerceOrder(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiCancelCommerceOrder(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiListCommerceOrders(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiCreatePlayerTrade(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiConfirmPlayerTrade(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiCreateConsignment(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiBuyConsignment(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiCancelConsignment(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiPlaceMarketOrder(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiCancelMarketOrder(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiListMarketOrders(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiGetMarketDepth(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiCreateAuctionLot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiPlaceAuctionBid(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiGetAuctionLot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiCancelAuctionLot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiBrowseCommerceOffers(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+namespace trade{void SendClientPlayerJubaozhaiListTradeMarkets(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 namespace trade{void SendTradeAdminSeedListing(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
 // InitMessageInfo 越界写导致节点启动断言)变成编译错误而不是运行期崩溃。
-static_assert(kMaxRpcMethodCount == 264,
+static_assert(kMaxRpcMethodCount == 314,
     "kMaxRpcMethodCount out of sync with this generation run - rerun the full proto generator");
 std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 
@@ -278,1395 +313,1615 @@ void InitMessageInfo()
         "BattleClientPlayer", "SubmitBattleAction",
         std::make_unique<::SubmitBattleActionRequest>(),
         std::make_unique<::SubmitBattleActionResponse>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerSubmitBattleAction};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerSubmitBattleAction};
     gRpcMethodRegistry[BattleClientPlayerGetBattleStateMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "GetBattleState",
         std::make_unique<::GetBattleStateRequest>(),
         std::make_unique<::BattleStateS2C>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerGetBattleState};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerGetBattleState};
     gRpcMethodRegistry[BattleClientPlayerNotifyBattleStartMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifyBattleStart",
         std::make_unique<::BattleStartS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleStart};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleStart};
     gRpcMethodRegistry[BattleClientPlayerNotifyTurnResultMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifyTurnResult",
         std::make_unique<::TurnResultS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyTurnResult};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyTurnResult};
     gRpcMethodRegistry[BattleClientPlayerNotifyBattleEndMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifyBattleEnd",
         std::make_unique<::BattleEndS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleEnd};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleEnd};
     gRpcMethodRegistry[BattleClientPlayerNotifyBattleReconnectMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifyBattleReconnect",
         std::make_unique<::BattleReconnectS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleReconnect};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleReconnect};
     gRpcMethodRegistry[BattleClientPlayerStopWatchBattleMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "StopWatchBattle",
         std::make_unique<::StopWatchBattleRequest>(),
         std::make_unique<::StopWatchBattleResponse>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerStopWatchBattle};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerStopWatchBattle};
     gRpcMethodRegistry[BattleClientPlayerSetAutoBattleMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "SetAutoBattle",
         std::make_unique<::SetAutoBattleRequest>(),
         std::make_unique<::SetAutoBattleResponse>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerSetAutoBattle};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerSetAutoBattle};
     gRpcMethodRegistry[BattleClientPlayerNotifySpectateStateMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifySpectateState",
         std::make_unique<::SpectateStateS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateState};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateState};
     gRpcMethodRegistry[BattleClientPlayerNotifySpectateTurnResultMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifySpectateTurnResult",
         std::make_unique<::TurnResultS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateTurnResult};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateTurnResult};
     gRpcMethodRegistry[BattleClientPlayerNotifySpectateEndMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifySpectateEnd",
         std::make_unique<::SpectateEndS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateEnd};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateEnd};
     gRpcMethodRegistry[BattleClientPlayerNotifyBattleAssignedMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifyBattleAssigned",
         std::make_unique<::BattleAssignedS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleAssigned};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleAssigned};
 
     // --- BattleNode ---
+    gRpcMethodRegistry[BattleNodeQueryBattleCreationMessageId] = RpcMethodMeta{
+        "BattleNode", "QueryBattleCreation",
+        std::make_unique<::QueryBattleCreationRequest>(),
+        std::make_unique<::QueryBattleCreationResponse>(),
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeQueryBattleCreation};
     gRpcMethodRegistry[BattleNodeCreateBattleMessageId] = RpcMethodMeta{
         "BattleNode", "CreateBattle",
         std::make_unique<::CreateBattleRequest>(),
         std::make_unique<::CreateBattleResponse>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeCreateBattle};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeCreateBattle};
     gRpcMethodRegistry[BattleNodeDestroyBattleMessageId] = RpcMethodMeta{
         "BattleNode", "DestroyBattle",
         std::make_unique<::DestroyBattleRequest>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeDestroyBattle};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeDestroyBattle};
     gRpcMethodRegistry[BattleNodeAddObserverMessageId] = RpcMethodMeta{
         "BattleNode", "AddObserver",
         std::make_unique<::AddObserverRequest>(),
         std::make_unique<::AddObserverResponse>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeAddObserver};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeAddObserver};
     gRpcMethodRegistry[BattleNodeRemoveObserverMessageId] = RpcMethodMeta{
         "BattleNode", "RemoveObserver",
         std::make_unique<::RemoveObserverRequest>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeRemoveObserver};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeRemoveObserver};
     gRpcMethodRegistry[BattleNodeIssueBattleTicketMessageId] = RpcMethodMeta{
         "BattleNode", "IssueBattleTicket",
         std::make_unique<::IssueBattleTicketRequest>(),
         std::make_unique<::IssueBattleTicketResponse>(),
-        nullptr, 1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeIssueBattleTicket};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeIssueBattleTicket};
 
     // --- ClientPlayerChat ---
     gRpcMethodRegistry[ClientPlayerChatSendChatMessageId] = RpcMethodMeta{
         "ClientPlayerChat", "SendChat",
         std::make_unique<::chatpb::SendChatRequest>(),
         std::make_unique<::chatpb::SendChatResponse>(),
-        nullptr, 1, common::base::eNodeType::ChatNodeService, chatpb::SendClientPlayerChatSendChat};
+        1, common::base::eNodeType::ChatNodeService, chatpb::SendClientPlayerChatSendChat};
     gRpcMethodRegistry[ClientPlayerChatPullChatHistoryMessageId] = RpcMethodMeta{
         "ClientPlayerChat", "PullChatHistory",
         std::make_unique<::chatpb::PullChatHistoryRequest>(),
         std::make_unique<::chatpb::PullChatHistoryResponse>(),
-        nullptr, 1, common::base::eNodeType::ChatNodeService, chatpb::SendClientPlayerChatPullChatHistory};
+        1, common::base::eNodeType::ChatNodeService, chatpb::SendClientPlayerChatPullChatHistory};
 
     // --- ClientRpcRouter ---
     gRpcMethodRegistry[ClientRpcRouterForwardMessageId] = RpcMethodMeta{
         "ClientRpcRouter", "Forward",
         std::make_unique<::client_rpc_router::ForwardRequest>(),
         std::make_unique<::MessageContent>(),
-        nullptr, 1, common::base::eNodeType::ClientRpcRouterNodeService, client_rpc_router::SendClientRpcRouterForward};
+        1, common::base::eNodeType::ClientRpcRouterNodeService, client_rpc_router::SendClientRpcRouterForward};
 
     // --- DataService ---
     gRpcMethodRegistry[DataServiceLoadPlayerDataMessageId] = RpcMethodMeta{
         "DataService", "LoadPlayerData",
         std::make_unique<::data_service::LoadPlayerDataRequest>(),
         std::make_unique<::data_service::LoadPlayerDataResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceLoadPlayerData};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceLoadPlayerData};
     gRpcMethodRegistry[DataServiceSavePlayerDataMessageId] = RpcMethodMeta{
         "DataService", "SavePlayerData",
         std::make_unique<::data_service::SavePlayerDataRequest>(),
         std::make_unique<::data_service::SavePlayerDataResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceSavePlayerData};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceSavePlayerData};
     gRpcMethodRegistry[DataServiceGetPlayerFieldMessageId] = RpcMethodMeta{
         "DataService", "GetPlayerField",
         std::make_unique<::data_service::GetPlayerFieldRequest>(),
         std::make_unique<::data_service::GetPlayerFieldResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerField};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerField};
     gRpcMethodRegistry[DataServiceSetPlayerFieldMessageId] = RpcMethodMeta{
         "DataService", "SetPlayerField",
         std::make_unique<::data_service::SetPlayerFieldRequest>(),
         std::make_unique<::data_service::SetPlayerFieldResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceSetPlayerField};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceSetPlayerField};
     gRpcMethodRegistry[DataServiceRegisterPlayerZoneMessageId] = RpcMethodMeta{
         "DataService", "RegisterPlayerZone",
         std::make_unique<::data_service::RegisterPlayerZoneRequest>(),
         std::make_unique<::google::protobuf::Empty>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRegisterPlayerZone};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRegisterPlayerZone};
     gRpcMethodRegistry[DataServiceGetPlayerHomeZoneMessageId] = RpcMethodMeta{
         "DataService", "GetPlayerHomeZone",
         std::make_unique<::data_service::GetPlayerHomeZoneRequest>(),
         std::make_unique<::data_service::GetPlayerHomeZoneResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerHomeZone};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerHomeZone};
     gRpcMethodRegistry[DataServiceBatchGetPlayerHomeZoneMessageId] = RpcMethodMeta{
         "DataService", "BatchGetPlayerHomeZone",
         std::make_unique<::data_service::BatchGetPlayerHomeZoneRequest>(),
         std::make_unique<::data_service::BatchGetPlayerHomeZoneResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerHomeZone};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerHomeZone};
     gRpcMethodRegistry[DataServiceRemapHomeZoneForMergeMessageId] = RpcMethodMeta{
         "DataService", "RemapHomeZoneForMerge",
         std::make_unique<::data_service::RemapHomeZoneForMergeRequest>(),
         std::make_unique<::data_service::RemapHomeZoneForMergeResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRemapHomeZoneForMerge};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRemapHomeZoneForMerge};
     gRpcMethodRegistry[DataServiceDeletePlayerDataMessageId] = RpcMethodMeta{
         "DataService", "DeletePlayerData",
         std::make_unique<::data_service::DeletePlayerDataRequest>(),
         std::make_unique<::data_service::DeletePlayerDataResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceDeletePlayerData};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceDeletePlayerData};
     gRpcMethodRegistry[DataServiceCreatePlayerSnapshotMessageId] = RpcMethodMeta{
         "DataService", "CreatePlayerSnapshot",
         std::make_unique<::data_service::CreatePlayerSnapshotRequest>(),
         std::make_unique<::data_service::CreatePlayerSnapshotResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreatePlayerSnapshot};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreatePlayerSnapshot};
     gRpcMethodRegistry[DataServiceListPlayerSnapshotsMessageId] = RpcMethodMeta{
         "DataService", "ListPlayerSnapshots",
         std::make_unique<::data_service::ListPlayerSnapshotsRequest>(),
         std::make_unique<::data_service::ListPlayerSnapshotsResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceListPlayerSnapshots};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceListPlayerSnapshots};
     gRpcMethodRegistry[DataServiceGetPlayerSnapshotDiffMessageId] = RpcMethodMeta{
         "DataService", "GetPlayerSnapshotDiff",
         std::make_unique<::data_service::GetPlayerSnapshotDiffRequest>(),
         std::make_unique<::data_service::GetPlayerSnapshotDiffResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerSnapshotDiff};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerSnapshotDiff};
     gRpcMethodRegistry[DataServiceRollbackPlayerMessageId] = RpcMethodMeta{
         "DataService", "RollbackPlayer",
         std::make_unique<::data_service::RollbackPlayerRequest>(),
         std::make_unique<::data_service::RollbackPlayerResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackPlayer};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackPlayer};
     gRpcMethodRegistry[DataServiceRollbackZoneMessageId] = RpcMethodMeta{
         "DataService", "RollbackZone",
         std::make_unique<::data_service::RollbackZoneRequest>(),
         std::make_unique<::data_service::RollbackZoneResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackZone};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackZone};
     gRpcMethodRegistry[DataServiceRollbackAllMessageId] = RpcMethodMeta{
         "DataService", "RollbackAll",
         std::make_unique<::data_service::RollbackAllRequest>(),
         std::make_unique<::data_service::RollbackAllResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackAll};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackAll};
     gRpcMethodRegistry[DataServiceBatchRecallItemsMessageId] = RpcMethodMeta{
         "DataService", "BatchRecallItems",
         std::make_unique<::data_service::BatchRecallItemsRequest>(),
         std::make_unique<::data_service::BatchRecallItemsResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchRecallItems};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchRecallItems};
     gRpcMethodRegistry[DataServiceQueryTransactionLogMessageId] = RpcMethodMeta{
         "DataService", "QueryTransactionLog",
         std::make_unique<::data_service::QueryTransactionLogRequest>(),
         std::make_unique<::data_service::QueryTransactionLogResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceQueryTransactionLog};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceQueryTransactionLog};
     gRpcMethodRegistry[DataServiceCreateEventSnapshotMessageId] = RpcMethodMeta{
         "DataService", "CreateEventSnapshot",
         std::make_unique<::data_service::CreateEventSnapshotRequest>(),
         std::make_unique<::data_service::CreateEventSnapshotResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreateEventSnapshot};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreateEventSnapshot};
     gRpcMethodRegistry[DataServiceAllocateIdSegmentMessageId] = RpcMethodMeta{
         "DataService", "AllocateIdSegment",
         std::make_unique<::data_service::AllocateIdSegmentRequest>(),
         std::make_unique<::data_service::AllocateIdSegmentResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceAllocateIdSegment};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceAllocateIdSegment};
     gRpcMethodRegistry[DataServiceReservePlayerNameMessageId] = RpcMethodMeta{
         "DataService", "ReservePlayerName",
         std::make_unique<::data_service::ReservePlayerNameRequest>(),
         std::make_unique<::data_service::ReservePlayerNameResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceReservePlayerName};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceReservePlayerName};
     gRpcMethodRegistry[DataServiceReleasePlayerNameMessageId] = RpcMethodMeta{
         "DataService", "ReleasePlayerName",
         std::make_unique<::data_service::ReleasePlayerNameRequest>(),
         std::make_unique<::google::protobuf::Empty>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceReleasePlayerName};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceReleasePlayerName};
     gRpcMethodRegistry[DataServiceBatchGetPlayerNameMessageId] = RpcMethodMeta{
         "DataService", "BatchGetPlayerName",
         std::make_unique<::data_service::BatchGetPlayerNameRequest>(),
         std::make_unique<::data_service::BatchGetPlayerNameResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerName};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerName};
     gRpcMethodRegistry[DataServiceGetPlayerAssetOpLedgerMessageId] = RpcMethodMeta{
         "DataService", "GetPlayerAssetOpLedger",
         std::make_unique<::data_service::GetPlayerAssetOpLedgerRequest>(),
         std::make_unique<::data_service::GetPlayerAssetOpLedgerResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerAssetOpLedger};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerAssetOpLedger};
     gRpcMethodRegistry[DataServiceGetPlayerInboxLedgerMessageId] = RpcMethodMeta{
         "DataService", "GetPlayerInboxLedger",
         std::make_unique<::data_service::GetPlayerInboxLedgerRequest>(),
         std::make_unique<::data_service::GetPlayerInboxLedgerResponse>(),
-        nullptr, 1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerInboxLedger};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerInboxLedger};
 
     // --- KV ---
     gRpcMethodRegistry[KVRangeMessageId] = RpcMethodMeta{
         "KV", "Range",
         std::make_unique<::etcdserverpb::RangeRequest>(),
         std::make_unique<::etcdserverpb::RangeResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVRange};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVRange};
     gRpcMethodRegistry[KVPutMessageId] = RpcMethodMeta{
         "KV", "Put",
         std::make_unique<::etcdserverpb::PutRequest>(),
         std::make_unique<::etcdserverpb::PutResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVPut};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVPut};
     gRpcMethodRegistry[KVDeleteRangeMessageId] = RpcMethodMeta{
         "KV", "DeleteRange",
         std::make_unique<::etcdserverpb::DeleteRangeRequest>(),
         std::make_unique<::etcdserverpb::DeleteRangeResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVDeleteRange};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVDeleteRange};
     gRpcMethodRegistry[KVTxnMessageId] = RpcMethodMeta{
         "KV", "Txn",
         std::make_unique<::etcdserverpb::TxnRequest>(),
         std::make_unique<::etcdserverpb::TxnResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVTxn};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVTxn};
     gRpcMethodRegistry[KVCompactMessageId] = RpcMethodMeta{
         "KV", "Compact",
         std::make_unique<::etcdserverpb::CompactionRequest>(),
         std::make_unique<::etcdserverpb::CompactionResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVCompact};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVCompact};
 
     // --- Watch ---
     gRpcMethodRegistry[WatchWatchMessageId] = RpcMethodMeta{
         "Watch", "Watch",
         std::make_unique<::etcdserverpb::WatchRequest>(),
         std::make_unique<::etcdserverpb::WatchResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendWatchWatch};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendWatchWatch};
 
     // --- Lease ---
     gRpcMethodRegistry[LeaseLeaseGrantMessageId] = RpcMethodMeta{
         "Lease", "LeaseGrant",
         std::make_unique<::etcdserverpb::LeaseGrantRequest>(),
         std::make_unique<::etcdserverpb::LeaseGrantResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseGrant};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseGrant};
     gRpcMethodRegistry[LeaseLeaseRevokeMessageId] = RpcMethodMeta{
         "Lease", "LeaseRevoke",
         std::make_unique<::etcdserverpb::LeaseRevokeRequest>(),
         std::make_unique<::etcdserverpb::LeaseRevokeResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseRevoke};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseRevoke};
     gRpcMethodRegistry[LeaseLeaseKeepAliveMessageId] = RpcMethodMeta{
         "Lease", "LeaseKeepAlive",
         std::make_unique<::etcdserverpb::LeaseKeepAliveRequest>(),
         std::make_unique<::etcdserverpb::LeaseKeepAliveResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseKeepAlive};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseKeepAlive};
     gRpcMethodRegistry[LeaseLeaseTimeToLiveMessageId] = RpcMethodMeta{
         "Lease", "LeaseTimeToLive",
         std::make_unique<::etcdserverpb::LeaseTimeToLiveRequest>(),
         std::make_unique<::etcdserverpb::LeaseTimeToLiveResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseTimeToLive};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseTimeToLive};
     gRpcMethodRegistry[LeaseLeaseLeasesMessageId] = RpcMethodMeta{
         "Lease", "LeaseLeases",
         std::make_unique<::etcdserverpb::LeaseLeasesRequest>(),
         std::make_unique<::etcdserverpb::LeaseLeasesResponse>(),
-        nullptr, 0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseLeases};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseLeases};
 
     // --- ClientPlayerFriend ---
     gRpcMethodRegistry[ClientPlayerFriendAddFriendMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "AddFriend",
         std::make_unique<::friendpb::AddFriendRequest>(),
         std::make_unique<::friendpb::AddFriendResponse>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendAddFriend};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendAddFriend};
     gRpcMethodRegistry[ClientPlayerFriendAcceptFriendMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "AcceptFriend",
         std::make_unique<::friendpb::AcceptFriendRequest>(),
         std::make_unique<::friendpb::AcceptFriendResponse>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendAcceptFriend};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendAcceptFriend};
     gRpcMethodRegistry[ClientPlayerFriendRejectFriendMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "RejectFriend",
         std::make_unique<::friendpb::RejectFriendRequest>(),
         std::make_unique<::friendpb::RejectFriendResponse>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRejectFriend};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRejectFriend};
     gRpcMethodRegistry[ClientPlayerFriendRemoveFriendMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "RemoveFriend",
         std::make_unique<::friendpb::RemoveFriendRequest>(),
         std::make_unique<::friendpb::RemoveFriendResponse>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRemoveFriend};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRemoveFriend};
     gRpcMethodRegistry[ClientPlayerFriendGetFriendListMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "GetFriendList",
         std::make_unique<::friendpb::GetFriendListRequest>(),
         std::make_unique<::friendpb::GetFriendListResponse>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendGetFriendList};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendGetFriendList};
     gRpcMethodRegistry[ClientPlayerFriendGetPendingRequestsMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "GetPendingRequests",
         std::make_unique<::friendpb::GetPendingRequestsRequest>(),
         std::make_unique<::friendpb::GetPendingRequestsResponse>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendGetPendingRequests};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendGetPendingRequests};
     gRpcMethodRegistry[ClientPlayerFriendBlockMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "Block",
         std::make_unique<::friendpb::BlockRequest>(),
         std::make_unique<::friendpb::BlockResponse>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendBlock};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendBlock};
     gRpcMethodRegistry[ClientPlayerFriendUnblockMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "Unblock",
         std::make_unique<::friendpb::UnblockRequest>(),
         std::make_unique<::friendpb::UnblockResponse>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendUnblock};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendUnblock};
     gRpcMethodRegistry[ClientPlayerFriendListBlocksMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "ListBlocks",
         std::make_unique<::friendpb::ListBlocksRequest>(),
         std::make_unique<::friendpb::ListBlocksResponse>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendListBlocks};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendListBlocks};
     gRpcMethodRegistry[ClientPlayerFriendRecommendFriendsMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "RecommendFriends",
         std::make_unique<::friendpb::RecommendFriendsRequest>(),
         std::make_unique<::friendpb::RecommendFriendsResponse>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRecommendFriends};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRecommendFriends};
     gRpcMethodRegistry[ClientPlayerFriendNotifyFriendEventMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "NotifyFriendEvent",
         std::make_unique<::friendpb::FriendEventS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendNotifyFriendEvent};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendNotifyFriendEvent};
 
     // --- Gate ---
-    gRpcMethodRegistry[GatePlayerEnterGameNodeMessageId] = RpcMethodMeta{
-        "Gate", "PlayerEnterGameNode",
-        std::make_unique<::RegisterGameNodeSessionRequest>(),
-        std::make_unique<::RegisterGameNodeSessionResponse>(),
-        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
     gRpcMethodRegistry[GateSendMessageToPlayerMessageId] = RpcMethodMeta{
         "Gate", "SendMessageToPlayer",
         std::make_unique<::NodeRouteMessageRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
-    gRpcMethodRegistry[GateRouteNodeMessageMessageId] = RpcMethodMeta{
-        "Gate", "RouteNodeMessage",
-        std::make_unique<::RouteMessageRequest>(),
-        std::make_unique<::RouteMessageResponse>(),
-        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
-    gRpcMethodRegistry[GateRoutePlayerMessageMessageId] = RpcMethodMeta{
-        "Gate", "RoutePlayerMessage",
-        std::make_unique<::RoutePlayerMessageRequest>(),
-        std::make_unique<::RoutePlayerMessageResponse>(),
-        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
+        0, common::base::eNodeType::GateNodeService};
     gRpcMethodRegistry[GateBroadcastToPlayersMessageId] = RpcMethodMeta{
         "Gate", "BroadcastToPlayers",
         std::make_unique<::BroadcastToPlayersRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
+        0, common::base::eNodeType::GateNodeService};
     gRpcMethodRegistry[GateBroadcastToSceneMessageId] = RpcMethodMeta{
         "Gate", "BroadcastToScene",
         std::make_unique<::BroadcastToSceneRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
+        0, common::base::eNodeType::GateNodeService};
     gRpcMethodRegistry[GateBroadcastToAllMessageId] = RpcMethodMeta{
         "Gate", "BroadcastToAll",
         std::make_unique<::BroadcastToAllRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
+        0, common::base::eNodeType::GateNodeService};
     gRpcMethodRegistry[GateNodeHandshakeMessageId] = RpcMethodMeta{
         "Gate", "NodeHandshake",
         std::make_unique<::NodeHandshakeRequest>(),
         std::make_unique<::NodeHandshakeResponse>(),
-        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
-    gRpcMethodRegistry[GateBindSessionToGateMessageId] = RpcMethodMeta{
-        "Gate", "BindSessionToGate",
-        std::make_unique<::BindSessionToGateRequest>(),
-        std::make_unique<::BindSessionToGateResponse>(),
-        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
+        0, common::base::eNodeType::GateNodeService};
     gRpcMethodRegistry[GateGmGracefulShutdownMessageId] = RpcMethodMeta{
         "Gate", "GmGracefulShutdown",
         std::make_unique<::GmGracefulShutdownRequest>(),
         std::make_unique<::GmGracefulShutdownResponse>(),
-        std::make_unique<GateImpl>(), 0, common::base::eNodeType::GateNodeService};
+        0, common::base::eNodeType::GateNodeService};
 
     // --- GuildService ---
     gRpcMethodRegistry[GuildServiceCreateGuildMessageId] = RpcMethodMeta{
         "GuildService", "CreateGuild",
         std::make_unique<::guildpb::CreateGuildRequest>(),
         std::make_unique<::guildpb::CreateGuildResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceCreateGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceCreateGuild};
     gRpcMethodRegistry[GuildServiceGetGuildMessageId] = RpcMethodMeta{
         "GuildService", "GetGuild",
         std::make_unique<::guildpb::GetGuildRequest>(),
         std::make_unique<::guildpb::GetGuildResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuild};
     gRpcMethodRegistry[GuildServiceGetPlayerGuildMessageId] = RpcMethodMeta{
         "GuildService", "GetPlayerGuild",
         std::make_unique<::guildpb::GetPlayerGuildRequest>(),
         std::make_unique<::guildpb::GetPlayerGuildResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetPlayerGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetPlayerGuild};
     gRpcMethodRegistry[GuildServiceLeaveGuildMessageId] = RpcMethodMeta{
         "GuildService", "LeaveGuild",
         std::make_unique<::guildpb::LeaveGuildRequest>(),
         std::make_unique<::guildpb::LeaveGuildResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceLeaveGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceLeaveGuild};
     gRpcMethodRegistry[GuildServiceDisbandGuildMessageId] = RpcMethodMeta{
         "GuildService", "DisbandGuild",
         std::make_unique<::guildpb::DisbandGuildRequest>(),
         std::make_unique<::guildpb::DisbandGuildResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceDisbandGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceDisbandGuild};
     gRpcMethodRegistry[GuildServiceSetAnnouncementMessageId] = RpcMethodMeta{
         "GuildService", "SetAnnouncement",
         std::make_unique<::guildpb::SetAnnouncementRequest>(),
         std::make_unique<::guildpb::SetAnnouncementResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceSetAnnouncement};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceSetAnnouncement};
     gRpcMethodRegistry[GuildServiceSetGuildMemberRoleMessageId] = RpcMethodMeta{
         "GuildService", "SetGuildMemberRole",
         std::make_unique<::guildpb::SetGuildMemberRoleRequest>(),
         std::make_unique<::guildpb::SetGuildMemberRoleResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceSetGuildMemberRole};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceSetGuildMemberRole};
     gRpcMethodRegistry[GuildServiceKickGuildMemberMessageId] = RpcMethodMeta{
         "GuildService", "KickGuildMember",
         std::make_unique<::guildpb::KickGuildMemberRequest>(),
         std::make_unique<::guildpb::KickGuildMemberResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceKickGuildMember};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceKickGuildMember};
     gRpcMethodRegistry[GuildServiceTransferGuildLeaderMessageId] = RpcMethodMeta{
         "GuildService", "TransferGuildLeader",
         std::make_unique<::guildpb::TransferGuildLeaderRequest>(),
         std::make_unique<::guildpb::TransferGuildLeaderResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceTransferGuildLeader};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceTransferGuildLeader};
     gRpcMethodRegistry[GuildServiceApplyJoinGuildMessageId] = RpcMethodMeta{
         "GuildService", "ApplyJoinGuild",
         std::make_unique<::guildpb::ApplyJoinGuildRequest>(),
         std::make_unique<::guildpb::ApplyJoinGuildResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceApplyJoinGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceApplyJoinGuild};
     gRpcMethodRegistry[GuildServiceCancelGuildApplicationMessageId] = RpcMethodMeta{
         "GuildService", "CancelGuildApplication",
         std::make_unique<::guildpb::CancelGuildApplicationRequest>(),
         std::make_unique<::guildpb::CancelGuildApplicationResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceCancelGuildApplication};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceCancelGuildApplication};
     gRpcMethodRegistry[GuildServiceListMyGuildApplicationsMessageId] = RpcMethodMeta{
         "GuildService", "ListMyGuildApplications",
         std::make_unique<::guildpb::ListMyGuildApplicationsRequest>(),
         std::make_unique<::guildpb::ListMyGuildApplicationsResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceListMyGuildApplications};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceListMyGuildApplications};
     gRpcMethodRegistry[GuildServiceListGuildApplicationsMessageId] = RpcMethodMeta{
         "GuildService", "ListGuildApplications",
         std::make_unique<::guildpb::ListGuildApplicationsRequest>(),
         std::make_unique<::guildpb::ListGuildApplicationsResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceListGuildApplications};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceListGuildApplications};
     gRpcMethodRegistry[GuildServiceReviewGuildApplicationMessageId] = RpcMethodMeta{
         "GuildService", "ReviewGuildApplication",
         std::make_unique<::guildpb::ReviewGuildApplicationRequest>(),
         std::make_unique<::guildpb::ReviewGuildApplicationResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceReviewGuildApplication};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceReviewGuildApplication};
     gRpcMethodRegistry[GuildServiceNotifyGuildChangedMessageId] = RpcMethodMeta{
         "GuildService", "NotifyGuildChanged",
         std::make_unique<::guildpb::GuildChangedS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceNotifyGuildChanged};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceNotifyGuildChanged};
     gRpcMethodRegistry[GuildServiceUpdateGuildScoreMessageId] = RpcMethodMeta{
         "GuildService", "UpdateGuildScore",
         std::make_unique<::guildpb::UpdateGuildScoreRequest>(),
         std::make_unique<::guildpb::UpdateGuildScoreResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceUpdateGuildScore};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceUpdateGuildScore};
     gRpcMethodRegistry[GuildServiceGetGuildRankMessageId] = RpcMethodMeta{
         "GuildService", "GetGuildRank",
         std::make_unique<::guildpb::GetGuildRankRequest>(),
         std::make_unique<::guildpb::GetGuildRankResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildRank};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildRank};
     gRpcMethodRegistry[GuildServiceGetGuildRankByGuildMessageId] = RpcMethodMeta{
         "GuildService", "GetGuildRankByGuild",
         std::make_unique<::guildpb::GetGuildRankByGuildRequest>(),
         std::make_unique<::guildpb::GetGuildRankByGuildResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildRankByGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildRankByGuild};
     gRpcMethodRegistry[GuildServiceGetGuildDonateOptionsMessageId] = RpcMethodMeta{
         "GuildService", "GetGuildDonateOptions",
         std::make_unique<::guildpb::GetGuildDonateOptionsRequest>(),
         std::make_unique<::guildpb::GetGuildDonateOptionsResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildDonateOptions};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildDonateOptions};
     gRpcMethodRegistry[GuildServiceDonateToGuildMessageId] = RpcMethodMeta{
         "GuildService", "DonateToGuild",
         std::make_unique<::guildpb::DonateToGuildRequest>(),
         std::make_unique<::guildpb::DonateToGuildResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceDonateToGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceDonateToGuild};
     gRpcMethodRegistry[GuildServiceUpgradeGuildMessageId] = RpcMethodMeta{
         "GuildService", "UpgradeGuild",
         std::make_unique<::guildpb::UpgradeGuildRequest>(),
         std::make_unique<::guildpb::UpgradeGuildResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceUpgradeGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceUpgradeGuild};
     gRpcMethodRegistry[GuildServiceGetGuildShopMessageId] = RpcMethodMeta{
         "GuildService", "GetGuildShop",
         std::make_unique<::guildpb::GetGuildShopRequest>(),
         std::make_unique<::guildpb::GetGuildShopResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildShop};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildShop};
     gRpcMethodRegistry[GuildServiceBuyGuildShopGoodsMessageId] = RpcMethodMeta{
         "GuildService", "BuyGuildShopGoods",
         std::make_unique<::guildpb::BuyGuildShopGoodsRequest>(),
         std::make_unique<::guildpb::BuyGuildShopGoodsResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceBuyGuildShopGoods};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceBuyGuildShopGoods};
     gRpcMethodRegistry[GuildServiceGetGuildActivitiesMessageId] = RpcMethodMeta{
         "GuildService", "GetGuildActivities",
         std::make_unique<::guildpb::GetGuildActivitiesRequest>(),
         std::make_unique<::guildpb::GetGuildActivitiesResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildActivities};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildActivities};
     gRpcMethodRegistry[GuildServiceLightGuildLanternMessageId] = RpcMethodMeta{
         "GuildService", "LightGuildLantern",
         std::make_unique<::guildpb::LightGuildLanternRequest>(),
         std::make_unique<::guildpb::LightGuildLanternResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceLightGuildLantern};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceLightGuildLantern};
     gRpcMethodRegistry[GuildServiceClaimGuildReunionMessageId] = RpcMethodMeta{
         "GuildService", "ClaimGuildReunion",
         std::make_unique<::guildpb::ClaimGuildReunionRequest>(),
         std::make_unique<::guildpb::ClaimGuildReunionResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceClaimGuildReunion};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceClaimGuildReunion};
     gRpcMethodRegistry[GuildServiceStartGuildTrialMessageId] = RpcMethodMeta{
         "GuildService", "StartGuildTrial",
         std::make_unique<::guildpb::StartGuildTrialRequest>(),
         std::make_unique<::guildpb::StartGuildTrialResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceStartGuildTrial};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceStartGuildTrial};
     gRpcMethodRegistry[GuildServiceRespondGuildTrialInviteMessageId] = RpcMethodMeta{
         "GuildService", "RespondGuildTrialInvite",
         std::make_unique<::guildpb::RespondGuildTrialInviteRequest>(),
         std::make_unique<::guildpb::RespondGuildTrialInviteResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceRespondGuildTrialInvite};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceRespondGuildTrialInvite};
 
     // --- GuildInternal ---
     gRpcMethodRegistry[GuildInternalListAppliedAssetOpsSinceMessageId] = RpcMethodMeta{
         "GuildInternal", "ListAppliedAssetOpsSince",
         std::make_unique<::guildpb::ListAppliedAssetOpsSinceRequest>(),
         std::make_unique<::guildpb::ListAppliedAssetOpsSinceResponse>(),
-        nullptr, 1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildInternalListAppliedAssetOpsSince};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildInternalListAppliedAssetOpsSince};
 
     // --- ClientPlayerLogin ---
     gRpcMethodRegistry[ClientPlayerLoginLoginMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "Login",
         std::make_unique<::loginpb::LoginRequest>(),
         std::make_unique<::loginpb::LoginResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLogin};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLogin};
     gRpcMethodRegistry[ClientPlayerLoginCreatePlayerMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "CreatePlayer",
         std::make_unique<::loginpb::CreatePlayerRequest>(),
         std::make_unique<::loginpb::CreatePlayerResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginCreatePlayer};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginCreatePlayer};
     gRpcMethodRegistry[ClientPlayerLoginEnterGameMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "EnterGame",
         std::make_unique<::loginpb::EnterGameRequest>(),
         std::make_unique<::loginpb::EnterGameResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGame};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGame};
     gRpcMethodRegistry[ClientPlayerLoginLeaveGameMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "LeaveGame",
         std::make_unique<::loginpb::LeaveGameRequest>(),
         std::make_unique<::loginpb::LoginEmptyResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGame};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGame};
     gRpcMethodRegistry[ClientPlayerLoginDisconnectMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "Disconnect",
         std::make_unique<::loginpb::LoginNodeDisconnectRequest>(),
         std::make_unique<::loginpb::LoginEmptyResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
     gRpcMethodRegistry[ClientPlayerLoginRefreshTokenMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "RefreshToken",
         std::make_unique<::loginpb::RefreshTokenRequest>(),
         std::make_unique<::loginpb::RefreshTokenResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginRefreshToken};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginRefreshToken};
 
     // --- LoginPreGate ---
     gRpcMethodRegistry[LoginPreGateAssignGateMessageId] = RpcMethodMeta{
         "LoginPreGate", "AssignGate",
         std::make_unique<::loginpb::AssignGateRequest>(),
         std::make_unique<::loginpb::AssignGateResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateAssignGate};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateAssignGate};
     gRpcMethodRegistry[LoginPreGateQueryQueueStatusMessageId] = RpcMethodMeta{
         "LoginPreGate", "QueryQueueStatus",
         std::make_unique<::loginpb::QueryQueueStatusRequest>(),
         std::make_unique<::loginpb::QueryQueueStatusResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateQueryQueueStatus};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateQueryQueueStatus};
 
     // --- LoginAdmin ---
     gRpcMethodRegistry[LoginAdminRemovePlayersFromAccountsMessageId] = RpcMethodMeta{
         "LoginAdmin", "RemovePlayersFromAccounts",
         std::make_unique<::loginpb::RemovePlayersFromAccountsRequest>(),
         std::make_unique<::loginpb::RemovePlayersFromAccountsResponse>(),
-        nullptr, 1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginAdminRemovePlayersFromAccounts};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginAdminRemovePlayersFromAccounts};
+
+    // --- ClientPlayerMail ---
+    gRpcMethodRegistry[ClientPlayerMailListMailsMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "ListMails",
+        std::make_unique<::mailpb::ListMailsRequest>(),
+        std::make_unique<::mailpb::ListMailsResponse>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailListMails};
+    gRpcMethodRegistry[ClientPlayerMailReadMailMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "ReadMail",
+        std::make_unique<::mailpb::ReadMailRequest>(),
+        std::make_unique<::mailpb::ReadMailResponse>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailReadMail};
+    gRpcMethodRegistry[ClientPlayerMailClaimMailAttachmentsMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "ClaimMailAttachments",
+        std::make_unique<::mailpb::ClaimMailAttachmentsRequest>(),
+        std::make_unique<::mailpb::ClaimMailAttachmentsResponse>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailClaimMailAttachments};
+    gRpcMethodRegistry[ClientPlayerMailDeleteMailsMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "DeleteMails",
+        std::make_unique<::mailpb::DeleteMailsRequest>(),
+        std::make_unique<::mailpb::DeleteMailsResponse>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailDeleteMails};
+    gRpcMethodRegistry[ClientPlayerMailClearReadMailsMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "ClearReadMails",
+        std::make_unique<::mailpb::ClearReadMailsRequest>(),
+        std::make_unique<::mailpb::ClearReadMailsResponse>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailClearReadMails};
+    gRpcMethodRegistry[ClientPlayerMailNotifyMailChangedMessageId] = RpcMethodMeta{
+        "ClientPlayerMail", "NotifyMailChanged",
+        std::make_unique<::mailpb::MailChangedEvent>(),
+        std::make_unique<::mailpb::MailChangedEvent>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailNotifyMailChanged};
+
+    // --- MailAdmin ---
+    gRpcMethodRegistry[MailAdminSendPersonalMailMessageId] = RpcMethodMeta{
+        "MailAdmin", "SendPersonalMail",
+        std::make_unique<::mailpb::SendMailRequest>(),
+        std::make_unique<::mailpb::SendMailResponse>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendPersonalMail};
+    gRpcMethodRegistry[MailAdminSendSystemMailMessageId] = RpcMethodMeta{
+        "MailAdmin", "SendSystemMail",
+        std::make_unique<::mailpb::SendMailRequest>(),
+        std::make_unique<::mailpb::SendMailResponse>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendSystemMail};
+    gRpcMethodRegistry[MailAdminSendGuildMailMessageId] = RpcMethodMeta{
+        "MailAdmin", "SendGuildMail",
+        std::make_unique<::mailpb::SendMailRequest>(),
+        std::make_unique<::mailpb::SendMailResponse>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendGuildMail};
+    gRpcMethodRegistry[MailAdminImportMailRecipientsMessageId] = RpcMethodMeta{
+        "MailAdmin", "ImportMailRecipients",
+        std::make_unique<::mailpb::ImportMailRecipientsRequest>(),
+        std::make_unique<::mailpb::ImportMailRecipientsResponse>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminImportMailRecipients};
+    gRpcMethodRegistry[MailAdminSealMailCampaignMessageId] = RpcMethodMeta{
+        "MailAdmin", "SealMailCampaign",
+        std::make_unique<::mailpb::SealMailCampaignRequest>(),
+        std::make_unique<::mailpb::SendMailResponse>(),
+        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSealMailCampaign};
 
     // --- MatchInternal ---
     gRpcMethodRegistry[MatchInternalStartActivityBattleMessageId] = RpcMethodMeta{
         "MatchInternal", "StartActivityBattle",
         std::make_unique<::match::StartActivityBattleRequest>(),
         std::make_unique<::match::StartActivityBattleResponse>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchInternalStartActivityBattle};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchInternalStartActivityBattle};
 
     // --- MatchService ---
+    gRpcMethodRegistry[MatchServiceGetNetworkProbePlanMessageId] = RpcMethodMeta{
+        "MatchService", "GetNetworkProbePlan",
+        std::make_unique<::match::GetNetworkProbePlanRequest>(),
+        std::make_unique<::match::GetNetworkProbePlanResponse>(),
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceGetNetworkProbePlan};
+    gRpcMethodRegistry[MatchServiceCommitNetworkProbeMessageId] = RpcMethodMeta{
+        "MatchService", "CommitNetworkProbe",
+        std::make_unique<::match::CommitNetworkProbeRequest>(),
+        std::make_unique<::match::CommitNetworkProbeResponse>(),
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceCommitNetworkProbe};
     gRpcMethodRegistry[MatchServiceJoinQueueMessageId] = RpcMethodMeta{
         "MatchService", "JoinQueue",
         std::make_unique<::match::JoinQueueRequest>(),
         std::make_unique<::match::JoinQueueResponse>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceJoinQueue};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceJoinQueue};
     gRpcMethodRegistry[MatchServiceCancelQueueMessageId] = RpcMethodMeta{
         "MatchService", "CancelQueue",
         std::make_unique<::match::CancelQueueRequest>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceCancelQueue};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceCancelQueue};
     gRpcMethodRegistry[MatchServiceGetQueueStatusMessageId] = RpcMethodMeta{
         "MatchService", "GetQueueStatus",
         std::make_unique<::match::GetQueueStatusRequest>(),
         std::make_unique<::match::GetQueueStatusResponse>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceGetQueueStatus};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceGetQueueStatus};
     gRpcMethodRegistry[MatchServiceChallengePlayerMessageId] = RpcMethodMeta{
         "MatchService", "ChallengePlayer",
         std::make_unique<::match::ChallengePlayerRequest>(),
         std::make_unique<::match::ChallengePlayerResponse>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceChallengePlayer};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceChallengePlayer};
     gRpcMethodRegistry[MatchServiceRespondChallengeMessageId] = RpcMethodMeta{
         "MatchService", "RespondChallenge",
         std::make_unique<::match::RespondChallengeRequest>(),
         std::make_unique<::match::RespondChallengeResponse>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceRespondChallenge};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceRespondChallenge};
     gRpcMethodRegistry[MatchServiceNotifyChallengeInviteMessageId] = RpcMethodMeta{
         "MatchService", "NotifyChallengeInvite",
         std::make_unique<::match::ChallengeInviteS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceNotifyChallengeInvite};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceNotifyChallengeInvite};
     gRpcMethodRegistry[MatchServiceNotifyChallengeResultMessageId] = RpcMethodMeta{
         "MatchService", "NotifyChallengeResult",
         std::make_unique<::match::ChallengeResultS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceNotifyChallengeResult};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceNotifyChallengeResult};
     gRpcMethodRegistry[MatchServiceWatchBattleMessageId] = RpcMethodMeta{
         "MatchService", "WatchBattle",
         std::make_unique<::match::WatchBattleRequest>(),
         std::make_unique<::match::WatchBattleResponse>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceWatchBattle};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceWatchBattle};
     gRpcMethodRegistry[MatchServiceRequestBattleTicketMessageId] = RpcMethodMeta{
         "MatchService", "RequestBattleTicket",
         std::make_unique<::RequestBattleTicketRequest>(),
         std::make_unique<::RequestBattleTicketResponse>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceRequestBattleTicket};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceRequestBattleTicket};
     gRpcMethodRegistry[MatchServiceListWatchableBattlesMessageId] = RpcMethodMeta{
         "MatchService", "ListWatchableBattles",
         std::make_unique<::match::ListWatchableBattlesRequest>(),
         std::make_unique<::match::ListWatchableBattlesResponse>(),
-        nullptr, 1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceListWatchableBattles};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceListWatchableBattles};
 
     // --- PlayerInbox ---
     gRpcMethodRegistry[PlayerInboxFetchItemsMessageId] = RpcMethodMeta{
         "PlayerInbox", "FetchItems",
         std::make_unique<::player_inbox::FetchPlayerInboxRequest>(),
         std::make_unique<::player_inbox::FetchPlayerInboxResponse>(),
-        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxFetchItems};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxFetchItems};
     gRpcMethodRegistry[PlayerInboxAckItemsMessageId] = RpcMethodMeta{
         "PlayerInbox", "AckItems",
         std::make_unique<::player_inbox::AckPlayerInboxRequest>(),
         std::make_unique<::player_inbox::AckPlayerInboxResponse>(),
-        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAckItems};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAckItems};
 
     // --- PlayerInboxAdmin ---
     gRpcMethodRegistry[PlayerInboxAdminGmSanctionPlayerMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "GmSanctionPlayer",
         std::make_unique<::player_inbox::GmSanctionPlayerRequest>(),
         std::make_unique<::player_inbox::GmSanctionPlayerResponse>(),
-        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGmSanctionPlayer};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGmSanctionPlayer};
     gRpcMethodRegistry[PlayerInboxAdminGetSummaryMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "GetSummary",
         std::make_unique<::player_inbox::GetPlayerInboxSummaryRequest>(),
         std::make_unique<::player_inbox::GetPlayerInboxSummaryResponse>(),
-        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGetSummary};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGetSummary};
     gRpcMethodRegistry[PlayerInboxAdminListItemsMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "ListItems",
         std::make_unique<::player_inbox::ListPlayerInboxItemsRequest>(),
         std::make_unique<::player_inbox::ListPlayerInboxItemsResponse>(),
-        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminListItems};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminListItems};
     gRpcMethodRegistry[PlayerInboxAdminLookupByRequestMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "LookupByRequest",
         std::make_unique<::player_inbox::LookupPlayerInboxRequest>(),
         std::make_unique<::player_inbox::LookupPlayerInboxResponse>(),
-        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminLookupByRequest};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminLookupByRequest};
     gRpcMethodRegistry[PlayerInboxAdminVoidItemMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "VoidItem",
         std::make_unique<::player_inbox::VoidPlayerInboxItemRequest>(),
         std::make_unique<::player_inbox::VoidPlayerInboxItemResponse>(),
-        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminVoidItem};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminVoidItem};
     gRpcMethodRegistry[PlayerInboxAdminReconcilePlayerMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "ReconcilePlayer",
         std::make_unique<::player_inbox::ReconcilePlayerInboxRequest>(),
         std::make_unique<::player_inbox::ReconcilePlayerInboxResponse>(),
-        nullptr, 1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminReconcilePlayer};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminReconcilePlayer};
+
+    // --- PlayerLocator ---
+    gRpcMethodRegistry[PlayerLocatorSetLocationMessageId] = RpcMethodMeta{
+        "PlayerLocator", "SetLocation",
+        std::make_unique<::playerlocator::PlayerLocation>(),
+        std::make_unique<::Empty>(),
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetLocation};
+    gRpcMethodRegistry[PlayerLocatorGetLocationMessageId] = RpcMethodMeta{
+        "PlayerLocator", "GetLocation",
+        std::make_unique<::playerlocator::PlayerId>(),
+        std::make_unique<::playerlocator::PlayerLocation>(),
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorGetLocation};
+    gRpcMethodRegistry[PlayerLocatorMarkOfflineMessageId] = RpcMethodMeta{
+        "PlayerLocator", "MarkOffline",
+        std::make_unique<::playerlocator::MarkOfflineRequest>(),
+        std::make_unique<::Empty>(),
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorMarkOffline};
+    gRpcMethodRegistry[PlayerLocatorSetSessionMessageId] = RpcMethodMeta{
+        "PlayerLocator", "SetSession",
+        std::make_unique<::playerlocator::SetSessionRequest>(),
+        std::make_unique<::Empty>(),
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetSession};
+    gRpcMethodRegistry[PlayerLocatorGetSessionMessageId] = RpcMethodMeta{
+        "PlayerLocator", "GetSession",
+        std::make_unique<::playerlocator::GetSessionRequest>(),
+        std::make_unique<::playerlocator::GetSessionResponse>(),
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorGetSession};
+    gRpcMethodRegistry[PlayerLocatorSetDisconnectingMessageId] = RpcMethodMeta{
+        "PlayerLocator", "SetDisconnecting",
+        std::make_unique<::playerlocator::SetDisconnectingRequest>(),
+        std::make_unique<::Empty>(),
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetDisconnecting};
+    gRpcMethodRegistry[PlayerLocatorReconnectMessageId] = RpcMethodMeta{
+        "PlayerLocator", "Reconnect",
+        std::make_unique<::playerlocator::ReconnectRequest>(),
+        std::make_unique<::playerlocator::ReconnectResponse>(),
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorReconnect};
+
+    // --- ClientPlayerRank ---
+    gRpcMethodRegistry[ClientPlayerRankGetRankPageMessageId] = RpcMethodMeta{
+        "ClientPlayerRank", "GetRankPage",
+        std::make_unique<::rankpb::GetRankPageRequest>(),
+        std::make_unique<::rankpb::GetRankPageResponse>(),
+        1, common::base::eNodeType::RankNodeService, rankpb::SendClientPlayerRankGetRankPage};
+    gRpcMethodRegistry[ClientPlayerRankGetRankAroundMessageId] = RpcMethodMeta{
+        "ClientPlayerRank", "GetRankAround",
+        std::make_unique<::rankpb::GetRankAroundRequest>(),
+        std::make_unique<::rankpb::GetRankAroundResponse>(),
+        1, common::base::eNodeType::RankNodeService, rankpb::SendClientPlayerRankGetRankAround};
+
+    // --- RankAdmin ---
+    gRpcMethodRegistry[RankAdminOpenRankGenerationMessageId] = RpcMethodMeta{
+        "RankAdmin", "OpenRankGeneration",
+        std::make_unique<::rankpb::OpenRankGenerationRequest>(),
+        std::make_unique<::rankpb::OpenRankGenerationResponse>(),
+        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminOpenRankGeneration};
+    gRpcMethodRegistry[RankAdminSubmitRankScoresMessageId] = RpcMethodMeta{
+        "RankAdmin", "SubmitRankScores",
+        std::make_unique<::rankpb::SubmitRankScoresRequest>(),
+        std::make_unique<::rankpb::SubmitRankScoresResponse>(),
+        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminSubmitRankScores};
+    gRpcMethodRegistry[RankAdminFreezeRankGenerationMessageId] = RpcMethodMeta{
+        "RankAdmin", "FreezeRankGeneration",
+        std::make_unique<::rankpb::FreezeRankGenerationRequest>(),
+        std::make_unique<::rankpb::FreezeRankGenerationResponse>(),
+        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminFreezeRankGeneration};
+    gRpcMethodRegistry[RankAdminRemoveRankEntryMessageId] = RpcMethodMeta{
+        "RankAdmin", "RemoveRankEntry",
+        std::make_unique<::rankpb::RemoveRankEntryRequest>(),
+        std::make_unique<::rankpb::RankAdminResponse>(),
+        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminRemoveRankEntry};
+    gRpcMethodRegistry[RankAdminDeleteRankGenerationMessageId] = RpcMethodMeta{
+        "RankAdmin", "DeleteRankGeneration",
+        std::make_unique<::rankpb::RemoveRankEntryRequest>(),
+        std::make_unique<::rankpb::RankAdminResponse>(),
+        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminDeleteRankGeneration};
 
     // --- SceneClientPlayerCommon ---
     gRpcMethodRegistry[SceneClientPlayerCommonSendTipToClientMessageId] = RpcMethodMeta{
         "SceneClientPlayerCommon", "SendTipToClient",
         std::make_unique<::TipInfoMessage>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneClientPlayerCommonImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneClientPlayerCommonKickPlayerMessageId] = RpcMethodMeta{
         "SceneClientPlayerCommon", "KickPlayer",
         std::make_unique<::GameKickPlayerRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneClientPlayerCommonImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneClientPlayerCommonRedirectToGateMessageId] = RpcMethodMeta{
         "SceneClientPlayerCommon", "RedirectToGate",
         std::make_unique<::RedirectToGateNotify>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneClientPlayerCommonImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneActivityClientPlayer ---
     gRpcMethodRegistry[SceneActivityClientPlayerGetActivityListMessageId] = RpcMethodMeta{
         "SceneActivityClientPlayer", "GetActivityList",
         std::make_unique<::GetActivityListRequest>(),
         std::make_unique<::GetActivityListResponse>(),
-        std::make_unique<SceneActivityClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneAttributeClientPlayer ---
     gRpcMethodRegistry[SceneAttributeClientPlayerGetAttributePanelMessageId] = RpcMethodMeta{
         "SceneAttributeClientPlayer", "GetAttributePanel",
         std::make_unique<::GetAttributePanelRequest>(),
         std::make_unique<::GetAttributePanelResponse>(),
-        std::make_unique<SceneAttributeClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneAttributeClientPlayerAllocateAttributePointsMessageId] = RpcMethodMeta{
         "SceneAttributeClientPlayer", "AllocateAttributePoints",
         std::make_unique<::AllocateAttributePointsRequest>(),
         std::make_unique<::AllocateAttributePointsResponse>(),
-        std::make_unique<SceneAttributeClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneAttributeClientPlayerResetAttributePointsMessageId] = RpcMethodMeta{
         "SceneAttributeClientPlayer", "ResetAttributePoints",
         std::make_unique<::ResetAttributePointsRequest>(),
         std::make_unique<::ResetAttributePointsResponse>(),
-        std::make_unique<SceneAttributeClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneAttributeClientPlayerAutoAllocateAttributePointsMessageId] = RpcMethodMeta{
         "SceneAttributeClientPlayer", "AutoAllocateAttributePoints",
         std::make_unique<::AutoAllocateAttributePointsRequest>(),
         std::make_unique<::AutoAllocateAttributePointsResponse>(),
-        std::make_unique<SceneAttributeClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneAttributeClientPlayerCreateAttributeSchemeMessageId] = RpcMethodMeta{
         "SceneAttributeClientPlayer", "CreateAttributeScheme",
         std::make_unique<::CreateAttributeSchemeRequest>(),
         std::make_unique<::CreateAttributeSchemeResponse>(),
-        std::make_unique<SceneAttributeClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneAttributeClientPlayerSwitchAttributeSchemeMessageId] = RpcMethodMeta{
         "SceneAttributeClientPlayer", "SwitchAttributeScheme",
         std::make_unique<::SwitchAttributeSchemeRequest>(),
         std::make_unique<::SwitchAttributeSchemeResponse>(),
-        std::make_unique<SceneAttributeClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneAttributeClientPlayerRenameAttributeSchemeMessageId] = RpcMethodMeta{
         "SceneAttributeClientPlayer", "RenameAttributeScheme",
         std::make_unique<::RenameAttributeSchemeRequest>(),
         std::make_unique<::RenameAttributeSchemeResponse>(),
-        std::make_unique<SceneAttributeClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneAttributeClientPlayerNotifyAttributePanelChangedMessageId] = RpcMethodMeta{
         "SceneAttributeClientPlayer", "NotifyAttributePanelChanged",
         std::make_unique<::AttributePanelChangedS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneAttributeClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneAttributeClientPlayerGmSetPlayerLevelMessageId] = RpcMethodMeta{
         "SceneAttributeClientPlayer", "GmSetPlayerLevel",
         std::make_unique<::GmSetPlayerLevelRequest>(),
         std::make_unique<::GmSetPlayerLevelResponse>(),
-        std::make_unique<SceneAttributeClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneBagClientPlayer ---
     gRpcMethodRegistry[SceneBagClientPlayerGetBagMessageId] = RpcMethodMeta{
         "SceneBagClientPlayer", "GetBag",
         std::make_unique<::GetBagRequest>(),
         std::make_unique<::GetBagResponse>(),
-        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneBagClientPlayerSortBagMessageId] = RpcMethodMeta{
         "SceneBagClientPlayer", "SortBag",
         std::make_unique<::SortBagRequest>(),
         std::make_unique<::SortBagResponse>(),
-        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneBagClientPlayerEquipItemMessageId] = RpcMethodMeta{
         "SceneBagClientPlayer", "EquipItem",
         std::make_unique<::EquipItemRequest>(),
         std::make_unique<::EquipItemResponse>(),
-        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneBagClientPlayerUnequipItemMessageId] = RpcMethodMeta{
         "SceneBagClientPlayer", "UnequipItem",
         std::make_unique<::UnequipItemRequest>(),
         std::make_unique<::UnequipItemResponse>(),
-        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneBagClientPlayerGmGrantItemMessageId] = RpcMethodMeta{
         "SceneBagClientPlayer", "GmGrantItem",
         std::make_unique<::GmGrantItemRequest>(),
         std::make_unique<::GmGrantItemResponse>(),
-        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneBagClientPlayerEnhanceEquipMessageId] = RpcMethodMeta{
         "SceneBagClientPlayer", "EnhanceEquip",
         std::make_unique<::EnhanceEquipRequest>(),
         std::make_unique<::EnhanceEquipResponse>(),
-        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneBagClientPlayerInlayGemMessageId] = RpcMethodMeta{
         "SceneBagClientPlayer", "InlayGem",
         std::make_unique<::InlayGemRequest>(),
         std::make_unique<::InlayGemResponse>(),
-        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneBagClientPlayerRemoveGemMessageId] = RpcMethodMeta{
         "SceneBagClientPlayer", "RemoveGem",
         std::make_unique<::RemoveGemRequest>(),
         std::make_unique<::RemoveGemResponse>(),
-        std::make_unique<SceneBagClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneCurrencyClientPlayer ---
     gRpcMethodRegistry[SceneCurrencyClientPlayerGmAddCurrencyMessageId] = RpcMethodMeta{
         "SceneCurrencyClientPlayer", "GmAddCurrency",
         std::make_unique<::GmAddCurrencyRequest>(),
         std::make_unique<::GmAddCurrencyResponse>(),
-        std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneCurrencyClientPlayerGmDeductCurrencyMessageId] = RpcMethodMeta{
         "SceneCurrencyClientPlayer", "GmDeductCurrency",
         std::make_unique<::GmDeductCurrencyRequest>(),
         std::make_unique<::GmDeductCurrencyResponse>(),
-        std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneCurrencyClientPlayerGetCurrencyListMessageId] = RpcMethodMeta{
         "SceneCurrencyClientPlayer", "GetCurrencyList",
         std::make_unique<::GetCurrencyListRequest>(),
         std::make_unique<::GetCurrencyListResponse>(),
-        std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneCurrencyClientPlayerGmBlockCurrencyMessageId] = RpcMethodMeta{
         "SceneCurrencyClientPlayer", "GmBlockCurrency",
         std::make_unique<::GmBlockCurrencyRequest>(),
         std::make_unique<::GmBlockCurrencyResponse>(),
-        std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneCurrencyClientPlayerGmUnblockCurrencyMessageId] = RpcMethodMeta{
         "SceneCurrencyClientPlayer", "GmUnblockCurrency",
         std::make_unique<::GmUnblockCurrencyRequest>(),
         std::make_unique<::GmUnblockCurrencyResponse>(),
-        std::make_unique<SceneCurrencyClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- ScenePlayer ---
     gRpcMethodRegistry[ScenePlayerGateLoginNotifyMessageId] = RpcMethodMeta{
         "ScenePlayer", "GateLoginNotify",
         std::make_unique<::GateLoginNotifyRequest>(),
         std::make_unique<::google::protobuf::Empty>(),
-        std::make_unique<ScenePlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePlayerExitGameMessageId] = RpcMethodMeta{
         "ScenePlayer", "ExitGame",
         std::make_unique<::GameNodeExitGameRequest>(),
         std::make_unique<::google::protobuf::Empty>(),
-        std::make_unique<ScenePlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneMissionClientPlayer ---
     gRpcMethodRegistry[SceneMissionClientPlayerGetMissionListMessageId] = RpcMethodMeta{
         "SceneMissionClientPlayer", "GetMissionList",
         std::make_unique<::GetMissionListRequest>(),
         std::make_unique<::GetMissionListResponse>(),
-        std::make_unique<SceneMissionClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneMissionClientPlayerAcceptMissionMessageId] = RpcMethodMeta{
         "SceneMissionClientPlayer", "AcceptMission",
         std::make_unique<::MissionActionRequest>(),
         std::make_unique<::GetMissionListResponse>(),
-        std::make_unique<SceneMissionClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneMissionClientPlayerClaimMissionRewardMessageId] = RpcMethodMeta{
         "SceneMissionClientPlayer", "ClaimMissionReward",
         std::make_unique<::MissionActionRequest>(),
         std::make_unique<::GetMissionListResponse>(),
-        std::make_unique<SceneMissionClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneMovementClientPlayer ---
     gRpcMethodRegistry[SceneMovementClientPlayerMoveStartMessageId] = RpcMethodMeta{
         "SceneMovementClientPlayer", "MoveStart",
         std::make_unique<::MoveStartC2S>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneMovementClientPlayerMoveStopMessageId] = RpcMethodMeta{
         "SceneMovementClientPlayer", "MoveStop",
         std::make_unique<::MoveStopC2S>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneMovementClientPlayerMoveSyncMessageId] = RpcMethodMeta{
         "SceneMovementClientPlayer", "MoveSync",
         std::make_unique<::MoveSyncC2S>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneMovementClientPlayerTeleportRequestMessageId] = RpcMethodMeta{
         "SceneMovementClientPlayer", "TeleportRequest",
         std::make_unique<::TeleportRequestC2S>(),
         std::make_unique<::TeleportRequestC2SResponse>(),
-        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneMovementClientPlayerNotifyMoveAckMessageId] = RpcMethodMeta{
         "SceneMovementClientPlayer", "NotifyMoveAck",
         std::make_unique<::MoveAckS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneMovementClientPlayerNotifyActorMoveMessageId] = RpcMethodMeta{
         "SceneMovementClientPlayer", "NotifyActorMove",
         std::make_unique<::ActorMoveS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneMovementClientPlayerNotifyActorMoveListMessageId] = RpcMethodMeta{
         "SceneMovementClientPlayer", "NotifyActorMoveList",
         std::make_unique<::ActorMoveListS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneMovementClientPlayerNotifyTeleportMessageId] = RpcMethodMeta{
         "SceneMovementClientPlayer", "NotifyTeleport",
         std::make_unique<::TeleportS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneMovementClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- ScenePetClientPlayer ---
     gRpcMethodRegistry[ScenePetClientPlayerGetPetListMessageId] = RpcMethodMeta{
         "ScenePetClientPlayer", "GetPetList",
         std::make_unique<::GetPetListRequest>(),
         std::make_unique<::GetPetListResponse>(),
-        std::make_unique<ScenePetClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePetClientPlayerSummonPetMessageId] = RpcMethodMeta{
         "ScenePetClientPlayer", "SummonPet",
         std::make_unique<::SummonPetRequest>(),
         std::make_unique<::SummonPetResponse>(),
-        std::make_unique<ScenePetClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePetClientPlayerRecallPetMessageId] = RpcMethodMeta{
         "ScenePetClientPlayer", "RecallPet",
         std::make_unique<::RecallPetRequest>(),
         std::make_unique<::RecallPetResponse>(),
-        std::make_unique<ScenePetClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePetClientPlayerAllocatePetPointsMessageId] = RpcMethodMeta{
         "ScenePetClientPlayer", "AllocatePetPoints",
         std::make_unique<::AllocatePetPointsRequest>(),
         std::make_unique<::AllocatePetPointsResponse>(),
-        std::make_unique<ScenePetClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePetClientPlayerResetPetPointsMessageId] = RpcMethodMeta{
         "ScenePetClientPlayer", "ResetPetPoints",
         std::make_unique<::ResetPetPointsRequest>(),
         std::make_unique<::ResetPetPointsResponse>(),
-        std::make_unique<ScenePetClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePetClientPlayerAutoAllocatePetPointsMessageId] = RpcMethodMeta{
         "ScenePetClientPlayer", "AutoAllocatePetPoints",
         std::make_unique<::AutoAllocatePetPointsRequest>(),
         std::make_unique<::AutoAllocatePetPointsResponse>(),
-        std::make_unique<ScenePetClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePetClientPlayerRenamePetMessageId] = RpcMethodMeta{
         "ScenePetClientPlayer", "RenamePet",
         std::make_unique<::RenamePetRequest>(),
         std::make_unique<::RenamePetResponse>(),
-        std::make_unique<ScenePetClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePetClientPlayerNotifyPetListChangedMessageId] = RpcMethodMeta{
         "ScenePetClientPlayer", "NotifyPetListChanged",
         std::make_unique<::PetListChangedS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<ScenePetClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePetClientPlayerGmGrantPetMessageId] = RpcMethodMeta{
         "ScenePetClientPlayer", "GmGrantPet",
         std::make_unique<::GmGrantPetRequest>(),
         std::make_unique<::GmGrantPetResponse>(),
-        std::make_unique<ScenePetClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneRollbackClientPlayer ---
     gRpcMethodRegistry[SceneRollbackClientPlayerGmAttachDebtMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmAttachDebt",
         std::make_unique<::GmAttachDebtRequest>(),
         std::make_unique<::GmAttachDebtResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmWaiveDebtMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmWaiveDebt",
         std::make_unique<::GmWaiveDebtRequest>(),
         std::make_unique<::GmWaiveDebtResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmAdjustDebtMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmAdjustDebt",
         std::make_unique<::GmAdjustDebtRequest>(),
         std::make_unique<::GmAdjustDebtResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmFreezeDebtMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmFreezeDebt",
         std::make_unique<::GmFreezeDebtRequest>(),
         std::make_unique<::GmFreezeDebtResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmQueryDebtMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmQueryDebt",
         std::make_unique<::GmQueryDebtRequest>(),
         std::make_unique<::GmQueryDebtResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmCreateSnapshotMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmCreateSnapshot",
         std::make_unique<::GmCreateSnapshotRequest>(),
         std::make_unique<::GmCreateSnapshotResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmListSnapshotsMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmListSnapshots",
         std::make_unique<::GmListSnapshotsRequest>(),
         std::make_unique<::GmListSnapshotsResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmPreviewRollbackMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmPreviewRollback",
         std::make_unique<::GmPreviewRollbackRequest>(),
         std::make_unique<::GmPreviewRollbackResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmExecuteRollbackMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmExecuteRollback",
         std::make_unique<::GmExecuteRollbackRequest>(),
         std::make_unique<::GmExecuteRollbackResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmQueryTransactionLogMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmQueryTransactionLog",
         std::make_unique<::GmQueryTransactionLogRequest>(),
         std::make_unique<::GmQueryTransactionLogResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmTraceItemMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmTraceItem",
         std::make_unique<::GmTraceItemRequest>(),
         std::make_unique<::GmTraceItemResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneRollbackClientPlayerGmClawbackItemMessageId] = RpcMethodMeta{
         "SceneRollbackClientPlayer", "GmClawbackItem",
         std::make_unique<::GmClawbackItemRequest>(),
         std::make_unique<::GmClawbackItemResponse>(),
-        std::make_unique<SceneRollbackClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneSceneClientPlayer ---
     gRpcMethodRegistry[SceneSceneClientPlayerEnterSceneMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "EnterScene",
         std::make_unique<::EnterSceneC2SRequest>(),
         std::make_unique<::EnterSceneC2SResponse>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneClientPlayerNotifyEnterSceneMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "NotifyEnterScene",
         std::make_unique<::EnterSceneS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneClientPlayerSceneInfoC2SMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "SceneInfoC2S",
         std::make_unique<::SceneInfoRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneClientPlayerNotifySceneInfoMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "NotifySceneInfo",
         std::make_unique<::SceneInfoS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneClientPlayerNotifyActorCreateMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "NotifyActorCreate",
         std::make_unique<::ActorCreateS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneClientPlayerNotifyActorDestroyMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "NotifyActorDestroy",
         std::make_unique<::ActorDestroyS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneClientPlayerNotifyActorListCreateMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "NotifyActorListCreate",
         std::make_unique<::ActorListCreateS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneClientPlayerNotifyActorListDestroyMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "NotifyActorListDestroy",
         std::make_unique<::ActorListDestroyS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneClientPlayerTravelToZoneMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "TravelToZone",
         std::make_unique<::TravelToZoneRequest>(),
         std::make_unique<::TravelToZoneResponse>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneClientPlayerGetSyncDigestMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "GetSyncDigest",
         std::make_unique<::GetSyncDigestRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneClientPlayerNotifySyncDigestMessageId] = RpcMethodMeta{
         "SceneSceneClientPlayer", "NotifySyncDigest",
         std::make_unique<::SyncDigestS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSceneClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneSkillClientPlayer ---
     gRpcMethodRegistry[SceneSkillClientPlayerReleaseSkillMessageId] = RpcMethodMeta{
         "SceneSkillClientPlayer", "ReleaseSkill",
         std::make_unique<::ReleaseSkillRequest>(),
         std::make_unique<::ReleaseSkillResponse>(),
-        std::make_unique<SceneSkillClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSkillClientPlayerNotifySkillUsedMessageId] = RpcMethodMeta{
         "SceneSkillClientPlayer", "NotifySkillUsed",
         std::make_unique<::SkillUsedS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSkillClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSkillClientPlayerNotifySkillInterruptedMessageId] = RpcMethodMeta{
         "SceneSkillClientPlayer", "NotifySkillInterrupted",
         std::make_unique<::SkillInterruptedS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSkillClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSkillClientPlayerListSkillsMessageId] = RpcMethodMeta{
         "SceneSkillClientPlayer", "ListSkills",
         std::make_unique<::ListSkillsRequest>(),
         std::make_unique<::ListSkillsResponse>(),
-        std::make_unique<SceneSkillClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- ScenePlayerSync ---
     gRpcMethodRegistry[ScenePlayerSyncSyncBaseAttributeMessageId] = RpcMethodMeta{
         "ScenePlayerSync", "SyncBaseAttribute",
         std::make_unique<::ActorBaseAttributesS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<ScenePlayerSyncImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePlayerSyncSyncAttribute2FramesMessageId] = RpcMethodMeta{
         "ScenePlayerSync", "SyncAttribute2Frames",
         std::make_unique<::AttributeDelta2FramesS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<ScenePlayerSyncImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePlayerSyncSyncAttribute5FramesMessageId] = RpcMethodMeta{
         "ScenePlayerSync", "SyncAttribute5Frames",
         std::make_unique<::AttributeDelta5FramesS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<ScenePlayerSyncImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePlayerSyncSyncAttribute10FramesMessageId] = RpcMethodMeta{
         "ScenePlayerSync", "SyncAttribute10Frames",
         std::make_unique<::AttributeDelta10FramesS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<ScenePlayerSyncImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePlayerSyncSyncAttribute30FramesMessageId] = RpcMethodMeta{
         "ScenePlayerSync", "SyncAttribute30Frames",
         std::make_unique<::AttributeDelta30FramesS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<ScenePlayerSyncImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePlayerSyncSyncAttribute60FramesMessageId] = RpcMethodMeta{
         "ScenePlayerSync", "SyncAttribute60Frames",
         std::make_unique<::AttributeDelta60FramesS2C>(),
         std::make_unique<::Empty>(),
-        std::make_unique<ScenePlayerSyncImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneScenePlayer ---
     gRpcMethodRegistry[SceneScenePlayerEnterSceneMessageId] = RpcMethodMeta{
         "SceneScenePlayer", "EnterScene",
         std::make_unique<::GsEnterSceneRequest>(),
         std::make_unique<::google::protobuf::Empty>(),
-        std::make_unique<SceneScenePlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneScenePlayerLeaveSceneMessageId] = RpcMethodMeta{
         "SceneScenePlayer", "LeaveScene",
         std::make_unique<::GsLeaveSceneRequest>(),
         std::make_unique<::google::protobuf::Empty>(),
-        std::make_unique<SceneScenePlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneScenePlayerEnterSceneS2CMessageId] = RpcMethodMeta{
         "SceneScenePlayer", "EnterSceneS2C",
         std::make_unique<::EnterSceneS2CRequest>(),
         std::make_unique<::EnterSceneS2CResponse>(),
-        std::make_unique<SceneScenePlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- Scene ---
     gRpcMethodRegistry[ScenePlayerEnterGameNodeMessageId] = RpcMethodMeta{
         "Scene", "PlayerEnterGameNode",
         std::make_unique<::PlayerEnterGameNodeRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
-    gRpcMethodRegistry[SceneSendMessageToPlayerMessageId] = RpcMethodMeta{
-        "Scene", "SendMessageToPlayer",
-        std::make_unique<::NodeRouteMessageRequest>(),
-        std::make_unique<::NodeRouteMessageResponse>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneProcessClientPlayerMessageMessageId] = RpcMethodMeta{
         "Scene", "ProcessClientPlayerMessage",
         std::make_unique<::ProcessClientPlayerMessageRequest>(),
         std::make_unique<::ProcessClientPlayerMessageResponse>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
-    gRpcMethodRegistry[SceneInvokePlayerServiceMessageId] = RpcMethodMeta{
-        "Scene", "InvokePlayerService",
-        std::make_unique<::NodeRouteMessageRequest>(),
-        std::make_unique<::NodeRouteMessageResponse>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
-    gRpcMethodRegistry[SceneRouteNodeStringMsgMessageId] = RpcMethodMeta{
-        "Scene", "RouteNodeStringMsg",
-        std::make_unique<::RouteMessageRequest>(),
-        std::make_unique<::RouteMessageResponse>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
-    gRpcMethodRegistry[SceneRoutePlayerStringMsgMessageId] = RpcMethodMeta{
-        "Scene", "RoutePlayerStringMsg",
-        std::make_unique<::RoutePlayerMessageRequest>(),
-        std::make_unique<::RoutePlayerMessageResponse>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneUpdateSessionDetailMessageId] = RpcMethodMeta{
         "Scene", "UpdateSessionDetail",
         std::make_unique<::RegisterPlayerSessionRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneCreateSceneMessageId] = RpcMethodMeta{
         "Scene", "CreateScene",
         std::make_unique<::CreateSceneRequest>(),
         std::make_unique<::CreateSceneResponse>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneDestroySceneMessageId] = RpcMethodMeta{
         "Scene", "DestroyScene",
         std::make_unique<::DestroySceneRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[ScenePrepareBattleMessageId] = RpcMethodMeta{
         "Scene", "PrepareBattle",
         std::make_unique<::PrepareBattleRequest>(),
         std::make_unique<::PrepareBattleResponse>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneCancelBattlePrepareMessageId] = RpcMethodMeta{
         "Scene", "CancelBattlePrepare",
         std::make_unique<::CancelBattlePrepareRequest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneNodeHandshakeMessageId] = RpcMethodMeta{
         "Scene", "NodeHandshake",
         std::make_unique<::NodeHandshakeRequest>(),
         std::make_unique<::NodeHandshakeResponse>(),
-        std::make_unique<SceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneScene ---
     gRpcMethodRegistry[SceneSceneTestMessageId] = RpcMethodMeta{
         "SceneScene", "Test",
         std::make_unique<::GameSceneTest>(),
         std::make_unique<::Empty>(),
-        std::make_unique<SceneSceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
     gRpcMethodRegistry[SceneSceneGmGracefulShutdownMessageId] = RpcMethodMeta{
         "SceneScene", "GmGracefulShutdown",
         std::make_unique<::GmGracefulShutdownRequest>(),
         std::make_unique<::GmGracefulShutdownResponse>(),
-        std::make_unique<SceneSceneImpl>(), 0, common::base::eNodeType::SceneNodeService};
+        0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneSceneGmDescribeEntityMessageId] = RpcMethodMeta{
+        "SceneScene", "GmDescribeEntity",
+        std::make_unique<::GmDescribeEntityRequest>(),
+        std::make_unique<::GmDescribeEntityResponse>(),
+        0, common::base::eNodeType::SceneNodeService};
 
     // --- SceneManager ---
     gRpcMethodRegistry[SceneManagerCreateSceneMessageId] = RpcMethodMeta{
         "SceneManager", "CreateScene",
         std::make_unique<::scene_manager::CreateSceneRequest>(),
         std::make_unique<::scene_manager::CreateSceneResponse>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerCreateScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerCreateScene};
     gRpcMethodRegistry[SceneManagerDestroySceneMessageId] = RpcMethodMeta{
         "SceneManager", "DestroyScene",
         std::make_unique<::scene_manager::DestroySceneRequest>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerDestroyScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerDestroyScene};
     gRpcMethodRegistry[SceneManagerEnterSceneMessageId] = RpcMethodMeta{
         "SceneManager", "EnterScene",
         std::make_unique<::scene_manager::EnterSceneRequest>(),
         std::make_unique<::scene_manager::EnterSceneResponse>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerEnterScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerEnterScene};
     gRpcMethodRegistry[SceneManagerLeaveSceneMessageId] = RpcMethodMeta{
         "SceneManager", "LeaveScene",
         std::make_unique<::scene_manager::LeaveSceneRequest>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerLeaveScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerLeaveScene};
 
     // --- SceneNodeGrpc ---
     gRpcMethodRegistry[SceneNodeGrpcCreateSceneMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "CreateScene",
         std::make_unique<::CreateSceneRequest>(),
         std::make_unique<::CreateSceneResponse>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcCreateScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcCreateScene};
     gRpcMethodRegistry[SceneNodeGrpcDestroySceneMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "DestroyScene",
         std::make_unique<::DestroySceneRequest>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcDestroyScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcDestroyScene};
     gRpcMethodRegistry[SceneNodeGrpcReleasePlayerMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "ReleasePlayer",
         std::make_unique<::scene_node::ReleasePlayerRequest>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcReleasePlayer};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcReleasePlayer};
     gRpcMethodRegistry[SceneNodeGrpcPrepareBattleMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "PrepareBattle",
         std::make_unique<::PrepareBattleRequest>(),
         std::make_unique<::PrepareBattleResponse>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcPrepareBattle};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcPrepareBattle};
     gRpcMethodRegistry[SceneNodeGrpcCancelBattlePrepareMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "CancelBattlePrepare",
         std::make_unique<::CancelBattlePrepareRequest>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcCancelBattlePrepare};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcCancelBattlePrepare};
     gRpcMethodRegistry[SceneNodeGrpcAssetDebitMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "AssetDebit",
         std::make_unique<::AssetOpRequest>(),
         std::make_unique<::AssetOpResponse>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetDebit};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetDebit};
     gRpcMethodRegistry[SceneNodeGrpcAssetAbortDebitMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "AssetAbortDebit",
         std::make_unique<::AssetOpRequest>(),
         std::make_unique<::AssetOpResponse>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetAbortDebit};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetAbortDebit};
     gRpcMethodRegistry[SceneNodeGrpcAssetCreditMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "AssetCredit",
         std::make_unique<::AssetOpRequest>(),
         std::make_unique<::AssetOpResponse>(),
-        nullptr, 1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetCredit};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetCredit};
+    gRpcMethodRegistry[SceneNodeGrpcAssetAckReceiptMessageId] = RpcMethodMeta{
+        "SceneNodeGrpc", "AssetAckReceipt",
+        std::make_unique<::AssetOpRequest>(),
+        std::make_unique<::AssetOpResponse>(),
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetAckReceipt};
 
     // --- ClientPlayerTeam ---
     gRpcMethodRegistry[ClientPlayerTeamCreateTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "CreateTeam",
         std::make_unique<::teampb::CreateTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamCreateTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamCreateTeam};
     gRpcMethodRegistry[ClientPlayerTeamGetMyTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "GetMyTeam",
         std::make_unique<::teampb::GetMyTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamGetMyTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamGetMyTeam};
     gRpcMethodRegistry[ClientPlayerTeamApplyJoinTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "ApplyJoinTeam",
         std::make_unique<::teampb::ApplyJoinTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamApplyJoinTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamApplyJoinTeam};
     gRpcMethodRegistry[ClientPlayerTeamHandleApplicationMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "HandleApplication",
         std::make_unique<::teampb::HandleApplicationRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamHandleApplication};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamHandleApplication};
     gRpcMethodRegistry[ClientPlayerTeamInviteToTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "InviteToTeam",
         std::make_unique<::teampb::InviteToTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamInviteToTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamInviteToTeam};
     gRpcMethodRegistry[ClientPlayerTeamRespondInviteMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "RespondInvite",
         std::make_unique<::teampb::RespondInviteRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamRespondInvite};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamRespondInvite};
     gRpcMethodRegistry[ClientPlayerTeamListMyInvitesMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "ListMyInvites",
         std::make_unique<::teampb::ListMyInvitesRequest>(),
         std::make_unique<::teampb::ListMyInvitesResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamListMyInvites};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamListMyInvites};
     gRpcMethodRegistry[ClientPlayerTeamLeaveTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "LeaveTeam",
         std::make_unique<::teampb::LeaveTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamLeaveTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamLeaveTeam};
     gRpcMethodRegistry[ClientPlayerTeamKickMemberMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "KickMember",
         std::make_unique<::teampb::KickMemberRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamKickMember};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamKickMember};
     gRpcMethodRegistry[ClientPlayerTeamTransferLeaderMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "TransferLeader",
         std::make_unique<::teampb::TransferLeaderRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamTransferLeader};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamTransferLeader};
     gRpcMethodRegistry[ClientPlayerTeamDisbandTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "DisbandTeam",
         std::make_unique<::teampb::DisbandTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamDisbandTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamDisbandTeam};
     gRpcMethodRegistry[ClientPlayerTeamStartTeamMatchMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "StartTeamMatch",
         std::make_unique<::teampb::StartTeamMatchRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamStartTeamMatch};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamStartTeamMatch};
     gRpcMethodRegistry[ClientPlayerTeamNotifyTeamSnapshotMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "NotifyTeamSnapshot",
         std::make_unique<::teampb::TeamSnapshotS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamSnapshot};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamSnapshot};
     gRpcMethodRegistry[ClientPlayerTeamNotifyTeamInviteMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "NotifyTeamInvite",
         std::make_unique<::teampb::TeamInviteS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamInvite};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamInvite};
     gRpcMethodRegistry[ClientPlayerTeamNotifyTeamEventMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "NotifyTeamEvent",
         std::make_unique<::teampb::TeamEventS2C>(),
         std::make_unique<::Empty>(),
-        nullptr, 1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamEvent};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamEvent};
 
     // --- ClientPlayerJubaozhai ---
     gRpcMethodRegistry[ClientPlayerJubaozhaiBrowseListingsMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "BrowseListings",
         std::make_unique<::trade::BrowseListingsRequest>(),
         std::make_unique<::trade::BrowseListingsResponse>(),
-        nullptr, 1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBrowseListings};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBrowseListings};
     gRpcMethodRegistry[ClientPlayerJubaozhaiGetListingDetailMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "GetListingDetail",
         std::make_unique<::trade::GetListingDetailRequest>(),
         std::make_unique<::trade::GetListingDetailResponse>(),
-        nullptr, 1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetListingDetail};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetListingDetail};
     gRpcMethodRegistry[ClientPlayerJubaozhaiSetFavoriteMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "SetFavorite",
         std::make_unique<::trade::SetFavoriteRequest>(),
         std::make_unique<::trade::SetFavoriteResponse>(),
-        nullptr, 1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiSetFavorite};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiSetFavorite};
     gRpcMethodRegistry[ClientPlayerJubaozhaiGetMyShelfMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "GetMyShelf",
         std::make_unique<::trade::GetMyShelfRequest>(),
         std::make_unique<::trade::GetMyShelfResponse>(),
-        nullptr, 1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetMyShelf};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetMyShelf};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiListOfficialSkusMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "ListOfficialSkus",
+        std::make_unique<::trade::ListOfficialSkusRequest>(),
+        std::make_unique<::trade::ListOfficialSkusResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListOfficialSkus};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCreateOfficialOrderMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CreateOfficialOrder",
+        std::make_unique<::trade::CreateOfficialOrderRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateOfficialOrder};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiGetCommerceOrderMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "GetCommerceOrder",
+        std::make_unique<::trade::GetCommerceOrderRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetCommerceOrder};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCancelCommerceOrderMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CancelCommerceOrder",
+        std::make_unique<::trade::CancelCommerceOrderRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelCommerceOrder};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiListCommerceOrdersMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "ListCommerceOrders",
+        std::make_unique<::trade::ListCommerceOrdersRequest>(),
+        std::make_unique<::trade::ListCommerceOrdersResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListCommerceOrders};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCreatePlayerTradeMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CreatePlayerTrade",
+        std::make_unique<::trade::CreatePlayerTradeRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreatePlayerTrade};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiConfirmPlayerTradeMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "ConfirmPlayerTrade",
+        std::make_unique<::trade::ConfirmPlayerTradeRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiConfirmPlayerTrade};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCreateConsignmentMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CreateConsignment",
+        std::make_unique<::trade::CreateConsignmentRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateConsignment};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiBuyConsignmentMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "BuyConsignment",
+        std::make_unique<::trade::BuyConsignmentRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBuyConsignment};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCancelConsignmentMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CancelConsignment",
+        std::make_unique<::trade::CancelConsignmentRequest>(),
+        std::make_unique<::trade::CommerceOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelConsignment};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiPlaceMarketOrderMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "PlaceMarketOrder",
+        std::make_unique<::trade::PlaceMarketOrderRequest>(),
+        std::make_unique<::trade::MarketOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiPlaceMarketOrder};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCancelMarketOrderMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CancelMarketOrder",
+        std::make_unique<::trade::CancelMarketOrderRequest>(),
+        std::make_unique<::trade::MarketOrderResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelMarketOrder};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiListMarketOrdersMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "ListMarketOrders",
+        std::make_unique<::trade::ListMarketOrdersRequest>(),
+        std::make_unique<::trade::ListMarketOrdersResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListMarketOrders};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiGetMarketDepthMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "GetMarketDepth",
+        std::make_unique<::trade::GetMarketDepthRequest>(),
+        std::make_unique<::trade::GetMarketDepthResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetMarketDepth};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCreateAuctionLotMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CreateAuctionLot",
+        std::make_unique<::trade::CreateAuctionLotRequest>(),
+        std::make_unique<::trade::AuctionLotResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateAuctionLot};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiPlaceAuctionBidMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "PlaceAuctionBid",
+        std::make_unique<::trade::PlaceAuctionBidRequest>(),
+        std::make_unique<::trade::AuctionLotResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiPlaceAuctionBid};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiGetAuctionLotMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "GetAuctionLot",
+        std::make_unique<::trade::GetAuctionLotRequest>(),
+        std::make_unique<::trade::AuctionLotResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetAuctionLot};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiCancelAuctionLotMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "CancelAuctionLot",
+        std::make_unique<::trade::CancelAuctionLotRequest>(),
+        std::make_unique<::trade::AuctionLotResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelAuctionLot};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiBrowseCommerceOffersMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "BrowseCommerceOffers",
+        std::make_unique<::trade::BrowseCommerceOffersRequest>(),
+        std::make_unique<::trade::BrowseCommerceOffersResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBrowseCommerceOffers};
+    gRpcMethodRegistry[ClientPlayerJubaozhaiListTradeMarketsMessageId] = RpcMethodMeta{
+        "ClientPlayerJubaozhai", "ListTradeMarkets",
+        std::make_unique<::trade::ListTradeMarketsRequest>(),
+        std::make_unique<::trade::ListTradeMarketsResponse>(),
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListTradeMarkets};
 
     // --- TradeAdmin ---
     gRpcMethodRegistry[TradeAdminSeedListingMessageId] = RpcMethodMeta{
         "TradeAdmin", "SeedListing",
         std::make_unique<::trade::SeedListingRequest>(),
         std::make_unique<::trade::SeedListingResponse>(),
-        nullptr, 1, common::base::eNodeType::TradeNodeService, trade::SendTradeAdminSeedListing};
+        1, common::base::eNodeType::TradeNodeService, trade::SendTradeAdminSeedListing};
 }
 
 bool IsClientMessageId(uint32_t messageId)
@@ -1731,6 +1986,14 @@ bool IsClientMessageId(uint32_t messageId)
 	case ClientPlayerLoginLeaveGameMessageId:
 	case ClientPlayerLoginDisconnectMessageId:
 	case ClientPlayerLoginRefreshTokenMessageId:
+	case ClientPlayerMailListMailsMessageId:
+	case ClientPlayerMailReadMailMessageId:
+	case ClientPlayerMailClaimMailAttachmentsMessageId:
+	case ClientPlayerMailDeleteMailsMessageId:
+	case ClientPlayerMailClearReadMailsMessageId:
+	case ClientPlayerMailNotifyMailChangedMessageId:
+	case MatchServiceGetNetworkProbePlanMessageId:
+	case MatchServiceCommitNetworkProbeMessageId:
 	case MatchServiceJoinQueueMessageId:
 	case MatchServiceCancelQueueMessageId:
 	case MatchServiceGetQueueStatusMessageId:
@@ -1741,6 +2004,8 @@ bool IsClientMessageId(uint32_t messageId)
 	case MatchServiceWatchBattleMessageId:
 	case MatchServiceRequestBattleTicketMessageId:
 	case MatchServiceListWatchableBattlesMessageId:
+	case ClientPlayerRankGetRankPageMessageId:
+	case ClientPlayerRankGetRankAroundMessageId:
 	case SceneClientPlayerCommonSendTipToClientMessageId:
 	case SceneClientPlayerCommonKickPlayerMessageId:
 	case SceneClientPlayerCommonRedirectToGateMessageId:
@@ -1821,6 +2086,26 @@ bool IsClientMessageId(uint32_t messageId)
 	case ClientPlayerJubaozhaiGetListingDetailMessageId:
 	case ClientPlayerJubaozhaiSetFavoriteMessageId:
 	case ClientPlayerJubaozhaiGetMyShelfMessageId:
+	case ClientPlayerJubaozhaiListOfficialSkusMessageId:
+	case ClientPlayerJubaozhaiCreateOfficialOrderMessageId:
+	case ClientPlayerJubaozhaiGetCommerceOrderMessageId:
+	case ClientPlayerJubaozhaiCancelCommerceOrderMessageId:
+	case ClientPlayerJubaozhaiListCommerceOrdersMessageId:
+	case ClientPlayerJubaozhaiCreatePlayerTradeMessageId:
+	case ClientPlayerJubaozhaiConfirmPlayerTradeMessageId:
+	case ClientPlayerJubaozhaiCreateConsignmentMessageId:
+	case ClientPlayerJubaozhaiBuyConsignmentMessageId:
+	case ClientPlayerJubaozhaiCancelConsignmentMessageId:
+	case ClientPlayerJubaozhaiPlaceMarketOrderMessageId:
+	case ClientPlayerJubaozhaiCancelMarketOrderMessageId:
+	case ClientPlayerJubaozhaiListMarketOrdersMessageId:
+	case ClientPlayerJubaozhaiGetMarketDepthMessageId:
+	case ClientPlayerJubaozhaiCreateAuctionLotMessageId:
+	case ClientPlayerJubaozhaiPlaceAuctionBidMessageId:
+	case ClientPlayerJubaozhaiGetAuctionLotMessageId:
+	case ClientPlayerJubaozhaiCancelAuctionLotMessageId:
+	case ClientPlayerJubaozhaiBrowseCommerceOffersMessageId:
+	case ClientPlayerJubaozhaiListTradeMarketsMessageId:
 		return true;
 	default:
 		return false;
@@ -1830,126 +2115,4 @@ bool IsClientMessageId(uint32_t messageId)
 bool IsValidEventId(uint32_t eventId)
 {
 	return eventId < kMaxEventCount;
-}
-
-KafkaEventDispatchResult DispatchSceneCommandEvent(uint32_t eventId, const std::string& payload)
-{
-	if (!IsSceneCommandEvent(eventId)) return KafkaEventDispatchResult::kNotAllowed;
-	switch (eventId) {
-	case BattleConfirmedEventEventId: {
-		BattleConfirmedEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case BattleSettlementEventEventId: {
-		BattleSettlementEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case PlayerInboxNotifyEventEventId: {
-		PlayerInboxNotifyEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case PlayerTeamRefreshEventEventId: {
-		PlayerTeamRefreshEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	default:
-		return KafkaEventDispatchResult::kNotAllowed;
-	}
-}
-
-KafkaEventDispatchResult DispatchGateCommandEvent(uint32_t eventId, const std::string& payload)
-{
-	if (!IsGateCommandEvent(eventId)) return KafkaEventDispatchResult::kNotAllowed;
-	switch (eventId) {
-	case ContractsKafkaBindSessionEventEventId: {
-		contracts::kafka::BindSessionEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case ContractsKafkaBroadcastToAllEventEventId: {
-		contracts::kafka::BroadcastToAllEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case ContractsKafkaBroadcastToPlayersEventEventId: {
-		contracts::kafka::BroadcastToPlayersEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case ContractsKafkaBroadcastToSceneEventEventId: {
-		contracts::kafka::BroadcastToSceneEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case ContractsKafkaKickPlayerEventEventId: {
-		contracts::kafka::KickPlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case ContractsKafkaPlayerLeaseExpiredEventEventId: {
-		contracts::kafka::PlayerLeaseExpiredEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case ContractsKafkaPushToPlayerEventEventId: {
-		contracts::kafka::PushToPlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case ContractsKafkaRedirectToGateEventEventId: {
-		contracts::kafka::RedirectToGateEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	case ContractsKafkaRoutePlayerEventEventId: {
-		contracts::kafka::RoutePlayerEvent event;
-		if (!event.ParseFromString(payload)) {
-			return KafkaEventDispatchResult::kDecodeFailed;
-		}
-		tlsEcs.dispatcher.trigger(event);
-		return KafkaEventDispatchResult::kDispatched;
-	}
-	default:
-		return KafkaEventDispatchResult::kNotAllowed;
-	}
 }

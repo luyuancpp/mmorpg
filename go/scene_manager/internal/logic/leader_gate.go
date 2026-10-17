@@ -4,9 +4,13 @@ import "sync"
 
 // 领导权闸门:scene_manager 多副本部署时,**变更类**后台动作(补建世界频道 /
 // rebalance / 死节点孤儿清理 / 空闲副本销毁 / 世界频道自动扩缩容 / Agones
-// 对账)只允许领导者执行;**数据面**(RPC handler、etcd watch 内存镜像、
-// 负载分刷新)每个副本照常跑 —— 它们的权威状态在 Redis,写入要么走 Lua CAS
-// 要么是幂等同值写,天然多实例安全。
+// 对账 / 负载分刷新)只允许领导者执行;**数据面**(RPC handler、etcd watch 内存镜像)
+// 每个副本照常跑 —— 它们的权威状态在 Redis,写入要么走 Lua CAS 要么是幂等同值写,
+// 天然多实例安全。
+//
+// 负载分刷新不是幂等同值写:跟随者的 watch 镜像可能落后于领导者的清理,会把领导者刚摘掉的
+// 死节点重新 ZADD 回负载集(理由见 load_reporter.go updateNodeLoad)。2026-10-16 起跟随者连读
+// 也不做,每节点指标只由领导者导出,跟随者只发布本 zone 的 nodes_by_role(load_refresh.go)。
 //
 // 领导者由 shared/leader 的 Redis 锁选出,接线在 scene_manager_service.go。
 // 未接线时(单测、旧启动路径)一律视为领导者,与历史单实例行为完全一致。

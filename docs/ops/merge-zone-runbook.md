@@ -100,8 +100,18 @@
 
 - 存盘 topic 是 **`db_task_zone_{zone}`**,世代号 ≥ 2 时带后缀 `_g{gen}`(`tools/merge_zone/preflight.go::dbTaskTopic`,镜像 `go/db/internal/config.DbTaskTopicForGeneration`;C++ 侧读 `bin/etc/base_deploy_config.yaml` 的 `DbTaskTopicGeneration`)。
 - 世代号由三方共同决定,必须相等:C++ `DbTaskTopicGeneration`、`go/db/etc/db.yaml` 的 `ServerConfig.Kafka.TopicGeneration`、`go/login/etc/login.yaml` 的 `Kafka.TopicGeneration`。`start_game.ps1`、`k8s_deploy.ps1` 与契约测试会在不一致时拒绝。
-- 消费组是 `db_rpc_consumer_group`(`go/db/etc/db.yaml` → `Kafka.GroupID`)。
-- `dev_tools.ps1` 会从 `go/db/etc/db.yaml` 现读 GroupID 与 TopicGeneration,并转发 `-kafka-group` / `-kafka-topic-generation`;需要覆盖时用 `-MergeKafkaGroup` / `-MergeKafkaTopicGeneration`。**以前「必须绕过 ps1 手敲 `go run`」的变通已经不需要了。**
+- 消费组(2026-10-15 起按 zone 推导;已落码,未编译、未测试,待 Codex 验证;设计见 [db-consumer-group-per-zone.md](../design/db-consumer-group-per-zone.md) §7):
+  - go/db 的存盘消费组正逐 zone 从共用的 legacy 组 `db_rpc_consumer_group` 交接到 `db_rpc_consumer_group_z{zone}`。P3 的候选组是按 zone 推导的 `db_rpc_consumer_group_z{zone}`
+    (合服取 src,撤销取 dst;`tools/merge_zone/preflight.go::dbConsumerGroupForZone`,基名 `defaultKafkaGroup` 与 `go/db/etc/db.yaml` 的 `ServerConfig.Kafka.GroupID` 相同),
+    加上 legacy 组(`-kafka-legacy-group`,缺省 `db_rpc_consumer_group`,传空值则只看 zone 组)。
+  - 门禁只认在本 topic 上至少有一行数值 CURRENT-OFFSET 的**唯一权威组**,只对它算 LAG(`resolveAuthoritativeLag`)。两组都有位点就拒绝(`more than one candidate group holds committed offsets on topic …`),
+    先用 `tools/scripts/kafka_offset_reset.ps1 -FinalizeHandoff` 收尾;两组都没有位点(`no candidate group holds committed offsets on topic …`)或 CLI 读不出,同样拒绝。
+    不取「各组 LAG 最小值」:冻结在高位的旧组 LAG 可以是 0,会替真正在消费的组担保(fail-open)。
+  - `-kafka-group` 显式给值时只看这一个组。本机单 zone 默认启动是裸名 `db_rpc_consumer_group`,`-Zone N` 启动是 `db_rpc_consumer_group_zN`,两种都在候选里;
+    本机混用过两种启动方式、两组都有位点时,用 `-MergeKafkaGroup` 显式指定实际在跑的组。
+- `dev_tools.ps1` 从 `go/db/etc/db.yaml` 现读 TopicGeneration 并转发 `-kafka-topic-generation`(`-MergeKafkaTopicGeneration` 覆盖)。**组名不再转发**(2026-10-15,`Get-MergeZoneArgs`):
+  由工具按 zone 推导并认定唯一权威组;`-MergeKafkaGroup` 只用于显式覆盖,非空才转成 `-kafka-group`。`dev_tools.ps1` 不转发 `-kafka-legacy-group`。
+  以前「必须绕过 ps1 手敲 `go run`」的变通已经不需要了。
 - 注意:`dev_tools.ps1` 里 `-RollbackKafkaTopic` 的默认值仍是旧名 `db_task_topic`,但那是 `k8s-zone-rollback` 的参数,与合服无关。
 
 ---
@@ -264,8 +274,8 @@ K8s 上 db Pod 因此 CrashLoop 时,集群里没有 db-migrate Job,db 镜像也�
 | 0 | collect | 扫一次 mapping 拿源区玩家 id(续跑从清单读,日志 `RESUME: ...`) | 首跑:释放围栏,exit 1;续跑:保留围栏(§3 ③) |
 | G | guard | 0 个玩家 ⇒ 拒绝(除非 `-MergeAllowEmptySource`);源库有行却没有任何映射 ⇒ 拒绝;`-MergeExpectedSrcPlayers` 对不上 ⇒ 拒绝 | 同上 |
 | P2 | preflight | `scene_nodes:zone:{src}:load` 必须空(源区无活节点) | 同上 |
-| P3 | preflight | `db_task_zone_{src}[_g{gen}]` 在 `db_rpc_consumer_group` 上的 LAG = 0 | 同上 |
-| P4 | preflight | `kafka:retry/processing/dead:queue:db_task_zone_{src}` 三个列表都空,且每个 db 实例各自的 `kafka:retry:processing:{topic}:{实例}` 也空 | 同上 |
+| P3 | preflight | `db_task_zone_{src}[_g{gen}]` 在**唯一权威组**上的 LAG = 0(2026-10-15 起):候选是 `db_rpc_consumer_group_z{src}` 加 legacy 组 `db_rpc_consumer_group`(或 `-kafka-group` 显式指定的一个),恰好一个组在本 topic 上有已提交位点才只对它算 LAG;两组都有 / 都没有 / CLI 读不出一律拒绝,见 §2.3。通过日志 `preflight P3 OK: authoritative group <g> lag=0 on <topic> [...]` | 同上 |
+| P4 | preflight | `kafka:retry/processing/dead:queue:db_task_zone_{src}` 三个列表都空,且每个 db 实例各自的 `kafka:retry:processing:{topic}:{实例}` 也空,以及按分区的 ready 列表 `kafka:retry:queue:db_task_zone_{src}:p*` 都空(2026-10-15 起,经 SCAN MATCH 发现,topic 先做 glob 转义,任一页出错整体拒绝) | 同上 |
 | P5 | preflight | 源区玩家没有在持的 `lock:player:{id}` | 同上 |
 | P6 | preflight | 源区玩家没有 `player:session:{id}` | 同上 |
 | P7 | preflight | 源区玩家**不在任何活队伍里**(`team:player:{id}` 的 tid 非 0 且 `team:rec:{tid}` 仍在)。队伍记录写着每个成员的 zone_id,合服不迁移 | 同上;处置见 §8 Step 1 |
@@ -403,7 +413,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command merge-zone-audit `
 | `source_scene_nodes` | `scene_nodes:zone:{src}:load` 必须空 | block | **必然 block**(在线),T-1 忽略 |
 | `online_presence` | `player:session:{pid}`(**DB 0**)必须为 0 | block | **必然 block**,T-1 忽略 |
 | `player_locks` | `lock:player:{id}`(mapping DB)+ `player:{id}:__lock`(data Redis,给了 `-MergeSourceDataRedis` 才查) | block | 可能 block,T-1 忽略 |
-| `kafka_db_task_queues` | `kafka:retry/processing/dead:queue:db_task_zone_{src}` 三个都空,且每个 db 实例各自的 processing 列表也空 | block | 在线时有也正常;**死信队列非空要在 T-1 查清** |
+| `kafka_db_task_queues` | `kafka:retry/processing/dead:queue:db_task_zone_{src}` 三个都空,且每个 db 实例各自的 processing 列表也空,以及按分区的 ready 列表 `kafka:retry:queue:db_task_zone_{src}:p*`(2026-10-15 起,经 SCAN 发现)也空 | block | 在线时有也正常;**死信队列非空要在 T-1 查清** |
 | `friend` / `friend_request` | 住独占库 `mmorpg_friend`,按 player_id 索引,合服后自然存活;只看量级。库 / 表查不到算 INFRA | info | 必须不是 INFRA |
 | `guild_member` | 按 player_id 索引,合服后自然存活;只看量级。库 / 表查不成或孤儿查询失败算 **INFRA**;同时给 `-MergeSkipGuildMySql -MergeSkipGuildRank` 时报 **SKIPPED(warn)** | info | 必须不是 INFRA |
 | `player.name (global)` | 角色名在 data_service 全局库 `player_name` 全服唯一,合服无冲突、不改名;不查库,只出说明行(§4.4) | info | — |
@@ -486,7 +496,9 @@ curl -X POST https://<gateway>/admin/zones/<DST_ID>/maintenance \
    ```
 2. **等 go/db 把 `db_task_zone_<src>` 消费完**:
    ```bash
-   <kafka-consumer-groups.sh> --bootstrap-server <broker:9092> --describe --group db_rpc_consumer_group \
+   # 2026-10-15 起组名按 zone:切组收尾后是 db_rpc_consumer_group_z<src>。尚未切组的 zone(线上 go-svc-db-config 仍是
+   # GroupID: "db_rpc_consumer_group")查 legacy 组;交接没收尾时两组都看,以 ConfigMap 的有效组为准(§2.3)。
+   <kafka-consumer-groups.sh> --bootstrap-server <broker:9092> --describe --group db_rpc_consumer_group_z<src> \
      | grep db_task_zone_<src>                                   # 每个分区 LAG == 0
    redis-cli -h <shared-redis> -n 0 LLEN kafka:retry:queue:db_task_zone_<src>        # 下面每一个都 == 0
    redis-cli -h <shared-redis> -n 0 LLEN kafka:retry:processing:db_task_zone_<src>   # 旧版共享 processing(新版只回收不写入)
@@ -494,9 +506,16 @@ curl -X POST https://<gateway>/admin/zones/<DST_ID>/maintenance \
    # 2026-10 起 db 可以多实例,每个实例有自己的 processing 列表。先列出登记过的实例名,再逐个查:
    redis-cli -h <shared-redis> -n 0 ZRANGE kafka:retry:instances:db_task_zone_<src> 0 -1
    redis-cli -h <shared-redis> -n 0 LLEN kafka:retry:processing:db_task_zone_<src>:<实例名>
+   # 2026-10-15 起(④ 重试只交给分区属主)还有按原始分区拆开的 ready 列表 kafka:retry:queue:<topic>:p<N>。先 SCAN 列出,再逐个 LLEN == 0:
+   redis-cli -h <shared-redis> -n 0 --scan --pattern 'kafka:retry:queue:db_task_zone_<src>:p*'
+   redis-cli -h <shared-redis> -n 0 LLEN kafka:retry:queue:db_task_zone_<src>:p<N>
    ```
    - 〔2026-10-08 更正〕本节以前把第二个键写成了 `kafka:processing:queue:…`,那个键不存在,照着查恒为 0。
    - merge_zone 的 P4 门禁与 `kafka_db_task_queues` 审计已经会把每个实例的列表都查到(`dbTaskQueueKeys`)。
+   - 〔2026-10-15 补,已落码,未编译、未测试,待 Codex 验证〕P4 与 `kafka_db_task_queues` 也已用 SCAN MATCH 查到按分区的 ready 列表 p*
+     (`tools/merge_zone/preflight.go::dbRetryPartitionQueuePattern`,topic 先经 `escapeRedisGlob` 转义,`db_task_zone_1` 的模式不会扫到 `db_task_zone_11` / `db_task_zone_1_g2`;
+     不按 p0..p{N-1} 枚举;SCAN 任一页出错整体拒绝)。P4 通过日志变为 `preflight P4 OK: kafka retry/processing/dead queues for <topic> are empty (<n> keys incl. per-instance processing lists and partitioned ready lists)`。
+     键名与 go/db 侧 `go/db/internal/kafka/retry_routing.go::retryPartitionReadyKey` 一致。
    - 世代号 ≥ 2 的环境,topic 名带 `_g<gen>`。
    - **死信队列非空不会自己变空**:死信没有消费者。按其内容排查(常见是 `stale_topic` 或 `missing_required`,见 go/db 的 `db_placement_guard_total`),处理清楚再继续。
    - 冻结中的玩家(`frozen_deferred`)会让重试队列一直不空:合服前不应有进行中的搬库(§14.2)。
@@ -983,7 +1002,7 @@ S   清单玩家不得有冻结的落点记录(与搬库互斥);有「落点记�
 已闭合、从本表移除的旧项:
 - C++ 审计 topic 世代号改为配置(2026-09-09,`audit_topic.h`);
 - C++ db_task topic 世代号改为配置(本批,`DbTaskTopicGeneration`);
-- `dev_tools.ps1` 已转发 `-kafka-group` / `-kafka-topic-generation`;
+- `dev_tools.ps1` 已转发 `-kafka-topic-generation`(2026-10-15 更正:组名不再缺省转发,由工具按 zone 推导并认定唯一权威组;`-MergeKafkaGroup` 只用于显式覆盖,非空才转成 `-kafka-group`;世代号仍从 `go/db/etc/db.yaml` 现读。见 §2.3);
 - `dev_tools.ps1` 已转发帮会跳过开关与撤销的 Kafka 门禁。
 - 以下三项 2026-09-28 修复,未经运行验证,修复结论以 Codex 验证为准:
   - K8s 未部署 guild 时 `-VerifyMerged` 恒 exit 2:两个跳过开关同时给出时,`verify:guild_zone` / `verify:guild_rank` 改报 SKIPPED(warn);
@@ -1027,7 +1046,9 @@ S   清单玩家不得有冻结的落点记录(与搬库互斥);有「落点记�
   (-MergeFriendRedisAddr / -MergeFriendRedisDB 已于 2026-09-18 删除,见 §2.1)
   -MergeSceneRedisAddr  / -MergeSceneRedisDB                     默认 0
   -MergeTableListJson <path>            默认 generated/data/mysql_database_table_list.json
-  -MergeKafkaGroup / -MergeKafkaTopicGeneration                  默认从 go/db/etc/db.yaml 现读
+  -MergeKafkaGroup <g>                  留空 = 不转发,工具按 zone 推导候选组(db_rpc_consumer_group_z<zone> + legacy)并认定唯一权威组;
+                                        非空才转发 -kafka-group,P3 只看这一个组(2026-10-15,§2.3)
+  -MergeKafkaTopicGeneration <n>        默认 -1 = 从 go/db/etc/db.yaml 现读
   -MergeSourceDataRedis / -MergeTargetDataRedis / -MergeDataRedisPassword
   -MergeSourceDataRedisDB / -MergeTargetDataRedisDB
   -MergeExpectedSrcPlayers <n>          -1 = 不校验
@@ -1233,6 +1254,7 @@ go run ./cmd/migrate -f <db.yaml 副本> -storage-id 1000000 -command up -create
 
 ## 修订历史
 
+- **2026-10-16(存盘管线 ③ 消费组按 zone 拆分与 ④ 按分区重试键同步;代码已落码,未编译、未测试,待 Codex 验证)**:§2.3 消费组改为「zone 组 `db_rpc_consumer_group_z{zone}` + legacy 候选,只认唯一权威组,两组都有位点先 `-FinalizeHandoff`」,dev_tools 不再缺省转发 `-kafka-group`(`-MergeKafkaGroup` 只用于显式覆盖,世代号仍现读);§5 P3 / P4 两行、§7.1 `kafka_db_task_queues` 行、§8 Step 2 命令块(describe 改 zone 组,补 `kafka:retry:queue:db_task_zone_<src>:p*` 的 SCAN 与 LLEN)、§12「已闭合」一行、§13 `-MergeKafkaGroup` / `-MergeKafkaTopicGeneration` 两行同步。设计见 [db-consumer-group-per-zone.md](../design/db-consumer-group-per-zone.md) §7。
 - **2026-10-12(映射持久化第 1a 批热点修复 G1a 同步,代码未编译、未测试)**:§9.3「重跑与恢复」的恢复 SQL 改为 `route_meta` 只复位 `writable`、另复位 `route_reconcile`(水位 / 租约从 `route_meta` 拆出),并注明 TiDB 上 TRUNCATE 后要重跑 `tidb-prepare`;§9.3 末尾新增 `route_tool tidb-prepare`(TiDB-only 预切与防合并,MySQL 自动跳过;开新 zone 时在开放前、低峰跑)。设计见 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2「第 1a 批热点修复」。
 - **2026-10-12(映射持久化第 1a 批同步,代码未编译、未测试)**:§3 围栏消费者表:`RegisterPlayerZone` 补 db_first 下由发布脚本复核围栏、库里已提交的行会留下;`RemapHomeZoneForMerge` 改为「已停用」。新增 §9.3 `route_tool` 导入与审计(P1 步骤、退出码、只能检测合服围栏、`db_only_unpublished` 的含义、P2 切换门禁)。§12 加一行:db_first 与 merge_zone 写模式不能共存。设计见 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2。同日评审修复:§9.3 写清 maprev 不是单独扫描的一族;import 结尾加 `merge:merged_into` 快照比对(窗口内跑完的合服也退出码 3),「原样重跑」改为按退出码分的「重跑与恢复」(结尾退出码 3 要在 P1 清表后从头导入);db_first 下真导入要显式 `-allow-db-first`;audit 方向 B 补比方向 A 之后提交的行;P2 门禁补 WAITAOF 启动探针与「发布未确认率」要连 `error` 一起看。
 - **2026-09-28 v3.2(`-MergeDbCapabilityZones` 去缺省,负责人决定;代码未编译、未测试)**:

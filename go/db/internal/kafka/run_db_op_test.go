@@ -345,18 +345,21 @@ func TestRunDBOp_ReportsOnlySQLOutcome(t *testing.T) {
 	}
 }
 
-// SQL 的 ctx 被本进程取消(写:失租;读:claim 收回)时什么都不报;写任务按失租 / 取消返回,不带 storeerr 标记
+// SQL 的 ctx 被本进程取消(写:失租;读:claim 收回)时什么都不报;写任务按取消原因(失租)返回,不带 storeerr 标记
 // (否则会被记成 conn_lost、豁免重试预算)。
 func TestRunDBOp_CanceledSQLIsNotReported(t *testing.T) {
-	canceled, cancel := context.WithCancel(context.Background())
-	cancel()
-
 	t.Run("write", func(t *testing.T) {
 		f := newRunDBOpFixture(t)
-		lease := &fakeLease{log: f.log, ctx: canceled}
+		// 与生产的租约同形:sqlCtx 只随失租取消,取消原因包着 errOrderingLeaseLost。
+		ctx, cancel := context.WithCancelCause(context.Background())
+		cancel(fmt.Errorf("%w: injected", errOrderingLeaseLost))
+		lease := &fakeLease{log: f.log, ctx: ctx}
+		sqlErr := connLostSQLError()
 		err := runDBOp(context.Background(), f.rc, f.task("write"), &db_proto.TaskResult{},
-			f.handler(connLostSQLError(), nil), f.route("write"), lease)
+			f.handler(sqlErr, nil), f.route("write"), lease)
 		require.Error(t, err)
+		assert.ErrorIs(t, err, errOrderingLeaseLost, "a write canceled by lease loss is reported as lease loss")
+		assert.NotErrorIs(t, err, sqlErr, "the SQL error is attached as text only, not kept in the error chain")
 		assert.Equal(t, storeerr.KindNone, storeerr.KindOf(err), "a canceled SQL must not carry a store-side tag")
 		connLost, healthy := f.stores.counts(testZoneID)
 		assert.Zero(t, connLost)
@@ -365,6 +368,8 @@ func TestRunDBOp_CanceledSQLIsNotReported(t *testing.T) {
 	})
 	t.Run("read", func(t *testing.T) {
 		f := newRunDBOpFixture(t)
+		canceled, cancel := context.WithCancel(context.Background())
+		cancel()
 		err := runDBOp(canceled, f.rc, f.task("read"), &db_proto.TaskResult{},
 			f.handler(connLostSQLError(), nil), f.route("read"), nil)
 		require.Error(t, err)

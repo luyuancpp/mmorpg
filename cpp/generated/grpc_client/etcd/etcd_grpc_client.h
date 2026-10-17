@@ -1,41 +1,20 @@
 #pragma once
 #include <chrono>
 #include <functional>
-#include <memory>
-#include <deque>
-#include "core/network/grpc_client_runtime.h"
+#include <string>
+#include <string_view>
+#include <vector>
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
-#include "proto/etcd/etcd.grpc.pb.h"
 
 #include "rpc/service_metadata/etcd_service_metadata.h"
 
-using grpc::ClientContext;
-using grpc::Status;
-using grpc::ClientAsyncResponseReader;
-
 namespace etcdserverpb {
-using KVStubPtr = std::unique_ptr<KV::Stub>;
 #pragma region KVRange
-
-struct AsyncKVRangeGrpcClient {
-    uint32_t messageId{ KVRangeMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::RangeResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::RangeResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::etcdserverpb::RangeRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncKVRangeHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::etcdserverpb::RangeResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kKVRangeGrpcPath = "/etcdserverpb.KV/Range";
 using AsyncKVRangeHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::RangeResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::etcdserverpb::RangeResponse&)>;
 extern AsyncKVRangeHandlerFunctionType AsyncKVRangeHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -51,25 +30,10 @@ void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const google
 void SendKVRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::RangeRequest& request, GrpcDone<::etcdserverpb::RangeResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region KVPut
-
-struct AsyncKVPutGrpcClient {
-    uint32_t messageId{ KVPutMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::PutResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::PutResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::etcdserverpb::PutRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncKVPutHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::etcdserverpb::PutResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kKVPutGrpcPath = "/etcdserverpb.KV/Put";
 using AsyncKVPutHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::PutResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::etcdserverpb::PutResponse&)>;
 extern AsyncKVPutHandlerFunctionType AsyncKVPutHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -85,25 +49,10 @@ void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const google::
 void SendKVPut(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::PutRequest& request, GrpcDone<::etcdserverpb::PutResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region KVDeleteRange
-
-struct AsyncKVDeleteRangeGrpcClient {
-    uint32_t messageId{ KVDeleteRangeMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::DeleteRangeResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::DeleteRangeResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::etcdserverpb::DeleteRangeRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncKVDeleteRangeHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::etcdserverpb::DeleteRangeResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kKVDeleteRangeGrpcPath = "/etcdserverpb.KV/DeleteRange";
 using AsyncKVDeleteRangeHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::DeleteRangeResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::etcdserverpb::DeleteRangeResponse&)>;
 extern AsyncKVDeleteRangeHandlerFunctionType AsyncKVDeleteRangeHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -119,25 +68,10 @@ void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const 
 void SendKVDeleteRange(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::DeleteRangeRequest& request, GrpcDone<::etcdserverpb::DeleteRangeResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region KVTxn
-
-struct AsyncKVTxnGrpcClient {
-    uint32_t messageId{ KVTxnMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::TxnResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::TxnResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::etcdserverpb::TxnRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncKVTxnHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::etcdserverpb::TxnResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kKVTxnGrpcPath = "/etcdserverpb.KV/Txn";
 using AsyncKVTxnHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::TxnResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::etcdserverpb::TxnResponse&)>;
 extern AsyncKVTxnHandlerFunctionType AsyncKVTxnHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -153,25 +87,10 @@ void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const google::
 void SendKVTxn(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::TxnRequest& request, GrpcDone<::etcdserverpb::TxnResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region KVCompact
-
-struct AsyncKVCompactGrpcClient {
-    uint32_t messageId{ KVCompactMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::CompactionResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::CompactionResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::etcdserverpb::CompactionRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncKVCompactHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::etcdserverpb::CompactionResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kKVCompactGrpcPath = "/etcdserverpb.KV/Compact";
 using AsyncKVCompactHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::CompactionResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::etcdserverpb::CompactionResponse&)>;
 extern AsyncKVCompactHandlerFunctionType AsyncKVCompactHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -186,57 +105,21 @@ void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const goog
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendKVCompact(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::CompactionRequest& request, GrpcDone<::etcdserverpb::CompactionResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
-using WatchStubPtr = std::unique_ptr<Watch::Stub>;
 #pragma region WatchWatch
-
-struct AsyncWatchWatchGrpcClient {
-    // context 不可移动；显式固定池地址，Read/Write/Finish 均只借用此对象内的缓冲。
-    static constexpr bool in_place_delete = true;
-    uint32_t messageId{ WatchWatchMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::WatchResponse reply;
-    ::etcdserverpb::WatchRequest writingRequest;
-    std::deque<::etcdserverpb::WatchRequest> pendingWrites;
-    std::unique_ptr<grpc::ClientAsyncReaderWriter<::etcdserverpb::WatchRequest, ::etcdserverpb::WatchResponse>> stream;
-    GrpcClientRuntimePtr runtime;
-    bool initializing{true};
-    bool reading{false};
-    bool writing{false};
-    bool closing{false};
-    bool finishing{false};
-    bool finished{false};
-};
-
-using AsyncWatchWatchHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::WatchResponse&)>;
-extern AsyncWatchWatchHandlerFunctionType AsyncWatchWatchHandler;
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kWatchWatchGrpcPath = "/etcdserverpb.Watch/Watch";
+// 流式方法不生成客户端:全仓唯一的流式服务 etcd 由 MuduoEtcdTransport 手写。下面三个重载只为 gRpcMethodRegistry
+// 的通用 sender 保留签名,调用即记 ERROR 拒绝。
 
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request);
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::WatchRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendWatchWatch(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
-using LeaseStubPtr = std::unique_ptr<Lease::Stub>;
 #pragma region LeaseLeaseGrant
-
-struct AsyncLeaseLeaseGrantGrpcClient {
-    uint32_t messageId{ LeaseLeaseGrantMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::LeaseGrantResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseGrantResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::etcdserverpb::LeaseGrantRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncLeaseLeaseGrantHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::etcdserverpb::LeaseGrantResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kLeaseLeaseGrantGrpcPath = "/etcdserverpb.Lease/LeaseGrant";
 using AsyncLeaseLeaseGrantHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::LeaseGrantResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::etcdserverpb::LeaseGrantResponse&)>;
 extern AsyncLeaseLeaseGrantHandlerFunctionType AsyncLeaseLeaseGrantHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -252,25 +135,10 @@ void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, cons
 void SendLeaseLeaseGrant(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseGrantRequest& request, GrpcDone<::etcdserverpb::LeaseGrantResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region LeaseLeaseRevoke
-
-struct AsyncLeaseLeaseRevokeGrpcClient {
-    uint32_t messageId{ LeaseLeaseRevokeMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::LeaseRevokeResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseRevokeResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::etcdserverpb::LeaseRevokeRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncLeaseLeaseRevokeHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::etcdserverpb::LeaseRevokeResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kLeaseLeaseRevokeGrpcPath = "/etcdserverpb.Lease/LeaseRevoke";
 using AsyncLeaseLeaseRevokeHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::LeaseRevokeResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::etcdserverpb::LeaseRevokeResponse&)>;
 extern AsyncLeaseLeaseRevokeHandlerFunctionType AsyncLeaseLeaseRevokeHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -286,54 +154,20 @@ void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, con
 void SendLeaseLeaseRevoke(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseRevokeRequest& request, GrpcDone<::etcdserverpb::LeaseRevokeResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region LeaseLeaseKeepAlive
-
-struct AsyncLeaseLeaseKeepAliveGrpcClient {
-    // context 不可移动；显式固定池地址，Read/Write/Finish 均只借用此对象内的缓冲。
-    static constexpr bool in_place_delete = true;
-    uint32_t messageId{ LeaseLeaseKeepAliveMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::LeaseKeepAliveResponse reply;
-    ::etcdserverpb::LeaseKeepAliveRequest writingRequest;
-    std::deque<::etcdserverpb::LeaseKeepAliveRequest> pendingWrites;
-    std::unique_ptr<grpc::ClientAsyncReaderWriter<::etcdserverpb::LeaseKeepAliveRequest, ::etcdserverpb::LeaseKeepAliveResponse>> stream;
-    GrpcClientRuntimePtr runtime;
-    bool initializing{true};
-    bool reading{false};
-    bool writing{false};
-    bool closing{false};
-    bool finishing{false};
-    bool finished{false};
-};
-
-using AsyncLeaseLeaseKeepAliveHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::LeaseKeepAliveResponse&)>;
-extern AsyncLeaseLeaseKeepAliveHandlerFunctionType AsyncLeaseLeaseKeepAliveHandler;
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kLeaseLeaseKeepAliveGrpcPath = "/etcdserverpb.Lease/LeaseKeepAlive";
+// 流式方法不生成客户端:全仓唯一的流式服务 etcd 由 MuduoEtcdTransport 手写。下面三个重载只为 gRpcMethodRegistry
+// 的通用 sender 保留签名,调用即记 ERROR 拒绝。
 
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request);
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseKeepAliveRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 void SendLeaseLeaseKeepAlive(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
 #pragma endregion
 #pragma region LeaseLeaseTimeToLive
-
-struct AsyncLeaseLeaseTimeToLiveGrpcClient {
-    uint32_t messageId{ LeaseLeaseTimeToLiveMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::LeaseTimeToLiveResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseTimeToLiveResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::etcdserverpb::LeaseTimeToLiveRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncLeaseLeaseTimeToLiveHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::etcdserverpb::LeaseTimeToLiveResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kLeaseLeaseTimeToLiveGrpcPath = "/etcdserverpb.Lease/LeaseTimeToLive";
 using AsyncLeaseLeaseTimeToLiveHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::LeaseTimeToLiveResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::etcdserverpb::LeaseTimeToLiveResponse&)>;
 extern AsyncLeaseLeaseTimeToLiveHandlerFunctionType AsyncLeaseLeaseTimeToLiveHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -349,25 +183,10 @@ void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity,
 void SendLeaseLeaseTimeToLive(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseTimeToLiveRequest& request, GrpcDone<::etcdserverpb::LeaseTimeToLiveResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region LeaseLeaseLeases
-
-struct AsyncLeaseLeaseLeasesGrpcClient {
-    uint32_t messageId{ LeaseLeaseLeasesMessageId };
-    ClientContext context;
-    Status status;
-    ::etcdserverpb::LeaseLeasesResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::etcdserverpb::LeaseLeasesResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::etcdserverpb::LeaseLeasesRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncLeaseLeaseLeasesHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::etcdserverpb::LeaseLeasesResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kLeaseLeaseLeasesGrpcPath = "/etcdserverpb.Lease/LeaseLeases";
 using AsyncLeaseLeaseLeasesHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::etcdserverpb::LeaseLeasesResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::etcdserverpb::LeaseLeasesResponse&)>;
 extern AsyncLeaseLeaseLeasesHandlerFunctionType AsyncLeaseLeaseLeasesHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -382,13 +201,11 @@ void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, con
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendLeaseLeaseLeases(entt::registry& registry, entt::entity nodeEntity, const ::etcdserverpb::LeaseLeasesRequest& request, GrpcDone<::etcdserverpb::LeaseLeasesResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
-void SetEtcdHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void SetEtcdIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetEtcdHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetEtcdIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetEtcdFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 void SetEtcdIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
+// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。
 void SetEtcdCallDeadline(std::chrono::milliseconds deadline);
-void HandleEtcdCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
-void InitEtcdGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace etcdserverpb

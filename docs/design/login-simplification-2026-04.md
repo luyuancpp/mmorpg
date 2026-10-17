@@ -65,7 +65,7 @@ Two rounds of simplification to make `go/login/` easier to understand, debug, an
 
 2. **Kafka `KeyOrderedKafkaProducer` (ordered delivery)**:
    - DB read requests sent with `key = playerIdStr`.
-   - Consistent hash maps same key to same partition.
+   - 分区 = CRC-32(key) mod N(`kafkautil.NewDBTaskPartitioner`,与 C++ scene 写存盘是同一个函数,见 `docs/design/db-task-kafka-partition-contract.md`),同一 topic 内同 key 同分区。(2026-10-16 订正:原文的 Consistent hash 从来没生效;已落码,未编译、未测试,待 Codex 验证)
    - Single partition = FIFO order.
    - `Idempotent=true` + `MaxOpenRequests=1` prevents reordering.
 

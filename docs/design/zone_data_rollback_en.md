@@ -133,14 +133,28 @@ kafka-topics.sh --delete --topic db_task_topic --bootstrap-server <broker>
 kafka-topics.sh --create --topic db_task_topic --partitions 5 --bootstrap-server <broker>
 
 # Option B: Reset consumer group offset to the specified timestamp
+# (corrected 2026-10-15: the group is the zone's own db_rpc_consumer_group_z<id> and the topic is db_task_zone_<id>,
+#  with a _g<gen> suffix when TopicGeneration >= 2; the legacy group's offsets on this topic must be deleted afterwards)
 kafka-consumer-groups.sh --reset-offsets --to-datetime 2026-03-26T10:00:00.000 \
-  --group db_rpc_consumer_group --topic db_task_topic --bootstrap-server <broker> --execute
+  --group db_rpc_consumer_group_z<id> --topic db_task_zone_<id> --bootstrap-server <broker> --execute
 
 Step 5: Bring the zone back up
 ──────────────────────────────
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
   -ZoneName <zone> -ZoneId <id> -NodeImage <image> -WaitReady
 ```
+
+> **Correction (2026-10-15; implemented, not compiled or tested, pending Codex verification)**: go/db's db_task consumer group is moving, zone by zone,
+> from the shared `db_rpc_consumer_group` (the legacy group) to a per-zone `db_rpc_consumer_group_z<ZoneId>` (the zone group). The manual steps above are
+> superseded by the one-shot script `tools/scripts/k8s_zone_rollback.ps1` (`dev_tools.ps1 -Command k8s-zone-rollback`, dry-run unless `-Apply`). Its Kafka
+> handling now: the old Step 2 drain wait is removed (`-KafkaDrainTimeoutSec` is gone); step 0 c takes a read-only LAG snapshot of both groups on this topic
+> (warnings only) and step 0 d rehearses Step 5 with a dry-run reset before shutdown when the zone group holds no offsets yet; Step 5 resets the zone group to
+> the target time, verifies every partition, then deletes the legacy group's offsets on this topic (`kafka_offset_reset.ps1 -RetireGroup … -Partitions <N>`);
+> Step 6 passes `-DbConsumerGroup zone`, so `k8s_deploy.ps1` renders the final shape `GroupID: "db_rpc_consumer_group_z<id>"` without `GroupHandoffFrom`.
+> After a rollback the zone always runs on its zone group. Group base name and partition count are read from `go/db/etc/db.yaml`
+> (`ServerConfig.Kafka.GroupID`, `ServerConfig.Kafka.PartitionCnt`). Full details, residual risks and unverified Kafka CLI behaviour are in the
+> "2026-10-15 修订" section of [zone_data_rollback.md](zone_data_rollback.md) (Chinese, authoritative) and in
+> [db-consumer-group-per-zone.md](db-consumer-group-per-zone.md).
 
 ### Key Safety Points
 

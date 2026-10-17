@@ -115,17 +115,24 @@ func NewServiceContext() *ServiceContext {
 	redisHost := config.AppConfig.Node.RedisClient.Host
 	redisPassword := config.AppConfig.Node.RedisClient.Password
 	redisDB := int(config.AppConfig.Node.RedisClient.DB)
+	if err := config.AppConfig.Node.RedisClient.ValidatePoolSize(); err != nil {
+		panic(fmt.Errorf("Node.RedisClient: %w", err))
+	}
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:             redisHost,
-		Password:         redisPassword,
-		DB:               redisDB,
+		Addr:     redisHost,
+		Password: redisPassword,
+		DB:       redisDB,
+		// 共享 Redis 连接总账按它记账(0 = go-redis 缺省 10 × GOMAXPROCS),见 config.RedisConf.PoolSize。
+		PoolSize:         config.AppConfig.Node.RedisClient.PoolSize,
 		DisableIndentity: true, // suppress CLIENT SETINFO on Redis < 7.2
 	})
 
 	if err := redisClient.Ping(ctx).Err(); err != nil {
 		panic(fmt.Errorf("failed to connect Redis: %w", err))
 	}
+	// 生效值(缺省时是 go-redis 算出来的 10 × GOMAXPROCS):核对 ConfigMap 镜像的 PoolSize 是否真的被加载。
+	logx.Infof("Redis client %s DB=%d pool_size=%d", redisHost, redisDB, redisClient.Options().PoolSize)
 
 	kafkaClient, err := kafka.NewKeyOrderedKafkaProducer(config.AppConfig.Kafka)
 
@@ -452,6 +459,13 @@ func (s *ServiceContext) initLoginQueue() {
 	if !cfg.Enabled {
 		return
 	}
+	// (2026-10-15)QueueEntryTTL 必须为正、AdmitTTL 不小于 1ms,与下面 NewDispatcher 对 interval / lockTTL
+	// 的校验同级、起服即失败。
+	// 配置的 default 只在键缺省时生效,显式写 0s 不回落:QueueEntryTTL<=0 每次入队都会删掉整条队列,
+	// AdmitTTL<=0 会让 PopAdmit 每拍拒绝出队。后果细节见 loginqueue.ValidateTTLs。
+	if err := loginqueue.ValidateTTLs(cfg.QueueEntryTTL, cfg.AdmitTTL); err != nil {
+		panic(fmt.Errorf("login queue: %w", err))
+	}
 	s.LoginQueue = loginqueue.New(
 		s.RedisClient,
 		cfg.QueueEntryTTL,
@@ -608,8 +622,12 @@ func (s *ServiceContext) SendBindSessionToGate(gateID string, gateInstanceID str
 }
 
 // KickSessionOnGate sends a KickPlayer command to the target Gate via Kafka.
-func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string, sessionID uint32, playerID uint64) error {
-	msg, err := buildKickPlayerCommand(gateID, gateInstanceID, sessionID, playerID)
+//
+// playerID 是被踢会话所属玩家,loginGeneration 是发起踢线、已提交的那条登录链铸出的代次;
+// 两者都写进 KickPlayerEvent payload,由 gate 的 ClassifyKick 核对后才踢
+// (docs/design/scene-enter-chain-residuals.md §2.2 ③④)。调用方只能在会话记录提交之后调用。
+func (s *ServiceContext) KickSessionOnGate(gateID string, gateInstanceID string, sessionID uint32, playerID uint64, loginGeneration uint64) error {
+	msg, err := buildKickPlayerCommand(gateID, gateInstanceID, sessionID, playerID, loginGeneration)
 	if err != nil {
 		return err
 	}

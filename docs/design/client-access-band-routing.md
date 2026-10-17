@@ -171,7 +171,7 @@ K1–K2 已另开后台任务"gate 补 x-caller 签名与断线通知可靠性"�
 | F26 | 现成 tip 码：1003 `kServiceUnavailable`（fault）、1005 `kInvalidParameter`、1008 `kRateLimitExceeded`、1013 `kMessageIdNotFound`；1011、1012 是 fault 码，friend 明确不用 1012 表示"客户端没带身份" | 【码】`generated/code/proto/tip/common_error_tip.proto:18-38`、`go/shared/generated/tip/faults.go:26-34`、`go/friend/internal/session/session.go:70-75` | **本设计不新增 tip 码**；未登录用 1005 |
 | F27 | MethodOptions 已有扩展点（`OptionMessagePriority=410000`），服务级 option 用了 400000/400001；SessionDetails 下一个空闲字段号是 7 | 【码】`proto/db/proto_option.proto:63-73`、`proto/common/base/session.proto:6-18` | 新 option 与新字段有位置，实施前复核 |
 | F28 | 生成的 C++ gRPC 客户端用 message_id 做完成队列 tag，在 switch 里分派，不索引注册表 | 【码】`cpp/generated/grpc_client/client_rpc_router/client_rpc_router_grpc_client.cpp:86,99` | ROUTER 段号不需要进 C++ 注册表 |
-| F29 | 节点摘除默认宽限 0：`ExecuteNodeRemoval` 在 queueInLoop 里 DestroyEntity，实体上的 CompletionQueue、stub、Channel 一起析构；全仓没有 CQ 的 Shutdown 或排空。结果是在途调用永无回调，call 对象在 object_pool 里泄漏，客户端只能等超时 | 【码】`cpp/libs/engine/core/node/system/node/node.cpp:1310-1311,1327-1393`、`cpp/generated/grpc_client/grpc_init_client.cpp:358-365,438`、`client_rpc_router_grpc_client.cpp:28,58`、`bin/etc/base_deploy_config.yaml:12` | 阶段 0g 修，是在途记账正确的前提 |
+| F29 | (2026-10-16 订正:已随 gRPC 传输第 3 批失效 —— 实体上不再有 CompletionQueue,节点摘除时 node.cpp 先摘 `MuduoGrpcChannelPtr`,`~Channel` 以 UNAVAILABLE 投递在途回调;阶段 0g 不再是在途记账的前提,见 grpc-muduo-transport.md §14、client-request-ordering.md §4.5)节点摘除默认宽限 0：`ExecuteNodeRemoval` 在 queueInLoop 里 DestroyEntity，实体上的 CompletionQueue、stub、Channel 一起析构；全仓没有 CQ 的 Shutdown 或排空。结果是在途调用永无回调，call 对象在 object_pool 里泄漏，客户端只能等超时 | 【码】`cpp/libs/engine/core/node/system/node/node.cpp:1310-1311,1327-1393`、`cpp/generated/grpc_client/grpc_init_client.cpp:358-365,438`、`client_rpc_router_grpc_client.cpp:28,58`、`bin/etc/base_deploy_config.yaml:12` | 阶段 0g 修，是在途记账正确的前提 |
 | F30 | gate 链接的 `-lrpc` 和 `-lgrpc_client` 是全节点共享的；`InitGrpcNode` 按节点类型初始化全部 Go 服务客户端；`main.cpp:26` include 了 scene_manager 的 pb 却没使用；`SendMessageToPlayerOnGrpcNode` 全仓无调用方 | 【码】`cpp/nodes/gate/CMakeLists.txt:104,107`、`grpc_init_client.cpp:436-476`、`cpp/libs/engine/core/network/player_message_utils.cpp:270-300` | 按节点生成（D55） |
 | F31 | MessageLimiter 表 68 行，主键是裸数字：47 行 Go 号（guild 21、team 12、friend 10、trade 4），21 行 scene 号；id=68 指向内部方法 `ScenePlayerSyncSyncAttribute30Frames`，id=119 已因发号漂移改绑过一次 | 【码】`data/schema/messagelimiter_table.proto:12-21`、`generated/tables/messagelimiter.json` | 表键改为方法名（D64） |
 | F32 | `message_id.txt` 有跨仓消费者：客户端仓的 `tools/gen_messageids.ps1` 直接读它，为没有生成桩的服务取号 | 【文】`docs/design/team-system.md:2192`、`player-pet.md:247`、`friend-client-spec-20260920.md:150-159` | 切换批次要同步客户端仓（§9 授权） |
@@ -293,6 +293,13 @@ NODE 大区也在同一批里按 extent 重新发号（D52）。这样"legacy"�
 - **撞号**：同一个 extent 的 `next` 高水位存成 state 里的独立一行。两处并行在同一 extent 追加方法时，这一行必然在 git 合并时冲突；再加上"号全局唯一"自检，重复号无法静默入库。文件锁（锁文件记录 pid，能判定过期锁）只能串行化同一工作树里的并发运行，**不是全局互斥**，文档和报错信息都要写明。
 - **写入原子性**：先写临时文件再 rename。
 - **bootstrap 防重入**：只在「HEAD 和 `git log --all` 里都从未出现过 state 文件」且 `message_id.txt` 首行不是毒丸时才允许；否则拒绝，并提示去恢复 state，而不是重新初始化。这是为了防止重建时丢掉墓碑、让被删方法的号又被发出去。
+- **2026-10-16 补注(RpcChannel 批 7,[muduo-rpc-channel.md §20](muduo-rpc-channel.md))**:现行 `message_id.txt` 已有墓碑,格式沿用 event_id 的 `N=reserved:<KeyName>`(41 / 74 / 78 / 81)。
+  D54 的 bootstrap 必须把这些行导入为 state 墓碑;§11.1 表里「墓碑以不含 `=` 的注释行保留」与现行格式不一致,实施时沿用 `N=reserved:` 或写明迁移。
+  上面两条对旧读取器与 dev_tools 的描述也已过时:现行读取器对畸形行、空名、超界号一律 Fatal;`proto-gen-run` 在 exe 比生成器源码旧时,默认路径改走 `go run`,`-UseBinary` 直接拒绝
+  (`dev_tools.ps1` 的 `Get-ProtoGenBinaryStaleReason`)。F32 所说客户端仓 `tools/gen_messageids.ps1` 已于 2026-10-16 获客户端任务授权核实:
+  它是客户端仓里 `message_id.txt` 的唯一直接读者,行正则 `^\s*(\d+)\s*=\s*([A-Za-z0-9_]+)\s*$`(客户端 HEAD `24ff81a` 第 218 行)不收含 `:` 的名字,
+  墓碑行被跳过,**兼容、未改客户端**;证据与核对数字见 [muduo-rpc-channel.md §20.1](muduo-rpc-channel.md)。顺带:§11.4 设想的毒丸 `!format=segmented-v2`
+  左段不是数字,同样会被这条正则静默跳过,不会 fail-closed;D54 若要客户端在格式切换时立即报错,需在该脚本里显式检查首行。
 
 #### 11.3 各生成物收录哪些号
 
@@ -481,7 +488,7 @@ NODE 大区也在同一批里按 extent 重新发号（D52）。这样"legacy"�
 
 | 阶段 | 内容 | 依赖 |
 |---|---|---|
-| 0 | 与号段无关的现存缺陷，可以立即各自上线：<br>a 注册表空槽安全：生成 `const RpcMethodMeta* LookupMeta(id)`，改 `game_channel.cpp:356-358,455-456,511-513` 与 `scene_handler.cpp:76,314,386,623`（修今天 id=3 的 UB）<br>b `BuildSessionDetails` 把 player_id 归一<br>c MessageLimiter 的 uint8 截断（`message_limiter.cpp:8,17`、`.h:10,15`），CheckMessageLimit 的日志与 error_reporter 改采样<br>d 失败回执带请求 id：`main.cpp:323-348`、`client_message_processor.cpp:820,831-834`，连接仍按会话查找后 `lock()`，不在 call 对象里存 `TcpConnectionPtr`（§11.7）<br>e robot 删除 `sendDisconnectBestEffort`（§14）<br>f 路由服启停顺序（§13.8）<br>g 节点摘除：先移除 NodeInfo 使其不再被选中，保留 CQ、stub、Channel，等在途归零或超过实际 deadline 加余量后再销毁实体（F29）<br>h guild、friend、trade 的拒绝日志改采样 | 无 |
+| 0 | 与号段无关的现存缺陷，可以立即各自上线：<br>a 注册表空槽安全：生成 `const RpcMethodMeta* LookupMeta(id)`，改 `game_channel.cpp:356-358,455-456,511-513` 与 `scene_handler.cpp:76,314,386,623`（修今天 id=3 的 UB）<br>b `BuildSessionDetails` 把 player_id 归一<br>c MessageLimiter 的 uint8 截断（`message_limiter.cpp:8,17`、`.h:10,15`），CheckMessageLimit 的日志与 error_reporter 改采样<br>d 失败回执带请求 id：`main.cpp:323-348`、`client_message_processor.cpp:820,831-834`，连接仍按会话查找后 `lock()`，不在 call 对象里存 `TcpConnectionPtr`（§11.7）<br>e robot 删除 `sendDisconnectBestEffort`（§14）<br>f 路由服启停顺序（§13.8）<br>g 节点摘除：先移除 NodeInfo 使其不再被选中，保留 CQ、stub、Channel，等在途归零或超过实际 deadline 加余量后再销毁实体（F29）(2026-10-16:不再需要,F29 已随 gRPC 传输第 3 批失效,见上表 F29 行)<br>h guild、friend、trade 的拒绝日志改采样 | 无 |
 | 1 | K8s 翻到路由模式，路由服 ≥2 副本，在路由模式下跑通 battle-smoke → **删除直连路径**：`HandleGrpcNodeMessage`、直连白名单、回包反查表、battle 绑定与 match_event 处理、路由模式开关本身、`main.cpp:26` 的死 include、`SendMessageToPlayerOnGrpcNode`。修订 D-12，以及 `gate_security_test.cpp:160-168`「默认必须落在旧模式」的断言 | 0 |
 | 2 | **一次停服切换**（清单见 §16.1） | 1 |
 | 3 | 安全前置（§15） | 可与 1、2 并行，但内部顺序定死；任何非 dev 部署前必须完成 |
@@ -633,4 +640,4 @@ gate 不重编、不重启。
 | 旧稿 Q1 的波及面 | 列了不需要搬的 C++ 号，漏了 Go 推送常量、客户端脚本、限流表 | §10.4 的搬迁清单 |
 | 旧稿 §7.4 未登录用 1012 | 1012 是 fault 码 | 改用 1005 |
 | F7、F10、F11、F15、F21 | TTL、今天已有空槽 id=3、第三个 handler、login 用 body 的范围、K8s deadline | 已在 §8 更正 |
-| 旧稿 R1 节点摘除 | 在途调用会永久丢失，且 call 对象泄漏 | 改为阶段 0g 的必修项 |
+| 旧稿 R1 节点摘除 | 在途调用会永久丢失，且 call 对象泄漏 | 改为阶段 0g 的必修项(2026-10-16:随 F29 一起失效) |

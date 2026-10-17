@@ -16,6 +16,7 @@
 #include "proto/common/component/battle_comp.pb.h"
 #include "services/scene/player/comp/player_frozen_comp.h"
 #include "services/scene/player/system/player_feature_snapshot.h"
+#include "services/scene/player/system/player_mission.h"
 #include "table/code/condition_table.h"
 #include "table/code/mission_table.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -149,17 +150,25 @@ TEST_F(PlayerFeatureSnapshotTest, InBattleSortKeepsSourceLayoutUnchanged) {
     EXPECT_FALSE(out.has_layout());
 }
 
-TEST_F(PlayerFeatureSnapshotTest, MissionCatalogueDoesNotAcceptOrInitializePlayerState) {
+TEST_F(PlayerFeatureSnapshotTest, MissionListWithoutLoadedStateFailsClosedWithoutCreatingState) {
     LoadMissions();
+    GetMissionListResponse out;
+    EXPECT_EQ(kServiceUnavailable, PlayerMissionReadSystem::BuildList(player, out));
+    EXPECT_EQ(0, out.missions_size());
+    EXPECT_FALSE(out.state_persistent());
+    EXPECT_EQ(nullptr, tlsEcs.actorRegistry.try_get<MissionsContainerComp>(player));
+}
+
+TEST_F(PlayerFeatureSnapshotTest, MissionCatalogueForLoadedEmptyStateListsAllConfiguredMissions) {
+    LoadMissions();
+    ASSERT_EQ(kSuccess, PlayerMissionSystem::Initialize(player));
     GetMissionListResponse out;
     ASSERT_EQ(kSuccess, PlayerMissionReadSystem::BuildList(player, out));
     EXPECT_EQ(MissionTableManager::Instance().FindAll().data_size(), out.missions_size());
-    EXPECT_FALSE(out.state_persistent());
-    EXPECT_EQ(nullptr, tlsEcs.actorRegistry.try_get<MissionsContainerComp>(player));
+    EXPECT_TRUE(out.state_persistent());
     for (const auto& mission : out.missions()) {
         EXPECT_TRUE(mission.configured());
         EXPECT_EQ(PLAYER_MISSION_NOT_ACCEPTED, mission.status());
-        EXPECT_FALSE(mission.can_accept());
         EXPECT_FALSE(mission.can_claim());
         EXPECT_TRUE(mission.name().empty());
     }
@@ -216,6 +225,7 @@ TEST_F(PlayerFeatureSnapshotTest, RuntimeMissionMissingConfigurationRemainsVisib
 
 TEST_F(PlayerFeatureSnapshotTest, ActivitiesOnlyExposeConfiguredEntriesWithoutInventingSchedule) {
     LoadMissions();
+    ASSERT_EQ(kSuccess, PlayerMissionSystem::Initialize(player));
     GetActivityListResponse out;
     constexpr uint64_t nowMs = 1900000000123;
     ASSERT_EQ(kSuccess, PlayerActivityReadSystem::BuildList(player, nowMs, out));
@@ -235,6 +245,16 @@ TEST_F(PlayerFeatureSnapshotTest, ActivitiesOnlyExposeConfiguredEntriesWithoutIn
         EXPECT_FALSE(activity.can_participate());
         EXPECT_TRUE(activity.name().empty());
     }
+}
+
+TEST_F(PlayerFeatureSnapshotTest, ActivityListWithoutLoadedStateFailsClosedWithoutCreatingState) {
+    LoadMissions();
+    GetActivityListResponse out;
+    constexpr uint64_t nowMs = 1900000000123;
+
+    EXPECT_EQ(kServiceUnavailable, PlayerActivityReadSystem::BuildList(player, nowMs, out));
+    EXPECT_EQ(0, out.activities_size());
+    EXPECT_EQ(nullptr, tlsEcs.actorRegistry.try_get<MissionsContainerComp>(player));
 }
 
 TEST_F(PlayerFeatureSnapshotTest, MissingMiddleConditionDoesNotShiftLaterProgress) {

@@ -13,6 +13,62 @@ message KafkaConfig {
     string group_id = 3;                    // Consumer group ID
     bool enable_auto_commit = 4;            // Enable auto-commit
     string auto_offset_reset = 5;           // earliest / latest
+
+    // ---- 控制面命令 topic 的分区契约 ----
+    // docs/design/control-plane-topic-partitioning-20260908.md。
+    // 控制面命令(GateCommand / SceneCommand)从"一个节点一个 topic"改成
+    // "一个节点类型一个 topic + 固定分区数,partition = node_id % P"。
+    // 三个字段都是 0 = 用编译期默认值(node_command_topic.h 里的常量),
+    // 这样存量 yaml 不改也能起。
+
+    // P:分区数。**不可变契约**,与 db_task / 审计 topic 同一套纪律
+    // (docs/design/db-task-kafka-partition-contract.md):要改就 +1 代号换一批
+    // 新 topic,绝不原地扩分区 —— 扩分区会把 node_id % P 重映射,
+    // 命令就发到没人 assign 的分区上,静默全丢。0 = 256。
+    uint32 command_topic_partitions = 6;
+
+    // 代号,进 topic 名:`<类型>-cmd_g<N>`(与 data_service 的
+    // transaction_log_topic_g1 同形)。0 = 1。
+    uint32 command_topic_generation = 7;
+
+    // 迁移窗口开关:true = **不再**消费旧的 `<类型>-<node_id>` per-node topic。
+    // 默认 false(仍消费),因为生产者是分批切的(Go login 由另一路发布切换),
+    // producer 还在写老 topic 时把消费端关掉 = 命令全丢。
+    // 全部生产者切完后置 true,P1(僵尸进程与继任者共用 consumer group、
+    // 分区被判给僵尸导致继任者饿死)才算彻底关闭 —— 老路径仍是 group 订阅。
+    bool disable_legacy_per_node_topic = 8;
+}
+
+// 一种永久 guid 的号段配置(docs/design/node-id-overhaul-plan-20260908.md §6 / §7.5)。
+// 号段 = scene 经 DataService.AllocateIdSegment 从全局库 id_segment 表领 [lo, hi),
+// 值域 [1, 2^55) 与存量 snowflake 号(≥ 6.7e16)不相交,新旧号在同一张表 / 玩家 blob 里共存、不迁数据。
+// 一种 GUID 一个客户端实例(C++ GuidSegmentRegistry),kind 名 = 注册表种类名 = id_segment.biz_tag。
+message IdSegmentKindConfig {
+    // 种类名:item / txlog / snapshot(以后 pet / guild …)。不认识的名字被忽略并记 ERROR。
+    string kind = 1;
+    // 关闭 = 这种 guid 在本节点**没有发号源**:没有 snowflake 回退(scene 已退出槽位协议),
+    // 每次铸号都 fail-closed。只用于故意停掉某种 guid 的场景,不是回滚开关。
+    bool enabled = 2;
+    // 动态 step(Leaf 口径):首次领段长度,以及上下限。一段不到 15 分钟用完 → 下次 ×2(≤ max_step),
+    // 超过 30 分钟才用完 → 下次 ÷2(≥ min_step)。0 = 钉在 initial_step 上(不扩 / 不缩)。
+    uint32 initial_step = 3;
+    uint32 min_step = 4;
+    uint32 max_step = 5;
+}
+
+// 永久 guid 号段总配置:每种 guid 一块。只有 scene 读;放在部署配置而不是 GameConfig,
+// 因为它是发号基础设施参数,不是玩法参数,而且只有这一份 yaml 不用改两处。
+message IdSegmentConfig {
+    repeated IdSegmentKindConfig kinds = 1;
+}
+
+// C++ 节点发出的 unary gRPC 调用的 deadline(docs/design/grpc-client-deadline-failure-callback.md §4)。
+// 按**目标**节点类型配;没配到的类型用生成代码里的 kDefaultGrpcCallDeadlineMs(grpc_client/grpc_call_tag.h)。
+// 取值遵守「上游比下游宽」:大于目标服务的服务端超时,小于依赖这次调用结果的 C++ 看门狗。
+message GrpcClientConfig {
+    // key = ENodeType 枚举名(SceneManagerNodeService / DataServiceNodeService …),value = 毫秒。
+    // 不认识的键、值为 0(= 不限时,违反超时预算)都被忽略并记 ERROR,该类型保持默认。
+    map<string, uint32> call_deadline_ms = 1;
 }
 
 // Base deploy config
@@ -44,6 +100,70 @@ message BaseDeployConfig {
     // 0 = immediate removal (production default).
     // 300+ = recommended for dev/debug to survive breakpoint pauses.
     uint32 node_removal_grace_seconds = 13;
+
+    // Root directory for data files (nav meshes, etc.).
+    // Nav bin path = data_root_directory + nav_bin_file from table.
+    // Local dev: "../"   K8s: "/app/"
+    string data_root_directory = 14;
+
+    // Gate 的并发客户端连接上限。生产取值 1..131071;
+    // 0 = 关闭运维阈值(仅供显式 dev/test 本地调试,prod 会拒绝启动),
+    // 但 session-id 的 131071 硬上限仍然生效。
+    //
+    // 为什么必须有:gate 是唯一对公网开放的端口,而 muduo 的 TcpServer 无条件
+    // accept —— 在此之前全仓没有任何连接数上限,任何人都能一直建连把 gate 的
+    // fd、SessionMap 和每连接缓冲吃光,直到 accept 撞 EMFILE 或进程 OOM。
+    // 这条限流不需要任何凭证即可触发,是纯粹的资源耗尽面。
+    // 超过上限的新连接在分配 session 之前就被拒掉(见 HandleConnectionEstablished)。
+    // 131071 上界为所有 node_id 保留 UINT32_MAX 哨兵,并避免 session-id 空间
+    // 全部占满后碰撞重试永久自旋。
+    uint32 gate_max_connections = 15;
+
+    // battle 节点客户端直连票据的 HMAC 共享密钥(battle 节点签发并校验;全部 battle 实例
+    // 必须一致;与 gate_token_secret 分域,任一泄露不影响另一侧)。
+    // 空值处置由 BATTLE_RUN_MODE 决定:dev/test 放行并 WARN,prod 拒绝启动
+    // (设计文档 turn-based-battle-server.md §18 D24/D27)。
+    string battle_token_secret = 16;
+
+    // battle 节点客户端面并发直连上限。0 = 关闭运维阈值(仅 dev/test);
+    // 语义与 gate_max_connections 相同:超限连接在握手前即被拒。
+    uint32 battle_max_connections = 17;
+
+    // 集群号:部署级常量,由运维一次性设定(ConfigMap / yaml),策划不碰,默认 0。
+    // 只有 Go 的 snowflake 槽位协议(login-player / guild / scene-manager / match)消费它,
+    // 作为 17 位 worker 字段的高 5 位([cluster5][node12]);C++ 侧 2026-09-08 起没有消费者
+    // (scene 的永久 guid 走号段,不编码集群),这里只是同一份 yaml 口径的原样读入。
+    // 取值 0..31。见 docs/design/node-id-overhaul-plan-20260908.md §5 / §7.5。
+    uint32 cluster_id = 18;
+
+    // 永久 guid 号段(item / txlog / snapshot 各一块,见 IdSegmentConfig)。
+    IdSegmentConfig id_segment = 19;
+
+    // 审计 topic(transaction_log / player_snapshot)的**世代号**,进有效 topic 名:
+    // `<基名>_g<N>`,基名在 cpp/libs/modules/{transaction_log,snapshot} 的头文件里。
+    // 0 当 1 处理(proto3 没有 presence,存量 yaml 不写这一键也能起,名字仍规范)。
+    //
+    // **必须等于 go/data_service 的 Kafka.TopicGeneration**(go/data_service/etc/data_service.yaml):
+    // C++ 是这两个 topic 唯一的生产者,data_service 是唯一的消费者,名字是两边唯一的会合点。
+    // 两边分家不报任何错 —— 生产者写进一个没人消费的 topic,流水 / 快照在保留期(默认 30 天)
+    // 到期时被静默吃掉。2026-09-09 之前这个后缀是 C++ 编译期常量,换代要手改两个头文件并重出镜像;
+    // 现在收敛成这一个部署键(k8s 侧由 k8s_deploy.ps1 从 data_service.yaml 镜像进 node ConfigMap)。
+    uint32 audit_topic_generation = 20;
+
+    // C++ 节点 unary gRPC 调用的 deadline(见 GrpcClientConfig)。可以不写:缺席 = 全部用内置默认。
+    GrpcClientConfig grpc_client = 21;
+
+    // 玩家存盘 DBTask topic(db_task_zone_{zone})的**世代号**。有效名:
+    // `<= 1` → `db_task_zone_{zone}`(不带后缀),`>= 2` → `db_task_zone_{zone}_g{N}`。
+    // 注意与 audit_topic_generation **第一代就带 _g1** 的规则不同:db_task 第一代的名字早已上线,
+    // 换规则等于换 topic,只能沿用 go/db、go/login 的 DbTaskTopicForGeneration 口径。
+    // 0 当 1 处理(proto3 没有 presence,存量 yaml 不写这一键也能起,名字不变)。
+    //
+    // **必须等于 go/db 的 ServerConfig.Kafka.TopicGeneration 与 go/login 的 Kafka.TopicGeneration**:
+    // C++ scene 按 home_zone 往这个 topic 写玩家存盘,go/db 是唯一的消费者。分家不报任何错 ——
+    // 换代后 scene 仍写旧代 topic,存盘静默积压在一个已排空、没人消费的 topic 里。
+    // 换代流程见 docs/design/db-task-kafka-partition-contract.md;设计见 player-storage-placement.md §7。
+    uint32 db_task_topic_generation = 22;
 }
 
 // Game config
@@ -59,4 +179,16 @@ message GameConfig {
     }
 
     ZoneRedisConfig zone_redis = 7; // Zone Redis config
+
+    // 玩家持久收件箱的 scene 消费端(docs/design/player-inbox-service.md §3.3、§7.3、§11.7)。
+    // 由 readGameConfig 手工逐键解析(cpp/libs/engine/config/config.cpp),yaml 键名 player_inbox。
+    // **整段或单键缺失时加载器显式取默认值**,不依赖 proto3 的 0:
+    //   consumer_enabled        默认 false = 不发 Fetch,账本字段照常随存档往返(这就是回滚下限,§11.7 第 4 步);
+    //   periodic_fetch_minutes  默认 30 = 在线有界兜底周期(分钟,±20% 抖动);0 = 关闭兜底(0 有含义,所以不能当缺省值)。
+    message PlayerInboxConfig {
+        bool consumer_enabled = 1;
+        uint32 periodic_fetch_minutes = 2;
+    }
+
+    PlayerInboxConfig player_inbox = 8;
 }

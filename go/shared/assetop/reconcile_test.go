@@ -196,6 +196,7 @@ func TestTickFinalizesDurableApplied(t *testing.T) {
 		return resultApplied(true), nil
 	}}
 	loop, m := newTestLoop(t, store, applier, nil)
+	loop.Ledger = sqlLedgerFixture(true, testOp(1))
 
 	if got := loop.Tick(context.Background()); got != 1 {
 		t.Fatalf("应处理 1 行,实际 %d", got)
@@ -224,6 +225,7 @@ func TestProcessOneSwitchesToAbortAfterDeadline(t *testing.T) {
 		return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_REJECTED, Durable: true}, nil
 	}}
 	loop, _ := newTestLoop(t, store, applier, nil)
+	loop.Ledger = sqlLedgerFixture(false, op)
 
 	processed, err := loop.ProcessOne(context.Background(), op)
 	if err != nil {
@@ -370,6 +372,7 @@ func TestTickContinuesAfterFinalizeError(t *testing.T) {
 		return resultApplied(true), nil
 	}}
 	loop, m := newTestLoop(t, store, applier, func(c *LoopConfig) { c.Workers = 1 })
+	loop.Ledger = sqlLedgerFixture(true, testOp(1), testOp(2))
 
 	if got := loop.Tick(context.Background()); got != 2 {
 		t.Fatalf("两行都应被处理,实际 %d", got)
@@ -460,6 +463,7 @@ func TestPoisonRowSkipped(t *testing.T) {
 		return resultApplied(true), nil
 	}}
 	loop, m := newTestLoop(t, store, applier, func(c *LoopConfig) { c.Workers = 1 })
+	loop.Ledger = sqlLedgerFixture(true, testOp(2))
 
 	if got := loop.Tick(context.Background()); got != 1 {
 		t.Fatalf("只应处理第二行,实际 %d", got)
@@ -476,7 +480,7 @@ func TestPoisonRowSkipped(t *testing.T) {
 	}
 }
 
-// 并发必须封顶在 Workers:scene 的 sync poller 只有 8 条,打满会连带拖垮进场与开战。
+// 并发必须封顶在 Workers:资产 RPC 在 scene 的 EventLoop 上同步执行,不封顶会挤占逻辑帧、连带拖慢进场与开战。
 func TestWorkersBounded(t *testing.T) {
 	ops := make([]Op, 0, 12)
 	for i := uint64(1); i <= 12; i++ {
@@ -718,6 +722,7 @@ func TestPartialNotBookedCounterSide(t *testing.T) {
 		}, nil
 	}}
 	loop, m := newTestLoop(t, store, applier, nil)
+	loop.Ledger = sqlLedgerFixture(true, op)
 
 	processed, err := loop.ProcessOne(context.Background(), op)
 	if err != nil {
@@ -776,6 +781,7 @@ func TestLastReasonStillMarksPartialAfterRingEviction(t *testing.T) {
 		return resultApplied(true), nil
 	}}
 	loop, _ := newTestLoop(t, store, applier, nil)
+	loop.Ledger = sqlLedgerFixture(true, op)
 
 	processed, err := loop.ProcessOne(context.Background(), op)
 	if err != nil {
@@ -839,4 +845,10 @@ type fakeLedger struct {
 func (f *fakeLedger) ReadPersistedLedger(context.Context, uint64) (*componentpb.PlayerAssetOpLedgerComp, error) {
 	f.reads.Add(1)
 	return f.ledger, f.err
+}
+
+// ReadSQLCommittedLedger 让同一份假账本也能充当 SQL 提交证据(RequireSQLCommit 打开的用例);
+// Redis blob 与 SQL 证据要给出不同内容时用 sql_commit_test.go 的 splitLedger。
+func (f *fakeLedger) ReadSQLCommittedLedger(ctx context.Context, playerID uint64) (*componentpb.PlayerAssetOpLedgerComp, error) {
+	return f.ReadPersistedLedger(ctx, playerID)
 }

@@ -73,6 +73,15 @@ func (l *MarkOfflineLogic) MarkOffline(in *pb.MarkOfflineRequest) (*common.Empty
 		)
 		return &common.Empty{}, nil
 	}
+	// 同号跨 gate 实例:旧实例迟到的登出不得删掉新实例上的会话、也不调 LeaveScene
+	// (docs/design/scene-enter-chain-residuals.md §6.2)。与上面的会话号 / 版本比对同在 GET 到的这份字节上判,
+	// 下面的整字节 CAS 不变。
+	if isStaleGateInstanceReport(current.GateInstanceId, in.ExpectedGateInstanceId) {
+		staleGateInstanceTotal.Inc(staleGateInstanceOpMarkOffline)
+		l.Infof("MarkOffline: stale gate instance ignored player=%d session=%d/%d record_instance=%s request_instance=%s",
+			playerID, current.SessionId, current.SessionVersion, current.GateInstanceId, in.ExpectedGateInstanceId)
+		return &common.Empty{}, nil
+	}
 
 	// Lua 比较完整 protobuf 原始字节后才删除。该字节包含已经在上面核对过的
 	// session_id/session_version，因此比只比较这两个字段更强：二次 GET 到 Lua

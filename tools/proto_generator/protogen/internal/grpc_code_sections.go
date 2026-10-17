@@ -10,8 +10,9 @@ import (
 	_config "protogen/internal/config"
 )
 
-// 命名守护段用于同一 RPC 的不同执行阶段与头文件声明，避免靠段落顺序识别代码。
-// 沿用既有 BEGIN/END 标记，仅在 BEGIN 后追加名称；普通 Handle/投递前段仍由原解析器读取。
+// 命名守护段用于 RPC 的准入段(grpc.<M>.guard)与头文件声明，避免靠段落顺序识别代码。
+// 沿用既有 BEGIN/END 标记，仅在 BEGIN 后追加名称；FirstCode 与 Handle* 的无名段仍由原解析器读取，
+// 旧模板的无名投递前段只用于检测(checkLegacyGrpcSections)。
 func readNamedGrpcCodeSections(path string) (map[string]string, error) {
 	sections := make(map[string]string)
 	file, err := os.Open(path)
@@ -74,16 +75,33 @@ func readNamedGrpcCodeSections(path string) (map[string]string, error) {
 	return sections, nil
 }
 
-func validateNamedGrpcCodeSections(sections map[string]string, allowedNames []string) error {
+// allowedNames 照常接受；emptyOnlyNames 是已退役的旧段名(如 grpc.<M>.in_loop / post_dispatch)，
+// 只在为空时接受(isEmptyGrpcCodeSection)，由调用方丢弃；其余名字一律拒绝。
+func validateNamedGrpcCodeSections(sections map[string]string, allowedNames []string, emptyOnlyNames []string) error {
 	allowed := make(map[string]bool, len(allowedNames))
 	for _, name := range allowedNames {
 		allowed[name] = true
 	}
-	var unknown []string
-	for name := range sections {
-		if !allowed[name] {
+	emptyOnly := make(map[string]bool, len(emptyOnlyNames))
+	for _, name := range emptyOnlyNames {
+		emptyOnly[name] = true
+	}
+	var unknown, nonEmptyLegacy []string
+	for name, code := range sections {
+		switch {
+		case allowed[name]:
+		case emptyOnly[name]:
+			if !isEmptyGrpcCodeSection(code) {
+				nonEmptyLegacy = append(nonEmptyLegacy, name)
+			}
+		default:
 			unknown = append(unknown, name)
 		}
+	}
+	if len(nonEmptyLegacy) > 0 {
+		sort.Strings(nonEmptyLegacy)
+		return fmt.Errorf("旧守护段非空，拒绝覆盖自定义代码(按 docs/design/grpc-muduo-transport.md §15.8.4 手工迁到 grpc.<M>.guard)：%s",
+			strings.Join(nonEmptyLegacy, ", "))
 	}
 	if len(unknown) == 0 {
 		return nil

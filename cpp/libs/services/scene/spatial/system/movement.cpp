@@ -60,9 +60,8 @@ void MovementSystem::Update(const double delta)
 	// Velocity 是**运动学矢量**(方向 × 速率),只能由真实的移动来源写入
 	// (移动输入 handler:player_movement_handler 的 MoveStart/MoveSync;
 	// AI 寻路仍是空桩)。
-	// 移速 buff 的标量属性在 MoveSpeedComp 里,由移动来源拿去缩放
-	// 输入方向 —— 绝不要把标量直接灌进 Velocity,那会让实体沿 (1,1,1)
-	// 匀速漂移(2026-08 修过的 P1)。
+	// 移速 buff 目前未接入移动；接入时用独立标量缩放输入方向，
+	// 绝不要把标量灌进 Velocity，避免实体沿 (1,1,1) 匀速漂移(2026-08 的 P1)。
 	//
 	// PlayerFrozenComp exclude:归属交接在途(PlayerLifecycleSystem::StartTravelHandoff:
 	// 跨 zone 传送 / 同 zone 跨节点换图)的玩家不得在源端继续积分位移 —— 目标节点稍后从盘上

@@ -235,17 +235,24 @@ func TestOrderingLease_OwnerChangedIsLostImmediately(t *testing.T) {
 	assert.Equal(t, retriesBefore, renewRetryCount(t), "owner change is not retried")
 }
 
-// worker ctx 取消(停机)不是失租:SQL ctx 不受影响。
+// worker ctx 取消(停机)不是失租:SQL ctx 不受影响,看门狗照常续租。
+//
+// 与看门狗逐拍同步,不在 stopWorker 之后立刻断言(那样看门狗还没来得及反应,守不住回归):先等它进入等待,
+// 再停 worker、让这次等待到期,确认它完成一轮续租、重新进入等待。若看门狗在 select 里监听了 worker ctx,
+// 停机后它会退出(tick 等不到接收方而失败)或判失租(下一次 nextWait 等不到请求而失败)。
 func TestOrderingLease_WorkerStopDoesNotCancelSQL(t *testing.T) {
 	w, _, _ := newTestWorker(t, 0)
-	installFakeLeaseTiming(t)
+	fc := installFakeLeaseTiming(t)
 	workerCtx, stopWorker := context.WithCancel(context.Background())
 	w.ctx = workerCtx
 	lease, _ := acquireTestLease(t, w, leaseTestTask(9806))
 	sqlCtx, _, err := lease.beginSQL()
 	require.NoError(t, err)
+	require.Equal(t, orderingLockRenewInterval, fc.nextWait(t), "the watchdog must be waiting before the worker stops")
 
 	stopWorker()
+	fc.tick(t)
+	require.Equal(t, orderingLockRenewInterval, fc.nextWait(t), "the watchdog must renew and wait again after the worker stops")
 
 	assert.NoError(t, sqlCtx.Err(), "shutting down must not cancel an in-flight write SQL")
 	assert.NoError(t, lease.lost())

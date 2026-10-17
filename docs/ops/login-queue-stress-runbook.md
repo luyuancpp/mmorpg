@@ -88,6 +88,15 @@ Queue:
 - 有 leader、日志里持续出现 `[loginqueue] queueLen zone=<id> err=...` = 读不出队列键(WRONGTYPE / ACL / 单键异常),锁照常续期但每拍都不出队(2026-10-14 之前这种情况零日志)
 - 日志里有 `goroutine_panic` 且 `point=login.queue_dispatcher_term`(指标 `safego_panic_total{point="login.queue_dispatcher_term"}` 在涨)= 出队路径有代码缺陷。该任期已放锁,本副本退避 TTL/3 后再参选,同 zone 备机可以接手;每个副本都 panic 就是每轮当选即 panic,队列照样不出,按栈修代码
 
+> (2026-10-15 补,已落码,未编译、未测试,待 Codex 验证)「队列在降、admit 不涨、robot 停在 rank=0」这一形状另查下面三条日志(见 `docs/handoff/launch-readiness-20261013/spec_G4b-G.md` §5.8 末尾补注):
+> - `[loginqueue] PopAdmit dropped entries after zpopmin zone=<id> reason=write_failed popped=… dropped=… firstErr=…`(ERROR,每批一行)= 已弹出的条目写放行失败,这些玩家停在名次 0 直到 meta 过期(1h)。`firstErr` 含 `OOM` 即 `redis-queue` 写满(noeviction):弹出照常成功、写入全被拒,几拍之内整条队列被弹空,先扩内存或清堆积(见「故障应急」),再排查谁占了内存;其它错误按 Redis 连接 / 延迟排查。停服、丢租约已不会造成这条(弹出之后的写入有 3s 独立预算),滚动重启期间偶发一行可以接受,持续出现不行。
+> - `[loginqueue] PopAdmit dropped entries after zpopmin zone=<id> reason=meta_gone dropped=<n>`(INFO)= 队首条目已在队里等满 `QueueEntryTTL`(1h),令牌已失效,这些人查询回 EXPIRED、会重新入队;不写放行槽、不占名额、不计入 `login_queue_admit_total`。持续出现说明排队等待超过 1h。
+> - `[loginqueue] PopAdmit zone=<id> err=loginqueue: … ttl must be positive …`(ERROR,每拍一行)= `Queue.AdmitTTL` 或 `Queue.QueueEntryTTL` 被显式配成 0 或负数(配置的默认值只在键缺省时生效),dispatcher 不出队,条目原样留在队列;改配置后滚动重启。起服时的校验还没接上,`QueueEntryTTL` 非正时入队本身也会把整条队列删掉,不要配。
+>
+> (2026-10-15 再补,更正上面两处,同样未编译、未测试)
+> - 第一条括号里的「3s 独立预算」自停服、丢租约时起算:没有取消时弹出之后的写入不设截止,一批写多久都照写;取消之后 3s 内仍没写完的尾部才会丢,记进这行 `reason=write_failed`(`firstErr` 通常是 `context deadline exceeded`)。
+> - 第三条「起服时的校验还没接上」已过时:`Queue.Enabled=true` 时起服装配在构造排队之前校验,`AdmitTTL` / `QueueEntryTTL` 非正、或 `AdmitTTL` 不足 1ms,login 直接起不来(panic 信息含 `login queue: loginqueue: … ttl must be positive`)。上线环境看不到第三条的每拍 ERROR,看到的是起服失败;按同样的方法改配置。
+
 ### 模式 2:over-issue(超发 gate token)
 ```
 [stats 30s] ... q_admitted=2000  (期望 920)
@@ -199,6 +208,10 @@ cd go/login && go test ./internal/logic/pkg/loginqueue/... -count=1
 #   - dispatcher 失 leader → 自动退出
 #   - 客户端 QueryQueueStatus 报错 → robot fall through 到 outer retry
 #   - Redis 起来后,所有数据丢失(预期),robot 触发新一轮 AssignGate 重建队列
+#   (2026-10-16 更正,上面第 2 条原文保留)按 2026-10-15 客户端契约,queue-status 报 500 / 网络错误时
+#   robot 先带 token 重调一次 assign-gate 作恢复;重入也失败才返回错误、走外层重试。Redis 宕机期间
+#   重入多半回 500 或 410,所以仍会落到外层重试或丢 token 重排;queue-status 连续失败时轮询间隔按
+#   2s 起翻倍退避、封顶 30s(open-server-rate-limit-design.md §11.5 的 2026-10-15 补注)。
 ```
 
 ---

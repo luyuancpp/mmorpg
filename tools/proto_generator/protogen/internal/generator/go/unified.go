@@ -1,8 +1,10 @@
 package _go
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	_config "protogen/internal/config"
@@ -85,7 +87,9 @@ func BuildUnifiedGoProto(wg *sync.WaitGroup) {
 		// 6. Run protoc. proto_path is the parent of stagingRoot so that
 		//    import "proto/common/base/tip.proto" resolves correctly.
 		protoRootPath := filepath.Dir(filepath.Clean(stagingRoot))
-		if err := GenerateGoGrpc(protoFiles, nodeGoDir, protoRootPath); err != nil {
+		if err := generateUnifiedOutput(nodeGoDir, filepath.Dir(stagingRoot), func(output string) error {
+			return GenerateGoGrpc(protoFiles, output, protoRootPath)
+		}); err != nil {
 			logger.Global.Fatal("Unified Go proto: code generation failed",
 				zap.String("staging_root", stagingRoot),
 				zap.String("output_dir", nodeGoDir),
@@ -98,6 +102,36 @@ func BuildUnifiedGoProto(wg *sync.WaitGroup) {
 			zap.String("output_dir", nodeGoDir+"/proto/"),
 		)
 	}()
+}
+
+// protoc 先写全新的临时目录，成功后才发布变更。Windows 上重建未变化的既有文件
+// 也可能因并行读者失败；复用统一的按内容写入规则，失败的 protoc 不污染绑定。
+func generateUnifiedOutput(outputDir, stagingParent string, generate func(string) error) error {
+	scratch, err := os.MkdirTemp(stagingParent, "go-output-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(scratch)
+	if err = generate(scratch); err != nil {
+		return err
+	}
+	return filepath.WalkDir(scratch, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
+			return nil
+		}
+		relative, err := filepath.Rel(scratch, path)
+		if err != nil {
+			return err
+		}
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return utils2.WriteFileIfChanged(filepath.Join(outputDir, relative), content)
+	})
 }
 
 // setUnifiedGoPackage sets go_package = "proto/{relative_dir}" for every

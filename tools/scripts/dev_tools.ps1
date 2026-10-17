@@ -84,7 +84,8 @@
     # go/db 存盘消费组的渲染模式(keep | zone | legacy),透传给 k8s_deploy.ps1 同名参数,语义见那边的参数注释与
     # docs/design/db-consumer-group-per-zone.md(zone / legacy 只许配 k8s-zone-up,由 k8s_deploy.ps1 在入口拒绝)。
     # 默认留空 = 不透传,由 k8s_deploy.ps1 的默认值 keep 接管(写法同 -GateRouterMode:默认值只留在 k8s_deploy.ps1 一处)。
-    # k8s-release-* 不转发它(等于 keep);k8s-zone-rollback 不经本参数,回滚脚本的 Step 6 自己固定传 zone。
+    # k8s-image-* / k8s-release-* 不转发它(不部署 db);k8s-zone-rollback 不经本参数,回滚脚本的 Step 6 自己固定传 zone。
+    # 这两条路上显式给了即在任何副作用之前拒绝,不静默吞掉。
     [ValidateSet("", "keep", "zone", "legacy")]
     [string]$DbConsumerGroup = "",
     # 集群外客户端入口,透传给 k8s_deploy.ps1(k8s-infra-up / k8s-zone-up / k8s-all-up)、k8s_image.ps1(k8s-release-*)
@@ -398,12 +399,23 @@ function Invoke-ProtoGenBuild {
         $primaryProtoGenExePath = Join-Path $ProtoGenDir "proto-gen.exe"
         $staleCmdExePath = Join-Path $ProtoGenDir "cmd.exe"
 
+        # 构建开始时刻:构建成功后用它给 exe 打写入时间戳(理由见下文),必须在 go build 启动之前取。
+        $buildStartUtc = [DateTime]::UtcNow
         go build -v -o $legacyProtoGenExePath ./cmd
         # go build 是外部命令,失败不会触发 $ErrorActionPreference = "Stop"。不在这里拦,下一行就会把上一次的
         # 旧 pbgen.exe 当新产物复制过去、脚本以 0 退出,dev.bat 接着用旧生成器改写代码。
         # 2026-09-20 就这样吞掉了 scene_node_service.cpp 的手写守护段。构建失败必须让整条 proto 流程停下。
         if ($LASTEXITCODE -ne 0) { throw "proto generator build failed (go build exit $LASTEXITCODE); stale pbgen.exe / proto-gen.exe left untouched, do not run proto-gen-run" }
         Copy-Item -Path $legacyProtoGenExePath -Destination $primaryProtoGenExePath -Force
+        # go build 发现产物已是最新时可以不重写文件,刷新写入时间也只是它的尽力而为(忽略错误)。
+        # proto-gen-run 按写入时间判定 exe 是否落后于源码(Get-ProtoGenBinaryStaleReason),所以构建成功后在这里显式打戳,
+        # 保证「构建成功 ⇒ 构建开始前已落盘的源码不判旧」:否则源码只被 touch(如切分支)时,构建了也会被 -UseBinary 一直拒绝。
+        # 戳用构建开始时刻而不是构建结束时刻:go build 在各包编译时才读源码,同一工作区的其他会话在构建期间保存的源码
+        # 可能没进这次产物;它们的写入时间晚于构建开始,proto-gen-run 会判旧(fail-closed),不会被更晚的戳盖住。
+        # 受文件系统时间戳精度限制,紧贴构建开始那一刻的保存仍可能判为不旧。
+        foreach ($builtExePath in @($legacyProtoGenExePath, $primaryProtoGenExePath)) {
+            [System.IO.File]::SetLastWriteTimeUtc($builtExePath, $buildStartUtc)
+        }
 
         if (Test-Path $staleCmdExePath) {
             Remove-Item $staleCmdExePath -Force -ErrorAction SilentlyContinue
@@ -412,6 +424,42 @@ function Invoke-ProtoGenBuild {
     finally {
         Pop-Location
     }
+}
+
+# 预编译生成器 exe 是否落后于生成器源码:落后时返回一句英文原因(哪个 exe 比哪个源码文件旧),否则返回 $null。
+# 背景:批 7 起 proto/message_id.txt 有 `N=reserved:<KeyName>` 墓碑行。不认识墓碑的旧 exe 会把墓碑号当空号回收、
+# 写回时丢掉墓碑行,悄悄毁掉「号码不复用」;同一工作区又有多个会话随时可能 regen,所以跑 exe 前必须先判新旧。
+# 只比现存源码文件的写入时间(LastWriteTimeUtc),不比内容,两个方向都有误差:
+#   - 多判:切分支等只 touch 源码的操作会误判为旧,代价只是改走 go run 或提示重建;
+#   - 漏判:删除源码文件、改名(NTFS 改名保留写入时间)、保留原写入时间的复制或解压,都不会留下比 exe 新的文件,判不出来。
+#     这类改动通常伴随其他源码修改;单独发生时需要手动跑 proto-gen-build。
+# 源码范围 = $ProtoGenDir 下会进入二进制的输入:
+#   - *.go,排除 *_test.go(测试文件不进二进制);
+#   - *.tmpl:grpc_service_handler.*.tmpl、service_metadata.h.tmpl 经 go:embed 编进二进制;其余模板在运行期按相对路径读取,
+#     一并计入只会多判,不会因此漏判;
+#   - 根目录 go.mod / go.sum(依赖版本变化)。
+# 排除的顶层目录(生成器运行期写入或读取、不进二进制;不排除的话每次 regen 后都可能误判为旧):
+#   - cpp/:cmd/root.go 的 makeProjectDir 在运行期按相对工作目录创建 generated_dir="cpp/generated/";
+#   - etc/:运行期读取的 yaml 配置;
+#   - bin/:.gitignore 里的本地构建输出目录。
+function Get-ProtoGenBinaryStaleReason {
+    param([Parameter(Mandatory = $true)][string]$BinaryPath)
+
+    $excludedTopLevelDirs = @('cpp', 'etc', 'bin')
+    $topLevelFiles = @(Get-ChildItem -LiteralPath $ProtoGenDir -File -Force)
+    $nestedFiles = @(Get-ChildItem -LiteralPath $ProtoGenDir -Directory -Force |
+        Where-Object { $excludedTopLevelDirs -notcontains $_.Name } |
+        ForEach-Object { Get-ChildItem -LiteralPath $_.FullName -Recurse -File -Force })
+    $sources = @(($topLevelFiles + $nestedFiles) | Where-Object {
+            ($_.Name -like '*.go' -and $_.Name -notlike '*_test.go') -or $_.Name -like '*.tmpl'
+        }) + @($topLevelFiles | Where-Object { $_.Name -in @('go.mod', 'go.sum') })
+
+    $binaryWriteTimeUtc = (Get-Item -LiteralPath $BinaryPath -Force).LastWriteTimeUtc
+    $newestSource = $sources | Sort-Object -Property LastWriteTimeUtc -Descending | Select-Object -First 1
+    if ($null -eq $newestSource -or $newestSource.LastWriteTimeUtc -le $binaryWriteTimeUtc) {
+        return $null
+    }
+    return "{0} ({1:o}) is older than generator source {2} ({3:o})" -f (Split-Path -Leaf $BinaryPath), $binaryWriteTimeUtc, $newestSource.FullName, $newestSource.LastWriteTimeUtc
 }
 
 function Invoke-ProtoGenRun {
@@ -454,28 +502,41 @@ function Invoke-ProtoGenRun {
             return
         }
 
+        # 预编译 exe:优先 proto-gen.exe,其次兼容名 pbgen.exe;两者都没有时为 $null。
+        $selectedProtoGenExePath = $null
+        if (Test-Path $primaryProtoGenExePath) {
+            $selectedProtoGenExePath = $primaryProtoGenExePath
+        }
+        elseif (Test-Path $legacyProtoGenExePath) {
+            $selectedProtoGenExePath = $legacyProtoGenExePath
+        }
+        # 选中的 exe 落后于生成器源码时不能直接跑:旧 exe 会抹掉 message_id.txt 墓碑等新格式(见 Get-ProtoGenBinaryStaleReason)。
+        $binaryStaleReason = $null
+        if ($null -ne $selectedProtoGenExePath) {
+            $binaryStaleReason = Get-ProtoGenBinaryStaleReason -BinaryPath $selectedProtoGenExePath
+        }
+
         if ($UseBinary) {
-            if (Test-Path $primaryProtoGenExePath) {
-                & $primaryProtoGenExePath
-                if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
-                return
+            if ($null -eq $selectedProtoGenExePath) {
+                throw "proto-gen binary not found. Expected $primaryProtoGenExePath or $legacyProtoGenExePath. Please run proto-gen-build first."
             }
-
-            if (Test-Path $legacyProtoGenExePath) {
-                & $legacyProtoGenExePath
-                if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
-                return
+            # 调用者显式要求跑 exe:不偷偷换成 go run,直接拒绝,让调用者先重建或显式改用 -UseGoRun。
+            if ($null -ne $binaryStaleReason) {
+                throw "Stale proto-gen binary refused; run proto-gen-build first or pass -UseGoRun. $binaryStaleReason."
             }
-
-            throw "proto-gen binary not found. Expected $primaryProtoGenExePath or $legacyProtoGenExePath. Please run proto-gen-build first."
+            & $selectedProtoGenExePath
+            if ($LASTEXITCODE -ne 0) { throw "协议生成器执行失败（退出码 $LASTEXITCODE）；生成未完成，停止后续构建。" }
+            return
         }
 
         # Default strategy: prefer prebuilt proto-gen binary for faster startup, fall back to the legacy name, then go run.
-        if (Test-Path $primaryProtoGenExePath) {
-            & $primaryProtoGenExePath
+        # 选中的 exe 落后于源码时告警并改走 go run(按当前源码生成),不跑旧 exe。
+        if ($null -ne $binaryStaleReason) {
+            Write-Warning "$binaryStaleReason; running 'go run ./cmd' instead. Run proto-gen-build to refresh the binary."
+            go run ./cmd
         }
-        elseif (Test-Path $legacyProtoGenExePath) {
-            & $legacyProtoGenExePath
+        elseif ($null -ne $selectedProtoGenExePath) {
+            & $selectedProtoGenExePath
         }
         else {
             go run ./cmd
@@ -831,6 +892,8 @@ function Invoke-K8sImage {
     if (-not [string]::IsNullOrWhiteSpace($GatewayIngressClassName)) { $notForwarded += '-GatewayIngressClassName' }
     if (-not [string]::IsNullOrWhiteSpace($GatewayIngressTlsSecret)) { $notForwarded += '-GatewayIngressTlsSecret' }
     if (-not [string]::IsNullOrWhiteSpace($GatewayTrustedProxies)) { $notForwarded += '-GatewayTrustedProxies' }
+    # -DbConsumerGroup:k8s_image.ps1 不部署 db(不传 -GoSvcRegistry),给什么值都不生效;切组只走 k8s-zone-up(docs/design/db-consumer-group-per-zone.md)。
+    if (-not [string]::IsNullOrWhiteSpace($DbConsumerGroup)) { $notForwarded += '-DbConsumerGroup' }
     if ($notForwarded.Count -gt 0) {
         throw "k8s-image-* / k8s-release-* 不支持 $($notForwarded -join ', '):k8s_image.ps1 不部署 Go / Java 服务,也不支持 Agones 高密度 / FleetAutoscaler。请改用 k8s-infra-up / k8s-zone-up / k8s-all-up(直接调 k8s_deploy.ps1)。"
     }
@@ -1319,7 +1382,8 @@ Compatibility aliases (legacy):
 
 Useful proto-gen flags:
     -EnablePprof   Enable pprof wait mode (PROTOGEN_ENABLE_PPROF=1)
-    -UseBinary     Force running proto-gen binary (proto-gen.exe, fallback: pbgen.exe)
+    -UseBinary     Force running proto-gen binary (proto-gen.exe, fallback: pbgen.exe);
+                   refuses to run when the binary is older than the generator sources (run proto-gen-build first)
     -UseGoRun      Force running go run ./cmd
 
 Go micro-service commands (local dev):
@@ -1620,6 +1684,11 @@ switch ($Command) {
         # 拿它回滚等于"把数据回档到过去、把代码留在现在",比不回滚更危险。
         if (-not $script:NodeImageExplicit) {
             throw "k8s-zone-rollback requires an explicit -NodeImage (回滚目标版本的镜像引用,如 ghcr.io/luyuancpp/mmorpg-node:<回滚目标 sha>)。默认值是当前工作树的 sha,不是回滚目标。"
+        }
+        # 回档的 Step 6 固定传 -DbConsumerGroup zone(docs/design/db-consumer-group-per-zone.md §6),本参数在这条路上不生效;
+        # 显式给了就在调用回档脚本之前拒绝,不静默吞掉(AGENTS §11.3)。
+        if (-not [string]::IsNullOrWhiteSpace($DbConsumerGroup)) {
+            throw "k8s-zone-rollback 不支持 -DbConsumerGroup:回档的 Step 6 固定使用 zone(回档后落到 zone 组的最终形状),给的 '$DbConsumerGroup' 不会生效。去掉该参数重跑;尚未做任何操作。"
         }
         # 必须 hashtable splatting:数组 splatting 会按**位置**绑定,
         # "-ZoneName" 这个字符串本身会被绑到 ZoneName、"$ZoneName" 绑到 [int]$ZoneId,

@@ -117,7 +117,7 @@ bool InterestSystem::AddAoiEntity(entt::entity watcher, entt::entity target, Aoi
     if (capacity == 0) return false;
     if (comp == nullptr)
     {
-        // 此处延迟创建,Pin 与空间可见性写入都经本入口。
+        // 此处延迟创建,空间可见性写入统一经本入口。
         comp = &tlsEcs.actorRegistry.emplace<AoiListComp>(watcher);
     }
     if (comp->entries.size() < capacity)
@@ -145,11 +145,6 @@ void InterestSystem::RemoveAoiEntity(entt::entity watcher, entt::entity target)
     auto* comp = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
     if (comp == nullptr) return;
     comp->entries.erase(target);
-}
-
-bool InterestSystem::PinAoiEntity(entt::entity watcher, entt::entity target)
-{
-    return AddAoiEntity(watcher, target, AoiPriority::kPinned);
 }
 
 void InterestSystem::UpgradePriority(entt::entity watcher, entt::entity target, AoiPriority priority)

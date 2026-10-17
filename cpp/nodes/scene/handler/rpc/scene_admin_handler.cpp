@@ -5,7 +5,13 @@
 #include <muduo/base/Logging.h>
 #include <node/system/node/node.h>
 #include <proto/common/component/player_comp.pb.h>
+#include <proto/common/database/mysql_database_table.pb.h>
 #include <thread_context/ecs_context.h>
+#include <utils/registry/describe_entity.h>
+
+#include <algorithm>
+#include <string>
+#include <unordered_map>
 
 // GM 面调用方鉴权。与 Gate.GmGracefulShutdown 共用同一份实现 —— 信封格式、
 // canonical 串、时间窗与 nonce 去重的完整定义都在这个头里,两侧必须逐字节一致,
@@ -19,6 +25,26 @@
 // 的路径引用 —— 九个文件的重构挂在一个安全修复上,而本仓 Claude 不执行编译
 // (CLAUDE.md §10.1),验证不了。搬迁另开一件事做。
 #include "../../../gate/gate_security.h"
+
+namespace
+{
+// 值只开放给已鉴权的 GM 调用；普通 C++ 持久组件仍只列类型，不新增序列化适配。
+const std::unordered_map<entt::id_type, std::string (*)(const void*)> kPersistedValueFormatters{
+    {entt::type_hash<Transform>::value(), [](const void* value) { return static_cast<const Transform*>(value)->ShortDebugString(); }},
+    {entt::type_hash<PlayerUint64Comp>::value(), [](const void* value) { return static_cast<const PlayerUint64Comp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<PlayerSkillListComp>::value(), [](const void* value) { return static_cast<const PlayerSkillListComp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<PlayerUint32Comp>::value(), [](const void* value) { return static_cast<const PlayerUint32Comp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<BaseAttributesComp>::value(), [](const void* value) { return static_cast<const BaseAttributesComp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<LevelComp>::value(), [](const void* value) { return static_cast<const LevelComp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<PlayerAttributeComp>::value(), [](const void* value) { return static_cast<const PlayerAttributeComp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<PlayerPetComp>::value(), [](const void* value) { return static_cast<const PlayerPetComp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<PlayerProfileComp>::value(), [](const void* value) { return static_cast<const PlayerProfileComp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<PlayerAssetOpLedgerComp>::value(), [](const void* value) { return static_cast<const PlayerAssetOpLedgerComp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<BattleSettlementLedgerComp>::value(), [](const void* value) { return static_cast<const BattleSettlementLedgerComp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<PlayerInboxLedgerComp>::value(), [](const void* value) { return static_cast<const PlayerInboxLedgerComp*>(value)->ShortDebugString(); }},
+    {entt::type_hash<CurrencyComp>::value(), [](const void* value) { return static_cast<const CurrencyComp*>(value)->ShortDebugString(); }},
+};
+}
 ///<<< END WRITING YOUR CODE
 
 void SceneSceneHandler::Test(::google::protobuf::RpcController* controller, const ::GameSceneTest* request,
@@ -27,6 +53,7 @@ void SceneSceneHandler::Test(::google::protobuf::RpcController* controller, cons
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
+
 }
 
 void SceneSceneHandler::GmGracefulShutdown(::google::protobuf::RpcController* controller, const ::GmGracefulShutdownRequest* request,
@@ -96,10 +123,88 @@ void SceneSceneHandler::GmGracefulShutdown(::google::protobuf::RpcController* co
 	// 3. 停机必须延后到本次 RPC 应答发出之后。直接在这里调 RequestShutdown 会在
 	// handler 返回前就开始拆运行时,框架随后再去发应答就可能发不出去。queueInLoop
 	// 把它排到当前事件循环回合的末尾:此时 handler 已返回、应答已写进发送缓冲。
-	// 仍然是非阻塞投递 —— RPC handler 不能等整个 barrier 完成,否则 gRPC
-	// Server::Shutdown 等 handler 退出、handler 又等 Shutdown 完成,会闭环。
+	// 仍然是非阻塞投递 —— RPC handler 跑在 loop 线程上,不能同步等整个 barrier 完成:
+	// gRPC 排空与停机收尾都靠 loop 推进,在 loop 上等就永远等不到。
 	gNode->GetLoop()->queueInLoop([] { gNode->RequestShutdown(); });
 	return;
 
 	///<<< END WRITING YOUR CODE
+
+}
+
+void SceneSceneHandler::GmDescribeEntity(::google::protobuf::RpcController* controller, const ::GmDescribeEntityRequest* request,
+	::GmDescribeEntityResponse* response,
+	::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+    constexpr std::size_t kMaxLoggedFieldLength = 128;
+    constexpr std::size_t kMaxValueLength = 4 * 1024;
+    constexpr std::size_t kMaxDescriptionLength = 64 * 1024;
+    const std::string selfNodeId = std::to_string(gNode->GetNodeId());
+    const auto gmAuth = gate_security::VerifyGmRequestFromEnv(
+        "Scene.GmDescribeEntity", selfNodeId, request->operator_(), request->reason());
+    if (gmAuth.result != gate_security::GmAuthResult::kOk)
+    {
+        LOG_ERROR << "GM describe entity REJECTED, reason="
+                  << gate_security::GmAuthResultName(gmAuth.result)
+                  << " raw_operator=" << request->operator_().substr(0, kMaxLoggedFieldLength)
+                  << " request_reason=" << request->reason().substr(0, kMaxLoggedFieldLength);
+        controller->SetFailed("GM describe entity rejected");
+        return;
+    }
+    // reason 是签名覆盖的目标，拒绝拿合法签名换 player_id 重放。
+    if (request->reason() != std::to_string(request->player_id()))
+    {
+        LOG_ERROR << "GM describe entity REJECTED, reason=target_mismatch"
+                  << " operator=" << gmAuth.operatorName.substr(0, kMaxLoggedFieldLength)
+                  << " player_id=" << request->player_id()
+                  << " request_reason=" << request->reason().substr(0, kMaxLoggedFieldLength);
+        controller->SetFailed("GM describe entity rejected");
+        return;
+    }
+
+    const auto player = tlsEcs.GetPlayer(request->player_id());
+    auto& registry = tlsEcs.actorRegistry;
+    if (!registry.valid(player))
+    {
+        response->set_description("player not on this node");
+        LOG_INFO << "GM describe entity operator=" << gmAuth.operatorName
+                 << " player_id=" << request->player_id() << " components=0";
+        return;
+    }
+
+    auto description = DescribeEntity(registry, player);
+    description.resize(std::min(description.size(), kMaxDescriptionLength));
+    std::size_t componentCount = 0;
+    for (auto [id, storage] : registry.storage())
+    {
+        if (!storage.contains(player))
+        {
+            continue;
+        }
+        ++componentCount;
+        if (!request->include_values() || description.size() == kMaxDescriptionLength)
+        {
+            continue;
+        }
+        const auto formatter = kPersistedValueFormatters.find(storage.type().hash());
+        if (formatter == kPersistedValueFormatters.end())
+        {
+            continue;
+        }
+        const void* value = storage.value(player);
+        if (value == nullptr)
+        {
+            continue;
+        }
+        const auto line = "\n" + std::string(storage.type().name()) + "=" +
+            formatter->second(value).substr(0, kMaxValueLength);
+        description.append(line, 0, kMaxDescriptionLength - description.size());
+    }
+    response->set_description(description);
+    // 值只在本次 RPC 应答中出现，审计日志不记录组件内容。
+    LOG_INFO << "GM describe entity operator=" << gmAuth.operatorName
+             << " player_id=" << request->player_id() << " components=" << componentCount;
+///<<< END WRITING YOUR CODE}
+
 }

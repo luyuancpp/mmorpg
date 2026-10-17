@@ -958,3 +958,42 @@ Tip.xlsx 把预留注释行换成组头 `//mail_error base=17000 width=1000`(**`
 5. **mail 的 proto-gen 是独立一次**,gate / 路由表 / robot / Unity 必须全部出自这一次;data_service 要先重编并 `-migrate` 出 `mail` 号段行。
 6. **附件协议推荐已从"import asset_op.proto"改为 mail 自有 message**(客户端不收 `common/asset` 已核实)。
 7. **K8s 上默认 `MailAdmin` 停用、玩家不可达**,都是设计内的;冒烟必须经 `start_game.ps1` 起栈。(2026-09-29 更正原因:玩家不可达现在是因为 mail 未登记进 K8s 部署,不再是 gate 默认直连 —— K8s 默认已为路由模式,见 §1.5 第 1 条)
+
+## 2026-10-15 完整邮箱闭环实施（进行中）
+
+用户已授权邮件、通用榜、交易拍卖、资产到账及跨区匹配两版与客户端完整实施。本批不再以领取短路作为完成条件；旧M1/M2分批保留为历史。主仓核对基线为0249bee0a，原仓b1f6c1eb，Java dffc0ed，客户端24ff81a9；本节记录契约与在途工作，不表示编译或验收通过。
+
+- 原仓 `services/social/mail/internal/biz/mail.go` 的列表151、已读213、领取223、稳定领取意图333、领取确认453及三类发件500/520/545均已核对。旧inventory直发与DS journal不迁入本仓；本仓只有scene资产通道持有资产真相。
+- 新增 `proto/mail/mail.proto` 的列表、阅读、批领、批删、清理与提醒，以及内部 `MailAdmin` 三类发件。身份只取gate会话；客户端原有MailUiState只承接权威快照，不乐观发物。`player_inbox`仅承接非资产scene处置，绝不充当邮箱。
+- 邮件内容、玩家状态、seq及op均以mail_table.proto为表源。发件按(sender_kind,request_id)在SQL内幂等并核完整内容摘要；逻辑删除不能删除幂等收据。个人箱守卫串行化发件上限；广播已读/删除/领取按玩家物化状态。
+- 附件用现有AssetBundle字节存储；首批真实闭环覆盖货币及新物品授予。既有实例转让须共用完整实例bundle，不能把已有装备重铸成新件。root统一扩展实例契约与C++资产路径；此项尚未宣称完成。
+- mail独占SYSTEM_CREDIT=5，TX_MAIL_ATTACHMENT。领取同事务锁玩家mail状态、绑定current_op_id/claim_version、分seq并写op；相同mail领取中的重试返回原op。APPLIED且持久确认才置CLAIMED；RETRY/NOT_HERE同seq恢复；部分发放或无法确定结局保护为人工处理，不能清理。REJECTED持久确认后可重新申请新的claim_version，旧op永留审计窗口。
+- 广播附件须明确资格且由权威服务复核；不会凭客户端请求宣称玩家存在或属于某帮。实现和验收须覆盖源三频道、离线、过期、重复、并发、未知提交、背包满及跳区恢复，不以独立库测试替代生产接线。
+
+共享proto由root统一生成；本子任务不运行生成器、不手改生成物。待生成后继续Go服务/Java进程/客户端适配和真实TiDB、Redis与HTTP/gate验证。
+
+## 2026-10-16 邮件领域实现与限定验收
+
+Go `go/mail` 现已提供实际进程、schema迁移与玩家/内部RPC，Java `game-mail` 已提供实际Spring Boot进程（默认Triple 20916、group mail），均以同一全局TiDB集群为权威。Java库按部署命名空间隔离，不与Go库混部；Go跨库只读 `mmorpg_guild.guild_member`，Java同命名空间读取 `guild_member`，资格判断和邮件可见性共用一次SQL事务快照。Redis仅定位资产持有者，不保存邮箱、领取结局或权威余额。
+
+广播附件采用不可变收件人清单：按固定活动、代次及分片导入去重后的uint64玩家ID，核分片摘要、全清单摘要、分片数量和总人数后，在同事务发布邮件。未封存内容不可见；封存后不能加人，离帮也不会改写已封存的奖励资格。角色固定为admin=1、guild=2、rank=3、trade=4、battle=5，各用独立角色HMAC密钥；缺签名、改载荷及跨方法复用签名均拒绝。
+
+领取按邮箱守卫→状态→资产操作锁序，同事务绑定 `current_op_id/claim_version` 并分配SYSTEM_CREDIT的seq；并发与断线重投复用原操作。Go资产通道强制SQL提交证明；Java后台即使收到在线durable=true也另读 `player_state` 已提交账本，仓储再次校验相同流/纪元/seq的结局。部分发放进入人工态，RETRY或无SQL证据保留原操作。未来未知claim_state同样保留、显示并禁止删除，包含已过期记录。新物品授予总数在写意图前限制为4096，与scene一致。
+
+客户端原生邮箱已接服务器列表、已读、批量领取、删除和清理；账号/连接切换使旧回复失效，传输结局未知时隔离旧请求槽，下一连接再拉权威状态。领取中与人工态不乐观改为已领取，过期后也不会变成可清理邮件。新邮件提醒可以丢失，列表恢复是权威路径；本批没有宣称全局通知零丢失。
+
+实际证据位于 `build/mail-rank-complete-20261015/`：Go数据层4/4及真实gRPC流程1/1在隔离TiDB通过，mailgrant3/3，mail/rank进程build与vet通过；Java邮件8/8、通用榜4/4真TiDB测试0跳过；两个JAR的实际启动均核对health=UP、玩家及内部Triple服务导出。客户端邮箱29条、榜3条、交易10条共42/42通过，另新增未知状态保护后MailClient7/7通过（增量共43条，不重复累计旧6条）。测试覆盖并发只一op、SQL未确认不终结、名单不能扩大、重启重投、partial保护、未知状态和角色签名；不等于跨洲故障演练、生产部署或两千万同时在线压测。
+
+### 2026-10-16 定向邮件提醒接线与补充验收
+
+个人邮件SQL提交成功后，Go沿现有共享Redis在线会话与Kafka GateCommand推送，校验玩家、会话、gate与目标实例；Java沿既有PlayerPushes在线目录与Redis发布/订阅推送。重复发件请求只回原邮件，不再次提醒。提醒有界且允许丢失，发送失败不会回滚已经提交的邮件，也不会参与资产到账判定。系统/帮派广播仍按打开列表恢复，不在发件RPC内遍历全球玩家推送；排行榜逐人奖励属于个人邮件，复用同一提醒入口。指标只使用sent/offline/error三个低基数结果。
+
+客户端收到提醒只标记入口、失效列表；隐藏期间合并提醒，打开或可见时重拉SQL权威列表，不改附件领取结局，旧连接提醒丢弃。实际补充证据：`mail-notify-ready-kafka-redis.log`为隔离真实Kafka与Redis发布/订阅通过，含消息key、分区、会话和目标实例；`mail-notify-flow-tidb.log`验证通知调用时SQL邮件已可见且重复发件不再次通知。Kafka4.3.1夹具的旧版建topic API与新topic leader就绪时序两次失败日志保留；最终采用现有客户端版本协商及有界leader就绪检查后通过，未改生产投递重试语义。
+
+Java `java-mail-notify-sql-redis.log`邮件9/9真实TiDB加Redis测试通过、0跳过，含8并发同发件请求仅一封一提醒、提交后可见、离线重新列表恢复；榜原4/4同样有效。新增Prometheus运行依赖后两个领域包均构建成功，最新JAR启动 `java-boot-final.log`均确认health=UP、内部与玩家Triple服务实际导出。客户端 `client/all-final-green.xml`邮件32条、榜3条、交易10条共45/45、0跳过，含提醒突发合并与旧连接隔离；后续交易域增量回归由其负责方另行登记，不能据此声称已覆盖后续修改。
+
+同日客户端交易恢复记录补充按原字符串CAS清理：迟到实例不能清掉另一实例的新请求，恢复文件同时按网关来源隔离。`commerce-cas-clear-red-actual.xml`单用例先真实失败（1条），修复后 `client/all-final-cas-green.xml`邮件32、榜3、交易12共47/47、0跳过。错误命名空间筛选产生的0条结果单独保留，不计为通过。自建Kafka夹具已仅按自身容器名停止并删除，未清其他Redis、TiDB或Kafka数据。
+
+### 2026-10-16 上线门禁：附件发奖依赖 go/db 切 dual(负责人拍板)
+
+附件发奖的 Finalize 强制要求资产 SQL 提交证据(`go/mail/mail.go` 固定打开 `RequireSQLCommit` 并在启动时 `CheckWiring`),而证据只在 go/db `Fencing.Mode=dual` 时发布(缺省 `legacy` 不发布)。所以**附件发奖上线前,必须先把它会投递到的每个 zone 的 go/db 按 [db-write-fencing-mysql.md](db-write-fencing-mysql.md) §8.3 切到 `dual`,并走完 §8.7 的上线顺序**;在此之前不对玩家开放附件发奖(不部署发奖链路或不放行发件入口),否则待办会一直停在 AwaitDurable。任一 zone 回退 `legacy` 之前先关该 zone 的发奖入口。

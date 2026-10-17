@@ -34,7 +34,11 @@ type Config struct {
 	// ChatRedis:chat 私有 key(chat:*)的存储,可配 Type: cluster(所有 key 单 key 操作,
 	// 集群安全,契约 §4/§9)。留空则回落到共享库 Redis,启动时打 WARN 并打印落点。
 	// 历史 LIST 是这类数据的唯一副本:staging/prod 必须独立实例且 maxmemory-policy=noeviction
-	// (compose 共享库是 allkeys-lfu,会把聊天记录当缓存淘汰)。
+	// (共享库:2026-10-12 起本地 compose 也改为 noeviction,K8s 的共享库一直是 noeviction;但历史带 TTL —— 见
+	// HistoryTTLSeconds / HistoryMaxEntries —— 回落共享库时仍与契约 key 争内存,共享库设了 maxmemory
+	// 时写满会连带拒写契约 key;共享库若被配成 volatile-* 淘汰型,带 TTL 的历史会被优先淘汰)。
+	// 注意 K8s 的 ChatRedis 复用 redis-match-cluster(maxmemory 512mb + volatile-lru),带 TTL 的 chat:*
+	// 键在那里同样会被优先淘汰,见 tools/scripts/k8s_deploy.ps1 chat ConfigMap 注释。
 	ChatRedis redis.RedisConf `json:",optional"`
 
 	// ZoneId:只影响 etcd 注册路径 <Prefix>/zone/<z>/...(路由服按 NodeInfo 发现本服务)。

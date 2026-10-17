@@ -1331,8 +1331,8 @@ TEST_F(PlayerEquipTest, GmGrantItemRejectsInvalidArgumentsAndBlockedStates)
 TEST_F(PlayerEquipTest, EquipMovesTheSameInstanceIntoTheWeaponSlot)
 {
 	const ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL80);
-	Inventory().InsertItemForRestore(weapon, 5);
-	Inventory().InsertItemForRestore(MakeInstance(kGuidB, kPlainNonStack), 6);
+	Inventory().RestoreItems({{weapon, 5}});
+	Inventory().RestoreItems({{MakeInstance(kGuidB, kPlainNonStack), 6}});
 	ASSERT_FALSE(AttributesWereRecalculated());
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::Equip(player, kGuidA));
@@ -1354,7 +1354,7 @@ TEST_F(PlayerEquipTest, EquipMovesTheSameInstanceIntoTheWeaponSlot)
 
 TEST_F(PlayerEquipTest, EquipChecksTheLevelRequirement)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL80), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL80), 0}});
 	const BagState inventoryBefore = Capture(Inventory());
 	const BagState equipmentBefore = Capture(Equipment());
 
@@ -1371,7 +1371,7 @@ TEST_F(PlayerEquipTest, EquipChecksTheClassRequirement)
 {
 	// 样例装备都不限职业,内存里给这一行加上职业要求。
 	Editable(ItemRowOrNull(kWeaponL1)).set_equip_class(7);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	const BagState inventoryBefore = Capture(Inventory());
 	const BagState equipmentBefore = Capture(Equipment());
 
@@ -1388,9 +1388,9 @@ TEST_F(PlayerEquipTest, EquipChecksTheClassRequirement)
 
 TEST_F(PlayerEquipTest, EquipRejectsWhatCannotBeWornAndChangesNothing)
 {
-	Inventory().InsertItemForRestore(MakeInstance(kGuidA, kPlainNonStack), 0);
+	Inventory().RestoreItems({{MakeInstance(kGuidA, kPlainNonStack), 0}});
 	Inventory().InsertItemForRestore(kGuidB, kStackable, /*stackSize=*/5, /*pos=*/1);
-	Warehouse().InsertItemForRestore(MakeRolledInstance(kGuidC, kWeaponL1), 0);
+	Warehouse().RestoreItems({{MakeRolledInstance(kGuidC, kWeaponL1), 0}});
 	ASSERT_EQ(kSuccess, Equipment().PutInstance(MakeRolledInstance(kGuidD, kWeaponL1)));
 	const BagState inventoryBefore = Capture(Inventory());
 	const BagState equipmentBefore = Capture(Equipment());
@@ -1413,7 +1413,7 @@ TEST_F(PlayerEquipTest, EquipWithoutAnAcceptingSlotIsRefused)
 {
 	// 一个没有任何槽位接受的部位(槽位表里没有这个部位的行)。
 	Editable(ItemRowOrNull(kWeaponL1)).set_equip_kind(987);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	const BagState inventoryBefore = Capture(Inventory());
 	const BagState equipmentBefore = Capture(Equipment());
 	EXPECT_EQ(kEquipNoSlot, PlayerEquipSystem::Equip(player, kGuidA));
@@ -1427,9 +1427,9 @@ TEST_F(PlayerEquipTest, EquipFillsTheFirstEmptySlotThenReplacesTheLowestSlot)
 	ItemComp second = MakeInstance(kGuidB, kOldEquipB);
 	second.mutable_equip();
 	const ItemComp third = MakeInstance(kGuidC, kOldEquipA);
-	Inventory().InsertItemForRestore(first, 0);
-	Inventory().InsertItemForRestore(second, 1);
-	Inventory().InsertItemForRestore(third, 2);
+	Inventory().RestoreItems({{first, 0}});
+	Inventory().RestoreItems({{second, 1}});
+	Inventory().RestoreItems({{third, 2}});
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::Equip(player, kGuidA));
 	EXPECT_EQ(kOldSlotFirst, Equipment().GetItemPosByGuid(kGuidA));
@@ -1482,7 +1482,7 @@ TEST_F(PlayerEquipTest, EquipReplacingTheWeaponReturnsTheOldOneEvenWhenTheInvent
 
 TEST_F(PlayerEquipTest, EquipAndUnequipAreRefusedWhileFrozenOrInBattle)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	ASSERT_EQ(kSuccess, Equipment().PutInstance(MakeRolledInstance(kGuidB, kHatL1)));
 	const BagState inventoryBefore = Capture(Inventory());
 	const BagState equipmentBefore = Capture(Equipment());
@@ -1567,7 +1567,7 @@ TEST_F(PlayerEquipTest, UnequipIsRefusedWhenTheInventoryIsFull)
 
 TEST_F(PlayerEquipTest, UnequipRejectsItemsThatAreNotWorn)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	ASSERT_EQ(kSuccess, Equipment().PutInstance(MakeRolledInstance(kGuidB, kHatL1)));
 	const BagState inventoryBefore = Capture(Inventory());
 	const BagState equipmentBefore = Capture(Equipment());
@@ -1594,8 +1594,8 @@ TEST_F(PlayerEquipTest, EquipPutsTheItemBackWhenTheEquipmentRefusesIt)
 	AddAffix(weapon, kAttrDamage, kBlue, /*value=*/3, /*seq=*/0);
 	ASSERT_EQ(kSuccess, Equipment().PutInstance(hat));
 	ASSERT_EQ(kHatSlot, Equipment().GetItemPosByGuid(kGuidA));
-	Inventory().InsertItemForRestore(MakeInstance(kGuidB, kPlainNonStack), 0);
-	Inventory().InsertItemForRestore(weapon, 2);
+	Inventory().RestoreItems({{MakeInstance(kGuidB, kPlainNonStack), 0}});
+	Inventory().RestoreItems({{weapon, 2}});
 	ASSERT_EQ(2u, Inventory().GetItemPosByGuid(kGuidA));
 	const BagState inventoryBefore = Capture(Inventory());
 	const BagState equipmentBefore = Capture(Equipment());
@@ -1621,8 +1621,8 @@ TEST_F(PlayerEquipTest, EquipRestoresBothPiecesWhenTheReplacedOneCannotEnterTheI
 	ItemComp newWeapon = MakeInstance(kGuidA, kWeaponL1);
 	AddAffix(newWeapon, kAttrDamage, kBlue, /*value=*/3, /*seq=*/0);
 	ASSERT_EQ(kSuccess, Equipment().PutInstance(oldWeapon, kWeaponSlot));
-	Inventory().InsertItemForRestore(MakeInstance(kGuidB, kPlainNonStack), 0); // 与旧武器同 guid
-	Inventory().InsertItemForRestore(newWeapon, 3);
+	Inventory().RestoreItems({{MakeInstance(kGuidB, kPlainNonStack), 0}}); // 与旧武器同 guid
+	Inventory().RestoreItems({{newWeapon, 3}});
 	ASSERT_EQ(3u, Inventory().GetItemPosByGuid(kGuidA));
 	const BagState inventoryBefore = Capture(Inventory());
 
@@ -1648,7 +1648,7 @@ TEST_F(PlayerEquipTest, UnequipPutsTheItemBackWhenTheInventoryRefusesIt)
 {
 	const ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL80);
 	ASSERT_EQ(kSuccess, Equipment().PutInstance(weapon, kWeaponSlot));
-	Inventory().InsertItemForRestore(MakeInstance(kGuidA, kPlainNonStack), 0); // 与穿着的武器同 guid
+	Inventory().RestoreItems({{MakeInstance(kGuidA, kPlainNonStack), 0}}); // 与穿着的武器同 guid
 	const BagState inventoryBefore = Capture(Inventory());
 
 	EXPECT_EQ(kEquipInternalError, PlayerEquipSystem::Unequip(player, kGuidA));
@@ -1697,7 +1697,7 @@ TEST_F(PlayerEquipTest, CollectBonusSumsBaseAttributesAndAffixesExactly)
 	ASSERT_EQ(kShoesSlot, Equipment().GetItemPosByGuid(kGuidB));
 	ASSERT_EQ(kWeaponSlot, Equipment().GetItemPosByGuid(kGuidC));
 	// 躺在背包里的装备不算:加成只看装备栏。
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidD, kWeaponL80), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidD, kWeaponL80), 0}});
 
 	using equiprules::CombatStat;
 	using equiprules::DerivedStat;
@@ -1735,7 +1735,7 @@ TEST_F(PlayerEquipTest, CollectBonusIsEmptyWithoutBagsOrWornEquipment)
 	const equiprules::EquipBonus empty;
 
 	// 装备栏空着(背包里有装备也不算)。
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL80), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL80), 0}});
 	ExpectSameBonus(empty, Collect());
 
 	// 无效实体 / 还没加载出背包的玩家:出参被重置为空,且不会顺手造出背包组件。
@@ -2008,7 +2008,7 @@ TEST_F(PlayerEquipTest, SnapshotsCarrySlotDefinitionsAndItemDisplay)
 	ItemComp weapon = MakeInstance(kGuidA, kWeaponL80);
 	AddAffix(weapon, kAttrDamage, kBlue, CapOf(kAttrDamage, kLevel80), 0);
 	ASSERT_EQ(kSuccess, Equipment().PutInstance(weapon, kWeaponSlot));
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidB, kHatL1), 4);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidB, kHatL1), 4}});
 
 	// 装备栏:有部位名的槽位定义全部下发(含空槽),槽号升序,带部位与名称。
 	BagInfo equipment;
@@ -2396,7 +2396,7 @@ TEST_F(PlayerEquipTest, EquipAndUnequipCarryEnhanceLevelAndGems)
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1, /*enhanceLevel=*/3);
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
 	AddGem(weapon, kWeaponAnySocket, kDefenseGem);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::Equip(player, kGuidA));
 	ASSERT_NO_FATAL_FAILURE(ExpectStoredInstance(Equipment(), weapon));
@@ -2411,7 +2411,7 @@ TEST_F(PlayerEquipTest, EquipAndUnequipCarryEnhanceLevelAndGems)
 TEST_F(PlayerEquipTest, EnhanceRaisesTheLevelByOneOnSuccess)
 {
 	const ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	ASSERT_NE(nullptr, StockForEnhance(1));
 	UseDice({0}); // 0 小于任何合法的成功率:必成
 
@@ -2431,7 +2431,7 @@ TEST_F(PlayerEquipTest, EnhanceRaisesTheLevelByOneOnSuccess)
 // 已经 +1 的装备再强化,用的是「强化到 +2」那一行(按当前等级 + 1 取行,而不是总用第一行)。
 TEST_F(PlayerEquipTest, EnhanceUsesTheRowOfTheNextLevel)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1, /*enhanceLevel=*/1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1, /*enhanceLevel=*/1), 0}});
 	const auto *nextRow = StockForEnhance(2); // 金币、材料恰好够「强化到 +2」
 	ASSERT_NE(nullptr, nextRow);
 	// 把「强化到 +1」那一行改得付不起:误用了它的话,这次强化会被拒成金币不足。
@@ -2449,7 +2449,7 @@ TEST_F(PlayerEquipTest, EnhanceUsesTheRowOfTheNextLevel)
 // 扣的恰好是这一行的数:金币与材料各剩下多给的那点零头,别的东西一个不少。
 TEST_F(PlayerEquipTest, EnhanceChargesExactlyTheGoldAndMaterialOfTheRow)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	PutStack(kGuidFiller, kStackable, 5, 1); // 旁观者:别的可叠加物品
 	ASSERT_NE(nullptr, StockForEnhance(1, /*spareGold=*/7, /*spareMaterial=*/2));
 	UseDice({0});
@@ -2469,7 +2469,7 @@ TEST_F(PlayerEquipTest, EnhanceChargesExactlyTheGoldAndMaterialOfTheRow)
 // 回收空堆是一次整理,被强化的那件必须还在原格、等级也已经写上。
 TEST_F(PlayerEquipTest, EnhanceReclaimsTheMaterialStackItEmptied)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 5}});
 	ASSERT_NE(nullptr, StockForEnhance(1)); // 一堆强化石,恰好够
 	UseDice({0});
 
@@ -2492,7 +2492,7 @@ TEST_F(PlayerEquipTest, EnhanceReclaimsTheMaterialStackItEmptied)
 // 躺在背包里的装备不提供加成,强化它不必重算属性。
 TEST_F(PlayerEquipTest, EnhanceInTheInventoryDoesNotRecalculateAttributes)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	ASSERT_NE(nullptr, StockForEnhance(1));
 	UseDice({0});
 	ASSERT_FALSE(AttributesWereRecalculated());
@@ -2527,7 +2527,7 @@ TEST_F(PlayerEquipTest, EnhanceOnWornEquipmentRecalculatesAttributes)
 TEST_F(PlayerEquipTest, EnhanceRollsExactlyOnceAndSucceedsBelowTheRate)
 {
 	Editable(EnhanceRowOrNull(1)).set_success_rate(5000);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	ASSERT_NE(nullptr, StockForEnhance(1));
 	const ScriptedDice &rolls = UseDice({4999});
 
@@ -2548,7 +2548,7 @@ TEST_F(PlayerEquipTest, EnhanceFailureStillChargesAndKeepsTheLevel)
 	row.set_success_rate(5000);
 	row.set_fail_level_loss(0);
 	const ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1, /*enhanceLevel=*/3);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	ASSERT_NE(nullptr, StockForEnhance(4, /*spareGold=*/7, /*spareMaterial=*/2));
 	const ScriptedDice &rolls = UseDice({5000});
 
@@ -2572,7 +2572,7 @@ TEST_F(PlayerEquipTest, EnhanceFailureDropsTheLevelByFailLevelLoss)
 	row.set_success_rate(5000);
 	row.set_fail_level_loss(2);
 	const ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1, /*enhanceLevel=*/3);
-	Inventory().InsertItemForRestore(weapon, 0);
+	Inventory().RestoreItems({{weapon, 0}});
 	ASSERT_NE(nullptr, StockForEnhance(4));
 	UseDice({9999});
 
@@ -2593,7 +2593,7 @@ TEST_F(PlayerEquipTest, EnhanceFailureNeverDropsTheLevelBelowZero)
 	row.set_success_rate(5000);
 	row.set_fail_level_loss(5);
 	const ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1, /*enhanceLevel=*/1);
-	Inventory().InsertItemForRestore(weapon, 0);
+	Inventory().RestoreItems({{weapon, 0}});
 	ASSERT_NE(nullptr, StockForEnhance(2));
 	UseDice({9999});
 
@@ -2652,7 +2652,7 @@ TEST_F(PlayerEquipTest, EnhanceRowsWithoutCostsNeedNeitherGoldNorMaterial)
 	row.set_cost_gold(0);
 	row.set_material_id(0);
 	row.set_material_count(0);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	ASSERT_EQ(0u, Gold());
 	UseDice({0});
 
@@ -2674,7 +2674,7 @@ TEST_F(PlayerEquipTest, EnhanceRowsWithoutCostsNeedNeitherGoldNorMaterial)
 // 强化表一行都没有 = 强化未开放。
 TEST_F(PlayerEquipTest, EnhanceIsUnavailableWhileTheEnhanceTableIsEmpty)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	ASSERT_NE(nullptr, StockForEnhance(1));
 	UseDice({});
 	TruncateEnhanceTable(0);
@@ -2689,7 +2689,7 @@ TEST_F(PlayerEquipTest, EnhanceIsUnavailableWhileTheEnhanceTableIsEmpty)
 TEST_F(PlayerEquipTest, EnhanceIsRefusedAtTheMaximumLevel)
 {
 	const uint32_t maxLevel = PlayerEquipSystem::MaxEnhanceLevel();
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1, maxLevel), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1, maxLevel), 0}});
 	ASSERT_NE(nullptr, StockForEnhance(maxLevel)); // 手里的金币与材料够再付一次最贵的那一级
 	UseDice({});
 	const ForgeState before = CaptureForge();
@@ -2702,7 +2702,7 @@ TEST_F(PlayerEquipTest, EnhanceIsRefusedAtTheMaximumLevel)
 // 存档里的等级比表上限还高(策划把上限下调了):按上限算,所以是「已满级」;存档值不改写。
 TEST_F(PlayerEquipTest, EnhanceTreatsAStoredLevelAboveTheCapAsTheCap)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1, /*enhanceLevel=*/3), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1, /*enhanceLevel=*/3), 0}});
 	ASSERT_NE(nullptr, StockForEnhance(4));
 	UseDice({});
 	TruncateEnhanceTable(2); // 上限下调到 +2
@@ -2721,7 +2721,7 @@ TEST_F(PlayerEquipTest, EnhanceIsRefusedWithoutEnoughMaterial)
 {
 	auto &row = Editable(EnhanceRowOrNull(1));
 	row.set_material_count(3);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	PutStack(kGuidStone, kEnhanceStone, 2, kStonePos);                   // 差一颗
 	Warehouse().InsertItemForRestore(kGuidFiller, kEnhanceStone, 9, 0); // 仓库里的不算
 	SetGold(row.cost_gold());
@@ -2740,7 +2740,7 @@ TEST_F(PlayerEquipTest, EnhanceIsRefusedWithoutEnoughMaterial)
 
 TEST_F(PlayerEquipTest, EnhanceIsRefusedWithoutEnoughGold)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	const auto *row = StockForEnhance(1);
 	ASSERT_NE(nullptr, row);
 	SetGold(row->cost_gold() - 1); // 差一枚
@@ -2759,7 +2759,7 @@ TEST_F(PlayerEquipTest, EnhanceTreatsAnUnpayableGoldCostAsNotEnoughGold)
 {
 	Editable(EnhanceRowOrNull(1))
 		.set_cost_gold(static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) + 1);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	ASSERT_NE(nullptr, StockForEnhance(1));
 	SetGold(std::numeric_limits<uint64_t>::max());
 	UseDice({});
@@ -2772,9 +2772,9 @@ TEST_F(PlayerEquipTest, EnhanceTreatsAnUnpayableGoldCostAsNotEnoughGold)
 
 TEST_F(PlayerEquipTest, EnhanceRejectsItemsThatAreNotEquipment)
 {
-	Inventory().InsertItemForRestore(MakeInstance(kGuidA, kPlainNonStack), 0);
+	Inventory().RestoreItems({{MakeInstance(kGuidA, kPlainNonStack), 0}});
 	PutStack(kGuidB, kStackable, 5, 1);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidC, kWeaponL80), 2);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidC, kWeaponL80), 2}});
 	// 被误配成可堆叠的「装备」:搬运原语不认它,强化也按非装备拒。
 	Editable(ItemRowOrNull(kWeaponL80)).set_max_stack_size(5);
 	ASSERT_NE(nullptr, StockForEnhance(1));
@@ -2795,8 +2795,8 @@ TEST_F(PlayerEquipTest, EnhanceRejectsItemsThatAreNotEquipment)
 // 只找人物背包与装备栏:仓库里的装备强化不了。
 TEST_F(PlayerEquipTest, EnhanceCannotFindItemsOutsideTheInventoryAndEquipment)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0); // 背包里确实有一件能强化的
-	Warehouse().InsertItemForRestore(MakeRolledInstance(kGuidC, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}}); // 背包里确实有一件能强化的
+	Warehouse().RestoreItems({{MakeRolledInstance(kGuidC, kWeaponL1), 0}});
 	ASSERT_NE(nullptr, StockForEnhance(1));
 	UseDice({});
 	const ForgeState before = CaptureForge();
@@ -2815,7 +2815,7 @@ TEST_F(PlayerEquipTest, EnhanceCannotFindItemsOutsideTheInventoryAndEquipment)
 // 强化是玩家可触发的背包扣减入口:跨区冻结中、战斗中都拒绝(战斗闸必须在这一层)。
 TEST_F(PlayerEquipTest, EnhanceIsRefusedWhileFrozenOrInBattle)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	ASSERT_NE(nullptr, StockForEnhance(1));
 	const ScriptedDice &rolls = UseDice({0});
 	const ForgeState before = CaptureForge();
@@ -2840,7 +2840,7 @@ TEST_F(PlayerEquipTest, EnhanceIsRefusedWhileFrozenOrInBattle)
 // 而且绝不能顺手替它建出 equip 段 —— 那会把「没初始化」变成「已初始化、零条属性」。
 TEST_F(PlayerEquipTest, EnhanceIsUnavailableForUninitialisedInstances)
 {
-	Inventory().InsertItemForRestore(MakeInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeInstance(kGuidA, kWeaponL1), 0}});
 	ASSERT_NE(nullptr, StockForEnhance(1));
 	UseDice({});
 	const ForgeState before = CaptureForge();
@@ -2857,7 +2857,7 @@ TEST_F(PlayerEquipTest, EnhanceIsUnavailableForUninitialisedInstances)
 TEST_F(PlayerEquipTest, EnhanceIsUnavailableWhenTheNextLevelCanNeverSucceed)
 {
 	Editable(EnhanceRowOrNull(1)).set_success_rate(0);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	ASSERT_NE(nullptr, StockForEnhance(1));
 	UseDice({});
 	const ForgeState before = CaptureForge();
@@ -2874,9 +2874,9 @@ TEST_F(PlayerEquipTest, EnhanceFailsClosedWhenTheMaterialIsEquipment)
 	auto &row = Editable(EnhanceRowOrNull(1));
 	row.set_material_id(kOldEquipA);
 	row.set_material_count(1);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	// 背包里恰好有一件那种「材料」:数量是够的,拦不住它就会被扣掉。
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidB, kOldEquipA), 1);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidB, kOldEquipA), 1}});
 	SetGold(row.cost_gold());
 	UseDice({});
 	const ForgeState before = CaptureForge();
@@ -2892,7 +2892,7 @@ TEST_F(PlayerEquipTest, EnhanceFailsClosedWhenTheMaterialIsTheTargetItself)
 	auto &row = Editable(EnhanceRowOrNull(1));
 	row.set_material_id(kWeaponL1);
 	row.set_material_count(1);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	SetGold(row.cost_gold());
 	UseDice({});
 	const ForgeState before = CaptureForge();
@@ -2907,7 +2907,7 @@ TEST_F(PlayerEquipTest, EnhanceFailsClosedWhenTheMaterialRowIsMissing)
 {
 	auto &row = Editable(EnhanceRowOrNull(1));
 	row.set_material_id(kUnknownConfig);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	SetGold(row.cost_gold());
 	UseDice({});
 	const ForgeState before = CaptureForge();
@@ -2948,7 +2948,7 @@ TEST_F(PlayerEquipTest, ForgeEntriesRejectInvalidEntitiesAndPlayersWithoutBags)
 TEST_F(PlayerEquipTest, InlayGemRecordsTheGemOnTheSocket)
 {
 	const ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1, /*enhanceLevel=*/2);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidA, kWeaponAttackSocket, kAttackGem));
@@ -2963,7 +2963,7 @@ TEST_F(PlayerEquipTest, InlayGemRecordsTheGemOnTheSocket)
 // 恰好消耗 1 颗:这种宝石少一颗,别的宝石、材料、金币都不动。
 TEST_F(PlayerEquipTest, InlayGemConsumesExactlyOneGem)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 5}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 	PutStack(kGuidGemB, kDefenseGem, 4, kGemPosB);
 	PutStack(kGuidStone, kEnhanceStone, 6, kStonePos);
@@ -2982,7 +2982,7 @@ TEST_F(PlayerEquipTest, InlayGemConsumesExactlyOneGem)
 // 嵌掉的是最后一颗:被抽空的那一堆当场回收,装备还在原格、宝石已经记上。
 TEST_F(PlayerEquipTest, InlayGemReclaimsTheStackItEmptied)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 5}});
 	PutStack(kGuidGemA, kAttackGem, 1, kGemPosA);
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidA, kWeaponAttackSocket, kAttackGem));
@@ -3006,8 +3006,8 @@ TEST_F(PlayerEquipTest, InlayGemAcceptsAnyTypeInAnAnySocket)
 {
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
-	Inventory().InsertItemForRestore(weapon, 5);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidB, kWeaponL1), 6);
+	Inventory().RestoreItems({{weapon, 5}});
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidB, kWeaponL1), 6}});
 	PutStack(kGuidGemA, kAttackGem, 2, kGemPosA);
 	PutStack(kGuidGemB, kDefenseGem, 2, kGemPosB);
 
@@ -3024,7 +3024,7 @@ TEST_F(PlayerEquipTest, InlayGemAcceptsAnyTypeInAnAnySocket)
 // 镶在背包里的装备上:它不提供加成,不必重算属性。
 TEST_F(PlayerEquipTest, InlayGemInTheInventoryDoesNotRecalculateAttributes)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 5}});
 	PutStack(kGuidGemA, kAttackGem, 1, kGemPosA);
 	ASSERT_FALSE(AttributesWereRecalculated());
 
@@ -3055,8 +3055,8 @@ TEST_F(PlayerEquipTest, InlayGemOnWornEquipmentRecalculatesAttributes)
 
 TEST_F(PlayerEquipTest, InlayGemRejectsConfigsThatAreNotGems)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 5);
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidB, kWeaponL1), 6);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 5}});
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidB, kWeaponL1), 6}});
 	PutStack(kGuidStone, kEnhanceStone, 3, kStonePos);
 	PutStack(kGuidFiller, kStackable, 3, 1);
 	const ForgeState before = CaptureForge();
@@ -3077,7 +3077,7 @@ TEST_F(PlayerEquipTest, InlayGemRejectsConfigsThatAreNotGems)
 // 宝石行指向的物品被配成了装备:不把它当宝石(放行的话,按 config 扣掉的是一件装备实例)。
 TEST_F(PlayerEquipTest, InlayGemRejectsGemRowsWhoseItemIsEquipment)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 5}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 	Editable(ItemRowOrNull(kAttackGem)).set_equip_kind(kWeaponKind);
 	const ForgeState before = CaptureForge();
@@ -3089,7 +3089,7 @@ TEST_F(PlayerEquipTest, InlayGemRejectsGemRowsWhoseItemIsEquipment)
 // 宝石只认人物背包里的:包里一颗都没有就拒,仓库里的不算。
 TEST_F(PlayerEquipTest, InlayGemIsRefusedWhenTheGemIsNotInTheInventory)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 5}});
 	PutStack(kGuidGemB, kDefenseGem, 2, kGemPosB); // 有别的宝石,没有要嵌的那一种
 	Warehouse().InsertItemForRestore(kGuidGemA, kAttackGem, 5, 0);
 	const ForgeState before = CaptureForge();
@@ -3103,10 +3103,10 @@ TEST_F(PlayerEquipTest, InlayGemIsRefusedWhenTheGemIsNotInTheInventory)
 // 孔位不存在:这个部位的孔位定义里没有这个号。没有任何孔的部位,哪个号都不存在。
 TEST_F(PlayerEquipTest, InlayGemRejectsSocketsThePartDoesNotHave)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 5}});
 	ItemComp oldEquip = MakeInstance(kGuidB, kOldEquipA);
 	oldEquip.mutable_equip(); // 已初始化;它的部位(部位 1)一个孔都没配
-	Inventory().InsertItemForRestore(oldEquip, 6);
+	Inventory().RestoreItems({{oldEquip, 6}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 	PutStack(kGuidGemB, kDefenseGem, 3, kGemPosB);
 	const ForgeState before = CaptureForge();
@@ -3129,7 +3129,7 @@ TEST_F(PlayerEquipTest, InlayGemRejectsAnOccupiedSocket)
 {
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 	PutStack(kGuidGemB, kDefenseGem, 3, kGemPosB);
 	const ForgeState before = CaptureForge();
@@ -3148,7 +3148,7 @@ TEST_F(PlayerEquipTest, InlayGemTreatsADeadRecordAsOccupyingItsSocket)
 {
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAttackSocket, kStackable);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 	const ForgeState before = CaptureForge();
 
@@ -3159,7 +3159,7 @@ TEST_F(PlayerEquipTest, InlayGemTreatsADeadRecordAsOccupyingItsSocket)
 
 TEST_F(PlayerEquipTest, InlayGemRejectsAGemOfTheWrongType)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 5}});
 	PutStack(kGuidGemB, kDefenseGem, 3, kGemPosB);
 	const ForgeState before = CaptureForge();
 
@@ -3172,7 +3172,7 @@ TEST_F(PlayerEquipTest, InlayGemRejectsAGemOfTheWrongType)
 // 没掷过属性的实例没有 equip 段可写:对玩家而言这件装备此刻没有可用的孔。绝不替它建出 equip 段。
 TEST_F(PlayerEquipTest, InlayGemIsRefusedForUninitialisedInstances)
 {
-	Inventory().InsertItemForRestore(MakeInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeInstance(kGuidA, kWeaponL1), 5}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 	const ForgeState before = CaptureForge();
 
@@ -3193,7 +3193,7 @@ TEST_F(PlayerEquipTest, InlayGemFailsClosedWhenTheInstanceAlreadyHoldsTooManyRec
 	{
 		AddGem(weapon, 100 + i, kAttackGem);
 	}
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 	const ForgeState before = CaptureForge();
 
@@ -3204,8 +3204,8 @@ TEST_F(PlayerEquipTest, InlayGemFailsClosedWhenTheInstanceAlreadyHoldsTooManyRec
 
 TEST_F(PlayerEquipTest, InlayGemRejectsTargetsThatAreMissingOrNotEquipment)
 {
-	Inventory().InsertItemForRestore(MakeInstance(kGuidA, kPlainNonStack), 0);
-	Warehouse().InsertItemForRestore(MakeRolledInstance(kGuidC, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeInstance(kGuidA, kPlainNonStack), 0}});
+	Warehouse().RestoreItems({{MakeRolledInstance(kGuidC, kWeaponL1), 0}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 	const ForgeState before = CaptureForge();
 	const BagState warehouseBefore = Capture(Warehouse());
@@ -3225,7 +3225,7 @@ TEST_F(PlayerEquipTest, InlayGemRejectsTargetsThatAreMissingOrNotEquipment)
 
 TEST_F(PlayerEquipTest, InlayGemIsRefusedWhileFrozenOrInBattle)
 {
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 5}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 	const ForgeState before = CaptureForge();
 
@@ -3251,7 +3251,7 @@ TEST_F(PlayerEquipTest, RemoveGemReturnsTheGemToTheInventory)
 	UseDice({});
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	SetGold(777);
 	ASSERT_EQ(0u, CountOf(kAttackGem));
 
@@ -3281,7 +3281,7 @@ TEST_F(PlayerEquipTest, RemoveGemClearsOnlyTheRequestedSocket)
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
 	AddGem(weapon, kWeaponAnySocket, kDefenseGem);
 	AddGem(expected, kWeaponAnySocket, kDefenseGem);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
 
@@ -3294,7 +3294,7 @@ TEST_F(PlayerEquipTest, RemoveGemClearsOnlyTheRequestedSocket)
 TEST_F(PlayerEquipTest, InlayThenRemoveRestoresTheInstanceAndTheGemCount)
 {
 	const ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1, /*enhanceLevel=*/1);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	PutStack(kGuidGemA, kAttackGem, 3, kGemPosA);
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::InlayGem(player, kGuidA, kWeaponAttackSocket, kAttackGem));
@@ -3312,7 +3312,7 @@ TEST_F(PlayerEquipTest, RemoveGemInTheInventoryDoesNotRecalculateAttributes)
 {
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	ASSERT_FALSE(AttributesWereRecalculated());
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
@@ -3342,7 +3342,7 @@ TEST_F(PlayerEquipTest, RemoveGemFromAnEmptySocketIsRefused)
 {
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAnySocket, kDefenseGem);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	const ForgeState before = CaptureForge();
 
 	EXPECT_EQ(kEquipGemSocketEmpty, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
@@ -3353,7 +3353,7 @@ TEST_F(PlayerEquipTest, RemoveGemFromAnEmptySocketIsRefused)
 // 没掷过属性的实例上不可能有宝石:报「空孔」,而且不替它建出 equip 段。
 TEST_F(PlayerEquipTest, RemoveGemFromAnUninitialisedInstanceReportsAnEmptySocket)
 {
-	Inventory().InsertItemForRestore(MakeInstance(kGuidA, kWeaponL1), 5);
+	Inventory().RestoreItems({{MakeInstance(kGuidA, kWeaponL1), 5}});
 	const ForgeState before = CaptureForge();
 
 	EXPECT_EQ(kEquipGemSocketEmpty, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
@@ -3427,7 +3427,7 @@ TEST_F(PlayerEquipTest, RemoveGemWithDuplicateRecordsReturnsTheFirstAndClearsBot
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
 	AddGem(weapon, kWeaponAnySocket, kAttackGem);
 	AddGem(weapon, kWeaponAttackSocket, kDefenseGem); // 同孔的第二条
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
 
@@ -3448,7 +3448,7 @@ TEST_F(PlayerEquipTest, GemRecordWithConfigZeroCountsAsAnEmptySocketAndHealsOnTh
 	const ItemComp bare = MakeRolledInstance(kGuidA, kWeaponL1);
 	ItemComp weapon = bare;
 	AddGem(weapon, kWeaponAttackSocket, 0);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	PutStack(kGuidGemA, kAttackGem, 1, 0);
 
 	// 取下:这个孔是空的,什么都不动。
@@ -3493,7 +3493,7 @@ TEST_F(PlayerEquipTest, RemoveGemStillWorksAfterTheSocketDefinitionIsGone)
 	const ItemComp bare = MakeRolledInstance(kGuidA, kWeaponL1);
 	ItemComp weapon = bare;
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	// 「删掉」武器的 0 号孔:把那一行的孔位号改成一个别的号。运行期按部位取孔位走索引、读的是行上的
 	// socket,所以这么改等于 0 号孔没有定义了(改 equip_kind 不行,索引不跟着变)。
 	Editable(SocketRowOrNull(kWeaponKind, kWeaponAttackSocket)).set_socket(5);
@@ -3511,7 +3511,7 @@ TEST_F(PlayerEquipTest, RemoveGemStillWorksAfterTheGemRowIsGone)
 	const ItemComp bare = MakeRolledInstance(kGuidA, kWeaponL1);
 	ItemComp weapon = bare;
 	AddGem(weapon, kWeaponAttackSocket, kStackable);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	ASSERT_FALSE(PlayerEquipSystem::IsGem(kStackable));
 
 	ASSERT_EQ(kSuccess, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
@@ -3526,7 +3526,7 @@ TEST_F(PlayerEquipTest, RemoveGemKeepsTheGemWhenItsItemRowIsGone)
 {
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAttackSocket, kUnknownConfig);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	const ForgeState before = CaptureForge();
 
 	EXPECT_EQ(kEquipInternalError, PlayerEquipSystem::RemoveGem(player, kGuidA, kWeaponAttackSocket));
@@ -3539,7 +3539,7 @@ TEST_F(PlayerEquipTest, RemoveGemKeepsTheGemWhileItsGrantIsBlocked)
 {
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	ScopedGlobalItemBlock blocked(kAttackGem);
 	const ForgeState before = CaptureForge();
 
@@ -3557,7 +3557,7 @@ TEST_F(PlayerEquipTest, RemoveGemFailsClosedWhenTheGemItemBecameEquipment)
 {
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	auto &gemItem = Editable(ItemRowOrNull(kAttackGem));
 	gemItem.set_equip_kind(kWeaponKind);
 	gemItem.set_max_stack_size(1);
@@ -3569,10 +3569,10 @@ TEST_F(PlayerEquipTest, RemoveGemFailsClosedWhenTheGemItemBecameEquipment)
 
 TEST_F(PlayerEquipTest, RemoveGemRejectsTargetsThatAreMissingOrNotEquipment)
 {
-	Inventory().InsertItemForRestore(MakeInstance(kGuidA, kPlainNonStack), 0);
+	Inventory().RestoreItems({{MakeInstance(kGuidA, kPlainNonStack), 0}});
 	ItemComp stored = MakeRolledInstance(kGuidC, kWeaponL1);
 	AddGem(stored, kWeaponAttackSocket, kAttackGem);
-	Warehouse().InsertItemForRestore(stored, 0);
+	Warehouse().RestoreItems({{stored, 0}});
 	const ForgeState before = CaptureForge();
 	const BagState warehouseBefore = Capture(Warehouse());
 
@@ -3588,7 +3588,7 @@ TEST_F(PlayerEquipTest, RemoveGemIsRefusedWhileFrozenOrInBattle)
 {
 	ItemComp weapon = MakeRolledInstance(kGuidA, kWeaponL1);
 	AddGem(weapon, kWeaponAttackSocket, kAttackGem);
-	Inventory().InsertItemForRestore(weapon, 5);
+	Inventory().RestoreItems({{weapon, 5}});
 	const ForgeState before = CaptureForge();
 
 	tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(player);
@@ -4230,8 +4230,8 @@ TEST_F(PlayerEquipTest, EquipHandlerReturnsBothBagsAndDoesNotLeakTips)
 {
 	const auto *method = BagMethod("EquipItem");
 	ASSERT_NE(nullptr, method) << kProtoGenFirst;
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
-	Inventory().InsertItemForRestore(MakeInstance(kGuidB, kPlainNonStack), 1);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
+	Inventory().RestoreItems({{MakeInstance(kGuidB, kPlainNonStack), 1}});
 
 	// 参数粗检:item_id = 0。
 	EquipItemRequest request;
@@ -4353,8 +4353,8 @@ TEST_F(PlayerEquipTest, EnhanceHandlerReturnsBothBagsAndDoesNotLeakTips)
 {
 	const auto *method = BagMethod("EnhanceEquip");
 	ASSERT_NE(nullptr, method) << kProtoGenFirst;
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
-	Inventory().InsertItemForRestore(MakeInstance(kGuidB, kPlainNonStack), 1);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
+	Inventory().RestoreItems({{MakeInstance(kGuidB, kPlainNonStack), 1}});
 	ASSERT_NE(nullptr, StockForEnhance(1, /*spareGold=*/5)); // 强化石恰好够:扣完那一堆是空的
 	UseDice({0});
 
@@ -4436,7 +4436,7 @@ TEST_F(PlayerEquipTest, InlayGemHandlerReturnsBothBagsAndDoesNotLeakTips)
 {
 	const auto *method = BagMethod("InlayGem");
 	ASSERT_NE(nullptr, method) << kProtoGenFirst;
-	Inventory().InsertItemForRestore(MakeRolledInstance(kGuidA, kWeaponL1), 0);
+	Inventory().RestoreItems({{MakeRolledInstance(kGuidA, kWeaponL1), 0}});
 	PutStack(kGuidGemA, kAttackGem, 1, kGemPosA); // 只有一颗:嵌掉之后那一堆是空的
 
 	// 参数粗检:item_id = 0;gem_config_id = 0。

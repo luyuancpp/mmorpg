@@ -60,6 +60,9 @@ $optionalServices += 'friend'
 #（Test-UsesKafkaCommandContract）。单独追加，不改上面的数组。
 $services += 'player_inbox'
 $optionalServices += 'player_inbox'
+# 邮件和排行榜仍严格检查TiDB与签名密钥；启动器只在没有部署配置时跳过这两个可选域。
+$services += @('mail','rank')
+$optionalServices += @('mail','rank')
 $skippedServices = @()
 $gatewayUrl = 'http://127.0.0.1:8081'
 $oldPath = $env:PATH
@@ -303,12 +306,12 @@ function Invoke-Dev([string]$Label, [string[]]$Arguments) {
     $reply.Err | Set-Content -LiteralPath (Join-Path $logDir "$Label.stderr.log")
     if ($reply.Code -ne 0) { throw "$Label 启动失败，查看 $logDir 下同名日志。" }
 }
-# friend / guild 的异步推送经 shared/kafkautil 写 gate-cmd,必须与 gate 使用同一代主题。
+# friend / guild / mail 的异步推送经 shared/kafkautil 写 gate-cmd,必须与 gate 使用同一代主题。
 # chat v1 只读写 Redis 历史,trade 资产通道走 gRPC,db/router 也不生产命令主题;不纳入此契约。
 # 校验与落记录共用名单,防止服务被复用后才在第一次推送时暴露旧 generation。
 function Test-UsesKafkaCommandContract([string]$Name) {
     # player_inbox:在线提醒(PlayerInboxNotifyEvent)发往 scene-cmd,与 guild / friend 的推送同为命令主题生产者。
-    return $Name -in @('gate','scene','battle','login','scene_manager','player_locator','match','guild','friend','player_inbox')
+    return $Name -in @('gate','scene','battle','login','scene_manager','player_locator','match','guild','friend','mail','player_inbox')
 }
 # 已运行进程不会重新读取进程环境；记录本启动器实际拉起的 PID 与启动时间，防止换代后复用旧进程。
 function Assert-RunningCommandContract($Process) {
@@ -391,6 +394,18 @@ try {
     }
     foreach ($node in @('gate','scene','battle')) {
         if (-not (Test-Path -LiteralPath (Join-Path $serverRoot "bin/$node.exe"))) { throw "缺少 bin/$node.exe。" }
+    }
+    $domainRequiredEnvs = @{
+        mail = @('MMORPG_MAIL_SQL_DSN','MAIL_PRODUCER_SECRET_ADMIN','MAIL_PRODUCER_SECRET_RANK','MAIL_PRODUCER_SECRET_GUILD')
+        rank = @('MMORPG_RANK_SQL_DSN','MAIL_PRODUCER_SECRET_RANK','RANK_PRODUCER_SECRET_MATCH','RANK_PRODUCER_SECRET_ADMIN')
+    }
+    foreach ($domain in @('mail','rank')) {
+        if ($domain -in $skippedServices) { continue }
+        $missingEnvironment = @($domainRequiredEnvs[$domain] | Where-Object { [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_)) })
+        if ($missingEnvironment.Count -gt 0) {
+            Write-Warning "$domain 缺少本机领域配置，已跳过；请配置TiDB连接与生产者签名环境变量后重新启动。"
+            $skippedServices += $domain
+        }
     }
     if (-not $ClientPath) { $ClientPath = Join-Path (Split-Path -Parent $serverRoot) 'tmp/showcase_player/mmorpg.exe' }
     $ClientPath = [IO.Path]::GetFullPath($ClientPath)
@@ -637,6 +652,8 @@ try {
         # 玩家收件箱 player_inbox 单独一批，理由同 trade / friend（空列表 = 全部服务）。它依赖第 3 步已起的 data_service
         #（玩家存在校验 / 对账读账本，NonBlock 拨号）；scene 已在第 4 步起来，不等它（弱依赖，IB-7）。
         if ('player_inbox' -notin $skippedServices) { Start-LocalGoServices @('player_inbox') }
+        if ('mail' -notin $skippedServices) { Start-LocalGoServices @('mail') }
+        if ('rank' -notin $skippedServices) { Start-LocalGoServices @('rank') }
         $gatewayProcess = Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'java.exe' -and $_.CommandLine -and $_.CommandLine.Contains($jar.FullName) } | Select-Object -First 1
         if (-not $gatewayProcess) {
             if (Test-Tcp 8081) { throw '8081 端口被其他程序占用，未启动重复网关。' }

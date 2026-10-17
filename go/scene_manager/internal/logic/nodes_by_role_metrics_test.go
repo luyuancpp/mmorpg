@@ -2,6 +2,8 @@ package logic
 
 // 告警盲区:scene_manager_nodes_by_role 对「有节点的 zone」与「本进程配置的 ZoneId」的四种声明角色
 // 补 0(metrics.go SetNodesByRole),整 zone 全灭时 PoolEmpty 的 `sum by (zone_id) (...) == 0` 支才有序列可比。
+// 2026-10-16 起「有节点的 zone」只由领导者发布,跟随者只发布本进程 ZoneId(load_refresh_scope_test.go
+// 钉住跟随者一侧);本文件的用例没装领导权闸门,默认就是领导者。
 
 import (
 	"strings"

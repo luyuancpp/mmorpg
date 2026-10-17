@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <memory>
+#include <stop_token>
 #include <string>
 
 // Agones SDK Sidecar 的本机 REST 客户端。
@@ -58,6 +59,17 @@ namespace agones
 			const HttpTimeouts& timeouts) = 0;
 
 		virtual HttpResponse Get(const std::string& url, const HttpTimeouts& timeouts) = 0;
+
+		// 可取消版本(grpc-muduo-transport.md §15.16):cancel 置位后,实现应尽快中止在途请求并返回
+		// transportOk=false。空令牌(默认构造,stop_possible() 为 false)= 不可取消。
+		// 默认实现不支持中途中止,直接转调上面不可取消的版本(请求最多跑满 timeouts.total);
+		// 能中止在途请求的实现(libcurl 版)覆盖它们。令牌只管在途请求,发不发下一个请求由调用方自己判断。
+		virtual HttpResponse Post(const std::string& url,
+			const std::string& body,
+			const HttpTimeouts& timeouts,
+			std::stop_token cancel);
+
+		virtual HttpResponse Get(const std::string& url, const HttpTimeouts& timeouts, std::stop_token cancel);
 	};
 
 #if defined(MMORPG_AGONES_CURL)
@@ -79,9 +91,20 @@ namespace agones
 
 		HttpResponse Get(const std::string& url, const HttpTimeouts& timeouts) override;
 
+		// 在途取消经 libcurl 进度回调(CURLOPT_XFERINFOFUNCTION)实现,见 Perform。
+		HttpResponse Post(const std::string& url,
+			const std::string& body,
+			const HttpTimeouts& timeouts,
+			std::stop_token cancel) override;
+
+		HttpResponse Get(const std::string& url, const HttpTimeouts& timeouts, std::stop_token cancel) override;
+
 	private:
-		// body == nullptr 表示 GET。
-		HttpResponse Perform(const std::string& url, const std::string* body, const HttpTimeouts& timeouts);
+		// body == nullptr 表示 GET;cancel 为空令牌时不装进度回调,行为与不可取消版本完全一致。
+		HttpResponse Perform(const std::string& url,
+			const std::string* body,
+			const HttpTimeouts& timeouts,
+			std::stop_token cancel);
 	};
 #endif
 
@@ -105,17 +128,19 @@ namespace agones
 	AgonesEnv ReadAgonesEnv();
 
 	// Agones REST SDK 的薄封装。不持有传输层所有权:transport 必须活得比本对象久。
+	// cancel:置位即中止在途请求(返回 transportOk=false);默认空令牌 = 不可取消。
 	class AgonesRestClient
 	{
 	public:
 		AgonesRestClient(std::string baseUrl, HttpTransport& transport, HttpTimeouts timeouts);
 
-		HttpResponse Ready();
-		HttpResponse Health();
-		HttpResponse Allocate();
+		HttpResponse Ready(std::stop_token cancel = {});
+		HttpResponse Health(std::stop_token cancel = {});
+		HttpResponse Allocate(std::stop_token cancel = {});
+		// 刻意不接取消令牌:/shutdown 是进程决定自我终止时必须送达的最终请求,不随 lifecycle Stop() 中止。
 		HttpResponse Shutdown();
 		// GET /gameserver:返回自身 GameServer 的 JSON,解析见 agones_gameserver_status.h。
-		HttpResponse GameServer();
+		HttpResponse GameServer(std::stop_token cancel = {});
 		// 同上,但本次请求改用调用方给的超时。给有总时间预算的调用方把单次超时截到剩余预算
 		// (AgonesClientEndpointSource);两项超时都必须 > 0(curl 的 0 表示不限时)。
 		HttpResponse GameServer(const HttpTimeouts& timeouts);

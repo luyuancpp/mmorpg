@@ -53,6 +53,12 @@ struct PlayerLastPersistedSnapshotComp
     // Helper: replace the snapshot in one call. Allocates a new
     // PlayerAllData copy and stamps the timestamp. Cheap to call
     // from HandlePlayerAsyncSaved.
+    //
+    // 拷贝之后清掉 last_save_seq(docs/design/db-write-fencing-mysql.md §7.3):它是每次写盘都变的存盘序号,
+    // 不是业务数据。快路径拿「新 marshal 的消息」与本快照比 dirty_save::IsEqual,新消息在比较时还没发号
+    // (SavePlayerToRedisImpl 在快路径之后才写 last_save_seq),快照若带着序号,快路径永远不命中。
+    // 剥离只在落地时做一次,不在每次存盘尝试的热路径上拷贝。快照的其他读者(资产 / 结算 / 收件箱账本的
+    // 「已落盘」判定)都不读这个字段。
     void Replace(const PlayerAllData& fresh)
     {
         if (!snapshot)
@@ -63,6 +69,7 @@ struct PlayerLastPersistedSnapshotComp
         {
             *snapshot = fresh;
         }
+        snapshot->clear_last_save_seq();
         saved_at_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
     }

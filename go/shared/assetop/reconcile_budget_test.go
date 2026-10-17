@@ -90,7 +90,7 @@ func (a *budgetEatingApplier) budget() (time.Duration, bool) {
 // 把投递预算压到 120ms,免得测试真等 1.8s;落库预留仍是 settleBudget,分配逻辑不变。
 func tightBudget(c *LoopConfig) { c.OpBudget = settleBudget + 120*time.Millisecond }
 
-// 投递吃满预算、父 ctx 已经过期之后,落库仍须拿到可用的 ctx。
+// 投递吃满预算、父 ctx 已经过期之后,落库仍须拿到可用的 ctx(RequireSQLCommit 关闭,HEAD 口径)。
 //
 // 修复前这里是会丢钱的:scene 扣了钱,Finalize 拿着死 ctx 写不进去,行还是 PENDING,
 // 下一轮重投又投一次。
@@ -131,6 +131,48 @@ func TestFinalizeKeepsBudgetAfterApplyExhaustsIt(t *testing.T) {
 	}
 }
 
+// RequireSQLCommit 打开时同一条时序:投递吃满预算之后已没有时间读 SQL 证据,不得终结,
+// 但重排仍须拿到完整的落库预留(否则这一行会原地被反复领取投递)。
+func TestAwaitSQLKeepsBudgetAfterApplyExhaustsIt(t *testing.T) {
+	op := testOp(1)
+	store := &settleSpyStore{fakeStore: newFakeStore(op)}
+	applier := &budgetEatingApplier{res: resultApplied(true)}
+	loop, _ := newTestLoop(t, store, applier, func(c *LoopConfig) {
+		tightBudget(c)
+		c.RequireSQLCommit = true
+	})
+
+	// 父 ctx 只剩投递那一段:同步路径的调用方在进来之前已经花掉了前面一部分预算。
+	// 投递吃满之后父 ctx 必然过期,正是修复前落库拿到死 ctx 的那条时序。
+	parent, cancel := context.WithTimeout(context.Background(), loop.cfg.OpBudget-settleBudget)
+	defer cancel()
+
+	processed, err := loop.ProcessOne(parent, op)
+	if err != nil {
+		t.Fatalf("ProcessOne 出错: %v", err)
+	}
+	if parent.Err() == nil {
+		t.Fatal("父 ctx 本应已经过期,否则这个用例什么也没验到")
+	}
+
+	finalize, reschedule := store.probes()
+	if finalize.calls != 0 || reschedule.calls != 1 {
+		t.Fatalf("预算耗尽后未取得 SQL 证据，必须可靠重排: finalize=%d reschedule=%d", finalize.calls, reschedule.calls)
+	}
+	if reschedule.err != nil {
+		t.Fatalf("重排拿到的 ctx 已经不可用: %v", reschedule.err)
+	}
+	if !reschedule.hasDeadline {
+		t.Fatal("落库的 ctx 必须自带超时:没有超时,一个卡住的库能把关停永远钉死")
+	}
+	if reschedule.remaining <= settleBudget/2 || reschedule.remaining > settleBudget {
+		t.Fatalf("重排应当拿到完整的 %v 预留,实际只剩 %v", settleBudget, reschedule.remaining)
+	}
+	if processed.Finalized {
+		t.Fatalf("无 SQL 证据不得终结，实际 %+v", processed)
+	}
+}
+
 // 投递拿到的是 OpBudget 扣掉落库预留,不是整个 OpBudget。
 func TestApplyBudgetReservesSettleShare(t *testing.T) {
 	op := testOp(1)
@@ -152,7 +194,7 @@ func TestApplyBudgetReservesSettleShare(t *testing.T) {
 	}
 }
 
-// 父 ctx 已经取消(调用方超时返回 / 服务正在关停),终局仍要落库。
+// 父 ctx 已经取消(调用方超时返回 / 服务正在关停),终局仍要落库(RequireSQLCommit 关闭,HEAD 口径)。
 func TestFinalizeSurvivesCanceledParent(t *testing.T) {
 	op := testOp(1)
 	store := &settleSpyStore{fakeStore: newFakeStore(op)}
@@ -178,6 +220,36 @@ func TestFinalizeSurvivesCanceledParent(t *testing.T) {
 	}
 	if !processed.Finalized {
 		t.Fatalf("应当终结,实际 %+v", processed)
+	}
+}
+
+// RequireSQLCommit 打开时父 ctx 已经取消:读不了 SQL 证据就不终结,但「未确认」本身仍要可靠写回。
+func TestUnconfirmedResultSurvivesCanceledParentAsPending(t *testing.T) {
+	op := testOp(1)
+	store := &settleSpyStore{fakeStore: newFakeStore(op)}
+	// scene 已经答复过了:结局到手,钱已经动了,这一步只剩写回去。
+	applier := &fakeApplier{fn: func(RPC, *assetpb.AssetOpRequest) (Result, error) {
+		return resultApplied(true), nil
+	}}
+	loop, _ := newTestLoop(t, store, applier, requireSQLCommit)
+	loop.Ledger = sqlLedgerFixture(true, op)
+
+	parent, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	processed, err := loop.ProcessOne(parent, op)
+	if err != nil {
+		t.Fatalf("ProcessOne 出错: %v", err)
+	}
+	finalize, reschedule := store.probes()
+	if finalize.calls != 0 || reschedule.calls != 1 || reschedule.err != nil {
+		t.Fatalf("父 ctx 取消后应可靠保留未确认待办: finalize=%d reschedule=%d err=%v", finalize.calls, reschedule.calls, reschedule.err)
+	}
+	if !reschedule.hasDeadline {
+		t.Fatal("落库的 ctx 必须自带超时")
+	}
+	if processed.Finalized {
+		t.Fatalf("缺 SQL 证据不得终结,实际 %+v", processed)
 	}
 }
 

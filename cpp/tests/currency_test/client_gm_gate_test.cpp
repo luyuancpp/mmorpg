@@ -5,7 +5,8 @@
 //   ② **策略**:GM 指令在当前运行模式下放不放行 —— gate_security::ClassifyGmClientMessage
 //      (判据读 SCENE_RUN_MODE,默认 prod = 拒绝,见 cpp/nodes/gate/SECURITY.md §3)。
 // 接线在 SceneHandler::ProcessClientPlayerMessage(客户端唯一入口)与各 Gm* handler
-// (节点路由那条路)。这里只验这两个纯函数的契约 —— 它们是闸门唯一会出错的地方,
+// (原为挡节点路由入口 InvokePlayerService;该入口已于批 7 退役并从 proto 删除,这层保留作纵深防御)。
+// 这里只验这两个纯函数的契约 —— 它们是闸门唯一会出错的地方,
 // 而且能在不起 ECS / 不连网络的情况下确定性地验。
 //
 // **最有价值的是 DescriptorScan 那条**:前缀判据的已知缝隙是"名字不叫 Gm* 的后门"。

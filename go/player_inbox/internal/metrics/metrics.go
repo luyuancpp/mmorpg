@@ -12,6 +12,8 @@ package metrics
 
 import (
 	"database/sql"
+	"errors"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -42,7 +44,7 @@ var (
 
 	voidTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace, Name: "void_total",
-		Help: "Admin VoidItem by domain, reason and path (direct = never delivered → VOIDED, directive = VOID directive attached, already = directive already attached).",
+		Help: "Admin VoidItem by domain, reason and path (direct = never delivered → VOIDED, directive = VOID directive attached, already = directive already attached, force = delivered row finalized VOIDED after the persisted-ledger proof).",
 	}, []string{"domain", "reason", "path"})
 
 	notifyTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -65,14 +67,30 @@ var (
 		Help: "Requests whose owner_epoch exceeded the core Redis value (defect or forgery). Critical.",
 	})
 
-	reconcileMismatchTotal = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: namespace, Name: "reconcile_mismatch_total",
-		Help: "Reconcile found a consumer-finalized row beyond the persisted ledger watermark. Critical.",
+	// reconcileInconsistentRows 取代了原来的 reconcile_mismatch_total 计数器(评审 L11):同一处不一致只要还在
+	// 24h 窗口里,每轮都会再被发现一次,累加进计数器会让 critical 告警挂满约 25 小时。它是「当前」读数,只由领导者产出。
+	reconcileInconsistentRows = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace, Name: "reconcile_inconsistent_rows",
+		Help: "Consumer-finalized rows in the reconcile window whose outcome the persisted ledger does not hold " +
+			"(beyond the watermark, missing from the recent ring, or a different item/outcome at that seq), " +
+			"as of the latest reconcile round (leader-only; aggregate with max()). A level, not an event count. Critical.",
 	})
+
+	reconcileTruncatedTotal = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: namespace, Name: "reconcile_truncated_total",
+		Help: "Reconcile rounds that did not cover the whole window (a shard hit the per-shard row limit or the round hit " +
+			"the player limit); the ERROR log says where it stopped and how many shards were left.",
+	})
+
+	reconcileRoundsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace, Name: "reconcile_rounds_total",
+		Help: "Reconcile rounds by result (ok|error|timeout), leader-only. Rounds cancelled by losing leadership or shutdown are not counted.",
+	}, []string{"result"})
 
 	reconcileReadTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace, Name: "reconcile_ledger_read_total",
-		Help: "Reconcile ledger reads by result (found|absent|error); absent = unknown, not alerted.",
+		Help: "Reconcile ledger reads by result (found|absent|error|invalid); absent = unknown, not alerted; " +
+			"invalid = structurally broken ledger, cannot be used as evidence.",
 	}, []string{"result"})
 
 	sweepDeletedTotal = prometheus.NewCounter(prometheus.CounterOpts{
@@ -80,10 +98,12 @@ var (
 		Help: "Terminal rows deleted after the retention window.",
 	})
 
+	// fetchScannedRows 是设计 §4.2 量级假设的触发指标:锁路径的 PENDING 扫描走「主键范围 + state 过滤」,
+	// 数的是数据库实际走过的行(含被过滤掉的终态行),不是返回的条数(返回最多 17 条,数它永远触发不了加索引)。
 	fetchScannedRows = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: namespace, Name: "fetch_scanned_rows",
-		Help:    "Rows read by the locked Fetch path (primary-key range scan filtered by state=PENDING).",
-		Buckets: []float64{0, 1, 2, 4, 8, 17, 32, 64, 128},
+		Help:    "Item rows walked by the locked Fetch PENDING scan (primary-key range up to the last row read, terminal rows included); sustained values in the hundreds mean the (shard,player_id,domain,state,seq) index is due.",
+		Buckets: []float64{0, 1, 2, 4, 8, 17, 32, 64, 128, 256, 512, 1024},
 	})
 
 	deliveredUnacked = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -132,14 +152,28 @@ func ObserveVoid(domain, reason, path string) { voidTotal.WithLabelValues(domain
 // ObserveNotify 记一次在线提醒尝试。
 func ObserveNotify(result string) { notifyTotal.WithLabelValues(result).Inc() }
 
-// IncCursorAhead / IncFenceRegressed / IncEpochAhead / IncReconcileMismatch 是 critical 级计数。
-func IncCursorAhead()       { cursorAheadTotal.Inc() }
-func IncFenceRegressed()    { fenceRegressedTotal.Inc() }
-func IncEpochAhead()        { epochAheadTotal.Inc() }
-func IncReconcileMismatch() { reconcileMismatchTotal.Inc() }
+// IncCursorAhead / IncFenceRegressed / IncEpochAhead 是 critical 级计数。
+func IncCursorAhead()    { cursorAheadTotal.Inc() }
+func IncFenceRegressed() { fenceRegressedTotal.Inc() }
+func IncEpochAhead()     { epochAheadTotal.Inc() }
 
 // ObserveReconcileRead 记一次对账读账本的结果。
 func ObserveReconcileRead(result string) { reconcileReadTotal.WithLabelValues(result).Inc() }
+
+// reconcileRoundResults 是 reconcile_rounds_total{result} 的全部取值(Register 预建零值序列)。
+var reconcileRoundResults = []string{"ok", "error", "timeout"}
+
+// ObserveReconcileRound 记一轮对账的结果(ok|error|timeout)。
+func ObserveReconcileRound(result string) { reconcileRoundsTotal.WithLabelValues(result).Inc() }
+
+// IncReconcileTruncated 记一轮没有覆盖完整个窗口的对账。
+func IncReconcileTruncated() { reconcileTruncatedTotal.Inc() }
+
+// SetReconcileInconsistent 写入领导者最近一轮对账发现的不一致行数(critical 告警按 max() 取它)。
+func SetReconcileInconsistent(n int) { reconcileInconsistentRows.Set(float64(max(n, 0))) }
+
+// ResetReconcileInconsistent 在卸任时把本副本的不一致行数归零,理由同 ResetScanGauges。
+func ResetReconcileInconsistent() { reconcileInconsistentRows.Set(0) }
 
 // AddSweepDeleted 记清理删掉的行数。
 func AddSweepDeleted(n int) {
@@ -176,7 +210,8 @@ func Register(db *sql.DB) {
 	registerOnce.Do(func() {
 		prometheus.MustRegister(
 			enqueueTotal, fetchTotal, ackTotal, voidTotal, notifyTotal,
-			cursorAheadTotal, fenceRegressedTotal, epochAheadTotal, reconcileMismatchTotal, reconcileReadTotal,
+			cursorAheadTotal, fenceRegressedTotal, epochAheadTotal,
+			reconcileInconsistentRows, reconcileTruncatedTotal, reconcileRoundsTotal, reconcileReadTotal,
 			sweepDeletedTotal, fetchScannedRows,
 			deliveredUnacked, deliveredUnackedOldestSeconds, openItems, oldestOpenAgeSeconds, maxDeliveryCount, notifyBacklog,
 		)
@@ -188,30 +223,46 @@ func Register(db *sql.DB) {
 		for _, r := range []string{"sent", "offline", "awaiting_placement", "no_node", "empty_uuid", "error"} {
 			notifyTotal.WithLabelValues(r)
 		}
-		for _, r := range []string{"found", "absent", "error"} {
+		for _, r := range []string{"found", "absent", "error", "invalid"} {
 			reconcileReadTotal.WithLabelValues(r)
+		}
+		for _, r := range reconcileRoundResults {
+			reconcileRoundsTotal.WithLabelValues(r)
 		}
 	})
 }
 
-// StartHTTP 启动 Prometheus /metrics 端点;addr 为空则关闭(与 trade 同模式)。返回的 stop 关闭监听。
+// StartHTTP 启动 Prometheus /metrics 端点;addr 为空则关闭(与 trade 同模式)。返回的 stop 关闭监听,可重复调用。
+// 监听失败(端口被占、地址非法)只记错误、进程照常服务(没有 /metrics 不该拖垮收件箱),返回空操作的 stop。
 func StartHTTP(addr string) (stop func()) {
+	stop, _ = startHTTP(addr)
+	return stop
+}
+
+// startHTTP 是 StartHTTP 的实现,另返回实际监听地址(addr 写 ":0" 时由内核分配端口;单测靠它拨号)。
+// 先同步监听再在后台 Serve:监听失败当场可见,不必等后台 goroutine 里的 ListenAndServe 报错。
+func startHTTP(addr string) (stop func(), bound string) {
 	if addr == "" {
 		logx.Info("[player_inbox] MetricsListenAddr empty; Prometheus /metrics endpoint disabled")
-		return func() {}
+		return func() {}, ""
+	}
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		logx.Errorf("[player_inbox] metrics HTTP listen on %s failed; continuing without /metrics: %v", addr, err)
+		return func() {}, ""
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 	srv := &http.Server{
-		Addr:              addr,
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
+	bound = ln.Addr().String()
+	logx.Infof("[player_inbox] Prometheus /metrics listening on %s", bound)
 	go func() {
-		logx.Infof("[player_inbox] Prometheus /metrics listening on %s", addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logx.Errorf("[player_inbox] metrics HTTP server exited: %v", err)
 		}
 	}()
-	return func() { _ = srv.Close() }
+	return func() { _ = srv.Close() }, bound
 }

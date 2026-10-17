@@ -134,6 +134,33 @@ func TestNewAttachesLedgerAndLocatorOnlyWhenGiven(t *testing.T) {
 	}
 }
 
+// TestNewRequireSQLCommitNeedsSQLLedger:资产 SQL 提交证据开关打开时,没有能读证据的 Ledger 必须拒绝构造
+// (否则每笔终结都静默停在 AwaitDurable,fence-inflight.md F6 (b));开关原样进循环。关闭时 Ledger 照旧可选。
+func TestNewRequireSQLCommitNeedsSQLLedger(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		ledger assetop.LedgerReader
+		ok     bool
+	}{
+		{"没挂 Ledger", nil, false},
+		{"只会读父键 blob", fakeLedger{}, false},
+		{"DataServiceLedger", &assetop.DataServiceLedger{}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p, err := New(Deps{Ops: newTestRepo(t), Caller: newTestCaller(t), OpIDs: &fakeIDs{}, Ledger: tc.ledger, RequireSQLCommit: true})
+			if (err == nil) != tc.ok {
+				t.Fatalf("New err=%v,期望通过=%t", err, tc.ok)
+			}
+			if tc.ok && !p.loop.RequireSQLCommit() {
+				t.Fatal("Deps.RequireSQLCommit 必须原样进 assetop.LoopConfig")
+			}
+		})
+	}
+	if p := newTestPipeline(t, &fakeIDs{}); p.loop.RequireSQLCommit() {
+		t.Fatal("开关缺省必须关闭(HEAD 口径)")
+	}
+}
+
 // TestMaintenanceEnabled:对账或放弃至少开一个才需要竞选领导权;都关着时装配层不竞选(省一把锁)。
 func TestMaintenanceEnabled(t *testing.T) {
 	cases := []struct {

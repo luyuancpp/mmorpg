@@ -22,6 +22,8 @@
 // 本头只放组件、纯判定与计数,不含 entt / redis / muduo / protobuf,不读任何时钟(先例:player_exit_intent.h)。
 // 粘合代码在 player_lifecycle.cpp(PlayerLifecycleSystem::HandleEnterGameNode / JudgeEnter / EnterScene 的绑定复核 /
 // RecordLoginIdentity),以及 scene_handler.cpp 的 UpdateSessionDetail。单测:cpp/tests/cross_zone_test 的 EnterFence*。
+// 另有一个只读用途:ActingLoginGeneration 给发往 scene_manager 的请求盖章(scene-enter-chain-residuals.md §5.2 ④),
+// 单测 ActingLoginGeneration*。
 //
 // 不变量(改任何一条先重过设计 §3.1 与 §5):
 //   * 只比较"随请求携带的代次"与"本节点已放行的最高代次",不与铸造键、会话记录做相等校验(G3 / G4)。
@@ -191,6 +193,21 @@ namespace enter_fence
 			}
 		}
 		return first;
+	}
+
+	// scene 自发、发往 scene_manager 的 EnterScene(客户端换图 / 镜像自动进场 / 队伍跟随 / 交接重发 / 疏散改派)
+	// 所代表的登录代次,填进 EnterSceneRequest.login_generation(12),供 scene_manager 做落点会话身份裁决
+	// (docs/design/scene-enter-chain-residuals.md §5.2 ④)。
+	// 只有实体有身份组件、请求会话有效且与组件记下的会话相同时才取组件的代次;否则 0(scene_manager 按 legacy 处理,
+	// 不降级它已记下的身份)。代次是实体已放行的值,可以落后于会话记录与 gate 会话值(G4),下游一律只用 ≥ 比较。
+	// 只读、纯函数,**只供给发往 scene_manager 的请求盖章**,不进入场判定(入场判定用 Decide / DecideAll)。
+	constexpr uint64_t ActingLoginGeneration(const PlayerLoginIdentityComp *identity, SessionId requestSession)
+	{
+		if (identity == nullptr || !player_exit::IsBoundSession(requestSession) || identity->sessionId != requestSession)
+		{
+			return 0;
+		}
+		return identity->loginGeneration;
 	}
 } // namespace enter_fence
 

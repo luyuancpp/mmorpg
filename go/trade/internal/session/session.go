@@ -40,10 +40,30 @@ type contextKey struct{}
 // ClientMethods 是允许客户端来源调用的方法全集:ClientPlayerJubaozhai 的 4 个 P1 方法。
 // TradeAdmin 的任何方法都刻意不在其中(session_test.go 遍历两个 ServiceDesc 守住)。
 var ClientMethods = map[string]struct{}{
-	tradepb.ClientPlayerJubaozhai_BrowseListings_FullMethodName:   {},
-	tradepb.ClientPlayerJubaozhai_GetListingDetail_FullMethodName: {},
-	tradepb.ClientPlayerJubaozhai_SetFavorite_FullMethodName:      {},
-	tradepb.ClientPlayerJubaozhai_GetMyShelf_FullMethodName:       {},
+	tradepb.ClientPlayerJubaozhai_ListTradeMarkets_FullMethodName:     {},
+	tradepb.ClientPlayerJubaozhai_BrowseCommerceOffers_FullMethodName: {},
+	tradepb.ClientPlayerJubaozhai_BrowseListings_FullMethodName:       {},
+	tradepb.ClientPlayerJubaozhai_GetListingDetail_FullMethodName:     {},
+	tradepb.ClientPlayerJubaozhai_SetFavorite_FullMethodName:          {},
+	tradepb.ClientPlayerJubaozhai_GetMyShelf_FullMethodName:           {},
+	tradepb.ClientPlayerJubaozhai_ListOfficialSkus_FullMethodName:     {},
+	tradepb.ClientPlayerJubaozhai_CreateOfficialOrder_FullMethodName:  {},
+	tradepb.ClientPlayerJubaozhai_GetCommerceOrder_FullMethodName:     {},
+	tradepb.ClientPlayerJubaozhai_CancelCommerceOrder_FullMethodName:  {},
+	tradepb.ClientPlayerJubaozhai_ListCommerceOrders_FullMethodName:   {},
+	tradepb.ClientPlayerJubaozhai_CreatePlayerTrade_FullMethodName:    {},
+	tradepb.ClientPlayerJubaozhai_ConfirmPlayerTrade_FullMethodName:   {},
+	tradepb.ClientPlayerJubaozhai_CreateConsignment_FullMethodName:    {},
+	tradepb.ClientPlayerJubaozhai_BuyConsignment_FullMethodName:       {},
+	tradepb.ClientPlayerJubaozhai_CancelConsignment_FullMethodName:    {},
+	tradepb.ClientPlayerJubaozhai_PlaceMarketOrder_FullMethodName:     {},
+	tradepb.ClientPlayerJubaozhai_CancelMarketOrder_FullMethodName:    {},
+	tradepb.ClientPlayerJubaozhai_ListMarketOrders_FullMethodName:     {},
+	tradepb.ClientPlayerJubaozhai_GetMarketDepth_FullMethodName:       {},
+	tradepb.ClientPlayerJubaozhai_CreateAuctionLot_FullMethodName:     {},
+	tradepb.ClientPlayerJubaozhai_PlaceAuctionBid_FullMethodName:      {},
+	tradepb.ClientPlayerJubaozhai_GetAuctionLot_FullMethodName:        {},
+	tradepb.ClientPlayerJubaozhai_CancelAuctionLot_FullMethodName:     {},
 }
 
 // WithDetails 把已校验的会话放进 ctx(拦截器与单测共用)。

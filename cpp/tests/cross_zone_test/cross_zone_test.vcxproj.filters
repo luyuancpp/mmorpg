@@ -7,6 +7,9 @@
     <ClCompile Include="db_task_dispatch_test.cpp">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="save_seq_test.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Include">

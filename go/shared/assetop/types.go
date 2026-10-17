@@ -102,12 +102,13 @@ const (
 	// RPCAbort 中止占位(AssetAbortDebit):把一个未见过的 seq 永久钉成 REJECTED。
 	// 允许用于任何流,包括 *_CREDIT(商店超时退帮贡要用),见规格偏差 #3。
 	RPCAbort
+	RPCAckReceipt
 
 	rpcCount
 )
 
 // rpcNames 与 canonical 串一字不差(规格 §4.32)。下标 0 空出来。
-var rpcNames = [...]string{"invalid", "debit", "credit", "abort_debit"}
+var rpcNames = [...]string{"invalid", "debit", "credit", "abort_debit", "ack_receipt"}
 
 var _ = [1]struct{}{}[len(rpcNames)-int(rpcCount)]
 
@@ -123,8 +124,7 @@ func (r RPC) String() string {
 // 第二个返回值为 false 表示流号非法(未指定或超出已知范围),调用方必须当成坏行处理,
 // 不得猜一个默认值 —— 猜错方向等于把扣钱发成发钱。
 //
-// 注意 SYSTEM_CREDIT 也会返回 Credit:v1 里 scene 对它一律验签失败回 UNKNOWN
-// (规格 §4.32 白名单),拒绝发生在 scene,不在这里静默吞掉。
+// SYSTEM_CREDIT 返回 Credit，由 scene 只接受 mail 调用方；不能用通用系统身份绕过白名单。
 func ApplyRPCOf(stream assetpb.AssetOpStream) (RPC, bool) {
 	switch stream {
 	case assetpb.AssetOpStream_ASSET_OP_STREAM_GUILD_DEBIT,
@@ -153,10 +153,10 @@ const (
 	// 答复留在行上的 last_reason。这两处不是同一份证据的两份拷贝,而是**接力**:
 	//
 	//   - scene 的只读答复只在 seq 仍留在账本的 partial_seqs 环里时才带 partial
-	//     (规格 §4.9 第 4 步经 IsAssetOpPartial 查环)。那个环上限 64 条、超了删最小,
-	//     watermark 右移时还会裁掉 seq <= 新 watermark 的条目(§4.4 Record 第 1、2 步)
-	//     —— 所以它**会**丢,丢了之后重查只能得到一个普通的 APPLIED。
-	//   - 环丢了之后,行上的 last_reason 是「这一笔曾经只发了一半」的唯一证据(§4.33)。
+	//     (规格 §4.9 第 4 步经 IsAssetOpPartial 查名单)。当前实现保留完整1024窗口，
+	//     未决跨度<=512保护在线重查；watermark滑动仍会裁掉旧seq。
+	//   - 行上的 last_reason 还要兼容旧scene的64条名单与窗口外恢复，保留
+	//     「这一笔曾经只发了一半」的证据(§4.33)。
 	//     漏掉它就是把半额发放当成全额成功入对侧账,那笔差额没有任何线索可追。
 	//
 	// 因此这个码在行上必须是**粘性**的。规格原话是「Reschedule 把 last_reason 写成
@@ -176,8 +176,12 @@ type Result struct {
 	// Durable 表示该 seq 的结局已经在「最后一次成功写入 Redis 的玩家数据」里。
 	// 只有它为真,终结才是安全的(不变量 I4)。
 	Durable bool
+	// SQLCommitted 仅由已提交 SQL 账本核验路径赋值，scene 的 Redis 回包不能设置它。
+	SQLCommitted bool
 	// Partial 表示 APPLIED 但只发放了一部分。对侧账不能做,转人工补偿(规格 §4.33)。
 	Partial bool
+	// Snapshot 为已持久化的托管结果；必须保留完整实例，重查不能仅保留摘要字段。
+	Snapshot *assetpb.AssetSnapshot
 	// Local 表示这次根本没发出 RPC(玩家无位置 / 节点未注册),NOT_HERE 是本地合成的。
 	// 离线已落盘结局读取(reconcile.go)只在 Local 时才有意义。
 	Local bool
@@ -267,6 +271,9 @@ type Limits struct {
 var DefaultLimits = Limits{MaxPending: 16, MaxSpan: 512}
 
 func (l Limits) validate() error {
+	if l.MaxSpan > 512 {
+		return fmt.Errorf("assetop: MaxSpan 不得超过 512，必须保护未决实例收据")
+	}
 	if l.MaxPending == 0 || l.MaxSpan == 0 {
 		return fmt.Errorf("assetop: 守卫上限必须为正(MaxPending=%d MaxSpan=%d)", l.MaxPending, l.MaxSpan)
 	}

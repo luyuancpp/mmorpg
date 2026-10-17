@@ -29,7 +29,7 @@
 python tools/scripts/gen_docs_index.py
 ```
 
-ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与未验收项见 [第 1 批 Codex 实施回执](handoff/ecs-refactor/batch1-codex-receipt.md)。早期在途证据保留在 [Codex 只读回执](handoff/ecs-refactor/codex-readonly-receipt.md),运行时与存盘采样稿由该回执索引。
+ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与未验收项见 [第 1 批 Codex 实施回执](handoff/ecs-refactor/batch1-codex-receipt.md)。第 1–5 批的代码审查结论见 [审查报告](handoff/ecs-refactor/review-report-20261015.md),修复任务见 [第 6 批任务单](handoff/ecs-refactor/batch6-review-fixes.md)。早期在途证据保留在 [Codex 只读回执](handoff/ecs-refactor/codex-readonly-receipt.md),运行时与存盘采样稿由该回执索引。
 
 ## 索引
 
@@ -88,6 +88,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [enter-scene-zone-routing.md](design/enter-scene-zone-routing.md) — EnterScene Zone Routing Design (updated 2026-08-03; handoff-gate, login-side and merge sections re-verified against code 2026-09-20)
 - [nav-spawn-fix-2026-09-05.md](design/nav-spawn-fix-2026-09-05.md) — 客户端/服务端导航数据、出生点与位置纠正契约统一(2026-09-05)
 - [scene-creation-architecture.md](design/scene-creation-architecture.md) — Scene Creation Architecture
+- [scene-enter-chain-residuals.md](design/scene-enter-chain-residuals.md) — 进场链余项 a–e:踢线、离场、落点、释放与断线上报的身份栅栏(设计稿,2026-10-16)
 - [scene-enter-session-fence.md](design/scene-enter-session-fence.md) — 入场会话栅栏:登录代次(login_generation)
 - [scene-grpc-server-design.md](design/scene-grpc-server-design.md) — Scene Node gRPC Server Design
 - [scene-navmesh-pipeline.md](design/scene-navmesh-pipeline.md) — 场景导航网格管线(Recast 烘焙 + 服务器寻路阻挡校验)
@@ -127,7 +128,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [guild-zone-client-access.md](design/guild-zone-client-access.md) — 公会:按 zone 隔离的客户端接入
 - [guild_friend_service_notes.md](design/guild_friend_service_notes.md) — Guild & Friend Service Implementation Notes (2025-03-25) · [EN](design/guild_friend_service_notes_en.md) · [中文](design/guild_friend_service_notes_zh.md)
 - [guild_ranking_architecture.md](design/guild_ranking_architecture.md) — Guild Ranking Architecture (2025-03-25) · [EN](design/guild_ranking_architecture_en.md) · [中文](design/guild_ranking_architecture_zh.md)
-- [jubaozhai-market.md](design/jubaozhai-market.md) — 聚宝斋与 mall 游戏经济适配；现行选型及全球权威见移植决定 D-17
+- [jubaozhai-market.md](design/jubaozhai-market.md) — 聚宝斋(玩家间人民币寄售交易)设计 — 2026-09-14
 - [leaderboard-system.md](design/leaderboard-system.md) — 排行榜(leaderboard / rank)v1 设计
 - [mail-system.md](design/mail-system.md) — mail(邮件)M1:全局服务 + 系统邮件 / 定向邮件 + 领取短路
 - [player-attribute-allocation.md](design/player-attribute-allocation.md) — 角色属性加点系统
@@ -314,18 +315,28 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [global-singletons-p0-codex-tasksheet-20261014.md](handoff/global-singletons-p0-codex-tasksheet-20261014.md) — Codex 任务单:全局单点 P0 五项的实测核实(2026-10-14)
 - [global-singletons-p0-findings-20261014.md](handoff/global-singletons-p0-findings-20261014.md) — 全局单点 P0 五项:静态调查记录与修复设计(2026-10-14)
 - [global-singletons-p0-measure-steps-20261014.md](handoff/global-singletons-p0-measure-steps-20261014.md) — 全局单点 P0 五项:实测步骤原文(2026-10-14)
+- [grpc-muduo-batch3-5/README.md](handoff/grpc-muduo-batch3-5/README.md) — 交接:C++ gRPC 迁到 muduo 驱动第 3–5 批(第 3 批做到一半,含五份现状调查附录,2026-10-15)
 - [godb-pipeline-codex-tasksheet-20261013.md](handoff/godb-pipeline-codex-tasksheet-20261013.md) — Codex 任务单：存盘管线第 0 批与 proto2mysql 条件写原语的验证（2026-10-13）
 - [godb-pipeline-handoff-20261013.md](handoff/godb-pipeline-handoff-20261013.md) — 交接：玩家存盘管线（go/db）瓶颈修复与条件写（2026-10-13）
 - [godb-pipeline-handoff-20261013-appendix.md](handoff/godb-pipeline-handoff-20261013-appendix.md) — 附录：存盘管线修复方案明细（工作流原始产出）
+- [godb-pipeline-impl-handoff-20261015.md](handoff/godb-pipeline-impl-handoff-20261015.md) — 交接：存盘管线剩余代码落码（①③④、WAITAOF、脏快照、保留期；2026-10-15）
 - [handoff-backlog-2026-09-05.md](handoff/handoff-backlog-2026-09-05.md) — 交接清单:2026-09-02 ~ 09-05 三天工作的留档待办(经代码核实)
+- [handoff-client-request-ordering-20261015.md](handoff/handoff-client-request-ordering-20261015.md) — 交接:客户端请求按会话保序(路由服水平扩展下的乱序修复,2026-10-15)
 - [handoff-crosszone-20260920.md](handoff/handoff-crosszone-20260920.md) — 跨 zone 场景传送:交接说明(2026-09-20)
 - [handoff-gate-dtor-fix-verify-and-stress-20260914.md](handoff/handoff-gate-dtor-fix-verify-and-stress-20260914.md) — 交接:gate `~TcpConnection` 事故第二批修复 —— 构建 / 验证 / 压测(执行方:ChatGPT;方案方:Claude Code)
 - [handoff-global-singletons-10m-ccu-20261013.md](handoff/handoff-global-singletons-10m-ccu-20261013.md) — 交接:全局单点盘点、解法与 1000 万在线容量核算(2026-10-13)
+- [handoff-global-singletons-p0-20261015.md](handoff/handoff-global-singletons-p0-20261015.md) — 交接:全局单点 P0 五项的落码现状与剩余工作(2026-10-15)
+- [handoff-global-singletons-p0-20261015-appendix.md](handoff/handoff-global-singletons-p0-20261015-appendix.md) — 附录:全局单点 P0 部署侧四批的实现报告(2026-10-15)
+- [handoff-landing-recovery-and-fencing-20261016.md](handoff/handoff-landing-recovery-and-fencing-20261016.md) — 交接:落地恢复、超窗处置、进场链余项 a–e 与 MySQL 行内围栏的落码现状与剩余工作(2026-10-16)
+- [landing-fencing-takeover-20261016/README.md](handoff/landing-fencing-takeover-20261016/README.md) — 接手记录:上条交接的复核结论(客户端/robot/在途围栏/v0.3/a–e)、负责人拍板、选定做法与落码批次(2026-10-16)
 - [handoff-launch-readiness-and-d1-20261013.md](handoff/handoff-launch-readiness-and-d1-20261013.md) — 交接:开服首日瓶颈修复、D1 映射持久化与 S3 容量目标(2026-10-13)
+- [handoff-launch-readiness-decisions-20261015.md](handoff/handoff-launch-readiness-decisions-20261015.md) — 交接:开服瓶颈负责人四项决定的收尾与验证(2026-10-15)
 - [handoff-orcontinue-closure-20260914.md](handoff/handoff-orcontinue-closure-20260914.md) — 交接：`Lookup*OrContinue` 修复收尾 + exporter-tests CI 复活
 - [handoff-tip-axis-and-port-20260903.md](handoff/handoff-tip-axis-and-port-20260903.md) — 交接清单：tip 码轴收尾 + 玄冥移植未开工项
 - [placement-reverify-checklist-20261012.md](handoff/placement-reverify-checklist-20261012.md) — 玩家存储落点:当前 HEAD 复验清单(交 Codex)
+- [player-inbox-handoff-20261015.md](handoff/player-inbox-handoff-20261015.md) — 玩家持久收件箱：实现交接（2026-10-15）
 - [repo-layout-20261007.md](handoff/repo-layout-20261007.md) — 仓库目录整理:交接说明(2026-10-07)
+- [rpc-channel-batch7-handoff-20261015.md](handoff/rpc-channel-batch7-handoff-20261015.md) — 交接:RpcChannel 改造收尾——第 7 批、剩余调用点迁移与玩家级延后完成(2026-10-15)
 - [session-summary-20260908-09.md](handoff/session-summary-20260908-09.md) — 本轮会话总览与遗留清单（2026-09-08 ~ 09-09）
 - [zone-home-and-physical-storage-conversation-20260924.md](handoff/zone-home-and-physical-storage-conversation-20260924.md) — 逻辑归属、物理存储与合服：完整对话记录（mmorpg）
 

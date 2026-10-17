@@ -25,8 +25,8 @@ std::optional<entt::entity> ResolveLocalZoneGateEntity(SessionId sessionId)
 		return entity;
 	}
 
-	// Defensive fallback for the brief window where the thread-local zone
-	// context (GetZoneId()) lags behind node discovery — e.g. early in
+	// Defensive fallback for the brief window where this node's zone
+	// (GetZoneId(), read from Node::localNodeInfo_, filled in Node::InitRpcServer) is not yet installed — e.g. early in
 	// startup before NodeContext is fully populated, or in dev/single-zone
 	// launches where zone propagation hasn't happened yet. The local-thread
 	// gate registry is already filtered down to same-zone gates by

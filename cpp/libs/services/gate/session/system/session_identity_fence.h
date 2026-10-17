@@ -56,4 +56,74 @@ namespace gate_session_fence
 		// 已进场景的玩家推送,而进场景必然晚于 gate 侧 BindSession 落地。
 		return PushVerdict::kDrop;
 	}
+
+	// ---------------------------------------------------------------------------------------------
+	// 踢线身份栅栏(docs/design/scene-enter-chain-residuals.md §2.2 ④,余项 a)。
+	//
+	// login 在 ReplaceLogin 的会话记录提交之后,经 KickPlayerEvent 踢掉被替换的旧会话。旧 gate 只按 session_id 踢,
+	// 两种情况会踢到不该踢的连接:session_id 序号回绕 / node_id 复用后被别的玩家复用(T3),以及同一连接上已经承载了
+	// 比踢线者更新的登录(T4)。所以踢线也要先核对玩家、再比代次。
+	//
+	// 判定顺序:先过 ClassifyPush(玩家维度,与推送栅栏同一口径),再比登录代次。
+	//
+	// - 未绑定会话 fail-closed(kSkipOtherPlayer):与 ClassifyPush 的 R13 口径一致。login 按 gate 节点号显式选分区,
+	//   同一 gate 的命令在同一分区内全序;被替换的链在 Bind 之后才释放玩家锁,所以正常时序下被踢会话一定已被 Bind 过,
+	//   未绑定只会出现在会话号复用或失败路径上。代价:失锁导致 Bind 被拖到踢线之后时旧连接暂时不被踢,之后由 scene
+	//   入场栅栏拒掉陈旧入场、推 3023 收口。
+	// - 代次只用 ≥ 比较、只读:会话代次只来自已提交登录的 Bind 与路由(都经 ApplyLoginBinding / ApplyRouteIdentity
+	//   取 max)。等号表示这条连接承载的正是踢线者本次登录,只会出现在同一会话上,而同一会话 login 本来就不发踢线,
+	//   判「不踢」是安全方向。踢线者代次为 0(旧版 login)不比较;会话代次为 0(没见过代次)时 0 ≥ gen 不成立,照踢。
+	// - 按值传参、不写会话:loginGeneration 的写入点仍只有 scene_route_helper.h 的那两个 helper(不变量 4),
+	//   本判定因此放在这里而不是 scene_route_helper.h。
+	enum class KickVerdict : uint8_t
+	{
+		// 玩家相符、会话没见过不小于踢线者的代次:推 kLoginBeKickByAnOtherAccount 后 shutdown。
+		kKick,
+		// 踢线事件没带 player_id(旧版 login):按 session_id 踢(旧行为),调用方首次记一行 INFO 供迁移观测。
+		kKickUnfenced,
+		// 会话绑定的是别的玩家,或会话尚未绑定玩家:不踢。
+		kSkipOtherPlayer,
+		// 会话已承载不小于踢线者代次的登录(同一连接上更新的重登):不踢。
+		kSkipNewerLogin,
+	};
+
+	// sessionBoundPlayerId:gate 本地会话当前绑定的玩家(SessionInfo::playerId,未绑定为 kInvalidGuid)。
+	// sessionLoginGeneration:会话上记的登录代次(SessionInfo::loginGeneration,0 = 没见过代次)。
+	// targetPlayerId:踢线事件里的被踢玩家(KickPlayerEvent.player_id,0 = 旧版 login)。
+	// kickerLoginGeneration:发起踢线、已提交的那条登录链的代次(KickPlayerEvent.login_generation,0 = 不比较)。
+	inline KickVerdict ClassifyKick(uint64_t sessionBoundPlayerId, uint64_t sessionLoginGeneration,
+	                                uint64_t targetPlayerId, uint64_t kickerLoginGeneration)
+	{
+		switch (ClassifyPush(sessionBoundPlayerId, targetPlayerId))
+		{
+		case PushVerdict::kDeliverUnfenced:
+			return KickVerdict::kKickUnfenced;
+		case PushVerdict::kDrop:
+			return KickVerdict::kSkipOtherPlayer;
+		case PushVerdict::kDeliver:
+			break;
+		}
+		if (kickerLoginGeneration != 0 && sessionLoginGeneration >= kickerLoginGeneration)
+		{
+			return KickVerdict::kSkipNewerLogin;
+		}
+		return KickVerdict::kKick;
+	}
+
+	// 只用于日志。
+	inline const char *KickVerdictName(KickVerdict verdict)
+	{
+		switch (verdict)
+		{
+		case KickVerdict::kKick:
+			return "kick";
+		case KickVerdict::kKickUnfenced:
+			return "kick_unfenced";
+		case KickVerdict::kSkipOtherPlayer:
+			return "skip_other_player";
+		case KickVerdict::kSkipNewerLogin:
+			return "skip_newer_login";
+		}
+		return "unknown";
+	}
 } // namespace gate_session_fence

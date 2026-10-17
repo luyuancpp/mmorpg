@@ -431,6 +431,9 @@ func TestAbandonRefusesZeroToken(t *testing.T) {
 // lockRowsFor 是录制驱动的结果集:sqlLockAssetOp(op 行主键点锁)按 present 回"有这一行 / 没有";其余查询回空。
 func lockRowsFor(present bool) func(string, []driver.Value) ([]string, [][]driver.Value) {
 	return func(query string, args []driver.Value) ([]string, [][]driver.Value) {
+		if present && query == "SELECT ref_kind FROM "+AssetOpTableName+" WHERE op_id=?" {
+			return []string{"ref_kind"}, [][]driver.Value{{int64(1)}}
+		}
 		if !present || query != collapseSpaces(sqlLockAssetOp) {
 			return nil, nil
 		}
@@ -567,6 +570,9 @@ func TestTerminalWritersLockRowBeforeCAS(t *testing.T) {
 			}
 			calls := s.recordedCalls()
 			want := []string{"BEGIN", collapseSpaces(sqlLockAssetOp), collapseSpaces(tc.cas), "COMMIT"}
+			if tc.name == "Finalize" {
+				want = []string{"BEGIN", collapseSpaces(sqlLockAssetOp), "SELECT ref_kind FROM " + AssetOpTableName + " WHERE op_id=?", collapseSpaces(tc.cas), "COMMIT"}
+			}
 			if got := callSQLs(calls); !reflect.DeepEqual(got, want) {
 				t.Fatalf("语句序列 = %+v\nwant %+v", got, want)
 			}

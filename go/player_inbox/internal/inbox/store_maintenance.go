@@ -100,70 +100,75 @@ func (s *Store) ResendNotify(ctx context.Context, d NotifyDue) NotifyResult {
 
 // ScanGauges 扫一遍全部分片,算出扫描型 gauge(设计 §9.4,只由领导者调用)。
 // notifyOverdueBeforeMs:notify_due_ms 早于它的流计入 notify_backlog(提醒积压超过 5 分钟)。
+// 每个分片两条只读聚合(PENDING 行走 (shard, state, updated_ms) 索引);跨分片怎么折见 foldScanGauges。
+// 任何一个分片读失败整轮作废(返回错误、不更新 gauge),不拿半套分片的数去刷新看板。
 func (s *Store) ScanGauges(ctx context.Context, nowMs, notifyOverdueBeforeMs uint64) (metrics.ScanGauges, error) {
-	var g metrics.ScanGauges
-	var oldestCreated, oldestDelivered uint64
+	shards := make([]shardGaugeScan, 0, ShardCount)
 	for shard := uint32(0); shard < ShardCount; shard++ {
 		if err := ctx.Err(); err != nil {
-			return g, err
+			return metrics.ScanGauges{}, err
 		}
-		var open, delivered, maxDelivery, minCreated, minDelivered uint64
+		var sc shardGaugeScan
 		err := s.db.QueryRowContext(ctx, "SELECT COUNT(*),"+
 			" COALESCE(SUM(CASE WHEN `delivery_count` > 0 THEN 1 ELSE 0 END), 0),"+
 			" COALESCE(MAX(`delivery_count`), 0), COALESCE(MIN(`created_ms`), 0),"+
 			" COALESCE(MIN(CASE WHEN `delivery_count` > 0 THEN `last_delivered_ms` END), 0)"+
 			" FROM "+itemTable+" WHERE `shard` = ? AND `state` = ?",
 			shard, uint32(inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING)).
-			Scan(&open, &delivered, &maxDelivery, &minCreated, &minDelivered)
+			Scan(&sc.openItems, &sc.deliveredUnacked, &sc.maxDeliveryCount, &sc.minCreatedMs, &sc.minDeliveredMs)
 		if err != nil {
-			return g, fmt.Errorf("inbox: gauge scan shard=%d: %w", shard, err)
+			return metrics.ScanGauges{}, fmt.Errorf("inbox: gauge scan shard=%d: %w", shard, err)
 		}
-		g.OpenItems += open
-		g.DeliveredUnacked += delivered
-		g.MaxDeliveryCount = max(g.MaxDeliveryCount, maxDelivery)
-		if minCreated != 0 && (oldestCreated == 0 || minCreated < oldestCreated) {
-			oldestCreated = minCreated
-		}
-		if minDelivered != 0 && (oldestDelivered == 0 || minDelivered < oldestDelivered) {
-			oldestDelivered = minDelivered
-		}
-
-		var backlog uint64
 		if err := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+streamTable+
-			" WHERE `shard` = ? AND `notify_due_ms` BETWEEN 1 AND ?", shard, notifyOverdueBeforeMs).Scan(&backlog); err != nil {
-			return g, fmt.Errorf("inbox: notify backlog scan shard=%d: %w", shard, err)
+			" WHERE `shard` = ? AND `notify_due_ms` BETWEEN 1 AND ?", shard, notifyOverdueBeforeMs).Scan(&sc.notifyBacklog); err != nil {
+			return metrics.ScanGauges{}, fmt.Errorf("inbox: notify backlog scan shard=%d: %w", shard, err)
 		}
-		g.NotifyBacklog += backlog
+		shards = append(shards, sc)
 	}
-	g.OldestOpenAgeSeconds = ageSeconds(nowMs, oldestCreated)
-	// 已投递未确认的「最老」按最后一次投递时刻算:被反复重投的行会刷新它,崩溃循环由 max_delivery_count 另行告警;
-	// 消费方 halt 之后不再拉取,它就一直变老 —— 这正是要抓的「卡住」信号(设计 §9.4)。
-	g.DeliveredUnackedOldestSeconds = ageSeconds(nowMs, oldestDelivered)
-	return g, nil
+	return foldScanGauges(nowMs, shards), nil
 }
 
-func ageSeconds(nowMs, sinceMs uint64) float64 {
-	if sinceMs == 0 || sinceMs >= nowMs {
-		return 0
-	}
-	return float64(nowMs-sinceMs) / 1000
-}
-
-// FinalizedRef 是对账作业要核对的一条「由消费方终结」的行。
+// FinalizedRef 是对账要核对的一条终态行:对账谓词 finalizedLedgerGap 用到的列,外加翻页游标要的 updated_ms。
+// 定时对账由 RecentlyFinalized 读出(只读消费方终结的行);ReconcilePlayer 由 finalizedRefOfRow 从整行取。
 type FinalizedRef struct {
-	PlayerID  uint64
-	Domain    inboxpb.PlayerInboxDomain
-	Seq       uint64
-	State     inboxpb.PlayerInboxItemState
-	RequestID uint64
+	PlayerID      uint64
+	Domain        inboxpb.PlayerInboxDomain
+	Seq           uint64
+	State         inboxpb.PlayerInboxItemState
+	RequestID     uint64
+	MsgType       inboxpb.PlayerInboxMessageType
+	OutcomeReason uint32
+	FinalizedBy   inboxpb.PlayerInboxFinalizer
+	UpdatedMs     uint64
 }
 
-// RecentlyFinalized 读一个分片里 updated_ms ≥ sinceMs、由消费方终结的终态行,最多 limit 条
-// (走 (shard, state, updated_ms) 索引,设计 §9.3)。
-func (s *Store) RecentlyFinalized(ctx context.Context, shard uint32, sinceMs uint64, limit int) ([]FinalizedRef, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT `player_id`, `domain`, `seq`, `state`, `request_id` FROM "+itemTable+
-		" WHERE `shard` = ? AND `state` IN "+terminalStatesSQL+" AND `updated_ms` >= ? AND `finalized_by` = ? LIMIT ?",
-		shard, sinceMs, uint32(inboxpb.PlayerInboxFinalizer_PLAYER_INBOX_FINALIZER_CONSUMER), limit)
+const finalizedRefColumns = "`player_id`, `domain`, `seq`, `state`, `request_id`, `msg_type`, `outcome_reason`, `finalized_by`, `updated_ms`"
+
+// RecentlyFinalized 读一个分片里 updated_ms ≥ sinceMs、由消费方终结的终态行的一页,最多 limit 条(设计 §9.3)。
+//
+// 按 (updated_ms, player_id, domain, seq) **降序**、键集翻页:before 为 nil 从最新的一行读起,否则只读严格排在
+// before 之后(更旧)的行。后三项即主键,同一分片内全序唯一,翻页不重不漏;终态行的 updated_ms 终结之后不再变。
+// 降序的理由:单片读满上限时被截掉的是最老的那部分 —— 它们在更早的轮次里已经作为「最新」被核对过,
+// 而刚终结的行(新丢的数据)每一轮都最先被核对。
+//
+// 必须有 ORDER BY(评审 M5):没有它,LIMIT 截下的是索引 (shard, state, updated_ms) 上 state 最小的那一段
+// (APPLIED),REJECTED / VOIDED 会被挤掉。ORDER BY 横跨 state IN (…) 的四个值,索引给不出这个序,
+// 数据库要对窗口内该片的终态行排一次序;GM 域量很小(设计 §9.3),可以接受。
+// 游标条件写成展开式而不是行比较 `(a, b, …) < (?, ?, …)`:MySQL 对行比较不做范围优化(同 guild activity_repo)。
+func (s *Store) RecentlyFinalized(ctx context.Context, shard uint32, sinceMs uint64, before *FinalizedRef, limit int) ([]FinalizedRef, error) {
+	query := "SELECT " + finalizedRefColumns + " FROM " + itemTable +
+		" WHERE `shard` = ? AND `state` IN " + terminalStatesSQL + " AND `updated_ms` >= ? AND `finalized_by` = ?"
+	args := []any{shard, sinceMs, uint32(inboxpb.PlayerInboxFinalizer_PLAYER_INBOX_FINALIZER_CONSUMER)}
+	if before != nil {
+		query += " AND (`updated_ms` < ? OR (`updated_ms` = ? AND (`player_id` < ? OR (`player_id` = ? AND" +
+			" (`domain` < ? OR (`domain` = ? AND `seq` < ?))))))"
+		args = append(args, before.UpdatedMs, before.UpdatedMs, before.PlayerID, before.PlayerID,
+			uint32(before.Domain), uint32(before.Domain), before.Seq)
+	}
+	query += " ORDER BY `updated_ms` DESC, `player_id` DESC, `domain` DESC, `seq` DESC LIMIT ?"
+	args = append(args, limit)
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("inbox: scan finalized shard=%d: %w", shard, err)
 	}
@@ -171,11 +176,13 @@ func (s *Store) RecentlyFinalized(ctx context.Context, shard uint32, sinceMs uin
 	var out []FinalizedRef
 	for rows.Next() {
 		var f FinalizedRef
-		var domain, state uint32
-		if err := rows.Scan(&f.PlayerID, &domain, &f.Seq, &state, &f.RequestID); err != nil {
+		var domain, state, msgType, finalizedBy uint32
+		if err := rows.Scan(&f.PlayerID, &domain, &f.Seq, &state, &f.RequestID, &msgType, &f.OutcomeReason,
+			&finalizedBy, &f.UpdatedMs); err != nil {
 			return nil, err
 		}
 		f.Domain, f.State = inboxpb.PlayerInboxDomain(domain), inboxpb.PlayerInboxItemState(state)
+		f.MsgType, f.FinalizedBy = inboxpb.PlayerInboxMessageType(msgType), inboxpb.PlayerInboxFinalizer(finalizedBy)
 		out = append(out, f)
 	}
 	return out, rows.Err()
@@ -198,8 +205,6 @@ func (s *Store) playerItems(ctx context.Context, playerID uint64, domain inboxpb
 	if err != nil {
 		return nil, false, fmt.Errorf("inbox: read player items player=%d: %w", playerID, err)
 	}
-	if len(rows) > playerItemsLimit {
-		return rows[:playerItemsLimit], true, nil
-	}
-	return rows, false, nil
+	rows, truncated = splitPage(rows, playerItemsLimit)
+	return rows, truncated, nil
 }

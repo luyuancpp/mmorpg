@@ -70,6 +70,7 @@ set(SOURCE_FILES
     node/system/node/client_endpoint.cpp
     node/system/grpc_call_deadline.cpp
     node/system/node/node_util.cpp
+    node/system/node/grpc_runtime_probe.cpp
     node/system/registration/registration_manager.cpp
     node/system/discovery/service_discovery_manager.cpp
     time/comp/timer_task_boost_comp.cpp
@@ -88,4 +89,5 @@ set(SOURCE_FILES
 )
 
 add_library(core STATIC ${SOURCE_FILES})
+target_sources(core PRIVATE utils/registry/describe_entity.h)
 

@@ -154,6 +154,14 @@ void NodeConnector::ConnectToTcpNode(const NodeInfo &nodeInfo)
 	{
 		LOG_WARN << "Node reply service is null, skip client registerService. node_type=" << gNode->GetNodeType();
 	}
+	client->setConnectionObserver([nodeType = nodeInfo.node_type()](const muduo::net::TcpConnectionPtr& conn)
+	{
+		if (gNode == nullptr || !gNode->IsServiceStarted() || !conn->connected())
+		{
+			return;
+		}
+		gNode->GetNodeRegistrationManager().TryRegisterNodeSession(nodeType, conn);
+	});
 	client->connect();
 
 	LOG_INFO << "Connecting to TCP node, Uuid: " << nodeInfo.node_uuid()

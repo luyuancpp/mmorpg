@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -428,5 +429,287 @@ func TestEtcYamlConsumerGroupIsFinalShape(t *testing.T) {
 	}
 	if err := k.ValidateConsumerGroup(); err != nil {
 		t.Fatalf("etc/db.yaml must validate: %v", err)
+	}
+}
+
+// ── 重试只交给分区属主 + 入队落盘确认(docs/design/db-retry-owner-routing.md)──────────────────────────
+
+// 环境变量优先、拼错拒启(大小写敏感,不静默回落 shared),来源只用于启动日志。
+func TestResolveRetryRouting(t *testing.T) {
+	for _, tc := range []struct {
+		name, configured, env string
+		wantMode, wantSource  string
+		wantErr               bool
+	}{
+		{name: "都没写", wantMode: RetryRoutingShared, wantSource: "default"},
+		{name: "配置 owner", configured: "owner", wantMode: RetryRoutingOwner, wantSource: "config"},
+		{name: "配置 shared", configured: "shared", wantMode: RetryRoutingShared, wantSource: "config"},
+		{name: "环境变量优先", configured: "shared", env: "owner", wantMode: RetryRoutingOwner, wantSource: "env DB_RETRY_ROUTING"},
+		{name: "环境变量去首尾空白", configured: "owner", env: " shared ", wantMode: RetryRoutingShared, wantSource: "env DB_RETRY_ROUTING"},
+		{name: "环境变量只有空白视同没设", configured: "owner", env: "   ", wantMode: RetryRoutingOwner, wantSource: "config"},
+		{name: "环境变量大小写不对", env: "Owner", wantErr: true},
+		{name: "环境变量拼错", configured: "owner", env: "ownr", wantErr: true},
+		{name: "配置拼错", configured: "bogus", wantErr: true},
+		{name: "配置大小写不对", configured: "Owner", wantErr: true},
+		{name: "配置带空格", configured: " owner", wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			mode, source, err := ResolveRetryRouting(tc.configured, tc.env)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("ResolveRetryRouting(%q, %q) = %q/%q, want an error", tc.configured, tc.env, mode, source)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ResolveRetryRouting(%q, %q): %v", tc.configured, tc.env, err)
+			}
+			if mode != tc.wantMode || source != tc.wantSource {
+				t.Fatalf("ResolveRetryRouting(%q, %q) = %q/%q, want %q/%q", tc.configured, tc.env, mode, source, tc.wantMode, tc.wantSource)
+			}
+		})
+	}
+	if RetryRoutingEnvVar != "DB_RETRY_ROUTING" {
+		t.Fatalf("RetryRoutingEnvVar = %q: the rollout runbook (kubectl set env) is written against DB_RETRY_ROUTING", RetryRoutingEnvVar)
+	}
+}
+
+// redisServerConfigHolder / redisHolder 只含 ServerConfig.RedisClient 一段,标签与 Config 上的相同(同 placementHolder 的做法)。
+type redisServerConfigHolder struct {
+	RedisClient RedisConfig `json:"RedisClient"`
+}
+
+type redisHolder struct {
+	ServerConfig redisServerConfigHolder `json:"ServerConfig"`
+}
+
+const redisClientYaml = "ServerConfig:\n" +
+	"  RedisClient:\n" +
+	"    Hosts: \"127.0.0.1:6379\"\n" +
+	"    DefaultTTLSeconds: 3600\n" +
+	"    Password: \"\"\n" +
+	"    DB: 0\n"
+
+// loadRedisClient 加载一段只有 RedisClient 的 yaml,装进 Config 返回(未 Normalize)。
+func loadRedisClient(t *testing.T, yaml string) Config {
+	t.Helper()
+	var h redisHolder
+	if err := conf.LoadFromYamlBytes([]byte(yaml), &h); err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	c := Config{}
+	c.ServerConfig.RedisClient = h.ServerConfig.RedisClient
+	return c
+}
+
+// 不写三个 WaitAOF 键:Normalize 之后是 1 / 0 / 1500,WaitsForAOF=true(默认就要确认落盘);可重复调用。
+func TestRedisWaitAOFDefaultsWhenMissing(t *testing.T) {
+	c := loadRedisClient(t, redisClientYaml)
+	r := c.ServerConfig.RedisClient
+	if r.WaitAOFNumLocal != nil || r.WaitAOFNumReplicas != nil || r.WaitAOFTimeoutMs != 0 {
+		t.Fatalf("unset keys must load as nil / nil / 0, got %v / %v / %d", r.WaitAOFNumLocal, r.WaitAOFNumReplicas, r.WaitAOFTimeoutMs)
+	}
+	if !r.WaitsForAOF() || r.NumLocal() != DefaultRedisWaitAOFNumLocal || r.NumReplicas() != DefaultRedisWaitAOFNumReplicas {
+		t.Fatal("accessors must read unset keys as the defaults even before Normalize")
+	}
+	// conf.Load 在 Normalize 之前就会调 Validate:没写的键必须放行。
+	if err := c.Validate(); err != nil {
+		t.Fatalf("an unnormalized config without the WaitAOF keys must validate: %v", err)
+	}
+
+	c.Normalize()
+	r = c.ServerConfig.RedisClient
+	if r.WaitAOFNumLocal == nil || r.WaitAOFNumReplicas == nil {
+		t.Fatal("Normalize must fill both WaitAOF pointers")
+	}
+	if *r.WaitAOFNumLocal != 1 || *r.WaitAOFNumReplicas != 0 || r.WaitAOFTimeoutMs != 1500 {
+		t.Fatalf("defaults = %d / %d / %d, want 1 / 0 / 1500", *r.WaitAOFNumLocal, *r.WaitAOFNumReplicas, r.WaitAOFTimeoutMs)
+	}
+	if DefaultRedisWaitAOFNumLocal != 1 || DefaultRedisWaitAOFNumReplicas != 0 || DefaultRedisWaitAOFTimeoutMs != 1500 {
+		t.Fatal("WaitAOF defaults changed: the design doc and the alerts assume 1 / 0 / 1500")
+	}
+	if !r.WaitsForAOF() {
+		t.Fatal("the default must wait for AOF")
+	}
+	if err := c.Validate(); err != nil {
+		t.Fatalf("normalized defaults must validate: %v", err)
+	}
+
+	before := *r.WaitAOFNumLocal
+	c.Normalize()
+	if *c.ServerConfig.RedisClient.WaitAOFNumLocal != before || c.ServerConfig.RedisClient.WaitAOFTimeoutMs != 1500 {
+		t.Fatal("Normalize must be idempotent for the WaitAOF keys")
+	}
+}
+
+// 两项显式写 0 = 关闭 WAITAOF(只给没开 AOF 的环境):Normalize 不得把 0 当成没写,Validate 放行。
+func TestRedisWaitAOFExplicitZeroDisables(t *testing.T) {
+	c := loadRedisClient(t, redisClientYaml+
+		"    WaitAOFNumLocal: 0\n"+
+		"    WaitAOFNumReplicas: 0\n")
+	r := c.ServerConfig.RedisClient
+	if r.WaitAOFNumLocal == nil || r.WaitAOFNumReplicas == nil {
+		t.Fatal("an explicit 0 must load as a non-nil pointer (otherwise it cannot be told apart from unset)")
+	}
+	c.Normalize()
+	r = c.ServerConfig.RedisClient
+	if *r.WaitAOFNumLocal != 0 || *r.WaitAOFNumReplicas != 0 {
+		t.Fatalf("explicit zeros must survive Normalize, got %d / %d", *r.WaitAOFNumLocal, *r.WaitAOFNumReplicas)
+	}
+	if r.WaitsForAOF() {
+		t.Fatal("WaitAOFNumLocal=0 and WaitAOFNumReplicas=0 must disable WAITAOF")
+	}
+	if r.WaitAOFTimeoutMs != DefaultRedisWaitAOFTimeoutMs {
+		t.Fatalf("an unset timeout still takes the default, got %d", r.WaitAOFTimeoutMs)
+	}
+	if err := c.Validate(); err != nil {
+		t.Fatalf("disabling WAITAOF must validate: %v", err)
+	}
+
+	// 只关一项不算关闭:NumReplicas=1 仍要等副本。
+	half := loadRedisClient(t, redisClientYaml+
+		"    WaitAOFNumLocal: 0\n"+
+		"    WaitAOFNumReplicas: 1\n")
+	half.Normalize()
+	if !half.ServerConfig.RedisClient.WaitsForAOF() {
+		t.Fatal("NumLocal=0 with NumReplicas=1 must still wait for AOF")
+	}
+}
+
+func intPtr(v int) *int { return &v }
+
+// 每一项写错都拒启,错误文本点名键;边界值放行。
+func TestConfigValidateRejects(t *testing.T) {
+	base := func() Config {
+		c := Config{}
+		c.Normalize()
+		return c
+	}
+	for _, tc := range []struct {
+		name    string
+		mutate  func(c *Config)
+		wantErr string // 空 = 必须通过
+	}{
+		{name: "默认值", mutate: func(c *Config) {}},
+		{name: "RetryRouting owner", mutate: func(c *Config) { c.ServerConfig.Kafka.RetryRouting = RetryRoutingOwner }},
+		{name: "RetryRouting 大小写不对", mutate: func(c *Config) { c.ServerConfig.Kafka.RetryRouting = "Owner" },
+			wantErr: "ServerConfig.Kafka.RetryRouting"},
+		{name: "RetryRouting 拼错", mutate: func(c *Config) { c.ServerConfig.Kafka.RetryRouting = "own" },
+			wantErr: "ServerConfig.Kafka.RetryRouting"},
+		{name: "NumLocal=2", mutate: func(c *Config) { c.ServerConfig.RedisClient.WaitAOFNumLocal = intPtr(2) },
+			wantErr: "WaitAOFNumLocal"},
+		{name: "NumLocal=-1", mutate: func(c *Config) { c.ServerConfig.RedisClient.WaitAOFNumLocal = intPtr(-1) },
+			wantErr: "WaitAOFNumLocal"},
+		{name: "NumReplicas=-1", mutate: func(c *Config) { c.ServerConfig.RedisClient.WaitAOFNumReplicas = intPtr(-1) },
+			wantErr: "WaitAOFNumReplicas"},
+		{name: "NumReplicas=17", mutate: func(c *Config) { c.ServerConfig.RedisClient.WaitAOFNumReplicas = intPtr(17) },
+			wantErr: "WaitAOFNumReplicas"},
+		{name: "NumReplicas=16 边界", mutate: func(c *Config) { c.ServerConfig.RedisClient.WaitAOFNumReplicas = intPtr(16) }},
+		{name: "TimeoutMs=-1", mutate: func(c *Config) { c.ServerConfig.RedisClient.WaitAOFTimeoutMs = -1 },
+			wantErr: "WaitAOFTimeoutMs"},
+		{name: "TimeoutMs=2001", mutate: func(c *Config) { c.ServerConfig.RedisClient.WaitAOFTimeoutMs = 2001 },
+			wantErr: "WaitAOFTimeoutMs"},
+		{name: "TimeoutMs=2000 边界", mutate: func(c *Config) { c.ServerConfig.RedisClient.WaitAOFTimeoutMs = 2000 }},
+		{name: "TimeoutMs=1 边界", mutate: func(c *Config) { c.ServerConfig.RedisClient.WaitAOFTimeoutMs = 1 }},
+		{name: "Fencing 缺省", mutate: func(c *Config) { c.ServerConfig.Fencing.Mode = "" }},
+		{name: "Fencing legacy", mutate: func(c *Config) { c.ServerConfig.Fencing.Mode = FencingModeLegacy }},
+		{name: "Fencing dual", mutate: func(c *Config) { c.ServerConfig.Fencing.Mode = FencingModeDual }},
+		{name: "Fencing 大小写不对", mutate: func(c *Config) { c.ServerConfig.Fencing.Mode = "Dual" },
+			wantErr: "ServerConfig.Fencing.Mode"},
+		{name: "Fencing 拼错", mutate: func(c *Config) { c.ServerConfig.Fencing.Mode = "sql" },
+			wantErr: "ServerConfig.Fencing.Mode"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := base()
+			tc.mutate(&c)
+			err := c.Validate()
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("must pass, got %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("err = %v, want it to name %q", err, tc.wantErr)
+			}
+		})
+	}
+	if MaxRedisWaitAOFNumReplicas != 16 || MaxRedisWaitAOFTimeoutMs != 2000 {
+		t.Fatal("WaitAOF upper bounds changed: the design doc states [0,16] and [1,2000]")
+	}
+}
+
+// 仓库自带的 etc/db.yaml:两个新键都必须显式写出(K8s 的 ConfigMap 用 Get-AuthoritativeScalar 镜像它们,缺键即
+// 生成失败),取值合法且不得悄悄关掉 WAITAOF。不断言取值等于 shared 或默认常量:rollout 第 4 步把它改成 owner、
+// redis-ha 接入时把 NumReplicas 改成 1,都不应该让这条测试变红(ConfigMap 与 db.yaml 一致由契约测试守住)。
+func TestEtcYamlRetryKeysValid(t *testing.T) {
+	var c Config
+	if err := conf.Load("../../etc/db.yaml", &c); err != nil {
+		t.Fatalf("load etc/db.yaml: %v", err)
+	}
+	// Normalize 之前:键必须写出来(键名写错会静默保持零值 / nil)。
+	routing := c.ServerConfig.Kafka.RetryRouting
+	if routing == "" {
+		t.Fatal("etc/db.yaml must spell out ServerConfig.Kafka.RetryRouting")
+	}
+	if _, source, err := ResolveRetryRouting(routing, ""); err != nil || source != "config" {
+		t.Fatalf("etc/db.yaml RetryRouting=%q must resolve from config, got source=%q err=%v", routing, source, err)
+	}
+	r := c.ServerConfig.RedisClient
+	if r.WaitAOFNumLocal == nil || r.WaitAOFNumReplicas == nil || r.WaitAOFTimeoutMs <= 0 {
+		t.Fatalf("etc/db.yaml must spell out WaitAOFNumLocal / WaitAOFNumReplicas / WaitAOFTimeoutMs, got %v / %v / %d",
+			r.WaitAOFNumLocal, r.WaitAOFNumReplicas, r.WaitAOFTimeoutMs)
+	}
+
+	c.Normalize()
+	if err := c.Validate(); err != nil {
+		t.Fatalf("etc/db.yaml must validate: %v", err)
+	}
+	if !c.ServerConfig.RedisClient.WaitsForAOF() {
+		t.Fatal("etc/db.yaml must not disable WAITAOF (only environments without AOF write both keys as 0)")
+	}
+}
+
+// 回滚兼容(修订稿 rulings 第 8 条):回滚到 S1 之前的镜像时,旧二进制要读带新键(RetryRouting、WaitAOF*)的 ConfigMap。
+// go-zero v1.10.0 忽略未知键(core/mapping 只按结构体字段取值),所以能起;这条用例在顶层、Kafka 段、RedisClient 段
+// 各注入一个结构体里没有的键,加载必须成功。以后升级 go-zero 若改成严格模式,这里先红,回滚规程就要改成
+// 「先生成不含新键的 ConfigMap 再回滚镜像」。
+func TestConfigLoaderIgnoresUnknownKeys(t *testing.T) {
+	raw, err := os.ReadFile("../../etc/db.yaml")
+	if err != nil {
+		t.Fatalf("read etc/db.yaml: %v", err)
+	}
+	text := strings.ReplaceAll(string(raw), "\r\n", "\n")
+	for _, inject := range []struct{ anchor, replacement string }{
+		{"\nServerConfig:\n", "\nFutureTopLevelKeyForRollbackTest: 1\nServerConfig:\n"},
+		{"\n  Kafka:\n", "\n  Kafka:\n    FutureKafkaKeyForRollbackTest: \"x\"\n"},
+		{"\n  RedisClient:\n", "\n  RedisClient:\n    FutureRedisKeyForRollbackTest: 7\n"},
+	} {
+		if strings.Count(text, inject.anchor) != 1 {
+			t.Fatalf("etc/db.yaml must contain the anchor %q exactly once (the injection would silently miss otherwise)", inject.anchor)
+		}
+		text = strings.Replace(text, inject.anchor, inject.replacement, 1)
+	}
+	for _, key := range []string{"FutureTopLevelKeyForRollbackTest", "FutureKafkaKeyForRollbackTest", "FutureRedisKeyForRollbackTest"} {
+		if !strings.Contains(text, key) {
+			t.Fatalf("injection of %s failed", key)
+		}
+	}
+
+	var c Config
+	if err := conf.LoadFromYamlBytes([]byte(text), &c); err != nil {
+		t.Fatalf("unknown keys must be ignored by the config loader (rollback to a pre-S1 image depends on it): %v", err)
+	}
+	if c.ServerConfig.Kafka.PartitionCnt <= 0 || c.ServerConfig.RedisClient.Hosts == "" {
+		t.Fatalf("the rest of etc/db.yaml must still load, got PartitionCnt=%d RedisClient.Hosts=%q",
+			c.ServerConfig.Kafka.PartitionCnt, c.ServerConfig.RedisClient.Hosts)
+	}
+
+	// 旧二进制的 KafkaConfig 没有 RetryRouting:用交接闸之前的结构(preHandoffKafkaConfig)代表它,读带新键的 Kafka 段。
+	var old preHandoffHolder
+	if err := conf.LoadFromYamlBytes([]byte(finalZoneShapedKafkaYaml+
+		"    RetryRouting: owner\n"+
+		"    FutureKafkaKeyForRollbackTest: \"x\"\n"), &old); err != nil {
+		t.Fatalf("a struct without RetryRouting must load a Kafka block that has it: %v", err)
 	}
 }

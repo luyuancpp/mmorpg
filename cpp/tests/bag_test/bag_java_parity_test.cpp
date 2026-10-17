@@ -121,7 +121,7 @@ protected:
         {
             tlsEcs.actorRegistry.destroy(player);
         }
-        EXPECT_TRUE(ArmParitySegment(900000, 1000000));
+        EXPECT_TRUE(ArmParitySegment(1, uint64_t{1} << 54));
     }
 
     void FillEvictingBag(Bag &bag)
@@ -134,6 +134,38 @@ protected:
     entt::entity player{entt::null};
     uint32_t maxStack{0};
 };
+
+TEST(BagLayoutCloneTest, FlatLayoutSubclassWithoutCloneOverrideDiesInDebug)
+{
+    class ForgetfulLayout final : public FlatLayout
+    {
+    public:
+        using FlatLayout::FlatLayout;
+        bool HasSlotSemantics() const override { return true; }
+    };
+    EXPECT_DEBUG_DEATH({ auto candidate = ForgetfulLayout(3).Clone(); (void)candidate; }, "Clone");
+}
+
+TEST_F(BagJavaParityTest, BagLevelRestoreStampsLegacyZeroAfterLaterExistingStamp)
+{
+    Bag bag;
+    bag.SetProfile(BagProfile::Flat(3));
+    ItemComp legacy;
+    legacy.set_item_id(kOldStack);
+    legacy.set_config_id(10);
+    legacy.set_size(1);
+    ItemComp stamped = legacy;
+    stamped.set_item_id(kOldOther);
+    stamped.set_acquire_seq(70);
+    bag.RestoreItems({{legacy, 0}, {stamped, 1}});
+    ASSERT_NE(nullptr, bag.GetItemCompByGuid(kOldStack));
+    ASSERT_NE(nullptr, bag.GetItemCompByGuid(kOldOther));
+    EXPECT_EQ(71u, bag.GetItemCompByGuid(kOldStack)->acquire_seq());
+    EXPECT_EQ(70u, bag.GetItemCompByGuid(kOldOther)->acquire_seq());
+    ASSERT_EQ(kSuccess, bag.AddItem(ParityGrant(3, 1)));
+    ASSERT_NE(nullptr, bag.GetItemCompByPos(2));
+    EXPECT_EQ(72u, bag.GetItemCompByPos(2)->acquire_seq());
+}
 
 TEST_F(BagJavaParityTest, PostEvictionMintFailurePreservesOldItemsLayoutAndReceipts)
 {
@@ -159,12 +191,9 @@ TEST_F(BagJavaParityTest, ServiceMintFailureReportsUnmutatedAndKeepsBothOldInsta
     FillEvictingBag(bag);
     const auto before = CaptureParityBag(bag);
     ASSERT_TRUE(ArmParitySegment(98300000, 98300001));
-    bool mutated = true;
-
     EXPECT_EQ(kBagAddItemInvalidParam,
               BagService::AddItems(entt::null, bag, ItemCountMap{{10, maxStack + 1}},
-                                   TX_SYSTEM_GRANT, 0, {}, &mutated));
-    EXPECT_FALSE(mutated);
+                                   TX_SYSTEM_GRANT, 0, {}));
     EXPECT_EQ(before, CaptureParityBag(bag));
     EXPECT_TRUE(bag.IsLayerConsistent());
 }

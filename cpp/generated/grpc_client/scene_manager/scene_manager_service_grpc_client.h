@@ -1,41 +1,20 @@
 #pragma once
 #include <chrono>
 #include <functional>
-#include <memory>
-#include <deque>
-#include "core/network/grpc_client_runtime.h"
+#include <string>
+#include <string_view>
+#include <vector>
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
-#include "proto/scene_manager/scene_manager_service.grpc.pb.h"
 
 #include "rpc/service_metadata/scene_manager_service_service_metadata.h"
 
-using grpc::ClientContext;
-using grpc::Status;
-using grpc::ClientAsyncResponseReader;
-
 namespace scene_manager {
-using SceneManagerStubPtr = std::unique_ptr<SceneManager::Stub>;
 #pragma region SceneManagerCreateScene
-
-struct AsyncSceneManagerCreateSceneGrpcClient {
-    uint32_t messageId{ SceneManagerCreateSceneMessageId };
-    ClientContext context;
-    Status status;
-    ::scene_manager::CreateSceneResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::scene_manager::CreateSceneResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::scene_manager::CreateSceneRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncSceneManagerCreateSceneHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::scene_manager::CreateSceneResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kSceneManagerCreateSceneGrpcPath = "/scene_manager.SceneManager/CreateScene";
 using AsyncSceneManagerCreateSceneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::scene_manager::CreateSceneResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::scene_manager::CreateSceneResponse&)>;
 extern AsyncSceneManagerCreateSceneHandlerFunctionType AsyncSceneManagerCreateSceneHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -51,25 +30,10 @@ void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEnti
 void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request, GrpcDone<::scene_manager::CreateSceneResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region SceneManagerDestroyScene
-
-struct AsyncSceneManagerDestroySceneGrpcClient {
-    uint32_t messageId{ SceneManagerDestroySceneMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::scene_manager::DestroySceneRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncSceneManagerDestroySceneHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kSceneManagerDestroySceneGrpcPath = "/scene_manager.SceneManager/DestroyScene";
 using AsyncSceneManagerDestroySceneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncSceneManagerDestroySceneHandlerFunctionType AsyncSceneManagerDestroySceneHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -85,25 +49,10 @@ void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEnt
 void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region SceneManagerEnterScene
-
-struct AsyncSceneManagerEnterSceneGrpcClient {
-    uint32_t messageId{ SceneManagerEnterSceneMessageId };
-    ClientContext context;
-    Status status;
-    ::scene_manager::EnterSceneResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::scene_manager::EnterSceneResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::scene_manager::EnterSceneRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncSceneManagerEnterSceneHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::scene_manager::EnterSceneResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kSceneManagerEnterSceneGrpcPath = "/scene_manager.SceneManager/EnterScene";
 using AsyncSceneManagerEnterSceneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::scene_manager::EnterSceneResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::scene_manager::EnterSceneResponse&)>;
 extern AsyncSceneManagerEnterSceneHandlerFunctionType AsyncSceneManagerEnterSceneHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -119,25 +68,10 @@ void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntit
 void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request, GrpcDone<::scene_manager::EnterSceneResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region SceneManagerLeaveScene
-
-struct AsyncSceneManagerLeaveSceneGrpcClient {
-    uint32_t messageId{ SceneManagerLeaveSceneMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::scene_manager::LeaveSceneRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncSceneManagerLeaveSceneHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kSceneManagerLeaveSceneGrpcPath = "/scene_manager.SceneManager/LeaveScene";
 using AsyncSceneManagerLeaveSceneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncSceneManagerLeaveSceneHandlerFunctionType AsyncSceneManagerLeaveSceneHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -152,13 +86,11 @@ void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntit
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
-void SetSceneManagerServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetSceneManagerServiceHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetSceneManagerServiceFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 void SetSceneManagerServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
+// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。
 void SetSceneManagerServiceCallDeadline(std::chrono::milliseconds deadline);
-void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
-void InitSceneManagerServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace scene_manager

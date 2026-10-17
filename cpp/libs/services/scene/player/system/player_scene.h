@@ -39,15 +39,19 @@ public:
 
 	// 只读解析业务场景号;不存在时返回 null,不把业务号当成本地句柄。
 	[[nodiscard]] static SceneEntity FindSceneById(uint64_t sceneId);
-	// 纯校验,不改会话、归属、AOI 或场景绑定。creators 为空表示公开场景;
-	// 非空时仅按玩家 GUID 的键判断权限,map 的 bool 值不承担权限语义。
+	// 纯校验:场景须存在于本节点、身份非零;不改会话、归属、AOI 或场景绑定。
+	// creators 只用于镜像自动进场回显,不承担准入语义(两版同基线,见 PARITY B5)。
 	// GUID 重载供尚未创建实体的加载入口预检,实体重载还要求真实有效且非零的玩家身份。
 	[[nodiscard]] static uint32_t CheckEnterScene(Guid playerId, SceneEntity scene);
 	[[nodiscard]] static uint32_t CheckEnterScene(entt::entity player, SceneEntity scene);
 
-	// true 表示已绑定目标场景(含幂等命中);通知中销毁/重绑或输入无效返回 false。
+	// true 表示已绑定目标场景(含幂等命中);输入无效或场景不存在返回 false。
 	// 调用方只有成功后才可写登录态、触发后续落地逻辑。
 	[[nodiscard]] static bool HandleEnterScene(entt::entity player, SceneEntity scene);
+
+	// AOI 先用仍在的 Hex / SceneEntityComp 清理格子和观察者,再成对摘除场景绑定与 Hex。
+	// 否则重连复用实体、落点 Hex 未变时不会重新入格;无效实体或不在场景里时 no-op。
+	static void LeaveCurrentScene(entt::entity player);
 
 	// RequestEnterMirrorScene asks SceneManager to create a mirror of the
 	// player's current scene and then route the player into it. The

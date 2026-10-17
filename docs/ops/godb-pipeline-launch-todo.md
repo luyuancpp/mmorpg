@@ -68,7 +68,23 @@ go test ./internal/storeerr/... ./internal/logic/pkg/proto_sql/... ./internal/ka
 | 探活不经过连接池 | `pingStore` 有连接器时新建连接 Ping 后关闭；池里只有死连接时不误判；池满时不误判 |
 | 冷却指标收集器 | `NewStoreCooldownCollector` 按 source 输出三类 pool 的序列 |
 
-状态：未写。
+状态：已写（2026-10-15，随 `de4960bee` 入库；之后 R1 / R2 对其中几个文件的小改在工作区、未提交），**未编译、未运行，待 Codex**。命令见 §4.1。文件与用例（按上表顺序）：
+
+| # | 文件 | 用例 |
+|---|---|---|
+| 1 | `go/db/internal/kafka/l04_deferral_test.go` | `TestRetryBudgetExempt_StoreTaggedErrors` |
+| 2 | 同上 | `TestDeferReason_EveryReason` |
+| 3 | 同上 | `TestConsumeRetryQueue_ClaimsAtMostReadyLengthPerTick`、`TestConsumeRetryQueue_TwoConsumersEachCapped` |
+| 4 | 同上 | `TestConsumeRetryQueue_SkipsTickWhileHomeStoreCoolingDown` |
+| 5 | 同上 | `TestConsumeOneRetryTask_ExhaustedReadIsDroppedNotDeadLettered` |
+| 6 | 同上 | `TestStoreDeferral_RetryWriteKeepsBudgetAndPayload` |
+| 7 | 同上 | `TestDeferAndDeadLetterCounters` |
+| 8 | `go/db/internal/kafka/run_db_op_test.go` | `TestRunDBOp_ReportsOnlySQLOutcome`、`TestRunDBOp_CanceledSQLIsNotReported`（SQL 被本进程取消时什么都不报） |
+| 9 | `go/db/internal/logic/pkg/proto_sql/service_pool_test.go` | `TestNewServiceMysqlConfig_SetsTimeoutsAndSessionWaits`、`TestNewServiceMysqlConfig_NegativeDisables`、`TestNewMysqlConfig_HasNoServiceTimeouts` |
+| 10 | 同上 | `TestPingStore_UsesConnectorNotPool`、`TestPingStore_FullPoolDoesNotBlock`、`TestPingStore_DeadPoolConnsDoNotMatter`、`TestPingStore_ConnectErrorIsConnLost` |
+| 11 | `go/db/internal/metrics/metrics_test.go` | `TestStoreCooldownCollector_EmitsAllPools` |
+
+第 8 条的口径以 `key_ordered_consumer.go` 的 `runDBOp` 注释「只把 SQL 这一步的结果报给注册表（L-04 §3.4）」为准：复核、核锁、缓存回写失败都不调 `ReportConnLost`。改 `config.AppConfig` 的用例在 `t.Cleanup` 里还原、不并行。
 
 ### 2.4 故障注入
 
@@ -94,6 +110,7 @@ go test ./internal/storeerr/... ./internal/logic/pkg/proto_sql/... ./internal/ka
 | 2.5.5 | `DbTaskRetryQueueGrowing` 的阈值（现为 1000）按压测数据定 | 待 R20 |
 | 2.5.6 | 本批提交后在 Java 仓库 `PARITY.md` 登记 | 2026-10-15 Claude 在 Java 仓库 `PARITY.md` 文件尾追加两行（未提交）：「存储不可用时存盘任务延后」为不适用（Java 不经 Kafka 落库，与「db 多实例」行同理）；「业务库连接超时与会话锁等待」为 Java 待做（待核对）——Java 的 game-scene / game-login 设了 `socketTimeout=10000` 但没设会话锁等待，MySQL 缺省值都比 10 s 长 |
 | 2.5.7 | TiDB 阶段：确认 TiDB 接受会话变量 `lock_wait_timeout`，不接受时 `SessionLockWaitSeconds` 写 -1 | 待 TiDB 阶段 |
+| 2.5.8 | `kubectl apply -n observability -f deploy/k8s/db-task-partition-alerts.yaml`（仓库不部署 Prometheus，手工 apply）：写规则 `DbTaskWritePartitionContractBroken` 在 go/db 观测上线后即可 apply；读规则 `DbTaskReadPartitionMismatch` 先注释掉，等 login 全部滚到按契约分区的版本后再放开、重 apply 同一文件（滚动期间旧版 login 按 FNV 分区，必然误报）；回滚 `kubectl delete -n observability -f` 同一文件。登记见 `deploy/k8s/README.md`「go/db 存盘管线告警」 | 待做 |
 
 ### 2.6 部署顺序与红线
 
@@ -114,3 +131,269 @@ go test ./internal/storeerr/... ./internal/logic/pkg/proto_sql/... ./internal/ka
 | ④B2 换代 topic（在线加分区）| 负责人 2026-10-13 定为要做，排在条件写之后 |
 | WAITAOF（go/db 的重试与死信入队）、scene 发 DBTask 失败后的脏快照、Lua `tonumber`（go/db 一处）、db_task 的 retention.bytes 与 PVC | 负责人 2026-10-13 定为归本交接；未授权开工 |
 | L-04 第 2 批：死信查看与重新入队工具 | 未授权 |
+
+> 2026-10-16 现状（上表是 2026-10-13 的记录，按本文件「不删行」的约定不改）：①、③、Lua `tonumber`、脏快照、retention.bytes 与 PVC 都已落码（2026-10-15 / 16，**未编译、未测试**），验证与部署项分别见下面 §5、§6、§4、§7、§8；④ 与 WAITAOF 的 go/db 部分也已落码（R2），其验证项随 ④ 的设计文档另批登记，本文件本批不写。条件写仍未开工（等 1.3）。
+
+---
+
+## 4. G1 治标、停机顺序与测量打点（S4）
+
+代码已落：go/db 部分随 `de4960bee` 入库（之后 R1 语义复核的补修与 R2 对同批文件的改动在工作区、未提交）；脚本随 `a7c510d65` / `0f6690604` 入库；`deploy/k8s/manifests/go-svc/db.yaml` 的 `minReadySeconds: 20` 与 `deploy/k8s/db-task-retry-alerts.yaml` 的 `db-task.ordering-lease` 组在工作区、未提交。全部**未编译、未测试，待 Codex 验证**。
+规格：[S4 规格](../handoff/godb-pipeline-impl-20261015/S4-g1-and-small-items-spec.md)；设计与三句语义（不是栅栏 / 只有失租才取消写 SQL / 在途取消后锁留给 TTL）、A3 相对规格的三处偏离见[瓶颈文档](../design/db-task-pipeline-bottlenecks.md) §7「S4 落码」，停机顺序见 §4.4「G6 停机顺序」。§3 表里 Lua `tonumber` 一项即本节的 `luaMarkAppliedEpoch` 十进制串比较。
+
+### 4.1 编译与单测
+
+做法同 §2（临时 worktree：被测建在含 S4 与 R1 补修的提交上，基线建在 `de4960bee` 的父提交上；环境变量照任务单 §1）。工作目录 worktree 里的 `go/db`：
+
+```sh
+gofmt -l internal/kafka internal/metrics internal/logic/pkg/proto_sql internal/migrate .
+go vet ./...
+go build ./...
+go test ./internal/kafka/... ./internal/metrics/... ./internal/logic/pkg/proto_sql/... ./internal/migrate/... -count=1 -v
+# race 需要 CGO 与 gcc;Windows 上没有就到 Linux / WSL 跑,并写明平台
+go test -race ./internal/kafka/ -run 'TestOrderingLease|TestConsumeClaim_Shutdown|TestStop_|TestRunDBOp|TestRetryConsumer_StopsClaiming|TestClaimAcker_Untrack' -count=1
+```
+
+重点用例（都必须出现在 `-v` 输出里并 PASS）：
+- 租约：`ordering_lease_test.go` 的 `TestOrderingLease_*`（续租成功 / 退避恢复 / 用尽失租并取消 SQL / 截止时间 / 易主立即失租 / 停 worker 不取消 SQL / 过截止不发 SQL / abandoned 不删锁 / 释放三种结果 / 释放取消 SQL ctx / 已取消 ctx 的核锁不算失租）、`TestLeaseMarginCoversLockWaits`、`TestOrderingLeaseTiming_Backoff`。
+- runDBOp：`run_db_op_test.go` 的 `TestRunDBOp_*` 与 `TestHandleTask_LeaseLostAfterSQLDoesNotPublishCache`（在改动前的代码上应为红）。
+- 停机：`consumer_shutdown_test.go` 的 `TestConsumeClaim_Shutdown*`、`TestConsumeClaim_RebalanceStillCancelsClaim`、`TestClaimAcker_Untrack*`、`TestStop_*`、`TestRetryConsumer_StopsClaimingAfterPullStop`。
+- 打点：`instrumentation_test.go`（`TestRedisSteps_*`、`TestOrderingGuardCounter_Outcomes`、`TestSubShardBatchSizeObserved`、`TestStages_QueueWaitTaskTotalKafkaE2E`）；`metrics_test.go` 的 `TestRedisStepNamesPinned`、`TestRedisStepNamesMatchStressSummarize`、`TestRedisPoolCollector_*`、`TestPipelineCountersPrecreated`。
+- Lua：`applied_epoch_lua_test.go` 的 `TestMarkAppliedEpoch_*`（存量 2^53 写入 2^53+1 必须推进，旧脚本为红）。
+- §2.3 的 11 条见 §2.3 表。
+
+仓库根目录（PowerShell 7）：
+
+```powershell
+pwsh -NoProfile -File tools/scripts/tests/go_services_stop.tests.ps1
+pwsh -NoProfile -File tools/scripts/tests/go_services_ports.tests.ps1
+pwsh -NoProfile -File tools/scripts/test_stress_summarize.ps1
+pwsh -NoProfile -NonInteractive -File tools/scripts/tests/k8s_deploy_contract.tests.ps1
+```
+
+通过标准：gofmt 无输出，vet 与 build 退出码 0；新用例全部 PASS、SKIP 为 0；既有用例的失败集合是基线失败集合的子集。`go_services_stop.tests.ps1` 退出码 0、没有失败行（B4 报告共 13 例）；`test_stress_summarize.ps1` 末行 PASS，并有 'DB write path'、'DB Redis steps'、'DB retry routing' 三段的 t20m_db 与 t18m_db 行；`k8s_deploy_contract.tests.ps1` 含 `minReadySeconds: 20` 的断言（「db 是多副本形态」用例）。失败时保留第一条错误前后 20 行与失败用例的 `-v` 全文；红了就停下归因，不连续重试。
+
+### 4.2 故障注入
+
+只在本地 compose 或 kind 做，由 Codex 执行。保留：go/db 日志、注入前中后三个时刻的 `/metrics`（`:9160`）、重试三个列表的 LLEN。
+
+| # | 注入 | 通过标准 |
+|---|---|---|
+| 4.2.1 | 优雅停：`go/db/cmd/data_stress` 持续写入时执行 `pwsh -File tools/scripts/go_services.ps1 -Command stop -Services db` | 输出 `[stop]  db (PID n, exited in Xs)`，没有 `[kill]`；`run\logs\go_services\db.stdout.log` 依次出现 "Shutting down gracefully..."、"claim drained for shutdown"、"db consumer stopped: … took=…"（took < 15s）；本实例的 `kafka:retry:processing:{topic}:{实例名}` 为空；重启后 lag 正常排空、死信不增长。再验一次 `-ForceStop`：输出 `[kill]  db (PID n): -ForceStop; force-killed process tree`，go.exe 及其子进程都已退出。若输出 "console interrupt not deliverable"，记下辅助进程退出码（2 = AttachConsole 失败，3 = GenerateConsoleCtrlEvent 失败）回报，不要重试 |
+| 4.2.2 | 续租失败：在 compose 的 Redis 上执行 `CLIENT PAUSE 70000 WRITE`（写流量在跑时） | `db_ordering_lease_lost_total{reason=~"renew_deadline\|renew_exhausted"}` 增长；在途写的排序锁键 `distributed:lock:kafka:ordering:{topic}:{key}:{msgType}` 留到 TTL（SQL 在途时计 `db_ordering_lock_release_total{outcome="skipped_sql_abandoned"}`）；恢复后抽样玩家的 MySQL 行等于最后一次写入 |
+| 4.2.3 | 锁被接管：另一会话 `LOCK TABLES player_database WRITE` 让 SQL 挂起，同时手工把测试玩家的排序锁键改写成别的 token | `db_ordering_lease_lost_total{reason="owner_changed"}` +1、`db_ordering_lock_release_total{outcome="skipped_sql_abandoned"}` +1；`UNLOCK TABLES` 后该行最终等于最新版本；做完撤掉临时锁 |
+| 4.2.4 | 回滚兼容：新旧二进制混跑 | 旧实例遇到新实例留到 TTL 的锁只报 `errOrderingLockBusy`（不耗重试预算），不进死信 |
+| 4.2.5 | （补充，R1 修法的端到端核对，规格外）MySQL 卡住时停机：`docker pause` MySQL、让 worker 通道积压，再执行 4.2.1 的 stop | 进程在 `StopTimeoutSeconds`（db 35s）内退出或按超时强杀，但不挂到更久；② 超时时日志有 "consumer loop did not exit within … canceling workers before leaving the group"；`unpause` 并重启后 lag 排空、死信不增长，抽样玩家的 MySQL 行等于最后一次写入 |
+
+状态：未做。
+
+### 4.3 上线前置
+
+| # | 事项 | 状态 |
+|---|---|---|
+| 4.3.1 | `kubectl apply -n observability -f deploy/k8s/db-task-retry-alerts.yaml`（与 2.5.2 是同一个文件，现含 `db-task.ordering-lease` 组的 `DbOrderingLockReleasedNotOwned`（critical）与 `DbOrderingLeaseLost`（warning，reason 取 `owner_changed` / `renew_exhausted` / `renew_deadline` / `verify_error`），以及 ③ 的 `db-task.consumer-group-handoff` 组）；负责人执行 | 待做 |
+| 4.3.2 | `minReadySeconds: 20` 属于 Deployment spec，改它不触发 Pod 重建，在下一次 db 滚动时生效；部署后核对 `kubectl -n <zone ns> get deploy db -o jsonpath={.spec.minReadySeconds}` 为 20 | 待做 |
+| 4.3.3 | 线上发布按瓶颈文档 §4.5：低峰，一次一个 zone、每个 zone 一次一个 Pod；每换一个 Pod 核对 lag、重试队列、processing、死信，以及 `db_ordering_lock_release_total{outcome="not_owner"}` 与 `db_ordering_lease_lost_total` 不增长；看 Stop 日志的 took；没有 "shutdown drain timed out"（有积压时允许出现）。键名与值格式都没变（applied_epoch 仍是规范十进制），新旧混跑安全，回滚直接换回旧镜像 | 待做 |
+| 4.3.4 | 对比口径：写任务的 `op_handler` 多了一次核锁往返；核锁失败由原来记 ok 改记 `db_task_result_total{result="error"}`；R20 作为 DB 段的新基线（含第 0 批的子 shard 打散），与 R19 只比 task_total、排空时长、Redis commandstats | 待 R20 |
+| 4.3.5 | 把下面三条发给条件写会话的接手方（交接文档 §4 的约定）：核锁已挪进 `runDBOp`，Redis 顺序变为 SQL → 复核 MGET → 核锁 → 缓存 SET → 游标 SET → epoch → LREM → ack → 释放；Stop 为六步；比较 uint64 时复用 `luaDecimalGreaterFn` | 待做 |
+
+### 4.4 状态
+
+- 代码已落，未编译、未测试；4.1–4.3 全部待做。
+- 剩余风险（不在本批修）：② 超时若源于 sarama 自身慢（提交、心跳、LeaveGroup 的网络调用），只受它的 Net 超时与 45s 宽限兜底；`routeToSubShard` 在子 shard 数 ≤1 时阻塞发送没有 `w.ctx` 出口（生产 `SubShardCount: 8` 碰不到，建议单独立项）；本地截止时间依赖进程单调时钟，虚拟机暂停恢复后 SQL 可能抢在看门狗之前发出；margin 30s 要求两个会话锁等待之和 ≤ 25s，TiDB 阶段若按 2.5.7 把 `SessionLockWaitSeconds` 写成 -1，启动只打 ERROR；go-redis 默认 `MaxRetries=3` 时单条 SETNX 重发可能把自己刚设上的锁判成被占（既有问题）；Ctrl+C 辅助进程方案未在本机实测（失败退回强杀）；`Invoke-Stop` 强杀前不核对进程身份，PID 被复用时 `taskkill /T` 的波及面比旧的单 PID 强杀大。
+
+---
+
+## 5. ① 读写分区对齐（S3）
+
+代码已落：Go 与 C++ 随 `a7c510d65` / `592d7e718` / `0f6690604` 等快照提交入库；告警文件 `deploy/k8s/db-task-partition-alerts.yaml` 在工作区、未提交。**未编译、未测试，待 Codex 验证。**
+契约、两侧实现、抽样命令、冷读冒烟与行为变化以[分区契约文档](../design/db-task-kafka-partition-contract.md)「分区函数契约」「golden 向量」「滚动对齐步骤与观测」「屏障覆盖范围与剩余缺口」为准。
+
+### 5.1 编译与单测（Codex，Go 1.27.2，环境变量照任务单 §1）
+
+| 工作目录 | 命令 | 通过标准 |
+|---|---|---|
+| `go/shared` | `go vet ./kafkautil/`；`go test ./kafkautil/ -count=1 -v -run "DBTask\|ParseConsoleConsumerLine\|IsDBTaskTopic"` | `TestDBTaskPartitionCheckValue`、`TestDBTaskPartitionGoldenVectors`、`TestNewDBTaskPartitionerMatchesDBTaskPartition`、`TestDBTaskKeyEncoding`、`TestDBTaskPartitionRejectsEmptyKeyAndBadCount`、`TestDBTaskPartitionDistribution`（打印分布表）、`TestIsDBTaskTopic`、`TestParseConsoleConsumerLine` PASS，`TestDBTaskPartitionAuditDump` SKIP。golden 不一致时保留 `-v` 全文回报，不改 JSON |
+| `go/shared` | `go test ./kafkautil/... -count=1` | ok。`topic_init_test`、`group_lag_test` 第一次进 L1，且别的会话在改 `topic_init.go`（S5b）与新增 `topic_durability*`，红了单独归因 |
+| `go/login` | `go build ./...`；`go vet ./internal/kafka/... ./internal/logic/pkg/dataloader/... ./internal/svc/...`；`go test ./internal/kafka/... ./internal/logic/pkg/dataloader/... -count=1 -v` | 全绿；`TestDBTaskReadAndWriteShareKafkaPartitionIntegration` SKIP；`TestSendTaskLeaderNotAvailableDoesNotDeadlock`、`TestDBTaskProducerConfig*`、`TestSend*RoutesByDBTaskContract`、`TestSendTaskRejectsMismatchedKey`、`TestCommandAwarePartitionerScope`、`TestDBTaskTopicNamingMatchesContractPrefix`、`TestSendToTopic*RefusesDBTaskTopics`、`TestPartitionDriftIrreversiblyFencesDBTaskSends`、`TestPartitionsMatchContractRequiresExactContiguousSet` PASS |
+| 仓库根 | `git grep -n "pkg/consistent" -- "go/*.go"` | 没有输出 |
+| `go/db` | `go build ./...`；`go vet ./internal/kafka/... ./internal/metrics/... ./cmd/data_stress/...`；`go test ./internal/kafka/... ./internal/metrics/... -count=1`；`go test ./internal/kafka/ -count=1 -v -run 'ProducerPartition'` | 全绿（build 覆盖 `cmd/data_stress`、`cmd/verifier`）；`TestObserveProducerPartitionVerdicts`（15 个子用例）、`TestObserveProducerPartitionPreRegistersAllSeries`、`TestObserveProducerPartitionNilInputs`、`TestAllowProducerPartitionLogBudget` PASS。`data_stress/main.go` 文件头注释改动前就不是 gofmt 格式，不计入 |
+| 仓库根 | `pwsh -File go/test.ps1` | 退出码 0、末行 `L1_TESTS_OK`；日志里能看到 db、shared（`./placement/... ./kafkautil/...`）、login（`./internal/kafka/...`）三组都执行了 |
+| `go/login`（可选，本机 docker kafka 已起） | `$env:KAFKA_INTEGRATION_BROKER='127.0.0.1:9092'; go test ./internal/kafka/ -run Integration -count=1 -v; Remove-Item Env:KAFKA_INTEGRATION_BROKER` | `TestDBTaskReadAndWriteShareKafkaPartitionIntegration` PASS（pW == pR == 契约分区，且 oR > oW）；用例自己删掉 `mmorpg_dbtask_partition_it_*` topic |
+
+C++（仓库根，VS 开发者环境，MSBuild 严格串行 `/m:1`；不以 `game.sln` 全量为通过标准，主干整体编不过）：
+1. `git -C <仓库根> submodule status third_party/librdkafka` 行首不是 `-`（需要 init 属于联网下载，先征得负责人同意）。
+2. 与 §7.1 同一组工程（`infra.vcxproj` → `scene.vcxproj` → `kafka_command_test.vcxproj` → `cpp\nodes\scene\scene.vcxproj`），0 error，`kafka_producer.cpp`、`player_lifecycle.cpp`、`kafka_partition_contract_test.cpp` 无新增警告。
+3. `pwsh -File tools/scripts/run_cpp_tests.ps1 -Filter kafka_command`：`DbTaskPartitionContract.VendoredDefaultPartitionerIsConsistentRandom`、`ExplicitPartitionerOnGlobalConfReachesDefaultTopicConf`、`LibrdkafkaConsistentRandomMatchesSharedVectors`、`KafkaKeyMatchesGoFormatUint` 四例 PASS，原有用例不新增失败；main 找不到 `base_deploy_config.yaml` 时只告警，属正常。
+4. 可选：`.\build\cpp\tests\kafka_command_test.exe --gtest_filter=DbTaskPartitionContract.* --gtest_output=xml:<路径>`，XML 里 `librdkafka_runtime_version` 应为 2.14.0。版本不一致时回报 DLL 的版本串，由负责人决定统一 DLL 还是调整断言，不要删断言。
+
+golden 表由 Go `crc32`、sarama、librdkafka 三方都通过才算成立；任何一方不一致都以机器结果回报。
+
+### 5.2 本机一区联调（Codex）
+
+前置按 AGENTS.md §6.2 第 6 条清空本机 redis、mysql、etcd，删掉 `tools/scripts/.run` 下的 pid 与 log。
+1. 用 `tools/scripts/start_game.ps1` 起服，顺序 db → login → scene；robot 登录测试通过率与基线一致。
+2. `curl.exe -s http://127.0.0.1:9160/metrics | Select-String db_task_producer_partition_total`：12 条序列都在；op="write" 与 op="read" 都只有 `verdict="ok"` 在增长；`key_mismatch`、`invalid` 为 0。
+3. 冷读冒烟（契约文档「滚动对齐步骤与观测」，含「在 Kafka 侧确认 W 已到 broker」）：至少 5 次有结论且全部通过。
+4. 对本机 kafka 容器演练一遍第 1 步的抽样与 `TestDBTaskPartitionAuditDump`，确认 runbook 可用。
+- 失败时保留：`go test -v` 全文、编译错误前 20 行、`kafka_command_test` 输出、`bin/logs/cpp_nodes/`、go/db 与 login 日志、`:9160` 与 `:9101` 的 `/metrics` 快照。不得据此宣称性能结论。
+
+### 5.3 上线
+
+| # | 事项 | 状态 |
+|---|---|---|
+| 5.3.1 | 只读抽样门槛：生产与预发每个 zone 都做，在 login 切换之前；**负责人执行**（Codex 只在本机或指定的 dev 环境）。写的非 ok 为 0、解析失败为 0、抽样里有写；读不符比例记作基线 | 待做 |
+| 5.3.2 | staging 按生产顺序走一遍并做冷读冒烟（只在 staging 删 Redis 键）；可选用 `KAFKA_INTEGRATION_BROKER` 指向 staging broker 跑一次集成用例 | 待做 |
+| 5.3.3 | 生产 login 逐副本滚动。**前置**：回滚目标提交必须包含 `d5cbb8a8e`（`git merge-base --is-ancestor d5cbb8a8e <commit>`），否则会把 G0 的自锁带回来 | 待做 |
+| 5.3.4 | go/db 观测随下一次例行 go/db 发版上（不单独滚 go/db），上线后至少看 2 个存盘周期 | 待做 |
+| 5.3.5 | 告警 apply：见 2.5.8（写规则在 5.3.4 之后，读规则在 5.3.3 全部滚完之后） | 见 2.5.8 |
+| 5.3.6 | C++ 改动随下次 scene / battle 例行发版；scene 启动日志没有 "failed to pin partitioner" | 待做 |
+| 5.3.7 | 发布说明与 runbook 写明契约文档列出的五条行为变化（db 积压超过约 8 秒时冷读进场失败、客户端收到 tip 3023 等），排障看 `entergame_total{result="preload_failed"}` 与按分区的 lag | 待做 |
+| 5.3.8 | 负责人确认偏离：`command_partitioner_test.go` 里名为 `"db_task"` 的 topic 仍断言走默认 FNV | 待负责人 |
+| 5.3.9 | 负责人定：op="other" 是否设告警（现在没设） | 待负责人 |
+
+---
+
+## 6. ③ 消费组按 zone 拆（S2）
+
+代码已落：go/db、`go/shared/kafkautil`、`tools/merge_zone`、`lib/kafka_consumer_groups.ps1`、`kafka_offset_reset.ps1`、`k8s_zone_rollback.ps1` 等随 `de4960bee` 入库；`k8s_deploy.ps1`（R4）、`dev_tools.ps1`、契约测试、`deploy/k8s/README.md`、`db.yaml` 注解占位与告警组在工作区、未提交。Kafka 镜像已四处钉到 `apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837`。**未编译、未测试，待 Codex 验证。**
+设计、四种 ConfigMap 形状、决策表与 runbook 以 `docs/design/db-consumer-group-per-zone.md`（本批另行撰写）为准；规格以 [S2 修订稿](../handoff/godb-pipeline-impl-20261015/S2-consumer-group-per-zone-addendum.md) 为准。
+
+### 6.1 编译与单测（Codex）
+
+| 工作目录 | 命令 | 通过标准 |
+|---|---|---|
+| `go/shared` | `go vet ./kafkautil/`；`go test ./kafkautil/ -count=1 -run 'CommittedOffsets\|ComputeGroupLag' -v` | `TestCommittedOffsets`、`TestComputeGroupLag` PASS |
+| `go/data_service` | `go build ./...` | 退出码 0（它用 `kafkautil.GroupLagProber`） |
+| `go/db` | `go vet ./internal/config/ ./internal/kafka/ ./internal/metrics/`；`go build ./...`；`go test ./internal/config/ -count=1 -v`；`go test ./internal/metrics/ -count=1 -v` | `TestKafkaTimeoutDefaults`、`TestValidateConsumerGroup`、`TestEffectiveGroupID`、`TestPreHandoffBinaryRefusesZoneShapedConfig`、`TestPreHandoffBinaryLoadsFinalZoneShape`、`TestPreHandoffBinaryIgnoresUnknownKeys`、`TestEtcYamlConsumerGroupIsFinalShape`、`TestConsumerGroupHandoffSeriesPrecreated` PASS；`PreHandoff*` 失败时保留 go-zero 的原始错误文本（F9 的核实证据） |
+| `go/db` | `go test ./internal/kafka/ -count=1 -v -run 'GroupHandoff\|HeldPartitions\|PeerView\|RebalanceGap\|ConsumerClientID\|ConsumerSetup\|ConsumeClaim\|NewKeyOrderedKafkaConsumer\|Inspector\|Settled\|StateUnknown\|ReplayAfterSeed'`（有 cgo 时再加 `-race`），再 `go test ./internal/kafka/ -count=1` 与 `go test ./... -count=1` | 全部 PASS，单个用例不超过几秒（等待全部走假时钟） |
+| `go/login` | `go build ./...`；`go test ./internal/config/ -count=1` | 带 `GroupID` 键的 login.yaml 仍能加载（login 的 `GroupID` 已改 optional、注明废弃） |
+| `tools/merge_zone` | `gofmt -l .`；`go vet ./...`；`go vet -tags merge_integration ./...`；`go test ./... -count=1 -v -run 'Lag\|Authoritative\|KafkaGroup\|CommittedOffset\|ConsumerGroupMissing\|DbTaskQueueKeys\|DbRetryPartition\|DbTaskTopic'`；`go test ./... -count=1` | 全部 PASS（`TestResolveAuthoritativeLag_*`、`TestCommittedOffsetPresent_ColumnOrderFromHeader`、`TestConsumerGroupMissing_Whitelist`、`TestKafkaGroupCandidates` 等） |
+
+PowerShell（仓库根，PowerShell 7）：逐个执行 `pwsh -NoProfile -NonInteractive -File tools/scripts/tests/<名>.tests.ps1`，名为 `k8s_deploy_contract`、`k8s_client_entry_contract`、`k8s_migrate_gate`、`k8s_gate_drain`、`dev_tools_merge_zone_contract`、`dev_tools_kafka_offset_reset`、`k8s_zone_rollback_gate_router_mode`、`k8s_zone_rollback_flush_guard`、`kafka_offset_reset_output_guard`，再跑 `pwsh -NoProfile -File tools/scripts/test_stress_summarize.ps1`；每个都以 0 退出、没有 FAIL 行。`k8s_client_entry_contract` 的 Forwarded 清单已含 `DbConsumerGroup`。
+手工 dry-run 冒烟（不连集群）：`pwsh -NoProfile -File tools/scripts/k8s_zone_rollback.ps1 -ZoneName t1 -ZoneId 101 -TargetTime 2026-05-15T14:23:00Z -NodeImage ghcr.io/luyuancpp/mmorpg-node:0123456789ab -SkipMySqlPause`：退出码 0；摘要含 `group=db_rpc_consumer_group_z101 retire=db_rpc_consumer_group partitions=10`；Step 6 行含 `-DbConsumerGroup zone`；没有 `Step 2: drain`。
+
+### 6.2 Kafka 钉版与 CLI 行为核对（V0 / V3）
+
+| # | 内容 | 通过标准 / 去向 |
+|---|---|---|
+| V0 | 上线前（负责人或 Codex，只读）：`kubectl get pod -n mmorpg-infra -l app=kafka -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.containerStatuses[0].imageID}{"\n"}{end}'`（`-n` 换成实际的 `-InfraNamespace`）；本机 `docker image inspect apache/kafka:latest --format '{{json .RepoDigests}}'` | 每个 broker 的 imageID、本机 RepoDigests 都含 `sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837`；任一不一致按一次 broker 版本升级评估（metadata.version、日志目录兼容、能否回退），由负责人决定是否另开窗口 |
+| V3 只读 | `docker buildx imagetools inspect apache/kafka:4.3.1` 与 `… apache/kafka:latest` | 两条的 Digest 行都等于上面的 digest |
+| V3 拉镜像（**下载，执行前请负责人确认**） | `docker pull` 钉版引用；`docker image inspect <钉版引用> --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}'`；`docker compose -f deploy/docker-compose.yml up -d kafka kafka-topic-init`；`docker exec kafka /opt/kafka/bin/kafka-topics.sh --version` | 入口为 `["/__cacert_entrypoint.sh"]` 与 `["/etc/kafka/docker/run"]`；kafka-topic-init 以 0 退出；版本 4.3.1。本机命名卷可能是更旧版本写的，按 AGENTS.md §6.2 先清再起 |
+| V3 (a)–(j) | 在 4.3.1 上逐条记录原始输出与退出码：(a) Stable 组 `--reset-offsets --execute`；(b) describe 不存在的组；(c) 对不存在的组 `--reset-offsets --to-datetime --execute` 能否建出位点；(d) 组 Stable 但没有成员订阅该 topic 时 `--delete-offsets`；(e) 有成员订阅时的输出（预期含 `GROUP_SUBSCRIBED_TO_TOPIC`）；(f) `--execute` 是否打印 NEW-OFFSET 表；(g) `kafka-get-offsets.sh --time -2 / -1` 的格式；(h) Empty 组无位点时 describe 的输出；(i) 不存在组 describe 的原文；(j) kind 里 `kubectl exec -n mmorpg-infra kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group <g>"` 能否成功（`k8s_deploy.ps1` 的 `Read-DbGroupTopicFacts` 就用这个形状：经 `/bin/sh -c` 覆盖小堆，防 CLI 继承 broker 大堆把 kafka-0 撑到 OOMKilled） | 回填 `docs/design/db-consumer-group-per-zone.md` §11，并把原文追加为 `tools/scripts/lib/kafka_consumer_groups.ps1` 与 `tools/merge_zone/merge_unit_test.go` 的 fixture（两边白名单同步）。**若 (c) 证实建不出位点，`k8s_zone_rollback.ps1` 的改动不得发布，交负责人决策** |
+
+### 6.3 本地交接集成（V5，功能验证，不出性能结论）与 kind 演练（V6，可选）
+
+按 S2 修订稿 §13 V5：compose 起 kafka / redis / mysql / etcd，从 `go/db/etc/db.yaml` 生成 legacy 形状 L1 / L2 与交接形状 Z1 / Z2 四份配置，`data_stress` 持续写入期间正向切组、收尾（`--delete-offsets` 后 describe 复核）、再起最终形状 Z3 续消费、反向切组与收尾、切组后起 legacy 实例触发守望。通过标准：verifier 退出码 0；Z1 / Z2 的 seeded 与 no_offsets 覆盖的不同分区合计 10，每个 seeded 值等于 L 停掉后该分区的 CURRENT-OFFSET；`db_consumer_group_handoff_conflict_total` 在切组期间为 0、起 legacy 实例后增加；zone 组 LAG 为 0；死信不增长；反向时最长消费空窗 < 15s；旧二进制加交接形状必须拒启，旧二进制加 final(Z) 形状能起并从 zone 组位点续消费。V6（只在 dev 集群）：kind 上两个 zone，robot 负载期间对 z1 切组与删 Pod，z2 的 db 不应出现 `db_consumer_group_rebalance_gap_seconds` 样本。
+
+### 6.4 上线（负责人执行，不停服、逐 zone）
+
+| 步 | 事项 | 状态 |
+|---|---|---|
+| 0 | 先做 V0，再合入钉版；下一次 infra-up 会因镜像字符串变化滚动重启 kafka StatefulSet：单 broker 档等同一次 broker 重启，在无玩家窗口执行，之后跑 `k8s_deploy.ps1 -Command infra-kafka-topics -WaitReady`；多 broker 档按 PDB 逐个滚 | 待做 |
+| 1 | Phase A：发布带交接闸的 go/db 镜像，生成器不变（线上仍是 `GroupID` 形状）；记录 `db_consumer_group_rebalance_gap_seconds` 基线，describe 的 CLIENT-ID 出现 `db-z<zone>-*`。除新增指标外没有任何差异 | 待做 |
+| 2 | 合入脚本（`k8s_deploy.ps1` 等）。线上 `GroupID` 形状的 zone 在 keep 下保持不变，但第一次部署会因新增的 Pod 注解（`mmorpg.io/db-consumer-group` / `mmorpg.io/db-group-handoff-from`）滚一次 db。全新 namespace 与回档只渲染最终形状；全新集群首次 all-up（不带 `-SkipInfra`、非 DryRun）先只读探测 infra namespace，不存在即视为空 Kafka、两组都无位点，不 exec | 待做 |
+| 3 | 金丝雀：选人数最少的 zone，冻结其它 zone 的发布，执行 `pwsh -File tools/scripts/k8s_deploy.ps1 -Command zone-up -ZoneName <z> -ZoneId <id> -GoSvcRegistry <registry> -GoSvcTag <与线上相同> -DbConsumerGroup zone`（其余参数与该 zone 的例行发布相同）。**必须带 `-GoSvcRegistry` 且不带 `-SkipGoSvc`**：本次不部署 db 时显式 `-DbConsumerGroup zone\|legacy` 直接拒绝（不拒绝的话 C++ 照常重部署、退出码 0，运维会以为切过了）。脚本先做 F2 预检，输出 `DB consumer group: zone=… mode=zone shape=handoff group=db_rpc_consumer_group_z<id> handoff_from=db_rpc_consumer_group source=explicit-handoff …`。观察 handoff waiting → released → seeded / no_offsets 覆盖 10 个分区、conflict 为 0、gap < 15s。然后收尾：`kafka_offset_reset.ps1 -BootstrapServer <b> -Topic db_task_zone_<id> -Group db_rpc_consumer_group_z<id> -RetireGroup db_rpc_consumer_group -Partitions 10 -FinalizeHandoff`，先 dry-run 再加 `-Apply`；紧接着以 keep 再跑一次同样的 zone-up，确认输出 `source=handoff-finalized`、ConfigMap 变为 `GroupID: "db_rpc_consumer_group_z<id>"`、db 滚动完成 | 待做 |
+| 4 | 金丝雀浸泡 24h；生产只观察指标、经历一次例行发布，delete pod 演练放到 staging 或 kind | 待做 |
+| 5 | 其余 zone 每天切 1–2 个，每个 zone 重复第 3 步（含收尾与 keep 再跑一次）。全部切完后 legacy 组变为 Empty | 待做 |
+| 6 | （以后另立项）按 AGENTS.md §6 出对比表之后再调 `HeartbeatIntervalMs` / `RebalanceTimeoutMs`，没有对比表不调 | 待定 |
+| 7 | （下一轮）全部 login Pod 跑上 optional 版本 ≥ 7 天后，删除 `go/login/etc/login.yaml`、`k8s_deploy.ps1` 的 login 模板、`deploy/login-stack.linux/login.yaml` 三处 login 的 `GroupID`；`tools/merge_zone` 的 `-kafka-legacy-group` 缺省改为空 | 待定 |
+
+- 回滚（单 zone 反向）：先确认正向已收尾（脚本也会拦：两组都有位点时显式模式 throw 并打印收尾命令）→ `zone-up -DbConsumerGroup legacy` → `FinalizeHandoff`（`-Group db_rpc_consumer_group -RetireGroup db_rpc_consumer_group_z<id>`）→ keep 再跑一次 zone-up 落到 final(L)。最终形状下可以直接用旧镜像部署；交接形状下必须先收尾。
+- 其它入口：`dev_tools.ps1` 的 `k8s-image-*` / `k8s-release-*` 拒绝 `-DbConsumerGroup`（`k8s_image.ps1` 不部署 db）；`k8s-zone-rollback` 也拒绝它（回档 Step 6 固定传 zone）。`k8s_deploy.ps1` 的 `ConvertFrom-LiveDbConsumerGroup` 只认 `ServerConfig.Kafka.{GroupID,ConsumerGroup,GroupHandoffFrom}` 路径上的键，别的段的同名键忽略；`Apply-OneGoSvc` 遇到 db manifest 缺注解占位直接 throw。
+- 告警：`db-task.consumer-group-handoff` 组 5 条随 4.3.1 一起 apply——`DbConsumerGroupHandoffWaiting`（> 45s，warning）、`DbConsumerGroupHandoffStuck`（`min by (namespace)` > 300，critical：只有本 zone 没有任何 Pod 越过闸才呼人）、`DbConsumerGroupHandoffOwnBehindPeer`（critical，处置分本组陈旧 / 对方陈旧两种）、`DbConsumerGroupHandoffConflict`（critical）、`DbConsumerGroupHandoffSeedAborted`（warning，按分区计数）。
+- 状态：代码已落，未编译、未测试；6.1–6.4 全部待做。
+
+---
+
+## 7. scene 发 DBTask 失败后的脏快照（S5a，C++）
+
+代码已落：随 `0f6690604` / `de4960bee` 等快照提交入库；截至 2026-10-16 工作区里 `kafka_producer.cpp`、`redis.cpp`、`db_task_dispatch_test.cpp`、`cross_zone_test.vcxproj` 仍有未提交改动（含别的会话的）。**未编译、未测试，待 Codex 验证。**
+要点：`cpp/libs/services/scene/player/system/db_task_dispatch_{ledger,system}.{h,cpp}` 按玩家记 DBTask 投递账本；某次存盘的 DBTask 同步被拒或投递回执失败时，该玩家强制重存（快路径 `db_task_dispatch::AllowsDirtySaveSkip` 不再放行），一律按当前内存重新 marshal、绝不重放旧字节；下线收尾经 `PlayerLifecycleSystem::FinishExitOrAwaitDbTaskAck` 等本玩家所有在途 DBTask 的回执（`player_exit::DecideDbTaskGate`，重存上限 `kMaxExitDbTaskResaveRounds` = 3）；生产者经 `KafkaProducer::sendTracked` / `DeliveryTracker` 逐条回执，50ms 的 Pump 定时器在 loop 顶层处理回执，票据超时兜底 `kTicketTimeout` = 330s。设计文档 `docs/design/db-task-delivery-and-retention.md` §A 本批另行撰写。
+
+### 7.1 编译与单测（Codex；仓库根，PowerShell 7 + VS 开发者环境，MSBuild 严格串行 `/m:1`，前一步红了就停下归因）
+
+```powershell
+msbuild cpp\libs\engine\infra\infra.vcxproj /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64
+msbuild cpp\libs\services\scene\scene.vcxproj /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64
+msbuild cpp\tests\kafka_command_test\kafka_command_test.vcxproj /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64
+msbuild cpp\tests\cross_zone_test\cross_zone_test.vcxproj /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64
+msbuild cpp\nodes\scene\scene.vcxproj /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64
+pwsh tools/scripts/run_cpp_tests.ps1 -Filter kafka_command
+pwsh tools/scripts/run_cpp_tests.ps1 -Filter cross_zone
+.\build\cpp\tests\kafka_command_test.exe --gtest_filter=DeliveryTracker.*
+.\build\cpp\tests\cross_zone_test.exe --gtest_filter=DbTaskDispatch*:ExitDbTaskGate*:ExitPersist*
+# 回归(同样链接 scene.lib,走退出 / 存盘路径)
+msbuild cpp\tests\bag_test\bag_test.vcxproj /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64
+msbuild cpp\tests\currency_test\currency_test.vcxproj /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64
+pwsh tools/scripts/run_cpp_tests.ps1 -Filter bag
+pwsh tools/scripts/run_cpp_tests.ps1 -Filter currency
+```
+
+通过标准：各工程 0 error，scene 节点链接无 unresolved external；`DeliveryTracker.*`、`DbTaskDispatchLedger.*`、`DbTaskDispatchStats.*`、`ExitDbTaskGate.*`、`DbTaskDispatchEcs.*` 全绿；既有 `ExitPersist*` 与 bag / currency 用例没有新增失败。不以 `game.sln` 为通过标准（主干整体编不过）。失败时保留 msbuild 第一条 error 前后 20 行、gtest 失败用例全文；报错落在别的会话的未提交文件里时单独记录。
+
+### 7.2 故障注入（只在本地 compose 或 kind，由 Codex 执行）
+
+| # | 注入 | 通过标准 |
+|---|---|---|
+| 7.2.1 | 一个玩家下线时 `docker pause` kafka 6 分钟（超过 `message.timeout.ms` 缺省 300s 与票据超时 330s），再 `unpause` | 期间该玩家实体被保留（不销毁）；30s 统计行 `[DbTaskDispatch]` 的 `exit_await_ack`、`exit_resave` 有计数，重存满 3 轮后 `exit_resave_capped` 增加；恢复后周期存盘强制真写，抽样玩家的 MySQL 行与 Redis 一致；`orphan_unsynced` 不增长 |
+| 7.2.2 | Kafka 不可用期间观察在线玩家的周期存盘 | 周期存盘不再被脏比较快路径跳过，每周期整份写一次 Redis（日志 "forcing a real save … (metric=db_task_forced_resave)"）；这是负责人拍板接受的行为变化，只记录 Redis 写量 |
+| 7.2.3 | Kafka 不可用时停 scene 节点 | 停机打一行 ERROR "[DbTaskDispatch] shutting down with N player(s) …" 列出未落定的玩家号（最多 50 个）；这些玩家的 MySQL 落后于 Redis，下次登录由 Redis 自愈 |
+
+状态：未做。
+
+### 7.3 上线
+
+| # | 事项 | 状态 |
+|---|---|---|
+| 7.3.1 | scene 节点滚动升级即可：不改 proto、配置、库表，不改与 go/db 之间的消息格式，新旧版本可以并存 | 待做 |
+| 7.3.2 | 观察 30s 一行的 `[DbTaskDispatch]`：`exit_await_ack` 随下线增长属正常；稳态下 `produce_rejected`、`delivery_failed`（扣除 `delivery_failed_superseded`）、`ticket_expired`、`exit_resave_capped`、`exit_unsynced`、`orphan_unsynced` 都应为 0；停机 drain 的耗时基本不变 | 待做 |
+| 7.3.3 | 发布说明写明行为变化（负责人已拍板）：下线销毁实体要等本玩家 DBTask 的回执，正常多 ≤ 50ms 的 Pump 间隔；Kafka 长时间不可用时下线实体被保留，直到 Kafka 恢复、再次收到退出请求触发 rekick，或停机看门狗到期；Kafka 长时间不可用时周期存盘不再被快路径跳过，每周期整份写一次 Redis（Redis 写量回到没有脏比较时的水平）；退出实体重存 3 轮后保留 | 待做 |
+| 7.3.4 | 回滚：换回旧的 scene 镜像；账本只在内存里，没有持久化状态要处理 | — |
+
+### 7.4 状态
+
+- 代码已落，未编译、未测试；7.1–7.3 全部待做。§3 表里「scene 发 DBTask 失败后的脏快照」即本节。
+- 剩余风险：`kTicketTimeout`（330s）依赖 librdkafka 缺省 `message.timeout.ms`（300s），以后改其一不同步另一个会把迟到的成功回执误判为失败（只多一次重存）；停机看门狗到期时这些玩家的 MySQL 落后于 Redis，合服、回档这类以 MySQL 为准的操作会读到旧档；被废黜、交接放行路径产生的孤儿要等新属主的首存来补；scene 先于 db / login 发 DBTask 时 broker 的 auto.create 会把 db_task 建成 1 分区（既有问题，未修）。
+
+---
+
+## 8. db_task 的 retention.bytes 与 Kafka PVC（S5b）
+
+代码已落：Go（R3：`kafkautil.TopicSpec.RetentionBytes`、db / login 的 `KafkaConfig.RetentionBytes`）与部署（R5a：`k8s_deploy.ps1` 盘预算、`kafka.yaml` 的 `__KAFKA_STORAGE_SIZE__` 占位）截至 2026-10-16 在工作区、未提交。**未编译、未测试，待 Codex 验证。**
+公式、缺省值表、账本行、扩盘 runbook 与「已存在的 topic 立即改配置」见 `deploy/k8s/README.md`「Kafka 磁盘预算与 db_task retention.bytes」；设计文档 `docs/design/db-task-delivery-and-retention.md` §B 本批另行撰写。
+
+要点（以代码为准）：
+- `TopicSpec.RetentionBytes`：0 = 不管理（沿用 broker 缺省），> 0 = 建 topic 时带上并在每次启动时增量 SET（与 `retention.ms` 合成一次 `IncrementalAlterConfig`），< 0 拒绝。
+- 档位缺省（`Apply-KafkaProfileDefaults`）：dev 每 zone 256 KiB/s、缓冲目标 1h、其它 topic 预留 1 GiB；prod-like 1 MiB/s、2h、2 GiB；prod 3 MiB/s、2h、4 GiB。新参数 `-KafkaDbTaskRetentionBytes` / `-KafkaDbTaskDesignBytesPerSec` / `-KafkaDbTaskBufferTargetMs` / `-KafkaStorageGi` / `-KafkaOtherTopicsReserveGi`，0 = 按档位或自动。
+- 生效值 = target ≤ 按盘可容纳值时取 target，否则取 floor(可容纳值, 64MiB)（`FitLimited`，只告警）；每个 broker 的份额按「持有每个分区各一份副本」取上界，再乘 1.3 余量（`Get-KafkaDiskPlan`）。
+- 线上盘 = min(StatefulSet 模板, 各 PVC `status.capacity` 的最小值)（`Get-LiveKafkaStorageGi` / `Get-LiveKafkaPvcMinGi`）；`Apply-Infra` 按 `StorageTemplateGi` 渲染 PVC 模板；显式 `-KafkaStorageGi` 与线上不符时 `Assert-KafkaStorageChangeIsSafe` 按 `Get-KafkaStorageChangeVerdict` 的 expand-refused / shrink-refused / pvc-not-expanded 拒绝，**zone-up 也做这项检查**。
+- zone 数 Z = zones 配置 ∪ `-ZoneId` ∪ 非 DryRun 时线上带 `-NamespacePrefix-` 前缀、不在配置里的 zone namespace。**行为变化**：`-ReleaseProfile` 不是 dev 时 zones 配置缺席直接拒绝部署（Z 不可信）。
+
+### 8.1 编译与单测（Codex）
+
+| 工作目录 | 命令 | 通过标准 |
+|---|---|---|
+| `go/shared` | `gofmt -l kafkautil`；`go vet ./kafkautil/`；`go test ./kafkautil/ -run 'TestEnsureTopics\|TestPartitionContract\|TestParseReplicationFactor' -count=1 -v` | `TestEnsureTopicsSetsRetentionBytesOnCreateAndAlter`、`TestEnsureTopicsLeavesRetentionBytesUnmanagedWhenZero`、`TestEnsureTopicsRejectsNegativeRetentionBytes`、`TestEnsureTopicsRetentionBytesWithoutRetentionMs` 与既有用例 PASS |
+| `go/db` | `gofmt -l internal/config`；`go vet ./...`；`go build ./...` | gofmt 无输出，退出码 0 |
+| `go/login` | `gofmt -l internal/config`；`go vet ./...`；`go build ./...` | 同上 |
+| 仓库根 | `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1` | 全部 PASS，含末尾「S5b 保留期与 Kafka 盘预算」一节（缺省值与各判定路径、两个 ConfigMap 的 `RetentionMs` / `RetentionBytes` 相等、账本行、kafka 清单的 `storage:`、负向参数、5 broker 取上界、模板与实际 PVC 取小 / live-pvc / pvc-not-expanded、线上 zone namespace 并入 Z、zones 配置缺席的告警与非 dev 档拒绝、FitLimited 的 lag 提醒） |
+| 仓库根（DryRun，不连集群） | `pwsh -NoProfile -NonInteractive -File tools/scripts/k8s_deploy.ps1 -Command infra-up -DryRun -SkipPreflight -SkipGoSvc -SkipJavaSvc -KafkaProfile dev -NodeImage registry.invalid/test/mmorpg-node:0123456789ab` | 输出一行 `Kafka disk ledger:`（`pvc_source=computed`），kafka 清单渲染出 `storage: 20Gi`、没有残留的 `__KAFKA_STORAGE_SIZE__` |
+| F9（S5 规格附录） | 用最小用例分别核实 go/db（go-zero v1.10.0）与 go/login（go-zero v1.9.2）的 `conf.MustLoad` 遇到未知键 `RetentionBytes` 是忽略还是报错；go/db 现有的 `TestConfigLoaderIgnoresUnknownKeys` / `TestPreHandoffBinaryIgnoresUnknownKeys` 可作 db 侧旁证，login 侧没有对应用例 | 结论写回本行；若会报错，S5b 的回滚必须连同旧的 ConfigMap 生成器一起回退 |
+
+### 8.2 上线（负责人执行）
+
+| # | 事项 | 状态 |
+|---|---|---|
+| 8.2.1 | 合入 Go 改动，构建 db / login 镜像（Go 侧要与 `k8s_deploy.ps1` 渲染新键同批或先合入） | 待做 |
+| 8.2.2 | 逐 zone 跑 zone-up：新 ConfigMap 带 `RetentionMs` / `RetentionBytes`，db / login 重启时经 `kafkautil.EnsureTopics` 生效。不想为改保留期滚动 go/db（瓶颈文档 §4.5 的发版红线）时，用 README 里的 `kafka-configs.sh --alter`（经 `/bin/sh -c` 覆盖 `KAFKA_HEAP_OPTS='-Xms16m -Xmx64m'`）立即生效，ConfigMap 等下次正常发布再收敛 | 待做 |
+| 8.2.3 | **账本行出现 `[KafkaDiskLedger]FitLimited:` 时先确认 db 消费 lag ≈ 0 再发布**：生效值低于 topic 现值时，db / login 重启立刻下调 topic 级 retention.bytes，Kafka 在下一次 retention 检查（2 分钟）内删掉超出部分的最旧积压，不管 db 读没读到；lag 不为 0 时先扩盘或等 db 追平 | 每次发布核对 |
+| 8.2.4 | infra-up：已有集群沿用线上盘，盘低于预算时按盘收缩并打 WARN（例：prod 档、20Gi、2 个 zone 时从 broker 缺省 512MiB 降到 256MiB，按设计速率约缓冲 10 分钟）；要扩盘按 README 的扩盘 runbook（patch 各 PVC → `delete statefulset kafka --cascade=orphan` → 带 `-KafkaStorageGi N` 重跑 infra-up → 对每个 zone 重跑 zone-up）；新集群直接按公式建盘 | 待做 |
+| 8.2.5 | 部署前确认 `-ZonesConfigPath` 指向登记了共用这套 Kafka 的全部 zone 的配置（staging / prod 缺席即拒绝）；加 zone 之后对全部 zone 重跑 zone-up | 待做 |
+| 8.2.6 | kind / 本机显式传 `-KafkaProfile dev`（缺省 prod 会申请 80Gi PVC） | 待做 |
+| 8.2.7 | 回滚：topic 级配置在回滚后仍留在 topic 上，本身无害；要撤用 `--alter --delete-config retention.bytes`；F9 未核实前回滚要连同旧的 ConfigMap 生成器一起回退 | — |
+
+### 8.3 状态
+
+- 代码已落，未编译、未测试；8.1–8.2 全部待做。§3 表里「db_task 的 retention.bytes 与 PVC」即本节。
+- 剩余风险：zone-down 删 namespace 之后，那个 zone 的旧 db_task topic 仍按旧的 retention.bytes 留着数据，直到 retention.ms 到期才释放盘，盘预算数不到它；lag 秒级告警本轮没做（go/db 没有导出消费 lag 指标），积压逼近缓冲时没有主动告警，删除是静默的；prod / prod-like 的 retention.bytes 按 2h 算，先于 24h / 6h 的 retention.ms 生效，账本行打 `[KafkaDiskLedger]BufferBelowRetention:`（属预期）；设计速率是推算值，`implied_db_task_buffer_min` 只是估算，回档的 TargetTime 不能早于这个窗口。

@@ -155,6 +155,7 @@
 2. **proto 重生成**(`proto/battle/player_battle.proto` 加了 `self_items`):
    `pwsh tools\scripts\dev_tools.ps1 -Command proto-gen-build` 然后 `pwsh tools\scripts\dev_tools.ps1 -Command proto-gen-run -UseBinary -ConfigPath tools\proto_generator\protogen\etc\proto_gen.yaml`;随后 `cd go && build.bat`。
    - 正向断言(regen 吞代码的历史坑):`grep -n AcquireCreatePermitBlocking cpp/nodes/scene/handler/grpc/scene_node_service.cpp` **必须命中**。
+     (2026-10-16 更正:今后改为 `grep -n AcquireAllocationPermitAsync` 同一文件必须命中,Agones 块在 `grpc.CreateScene.guard` 守护段里,见 grpc-muduo-transport.md §15.14 第 3 步。)
    - 核对 `proto/message_id.txt` 既有号一个不少(本轮不新增 RPC,该文件应无实质变化)。
 3. **C++ 串行编译**(一律 `/m:1`,MSBuild 在 `D:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\MSBuild.exe`):
    顺序 `proto → table → modules → battle → scene → 节点(battle/scene)`。

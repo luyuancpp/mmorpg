@@ -12,6 +12,11 @@ RedisClient:
   Host: 127.0.0.1:6379
   Password: ""
   DB: 0
+  # go-redis 连接池上限(P0-E 第 3 批,共享 Redis 连接总账)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+  # 随 CPU limit 漂移(本机 Windows 上是 10 × 核数)。20 = K8s 上 GOMAXPROCS 按 2 时的缺省值,显式写出后不再随 CPU limit 变。
+  # tools/scripts/k8s_deploy.ps1 把它镜像进 player-locator ConfigMap(要求正整数),Redis 连接总账读同一个键:
+  # 改它看部署时打印的 "Redis connection ledger" 一行。
+  PoolSize: 20
 
 Kafka:
   Brokers:

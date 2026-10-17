@@ -47,6 +47,22 @@ func (l *ReconnectLogic) Reconnect(in *pb.ReconnectRequest) (*pb.ReconnectRespon
 	}
 	if session.State == pb.PlayerSessionState_SESSION_STATE_ONLINE &&
 		session.SessionId == in.NewSessionId && session.RequestId == in.RequestId {
+		// 同一幂等键 (session_id, request_id) 只有代次也相等才算 RPC response 丢失后的同请求重放
+		// (docs/design/scene-enter-chain-residuals.md §3.2 处置 2)。代次不等 = 失锁时两条并发重连链复用了
+		// 同一个 request_id:回成功的话,第二条链会用自己更大的铸出值发 EnterScene,location 记下 (sB, gB) 而会话
+		// 记录仍是第一条链的 (sB, gA),到期清理的 LeaveScene{sB, gA} 被 scene_manager 判 keep_newer、claim 被 ack,
+		// location 从此无人删除(幽灵人数)。这是 keep_newer 不漏删的前提之一。
+		// 同一幂等键配不同内容按幂等的通行做法拒绝,不当成功回:不走后面的代次栅栏与 CAS,记录一个字节都不改。
+		// 代价是第二条链失败、同会话收 3023,客户端走短线重连收敛,只伤活性。双方都为 0(旧版 login)照旧算重放。
+		if session.LoginGeneration != in.LoginGeneration {
+			l.Infof("Reconnect: replay generation mismatch rejected as stale: player=%d session=%d request_id=%s current_generation=%d incoming_generation=%d",
+				in.PlayerId, session.SessionId, in.RequestId, session.LoginGeneration, in.LoginGeneration)
+			return &pb.ReconnectResponse{
+				Success: false,
+				ErrorMessage: fmt.Sprintf("stale reconnect: replay generation mismatch current=%d incoming=%d",
+					session.LoginGeneration, in.LoginGeneration),
+			}, nil
+		}
 		// RPC response 丢失后的同请求重放。
 		return &pb.ReconnectResponse{Success: true, Session: session}, nil
 	}

@@ -130,6 +130,8 @@ set(SOURCE_FILES
     proto/test_table.pb.cc
     proto/tip/actor_action_error_tip.pb.cc
     proto/tip/asset_error_tip.pb.cc
+    proto/tip/mail_error_tip.pb.cc
+    proto/tip/rank_error_tip.pb.cc
     proto/tip/bag_error_tip.pb.cc
     proto/tip/buff_error_tip.pb.cc
     proto/tip/common_error_tip.pb.cc

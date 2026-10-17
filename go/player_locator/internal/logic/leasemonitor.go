@@ -283,6 +283,11 @@ func parseGateID(gateID string) uint32 {
 // notifySceneManagerLeave 调用 SceneManager.LeaveScene 清理位置与实例人数。
 // 只要仍有权威 scene 位置，client 缺失或 RPC 失败都必须返回错误，让 processing
 // receipt 留待重试；不能把未执行的清理当作成功 ACK。
+//
+// 请求带**被删那条会话记录的原值** (session_id, login_generation)(docs/design/scene-enter-chain-residuals.md §3.2):
+// scene_manager 拿它与 location 里记的会话身份比较,location 已属于更新的登录时不删,迟到的离场就删不掉
+// 新登录的 location。MarkOffline 同步路径、租约到期路径、enqueue 重试都经过这里;enqueue 用 proto.Clone
+// 保留了代次,所以只在这一处填。旧版 scene_manager 忽略这两个字段,按旧行为删除。
 func notifySceneManagerLeave(ctx context.Context, svcCtx *svc.ServiceContext, session *pb.PlayerSession) error {
 	sceneID := session.SceneId
 	if sceneID == 0 {
@@ -302,15 +307,17 @@ func notifySceneManagerLeave(ctx context.Context, svcCtx *svc.ServiceContext, se
 	}
 
 	_, err := svcCtx.SceneManagerClient.LeaveScene(ctx, &smpb.LeaveSceneRequest{
-		PlayerId: session.PlayerId,
-		SceneId:  sceneID,
+		PlayerId:        session.PlayerId,
+		SceneId:         sceneID,
+		SessionId:       session.SessionId,
+		LoginGeneration: session.LoginGeneration,
 	})
 	if err != nil {
-		return fmt.Errorf("SceneManager.LeaveScene player=%d scene=%d: %w",
-			session.PlayerId, sceneID, err)
+		return fmt.Errorf("SceneManager.LeaveScene player=%d scene=%d session=%d login_generation=%d: %w",
+			session.PlayerId, sceneID, session.SessionId, session.LoginGeneration, err)
 	}
-	logx.Infof("LeaseMonitor: notified SceneManager.LeaveScene player=%d scene=%d",
-		session.PlayerId, sceneID)
+	logx.Infof("LeaseMonitor: notified SceneManager.LeaveScene player=%d scene=%d session=%d login_generation=%d",
+		session.PlayerId, sceneID, session.SessionId, session.LoginGeneration)
 	return nil
 }
 

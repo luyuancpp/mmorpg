@@ -372,7 +372,19 @@
         "TradeListingNotFound": 20000,
         "TradeHomeZoneUnknown": 20001,
         "TradeFavoriteLimitReached": 20002,
-        "TradeFeatureDisabled": 20003
+        "TradeFeatureDisabled": 20003,
+        "TradeOrderNotFound": 20004,
+        "TradeOrderStateConflict": 20005,
+        "TradeRequestConflict": 20006,
+        "TradeOrderLimit": 20007,
+        "TradeCannotTradeSelf": 20008,
+        "TradeCounterpartyUnknown": 20009,
+        "TradeInsufficientAsset": 20010,
+        "TradeBidTooLow": 20011,
+        "TradeAuctionEnded": 20012,
+        "TradeAssetDeliveryPending": 20013,
+        "TradeManualReview": 20014,
+        "TradeAssetNotTradable": 20015
       }
     },
     "asset_error": {
@@ -437,6 +449,31 @@
         "PlayerInboxItemNotFound": 29012,
         "PlayerInboxItemStateConflict": 29013,
         "PlayerInboxStoreUnavailable": 29014
+      }
+    },
+    "mail_error": {
+      "base": 17000,
+      "width": 1000,
+      "ids": {
+        "MailNotFound": 17000,
+        "MailExpired": 17001,
+        "MailRecipientBoxFull": 17002,
+        "MailAttachmentInvalid": 17003,
+        "MailRequestConflict": 17004,
+        "MailSystemMailLimit": 17005,
+        "MailClaimPending": 17006,
+        "MailClaimManual": 17007,
+        "MailAttachmentProtected": 17008
+      }
+    },
+    "rank_error": {
+      "base": 21000,
+      "width": 1000,
+      "ids": {
+        "RankBoardNotFound": 21000,
+        "RankGenerationClosed": 21001,
+        "RankRequestConflict": 21002,
+        "RankSettlementPending": 21003
       }
     }
   },

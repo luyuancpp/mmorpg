@@ -58,6 +58,11 @@ set(SOURCE_FILES
     battle/player_battle_grpc_client.cpp
     match/match_service_grpc_client.cpp
     match/match_internal_grpc_client.cpp
+    mail/mail_admin_grpc_client.cpp
+    mail/mail_grpc_client.cpp
+    rank/rank_admin_grpc_client.cpp
+    rank/rank_grpc_client.cpp
+    player_locator/player_locator_grpc_client.cpp
 )
 
 add_library(grpc_client STATIC ${SOURCE_FILES})

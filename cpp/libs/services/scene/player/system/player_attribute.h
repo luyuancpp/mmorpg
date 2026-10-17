@@ -93,7 +93,7 @@ public:
 	static uint32_t SwitchScheme(entt::entity player, uint32_t schemeId);
 	static uint32_t RenameScheme(entt::entity player, uint32_t schemeId, const std::string& name);
 
-	// GM:设等级(1..kMaxLevel),触发 PlayerUpgradeEvent → 重算 + 推面板
+	// GM:设等级(1..kMaxLevel),直接重算并推面板与宠物列表。
 	static uint32_t GmSetLevel(entt::entity player, uint32_t level);
 
 	// 主动推面板(升级 / GM / 外部加成变化);BuildPanel 失败时不推。

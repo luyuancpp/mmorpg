@@ -49,7 +49,6 @@ add_definitions(-DMMORPG_AGONES_CURL=1)
 
 set(SOURCE_FILES
     client/battle_client_edge.cpp
-    handler/event/event_handler.cpp
     # handler/grpc/battle_node.cpp 由 proto 生成器写出(gRPC handler 骨架,
     # 守护段内容见任务返回的 guard_fills),生成前本工程不可编译。
     handler/grpc/battle_node.cpp

@@ -4,7 +4,6 @@
 #include <limits>
 #include <set>
 #include <utility>
-#include "../../nodes/scene/handler/local_event/scene_local_events.h"
 #include "modules/bag/bag_service.h"
 #include "modules/bag/comp/player_bags_comp.h"
 #include "modules/condition/condition_type.h"
@@ -23,6 +22,7 @@
 #include "table/code/dungeon_table.h"
 #include "table/code/monster_table.h"
 #include "table/code/item_table.h"
+#include "table/code/mission_table.h"
 #include "table/code/reward_table.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/mission_error_tip.pb.h"
@@ -84,14 +84,8 @@ protected:
         auto& bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(player);
         for (auto& bag : bags.bags) bag.SetPlayerGuid(Guid{424242});
         ASSERT_EQ(kSuccess, PlayerMissionSystem::Initialize(player));
-        scene_local_events::RegisterMission();
     }
     void TearDown() override {
-        scene_local_events::UnregisterMission();
-        tlsEcs.dispatcher.clear<AcceptMissionEvent>();
-        tlsEcs.dispatcher.clear<ConditionEvent>();
-        tlsEcs.dispatcher.clear<OnAcceptedMissionEvent>();
-        tlsEcs.dispatcher.clear<OnMissionAwardEvent>();
         if (tlsEcs.actorRegistry.valid(player)) tlsEcs.actorRegistry.destroy(player);
         // 恢复其它背包测试使用的无 I/O 号段基线。
         EXPECT_TRUE(ArmMissionTestItemSegment(1, uint64_t{1} << 54));
@@ -116,7 +110,7 @@ protected:
         return event;
     }
     void Progress(uint32_t monster, uint32_t count = 1) {
-        tlsEcs.dispatcher.trigger(Kill(monster, count));
+        PlayerMissionSystem::OnCondition(player, Kill(monster, count));
     }
     uint32_t ItemCount() {
         uint32_t count = 0;
@@ -215,10 +209,17 @@ TEST_F(PlayerMissionSystemTest, BlockedRewardAndFrozenPlayerPreserveClaimAndBag)
 
 TEST_F(PlayerMissionSystemTest, SegmentTailCannotPartiallyGrantReward) {
     ReadyReward();
+    BagAllData before;
+    bag_marshal::Marshal(player, before);
     ASSERT_TRUE(ArmMissionTestItemSegment(500000, 500002));
     EXPECT_NE(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
     EXPECT_EQ(0u, ItemCount());
-    EXPECT_EQ(2u, tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available());
+    // 候选事务失败允许已签发号作废，不能部分改玩家资产或消费领取资格。
+    EXPECT_EQ(0u, tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available());
+    EXPECT_EQ(2u, tlsGuidSegmentRegistry.Get(GuidKind::kItem).GetStats().issued);
+    BagAllData unchanged;
+    bag_marshal::Marshal(player, unchanged);
+    EXPECT_EQ(before.SerializeAsString(), unchanged.SerializeAsString());
     EXPECT_TRUE(Missions().IsClaimable(12));
 }
 
@@ -236,15 +237,10 @@ TEST_F(PlayerMissionSystemTest, AutoRewardFailureRemainsClaimableAndDoesNotRepea
     Progress(1);
     ASSERT_TRUE(Missions().IsComplete(4));
     ASSERT_TRUE(Missions().IsClaimable(4));
-    tlsEcs.dispatcher.update<OnMissionAwardEvent>();
-    EXPECT_TRUE(Missions().IsClaimable(4));
     EXPECT_EQ(0u, ItemCount());
     Inventory().SetCapacityForRestore(4);
     ASSERT_EQ(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 4));
-    OnMissionAwardEvent retry;
-    retry.player = player;
-    retry.missionId = 4;
-    tlsEcs.dispatcher.trigger(retry);
+    EXPECT_EQ(kRewardAlreadyClaimed, PlayerMissionSystem::ClaimReward(player, 0, 4));
     EXPECT_EQ(4u, ItemCount());
 }
 
@@ -257,9 +253,6 @@ TEST_F(PlayerMissionSystemTest, AutoRewardIsGrantedWithoutDispatcherUpdate) {
     ASSERT_TRUE(Missions().IsComplete(4));
     EXPECT_FALSE(Missions().IsClaimable(4));
     EXPECT_EQ(4u, ItemCount());
-    EXPECT_EQ(0u, tlsEcs.dispatcher.size<OnMissionAwardEvent>());
-    EXPECT_EQ(0u, tlsEcs.dispatcher.size<AcceptMissionEvent>());
-    EXPECT_EQ(0u, tlsEcs.dispatcher.size<ConditionEvent>());
 }
 
 // 任务事件里的实体整数曾被截成 uint32,丢掉 version:槽位复用过的玩家在 handler 里
@@ -293,6 +286,12 @@ TEST_F(PlayerMissionSystemTest, OrderedDuplicateTargetsRequireSeparateFacts) {
 }
 
 TEST_F(PlayerMissionSystemTest, HugeProgressSaturatesAndTruncatedProgressCannotComplete) {
+    const auto* row = MissionTableManager::Instance().FindByIdSilent(7).first;
+    ASSERT_NE(nullptr, row);
+    auto& mutableRow = *const_cast<MissionTable*>(row);
+    ScopedTestRestore restore(mutableRow);
+    // 此例测进度规则，不自动接取同类型后续任务来占用截断进度用例的名额。
+    mutableRow.clear_next_mission_id();
     ASSERT_EQ(kSuccess, PlayerMissionSystem::Accept(player, 0, 7, 1000));
     Progress(1, std::numeric_limits<uint32_t>::max());
     EXPECT_TRUE(Missions().IsComplete(7));
@@ -438,13 +437,14 @@ TEST_F(PlayerMissionSystemTest, OwnedLevelFactsReplaceProgressInsteadOfAccumulat
     level.conditionType = static_cast<uint32_t>(eConditionType::kConditionLevelUp);
     level.conditionIds.push_back(20);
     level.amount = 20;
-    MissionSystem::HandleConditionEvent(level, Missions(), config);
-    MissionSystem::HandleConditionEvent(level, Missions(), config);
+    MissionFollowUps followUps;
+    MissionSystem::HandleConditionEvent(level, Missions(), config, followUps);
+    MissionSystem::HandleConditionEvent(level, Missions(), config, followUps);
     ASSERT_TRUE(Missions().IsAccepted(4));
     EXPECT_EQ(20u, Missions().GetMissionList().missions().at(4).progress(0));
     level.amount = 40;
     level.conditionIds[0] = 40;
-    MissionSystem::HandleConditionEvent(level, Missions(), config);
+    MissionSystem::HandleConditionEvent(level, Missions(), config, followUps);
     EXPECT_TRUE(Missions().IsComplete(4));
 }
 TEST_F(PlayerMissionSystemTest, CheckClaimMatchesEligibilityWithoutReservingItemsOrIds) {
@@ -537,6 +537,12 @@ TEST_F(PlayerMissionSystemTest, AcceptBackfillsSavedPrerequisitesOnceWithoutRepl
 }
 
 TEST_F(PlayerMissionSystemTest, CompletedPrerequisitesSurviveReloadAndFinishLateAcceptedMission) {
+    const auto* row = MissionTableManager::Instance().FindByIdSilent(14).first;
+    ASSERT_NE(nullptr, row);
+    auto& mutableRow = *const_cast<MissionTable*>(row);
+    ScopedTestRestore restore(mutableRow);
+    // 此例验证重载与待领事实；显式使用手动领取，避免同步自动发奖消费待领位。
+    mutableRow.set_auto_reward(0);
     Missions().RestoreCompleted(15);
     Missions().RestoreCompleted(16);
     QuestAllData saved;
@@ -547,17 +553,18 @@ TEST_F(PlayerMissionSystemTest, CompletedPrerequisitesSurviveReloadAndFinishLate
     EXPECT_TRUE(Missions().IsClaimable(14));
     EXPECT_FALSE(Missions().IsAccepted(14));
     EXPECT_EQ(kMissionAlreadyCompleted, PlayerMissionSystem::Accept(player, 0, 14, 2000));
-    EXPECT_EQ(0u, ItemCount()); // completion queued the ordinary award path; backfill does not grant directly
+    EXPECT_EQ(0u, ItemCount());
 }
 
 TEST_F(PlayerMissionSystemTest, TargetedConditionRefreshDoesNotReplaceLiveEventFanout) {
     Missions().SetMissionTypeNotRepeated(false);
     ASSERT_EQ(kSuccess, AcceptForRuleTest(7));
     ASSERT_EQ(kSuccess, AcceptForRuleTest(8));
-    MissionSystem::HandleConditionEvent(Kill(1), Missions(), MissionConfig::GetSingleton(), 7);
+    MissionFollowUps followUps;
+    MissionSystem::HandleConditionEvent(Kill(1), Missions(), MissionConfig::GetSingleton(), followUps, 7);
     EXPECT_EQ(1u, Missions().GetMissionList().missions().at(7).progress(0));
     EXPECT_EQ(0u, Missions().GetMissionList().missions().at(8).progress(0));
-    MissionSystem::HandleConditionEvent(Kill(1), Missions(), MissionConfig::GetSingleton());
+    MissionSystem::HandleConditionEvent(Kill(1), Missions(), MissionConfig::GetSingleton(), followUps);
     EXPECT_EQ(2u, Missions().GetMissionList().missions().at(7).progress(0));
     EXPECT_EQ(1u, Missions().GetMissionList().missions().at(8).progress(0));
 }
@@ -624,7 +631,8 @@ TEST_F(PlayerMissionSystemTest, PartiallyFilledStacksUseExactBatchGuidBudgetWith
     ASSERT_TRUE(ArmMissionTestItemSegment(500000, 500001));
     EXPECT_NE(kSuccess, PlayerMissionSystem::ClaimReward(player, 0, 12));
     EXPECT_TRUE(Missions().IsClaimable(12));
-    EXPECT_EQ(1u, tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available());
+    EXPECT_EQ(0u, tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available());
+    EXPECT_EQ(1u, tlsGuidSegmentRegistry.Get(GuidKind::kItem).GetStats().issued);
     BagAllData unchanged;
     bag_marshal::Marshal(player, unchanged);
     EXPECT_EQ(before.SerializeAsString(), unchanged.SerializeAsString());

@@ -1,7 +1,8 @@
 # 共享 Redis 的高可用形态:1 主 2 从 + 3 个哨兵 + 2 个入口代理
 # (docs/design/no-single-node-horizontal-scaling-20261001.md §5)。
-# k8s_deploy.ps1 在 -RedisReplicas 3(staging / prod 档默认)时 apply 本文件,**代替** redis.yaml;
-# 本机 kind / dev 档默认仍用 redis.yaml 的单实例。两份清单里的对象同名,所以可以原地从单实例切过来。
+# **现状(2026-10-15 核实):本文件尚未接入任何部署路径。** k8s_deploy.ps1 没有 -RedisReplicas 参数,Apply-Infra 的 $infraManifests
+# 只有 redis.yaml;各档(含 staging / prod)跑的都是 redis.yaml 的单实例,P0-E 的重启闸与 maxclients 都作用在它上面。
+# 原计划是在 -RedisReplicas 3 时 apply 本文件、**代替** redis.yaml;两份清单里的对象同名,所以可以原地从单实例切过来。
 # **接入前置(P0-E,2026-10-15;本文件行为未改)**:接入前必须像 redis.yaml 那样给每个 redis-server 显式 --maxclients,并重算
 # k8s_deploy.ps1「Redis 连接总账」(haproxy 的 maxconn 也要算进去:节点上限 ≥(代理副本数 + maxSurge)× maxconn + 余量,
 # 现在是 (2 + 1) × 20000 = 60000,超过 Redis 缺省 10000,也超过 redis.yaml 的 40000;到线时代理健康检查失败会
@@ -31,9 +32,9 @@
 #     这些写入在它被降级时会全部丢弃(锁、会话、存档游标都在里面)。代价:三个 Pod 里同时坏两个时 Redis 只读。
 #   - 哨兵的多数派是 2/3:同时坏两个 Pod 就不能自动切主。
 #
-# 从单实例原地切过来(脚本 Apply-Infra 的配套分支会处理):redis-0 保留原 PVC 与数据、以主身份重启,
+# 从单实例原地切过来(**计划**由 Apply-Infra 的配套分支处理,尚未实现):redis-0 保留原 PVC 与数据、以主身份重启,
 # redis-1 / redis-2 新建后从它全量同步。**这是一次有停机窗口的变更**(redis-0 重启期间全服登录不可用)。
-# 反方向(3 → 1)脚本拒绝:主可能不在 redis-0 上,直接缩容会丢数据。
+# 反方向(3 → 1)接入时脚本必须拒绝(尚未实现):主可能不在 redis-0 上,直接缩容会丢数据。
 #
 # **Service redis 不能删了重建**:C++ 节点启动时把它解析成 IP 存下来,重连用的是同一个 IP;
 # 重建 Service 会换 ClusterIP,所有 gate / scene / battle 都要重启才连得上。改 selector 用 apply,不要 delete。
@@ -440,7 +441,8 @@ data:
     # 口令的字符集限制(只在高可用形态下有):哨兵会把口令**原样、不加引号**写回它自己的配置文件
     # (sentinel auth-pass / sentinel-pass 两行,Redis 自身的行为),口令里有空白、引号或反斜杠时,
     # 这次能启动,下一次重启读这份文件就报 "Unbalanced quotes" 起不来(2026-10-08 实测)。
-    # 所以宁可现在就拒启、把话说清楚。k8s_deploy.ps1 在部署入口有同一条检查。
+    # 所以宁可现在就拒启、把话说清楚。k8s_deploy.ps1 的部署入口目前只拒绝 `"`、`\` 与控制字符(Assert-RedisPasswordYamlSafe),
+    # 不拒绝空白与单引号;接入本文件时要把这条检查补齐到同一口径。
     case "${REDIS_PASSWORD:-}" in
       *[[:space:]\"\'\\]*)
         echo "[sentinel-start] Refusing startup: Redis password contains whitespace, quotes, or backslashes. Sentinels cannot save such a password back to the configuration file; use a password containing only letters, digits, and ._~@%+=:,^-." >&2
@@ -658,7 +660,8 @@ spec:
   replicas: 3
   # 三个 Pod 同时创建,而不是 0 → 1 → 2 逐个等就绪:整个集群断电重启时,上一任主可能是 redis-1,
   # 而 redis-0 作为从要等主起来才就绪 —— 按序创建会在这里互相等死。
-  # 这个字段创建后不能改:从单实例清单切过来时,脚本会先 `delete --cascade=orphan` 旧的 StatefulSet(Pod 与 PVC 原样保留)。
+  # 这个字段创建后不能改:从单实例清单切过来时,脚本要先 `delete --cascade=orphan` 旧的 StatefulSet(Pod 与 PVC 原样保留;
+  # 尚未实现。注意 P0-E 的 Redis 重启闸此时查不到 sts、会按「全新集群」放行,接入时要一并处理)。
   # 滚动更新不受它影响,仍然一次换一个、等就绪再换下一个。
   podManagementPolicy: Parallel
   selector:

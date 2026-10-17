@@ -80,6 +80,19 @@ func main() {
 	svcCtx := svc.NewServiceContext(c)
 
 	ctx, cancel := context.WithCancel(context.Background())
+	resultConfig := matchkafka.ResultConsumerConfig{
+		Brokers: c.Kafka.Brokers, Topic: c.ResultTopic,
+		GroupID: c.ResultConsumerGroup, Partitions: c.ResultTopicPartitions,
+		RequireSQLCommit: c.GlobalMatch.Enabled,
+	}
+	// 成局之后 battle 会写结果，不能等到可选的评分消费者启动时才发现主题不耐久。
+	// 此门禁先于 matcher、节点发现和 RPC 注册；失败直接拒绝本进程启动。
+	if c.GlobalMatch.Enabled {
+		if err := matchkafka.EnsureResultTopic(resultConfig); err != nil {
+			cancel()
+			panic(fmt.Errorf("全球匹配结果主题未满足耐久契约，拒绝启动: %w", err))
+		}
+	}
 
 	// Prometheus /metrics(MetricsListenAddr 为空则不开)。
 	metrics.Start(c.MetricsListenAddr)
@@ -92,29 +105,31 @@ func main() {
 	safego.Go("match.watch.scene", func() { svcCtx.SceneNodes.Run(ctx, svcCtx.Etcd) })
 	safego.Go("match.watch.battle", func() { svcCtx.BattleNodes.Run(ctx, svcCtx.Etcd) })
 
-	// matcher loop:定时扫队列凑单。多实例安全由每个 (mode, config) 队列的
-	// Redis SETNX 锁保证,match 服务本身无状态、可水平扩(设计文档 §5.4)。
-	matchlogic.StartMatcherLoop(ctx, svcCtx)
-
-	// 对局结果回流(cross-zone-matchmaking.md §11):消费 battle 发的
-	// BattleResultEvent 更新 Elo。消费者不 import logic(会成环),入账逻辑
-	// 以回调注入;RatingEnabled=false 时不消费,评分停在默认 1500。
-	if c.RatingEnabled {
+	// 全球结果来源归档独立于评分开关，PVE与不计分局也必须保全完整个人原件。
+	// 启动接线先于matcher与RPC注册；旧兼容模式仍只在启用评分时消费。
+	if c.GlobalMatch.Enabled || c.RatingEnabled {
 		startResults := func() error {
-			return matchkafka.StartResultConsumer(ctx, matchkafka.ResultConsumerConfig{
-				Brokers:    c.Kafka.Brokers,
-				Topic:      c.ResultTopic,
-				GroupID:    c.ResultConsumerGroup,
-				Partitions: c.ResultTopicPartitions,
-			}, func(_ context.Context, event *kafkapb.BattleResultEvent) error {
+			var recorder []matchkafka.ResultRecordHandler
+			if c.GlobalMatch.Enabled {
+				if svcCtx.Authority == nil {
+					return fmt.Errorf("全球匹配完整结算来源数据库未装配")
+				}
+				recorder = append(recorder, svcCtx.Authority.ArchiveCompletion)
+			}
+			return matchkafka.StartResultConsumer(ctx, resultConfig, func(_ context.Context, event *kafkapb.BattleResultEvent) error {
+				if !c.RatingEnabled {
+					return nil
+				}
 				_, err := matchlogic.ApplyBattleResult(svcCtx, event)
 				return err
-			})
+			}, recorder...)
 		}
-		// 评分是软数据:Kafka 暂不可达(EnsureTopics / 建 reader 失败)不能拖死匹配本身
-		// (复审:RatingEnabled=true 让 match 启动硬依赖 Kafka)。降级为告警 + 30s 后台重试,
-		// 期间排队/凑单照常、评分停在当前值;重试成功后从最早 offset 补消费,不丢结果。
+		// 全球来源归档必须同步装配成功；只有显式旧兼容模式的软评分允许告警后后台重试。
 		if err := startResults(); err != nil {
+			if c.GlobalMatch.Enabled {
+				cancel()
+				panic(fmt.Errorf("全球匹配完整结算来源消费者未就绪，拒绝启动: %w", err))
+			}
 			logx.Errorf("[rating] Failed to start battle result consumer; rating updates paused, retrying in the background after 30s: %v", err)
 			safego.Go("match.kafka.results.retry", func() {
 				for {
@@ -133,6 +148,9 @@ func main() {
 			})
 		}
 	}
+
+	// 结果归档已装配之后才开放成局循环；多实例由当前模式的权威认领规则隔离。
+	matchlogic.StartMatcherLoop(ctx, svcCtx)
 
 	// 组队(team-system.md §A.3,port-decisions D-2 / feasibility D7):与 match 同进程、同一个
 	// zrpc server,协议独立(ClientPlayerTeam service + TeamNodeService 第二次节点注册)。

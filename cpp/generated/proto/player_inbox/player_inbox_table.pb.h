@@ -96,6 +96,7 @@ enum PlayerInboxAuditAction : int {
   PLAYER_INBOX_AUDIT_UNSPECIFIED = 0,
   PLAYER_INBOX_AUDIT_SANCTION = 1,
   PLAYER_INBOX_AUDIT_VOID = 2,
+  PLAYER_INBOX_AUDIT_FORCE_VOID = 3,
   PlayerInboxAuditAction_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   PlayerInboxAuditAction_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -106,11 +107,11 @@ extern const uint32_t PlayerInboxAuditAction_internal_data_[];
 inline constexpr PlayerInboxAuditAction PlayerInboxAuditAction_MIN =
     static_cast<PlayerInboxAuditAction>(0);
 inline constexpr PlayerInboxAuditAction PlayerInboxAuditAction_MAX =
-    static_cast<PlayerInboxAuditAction>(2);
+    static_cast<PlayerInboxAuditAction>(3);
 [[nodiscard]] inline bool PlayerInboxAuditAction_IsValid(int value) {
-  return 0 <= value && value <= 2;
+  return 0 <= value && value <= 3;
 }
-inline constexpr int PlayerInboxAuditAction_ARRAYSIZE = 2 + 1;
+inline constexpr int PlayerInboxAuditAction_ARRAYSIZE = 3 + 1;
 [[nodiscard]] const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL
 PlayerInboxAuditAction_descriptor();
 [[nodiscard]] inline auto ProtobufInternalGetEnumDescriptor(PlayerInboxAuditAction) {
@@ -125,7 +126,7 @@ template <typename T>
 }
 template <>
 [[nodiscard]] inline const ::std::string& PlayerInboxAuditAction_Name(PlayerInboxAuditAction value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<PlayerInboxAuditAction_descriptor, 0, 2>(
+  return ::google::protobuf::internal::NameOfDenseEnum<PlayerInboxAuditAction_descriptor, 0, 3>(
       static_cast<int>(value));
 }
 [[nodiscard]] inline bool PlayerInboxAuditAction_Parse(

@@ -99,20 +99,19 @@ comments as English to dodge a hazard the build already handled.
 - **Proto**：`proto/gate/gate_service.proto`（C++ 节点 RPC）、`proto/contracts/kafka/gate_event.proto`（Kafka 命令）。
 - **Design doc**: `docs/design/broadcast-message-size-analysis.md`.
 
-## gRPC Server Thread Pool (C++ Nodes)
-- C++ nodes embed a gRPC sync server for control-plane RPCs (CreateScene, DestroyScene, etc.).
-- RPC transport work runs on gRPC threads. Handlers dispatch their business portion to the muduo EventLoop via `runInLoop` + `promise/future`, so ECS and gameplay state remain single-thread-owned. “Business logic is single-threaded” does **not** mean the process has only one thread.
-- **Sync poller setting**: env `GRPC_SERVER_MAX_POLLERS` (default `8`) controls the maximum sync server pollers. It does not control EventEngine workers.
-- gRPC v1.83's built-in EventEngine eagerly starts `Clamp(gpr_cpu_num_cores(), 4, 16)` reserve workers plus one Lifeguard, and may add workers under backlog. `16` is not a hard maximum.
-- The built-in EventEngine has no public reserve/max environment variable. Do not claim that `GRPC_THREAD_POOL_RESERVE_THREADS` or `GRPC_THREAD_POOL_MAX_THREADS` configures it; legacy settings with those names are currently inert.
-- `GRPC_MAX_THREADS` is the `ResourceQuota` setting attached to client channels by `GrpcChannelCache`; it is not a cap on EventEngine workers, sync server pollers, or total process threads.
-- Multiple gRPC services (scene, mail, guild, etc.) share the same port and thread pool.
+## gRPC 服务端与线程(C++ 节点,muduo 驱动)
+- scene / battle 内嵌 gRPC 服务端承接控制面 RPC(CreateScene、DestroyScene、ReleasePlayer、资产 RPC、CreateBattle 等)。第 4 批起它是 `muduo_grpc::Server`(muduo `Acceptor` + nghttp2,设计见 `docs/design/grpc-muduo-transport.md` §15):接入、HTTP/2、派发、截止、排空全部跑在节点 EventLoop 上,**不新增任何线程**;不再构造 `grpc::Server` / `ServerBuilder` / `ServerContext` / `CompletionQueue`。每个节点一个 gRPC 端口(TCP+30000),scene 只注册 `SceneNodeGrpc`(9 个方法),battle 只注册 `BattleNode`(6 个方法)。
+- 生成的 `<Svc>Impl : muduo_grpc::Service` 在 loop 线程上被调用:`grpc.<M>.guard` 守护段要么同步 `Reject`,要么发起异步步骤(如 `AcquireAllocationPermitAsync`)后再 `Proceed()`;`Handle<M>` 同步执行。handler 里**不得阻塞**(不用 `promise/future`,不调 `AcquireAllocationPermitBlocking`),否则卡住整个逻辑帧。异步续跑只捕获调用句柄(`shared_ptr<GrpcUnaryCall>`)或 weak,不捕获 `this`。「业务逻辑单线程」仍然不等于进程只有一个线程(Kafka、Redis、日志等仍有自己的线程)。
+- 第 3 批起生成的 C++ gRPC 客户端也走 muduo_grpc(节点实体上的 `MuduoGrpcChannelPtr`),节点不再拉起官方 gRPC 运行时(`grpc_init`、EventEngine、poller、Lifeguard)。保持这一点:进程里任何路径再构造官方 grpc 对象,这些线程就会回来。第 5 批的运行期守卫已落地:ThreadMonitor 采样时核对 `grpc_is_initialized()`,第一次为真打一条 ERROR「official gRPC runtime is initialized」,每小时指标行带 `grpc_runtime_initialized=0/1`(见 docs/design/thread-count-monitoring.md「gRPC Runtime Guard」);`rpc_controller_test` 里的 `GrpcRuntimeNotInitializedTest` 锁住这一点,该测试工程内不得有用例构造官方 grpc 对象。grpc 库与 `*.grpc.pb.*` 仍保留在构建里,只是服务端 / 客户端都不再 include。
+- `GRPC_SERVER_MAX_POLLERS` **已退役**:进程忽略它,设了只打一行 WARN;部署脚本不再注入。并发上限由服务端内建:每连接 `MAX_CONCURRENT_STREAMS=256`、全节点在途 1024(超限在业务之前回 `RESOURCE_EXHAUSTED`)、派发泵每轮 ≤64 个且 ≤2ms。
+- `GRPC_THREAD_POOL_RESERVE_THREADS` / `GRPC_THREAD_POOL_MAX_THREADS` / `GRPC_MAX_THREADS` 对节点线程数都没有作用(`GrpcChannelCache` 已随第 3 批删除),不要再用它们「调线程」。线程数核对按 `grpc-muduo-transport.md` §15.14 第 8 步(thread baseline + Linux `/proc/<pid>/task/*/comm`)。
 
-### gRPC Sync Server Shutdown
-- Never call `grpc::Server::Shutdown()` synchronously on the muduo EventLoop while sync handlers can be waiting for `runInLoop` work; that creates a loop-thread ↔ poller-thread wait cycle.
-- Use a temporary Node-owned, joinable worker to run `Shutdown()`. Keep the EventLoop running so queued handler work can finish. When the worker returns, queue finalization back to the EventLoop, join the completed worker there, then tear down the remaining Node resources and quit.
-- Do not immediately join the shutdown worker on the EventLoop, and do not detach it past the lifetime of `Node` or the registered gRPC services.
-- A shutdown deadline is only a transport grace deadline. It may cancel pending calls but cannot forcibly terminate an already-running C++ sync handler; it is not a hard handler-duration or process-shutdown bound.
+### gRPC 服务端关机
+- 关机全部在 loop 内完成,没有关机线程、没有 join(旧的 `grpcShutdownThread_` 已删):`ShutdownInLoop` 依次 StopConsumers → beforeShutdown hook → 看门狗 → `grpcServer_->BeginShutdown({2s, 1s, 1s}, onDrained)` → MaybeFinalize(`grpc-muduo-transport.md` §15.10)。
+- `BeginShutdown`:置排空标志(此后 `ServerDraining()` 为真)→ 停监听(Acceptor 经 `queueInLoop` 销毁)→ 每条连接两段 GOAWAY(shutdown notice + PING,收到 PING ACK 或满 1s 再发最终 GOAWAY)。最终 GOAWAY 之前收到的调用照常处理;2s 排空到期时,未开始的回 `RST_STREAM(REFUSED_STREAM)`,已开始的回 `UNAVAILABLE "server shutting down"`;之后写半关,宽限 1s 再 forceClose,总上限约 3s。
+- `onDrained` 恰好一次、经 `queueInLoop` 投递;`Node::OnGrpcServerDrained` 在这个排队任务里 reset Server,早于两跳 `quit()`。`muduo_grpc::Server` 与 `Acceptor` 只能在 `queueInLoop` 任务里或 loop 外析构(I/O 事件处理期间 `removeChannel` 有断言)。
+- handler 不能同步等待排空:排空本身要靠 loop 推进。停机期间要拒绝的变更型 RPC 在守护段里查 `ServerDraining()`(scene CreateScene 回 `UNAVAILABLE "scene_node_shutting_down"`)或用自己的准入闸(battle CreateBattle 回 `battle_not_allocatable`)。
+- 截止由服务端执行:投递前或等许可时到期回 `DEADLINE_EXCEEDED`、不进业务;业务一旦开始不会被打断,迟到的完成被丢弃并计数。恰好一次的唯一裁决点是 `Server::CompleteCall`。
 
 ## Scene Manager 与 Gate 当前通信
 

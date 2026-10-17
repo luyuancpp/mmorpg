@@ -22,6 +22,7 @@
 #include <grpcpp/ports_def.inc>
 
 static const char* BattleNode_method_names[] = {
+  "/BattleNode/QueryBattleCreation",
   "/BattleNode/CreateBattle",
   "/BattleNode/DestroyBattle",
   "/BattleNode/AddObserver",
@@ -36,12 +37,36 @@ std::unique_ptr< BattleNode::Stub> BattleNode::NewStub(const std::shared_ptr< ::
 }
 
 BattleNode::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
-  : channel_(channel), rpcmethod_CreateBattle_(BattleNode_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_DestroyBattle_(BattleNode_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_AddObserver_(BattleNode_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RemoveObserver_(BattleNode_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_IssueBattleTicket_(BattleNode_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  : channel_(channel), rpcmethod_QueryBattleCreation_(BattleNode_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CreateBattle_(BattleNode_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_DestroyBattle_(BattleNode_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AddObserver_(BattleNode_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RemoveObserver_(BattleNode_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_IssueBattleTicket_(BattleNode_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
+
+::grpc::Status BattleNode::Stub::QueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::QueryBattleCreationResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::QueryBattleCreationRequest, ::QueryBattleCreationResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_QueryBattleCreation_, context, request, response);
+}
+
+void BattleNode::Stub::async::QueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest* request, ::QueryBattleCreationResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::QueryBattleCreationRequest, ::QueryBattleCreationResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_QueryBattleCreation_, context, request, response, std::move(f));
+}
+
+void BattleNode::Stub::async::QueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest* request, ::QueryBattleCreationResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_QueryBattleCreation_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::QueryBattleCreationResponse>* BattleNode::Stub::PrepareAsyncQueryBattleCreationRaw(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::QueryBattleCreationResponse, ::QueryBattleCreationRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_QueryBattleCreation_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::QueryBattleCreationResponse>* BattleNode::Stub::AsyncQueryBattleCreationRaw(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncQueryBattleCreationRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
 
 ::grpc::Status BattleNode::Stub::CreateBattle(::grpc::ClientContext* context, const ::CreateBattleRequest& request, ::CreateBattleResponse* response) {
   return ::grpc::internal::BlockingUnaryCall< ::CreateBattleRequest, ::CreateBattleResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CreateBattle_, context, request, response);
@@ -162,6 +187,16 @@ BattleNode::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       BattleNode_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< BattleNode::Service, ::QueryBattleCreationRequest, ::QueryBattleCreationResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](BattleNode::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::QueryBattleCreationRequest* req,
+             ::QueryBattleCreationResponse* resp) {
+               return service->QueryBattleCreation(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      BattleNode_method_names[1],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< BattleNode::Service, ::CreateBattleRequest, ::CreateBattleResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](BattleNode::Service* service,
              ::grpc::ServerContext* ctx,
@@ -170,7 +205,7 @@ BattleNode::Service::Service() {
                return service->CreateBattle(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      BattleNode_method_names[1],
+      BattleNode_method_names[2],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< BattleNode::Service, ::DestroyBattleRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](BattleNode::Service* service,
@@ -180,7 +215,7 @@ BattleNode::Service::Service() {
                return service->DestroyBattle(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      BattleNode_method_names[2],
+      BattleNode_method_names[3],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< BattleNode::Service, ::AddObserverRequest, ::AddObserverResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](BattleNode::Service* service,
@@ -190,7 +225,7 @@ BattleNode::Service::Service() {
                return service->AddObserver(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      BattleNode_method_names[3],
+      BattleNode_method_names[4],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< BattleNode::Service, ::RemoveObserverRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](BattleNode::Service* service,
@@ -200,7 +235,7 @@ BattleNode::Service::Service() {
                return service->RemoveObserver(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      BattleNode_method_names[4],
+      BattleNode_method_names[5],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< BattleNode::Service, ::IssueBattleTicketRequest, ::IssueBattleTicketResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](BattleNode::Service* service,
@@ -212,6 +247,13 @@ BattleNode::Service::Service() {
 }
 
 BattleNode::Service::~Service() {
+}
+
+::grpc::Status BattleNode::Service::QueryBattleCreation(::grpc::ServerContext* context, const ::QueryBattleCreationRequest* request, ::QueryBattleCreationResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
 ::grpc::Status BattleNode::Service::CreateBattle(::grpc::ServerContext* context, const ::CreateBattleRequest* request, ::CreateBattleResponse* response) {

@@ -1,41 +1,58 @@
 #pragma once
 #include <chrono>
 #include <functional>
-#include <memory>
-#include <deque>
-#include "core/network/grpc_client_runtime.h"
+#include <string>
+#include <string_view>
+#include <vector>
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
-#include "proto/match/match_service.grpc.pb.h"
 
 #include "rpc/service_metadata/match_service_service_metadata.h"
 
-using grpc::ClientContext;
-using grpc::Status;
-using grpc::ClientAsyncResponseReader;
-
 namespace match {
-using MatchServiceStubPtr = std::unique_ptr<MatchService::Stub>;
+#pragma region MatchServiceGetNetworkProbePlan
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceGetNetworkProbePlanGrpcPath = "/match.MatchService/GetNetworkProbePlan";
+using AsyncMatchServiceGetNetworkProbePlanHandlerFunctionType =
+    std::function<void(const GrpcReplyContext&, const ::match::GetNetworkProbePlanResponse&)>;
+extern AsyncMatchServiceGetNetworkProbePlanHandlerFunctionType AsyncMatchServiceGetNetworkProbePlanHandler;
+// 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
+// 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
+using AsyncMatchServiceGetNetworkProbePlanFailedHandlerFunctionType =
+    std::function<void(const GrpcCallFailure&, const ::match::GetNetworkProbePlanRequest&)>;
+extern AsyncMatchServiceGetNetworkProbePlanFailedHandlerFunctionType AsyncMatchServiceGetNetworkProbePlanFailedHandler;
+
+void SendMatchServiceGetNetworkProbePlan(entt::registry& registry, entt::entity nodeEntity, const ::match::GetNetworkProbePlanRequest& request);
+void SendMatchServiceGetNetworkProbePlan(entt::registry& registry, entt::entity nodeEntity, const ::match::GetNetworkProbePlanRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendMatchServiceGetNetworkProbePlan(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceGetNetworkProbePlan(entt::registry& registry, entt::entity nodeEntity, const ::match::GetNetworkProbePlanRequest& request, GrpcDone<::match::GetNetworkProbePlanResponse> done, const GrpcCallOptions& options = {});
+#pragma endregion
+#pragma region MatchServiceCommitNetworkProbe
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceCommitNetworkProbeGrpcPath = "/match.MatchService/CommitNetworkProbe";
+using AsyncMatchServiceCommitNetworkProbeHandlerFunctionType =
+    std::function<void(const GrpcReplyContext&, const ::match::CommitNetworkProbeResponse&)>;
+extern AsyncMatchServiceCommitNetworkProbeHandlerFunctionType AsyncMatchServiceCommitNetworkProbeHandler;
+// 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
+// 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
+using AsyncMatchServiceCommitNetworkProbeFailedHandlerFunctionType =
+    std::function<void(const GrpcCallFailure&, const ::match::CommitNetworkProbeRequest&)>;
+extern AsyncMatchServiceCommitNetworkProbeFailedHandlerFunctionType AsyncMatchServiceCommitNetworkProbeFailedHandler;
+
+void SendMatchServiceCommitNetworkProbe(entt::registry& registry, entt::entity nodeEntity, const ::match::CommitNetworkProbeRequest& request);
+void SendMatchServiceCommitNetworkProbe(entt::registry& registry, entt::entity nodeEntity, const ::match::CommitNetworkProbeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+void SendMatchServiceCommitNetworkProbe(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues);
+// 每次调用回调版(契约见 grpc_call_tag.h 的 GrpcDone):done 恰好调用一次、从不在本函数栈内同步调用,
+// 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
+void SendMatchServiceCommitNetworkProbe(entt::registry& registry, entt::entity nodeEntity, const ::match::CommitNetworkProbeRequest& request, GrpcDone<::match::CommitNetworkProbeResponse> done, const GrpcCallOptions& options = {});
+#pragma endregion
 #pragma region MatchServiceJoinQueue
-
-struct AsyncMatchServiceJoinQueueGrpcClient {
-    uint32_t messageId{ MatchServiceJoinQueueMessageId };
-    ClientContext context;
-    Status status;
-    ::match::JoinQueueResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::match::JoinQueueResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::match::JoinQueueRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceJoinQueueHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::match::JoinQueueResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceJoinQueueGrpcPath = "/match.MatchService/JoinQueue";
 using AsyncMatchServiceJoinQueueHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::match::JoinQueueResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::match::JoinQueueResponse&)>;
 extern AsyncMatchServiceJoinQueueHandlerFunctionType AsyncMatchServiceJoinQueueHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -51,25 +68,10 @@ void SendMatchServiceJoinQueue(entt::registry& registry, entt::entity nodeEntity
 void SendMatchServiceJoinQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::JoinQueueRequest& request, GrpcDone<::match::JoinQueueResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceCancelQueue
-
-struct AsyncMatchServiceCancelQueueGrpcClient {
-    uint32_t messageId{ MatchServiceCancelQueueMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::match::CancelQueueRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceCancelQueueHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceCancelQueueGrpcPath = "/match.MatchService/CancelQueue";
 using AsyncMatchServiceCancelQueueHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncMatchServiceCancelQueueHandlerFunctionType AsyncMatchServiceCancelQueueHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -85,25 +87,10 @@ void SendMatchServiceCancelQueue(entt::registry& registry, entt::entity nodeEnti
 void SendMatchServiceCancelQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::CancelQueueRequest& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceGetQueueStatus
-
-struct AsyncMatchServiceGetQueueStatusGrpcClient {
-    uint32_t messageId{ MatchServiceGetQueueStatusMessageId };
-    ClientContext context;
-    Status status;
-    ::match::GetQueueStatusResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::match::GetQueueStatusResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::match::GetQueueStatusRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceGetQueueStatusHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::match::GetQueueStatusResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceGetQueueStatusGrpcPath = "/match.MatchService/GetQueueStatus";
 using AsyncMatchServiceGetQueueStatusHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::match::GetQueueStatusResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::match::GetQueueStatusResponse&)>;
 extern AsyncMatchServiceGetQueueStatusHandlerFunctionType AsyncMatchServiceGetQueueStatusHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -119,25 +106,10 @@ void SendMatchServiceGetQueueStatus(entt::registry& registry, entt::entity nodeE
 void SendMatchServiceGetQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::match::GetQueueStatusRequest& request, GrpcDone<::match::GetQueueStatusResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceChallengePlayer
-
-struct AsyncMatchServiceChallengePlayerGrpcClient {
-    uint32_t messageId{ MatchServiceChallengePlayerMessageId };
-    ClientContext context;
-    Status status;
-    ::match::ChallengePlayerResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::match::ChallengePlayerResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::match::ChallengePlayerRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceChallengePlayerHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::match::ChallengePlayerResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceChallengePlayerGrpcPath = "/match.MatchService/ChallengePlayer";
 using AsyncMatchServiceChallengePlayerHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::match::ChallengePlayerResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::match::ChallengePlayerResponse&)>;
 extern AsyncMatchServiceChallengePlayerHandlerFunctionType AsyncMatchServiceChallengePlayerHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -153,25 +125,10 @@ void SendMatchServiceChallengePlayer(entt::registry& registry, entt::entity node
 void SendMatchServiceChallengePlayer(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengePlayerRequest& request, GrpcDone<::match::ChallengePlayerResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceRespondChallenge
-
-struct AsyncMatchServiceRespondChallengeGrpcClient {
-    uint32_t messageId{ MatchServiceRespondChallengeMessageId };
-    ClientContext context;
-    Status status;
-    ::match::RespondChallengeResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::match::RespondChallengeResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::match::RespondChallengeRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceRespondChallengeHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::match::RespondChallengeResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceRespondChallengeGrpcPath = "/match.MatchService/RespondChallenge";
 using AsyncMatchServiceRespondChallengeHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::match::RespondChallengeResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::match::RespondChallengeResponse&)>;
 extern AsyncMatchServiceRespondChallengeHandlerFunctionType AsyncMatchServiceRespondChallengeHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -187,25 +144,10 @@ void SendMatchServiceRespondChallenge(entt::registry& registry, entt::entity nod
 void SendMatchServiceRespondChallenge(entt::registry& registry, entt::entity nodeEntity, const ::match::RespondChallengeRequest& request, GrpcDone<::match::RespondChallengeResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceNotifyChallengeInvite
-
-struct AsyncMatchServiceNotifyChallengeInviteGrpcClient {
-    uint32_t messageId{ MatchServiceNotifyChallengeInviteMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::match::ChallengeInviteS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceNotifyChallengeInviteHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceNotifyChallengeInviteGrpcPath = "/match.MatchService/NotifyChallengeInvite";
 using AsyncMatchServiceNotifyChallengeInviteHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncMatchServiceNotifyChallengeInviteHandlerFunctionType AsyncMatchServiceNotifyChallengeInviteHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -221,25 +163,10 @@ void SendMatchServiceNotifyChallengeInvite(entt::registry& registry, entt::entit
 void SendMatchServiceNotifyChallengeInvite(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeInviteS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceNotifyChallengeResult
-
-struct AsyncMatchServiceNotifyChallengeResultGrpcClient {
-    uint32_t messageId{ MatchServiceNotifyChallengeResultMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::match::ChallengeResultS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceNotifyChallengeResultHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceNotifyChallengeResultGrpcPath = "/match.MatchService/NotifyChallengeResult";
 using AsyncMatchServiceNotifyChallengeResultHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncMatchServiceNotifyChallengeResultHandlerFunctionType AsyncMatchServiceNotifyChallengeResultHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -255,25 +182,10 @@ void SendMatchServiceNotifyChallengeResult(entt::registry& registry, entt::entit
 void SendMatchServiceNotifyChallengeResult(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeResultS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceWatchBattle
-
-struct AsyncMatchServiceWatchBattleGrpcClient {
-    uint32_t messageId{ MatchServiceWatchBattleMessageId };
-    ClientContext context;
-    Status status;
-    ::match::WatchBattleResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::match::WatchBattleResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::match::WatchBattleRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceWatchBattleHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::match::WatchBattleResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceWatchBattleGrpcPath = "/match.MatchService/WatchBattle";
 using AsyncMatchServiceWatchBattleHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::match::WatchBattleResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::match::WatchBattleResponse&)>;
 extern AsyncMatchServiceWatchBattleHandlerFunctionType AsyncMatchServiceWatchBattleHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -289,25 +201,10 @@ void SendMatchServiceWatchBattle(entt::registry& registry, entt::entity nodeEnti
 void SendMatchServiceWatchBattle(entt::registry& registry, entt::entity nodeEntity, const ::match::WatchBattleRequest& request, GrpcDone<::match::WatchBattleResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceRequestBattleTicket
-
-struct AsyncMatchServiceRequestBattleTicketGrpcClient {
-    uint32_t messageId{ MatchServiceRequestBattleTicketMessageId };
-    ClientContext context;
-    Status status;
-    ::RequestBattleTicketResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::RequestBattleTicketResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::RequestBattleTicketRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceRequestBattleTicketHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::RequestBattleTicketResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceRequestBattleTicketGrpcPath = "/match.MatchService/RequestBattleTicket";
 using AsyncMatchServiceRequestBattleTicketHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::RequestBattleTicketResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::RequestBattleTicketResponse&)>;
 extern AsyncMatchServiceRequestBattleTicketHandlerFunctionType AsyncMatchServiceRequestBattleTicketHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -323,25 +220,10 @@ void SendMatchServiceRequestBattleTicket(entt::registry& registry, entt::entity 
 void SendMatchServiceRequestBattleTicket(entt::registry& registry, entt::entity nodeEntity, const ::RequestBattleTicketRequest& request, GrpcDone<::RequestBattleTicketResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region MatchServiceListWatchableBattles
-
-struct AsyncMatchServiceListWatchableBattlesGrpcClient {
-    uint32_t messageId{ MatchServiceListWatchableBattlesMessageId };
-    ClientContext context;
-    Status status;
-    ::match::ListWatchableBattlesResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::match::ListWatchableBattlesResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::match::ListWatchableBattlesRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceListWatchableBattlesHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::match::ListWatchableBattlesResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kMatchServiceListWatchableBattlesGrpcPath = "/match.MatchService/ListWatchableBattles";
 using AsyncMatchServiceListWatchableBattlesHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::match::ListWatchableBattlesResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::match::ListWatchableBattlesResponse&)>;
 extern AsyncMatchServiceListWatchableBattlesHandlerFunctionType AsyncMatchServiceListWatchableBattlesHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -356,13 +238,11 @@ void SendMatchServiceListWatchableBattles(entt::registry& registry, entt::entity
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendMatchServiceListWatchableBattles(entt::registry& registry, entt::entity nodeEntity, const ::match::ListWatchableBattlesRequest& request, GrpcDone<::match::ListWatchableBattlesResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
-void SetMatchServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void SetMatchServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetMatchServiceHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetMatchServiceIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetMatchServiceFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 void SetMatchServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
+// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。
 void SetMatchServiceCallDeadline(std::chrono::milliseconds deadline);
-void HandleMatchServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
-void InitMatchServiceGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace match

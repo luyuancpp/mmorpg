@@ -6,6 +6,8 @@
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <algorithm>
+#include <openssl/sha.h>
 
 #include "muduo/base/Logging.h"
 
@@ -23,6 +25,11 @@
 #include "player/system/asset_op_ledger.h"
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_mutability.h" // HasFencedOwnership / IsPlayerMutable(与玩家收件箱共用,D12)
+#include "player/system/player_pet.h"
+#include "modules/transaction_log/transaction_log_system.h"
+#include "table/code/petrule_table.h"
+#include "table/code/pet_table.h"
+#include "proto/common/component/player_pet_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h" // UnregisterPlayer
 #include "table/code/item_table.h"
 #include "table/proto/tip/asset_error_tip.pb.h"
@@ -84,8 +91,8 @@ constexpr AssetOpStreamRule kAssetOpStreamRules[] = {
 	 {TX_GUILD_DONATE, TX_UNKNOWN, TX_UNKNOWN}},
 	{ASSET_OP_STREAM_GUILD_CREDIT, AssetOpDirection::kCredit, 2,
 	 {TX_GUILD_SHOP, TX_GUILD_ACTIVITY_REWARD, TX_UNKNOWN}},
-	{ASSET_OP_STREAM_TRADE_DEBIT, AssetOpDirection::kDebit, 1,
-	 {TX_AUCTION_SELL, TX_UNKNOWN, TX_UNKNOWN}},
+	{ASSET_OP_STREAM_TRADE_DEBIT, AssetOpDirection::kDebit, 3,
+	 {TX_AUCTION_SELL, TX_TRADE, TX_AUCTION_BUY}},
 	{ASSET_OP_STREAM_TRADE_CREDIT, AssetOpDirection::kCredit, 2,
 	 {TX_AUCTION_BUY, TX_TRADE, TX_UNKNOWN}},
 	{ASSET_OP_STREAM_SYSTEM_CREDIT, AssetOpDirection::kCredit, 3,
@@ -124,13 +131,55 @@ int64_t DefaultNowMs()
 	return static_cast<int64_t>(TimeSystem::NowMillisecondsUTC());
 }
 
-PlayerAssetOpSystem::PersistFn g_persistFn = &PlayerLifecycleSystem::SavePlayerToRedis;
+PlayerAssetOpSystem::PersistFn g_persistFn = &PlayerLifecycleSystem::SavePlayerForAssetCommit;
 PlayerAssetOpSystem::AddCurrencyFn g_addCurrencyFn = &CurrencySystem::AddCurrency;
 PlayerAssetOpSystem::NowMsFn g_nowMsFn = &DefaultNowMs;
 
 // nullptr 的含义由 asset_op_auth.h 约定:走默认实现(读环境变量
 // MMORPG_ASSET_OP_SECRET_<CALLER> 并缓存)。密钥值**不进日志、不进仓库**。
 AssetOpSecretLookup g_secretLookup = nullptr;
+
+constexpr size_t kInstanceBytesLimit = kAssetOpMaxInstanceBytes;
+constexpr size_t kSnapshotBytesLimit = kAssetOpMaxSnapshotBytes;
+constexpr size_t kPlayerReceiptBytesLimit = kAssetOpMaxPlayerReceiptBytes;
+
+std::string ReceiptDigest(const AssetOpRequest& request)
+{
+	AssetOpRequest stable = request;
+	stable.mutable_auth()->set_timestamp_ms(0);
+	stable.mutable_auth()->clear_signature_hex();
+	const auto canonical = AssetOpCanonical("debit", stable);
+	unsigned char digest[SHA256_DIGEST_LENGTH];
+	SHA256(reinterpret_cast<const unsigned char*>(canonical.data()), canonical.size(), digest);
+	return {reinterpret_cast<const char*>(digest), sizeof(digest)};
+}
+
+const AssetOpReceipt* FindReceipt(const AssetOpStreamLedger& ledger, uint64_t seq)
+{
+	for (const auto& receipt : ledger.receipts()) if (receipt.seq() == seq) return &receipt;
+	return nullptr;
+}
+
+bool HasReceiptRoom(const PlayerAssetOpLedgerComp& comp, const AssetSnapshot& snapshot)
+{
+	if (snapshot.ByteSizeLong() > kSnapshotBytesLimit) return false;
+	size_t size = snapshot.ByteSizeLong() + 128;
+	for (const auto& stream : comp.streams()) for (const auto& receipt : stream.receipts()) size += receipt.ByteSizeLong();
+	return size <= kPlayerReceiptBytesLimit;
+}
+
+void StoreReceipt(PlayerAssetOpLedgerComp& comp, const AssetOpRequest& request, const AssetSnapshot& snapshot)
+{
+	if (snapshot.items_size() == 0 && !snapshot.has_pet()) return;
+	auto& ledger = MutableAssetOpStream(comp, request.stream());
+	auto* receipt = ledger.add_receipts();
+	receipt->set_seq(request.seq());
+	receipt->set_correlation_id(request.correlation_id());
+	receipt->set_request_digest(ReceiptDigest(request));
+	*receipt->mutable_snapshot() = snapshot;
+	std::sort(ledger.mutable_receipts()->begin(), ledger.mutable_receipts()->end(),
+		[](const auto& lhs, const auto& rhs) { return lhs.seq() < rhs.seq(); });
+}
 
 // ── 响应小工具 ──────────────────────────────────────────────────────────────
 
@@ -230,6 +279,15 @@ bool PersistAndProbeDurable(entt::entity player, const ::AssetOpRequest& request
 void AnswerSeenSeq(entt::entity player, const AssetOpStreamLedger& ledger, const ::AssetOpRequest& request,
 				   AssetOpSeqState state, int64_t nowMs, ::AssetOpResponse& response)
 {
+	if (const auto* receipt = FindReceipt(ledger, request.seq()))
+	{
+		if (receipt->correlation_id() != request.correlation_id() || receipt->request_digest() != ReceiptDigest(request))
+		{
+			Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle);
+			return;
+		}
+		*response.mutable_snapshot() = receipt->snapshot();
+	}
 	const bool applied = (state == AssetOpSeqState::kApplied);
 	if (applied)
 	{
@@ -248,7 +306,7 @@ void AnswerSeenSeq(entt::entity player, const AssetOpStreamLedger& ledger, const
 
 	bool durable =
 		IsAssetOpDurable(player, request.stream(), request.stream_epoch(), request.seq(), applied);
-	if (!durable && IsPlayerMutable(player))
+	if (IsPlayerMutable(player))
 	{
 		const auto* persistRequest = tlsEcs.actorRegistry.try_get<PlayerAssetOpPersistRequestComp>(player);
 		const int64_t lastRequestMs = persistRequest == nullptr ? 0 : persistRequest->lastRequestMs;
@@ -322,7 +380,7 @@ void RejectAndRecord(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp,
 // P3 实现按 guid 扣物之后,删掉这个函数与两处调用,改为真正的包内容校验。
 bool HasUnsupportedP2Fields(const ::AssetBundle& bundle)
 {
-	return bundle.item_uuids_size() > 0 || bundle.pet_id() != 0;
+	return bundle.item_uuids_size() > 8 || bundle.item_instances_size() > 8;
 }
 
 // ── 包内容校验(§4.9 第 8 步:确定性失败,要记账)──────────────────────────
@@ -340,27 +398,38 @@ bool ValidateDebitBundle(const ::AssetBundle& bundle, std::string& why)
 		why = "debit v1 does not support item/pet deductions by guid(item_uuids / pet_id)";
 		return false;
 	}
-	if (bundle.currencies_size() != 1 || bundle.items_size() != 0)
+	if (bundle.currencies_size() > 4 || bundle.items_size() > 16 || bundle.item_instances_size() != 0 || bundle.has_pet_instance())
 	{
-		why = "debit v1 requires exactly 1 currency entry and 0 items";
+		why = "debit entry limit or credit-only payload";
 		return false;
 	}
-	if (!IsCurrencyAmountValid(bundle.currencies(0)))
+	if (bundle.currencies_size() + bundle.items_size() + bundle.item_uuids_size() == 0 && bundle.pet_id() == 0)
 	{
-		why = "debit currency type or amount out of range";
+		why = "debit bundle is empty";
 		return false;
 	}
+	std::unordered_set<uint32_t> types, configs;
+	std::unordered_set<uint64_t> guids;
+	for (const auto& currency : bundle.currencies())
+		if (!IsCurrencyAmountValid(currency) || !types.insert(currency.currency_type()).second) { why = "invalid debit currency"; return false; }
+	for (const auto& item : bundle.items())
+	{
+		const auto* row = ItemTableManager::Instance().FindByIdSilent(item.config_id()).first;
+		if (item.count() == 0 || item.count() > 4096 || row == nullptr || row->max_stack_size() <= 1 || !configs.insert(item.config_id()).second)
+		{ why = "quantity debit requires distinct stackable configurations"; return false; }
+	}
+	for (auto guid : bundle.item_uuids()) if (guid == 0 || !guids.insert(guid).second) { why = "duplicate or zero instance"; return false; }
 	return true;
 }
 
 bool ValidateCreditBundle(const ::AssetBundle& bundle, std::string& why)
 {
-	if (HasUnsupportedP2Fields(bundle))
+	if (HasUnsupportedP2Fields(bundle) || bundle.item_uuids_size() > 0 || bundle.pet_id() != 0)
 	{
 		why = "credit v1 does not support item/pet grants by guid(item_uuids / pet_id)";
 		return false;
 	}
-	if (bundle.currencies_size() + bundle.items_size() < 1)
+	if (bundle.currencies_size() + bundle.items_size() + bundle.item_instances_size() < 1 && !bundle.has_pet_instance())
 	{
 		why = "credit bundle is empty";
 		return false;
@@ -387,9 +456,11 @@ bool ValidateCreditBundle(const ::AssetBundle& bundle, std::string& why)
 	}
 
 	std::unordered_set<uint32_t> seenConfigIds;
+	uint64_t totalGrants = 0;
 	for (const auto& item : bundle.items())
 	{
-		if (item.count() < 1)
+		totalGrants += item.count();
+		if (item.count() < 1 || totalGrants > 4096)
 		{
 			why = "credit item count is 0";
 			return false;
@@ -405,12 +476,31 @@ bool ValidateCreditBundle(const ::AssetBundle& bundle, std::string& why)
 			return false;
 		}
 	}
+	std::unordered_set<uint64_t> identities;
+	for (const auto& transfer : bundle.item_instances())
+	{
+		ItemComp item;
+		const auto* row = ItemTableManager::Instance().FindByIdSilent(transfer.config_id()).first;
+		if (transfer.instance_proto().size() > kInstanceBytesLimit || !item.ParseFromString(transfer.instance_proto()) ||
+			item.item_id() == 0 || item.item_id() != transfer.item_uuid() || item.config_id() != transfer.config_id() ||
+			item.size() != 1 || transfer.stack_size() != 1 || row == nullptr || row->max_stack_size() != 1 || !identities.insert(item.item_id()).second)
+		{ why = "invalid complete item instance"; return false; }
+	}
+	if (bundle.has_pet_instance())
+	{
+		const auto& transfer = bundle.pet_instance();
+		PetInstance pet;
+		if (transfer.instance_proto().size() > kInstanceBytesLimit || !pet.ParseFromString(transfer.instance_proto()) ||
+			pet.pet_id() == 0 || pet.pet_id() != transfer.pet_id() || pet.pet_table_id() != transfer.pet_table_id() ||
+			pet.level() != transfer.level() || pet.name() != transfer.name() || PetTableManager::Instance().FindByIdSilent(pet.pet_table_id()).first == nullptr)
+		{ why = "invalid complete pet instance"; return false; }
+	}
 	return true;
 }
 
 // ── 应用段 ──────────────────────────────────────────────────────────────────
 
-void ApplyDebit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const ::AssetOpRequest& request,
+void ApplyCurrencyDebit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const ::AssetOpRequest& request,
 				int64_t nowMs, ::AssetOpResponse& response)
 {
 	const auto& currency = request.bundle().currencies(0);
@@ -455,6 +545,100 @@ void ApplyDebit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const 
 // 先物品后货币:只有物品会"暂时失败"(背包满),先做它就不会留下半截。
 // 一旦已有改动后又失败,记 kAppliedPartial 并回 APPLIED + partial=true,
 // **不再**把部分发放记成完整成功(AGENTS §11.3:错误不得伪装成功)。
+void ApplyDebit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const ::AssetOpRequest& request,
+	int64_t nowMs, ::AssetOpResponse& response)
+{
+	const auto& bundle = request.bundle();
+	if (bundle.currencies_size() == 1 && bundle.items_size() == 0 && bundle.item_uuids_size() == 0 && bundle.pet_id() == 0)
+	{
+		ApplyCurrencyDebit(player, ledgerComp, request, nowMs, response);
+		return;
+	}
+	auto* bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player);
+	const auto txType = static_cast<TransactionType>(request.tx_type());
+	ItemCountMap quantities;
+	for (const auto& item : bundle.items()) quantities[item.config_id()] = item.count();
+	std::vector<Guid> guids(bundle.item_uuids().begin(), bundle.item_uuids().end());
+	AssetSnapshot snapshot;
+	for (const auto& currency : bundle.currencies())
+	{
+		if (!CurrencySystem::CanAfford(player, static_cast<CurrencyType>(currency.currency_type()), static_cast<int64_t>(currency.amount())))
+		{ RejectAndRecord(player, ledgerComp, request, kAssetCurrencyInsufficient, nowMs, response); return; }
+	}
+	if (!quantities.empty() || !guids.empty())
+	{
+		if (bags == nullptr) { Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere); return; }
+		auto& bag = bags->bags[kInventory];
+		for (const auto& item : quantities)
+			if (bag.GetTotalItemCount(item.first) < item.second)
+			{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+		if (!guids.empty() && bag.ReserveForBatchRemove(guids) != kSuccess)
+		{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+		for (auto guid : guids)
+		{
+			const auto* item = bag.GetItemCompByGuid(guid);
+			if (item == nullptr || item->ByteSizeLong() > kInstanceBytesLimit)
+			{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+			auto* transfer = snapshot.add_items();
+			transfer->set_item_uuid(guid); transfer->set_config_id(item->config_id()); transfer->set_stack_size(item->size());
+			transfer->set_instance_proto(item->SerializeAsString());
+		}
+	}
+	if (bundle.pet_id() != 0)
+	{
+		const auto* pets = tlsEcs.actorRegistry.try_get<PlayerPetComp>(player);
+		if (pets == nullptr) { Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere); return; }
+		if (pets->active_pet_id() == bundle.pet_id())
+		{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+		for (const auto& pet : pets->pets()) if (pet.pet_id() == bundle.pet_id())
+		{
+			if (pet.ByteSizeLong() > kInstanceBytesLimit)
+			{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+			auto* transfer = snapshot.mutable_pet();
+			transfer->set_pet_id(pet.pet_id()); transfer->set_pet_table_id(pet.pet_table_id());
+			transfer->set_name(pet.name()); transfer->set_level(pet.level()); transfer->set_instance_proto(pet.SerializeAsString());
+		}
+		if (!snapshot.has_pet()) { RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+	}
+	if (!HasReceiptRoom(ledgerComp, snapshot)) { Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetBagFull); return; }
+	// 所有可预知失败均在副作用前复核。提交阶段若内部不变量损坏，记 partial 阻止对侧入账。
+	bool mutated = false;
+	uint32_t error = kSuccess;
+	if (!quantities.empty())
+	{
+		error = BagService::RemoveItemsExact(player, bags->bags[kInventory], quantities, txType, request.correlation_id());
+		mutated = error == kSuccess;
+	}
+	if (error == kSuccess && !guids.empty())
+	{
+		bool removed = false;
+		error = BagService::RemoveItemsByGuid(player, bags->bags[kInventory], guids, txType, request.correlation_id(), nullptr, &removed);
+		mutated = mutated || removed;
+	}
+	if (error == kSuccess && bundle.pet_id() != 0)
+	{
+		PetInstance removed;
+		error = PetSystem::RemovePetForTrade(player, bundle.pet_id(), removed);
+		mutated = mutated || error == kSuccess;
+	}
+	if (error == kSuccess) for (const auto& currency : bundle.currencies())
+	{
+		error = CurrencySystem::DeductCurrency(player, static_cast<CurrencyType>(currency.currency_type()),
+			static_cast<int64_t>(currency.amount()), txType, request.correlation_id());
+		if (error != kSuccess) break;
+		mutated = true;
+	}
+	if (error != kSuccess && !mutated) { Answer(response, ASSET_OP_OUTCOME_RETRY, error); return; }
+	const bool partial = error != kSuccess;
+	if (!RecordOutcome(ledgerComp, request, partial ? AssetOpRecordKind::kAppliedPartial : AssetOpRecordKind::kApplied, 0))
+	{ Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle); return; }
+	StoreReceipt(ledgerComp, request, snapshot);
+	*response.mutable_snapshot() = snapshot;
+	Answer(response, ASSET_OP_OUTCOME_APPLIED, partial ? kAssetPartialApplied : 0);
+	response.set_partial(partial);
+	response.set_durable(PersistAndProbeDurable(player, request, true, nowMs));
+}
+
 void ApplyCredit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const ::AssetOpRequest& request,
 				 int64_t nowMs, ::AssetOpResponse& response)
 {
@@ -494,6 +678,44 @@ void ApplyCredit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const
 		}
 	}
 
+	std::vector<ItemComp> transferredItems;
+	PetInstance transferredPet;
+	auto* destinationBags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player);
+	ItemCountMap totalIncoming = itemsToAdd;
+	for (const auto& transfer : bundle.item_instances())
+	{
+		ItemComp item;
+		if (!item.ParseFromString(transfer.instance_proto()))
+		{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+		if (GainBlockService::IsGainBlocked(GainBlockService::GainType::kItem, item.config_id()))
+		{ RejectAndRecord(player, ledgerComp, request, kAssetBlocked, nowMs, response); return; }
+		for (auto& bag : destinationBags->bags) if (bag.GetItemCompByGuid(item.item_id()) != nullptr)
+		{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+		for (auto& entry : destinationBags->dynamicBags_) if (entry.second.GetItemCompByGuid(item.item_id()) != nullptr)
+		{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+		++totalIncoming[item.config_id()];
+		item.clear_acquire_seq();
+		transferredItems.push_back(std::move(item));
+	}
+	if (!totalIncoming.empty() && destinationBags->bags[kInventory].CheckSpaceFor(totalIncoming) != kSuccess)
+	{ Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetBagFull); return; }
+	for (const auto& item : itemsToAdd) if (GainBlockService::IsGainBlocked(GainBlockService::GainType::kItem, item.first))
+	{ RejectAndRecord(player, ledgerComp, request, kAssetBlocked, nowMs, response); return; }
+	if (bundle.has_pet_instance())
+	{
+		if (!transferredPet.ParseFromString(bundle.pet_instance().instance_proto()))
+		{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+		const auto* pets = tlsEcs.actorRegistry.try_get<PlayerPetComp>(player);
+		if (pets == nullptr) { Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere); return; }
+		const auto& rows = PetRuleTableManager::Instance().FindAll().data();
+		const auto maxPets = rows.size() > 0 && rows.Get(0).max_pets() > 0 ? rows.Get(0).max_pets() : 1;
+		if (static_cast<uint32_t>(pets->pets_size()) >= maxPets) { Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetBagFull); return; }
+		for (const auto& pet : pets->pets()) if (pet.pet_id() == transferredPet.pet_id())
+		{ RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
+		// 完整实例来自经签名的托管快照；配表调低上限不应改写已有资产。
+		// 是否可出战由宠物系统按当前主人等级与配置另行校验。
+	}
+
 	bool anyMutated = false;
 	uint32_t failedError = kSuccess;
 	std::string failedWhat;
@@ -502,29 +724,17 @@ void ApplyCredit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const
 	if (!itemsToAdd.empty())
 	{
 		auto& bags = tlsEcs.actorRegistry.get<PlayerBagsComp>(player);
-		// mutated 表示这次物品批量是否已提交；候选提交失败保持 false，
-		// 不因规划淘汰或已取号就宣称资产已变化。extra 保留既有流水关联。
-		bool mutated = false;
-		const uint32_t error =
-			BagService::AddItems(player, bags.bags[kInventory],
-								 itemsToAdd, txType,
-								 request.correlation_id(), /*extra=*/{}, &mutated);
-		if (error == kSuccess)
+		// BagService 候选提交的任何拒绝都保持物品批次零改动。
+		const uint32_t error = BagService::AddItems(
+			player, bags.bags[kInventory], itemsToAdd, txType, request.correlation_id());
+		if (error != kSuccess)
 		{
-			anyMutated = true;
-		}
-		else if (!mutated)
-		{
-			// 零改动:资产与账本都不动,按错误类别选结局。
 			if (error == kBagItemNotStacked)
 			{
-				// 空间不足:暂时条件,Go 稍后重投同一 seq(超过业务时限由帮会改发中止)。
 				Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetBagFull);
 			}
 			else if (error == kInvalidParameter)
 			{
-				// BagService 对冻结 / 封禁一律回 kInvalidParameter。冻结已在闸门挡掉,
-				// 走到这里就是封禁 —— 终局拒绝,记账,Go 按业务退款。
 				RejectAndRecord(player, ledgerComp, request, kAssetBlocked, nowMs, response);
 			}
 			else
@@ -533,14 +743,26 @@ void ApplyCredit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const
 			}
 			return;
 		}
-		else
-		{
-			// 已经写进去一部分才失败:不能重投(会重复发放),只能记部分发放。
-			anyMutated = true;
-			failedError = error;
-			failedWhat = "items";
-		}
+		anyMutated = true;
 	}
+
+	if (failedError == kSuccess) for (auto& item : transferredItems)
+	{
+		const auto guid = item.item_id();
+		const auto config = item.config_id();
+		const auto error = destinationBags->bags[kInventory].PutInstance(std::move(item));
+		if (error != kSuccess) { failedError = error; failedWhat = "item_instance"; break; }
+		TransactionLogSystem::LogItemCreate(player, guid, config, 1, txType, request.correlation_id());
+		anyMutated = true;
+	}
+	if (failedError == kSuccess && bundle.has_pet_instance())
+	{
+		const auto error = PetSystem::RestorePetFromSnapshot(player, transferredPet);
+		if (error != kSuccess) { failedError = error; failedWhat = "pet_instance"; }
+		else anyMutated = true;
+	}
+	if (failedError != kSuccess && !anyMutated)
+	{ Answer(response, ASSET_OP_OUTCOME_RETRY, failedError); return; }
 
 	// (d) 货币。补缴抵扣(欠款先扣)属于正常应用,不算失败。
 	if (failedError == kSuccess)
@@ -779,7 +1001,17 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);
 		return;
 	}
-	if (request.bundle().items_size() > 0 && tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player) == nullptr)
+	// 帮会捐献保留单币种契约；物品与多币种托管只由交易流承载。
+	// 这是纯包校验，必须先于背包加载依赖，避免坏请求被当作暂不可用反复重投。
+	if (rpc == AssetOpRpc::kDebit && request.stream() == ASSET_OP_STREAM_GUILD_DEBIT &&
+		(request.bundle().currencies_size() != 1 || request.bundle().items_size() != 0 ||
+		 request.bundle().item_uuids_size() != 0 || request.bundle().item_instances_size() != 0 ||
+		 request.bundle().pet_id() != 0 || request.bundle().has_pet_instance()))
+	{
+		RejectAndRecord(player, *ledgerComp, request, kAssetInvalidBundle, nowMs, response);
+		return;
+	}
+	if ((request.bundle().items_size() > 0 || request.bundle().item_uuids_size() > 0 || request.bundle().item_instances_size() > 0) && tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player) == nullptr)
 	{
 		LOG_WARN << "[AssetOp] Player lacks PlayerBagsComp(still loading) player_id=" << request.player_id();
 		Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere);
@@ -787,6 +1019,9 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 	}
 
 	// 8. 包内容校验(确定性失败 → 记 REJECTED,免得 Go 无限重投同一个坏包)
+	if (request.stream() != ASSET_OP_STREAM_TRADE_DEBIT && request.stream() != ASSET_OP_STREAM_TRADE_CREDIT &&
+		(request.bundle().item_uuids_size() > 0 || request.bundle().item_instances_size() > 0 || request.bundle().pet_id() != 0 || request.bundle().has_pet_instance()))
+	{ RejectAndRecord(player, *ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
 	std::string why;
 	const bool bundleOk = (rpc == AssetOpRpc::kDebit) ? ValidateDebitBundle(request.bundle(), why)
 													  : ValidateCreditBundle(request.bundle(), why);
@@ -843,9 +1078,51 @@ void PlayerAssetOpSystem::Credit(const ::AssetOpRequest& request, ::AssetOpRespo
 	Process(AssetOpRpc::kCredit, request, response);
 }
 
+void PlayerAssetOpSystem::AckReceipt(const ::AssetOpRequest& request, ::AssetOpResponse& response)
+{
+	response.Clear();
+	const auto nowMs = g_nowMsFn();
+	if (request.player_id() == 0 || request.seq() == 0 || request.stream_epoch() == 0 || request.correlation_id() == 0 ||
+		request.auth().caller() != "trade" || VerifyAssetOpAuth("ack_receipt", request, nowMs, g_secretLookup) != AssetOpAuthVerdict::kOk)
+	{ Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetAuthFailed); return; }
+	const auto it = tlsEcs.playerList.find(request.player_id());
+	if (it == tlsEcs.playerList.end() || !tlsEcs.actorRegistry.valid(it->second))
+	{ Answer(response, ASSET_OP_OUTCOME_NOT_HERE, kAssetPlayerNotHere); return; }
+	const auto player = it->second;
+	if (!IsPlayerMutable(player) || tlsEcs.actorRegistry.any_of<PlayerAssetOpLedgerInvalidComp>(player))
+	{ Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetFrozen); return; }
+	auto* comp = tlsEcs.actorRegistry.try_get<PlayerAssetOpLedgerComp>(player);
+	if (comp == nullptr) { Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetPlayerNotHere); return; }
+	for (auto& stream : *comp->mutable_streams())
+	{
+		if (stream.stream() != request.stream() || stream.stream_epoch() != request.stream_epoch()) continue;
+		for (int index = 0; index < stream.receipts_size(); ++index) if (stream.receipts(index).seq() == request.seq())
+		{
+			if (stream.receipts(index).correlation_id() != request.correlation_id())
+			{ Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle); return; }
+			stream.mutable_receipts()->DeleteSubrange(index, 1);
+			RequestAssetOpPersist(player, nowMs);
+			Answer(response, ASSET_OP_OUTCOME_APPLIED, 0);
+			return;
+		}
+		// 重复 ACK 不改业务结局。Go 仍须核对 SQL 证据中收据已移除，不能只信此 Redis 确认。
+		Answer(response, ASSET_OP_OUTCOME_APPLIED, 0);
+		const auto* persisted = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
+		if (persisted != nullptr && persisted->HasSnapshot())
+		{
+			const auto* saved = FindAssetOpStream(persisted->snapshot->player_database_data().asset_op_ledger(), request.stream());
+			response.set_durable(saved != nullptr && saved->stream_epoch() == request.stream_epoch() && FindReceipt(*saved, request.seq()) == nullptr);
+		}
+		const auto* last = tlsEcs.actorRegistry.try_get<PlayerAssetOpPersistRequestComp>(player);
+		if (last == nullptr || nowMs - last->lastRequestMs >= kAssetOpResaveMinIntervalMs) RequestAssetOpPersist(player, nowMs);
+		return;
+	}
+	Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle);
+}
+
 void PlayerAssetOpSystem::SetPersistFnForTest(PersistFn fn)
 {
-	g_persistFn = (fn == nullptr) ? &PlayerLifecycleSystem::SavePlayerToRedis : fn;
+	g_persistFn = (fn == nullptr) ? &PlayerLifecycleSystem::SavePlayerForAssetCommit : fn;
 }
 
 void PlayerAssetOpSystem::SetAddCurrencyFnForTest(AddCurrencyFn fn)

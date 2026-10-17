@@ -1,6 +1,6 @@
 # 服务端发布清单
 
-**Updated:** 2026-09-16(重组:新增 §1–§5 发布流水线;原 2026-05-09 版"HTTP /api/login 上线 Checklist"全文移入文末附录,内容未删)
+**Updated:** 2026-09-16(重组:新增 §1–§5 发布流水线;原 2026-05-09 版"HTTP /api/login 上线 Checklist"全文移入文末附录,内容未删);2026-10-16 增补 §6「发版后一次性项」,§2.1 ⑦ 加指针
 **适用范围:** 服务端运行镜像(C++ 节点 `mmorpg-node`、Go 服务、Java 网关)的出包、发版、版本追溯、回滚与离线交付
 **设计依据:** [release-packaging-standard-20260914.md](../design/release-packaging-standard-20260914.md)(P1–P4)、[CHANGELOG.md](../../CHANGELOG.md)
 **脚本入口:** `tools/scripts/publish_images.ps1` → `make_release.ps1` → `release_preflight.ps1`;离线交付 `fetch_images.ps1` → `import_images.ps1`;快照清理 `artifacts_retention.ps1`;公共库 `tools/scripts/lib/release_common.ps1`、`tools/scripts/lib/artifacts_lib.ps1`;GitHub 干净出包 `.github/workflows/release.yml`
@@ -115,6 +115,7 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
   git push origin vX.Y.Z
   ```
   部署沿用 `k8s_deploy.ps1` / `k8s_image.ps1` 的既有命令,`-ReleaseProfile prod`,镜像参数统一用本版本 tag:`-NodeImage <registry>/mmorpg-node:vX.Y.Z-<12位commit>`、`-GoSvcRegistry <registry> -GoSvcTag vX.Y.Z-<12位commit>`、`-JavaSvcRegistry <registry> -JavaSvcTag vX.Y.Z-<12位commit>`。部署前后按 §3.2 核对 digest。
+  部署核对完成后,查看 §6 有没有本版本对应的一次性项(2026-10-16 增补)。
 
 ### 2.2 在 GitHub Actions 上出包(`.github/workflows/release.yml`)
 
@@ -163,6 +164,7 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
 - [ ] **核对 registry 上的 tag 仍指向记录的 digest**:对每个 ref 跑 `docker buildx imagetools inspect <ref>`,`Digest:` 必须等于 `images.digests["<ref>"]`。不一致说明 tag 被覆盖过:**不要用这个 tag 回滚**,停下查清是谁推的、推了什么。
 - [ ] **部署上一版本**:沿用 `k8s_deploy.ps1` 既有部署命令,`-ReleaseProfile prod`,镜像参数换成上一版:`-NodeImage <registry>/mmorpg-node:<image_tag>`、`-GoSvcTag <image_tag>`、`-JavaSvcTag <image_tag>`。
 - [ ] **快速回滚单个 Deployment**:`kubectl rollout undo`(附录 E.2 三级回滚的第 3 级)。它的前提是新旧 revision 的 tag 不同且不可变,本流水线的 `vX.Y.Z-<commit>` tag 满足。
+  - **gateway 例外(2026-10-16 补注)**:gateway 的上一个 revision 早于 2026-10-15「探针改走独立管理端口 8082」时,**不要**对 gateway 做 `kubectl rollout undo`。undo 只退 Pod 模板(探针回到 8081),`java-svc-gateway-config` 仍是 `management.server.port: 8082`,三个探针全部失败,startupProbe 约 600s 后杀容器并反复重启,rollout 卡到 progressDeadline,回滚不生效。改用旧 commit 重跑 `k8s_deploy.ps1 zone-up`(ConfigMap 与 Pod 模板同批生成);详见 [deploy/k8s/README.md](../../deploy/k8s/README.md)「gateway 探针、管理端口与回退口径」。更一般地,`rollout undo` 还隐含「旧 revision 与当前 ConfigMap 兼容」这一前提,ConfigMap 不随 undo 回退。
 - [ ] **回滚后核对**:按 §3.1 确认 Pod `imageID` digest、启动版本行、`/app/BUILD_INFO` 都已是上一版本;再做附录 E.3"回滚后必做"。
 - **数据不随代码回滚**:库结构迁移只前进(`go/schemamigrate` 只有 `Up`;trade 的迁移 Job 以 `-migrate` 运行),回滚前确认上一版本能在当前库结构上运行。需要把数据回到某个时间点时走 `tools/scripts/k8s_zone_rollback.ps1`(`-NodeImage` 必填,且必须是不可变引用)与 [zone_data_rollback.md](../design/zone_data_rollback.md)。
 
@@ -182,6 +184,50 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
   有 `sha256sums.txt` 就先校验;按 `images-manifest.json` 逐个 `docker load`,每个导入后 `docker image inspect` 的镜像 ID 必须等于清单里的 `image_id`。
 - [ ] **导入后核对**:抽查 §3.1 的 OCI label 与 `/app/BUILD_INFO`。离线环境没有 registry digest,以 `images-manifest.json` 的 `image_id` 为镜像身份依据。
 - 快照包同理:`fetch_images.ps1` 不带参数时取 `snapshots/images/latest.json` 指向的版本。快照清理:`pwsh -File tools/scripts/artifacts_retention.ps1`(只预览)/ `pwsh -File tools/scripts/artifacts_retention.ps1 -KeepLast 5 -Force`(真删),只动 `snapshots/`,`releases/` 永不触碰。
+
+---
+
+## 6. 发版后一次性项
+
+只在**第一次**部署含对应改动的版本之后做一次,做完在 `docs/PROGRESS.md` 记一条(环境、时间、读数),之后的发版不再重复。在 staging / prod 执行属于触碰共享环境,**须负责人明确指定环境并授权**(AGENTS.md §9),AI 与 CI 都不执行。本机开发 / 压测环境每轮都 `FLUSHALL`,不用单独做。
+
+### 6.1 清理共享核心 Redis 里的存量 `dirty_keys_set`(2026-10-16 增补)
+
+- **背景**:含 2026-10-16 落码提交(提交号待提交后回填)的 C++ scene 镜像,两段存盘 Lua 不再 `SADD` 全服单键 `dirty_keys_set`;没换镜像的 scene 实例仍在写。这个键全仓没有读者、没有 TTL,只随「累计存过盘的玩家数」增长;新版本不再写它,旧版本写下的存量要一次性删掉。新旧版本混跑与回滚都无害(旧二进制只是继续写一个没人读的键),所以清理不是发版的前置条件,但必须在下面的门禁之后做。依据见 [capacity-model-hok-scale.md](../design/capacity-model-hok-scale.md) A0-4、[shared-redis-split-by-purpose.md](../design/shared-redis-split-by-purpose.md) §2.5 第 1 条。
+- **对象**:C++ `zoneredis` 指向的共享核心 Redis 的 DB 0(C++ 不发 `SELECT`)。K8s 上是 `<InfraNamespace>` 里的 StatefulSet `redis`(Pod `redis-0`,Service `redis.<InfraNamespace>:6379`);届时若已换成别的实例,以 `k8s_deploy.ps1` 生成的 zoneredis 配置为准。若届时已切到 `deploy/k8s/manifests/infra/redis-ha.yaml`(1 主 2 从 + 哨兵,2026-10-15 时尚未接入部署路径),`redis-0` 不一定是主:在从库上 `UNLINK` 会报 `READONLY`,`OBJECT IDLETIME` 也只反映那个从库上的访问。所以进 Pod 后先跑下面的 ⓪ `ROLE`,不是 master 就换到 `ROLE` 为 master 的那个 `redis-N` 上重来(两份清单里 Redis 容器都叫 `redis`)。
+- [ ] **门禁:版本盘点**(必须先过,不能用 `OBJECT IDLETIME` 代替,原因见下一条)。确认**所有** scene 实例都已换成含该改动的镜像,包括 Agones 里仍是 `Allocated` 的旧 GameServer(它们不随 Fleet 滚动立即退出,会继续写这个键):
+  ```powershell
+  # scene 的 Pod:Deployment 与 Agones 两种编排的 Pod 都带 app=<scene 池名>;每个容器按「容器名=imageID」列出
+  kubectl get pods -A -l 'app in (scene,scene-world,scene-instance)' -o jsonpath='{range .items[*]}{.metadata.namespace}{"\t"}{.metadata.name}{"\t"}app={.metadata.labels.app}{"\t"}{range .status.containerStatuses[*]}{.name}={.imageID}{" "}{end}{"\n"}{end}'
+  # Agones GameServer,重点看 STATE=Allocated 的那些;GameServer 的 Pod 与它同名,版本以上一条里该 Pod 业务容器的 imageID 为准
+  kubectl get gameservers -A -l 'app in (scene,scene-world,scene-instance)' -o custom-columns='NS:.metadata.namespace,GS:.metadata.name,STATE:.status.state,IMAGE:.spec.template.spec.containers[*].image'
+  ```
+  - **只核对业务容器**:容器名与 Pod 的 `app` 标签同值(`k8s_deploy.ps1` 里 Deployment 模板是 `- name: $NodeName`,Fleet 模板是 `- name: $FleetName`,都与 app 标签同值)。Agones 注入的 SDK sidecar `agones-gameserver-sidecar`(以普通容器还是原生 sidecar 注入取决于 Agones 的特性门,未核实)和 C++ 日志 sidecar(原生 sidecar,在 `initContainerStatuses` 里,上面的命令本来就不列)都不核对,它们的 digest 不会出现在任何 release manifest 里。
+  - **逐个确定业务容器的源码提交 `<commit>`**,再跑 `git merge-base --is-ancestor <落码提交> <commit>`,返回 0 才算已含改动:
+    1. 正式发布的镜像:`imageID` 的 digest 按 §3.2 第 1 步反查到 release manifest,取它的 `source.commit`。
+    2. 反查不到 manifest 的(快照部署,staging 常见;CI 出包的 manifest `images.digests` 为空,见 §2.2):改用 §3.1 的 `/app/BUILD_INFO`,即 `kubectl -n <ns> exec <pod> -c <app 值> -- cat /app/BUILD_INFO` 里的 `commit=`;或镜像 OCI label `org.opencontainers.image.revision`。commit 带 `-dirty` 的镜像出自未提交的工作树,commit 证明不了内容,按「无法确定」处理。
+  - **按判定结果处理**:
+    - 全部返回 0:门禁通过。
+    - 确认不含(返回 1):这是仍会写这个键的旧实例。Deployment 的 Pod 等滚动换完;`Allocated` 的 GameServer 上有在线玩家,等它自然结束退出,不要为清理这个键删它(确需提前,只在维护窗口、确认没有在线玩家后再删)。处理完回来重做盘点。
+    - 无法确定(两种来源都拿不到 commit,或带 `-dirty`):门禁不过。停下按 §3.2 查清它跑的是什么,**不要**据此删实例。
+- [ ] **辅助观测(不作门禁)**:`OBJECT IDLETIME dirty_keys_set` 必须是对这个键执行的**第一条**命令(其他读命令会刷新 LRU,`OBJECT` 不会);隔至少一个完整的周期存盘(默认 300s,建议 10 分钟以上)再读一次。读数归零说明还有写者或读者,停下排查。读数一直增大**不能**证明没有旧写者:旧二进制只在真写时才 SADD,快照相等的存盘会被跳过;`BGSAVE` / `BGREWRITEAOF` 子进程运行期间,读写也不刷新 LRU。
+- [ ] **按序执行**(口令不上命令行:进 Pod 后用容器自带的 `REDIS_PASSWORD` 导出成 `REDISCLI_AUTH`;dev 档没有口令时这一步什么都不做):
+  ```sh
+  kubectl -n <InfraNamespace> exec -it redis-0 -c redis -- sh
+  # 以下在 Pod 内执行
+  [ -n "$REDIS_PASSWORD" ] && export REDISCLI_AUTH="$REDIS_PASSWORD"
+  redis-cli ROLE                             # ⓪ 第一行必须是 master,否则退出换 Pod(见上面「对象」);它不碰下面的键,不影响 ① 的读数
+  redis-cli OBJECT IDLETIME dirty_keys_set   # ① 必须是对这个键的第一条命令
+  redis-cli TYPE dirty_keys_set              # ② 期望 set;none = 没有存量,直接做 24 小时复查
+  redis-cli SCARD dirty_keys_set             # ③ O(1),记下规模
+  redis-cli MEMORY USAGE dirty_keys_set      # ④ 默认 SAMPLES 5 抽样;不要带 SAMPLES 0(O(N),阻塞),也不要 SMEMBERS
+  redis-cli UNLINK dirty_keys_set            # ⑤ 主线程只摘键,内存由后台 lazyfree 释放;禁止 DEL(大 set 在主线程逐个释放成员,阻塞数秒)
+  redis-cli EXISTS dirty_keys_set            # ⑥ 期望 0
+  ```
+- [ ] **24 小时后复查**:再执行一次 `EXISTS dirty_keys_set`,期望仍为 0。被建回说明还有旧二进制在跑:回到版本盘点找到并处理掉它,再重复 ⑤⑥。
+- **兜底**:托管 Redis 禁用或改名了 `UNLINK` 时,循环执行 `SPOP dirty_keys_set 1000`,批与批之间短暂停顿,直到 `SCARD` 为 0;不要用 `SSCAN` + `SREM` 全量遍历。
+- **恢复后重做**:之后若从清理前的 AOF / RDB 备份恢复了这个 Redis(K8s 上是 PVC + appendonly),存量键会跟着回来,恢复后重做 ⓪、②~⑥ 与 24 小时复查。scene 镜像回滚到不含改动的版本也会把键重新建起来(无害),再次升级后同样重做版本盘点与 ②~⑥。
+- **预期与记录**:`INFO memory` 的 `used_memory` 下降;RSS 不一定立刻回落(jemalloc)。把环境、时间、③④ 的读数和两次 `EXISTS` 结果记进 `docs/PROGRESS.md`。此前的规模与内存数字都是推算,以这里的读数为准。
 
 ---
 
@@ -390,6 +436,8 @@ kubectl rollout undo deploy/gateway-node -n mmorpg
 kubectl rollout undo deploy/login -n mmorpg
 # cpp gate 是 statefulset,谨慎滚动
 ```
+
+> **2026-10-16 补注**(上面与第 1 级代码块原文保留):`deploy/gateway-node -n mmorpg` 是 2026-05 的旧名。当前 K8s 上 Java 网关的 Deployment 叫 `gateway`,位于各 zone namespace(`<NamespacePrefix>-<zone>`,如 `mmorpg-zone-<zone>`);第 1 级的 `rollout restart` 同样要换成 `kubectl -n <zone ns> rollout restart deploy/gateway`。gateway 的上一个 revision 早于 2026-10-15 探针改端口时,不要对它做 `rollout undo`(原因见 §4「快速回滚单个 Deployment」的 gateway 例外),改用旧 commit 重跑 `k8s_deploy.ps1 zone-up`。第 1 级「Gateway 配置中心改 `gate.rate-limit.enabled=false`」是 2026-05 的口径,在当前 K8s 部署下是否仍有效未核对。
 
 #### E.3 回滚后必做
 

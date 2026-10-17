@@ -2136,28 +2136,21 @@ const char descriptor_table_protodef_proto_2fscene_2fscene_2eproto[] ABSL_ATTRIB
     "ssage\022\'\n\010snapshot\030\002 \001(\0132\025.BattlePlayerSn"
     "apshot\022\031\n\021table_fingerprint\030\003 \001(\t\"B\n\032Can"
     "celBattlePrepareRequest\022\021\n\tplayer_id\030\001 \001"
-    "(\004\022\021\n\tbattle_id\030\002 \001(\0042\277\006\n\005Scene\022:\n\023Playe"
+    "(\004\022\021\n\tbattle_id\030\002 \001(\0042\214\004\n\005Scene\022:\n\023Playe"
     "rEnterGameNode\022\033.PlayerEnterGameNodeRequ"
-    "est\032\006.Empty\022J\n\023SendMessageToPlayer\022\030.Nod"
-    "eRouteMessageRequest\032\031.NodeRouteMessageR"
-    "esponse\022e\n\032ProcessClientPlayerMessage\022\"."
-    "ProcessClientPlayerMessageRequest\032#.Proc"
-    "essClientPlayerMessageResponse\022J\n\023Invoke"
-    "PlayerService\022\030.NodeRouteMessageRequest\032"
-    "\031.NodeRouteMessageResponse\022A\n\022RouteNodeS"
-    "tringMsg\022\024.RouteMessageRequest\032\025.RouteMe"
-    "ssageResponse\022V\n\024RoutePlayerStringMsg\022\032."
-    "RoutePlayerMessageRequest\032\033.RoutePlayerM"
-    "essageResponse\"\005\200\231\310\001\001\022<\n\023UpdateSessionDe"
-    "tail\022\035.RegisterPlayerSessionRequest\032\006.Em"
-    "pty\0228\n\013CreateScene\022\023.CreateSceneRequest\032"
-    "\024.CreateSceneResponse\022,\n\014DestroyScene\022\024."
-    "DestroySceneRequest\032\006.Empty\022>\n\rPrepareBa"
-    "ttle\022\025.PrepareBattleRequest\032\026.PrepareBat"
-    "tleResponse\022:\n\023CancelBattlePrepare\022\033.Can"
-    "celBattlePrepareRequest\032\006.Empty\022>\n\rNodeH"
-    "andshake\022\025.NodeHandshakeRequest\032\026.NodeHa"
-    "ndshakeResponseB\016Z\005scene\200\001\001\230\324a\003b\006proto3"
+    "est\032\006.Empty\022e\n\032ProcessClientPlayerMessag"
+    "e\022\".ProcessClientPlayerMessageRequest\032#."
+    "ProcessClientPlayerMessageResponse\022<\n\023Up"
+    "dateSessionDetail\022\035.RegisterPlayerSessio"
+    "nRequest\032\006.Empty\0228\n\013CreateScene\022\023.Create"
+    "SceneRequest\032\024.CreateSceneResponse\022,\n\014De"
+    "stroyScene\022\024.DestroySceneRequest\032\006.Empty"
+    "\022>\n\rPrepareBattle\022\025.PrepareBattleRequest"
+    "\032\026.PrepareBattleResponse\022:\n\023CancelBattle"
+    "Prepare\022\033.CancelBattlePrepareRequest\032\006.E"
+    "mpty\022>\n\rNodeHandshake\022\025.NodeHandshakeReq"
+    "uest\032\026.NodeHandshakeResponseB\016Z\005scene\200\001\001"
+    "\230\324a\003b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_2fscene_2eproto_deps[7] = {
@@ -2173,7 +2166,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_2fscene_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_2fscene_2eproto = {
     false,
     false,
-    2279,
+    1972,
     descriptor_table_protodef_proto_2fscene_2fscene_2eproto,
     "proto/scene/scene.proto",
     &descriptor_table_proto_2fscene_2fscene_2eproto_once,
@@ -5293,39 +5286,11 @@ void Scene::PlayerEnterGameNode(::google::protobuf::RpcController* PROTOBUF_NULL
   controller->SetFailed("Method PlayerEnterGameNode() not implemented.");
   done->Run();
 }
-void Scene::SendMessageToPlayer(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL,
-                         ::NodeRouteMessageResponse* PROTOBUF_NONNULL,
-                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method SendMessageToPlayer() not implemented.");
-  done->Run();
-}
 void Scene::ProcessClientPlayerMessage(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
                          const ::ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL,
                          ::ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL,
                          ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
   controller->SetFailed("Method ProcessClientPlayerMessage() not implemented.");
-  done->Run();
-}
-void Scene::InvokePlayerService(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::NodeRouteMessageRequest* PROTOBUF_NONNULL,
-                         ::NodeRouteMessageResponse* PROTOBUF_NONNULL,
-                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method InvokePlayerService() not implemented.");
-  done->Run();
-}
-void Scene::RouteNodeStringMsg(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::RouteMessageRequest* PROTOBUF_NONNULL,
-                         ::RouteMessageResponse* PROTOBUF_NONNULL,
-                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method RouteNodeStringMsg() not implemented.");
-  done->Run();
-}
-void Scene::RoutePlayerStringMsg(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-                         const ::RoutePlayerMessageRequest* PROTOBUF_NONNULL,
-                         ::RoutePlayerMessageResponse* PROTOBUF_NONNULL,
-                         ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  controller->SetFailed("Method RoutePlayerStringMsg() not implemented.");
   done->Run();
 }
 void Scene::UpdateSessionDetail(::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
@@ -5383,46 +5348,30 @@ void Scene::CallMethod(
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
     case 1:
-      this->SendMessageToPlayer(controller, ::google::protobuf::DownCastMessage<::NodeRouteMessageRequest>(request),
-                   ::google::protobuf::DownCastMessage<::NodeRouteMessageResponse>(response), done);
-      break;
-    case 2:
       this->ProcessClientPlayerMessage(controller, ::google::protobuf::DownCastMessage<::ProcessClientPlayerMessageRequest>(request),
                    ::google::protobuf::DownCastMessage<::ProcessClientPlayerMessageResponse>(response), done);
       break;
-    case 3:
-      this->InvokePlayerService(controller, ::google::protobuf::DownCastMessage<::NodeRouteMessageRequest>(request),
-                   ::google::protobuf::DownCastMessage<::NodeRouteMessageResponse>(response), done);
-      break;
-    case 4:
-      this->RouteNodeStringMsg(controller, ::google::protobuf::DownCastMessage<::RouteMessageRequest>(request),
-                   ::google::protobuf::DownCastMessage<::RouteMessageResponse>(response), done);
-      break;
-    case 5:
-      this->RoutePlayerStringMsg(controller, ::google::protobuf::DownCastMessage<::RoutePlayerMessageRequest>(request),
-                   ::google::protobuf::DownCastMessage<::RoutePlayerMessageResponse>(response), done);
-      break;
-    case 6:
+    case 2:
       this->UpdateSessionDetail(controller, ::google::protobuf::DownCastMessage<::RegisterPlayerSessionRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
-    case 7:
+    case 3:
       this->CreateScene(controller, ::google::protobuf::DownCastMessage<::CreateSceneRequest>(request),
                    ::google::protobuf::DownCastMessage<::CreateSceneResponse>(response), done);
       break;
-    case 8:
+    case 4:
       this->DestroyScene(controller, ::google::protobuf::DownCastMessage<::DestroySceneRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
-    case 9:
+    case 5:
       this->PrepareBattle(controller, ::google::protobuf::DownCastMessage<::PrepareBattleRequest>(request),
                    ::google::protobuf::DownCastMessage<::PrepareBattleResponse>(response), done);
       break;
-    case 10:
+    case 6:
       this->CancelBattlePrepare(controller, ::google::protobuf::DownCastMessage<::CancelBattlePrepareRequest>(request),
                    ::google::protobuf::DownCastMessage<::Empty>(response), done);
       break;
-    case 11:
+    case 7:
       this->NodeHandshake(controller, ::google::protobuf::DownCastMessage<::NodeHandshakeRequest>(request),
                    ::google::protobuf::DownCastMessage<::NodeHandshakeResponse>(response), done);
       break;
@@ -5440,26 +5389,18 @@ const ::google::protobuf::Message& Scene::GetRequestPrototype(
     case 0:
       return ::PlayerEnterGameNodeRequest::default_instance();
     case 1:
-      return ::NodeRouteMessageRequest::default_instance();
-    case 2:
       return ::ProcessClientPlayerMessageRequest::default_instance();
-    case 3:
-      return ::NodeRouteMessageRequest::default_instance();
-    case 4:
-      return ::RouteMessageRequest::default_instance();
-    case 5:
-      return ::RoutePlayerMessageRequest::default_instance();
-    case 6:
+    case 2:
       return ::RegisterPlayerSessionRequest::default_instance();
-    case 7:
+    case 3:
       return ::CreateSceneRequest::default_instance();
-    case 8:
+    case 4:
       return ::DestroySceneRequest::default_instance();
-    case 9:
+    case 5:
       return ::PrepareBattleRequest::default_instance();
-    case 10:
+    case 6:
       return ::CancelBattlePrepareRequest::default_instance();
-    case 11:
+    case 7:
       return ::NodeHandshakeRequest::default_instance();
 
     default:
@@ -5476,26 +5417,18 @@ const ::google::protobuf::Message& Scene::GetResponsePrototype(
     case 0:
       return ::Empty::default_instance();
     case 1:
-      return ::NodeRouteMessageResponse::default_instance();
-    case 2:
       return ::ProcessClientPlayerMessageResponse::default_instance();
+    case 2:
+      return ::Empty::default_instance();
     case 3:
-      return ::NodeRouteMessageResponse::default_instance();
+      return ::CreateSceneResponse::default_instance();
     case 4:
-      return ::RouteMessageResponse::default_instance();
+      return ::Empty::default_instance();
     case 5:
-      return ::RoutePlayerMessageResponse::default_instance();
+      return ::PrepareBattleResponse::default_instance();
     case 6:
       return ::Empty::default_instance();
     case 7:
-      return ::CreateSceneResponse::default_instance();
-    case 8:
-      return ::Empty::default_instance();
-    case 9:
-      return ::PrepareBattleResponse::default_instance();
-    case 10:
-      return ::Empty::default_instance();
-    case 11:
       return ::NodeHandshakeResponse::default_instance();
 
     default:
@@ -5525,81 +5458,53 @@ void Scene_Stub::PlayerEnterGameNode(
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void Scene_Stub::SendMessageToPlayer(
-    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request, ::NodeRouteMessageResponse* PROTOBUF_NONNULL response,
-    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(1), controller,
-                       request, response, done);
-}
 void Scene_Stub::ProcessClientPlayerMessage(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::ProcessClientPlayerMessageRequest* PROTOBUF_NONNULL request, ::ProcessClientPlayerMessageResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(2), controller,
-                       request, response, done);
-}
-void Scene_Stub::InvokePlayerService(
-    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::NodeRouteMessageRequest* PROTOBUF_NONNULL request, ::NodeRouteMessageResponse* PROTOBUF_NONNULL response,
-    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(3), controller,
-                       request, response, done);
-}
-void Scene_Stub::RouteNodeStringMsg(
-    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::RouteMessageRequest* PROTOBUF_NONNULL request, ::RouteMessageResponse* PROTOBUF_NONNULL response,
-    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(4), controller,
-                       request, response, done);
-}
-void Scene_Stub::RoutePlayerStringMsg(
-    ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
-    const ::RoutePlayerMessageRequest* PROTOBUF_NONNULL request, ::RoutePlayerMessageResponse* PROTOBUF_NONNULL response,
-    ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(5), controller,
+  channel_->CallMethod(descriptor()->method(1), controller,
                        request, response, done);
 }
 void Scene_Stub::UpdateSessionDetail(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::RegisterPlayerSessionRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(6), controller,
+  channel_->CallMethod(descriptor()->method(2), controller,
                        request, response, done);
 }
 void Scene_Stub::CreateScene(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::CreateSceneRequest* PROTOBUF_NONNULL request, ::CreateSceneResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(7), controller,
+  channel_->CallMethod(descriptor()->method(3), controller,
                        request, response, done);
 }
 void Scene_Stub::DestroyScene(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::DestroySceneRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(8), controller,
+  channel_->CallMethod(descriptor()->method(4), controller,
                        request, response, done);
 }
 void Scene_Stub::PrepareBattle(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::PrepareBattleRequest* PROTOBUF_NONNULL request, ::PrepareBattleResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(9), controller,
+  channel_->CallMethod(descriptor()->method(5), controller,
                        request, response, done);
 }
 void Scene_Stub::CancelBattlePrepare(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::CancelBattlePrepareRequest* PROTOBUF_NONNULL request, ::Empty* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(10), controller,
+  channel_->CallMethod(descriptor()->method(6), controller,
                        request, response, done);
 }
 void Scene_Stub::NodeHandshake(
     ::google::protobuf::RpcController* PROTOBUF_NULLABLE controller,
     const ::NodeHandshakeRequest* PROTOBUF_NONNULL request, ::NodeHandshakeResponse* PROTOBUF_NONNULL response,
     ::google::protobuf::Closure* PROTOBUF_NULLABLE done) {
-  channel_->CallMethod(descriptor()->method(11), controller,
+  channel_->CallMethod(descriptor()->method(7), controller,
                        request, response, done);
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -6,12 +6,10 @@
 
 #include <cstdlib>
 
-#include "services/scene/actor/actor_events.h"
 #include "proto/common/component/player_async_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h"
 #include "proto/common/component/player_login_comp.pb.h"
 #include "proto/common/component/player_network_comp.pb.h"
-#include "services/scene/player/player_events.h"
 
 #include "thread_context/redis_manager.h"
 #include "time/system/time.h"
@@ -25,10 +23,15 @@
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/comp/player_frozen_comp.h"
 #include "player/comp/player_ownership_comp.h"
+#include "player/comp/player_save_seq_floor_comp.h" // 存盘序号的个人下限(db-write-fencing-mysql.md §7.2)
+#include "core/system/id_generator.h"              // tlsIdGeneratorManager.saveSeq:进程级存盘序号发号器
+#include "player/system/save_seq.h"
+#include "player/system/save_seq_floor.h"
 #include "player/system/db_task_dispatch_system.h"
 #include "player/system/dirty_save_stats.h"
 #include "player/system/handoff_mark_withdraw.h"
 #include "player/system/player_data_loader.h"
+#include "player/system/release_fence.h" // HandleReleaseFromSceneManager 的纯判定与计数
 #include "engine/core/type_define/type_define.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/cross_server_error_tip.pb.h"
@@ -41,7 +44,6 @@
 #include "player_skill.h"
 #include "player_team.h"
 #include "player_landing.h"
-#include "hexagons_grid.h"  // Hex —— 退出场景时要和 SceneEntityComp 成对摘掉
 #include "generated/attribute/actorbaseattributess2c_attribute_sync.h" // StopMotionForExit:速度脏位
 #include "spatial/system/movement.h" // StopMotionForExit:停步广播
 #include "spatial/system/aoi.h"
@@ -55,7 +57,6 @@
 #include <proto/scene/scene_info.pb.h>
 #include "player/comp/afk_comp.h"
 #include "frame/manager/frame_time.h"
-#include "modules/scene/scene_events.h"
 #include "network/network_utils.h"
 #include "network/player_message_utils.h"
 #include "network/rpc_session.h"
@@ -104,6 +105,10 @@ struct EmergencyRelocateTicket
 	SessionId sessionId{kInvalidSessionId};
 	NodeId gateNodeId{0};
 	std::string gateInstanceId;
+	// 改派 EnterScene 代表的登录代次(EnterSceneRequest.login_generation,scene-enter-chain-residuals.md §5.2 ④)。
+	// 发票时不填(0);DispatchEmergencyRelocate 消费票据、实体还在时按票据会话用 enter_fence::ActingLoginGeneration 算出,
+	// 票据随后按值进 Redis 回调,EnterScene 在 TrackRelocateDispatch → SendEmergencyRelocateEnterScene 里才发出(实体已销毁)。
+	uint64_t loginGeneration{0};
 };
 
 thread_local bool tlsEmergencyRelocating = false;
@@ -119,7 +124,7 @@ thread_local std::size_t tlsExitReleaseMarksInFlight = 0;
 // tlsRelocateHandoffMarksInFlight 只覆盖"标记在写、EnterScene 还没发"这一段;发出之后改派有没有生效,由这张表盯到
 // 有结论为止(已在别处 / 已落回本节点 / 已踢线 / 已放弃)。
 // 线程模型:只在 scene 逻辑线程上读写 —— 登记(FinishExitAfterPersist → DispatchEmergencyRelocate)、写标记的 Redis
-// 回调、EnterScene 的应答 / 传输失败(主循环上的定时器轮询 CompletionQueue 后分发)、进场路由(PlayerEnterGameNode)、
+// 回调、EnterScene 的应答 / 传输失败(muduo_grpc 通道在节点 EventLoop 上经 queueInLoop 投递)、进场路由(PlayerEnterGameNode)、
 // 核实的 Redis 回调、RedisSystem 的重连回调与 1s 定时器,都跑在同一个 EventLoop 上,不需要锁。认领靠的 EnterScene
 // 关联号也是线程内发号(tlsEnterSceneCorrelationSeq),两者作用域一致:号只在发出它的线程上有意义。
 // 不随 tlsEcs.Clear() 清空;进程退出丢表无害(只是少踢,玩家自己重登)。
@@ -163,7 +168,7 @@ namespace
 			LOG_WARN << site << ": RpcSession missing for session " << sessionId;
 			return relocate_confirm::GatePushResult::kGateGone;
 		}
-		// 连接已断时 RpcSession 自己会丢弃并打 ERROR;在这里先判,调用方才分得清"交出去了"与"根本没发"。
+		// 连接已断时 RpcSession 不会发出(SendRequest 返回 false,CallMethod 以 kNotSent 回调);在这里先判,调用方才分得清"交出去了"与"根本没发"。
 		if (!gateSessionPtr->IsConnected())
 		{
 			LOG_WARN << site << ": gate not connected for session " << sessionId;
@@ -442,7 +447,7 @@ namespace
 
 	// ── EnterScene 关联号(EnterSceneRequest.correlation_id,契约见 player_lifecycle.h 的 enter_scene_reply)──
 	//
-	// 线程内计数器。应答只回到发出它的那个进程、那条线程的完成队列(生成的 gRPC 客户端在同一线程上发送与回调),
+	// 线程内计数器。应答只在发出它的那个进程、那条线程的 EventLoop 上投递(muduo_grpc 通道经 queueInLoop 回调,生成的 gRPC 客户端在同一线程上发送与回调),
 	// 所以线程内唯一就够了;进程重启后从 1 重来无害 —— 旧进程发出的请求,其应答回不到新进程。
 	// 号只在进程内有意义,排障时要与 player_id 一起看。
 	thread_local uint64_t tlsEnterSceneCorrelationSeq = 0;
@@ -746,6 +751,9 @@ namespace
 	// 存盘要写的那份 PlayerAllData:marshal 全部字段,再补两张子表的 player_id(生成的 marshal 不填)。
 	// SavePlayerToRedisImpl 与退出分支的收敛比对共用,保证"比的"与"写的"是同一个形状。
 	// 不打压测探针:探针只在真正写盘的路径上打(见 SavePlayerToRedisImpl)。
+	// 也不写存盘元数据(db-write-fencing-mysql.md §7.2、§7.3):last_save_seq 由 SavePlayerToRedisImpl 在快路径判定之后
+	// 才发号写入(快路径比较时两侧都不带它);两张子表 body 里的 fence_owner_epoch / fence_save_seq 恒为 0,由 go/db 按
+	// DBTask 的 (owner_epoch, save_seq) 盖章(§4.2)。
 	// 返回 false = 持久化组件缺失(marshal 已打 ERROR 写明缺哪个),不得写盘或用于收敛判定。
 	bool MarshalPlayerForSave(entt::entity player, Guid playerId, PlayerAllData &out)
 	{
@@ -756,6 +764,39 @@ namespace
 		out.mutable_player_database_data()->set_player_id(playerId);
 		out.mutable_player_database_1_data()->set_player_id(playerId);
 		return true;
+	}
+
+	// 为一次确定要写的存盘发 save_seq(db-write-fencing-mysql.md §7.2)。进程级发号器 Next;该玩家挂着个人下限
+	// (PlayerSaveSeqFloorComp,加载时种子超界才有)时再取 max(进程 Next, 个人下限 + 1),并把个人下限推进到发出的值。
+	// 饱和(进程水位或个人下限到了 UINT64_MAX)返回 nullopt:调用方拒绝本次存盘,不回绕。
+	// 只在 SavePlayerToRedisImpl 的快路径之后调:被快路径跳过的存盘不消耗序号。个人下限只经 try_get 读写,这里不创建它
+	// (唯一创建入口是 InitPlayerFromAllData)。
+	std::optional<uint64_t> IssueSaveSeq(entt::entity player, Guid playerId)
+	{
+		const auto processSeq = tlsIdGeneratorManager.saveSeq.Next(TimeSystem::NowMillisecondsUTC());
+		if (!processSeq)
+		{
+			save_seq_stats::Inc(save_seq_stats::Counter::kExhausted);
+			LOG_ERROR << "[SaveSeq] process allocator saturated at UINT64_MAX; refusing save of player " << playerId
+					  << " without wrapping (metric=exhausted)";
+			return std::nullopt;
+		}
+		auto *personalFloor = tlsEcs.actorRegistry.try_get<PlayerSaveSeqFloorComp>(player);
+		if (personalFloor == nullptr)
+		{
+			return processSeq;
+		}
+		const auto issued = save_seq::ApplyPersonalFloor(*processSeq, personalFloor->floor);
+		if (!issued)
+		{
+			save_seq_stats::Inc(save_seq_stats::Counter::kExhausted);
+			LOG_ERROR << "[SaveSeq] personal save_seq floor of player " << playerId
+					  << " is UINT64_MAX; refusing save without wrapping (metric=exhausted)";
+			return std::nullopt;
+		}
+		personalFloor->floor = *issued;
+		save_seq_stats::Inc(save_seq_stats::Counter::kPersonalFloorIssued);
+		return issued;
 	}
 
 	// 该玩家的 PlayerAllData 在 MessageAsyncClient 里还有没有未落地的存盘(在途或排队),
@@ -811,6 +852,13 @@ bool player_exit::IsPersistedPayloadCurrent(const PlayerAllData &landed, const P
 	{
 		payload->mutable_player_database_data()->clear_stress_test_probe();
 		payload->mutable_player_database_1_data()->clear_stress_test_probe();
+		// 存盘元数据不参与收敛比较(db-write-fencing-mysql.md §7.3):落地的那份带着发号写入的 last_save_seq,
+		// 当前 marshal 不带;两笔存盘在途时落地的与当前的序号也不同。子表 fence_* 的清除是防御:C++ 不写它们。
+		payload->clear_last_save_seq();
+		payload->mutable_player_database_data()->clear_fence_owner_epoch();
+		payload->mutable_player_database_data()->clear_fence_save_seq();
+		payload->mutable_player_database_1_data()->clear_fence_owner_epoch();
+		payload->mutable_player_database_1_data()->clear_fence_save_seq();
 	}
 	return dirty_save::IsEqual(landedStripped, currentStripped);
 }
@@ -2222,11 +2270,9 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 			PlayerAllData current;
 			if (!MarshalPlayerForSave(playerEntity, playerId, current))
 			{
-				// 回调只证明 message 已落盘,证明不了此刻缺组件的内存已收敛。保留实体与退出意图,
-				// 真实落盘快照仍可更新为 message,不能再走重存 false 后的同步销毁。
 				LOG_ERROR << "HandlePlayerAsyncSaved: persisted component missing for exiting player " << playerId
-						  << "; keeping the entity and exit intent without declaring convergence";
-				tlsEcs.actorRegistry.get_or_emplace<PlayerLastPersistedSnapshotComp>(playerEntity).Replace(message);
+						  << "; discarding without persisting (metric=save_marshal_refused)";
+				DestroyDeposedPlayer(playerId, "exit_save_refused");
 				return;
 			}
 			const bool payloadCurrent = player_exit::IsPersistedPayloadCurrent(message, current);
@@ -2268,6 +2314,11 @@ void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData 
 				}
 				if (saveResult != SaveResult::kAlreadyPersisted)
 				{
+					if (saveResult == SaveResult::kRejected)
+					{
+						DestroyDeposedPlayer(playerId, "exit_save_refused");
+						return;
+					}
 					LOG_ERROR << "HandlePlayerAsyncSaved: exit re-save did not establish persistence for player "
 							  << playerId << "; keeping the entity and exit intent";
 					return;
@@ -2559,7 +2610,7 @@ PlayerLifecycleSystem::EnterGameNodeOutcome PlayerLifecycleSystem::HandleEnterGa
 		else
 		{
 			// 同一会话:合并而不是整体替换。"先登录类型、后 0 型换图路由"在载入完成前到达时,整体替换会丢掉登录类型 ——
-			// 不置登录态、不触发 PlayerLoginEvent。登录类型新值为 0 时保留旧的非 0 值;代次取 max(同一会话的旧值不得
+			// 不置登录态。登录类型新值为 0 时保留旧的非 0 值;代次取 max(同一会话的旧值不得
 			// 把已放行的代次拉低);scene_id / home_zone / owner_epoch 取新值(这一次路由决策)。
 			if (ctx.enterInfo.enter_gs_type() == 0 && previous.enterInfo.enter_gs_type() != 0)
 			{
@@ -2670,7 +2721,7 @@ bool PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	}
 
 	// 1. Bind session: map session_id -> player_id on this Scene node
-	//    so SendMessageToPlayer can route by session, and
+	//    so session-addressed client messages (ProcessClientPlayerMessage) can find the player, and
 	//    SendMessageToClientViaGate can find the gate node.
 	if (enterInfo.session_id() != 0)
 	{
@@ -2773,15 +2824,11 @@ bool PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 		const bool alreadyLoggedIn = (enterState.enter_gs_type() != 0);
 		enterState.set_enter_gs_type(enterInfo.enter_gs_type());
 
-		// 5. Fire login event only on first entry — skip on duplicate/reconnect
-		//    to avoid business systems (quests, daily rewards, etc.) reacting twice.
+		// 5. 只记录首次提交的登录态;重复入场不重复记录。
 		if (!alreadyLoggedIn)
 		{
-			PlayerLoginEvent loginEvent;
-			loginEvent.player = player;
-			loginEvent.enterGsType = enterInfo.enter_gs_type();
-			tlsEcs.dispatcher.trigger(loginEvent);
-			if (!canContinueEntry()) return stopEntry();
+			LOG_INFO << "玩家登录 entity=" << entt::to_integral(player)
+					 << " enter_gs_type=" << EnterGsType_Name(static_cast<EnterGsType>(enterInfo.enter_gs_type()));
 		}
 	}
 
@@ -2862,56 +2909,19 @@ void PlayerLifecycleSystem::DestroyPlayer(Guid playerId)
 	const auto playerEntity = tlsEcs.GetPlayer(playerId);
 
 	// 销毁出口兜底走完整离场链,不能只擦一份反向索引而漏掉格子、远端观察者及客户端通知。
-	// 正常退出已 Detach,没有场景绑定时自然幂等。强制清理由出口直接调用,不依赖事件订阅。
+	// 正常退出已离场,没有场景绑定时自然幂等。强制清理由出口直接调用,不依赖事件订阅。
 	if (tlsEcs.actorRegistry.valid(playerEntity) && tlsEcs.actorRegistry.all_of<SceneEntityComp>(playerEntity))
 	{
 		LOG_WARN << "DestroyPlayer: missing prior scene detach, entity=" << entt::to_integral(playerEntity);
-		DetachFromScene(playerEntity);
+		PlayerSceneSystem::LeaveCurrentScene(playerEntity);
 	}
 
 	DestroyEntity(tlsEcs.actorRegistry, playerEntity);
-	// 离场通知可重入销毁并重建同一玩家,不能擦掉通知中新建实体的索引。
-	const auto playerIt = tlsEcs.playerList.find(playerId);
-	if (playerIt != tlsEcs.playerList.end() && playerIt->second == playerEntity)
-	{
-		tlsEcs.playerList.erase(playerIt);
-	}
+	tlsEcs.playerList.erase(playerId);
 
 	// DBTask 投递账本按玩家号记账:本节点上已没有这名玩家时回收条目(还有在途票据就等回执到了再回收;
-	// 离开时仍欠 MySQL 一次写的计 orphan_unsynced)。通知里重建出的新实体沿用同一条目 —— 它的下一次存盘
-	// 就是那次要补的整份写,条目不能在这里被擦掉。
-	if (tlsEcs.playerList.find(playerId) == tlsEcs.playerList.end())
-	{
-		DbTaskDispatchSystem::OnPlayerGone(playerId);
-	}
-}
-
-void PlayerLifecycleSystem::DetachFromScene(entt::entity player)
-{
-	if (!tlsEcs.actorRegistry.valid(player) || !tlsEcs.actorRegistry.all_of<SceneEntityComp>(player))
-	{
-		return;
-	}
-
-	BeforeLeaveScene leaveEvent;
-	leaveEvent.actor = player;
-	// AOI 在绑定仍在时读取旧格子,显式完成后先解绑,通知才不会递归执行同一次离场。
-	AoiSystem::BeforeLeaveSceneHandler(leaveEvent);
-	if (!tlsEcs.actorRegistry.valid(player))
-	{
-		return;
-	}
-
-	tlsEcs.actorRegistry.remove<SceneEntityComp>(player);
-	// Hex 必须和 SceneEntityComp 成对回收。换场景那条路径(player_scene.cpp:194)
-	// 显式删了 Hex 并注明"让 AOI 把新场景当成一次全新进场",退出这条路径漏了。
-	// 留着 Hex 的后果:存盘在途(savePending)期间玩家重连、实体被复用时,
-	// AoiSystem::UpdateGridState 会走"位置更新"分支而不是"首次进场"分支;
-	// 若重连点与旧 hex 相同,hex_distance==0 直接 return,实体再也不会被插进
-	// 任何格子 —— 谁都看不见他,他也看不见任何人,且没有任何路径能自愈。
-	tlsEcs.actorRegistry.remove<Hex>(player);
-	// 通知不承担强制初始化或清理;此后不再使用任何先前借用的组件指针。
-	tlsEcs.dispatcher.trigger(leaveEvent);
+	// 离开时仍欠 MySQL 一次写的计 orphan_unsynced)。
+	DbTaskDispatchSystem::OnPlayerGone(playerId);
 }
 
 void PlayerLifecycleSystem::StopMotionForExit(entt::entity player)
@@ -2996,7 +3006,8 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player, ExitCause ca
 				if (saveResult == SaveResult::kRejected)
 				{
 					LOG_ERROR << "HandleExitGameNode: retained player " << retainedPlayerId
-							  << " could not be saved; keeping the entity and exit intent";
+							  << " could not be saved; discarding without persisting (metric=save_marshal_refused)";
+					DestroyDeposedPlayer(retainedPlayerId, "exit_save_refused");
 					return;
 				}
 				if ((saveResult == SaveResult::kAlreadyPersisted || saveResult == SaveResult::kHandoffAlreadyRequested) &&
@@ -3052,12 +3063,11 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player, ExitCause ca
 		intent.cause = cause;
 		// 会话是不是已经死了(粘性;之后再来的客户端断线由 MergeExitCause 置位)。改派票据据此作废。
 		intent.clientDisconnected = cause == ExitCause::kClientDisconnect;
-		// 源场景必须此刻抄:下面的 DetachFromScene 会摘掉 SceneEntityComp,而疏散 / 排空的改派要等退出收敛之后才发,
+		// 源场景必须此刻抄:下面的 LeaveCurrentScene 会摘掉 SceneEntityComp,而疏散 / 排空的改派要等退出收敛之后才发,
 		// 那时已无从知道玩家是从哪个场景被排走的。改派的确认核实拿它与 Redis 里的 location 比:仍指向这个场景 = 改派
 		// 没生效。对"整节点疏散时本来就已在退出中"的玩家同样有效(那时只合并原因,这里抄下的值还在)。
-		// 场景有效才可作为本次退出的归属来源;try_get 对陈旧句柄本身安全返回空。
-		if (const auto *sceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
-			sceneComp != nullptr && tlsEcs.sceneRegistry.valid(sceneComp->sceneEntity))
+		// 源场景已销毁时 try_get 返回空,不记 sceneIdAtExit。
+		if (const auto *sceneComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player); sceneComp != nullptr)
 		{
 			if (const auto *sceneInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneComp->sceneEntity))
 			{
@@ -3073,11 +3083,7 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player, ExitCause ca
 
 	// Remove entity from AOI grid immediately so the AOI system stops
 	// sending messages to the (already-disconnected) gate session.
-	DetachFromScene(player);
-	if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayer(exitingPlayerId) != player)
-	{
-		return; // 离场通知已销毁或替换本次玩家,不对旧实例继续快照或保存。
-	}
+	PlayerSceneSystem::LeaveCurrentScene(player);
 
 	// Capture a logout snapshot before persisting (safety net for rollback).
 	SnapshotSystem::CaptureAndSend(player, SNAPSHOT_LOGOUT);
@@ -3086,7 +3092,8 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player, ExitCause ca
 	if (saveResult == SaveResult::kRejected)
 	{
 		LOG_ERROR << "HandleExitGameNode: save refused for player " << exitingPlayerId
-				  << "; keeping the entity and exit intent, not finishing exit";
+				  << "; discarding without persisting (metric=save_marshal_refused)";
+		DestroyDeposedPlayer(exitingPlayerId, "exit_save_refused");
 		return;
 	}
 
@@ -3103,8 +3110,12 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player, ExitCause ca
 		saveResult = SavePlayerToRedisImpl(player, /*allowSkipWhenPersisted=*/false);
 		if (saveResult != SaveResult::kQueued)
 		{
-			// 拒绝或交接已发起都不能同步收尾。那笔旧存盘会在实体销毁后落地、把盘改回中间态;
-			// 保留实体,后续真实落地再判收敛。交接标记若已写,由回调的"退出优先"分支撤回。
+			if (saveResult == SaveResult::kRejected)
+			{
+				DestroyDeposedPlayer(exitingPlayerId, "exit_save_refused");
+				return;
+			}
+			// 交接已发起时等旧存盘落地再判收敛;标记若已写,由回调的"退出优先"分支撤回。
 			LOG_WARN << "HandleExitGameNode: player " << exitingPlayerId
 					 << " could not force a save; keeping the entity until persistence is established";
 			return;
@@ -3324,11 +3335,10 @@ bool PlayerLifecycleSystem::FinishExitOrAwaitDbTaskAck(Guid playerId)
 		}
 		if (saveResult == SaveResult::kRejected)
 		{
-			// 持久组件缺失:缺组件拒存不是已落盘证据,不得据此销毁实体(ecs-component-access-rules.md)。
-			// fail-closed 保留实体与退出意图,停机由看门狗裁决;拒存本身已计 save_marshal_refused。
 			LOG_ERROR << "FinishExitOrAwaitDbTaskAck: re-save refused for exiting player " << playerId
-					  << " (persisted component missing); keeping the entity, MySQL lags Redis";
-			return false;
+					  << "; discarding without persisting (metric=save_marshal_refused)";
+			DestroyDeposedPlayer(playerId, "exit_save_refused");
+			return true;
 		}
 		if (HasUnsettledPlayerSave(playerId))
 		{
@@ -3394,9 +3404,9 @@ void PlayerLifecycleSystem::OnDbTaskDispatchSettled(Guid playerId)
 	PlayerAllData current;
 	if (!MarshalPlayerForSave(playerEntity, playerId, current))
 	{
-		// 缺组件拒存不是收敛证据:保留实体与退出意图,不宣称收敛(与落地回调同一处理)。
 		LOG_ERROR << "OnDbTaskDispatchSettled: persisted component missing for exiting player " << playerId
-				  << "; keeping the entity and exit intent without declaring convergence";
+				  << "; discarding without persisting (metric=save_marshal_refused)";
+		DestroyDeposedPlayer(playerId, "exit_save_refused");
 		return;
 	}
 	const auto *snap = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(playerEntity);
@@ -3425,7 +3435,8 @@ void PlayerLifecycleSystem::OnDbTaskDispatchSettled(Guid playerId)
 			if (saveResult == SaveResult::kRejected)
 			{
 				LOG_ERROR << "OnDbTaskDispatchSettled: re-save refused for exiting player " << playerId
-						  << "; keeping the entity and exit intent";
+						  << "; discarding without persisting (metric=save_marshal_refused)";
+				DestroyDeposedPlayer(playerId, "exit_save_refused");
 				return;
 			}
 			// 交接已发起不得再写:Redis 停在交接前落下的那一份,交给闸门按欠账情况收尾。
@@ -3576,7 +3587,8 @@ bool PlayerLifecycleSystem::DispatchEmergencyRelocate(Guid playerId, bool earlie
 	{
 		return false; // 不在疏散中,或者已经派发过
 	}
-	const EmergencyRelocateTicket ticket = it->second;
+	// 可写副本:下面读身份组件时要把改派代表的登录代次填进票据(票据之后按值进 Redis 回调)。
+	EmergencyRelocateTicket ticket = it->second;
 	tlsEmergencyRelocateTickets.erase(it);
 
 	// 实体此刻还在(FinishExitAfterPersist 在本函数返回之后才销毁它):意图组件、当前会话、缓存的 owner_epoch 都要
@@ -3604,6 +3616,10 @@ bool PlayerLifecycleSystem::DispatchEmergencyRelocate(Guid playerId, bool earlie
 		{
 			loginGeneration = loginIdentity->loginGeneration;
 		}
+		// 改派 EnterScene 的盖章(scene-enter-chain-residuals.md §5.2 ④)按**票据会话**取:会话不符或没有身份组件为 0。
+		// 与上面登记进待确认条目的 loginGeneration 不同 —— 那个是实体的当前身份,不看会话。只读,不懒建。
+		ticket.loginGeneration = enter_fence::ActingLoginGeneration(
+			tlsEcs.actorRegistry.try_get<PlayerLoginIdentityComp>(playerEntity), ticket.sessionId);
 	}
 
 	// 票据作废:本次退出期间客户端已断线(会话已死),或实体当前的会话已不是发票时那一条。给这样的会话改派,
@@ -3842,6 +3858,9 @@ uint64_t PlayerLifecycleSystem::SendEmergencyRelocateEnterScene(Guid playerId, c
 	req.set_gate_instance_id(ticket.gateInstanceId);
 	req.set_gate_zone_id(GetZoneId());
 	req.set_zone_id(GetZoneId());
+	// 实体已放行的登录代次(DispatchEmergencyRelocate 消费票据时按票据会话算好),供 scene_manager 做落点会话身份裁决
+	// (scene-enter-chain-residuals.md §5.2 ④)。0 = 未知,scene_manager 按 legacy 处理。
+	req.set_login_generation(ticket.loginGeneration);
 	// 刻意不设 request_id。SceneManager 的 request_id 去重是 60s SETNX,一旦填一个
 	// 按 (node, player) 稳定的键,同一个玩家在 60s 内被排空第二次(频道缩容会发生)
 	// 就会被静默丢掉,玩家卡在原地。这里本来也不需要去重:票据在发送前就已经从
@@ -4079,33 +4098,6 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 	}
 	// Register in global player-entity map
 	tlsEcs.playerList.emplace(playerId, player);
-	std::optional<PlayerSceneSystem::EntryOwnershipGuard> notificationOwnership;
-	// 通知允许同步销毁本次实体;每次返回后重验版本,且只清理仍属于旧实体的索引。
-	const auto canContinueInitialization = [player = player, playerId, &ctx, &notificationOwnership]()
-	{
-		if (tlsEcs.actorRegistry.valid(player) && tlsEcs.GetPlayer(playerId) == player &&
-			(!notificationOwnership || notificationOwnership->IsCurrent())) return true;
-		const auto found = tlsEcs.playerList.find(playerId);
-		const auto* currentGuid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-		if (found != tlsEcs.playerList.end() && found->second == player &&
-			(!tlsEcs.actorRegistry.valid(player) || currentGuid == nullptr || currentGuid->value != playerId))
-			tlsEcs.playerList.erase(found);
-		const auto replacement = tlsEcs.GetPlayer(playerId);
-		if (replacement == entt::null)
-		{
-			// 同步通知销毁也会放弃本次载入,必须撤销预登记会话和继承清理凭证。
-			RefuseInheritedEntry(playerId, "初始化通知中断", ctx);
-		}
-		else if (const auto* snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(replacement);
-				 snapshot == nullptr || snapshot->gate_session_id() != ctx.enterInfo.session_id())
-		{
-			// 替身没有接管本次会话时只清理旧预登记号,不擦它的新会话。
-			EraseSessionMappingIfOwned(ctx.enterInfo.session_id(), playerId);
-		}
-		LOG_WARN << "玩家初始化在通知中中止 player_id=" << playerId
-		         << " entity=" << entt::to_integral(player);
-		return false;
-	};
 
 	tlsEcs.actorRegistry.emplace<Player>(player);
 	tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, playerId);
@@ -4117,13 +4109,24 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 	tlsEcs.actorRegistry.emplace<PlayerHomeZoneComp>(player);
 	tlsEcs.actorRegistry.emplace<PlayerOwnerEpochComp>(player);
 
-	PlayerAllDataMessageFieldsUnMarshal(player, playerAllData);
-	// 必需派生投影在首个注册/初始化通知之前就绪,宿主未订阅事件也能完整创建 actor。
-	if (!canContinueInitialization() || !ActorAttributeCalculatorSystem::InitializeOnCreate(player))
+	// 存盘序号播种(db-write-fencing-mysql.md §7.2):三路 max 经 Observe 进进程级发号器。种子超界(超过「(now + 60s) << 10」)
+	// 时不抬进程水位,只给这名玩家挂个人下限 —— PlayerSaveSeqFloorComp 的唯一创建入口就在这里。
+	const uint64_t saveSeqSeed = save_seq::SaveSeqFloorFrom(playerAllData);
+	const uint64_t saveSeqNowMs = TimeSystem::NowMillisecondsUTC();
+	if (tlsIdGeneratorManager.saveSeq.Observe(saveSeqSeed, saveSeqNowMs) == save_seq::ObserveResult::kBeyondBound)
 	{
-		return entt::null;
+		tlsEcs.actorRegistry.emplace<PlayerSaveSeqFloorComp>(player).floor = saveSeqSeed;
+		save_seq_stats::Inc(save_seq_stats::Counter::kObserveBeyondBound);
+		LOG_ERROR << "[SaveSeq] loaded save_seq seed of player " << playerId << " is beyond the bound (seed=" << saveSeqSeed
+				  << " bound=" << save_seq::ObserveUpperBound(saveSeqNowMs) << " last_save_seq=" << playerAllData.last_save_seq()
+				  << " fence_save_seq=" << playerAllData.player_database_data().fence_save_seq() << "/"
+				  << playerAllData.player_database_1_data().fence_save_seq()
+				  << "); kept as this player's personal floor, process allocator not raised (metric=observe_beyond_bound)";
 	}
-	notificationOwnership.emplace(player, ctx.enterInfo.session_id());
+
+	PlayerAllDataMessageFieldsUnMarshal(player, playerAllData);
+	// 必需派生投影由加载链直接创建,不依赖事件订阅。
+	ActorAttributeCalculatorSystem::InitializeOnCreate(player);
 
 	// First-time registration: initialize defaults
 	if (playerAllData.player_database_data().uint64_pb_component().registration_timestamp() <= 0)
@@ -4132,37 +4135,18 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 		tlsEcs.actorRegistry.get<PlayerUint64Comp>(player).set_registration_timestamp(TimeSystem::NowSecondsUTC());
 		tlsEcs.actorRegistry.get<LevelComp>(player).set_level(1);
 
-		// 必需初始化直接完成,通知事件不再决定默认技能是否存在。
+		// 默认技能由加载链直接初始化。
 		PlayerSkillSystem::RegisterPlayer(player);
-		RegisterPlayerEvent registerPlayer;
-		registerPlayer.player = player;
-		tlsEcs.dispatcher.trigger(registerPlayer);
-		if (!canContinueInitialization()) return entt::null;
 	}
 
 	tlsEcs.actorRegistry.emplace<ViewRadius>(player).set_radius(10);
 
 	// player_locator (Go) owns the canonical session/location record.
 
-	// 必需初始化已经直接完成;以下事件仅通知观察者,保留通知后的重入校验。
-	InitializeActorCompsEvent initActorEvent;
-	initActorEvent.actor = player;
-	tlsEcs.dispatcher.trigger(initActorEvent);
-	if (!canContinueInitialization()) return entt::null;
-
-	InitializePlayerCompsEvent initPlayerEvent;
-	initPlayerEvent.player = player;
-	tlsEcs.dispatcher.trigger(initPlayerEvent);
-	if (!canContinueInitialization()) return entt::null;
-
 	bool stillOwnsEntry = false;
 	if (!EnterScene(player, ctx, &stillOwnsEntry))
 	{
-		if (!stillOwnsEntry)
-		{
-			(void)canContinueInitialization();
-			return entt::null;
-		}
+		if (!stillOwnsEntry) return entt::null;
 		// 只撤销本次新建实体;通知中登记的同号替身及其会话必须保留。
 		if (tlsEcs.actorRegistry.valid(player))
 		{
@@ -4173,7 +4157,7 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 			}
 			else
 			{
-				DetachFromScene(player);
+				PlayerSceneSystem::LeaveCurrentScene(player);
 				DestroyEntity(tlsEcs.actorRegistry, player);
 			}
 		}
@@ -4181,7 +4165,6 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 			RefuseInheritedEntry(playerId, "新建玩家入场未完成", ctx);
 		return entt::null;
 	}
-	if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayer(playerId) != player) return entt::null;
 
 	// Capture a login snapshot for rollback safety net.
 	SnapshotSystem::CaptureAndSend(player, SNAPSHOT_LOGIN);
@@ -4192,6 +4175,11 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 bool PlayerLifecycleSystem::SavePlayerToRedis(entt::entity player)
 {
 	return SavePlayerToRedisImpl(player, /*allowSkipWhenPersisted=*/true) == SaveResult::kQueued;
+}
+
+bool PlayerLifecycleSystem::SavePlayerForAssetCommit(entt::entity player)
+{
+	return SavePlayerToRedisImpl(player, /*allowSkipWhenPersisted=*/false) == SaveResult::kQueued;
 }
 
 PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
@@ -4280,14 +4268,15 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	// when the in-memory state diverged from Redis during a load path
 	// we don't fully trust.
 	//
-	// allowSkipWhenPersisted = false:不走快路径,一定写盘。这么传的有:退出流程的 M4 分支
-	// (exit_fastpath_deferred)、StartTravelHandoff 的快路径补写(handoff_fastpath_forced)、跨 zone 交接
-	// 被回滚到本节点后的采纳(JudgeTravelOutcomeReply B5,rolled_back_adopted),以及下线收尾的 DBTask 回执闸门
-	// (FinishExitOrAwaitDbTaskAck / OnDbTaskDispatchSettled 的重存)。
+	// 调用方清单与理由见头文件 SavePlayerToRedisImpl 的注释。
 	//
 	// 快照只证明「这份字节已进 Redis」,不证明 MySQL 也有:某次存盘的 DBTask 同步被拒 / 投递回执失败时,
 	// DbTaskDispatchSystem 记着这笔欠账(NeedsResave),快路径必须让路、强制真写 —— 重新 marshal 当前内存整份重发,
 	// 绝不重放旧载荷。快照本身不作废:战斗结算 / 资产通道拿它判「已进 Redis」销账,Redis 落地回调也会把它写回。
+	//
+	// 存盘序号不污染这次比较(db-write-fencing-mysql.md §7.3):快照里的 last_save_seq 在 Replace 时已剥离,新消息此刻还没
+	// 发号,C++ 也不写子表 fence_*,两侧都不带非业务字段,直接 dirty_save::IsEqual,不在热路径上深拷贝。
+	// 快路径是否剥离 stress_test_probe 待负责人定(§14 第 22 条),现行口径同 HEAD:不剥离。
 	const auto *snap = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
 	const bool snapshotMatches = allowSkipWhenPersisted && snap != nullptr && snap->HasSnapshot() &&
 								 dirty_save::IsEqual(*message, *snap->snapshot);
@@ -4307,6 +4296,17 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 		LOG_INFO << "[SavePlayerToRedis] forcing a real save for player " << playerId
 				 << ": an earlier DB write task was not delivered (metric=db_task_forced_resave)";
 	}
+
+	// ── save_seq(db-write-fencing-mysql.md §7.2):确定要写之后才发号,被快路径跳过的存盘不消耗序号 ──────────
+	// 与 owner_epoch 无关、总是发号并写进父键的 last_save_seq(下次加载的播种来源);DBTask 是否带它见下面 sendSubTableTask。
+	// 必须在 Save() 之前写进 message:Save() 会立即序列化载荷。饱和时拒绝本次存盘(什么都没写,IssueSaveSeq 已打 ERROR)。
+	const auto issuedSaveSeq = IssueSaveSeq(player, playerId);
+	if (!issuedSaveSeq)
+	{
+		return SaveResult::kRejected;
+	}
+	const uint64_t saveSeq = *issuedSaveSeq;
+	message->set_last_save_seq(saveSeq);
 
 	// Stamp the data-consistency stress probe (no-op when STRESS_TEST_PROBE
 	// is unset). MUST be before Save() — payload is serialized eagerly
@@ -4394,6 +4394,9 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 		// Redis 侧的 CAS 挡不住这条通道:被废黜节点的 DBTask 仍可能后到并覆盖 MySQL。
 		// db 服务落库前比对(reentry-barrier §6.3);0 表示兼容窗口放行。
 		dbTask.set_owner_epoch(ownerEpoch);
+		// 两张子表共用同一个 save_seq(db-write-fencing-mysql.md §7.2)。epoch 为 0 时不带序号:go/db 对「有 seq、无 epoch」
+		// 无法判定(class-3 只看 epoch,§2);父键里的 last_save_seq 照样写了,播种来源不断。
+		dbTask.set_save_seq(ownerEpoch == 0 ? 0 : saveSeq);
 
 		std::string dbTaskBytes;
 		if (!dbTask.SerializeToString(&dbTaskBytes))
@@ -4427,7 +4430,7 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	}
 
 	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis, DB write tasks enqueued"
-			 << " (topic=" << dbTaskTopic << ", owner_epoch=" << ownerEpoch << ")";
+			 << " (topic=" << dbTaskTopic << ", owner_epoch=" << ownerEpoch << ", save_seq=" << saveSeq << ")";
 	return SaveResult::kQueued;
 }
 
@@ -4453,6 +4456,11 @@ void PlayerLifecycleSystem::HandlePlayerSaveRejected(Guid playerId, const std::s
 			}
 			if (saveResult == SaveResult::kRejected)
 			{
+				if (tlsEcs.actorRegistry.any_of<UnregisterPlayer>(playerEntity))
+				{
+					DestroyDeposedPlayer(playerId, "exit_save_refused");
+					return;
+				}
 				LOG_ERROR << "HandlePlayerSaveRejected: current-owner re-save refused for player " << playerId
 						  << "; keeping the entity without finishing exit";
 				return;
@@ -4507,21 +4515,12 @@ void PlayerLifecycleSystem::DestroyDeposedPlayer(Guid playerId, const char *reas
 				 << " (metric=ticket_dropped_deposed)";
 	}
 
-	// 交接标记与冻结成对摘掉。实体马上就销毁,组件本来也会跟着消失;显式先摘是为了让下面
-	// DetachFromScene 触发的事件(BeforeLeaveScene …)看到的是一个普通的离场实体,而不是一个
-	// 会被各业务系统的 Frozen 闸跳过的实体。remove 对不存在的组件是 no-op。
+	// 交接标记与冻结成对摘除;实体随后销毁,离场链路不读这两个组件。
 	tlsEcs.actorRegistry.remove<PlayerTravelHandoffComp>(playerEntity);
 	tlsEcs.actorRegistry.remove<PlayerFrozenComp>(playerEntity);
 
 	// 与 HandleExitGameNode 同款,只是**没有存盘**:摘场景(AOI 停止广播)→ 摘会话 → 销毁。
-	DetachFromScene(playerEntity);
-	// 离场通知可销毁旧实体或把同号玩家映射交给替身;之后的按ID收尾不得作用到新玩家。
-	if (!tlsEcs.actorRegistry.valid(playerEntity) || tlsEcs.GetPlayer(playerId) != playerEntity)
-	{
-		LOG_INFO << "[" << reasonTag << "] player " << playerId
-		         << " changed during leave notification; stopping old entity teardown";
-		return;
-	}
+	PlayerSceneSystem::LeaveCurrentScene(playerEntity);
 	RemovePlayerSession(playerId);
 	DestroyPlayer(playerId);
 
@@ -4534,7 +4533,7 @@ void PlayerLifecycleSystem::DestroyDeposedPlayer(Guid playerId, const char *reas
 	else
 	{
 		LOG_WARN << "[" << reasonTag << "] local entity for player " << playerId
-				 << " destroyed without persisting (ownership moved away)";
+				 << " destroyed without persisting (local state abandoned)";
 	}
 }
 
@@ -4713,10 +4712,12 @@ uint32_t PlayerLifecycleSystem::StartTravelHandoff(entt::entity player, uint32_t
 	}
 
 	// 先查持久状态是否完整,不让错误实体进入冻结/交接。保存提交点仍会重新检查,
-	// 这次预检不能代替 SaveResult::kRejected 的失败处理。
-	PlayerAllData verifiedState;
-	if (!MarshalPlayerForSave(player, playerId, verifiedState))
+	// 当前预检与提交点之间没有摘持久组件的路径,后面的 kRejected 分支只作提交点复核。
+	PlayerAllData discardedProbe;
+	if (!MarshalPlayerForSave(player, playerId, discardedProbe))
 	{
+		LOG_ERROR << "[ZoneTravel] handoff precheck refused for player " << playerId
+				  << ": persisted component missing (see the [PlayerSave] line above)";
 		return genericFailTip;
 	}
 
@@ -4888,6 +4889,15 @@ uint64_t PlayerLifecycleSystem::RequestSceneChange(entt::entity player, entt::en
 		pending.sentAtMs = TimeSystem::NowMillisecondsUTC();
 		pending.playerRequested = playerRequested;
 		pending.correlationId = correlationId;
+		// 统一盖章(scene-enter-chain-residuals.md §5.2 ④):客户端换图、镜像自动进场、队伍跟随三处调用点都经这里,
+		// 它们本身不填代次。带上实体已放行的登录代次,scene_manager 据此做落点会话身份裁决、拒掉旧会话在途的换图(d2)。
+		// 调用方已显式填了代次的不覆盖。请求会话与身份组件记的不符、或没有身份组件时为 0(scene_manager 按 legacy 放行,
+		// 不降级它已记下的身份)。只读,不懒建组件。
+		if (req.login_generation() == 0)
+		{
+			req.set_login_generation(enter_fence::ActingLoginGeneration(
+				tlsEcs.actorRegistry.try_get<PlayerLoginIdentityComp>(player), req.session_id()));
+		}
 	}
 	SendCorrelatedEnterScene(smEntity, req, correlationId);
 	return correlationId;
@@ -5121,6 +5131,99 @@ bool PlayerLifecycleSystem::IsHandoffRequested(entt::entity player)
 	return travel != nullptr && travel->requestedAtMs != 0;
 }
 
+void PlayerLifecycleSystem::HandleReleaseFromSceneManager(Guid playerId, uint64_t expectedOwnerEpoch, uint64_t targetSceneId,
+														  const std::string &targetNodeId)
+{
+	// ReleasePlayer 归属栅栏(docs/design/scene-enter-chain-residuals.md §4)。从 scene_node_service.cpp 的 HandleReleasePlayer
+	// 守护段搬进库里,判定抽成纯函数 release_fence::Decide。查到实体之后、任何副作用之前先判完;被忽略的请求不碰会话、
+	// 待入场上下文、改派票据、待确认条目与退出意图,也不做 MergeExitCause 或超限重踢(所以忽略分支不能交给 HandleExitGameNode
+	// 去"合并原因")。
+	const auto playerIt = tlsEcs.playerList.find(playerId);
+	if (playerIt == tlsEcs.playerList.end())
+	{
+		// 成功交接后源实体通常已销毁,释放到达时就落在这里:幂等返回。
+		release_fence_stats::Inc(release_fence_stats::Get().notFound);
+		LOG_DEBUG << "[ReleaseFence] ReleasePlayer: player " << playerId << " not on this node, idempotent OK"
+				  << " (target scene " << targetSceneId << " on node " << targetNodeId << ")";
+		return;
+	}
+	const entt::entity player = playerIt->second;
+	if (!tlsEcs.actorRegistry.valid(player))
+	{
+		// playerList 里留着陈旧句柄(不该发生)。改动前这里会走进 HandleExitGameNode 打同样的 ERROR 后返回,结局不变。
+		release_fence_stats::Inc(release_fence_stats::Get().notFound);
+		LOG_ERROR << "[ReleaseFence] ReleasePlayer: player " << playerId
+				  << " has a stale entity handle in playerList; nothing to release";
+		return;
+	}
+
+	// 判定表第 1 行(现有守卫,语义不变):归属交接已发起(handoff 标记已写、EnterScene 已发)的实体不走退出。
+	// 它的去留只由 EnterScene 应答与看门狗裁决(ResolveTravelOutcome):放行了会销毁实体,没放行(或被回滚到本节点)会解冻,
+	// 两头都不需要这条通知。盘上已是最新状态,不存在"不退出就丢存盘"的问题。
+	// **不要**在这里调 ResolveTravelOutcome:它的原子取证会删掉本次交接这一族 handoff 标记。新版 scene_manager 只在本次
+	// EnterScene 提交(路由 broker ACK,或无 GateId 时落点成功)之后才派发释放,但滚动升级窗口里旧版 scene_manager 仍是
+	// 先派发、后落点,释放可能早于铸造 Lua 到达 —— 在这里取证等于源端自己把即将发生的放行撤回。
+	// 已知副作用(预期现象,压测时别当 bug 追):交接被放行到别的节点、而 EnterScene 应答又丢了(scene_manager 在路由 ACK
+	// 之后重启 / 断连:传输失败对交接只记日志、不当证据)时,源实体要等 30s 应答看门狗才销毁(日志
+	// "travel_granted_without_reply"),这段时间以冻结态留在源场景的 AOI 内。数据安全:交接发起后本实体不再存盘,
+	// 玩家再被派回本节点时 DiscardStaleHandoffEntity 会先销毁它再重载。
+	// **也不要**改成"收到 ReleasePlayer 后读一次 Redis 的 owner_epoch、变了就销毁"来缩短它:违反 CZ-3(节点不自己读 Redis
+	// 取 epoch),而且旧版 scene_manager 先铸造、后推路由,路由失败会把 epoch 单调回滚到本节点(E+1 → E+2),探测落在这段
+	// 窗口里会读到一个随后本该被回滚的新 epoch。应答路径没有这个竞态。
+	const bool handoffRequested = IsHandoffRequested(player);
+
+	// 判定表第 2–6 行:按期望 owner_epoch 比对。期望值是 scene_manager 本次落点 CAS 用过的观察值,源实体缓存必须恰好是
+	// 那一代才允许退出这种破坏性动作。这一比对收掉了原先登记的残余"采纳后迟到的 ReleasePlayer":B5 采纳 E+2 解冻之后
+	// 迟到的释放(期望 E)、回流后新载入实体(缓存 E+2)收到的旧释放,都判 skip_stale_release。前提是 ResolveTravelOutcome →
+	// JudgeTravelOutcomeReply 的 B5(kRolledBackToSelf)采纳"先抬 epoch、后摘交接组件",两步在同一次回调里同步完成(那里有注释钉住)。
+	// 只读本地缓存(CZ-3,不读 Redis、不采纳 epoch);组件缺失按 0。try_get,不懒建。
+	uint64_t cachedOwnerEpoch = 0;
+	if (const auto *epochComp = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player))
+	{
+		cachedOwnerEpoch = epochComp->epoch;
+	}
+	const release_fence::Verdict verdict = release_fence::Decide(expectedOwnerEpoch, cachedOwnerEpoch, handoffRequested);
+	release_fence_stats::IncVerdict(verdict);
+
+	switch (verdict)
+	{
+	case release_fence::Verdict::kSkipHandoffInFlight:
+		LOG_INFO << "[ReleaseFence] ReleasePlayer: player " << playerId
+				 << " has an ownership handoff in flight; leaving the outcome to the EnterScene reply / watchdog"
+				 << " (expected_owner_epoch=" << expectedOwnerEpoch << " cached_owner_epoch=" << cachedOwnerEpoch
+				 << " target scene " << targetSceneId << " on node " << targetNodeId
+				 << "; if the reply is lost the frozen source entity lingers until the reply watchdog fires)";
+		return;
+	case release_fence::Verdict::kSkipStaleRelease:
+	case release_fence::Verdict::kSkipAheadOfHolder:
+		LOG_WARN << "[ReleaseFence] ReleasePlayer ignored: player=" << playerId
+				 << " verdict=" << release_fence::VerdictName(verdict) << " expected_owner_epoch=" << expectedOwnerEpoch
+				 << " cached_owner_epoch=" << cachedOwnerEpoch << " target_scene=" << targetSceneId
+				 << " target_node=" << targetNodeId << "; the entity keeps running on this node";
+		return;
+	case release_fence::Verdict::kReleaseCacheUnknown:
+		LOG_WARN << "[ReleaseFence] ReleasePlayer: player=" << playerId
+				 << " has no cached owner_epoch; releasing as before (verdict=" << release_fence::VerdictName(verdict)
+				 << " expected_owner_epoch=" << expectedOwnerEpoch << " target_scene=" << targetSceneId
+				 << " target_node=" << targetNodeId << ")";
+		break;
+	default:
+		break;
+	}
+	if (!release_fence::Releases(verdict))
+	{
+		// 越界值(Decide 产不出;防御写法):退出是破坏性动作,按不释放处理。
+		LOG_ERROR << "[ReleaseFence] ReleasePlayer: player=" << playerId << " unexpected verdict="
+				  << static_cast<uint32_t>(verdict) << "; not releasing";
+		return;
+	}
+
+	LOG_INFO << "[ReleaseFence] ReleasePlayer: releasing player " << playerId << " moving to scene " << targetSceneId
+			 << " on node " << targetNodeId << " (verdict=" << release_fence::VerdictName(verdict)
+			 << " expected_owner_epoch=" << expectedOwnerEpoch << " cached_owner_epoch=" << cachedOwnerEpoch << ")";
+	HandleExitGameNode(player, ExitCause::kReleasedByTransfer);
+}
+
 bool PlayerLifecycleSystem::DiscardStaleHandoffEntity(entt::entity player, uint64_t incomingOwnerEpoch)
 {
 	// 0 = 上游没填 epoch(旧版 gate / scene_manager),无从比较,保持原有的"复用实体"行为。
@@ -5237,15 +5340,6 @@ void PlayerLifecycleSystem::BeginTravelHandoff(Guid playerId)
 			AbortTravelHandoff(playerId, "handoff dispatch window closed before the mark was sent");
 			return;
 		}
-	}
-
-	// 落盘回调与写标记之间也要重新确认加载不变量。旧 payload 已落盘并不意味着
-	// 此刻缺组件的内存可以交接;标记还没发出,拒绝时安全撤销交接,保留玩家。
-	PlayerAllData verifiedState;
-	if (!MarshalPlayerForSave(playerEntity, playerId, verifiedState))
-	{
-		AbortTravelHandoff(playerId, "persisted component missing before writing the handoff mark");
-		return;
 	}
 
 	uint64_t ownerEpoch = 0;
@@ -5425,6 +5519,10 @@ void PlayerLifecycleSystem::RequestTravelEnterScene(Guid playerId)
 	req.set_gate_id(std::to_string(GetGateNodeId(session->gate_session_id())));
 	req.set_gate_instance_id(ResolveGateInstanceId(session->gate_session_id()));
 	req.set_gate_zone_id(GetZoneId());
+	// 交接重发带实体已放行的登录代次(scene-enter-chain-residuals.md §5.2 ④),按快照会话取;会话与身份组件记的不符、
+	// 或没有身份组件时为 0(scene_manager 按 legacy 处理)。只读,不懒建。
+	req.set_login_generation(enter_fence::ActingLoginGeneration(
+		tlsEcs.actorRegistry.try_get<PlayerLoginIdentityComp>(playerEntity), session->gate_session_id()));
 	// zone_id != gate_zone_id 就是 scene_manager 判定"跨 zone"的依据,它据此走 CZ-4 两道门
 	// 并回 Redirect 票据(GateTokenPayload.player_id / target_zone_id)。
 	// 同 zone 交接时两者相等,走普通落点:凭 handoff 标记过换手门,应答没有 Redirect。
@@ -5674,8 +5772,8 @@ void PlayerLifecycleSystem::JudgeTravelOutcomeReply(Guid playerId, uint64_t requ
 		}
 		// 采纳会解冻并强制保存。先确认能形成完整记录,否则保留冻结实体等待明确裁决,
 		// 不能把拒绝保存当成"按构造不可达",更不能带着不完整状态恢复可写。
-		PlayerAllData verifiedState;
-		if (!MarshalPlayerForSave(entity, playerId, verifiedState))
+		PlayerAllData discardedProbe;
+		if (!MarshalPlayerForSave(entity, playerId, discardedProbe))
 		{
 			LOG_ERROR << "[ZoneTravel][RollbackAdopt] persisted component missing for player " << playerId
 					  << "; keeping the frozen entity without adopting or forcing a save";
@@ -5685,6 +5783,11 @@ void PlayerLifecycleSystem::JudgeTravelOutcomeReply(Guid playerId, uint64_t requ
 				 << " handoff was rolled back to this node (receipt=" << location.rollback_receipt() << ", "
 				 << reasonText << ", evidence=" << travel_outcome::EvidenceName(evidence) << "): owner_epoch "
 				 << cachedEpoch << " -> " << redisEpoch << "; adopting and unfreezing (metric=rolled_back_adopted)";
+		// 顺序钉死:**先抬 epoch、后 AbortTravelHandoff 摘交接组件**,且两步在同一个调用栈里同步完成。ReleasePlayer 归属栅栏
+		// (HandleReleaseFromSceneManager / release_fence::Decide,scene-enter-chain-residuals.md §4)依赖它:交接组件一摘,
+		// IsHandoffRequested 即为假,此后到达的迟到释放(期望 E)必须看到缓存已是 E+2、判 skip_stale_release;若缓存还停在 E,
+		// 会判 E == E 而退掉这个刚解冻、仍持有归属的实体。本函数本身就跑在取证脚本的 Redis 应答回调里,这没问题;约束是:
+		// 重构不得调换这两步,也不得把两步拆到不同的回调或事件循环轮次之间(例如先 Abort、等另一次 Redis 应答再抬 epoch)。
 		epochComp->epoch = std::max(epochComp->epoch, redisEpoch);
 		current->markEpoch = 0; // 本族标记已被脚本删掉,不登记撤回(理由同 B4)
 		travel_handoff_stats::Inc(travel_handoff_stats::Get().rolledBackAdopted);

@@ -237,7 +237,10 @@ type Config struct {
 
 	// CleanupOrphanChannelsOnStartup: when true (default), SceneManager
 	// scans Redis on fullSync for world_channels:* sets whose confId is
-	// not in World.json and deletes them. This removes drift left by
+	// not in World.json and deletes them.
+	// (2026-10-16 起不再 SCAN:候选 zone 取 zone 登记集合 scene_manager:zones ∪ 有活节点的 zone,
+	// 候选 (zone, confId) 取 world_channels:desired:zone:{z} 的字段,全部是点查;覆盖范围见
+	// internal/logic/orphan_cleanup.go 文件头。) This removes drift left by
 	// designers dropping a map from the table without a clean tear-down.
 	// Set to false in environments where you migrate maps manually or
 	// share a Redis cluster across incompatible World.json versions.

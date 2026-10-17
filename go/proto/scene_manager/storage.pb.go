@@ -125,8 +125,13 @@ type PlayerLocation struct {
 	//   (每次交接的 saved_at_ms 都是新值),无害。
 	// - 唯一消费者是源 scene 的 ResolveTravelOutcome:只认与自己本次交接标记原文逐字节相同的回执。
 	//   其它读 location 的服务一律忽略这个字段。
-	// - GO-3 的新字段从 8 起取。
+	// - GO-3 的新字段从 10 起取(8 / 9 已被会话身份占用)。
 	RollbackReceipt string `protobuf:"bytes,7,opt,name=rollback_receipt,json=rollbackReceipt,proto3" json:"rollback_receipt,omitempty"`
+	// 最近一次被 scene_manager 放行、并写入或确认这条 location 的 EnterScene 所代表的会话
+	// (docs/design/scene-enter-chain-residuals.md §3 / §5)。0 / 0 = 无身份(旧版 scene_manager 写入或请求不带会话),
+	// 所有比较退回旧行为。只由落点 Lua 写入;bump 回滚克隆旧值、keep 回滚恢复原字节,两者都保留身份。
+	SessionId       uint32 `protobuf:"varint,8,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	LoginGeneration uint64 `protobuf:"varint,9,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -210,6 +215,20 @@ func (x *PlayerLocation) GetRollbackReceipt() string {
 	return ""
 }
 
+func (x *PlayerLocation) GetSessionId() uint32 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *PlayerLocation) GetLoginGeneration() uint64 {
+	if x != nil {
+		return x.LoginGeneration
+	}
+	return 0
+}
+
 var File_proto_scene_manager_storage_proto protoreflect.FileDescriptor
 
 const file_proto_scene_manager_storage_proto_rawDesc = "" +
@@ -222,7 +241,7 @@ const file_proto_scene_manager_storage_proto_rawDesc = "" +
 	"\vcreate_time\x18\x04 \x01(\x03R\n" +
 	"createTime\x12\x1d\n" +
 	"\n" +
-	"scene_type\x18\x05 \x01(\rR\tsceneType\"\xfd\x01\n" +
+	"scene_type\x18\x05 \x01(\rR\tsceneType\"\xc7\x02\n" +
 	"\x0ePlayerLocation\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\x04R\asceneId\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\tR\x06nodeId\x12\x1f\n" +
@@ -232,7 +251,10 @@ const file_proto_scene_manager_storage_proto_rawDesc = "" +
 	"\vowner_epoch\x18\x05 \x01(\x04R\n" +
 	"ownerEpoch\x121\n" +
 	"\x15pending_scene_conf_id\x18\x06 \x01(\x04R\x12pendingSceneConfId\x12)\n" +
-	"\x10rollback_receipt\x18\a \x01(\tR\x0frollbackReceiptB\x15Z\x13proto/scene_managerb\x06proto3"
+	"\x10rollback_receipt\x18\a \x01(\tR\x0frollbackReceipt\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\b \x01(\rR\tsessionId\x12)\n" +
+	"\x10login_generation\x18\t \x01(\x04R\x0floginGenerationB\x15Z\x13proto/scene_managerb\x06proto3"
 
 var (
 	file_proto_scene_manager_storage_proto_rawDescOnce sync.Once

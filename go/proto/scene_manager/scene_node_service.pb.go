@@ -30,9 +30,13 @@ type ReleasePlayerRequest struct {
 	// Optional: target scene id the player is moving to (for logging only).
 	TargetSceneId uint64 `protobuf:"varint,2,opt,name=target_scene_id,json=targetSceneId,proto3" json:"target_scene_id,omitempty"`
 	// Optional: target node id the player is moving to (for logging only).
-	TargetNodeId  string `protobuf:"bytes,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	TargetNodeId string `protobuf:"bytes,3,opt,name=target_node_id,json=targetNodeId,proto3" json:"target_node_id,omitempty"`
+	// SM 本次 EnterScene 观察到、并用于落点 CAS 的 owner_epoch,即旧节点在提交时刻应持有的那一代。
+	// scene 只在本地缓存 PlayerOwnerEpochComp.epoch 与它相等时释放;缓存为 0 时按旧行为释放并计数;其余忽略。
+	// 0 = 旧版调用方或尚未铸造,按旧行为释放并计数。不进存盘,不与 login_generation 混用。
+	ExpectedOwnerEpoch uint64 `protobuf:"varint,4,opt,name=expected_owner_epoch,json=expectedOwnerEpoch,proto3" json:"expected_owner_epoch,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ReleasePlayerRequest) Reset() {
@@ -86,16 +90,24 @@ func (x *ReleasePlayerRequest) GetTargetNodeId() string {
 	return ""
 }
 
+func (x *ReleasePlayerRequest) GetExpectedOwnerEpoch() uint64 {
+	if x != nil {
+		return x.ExpectedOwnerEpoch
+	}
+	return 0
+}
+
 var File_proto_scene_manager_scene_node_service_proto protoreflect.FileDescriptor
 
 const file_proto_scene_manager_scene_node_service_proto_rawDesc = "" +
 	"\n" +
 	",proto/scene_manager/scene_node_service.proto\x12\n" +
-	"scene_node\x1a!proto/common/asset/asset_op.proto\x1a\x1dproto/common/base/empty.proto\x1a\x17proto/scene/scene.proto\"\x81\x01\n" +
+	"scene_node\x1a!proto/common/asset/asset_op.proto\x1a\x1dproto/common/base/empty.proto\x1a\x17proto/scene/scene.proto\"\xb3\x01\n" +
 	"\x14ReleasePlayerRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
 	"\x0ftarget_scene_id\x18\x02 \x01(\x04R\rtargetSceneId\x12$\n" +
-	"\x0etarget_node_id\x18\x03 \x01(\tR\ftargetNodeId2\xd7\x03\n" +
+	"\x0etarget_node_id\x18\x03 \x01(\tR\ftargetNodeId\x120\n" +
+	"\x14expected_owner_epoch\x18\x04 \x01(\x04R\x12expectedOwnerEpoch2\x8f\x04\n" +
 	"\rSceneNodeGrpc\x12:\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\"\x00\x12.\n" +
 	"\fDestroyScene\x12\x14.DestroySceneRequest\x1a\x06.Empty\"\x00\x12;\n" +
@@ -105,7 +117,8 @@ const file_proto_scene_manager_scene_node_service_proto_rawDesc = "" +
 	"\n" +
 	"AssetDebit\x12\x0f.AssetOpRequest\x1a\x10.AssetOpResponse\"\x00\x126\n" +
 	"\x0fAssetAbortDebit\x12\x0f.AssetOpRequest\x1a\x10.AssetOpResponse\"\x00\x122\n" +
-	"\vAssetCredit\x12\x0f.AssetOpRequest\x1a\x10.AssetOpResponse\"\x00B\x15Z\x13proto/scene_managerb\x06proto3"
+	"\vAssetCredit\x12\x0f.AssetOpRequest\x1a\x10.AssetOpResponse\"\x00\x126\n" +
+	"\x0fAssetAckReceipt\x12\x0f.AssetOpRequest\x1a\x10.AssetOpResponse\"\x00B\x15Z\x13proto/scene_managerb\x06proto3"
 
 var (
 	file_proto_scene_manager_scene_node_service_proto_rawDescOnce sync.Once
@@ -141,16 +154,18 @@ var file_proto_scene_manager_scene_node_service_proto_depIdxs = []int32{
 	5, // 5: scene_node.SceneNodeGrpc.AssetDebit:input_type -> AssetOpRequest
 	5, // 6: scene_node.SceneNodeGrpc.AssetAbortDebit:input_type -> AssetOpRequest
 	5, // 7: scene_node.SceneNodeGrpc.AssetCredit:input_type -> AssetOpRequest
-	6, // 8: scene_node.SceneNodeGrpc.CreateScene:output_type -> CreateSceneResponse
-	7, // 9: scene_node.SceneNodeGrpc.DestroyScene:output_type -> Empty
-	7, // 10: scene_node.SceneNodeGrpc.ReleasePlayer:output_type -> Empty
-	8, // 11: scene_node.SceneNodeGrpc.PrepareBattle:output_type -> PrepareBattleResponse
-	7, // 12: scene_node.SceneNodeGrpc.CancelBattlePrepare:output_type -> Empty
-	9, // 13: scene_node.SceneNodeGrpc.AssetDebit:output_type -> AssetOpResponse
-	9, // 14: scene_node.SceneNodeGrpc.AssetAbortDebit:output_type -> AssetOpResponse
-	9, // 15: scene_node.SceneNodeGrpc.AssetCredit:output_type -> AssetOpResponse
-	8, // [8:16] is the sub-list for method output_type
-	0, // [0:8] is the sub-list for method input_type
+	5, // 8: scene_node.SceneNodeGrpc.AssetAckReceipt:input_type -> AssetOpRequest
+	6, // 9: scene_node.SceneNodeGrpc.CreateScene:output_type -> CreateSceneResponse
+	7, // 10: scene_node.SceneNodeGrpc.DestroyScene:output_type -> Empty
+	7, // 11: scene_node.SceneNodeGrpc.ReleasePlayer:output_type -> Empty
+	8, // 12: scene_node.SceneNodeGrpc.PrepareBattle:output_type -> PrepareBattleResponse
+	7, // 13: scene_node.SceneNodeGrpc.CancelBattlePrepare:output_type -> Empty
+	9, // 14: scene_node.SceneNodeGrpc.AssetDebit:output_type -> AssetOpResponse
+	9, // 15: scene_node.SceneNodeGrpc.AssetAbortDebit:output_type -> AssetOpResponse
+	9, // 16: scene_node.SceneNodeGrpc.AssetCredit:output_type -> AssetOpResponse
+	9, // 17: scene_node.SceneNodeGrpc.AssetAckReceipt:output_type -> AssetOpResponse
+	9, // [9:18] is the sub-list for method output_type
+	0, // [0:9] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

@@ -138,16 +138,8 @@ uint32_t BagService::AddItems(
 	const ItemCountMap &itemsToAdd,
 	TransactionType txType,
 	uint64_t correlationId,
-	const std::string &extra,
-	bool *mutated)
+	const std::string &extra)
 {
-	// 先置 false:下面每条 return 路径都可能在任意一步退出,只有开头统一清零才能
-	// 保证"没写过 true 就是真的没动过"。
-	if (mutated != nullptr)
-	{
-		*mutated = false;
-	}
-
 	// ── Cross-zone Frozen check (Single Writer guarantee) ────────────────
 	// See AddItem above for rationale. Reject the whole batch early.
 	// See docs/design/cross-zone-readiness-audit.md §11.1.
@@ -175,10 +167,6 @@ uint32_t BagService::AddItems(
     std::vector<DestroyedInstance> evicted;
     std::vector<GuidVector> written;
     RETURN_ON_ERROR(bag.AddItems(itemsToAdd, &evicted, &written, InstalledItemInstanceInitializer()));
-    if (mutated != nullptr)
-    {
-        *mutated = !itemsToAdd.empty();
-    }
     LogEvictedInstances(playerEntity, evicted);
     for (std::size_t i = 0; i < ordered.size(); ++i)
     {

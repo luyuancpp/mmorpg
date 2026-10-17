@@ -7,7 +7,7 @@
 #include "combat_state/constants/combat_state.h"
 #include "combat/buff/constants/buff.h"
 #include "macros/return_define.h"
-#include "services/scene/actor/actor_events.h"
+#include "combat_state/system/combat_state.h"
 #include "core/utils/defer/defer.h"
 
 void BuffImplSystem::OnIntervalThink(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable,
@@ -83,21 +83,11 @@ void BuffImplSystem::ResetCombatIdleBuff(entt::entity caster, entt::entity victi
 }
 
 void BuffImplSystem::AddSilenceState(entt::entity parent, const BuffEntry& buff) {
-    CombatStateAddedEvent event;
-    event.actor = parent;
-    event.sourceBuffId = buff.buffPb.buff_id();
-    event.stateType = kActorCombatStateSilence;
-
-    tlsEcs.dispatcher.trigger(event);
+    CombatStateSystem::AddCombatState(parent, buff.buffPb.buff_id(), kActorCombatStateSilence);
 }
 
 void BuffImplSystem::RemoveSilenceState(entt::entity parent, uint64_t buffId) {
-    CombatStateRemovedEvent event;
-    event.actor = parent;
-    event.sourceBuffId = buffId;
-    event.stateType = kActorCombatStateSilence;
-
-    tlsEcs.dispatcher.trigger(event);
+    CombatStateSystem::RemoveCombatState(parent, buffId, kActorCombatStateSilence);
 }
 
 void BuffImplSystem::TickCombatIdleBuff(entt::entity parent, BuffEntry& buff, const BuffTable* buffTable,
@@ -128,8 +118,8 @@ void BuffImplSystem::ApplyNextBasicAttackBonus(entt::entity caster, entt::entity
 
     buffsToRemove.emplace(buff.buffPb.buff_id());
 
-    // AddSubBuffs 之后 buff 可能已被驱散删除,先把要用的上下文强引用拷出来。
-    const SkillContextPtrComp skillContext = buff.skillContext;
+    // AddSubBuffs 之后 buff 可能已被驱散删除，先复制施法者整数。
+    const uint64_t sourceCaster = buff.buffPb.caster();
     BuffSystem::AddSubBuffs(caster, buffTable, buff);
-    BuffSystem::AddTargetSubBuffs(target, buffTable, skillContext);
+    BuffSystem::AddTargetSubBuffs(target, buffTable, sourceCaster);
 }

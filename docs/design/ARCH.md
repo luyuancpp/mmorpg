@@ -164,7 +164,7 @@
 
 两层保证同玩家串行:
 1. `player_locker:{playerId}` 分布式锁(`RedisLocker`,UUID+Lua CAS)
-2. Kafka `KeyOrderedKafkaProducer`(playerId 一致性哈希到同一分区,FIFO)
+2. Kafka db_task 分区契约:key = playerId 十进制,partition = CRC-32(key) mod N(login 的读与 C++ scene 的写用同一个函数,见 [db-task-kafka-partition-contract.md](./db-task-kafka-partition-contract.md)「分区函数契约」),同一 topic 内同一玩家的读写落同一分区、按 offset 串行;访客和合服后跨 zone 的读写分属两个 topic,不在此保证之内。(2026-10-16 订正:原文「playerId 一致性哈希到同一分区」从来没生效;已落码,未编译、未测试,待 Codex 验证)
 
 详见: [login-simplification-2026-04.md](./login-simplification-2026-04.md)
 

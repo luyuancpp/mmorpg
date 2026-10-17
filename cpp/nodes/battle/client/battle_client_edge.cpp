@@ -1,6 +1,8 @@
 #include "battle_client_edge.h"
 
 #include <boost/any.hpp>
+#include <openssl/rand.h>
+#include "network_probe_security.h"
 
 #include "muduo/base/Logging.h"
 
@@ -63,15 +65,18 @@ BattleClientEdge::BattleClientEdge()
         [this](const muduo::net::TcpConnectionPtr &conn,
                const std::shared_ptr<::ClientRequest> &request, muduo::Timestamp ts)
         { OnClientRequest(conn, request, ts); });
+    dispatcher_.registerMessageCallback<match::NetworkProbeStart>([this](const auto& conn,const auto& request,auto ts){OnProbeStart(conn,request,ts);});
+    dispatcher_.registerMessageCallback<match::NetworkProbeEcho>([this](const auto& conn,const auto& request,auto ts){OnProbeEcho(conn,request,ts);});
 }
 
 void BattleClientEdge::Install(muduo::net::TcpServer &server)
 {
-    server.setConnectionCallback([this](const muduo::net::TcpConnectionPtr &conn)
-                                 { OnConnection(conn); });
-    server.setMessageCallback([this](const muduo::net::TcpConnectionPtr &conn, muduo::net::Buffer *buf,
+    auto weak = weak_from_this();
+    server.setConnectionCallback([weak](const muduo::net::TcpConnectionPtr &conn)
+                                 { if(auto self=weak.lock()) self->OnConnection(conn); });
+    server.setMessageCallback([weak](const muduo::net::TcpConnectionPtr &conn, muduo::net::Buffer *buf,
                                      muduo::Timestamp ts)
-                              { codec_.onMessage(conn, buf, ts); });
+                              { if(auto self=weak.lock()) self->codec_.onMessage(conn, buf, ts); });
 }
 
 void BattleClientEdge::Send(const muduo::net::TcpConnectionPtr &conn,
@@ -186,10 +191,12 @@ void BattleClientEdge::HandleEstablished(const muduo::net::TcpConnectionPtr &con
 
     // 闸 3:握手期限。回调只持 connId,到期时重查会话;已验证则什么都不做。
     std::weak_ptr<muduo::net::TcpConnection> weakConn = conn;
-    session.handshakeTimer.RunAfter(kHandshakeTimeoutSec, [this, connId, weakConn]
+    const auto weakSelf=weak_from_this();
+    session.handshakeTimer.RunAfter(kHandshakeTimeoutSec, [weakSelf, connId, weakConn]
                                     {
-        const auto found = sessions_.find(connId);
-        if (found == sessions_.end() || found->second.verified)
+        const auto self=weakSelf.lock();if(!self)return;
+        const auto found = self->sessions_.find(connId);
+        if (found == self->sessions_.end() || found->second.verified)
         {
             return;
         }
@@ -207,6 +214,49 @@ void BattleClientEdge::HandleEstablished(const muduo::net::TcpConnectionPtr &con
                  << " accepted_total=" << acceptedCount
                  << " current=" << sessions_.size();
     }
+}
+
+void BattleClientEdge::OnProbeStart(const muduo::net::TcpConnectionPtr& conn,
+    const std::shared_ptr<match::NetworkProbeStart>& request, muduo::Timestamp)
+{
+    auto* s=FindSession(conn);
+    if(!s||s->verified||s->probeGrant||network_probe::PhysicalRegion()==0){conn->forceClose();return;}
+    const auto& signedGrant=request->grant();
+    match::NetworkProbeGrant grant;
+    const auto signature=network_probe::Sign(network_probe::kGrantDomain,signedGrant.payload());
+    if(!token_security::ConstantTimeEquals(signature,signedGrant.signature())||!grant.ParseFromString(signedGrant.payload())||
+       grant.player_id()==0||grant.plan_id().empty()||grant.session_binding().empty()||
+       !gNode||grant.physical_region()!=network_probe::PhysicalRegion()||grant.target_node_id()!=gNode->GetNodeInfo().node_id()||
+       grant.target_instance_id()!=gNode->GetNodeInfo().node_uuid()||grant.expires_at_ms()<=TimeSystem::NowMillisecondsUTC())
+    {conn->forceClose();return;}
+    s->probeGrant=std::move(grant);SendProbeChallenge(*s,conn);
+}
+
+void BattleClientEdge::SendProbeChallenge(DirectSession& s,const muduo::net::TcpConnectionPtr& conn)
+{
+    unsigned char nonce[32];if(RAND_bytes(nonce,sizeof(nonce))!=1){conn->forceClose();return;}
+    s.probeNonce.assign(reinterpret_cast<const char*>(nonce),sizeof(nonce));
+    match::NetworkProbeChallenge challenge;challenge.set_nonce(s.probeNonce);challenge.set_sample_index(s.probeSamples);
+    s.probeSent=std::chrono::steady_clock::now();Send(conn,challenge);
+}
+
+void BattleClientEdge::OnProbeEcho(const muduo::net::TcpConnectionPtr& conn,
+    const std::shared_ptr<match::NetworkProbeEcho>& request,muduo::Timestamp)
+{
+    auto* s=FindSession(conn);
+    if(!s||s->verified||!s->probeGrant||request->sample_index()!=s->probeSamples||
+       !token_security::ConstantTimeEquals(request->nonce(),s->probeNonce)){conn->forceClose();return;}
+    const auto elapsed=std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-s->probeSent).count();
+    if(elapsed<0||elapsed>3000000||s->probeGrant->expires_at_ms()<=TimeSystem::NowMillisecondsUTC()){conn->forceClose();return;}
+    // 用三次的最大值，客户端调度变慢只会保守拒绝，无法填写更小RTT。
+    s->probeRttMs=std::max(s->probeRttMs,static_cast<uint32_t>((elapsed+999)/1000));
+    if(++s->probeSamples<3){SendProbeChallenge(*s,conn);return;}
+    match::NetworkProbeReceipt receipt;*receipt.mutable_grant()=*s->probeGrant;
+    receipt.set_rtt_ms(std::max(1u,s->probeRttMs));receipt.set_sample_count(3);
+    receipt.set_measured_at_ms(TimeSystem::NowMillisecondsUTC());receipt.set_expires_at_ms(s->probeGrant->expires_at_ms());
+    match::NetworkProbeComplete complete;auto* result=complete.mutable_receipt();result->set_payload(receipt.SerializeAsString());
+    result->set_signature(network_probe::Sign(network_probe::kReceiptDomain,result->payload()));
+    Send(conn,complete);s->probeGrant.reset();conn->shutdown();
 }
 
 void BattleClientEdge::HandleClosed(const muduo::net::TcpConnectionPtr &conn)

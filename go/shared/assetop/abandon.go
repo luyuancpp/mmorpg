@@ -8,6 +8,8 @@ import (
 
 	"github.com/zeromicro/go-zero/core/logx"
 
+	componentpb "proto/common/component"
+
 	"shared/scenenode"
 )
 
@@ -42,6 +44,9 @@ import (
 //   - 已落盘账本确定未见(条件 5)。「确定」= 有 blob,且这条流的账本是同纪元或更旧纪元(按空账本看),
 //     seq 在窗内未见或超出窗口上沿。纪元比请求新(stale)、滑出窗口、跳号过远、账本损坏、根本没有 blob,
 //     都给不出「确定未见」,一律不放弃。
+//     LoopConfig.RequireSQLCommit 打开时,「已落盘账本」有两份:Redis 父键 blob 与 SQL 提交证据,
+//     **两份都**确定未见才放弃;证据已见按证据终结;证据未见而 blob 已见说明证据落后于父键,跳过
+//     (judgeWithSQLCommit,docs/design/db-write-fencing-mysql.md §6.6)。
 //
 // 于是「Go 退款、scene 从未发货」是唯一可能的终局,与 ABORTED 等价。任何一条拿不到证据都跳过、
 // 还租约并计数,绝不猜(AGENTS §11.3,玩家资产路径 fail-closed)。
@@ -156,13 +161,17 @@ const (
 	// abandonSkipNotCandidate 持租约复核时不再是候选:创建时刻不够老、流号非法,或 Store 没填
 	// CreatedMs / LastSendMs(契约违例,打 ERROR)。
 	abandonSkipNotCandidate
+	// abandonSkipSQLEvidenceBehind 只在 RequireSQLCommit 打开时出现:SQL 提交证据未见这条 seq,Redis 父键 blob 却已见
+	// —— 证据落后于父键(旧版 scene、计数器倒退期间的存盘没落库或进了死信)。不放弃(会一物两得),也不终结
+	// (开关打开只认 SQL 证据),等证据追上或人工处理。
+	abandonSkipSQLEvidenceBehind
 
 	abandonSkipCount
 )
 
 var abandonSkipNames = [...]string{
 	"invalid", "located", "locate_error", "recent", "ledger_seen", "ledger_error",
-	"ledger_unknown", "lease_lost", "store_error", "not_candidate",
+	"ledger_unknown", "lease_lost", "store_error", "not_candidate", "sql_evidence_behind",
 }
 
 var _ = [1]struct{}{}[len(abandonSkipNames)-int(abandonSkipCount)]
@@ -246,6 +255,8 @@ func (l *Loop) abandoner() (Abandoner, bool) {
 		missing = "store does not implement Abandoner"
 	case l.Ledger == nil:
 		missing = "persisted ledger reader (Loop.Ledger) not attached"
+	case l.cfg.RequireSQLCommit && l.sqlLedger() == nil:
+		missing = "RequireSQLCommit is on but Loop.Ledger cannot read SQL commit evidence"
 	case l.Locator == nil:
 		missing = "player locator (Loop.Locator) not attached"
 	}
@@ -332,7 +343,15 @@ func (l *Loop) judgeAbandon(ctx context.Context, op Op, cutoffMs, nowMs uint64) 
 		return abandonSkipRecent, Result{}
 	}
 
-	ledger, err := l.Ledger.ReadPersistedLedger(checkCtx, op.PlayerID)
+	if l.cfg.RequireSQLCommit {
+		return l.judgeWithSQLCommit(checkCtx, op)
+	}
+	return l.judgePlayerBlob(checkCtx, op)
+}
+
+// judgePlayerBlob 是开关关闭时(HEAD 口径)条件 5 的判定:只看 Redis 父键 blob。
+func (l *Loop) judgePlayerBlob(ctx context.Context, op Op) (abandonSkip, Result) {
+	ledger, err := l.Ledger.ReadPersistedLedger(ctx, op.PlayerID)
 	if err != nil {
 		logx.Errorf("[AssetOp] Failed to read persisted ledger for abandon check; skipped op_id=%d: %v", op.OpID, err)
 		return abandonSkipLedgerError, Result{}
@@ -343,18 +362,104 @@ func (l *Loop) judgeAbandon(ctx context.Context, op Op, cutoffMs, nowMs uint64) 
 		logx.Infof("[AssetOp] Abandon skipped: no persisted player blob op_id=%d stream=%d seq=%d", op.OpID, op.Stream, op.Seq)
 		return abandonSkipLedgerUnknown, Result{}
 	}
-	state := ClassifySeq(FindStream(ledger, op.Stream), op.StreamEpoch, op.Seq)
-	switch state {
-	case SeqUnseen, SeqAheadOfWindow:
+	switch verdict, state := abandonVerdict(ledger, op); verdict {
+	case ledgerUnseen:
 		return 0, Result{}
-	case SeqApplied, SeqRejected:
-		outcome, partial, reason := ClassifyPersisted(ledger, op.Stream, op.StreamEpoch, op.Seq)
-		return abandonSkipLedgerSeen, Result{Outcome: outcome, Reason: reason, Durable: true, Partial: partial}
+	case ledgerSeen:
+		return seenForFinalize(ledger, op, false)
 	default:
 		logx.Infof("[AssetOp] Abandon skipped: persisted ledger cannot prove seq unseen op_id=%d stream=%d seq=%d epoch=%d state=%s",
 			op.OpID, op.Stream, op.Seq, op.StreamEpoch, state)
 		return abandonSkipLedgerUnknown, Result{}
 	}
+}
+
+// judgeWithSQLCommit 是开关打开时条件 5 的判定(docs/design/db-write-fencing-mysql.md §6.6「自动放弃」)。
+//
+// 只看 SQL 证据会出事:玩家在旧版 scene 上、或计数器倒退期间完成一笔操作,scene 回 APPLIED 并写进 Redis 父键,
+// 对应的存盘没有落库(或进了死信),证据停在之前的版本;只读证据判「未见」就放弃并退还对侧,玩家再上线从父键
+// 加载,资产仍在,一物两得(fence-inflight.md F6 (a))。所以:
+//   - SQL 证据已见 → 按证据里的结局正常终结(SQL 已提交,与在线终结同口径);
+//   - SQL 证据确定未见 → 还要 Redis 父键 blob 也确定未见才放弃;blob 已见即证据落后于父键,跳过(sql_evidence_behind);
+//   - 任一侧读失败、缺失或给不出结论 → 跳过,绝不放弃(fail-closed)。
+//
+// 设计里的另一条放行条件「证据 save_seq ≥ 父键 last_save_seq 时单凭证据未见即可」没有实现:GetPlayerAssetOpLedger
+// 不回这两个版本,要改 proto 才拿得到。只用「两份都未见」更保守,代价是父键缺失的玩家不会被自动放弃(留给人工)。
+func (l *Loop) judgeWithSQLCommit(ctx context.Context, op Op) (abandonSkip, Result) {
+	evidence, err := l.sqlLedger().ReadSQLCommittedLedger(ctx, op.PlayerID)
+	if err != nil {
+		logx.Errorf("[AssetOp] Failed to read asset SQL commit evidence for abandon check; skipped op_id=%d: %v", op.OpID, err)
+		return abandonSkipLedgerError, Result{}
+	}
+	switch verdict, state := abandonVerdict(evidence, op); verdict {
+	case ledgerSeen:
+		return seenForFinalize(evidence, op, true)
+	case ledgerUnknown:
+		logx.Infof("[AssetOp] Abandon skipped: asset SQL commit evidence cannot prove seq unseen op_id=%d stream=%d seq=%d epoch=%d evidence_present=%t state=%s",
+			op.OpID, op.Stream, op.Seq, op.StreamEpoch, evidence != nil, state)
+		return abandonSkipLedgerUnknown, Result{}
+	}
+
+	blob, err := l.Ledger.ReadPersistedLedger(ctx, op.PlayerID)
+	if err != nil {
+		logx.Errorf("[AssetOp] Failed to read persisted player blob for abandon check; skipped op_id=%d: %v", op.OpID, err)
+		return abandonSkipLedgerError, Result{}
+	}
+	switch verdict, state := abandonVerdict(blob, op); verdict {
+	case ledgerUnseen:
+		return 0, Result{}
+	case ledgerSeen:
+		// 证据落后于父键:放弃会让对侧退款而玩家下次上线仍拿到资产。要人看:查该玩家的死信与 go/db 证据发布计数。
+		logx.Errorf("[AssetOp] Abandon skipped: player blob has an outcome that asset SQL commit evidence has not seen "+
+			"(evidence behind blob); not abandoned and not finalized op_id=%d stream=%d seq=%d epoch=%d corr=%d",
+			op.OpID, op.Stream, op.Seq, op.StreamEpoch, op.CorrelationID)
+		return abandonSkipSQLEvidenceBehind, Result{}
+	default:
+		logx.Infof("[AssetOp] Abandon skipped: persisted player blob cannot prove seq unseen op_id=%d stream=%d seq=%d epoch=%d blob_present=%t state=%s",
+			op.OpID, op.Stream, op.Seq, op.StreamEpoch, blob != nil, state)
+		return abandonSkipLedgerUnknown, Result{}
+	}
+}
+
+// ledgerVerdict 是一份已落盘账本对某个 seq 能给出的结论(条件 5)。
+type ledgerVerdict uint8
+
+const (
+	// ledgerUnknown 给不出结论:没有账本、纪元比请求新、滑出窗口、跳号过远、账本损坏。
+	ledgerUnknown ledgerVerdict = iota
+	// ledgerUnseen 确定未见:同纪元或更旧纪元(按空账本看),seq 在窗内未见或超出窗口上沿。
+	ledgerUnseen
+	// ledgerSeen 已有结局(已应用或已拒绝)。
+	ledgerSeen
+)
+
+func abandonVerdict(ledger *componentpb.PlayerAssetOpLedgerComp, op Op) (ledgerVerdict, SeqState) {
+	if ledger == nil {
+		return ledgerUnknown, SeqInvalid
+	}
+	state := ClassifySeq(FindStream(ledger, op.Stream), op.StreamEpoch, op.Seq)
+	switch state {
+	case SeqUnseen, SeqAheadOfWindow:
+		return ledgerUnseen, state
+	case SeqApplied, SeqRejected:
+		return ledgerSeen, state
+	default:
+		return ledgerUnknown, state
+	}
+}
+
+// seenForFinalize 把账本里已见的结局交给 finalizeSeen(durable 已置;sqlCommitted 表示这份账本是 SQL 证据)。
+// 托管扣出缺可用原件时既不能终结(托管方拿不到完整实例),也不能放弃(scene 已应用),只能跳过并打 ERROR,
+// 与 tryPersistedLedger 的同一判据(resultWithReceipt)一致。
+func seenForFinalize(ledger *componentpb.PlayerAssetOpLedgerComp, op Op, sqlCommitted bool) (abandonSkip, Result) {
+	outcome, partial, reason := ClassifyPersisted(ledger, op.Stream, op.StreamEpoch, op.Seq)
+	res := resultWithReceipt(ledger, op, Result{Outcome: outcome, Reason: reason, Durable: true, SQLCommitted: sqlCommitted, Partial: partial})
+	if !res.Durable {
+		logx.Errorf("[AssetOp] Abandon skipped: persisted outcome found but escrow receipt is missing; manual handling required op_id=%d stream=%d seq=%d corr=%d",
+			op.OpID, op.Stream, op.Seq, op.CorrelationID)
+		return abandonSkipLedgerUnknown, Result{}
+	}
+	return abandonSkipLedgerSeen, res
 }
 
 // playerAbsent 报告玩家是否**确定**没有位置。只有「位置键不存在」(ErrNotOnline)算没有:

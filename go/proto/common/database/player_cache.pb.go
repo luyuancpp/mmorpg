@@ -51,6 +51,7 @@ type PlayerAllData struct {
 	BagData              *BagAllData            `protobuf:"bytes,4,opt,name=bag_data,json=bagData,proto3" json:"bag_data,omitempty"`
 	QuestData            *QuestAllData          `protobuf:"bytes,5,opt,name=quest_data,json=questData,proto3" json:"quest_data,omitempty"`
 	MailData             *MailAllData           `protobuf:"bytes,6,opt,name=mail_data,json=mailData,proto3" json:"mail_data,omitempty"`
+	LastSaveSeq          uint64                 `protobuf:"varint,7,opt,name=last_save_seq,json=lastSaveSeq,proto3" json:"last_save_seq,omitempty"` // 存盘发号水位，跨重接和跨场景继承，不承载业务数据
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -120,18 +121,26 @@ func (x *PlayerAllData) GetMailData() *MailAllData {
 	return nil
 }
 
+func (x *PlayerAllData) GetLastSaveSeq() uint64 {
+	if x != nil {
+		return x.LastSaveSeq
+	}
+	return 0
+}
+
 var File_proto_common_database_player_cache_proto protoreflect.FileDescriptor
 
 const file_proto_common_database_player_cache_proto_rawDesc = "" +
 	"\n" +
-	"(proto/common/database/player_cache.proto\x1a0proto/common/database/mysql_database_table.proto\x1a/proto/common/database/bag_quest_mail_data.proto\"\x9d\x02\n" +
+	"(proto/common/database/player_cache.proto\x1a0proto/common/database/mysql_database_table.proto\x1a/proto/common/database/bag_quest_mail_data.proto\"\xc1\x02\n" +
 	"\rPlayerAllData\x12B\n" +
 	"\x14player_database_data\x18\x02 \x01(\v2\x10.player_databaseR\x12playerDatabaseData\x12G\n" +
 	"\x16player_database_1_data\x18\x03 \x01(\v2\x12.player_database_1R\x13playerDatabase1Data\x12&\n" +
 	"\bbag_data\x18\x04 \x01(\v2\v.BagAllDataR\abagData\x12,\n" +
 	"\n" +
 	"quest_data\x18\x05 \x01(\v2\r.QuestAllDataR\tquestData\x12)\n" +
-	"\tmail_data\x18\x06 \x01(\v2\f.MailAllDataR\bmailDataB\x17Z\x15proto/common/databaseb\x06proto3"
+	"\tmail_data\x18\x06 \x01(\v2\f.MailAllDataR\bmailData\x12\"\n" +
+	"\rlast_save_seq\x18\a \x01(\x04R\vlastSaveSeqB\x17Z\x15proto/common/databaseb\x06proto3"
 
 var (
 	file_proto_common_database_player_cache_proto_rawDescOnce sync.Once

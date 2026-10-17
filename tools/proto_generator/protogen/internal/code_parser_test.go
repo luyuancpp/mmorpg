@@ -64,7 +64,7 @@ func TestReadCodeSections_MethodBlocksNotMisclassifiedAsGlobal(t *testing.T) {
 	}
 }
 
-// gRPC 包装函数的"投递前"守护段:第二遍解析只取包装函数里的段,不串到 Handle* 的段,
+// 旧模板 gRPC 包装函数的"投递前"守护段(现只供 checkLegacyGrpcSections 检测):按旧包装函数键解析只取包装函数里的段,不串到 Handle* 的段,
 // 同名前缀方法(Create / CreateScene)不互相命中,没有守护段的包装函数回落默认空段。
 func TestReadCodeSections_GrpcWrapperPreDispatchSections(t *testing.T) {
 	setParserTestNaming(t)
@@ -106,7 +106,7 @@ func TestReadCodeSections_GrpcWrapperPreDispatchSections(t *testing.T) {
 	}, "\n")
 
 	filePath := writeParserTempFile(t, cpp)
-	codeMap, _, err := ReadCodeSectionsFromFile(filePath, &methods, GenerateGrpcWrapperNameWrapper, "")
+	codeMap, _, err := ReadCodeSectionsFromFile(filePath, &methods, legacyGrpcWrapperKey, "")
 	if err != nil {
 		t.Fatalf("ReadCodeSectionsFromFile failed: %v", err)
 	}
@@ -168,7 +168,7 @@ func TestReadCodeSections_GrpcWrapperLegacyFileHasNoPreDispatchSections(t *testi
 	}, "\n")
 
 	filePath := writeParserTempFile(t, cpp)
-	codeMap, _, err := ReadCodeSectionsFromFile(filePath, &methods, GenerateGrpcWrapperNameWrapper, "")
+	codeMap, _, err := ReadCodeSectionsFromFile(filePath, &methods, legacyGrpcWrapperKey, "")
 	if err != nil {
 		t.Fatalf("ReadCodeSectionsFromFile failed: %v", err)
 	}
@@ -203,12 +203,12 @@ func TestReadCodeSections_GrpcWrapperWithoutSectionDoesNotCaptureNextHandler(t *
 		"}",
 	}, "\n")
 
-	codeMap, _, err := ReadCodeSectionsFromFile(writeParserTempFile(t, cpp), &methods, GenerateGrpcWrapperNameWrapper, "")
+	codeMap, _, err := ReadCodeSectionsFromFile(writeParserTempFile(t, cpp), &methods, legacyGrpcWrapperKey, "")
 	if err != nil {
 		t.Fatalf("ReadCodeSectionsFromFile failed: %v", err)
 	}
 	for _, method := range methods {
-		key := GenerateGrpcWrapperNameWrapper(method, "")
+		key := legacyGrpcWrapperKey(method, "")
 		if codeMap[key] != _config.Global.Naming.YourCodePair {
 			t.Fatalf("wrapper %q without a section captured unrelated code: %q", key, codeMap[key])
 		}

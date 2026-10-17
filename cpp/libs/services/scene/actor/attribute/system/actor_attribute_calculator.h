@@ -12,11 +12,9 @@ struct AttributeCalculatorConfig {
 // 线程模型:只在 scene 节点 loop 线程调用。
 class ActorAttributeCalculatorSystem {
 public:
-    // actor 创建流程在首个通知之前直接调用,不依赖 dispatcher 订阅。
-    // 建立并立即计算移速/战斗状态投影;重复调用按当前来源重算,不清掉已有状态或脏位。
-    // 只创建必需投影,不预挂冷却、Buff、技能上下文等按需状态,也不为初始化标同步脏位。
-    // 实体无效时返回 false,不改变组件集合;调用方必须中止本次创建。
-    [[nodiscard]] static bool InitializeOnCreate(entt::entity actorEntity);
+    // actor 创建流程在 Unmarshal 之后对新实体直接调用一次,挂上空的同步投影 CombatStateFlagsComp。
+    // 调用方保证 actorEntity 是刚创建的有效实体,不能重复调用。
+    static void InitializeOnCreate(entt::entity actorEntity);
 
     // 给 actor 标记一项待重算属性(attributeBit 取 eAttributeCalculator)。
     // 脏标记组件按需挂上、Update 消费后摘掉;同一 tick 内多次标脏合并。

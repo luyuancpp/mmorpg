@@ -124,6 +124,51 @@ func TestInitLoginQueue_ZeroZonePanicsWhenQueueEnabled(t *testing.T) {
 	(&ServiceContext{RedisClient: rdb}).initLoginQueue()
 }
 
+// (2026-10-15)开了排队时 QueueEntryTTL 非正、AdmitTTL 不足 1ms 即起服失败(loginqueue.ValidateTTLs),
+// 显式写 0s 不回落默认值。修复前红:initLoginQueue 原样把 0 / 负值交给 loginqueue.New,不 panic,
+// 带着「每次入队删整条队列」或「每拍拒绝出队」的配置上线。
+func TestInitLoginQueue_NonPositiveTTLPanicsWhenQueueEnabled(t *testing.T) {
+	cases := []struct {
+		name               string
+		admitTTL, entryTTL time.Duration
+	}{
+		{"AdmitTTL=0", 0, time.Hour},
+		{"AdmitTTL=-1s", -time.Second, time.Hour},
+		{"AdmitTTL=500us", 500 * time.Microsecond, time.Hour}, // 放行脚本 SET PX 取整到毫秒,亚毫秒成 PX 0
+		{"QueueEntryTTL=0", 60 * time.Second, 0},
+		{"QueueEntryTTL=-1s", 60 * time.Second, -time.Second},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			previous := config.AppConfig
+			t.Cleanup(func() { config.AppConfig = previous })
+			rdb, _ := newSvcTestRedis(t)
+
+			config.AppConfig = config.Config{}
+			config.AppConfig.Node.ZoneId = 7 // 合法 zone:只让 TTL 校验有机会失败
+			config.AppConfig.Queue = loginQueueTestConf("dispatcher:lock:login_queue")
+			config.AppConfig.Queue.AdmitTTL = tc.admitTTL
+			config.AppConfig.Queue.QueueEntryTTL = tc.entryTTL
+
+			s := &ServiceContext{RedisClient: rdb}
+			defer func() {
+				recovered := recover()
+				if recovered == nil {
+					t.Fatalf("Queue.Enabled=true with %s must panic at startup", tc.name)
+				}
+				// 只认 TTL 校验:别的 panic 不能让本用例假绿。
+				if !strings.Contains(fmt.Sprint(recovered), "ttl must be positive") {
+					t.Fatalf("panic = %v, want the TTL validation", recovered)
+				}
+				if s.LoginQueue != nil || s.QueueDispatcher != nil {
+					t.Fatal("a rejected TTL must build neither the queue nor the dispatcher")
+				}
+			}()
+			s.initLoginQueue()
+		})
+	}
+}
+
 // 默认关:不构造队列和 dispatcher,也就不做任何新校验,与修复前一致。
 func TestInitLoginQueue_DisabledSkipsDispatcherValidation(t *testing.T) {
 	previous := config.AppConfig

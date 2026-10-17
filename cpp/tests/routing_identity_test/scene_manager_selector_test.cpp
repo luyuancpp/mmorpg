@@ -6,6 +6,7 @@
 #include <set>
 #include <vector>
 
+#include "muduo_grpc/channel.h"  // ConnectivityState 的枚举项;node_utils.h 只前向声明了枚举
 #include "network/node_utils.h"
 
 // ---------------------------------------------------------------------------
@@ -22,6 +23,7 @@
 
 namespace
 {
+	using muduo_grpc::ConnectivityState;
 	using scene_manager_selector::Candidate;
 	using scene_manager_selector::Pick;
 
@@ -73,9 +75,9 @@ TEST(SceneManagerSelector, EmptyCandidateListPicksNothing)
 TEST(SceneManagerSelector, AllReadySpreadsPlayersOverEveryInstanceAndIsDeterministic)
 {
 	const std::vector<Candidate> candidates{
-		{Instance(1), GRPC_CHANNEL_READY},
-		{Instance(2), GRPC_CHANNEL_READY},
-		{Instance(3), GRPC_CHANNEL_READY},
+		{Instance(1), ConnectivityState::kReady},
+		{Instance(2), ConnectivityState::kReady},
+		{Instance(3), ConnectivityState::kReady},
 	};
 	std::size_t hits[4]{};
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
@@ -95,8 +97,8 @@ TEST(SceneManagerSelector, AllReadySpreadsPlayersOverEveryInstanceAndIsDetermini
 TEST(SceneManagerSelector, TwoInstancesShareSnowflakeShapedPlayersEvenly)
 {
 	const std::vector<Candidate> candidates{
-		{Instance(1), GRPC_CHANNEL_READY},
-		{Instance(2), GRPC_CHANNEL_READY},
+		{Instance(1), ConnectivityState::kReady},
+		{Instance(2), ConnectivityState::kReady},
 	};
 	std::size_t hits[3]{};
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
@@ -114,9 +116,9 @@ TEST(SceneManagerSelector, TwoInstancesShareSnowflakeShapedPlayersEvenly)
 TEST(SceneManagerSelector, PrefersReadyOverIdleAndConnecting)
 {
 	const std::vector<Candidate> candidates{
-		{Instance(1), GRPC_CHANNEL_IDLE},
-		{Instance(2), GRPC_CHANNEL_READY},
-		{Instance(3), GRPC_CHANNEL_CONNECTING},
+		{Instance(1), ConnectivityState::kIdle},
+		{Instance(2), ConnectivityState::kReady},
+		{Instance(3), ConnectivityState::kConnecting},
 	};
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
 	{
@@ -129,11 +131,11 @@ TEST(SceneManagerSelector, NeverPicksTransientFailureOrShutdownWhileUsableInstan
 	// 崩溃的实例:通道被踢去重连后停在 TRANSIENT_FAILURE,etcd 租约到期前仍在注册表里。
 	// 只要还有 READY / IDLE / CONNECTING 的实例,就绝不挑它。
 	const std::vector<Candidate> besideReady{
-		{Instance(1), GRPC_CHANNEL_TRANSIENT_FAILURE},
-		{Instance(2), GRPC_CHANNEL_READY},
-		{Instance(3), GRPC_CHANNEL_SHUTDOWN},
-		{Instance(4), GRPC_CHANNEL_READY},
-		{Instance(5), GRPC_CHANNEL_TRANSIENT_FAILURE},
+		{Instance(1), ConnectivityState::kTransientFailure},
+		{Instance(2), ConnectivityState::kReady},
+		{Instance(3), ConnectivityState::kShutdown},
+		{Instance(4), ConnectivityState::kReady},
+		{Instance(5), ConnectivityState::kTransientFailure},
 	};
 	std::set<uint64_t> used;
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
@@ -146,9 +148,9 @@ TEST(SceneManagerSelector, NeverPicksTransientFailureOrShutdownWhileUsableInstan
 
 	// 只剩一个 CONNECTING(比如对端主机刚被替换、还在连)时也一样。
 	const std::vector<Candidate> besideConnecting{
-		{Instance(1), GRPC_CHANNEL_SHUTDOWN},
-		{Instance(2), GRPC_CHANNEL_TRANSIENT_FAILURE},
-		{Instance(3), GRPC_CHANNEL_CONNECTING},
+		{Instance(1), ConnectivityState::kShutdown},
+		{Instance(2), ConnectivityState::kTransientFailure},
+		{Instance(3), ConnectivityState::kConnecting},
 	};
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
 	{
@@ -158,11 +160,12 @@ TEST(SceneManagerSelector, NeverPicksTransientFailureOrShutdownWhileUsableInstan
 
 TEST(SceneManagerSelector, NoReadyFallsBackToIdleAndConnectingInsteadOfFailing)
 {
-	// 刚启动(通道还没拨过号)或 30 分钟没有调用(客户端空闲超时)时通道是 IDLE,不能因此判"没有 SceneManager"。
+	// 刚发现的实例在收到对端 SETTINGS 前是 CONNECTING;连接断开(含 go-zero 空闲 5 分钟发 GOAWAY)后通道回 IDLE、
+	// 下次调用才重连。两者都不能判"没有 SceneManager"。
 	const std::vector<Candidate> allIdle{
-		{Instance(1), GRPC_CHANNEL_IDLE},
-		{Instance(2), GRPC_CHANNEL_IDLE},
-		{Instance(3), GRPC_CHANNEL_CONNECTING},
+		{Instance(1), ConnectivityState::kIdle},
+		{Instance(2), ConnectivityState::kIdle},
+		{Instance(3), ConnectivityState::kConnecting},
 	};
 	std::set<uint64_t> used;
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
@@ -175,9 +178,9 @@ TEST(SceneManagerSelector, NoReadyFallsBackToIdleAndConnectingInsteadOfFailing)
 
 	// 退到 IDLE / CONNECTING 这一级时同样跳过坏实例。
 	const std::vector<Candidate> idleBesideBroken{
-		{Instance(1), GRPC_CHANNEL_TRANSIENT_FAILURE},
-		{Instance(2), GRPC_CHANNEL_IDLE},
-		{Instance(3), GRPC_CHANNEL_SHUTDOWN},
+		{Instance(1), ConnectivityState::kTransientFailure},
+		{Instance(2), ConnectivityState::kIdle},
+		{Instance(3), ConnectivityState::kShutdown},
 	};
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
 	{
@@ -190,9 +193,9 @@ TEST(SceneManagerSelector, AllChannelsFailedStillPicksOneDeterministically)
 	// 全部实例都在 TRANSIENT_FAILURE / SHUTDOWN:不返回 null,落到兜底级照样挑一个(与旧实现"总能挑到"一致)。
 	// 那次调用以 UNAVAILABLE 进失败处理器 / 由看门狗收尾;返回 null 反而会让跨 zone 交接在 SET 之后销毁 + 踢线。
 	const std::vector<Candidate> candidates{
-		{Instance(1), GRPC_CHANNEL_TRANSIENT_FAILURE},
-		{Instance(2), GRPC_CHANNEL_SHUTDOWN},
-		{Instance(3), GRPC_CHANNEL_TRANSIENT_FAILURE},
+		{Instance(1), ConnectivityState::kTransientFailure},
+		{Instance(2), ConnectivityState::kShutdown},
+		{Instance(3), ConnectivityState::kTransientFailure},
 	};
 	std::set<uint64_t> used;
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
@@ -210,15 +213,15 @@ TEST(SceneManagerSelector, AllChannelsFailedStillPicksOneDeterministically)
 
 TEST(SceneManagerSelector, ChannellessEntityIsPickedOnlyWhenNothingElseIsRegistered)
 {
-	// 没挂通道的实体(TCP 握手声明成 SceneManager 造出的,或单测只挂 NodeInfo 的假节点)挑中后一发送就断言,
-	// 所以只要有任何挂了通道的实例 —— 不论状态 —— 都轮不到它。
+	// 没挂通道的实体(单测只挂 NodeInfo 的假节点;生产适配层不把它放进候选)挑中后,发送在生成层本地以 UNAVAILABLE
+	// 失败且永远不会恢复,所以只要有任何挂了通道的实例 —— 不论状态 —— 都轮不到它。
 	const std::vector<Candidate> besideReady{
 		{Instance(1), std::nullopt},
-		{Instance(2), GRPC_CHANNEL_READY},
+		{Instance(2), ConnectivityState::kReady},
 	};
 	const std::vector<Candidate> besideIdle{
 		{Instance(1), std::nullopt},
-		{Instance(2), GRPC_CHANNEL_IDLE},
+		{Instance(2), ConnectivityState::kIdle},
 	};
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
 	{
@@ -226,7 +229,8 @@ TEST(SceneManagerSelector, ChannellessEntityIsPickedOnlyWhenNothingElseIsRegiste
 		EXPECT_EQ(Picked(besideIdle, playerId), 2u);
 	}
 
-	// 注册表里只有它(cross_zone_test 的 ScopedFakeSceneManagerNode 就是这个形状):照样挑中,不返回 null。
+	// 候选表里只有它:纯选择器照样挑中,不返回 null(生产适配层不把无通道实体放进候选,那时
+	// GetSceneManagerEntity 拿到空表、返回 null)。
 	const std::vector<Candidate> onlyChannelless{
 		{Instance(1), std::nullopt},
 	};
@@ -253,12 +257,13 @@ TEST(SceneManagerSelector, ChannellessEntityIsPickedOnlyWhenNothingElseIsRegiste
 
 TEST(SceneManagerSelector, FailedChannelIsPreferredOverChannellessEntity)
 {
-	// 兜底级内再分两级:挂了通道的坏实例(那次调用以 UNAVAILABLE 失败,走失败处理器)排在没挂通道的实体
-	// (一发送就断言)之前。若把"没通道"记成 SHUTDOWN 与坏实例同级取模,这里会有约一半玩家挑到 1 / 4。
+	// 兜底级内再分两级:挂了通道的坏实例(那次调用以 UNAVAILABLE 失败、走失败处理器,通道在后台按退避重连,对端
+	// 回来就能用)排在没挂通道的实体(发送本地失败、永不恢复)之前。若把"没通道"记成 SHUTDOWN 与坏实例同级取模,
+	// 这里会有约一半玩家挑到 1 / 4。
 	const std::vector<Candidate> candidates{
 		{Instance(1), std::nullopt},
-		{Instance(2), GRPC_CHANNEL_TRANSIENT_FAILURE},
-		{Instance(3), GRPC_CHANNEL_SHUTDOWN},
+		{Instance(2), ConnectivityState::kTransientFailure},
+		{Instance(3), ConnectivityState::kShutdown},
 		{Instance(4), std::nullopt},
 	};
 	std::set<uint64_t> used;
@@ -273,7 +278,7 @@ TEST(SceneManagerSelector, FailedChannelIsPreferredOverChannellessEntity)
 	// 只有一个 TRANSIENT_FAILURE 实例与无通道实体并存时,永远选那个 TRANSIENT_FAILURE 实例。
 	const std::vector<Candidate> oneFailedBesideChannelless{
 		{Instance(1), std::nullopt},
-		{Instance(2), GRPC_CHANNEL_TRANSIENT_FAILURE},
+		{Instance(2), ConnectivityState::kTransientFailure},
 	};
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
 	{
@@ -284,9 +289,9 @@ TEST(SceneManagerSelector, FailedChannelIsPreferredOverChannellessEntity)
 TEST(SceneManagerSelector, PlayerLeavesAnInstanceThatDiesAndReturnsWhenItRecovers)
 {
 	const std::vector<Candidate> healthy{
-		{Instance(1), GRPC_CHANNEL_READY},
-		{Instance(2), GRPC_CHANNEL_READY},
-		{Instance(3), GRPC_CHANNEL_READY},
+		{Instance(1), ConnectivityState::kReady},
+		{Instance(2), ConnectivityState::kReady},
+		{Instance(3), ConnectivityState::kReady},
 	};
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
 	{
@@ -298,7 +303,7 @@ TEST(SceneManagerSelector, PlayerLeavesAnInstanceThatDiesAndReturnsWhenItRecover
 		{
 			if (entt::to_integral(candidate.entity) == before)
 			{
-				candidate.channelState = GRPC_CHANNEL_TRANSIENT_FAILURE;
+				candidate.channelState = ConnectivityState::kTransientFailure;
 			}
 		}
 		const uint64_t during = Picked(oneDown, playerId);
@@ -314,19 +319,19 @@ TEST(SceneManagerSelector, PlayerLeavesAnInstanceThatDiesAndReturnsWhenItRecover
 
 TEST(SceneManagerSelector, NonReadyInstancesDoNotReshuffleReadyPicks)
 {
-	// 新发现的实例(IDLE)、正在死去的实例(TRANSIENT_FAILURE)或没挂通道的实体进出候选表,不应打乱 READY 级
+	// 新发现或连接被回收的实例(CONNECTING / IDLE)、正在死去的实例(TRANSIENT_FAILURE)或没挂通道的实体进出候选表,不应打乱 READY 级
 	// 里已有的分配:取模只数同一级,别级的成员插在哪里都不影响序号。
 	const std::vector<Candidate> readyOnly{
-		{Instance(1), GRPC_CHANNEL_READY},
-		{Instance(2), GRPC_CHANNEL_READY},
+		{Instance(1), ConnectivityState::kReady},
+		{Instance(2), ConnectivityState::kReady},
 	};
 	const std::vector<Candidate> withOthers{
-		{Instance(7), GRPC_CHANNEL_IDLE},
-		{Instance(1), GRPC_CHANNEL_READY},
-		{Instance(3), GRPC_CHANNEL_TRANSIENT_FAILURE},
+		{Instance(7), ConnectivityState::kIdle},
+		{Instance(1), ConnectivityState::kReady},
+		{Instance(3), ConnectivityState::kTransientFailure},
 		{Instance(9), std::nullopt},
-		{Instance(2), GRPC_CHANNEL_READY},
-		{Instance(4), GRPC_CHANNEL_CONNECTING},
+		{Instance(2), ConnectivityState::kReady},
+		{Instance(4), ConnectivityState::kConnecting},
 	};
 	for (const Guid playerId : LowRatePlayerIds(kPlayerCount))
 	{

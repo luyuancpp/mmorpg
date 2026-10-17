@@ -3,6 +3,7 @@ package inbox
 import (
 	"context"
 	"errors"
+	mathrand "math/rand/v2"
 	"sync"
 	"time"
 
@@ -20,7 +21,8 @@ import (
 //   - 清理只删终态行、逐行 autocommit、不持流行锁;领导者切换期间重叠执行无害(删除幂等)。
 //   - 补发的每一步都是 next_seq CAS,重叠执行最多多发一次提醒。
 //   - gauge 只由领导者产出,卸任时归零,避免 max() 聚合里留着卸任副本的旧值。
-//   - 对账只读,重叠只会让 mismatch 计数在两个副本上各记一次(告警用速率 > 0,不影响结论)。
+//   - 对账只读;不一致行数是领导者产出的 gauge,重叠期间两个副本各报一份,告警取 max(),不影响结论。
+//     当选后第一轮对账只等 1–5 分钟(随机错开),不等满一个间隔;之后按间隔跑,起始分片按墙钟轮转(评审 M5 / L4)。
 //
 // 关停(设计 §10):先取消循环与选举,有界等待它们退出,再由装配层关连接池 —— Run 返回即全部轮次已结束。
 
@@ -30,9 +32,12 @@ type LoopConfig struct {
 	SweepInterval     time.Duration
 	NotifyInterval    time.Duration
 	GaugeInterval     time.Duration
-	// ReconcileInterval 为 0 = 不跑对账。
+	// ReconcileInterval 为 0 = 不跑对账。开着时 ReconcileWindow 必须 ≥ 2 × ReconcileInterval(同 config.Validate)。
 	ReconcileInterval time.Duration
 	ReconcileWindow   time.Duration
+	// Jitter 返回 [0, n) 内的随机时长,只用来错开当选后第一轮对账(reconcileFirstDelay)。
+	// nil = math/rand/v2;单测注入确定值。
+	Jitter func(n time.Duration) time.Duration
 }
 
 // 每轮的工作量上限。
@@ -47,6 +52,18 @@ const (
 	notifyOverdue = 5 * time.Minute
 	// roundBudgetCap:单轮的整体上限,避免一轮拖到下一轮之后;关停时 ctx 取消立即生效。
 	roundBudgetCap = 2 * time.Minute
+	// reconcileFirstDelayMin / reconcileFirstDelaySpread:当选后第一轮对账在 [1, 5) 分钟内随机起跑(评审 L4)。
+	// 不等满一个间隔:滚动发布每次都会易主,等满 60 分钟就等于窗口内的行少核对一轮;
+	// 也不当选即跑:启动风暴期不抢库,随机量把接连几次易主后的首轮错开。
+	reconcileFirstDelayMin    = time.Minute
+	reconcileFirstDelaySpread = 4 * time.Minute
+)
+
+// reconcile_rounds_total{result} 的取值;"" = 不计数(领导权丢失 / 关停造成的取消)。
+const (
+	reconcileRoundOK      = "ok"
+	reconcileRoundError   = "error"
+	reconcileRoundTimeout = "timeout"
 )
 
 // Campaign 是「竞选领导者并在任期内运行 whileLeader」的函数形状,生产为 (*leader.Elector).Run。
@@ -59,7 +76,7 @@ type MaintenanceStore interface {
 	DueNotifications(ctx context.Context, shard uint32, dueBeforeMs uint64, limit int) ([]NotifyDue, error)
 	ResendNotify(ctx context.Context, d NotifyDue) NotifyResult
 	ScanGauges(ctx context.Context, nowMs, notifyOverdueBeforeMs uint64) (metrics.ScanGauges, error)
-	ReconcileRecent(ctx context.Context, sinceMs uint64, ledgers LedgerReader) (int, error)
+	ReconcileRecent(ctx context.Context, sinceMs uint64, startShard uint32, ledgers LedgerReader) (ReconcileRoundResult, error)
 }
 
 // Loops 持有后台循环的依赖。构造后只读。
@@ -69,6 +86,7 @@ type Loops struct {
 	cfg      LoopConfig
 	campaign Campaign
 	now      func() time.Time
+	jitter   func(time.Duration) time.Duration
 }
 
 // NewLoops 校验参数并构造。ledgers 可为 nil:此时不跑对账(只在 ReconcileInterval > 0 时要求非 nil)。
@@ -89,7 +107,22 @@ func NewLoops(store MaintenanceStore, ledgers LedgerReader, cfg LoopConfig, camp
 	if cfg.ReconcileInterval > 0 && (ledgers == nil || cfg.ReconcileWindow <= 0) {
 		return nil, errors.New("inbox: reconcile enabled but ledger reader or window missing")
 	}
-	return &Loops{store: store, ledgers: ledgers, cfg: cfg, campaign: campaign, now: now}, nil
+	if cfg.ReconcileInterval > 0 && cfg.ReconcileWindow < 2*cfg.ReconcileInterval {
+		return nil, errors.New("inbox: reconcile window must cover at least two intervals (see config.Validate)")
+	}
+	jitter := cfg.Jitter
+	if jitter == nil {
+		jitter = randomJitter
+	}
+	return &Loops{store: store, ledgers: ledgers, cfg: cfg, campaign: campaign, now: now, jitter: jitter}, nil
+}
+
+// randomJitter 返回 [0, n) 内均匀分布的随机时长;n ≤ 0 时为 0。
+func randomJitter(n time.Duration) time.Duration {
+	if n <= 0 {
+		return 0
+	}
+	return mathrand.N(n)
 }
 
 // Run 阻塞运行候选者循环直到 ctx 结束;当选后起各循环,丢失领导权或 ctx 结束即等全部轮次退出。
@@ -106,35 +139,95 @@ func (l *Loops) whileLeader(lctx context.Context) {
 	every(lctx, &wg, "player_inbox.notify_resend", l.cfg.NotifyInterval, l.notifyRound)
 	every(lctx, &wg, "player_inbox.gauges", l.cfg.GaugeInterval, l.gaugeRound)
 	if l.cfg.ReconcileInterval > 0 {
-		every(lctx, &wg, "player_inbox.reconcile", l.cfg.ReconcileInterval, l.reconcileRound)
+		first := reconcileFirstDelay(l.cfg.ReconcileInterval, l.jitter)
+		logx.Infof("[player_inbox] First reconcile round in %v, then every %v", first, l.cfg.ReconcileInterval)
+		everyAfter(lctx, &wg, "player_inbox.reconcile", first, l.cfg.ReconcileInterval, l.reconcileRound)
 	}
 	<-lctx.Done()
 	wg.Wait()
 	metrics.ResetScanGauges()
+	metrics.ResetReconcileInconsistent()
 	logx.Info("[player_inbox] Maintenance leader released; loops stopped")
 }
 
-// every 起一个可等待的定时循环:先等一个间隔再跑第一轮(启动风暴期不抢库),每一轮各自 recover
-// (safego.Run),ctx 取消即退出;wg 在 goroutine 退出时 Done。
+// every 起一个可等待的定时循环:先等一个间隔再跑第一轮(启动风暴期不抢库)。见 everyAfter。
 func every(ctx context.Context, wg *sync.WaitGroup, point string, interval time.Duration, round func(context.Context)) {
+	everyAfter(ctx, wg, point, interval, interval, round)
+}
+
+// everyAfter 起一个可等待的定时循环:等 first 跑第一轮,之后按 first + k·interval 的固定节拍一轮
+// (一轮拖长了就跳过错过的节拍;first = interval 时节拍与原先的单个 ticker 相同)。
+// 每一轮各自 recover(safego.Run),预算 min(interval, roundBudgetCap);ctx 取消即退出;wg 在 goroutine 退出时 Done。
+func everyAfter(ctx context.Context, wg *sync.WaitGroup, point string, first, interval time.Duration, round func(context.Context)) {
 	wg.Add(1)
 	safego.Go(point, func() {
 		defer wg.Done()
-		ticker := time.NewTicker(interval)
+		runRound := func() {
+			safego.Run(point, func() {
+				roundCtx, cancel := context.WithTimeout(ctx, min(interval, roundBudgetCap))
+				defer cancel()
+				round(roundCtx)
+			})
+		}
+		timer := time.NewTimer(first)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		case <-timer.C:
+		}
+		ticker := time.NewTicker(interval) // 先起节拍再跑第一轮:第一轮的耗时不推迟之后的节拍
 		defer ticker.Stop()
+		runRound()
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				safego.Run(point, func() {
-					roundCtx, cancel := context.WithTimeout(ctx, min(interval, roundBudgetCap))
-					defer cancel()
-					round(roundCtx)
-				})
+				runRound()
 			}
 		}
 	})
+}
+
+// reconcileFirstDelay 是当选后第一轮对账前的等待:reconcileFirstDelayMin + jitter([0, spread)),不超过一个间隔。
+// jitter 的返回值钳到 [0, spread],注入的随机源越界也不会让首轮提前或拖过 5 分钟。
+func reconcileFirstDelay(interval time.Duration, jitter func(time.Duration) time.Duration) time.Duration {
+	j := min(max(jitter(reconcileFirstDelaySpread), 0), reconcileFirstDelaySpread)
+	return min(reconcileFirstDelayMin+j, interval)
+}
+
+// reconcileStartShard 是一轮对账的起始分片:墙钟落在第几个间隔,(nowMs / intervalMs) % 64(评审 M5)。
+// 不依赖内存状态:易主后新领导者从同一个位置接着轮转;某一轮被截断时,下一轮从下一片起步,高号分片不会永远轮不到。
+func reconcileStartShard(nowMs uint64, interval time.Duration) uint32 {
+	intervalMs := interval.Milliseconds()
+	if intervalMs <= 0 {
+		return 0
+	}
+	return uint32((nowMs / uint64(intervalMs)) % ShardCount)
+}
+
+// reconcileRoundResult 把一轮对账的错误折成 player_inbox_reconcile_rounds_total 的 result:
+// 成功 ok;本轮预算用完 timeout;领导权丢失 / 关停造成的取消返回 ""(不计数:那一轮不是失败,是不该再跑);其余 error。
+// 驱动层不一定把 ctx 错误包进返回值,所以同时看 ctx.Err()。
+func reconcileRoundResult(ctx context.Context, err error) string {
+	switch {
+	case err == nil:
+		return reconcileRoundOK
+	case errors.Is(err, context.Canceled) || errors.Is(ctx.Err(), context.Canceled):
+		return ""
+	case errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded):
+		return reconcileRoundTimeout
+	default:
+		return reconcileRoundError
+	}
+}
+
+// reconcileGaugeUpdates 报告这一轮的结果要不要写进 player_inbox_reconcile_inconsistent_rows:
+// 跑完的轮次(ok,含截断)照实写;失败 / 超时的轮次只核对了一部分,发现了不一致就写(那是确凿的下界),
+// 一处都没发现则保留上一轮的读数 —— 半截轮次的 0 不能证明「已经一致」。
+func reconcileGaugeUpdates(result string, inconsistent int) bool {
+	return result == reconcileRoundOK || (result != "" && inconsistent > 0)
 }
 
 func (l *Loops) nowMs() uint64 {
@@ -206,7 +299,8 @@ func (l *Loops) gaugeRound(ctx context.Context) {
 	metrics.SetScanGauges(g)
 }
 
-// reconcileRound 跑一轮定时对账(设计 §9.3)。
+// reconcileRound 跑一轮定时对账(设计 §9.3):窗口 [now − ReconcileWindow, now],起始分片按墙钟轮转;
+// 记 reconcile_rounds_total{result},按 reconcileGaugeUpdates 刷新不一致行数 gauge。
 func (l *Loops) reconcileRound(ctx context.Context) {
 	nowMs := l.nowMs()
 	window := uint64(l.cfg.ReconcileWindow.Milliseconds())
@@ -214,12 +308,26 @@ func (l *Loops) reconcileRound(ctx context.Context) {
 	if nowMs > window {
 		since = nowMs - window
 	}
-	mismatches, err := l.store.ReconcileRecent(ctx, since, l.ledgers)
-	if err != nil && !errors.Is(err, context.Canceled) {
-		logx.Errorf("[player_inbox] Reconcile round failed: %v", err)
-		return
+	start := reconcileStartShard(nowMs, l.cfg.ReconcileInterval)
+	res, err := l.store.ReconcileRecent(ctx, since, start, l.ledgers)
+	result := reconcileRoundResult(ctx, err)
+	if result == "" {
+		return // 领导权丢失 / 关停:不计数、不刷新 gauge(卸任时 whileLeader 会把它归零)
 	}
-	if mismatches > 0 {
-		logx.Errorf("[player_inbox] Reconcile round found %d mismatches (see preceding ERROR lines)", mismatches)
+	metrics.ObserveReconcileRound(result)
+	if reconcileGaugeUpdates(result, res.Inconsistent) {
+		metrics.SetReconcileInconsistent(res.Inconsistent)
+	}
+	switch result {
+	case reconcileRoundTimeout:
+		logx.Errorf("[player_inbox] Reconcile round ran out of its %v budget after checking %d of %d players (start_shard=%d); "+
+			"unchecked rows are retried next round", min(l.cfg.ReconcileInterval, roundBudgetCap),
+			res.PlayersChecked, res.PlayersPlanned, start)
+	case reconcileRoundError:
+		logx.Errorf("[player_inbox] Reconcile round failed after checking %d of %d players (start_shard=%d): %v",
+			res.PlayersChecked, res.PlayersPlanned, start, err)
+	}
+	if res.Inconsistent > 0 {
+		logx.Errorf("[player_inbox] Reconcile round found %d inconsistent rows (see preceding ERROR lines)", res.Inconsistent)
 	}
 }

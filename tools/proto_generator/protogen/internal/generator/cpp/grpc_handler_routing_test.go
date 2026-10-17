@@ -30,6 +30,7 @@ func setupGrpcHandlerRouting(t *testing.T) string {
 	_config.Global.Paths.OutputRoot = root
 	_config.Global.DirectoryNames.ProtoDirName = "proto/"
 	_config.Global.FileExtensions.Proto = ".proto"
+	_config.Global.FileExtensions.PbH = ".pb.h"
 	_config.Global.FileExtensions.GrpcPbH = ".grpc.pb.h"
 	_config.Global.FileExtensions.GrpcHandlerH = ".h"
 	_config.Global.FileExtensions.GrpcHandlerCpp = ".cpp"
@@ -169,6 +170,60 @@ func TestTargetGrpcHandlerDescriptorDoesNotGenerateImports(t *testing.T) {
 	}
 	if err := generateGrpcHandlerFromDescriptor("proto/battle/player_battle.proto", data); err == nil {
 		t.Fatal("定向入口未拒绝已删除的客户端 gRPC handler")
+	}
+}
+
+// 旧模板留下的非空手写段(§15.8.4)必须先手工迁移:定向生成在写任何文件之前失败,
+// .h 预检对同名 .cpp 做旧段检查,两份文件都保持原样(宁可拒绝生成,也不吞代码)。
+func TestTargetGrpcHandlerRefusesLegacySectionsBeforeWriting(t *testing.T) {
+	root := setupGrpcHandlerRouting(t)
+	methods := battleGrpcMethods("BattleNode", false)
+	methods[0].Fd.Service = []*descriptorpb.ServiceDescriptorProto{methods[0].ServiceDescriptorProto}
+	methods[0].ServiceDescriptorProto.Method = []*descriptorpb.MethodDescriptorProto{methods[0].MethodDescriptorProto}
+	data, err := proto.Marshal(&descriptorpb.FileDescriptorSet{File: []*descriptorpb.FileDescriptorProto{methods[0].Fd}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	directory := filepath.Join(root, "battle-grpc")
+	if err := os.MkdirAll(directory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	headerPath := filepath.Join(directory, "battle_node.h")
+	cppPath := filepath.Join(directory, "battle_node.cpp")
+	header := "///<<< BEGIN WRITING YOUR CODE: grpc.header.includes\n#include \"battle_admission_gate.h\"\n///<<< END WRITING YOUR CODE\n"
+	cpp := strings.Join([]string{
+		"#include \"battle_node.h\"",
+		"#include <future>",
+		"///<<< BEGIN WRITING YOUR CODE",
+		"///<<< END WRITING YOUR CODE",
+		"grpc::Status BattleNodeImpl::CreateBattle(grpc::ServerContext* /*context*/,",
+		"    const ::CreateBattleRequest* request,",
+		"    ::CreateBattleResponse* response)",
+		"{",
+		"    ///<<< BEGIN WRITING YOUR CODE",
+		"    auto permit = agones::GameServerLifecycle::Instance().AcquireAllocationPermitBlocking();",
+		"    ///<<< END WRITING YOUR CODE",
+		"    return grpc::Status::OK;",
+		"}",
+		"",
+	}, "\n")
+	for path, content := range map[string]string{headerPath: header, cppPath: cpp} {
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	err = generateGrpcHandlerFromDescriptor("proto/battle/battle_node.proto", data)
+	if err == nil || !strings.Contains(err.Error(), "CreateBattle:无名投递前段") || !strings.Contains(err.Error(), "§15.8.4") {
+		t.Fatalf("旧段非空时定向生成必须拒绝并列出旧段: %v", err)
+	}
+	for path, want := range map[string]string{headerPath: header, cppPath: cpp} {
+		got, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(got) != want {
+			t.Fatalf("拒绝生成时不得改动 %s:\n%s", path, got)
+		}
 	}
 }
 

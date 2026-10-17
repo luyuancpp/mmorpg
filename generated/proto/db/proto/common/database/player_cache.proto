@@ -34,4 +34,5 @@ message PlayerAllData {
   BagAllData   bag_data   = 4;
   QuestAllData quest_data = 5;
   MailAllData  mail_data  = 6;
+  uint64 last_save_seq = 7; // 存盘发号水位，跨重接和跨场景继承，不承载业务数据
 }

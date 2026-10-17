@@ -1,8 +1,10 @@
 syntax = "proto3";
+import "proto/trade/commerce.proto";
 option go_package = "login/proto/trade";
 
 import "proto/db/proto_option.proto";
 import "proto/trade/jubaozhai.proto";
+import "proto/common/asset/asset_op.proto";
 
 package trade;
 
@@ -153,6 +155,84 @@ message TradeAssetOpRecord {
   // 重排只在确实发过请求(非本地 NOT_HERE)时推进;毒行推迟与归还租约不动它。
   // 存量行(加列前插入)是 0,由领取时懒初始化为 GREATEST(created_ms, updated_ms),不做单独回填。
   uint64 last_send_ms = 24;
+  // SQL提交托管快照后才允许ACK；清理必须等业务消费和ACK均完成。
+  bytes escrow_snapshot = 25;
+  bool receipt_ack_pending = 26;
+  bool business_consumed = 27;
+}
+
+// 所有交易类型共用资产托管状态机；这张表只保存合同、托管证据与待办，绝不保存玩家余额。
+// request_key = 可信入口域 + ':' + 请求主体 + ':' + 客户端幂等号，长度上限191且逐字节比较。
+message TradeCommerceRecord {
+  option(OptionTableName) = "trade_commerce";
+  option(OptionPrimaryKey) = "commerce_id";
+  option(OptionUniqueKey) = "request_key";
+  option(OptionIndex) = "status,updated_ms; seller_player_id,commerce_id;buyer_player_id,commerce_id;kind,market_id,item_config_id,side,status,unit_price,commerce_id;kind,status,expires_ms;parent_id,status;counterparty_id,status";
+  option(OptionTiDBNonclusteredPK) = true;
+  option(OptionTiDBShardRowIDBits) = 4;
+  option(OptionTiDBPreSplitRegions) = 4;
+  uint64 commerce_id = 1;
+  string request_key = 2;
+  bytes request_digest = 3;
+  uint32 kind = 4;
+  uint32 status = 5;
+  uint64 seller_player_id = 6;
+  uint64 buyer_player_id = 7;
+  uint32 market_id = 8;
+  uint32 item_config_id = 9;
+  uint32 side = 10;
+  uint64 unit_price = 11;
+  uint32 quantity = 12;
+  uint32 filled_quantity = 13;
+  uint32 currency_type = 14;
+  uint64 expires_ms = 15;
+  uint64 created_ms = 16;
+  uint64 updated_ms = 17;
+  uint64 version = 18;
+  bytes workflow_proto = 19;
+  uint64 parent_id = 20;
+  uint64 counterparty_id = 21;
+}
+
+// 仅供同一业务SQL事务内锁定市场/竞拍序列；不存在Redis裁决或跨库事务。
+message TradeCommerceGuardRecord {
+  option(OptionTableName) = "trade_commerce_guard";
+  option(OptionPrimaryKey) = "guard_id";
+  uint64 guard_id = 1;
+}
+
+// 非表消息是持久化合同的一部分，各语言直接用生成类型，不另建平行DTO。
+message TradeCommerceWorkflow {
+  TradeAssetSelection seller_assets = 1;
+  TradeAssetSelection buyer_assets = 2;
+  bool seller_confirmed = 3;
+  bool buyer_confirmed = 4;
+  bool cancel_requested = 5;
+  repeated TradeCommerceLeg legs = 6;
+  string stage = 7;
+  uint64 minimum_increment = 8;
+  uint64 highest_bid = 9;
+  uint64 highest_bidder = 10;
+  uint64 winning_bid_id = 11;
+  uint64 parent_id = 12;
+  uint64 quantity_reserved = 13;
+  string external_order_sn = 14;
+  uint64 sku_id = 15;
+  uint32 sku_quantity = 16;
+  // 已验证的官方SKU只能由受信服务配置产生，不接受玩家提交此bundle。
+  AssetBundle official_bundle = 17;
+  string external_currency = 18;
+  uint64 external_amount = 19;
+}
+
+message TradeCommerceLeg {
+  string role = 1;
+  uint64 player_id = 2;
+  uint32 stream = 3;
+  AssetBundle bundle = 4;
+  uint64 op_id = 5;
+  AssetSnapshot snapshot = 6;
+  uint32 outcome = 7;
 }
 
 // outbox 行做的是哪一步。与 stream 不是一回事:同为 TRADE_CREDIT 流,交付买家与退回卖家

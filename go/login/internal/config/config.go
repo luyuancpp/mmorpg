@@ -271,6 +271,8 @@ type HomeZoneConf struct {
 //     配得不一样就是两把互不相干的锁,该 zone 长期双 leader。
 //   - Queue.Enabled=true 时 DispatchInterval、DispatcherLockTTL 必须为正(loginqueue.NewDispatcher
 //     校验),否则起服失败。default=1s / 30s 只在键缺省时生效,显式写 0s 不会回落到默认值。
+//     (2026-10-15 补注)QueueEntryTTL 同样必须为正,AdmitTTL 不小于 1ms(放行脚本的 SET PX 取整到毫秒;
+//     loginqueue.ValidateTTLs,initLoginQueue 校验),否则起服失败;default=60s / 1h 同样只在键缺省时生效。
 type QueueConf struct {
 	Enabled             bool          `json:"Enabled,default=false"`
 	DispatchInterval    time.Duration `json:"DispatchInterval,default=1s"`
@@ -462,6 +464,20 @@ type RedisConf struct {
 	DialTimeout  time.Duration `json:"DialTimeout"`
 	ReadTimeout  time.Duration `json:"ReadTimeout"`
 	WriteTimeout time.Duration `json:"WriteTimeout"`
+	// PoolSize 是这个 go-redis 客户端的连接池上限(共享 Redis 连接总账,P0-E 第 3 批)。
+	// 0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,随 CPU limit 漂移;负数起服即失败(ValidatePoolSize)。
+	// K8s 上 tools/scripts/k8s_deploy.ps1 从 etc/login.yaml 镜像 Node.RedisClient.PoolSize 并要求正整数,
+	// Redis 连接总账读同一个键。Pub/Sub 专用连接不占池名额;PasswordAuth 的失败配额池固定 4 条,不读本字段。
+	PoolSize int `json:"PoolSize,optional"`
+}
+
+// ValidatePoolSize 拒绝负的 PoolSize:负数没有合法含义,go-redis 只把 0 当缺省
+// (v9.16.0 建池时 make(chan) 遇到负容量直接 panic)。
+func (c RedisConf) ValidatePoolSize() error {
+	if c.PoolSize < 0 {
+		return fmt.Errorf("PoolSize=%d must be >= 0 (0 = go-redis default 10 x GOMAXPROCS)", c.PoolSize)
+	}
+	return nil
 }
 
 // KafkaConfig holds Kafka producer and consumer settings.
@@ -493,6 +509,10 @@ type KafkaConfig struct {
 	RetentionMs      int64                   `json:"RetentionMs,default=86400000"` // Topic retention in ms (default 24h)
 	// P1 数据安全加固 2026-06-03: 旧值 300000 (5min)
 	// 太短,db service 卡住会丢数据
+	// RetentionBytes 是 db_task topic 每分区的 retention.bytes。K8s 由 k8s_deploy.ps1 按 Kafka 盘预算渲染,
+	// 与 db 同值;本机不设 = 沿用 broker 缺省(0 = 不管理,<0 启动拒绝)。
+	// 见 docs/design/db-task-delivery-and-retention.md §B。
+	RetentionBytes int64 `json:"RetentionBytes,optional"`
 }
 
 // SnowflakeConf holds snowflake ID generator settings.

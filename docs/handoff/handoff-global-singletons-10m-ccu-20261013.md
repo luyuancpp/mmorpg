@@ -1,5 +1,14 @@
 # 交接:全局单点盘点、解法与 1000 万在线容量核算(2026-10-13)
 
+> **2026-10-16 状态订正(先读)**:
+> - **目标已改**:负责人 10-15 确认的新目标是日活 1 亿、**峰值同时在线 2000 万**(`docs/design/capacity-model-hok-scale.md` §7)。本文 §5 按 1000 万推算,只作历史参考,不能当新目标的预算;按在线人数增长的项不能简单乘二,以该文 §7.2 为准。
+> - **本文的后续工作已全部分给其他工作线,不要再按本文 §0 重新开一条**:
+>   - §3 的 P0 → [handoff-global-singletons-p0-20261015.md](handoff-global-singletons-p0-20261015.md)(P0-D 并入 [grpc-muduo-transport.md](../design/grpc-muduo-transport.md) §10.2 第 2 批);
+>   - 会话对账按 gate 建索引、删 `dirty_keys_set`、task:result 分频道、gate nofile、scene_manager 只读本 zone → [handoff-launch-readiness-and-d1-20261013.md](handoff-launch-readiness-and-d1-20261013.md) 与 [handoff-launch-readiness-decisions-20261015.md](handoff-launch-readiness-decisions-20261015.md);
+>   - WAITAOF 的 go/db 部分、db 消费组按 zone、L-04、clientFoundRows、快照保留期、Kafka retention.bytes → [godb-pipeline-handoff-20261013.md](godb-pipeline-handoff-20261013.md) 与 `godb-pipeline-impl-20261015/`。注意 DBTask 9 号字段 `reply_instance` 与 `save_seq` 撞号,按 godb 交接 §5 第 13 项定;
+>   - `trade_asset_op` 号段 tag 已补进四份清单。
+> - **截至 10-16 没有找到归属的小项**(本文 §3 / §4):refresh token 每账号最多 32 枚不作废;Java gateway 单 zone 准入容量默认 5000;scene_manager `reassignSceneNode` 无 CAS(`go/scene_manager/internal/logic/world_init.go:528`);match `migrateLegacyQueues` 仍在;每次存盘一条 LOG_INFO。要做时另开任务,先核对当时代码。
+
 > **性质**:只读调查与设计结论。本会话**没有改任何代码**,没有编译、测试或压测(AGENTS.md §10.1)。
 > 新增的只有本文件,以及 `docs/README.md` 一行索引、`docs/PROGRESS.md` 一条记录。
 > **证据级别**:「已亲核」= 本会话主线程打开代码逐行确认过;其余条目来自多路只读调查 + 对抗审查(每条结论都有第二个代理回到代码行号核对过),但仍是**静态推断**。

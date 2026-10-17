@@ -38,6 +38,10 @@ package main
 //      发布者,不清就永久残留。
 //   4. node:zone:{S}:* (scene_count / player_count / scene_node_type /
 //      death_at / scenes 反向索引)+ scene_nodes:zone:{S}:load 本身。
+//   5. (2026-10-16)从 scene_manager 的 zone 登记集合 scene_manager:zones 里摘掉 S。登记集合是
+//      scene_manager 领导者清扫陈旧负载集与孤儿频道时发现 zone 的索引(替代了全库 SCAN),本工具是它
+//      唯一的删除方。必须最后做:前面任何一步失败都直接返回、保留登记,scene_manager 仍能找到这个
+//      zone 的残留;登记集合不是按 zone 前缀的键,上面的 SCAN 模式扫不到它,所以单独摘成员。
 //
 // 故意不清的 player:* 键:本步骤只动 player:{id}:location(它不会自己过期,且能证明归属)。
 // 其余按玩家维度、自带 TTL 的键 —— player:{id}:handoff(300s)与切线冷却
@@ -74,6 +78,9 @@ const (
 	worldLinenoZonePattern    = "world_channel_lineno:zone:%d:*"
 	worldDirectoryZonePattern = "world_channel_directory:zone:%d:*"
 	nodeZonePattern           = "node:zone:%d:*"
+	// sceneManagerZonesKey:scene_manager 的 zone 登记集合(SET,成员是 zone 十进制)。与
+	// go/scene_manager/internal/logic/zone_registry.go 的同名常量同值,跨 module 契约,两边测试各自钉死。
+	sceneManagerZonesKey      = "scene_manager:zones"
 	hotStateScanCount         = 500
 	hotStatePipelineBatch     = 500
 	hotStateSceneKeysPerScene = 6 // 与 sceneHotStateKeys 返回的键数一致
@@ -98,15 +105,26 @@ type hotStateClearReport struct {
 	NodeKeys          int // node:zone:{S}:* + 负载集
 	NodeKeysDeleted   int
 	ActiveSetDeleted  int
+	// ZoneRegistry* 是第 5 步(从 scene_manager:zones 摘掉 S)的计数:Found=1 表示 S 在登记集合里。
+	ZoneRegistryFound   int
+	ZoneRegistryRemoved int
 }
 
 func (r hotStateClearReport) String() string {
 	return fmt.Sprintf("locations(checked=%d matched=%d deleted=%d undecided=%d) zone0_sweep(checked=%d matched=%d deleted=%d undecided=%d) "+
-		"scenes(matched=%d keys_deleted=%d) world_channels(keys=%d deleted=%d) node_keys(found=%d deleted=%d) active_set_deleted=%d",
+		"scenes(matched=%d keys_deleted=%d) world_channels(keys=%d deleted=%d) node_keys(found=%d deleted=%d) active_set_deleted=%d "+
+		"zone_registry(found=%d removed=%d)",
 		r.LocationsChecked, r.LocationsMatched, r.LocationsDeleted, r.LocationsUndecided,
 		r.ZoneZeroChecked, r.ZoneZeroMatched, r.ZoneZeroDeleted, r.ZoneZeroUndecided,
 		r.ScenesMatched, r.SceneKeysDeleted, r.WorldChannelKeys, r.WorldChannelDel,
-		r.NodeKeys, r.NodeKeysDeleted, r.ActiveSetDeleted)
+		r.NodeKeys, r.NodeKeysDeleted, r.ActiveSetDeleted,
+		r.ZoneRegistryFound, r.ZoneRegistryRemoved)
+}
+
+// sourceZoneRegistryMember 是源 zone 在 scene_manager:zones 里的成员写法(zone 十进制,与
+// scene_manager 的 registerSceneManagerZones 一致)。
+func sourceZoneRegistryMember(src uint32) string {
+	return strconv.FormatUint(uint64(src), 10)
 }
 
 // locationCounts 是一轮 location 清理的计数,由调用方按轮次记进报告的对应字段。
@@ -490,6 +508,23 @@ func clearSourceZoneHotState(ctx context.Context, rdb redis.UniversalClient, src
 		} else {
 			rep.WorldChannelKeys++
 			rep.WorldChannelDel += n
+		}
+	}
+
+	// 5) 最后一步:从 scene_manager 的 zone 登记集合摘掉 S(理由见文件头第 5 步)。
+	member := sourceZoneRegistryMember(src)
+	registered, err := rdb.SIsMember(ctx, sceneManagerZonesKey, member).Result()
+	if err != nil {
+		return rep, fmt.Errorf("sismember %s %s: %w", sceneManagerZonesKey, member, err)
+	}
+	if registered {
+		rep.ZoneRegistryFound = 1
+		if !dryRun {
+			n, err := rdb.SRem(ctx, sceneManagerZonesKey, member).Result()
+			if err != nil {
+				return rep, fmt.Errorf("srem %s %s: %w", sceneManagerZonesKey, member, err)
+			}
+			rep.ZoneRegistryRemoved = int(n)
 		}
 	}
 	return rep, nil

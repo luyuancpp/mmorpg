@@ -31,9 +31,6 @@
     <ClCompile Include="client\battle_client_edge.cpp">
       <Filter>client</Filter>
     </ClCompile>
-    <ClCompile Include="handler\event\event_handler.cpp">
-      <Filter>handler\event</Filter>
-    </ClCompile>
     <ClCompile Include="handler\grpc\battle_node.cpp">
       <Filter>handler\grpc</Filter>
     </ClCompile>

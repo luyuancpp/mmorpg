@@ -1637,7 +1637,7 @@ $ClientEntryWrapperKeys = @('ClientEntryMode', 'ClientPublicHost', 'GateClientHo
     'RequireClientEndpoint', 'AllowDisruptiveSwitch')
 $WrapperPairs = @(
     @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sDeploy'; Downstream = 'k8s_deploy.ps1'
-        Forwarded = $ClientEntryWrapperKeys + @('GatewayIngressHost', 'GatewayIngressClassName', 'GatewayIngressTlsSecret', 'GatewayTrustedProxies', 'LoginDevPasswordAuth', 'GateRouterMode') },
+        Forwarded = $ClientEntryWrapperKeys + @('GatewayIngressHost', 'GatewayIngressClassName', 'GatewayIngressTlsSecret', 'GatewayTrustedProxies', 'LoginDevPasswordAuth', 'GateRouterMode', 'DbConsumerGroup') },
     @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sImage'; Downstream = 'k8s_image.ps1'; Forwarded = $ClientEntryWrapperKeys + @('GateRouterMode') },
     @{ Source = 'k8s_image.ps1'; Function = 'Invoke-K8sDeploy'; Downstream = 'k8s_deploy.ps1'; Forwarded = $ClientEntryWrapperKeys + @('GateRouterMode') }
 )

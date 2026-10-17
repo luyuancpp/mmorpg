@@ -43,17 +43,20 @@ func sessionPlayersToSettle(fromGate, bound uint64) []uint64 {
 	return players
 }
 
-func deletePlayerSession(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64, sessionID uint32) {
+// deletePlayerSession / markPlayerSessionDisconnecting 的 gateInstanceID 是发起这次清理的 gate 实例 uuid
+// (Disconnect / LeaveGame 取 SessionDetails.gate_instance_id,入场链补偿取 state.gateInstanceID)。
+// player_locator 据此忽略旧实例迟到的同号上报;空 = 不校验(docs/design/scene-enter-chain-residuals.md §6)。
+func deletePlayerSession(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64, sessionID uint32, gateInstanceID string) {
 	if playerID == 0 || sessionID == 0 {
 		return
 	}
 
-	if err := sessionmanager.DeleteSession(ctx, svcCtx.PlayerLocatorClient, playerID, sessionID); err != nil {
+	if err := sessionmanager.DeleteSession(ctx, svcCtx.PlayerLocatorClient, playerID, sessionID, gateInstanceID); err != nil {
 		logx.Errorf("Failed to delete session for player %d: %v", playerID, err)
 	}
 }
 
-func markPlayerSessionDisconnecting(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64, sessionID uint32) {
+func markPlayerSessionDisconnecting(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64, sessionID uint32, gateInstanceID string) {
 	if playerID == 0 {
 		return
 	}
@@ -70,9 +73,9 @@ func markPlayerSessionDisconnecting(ctx context.Context, svcCtx *svc.ServiceCont
 	backoff := 200 * time.Millisecond
 	var lastErr error
 	for attempt := 1; ; attempt++ {
-		lastErr = sessionmanager.SetSessionDisconnecting(ctx, svcCtx.PlayerLocatorClient, playerID, sessionID)
+		lastErr = sessionmanager.SetSessionDisconnecting(ctx, svcCtx.PlayerLocatorClient, playerID, sessionID, gateInstanceID)
 		if lastErr == nil {
-			logx.Infof("Session disconnecting with 30s lease: player=%d session=%d", playerID, sessionID)
+			logx.Infof("Session disconnecting with 30s lease: player=%d session=%d gate_instance=%q", playerID, sessionID, gateInstanceID)
 			return
 		}
 		if attempt >= maxAttempts || ctx.Err() != nil {
@@ -88,6 +91,6 @@ func markPlayerSessionDisconnecting(ctx context.Context, svcCtx *svc.ServiceCont
 	}
 
 	logx.Severef("CRITICAL: session stuck ONLINE — SetSessionDisconnecting exhausted retries "+
-		"player=%d session=%d err=%v (manual fix: see release-checklist #B-1 sweep)",
-		playerID, sessionID, lastErr)
+		"player=%d session=%d gate_instance=%q err=%v (manual fix: see release-checklist #B-1 sweep)",
+		playerID, sessionID, gateInstanceID, lastErr)
 }

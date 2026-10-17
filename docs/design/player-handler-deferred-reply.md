@@ -90,6 +90,10 @@ class SyncOnlyPlayerCallContext final : public PlayerCallContext { /* DeferImpl 
 - 新增非虚 4 参便捷重载:构造 `SyncOnlyPlayerCallContext` 后转调 5 参。节点路由入口(`SendMessageToPlayer`、
   `InvokePlayerService`)与 bag_test 等 29 处单测调用不用改。
 
+> 2026-10-16 补(RpcChannel 批 7):`SendMessageToPlayer`(Scene 1)、`InvokePlayerService`(Scene 40)已退役并从 proto 删除
+> (号留墓碑,见 `docs/design/muduo-rpc-channel.md` §20.3),不再调玩家 handler 的 `CallMethod`;实施时 4 参便捷重载的调用方只剩单测,
+> 本节与 §3.5 里涉及这两个入口的说法只作留痕,不要去接这两个已退役的入口。
+
 ### 3.3 生成物(只改 `player_service_gen.go` 的模板字符串,不改 yaml)
 
 - 类内紧跟 `using PlayerService::PlayerService;` 加 **`using PlayerService::CallMethod;`**(否则 5 参 override 隐藏 4 参重载,单测断编)。
@@ -115,6 +119,7 @@ class SyncOnlyPlayerCallContext final : public PlayerCallContext { /* DeferImpl 
 `ProcessClientPlayerMessage`:两个 `MessageUniquePtr` 去 const;派发改为
 `else if (DispatchClientPlayerCall(...)) { return; }`;末尾装帧改为 `FrameClientPlayerReply(framing, *playerResponse, *response)`。
 退出闸、GM 闸、`SendMessageToPlayer`、`InvokePlayerService` 不变(后两者走 4 参,延后 handler 拿到 nullopt 同步回码)。
+(2026-10-16 补:后两者已于批 7 退役并从 proto 删除,见 §3.2 末注。)
 
 ### 3.6 续延复核(随首个调用方加)
 

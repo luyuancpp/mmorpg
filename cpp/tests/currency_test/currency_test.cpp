@@ -5,6 +5,9 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/InetAddress.h"
@@ -20,6 +23,7 @@
 #include "table/proto/tip/common_error_tip.pb.h"
 #include <thread_context/ecs_context.h>
 #include "modules/id_segment/guid_segment_registry.h"
+#include "../test_config_helper.h"
 
 template <class MessageKey, class MessageValue>
 struct MessageAsyncClientTestPeer
@@ -93,6 +97,13 @@ struct MessageAsyncClientTestPeer
         client.pending_save_queue_.erase(it);
         client.saving_queue_[redisKey] = element;
         return element;
+    }
+
+    // 两个 ScriptSlot 里实际会经 EVALSHA / EVAL 发出的脚本文本(普通存盘、带 guard 存盘)。
+    // 断言打在发出的文本上而不是常量名上:槽位换绑到别的常量也逃不过。
+    static std::vector<std::string_view> SaveScriptSources(const Client& client)
+    {
+        return {client.save_script_.source, client.guard_script_.source};
     }
 };
 
@@ -369,7 +380,7 @@ TEST(CurrencyTest, DebtPersistenceRoundTrip)
     EXPECT_EQ(debt.createdAt, it->second.createdAt);
 }
 
-TEST(CurrencyTest, AnomalyBucketsSeparateCurrencyAndItemAndClearInConstantTime)
+TEST(CurrencyTest, AnomalyBucketsSeparateCurrencyAndItemAndClearForTestIsolation)
 {
     AnomalyDetector::ClearAll();
     const uint32_t sharedNumericKey = static_cast<uint32_t>(kCurrencyGold);
@@ -391,7 +402,7 @@ TEST(CurrencyTest, AnomalyBucketsSeparateCurrencyAndItemAndClearInConstantTime)
     EXPECT_FALSE(AnomalyDetector::RecordItemGain(player, sharedNumericKey, 1));
     EXPECT_EQ(1u, AnomalyDetector::GetCurrencyGainCount(player, kCurrencyGold));
 
-    AnomalyDetector::ClearPlayer(player);
+    AnomalyDetector::ClearAll();
     EXPECT_EQ(0u, AnomalyDetector::GetCurrencyGainCount(player, kCurrencyGold));
 
     DestroyTestPlayer(player);
@@ -816,8 +827,166 @@ TEST(CurrencyTest, RedisGuardScriptComparesBeforeWrite)
     EXPECT_LT(reject, writeData) << "归属不等必须在写数据之前返回";
 }
 
+namespace
+{
+std::string_view TrimLuaToken(std::string_view text)
+{
+    const auto begin = text.find_first_not_of(" \t\r\n");
+    if (begin == std::string_view::npos)
+    {
+        return {};
+    }
+    return text.substr(begin, text.find_last_not_of(" \t\r\n") - begin + 1);
+}
+
+// 整串恰好是 KEYS[<十进制下标>]。派生键(KEYS[1] .. ':x')不算声明过的键。
+bool IsDeclaredKeyRef(std::string_view arg)
+{
+    constexpr std::string_view kPrefix = "KEYS[";
+    if (!arg.starts_with(kPrefix) || !arg.ends_with(']'))
+    {
+        return false;
+    }
+    const auto index = arg.substr(kPrefix.size(), arg.size() - kPrefix.size() - 1);
+    return !index.empty() && index.find_first_not_of("0123456789") == std::string_view::npos;
+}
+
+struct LuaScriptScan
+{
+    // 每条 redis.call / redis.pcall 按顶层逗号切开、去掉首尾空白的参数;[0] 是命令名。
+    std::vector<std::vector<std::string_view>> calls;
+    // 不处在任何 redis.call 命令名位置上的字符串字面量(含引号)。
+    std::vector<std::string_view> strayLiterals;
+};
+
+// 只识别存盘脚本用到的 Lua 子集:单 / 双引号字符串(含反斜杠转义)、-- 行注释、圆括号嵌套。
+// 长括号字符串 [[...]] 目前没有用到,不识别;以后用到要同步扩展这里。
+LuaScriptScan ScanLuaScript(std::string_view lua)
+{
+    struct Paren
+    {
+        bool isRedisCall = false;
+        std::size_t argBegin = 0;
+        std::vector<std::string_view> args;
+    };
+    std::vector<Paren> parens;
+    std::vector<std::string_view> literals;
+    LuaScriptScan scan;
+    for (std::size_t i = 0; i < lua.size(); ++i)
+    {
+        const char c = lua[i];
+        if (c == '\'' || c == '"')
+        {
+            std::size_t end = i + 1;
+            while (end < lua.size() && lua[end] != c)
+            {
+                end += (lua[end] == '\\') ? 2 : 1;
+            }
+            literals.push_back(lua.substr(i, end - i + 1));
+            i = end;
+            continue;
+        }
+        if (lua.compare(i, 2, "--") == 0)
+        {
+            const auto eol = lua.find('\n', i);
+            if (eol == std::string_view::npos)
+            {
+                break;
+            }
+            i = eol;
+            continue;
+        }
+        if (c == '(')
+        {
+            const auto head = lua.substr(0, i);
+            parens.push_back({head.ends_with("redis.call") || head.ends_with("redis.pcall"), i + 1, {}});
+            continue;
+        }
+        if ((c != ',' && c != ')') || parens.empty())
+        {
+            continue;
+        }
+        Paren& top = parens.back();
+        if (top.isRedisCall)
+        {
+            top.args.push_back(TrimLuaToken(lua.substr(top.argBegin, i - top.argBegin)));
+            top.argBegin = i + 1;
+        }
+        if (c == ')')
+        {
+            if (top.isRedisCall)
+            {
+                scan.calls.push_back(std::move(top.args));
+            }
+            parens.pop_back();
+        }
+    }
+    for (const std::string_view literal : literals)
+    {
+        bool isCommandName = false;
+        for (const auto& call : scan.calls)
+        {
+            isCommandName = isCommandName ||
+                (call.front().data() == literal.data() && call.front().size() == literal.size());
+        }
+        if (!isCommandName)
+        {
+            scan.strayLiterals.push_back(literal);
+        }
+    }
+    return scan;
+}
+} // namespace
+
+// A0-4 回归:客户端实际发出的两段存盘脚本只访问 KEYS[] 声明的键。
+// 写死的全局键在全服共享 Redis 上是所有 scene 共打的单键、随累计存盘玩家数无界增长,
+// 也挡住 Redis Cluster(docs/design/capacity-model-hok-scale.md A0-4)。
+// 修复前这条红:两段脚本都 SADD 一个写死的全局集合 'dirty_keys_set'。
+// 判定口径(三条一起才覆盖非首参位置的写死键,如 SMOVE KEYS[1] 'g' m、DEL KEYS[1] 'g'):
+//   1. 每条 redis.call 的首个参数整串恰好是 KEYS[n],派生键(KEYS[1] .. ':x')不算;
+//   2. 除命令名外脚本里没有任何字符串字面量,写死键名或拼出派生键都得带字面量;
+//   3. 旧版全服集合的名字不再出现。
+// 判定前提:目前每条 redis.call 的首个参数都是键,脚本里也没有选项字面量(如 'EX')或字面量比较;
+// 以后加无键命令(如 TIME)或这类字面量,要同步改本用例。
+// 已知盲区:经 ARGV 传入、落在非首参位置的键(RENAME KEYS[1] ARGV[2])需按命令元数判定,本用例不覆盖。
+TEST(CurrencyTest, RedisSaveScriptsTouchOnlyDeclaredKeys)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+
+    Client::HiredisPtr hiredis;
+    Client client(hiredis);
+    for (const std::string_view script : Peer::SaveScriptSources(client))
+    {
+        ASSERT_FALSE(script.empty());
+        EXPECT_EQ(std::string_view::npos, script.find("dirty_keys_set"))
+            << "存盘脚本仍引用旧版全服集合:\n" << script;
+        const LuaScriptScan scan = ScanLuaScript(script);
+        EXPECT_FALSE(scan.calls.empty()) << "没解析到任何 redis.call,判定前提已失效:\n" << script;
+        for (const auto& args : scan.calls)
+        {
+            const std::string_view command = args.front();
+            EXPECT_TRUE(command.size() >= 2 && (command.front() == '\'' || command.front() == '"'))
+                << "redis.call 的命令名不是字符串字面量,判定前提已失效 [" << command << "]:\n" << script;
+            if (args.size() < 2)
+            {
+                ADD_FAILURE() << "redis.call 没有键参数 " << command << "(无键命令要同步改本用例):\n" << script;
+                continue;
+            }
+            EXPECT_TRUE(IsDeclaredKeyRef(args[1]))
+                << "存盘脚本访问了未在 KEYS[] 声明的键 [" << args[1] << "](无键命令要同步改本用例):\n" << script;
+        }
+        for (const std::string_view literal : scan.strayLiterals)
+        {
+            ADD_FAILURE() << "存盘脚本里有命令名以外的字符串字面量 " << literal
+                          << "(写死键名或拼派生键;确属选项 / 比较用字面量时同步改本用例):\n" << script;
+        }
+    }
+}
+
 // ── 真 Redis 用例:读 MMORPG_TEST_REDIS_ADDR(host:port,host 必须是 IP),未设就跳过 ──────────
-// 只指向本机 / 专用的测试 Redis,不要指向共享或预发实例:用例会写并删除自己的键(含 dirty_keys_set 的成员)。
+// 只指向本机 / 专用的测试 Redis,不要指向共享或预发实例:用例会写并删除自己的键。
+// 清理时仍 SREM 旧版全服集合 dirty_keys_set 里本用例的成员:修复前的二进制会写入,红跑也不留残余。
 namespace
 {
 bool TestRedisAddr(std::string& host, uint16_t& port)
@@ -906,6 +1075,17 @@ struct SyncRedisForTest
         Run(redisCommand(context.get(), "SREM %b %b", set.data(), set.size(), member.data(), member.size()));
     }
 
+    // 下面两个回整数;连接或命令出错返回 -1,让"应为 0"的断言出错时也红,而不是误判通过。
+    long long Exists(const std::string& key)
+    {
+        return Integer(redisCommand(context.get(), "EXISTS %b", key.data(), key.size()));
+    }
+
+    long long SIsMember(const std::string& set, const std::string& member)
+    {
+        return Integer(redisCommand(context.get(), "SISMEMBER %b %b", set.data(), set.size(), member.data(), member.size()));
+    }
+
 private:
     static void Run(void* reply)
     {
@@ -913,6 +1093,14 @@ private:
         {
             freeReplyObject(reply);
         }
+    }
+
+    static long long Integer(void* raw)
+    {
+        const auto* reply = static_cast<redisReply*>(raw);
+        const long long value = (reply != nullptr && reply->type == REDIS_REPLY_INTEGER) ? reply->integer : -1;
+        Run(raw);
+        return value;
     }
 };
 } // namespace
@@ -1019,6 +1207,86 @@ TEST(CurrencyTest, RedisGuardedSaveSemanticsAgainstRealRedis)
         EXPECT_EQ("saved", saveOnce(third, "9"));
         EXPECT_EQ(third->SerializeAsString(), sync.Get(blobKey));
         EXPECT_EQ("9", sync.Get(guardKey));
+
+        cleanup();
+    }
+}
+
+// A0-4 回归(端到端):普通存盘与带 guard 存盘都只写数据键(与 guard 键),
+// 不再把数据键登记进旧版写死的全服集合。修复前这条红:两段脚本都会 SADD 它。
+// 键级断言只在用例开始时库里没有这个集合时才做:专用测试 Redis 若留有旧二进制写下的集合,
+// 那些成员不归本用例管,此时只按本用例自己的成员判定,结果不依赖外部残留。
+TEST(CurrencyTest, RedisSaveLeavesNoGlobalDirtySetAgainstRealRedis)
+{
+    std::string host;
+    uint16_t port = 0;
+    if (!TestRedisAddr(host, port))
+    {
+        GTEST_SKIP() << "MMORPG_TEST_REDIS_ADDR 未设置(host:port),跳过真 Redis 用例";
+    }
+
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+
+    SyncRedisForTest sync;
+    ASSERT_TRUE(sync.Connect(host, port)) << "同步连接失败 " << host << ":" << port;
+
+    muduo::net::EventLoop loop;
+    Client::HiredisPtr connection = ConnectForTest(loop, host, port);
+    const LeakConnectionOnExit leak{connection};
+    ASSERT_TRUE(connection->connected()) << "连不上 " << host << ":" << port;
+    {
+        Client client(connection);
+        std::string outcome;
+        client.SetSaveCallback([&](Guid, CurrencyComp&) {
+            outcome = "saved";
+            loop.quit();
+        });
+        client.SetSaveRejectedCallback([&](Guid, const std::string&, const std::string&) {
+            outcome = "rejected";
+            loop.quit();
+        });
+
+        constexpr Guid kPlayerId = 950299003;
+        const std::string guardKey = "b4c_test:950299003:owner_epoch";
+        const std::string blobKey = client.full_name() + ":" + std::to_string(kPlayerId);
+        const std::string legacyDirtySet = "dirty_keys_set";
+        const auto cleanup = [&] {
+            sync.Del(blobKey);
+            sync.Del(guardKey);
+            sync.SRem(legacyDirtySet, blobKey);
+        };
+        // 跑事件循环直到落地回调或 3 秒超时,返回结局("" = 超时)。
+        const auto settle = [&] {
+            const auto timeout = loop.runAfter(3.0, [&loop] { loop.quit(); });
+            loop.loop();
+            loop.cancel(timeout);
+            return outcome;
+        };
+        cleanup();
+        const long long legacySetBefore = sync.Exists(legacyDirtySet);
+        ASSERT_NE(-1LL, legacySetBefore) << "EXISTS 失败";
+
+        // 1. 普通存盘(epoch==0 兼容窗口走这条)
+        outcome.clear();
+        const auto plain = MarkedCurrency(1);
+        client.Save(plain, kPlayerId);
+        EXPECT_EQ("saved", settle());
+        EXPECT_EQ(plain->SerializeAsString(), sync.Get(blobKey));
+        EXPECT_EQ(0LL, sync.SIsMember(legacyDirtySet, blobKey)) << "普通存盘不得登记进全服集合";
+
+        // 2. 带 guard 存盘
+        sync.Set(guardKey, "5");
+        outcome.clear();
+        const auto guarded = MarkedCurrency(2);
+        client.Save(guarded, kPlayerId, guardKey, "5");
+        EXPECT_EQ("saved", settle());
+        EXPECT_EQ(guarded->SerializeAsString(), sync.Get(blobKey));
+        EXPECT_EQ(0LL, sync.SIsMember(legacyDirtySet, blobKey)) << "带 guard 存盘不得登记进全服集合";
+
+        if (legacySetBefore == 0)
+        {
+            EXPECT_EQ(0LL, sync.Exists(legacyDirtySet)) << "存盘后全服集合不应存在";
+        }
 
         cleanup();
     }
@@ -1280,6 +1548,8 @@ TEST(CurrencyTest, DeductCurrencyMissingPlayerCurrencyCompFailsClosed)
 
 int main(int argc, char** argv)
 {
+    // 资产通道物品用例必须使用真实配表，不因默认配置目录为空而全部跳过。
+    if (!test_config::FindAndLoadTestConfig(argc, argv)) return 1;
     // 生产线程由 scene 的 ConfigureGuidSegmentClients 按配置启用 txlog 号段并经 DataService 领首段;
     // 单测没有那条启动链。给 txlog 种类装一个不回话的假传输并直接投一段大范围,
     // 避免交易流水因 tx_id 号段未就绪被 fail-closed 丢弃(那条路径由 bag_test 专门覆盖)。

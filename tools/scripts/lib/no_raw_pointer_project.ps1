@@ -7,6 +7,21 @@ function Get-ClangQueryExitCode {
     return 0
 }
 
+function Invoke-ClangProjectSourceCheck {
+    param([string]$Executable, [string]$Query, [string[]]$Sources, [string[]]$CompilerArguments)
+    # clang-query 会同时保留一次调用的全部 AST；scene 的 53 个单元曾超过 32GiB。
+    # 每个单元使用自身配置独立检查，避免内存随工程单元数线性累积。
+    foreach ($source in $Sources) {
+        Write-Host "[no-raw-pointer-member] Parsing $source"
+        $arguments = @('-f', $Query, $source, '--', '-xc++', '-fsyntax-only', '-fms-extensions', '-fms-compatibility', '-Wno-everything') + $CompilerArguments
+        $result = & $Executable @arguments 2>&1
+        $code = Get-ClangQueryExitCode -OutputText ($result -join "`n") -ProcessExitCode $LASTEXITCODE
+        $result | ForEach-Object { Write-Host $_ }
+        if ($code -ne 0) { return $code }
+    }
+    return 0
+}
+
 function Invoke-ProjectRawPointerCheck {
     if (-not $MSBuildPath -or -not (Test-Path -LiteralPath $MSBuildPath)) {
         throw '工程检查需要当前构建所用的 MSBuildPath。'
@@ -101,10 +116,7 @@ function Invoke-ProjectRawPointerCheck {
                 } finally { Remove-Item -LiteralPath $responsePath -Force -ErrorAction SilentlyContinue }
             } else {
                 $query = Join-Path $repoRoot 'cpp/plugin/no_raw_ptr_matcher.cq'
-                $arguments = @('-f', $query) + @($group.Sources) + @('--', '-xc++', '-fsyntax-only', '-fms-extensions', '-fms-compatibility', '-Wno-everything') + @($group.Arguments)
-                $result = & $clangQuery @arguments 2>&1
-                $code = Get-ClangQueryExitCode -OutputText ($result -join "`n") -ProcessExitCode $LASTEXITCODE
-                $result | ForEach-Object { Write-Host $_ }
+                $code = Invoke-ClangProjectSourceCheck -Executable $clangQuery -Query $query -Sources $group.Sources.ToArray() -CompilerArguments $group.Arguments.ToArray()
             }
             if ($code -ne 0) {
                 Write-Host "[no-raw-pointer-member] FAILED for '$ProjectName' (exit $code)."

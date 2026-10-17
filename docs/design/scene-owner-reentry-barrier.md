@@ -118,9 +118,13 @@ elseif cur ~= ARGV[2] then
     return 0
 end
 redis.call('SET', KEYS[1], ARGV[1])
-redis.call('SADD', 'dirty_keys_set', KEYS[1])
 return 1
 ```
+
+**2026-10-16 更正**:上面代码块原先在 `SET KEYS[1]` 之后还有一行 `redis.call('SADD', 'dirty_keys_set', KEYS[1])`。
+该全服集合没有任何读者、随累计存盘玩家数无界增长,且是脚本未在 KEYS[] 声明的键(挡 Redis Cluster),
+已从源码删除;无 guard 的普通存盘脚本同步删去同一行并改名为 `kSaveLuaScript`。两段脚本现在只访问
+KEYS[] 声明的键,返回值与 CAS / 补种语义不变。原因见 [capacity-model-hok-scale.md](./capacity-model-hok-scale.md) A0-4。
 
 与最初“缺键也拒绝”的提案有意不同：guard 缺失时补种调用方的期望值，再在同一 Lua 内写入，
 避免 Redis 清空后把在线玩家内存中剩余的状态全部当作旧主丢弃。**风险仍在**：清空时若被废黜

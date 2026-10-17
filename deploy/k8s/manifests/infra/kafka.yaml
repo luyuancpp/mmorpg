@@ -283,6 +283,9 @@ spec:
             - name: KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS
               value: "__KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS__"
             # 每分区的磁盘上限,是 PVC 的兜底闸(retention.ms 先到先删,这条防突发写爆盘)。
+            # broker 缺省只兜底没有自己 retention.bytes 的 topic(审计、控制面、旧的一节点一 topic);
+            # db_task 的 retention.bytes 由各 zone 的 db / login 在 topic 级设置(ConfigMap 的 Kafka.RetentionBytes,
+            # 值由 k8s_deploy.ps1 的 Get-KafkaDiskPlan 按盘预算算出)。
             - name: KAFKA_LOG_RETENTION_BYTES
               value: "__KAFKA_LOG_RETENTION_BYTES__"
             - name: KAFKA_LOG_SEGMENT_BYTES
@@ -357,9 +360,16 @@ spec:
               cpu: "2"
               memory: 2Gi
   # 一块盘,跟着 Pod 身份走。不写 storageClassName = 用集群默认 StorageClass
-  # (kind 的 local-path、云上的默认盘)。20Gi 的实际约束是 retention:命令 topic 1 小时、
-  # db_task 见 go-svc ConfigMap 的 RetentionMs、审计 topic 30 天,再由 LOG_RETENTION_BYTES
-  # 每分区兜底。zone 数或 db_task 保留期显著变大时要一起复核这个尺寸。
+  # (kind 的 local-path、云上的默认盘)。
+  # 大小由 k8s_deploy.ps1 的 Get-KafkaDiskPlan 按盘预算公式算,Apply-Infra 替换下面 storage 的占位:
+  #   PVC ≥ 1.3 × Σ(分区数 × (retention.bytes + segment)),另计审计 topic 与其它 topic 的预留;
+  #   每个 broker 按「持有每个分区的一份副本」算,不按 RF ÷ broker 数均摊:3 → N 扩容后、kafka-reassign-partitions 之前,
+  #   老 broker 仍持有全部分区,按均摊算会写爆它们(≥ 4 个 broker 时因此偏保守)。
+  # 线上已有 StatefulSet 时沿用线上模板;retention.bytes 按模板与每块 PVC 实际容量中小的那个算
+  # (盘不够就按盘收缩 db_task 的 retention.bytes 并告警);StatefulSet 不在但 PVC 在时按最小的实际 PVC。
+  # volumeClaimTemplates 不可变,扩盘不能靠改这里再 apply:按 deploy/k8s/README.md「Kafka 磁盘预算与 db_task retention.bytes」
+  # 的 runbook 先 patch PVC、再 --cascade=orphan 删 StatefulSet、最后带 -KafkaStorageGi 重跑 infra-up。
+  # db_task 的 retention.bytes 由各 zone 的 db / login 在 topic 级设置,不吃上面 KAFKA_LOG_RETENTION_BYTES 的 broker 缺省值。
   # 注意:删 StatefulSet **不会**删这块 PVC(删 namespace 才会)。infra-down 是删 namespace,
   # 所以 infra-down → infra-up 之后是一套全新的空 Kafka,必须重跑 infra-kafka-topics。
   volumeClaimTemplates:
@@ -369,4 +379,4 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 20Gi
+            storage: __KAFKA_STORAGE_SIZE__

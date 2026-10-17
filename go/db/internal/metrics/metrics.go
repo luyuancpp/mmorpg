@@ -158,12 +158,14 @@ var (
 		Help:      "Read tasks answered with a failure or dropped instead of retried / dead-lettered. reason: store_unavailable (failure receipt sent at once) | budget_exhausted (dropped after the retry budget).",
 	}, []string{"reason"})
 
-	// retryQueueLength 是重试链路三个列表的长度,重试循环每拍采样一次。ready 与 dead 是同一 topic 所有实例共用的
-	// 列表,每个副本报的是同一个数,告警里取 max;processing 是本实例自己的列表。
+	// retryQueueLength 是重试链路各列表的长度,重试循环每拍采样一次。ready、partitioned 与 dead 是同一 topic 所有实例
+	// 共用的列表,每个副本报的是同一个数,告警里取 max;processing 是本实例自己的列表。
+	// partitioned 是按原始分区拆开的 ready(kafka:retry:queue:{topic}:p{N},docs/design/db-retry-owner-routing.md)之和,
+	// 任一 p 键读失败时本拍不更新;S1 之前的版本不报这个取值。
 	retryQueueLength = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Subsystem: subsystem,
 		Name:      "retry_queue_length",
-		Help:      "Length of the retry lists, sampled every retry tick. queue: ready (shared by the topic) | processing (this instance) | dead (shared by the topic).",
+		Help:      "Length of the retry lists, sampled every retry tick. queue: ready (shared inbox of the topic) | partitioned (sum of the per-origin-partition ready lists kafka:retry:queue:{topic}:p{N}) | processing (this instance) | dead (shared by the topic).",
 	}, []string{"queue"})
 
 	// producerPartitionTotal 是 db_task 分区契约(docs/design/db-task-kafka-partition-contract.md「分区函数契约」)
@@ -226,6 +228,27 @@ func register() {
 			consumerGroupHandoffGateTotal.WithLabelValues(outcome).Add(0)
 		}
 		consumerGroupHandoffConflictTotal.Add(0)
+		// 重试只交给分区属主与入队落盘确认(docs/design/db-retry-owner-routing.md §11):告警按 mode / action / origin /
+		// target / result 的具体取值写,先以 0 建出全部序列(retry_route 2×6、ordering_lock_busy 2、durable_enqueue 2×4、
+		// retry_routing_mode 2)。db_retry_routing_mode 的两条都要存在:DbZoneNoPartitionClaims 数的是 mode="owner" 序列的
+		// 条数(每个 S1 版 Pod 一条,与取值无关),SetRetryRoutingMode 只改值。
+		prometheus.MustRegister(retryRouteTotal, ownedPartitionsGauge, retryRoutingModeGauge, orderingLockBusyTotal,
+			durableEnqueueTotal, durableEnqueueSeconds, claimAcquiredTotal)
+		for _, mode := range retryModes {
+			for _, action := range retryRouteActions {
+				retryRouteTotal.WithLabelValues(mode, action).Add(0)
+			}
+			retryRoutingModeGauge.WithLabelValues(mode).Set(0)
+		}
+		for _, origin := range orderingLockBusyOrigins {
+			orderingLockBusyTotal.WithLabelValues(origin).Add(0)
+		}
+		for _, target := range durableTargets {
+			for _, result := range durableResults {
+				durableEnqueueTotal.WithLabelValues(target, result).Add(0)
+			}
+		}
+		claimAcquiredTotal.Add(0)
 	})
 }
 
@@ -275,11 +298,14 @@ const (
 	ReadAbandonedBudgetExhausted  = "budget_exhausted"  // 重试次数用完:丢弃,不进死信
 )
 
-// 重试链路的三个列表(db_retry_queue_length 的 queue)。
+// 重试链路的列表(db_retry_queue_length 的 queue)。
+// 取值被 tools/scripts/stress_summarize.ps1 的 2f 段按精确字符串读取(ready / partitioned / processing / dead),
+// 改名必须同改该段与 test_stress_summarize.ps1;TestRetryRoutingSeriesPrecreated 钉住 RetryQueuePartitioned。
 const (
-	RetryQueueReady      = "ready"
-	RetryQueueProcessing = "processing"
-	RetryQueueDead       = "dead"
+	RetryQueueReady       = "ready"
+	RetryQueuePartitioned = "partitioned" // 按原始分区拆开的 ready(p*)之和
+	RetryQueueProcessing  = "processing"
+	RetryQueueDead        = "dead"
 )
 
 // CountTaskDeferred 记一次延后。op 为 read / write / unknown,reason 用 Defer* 常量。
@@ -448,6 +474,198 @@ func ObserveHandoffWait(d time.Duration) {
 func CountHandoffConflict() {
 	register()
 	consumerGroupHandoffConflictTotal.Inc()
+}
+
+// ── 重试只交给分区属主 + 重试 / 死信 / 毒消息入队的落盘确认(docs/design/db-retry-owner-routing.md;
+// go/db/internal/kafka/retry_routing.go、durable_enqueue.go)──
+//
+// label 全是封闭集合(2×6、2、2×4 个取值),不含 player_id(AGENTS.md §9),每个 Pod 一份。告警见
+// deploy/k8s/db-task-retry-alerts.yaml。mode / action / queue 的取值被 tools/scripts/stress_summarize.ps1 的 2f 段
+// 按精确字符串读取(client_golang 按 label 名字母序输出,action 在 mode 之前,脚本的正则依赖这个顺序);
+// 下面常量**改名必须同改 stress_summarize.ps1 的 2f 段与 test_stress_summarize.ps1**,并同改告警。
+// 理由同 ownerEpochGuardTotal:按旧名字写的表达式只会静默落空,不报错。
+var (
+	// retryRouteTotal 是每条重试的路由决定。executed / executed_nonowner 在派发进 worker 通道时计
+	// (不代表落库成功);forwarded 是 owner 实例把共享收件箱分拣进 p{N} 的条数;requeued_revoked 是 claim 撤销后
+	// 原样搬回 p{origin} 的条数(派发前或 handleTask 复核时);misrouted 是放错 p 键、按载荷挪回 p{origin} 的条数;
+	// dead 是路由阶段判进死信的条数(坏载荷 / 越界分区 / 次数用完,细分原因看 db_task_dead_letter_total)。
+	retryRouteTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "retry_route_total",
+		Help:      "Retry routing decisions. mode: shared | owner. action: executed | executed_nonowner | forwarded | requeued_revoked | misrouted | dead.",
+	}, []string{"mode", "action"})
+
+	// ownedPartitionsGauge 是本进程此刻存活的 claim 租约数(= 本实例持有、可以执行 owner 重试的分区数)。
+	// owner 模式下拿不到分区的热备为 0;一个 zone 所有 Pod 之和稳态应等于 PartitionCnt。
+	ownedPartitionsGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "owned_partitions",
+		Help:      "Partition claims currently alive in this db process (claim leases that may execute owner-routed retries).",
+	})
+
+	// retryRoutingModeGauge 是本进程生效的 RetryRouting:生效的那个为 1、另一个为 0,两条序列都始终存在。
+	// 切 owner 的前置是该 zone 每个 Pod 都暴露它(旧版 Pod 没有这条序列)。
+	retryRoutingModeGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "retry_routing_mode",
+		Help:      "Effective retry routing mode of this db process: 1 for the active mode, 0 for the other. mode: shared | owner.",
+	}, []string{"mode"})
+
+	// orderingLockBusyTotal 是任务因排序锁被占而延后的次数,按任务来源分。owner 模式稳态下 origin=retry 应接近 0
+	// (重试与同分区新消息在同一个子 shard 串行,不再与别的实例抢锁)。
+	orderingLockBusyTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "ordering_lock_busy_total",
+		Help:      "Tasks deferred because the per-key ordering lock was held by someone else. origin: kafka | retry.",
+	}, []string{"origin"})
+
+	// durableEnqueueTotal 只覆盖「Kafka 位点提交之前,任务唯一副本首次写进 Redis」的入队点(Kafka 源失败入重试、
+	// Kafka 源隔离进死信、毒消息)。not_durable / error 时位点不提交、该 claim 失败并重投;canceled 是停机或调用方
+	// ctx 取消(滚动重启时会增长,告警不看它)。重试源的搬移(LPUSH+LREM 脚本)不经过这里。
+	durableEnqueueTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "durable_enqueue_total",
+		Help:      "Enqueues of the only copy of a Kafka-origin task into Redis before its offset is committed (retry / dead / poison), confirmed by WAITAOF when enabled. target: retry | dead. result: ok | not_durable (group commit not confirmed within the batch budget: too few WAITAOF copies, or network errors to Redis until the budget ran out, so it can also mean Redis is unreachable) | error (deterministic error reply to LPUSH / WAITAOF, malformed WAITAOF reply, used before start, or every LPUSH attempt failed with WAITAOF disabled) | canceled (shutdown or caller context canceled; the offset stays uncommitted and replays).",
+	}, []string{"target", "result"})
+
+	// durableEnqueueSeconds 从提交给入队层到结果回调(含排队、LPUSH 与 WAITAOF);canceled 不观测。
+	durableEnqueueSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Subsystem: subsystem,
+		Name:      "durable_enqueue_seconds",
+		Help:      "Time from submitting a Kafka-origin task copy to the durable enqueue layer until its result (queueing + LPUSH + WAITAOF). Canceled requests are not observed. target: retry | dead.",
+		Buckets:   stageBuckets,
+	}, []string{"target"})
+
+	// claimAcquiredTotal 每次 ConsumeClaim 登记租约加 1(一次 claim 开始一次),用来区分再平衡时刻的撤销与异常撤销
+	// (DbRetryRevokedOutsideRebalance)。单独无 label,告警按固定名字引用。
+	claimAcquiredTotal = prometheus.NewCounter(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "claim_acquired_total",
+		Help:      "Partition claims registered by ConsumeClaim (one per claim start); used to tell rebalance-time revocations from anomalies.",
+	})
+)
+
+// db_retry_route_total / db_retry_routing_mode 的 mode 取值(stress_summarize.ps1 2f 段按这两个字符串读)。
+const (
+	RetryModeShared = "shared"
+	RetryModeOwner  = "owner"
+)
+
+var retryModes = []string{RetryModeShared, RetryModeOwner}
+
+// db_retry_route_total 的 action 取值(stress_summarize.ps1 2f 段按这六个字符串读)。
+const (
+	RetryRouteExecuted         = "executed"          // 派发给本地 worker:shared 模式下本实例持有该分区的 claim,或 owner 模式
+	RetryRouteExecutedNonOwner = "executed_nonowner" // shared 模式下派发了一条本实例没有持有原始分区 claim 的重试
+	RetryRouteForwarded        = "forwarded"         // owner:共享收件箱 → p{origin}
+	RetryRouteRequeuedRevoked  = "requeued_revoked"  // owner:claim 撤销,收据原样搬回 p{origin},不执行、不耗预算
+	RetryRouteMisrouted        = "misrouted"         // owner:收据放错了 p 键,按载荷里的原始分区挪回 p{origin}
+	RetryRouteDead             = "dead"              // 路由阶段判进死信(或读任务次数用完被丢弃)
+)
+
+var retryRouteActions = []string{
+	RetryRouteExecuted, RetryRouteExecutedNonOwner, RetryRouteForwarded,
+	RetryRouteRequeuedRevoked, RetryRouteMisrouted, RetryRouteDead,
+}
+
+// db_ordering_lock_busy_total 的 origin 取值。
+const (
+	OriginKafka = "kafka"
+	OriginRetry = "retry"
+)
+
+var orderingLockBusyOrigins = []string{OriginKafka, OriginRetry}
+
+// db_durable_enqueue_total / db_durable_enqueue_seconds 的 target 与 result 取值。
+const (
+	DurableTargetRetry = "retry" // Kafka 源失败入重试 ready
+	DurableTargetDead  = "dead"  // Kafka 源隔离进死信、毒消息
+
+	// result 的归类见 durable_enqueue.go 的 durableEnqueueResult(canceled 先判,其次 not_durable,其余非 nil 为 error):
+	//   - not_durable 只来自组提交(开启 WAITAOF):单批预算内没拿到足够确认,包括 WAITAOF 份数不足,以及连 Redis 的
+	//     网络错误反复出现直到预算耗尽 —— 所以它也可能是 Redis 不可达或网络分区,不只是 AOF / fsync 慢;
+	//   - error:确定性错误回复(LPUSH / WAITAOF 被拒)、WAITAOF 回复形状不对、未 start 就 submit,以及关闭 WAITAOF 时
+	//     directEnqueue 的 4 次 LPUSH 全部失败(含网络错误)。同一种网络故障在两条路径上计成不同的 result。
+	DurableOK         = "ok"          // 已按配置确认(关闭 WAITAOF 时 = LPUSH 成功)
+	DurableNotDurable = "not_durable" // 组提交单批预算内没拿到足够确认(份数不足,或网络错误重试到预算耗尽)
+	DurableError      = "error"       // 确定性错误回复、回复形状不对、未 start;关闭 WAITAOF 时 LPUSH 重试用尽
+	DurableCanceled   = "canceled"    // 停机或调用方 ctx 取消:位点不提交、之后重投,不算故障
+)
+
+var (
+	durableTargets = []string{DurableTargetRetry, DurableTargetDead}
+	durableResults = []string{DurableOK, DurableNotDurable, DurableError, DurableCanceled}
+)
+
+// CountRetryRoute 记一次重试路由决定。mode 用 RetryMode* 常量,action 用 RetryRoute* 常量。
+func CountRetryRoute(mode, action string) {
+	register()
+	retryRouteTotal.WithLabelValues(mode, action).Inc()
+}
+
+// CountRetryRouteN 一次记 n 条同类决定(分拣脚本一次搬多条);n ≤ 0 时什么都不做。
+func CountRetryRouteN(mode, action string, n int) {
+	if n <= 0 {
+		return
+	}
+	register()
+	retryRouteTotal.WithLabelValues(mode, action).Add(float64(n))
+}
+
+// SetOwnedPartitions 更新本进程存活的 claim 租约数。
+func SetOwnedPartitions(n int) {
+	register()
+	ownedPartitionsGauge.Set(float64(n))
+}
+
+// SetRetryRoutingMode 把生效模式置 1、另一个置 0。mode 不是 RetryMode* 之一时两条都置 0 并记 ERROR
+// (调用方应已校验过配置,走到这里说明是编程错误;宁可让告警看见「没有生效模式」,也不报一个猜出来的值)。
+func SetRetryRoutingMode(mode string) {
+	register()
+	known := false
+	for _, m := range retryModes {
+		value := 0.0
+		if m == mode {
+			value = 1
+			known = true
+		}
+		retryRoutingModeGauge.WithLabelValues(m).Set(value)
+	}
+	if !known {
+		logx.Errorf("[metrics] unknown retry routing mode %q; db_retry_routing_mode set to 0 for every mode", mode)
+	}
+}
+
+// CountOrderingLockBusy 记一次因排序锁被占而延后,origin 用 OriginKafka / OriginRetry。
+func CountOrderingLockBusy(origin string) {
+	register()
+	orderingLockBusyTotal.WithLabelValues(origin).Inc()
+}
+
+// ObserveDurableEnqueue 记一次入队结果:target 用 DurableTarget*,result 用 Durable*,d 从提交到结果回调。
+// canceled 只计数、不进直方图(停机时的取消耗时没有意义,还会把均值拉偏)。
+func ObserveDurableEnqueue(target, result string, d time.Duration) {
+	register()
+	durableEnqueueTotal.WithLabelValues(target, result).Inc()
+	if result == DurableCanceled {
+		return
+	}
+	durableEnqueueSeconds.WithLabelValues(target).Observe(d.Seconds())
+}
+
+// CountClaimAcquired 记一次 claim 租约登记(ownedPartitions.acquire)。
+func CountClaimAcquired() {
+	register()
+	claimAcquiredTotal.Inc()
+}
+
+// CountTaskDeadLetterN 一次记 n 条进死信(分拣脚本一次搬多条坏载荷),reason 用 DeadLetter* 常量;n ≤ 0 时什么都不做。
+func CountTaskDeadLetterN(reason string, n int) {
+	if n <= 0 {
+		return
+	}
+	register()
+	taskDeadLetterTotal.WithLabelValues(reason).Add(float64(n))
 }
 
 // storeCooldownCollector 在每次抓取时现算 db_store_cooldown_stores:此刻仍在库级冷却期内(探活确认整库不可达)的库个数,

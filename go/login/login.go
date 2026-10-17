@@ -97,9 +97,10 @@ func main() {
 	// (老的一节点一 topic gate-<id> / scene-<id> 已停用,login 是最后一个切换的生产者。)
 	if err := kafkautil.EnsureTopics(config.AppConfig.Kafka.Brokers, []kafkautil.TopicSpec{
 		{
-			Name:        config.AppConfig.Kafka.Topic,
-			Partitions:  config.AppConfig.Kafka.PartitionCnt,
-			RetentionMs: config.AppConfig.Kafka.RetentionMs,
+			Name:           config.AppConfig.Kafka.Topic,
+			Partitions:     config.AppConfig.Kafka.PartitionCnt,
+			RetentionMs:    config.AppConfig.Kafka.RetentionMs,
+			RetentionBytes: config.AppConfig.Kafka.RetentionBytes,
 		},
 	}); err != nil {
 		panic(fmt.Sprintf("Kafka db-task partition contract rejected: %v", err))

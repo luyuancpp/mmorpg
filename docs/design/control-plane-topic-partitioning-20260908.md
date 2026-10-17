@@ -307,11 +307,11 @@ Kafka 集群是完全常规的规模。P 必须能覆盖节点数的**分布**�
 
 节点命令的事件入口由消息上的 `option (OptionKafkaIngress) = true` 显式开放，未标注默认拒绝。标注位只回答是否允许进入，入口由文件位置决定：`common/event` 进入 scene，`contracts/kafka/gate_event.proto` 进入 gate。生成器拒绝标注在其它目录或含 `entity` / `*_entity` 字段的消息。
 
-生成的 `DispatchSceneCommandEvent` / `DispatchGateCommandEvent` 先检查同一份 constexpr 白名单，再解码并通知，分别返回成功、未允许、解码失败。gate 的空载荷信封映射也经过该白名单；节点 hook 必须显式指定派发函数。`target_instance_id` 检查仍在派发前，legacy topic 与共享 topic 走同一入口。
+生成的节点本地 `DispatchSceneKafkaCommand` / `DispatchGateKafkaCommand` 先检查对应的 constexpr 白名单，再解码并直接调用生成的静态 handler；未允许的事件记 ERROR，解码失败记 WARN，不依赖 dispatcher 订阅。gate 的空载荷信封映射也经过该白名单；节点 hook 必须显式指定派发函数。`target_instance_id` 检查仍在派发前，legacy topic 与共享 topic 走同一入口。
 
-当前开放 scene 的结算、结算确认、队伍刷新 3 个事件，以及 gate 的路由、重定向、绑定、踢线、租约到期、单人推送、玩家集合广播、场景广播、全体广播 9 个事件。进程内事件使用所属模块的 C++ 结构体，携带所属 registry 的句柄，只能由本进程发送。后续新增跨进程事件时在 proto 标注，不另维护手写白名单。
+当前开放 scene 的结算、结算确认、队伍刷新、收件箱提醒 4 个事件（42/45/48/49），以及 gate 的路由、重定向、绑定、踢线、租约到期、单人推送、玩家集合广播、场景广播、全体广播 9 个事件。进程内事件使用所属模块的 C++ 结构体，携带所属 registry 的句柄，只能由本进程发送。后续新增跨进程事件时在 proto 标注，不另维护手写白名单。
 
-本条为源码设计记录；用户要求暂缓生成器构建、重生成、编译与测试，生成产物和运行验收尚待执行。
+白名单生成产物已随 `526780b4e` / `de4960bee` 落盘；本轮改为节点本地直接调用 handler，统一重生成、编译与运行验收待执行。
 
 - **`go/login` 未切**:本轮由另一路会话在编辑,`login` 仍然写 `gate-{id}`
   (`go/login/internal/svc/servicecontext.go` 的 BindSession / KickPlayer 两处)。

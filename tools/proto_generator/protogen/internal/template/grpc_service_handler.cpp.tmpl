@@ -16,27 +16,29 @@ void {{ $.Service }}Impl::Handle{{ .HandlerName }}(const {{ .CppRequest }}* requ
 }
 {{ end }}
 {{- range .Methods }}
-grpc::Status {{ $.Service }}Impl::{{ .HandlerName }}(grpc::ServerContext* /*context*/,
-    const {{ .CppRequest }}* request,
-    {{ .CppResponse }}*{{ if .IsVoidResponse }} /*response*/{{ else }} response{{ end }})
+void {{ $.Service }}Impl::{{ .HandlerName }}(const std::shared_ptr<{{ .HandlerName }}Call>& call)
 {
-{{ .PreDispatchCode }}
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-{{ .InLoopCode }}
-        if (dispatchStatus.ok())
-        {
-            Handle{{ .HandlerName }}(request{{ if not .IsVoidResponse }}, response{{ end }});
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-{{ .PostDispatchCode }}
-    return status;
+    [[maybe_unused]] const {{ .CppRequest }}* request = &call->request();
+{{ .GuardCode }}
+    call->Proceed();
 }
 {{ end }}
+void {{ .Service }}Impl::RegisterMethods(muduo_grpc::MethodTable& table)
+{
+{{- range .Methods }}
+    table.AddUnary(std::string(k{{ .HandlerName }}Path),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+{{- if .IsVoidResponse }}
+            const auto call = {{ .HandlerName }}Call::Create(std::move(serverCall),
+                [](const {{ .CppRequest }}* request, {{ .CppResponse }}* /*response*/) { Handle{{ .HandlerName }}(request); });
+{{- else }}
+            const auto call = {{ .HandlerName }}Call::Create(std::move(serverCall), &Handle{{ .HandlerName }});
+{{- end }}
+            if (call->ParseRequest(requestBytes))
+            {
+                {{ .HandlerName }}(call);
+            }
+        });
+{{- end }}
+}

@@ -1,7 +1,7 @@
 # 节点间 muduo RPC:每次调用的回调、延后回包与完整的完成语义(RpcChannel 改造)
 
 > 状态:**批 1–5 已实施,未编译,待 Codex 验证**(2026-10-15,Claude)。用户授权实施到第 5 批,升级口径选「同 zone 停服一次切换」;
-> 实施与本文的偏离、未做项与验证步骤见 §18。批 6(玩家回包死链)与 gRPC 每次调用回调见 §19(2026-10-15 续,未编译);批 7 见 §19 后续小节。
+> 实施与本文的偏离、未做项与验证步骤见 §18。批 6(玩家回包死链)与 gRPC 每次调用回调见 §19(2026-10-15 续,未编译)。**批 7 与剩余调用点迁移已实施,见 §20**(2026-10-16;第一步已 regen,rpc / scene / gate 随 Codex 的整组串行构建编过;§20.3 的第二步(四个方法删 proto)未 regen、未编译;专项测试都未跑);任务来源是交接 [`docs/handoff/rpc-channel-batch7-handoff-20261015.md`](../handoff/rpc-channel-batch7-handoff-20261015.md)。
 > 本文不引用此前任何会话的方案为既定结论;`build/rpc-lambda-tools/`(被 .gitignore 忽略的早先尝试)不是本设计的一部分。
 > 事实核对基线:`54c9d775d`(2026-10-15 03:08)。行号以该提交为准,并发会话仍在改 gate 相关文件,动手前须重新核对。
 
@@ -375,7 +375,7 @@ lambda 捕获 `{sessionId, incarnation, clientRequestId, innerMessageId}`:
 `CallMethod`(`kNodeHandshakeCallTimeout`),lambda 捕获 `{nodeType, entity, weak_ptr<RpcClient>, weak_ptr<TcpConnection>}`,回调时先复核实体上仍是同一个 RpcClient。
 成功 → `OnHandshakeReplied` + 成功钩子 `NodeHandshakeManager::SetHandshakeSucceededHook(std::function<void(uint32_t, const TcpConnectionPtr&, const NodeHandshakeResponse&)>)`
 (gate/main.cpp 装 `gate_scene_entry::OnSceneLinkHandshaken`,engine/core 不反向依赖 gate)。`kTimeout` / `kRemote*` → 照旧 `RunAfter(0.5)` 重试(补上"应答丢失不重试");
-`kDisconnected` / `kChannelClosed` / `kNotSent` 不重试(UP 会经 `OnConnected2TcpServerEvent` 重新握手,否则会握手两次)。lambda 不捕获 this。
+`kDisconnected` / `kChannelClosed` / `kNotSent` 不重试(UP 会经 RpcClient 的连接观察者重新握手,否则会握手两次)。lambda 不捕获 this。
 顺带修 `OnSceneNodeHandshakeReply` 判空前解引用(`scene_response_handler.cpp:141`)。
 
 ### 8.4 B 的下游是 gRPC(本轮的过渡写法)
@@ -408,7 +408,7 @@ handler 头文件模板(整文件生成)加一行类级注释说明"延后应答
 - 玩家回包死链(`gPlayerServiceReplied` 全仓无读者、`scene/rpc_replies/player/` 5 个类 28 个方法、`InitPlayerServiceReplied` 义务、与 `rpc_event_registry.cpp` 同名不同义的 `XxxImpl` ODR 隐患)单独成批删除。
 - 规范:AGENTS §8 与 copilot-instructions.md:213 的 `On<Domain><Method>Reply` 规则改为"节点间 RPC0 的回包在调用点 per-call lambda;rpc_replies 只放 gRPC 应答适配"(改 AGENTS 需用户同意)。
 
-### 9.3 `GateHandler::RoutePlayerMessage` 一族:不改造,显式拒绝;proto 方法暂不删
+### 9.3 `GateHandler::RoutePlayerMessage` 一族:不改造,显式拒绝;批 7 已从 proto 删除(墓碑见 §20)
 
 范围:`Gate.RoutePlayerMessage`(74)、`Scene.RoutePlayerStringMsg`(81)、`Gate.RouteNodeMessage`(41)、`Scene.RouteNodeStringMsg`(78)。理由:
 
@@ -427,6 +427,9 @@ afk.cpp 注释更正。proto 方法上加注释"deprecated:无发起端;删除�
 (Java ContractSync 原样复制,robot / Unity / 9 个 Go 服务的 message_id.go 都从它生成,Kafka 留存的 MessageContent 也带号)。删方法要等
 `client-access-band-routing.md` D52 / D54 的停服重新发号与墓碑发号器,或先给 message_id 补墓碑——须用户拍板项目是否已上线并授权客户端仓重生成。
 
+> 2026-10-16 更新:批 7 已给 message_id 加 `N=reserved:<KeyName>` 墓碑并删除这四个方法(41 / 74 / 78 / 81 留墓碑,号永不复用),见 §20。
+> 另更正上段一处说法:Unity 客户端处理器不读 message_id.txt,用的是生成器内存里的 `method.Id`(`unity_client_handler.go:99`)。
+
 ## 10. 生成器:方法 tag(类型安全的调用面)
 
 `service_id_gen.go` 只为 `CcGenericServices() && !IsPlayerService && !IsClientProtocolService` 的服务(即 Gate、Scene、SceneScene)在各自
@@ -444,7 +447,10 @@ struct SceneProcessClientPlayerMessageRpc {
 - 不占用 `<KeyName>Method` 名(那是现有宏,`bag_test/player_feature_handler_test.cpp:117-164` 在用);现有 Method 宏与 Index 常量不动。
 - 生成头不 include core,保持纯类型信息;core 的模板入口按 tag 取类型。
 - 模板写成 `internal/template/*.tmpl` + `go:embed`(2f897bd07 先例),配 golden 测试:scene.proto 产出 tag,gRPC 文件与玩家服务文件不产出。只新增头文件内容,不改构建清单。
-- `registration_manager` 的运行期 `kNodeTypeToMessageId` 表只剩 Scene 一项可达,改为按 nodeType switch 成 typed 调用;无类型 `CallMethod(uint32_t, ...)` 保留为底层入口。
+- `registration_manager` 的运行期 `kNodeTypeToMessageId` 表已删(批 7,未编译),改为匿名命名空间的 `VisitHandshakeRpc(nodeType, fn)`(Scene → `SceneNodeHandshakeRpc`、Gate → `GateNodeHandshakeRpc`)
+  + `CallMethod<Method>` 的 typed 调用;无类型 `CallMethod(uint32_t, ...)` 保留为底层入口。出站发送只用到 Scene 项(当前没有节点向 gate 拨 TCP);
+  **Gate 项不能删**:它同时是入站 `OnNodeHandshake` / `IsHandshakeNodeType` 的类型白名单,scene 靠它放行 gate 的握手,删掉后 scene 对每次 gate 握手回
+  `kFailedToRegisterTheNode`,gate 按 0.5s 重试永不成功、scene 不给 gate 挂 `RpcSession`。由 `rpc_client_lifecycle_test.cpp` 的 `HandshakeTypeWhitelistAdmitsSceneAndGate` 守住。
 
 ## 11. 兼容与升级(扩 / 缩两版)
 
@@ -458,6 +464,9 @@ gate 与 scene 按 zone 划分(`NodeUtils::IsZoneScopedNodeType`),RPC0 混跑只
 | R3(缩,下一版本) | 删除服务端 id=0 旧回包分支(id=0 永不回);删 `RpcMethodMeta.handler` 与空 `XxxImpl` | 要求 ≥ R2 |
 
 回滚按相反顺序。若用户选择"同 zone 停服一次切换"(项目未上线,D52 有先例),R1–R3 可合并发布,旧规则分支从不需要。
+
+> R3 已决(批 7,§20):用户选了停服一次切换(§18.1 第 1 条),id=0 旧回包分支从未实现,没有可删的分支,只剩 `legacy_id0_reply` 计数(保留作诊断);
+> `RpcMethodMeta.handler` 与 `rpc_event_registry.cpp` 的 17 个空 `XxxImpl` 已删。
 外部 GM 停机工具(`SceneScene.GmGracefulShutdown`,`SECURITY.md:37-48`,仓库内无发送方)在 R3 之后必须带非 0 id 才能收到应答;`affected_count == 0` 时 R1 起也会回包(改进)。
 
 **双版本(AGENTS §12)**:节点间 RPC0 信封、调用关联、超时、断连语义是服务端内部实现,Java 版 gate↔scene 用 NodeLinkFrame、内部 RPC 用 Dubbo,**不适用**;
@@ -487,13 +496,14 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 | 4 生成器 tag | `service_id_gen.go` + tmpl + golden 测试;3 份 metadata 头由 Codex 生成 | 无 | ~5 |
 | 5 切换(R2) | §8 全部调用点;gate 回包桥与 `SendEnvelope` / `FindLiveSession` 导出;握手钩子;删 `CallRemoteMethod` 与全局回包表;生成器停产 muduo 回包(§9.2);删生成回包文件;`InitReply` 义务;三节点 vcxproj / filters / CMakeLists;AGENTS §8 / copilot-instructions(需同意);stress_summarize 汇总段 | 调用方切到 id≠0 | ~45(多为删除) |
 | 6 玩家回包死链 | §9.2 末条 | 无 | ~30(多为删除) |
-| 7 收口(R3) | 删 id=0 旧规则分支;`RpcMethodMeta.handler` / `XxxImpl`;proto 方法删除(待墓碑与用户拍板) | id=0 永不回 | 待定 |
+| 7 收口(R3) | 删 id=0 旧规则分支;`RpcMethodMeta.handler` / `XxxImpl`;proto 方法删除(待墓碑与用户拍板)。**已实施,见 §20**(id=0 分支无可删;另含墓碑生成器、四个无发起端方法退役与剩余调用点迁移) | id=0 永不回 | ~40 |
 
 批 1、2、4 互不依赖可先行;3 依赖 2;5 依赖 3、4;6 可在 5 之后任意时间;7 在 R2 全量上线之后。
 
 ## 14. 后续(本轮不做,需各自 owner 同意)
 
-- 玩家级 handler 延后完成(`player_service_gen.go` / `PlayerService::CallMethod` 加调用上下文)。
+- 玩家级 handler 延后完成(`player_service_gen.go` / `PlayerService::CallMethod` 加调用上下文)。2026-10-15 设计已定、建议暂不实施(无合理首个调用方),
+  见 [`player-handler-deferred-reply.md`](player-handler-deferred-reply.md)。2026-10-16 用户决定暂不实施;出现第一个需要延后回包的玩家 handler 时再按该文档 §3、§6 做。
 - `grpc_async_client` 模板加每次调用的 done 与 deadline,让 B 的 gRPC 下游也能直接挂 `RpcDoneCallback`。
 - `muduo_grpc::Channel` 的在途表迁到同一份 `InflightIndex`;其 `clear<MuduoGrpcChannelPtr>` 挪进关机阶段 0。
 - PlayerEnterGameNode 改 `CallMethod` 拿送达确认(I1 残余),由进场欠账 owner 决定。
@@ -546,7 +556,7 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 2. 升级口径:§11 的扩 / 缩两版,还是同 zone 停服一次切换。
 3. 改 `rpc_message.proto`(加 id、两个错误码、枚举 reserved)连带重生成 Go / robot 的 `.pb.go`,是否接受为"只改 C++"的必要代价。
 4. 改 AGENTS.md §8 / §11.7 的规则与引用名。
-5. RoutePlayerMessage 一族 proto 方法何时删、message_id 是否先做墓碑。
+5. RoutePlayerMessage 一族 proto 方法何时删、message_id 是否先做墓碑。(已决:批 7 先加墓碑再删,§20)
 6. 在 Java 仓 `PARITY.md` 登记两行(跨仓写入)。
 
 ## 18. 实施记录(2026-10-15,批 1–5,未编译)
@@ -609,7 +619,7 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 6. 测试:`rpc_controller_test` Rebuild 后全量与 `--gtest_filter=InflightIndex*:RpcChannel*:RpcChain* --gtest_shuffle --gtest_repeat=50`;
    `routing_identity`、`gate_security`;router_lane 独立 g++ 编译(命令已加 `-I cpp/libs/engine/core`)。
 7. 冒烟:`travel_smoke` 与 robot_smoke,gate / scene 日志里握手成功、`[RpcChannel] summary` 的 timeout / late_reply / legacy_id0_reply 为 0、
-   `Rejected deprecated RPC` 为 0、客户端请求类消息有回包。
+   `Rejected deprecated RPC` 为 0、客户端请求类消息有回包。(批 7 起这条日志的关键字改为 `Rejected retired RPC`,冒烟判据见 §20.7。)
 8. 微基准 `DISABLED_RpcChannelBench.*` 改动前后各跑一次出对比表;没有对比表不声称「无性能回退」(AGENTS §6)。
 
 ### 18.5 遗留
@@ -639,7 +649,9 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 
 见 `docs/design/grpc-client-deadline-failure-callback.md` §11:每个 unary 方法多一个
 `Send<Svc><Method>(registry, entity, req, GrpcDone<Resp>, GrpcCallOptions = {})`,`done` 恰好一次、从不同步、不触发全局处理器;
-既有 API 全部保留。模板与 `grpc_call_tag.h` 已随用户快照提交并 regen;`grpc_client_lifecycle_test.cpp` 补 `PerCallDone*` 三条用例。
+既有 API 全部保留。模板与 `grpc_call_tag.h` 已随用户快照提交并 regen;`grpc_client_lifecycle_test.cpp` 补 `PerCallDone*` 三条用例
+(2026-10-16:该文件随 gRPC 传输第 3 批删除,本地拒绝改由 `grpc_client_local_reject_test.cpp` 覆盖,成功 / 停机两条待第 4 批回环重写,
+见 grpc-client-deadline-failure-callback.md §11.4)。
 §8.4「关联号 → RpcDoneCallback」过渡写法从此不再必要:B 的 gRPC 下游直接把 `RpcDoneCallback` 捕获进 `GrpcDone`。
 
 ### 19.3 GM 停机鉴权被拒返回失败
@@ -647,6 +659,127 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 `GateHandler::GmGracefulShutdown` 与 `SceneSceneHandler::GmGracefulShutdown` 的拒绝分支调 `controller->SetFailed`,调用方得到
 `RPC_ERROR(HANDLER_FAILED)`(`kRemoteFailed`),与「鉴权通过但没有可关的对象」(`RESPONSE`,`affected_count == 0`)可直接区分;
 线上只带错误码,拒绝原因只在本地日志。`cpp/nodes/gate/SECURITY.md` 已同步。
+
+## 20. 实施记录(批 7 与剩余调用点迁移,2026-10-15 ~ 16,Claude)
+
+任务来源:[交接](../handoff/rpc-channel-batch7-handoff-20261015.md)。用户拍板:批 7「一次落完」(生成器、proto 删除、守护段处理同批);交接 §1.2 九条默认照用;
+§3(e) 退役范围在 Gate 42 / 56 之外**加上 Scene 1 / 40**;`BroadcastMessageToScene` / `BroadcastMessageToAll` 保留;玩家级延后完成暂不实施(§14)。
+
+### 20.1 message_id 墓碑(生成器)
+
+- 格式沿用 event_id 的 `N=reserved:<KeyName>`。行解析与重号校验从 `event_id.go` 抽到 `generator/cpp/id_file.go`,两份 id 文件共用(event 侧逻辑不变)。
+- 发号(`assignMessageIds`,纯函数):已登记的活号沿用;文件里有、本轮 proto 没有的活号转墓碑;新方法按 `GlobalRPCServiceList` 顺序,先**升序**填
+  `0..最大号` 里既非活号也非墓碑的空洞,再从最大号 +1 往后发——不再按 Go map 随机顺序回收空号。同名方法重新出现发新号、墓碑保留;
+  复活旧号只能人工改行并评审。本轮两个活方法 KeyName 相同时报错(`Ab.C` 与 `A.bC` 拼出同一个名)。
+- 自检(失败即 Fatal,此时 message_id.txt 还没写):畸形行、非数字号、空名、重号;号 ≥ `MaxUint32`;空洞超过 64 个;本轮活方法为 0 而文件有活号;
+  **本轮新增**墓碑超过 4 条且未设 `PROTOGEN_ALLOW_MASS_MESSAGE_TOMBSTONE=1`(已有墓碑不计)。每条新墓碑、每次同名复活各打一条 WARN。
+- 写回改为纯函数 `renderMessageIdFile` + `WriteFileIfChanged`,按号升序输出活行与墓碑行。`kMaxRpcMethodCount` = 最大号(含墓碑)+ 1。
+- 读者兼容:Go / robot 的 `message_id.go` 常量生成本来就跳过 `reserved:` 行;三个 Python 补丁脚本按 `partition('=')` 解析,能容忍;
+  Java `MessageIdRegistry` 已在 Java 仓 `15058ad` 支持。客户端仓(2026-10-16 客户端任务授权后核实,未改客户端):
+  `message_id.txt` 的唯一直接读者是 `tools/gen_messageids.ps1`,按 `^\s*(\d+)\s*=\s*([A-Za-z0-9_]+)\s*$` 解析(客户端 HEAD `24ff81a` 第 218 行,
+  工作区第 248 行),名字段不允许 `:`,墓碑行整行不匹配、被跳过,与 Go `GenerateWithSuffix` 同口径,**兼容、无需改**。白名单方法若被转成墓碑,
+  效果等同未发号:出一条 `missing in message_id.txt` Warning、常量不生成、引用处 CS0117,不会映射到错号。只读复刻该循环核对现行文件:
+  活号 303、跳过的正好是 41 / 74 / 78 / 81 四行,现有 `MessageIds.cs` 157 个常量与之零漂移。Unity 桩(`Assets/Scripts/Net/Generated/Handlers`)
+  的号由服务端 `unity_client_handler.go` 取内存 `method.Id`,只遍历活方法,不读文本行,四个墓碑号无一出现。
+- 去掉 `RpcMethodMeta.handler`(全仓无读者)与 `rpc_event_registry.cpp` 的 17 个空 `XxxImpl`,顺带消掉它们与 `player_service_interface.cpp` 同名类的 ODR 隐患。
+  玩家服务的 `XxxImpl`(`player_service_instance.cpp.tmpl`)保留:`PlayerService::service()` 靠它取 descriptor / prototype。
+
+**小域整域漏读(2026-10-16 已修)**:原先域的 source 目录不存在或走下来 0 个 .proto 时只打 WARN,该域的号会被永久转成墓碑,
+上限 4 拦不住方法数 ≤ 4 的域(chat 2 个、db 1 个、client_rpc_router 1 个)。用户拍板删掉 `proto_gen.yaml` / `proto_gen.no-unity.yaml`
+里目录已不存在的 `slg` 块(`proto/slg` 在 `7f1ff7b8b` 已删,全仓无读者;不加「可选域」标记)。之后 `prototools/descriptor.go` 的
+`collectDomainProtoFiles` 按域设防:source 为空、不存在、不是目录、遍历中任一路径访问失败、走下来 0 个 .proto,都返回写明域名与路径的错误,
+`generateAllInOneDesc` 据此 Fatal——这一步在 `WriteMessageIdFile` / `WriteEventIdFile` 之前,中止时两份 id 文件都还没写。
+退役一个域要连同 `domain_meta` 块一起删,不能留空目录。单测见 `internal/prototools/descriptor_test.go`(临时目录,不依赖真实 proto 树)。
+
+**剩余风险**:① `domain_meta` 块本身被删或漏配(如合并冲突吃掉一块),该域的活号与正常删除无从区分,方法数 ≤ 4 时毫无拦截;
+② 域目录在但个别 .proto 被删或改名,同样与正常删方法无从区分。两者都只能靠评审:每次 regen 都要核对「RPC method no longer in proto」
+WARN 的条数和 message_id.txt 的 diff(只改行、只追加、不删行)。
+
+### 20.2 删 Route 一族
+
+- proto:`Gate.RouteNodeMessage`(41)、`Gate.RoutePlayerMessage`(74)、`Scene.RouteNodeStringMsg`(78)、`Scene.RoutePlayerStringMsg`(81),以及只被它们使用的
+  `RoutingNodeInfo`、`RouteMessageRequest` / `Response`、`RoutePlayerMessageRequest` / `Response`。`PlayerInfoExternal`、`OptionMessagePriority` 定义保留。
+- regen 已由并发会话完成(用的是新生成器源码),结果:`message_id.txt` 只有 41 / 74 / 78 / 81 四行改成墓碑,其余为他人新增方法的追加行,**没有删行**;
+  两个 handler 的 Route 方法连同方法守护段已被生成器去掉。`generated/robot/proto` 是不在流水线里的旧快照,仍有 Route 一族,与本批无关。
+- `proto_field_checker_test` 的两条用例改用 `ProtoFieldCheckerTestSubPB` / `items`(阈值语义不变)。
+
+### 20.3 退役无发起端的四个方法(已从 proto 删除,1 / 40 / 42 / 56 留墓碑)
+
+| 方法 | 号 | 核实依据(全仓含 Go / robot / Java 无发起端) | 权威路径 |
+|---|---|---|---|
+| `Gate.PlayerEnterGameNode` | 42 | 与 `Scene.PlayerEnterGameNode`(gate 调用,不退役)不是一个方法 | Kafka RoutePlayer → `scene_route_helper.h` |
+| `Gate.BindSessionToGate` | 56 | login 的 `SendBindSessionToGate` 走 Kafka,不是这条 RPC;该 RPC 不带登录代次 | Kafka BindSession → `BindSessionEventHandler` |
+| `Scene.SendMessageToPlayer` | 1 | 玩家推送走 `Gate.SendMessageToPlayer`(`player_message_utils.cpp`) | gate 推送 / Kafka / 持久收件箱 |
+| `Scene.InvokePlayerService` | 40 | 无调用方;退役同时关掉「节点路由直达 Gm* / 回档 handler」的旁路 | `ProcessClientPlayerMessage`(唯一按 `gPlayerService` 派发的入口) |
+
+- 分两步落地。第一步:四个方法改为显式拒绝(gate / scene 各一份 `RejectRetiredCall`,WARN 关键字 `Rejected retired RPC`)。
+  第二步(2026-10-16 同日):Route 一族的墓碑已落盘、不再计入「本轮新增」,于是把这四个方法也从 proto 删掉——下一次 regen 恰好新增 4 条墓碑,
+  卡在上限内;同批删掉只被它们使用的 `RegisterGameNodeSessionRequest` / `Response`(message.proto)、`BindSessionToGateRequest` / `Response`
+  (gate_service.proto)、`NodeRouteMessageResponse`(message.proto)。`NodeRouteMessageRequest` 仍被 `Gate.SendMessageToPlayer` 使用,保留。
+  全仓(C++ 非生成、Go、robot、Java 代码)没有这些消息的手写使用者。
+- regen 之前生成头仍声明这四个方法,所以守护段里先就地 `controller->SetFailed("<method> is retired: removed from proto, message id N is tombstoned")`
+  (调用方得到 `RPC_ERROR(HANDLER_FAILED)` / `kRemoteFailed`),regen 后方法连同守护段被生成器去掉,不留死代码。`RejectRetiredCall` 与它用的
+  `rpc_channel_stats.h` include 已从两个 handler 删除。regen 之后墓碑号是注册表空槽:新二进制本地发不出(`kNotSent`「message id not dispatchable」);
+  旧二进制的对端发来时,服务端在派发前回 `RPC_ERROR(INVALID_REQUEST)`(`rpc_channel.cpp` 的 `IsDispatchableMessageId` 判据),调用方得到 `kRemoteRejected`、确定未执行。
+- `SendErrorToClient` 的调用方只有这两个 scene 方法,`cpp/libs/engine/core/network/error_handling_system.h` 连同 `core.vcxproj` / `.filters` 条目一并删除。
+- 没有为退役写专门的自动化回归:regen 后方法不存在,墓碑号由 `IsDispatchableMessageId` 的既有测试覆盖;替代验证见 §20.7 第 4 步。
+
+### 20.4 剩余调用点迁移(交接 §3 (a)–(d))
+
+- (a) `RpcSession` 构造时连接为空直接 `LOG_FATAL`(私有 `LoopOf`);`loop_` 改 `std::reference_wrapper<EventLoop>`;`FailNotConnected` 只剩一行 `RpcChannel::FailNotSent`。
+  以前连接为空时 `loop_` 留空、channel 不在时 `CallMethod` 的 done 被就地丢弃,违反「恰好一次、永不同步」。测试:`SessionWithoutChannelFailsCallsExactlyOnceThroughTheLoop`、
+  `RpcSessionDeathTest.NullConnectionIsFatal`。
+- (b) 握手:运行期表 `kNodeTypeToMessageId` 删掉,改为 `VisitHandshakeRpc` + typed `CallMethod<Method>`(§10 末条已更正);`OnHandshakeCallDone` 收
+  `std::shared_ptr<NodeHandshakeResponse>`,不再手写 descriptor 校验与 `static_cast`。Gate 项保留为入站白名单,由 `HandshakeTypeWhitelistAdmitsSceneAndGate` 守住。
+  行为差异只在生成物不同步时出现:注册表的响应类型与 tag 不符时,以前收到应答后校验失败每 0.5s 重试,现在发送时就 `kNotSent`、等下次重连再握手。
+- (c) `scene_entry_dispatch.cpp`:`SendRequest<ScenePlayerEnterGameNodeRpc>(req)`,线上字节与返回值语义不变。
+- (d) `ProcessClientPlayerMessage` 不再回显 `session_id`(gate 已在调用点 lambda 捕获会话);proto 字段不 reserved,两个测试夹具仍拿它当关联标记。
+
+### 20.5 dev_tools 旧生成器防护(交接之外,为「一次落完」加的保险)
+
+- `proto-gen-run` 先比较选中的 exe 与生成器源码(非 `*_test.go` 的 `*.go`、全部 `*.tmpl`、根目录 `go.mod` / `go.sum`;排除 `cpp/`、`etc/`、`bin/`)的写入时间:
+  默认路径 exe 旧时告警并改走 `go run ./cmd`;`-UseBinary` 时直接拒绝,提示先 `proto-gen-build` 或改用 `-UseGoRun`。
+- `proto-gen-build` 成功后把两个 exe 的写入时间打成「构建开始时刻」,构建期间别的会话保存的源码仍判旧。
+- 只比时间不比内容:只 touch 源码会多判;删除、改名、保留写入时间的复制判不出来。绕过 dev_tools 直接跑 exe 不受保护。
+- 测试:`tools/scripts/tests/dev_tools_proto_gen_exit.tests.ps1` 由 24 例增到 35 例。
+
+### 20.6 文档与注释同步
+
+`proto/README.md`、`proto/friend/friend.proto`(旧发号注释改为历史说明)、`robot/travel_smoke_wire.go`、`client_gm_gate_test.cpp`、`player_service_interface.h`、
+`player_currency_handler.cpp` / `player_rollback_handler.cpp` 守护段注释;`guild-phase2/04-asset-channel.md`、`player-handler-deferred-reply.md`、
+`async-load-disconnect-reconnect-race.md`、`cross-zone-scene-travel.md`、`client-access-band-routing.md`、`reliable-player-inbox-20261014.md`
+各追加一句补注(不改旧结论);`cpp/nodes/gate/gate_gm_client_messages.h` 里「proto 一改就漂移」的注释按墓碑规则改写。日志关键字由 `Rejected deprecated RPC` 改为 `Rejected retired RPC`(§18.4 第 7 步已加指针)。
+`player_lifecycle.cpp` 约 167 行(RpcSession 断连时的行为)与约 2690 行(会话绑定的用途)两处过时注释也已更正(只改注释行,未碰 `IsSceneChangeBusy`);
+`docs/design/error-reporting.md` 对 `SendErrorToClient` 的引用加了删除说明。
+
+### 20.7 验证
+
+已有证据(不是针对本批的专项验证,且**只覆盖第一步**):Codex 2026-10-16 05:41–05:52 在共享工作区串行构建 rpc、scene、gate 等工程全部退出 0,时间晚于第一步 C++ 文件的最后改动
+(05:21)。第二步(10:24 之后的 proto 删除、四个守护段改写、删 error_handling_system.h 与工程条目、player_lifecycle.cpp 注释)未 regen、未编译、未测试;同一条记录写有生成器 cmd / prototools 测试、vet 与完整 proto-gen-build / proto-gen-run 退出 0(`docs/PROGRESS.md` 当日「全球大厅续批 C++ 最终构建」条)。
+未跑:protogen `internal/generator/cpp` 的新测试、`rpc_controller_test`、`proto_field_checker_test`、`routing_identity_test`、dev_tools 的 Pester 测试、冒烟。
+
+1. protogen:`cd tools/proto_generator/protogen; $env:GOTOOLCHAIN='local'`;`gofmt -l ./internal ./cmd` 无输出;`go vet ./internal/... ./cmd`;
+   `go test -mod=readonly ./internal/... ./cmd`(重点 `TestAssignMessageIds*`、`TestCheckMessageIdInputComplete*`、`TestParseMessageIdFile*`、`TestRender*`、
+   `TestRpcMethodMetaInitLinesHaveNoHandler`、`TestGenerateWithSuffixSkipsReservedMessageIds`)。
+2. 不动点:`proto-gen-build` 后连跑两次 `proto-gen-run -UseBinary -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`,第二次零 diff;
+   第一次 regen 应恰好打 4 条「RPC method no longer in proto」WARN(1 / 40 / 42 / 56;若同时有别的会话删方法而超过 4 条会 Fatal,先核对再决定是否放行);
+   `git diff proto/message_id.txt` 只有 1 / 40 / 41 / 42 / 56 / 74 / 78 / 81 八行改成墓碑与他人的追加行、没有删行;`gate_service_handler.h` / `scene_handler.h`
+   不再声明这四个方法;`git -C ..\mmorpg-client status` 不变。批 7 不走 dev.bat(它用默认 yaml,会写客户端仓)。
+3. C++:`rpc_controller_test`(Rebuild)、`proto_field_checker_test`、`routing_identity_test` 串行 `/m:1` 编译并运行;`rpc_controller_test.exe` 另跑
+   `--gtest_filter=RpcClientLoopback.*:RpcSessionDeathTest.*:RpcChannel*:RpcChain* --gtest_shuffle --gtest_repeat=50`。
+4. 冒烟:`robot -c etc/travel_smoke.yaml` 与 robot_smoke;握手成功;`[RpcChannel] summary` 的 timeout / late_reply / legacy_id0_reply 为 0;
+   `Rejected retired RPC` 与 `Rejected deprecated RPC` 都为 0(regen 后这两个关键字在代码里都已不存在)。退役方法的替代验证(可选,需要能发原始帧的工具):regen 后
+   向 scene 发 1 / 40、向 gate 发 42 / 56,应得 `RPC_ERROR(INVALID_REQUEST)`(`kRemoteRejected`)。
+5. `pwsh -NoProfile -File tools/scripts/tests/dev_tools_proto_gen_exit.tests.ps1`:`total=35 pass=35 fail=0`。
+6. robot:regen 之后 `cd robot; go mod vendor; go build -mod=vendor ./...`(vendor 会带上 go/proto 下别人未提交的改动,逐 hunk 审)。
+7. Java:主仓提交本批后在 Java 仓重跑 ContractSync(当前 Java 工作区已同步了带墓碑的副本,但 `SOURCE.properties` 记的提交与内容对不上),
+   再 `./mvnw -B -pl game-proto -am test`。
+
+**并发提醒**:其他 worktree(`.claude/worktrees/*`、Codex 工作树)里的生成器早于墓碑。从这些树合入时只带 proto 源码与手写代码,
+不带 message_id.txt 与生成物,统一在主工作区用新生成器 regen;合入后确认 message_id.txt 没有删行、`reserved:` 行没有变回活行。
+
+**双版本(AGENTS §12)**:墓碑格式与 Route 一族删除涉及客户端契约文件(message_id.txt 与 proto),Java 侧读墓碑已在 `15058ad` 完成,ContractSync 待主仓提交后重跑;
+四个方法的退役、RpcSession / 握手 / dev_tools 都是 C++ 服务端内部,Java 不适用。Java 仓 `PARITY.md` 已登记。
 
 ## 附录 A:主要事实证据
 

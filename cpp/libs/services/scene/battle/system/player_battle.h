@@ -21,7 +21,7 @@
 // ②备战到期 reaper 只摘组件不删锁,迟到的 BattleConfirmedEvent 按锁值重建 FIGHTING。
 // 结算在线路径无 InBattleComp 时同样按锁值匹配应用而不是丢弃。
 //
-// 线程模型:所有方法都必须在 scene 节点 loop 线程调用(gRPC 入口由生成骨架 runInLoop 投递)。
+// 线程模型:所有方法都必须在 scene 节点 loop 线程调用(gRPC 入口:muduo_grpc 服务端在 loop 线程上派发)。
 
 #include <cstdint>
 

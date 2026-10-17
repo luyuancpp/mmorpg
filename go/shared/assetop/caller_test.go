@@ -265,7 +265,7 @@ func TestCallerRetriesOnNewNodeAfterNotHere(t *testing.T) {
 	}
 }
 
-// ④ NOT_HERE 但位置没变:不重调(重调只会得到同样答复,还白占 scene 的 poller)。
+// ④ NOT_HERE 但位置没变:不重调(重调只会得到同样答复,还在 scene 的 EventLoop 上白跑一次)。
 func TestCallerDoesNotRecallSameNodeOnNotHere(t *testing.T) {
 	scene, client := startFakeScene(t, func(_ RPC, _ *assetpb.AssetOpRequest, _ int) (*assetpb.AssetOpResponse, error) {
 		return &assetpb.AssetOpResponse{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE}, nil

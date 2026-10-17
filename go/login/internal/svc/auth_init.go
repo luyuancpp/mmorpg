@@ -64,6 +64,9 @@ func InitAuthProviders() (cleanup func()) {
 	cfg := config.AppConfig.AuthProviders
 
 	if cfg.SaToken != nil {
+		if err := cfg.SaToken.Redis.ValidatePoolSize(); err != nil {
+			panic(fmt.Errorf("AuthProviders.SaToken.Redis: %w", err))
+		}
 		rdb := redis.NewClient(&redis.Options{
 			Addr:             cfg.SaToken.Redis.Host,
 			Password:         cfg.SaToken.Redis.Password,
@@ -71,6 +74,7 @@ func InitAuthProviders() (cleanup func()) {
 			DialTimeout:      cfg.SaToken.Redis.DialTimeout,
 			ReadTimeout:      cfg.SaToken.Redis.ReadTimeout,
 			WriteTimeout:     cfg.SaToken.Redis.WriteTimeout,
+			PoolSize:         cfg.SaToken.Redis.PoolSize, // 同一个 RedisConf:写了就生效,不静默忽略
 			DisableIndentity: true,
 		})
 		if err := rdb.Ping(context.Background()).Err(); err != nil {

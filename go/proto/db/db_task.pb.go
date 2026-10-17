@@ -35,6 +35,7 @@ type DBTask struct {
 	// 生产者(scene)持有的玩家归属 epoch。db 落库前与 player:{key}:owner_epoch 比对,小于当前值即被废黜节点的迟到写,
 	// 拒绝并计数 stale_owner_write_rejected;0 表示旧版生产者未填(兼容窗口内放行)。见 scene-owner-reentry-barrier.md §6.3。
 	OwnerEpoch    uint64 `protobuf:"varint,8,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`
+	SaveSeq       uint64 `protobuf:"varint,9,opt,name=save_seq,json=saveSeq,proto3" json:"save_seq,omitempty"` // 同一玩家同一 owner_epoch 内严格递增；与 SQL 行版本一起校验
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -125,6 +126,13 @@ func (x *DBTask) GetOwnerEpoch() uint64 {
 	return 0
 }
 
+func (x *DBTask) GetSaveSeq() uint64 {
+	if x != nil {
+		return x.SaveSeq
+	}
+	return 0
+}
+
 // TaskResult: DB task execution result struct
 // Usage: consumer stores result in Redis after execution, for producer to query
 type TaskResult struct {
@@ -199,7 +207,7 @@ var File_proto_db_db_task_proto protoreflect.FileDescriptor
 
 const file_proto_db_db_task_proto_rawDesc = "" +
 	"\n" +
-	"\x16proto/db/db_task.proto\x12\x06taskpb\"\xd3\x01\n" +
+	"\x16proto/db/db_task.proto\x12\x06taskpb\"\xee\x01\n" +
 	"\x06DBTask\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12\x1d\n" +
 	"\n" +
@@ -211,7 +219,8 @@ const file_proto_db_db_task_proto_rawDesc = "" +
 	"\vretry_count\x18\a \x01(\x05R\n" +
 	"retryCount\x12\x1f\n" +
 	"\vowner_epoch\x18\b \x01(\x04R\n" +
-	"ownerEpoch\"n\n" +
+	"ownerEpoch\x12\x19\n" +
+	"\bsave_seq\x18\t \x01(\x04R\asaveSeq\"n\n" +
 	"\n" +
 	"TaskResult\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x12\n" +

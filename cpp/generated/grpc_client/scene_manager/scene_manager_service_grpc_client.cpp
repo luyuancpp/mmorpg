@@ -1,52 +1,58 @@
 #include "muduo/base/Logging.h"
 
 #include "scene_manager_service_grpc_client.h"
-#include "proto/common/constants/etcd_grpc.pb.h"
-#include "core/utils/encode/base64.h"
+#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <boost/pool/object_pool.hpp>
-#include "grpc_call_tag.h"
+#include <memory>
+#include <string>
+#include <utility>
+#include "core/network/grpc_client_runtime.h"
+#include "core/utils/encode/base64.h"
+#include "muduo_grpc/channel.h"
 
 namespace {
-boost::object_pool<GrpcTag> tagPool;
 // 本文件所有 unary 调用的 deadline(毫秒)。启动时 SetSceneManagerServiceCallDeadline 按目标节点类型写入
 // (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
-std::chrono::system_clock::time_point NextCallDeadline() {
-    return std::chrono::system_clock::now() +
-        std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+std::chrono::milliseconds DefaultCallDeadline() {
+    return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
+}
+
+GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+    GrpcCallOutcome outcome;
+    outcome.code = code;
+    outcome.message = std::move(message);
+    return outcome;
 }
 }
 
 namespace scene_manager {
-struct SceneManagerServiceCompleteQueue {
-    grpc::CompletionQueue cq;
-};
 #pragma region SceneManagerCreateScene
-boost::object_pool<AsyncSceneManagerCreateSceneGrpcClient> SceneManagerCreateScenePool;
-using AsyncSceneManagerCreateSceneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::scene_manager::CreateSceneResponse&)>;
 AsyncSceneManagerCreateSceneHandlerFunctionType AsyncSceneManagerCreateSceneHandler;
 AsyncSceneManagerCreateSceneFailedHandlerFunctionType AsyncSceneManagerCreateSceneFailedHandler;
 
-void CompleteSceneManagerCreateScene(AsyncSceneManagerCreateSceneGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncSceneManagerCreateSceneGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        SceneManagerCreateScenePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncSceneManagerCreateSceneGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct SceneManagerCreateSceneCall {
+    ::scene_manager::CreateSceneRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncSceneManagerCreateSceneHandler / FailedHandler。
+    GrpcDone<::scene_manager::CreateSceneResponse> done;
+};
+
+void CompleteSceneManagerCreateScene(const SceneManagerCreateSceneCall& call, const GrpcCallOutcome& outcome,
+                                                const ::scene_manager::CreateSceneResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncSceneManagerCreateSceneHandler) {
-            AsyncSceneManagerCreateSceneHandler(call->context, call->reply);
+            AsyncSceneManagerCreateSceneHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -58,50 +64,65 @@ void CompleteSceneManagerCreateScene(AsyncSceneManagerCreateSceneGrpcClient* cal
             }
         }
     } else if (AsyncSceneManagerCreateSceneFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "SceneManager.CreateScene", call->context, call->status, call->sentMetadata};
-        AsyncSceneManagerCreateSceneFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ SceneManagerCreateSceneMessageId, "SceneManager.CreateScene", outcome, call.sentMetadata};
+        AsyncSceneManagerCreateSceneFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC SceneManager.CreateScene failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC SceneManager.CreateScene failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcSceneManagerCreateScene(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncSceneManagerCreateSceneGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteSceneManagerCreateScene(call);
+void QueueLocalSceneManagerCreateSceneFailure(std::shared_ptr<SceneManagerCreateSceneCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteSceneManagerCreateScene(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartSceneManagerCreateSceneCall(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::scene_manager::CreateSceneResponse> done) {
-    auto call(SceneManagerCreateScenePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<SceneManagerCreateSceneCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<SceneManagerStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteSceneManagerCreateScene(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalSceneManagerCreateSceneFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncCreateScene(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(SceneManagerCreateSceneMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kSceneManagerCreateSceneGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalSceneManagerCreateSceneFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteSceneManagerCreateScene(*call, outcome, nullptr);
+            return;
+        }
+        ::scene_manager::CreateSceneResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the SceneManager.CreateScene response";
+            CompleteSceneManagerCreateScene(*call, outcome, nullptr);
+            return;
+        }
+        CompleteSceneManagerCreateScene(*call, outcome, &reply);
+    });
 }
 
 void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request,
@@ -110,12 +131,11 @@ void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEnti
 }
 
 void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendSceneManagerCreateScene(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::CreateSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -123,37 +143,37 @@ void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEnti
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartSceneManagerCreateSceneCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendSceneManagerCreateScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::scene_manager::CreateSceneRequest& derived = static_cast<const ::scene_manager::CreateSceneRequest&>(message);
     SendSceneManagerCreateScene(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region SceneManagerDestroyScene
-boost::object_pool<AsyncSceneManagerDestroySceneGrpcClient> SceneManagerDestroyScenePool;
-using AsyncSceneManagerDestroySceneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncSceneManagerDestroySceneHandlerFunctionType AsyncSceneManagerDestroySceneHandler;
 AsyncSceneManagerDestroySceneFailedHandlerFunctionType AsyncSceneManagerDestroySceneFailedHandler;
 
-void CompleteSceneManagerDestroyScene(AsyncSceneManagerDestroySceneGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncSceneManagerDestroySceneGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        SceneManagerDestroyScenePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncSceneManagerDestroySceneGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct SceneManagerDestroySceneCall {
+    ::scene_manager::DestroySceneRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncSceneManagerDestroySceneHandler / FailedHandler。
+    GrpcDone<::Empty> done;
+};
+
+void CompleteSceneManagerDestroyScene(const SceneManagerDestroySceneCall& call, const GrpcCallOutcome& outcome,
+                                                const ::Empty* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncSceneManagerDestroySceneHandler) {
-            AsyncSceneManagerDestroySceneHandler(call->context, call->reply);
+            AsyncSceneManagerDestroySceneHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -165,50 +185,65 @@ void CompleteSceneManagerDestroyScene(AsyncSceneManagerDestroySceneGrpcClient* c
             }
         }
     } else if (AsyncSceneManagerDestroySceneFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "SceneManager.DestroyScene", call->context, call->status, call->sentMetadata};
-        AsyncSceneManagerDestroySceneFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ SceneManagerDestroySceneMessageId, "SceneManager.DestroyScene", outcome, call.sentMetadata};
+        AsyncSceneManagerDestroySceneFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC SceneManager.DestroyScene failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC SceneManager.DestroyScene failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcSceneManagerDestroyScene(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncSceneManagerDestroySceneGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteSceneManagerDestroyScene(call);
+void QueueLocalSceneManagerDestroySceneFailure(std::shared_ptr<SceneManagerDestroySceneCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteSceneManagerDestroyScene(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartSceneManagerDestroySceneCall(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call(SceneManagerDestroyScenePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<SceneManagerDestroySceneCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<SceneManagerStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteSceneManagerDestroyScene(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalSceneManagerDestroySceneFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncDestroyScene(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(SceneManagerDestroySceneMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kSceneManagerDestroySceneGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalSceneManagerDestroySceneFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteSceneManagerDestroyScene(*call, outcome, nullptr);
+            return;
+        }
+        ::Empty reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the SceneManager.DestroyScene response";
+            CompleteSceneManagerDestroyScene(*call, outcome, nullptr);
+            return;
+        }
+        CompleteSceneManagerDestroyScene(*call, outcome, &reply);
+    });
 }
 
 void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request,
@@ -217,12 +252,11 @@ void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEnt
 }
 
 void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendSceneManagerDestroyScene(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::DestroySceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -230,37 +264,37 @@ void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEnt
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartSceneManagerDestroySceneCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendSceneManagerDestroyScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::scene_manager::DestroySceneRequest& derived = static_cast<const ::scene_manager::DestroySceneRequest&>(message);
     SendSceneManagerDestroyScene(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region SceneManagerEnterScene
-boost::object_pool<AsyncSceneManagerEnterSceneGrpcClient> SceneManagerEnterScenePool;
-using AsyncSceneManagerEnterSceneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::scene_manager::EnterSceneResponse&)>;
 AsyncSceneManagerEnterSceneHandlerFunctionType AsyncSceneManagerEnterSceneHandler;
 AsyncSceneManagerEnterSceneFailedHandlerFunctionType AsyncSceneManagerEnterSceneFailedHandler;
 
-void CompleteSceneManagerEnterScene(AsyncSceneManagerEnterSceneGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncSceneManagerEnterSceneGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        SceneManagerEnterScenePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncSceneManagerEnterSceneGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct SceneManagerEnterSceneCall {
+    ::scene_manager::EnterSceneRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncSceneManagerEnterSceneHandler / FailedHandler。
+    GrpcDone<::scene_manager::EnterSceneResponse> done;
+};
+
+void CompleteSceneManagerEnterScene(const SceneManagerEnterSceneCall& call, const GrpcCallOutcome& outcome,
+                                                const ::scene_manager::EnterSceneResponse* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncSceneManagerEnterSceneHandler) {
-            AsyncSceneManagerEnterSceneHandler(call->context, call->reply);
+            AsyncSceneManagerEnterSceneHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -272,50 +306,65 @@ void CompleteSceneManagerEnterScene(AsyncSceneManagerEnterSceneGrpcClient* call)
             }
         }
     } else if (AsyncSceneManagerEnterSceneFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "SceneManager.EnterScene", call->context, call->status, call->sentMetadata};
-        AsyncSceneManagerEnterSceneFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ SceneManagerEnterSceneMessageId, "SceneManager.EnterScene", outcome, call.sentMetadata};
+        AsyncSceneManagerEnterSceneFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC SceneManager.EnterScene failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC SceneManager.EnterScene failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcSceneManagerEnterScene(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncSceneManagerEnterSceneGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteSceneManagerEnterScene(call);
+void QueueLocalSceneManagerEnterSceneFailure(std::shared_ptr<SceneManagerEnterSceneCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteSceneManagerEnterScene(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartSceneManagerEnterSceneCall(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::scene_manager::EnterSceneResponse> done) {
-    auto call(SceneManagerEnterScenePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<SceneManagerEnterSceneCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<SceneManagerStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteSceneManagerEnterScene(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalSceneManagerEnterSceneFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncEnterScene(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(SceneManagerEnterSceneMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kSceneManagerEnterSceneGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalSceneManagerEnterSceneFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteSceneManagerEnterScene(*call, outcome, nullptr);
+            return;
+        }
+        ::scene_manager::EnterSceneResponse reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the SceneManager.EnterScene response";
+            CompleteSceneManagerEnterScene(*call, outcome, nullptr);
+            return;
+        }
+        CompleteSceneManagerEnterScene(*call, outcome, &reply);
+    });
 }
 
 void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request,
@@ -324,12 +373,11 @@ void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntit
 }
 
 void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendSceneManagerEnterScene(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -337,37 +385,37 @@ void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntit
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartSceneManagerEnterSceneCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::scene_manager::EnterSceneRequest& derived = static_cast<const ::scene_manager::EnterSceneRequest&>(message);
     SendSceneManagerEnterScene(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 #pragma region SceneManagerLeaveScene
-boost::object_pool<AsyncSceneManagerLeaveSceneGrpcClient> SceneManagerLeaveScenePool;
-using AsyncSceneManagerLeaveSceneHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
 AsyncSceneManagerLeaveSceneHandlerFunctionType AsyncSceneManagerLeaveSceneHandler;
 AsyncSceneManagerLeaveSceneFailedHandlerFunctionType AsyncSceneManagerLeaveSceneFailedHandler;
 
-void CompleteSceneManagerLeaveScene(AsyncSceneManagerLeaveSceneGrpcClient* call) {
-    // 回调可能重入关闭/排空；context 登记与调用对象必须一起保留到业务回调退栈。
-    const auto release = [](AsyncSceneManagerLeaveSceneGrpcClient* completed) {
-        if (completed->runtime) completed->runtime->calls.erase(&completed->context);
-        SceneManagerLeaveScenePool.destroy(completed);
-    };
-    const std::unique_ptr<AsyncSceneManagerLeaveSceneGrpcClient, decltype(release)> owner(call, release);
-    if (call->done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 借自调用对象,回调退栈后才释放。
-        const GrpcCallOutcome outcome{static_cast<uint32_t>(call->status.error_code()), call->status.error_message()};
-        call->done(outcome, call->status.ok() ? &call->reply : nullptr);
+namespace {
+// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
+// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
+struct SceneManagerLeaveSceneCall {
+    ::scene_manager::LeaveSceneRequest request;
+    GrpcSentMetadata sentMetadata;
+    // 每次调用回调;为空时走全局 AsyncSceneManagerLeaveSceneHandler / FailedHandler。
+    GrpcDone<::Empty> done;
+};
+
+void CompleteSceneManagerLeaveScene(const SceneManagerLeaveSceneCall& call, const GrpcCallOutcome& outcome,
+                                                const ::Empty* reply) {
+    if (call.done) {
+        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
+        call.done(outcome, outcome.ok() ? reply : nullptr);
         return;
     }
-    if (call->status.ok()) {
+    if (outcome.ok()) {
         if (AsyncSceneManagerLeaveSceneHandler) {
-            AsyncSceneManagerLeaveSceneHandler(call->context, call->reply);
+            AsyncSceneManagerLeaveSceneHandler(outcome, *reply);
         } else {
             // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
             // 确实不需要应答的调用方显式装一个空处理器。
@@ -379,50 +427,65 @@ void CompleteSceneManagerLeaveScene(AsyncSceneManagerLeaveSceneGrpcClient* call)
             }
         }
     } else if (AsyncSceneManagerLeaveSceneFailedHandler) {
-        const GrpcCallFailure failure{call->messageId, "SceneManager.LeaveScene", call->context, call->status, call->sentMetadata};
-        AsyncSceneManagerLeaveSceneFailedHandler(failure, call->request);
+        const GrpcCallFailure failure{ SceneManagerLeaveSceneMessageId, "SceneManager.LeaveScene", outcome, call.sentMetadata};
+        AsyncSceneManagerLeaveSceneFailedHandler(failure, call.request);
     } else {
-        LOG_ERROR << "gRPC SceneManager.LeaveScene failed: code=" << static_cast<int>(call->status.error_code())
-                  << " msg=" << call->status.error_message();
+        LOG_ERROR << "gRPC SceneManager.LeaveScene failed: code=" << outcome.code << " msg=" << outcome.message;
     }
-
 }
 
-void AsyncCompleteGrpcSceneManagerLeaveScene(entt::registry&, entt::entity,
-                                                         grpc::CompletionQueue&, bool ok, void* got_tag) {
-    auto* call = static_cast<AsyncSceneManagerLeaveSceneGrpcClient*>(got_tag);
-    if (!ok && call->status.ok()) {
-        call->status = Status(grpc::StatusCode::CANCELLED, "completion cancelled");
-    }
-    CompleteSceneManagerLeaveScene(call);
+void QueueLocalSceneManagerLeaveSceneFailure(std::shared_ptr<SceneManagerLeaveSceneCall> call, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
+        CompleteSceneManagerLeaveScene(*call, outcome, nullptr);
+    });
+}
 }
 
 // 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
 void StartSceneManagerLeaveSceneCall(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call(SceneManagerLeaveScenePool.construct());
-    for (const auto& [key, value] : metadata) {
-        call->context.AddMetadata(key, Base64Encode(value));
-    }
-    call->sentMetadata = std::move(metadata);
+    auto call = std::make_shared<SceneManagerLeaveSceneCall>();
     call->request = request;
+    call->sentMetadata = std::move(metadata);
     call->done = std::move(done);
-    call->context.set_deadline(deadline.count() > 0 ? std::chrono::system_clock::now() + deadline : NextCallDeadline());
-    auto* cq = registry.valid(nodeEntity) ? registry.try_get<grpc::CompletionQueue>(nodeEntity) : nullptr;
-    auto* stub = registry.valid(nodeEntity) ? registry.try_get<SceneManagerStubPtr>(nodeEntity) : nullptr;
-    auto* runtime = registry.valid(nodeEntity) ? registry.try_get<GrpcClientRuntimePtr>(nodeEntity) : nullptr;
-    if (runtime != nullptr) call->runtime = *runtime;
-    if (cq == nullptr || stub == nullptr || !*stub || !call->runtime || call->runtime->closing) {
-        call->status = Status(grpc::StatusCode::UNAVAILABLE, "node transport missing or closing");
-        QueueGrpcClientCompletion(call->runtime, [call] { CompleteSceneManagerLeaveScene(call); });
+
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalSceneManagerLeaveSceneFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    call->runtime->calls.insert(&call->context);
-    call->response_reader = (*stub)->PrepareAsyncLeaveScene(&call->context, call->request, cq);
-    call->response_reader->StartCall();
-    GrpcTag* got_tag(tagPool.construct(SceneManagerLeaveSceneMessageId, (void*)call));
-    call->response_reader->Finish(&call->reply, &call->status, (void*)got_tag);
+    muduo_grpc::UnaryCallRequest rpc;
+    rpc.method = std::string(kSceneManagerLeaveSceneGrpcPath);
+    if (!call->request.SerializeToString(&rpc.message)) {
+        QueueLocalSceneManagerLeaveSceneFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+        return;
+    }
+    rpc.metadata.reserve(call->sentMetadata.size());
+    for (const auto& [key, value] : call->sentMetadata) {
+        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+        rpc.metadata.emplace_back(key, Base64Encode(value));
+    }
+    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+        GrpcCallOutcome outcome;
+        outcome.code = result.status.code_value();
+        outcome.message = result.status.message();
+        outcome.initialMetadata = std::move(result.initialMetadata);
+        outcome.trailingMetadata = std::move(result.trailingMetadata);
+        if (!outcome.ok()) {
+            CompleteSceneManagerLeaveScene(*call, outcome, nullptr);
+            return;
+        }
+        ::Empty reply;
+        if (!reply.ParseFromString(result.response)) {
+            outcome.code = kGrpcStatusInternal;
+            outcome.message = "failed to parse the SceneManager.LeaveScene response";
+            CompleteSceneManagerLeaveScene(*call, outcome, nullptr);
+            return;
+        }
+        CompleteSceneManagerLeaveScene(*call, outcome, &reply);
+    });
 }
 
 void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request,
@@ -431,12 +494,11 @@ void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntit
 }
 
 void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request) {
-    // 显式写出空 vector:unary 方法另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
+    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
     SendSceneManagerLeaveScene(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
 }
 
-void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
-
+void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::LeaveSceneRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const size_t count = std::min(metaKeys.size(), metaValues.size());
     GrpcSentMetadata metadata;
     metadata.reserve(count);
@@ -444,46 +506,23 @@ void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntit
         metadata.emplace_back(metaKeys[i], metaValues[i]);
     }
     StartSceneManagerLeaveSceneCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-
 }
 
-void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues){
+void SendSceneManagerLeaveScene(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
     const ::scene_manager::LeaveSceneRequest& derived = static_cast<const ::scene_manager::LeaveSceneRequest&>(message);
     SendSceneManagerLeaveScene(registry, nodeEntity, derived, metaKeys, metaValues);
 }
 #pragma endregion
 
-void HandleSceneManagerServiceCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag) {
-        const auto releaseTag = [](GrpcTag* tag) { tagPool.destroy(tag); };
-        const std::unique_ptr<GrpcTag, decltype(releaseTag)> owner(grpcTag, releaseTag);
-        switch (grpcTag->messageId) {
-        case SceneManagerCreateSceneMessageId:
-            AsyncCompleteGrpcSceneManagerCreateScene(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case SceneManagerDestroySceneMessageId:
-            AsyncCompleteGrpcSceneManagerDestroyScene(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case SceneManagerEnterSceneMessageId:
-            AsyncCompleteGrpcSceneManagerEnterScene(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        case SceneManagerLeaveSceneMessageId:
-            AsyncCompleteGrpcSceneManagerLeaveScene(registry, nodeEntity, completeQueueComp, ok, grpcTag->valuePtr);
-            break;
-        default:
-            break;
-        }
-}
-
-void SetSceneManagerServiceHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-
+void SetSceneManagerServiceHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
     AsyncSceneManagerCreateSceneHandler = handler;
     AsyncSceneManagerDestroySceneHandler = handler;
     AsyncSceneManagerEnterSceneHandler = handler;
     AsyncSceneManagerLeaveSceneHandler = handler;
+    (void)handler;
 }
 
-void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler) {
-
+void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
     if (!AsyncSceneManagerCreateSceneHandler) {
         AsyncSceneManagerCreateSceneHandler = handler;
     }
@@ -496,6 +535,7 @@ void SetSceneManagerServiceIfEmptyHandler(const std::function<void(const ClientC
     if (!AsyncSceneManagerLeaveSceneHandler) {
         AsyncSceneManagerLeaveSceneHandler = handler;
     }
+    (void)handler;
 }
 
 void SetSceneManagerServiceFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -503,6 +543,7 @@ void SetSceneManagerServiceFailedHandler(const std::function<void(const GrpcCall
     AsyncSceneManagerDestroySceneFailedHandler = handler;
     AsyncSceneManagerEnterSceneFailedHandler = handler;
     AsyncSceneManagerLeaveSceneFailedHandler = handler;
+    (void)handler;
 }
 
 void SetSceneManagerServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
@@ -518,16 +559,11 @@ void SetSceneManagerServiceIfEmptyFailedHandler(const std::function<void(const G
     if (!AsyncSceneManagerLeaveSceneFailedHandler) {
         AsyncSceneManagerLeaveSceneFailedHandler = handler;
     }
+    (void)handler;
 }
 
 void SetSceneManagerServiceCallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);
-}
-
-void InitSceneManagerServiceGrpcNode(const std::shared_ptr<::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity) {
-
-    registry.emplace<SceneManagerStubPtr>(nodeEntity, SceneManager::NewStub(channel));
-
 }
 
 }// namespace scene_manager

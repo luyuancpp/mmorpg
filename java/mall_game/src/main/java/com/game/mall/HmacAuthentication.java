@@ -33,11 +33,11 @@ public class HmacAuthentication extends OncePerRequestFilter {
             }
             // 容器已剥离 context 和 DispatcherServlet 前缀；签名仍绑定上面的完整原始 URI。
             String route = request.getPathInfo() == null ? request.getServletPath() : request.getPathInfo();
-            String role = "/internal/payments".equals(route) ? "payment" : "gateway";
-            if (route != null && route.startsWith("/internal/") && !role.equals("payment")) { throw new CommerceException(404, "接口不存在"); }
+            String role = Set.of("/internal/payments","/internal/refunds/poll","/internal/refunds/receipt").contains(route) ? "payment" : Set.of("/internal/deliveries/poll","/internal/deliveries/receipt").contains(route) ? "delivery" : "gateway";
+            if (route != null && route.startsWith("/internal/") && role.equals("gateway")) { throw new CommerceException(404, "接口不存在"); }
             String subject = single(request, "X-Commerce-Subject");
             if (role.equals("gateway")) { requirePlayer(subject); }
-            else if (!props.getPaymentSubject().equals(subject)) { throw new CommerceException(401, "调用方认证失败"); }
+            else if (!(role.equals("delivery")?"trade".equals(subject):props.getPaymentSubject().equals(subject))) { throw new CommerceException(401, "调用方认证失败"); }
             String timestamp = single(request, "X-Commerce-Timestamp");
             String nonce = single(request, "X-Commerce-Nonce");
             String signature = single(request, "X-Commerce-Signature");
@@ -45,7 +45,8 @@ public class HmacAuthentication extends OncePerRequestFilter {
                 throw new CommerceException(401, "调用方认证失败");
             }
             long sent = Long.parseLong(timestamp);
-            String secret = role.equals("payment") ? props.getPaymentSecret() : props.getGatewaySecret();
+            String secret = role.equals("payment") ? props.getPaymentSecret() : role.equals("delivery")?props.getDeliverySecret():props.getGatewaySecret();
+            if(secret==null||secret.getBytes(StandardCharsets.UTF_8).length<32)throw new CommerceException(401,"调用方认证失败");
             byte[] expected = HexFormat.of().parseHex(sign(secret, role, subject, timestamp, nonce, request.getMethod(), path, body));
             if (!MessageDigest.isEqual(expected, HexFormat.of().parseHex(signature))) { throw new CommerceException(401, "调用方认证失败"); }
             nonces.claim(role, nonce, sent);

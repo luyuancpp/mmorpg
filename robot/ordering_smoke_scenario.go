@@ -1,6 +1,6 @@
 package main
 
-// ordering-smoke 场景:单机器人验证「同一会话经路由服的请求按收包顺序执行」
+// ordering-smoke 场景:验证「同一会话经路由服的请求按收包顺序执行」
 // (docs/design/client-request-ordering.md §1.3 / §12 批次 R):
 //
 //	O1 登录进场;
@@ -13,6 +13,12 @@ package main
 // 判据:任何一轮停在 QUEUED 即失败。gate 路由 lane(批次 C)上线之前,路由服按条随机选副本、业务服按条并发执行,
 // 本场景**预期会间歇失败**(这正是它要证明的缺陷);上线之后必须每轮都通过。单副本也可能失败:同一 HTTP/2 连接上的
 // 两个 unary 在服务端是两个 goroutine 并发执行(§1.2)。
+//
+// O5–O7(ordering_smoke_groups.go):帮会 ApplyJoinGuild → CancelGuildApplication、好友 AcceptFriend → RemoveFriend、
+// 登录 Login → EnterGame 三组,各用独立账号(robot_9902–9906)与连接,在 O1 之前跑完、不碰主机器人;判定方式与 O3 相同,
+// 细节见该文件头。各组与 O3 的乱序不当场退出,O3 之后汇总成一行 FAIL,step 是逗号分隔的乱序步骤
+// (如 step=O5-order,O3-order);其余失败仍立即退出。O4 编号留给另一条分支正在加的「LeaveGame → JoinQueue」:
+// 它让主机器人离开游戏,所以必须是主机器人的最后一步,这条约束只管主机器人(robot_9901)。
 //
 // 结果约定(供外层脚本消费):
 //
@@ -122,6 +128,13 @@ func RunOrderingSmoke(cfg *config.Config) {
 		zap.L().Info(fmt.Sprintf("[ordering-smoke] PASS step=%s %s", step, fmt.Sprintf(format, args...)))
 	}
 
+	// ---- O5–O7:独立账号的三组流水线(ordering_smoke_groups.go),不碰主机器人,先于 O1 跑完 ----
+	// 乱序只登记,O3 之后与 O3 的乱序汇总成一行 FAIL;其余失败立即退出(见 runOrderingSmokeGroups)。
+	reorderFailures, groupErr := runOrderingSmokeGroups(cfg, stats, pass)
+	if groupErr != nil {
+		fail(groupErr.step, "%v", groupErr.err)
+	}
+
 	// ---- O1:登录进场 ----
 	var err error
 	bot, err = orderingSmokeLogin(cfg, orderingSmokeAccount, stats)
@@ -171,11 +184,17 @@ func RunOrderingSmoke(cfg *config.Config) {
 		}
 	}
 	if len(reordered) > 0 {
-		fail("O3-order", "%d/%d 轮执行顺序被颠倒(先发的 JoinQueue 晚于后发的 CancelQueue 执行),乱序轮次=%v。"+
+		reorderFailures = append(reorderFailures, orderingReorderFail("O3-order", "%d/%d 轮执行顺序被颠倒(先发的 JoinQueue 晚于后发的 CancelQueue 执行),乱序轮次=%v。"+
 			"gate 路由 lane(client-request-ordering.md 批次 C)上线之前这是预期结果;上线之后出现即为缺陷",
-			len(reordered), orderingSmokeRounds, reordered)
+			len(reordered), orderingSmokeRounds, reordered))
+	} else {
+		pass("O3-order", "rounds=%d 全部按发送顺序执行", orderingSmokeRounds)
 	}
-	pass("O3-order", "rounds=%d 全部按发送顺序执行", orderingSmokeRounds)
+	// O5–O7 与 O3 的乱序在这里汇总成一行 FAIL:一次运行就能看到每组各自是否抓到乱序。
+	if len(reorderFailures) > 0 {
+		step, reason := orderingReorderSummary(reorderFailures)
+		fail(step, "%s", reason)
+	}
 
 	zap.L().Info(fmt.Sprintf("ORDERING_SMOKE_OK player_id=%d rounds=%d", bot.gc.PlayerId, orderingSmokeRounds))
 	cleanup()
@@ -227,6 +246,25 @@ func orderingSmokeIsRecorded(messageId uint32) bool {
 		game.MatchServiceCancelQueueMessageId,
 		game.MatchServiceGetQueueStatusMessageId,
 		game.SceneClientPlayerCommonSendTipToClientMessageId:
+		return true
+	// O5–O7(ordering_smoke_groups.go)等的帮会 / 好友 / 登录回包。两边的推送(NotifyGuildChanged、NotifyFriendEvent)
+	// 不是任何请求的回包,不留底,照旧交给通用分发。
+	case game.GuildServiceCreateGuildMessageId,
+		game.GuildServiceGetPlayerGuildMessageId,
+		game.GuildServiceLeaveGuildMessageId,
+		game.GuildServiceDisbandGuildMessageId,
+		game.GuildServiceApplyJoinGuildMessageId,
+		game.GuildServiceCancelGuildApplicationMessageId,
+		game.GuildServiceListMyGuildApplicationsMessageId,
+		game.GuildServiceListGuildApplicationsMessageId,
+		game.ClientPlayerFriendAddFriendMessageId,
+		game.ClientPlayerFriendAcceptFriendMessageId,
+		game.ClientPlayerFriendRejectFriendMessageId,
+		game.ClientPlayerFriendRemoveFriendMessageId,
+		game.ClientPlayerFriendGetFriendListMessageId,
+		game.ClientPlayerFriendGetPendingRequestsMessageId,
+		game.ClientPlayerLoginLoginMessageId,
+		game.ClientPlayerLoginEnterGameMessageId:
 		return true
 	}
 	return false

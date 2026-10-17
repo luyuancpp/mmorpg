@@ -49,8 +49,10 @@ func (l *DisconnectLogic) Disconnect(in *login_proto.LoginNodeDisconnectRequest)
 
 	// Mark session as disconnecting with 30s lease in Redis (replaces Centre's DelayedCleanupTimer).
 	// When the Redis key TTL expires, the session is effectively cleaned up.
+	// 带上本连接所在的 gate 实例号:同号跨实例时,旧实例迟到的断线由 player_locator 按实例号忽略
+	// (docs/design/scene-enter-chain-residuals.md §6)。栅栏绑定的玩家来自同一个含实例号的栅栏键,用同一个实例号。
 	for _, playerID := range sessionPlayersToSettle(sessionDetails.PlayerId, bound) {
-		markPlayerSessionDisconnecting(l.ctx, l.svcCtx, playerID, in.SessionId)
+		markPlayerSessionDisconnecting(l.ctx, l.svcCtx, playerID, in.SessionId, sessionDetails.GetGateInstanceId())
 	}
 
 	return &login_proto.LoginEmptyResponse{}, nil

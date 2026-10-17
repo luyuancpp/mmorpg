@@ -98,8 +98,14 @@ type BattleResultEvent struct {
 	// 结算时 BattleSettlementData.is_dead == true 的玩家,升序去重;所有对局都填。
 	// 用户决策 U2(阵亡也得奖):guild 发奖候选 = team 0 − fled_player_ids,本字段不参与过滤,只供统计与日后回退。
 	DeadPlayerIds []uint64 `protobuf:"varint,11,rep,packed,name=dead_player_ids,json=deadPlayerIds,proto3" json:"dead_player_ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// 完整个人结算源：提交结果前固定，之后的终局包与旧R07投递复用原值。
+	// 仅作恢复原件；没有玩家源版本与SQL收据时，消费者不得据此自动重发资产或销账。
+	Settlements []*battle.BattleSettlementData `protobuf:"bytes,12,rep,name=settlements,proto3" json:"settlements,omitempty"`
+	// 0是没有完整个人原件的历史结果；1要求成员集合与settlements严格一一对应。
+	// 未知版本拒绝推进消费位点，不能把默认0冒充完整原件。
+	SettlementFormatVersion uint32 `protobuf:"varint,13,opt,name=settlement_format_version,json=settlementFormatVersion,proto3" json:"settlement_format_version,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *BattleResultEvent) Reset() {
@@ -209,6 +215,20 @@ func (x *BattleResultEvent) GetDeadPlayerIds() []uint64 {
 	return nil
 }
 
+func (x *BattleResultEvent) GetSettlements() []*battle.BattleSettlementData {
+	if x != nil {
+		return x.Settlements
+	}
+	return nil
+}
+
+func (x *BattleResultEvent) GetSettlementFormatVersion() uint32 {
+	if x != nil {
+		return x.SettlementFormatVersion
+	}
+	return 0
+}
+
 var File_proto_contracts_kafka_match_event_proto protoreflect.FileDescriptor
 
 const file_proto_contracts_kafka_match_event_proto_rawDesc = "" +
@@ -218,7 +238,7 @@ const file_proto_contracts_kafka_match_event_proto_rawDesc = "" +
 	"\n" +
 	"team_index\x18\x01 \x01(\rR\tteamIndex\x12\x1d\n" +
 	"\n" +
-	"player_ids\x18\x02 \x03(\x04R\tplayerIds\"\xe5\x03\n" +
+	"player_ids\x18\x02 \x03(\x04R\tplayerIds\"\xda\x04\n" +
 	"\x11BattleResultEvent\x12\x1b\n" +
 	"\tbattle_id\x18\x01 \x01(\x04R\bbattleId\x12\x1d\n" +
 	"\n" +
@@ -232,7 +252,9 @@ const file_proto_contracts_kafka_match_event_proto_rawDesc = "" +
 	"\x10activity_context\x18\t \x01(\v2\x16.BattleActivityContextR\x0factivityContext\x12&\n" +
 	"\x0ffled_player_ids\x18\n" +
 	" \x03(\x04R\rfledPlayerIds\x12&\n" +
-	"\x0fdead_player_ids\x18\v \x03(\x04R\rdeadPlayerIdsB\x17Z\x15proto/contracts/kafkab\x06proto3"
+	"\x0fdead_player_ids\x18\v \x03(\x04R\rdeadPlayerIds\x127\n" +
+	"\vsettlements\x18\f \x03(\v2\x15.BattleSettlementDataR\vsettlements\x12:\n" +
+	"\x19settlement_format_version\x18\r \x01(\rR\x17settlementFormatVersionB\x17Z\x15proto/contracts/kafkab\x06proto3"
 
 var (
 	file_proto_contracts_kafka_match_event_proto_rawDescOnce sync.Once
@@ -252,16 +274,18 @@ var file_proto_contracts_kafka_match_event_proto_goTypes = []any{
 	(*BattleResultEvent)(nil),            // 1: contracts.kafka.BattleResultEvent
 	(battle.EBattleOutcome)(0),           // 2: eBattleOutcome
 	(*battle.BattleActivityContext)(nil), // 3: BattleActivityContext
+	(*battle.BattleSettlementData)(nil),  // 4: BattleSettlementData
 }
 var file_proto_contracts_kafka_match_event_proto_depIdxs = []int32{
 	2, // 0: contracts.kafka.BattleResultEvent.outcome:type_name -> eBattleOutcome
 	0, // 1: contracts.kafka.BattleResultEvent.teams:type_name -> contracts.kafka.BattleResultTeam
 	3, // 2: contracts.kafka.BattleResultEvent.activity_context:type_name -> BattleActivityContext
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	4, // 3: contracts.kafka.BattleResultEvent.settlements:type_name -> BattleSettlementData
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_proto_contracts_kafka_match_event_proto_init() }

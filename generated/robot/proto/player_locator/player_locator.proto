@@ -21,7 +21,7 @@ message PlayerId {
   int64 uid = 1;
 }
 
-// ----- Session management (replaces Centre SessionMap) -----
+// ----- Session management -----
 
 enum PlayerSessionState {
   SESSION_STATE_UNKNOWN = 0;
@@ -32,18 +32,22 @@ enum PlayerSessionState {
 
 message PlayerSession {
   uint64 player_id = 1;
-  uint64 session_id = 2;         // Gate session ID
+  uint32 session_id = 2;         // Gate session ID
   string gate_id = 3;            // Gate node ID
   string gate_instance_id = 4;   // Gate instance UUID (prevent zombie messages)
   string scene_node_id = 5;      // Current Scene node ID
   uint64 scene_id = 6;           // Current scene ID
   string token_id = 7;           // SHA256(login_token)
   uint64 token_expiry_ms = 8;
-  uint64 session_version = 9;    // Incremented on each real change, prevents stale messages
+  uint32 session_version = 9;    // Incremented on each real change, prevents stale messages
   PlayerSessionState state = 10;
   int64 last_active_ts = 11;     // Last active time (unix ms)
   string request_id = 12;        // Latest login request_id (idempotent)
   string account = 13;           // Account name (used by Login for reconnect decisions)
+  // 登录代次:login 持玩家锁铸造,随本记录的整字节 CAS 提交;记录与请求都非 0 时提交点要求严格递增。
+  // 与 session_version 不同,断线不变、删键不归零(铸造带毫秒下限)。0 = 旧版 login 写入的无代次会话。
+  // 见 docs/design/scene-enter-session-fence.md §3。
+  uint64 login_generation = 14;
 }
 
 message SetSessionRequest {
@@ -59,30 +63,39 @@ message GetSessionResponse {
   bool found = 2;
 }
 
-// 离线转换必须带上调用方观察到的精确会话；迟到的旧 LeaveGame 不能删除新会话。
+// 正常登出必须带上 Login 观察到的精确会话。会话已被替换或版本已推进后，
+// 迟到的旧 Gate LeaveGame 只能成为无操作，不能删除新会话。
 message MarkOfflineRequest {
   uint64 player_id = 1;
   uint32 expected_session_id = 2;
   uint32 expected_session_version = 3;
+  // 语义同 SetDisconnectingRequest.gate_instance_id:请求与会话记录的实例号都非空且不等时,
+  // 判为旧实例迟到的登出,忽略(不删会话、不调 LeaveScene);空 = 旧版 login,不校验。
+  string expected_gate_instance_id = 4;
 }
 
 // Disconnect request: mark DISCONNECTING + start TTL lease
 message SetDisconnectingRequest {
   uint64 player_id = 1;
-  uint64 session_id = 2;
+  uint32 session_id = 2;
   uint32 lease_ttl_seconds = 3;  // Default 30s
+  // 发起断线的 gate 实例 uuid(SessionDetails.gate_instance_id)。请求与会话记录的实例号都非空且不等时,
+  // 判为旧实例迟到的上报,忽略;空 = 旧版 login,不校验(docs/design/scene-enter-chain-residuals.md §6)。
+  string gate_instance_id = 4;
 }
 
 // Reconnect request: cancel lease, restore ONLINE
 message ReconnectRequest {
   uint64 player_id = 1;
-  uint64 new_session_id = 2;
+  uint32 new_session_id = 2;
   string gate_id = 3;
   string gate_instance_id = 4;
   string token_id = 5;
   uint64 token_expiry_ms = 6;
   string request_id = 7;
   string account = 8;           // Account name (from Login)
+  // 本次重连链铸造的登录代次,写进会话记录;记录与请求都非 0 时要求严格递增。0 = 旧版 login。
+  uint64 login_generation = 9;
 }
 
 message ReconnectResponse {
@@ -94,7 +107,7 @@ message ReconnectResponse {
 // Lease expired cleanup result
 message LeaseExpiredEvent {
   uint64 player_id = 1;
-  uint64 session_id = 2;
+  uint32 session_id = 2;
   string scene_node_id = 3;
   uint64 scene_id = 4;
   string gate_id = 5;
@@ -106,7 +119,7 @@ service PlayerLocator {
   rpc GetLocation(PlayerId) returns (PlayerLocation);
   rpc MarkOffline(MarkOfflineRequest) returns (Empty);
 
-  // Session management (replaces Centre)
+  // Session management
   rpc SetSession(SetSessionRequest) returns (Empty);
   rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
   rpc SetDisconnecting(SetDisconnectingRequest) returns (Empty);

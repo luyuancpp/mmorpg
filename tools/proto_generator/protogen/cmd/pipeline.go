@@ -37,13 +37,13 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		{Name: "cppGen.GenNodeUtil", Run: cppGen.GenNodeUtil},
 		{Name: "cppGen.GenerateAllEventHandlers", Run: cppGen.GenerateAllEventHandlers},
 		{Name: "cppGen.GenerateGateKafkaCommandRouter", Run: cppGen.GenerateGateKafkaCommandRouter},
+		{Name: "cppGen.GenerateSceneKafkaCommandRouter", Run: cppGen.GenerateSceneKafkaCommandRouter},
 	})
 
 	runner.RunTask("cppGen.InitMessageId", cppGen.InitMessageId)
 	runner.RunTask("cppGen.InitEventId", cppGen.InitEventId)
 	runner.RunTask("cppGen.WriteMessageIdFile", cppGen.WriteMessageIdFile)
 	runner.RunTask("cppGen.WriteEventIdFile", cppGen.WriteEventIdFile)
-	runner.RunTaskWithWG("prototools.PruneOrphanedLocalEventOutputs", prototools.PruneOrphanedLocalEventOutputs)
 
 	runner.RunParallelGroup("MethodFilesGeneration", []NamedTask{
 		{Name: "cppGen.WriteMethodFile", Run: cppGen.WriteMethodFile},
@@ -72,4 +72,6 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 			protoToolsOption.ProcessAllOptions(wg, internal.FdSet)
 		}},
 	})
+	runner.RunTaskWithWG("prototools.SyncCppBuildProjects", prototools.SyncCppBuildProjects)
+	runner.RunTaskWithWG("prototools.RetireLegacyEventRegistries", prototools.RetireLegacyEventRegistries)
 }

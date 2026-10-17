@@ -2,20 +2,6 @@
 #include "thread_context/ecs_context.h"
 
 {{ .GlobalUserCode }}
-void {{ .ClassName }}::Register()
-{
-{{- range .EventMessages }}
-    tlsEcs.dispatcher.sink<{{ .QualifiedName }}>().connect<&{{ $.ClassName }}::{{ .HandlerName }}>();
-{{- end }}
-}
-
-void {{ .ClassName }}::UnRegister()
-{
-{{- range .EventMessages }}
-    tlsEcs.dispatcher.sink<{{ .QualifiedName }}>().disconnect<&{{ $.ClassName }}::{{ .HandlerName }}>();
-{{- end }}
-}
-
 {{- range .EventMessages }}
 void {{ $.ClassName }}::{{ .HandlerName }}(const {{ .QualifiedName }}& event)
 {

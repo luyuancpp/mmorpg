@@ -574,9 +574,9 @@ TEST_F(DbTaskDispatchEcs, FailedAckOnExitingPlayerRetainsWhenCapped)
     EXPECT_TRUE(tlsEcs.actorRegistry.valid(player));
 }
 
-TEST_F(DbTaskDispatchEcs, ExhaustedRekickWithMissingComponentRetainsEntity)
+TEST_F(DbTaskDispatchEcs, ExhaustedRekickWithMissingComponentDiscardsWithoutReleaseMark)
 {
-    // 被闸门保留的实体再收到退出请求:轮次清零、重新开始重存;重存因持久组件缺失被拒 → fail-closed 保留,不收尾。
+    // 重存永久拒绝后不存盘丢弃,DestroyPlayer 负责把 MySQL 欠账记入 orphan_unsynced 并回收。
     const auto player = MakeExitingPlayer();
     ASSERT_TRUE(MarkPersisted(player));
     {
@@ -593,16 +593,14 @@ TEST_F(DbTaskDispatchEcs, ExhaustedRekickWithMissingComponentRetainsEntity)
 
     PlayerLifecycleSystem::HandleExitGameNode(player, ExitCause::kNodeShutdown);
 
-    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
-    EXPECT_TRUE((tlsEcs.actorRegistry.all_of<UnregisterPlayer, PlayerExitIntentComp>(player)));
-    const auto& intent = tlsEcs.actorRegistry.get<PlayerExitIntentComp>(player);
-    EXPECT_EQ(intent.dbTaskResaveRounds, 1u) << "rekick 清零后闸门又重存了一轮";
-    EXPECT_TRUE(intent.awaitingDbTaskAck);
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.GetPlayer(kDispatchPlayerId), entt::entity{entt::null});
     EXPECT_EQ(Delta(before, Counter::kExitRekick), 1u);
     EXPECT_EQ(Delta(before, Counter::kExitResave), 1u);
-    EXPECT_EQ(Delta(before, Counter::kExitUnsynced), 0u) << "拒存不是「没法再补」:不带着落后收尾";
-    EXPECT_EQ(SessionMap().count(kDispatchSession), 1u);
-    EXPECT_TRUE(DbTaskDispatchSystem::NeedsResave(kDispatchPlayerId));
+    EXPECT_EQ(Delta(before, Counter::kExitUnsynced), 0u) << "不走已落盘退出收尾";
+    EXPECT_EQ(Delta(before, Counter::kOrphanUnsynced), 1u);
+    EXPECT_EQ(SessionMap().count(kDispatchSession), 0u);
+    EXPECT_FALSE(DbTaskDispatchSystem::NeedsResave(kDispatchPlayerId));
 }
 
 TEST_F(DbTaskDispatchEcs, OrphanFailureIsCountedAndForgotten)

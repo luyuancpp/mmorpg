@@ -23,6 +23,7 @@
 #include <string>
 
 #include "battle_security.h"
+#include "client/network_probe_security.h"
 
 namespace
 {
@@ -214,6 +215,23 @@ TEST(BattleTokenSecretStrength, RejectsReuseOfGateSecretButAllowsUnsetGate)
 	EXPECT_EQ(ClassifySecretStrength(kSecret, gate), SecretStrengthVerdict::kOk);
 	// gate 侧没配密钥(本地 dev)不判相同:这一项只守"分域",不守 gate 自己的强度
 	EXPECT_EQ(ClassifySecretStrength(kSecret, ""), SecretStrengthVerdict::kOk);
+}
+
+TEST(NetworkProbeIdentity, PhysicalRegionRejectsMalformedAndOverflow)
+{
+    EXPECT_EQ(network_probe::ParsePhysicalRegion("1"),1u);
+    EXPECT_EQ(network_probe::ParsePhysicalRegion("4294967295"),UINT32_MAX);
+    for(const auto* text:{"","-1"," 1","1x","4294967296"})
+        EXPECT_EQ(network_probe::ParsePhysicalRegion(text),0u);
+}
+
+TEST(NetworkProbeSignature, GrantAndReceiptAreDistinctAndWeakKeysFailClosed)
+{
+    const auto grant=network_probe::SignWithSecret(kSecret,network_probe::kGrantDomain,kPayload);
+    const auto receipt=network_probe::SignWithSecret(kSecret,network_probe::kReceiptDomain,kPayload);
+    EXPECT_EQ(grant.size(),32u);EXPECT_EQ(receipt.size(),32u);EXPECT_NE(grant,receipt);
+    EXPECT_TRUE(network_probe::SignWithSecret("weak",network_probe::kGrantDomain,kPayload).empty());
+    EXPECT_NE(grant,network_probe::SignWithSecret(kSecret,network_probe::kGrantDomain,kPayload+"changed"));
 }
 
 } // namespace

@@ -179,4 +179,16 @@ message GameConfig {
     }
 
     ZoneRedisConfig zone_redis = 7; // Zone Redis config
+
+    // 玩家持久收件箱的 scene 消费端(docs/design/player-inbox-service.md §3.3、§7.3、§11.7)。
+    // 由 readGameConfig 手工逐键解析(cpp/libs/engine/config/config.cpp),yaml 键名 player_inbox。
+    // **整段或单键缺失时加载器显式取默认值**,不依赖 proto3 的 0:
+    //   consumer_enabled        默认 false = 不发 Fetch,账本字段照常随存档往返(这就是回滚下限,§11.7 第 4 步);
+    //   periodic_fetch_minutes  默认 30 = 在线有界兜底周期(分钟,±20% 抖动);0 = 关闭兜底(0 有含义,所以不能当缺省值)。
+    message PlayerInboxConfig {
+        bool consumer_enabled = 1;
+        uint32 periodic_fetch_minutes = 2;
+    }
+
+    PlayerInboxConfig player_inbox = 8;
 }

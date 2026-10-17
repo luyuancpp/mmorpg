@@ -60,7 +60,6 @@ include_directories(
 
 set(SOURCE_FILES
     handler/event/scene_entry_dispatch.cpp
-    handler/event/event_handler.cpp
     handler/event/gate_event_handler.cpp
     handler/event/gate_kafka_command_router.cpp
     handler/event/player_event_handler.cpp

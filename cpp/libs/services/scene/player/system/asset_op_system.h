@@ -10,15 +10,15 @@
 // 一起落盘、一起丢(不变量 I3)。
 //
 // 契约(调用方必须知道的全部):
-//   * **线程**:三个入口只能在 scene 的 muduo loop 线程上调用(gRPC 包装已 runInLoop 投递)。
+//   * **线程**:资产 RPC 入口(含 AckReceipt)只能在 scene 的 muduo loop 线程上调用(muduo_grpc 服务端在 loop 线程上派发)。
 //     内部读写 ECS、读账本、触发存盘,没有任何自己的锁。
 //   * **gRPC status 恒为 OK**,结局写在 response.outcome;reason 是 asset_error 段的 tip 码
 //     (无原因时 id = 0)。四种结局的含义见 §4.10 与下面的 Kind 注释。
 //   * **幂等**:同一 (player_id, stream, stream_epoch, seq) 重复调用只读答复,绝不重办
 //     (不变量 I2 结局固定)。未记账的结局(RETRY / NOT_HERE / UNKNOWN)可以安全重投。
 //   * **不在本调用里等落盘**:记账后立刻触发一次 SavePlayerToRedis 并如实回报 durable;
-//     Go 用同一 seq 重查直到 durable=true 才终结(不变量 I4)。生成器模板在 future.get()
-//     之后没有守护段(grpc_handler_gen.go:130-141),硬塞等待会被重生成吞掉。
+//     Go 用同一 seq 重查直到 durable=true 才终结(不变量 I4)。Handle* 在 loop 线程上同步执行,
+//     不得阻塞等落盘(docs/design/grpc-muduo-transport.md §15.8),等落盘只会卡住整个逻辑帧。
 //   * **性能**:只有"要记账"和"已见但尚未 durable 且距上次请求 ≥500ms"两种情况会触发
 //     marshal + proto 比较;其余路径是几次组件查找。
 //
@@ -66,6 +66,7 @@ public:
 	static void Debit(const ::AssetOpRequest& request, ::AssetOpResponse& response);
 	static void AbortDebit(const ::AssetOpRequest& request, ::AssetOpResponse& response);
 	static void Credit(const ::AssetOpRequest& request, ::AssetOpResponse& response);
+	static void AckReceipt(const ::AssetOpRequest& request, ::AssetOpResponse& response);
 
 	// ── 测试注入点(AGENTS §11.2 显式依赖:存盘、发币、密钥、时间都要能替换)──
 	// 全部传 nullptr 恢复默认实现。生产代码**不调用**这些 setter。

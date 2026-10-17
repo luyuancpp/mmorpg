@@ -58,6 +58,22 @@ func main() {
 	// 回填 optional 段的默认值(迁移超时、大字段闸上限)。见 config.Normalize 注释。
 	config.AppConfig.Normalize()
 
+	// 重试路由(docs/design/db-retry-owner-routing.md):配置键 ServerConfig.Kafka.RetryRouting,环境变量 DB_RETRY_ROUTING
+	// 优先(只用于单 zone 金丝雀)。拼错一律拒启、不静默回落;生效值回写进配置,消费者按它装配。
+	// 启动日志 "retry routing: mode=… source=…" 与指标 db_retry_routing_mode 是切换 / 回滚时的核对依据。
+	retryRouting, retryRoutingSource, err := config.ResolveRetryRouting(
+		config.AppConfig.ServerConfig.Kafka.RetryRouting, os.Getenv(config.RetryRoutingEnvVar))
+	if err != nil {
+		panic(fmt.Sprintf("retry routing rejected: %v", err))
+	}
+	config.AppConfig.ServerConfig.Kafka.RetryRouting = retryRouting
+	// 重试路由与入队落盘确认(WAITAOF)的取值校验。conf.Load 在 Normalize 之前已自动调过一次(没写的键放行),
+	// 这里按回填默认值、合并环境变量之后的生效值再判一次,非法即拒启。
+	if err := config.AppConfig.Validate(); err != nil {
+		panic(fmt.Sprintf("config rejected: %v", err))
+	}
+	logx.Infof("retry routing: mode=%s source=%s", retryRouting, retryRoutingSource)
+
 	// Derive zone-specific Kafka topic and MySQL database name from ZoneId
 	if config.AppConfig.ZoneId == 0 {
 		panic("ZoneId must be set in config (> 0)")
@@ -78,9 +94,10 @@ func main() {
 	if err := kafkautil.EnsureTopics(
 		config.AppConfig.ServerConfig.Kafka.Brokers,
 		[]kafkautil.TopicSpec{{
-			Name:        config.AppConfig.ServerConfig.Kafka.Topic,
-			Partitions:  config.AppConfig.ServerConfig.Kafka.PartitionCnt,
-			RetentionMs: config.AppConfig.ServerConfig.Kafka.RetentionMs,
+			Name:           config.AppConfig.ServerConfig.Kafka.Topic,
+			Partitions:     config.AppConfig.ServerConfig.Kafka.PartitionCnt,
+			RetentionMs:    config.AppConfig.ServerConfig.Kafka.RetentionMs,
+			RetentionBytes: config.AppConfig.ServerConfig.Kafka.RetentionBytes,
 		}},
 	); err != nil {
 		panic(fmt.Sprintf("Kafka db-task partition contract rejected: %v", err))
@@ -119,6 +136,13 @@ func main() {
 
 	// 装配大字段三档闸(必须在消费者启动之前:第一条消息落到 worker 就要过闸)
 	kafka.InitBlobGuard(config.AppConfig.ServerConfig.BlobGuard)
+
+	// 行内围栏模式:启动期设置一次、运行中不可改,必须在构造消费者之前(设计 db-write-fencing-mysql.md §4.7、§8)。
+	fencingMode := config.AppConfig.ServerConfig.Fencing.EffectiveMode()
+	if err := kafka.SetFencingMode(fencingMode); err != nil {
+		panic(fmt.Sprintf("fencing mode rejected: %v", err))
+	}
+	logx.Infof("player row fencing: mode=%s", fencingMode)
 
 	// Initialize Kafka consumer
 	kafkaConsumer, err := kafka.NewKeyOrderedKafkaConsumer(
@@ -242,6 +266,9 @@ func main() {
 		time.Duration(pc.ExtraStoreConnMaxIdleSeconds)*time.Second)
 	fmt.Printf("  kafka:       %v\n", config.AppConfig.ServerConfig.Kafka.Brokers)
 	fmt.Printf("  kafka topic: %s\n", config.AppConfig.ServerConfig.Kafka.Topic)
+	redisCfg := config.AppConfig.ServerConfig.RedisClient
+	fmt.Printf("  retry:       routing=%s (%s) waitaof=%d/%d/%dms\n", retryRouting, retryRoutingSource,
+		redisCfg.NumLocal(), redisCfg.NumReplicas(), redisCfg.WaitAOFTimeoutMs)
 	fmt.Printf("  mysql:       %s@%s/%s\n", config.AppConfig.ServerConfig.Database.User, config.AppConfig.ServerConfig.Database.Hosts, config.AppConfig.ServerConfig.Database.DBName)
 	fmt.Println("=============================================================")
 	// 不要对 quit 调 signal.Stop / signal.Reset:Linux 上 go-zero 收到 SIGTERM 后会在约 5.5 秒后向自身重发一次

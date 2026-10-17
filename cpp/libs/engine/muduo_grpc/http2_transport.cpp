@@ -95,6 +95,13 @@ void Http2Transport::Connect()
         {
             self->FlushOutput();
         } });
+    // muduo LOCAL DELTA 补的连接失败回调;回调存进 Connector,同样只绑 weak_ptr。
+    client_.setConnectFailedCallback([weakSelf](int savedErrno)
+                                     {
+        if (const auto self = weakSelf.lock())
+        {
+            self->HandleConnectFailed(savedErrno);
+        } });
 
     connectDeadline_ = std::chrono::steady_clock::now() + options_.connectTimeout;
     ArmConnectTimer();
@@ -364,7 +371,8 @@ void Http2Transport::HandleConnection(const muduo::net::TcpConnectionPtr &conn)
             CloseWithError(started);
             return;
         }
-        // 发出 client magic + SETTINGS;READY 要等对端 SETTINGS(Windows 的 win_connect 有假阳性)。
+        // 发出 client magic + SETTINGS;READY 要等对端 SETTINGS(gRPC 语义:TCP 连上只说明端口在监听,
+        // 对端是不是可用的 HTTP/2 服务端要看它的 SETTINGS)。
         FlushOutput();
         return;
     }
@@ -404,6 +412,31 @@ void Http2Transport::HandleMessage(const muduo::net::TcpConnectionPtr &, muduo::
     {
         CloseWithError(Status(StatusCode::kUnavailable, "http2 session terminated"));
     }
+}
+
+void Http2Transport::HandleConnectFailed(int savedErrno)
+{
+    // 已放弃(连接超时 / Shutdown):CloseConnection 已经停过 Connector,这次失败不再报。
+    if (closed_)
+    {
+        return;
+    }
+    // 1) 停掉 Connector 的内部重试:Connector::retry 在本回调返回后复核 connect_,已停就不再排下一次;
+    //    重连只留 Channel 按 gRPC 退避这一套。此时没有连接,stop() 也不会碰到 TcpConnection。
+    client_.stop();
+    // 2) 关闭排到下一轮:CloseWithError 会同步回调 Channel::OnTransportClosed,后者释放本对象、改通道状态;
+    //    本回调可能正处在 Connector 自己的 Channel 事件栈上,也可能就在 Connect() → Channel::CreateTransport
+    //    里同步发生(connect() 当场失败),都不能在这里做(设计 §6)。
+    //    与连接超时只会关一次:先到的一方置 closed_,后到的在 CloseWithError 开头返回。
+    std::weak_ptr<Http2Transport> weakSelf = weak_from_this();
+    loop_.queueInLoop([weakSelf, savedErrno]
+                      {
+        if (const auto self = weakSelf.lock())
+        {
+            self->CloseWithError(Status(StatusCode::kUnavailable,
+                                        savedErrno != 0 ? "connect failed (errno " + std::to_string(savedErrno) + ")"
+                                                        : std::string("connect failed")));
+        } });
 }
 
 void Http2Transport::HandleConnectTimeout()
@@ -507,8 +540,9 @@ void Http2Transport::CloseConnection()
         conn->forceClose();
         return;
     }
-    // 还没连上:停掉 Connector 的内部重试。只在没有连接时调用 stop() —— 有连接时 ~TcpClient 不会
-    // 续命 Connector,而 stop() 排队的 stopInLoop 绑的是 Connector 裸指针(上游 FIXME)。
+    // 还没连上:停掉 Connector 的内部重试(连接失败回调里已停过的,再停一次无害)。有连接时用不着:
+    // 本类不 enableRetry,Connector 连上之后不会再自己发起连接。stop() 排队的 stopInLoop 已改持
+    // Connector 的 shared_ptr(muduo LOCAL DELTA),不再有上游裸指针 FIXME 的悬空风险。
     if (connectStarted_)
     {
         client_.stop();

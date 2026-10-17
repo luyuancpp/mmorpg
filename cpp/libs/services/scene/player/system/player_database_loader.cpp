@@ -3,6 +3,7 @@
 #include "engine/core/type_define/player_guid_comp.h"
 
 #include "thread_context/ecs_context.h"
+#include "utils/registry/describe_entity.h"
 #include "proto/common/database/mysql_database_table.pb.h"
 #include "proto/common/component/player_comp.pb.h"  // PlayerProfileComp(角色名只读副本)
 #include "modules/bag/comp/player_bags_comp.h"       // 存盘前确认背包组件在场(bag_marshal 对缺组件输出空记录)
@@ -207,7 +208,8 @@ bool PlayerDatabaseMessageFieldsMarshal(entt::entity player, player_database& me
 		const auto* guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
 		LOG_ERROR << "[PlayerSave] Persisted component(s) missing, refusing to marshal player_database"
 				  << " (load invariant broken; nothing is written): entity=" << entt::to_integral(player)
-				  << " player_id=" << (guid != nullptr ? guid->value : kInvalidGuid) << " missing=" << missing;
+				  << " player_id=" << (guid != nullptr ? guid->value : kInvalidGuid) << " missing=" << missing
+				  << " " << DescribeEntity(tlsEcs.actorRegistry, player);
 		return false;
 	}
 

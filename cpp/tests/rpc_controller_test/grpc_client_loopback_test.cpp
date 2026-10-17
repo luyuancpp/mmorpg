@@ -1,0 +1,363 @@
+// grpc_client_loopback_test — 生成的 gRPC 客户端经真实 muduo_grpc 通道打到同进程 muduo_grpc::Server 的回环用例
+// (docs/design/grpc-muduo-transport.md §14、§15)。
+//
+// 服务端:muduo_grpc::Server 在 127.0.0.1 上提供 /data_service.DataService/LoadPlayerData,方法体走
+// core 的 GrpcUnaryCall 胶水(与生成的 scene / battle 骨架同一条路径:Create → ParseRequest → Proceed)。
+// 客户端:节点实体上挂真实的 MuduoGrpcChannelPtr,经生成的 SendDataServiceLoadPlayerData(带每次调用 done)发出。
+// 锁定的契约:
+//   * 成功:done 恰好一次、不在 Send 栈内同步执行,应答字段正确;带 done 的调用不触发全局应答 / 失败处理器;
+//   * 服务端把调用留着不进业务(守护段式延后)而客户端 deadline 到期:DEADLINE_EXCEEDED 恰好一次;服务端随后
+//     把这次调用收口(截止定时器或对端 RST),迟到的 Proceed 不再进业务;
+//   * 业务已开始、延后完成的调用遇到服务端关机:排空到期回 UNAVAILABLE "server shutting down",onDrained 恰好一次,
+//     迟到的 FinishOk 被吞掉,done 不会第二次执行。
+//
+// 全部在测试线程自己的 EventLoop 上:Server、通道、连接都不起线程。等待一律以 5s 作活性上限,判据只看事件与计数。
+// 销毁顺序:通道先于 Server(先转 loop 让连接断开、排队的完成回调跑完),Server 在 loop 外析构(server.h 的前置条件),
+// 之后再转 loop 让它排进的 forceClose / connectDestroyed 跑完;EventLoop 最先构造、最后析构。
+//
+// 与 rpc_controller_test.cpp 同一工程、同一个 main。
+
+#include <gtest/gtest.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+
+#include <chrono>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+// muduo 头放在标准库 / 系统头之后(它的 Windows 适配头 #define 了 off_t / pid_t 等名字)。
+#include "core/network/grpc_client_runtime.h"
+#include "core/network/grpc_unary_call.h"
+#include "grpc_client/data_service/data_service_grpc_client.h"
+#include "muduo/net/EventLoop.h"
+#include "muduo/net/TimerId.h"
+#include "muduo_grpc/channel.h"
+#include "muduo_grpc/method_table.h"
+#include "muduo_grpc/server.h"
+#include "muduo_grpc/server_call.h"
+
+using namespace std::chrono_literals;
+
+namespace
+{
+
+using data_service::LoadPlayerDataRequest;
+using data_service::LoadPlayerDataResponse;
+using LoadPlayerDataCall = GrpcUnaryCall<LoadPlayerDataRequest, LoadPlayerDataResponse>;
+
+constexpr auto kLiveness = 5s;   // 只作活性上限,不作判据
+
+// 向 OS 借一个空闲回环端口(Server::Create 不接受 0 端口)。失败返回 0。
+uint16_t FindFreeLoopbackPort()
+{
+#ifdef _WIN32
+    const SOCKET s = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (s == INVALID_SOCKET)
+    {
+        return 0;
+    }
+    int len = sizeof(sockaddr_in);
+#else
+    const int s = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (s < 0)
+    {
+        return 0;
+    }
+    socklen_t len = sizeof(sockaddr_in);
+#endif
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = 0;
+    uint16_t port = 0;
+    if (::bind(s, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) == 0 &&
+        ::getsockname(s, reinterpret_cast<sockaddr *>(&addr), &len) == 0)
+    {
+        port = ntohs(addr.sin_port);
+    }
+#ifdef _WIN32
+    ::closesocket(s);
+#else
+    ::close(s);
+#endif
+    return port;
+}
+
+// 测试服务:按 mode 决定方法体怎么完成调用。只在 loop 线程上使用,不需要原子量。
+// 必须活过注册它的 Server(方法表闭包捕获 this),所以在夹具里先于 server_ 声明。
+class LoopbackDataService final : public muduo_grpc::Service
+{
+public:
+    enum class Mode : uint8_t
+    {
+        kReply,                    // 同步:Proceed → 业务 → FinishOk
+        kHoldBeforeBusiness,       // 守护段式延后:不 Proceed,留着句柄
+        kHoldAfterBusinessStarted, // 业务已开始、延后完成(§15.3 Q6):TryStartBusiness 后留着 ServerCall
+    };
+
+    void RegisterMethods(muduo_grpc::MethodTable &table) override
+    {
+        table.AddUnary(std::string(data_service::kDataServiceLoadPlayerDataGrpcPath),
+                       [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+                       { Dispatch(std::move(serverCall), requestBytes); });
+    }
+
+    Mode mode{Mode::kReply};
+    int dispatched{0};
+    int businessRuns{0};
+    std::vector<std::shared_ptr<LoadPlayerDataCall>> heldBeforeBusiness;
+    std::vector<muduo_grpc::ServerCall> heldAfterBusinessStarted;
+
+private:
+    void Dispatch(muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+    {
+        ++dispatched;
+        const auto call = LoadPlayerDataCall::Create(
+            std::move(serverCall),
+            [this](const LoadPlayerDataRequest *request, LoadPlayerDataResponse *response)
+            {
+                ++businessRuns;
+                response->set_version(request->player_id() + 1);
+            });
+        if (!call->ParseRequest(requestBytes))
+        {
+            return;
+        }
+        switch (mode)
+        {
+        case Mode::kReply:
+            call->Proceed();
+            return;
+        case Mode::kHoldBeforeBusiness:
+            heldBeforeBusiness.push_back(call);
+            return;
+        case Mode::kHoldAfterBusinessStarted:
+            if (call->server_call().TryStartBusiness())
+            {
+                ++businessRuns;
+                heldAfterBusinessStarted.push_back(call->server_call());
+            }
+            return;
+        }
+    }
+};
+
+// 一次客户端调用的观察结果。回调只在 loop 线程执行。
+struct Observed
+{
+    bool sendReturned{false};
+    int calls{0};
+    uint32_t code{kGrpcStatusOk};
+    std::string message;
+    bool hadReply{false};
+    uint64_t version{0};
+    bool sendHadReturnedAtDone{false};
+};
+
+class GrpcClientLoopbackTest : public ::testing::Test
+{
+protected:
+    void SetUp() override
+    {
+        savedReplyHandler_ = std::move(data_service::AsyncDataServiceLoadPlayerDataHandler);
+        savedFailedHandler_ = std::move(data_service::AsyncDataServiceLoadPlayerDataFailedHandler);
+        // 带 done 的调用一次都不能触发全局处理器。
+        data_service::AsyncDataServiceLoadPlayerDataHandler =
+            [calls = globalReplyCalls_](const GrpcReplyContext &, const LoadPlayerDataResponse &) { ++*calls; };
+        data_service::AsyncDataServiceLoadPlayerDataFailedHandler =
+            [calls = globalFailedCalls_](const GrpcCallFailure &, const LoadPlayerDataRequest &) { ++*calls; };
+
+        port_ = FindFreeLoopbackPort();
+        ASSERT_NE(port_, 0) << "no free loopback port";
+
+        muduo_grpc::ServerOptions options;
+        options.name = "grpc_client_loopback";
+        options.statsLogInterval = std::chrono::seconds(0);
+        server_ = muduo_grpc::Server::Create(loop_, "127.0.0.1", port_, options);
+        ASSERT_NE(server_, nullptr);
+        ASSERT_TRUE(server_->RegisterService(service_));
+        server_->Start();
+
+        channel_ = muduo_grpc::Channel::Create(loop_, "127.0.0.1", port_);
+        ASSERT_NE(channel_, nullptr);
+        nodeEntity_ = registry_.create();
+        registry_.emplace<MuduoGrpcChannelPtr>(nodeEntity_, channel_);
+    }
+
+    void TearDown() override
+    {
+        // 留着的服务端句柄先放掉(记录已不在时什么都不发;还在时按「句柄全部丢弃」收口),此时 Server 仍活着。
+        service_.heldBeforeBusiness.clear();
+        service_.heldAfterBusinessStarted.clear();
+        // 通道先走:~Channel 把在途调用以 UNAVAILABLE 排进队列,连接断开后服务端摘表。
+        registry_.clear();
+        channel_.reset();
+        RunLoopFor(300ms);
+        // loop 外析构 Server(server.h 的前置条件),再转 loop 让它排进的 forceClose / connectDestroyed 跑完。
+        server_.reset();
+        RunLoopFor(200ms);
+
+        data_service::AsyncDataServiceLoadPlayerDataHandler = std::move(savedReplyHandler_);
+        data_service::AsyncDataServiceLoadPlayerDataFailedHandler = std::move(savedFailedHandler_);
+    }
+
+    // 在 loop 上转到 done() 为真或超时;返回 done() 的最终结果。不能在 loop 自己的回调里调用。
+    bool RunLoopUntil(const std::function<bool()> &done, std::chrono::milliseconds timeout)
+    {
+        if (done())
+        {
+            return true;
+        }
+        const auto deadline = std::chrono::steady_clock::now() + timeout;
+        const muduo::net::TimerId check = loop_.runEvery(0.005, [this, &done, deadline]
+                                                         {
+            if (done() || std::chrono::steady_clock::now() >= deadline)
+            {
+                loop_.quit();
+            } });
+        loop_.loop();
+        loop_.cancel(check);
+        return done();
+    }
+
+    void RunLoopFor(std::chrono::milliseconds duration)
+    {
+        RunLoopUntil([] { return false; }, duration);
+    }
+
+    // 在 loop 任务里发起一次带 done 的调用(Send 只在 loop 线程上调用);done 只捕获 observed。
+    void SendInLoop(const std::shared_ptr<Observed> &observed, uint64_t playerId, std::chrono::milliseconds deadline)
+    {
+        loop_.queueInLoop([this, observed, playerId, deadline]
+        {
+            LoadPlayerDataRequest request;
+            request.set_player_id(playerId);
+            GrpcCallOptions options;
+            options.deadline = deadline;
+            data_service::SendDataServiceLoadPlayerData(
+                registry_, nodeEntity_, request,
+                [observed](const GrpcCallOutcome &outcome, const LoadPlayerDataResponse *reply)
+                {
+                    ++observed->calls;
+                    observed->code = outcome.code;
+                    observed->message = outcome.message;
+                    observed->hadReply = reply != nullptr;
+                    observed->version = reply != nullptr ? reply->version() : 0;
+                    observed->sendHadReturnedAtDone = observed->sendReturned;
+                },
+                options);
+            observed->sendReturned = true;
+            EXPECT_EQ(observed->calls, 0) << "done 不得在 Send 栈内同步调用";
+        });
+    }
+
+    // 声明顺序 = 析构逆序:EventLoop 最先构造、最后析构;service_ 活过 server_。
+    muduo::net::EventLoop loop_;
+    LoopbackDataService service_;
+    std::shared_ptr<muduo_grpc::Server> server_;
+    entt::registry registry_;
+    MuduoGrpcChannelPtr channel_;
+    entt::entity nodeEntity_{entt::null};
+    uint16_t port_{0};
+    std::shared_ptr<int> globalReplyCalls_ = std::make_shared<int>(0);
+    std::shared_ptr<int> globalFailedCalls_ = std::make_shared<int>(0);
+    data_service::AsyncDataServiceLoadPlayerDataHandlerFunctionType savedReplyHandler_;
+    data_service::AsyncDataServiceLoadPlayerDataFailedHandlerFunctionType savedFailedHandler_;
+};
+
+// 同步方法体:done 以 OK 恰好一次,应答字段来自业务,不触发全局处理器;服务端在途计数归零。
+TEST_F(GrpcClientLoopbackTest, PerCallDoneSucceedsExactlyOnceWithoutGlobalHandlers)
+{
+    const auto observed = std::make_shared<Observed>();
+    SendInLoop(observed, 42, kLiveness);
+    ASSERT_TRUE(RunLoopUntil([&] { return observed->calls > 0; }, kLiveness));
+    // 再空转一段:「恰好一次」不是刚好赶上 quit 得出的。
+    RunLoopFor(200ms);
+
+    EXPECT_EQ(observed->calls, 1) << "恰好一次";
+    EXPECT_EQ(observed->code, kGrpcStatusOk) << observed->message;
+    EXPECT_TRUE(observed->hadReply);
+    EXPECT_EQ(observed->version, 43u) << "应答来自服务端业务";
+    EXPECT_TRUE(observed->sendHadReturnedAtDone);
+    EXPECT_EQ(service_.dispatched, 1);
+    EXPECT_EQ(service_.businessRuns, 1);
+    EXPECT_EQ(server_->inFlightCalls(), 0u);
+    EXPECT_EQ(*globalReplyCalls_, 0) << "带 done 的调用不得触发全局应答处理器";
+    EXPECT_EQ(*globalFailedCalls_, 0) << "带 done 的调用不得触发全局失败处理器";
+}
+
+// 服务端留着调用不进业务,客户端 deadline 到期:DEADLINE_EXCEEDED 恰好一次;服务端随后把调用收口,
+// 迟到的 Proceed 不进业务(§15.7「已派发、等许可」一行)。
+TEST_F(GrpcClientLoopbackTest, ServerDeferringTheCallYieldsDeadlineExceededExactlyOnce)
+{
+    service_.mode = LoopbackDataService::Mode::kHoldBeforeBusiness;
+    const auto observed = std::make_shared<Observed>();
+    // 500ms 足够回环建连 + 派发到方法体;判据是 DEADLINE_EXCEEDED 本身,不是时长。
+    SendInLoop(observed, 7, 500ms);
+    ASSERT_TRUE(RunLoopUntil([&] { return observed->calls > 0; }, kLiveness));
+    ASSERT_EQ(service_.heldBeforeBusiness.size(), 1u) << "请求必须已经派发到方法体";
+    const auto held = service_.heldBeforeBusiness.front();
+    // 服务端的截止定时器(grpc-timeout)或客户端到期发出的 RST 会让这次调用失效。
+    ASSERT_TRUE(RunLoopUntil([&] { return !held->IsActive(); }, kLiveness));
+    held->Proceed();
+    RunLoopFor(200ms);
+
+    EXPECT_EQ(observed->calls, 1) << "恰好一次";
+    EXPECT_EQ(observed->code, kGrpcStatusDeadlineExceeded) << observed->message;
+    EXPECT_FALSE(observed->hadReply);
+    EXPECT_EQ(service_.businessRuns, 0) << "调用失效后 Proceed 不得进业务";
+    EXPECT_EQ(server_->inFlightCalls(), 0u);
+    EXPECT_EQ(*globalReplyCalls_, 0);
+    EXPECT_EQ(*globalFailedCalls_, 0);
+}
+
+// 业务已开始、延后完成的调用遇到服务端关机:排空到期回 UNAVAILABLE "server shutting down"(§15.7「业务已开始」一行),
+// onDrained 恰好一次且不在 BeginShutdown 栈内;迟到的 FinishOk 被吞掉,done 不会再来一次。
+TEST_F(GrpcClientLoopbackTest, ServerShutdownCompletesStartedCallWithUnavailable)
+{
+    service_.mode = LoopbackDataService::Mode::kHoldAfterBusinessStarted;
+    const auto observed = std::make_shared<Observed>();
+    SendInLoop(observed, 9, kLiveness);
+    ASSERT_TRUE(RunLoopUntil([&] { return service_.heldAfterBusinessStarted.size() == 1; }, kLiveness));
+    EXPECT_EQ(observed->calls, 0);
+
+    const auto drainedCalls = std::make_shared<int>(0);
+    muduo_grpc::ServerShutdownOptions shutdownOptions;
+    shutdownOptions.drainTimeout = 200ms;
+    shutdownOptions.goawayPingTimeout = 100ms;
+    shutdownOptions.closeGrace = 100ms;
+    server_->BeginShutdown(shutdownOptions, [drainedCalls] { ++*drainedCalls; });
+    EXPECT_EQ(*drainedCalls, 0) << "onDrained 永不在 BeginShutdown 栈内执行";
+    EXPECT_TRUE(server_->draining());
+    EXPECT_TRUE(service_.heldAfterBusinessStarted.front().ServerDraining());
+
+    ASSERT_TRUE(RunLoopUntil([&] { return observed->calls > 0 && *drainedCalls > 0; }, kLiveness));
+    // 迟到的完成:记录已被排空到期收口,这里必须被吞掉。
+    service_.heldAfterBusinessStarted.front().FinishOk(std::string());
+    RunLoopFor(200ms);
+
+    EXPECT_EQ(observed->calls, 1) << "恰好一次";
+    EXPECT_EQ(observed->code, kGrpcStatusUnavailable) << observed->message;
+    EXPECT_EQ(observed->message, "server shutting down");
+    EXPECT_FALSE(observed->hadReply);
+    EXPECT_EQ(*drainedCalls, 1) << "onDrained 恰好一次";
+    EXPECT_EQ(server_->inFlightCalls(), 0u);
+    EXPECT_EQ(server_->connectionCount(), 0u);
+    EXPECT_EQ(*globalReplyCalls_, 0);
+    EXPECT_EQ(*globalFailedCalls_, 0);
+}
+
+} // namespace

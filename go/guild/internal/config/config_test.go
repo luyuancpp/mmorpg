@@ -121,6 +121,70 @@ func loadMinimal(t *testing.T) Config {
 	return c
 }
 
+func TestProductionGuildCannotDisableTiDBAuthority(t *testing.T) {
+	for _, mode := range []string{"pro", "pre", "test", "dev"} {
+		t.Run(mode, func(t *testing.T) {
+			input := "Mode: " + mode + "\n" + strings.Replace(minimalGuildYaml, "MySQL:\n", "MySQL:\n  RequireTiDB: false\n", 1)
+			var c Config
+			err := conf.LoadFromYamlBytes([]byte(input), &c)
+			if mode == "dev" || mode == "test" {
+				if err != nil {
+					t.Fatalf("显式本地旧MySQL兼容应放行: %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), "TiDB") {
+				t.Fatalf("%s 模式关闭TiDB门禁必须拒启,得到 %v", mode, err)
+			}
+		})
+	}
+}
+
+func TestGuildAuthorityDefaultsAndPoolBounds(t *testing.T) {
+	c := loadMinimal(t)
+	if !c.MySQL.RequiresTiDB() || c.MySQL.MaxOpenConn != 20 {
+		t.Fatal("未配置时必须开启TiDB门禁且固定连接池默认20")
+	}
+	for _, size := range []int{0, -1, 129} {
+		c.MySQL.MaxOpenConn = size
+		if err := c.Validate(); err == nil || !strings.Contains(err.Error(), "MaxOpenConn") {
+			t.Fatalf("非法连接池上限%d必须拒启,得到%v", size, err)
+		}
+	}
+}
+
+func TestGuildSQLDataSourceEnvIsAuthoritative(t *testing.T) {
+	const env = "GUILD_UNIT_TEST_SQL_DSN"
+	c := loadMinimal(t)
+	c.MySQL.DataSourceEnv = env
+	t.Setenv(env, "")
+	if err := c.Validate(); err == nil || !strings.Contains(err.Error(), "DataSourceEnv") {
+		t.Fatalf("显式环境来源缺失不能回退样例DSN: %v", err)
+	}
+	t.Setenv(env, "u:must-not-leak@tcp(127.0.0.1:3306)/mmorpg_guild")
+	if err := c.Validate(); err != nil {
+		t.Fatalf("合法环境来源应通过: %v", err)
+	}
+	if c.MySQL.DataSource != os.Getenv(env) {
+		t.Fatal("环境来源没有覆盖样例DSN")
+	}
+	// K8s不提供DataSource字面量，只注入Secret指定的环境来源。
+	input := strings.Replace(minimalGuildYaml,
+		`  DataSource: "u:p@tcp(127.0.0.1:3306)/mmorpg_guild"`,
+		"  DataSourceEnv: "+env, 1)
+	var fromEnvOnly Config
+	if err := conf.LoadFromYamlBytes([]byte(input), &fromEnvOnly); err != nil {
+		t.Fatalf("仅环境来源的部署配置应可加载: %v", err)
+	}
+	if fromEnvOnly.MySQL.DataSource != os.Getenv(env) {
+		t.Fatal("部署配置未解析Secret环境来源")
+	}
+	t.Setenv(env, "u:must-not-leak@tcp(::broken")
+	if err := c.Validate(); err == nil || strings.Contains(err.Error(), "must-not-leak") {
+		t.Fatalf("非法环境DSN必须拒启且不泄露口令: %v", err)
+	}
+}
+
 // TestValidateTimeoutBudget:Timeout 是路由服 5s 转发预算减去 1s;预算还必须放得下
 // 一次 data_service 调用(≤3s)+ 归属区查询(1.5s)+ 回包余量(0.5s),否则建帮会在
 // 服务端超时,客户端看到的是 DeadlineExceeded 而不是业务 tip。
@@ -331,6 +395,9 @@ func TestAssetOpEnabledFillsY06Defaults(t *testing.T) {
 	}
 	if a.CleanupEnabled {
 		t.Error("CleanupEnabled 没写时应为 false(只有显式打开才清理)")
+	}
+	if a.RequireSQLCommit {
+		t.Error("RequireSQLCommit 没写时应为 false(HEAD 口径,db-write-fencing-mysql.md §6.6)")
 	}
 	// 常量与 struct tag 是同一个默认值的两处写法:段缺失时回档检查按常量回落(svc.RollbackProofRetention),
 	// 两处分叉会让"段缺失的副本"与"段出现但没写这个键的副本"对同一次回档给出不同结论。

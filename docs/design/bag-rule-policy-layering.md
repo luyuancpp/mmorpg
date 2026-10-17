@@ -415,6 +415,8 @@ grep -rn "\.AddItem\|AddItems" --include=*.cpp cpp/libs/services cpp/nodes
 
 #### (3) 落码后的实际形状
 
+> 2026-10-15 起 `ReserveOrEvict` / `ReserveForBatchAdd` / `ReserveBatch` 已删除，由 `Bag::AddItems` 候选提交取代；下文为历史。
+
 | 环节 | 落在哪 |
 |---|---|
 | 选谁退役(零副作用) | `EvictOldestFirst::SelectVictims` —— 腾不够就返回**空**,绝不"能腾多少算多少" |
@@ -429,7 +431,7 @@ grep -rn "\.AddItem\|AddItems" --include=*.cpp cpp/libs/services cpp/nodes
    "有人手工把 `EvictOldestFirst` 配到装备栏上"。
    用例 `EvictionPolicyTest.NamedSlotsNeverEvictEvenWithAnEvictingPolicy`。
 2. **淘汰之后必须重新规划。** 被挤掉的可能正是本次打算并进去的未满堆(临时格里
-   同 config 的旧堆恰恰最早进包),不重算就会拿着悬空的 entity 去 `ApplyStackFill`。
+   同 config 的旧堆恰恰最早进包),不重算就会拿着已销毁的 guid 去 `ApplyStackFill`。
    `AddStackableItem` 与 `ReserveBatch` 各有一次重规划,两遍是确定上界不是循环。
 3. **`CheckSpaceFor` 保持纯预测。** 它按"不破坏现状"回答,于是对会淘汰的包偏
    保守。真入包路径改走 `ReserveForBatchAdd` —— 否则纯预测会抢在淘汰之前把整批
@@ -442,6 +444,8 @@ grep -rn "\.AddItem\|AddItems" --include=*.cpp cpp/libs/services cpp/nodes
 > (运行时)。FIFO 序要在运行时可读,**两边都得加**。
 
 ### 6.3 落码时自己踩出来的一个同族缺陷(已修)
+
+> 2026-10-15 起 `ReserveOrEvict` / `ReserveForBatchAdd` / `ReserveBatch` 已删除，由 `Bag::AddItems` 候选提交取代；下文为历史。
 
 加淘汰轴的当天,在同一份代码里又造出了一个**和 §6.1 同一家族**的问题:
 **一个会失败的判断站错了位置。**
@@ -549,6 +553,8 @@ C++ 里不写死任何一个 tag 值。** 这条在装备槽上已经做对了�
 
 #### 6.5.1 P0(3 族 5 条)—— 全部是淘汰轴引入的,全部已修
 
+> 2026-10-15 起 `ReserveOrEvict` / `ReserveForBatchAdd` / `ReserveBatch` 已删除，由 `Bag::AddItems` 候选提交取代；下文为历史。
+
 | 族 | 缺陷 | 根因 | 修法 |
 |---|---|---|---|
 | **A** | 淘汰掉的正是本批要并入的同 config 未满堆 → 腾位后需求变大 → 已销毁却整批失败 | 缺口按**淘汰前**的规划算;`EvictOldestFirst` 不排除并入目标;第一版注释"不是数据能触发"是错的 —— 临时格拾取同种材料就是日常路径 | `ReserveOrEvict` 改为**先算到不动点再销毁**:把牺牲者当作已不存在重新规划(`PlanInstances` / `ItemStore` 两个规划函数新增 `exclude` 集),需求变大就多选牺牲者,稳定了才真 `DestroyItem`。收敛上界 `store_.Size()` 轮 |
@@ -556,6 +562,8 @@ C++ 里不写死任何一个 tag 值。** 这条在装备槽上已经做对了�
 | **C** | 单件沿用预设 guid 时,`store_.Contains` 这道零成本预检排在腾位之后 | 与 vector 批量入口不对称 | `AddNonStackableItem` 在 `ReserveOrEvict` 之前加 `Contains` 预检 |
 
 #### 6.5.2 P1 / P2(8 条)—— 已修
+
+> 2026-10-15 起 `ReserveOrEvict` / `ReserveForBatchAdd` / `ReserveBatch` 已删除，由 `Bag::AddItems` 候选提交取代；下文为历史。
 
 | # | 缺陷 | 修法 |
 |---|---|---|
@@ -567,6 +575,8 @@ C++ 里不写死任何一个 tag 值。** 这条在装备槽上已经做对了�
 | P2 | `ApplyStackFill` 对悬空 entity 零防御(entt Release 下 UB) | `registry_.valid()` 防御 + `LOG_ERROR`;真正的保证仍是"淘汰后必重规划" |
 | P2 | 格子布局碎片时 `ReserveOrEvict` 把"空格够却摆不进"当编程错误吼 | 识别为"容量不是标量",按 `RejectWhenFull` 静默处理 |
 | 文档 | `bag_service.h` 仍写"transactional / all-or-nothing space check" | 更正为实际口径:reserve 之后逐项不再失败,但临时格上 reserve 本身可能已销毁旧物 |
+
+> 2026-10-15 起 `StackFill` 存 guid，失效时 `Find` 为空并记 `LOG_ERROR`，不再有 entt UB。
 
 #### 6.5.3 覆盖缺口(3 条)—— 已补用例
 

@@ -1,0 +1,30 @@
+
+syntax = "proto3";
+
+option go_package = "generated/pb/table";
+
+option java_package = "com.game.table";
+
+
+enum mail_error {
+  kMail_errorOK = 0;
+
+  kMailNotFound = 17000;
+
+  kMailExpired = 17001;
+
+  kMailRecipientBoxFull = 17002;
+
+  kMailAttachmentInvalid = 17003;
+
+  kMailRequestConflict = 17004;
+
+  kMailSystemMailLimit = 17005;
+
+  kMailClaimPending = 17006;
+
+  kMailClaimManual = 17007;
+
+  kMailAttachmentProtected = 17008;
+
+};

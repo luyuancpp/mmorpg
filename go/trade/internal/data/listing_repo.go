@@ -271,7 +271,7 @@ func (r *ListingRepo) CountFavorites(ctx context.Context, playerID uint64) (uint
 // 为什么不是 INSERT IGNORE(2026-09-21 死锁审计 #9):收藏 → 取消 → 再收藏时,(player, listing) 主键可能是刚被
 // DeleteFavorite 删掉、尚未 purge 的 delete-marked 记录。成环有一个前提:**必须有第三方正持着这条删除标记记录的 X**,
 // 两个 INSERT IGNORE 同时排在它后面。本调用路径上的第三方只有两种:
-//   - 未提交的取消收藏 DELETE(自动提交语句从取锁到提交之间同样持着 X,只是窗口窄);
+//   - 未提交的取消收藏 DELETE(DeleteFavorite 的单语句事务从取锁到 COMMIT 之间持着 X,只是窗口窄);
 //   - 先到的收藏已把删除标记记录复活、随后回滚(ctx 超时、断连、被选为死锁牺牲者)。
 //
 // 第三方一放锁,两个排队者的重复键检查**同时**拿到 **S**(彼此相容),都判定"只是删除标记、不算重复",
@@ -299,27 +299,53 @@ const insertFavoriteSQL = "INSERT INTO trade_favorite (`player_id`, `listing_id`
 // "同键插入 + 回滚 / purge"才会再成环,而每成一次环都有一方完成。重试有上限(txRetryAttempts)、带抖动退避、
 // 受 opTimeout 与 ctx 约束;极端同键风暴下重试用尽则返回错误,不会挂住。语句幂等,重跑安全;
 // 不重试的话玩家看到的是一次"服务不可用"。代价是多两次 BEGIN / COMMIT 往返,收藏是低频操作。
+// 事务还承担"截止之后不提交",见 execFavoriteWriteTx。
 func (r *ListingRepo) InsertFavorite(ctx context.Context, rec *tradepb.TradeFavoriteRecord) error {
 	ctx, cancel := r.bounded(ctx)
 	defer cancel()
-	if err := assetop.WithTxRetry(ctx, r.db, txRetryAttempts, IsRetryableTxError, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, insertFavoriteSQL, rec.GetPlayerId(), rec.GetListingId(), rec.GetCreatedMs())
-		return err
-	}); err != nil {
+	if err := r.execFavoriteWriteTx(ctx, insertFavoriteSQL, rec.GetPlayerId(), rec.GetListingId(), rec.GetCreatedMs()); err != nil {
 		return fmt.Errorf("insert trade_favorite: %w", err)
 	}
 	return nil
 }
 
-// DeleteFavorite 取消收藏,幂等。
+// deleteFavoriteSQL 是取消收藏:主键 (player_id, listing_id) 等值删除。写成包级常量是为了让截止栅栏测试与
+// 真库编排(listing_repo_integration_test.go 的 favoriteDeleteSQL)用的都是生产代码实际执行的这一条。
+const deleteFavoriteSQL = "DELETE FROM trade_favorite WHERE `player_id` = ? AND `listing_id` = ?"
+
+// DeleteFavorite 取消收藏,幂等(行不存在也不报错)。
+//
+// 与 InsertFavorite 同样包在单语句 RC 事务里(execFavoriteWriteTx):原先是自动提交,请求截止之后仍可能落地,
+// 理由见 execFavoriteWriteTx。主键等值 DELETE 在 RC 下删不到行时不加锁,删到时只锁这一行,事务不改变锁形状。
 func (r *ListingRepo) DeleteFavorite(ctx context.Context, playerID, listingID uint64) error {
 	ctx, cancel := r.bounded(ctx)
 	defer cancel()
-	if _, err := r.db.ExecContext(ctx,
-		"DELETE FROM trade_favorite WHERE `player_id` = ? AND `listing_id` = ?", playerID, listingID); err != nil {
+	if err := r.execFavoriteWriteTx(ctx, deleteFavoriteSQL, playerID, listingID); err != nil {
 		return fmt.Errorf("delete trade_favorite: %w", err)
 	}
 	return nil
+}
+
+// execFavoriteWriteTx 把一条收藏写语句放进 assetop.WithTxRetry 的单语句 RC 事务,提交前复核 ctx。
+//
+// 为什么收藏的两条写都不许自动提交(客户端请求按会话保序,docs/design/client-request-ordering.md §6.1):
+// 请求截止时 go-sql-driver 只断开连接、不发 KILL QUERY。自动提交的语句若正排在这一行的锁后面,服务端会一直等到
+// 拿到锁或 innodb_lock_wait_timeout(trade 的连接串没设,MySQL 缺省 50 s),拿到锁后照样执行并**自动提交** ——
+// 此时路由服早已回超时、gate 已放行同一会话的下一条,这条写就晚于下一条落地。例如"取消收藏"超时后紧接着"收藏":
+// 收藏的存在性预读看到行还在、直接回成功,迟到的 DELETE 随后落地,商品已不在收藏里,客户端却以为在。
+// 放进显式事务后,没走到 COMMIT 就不会提交:语句跑过截止时 database/sql 回滚并丢弃连接,服务端在连接断开时
+// 回滚未提交事务。剩余窗口只有"查完 ctx 之后发出的那一条 COMMIT"(§6.1 的已发出命令),而 COMMIT 不等行锁。
+//
+// 提交前显式查 ctx,而不只靠 Tx.Commit 自己的检查:ctx 一结束 database/sql 会在后台异步回滚,那之后 Commit 回的是
+// sql.ErrTxDone 而不是 ctx 错误,storeFault 的日志里就看不出是截止。ctx 错误不在 IsRetryableTxError 之列,
+// 不会触发重试;重试的每次尝试之前 WithTxRetry 也先看 ctx。
+func (r *ListingRepo) execFavoriteWriteTx(ctx context.Context, query string, args ...any) error {
+	return assetop.WithTxRetry(ctx, r.db, txRetryAttempts, IsRetryableTxError, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
+			return err
+		}
+		return ctx.Err()
+	})
 }
 
 // rowScanner 是 *sql.Row 与 *sql.Rows 的公共 Scan。

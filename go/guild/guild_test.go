@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -22,8 +23,66 @@ import (
 	base "proto/common/base"
 	pb "proto/guild"
 	"schemamigrate"
+	"shared/kafkautil"
 	"shared/killswitch"
 )
+
+func TestNodeAdvertiseHostPinsPodIP(t *testing.T) {
+	t.Setenv("POD_IP", "10.12.34.56")
+	for _, listen := range []string{"0.0.0.0", "::", "127.0.0.1"} {
+		host, err := nodeAdvertiseHost(listen)
+		if err != nil || host != "10.12.34.56" {
+			t.Fatalf("监听%s应注册显式PodIP,得到%s/%v", listen, host, err)
+		}
+	}
+	for _, invalid := range []string{"", "0.0.0.0", "::", "not-an-ip"} {
+		t.Setenv("POD_IP", invalid)
+		if _, err := nodeAdvertiseHost("127.0.0.1"); err == nil {
+			t.Fatalf("显式非法POD_IP=%q不得回退", invalid)
+		}
+	}
+	if err := os.Unsetenv("POD_IP"); err != nil {
+		t.Fatal(err)
+	}
+	if host, err := nodeAdvertiseHost("127.0.0.1"); err != nil || host != "127.0.0.1" {
+		t.Fatalf("本地监听兼容失败: %s/%v", host, err)
+	}
+	for _, wildcard := range []string{"", "0.0.0.0", "::"} {
+		if _, err := nodeAdvertiseHost(wildcard); err == nil {
+			t.Fatalf("无POD_IP不能注册通配监听%s", wildcard)
+		}
+	}
+}
+
+func TestGlobalGuildTrialRequiresDurableTopicBeforeServing(t *testing.T) {
+	c := config.Config{}
+	c.Kafka.Brokers = []string{"broker:9092"}
+	c.Activity.TrialResult.Enabled = true
+	c.Activity.TrialResult.Topic = "match-results"
+	c.Activity.TrialResult.Partitions = 3
+	calls := 0
+	blocked := errors.New("existing topic RF1")
+	ensure := func(brokers []string, specs []kafkautil.TopicSpec) error {
+		calls++
+		if len(brokers) != 1 || len(specs) != 1 || !specs[0].RequireDurability || specs[0].ReplicaFactor != 3 || specs[0].Partitions != 3 {
+			t.Fatal("全局启动必须显式核验RF3严格策略")
+		}
+		return blocked
+	}
+	if err := ensureTrialResultTopic(c, ensure); !errors.Is(err, blocked) || calls != 1 {
+		t.Fatalf("耐久门禁失败不能转为后台放行: %v calls=%d", err, calls)
+	}
+	legacy := false
+	c.MySQL.RequireTiDB = &legacy
+	if err := ensureTrialResultTopic(c, ensure); err != nil || calls != 1 {
+		t.Fatalf("显式本地兼容不应同步连接Kafka: %v calls=%d", err, calls)
+	}
+	c.MySQL.RequireTiDB = nil
+	c.Activity.TrialResult.Enabled = false
+	if err := ensureTrialResultTopic(c, ensure); err != nil || calls != 1 {
+		t.Fatalf("活动关闭不应创建结果topic: %v calls=%d", err, calls)
+	}
+}
 
 // chainUnary 按 gRPC 的语义把一组一元拦截器串成一个 handler:
 // 切片里第一个是最外层,最后一个紧贴业务 handler。

@@ -173,15 +173,21 @@
     <ClCompile Include="client_session_test.cpp" />
     <ClCompile Include="codec_utils_test.cpp" />
     <ClCompile Include="etcd_transport_helpers_test.cpp" />
+    <ClCompile Include="event_loop_wakeup_test.cpp" />
     <ClCompile Include="go_interop_test.cpp" />
     <ClCompile Include="message_framing_test.cpp" />
     <ClCompile Include="muduo_test_loop.cpp" />
+    <ClCompile Include="server_interop_test.cpp" />
+    <ClCompile Include="server_session_test.cpp" />
+    <ClCompile Include="server_test.cpp" />
+    <ClCompile Include="test_h2_client.cpp" />
     <ClCompile Include="test_h2_peer.cpp" />
     <ClCompile Include="..\..\..\third_party\yaml-cpp\test\googletest-1.16.0\googletest\src\gtest-all.cc" />
     <ClCompile Include="..\..\..\third_party\yaml-cpp\test\googletest-1.16.0\googletest\src\gtest_main.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="muduo_test_loop.h" />
+    <ClInclude Include="test_h2_client.h" />
     <ClInclude Include="test_h2_peer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,15 +1,13 @@
 #pragma once
+#include <cstdint>
 #include <entt/src/entt/entity/entity.hpp>
-
-struct CombatStateAddedEvent;
-struct CombatStateRemovedEvent;
 
 class CombatStateSystem
 {
 public:
-    static void AddCombatState(const CombatStateAddedEvent& event);
+    static void AddCombatState(entt::entity actor, uint64_t sourceBuffId, uint32_t stateType);
     
-    static void RemoveCombatState(const CombatStateRemovedEvent& event);
+    static void RemoveCombatState(entt::entity actor, uint64_t sourceBuffId, uint32_t stateType);
 
     static uint32_t ValidateSkillUsage(entt::entity entityId, uint32_t combatAction);
 };

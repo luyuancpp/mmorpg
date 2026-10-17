@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "services/battle/system/battle_result_activity.h"
+#include "services/battle/system/result_commit.h"
 
 // 活动局结果纯函数(battle_result_activity.h)的单元测试,docs/design/guild-phase2/06-activities.md §6.42。
 // 覆盖:上下文回显 / 不回显、逃跑与阵亡名单升序去重、重发判定顺序、跨语言持久记录键契约。
@@ -132,4 +133,161 @@ TEST(BattleResultActivity, ActivityResultKeyMatchesGuildContract)
     EXPECT_EQ(turnbattle::kActivityResultTtlSec, 604800u);
     EXPECT_EQ(turnbattle::kActivityResultRetryIntervalSec, 10u);
     EXPECT_EQ(turnbattle::kActivityResultRetryMaxAttempts, 30u);
+}
+
+TEST(BattleResultCommit, UnknownCannotReleaseTerminalOrChangeOriginalBytes)
+{
+    turnbattle::ResultCommit commit("original-result-with-first-finished-at");
+    const auto start = turnbattle::ResultCommit::Clock::time_point{};
+    ASSERT_TRUE(commit.Begin(7, start));
+    EXPECT_FALSE(commit.Confirmed());
+    EXPECT_FALSE(commit.Begin(8, start));
+    EXPECT_FALSE(commit.Deliver(99, true, start));
+    EXPECT_FALSE(commit.Deliver(7, false, start));
+    EXPECT_FALSE(commit.CanSend(start));
+    EXPECT_TRUE(commit.CanSend(start + std::chrono::seconds(1)));
+    ASSERT_TRUE(commit.Begin(8, start + std::chrono::seconds(1)));
+    EXPECT_FALSE(commit.Deliver(7, true, start + std::chrono::seconds(1)));
+    EXPECT_TRUE(commit.Deliver(8, true, start + std::chrono::seconds(1)));
+    EXPECT_TRUE(commit.Confirmed());
+    EXPECT_FALSE(commit.Deliver(8, true, start + std::chrono::seconds(2)));
+    EXPECT_FALSE(commit.Begin(9, start + std::chrono::seconds(90)));
+    EXPECT_EQ(commit.Payload(), "original-result-with-first-finished-at");
+}
+
+TEST(BattleResultCommit, FailedAdmissionUsesMonotonicBoundedBackoff)
+{
+    turnbattle::ResultCommit commit("same-bytes");
+    auto current = turnbattle::ResultCommit::Clock::time_point{};
+    const uint32_t delays[]{1,2,4,8,16,30,30};
+    uint64_t correlation = 0;
+    for (const auto seconds : delays)
+    {
+        ASSERT_TRUE(commit.Begin(++correlation, current));
+        EXPECT_FALSE(commit.Deliver(correlation, false, current));
+        EXPECT_FALSE(commit.CanSend(current + std::chrono::seconds(seconds) - std::chrono::milliseconds(1)));
+        current += std::chrono::seconds(seconds);
+        EXPECT_TRUE(commit.CanSend(current));
+        EXPECT_FALSE(commit.Confirmed());
+    }
+}
+
+TEST(BattleResultCommit, LiveRoomKeepsCreationReceiptBeyondDeadlineWhileResultIsUnknown)
+{
+    EXPECT_FALSE(turnbattle::CreationReceiptExpired(360000, 900000, true));
+    EXPECT_TRUE(turnbattle::CreationReceiptExpired(360000, 900000, false));
+    EXPECT_FALSE(turnbattle::CreationReceiptExpired(360000, 360000, false));
+}
+
+namespace
+{
+    contracts::kafka::BattleResultEvent MakeSettlementSourceResult()
+    {
+        contracts::kafka::BattleResultEvent event;
+        event.set_battle_id(851);
+        event.set_outcome(::BATTLE_OUTCOME_DRAW);
+        event.set_finished_at_ms(123456);
+        auto* team = event.add_teams();
+        team->set_team_index(0);
+        team->add_player_ids(92);
+        team->add_player_ids(93);
+        return event;
+    }
+
+    std::vector<::BattleSettlementData> MakeSettlementSources()
+    {
+        ::BattleSettlementData first;
+        first.set_battle_id(851);
+        first.set_player_id(92);
+        first.set_health(27);
+        first.set_mana(19);
+        first.set_exp_gain(123);
+        first.set_gold_gain(456);
+        first.set_total_rounds(7);
+        first.set_is_dead(true);
+        first.set_fled(true);
+        auto* consumed = first.add_items_consumed();
+        consumed->set_item_table_id(1001);
+        consumed->set_count(3);
+        auto* gained = first.add_items_gained();
+        gained->set_item_table_id(1002);
+        gained->set_count(4);
+        auto* pet = first.add_pets();
+        pet->set_pet_id(923);
+        pet->set_health(0);
+        pet->set_mana(9);
+        pet->set_is_dead(true);
+        auto* defeated = first.add_defeated_monsters();
+        defeated->set_monster_config_id(101);
+        defeated->set_count(2);
+        ::BattleSettlementData second;
+        second.set_player_id(93);
+        return {second, first};
+    }
+}
+
+TEST(BattleResultCommit, FullSourcePreservesAllAssetsAndFixedBytesAfterUnknownAck)
+{
+    auto event = MakeSettlementSourceResult();
+    auto source = MakeSettlementSources();
+    auto expected = source.at(1);
+    expected.set_outcome(::BATTLE_OUTCOME_DRAW);
+    ASSERT_TRUE(turnbattle::FreezeBattleSettlementSource(event, source));
+    ASSERT_EQ(event.settlements_size(), 2);
+    EXPECT_EQ(event.settlement_format_version(), 1u);
+    EXPECT_EQ(event.settlements(0).SerializeAsString(), expected.SerializeAsString());
+    EXPECT_EQ(event.settlements(1).player_id(), 93u);
+    EXPECT_EQ(event.settlements(1).battle_id(), 851u);
+    EXPECT_EQ(event.settlements(1).outcome(), ::BATTLE_OUTCOME_DRAW);
+    turnbattle::ResultCommit commit(event.SerializeAsString());
+    source.at(1).set_gold_gain(99999);
+    event.mutable_settlements(0)->clear_items_gained();
+    const auto instant = turnbattle::ResultCommit::Clock::time_point{};
+    ASSERT_TRUE(commit.Begin(1, instant));
+    EXPECT_FALSE(commit.Deliver(1, false, instant));
+    ASSERT_TRUE(commit.Begin(2, instant + std::chrono::seconds(1)));
+    ASSERT_TRUE(commit.Deliver(2, true, instant + std::chrono::seconds(1)));
+    contracts::kafka::BattleResultEvent restored;
+    ASSERT_TRUE(restored.ParseFromString(commit.Payload()));
+    EXPECT_EQ(restored.settlements(0).SerializeAsString(), expected.SerializeAsString());
+    EXPECT_EQ(restored.finished_at_ms(), 123456u);
+}
+
+TEST(BattleResultCommit, InvalidSourceFailsBeforeChangingTheResult)
+{
+    const auto original = MakeSettlementSourceResult();
+    const auto sources = MakeSettlementSources();
+    auto event = original;
+    auto invalid = sources;
+    invalid.pop_back();
+    EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, invalid));
+    EXPECT_EQ(event.SerializeAsString(), original.SerializeAsString());
+    invalid = sources;
+    invalid.at(0).set_player_id(92);
+    EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, invalid));
+    invalid = sources;
+    invalid.at(0).set_player_id(0);
+    EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, invalid));
+    invalid = sources;
+    invalid.at(0).set_player_team_index(1);
+    EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, invalid));
+    invalid = sources;
+    invalid.at(0).set_battle_id(852);
+    EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, invalid));
+    EXPECT_EQ(event.SerializeAsString(), original.SerializeAsString());
+    ASSERT_TRUE(turnbattle::FreezeBattleSettlementSource(event, sources));
+    const auto once = event.SerializeAsString();
+    EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, sources));
+    EXPECT_EQ(event.SerializeAsString(), once);
+}
+
+TEST(BattleResultCommit, OversizedCompleteSourceNeverPublishesATruncatedRecord)
+{
+    auto event = MakeSettlementSourceResult();
+    event.GetReflection()->MutableUnknownFields(&event)->AddLengthDelimited(99,
+        std::string(turnbattle::kMaxCompleteResultBytes, 'x'));
+    const auto before = event.SerializeAsString();
+    EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, MakeSettlementSources()));
+    EXPECT_EQ(event.SerializeAsString(), before);
+    EXPECT_EQ(event.settlement_format_version(), 0u);
 }

@@ -1,5 +1,7 @@
 # Bag → BagService SRP Refactor (2026-03-26)
 
+> 2026-10-15：`PlayerItemBlockList` 与 `blockList` 参数已按 C004 删除，下文为 2026-03-26 历史。
+
 ## Problem
 `Bag` class had too many responsibilities — it was a container but also handled:
 - Global item block checks (GainBlockService)

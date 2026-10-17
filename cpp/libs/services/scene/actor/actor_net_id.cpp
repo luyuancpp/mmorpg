@@ -6,6 +6,11 @@
 #include "muduo/base/Logging.h"
 
 namespace {
+struct ActorNetIdComp
+{
+    uint64_t value{0};
+};
+
 struct ActorNetIdIndex
 {
     std::unordered_map<uint64_t, entt::entity> byNetId;
@@ -37,9 +42,7 @@ uint64_t actor_net_id::Assign(entt::registry& actors, entt::entity actor)
         return 0;
     }
     if (const auto* current = actors.try_get<ActorNetIdComp>(actor)) {
-        if (Resolve(actors, current->value) == actor) return current->value;
-        LOG_ERROR << "ActorNetIds: assignment refused, inconsistent actor mapping";
-        return 0;
+        return current->value;
     }
     uint64_t id = 0;
     if (!tlsIdGeneratorManager.actorNetIdGenerator.TryGenerateWithoutReuse(id)) {
@@ -56,9 +59,8 @@ uint64_t actor_net_id::Assign(entt::registry& actors, entt::entity actor)
 
 uint64_t actor_net_id::Of(const entt::registry& actors, entt::entity actor)
 {
-    if (!actors.valid(actor)) return 0;
     const auto* id = actors.try_get<ActorNetIdComp>(actor);
-    return id != nullptr && Resolve(actors, id->value) == actor ? id->value : 0;
+    return id != nullptr ? id->value : 0;
 }
 
 entt::entity actor_net_id::Resolve(const entt::registry& actors, uint64_t netId)
@@ -67,7 +69,5 @@ entt::entity actor_net_id::Resolve(const entt::registry& actors, uint64_t netId)
     const auto* index = actors.ctx().find<ActorNetIdIndex>();
     if (index == nullptr) return entt::null;
     const auto it = index->byNetId.find(netId);
-    if (it == index->byNetId.end() || !actors.valid(it->second)) return entt::null;
-    const auto* id = actors.try_get<ActorNetIdComp>(it->second);
-    return id != nullptr && id->value == netId ? it->second : entt::null;
+    return it == index->byNetId.end() ? entt::null : it->second;
 }

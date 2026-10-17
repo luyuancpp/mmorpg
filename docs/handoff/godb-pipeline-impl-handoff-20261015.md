@@ -1,0 +1,189 @@
+# 交接：存盘管线剩余代码落码（2026-10-15）
+
+> **接手第一步**：读本文 §0–§4，再按 §3 的顺序干活。规格、复核、修订稿与各阶段报告都在 [godb-pipeline-impl-20261015/](godb-pipeline-impl-20261015/)。
+> **上游交接**：[godb-pipeline-handoff-20261013.md](godb-pipeline-handoff-20261013.md)（§4 待办清单、§5 拍板项）与它的附录；[上线待做](../ops/godb-pipeline-launch-todo.md)。
+> **为什么交接**：本会话的周额度用完，第 2 批落到一半中断（A3 已落但没交报告，A4 / A5 与第 3 批没开始）。
+
+---
+
+## 0. 给新账号的开场提示词（可直接复制）
+
+```
+你接手 go/db 玩家存盘管线剩余代码的落码。先走 AGENTS.md 会话启动门禁，然后读
+docs/handoff/godb-pipeline-impl-handoff-20261015.md，按它 §3 的顺序做 R1 → R7。
+规格在 docs/handoff/godb-pipeline-impl-20261015/：每项先读 *-spec.md，再读 *-review.md，
+最后读 *-addendum.md，三者冲突时修订稿优先。已落阶段的报告在 batch-reports.md，
+其中「留给第 3 批」是第 3 批要落的要点。
+约束：你不编译、不测试（编译负责人自己做，测试交 Codex），交付时给出构建与测试命令；
+不 commit / push；同一工作区有别的会话在写，改文件前先重读目标段落、只改自己的段落；
+docs/PROGRESS.md 只追加。全部用中文，运行期日志文本用英文。
+```
+
+---
+
+## 1. 背景与授权
+
+负责人 2026-10-13 对上游交接 §5 的答复记在 `docs/PROGRESS.md`「2026-10-14 存盘管线接手…」条目。与本轮有关的：
+
+- ① 读写分区对齐：授权，接受「db 积压超过约 8 秒时冷读进场失败」。
+- ③ 消费组按 zone 拆：授权，是**开服门槛**（要支持单 zone 回档或合服）。
+- ④ 重试只交给分区属主：先做，并修订 TiDB 决策 D5。④B2 换代 topic 排在条件写之后，本轮不做。
+- WAITAOF（go/db 的入队点）、scene 发 DBTask 失败后的脏快照、Lua tonumber、db_task 的 retention 与 PVC：归本交接。
+- `kafka:expand:status` 保留；② 批 B（压缩连接池）作废。
+
+2026-10-15 负责人的原话：「你把代码做完给我就行了啊，其他的你不用管」。另一会话里还说过「编译的话我自己去做」。各规格的待决项都按规格里的推荐默认值拍板了，见各 *-spec.md 末尾「待决项」，其中几项重要的：
+- ③ 拆成 4 个 PR 继续做。
+- Kafka 镜像钉 `apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837`。
+- 脏快照：下线收尾一律等 DBTask 回执。Kafka 不可用时，退出实体保留到 Kafka 恢复或停机看门狗到期。
+- 保留期默认值：prod 2h / 3 MiB/s，prod-like 2h / 1 MiB/s，dev 1h / 256 KiB/s。PVC 不够时按盘收缩并 WARN。
+- 本轮不关「一节点一 topic」。
+- Codex 跑测试时可以联网下载 Go 模块（「同意 2」，2026-10-15）。
+
+**不归本轮**：MySQL 行内围栏 / 条件写由「玩家消息投递与位置管理」会话落码（见 §4）；⑤ guild 扩展。
+
+---
+
+## 2. 状态
+
+全部改动**未编译、未测试**。用户频繁把整个工作区打成快照提交，下表的已落代码基本都已入库（截至 `f0dadf5b0`），不要按「未提交」去找。
+
+| 阶段 | 内容 | 状态 | 报告 |
+|---|---|---|---|
+| A1 | ① Go：`go/shared/kafkautil/dbtask_partition.go`（CRC32 契约与 golden 向量）、login 生产者改用契约分区器并删除一致性哈希、go/db 写分区审计 | 已落 | batch-reports.md §A1 |
+| C1 | ① C++：db_task 显式 partitioner、`DbTaskKafkaKey`、golden 契约测试 | 已落 | §C1 |
+| C2 | 脏快照（S5a）：DBTask 投递账本 `db_task_dispatch_{ledger,system}`、失败强制重存、下线等回执 | 已落 | §C2 |
+| B4 | S4 脚本：`go_services.ps1` 先 Ctrl+C 再强杀；`stress_summarize.ps1` DB 段 2d / 2e / 2f | 已落 | §B4 |
+| A2 | ③ Go：交接闸 `group_handoff.go`、播种、让出，配置四种形状，`kafkautil.CommittedOffsets` | 已落 | §A2 |
+| B1 | ③ PR-A：Kafka 镜像四处钉版，`deploy/k8s/README.md`「镜像钉版本」 | 已落 | §B1 |
+| B2 | ③ 脚本：`lib/kafka_consumer_groups.ps1`、`kafka_offset_reset.ps1`（重置后复核、-RetireGroup、-FinalizeHandoff）、`k8s_zone_rollback.ps1`（删 Step 2、第 0 步 c / d）、`dev_tools.ps1`（改为 hashtable splatting）、`stress_summarize.ps1` 参数块 | 已落 | §B2 |
+| B3 | merge_zone：唯一权威组（③）、P4 / 审计用 SCAN 覆盖 `kafka:retry:queue:<topic>:p*`（④） | 已落 | §B3 |
+| **A3** | S4 go/db：G1 治标、`ordering_lease.go`、Stop 五步、`metrics/pipeline.go` 打点、tonumber 修复、注释订正、9 个新测试文件 | **已落但未核实**：代理因额度中断，没交报告；文件已随 `de4960bee` 入库 | 无 |
+| A4 | ④ + WAITAOF 的 go/db 部分 | **未开始** | — |
+| A5 | S5b 保留期的 Go 部分 | **未开始** | — |
+| 第 3 批 | k8s_deploy / 清单 / 告警（D1）、文档（D2） | **未开始** | — |
+
+另外，L-04 第 1 批已于 `ebccaf04d` / `54c9d775d` 入库，验证清单在[上线待做](../ops/godb-pipeline-launch-todo.md) §2。
+
+---
+
+## 3. 剩余工作（按顺序）
+
+go/db 这条线（R1 → R2 → R3）**必须串行**：三项都改 `key_ordered_consumer.go`、`config.go`、`metrics.go`、`db.go`、`etc/db.yaml`。R4 与 R1–R3 没有文件重叠，可以并行。R5 要等 R2 / R3 把配置键与指标名定下来。R6 在代码全部落完后做，R7 最后做。
+
+### R1　核实并补完 A3（S4 go/db）
+- 依据：`S4-g1-and-small-items-spec.md`（没有单独的复核，对照代码核实）。
+- 逐条核对规格「逐文件改动」与「测试」两节，缺的补上。重点看这几处：
+  - Stop 改成「先撤拉取再等 worker」之后，A2 的 `closeHandoff` 必须仍在 `consumer.Close()` 之后；
+  - A2 交接闸在 Start 里等待时，要同时 select `pullStop` 和 ctx；
+  - `metrics/pipeline.go` 的 step 与指标名，要和已入库的 `stress_summarize.ps1` DB 段逐字一致；
+  - verify 已挪进 `runDBOp`，放在「复核之后、缓存回写之前」，`markAppliedSeq` / `markAppliedOwnerEpoch` 本身的顺序不变。要把新旧 Redis 步骤顺序写给条件写会话（§4）。
+- 只改 S4 清单里的 go/db 文件。
+
+### R2　A4：④ 重试只交给分区属主 + WAITAOF（go/db）
+- 依据：`S1-retry-owner-waitaof-spec.md` → `-review.md` → `-addendum.md`（修订稿优先）。修订稿的主要改动：
+  - WAITAOF 改为异步组提交，确认前不 ack；
+  - `StartRetryConsumer` 纳入 `c.wg`；
+  - 停机时被取消的入队计 `canceled`，不计 `error`；
+  - nil 接收者安全；
+  - 新增 `db_claim_acquired_total`；
+  - `placement_route_test.go`、`retry_ownership_test.go` 移出清单。
+- 文件：
+  - 新增 `go/db/internal/kafka/{retry_routing,durable_enqueue}.go` 及其 `_test.go`；
+  - 修改 `key_ordered_consumer.go`、`retry_ownership.go`、`store_failure.go`、`config/config{,_test}.go`、`metrics/metrics{,_test}.go`、`db.go`、`etc/db.yaml`；
+  - 新增 `go/db/cmd/retry_requeue/main.go`。
+- 在 R1 之上接入：保留各处 `pullStop` 分支；Stop 最后一步是 `enqueuer.close()`；属主判定看 claim 本身的生命周期（停机排空期间 claimCtx 不随会话取消）。
+- merge_zone 的 p* 已由 B3 落完，键名要与 `retry_routing.go` 核对一致。
+
+### R3　A5：S5b 保留期（Go）
+- 依据：`S5-dirty-snapshot-retention-spec.md`，只做 S5b 的 Go 部分。
+- 文件：`go/shared/kafkautil/topic_init{,_test}.go`、`go/db/internal/config/config.go`、`go/db/db.go`、`go/db/etc/db.yaml`、`go/login/internal/config/config.go`、`go/login/login.go`、`go/login/etc/login.yaml`。前面几步改过的地方只追加。
+
+### R4　D1a：k8s_deploy.ps1 的 ③ 部分
+- 依据：S2 三件套，重点是修订稿 §2 / §3 / §12，以及 batch-reports.md §B2「留给第 3 批」前 6 条。要做的：
+  - `-DbConsumerGroup keep|zone|legacy`，只允许和 zone-up 一起用；
+  - dot-source `lib/kafka_consumer_groups.ps1`；
+  - 实现四种 ConfigMap 形状，`Resolve-DbConsumerGroupPlan` 决策表，`Read-DbGroupTopicFacts`（kubectl exec 进 kafka-0）；
+  - F2 / F4 两处 throw；
+  - keep 遇到交接形状时自动去掉 `GroupHandoffFrom`；
+  - 契约测试按修订稿 §12，并在 `k8s_client_entry_contract` 的 Forwarded 清单里加 `DbConsumerGroup`。
+- 回档脚本 Step 6 已经传 `-DbConsumerGroup zone`，依赖这里实现。
+
+### R5　D1b：k8s_deploy.ps1 的 ④ 与保留期部分，清单与告警
+- k8s_deploy.ps1：
+  - ④：`Assert-DbReplicasWithinPartitionContract`（db 副本数 ≤ PartitionCnt），db ConfigMap 加 `RetryRouting` 与 `RedisClient` 的三项 WaitAOF；
+  - 保留期：db / login ConfigMap 加 RetentionMs / RetentionBytes，Kafka PVC 按容量公式计算。
+- 契约测试：新用例放在文件末尾新开的一节。
+- `deploy/k8s/manifests/go-svc/db.yaml`：加 ③ 的两条注解（batch-reports §B2）和 S4 的 `minReadySeconds`。④ 修订稿已把这个文件移出 ④ 的清单。
+- `deploy/k8s/manifests/infra/kafka.yaml`：只改 PVC 与保留期（B1 已改过 image 行）。
+- 告警：
+  - `deploy/k8s/db-task-retry-alerts.yaml` 加三组：④ 按修订稿共 7 条（含 `DbRetryPartitionedStranded`、`DbZoneNoPartitionClaims`）；③ 的 `db-task.consumer-group-handoff` 组 5 条（batch-reports §A2 / §B2）；S4 规格要求的租约与释放失败告警；
+  - 新增 `deploy/k8s/db-task-partition-alerts.yaml`（S3 规格）。
+- 每个告警表达式里的指标名都要到 go/db 代码里 grep 核实。
+
+### R6　D2：文档（代码全部落完之后）
+- **新增设计文档**：
+  - `docs/design/db-retry-owner-routing.md`（④，含回滚前置）；
+  - `docs/design/db-consumer-group-per-zone.md`（③，含 §11「Kafka CLI 行为核对（4.3.1）」的待实测清单）；
+  - `docs/design/db-task-delivery-and-retention.md`（S5，§A 脏快照、§B 保留期）。
+- **修改**，要点见各规格「逐文件改动」与 batch-reports 各阶段的「留给第 3 批」：
+  - `global-data-layer-tidb-decision.md`（D5）
+  - `db-task-kafka-partition-contract.md`、`ARCH.md`、`infra-reconnect-overview.md`、`cross-zone-readiness-audit.md`、`login-simplification-2026-04.md`
+  - `zone_data_rollback{,_en,_zh}.md`、`merge-zone-runbook.md`、`server_merge_design.md`
+  - `data-consistency-stress-testing.md`、`no-single-node-horizontal-scaling-20261001.md`（只追加）、`db-task-pipeline-bottlenecks.md`
+  - `kafka-cluster-production-runbook.md`、`shared-redis-split-by-purpose.md`、`release-checklist.md`、`tidb-phase1-and-launch-readiness.md`
+  - [上线待做](../ops/godb-pipeline-launch-todo.md)：补 ①③④、脏快照、保留期的验证与部署项
+- **登记**：
+  - `docs/README.md` 登记三份新设计文档，与 `gen_docs_index.py` 的生成结果逐字一致；
+  - `docs/PROGRESS.md` 只追加；
+  - Java 仓库 `D:\luyuan\xuanming-server-mmo\PARITY.md` 末尾追加行，①③④、WAITAOF、钉版、保留期都是「不适用（Java 没有 Kafka 存盘链）」；脏快照按 Java 的同步写库路径核实后再登记。
+
+### R7　语义复核（不做编译可行性复核）
+负责人自己编译，所以复核只看编译查不出来的问题：
+- 并发与生命周期：sarama 再平衡与 claim 生命周期、WAITAOF 异步确认与位点提交、停机五步、C++ 投递报告回调回主循环、实体销毁。
+- 数据一致性：旧写覆盖新写、重放幂等，以及 Redis 丢 AOF 尾巴时游标与收据一起回退。
+- 滚动升级新旧并存：交接形状与最终形状、旧镜像回滚、p* 滞留。
+- 回档与合服脚本：破坏性步骤之前是否已经 fail-closed。
+
+复核按条目分组做，每组一个复核员，额度紧时先复核 ③ 和 ④。
+
+---
+
+## 4. 协作约束（截至 2026-10-15 晚）
+
+- **「玩家消息投递与位置管理」会话**：负责 MySQL 条件写。它在等两件事：go/db 这批落完后的文件清单，以及 proto2mysql `SaveConditional` 经 Codex 验证并合入。已承诺落完后发清单给它。清单里要单独标出：
+  - verify 被挪进 `runDBOp`（R1）；
+  - Stop 改成五步；
+  - `luaDecimalGreaterFn`，条件写要比较 uint64 时复用它，不再写 tonumber。
+
+  另外答应过它：Codex 的 proto2mysql 结果一回来就通知它（任务单 [godb-pipeline-codex-tasksheet-20261013.md](godb-pipeline-codex-tasksheet-20261013.md)，第 2.1 版，结果还没回来）。
+  **该会话已于 2026-10-15 晚交接**，交接文档是 [handoff-landing-recovery-and-fencing-20261016.md](handoff-landing-recovery-and-fencing-20261016.md)，§3.4 记的是双方约定。之后的文件清单和 SaveConditional 验证结果，发给它的接手会话：名字问负责人，或用 ListAgents 查。
+- **「全局单例扩容交接」会话**：在改 `k8s_deploy.ps1`，范围是 `New-NodeConfigMapYaml`、C++ Pod 模板注解、`Apply-Infra` 的 `$infraManifests`、新增「Redis 连接总账」一节、`-ConfirmRedisCoreRestart`，还给 `Get-ManifestDeploymentReplicas` 加了可选参数，缺省不变。它也在改 `dev_tools.ps1` / `k8s_image.ps1` 的透传，以及契约测试的 prod 段、battle infra 段和 MySQL 总账用例附近。它的 C++ Kafka 改动已结束：`kafka_producer.h` 的 `brokersConfigured()` 要保留，`kafka_manager.*`、`kafka_consumer.cpp`、`node.cpp` 都不碰。
+- **launch-readiness 会话**：k8s_deploy.ps1 只剩 `Write-MysqlConnectionLedger` 一个函数在改。契约测试里避开用例 15（「G4b-2 前置…」）和第 2479 行附近的 Secret dry-run 断言。
+- 新开的桌面版会话可能跑在 `.claude/worktrees/<名字>` 里，这时 Edit 改不了主工作区，只能导出补丁交付。见记忆 shared-worktree-concurrent-sessions。
+
+---
+
+## 5. 风险与待验证（交付时要写进说明）
+
+- **golden 向量**：45 条 CRC 值取自规格（附录作者与复核各自手算），没有运行代码算过。由 Codex 用 Go crc32、sarama、librdkafka 三方机械复核，不一致时回报，不要改表。
+- **librdkafka 版本**：C1 加了 `rd_kafka_version()==RD_KAFKA_VERSION` 断言，`bin/rdkafka.dll` 的版本没核实。
+- **Kafka 4.3.1 CLI 行为（V3）**：describe 不存在的组时的文案、对不存在的组 `--reset-offsets --to-datetime` 能否建出位点、`--delete-offsets` 的行为，都还没实测。**如果实测建不出位点，回档脚本的改动（B2 里的 `k8s_zone_rollback.ps1`）不得发布**，交负责人决定。
+- **行为变化**（A1）：
+  - key 校验 fail-closed；
+  - `SendToTopic` / `SendToTopicPartition` 拒绝 db_task topic；
+  - 删掉 safego 点位与「全部分区不可用」快速失败；
+  - db 积压超过约 8 秒时冷读进场失败（tip 3023）。
+- **行为变化**（C2）：Kafka 长时间不可用时，周期存盘不再被快路径跳过，每周期整份写一次 Redis；退出实体重存 3 轮后保留。
+- **回滚前置**：回滚目标提交必须包含 `d5cbb8a8e`（`git merge-base --is-ancestor`）；④ 的回滚规程见修订稿（先切 shared，`retry_requeue -check` 确认 p* 为 0）。
+- **上游未完成项**：proto2mysql 的验证（任务单任务 A / B）还没回来，条件写因此没法开工。
+
+---
+
+## 6. 构建与测试（给负责人 / Codex）
+
+各阶段的具体命令与通过标准见 batch-reports.md 各节的「验证命令」。全部落完后按下面的顺序跑：
+
+1. **Go**：环境变量照任务单 §1（`GOTOOLCHAIN=local`、`GOFLAGS=-mod=readonly`、`GOPROXY=https://goproxy.cn,direct`）。依次在 `go/shared`、`go/db`、`go/login`、`tools/merge_zone` 下跑 `go vet ./...`、`go build ./...`、`go test ./... -count=1`；go/db 的 kafka 包需要回环网络（miniredis）。`go/test.ps1` 的 L1 列表已加入 `shared/kafkautil` 与 `login/internal/kafka`。
+2. **C++**：MSBuild 串行 `/m:1`，先编 scene 库（CMakeLists.txt / scene.vcxproj 已登记新文件），再编 `kafka_command_test`、`cross_zone_test` 并运行。
+3. **PowerShell**：跑 `tools/scripts/tests/` 下本轮改过和新增的 `*.tests.ps1`，以及 `test_stress_summarize.ps1`。
+4. **上线前**：按[上线待做](../ops/godb-pipeline-launch-todo.md)与各设计文档的 rollout 节执行，比如 kcat 抽样核对 C++ 写消息守契约、V0 核对现网 broker 版本、本机双 db 实例复验。

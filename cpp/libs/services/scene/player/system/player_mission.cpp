@@ -5,6 +5,7 @@
 #include <limits>
 #include <set>
 #include "thread_context/ecs_context.h"
+#include "core/time/system/time.h"
 #include "modules/bag/bag_service.h"
 #include "modules/bag/comp/player_bags_comp.h"
 #include "modules/condition/condition_type.h"
@@ -78,6 +79,25 @@ bool HasProgressSource(uint32_t category) {
         return false;
     }
 }
+
+void ApplyFollowUps(entt::entity player, const MissionFollowUps& followUps) {
+    for (const uint32_t missionId : followUps.autoGrant) {
+        const auto result = PlayerMissionSystem::ClaimReward(player, MissionListComp::kPlayerMission, missionId);
+        if (result != kSuccess)
+            LOG_WARN << "任务自动奖励保留待重试 mission=" << missionId << " tip=" << result;
+    }
+    for (const uint32_t missionId : followUps.chainAccept) {
+        const auto result = PlayerMissionSystem::Accept(player, MissionListComp::kPlayerMission,
+            missionId, TimeSystem::NowMillisecondsUTC());
+        if (result != kSuccess)
+            LOG_WARN << "任务链接取被拒 mission=" << missionId << " tip=" << result;
+    }
+    for (const uint32_t missionId : followUps.completed) {
+        const ConditionEvent completed{player,
+            static_cast<uint32_t>(eConditionType::kConditionCompleteMission), {missionId}, 1};
+        PlayerMissionSystem::OnCondition(player, completed);
+    }
+}
 } // namespace
 
 uint32_t PlayerMissionSystem::Initialize(entt::entity player) {
@@ -141,6 +161,7 @@ uint32_t PlayerMissionSystem::Accept(entt::entity player, uint32_t scope,
     AcceptMissionEvent event;
     event.player = player;
     event.missionId = missionId;
+    MissionFollowUps followUps;
     const auto result = MissionSystem::AcceptMission(event, missions, MissionConfig::GetSingleton());
     if (result == kSuccess) {
         (*missions.GetMutableMissionList().mutable_mission_begin_time())[missionId] = nowMs;
@@ -150,7 +171,7 @@ uint32_t PlayerMissionSystem::Accept(entt::entity player, uint32_t scope,
             currentLevel.conditionType = static_cast<uint32_t>(eConditionType::kConditionLevelUp);
             currentLevel.conditionIds.push_back(level->level());
             currentLevel.amount = level->level();
-            MissionSystem::HandleConditionEvent(currentLevel, missions, MissionConfig::GetSingleton(), missionId);
+            MissionSystem::HandleConditionEvent(currentLevel, missions, MissionConfig::GetSingleton(), followUps, missionId);
         }
         // 完成事实已持久化：晚接取依赖任务也能补齐，但只更新本次新任务。
         // 去重后每个历史任务至多贡献一次，不能借反复接取其它任务重放进度。
@@ -177,10 +198,28 @@ uint32_t PlayerMissionSystem::Accept(entt::entity player, uint32_t scope,
             completed.conditionType = static_cast<uint32_t>(eConditionType::kConditionCompleteMission);
             completed.conditionIds.push_back(completedId);
             completed.amount = 1;
-            MissionSystem::HandleConditionEvent(completed, missions, MissionConfig::GetSingleton(), missionId);
+            MissionSystem::HandleConditionEvent(completed, missions, MissionConfig::GetSingleton(), followUps, missionId);
         }
     }
+    ApplyFollowUps(player, followUps);
     return result;
+}
+
+void PlayerMissionSystem::OnCondition(entt::entity player, const ConditionEvent& fact) {
+    if (!tlsEcs.actorRegistry.valid(player) || PlayerLifecycleSystem::IsCrossZoneFrozen(player)) return;
+    auto* container = tlsEcs.actorRegistry.try_get<MissionsContainerComp>(player);
+    if (container == nullptr) {
+        LOG_ERROR << "任务条件推进失败:缺少持久任务组件 entity=" << entt::to_integral(player);
+        return;
+    }
+    auto* missions = container->GetMutable(MissionListComp::kPlayerMission);
+    if (missions == nullptr) {
+        LOG_ERROR << "任务条件推进失败:缺少玩家任务 scope entity=" << entt::to_integral(player);
+        return;
+    }
+    MissionFollowUps followUps;
+    MissionSystem::HandleConditionEvent(fact, *missions, MissionConfig::GetSingleton(), followUps);
+    ApplyFollowUps(player, followUps);
 }
 
 uint32_t PlayerMissionSystem::CheckClaim(entt::entity player, uint32_t scope, uint32_t missionId) {

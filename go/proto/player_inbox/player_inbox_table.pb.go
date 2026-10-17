@@ -29,6 +29,9 @@ const (
 	PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_UNSPECIFIED PlayerInboxAuditAction = 0
 	PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_SANCTION    PlayerInboxAuditAction = 1 // GmSanctionPlayer 入箱
 	PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_VOID        PlayerInboxAuditAction = 2 // VoidItem(未投递直接 VOIDED,或已投递挂 VOID 指令)
+	// VoidItem 强制模式:经已落盘账本证明后终结已投递的行。与 VOID 分列:同一条目常先挂过指令再强制终结,
+	// 审计主键含 action 且 INSERT IGNORE,共用 VOID 会让这次终结的审计行被静默吞掉。
+	PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_FORCE_VOID PlayerInboxAuditAction = 3
 )
 
 // Enum value maps for PlayerInboxAuditAction.
@@ -37,11 +40,13 @@ var (
 		0: "PLAYER_INBOX_AUDIT_UNSPECIFIED",
 		1: "PLAYER_INBOX_AUDIT_SANCTION",
 		2: "PLAYER_INBOX_AUDIT_VOID",
+		3: "PLAYER_INBOX_AUDIT_FORCE_VOID",
 	}
 	PlayerInboxAuditAction_value = map[string]int32{
 		"PLAYER_INBOX_AUDIT_UNSPECIFIED": 0,
 		"PLAYER_INBOX_AUDIT_SANCTION":    1,
 		"PLAYER_INBOX_AUDIT_VOID":        2,
+		"PLAYER_INBOX_AUDIT_FORCE_VOID":  3,
 	}
 )
 
@@ -410,7 +415,7 @@ type PlayerInboxAudit struct {
 	PlayerId      uint64                 `protobuf:"varint,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	Domain        uint32                 `protobuf:"varint,3,opt,name=domain,proto3" json:"domain,omitempty"` // PlayerInboxDomain
 	Seq           uint64                 `protobuf:"varint,4,opt,name=seq,proto3" json:"seq,omitempty"`
-	Action        uint32                 `protobuf:"varint,5,opt,name=action,proto3" json:"action,omitempty"`                    // PlayerInboxAuditAction:SANCTION / VOID
+	Action        uint32                 `protobuf:"varint,5,opt,name=action,proto3" json:"action,omitempty"`                    // PlayerInboxAuditAction:SANCTION / VOID / FORCE_VOID
 	Operator      string                 `protobuf:"bytes,6,opt,name=operator,proto3" json:"operator,omitempty"`                 // 调用方自报,≤ 64B
 	PeerAddr      string                 `protobuf:"bytes,7,opt,name=peer_addr,json=peerAddr,proto3" json:"peer_addr,omitempty"` // gRPC 对端地址,唯一不可伪造的部分(设计 §1.6)
 	Reason        string                 `protobuf:"bytes,8,opt,name=reason,proto3" json:"reason,omitempty"`                     // ≤ 256B
@@ -571,11 +576,12 @@ const file_proto_player_inbox_player_inbox_table_proto_rawDesc = "" +
 	"\tpeer_addr\x18\a \x01(\tR\bpeerAddr\x12\x16\n" +
 	"\x06reason\x18\b \x01(\tR\x06reason\x12\x1d\n" +
 	"\n" +
-	"created_ms\x18\t \x01(\x04R\tcreatedMs:G\x8a\x92\xf4\x01\x12player_inbox_audit\x92\x92\xf4\x01!shard,player_id,domain,seq,action\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04*z\n" +
+	"created_ms\x18\t \x01(\x04R\tcreatedMs:G\x8a\x92\xf4\x01\x12player_inbox_audit\x92\x92\xf4\x01!shard,player_id,domain,seq,action\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04*\x9d\x01\n" +
 	"\x16PlayerInboxAuditAction\x12\"\n" +
 	"\x1ePLAYER_INBOX_AUDIT_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bPLAYER_INBOX_AUDIT_SANCTION\x10\x01\x12\x1b\n" +
-	"\x17PLAYER_INBOX_AUDIT_VOID\x10\x02B\x14Z\x12proto/player_inboxb\x06proto3"
+	"\x17PLAYER_INBOX_AUDIT_VOID\x10\x02\x12!\n" +
+	"\x1dPLAYER_INBOX_AUDIT_FORCE_VOID\x10\x03B\x14Z\x12proto/player_inboxb\x06proto3"
 
 var (
 	file_proto_player_inbox_player_inbox_table_proto_rawDescOnce sync.Once

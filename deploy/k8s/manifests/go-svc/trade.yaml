@@ -87,6 +87,15 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: MMORPG_ASSET_OP_SECRET_TRADE
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: asset-trade, optional: true}
+            - name: COMMERCE_GATEWAY_SECRET
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: commerce-gateway, optional: true}
+            - name: COMMERCE_DELIVERY_SECRET
+              valueFrom:
+                secretKeyRef: {name: domain-service-secrets, key: commerce-delivery, optional: true}
           args: ["-f", "/app/etc/trade.yaml"]
           ports:
             - containerPort: 50800

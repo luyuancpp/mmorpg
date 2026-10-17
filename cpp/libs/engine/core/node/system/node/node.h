@@ -17,14 +17,19 @@
 #include <mutex>
 #include <optional>
 #include <network/node_utils.h>
-#include <thread>
-#include "entt/src/entt/signal/sigh.hpp"
 #include "infra/messaging/kafka/kafka_manager.h"
 #include "node/system/etcd/etcd_service.h"
 #include "node/system/etcd/etcd_manager.h"
 #include "node/system/registration/registration_manager.h"
 #include "node/system/discovery/service_discovery_manager.h"
-#include <grpcpp/grpcpp.h>
+
+// 只前向声明:本头经大量翻译单元包含,gRPC 服务端(muduo_grpc,docs/design/grpc-muduo-transport.md §15)
+// 的完整定义只在 node.cpp 里需要。
+namespace muduo_grpc
+{
+class Server;
+class Service;
+} // namespace muduo_grpc
 
 // Tracks a pending node removal that can be cancelled if the node re-registers.
 struct PendingNodeRemoval
@@ -170,9 +175,11 @@ public:
                                      const std::vector<int32_t> &partitions = {},
                                      const KafkaPartitionAssignPolicy &assignPolicy = {});
 
-    // gRPC server: register a service before StartRpcServer().
-    void RegisterGrpcService(grpc::Service *service);
-    const std::vector<grpc::Service *> &GetGrpcServices() const { return grpcServices_; }
+    // gRPC 服务端:在 StartRpcServer() 之前注册(etcd 端口分配看 HasGrpcServices() 决定是否派生 gRPC 端口)。
+    // 服务由调用者拥有,必须活过 Node:生成的方法表闭包捕获服务的 this,muduo_grpc::Server 在 Node 析构前
+    // (OnGrpcServerDrained / 收尾的防御销毁)已经销毁。服务端整个跑在本节点 EventLoop 上,不创建线程。
+    void RegisterGrpcService(muduo_grpc::Service &service);
+    bool HasGrpcServices() const { return !grpcServices_.empty(); }
 
     // 本节点的 etcd 身份(node_id 租约)已经失效时调用。
     //
@@ -182,7 +189,8 @@ public:
     virtual void OnNodeIdConflictShutdown(NodeIdConflictReason reason);
 
     // 非阻塞地把停机请求投递到 EventLoop。适合 RPC handler / 信号转发器:
-    // 它们不能等待整个 drain,否则会与 gRPC Server::Shutdown 互相等待。
+    // handler 跑在 loop 线程上,不能同步等待整个 drain —— gRPC 排空与收尾都要靠 loop 推进,
+    // 在 loop 上等就永远等不到。
     void RequestShutdown();
 
     // 优雅停机。EventLoop 外调用会等待有界时间;异步入口优先用
@@ -199,7 +207,7 @@ public:
     // 线程:本函数读的是普通成员(构造期写一次、之后只读),任何线程都可调用。
     // 配套的 NodeInfo 由 Node 持有,只在 loop 线程写;跨线程读取不会与写入同步。
     // 所以 ClientFacing 的 node 实参必须取自 loop 线程上的
-    // gNode->GetNodeInfo()(例如 battle 在 runInLoop 之内的 BuildAssignment / 预签,不得挪到 gRPC 线程上的许可阶段)。
+    // gNode->GetNodeInfo()(例如 battle 在 loop 线程上执行的 BuildAssignment / 预签)。
     bool ClientEndpointRequired() const { return clientEndpointRequired_; }
 
 protected:
@@ -210,7 +218,6 @@ protected:
     void InitClientEndpoint();
     void Initialize();
     void InitLogSystem();
-    void RegisterEventHandlers();
     void LoadConfigs();
     void LoadAllConfigData();
     void SetupTimeZone();
@@ -221,7 +228,12 @@ protected:
 
     // gRPC server lifecycle (called automatically if services registered).
     void StartGrpcServer();
+    // 停机第 4 步(docs/design/grpc-muduo-transport.md §15.10):BeginShutdown 进入 loop 内排空
+    // (停听、两段 GOAWAY、已收完的调用照常派发,约 3s 硬上限);没有服务端时直接记为已排空。
     void ShutdownGrpcServer();
+    // 排空完成回调。由 Server 经 queueInLoop 投递(不在 Server 自己的栈上,也不在 I/O 事件处理期间),
+    // 所以可以在这里同步销毁 Server。幂等。
+    void OnGrpcServerDrained();
     // 关机收尾分两段(docs/design/muduo-rpc-channel.md §6.5):阶段 0 关闭全部 RPC 通道、让在途调用以失败完成,
     // 再把拆除(FinalizeTeardownInLoop)排到这些失败回调之后。
     void FinalizeShutdownInLoop();
@@ -236,9 +248,6 @@ protected:
     void StartConflictDrainWatchdog();
     void StartShutdownDrainWatchdog();
     void MaybeFinalizeShutdownInLoop();
-
-    // Event handling
-    void OnServerConnected(const OnConnected2TcpServerEvent &connectedEvent);
 
     void ShutdownInLoop();
 
@@ -295,13 +304,14 @@ protected:
     std::chrono::steady_clock::time_point shutdownDrainDeadline_{};
 
     // gRPC server (optional, started only when services are registered via RegisterGrpcService).
-    std::vector<grpc::Service *> grpcServices_;
-    std::unique_ptr<grpc::Server> grpcServer_;
-    // 不再为 Server::Wait() 常驻一条线程。只在关机期间临时起线程跑同步
-    // Server::Shutdown(),让 muduo loop 保持可运行并完成已在途的 runInLoop handler。
-    std::thread grpcShutdownThread_;
-    // 最后声明，最先析构：其它成员开始释放前先断开带 this 的 dispatcher 订阅。
-    entt::scoped_connection nodeConnectedSubscription_;
+    // 服务由调用者拥有(见 RegisterGrpcService),这里只存引用。
+    std::vector<std::reference_wrapper<muduo_grpc::Service>> grpcServices_;
+    // muduo_grpc::Server 是连接的唯一强持有者(TcpServer 的等价物,AGENTS §11.7),自己的定时器 / 闭包只绑 weak;
+    // Node 是它唯一的所有者。全部在本节点 EventLoop 上运行,不创建线程(第 4 批起没有 poller / 关机线程)。
+    // 只在排队任务里或 loop 外销毁:OnGrpcServerDrained 里 reset;收尾时若仍在,经 queueInLoop 防御销毁。
+    std::shared_ptr<muduo_grpc::Server> grpcServer_;
+    // 排空起点(BeginShutdown 时刻),只用于 "gRPC server drained. drain_ms=" 日志。
+    std::chrono::steady_clock::time_point grpcDrainStart_{};
 };
 
 // DependencyGate — polls for required service-discovery dependencies before

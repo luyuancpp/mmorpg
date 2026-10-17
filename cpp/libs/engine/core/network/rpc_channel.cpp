@@ -15,9 +15,7 @@
 #include "network/rpc_controller.h"
 #include "network/rpc_done_callback.h"
 #include "network/traffic_statistics.h"
-#include "proto/common/base/tip.pb.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
-#include "thread_context/ecs_context.h"
 
 using namespace std::placeholders;
 

@@ -1380,6 +1380,7 @@ cd tools/data_table_exporter && py -m pytest -q
   - `route_table.go` 条目如 §I.2 所述;
   - `rpc_event_registry.h` 里 `kMaxRpcMethodCount == 最大号 + 1`;
   - **Agones 块正向断言**:`grep -n AcquireCreatePermitBlocking cpp/nodes/scene/handler/grpc/scene_node_service.cpp` 必须命中，不命中即判失败。只看 `git diff` 查不出问题：该块已在 commit `6c4021ae5`(2026-09-02)被删掉，HEAD 里没有任何调用点(见 J-28 ④);
+    (2026-10-16 更正:该函数 2026-09-29 已改名为 `AcquireAllocationPermitBlocking`;grpc-muduo-transport 第 4 批起 Agones 块在守护段 `grpc.CreateScene.guard` 里、改用异步许可。今后此断言改为 `grep -n AcquireAllocationPermitAsync cpp/nodes/scene/handler/grpc/scene_node_service.cpp` 必须命中,且 `AcquireAllocationPermitBlocking` 不得命中,见 grpc-muduo-transport.md §15.14 第 3 步。本文其余处的同名断言是历史执行记录,不再改写。)
   - `go/team/generated/pb/game/` 与 `cpp/generated/grpc_client/team/team_grpc_client.{h,cpp}` 已生成(两者必定生成，见 §B.5、§I.1 批 0 第 11 项),后者已登记进 grpc_client 工程。
 - 然后把 15 个消息号的额度填进 `data/MessageLimiter.xlsx`,再执行一次 `dev.bat export`(MessageLimiter 只需导表，proto 生成器不读它;**不要**用 `dev.bat gen`,理由同第 1 步)。之后如需重跑 proto 生成，仍用同一份副本执行 `proto-gen-run -ConfigPath <副本>`。
 
@@ -1600,7 +1601,7 @@ cd robot && go mod vendor && go build ./...
 | 1 | Go `teampb "proto/team"`(包名 `team`):26 个 message、3 个 enum(`TeamMatchState_TEAM_MATCH_STATE_*`、`TeamChangeReason_TEAM_CHANGE_REASON_*`、`TeamEventType_TEAM_EVENT_TYPE_*`)、`ClientPlayerTeamServer` / `UnimplementedClientPlayerTeamServer` / `RegisterClientPlayerTeamServer` | `go/proto/team/team.pb.go`、`team_grpc.pb.go` | `go/match/internal/team/*`、`go/match/match_service.go`、`robot/team_smoke_scenario.go` |
 | 2 | Go `event.PlayerTeamRefreshEvent`;C++ `::PlayerTeamRefreshEvent` | `go/proto/common/event/team_event.pb.go`;`cpp/generated/proto/common/event/team_event.pb.{h,cc}` | `team/notify.go`、`service_test.go`;`player_team.cpp`、`team_event_handler.{h,cpp}` |
 | 3 | C++ `::TeamId::membership_epoch()` / `set_membership_epoch()` | `cpp/generated/proto/common/component/team_comp.pb.h` | `player_team.cpp` |
-| 4 | `game.PlayerTeamRefreshEventEventId`(Go);C++ 同名常量 + `DispatchProtoEvent` 的对应 case | `proto/event_id.txt` → `go/match/generated/pb/game/event_id.go`;`cpp/generated/rpc/service_metadata/{common_event_team_event_event_id.h, rpc_event_registry.*}` | `team/notify.go`、`service_test.go`;scene Kafka 命令路由 |
+| 4 | `game.PlayerTeamRefreshEventEventId`(Go);C++ 同名常量 + `DispatchSceneKafkaCommand` 的白名单 case | `proto/event_id.txt` → `go/match/generated/pb/game/event_id.go`;`cpp/generated/rpc/service_metadata/common_event_team_event_event_id.h` 与 `cpp/nodes/scene/handler/event/scene_kafka_command_router.cpp` | `team/notify.go`、`service_test.go`;scene Kafka 命令路由 |
 | 5 | `game.ClientPlayerTeam{CreateTeam,GetMyTeam,ApplyJoinTeam,HandleApplication,InviteToTeam,RespondInvite,ListMyInvites,LeaveTeam,KickMember,TransferLeader,DisbandTeam,StartTeamMatch,NotifyTeamSnapshot,NotifyTeamInvite,NotifyTeamEvent}MessageId`(15 个,数值由发号器定) | `proto/message_id.txt` → `go/match/generated/pb/game/message_id.go`、`robot/generated/pb/game/message_id.go`、`go/client_rpc_router/generated/pb/game/{message_id,route_table}.go`、`cpp/generated/rpc/service_metadata/team_service_metadata.h`(另会多出 `go/team/generated/`,J-15) | `team/{notify,service}.go`、测试;`robot/team_smoke_scenario.go`;MessageLimiter 额度 |
 | 6 | `table.TeamError_kTeam{NotLeader,HomeZoneUnknown,CrossZoneDenied,InviteNotFound,InviteLimit,InMatch,MemberOffline,MemberInBattle,MemberNotReady,DungeonNotOpen,SizeExceeded,StateChanged,Internal}`;`tip.Segments` 的 team 段 Hi/Count;`tip.Faults` 含 TeamInternal | `Tip.xlsx` 加 13 行 → `go/shared/generated/pb/table/team_error_tip.pb.go`、`go/shared/generated/tip/{segments,faults}.go`(robot 还要 `go mod vendor`) | `team/errors.go`、`errors_test.go`、`server.go`(`serverbase.TipVerdict`);`robot/team_smoke_scenario.go` |
 | 7 | C++ `cpp/generated/proto/team/team.{pb,grpc.pb}.{h,cc}` | proto 生成 | 已登记进 proto 工程(文件不存在前 proto 工程编不过) |
@@ -1929,7 +1930,7 @@ cd robot && go mod vendor && go build ./...
 
 `proto/event_id.txt` 新增唯一一行 `48=PlayerTeamRefreshEvent`(`git diff --numstat` = `1  0`)。各服务 `generated/pb/game/event_id.go` 同步出现 `const PlayerTeamRefreshEventEventId = 48`(例:`go/match/generated/pb/game/event_id.go:51`)。
 
-`PlayerTeamRefreshEvent` 在全局命名空间(`team_event.proto` 无 `package`),由 `rpc_event_registry.cpp` 的 `DispatchProtoEvent` 解包后进程内分发到 `TeamEventHandler`。
+`PlayerTeamRefreshEvent` 在全局命名空间(`team_event.proto` 无 `package`),由生成的 `scene_kafka_command_router.cpp` 中 `DispatchSceneKafkaCommand` 白名单解包后直接调用 `TeamEventHandler`。
 
 ### GR.4 生成护栏核对(逐条 pass / fail)
 

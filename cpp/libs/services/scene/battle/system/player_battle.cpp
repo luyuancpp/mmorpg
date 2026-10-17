@@ -41,6 +41,7 @@
 // 判「可不可以销账」只认它,不另建已持久化水位(与通用资产通道同一条纪律)。
 #include "player/comp/last_persisted_snapshot_comp.h"
 #include "player/system/player_lifecycle.h"  // IsCrossZoneFrozen / SavePlayerToRedis
+#include "player/system/player_mission.h"
 #include "core/system/redis.h"  // tlsRedisSystem:判断该玩家是否还有未落地的存盘
 #include "player/system/player_pet.h"
 #include "modules/condition/condition_type.h"
@@ -130,19 +131,6 @@ namespace
 	{
 		auto& redis = tlsRedis.GetZoneRedis();
 		return redis && redis->connected();
-	}
-
-	uint64_t GuidForLog(entt::entity player)
-	{
-		const auto* g = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-		return g ? g->value : 0;
-	}
-
-	// 战斗冻结的唯一按需创建口。备战、迟到确认重建和登录恢复都先完成各自的
-	// 实体有效性、既有冻结及快照或锁/账本校验，再在实际写入时调用；读路径不创建。
-	InBattleComp& StoreBattleFreezeForWrite(entt::entity player)
-	{
-		return tlsEcs.actorRegistry.get_or_emplace<InBattleComp>(player);
 	}
 
 	// 备战时写进快照 routing 的大厅会话号(turn-based §22.5 第 3 条)。
@@ -303,7 +291,7 @@ namespace
 				// 「销账其实没落地 + 重启」退回重复发奖(§9.3 的复制窗口)。
 				const bool lockReleased = reply->type == REDIS_REPLY_INTEGER && (reply->integer & 2) != 0;
 				const auto owner = tlsEcs.GetPlayer(playerId);
-				if (!tlsEcs.actorRegistry.valid(owner) || GuidForLog(owner) != playerId) return;
+				if (!tlsEcs.actorRegistry.valid(owner) || tlsEcs.GetPlayerId(owner) != playerId) return;
 				if (auto* ledger = tlsEcs.actorRegistry.try_get<BattleSettlementLedgerComp>(owner);
 					ledger != nullptr && battle_settlement::ForgetApplied(*ledger, battleId))
 				{
@@ -400,9 +388,9 @@ namespace
 		}
 		if (!gPersistFn(player))
 		{
-			// false 有两种来源:脏比较判定「盘上已是这一份」,或交接/退出在途跳过写盘。
-			// 两者都不能当成「已落盘」—— 是否 durable 一律由 IsSettlementDurable 按字节判。
-			LOG_DEBUG << "[PlayerBattle] Settlement save produced no write(unchanged data or save skipped), player_id="
+			// false 只表示没有排入新写:要么盘上已是这一份(快路径),要么存盘被拒(缺身份 / 持久组件、存盘序号耗尽,保存入口已打 ERROR)。
+			// 交接 / 退出在途已被上面 IsSettlementApplicable 挡掉,走不到这里。哪种都不能当成「已落盘」,durable 一律由 IsSettlementDurable 按字节判。
+			LOG_DEBUG << "[PlayerBattle] Settlement save not queued(unchanged or refused), player_id="
 					  << playerId << " battle_id=" << battleId;
 			return;
 		}
@@ -440,7 +428,7 @@ namespace
 	void AckSettlementPending(const uint64_t playerId, const uint64_t battleId, const bool supersededWithoutEntity)
 	{
 		const auto player = tlsEcs.GetPlayer(playerId);
-		const bool live = tlsEcs.actorRegistry.valid(player) && GuidForLog(player) == playerId;
+		const bool live = tlsEcs.actorRegistry.valid(player) && tlsEcs.GetPlayerId(player) == playerId;
 		if (!live)
 		{
 			if (supersededWithoutEntity)
@@ -593,7 +581,7 @@ namespace
 				{
 					return; // 锁仍匹配:重建成立,ctx 已同步
 				}
-				if (!tlsEcs.actorRegistry.valid(player) || GuidForLog(player) != playerId)
+				if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayerId(player) != playerId)
 				{
 					return;
 				}
@@ -791,10 +779,7 @@ namespace
 							 << " battle_id=" << battleId << " requested=" << requestedTotal
 							 << " drained=" << drainedTotal;
 				}
-				// 抽空的堆会留下 size==0 的实例继续占格(实例层的刻意行为),不回收的话
-				// 主背包会被僵尸堆占满,后面的掉落直接 kBagAddItemBagFull。
-				// kMergeOnly 只回收空实例、不重排槽位,不会洗掉跨服还原的位置。
-				BagService::MergeAndCompact(player, inventory, CompactPolicy::kMergeOnly);
+
 			}
 		}
 
@@ -815,44 +800,15 @@ namespace
 			}
 			if (!gained.empty())
 			{
-				// 入包前抓一份各 config 的持有量:BagService::AddItems 返回失败**不代表包没变**
-				// (bag_service.h 的原子性口径明写:临时格可能已经淘汰了旧物)。直接把整批重投
-				// 临时格会把已经进了主包的那部分再发一遍 —— 凭空复制道具。
-				std::map<uint32_t, std::size_t> beforeCounts;
-				for (const auto& [configId, count] : gained)
-				{
-					beforeCounts[configId] = inventory.GetTotalItemCount(configId);
-				}
-
+				// bag_service.h 保证任何拒绝都不修改原包，失败时整批转投临时格。
 				auto result = BagService::AddItems(player, inventory, gained,
-												   TX_ITEM_AWARD, battleId, extra);
+					TX_ITEM_AWARD, battleId, extra);
 				if (result != kSuccess)
 				{
-					// 只补"确实没进去"的那部分:实收 = 现有 − 入包前
-					ItemCountMap remainder;
-					for (const auto& [configId, count] : gained)
-					{
-						const std::size_t landed =
-							inventory.GetTotalItemCount(configId) - beforeCounts[configId];
-						if (landed >= count)
-						{
-							continue;
-						}
-						remainder[configId] = count - static_cast<uint32_t>(landed);
-					}
-					LOG_WARN << "[PlayerBattle] Drop insertion into main bag failed;remaining drops redirected to temporary slots: player_id=" << playerId
-							 << " battle_id=" << battleId << " err=" << result
-							 << " remainder_configs=" << remainder.size();
-					if (!remainder.empty())
-					{
-						result = BagService::AddItems(player, bags->bags[kTemporary],
-													  remainder, TX_ITEM_AWARD,
-													  battleId, extra);
-					}
-					else
-					{
-						result = kSuccess;  // 其实全进去了,上面的失败码来自已被淘汰的腾位动作
-					}
+					LOG_WARN << "[PlayerBattle] 主背包拒绝，整批掉落转投临时格: player_id=" << playerId
+						<< " battle_id=" << battleId << " err=" << result;
+					result = BagService::AddItems(player, bags->bags[kTemporary], gained,
+						TX_ITEM_AWARD, battleId, extra);
 				}
 				if (result != kSuccess)
 				{
@@ -911,7 +867,7 @@ bool PlayerBattleSystem::IsInBattle(entt::entity player)
 
 bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayerSnapshot& snapshot, uint32_t& errorTipId)
 {
-	const uint64_t playerId = GuidForLog(player);
+	const uint64_t playerId = tlsEcs.GetPlayerId(player);
 
 	// —— 基础属性(必需;含 speed 出手序)——
 	const auto* baseAttributes = tlsEcs.actorRegistry.try_get<BaseAttributesComp>(player);
@@ -932,6 +888,7 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 		return false;
 	}
 
+	const auto& registry = tlsEcs.actorRegistry;
 	// —— 路由信息(必需;battle 节点出站 Kafka 全靠它,不查 etcd)——
 	GateRoute gateRoute;
 	if (!ResolveGateRoute(player, gateRoute))
@@ -943,17 +900,15 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 
 	snapshot.set_player_id(playerId);
 	// 名字副本来自 PlayerProfileComp(真源 data_service player_name;login 首次入场补齐,scene 只读)。
-	// 组件已在前置校验中确认存在；名字字段尚未补齐时允许留空，不凭空补建组件。
-	const auto* profile = tlsEcs.actorRegistry.try_get<PlayerProfileComp>(player);
-	snapshot.set_player_name(profile != nullptr ? profile->name() : std::string());
-	snapshot.set_appearance_id(profile != nullptr ? profile->appearance_id() : std::string());
-	snapshot.set_gender(profile != nullptr ? profile->gender() : 0);
-	if (const auto* identity = tlsEcs.actorRegistry.try_get<PlayerUint32Comp>(player)) {
-		snapshot.set_class_id(identity->class_());
-	}
+	// 名字字段尚未补齐时允许留空。
+	const auto& profile = registry.get<PlayerProfileComp>(player);
+	snapshot.set_player_name(profile.name());
+	snapshot.set_appearance_id(profile.appearance_id());
+	snapshot.set_gender(profile.gender());
+	snapshot.set_class_id(registry.get<PlayerUint32Comp>(player).class_());
 
-	const auto* levelComp = tlsEcs.actorRegistry.try_get<LevelComp>(player);
-	snapshot.set_level(levelComp != nullptr && levelComp->level() > 0 ? levelComp->level() : 1);
+	const uint32_t level = registry.get<LevelComp>(player).level();
+	snapshot.set_level(level > 0 ? level : 1);
 
 	*snapshot.mutable_base_attributes() = *baseAttributes;
 	if (baseAttributes->speed() == 0)
@@ -964,27 +919,24 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 				 << ", player_id=" << playerId;
 	}
 
-	// 派生组件已确认存在；存量 max_health=0 时保守取当前 HP(不给引擎超治疗空间)。
-	const auto* derived = tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player);
-	const uint64_t maxHealth = (derived != nullptr && derived->max_health() > 0)
-								   ? derived->max_health()
+	// 存量 max_health=0 时保守取当前 HP(不给引擎超治疗空间)。
+	const auto& derived = registry.get<DerivedAttributesComp>(player);
+	const uint64_t maxHealth = derived.max_health() > 0
+								   ? derived.max_health()
 								   : std::max<uint64_t>(baseAttributes->health(), 1);
 	snapshot.set_max_health(maxHealth);
 	// max_mana / 二级属性:来自属性加点系统的 DerivedAttributesComp(登录加载即重算);
 	// 存量蓝上限为 0 时取当前 MP；物伤/法伤/防御沿用已经计算出的派生值。
-	const uint64_t maxMana = (derived != nullptr && derived->max_mana() > 0)
-								 ? derived->max_mana()
+	const uint64_t maxMana = derived.max_mana() > 0
+									 ? derived.max_mana()
 								 : std::max<uint64_t>(baseAttributes->mana(), 1);
 	snapshot.set_max_mana(maxMana);
-	if (derived != nullptr)
-	{
-		snapshot.set_physical_attack(derived->physical_attack());
-		snapshot.set_magic_attack(derived->magic_attack());
-		snapshot.set_defense(derived->defense());
-		// 战斗类属性的装备加成(必杀 / 连击 / 反击 / 反震 / 抗性,equipment-attributes.md §4.5):
-		// 整块原样拷给引擎，不把缺失组件伪装成全 0 加成。
-		snapshot.mutable_combat()->CopyFrom(derived->combat());
-	}
+	snapshot.set_physical_attack(derived.physical_attack());
+	snapshot.set_magic_attack(derived.magic_attack());
+	snapshot.set_defense(derived.defense());
+	// 战斗类属性的装备加成(必杀 / 连击 / 反击 / 反震 / 抗性,equipment-attributes.md §4.5):
+	// 整块原样拷给引擎，不把缺失组件伪装成全 0 加成。
+	snapshot.mutable_combat()->CopyFrom(derived.combat());
 
 	// —— 出战宝宝(player-pet.md §5):没带宝宝时不填,引擎侧自然没有这个单位 ——
 	if (::BattlePetSnapshot petSnapshot; PetSystem::BuildBattleSnapshot(player, petSnapshot))
@@ -996,38 +948,36 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 	// 被动技能没有施放动作、开关技能是状态切换、持续施法依赖引擎已删除的相位概念;
 	// 三者若进了快照,引擎会把它们当普通技能按 damage 表达式打出伤害。
 	// 这里是第一道过滤,引擎 InitPlayers 还有一道(快照来自本进程也不能单点信任)。
-	if (const auto* skillList = tlsEcs.actorRegistry.try_get<PlayerSkillListComp>(player))
+	const auto& skillList = registry.get<PlayerSkillListComp>(player);
+	for (const auto& skill : skillList.skill_list())
 	{
-		for (const auto& skill : skillList->skill_list())
+		if (skill.skill_table_id() == 0)
 		{
-			if (skill.skill_table_id() == 0)
-			{
-				continue;
-			}
-			const auto* skillRow =
-				SkillTableManager::Instance().FindByIdSilent(skill.skill_table_id()).first;
-			if (skillRow == nullptr)
-			{
-				continue;
-			}
-			bool castableInTurnBattle = true;
-			// 表里存的是位号(0..5)不是掩码,别和 scene 侧 eSkillType 的 1<<n 混用
-			for (const auto skillTypeBit : skillRow->skill_type())
-			{
-				if (skillTypeBit == turnbattle::kSkillTypeBitPassive ||
-					skillTypeBit == turnbattle::kSkillTypeBitToggle ||
-					skillTypeBit == turnbattle::kSkillTypeBitChannel)
-				{
-					castableInTurnBattle = false;
-					break;
-				}
-			}
-			if (!castableInTurnBattle)
-			{
-				continue;
-			}
-			snapshot.add_skill_table_ids(skill.skill_table_id());
+			continue;
 		}
+		const auto* skillRow =
+			SkillTableManager::Instance().FindByIdSilent(skill.skill_table_id()).first;
+		if (skillRow == nullptr)
+		{
+			continue;
+		}
+		bool castableInTurnBattle = true;
+		// 表里存的是位号(0..5)不是掩码,别和 scene 侧 eSkillType 的 1<<n 混用
+		for (const auto skillTypeBit : skillRow->skill_type())
+		{
+			if (skillTypeBit == turnbattle::kSkillTypeBitPassive ||
+				skillTypeBit == turnbattle::kSkillTypeBitToggle ||
+				skillTypeBit == turnbattle::kSkillTypeBitChannel)
+			{
+				castableInTurnBattle = false;
+				break;
+			}
+		}
+		if (!castableInTurnBattle)
+		{
+			continue;
+		}
+		snapshot.add_skill_table_ids(skill.skill_table_id());
 	}
 
 	// —— 参战持续 buff(时长换算为回合)——
@@ -1094,26 +1044,20 @@ bool PlayerBattleSystem::BuildBattleSnapshot(entt::entity player, ::BattlePlayer
 	//     于是结算扣除按实际持有夹紧时凭空少扣,白赚一次回血。
 	//   * 这是一份**数量副本**,不带 guid/格子:实例身份归 scene(战斗掉落 iid 归属决策),
 	//     战斗服只拿可丢弃的派生副本(D1)。
-	if (const auto* bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(player))
-	{
-		std::map<uint32_t, uint64_t> battleItems;  // 有序:同一背包每次出的副本顺序稳定
-		bags->bags[kInventory].ForEachItem([&battleItems](Guid, const ItemComp& item) {
-			if (item.size() == 0)
-			{
-				return;  // 被抽空的僵尸堆
-			}
-			if (!IsBattleUsableItem(item.config_id()))
-			{
-				return;
-			}
-			battleItems[item.config_id()] += item.size();
-		});
-		for (const auto& [configId, count] : battleItems)
+	const auto& bags = registry.get<PlayerBagsComp>(player);
+	std::map<uint32_t, uint64_t> battleItems;  // 有序:同一背包每次出的副本顺序稳定
+	bags.bags[kInventory].ForEachItem([&battleItems](Guid, const ItemComp& item) {
+		if (!IsBattleUsableItem(item.config_id()))
 		{
-			auto* itemEntry = snapshot.add_items();
-			itemEntry->set_item_table_id(configId);
-			itemEntry->set_count(count);
+			return;
 		}
+		battleItems[item.config_id()] += item.size();
+	});
+	for (const auto& [configId, count] : battleItems)
+	{
+		auto* itemEntry = snapshot.add_items();
+		itemEntry->set_item_table_id(configId);
+		itemEntry->set_count(count);
 	}
 
 	// —— 路由 ——
@@ -1146,8 +1090,9 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 {
 	const uint64_t playerId = request.player_id();
 	const uint64_t battleId = request.battle_id();
+    const uint64_t prepareDeadlineMs = request.prepare_deadline_ms() != 0 ? request.prepare_deadline_ms() : request.deadline_ms();
 
-	if (playerId == 0 || battleId == 0 || request.deadline_ms() == 0)
+	if (playerId == 0 || battleId == 0 || request.deadline_ms() == 0 || prepareDeadlineMs <= TimeSystem::NowMillisecondsUTC())
 	{
 		LOG_ERROR << "[PlayerBattle] PrepareBattle invalid arguments: player_id=" << playerId
 				  << " battle_id=" << battleId << " deadline_ms=" << request.deadline_ms();
@@ -1206,11 +1151,12 @@ void PlayerBattleSystem::PrepareBattle(const ::PrepareBattleRequest& request, ::
 
 	// 备战作废期限:match 在 gather 阶段崩溃时,已冻结成员只等这个短期限而不是整场战斗时限;
 	// 旧版 match 不填(0)时沿用 deadline_ms,行为与一期一致
-	const uint64_t prepareDeadlineMs =
-		request.prepare_deadline_ms() != 0 ? request.prepare_deadline_ms() : request.deadline_ms();
+	// 快照与配表读取后，在冻结提交点再次校验；旧 worker 失租后迟到的 Prepare 不能复活。
+    if(prepareDeadlineMs <= TimeSystem::NowMillisecondsUTC())
+    {response.clear_snapshot();response.mutable_error_message()->set_id(kInvalidParameter);return;}
 
 	// 上面已确认没有冻结且快照完整，此处才创建本次备战状态。
-	auto& inBattle = StoreBattleFreezeForWrite(player);
+	auto& inBattle = tlsEcs.actorRegistry.emplace<InBattleComp>(player);
 	inBattle.set_battle_id(battleId);
 	inBattle.set_battle_node_id(request.battle_node_id());
 	inBattle.set_deadline_ms(request.deadline_ms());
@@ -1504,7 +1450,7 @@ void PlayerBattleSystem::RebuildBattleFreezeFromLock(entt::entity player, const 
 				return;
 			}
 			// 回调期间实体可能已销毁/复用,或已被新的 PrepareBattle 挂上组件
-			if (!tlsEcs.actorRegistry.valid(player) || GuidForLog(player) != playerId)
+			if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayerId(player) != playerId)
 			{
 				LOG_INFO << "[PlayerBattle] Freeze reconstruction abandoned: entity no longer exists, player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=" << reasonCopy;
@@ -1545,7 +1491,7 @@ void PlayerBattleSystem::RebuildBattleFreezeFromLock(entt::entity player, const 
 			{
 				rebuilt.set_deadline_ms(deadlineMsHint);
 			}
-			StoreBattleFreezeForWrite(player).CopyFrom(rebuilt);
+			tlsEcs.actorRegistry.emplace<InBattleComp>(player, rebuilt);
 
 			// 续期到正式 deadline + 覆写 ctx,同时复核锁仍是本战斗的(否则撤销重建)
 			const uint64_t ttlSec = LockTtlSecFor(rebuilt.deadline_ms(), nowMs);
@@ -1583,7 +1529,7 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 			{
 				return; // 锁不在 = 没有战斗在途(EVAL 错误也按无锁处理,锁本身是咨询性的)
 			}
-			if (!tlsEcs.actorRegistry.valid(player) || GuidForLog(player) != playerId)
+			if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayerId(player) != playerId)
 			{
 				return;
 			}
@@ -1632,7 +1578,7 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 			const uint64_t nowMs = TimeSystem::NowMillisecondsUTC();
 			const InBattleComp rebuilt =
 				BuildInBattleFromCtx(battleId, ctxPayload, ReplyElementToInteger(reply, 2), nowMs);
-			StoreBattleFreezeForWrite(player).CopyFrom(rebuilt);
+			tlsEcs.actorRegistry.emplace<InBattleComp>(player, rebuilt);
 
 			// 复核锁仍是本战斗的(登录窗口内恰好到达的结算已删锁 -> 撤销重建);
 			// TTL 按重建后的有效期限算:PREPARING 看 prepare_deadline,其余看 deadline
@@ -1668,7 +1614,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 {
     if (alreadyAppliedOut != nullptr) *alreadyAppliedOut = false;
     if (!tlsEcs.actorRegistry.valid(player)) return false;
-    const uint64_t playerId = GuidForLog(player);
+    const uint64_t playerId = tlsEcs.GetPlayerId(player);
     const uint64_t battleId = settlement.battle_id();
     if (playerId == 0 || playerId != settlement.player_id() || battleId == 0)
     {
@@ -1764,18 +1710,17 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 	        }
 	    }
 		// HP/MP 终值回写(引擎输出已按快照上限饱和,这里再按派生上限夹一次,防御引擎侧越界)
+		const auto& derived = tlsEcs.actorRegistry.get<DerivedAttributesComp>(player);
 		uint64_t health = settlement.health();
-		if (const auto* derived = tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player);
-			derived != nullptr && derived->max_health() > 0)
+		if (derived.max_health() > 0)
 		{
-			health = std::min<uint64_t>(health, derived->max_health());
+			health = std::min<uint64_t>(health, derived.max_health());
 		}
 		baseAttributes->set_health(health);
 		uint64_t mana = settlement.mana();
-		if (const auto* derived = tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player);
-			derived != nullptr && derived->max_mana() > 0)
+		if (derived.max_mana() > 0)
 		{
-			mana = std::min<uint64_t>(mana, derived->max_mana());
+			mana = std::min<uint64_t>(mana, derived.max_mana());
 		}
 		baseAttributes->set_mana(mana);
 		// 阵亡基础复活(与登录加载同一规则,产品完整死亡/复活流程未定前的基线):
@@ -1783,12 +1728,10 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 		// 离线挂起结算在登录后补应用时也走这里,登录时的复活判定早已跑完、拦不住)。
 		if (settlement.is_dead() || health == 0)
 		{
-			// 回满到玩家真实上限(属性加点算出的 DerivedAttributesComp);取不到才退回职业初值 ——
+			// 回满到玩家真实上限(属性加点算出的 DerivedAttributesComp)。
 			// 只回 ClassTable 的 1 级初值会把等级/加点成长吞掉(20 级 max_health 约 1100,初值 500)。
-			const auto* derivedForRevive = tlsEcs.actorRegistry.try_get<DerivedAttributesComp>(player);
 			ReviveBaseAttributesIfDead(*baseAttributes,
-				derivedForRevive != nullptr ? derivedForRevive->max_health() : 0,
-				derivedForRevive != nullptr ? derivedForRevive->max_mana() : 0);
+				derived.max_health(), derived.max_mana());
 			LOG_INFO << "[PlayerBattle] Basic revival after death in settlement: player_id=" << playerId
 					 << " battle_id=" << settlement.battle_id()
 					 << " health=" << baseAttributes->health() << " mana=" << baseAttributes->mana();
@@ -1808,8 +1751,8 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 			PetSystem::PushList(player);
 		}
 
-		// 经验:全仓当前没有经验值组件/升级结算系统(只有 PlayerUpgradeEvent 事件壳),
-		// 一期仅记日志留痕,接入后在此入账(见 open_issues)
+		// 经验系统尚未接入,一期仅记日志留痕;升级后果见 PlayerAttributeSystem::GmSetLevel,
+		// 经验系统接入时抽出共用(见 open_issues)。
 		if (settlement.exp_gain() > 0)
 		{
 			LOG_INFO << "[PlayerBattle] Experience settlement deferred(experience system not integrated): player_id=" << playerId
@@ -1837,7 +1780,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 	            progress.conditionType = static_cast<uint32_t>(eConditionType::kConditionKillMonster);
 	            progress.conditionIds.push_back(defeat.monster_config_id());
 	            progress.amount = 1;
-	            tlsEcs.dispatcher.trigger(progress);
+	            PlayerMissionSystem::OnCondition(player, progress);
 	        }
 	    }
 		// 登记「这一局已应用」。必须在所有副作用之后、返回 true 之前:提前登记会让中途
@@ -1971,7 +1914,7 @@ void PlayerBattleSystem::ApplySettlement(const ::BattleSettlementEvent& event)
 					AckSettlementPending(playerId, battleId);
 					return;
 				}
-				if (!tlsEcs.actorRegistry.valid(player) || GuidForLog(player) != playerId ||
+				if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayerId(player) != playerId ||
 					tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player))
 				{
 					// 回调期间玩家又下线了 / 进入了退出流程(视同离线,理由见本函数开头):
@@ -2072,7 +2015,7 @@ void PlayerBattleSystem::RecoverPendingSettlementAfterFreezeExpiry(entt::entity 
 		[player = player, playerId](hiredis::Hiredis*, redisReply* reply) {
 			// 身份复核与 OnPlayerEnterScene 的回调同一写法:实体已销毁 / 句柄被复用就什么都不做,
 			// pending 留给下次进场的登录钩子。
-			if (!tlsEcs.actorRegistry.valid(player) || GuidForLog(player) != playerId)
+			if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayerId(player) != playerId)
 			{
 				return;
 			}
@@ -2139,7 +2082,7 @@ void PlayerBattleSystem::NotifyBattleReconnectToClient(entt::entity player)
 	message.set_battle_id(inBattle->battle_id());
 	SendMessageToClientViaGate(BattleClientPlayerNotifyBattleReconnectMessageId, message, player);
 
-	LOG_INFO << "[PlayerBattle] Session changed during battle;reconnect notification sent: player_id=" << GuidForLog(player)
+	LOG_INFO << "[PlayerBattle] Session changed during battle;reconnect notification sent: player_id=" << tlsEcs.GetPlayerId(player)
 			 << " battle_id=" << inBattle->battle_id()
 			 << " state=" << eInBattleState_Name(inBattle->state())
 			 << " battle_node_id=" << inBattle->battle_node_id();
@@ -2151,7 +2094,7 @@ void PlayerBattleSystem::OnPlayerEnterScene(entt::entity player, uint32_t enterG
 	{
 		return;
 	}
-	const uint64_t playerId = GuidForLog(player);
+	const uint64_t playerId = tlsEcs.GetPlayerId(player);
 	if (playerId == 0)
 	{
 		return;
@@ -2168,7 +2111,7 @@ void PlayerBattleSystem::OnPlayerEnterScene(entt::entity player, uint32_t enterG
 	{
 		tlsRedis.GetZoneRedis()->command(
 			[player, playerId](hiredis::Hiredis*, redisReply* reply) {
-				if (!tlsEcs.actorRegistry.valid(player) || GuidForLog(player) != playerId)
+				if (!tlsEcs.actorRegistry.valid(player) || tlsEcs.GetPlayerId(player) != playerId)
 				{
 					// 回调期间实体已销毁/复用:留着 pending,下次登录再应用
 					return;
@@ -2279,7 +2222,7 @@ void PlayerBattleSystem::StartReaper(muduo::net::EventLoop* loop)
 
 		for (const auto& entry : expired)
 		{
-			const uint64_t playerId = GuidForLog(entry.entity);
+			const uint64_t playerId = tlsEcs.GetPlayerId(entry.entity);
 			// 结构化 metric 日志:cpp scene 进程当前没有 Prometheus 端点,
 			// 由日志侧提取计数,见 open_issues。
 			// 两个 metric 区分:备战期作废(match gather 断链)vs 战斗期作废(battle 节点崩溃)
@@ -2333,7 +2276,7 @@ void PlayerBattleSystem::StartReaper(muduo::net::EventLoop* loop)
 		for (auto&& [entity, ledger] : tlsEcs.actorRegistry.view<BattleSettlementLedgerComp>().each())
 		{
 			if (ledger.applied_size() == 0) continue;
-			const uint64_t playerId = GuidForLog(entity);
+			const uint64_t playerId = tlsEcs.GetPlayerId(entity);
 			if (playerId == 0) continue;
 			// 先收集再处理:AckSettlementPending 会按 player_id 重新取实体并可能触发存盘,
 			// 边遍历边调用等于在遍历中改注册表。

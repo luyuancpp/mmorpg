@@ -41,7 +41,7 @@
 | §4.35 原方案 | owner_epoch 中的对应实现 | 结论 |
 |---|---|---|
 | `kClaimAndLoadLuaScript`:加载时 SET 属主、同一段 Lua 里 GET blob,认领早于读 | scene_manager 在 EnterScene 里先 `INCR owner_epoch` 并写 location(同一段 Lua,`go/scene_manager/internal/logic/owner_epoch.go`),之后才路由,新节点才 `AsyncLoad` | 取代。认领由铸造方完成,且严格早于读 |
-| `kFencedSaveLuaScript`:属主键缺失则补种、不等返回 0、相等则 SET + SADD | `redis_client.h` 的 `kSaveIfGuardLuaScript`,结构逐行相同 | 已存在 |
+| `kFencedSaveLuaScript`:属主键缺失则补种、不等返回 0、相等则 SET + SADD | `redis_client.h` 的 `kSaveIfGuardLuaScript`,结构逐行相同 *(2026-10-16 更正:现行脚本已删去 SADD 全服集合 `dirty_keys_set` 那一行,相等时只 SET 数据键;比对 / 补种 / 返回 0 的结构不变。原因见 [capacity-model-hok-scale.md](../capacity-model-hok-scale.md) A0-4)* | 已存在 |
 | 属主键 `<redis_key>:owner`,不设 TTL | `player:{id}:owner_epoch`,只由铸造方 INCR,删 location 时刻意不删 | 取代 |
 | 令牌 `<节点UUID>:<毫秒>:<自增>` + `PlayerSaveOwnerComp` | `PlayerOwnerEpochComp`(`player_ownership_comp.h`),路由事件下发,取 max 更新 | 取代(epoch 由 Go 按路由决策发,比节点自铸 token 更强:见 reentry-barrier §3.3"为什么不能让节点自己读") |
 | `Element.owner_token` / `SaveFenced` / 收 0 回调 / 丢弃同 key 排队值 / 不重试 | `Element.guard_key / guard_expected`;`OnSaved` 被拒分支丢同期望值的排队值、保留更新期望值的排队值、回调 `save_rejected_callback_` | 已存在 |

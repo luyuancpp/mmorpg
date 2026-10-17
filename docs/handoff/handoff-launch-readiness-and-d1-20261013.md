@@ -25,6 +25,19 @@
 >   - `RouteStore.FenceShards` 的 TiDB 档 64 没有配置载体。这是实现方登记的延后,不是负责人拍板;切 db_first 前要补进 ConfigMap。
 > - **提交状态**:10-15「按最标准」及之后补缺口的改动,一部分已被别的会话的整区快照带进 HEAD,其余仍在工作区。以各 PROGRESS 条目的文件清单为准。**全部未编译、未测试。**
 >
+> **2026-10-15 晚,续**:上面「仍待负责人定」的前四条,负责人已让「按最标准修复」,均已落码。剩余的评审、修复与验证移交 [handoff-launch-readiness-decisions-20261015.md](handoff-launch-readiness-decisions-20261015.md),以那份为准。本文 §4 第 5、7~10 项仍归本文。
+>
+> **2026-10-16**:
+> - 全局单点交接 10-16 的订正把五项改派回本线:会话对账按 gate 建索引、删 `dirty_keys_set`、task:result 分频道、nofile、scene_manager 只读本 zone。这与本文 §4 第 7 项「归全局单点交接」的说法相反,以那份订正为准。
+> - 这五项、D1 第 1b 批、G4a 修订(第 5 项)与过时注释(第 10 项)都已出调研规格,附核实意见,文件名为 `launch-readiness-20261013/spec_B0-*.md`、`spec_D1_batch1b_scout.md`、`spec_G4a_revision_scout.md`。**未落码**。
+> - 逐项结论、11 条待拍板与推荐顺序见 [PROGRESS.md](../PROGRESS.md)「2026-10-16 开服线剩余工作调研」。
+> - 不依赖拍板、可以先落的四项:B0-2、过时注释、B0-5、D1 1b-1。
+> - **同日落码**(全部未编译、未测试;各项条目见 PROGRESS 同日):
+>   - B0-2「删除 C++ 存盘 Lua 的全服键 dirty_keys_set 写入」:写入已在代码中删除,全部 scene 换成新镜像前生产仍在写;存量清理口径在 `docs/ops/release-checklist.md` §6.1,执行环境与时间待负责人定(待拍板第 11 项)。
+>   - 第 10 项「共享 Redis 淘汰策略过时注释更正」:go 下实为 10 处,另有 k8s_deploy.ps1、deploy/k8s/README.md 各 1 处,共 12 处;已改 9 处,`go/match/etc/match_service.yaml`、k8s_deploy.ps1、README 3 处待对应会话收尾,建议文案在该条目里。
+>   - B0-5「scene_manager 负载刷新」:用「领导者按 zone 批量刷新 + 登记集合替代 SCAN」缓解;字面的「每个副本只读本 zone」、按 zone 选主和 watch 收窄仍归 A1。
+>   - D1 1b-1 另起一批做。
+>
 > **会话产物位置**:原会话的 scratchpad 在本机临时目录,新会话读不到。需要的规格都已复制到 [launch-readiness-20261013/](launch-readiness-20261013/)。
 
 ## 0. 一句话

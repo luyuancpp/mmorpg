@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -12,9 +13,6 @@
 
 #include "network/rpc_channel.h"
 #include "network/rpc_channel_stats.h"
-
-#include "rpc_connection_event.h"
-#include <thread_context/ecs_context.h>
 
 // 出站节点链路:一个 muduo TcpClient(enableRetry 自动重连)+ 当前连接上的 RpcChannel。
 //
@@ -31,6 +29,8 @@
 class RpcClient : muduo::noncopyable, public std::enable_shared_from_this<RpcClient>
 {
 public:
+    using ConnectionObserver = std::function<void(const muduo::net::TcpConnectionPtr&)>;
+
     RpcClient(muduo::net::EventLoop* loop,
         const muduo::net::InetAddress& serverAddr)
         : client_(loop, serverAddr, "RpcClient"),
@@ -70,6 +70,12 @@ public:
     {
         const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
         services_[std::string(desc->full_name())] = service;
+    }
+
+    // 与 registerService 一样，必须在 connect() 之前设置；在 loop 线程同步观察 UP/DOWN。
+    void setConnectionObserver(ConnectionObserver observer)
+    {
+        connectionObserver_ = std::move(observer);
     }
 
     void connect()
@@ -165,7 +171,7 @@ public:
     }
 
     // 节点关机阶段 0(NodeUtils::CloseAllRpcChannels):在途调用以 kChannelClosed 失败,之后拒收新调用。
-    // 之后 enableRetry 重连建出的 channel 一出生就是关闭态:阶段 0 到拆除之间 loop 仍在转(gRPC CQ 排空可能拉长这段),
+    // 之后 enableRetry 重连建出的 channel 一出生就是关闭态:阶段 0 到拆除之间 loop 仍在转(至少一轮;gRPC 本地失败完成未排空时拆除还会再让,见 Node::FinalizeTeardownInLoop),
     // 不能让新连接上再登记出在途调用 —— 它们会拖到拆除之后才由 ~RpcChannel 失败。
     void CloseChannel()
     {
@@ -255,7 +261,10 @@ private:
             connectedAt_ = muduo::Timestamp::invalid();
         }
 
-        tlsEcs.dispatcher.trigger<OnConnected2TcpServerEvent>(conn);
+        if (connectionObserver_)
+        {
+            connectionObserver_(conn);
+        }
     }
 
     muduo::Timestamp connectedAt_{};
@@ -265,6 +274,7 @@ private:
     bool channelsClosed_{false};
     // 声明在 client_ 之后:析构时先于 client_ 释放(~RpcChannel 在 loop 还活着时把在途调用排进队列)。
     RpcChannelPtr channel_;
+    ConnectionObserver connectionObserver_;
 };
 
 using RpcClientPtr = std::shared_ptr<RpcClient>;

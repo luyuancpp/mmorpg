@@ -9,7 +9,7 @@
 // muduo_grpc 通道上的 etcd 传输(docs/design/grpc-muduo-transport.md §13)。
 //
 //   * unary(Range / Put / DeleteRange / Txn / LeaseGrant / LeaseRevoke):每次调用带截止时间
-//     (grpc_call_deadline::Get(EtcdNodeService),与官方客户端同一配置);失败只记日志(按方法限频),
+//     (grpc_call_deadline::Get(EtcdNodeService),与生成的 etcd 客户端同一配置);失败只记日志(按方法限频),
 //     恢复仍靠 EtcdService 既有的 txn / lease 10s 看门狗与 2s 全量 Range。
 //   * Watch / LeaseKeepAlive 两条双向流常驻;任何原因结束都按退避重建:0.2s 起、×2、封顶 5s、±20% 抖动,
 //     流活过 10s 再断则从 0.2s 重新开始,**不设次数上限**(§10.2 第 1 条的有意偏离)。

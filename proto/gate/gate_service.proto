@@ -9,18 +9,6 @@ import "proto/common/base/gm_admin.proto";
 option cc_generic_services = true;
 option (OptionFileDefaultNode) = NODE_GATE;
 
-message BindSessionToGateRequest {
-  uint32 session_id = 1;
-  uint64 player_id = 2;
-  uint32 session_version = 3; 
-}
-
-message BindSessionToGateResponse {
-  uint32 session_id = 1;
-  uint64 player_id = 2;
-  uint32 session_version = 3; 
-}
-
 message BroadcastToPlayersRequest
 {
   repeated uint32 session_list = 1;
@@ -55,14 +43,10 @@ message BroadcastToAllRequest
 }
 
 service Gate {
-  rpc PlayerEnterGameNode (RegisterGameNodeSessionRequest) returns (RegisterGameNodeSessionResponse);
   rpc SendMessageToPlayer (NodeRouteMessageRequest) returns (Empty);
-  rpc RouteNodeMessage (RouteMessageRequest) returns (RouteMessageResponse);
-  rpc RoutePlayerMessage (RoutePlayerMessageRequest) returns (RoutePlayerMessageResponse);
   rpc BroadcastToPlayers (BroadcastToPlayersRequest) returns (Empty);
   rpc BroadcastToScene (BroadcastToSceneRequest) returns (Empty);
   rpc BroadcastToAll (BroadcastToAllRequest) returns (Empty);
   rpc NodeHandshake(NodeHandshakeRequest) returns (NodeHandshakeResponse);
-  rpc BindSessionToGate(BindSessionToGateRequest) returns (BindSessionToGateResponse);
   rpc GmGracefulShutdown (GmGracefulShutdownRequest) returns (GmGracefulShutdownResponse);
 }

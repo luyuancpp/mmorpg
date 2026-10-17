@@ -77,8 +77,10 @@ Redis:
 # 全部单 key 操作,Redis Cluster 安全;Host 逗号分隔种子地址,Type 必须是 cluster。
 # 整段留空 / 注释掉 = 回落到上面的共享库,启动时打 WARN 并在横幅打印 shared-fallback 落点。
 # 本地默认就走这个单库形态(不另起集群,省一套 compose profile)。
-# ⚠ staging/prod 必须指向独立实例且 maxmemory-policy=noeviction:共享库是 allkeys-lfu,
-#   好友列表缓存被淘汰只是多打一次 MySQL,但**配额 / 限流 key 被淘汰等于限流静默失效**。
+# ⚠ staging/prod 必须指向独立实例且 maxmemory-policy=noeviction。2026-10-12 起本地 compose 也改为
+#   noeviction(K8s 一直是 noeviction),回落时这些 key 不会被淘汰,但会与契约 key 争内存:共享库设了
+#   maxmemory 时写满会连带拒写契约 key,配额计数写不进去也按 fail-open 放行(见 internal/logic/rate_quota.go)。
+#   共享库一旦被配成淘汰型:好友列表缓存被淘汰只是多打一次 MySQL,但**配额 / 限流 key 被淘汰等于限流静默失效**。
 # FriendRedis:
 #   Host: 127.0.0.1:7000,127.0.0.1:7001,127.0.0.1:7002,127.0.0.1:7003,127.0.0.1:7004,127.0.0.1:7005
 #   Type: cluster

@@ -5,9 +5,11 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 #include "muduo/net/TcpConnection.h"
 #include "time/comp/timer_task_comp.h"
@@ -16,6 +18,7 @@
 
 // 回合引擎(cpp/libs/services/battle,纯逻辑库,API 见设计文档 §5.1)
 #include "system/turn_battle_engine.h"
+#include "system/result_commit.h"
 // 结算发件箱的判定与 Redis 契约(PendingIndexSweepCursor 作为成员类型)
 #include "settlement/settlement_outbox.h"
 
@@ -27,8 +30,8 @@
 
 // 回合制战斗房间管理器(设计文档 §5.2)。
 //
-// 线程模型:所有方法只允许在 muduo loop 线程执行(gRPC handler 经
-// runInLoop + promise 投递进来,timer 回调本来就在 loop 线程),
+// 线程模型:所有方法只允许在 muduo loop 线程执行(gRPC handler 由 muduo_grpc 服务端
+// 在 loop 线程上派发,timer 回调本来就在 loop 线程),
 // 因此内部完全无锁;TimerTaskComp 也依赖当前线程 loop。
 //
 // 生命周期:房间是纯内存对象,节点崩溃即战斗作废(设计文档 §8);
@@ -141,6 +144,8 @@ public:
 
     // 幂等:房间不存在视为已销毁。销毁不发结算(补偿/回滚路径),推观众终局并关闭直连。
     void HandleDestroyBattle(const ::DestroyBattleRequest &request);
+    void HandleQueryBattleCreation(const ::QueryBattleCreationRequest&, ::QueryBattleCreationResponse&);
+    bool AcceptsPlacementOperation(uint64_t,const std::string&,const std::string&) const;
 
     // 观战接入(设计文档 §10.5)。错误 tip 约定:房间不存在=kEntityIsNull
     // (match 据此懒剔除 Redis 索引并换场重试)、观众满=kRateLimitExceeded、
@@ -180,8 +185,8 @@ public:
                              ::SetAutoBattleResponse &response);
 
     // 停机收尾:全部房间作废(不结算;观众收 ABORTED,关闭房间直连),供 SetBeforeShutdown 调用。
-    // 调用方必须在同一个 loop 任务里先关建房准入闸(BattleNodeImpl::CloseAdmission):gRPC drain
-    // 期间已排进 loop 的 CreateBattle 仍会执行,不关闸它们会在作废之后照常建房。关闸之后房间表
+    // 调用方必须在同一个 loop 任务里先关建房准入闸(BattleNodeImpl::CloseAdmission):gRPC 排空
+    // 期间已收完的 CreateBattle 仍会派发(等许可的回调也可能排在关闸之后),不关闸它们会在作废之后照常建房。关闸之后房间表
     // 保持为空,AddObserver / IssueBattleTicket 因房间不存在自然被拒(kEntityIsNull / kInvalidParameter)。
     void AbortAllRooms(const std::string &reason);
 
@@ -217,6 +222,12 @@ private:
         // CreateBattleRequest.activity_context 原样副本(缺省 = kind NONE = 普通对局)。
         // battle 不解释业务字段,只在 FinishBattle 回显进 BattleResultEvent 并据 kind 选结果通道。
         ::BattleActivityContext activityContext;
+        bool requiresResultConfirmation = false;
+        std::optional<turnbattle::ResultCommit> resultCommit;
+        ::contracts::kafka::BattleResultEvent pendingResult;
+        std::optional<::TurnResultS2C> pendingFinalTurn;
+        std::optional<::BattleStateS2C> pendingVisibleState;
+        ::eSpectateEndReason pendingSpectateReason = ::SPECTATE_END_BATTLE_FINISHED;
         turnbattle::TurnBattleEngine engine;
         // player_id → 路由信息副本(快照携带,battle 不查 etcd 定位对端)。
         // 有序容器:广播与结算的遍历顺序稳定,日志/回放可复现。
@@ -279,7 +290,13 @@ private:
     // DispatchActivityResultDurably 的持久化通道)。
     // 只组装与发送,不动 rooms_(房间由调用方随后 EraseRoom)。
     void FinishBattle(BattleRoom &room, ::eBattleOutcome outcome,
-                      ::eSpectateEndReason spectateReason);
+                      ::eSpectateEndReason spectateReason,
+                      const contracts::kafka::BattleResultEvent* committedResult = nullptr);
+    contracts::kafka::BattleResultEvent BuildResult(const BattleRoom&, ::eBattleOutcome) const;
+    void BeginResultCommit(BattleRoom&, ::eBattleOutcome, ::eSpectateEndReason,
+                           std::optional<::TurnResultS2C>, ::BattleStateS2C);
+    void PumpResultCommits();
+    void StopResultCommits();
 
     void BroadcastTurnResult(const BattleRoom &room, const ::TurnResultS2C &result);
 
@@ -412,7 +429,7 @@ private:
     // 反过来先发后写,guild 可能先结算并 DEL(此刻记录还不存在,DEL 是空操作),迟到的 SET
     // 落地后就留下一条孤儿记录,battle 会对一局已结算的对局一直重发到次数用尽。
     // Redis 不可用 / SET 失败:降级为只发一次并报 ERROR(§6.21 R6,与改造前行为一致)。
-    void DispatchActivityResultDurably(const contracts::kafka::BattleResultEvent &result);
+    void DispatchActivityResultDurably(const contracts::kafka::BattleResultEvent &result, bool brokerCommitted = false);
     // SET 成功后登记一条待销账记录,并保证重发定时器已装填。
     void EnqueuePendingActivityResult(uint64_t battleId, std::string payload);
     // 定时器回调:对每条未销账的记录探测一次。
@@ -435,6 +452,16 @@ private:
     // 房间表:增删与生命周期回调(SetRoomLifecycleHooks)绑死在 RoomTable 里,本类只经
     // EmplaceRoom / EraseRoom 调它的 Emplace / Erase,其余路径只读(FindRoom / AbortAllRooms 抄 id)。
     battle_room_table::RoomTable<BattleRoom> rooms_;
+    // 本实例操作墓碑只在loop线程访问；进程重启后精确target_instance使旧RPC失效。
+    struct CreationOperation {std::string operationId;std::string canonicalRequest;uint64_t expiresMs=0;bool aborted=false;};
+    std::unordered_map<uint64_t,CreationOperation> creationOperations_;
+    // producer listener 只登记回执，pump 在 poll 返回后才执行终局副作用，禁止回执栈递归 send。
+    bool resultListenerInstalled_ = false;
+    uint64_t nextResultCorrelation_ = 0;
+    std::map<uint64_t, uint64_t> resultAttempts_;
+    std::set<uint64_t> resultRooms_;
+    std::vector<std::pair<uint64_t, bool>> resultReports_;
+    TimerTaskComp resultCommitTimer_;
 
     // key = (battle_id, player_id);量级 = 未销账的结算条数,常态为 0。
     std::map<std::pair<uint64_t, uint64_t>, PendingSettlement> settlementOutbox_;

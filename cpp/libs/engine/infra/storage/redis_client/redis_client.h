@@ -17,9 +17,15 @@
 
 #include "engine/core/type_define/type_define.h"
 
-static constexpr const char* kSaveAndMarkLuaScript = R"(
+// 普通存盘(无归属校验)。KEYS[1]=数据键, ARGV[1]=payload。
+// 仍走脚本并恒返回 1,而不是裸 SET:两条存盘共用 ScriptSlot 的 EVALSHA / NOSCRIPT 回退
+// 通道,OnSaved 也按这一整数回包处理(见 OnSaved 对 0 的解释)。
+// 约束(对本文件全部存盘脚本成立):脚本只访问 KEYS[] 声明的键,不得写任何写死的全局键。
+// 原因:全服共享 Redis 上的单键会随累计存盘玩家数无界增长、所有 scene 都打同一个键,
+// 未声明的键也挡住 Redis Cluster(见 docs/design/capacity-model-hok-scale.md A0-4)。
+// 回归用例:currency_test 的 RedisSaveScriptsTouchOnlyDeclaredKeys。
+static constexpr const char* kSaveLuaScript = R"(
     redis.call('SET', KEYS[1], ARGV[1])
-    redis.call('SADD', 'dirty_keys_set', KEYS[1])
     return 1
 )";
 
@@ -39,6 +45,7 @@ static constexpr const char* kSaveAndMarkLuaScript = R"(
 // 事件叠加,且僵尸本身由再入屏障先行兜住。
 // 键存在但不相等 → 返回 0(已被废黜)。兼容窗口(epoch==0 未铸造)由调用方走
 // 无 guard 的 Save 跳过校验,不在脚本里放宽。
+// 与 kSaveLuaScript 同一约束:只访问 KEYS[] 声明的键。
 static constexpr const char* kSaveIfGuardLuaScript = R"(
     local cur = redis.call('GET', KEYS[2])
     if cur == false then
@@ -47,7 +54,6 @@ static constexpr const char* kSaveIfGuardLuaScript = R"(
         return 0
     end
     redis.call('SET', KEYS[1], ARGV[1])
-    redis.call('SADD', 'dirty_keys_set', KEYS[1])
     return 1
 )";
 
@@ -197,7 +203,7 @@ public:
 	}
 
 	// 带归属校验的存盘:只有 Redis 里 guardKey 的当前值 == guardExpected 时才
-	// 原子地写入并标脏,否则整条写入被丢弃并回调 save_rejected_callback_
+	// 原子地写入,否则整条写入被丢弃并回调 save_rejected_callback_
 	// (见 kSaveIfGuardLuaScript)。guardKey 为空退化为无校验的 Save。
 	// 期望值按调用方与铸造方约定的文本格式传入(owner_epoch 是纯十进制整数
 	// 字符串),本类不解释其含义,只做逐字节比对。
@@ -903,7 +909,7 @@ private:
 	LoadingQueue pending_retry_queue_;
 	LoadingQueue saving_queue_;
 	LoadingQueue pending_save_queue_;
-	ScriptSlot save_script_{kSaveAndMarkLuaScript};
+	ScriptSlot save_script_{kSaveLuaScript};
 	ScriptSlot guard_script_{kSaveIfGuardLuaScript};
 	EventCallback save_callback_;
 	SaveFailedCallback save_failed_callback_;

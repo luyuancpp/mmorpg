@@ -12,7 +12,6 @@
 #include "muduo/base/Logging.h"
 #include "proto/common/component/actor_comp.pb.h"
 #include "proto/common/component/team_comp.pb.h"
-#include "modules/scene/scene_events.h"
 #include "rpc/service_metadata/player_scene_service_metadata.h"
 #include "core/utils/stat/stat.h"
 #include "proto/scene/player_scene.pb.h"
@@ -174,8 +173,6 @@ void AoiSystem::HandleEntityVisibility(entt::entity entity, SceneGridListComp& g
 void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity, 
                                               const EntityUnorderedSet& enteringEntities, 
                                               const EntityUnorderedSet& leavingEntities) {
-    // 下面几处 S2C 消息都是"本线程复用的发送缓冲",不是任何实体的数据,所以不挂在 GlobalEntity 上:
-    // 那样每次通知都要过一遍 get_or_emplace,而且这块缓冲会以组件身份混进 globalRegistry。
     // 用函数内 static thread_local:与 tlsEcs 同线程、同寿命,Clear() 保留已分配的子消息供下次复用;
     // 填好后同步发送,发送路径不会回调进 AOI,不存在重入覆盖。
     // Notify entities entering view
@@ -183,11 +180,12 @@ void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity,
         static thread_local ActorListCreateS2C createMsg;
         createMsg.Clear();
         for (auto& otherEntity : enteringEntities) {
-            if (actor_net_id::Of(tlsEcs.actorRegistry, otherEntity) == 0) {
+            const auto netId = actor_net_id::Of(tlsEcs.actorRegistry, otherEntity);
+            if (netId == 0) {
                 LOG_ERROR << "AOI: actor create skipped, network id missing";
                 continue;
             }
-            ViewSystem::FillActorCreateMessageInfo(entity, otherEntity, *createMsg.add_actor_list());
+            ViewSystem::FillActorCreateMessageInfo(otherEntity, netId, *createMsg.add_actor_list());
         }
         if (!createMsg.actor_list().empty()) {
             SendMessageToClientViaGate(SceneSceneClientPlayerNotifyActorListCreateMessageId, createMsg, entity);
@@ -212,8 +210,7 @@ void AoiSystem::NotifyEntityVisibilityChanges(entt::entity entity,
     }
 }
 
-void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
-    const auto entity = message.actor;
+void AoiSystem::OnLeaveScene(entt::entity entity) {
     if (tlsEcs.actorRegistry.valid(entity)) {
         // 离场者本人的表也必须清空,否则旧场景的条目会占满新场景的观察容量。
         if (auto* ownList = tlsEcs.actorRegistry.try_get<AoiListComp>(entity)) {
@@ -222,7 +219,7 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
         const auto* hex = tlsEcs.actorRegistry.try_get<Hex>(entity);
         const auto* scene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(entity);
         if (hex != nullptr && scene != nullptr && tlsEcs.sceneRegistry.valid(scene->sceneEntity)) {
-            // 格子表是按需状态;缺表时仍须继续做远端关系清扫,不得补建空表。
+            // 格子表是按需状态;缺表表示没有空间记录,不得补建空表。
             if (auto* gridList = tlsEcs.sceneRegistry.try_get<SceneGridListComp>(scene->sceneEntity)) {
                 GridSet gridsToLeave;
                 GridSystem::GetCurrentAndNeighborGridIds(*hex, gridsToLeave);
@@ -231,53 +228,6 @@ void AoiSystem::BeforeLeaveSceneHandler(const BeforeLeaveScene& message) {
             }
         }
     }
-
-    // 跨实体关系不能靠 on_destroy:组件销毁顺序不保证 Hex / 场景绑定仍在。
-    // 邻格广播之后再扫全部 AOI 参与者,回收远端 Pin 和缺格子记录的残留。
-    // 成本为 O(AOI 参与者)/次离场;离场频率低,正确性不依赖空间索引完整。
-    EntityUnorderedSet remoteWatchers;
-    for (auto&& [watcher, list] : tlsEcs.actorRegistry.view<AoiListComp>().each()) {
-        if (watcher != entity && list.entries.erase(entity) > 0) {
-            remoteWatchers.insert(watcher);
-        }
-    }
-    for (const auto watcher : remoteWatchers) {
-        NotifyEntityVisibilityChanges(watcher, {}, EntityUnorderedSet{entity});
-    }
-}
-
-bool AoiSystem::PinAoiEntity(entt::entity watcher, entt::entity target) {
-    return InterestSystem::PinAoiEntity(watcher, target);
-}
-
-void AoiSystem::UnpinAoiEntity(entt::entity watcher, entt::entity target) {
-    if (!tlsEcs.actorRegistry.valid(watcher)) return;
-    auto* list = tlsEcs.actorRegistry.try_get<AoiListComp>(watcher);
-    if (list == nullptr) return;
-    const auto entry = list->entries.find(target);
-    if (entry == list->entries.end() || entry->second.priority != AoiPriority::kPinned) return;
-
-    bool visible = false;
-    if (tlsEcs.actorRegistry.valid(target)) {
-        const auto* watcherScene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(watcher);
-        const auto* targetScene = tlsEcs.actorRegistry.try_get<SceneEntityComp>(target);
-        const auto* watcherHex = tlsEcs.actorRegistry.try_get<Hex>(watcher);
-        const auto* targetHex = tlsEcs.actorRegistry.try_get<Hex>(target);
-        if (watcherScene != nullptr && targetScene != nullptr && watcherHex != nullptr && targetHex != nullptr &&
-            watcherScene->sceneEntity == targetScene->sceneEntity &&
-            tlsEcs.sceneRegistry.valid(watcherScene->sceneEntity)) {
-            // 先解除强制可见权限再判 CanSee,否则隐身目标会借当前 kPinned 绕过检查。
-            entry->second.priority = DetermineAoiPriority(watcher, target);
-            GridSet visibleGrids;
-            GridSystem::GetCurrentAndNeighborGridIds(*watcherHex, visibleGrids);
-            visible = visibleGrids.contains(GridSystem::GetGridId(*targetHex)) && ViewSystem::CanSee(watcher, target);
-        }
-    }
-    if (visible) {
-        return;
-    }
-    InterestSystem::RemoveAoiEntity(watcher, target);
-    NotifyEntityVisibilityChanges(watcher, {}, EntityUnorderedSet{target});
 }
 
 void AoiSystem::ResetEntityVisibility(entt::entity entity) {
@@ -287,7 +237,7 @@ void AoiSystem::ResetEntityVisibility(entt::entity entity) {
 
     // 1) 自己这一侧:摘掉所有非钉住条目,并让自己的客户端销毁这些 actor。
     //    不通知的话客户端会把旧位置的 actor 永远留在世界里(之后同一实体再进视野时
-    //    客户端按 entity 去重,连位置都不会更新)。kPinned 由 buff/skill 生命周期管理,不动。
+    //    客户端按 entity 去重,连位置都不会更新)。预留的 kPinned 标签保持不动。
     if (auto* ownList = tlsEcs.actorRegistry.try_get<AoiListComp>(entity)) {
         EntityUnorderedSet leavingEntities;
         for (auto it = ownList->entries.begin(); it != ownList->entries.end(); ) {
@@ -302,7 +252,7 @@ void AoiSystem::ResetEntityVisibility(entt::entity entity) {
     }
 
     // 2) 观察者一侧:按格子建立的条目只存在于"当前格及邻格"的实体之间,遍历旧 Hex 的这 7 格就够了。
-    //    Unpin 已立即剔除超出范围的条目,远端剩余条目仍为 kPinned,按约定保留。
+    //    远端锁定尚未接入;未来接入时必须同批设计远端关系清理,不能扫描全节点。
     const auto* hex = tlsEcs.actorRegistry.try_get<Hex>(entity);
     if (hex == nullptr) {
         return;

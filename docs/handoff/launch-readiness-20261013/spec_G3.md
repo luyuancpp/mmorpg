@@ -1016,6 +1016,8 @@ python tools/scripts/gen_docs_index.py --check
 
 > **2026-10-15 结论注**:负责人按『最标准』定为:采用 P7 且 P2 升级为拒绝。上面「id 复用只告警」不再适用:新铸 id 上已有父键或 owner_epoch 时建角在名字登记之前就拒绝(探测不看种子开关),种子在窗口里报出的同样拒绝并释放名字。B2.3 / B5.2 里 `seedNewPlayer` 只告警的代码与 `TestCreatePlayer_SeedNeverOverwritesExistingParent` / `TestCreatePlayer_SeedRefusedAfterOwnerEpochMinted`「建角成功」的期望已过时,现行实现、改写后的用例与验证命令见设计文档 `docs/design/new-player-first-enter-no-cold-read.md` §13.2。
 
+> **2026-10-16 补注**:G3 第 4 项落码的语义评审之后又改了三处,均以设计文档为准。(1) 6b' 探测删去 1s 子预算(`mintedIDProbeTimeout`),直接用 handler ctx:1s 子预算会截断连接池排队与拨号,让池等满超过 1s 的建角被 fail-closed 拒绝;请求 ctx 在探测途中结束的仍拒绝,但只打 INFO、不计 `id_probe_total{error}`(设计 §9 第 1 条 2026-10-16 更正注、§13.2 行为表补行)。(2) 「提交点仍由种子脚本原子复核」不成立:写时复核只在开种子时存在且只覆盖探测 → 种子一段,关种子(默认)时探测之后、开种子时种子之后到第 7 步都没有复核,作为已知残余窗口记录在案(设计 §13.2 首段 2026-10-16 补注)。(3) 用例:新增 3 条 `TestCreatePlayer_IDProbe*`,两条种子拒绝用例改用 `newNameHarness` 补「无延迟二次释放」断言;§13.2「修复前应红」核对的基线改为 `de4960bee^`(10-15 那批用例;10-16 新增的两条归类用例基线是 `a105c3efd`,见设计 §13.2)。本规格 §9 / B2.9 里「ctx 预算 1s 只掐重发」的说法对种子同样不完整(也截断池等待),但种子尽力而为,行为上无害,正文不改。
+
 ## B11 Java 版(AGENTS §12)
 
 **状态:不适用,对应 Java 版本号:无。**

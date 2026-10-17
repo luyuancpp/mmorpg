@@ -90,18 +90,17 @@ int64_t ElapsedMs(const Clock::time_point from, const Clock::time_point to)
 // playerId / homeZoneId / ownerEpoch / loginGeneration 一律从会话取:路由到达时已把最新决策写进会话,BindSession
 // 晚到的补发读不到路由事件,只能从会话取。sceneId 显式传入:会话的 sceneId 只在转发成功后才提交,调用时还是旧图。
 SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_t enterGsType,
-                                        const entt::entity sceneNodeEntityId, const SessionInfo &session,
+                                        const entt::entity sceneNode, const SessionInfo &session,
                                         const uint64_t sceneId)
 {
     // LOGIN_NONE(0) 用于已登录角色换图;要不要转发、以什么类型转发由 ApplyRoute 决定。
-    auto &sceneRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
-    const auto sceneEntity = sceneNodeEntityId;
-    if (!sceneRegistry.valid(sceneEntity))
+    auto &sceneNodeRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
+    if (!sceneNodeRegistry.valid(sceneNode))
     {
         return SceneForwardResult::kNodeNotFound;
     }
 
-    const auto *rpcClient = sceneRegistry.try_get<RpcClientPtr>(sceneEntity);
+    const auto *rpcClient = sceneNodeRegistry.try_get<RpcClientPtr>(sceneNode);
     if (!rpcClient || !*rpcClient)
     {
         return SceneForwardResult::kNoRpcClient;
@@ -109,7 +108,7 @@ SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_
 
     // 局部强引用只活到本函数返回,不外泄(AGENTS.md §11.7)。
     const auto currentConn = (*rpcClient)->GetConnection();
-    const auto *handshake = sceneRegistry.try_get<gate_scene_entry::SceneLinkHandshakeComp>(sceneEntity);
+    const auto *handshake = sceneNodeRegistry.try_get<gate_scene_entry::SceneLinkHandshakeComp>(sceneNode);
     const auto handshakenConn = handshake ? handshake->conn.lock() : muduo::net::TcpConnectionPtr{};
     if (const auto notReady = gate_scene_route::ClassifySceneLink((*rpcClient)->connected(),
                                                                    currentConn.get(),
@@ -119,6 +118,8 @@ SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_
         return *notReady;
     }
 
+    const auto* info = sceneNodeRegistry.try_get<NodeInfo>(sceneNode);
+    const auto nodeId = info != nullptr ? info->node_id() : 0;
     const auto playerId = session.playerId;
 
     PlayerEnterGameNodeRequest req;
@@ -135,21 +136,22 @@ SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_
     req.set_login_generation(session.loginGeneration);
 
     // 单向发送(id = 0,不要应答):PlayerEnterGameNode 返回 Empty,线上与旧的 CallRemoteMethod 逐字节相同。
+    // 走方法 tag(ScenePlayerEnterGameNodeRpc):消息号与请求类型同出一处,请求类型在编译期钉住;消息号与帧不变。
     // 返回 false = 本地确定没交给连接(链路刚断 / 请求与注册表不符 / 序列化失败;RpcClient / RpcChannel 内部已计数并采样告警),
     // 与上面的链路判定同属"确定没发出去",按 kNotConnected 交给欠账补发(I1),不新增结果类型、不改补发规则。
     // 以前这里拿不到失败,只能当作 kSent 清掉欠账。
-    if (!(*rpcClient)->SendRequest(ScenePlayerEnterGameNodeMessageId, req))
+    if (!(*rpcClient)->SendRequest<ScenePlayerEnterGameNodeRpc>(req))
     {
         if (ShouldLogSampled(tlsSendRejectedLogSeq))
         {
-            LOG_WARN << "ForwardPlayerToScene: SendRequest rejected locally, treating as link not ready. scene_node="
-                     << entt::to_integral(sceneNodeEntityId) << " player=" << playerId << " session=" << sessionId
+            LOG_WARN << "ForwardPlayerToScene: SendRequest rejected locally, treating as link not ready. scene_node_id="
+                     << nodeId << " player=" << playerId << " session=" << sessionId
                      << " scene_id=" << sceneId << " rejected_seq=" << tlsSendRejectedLogSeq;
         }
         return SceneForwardResult::kNotConnected;
     }
 
-    LOG_DEBUG << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node=" << entt::to_integral(sceneNodeEntityId)
+    LOG_DEBUG << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node_id=" << entt::to_integral(sceneNode)
               << " player=" << playerId << " session=" << sessionId
               << " scene_id=" << sceneId << " enter_gs_type=" << enterGsType
               << " home_zone_id=" << session.homeZoneId << " owner_epoch=" << session.ownerEpoch
@@ -160,12 +162,7 @@ SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_
 // 按业务 node_id 解析 gate 上的 scene 节点实体号;每次尝试都重新解析,不缓存实体号(I3)。
 std::optional<entt::entity> ResolveSceneNodeEntity(const uint32_t nodeId)
 {
-    const auto entity = NodeUtils::FindNodeEntityByNodeId(SceneNodeService, nodeId);
-    if (!entity)
-    {
-        return std::nullopt;
-    }
-    return *entity;
+    return NodeUtils::FindNodeEntityByNodeId(SceneNodeService, nodeId);
 }
 
 // 放弃收口:只做三件事 —— 推 tip、踢线、关连接(I6)。
@@ -388,10 +385,10 @@ void OnSceneLinkHandshaken(const muduo::net::TcpConnectionPtr &conn, const std::
         return;
     }
 
-    auto &sceneRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
+    auto &sceneNodeRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
     // 应答所走的连接必须就是该节点 RpcClient 的**当前**连接:迟到的旧连接应答不能给新连接盖章,
     // 否则新连接会在 scene 还没为它挂 RpcSession 时被当成就绪。
-    const auto *rpcClient = sceneRegistry.try_get<RpcClientPtr>(*nodeEntity);
+    const auto *rpcClient = sceneNodeRegistry.try_get<RpcClientPtr>(*nodeEntity);
     if (!conn || !rpcClient || !*rpcClient || (*rpcClient)->GetConnection() != conn)
     {
         LOG_WARN << "[SceneEntry] handshake reply not on the node's current link, ignored uuid=" << nodeUuid;
@@ -399,11 +396,11 @@ void OnSceneLinkHandshaken(const muduo::net::TcpConnectionPtr &conn, const std::
     }
 
     // 握手应答路径,不是逐帧路径;重连后的再次握手就是要覆盖旧章,所以用 emplace_or_replace。
-    sceneRegistry.emplace_or_replace<gate_scene_entry::SceneLinkHandshakeComp>(
+    sceneNodeRegistry.emplace_or_replace<gate_scene_entry::SceneLinkHandshakeComp>(
         *nodeEntity, gate_scene_entry::SceneLinkHandshakeComp{conn});
     ++tlsCounters.linksReady;
 
-    const auto *nodeInfo = sceneRegistry.try_get<NodeInfo>(*nodeEntity);
+    const auto *nodeInfo = sceneNodeRegistry.try_get<NodeInfo>(*nodeEntity);
     LOG_INFO << "[SceneEntry] scene link ready node_id=" << (nodeInfo ? nodeInfo->node_id() : 0u)
              << " uuid=" << nodeUuid;
     if (!nodeInfo)

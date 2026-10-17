@@ -117,7 +117,7 @@ func RequestNodeCreateSceneWithOptions(
 	if err != nil {
 		return nil, fmt.Errorf("CreateScene RPC to node %s: %w", nodeId, err)
 	}
-	// RPC 的 OK 只代表传输完成;C++ 创建监听者可能回滚实体并留下空应答。
+	// RPC 的 OK 只代表传输完成;C++ 创建入口仍可能因参数或分配许可拒绝而留下空应答。
 	// 在发布/切换场景归属之前确认实际创建的是本次请求的实例,失败沿调用方原有补偿收尾。
 	if resp == nil || resp.SceneInfo == nil || resp.SceneInfo.SceneId != sceneId {
 		return nil, fmt.Errorf("CreateScene node %s did not confirm requested scene %d (received %d)",
@@ -147,7 +147,11 @@ func RequestNodeDestroyScene(ctx context.Context, svcCtx *svc.ServiceContext, zo
 // (the player's previous scene node) and asks it to release the player so
 // the new node can load fresh state from Redis. Used during cross-node
 // scene switches; same-node switches do not need this.
-func RequestNodeReleasePlayer(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, nodeId string, playerId uint64, targetSceneId uint64, targetNodeId string) error {
+//
+// expectedOwnerEpoch 是 SM 本次 EnterScene 观察到、并用于落点 CAS 的 owner_epoch(scene-enter-chain-residuals.md
+// §4.2 ②):scene 只在本地缓存恰好等于它时才执行退出,0 = 按旧行为释放。
+func RequestNodeReleasePlayer(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, nodeId string, playerId uint64,
+	targetSceneId uint64, targetNodeId string, expectedOwnerEpoch uint64) error {
 	conn, err := getOrDialNode(ctx, svcCtx, zoneId, nodeId)
 	if err != nil {
 		return fmt.Errorf("dial scene node %s: %w", nodeId, err)
@@ -155,11 +159,12 @@ func RequestNodeReleasePlayer(ctx context.Context, svcCtx *svc.ServiceContext, z
 
 	client := scenenodepb.NewSceneNodeGrpcClient(conn)
 	if _, err := client.ReleasePlayer(ctx, &scenenodepb.ReleasePlayerRequest{
-		PlayerId:      playerId,
-		TargetSceneId: targetSceneId,
-		TargetNodeId:  targetNodeId,
+		PlayerId:           playerId,
+		TargetSceneId:      targetSceneId,
+		TargetNodeId:       targetNodeId,
+		ExpectedOwnerEpoch: expectedOwnerEpoch,
 	}); err != nil {
-		return fmt.Errorf("ReleasePlayer RPC to node %s: %w", nodeId, err)
+		return fmt.Errorf("ReleasePlayer RPC to node %s (expected_owner_epoch=%d): %w", nodeId, expectedOwnerEpoch, err)
 	}
 
 	return nil
@@ -330,15 +335,21 @@ func RemoveNodeConn(zoneId uint32, nodeId string) {
 //
 // Failures are non-fatal — the C++ scene node's AFK sweeper is the final
 // safety net for any player who is never released.
+//
+// 重试按代际幂等(scene-enter-chain-residuals.md §4.2):首发与每次重试都带同一个 expectedOwnerEpoch,
+// scene 侧按「本地缓存 == 期望值才退出」裁决,所以迟到的重试不会退掉已采纳回滚(E+2)或回流后重新载入的实体;
+// 被忽略的释放也回 Empty,重试不会改变结论。调用方(EnterScene 第 7b 步)只在本请求提交之后才派发。
 func dispatchReleasePlayer(svcCtx *svc.ServiceContext, log logx.Logger, oldZoneID uint32,
-	oldNodeId string, playerId uint64, targetSceneId uint64, targetNodeId string) {
+	oldNodeId string, playerId uint64, targetSceneId uint64, targetNodeId string, expectedOwnerEpoch uint64) {
 	// safego.Go 而不是裸 go func:这条链路挂在 EnterScene 热路径上,45k 并发时
 	// 每次跨节点交接都会派生一条。裸写法里任何一次 panic(比如 nil svcCtx.Kafka、
 	// 节点连接缓存被并发改坏)都会当场打死整个进程,而日志里只剩一段 runtime 栈,
 	// 看不出是哪条后台链路炸的。
+	// 退避表在派发时取一次快照,单测替换 releasePlayerRetryBackoffs 不会与在途协程竞争。
+	backoffs := releasePlayerRetryBackoffs
 	safego.Go(SafePointReleasePlayer, func() {
 		attemptCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-		err := RequestNodeReleasePlayer(attemptCtx, svcCtx, oldZoneID, oldNodeId, playerId, targetSceneId, targetNodeId)
+		err := RequestNodeReleasePlayer(attemptCtx, svcCtx, oldZoneID, oldNodeId, playerId, targetSceneId, targetNodeId, expectedOwnerEpoch)
 		cancel()
 
 		if err == nil {
@@ -346,30 +357,40 @@ func dispatchReleasePlayer(svcCtx *svc.ServiceContext, log logx.Logger, oldZoneI
 			return
 		}
 
-		logx.Errorf("ReleasePlayer first attempt failed for player %d on old node %s (will retry in background): %v",
-			playerId, oldNodeId, err)
+		logx.Errorf("ReleasePlayer first attempt failed for player %d on old node %s expected_owner_epoch=%d (will retry in background): %v",
+			playerId, oldNodeId, expectedOwnerEpoch, err)
 
-		backoffs := []time.Duration{1 * time.Second, 3 * time.Second}
 		var lastErr = err
 		for i, backoff := range backoffs {
 			time.Sleep(backoff)
 			retryCtx, retryCancel := context.WithTimeout(context.Background(), 1*time.Second)
-			lastErr = RequestNodeReleasePlayer(retryCtx, svcCtx, oldZoneID, oldNodeId, playerId, targetSceneId, targetNodeId)
+			lastErr = RequestNodeReleasePlayer(retryCtx, svcCtx, oldZoneID, oldNodeId, playerId, targetSceneId, targetNodeId, expectedOwnerEpoch)
 			retryCancel()
 			if lastErr == nil {
-				logx.Infof("[ReleasePlayer] Retry %d succeeded for player %d on old node %s", i+1, playerId, oldNodeId)
+				logx.Infof("[ReleasePlayer] Retry %d succeeded for player %d on old node %s expected_owner_epoch=%d",
+					i+1, playerId, oldNodeId, expectedOwnerEpoch)
 				metrics.ObserveReleasePlayer(oldZoneID, "retry_ok")
 				return
 			}
-			logx.Errorf("[ReleasePlayer] Retry %d failed for player %d on old node %s: %v", i+1, playerId, oldNodeId, lastErr)
+			logx.Errorf("[ReleasePlayer] Retry %d failed for player %d on old node %s expected_owner_epoch=%d: %v",
+				i+1, playerId, oldNodeId, expectedOwnerEpoch, lastErr)
 		}
 		outcome := "error"
 		if errors.Is(lastErr, context.DeadlineExceeded) {
 			outcome = "timeout"
 		}
 		metrics.ObserveReleasePlayer(oldZoneID, outcome)
-		logx.Errorf("[ReleasePlayer] All retries exhausted for player %d on old node %s; relying on AFK cleanup. last_err=%v",
-			playerId, oldNodeId, lastErr)
+		logx.Errorf("[ReleasePlayer] All retries exhausted for player %d on old node %s expected_owner_epoch=%d; relying on AFK cleanup. last_err=%v",
+			playerId, oldNodeId, expectedOwnerEpoch, lastErr)
 	})
 	_ = log // logger no longer used on hot path — kept in signature for ABI stability
 }
+
+// releasePlayerRetryBackoffs 是 dispatchReleasePlayer 首发失败后的重试间隔(最坏约 7s 送达)。
+// 包级变量只为单测缩短等待;生产从不改它。
+var releasePlayerRetryBackoffs = []time.Duration{1 * time.Second, 3 * time.Second}
+
+// releaseDispatcher 是 EnterScene 第 7b 步派发 ReleasePlayer 的接缝,默认就是 dispatchReleasePlayer。
+// 包级钩子只为单测能**同步**断言「派发了几次、带什么期望值、是否在路由之后」(不靠 sleep),做法同 nodeDialer;
+// 生产从不改它。替换的用例必须用 t.Cleanup 还原。
+var releaseDispatcher = dispatchReleasePlayer

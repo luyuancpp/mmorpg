@@ -321,6 +321,9 @@ var (
 	// clear | parent_exists | owner_epoch_exists | error。除 clear 外每 +1 都对应一次被拒绝的建角和一条带
 	// player_id 的 ERROR 日志(`[minted-id-probe] ...`):parent_exists / owner_epoch_exists 意味着 id 复用,
 	// 按 ID 安全事件处理;error 是 Redis 探不清,建角 fail-closed。请求 ctx 截止之后不探、不计。
+	// (2026-10-16 补)探测途中请求 ctx 结束(go-redis 取连接 / 拨号时返回 ctx 错误)同样不计、只打 INFO。
+	// error 只统计不会被 go-redis 重发、或在截止前已重发到上限的 Redis 错误;读超时、连接池超时在截止之后会被
+	// 重发前的退避换成 ctx 错误,不计入 —— Redis 卡顿要看 stage_seconds{stage="id_probe"},不能指望 error。
 	createPlayerIDProbeTotal = metric.NewCounterVec(&metric.CounterVecOpts{
 		Namespace: createPlayerMetricNamespace,
 		Subsystem: createPlayerMetricSubsystem,
@@ -356,6 +359,32 @@ func PrimeCreatePlayerMetrics() {
 	createPlayerIDProbeTotal.Add(0, dataloader.MintedIDOwnerEpochExists.String())
 	createPlayerIDProbeTotal.Add(0, dataloader.MintedIDProbeError.String())
 }
+
+// ── 顶号踢线指标 ─────────────────────────────────────────────────────────
+//
+// ReplaceLogin 踢掉被替换的旧会话这一步的结局(docs/design/scene-enter-chain-residuals.md §2.2 ⑥)。
+// 全称 `login_kick_total`:本文件上面 EnterGame 那批的命名空间是 `entergame`,这里显式写 `login`。
+// 只有一个低基数 label,**不放 player_id / session_id**;定位具体玩家靠同一处的 `[login-kick]` 日志。
+// 稳态下 skip_uncommitted 只在 SetSession 失败时出现;send_failed 有数 = 旧设备没被踢,靠 scene 栅栏改绑后变哑;
+// skip_cross_instance 有数 = 同号跨实例的旧连接按 §12.3 定论没有被踢(方案 C 落地前只计数)。
+var kickTotal = metric.NewCounterVec(&metric.CounterVecOpts{
+	Namespace: "login",
+	Subsystem: "",
+	Name:      "kick_total",
+	Help: "Kicks of the replaced session after a ReplaceLogin committed its session record. " +
+		"Result: sent | send_failed | skip_same_session | skip_no_target | skip_uncommitted | skip_cross_instance.",
+	Labels: []string{"result"},
+})
+
+// kickTotal 的 result 取值。
+const (
+	kickResultSent              = "sent"                // 踢线命令已写进 Kafka(不等于 gate 一定踢了:gate 还要过 ClassifyKick)
+	kickResultSendFailed        = "send_failed"         // 组装被守卫拒绝或 Kafka 写失败;提交已发生,链不因此失败
+	kickResultSkipSameSession   = "skip_same_session"   // 旧记录与本链是同一连接(会话号与 gate 实例号都相同)
+	kickResultSkipNoTarget      = "skip_no_target"      // 旧记录缺 gate 寻址,或本链实例号为空(这条链注定在 Bind 失败)
+	kickResultSkipUncommitted   = "skip_uncommitted"    // SetSession 报错且复读没有确认本链已提交
+	kickResultSkipCrossInstance = "skip_cross_instance" // 会话号相同、gate 实例不同:方案 C 落地前只计数不踢(§12.3)
+)
 
 // PrimeEnterGameMetrics 把 entergame_total{result="pool_saturated"} 预置成 0,让这条序列从起服起就存在。
 //

@@ -174,6 +174,8 @@ func RecordExpiredQueueDisabled() {
 // recordAdmit is called by the dispatcher after each successful PopAdmit
 // batch, with the count of entries that were actually admitted (which may
 // be less than the requested batch if signFn failed for some entries).
+// (2026-10-15 补注)meta 已过期的条目(在队里待满 QueueEntryTTL)与写入出错的条目都不计入,
+// 此前前者照样计入、虚增 admit_total;两类都由 PopAdmit 每批汇总一行日志(见 Queue.PopAdmit)。
 func recordAdmit(zoneID uint32, count int) {
 	if count <= 0 {
 		return

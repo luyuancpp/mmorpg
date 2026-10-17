@@ -129,14 +129,25 @@ kafka-topics.sh --delete --topic db_task_topic --bootstrap-server <broker>
 kafka-topics.sh --create --topic db_task_topic --partitions 5 --bootstrap-server <broker>
 
 # 方式 B: 重置 consumer group offset 到指定时间戳
+# (2026-10-15 更正:组名是本 zone 的 db_rpc_consumer_group_z<id>,topic 是 db_task_zone_<id>,TopicGeneration ≥ 2 时
+#  带 _g<gen> 后缀;重置之后还要删掉 legacy 组 db_rpc_consumer_group 在本 topic 上的位点)
 kafka-consumer-groups.sh --reset-offsets --to-datetime 2026-03-26T10:00:00.000 \
-  --group db_rpc_consumer_group --topic db_task_topic --bootstrap-server <broker> --execute
+  --group db_rpc_consumer_group_z<id> --topic db_task_zone_<id> --bootstrap-server <broker> --execute
 
 步骤 5: 重新拉起 zone
 ─────────────────────
 pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
   -ZoneName <zone> -ZoneId <id> -NodeImage <image> -WaitReady
 ```
+
+> **2026-10-15 更正(已落码,未编译、未测试,待 Codex 验证)**:go/db 的存盘消费组正逐 zone 从共用的 `db_rpc_consumer_group`(legacy 组)换成
+> `db_rpc_consumer_group_z<ZoneId>`(zone 组)。上面的手工步骤已由一键脚本 `tools/scripts/k8s_zone_rollback.ps1`(`dev_tools.ps1 -Command k8s-zone-rollback`,
+> 默认 dry-run,`-Apply` 才执行)取代,它的 Kafka 处理现在是:删掉原 Step 2 的排空等待(`-KafkaDrainTimeoutSec` 一并删除);第 0 步 c 对两组在本 topic 上
+> 做只读 LAG 快照(只告警);第 0 步 d 在 zone 组还没有位点时于停服前用 dry-run 预演 Step 5;Step 5 把 zone 组重置到目标时间、逐分区复核,再删掉 legacy 组
+> 在本 topic 上的位点(`kafka_offset_reset.ps1 -RetireGroup … -Partitions <N>`);Step 6 显式传 `-DbConsumerGroup zone`,`k8s_deploy.ps1` 渲染最终形状
+> `GroupID: "db_rpc_consumer_group_z<id>"`,不带 `GroupHandoffFrom`。回档之后该 zone 一律以 zone 组为权威。组名基名与分区数现读 `go/db/etc/db.yaml`
+> (`ServerConfig.Kafka.GroupID`、`ServerConfig.Kafka.PartitionCnt`)。细节、剩余风险与未实测的 Kafka CLI 行为见
+> [zone_data_rollback.md](zone_data_rollback.md) 的「2026-10-15 修订」与 [db-consumer-group-per-zone.md](db-consumer-group-per-zone.md)。
 
 ### 关键安全点
 

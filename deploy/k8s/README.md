@@ -213,6 +213,35 @@ Omit `-JavaSvcRegistry` or pass `-SkipJavaSvc` to skip Java service deployment.
   「MySQL 连接总账」);`/api/server-list` 的 zone_config 行改为 1s 短缓存,过期瞬间的并发请求只查一次库,查库失败不缓存。
   `/api/queue-status` 有意不加「先按 zone 目录判断 `zone_id` 是否存在」的前置校验:开区瞬间新 zone 还没进目录快照时会把真实排队玩家判成
   `zone_not_found`;探针已隔离、取连接有 3s 上限之后,刷这个端点只会让碰库的请求回 5xx,不再连带重启。
+- **2026-10-16 补注(readiness 同样不再摘流;发现与处置)**:上面「代价」只举了 liveness。readiness 同样打 8082、只看 `readinessState`
+  (应用代码不在运行期改它),业务 Tomcat 线程(默认 200)被占满或业务代码死锁时,这个副本仍是 Ready:不会被摘出 Service 的 Endpoints,
+  继续分到约一半请求;PDB(minAvailable 1)也照样算它健康,drain 节点时可能先驱逐正常的那个副本。改动前 readiness 在 8081 上
+  (默认 timeout 1s、period 10s、failureThreshold 3)约 30s 就会把它摘流。上面说的「上游错误率」目前没有落地手段:gateway 的 actuator
+  只暴露 health、info,没有导出指标(开放 `/actuator/prometheus` 需新增 micrometer 依赖,见 G2b §10 第 10 条),仓库里也没有 gateway
+  或 Ingress 的错误率告警,现阶段只能人工看日志和客户端 / Ingress 侧报错。处置:只有单个副本卡住、另一副本正常且 MySQL 可达时,用
+  `kubectl -n <zone ns> delete pod <卡住的 Pod>` 让 Deployment 重建(直接 delete 不经 PDB);MySQL 本身不可达、两个副本都慢时不要删 Pod,
+  新 Pod 启动时 `ddl-auto: validate` 要连库,会进 CrashLoopBackOff,正是本改动要断开的连锁。
+  另外,上面「刷这个端点只会让碰库的请求回 5xx」偏乐观:业务线程池是所有端点共用的。MySQL 不可达(取不到连接)时每个碰库请求占线程约 3s,
+  碰库请求超过约 200/3≈67 次/s 就能占满一个副本;MySQL 正常时阈值是 5 条连接的池吞吐;queue-status 还要调 login 的 gRPC
+  (`login.grpc.timeout-ms: 3000`、`retry: 1`)。占满后同一副本上不碰库的请求也会排队变慢或超时,只是不再连带重启。
+- **2026-10-16 补注(server-list 等待方上限;JDBC 读超时缺口;回滚清单未同步)**:
+  - `/api/server-list` 的合并查库落码时等待方用无上限的 `join()`:查库方一旦挂在已取到的连接上(半开 TCP、zone_config 上的 MDL 排队),
+    过期后到达的全部请求都会无限期挂在同一个 future 上,线程占用随挂住时长无界增长,而探针在 8082 上照样是绿的。已改为等待方最多等
+    3000ms(与 `connection-timeout` 同口径)后回 5xx。这只在「取不到连接」时恢复了改动前「最多等 3s 回 5xx」的语义:查库方挂在
+    已取到的连接上时,在途查库只有它自己能摘,这个副本上后到的全部 server-list 请求都会等满 3s 回 5xx,直到那条套接字自己断开
+    (半开 TCP 按内核重传约 15 分钟,在等回包时按 keepalive 约 2 小时)。改动前这种单连接故障只拖住拿到那条连接的请求,合并查库把它
+    放大成整个副本的 server-list 不可用;概率低(查库方恰好在查询中途遇到连接异常),根治靠下面的 JDBC 读超时。
+    (2026-10-16 续)已补:gateway 的 JDBC URL 带 `connectTimeout=3000&socketTimeout=10000`(jar 内 `application.yaml` 为单一真相,
+    `k8s_deploy.ps1` 从它的查询串镜像进 `java-svc-gateway-config`,缺项即生成失败,契约测试钉住两边一致;取值与 Java 版
+    game-gateway 相同)。查库方挂住最多约 10s 即失败、摘掉在途查询,上面的不可用窗口收到约 10s。代价:管理接口的写在行锁 / MDL
+    上等超过 10s 会以通信异常回 5xx。`/api/assign-gate`、`/api/queue-status` 的准入缓存等待方(`AssignGateService.awaitAdmission`)
+    也已改为最多等 3000ms,到点 fail-closed 回 500 `zone_admission_unavailable`。
+  - `connection-timeout` 只限取连接。两份 JDBC URL(jar 内 `application.yaml` 与 `k8s_deploy.ps1` 生成的 `java-svc-gateway-config`)都没配
+    `socketTimeout`、也没配查询超时,已取到连接后的查询本身没有上限,查库方仍可能占住 1 个线程与 1 条连接,登记为后续。
+    `/api/assign-gate` 的准入缓存等待方(`AssignGateService.awaitAdmission`)仍是无上限 `join()`(改动前就有,G2b §9 第 7 条已记),本次未改。
+  - gateway 的上一个 revision 早于 2026-10-15 探针改端口时,不做 `rollout undo`,用旧 commit 重跑 `k8s_deploy.ps1 zone-up`。
+    [docs/ops/release-checklist.md](../../docs/ops/release-checklist.md) §4「快速回滚单个 Deployment」与附录 E.2 第 3 级已于 2026-10-16
+    追加这条 gateway 例外,并注明 E.2 里的 `deploy/gateway-node -n mmorpg` 是 2026-05 的旧名(当前 Deployment 叫 `gateway`,位于各 zone namespace)。
 
 ## 发布打包(版本库外制品 + release manifest)
 
@@ -345,7 +374,8 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
 - Node pods use:
   - `POD_IP` from Kubernetes Downward API.
   - `RPC_PORT`/`NODE_PORT` env vars (fixed per role: gate `18000`, scene `20000`). The value must fall inside the engine's per-role TCP range — gate `10000-19999`, everything else `20000-35535` — since the gRPC port is derived as TCP+30000. A node now refuses to start (retrying, nothing published to etcd) if the requested port is taken, rather than silently picking a different one.
-  - `GRPC_SERVER_MAX_POLLERS` 用于限制 gRPC server poller 数（默认 `8`，与 C++ 进程默认值一致）。传 `-GrpcServerMaxPollers 0` 时，Deployment 与 Fleet 都不写该环境变量，交给进程默认值。
+  - `GRPC_SERVER_MAX_POLLERS` **已退役**(`docs/design/grpc-muduo-transport.md` §15.11):第 4 批起 scene / battle 的 gRPC 服务端跑在节点 EventLoop 上(muduo + nghttp2),没有 poller 线程,进程不再读这个变量(设了只打一行 WARN)。Deployment、Fleet 与客户端入口生成器都不再注入它。并发上限改由服务端内建:每连接 `MAX_CONCURRENT_STREAMS=256`、全节点在途 1024,超限回 `RESOURCE_EXHAUSTED`。
+  - scene / battle 的 readinessProbe 探 gRPC 口(TCP+30000):新服务端对不发 HTTP/2 preface 的探针连接静默处理(不写字节、只打 DEBUG、计 `closed_before_preface`);停机排空期间监听已关,探针失败属预期。
 - **C++ 业务日志不在容器 stdout**:Linux 下 muduo 的 `LogToConsole` 那一句包在 `#ifdef WIN32` 里,业务日志只落 `/app/bin/logs/cpp_nodes/<节点>.*.log`。`kubectl logs` 对 gate / scene / battle 只看得到启动行和 gRPC / librdkafka 写在 stderr 上的东西 —— 查不到业务日志不是没打,是采集口不同。默认的 Alloy sidecar 正是为此读文件送 Loki(见 Optional Flags 的 `-NoCppLogSidecar`)。
   - 这个目录**不会无限长**:muduo 每 8MiB 滚一个新文件且从不删旧文件,所以业务容器的启动命令里带了一个每 5 分钟跑一次的清理循环,按时间只留最近 8 个 `.log`(≈64MiB);`node-logs` 这个 emptyDir 另有 `sizeLimit: 2Gi` 作远端兜底。`kubectl exec` 进去只看得到最近这几个文件,更早的要去 Loki 查。
   - **采不到的东西**:容器 stdout 上的 gRPC / librdkafka stderr,以及崩溃现场文本(glibc 断言、`terminate called`、abort 栈)——它们只在 `kubectl logs` 里,Pod 一重建就没了。Loki 里的 `level="fatal"` 只覆盖代码里显式 `LOG_FATAL` 的分支。
@@ -368,7 +398,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-all-down -ZonesConfigPath de
 - `-KubeConfig`: pass an explicit kubeconfig path.
 - `-NamespacePrefix`: change namespace prefix.
 - `-CentreReplicas`, `-GateReplicas`, `-SceneReplicas`: per-zone replica overrides for `k8s-zone-up`.
-- `-GrpcServerMaxPollers`：每个 C++ 节点的 gRPC server poller 上限（默认 `8`，与进程默认值一致）。设为 `0` 时，Deployment 与 Fleet 都不写环境变量覆盖。
+- `-GrpcServerMaxPollers`:**已退役**,默认 `0`。只为兼容旧命令保留:传入大于 `0` 的值只打一条 `Write-Warning`,取值被忽略,任何清单都不再写 `GRPC_SERVER_MAX_POLLERS`(原因见上面 Runtime Behavior)。
 - `-GateServiceType`: `ClusterIP`, `NodePort`, or `LoadBalancer`.
 - `-GateServicePort`: external gate service port.
 - `-OpsProfile`: `managed-cloud`, `bare-metal`, or `custom`.
@@ -959,26 +989,61 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
   静态契约:`tools/scripts/tests/redis_maxclients_contract.tests.ps1`(恰好定义一次、两条 exec 都带、打印 fd 限值、compose 同值、不 exit)。
 - **总账在哪**:`tools/scripts/k8s_deploy.ps1` 的「Redis 连接总账与重启闸」一节,形状与纪律同上面的 MySQL 连接总账。
   `Get-RedisConnectionPlan`(规划档;zone 数与滚动余量取自 `Get-MysqlConnectionPlan`)、`Get-RedisMaxClientsFromManifest`(读 `MAXCLIENTS`,不是恰好一处即 throw)、
-  `Get-RedisConnectionLedgerInputs`(每副本上限常数表,每行带代码出处;副本数读各 manifest)、`Get-RedisConnectionLedger`(纯函数)、`Write-RedisConnectionLedger`(写路径打印)。
-- **公式**(G = GOMAXPROCS。Go 1.27.2 容器感知,CPU limit 500m / `"1"` 预期都是 2;**未实测,待 S6**;按 2 记。go-redis v9 缺省池上限 = 10 × G,按池上限记账):
+  `Get-RedisPoolMirror`(go-redis 直连池上限,读服务 yaml,不是正整数即 throw)、`Get-RedisConnectionLedgerInputs`(每副本上限常数表,每行带代码出处;
+  显式池上限经 `Get-RedisPoolMirror` 读;副本数读各 manifest)、`Get-RedisConnectionLedger`(纯函数)、`Write-RedisConnectionLedger`(写路径打印)。
+- **显式池上限(第 3 批,2026-10-16)**:连共享 Redis 的 go-redis 直连客户端都显式设了 `PoolSize`,值在各服务 yaml 里(当前都是 20 = 以前 K8s 上
+  GOMAXPROCS 按 2 时的缺省值,所以总账数字不变),ConfigMap 生成器镜像同一个键、总账读同一个键,池上限不再随 CPU limit 漂:
+
+  | 服务 | 键(服务 yaml) | ConfigMap |
+  |---|---|---|
+  | login | `go/login/etc/login.yaml` 的 `Node.RedisClient.PoolSize` | go-svc-login-config |
+  | db | `go/db/etc/db.yaml` 的 `ServerConfig.RedisClient.PoolSize` | go-svc-db-config |
+  | data-service | `go/data_service/etc/data_service.yaml` 的 `DevRedis.PoolSize` | go-svc-data-service-config |
+  | player-locator | `go/player_locator/etc/player_locator.yaml` 的 `RedisClient.PoolSize` | go-svc-player-locator-config |
+  | trade | `go/trade/etc/trade.yaml` 的 `SharedRedis.PoolSize` | go-svc-trade-config |
+  | player-inbox | `go/player_inbox/etc/player_inbox.yaml` 的 `CoreRedis.PoolSize` | go-svc-player-inbox-config |
+
+  guild 2026-10-16 起由接入 K8s 那条线一并计入(`Get-RedisPoolMirror -Target guild` 读 `RedisClient` / `PlayerLocatorRedis` / `MergeMarkerRedis`
+  三段的 `PoolSize`),ConfigMap 由它自己的生成器写。
+  Go 侧语义:0 / 不写 = go-redis 缺省 10 × GOMAXPROCS(兼容旧 ConfigMap,滚动升级期间旧配置照常加载),负数起服即失败;部署侧要求正整数,
+  写路径入口算总账时先于任何集群写操作把这些键读一遍,不合格就拒绝(`Redis 连接池镜像:...`)。各服务启动日志打一行 `pool_size=<生效值>`,
+  用来核对 ConfigMap 里的值真的被加载(go-zero 对不认识的键静默忽略)。只设 `PoolSize`,不设 `MaxActiveConns`:Pub/Sub 专用连接走 `NewConn`、
+  不占池名额,但受 `MaxActiveConns` 约束,池满时订阅会直接失败(go-redis v9.16.0 / v9.17.3 / v9.18.0 的 `newConn`)。
+  **改值 = 重算总账**:看部署时打印的 `Redis connection ledger` 一行;池等满时调用方排队(go-redis `PoolTimeout`),db 可看 `db_redis_pool_wait_total` /
+  `db_redis_pool_timeouts_total`。本机 Windows 以前是 10 × 核数,现在同样是 20 —— 压测对比时注意这一口径变化。
+  **设不了的**:go-zero 封装的客户端(data-service 的 `MappingRedis`、scene-manager、match、chat、friend 的共享库句柄)—— go-zero v1.9.2 / v1.10.0 的
+  `redis.RedisConf` 没有池参数,`redisclientmanager.go` 不设 `PoolSize`、固定 `MinIdleConns: 8`,同一进程同一地址共用一个池。
+  这些仍按缺省池(10G)记账,CPU limit 的输入钉子只对它们生效。
+- **公式**(P = 该服务 yaml 里的显式 `PoolSize`;G = GOMAXPROCS,只用于缺省池。Go 1.27.2 容器感知,CPU limit 500m / `"1"` 预期都是 2;**未实测,待 S6**;
+  按 2 记。go-redis v9 缺省池上限 = 10 × G。池没有后台回收,一律按池上限记账):
   ```text
-  login           每副本 = 10G + 1     # go-redis 池 + 任务结果 Pub/Sub 专用连接
-  db / player-locator / scene-manager   每副本 = 10G
-  data-service    每副本 = 20G         # MappingRedis + DevRedis 两个池(K8s 上都指向共享 Redis)
+  login           每副本 = P + 1       # go-redis 池 + 任务结果 Pub/Sub 专用连接
+  db              每副本 = P + 2       # 主池 + WAITAOF 专用客户端(go/db/internal/kafka/durable_enqueue.go,代码写死 2;两项 WaitAOF 都写 0 时不建,按开计)
+  player-locator  每副本 = P
+  data-service    每副本 = P + 10G     # DevRedis(go-redis,显式)+ MappingRedis(go-zero,缺省池;K8s 上两段都指向共享 Redis)
+  scene-manager   每副本 = 10G         # go-zero,缺省池
   gateway(Java)  每副本 = 2           # Lettuce 共享连接 + 限流专用连接(staging / prod 缺省开限流;dev 关时实际 1,按 2 记)
-  match / chat / friend 每副本 = 10G;trade 每副本 = 10G + 1(资产通道 + 落地唤醒订阅;K8s 现在固定 AssetOp.Enabled=false,实际 0,按开计)
+  match / chat / friend 每副本 = 10G   # go-zero,缺省池
+  trade           每副本 = P + 1       # 资产通道 + 落地唤醒订阅(资产通道开关缺省关,按开计)
+  guild           每副本 = 3P + 1 + 4  # 全局库 / 在线查询 / 合服标记三个显式池 + 落地唤醒订阅 + 摘要 bump 专用池(代码写死 4)
+  player-inbox    每副本 = P           # 核心 Redis 一个 go-redis 池,没有 Pub/Sub
+  mail            每副本 = 8           # 代码里写死 PoolSize 8
   gate / scene / battle 每进程 = 1     # node.cpp 唯一的 tlsRedis.Connect:每进程一条,不是每线程
-  每 zone = 2·(10G+1) + 2·10G + 2·20G + 2·10G + 2·10G + 2·2 + gate 台数 + scene 台数
-  全局    = 3·2·10G + 2·(10G+1) + battle 台数
+  每 zone = 2·(P+1) + 2·(P+2) + 2·(P+10G) + 2·P + 2·10G + 2·2 + gate 台数 + scene 台数
+  全局    = 3·2·10G + 2·(P+1) + 2·(3P+5) + 2·P + 2·8 + battle 台数   # match / chat / friend、trade、guild、player-inbox、mail 各 2 副本
   steady  = Z·每 zone(含各 zone 的 gate / scene)+ 全局
   surge   = R·(各客户端每副本之和 + 3)   # R = 2,同 MySQL 总账;C++ 按 gate / scene / battle 三个工作负载计
   peak    = steady + surge + 运维余量 50   # 探针、运维 redis-cli、merge_zone / route_tool 等一次性工具(估计值)
   ```
-  G=2、缺省台数(gate 2、scene 4、battle 1)时每 zone 252 条(其中 C++ 6 条),全局 163 条。
-  - 不计入(接上时在常数表加一行):player-inbox(配置有 `CoreRedis` 段,代码还没建客户端)、guild(没有 K8s 清单)、client-rpc-router(不连 Redis)、
+  P=20、G=2、缺省台数(gate 2、scene 4、battle 1)时每 zone 256 条(其中 C++ 6 条),全局 349 条(含 guild 130、mail 16 条)。
+  db 的 +2 与 guild 一行是 2026-10-16 存盘线、guild 接入 K8s 线加进 `Get-RedisConnectionLedgerInputs` 的;数字以代码表与部署时打印的总账一行为准。
+  - player-inbox 2026-10-16 起计入:核心 Redis 一个 go-redis 池(`go/player_inbox/internal/svc/servicecontext.go` 的 `openCoreRedis`,
+    围栏上界、在线提醒读 location 与后台循环选主锁共用),池上限 `CoreRedis.PoolSize`,没有 Pub/Sub。
+  - 不计入(接上时在常数表加一行):client-rpc-router(不连 Redis)、
     login 的 PasswordAuth 失败配额池(K8s 不写该段,启用后每 login 副本 +4)、match 的 MatchRedis 与 chat 的 ChatRedis(在 redis-match-cluster 上)。
-  - 契约测试钉住「表里每个 Go 服务 manifest 的 CPU limit ≤ G 核」:调大 CPU limit 会悄悄放大连接池,那时测试变红,逼着重算这一列(或给该服务显式 PoolSize,第 3 批)。
-- **取值**:规划档(Z=4,来自 MySQL 规划档)峰值 1635;`MAXCLIENTS=40000` 时 80% 水位 32000,按每 zone 252 条约能承载 124 个 zone,需要 40032 个 fd。
+  - 契约测试钉住:显式池那几行等于服务 yaml 的值、ConfigMap 镜像同一个值、yaml 写 0 / 负数 / 非整数时部署侧 throw;
+    有缺省池的行「manifest 的 CPU limit ≤ G 核」—— 调大这些服务的 CPU limit 会悄悄放大缺省池,那时测试变红,逼着重算这一列。
+- **取值**:规划档(Z=4,来自 MySQL 规划档)峰值 2027;`MAXCLIENTS=40000` 时 80% 水位 32000,按每 zone 256 条约能承载 121 个 zone,需要 40032 个 fd。
   契约测试钉住「规划档峰值 ≤ 80% × MAXCLIENTS」。Z≈220 或目标形态(每 zone gate 5~22、scene 9~44,login 4 核)落地时要重算。
   单实例按连接数撑到 100 个 zone 只是算术:命令量约 3 个满载 zone 就到顶,这个上限真正的用处在按用途 / 按玩家拆分之后(每个拆出的实例各自显式 `--maxclients`、各自记账)。
   每条连接的内存是外部常识(空闲几 KB,最坏约 20KB),4 万条最坏约 0.8GB;`redis.yaml` 只有 512Mi 的 requests、没有 limits。
@@ -987,7 +1052,7 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
   Redis connection ledger: zones=<Z> steady=<稳态> peak=<峰值> maxclients=<上限> warn_at=<80% 水位> headroom=<余量>; plan zones=4 peak=<规划峰值> headroom=<规划余量>
   ```
   zone 集合与 MySQL 那一行同一口径(契约测试比对两行的 `zones=` 相等);各 zone 的 gate / scene 台数按命令行或 zones 配置算(拆分池取两池之和,Agones 自动伸缩取 `-AgonesMaxReplicas`)。
-  按仓库当前值手算(未运行):`zones.json` 两个 zone 的 `zone-up` 是 `zones=2 steady=667 peak=1131 maxclients=40000 warn_at=32000 headroom=38869; plan zones=4 peak=1635 headroom=38365`。
+  按仓库当前值手算(未运行;含 mail、guild、db 的 WAITAOF 客户端):`zones.json` 两个 zone 的 `zone-up` 是 `zones=2 steady=861 peak=1515 maxclients=40000 warn_at=32000 headroom=38485; plan zones=4 peak=2027 headroom=37973`。
   任一份峰值超过 80% 水位时打一条英文 WARNING,以 `[RedisConnectionLedger]OverWarnRatio:` 开头,**只告警、不阻断**(与 MySQL 那份同一纪律,是否升级成门禁两份一起拍板)。
 - **部署后核对**:非 DryRun 且带 `-WaitReady` 的 `infra-up` / `all-up`,在 redis-0 就绪后 exec 进 Pod 读 `CONFIG GET maxclients`,与清单的 `MAXCLIENTS` 比较
   (口令取 Pod 自己的 `REDIS_PASSWORD`,经 `REDISCLI_AUTH` 交给 redis-cli,不经本机命令行、不进日志)。相等打 `Redis maxclients check OK`;
@@ -996,9 +1061,26 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
   **全服登录中断并重放 AOF**。所以 `Apply-Infra` 在它的任何写操作之前先比较:
   - 渲染后的 `spec.template` 段(去掉 YAML 注释与空行;启动薄壳字面块里的行原样保留)的 SHA-256 前 16 位,写在 StatefulSet **自己的** metadata 注解
     `mmorpg.io/redis-pod-template-digest` 上(不在 Pod 模板里,改它不滚动);
-  - 线上没有 `sts/redis` → 放行;线上注解与本次摘要相同 → 放行;不同,或线上没有这条注解 → 没给 `-ConfirmRedisCoreRestart` 就拒绝,
-    报错写明「apply 会重启 redis-0,全服登录中断并重放 AOF」,本次不做任何写操作;给了开关就放行并打 `[RedisCoreRestart]Confirmed:` 告警。
-  - DryRun 不查集群,只打 `Redis restart gate: skipped in DryRun ...` 一行。只改注释不触发;`kubectl edit` 之类绕过本脚本的改动看不见(比较的是上次经本脚本 apply 的模板)。
+  - 线上既没有 `sts/redis` 也没有旧的 `deployment/redis` → 放行(全新集群);线上注解与本次摘要相同 → 放行;不同,或线上没有这条注解 →
+    没给 `-ConfirmRedisCoreRestart` 就拒绝,报错写明「apply 会重启 redis-0,全服登录中断并重放 AOF」,本次不做任何写操作;
+    给了开关就放行并打 `[RedisCoreRestart]Confirmed:` 告警。
+  - 线上没有 `sts/redis`、但还有 2026-09-19 之前的 `deployment/redis`(emptyDir)→ 同样要 `-ConfirmRedisCoreRestart`:`Apply-Infra` 会先删它再建
+    StatefulSet,Redis 停机、数据不迁移(以前这种集群被当成全新集群放行)。查询 `sts` / `deployment` 时 kubectl 失败一律拒绝(fail-closed)。
+  - DryRun 不查集群,只打 `Redis restart gate: skipped in DryRun ...` 一行。只改注释不触发。
+  - **盲区**:比较的是上次经本脚本 apply 的模板(注解),不是线上真实的 `spec.template`。有人用 `kubectl edit` / `set image` / `patch` 带外改过
+    `redis.yaml` 里声明了的字段(镜像、resources、命令、探针)时,闸判「unchanged」放行,而 apply 的三方合并会把它们改回清单值、照样重启 redis-0;
+    所以放行那一行写的是 `pod template unchanged since the last apply by this script ... would be reverted`,不是「不会重启」。
+    对 sts/redis 带外改过之后,先把同样的改动落进 `redis.yaml` 再跑 infra-up。`rollout restart` 加的 `restartedAt` 注解不在清单里,三方合并保留它,不受影响。
+    用 server-side dry-run 的模板与线上模板比较可以补上,待负责人拍板与实测。
+    另一个盲区:`kubectl delete sts redis --cascade=orphan` 之后(改 volumeClaimTemplates 之类不可变字段的常规做法)redis-0 Pod 与 PVC 仍在服务,
+    闸查不到 sts、也查不到旧 Deployment,按「全新集群」放行;apply 新建的 StatefulSet 收养孤儿 Pod,模板不一致就重建 redis-0。做过这类操作后,
+    下一次 infra-up 放进维护窗口。
+  - redis.yaml 在 `Apply-Infra` 里只读一次:过闸算摘要、实际 apply、`-WaitReady` 部署后核对的期望 MAXCLIENTS 都取自同一次读取的内容
+    (两次读之间文件被改时,不会出现「闸按旧内容放行、apply 新模板」,也不会拿新值去核对刚 apply 的旧值)。
+  - 带 `-WaitReady` 确认重启时,`Wait-ForStatefulSetReady` 的时限是 `-WaitTimeoutSeconds`(缺省 180s),而 `startupProbe` 给 AOF 重放留了 300s、
+    大库重放可能更久:等待超时会 throw,**其后的步骤全部没做** —— maxclients 核对、等 `kafka-topic-init` Complete、battle 池(含新的
+    `battle-node-config`)、全局 Go 服务,all-up 还有全部 zone。必须重跑同一条命令(安全:注解已更新,会判 unchanged);
+    或一开始就给大一点的 `-WaitTimeoutSeconds`。
   - `dev_tools.ps1`(`k8s-infra-up` / `k8s-all-up` / `k8s-release-all`)与 `k8s_image.ps1`(`release-all`)只在被指定时透传同名开关。
   - 它取代了 G4a 设计稿(`docs/design/shared-redis-split-by-purpose.md` §4.2)里「给了 `-RedisCoreMaxMemory` 就必须给 Confirm」的同名开关规划,语义更宽。
   - **运维后果:本项合入后第一次 `infra-up`(以及不带 `-SkipInfra` 的 `all-up`、`k8s-release-all`)必须带 `-ConfirmRedisCoreRestart`** ——
@@ -1019,16 +1101,21 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
 - **排查**(都在 redis-0 里执行,口令同上经 `REDISCLI_AUTH`):`redis-cli config get maxclients`;`redis-cli info clients`(`connected_clients`);
   `redis-cli info stats`(**`rejected_connections`**,因上限被拒的累计数)。`CLIENT LIST` 不好用:全仓没有客户端设连接名,login / db 连 lib-name 也是空的。
   - **客户端日志里不一定出现 `max number of clients`,以服务端 `rejected_connections` 为准**:go-redis v9 握手时把 HELLO 收到的任何 Redis 错误当成「不支持 HELLO」吞掉,
-    Go 侧多半只看到 EOF / 连接重置,release 档还可能是 `failed to authenticate`(容易与「C++ 不发 AUTH」那一项混淆);C++ 断连日志本来就不带原因。
+    Go 侧多半只看到 EOF / 连接重置,release 档还可能是 `failed to authenticate`(容易与「C++ 不发 AUTH」那一项混淆)。
+    C++ 的 `Redis disconnected` / `Redis connect attempt failed` 两行 2026-10-16 起带 `reason=<hiredis errstr>`:hiredis 在建连后、发出第一条命令前
+    收到的错误回复(到线时的 `ERR max number of clients reached`)会原样进 errstr;更常见的是错误回复被当成 AUTH 的应答
+    (`Redis AUTH rejected by ...` 一行带服务端原文)或排队命令的应答,之后断线一行是 `reason=Server closed the connection`。
   - **到线之后 redis-cli 自己也进不去**(Redis 不给管理连接留名额,外部常识,待实测),所以**在线调大必须在到线之前做**;已经到线时只能先停掉一部分客户端腾出名额,
     或重启 redis-0(回到清单值)。
 - **接入 redis-ha / 按用途拆分 / 分片时**:每个 redis-server 都要显式 `--maxclients` 并按用途重算总账;redis-ha 还要算 haproxy:节点上限 ≥(代理副本数 + maxSurge)× `maxconn` + 余量
   (现在 3 × 20000,见 `redis-ha.yaml` 文件头)。按用途拆分后每个进程对每个实例各开一个池,单实例连接数下降、进程总连接数上升;按 player_id 分片后每片的连接数约等于今天单实例的总数。
-- **未做(第 3 批,另起)**:告警(connected_clients ÷ maxclients、rejected_connections 增量、生效值 < 清单值;依赖 redis_exporter,待拍板,届时照 `mysql-connection-alerts.yaml` 写);
-  go-redis 直连客户端显式 `PoolSize`(让总账不再跟着 CPU limit 漂);C++ 断连日志带原因。在此之前只有部署后核对与 CPU limit 的输入钉子。
+- **第 3 批**:go-redis 直连客户端显式 `PoolSize`(见上「显式池上限」)与 C++ 断连日志带原因已于 2026-10-16 落码(未编译、未测试)。
+  **未做**:告警(connected_clients ÷ maxclients、rejected_connections 增量、生效值 < 清单值;依赖 redis_exporter,待拍板,届时照 `mysql-connection-alerts.yaml` 写);
+  go-zero 客户端的池上限(要换掉 go-zero 封装,不在本批)。player-inbox 的 `CoreRedis.PoolSize` 已于 2026-10-16 补上。在告警落地前只有部署后核对与输入钉子。
 - **验证(交 Codex,未运行)**:`pwsh -NoProfile -File tools/scripts/tests/redis_maxclients_contract.tests.ps1`(第 1 批静态契约);
-  `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`(第 2 批:规划档 ≤ 80%、输入钉子、公式自检、写路径打印、重启闸三种判定与拒绝文本、
-  摘要语义、infra-up DryRun 的注解、两个包装入口透传)。
+  `pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1`(第 2 批:规划档 ≤ 80%、输入钉子、公式自检、写路径打印、重启闸四种判定与拒绝文本、
+  旧 Deployment 的拒绝、读线上那一步的 fail-closed、摘要语义、infra-up DryRun 的注解、两个包装入口透传;第 3 批:显式池上限等于服务 yaml、
+  ConfigMap 镜像 PoolSize、PoolSize 非法时 fail-closed)。Go 侧与 C++ 侧的编译与单测命令见 `docs/PROGRESS.md` 2026-10-16「P0-E 第 3 批」条目。
 
 ## Kafka 审计 topic 预建(kafka-topic-init,2026-09-08,node-id-overhaul-plan §2.0c)
 
@@ -1117,8 +1204,9 @@ Go 服务侧的同一对值由 `k8s_deploy.ps1` 的 `Add-GoSvcCommandTopicEnv` �
     重放老 topic 里保留期内的消息(非空且不匹配的 `target_instance_id` 会被过滤,空实例号的不会)。关掉老路径后 GroupID 在
     K8s 上已无 C++ 读者;battle 只生产,它在旧二进制上拿不到 broker 的缺陷随 GroupID 改空一并消除(新二进制已在批 1 修掉)。
   - **上线影响**:
-    1. **改 ConfigMap 不会自动滚 Pod**:C++ 节点的 Pod 模板只带 `mmorpg.io/cpp-log-sidecar-config-hash`(只哈希 sidecar 配置),
-       不带 node-config 的哈希,`kubectl apply` 之后跑着的 gate / scene / battle 仍是旧配置,要手动 `kubectl rollout restart`
+    1. **改 ConfigMap 不会自动滚 Pod**:C++ 节点的 Pod 模板只带 `mmorpg.io/cpp-log-sidecar-config-hash`(只哈希 sidecar 配置)
+       与有口令时的 `mmorpg.io/zone-redis-auth-hash`(只哈希 zone Redis 口令,见「C++ 节点的 zone Redis 口令」),
+       不带整份 node-config 的哈希,`kubectl apply` 之后跑着的 gate / scene / battle 仍是旧配置,要手动 `kubectl rollout restart`
        (Agones 编排的 scene / battle 不吃 rollout restart,要让 Fleet 换一批 GameServer)。
     2. **重启 Deployment 形态的 battle 会作废正在打的局**;挑没有对局的窗口。battle 是 infra namespace 里的全局池,
        `battle-node-config` 只由 `infra-up` / `all-up` 渲染,`zone-up` 不碰它。
@@ -1409,17 +1497,33 @@ C++ 节点(gate / scene / battle)连共享 Redis(`redis.<InfraNamespace>:6379`)�
 - **指纹注解**:挂 `/app/bin/etc` 的 C++ 工作负载在口令非空时,Pod 模板带 `mmorpg.io/zone-redis-auth-hash`(只哈希口令,不哈希整份 node-config ——
   否则 P0-B 这类无关改动也会滚动 gate 与 battle)。C++ 只在启动时读配置,只改 ConfigMap 不会让进程重读;指纹把「换口令」变成 Pod 模板变化:
   - gate / scene / battle 的 Deployment:apply 即滚动 —— gate 断开该 Pod 上的玩家,scene 迁走玩家,battle 作废在打的局。这是期望行为;
-  - Agones Fleet(scene / battle):新建 GameServerSet,已 Allocated 的实例打完才退;
+  - Agones Fleet(scene / battle):新建 GameServerSet,已 Allocated 的实例打完才退 —— 它们一直用启动时读到的旧口令(首次开口令时是空口令),
+    Redis 带新口令重启后会一直认证失败或 NOAUTH,直到实例退出,**不会自行恢复**;高密度 scene 只要还有一个房间就一直是 Allocated。
+    处置见下面上线步骤的第 3 步前置;
   - `-ClientEntryMode external` 的 gate StatefulSet 是 `OnDelete`:模板换了不自动重建,按 `tools/scripts/k8s_gate_drain.ps1` 逐个排空删 Pod。
 - **上线步骤**(给已在运行、Redis 还没开口令的环境开口令,维护窗口内做):
   1. 先发带 AUTH 的 C++ 镜像(第一批)。旧二进制忽略 `zoneredis.password`,Redis 一开口令就全线 NOAUTH,所以镜像必须先行;
      新镜像配空口令时行为与今天相同,可以提前滚。
   2. 维护窗口内带 `MMORPG_REDIS_PASSWORD` 重跑 `infra-up`(建 Secret `redis-auth`、写 `battle-node-config`)与各 zone 的 `zone-up`(写 `node-config`)。
      staging / prod 必须设该变量(≥12 位);dev 档设了同样生效。
-  3. Redis 首次开口令要手动重启:`kubectl -n <InfraNamespace> rollout restart statefulset/redis`。`--requirepass` 只在容器启动时从 Secret 读,
-     脚本只建 / 更新 Secret,不重启 Redis。重启 = 一次 Redis 停机(在线会话与锁清空)。
-  4. C++ Pod 因指纹注解变化自动滚动(Deployment / Fleet;external gate 按上一条手动排空)。在 Redis 带口令重启之前就起来的新 Pod,
-     发出的 AUTH 会被还没设口令的 Redis 拒绝,按重连间隔重试,Redis 带口令起来后自行恢复(这一段未实测)。
+  3. **前置(只针对 `-SceneOrchestrator agones` / `-BattleOrchestrator agones`)**:重启 Redis 之前,确认每个 Fleet 都只剩当前这一代
+     GameServerSet(旧的已删除,或 DESIRED 与 CURRENT 都是 0),而且旧一代里没有 Allocated 实例。**先等 Fleet 滚动结束再查**:
+     SceneManager 分配时只按 zone / role / build 标签选、不分代,第 2 步只改配置时 build 标签不变,滚动中旧一代的 Ready 实例在你查完之后、
+     Redis 重启之前仍可能被分配出去。Fleet 名:scene(拆分池时是 scene-world 与 scene-instance)在各 zone namespace,battle 在 InfraNamespace:
+     ```bash
+     kubectl -n <ns> get gameserverset -L agones.dev/fleet                               # 每个 Fleet 只应剩一行(或旧的 DESIRED/CURRENT 为 0)
+     kubectl -n <ns> get gs -L agones.dev/fleet,agones.dev/gameserverset                 # 不按 Fleet 名过滤,免得填错名字查出空结果
+     ```
+     旧一代里的 Allocated 实例启动时读的是旧 `node-config`(旧口令、空口令,或第 1 步之前的旧二进制 —— 它们根本不认口令),Redis 带新口令起来后
+     会一直 fail-closed 或 NOAUTH 到实例退出;battle 在空口令时还会把 NOAUTH 当成「已销账」删掉结算外发箱条目(`BattleRoomManager::ProbeAndRetryOne`,
+     交接 handoff-global-singletons-p0-20261015.md §3 第 7 条那张卡片)。高密度 scene 只要还有房间就一直 Allocated,等它自己退出可能永远等不到,
+     所以维护窗口里要**主动删除**这些旧实例(`kubectl -n <ns> delete gs <名字>`;代价:scene 迁走 / 断开实例上的玩家,battle 作废在打的局),
+     删干净再往下走。Deployment 形态没有这个问题。
+     然后手动重启 Redis(首次开口令必须做):`kubectl -n <InfraNamespace> rollout restart statefulset/redis`。`--requirepass` 只在容器启动时从
+     Secret 读,脚本只建 / 更新 Secret,不重启 Redis。重启 = 一次 Redis 停机(在线会话与锁清空)。
+  4. C++ Pod 因指纹注解变化自动滚动 —— 只对 Deployment 和 Fleet 里**未分配**的实例成立(Allocated 的旧实例按第 3 步前置处理,external gate
+     按上一条手动排空)。用新模板起来、但早于 Redis 带口令重启的 Pod,发出的 AUTH 会被还没设口令的 Redis 拒绝,按重连间隔重试,
+     Redis 带口令起来后自行恢复(这一段未实测)。
   - **通过标准**:每个 C++ 节点日志都出现 `Zone Redis auth: on` 与 `Redis AUTH ok to <host:port>`,之后不再有 `metric=zone_redis_auth_failed`;
     Redis 的 `INFO errorstats` 里 NOAUTH 计数不再增长。
   - 换口令同样走第 2–4 步;新旧口令并存期间总有一侧被拒,所以同样要维护窗口。首次开服是冷启动(Secret 先于 `redis.yaml` 落地),不存在滚动问题。
@@ -1432,8 +1536,9 @@ C++ 节点(gate / scene / battle)连共享 Redis(`redis.<InfraNamespace>:6379`)�
 
 `manifests/infra/kafka.yaml` 现在是:ClusterIP Service `kafka`(仍是 `kafka.<InfraNamespace>:9092`,所有 ConfigMap /
 `base_deploy_config.yaml` 都不用改)+ headless Service `kafka-headless` + `PodDisruptionBudget minAvailable: 1`
-+ StatefulSet `kafka`(**1 个或 ≥3 个 broker**,由 `-KafkaBrokers` 决定,见下面「Kafka:多 broker」)、每个 broker 一块 `20Gi` PVC
-(集群默认 StorageClass),数据目录由 `KAFKA_LOG_DIRS=/var/lib/kafka/data` 显式指定。本节其余内容以单 broker(dev 档)为例。
++ StatefulSet `kafka`(**1 个或 ≥3 个 broker**,由 `-KafkaBrokers` 决定,见下面「Kafka:多 broker」)、每个 broker 一块 PVC
+(集群默认 StorageClass;大小 2026-10-16 起按盘预算算、线上已有时沿用线上值,见下面「Kafka 磁盘预算与 db_task retention.bytes」,以前写死 `20Gi`),
+数据目录由 `KAFKA_LOG_DIRS=/var/lib/kafka/data` 显式指定。本节其余内容以单 broker(dev 档)为例。
 
 - **为什么**:旧写法是单副本 Deployment + `emptyDir`,broker 一重启(漂移、OOM、升级)**全部 topic、分区元数据与已提交 offset
   一起消失**。消费者随后静默把 topic 自动重建成 1 分区(broker 开着 `auto.create.topics.enable` + `num.partitions=1`),
@@ -1585,8 +1690,11 @@ C++ 节点(gate / scene / battle)连共享 Redis(`redis.<InfraNamespace>:6379`)�
   除了"低于 900s"之外,这里还有一个更难发现的问题:**login 与 db 都会在启动时对同一个 `db_task_zone_<N>` 执行
   `IncrementalAlterConfigs`**(`kafkautil.EnsureTopics`),而 db 的 K8s ConfigMap 根本不写 `RetentionMs`、走 Go 结构体
   默认值 86400000(24h),login 的 ConfigMap 写的是脚本注入值。于是这个 topic 的保留期会**随两个服务的重启顺序在
-  15 分钟和 24 小时之间反复横跳**。把 `custom/default` 对齐到 86400000 之后不再漂;真要改保留期,
-  两处(`Apply-KafkaProfileDefaults` 与 `go/db/etc/db.yaml`)必须同拍。
+  15 分钟和 24 小时之间反复横跳**。把 `custom/default` 对齐到 86400000 只消掉了 prod 档的横跳:
+  **2026-10-16 更正(S5b,B-15)**:那次对齐之后 db 的 ConfigMap 仍不写 `RetentionMs`,dev / prod-like 档的保留期照样在 1h / 6h 与 24h 之间横跳。
+  现在 db 与 login 两个 ConfigMap 的 Kafka 段都写 `RetentionMs` 与 `RetentionBytes`,从生成器里同一个变量渲染,所有档位两边同值,
+  契约测试断言两个 ConfigMap 相等。真要改保留期,改 `Apply-KafkaProfileDefaults`(或传 `-KafkaDbTaskRetentionMs`),
+  不要只改一个服务的 etc yaml(K8s 上 ConfigMap 覆盖它)。
 - **保留期改为"声明"而非"创建时附带"**:`kafka-topics.sh --create --config retention.ms=...` 只在新建那一刻生效。
   一个已经存在的 topic(被生产者抢先 auto-create、或上一代 Job 用别的值建的)会静默继承 broker 默认值。
   所以 K8s Job 与 compose 的 init 现在都在建完之后再 `kafka-configs.sh --alter --add-config retention.ms=...`
@@ -1614,3 +1722,165 @@ docker compose -f deploy/docker-compose.yml config
 9092+9093 端口没变、PVC 的 `mountPath` 等于 `KAFKA_LOG_DIRS`、两条 topic-init 路径都对四个 topic 显式设了保留期、
 渲染后的 broker 默认保留期 > 900000。manifest 里嵌的 shell 可以用
 `yaml.safe_load` 抽出来跑 `sh -n`(Job 的 `command[2]`、kafka 的 `args[0]`、compose 的 `entrypoint[2]`)。
+
+## Kafka 磁盘预算与 db_task retention.bytes(2026-10-16,S5b;未编译、未测试,待 Codex 验证)
+
+规格:`docs/handoff/godb-pipeline-impl-20261015/S5-dirty-snapshot-retention-spec.md`(B-10 / B-11 / B-15 / B-16 / B-17 / B-18);
+设计:`docs/design/db-task-delivery-and-retention.md` §B;容量依据:容量模型 A0-3。
+
+以前 `db_task_zone_<id>` 每分区只有 broker 缺省的 `retention.bytes`(dev 128MiB,其余 512MiB)兜底,与 PVC 大小无关:
+zone 一多,Σ 保留上限就超过盘(容量模型估算是 PVC 的 2.5~5.8 倍),写满盘时整个 broker 停摆;盘又写死 `20Gi`。
+现在 `k8s_deploy.ps1` 在写路径入口(zone-up / all-up / infra-up)算一份盘预算,同时决定 PVC 大小与 db_task 的 topic 级
+`retention.bytes`,两者在同一个公式里对账。
+
+### 公式(`Get-KafkaDbTaskRetentionBytesTarget` / `Get-KafkaDiskPlan`)
+
+记 R = 每 zone 的 db_task 设计字节率,T = min(缓冲目标, db_task retention.ms),P = 每 zone 的 db_task 分区数
+(`go/db/etc/db.yaml` 的 `ServerConfig.Kafka.PartitionCnt`,现为 10),seg = segment 字节数,
+Z = zone 数(zones 配置 ∪ `-ZoneId`;非 DryRun 时再加上线上名字既不在 zones 配置里、也不是 `-ZoneName` 的 zone namespace,每个算一个),
+A = 审计 topic 分区数(`data_service.yaml` 的 `TransactionLogPartitions` + `SnapshotPartitions`,现为 6 + 3 = 9,按 broker 缺省
+`retention.bytes` 记),reserve = 其它 topic 预留(GiB),Gi = 1073741824:
+
+```text
+target      = roundUp(R × T × 1.2 ÷ P, 64MiB) + seg                        # 1.2 = 分区间倾斜余量;+seg:只删整个已关闭的 segment
+required    = 1.3 × (Z × P × (target + seg) + A × (broker 缺省 retention.bytes + seg) + reserve × Gi)   # 每个 broker 各持有每个分区一份(上界)
+RequiredGi  = max(20, ceil(required ÷ Gi ÷ 10) × 10)
+EffectiveGi = -KafkaStorageGi(> 0)
+            > 线上 StatefulSet kafka 在:min(它的模板, 最小的实际 PVC)                # pvc_source = explicit / live / live-pvc / computed
+            > StatefulSet 不在、PVC 在(--cascade=orphan 之后):最小的实际 PVC
+            > RequiredGi
+capacity    = (EffectiveGi × Gi ÷ 1.3 − A × (broker 缺省 + seg) − reserve × Gi) ÷ (Z × P) − seg
+生效值      = target ≤ capacity ? target : floor(capacity, 64MiB)                 # 后者 = FitLimited,按盘收缩
+```
+
+`floor(capacity, 64MiB)` 连 2 个 segment 都不到时 throw(每分区只剩活跃 segment,缓冲约等于零);其余情况**只告警、不阻断**
+(负责人 2026-10-13 拍板)。生效值同时渲染进 `go-svc-db-config` 与 `go-svc-login-config` 的 `Kafka.RetentionBytes`
+(两边同值,`RetentionMs` 也一样,契约测试钉住),两个服务启动时经 `kafkautil.EnsureTopics` 在 topic 级设置它。
+
+### 缺省值(`Apply-KafkaProfileDefaults`;参数 0 = 按档位)
+
+| `-KafkaProfile` | 设计速率 `-KafkaDbTaskDesignBytesPerSec` | 缓冲目标 `-KafkaDbTaskBufferTargetMs` | db_task retention.ms | segment | 其它预留 `-KafkaOtherTopicsReserveGi` | target retention.bytes | 2 个 zone 的 RequiredGi | 按设计速率的缓冲 |
+|---|---|---|---|---|---|---|---|---|
+| dev | 262144(256 KiB/s) | 3600000(1h) | 1h | 16MiB | 1 | 150994944(144MiB) | 20(公式 ≈ 7.0,取下限) | ≈ 71 分钟 |
+| prod-like | 1048576(1 MiB/s) | 7200000(2h) | 6h | 32MiB | 2 | 973078528(928MiB) | 40(≈ 33.2) | ≈ 124 分钟 |
+| prod(缺省) | 3145728(3 MiB/s) | 7200000(2h) | 24h | 32MiB | 4 | 2785017856(2656MiB) | 80(≈ 79.7) | ≈ 121 分钟 |
+
+- broker 数与 RF 不进公式(2026-10-16 R5a 复核更正,以前按「RF ÷ broker 数」均摊):一个 broker 对同一分区至多持有一份副本,
+  每个 broker 的份额按「持有全部分区各一份」取上界。均摊只在副本已在各 broker 间分匀时成立,而 3 → N 扩容是放行的、新 broker
+  不会自动接手已有分区(见「Kafka:多 broker」):`kafka-reassign-partitions.sh` 之前老的 3 个 broker 仍持有全部分区。
+  例:prod、线上 20Gi、2 个 zone、`-KafkaBrokers 5` 时按均摊会把生效值算成 805306368,老 broker 上光 db_task 与审计、预留就要约 26.2GB,超过 20Gi;
+  现在与 3 broker 相同(268435456)。单 broker(RF 1)与 3 broker(RF 3)结果不变,≥ 4 个 broker 时偏保守(没有「已均衡」的开关,YAGNI)。
+- 缓冲目标取 2h 是全局单点交接对 db_task 缓冲的下限(≥ 2h)。prod / prod-like 的 retention.bytes 按 2h 算,会先于 24h / 6h 的
+  retention.ms 生效:按设计速率,DB 故障超过约 2 小时就开始丢存盘积压,回档的 TargetTime 也不能早于这个窗口。账本行会就此打
+  `[KafkaDiskLedger]BufferBelowRetention:` 告警(每次 prod 档部署都会出现,属预期;要消掉就调大缓冲目标并按下面的 runbook 扩盘)。
+- 显式 `-KafkaDbTaskRetentionBytes <B>` 覆盖 target(仍会按盘收缩);负数、或小于 2 个 segment 在写路径入口拒绝。
+- 设计速率是推算值,`implied_db_task_buffer_min` 只是估算,不是承诺的缓冲时长。
+
+### 账本行(每次 zone-up / all-up / infra-up 打一行)
+
+```text
+Kafka disk ledger: brokers=1 rf=1 zones=2 db_task_partitions=10 segment_bytes=33554432 db_task_retention_bytes=2785017856 target_retention_bytes=2785017856 pvc_gib=80 pvc_source=computed required_gib=80 implied_db_task_buffer_min=121 db_task_retention_ms_min=1440 design_bytes_per_sec=3145728 audit_partitions=9 other_topics_reserve_gib=4 live_sts_gib=none live_pvc_min_gib=none live_extra_zones=unread
+```
+
+(按仓库当前值手算,未运行。)字段:`db_task_retention_bytes` = 生效值(渲染进 ConfigMap 的那个),`target_retention_bytes` = 目标值;
+`pvc_gib` / `pvc_source` = 本次用的盘及其来源(explicit / live / live-pvc / computed);`required_gib` = 按目标值需要的盘;
+`implied_db_task_buffer_min` = 按设计速率估算的缓冲分钟数;`db_task_retention_ms_min` = retention.ms 折成分钟;
+`live_sts_gib` / `live_pvc_min_gib` = 线上 StatefulSet 模板 / 各块 PVC 实际容量的最小值(`none` = 没有,DryRun 一律 `none`),`pvc_gib` 在 live 时取两者中小的;
+`live_extra_zones` = 线上不在 zones 配置里的 zone namespace 数,已计入 `zones`(`unread` = DryRun 没读)。zones 配置缺席时
+行尾带 `zones_config=missing`。随后一行 `Kafka disk ledger note:` 提醒 retention.bytes 是 topic 级设置。
+
+- **FitLimited**(`[KafkaDiskLedger]FitLimited:` 告警):现有的盘装不下目标值,retention.bytes 已按盘收缩。例:prod 档、线上 20Gi、2 个 zone →
+  从 2785017856 收缩到 268435456(256MiB),按设计速率约能缓冲 10 分钟。真要恢复目标,按下面的 runbook 扩盘到 `required_gib`。
+  **收缩后的值低于 topic 现值时(例如 broker 缺省 512MiB → 256MiB),先确认 db 消费 lag 为 0 再发布**:db / login 滚动重启时
+  `EnsureTopics` 立刻下调 topic 级 retention.bytes,Kafka 在下一次 retention 检查(`retention.check.interval`,2 分钟)内就删掉
+  超出部分的最旧积压,不管 db 读没读到。zone-up 常常正是在 DB 故障期间为修 db 而跑的,这时删掉的就是积压的存盘;
+  lag 不为 0 时先扩盘(下面的 runbook),或等 db 追平再发布。
+- **ZonesConfigMissing**(`[KafkaDiskLedger]ZonesConfigMissing:` 告警,2026-10-16 起):zones 配置缺席时 Z 只数 `-ZoneId`
+  (非 DryRun 再加上线上其它 zone namespace),还没部署的 zone 数不到,retention.bytes 可能超量。`-ReleaseProfile dev` 只告警;
+  **staging / prod 直接拒绝部署**(含 infra-up:它也按 Z 定 PVC 大小),用 `-ZonesConfigPath` 指向登记了共用这套 Kafka 的全部 zone 的配置。
+- **LiveZonesNotInConfig**(`[KafkaDiskLedger]LiveZonesNotInConfig:` 告警):线上有 zone namespace 不在 zones 配置里(例如用 `zone-up -ZoneId`
+  单独部署、没登记的 zone),已按一个 zone 计入 Z。补进 zones 配置(或 zone-down 掉它),否则不同入口算出的 Z 不一样。
+  名字以 `-NamespacePrefix-` 开头的 namespace 都算(不看里面有没有 go/db,多算只会偏保守);列 namespace 失败一律拒绝部署。
+  **残余风险**:zone-down 删的是 namespace,但那个 zone 的 db_task topic 仍按旧的 retention.bytes 留着数据,直到 retention.ms 到期(prod 24h),这里数不到。
+  zone-down 之后 retention.ms 之内部署别的 zone 时,这块残留按超量承诺对待:用下面「已存在的 topic 立即改配置」把那个 topic 的 retention.bytes 调小。
+- 线上盘同时读两处:StatefulSet 的 `volumeClaimTemplates`,以及每块 `kafka-data-kafka-<i>` 的实际容量(`status.capacity`;
+  还没绑定的 PVC 取它的 `requests`)。StatefulSet 在时 retention.bytes 按两者中小的算,kafka.yaml 照旧渲染线上模板(模板不可变);
+  StatefulSet 不在(扩盘 runbook 第 ③ 步 `--cascade=orphan` 之后)但 PVC 在时按最小的实际 PVC 算并以它为模板(`pvc_source=live-pvc`)。
+  只 patch 了 PVC、没重建 StatefulSet 时按旧模板(更小的)算,方向是保守的;反过来,有一块 PVC 没扩成、停在 `FileSystemResizePending`,
+  也按那块实际的盘算。同 namespace 里所有名字匹配的 PVC 都算(含已缩容留下的旧序号 PVC,偏保守)。
+- 线上大小只认 `<整数>Gi`;读不出、别的单位、kubectl 失败一律拒绝部署(fail-closed)。DryRun 不查集群,一律按「线上没有」算。
+
+### 扩盘 runbook(StatefulSet 的 volumeClaimTemplates 不可变)
+
+显式 `-KafkaStorageGi N` 与线上不同时脚本拒绝:比线上模板大 = `expand-refused`(附本 runbook),比线上小 = `shrink-refused`(PVC 不能缩);
+N 大于最小的实际 PVC = `pvc-not-expanded`(某块盘还没扩到 N:先完成第 2 步并确认 CAPACITY),StatefulSet 在不在都判。
+zone-up 同样判(它按这块盘算 retention.bytes;按一块线上并不存在的盘算出来的值会写爆真实的盘)——这是相对规格多出的一处,规格只在 infra-up / all-up 判。
+
+1. `kubectl get sc <StorageClass> -o jsonpath={.allowVolumeExpansion}` 必须是 `true`;不支持扩容的 StorageClass 只能按「Kafka:多 broker」的重建流程换盘。
+2. 逐个 broker:`kubectl -n <infra> patch pvc kafka-data-kafka-<i> -p '{"spec":{"resources":{"requests":{"storage":"<N>Gi"}}}}'`,
+   `kubectl -n <infra> get pvc kafka-data-kafka-<i>` 确认 CAPACITY 已是 `<N>Gi`;需要文件系统扩容的驱动(状态里有 `FileSystemResizePending`)
+   逐个重启 broker(`kubectl -n <infra> delete pod kafka-<i>`,等它 Ready),多 broker 时每重启一个都确认 under-replicated 分区为 0:
+   `kubectl -n <infra> exec kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe --under-replicated-partitions"` 输出为空。
+3. `kubectl -n <infra> delete statefulset kafka --cascade=orphan`:只删 StatefulSet 对象,Pod 与 PVC 保留,broker 不停。
+4. `k8s_deploy.ps1 -Command infra-up … -KafkaStorageGi <N>`(建议带:脚本核对 N 不大于最小的实际 PVC、否则 `pvc-not-expanded` 拒绝;
+   2026-10-16 起不带也不会按公式值建模板,而是按最小的实际 PVC 建,`pvc_source=live-pvc`,某块没扩成时模板就停在旧大小)。
+   ③ 与 ④ 之间跑的 zone-up 同样按最小的实际 PVC 算 retention.bytes。新 StatefulSet 收养原有 Pod 与 PVC;之后
+   `kubectl -n <infra> get sts kafka -o jsonpath={.spec.volumeClaimTemplates[0].spec.resources.requests.storage}` 应为 `<N>Gi`。
+5. 对**每个** zone 重跑 zone-up,db / login 重启时按新盘设置 retention.bytes;不想为此滚动 go/db 时用下一节的 `--alter` 立即生效,
+   ConfigMap 等下次正常发布再收敛。
+
+### 已存在的 topic 立即改配置 / 回滚
+
+exec 进 broker 跑工具时必须把 `KAFKA_HEAP_OPTS` 覆盖成小堆(理由见上面「探针」一条:容器 env 的大堆会被工具继承,和 broker 叠在同一个 memory limit 里 OOMKilled):
+
+```bash
+# topic 名 = db_task_zone_<ZoneId>,TopicGeneration > 1 时带 _g<N>(与 Get-DbTaskTopicName 同一规则)
+kubectl -n <infra> exec kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type topics --entity-name db_task_zone_<id> --alter --add-config retention.bytes=<B>,retention.ms=<T>"
+kubectl -n <infra> exec kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type topics --entity-name db_task_zone_<id> --describe"
+# 回滚:去掉 topic 级配置,回到 broker 缺省
+kubectl -n <infra> exec kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type topics --entity-name db_task_zone_<id> --alter --delete-config retention.bytes"
+```
+
+- 顺序:**先扩盘再调大**;调小立即生效(下一次 retention 检查,`retention.check.interval` 为 2 分钟),被删的就是最旧的积压。
+- `<B>` 取账本行的 `db_task_retention_bytes`,`<T>` 取 ConfigMap 的 `RetentionMs`;两者都写在 db 与 login 的 ConfigMap 里,下次 zone-up 会收敛到同一组值。
+- **加 zone 之后**:新 zone 按新的 Z 拿到更小的 retention.bytes,先部署的 zone 在下次 zone-up 之前仍保留旧值,期间是超量承诺。
+  要对**全部** zone 重跑 zone-up,或对每个 db_task topic 用上面的 `--alter`。
+- 回滚 S5b:topic 级配置在回滚后仍留在 topic 上,本身无害;要撤就用上面的 `--delete-config`。旧二进制读到 ConfigMap 里的新键
+  `RetentionBytes` 会怎样尚未核实(go-zero `conf.MustLoad` 对未知键的行为,规格附录 F9),若会报错,回滚要连同旧的 ConfigMap 生成器一起回退。
+
+### kind / 本机
+
+缺省 `-KafkaProfile prod`:kind 上的新集群会申请 80Gi 的 PVC。local-path 不强制容量,但 retention 上限也随之约是以前的 5 倍,
+高写入压测可能写满宿主盘。**本机 / kind 建议显式传 `-KafkaProfile dev`**(PVC 20Gi,target 144MiB)。
+
+### 本轮不做
+
+- lag 秒级告警(B-12):go/db 还没有导出消费 lag 指标,积压逼近缓冲时仍没有主动告警;账本行的 `implied_db_task_buffer_min` 是以后告警阈值的依据。
+- 关掉旧的「一节点一 topic」路径(B-13,`DisableLegacyPerNodeTopic`):不在本节做。K8s 的 node ConfigMap 已由全局单点 P0-B 批 2
+  (2026-10-15)改写 `true`,见上面「K8s 已关老路径」;本机 `bin/etc` 仍是 `false`。已经 auto-create 出来的 `gate-<id>` / `scene-<id>`
+  在 broker 缺省保留期到期前仍占盘,由其它 topic 预留(`-KafkaOtherTopicsReserveGi`)覆盖。
+- 预留只是固定值,没有按 broker 缺省 retention.bytes 给控制面 topic 取最坏值;到大规模时(控制面约 4.8 GB/h 每 broker)要调大 `-KafkaOtherTopicsReserveGi`。
+- **验证(交 Codex,未运行)**:`pwsh -NoProfile -File tools/scripts/tests/k8s_deploy_contract.tests.ps1` 末尾「S5b 保留期与 Kafka 盘预算」一节
+  (纯函数的缺省值与各判定路径、两个 ConfigMap 的 RetentionMs / RetentionBytes 相等、账本行、kafka 清单的 `storage:`、负向参数;
+  2026-10-16 R5a 复核补:5 broker 取上界、模板与实际 PVC 取小 / `live-pvc` / `pvc-not-expanded`、线上 zone namespace 并入 Z、
+  zones 配置缺席的告警与非 dev 档拒绝、FitLimited 的 lag 提醒)。
+
+## go/db 存盘管线告警(PrometheusRule,手工 apply;2026-10-16 登记,未在集群上 apply 过)
+
+仓库不部署 Prometheus,下面两份与 `owner-epoch-alerts.yaml` 同法手工安装;上线清单是 `docs/ops/godb-pipeline-launch-todo.md` §2.5
+(2.5.2 / 2.5.8)。抓取前提:go/db 的 `:9160`(db ConfigMap 的 `MetricsListenAddr`)有 ServiceMonitor / PodMonitor,否则规则全部是哑的。
+
+- `deploy/k8s/db-task-retry-alerts.yaml`:存储不可用时的延后与冷却、死信、重试队列(`db-task.retry-and-dead-letter`)、排序锁租约
+  (`db-task.ordering-lease`)、消费组交接闸(`db-task.consumer-group-handoff`)。
+  ```bash
+  kubectl apply -n observability -f deploy/k8s/db-task-retry-alerts.yaml
+  ```
+- `deploy/k8s/db-task-partition-alerts.yaml`:db_task 读写分区契约(`db-task.partition-contract`,指标 `db_task_producer_partition_total`)。
+  **安装时机**:写规则 `DbTaskWritePartitionContractBroken`(critical)在 go/db 观测上线后即可 apply;读规则 `DbTaskReadPartitionMismatch`
+  必须等 login 全部滚到按契约分区的版本之后才放开 —— 滚动期间旧版 login 的读按 sarama 默认 FNV 分区,必然不符,会误报。
+  先上写规则时把读规则注释掉再 apply,login 滚完后放开、重 apply 同一文件。
+  ```bash
+  kubectl apply -n observability -f deploy/k8s/db-task-partition-alerts.yaml
+  # 回滚
+  kubectl delete -n observability -f deploy/k8s/db-task-partition-alerts.yaml
+  ```

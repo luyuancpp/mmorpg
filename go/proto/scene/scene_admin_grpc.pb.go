@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	SceneScene_Test_FullMethodName               = "/SceneScene/Test"
 	SceneScene_GmGracefulShutdown_FullMethodName = "/SceneScene/GmGracefulShutdown"
+	SceneScene_GmDescribeEntity_FullMethodName   = "/SceneScene/GmDescribeEntity"
 )
 
 // SceneSceneClient is the client API for SceneScene service.
@@ -33,6 +34,7 @@ const (
 type SceneSceneClient interface {
 	Test(ctx context.Context, in *GameSceneTest, opts ...grpc.CallOption) (*base.Empty, error)
 	GmGracefulShutdown(ctx context.Context, in *base.GmGracefulShutdownRequest, opts ...grpc.CallOption) (*base.GmGracefulShutdownResponse, error)
+	GmDescribeEntity(ctx context.Context, in *GmDescribeEntityRequest, opts ...grpc.CallOption) (*GmDescribeEntityResponse, error)
 }
 
 type sceneSceneClient struct {
@@ -63,6 +65,16 @@ func (c *sceneSceneClient) GmGracefulShutdown(ctx context.Context, in *base.GmGr
 	return out, nil
 }
 
+func (c *sceneSceneClient) GmDescribeEntity(ctx context.Context, in *GmDescribeEntityRequest, opts ...grpc.CallOption) (*GmDescribeEntityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GmDescribeEntityResponse)
+	err := c.cc.Invoke(ctx, SceneScene_GmDescribeEntity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SceneSceneServer is the server API for SceneScene service.
 // All implementations must embed UnimplementedSceneSceneServer
 // for forward compatibility.
@@ -72,6 +84,7 @@ func (c *sceneSceneClient) GmGracefulShutdown(ctx context.Context, in *base.GmGr
 type SceneSceneServer interface {
 	Test(context.Context, *GameSceneTest) (*base.Empty, error)
 	GmGracefulShutdown(context.Context, *base.GmGracefulShutdownRequest) (*base.GmGracefulShutdownResponse, error)
+	GmDescribeEntity(context.Context, *GmDescribeEntityRequest) (*GmDescribeEntityResponse, error)
 	mustEmbedUnimplementedSceneSceneServer()
 }
 
@@ -87,6 +100,9 @@ func (UnimplementedSceneSceneServer) Test(context.Context, *GameSceneTest) (*bas
 }
 func (UnimplementedSceneSceneServer) GmGracefulShutdown(context.Context, *base.GmGracefulShutdownRequest) (*base.GmGracefulShutdownResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GmGracefulShutdown not implemented")
+}
+func (UnimplementedSceneSceneServer) GmDescribeEntity(context.Context, *GmDescribeEntityRequest) (*GmDescribeEntityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GmDescribeEntity not implemented")
 }
 func (UnimplementedSceneSceneServer) mustEmbedUnimplementedSceneSceneServer() {}
 func (UnimplementedSceneSceneServer) testEmbeddedByValue()                    {}
@@ -145,6 +161,24 @@ func _SceneScene_GmGracefulShutdown_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SceneScene_GmDescribeEntity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GmDescribeEntityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SceneSceneServer).GmDescribeEntity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SceneScene_GmDescribeEntity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SceneSceneServer).GmDescribeEntity(ctx, req.(*GmDescribeEntityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SceneScene_ServiceDesc is the grpc.ServiceDesc for SceneScene service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -159,6 +193,10 @@ var SceneScene_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GmGracefulShutdown",
 			Handler:    _SceneScene_GmGracefulShutdown_Handler,
+		},
+		{
+			MethodName: "GmDescribeEntity",
+			Handler:    _SceneScene_GmDescribeEntity_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -39,7 +39,8 @@ Set-StrictMode -Off
 # AssetOpSecretEnv、C++ asset_op_auth 的默认查找逐字一致。
 $script:AssetOpDevSecretEnvNames = @(
     'MMORPG_ASSET_OP_SECRET_GUILD',
-    'MMORPG_ASSET_OP_SECRET_TRADE'
+    'MMORPG_ASSET_OP_SECRET_TRADE',
+    'MMORPG_ASSET_OP_SECRET_MAIL'
 )
 
 # 与 go/shared/assetop.MinSecretLen、C++ kAssetOpAuthMinSecretBytes 同值。去首尾空白后不足这么长

@@ -34,6 +34,8 @@ type EnterGameLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
+	// kicker 是 ReplaceLogin 踢旧会话用的发送能力;nil = 生产实现 l.svcCtx(见 replacedKicker)。只供单测替换。
+	kicker replacedSessionKicker
 }
 
 type enterGameSessionState struct {
@@ -468,6 +470,22 @@ type enterFailureTipPusher interface {
 	PushTipToSession(gateID string, gateInstanceID string, sessionID uint32, playerID uint64, tipID uint32) error
 }
 
+// replacedSessionKicker 是 ReplaceLogin 踢旧会话唯一需要的能力:经 gate 踢掉被替换的会话。
+// 生产实现是 *svc.ServiceContext(KickSessionOnGate),做法同 enterFailureTipPusher:KafkaClient 是具体类型,
+// 单测里起不出来,收成一个方法的接口才测得到「只在提交之后踢」(docs/design/scene-enter-chain-residuals.md §2.3)。
+// playerID 与 loginGeneration 随 KickPlayerEvent payload 下发,供 gate 的 ClassifyKick 核对。
+type replacedSessionKicker interface {
+	KickSessionOnGate(gateID string, gateInstanceID string, sessionID uint32, playerID uint64, loginGeneration uint64) error
+}
+
+// replacedKicker 返回本次踢线用的 kicker:测试注入的优先,否则用生产的 l.svcCtx。
+func (l *EnterGameLogic) replacedKicker() replacedSessionKicker {
+	if l.kicker != nil {
+		return l.kicker
+	}
+	return l.svcCtx
+}
+
 // notifyEnterGameFailed 是 EnterGame 异步链**唯一**的面向客户端的失败出口
 // (只覆盖链上显式返回的失败;panic 路径不经过这里,见 onPreloadComplete 里 failedStage 的注释)。
 //
@@ -740,7 +758,8 @@ func (l *EnterGameLogic) applyLoadedPlayerSession(ctx context.Context, state ent
 		return decision, err
 	}
 
-	// 登录代次:持锁、读到会话记录之后,踢线与写会话之前铸一次(scene-enter-session-fence.md §3.2 / §3.3)。
+	// 登录代次:持锁、读到会话记录之后,写会话与踢线之前铸一次(scene-enter-session-fence.md §3.2 / §3.3)。
+	// 踢线排在 SetSession 提交之后(persistEnterGameSession,scene-enter-chain-residuals.md §2.2 ①)。
 	// 失败即链失败:带 0 继续会让 scene 按"旧版无代次"处理,已有代次的实体会拒掉这次合法登录。
 	loginGeneration, err := mintEnterLoginGeneration(ctx, l.svcCtx.RedisClient, state.playerID, existing, time.Now())
 	if err != nil {
@@ -883,20 +902,28 @@ func (l *EnterGameLogic) bindSessionFence(ctx context.Context, state enterGameSe
 const fenceBindCompensationTimeout = 10 * time.Second
 
 // compensateFenceBind 撤销绑定失败时已写入的会话:placeLease = true 挂断线租约,否则删会话。
+// ReplaceLogin 的 SetSession 报错、复读却确认已提交时也用它补挂断线租约(placeLease = true,
+// scene-enter-chain-residuals.md §2.2 ②)。两处都带本链的 gate 实例号:本链写下的会话记录就是这个实例号,
+// player_locator 的实例号校验因此放行(§6.2)。
 func (l *EnterGameLogic) compensateFenceBind(ctx context.Context, state enterGameSessionState, placeLease bool) {
 	cctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), fenceBindCompensationTimeout)
 	defer cancel()
 	if placeLease {
-		markPlayerSessionDisconnecting(cctx, l.svcCtx, state.playerID, state.sessionID)
+		markPlayerSessionDisconnecting(cctx, l.svcCtx, state.playerID, state.sessionID, state.gateInstanceID)
 		return
 	}
-	deletePlayerSession(cctx, l.svcCtx, state.playerID, state.sessionID)
+	deletePlayerSession(cctx, l.svcCtx, state.playerID, state.sessionID, state.gateInstanceID)
 }
 
 // persistEnterGameSession persists the session and returns the new session version.
 //
 // loginGeneration 是本链铸出的登录代次,随 SetSession / Reconnect 的整字节 CAS 一起提交;
 // player_locator 在记录与请求都非 0 时要求严格递增,失锁的并发登录链只有一条能提交(§3.4)。
+//
+// ReplaceLogin 的踢线排在 SetSession 提交**之后**、bindSessionFence 之前(scene-enter-chain-residuals.md §2.2 ①):
+// 先踢后提交时,提交失败(失锁、ctx 取消、版本冲突)的链也会把当前合法会话踢掉。不能再晚:等 EnterScene 成功
+// 再踢的话,EnterScene 被可重试码拒绝时记录已指向本链,旧设备却还在 scene 上照常游戏。
+// SetSession 报错时结果未知,用独立短超时复读一次消歧(settleReplaceLoginAfterSetSessionError)。
 func (l *EnterGameLogic) persistEnterGameSession(
 	ctx context.Context,
 	decision sessionmanager.EnterGameDecision,
@@ -906,12 +933,6 @@ func (l *EnterGameLogic) persistEnterGameSession(
 ) (uint32, error) {
 	switch decision {
 	case sessionmanager.FirstLogin, sessionmanager.ReplaceLogin:
-		if decision == sessionmanager.ReplaceLogin {
-			if err := l.kickReplacedSession(existing, state.sessionID); err != nil {
-				logx.Errorf("Failed to kick old session for player %d: %v", state.playerID, err)
-			}
-		}
-
 		newSession := sessionmanager.NewOnlineSession(existing, sessionmanager.OnlineSessionInput{
 			PlayerID:        state.playerID,
 			SessionID:       state.sessionID,
@@ -923,7 +944,14 @@ func (l *EnterGameLogic) persistEnterGameSession(
 			LoginGeneration: loginGeneration,
 		})
 		if err := sessionmanager.SetSession(ctx, l.svcCtx.PlayerLocatorClient, newSession); err != nil {
+			if decision == sessionmanager.ReplaceLogin {
+				l.settleReplaceLoginAfterSetSessionError(ctx, existing, state, loginGeneration, err)
+			}
+			// 复读确认已提交时链也按失败收尾:bindSessionFence 还没执行,不能接着发 Bind / 进场。
 			return 0, err
+		}
+		if decision == sessionmanager.ReplaceLogin {
+			l.kickReplacedSessionAfterCommit(existing, state, loginGeneration)
 		}
 		return newSession.SessionVersion, nil
 	case sessionmanager.ShortReconnect:
@@ -987,13 +1015,107 @@ func buildEnterSceneRequest(state enterGameSessionState, route enterSceneRoute, 
 	}
 }
 
-func (l *EnterGameLogic) kickReplacedSession(existing *sessionmanager.PlayerSession, currentSessionID uint32) error {
-	if existing == nil {
-		return nil
+// setSessionProbeTimeout 是 SetSession 结果未知时复读会话记录的预算。复读只为消歧,不重试:
+// 读不到就按未提交处理(不踢、不挂租约),宁可旧设备多在线一会儿,也不在没提交时踢掉合法会话。
+const setSessionProbeTimeout = 2 * time.Second
+
+// kickReplacedSessionAfterCommit 在本链的会话记录确认已提交之后踢掉被替换的旧会话,并按结局计数。
+// 踢线写 Kafka 失败只记 ERROR 并计数,不让链失败:提交已经发生,旧设备会因 scene 栅栏改绑而变哑(§2.2 ①)。
+func (l *EnterGameLogic) kickReplacedSessionAfterCommit(existing *sessionmanager.PlayerSession, state enterGameSessionState, loginGeneration uint64) {
+	kickTotal.Inc(kickReplacedSession(l.replacedKicker(), existing, state, loginGeneration))
+}
+
+// settleReplaceLoginAfterSetSessionError 处理 ReplaceLogin 的 SetSession 报错(应答丢失、链 ctx 取消、locator 拒绝)。
+//
+// 报错不等于没提交:用独立短超时 ctx 复读一次(setSessionCommittedDespiteError)。
+//   - 复读确认本链已提交:照常踢旧会话,并补挂断线租约。此刻 bindSessionFence 还没执行,链又按失败收尾,
+//     当前 Unity 客户端收到 3023 就拆连接,断线时栅栏没有绑定玩家,Disconnect 收不到本玩家;被踢的旧连接的
+//     SetDisconnecting 又因会话号不符被忽略。不补挂,记录会停在 ONLINE、没有租约(§2.2 ②)。连接若还活着、
+//     客户端同连接重试,走短线重连接回,与绑定失败补偿同一语义。
+//   - 复读失败或对不上:按未提交处理,不踢、不挂租约。
+//
+// 调用方照旧返回 SetSession 的原错误。
+func (l *EnterGameLogic) settleReplaceLoginAfterSetSessionError(
+	ctx context.Context,
+	existing *sessionmanager.PlayerSession,
+	state enterGameSessionState,
+	loginGeneration uint64,
+	setErr error,
+) {
+	if !l.setSessionCommittedDespiteError(ctx, state, loginGeneration) {
+		kickTotal.Inc(kickResultSkipUncommitted)
+		logx.Infof("[login-kick] SetSession failed and probe did not confirm commit: player=%d session=%d generation=%d err=%v; not kicking replaced session",
+			state.playerID, state.sessionID, loginGeneration, setErr)
+		return
 	}
-	if existing.SessionID == currentSessionID || existing.GateID == "" {
-		return nil
+	logx.Errorf("[login-kick] WARN SetSession outcome unknown, probe confirms commit: player=%d session=%d generation=%d err=%v; kicking replaced session and placing disconnect lease",
+		state.playerID, state.sessionID, loginGeneration, setErr)
+	l.kickReplacedSessionAfterCommit(existing, state, loginGeneration)
+	// 等价于绑定失败的补偿:独立于链 ctx(WithoutCancel)、预算覆盖 markPlayerSessionDisconnecting 的退避重试,
+	// 带本链的 gate 实例号(e:与本链写下的记录同一个实例号)。
+	l.compensateFenceBind(ctx, state, true)
+}
+
+// setSessionCommittedDespiteError 在 SetSession 报错后复读一次会话记录,判断本链其实是否已经提交。
+//
+// ctx 从链 ctx 派生但去掉取消(WithoutCancel)、另设 setSessionProbeTimeout 截止:报错的常见原因之一正是链 ctx
+// 已被心跳丢锁取消(onLost),沿用它复读必然失败。做法同 compensateFenceBind。
+func (l *EnterGameLogic) setSessionCommittedDespiteError(ctx context.Context, state enterGameSessionState, loginGeneration uint64) bool {
+	pctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), setSessionProbeTimeout)
+	defer cancel()
+	record, err := sessionmanager.GetSession(pctx, l.svcCtx.PlayerLocatorClient, state.playerID)
+	if err != nil {
+		logx.Errorf("[login-kick] SetSession outcome probe failed: player=%d session=%d generation=%d err=%v; treating as uncommitted",
+			state.playerID, state.sessionID, loginGeneration, err)
+		return false
+	}
+	return setSessionProbeConfirmsCommit(record, state.sessionID, loginGeneration)
+}
+
+// setSessionProbeConfirmsCommit:复读到的记录是本链写下的,当且仅当会话号与本链相同、代次等于本链铸出值且非 0。
+// 非 0 代次与会话一一对应(fence G2),所以代次相等足以排除「同号的另一次登录」;代次为 0 无从区分,按未提交处理。
+func setSessionProbeConfirmsCommit(record *sessionmanager.PlayerSession, sessionID uint32, loginGeneration uint64) bool {
+	return record != nil && loginGeneration != 0 &&
+		record.SessionID == sessionID && record.LoginGeneration == loginGeneration
+}
+
+// kickReplacedSession 决定要不要踢被替换的旧会话,要踢就发出去;返回 kickTotal 的 result 供调用方计数。
+// 只能在本链的会话记录确认已提交之后调用。按顺序判(scene-enter-chain-residuals.md §2.2 ⑤):
+//
+//  1. 旧记录缺 gate 寻址(GateID 或 GateInstanceID 为空)→ skip_no_target:buildGateCommandMessage 守卫一本来就拒空实例号。
+//  2. 本链实例号为空 → skip_no_target,无论会话号:这条链必在 Bind 的守卫一失败、3023 也推不出去,
+//     不能先踢掉旧设备再失败。
+//  3. 会话号相同、实例号相同 → skip_same_session:同一连接重登。本链的 Bind 在踢线之后才发,本连接的 gate 会话
+//     仍绑着上一次的更小代次,ClassifyKick 会判 kKick,所以必须在这里拦住自踢。
+//  4. 会话号相同、两边实例号都非空且不同(gate 以同一 node_id 重启,同号落到新实例)→ skip_cross_instance:
+//     按 §12.3 定论只计数不踢。踢旧实例会让它关闭旧连接时立刻向 scene 发 ExitGame(同号同玩家),晚于新会话的
+//     入场到达就会退掉新实体;方案 C(scene 按 (gate 实例, session_id) 认会话)落地后再打开。
+//  5. 会话号不同 → 踢,结局 sent / send_failed。
+//
+// 被踢会话所属玩家取本链玩家:会话记录按玩家键存取,被替换的就是本玩家的会话。不用记录里的 PlayerID,
+// 免得字段缺失(0)时退化成 gate 不核对玩家的旧踢线。代次取本链铸出、已提交的值,gate 据此不踢承载更新登录的会话。
+func kickReplacedSession(kicker replacedSessionKicker, existing *sessionmanager.PlayerSession, state enterGameSessionState, loginGeneration uint64) string {
+	if existing == nil || existing.GateID == "" || existing.GateInstanceID == "" {
+		return kickResultSkipNoTarget
+	}
+	if state.gateInstanceID == "" {
+		return kickResultSkipNoTarget
+	}
+	if existing.SessionID == state.sessionID {
+		if existing.GateInstanceID == state.gateInstanceID {
+			return kickResultSkipSameSession
+		}
+		logx.Infof("[login-kick] replaced session shares the session id on another gate instance, not kicking (counted only): player=%d session=%d old_gate=%s old_instance=%s new_instance=%s generation=%d",
+			state.playerID, existing.SessionID, existing.GateID, existing.GateInstanceID, state.gateInstanceID, loginGeneration)
+		return kickResultSkipCrossInstance
 	}
 
-	return l.svcCtx.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID, existing.PlayerID)
+	if err := kicker.KickSessionOnGate(existing.GateID, existing.GateInstanceID, existing.SessionID, state.playerID, loginGeneration); err != nil {
+		logx.Errorf("[login-kick] kick after commit failed: player=%d old_session=%d old_gate=%s old_instance=%s generation=%d err=%v; old device stays connected until the scene fence rebinds",
+			state.playerID, existing.SessionID, existing.GateID, existing.GateInstanceID, loginGeneration, err)
+		return kickResultSendFailed
+	}
+	logx.Infof("[login-kick] kicked replaced session after commit: player=%d old_session=%d old_gate=%s old_instance=%s new_session=%d generation=%d",
+		state.playerID, existing.SessionID, existing.GateID, existing.GateInstanceID, state.sessionID, loginGeneration)
+	return kickResultSent
 }

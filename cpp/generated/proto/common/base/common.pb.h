@@ -77,14 +77,6 @@ extern const ::google::protobuf::internal::ClassDataFull NodeInfo_class_data_;
 #else
 extern const NodeInfoGlobalsTypeInternal NodeInfo_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
-class NodeInfoListComp;
-struct NodeInfoListCompGlobalsTypeInternal;
-#ifndef PROTOBUF_MESSAGE_GLOBALS
-extern NodeInfoListCompGlobalsTypeInternal NodeInfoListComp_globals_;
-extern const ::google::protobuf::internal::ClassDataFull NodeInfoListComp_class_data_;
-#else
-extern const NodeInfoListCompGlobalsTypeInternal NodeInfoListComp_globals_;
-#endif  // PROTOBUF_MESSAGE_GLOBALS
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
@@ -152,7 +144,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED NetworkAddress final : public ::goo
   [[nodiscard]] static const NetworkAddress& default_instance() {
     return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<NetworkAddress>(&NetworkAddress_globals_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(NetworkAddress& a, NetworkAddress& b) { a.Swap(&b); }
   inline void Swap(NetworkAddress* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -691,6 +683,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED NodeInfo final : public ::google::p
     kZoneIdFieldNumber = 6,
     kProtocolTypeFieldNumber = 7,
     kPlayerCountFieldNumber = 9,
+    kPhysicalRegionFieldNumber = 12,
   };
   // string node_uuid = 8;
   void clear_node_uuid() ;
@@ -825,11 +818,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED NodeInfo final : public ::google::p
   void _internal_set_player_count(::uint32_t value);
 
   public:
+  // uint32 physical_region = 12;
+  void clear_physical_region() ;
+  [[nodiscard]] ::uint32_t physical_region() const;
+  void set_physical_region(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_physical_region() const;
+  void _internal_set_physical_region(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:NodeInfo)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<4, 11,
+      ::google::protobuf::internal::TcParseTable<4, 12,
                           3, 34,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -869,218 +872,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED NodeInfo final : public ::google::p
     ::uint32_t zone_id_;
     ::uint32_t protocol_type_;
     ::uint32_t player_count_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fcommon_2fbase_2fcommon_2eproto;
-};
-// -------------------------------------------------------------------
-
-class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED NodeInfoListComp final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:NodeInfoListComp) */ {
- public:
-  inline NodeInfoListComp() : NodeInfoListComp(nullptr) {}
-  ~NodeInfoListComp() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(NodeInfoListComp* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(NodeInfoListComp));
-  }
-#endif
-
-  template <typename = void>
-  explicit constexpr NodeInfoListComp(::google::protobuf::internal::ConstantInitialized,
-                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
-                               class_data);
-
-  inline NodeInfoListComp(const NodeInfoListComp& from) : NodeInfoListComp(nullptr, from) {}
-  inline NodeInfoListComp(NodeInfoListComp&& from) noexcept : NodeInfoListComp(nullptr, ::std::move(from)) {}
-  inline NodeInfoListComp& operator=(const NodeInfoListComp& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline NodeInfoListComp& operator=(NodeInfoListComp&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
-  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
-  GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  [[nodiscard]] static const NodeInfoListComp& default_instance() {
-    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<NodeInfoListComp>(&NodeInfoListComp_globals_);
-  }
-  static constexpr int kIndexInFileMessages = 2;
-  friend void swap(NodeInfoListComp& a, NodeInfoListComp& b) { a.Swap(&b); }
-  inline void Swap(NodeInfoListComp* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(NodeInfoListComp* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  [[nodiscard]] NodeInfoListComp* PROTOBUF_NONNULL
-  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<NodeInfoListComp>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const NodeInfoListComp& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const NodeInfoListComp& from) { NodeInfoListComp::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  [[nodiscard]] bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] ::size_t ByteSizeLong() const final;
-  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  [[nodiscard]] int GetCachedSize() const {
-    return _impl_._cached_size_.Get();
-  }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(NodeInfoListComp* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "NodeInfoListComp"; }
-
-  explicit NodeInfoListComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  NodeInfoListComp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const NodeInfoListComp& from);
-  NodeInfoListComp(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, NodeInfoListComp&& from) noexcept
-      : NodeInfoListComp(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_(
-      const MessageLite& prototype,
-      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
-
-  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kNodeListFieldNumber = 1,
-  };
-  // repeated .NodeInfo node_list = 1;
-  [[nodiscard]] int node_list_size()
-      const;
-  private:
-  int _internal_node_list_size() const;
-
-  public:
-  void clear_node_list() ;
-  [[nodiscard]] const ::NodeInfo& node_list(int index) const;
-  [[nodiscard]] ::NodeInfo* PROTOBUF_NONNULL mutable_node_list(int index);
-  ::NodeInfo* PROTOBUF_NONNULL add_node_list();
-  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::NodeInfo>&
-  node_list() const;
-  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::NodeInfo>* PROTOBUF_NONNULL
-  mutable_node_list();
-
-  private:
-  const ::google::protobuf::RepeatedPtrField<::NodeInfo>& _internal_node_list() const;
-  ::google::protobuf::RepeatedPtrField<::NodeInfo>* PROTOBUF_NONNULL _internal_mutable_node_list();
-
-  public:
-  // @@protoc_insertion_point(class_scope:NodeInfoListComp)
- private:
-  class _Internal;
-  using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<0, 1,
-                          1, 0,
-                          2>;
-  static constexpr ParseTableT_ InternalGenerateParseTable_(
-      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
-  friend class ::google::protobuf::internal::TcParser;
-  #ifndef PROTOBUF_MESSAGE_GLOBALS
-  static const ParseTableT_ _table_;
-  #endif
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  friend ::google::protobuf::internal::PrivateAccess;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const NodeInfoListComp& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::NodeInfo > node_list_;
+    ::uint32_t physical_region_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -1721,63 +1513,28 @@ inline void NodeInfo::set_allocated_client_endpoint(::EndpointComp* PROTOBUF_NUL
   // @@protoc_insertion_point(field_set_allocated:NodeInfo.client_endpoint)
 }
 
-// -------------------------------------------------------------------
-
-// NodeInfoListComp
-
-// repeated .NodeInfo node_list = 1;
-inline int NodeInfoListComp::_internal_node_list_size() const {
-  return _internal_node_list().size();
-}
-inline int NodeInfoListComp::node_list_size() const {
-  return _internal_node_list_size();
-}
-inline void NodeInfoListComp::clear_node_list() {
+// uint32 physical_region = 12;
+inline void NodeInfo::clear_physical_region() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.node_list_.Clear();
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.physical_region_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
 }
-inline const ::NodeInfo& NodeInfoListComp::node_list(int index) const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:NodeInfoListComp.node_list)
-  return _internal_node_list().Get(index);
+inline ::uint32_t NodeInfo::physical_region() const {
+  // @@protoc_insertion_point(field_get:NodeInfo.physical_region)
+  return _internal_physical_region();
 }
-inline ::NodeInfo* PROTOBUF_NONNULL NodeInfoListComp::mutable_node_list(int index)
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:NodeInfoListComp.node_list)
-  return _internal_mutable_node_list()->Mutable(index);
+inline void NodeInfo::set_physical_region(::uint32_t value) {
+  _internal_set_physical_region(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  // @@protoc_insertion_point(field_set:NodeInfo.physical_region)
 }
-inline ::NodeInfo* PROTOBUF_NONNULL NodeInfoListComp::add_node_list()
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::NodeInfo* _add =
-      _internal_mutable_node_list()->InternalAddWithArena(
-          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  // @@protoc_insertion_point(field_add:NodeInfoListComp.node_list)
-  return _add;
-}
-inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>& NodeInfoListComp::node_list() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:NodeInfoListComp.node_list)
-  return _internal_node_list();
-}
-inline ::google::protobuf::RepeatedPtrField<::NodeInfo>* PROTOBUF_NONNULL
-NodeInfoListComp::mutable_node_list() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  // @@protoc_insertion_point(field_mutable_list:NodeInfoListComp.node_list)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _internal_mutable_node_list();
-}
-inline const ::google::protobuf::RepeatedPtrField<::NodeInfo>&
-NodeInfoListComp::_internal_node_list() const {
+inline ::uint32_t NodeInfo::_internal_physical_region() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.node_list_;
+  return _impl_.physical_region_;
 }
-inline ::google::protobuf::RepeatedPtrField<::NodeInfo>* PROTOBUF_NONNULL
-NodeInfoListComp::_internal_mutable_node_list() {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return &_impl_.node_list_;
+inline void NodeInfo::_internal_set_physical_region(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.physical_region_ = value;
 }
 
 // -------------------------------------------------------------------

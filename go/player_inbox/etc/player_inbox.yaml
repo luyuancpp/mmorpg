@@ -61,6 +61,11 @@ CoreRedis:
   Host: 127.0.0.1:6379
   Password: ""
   DB: 0
+  # go-redis 连接池上限(P0-E 第 3 批,共享 Redis 连接总账)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+  # 随 CPU limit 漂移(本机 Windows 上是 10 × 核数);负数 config.Validate 拒启。20 = K8s 上 GOMAXPROCS 按 2 时的缺省值。
+  # tools/scripts/k8s_deploy.ps1 把它镜像进 player-inbox ConfigMap(要求正整数),Redis 连接总账读同一个键:
+  # 改它看部署时打印的 "Redis connection ledger" 一行。
+  PoolSize: 20
 
 # 在线提醒:SceneCommand{DispatchEvent, PlayerInboxNotifyEvent} 写 scene-cmd_g<N>(分区 = scene node_id % P),
 # key = player_id,target_instance_id = 目标 scene 节点 uuid(AGENTS §7 #2 #3)。
@@ -103,5 +108,6 @@ PlayerInbox:
   NotifyResendIntervalSeconds: 30
   GaugeIntervalSeconds: 60
   # 对账(设计 §9.3):每小时一轮,看最近 24 小时内由消费方终结的行。0 = 不跑。
+  # 窗口必须覆盖至少两轮间隔(窗口小时 × 60 ≥ 2 × 间隔分钟,config.Validate 拒启);当选后第一轮 1–5 分钟内起跑。
   ReconcileIntervalMinutes: 60
   ReconcileWindowHours: 24

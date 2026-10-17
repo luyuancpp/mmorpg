@@ -1,14 +1,22 @@
 #include "scene_node_service.h"
-#include <future>
 ///<<< BEGIN WRITING YOUR CODE
 #include "infra/agones/agones_gameserver_lifecycle.h"
 #include "proto/scene/scene_info.pb.h"
 #include "player/system/player_lifecycle.h"
-#include "modules/scene/scene_events.h"
+#include "player/system/player_scene.h"
+#include "world/scene_lifecycle.h"
 #include "thread_context/ecs_context.h"
 #include "muduo/base/Logging.h"
 #include "battle/system/player_battle.h"
 #include "player/system/asset_op_system.h"
+#include <memory>
+
+namespace
+{
+// 停机开始后 CreateScene 的拒绝文案(grpc-muduo-transport.md §15.3 Q9)。不是跨语言契约:
+// SceneManager 收到任何错误都回滚,不匹配文案。
+constexpr char kSceneNodeShuttingDownMessage[] = "scene_node_shutting_down";
+} // namespace
 ///<<< END WRITING YOUR CODE
 
 SceneNodeGrpcImpl::SceneNodeGrpcImpl(muduo::net::EventLoop& loop)
@@ -20,70 +28,26 @@ void SceneNodeGrpcImpl::HandleCreateScene(const ::CreateSceneRequest* request,
     ::CreateSceneResponse* response)
 {
     ///<<< BEGIN WRITING YOUR CODE
-    // Idempotent: deduplicate by scene_id.
+    if (request->scene_id() == 0)
     {
-        auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
-        for (auto entity : view)
-        {
-            const auto &info = view.get<SceneInfoComp>(entity);
-            if (info.scene_id() == request->scene_id())
-            {
-                response->mutable_scene_info()->CopyFrom(info);
-                LOG_INFO << "[gRPC] CreateScene: scene_id=" << request->scene_id()
-                         << " already exists, returning existing";
-                return;
-            }
-        }
-    }
-
-    auto sceneEntity = tlsEcs.sceneRegistry.create();
-
-    // sceneInfo 引用只在这个块里用。下面的 dispatcher.trigger 会同步跑监听者,监听者一旦删掉场景
-    // 或 SceneInfoComp(swap-and-pop),trigger 之前拿的引用就悬空了(ecs-entt-misuse-audit-20261015 F087/F088)。
-    {
-        auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
-        sceneInfo.set_scene_config_id(request->config_id());
-        sceneInfo.set_mirror_config_id(request->mirror_config_id());
-        sceneInfo.set_dungeon_config_id(request->dungeon_config_id());
-        sceneInfo.set_scene_id(request->scene_id());
-
-        for (const auto creator_id : request->creator_ids())
-        {
-            sceneInfo.mutable_creators()->insert({creator_id, true});
-        }
-    }
-
-    OnSceneCreated event;
-    event.scene = sceneEntity;
-    tlsEcs.dispatcher.trigger(event);
-
-    // 回包按监听者跑完之后的状态重新取。场景在 trigger 里被删掉时不回 scene_info,
-    // 与 SceneHandler::CreateScene 同一口径。
-    const auto *createdInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneEntity);
-    if (createdInfo == nullptr)
-    {
-        LOG_ERROR << "[gRPC] CreateScene: entity=" << entt::to_integral(sceneEntity)
-                  << " scene_id=" << request->scene_id()
-                  << " lost SceneInfoComp inside OnSceneCreated listeners, not reporting success";
-        // 回滚半成品场景,与 SceneHandler::CreateScene 同一做法和理由:先补发 OnSceneDestroyed 让监听者
-        // 对称撤账(Agones 计数、AOI 格子表),再销毁实体;否则这个没有 SceneInfoComp 的实体去重看不到,
-        // 重试会再建一个,它永远留在 sceneRegistry 里。实体已被监听者自己销毁时不再重复。
-        if (tlsEcs.sceneRegistry.valid(sceneEntity))
-        {
-            OnSceneDestroyed rollbackEvent;
-            rollbackEvent.scene = sceneEntity;
-            tlsEcs.dispatcher.trigger(rollbackEvent);
-            tlsEcs.sceneRegistry.destroy(sceneEntity);
-        }
+        LOG_ERROR << "[gRPC] CreateScene: scene_id is 0";
         return;
     }
-    response->mutable_scene_info()->CopyFrom(*createdInfo);
 
-    LOG_INFO << "[gRPC] CreateScene: created entity=" << entt::to_integral(sceneEntity)
-             << " config_id=" << request->config_id()
-             << " scene_id=" << createdInfo->scene_id()
-             << " mirror_config_id=" << createdInfo->mirror_config_id()
-             << " dungeon_config_id=" << createdInfo->dungeon_config_id();
+    if (const SceneEntity existing = PlayerSceneSystem::FindSceneById(request->scene_id()); existing != entt::null)
+    {
+        response->mutable_scene_info()->CopyFrom(tlsEcs.sceneRegistry.get<SceneInfoComp>(existing));
+        LOG_INFO << "[gRPC] CreateScene: scene_id=" << request->scene_id()
+                 << " already exists (entity=" << entt::to_integral(existing) << "), returning existing";
+        return;
+    }
+
+    response->mutable_scene_info()->CopyFrom(SceneLifecycle::CreateScene(*request));
+
+    LOG_INFO << "[gRPC] CreateScene: created config_id=" << request->config_id()
+             << " scene_id=" << request->scene_id()
+             << " mirror_config_id=" << request->mirror_config_id()
+             << " dungeon_config_id=" << request->dungeon_config_id();
     ///<<< END WRITING YOUR CODE
 }
 
@@ -92,17 +56,7 @@ void SceneNodeGrpcImpl::HandleDestroyScene(const ::DestroySceneRequest* request)
     ///<<< BEGIN WRITING YOUR CODE
     const auto sceneId = request->scene_id();
 
-    SceneEntity targetEntity = entt::null;
-    auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
-    for (auto entity : view)
-    {
-        const auto &info = view.get<SceneInfoComp>(entity);
-        if (info.scene_id() == sceneId)
-        {
-            targetEntity = entity;
-            break;
-        }
-    }
+    const SceneEntity targetEntity = PlayerSceneSystem::FindSceneById(sceneId);
 
     if (targetEntity == entt::null)
     {
@@ -110,37 +64,13 @@ void SceneNodeGrpcImpl::HandleDestroyScene(const ::DestroySceneRequest* request)
         return;
     }
 
-    // Drain-then-destroy.
-    //
-    // A scene that still has residents must NOT be dropped on the floor: the
-    // players would keep a gate session pointing at an entity that no longer
-    // exists. Relocate them to the main world first (same path as the node
-    // evacuation: persist -> re-home via SceneManager.EnterScene(0,0) ->
-    // drop the local entity), and leave the scene entity alone for now.
-    //
-    // Returning without destroying is deliberate. Relocation is asynchronous
-    // (it completes on the persist callback), so the scene cannot be empty
-    // yet. SceneManager's DestroyScene is idempotent and its autoscaler
-    // retries on the next tick -- by then the residents are gone and the
-    // second call takes the normal path. This is convergence, not a retry
-    // hack: every tick re-observes real state instead of assuming success.
-    //
-    // Instances never hit this branch (the Lua CAS refuses to destroy a scene
-    // with player_count > 0). It fires for world-channel scale-in and for
-    // mirror cascade destroys, where residents genuinely can be present.
-    if (const std::size_t relocating = PlayerLifecycleSystem::BeginSceneDrain(targetEntity); relocating > 0)
+    if (const std::size_t relocating = SceneLifecycle::DestroyScene(targetEntity); relocating > 0)
     {
         LOG_WARN << "[gRPC] DestroyScene: scene_id=" << sceneId << " still has residents; "
                  << "relocating " << relocating << " player(s) to the main world, "
                  << "entity kept until drained";
         return;
     }
-
-    OnSceneDestroyed event;
-    event.scene = targetEntity;
-    tlsEcs.dispatcher.trigger(event);
-
-    tlsEcs.sceneRegistry.destroy(targetEntity);
 
     LOG_INFO << "[gRPC] DestroyScene: destroyed scene_id=" << sceneId;
     ///<<< END WRITING YOUR CODE
@@ -149,59 +79,11 @@ void SceneNodeGrpcImpl::HandleDestroyScene(const ::DestroySceneRequest* request)
 void SceneNodeGrpcImpl::HandleReleasePlayer(const ::scene_node::ReleasePlayerRequest* request)
 {
     ///<<< BEGIN WRITING YOUR CODE
-    const auto playerId = request->player_id();
-    auto playerIt = tlsEcs.playerList.find(playerId);
-    if (playerIt == tlsEcs.playerList.end())
-    {
-        LOG_DEBUG << "[gRPC] ReleasePlayer: player " << playerId
-                  << " not on this node, idempotent OK";
-        return;
-    }
-
-    // 归属交接已发起(handoff 标记已写、EnterScene 已发)的实体,不走退出流程。
-    //
-    // scene_manager 是**先**异步发 ReleasePlayer、**后**提交落点(铸造 epoch + 写 location)和路由。
-    // 落点或路由随后失败(Lua 撤回 / epoch 冲突 / Kafka 路由失败并回滚)时,location 与 gate 会话都
-    // 还指向本节点;若这里已按"退出优先"把实体销毁,玩家的消息全部落空,只能重登。
-    // 交接中的实体去留只由 EnterScene 应答与看门狗裁决(PlayerLifecycleSystem::ResolveTravelOutcome):
-    // 放行了它会销毁实体,没放行(或被回滚到本节点)它会解冻,两头都不需要这条通知。盘上已是最新状态,不存在
-    // "不退出就丢存盘"的问题。
-    //
-    // **不要**在这里调 ResolveTravelOutcome:它的原子取证会删掉本次交接这一族 handoff 标记,而 ReleasePlayer
-    // 可能早于 scene_manager 的铸造 Lua 到达 —— 等于源端自己把即将发生的放行撤回。
-    //
-    // 已知副作用(预期现象,压测时别当 bug 追):交接被放行到别的节点、而 EnterScene 应答又丢了
-    // (scene_manager 在路由 ACK 之后重启 / 断连:传输失败对交接只记日志、不当证据)时,
-    // 本节点的源实体要等 30s 应答看门狗才销毁(日志 "travel_granted_without_reply")。这 30s 里它
-    // 以冻结态留在源场景的 AOI 内,周围玩家会看到一个不动的分身;真身已在目标节点。数据安全:
-    // 交接发起后本实体不再存盘,玩家再被派回本节点时 DiscardStaleHandoffEntity 会先销毁它再重载。
-    // **也不要**改成"收到 ReleasePlayer 后几秒只读一次 owner_epoch、变了就销毁"来缩短它:
-    // scene_manager 是先铸造 epoch、后发 Kafka 路由,路由失败(KafkaWriteTimeoutSeconds,默认 5s)
-    // 会把 location 回滚到本节点、epoch 再前进一格(E+1 → E+2,只进不退,并在 location 里写本次回执,
-    // GO-2 §12.8)。探测落在这段窗口里会读到一个随后本该被回滚的新 epoch,销毁实体之后 location 又指回
-    // 本节点 —— 玩家在线却没有实体,只能重登;用一个观感问题换来一个卡死问题。应答路径没有这个竞态
-    // (scene_manager 在路由 ACK / 回滚完成之后才回应答),看门狗的 30s 则远大于那段窗口。
-    //
-    // 已登记的残余(采纳后迟到的 ReleasePlayer):scene_manager 在落点之前异步发 ReleasePlayer,失败时按 1s / 3s
-    // 退避重试,总长约 7s。它可能在源端按回执采纳 E+2 并解冻(约 5-8s)之后才到:此时 IsHandoffRequested 为假,
-    // 下面会按 kReleasedByTransfer 让实体退出,而 location 仍指向本节点,会话变哑、要重登。不违反 Battle 的
-    // 不变量(实体进入退出态,战斗侧视同离线),改动前解冻之后同样如此。根治要让 ReleasePlayerRequest 携带
-    // 预期 owner_epoch(本节点缓存值 ≠ 预期即忽略),属 proto 变更,另案处理。
-    if (PlayerLifecycleSystem::IsHandoffRequested(playerIt->second))
-    {
-        LOG_INFO << "[gRPC] ReleasePlayer: player " << playerId
-                 << " has an ownership handoff in flight; leaving the outcome to the EnterScene reply / watchdog"
-                 << " (target scene " << request->target_scene_id()
-                 << " on node " << request->target_node_id()
-                 << "; if the reply is lost the frozen source entity lingers until the reply watchdog fires)";
-        return;
-    }
-
-    LOG_INFO << "[gRPC] ReleasePlayer: releasing player " << playerId
-             << " moving to scene " << request->target_scene_id()
-             << " on node " << request->target_node_id();
-
-    PlayerLifecycleSystem::HandleExitGameNode(playerIt->second, ExitCause::kReleasedByTransfer);
+    // 已在 loop 线程(gRPC 服务端在节点 EventLoop 上派发)。查找、交接守卫、按期望 owner_epoch 的归属栅栏与退出都在库里:
+    // PlayerLifecycleSystem::HandleReleaseFromSceneManager(docs/design/scene-enter-chain-residuals.md §4,
+    // 纯判定见 player/system/release_fence.h)。
+    PlayerLifecycleSystem::HandleReleaseFromSceneManager(request->player_id(), request->expected_owner_epoch(),
+                                                         request->target_scene_id(), request->target_node_id());
     ///<<< END WRITING YOUR CODE
 }
 
@@ -209,7 +91,7 @@ void SceneNodeGrpcImpl::HandlePrepareBattle(const ::PrepareBattleRequest* reques
     ::PrepareBattleResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    // match -> scene 备战冻结(外层已 runInLoop 投递到 loop 线程,可直接同步访问 ECS;
+    // match -> scene 备战冻结(gRPC 服务端在 loop 线程上派发,可直接同步访问 ECS;
     // 失败原因经 response.error_message 返回,gRPC status 恒为 OK)
     PlayerBattleSystem::PrepareBattle(*request, *response);
 ///<<< END WRITING YOUR CODE
@@ -228,7 +110,7 @@ void SceneNodeGrpcImpl::HandleAssetDebit(const ::AssetOpRequest* request,
 {
 ///<<< BEGIN WRITING YOUR CODE
     // 通用资产通道(guild-phase2/04-asset-channel.md §S4):Go 服务扣玩家资产。
-    // 外层已 runInLoop 投递到 loop 线程,系统层可直接同步访问 ECS;
+    // gRPC 服务端在 loop 线程上派发,系统层可直接同步访问 ECS;
     // 结局写在 response.outcome,gRPC status 恒为 OK。同 seq 重复调用只读答复。
     PlayerAssetOpSystem::Debit(*request, *response);
 ///<<< END WRITING YOUR CODE
@@ -254,237 +136,216 @@ void SceneNodeGrpcImpl::HandleAssetCredit(const ::AssetOpRequest* request,
 ///<<< END WRITING YOUR CODE
 }
 
-grpc::Status SceneNodeGrpcImpl::CreateScene(grpc::ServerContext* /*context*/,
-    const ::CreateSceneRequest* request,
-    ::CreateSceneResponse* response)
+void SceneNodeGrpcImpl::HandleAssetAckReceipt(const ::AssetOpRequest* request,
+    ::AssetOpResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    PlayerAssetOpSystem::AckReceipt(*request, *response);
+///<<< END WRITING YOUR CODE
+}
+
+void SceneNodeGrpcImpl::CreateScene(const std::shared_ptr<CreateSceneCall>& call)
+{
+    [[maybe_unused]] const ::CreateSceneRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.CreateScene.guard
+    // 停机已开始(Node 在 beforeShutdown 之后进入 gRPC 排空):不再建新场景 —— 建出的场景会随进程退出丢失,
+    // SceneManager 却以为它在。回 UNAVAILABLE 让 SceneManager 回滚(它对任何错误都回滚,不匹配文案)。
+    if (call->ServerDraining())
+    {
+        LOG_WARN << "[gRPC] CreateScene rejected: scene node is shutting down, scene_id=" << request->scene_id();
+        call->Reject(muduo_grpc::Status(muduo_grpc::StatusCode::kUnavailable, kSceneNodeShuttingDownMessage));
+        return;
+    }
     // Agones 高密度模式:进程必须先被 Allocate,才能创建第一个场景。
-    //
-    // 刻意放在 runInLoop 之前(gRPC 线程上):POST /allocate 是网络调用,
-    // 放进事件循环会卡住整个逻辑帧;这里阻塞的只是一个 gRPC 池线程,
-    // 且等待有上限(LifecycleOptions::allocateWaitTimeout)。
-    //
-    // 失败一律 fail-closed:不建实体,返回非 OK,让 SceneManager 回滚重试,
-    // 而不是留下一个 Agones 不知道的房间。createPermit 必须活到本函数返回
-    // (覆盖 future.get()),在途创建才能阻止提前回到 Ready。
+    // POST /allocate 在 lifecycle worker 线程,结果经 queueInLoop 回 loop,不阻塞逻辑帧;等待上限
+    // LifecycleOptions::allocateWaitTimeout。失败一律 fail-closed:不建实体,回非 OK,让 SceneManager 回滚重试,
+    // 而不是留下一个 Agones 不知道的房间。createPermit 是回调参数,活到 Proceed() 返回(Handle* 同步建完场景),
+    // 在途创建才能阻止提前回到 Ready。回调只捕获 call,不捕获 this(AGENTS §11.7)。
     //
     // 2026-09-15 恢复:原块在 commit 6c4021ae5 被 proto 重生成吞掉(当时位于守护段外)。
-    auto createPermit = agones::GameServerLifecycle::Instance().AcquireAllocationPermitBlocking();
-    if (!createPermit)
-    {
-        LOG_ERROR << "[gRPC] CreateScene rejected: Agones allocate not confirmed, scene_id="
-                  << request->scene_id() << " state="
-                  << agones::ToString(agones::GameServerLifecycle::Instance().State());
-        return grpc::Status(grpc::StatusCode::UNAVAILABLE, "agones allocate not confirmed");
-    }
-///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.CreateScene.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
+    agones::GameServerLifecycle::Instance().AcquireAllocationPermitAsync(
+        loop_,
+        [call](agones::GameServerLifecycle::AllocationPermit createPermit)
         {
-            HandleCreateScene(request, response);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.CreateScene.post_dispatch
+            if (!createPermit && call->ServerDraining())
+            {
+                // 停机时 hook 里的 lifecycle.Stop() 先于 gRPC 排空拒掉还在等许可的调用;这些回调执行时排空已开始,
+                // 如实回「节点停机」并只打 WARN,不把正常停机记成 Agones 分配失败(SceneManager 对任何错误都回滚)。
+                LOG_WARN << "[gRPC] CreateScene rejected while waiting for permit: scene node is shutting down, scene_id="
+                         << call->request().scene_id();
+                call->Reject(muduo_grpc::Status(muduo_grpc::StatusCode::kUnavailable, kSceneNodeShuttingDownMessage));
+                return;
+            }
+            if (!createPermit)
+            {
+                LOG_ERROR << "[gRPC] CreateScene rejected: Agones allocate not confirmed, scene_id="
+                          << call->request().scene_id() << " state="
+                          << agones::ToString(agones::GameServerLifecycle::Instance().State());
+                call->Reject(muduo_grpc::Status(muduo_grpc::StatusCode::kUnavailable, "agones allocate not confirmed"));
+                return;
+            }
+            if (call->ServerDraining())   // 等许可期间停机开始
+            {
+                LOG_WARN << "[gRPC] CreateScene rejected after permit: scene node is shutting down, scene_id="
+                         << call->request().scene_id();
+                call->Reject(muduo_grpc::Status(muduo_grpc::StatusCode::kUnavailable, kSceneNodeShuttingDownMessage));
+                return;
+            }
+            call->Proceed();
+        });
+    return;
     ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status SceneNodeGrpcImpl::DestroyScene(grpc::ServerContext* /*context*/,
-    const ::DestroySceneRequest* request,
-    ::Empty* /*response*/)
+void SceneNodeGrpcImpl::DestroyScene(const std::shared_ptr<DestroySceneCall>& call)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.DestroyScene.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandleDestroyScene(request);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.DestroyScene.post_dispatch
+    [[maybe_unused]] const ::DestroySceneRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.DestroyScene.guard
     ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status SceneNodeGrpcImpl::ReleasePlayer(grpc::ServerContext* /*context*/,
-    const ::scene_node::ReleasePlayerRequest* request,
-    ::Empty* /*response*/)
+void SceneNodeGrpcImpl::ReleasePlayer(const std::shared_ptr<ReleasePlayerCall>& call)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.ReleasePlayer.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandleReleasePlayer(request);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.ReleasePlayer.post_dispatch
+    [[maybe_unused]] const ::scene_node::ReleasePlayerRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.ReleasePlayer.guard
     ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status SceneNodeGrpcImpl::PrepareBattle(grpc::ServerContext* /*context*/,
-    const ::PrepareBattleRequest* request,
-    ::PrepareBattleResponse* response)
+void SceneNodeGrpcImpl::PrepareBattle(const std::shared_ptr<PrepareBattleCall>& call)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.PrepareBattle.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandlePrepareBattle(request, response);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.PrepareBattle.post_dispatch
+    [[maybe_unused]] const ::PrepareBattleRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.PrepareBattle.guard
     ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status SceneNodeGrpcImpl::CancelBattlePrepare(grpc::ServerContext* /*context*/,
-    const ::CancelBattlePrepareRequest* request,
-    ::Empty* /*response*/)
+void SceneNodeGrpcImpl::CancelBattlePrepare(const std::shared_ptr<CancelBattlePrepareCall>& call)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.CancelBattlePrepare.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandleCancelBattlePrepare(request);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.CancelBattlePrepare.post_dispatch
+    [[maybe_unused]] const ::CancelBattlePrepareRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.CancelBattlePrepare.guard
     ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status SceneNodeGrpcImpl::AssetDebit(grpc::ServerContext* /*context*/,
-    const ::AssetOpRequest* request,
-    ::AssetOpResponse* response)
+void SceneNodeGrpcImpl::AssetDebit(const std::shared_ptr<AssetDebitCall>& call)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.AssetDebit.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandleAssetDebit(request, response);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetDebit.post_dispatch
+    [[maybe_unused]] const ::AssetOpRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetDebit.guard
     ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status SceneNodeGrpcImpl::AssetAbortDebit(grpc::ServerContext* /*context*/,
-    const ::AssetOpRequest* request,
-    ::AssetOpResponse* response)
+void SceneNodeGrpcImpl::AssetAbortDebit(const std::shared_ptr<AssetAbortDebitCall>& call)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.AssetAbortDebit.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandleAssetAbortDebit(request, response);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetAbortDebit.post_dispatch
+    [[maybe_unused]] const ::AssetOpRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetAbortDebit.guard
     ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
 }
 
-grpc::Status SceneNodeGrpcImpl::AssetCredit(grpc::ServerContext* /*context*/,
-    const ::AssetOpRequest* request,
-    ::AssetOpResponse* response)
+void SceneNodeGrpcImpl::AssetCredit(const std::shared_ptr<AssetCreditCall>& call)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-    std::promise<grpc::Status> promise;
-    auto future = promise.get_future();
-
-    // future.get() 覆盖整个任务寿命；自定义段需要的成员引用应在投递前绑定，避免捕获 this。
-    loop_.runInLoop([&]
-                    {
-        grpc::Status dispatchStatus = grpc::Status::OK;
-        ///<<< BEGIN WRITING YOUR CODE: grpc.AssetCredit.in_loop
-        ///<<< END WRITING YOUR CODE
-        if (dispatchStatus.ok())
-        {
-            HandleAssetCredit(request, response);
-        }
-        promise.set_value(dispatchStatus); });
-
-    auto status = future.get();
-    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetCredit.post_dispatch
+    [[maybe_unused]] const ::AssetOpRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetCredit.guard
     ///<<< END WRITING YOUR CODE
-    return status;
+    call->Proceed();
+}
+
+void SceneNodeGrpcImpl::AssetAckReceipt(const std::shared_ptr<AssetAckReceiptCall>& call)
+{
+    [[maybe_unused]] const ::AssetOpRequest* request = &call->request();
+    ///<<< BEGIN WRITING YOUR CODE: grpc.AssetAckReceipt.guard
+    ///<<< END WRITING YOUR CODE
+    call->Proceed();
+}
+
+void SceneNodeGrpcImpl::RegisterMethods(muduo_grpc::MethodTable& table)
+{
+    table.AddUnary(std::string(kCreateScenePath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = CreateSceneCall::Create(std::move(serverCall), &HandleCreateScene);
+            if (call->ParseRequest(requestBytes))
+            {
+                CreateScene(call);
+            }
+        });
+    table.AddUnary(std::string(kDestroyScenePath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = DestroySceneCall::Create(std::move(serverCall),
+                [](const ::DestroySceneRequest* request, ::Empty* /*response*/) { HandleDestroyScene(request); });
+            if (call->ParseRequest(requestBytes))
+            {
+                DestroyScene(call);
+            }
+        });
+    table.AddUnary(std::string(kReleasePlayerPath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = ReleasePlayerCall::Create(std::move(serverCall),
+                [](const ::scene_node::ReleasePlayerRequest* request, ::Empty* /*response*/) { HandleReleasePlayer(request); });
+            if (call->ParseRequest(requestBytes))
+            {
+                ReleasePlayer(call);
+            }
+        });
+    table.AddUnary(std::string(kPrepareBattlePath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = PrepareBattleCall::Create(std::move(serverCall), &HandlePrepareBattle);
+            if (call->ParseRequest(requestBytes))
+            {
+                PrepareBattle(call);
+            }
+        });
+    table.AddUnary(std::string(kCancelBattlePreparePath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = CancelBattlePrepareCall::Create(std::move(serverCall),
+                [](const ::CancelBattlePrepareRequest* request, ::Empty* /*response*/) { HandleCancelBattlePrepare(request); });
+            if (call->ParseRequest(requestBytes))
+            {
+                CancelBattlePrepare(call);
+            }
+        });
+    table.AddUnary(std::string(kAssetDebitPath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = AssetDebitCall::Create(std::move(serverCall), &HandleAssetDebit);
+            if (call->ParseRequest(requestBytes))
+            {
+                AssetDebit(call);
+            }
+        });
+    table.AddUnary(std::string(kAssetAbortDebitPath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = AssetAbortDebitCall::Create(std::move(serverCall), &HandleAssetAbortDebit);
+            if (call->ParseRequest(requestBytes))
+            {
+                AssetAbortDebit(call);
+            }
+        });
+    table.AddUnary(std::string(kAssetCreditPath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = AssetCreditCall::Create(std::move(serverCall), &HandleAssetCredit);
+            if (call->ParseRequest(requestBytes))
+            {
+                AssetCredit(call);
+            }
+        });
+    table.AddUnary(std::string(kAssetAckReceiptPath),
+        [this](muduo_grpc::ServerCall serverCall, std::string_view requestBytes)
+        {
+            const auto call = AssetAckReceiptCall::Create(std::move(serverCall), &HandleAssetAckReceipt);
+            if (call->ParseRequest(requestBytes))
+            {
+                AssetAckReceipt(call);
+            }
+        });
 }

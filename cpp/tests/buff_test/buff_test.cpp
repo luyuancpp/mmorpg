@@ -12,7 +12,7 @@
 // - BuffStackingTest(C003):no_caster 的 buff 跨施法者叠层、按施法者隔离的 buff 各占一条,
 //   层数从 1 起算、封顶 max_layer(新条目层数与回合引擎 StackOrRefreshExistingBuff 一致);
 // - BuffListLifecycleTest(F037):BuffListComp 是按需状态 —— 只在第一次真正插入条目时创建,
-//   帧末列表空了即摘掉;被拒绝 / 纯驱散 / 叠层判断不补空表,待删集合处理后即摘除。
+//   帧末列表空了即摘掉；被拒绝 / 纯驱散 / 叠层判断不补空表。
 
 #include <gtest/gtest.h>
 
@@ -23,10 +23,12 @@
 #include <system_error>
 
 #include "combat/buff/comp/buff_comp.h"
+#include "combat/buff/constants/buff.h"
 #include "combat/buff/system/buff.h"
+#include "combat_state/constants/combat_state.h"
 #include "muduo/net/EventLoop.h"
 #include "proto/common/component/buff_comp.pb.h"
-#include "services/scene/actor/actor_events.h"
+#include "proto/common/component/actor_combat_state_comp.pb.h"
 #include "proto/common/component/battle_comp.pb.h"
 #include "player/comp/player_frozen_comp.h"
 #include "table/code/buff_table.h"
@@ -60,8 +62,7 @@ constexpr uint32_t kOtherIdleBonusOwner = 9019;
 constexpr uint32_t kNoCasterBonusOwner = 9020;
 constexpr uint32_t kOtherNoCasterBonusOwner = 9021;
 constexpr uint32_t kNextAttackDispelledByChild = 9022;
-constexpr uint32_t kSilenceBonusOwner = 9024;
-constexpr uint32_t kRepeatedSilenceBonusOwner = 9025;
+constexpr uint32_t kPermanentSilence = 9026;
 constexpr int kManySubBuffCount = 16;
 
 // buff_type 一律显式写:缺省 0 是 kBuffTypeMovementSpeedReduction,会顺带去标记属性重算。
@@ -99,20 +100,16 @@ std::string FixtureBuffTableJson()
 		R"({"id":9020,"buff_type":43,"duration":-1,"interval":1,"combat_idle_seconds":5,"sub_buff":[9005]},)"
 		R"({"id":9021,"buff_type":43,"duration":-1,"interval":1,"combat_idle_seconds":5,"sub_buff":[9005]},)"
 		R"({"id":9022,"buff_type":36,"duration":-1,"tag":{"combat_idle":true},"sub_buff":[9017]},)"
-		R"({"id":9023,"buff_type":31,"duration":60,"no_caster":1},)"
-		R"({"id":9024,"buff_type":43,"duration":-1,"interval":1,"combat_idle_seconds":5,"sub_buff":[9023]},)"
-		R"({"id":9025,"buff_type":43,"duration":-1,"interval":1,"combat_idle_seconds":5,"sub_buff":[9023,9023]},)"
+		R"({"id":9026,"buff_type":31,"duration":-1,"max_layer":1},)"
 		R"({"id":9007,"buff_type":10,"duration":-1,"immune_tag":{"blocked":true}},)"
 		R"({"id":9008,"buff_type":10,"duration":-1,"tag":{"blocked":true}})"
 		R"(]})";
 }
 
-// 以 caster 为施法者的技能上下文;buff 侧只看 caster 这个整数。
-SkillContextPtrComp ContextFromCaster(entt::entity caster)
+// Buff 仅保存施法者整数，不持有施法上下文。
+uint64_t ContextFromCaster(entt::entity caster)
 {
-	auto context = std::make_shared<SkillContextComp>();
-	context->set_caster(entt::to_integral(caster));
-	return context;
+	return entt::to_integral(caster);
 }
 
 uint64_t AddBuffOrFail(entt::entity actor, uint32_t buffTableId)
@@ -231,9 +228,9 @@ TEST_F(BuffIntervalThinkTest, SubBuffsRehashList_OwnerRecordsEverySubBuff)
 	}
 }
 
-// no_caster 的 buff 不区分施法者:不同施法者(以及没有施法者上下文时)反复挂,始终只有一条,
+// no_caster 的 buff 不区分施法者:不同施法者(以及没有施法者时)反复挂,始终只有一条,
 // 层数从 1 起、封顶 max_layer。
-// 修复前 processed_caster 存的是 entt::null,叠层时与施法者整数比较永远不等;没有上下文时
+// 修复前 processed_caster 存的是 entt::null,叠层时与施法者整数比较永远不等;没有施法者时
 // 又直接不叠 —— 每挂一次都新建一条,列表里会有 4 条(C003)。
 TEST_F(BuffStackingTest, NoCasterBuff_StacksAcrossCastersUpToMaxLayer)
 {
@@ -245,7 +242,7 @@ TEST_F(BuffStackingTest, NoCasterBuff_StacksAcrossCastersUpToMaxLayer)
 	ASSERT_EQ(kSuccess, firstResult);
 	ASSERT_NE(UINT64_MAX, firstId);
 
-	for (const auto &context : {casterB, SkillContextPtrComp{}, casterA})
+	for (const auto &context : {casterB, kNoBuffCaster, casterA})
 	{
 		const auto [result, buffId] = BuffSystem::AddOrUpdateBuff(actor, kNoCasterStackable, context);
 		EXPECT_EQ(kSuccess, result);
@@ -258,7 +255,7 @@ TEST_F(BuffStackingTest, NoCasterBuff_StacksAcrossCastersUpToMaxLayer)
 	const auto &stacked = buffList.at(firstId).buffPb;
 	EXPECT_EQ(kStackableMaxLayer, stacked.layer()) << "施加 4 次,层数应封顶在 max_layer";
 	EXPECT_EQ(0u, stacked.processed_caster()) << "no_caster 统一记 0(无施法者)";
-	EXPECT_EQ(casterA->caster(), stacked.caster()) << "caster 仍记录首次施加者";
+	EXPECT_EQ(casterA, stacked.caster()) << "caster 仍记录首次施加者";
 }
 
 // 按施法者隔离的 buff:同一施法者叠层,不同施法者各占一条;新条目是第 1 层。
@@ -285,8 +282,26 @@ TEST_F(BuffStackingTest, CasterScopedBuff_StacksPerCasterFromLayerOne)
 	ASSERT_EQ(2u, buffList.size());
 	EXPECT_EQ(2u, buffList.at(buffIdA).buffPb.layer());
 	EXPECT_EQ(1u, buffList.at(buffIdB).buffPb.layer());
-	EXPECT_EQ(casterA->caster(), buffList.at(buffIdA).buffPb.processed_caster());
-	EXPECT_EQ(casterB->caster(), buffList.at(buffIdB).buffPb.processed_caster());
+	EXPECT_EQ(casterA, buffList.at(buffIdA).buffPb.processed_caster());
+	EXPECT_EQ(casterB, buffList.at(buffIdB).buffPb.processed_caster());
+}
+
+TEST_F(BuffStackingTest, CasterScopedBuffWithoutCasterCreatesIndependentLayerOneEntries)
+{
+	const auto actor = tlsEcs.actorRegistry.create();
+	const auto [firstResult, firstId] = BuffSystem::AddOrUpdateBuff(actor, kCasterScopedStackable, kNoBuffCaster);
+	const auto [secondResult, secondId] = BuffSystem::AddOrUpdateBuff(actor, kCasterScopedStackable, kNoBuffCaster);
+	ASSERT_EQ(kSuccess, firstResult);
+	ASSERT_EQ(kSuccess, secondResult);
+	ASSERT_NE(UINT64_MAX, firstId);
+	ASSERT_NE(UINT64_MAX, secondId);
+	ASSERT_NE(firstId, secondId);
+	const auto& buffs = tlsEcs.actorRegistry.get<BuffListComp>(actor);
+	ASSERT_EQ(2u, buffs.size());
+	EXPECT_EQ(1u, buffs.at(firstId).buffPb.layer());
+	EXPECT_EQ(1u, buffs.at(secondId).buffPb.layer());
+	EXPECT_EQ(kNoBuffCaster, buffs.at(firstId).buffPb.caster());
+	EXPECT_EQ(kNoBuffCaster, buffs.at(secondId).buffPb.caster());
 }
 
 // BuffListComp 是按需状态:身上还没有 buff 的实体(生产里所有刚初始化的 actor 都是这样)
@@ -304,6 +319,24 @@ TEST_F(BuffListLifecycleTest, AddOrUpdateBuff_FirstBuffCreatesBuffList)
 	const auto *buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(actor);
 	ASSERT_NE(nullptr, buffList);
 	EXPECT_TRUE(buffList->contains(buffId));
+}
+
+TEST_F(BuffListLifecycleTest, SilenceBuffAddsAndRemovesCombatStateWithoutEventWiring)
+{
+	const auto actor = tlsEcs.actorRegistry.create();
+	const auto [result, buffId] = BuffSystem::AddOrUpdateBuff(actor, kPermanentSilence);
+	ASSERT_EQ(kSuccess, result);
+	ASSERT_NE(UINT64_MAX, buffId);
+	const auto* states = tlsEcs.actorRegistry.try_get<CombatStateCollectionComp>(actor);
+	ASSERT_NE(nullptr, states);
+	ASSERT_TRUE(states->states().contains(kActorCombatStateSilence));
+	EXPECT_TRUE(states->states().at(kActorCombatStateSilence).sources().contains(buffId));
+
+	BuffSystem::RemoveBuff(actor, buffId);
+
+	states = tlsEcs.actorRegistry.try_get<CombatStateCollectionComp>(actor);
+	ASSERT_NE(nullptr, states);
+	EXPECT_FALSE(states->states().contains(kActorCombatStateSilence));
 }
 
 // 不产生新条目的施加(这里是纯驱散 buff)不得给实体凭空挂上一张空表。
@@ -337,7 +370,30 @@ TEST_F(BuffListLifecycleTest, ReadPathsOnBareEntityDoNotCreateBuffState)
 	EXPECT_FALSE(BuffSystem::DispelBuffsOnAwake(bare, kPlainSubBuff));
 	BuffSystem::OnIntervalThink(bare, 12345);
 	BuffSystem::Update(0.0);
-	EXPECT_FALSE((tlsEcs.actorRegistry.any_of<BuffListComp, BuffPendingRemoveBuffs>(bare)));
+	EXPECT_FALSE(tlsEcs.actorRegistry.any_of<BuffListComp>(bare));
+}
+
+TEST_F(BuffListLifecycleTest, RemoveBuffSet_UnremovableEntryLeavesNoExtraStateAcrossFrames)
+{
+	constexpr uint64_t kBuffId = 900001;
+	ASSERT_FALSE(BuffTableManager::Instance().Exists(UINT32_MAX));
+	const auto actor = tlsEcs.actorRegistry.create();
+	tlsEcs.actorRegistry.emplace<BuffListComp>(actor)[kBuffId].buffPb.set_buff_table_id(UINT32_MAX);
+
+	BuffSystem::RemoveBuff(actor, UInt64Set{kBuffId});
+	BuffSystem::Update(0.0);
+	BuffSystem::Update(0.0);
+
+	std::size_t componentPoolCount = 0;
+	for (auto&& [componentType, pool] : tlsEcs.actorRegistry.storage()) {
+		if (pool.contains(actor)) {
+			++componentPoolCount;
+		}
+	}
+	EXPECT_EQ(1u, componentPoolCount) << "不可移除的 Buff 只保留原列表，不留下额外待删状态";
+	const auto* buffs = tlsEcs.actorRegistry.try_get<BuffListComp>(actor);
+	ASSERT_NE(nullptr, buffs);
+	EXPECT_TRUE(buffs->contains(kBuffId));
 }
 
 TEST_F(BuffListLifecycleTest, RejectedAddDoesNotCreateBuffList)
@@ -384,33 +440,6 @@ TEST_F(BuffListLifecycleTest, Update_RemovesEmptiedBuffListAtFrameEnd)
 	BuffSystem::Update(0.0);
 
 	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<BuffListComp>(actor)) << "列表空了应在帧末摘掉";
-}
-
-// 帧末待删集合是按需状态:只给真挂着这条 buff 的实体建,帧末处理完即摘掉。
-// 修复前 MarkBuffForRemoval 对任何实体都 get_or_emplace,处理完也只 clear 不摘。
-TEST_F(BuffListLifecycleTest, MarkBuffForRemoval_PendingSetLivesOnlyUntilFrameEnd)
-{
-	const auto bare = tlsEcs.actorRegistry.create();
-	BuffSystem::MarkBuffForRemoval(bare, 12345);
-	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<BuffPendingRemoveBuffs>(bare))
-		<< "没有这条 buff 的实体不该被挂上待删集合";
-
-	// 没有技能上下文的按施法者隔离 buff 每次新建一条:挂两条、只删一条,列表在帧末仍然非空。
-	const auto actor = tlsEcs.actorRegistry.create();
-	const auto removedId = AddBuffOrFail(actor, kPlainSubBuff);
-	const auto keptId = AddBuffOrFail(actor, kPlainSubBuff);
-	ASSERT_NE(removedId, keptId);
-	BuffSystem::MarkBuffForRemoval(actor, removedId);
-	ASSERT_TRUE(tlsEcs.actorRegistry.all_of<BuffPendingRemoveBuffs>(actor));
-
-	BuffSystem::Update(0.0);
-
-	const auto *buffList = tlsEcs.actorRegistry.try_get<BuffListComp>(actor);
-	ASSERT_NE(nullptr, buffList) << "还剩一条 buff,列表不该被摘";
-	EXPECT_FALSE(buffList->contains(removedId));
-	EXPECT_TRUE(buffList->contains(keptId));
-	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<BuffPendingRemoveBuffs>(actor))
-		<< "处理完的待删集合应随之摘掉";
 }
 
 class BuffDurationTest : public BuffTableFixture {};
@@ -567,16 +596,6 @@ TEST_F(BuffCombatIdleTest, OwnerExpires_RemovesEveryBonusChild)
 	EXPECT_TRUE(tlsEcs.actorRegistry.get<BuffListComp>(actor).empty());
 }
 
-TEST_F(BuffCombatIdleTest, PendingOwnerRemoval_RemovesEveryBonusChild)
-{
-	const auto actor = tlsEcs.actorRegistry.create();
-	const auto id = AddBuffOrFail(actor, kOwnerWithManySubs);
-	GrantBonusOrFail(actor, id);
-	BuffSystem::MarkBuffForRemoval(actor, id);
-	BuffSystem::Update(0.0);
-	EXPECT_FALSE(tlsEcs.actorRegistry.all_of<BuffListComp>(actor));
-}
-
 TEST_F(BuffCombatIdleTest, ChildExpires_DropsStaleIdWithoutRegranting)
 {
 	const auto actor = tlsEcs.actorRegistry.create();
@@ -683,74 +702,13 @@ TEST_F(BuffCombatIdleTest, NextAttackChildDispelsOwner_PreservesIndependentChild
 	EXPECT_EQ(9017u, list.begin()->second.buffPb.buff_table_id());
 }
 
-TEST_F(BuffCombatIdleTest, ChildStartCallbackRemovesOwner_DoesNotLeaveChildOrArmTimer)
-{
-	muduo::net::EventLoop loop;
-	const auto actor = tlsEcs.actorRegistry.create();
-	const auto owner = AddBuffOrFail(actor, kSilenceBonusOwner);
-	struct RemoveOwnerOnStart {
-		entt::entity actor;
-		uint64_t owner;
-		void OnAdded(const CombatStateAddedEvent&) { BuffSystem::RemoveBuff(actor, owner); }
-	} listener{actor, owner};
-	entt::scoped_connection connection = tlsEcs.dispatcher.sink<CombatStateAddedEvent>()
-		.connect<&RemoveOwnerOnStart::OnAdded>(listener);
-	BuffSystem::OnIntervalThink(actor, owner, IdleWindowStartedAt(actor, owner) + 5000);
-	EXPECT_TRUE(tlsEcs.actorRegistry.get<BuffListComp>(actor).empty());
-}
-
-// 删除第一个沉默子时同步施加独立同表 Buff；它不能叠到这一批尚未删掉的另一个子上。
-void CheckIndependentBuffDuringBonusRemoval(bool removeOwner)
-{
-	muduo::net::EventLoop loop;
-	const auto actor = tlsEcs.actorRegistry.create();
-	const auto owner = AddBuffOrFail(actor, kRepeatedSilenceBonusOwner);
-	BuffSystem::OnIntervalThink(actor, owner, IdleWindowStartedAt(actor, owner) + 5000);
-	ASSERT_EQ(3u, tlsEcs.actorRegistry.get<BuffListComp>(actor).size());
-	struct AddIndependentOnRemoval {
-		entt::entity actor;
-		uint64_t independent = UINT64_MAX;
-		bool added = false;
-		void OnRemoved(const CombatStateRemovedEvent&) {
-			if (!added) {
-				added = true;
-				independent = std::get<1>(BuffSystem::AddOrUpdateBuff(actor, 9023));
-			}
-		}
-	} listener{actor};
-	entt::scoped_connection connection = tlsEcs.dispatcher.sink<CombatStateRemovedEvent>()
-		.connect<&AddIndependentOnRemoval::OnRemoved>(listener);
-	if (removeOwner) {
-		BuffSystem::RemoveBuff(actor, owner);
-	} else {
-		BuffSystem::OnSkillHit(actor, actor);
-	}
-	const auto& list = tlsEcs.actorRegistry.get<BuffListComp>(actor);
-	EXPECT_TRUE(listener.added);
-	EXPECT_TRUE(list.contains(listener.independent));
-	EXPECT_EQ(removeOwner ? 1u : 2u, list.size());
-	if (list.contains(listener.independent)) {
-		BuffSystem::RemoveBuff(actor, listener.independent);
-	}
-}
-
-TEST_F(BuffCombatIdleTest, OwnerRemovalCallback_DoesNotConsumeIndependentBuff)
-{
-	CheckIndependentBuffDuringBonusRemoval(true);
-}
-
-TEST_F(BuffCombatIdleTest, ResetCallback_DoesNotConsumeIndependentBuff)
-{
-	CheckIndependentBuffDuringBonusRemoval(false);
-}
-
-TEST_F(BuffListLifecycleTest, PendingLastBuffRemovalEndsBothOnDemandStates)
+TEST_F(BuffListLifecycleTest, LastBuffRemovalEndsOnDemandState)
 {
 	const auto actor = tlsEcs.actorRegistry.create();
 	const auto buffId = AddBuffOrFail(actor, kPlainSubBuff);
-	BuffSystem::MarkBuffForRemoval(actor, buffId);
+	BuffSystem::RemoveBuff(actor, UInt64Set{buffId});
 	BuffSystem::Update(0.0);
-	EXPECT_FALSE((tlsEcs.actorRegistry.any_of<BuffListComp, BuffPendingRemoveBuffs>(actor)));
+	EXPECT_FALSE(tlsEcs.actorRegistry.any_of<BuffListComp>(actor));
 }
 
 int main(int argc, char **argv)

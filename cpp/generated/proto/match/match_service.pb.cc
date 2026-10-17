@@ -688,11 +688,11 @@ constexpr JoinQueueRequest::ParseTableT_ JoinQueueRequest::InternalGenerateParse
     {
       PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_._has_bits_),
       0, // no _extensions_
-      7, 56,  // max_field_number, fast_idx_mask
+      9, 120,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967168,  // skipmap
+      4294966784,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      7,  // num_field_entries
+      9,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -704,53 +704,75 @@ constexpr JoinQueueRequest::ParseTableT_ JoinQueueRequest::InternalGenerateParse
     }, {{
       {::_pbi::TcParser::MiniParse, {}},
       // uint64 player_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(JoinQueueRequest, _impl_.player_id_), 1>(),
-       {8, 1, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(JoinQueueRequest, _impl_.player_id_), 3>(),
+       {8, 3, 0,
         PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.player_id_)}},
       // .match.MatchMode mode = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinQueueRequest, _impl_.mode_), 2>(),
-       {16, 2, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinQueueRequest, _impl_.mode_), 4>(),
+       {16, 4, 0,
         PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.mode_)}},
       // uint32 map_config_id = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinQueueRequest, _impl_.map_config_id_), 3>(),
-       {24, 3, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinQueueRequest, _impl_.map_config_id_), 5>(),
+       {24, 5, 0,
         PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.map_config_id_)}},
       // repeated uint64 party_member_ids = 4 [deprecated = true];
       {::_pbi::TcParser::FastV64P1,
        {34, 0, 0,
         PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.party_member_ids_)}},
       // uint32 zone_id = 5;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinQueueRequest, _impl_.zone_id_), 4>(),
-       {40, 4, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinQueueRequest, _impl_.zone_id_), 6>(),
+       {40, 6, 0,
         PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.zone_id_)}},
       // uint32 battle_config_id = 6;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinQueueRequest, _impl_.battle_config_id_), 5>(),
-       {48, 5, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinQueueRequest, _impl_.battle_config_id_), 7>(),
+       {48, 7, 0,
         PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.battle_config_id_)}},
       // uint32 team_size = 7;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinQueueRequest, _impl_.team_size_), 6>(),
-       {56, 6, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(JoinQueueRequest, _impl_.team_size_), 8>(),
+       {56, 8, 0,
         PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.team_size_)}},
+      // string request_id = 8;
+      {::_pbi::TcParser::FastUS1,
+       {66, 1, 0,
+        PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.request_id_)}},
+      // string network_plan_id = 9;
+      {::_pbi::TcParser::FastUS1,
+       {74, 2, 0,
+        PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.network_plan_id_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 player_id = 1;
-      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // .match.MatchMode mode = 2;
-      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.mode_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.mode_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
       // uint32 map_config_id = 3;
-      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.map_config_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.map_config_id_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // repeated uint64 party_member_ids = 4 [deprecated = true];
       {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.party_member_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt64)},
       // uint32 zone_id = 5;
-      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.zone_id_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.zone_id_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 battle_config_id = 6;
-      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.battle_config_id_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.battle_config_id_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 team_size = 7;
-      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.team_size_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.team_size_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // string request_id = 8;
+      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string network_plan_id = 9;
+      {PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.network_plan_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     }},
     // no aux_entries
     {{
+      "\26\0\0\0\0\0\0\0\12\17\0\0\0\0\0\0"
+      "match.JoinQueueRequest"
+      "request_id"
+      "network_plan_id"
     }},
   };
 }
@@ -766,6 +788,12 @@ inline constexpr JoinQueueRequest::Impl_::Impl_(
          }
         ,
         _party_member_ids_cached_byte_size_{0},
+        request_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        network_plan_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
         mode_{static_cast< ::match::MatchMode >(0)},
         map_config_id_{0u},
@@ -877,11 +905,11 @@ constexpr GetQueueStatusResponse::ParseTableT_ GetQueueStatusResponse::InternalG
     {
       PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_._has_bits_),
       0, // no _extensions_
-      3, 24,  // max_field_number, fast_idx_mask
+      8, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967288,  // skipmap
+      4294967040,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      3,  // num_field_entries
+      8,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -891,31 +919,63 @@ constexpr GetQueueStatusResponse::ParseTableT_ GetQueueStatusResponse::InternalG
       ::_pbi::TcParser::GetTable<::match::GetQueueStatusResponse>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      {::_pbi::TcParser::MiniParse, {}},
+      // bool request_cancelled = 8;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GetQueueStatusResponse, _impl_.request_cancelled_), 7>(),
+       {64, 7, 0,
+        PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.request_cancelled_)}},
       // .match.QueueState state = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetQueueStatusResponse, _impl_.state_), 0>(),
-       {8, 0, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetQueueStatusResponse, _impl_.state_), 1>(),
+       {8, 1, 0,
         PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.state_)}},
       // uint32 estimated_wait_seconds = 2;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetQueueStatusResponse, _impl_.estimated_wait_seconds_), 1>(),
-       {16, 1, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetQueueStatusResponse, _impl_.estimated_wait_seconds_), 2>(),
+       {16, 2, 0,
         PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.estimated_wait_seconds_)}},
       // uint32 queued_seconds = 3;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetQueueStatusResponse, _impl_.queued_seconds_), 2>(),
-       {24, 2, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetQueueStatusResponse, _impl_.queued_seconds_), 3>(),
+       {24, 3, 0,
         PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.queued_seconds_)}},
+      // string queue_ticket = 4;
+      {::_pbi::TcParser::FastUS1,
+       {34, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.queue_ticket_)}},
+      // uint64 battle_id = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetQueueStatusResponse, _impl_.battle_id_), 5>(),
+       {40, 5, 0,
+        PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.battle_id_)}},
+      // uint32 selected_region = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetQueueStatusResponse, _impl_.selected_region_), 4>(),
+       {48, 4, 0,
+        PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.selected_region_)}},
+      // uint32 retry_after_ms = 7;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetQueueStatusResponse, _impl_.retry_after_ms_), 6>(),
+       {56, 6, 0,
+        PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.retry_after_ms_)}},
     }}, {{
       65535, 65535
     }}, {{
       // .match.QueueState state = 1;
-      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.state_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.state_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
       // uint32 estimated_wait_seconds = 2;
-      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.estimated_wait_seconds_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.estimated_wait_seconds_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 queued_seconds = 3;
-      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.queued_seconds_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.queued_seconds_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // string queue_ticket = 4;
+      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.queue_ticket_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint64 battle_id = 5;
+      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.battle_id_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint32 selected_region = 6;
+      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.selected_region_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 retry_after_ms = 7;
+      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.retry_after_ms_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // bool request_cancelled = 8;
+      {PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.request_cancelled_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     }},
     // no aux_entries
     {{
+      "\34\0\0\0\14\0\0\0\0\0\0\0\0\0\0\0"
+      "match.GetQueueStatusResponse"
+      "queue_ticket"
     }},
   };
 }
@@ -925,9 +985,16 @@ inline constexpr GetQueueStatusResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        queue_ticket_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         state_{static_cast< ::match::QueueState >(0)},
         estimated_wait_seconds_{0u},
-        queued_seconds_{0u} {}
+        queued_seconds_{0u},
+        selected_region_{0u},
+        battle_id_{::uint64_t{0u}},
+        retry_after_ms_{0u},
+        request_cancelled_{false} {}
 
 template <typename>
 constexpr GetQueueStatusResponse::GetQueueStatusResponse(::_pbi::ConstantInitialized,
@@ -945,7 +1012,7 @@ inline void* PROTOBUF_NONNULL GetQueueStatusResponse::PlacementNew_(
   return ::new (mem) GetQueueStatusResponse(arena);
 }
 constexpr auto GetQueueStatusResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetQueueStatusResponse), alignof(GetQueueStatusResponse));
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GetQueueStatusResponse), alignof(GetQueueStatusResponse));
 }
 constexpr auto GetQueueStatusResponse::InternalGenerateClassData_(
     const MessageLite& prototype,
@@ -1033,11 +1100,11 @@ constexpr GetQueueStatusRequest::ParseTableT_ GetQueueStatusRequest::InternalGen
     {
       PROTOBUF_FIELD_OFFSET(GetQueueStatusRequest, _impl_._has_bits_),
       0, // no _extensions_
-      1, 0,  // max_field_number, fast_idx_mask
+      2, 8,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967294,  // skipmap
+      4294967292,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      1,  // num_field_entries
+      2,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -1047,18 +1114,27 @@ constexpr GetQueueStatusRequest::ParseTableT_ GetQueueStatusRequest::InternalGen
       ::_pbi::TcParser::GetTable<::match::GetQueueStatusRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
+      // string request_id = 2;
+      {::_pbi::TcParser::FastUS1,
+       {18, 0, 0,
+        PROTOBUF_FIELD_OFFSET(GetQueueStatusRequest, _impl_.request_id_)}},
       // uint64 player_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetQueueStatusRequest, _impl_.player_id_), 0>(),
-       {8, 0, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GetQueueStatusRequest, _impl_.player_id_), 1>(),
+       {8, 1, 0,
         PROTOBUF_FIELD_OFFSET(GetQueueStatusRequest, _impl_.player_id_)}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 player_id = 1;
-      {PROTOBUF_FIELD_OFFSET(GetQueueStatusRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(GetQueueStatusRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // string request_id = 2;
+      {PROTOBUF_FIELD_OFFSET(GetQueueStatusRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     }},
     // no aux_entries
     {{
+      "\33\0\12\0\0\0\0\0"
+      "match.GetQueueStatusRequest"
+      "request_id"
     }},
   };
 }
@@ -1068,6 +1144,9 @@ inline constexpr GetQueueStatusRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        request_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}} {}
 
 template <typename>
@@ -1086,7 +1165,7 @@ inline void* PROTOBUF_NONNULL GetQueueStatusRequest::PlacementNew_(
   return ::new (mem) GetQueueStatusRequest(arena);
 }
 constexpr auto GetQueueStatusRequest::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetQueueStatusRequest), alignof(GetQueueStatusRequest));
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GetQueueStatusRequest), alignof(GetQueueStatusRequest));
 }
 constexpr auto GetQueueStatusRequest::InternalGenerateClassData_(
     const MessageLite& prototype,
@@ -1663,11 +1742,11 @@ constexpr CancelQueueRequest::ParseTableT_ CancelQueueRequest::InternalGenerateP
     {
       PROTOBUF_FIELD_OFFSET(CancelQueueRequest, _impl_._has_bits_),
       0, // no _extensions_
-      2, 8,  // max_field_number, fast_idx_mask
+      3, 24,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967292,  // skipmap
+      4294967288,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      2,  // num_field_entries
+      3,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -1677,27 +1756,35 @@ constexpr CancelQueueRequest::ParseTableT_ CancelQueueRequest::InternalGenerateP
       ::_pbi::TcParser::GetTable<::match::CancelQueueRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
+      {::_pbi::TcParser::MiniParse, {}},
+      // uint64 player_id = 1;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CancelQueueRequest, _impl_.player_id_), 2>(),
+       {8, 2, 0,
+        PROTOBUF_FIELD_OFFSET(CancelQueueRequest, _impl_.player_id_)}},
       // string queue_ticket = 2;
       {::_pbi::TcParser::FastUS1,
        {18, 0, 0,
         PROTOBUF_FIELD_OFFSET(CancelQueueRequest, _impl_.queue_ticket_)}},
-      // uint64 player_id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(CancelQueueRequest, _impl_.player_id_), 1>(),
-       {8, 1, 0,
-        PROTOBUF_FIELD_OFFSET(CancelQueueRequest, _impl_.player_id_)}},
+      // string request_id = 3;
+      {::_pbi::TcParser::FastUS1,
+       {26, 1, 0,
+        PROTOBUF_FIELD_OFFSET(CancelQueueRequest, _impl_.request_id_)}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 player_id = 1;
-      {PROTOBUF_FIELD_OFFSET(CancelQueueRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      {PROTOBUF_FIELD_OFFSET(CancelQueueRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // string queue_ticket = 2;
       {PROTOBUF_FIELD_OFFSET(CancelQueueRequest, _impl_.queue_ticket_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string request_id = 3;
+      {PROTOBUF_FIELD_OFFSET(CancelQueueRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     }},
     // no aux_entries
     {{
-      "\30\0\14\0\0\0\0\0"
+      "\30\0\14\12\0\0\0\0"
       "match.CancelQueueRequest"
       "queue_ticket"
+      "request_id"
     }},
   };
 }
@@ -1708,6 +1795,9 @@ inline constexpr CancelQueueRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         queue_ticket_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        request_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}} {}
@@ -3113,7 +3203,7 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::match::JoinQueueRequest, _impl_._has_bits_),
-        10, // hasbit index offset
+        12, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::match::JoinQueueRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::match::JoinQueueRequest, _impl_.mode_),
         PROTOBUF_FIELD_OFFSET(::match::JoinQueueRequest, _impl_.map_config_id_),
@@ -3121,13 +3211,17 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::match::JoinQueueRequest, _impl_.zone_id_),
         PROTOBUF_FIELD_OFFSET(::match::JoinQueueRequest, _impl_.battle_config_id_),
         PROTOBUF_FIELD_OFFSET(::match::JoinQueueRequest, _impl_.team_size_),
-        1,
-        2,
+        PROTOBUF_FIELD_OFFSET(::match::JoinQueueRequest, _impl_.request_id_),
+        PROTOBUF_FIELD_OFFSET(::match::JoinQueueRequest, _impl_.network_plan_id_),
         3,
-        0,
         4,
         5,
+        0,
         6,
+        7,
+        8,
+        1,
+        2,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::match::JoinQueueResponse, _impl_._has_bits_),
         6, // hasbit index offset
@@ -3139,25 +3233,39 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::match::CancelQueueRequest, _impl_._has_bits_),
-        5, // hasbit index offset
+        6, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::match::CancelQueueRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::match::CancelQueueRequest, _impl_.queue_ticket_),
-        1,
+        PROTOBUF_FIELD_OFFSET(::match::CancelQueueRequest, _impl_.request_id_),
+        2,
         0,
+        1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusRequest, _impl_._has_bits_),
-        4, // hasbit index offset
+        5, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusRequest, _impl_.request_id_),
+        1,
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusResponse, _impl_._has_bits_),
-        6, // hasbit index offset
+        11, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusResponse, _impl_.state_),
         PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusResponse, _impl_.estimated_wait_seconds_),
         PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusResponse, _impl_.queued_seconds_),
-        0,
+        PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusResponse, _impl_.queue_ticket_),
+        PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusResponse, _impl_.battle_id_),
+        PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusResponse, _impl_.selected_region_),
+        PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusResponse, _impl_.retry_after_ms_),
+        PROTOBUF_FIELD_OFFSET(::match::GetQueueStatusResponse, _impl_.request_cancelled_),
         1,
         2,
+        3,
+        0,
+        5,
+        4,
+        6,
+        7,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::match::ChallengePlayerRequest, _impl_._has_bits_),
         6, // hasbit index offset
@@ -3283,24 +3391,24 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::match::JoinQueueRequest)},
-        {17, sizeof(::match::JoinQueueResponse)},
-        {26, sizeof(::match::CancelQueueRequest)},
-        {33, sizeof(::match::GetQueueStatusRequest)},
-        {38, sizeof(::match::GetQueueStatusResponse)},
-        {47, sizeof(::match::ChallengePlayerRequest)},
-        {56, sizeof(::match::ChallengePlayerResponse)},
-        {63, sizeof(::match::RespondChallengeRequest)},
-        {72, sizeof(::match::RespondChallengeResponse)},
-        {77, sizeof(::match::ChallengeInviteS2C)},
-        {90, sizeof(::match::ChallengeResultS2C)},
-        {99, sizeof(::match::WatchBattleRequest)},
-        {106, sizeof(::match::WatchBattleResponse)},
-        {113, sizeof(::match::ListWatchableBattlesRequest)},
-        {120, sizeof(::match::ListWatchableBattlesResponse)},
-        {125, sizeof(::match::BattleWatchSummary)},
-        {138, sizeof(::match::SpectateBattleRecord)},
-        {145, sizeof(::match::MatchResult)},
-        {160, sizeof(::match::MatchTeam)},
+        {21, sizeof(::match::JoinQueueResponse)},
+        {30, sizeof(::match::CancelQueueRequest)},
+        {39, sizeof(::match::GetQueueStatusRequest)},
+        {46, sizeof(::match::GetQueueStatusResponse)},
+        {65, sizeof(::match::ChallengePlayerRequest)},
+        {74, sizeof(::match::ChallengePlayerResponse)},
+        {81, sizeof(::match::RespondChallengeRequest)},
+        {90, sizeof(::match::RespondChallengeResponse)},
+        {95, sizeof(::match::ChallengeInviteS2C)},
+        {108, sizeof(::match::ChallengeResultS2C)},
+        {117, sizeof(::match::WatchBattleRequest)},
+        {124, sizeof(::match::WatchBattleResponse)},
+        {131, sizeof(::match::ListWatchableBattlesRequest)},
+        {138, sizeof(::match::ListWatchableBattlesResponse)},
+        {143, sizeof(::match::BattleWatchSummary)},
+        {156, sizeof(::match::SpectateBattleRecord)},
+        {163, sizeof(::match::MatchResult)},
+        {178, sizeof(::match::MatchTeam)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -3330,99 +3438,110 @@ const char descriptor_table_protodef_proto_2fmatch_2fmatch_5fservice_2eproto[] A
     "\032\033proto/db/proto_option.proto\032\035proto/com"
     "mon/base/empty.proto\032\033proto/common/base/"
     "tip.proto\032 proto/battle/player_battle.pr"
-    "oto\"\270\001\n\020JoinQueueRequest\022\021\n\tplayer_id\030\001 "
-    "\001(\004\022\036\n\004mode\030\002 \001(\0162\020.match.MatchMode\022\025\n\rm"
-    "ap_config_id\030\003 \001(\r\022\034\n\020party_member_ids\030\004"
-    " \003(\004B\002\030\001\022\017\n\007zone_id\030\005 \001(\r\022\030\n\020battle_conf"
-    "ig_id\030\006 \001(\r\022\021\n\tteam_size\030\007 \001(\r\"e\n\021JoinQu"
-    "eueResponse\022\022\n\nerror_code\030\001 \001(\r\022\024\n\014queue"
-    "_ticket\030\002 \001(\t\022&\n\rerror_message\030\003 \001(\0132\017.T"
-    "ipInfoMessage\"=\n\022CancelQueueRequest\022\021\n\tp"
-    "layer_id\030\001 \001(\004\022\024\n\014queue_ticket\030\002 \001(\t\"*\n\025"
-    "GetQueueStatusRequest\022\021\n\tplayer_id\030\001 \001(\004"
-    "\"r\n\026GetQueueStatusResponse\022 \n\005state\030\001 \001("
-    "\0162\021.match.QueueState\022\036\n\026estimated_wait_s"
-    "econds\030\002 \001(\r\022\026\n\016queued_seconds\030\003 \001(\r\"_\n\026"
-    "ChallengePlayerRequest\022\021\n\tplayer_id\030\001 \001("
-    "\004\022\030\n\020target_player_id\030\002 \001(\004\022\030\n\020battle_co"
-    "nfig_id\030\003 \001(\r\"W\n\027ChallengePlayerResponse"
-    "\022\024\n\014challenge_id\030\001 \001(\004\022&\n\rerror_message\030"
-    "\002 \001(\0132\017.TipInfoMessage\"R\n\027RespondChallen"
-    "geRequest\022\021\n\tplayer_id\030\001 \001(\004\022\024\n\014challeng"
-    "e_id\030\002 \001(\004\022\016\n\006accept\030\003 \001(\010\"B\n\030RespondCha"
-    "llengeResponse\022&\n\rerror_message\030\001 \001(\0132\017."
-    "TipInfoMessage\"\213\001\n\022ChallengeInviteS2C\022\024\n"
-    "\014challenge_id\030\001 \001(\004\022\025\n\rchallenger_id\030\002 \001"
-    "(\004\022\027\n\017challenger_name\030\003 \001(\t\022\030\n\020battle_co"
-    "nfig_id\030\004 \001(\r\022\025\n\rexpires_at_ms\030\005 \001(\004\"R\n\022"
-    "ChallengeResultS2C\022\024\n\014challenge_id\030\001 \001(\004"
-    "\022\020\n\010accepted\030\002 \001(\010\022\024\n\014responder_id\030\003 \001(\004"
-    "\":\n\022WatchBattleRequest\022\021\n\tplayer_id\030\001 \001("
-    "\004\022\021\n\tbattle_id\030\002 \001(\004\"P\n\023WatchBattleRespo"
-    "nse\022\021\n\tbattle_id\030\001 \001(\004\022&\n\rerror_message\030"
-    "\002 \001(\0132\017.TipInfoMessage\"\?\n\033ListWatchableB"
-    "attlesRequest\022\021\n\tplayer_id\030\001 \001(\004\022\r\n\005limi"
-    "t\030\002 \001(\r\"J\n\034ListWatchableBattlesResponse\022"
-    "*\n\007battles\030\001 \003(\0132\031.match.BattleWatchSumm"
-    "ary\"\216\001\n\022BattleWatchSummary\022\021\n\tbattle_id\030"
-    "\001 \001(\004\022\036\n\004mode\030\002 \001(\0162\020.match.MatchMode\022\030\n"
-    "\020battle_config_id\030\003 \001(\r\022\024\n\014player_names\030"
-    "\004 \003(\t\022\025\n\rcreated_at_ms\030\005 \001(\004\"Z\n\024Spectate"
-    "BattleRecord\022*\n\007summary\030\001 \001(\0132\031.match.Ba"
-    "ttleWatchSummary\022\026\n\016battle_node_id\030\002 \001(\r"
-    "\"\243\001\n\013MatchResult\022\020\n\010match_id\030\001 \001(\t\022\036\n\004mo"
-    "de\030\002 \001(\0162\020.match.MatchMode\022\025\n\rmap_config"
-    "_id\030\003 \001(\r\022\031\n\021dungeon_config_id\030\004 \001(\r\022\037\n\005"
-    "teams\030\005 \003(\0132\020.match.MatchTeam\022\017\n\007zone_id"
-    "\030\006 \001(\r\"3\n\tMatchTeam\022\022\n\nteam_index\030\001 \001(\r\022"
-    "\022\n\nplayer_ids\030\002 \003(\004*\263\001\n\tMatchMode\022\032\n\026MAT"
-    "CH_MODE_UNSPECIFIED\020\000\022\022\n\016MATCH_MODE_5V5\020"
-    "\001\022\022\n\016MATCH_MODE_3V3\020\002\022\022\n\016MATCH_MODE_1V1\020"
-    "\003\022\027\n\023MATCH_MODE_PVE_SOLO\020\004\022\027\n\023MATCH_MODE"
-    "_PVE_TEAM\020\005\022\034\n\030MATCH_MODE_PVP_CHALLENGE\020"
-    "\006*\247\001\n\nQueueState\022\033\n\027QUEUE_STATE_UNSPECIF"
-    "IED\020\000\022\026\n\022QUEUE_STATE_QUEUED\020\001\022\027\n\023QUEUE_S"
-    "TATE_MATCHED\020\002\022\025\n\021QUEUE_STATE_READY\020\003\022\030\n"
-    "\024QUEUE_STATE_ENTERING\020\004\022\032\n\026QUEUE_STATE_N"
-    "OT_QUEUED\020\0052\202\006\n\014MatchService\022@\n\tJoinQueu"
-    "e\022\027.match.JoinQueueRequest\032\030.match.JoinQ"
-    "ueueResponse\"\000\0222\n\013CancelQueue\022\031.match.Ca"
-    "ncelQueueRequest\032\006.Empty\"\000\022O\n\016GetQueueSt"
-    "atus\022\034.match.GetQueueStatusRequest\032\035.mat"
-    "ch.GetQueueStatusResponse\"\000\022R\n\017Challenge"
-    "Player\022\035.match.ChallengePlayerRequest\032\036."
-    "match.ChallengePlayerResponse\"\000\022U\n\020Respo"
-    "ndChallenge\022\036.match.RespondChallengeRequ"
-    "est\032\037.match.RespondChallengeResponse\"\000\022<"
-    "\n\025NotifyChallengeInvite\022\031.match.Challeng"
-    "eInviteS2C\032\006.Empty\"\000\022<\n\025NotifyChallengeR"
-    "esult\022\031.match.ChallengeResultS2C\032\006.Empty"
-    "\"\000\022F\n\013WatchBattle\022\031.match.WatchBattleReq"
-    "uest\032\032.match.WatchBattleResponse\"\000\022R\n\023Re"
-    "questBattleTicket\022\033.RequestBattleTicketR"
-    "equest\032\034.RequestBattleTicketResponse\"\000\022a"
-    "\n\024ListWatchableBattles\022\".match.ListWatch"
-    "ableBattlesRequest\032#.match.ListWatchable"
-    "BattlesResponse\"\000\032\005\210\250\303\001\001B\021Z\013match/match\230"
-    "\324a\025b\006proto3"
+    "oto\032\037proto/match/match_network.proto\"\345\001\n"
+    "\020JoinQueueRequest\022\021\n\tplayer_id\030\001 \001(\004\022\036\n\004"
+    "mode\030\002 \001(\0162\020.match.MatchMode\022\025\n\rmap_conf"
+    "ig_id\030\003 \001(\r\022\034\n\020party_member_ids\030\004 \003(\004B\002\030"
+    "\001\022\017\n\007zone_id\030\005 \001(\r\022\030\n\020battle_config_id\030\006"
+    " \001(\r\022\021\n\tteam_size\030\007 \001(\r\022\022\n\nrequest_id\030\010 "
+    "\001(\t\022\027\n\017network_plan_id\030\t \001(\t\"e\n\021JoinQueu"
+    "eResponse\022\022\n\nerror_code\030\001 \001(\r\022\024\n\014queue_t"
+    "icket\030\002 \001(\t\022&\n\rerror_message\030\003 \001(\0132\017.Tip"
+    "InfoMessage\"Q\n\022CancelQueueRequest\022\021\n\tpla"
+    "yer_id\030\001 \001(\004\022\024\n\014queue_ticket\030\002 \001(\t\022\022\n\nre"
+    "quest_id\030\003 \001(\t\">\n\025GetQueueStatusRequest\022"
+    "\021\n\tplayer_id\030\001 \001(\004\022\022\n\nrequest_id\030\002 \001(\t\"\347"
+    "\001\n\026GetQueueStatusResponse\022 \n\005state\030\001 \001(\016"
+    "2\021.match.QueueState\022\036\n\026estimated_wait_se"
+    "conds\030\002 \001(\r\022\026\n\016queued_seconds\030\003 \001(\r\022\024\n\014q"
+    "ueue_ticket\030\004 \001(\t\022\021\n\tbattle_id\030\005 \001(\004\022\027\n\017"
+    "selected_region\030\006 \001(\r\022\026\n\016retry_after_ms\030"
+    "\007 \001(\r\022\031\n\021request_cancelled\030\010 \001(\010\"_\n\026Chal"
+    "lengePlayerRequest\022\021\n\tplayer_id\030\001 \001(\004\022\030\n"
+    "\020target_player_id\030\002 \001(\004\022\030\n\020battle_config"
+    "_id\030\003 \001(\r\"W\n\027ChallengePlayerResponse\022\024\n\014"
+    "challenge_id\030\001 \001(\004\022&\n\rerror_message\030\002 \001("
+    "\0132\017.TipInfoMessage\"R\n\027RespondChallengeRe"
+    "quest\022\021\n\tplayer_id\030\001 \001(\004\022\024\n\014challenge_id"
+    "\030\002 \001(\004\022\016\n\006accept\030\003 \001(\010\"B\n\030RespondChallen"
+    "geResponse\022&\n\rerror_message\030\001 \001(\0132\017.TipI"
+    "nfoMessage\"\213\001\n\022ChallengeInviteS2C\022\024\n\014cha"
+    "llenge_id\030\001 \001(\004\022\025\n\rchallenger_id\030\002 \001(\004\022\027"
+    "\n\017challenger_name\030\003 \001(\t\022\030\n\020battle_config"
+    "_id\030\004 \001(\r\022\025\n\rexpires_at_ms\030\005 \001(\004\"R\n\022Chal"
+    "lengeResultS2C\022\024\n\014challenge_id\030\001 \001(\004\022\020\n\010"
+    "accepted\030\002 \001(\010\022\024\n\014responder_id\030\003 \001(\004\":\n\022"
+    "WatchBattleRequest\022\021\n\tplayer_id\030\001 \001(\004\022\021\n"
+    "\tbattle_id\030\002 \001(\004\"P\n\023WatchBattleResponse\022"
+    "\021\n\tbattle_id\030\001 \001(\004\022&\n\rerror_message\030\002 \001("
+    "\0132\017.TipInfoMessage\"\?\n\033ListWatchableBattl"
+    "esRequest\022\021\n\tplayer_id\030\001 \001(\004\022\r\n\005limit\030\002 "
+    "\001(\r\"J\n\034ListWatchableBattlesResponse\022*\n\007b"
+    "attles\030\001 \003(\0132\031.match.BattleWatchSummary\""
+    "\216\001\n\022BattleWatchSummary\022\021\n\tbattle_id\030\001 \001("
+    "\004\022\036\n\004mode\030\002 \001(\0162\020.match.MatchMode\022\030\n\020bat"
+    "tle_config_id\030\003 \001(\r\022\024\n\014player_names\030\004 \003("
+    "\t\022\025\n\rcreated_at_ms\030\005 \001(\004\"Z\n\024SpectateBatt"
+    "leRecord\022*\n\007summary\030\001 \001(\0132\031.match.Battle"
+    "WatchSummary\022\026\n\016battle_node_id\030\002 \001(\r\"\243\001\n"
+    "\013MatchResult\022\020\n\010match_id\030\001 \001(\t\022\036\n\004mode\030\002"
+    " \001(\0162\020.match.MatchMode\022\025\n\rmap_config_id\030"
+    "\003 \001(\r\022\031\n\021dungeon_config_id\030\004 \001(\r\022\037\n\005team"
+    "s\030\005 \003(\0132\020.match.MatchTeam\022\017\n\007zone_id\030\006 \001"
+    "(\r\"3\n\tMatchTeam\022\022\n\nteam_index\030\001 \001(\r\022\022\n\np"
+    "layer_ids\030\002 \003(\004*\263\001\n\tMatchMode\022\032\n\026MATCH_M"
+    "ODE_UNSPECIFIED\020\000\022\022\n\016MATCH_MODE_5V5\020\001\022\022\n"
+    "\016MATCH_MODE_3V3\020\002\022\022\n\016MATCH_MODE_1V1\020\003\022\027\n"
+    "\023MATCH_MODE_PVE_SOLO\020\004\022\027\n\023MATCH_MODE_PVE"
+    "_TEAM\020\005\022\034\n\030MATCH_MODE_PVP_CHALLENGE\020\006*\247\001"
+    "\n\nQueueState\022\033\n\027QUEUE_STATE_UNSPECIFIED\020"
+    "\000\022\026\n\022QUEUE_STATE_QUEUED\020\001\022\027\n\023QUEUE_STATE"
+    "_MATCHED\020\002\022\025\n\021QUEUE_STATE_READY\020\003\022\030\n\024QUE"
+    "UE_STATE_ENTERING\020\004\022\032\n\026QUEUE_STATE_NOT_Q"
+    "UEUED\020\0052\277\007\n\014MatchService\022^\n\023GetNetworkPr"
+    "obePlan\022!.match.GetNetworkProbePlanReque"
+    "st\032\".match.GetNetworkProbePlanResponse\"\000"
+    "\022[\n\022CommitNetworkProbe\022 .match.CommitNet"
+    "workProbeRequest\032!.match.CommitNetworkPr"
+    "obeResponse\"\000\022@\n\tJoinQueue\022\027.match.JoinQ"
+    "ueueRequest\032\030.match.JoinQueueResponse\"\000\022"
+    "2\n\013CancelQueue\022\031.match.CancelQueueReques"
+    "t\032\006.Empty\"\000\022O\n\016GetQueueStatus\022\034.match.Ge"
+    "tQueueStatusRequest\032\035.match.GetQueueStat"
+    "usResponse\"\000\022R\n\017ChallengePlayer\022\035.match."
+    "ChallengePlayerRequest\032\036.match.Challenge"
+    "PlayerResponse\"\000\022U\n\020RespondChallenge\022\036.m"
+    "atch.RespondChallengeRequest\032\037.match.Res"
+    "pondChallengeResponse\"\000\022<\n\025NotifyChallen"
+    "geInvite\022\031.match.ChallengeInviteS2C\032\006.Em"
+    "pty\"\000\022<\n\025NotifyChallengeResult\022\031.match.C"
+    "hallengeResultS2C\032\006.Empty\"\000\022F\n\013WatchBatt"
+    "le\022\031.match.WatchBattleRequest\032\032.match.Wa"
+    "tchBattleResponse\"\000\022R\n\023RequestBattleTick"
+    "et\022\033.RequestBattleTicketRequest\032\034.Reques"
+    "tBattleTicketResponse\"\000\022a\n\024ListWatchable"
+    "Battles\022\".match.ListWatchableBattlesRequ"
+    "est\032#.match.ListWatchableBattlesResponse"
+    "\"\000\032\005\210\250\303\001\001B\021Z\013match/match\230\324a\025b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fmatch_2fmatch_5fservice_2eproto_deps[4] = {
+    descriptor_table_proto_2fmatch_2fmatch_5fservice_2eproto_deps[5] = {
         &::descriptor_table_proto_2fbattle_2fplayer_5fbattle_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2fempty_2eproto,
         &::descriptor_table_proto_2fcommon_2fbase_2ftip_2eproto,
         &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
+        &::descriptor_table_proto_2fmatch_2fmatch_5fnetwork_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fmatch_2fmatch_5fservice_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fmatch_2fmatch_5fservice_2eproto = {
     false,
     false,
-    3131,
+    3556,
     descriptor_table_protodef_proto_2fmatch_2fmatch_5fservice_2eproto,
     "proto/match/match_service.proto",
     &descriptor_table_proto_2fmatch_2fmatch_5fservice_2eproto_once,
     descriptor_table_proto_2fmatch_2fmatch_5fservice_2eproto_deps,
-    4,
+    5,
     19,
     schemas,
     file_message_globals,
@@ -3469,7 +3588,9 @@ PROTOBUF_NDEBUG_INLINE JoinQueueRequest::Impl_::Impl_(
           , from.party_member_ids_
         }
         ,
-        _party_member_ids_cached_byte_size_{0} {}
+        _party_member_ids_cached_byte_size_{0},
+        request_id_(arena, from.request_id_),
+        network_plan_id_(arena, from.network_plan_id_) {}
 
 JoinQueueRequest::JoinQueueRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -3504,7 +3625,9 @@ PROTOBUF_NDEBUG_INLINE JoinQueueRequest::Impl_::Impl_(
             PROTOBUF_FIELD_OFFSET(::match::JoinQueueRequest, _impl_.party_member_ids_)>()
          }
         ,
-        _party_member_ids_cached_byte_size_{0} {}
+        _party_member_ids_cached_byte_size_{0},
+        request_id_(arena),
+        network_plan_id_(arena) {}
 
 inline void JoinQueueRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -3526,6 +3649,8 @@ inline void JoinQueueRequest::SharedDtor(MessageLite& self) {
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.request_id_.Destroy();
+  this_._impl_.network_plan_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -3563,14 +3688,23 @@ PROTOBUF_NOINLINE void JoinQueueRequest::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    _impl_.party_member_ids_.Clear();
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.party_member_ids_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.request_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.network_plan_id_.ClearNonDefaultToEmpty();
+    }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007eU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000f8U)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.team_size_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.team_size_));
+        reinterpret_cast<char*>(&_impl_.battle_config_id_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.battle_config_id_));
   }
+  _impl_.team_size_ = 0u;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -3595,7 +3729,7 @@ PROTOBUF_NOINLINE void JoinQueueRequest::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint64 player_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -3604,7 +3738,7 @@ PROTOBUF_NOINLINE void JoinQueueRequest::Clear() {
   }
 
   // .match.MatchMode mode = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_mode() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -3613,7 +3747,7 @@ PROTOBUF_NOINLINE void JoinQueueRequest::Clear() {
   }
 
   // uint32 map_config_id = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_map_config_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -3633,7 +3767,7 @@ PROTOBUF_NOINLINE void JoinQueueRequest::Clear() {
   }
 
   // uint32 zone_id = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
     if (this_._internal_zone_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -3642,7 +3776,7 @@ PROTOBUF_NOINLINE void JoinQueueRequest::Clear() {
   }
 
   // uint32 battle_config_id = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
     if (this_._internal_battle_config_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -3651,11 +3785,31 @@ PROTOBUF_NOINLINE void JoinQueueRequest::Clear() {
   }
 
   // uint32 team_size = 7;
-  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
     if (this_._internal_team_size() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           7, this_._internal_team_size(), target);
+    }
+  }
+
+  // string request_id = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_request_id().empty()) {
+      const ::std::string& _s = this_._internal_request_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "match.JoinQueueRequest.request_id");
+      target = stream->WriteStringMaybeAliased(8, _s, target);
+    }
+  }
+
+  // string network_plan_id = 9;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_network_plan_id().empty()) {
+      const ::std::string& _s = this_._internal_network_plan_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "match.JoinQueueRequest.network_plan_id");
+      target = stream->WriteStringMaybeAliased(9, _s, target);
     }
   }
 
@@ -3684,7 +3838,7 @@ PROTOBUF_NOINLINE void JoinQueueRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     // repeated uint64 party_member_ids = 4 [deprecated = true];
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size +=
@@ -3692,43 +3846,59 @@ PROTOBUF_NOINLINE void JoinQueueRequest::Clear() {
               this_._internal_party_member_ids(), 1,
               this_._impl_._party_member_ids_cached_byte_size_);
     }
-    // uint64 player_id = 1;
+    // string request_id = 8;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_request_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_request_id());
+      }
+    }
+    // string network_plan_id = 9;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_network_plan_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_network_plan_id());
+      }
+    }
+    // uint64 player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
       }
     }
     // .match.MatchMode mode = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_mode() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_mode());
       }
     }
     // uint32 map_config_id = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_map_config_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_map_config_id());
       }
     }
     // uint32 zone_id = 5;
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (this_._internal_zone_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_zone_id());
       }
     }
     // uint32 battle_config_id = 6;
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (this_._internal_battle_config_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_battle_config_id());
       }
     }
+  }
+   {
     // uint32 team_size = 7;
-    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
       if (this_._internal_team_size() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_team_size());
@@ -3752,39 +3922,57 @@ void JoinQueueRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_party_member_ids()->MergeFrom(from._internal_party_member_ids());
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_request_id().empty()) {
+        _this->_internal_set_request_id(from._internal_request_id());
+      } else {
+        if (_this->_impl_.request_id_.IsDefault()) {
+          _this->_internal_set_request_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_network_plan_id().empty()) {
+        _this->_internal_set_network_plan_id(from._internal_network_plan_id());
+      } else {
+        if (_this->_impl_.network_plan_id_.IsDefault()) {
+          _this->_internal_set_network_plan_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_player_id() != 0) {
         _this->_impl_.player_id_ = from._impl_.player_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_mode() != 0) {
         _this->_impl_.mode_ = from._impl_.mode_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_map_config_id() != 0) {
         _this->_impl_.map_config_id_ = from._impl_.map_config_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (from._internal_zone_id() != 0) {
         _this->_impl_.zone_id_ = from._impl_.zone_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (from._internal_battle_config_id() != 0) {
         _this->_impl_.battle_config_id_ = from._impl_.battle_config_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
-      if (from._internal_team_size() != 0) {
-        _this->_impl_.team_size_ = from._impl_.team_size_;
-      }
+  }
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (from._internal_team_size() != 0) {
+      _this->_impl_.team_size_ = from._impl_.team_size_;
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -3802,9 +3990,13 @@ void JoinQueueRequest::CopyFrom(const JoinQueueRequest& from) {
 
 void JoinQueueRequest::InternalSwap(JoinQueueRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.party_member_ids_.InternalSwap(&other->_impl_.party_member_ids_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.request_id_, &other->_impl_.request_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.network_plan_id_, &other->_impl_.network_plan_id_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(JoinQueueRequest, _impl_.team_size_)
       + sizeof(JoinQueueRequest::_impl_.team_size_)
@@ -4122,7 +4314,8 @@ PROTOBUF_NDEBUG_INLINE CancelQueueRequest::Impl_::Impl_(
     [[maybe_unused]] const ::match::CancelQueueRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
-        queue_ticket_(arena, from.queue_ticket_) {}
+        queue_ticket_(arena, from.queue_ticket_),
+        request_id_(arena, from.request_id_) {}
 
 CancelQueueRequest::CancelQueueRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -4146,7 +4339,8 @@ PROTOBUF_NDEBUG_INLINE CancelQueueRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
-        queue_ticket_(arena) {}
+        queue_ticket_(arena),
+        request_id_(arena) {}
 
 inline void CancelQueueRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -4164,6 +4358,7 @@ inline void CancelQueueRequest::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.queue_ticket_.Destroy();
+  this_._impl_.request_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -4201,8 +4396,13 @@ PROTOBUF_NOINLINE void CancelQueueRequest::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    _impl_.queue_ticket_.ClearNonDefaultToEmpty();
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.queue_ticket_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.request_id_.ClearNonDefaultToEmpty();
+    }
   }
   _impl_.player_id_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
@@ -4229,7 +4429,7 @@ PROTOBUF_NOINLINE void CancelQueueRequest::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint64 player_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (this_._internal_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
@@ -4244,6 +4444,16 @@ PROTOBUF_NOINLINE void CancelQueueRequest::Clear() {
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
           _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "match.CancelQueueRequest.queue_ticket");
       target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string request_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_request_id().empty()) {
+      const ::std::string& _s = this_._internal_request_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "match.CancelQueueRequest.request_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
     }
   }
 
@@ -4272,7 +4482,7 @@ PROTOBUF_NOINLINE void CancelQueueRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     // string queue_ticket = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_queue_ticket().empty()) {
@@ -4280,8 +4490,15 @@ PROTOBUF_NOINLINE void CancelQueueRequest::Clear() {
                                         this_._internal_queue_ticket());
       }
     }
-    // uint64 player_id = 1;
+    // string request_id = 3;
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_request_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_request_id());
+      }
+    }
+    // uint64 player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
@@ -4305,7 +4522,7 @@ void CancelQueueRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_queue_ticket().empty()) {
         _this->_internal_set_queue_ticket(from._internal_queue_ticket());
@@ -4316,6 +4533,15 @@ void CancelQueueRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_request_id().empty()) {
+        _this->_internal_set_request_id(from._internal_request_id());
+      } else {
+        if (_this->_impl_.request_id_.IsDefault()) {
+          _this->_internal_set_request_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_player_id() != 0) {
         _this->_impl_.player_id_ = from._impl_.player_id_;
       }
@@ -4341,6 +4567,7 @@ void CancelQueueRequest::InternalSwap(CancelQueueRequest* PROTOBUF_RESTRICT PROT
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.queue_ticket_, &other->_impl_.queue_ticket_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.request_id_, &other->_impl_.request_id_, arena);
   swap(_impl_.player_id_, other->_impl_.player_id_);
 }
 
@@ -4358,21 +4585,37 @@ GetQueueStatusRequest::GetQueueStatusRequest(::google::protobuf::Arena* PROTOBUF
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:match.GetQueueStatusRequest)
 }
+PROTOBUF_NDEBUG_INLINE GetQueueStatusRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::match::GetQueueStatusRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        request_id_(arena, from.request_id_) {}
+
 GetQueueStatusRequest::GetQueueStatusRequest(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetQueueStatusRequest& from)
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetQueueStatusRequest& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, GetQueueStatusRequest_get_class_data()),
+    : ::google::protobuf::Message(arena, GetQueueStatusRequest_get_class_data()) {
+
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
+  GetQueueStatusRequest* const _this = this;
+  (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.player_id_ = from._impl_.player_id_;
+
+  // @@protoc_insertion_point(copy_constructor:match.GetQueueStatusRequest)
 }
 PROTOBUF_NDEBUG_INLINE GetQueueStatusRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        request_id_(arena) {}
 
 inline void GetQueueStatusRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -4389,6 +4632,7 @@ inline void GetQueueStatusRequest::SharedDtor(MessageLite& self) {
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.request_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -4425,6 +4669,10 @@ PROTOBUF_NOINLINE void GetQueueStatusRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.request_id_.ClearNonDefaultToEmpty();
+  }
   _impl_.player_id_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -4450,11 +4698,21 @@ PROTOBUF_NOINLINE void GetQueueStatusRequest::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint64 player_id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
     if (this_._internal_player_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           1, this_._internal_player_id(), target);
+    }
+  }
+
+  // string request_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_request_id().empty()) {
+      const ::std::string& _s = this_._internal_request_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "match.GetQueueStatusRequest.request_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
     }
   }
 
@@ -4481,10 +4739,18 @@ PROTOBUF_NOINLINE void GetQueueStatusRequest::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void)cached_has_bits;
 
-   {
-    // uint64 player_id = 1;
-    cached_has_bits = this_._impl_._has_bits_[0];
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string request_id = 2;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_request_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_request_id());
+      }
+    }
+    // uint64 player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (this_._internal_player_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
             this_._internal_player_id());
@@ -4508,9 +4774,20 @@ void GetQueueStatusRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-    if (from._internal_player_id() != 0) {
-      _this->_impl_.player_id_ = from._impl_.player_id_;
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_request_id().empty()) {
+        _this->_internal_set_request_id(from._internal_request_id());
+      } else {
+        if (_this->_impl_.request_id_.IsDefault()) {
+          _this->_internal_set_request_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_player_id() != 0) {
+        _this->_impl_.player_id_ = from._impl_.player_id_;
+      }
     }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
@@ -4528,8 +4805,11 @@ void GetQueueStatusRequest::CopyFrom(const GetQueueStatusRequest& from) {
 
 void GetQueueStatusRequest::InternalSwap(GetQueueStatusRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.request_id_, &other->_impl_.request_id_, arena);
   swap(_impl_.player_id_, other->_impl_.player_id_);
 }
 
@@ -4547,30 +4827,52 @@ GetQueueStatusResponse::GetQueueStatusResponse(::google::protobuf::Arena* PROTOB
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:match.GetQueueStatusResponse)
 }
+PROTOBUF_NDEBUG_INLINE GetQueueStatusResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::match::GetQueueStatusResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        queue_ticket_(arena, from.queue_ticket_) {}
+
 GetQueueStatusResponse::GetQueueStatusResponse(
-    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetQueueStatusResponse& from)
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetQueueStatusResponse& from)
 #if defined(PROTOBUF_CUSTOM_VTABLE)
-    : ::google::protobuf::Message(arena, GetQueueStatusResponse_get_class_data()),
+    : ::google::protobuf::Message(arena, GetQueueStatusResponse_get_class_data()) {
+
 #else   // PROTOBUF_CUSTOM_VTABLE
-    : ::google::protobuf::Message(arena),
+    : ::google::protobuf::Message(arena) {
 #endif  // PROTOBUF_CUSTOM_VTABLE
-      _impl_(from._impl_) {
+  GetQueueStatusResponse* const _this = this;
+  (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, state_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, state_),
+           offsetof(Impl_, request_cancelled_) -
+               offsetof(Impl_, state_) +
+               sizeof(Impl_::request_cancelled_));
+
+  // @@protoc_insertion_point(copy_constructor:match.GetQueueStatusResponse)
 }
 PROTOBUF_NDEBUG_INLINE GetQueueStatusResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        queue_ticket_(arena) {}
 
 inline void GetQueueStatusResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, state_),
            0,
-           offsetof(Impl_, queued_seconds_) -
+           offsetof(Impl_, request_cancelled_) -
                offsetof(Impl_, state_) +
-               sizeof(Impl_::queued_seconds_));
+               sizeof(Impl_::request_cancelled_));
 }
 GetQueueStatusResponse::~GetQueueStatusResponse() {
   // @@protoc_insertion_point(destructor:match.GetQueueStatusResponse)
@@ -4583,6 +4885,7 @@ inline void GetQueueStatusResponse::SharedDtor(MessageLite& self) {
   }
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.queue_ticket_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -4620,10 +4923,13 @@ PROTOBUF_NOINLINE void GetQueueStatusResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.queue_ticket_.ClearNonDefaultToEmpty();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x000000feU)) {
     ::memset(&_impl_.state_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.queued_seconds_) -
-        reinterpret_cast<char*>(&_impl_.state_)) + sizeof(_impl_.queued_seconds_));
+        reinterpret_cast<char*>(&_impl_.request_cancelled_) -
+        reinterpret_cast<char*>(&_impl_.state_)) + sizeof(_impl_.request_cancelled_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -4649,7 +4955,7 @@ PROTOBUF_NOINLINE void GetQueueStatusResponse::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // .match.QueueState state = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
     if (this_._internal_state() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -4658,7 +4964,7 @@ PROTOBUF_NOINLINE void GetQueueStatusResponse::Clear() {
   }
 
   // uint32 estimated_wait_seconds = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (this_._internal_estimated_wait_seconds() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -4667,11 +4973,57 @@ PROTOBUF_NOINLINE void GetQueueStatusResponse::Clear() {
   }
 
   // uint32 queued_seconds = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_queued_seconds() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
           3, this_._internal_queued_seconds(), target);
+    }
+  }
+
+  // string queue_ticket = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_queue_ticket().empty()) {
+      const ::std::string& _s = this_._internal_queue_ticket();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "match.GetQueueStatusResponse.queue_ticket");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  // uint64 battle_id = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_battle_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+          5, this_._internal_battle_id(), target);
+    }
+  }
+
+  // uint32 selected_region = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_selected_region() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          6, this_._internal_selected_region(), target);
+    }
+  }
+
+  // uint32 retry_after_ms = 7;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_retry_after_ms() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          7, this_._internal_retry_after_ms(), target);
+    }
+  }
+
+  // bool request_cancelled = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (this_._internal_request_cancelled() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          8, this_._internal_request_cancelled(), target);
     }
   }
 
@@ -4700,26 +5052,60 @@ PROTOBUF_NOINLINE void GetQueueStatusResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    // .match.QueueState state = 1;
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    // string queue_ticket = 4;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_queue_ticket().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_queue_ticket());
+      }
+    }
+    // .match.QueueState state = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (this_._internal_state() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_state());
       }
     }
     // uint32 estimated_wait_seconds = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (this_._internal_estimated_wait_seconds() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_estimated_wait_seconds());
       }
     }
     // uint32 queued_seconds = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (this_._internal_queued_seconds() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_queued_seconds());
+      }
+    }
+    // uint32 selected_region = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_selected_region() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_selected_region());
+      }
+    }
+    // uint64 battle_id = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_battle_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+            this_._internal_battle_id());
+      }
+    }
+    // uint32 retry_after_ms = 7;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_retry_after_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_retry_after_ms());
+      }
+    }
+    // bool request_cancelled = 8;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (this_._internal_request_cancelled() != 0) {
+        total_size += 2;
       }
     }
   }
@@ -4740,20 +5126,49 @@ void GetQueueStatusResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_queue_ticket().empty()) {
+        _this->_internal_set_queue_ticket(from._internal_queue_ticket());
+      } else {
+        if (_this->_impl_.queue_ticket_.IsDefault()) {
+          _this->_internal_set_queue_ticket("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (from._internal_state() != 0) {
         _this->_impl_.state_ = from._impl_.state_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (from._internal_estimated_wait_seconds() != 0) {
         _this->_impl_.estimated_wait_seconds_ = from._impl_.estimated_wait_seconds_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       if (from._internal_queued_seconds() != 0) {
         _this->_impl_.queued_seconds_ = from._impl_.queued_seconds_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_selected_region() != 0) {
+        _this->_impl_.selected_region_ = from._impl_.selected_region_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_battle_id() != 0) {
+        _this->_impl_.battle_id_ = from._impl_.battle_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_retry_after_ms() != 0) {
+        _this->_impl_.retry_after_ms_ = from._impl_.retry_after_ms_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (from._internal_request_cancelled() != 0) {
+        _this->_impl_.request_cancelled_ = from._impl_.request_cancelled_;
       }
     }
   }
@@ -4772,11 +5187,14 @@ void GetQueueStatusResponse::CopyFrom(const GetQueueStatusResponse& from) {
 
 void GetQueueStatusResponse::InternalSwap(GetQueueStatusResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
   using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.queue_ticket_, &other->_impl_.queue_ticket_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.queued_seconds_)
-      + sizeof(GetQueueStatusResponse::_impl_.queued_seconds_)
+      PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.request_cancelled_)
+      + sizeof(GetQueueStatusResponse::_impl_.request_cancelled_)
       - PROTOBUF_FIELD_OFFSET(GetQueueStatusResponse, _impl_.state_)>(
           reinterpret_cast<char*>(&_impl_.state_),
           reinterpret_cast<char*>(&other->_impl_.state_));

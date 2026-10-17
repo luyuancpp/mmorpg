@@ -2,7 +2,15 @@
 
 **Date:** 2026-04-15
 **最近核对:** 2026-10-15，基线 `6281e4d27`；本次只修订文档，未执行构建或运行验证。
-**Status:** Implemented
+**Status:** Implemented;服务端实现部分 **已被 [grpc-muduo-transport.md](grpc-muduo-transport.md) §15 取代**(2026-10-16)
+
+> **已被取代(2026-10-16,第 4 批;代码未编译,待 Codex 验证)**:双端口决定(TCP RPC0 + TCP+30000 gRPC)、
+> 端口派生、etcd 注册与 Go 侧拨号仍然有效;但 C++ 服务端已改为 `muduo_grpc::Server`(muduo `Acceptor` + nghttp2),
+> 整个跑在节点 EventLoop 上,不再构造 `grpc::Server` / `ServerBuilder` / `CompletionQueue`,没有 sync poller、
+> EventEngine 与关机线程;`GRPC_SERVER_MAX_POLLERS` 已退役;`RegisterGrpcService` 改收 `muduo_grpc::Service&`;
+> handler 不再 runInLoop + promise/future,改为在 loop 上同步执行(CreateScene 的 Agones 许可走 `AcquireAllocationPermitAsync`);
+> 关机改为 loop 内两段 GOAWAY 排空。下文 §3、§5 与「Threading and Shutdown Contract」中关于官方 sync server、poller、
+> EventEngine、`grpc::Server::Shutdown()` 关机 worker 的描述只作历史保留,一律以 §15 为准。
 
 ## 原始问题（双端口实现前）
 
@@ -106,6 +114,10 @@ This imports the existing Scene request/response messages from the legacy Scene 
 
 ### 3. C++ Node base class: Added optional gRPC server
 
+> 第 4 批起本节的官方 sync server 描述已过时:现为 `RegisterGrpcService(muduo_grpc::Service&)`、
+> `grpcServer_`(`shared_ptr<muduo_grpc::Server>`)、`BeginShutdown` + `OnGrpcServerDrained` 的 loop 内排空,
+> 见 [grpc-muduo-transport.md](grpc-muduo-transport.md) §15.10 / §15.11。
+
 **File:** `cpp/libs/engine/core/node/system/node/node.h`
 
 - `RegisterGrpcService(grpc::Service*)` — register before `StartRpcServer()`
@@ -136,6 +148,10 @@ gRPC fallback。最终两类 endpoint 都写入 NodeInfo 后发布到 etcd。
 
 ### 5. C++ Scene Node: gRPC service implementation
 
+> 第 4 批起 `SceneNodeGrpcImpl : muduo_grpc::Service`(9 个 unary 方法),不再 include `*.grpc.pb.h`、不再
+> promise/future 投递;`Handle*` 在 loop 上同步执行,CreateScene 守护段走异步许可,见
+> [grpc-muduo-transport.md](grpc-muduo-transport.md) §15.8。
+
 **File:** `cpp/nodes/scene/handler/grpc/scene_node_service.h/.cpp`
 
 Implements `SceneNodeGrpc::Service` from generated
@@ -151,6 +167,10 @@ Registers `SceneNodeGrpcImpl` via `node.RegisterGrpcService()` before startup.
 Changed from `RunSimpleNodeMainWithOwnedContext` to `RunNodeMain` to support constructing `SceneRuntimeContext` with `EventLoop*`.
 
 ## Threading and Shutdown Contract
+
+> 第 4 批起本节作废,只作历史保留:节点上没有 gRPC poller / EventEngine / 关机线程,关机为 loop 内排空。
+> 现行约束见 [scene-node-threading-model.md](scene-node-threading-model.md) 与
+> [grpc-muduo-transport.md](grpc-muduo-transport.md) §15.10。
 
 “Scene gameplay logic is single-threaded” does not mean the Scene process has
 only one thread:
@@ -261,7 +281,7 @@ This design does **not** recreate the old full-mesh explosion problem.
 | Per-Scene steady-state connections | Usually single-digit to low double-digit |
 | Per-request connection creation | No — connections are cached and reused |
 | Concurrency model | HTTP/2 multiplexing over a small number of TCP connections |
-| Process threads | Includes sync pollers and EventEngine workers; business state still stays on one EventLoop |
+| Process threads | 第 4 批起 gRPC 服务端不新增线程(muduo_grpc 跑在节点 EventLoop 上);此前含 sync poller 与 EventEngine worker |
 | High-fanout traffic | Still stays on Kafka or existing TCP(RPC0), not this gRPC path |
 
 So the cost is acceptable because this path is for **low-caller-count, request/response orchestration**, not for Gate-scale fanout.

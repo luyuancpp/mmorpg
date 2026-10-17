@@ -244,7 +244,9 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 	// 6b'. 新铸 id 的只读探测(docs/design/new-player-first-enter-no-cold-read.md §10 P7,负责人 2026-10-15 定):
 	// PlayerAllData 父键或 player:{id}:owner_epoch 已在 = 这个 id 上已有既有状态(id 复用),探测出错 = 探不清,
 	// 两者都拒绝建角(fail-closed)。排在 6c 之前:拒绝发生在任何持久写之前,只烧掉这一个 id,名字与 player:zone
-	// 都不登记,无需补偿。与种子开关无关,每次建角都探;它只是预检,6d' 的种子脚本仍在写时原子复核。
+	// 都不登记,无需补偿。与种子开关无关,每次建角都探。它只是预检,不是提交点:开种子时 6d' 的种子脚本对「探测 → 种子」
+	// 这一段做写时原子复核;关种子(默认)时探测之后、开种子时种子之后,到第 7 步围栏写都没有复核(已知残余窗口,
+	// 接受理由见设计 §13.2 的 2026-10-16 补注;6c 名字登记的 FailedPrecondition 是与时序无关的另一道拦截)。
 	stageDone = observeStage(createPlayerStageSeconds, createStageIDProbe)
 	tip = l.probeMintedID(account, newPlayerId)
 	stageDone()

@@ -18,12 +18,12 @@ TEST_F(ActorNetIdTest, MissingInstallationOrNodeIdRefusesWithoutAttachingIdentit
     EXPECT_EQ(0, actor_net_id::Assign(actors, actor));
     EXPECT_EQ(0, actor_net_id::Of(actors, actor));
     EXPECT_TRUE(actor_net_id::Resolve(actors, 1) == entt::null);
-    EXPECT_FALSE(actors.any_of<ActorNetIdComp>(actor));
+    EXPECT_EQ(0, actor_net_id::Of(actors, actor));
 
     actor_net_id::Install(actors);
     tlsIdGeneratorManager.SetNodeId(0);
     EXPECT_EQ(0, actor_net_id::Assign(actors, actor));
-    EXPECT_FALSE(actors.any_of<ActorNetIdComp>(actor));
+    EXPECT_EQ(0, actor_net_id::Of(actors, actor));
     tlsIdGeneratorManager.SetNodeId(101);
     EXPECT_NE(0, actor_net_id::Assign(actors, actor));
 }
@@ -43,8 +43,7 @@ TEST_F(ActorNetIdTest, AssignmentIsIdempotentAndQueriesDoNotCreateIdentity)
     EXPECT_EQ(0, actor_net_id::Of(actors, untouched));
     EXPECT_TRUE(actor_net_id::Resolve(actors, 0) == entt::null);
     EXPECT_TRUE(actor_net_id::Resolve(actors, id + 1000000) == entt::null);
-    EXPECT_FALSE(actors.any_of<ActorNetIdComp>(untouched));
-    EXPECT_EQ(1u, actors.storage<ActorNetIdComp>().size());
+    EXPECT_EQ(0, actor_net_id::Of(actors, untouched));
 }
 
 TEST_F(ActorNetIdTest, RecycledEntityVersionNeverResolvesThroughPreviousNetworkId)
@@ -69,16 +68,18 @@ TEST_F(ActorNetIdTest, RecycledEntityVersionNeverResolvesThroughPreviousNetworkI
     EXPECT_EQ(newId, actor_net_id::Of(actors, after));
 }
 
-TEST_F(ActorNetIdTest, ClearAndComponentRemovalDropMappingsWithoutReusingNetworkIds)
+TEST_F(ActorNetIdTest, ClearAndDestructionDropMappingsWithoutReusingNetworkIds)
 {
     entt::registry actors;
     actor_net_id::Install(actors);
     const auto actor = actors.create();
     const auto first = actor_net_id::Assign(actors, actor);
     ASSERT_NE(0, first);
-    actors.remove<ActorNetIdComp>(actor);
+    actors.destroy(actor);
     EXPECT_TRUE(actor_net_id::Resolve(actors, first) == entt::null);
-    const auto second = actor_net_id::Assign(actors, actor);
+    const auto recreated = actors.create();
+    EXPECT_EQ(0, actor_net_id::Of(actors, recreated));
+    const auto second = actor_net_id::Assign(actors, recreated);
     ASSERT_NE(0, second);
     EXPECT_NE(first, second);
     actors.clear();

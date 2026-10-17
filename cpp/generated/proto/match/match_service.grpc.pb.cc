@@ -23,6 +23,8 @@
 namespace match {
 
 static const char* MatchService_method_names[] = {
+  "/match.MatchService/GetNetworkProbePlan",
+  "/match.MatchService/CommitNetworkProbe",
   "/match.MatchService/JoinQueue",
   "/match.MatchService/CancelQueue",
   "/match.MatchService/GetQueueStatus",
@@ -42,17 +44,65 @@ std::unique_ptr< MatchService::Stub> MatchService::NewStub(const std::shared_ptr
 }
 
 MatchService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
-  : channel_(channel), rpcmethod_JoinQueue_(MatchService_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_CancelQueue_(MatchService_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_GetQueueStatus_(MatchService_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ChallengePlayer_(MatchService_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RespondChallenge_(MatchService_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_NotifyChallengeInvite_(MatchService_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_NotifyChallengeResult_(MatchService_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_WatchBattle_(MatchService_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_RequestBattleTicket_(MatchService_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_ListWatchableBattles_(MatchService_method_names[9], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  : channel_(channel), rpcmethod_GetNetworkProbePlan_(MatchService_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CommitNetworkProbe_(MatchService_method_names[1], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_JoinQueue_(MatchService_method_names[2], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_CancelQueue_(MatchService_method_names[3], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_GetQueueStatus_(MatchService_method_names[4], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ChallengePlayer_(MatchService_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RespondChallenge_(MatchService_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_NotifyChallengeInvite_(MatchService_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_NotifyChallengeResult_(MatchService_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_WatchBattle_(MatchService_method_names[9], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_RequestBattleTicket_(MatchService_method_names[10], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ListWatchableBattles_(MatchService_method_names[11], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
+
+::grpc::Status MatchService::Stub::GetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::match::GetNetworkProbePlanResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::match::GetNetworkProbePlanRequest, ::match::GetNetworkProbePlanResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetNetworkProbePlan_, context, request, response);
+}
+
+void MatchService::Stub::async::GetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest* request, ::match::GetNetworkProbePlanResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::match::GetNetworkProbePlanRequest, ::match::GetNetworkProbePlanResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetNetworkProbePlan_, context, request, response, std::move(f));
+}
+
+void MatchService::Stub::async::GetNetworkProbePlan(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest* request, ::match::GetNetworkProbePlanResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetNetworkProbePlan_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::match::GetNetworkProbePlanResponse>* MatchService::Stub::PrepareAsyncGetNetworkProbePlanRaw(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::match::GetNetworkProbePlanResponse, ::match::GetNetworkProbePlanRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_GetNetworkProbePlan_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::match::GetNetworkProbePlanResponse>* MatchService::Stub::AsyncGetNetworkProbePlanRaw(::grpc::ClientContext* context, const ::match::GetNetworkProbePlanRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncGetNetworkProbePlanRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
+::grpc::Status MatchService::Stub::CommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::match::CommitNetworkProbeResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::match::CommitNetworkProbeRequest, ::match::CommitNetworkProbeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_CommitNetworkProbe_, context, request, response);
+}
+
+void MatchService::Stub::async::CommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest* request, ::match::CommitNetworkProbeResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::match::CommitNetworkProbeRequest, ::match::CommitNetworkProbeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CommitNetworkProbe_, context, request, response, std::move(f));
+}
+
+void MatchService::Stub::async::CommitNetworkProbe(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest* request, ::match::CommitNetworkProbeResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_CommitNetworkProbe_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::match::CommitNetworkProbeResponse>* MatchService::Stub::PrepareAsyncCommitNetworkProbeRaw(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::match::CommitNetworkProbeResponse, ::match::CommitNetworkProbeRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_CommitNetworkProbe_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::match::CommitNetworkProbeResponse>* MatchService::Stub::AsyncCommitNetworkProbeRaw(::grpc::ClientContext* context, const ::match::CommitNetworkProbeRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncCommitNetworkProbeRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
 
 ::grpc::Status MatchService::Stub::JoinQueue(::grpc::ClientContext* context, const ::match::JoinQueueRequest& request, ::match::JoinQueueResponse* response) {
   return ::grpc::internal::BlockingUnaryCall< ::match::JoinQueueRequest, ::match::JoinQueueResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_JoinQueue_, context, request, response);
@@ -288,6 +338,26 @@ MatchService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       MatchService_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::GetNetworkProbePlanRequest, ::match::GetNetworkProbePlanResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](MatchService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::match::GetNetworkProbePlanRequest* req,
+             ::match::GetNetworkProbePlanResponse* resp) {
+               return service->GetNetworkProbePlan(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      MatchService_method_names[1],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::CommitNetworkProbeRequest, ::match::CommitNetworkProbeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](MatchService::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::match::CommitNetworkProbeRequest* req,
+             ::match::CommitNetworkProbeResponse* resp) {
+               return service->CommitNetworkProbe(ctx, req, resp);
+             }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      MatchService_method_names[2],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::JoinQueueRequest, ::match::JoinQueueResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MatchService::Service* service,
              ::grpc::ServerContext* ctx,
@@ -296,7 +366,7 @@ MatchService::Service::Service() {
                return service->JoinQueue(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      MatchService_method_names[1],
+      MatchService_method_names[3],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::CancelQueueRequest, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MatchService::Service* service,
@@ -306,7 +376,7 @@ MatchService::Service::Service() {
                return service->CancelQueue(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      MatchService_method_names[2],
+      MatchService_method_names[4],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::GetQueueStatusRequest, ::match::GetQueueStatusResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MatchService::Service* service,
@@ -316,7 +386,7 @@ MatchService::Service::Service() {
                return service->GetQueueStatus(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      MatchService_method_names[3],
+      MatchService_method_names[5],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::ChallengePlayerRequest, ::match::ChallengePlayerResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MatchService::Service* service,
@@ -326,7 +396,7 @@ MatchService::Service::Service() {
                return service->ChallengePlayer(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      MatchService_method_names[4],
+      MatchService_method_names[6],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::RespondChallengeRequest, ::match::RespondChallengeResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MatchService::Service* service,
@@ -336,7 +406,7 @@ MatchService::Service::Service() {
                return service->RespondChallenge(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      MatchService_method_names[5],
+      MatchService_method_names[7],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::ChallengeInviteS2C, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MatchService::Service* service,
@@ -346,7 +416,7 @@ MatchService::Service::Service() {
                return service->NotifyChallengeInvite(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      MatchService_method_names[6],
+      MatchService_method_names[8],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::ChallengeResultS2C, ::Empty, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MatchService::Service* service,
@@ -356,7 +426,7 @@ MatchService::Service::Service() {
                return service->NotifyChallengeResult(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      MatchService_method_names[7],
+      MatchService_method_names[9],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::WatchBattleRequest, ::match::WatchBattleResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MatchService::Service* service,
@@ -366,7 +436,7 @@ MatchService::Service::Service() {
                return service->WatchBattle(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      MatchService_method_names[8],
+      MatchService_method_names[10],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::RequestBattleTicketRequest, ::RequestBattleTicketResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MatchService::Service* service,
@@ -376,7 +446,7 @@ MatchService::Service::Service() {
                return service->RequestBattleTicket(ctx, req, resp);
              }, this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      MatchService_method_names[9],
+      MatchService_method_names[11],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< MatchService::Service, ::match::ListWatchableBattlesRequest, ::match::ListWatchableBattlesResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](MatchService::Service* service,
@@ -388,6 +458,20 @@ MatchService::Service::Service() {
 }
 
 MatchService::Service::~Service() {
+}
+
+::grpc::Status MatchService::Service::GetNetworkProbePlan(::grpc::ServerContext* context, const ::match::GetNetworkProbePlanRequest* request, ::match::GetNetworkProbePlanResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status MatchService::Service::CommitNetworkProbe(::grpc::ServerContext* context, const ::match::CommitNetworkProbeRequest* request, ::match::CommitNetworkProbeResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
 ::grpc::Status MatchService::Service::JoinQueue(::grpc::ServerContext* context, const ::match::JoinQueueRequest* request, ::match::JoinQueueResponse* response) {

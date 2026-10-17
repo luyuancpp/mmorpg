@@ -1,41 +1,20 @@
 #pragma once
 #include <chrono>
 #include <functional>
-#include <memory>
-#include <deque>
-#include "core/network/grpc_client_runtime.h"
+#include <string>
+#include <string_view>
+#include <vector>
 #include "entt/src/entt/entity/registry.hpp"
 #include "grpc_client/grpc_call_tag.h"
-#include "proto/team/team.grpc.pb.h"
 
 #include "rpc/service_metadata/team_service_metadata.h"
 
-using grpc::ClientContext;
-using grpc::Status;
-using grpc::ClientAsyncResponseReader;
-
 namespace teampb {
-using ClientPlayerTeamStubPtr = std::unique_ptr<ClientPlayerTeam::Stub>;
 #pragma region ClientPlayerTeamCreateTeam
-
-struct AsyncClientPlayerTeamCreateTeamGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamCreateTeamMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::CreateTeamRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamCreateTeamHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamCreateTeamGrpcPath = "/teampb.ClientPlayerTeam/CreateTeam";
 using AsyncClientPlayerTeamCreateTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamCreateTeamHandlerFunctionType AsyncClientPlayerTeamCreateTeamHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -51,25 +30,10 @@ void SendClientPlayerTeamCreateTeam(entt::registry& registry, entt::entity nodeE
 void SendClientPlayerTeamCreateTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::CreateTeamRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamGetMyTeam
-
-struct AsyncClientPlayerTeamGetMyTeamGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamGetMyTeamMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::GetMyTeamRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamGetMyTeamHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamGetMyTeamGrpcPath = "/teampb.ClientPlayerTeam/GetMyTeam";
 using AsyncClientPlayerTeamGetMyTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamGetMyTeamHandlerFunctionType AsyncClientPlayerTeamGetMyTeamHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -85,25 +49,10 @@ void SendClientPlayerTeamGetMyTeam(entt::registry& registry, entt::entity nodeEn
 void SendClientPlayerTeamGetMyTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::GetMyTeamRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamApplyJoinTeam
-
-struct AsyncClientPlayerTeamApplyJoinTeamGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamApplyJoinTeamMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::ApplyJoinTeamRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamApplyJoinTeamHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamApplyJoinTeamGrpcPath = "/teampb.ClientPlayerTeam/ApplyJoinTeam";
 using AsyncClientPlayerTeamApplyJoinTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamApplyJoinTeamHandlerFunctionType AsyncClientPlayerTeamApplyJoinTeamHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -119,25 +68,10 @@ void SendClientPlayerTeamApplyJoinTeam(entt::registry& registry, entt::entity no
 void SendClientPlayerTeamApplyJoinTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ApplyJoinTeamRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamHandleApplication
-
-struct AsyncClientPlayerTeamHandleApplicationGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamHandleApplicationMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::HandleApplicationRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamHandleApplicationHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamHandleApplicationGrpcPath = "/teampb.ClientPlayerTeam/HandleApplication";
 using AsyncClientPlayerTeamHandleApplicationHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamHandleApplicationHandlerFunctionType AsyncClientPlayerTeamHandleApplicationHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -153,25 +87,10 @@ void SendClientPlayerTeamHandleApplication(entt::registry& registry, entt::entit
 void SendClientPlayerTeamHandleApplication(entt::registry& registry, entt::entity nodeEntity, const ::teampb::HandleApplicationRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamInviteToTeam
-
-struct AsyncClientPlayerTeamInviteToTeamGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamInviteToTeamMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::InviteToTeamRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamInviteToTeamHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamInviteToTeamGrpcPath = "/teampb.ClientPlayerTeam/InviteToTeam";
 using AsyncClientPlayerTeamInviteToTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamInviteToTeamHandlerFunctionType AsyncClientPlayerTeamInviteToTeamHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -187,25 +106,10 @@ void SendClientPlayerTeamInviteToTeam(entt::registry& registry, entt::entity nod
 void SendClientPlayerTeamInviteToTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::InviteToTeamRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamRespondInvite
-
-struct AsyncClientPlayerTeamRespondInviteGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamRespondInviteMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::RespondInviteRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamRespondInviteHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamRespondInviteGrpcPath = "/teampb.ClientPlayerTeam/RespondInvite";
 using AsyncClientPlayerTeamRespondInviteHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamRespondInviteHandlerFunctionType AsyncClientPlayerTeamRespondInviteHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -221,25 +125,10 @@ void SendClientPlayerTeamRespondInvite(entt::registry& registry, entt::entity no
 void SendClientPlayerTeamRespondInvite(entt::registry& registry, entt::entity nodeEntity, const ::teampb::RespondInviteRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamListMyInvites
-
-struct AsyncClientPlayerTeamListMyInvitesGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamListMyInvitesMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::ListMyInvitesResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::ListMyInvitesResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::ListMyInvitesRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamListMyInvitesHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::ListMyInvitesResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamListMyInvitesGrpcPath = "/teampb.ClientPlayerTeam/ListMyInvites";
 using AsyncClientPlayerTeamListMyInvitesHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::ListMyInvitesResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::ListMyInvitesResponse&)>;
 extern AsyncClientPlayerTeamListMyInvitesHandlerFunctionType AsyncClientPlayerTeamListMyInvitesHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -255,25 +144,10 @@ void SendClientPlayerTeamListMyInvites(entt::registry& registry, entt::entity no
 void SendClientPlayerTeamListMyInvites(entt::registry& registry, entt::entity nodeEntity, const ::teampb::ListMyInvitesRequest& request, GrpcDone<::teampb::ListMyInvitesResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamLeaveTeam
-
-struct AsyncClientPlayerTeamLeaveTeamGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamLeaveTeamMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::LeaveTeamRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamLeaveTeamHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamLeaveTeamGrpcPath = "/teampb.ClientPlayerTeam/LeaveTeam";
 using AsyncClientPlayerTeamLeaveTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamLeaveTeamHandlerFunctionType AsyncClientPlayerTeamLeaveTeamHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -289,25 +163,10 @@ void SendClientPlayerTeamLeaveTeam(entt::registry& registry, entt::entity nodeEn
 void SendClientPlayerTeamLeaveTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::LeaveTeamRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamKickMember
-
-struct AsyncClientPlayerTeamKickMemberGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamKickMemberMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::KickMemberRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamKickMemberHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamKickMemberGrpcPath = "/teampb.ClientPlayerTeam/KickMember";
 using AsyncClientPlayerTeamKickMemberHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamKickMemberHandlerFunctionType AsyncClientPlayerTeamKickMemberHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -323,25 +182,10 @@ void SendClientPlayerTeamKickMember(entt::registry& registry, entt::entity nodeE
 void SendClientPlayerTeamKickMember(entt::registry& registry, entt::entity nodeEntity, const ::teampb::KickMemberRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamTransferLeader
-
-struct AsyncClientPlayerTeamTransferLeaderGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamTransferLeaderMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::TransferLeaderRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamTransferLeaderHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamTransferLeaderGrpcPath = "/teampb.ClientPlayerTeam/TransferLeader";
 using AsyncClientPlayerTeamTransferLeaderHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamTransferLeaderHandlerFunctionType AsyncClientPlayerTeamTransferLeaderHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -357,25 +201,10 @@ void SendClientPlayerTeamTransferLeader(entt::registry& registry, entt::entity n
 void SendClientPlayerTeamTransferLeader(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TransferLeaderRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamDisbandTeam
-
-struct AsyncClientPlayerTeamDisbandTeamGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamDisbandTeamMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::DisbandTeamRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamDisbandTeamHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamDisbandTeamGrpcPath = "/teampb.ClientPlayerTeam/DisbandTeam";
 using AsyncClientPlayerTeamDisbandTeamHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamDisbandTeamHandlerFunctionType AsyncClientPlayerTeamDisbandTeamHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -391,25 +220,10 @@ void SendClientPlayerTeamDisbandTeam(entt::registry& registry, entt::entity node
 void SendClientPlayerTeamDisbandTeam(entt::registry& registry, entt::entity nodeEntity, const ::teampb::DisbandTeamRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamStartTeamMatch
-
-struct AsyncClientPlayerTeamStartTeamMatchGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamStartTeamMatchMessageId };
-    ClientContext context;
-    Status status;
-    ::teampb::TeamResponse reply;
-    std::unique_ptr<ClientAsyncResponseReader<::teampb::TeamResponse>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::StartTeamMatchRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamStartTeamMatchHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::teampb::TeamResponse> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamStartTeamMatchGrpcPath = "/teampb.ClientPlayerTeam/StartTeamMatch";
 using AsyncClientPlayerTeamStartTeamMatchHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::teampb::TeamResponse&)>;
+    std::function<void(const GrpcReplyContext&, const ::teampb::TeamResponse&)>;
 extern AsyncClientPlayerTeamStartTeamMatchHandlerFunctionType AsyncClientPlayerTeamStartTeamMatchHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -425,25 +239,10 @@ void SendClientPlayerTeamStartTeamMatch(entt::registry& registry, entt::entity n
 void SendClientPlayerTeamStartTeamMatch(entt::registry& registry, entt::entity nodeEntity, const ::teampb::StartTeamMatchRequest& request, GrpcDone<::teampb::TeamResponse> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamNotifyTeamSnapshot
-
-struct AsyncClientPlayerTeamNotifyTeamSnapshotGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamNotifyTeamSnapshotMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::TeamSnapshotS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamNotifyTeamSnapshotHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamNotifyTeamSnapshotGrpcPath = "/teampb.ClientPlayerTeam/NotifyTeamSnapshot";
 using AsyncClientPlayerTeamNotifyTeamSnapshotHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncClientPlayerTeamNotifyTeamSnapshotHandlerFunctionType AsyncClientPlayerTeamNotifyTeamSnapshotHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -459,25 +258,10 @@ void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& registry, entt::enti
 void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamSnapshotS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamNotifyTeamInvite
-
-struct AsyncClientPlayerTeamNotifyTeamInviteGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamNotifyTeamInviteMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::TeamInviteS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamNotifyTeamInviteHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamNotifyTeamInviteGrpcPath = "/teampb.ClientPlayerTeam/NotifyTeamInvite";
 using AsyncClientPlayerTeamNotifyTeamInviteHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncClientPlayerTeamNotifyTeamInviteHandlerFunctionType AsyncClientPlayerTeamNotifyTeamInviteHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -493,25 +277,10 @@ void SendClientPlayerTeamNotifyTeamInvite(entt::registry& registry, entt::entity
 void SendClientPlayerTeamNotifyTeamInvite(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamInviteS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
 #pragma region ClientPlayerTeamNotifyTeamEvent
-
-struct AsyncClientPlayerTeamNotifyTeamEventGrpcClient {
-    uint32_t messageId{ ClientPlayerTeamNotifyTeamEventMessageId };
-    ClientContext context;
-    Status status;
-    ::Empty reply;
-    std::unique_ptr<ClientAsyncResponseReader<::Empty>> response_reader;
-    // 失败时交还失败处理器:应答里的回显字段与服务端回写的 metadata 这时都拿不到(见 GrpcCallFailure)。
-    // 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-    ::teampb::TeamEventS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncClientPlayerTeamNotifyTeamEventHandler / FailedHandler。
-    // 调用对象在对象池里不移动,回调捕获的上下文随它活到完成(不放进 ECS 组件)。
-    GrpcDone<::Empty> done;
-    GrpcClientRuntimePtr runtime;
-};
-
+// gRPC :path(线上契约,与 Go 侧一致)。
+inline constexpr std::string_view kClientPlayerTeamNotifyTeamEventGrpcPath = "/teampb.ClientPlayerTeam/NotifyTeamEvent";
 using AsyncClientPlayerTeamNotifyTeamEventHandlerFunctionType =
-    std::function<void(const ClientContext&, const ::Empty&)>;
+    std::function<void(const GrpcReplyContext&, const ::Empty&)>;
 extern AsyncClientPlayerTeamNotifyTeamEventHandlerFunctionType AsyncClientPlayerTeamNotifyTeamEventHandler;
 // 调用以非 OK 状态结束时的回调(deadline 到期 / 连接不可用 / 服务端报错),拿到发出的请求副本。
 // 未装时只打 ERROR 日志。失败 = 结果未知,语义见 GrpcCallFailure。
@@ -526,13 +295,11 @@ void SendClientPlayerTeamNotifyTeamEvent(entt::registry& registry, entt::entity 
 // 且本次调用不再触发上面的全局处理器。done 为空等同于不带回调的 Send。
 void SendClientPlayerTeamNotifyTeamEvent(entt::registry& registry, entt::entity nodeEntity, const ::teampb::TeamEventS2C& request, GrpcDone<::Empty> done, const GrpcCallOptions& options = {});
 #pragma endregion
-void SetTeamHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
-void SetTeamIfEmptyHandler(const std::function<void(const ClientContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetTeamHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
+void SetTeamIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler);
 void SetTeamFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
 void SetTeamIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler);
-// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。流式调用不设。
+// 本文件所有 unary 调用此后使用的 deadline;启动时由 SetGrpcCallDeadline 按目标节点类型调用。
 void SetTeamCallDeadline(std::chrono::milliseconds deadline);
-void HandleTeamCompletedQueueMessage(entt::registry& registry, entt::entity nodeEntity, grpc::CompletionQueue& completeQueueComp, bool ok, GrpcTag* grpcTag);
-void InitTeamGrpcNode(const std::shared_ptr< ::grpc::ChannelInterface>& channel, entt::registry& registry, entt::entity nodeEntity);
 
 }// namespace teampb

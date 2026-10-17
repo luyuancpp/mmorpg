@@ -18,7 +18,7 @@
 //                           在途超时。
 //
 // 契约:
-//   * **线程**:全部入口只在 scene 的 loop 线程上调用(落地钩子、tick、Kafka 事件、gRPC 完成队列都在这个线程,
+//   * **线程**:全部入口只在 scene 的 loop 线程上调用(落地钩子、tick、Kafka 事件、gRPC 完成回调都在这个线程,
 //     设计 §10)。状态在 thread_local 的 ECS 组件里,没有锁。
 //   * **回调只认 player_id**:gRPC 回包与 PING 回调都按 player_id 重新找实体,再核对 domain 与 correlation_id
 //     (节点级单调计数器);对不上就丢弃。不捕获实体句柄。
@@ -60,7 +60,7 @@ public:
 	static void Tick();
 
 	// ── gRPC 回包(由 InitPlayerInboxReply 装的处理器转进来)──
-	// grpcCode 与 grpc::StatusCode 同值;非 OK = 结果未知(GrpcCallFailure 的语义)。
+	// grpcCode 是线上 grpc-status 的数值(grpc_call_tag.h 的 kGrpcStatus*);非 OK = 结果未知(GrpcCallFailure 的语义)。
 	static void OnFetchReply(const player_inbox::FetchPlayerInboxResponse &response);
 	static void OnFetchFailed(const player_inbox::FetchPlayerInboxRequest &request, uint32_t grpcCode,
 							  const std::string &detail);

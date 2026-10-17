@@ -70,7 +70,7 @@ struct PlayerExitIntentComp
 	// 本次退出已打过一次 "save outran reconnect lease" WARN。退出分支现在一次退出可能落地多次(重存轮次、
 	// 超限保留后的周期存盘 / rekick),该 WARN 被帮会值班 LogQL 按"事件数"引用(§12.6.9),只许每次退出打一条。
 	bool leaseOverrunWarned{false};
-	// 退出发起那一刻所在场景的 scene_id(SceneInfoComp);0 = 当时不在任何场景 / 拿不到。必须在 DetachFromScene 之前抄:
+	// 退出发起那一刻所在场景的 scene_id(SceneInfoComp);0 = 当时不在任何场景 / 拿不到。必须在 LeaveCurrentScene 之前抄:
 	// 它一摘 SceneEntityComp 就再也拿不到了,而疏散 / 排空改派要在退出收敛之后才发。改派的确认核实拿它与 Redis 里
 	// location 的场景比:仍指向这个场景 = 改派没生效(relocate_confirm::ClassifyPlacement 的 sourceSceneId)。
 	// 0 时核实一律判"判不清"、不踢。

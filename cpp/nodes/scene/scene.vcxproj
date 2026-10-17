@@ -198,7 +198,6 @@
   <ItemGroup>
     <ClCompile Include="handler\event\scene_kafka_command_router.cpp" />
     <ClCompile Include="handler\event\battle_event_handler.cpp" />
-    <ClCompile Include="handler\event\event_handler.cpp" />
     <ClCompile Include="handler\event\player_migration_event_handler.cpp" />
     <ClCompile Include="handler\event\team_event_handler.cpp" />
     <ClCompile Include="handler\event\player_inbox_event_handler.cpp" />
@@ -221,12 +220,12 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="id_segment_bootstrap.cpp" />
     <ClCompile Include="rpc_replies\scene_manager_response_handler.cpp" />
+    <ClCompile Include="rpc_replies\player_inbox_response_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="handler\event\scene_kafka_command_router.h" />
     <ClInclude Include="id_segment_bootstrap.h" />
     <ClInclude Include="handler\event\battle_event_handler.h" />
-    <ClInclude Include="handler\event\event_handler.h" />
     <ClInclude Include="handler\event\player_migration_event_handler.h" />
     <ClInclude Include="handler\event\team_event_handler.h" />
     <ClInclude Include="handler\event\player_inbox_event_handler.h" />
@@ -246,6 +245,7 @@
     <ClInclude Include="handler\rpc\player\player_state_attribute_sync_handler.h" />
     <ClInclude Include="handler\grpc\scene_node_service.h" />
     <ClInclude Include="rpc_replies\scene_manager_response_handler.h" />
+    <ClInclude Include="rpc_replies\player_inbox_response_handler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -259,7 +259,5 @@
     <ClInclude Include="handler\rpc\player\player_activity_handler.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="handler\local_event\scene_local_events.cpp" />
-    <ClInclude Include="handler\local_event\scene_local_events.h" />
   </ItemGroup>
 </Project>

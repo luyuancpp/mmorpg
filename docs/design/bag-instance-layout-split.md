@@ -111,7 +111,7 @@ Bag            ← 桥:需要两层才能回答的玩法规则(堆叠 + 摆放 +
 - 身份与生命期:`Insert` / `Erase` / `Clear` / `Find` / `Contains` / `ForEach`
 - 数量:`TotalCountOf` / `HasAll` / `DrainStacks`
 - 堆叠语义:`MeasureFreeRoomPerConfig` / `PlanStackIntoExistingStacks` / `ApplyStackFill` / `HasMergeablePartials` / `MergePartialStacks` / `CanStack` / `StacksNeededFor`
-- guid 发号:`MintGuid` / `CanMintGuid` / `IsInvalidGuid`
+- guid 发号:`MintGuid` / `IsInvalidGuid`
 
 不知道:槽位、容量、满没满。
 
@@ -216,7 +216,7 @@ commit  : 两层一起写;失败一定发生在 reserve 之前,绝无半写状�
 | `IsAlreadyMergedAndCompact()` 的第 ① 条(可合并性) | `HasMergeablePartials()` |
 | `MergeAndCompact()` 里合并堆叠的 ①② 两段 | `MergePartialStacks()`,返回待销毁 guid |
 | `GridsNeededFor` | `StacksNeededFor`(改名见 §2.1) |
-| `GenerateItemGuid` / `CanMintItemGuid` / `IsInvalidItemGuid` | `MintGuid` / `CanMintGuid` / `IsInvalidGuid` |
+| `GenerateItemGuid` / `IsInvalidItemGuid` | `MintGuid` / `IsInvalidGuid` |
 
 ### 留在桥层
 
@@ -268,7 +268,7 @@ W×H 二维格,实例按 `Footprint` 的宽高占据一块矩形,`SlotId = y * w
 2. 实例层不认识槽位 / 容量 / 满没满。
 3. 销毁必须两层成对,唯一入口 `Bag::DestroyItem`。
 4. `ItemStore::items_` 的 key 等于实例 `item_id`，创建只走 `Insert`，销毁只走 `Erase` / `Clear`。
-5. 入包一律 plan → reserve → commit;任何失败都发生在第一次写入之前。
+5. 入包一律在候选副本上 plan → mint → commit，失败只丢弃副本。
 6. `SlotId` 序列化后就是 `ItemEntry.pos`(uint32),各策略对它的解释不同但宽度与语义位置不变。
 7. 换布局策略只允许在空背包上做(`Bag::SetLayout` fail-closed)——槽位号在不同策略下含义不同,带着物品换等于让所有已持久化的 `pos` 突然改变意义。
 
@@ -292,7 +292,7 @@ W×H 二维格,实例按 `Footprint` 的宽高占据一块矩形,`SlotId = y * w
 
 ## 8. 行为差异清单
 
-拆分的目标是行为不变。下面是**全部**已知差异,逐条列出:
+拆分期行为不变；后续有意变化见 #7。下面逐条列出已知差异：
 
 | # | 差异 | 影响 |
 |---|---|---|
@@ -302,6 +302,7 @@ W×H 二维格,实例按 `Footprint` 的宽高占据一块矩形,`SlotId = y * w
 | 4 | `FlatLayout::PlaceAt` 覆盖已占槽位时,会把被顶掉的 guid 从反向索引摘掉 | 反向索引是拆分后才有的,不摘就会残留一条指向已易主槽位的记录。对外表现与拆分前 `posToGuid[pos] = guid` 一致 |
 | 5 | `FlatLayout::FreeCells()` 在 `slots > capacity` 时钳到 0,不再无符号下溢 | 拆分前该状态只有 `assert` 拦,Release 下会下溢成天文数字并让背包"永远不满" |
 | 6 | 脏数据日志 `PlanStackIntoExistingStacks` 打印 `config_id` 而非 `PlayerGuid()` | `Bag::playerGuid` 从未被赋值过(见 §11 遗留 b),原来打印的一直是哨兵值 |
+| 7 | 2026-10-15 第 3 批起，灌哪堆 / 扣哪堆 / 留哪堆 / 批量占格 / 整理平局改为显式顺序 | 客户端可见，详见 §14 |
 
 `MergeAndCompact` 的早退判据**刻意保持相邻比较**,没有改成"跟 `DesiredOrder()` 的结果比对是否相等":`(config, size)` 完全相同的两个实例之间顺序本就是任意的(`std::sort` 不稳定),拿排序结果去比会把本已整齐的布局判成需要整理,反而把玩家摆好的东西挪走。
 
@@ -605,6 +606,35 @@ build/cpp/tests/bag_test.exe
 - **`FixedSlotLayout` 继承了 first-fit 自动选位。** 具名槽语义下"头盔落进靴子槽"是错的,但没有槽位分类就做不了更好,而 `AddItem` 又必须能放。等 §11.2(d) 的 `equip_slot` 列落地后,在桥层加准入卫语句即可。
 
 ---
+
+## 14. 实例层去 entt、选择顺序与原子提交（2026-10-15）
+
+`ItemStore` 以 `Guid -> ItemComp` 普通字典保存实例，不再创建或暴露物品实体句柄。以下规则取代前文拆分期的旧实现描述：
+
+| 操作 | 当前规则 |
+|---|---|
+| 实例序 | `(acquire_seq 升序, guid 升序)`；使用完整无符号值，不依赖哈希遍历或删除历史 |
+| 补堆 | 同 config、可堆叠的既有实例按实例序先填较早的零头 |
+| 合并 | 分组及组内分配按实例序，最早的非空实例作为幸存者；空堆不参与合并 |
+| 回收回执 | 被合并清空的实例按实例序回收并返回退役回执 |
+| 淘汰 | FIFO 按实例序选牺牲者，先把牺牲者视为不存在重新规划到不动点 |
+| 整理平局 | 同 config、同 size 时按实例序打破平局；已整齐布局仍保留玩家现有摆法 |
+| 扣除 | 槽位号升序，再按实例序；来源为 Java 仓库 `scene-battle-spec` D22 |
+| 批量配置 | `ItemCountMap` 按 config 升序预检、占格及落流水 |
+| 扣空 | 当场两层成对释放实例与槽位，不等待整理 |
+| 还原 | 跳过零堆；`Bag::RestoreItems` 先取全包最大既有序号，再按输入顺序补旧零章 |
+| 入包提交 | `Bag::AddItems` 先算淘汰不动点并铸齐 ID，再在仓库副本和布局 `Clone` 候选上提交；失败零改动、允许烧号 |
+| 借用 | 任何成功入包都会使既有 `ItemComp*` 借用失效，调用者须重新按 guid 获取 |
+| 写盘 | 固定包按 `bag_type / slot`，动态包按 `bag_id / slot` 输出 |
+
+与 Java `Bag.java` 的对照（运行验收前保留差异，不将源码变更写成已验证）：
+
+| 规则 | C++ | Java 对照 |
+|---|---|---|
+| 选择顺序 | 实例序、槽位扣除序、config 批次序显式化 | 参照 `BagItem.ACQUIRE_ORDER` 与 `scene-battle-spec` D22 |
+| 原子提交与扣空 | 候选提交、失败零改动；扣空即释放 | Java 对应行为同批核对，见 `PARITY.md` |
+| 写盘顺序 | 固定包 `bag_type / slot`、动态包 `bag_id / slot` | 仍有差异，须单独核对 Java 写出顺序，不写“已对齐” |
+| 旧档 seq0 补章 | 每包先扫最大既有章，再补零章 | 仍有差异，须单独核对 Java 混合旧章恢复，不写“已对齐” |
 
 ## 关联
 

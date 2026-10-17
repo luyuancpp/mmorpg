@@ -66,6 +66,9 @@ func getPlayerLocationWithRaw(svcCtx *svc.ServiceContext, playerId uint64) (*smp
 // location 与 owner_epoch 必须在同一段 Lua 里一起推进,分开写就会出现「epoch 已经
 // 是 N+1、location 还写着 N」的窗口,C++ 侧的存盘 CAS 会据此把正常持有者当成
 // 已废黜。细节见 placePlayerLocation。
+//
+// guard 的 identity 与 expectLoc 都留零值(无身份、原文期望 any),行为与加会话身份之前相同 ——
+// 它只供测试夹具摆初始状态,不经过 EnterScene 的身份裁决。
 func UpdatePlayerLocation(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64, sceneId uint64, nodeId string, zoneId uint32) error {
 	observed, err := currentOwnerEpoch(svcCtx, playerId)
 	if err != nil {
@@ -101,6 +104,54 @@ type placementGuard struct {
 	// (PlayerLocation.pending_scene_conf_id);放在这里只为不再给 placePlayerLocation 加位置参数。
 	// 常规落点(nodeId 非空)必须留 0。
 	pendingSceneConfID uint64
+	// identity 也不是并发前提,是本次落点要写进 location 的会话身份(decidePlacementIdentity 给出的
+	// 「应写入的身份」,scene-enter-chain-residuals.md §5.2 ②)。零值 = 无身份,只有测试夹具会这样写。
+	identity placementIdentity
+	// expectLoc:location 原文期望(落点 Lua 的 ARGV[4] / ARGV[5],见 luaLocationExpectCheck)。
+	// 零值 mode 即 any(不检查),**只供测试夹具与 UpdatePlayerLocation 使用**;生产构造点(跨区 guard、
+	// 常规 guard、samePlacement 的身份写)必须用 expectObservedLocation 显式填 missing / present ——
+	// 漏填时原文 CAS 静默失效,由 enterscene_identity_test.go 里每处构造点的「观察之后 location 变化 → 19」用例守住。
+	expectLoc locationExpectation
+}
+
+// locationExpectMode 是落点 Lua 对 location 原文的期望模式(ARGV[4])。零值 = any。
+type locationExpectMode uint8
+
+const (
+	// locationExpectAny:不检查(ARGV[4] 传空串)。只供测试夹具与 UpdatePlayerLocation。
+	locationExpectAny locationExpectMode = iota
+	// locationExpectMissing:观察时没有 location,提交时也必须没有。
+	locationExpectMissing
+	// locationExpectPresent:提交时 location 必须逐字节等于观察原文。
+	locationExpectPresent
+)
+
+// luaArg 是 Lua 实参里的写法,与 luaLocationExpectCheck 的字面量一一对应。
+func (m locationExpectMode) luaArg() string {
+	switch m {
+	case locationExpectMissing:
+		return "missing"
+	case locationExpectPresent:
+		return "present"
+	default:
+		return ""
+	}
+}
+
+// locationExpectation 是一次落点对 location 原文的期望:模式 + present 时的期望原文。
+type locationExpectation struct {
+	mode locationExpectMode
+	raw  string
+}
+
+// expectObservedLocation 按本次 EnterScene 开头观察到的 location 原文给出期望:没有 location = missing,
+// 否则 present + 观察原文。observedRaw 必须是 Gone / Dead 过滤**之前**的原文 —— 过滤只决定换手门放不放过,
+// 提交时 Redis 里的 location 仍是观察到的那一份才说明观察之后没人改过它。
+func expectObservedLocation(observedRaw string) locationExpectation {
+	if observedRaw == "" {
+		return locationExpectation{mode: locationExpectMissing}
+	}
+	return locationExpectation{mode: locationExpectPresent, raw: observedRaw}
 }
 
 // placePlayerLocation 写入 location,并按 mint 决定是否同时铸造新的归属 epoch;
@@ -111,6 +162,11 @@ type placementGuard struct {
 // 全部建立在那一次观察上,观察之后只要有并发 EnterScene 推进过 epoch,CAS 就必须
 // 失败 —— 返回 errOwnerEpochConflict,Redis 里**什么都没改**,调用方拒绝本次请求、
 // 不发路由,由先到者决定归属。
+//
+// 同一段 Lua 还比 location 原文(guard.expectLoc,scene-enter-chain-residuals.md §5.2 ③):本次的会话身份判定
+// 也建立在那一次观察上,观察之后 location 被改写或删除(另一次登录写了身份、LeaveScene 删了它)时同样返回
+// errOwnerEpochConflict。owner_epoch CAS 只挡得住「有人铸造」,同节点不铸造的落点与 samePlacement 改写
+// location 不动 epoch,只有原文期望挡得住。写入的 location 带 guard.identity。
 //
 // mint=true(持有者换了:首次落点 / 过了标记门的交接 / 跨 zone 放行 / 等待落点
 // 的第二条腿)→ luaMintEpochAndSetLocation,location 里记 observedEpoch+1。
@@ -143,6 +199,9 @@ func placePlayerLocation(svcCtx *svc.ServiceContext, playerId uint64, sceneId ui
 		OwnerEpoch: placedEpoch,
 
 		PendingSceneConfId: guard.pendingSceneConfID,
+
+		SessionId:       guard.identity.sessionID,
+		LoginGeneration: guard.identity.loginGeneration,
 	}
 	data, err := proto.Marshal(loc)
 	if err != nil {
@@ -152,7 +211,8 @@ func placePlayerLocation(svcCtx *svc.ServiceContext, playerId uint64, sceneId ui
 
 	result, err := svcCtx.Redis.Eval(script,
 		[]string{ownerepoch.OwnerEpochKey(playerId), getPlayerLocationKey(playerId), ownerepoch.HandoffKey(playerId)},
-		strconv.FormatUint(observedEpoch, 10), raw, guard.requiredMarker)
+		strconv.FormatUint(observedEpoch, 10), raw, guard.requiredMarker,
+		guard.expectLoc.mode.luaArg(), guard.expectLoc.raw)
 	if err != nil {
 		return placedLocation{}, err
 	}
@@ -193,6 +253,47 @@ func decodeMintReply(signed int64) (int64, bool) {
 		return -signed, true
 	}
 	return signed, false
+}
+
+// setLocationIdentityIfUnchanged 是 samePlacement(同一落点重连)的身份写(scene-enter-chain-residuals.md §5.2 ②):
+// 克隆观察到的 location,保留 owner_epoch、rollback_receipt、update_time、pending_scene_conf_id 等全部字段,
+// 只把会话身份改成 identity,用不铸造的 luaSetLocationIfEpoch 写回(present 模式,期望 = 观察原文,
+// epoch = observedEpoch)。
+//
+//   - observed / observedRaw:本次 EnterScene 开头观察到的 location 与原文,必须成对且非空。
+//   - 返回 errOwnerEpochConflict:epoch 被并发推进,或 location 在观察之后被改写 / 删除(例如 LeaveScene 删了它),
+//     Redis 一个字节都没改;调用方回 19、不发路由。
+//   - 只改身份,不动人数,也不动 owner_epoch 键:归属没变,持有节点的缓存必须继续合法。
+//
+// 调用方只在「应写入的身份 ≠ location 记的身份」时调用。写入之后若推路由失败,**不回滚身份**(§5.2 ② v0.2):
+// kafka-go 报错但 broker 其实已投递时,回滚会把身份退回旧会话,重开迟到 LeaveScene 误删(b1)与陈旧换图放行(d2)。
+func setLocationIdentityIfUnchanged(svcCtx *svc.ServiceContext, playerId uint64, observed *smpb.PlayerLocation,
+	observedRaw string, identity placementIdentity, observedEpoch uint64) error {
+	if observed == nil || observedRaw == "" {
+		return fmt.Errorf("同落点身份写缺少观察到的 location: observed_nil=%v raw_len=%d", observed == nil, len(observedRaw))
+	}
+	updated := proto.Clone(observed).(*smpb.PlayerLocation)
+	updated.SessionId = identity.sessionID
+	updated.LoginGeneration = identity.loginGeneration
+	data, err := proto.Marshal(updated)
+	if err != nil {
+		return err
+	}
+	expect := expectObservedLocation(observedRaw)
+	result, err := svcCtx.Redis.Eval(luaSetLocationIfEpoch,
+		[]string{ownerepoch.OwnerEpochKey(playerId), getPlayerLocationKey(playerId), ownerepoch.HandoffKey(playerId)},
+		strconv.FormatUint(observedEpoch, 10), string(data), "", expect.mode.luaArg(), expect.raw)
+	if err != nil {
+		return err
+	}
+	signed, parseErr := strconv.ParseInt(fmt.Sprint(result), 10, 64)
+	if parseErr != nil {
+		return fmt.Errorf("同落点身份写返回值非法: %v: %w", result, parseErr)
+	}
+	if signed <= 0 {
+		return errOwnerEpochConflict
+	}
+	return nil
 }
 
 // DeletePlayerLocation removes the player's location from Redis.

@@ -13,6 +13,7 @@ package logic
 //   - 5v5 分队 assignBalancedTeams:按评分排序后蛇形分配 0/1。
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -119,6 +120,12 @@ func parseRating(raw string) float64 {
 
 // loadRating 读玩家评分;没有记录返回 defaultRating。评分是 match 私有 key,走 MatchRedis。
 func loadRating(svcCtx *svc.ServiceContext, playerId uint64) (float64, error) {
+	if svcCtx.Authority != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		rating, e := svcCtx.Authority.Rating(ctx, playerId)
+		return float64(rating) / 100, e
+	}
 	raw, err := svcCtx.MatchRedis.Hget(matchRatingKey(playerId), ratingFieldRating)
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -426,6 +433,18 @@ func ApplyBattleResult(svcCtx *svc.ServiceContext, event *kafkapb.BattleResultEv
 		}
 	}
 
+	if svcCtx.Authority != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+		defer cancel()
+		applied, e := svcCtx.Authority.ApplyRating(ctx, battleId, event, uint32(mode), teamA, teamB, scoreA)
+		if e != nil {
+			return finish(ratingOutcomeError), e
+		}
+		if !applied {
+			return finish(ratingOutcomeDuplicate), nil
+		}
+		return finish(ratingOutcomeApplied), nil
+	}
 	// 先按赛前评分算 Δ_A,再拿标记:标记值要带 Δ_A(续写不重算)。
 	all := append(append([]uint64(nil), teamA...), teamB...)
 	ratings := loadRatings(svcCtx, all)

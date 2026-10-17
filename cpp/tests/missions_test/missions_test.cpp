@@ -14,7 +14,7 @@
 #include "modules/mission/system/mission.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/mission_error_tip.pb.h"
-#include "../../nodes/scene/handler/local_event/scene_local_events.h"
+#include "services/scene/player/system/player_mission.h"
 #include "engine/core/utils/random/random.h"
 
 #include "proto/common/component/mission_comp.pb.h"
@@ -30,7 +30,6 @@ entt::entity CreateTestPlayer()
 {
 	const auto player = tlsEcs.actorRegistry.create();
 	(void)tlsEcs.actorRegistry.emplace<PlayerGuidComp>(player, Guid{100000} + entt::to_integral(player));
-	scene_local_events::RegisterMission();
 	return player;
 }
 
@@ -142,7 +141,7 @@ TEST(MissionsComp, TriggerMissionCondition)
 	{
 		condEv.conditionIds.clear();
 		condEv.conditionIds.push_back(condId);
-		MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+		PlayerMissionSystem::OnCondition(player, condEv);
 		EXPECT_EQ(1, missions.MissionSize());
 		EXPECT_EQ(0, missions.CompleteSize());
 	}
@@ -150,7 +149,7 @@ TEST(MissionsComp, TriggerMissionCondition)
 	// Condition 4: mission completes
 	condEv.conditionIds.clear();
 	condEv.conditionIds.push_back(4);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_EQ(0, missions.MissionSize());
 	EXPECT_EQ(1, missions.CompleteSize());
 	EXPECT_EQ(0, missions.TypeSetSize());
@@ -160,8 +159,6 @@ TEST(MissionsComp, ConditionTypeSize)
 {
 	const auto player = CreateTestPlayer();
 	auto &missions = GetPlayerMissionsComp(player);
-
-	tlsEcs.dispatcher.update<AcceptMissionEvent>();
 
 	constexpr uint32_t missionId = 6;
 	auto acceptEv = MakeAcceptEvent(player, missionId);
@@ -180,17 +177,17 @@ TEST(MissionsComp, ConditionTypeSize)
 	condEv.conditionIds.push_back(1);
 
 	// KillMonster
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_EQ(1, missions.MissionSize());
 
 	// TalkWithNpc
 	condEv.conditionType = static_cast<uint32_t>(eConditionType::kConditionTalkWithNpc);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_EQ(1, missions.MissionSize());
 
 	// CompleteCondition
 	condEv.conditionType = static_cast<uint32_t>(eConditionType::kConditionCompleteCondition);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_EQ(1, missions.MissionSize());
 
 	// UseItem (needs condition ids {1, 2})
@@ -198,7 +195,7 @@ TEST(MissionsComp, ConditionTypeSize)
 	condEv.conditionIds.clear();
 	condEv.conditionIds.push_back(1);
 	condEv.conditionIds.push_back(2);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_EQ(1, missions.MissionSize());
 
     // 等级是当前拥有值；生产事件同时在 ID 槽和 amount 携带当前等级。
@@ -206,7 +203,7 @@ TEST(MissionsComp, ConditionTypeSize)
 	condEv.conditionIds.clear();
 	condEv.conditionIds.push_back(10);
     condEv.amount = 10;
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_EQ(1, missions.MissionSize());
 
 	// Interaction — final condition, completes the mission
@@ -215,9 +212,7 @@ TEST(MissionsComp, ConditionTypeSize)
 	condEv.conditionIds.clear();
 	condEv.conditionIds.push_back(1);
 	condEv.conditionIds.push_back(2);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
-
-	tlsEcs.dispatcher.update<ConditionEvent>();
+	PlayerMissionSystem::OnCondition(player, condEv);
 
 	EXPECT_EQ(0, missions.MissionSize());
 	EXPECT_EQ(1, missions.CompleteSize());
@@ -246,7 +241,7 @@ TEST(MissionsComp, CompleteAcceptMission)
 	// Fulfill condition → mission completes
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster);
 	condEv.conditionIds.push_back(1);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 
 	EXPECT_FALSE(missions.IsAccepted(missionId));
 	EXPECT_TRUE(missions.IsComplete(missionId));
@@ -275,14 +270,14 @@ TEST(MissionsComp, EventTriggerMutableMission)
 	{
 		condEv.conditionIds.clear();
 		condEv.conditionIds.push_back(i);
-		MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+		PlayerMissionSystem::OnCondition(player, condEv);
 	}
 
 	EXPECT_TRUE(missions.IsComplete(missionId1));
     EXPECT_FALSE(missions.IsComplete(missionId2));
-    MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+    PlayerMissionSystem::OnCondition(player, condEv);
     EXPECT_FALSE(missions.IsComplete(missionId2));
-    MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+    PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_TRUE(missions.IsComplete(missionId2));
 }
 
@@ -300,9 +295,7 @@ TEST(MissionsComp, OnCompleteMission)
 	// amount must satisfy mission target_count (highest in chain is 12)
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster, 12);
 	condEv.conditionIds.push_back(1);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
-
-	tlsEcs.dispatcher.update<AcceptMissionEvent>();
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_FALSE(missions.IsAccepted(missionId));
 	EXPECT_TRUE(missions.IsComplete(missionId));
 
@@ -317,13 +310,10 @@ TEST(MissionsComp, OnCompleteMission)
 	{
 		condEv.conditionIds.clear();
 		condEv.conditionIds.push_back(i);
-		MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+		PlayerMissionSystem::OnCondition(player, condEv);
 
 		EXPECT_FALSE(missions.IsAccepted(missionId));
 		EXPECT_TRUE(missions.IsComplete(missionId));
-
-		tlsEcs.dispatcher.update<AcceptMissionEvent>();
-		EXPECT_EQ(0, tlsEcs.dispatcher.size<AcceptMissionEvent>());
 
         ++missionId;
         if (missionId == 10 || missionId == 11)
@@ -356,15 +346,12 @@ TEST(MissionsComp, AcceptNextMirroMission)
 	// Complete mission 7 (target_count=8)
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster, 8);
 	condEv.conditionIds.push_back(1);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
-
-	tlsEcs.dispatcher.update<AcceptMissionEvent>();
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_FALSE(missions.IsAccepted(missionId));
 	EXPECT_TRUE(missions.IsComplete(missionId));
 
 	// Next mission in chain auto-accepted
 	const auto nextMissionId = ++missionId;
-	tlsEcs.dispatcher.update<AcceptMissionEvent>();
 	EXPECT_TRUE(missions.IsAccepted(nextMissionId));
 	EXPECT_FALSE(missions.IsComplete(nextMissionId));
 }
@@ -389,10 +376,7 @@ TEST(MissionsComp, MissionCondition)
 	// Single condition event completes all three
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster);
 	condEv.conditionIds.push_back(1);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
-
-	tlsEcs.dispatcher.update<AcceptMissionEvent>();
-	tlsEcs.dispatcher.update<ConditionEvent>();
+	PlayerMissionSystem::OnCondition(player, condEv);
 
 	for (uint32_t id : {missionId, missionId1, missionId2})
 	{
@@ -415,12 +399,12 @@ TEST(MissionsComp, ConditionAmount)
 	condEv.conditionIds.push_back(1);
 
 	// First event: progress increases but not enough to complete
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_TRUE(missions.IsAccepted(missionId));
 	EXPECT_FALSE(missions.IsComplete(missionId));
 
 	// Second event: accumulated amount reaches threshold → completes
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_FALSE(missions.IsAccepted(missionId));
 	EXPECT_TRUE(missions.IsComplete(missionId));
 }
@@ -445,7 +429,7 @@ TEST(MissionsComp, ProgressClampedToTarget)
 	// Fire a huge amount at the first condition (KillMonster, condition id 1).
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster, 1000000);
 	condEv.conditionIds.push_back(1);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 
 	// The mission stays accepted because the remaining conditions are unmet.
 	EXPECT_TRUE(missions.IsAccepted(missionId));
@@ -456,7 +440,7 @@ TEST(MissionsComp, ProgressClampedToTarget)
 	EXPECT_LT(clamped, 1000000u);
 
 	// Re-firing the same event must not push progress beyond the target.
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_EQ(clamped, firstSlotProgress());
 }
 
@@ -479,7 +463,7 @@ TEST(MissionsComp, MissionRewardList)
 	// Complete the mission
 	auto condEv = MakeConditionEvent(player, eConditionType::kConditionKillMonster);
 	condEv.conditionIds.push_back(1);
-	MissionSystem::HandleConditionEvent(condEv, missions, MissionConfig::GetSingleton());
+	PlayerMissionSystem::OnCondition(player, condEv);
 	EXPECT_FALSE(missions.IsAccepted(missionId));
 	EXPECT_TRUE(missions.IsComplete(missionId));
 

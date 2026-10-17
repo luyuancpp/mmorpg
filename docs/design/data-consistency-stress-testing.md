@@ -213,8 +213,25 @@ Convergence kinds:
 | `CACHE_SIG_INVALID`     | Same, in Redis cache.                                                         |
 | `BOTH_SIG_INVALID`      | Both stores have invalid sigs — almost always proto-schema drift.             |
 
-Pair this with `kafka-consumer-groups.sh --describe --group db_rpc_consumer_group`
-for I3 (no backlog).
+Pair this with `kafka-consumer-groups.sh --describe --group <go/db consumer group>`
+for I3 (no backlog). The group name depends on how go/db was started (corrected
+2026-10-16; the code is in place, not compiled or tested, pending Codex verification):
+
+| How go/db runs | Consumer group | Topic |
+| --- | --- | --- |
+| Local single-zone default start (`go_services.ps1` without `-Zone`, i.e. `-Zone 0`, e.g. `dev-start`) | bare `db_rpc_consumer_group` (`go/db/etc/db.yaml` `ServerConfig.Kafka.GroupID`, unchanged) | `db_task_zone_1` |
+| Local `-Zone N` start (`dev-start-zones`, or `go-svc-start -Zone N`) | `db_rpc_consumer_group_zN` (`go_services.ps1` appends `_zN` to the `GroupID` line only when `-Zone` > 0) | `db_task_zone_N` |
+| K8s, after the zone was switched to its own group | `db_rpc_consumer_group_z<ZoneId>` | `db_task_zone_<ZoneId>` |
+
+A K8s zone that has not been switched yet still consumes with the legacy shared
+`db_rpc_consumer_group`; the live `go-svc-db-config` ConfigMap is authoritative
+(see `docs/design/db-consumer-group-per-zone.md`). Topics carry a `_g<gen>`
+suffix when `TopicGeneration` >= 2.
+
+`tools/scripts/stress_summarize.ps1` follows the same rule: `-Zone` defaults
+to 0, which keeps the defaults `db_task_zone_1` / bare `db_rpc_consumer_group`;
+with `-Zone N` (N > 0) it derives `db_task_zone_N` / `db_rpc_consumer_group_zN`,
+and an explicitly passed `-KafkaTopic` / `-KafkaConsumerGroup` always wins.
 
 ### L3 — E2E robot mode
 

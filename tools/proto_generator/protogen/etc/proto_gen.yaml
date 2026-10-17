@@ -277,6 +277,24 @@ log:
   file_path: "protogen.log"
 
 domain_meta:
+  mail:
+    source: "{{proto_dir}}mail/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto: "go/generated/mail/proto"
+        handler: "go/generated/mail/handler"
+        grpc: "go/generated/mail/grpc"
+  rank:
+    source: "{{proto_dir}}rank/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto: "go/generated/rank/proto"
+        handler: "go/generated/rank/handler"
+        grpc: "go/generated/rank/grpc"
   login:
     source: "{{proto_dir}}login/"
     rpc:
@@ -436,6 +454,23 @@ domain_meta:
         handler: "go/generated/player_inbox/handler"
         grpc: "go/generated/player_inbox/grpc"
 
+  # 玩家在线目录(go/player_locator):Go gRPC 服务,go/login 经 stub 调 GetSession / SetSession /
+  # SetDisconnecting / Reconnect / MarkOffline;friend / guild / mail / match 只借 PlayerSession 类型读 Redis。
+  # 2026-10-16 补配:此前整域漏配,从未发过号。go/proto/player_locator 走 unified 全量拷贝,与本块无关。
+  # 补配的原因不是要按号路由,而是封住隐患:别的域一旦 import 本目录的 proto,--include_imports 会把这 7 个
+  # 方法悄悄带进描述符集并发号,而 C++ 侧不会为它生成 pb(见 prototools/descriptor.go 的域级检查同类风险)。
+  # 形状照 trade:只出 Go outputs;C++ 的 pb / grpc_client 由全量生成照常产出,C++ 无调用方。
+  # proto_gen.no-unity.yaml 必须同步加同样一块。
+  player_locator:
+    source: "{{proto_dir}}player_locator/"
+    rpc:
+      type: grpc
+    outputs:
+      go:
+        proto: "go/generated/player_locator/proto"
+        handler: "go/generated/player_locator/handler"
+        grpc: "go/generated/player_locator/grpc"
+
   friend:
     source: "{{proto_dir}}friend/"
     rpc:
@@ -445,15 +480,6 @@ domain_meta:
         proto: "go/generated/friend/proto"
         handler: "go/generated/friend/handler"
         grpc: "go/generated/friend/grpc"
-
-  slg:
-    source: "{{proto_dir}}slg/"
-    rpc:
-      type: rpc
-    outputs:
-      cpp:
-        proto: "cpp/generated/slg/proto"
-        handler: "cpp/generated/slg/handler"
 
   # 回合制战斗(设计文档 docs/design/turn-based-battle-server.md):
   # C++ battle 节点为纯 gRPC 服务(battle_node.proto/player_battle.proto 均不带 cc_generic_services);

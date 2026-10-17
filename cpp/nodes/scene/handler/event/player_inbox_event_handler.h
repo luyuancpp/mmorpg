@@ -5,8 +5,5 @@
 class PlayerInboxEventHandler
 {
 public:
-    static void Register();
-
-    static void UnRegister();
     static void PlayerInboxNotifyEventHandler(const PlayerInboxNotifyEvent& event);
 };

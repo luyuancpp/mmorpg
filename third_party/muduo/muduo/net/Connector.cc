@@ -42,7 +42,11 @@ Connector::~Connector()
 void Connector::start()
 {
   connect_ = true;
-  loop_->runInLoop(std::bind(&Connector::startInLoop, this)); // FIXME: unsafe
+  // LOCAL DELTA(上游绑裸 this,标了 FIXME: unsafe):改绑 shared_from_this()(AGENTS.md §11.7)。
+  // 不在 loop 线程调用时 startInLoop 排到队尾才执行,裸 this 届时可能已悬空;在 loop 线程调用时,
+  // runInLoop 按值持有的函数对象也让 Connector 活过 startInLoop → connect() 整个栈(其中可能回调连接失败)。
+  // 构造期间不会走到这里:Connector 只由 TcpClient 以 shared_ptr 持有,start() 只经 TcpClient::connect() 调用。
+  loop_->runInLoop(std::bind(&Connector::startInLoop, shared_from_this()));
 }
 
 void Connector::startInLoop()
@@ -62,7 +66,10 @@ void Connector::startInLoop()
 void Connector::stop()
 {
   connect_ = false;
-  loop_->queueInLoop(std::bind(&Connector::stopInLoop, this)); // FIXME: unsafe
+  // LOCAL DELTA(上游绑裸 this,标了 FIXME: unsafe):改绑 shared_from_this()(AGENTS.md §11.7)。
+  // stopInLoop 排到下一轮才执行;TcpClient 有连接时析构不给 Connector 续命,若此前调过 stop(),
+  // 裸 this 到那时可能已悬空。持有 shared_ptr 后,任何时机调用 stop() 都安全。
+  loop_->queueInLoop(std::bind(&Connector::stopInLoop, shared_from_this()));
   // FIXME: cancel timer
 }
 
@@ -73,7 +80,7 @@ void Connector::stopInLoop()
   {
     setState(kDisconnected);
     int sockfd = removeAndResetChannel();
-    retry(sockfd);
+    retry(sockfd, 0);
   }
 }
 
@@ -96,7 +103,7 @@ void Connector::connect()
     case EADDRNOTAVAIL:
     case ECONNREFUSED:
     case ENETUNREACH:
-      retry(sockfd);
+      retry(sockfd, savedErrno);
       break;
 
     case EACCES:
@@ -108,12 +115,15 @@ void Connector::connect()
     case ENOTSOCK:
       LOG_SYSERR << "connect error in Connector::startInLoop " << savedErrno;
       sockets::close(sockfd);
+      // LOCAL DELTA:致命错误照旧不重试,但要通知使用方,否则它只能干等自己的超时。
+      notifyConnectFailed(savedErrno);
       break;
 
     default:
       LOG_SYSERR << "Unexpected error in Connector::startInLoop " << savedErrno;
       sockets::close(sockfd);
-      // connectErrorCallback_();
+      // LOCAL DELTA:接上上游注释掉的 connectErrorCallback_(),理由同上。
+      notifyConnectFailed(savedErrno);
       break;
   }
 }
@@ -132,10 +142,16 @@ void Connector::connecting(int sockfd)
   setState(kConnecting);
   assert(!channel_);
   channel_.reset(new Channel(loop_, sockfd));
+  // LOCAL DELTA(只去掉上游这两行的 FIXME: unsafe,绑定照旧是裸 this):属于 AGENTS.md §11.7
+  // 「与被绑对象同寿命的成员」例外。回调存在 channel_ 里,channel_ 由本对象独占,只由 Channel::handleEvent
+  // 在 channel_ 登记于 Poller 期间调用;登记只在 removeAndResetChannel 里摘除,摘除后不再派发,
+  // 而它排队的 resetChannel 持有 shared_from_this(),所以 channel_ 能派发回调时本对象必然还活着。
+  // 登记期间(kConnecting)TcpClient 没有连接(TcpClient 正常用法),~TcpClient 会走 stop(),排队的 stopInLoop
+  // 同样持有 shared_ptr,摘除前本对象不会析构。
   channel_->setWriteCallback(
-      std::bind(&Connector::handleWrite, this)); // FIXME: unsafe
+      std::bind(&Connector::handleWrite, this));
   channel_->setErrorCallback(
-      std::bind(&Connector::handleError, this)); // FIXME: unsafe
+      std::bind(&Connector::handleError, this));
 
   // channel_->tie(shared_from_this()); is not working,
   // as channel_ is not managed by shared_ptr
@@ -148,7 +164,12 @@ int Connector::removeAndResetChannel()
   channel_->remove();
   int sockfd = channel_->fd();
   // Can't reset channel_ here, because we are inside Channel::handleEvent
-  loop_->queueInLoop(std::bind(&Connector::resetChannel, this)); // FIXME: unsafe
+  // LOCAL DELTA(上游绑裸 this,标了 FIXME: unsafe):改绑 shared_from_this()(AGENTS.md §11.7)。
+  // resetChannel 排到下一轮才执行;刚连上时 ~TcpClient(有连接)不给 Connector 续命,使用方若在此之前
+  // 析构 TcpClient,Connector 会带着未释放的 channel_ 析构(assert(!channel_);此刻可能还在 channel_ 的
+  // handleEvent 栈上),排队的裸 this 随后悬空。持有 shared_ptr 后,本对象至少活到 channel_ 释放。
+  // 调用方 stopInLoop / handleWrite / handleError 都要求 state_ == kConnecting,构造期间到达不了。
+  loop_->queueInLoop(std::bind(&Connector::resetChannel, shared_from_this()));
   return sockfd;
 }
 
@@ -169,12 +190,12 @@ void Connector::handleWrite()
     {
       LOG_WARN << "Connector::handleWrite - SO_ERROR = "
                << err << " " << strerror_tl(err);
-      retry(sockfd);
+      retry(sockfd, err);
     }
     else if (sockets::isSelfConnect(sockfd))
     {
       LOG_WARN << "Connector::handleWrite - Self connect";
-      retry(sockfd);
+      retry(sockfd, 0);
     }
     else
     {
@@ -204,14 +225,17 @@ void Connector::handleError()
     int sockfd = removeAndResetChannel();
     int err = sockets::getSocketError(sockfd);
     LOG_TRACE << "SO_ERROR = " << err << " " << strerror_tl(err);
-    retry(sockfd);
+    retry(sockfd, err);
   }
 }
 
-void Connector::retry(int sockfd)
+void Connector::retry(int sockfd, int savedErrno)
 {
   sockets::close(sockfd);
   setState(kDisconnected);
+  // LOCAL DELTA:排下一次重试之前通知连接失败。回调可能 stop(),所以下面重新读 connect_;
+  // stop() 排队的 stopInLoop 届时看到 kDisconnected,什么也不做。
+  notifyConnectFailed(savedErrno);
   if (connect_)
   {
     LOG_INFO << "Connector::retry - Retry connecting to " << serverAddr_.toIpPort()
@@ -223,6 +247,15 @@ void Connector::retry(int sockfd)
   else
   {
     LOG_DEBUG << "do not connect";
+  }
+}
+
+// LOCAL DELTA:已 stop() 的不再通知(stopInLoop 也经 retry 关 socket,那不是连接失败)。
+void Connector::notifyConnectFailed(int savedErrno)
+{
+  if (connect_ && connectFailedCallback_)
+  {
+    connectFailedCallback_(savedErrno);
   }
 }
 

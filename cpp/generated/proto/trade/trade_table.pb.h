@@ -31,8 +31,10 @@
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/unknown_field_set.h"
+#include "proto/trade/commerce.pb.h"
 #include "proto/db/proto_option.pb.h"
 #include "proto/trade/jubaozhai.pb.h"
+#include "proto/common/asset/asset_op.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -72,6 +74,38 @@ extern TradeAssetOpRecordGlobalsTypeInternal TradeAssetOpRecord_globals_;
 extern const ::google::protobuf::internal::ClassDataFull TradeAssetOpRecord_class_data_;
 #else
 extern const TradeAssetOpRecordGlobalsTypeInternal TradeAssetOpRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class TradeCommerceGuardRecord;
+struct TradeCommerceGuardRecordGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern TradeCommerceGuardRecordGlobalsTypeInternal TradeCommerceGuardRecord_globals_;
+extern const ::google::protobuf::internal::ClassDataFull TradeCommerceGuardRecord_class_data_;
+#else
+extern const TradeCommerceGuardRecordGlobalsTypeInternal TradeCommerceGuardRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class TradeCommerceLeg;
+struct TradeCommerceLegGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern TradeCommerceLegGlobalsTypeInternal TradeCommerceLeg_globals_;
+extern const ::google::protobuf::internal::ClassDataFull TradeCommerceLeg_class_data_;
+#else
+extern const TradeCommerceLegGlobalsTypeInternal TradeCommerceLeg_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class TradeCommerceRecord;
+struct TradeCommerceRecordGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern TradeCommerceRecordGlobalsTypeInternal TradeCommerceRecord_globals_;
+extern const ::google::protobuf::internal::ClassDataFull TradeCommerceRecord_class_data_;
+#else
+extern const TradeCommerceRecordGlobalsTypeInternal TradeCommerceRecord_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
+class TradeCommerceWorkflow;
+struct TradeCommerceWorkflowGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern TradeCommerceWorkflowGlobalsTypeInternal TradeCommerceWorkflow_globals_;
+extern const ::google::protobuf::internal::ClassDataFull TradeCommerceWorkflow_class_data_;
+#else
+extern const TradeCommerceWorkflowGlobalsTypeInternal TradeCommerceWorkflow_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
 class TradeFavoriteRecord;
 struct TradeFavoriteRecordGlobalsTypeInternal;
@@ -1214,6 +1248,663 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeFavoriteRecord final : public 
 };
 // -------------------------------------------------------------------
 
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeCommerceRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:trade.TradeCommerceRecord) */ {
+ public:
+  inline TradeCommerceRecord() : TradeCommerceRecord(nullptr) {}
+  ~TradeCommerceRecord() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(TradeCommerceRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(TradeCommerceRecord));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr TradeCommerceRecord(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline TradeCommerceRecord(const TradeCommerceRecord& from) : TradeCommerceRecord(nullptr, from) {}
+  inline TradeCommerceRecord(TradeCommerceRecord&& from) noexcept : TradeCommerceRecord(nullptr, ::std::move(from)) {}
+  inline TradeCommerceRecord& operator=(const TradeCommerceRecord& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline TradeCommerceRecord& operator=(TradeCommerceRecord&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const TradeCommerceRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<TradeCommerceRecord>(&TradeCommerceRecord_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 4;
+  friend void swap(TradeCommerceRecord& a, TradeCommerceRecord& b) { a.Swap(&b); }
+  inline void Swap(TradeCommerceRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(TradeCommerceRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] TradeCommerceRecord* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<TradeCommerceRecord>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const TradeCommerceRecord& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const TradeCommerceRecord& from) { TradeCommerceRecord::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(TradeCommerceRecord* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "trade.TradeCommerceRecord"; }
+
+  explicit TradeCommerceRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  TradeCommerceRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const TradeCommerceRecord& from);
+  TradeCommerceRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, TradeCommerceRecord&& from) noexcept
+      : TradeCommerceRecord(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRequestKeyFieldNumber = 2,
+    kRequestDigestFieldNumber = 3,
+    kWorkflowProtoFieldNumber = 19,
+    kCommerceIdFieldNumber = 1,
+    kKindFieldNumber = 4,
+    kStatusFieldNumber = 5,
+    kSellerPlayerIdFieldNumber = 6,
+    kBuyerPlayerIdFieldNumber = 7,
+    kMarketIdFieldNumber = 8,
+    kItemConfigIdFieldNumber = 9,
+    kUnitPriceFieldNumber = 11,
+    kSideFieldNumber = 10,
+    kQuantityFieldNumber = 12,
+    kFilledQuantityFieldNumber = 13,
+    kCurrencyTypeFieldNumber = 14,
+    kExpiresMsFieldNumber = 15,
+    kCreatedMsFieldNumber = 16,
+    kUpdatedMsFieldNumber = 17,
+    kVersionFieldNumber = 18,
+    kParentIdFieldNumber = 20,
+    kCounterpartyIdFieldNumber = 21,
+  };
+  // string request_key = 2;
+  void clear_request_key() ;
+  [[nodiscard]] const ::std::string& request_key() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_key(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_key();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_key();
+  void set_allocated_request_key(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_key() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_key(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_key();
+
+  public:
+  // bytes request_digest = 3;
+  void clear_request_digest() ;
+  [[nodiscard]] const ::std::string& request_digest() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_request_digest(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_request_digest();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_request_digest();
+  void set_allocated_request_digest(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_request_digest() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_request_digest(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_request_digest();
+
+  public:
+  // bytes workflow_proto = 19;
+  void clear_workflow_proto() ;
+  [[nodiscard]] const ::std::string& workflow_proto() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_workflow_proto(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_workflow_proto();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_workflow_proto();
+  void set_allocated_workflow_proto(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_workflow_proto() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_workflow_proto(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_workflow_proto();
+
+  public:
+  // uint64 commerce_id = 1;
+  void clear_commerce_id() ;
+  [[nodiscard]] ::uint64_t commerce_id() const;
+  void set_commerce_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_commerce_id() const;
+  void _internal_set_commerce_id(::uint64_t value);
+
+  public:
+  // uint32 kind = 4;
+  void clear_kind() ;
+  [[nodiscard]] ::uint32_t kind() const;
+  void set_kind(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_kind() const;
+  void _internal_set_kind(::uint32_t value);
+
+  public:
+  // uint32 status = 5;
+  void clear_status() ;
+  [[nodiscard]] ::uint32_t status() const;
+  void set_status(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_status() const;
+  void _internal_set_status(::uint32_t value);
+
+  public:
+  // uint64 seller_player_id = 6;
+  void clear_seller_player_id() ;
+  [[nodiscard]] ::uint64_t seller_player_id() const;
+  void set_seller_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_seller_player_id() const;
+  void _internal_set_seller_player_id(::uint64_t value);
+
+  public:
+  // uint64 buyer_player_id = 7;
+  void clear_buyer_player_id() ;
+  [[nodiscard]] ::uint64_t buyer_player_id() const;
+  void set_buyer_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_buyer_player_id() const;
+  void _internal_set_buyer_player_id(::uint64_t value);
+
+  public:
+  // uint32 market_id = 8;
+  void clear_market_id() ;
+  [[nodiscard]] ::uint32_t market_id() const;
+  void set_market_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_market_id() const;
+  void _internal_set_market_id(::uint32_t value);
+
+  public:
+  // uint32 item_config_id = 9;
+  void clear_item_config_id() ;
+  [[nodiscard]] ::uint32_t item_config_id() const;
+  void set_item_config_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_item_config_id() const;
+  void _internal_set_item_config_id(::uint32_t value);
+
+  public:
+  // uint64 unit_price = 11;
+  void clear_unit_price() ;
+  [[nodiscard]] ::uint64_t unit_price() const;
+  void set_unit_price(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_unit_price() const;
+  void _internal_set_unit_price(::uint64_t value);
+
+  public:
+  // uint32 side = 10;
+  void clear_side() ;
+  [[nodiscard]] ::uint32_t side() const;
+  void set_side(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_side() const;
+  void _internal_set_side(::uint32_t value);
+
+  public:
+  // uint32 quantity = 12;
+  void clear_quantity() ;
+  [[nodiscard]] ::uint32_t quantity() const;
+  void set_quantity(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_quantity() const;
+  void _internal_set_quantity(::uint32_t value);
+
+  public:
+  // uint32 filled_quantity = 13;
+  void clear_filled_quantity() ;
+  [[nodiscard]] ::uint32_t filled_quantity() const;
+  void set_filled_quantity(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_filled_quantity() const;
+  void _internal_set_filled_quantity(::uint32_t value);
+
+  public:
+  // uint32 currency_type = 14;
+  void clear_currency_type() ;
+  [[nodiscard]] ::uint32_t currency_type() const;
+  void set_currency_type(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_currency_type() const;
+  void _internal_set_currency_type(::uint32_t value);
+
+  public:
+  // uint64 expires_ms = 15;
+  void clear_expires_ms() ;
+  [[nodiscard]] ::uint64_t expires_ms() const;
+  void set_expires_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_expires_ms() const;
+  void _internal_set_expires_ms(::uint64_t value);
+
+  public:
+  // uint64 created_ms = 16;
+  void clear_created_ms() ;
+  [[nodiscard]] ::uint64_t created_ms() const;
+  void set_created_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_created_ms() const;
+  void _internal_set_created_ms(::uint64_t value);
+
+  public:
+  // uint64 updated_ms = 17;
+  void clear_updated_ms() ;
+  [[nodiscard]] ::uint64_t updated_ms() const;
+  void set_updated_ms(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_updated_ms() const;
+  void _internal_set_updated_ms(::uint64_t value);
+
+  public:
+  // uint64 version = 18;
+  void clear_version() ;
+  [[nodiscard]] ::uint64_t version() const;
+  void set_version(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_version() const;
+  void _internal_set_version(::uint64_t value);
+
+  public:
+  // uint64 parent_id = 20;
+  void clear_parent_id() ;
+  [[nodiscard]] ::uint64_t parent_id() const;
+  void set_parent_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_parent_id() const;
+  void _internal_set_parent_id(::uint64_t value);
+
+  public:
+  // uint64 counterparty_id = 21;
+  void clear_counterparty_id() ;
+  [[nodiscard]] ::uint64_t counterparty_id() const;
+  void set_counterparty_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_counterparty_id() const;
+  void _internal_set_counterparty_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:trade.TradeCommerceRecord)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<5, 21,
+                          0, 61,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const TradeCommerceRecord& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr request_key_;
+    ::google::protobuf::internal::ArenaStringPtr request_digest_;
+    ::google::protobuf::internal::ArenaStringPtr workflow_proto_;
+    ::uint64_t commerce_id_;
+    ::uint32_t kind_;
+    ::uint32_t status_;
+    ::uint64_t seller_player_id_;
+    ::uint64_t buyer_player_id_;
+    ::uint32_t market_id_;
+    ::uint32_t item_config_id_;
+    ::uint64_t unit_price_;
+    ::uint32_t side_;
+    ::uint32_t quantity_;
+    ::uint32_t filled_quantity_;
+    ::uint32_t currency_type_;
+    ::uint64_t expires_ms_;
+    ::uint64_t created_ms_;
+    ::uint64_t updated_ms_;
+    ::uint64_t version_;
+    ::uint64_t parent_id_;
+    ::uint64_t counterparty_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2ftrade_2ftrade_5ftable_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeCommerceGuardRecord final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:trade.TradeCommerceGuardRecord) */ {
+ public:
+  inline TradeCommerceGuardRecord() : TradeCommerceGuardRecord(nullptr) {}
+  ~TradeCommerceGuardRecord() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(TradeCommerceGuardRecord* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(TradeCommerceGuardRecord));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr TradeCommerceGuardRecord(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline TradeCommerceGuardRecord(const TradeCommerceGuardRecord& from) : TradeCommerceGuardRecord(nullptr, from) {}
+  inline TradeCommerceGuardRecord(TradeCommerceGuardRecord&& from) noexcept : TradeCommerceGuardRecord(nullptr, ::std::move(from)) {}
+  inline TradeCommerceGuardRecord& operator=(const TradeCommerceGuardRecord& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline TradeCommerceGuardRecord& operator=(TradeCommerceGuardRecord&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const TradeCommerceGuardRecord& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<TradeCommerceGuardRecord>(&TradeCommerceGuardRecord_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 5;
+  friend void swap(TradeCommerceGuardRecord& a, TradeCommerceGuardRecord& b) { a.Swap(&b); }
+  inline void Swap(TradeCommerceGuardRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(TradeCommerceGuardRecord* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] TradeCommerceGuardRecord* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<TradeCommerceGuardRecord>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const TradeCommerceGuardRecord& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const TradeCommerceGuardRecord& from) { TradeCommerceGuardRecord::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(TradeCommerceGuardRecord* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "trade.TradeCommerceGuardRecord"; }
+
+  explicit TradeCommerceGuardRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  TradeCommerceGuardRecord(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const TradeCommerceGuardRecord& from);
+  TradeCommerceGuardRecord(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, TradeCommerceGuardRecord&& from) noexcept
+      : TradeCommerceGuardRecord(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kGuardIdFieldNumber = 1,
+  };
+  // uint64 guard_id = 1;
+  void clear_guard_id() ;
+  [[nodiscard]] ::uint64_t guard_id() const;
+  void set_guard_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_guard_id() const;
+  void _internal_set_guard_id(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:trade.TradeCommerceGuardRecord)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<0, 1,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const TradeCommerceGuardRecord& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::uint64_t guard_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2ftrade_2ftrade_5ftable_2eproto;
+};
+// -------------------------------------------------------------------
+
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:trade.TradeAssetOpRecord) */ {
  public:
@@ -1365,6 +2056,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
     kPayloadFieldNumber = 17,
     kResolvedByFieldNumber = 22,
     kResolveReasonFieldNumber = 23,
+    kEscrowSnapshotFieldNumber = 25,
     kOpIdFieldNumber = 1,
     kPlayerIdFieldNumber = 2,
     kStreamEpochFieldNumber = 4,
@@ -1372,20 +2064,22 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
     kKindFieldNumber = 6,
     kSeqFieldNumber = 5,
     kStatusFieldNumber = 7,
-    kDurableFieldNumber = 8,
+    kAttemptsFieldNumber = 9,
     kNextAttemptMsFieldNumber = 10,
     kDeadlineMsFieldNumber = 11,
-    kAttemptsFieldNumber = 9,
-    kTxTypeFieldNumber = 14,
     kLeaseUntilMsFieldNumber = 12,
     kLeaseTokenFieldNumber = 13,
-    kRefIdFieldNumber = 16,
+    kTxTypeFieldNumber = 14,
     kRefKindFieldNumber = 15,
+    kRefIdFieldNumber = 16,
     kLastOutcomeFieldNumber = 18,
+    kLastReasonFieldNumber = 19,
     kCreatedMsFieldNumber = 20,
     kUpdatedMsFieldNumber = 21,
     kLastSendMsFieldNumber = 24,
-    kLastReasonFieldNumber = 19,
+    kDurableFieldNumber = 8,
+    kReceiptAckPendingFieldNumber = 26,
+    kBusinessConsumedFieldNumber = 27,
   };
   // bytes payload = 17;
   void clear_payload() ;
@@ -1430,6 +2124,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
   const ::std::string& _internal_resolve_reason() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_resolve_reason(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_resolve_reason();
+
+  public:
+  // bytes escrow_snapshot = 25;
+  void clear_escrow_snapshot() ;
+  [[nodiscard]] const ::std::string& escrow_snapshot() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_escrow_snapshot(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_escrow_snapshot();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_escrow_snapshot();
+  void set_allocated_escrow_snapshot(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_escrow_snapshot() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_escrow_snapshot(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_escrow_snapshot();
 
   public:
   // uint64 op_id = 1;
@@ -1502,14 +2211,14 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
   void _internal_set_status(::trade::TradeAssetOpStatus value);
 
   public:
-  // bool durable = 8;
-  void clear_durable() ;
-  [[nodiscard]] bool durable() const;
-  void set_durable(bool value);
+  // uint32 attempts = 9;
+  void clear_attempts() ;
+  [[nodiscard]] ::uint32_t attempts() const;
+  void set_attempts(::uint32_t value);
 
   private:
-  bool _internal_durable() const;
-  void _internal_set_durable(bool value);
+  ::uint32_t _internal_attempts() const;
+  void _internal_set_attempts(::uint32_t value);
 
   public:
   // uint64 next_attempt_ms = 10;
@@ -1532,26 +2241,6 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
   void _internal_set_deadline_ms(::uint64_t value);
 
   public:
-  // uint32 attempts = 9;
-  void clear_attempts() ;
-  [[nodiscard]] ::uint32_t attempts() const;
-  void set_attempts(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_attempts() const;
-  void _internal_set_attempts(::uint32_t value);
-
-  public:
-  // uint32 tx_type = 14;
-  void clear_tx_type() ;
-  [[nodiscard]] ::uint32_t tx_type() const;
-  void set_tx_type(::uint32_t value);
-
-  private:
-  ::uint32_t _internal_tx_type() const;
-  void _internal_set_tx_type(::uint32_t value);
-
-  public:
   // uint64 lease_until_ms = 12;
   void clear_lease_until_ms() ;
   [[nodiscard]] ::uint64_t lease_until_ms() const;
@@ -1572,14 +2261,14 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
   void _internal_set_lease_token(::uint64_t value);
 
   public:
-  // uint64 ref_id = 16;
-  void clear_ref_id() ;
-  [[nodiscard]] ::uint64_t ref_id() const;
-  void set_ref_id(::uint64_t value);
+  // uint32 tx_type = 14;
+  void clear_tx_type() ;
+  [[nodiscard]] ::uint32_t tx_type() const;
+  void set_tx_type(::uint32_t value);
 
   private:
-  ::uint64_t _internal_ref_id() const;
-  void _internal_set_ref_id(::uint64_t value);
+  ::uint32_t _internal_tx_type() const;
+  void _internal_set_tx_type(::uint32_t value);
 
   public:
   // .trade.TradeAssetOpRefKind ref_kind = 15;
@@ -1592,6 +2281,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
   void _internal_set_ref_kind(::trade::TradeAssetOpRefKind value);
 
   public:
+  // uint64 ref_id = 16;
+  void clear_ref_id() ;
+  [[nodiscard]] ::uint64_t ref_id() const;
+  void set_ref_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_ref_id() const;
+  void _internal_set_ref_id(::uint64_t value);
+
+  public:
   // uint32 last_outcome = 18;
   void clear_last_outcome() ;
   [[nodiscard]] ::uint32_t last_outcome() const;
@@ -1600,6 +2299,16 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
   private:
   ::uint32_t _internal_last_outcome() const;
   void _internal_set_last_outcome(::uint32_t value);
+
+  public:
+  // uint32 last_reason = 19;
+  void clear_last_reason() ;
+  [[nodiscard]] ::uint32_t last_reason() const;
+  void set_last_reason(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_last_reason() const;
+  void _internal_set_last_reason(::uint32_t value);
 
   public:
   // uint64 created_ms = 20;
@@ -1632,21 +2341,41 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
   void _internal_set_last_send_ms(::uint64_t value);
 
   public:
-  // uint32 last_reason = 19;
-  void clear_last_reason() ;
-  [[nodiscard]] ::uint32_t last_reason() const;
-  void set_last_reason(::uint32_t value);
+  // bool durable = 8;
+  void clear_durable() ;
+  [[nodiscard]] bool durable() const;
+  void set_durable(bool value);
 
   private:
-  ::uint32_t _internal_last_reason() const;
-  void _internal_set_last_reason(::uint32_t value);
+  bool _internal_durable() const;
+  void _internal_set_durable(bool value);
+
+  public:
+  // bool receipt_ack_pending = 26;
+  void clear_receipt_ack_pending() ;
+  [[nodiscard]] bool receipt_ack_pending() const;
+  void set_receipt_ack_pending(bool value);
+
+  private:
+  bool _internal_receipt_ack_pending() const;
+  void _internal_set_receipt_ack_pending(bool value);
+
+  public:
+  // bool business_consumed = 27;
+  void clear_business_consumed() ;
+  [[nodiscard]] bool business_consumed() const;
+  void set_business_consumed(bool value);
+
+  private:
+  bool _internal_business_consumed() const;
+  void _internal_set_business_consumed(bool value);
 
   public:
   // @@protoc_insertion_point(class_scope:trade.TradeAssetOpRecord)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<5, 24,
+      ::google::protobuf::internal::TcParseTable<5, 27,
                           0, 82,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1678,6 +2407,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
     ::google::protobuf::internal::ArenaStringPtr payload_;
     ::google::protobuf::internal::ArenaStringPtr resolved_by_;
     ::google::protobuf::internal::ArenaStringPtr resolve_reason_;
+    ::google::protobuf::internal::ArenaStringPtr escrow_snapshot_;
     ::uint64_t op_id_;
     ::uint64_t player_id_;
     ::uint64_t stream_epoch_;
@@ -1685,20 +2415,773 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeAssetOpRecord final : public :
     int kind_;
     ::uint64_t seq_;
     int status_;
-    bool durable_;
+    ::uint32_t attempts_;
     ::uint64_t next_attempt_ms_;
     ::uint64_t deadline_ms_;
-    ::uint32_t attempts_;
-    ::uint32_t tx_type_;
     ::uint64_t lease_until_ms_;
     ::uint64_t lease_token_;
-    ::uint64_t ref_id_;
+    ::uint32_t tx_type_;
     int ref_kind_;
+    ::uint64_t ref_id_;
     ::uint32_t last_outcome_;
+    ::uint32_t last_reason_;
     ::uint64_t created_ms_;
     ::uint64_t updated_ms_;
     ::uint64_t last_send_ms_;
-    ::uint32_t last_reason_;
+    bool durable_;
+    bool receipt_ack_pending_;
+    bool business_consumed_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2ftrade_2ftrade_5ftable_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeCommerceLeg final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:trade.TradeCommerceLeg) */ {
+ public:
+  inline TradeCommerceLeg() : TradeCommerceLeg(nullptr) {}
+  ~TradeCommerceLeg() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(TradeCommerceLeg* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(TradeCommerceLeg));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr TradeCommerceLeg(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline TradeCommerceLeg(const TradeCommerceLeg& from) : TradeCommerceLeg(nullptr, from) {}
+  inline TradeCommerceLeg(TradeCommerceLeg&& from) noexcept : TradeCommerceLeg(nullptr, ::std::move(from)) {}
+  inline TradeCommerceLeg& operator=(const TradeCommerceLeg& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline TradeCommerceLeg& operator=(TradeCommerceLeg&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const TradeCommerceLeg& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<TradeCommerceLeg>(&TradeCommerceLeg_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 7;
+  friend void swap(TradeCommerceLeg& a, TradeCommerceLeg& b) { a.Swap(&b); }
+  inline void Swap(TradeCommerceLeg* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(TradeCommerceLeg* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] TradeCommerceLeg* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<TradeCommerceLeg>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const TradeCommerceLeg& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const TradeCommerceLeg& from) { TradeCommerceLeg::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(TradeCommerceLeg* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "trade.TradeCommerceLeg"; }
+
+  explicit TradeCommerceLeg(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  TradeCommerceLeg(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const TradeCommerceLeg& from);
+  TradeCommerceLeg(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, TradeCommerceLeg&& from) noexcept
+      : TradeCommerceLeg(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRoleFieldNumber = 1,
+    kBundleFieldNumber = 4,
+    kSnapshotFieldNumber = 6,
+    kPlayerIdFieldNumber = 2,
+    kOpIdFieldNumber = 5,
+    kStreamFieldNumber = 3,
+    kOutcomeFieldNumber = 7,
+  };
+  // string role = 1;
+  void clear_role() ;
+  [[nodiscard]] const ::std::string& role() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_role(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_role();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_role();
+  void set_allocated_role(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_role() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_role(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_role();
+
+  public:
+  // .AssetBundle bundle = 4;
+  [[nodiscard]] bool has_bundle()
+      const;
+  void clear_bundle() ;
+  [[nodiscard]] const ::AssetBundle& bundle() const;
+  [[nodiscard]] ::AssetBundle* PROTOBUF_NULLABLE release_bundle();
+  ::AssetBundle* PROTOBUF_NONNULL mutable_bundle();
+  void set_allocated_bundle(::AssetBundle* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_bundle(::AssetBundle* PROTOBUF_NULLABLE value);
+  ::AssetBundle* PROTOBUF_NULLABLE unsafe_arena_release_bundle();
+
+  private:
+  const ::AssetBundle& _internal_bundle() const;
+  ::AssetBundle* PROTOBUF_NONNULL _internal_mutable_bundle();
+
+  public:
+  // .AssetSnapshot snapshot = 6;
+  [[nodiscard]] bool has_snapshot()
+      const;
+  void clear_snapshot() ;
+  [[nodiscard]] const ::AssetSnapshot& snapshot() const;
+  [[nodiscard]] ::AssetSnapshot* PROTOBUF_NULLABLE release_snapshot();
+  ::AssetSnapshot* PROTOBUF_NONNULL mutable_snapshot();
+  void set_allocated_snapshot(::AssetSnapshot* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_snapshot(::AssetSnapshot* PROTOBUF_NULLABLE value);
+  ::AssetSnapshot* PROTOBUF_NULLABLE unsafe_arena_release_snapshot();
+
+  private:
+  const ::AssetSnapshot& _internal_snapshot() const;
+  ::AssetSnapshot* PROTOBUF_NONNULL _internal_mutable_snapshot();
+
+  public:
+  // uint64 player_id = 2;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint64 op_id = 5;
+  void clear_op_id() ;
+  [[nodiscard]] ::uint64_t op_id() const;
+  void set_op_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_op_id() const;
+  void _internal_set_op_id(::uint64_t value);
+
+  public:
+  // uint32 stream = 3;
+  void clear_stream() ;
+  [[nodiscard]] ::uint32_t stream() const;
+  void set_stream(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_stream() const;
+  void _internal_set_stream(::uint32_t value);
+
+  public:
+  // uint32 outcome = 7;
+  void clear_outcome() ;
+  [[nodiscard]] ::uint32_t outcome() const;
+  void set_outcome(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_outcome() const;
+  void _internal_set_outcome(::uint32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:trade.TradeCommerceLeg)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<3, 7,
+                          2, 35,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const TradeCommerceLeg& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr role_;
+    ::AssetBundle* PROTOBUF_NULLABLE bundle_;
+    ::AssetSnapshot* PROTOBUF_NULLABLE snapshot_;
+    ::uint64_t player_id_;
+    ::uint64_t op_id_;
+    ::uint32_t stream_;
+    ::uint32_t outcome_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2ftrade_2ftrade_5ftable_2eproto;
+};
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED TradeCommerceWorkflow final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:trade.TradeCommerceWorkflow) */ {
+ public:
+  inline TradeCommerceWorkflow() : TradeCommerceWorkflow(nullptr) {}
+  ~TradeCommerceWorkflow() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(TradeCommerceWorkflow* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(TradeCommerceWorkflow));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr TradeCommerceWorkflow(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline TradeCommerceWorkflow(const TradeCommerceWorkflow& from) : TradeCommerceWorkflow(nullptr, from) {}
+  inline TradeCommerceWorkflow(TradeCommerceWorkflow&& from) noexcept : TradeCommerceWorkflow(nullptr, ::std::move(from)) {}
+  inline TradeCommerceWorkflow& operator=(const TradeCommerceWorkflow& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline TradeCommerceWorkflow& operator=(TradeCommerceWorkflow&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const TradeCommerceWorkflow& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<TradeCommerceWorkflow>(&TradeCommerceWorkflow_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 6;
+  friend void swap(TradeCommerceWorkflow& a, TradeCommerceWorkflow& b) { a.Swap(&b); }
+  inline void Swap(TradeCommerceWorkflow* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(TradeCommerceWorkflow* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] TradeCommerceWorkflow* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<TradeCommerceWorkflow>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const TradeCommerceWorkflow& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const TradeCommerceWorkflow& from) { TradeCommerceWorkflow::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(TradeCommerceWorkflow* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "trade.TradeCommerceWorkflow"; }
+
+  explicit TradeCommerceWorkflow(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  TradeCommerceWorkflow(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const TradeCommerceWorkflow& from);
+  TradeCommerceWorkflow(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, TradeCommerceWorkflow&& from) noexcept
+      : TradeCommerceWorkflow(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kLegsFieldNumber = 6,
+    kStageFieldNumber = 7,
+    kExternalOrderSnFieldNumber = 14,
+    kExternalCurrencyFieldNumber = 18,
+    kSellerAssetsFieldNumber = 1,
+    kBuyerAssetsFieldNumber = 2,
+    kOfficialBundleFieldNumber = 17,
+    kSellerConfirmedFieldNumber = 3,
+    kBuyerConfirmedFieldNumber = 4,
+    kCancelRequestedFieldNumber = 5,
+    kSkuQuantityFieldNumber = 16,
+    kMinimumIncrementFieldNumber = 8,
+    kHighestBidFieldNumber = 9,
+    kHighestBidderFieldNumber = 10,
+    kWinningBidIdFieldNumber = 11,
+    kParentIdFieldNumber = 12,
+    kQuantityReservedFieldNumber = 13,
+    kSkuIdFieldNumber = 15,
+    kExternalAmountFieldNumber = 19,
+  };
+  // repeated .trade.TradeCommerceLeg legs = 6;
+  [[nodiscard]] int legs_size()
+      const;
+  private:
+  int _internal_legs_size() const;
+
+  public:
+  void clear_legs() ;
+  [[nodiscard]] const ::trade::TradeCommerceLeg& legs(int index) const;
+  [[nodiscard]] ::trade::TradeCommerceLeg* PROTOBUF_NONNULL mutable_legs(int index);
+  ::trade::TradeCommerceLeg* PROTOBUF_NONNULL add_legs();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::trade::TradeCommerceLeg>&
+  legs() const;
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::trade::TradeCommerceLeg>* PROTOBUF_NONNULL
+  mutable_legs();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::trade::TradeCommerceLeg>& _internal_legs() const;
+  ::google::protobuf::RepeatedPtrField<::trade::TradeCommerceLeg>* PROTOBUF_NONNULL _internal_mutable_legs();
+
+  public:
+  // string stage = 7;
+  void clear_stage() ;
+  [[nodiscard]] const ::std::string& stage() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_stage(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_stage();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_stage();
+  void set_allocated_stage(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_stage() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_stage(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_stage();
+
+  public:
+  // string external_order_sn = 14;
+  void clear_external_order_sn() ;
+  [[nodiscard]] const ::std::string& external_order_sn() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_external_order_sn(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_external_order_sn();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_external_order_sn();
+  void set_allocated_external_order_sn(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_external_order_sn() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_external_order_sn(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_external_order_sn();
+
+  public:
+  // string external_currency = 18;
+  void clear_external_currency() ;
+  [[nodiscard]] const ::std::string& external_currency() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_external_currency(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_external_currency();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_external_currency();
+  void set_allocated_external_currency(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_external_currency() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_external_currency(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_external_currency();
+
+  public:
+  // .trade.TradeAssetSelection seller_assets = 1;
+  [[nodiscard]] bool has_seller_assets()
+      const;
+  void clear_seller_assets() ;
+  [[nodiscard]] const ::trade::TradeAssetSelection& seller_assets() const;
+  [[nodiscard]] ::trade::TradeAssetSelection* PROTOBUF_NULLABLE release_seller_assets();
+  ::trade::TradeAssetSelection* PROTOBUF_NONNULL mutable_seller_assets();
+  void set_allocated_seller_assets(::trade::TradeAssetSelection* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_seller_assets(::trade::TradeAssetSelection* PROTOBUF_NULLABLE value);
+  ::trade::TradeAssetSelection* PROTOBUF_NULLABLE unsafe_arena_release_seller_assets();
+
+  private:
+  const ::trade::TradeAssetSelection& _internal_seller_assets() const;
+  ::trade::TradeAssetSelection* PROTOBUF_NONNULL _internal_mutable_seller_assets();
+
+  public:
+  // .trade.TradeAssetSelection buyer_assets = 2;
+  [[nodiscard]] bool has_buyer_assets()
+      const;
+  void clear_buyer_assets() ;
+  [[nodiscard]] const ::trade::TradeAssetSelection& buyer_assets() const;
+  [[nodiscard]] ::trade::TradeAssetSelection* PROTOBUF_NULLABLE release_buyer_assets();
+  ::trade::TradeAssetSelection* PROTOBUF_NONNULL mutable_buyer_assets();
+  void set_allocated_buyer_assets(::trade::TradeAssetSelection* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_buyer_assets(::trade::TradeAssetSelection* PROTOBUF_NULLABLE value);
+  ::trade::TradeAssetSelection* PROTOBUF_NULLABLE unsafe_arena_release_buyer_assets();
+
+  private:
+  const ::trade::TradeAssetSelection& _internal_buyer_assets() const;
+  ::trade::TradeAssetSelection* PROTOBUF_NONNULL _internal_mutable_buyer_assets();
+
+  public:
+  // .AssetBundle official_bundle = 17;
+  [[nodiscard]] bool has_official_bundle()
+      const;
+  void clear_official_bundle() ;
+  [[nodiscard]] const ::AssetBundle& official_bundle() const;
+  [[nodiscard]] ::AssetBundle* PROTOBUF_NULLABLE release_official_bundle();
+  ::AssetBundle* PROTOBUF_NONNULL mutable_official_bundle();
+  void set_allocated_official_bundle(::AssetBundle* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_official_bundle(::AssetBundle* PROTOBUF_NULLABLE value);
+  ::AssetBundle* PROTOBUF_NULLABLE unsafe_arena_release_official_bundle();
+
+  private:
+  const ::AssetBundle& _internal_official_bundle() const;
+  ::AssetBundle* PROTOBUF_NONNULL _internal_mutable_official_bundle();
+
+  public:
+  // bool seller_confirmed = 3;
+  void clear_seller_confirmed() ;
+  [[nodiscard]] bool seller_confirmed() const;
+  void set_seller_confirmed(bool value);
+
+  private:
+  bool _internal_seller_confirmed() const;
+  void _internal_set_seller_confirmed(bool value);
+
+  public:
+  // bool buyer_confirmed = 4;
+  void clear_buyer_confirmed() ;
+  [[nodiscard]] bool buyer_confirmed() const;
+  void set_buyer_confirmed(bool value);
+
+  private:
+  bool _internal_buyer_confirmed() const;
+  void _internal_set_buyer_confirmed(bool value);
+
+  public:
+  // bool cancel_requested = 5;
+  void clear_cancel_requested() ;
+  [[nodiscard]] bool cancel_requested() const;
+  void set_cancel_requested(bool value);
+
+  private:
+  bool _internal_cancel_requested() const;
+  void _internal_set_cancel_requested(bool value);
+
+  public:
+  // uint32 sku_quantity = 16;
+  void clear_sku_quantity() ;
+  [[nodiscard]] ::uint32_t sku_quantity() const;
+  void set_sku_quantity(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_sku_quantity() const;
+  void _internal_set_sku_quantity(::uint32_t value);
+
+  public:
+  // uint64 minimum_increment = 8;
+  void clear_minimum_increment() ;
+  [[nodiscard]] ::uint64_t minimum_increment() const;
+  void set_minimum_increment(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_minimum_increment() const;
+  void _internal_set_minimum_increment(::uint64_t value);
+
+  public:
+  // uint64 highest_bid = 9;
+  void clear_highest_bid() ;
+  [[nodiscard]] ::uint64_t highest_bid() const;
+  void set_highest_bid(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_highest_bid() const;
+  void _internal_set_highest_bid(::uint64_t value);
+
+  public:
+  // uint64 highest_bidder = 10;
+  void clear_highest_bidder() ;
+  [[nodiscard]] ::uint64_t highest_bidder() const;
+  void set_highest_bidder(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_highest_bidder() const;
+  void _internal_set_highest_bidder(::uint64_t value);
+
+  public:
+  // uint64 winning_bid_id = 11;
+  void clear_winning_bid_id() ;
+  [[nodiscard]] ::uint64_t winning_bid_id() const;
+  void set_winning_bid_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_winning_bid_id() const;
+  void _internal_set_winning_bid_id(::uint64_t value);
+
+  public:
+  // uint64 parent_id = 12;
+  void clear_parent_id() ;
+  [[nodiscard]] ::uint64_t parent_id() const;
+  void set_parent_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_parent_id() const;
+  void _internal_set_parent_id(::uint64_t value);
+
+  public:
+  // uint64 quantity_reserved = 13;
+  void clear_quantity_reserved() ;
+  [[nodiscard]] ::uint64_t quantity_reserved() const;
+  void set_quantity_reserved(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_quantity_reserved() const;
+  void _internal_set_quantity_reserved(::uint64_t value);
+
+  public:
+  // uint64 sku_id = 15;
+  void clear_sku_id() ;
+  [[nodiscard]] ::uint64_t sku_id() const;
+  void set_sku_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_sku_id() const;
+  void _internal_set_sku_id(::uint64_t value);
+
+  public:
+  // uint64 external_amount = 19;
+  void clear_external_amount() ;
+  [[nodiscard]] ::uint64_t external_amount() const;
+  void set_external_amount(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_external_amount() const;
+  void _internal_set_external_amount(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:trade.TradeCommerceWorkflow)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<5, 19,
+                          4, 91,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const TradeCommerceWorkflow& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::trade::TradeCommerceLeg > legs_;
+    ::google::protobuf::internal::ArenaStringPtr stage_;
+    ::google::protobuf::internal::ArenaStringPtr external_order_sn_;
+    ::google::protobuf::internal::ArenaStringPtr external_currency_;
+    ::trade::TradeAssetSelection* PROTOBUF_NULLABLE seller_assets_;
+    ::trade::TradeAssetSelection* PROTOBUF_NULLABLE buyer_assets_;
+    ::AssetBundle* PROTOBUF_NULLABLE official_bundle_;
+    bool seller_confirmed_;
+    bool buyer_confirmed_;
+    bool cancel_requested_;
+    ::uint32_t sku_quantity_;
+    ::uint64_t minimum_increment_;
+    ::uint64_t highest_bid_;
+    ::uint64_t highest_bidder_;
+    ::uint64_t winning_bid_id_;
+    ::uint64_t parent_id_;
+    ::uint64_t quantity_reserved_;
+    ::uint64_t sku_id_;
+    ::uint64_t external_amount_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2585,7 +4068,7 @@ inline void TradePlayerOpSeqRecord::_internal_set_updated_ms(::uint64_t value) {
 inline void TradeAssetOpRecord::clear_op_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.op_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::uint64_t TradeAssetOpRecord::op_id() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.op_id)
@@ -2593,7 +4076,7 @@ inline ::uint64_t TradeAssetOpRecord::op_id() const {
 }
 inline void TradeAssetOpRecord::set_op_id(::uint64_t value) {
   _internal_set_op_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.op_id)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_op_id() const {
@@ -2609,7 +4092,7 @@ inline void TradeAssetOpRecord::_internal_set_op_id(::uint64_t value) {
 inline void TradeAssetOpRecord::clear_player_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.player_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint64_t TradeAssetOpRecord::player_id() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.player_id)
@@ -2617,7 +4100,7 @@ inline ::uint64_t TradeAssetOpRecord::player_id() const {
 }
 inline void TradeAssetOpRecord::set_player_id(::uint64_t value) {
   _internal_set_player_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.player_id)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_player_id() const {
@@ -2633,7 +4116,7 @@ inline void TradeAssetOpRecord::_internal_set_player_id(::uint64_t value) {
 inline void TradeAssetOpRecord::clear_stream() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.stream_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
 }
 inline ::uint32_t TradeAssetOpRecord::stream() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.stream)
@@ -2641,7 +4124,7 @@ inline ::uint32_t TradeAssetOpRecord::stream() const {
 }
 inline void TradeAssetOpRecord::set_stream(::uint32_t value) {
   _internal_set_stream(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.stream)
 }
 inline ::uint32_t TradeAssetOpRecord::_internal_stream() const {
@@ -2657,7 +4140,7 @@ inline void TradeAssetOpRecord::_internal_set_stream(::uint32_t value) {
 inline void TradeAssetOpRecord::clear_stream_epoch() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.stream_epoch_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
 }
 inline ::uint64_t TradeAssetOpRecord::stream_epoch() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.stream_epoch)
@@ -2665,7 +4148,7 @@ inline ::uint64_t TradeAssetOpRecord::stream_epoch() const {
 }
 inline void TradeAssetOpRecord::set_stream_epoch(::uint64_t value) {
   _internal_set_stream_epoch(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.stream_epoch)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_stream_epoch() const {
@@ -2681,7 +4164,7 @@ inline void TradeAssetOpRecord::_internal_set_stream_epoch(::uint64_t value) {
 inline void TradeAssetOpRecord::clear_seq() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.seq_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
 }
 inline ::uint64_t TradeAssetOpRecord::seq() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.seq)
@@ -2689,7 +4172,7 @@ inline ::uint64_t TradeAssetOpRecord::seq() const {
 }
 inline void TradeAssetOpRecord::set_seq(::uint64_t value) {
   _internal_set_seq(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.seq)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_seq() const {
@@ -2705,7 +4188,7 @@ inline void TradeAssetOpRecord::_internal_set_seq(::uint64_t value) {
 inline void TradeAssetOpRecord::clear_kind() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.kind_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
 }
 inline ::trade::TradeAssetOpKind TradeAssetOpRecord::kind() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.kind)
@@ -2713,7 +4196,7 @@ inline ::trade::TradeAssetOpKind TradeAssetOpRecord::kind() const {
 }
 inline void TradeAssetOpRecord::set_kind(::trade::TradeAssetOpKind value) {
   _internal_set_kind(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.kind)
 }
 inline ::trade::TradeAssetOpKind TradeAssetOpRecord::_internal_kind() const {
@@ -2729,7 +4212,7 @@ inline void TradeAssetOpRecord::_internal_set_kind(::trade::TradeAssetOpKind val
 inline void TradeAssetOpRecord::clear_status() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.status_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
 }
 inline ::trade::TradeAssetOpStatus TradeAssetOpRecord::status() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.status)
@@ -2737,7 +4220,7 @@ inline ::trade::TradeAssetOpStatus TradeAssetOpRecord::status() const {
 }
 inline void TradeAssetOpRecord::set_status(::trade::TradeAssetOpStatus value) {
   _internal_set_status(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.status)
 }
 inline ::trade::TradeAssetOpStatus TradeAssetOpRecord::_internal_status() const {
@@ -2753,7 +4236,7 @@ inline void TradeAssetOpRecord::_internal_set_status(::trade::TradeAssetOpStatus
 inline void TradeAssetOpRecord::clear_durable() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.durable_ = false;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+  ClearHasBit(_impl_._has_bits_[0], 0x01000000U);
 }
 inline bool TradeAssetOpRecord::durable() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.durable)
@@ -2761,7 +4244,7 @@ inline bool TradeAssetOpRecord::durable() const {
 }
 inline void TradeAssetOpRecord::set_durable(bool value) {
   _internal_set_durable(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  SetHasBit(_impl_._has_bits_[0], 0x01000000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.durable)
 }
 inline bool TradeAssetOpRecord::_internal_durable() const {
@@ -2777,7 +4260,7 @@ inline void TradeAssetOpRecord::_internal_set_durable(bool value) {
 inline void TradeAssetOpRecord::clear_attempts() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.attempts_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
 }
 inline ::uint32_t TradeAssetOpRecord::attempts() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.attempts)
@@ -2785,7 +4268,7 @@ inline ::uint32_t TradeAssetOpRecord::attempts() const {
 }
 inline void TradeAssetOpRecord::set_attempts(::uint32_t value) {
   _internal_set_attempts(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.attempts)
 }
 inline ::uint32_t TradeAssetOpRecord::_internal_attempts() const {
@@ -2801,7 +4284,7 @@ inline void TradeAssetOpRecord::_internal_set_attempts(::uint32_t value) {
 inline void TradeAssetOpRecord::clear_next_attempt_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.next_attempt_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
 }
 inline ::uint64_t TradeAssetOpRecord::next_attempt_ms() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.next_attempt_ms)
@@ -2809,7 +4292,7 @@ inline ::uint64_t TradeAssetOpRecord::next_attempt_ms() const {
 }
 inline void TradeAssetOpRecord::set_next_attempt_ms(::uint64_t value) {
   _internal_set_next_attempt_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.next_attempt_ms)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_next_attempt_ms() const {
@@ -2825,7 +4308,7 @@ inline void TradeAssetOpRecord::_internal_set_next_attempt_ms(::uint64_t value) 
 inline void TradeAssetOpRecord::clear_deadline_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.deadline_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
 }
 inline ::uint64_t TradeAssetOpRecord::deadline_ms() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.deadline_ms)
@@ -2833,7 +4316,7 @@ inline ::uint64_t TradeAssetOpRecord::deadline_ms() const {
 }
 inline void TradeAssetOpRecord::set_deadline_ms(::uint64_t value) {
   _internal_set_deadline_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.deadline_ms)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_deadline_ms() const {
@@ -2849,7 +4332,7 @@ inline void TradeAssetOpRecord::_internal_set_deadline_ms(::uint64_t value) {
 inline void TradeAssetOpRecord::clear_lease_until_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.lease_until_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
 }
 inline ::uint64_t TradeAssetOpRecord::lease_until_ms() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.lease_until_ms)
@@ -2857,7 +4340,7 @@ inline ::uint64_t TradeAssetOpRecord::lease_until_ms() const {
 }
 inline void TradeAssetOpRecord::set_lease_until_ms(::uint64_t value) {
   _internal_set_lease_until_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.lease_until_ms)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_lease_until_ms() const {
@@ -2873,7 +4356,7 @@ inline void TradeAssetOpRecord::_internal_set_lease_until_ms(::uint64_t value) {
 inline void TradeAssetOpRecord::clear_lease_token() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.lease_token_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
 }
 inline ::uint64_t TradeAssetOpRecord::lease_token() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.lease_token)
@@ -2881,7 +4364,7 @@ inline ::uint64_t TradeAssetOpRecord::lease_token() const {
 }
 inline void TradeAssetOpRecord::set_lease_token(::uint64_t value) {
   _internal_set_lease_token(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.lease_token)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_lease_token() const {
@@ -2897,7 +4380,7 @@ inline void TradeAssetOpRecord::_internal_set_lease_token(::uint64_t value) {
 inline void TradeAssetOpRecord::clear_tx_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.tx_type_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
 }
 inline ::uint32_t TradeAssetOpRecord::tx_type() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.tx_type)
@@ -2905,7 +4388,7 @@ inline ::uint32_t TradeAssetOpRecord::tx_type() const {
 }
 inline void TradeAssetOpRecord::set_tx_type(::uint32_t value) {
   _internal_set_tx_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.tx_type)
 }
 inline ::uint32_t TradeAssetOpRecord::_internal_tx_type() const {
@@ -2921,7 +4404,7 @@ inline void TradeAssetOpRecord::_internal_set_tx_type(::uint32_t value) {
 inline void TradeAssetOpRecord::clear_ref_kind() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.ref_kind_ = 0;
-  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
 }
 inline ::trade::TradeAssetOpRefKind TradeAssetOpRecord::ref_kind() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.ref_kind)
@@ -2929,7 +4412,7 @@ inline ::trade::TradeAssetOpRefKind TradeAssetOpRecord::ref_kind() const {
 }
 inline void TradeAssetOpRecord::set_ref_kind(::trade::TradeAssetOpRefKind value) {
   _internal_set_ref_kind(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.ref_kind)
 }
 inline ::trade::TradeAssetOpRefKind TradeAssetOpRecord::_internal_ref_kind() const {
@@ -2945,7 +4428,7 @@ inline void TradeAssetOpRecord::_internal_set_ref_kind(::trade::TradeAssetOpRefK
 inline void TradeAssetOpRecord::clear_ref_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.ref_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
 }
 inline ::uint64_t TradeAssetOpRecord::ref_id() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.ref_id)
@@ -2953,7 +4436,7 @@ inline ::uint64_t TradeAssetOpRecord::ref_id() const {
 }
 inline void TradeAssetOpRecord::set_ref_id(::uint64_t value) {
   _internal_set_ref_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.ref_id)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_ref_id() const {
@@ -3057,7 +4540,7 @@ inline void TradeAssetOpRecord::_internal_set_last_outcome(::uint32_t value) {
 inline void TradeAssetOpRecord::clear_last_reason() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.last_reason_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00800000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00100000U);
 }
 inline ::uint32_t TradeAssetOpRecord::last_reason() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.last_reason)
@@ -3065,7 +4548,7 @@ inline ::uint32_t TradeAssetOpRecord::last_reason() const {
 }
 inline void TradeAssetOpRecord::set_last_reason(::uint32_t value) {
   _internal_set_last_reason(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00800000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.last_reason)
 }
 inline ::uint32_t TradeAssetOpRecord::_internal_last_reason() const {
@@ -3081,7 +4564,7 @@ inline void TradeAssetOpRecord::_internal_set_last_reason(::uint32_t value) {
 inline void TradeAssetOpRecord::clear_created_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.created_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00100000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00200000U);
 }
 inline ::uint64_t TradeAssetOpRecord::created_ms() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.created_ms)
@@ -3089,7 +4572,7 @@ inline ::uint64_t TradeAssetOpRecord::created_ms() const {
 }
 inline void TradeAssetOpRecord::set_created_ms(::uint64_t value) {
   _internal_set_created_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00200000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.created_ms)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_created_ms() const {
@@ -3105,7 +4588,7 @@ inline void TradeAssetOpRecord::_internal_set_created_ms(::uint64_t value) {
 inline void TradeAssetOpRecord::clear_updated_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.updated_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00200000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00400000U);
 }
 inline ::uint64_t TradeAssetOpRecord::updated_ms() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.updated_ms)
@@ -3113,7 +4596,7 @@ inline ::uint64_t TradeAssetOpRecord::updated_ms() const {
 }
 inline void TradeAssetOpRecord::set_updated_ms(::uint64_t value) {
   _internal_set_updated_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00200000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00400000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.updated_ms)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_updated_ms() const {
@@ -3257,7 +4740,7 @@ inline void TradeAssetOpRecord::set_allocated_resolve_reason(::std::string* PROT
 inline void TradeAssetOpRecord::clear_last_send_ms() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.last_send_ms_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00400000U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00800000U);
 }
 inline ::uint64_t TradeAssetOpRecord::last_send_ms() const {
   // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.last_send_ms)
@@ -3265,7 +4748,7 @@ inline ::uint64_t TradeAssetOpRecord::last_send_ms() const {
 }
 inline void TradeAssetOpRecord::set_last_send_ms(::uint64_t value) {
   _internal_set_last_send_ms(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00400000U);
+  SetHasBit(_impl_._has_bits_[0], 0x00800000U);
   // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.last_send_ms)
 }
 inline ::uint64_t TradeAssetOpRecord::_internal_last_send_ms() const {
@@ -3275,6 +4758,1942 @@ inline ::uint64_t TradeAssetOpRecord::_internal_last_send_ms() const {
 inline void TradeAssetOpRecord::_internal_set_last_send_ms(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.last_send_ms_ = value;
+}
+
+// bytes escrow_snapshot = 25;
+inline void TradeAssetOpRecord::clear_escrow_snapshot() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.escrow_snapshot_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::std::string& TradeAssetOpRecord::escrow_snapshot() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.escrow_snapshot)
+  return _internal_escrow_snapshot();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void TradeAssetOpRecord::set_escrow_snapshot(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.escrow_snapshot_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.escrow_snapshot)
+}
+inline ::std::string* PROTOBUF_NONNULL TradeAssetOpRecord::mutable_escrow_snapshot()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_escrow_snapshot();
+  // @@protoc_insertion_point(field_mutable:trade.TradeAssetOpRecord.escrow_snapshot)
+  return _s;
+}
+inline const ::std::string& TradeAssetOpRecord::_internal_escrow_snapshot() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.escrow_snapshot_.Get();
+}
+inline void TradeAssetOpRecord::_internal_set_escrow_snapshot(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.escrow_snapshot_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL TradeAssetOpRecord::_internal_mutable_escrow_snapshot() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.escrow_snapshot_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE TradeAssetOpRecord::release_escrow_snapshot() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeAssetOpRecord.escrow_snapshot)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.escrow_snapshot_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.escrow_snapshot_.Set("", GetArena());
+  }
+  return released;
+}
+inline void TradeAssetOpRecord::set_allocated_escrow_snapshot(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.escrow_snapshot_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.escrow_snapshot_.IsDefault()) {
+    _impl_.escrow_snapshot_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeAssetOpRecord.escrow_snapshot)
+}
+
+// bool receipt_ack_pending = 26;
+inline void TradeAssetOpRecord::clear_receipt_ack_pending() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.receipt_ack_pending_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x02000000U);
+}
+inline bool TradeAssetOpRecord::receipt_ack_pending() const {
+  // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.receipt_ack_pending)
+  return _internal_receipt_ack_pending();
+}
+inline void TradeAssetOpRecord::set_receipt_ack_pending(bool value) {
+  _internal_set_receipt_ack_pending(value);
+  SetHasBit(_impl_._has_bits_[0], 0x02000000U);
+  // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.receipt_ack_pending)
+}
+inline bool TradeAssetOpRecord::_internal_receipt_ack_pending() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.receipt_ack_pending_;
+}
+inline void TradeAssetOpRecord::_internal_set_receipt_ack_pending(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.receipt_ack_pending_ = value;
+}
+
+// bool business_consumed = 27;
+inline void TradeAssetOpRecord::clear_business_consumed() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.business_consumed_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x04000000U);
+}
+inline bool TradeAssetOpRecord::business_consumed() const {
+  // @@protoc_insertion_point(field_get:trade.TradeAssetOpRecord.business_consumed)
+  return _internal_business_consumed();
+}
+inline void TradeAssetOpRecord::set_business_consumed(bool value) {
+  _internal_set_business_consumed(value);
+  SetHasBit(_impl_._has_bits_[0], 0x04000000U);
+  // @@protoc_insertion_point(field_set:trade.TradeAssetOpRecord.business_consumed)
+}
+inline bool TradeAssetOpRecord::_internal_business_consumed() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.business_consumed_;
+}
+inline void TradeAssetOpRecord::_internal_set_business_consumed(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.business_consumed_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// TradeCommerceRecord
+
+// uint64 commerce_id = 1;
+inline void TradeCommerceRecord::clear_commerce_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.commerce_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t TradeCommerceRecord::commerce_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.commerce_id)
+  return _internal_commerce_id();
+}
+inline void TradeCommerceRecord::set_commerce_id(::uint64_t value) {
+  _internal_set_commerce_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.commerce_id)
+}
+inline ::uint64_t TradeCommerceRecord::_internal_commerce_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.commerce_id_;
+}
+inline void TradeCommerceRecord::_internal_set_commerce_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.commerce_id_ = value;
+}
+
+// string request_key = 2;
+inline void TradeCommerceRecord::clear_request_key() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_key_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& TradeCommerceRecord::request_key() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.request_key)
+  return _internal_request_key();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void TradeCommerceRecord::set_request_key(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.request_key_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.request_key)
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceRecord::mutable_request_key()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_request_key();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceRecord.request_key)
+  return _s;
+}
+inline const ::std::string& TradeCommerceRecord::_internal_request_key() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_key_.Get();
+}
+inline void TradeCommerceRecord::_internal_set_request_key(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_key_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceRecord::_internal_mutable_request_key() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_key_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE TradeCommerceRecord::release_request_key() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceRecord.request_key)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.request_key_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_key_.Set("", GetArena());
+  }
+  return released;
+}
+inline void TradeCommerceRecord::set_allocated_request_key(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.request_key_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_key_.IsDefault()) {
+    _impl_.request_key_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceRecord.request_key)
+}
+
+// bytes request_digest = 3;
+inline void TradeCommerceRecord::clear_request_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_digest_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& TradeCommerceRecord::request_digest() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.request_digest)
+  return _internal_request_digest();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void TradeCommerceRecord::set_request_digest(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.request_digest_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.request_digest)
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceRecord::mutable_request_digest()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_request_digest();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceRecord.request_digest)
+  return _s;
+}
+inline const ::std::string& TradeCommerceRecord::_internal_request_digest() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_digest_.Get();
+}
+inline void TradeCommerceRecord::_internal_set_request_digest(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_digest_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceRecord::_internal_mutable_request_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.request_digest_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE TradeCommerceRecord::release_request_digest() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceRecord.request_digest)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.request_digest_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.request_digest_.Set("", GetArena());
+  }
+  return released;
+}
+inline void TradeCommerceRecord::set_allocated_request_digest(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.request_digest_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.request_digest_.IsDefault()) {
+    _impl_.request_digest_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceRecord.request_digest)
+}
+
+// uint32 kind = 4;
+inline void TradeCommerceRecord::clear_kind() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.kind_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint32_t TradeCommerceRecord::kind() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.kind)
+  return _internal_kind();
+}
+inline void TradeCommerceRecord::set_kind(::uint32_t value) {
+  _internal_set_kind(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.kind)
+}
+inline ::uint32_t TradeCommerceRecord::_internal_kind() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.kind_;
+}
+inline void TradeCommerceRecord::_internal_set_kind(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.kind_ = value;
+}
+
+// uint32 status = 5;
+inline void TradeCommerceRecord::clear_status() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.status_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint32_t TradeCommerceRecord::status() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.status)
+  return _internal_status();
+}
+inline void TradeCommerceRecord::set_status(::uint32_t value) {
+  _internal_set_status(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.status)
+}
+inline ::uint32_t TradeCommerceRecord::_internal_status() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.status_;
+}
+inline void TradeCommerceRecord::_internal_set_status(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.status_ = value;
+}
+
+// uint64 seller_player_id = 6;
+inline void TradeCommerceRecord::clear_seller_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.seller_player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint64_t TradeCommerceRecord::seller_player_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.seller_player_id)
+  return _internal_seller_player_id();
+}
+inline void TradeCommerceRecord::set_seller_player_id(::uint64_t value) {
+  _internal_set_seller_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.seller_player_id)
+}
+inline ::uint64_t TradeCommerceRecord::_internal_seller_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.seller_player_id_;
+}
+inline void TradeCommerceRecord::_internal_set_seller_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.seller_player_id_ = value;
+}
+
+// uint64 buyer_player_id = 7;
+inline void TradeCommerceRecord::clear_buyer_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.buyer_player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline ::uint64_t TradeCommerceRecord::buyer_player_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.buyer_player_id)
+  return _internal_buyer_player_id();
+}
+inline void TradeCommerceRecord::set_buyer_player_id(::uint64_t value) {
+  _internal_set_buyer_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.buyer_player_id)
+}
+inline ::uint64_t TradeCommerceRecord::_internal_buyer_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.buyer_player_id_;
+}
+inline void TradeCommerceRecord::_internal_set_buyer_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.buyer_player_id_ = value;
+}
+
+// uint32 market_id = 8;
+inline void TradeCommerceRecord::clear_market_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.market_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline ::uint32_t TradeCommerceRecord::market_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.market_id)
+  return _internal_market_id();
+}
+inline void TradeCommerceRecord::set_market_id(::uint32_t value) {
+  _internal_set_market_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.market_id)
+}
+inline ::uint32_t TradeCommerceRecord::_internal_market_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.market_id_;
+}
+inline void TradeCommerceRecord::_internal_set_market_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.market_id_ = value;
+}
+
+// uint32 item_config_id = 9;
+inline void TradeCommerceRecord::clear_item_config_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.item_config_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline ::uint32_t TradeCommerceRecord::item_config_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.item_config_id)
+  return _internal_item_config_id();
+}
+inline void TradeCommerceRecord::set_item_config_id(::uint32_t value) {
+  _internal_set_item_config_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.item_config_id)
+}
+inline ::uint32_t TradeCommerceRecord::_internal_item_config_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.item_config_id_;
+}
+inline void TradeCommerceRecord::_internal_set_item_config_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.item_config_id_ = value;
+}
+
+// uint32 side = 10;
+inline void TradeCommerceRecord::clear_side() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.side_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+}
+inline ::uint32_t TradeCommerceRecord::side() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.side)
+  return _internal_side();
+}
+inline void TradeCommerceRecord::set_side(::uint32_t value) {
+  _internal_set_side(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.side)
+}
+inline ::uint32_t TradeCommerceRecord::_internal_side() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.side_;
+}
+inline void TradeCommerceRecord::_internal_set_side(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.side_ = value;
+}
+
+// uint64 unit_price = 11;
+inline void TradeCommerceRecord::clear_unit_price() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.unit_price_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+}
+inline ::uint64_t TradeCommerceRecord::unit_price() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.unit_price)
+  return _internal_unit_price();
+}
+inline void TradeCommerceRecord::set_unit_price(::uint64_t value) {
+  _internal_set_unit_price(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.unit_price)
+}
+inline ::uint64_t TradeCommerceRecord::_internal_unit_price() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.unit_price_;
+}
+inline void TradeCommerceRecord::_internal_set_unit_price(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.unit_price_ = value;
+}
+
+// uint32 quantity = 12;
+inline void TradeCommerceRecord::clear_quantity() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.quantity_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+}
+inline ::uint32_t TradeCommerceRecord::quantity() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.quantity)
+  return _internal_quantity();
+}
+inline void TradeCommerceRecord::set_quantity(::uint32_t value) {
+  _internal_set_quantity(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.quantity)
+}
+inline ::uint32_t TradeCommerceRecord::_internal_quantity() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.quantity_;
+}
+inline void TradeCommerceRecord::_internal_set_quantity(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.quantity_ = value;
+}
+
+// uint32 filled_quantity = 13;
+inline void TradeCommerceRecord::clear_filled_quantity() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.filled_quantity_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
+}
+inline ::uint32_t TradeCommerceRecord::filled_quantity() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.filled_quantity)
+  return _internal_filled_quantity();
+}
+inline void TradeCommerceRecord::set_filled_quantity(::uint32_t value) {
+  _internal_set_filled_quantity(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.filled_quantity)
+}
+inline ::uint32_t TradeCommerceRecord::_internal_filled_quantity() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.filled_quantity_;
+}
+inline void TradeCommerceRecord::_internal_set_filled_quantity(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.filled_quantity_ = value;
+}
+
+// uint32 currency_type = 14;
+inline void TradeCommerceRecord::clear_currency_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_type_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
+}
+inline ::uint32_t TradeCommerceRecord::currency_type() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.currency_type)
+  return _internal_currency_type();
+}
+inline void TradeCommerceRecord::set_currency_type(::uint32_t value) {
+  _internal_set_currency_type(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.currency_type)
+}
+inline ::uint32_t TradeCommerceRecord::_internal_currency_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.currency_type_;
+}
+inline void TradeCommerceRecord::_internal_set_currency_type(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_type_ = value;
+}
+
+// uint64 expires_ms = 15;
+inline void TradeCommerceRecord::clear_expires_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expires_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
+}
+inline ::uint64_t TradeCommerceRecord::expires_ms() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.expires_ms)
+  return _internal_expires_ms();
+}
+inline void TradeCommerceRecord::set_expires_ms(::uint64_t value) {
+  _internal_set_expires_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.expires_ms)
+}
+inline ::uint64_t TradeCommerceRecord::_internal_expires_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.expires_ms_;
+}
+inline void TradeCommerceRecord::_internal_set_expires_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expires_ms_ = value;
+}
+
+// uint64 created_ms = 16;
+inline void TradeCommerceRecord::clear_created_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
+}
+inline ::uint64_t TradeCommerceRecord::created_ms() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.created_ms)
+  return _internal_created_ms();
+}
+inline void TradeCommerceRecord::set_created_ms(::uint64_t value) {
+  _internal_set_created_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.created_ms)
+}
+inline ::uint64_t TradeCommerceRecord::_internal_created_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.created_ms_;
+}
+inline void TradeCommerceRecord::_internal_set_created_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.created_ms_ = value;
+}
+
+// uint64 updated_ms = 17;
+inline void TradeCommerceRecord::clear_updated_ms() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.updated_ms_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+}
+inline ::uint64_t TradeCommerceRecord::updated_ms() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.updated_ms)
+  return _internal_updated_ms();
+}
+inline void TradeCommerceRecord::set_updated_ms(::uint64_t value) {
+  _internal_set_updated_ms(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.updated_ms)
+}
+inline ::uint64_t TradeCommerceRecord::_internal_updated_ms() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.updated_ms_;
+}
+inline void TradeCommerceRecord::_internal_set_updated_ms(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.updated_ms_ = value;
+}
+
+// uint64 version = 18;
+inline void TradeCommerceRecord::clear_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.version_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
+}
+inline ::uint64_t TradeCommerceRecord::version() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.version)
+  return _internal_version();
+}
+inline void TradeCommerceRecord::set_version(::uint64_t value) {
+  _internal_set_version(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.version)
+}
+inline ::uint64_t TradeCommerceRecord::_internal_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.version_;
+}
+inline void TradeCommerceRecord::_internal_set_version(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.version_ = value;
+}
+
+// bytes workflow_proto = 19;
+inline void TradeCommerceRecord::clear_workflow_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.workflow_proto_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::std::string& TradeCommerceRecord::workflow_proto() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.workflow_proto)
+  return _internal_workflow_proto();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void TradeCommerceRecord::set_workflow_proto(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.workflow_proto_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.workflow_proto)
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceRecord::mutable_workflow_proto()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_workflow_proto();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceRecord.workflow_proto)
+  return _s;
+}
+inline const ::std::string& TradeCommerceRecord::_internal_workflow_proto() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.workflow_proto_.Get();
+}
+inline void TradeCommerceRecord::_internal_set_workflow_proto(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.workflow_proto_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceRecord::_internal_mutable_workflow_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.workflow_proto_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE TradeCommerceRecord::release_workflow_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceRecord.workflow_proto)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.workflow_proto_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.workflow_proto_.Set("", GetArena());
+  }
+  return released;
+}
+inline void TradeCommerceRecord::set_allocated_workflow_proto(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.workflow_proto_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.workflow_proto_.IsDefault()) {
+    _impl_.workflow_proto_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceRecord.workflow_proto)
+}
+
+// uint64 parent_id = 20;
+inline void TradeCommerceRecord::clear_parent_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.parent_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00080000U);
+}
+inline ::uint64_t TradeCommerceRecord::parent_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.parent_id)
+  return _internal_parent_id();
+}
+inline void TradeCommerceRecord::set_parent_id(::uint64_t value) {
+  _internal_set_parent_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00080000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.parent_id)
+}
+inline ::uint64_t TradeCommerceRecord::_internal_parent_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.parent_id_;
+}
+inline void TradeCommerceRecord::_internal_set_parent_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.parent_id_ = value;
+}
+
+// uint64 counterparty_id = 21;
+inline void TradeCommerceRecord::clear_counterparty_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.counterparty_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00100000U);
+}
+inline ::uint64_t TradeCommerceRecord::counterparty_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceRecord.counterparty_id)
+  return _internal_counterparty_id();
+}
+inline void TradeCommerceRecord::set_counterparty_id(::uint64_t value) {
+  _internal_set_counterparty_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00100000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceRecord.counterparty_id)
+}
+inline ::uint64_t TradeCommerceRecord::_internal_counterparty_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.counterparty_id_;
+}
+inline void TradeCommerceRecord::_internal_set_counterparty_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.counterparty_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// TradeCommerceGuardRecord
+
+// uint64 guard_id = 1;
+inline void TradeCommerceGuardRecord::clear_guard_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.guard_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline ::uint64_t TradeCommerceGuardRecord::guard_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceGuardRecord.guard_id)
+  return _internal_guard_id();
+}
+inline void TradeCommerceGuardRecord::set_guard_id(::uint64_t value) {
+  _internal_set_guard_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceGuardRecord.guard_id)
+}
+inline ::uint64_t TradeCommerceGuardRecord::_internal_guard_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.guard_id_;
+}
+inline void TradeCommerceGuardRecord::_internal_set_guard_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.guard_id_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// TradeCommerceWorkflow
+
+// .trade.TradeAssetSelection seller_assets = 1;
+inline bool TradeCommerceWorkflow::has_seller_assets() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000010U);
+  PROTOBUF_ASSUME(!value || _impl_.seller_assets_ != nullptr);
+  return value;
+}
+inline const ::trade::TradeAssetSelection& TradeCommerceWorkflow::_internal_seller_assets() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::trade::TradeAssetSelection* p = _impl_.seller_assets_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::trade::TradeAssetSelection>(&::trade::TradeAssetSelection_globals_);
+}
+inline const ::trade::TradeAssetSelection& TradeCommerceWorkflow::seller_assets() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.seller_assets)
+  return _internal_seller_assets();
+}
+inline void TradeCommerceWorkflow::unsafe_arena_set_allocated_seller_assets(
+    ::trade::TradeAssetSelection* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.seller_assets_);
+  }
+  _impl_.seller_assets_ = reinterpret_cast<::trade::TradeAssetSelection*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:trade.TradeCommerceWorkflow.seller_assets)
+}
+inline ::trade::TradeAssetSelection* PROTOBUF_NULLABLE TradeCommerceWorkflow::release_seller_assets() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::trade::TradeAssetSelection* released = _impl_.seller_assets_;
+  _impl_.seller_assets_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::trade::TradeAssetSelection* PROTOBUF_NULLABLE TradeCommerceWorkflow::unsafe_arena_release_seller_assets() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceWorkflow.seller_assets)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::trade::TradeAssetSelection* temp = _impl_.seller_assets_;
+  _impl_.seller_assets_ = nullptr;
+  return temp;
+}
+inline ::trade::TradeAssetSelection* PROTOBUF_NONNULL TradeCommerceWorkflow::_internal_mutable_seller_assets() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.seller_assets_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::trade::TradeAssetSelection>(GetArena());
+    _impl_.seller_assets_ = reinterpret_cast<::trade::TradeAssetSelection*>(p);
+  }
+  return _impl_.seller_assets_;
+}
+inline ::trade::TradeAssetSelection* PROTOBUF_NONNULL TradeCommerceWorkflow::mutable_seller_assets()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::trade::TradeAssetSelection* _msg = _internal_mutable_seller_assets();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceWorkflow.seller_assets)
+  return _msg;
+}
+inline void TradeCommerceWorkflow::set_allocated_seller_assets(::trade::TradeAssetSelection* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.seller_assets_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  }
+
+  _impl_.seller_assets_ = reinterpret_cast<::trade::TradeAssetSelection*>(value);
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceWorkflow.seller_assets)
+}
+
+// .trade.TradeAssetSelection buyer_assets = 2;
+inline bool TradeCommerceWorkflow::has_buyer_assets() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000020U);
+  PROTOBUF_ASSUME(!value || _impl_.buyer_assets_ != nullptr);
+  return value;
+}
+inline const ::trade::TradeAssetSelection& TradeCommerceWorkflow::_internal_buyer_assets() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::trade::TradeAssetSelection* p = _impl_.buyer_assets_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::trade::TradeAssetSelection>(&::trade::TradeAssetSelection_globals_);
+}
+inline const ::trade::TradeAssetSelection& TradeCommerceWorkflow::buyer_assets() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.buyer_assets)
+  return _internal_buyer_assets();
+}
+inline void TradeCommerceWorkflow::unsafe_arena_set_allocated_buyer_assets(
+    ::trade::TradeAssetSelection* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.buyer_assets_);
+  }
+  _impl_.buyer_assets_ = reinterpret_cast<::trade::TradeAssetSelection*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:trade.TradeCommerceWorkflow.buyer_assets)
+}
+inline ::trade::TradeAssetSelection* PROTOBUF_NULLABLE TradeCommerceWorkflow::release_buyer_assets() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ::trade::TradeAssetSelection* released = _impl_.buyer_assets_;
+  _impl_.buyer_assets_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::trade::TradeAssetSelection* PROTOBUF_NULLABLE TradeCommerceWorkflow::unsafe_arena_release_buyer_assets() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceWorkflow.buyer_assets)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ::trade::TradeAssetSelection* temp = _impl_.buyer_assets_;
+  _impl_.buyer_assets_ = nullptr;
+  return temp;
+}
+inline ::trade::TradeAssetSelection* PROTOBUF_NONNULL TradeCommerceWorkflow::_internal_mutable_buyer_assets() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.buyer_assets_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::trade::TradeAssetSelection>(GetArena());
+    _impl_.buyer_assets_ = reinterpret_cast<::trade::TradeAssetSelection*>(p);
+  }
+  return _impl_.buyer_assets_;
+}
+inline ::trade::TradeAssetSelection* PROTOBUF_NONNULL TradeCommerceWorkflow::mutable_buyer_assets()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ::trade::TradeAssetSelection* _msg = _internal_mutable_buyer_assets();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceWorkflow.buyer_assets)
+  return _msg;
+}
+inline void TradeCommerceWorkflow::set_allocated_buyer_assets(::trade::TradeAssetSelection* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.buyer_assets_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  }
+
+  _impl_.buyer_assets_ = reinterpret_cast<::trade::TradeAssetSelection*>(value);
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceWorkflow.buyer_assets)
+}
+
+// bool seller_confirmed = 3;
+inline void TradeCommerceWorkflow::clear_seller_confirmed() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.seller_confirmed_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000080U);
+}
+inline bool TradeCommerceWorkflow::seller_confirmed() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.seller_confirmed)
+  return _internal_seller_confirmed();
+}
+inline void TradeCommerceWorkflow::set_seller_confirmed(bool value) {
+  _internal_set_seller_confirmed(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.seller_confirmed)
+}
+inline bool TradeCommerceWorkflow::_internal_seller_confirmed() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.seller_confirmed_;
+}
+inline void TradeCommerceWorkflow::_internal_set_seller_confirmed(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.seller_confirmed_ = value;
+}
+
+// bool buyer_confirmed = 4;
+inline void TradeCommerceWorkflow::clear_buyer_confirmed() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.buyer_confirmed_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000100U);
+}
+inline bool TradeCommerceWorkflow::buyer_confirmed() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.buyer_confirmed)
+  return _internal_buyer_confirmed();
+}
+inline void TradeCommerceWorkflow::set_buyer_confirmed(bool value) {
+  _internal_set_buyer_confirmed(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.buyer_confirmed)
+}
+inline bool TradeCommerceWorkflow::_internal_buyer_confirmed() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.buyer_confirmed_;
+}
+inline void TradeCommerceWorkflow::_internal_set_buyer_confirmed(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.buyer_confirmed_ = value;
+}
+
+// bool cancel_requested = 5;
+inline void TradeCommerceWorkflow::clear_cancel_requested() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cancel_requested_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000200U);
+}
+inline bool TradeCommerceWorkflow::cancel_requested() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.cancel_requested)
+  return _internal_cancel_requested();
+}
+inline void TradeCommerceWorkflow::set_cancel_requested(bool value) {
+  _internal_set_cancel_requested(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.cancel_requested)
+}
+inline bool TradeCommerceWorkflow::_internal_cancel_requested() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.cancel_requested_;
+}
+inline void TradeCommerceWorkflow::_internal_set_cancel_requested(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cancel_requested_ = value;
+}
+
+// repeated .trade.TradeCommerceLeg legs = 6;
+inline int TradeCommerceWorkflow::_internal_legs_size() const {
+  return _internal_legs().size();
+}
+inline int TradeCommerceWorkflow::legs_size() const {
+  return _internal_legs_size();
+}
+inline void TradeCommerceWorkflow::clear_legs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.legs_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::trade::TradeCommerceLeg& TradeCommerceWorkflow::legs(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.legs)
+  return _internal_legs().Get(index);
+}
+inline ::trade::TradeCommerceLeg* PROTOBUF_NONNULL TradeCommerceWorkflow::mutable_legs(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceWorkflow.legs)
+  return _internal_mutable_legs()->Mutable(index);
+}
+inline ::trade::TradeCommerceLeg* PROTOBUF_NONNULL TradeCommerceWorkflow::add_legs()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::trade::TradeCommerceLeg* _add =
+      _internal_mutable_legs()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:trade.TradeCommerceWorkflow.legs)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::trade::TradeCommerceLeg>& TradeCommerceWorkflow::legs() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:trade.TradeCommerceWorkflow.legs)
+  return _internal_legs();
+}
+inline ::google::protobuf::RepeatedPtrField<::trade::TradeCommerceLeg>* PROTOBUF_NONNULL
+TradeCommerceWorkflow::mutable_legs() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:trade.TradeCommerceWorkflow.legs)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_legs();
+}
+inline const ::google::protobuf::RepeatedPtrField<::trade::TradeCommerceLeg>&
+TradeCommerceWorkflow::_internal_legs() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.legs_;
+}
+inline ::google::protobuf::RepeatedPtrField<::trade::TradeCommerceLeg>* PROTOBUF_NONNULL
+TradeCommerceWorkflow::_internal_mutable_legs() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.legs_;
+}
+
+// string stage = 7;
+inline void TradeCommerceWorkflow::clear_stage() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.stage_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& TradeCommerceWorkflow::stage() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.stage)
+  return _internal_stage();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void TradeCommerceWorkflow::set_stage(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.stage_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.stage)
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceWorkflow::mutable_stage()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_stage();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceWorkflow.stage)
+  return _s;
+}
+inline const ::std::string& TradeCommerceWorkflow::_internal_stage() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.stage_.Get();
+}
+inline void TradeCommerceWorkflow::_internal_set_stage(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.stage_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceWorkflow::_internal_mutable_stage() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.stage_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE TradeCommerceWorkflow::release_stage() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceWorkflow.stage)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.stage_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.stage_.Set("", GetArena());
+  }
+  return released;
+}
+inline void TradeCommerceWorkflow::set_allocated_stage(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.stage_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.stage_.IsDefault()) {
+    _impl_.stage_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceWorkflow.stage)
+}
+
+// uint64 minimum_increment = 8;
+inline void TradeCommerceWorkflow::clear_minimum_increment() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.minimum_increment_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000800U);
+}
+inline ::uint64_t TradeCommerceWorkflow::minimum_increment() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.minimum_increment)
+  return _internal_minimum_increment();
+}
+inline void TradeCommerceWorkflow::set_minimum_increment(::uint64_t value) {
+  _internal_set_minimum_increment(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.minimum_increment)
+}
+inline ::uint64_t TradeCommerceWorkflow::_internal_minimum_increment() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.minimum_increment_;
+}
+inline void TradeCommerceWorkflow::_internal_set_minimum_increment(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.minimum_increment_ = value;
+}
+
+// uint64 highest_bid = 9;
+inline void TradeCommerceWorkflow::clear_highest_bid() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.highest_bid_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00001000U);
+}
+inline ::uint64_t TradeCommerceWorkflow::highest_bid() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.highest_bid)
+  return _internal_highest_bid();
+}
+inline void TradeCommerceWorkflow::set_highest_bid(::uint64_t value) {
+  _internal_set_highest_bid(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.highest_bid)
+}
+inline ::uint64_t TradeCommerceWorkflow::_internal_highest_bid() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.highest_bid_;
+}
+inline void TradeCommerceWorkflow::_internal_set_highest_bid(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.highest_bid_ = value;
+}
+
+// uint64 highest_bidder = 10;
+inline void TradeCommerceWorkflow::clear_highest_bidder() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.highest_bidder_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00002000U);
+}
+inline ::uint64_t TradeCommerceWorkflow::highest_bidder() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.highest_bidder)
+  return _internal_highest_bidder();
+}
+inline void TradeCommerceWorkflow::set_highest_bidder(::uint64_t value) {
+  _internal_set_highest_bidder(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.highest_bidder)
+}
+inline ::uint64_t TradeCommerceWorkflow::_internal_highest_bidder() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.highest_bidder_;
+}
+inline void TradeCommerceWorkflow::_internal_set_highest_bidder(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.highest_bidder_ = value;
+}
+
+// uint64 winning_bid_id = 11;
+inline void TradeCommerceWorkflow::clear_winning_bid_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.winning_bid_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00004000U);
+}
+inline ::uint64_t TradeCommerceWorkflow::winning_bid_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.winning_bid_id)
+  return _internal_winning_bid_id();
+}
+inline void TradeCommerceWorkflow::set_winning_bid_id(::uint64_t value) {
+  _internal_set_winning_bid_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00004000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.winning_bid_id)
+}
+inline ::uint64_t TradeCommerceWorkflow::_internal_winning_bid_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.winning_bid_id_;
+}
+inline void TradeCommerceWorkflow::_internal_set_winning_bid_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.winning_bid_id_ = value;
+}
+
+// uint64 parent_id = 12;
+inline void TradeCommerceWorkflow::clear_parent_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.parent_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00008000U);
+}
+inline ::uint64_t TradeCommerceWorkflow::parent_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.parent_id)
+  return _internal_parent_id();
+}
+inline void TradeCommerceWorkflow::set_parent_id(::uint64_t value) {
+  _internal_set_parent_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00008000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.parent_id)
+}
+inline ::uint64_t TradeCommerceWorkflow::_internal_parent_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.parent_id_;
+}
+inline void TradeCommerceWorkflow::_internal_set_parent_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.parent_id_ = value;
+}
+
+// uint64 quantity_reserved = 13;
+inline void TradeCommerceWorkflow::clear_quantity_reserved() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.quantity_reserved_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00010000U);
+}
+inline ::uint64_t TradeCommerceWorkflow::quantity_reserved() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.quantity_reserved)
+  return _internal_quantity_reserved();
+}
+inline void TradeCommerceWorkflow::set_quantity_reserved(::uint64_t value) {
+  _internal_set_quantity_reserved(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00010000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.quantity_reserved)
+}
+inline ::uint64_t TradeCommerceWorkflow::_internal_quantity_reserved() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.quantity_reserved_;
+}
+inline void TradeCommerceWorkflow::_internal_set_quantity_reserved(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.quantity_reserved_ = value;
+}
+
+// string external_order_sn = 14;
+inline void TradeCommerceWorkflow::clear_external_order_sn() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.external_order_sn_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline const ::std::string& TradeCommerceWorkflow::external_order_sn() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.external_order_sn)
+  return _internal_external_order_sn();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void TradeCommerceWorkflow::set_external_order_sn(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.external_order_sn_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.external_order_sn)
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceWorkflow::mutable_external_order_sn()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_external_order_sn();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceWorkflow.external_order_sn)
+  return _s;
+}
+inline const ::std::string& TradeCommerceWorkflow::_internal_external_order_sn() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.external_order_sn_.Get();
+}
+inline void TradeCommerceWorkflow::_internal_set_external_order_sn(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.external_order_sn_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceWorkflow::_internal_mutable_external_order_sn() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.external_order_sn_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE TradeCommerceWorkflow::release_external_order_sn() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceWorkflow.external_order_sn)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.external_order_sn_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.external_order_sn_.Set("", GetArena());
+  }
+  return released;
+}
+inline void TradeCommerceWorkflow::set_allocated_external_order_sn(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.external_order_sn_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.external_order_sn_.IsDefault()) {
+    _impl_.external_order_sn_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceWorkflow.external_order_sn)
+}
+
+// uint64 sku_id = 15;
+inline void TradeCommerceWorkflow::clear_sku_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.sku_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00020000U);
+}
+inline ::uint64_t TradeCommerceWorkflow::sku_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.sku_id)
+  return _internal_sku_id();
+}
+inline void TradeCommerceWorkflow::set_sku_id(::uint64_t value) {
+  _internal_set_sku_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00020000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.sku_id)
+}
+inline ::uint64_t TradeCommerceWorkflow::_internal_sku_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.sku_id_;
+}
+inline void TradeCommerceWorkflow::_internal_set_sku_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.sku_id_ = value;
+}
+
+// uint32 sku_quantity = 16;
+inline void TradeCommerceWorkflow::clear_sku_quantity() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.sku_quantity_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000400U);
+}
+inline ::uint32_t TradeCommerceWorkflow::sku_quantity() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.sku_quantity)
+  return _internal_sku_quantity();
+}
+inline void TradeCommerceWorkflow::set_sku_quantity(::uint32_t value) {
+  _internal_set_sku_quantity(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.sku_quantity)
+}
+inline ::uint32_t TradeCommerceWorkflow::_internal_sku_quantity() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.sku_quantity_;
+}
+inline void TradeCommerceWorkflow::_internal_set_sku_quantity(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.sku_quantity_ = value;
+}
+
+// .AssetBundle official_bundle = 17;
+inline bool TradeCommerceWorkflow::has_official_bundle() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000040U);
+  PROTOBUF_ASSUME(!value || _impl_.official_bundle_ != nullptr);
+  return value;
+}
+inline const ::AssetBundle& TradeCommerceWorkflow::_internal_official_bundle() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::AssetBundle* p = _impl_.official_bundle_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::AssetBundle>(&::AssetBundle_globals_);
+}
+inline const ::AssetBundle& TradeCommerceWorkflow::official_bundle() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.official_bundle)
+  return _internal_official_bundle();
+}
+inline void TradeCommerceWorkflow::unsafe_arena_set_allocated_official_bundle(
+    ::AssetBundle* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.official_bundle_);
+  }
+  _impl_.official_bundle_ = reinterpret_cast<::AssetBundle*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:trade.TradeCommerceWorkflow.official_bundle)
+}
+inline ::AssetBundle* PROTOBUF_NULLABLE TradeCommerceWorkflow::release_official_bundle() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ::AssetBundle* released = _impl_.official_bundle_;
+  _impl_.official_bundle_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::AssetBundle* PROTOBUF_NULLABLE TradeCommerceWorkflow::unsafe_arena_release_official_bundle() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceWorkflow.official_bundle)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ::AssetBundle* temp = _impl_.official_bundle_;
+  _impl_.official_bundle_ = nullptr;
+  return temp;
+}
+inline ::AssetBundle* PROTOBUF_NONNULL TradeCommerceWorkflow::_internal_mutable_official_bundle() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.official_bundle_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::AssetBundle>(GetArena());
+    _impl_.official_bundle_ = reinterpret_cast<::AssetBundle*>(p);
+  }
+  return _impl_.official_bundle_;
+}
+inline ::AssetBundle* PROTOBUF_NONNULL TradeCommerceWorkflow::mutable_official_bundle()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ::AssetBundle* _msg = _internal_mutable_official_bundle();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceWorkflow.official_bundle)
+  return _msg;
+}
+inline void TradeCommerceWorkflow::set_allocated_official_bundle(::AssetBundle* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.official_bundle_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  }
+
+  _impl_.official_bundle_ = reinterpret_cast<::AssetBundle*>(value);
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceWorkflow.official_bundle)
+}
+
+// string external_currency = 18;
+inline void TradeCommerceWorkflow::clear_external_currency() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.external_currency_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::std::string& TradeCommerceWorkflow::external_currency() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.external_currency)
+  return _internal_external_currency();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void TradeCommerceWorkflow::set_external_currency(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.external_currency_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.external_currency)
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceWorkflow::mutable_external_currency()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_external_currency();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceWorkflow.external_currency)
+  return _s;
+}
+inline const ::std::string& TradeCommerceWorkflow::_internal_external_currency() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.external_currency_.Get();
+}
+inline void TradeCommerceWorkflow::_internal_set_external_currency(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.external_currency_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceWorkflow::_internal_mutable_external_currency() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.external_currency_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE TradeCommerceWorkflow::release_external_currency() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceWorkflow.external_currency)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.external_currency_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.external_currency_.Set("", GetArena());
+  }
+  return released;
+}
+inline void TradeCommerceWorkflow::set_allocated_external_currency(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.external_currency_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.external_currency_.IsDefault()) {
+    _impl_.external_currency_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceWorkflow.external_currency)
+}
+
+// uint64 external_amount = 19;
+inline void TradeCommerceWorkflow::clear_external_amount() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.external_amount_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00040000U);
+}
+inline ::uint64_t TradeCommerceWorkflow::external_amount() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceWorkflow.external_amount)
+  return _internal_external_amount();
+}
+inline void TradeCommerceWorkflow::set_external_amount(::uint64_t value) {
+  _internal_set_external_amount(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00040000U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceWorkflow.external_amount)
+}
+inline ::uint64_t TradeCommerceWorkflow::_internal_external_amount() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.external_amount_;
+}
+inline void TradeCommerceWorkflow::_internal_set_external_amount(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.external_amount_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// TradeCommerceLeg
+
+// string role = 1;
+inline void TradeCommerceLeg::clear_role() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.role_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& TradeCommerceLeg::role() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceLeg.role)
+  return _internal_role();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void TradeCommerceLeg::set_role(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.role_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceLeg.role)
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceLeg::mutable_role()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_role();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceLeg.role)
+  return _s;
+}
+inline const ::std::string& TradeCommerceLeg::_internal_role() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.role_.Get();
+}
+inline void TradeCommerceLeg::_internal_set_role(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.role_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL TradeCommerceLeg::_internal_mutable_role() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.role_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE TradeCommerceLeg::release_role() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceLeg.role)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.role_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.role_.Set("", GetArena());
+  }
+  return released;
+}
+inline void TradeCommerceLeg::set_allocated_role(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.role_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.role_.IsDefault()) {
+    _impl_.role_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceLeg.role)
+}
+
+// uint64 player_id = 2;
+inline void TradeCommerceLeg::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t TradeCommerceLeg::player_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceLeg.player_id)
+  return _internal_player_id();
+}
+inline void TradeCommerceLeg::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceLeg.player_id)
+}
+inline ::uint64_t TradeCommerceLeg::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void TradeCommerceLeg::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// uint32 stream = 3;
+inline void TradeCommerceLeg::clear_stream() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.stream_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint32_t TradeCommerceLeg::stream() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceLeg.stream)
+  return _internal_stream();
+}
+inline void TradeCommerceLeg::set_stream(::uint32_t value) {
+  _internal_set_stream(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceLeg.stream)
+}
+inline ::uint32_t TradeCommerceLeg::_internal_stream() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.stream_;
+}
+inline void TradeCommerceLeg::_internal_set_stream(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.stream_ = value;
+}
+
+// .AssetBundle bundle = 4;
+inline bool TradeCommerceLeg::has_bundle() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  PROTOBUF_ASSUME(!value || _impl_.bundle_ != nullptr);
+  return value;
+}
+inline const ::AssetBundle& TradeCommerceLeg::_internal_bundle() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::AssetBundle* p = _impl_.bundle_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::AssetBundle>(&::AssetBundle_globals_);
+}
+inline const ::AssetBundle& TradeCommerceLeg::bundle() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceLeg.bundle)
+  return _internal_bundle();
+}
+inline void TradeCommerceLeg::unsafe_arena_set_allocated_bundle(
+    ::AssetBundle* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.bundle_);
+  }
+  _impl_.bundle_ = reinterpret_cast<::AssetBundle*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:trade.TradeCommerceLeg.bundle)
+}
+inline ::AssetBundle* PROTOBUF_NULLABLE TradeCommerceLeg::release_bundle() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::AssetBundle* released = _impl_.bundle_;
+  _impl_.bundle_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::AssetBundle* PROTOBUF_NULLABLE TradeCommerceLeg::unsafe_arena_release_bundle() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceLeg.bundle)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::AssetBundle* temp = _impl_.bundle_;
+  _impl_.bundle_ = nullptr;
+  return temp;
+}
+inline ::AssetBundle* PROTOBUF_NONNULL TradeCommerceLeg::_internal_mutable_bundle() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.bundle_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::AssetBundle>(GetArena());
+    _impl_.bundle_ = reinterpret_cast<::AssetBundle*>(p);
+  }
+  return _impl_.bundle_;
+}
+inline ::AssetBundle* PROTOBUF_NONNULL TradeCommerceLeg::mutable_bundle()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::AssetBundle* _msg = _internal_mutable_bundle();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceLeg.bundle)
+  return _msg;
+}
+inline void TradeCommerceLeg::set_allocated_bundle(::AssetBundle* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.bundle_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+
+  _impl_.bundle_ = reinterpret_cast<::AssetBundle*>(value);
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceLeg.bundle)
+}
+
+// uint64 op_id = 5;
+inline void TradeCommerceLeg::clear_op_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.op_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline ::uint64_t TradeCommerceLeg::op_id() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceLeg.op_id)
+  return _internal_op_id();
+}
+inline void TradeCommerceLeg::set_op_id(::uint64_t value) {
+  _internal_set_op_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceLeg.op_id)
+}
+inline ::uint64_t TradeCommerceLeg::_internal_op_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.op_id_;
+}
+inline void TradeCommerceLeg::_internal_set_op_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.op_id_ = value;
+}
+
+// .AssetSnapshot snapshot = 6;
+inline bool TradeCommerceLeg::has_snapshot() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
+  PROTOBUF_ASSUME(!value || _impl_.snapshot_ != nullptr);
+  return value;
+}
+inline const ::AssetSnapshot& TradeCommerceLeg::_internal_snapshot() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::AssetSnapshot* p = _impl_.snapshot_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::AssetSnapshot>(&::AssetSnapshot_globals_);
+}
+inline const ::AssetSnapshot& TradeCommerceLeg::snapshot() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceLeg.snapshot)
+  return _internal_snapshot();
+}
+inline void TradeCommerceLeg::unsafe_arena_set_allocated_snapshot(
+    ::AssetSnapshot* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.snapshot_);
+  }
+  _impl_.snapshot_ = reinterpret_cast<::AssetSnapshot*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:trade.TradeCommerceLeg.snapshot)
+}
+inline ::AssetSnapshot* PROTOBUF_NULLABLE TradeCommerceLeg::release_snapshot() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::AssetSnapshot* released = _impl_.snapshot_;
+  _impl_.snapshot_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::AssetSnapshot* PROTOBUF_NULLABLE TradeCommerceLeg::unsafe_arena_release_snapshot() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:trade.TradeCommerceLeg.snapshot)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::AssetSnapshot* temp = _impl_.snapshot_;
+  _impl_.snapshot_ = nullptr;
+  return temp;
+}
+inline ::AssetSnapshot* PROTOBUF_NONNULL TradeCommerceLeg::_internal_mutable_snapshot() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.snapshot_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::AssetSnapshot>(GetArena());
+    _impl_.snapshot_ = reinterpret_cast<::AssetSnapshot*>(p);
+  }
+  return _impl_.snapshot_;
+}
+inline ::AssetSnapshot* PROTOBUF_NONNULL TradeCommerceLeg::mutable_snapshot()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::AssetSnapshot* _msg = _internal_mutable_snapshot();
+  // @@protoc_insertion_point(field_mutable:trade.TradeCommerceLeg.snapshot)
+  return _msg;
+}
+inline void TradeCommerceLeg::set_allocated_snapshot(::AssetSnapshot* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.snapshot_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+
+  _impl_.snapshot_ = reinterpret_cast<::AssetSnapshot*>(value);
+  // @@protoc_insertion_point(field_set_allocated:trade.TradeCommerceLeg.snapshot)
+}
+
+// uint32 outcome = 7;
+inline void TradeCommerceLeg::clear_outcome() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.outcome_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint32_t TradeCommerceLeg::outcome() const {
+  // @@protoc_insertion_point(field_get:trade.TradeCommerceLeg.outcome)
+  return _internal_outcome();
+}
+inline void TradeCommerceLeg::set_outcome(::uint32_t value) {
+  _internal_set_outcome(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:trade.TradeCommerceLeg.outcome)
+}
+inline ::uint32_t TradeCommerceLeg::_internal_outcome() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.outcome_;
+}
+inline void TradeCommerceLeg::_internal_set_outcome(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.outcome_ = value;
 }
 
 #ifdef __GNUC__

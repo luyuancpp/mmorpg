@@ -2,7 +2,7 @@ package handler
 
 // match_service 客户端应答 handler(手写,非生成器产物)。
 // battle-smoke 场景发 JoinQueue / WatchBattle 后,服务端的应答以同 message id
-// 回到客户端;这里只做诊断日志:错误提示打 Warn,成功打 Info(带 ticket / battle_id)。
+// 回到客户端;这里只做诊断日志:错误提示打 Warn,成功打 Info(带 battle_id 等安全元信息)。
 // RequestBattleTicket 应答除日志外还要唤醒等待直连的场景(见下)。
 
 import (
@@ -42,7 +42,7 @@ func MatchServiceJoinQueueHandler(player *gameobject.Player, response *match.Joi
 	}
 	zap.L().Info("join queue ok",
 		zap.Uint64("player", player.ID),
-		zap.String("queue_ticket", response.GetQueueTicket()),
+		zap.Bool("ticket_present", response.GetQueueTicket() != ""),
 	)
 }
 

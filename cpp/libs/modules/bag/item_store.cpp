@@ -163,7 +163,7 @@ ItemCountMap ItemStore::MeasureFreeRoomPerConfig(const ItemCountMap &wanted,
                                                  const std::unordered_set<Guid> *exclude) const
 {
     ItemCountMap freeRoomByConfig;
-    // 空余总量与遍历顺序无关,空堆仍可作为并堆目标。
+    // 空余总量与遍历顺序无关；Bag 已在扣空时释放实例，加载也跳过旧档零堆。
     for (const auto &[guid, item] : items_)
     {
         if (!wanted.contains(item.config_id()))
@@ -434,7 +434,7 @@ namespace
         return tlsGuidSegmentRegistry.Get(GuidKind::kItem);
     }
 
-    // 发号源掉线时 MintGuid / CanMintGuid 会被批量入包连续调用,ERROR 按 1/s 节流,
+    // 发号源掉线时 MintGuid 会被批量入包连续调用,ERROR 按 1/s 节流,
     // 否则一次 400 件的发放就是 400 行同样的日志。tls 单线程,不需要原子量。
     bool ShouldLogMintFailure()
     {
@@ -464,26 +464,6 @@ Guid ItemStore::MintGuid()
                   << ItemSegment().Describe();
     }
     return kInvalidGuid;
-}
-
-bool ItemStore::CanMintGuids(std::size_t count)
-{
-    // 铸号型写入必须在**改动任何状态之前**用它把整个操作拒掉:哨兵值一旦被 set 进
-    // item_id 并 Insert,就是一件 guid 为哨兵的物品被持久化进玩家 blob(数据完整性破坏),
-    // 且第二件同样的插入会撞 DuplicateGuid,报错方向完全误导排障。
-    // tls 单线程,本调用与后续铸号之间状态不会被并发翻转,先查后铸没有 TOCTOU。
-    if (ItemSegment().Available() >= count)
-    {
-        return true;
-    }
-    // 库存不够 —— "没有发号源"。启动期 DependencyGate 挡着玩家进不来,运行期走到这里说明
-    // 手里两段都已耗尽而 data_service 仍没恢复(或 item 种类根本没在配置里启用)。
-    if (ShouldLogMintFailure())
-    {
-        LOG_ERROR << "[idsegment] no id source for " << count << " item guid(s): available="
-                  << ItemSegment().Available() << ", no fallback by design " << ItemSegment().Describe();
-    }
-    return false;
 }
 
 bool ItemStore::IsInvalidGuid(const ItemComp &item)

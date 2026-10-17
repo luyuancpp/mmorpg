@@ -5,6 +5,7 @@
 #include <muduo/base/Logging.h>
 
 #include <algorithm>
+#include <array>
 #include <vector>
 
 #include "modules/bag/comp/player_bags_comp.h"
@@ -201,18 +202,10 @@ void Unmarshal(entt::entity player, const BagAllData& in)
         }
     }
 
-    // 先扫描本包所有已有章，再重放零章条目；源列表先出现零章也不会盖出重复序号。
-    for (const auto &entry : in.items())
-    {
-        if (entry.bag_type() < static_cast<uint32_t>(kBagTypeCount) && entry.stack_size() > 0)
-        {
-            bags.bags[entry.bag_type()].RaiseAcquireSeqForRestore(entry.acquire_seq());
-        }
-    }
-
     // Items replay. Out-of-range bag_type values (corruption / future
     // bag types we don't support) are dropped with a WARN — better
     // than crashing, and the player just loses those items.
+    std::array<std::vector<std::pair<ItemComp, uint32_t>>, kBagTypeCount> perBag;
     for (const auto& entry : in.items())
     {
         const uint32_t bagType = entry.bag_type();
@@ -226,8 +219,11 @@ void Unmarshal(entt::entity player, const BagAllData& in)
                      << " " << ActorLog(player);
             continue;
         }
-        // 整份重载:实例数据(equip 段)原样带回。位置参数那个重载带不动它。
-        bags.bags[bagType].InsertItemForRestore(ItemFromEntry(entry), entry.pos());
+        perBag[bagType].emplace_back(ItemFromEntry(entry), entry.pos());
+    }
+    for (uint32_t bagType = 0; bagType < static_cast<uint32_t>(kBagTypeCount); ++bagType)
+    {
+        bags.bags[bagType].RestoreItems(std::move(perBag[bagType]));
     }
 
     // Transient runtime bags. Rebuild dynamicBags_ from scratch so a
@@ -246,17 +242,13 @@ void Unmarshal(entt::entity player, const BagAllData& in)
         bag.SetProfile(BagProfileRegistry::Instance().Make(
             dyn.profile_id(), static_cast<std::size_t>(dyn.capacity())));
         bag.SetCapacityForRestore(static_cast<std::size_t>(dyn.capacity()));
+        std::vector<std::pair<ItemComp, uint32_t>> items;
+        items.reserve(dyn.items_size());
         for (const auto &entry : dyn.items())
         {
-            if (entry.stack_size() > 0)
-            {
-                bag.RaiseAcquireSeqForRestore(entry.acquire_seq());
-            }
+            items.emplace_back(ItemFromEntry(entry), entry.pos());
         }
-        for (const auto& entry : dyn.items())
-        {
-            bag.InsertItemForRestore(ItemFromEntry(entry), entry.pos());
-        }
+        bag.RestoreItems(std::move(items));
     }
 }
 

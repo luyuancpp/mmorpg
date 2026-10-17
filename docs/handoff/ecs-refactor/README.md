@@ -24,6 +24,7 @@
 | 第 4 批 | [batch4-external-id.md](batch4-external-id.md) | Kafka 显式白名单、内部结构体事件、节点句柄类型、日志、ActorNetIds | 源码完成；默认兼容方案 A；统一生成及运行验收待执行 |
 | 第 5 批 | [batch5-lifecycle-types.md](batch5-lifecycle-types.md) | 生命周期、可搬移定时器、PlayerGuidComp、SceneEntity、死代码清理 | 源码完成；已补通知重入防护；运行验收待执行 |
 | 总评 | [ecs-fit-overview.md](ecs-fit-overview.md) | 逐个子系统判断用 ECS 是否合适，以及第 2–5 批之外还该做的结构性改动 | 参考 |
+| 第 6 批 | [batch6-review-fixes.md](batch6-review-fixes.md) | 审查修复：删除零监听事件与必需步骤的 dispatcher 转发、死 API 与无效测试，creators 准入、对尸体施法等可达缺陷，打印实体全部组件的调试工具；依据 [审查报告](review-report-20261015.md) | 2026-10-16 已交 Codex；4 项核心拍板与 24 项默认决定负责人均已确认；实施与运行验收待 Codex 回执 |
 
 **顺序**：第 1 批 → 第 2 批 → 第 3 批 → 第 4 批 → 第 5 批。
 - 第 3 批与第 2 批的文件不重叠。负责人同意后可以并行，但每批的回执分开交。
@@ -144,11 +145,19 @@
 | C004 | 删除单人物品封禁结构、服务参数及全部调用点；任务领奖、装备退宝石等拒绝与恢复断言保留，使用全服封禁入口 |
 | 背包事务与两版差异 | 先完成淘汰规划并铸齐 ID，在候选 ItemStore 与候选布局中合堆、初始化和放置，成功后一次发布及记流水；失败不改原包/槽位/回执。三种布局 Clone 保留完整动态行为，不引入领域依赖；成功写入后原实例借用失效。扣空当场释放，加载跳过零堆；每包先扫最大序号再补零章；固定包与动态包按包及槽位顺序写出 |
 | actor 必需数据 | `DerivedAttributesComp`、`MoveSpeedComp`、`CombatStateFlagsComp` 在加载/创建流程直接计算，首个通知前就绪；不依赖业务 sink，不预挂任何按需状态，详见第 5 批 §10 |
-| 场景权限与创建确认 | 公共场景允许合法身份，私有场景按 creators 的键判断；会话、归属和离场操作之前预检，通知后再验原 actor 所有权与目标权限。Go 创建 RPC 必须返回请求对应的非空 SceneInfo，空/零/错号走现有补偿，重平衡保留原映射 |
+| 场景权限与创建确认 | 按第 6 批负责人拍板，creators 不做准入，只用于镜像自动进场回显；两版同基线。保留本节点场景存在、身份非零以及会话/归属的只读前置校验。Go 创建 RPC 必须返回请求对应的非空 SceneInfo，空/零/错号走现有补偿，重平衡保留原映射 |
 | 旧测试清理 | 迁移 creator_ids 的有效权限断言并补通知重入回归；删除独立旧 scene_test 的源码与工程四文件及 runner 废弃说明，不修改其他测试工程 GUID |
-| 传输组件寿命 | 缺 CQ/stub/合法节点时异步失败一次；选点跳过无传输及关闭中的节点；入站握手类型和发现前缀/JSON 类型先校验。流的读写缓冲归稳定调用对象；关闭先取消在途调用、处理全部 tag 与本地回调，再销毁节点实体/CQ 或清池；回调重入也纳入排空门槛 |
+| 传输组件寿命 | 缺通道时异步失败一次；选点要求挂着 `MuduoGrpcChannelPtr`（DataService 还要求 `kReady`）；摘节点先移除通道，`~Channel` 把在途调用以 `UNAVAILABLE` 排队，再销毁实体 |
 | Java | `SceneWorld` 在移除同会话旧实例之前处理发号异常/零号并释放本次归属；`BagItem.ACQUIRE_ORDER` 对序号与 guid 使用无符号比较。原有领域模型无需复制 EnTT 机制 |
 
 新增/强化测试源码已登记在现有工程：背包原子性与还原 11 例、全服封禁行为、私有场景/初始化与通知重入、官方 gRPC 真实入口及 CQ 排空 9 例、Go 创建应答与重平衡补偿、Java actor 拒入与无符号比较。传输门槛覆盖回调退栈、READ 缓冲借用及缺 runtime 的本地失败；后者由 loop 线程计数保护，不能依赖一个有效 ECS owner。修复前失败原因记录在相应测试和批次补充回执，**均未实际运行本轮红/绿**。
 
 当前剩余的是统一生成、串行重编、受影响测试及本地冒烟，负责人“先别编译”的限制尚未解除。完整 gRPC→muduo 迁移、etcd 自动重连/revision/compact 恢复与 LeaseRevoke 发送策略属于独立传输任务，不列为本任务已实现。审计 110 条的最终验收状态须由审查方结合运行证据更新。
+
+## 9. 第 6 批 actor 契约补充（2026-10-16）
+
+本节覆盖前述历史回执的对应口径：MoveSpeedComp 整套删除，移动尚未接通速度 buff 的行为不变；InBattleComp 的三个创建入口各自确认不存在后直接 emplace，不再经过首写 helper。
+
+ActorNetIds 的 C++ 号为 node_id<<32|seq，同时在线节点之间唯一、本进程内不复用；进程重启或 node_id 回收后，同一 node_id 从 seq=1 重新发号。Java 的 SceneWorld.nextId 雪花号跨重启也唯一。负责人于 2026-10-16 确认客户端换场景、重连、换节点时清空 actor 表，号源维持现状。是否只把 actor 号当不透明值使用、是否接受方案 B 两项未单独确认，按方案 A 记录。66 号 ActorBaseAttributesS2C.entity_id 是玩家 GUID，与 ActorCreateS2C.entity 的 net id 不是同一口径，NPC 暂为 0。
+
+本节仅记录源码与契约修复；最终统一生成、串行编译、测试及 Java 同批对账的证据由第 6 批任务单回执记录。

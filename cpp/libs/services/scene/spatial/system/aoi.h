@@ -3,7 +3,6 @@
 #include "spatial/comp/grid_comp.h"
 #include "engine/core/utils/registry/scene_entity.h"
 
-struct BeforeLeaveScene;
 
 struct Hex;
 
@@ -11,12 +10,8 @@ class AoiSystem {
 public:
     static void Update(double delta);
 
-    static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
-
-    // Pin 保留跨格观察;Unpin 立即按当前场景、邻格与可见性重新判断。
-    // 仍可见时恢复空间优先级(队友仍为 kTeammate),否则立即摘除并发送销毁通知。
-    static bool PinAoiEntity(entt::entity watcher, entt::entity target);
-    static void UnpinAoiEntity(entt::entity watcher, entt::entity target);
+    // 离场只清自己的兴趣表及当前格/邻格观察者,不扫描全节点。
+    static void OnLeaveScene(entt::entity entity);
 
     // 实体在**同一场景内**被瞬移之后调用(MovementSystem::TeleportWithinScene),调用前 Transform 必须
     // 已经写成新位置。效果等价于"从旧位置离开视野、在新位置重新进场":

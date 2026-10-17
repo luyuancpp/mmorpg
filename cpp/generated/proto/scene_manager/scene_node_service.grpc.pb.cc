@@ -31,6 +31,7 @@ static const char* SceneNodeGrpc_method_names[] = {
   "/scene_node.SceneNodeGrpc/AssetDebit",
   "/scene_node.SceneNodeGrpc/AssetAbortDebit",
   "/scene_node.SceneNodeGrpc/AssetCredit",
+  "/scene_node.SceneNodeGrpc/AssetAckReceipt",
 };
 
 std::unique_ptr< SceneNodeGrpc::Stub> SceneNodeGrpc::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -48,6 +49,7 @@ SceneNodeGrpc::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& chan
   , rpcmethod_AssetDebit_(SceneNodeGrpc_method_names[5], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_AssetAbortDebit_(SceneNodeGrpc_method_names[6], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   , rpcmethod_AssetCredit_(SceneNodeGrpc_method_names[7], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_AssetAckReceipt_(SceneNodeGrpc_method_names[8], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
 ::grpc::Status SceneNodeGrpc::Stub::CreateScene(::grpc::ClientContext* context, const ::CreateSceneRequest& request, ::CreateSceneResponse* response) {
@@ -234,6 +236,29 @@ void SceneNodeGrpc::Stub::async::AssetCredit(::grpc::ClientContext* context, con
   return result;
 }
 
+::grpc::Status SceneNodeGrpc::Stub::AssetAckReceipt(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::AssetOpResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::AssetOpRequest, ::AssetOpResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_AssetAckReceipt_, context, request, response);
+}
+
+void SceneNodeGrpc::Stub::async::AssetAckReceipt(::grpc::ClientContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::AssetOpRequest, ::AssetOpResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AssetAckReceipt_, context, request, response, std::move(f));
+}
+
+void SceneNodeGrpc::Stub::async::AssetAckReceipt(::grpc::ClientContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_AssetAckReceipt_, context, request, response, reactor);
+}
+
+::grpc::ClientAsyncResponseReader< ::AssetOpResponse>* SceneNodeGrpc::Stub::PrepareAsyncAssetAckReceiptRaw(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::AssetOpResponse, ::AssetOpRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_AssetAckReceipt_, context, request);
+}
+
+::grpc::ClientAsyncResponseReader< ::AssetOpResponse>* SceneNodeGrpc::Stub::AsyncAssetAckReceiptRaw(::grpc::ClientContext* context, const ::AssetOpRequest& request, ::grpc::CompletionQueue* cq) {
+  auto* result =
+    this->PrepareAsyncAssetAckReceiptRaw(context, request, cq);
+  result->StartCall();
+  return result;
+}
+
 SceneNodeGrpc::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SceneNodeGrpc_method_names[0],
@@ -315,6 +340,16 @@ SceneNodeGrpc::Service::Service() {
              ::AssetOpResponse* resp) {
                return service->AssetCredit(ctx, req, resp);
              }, this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      SceneNodeGrpc_method_names[8],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< SceneNodeGrpc::Service, ::AssetOpRequest, ::AssetOpResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+          [](SceneNodeGrpc::Service* service,
+             ::grpc::ServerContext* ctx,
+             const ::AssetOpRequest* req,
+             ::AssetOpResponse* resp) {
+               return service->AssetAckReceipt(ctx, req, resp);
+             }, this)));
 }
 
 SceneNodeGrpc::Service::~Service() {
@@ -370,6 +405,13 @@ SceneNodeGrpc::Service::~Service() {
 }
 
 ::grpc::Status SceneNodeGrpc::Service::AssetCredit(::grpc::ServerContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status SceneNodeGrpc::Service::AssetAckReceipt(::grpc::ServerContext* context, const ::AssetOpRequest* request, ::AssetOpResponse* response) {
   (void) context;
   (void) request;
   (void) response;

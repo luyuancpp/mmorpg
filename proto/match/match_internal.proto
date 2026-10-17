@@ -38,6 +38,7 @@ message StartActivityBattleRequest {
   // 活动上下文:kind 必须非 NONE,guild_id / activity_id / period_key / guild_period_key 非 0,
   // initiator_player_id == member_player_ids[0]。match 深拷贝后原样放进 CreateBattleRequest.activity_context。
   BattleActivityContext activity_context = 3;
+  uint64 request_id = 4; // 调用方持久的邀请房间/业务操作号；全球模式为0拒绝，重试必须复用。
 }
 
 message StartActivityBattleResponse {

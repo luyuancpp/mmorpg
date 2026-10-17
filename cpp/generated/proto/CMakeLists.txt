@@ -169,6 +169,30 @@ set(SOURCE_FILES
     scene/player_bag.pb.cc
     scene/player_mission.pb.cc
     scene/player_pet.pb.cc
+    common/base/service_call_auth.pb.cc
+    friend/friend_table.grpc.pb.cc
+    friend/friend_table.pb.cc
+    guild/guild_db.grpc.pb.cc
+    mail/mail.grpc.pb.cc
+    mail/mail.pb.cc
+    mail/mail_admin.grpc.pb.cc
+    mail/mail_admin.pb.cc
+    mail/mail_table.grpc.pb.cc
+    mail/mail_table.pb.cc
+    match/match_authority.grpc.pb.cc
+    match/match_authority.pb.cc
+    match/match_network.grpc.pb.cc
+    match/match_network.pb.cc
+    rank/rank.grpc.pb.cc
+    rank/rank.pb.cc
+    rank/rank_admin.grpc.pb.cc
+    rank/rank_admin.pb.cc
+    rank/rank_table.grpc.pb.cc
+    rank/rank_table.pb.cc
+    trade/commerce.grpc.pb.cc
+    trade/commerce.pb.cc
+    player_locator/player_locator.grpc.pb.cc
+    player_locator/player_locator.pb.cc
 )
 
 add_library(proto STATIC ${SOURCE_FILES})

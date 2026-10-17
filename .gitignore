@@ -161,8 +161,6 @@ java/config_node/target/
 go/chat/generated/
 # 聚宝斋 trade 同口径:服务代码不引用本目录下生成的重复协议编号。
 go/trade/generated/
-# 玩家收件箱 player_inbox 同口径(docs/design/player-inbox-service.md 附录 E)。
-go/player_inbox/generated/
 go/common/
 go/contracts/
 go/etcd/

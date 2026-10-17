@@ -160,6 +160,22 @@ TEST(AssetOpAuthTest, CanonicalEmptyBundle)
 			  AssetOpCanonical("abort_debit", request));
 }
 
+TEST(AssetOpAuthTest, CompleteInstanceCanonicalGoldenAndTamper)
+{
+	auto request = MakeGoldenRequest();
+	request.set_stream(ASSET_OP_STREAM_TRADE_CREDIT);
+	request.mutable_auth()->set_caller("trade");
+	auto* instance = request.mutable_bundle()->add_item_instances();
+	instance->set_item_uuid(42); instance->set_config_id(10); instance->set_stack_size(1);
+	instance->set_instance_proto(std::string("\0\xff\1", 3));
+	const std::string expected = "mmorpg-asset-op/v1\ntrade\ncredit\n42\n4\n1700000000000\n7\n99\n24\nc=1:30;i=;u=;p=0;v2=082a100a1801220300ff01,;\n1700000000123";
+	EXPECT_EQ(expected, AssetOpCanonical("credit", request));
+	SignRequest("credit", request);
+	EXPECT_EQ(AssetOpAuthVerdict::kOk, VerifyGolden(request, "credit"));
+	instance->set_instance_proto("altered");
+	EXPECT_NE(AssetOpAuthVerdict::kOk, VerifyGolden(request, "credit"));
+}
+
 // 多条货币 / 物品按**请求顺序**拼,不排序(两侧都按同一份请求重算,排序只会多一个出错机会)。
 TEST(AssetOpAuthTest, CanonicalKeepsRequestOrder)
 {
@@ -216,7 +232,7 @@ TEST(AssetOpAuthTest, CanonicalCoversGuidAndPet)
 
 // 上一条的**意义**所在:改掉 item_uuids / pet_id 之后,原签名必须失效。
 //
-// 这才是 §4.32 真正要挡的攻击:scene 的 gRPC 是 InsecureServerCredentials(),集群内
+// 这才是 §4.32 真正要挡的攻击:scene 的 gRPC 端口是明文 h2c、不鉴权(muduo_grpc::Server),集群内
 // 任意进程可连可嗅;攻击者截下一条合法的 TRADE_DEBIT,只把 item_uuids 换成该玩家的
 // 其它装备再发出去。这个 seq scene 没见过,幂等挡不住;时间戳没动,300s 时间窗也挡不住。
 // 唯一挡得住的就是签名覆盖到这两个字段。
@@ -360,7 +376,7 @@ TEST(AssetOpAuthTest, CallerNotAllowed)
 }
 
 // SYSTEM_CREDIT(邮件 / GM 发物)在 v1 没有合法调用方,任何签名都过不去。
-TEST(AssetOpAuthTest, SystemCreditAlwaysRejected)
+TEST(AssetOpAuthTest, SystemCreditOnlyMailAllowed)
 {
 	for (const char* caller : {"guild", "trade", "system", ""})
 	{
@@ -372,6 +388,11 @@ TEST(AssetOpAuthTest, SystemCreditAlwaysRejected)
 		EXPECT_EQ(AssetOpAuthVerdict::kCallerNotAllowed, VerifyGolden(request, "credit"))
 			<< "caller=" << caller;
 	}
+	::AssetOpRequest request = MakeGoldenRequest();
+	request.set_stream(ASSET_OP_STREAM_SYSTEM_CREDIT);
+	request.mutable_auth()->set_caller("mail");
+	SignRequest("credit", request);
+	EXPECT_EQ(AssetOpAuthVerdict::kOk, VerifyGolden(request, "credit"));
 }
 
 // 白名单必须排在取密钥之前:caller 来自不可信请求,而默认查表要拿它去拼环境变量名。

@@ -17,7 +17,7 @@
 
 1. **乱序是真的,而且与路由服副本数无关。** 这条链上有四处会让同一玩家的请求并发执行:gate 每条请求随机选路由服;路由服每条请求随机选业务实例;grpc-go 服务端每个 stream 起一个 goroutine;go-zero 超时拦截器再起一个 goroutine 跑 handler。所以即使全集群只有 1 个路由服、1 个 match,`JoinQueue → CancelQueue` 照样可能执行成 `Cancel → Join`,玩家以为取消了,实际还在队列里(§1)。
 2. **粘性路由、一致性哈希都修不了。** 它们只能保证落到同一处,保证不了串行。按玩家加锁也只能保证互斥,保证不了先发的先拿到锁。
-3. **推荐方案:在 gate 上按会话单飞排队。** 每个会话开一条「路由 lane」:经路由服的 gRPC 类请求按 gate 收包顺序逐条发出,上一条完成(成功回包、失败回调、节点摘除、本地截止到期,四者之一)之后才发下一条。不同玩家之间照样并行;路由服保持无状态、继续随机选副本(D29 不变);业务实例也继续随机。只有 gate 看得到客户端的收包顺序,也只有 gate 持有会话生命周期,所以保序放在这里(O1、O2)。
+3. **推荐方案:在 gate 上按会话单飞排队。** 每个会话开一条「路由 lane」:经路由服的 gRPC 类请求按 gate 收包顺序逐条发出,上一条完成(成功回包、失败回调、本地截止到期,三者之一;2026-10-16 起路由服节点摘除经 `~Channel` 的 UNAVAILABLE 走失败回调,不再单列,见 §4.5)之后才发下一条。不同玩家之间照样并行;路由服保持无状态、继续随机选副本(D29 不变);业务实例也继续随机。只有 gate 看得到客户端的收包顺序,也只有 gate 持有会话生命周期,所以保序放在这里(O1、O2)。
 4. **第一阶段每个会话只开一条 lane(全序),不按服务分域。** 分域需要人工标注哪些方法跨域、要做屏障,新功能忘了标就会静默乱序,与仓库「约定拦不住不知情的新服务」的教训相同(AGENTS §7.5)。单 lane 默认全序,自动覆盖 team↔match、帮会历练↔match、登录生命周期↔其他服务这些跨服务因果对,gate 也不需要认识任何 Go 方法号,与号段终态 D51 一致。代价是同一会话内的读请求也被串行:健康时每条多等一个毫秒级往返;某个服务降级时,排队超过等待上限的请求会快速回 1003,不会拖到客户端超时。以后要放宽,也只能凭压测数据、通过生成的方法级 option 按需放开,默认值始终是全序(O3、§4.12)。
 5. **gate 排队只能管住「观察到完成」之前的顺序,另外两层必须同批补齐。**
    - **预算链与提交点:** go-zero 超时后 handler 不会停。所以要求目标服务超时 < 路由服转发超时 < gate deadline,业务把请求 ctx 传进存储调用,提交前检查 ctx。满足这些,gate 看到超时的时候,目标已经不会再发出新的写。要修两处:login 的 `Timeout: 10000`、match 的 `Timeout: 5000` 都超出了路由服 5s 的转发预算;match 的票据读写用的是 `context.Background()`(§5、§6.1)。
@@ -74,7 +74,7 @@
 ### 1.4 为什么保序点放在 gate
 
 - 只有 gate 看得到客户端的原始收包顺序,也只有 gate 持有会话生命周期(建连、顶号、断线、重定向)。
-- gate 是单 EventLoop,会话表是 thread_local,gRPC 完成回调也由主 loop 上的定时器轮询 CQ 执行【码】`cpp/libs/engine/core/node/system/etcd/etcd_service.cpp:33-37`。队列不需要加锁,也不需要新线程。
+- gate 是单 EventLoop,会话表是 thread_local,gRPC 完成回调也由主 loop 上的定时器轮询 CQ 执行【码】`cpp/libs/engine/core/node/system/etcd/etcd_service.cpp:33-37`(2026-10-16 订正:gRPC 传输第 3 批后改由 `muduo_grpc::Channel` 在 loop 上经 queueInLoop 恰好一次投递,CQ 轮询已删)。队列不需要加锁,也不需要新线程。
 - 路由服按 D29 无状态,可以随时重启【文】`client-rpc-router.md:27`。要在路由服里排队,必须先把会话粘到固定副本、处理成员变化时的排空,而路由服被黑洞时,粘性会让一个会话的请求全部卡住。
 - Java 版已经验证了这个位置:gate 按会话串行发出,后端契约直接写着「同一会话的调用由 gate 串行发出」【码】`game-api/src/main/java/com/game/api/ClientMessageService.java:30`。
 
@@ -88,7 +88,7 @@
                 │   └─ PROTOCOL_GRPC 且路由模式 → 会话 lane 准入                     │
                 │        queued: [r3, r4] ← 有界(32)、带入队时刻与身份快照           │
                 │        inFlight: r2(gate_call_seq=s2)── 只放 1 条               │
-                │   完成 = 成功桥 / 失败桥 / 节点摘除 / 本地截止 ── 恰好一次 → 发下一条│
+                │   完成 = 成功桥 / 失败桥(含节点摘除)/ 本地截止 ─ 恰好一次 → 发下一条│
                 └───────────────┬──────────────────────────────────────────────────┘
                                 │ x-session-detail-bin{…, incarnation, gate_call_seq}
                                 ▼
@@ -123,7 +123,7 @@
 | O1 | 保序点放在 gate;路由服无状态、随机选副本;业务实例随机 | §1.4;D29、D33 不变 |
 | O2 | 只在**路由模式**下、只对 **PROTOCOL_GRPC** 消息启用 lane。TCP(scene)路径不进 lane;直连模式不启用;gate 合成的 Disconnect 不进 lane | TCP 路径本身单连接 FIFO,两端单线程,已经有序;而且返回 Empty 的方法(MoveStart/MoveSync/MoveStop)不回包,排队会卡死【码】`proto/scene/player_movement.proto:105-107`。直连模式下 match 不回写会话头,无法认领(O7)。Disconnect 见 O8 |
 | O3 | **第一阶段每个会话一条 lane,全序**;放宽只能凭压测数据、通过生成的方法级 option 显式放开,默认值始终是全序 | §0 第 4 条;fail-closed;不需要方法知识,与 D51 兼容 |
-| O4 | lane 同时只放 1 条在途;完成来源有 4 个,每个请求恰好得到一个回执,晚到的完成一律丢弃 | 认领恰好一次,与 Dubbo 超时后丢弃应答同语义【文】Java `docs/design/architecture.md:101` |
+| O4 | lane 同时只放 1 条在途;完成来源有 4 个(2026-10-16 起为 3 个:节点摘除并入失败回调,§4.5),每个请求恰好得到一个回执,晚到的完成一律丢弃 | 认领恰好一次,与 Dubbo 超时后丢弃应答同语义【文】Java `docs/design/architecture.md:101` |
 | O5 | 认领用 gate 自己的令牌:SessionDetails 新增 `session_incarnation = 7`、`gate_call_seq = 8`,在**准入时**按收包顺序分配;路由服原值回写,不改路由服代码 | 不信任客户端给的 id;incarnation 防 session_id 复用串号(F47);准入时分配的号以后也可以给业务做水位栅栏 |
 | O6 | 有界:排队 + 在途 ≤ 32,超限回带 id 的 1008,不计非法包;排队等待超过 `kMaxLaneWait`(5s)不发出,回带 id 的 1003;所有 gate 级失败回执都带请求 id | 防内存放大与客户端超时;合并 band-routing D57;完成阶段 0d |
 | O7 | 直连模式维持现状,在启动日志里注明「直连模式不保序」,交由 D61 删除直连路径时一并处理 | 直连模式下 match 不回写会话头【码】`go/match/match_service.go:346-350`,成功桥找不到会话就直接返回【码】`cpp/nodes/gate/main.cpp:292-293`,今天直连模式下 match 的回包本来就全部丢失 |
@@ -162,7 +162,7 @@ lane 准入放在 `PROTOCOL_GRPC` 分支里、路由模式下,取代现在直接
 |---|---|---|
 | `uint64 incarnation` | `SessionInfo` 新字段 | 建连 emplace 时从 SessionManager 的进程内单调计数器取,从 1 开始【码】`client_message_processor.cpp:634-654`、`session_manager.h:8-23` |
 | `RouterLane lane` | `SessionInfo` 新成员 | `{deque<Item> queued; uint64 inFlightSeq = 0; bool redirected = false;}`,`Item = {shared_ptr<ClientRequest> request; SessionDetails snapshot; uint64 callSeq; steady_clock::time_point enqueuedAt;}`。会话 erase 即取消,先例是 `pendingSceneEntry`【码】`session_info_comp.h:73-80`。codec 每帧 `New()` 一个新对象【码】`codec.cpp:211,235`,持有 shared_ptr 是安全的,它不是连接对象 |
-| 在途索引 `unordered_map<uint64 seq, InflightCall>` | 新文件 `cpp/nodes/gate/handler/rpc/client_request_lane.{h,cpp}`,thread_local | `{sessionId, incarnation, clientRequestId, messageId, routerEntity, expiresAt}`;用 `extract(seq)` 保证恰好一次 |
+| 在途索引 `unordered_map<uint64 seq, InflightCall>` | 新文件 `cpp/nodes/gate/handler/rpc/client_request_lane.{h,cpp}`,thread_local | `{sessionId, incarnation, clientRequestId, messageId, expiresAt}`;用 `extract(seq)` 保证恰好一次(2026-10-16 删去 `routerEntity`:节点摘除不再按实体批量摘,见 §4.5) |
 | 过期堆 `priority_queue<(expiresAt, seq)>` | 同上 | 惰性删除:弹出时 seq 已不在索引里就跳过 |
 | `gate_call_seq` 发号器 | 同上 | 进程内单调 uint64;0 保留,表示「不受 lane 管理的调用」 |
 
@@ -194,22 +194,22 @@ while lane.inFlightSeq == 0 && !lane.queued.empty():     // 循环 ≤ 32 次
     if !router: 回 1003(带 id);continue
     SendClientRpcRouterForward(…, metadata = item.snapshot)
     lane.inFlightSeq = item.callSeq
-    index[item.callSeq] = {…, routerEntity = router,
+    index[item.callSeq] = {…,
                            expiresAt = now + grpc_call_deadline::Get(router 类型) + 1000ms}
     heap.push(expiresAt, seq)
     if message_id == Login: session.loginStarted = true
 ```
 
 - 排队超时回的 1003 明确表示「没有发出」,客户端重试是安全的。
-- `grpc_call_deadline::Get` 读实际生效的 deadline【码】`grpc_call_deadline.h:34-35`,不另写常数;本地与 K8s 都是 8000【码】`bin/etc/base_deploy_config.yaml:230`、`tools/scripts/k8s_deploy.ps1:2175-2176`。多出的 1000ms 用来覆盖 5ms 的 CQ 轮询和 loop 积压。
+- `grpc_call_deadline::Get` 读实际生效的 deadline【码】`grpc_call_deadline.h:34-35`,不另写常数;本地与 K8s 都是 8000【码】`bin/etc/base_deploy_config.yaml:230`、`tools/scripts/k8s_deploy.ps1:2175-2176`。多出的 1000ms 用来覆盖 5ms 的 CQ 轮询和 loop 积压(2026-10-16 订正:CQ 轮询已随 gRPC 传输第 3 批删除,现在只覆盖 loop 积压)。
 
 ### 4.5 认领(Complete)
 
 | 来源 | 入口 | 拿 seq 的方式 |
 |---|---|---|
 | 成功回包 | 成功桥 `SetIfEmptyHandler`【码】`main.cpp:290-315` | 解响应 initial metadata 里的 `x-session-detail-bin`(路由服在 Forward 开头按原值回写【码】`forwardlogic.go:103-105,203-212`) |
-| gRPC 失败 | 失败桥 `SetIfEmptyFailedHandler`【码】`main.cpp:325-350` | `failure.FindSentMetadata(kSessionBinMetaKey)`,即发出时的原值 |
-| 路由服节点摘除 | `OnNodeRemoveEventHandler`【码】`client_message_processor.cpp:1104-1113` | 遍历在途索引里 `routerEntity == 被摘实体` 的条目。事件在 DestroyEntity 之前、同一 loop 线程触发【码】`node.cpp:1469-1494`;此时该实体 CQ 上的在途调用永远不会再有回调(F29) |
+| gRPC 失败 | 失败桥 `SetIfEmptyFailedHandler`【码】`main.cpp:325-350`(2026-10-16 订正:路由模式的 Forward 不经全局处理器,由 `router_muduo_forward.cpp` `SendForward` 的完成回调 → `gate_rpc_reply_bridge::NotifyCallFailure` → `gate_lane::OnRouterCallFailed`;全局失败处理器只剩直连模式在用) | `failure.FindSentMetadata(kSessionBinMetaKey)`,即发出时的原值(路由模式:发出时捕获的 SessionDetails 原始字节) |
+| 路由服节点摘除 | 不单独处理(2026-10-16 起) | 走上一行「gRPC 失败」:gRPC 传输第 3 批起 node.cpp 先 `remove<MuduoGrpcChannelPtr>`,`~Channel` 把在途调用以 UNAVAILABLE 排进下一轮,再触发 OnNodeRemoveEvent、DestroyEntity;放行下一条时 `PickRandomNode` 要求实体挂着通道,不会再选中被摘节点。原设计按 `routerEntity` 遍历摘除,前提是官方 CQ 析构后在途调用永远不会再有回调(F29),该前提已不成立,`OnRouterNodeRemoved` 与 `InflightIndex::ExtractIf` 已删(ECS 审查 W1-45);它还会让每个被摘调用在 `late_dropped` 里多计一次 |
 | 本地截止 | GateRuntimeContext 上新增 `TimerTaskComp laneExpiryTimer`,`RunEvery(0.25s)`,回调不捕获对象 | 弹出过期堆。**必须主动扫描**:队头卡住时客户端在等回包,不会再发新请求,纯惰性清理永远触发不到。先例是 `sceneEntryRetryTimer`【码】`main.cpp:141-144,396-398` |
 
 统一处理:
@@ -220,7 +220,7 @@ it = sessions.find(call.sessionId)
 if it 不存在 || it.incarnation != call.incarnation: incarnation_mismatch++,丢弃;return
 if it.lane.inFlightSeq != seq: lane_mismatch++,丢弃;return      // 防御性,正常不可达
 it.lane.inFlightSeq = 0
-成功:原样下发 MessageContent(路由服已回显 id);失败 / 摘除 / 过期:下发 {id, message_id, error=1003}
+成功:原样下发 MessageContent(路由服已回显 id);失败(含节点摘除) / 过期:下发 {id, message_id, error=1003}
 conn = it.conn.lock();有连接才写
 Pump(*it)
 ```
@@ -228,6 +228,7 @@ Pump(*it)
 - `gate_call_seq == 0` 的成功回包只可能来自 gate 合成的 Disconnect,而那时会话通常已经 erase,保留旧行为即可(找不到会话就丢弃)。
 - 失败桥改为回带 id 的信封,取代现在不带 id 的 `SendTipToClient(kServiceUnavailable)`【码】`main.cpp:350`,也就是阶段 0d。
 - 本地截止与 gRPC deadline 的先后:正常情况下失败桥先在约 8s 时触发,本地截止(约 9s)只兜「回调丢失」这一种情况:F29,以及 CQ 轮询遇到 `!ok` 时直接 `return`、跳过本轮剩余事件【码】`cpp/generated/grpc_client/grpc_init_client.cpp:365-368`。
+  2026-10-16 订正:这两个来源已随 gRPC 传输第 3 批(官方 CQ 删除)消失,`muduo_grpc::Channel` 对每个调用恰好回调一次;本地截止现在兜的是「完成没被 lane 认领」:传输层「恰好一次」契约出缺陷,或路由服成功回包缺 `x-session-detail-bin` 回显 / 回显解析失败 / 不带 `gate_call_seq`(版本不符,`router_muduo_forward.cpp` 只打采样 WARN 后丢弃)。正常运行时 `router_lane_expired` 不应增长,增长时先对照「no x-session-detail-bin echo」WARN。
 
 ### 4.6 断线、顶号、重定向
 
@@ -271,7 +272,7 @@ Pump(*it)
 
 ### 4.10 观测
 
-gate 没有 Prometheus 出口。仿照 scene_entry 的汇总日志写法【码】`cpp/nodes/gate/handler/event/scene_entry_dispatch.cpp:414`,每 30s 打一行 `[lane]` 汇总:`admitted / sent / replied / failed / node_removed / expired / expired_in_queue / rejected_full / rejected_redirected / late_dropped / incarnation_mismatch / dropped_on_disconnect`,外加当前在途数和最大队长。本地截止进 error_reporter。不使用 player_id、session_id 或原始 message_id 作维度(AGENTS §9)。
+gate 没有 Prometheus 出口。仿照 scene_entry 的汇总日志写法【码】`cpp/nodes/gate/handler/event/scene_entry_dispatch.cpp:414`,每 30s 打一行 `[lane]` 汇总:`admitted / sent / replied / failed / expired / expired_in_queue / rejected_full / rejected_redirected / late_dropped / incarnation_mismatch / dropped_on_disconnect`,外加当前在途数和最大队长。(2026-10-16:`node_removed` 已删,路由服摘除计入 `failed`,见 §4.5。)本地截止进 error_reporter。不使用 player_id、session_id 或原始 message_id 作维度(AGENTS §9)。
 
 > 2026-10-15 订正(与实现对齐,以 `client_request_lane.cpp` 的 `LogSummaryIfDue` 为准):`dropped_on_disconnect` 实际叫 `dropped_on_close`,它同时覆盖断线与租约到期摘无连接会话两条路径;另有 `no_router`(没有可用路由服时回 1003)、`dropped_on_redirect`(重定向时丢弃的排队项)两个计数,以及 `in_flight`、`expiry_heap`、`max_depth_seen` 三个观测量。§4.5 伪码里的 `lane_mismatch++` 实现为 `LOG_ERROR`(防御性,正常不可达),不单独计数。`incarnation_mismatch` 自 2026-10-15 起同时包含 scene TCP(RPC0)回包路径(`FindLiveSession` 被两条路径共用)。
 
@@ -349,6 +350,8 @@ go-zero 超时拦截器用 `context.WithTimeout` 派生 ctx 交给 handler,超�
 > - **login RefreshToken**(新增一行):作废与签发合成一段按值比对的 Lua,提交前查 ctx。✓ 「脚本已执行、回包丢了,重试必然失败」仍是 §7.2 第 5 条的重试问题,已另立任务。
 > - 四个社交服务与 guild 的 zrpc Timeout 都是 4000,满足 I1。
 
+> 2026-10-16 订正(Java 版同期核实时发现同类缺口,反查 Go 版):上面 friend、trade 两行的 ✓ 偏乐观。go-sql-driver/mysql 在 ctx 结束时只断开连接、不发 KILL QUERY;**事务外的自动提交单语句**若正在等行锁,服务端会继续等到 `innodb_lock_wait_timeout`(friend / trade 连接串没设,MySQL 缺省 50 s),拿到锁后照样执行并提交,形成迟到写。显式事务里的语句不会:`Tx.Commit` 在 ctx 结束时不发 COMMIT,断连后服务端回滚。客户端路径上属于这一类的只有 friend `FriendRepo.Unblock` 与 trade `ListingRepo.DeleteFavorite` 两处,已改为单语句 RC 事务、提交前查 ctx(trade 走 `assetop.WithTxRetry`),各补录制驱动回归用例;friend 的守卫事务(含 RejectRequest)、`ensureFriendCapacityRow` 的 ODKU 补行(迟到落地跨不过回收保留期)、trade InsertFavorite 本来就安全。连接串加 `innodb_lock_wait_timeout=2` 的建议未落:会牵动守卫事务的 1205 定性、WithTxRetry 重试与后台回收路径,需单独评估。别的会话在途的 match 全球匹配(`internal/authority`)有同类问题,未改:`SavePlan` 自动提交覆盖;`Ticket` / `ReleaseReady` 在客户端路径上用 `context.Background()` 派生的 3 s ctx。见 §16 同日行。
+
 ### 6.2 login 会话栅栏(O12)
 
 **要修的三种竞态:**
@@ -409,7 +412,7 @@ go-zero 超时拦截器用 `context.WithTimeout` 派生 ctx 交给 handler,超�
 3. gate 从不在 LeaveGame 之后清 playerId,同一连接换角色时,新角色 BindSession 到达之前的请求仍以旧角色身份执行【码】`gate_event_handler.cpp:78,211`、`leavegamelogic.go:25-39`。Java 靠 login 应答里的 SessionDirective 同步解绑。
 4. DonateToGuild / BuyGuildShopGoods 没有客户端幂等键,超时重发会扣两次【码】`go/guild/internal/logic/economy_logic.go:742-746`。这是重试问题,不是顺序问题。
 5. RefreshToken 一次性消费,回包丢失后重试必然失败【码】`go/login/internal/logic/pkg/token/token.go:145-159`。
-6. CQ 轮询遇到 `!ok` 直接 `return`,跳过本轮剩余的完成事件【码】`grpc_init_client.cpp:365-368`。本文的本地截止能兜住,根治属于生成模板的问题。
+6. CQ 轮询遇到 `!ok` 直接 `return`,跳过本轮剩余的完成事件【码】`grpc_init_client.cpp:365-368`。本文的本地截止能兜住,根治属于生成模板的问题。(2026-10-16:随 gRPC 传输第 3 批删除官方 CQ 而失效。)
 7. 镜像 CreateScene 在途时没有登记 PlayerSceneChangeInFlightComp;SortBag 没有判冻结【码】`player_scene.cpp:288-303`、`player_bag_handler.cpp:56-69`。
 8. (批次 B 实施时发现)WatchBattle 的 `addObserver` 如果恰好在请求截止那一刻还在途,battle 侧可能已经挂上观众,match 却回了失败、删了观战标记。之后玩家排队开战时,gather 靠观战标记找不到这场观战,也就不会清退,玩家可能同时是 A 场的观众和新一局的参战者。批次 B 把这个窗口从「最长约 9s」缩到「截止那一刻在途的那一次 RPC」,但没有消除它。根治办法:RPC 失败且结果未知时,用独立 ctx 补发一次 `removeObserver`。它会给本玩家推一次 SpectateEnd,所以要先和 battle 侧确认语义再做。
 
@@ -456,7 +459,7 @@ go-zero 超时拦截器用 `context.WithTimeout` 派生 ctx 交给 handler,超�
 | client-access-band-routing D57 | 合并 | 「每会话在途 ≤ 32」改为「排队 + 在途 ≤ 32」;按次记账的键由 `(ClientContext*, seq)` 改为 `gate_call_seq`。理由:生成的 Send* 返回 void,gate 拿不到 ctx 指针【码】`cpp/generated/grpc_client/client_rpc_router/client_rpc_router_grpc_client.cpp:67-89` |
 | client-access-band-routing D60 | 照用 7 号字段 | 无 |
 | client-access-band-routing §12.4 | 「惰性清理、不挂定时器」 | 改为「主动扫描(TimerTaskComp,回调不捕获对象)+ 惰性清理」 |
-| client-access-band-routing 阶段 0b / 0d / 0g | 0b(player_id 归一)、0d(失败回执带 id)并入本方案批次 C;0g(节点摘除排空)与本方案兼容:0g 落地后,晚到的真实完成会因 extract 取不到而被丢弃 | 在阶段表里注明 0b、0d 由本文批次 C 承担 |
+| client-access-band-routing 阶段 0b / 0d / 0g | 0b(player_id 归一)、0d(失败回执带 id)并入本方案批次 C;0g(节点摘除排空)与本方案兼容:0g 落地后,晚到的真实完成会因 extract 取不到而被丢弃(2026-10-16 订正:0g 已不需要 —— gRPC 传输第 3 批后节点摘除时 `~Channel` 以 UNAVAILABLE 完成在途调用,经失败桥认领) | 在阶段表里注明 0b、0d 由本文批次 C 承担 |
 | grpc-client-deadline-failure-callback | 失败桥行为变化 | 失败回执改为带 id 的 1003 信封 |
 | xuanming-port-decisions D-12 | **兼容**:lane 只在路由模式启用,C++ 默认值和现有单测都不改 | 无 |
 | AGENTS §4 字段类型清单 | 新增两个 uint64 计数字段 | 是否登记进清单,由用户决定 |
@@ -475,6 +478,8 @@ go-zero 超时拦截器用 `context.WithTimeout` 派生 ctx 交给 handler,超�
 | 断线 | 丢弃未发出项;不等后端调用;等在途 login 调用完成后再通知 login【码】`:375-379,471-477,523-531` | 本文立即通知 + login 栅栏 | 可以保留等待;Java login 是否存在与 EnterGame 后台链同类的竞态,**待核实** |
 | 跨会话 | JoinQueue 要求位置为 ONLINE,不校验会话身份 | 同 §6.3 | 用 SessionContext 的会话号与 gate 实例比对 |
 | 重定向 | 丢弃排队项、停止 drain【码】`:433-434,1058-1062` | 本文对齐 Java | 无 |
+
+> 2026-10-16 订正(Java 版后端截止核实时发现):Java gate 的会话后端 lane 不只在后端回包或 5 s 消费端超时时放行,Dubbo 调用以任何错误结束(断连、Triple 流被重置、提供方重启)都会立即放行,而后端 handler 可能还在跑、仍会在自己的预算内提交,与下一条交错。Dubbo 不像 gRPC 那样把取消沿调用链传给后端 handler。已改:future 异常完成(请求已交给 Dubbo、结果未知)时回执照常立即给,lane 等到「发出 + 调用超时 5 s」(`ClientDispatcher.BACKEND_RESULT_UNKNOWN_HOLD_NANOS`)才放行下一条,与超时路径一致;代理当场抛异常(「No provider available」,请求没发出)不等;断线撤销定时器。C++ 版不需要:gRPC 的取消沿 gate → 路由服 → 目标服务传播,目标 handler 的 ctx 随之结束,提交点前查 ctx(§6.1)。
 
 `PARITY.md`:更新第 31 行「gate 接入与路由」,并新增一行「客户端请求按会话保序」,登记两版各自的批次状态。本仓 `docs/PROGRESS.md` 的条目要注明对应的 Java 版本号。
 
@@ -500,6 +505,10 @@ go-zero 超时拦截器用 `context.WithTimeout` 派生 ctx 交给 handler,超�
 **拍板记录(2026-10-15,用户):** E2(guild `expected_guild_id`,§6.4)推迟,记录下来以后再做;本轮不改客户端仓,也不改 guild 的 proto。在 E2 落地之前,§6.4 要防的「卡住的 LeaveGuild(及 Disband / Kick / Transfer / SetRole)恢复后作用到玩家的新帮会」维持现状:gate lane 让同一会话的这些请求按顺序发出,但路由服回超时、gate 放行下一条之后,上一条仍可能在 guild 里跑完,这个窗口只有 `expected_guild_id` 能关。概率低,所以本来就排在最后一批。
 
 **拍板记录(2026-10-15 稍后,用户):** 用户要求「别管提交,把所有问题全部做完」,取代上一条的「E2 推迟」。E2 服务端两版已实施(§16 同日行);客户端仓 `../mmorpg-client` 未授权,仍未改:客户端下个版本发这五个请求时要带上 `expected_guild_id`(= 发请求那一刻界面上本人帮会的 guild_id),收到 kGuildNotInGuild(14002)时,任免 / 踢人 / 转让用回包里的 guild 刷新界面(没带说明已不在任何帮),退帮 / 解散拉一次 GetPlayerGuild;不要把 14002 当成退帮成功。客户端接入之前窗口仍在,迁移进度看 `guild_manage_expected_guild_total{outcome="absent"}`。
+
+**拍板记录(2026-10-16,用户):** Java game-trade 收藏写入保留「写入预留」(缺省预算 3500 ms 时预留 1000 ms,受理后 2.5 s 起不再发收藏写、回 in-band 1003),登记为已定;备选「只对收藏语句把会话级 `innodb_lock_wait_timeout` 降到 1 s」不采用。mmorpg 没有这个预留,在这一窄窗口上两版的客户端可见行为不同,登记在 Java `docs/porting/trade-spec.md` §1.9 订正注与 PARITY 第 158 行。仍待拍板:RefreshToken 截止放弃的回执码(Java 1003 / mmorpg 2000)、game-gate 在 Dubbo 调用以错误结束时立即放行(归 gate 负责人)。
+
+**按推荐默认值定(2026-10-16,用户「没做完继续做完」,可推翻):** ① RefreshToken 截止放弃时 Java 回 in-band 1003(旧 refresh 仍有效、可重试;mmorpg 路由模式下客户端实际收到的也是 gate 的 1003),不改回 2000。② Java gate 在 Dubbo 调用以错误结束时不再立即放行,改为等到「发出 + 调用超时」(§10 订正注)。③ Java match 157 建票失败后的回滚沿用请求截止(截止已过不发,靠票据 TTL、下一次 157 自愈与 153 兜底),不改成独立预算:独立预算的回滚本身就是回包之后的迟到写。
 
 ---
 
@@ -540,7 +549,7 @@ go-zero 超时拦截器用 `context.WithTimeout` 派生 ctx 交给 handler,超�
 ## 14. 开放问题
 
 1. 正式客户端的行为(Q4)。
-2. 在 pending 状态下析构 grpc::CompletionQueue 会不会崩溃(F29),本轮没有验证,属于阶段 0g。
+2. 在 pending 状态下析构 grpc::CompletionQueue 会不会崩溃(F29),本轮没有验证,属于阶段 0g。(2026-10-16:官方 CQ 已随 gRPC 传输第 3 批删除,问题失效。)
 3. Java login 是否存在与 C++ EnterGame 后台链同类的「已受理、未完成即断线」竞态。
 4. §6.1 表中 match 以外各行是起草代理逐服务读代码的结论,主会话没有逐行复核;实施时对每个服务补一条「ctx 取消后不再提交」的单测作为证据。
 5. 工作区里 `client_message_processor.cpp`、`main.cpp` 等文件有别的会话的未提交改动,实施前要先分清归属。登录代次那一批(scene-enter-session-fence.md)正在改 login 的 EnterGame 链与 gate 的会话转发,批次 C、D 要排在它之后,并在它的基础上改。
@@ -627,3 +636,10 @@ go-zero 超时拦截器用 `context.WithTimeout` 派生 ctx 交给 handler,超�
 | login 客户端写方法截止核对(收尾第一批,2026-10-15) | 已改完,未编译 | 栅栏之外经路由服的 login 写方法只有 CreatePlayer 与 RefreshToken。`createplayerlogic.go` 三处截止检查、名字登记发出前查 ctx、7b 改 WithoutCancel + 1s;`pkg/token/token.go` 轮换合成一段 Lua `rotateRefreshScript`(作废与签发原子)。新测试 `createplayer_deadline_test.go`(5 例)、`token_test.go`(5 例);`createplayer_name_test.go` 一例跟随;`login.yaml` 只改注释。CreatePlayer 子预算未重分(§6.1 订正注) | 待 Codex:`cd go/login && go build ./... && go vet ./... && go test ./... -count=1` |
 | §6.1 社交服务复核(收尾第一批,2026-10-15) | 已改完,未编译 | 只补测试、没改业务代码,结论见 §6.1 订正注。上一次中断留下的 `go/chat/internal/logic/request_deadline_fence_test.go`、`go/friend/internal/data/request_deadline_fence_test.go`、`go/trade/internal/data/request_deadline_fence_test.go` 已核对;新增 `go/friend/internal/logic/request_deadline_fence_test.go`(6 个写 RPC)、`go/match/internal/team/request_deadline_fence_test.go`(开战锁 + 11 个写 RPC),`go/trade/internal/logic/jubaozhai_logic_test.go` 补完。§14 第 4 条:已补单测,待运行 | 待 Codex:`go/chat`、`go/friend`、`go/trade`、`go/match` 各 `go build ./... && go vet ./... && go test ./... -count=1` |
 | O6 剩余 gate 级失败回执带 id(收尾第二批,两版同批,2026-10-15) | 已改完,未编译、未测试 | **C++**:`client_message_processor.cpp` 新增 `SendRequestErrorEnvelope`;`HandleTcpNodeMessage` 两处(scene 未就绪、RpcClient 未挂)与直连 `HandleGrpcNodeMessage` 两处(解析失败、找不到业务节点)由 23 号 tip 改为带 id 与原 message_id 的信封,不计非法包、不断连不变;`rpc_reply_bridge.cpp` 的非 lane 失败桥未改(拿不到客户端请求 id,§4.1 订正注)。**Java**:`ClientDispatcher` 的「玩家不在场景」「未接入的域」由 23 {1003} 改为 `envelopeError`;另对齐 `links.send` 返回 0(链路层不受理)时也回信封 1003(原为不回任何回执);`GateMetrics` / `GateConfiguration` 注释;测试 `ClientDispatcherTest`(新增「scene 链路不受理这一帧」用例)、`ClientPipelineTest`、`BattleUplinkRejectedTest`(删 `expectTip1003`)、`ClientRedirectTest`、`MessageRoutesTest`、`GateConfigurationTest`;robot `GameConnection` 注释、`TradeScenario`;文档 `mmorpg-client-contract-login.md` §2.4、`zone-travel-spec.md` :779 / :1058、`architecture.md` :1897。**客户端可见**:scene 未就绪时所有 scene 类请求(含应答为 Empty 的移动号)回以该请求号为 message_id 的错误信封,不再推 23,客户端要对这些号的信封错误做通用处理。**已知 robot 缺陷(未改)**:本仓 Go robot 的通用分发 `robot/logic/handler/message_body_handler.go` 不看 `error_message`,错误信封的空 body 会交给类型化 handler(例如 ListSkills 清空技能表);这是既有问题,travel_smoke 的 GM 流程又依赖 handler 被调用来关闭等待通道,改它要连带调整,留作后续 | 待 Codex:gate `msbuild game.sln /m:1`;Java `./mvnw -B -pl game-gate,game-robot -am test` |
+| 交接(2026-10-15) | 本会话停止,交给别的账号续做 | 收尾第二批的「Java 后端截止后不提交 + 误拒窗口」「保序冒烟补齐」两块因认证报错(403)未开工,工作区无半截改动;剩余工作、验证命令与待拍板项见 [handoff-client-request-ordering-20261015.md](../handoff/handoff-client-request-ordering-20261015.md) | — |
+| W1-45 删除 lane 的重复摘节点机制(2026-10-16,gRPC 迁移会话) | 已改完,未编译 | ECS 审查转交:删 `gate_lane::OnRouterNodeRemoved`、`InflightCall::routerEntity`、`LaneCounters::nodeRemoved`(汇总日志去掉 `node_removed`)、`InflightIndex::ExtractIf` 及其单测;`RouterSendFn` / `SendRawViaRouter` 改为返回 bool;`OnNodeRemoveEventHandler` 不再调 lane。路由服摘除改由 `~Channel` 的 UNAVAILABLE 失败回调经 `OnRouterCallFailed` 认领,客户端回执仍恰好一次,`late_dropped` 不再被摘除重复计数。§4.5 表、§4.4 伪码、汇总字段已订正 | 待 Codex:gate `msbuild game.sln /m:1`;`router_lane_test` 按 §13 第 2 步的独立编译命令复跑,用例由 12 例减为 11 例(删 `ExtractIfSelectsByRouterEntityForNodeRemoval`),预期 11 例全绿。Java 版:只改 C++ gate 内部的完成认领路径,客户端可见行为不变,不适用 |
+| F Java(第 4 部分:后端「gate 放行后不再提交」,交接 §3.1,2026-10-16) | 已改完,未编译、未测试(Java 仓未提交,基线 `76e7bad`) | 逐方法核实六个模块。gate 放行同会话下一条的时刻 = min(后端回包, 发出 + 5000 ms Dubbo 超时),Dubbo 调用以错误结束时立即放行(残留,见 PROGRESS 同日条)。**game-match**:新增 `port/RedisClientWrites`(客户端写句柄:retryAttempts(0)、timeout = min(`game.redis.timeout-ms`, 剩余)),票据 enqueue / createMatched / cancel / heal、切磋 invite / consume、观战 acquire 改走它,截止已过不发;`QueueService` 跨会话栅栏加 `staleEntry`:在线目录条目 owner_epoch(非 0)小于位置记录时按缺席放行,修掉 PARITY 158 行「已知残留」的误拒;Queue / Challenge / SpectateStore 三个 Configuration 注入 `RedisProperties`。**game-login**:`ClientMessageDispatcher` 在 Dubbo 线程记受理时刻,经 `ClientMessageHandler` 三参 `handle` 传排队时长;CreatePlayer 3.5 s(发号前查,用完回 2020)、EnterGame 4 s 从受理起算(退避醒来已过预算不再夺权、预算用完不再请让出、注定空转的末次重试当场回 2005)、RefreshToken 3.5 s(`LoginTokens.refresh(token, pastDeadline)` 在发轮换脚本前查,放弃回 in-band 1003、旧 refresh 仍有效)。EnterGame 后台链复核:没有永久在线 / 双绑竞态(future 等整条链,迟到应答被 Dubbo 丢弃,绑定只在 gate 会话线程执行),Java 不需要批次 D 的会话栅栏;有界残留是设备登记迟到写(30 min 自愈)与超时后的孤儿 epoch(30 s 租约)。**game-friend**:Reject / Unblock 改显式 RC 事务、提交前查预算;发申请与在线目录配额 INCR 截止已过不发、不重发;NOSCRIPT 回退自处理(自发 EVALSHA,加载与重发前各查一次截止)。**game-chat**:占位 / 限速 / 写历史经 `clientWrite` 发出前查截止、不重发、超时取剩余,写历史前已过截止就释放占位回 1003;NOSCRIPT 同上。**game-trade**:收藏写入加写入预留(预算 3500 时 1000 ms,受理后 2.5 s 起不再发收藏写、回 in-band 1003),锁等待落定 ≤ 受理 + 4.5 s。**game-team**:`TeamStore.eval` 对写脚本先查截止,`RedissonTeamRedis.evalWrite` 自发 EVALSHA、不重发、NOSCRIPT 按截止决定是否加载重发。每个模块至少一条「截止已过 → 不提交」单测。各条都经对抗评审与修复 | 待 Codex(命令见 docs/PROGRESS.md 2026-10-16 条) |
+| R 冒烟补齐(交接 §3.2,2026-10-16) | 已改完,未编译 | 新文件 `robot/ordering_smoke_groups.go`:O5 帮会 ApplyJoinGuild→CancelGuildApplication(robot_9902 建临时帮、9903 申请,帮主侧 ListGuildApplications 判定)、O6 好友 AcceptFriend→RemoveFriend(9905 申请、9904 连发,查双方好友列表)、O7 登录 Login→EnterGame(9906,新连接不等 Login 回包就发 EnterGame,回 kLoginSessionNotFound 记乱序,回 0 还要等进场推送);各 5 / 5 / 3 轮,开局安全清场,收尾解散 / 撤回 / 删除;乱序不当场退出,O3 与 O5–O7 的乱序最后汇总成一行 FAIL;帮会组并发撞锁(kGuildBusyRetry)记为乱序。`ordering_smoke_scenario.go` 只加调用、记录过滤与文件头,`etc/ordering_smoke.yaml` 更新流程 / 前置 / 耗时。O4 编号留给未合入的 worktree `claude/practical-bouman-1beb0d`(LeaveGame→JoinQueue,只约束主机器人);合入时把 yaml「预期」行改成汇总写法 | 待 Codex:`robot` 下 `go build ./... && go vet ./...`、`gofmt -l`、冒烟 |
+| E2 robot 冒烟(交接 §3.2 可选项,2026-10-16) | 已改完,未编译 | `robot/guild_smoke_scenario.go` 第 11 步:第 10 步解散后 A 另建临时帮 H、B 入帮;B 带已解散旧帮的 `expected_guild_id` 退帮 → kGuildNotInGuild,B 仍是 H 的普通成员、H 仍 2 人;对照:带 H 的 id 退帮照常受理;A 解散 H。`etc/guild_smoke.yaml` 前置 6:guild 须是 E2 二进制,旧二进制以 step=stale-expected-leave、tip=0 失败 | 待 Codex:guild 冒烟 |
+| 第三波补齐(2026-10-16) | 已改完,未编译、未测试 | **Java game-match**(Java 仓未提交):由 team 客户端请求发起的 211 整组建票(`createTeamTickets` → `GroupTickets.create` → `RedissonTicketStore.createGroup`)改走客户端写句柄;生产缺省组合(team `SQL_AUTHORITY` + match 非全球)下 `createDurableTickets` 也落到这条路径;回滚与 `releaseTeamTickets` 是补偿,保留重发。`RedisClientWrites` 自发 EVALSHA,NOSCRIPT 时先查截止再加载、加载后再查才重发;超时 = min(配置, 剩余 − 一个 Redisson 定时器刻度 100 ms),不足 1 ms 不发,保证放弃等连接落在截止之前(gate 在后端回包即放行,team 一跳超时后立刻回包,不能拿 5 s 作基准)。新增 `RedisClientWritesTest` 与 `RedissonTicketStoreTest` 整组建票 3 例。**mmorpg Go**:§6.1 2026-10-16 订正注所列两处,`go/friend/internal/data/block_repo.go`、`go/trade/internal/data/listing_repo.go` 改为单语句事务,`request_deadline_fence_test.go` 两包各补「语句跑过截止不提交」「截止前提交恰好一次」;两包 MySQL 集成测试改引生产 SQL 常量;friend / trade `svc/servicecontext.go` 的 BuildDSN 注释同步 | 待 Codex(命令见 docs/PROGRESS.md 2026-10-16 第二条) |
+| Java gate 结果未知延后放行(2026-10-16) | 已改完,未编译、未测试(Java 仓未提交) | §10 的 2026-10-16 订正注:`ClientDispatcher` 记发出时刻,future 异常完成时回执照常立即给、lane 到「发出 + 5 s」(`BACKEND_RESULT_UNKNOWN_HOLD_NANOS`,与 `dubbo.consumer.timeout` 同值)才放行;同步抛出 / 返回 null 不等;`ClientSession.scheduleBackendRelease` / `cancelBackendRelease`,断线撤销。测试:`ClientDispatcherTest` 改写「好友后端调用失败…结果未知时等满调用超时才放行下一条」、新增「结果未知的延后放行期间断线_定时器撤销_排队项不再发出」,`MatchBackendForwardingTest` 的 148→153 用例按新语义推进时钟。Java `docs/design/architecture.md` 加更正注 | 待 Codex:`./mvnw -B -pl game-gate -am test` |

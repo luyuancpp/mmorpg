@@ -221,7 +221,7 @@ type IdSegmentConfig struct {
 // trade_listing 的消费表在独占库 mmorpg_trade,不在本服务全局库里,所以不进 schema.go 的水位地板校验。
 // guild_asset_op:帮会资产指令的 op_id(Go guild,同时作资产通道的 correlation_id;
 // docs/design/guild-phase2/05-economy.md §5.8)。消费表在独占库 mmorpg_guild,同理不做地板校验。
-var DefaultIdSegmentBootstrapTags = []string{"player", "guild", "item", "txlog", "snapshot", "trade_listing", "guild_asset_op", "friend_request"}
+var DefaultIdSegmentBootstrapTags = []string{"player", "guild", "item", "txlog", "snapshot", "trade_listing", "guild_asset_op", "friend_request", "trade_asset_op", "mail", "mail_asset_op", "rank_board", "rank_settlement", "rank_reward"}
 
 // EffectiveBootstrapTags 是迁移路径实际预建的 tag 清单:没配 = 默认清单。
 // 返回副本,免得调用方改到包级默认值。
@@ -591,6 +591,12 @@ type DevRedisConfig struct {
 	Host     string `json:",optional"`
 	Password string `json:",optional"`
 	DB       int    `json:",default=0"`
+	// PoolSize 是 go-redis 连接池上限(共享 Redis 连接总账,P0-E 第 3 批)。0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,
+	// 随 CPU limit 漂移;负数 routing.NewRouter 拒绝。K8s 上 tools/scripts/k8s_deploy.ps1 从 etc/data_service.yaml
+	// 镜像 DevRedis.PoolSize 并要求正整数,Redis 连接总账读同一个键。
+	// MappingRedis 是 go-zero 的 redis.RedisConf,没有池参数(go-zero 固定 go-redis 缺省 10 × GOMAXPROCS、MinIdleConns 8),
+	// 总账仍按缺省池记它。
+	PoolSize int `json:",optional"`
 }
 
 type RegionConfig struct {

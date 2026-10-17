@@ -8,14 +8,13 @@
 #include "node/system/node/node.h"
 #include "player/system/player_lifecycle.h"
 #include "player/system/player_scene.h"
+#include "world/scene_lifecycle.h"
 #include "player/player_gm_guard.h" // 客户端 GM 指令统一闸门(guild-phase2 §S4 4.34)
 #include "battle/system/player_battle.h"
 #include "rpc/player_service_interface.h"
 #include "network/rpc_channel.h"          // IsDispatchableMessageId:消息号越界或注册表空槽都不可派发
-#include "network/rpc_channel_stats.h"    // ShouldLogRpcEvent
 #include "network/rpc_controller.h"
 #include "network/network_constants.h"
-#include "network/error_handling_system.h"
 #include "proto/common/component/player_async_comp.pb.h"
 #include "proto/common/component/player_comp.pb.h" // UnregisterPlayer:退出中只放行 ExitGame
 #include "proto/common/component/player_network_comp.pb.h"
@@ -29,7 +28,6 @@
 #include "frame/manager/frame_time.h"
 #include "rpc/service_metadata/player_lifecycle_service_metadata.h"
 #include "proto/scene/scene_info.pb.h"
-#include "modules/scene/scene_events.h"
 #include <unordered_map>
 #include <string>
 
@@ -39,37 +37,6 @@ using namespace muduo::net;
 
 namespace
 {
-
-	// 源路由一族(Scene.RoutePlayerStringMsg / Scene.RouteNodeStringMsg,gate 侧的 RoutePlayerMessage /
-	// RouteNodeMessage)已退役,只做显式拒绝。理由见 docs/design/muduo-rpc-channel.md §9.3:
-	//   - 全仓没有发起端(C++ 只有这几个 handler 互相转发);RoutePlayerStringMsg(81)/ RoutePlayerMessage(74)
-	//     不在 IsClientMessageId 里,客户端不可达;
-	//   - 它是「源路由 + 逐跳同步镜像应答」:应答在下游完成之前就回给上游且没有错误字段,正是 A→B→C 的反例;
-	//   - 旧的 scene 本地命中分支只打 TRACE、从不派发,gate→gate / scene→scene 分支拓扑不可达;
-	//   - 跨节点玩家消息的权威通道是 Kafka 与持久收件箱(cross_scene_player_messaging.md、reliable-player-inbox-20261014.md)。
-	// SetFailed 之后框架回 RPC_ERROR(HANDLER_FAILED),调用方得到 kRemoteFailed;这里不转发、不派发、不填 response。
-	// proto 方法暂不删:message_id 还没有墓碑,删了会被发号器回收给新方法(§9.3 末段)。
-	// 原先只为它们存在的 ResolveRoutedMessagePriority / GetMethodPriority / IsImportantPriority 一并删除。
-	//
-	// occurrences 由各 handler 的函数内 static 持有:handler 只在节点唯一的 EventLoop 线程上派发,不需要原子。
-	// 日志按 ShouldLogRpcEvent 采样(前 8 条逐条,之后每 1024 条一条),防止对端刷包把日志打爆。
-	void RejectDeprecatedRouteCall(::google::protobuf::RpcController *controller, const char *method,
-								   uint64_t &occurrences)
-	{
-		controller->SetFailed(std::string(method) +
-							  " is deprecated: no initiator; cross-node player messages go through Kafka / reliable inbox");
-		++occurrences;
-		if (!ShouldLogRpcEvent(occurrences))
-		{
-			return;
-		}
-		const auto &conn = RpcController::From(controller).conn();
-		LOG_WARN << "Rejected deprecated RPC " << method
-				 << ": no initiator; cross-node player messages go through Kafka / reliable inbox"
-				 << " (docs/design/muduo-rpc-channel.md 9.3). peer="
-				 << (conn ? conn->peerAddress().toIpPort() : std::string("<unknown>"))
-				 << " occurrences=" << occurrences;
-	}
 
 	// 反向身份栅栏(docs/design/routing-identity-audit-20260908.md R13 的反向面)。
 	//
@@ -178,113 +145,7 @@ void SceneHandler::PlayerEnterGameNode(::google::protobuf::RpcController* contro
 	// HandleEnterGameNode 已登记待入场上下文并发出 A2′(同一条 zone Redis 连接 FIFO,EVAL 排在这次 GET 前面)。
 	tlsRedisSystem.GetPlayerDataRedis()->AsyncLoad(request->player_id());
 	///<<< END WRITING YOUR CODE
-}
 
-void SceneHandler::SendMessageToPlayer(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-	::NodeRouteMessageResponse* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-
-	LOG_TRACE << "Handling message routing for session ID: " << request->header().session_id()
-			  << ", message ID: " << request->message_content().message_id();
-
-	const auto it = SessionMap().find(request->header().session_id());
-	if (it == SessionMap().end())
-	{
-		LOG_ERROR << "Session ID not found: " << request->header().session_id()
-				  << ", message ID: " << request->message_content().message_id();
-		return;
-	}
-
-	if (!CheckRoutedPlayerIdentity("SendMessageToPlayer", request->header().session_id(), it->second,
-								   request->header().target_player_id(),
-								   request->message_content().message_id()))
-	{
-		return;
-	}
-
-	const auto playerIt = tlsEcs.playerList.find(it->second);
-	if (playerIt == tlsEcs.playerList.end())
-	{
-		LOG_ERROR << "Player ID not found in common logic: " << it->second;
-		return;
-	}
-
-	const auto &player = playerIt->second;
-
-	// Guard: reject messages from a superseded session (same as ProcessClientPlayerMessage).
-	const auto *snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
-	if (snapshot && snapshot->gate_session_id() != request->header().session_id())
-	{
-		LOG_INFO << "SendMessageToPlayer: stale session " << request->header().session_id()
-				 << " (current=" << snapshot->gate_session_id()
-				 << "), dropping message_id=" << request->message_content().message_id();
-		SessionMap().erase(it);
-		return;
-	}
-
-	// 越界与注册表空槽(serviceName / methodName 为 nullptr,例如被跳过的 DB 域)都不可派发:
-	// 只查越界会拿 nullptr 去构造 std::string(gPlayerService.find),对端发一帧就是 UB。
-	if (!IsDispatchableMessageId(request->message_content().message_id()))
-	{
-		LOG_ERROR << "Invalid message ID: " << request->message_content().message_id();
-		return;
-	}
-
-	const auto &messageInfo = gRpcMethodRegistry[request->message_content().message_id()];
-	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
-	if (serviceIt == gPlayerService.end())
-	{
-		LOG_ERROR << "PlayerService not found for message ID: " << request->message_content().message_id();
-		return;
-	}
-
-	const auto &serviceHandler = serviceIt->second;
-	google::protobuf::Service *service = serviceHandler->service();
-	const google::protobuf::MethodDescriptor *method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
-	if (method == nullptr)
-	{
-		LOG_ERROR << "Method not found in PlayerService: " << messageInfo.methodName;
-		return;
-	}
-
-	const MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
-	if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(),
-											  int32_t(request->message_content().serialized_message().size())))
-	{
-		LOG_ERROR << "Failed to parse request message for message ID: " << request->message_content().message_id()
-				  << " session=" << request->header().session_id();
-		return;
-	}
-
-	std::string errorDetails;
-	if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails))
-	{
-		LOG_ERROR << errorDetails << " message_id=" << request->message_content().message_id()
-				  << " session=" << request->header().session_id();
-		return;
-	}
-	if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails))
-	{
-		LOG_ERROR << errorDetails << " message_id=" << request->message_content().message_id()
-				  << " session=" << request->header().session_id();
-		return;
-	}
-
-	const MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
-	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
-
-	response->mutable_header()->set_session_id(request->header().session_id());
-	response->mutable_message_content()->set_message_id(request->message_content().message_id());
-
-	if (Empty::GetDescriptor() == playerResponse->GetDescriptor())
-	{
-		return;
-	}
-
-	response->mutable_message_content()->set_serialized_message(playerResponse->SerializeAsString());
-	///<<< END WRITING YOUR CODE
 }
 
 void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController* controller, const ::ProcessClientPlayerMessageRequest* request,
@@ -298,7 +159,8 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 	const auto &msg = request->message_content();
 	const SessionId sessionId = request->session_id();
 
-	// 越界与注册表空槽都按「message_id not found」处理(见 SendMessageToPlayer 同一判据的注释)。
+	// 越界与注册表空槽(serviceName / methodName 为 nullptr,例如被跳过的 DB 域)都按「message_id not found」处理:
+	// 只查越界会拿 nullptr 去构造 std::string(gPlayerService.find),对端发一帧就是 UB。
 	if (!IsDispatchableMessageId(msg.message_id()))
 	{
 		LOG_ERROR << "ProcessClientPlayerMessage: message_id not found " << msg.message_id();
@@ -440,10 +302,11 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 		// cpp/nodes/gate/SECURITY.md §3),不另起一个环境变量 —— 同一件事两个开关
 		// 只会让运维在拒绝时不知道该看哪个。
 		//
-		// InvokePlayerService(下面那个)与 SendMessageToPlayer 是**节点路由**,不对
-		// 客户端开放,所以不在这里加闸;它们那侧的防护是各 Gm* handler 自己的
-		// scene_gm_guard::RejectGmClientRpc。将来若再有路径转发客户端消息,必须调
-		// 同一个谓词。
+		// 原先的节点路由入口 InvokePlayerService / SendMessageToPlayer 已于批 7 退役并从 proto
+		// 删除(无发起端,号 40 / 1 留墓碑,见 docs/design/muduo-rpc-channel.md §20),本函数是玩家
+		// handler 现在唯一的派发入口;各 Gm* handler 自己的 scene_gm_guard::RejectGmClientRpc
+		// 仍保留作纵深防御。将来若再有路径转发客户端消息、或从节点路由打到玩家 handler,
+		// 必须调同一个谓词。
 		LOG_WARN << "ProcessClientPlayerMessage: client GM rejected method=" << methodName
 				 << " player_id=" << it->second << " session=" << sessionId;
 
@@ -459,9 +322,10 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 	// Populate synchronous response (if caller expects one)
 	if (response != nullptr && Empty::GetDescriptor() != playerResponse->GetDescriptor())
 	{
+		// message_id / id 是客户端协议(gate 原样下发 message_content),必须回填。
+		// 不再回显 session_id:gate 在调用点 lambda 里捕获会话(docs/design/muduo-rpc-channel.md §8.1),不读应答的这个字段。
 		response->mutable_message_content()->set_message_id(msg.message_id());
 		response->mutable_message_content()->set_id(msg.id());
-		response->set_session_id(sessionId);
 
 		// Serialize response
 		const auto byte_size = playerResponse->ByteSizeLong();
@@ -475,147 +339,7 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 	}
 
 	///<<< END WRITING YOUR CODE
-}
 
-void SceneHandler::InvokePlayerService(::google::protobuf::RpcController* controller, const ::NodeRouteMessageRequest* request,
-	::NodeRouteMessageResponse* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	const auto it = SessionMap().find(request->header().session_id());
-	if (it == SessionMap().end())
-	{
-		LOG_ERROR << "session id not found " << request->header().session_id() << ","
-				  << " message id " << request->message_content().message_id();
-		SendErrorToClient(*request, *response, kSessionNotFound);
-		return;
-	}
-
-	if (!CheckRoutedPlayerIdentity("InvokePlayerService", request->header().session_id(), it->second,
-								   request->header().target_player_id(),
-								   request->message_content().message_id()))
-	{
-		return;
-	}
-
-	const auto player = tlsEcs.GetPlayer(it->second);
-	if (player == entt::null)
-	{
-		LOG_ERROR << "GatePlayerService player not loading";
-		SendErrorToClient(*request, *response, kPlayerNotFoundInSession);
-		return;
-	}
-
-	// Guard: reject messages from a superseded session.
-	const auto *snapshot = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
-	if (snapshot && snapshot->gate_session_id() != request->header().session_id())
-	{
-		LOG_INFO << "InvokePlayerService: stale session " << request->header().session_id()
-				 << " (current=" << snapshot->gate_session_id()
-				 << "), dropping message_id=" << request->message_content().message_id();
-		SessionMap().erase(it);
-		return;
-	}
-
-	// 越界与注册表空槽都按「message_id not found」处理(见 SendMessageToPlayer 同一判据的注释)。
-	if (!IsDispatchableMessageId(request->message_content().message_id()))
-	{
-		LOG_ERROR << "message_id not found " << request->message_content().message_id();
-		SendErrorToClient(*request, *response, kMessageIdNotFound);
-		return;
-	}
-
-	const auto &messageInfo = gRpcMethodRegistry[request->message_content().message_id()];
-	const auto serviceIt = gPlayerService.find(messageInfo.serviceName);
-	if (serviceIt == gPlayerService.end())
-	{
-		LOG_ERROR << "PlayerService service not found " << request->header().session_id()
-				  << "," << request->message_content().message_id();
-		return;
-	}
-
-	const auto &serviceHandler = serviceIt->second;
-	google::protobuf::Service *service = serviceHandler->service();
-	const google::protobuf::MethodDescriptor *method = service->GetDescriptor()->FindMethodByName(messageInfo.methodName);
-	if (method == nullptr)
-	{
-		LOG_ERROR << "PlayerService method not found " << request->message_content().message_id();
-		return;
-	}
-
-	MessageUniquePtr playerRequest(service->GetRequestPrototype(method).New());
-	if (!playerRequest->ParsePartialFromArray(request->message_content().serialized_message().data(), int32_t(request->message_content().serialized_message().size())))
-	{
-		LOG_ERROR << "ParsePartialFromArray " << request->message_content().message_id();
-		SendErrorToClient(*request, *response, kRequestMessageParseError);
-		return;
-	}
-
-	std::string errorDetails;
-
-	// Validate field sizes
-	if (ProtoFieldChecker::CheckFieldSizes(*playerRequest, kProtoFieldCheckerThreshold, errorDetails))
-	{
-		LOG_ERROR << errorDetails << " Failed to check request for message ID: "
-				  << request->message_content().message_id();
-		SendErrorToClient(*request, *response, kArraySizeTooLargeInMessage);
-		return;
-	}
-
-	// Validate no negative integers
-	if (ProtoFieldChecker::CheckForNegativeInts(*playerRequest, errorDetails))
-	{
-		LOG_ERROR << errorDetails << " Failed to check request for message ID: "
-				  << request->message_content().message_id();
-		SendErrorToClient(*request, *response, kNegativeValueInMessage);
-		return;
-	}
-
-	MessageUniquePtr playerResponse(service->GetResponsePrototype(method).New());
-	serviceHandler->CallMethod(method, player, playerRequest.get(), playerResponse.get());
-
-	response->mutable_header()->set_session_id(request->header().session_id());
-	response->mutable_message_content()->set_message_id(request->message_content().message_id());
-
-	if (Empty::GetDescriptor() == playerResponse->GetDescriptor())
-	{
-		return;
-	}
-
-	const auto byte_size = playerResponse->ByteSizeLong();
-	response->mutable_message_content()->mutable_serialized_message()->resize(byte_size);
-	if (!playerResponse->SerializePartialToArray(response->mutable_message_content()->mutable_serialized_message()->data(),
-												 static_cast<int32_t>(byte_size)))
-	{
-		LOG_ERROR << "Failed to serialize response for message ID: " << request->message_content().message_id();
-		SendErrorToClient(*request, *response, kResponseMessageParseError);
-		return;
-	}
-
-	///<<< END WRITING YOUR CODE
-}
-
-void SceneHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller, const ::RouteMessageRequest* request,
-	::RouteMessageResponse* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	// 已退役:显式拒绝,不再转发(见全局守护段 RejectDeprecatedRouteCall 与 docs/design/muduo-rpc-channel.md §9.3)。
-	static uint64_t rejectedCalls = 0;
-	RejectDeprecatedRouteCall(controller, "Scene.RouteNodeStringMsg", rejectedCalls);
-	///<<< END WRITING YOUR CODE
-}
-
-void SceneHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller, const ::RoutePlayerMessageRequest* request,
-	::RoutePlayerMessageResponse* response,
-	::google::protobuf::Closure* done)
-{
-	///<<< BEGIN WRITING YOUR CODE
-	// 已退役:显式拒绝。不再按 node_list 转发、不再镜像 response;跨 zone 冻结闸等本地分支随之退场
-	// (见全局守护段 RejectDeprecatedRouteCall 与 docs/design/muduo-rpc-channel.md §9.3)。
-	static uint64_t rejectedCalls = 0;
-	RejectDeprecatedRouteCall(controller, "Scene.RoutePlayerStringMsg", rejectedCalls);
-	///<<< END WRITING YOUR CODE
 }
 
 void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* controller, const ::RegisterPlayerSessionRequest* request,
@@ -678,6 +402,7 @@ void SceneHandler::UpdateSessionDetail(::google::protobuf::RpcController* contro
 
 	PlayerLifecycleSystem::HandleBindPlayerToGateOK(player);
 	///<<< END WRITING YOUR CODE
+
 }
 
 void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, const ::CreateSceneRequest* request,
@@ -698,8 +423,9 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 	// allowed here -- one HTTP hiccup would stall the whole logic frame. The
 	// non-blocking variant kicks an async allocate and returns false right
 	// away; this create fails closed and the caller's retry normally lands
-	// after the process is already Allocated. (SceneManager uses the gRPC
-	// path, which does get the bounded blocking variant.)
+	// after the process is already Allocated.
+	// SceneManager 走 gRPC 面(grpc.CreateScene.guard):同样在 loop 上,用 AcquireAllocationPermitAsync ——
+	// allocate 在 lifecycle worker 线程、结果经 queueInLoop 回 loop,不阻塞逻辑帧,但能有界等到确认再建。
 	auto createPermit = agones::GameServerLifecycle::Instance().AcquireAllocationPermitNonBlocking();
 	if (!createPermit)
 	{
@@ -709,77 +435,23 @@ void SceneHandler::CreateScene(::google::protobuf::RpcController* controller, co
 		return;
 	}
 
-	// Idempotent: deduplicate by scene_id (Go-allocated, globally unique).
+	// 按 Go 分配的全局场景号幂等,不维护第二份场景索引。
+	if (const SceneEntity existing = PlayerSceneSystem::FindSceneById(request->scene_id()); existing != entt::null)
 	{
-		auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
-		for (auto entity : view)
-		{
-			const auto &info = view.get<SceneInfoComp>(entity);
-			if (info.scene_id() == request->scene_id())
-			{
-				response->mutable_scene_info()->CopyFrom(info);
-				LOG_INFO << "CreateScene: scene_id=" << request->scene_id()
-						 << " already exists (entity=" << entt::to_integral(entity) << "), returning existing";
-				return;
-			}
-		}
-	}
-
-	auto sceneEntity = tlsEcs.sceneRegistry.create();
-
-	// Keep this block in sync with SceneNodeGrpcImpl::HandleCreateScene. Both
-	// entrypoints write the same fields so the mirror-co-location pipeline
-	// works no matter which transport the caller uses.
-	//
-	// sceneInfo 引用只在这个块里用。下面的 dispatcher.trigger 会同步跑监听者,监听者一旦删掉场景
-	// 或 SceneInfoComp(swap-and-pop),trigger 之前拿的引用就悬空了(ecs-entt-misuse-audit-20261015 F096)。
-	{
-		auto &sceneInfo = tlsEcs.sceneRegistry.emplace<SceneInfoComp>(sceneEntity);
-		sceneInfo.set_scene_config_id(request->config_id());
-		sceneInfo.set_scene_id(request->scene_id());
-		sceneInfo.set_mirror_config_id(request->mirror_config_id());
-		sceneInfo.set_dungeon_config_id(request->dungeon_config_id());
-
-		for (const auto creator_id : request->creator_ids())
-		{
-			sceneInfo.mutable_creators()->insert({creator_id, true});
-		}
-	}
-
-	OnSceneCreated event;
-	event.scene = sceneEntity;
-	tlsEcs.dispatcher.trigger(event);
-
-	// 回包按监听者跑完之后的状态重新取。场景在 trigger 里被删掉时不回 scene_info,
-	// 和上面的校验失败分支同一口径。
-	const auto *createdInfo = tlsEcs.sceneRegistry.try_get<SceneInfoComp>(sceneEntity);
-	if (createdInfo == nullptr)
-	{
-		LOG_ERROR << "CreateScene: scene entity=" << entt::to_integral(sceneEntity)
-				  << " scene_id=" << request->scene_id()
-				  << " lost SceneInfoComp inside OnSceneCreated listeners, not reporting success";
-		// 回滚半成品场景,做成真正的 fail-closed。OnSceneCreated 已经发出,监听者按「场景已建成」记过账
-		// (Agones 计数、AOI 格子表)。不收掉的话,这个实体没有 SceneInfoComp,按 scene_id 去重的 view 看不到它,
-		// 调用方重试会再建一个,它就永远留在 sceneRegistry 里。先补发 OnSceneDestroyed 让监听者对称撤账,
-		// 再销毁实体,与 DestroyScene 的收尾顺序一致;刚建的场景没有住户,不需要先排空。
-		// 实体已被监听者自己销毁时,撤账归那个监听者,这里不再重复。
-		if (tlsEcs.sceneRegistry.valid(sceneEntity))
-		{
-			OnSceneDestroyed rollbackEvent;
-			rollbackEvent.scene = sceneEntity;
-			tlsEcs.dispatcher.trigger(rollbackEvent);
-			tlsEcs.sceneRegistry.destroy(sceneEntity);
-		}
+		response->mutable_scene_info()->CopyFrom(tlsEcs.sceneRegistry.get<SceneInfoComp>(existing));
+		LOG_INFO << "CreateScene: scene_id=" << request->scene_id()
+				 << " already exists (entity=" << entt::to_integral(existing) << "), returning existing";
 		return;
 	}
-	response->mutable_scene_info()->CopyFrom(*createdInfo);
 
-	LOG_INFO << "CreateScene: created scene entity=" << entt::to_integral(sceneEntity)
-			 << " config_id=" << request->config_id()
-			 << " scene_id=" << createdInfo->scene_id()
-			 << " mirror_config_id=" << createdInfo->mirror_config_id()
-			 << " dungeon_config_id=" << createdInfo->dungeon_config_id();
+	response->mutable_scene_info()->CopyFrom(SceneLifecycle::CreateScene(*request));
+
+	LOG_INFO << "CreateScene: created config_id=" << request->config_id()
+			 << " scene_id=" << request->scene_id()
+			 << " mirror_config_id=" << request->mirror_config_id()
+			 << " dungeon_config_id=" << request->dungeon_config_id();
 	///<<< END WRITING YOUR CODE
+
 }
 
 void SceneHandler::DestroyScene(::google::protobuf::RpcController* controller, const ::DestroySceneRequest* request,
@@ -794,18 +466,7 @@ void SceneHandler::DestroyScene(::google::protobuf::RpcController* controller, c
 		return;
 	}
 
-	// Find the scene entity by scene_id.
-	SceneEntity targetEntity = entt::null;
-	auto view = tlsEcs.sceneRegistry.view<SceneInfoComp>();
-	for (auto entity : view)
-	{
-		const auto &info = view.get<SceneInfoComp>(entity);
-		if (info.scene_id() == sceneId)
-		{
-			targetEntity = entity;
-			break;
-		}
-	}
+	const SceneEntity targetEntity = PlayerSceneSystem::FindSceneById(sceneId);
 
 	if (targetEntity == entt::null)
 	{
@@ -813,25 +474,16 @@ void SceneHandler::DestroyScene(::google::protobuf::RpcController* controller, c
 		return;
 	}
 
-	// Drain-then-destroy. Keep in sync with SceneNodeGrpcImpl::HandleDestroyScene
-	// -- see the long comment there for why we return without destroying.
-	if (const std::size_t relocating = PlayerLifecycleSystem::BeginSceneDrain(targetEntity); relocating > 0)
+	if (const std::size_t relocating = SceneLifecycle::DestroyScene(targetEntity); relocating > 0)
 	{
 		LOG_WARN << "DestroyScene: scene_id=" << sceneId << " still has residents; relocating "
 				 << relocating << " player(s) to the main world, entity kept until drained";
 		return;
 	}
 
-	// Fire scene-destroyed event before entity removal.
-	OnSceneDestroyed event;
-	event.scene = targetEntity;
-	tlsEcs.dispatcher.trigger(event);
-
-	// Destroy the ECS entity (removes all components).
-	tlsEcs.sceneRegistry.destroy(targetEntity);
-
 	LOG_INFO << "DestroyScene: destroyed scene entity for scene_id=" << sceneId;
 	///<<< END WRITING YOUR CODE
+
 }
 
 void SceneHandler::PrepareBattle(::google::protobuf::RpcController* controller, const ::PrepareBattleRequest* request,
@@ -843,6 +495,7 @@ void SceneHandler::PrepareBattle(::google::protobuf::RpcController* controller, 
 	// match Go 侧实际走 SceneNodeGrpc 的 gRPC 面,本面供 C++ 节点间调用)
 	PlayerBattleSystem::PrepareBattle(*request, *response);
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneHandler::CancelBattlePrepare(::google::protobuf::RpcController* controller, const ::CancelBattlePrepareRequest* request,
@@ -853,6 +506,7 @@ void SceneHandler::CancelBattlePrepare(::google::protobuf::RpcController* contro
 	// gather 失败补偿解冻,幂等
 	PlayerBattleSystem::CancelBattlePrepare(*request);
 ///<<< END WRITING YOUR CODE
+
 }
 
 void SceneHandler::NodeHandshake(::google::protobuf::RpcController* controller, const ::NodeHandshakeRequest* request,
@@ -862,4 +516,5 @@ void SceneHandler::NodeHandshake(::google::protobuf::RpcController* controller, 
 	///<<< BEGIN WRITING YOUR CODE
 	gNode->GetNodeRegistrationManager().OnNodeHandshake(RpcController::From(controller), *request, *response);
 	///<<< END WRITING YOUR CODE
+
 }

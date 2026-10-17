@@ -141,19 +141,15 @@ func (s *Store) enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 		if st == nil {
 			return errStreamVanished
 		}
-		// 7.2 锁内权威判重:RC 下普通读看得见前一个持锁者已提交的行。
+		// 7.2 锁内权威判重(RC 下普通读看得见前一个持锁者已提交的行),7.3 再判满箱:
+		// 满箱同步拒绝,不挤掉旧条目也不静默丢弃(设计 §3.4)。两步的先后见 decideEnqueueLocked。
 		existing, err := readItemByRequest(ctx, tx, shard, p.PlayerID, p.Producer, p.RequestID)
 		if err != nil {
 			return err
 		}
-		if existing != nil {
-			res = resultForExisting(existing, digest)
+		if decided, proceed := decideEnqueueLocked(existing, digest, st.GetOpenCount(), domainSpec.GetMaxPending()); !proceed {
+			res = decided
 			return nil // 不写任何东西,提交一个空事务
-		}
-		// 7.3 满箱:同步拒绝,不挤掉旧条目也不静默丢弃(设计 §3.4)。
-		if st.GetOpenCount() >= domainSpec.GetMaxPending() {
-			res = EnqueueResult{Code: constants.ErrFull}
-			return nil
 		}
 		// 7.4 分配 seq 并插入。时间每次重跑重取:seq 的时间下界按实际提交那一轮算。
 		txNowMs := s.nowMs()

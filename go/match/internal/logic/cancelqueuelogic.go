@@ -2,6 +2,9 @@ package logic
 
 import (
 	"context"
+	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"match/internal/svc"
 
@@ -41,6 +44,17 @@ func (l *CancelQueueLogic) CancelQueue(in *matchpb.CancelQueueRequest) (*base.Em
 		return &base.Empty{}, nil
 	}
 
+	if l.svcCtx.Authority != nil {
+		if in.RequestId != "" {
+			if parsed, e := uuid.Parse(in.RequestId); e != nil || parsed == uuid.Nil || parsed.String() != in.RequestId {
+				return nil, status.Error(codes.InvalidArgument, "匹配请求编号无效")
+			}
+		}
+		if in.RequestId == "" && in.QueueTicket == "" {
+			return nil, status.Error(codes.InvalidArgument, "撤销需要原请求编号或票据")
+		}
+		return &base.Empty{}, l.svcCtx.Authority.CancelIntent(l.ctx, playerId, in.QueueTicket, in.RequestId)
+	}
 	ticket, err := loadTicket(l.svcCtx, playerId)
 	if err != nil {
 		l.Errorf("[match] CancelQueue failed to read ticket player=%d: %v", playerId, err)

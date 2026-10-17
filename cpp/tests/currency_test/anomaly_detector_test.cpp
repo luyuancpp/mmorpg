@@ -79,7 +79,6 @@ TEST_F(PlayerAnomalyWindowTest, NullOrStaleEntityIsNotRecorded)
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerAnomalyWindowComp>(reused));
 
     EXPECT_FALSE(AnomalyDetector::RecordCurrencyGain(reused, kCurrencyGold, 1));
-    AnomalyDetector::ClearPlayer(stale);
     EXPECT_EQ(1u, AnomalyDetector::GetCurrencyGainCount(reused, kCurrencyGold));
 }
 
@@ -101,7 +100,7 @@ TEST_F(PlayerAnomalyWindowTest, ClearAllDropsAllWindowsWithoutDestroyingPlayers)
     EXPECT_EQ(0u, AnomalyDetector::GetCurrencyGainCount(first, kCurrencyGold));
 }
 
-TEST_F(PlayerAnomalyWindowTest, DisabledRecordingAndClearingDoNotCreateWindows)
+TEST_F(PlayerAnomalyWindowTest, DisabledRecordingDoesNotCreateWindows)
 {
     const auto player = CreatePlayer();
     AnomalyThreshold disabled;
@@ -112,7 +111,6 @@ TEST_F(PlayerAnomalyWindowTest, DisabledRecordingAndClearingDoNotCreateWindows)
 
     EXPECT_FALSE(AnomalyDetector::RecordCurrencyGain(player, kCurrencyGold, 1));
     EXPECT_FALSE(AnomalyDetector::RecordItemGain(player, kItemConfigId, 1));
-    AnomalyDetector::ClearPlayer(player);
     EXPECT_EQ(0u, AnomalyDetector::GetCurrencyGainCount(player, kCurrencyGold));
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<PlayerAnomalyWindowComp>(player));
 }

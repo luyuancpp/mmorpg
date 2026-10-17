@@ -58,7 +58,7 @@
   - battle:`BattleRoomManager::BuildAssignment`(`battle_room_manager.cpp:1432`),补签 IssueBattleTicket 同路。
 - 去重:login 与 scene_manager 按有效客户端地址 `net.JoinHostPort(host, port)` 去重,同一地址只留 launch_time 最大的一条。login 的顺序是先按 zone 过滤、再去重、最后做排空过滤;如果先做排空过滤,同地址上没被标记的陈旧影子会顶上来。
 - 去重的理由:地址稳定时,gate 崩溃后旧记录会残留到 NodeTTL(180s)。客户端能连通 TCP,却会被新 gate 以 `token_gate_node_mismatch` 拒绝。
-- 线程约束(battle):`ClientFacing(gNode->GetNodeInfo(), ...)` 只能在 loop 线程上调用。`GetNodeInfo()` 读的是 thread_local,在 gRPC 线程上会得到空 NodeInfo,结果是整批静默拒签。`ClientEndpointRequired()` 可以跨线程读。
+- 线程约束(battle):`ClientFacing(gNode->GetNodeInfo(), ...)` 只能在 loop 线程上调用。`GetNodeInfo()` 读的是 thread_local,在其它线程上会得到空 NodeInfo,结果是整批静默拒签。`ClientEndpointRequired()` 可以跨线程读。(2026-10-16:第 4 批起 gRPC handler 也在 loop 线程上执行,节点上已没有 gRPC 线程;这条约束对 lifecycle worker 等后台线程仍然成立。)
 - 指标:`mmorpg_client_endpoint_select_total{result="client|fallback|rejected|deduped"}`(`go/shared/clientendpoint/metrics.go`),不带 player_id。读法见运维手册「客户端地址排障」。
 
 ### D79 生产方 fail-closed,并在发布前同步解析
@@ -90,10 +90,11 @@
 ### D82 battle 分配许可与建房准入
 
 - CreateBattle 的节点级准入共三道,全部在任何副作用之前(`cpp/nodes/battle/handler/grpc/battle_node.cpp:56-124`;2026-09-29 更正,初稿写作 56-110,第三道的拒绝在 `:120`):
-  1. 建房准入闸(`battle_admission_gate.h`),在 gRPC 线程上判定。SetAfterStart 完成后才打开,停机开始即关闭。
-  2. 分配许可:gRPC 线程上、`runInLoop` 之前调 `AcquireAllocationPermitBlocking()`,等 Agones allocate 的上限是 allocateWaitTimeout(3s)。
-  3. 投递进 loop 后,复核准入闸。
-- 任一道不过,即返回 `grpc::Status(UNAVAILABLE, "battle_not_allocatable")`。三道都通过后,才是 loop 内预签票据(D70),再插表。
+  1. 建房准入闸(`battle_admission_gate.h`)。SetAfterStart 完成后才打开,停机开始即关闭。
+  2. 分配许可,等 Agones allocate 的上限是 allocateWaitTimeout(3s)。
+  3. 许可回到 loop 后,复核准入闸。
+  - (2026-10-16 更正,第 4 批,代码未编译、待 Codex 验证)三道现在都在 loop 线程上,写在守护段 `grpc.CreateBattle.guard` 里:第 1 道同步判定;第 2 道改为 `AcquireAllocationPermitAsync(loop, cb)`,HTTP 在 lifecycle worker,结果经 `queueInLoop` 回 loop;第 3 道在许可回调里经 `weak_ptr` 复核闸,通过才 `Proceed()` 进 `HandleCreateBattle`(见 [grpc-muduo-transport.md](grpc-muduo-transport.md) §15.8.4、§15.9)。初稿写的「第 1、2 道在 gRPC 线程上判定,`runInLoop` 之前调 `AcquireAllocationPermitBlocking()`」随第 4 批失效:节点上已没有 gRPC 线程,`AcquireAllocationPermitBlocking` 只给非 EventLoop 线程与测试用。
+- 任一道不过,即返回 `UNAVAILABLE "battle_not_allocatable"`(第 4 批起由守护段 `call->Reject(...)` 回出,线上字节不变)。三道都通过后,才是 loop 内预签票据(D70),再插表。
 - match 侧(`go/match/internal/logic/gather.go:65`,`isBattleNotAllocatable` 在 `:581`)只认 `codes.Unavailable` 加上消息**精确等于** `battle_not_allocatable` 的组合。命中时不发 DestroyBattle,用 `PickRandomExcept`(`node_watcher.go:317`)按 endpoint 排除已试节点,换一个节点重试**一次**;仍被拒就干净失败,记 `match_gather_total{outcome="not_allocatable"}`。其他 UNAVAILABLE 照旧走 DestroyBattle 兜底。
 - 偏离「CreateBattle 错误走 tip、status 恒 OK」惯例的理由:这是节点级的准入拒绝,发生在业务处理之前;UNAVAILABLE 是 gRPC 标准的「换一台试」语义;客户端看不到这个错误,不值得为它往 Tip.xlsx 发号。
 - AddObserver / IssueBattleTicket 只作用于已有房间,不取许可。

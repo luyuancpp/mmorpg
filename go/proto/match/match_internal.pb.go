@@ -92,6 +92,7 @@ type StartActivityBattleRequest struct {
 	// 活动上下文:kind 必须非 NONE,guild_id / activity_id / period_key / guild_period_key 非 0,
 	// initiator_player_id == member_player_ids[0]。match 深拷贝后原样放进 CreateBattleRequest.activity_context。
 	ActivityContext *battle.BattleActivityContext `protobuf:"bytes,3,opt,name=activity_context,json=activityContext,proto3" json:"activity_context,omitempty"`
+	RequestId       uint64                        `protobuf:"varint,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // 调用方持久的邀请房间/业务操作号；全球模式为0拒绝，重试必须复用。
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -145,6 +146,13 @@ func (x *StartActivityBattleRequest) GetActivityContext() *battle.BattleActivity
 		return x.ActivityContext
 	}
 	return nil
+}
+
+func (x *StartActivityBattleRequest) GetRequestId() uint64 {
+	if x != nil {
+		return x.RequestId
+	}
+	return 0
 }
 
 type StartActivityBattleResponse struct {
@@ -214,11 +222,13 @@ var File_proto_match_match_internal_proto protoreflect.FileDescriptor
 
 const file_proto_match_match_internal_proto_rawDesc = "" +
 	"\n" +
-	" proto/match/match_internal.proto\x12\x05match\x1a\x1bproto/db/proto_option.proto\x1a\x1eproto/battle/battle_data.proto\"\xb5\x01\n" +
+	" proto/match/match_internal.proto\x12\x05match\x1a\x1bproto/db/proto_option.proto\x1a\x1eproto/battle/battle_data.proto\"\xd4\x01\n" +
 	"\x1aStartActivityBattleRequest\x12(\n" +
 	"\x10battle_config_id\x18\x01 \x01(\rR\x0ebattleConfigId\x12*\n" +
 	"\x11member_player_ids\x18\x02 \x03(\x04R\x0fmemberPlayerIds\x12A\n" +
-	"\x10activity_context\x18\x03 \x01(\v2\x16.BattleActivityContextR\x0factivityContext\"\x9d\x01\n" +
+	"\x10activity_context\x18\x03 \x01(\v2\x16.BattleActivityContextR\x0factivityContext\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x04 \x01(\x04R\trequestId\"\x9d\x01\n" +
 	"\x1bStartActivityBattleResponse\x123\n" +
 	"\x06reject\x18\x01 \x01(\x0e2\x1b.match.ActivityBattleRejectR\x06reject\x12,\n" +
 	"\x12offender_player_id\x18\x02 \x01(\x04R\x10offenderPlayerId\x12\x1b\n" +

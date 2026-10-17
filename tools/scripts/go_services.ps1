@@ -141,6 +141,8 @@ $GoBinDir   = Join-Path $RepoRoot "bin\go_services"
 #               + 5s 余量),再离组、等 worker 收尾,比其它服务慢;K8s 侧对应 45s 宽限减 5s preStop。
 #               超时被强杀不丢数据(排序锁留到 TTL、重试收据租约过期后回收),只是失去优雅停的收益。
 $ServiceCatalogue = [ordered]@{
+    mail = @{ Dir = "mail"; Entry = "mail.go"; Port = 50900; Desc = "邮件（全局权威邮箱与附件到账）"; ConfigFlag = "-f"; ConfigFile = "etc/mail.yaml"; AllowMultiInstance = $true; Tier = 1 }
+    rank = @{ Dir = "rank"; Entry = "rank.go"; Port = 51100; Desc = "排行榜（全局代次、封榜与奖励）"; ConfigFlag = "-f"; ConfigFile = "etc/rank.yaml"; AllowMultiInstance = $true; Tier = 1 }
     db              = @{ Dir = "db";              Entry = "db.go";                    Port = 6000;  Desc = "DB (Kafka consumer + MySQL)";       ConfigFlag = "-f";            ConfigFile = "etc/db.yaml";                    AllowMultiInstance = $true;  Tier = 0; StopTimeoutSeconds = 35 }
     data_service    = @{ Dir = "data_service";    Entry = "data_service.go";          Port = 9000;  Desc = "Data Service (multi-zone Redis)"; ConfigFlag = "-f";            ConfigFile = "etc/data_service.yaml";          AllowMultiInstance = $true;  Tier = 0 }
     # Base ports for the zRPC services were originally 50000/50200 but Windows

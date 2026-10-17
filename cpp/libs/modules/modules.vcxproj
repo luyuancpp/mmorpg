@@ -215,6 +215,5 @@
   <ImportGroup Label="ExtensionTargets"></ImportGroup>
   <ItemGroup>
     <ClInclude Include="mission\mission_events.h" />
-    <ClInclude Include="scene\scene_events.h" />
   </ItemGroup>
 </Project>

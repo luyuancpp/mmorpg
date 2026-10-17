@@ -40,7 +40,7 @@ const (
 const assetOpColumns = "`op_id`, `player_id`, `stream`, `stream_epoch`, `seq`, `kind`, `status`, `durable`, " +
 	"`attempts`, `next_attempt_ms`, `deadline_ms`, `lease_until_ms`, `lease_token`, `tx_type`, " +
 	"`ref_kind`, `ref_id`, `payload`, `last_outcome`, `last_reason`, `created_ms`, `updated_ms`, " +
-	"`resolved_by`, `resolve_reason`, `last_send_ms`"
+	"`resolved_by`, `resolve_reason`, `last_send_ms`, `escrow_snapshot`, `receipt_ack_pending`, `business_consumed`"
 
 // PendingStatus 是 outbox 的"待办"状态数值,给 assetop 的 seq 分配与重投循环用。
 // 取 proto 枚举而不是写 0 / 1:§4.43 #23 明确 assetop.Status 不绑库值,库值由业务表自己定。
@@ -532,7 +532,7 @@ func (r *AssetOpRepo) AllocateSeqsTx(ctx context.Context, tx *sql.Tx, nowMs uint
 func (r *AssetOpRepo) InsertOp(ctx context.Context, tx *sql.Tx, rec *tradepb.TradeAssetOpRecord) error {
 	_, err := tx.ExecContext(ctx,
 		"INSERT INTO "+AssetOpTableName+" ("+assetOpColumns+") VALUES "+
-			"(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			"(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		rec.GetOpId(), rec.GetPlayerId(), rec.GetStream(), rec.GetStreamEpoch(), rec.GetSeq(),
 		int32(rec.GetKind()), int32(rec.GetStatus()), rec.GetDurable(),
 		rec.GetAttempts(), rec.GetNextAttemptMs(), rec.GetDeadlineMs(), rec.GetLeaseUntilMs(), rec.GetLeaseToken(),
@@ -541,6 +541,7 @@ func (r *AssetOpRepo) InsertOp(ctx context.Context, tx *sql.Tx, rec *tradepb.Tra
 		// 新行一律是空留痕:人工终结只由 ResolveManually 写,插入路径绝不预置操作人。
 		rec.GetResolvedBy(), rec.GetResolveReason(),
 		insertLastSendMs(rec),
+		rec.GetEscrowSnapshot(), rec.GetReceiptAckPending(), rec.GetBusinessConsumed(),
 	)
 	if err != nil {
 		return fmt.Errorf("insert %s %d: %w", AssetOpTableName, rec.GetOpId(), err)
@@ -800,6 +801,9 @@ func (r *AssetOpRepo) markPoison(ctx context.Context, opID, token, nowMs, poison
 // ABANDONED 只能经 Abandon(带令牌、六条证据齐全)写入。重投循环本来就只会传这四个,这道闸防的是绕过循环的调用者。
 // 同写 next_attempt_ms = 终结时刻(sqlFinalizeAssetOp),终态行清理按它判龄。
 func (r *AssetOpRepo) Finalize(ctx context.Context, op assetop.Op, status assetop.Status, res assetop.Result, nowMs uint64) (bool, error) {
+	if status == assetop.StatusApplied && res.Partial {
+		return false, errors.New("部分到账不得终结为完整交易成功")
+	}
 	final := StatusToRecord(status)
 	if !isFinalizableRecord(final) {
 		return false, fmt.Errorf("finalize %s %d: 终结状态非法 (%s)", AssetOpTableName, op.OpID, status)
@@ -816,6 +820,13 @@ func (r *AssetOpRepo) Finalize(ctx context.Context, op assetop.Op, status asseto
 		if !found {
 			return nil // 行已被清理:与 CAS 落空同义,不做对侧账
 		}
+		var refKind uint32
+		if err := tx.QueryRowContext(ctx, "SELECT ref_kind FROM "+AssetOpTableName+" WHERE op_id=?", op.OpID).Scan(&refKind); err != nil {
+			return err
+		}
+		if refKind == uint32(tradepb.TradeAssetOpRefKind_TRADE_ASSET_OP_REF_KIND_ORDER) && (!res.SQLCommitted || !res.Durable) {
+			return errors.New("交易合同终结缺少玩家SQL提交证据")
+		}
 		result, err := tx.ExecContext(ctx, sqlFinalizeAssetOp,
 			int32(final), uint32(res.Outcome), res.Reason, nowMs, nowMs, op.OpID, PendingStatus())
 		if err != nil {
@@ -827,6 +838,15 @@ func (r *AssetOpRepo) Finalize(ctx context.Context, op assetop.Op, status asseto
 		}
 		if affected != 1 {
 			return nil // 已被别的副本终结:不是错误,也不做对侧账
+		}
+		if res.Snapshot != nil && status == assetop.StatusApplied && op.Stream == assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT {
+			snapshot, marshalErr := proto.MarshalOptions{Deterministic: true}.Marshal(res.Snapshot)
+			if marshalErr != nil {
+				return marshalErr
+			}
+			if _, err := tx.ExecContext(ctx, "UPDATE "+AssetOpTableName+" SET escrow_snapshot=?,receipt_ack_pending=1 WHERE op_id=?", snapshot, op.OpID); err != nil {
+				return err
+			}
 		}
 		finalized = true
 		// P3 对侧账在这里(同一事务):
@@ -1221,9 +1241,9 @@ const (
 // 清理点删之前的主键点锁与终结类写者共用 sqlLockAssetOp(同一形状,见"op 行的写者:先主键点锁再 CAS")。
 const (
 	sqlListCleanupTerminalOps = "SELECT `op_id` FROM " + AssetOpTableName +
-		" WHERE `status` IN (?, ?, ?, ?) AND `next_attempt_ms` < ? ORDER BY `op_id` ASC LIMIT ?"
+		" WHERE `status` IN (?, ?, ?, ?) AND `receipt_ack_pending`=0 AND (`ref_kind`<>2 OR `business_consumed`=1) AND `next_attempt_ms` < ? ORDER BY `op_id` ASC LIMIT ?"
 	sqlCleanupTerminalOp = "DELETE FROM " + AssetOpTableName +
-		" WHERE `op_id` = ? AND `status` IN (?, ?, ?, ?) AND `next_attempt_ms` < ?"
+		" WHERE `op_id` = ? AND `status` IN (?, ?, ?, ?) AND `receipt_ack_pending`=0 AND (`ref_kind`<>2 OR `business_consumed`=1) AND `next_attempt_ms` < ?"
 )
 
 // cleanupStatuses 是可被清理的四个终态的库值,顺序即两条清理语句里 IN (?, ?, ?, ?) 的参数顺序。
@@ -1422,6 +1442,7 @@ func scanAssetOp(row rowScanner) (*tradepb.TradeAssetOpRecord, error) {
 		&rec.TxType, &refKind, &rec.RefId, &rec.Payload,
 		&rec.LastOutcome, &rec.LastReason, &rec.CreatedMs, &rec.UpdatedMs,
 		&rec.ResolvedBy, &rec.ResolveReason, &rec.LastSendMs,
+		&rec.EscrowSnapshot, &rec.ReceiptAckPending, &rec.BusinessConsumed,
 	); err != nil {
 		return nil, err
 	}

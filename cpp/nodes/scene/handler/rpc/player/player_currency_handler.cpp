@@ -19,8 +19,9 @@ namespace
 	// 第三道锁在分发入口 SceneHandler::ProcessClientPlayerMessage(guild-phase2 §S4 4.34):
 	// 它按 `Gm` 前缀拦住**全部**客户端 GM 指令,判据是同一个 SCENE_RUN_MODE。
 	// 本函数因此对客户端路径是冗余的 —— 留着不是忘了删:分发入口那道闸只管客户端
-	// 消息,而 SceneHandler::InvokePlayerService(节点路由)同样能调到下面这四条,
-	// 那条路只有这里挡得住。
+	// 消息。原先 SceneHandler::InvokePlayerService(节点路由)同样能调到下面这四条,
+	// 那条路只有这里挡得住;它已于批 7 退役并从 proto 删除(docs/design/muduo-rpc-channel.md §20),
+	// 这道闸保留作纵深防御:将来若再有路径从节点路由打到玩家 handler,不能指望它记得补闸。
 	template <typename Response>
 	bool RejectGmCurrencyRpc(const char* rpcName, Response& response)
 	{

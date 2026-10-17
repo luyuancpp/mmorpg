@@ -1,8 +1,6 @@
 #pragma once
 #include "entt/src/entt/entity/registry.hpp"
 #include "proto/common/database/player_cache.pb.h"
-#include "services/scene/player/system/bag_marshal.h"
-#include "services/scene/player/system/mission_marshal.h"
 // Unmarshal 是持久化组件的唯一创建点(emplace);Marshal 只读(try_get),不改变实体的组件集合。
 // Marshal 返回 false = 有持久化组件缺失(加载不变量被破坏),此时不写出任何零值。
 void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_database& message);
@@ -29,11 +27,19 @@ void PlayerDatabase1MessageFieldsUnmarshal(entt::entity player, const player_dat
 
 inline void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)
 {
-PlayerDatabaseMessageFieldsUnmarshal(player, message.player_database_data());
-PlayerDatabase1MessageFieldsUnmarshal(player, message.player_database_1_data());
-// 旧快照没有新增数据库字段时，仍恢复已有顶层数据。
-if (!message.player_database_data().has_bag_component() && message.has_bag_data())
-    bag_marshal::Unmarshal(player, message.bag_data());
-if (!message.player_database_data().has_mission_component() && message.has_quest_data())
-    mission_marshal::Unmarshal(player, message.quest_data());
+    // 先把旧顶层数据并入数据库记录，再统一解码，保证派生属性初始化能看到装备与任务。
+    const bool legacyBag = !message.player_database_data().has_bag_component() && message.has_bag_data();
+    const bool legacyQuest = !message.player_database_data().has_mission_component() && message.has_quest_data();
+    PlayerAllData upgraded;
+    const PlayerAllData* source = &message;
+    if (legacyBag || legacyQuest)
+    {
+        upgraded = message;
+        auto* db = upgraded.mutable_player_database_data();
+        if (legacyBag) *db->mutable_bag_component() = message.bag_data();
+        if (legacyQuest) *db->mutable_mission_component() = message.quest_data();
+        source = &upgraded;
+    }
+    PlayerDatabaseMessageFieldsUnmarshal(player, source->player_database_data());
+    PlayerDatabase1MessageFieldsUnmarshal(player, source->player_database_1_data());
 }

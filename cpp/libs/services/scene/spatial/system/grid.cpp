@@ -41,7 +41,7 @@ namespace {
 // 空间查询是只读路径,不得改变场景实体的组件集合。
 // 格子表在首次真实入格时创建;活场景没有表表示尚无入格记录,正常返回空。
 // 场景失效仍是错误,返回 nullptr,由调用方按"查不到任何实体"处理。
-// 场景句柄必须先 valid() 再 try_get:SceneEntityComp 里存的是 sceneRegistry 的句柄,场景销毁后可能已陈旧。
+// try_get 对陈旧句柄安全返回空；先 valid() 只为区分场景已销毁（错误）与尚无格子表（正常空结果）。
 const SceneGridListComp* FindSceneGridList(entt::entity actor, SceneEntity sceneEntity)
 {
     if (!tlsEcs.sceneRegistry.valid(sceneEntity)) {

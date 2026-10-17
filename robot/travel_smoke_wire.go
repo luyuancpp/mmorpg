@@ -23,8 +23,8 @@ import (
 	"robot/generated/pb/game"
 )
 
-// travelToZoneMessageId 是 TravelToZone 的消息号。号由 proto-gen 发(会先随机填 message_id.txt 的空洞,
-// 无洞才取最大值 +1),所以只按常量名引用,任何地方都不许写死数字。
+// travelToZoneMessageId 是 TravelToZone 的消息号。号由 proto-gen 发(按号升序填 message_id.txt 的空洞,
+// 无洞才取最大值 +1;墓碑号永不复用),所以只按常量名引用,任何地方都不许写死数字。
 const travelToZoneMessageId uint32 = game.SceneSceneClientPlayerTravelToZoneMessageId
 
 // newTravelToZoneRequest 构造传送请求。sceneConfigId=0 = 由目标 zone 的 scene_manager 挑默认大世界。
@@ -34,8 +34,8 @@ func newTravelToZoneRequest(targetZoneId, sceneConfigId uint32) proto.Message {
 
 // travelToZoneRejectTip 解 TravelToZone 回包体,返回同步拒绝码(0 = 已受理)。
 //
-// 只能用 id != 0 判拒绝,不能判 error_message 是否为 nil:C++ 侧 CallMethod 里的 TRANSFER_ERROR_MESSAGE
-// 宏总会 mutable 出一个 error_message,受理时它是个 id=0 的空消息。
+// 契约只保证 id 非零即拒绝；C++ 成功时不创建 error_message，
+// 但不要依赖字段是否存在。
 // "已受理"只代表 scene 已冻结玩家并开始存盘,不代表已到达:到达 = 之后收到 msg 124;
 // 受理后失败 = 之后收到 SendTipToClient(scene 已解冻,玩家留在原地)。
 func travelToZoneRejectTip(body []byte) (uint32, error) {

@@ -131,6 +131,14 @@ extern const ::google::protobuf::internal::ClassDataFull ItemGrant_class_data_;
 #else
 extern const ItemGrantGlobalsTypeInternal ItemGrant_globals_;
 #endif  // PROTOBUF_MESSAGE_GLOBALS
+class PlayerAssetSQLCommit;
+struct PlayerAssetSQLCommitGlobalsTypeInternal;
+#ifndef PROTOBUF_MESSAGE_GLOBALS
+extern PlayerAssetSQLCommitGlobalsTypeInternal PlayerAssetSQLCommit_globals_;
+extern const ::google::protobuf::internal::ClassDataFull PlayerAssetSQLCommit_class_data_;
+#else
+extern const PlayerAssetSQLCommitGlobalsTypeInternal PlayerAssetSQLCommit_globals_;
+#endif  // PROTOBUF_MESSAGE_GLOBALS
 namespace google {
 namespace protobuf {
 template <>
@@ -235,6 +243,248 @@ using ::google::protobuf::internal::generated_enum::AbslUnparseFlag;
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerAssetSQLCommit final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:PlayerAssetSQLCommit) */ {
+ public:
+  inline PlayerAssetSQLCommit() : PlayerAssetSQLCommit(nullptr) {}
+  ~PlayerAssetSQLCommit() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(PlayerAssetSQLCommit* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PlayerAssetSQLCommit));
+  }
+#endif
+
+  template <typename = void>
+  explicit constexpr PlayerAssetSQLCommit(::google::protobuf::internal::ConstantInitialized,
+                           const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+                               class_data);
+
+  inline PlayerAssetSQLCommit(const PlayerAssetSQLCommit& from) : PlayerAssetSQLCommit(nullptr, from) {}
+  inline PlayerAssetSQLCommit(PlayerAssetSQLCommit&& from) noexcept : PlayerAssetSQLCommit(nullptr, ::std::move(from)) {}
+  inline PlayerAssetSQLCommit& operator=(const PlayerAssetSQLCommit& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PlayerAssetSQLCommit& operator=(PlayerAssetSQLCommit&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  [[nodiscard]] inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  [[nodiscard]] inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL
+  mutable_unknown_fields() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  [[nodiscard]] static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL
+  GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  [[nodiscard]] static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  [[nodiscard]] static const PlayerAssetSQLCommit& default_instance() {
+    return *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<PlayerAssetSQLCommit>(&PlayerAssetSQLCommit_globals_);
+  }
+  static constexpr int kIndexInFileMessages = 9;
+  friend void swap(PlayerAssetSQLCommit& a, PlayerAssetSQLCommit& b) { a.Swap(&b); }
+  inline void Swap(PlayerAssetSQLCommit* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PlayerAssetSQLCommit* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  [[nodiscard]] PlayerAssetSQLCommit* PROTOBUF_NONNULL
+  New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PlayerAssetSQLCommit>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const PlayerAssetSQLCommit& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const PlayerAssetSQLCommit& from) { PlayerAssetSQLCommit::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  [[nodiscard]] bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  [[nodiscard]] static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  [[nodiscard]] static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  [[nodiscard]] ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] ::size_t ByteSizeLong() const final;
+  [[nodiscard]] ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  [[nodiscard]] int GetCachedSize() const {
+    return _impl_._cached_size_.Get();
+  }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(PlayerAssetSQLCommit* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "PlayerAssetSQLCommit"; }
+
+  explicit PlayerAssetSQLCommit(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PlayerAssetSQLCommit(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PlayerAssetSQLCommit& from);
+  PlayerAssetSQLCommit(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PlayerAssetSQLCommit&& from) noexcept
+      : PlayerAssetSQLCommit(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_(
+      const MessageLite& prototype,
+      const ::google::protobuf::internal::TcParseTableBase* PROTOBUF_NULLABLE tc_table = nullptr);
+
+  [[nodiscard]] ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kLedgerProtoFieldNumber = 4,
+    kPlayerIdFieldNumber = 1,
+    kOwnerEpochFieldNumber = 2,
+    kSaveSeqFieldNumber = 3,
+  };
+  // bytes ledger_proto = 4;
+  void clear_ledger_proto() ;
+  [[nodiscard]] const ::std::string& ledger_proto() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_ledger_proto(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_ledger_proto();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_ledger_proto();
+  void set_allocated_ledger_proto(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_ledger_proto() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_ledger_proto(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_ledger_proto();
+
+  public:
+  // uint64 player_id = 1;
+  void clear_player_id() ;
+  [[nodiscard]] ::uint64_t player_id() const;
+  void set_player_id(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_player_id() const;
+  void _internal_set_player_id(::uint64_t value);
+
+  public:
+  // uint64 owner_epoch = 2;
+  void clear_owner_epoch() ;
+  [[nodiscard]] ::uint64_t owner_epoch() const;
+  void set_owner_epoch(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_owner_epoch() const;
+  void _internal_set_owner_epoch(::uint64_t value);
+
+  public:
+  // uint64 save_seq = 3;
+  void clear_save_seq() ;
+  [[nodiscard]] ::uint64_t save_seq() const;
+  void set_save_seq(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_save_seq() const;
+  void _internal_set_save_seq(::uint64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:PlayerAssetSQLCommit)
+ private:
+  class _Internal;
+  using ParseTableT_ =
+      ::google::protobuf::internal::TcParseTable<2, 4,
+                          0, 0,
+                          2>;
+  static constexpr ParseTableT_ InternalGenerateParseTable_(
+      const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
+  friend class ::google::protobuf::internal::TcParser;
+  #ifndef PROTOBUF_MESSAGE_GLOBALS
+  static const ParseTableT_ _table_;
+  #endif
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  friend ::google::protobuf::internal::PrivateAccess;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                                    ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const PlayerAssetSQLCommit& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr ledger_proto_;
+    ::uint64_t player_id_;
+    ::uint64_t owner_epoch_;
+    ::uint64_t save_seq_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fcommon_2fasset_2fasset_5fop_2eproto;
+};
 // -------------------------------------------------------------------
 
 class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ItemGrant final : public ::google::protobuf::Message
@@ -812,6 +1062,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetPetInstance final : public ::g
   // accessors -------------------------------------------------------
   enum : int {
     kNameFieldNumber = 3,
+    kInstanceProtoFieldNumber = 5,
     kPetIdFieldNumber = 1,
     kPetTableIdFieldNumber = 2,
     kLevelFieldNumber = 4,
@@ -829,6 +1080,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetPetInstance final : public ::g
   const ::std::string& _internal_name() const;
   PROTOBUF_ALWAYS_INLINE void _internal_set_name(const ::std::string& value);
   ::std::string* PROTOBUF_NONNULL _internal_mutable_name();
+
+  public:
+  // bytes instance_proto = 5;
+  void clear_instance_proto() ;
+  [[nodiscard]] const ::std::string& instance_proto() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_instance_proto(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_instance_proto();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_instance_proto();
+  void set_allocated_instance_proto(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_instance_proto() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_instance_proto(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_instance_proto();
 
   public:
   // uint64 pet_id = 1;
@@ -865,7 +1131,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetPetInstance final : public ::g
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 4,
+      ::google::protobuf::internal::TcParseTable<3, 5,
                           0, 29,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -895,6 +1161,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetPetInstance final : public ::g
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr name_;
+    ::google::protobuf::internal::ArenaStringPtr instance_proto_;
     ::uint64_t pet_id_;
     ::uint32_t pet_table_id_;
     ::uint32_t level_;
@@ -1288,10 +1555,26 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetItemInstance final : public ::
 
   // accessors -------------------------------------------------------
   enum : int {
+    kInstanceProtoFieldNumber = 4,
     kItemUuidFieldNumber = 1,
     kConfigIdFieldNumber = 2,
     kStackSizeFieldNumber = 3,
   };
+  // bytes instance_proto = 4;
+  void clear_instance_proto() ;
+  [[nodiscard]] const ::std::string& instance_proto() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_instance_proto(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_instance_proto();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_instance_proto();
+  void set_allocated_instance_proto(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_instance_proto() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_instance_proto(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_instance_proto();
+
+  public:
   // uint64 item_uuid = 1;
   void clear_item_uuid() ;
   [[nodiscard]] ::uint64_t item_uuid() const;
@@ -1326,7 +1609,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetItemInstance final : public ::
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 3,
+      ::google::protobuf::internal::TcParseTable<2, 4,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -1355,6 +1638,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetItemInstance final : public ::
         const AssetItemInstance& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr instance_proto_;
     ::uint64_t item_uuid_;
     ::uint32_t config_id_;
     ::uint32_t stack_size_;
@@ -1764,6 +2048,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetBundle final : public ::google
     kCurrenciesFieldNumber = 1,
     kItemsFieldNumber = 2,
     kItemUuidsFieldNumber = 3,
+    kItemInstancesFieldNumber = 5,
+    kPetInstanceFieldNumber = 6,
     kPetIdFieldNumber = 4,
   };
   // repeated .CurrencyAmount currencies = 1;
@@ -1828,6 +2114,43 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetBundle final : public ::google
   ::google::protobuf::RepeatedField<::uint64_t>* PROTOBUF_NONNULL _internal_mutable_item_uuids();
 
   public:
+  // repeated .AssetItemInstance item_instances = 5;
+  [[nodiscard]] int item_instances_size()
+      const;
+  private:
+  int _internal_item_instances_size() const;
+
+  public:
+  void clear_item_instances() ;
+  [[nodiscard]] const ::AssetItemInstance& item_instances(int index) const;
+  [[nodiscard]] ::AssetItemInstance* PROTOBUF_NONNULL mutable_item_instances(int index);
+  ::AssetItemInstance* PROTOBUF_NONNULL add_item_instances();
+  [[nodiscard]] const ::google::protobuf::RepeatedPtrField<::AssetItemInstance>&
+  item_instances() const;
+  [[nodiscard]] ::google::protobuf::RepeatedPtrField<::AssetItemInstance>* PROTOBUF_NONNULL
+  mutable_item_instances();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::AssetItemInstance>& _internal_item_instances() const;
+  ::google::protobuf::RepeatedPtrField<::AssetItemInstance>* PROTOBUF_NONNULL _internal_mutable_item_instances();
+
+  public:
+  // .AssetPetInstance pet_instance = 6;
+  [[nodiscard]] bool has_pet_instance()
+      const;
+  void clear_pet_instance() ;
+  [[nodiscard]] const ::AssetPetInstance& pet_instance() const;
+  [[nodiscard]] ::AssetPetInstance* PROTOBUF_NULLABLE release_pet_instance();
+  ::AssetPetInstance* PROTOBUF_NONNULL mutable_pet_instance();
+  void set_allocated_pet_instance(::AssetPetInstance* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_pet_instance(::AssetPetInstance* PROTOBUF_NULLABLE value);
+  ::AssetPetInstance* PROTOBUF_NULLABLE unsafe_arena_release_pet_instance();
+
+  private:
+  const ::AssetPetInstance& _internal_pet_instance() const;
+  ::AssetPetInstance* PROTOBUF_NONNULL _internal_mutable_pet_instance();
+
+  public:
   // uint64 pet_id = 4;
   void clear_pet_id() ;
   [[nodiscard]] ::uint64_t pet_id() const;
@@ -1842,8 +2165,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetBundle final : public ::google
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 4,
-                          2, 0,
+      ::google::protobuf::internal::TcParseTable<3, 6,
+                          4, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
       const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL class_data);
@@ -1875,6 +2198,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AssetBundle final : public ::google
     ::google::protobuf::RepeatedPtrField< ::ItemGrant > items_;
     ::google::protobuf::RepeatedField<::uint64_t> item_uuids_;
     ::google::protobuf::internal::CachedSize _item_uuids_cached_byte_size_;
+    ::google::protobuf::RepeatedPtrField< ::AssetItemInstance > item_instances_;
+    ::AssetPetInstance* PROTOBUF_NULLABLE pet_instance_;
     ::uint64_t pet_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2725,7 +3050,7 @@ AssetBundle::_internal_mutable_item_uuids() {
 inline void AssetBundle::clear_pet_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.pet_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
 }
 inline ::uint64_t AssetBundle::pet_id() const {
   // @@protoc_insertion_point(field_get:AssetBundle.pet_id)
@@ -2733,7 +3058,7 @@ inline ::uint64_t AssetBundle::pet_id() const {
 }
 inline void AssetBundle::set_pet_id(::uint64_t value) {
   _internal_set_pet_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:AssetBundle.pet_id)
 }
 inline ::uint64_t AssetBundle::_internal_pet_id() const {
@@ -2743,6 +3068,159 @@ inline ::uint64_t AssetBundle::_internal_pet_id() const {
 inline void AssetBundle::_internal_set_pet_id(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.pet_id_ = value;
+}
+
+// repeated .AssetItemInstance item_instances = 5;
+inline int AssetBundle::_internal_item_instances_size() const {
+  return _internal_item_instances().size();
+}
+inline int AssetBundle::item_instances_size() const {
+  return _internal_item_instances_size();
+}
+inline void AssetBundle::clear_item_instances() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.item_instances_.Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline const ::AssetItemInstance& AssetBundle::item_instances(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:AssetBundle.item_instances)
+  return _internal_item_instances().Get(index);
+}
+inline ::AssetItemInstance* PROTOBUF_NONNULL AssetBundle::mutable_item_instances(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:AssetBundle.item_instances)
+  return _internal_mutable_item_instances()->Mutable(index);
+}
+inline ::AssetItemInstance* PROTOBUF_NONNULL AssetBundle::add_item_instances()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::AssetItemInstance* _add =
+      _internal_mutable_item_instances()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_add:AssetBundle.item_instances)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::AssetItemInstance>& AssetBundle::item_instances() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:AssetBundle.item_instances)
+  return _internal_item_instances();
+}
+inline ::google::protobuf::RepeatedPtrField<::AssetItemInstance>* PROTOBUF_NONNULL
+AssetBundle::mutable_item_instances() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_mutable_list:AssetBundle.item_instances)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_item_instances();
+}
+inline const ::google::protobuf::RepeatedPtrField<::AssetItemInstance>&
+AssetBundle::_internal_item_instances() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.item_instances_;
+}
+inline ::google::protobuf::RepeatedPtrField<::AssetItemInstance>* PROTOBUF_NONNULL
+AssetBundle::_internal_mutable_item_instances() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.item_instances_;
+}
+
+// .AssetPetInstance pet_instance = 6;
+inline bool AssetBundle::has_pet_instance() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000010U);
+  PROTOBUF_ASSUME(!value || _impl_.pet_instance_ != nullptr);
+  return value;
+}
+inline void AssetBundle::clear_pet_instance() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.pet_instance_ != nullptr) _impl_.pet_instance_->Clear();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline const ::AssetPetInstance& AssetBundle::_internal_pet_instance() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::AssetPetInstance* p = _impl_.pet_instance_;
+  return p != nullptr ? *p : *::google::protobuf::internal::MessageGlobalsBase::ToDefaultInstance<::AssetPetInstance>(&::AssetPetInstance_globals_);
+}
+inline const ::AssetPetInstance& AssetBundle::pet_instance() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:AssetBundle.pet_instance)
+  return _internal_pet_instance();
+}
+inline void AssetBundle::unsafe_arena_set_allocated_pet_instance(
+    ::AssetPetInstance* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.pet_instance_);
+  }
+  _impl_.pet_instance_ = reinterpret_cast<::AssetPetInstance*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:AssetBundle.pet_instance)
+}
+inline ::AssetPetInstance* PROTOBUF_NULLABLE AssetBundle::release_pet_instance() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::AssetPetInstance* released = _impl_.pet_instance_;
+  _impl_.pet_instance_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::AssetPetInstance* PROTOBUF_NULLABLE AssetBundle::unsafe_arena_release_pet_instance() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:AssetBundle.pet_instance)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::AssetPetInstance* temp = _impl_.pet_instance_;
+  _impl_.pet_instance_ = nullptr;
+  return temp;
+}
+inline ::AssetPetInstance* PROTOBUF_NONNULL AssetBundle::_internal_mutable_pet_instance() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.pet_instance_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::AssetPetInstance>(GetArena());
+    _impl_.pet_instance_ = reinterpret_cast<::AssetPetInstance*>(p);
+  }
+  return _impl_.pet_instance_;
+}
+inline ::AssetPetInstance* PROTOBUF_NONNULL AssetBundle::mutable_pet_instance()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  ::AssetPetInstance* _msg = _internal_mutable_pet_instance();
+  // @@protoc_insertion_point(field_mutable:AssetBundle.pet_instance)
+  return _msg;
+}
+inline void AssetBundle::set_allocated_pet_instance(::AssetPetInstance* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.pet_instance_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+  }
+
+  _impl_.pet_instance_ = reinterpret_cast<::AssetPetInstance*>(value);
+  // @@protoc_insertion_point(field_set_allocated:AssetBundle.pet_instance)
 }
 
 // -------------------------------------------------------------------
@@ -3253,7 +3731,7 @@ inline void AssetOpRequest::set_allocated_auth(::AssetOpAuth* PROTOBUF_NULLABLE 
 inline void AssetItemInstance::clear_item_uuid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.item_uuid_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
 }
 inline ::uint64_t AssetItemInstance::item_uuid() const {
   // @@protoc_insertion_point(field_get:AssetItemInstance.item_uuid)
@@ -3261,7 +3739,7 @@ inline ::uint64_t AssetItemInstance::item_uuid() const {
 }
 inline void AssetItemInstance::set_item_uuid(::uint64_t value) {
   _internal_set_item_uuid(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   // @@protoc_insertion_point(field_set:AssetItemInstance.item_uuid)
 }
 inline ::uint64_t AssetItemInstance::_internal_item_uuid() const {
@@ -3277,7 +3755,7 @@ inline void AssetItemInstance::_internal_set_item_uuid(::uint64_t value) {
 inline void AssetItemInstance::clear_config_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.config_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint32_t AssetItemInstance::config_id() const {
   // @@protoc_insertion_point(field_get:AssetItemInstance.config_id)
@@ -3285,7 +3763,7 @@ inline ::uint32_t AssetItemInstance::config_id() const {
 }
 inline void AssetItemInstance::set_config_id(::uint32_t value) {
   _internal_set_config_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:AssetItemInstance.config_id)
 }
 inline ::uint32_t AssetItemInstance::_internal_config_id() const {
@@ -3301,7 +3779,7 @@ inline void AssetItemInstance::_internal_set_config_id(::uint32_t value) {
 inline void AssetItemInstance::clear_stack_size() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.stack_size_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint32_t AssetItemInstance::stack_size() const {
   // @@protoc_insertion_point(field_get:AssetItemInstance.stack_size)
@@ -3309,7 +3787,7 @@ inline ::uint32_t AssetItemInstance::stack_size() const {
 }
 inline void AssetItemInstance::set_stack_size(::uint32_t value) {
   _internal_set_stack_size(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:AssetItemInstance.stack_size)
 }
 inline ::uint32_t AssetItemInstance::_internal_stack_size() const {
@@ -3321,6 +3799,70 @@ inline void AssetItemInstance::_internal_set_stack_size(::uint32_t value) {
   _impl_.stack_size_ = value;
 }
 
+// bytes instance_proto = 4;
+inline void AssetItemInstance::clear_instance_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.instance_proto_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& AssetItemInstance::instance_proto() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:AssetItemInstance.instance_proto)
+  return _internal_instance_proto();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void AssetItemInstance::set_instance_proto(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.instance_proto_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:AssetItemInstance.instance_proto)
+}
+inline ::std::string* PROTOBUF_NONNULL AssetItemInstance::mutable_instance_proto()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_instance_proto();
+  // @@protoc_insertion_point(field_mutable:AssetItemInstance.instance_proto)
+  return _s;
+}
+inline const ::std::string& AssetItemInstance::_internal_instance_proto() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.instance_proto_.Get();
+}
+inline void AssetItemInstance::_internal_set_instance_proto(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.instance_proto_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL AssetItemInstance::_internal_mutable_instance_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.instance_proto_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE AssetItemInstance::release_instance_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:AssetItemInstance.instance_proto)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.instance_proto_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.instance_proto_.Set("", GetArena());
+  }
+  return released;
+}
+inline void AssetItemInstance::set_allocated_instance_proto(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.instance_proto_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.instance_proto_.IsDefault()) {
+    _impl_.instance_proto_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:AssetItemInstance.instance_proto)
+}
+
 // -------------------------------------------------------------------
 
 // AssetPetInstance
@@ -3329,7 +3871,7 @@ inline void AssetItemInstance::_internal_set_stack_size(::uint32_t value) {
 inline void AssetPetInstance::clear_pet_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.pet_id_ = ::uint64_t{0u};
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
 }
 inline ::uint64_t AssetPetInstance::pet_id() const {
   // @@protoc_insertion_point(field_get:AssetPetInstance.pet_id)
@@ -3337,7 +3879,7 @@ inline ::uint64_t AssetPetInstance::pet_id() const {
 }
 inline void AssetPetInstance::set_pet_id(::uint64_t value) {
   _internal_set_pet_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:AssetPetInstance.pet_id)
 }
 inline ::uint64_t AssetPetInstance::_internal_pet_id() const {
@@ -3353,7 +3895,7 @@ inline void AssetPetInstance::_internal_set_pet_id(::uint64_t value) {
 inline void AssetPetInstance::clear_pet_table_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.pet_table_id_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
 }
 inline ::uint32_t AssetPetInstance::pet_table_id() const {
   // @@protoc_insertion_point(field_get:AssetPetInstance.pet_table_id)
@@ -3361,7 +3903,7 @@ inline ::uint32_t AssetPetInstance::pet_table_id() const {
 }
 inline void AssetPetInstance::set_pet_table_id(::uint32_t value) {
   _internal_set_pet_table_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:AssetPetInstance.pet_table_id)
 }
 inline ::uint32_t AssetPetInstance::_internal_pet_table_id() const {
@@ -3441,7 +3983,7 @@ inline void AssetPetInstance::set_allocated_name(::std::string* PROTOBUF_NULLABL
 inline void AssetPetInstance::clear_level() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.level_ = 0u;
-  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
 }
 inline ::uint32_t AssetPetInstance::level() const {
   // @@protoc_insertion_point(field_get:AssetPetInstance.level)
@@ -3449,7 +3991,7 @@ inline ::uint32_t AssetPetInstance::level() const {
 }
 inline void AssetPetInstance::set_level(::uint32_t value) {
   _internal_set_level(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:AssetPetInstance.level)
 }
 inline ::uint32_t AssetPetInstance::_internal_level() const {
@@ -3459,6 +4001,70 @@ inline ::uint32_t AssetPetInstance::_internal_level() const {
 inline void AssetPetInstance::_internal_set_level(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.level_ = value;
+}
+
+// bytes instance_proto = 5;
+inline void AssetPetInstance::clear_instance_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.instance_proto_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline const ::std::string& AssetPetInstance::instance_proto() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:AssetPetInstance.instance_proto)
+  return _internal_instance_proto();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void AssetPetInstance::set_instance_proto(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.instance_proto_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:AssetPetInstance.instance_proto)
+}
+inline ::std::string* PROTOBUF_NONNULL AssetPetInstance::mutable_instance_proto()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_instance_proto();
+  // @@protoc_insertion_point(field_mutable:AssetPetInstance.instance_proto)
+  return _s;
+}
+inline const ::std::string& AssetPetInstance::_internal_instance_proto() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.instance_proto_.Get();
+}
+inline void AssetPetInstance::_internal_set_instance_proto(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.instance_proto_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL AssetPetInstance::_internal_mutable_instance_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.instance_proto_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE AssetPetInstance::release_instance_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:AssetPetInstance.instance_proto)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.instance_proto_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.instance_proto_.Set("", GetArena());
+  }
+  return released;
+}
+inline void AssetPetInstance::set_allocated_instance_proto(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.instance_proto_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.instance_proto_.IsDefault()) {
+    _impl_.instance_proto_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:AssetPetInstance.instance_proto)
 }
 
 // -------------------------------------------------------------------
@@ -3981,6 +4587,146 @@ inline void AssetOpResponse::set_allocated_snapshot(::AssetSnapshot* PROTOBUF_NU
 
   _impl_.snapshot_ = reinterpret_cast<::AssetSnapshot*>(value);
   // @@protoc_insertion_point(field_set_allocated:AssetOpResponse.snapshot)
+}
+
+// -------------------------------------------------------------------
+
+// PlayerAssetSQLCommit
+
+// uint64 player_id = 1;
+inline void PlayerAssetSQLCommit::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+}
+inline ::uint64_t PlayerAssetSQLCommit::player_id() const {
+  // @@protoc_insertion_point(field_get:PlayerAssetSQLCommit.player_id)
+  return _internal_player_id();
+}
+inline void PlayerAssetSQLCommit::set_player_id(::uint64_t value) {
+  _internal_set_player_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:PlayerAssetSQLCommit.player_id)
+}
+inline ::uint64_t PlayerAssetSQLCommit::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_;
+}
+inline void PlayerAssetSQLCommit::_internal_set_player_id(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_ = value;
+}
+
+// uint64 owner_epoch = 2;
+inline void PlayerAssetSQLCommit::clear_owner_epoch() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_epoch_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint64_t PlayerAssetSQLCommit::owner_epoch() const {
+  // @@protoc_insertion_point(field_get:PlayerAssetSQLCommit.owner_epoch)
+  return _internal_owner_epoch();
+}
+inline void PlayerAssetSQLCommit::set_owner_epoch(::uint64_t value) {
+  _internal_set_owner_epoch(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:PlayerAssetSQLCommit.owner_epoch)
+}
+inline ::uint64_t PlayerAssetSQLCommit::_internal_owner_epoch() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.owner_epoch_;
+}
+inline void PlayerAssetSQLCommit::_internal_set_owner_epoch(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.owner_epoch_ = value;
+}
+
+// uint64 save_seq = 3;
+inline void PlayerAssetSQLCommit::clear_save_seq() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.save_seq_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t PlayerAssetSQLCommit::save_seq() const {
+  // @@protoc_insertion_point(field_get:PlayerAssetSQLCommit.save_seq)
+  return _internal_save_seq();
+}
+inline void PlayerAssetSQLCommit::set_save_seq(::uint64_t value) {
+  _internal_set_save_seq(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:PlayerAssetSQLCommit.save_seq)
+}
+inline ::uint64_t PlayerAssetSQLCommit::_internal_save_seq() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.save_seq_;
+}
+inline void PlayerAssetSQLCommit::_internal_set_save_seq(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.save_seq_ = value;
+}
+
+// bytes ledger_proto = 4;
+inline void PlayerAssetSQLCommit::clear_ledger_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ledger_proto_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+}
+inline const ::std::string& PlayerAssetSQLCommit::ledger_proto() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:PlayerAssetSQLCommit.ledger_proto)
+  return _internal_ledger_proto();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PlayerAssetSQLCommit::set_ledger_proto(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.ledger_proto_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:PlayerAssetSQLCommit.ledger_proto)
+}
+inline ::std::string* PROTOBUF_NONNULL PlayerAssetSQLCommit::mutable_ledger_proto()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_ledger_proto();
+  // @@protoc_insertion_point(field_mutable:PlayerAssetSQLCommit.ledger_proto)
+  return _s;
+}
+inline const ::std::string& PlayerAssetSQLCommit::_internal_ledger_proto() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.ledger_proto_.Get();
+}
+inline void PlayerAssetSQLCommit::_internal_set_ledger_proto(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ledger_proto_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PlayerAssetSQLCommit::_internal_mutable_ledger_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.ledger_proto_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PlayerAssetSQLCommit::release_ledger_proto() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:PlayerAssetSQLCommit.ledger_proto)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.ledger_proto_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.ledger_proto_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PlayerAssetSQLCommit::set_allocated_ledger_proto(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.ledger_proto_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.ledger_proto_.IsDefault()) {
+    _impl_.ledger_proto_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:PlayerAssetSQLCommit.ledger_proto)
 }
 
 #ifdef __GNUC__

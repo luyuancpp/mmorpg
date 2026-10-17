@@ -920,11 +920,12 @@ const char descriptor_table_protodef_proto_2fplayer_5finbox_2fplayer_5finbox_5ft
     "operator\030\006 \001(\t\022\021\n\tpeer_addr\030\007 \001(\t\022\016\n\006rea"
     "son\030\010 \001(\t\022\022\n\ncreated_ms\030\t \001(\004:G\212\222\364\001\022play"
     "er_inbox_audit\222\222\364\001!shard,player_id,domai"
-    "n,seq,action\250\223\364\001\001\260\223\364\001\004*z\n\026PlayerInboxAud"
-    "itAction\022\"\n\036PLAYER_INBOX_AUDIT_UNSPECIFI"
-    "ED\020\000\022\037\n\033PLAYER_INBOX_AUDIT_SANCTION\020\001\022\033\n"
-    "\027PLAYER_INBOX_AUDIT_VOID\020\002B\033Z\031player_inb"
-    "ox/player_inboxb\006proto3"
+    "n,seq,action\250\223\364\001\001\260\223\364\001\004*\235\001\n\026PlayerInboxAu"
+    "ditAction\022\"\n\036PLAYER_INBOX_AUDIT_UNSPECIF"
+    "IED\020\000\022\037\n\033PLAYER_INBOX_AUDIT_SANCTION\020\001\022\033"
+    "\n\027PLAYER_INBOX_AUDIT_VOID\020\002\022!\n\035PLAYER_IN"
+    "BOX_AUDIT_FORCE_VOID\020\003B\033Z\031player_inbox/p"
+    "layer_inboxb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_5ftable_2eproto_deps[1] = {
@@ -934,7 +935,7 @@ static ::absl::once_flag descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbo
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_5ftable_2eproto = {
     false,
     false,
-    1423,
+    1459,
     descriptor_table_protodef_proto_2fplayer_5finbox_2fplayer_5finbox_5ftable_2eproto,
     "proto/player_inbox/player_inbox_table.proto",
     &descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_5ftable_2eproto_once,
@@ -954,7 +955,7 @@ PlayerInboxAuditAction_descriptor() {
   return file_level_enum_descriptors_proto_2fplayer_5finbox_2fplayer_5finbox_5ftable_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t PlayerInboxAuditAction_internal_data_[] = {
-    196608u, 0u, };
+    262144u, 0u, };
 // ===================================================================
 
 player_inbox_stream::player_inbox_stream(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)

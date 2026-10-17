@@ -20,7 +20,11 @@ import (
 
 // generateClassNameFromFile generates a C++ class name from a proto file name (underscore to upper camel case) with a suffix.
 func generateClassNameFromFile(file os.DirEntry, suffix string) string {
-	baseName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+	return generateClassNameFromProtoName(file.Name(), suffix)
+}
+
+func generateClassNameFromProtoName(name, suffix string) string {
+	baseName := strings.TrimSuffix(name, filepath.Ext(name))
 	parts := strings.Split(baseName, "_")
 	title := cases.Title(language.English)
 
@@ -198,6 +202,39 @@ type EventHandlerMessage struct {
 	IsLast        bool
 }
 
+// Kafka handler 只接受显式入口事件,顺序沿用 proto,不再为内部消息生成空 handler。
+func kafkaIngressMessages(protoRelativeDir string, file os.DirEntry, messages []string) []string {
+	protoInclude := filepath.ToSlash(filepath.Join(_config.Global.DirectoryNames.ProtoDirName, protoRelativeDir,
+		strings.Replace(file.Name(), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.PbH, 1)))
+	allowed := make(map[string]struct{})
+	for _, event := range globalProtoEventList {
+		if event.ProtoInclude == protoInclude && event.Ingress != eventIngressNone {
+			allowed[event.MessageName] = struct{}{}
+		}
+	}
+	var result []string
+	for _, message := range messages {
+		if _, ok := allowed[message]; ok {
+			result = append(result, message)
+		}
+	}
+	return result
+}
+
+func filterKafkaIngressFiles(protoRelativeDir string, files []os.DirEntry) []os.DirEntry {
+	var result []os.DirEntry
+	for _, file := range files {
+		messages, err := parseProtoMessages(filepath.Join(_config.Global.Paths.ProtoDir, protoRelativeDir, file.Name()))
+		if err != nil {
+			logger.Global.Fatal("读取 Kafka 入口 proto 失败", zap.String("file", file.Name()), zap.Error(err))
+		}
+		if len(kafkaIngressMessages(protoRelativeDir, file, messages)) > 0 {
+			result = append(result, file)
+		}
+	}
+	return result
+}
+
 // generateEventHandlerFiles generates .h and .cpp files for each proto using templates.
 func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelativeDir string, outputDir string) {
 	defer wg.Done()
@@ -209,6 +246,10 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelati
 			zap.String("proto_file", protoFilePath),
 			zap.Error(err),
 		)
+		return
+	}
+	eventMessages = kafkaIngressMessages(protoRelativeDir, file, eventMessages)
+	if len(eventMessages) == 0 {
 		return
 	}
 
@@ -314,7 +355,7 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 			zap.Error(err),
 		)
 	}
-	logicEventFiles = filterProtoFiles(logicEventFiles)
+	logicEventFiles = filterKafkaIngressFiles(_config.Global.PathLists.ProtoDirs.LogicEvent, filterProtoFiles(logicEventFiles))
 
 	for _, file := range logicEventFiles {
 		wg.Add(1)
@@ -330,7 +371,7 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 				zap.Error(readErr),
 			)
 		} else {
-			kafkaContractFiles = filterProtoFilesBySuffix(files, "_event.proto")
+			kafkaContractFiles = filterKafkaIngressFiles(_config.Global.PathLists.ProtoDirs.ContractsKafka, filterProtoFilesBySuffix(files, "_event.proto"))
 			for _, file := range kafkaContractFiles {
 				wg.Add(1)
 				go generateEventHandlerFiles(wg, file, _config.Global.PathLists.ProtoDirs.ContractsKafka, _config.Global.Paths.GateNodeEventHandlerDirectory)
@@ -338,74 +379,6 @@ func GenerateAllEventHandlers(wg *sync.WaitGroup) {
 		}
 	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err = GenerateEventHandlersTemplate(logicEventFiles, _config.Global.Paths.SceneNodeEventHandlerDirectory); err != nil {
-			logger.Global.Fatal("Failed to generate event handler template",
-				zap.String("dir", _config.Global.Paths.SceneNodeEventHandlerDirectory),
-				zap.Error(err),
-			)
-			return
-		}
-		if len(kafkaContractFiles) > 0 {
-			if err = GenerateEventHandlersTemplate(kafkaContractFiles, _config.Global.Paths.GateNodeEventHandlerDirectory); err != nil {
-				logger.Global.Fatal("Failed to generate Gate event handler template",
-					zap.String("dir", _config.Global.Paths.GateNodeEventHandlerDirectory),
-					zap.Error(err),
-				)
-				return
-			}
-		}
-	}()
-}
-
-func GenerateEventHandlersTemplate(protoFiles []os.DirEntry, outputDir string) error {
-	// Prepare the dynamic data
-	var cppIncludeData, registerData, unRegisterData string
-	for _, protoFile := range protoFiles {
-		if !strings.HasSuffix(protoFile.Name(), _config.Global.FileExtensions.Proto) {
-			continue
-		}
-
-		cppIncludeData += _config.Global.Naming.IncludeBegin + strings.Replace(filepath.Base(strings.ToLower(protoFile.Name())), _config.Global.FileExtensions.Proto, _config.Global.FileExtensions.HandlerH, 1) + _config.Global.Naming.IncludeEndLine
-
-		className := generateClassNameFromFile(protoFile, _config.Global.Naming.HandlerFile)
-		registerData += className + "::Register();\n"
-		unRegisterData += className + "::UnRegister();\n"
-	}
-
-	eventCppData := struct {
-		IncludeBegin               string
-		EventHandlerHeaderFileName string
-		IncludeEndLine             string
-		CppIncludeData             string
-		RegisterData               string
-		UnRegisterData             string
-	}{
-		IncludeBegin:               _config.Global.Naming.IncludeBegin,
-		EventHandlerHeaderFileName: _config.Global.Naming.EventHandlerBase + _config.Global.FileExtensions.Header,
-		IncludeEndLine:             _config.Global.Naming.IncludeEndLine,
-		CppIncludeData:             cppIncludeData,
-		RegisterData:               registerData,
-		UnRegisterData:             unRegisterData,
-	}
-
-	headerFilePath := filepath.Join(outputDir, _config.Global.Naming.EventHandlerBase+_config.Global.FileExtensions.Header)
-	cppFilePath := filepath.Join(outputDir, _config.Global.Naming.EventHandlerBase+_config.Global.FileExtensions.Cpp)
-	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.h.tmpl", headerFilePath, nil); err != nil {
-		logger.Global.Error("Failed to generate aggregate header file",
-			zap.String("header_file", headerFilePath),
-			zap.Error(err),
-		)
-	}
-	if err := utils2.RenderTemplateToFile("internal/template/event_handler_total.cpp.tmpl", cppFilePath, eventCppData); err != nil {
-		logger.Global.Error("Failed to generate aggregate cpp file",
-			zap.String("cpp_file", cppFilePath),
-			zap.Error(err),
-		)
-	}
-	return nil
 }
 
 type Config struct {

@@ -635,7 +635,9 @@ namespace player_exit
 	// player_database_1 的 stress_test_probe 剔掉:压测探针只在真正写盘的那份上打(SavePlayerToRedis 在快路径
 	// 比对之后才 Stamp),落地的 message 带着 test_seq / test_sig,而新 marshal 的不带;不剔的话开了
 	// STRESS_TEST_PROBE 的构建永远判"不一致",退出永不收敛。其余字段用 dirty_save::IsEqual(与快路径同一把尺子)。
-	// 入参不改;内部各拷一份再剔。只在退出落地回调里调,不在逐帧路径上。
+	// 同样剔掉存盘元数据 last_save_seq 与两张子表的 fence_*(db-write-fencing-mysql.md §7.3):落地的那份带着发号写入的
+	// 序号、当前 marshal 不带,两笔存盘在途时两边序号也不同;不剔的话退出永不收敛。
+	// 入参不改;内部各拷一份再剔。只在退出收敛 / 交接路径上调,不在每次存盘的快路径上(快路径直接比 dirty_save::IsEqual)。
 	bool IsPersistedPayloadCurrent(const PlayerAllData& landed, const PlayerAllData& current);
 } // namespace player_exit
 
@@ -1081,6 +1083,8 @@ public:
 	// 落库目的地由 PlayerHomeZoneComp 决定(CZ-2),Redis 写带 owner_epoch CAS(CZ-4 ①),
 	// DBTask 带 owner_epoch(reentry-barrier §6.3)。
 	static bool SavePlayerToRedis(entt::entity player);
+	// 资产重查可重建丢失的 SQL 提交证据，必须重投当前整份载荷，不能被 Redis 快照相等跳过。
+	static bool SavePlayerForAssetCommit(entt::entity player);
 
 	// ── 归属交接:源端释放链(CZ-5)──────────────────────────────────────────────
 	// 跨 zone 传送与同 zone 跨节点换图共用同一条链,区别只有目标 zone 是不是本 zone。
@@ -1097,9 +1101,10 @@ public:
 	// 改那边必须同步这里。全 C++ 只此一处定义,别处一律引用它,不许再写字面量 18。
 	static constexpr uint32_t kSmErrHandoffPending = 18;
 
-	// scene_manager.EnterScene 的另外七个拒绝码,只供下面的 SmRejectedBeforeAnyPlacementWrite 使用。与
+	// scene_manager.EnterScene 的另外八个拒绝码,只供下面的 SmRejectedBeforeAnyPlacementWrite 使用。与
 	// kSmErrHandoffPending 同一条纪律:数值手抄自 go/scene_manager/internal/constants/errors.go(依次是 ErrNoAvailableNode /
-	// ErrInvalidNodeID / ErrInvalidGateID / ErrRedis / ErrSceneReentryBarrier / ErrHomeZoneUnavailable / ErrHomeZoneMerging),
+	// ErrInvalidNodeID / ErrInvalidGateID / ErrRedis / ErrSceneReentryBarrier / ErrHomeZoneUnavailable / ErrHomeZoneMerging /
+	// ErrPlacementSessionSuperseded),
 	// 走的是 scene_manager 自己的 error_code 轴、两边没有共享的生成物,改那边必须同步这里;全 C++ 只此一处定义,
 	// 别处一律引用具名常量,不许再写字面量。
 	static constexpr uint32_t kSmErrNoAvailableNode = 1;
@@ -1109,6 +1114,9 @@ public:
 	static constexpr uint32_t kSmErrSceneReentryBarrier = 17;
 	static constexpr uint32_t kSmErrHomeZoneUnavailable = 20;
 	static constexpr uint32_t kSmErrHomeZoneMerging = 21;
+	// 落点会话身份已被更新的登录取代(stale 或 conflict),scene_manager 一个字节都没改;陈旧请求方不应以同一会话重试
+	// (docs/design/scene-enter-chain-residuals.md §5.2 ⑤)。交接收到它走 ResolveTravelOutcome(kFailed),与其余非 0 码相同。
+	static constexpr uint32_t kSmErrPlacementSessionSuperseded = 25;
 
 	// scene_manager 以 smErrorCode 拒绝了一条 EnterScene 时,这次拒绝是否**一定**发生在该请求的任何落点写之前。
 	// 唯一用途:疏散 / 排空改派被拒、之后又连续读不到 Redis 时,决定能不能不经核实就踢(relocate_confirm::ShouldKickUnverified
@@ -1116,6 +1124,8 @@ public:
 	// 判据:该码在 go/scene_manager/internal/logic/enterscenelogic.go(含 home_zone.go)里的**每一个**出处都早于本请求的
 	//   落点写(铸造 owner_epoch / CAS 写 location)。同节点的 owner_epoch 补种只是把丢失的键按 location 记的值 SETNX 回去,
 	//   不改变玩家在哪,不算落点写。18 的两个出处都满足:换手门只读;落点 Lua 发现标记已不是预检那一份时什么都不改。
+	//   25 的唯一出处是落点会话身份判定 decidePlacementIdentity,它排在一切预占、补种、落点写与路由之前
+	//   (Go 侧 errors.go 的注释写明「只许在任何落点写之前返回」)。
 	// 被排除的码(一律 false),各有一个"落点可能已写"的出处:
 	//   7  ErrKafkaRoute        既可能是 Kafka writer 为空的前置拒绝,也可能出在落点已写之后的推路由失败 —— 回滚成没成都回 7,
 	//                           回滚没成(所凭标记已被目标节点删掉)等于已放行到别处;
@@ -1137,6 +1147,7 @@ public:
 		case kSmErrHandoffPending:
 		case kSmErrHomeZoneUnavailable:
 		case kSmErrHomeZoneMerging:
+		case kSmErrPlacementSessionSuperseded:
 			return true;
 		default:
 			return false;
@@ -1239,8 +1250,20 @@ public:
 	static void DispatchEnterSceneTransportFailure(const ::scene_manager::EnterSceneRequest& req, const std::string& reason);
 
 	// 交接是否已经发起(handoff 标记已写、EnterScene 已发)。此后本实体的去留只由 EnterScene 应答与
-	// 看门狗裁决:ReleasePlayer 不得把它推进退出流程(见 scene_node_service.cpp HandleReleasePlayer)。
+	// 看门狗裁决:ReleasePlayer 不得把它推进退出流程(见 HandleReleaseFromSceneManager)。
 	static bool IsHandoffRequested(entt::entity player);
+
+	// scene_manager.ReleasePlayer 的系统层入口(scene_node_service.cpp 的 HandleReleasePlayer 只委托到这里)。
+	// 设计:docs/design/scene-enter-chain-residuals.md §4。按顺序:
+	//   1. playerList 里找不到 → 计 not_found,DEBUG,幂等返回;
+	//   2. 读 IsHandoffRequested,用 try_get 只读 PlayerOwnerEpochComp(缺失按 0),调纯判定 release_fence::Decide 并计数;
+	//   3. 判为忽略(交接在途 / 迟到的旧释放 / 期望超前于缓存)→ 记日志后返回,**不**调 HandleExitGameNode,
+	//      也不做 MergeExitCause 或超限重踢,不碰会话、待入场上下文、改派票据、待确认条目与退出意图;
+	//   4. 判为释放 → HandleExitGameNode(kReleasedByTransfer)。
+	// expectedOwnerEpoch = ReleasePlayerRequest.expected_owner_epoch(0 = 旧版 scene_manager,按旧行为释放并计数)。
+	// 只读本地缓存,不读 Redis、不采纳 epoch(CZ-3)。scene 逻辑线程调用。targetSceneId / targetNodeId 只进日志。
+	static void HandleReleaseFromSceneManager(Guid playerId, uint64_t expectedOwnerEpoch, uint64_t targetSceneId,
+											  const std::string &targetNodeId);
 
 	// 进场路由(PlayerEnterGameNode)撞上一个交接已发起的旧实体,且路由带来的 owner_epoch 比实体
 	// 缓存的新:说明那次交接其实已被放行(应答丢了,看门狗还没到期),玩家在别处玩过一圈又被
@@ -1437,27 +1460,26 @@ private:
 
 	// SavePlayerToRedis 的本体。allowSkipWhenPersisted = false 时跳过 dirty-save 快路径,
 	// 但持久组件缺失仍拒绝,交接已发起时的"不得再写"仍然生效。快路径判"盘上已是同一份",但同 key 还有在途 / 排队中的存盘时,
-	// 必须改走一次真实存盘、等落地回调收尾。只有三个调用方:
+	// 必须改走一次真实存盘、等落地回调收尾。调用方:
 	//   * 退出流程的 M4 分支(HandleExitGameNode,exit_fastpath_deferred,§12.6.4 M4);
 	//   * StartTravelHandoff 的快路径补写(handoff_fastpath_forced):保证写 handoff 标记之前没有更早的未落地存盘,
 	//     也就是"SET 发出 ⇒ Redis ⊇ 冻结内存"(骨架 I1);
 	//   * ResolveTravelOutcome 的 B5 采纳(rolled_back_adopted,GO-2 §12.8):采纳回滚后的 epoch(E+2)、解冻之后立即写一次。
 	//     一是让 DBTask(E+2) 立刻越过兼容窗口里幽灵持有者可能落下的 DBTask(E+1);二是恢复"快照 == Redis"的前提 ——
 	//     兼容窗口里旧版目标节点若在回滚前写过一份 Redis blob,不强制写的话 dirty-save 快路径会误判"盘上已是同一份"。
+	//   * 下线收尾的 DBTask 回执闸门(FinishExitOrAwaitDbTaskAck / OnDbTaskDispatchSettled):快照只证明那份字节进了 Redis,
+	//     DbTaskDispatchSystem 记着 MySQL 欠账(NeedsResave)时必须按当前内存整份重发,不能走快路径。
+	//   * SavePlayerForAssetCommit:资产重查需要重建 SQL 提交证据,即使 Redis 快照相等也必须重投整份载荷。
 	// 不给 SavePlayerToRedis 加默认参数:它以函数指针形式被引用(asset_op_system.cpp 的 PersistFn)。
 	static SaveResult SavePlayerToRedisImpl(entt::entity player, bool allowSkipWhenPersisted);
-
-	// 把玩家从所在场景摘掉:BeforeLeaveScene(AOI)→ 摘 SceneEntityComp + Hex。
-	// 退出流程与"被废黜"销毁共用;不在场景里则 no-op。
-	static void DetachFromScene(entt::entity player);
 
 	// "我已被废黜"的统一销毁:不存盘、不改派(疏散票据作废)、摘冻结 / 交接标记、摘场景、摘会话、销毁实体。
 	// 入口:存盘被 epoch CAS 拒(HandlePlayerSaveRejected)、交接被放行(EnterScene 应答 Redirect /
 	// ResolveTravelOutcome 判出 epoch 已变 —— 含 B7:epoch 变了、没有本次回滚回执、location 却指回本节点,
 	// 同样不解冻而销毁)、进场路由撞上过期的交接实体(DiscardStaleHandoffEntity)、
 	// handoff 标记已发出但归属核实不了(ConcludeHandoffAfterMarkSent,reasonTag = travel_freeze_cap::MarkSentSiteName)。
-	// 最后这个入口下 routine=false 打出的原文 "(ownership moved away)" 是沿用下来的,实际含义是"归属未知";
-	// 判读以它前一行的 [ZoneTravel][MarkSentDestroy](ownership UNKNOWN)为准。
+	// 退出流程永久拒存时也由本入口不存盘丢弃,不写释放或交接标记。非 routine 的日志只说明本地状态被丢弃;
+	// 归属未知的判读以它前一行的 [ZoneTravel][MarkSentDestroy](ownership UNKNOWN)为准。
 	// routine = 这是交接成功的正常收尾,收尾日志打 INFO;否则打 WARN(异常信号,要留证据)。
 	// 本函数自己**不给客户端发任何消息**,而且它会摘会话(RemovePlayerSession),之后再也发不出去。
 	// 需要让客户端断线重登的调用方(ResolveTravelOutcome 的"跨 zone 已放行却没收到放行应答"分支)

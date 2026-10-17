@@ -52,15 +52,13 @@ public:
     // 容器先完成最终空间规划和全部发号，任何拒绝都不修改原包、布局或回执，不发资产流水。
     // 发号允许烧掉尚未入包的 ID；这不是跨 Kafka 或持久化存储的事务。
     // correlationId / extra 继续关联获取流水（战斗掉落传 battle_id 与来源）。
-    // mutated 起始为 false；仅整批成功且请求非空时为 true，失败恒为 false。
 	static uint32_t AddItems(
 		entt::entity playerEntity,
 		Bag &bag,
 		const ItemCountMap &itemsToAdd,
 		TransactionType txType = TX_SYSTEM_GRANT,
 		uint64_t correlationId = 0,
-		const std::string &extra = {},
-		bool *mutated = nullptr);
+		const std::string &extra = {});
 
 	// Orchestrated batch AddItems carrying full ItemComp per piece
 	//   (mail attachments mixing equipment + stackable items): preserves
@@ -181,8 +179,8 @@ public:
 	// txType 进流水(托管扣出传 TX_AUCTION_SELL),correlationId 传 listing_id。
 	// removedOut(可为 nullptr)按入参顺序给出销毁前抓拍的 (guid, config, size)。
 	//
-	// mutated(可为 nullptr)与 AddItems 的同名出参同一用途、同一纪律:**这次失败,
-	// 包到底动过没有**。函数开头一律先置 false。预检拒与冻结拒都是一件不扣
+	// mutated(可为 nullptr)说明 RemoveItemsByGuid 这次失败时，
+	// 包到底动过没有。函数开头一律先置 false。预检拒与冻结拒都是一件不扣
 	// (mutated 保持 false,调用方按 RETRY / REJECTED 记账,不记资产变更);
 	// commit 段中途失败则已有实例被销毁并落了流水,置 true —— 调用方**必须**按
 	// APPLIED + partial 记账转人工补偿,不许当成零改动重投(04-asset-channel.md
@@ -209,7 +207,7 @@ public:
 	//   frozen check → Bag::MergeAndCompact → transaction log per retired instance
 	//
 	// **生产代码整理背包一律走这个入口,不要直接调 Bag::MergeAndCompact。**
-	// 整理会退役一批 item_uuid(被合并空的堆、以及 size==0 的僵尸实例),而
+	// 整理会退役一批 item_uuid(被合并空的堆),而
 	// item_uuid 正是 transaction_log 做外挂回收关联的键 —— 直接调纯容器那层,
 	// 这些实例就无声消失了,追溯链在整理这一步断掉。
 	//

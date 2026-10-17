@@ -118,6 +118,8 @@ func (p *commandProbe) ProcessPipelineHook(next redis.ProcessPipelineHook) redis
 //
 // 修复前:发号之后的那一例会照发 Reserve 与 RegisterPlayerZone;登记之后的几例会尝试围栏写、
 // 被 go-redis 拒掉之后再回读一次,tip 是 kLoginRedisSetFailed。
+// (2026-10-16 补注)6b' 新铸 id 探测落地后,「发号之后」那一例停在探测的 ctx 前置检查,钉住的是 6b' 的预检;
+// tryReserveName 开头的预检改由 TestCreatePlayer_IDProbeClearThenDeadlineSendsNoReserve 钉住。
 func TestCreatePlayer_RequestDoneMidCreateCommitsNothing(t *testing.T) {
 	const requested = "云中君"
 	accountKey := constants.GetAccountDataKey(hzAccount)

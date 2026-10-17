@@ -21,14 +21,22 @@ message RoutePlayerEvent {
   // 必须随事件下发,节点不得自行读 Redis:两次改派挨近时后到者才持有最新值。
   // 见 scene-owner-reentry-barrier.md §3.3。
   uint64 owner_epoch = 6;
-  // 发起这次路由的登录代次(EnterSceneRequest.login_generation 原样透传)。scene 节点自发的路由为 0。
+  // 发起这次路由的登录代次(EnterSceneRequest.login_generation 原样透传)。scene 自发的路由带实体已放行的代次
+  // (≤ gate 会话值),旧版 scene 为 0(docs/design/scene-enter-chain-residuals.md §5.2 ④)。
   // gate 只用它抬高会话上记的代次,不据此丢弃路由(docs/design/scene-enter-session-fence.md §4)。
   uint64 login_generation = 7;
 }
 
+// login 在 ReplaceLogin 的会话记录提交成功之后,踢掉被替换的旧会话(docs/design/scene-enter-chain-residuals.md §2)。
+// login 经 GateCommand.payload 下发(信封字段照填):登录代次只能经 payload 到 gate。
 message KickPlayerEvent {
   option (OptionKafkaIngress) = true;
   uint32 session_id = 1;
+  // 被踢会话所属玩家。gate 只踢当前绑定该玩家的会话;0 = 旧版发送方,按 session_id 踢。
+  // 信封路径由生成路由按同名同型从 GateCommand.player_id 映射(必须 uint64)。
+  uint64 player_id = 2;
+  // 发起踢线、已提交的那条登录链的代次。会话已见过不小于它的代次时不踢;0 = 不比较。只经 payload 下发。
+  uint64 login_generation = 3;
 }
 
 // Sent by Gate when a player TCP connection drops.

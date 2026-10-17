@@ -260,9 +260,20 @@ func TestStages_QueueWaitTaskTotalKafkaE2E(t *testing.T) {
 	kafkaTask.enqueuedAt = now.Add(-time.Second)
 	run("kafka task with enqueue time", kafkaTask, sample{queue: 1, total: 1, e2e: 1})
 
-	// 没有 kafkaMsg 的任务(重试源同样没有):不进 kafka_e2e;没有 enqueuedAt:不进 queue_wait。
+	// 没有 kafkaMsg 的任务:不进 kafka_e2e;没有 enqueuedAt:不进 queue_wait。
 	run("task without kafka message or enqueue time", makeWriteTask(t, 9721, placementTestMsgType, 10),
 		sample{queue: 0, total: 1, e2e: 0})
+
+	// 真正的重试源:经生产的 consumeOneRetryTask 认领(fromRetry、enqueuedAt 由认领时赋值、没有 kafkaMsg)。
+	// queue_wait 只看 enqueuedAt 非零、不看时长,结果与墙钟无关。
+	require.NoError(t, saveToRetryQueue(w.ctx, w.redisClient, w.retryQueueKey,
+		makeWriteTask(t, 9724, placementTestMsgType, 10).dbTask, 10, 0))
+	retryTask := claimRetry(t, w)
+	require.NotNil(t, retryTask)
+	require.True(t, retryTask.fromRetry)
+	require.Nil(t, retryTask.kafkaMsg, "retry-origin tasks carry no Kafka message")
+	require.False(t, retryTask.enqueuedAt.IsZero(), "claiming a retry stamps its enqueue time")
+	run("retry task", retryTask, sample{queue: 1, total: 1, e2e: 0})
 
 	run("kafka task without CreateTime", kafkaWriteTaskAt(t, w, 9722, 10, time.Time{}), sample{queue: 0, total: 1, e2e: 0})
 

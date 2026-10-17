@@ -8,15 +8,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
+	"trade/internal/commerce"
 	"trade/internal/config"
 	"trade/internal/data"
 
 	dspb "proto/data_service"
 
 	"shared/assetop"
+	"shared/authoritysql"
 	"shared/idsegment"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -65,7 +69,9 @@ type ServiceContext struct {
 	// **整个字段可能为 nil**:AssetOp.Enabled=false(默认)时通道根本不装配。调用托管 / 交付前
 	// 应判 Assets.Enabled(),好给玩家一个明确的"功能未开放";漏判也不会 panic —— AssetChannel
 	// 的方法都带空接收者守卫,reconcile 同理,业务侧拿到的是 reconcile.ErrSignerMissing。
-	Assets *AssetChannel
+	Assets   *AssetChannel
+	Commerce *commerce.Engine
+	Mall     *commerce.Mall
 
 	stopOnce sync.Once
 }
@@ -132,6 +138,29 @@ func NewServiceContext(c config.Config) *ServiceContext {
 			AssetOpSecretEnv, assetop.MinSecretLen)
 	}
 
+	var commerceEngine *commerce.Engine
+	var mall *commerce.Mall
+	if assets != nil {
+		titles := map[uint32]string{}
+		for key, value := range c.Commerce.ItemTitles {
+			id, parseErr := strconv.ParseUint(key, 10, 32)
+			if parseErr != nil || id == 0 || strconv.FormatUint(id, 10) != key {
+				panic("商城道具名称目录配置号非法")
+			}
+			titles[uint32(id)] = value
+		}
+		commerceEngine = &commerce.Engine{Repo: &data.CommerceRepo{DB: db, Ops: assets.Ops}, IDs: seg, OpIDs: assets.OpIDs,
+			Policy:  commerce.Policy{Items: c.Commerce.ItemConfigs, ItemTitles: titles, Pets: c.Commerce.PetConfigs, Currencies: c.Commerce.CurrencyTypes, AllowInstances: c.Commerce.AllowInstances},
+			Applier: assets.Caller, Ledger: persistedLedger(dsClient), Now: time.Now}
+		assets.Commerce = commerceEngine
+		if c.Mall.URL != "" {
+			mall, err = commerce.NewMall(c.Mall.URL, os.Getenv(c.Mall.GatewaySecretEnv), os.Getenv(c.Mall.DeliverySecretEnv), commerceEngine)
+			if err != nil {
+				panic(fmt.Errorf("商城装配失败: %w", err))
+			}
+			assets.Mall = mall
+		}
+	}
 	return &ServiceContext{
 		Config:            c,
 		Etcd:              etcdCli,
@@ -139,6 +168,8 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		DataServiceClient: dsClient,
 		ListingIDSegment:  seg,
 		Assets:            assets,
+		Commerce:          commerceEngine,
+		Mall:              mall,
 	}
 }
 
@@ -229,7 +260,7 @@ func isLockContentionErr(err error) bool {
 // transaction_isolation=%27READ-COMMITTED%27 把整个连接池的会话隔离级别设成 RC(驱动建连时发 SET),
 // 与 go/friend 的 BuildDSN 同口径。显式事务本来就经 assetop.WithTxRetry 固定 RC(建 seq 行的短事务
 // 与业务事务都走它);这一项管的是事务**之外**的自动提交语句(Claim / Reschedule / 毒行的主键 UPDATE、
-// InsertListing、DeleteFavorite、EnsureSeqGuardRow 的哨兵行 INSERT,以及 data.EnsureSeqRows 那条
+// InsertListing、EnsureSeqGuardRow 的哨兵行 INSERT(DeleteFavorite 2026-10-16 起改走 WithTxRetry 单语句事务),以及 data.EnsureSeqRows 那条
 // 自动提交的普通读探针 —— 玩家 seq 行的建行 2026-09-29 起在它自己的 RC 短事务里),
 // 它们原先落在服务器全局默认的 REPEATABLE-READ 上,删不到行 / 撞上删除标记时会拿间隙锁或 next-key 锁,
 // 与别人的插入意向锁互等。RC 下只剩记录锁。自动提交语句每条各取新快照,读语义与 RR 下相同。
@@ -250,21 +281,9 @@ func MySQLTarget(c config.MySQLConf) string {
 // OpenMySQL 建池、设上限、ping。返回错误时池已关闭;错误信息点名库名
 // (库不存在时 -migrate 以 1 退出并点名库名,D-14 第 5 条)。
 func OpenMySQL(c config.MySQLConf) (*sql.DB, error) {
-	db, err := sql.Open("mysql", BuildDSN(c))
-	if err != nil {
-		return nil, fmt.Errorf("open MySQL %s: %w", MySQLTarget(c), err)
-	}
-	db.SetMaxOpenConns(c.MaxOpenConn)
-	db.SetMaxIdleConns(c.MaxIdleConn)
-
 	ctx, cancel := context.WithTimeout(context.Background(), mysqlPingTimeout)
 	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
-		_ = db.Close()
-		return nil, fmt.Errorf("ping MySQL %s 失败(库 %s 不存在时先按 deploy/mysql-init/00_init_zone_dbs.sql 建库并授权): %w",
-			MySQLTarget(c), c.DBName, err)
-	}
-	return db, nil
+	return authoritysql.Open(ctx, BuildDSN(c), c.DBName, c.RequiresTiDB(), c.MaxOpenConn)
 }
 
 // NewListingIDSegment 按 IdSegment 配置建 listing_id 号段客户端。Enabled=false 或客户端为 nil 直接报错:

@@ -39,6 +39,7 @@ import (
 	assetpb "proto/common/asset"
 	pb "proto/guild"
 	"shared/assetop"
+	tablepb "shared/generated/pb/table"
 	"shared/generated/table"
 )
 
@@ -1308,4 +1309,16 @@ func TestOnAssetFinalizedUnknownKindDoesNotPush(t *testing.T) {
 	}
 
 	assert.Zero(t, n.total())
+}
+
+func TestClientRequestReplayBindsOriginalGuild(t *testing.T) {
+	hit := data.ClientRequestHit{OpFound: true, Op: data.AssetOpRow{
+		GuildID: 7, Kind: pb.GuildAssetOpKind_GUILD_ASSET_OP_KIND_DONATE, RefID: 1, RefCount: 1,
+	}}
+	for _, expected := range []uint64{0, 7} {
+		require.Nil(t, clientRequestMismatch(hit, hit.Op.Kind, 1, 1, expected))
+	}
+	tip := clientRequestMismatch(hit, hit.Op.Kind, 1, 1, 8)
+	require.NotNil(t, tip, "重放不得把同一个键改绑新帮会")
+	require.Equal(t, uint32(tablepb.CommonError_kInvalidParameter), tip.GetId())
 }

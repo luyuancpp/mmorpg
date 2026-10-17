@@ -624,7 +624,8 @@ func resolveZoneIDLocal(gatewayAddr string) (uint32, error) {
 // assignGateHTTPLocal drives one queue-aware AssignGate flow.
 //
 // 排队状态机在 AssignGateWithQueue(http_assign_gate.go),按 2026-10-15 的客户端契约推进:持有 queue_token
-// 时轮询 /api/queue-status,恢复用的 assign-gate 重入被限流时回到轮询,410 丢 token 重来。网关放行并给出
+// 时轮询 /api/queue-status(间隔下限 2s 加抖动,queue-status 连续失败时指数退避封顶 30s),恢复用的
+// assign-gate 重入被限流时回到轮询,zone 不可进(503 zone_* / 404)按错误返回,410 丢 token 重来。网关放行并给出
 // gate 票时返回结果;排队预算用完、网络错误或不可恢复的回包码都以错误返回,由外层
 // resolveGateViaHTTPLocal 的重试循环处理。
 //
@@ -644,8 +645,8 @@ func assignGateHTTPLocal(cfg *config.Config, zoneId uint32) (*gateAssignmentLoca
 	}
 	api := httpGatewayQueueAPI{gatewayAddr: cfg.GatewayAddr, perCallTimeout: 5 * time.Second}
 
-	// robotStatsRef 在 main() 里赋值;为 nil 时状态机不记统计。
-	rsp, err := AssignGateWithQueue(ctx, api, req, robotStatsRef, sleepCtx)
+	// robotStatsRef 在 main() 里赋值;为 nil 时状态机不记统计。等待与抖动用生产实现(sleepCtx / uniformJitter)。
+	rsp, err := AssignGateWithQueue(ctx, api, req, robotStatsRef, sleepCtx, uniformJitter)
 	if err != nil {
 		return nil, err
 	}

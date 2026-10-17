@@ -5,8 +5,5 @@
 class TeamEventHandler
 {
 public:
-    static void Register();
-
-    static void UnRegister();
     static void PlayerTeamRefreshEventHandler(const PlayerTeamRefreshEvent& event);
 };

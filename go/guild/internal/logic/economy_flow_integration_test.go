@@ -34,6 +34,8 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -44,23 +46,63 @@ import (
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 
 	"guild/internal/constants"
 	"guild/internal/data"
 	assetpb "proto/common/asset"
+	componentpb "proto/common/component"
 	pb "proto/guild"
 	scenepb "proto/scene"
 	"schemamigrate"
 	"shared/assetop"
+	"shared/authoritysql"
 	"shared/gameday"
+	tablepb "shared/generated/pb/table"
 )
 
 // ── 建表 / 删表(最小助手)────────────────────────────────────
 
+func TestEconomyFlowExpectedGuildRejectsBeforeReservation(t *testing.T) {
+	env := newEconomyFlowEnv(t, 1)
+	env.seedGuild(t, flowGuildID, flowLeader)
+	env.setContribution(t, flowGuildID, flowLeader, 1000)
+	ctx := clientCtx(flowLeader)
+	donation, err := env.logic.DonateToGuild(ctx, &pb.DonateToGuildRequest{DonateId: 1, ClientRequestId: 100, ExpectedGuildId: flowGuildID + 1})
+	require.NoError(t, err)
+	require.Equal(t, constants.ErrNotInGuild, donation.GetErrorMessage().GetId())
+	order, err := env.logic.BuyGuildShopGoods(ctx, &pb.BuyGuildShopGoodsRequest{GoodsId: 101, Count: 1, ClientRequestId: 101, ExpectedGuildId: flowGuildID + 1})
+	require.NoError(t, err)
+	require.Equal(t, constants.ErrNotInGuild, order.GetErrorMessage().GetId())
+	require.Zero(t, env.opCountOf(t, flowLeader))
+	require.Zero(t, env.clientRequestCount(t))
+	require.Zero(t, env.scene.totalCalls())
+	_, balance, found := env.contribution(t, flowGuildID, flowLeader)
+	require.True(t, found)
+	require.Equal(t, uint64(1000), balance, "错误帮会请求不能扣帮贡")
+}
+
+func TestEconomyFlowReplayCannotChangeExpectedGuild(t *testing.T) {
+	env := newEconomyFlowEnv(t, 1)
+	env.seedGuild(t, flowGuildID, flowLeader)
+	ctx := clientCtx(flowLeader)
+	req := &pb.DonateToGuildRequest{DonateId: 1, ClientRequestId: 102, ExpectedGuildId: flowGuildID}
+	first, err := env.logic.DonateToGuild(ctx, req)
+	require.NoError(t, err)
+	require.NotNil(t, first.GetDonation())
+	req.ExpectedGuildId++
+	replayed, err := env.logic.DonateToGuild(ctx, req)
+	require.NoError(t, err)
+	require.Equal(t, uint32(tablepb.CommonError_kInvalidParameter), replayed.GetErrorMessage().GetId())
+	require.Nil(t, replayed.GetDonation())
+	require.Equal(t, 1, env.opCountOf(t, flowLeader))
+}
+
 // economyFlowDropTables:本服务全部表 + schemamigrate 台账,逆锁序。新增表时同步追加
 // (resetEconomyFlowSchema 按 len(data.Tables())+1 守数量,漏加即红)。
 var economyFlowDropTables = []string{
-	"guild_trial_reward_owed", "guild_trial_battle", // B6b 同道历练两表:全序末尾 W、T,逆锁序排最前
+	"guild_client_request",                          // 客户端幂等键去重记录:全序末尾 R,逆锁序排最前
+	"guild_trial_reward_owed", "guild_trial_battle", // B6b 同道历练两表 W、T
 	"guild_activity_progress", // B6a 活动进度 P
 	"guild_daily_counter", "guild_asset_op", "guild_player_op_seq",
 	"guild_application", "guild_member", "guild_player_state", "guild", "schema_migrations",
@@ -103,20 +145,29 @@ func openEconomyFlowDB(t *testing.T, rawDSN string) *sql.DB {
 	cfg, err := mysqldriver.ParseDSN(rawDSN)
 	require.NoError(t, err, "解析 GUILD_TEST_MYSQL_DSN")
 	cfg.DBName = ""
+	// 安装连接只受下面的DDL上下文约束。业务DSN的readTimeout曾在
+	// TiDB预切Region尚未结束时先切断socket，不能把它挪成业务预算。
+	cfg.ReadTimeout = 0
+	cfg.WriteTimeout = 0
 	admin, err := sql.Open("mysql", cfg.FormatDSN())
 	require.NoError(t, err)
 	t.Cleanup(func() { admin.Close() })
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// 只限隔离库安装：TiDB逐表预切Region时，11张表的累计DDL曾超过30秒。
+	// 运行时投递/租约/请求截止预算保持原值，不能用安装耗时冒充业务超时。
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	require.NoError(t, admin.PingContext(ctx))
+	var version string
+	require.NoError(t, admin.QueryRowContext(ctx, "SELECT VERSION()").Scan(&version))
+	requireTiDB := strings.Contains(strings.ToLower(version), "tidb")
 	name := fmt.Sprintf("guild_it_%d_%d", os.Getpid(), economyFlowDBCounter.Add(1))
 	if _, err := admin.ExecContext(ctx, "CREATE DATABASE `"+name+"` DEFAULT CHARACTER SET utf8mb4"); err != nil {
 		t.Fatalf("用 GUILD_TEST_MYSQL_DSN 的账号建一次性库 %s 失败(该账号需要 CREATE / DROP DATABASE 权限): %v", name, err)
 	}
 	// Cleanup 后进先出:业务连接先关(下面注册)→ DROP → admin 关(上面注册)。
 	t.Cleanup(func() {
-		dropCtx, dropCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		dropCtx, dropCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer dropCancel()
 		if _, err := admin.ExecContext(dropCtx, "DROP DATABASE IF EXISTS `"+name+"`"); err != nil {
 			t.Errorf("DROP DATABASE %s 失败(请手工清理): %v", name, err)
@@ -128,12 +179,51 @@ func openEconomyFlowDB(t *testing.T, rawDSN string) *sql.DB {
 	cfg.DBName = name
 	dsn, err := data.WithLockWaitTimeout(cfg.FormatDSN())
 	require.NoError(t, err)
-	db, err := sql.Open("mysql", dsn)
+	installDB, err := authoritysql.OpenForMigration(ctx, dsn, name, requireTiDB)
+	require.NoError(t, err)
+	t.Cleanup(func() { installDB.Close() })
+	require.NoError(t, installDB.PingContext(ctx))
+	resetEconomyFlowSchema(t, ctx, installDB)
+	require.NoError(t, installDB.Close())
+	// 运行连接与服务端复用逐物理连接强会话初始化；安装连接不会流入业务池。
+	// 显式设置的DSN也允许本地旧MySQL夹具，不把该兼容误报成TiDB证据。
+	db, err := authoritysql.Open(ctx, dsn, name, requireTiDB, 20)
 	require.NoError(t, err)
 	t.Cleanup(func() { db.Close() })
-	require.NoError(t, db.PingContext(ctx))
-	resetEconomyFlowSchema(t, ctx, db)
 	return db
+}
+
+func TestEconomyFlowTiDBConnectionsKeepStrongSession(t *testing.T) {
+	env := newEconomyFlowEnv(t, 1)
+	var version string
+	require.NoError(t, env.db.QueryRowContext(context.Background(), "SELECT VERSION()").Scan(&version))
+	if !strings.Contains(strings.ToLower(version), "tidb") {
+		t.Skip("该断言只适用于显式TiDB夹具，旧MySQL兼容另测")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	var connections []*sql.Conn
+	defer func() {
+		for _, conn := range connections {
+			conn.Close()
+		}
+	}()
+	for i := 0; i < 3; i++ {
+		conn, err := env.db.Conn(ctx)
+		require.NoError(t, err)
+		connections = append(connections, conn)
+		var mode, isolation, replica, consistency, snapshot string
+		var stale, low, lockWait int64
+		require.NoError(t, conn.QueryRowContext(ctx, "SELECT @@tidb_txn_mode,@@transaction_isolation,@@tidb_read_staleness,@@tidb_low_resolution_tso,@@tidb_replica_read,@@tidb_read_consistency,@@tidb_snapshot,@@innodb_lock_wait_timeout").Scan(&mode, &isolation, &stale, &low, &replica, &consistency, &snapshot, &lockWait))
+		require.Equal(t, "pessimistic", mode)
+		require.Equal(t, "READ-COMMITTED", isolation)
+		require.Zero(t, stale)
+		require.Zero(t, low)
+		require.Equal(t, "leader", replica)
+		require.Equal(t, "strict", consistency)
+		require.Empty(t, snapshot)
+		require.EqualValues(t, 1, lockWait)
+	}
 }
 
 // ── 替身 ──────────────────────────────────────────────────────
@@ -173,9 +263,10 @@ type sceneCall struct {
 
 // scriptedScene 实现 assetop.Applier:按脚本作答并记下每次调用。加锁:重投循环的 worker 并发调用。
 type scriptedScene struct {
-	mu      sync.Mutex
-	respond func(rpc assetop.RPC, req *assetpb.AssetOpRequest) assetop.Result
-	calls   []sceneCall
+	mu        sync.Mutex
+	respond   func(rpc assetop.RPC, req *assetpb.AssetOpRequest) assetop.Result
+	calls     []sceneCall
+	committed map[uint64]*componentpb.PlayerAssetOpLedgerComp
 }
 
 var _ assetop.Applier = (*scriptedScene)(nil)
@@ -187,7 +278,62 @@ func (s *scriptedScene) Do(_ context.Context, rpc assetop.RPC, req *assetpb.Asse
 	if s.respond == nil {
 		return assetop.Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_RETRY}, nil
 	}
-	return s.respond(rpc, req), nil
+	res := s.respond(rpc, req)
+	// 此替身模拟scene将资产与账本一起提交；Loop仍经独立读取面核对，
+	// 不向回包填SQLCommitted。真实玩家SQL提交由db/assetop集成测试覆盖。
+	if res.Durable && (res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_APPLIED || res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_REJECTED) {
+		if s.committed == nil {
+			s.committed = make(map[uint64]*componentpb.PlayerAssetOpLedgerComp)
+		}
+		ledger := s.committed[req.GetPlayerId()]
+		if ledger == nil {
+			ledger = &componentpb.PlayerAssetOpLedgerComp{}
+			s.committed[req.GetPlayerId()] = ledger
+		}
+		var stream *componentpb.AssetOpStreamLedger
+		for _, candidate := range ledger.Streams {
+			if candidate.Stream == req.GetStream() && candidate.StreamEpoch == req.GetStreamEpoch() {
+				stream = candidate
+			}
+		}
+		if stream == nil {
+			stream = &componentpb.AssetOpStreamLedger{Stream: req.GetStream(), StreamEpoch: req.GetStreamEpoch(), SeenBits: make([]uint64, 16), AppliedBits: make([]uint64, 16)}
+			ledger.Streams = append(ledger.Streams, stream)
+		}
+		if req.GetSeq() == 0 || req.GetSeq() > 1024 {
+			return assetop.Result{}, fmt.Errorf("流程夹具序号超出窗口")
+		}
+		index := req.GetSeq() - 1
+		stream.SeenBits[index/64] |= uint64(1) << (index % 64)
+		if req.GetSeq() > stream.MaxSeq {
+			stream.MaxSeq = req.GetSeq()
+		}
+		if res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_APPLIED {
+			stream.AppliedBits[index/64] |= uint64(1) << (index % 64)
+		} else {
+			found := false
+			for _, rejection := range stream.Rejections {
+				if rejection.Seq == req.GetSeq() {
+					found = true
+				}
+			}
+			if !found {
+				stream.Rejections = append(stream.Rejections, &componentpb.AssetOpRejection{Seq: req.GetSeq(), ReasonTipId: res.Reason})
+				sort.Slice(stream.Rejections, func(i, j int) bool { return stream.Rejections[i].Seq < stream.Rejections[j].Seq })
+			}
+		}
+	}
+	return res, nil
+}
+
+func (s *scriptedScene) ReadPersistedLedger(_ context.Context, playerID uint64) (*componentpb.PlayerAssetOpLedgerComp, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	ledger := s.committed[playerID]
+	if ledger == nil {
+		return nil, nil
+	}
+	return proto.Clone(ledger).(*componentpb.PlayerAssetOpLedgerComp), nil
 }
 
 func (s *scriptedScene) answer(fn func(assetop.RPC, *assetpb.AssetOpRequest) assetop.Result) {
@@ -285,6 +431,7 @@ func newEconomyFlowEnv(t *testing.T, workers int) *economyFlowEnv {
 	}
 	loop, err := assetop.NewLoop(cfg, store, scene, nil, clock.Now)
 	require.NoError(t, err)
+	loop.Ledger = scene
 
 	notifier := &recordingNotifier{}
 	syncBumps := &recordingSyncBumper{}
@@ -666,6 +813,7 @@ func TestEconomyFlowWorkersFinalizeEachOpExactlyOnce(t *testing.T) {
 	env.clock.Advance(5 * time.Second)
 	replica, err := assetop.NewLoop(env.loopCfg, env.store, env.scene, nil, env.clock.Now)
 	require.NoError(t, err)
+	replica.Ledger = env.scene
 	callsBefore := env.scene.totalCalls()
 
 	var (
@@ -1164,4 +1312,267 @@ func TestManagementFlowSyncDigestBumps(t *testing.T) {
 	require.Nil(t, reviewed.GetErrorMessage())
 	assert.Equal(t, []uint64{applicantB}, env.syncBumps.playersOf(syncApplication))
 	assert.Equal(t, []uint64{flowLeader, officer, applicantB}, env.syncBumps.playersOf(syncGuild), "通过:全帮含新成员与审批人")
+}
+
+// ── 客户端幂等键(05 顶部「客户端幂等键」覆盖块)──────────────────────
+
+// opCountOf 数某玩家名下的指令行(不分流、不分状态)。
+func (e *economyFlowEnv) opCountOf(t *testing.T, playerID uint64) int {
+	t.Helper()
+	var n int
+	require.NoError(t, e.db.QueryRowContext(context.Background(),
+		"SELECT COUNT(*) FROM guild_asset_op WHERE player_id = ?", playerID).Scan(&n))
+	return n
+}
+
+// clientRequestCount 数去重记录行(全表)。
+func (e *economyFlowEnv) clientRequestCount(t *testing.T) int {
+	t.Helper()
+	var n int
+	require.NoError(t, e.db.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM guild_client_request").Scan(&n))
+	return n
+}
+
+// flowInvalidParameter:同一个键换了参数时的答复(common 段 kInvalidParameter)。
+var flowInvalidParameter = uint32(tablepb.CommonError_kInvalidParameter)
+
+// TestEconomyFlowClientRequestDonateReplaysCurrentView:首次捐献停在 PENDING(战斗中)→ 重投循环终结为 APPLIED →
+// 带同一个键重发:回同一个 op_id、指令的**当前**状态 APPLIED,不发号、不再投递,资金与今日次数只记一次。
+func TestEconomyFlowClientRequestDonateReplaysCurrentView(t *testing.T) {
+	const key uint64 = 0xD0_0001
+	env := newEconomyFlowEnv(t, 8)
+	env.seedGuild(t, flowGuildID, flowLeader)
+	env.scene.answer(always(flowInBattle))
+	req := &pb.DonateToGuildRequest{DonateId: 1, ClientRequestId: key}
+
+	first, err := env.logic.DonateToGuild(clientCtx(flowLeader), req)
+	require.NoError(t, err)
+	opID := first.GetDonation().GetOpId()
+	require.NotZero(t, opID)
+	require.Equal(t, pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_PENDING, first.GetDonation().GetStatus())
+
+	env.scene.answer(always(flowApplied))
+	env.clock.Advance(5 * time.Second) // 越过退避(attempts=0 时 1× 重投基准)
+	require.Equal(t, 1, env.loop.Tick(context.Background()))
+	callsBefore := env.scene.totalCalls()
+
+	retry, err := env.logic.DonateToGuild(clientCtx(flowLeader), req)
+	require.NoError(t, err)
+	assert.Nil(t, retry.GetErrorMessage())
+	donation := retry.GetDonation()
+	require.NotNil(t, donation, "重发必须带订单视图:客户端据此认定这一笔已经发生")
+	assert.Equal(t, opID, donation.GetOpId(), "重发回首次那笔指令")
+	assert.Equal(t, pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED, donation.GetStatus(), "视图是指令的当前状态")
+	assert.Equal(t, uint32(1), donation.GetDonateId())
+	assert.Equal(t, uint64(10000), donation.GetCostAmount(), "数额从行上的 payload 解出,与首次回包一致")
+	assert.Equal(t, first.GetDonation().GetCreatedMs(), donation.GetCreatedMs())
+	require.NotNil(t, retry.GetGuild(), "本人仍在帮:GuildInfo 必填")
+	assert.Equal(t, uint64(1000), retry.GetGuild().GetFunds())
+
+	assert.Equal(t, callsBefore, env.scene.totalCalls(), "重发不再投递")
+	assert.Equal(t, 1, env.opCountOf(t, flowLeader), "只有一行指令")
+	assert.Equal(t, 1, env.clientRequestCount(t))
+	assert.Equal(t, uint64(1000), env.funds(t, flowGuildID), "资金只记一次")
+	dayKey := gameday.DayKey(time.UnixMilli(int64(first.GetDonation().GetCreatedMs())))
+	assert.Equal(t, uint32(1), env.usedCount(t, flowLeader, pb.GuildDailyCounterKind_GUILD_DAILY_COUNTER_KIND_DONATE, 1, dayKey),
+		"今日次数只占一次")
+}
+
+// TestEconomyFlowClientRequestShopDebitsOnce:帮贡恰好够一份,兑换 APPLIED 后带同一个键重发 —— 不能回"帮贡不足",
+// 也不能再扣:回同一单、余额 0。count=0(老客户端不填份数)与 count=1 是同一个请求。
+func TestEconomyFlowClientRequestShopDebitsOnce(t *testing.T) {
+	const key uint64 = 0x5E_0001
+	env := newEconomyFlowEnv(t, 8)
+	env.seedGuild(t, flowGuildID, flowLeader)
+	env.setContribution(t, flowGuildID, flowLeader, 30) // GuildShop 101 每份 30 帮贡(见 TestEconomyFlowShopRejectedRefundsContributionAndLimit)
+	env.scene.answer(always(flowApplied))
+	req := &pb.BuyGuildShopGoodsRequest{GoodsId: 101, Count: 1, ClientRequestId: key}
+
+	first, err := env.logic.BuyGuildShopGoods(clientCtx(flowLeader), req)
+	require.NoError(t, err)
+	require.Nil(t, first.GetErrorMessage())
+	opID := first.GetOrder().GetOpId()
+	require.Equal(t, pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED, first.GetOrder().GetStatus())
+	require.Zero(t, first.GetContributionBalance())
+
+	for name, retryReq := range map[string]*pb.BuyGuildShopGoodsRequest{
+		"同一个请求原样重发":      req,
+		"count=0 视为 1 份": {GoodsId: 101, ClientRequestId: key},
+	} {
+		retry, err := env.logic.BuyGuildShopGoods(clientCtx(flowLeader), retryReq)
+		require.NoError(t, err, name)
+		assert.Nil(t, retry.GetErrorMessage(), "%s:不能回帮贡不足", name)
+		require.NotNil(t, retry.GetOrder(), name)
+		assert.Equal(t, opID, retry.GetOrder().GetOpId(), name)
+		assert.Equal(t, pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED, retry.GetOrder().GetStatus(), name)
+		assert.Equal(t, uint32(1), retry.GetOrder().GetCount(), name)
+		assert.Equal(t, uint64(30), retry.GetOrder().GetCostContribution(), name)
+		assert.Zero(t, retry.GetContributionBalance(), "%s:余额直读 MySQL", name)
+	}
+
+	_, balance, found := env.contribution(t, flowGuildID, flowLeader)
+	require.True(t, found)
+	assert.Zero(t, balance, "帮贡只扣一次")
+	assert.Equal(t, 1, env.opCountOf(t, flowLeader))
+	assert.Len(t, env.scene.callsFor(opID), 1, "重发不再投递")
+}
+
+// TestEconomyFlowClientRequestConflictRefusedWithoutWriting:同一个键换了捐献选项、拿去兑换、换了份数 → kInvalidParameter,
+// 不带订单视图、一行都不写、帮贡不扣;首次那笔不受影响。
+func TestEconomyFlowClientRequestConflictRefusedWithoutWriting(t *testing.T) {
+	const (
+		donateKey uint64 = 0xC0_0001
+		shopKey   uint64 = 0xC0_0002
+	)
+	env := newEconomyFlowEnv(t, 8)
+	env.seedGuild(t, flowGuildID, flowLeader)
+	env.setContribution(t, flowGuildID, flowLeader, 1000)
+	env.scene.answer(always(flowApplied))
+	ctx := clientCtx(flowLeader)
+
+	donated, err := env.logic.DonateToGuild(ctx, &pb.DonateToGuildRequest{DonateId: 1, ClientRequestId: donateKey})
+	require.NoError(t, err)
+	require.NotNil(t, donated.GetDonation())
+	bought, err := env.logic.BuyGuildShopGoods(ctx, &pb.BuyGuildShopGoodsRequest{GoodsId: 101, Count: 1, ClientRequestId: shopKey})
+	require.NoError(t, err)
+	require.NotNil(t, bought.GetOrder())
+	_, balanceBefore, _ := env.contribution(t, flowGuildID, flowLeader)
+
+	type outcome struct {
+		tipID     uint32
+		wroteView bool
+	}
+	for name, call := range map[string]func() (outcome, error){
+		"换了捐献选项": func() (outcome, error) {
+			resp, err := env.logic.DonateToGuild(ctx, &pb.DonateToGuildRequest{DonateId: 2, ClientRequestId: donateKey})
+			return outcome{resp.GetErrorMessage().GetId(), resp.GetDonation() != nil}, err
+		},
+		"捐献的键拿去兑换": func() (outcome, error) {
+			resp, err := env.logic.BuyGuildShopGoods(ctx, &pb.BuyGuildShopGoodsRequest{GoodsId: 101, Count: 1, ClientRequestId: donateKey})
+			return outcome{resp.GetErrorMessage().GetId(), resp.GetOrder() != nil}, err
+		},
+		"兑换换了份数": func() (outcome, error) {
+			resp, err := env.logic.BuyGuildShopGoods(ctx, &pb.BuyGuildShopGoodsRequest{GoodsId: 101, Count: 2, ClientRequestId: shopKey})
+			return outcome{resp.GetErrorMessage().GetId(), resp.GetOrder() != nil}, err
+		},
+	} {
+		got, err := call()
+		require.NoError(t, err, name)
+		assert.Equal(t, flowInvalidParameter, got.tipID, name)
+		assert.False(t, got.wroteView, "%s:冲突不带订单视图,客户端不能把它当成第二笔已成功", name)
+	}
+
+	assert.Equal(t, 2, env.opCountOf(t, flowLeader), "冲突一行都不写")
+	assert.Equal(t, 2, env.clientRequestCount(t))
+	_, balanceAfter, _ := env.contribution(t, flowGuildID, flowLeader)
+	assert.Equal(t, balanceBefore, balanceAfter, "冲突不扣帮贡")
+}
+
+// TestEconomyFlowClientRequestZeroKeyIsNotDeduplicated:旧客户端(键 0)两次请求就是两笔 —— 与加字段之前完全相同,也不写去重记录。
+func TestEconomyFlowClientRequestZeroKeyIsNotDeduplicated(t *testing.T) {
+	env := newEconomyFlowEnv(t, 8)
+	env.seedGuild(t, flowGuildID, flowLeader)
+	env.scene.answer(always(flowApplied))
+
+	first := env.donate(t, flowLeader, 1)
+	second := env.donate(t, flowLeader, 1)
+
+	assert.NotEqual(t, first.GetDonation().GetOpId(), second.GetDonation().GetOpId())
+	assert.Equal(t, 2, env.opCountOf(t, flowLeader))
+	assert.Equal(t, uint64(2000), env.funds(t, flowGuildID))
+	assert.Zero(t, env.clientRequestCount(t), "键 0 不写去重记录")
+}
+
+// TestEconomyFlowClientRequestReplayAfterLeavingGuild:首次捐献已 APPLIED,玩家随后离帮;带同一个键重发仍回首次那笔
+// (第 1 道在前置之前查,不回"未入帮"),GuildInfo 不填(本人已不在该帮)。
+func TestEconomyFlowClientRequestReplayAfterLeavingGuild(t *testing.T) {
+	const (
+		member uint64 = 6002
+		key    uint64 = 0x1E_0001
+	)
+	env := newEconomyFlowEnv(t, 8)
+	env.seedGuild(t, flowGuildID, flowLeader, member)
+	env.scene.answer(always(flowApplied))
+	req := &pb.DonateToGuildRequest{DonateId: 1, ClientRequestId: key}
+
+	first, err := env.logic.DonateToGuild(clientCtx(member), req)
+	require.NoError(t, err)
+	require.Equal(t, pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED, first.GetDonation().GetStatus())
+
+	left, err := env.logic.LeaveGuild(clientCtx(member), &pb.LeaveGuildRequest{})
+	require.NoError(t, err)
+	require.Nil(t, left.GetErrorMessage())
+
+	retry, err := env.logic.DonateToGuild(clientCtx(member), req)
+	require.NoError(t, err)
+	assert.Nil(t, retry.GetErrorMessage(), "那笔捐献确实发生了,不能回未入帮")
+	assert.Equal(t, first.GetDonation().GetOpId(), retry.GetDonation().GetOpId())
+	assert.Equal(t, pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED, retry.GetDonation().GetStatus())
+	assert.Nil(t, retry.GetGuild(), "本人已不在该帮:GuildInfo 不填")
+	assert.Equal(t, 1, env.opCountOf(t, member))
+}
+
+// TestEconomyFlowClientRequestRejectionIsNotRecorded:帮贡不足被拒的兑换不留去重记录(被拒的请求没有副作用);
+// 补足帮贡之后带同一个键重发会真正执行一次。
+func TestEconomyFlowClientRequestRejectionIsNotRecorded(t *testing.T) {
+	const key uint64 = 0x2E_0001
+	env := newEconomyFlowEnv(t, 8)
+	env.seedGuild(t, flowGuildID, flowLeader)
+	env.scene.answer(always(flowApplied))
+	req := &pb.BuyGuildShopGoodsRequest{GoodsId: 101, Count: 1, ClientRequestId: key}
+
+	rejected, err := env.logic.BuyGuildShopGoods(clientCtx(flowLeader), req)
+	require.NoError(t, err)
+	assert.Equal(t, constants.ErrContributionInsufficient, rejected.GetErrorMessage().GetId())
+	assert.Nil(t, rejected.GetOrder())
+	assert.Zero(t, env.clientRequestCount(t), "被拒的请求不留去重记录")
+
+	// 缓存快照里帮贡仍是 0:预判会直读 MySQL 确认(contributionPrecheck),事务按锁内余额判,所以直接改库即可。
+	env.setContribution(t, flowGuildID, flowLeader, 30)
+	retry, err := env.logic.BuyGuildShopGoods(clientCtx(flowLeader), req)
+	require.NoError(t, err)
+	require.Nil(t, retry.GetErrorMessage())
+	require.NotNil(t, retry.GetOrder())
+	assert.Equal(t, pb.GuildAssetOrderStatus_GUILD_ASSET_ORDER_STATUS_APPLIED, retry.GetOrder().GetStatus())
+	assert.Equal(t, 1, env.opCountOf(t, flowLeader))
+	assert.Equal(t, 1, env.clientRequestCount(t))
+}
+
+// TestEconomyFlowClientRequestConcurrentRetriesShareOneOp:同一个键 6 路并发(首次仍在途时客户端超时重发)→ 全部回同一个 op_id,
+// 只写一行、资金只记一次、只投递一次。输家可能在第 1 道、事务内(第 2 道)或被拒之后(第 3 道)拿到首次结果,
+// 三条路都必须收敛到同一笔。goroutine 里只收集结果,断言全部在 Wait 之后的主 goroutine 里做。
+func TestEconomyFlowClientRequestConcurrentRetriesShareOneOp(t *testing.T) {
+	const (
+		key     uint64 = 0x3E_0001
+		workers        = 6
+	)
+	env := newEconomyFlowEnv(t, 8)
+	env.seedGuild(t, flowGuildID, flowLeader)
+	env.scene.answer(always(flowApplied))
+	req := &pb.DonateToGuildRequest{DonateId: 1, ClientRequestId: key}
+
+	resps := make([]*pb.DonateToGuildResponse, workers)
+	errs := make([]error, workers)
+	var wg sync.WaitGroup
+	for i := range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			resps[i], errs[i] = env.logic.DonateToGuild(clientCtx(flowLeader), req)
+		}()
+	}
+	wg.Wait()
+
+	var opID uint64
+	for i := range workers {
+		require.NoError(t, errs[i], "第 %d 路", i)
+		require.NotNil(t, resps[i].GetDonation(), "第 %d 路必须拿到订单视图(tip=%v)", i, resps[i].GetErrorMessage())
+		if opID == 0 {
+			opID = resps[i].GetDonation().GetOpId()
+		}
+		assert.Equal(t, opID, resps[i].GetDonation().GetOpId(), "第 %d 路", i)
+	}
+	assert.Equal(t, 1, env.opCountOf(t, flowLeader), "同一个键只写一行")
+	assert.Equal(t, uint64(1000), env.funds(t, flowGuildID), "资金只记一次")
+	assert.Len(t, env.scene.callsFor(opID), 1, "只投递一次")
 }

@@ -1429,6 +1429,101 @@ func (x *GuildTrialRewardOwedRecord) GetCreatedMs() uint64 {
 	return 0
 }
 
+// ── 客户端幂等键(2026-10-15)──────────────────────────────────────
+// 设计:docs/design/guild-phase2/05-economy.md 顶部「客户端幂等键」覆盖块。
+// DonateToGuild / BuyGuildShopGoods 的 client_request_id(非 0)写成指令时,在**同一个预留事务**里插一行:
+// (玩家, 键) → 首次写成的 op_id。重发凭它找回首次那笔指令,不再发号、不再扣。
+//
+// 为什么另起一张表,而不是给 guild_asset_op 加列 + 唯一键:
+//   - D-14 每表至多一个唯一键,guild_asset_op 已有 uk_guild_asset_op;
+//   - 存量行与旧客户端的新行都是 0,(player_id, client_request_id) 上的唯一键会把它们判成重复;
+//   - schemamigrate 对已存在的表不补建索引(只告警),在 guild_asset_op 上加索引只能停服手工做。
+//     新表首次建出就带主键与索引,存量数据不需要回填。
+//
+// 锁序位置 11(全序末尾,记号 R)。写者只有两类:
+//   - 捐献 / 兑换预留(T-D / T-S):锁本人成员行 M 之后**普通读**本表复核(读到 = 首次已提交,整体回滚),
+//     事务最后(O、C、扣帮贡之后)插新行。同一玩家的全部插入者都先持他唯一的那一行 M(uk_guild_member),
+//     所以同一 (p, 键) 在途的插入者至多一个,首插者回滚时没有排队者;
+//   - 清理(asset_store.go,不持其它锁):普通读过期候选 → 逐行 RC 短事务{主键点锁 → 带 created_ms 复核的点删}。
+//     它只删保留期外的行,预留只插新行,两者行集合不相交。
+//
+// 读路径(重发前查首次结果)一律普通读。
+//
+// 寿命:created_ms 早于 now − AssetOp.TerminalRetentionDays 的行由清理删掉(与终态指令同一个保留期配置,同一轮里先删本表)。
+// 终态指令按终结时刻判龄、终结时刻不早于创建时刻,所以一笔指令可删时它的去重记录早已可删;批次上限或单行失败
+// 仍可能让少量本行比指令行晚一轮删,那段时间重发同一个键会查到本行却查不到指令行 —— 按拒绝答复,绝不重新执行。
+// PENDING / APPLIED_PARTIAL 指令永不删,它们的去重记录照样按创建时刻过期
+// (那之后同一个键会被当成新请求;客户端不会在保留期之外重发同一个键)。
+//
+// idx_guild_client_request_0 (created_ms):清理按创建时刻范围取候选。
+type GuildClientRequestRecord struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId        uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	ClientRequestId uint64                 `protobuf:"varint,2,opt,name=client_request_id,json=clientRequestId,proto3" json:"client_request_id,omitempty"` // DonateToGuildRequest / BuyGuildShopGoodsRequest.client_request_id,非 0
+	OpId            uint64                 `protobuf:"varint,3,opt,name=op_id,json=opId,proto3" json:"op_id,omitempty"`                                    // 首次写成的 guild_asset_op.op_id;种类与参数以那一行为准,本表不重复存
+	CreatedMs       uint64                 `protobuf:"varint,4,opt,name=created_ms,json=createdMs,proto3" json:"created_ms,omitempty"`                     // = 那一行的 created_ms(预留事务的 now);清理按它判龄
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GuildClientRequestRecord) Reset() {
+	*x = GuildClientRequestRecord{}
+	mi := &file_proto_guild_guild_db_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GuildClientRequestRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GuildClientRequestRecord) ProtoMessage() {}
+
+func (x *GuildClientRequestRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_guild_guild_db_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GuildClientRequestRecord.ProtoReflect.Descriptor instead.
+func (*GuildClientRequestRecord) Descriptor() ([]byte, []int) {
+	return file_proto_guild_guild_db_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GuildClientRequestRecord) GetPlayerId() uint64 {
+	if x != nil {
+		return x.PlayerId
+	}
+	return 0
+}
+
+func (x *GuildClientRequestRecord) GetClientRequestId() uint64 {
+	if x != nil {
+		return x.ClientRequestId
+	}
+	return 0
+}
+
+func (x *GuildClientRequestRecord) GetOpId() uint64 {
+	if x != nil {
+		return x.OpId
+	}
+	return 0
+}
+
+func (x *GuildClientRequestRecord) GetCreatedMs() uint64 {
+	if x != nil {
+		return x.CreatedMs
+	}
+	return 0
+}
+
 var File_proto_guild_guild_db_proto protoreflect.FileDescriptor
 
 const file_proto_guild_guild_db_proto_rawDesc = "" +
@@ -1564,6 +1659,13 @@ const file_proto_guild_guild_db_proto_rawDesc = "" +
 	"\battempts\x18\a \x01(\rR\battempts\x12\x1d\n" +
 	"\n" +
 	"created_ms\x18\b \x01(\x04R\tcreatedMs:R\x8a\x92\xf4\x01\x17guild_trial_reward_owed\x92\x92\xf4\x01\x13player_id,battle_idڒ\xf4\x01\n" +
+	"created_ms\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xf0\x01\n" +
+	"\x18GuildClientRequestRecord\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12*\n" +
+	"\x11client_request_id\x18\x02 \x01(\x04R\x0fclientRequestId\x12\x13\n" +
+	"\x05op_id\x18\x03 \x01(\x04R\x04opId\x12\x1d\n" +
+	"\n" +
+	"created_ms\x18\x04 \x01(\x04R\tcreatedMs:W\x8a\x92\xf4\x01\x14guild_client_request\x92\x92\xf4\x01\x1bplayer_id,client_request_idڒ\xf4\x01\n" +
 	"created_ms\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04*\x98\x02\n" +
 	"\x12GuildAssetOpStatus\x12%\n" +
 	"!GUILD_ASSET_OP_STATUS_UNSPECIFIED\x10\x00\x12!\n" +
@@ -1609,7 +1711,7 @@ func file_proto_guild_guild_db_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_guild_guild_db_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_proto_guild_guild_db_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_proto_guild_guild_db_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_proto_guild_guild_db_proto_goTypes = []any{
 	(GuildAssetOpStatus)(0),             // 0: guildpb.GuildAssetOpStatus
 	(GuildAssetOpKind)(0),               // 1: guildpb.GuildAssetOpKind
@@ -1626,6 +1728,7 @@ var file_proto_guild_guild_db_proto_goTypes = []any{
 	(*GuildActivityProgressRecord)(nil), // 12: guildpb.GuildActivityProgressRecord
 	(*GuildTrialBattleRecord)(nil),      // 13: guildpb.GuildTrialBattleRecord
 	(*GuildTrialRewardOwedRecord)(nil),  // 14: guildpb.GuildTrialRewardOwedRecord
+	(*GuildClientRequestRecord)(nil),    // 15: guildpb.GuildClientRequestRecord
 }
 var file_proto_guild_guild_db_proto_depIdxs = []int32{
 	1, // 0: guildpb.GuildAssetOpRecord.kind:type_name -> guildpb.GuildAssetOpKind
@@ -1651,7 +1754,7 @@ func file_proto_guild_guild_db_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_guild_guild_db_proto_rawDesc), len(file_proto_guild_guild_db_proto_rawDesc)),
 			NumEnums:      5,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

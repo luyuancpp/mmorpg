@@ -9,7 +9,9 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
-	Kafka struct {
+	// 全球模式权威在同一个 TiDB 事务域；Redis 只保存候选索引和通知。
+	GlobalMatch GlobalMatchConf `json:",optional"`
+	Kafka       struct {
 		Brokers []string
 	}
 
@@ -163,6 +165,21 @@ type Config struct {
 	// svc.NewDataServiceClient 对 NonBlock=false 记错误日志并强制改为 true。
 	// optional:没配任何目标时不建客户端,team 需要 home zone 的请求一律 fail-closed。
 	DataServiceRpc zrpc.RpcClientConf `json:",optional"`
+}
+
+type GlobalMatchConf struct {
+	Enabled                bool   `json:",optional"`
+	RequireTiDB            bool   `json:",optional"`
+	Host                   string `json:",optional"`
+	User                   string `json:",optional"`
+	PasswordEnv            string `json:",default=MATCH_MYSQL_PASSWORD"`
+	Database               string `json:",default=mmorpg_match"`
+	ProbeSecretEnv         string `json:",default=MATCH_PROBE_SECRET"`
+	CrossRegionWaitSeconds uint32 `json:",default=30"`
+	HardLatencyMs          uint32 `json:",default=180"`
+	ProbeTTLSeconds        uint32 `json:",default=120"`
+	RankEndpoint           string `json:",default=127.0.0.1:51100"`
+	RankSecretEnv          string `json:",default=RANK_PRODUCER_SECRET_MATCH"`
 }
 
 // TeamConf 组队配置(team-system.md §D.1 / §D.3)。

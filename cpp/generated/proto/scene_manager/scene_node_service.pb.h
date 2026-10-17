@@ -229,6 +229,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReleasePlayerRequest final : public
     kTargetNodeIdFieldNumber = 3,
     kPlayerIdFieldNumber = 1,
     kTargetSceneIdFieldNumber = 2,
+    kExpectedOwnerEpochFieldNumber = 4,
   };
   // string target_node_id = 3;
   void clear_target_node_id() ;
@@ -265,11 +266,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReleasePlayerRequest final : public
   void _internal_set_target_scene_id(::uint64_t value);
 
   public:
+  // uint64 expected_owner_epoch = 4;
+  void clear_expected_owner_epoch() ;
+  [[nodiscard]] ::uint64_t expected_owner_epoch() const;
+  void set_expected_owner_epoch(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_expected_owner_epoch() const;
+  void _internal_set_expected_owner_epoch(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_node.ReleasePlayerRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 3,
+      ::google::protobuf::internal::TcParseTable<2, 4,
                           0, 54,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -301,6 +312,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReleasePlayerRequest final : public
     ::google::protobuf::internal::ArenaStringPtr target_node_id_;
     ::uint64_t player_id_;
     ::uint64_t target_scene_id_;
+    ::uint64_t expected_owner_epoch_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -433,6 +445,30 @@ inline void ReleasePlayerRequest::set_allocated_target_node_id(::std::string* PR
     _impl_.target_node_id_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:scene_node.ReleasePlayerRequest.target_node_id)
+}
+
+// uint64 expected_owner_epoch = 4;
+inline void ReleasePlayerRequest::clear_expected_owner_epoch() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expected_owner_epoch_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+}
+inline ::uint64_t ReleasePlayerRequest::expected_owner_epoch() const {
+  // @@protoc_insertion_point(field_get:scene_node.ReleasePlayerRequest.expected_owner_epoch)
+  return _internal_expected_owner_epoch();
+}
+inline void ReleasePlayerRequest::set_expected_owner_epoch(::uint64_t value) {
+  _internal_set_expected_owner_epoch(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:scene_node.ReleasePlayerRequest.expected_owner_epoch)
+}
+inline ::uint64_t ReleasePlayerRequest::_internal_expected_owner_epoch() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.expected_owner_epoch_;
+}
+inline void ReleasePlayerRequest::_internal_set_expected_owner_epoch(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expected_owner_epoch_ = value;
 }
 
 #ifdef __GNUC__

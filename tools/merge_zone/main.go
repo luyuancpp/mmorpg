@@ -308,7 +308,7 @@ func main() {
 	flag.BoolVar(&o.migrateBlobs, "migrate-player-blobs", false, "Copy player:{id}:* keys between per-zone data Redis clusters (multi-cluster deployments only)")
 	flag.BoolVar(&o.skipBlobs, "skip-player-blob-migration", false, "Skip the blob step even if -migrate-player-blobs was passed (emergency)")
 	flag.BoolVar(&o.clearHotState, "clear-source-hot-state", false,
-		"After remap: DEL source-zone player:{id}:location / scene:* / world_channels / node_load in the scene_manager Redis. Refuses unless scene_nodes:zone:{S}:load is empty")
+		"After remap: DEL source-zone player:{id}:location / scene:* / world_channels / node_load in the scene_manager Redis, then (last step) SREM S from scene_manager:zones. Refuses unless scene_nodes:zone:{S}:load is empty")
 
 	flag.BoolVar(&o.allowEmptySource, "allow-empty-source", false,
 		"Allow -apply when the source zone maps zero players (otherwise refused: an empty mapping usually means the wrong -mapping-redis-db or a missing -backfill-home-zone)")

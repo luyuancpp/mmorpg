@@ -30,12 +30,16 @@ include_directories(
 )
 
 set(SOURCE_FILES
+    address.cpp
     channel.cpp
     client_session.cpp
     grpc_timeout.cpp
     http2_transport.cpp
     message_framing.cpp
     metadata.cpp
+    method_table.cpp
+    server.cpp
+    server_session.cpp
     status.cpp
 )
 

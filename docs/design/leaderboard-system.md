@@ -594,3 +594,25 @@ Java 版已有更完整的接缝：`game-guild/.../rank/RedissonGuildRankRedis.j
 新增 `go/guild/internal/data/rank_read_snapshot_test.go` 在第一次成功的榜读取响应后，由独立连接立即删成员或改分，确定复现三种交错。默认使用 miniredis；设置 `GUILD_RANK_TEST_REDIS` 则走真实 Redis，所有榜键在测试传输边界映射到每例随机的 `guild-rank-it:{UUID}:rank`，只清理本例键，不使用 FLUSH。红回归在两种后端均实际得到三条失败；最终验证证据见 `build/guild-rank-read-20261015/`，完整命令与结果由本轮交付记录列出。
 
 本批实际验证：Go 新增三条交错与既有全服/分区 16 个分页边界在 miniredis、真实 Redis `13379` 均通过，`internal/data` 全部默认测试、该包 build/vet 退出 0；Java 独立 HEAD 快照执行 `GuildRanksTest` 18 项及 `GuildRanksRedisIntegrationTest` 10 项，共 28/28、无跳过、10 reactor 成功。Java 排行生产和测试的七个文件与当前工作树按 UTF-8/LF 比对一致；该证据不覆盖并行配额改动。Go 整服测试及 Java 其他域的整合结果另按本轮进度记录，不能由这组局部证据推断。
+
+## 2026-10-15 通用榜完整代次与奖励实施（进行中）
+
+用户已授权完整榜与邮件奖励闭环；本节替代旧v1不发奖的实施范围，不把尚未运行的工作标绿。新协议源为proto/rank/{rank,rank_admin,rank_table}.proto。
+
+SQL是榜代次、分数、写入游标、封榜快照与邮件奖励意图的权威；Redis只能作为可重建展示投影。内部生产者每个board/generation独占source_epoch及从1起无缺口cursor，batch写分与cursor收据同事务提交；重复cursor核完整请求摘要回放，跳号、混配、旧代次及未授权生产者拒绝。SET/SET_IF_HIGHER/INCREMENT只在该有序入口操作，不在rank重算Elo。
+
+封榜先取得生产者源SQL中停止本代写的真实屏障及最终cursor；榜端只有committed_cursor等于最终cursor才可seal。seal、TopN静态快照、全部逐玩家邮件奖励意图必须同TiDB事务提交；重试回放同settlement，不从Redis重读名单，不以写一个批次头冒充结算完成。后台按reward_id幂等调用MailAdmin，邮件未持久接收时保留奖励意图。新一代使用新的generation，不删除旧榜模拟reset。
+
+原仓SettleBoard（biz/leaderboard.go:242）按独立Exec写批次279、快照307、奖励意图383，且读榜至Clear331没有冻结；此恢复窗口不复制。旧设计的match快照出口允许末条丢失后靠下一局修复，只适用于派生展示，不能证明赛季奖励输入齐全。匹配代理负责评分SQL事务、可靠投榜outbox与源侧停代屏障，本模块负责生产者鉴权、游标、封榜与邮件奖励投递；两边共同验收才算完成。
+
+客户端新增通用榜分页/本人及周围名次，服务器一份读快照返回页/总数/本人，换账号或连接后旧回包失效。当前仅协议源及实施设计已落；未生成、未编译、未测试。
+
+## 2026-10-16 通用榜进程、封榜与邮件奖验收
+
+`go/rank`（gRPC51100、node13）和Java `game-rank`（Triple20917、group rank）已提供实际独立进程、内部生产者接口及客户端分页/周围名次入口。共享客户端契约来自主仓proto；Java拥有独立领域表和按命名空间配置的全局TiDB库。两版均固定强读、悲观事务及会话门禁，不从Redis或当前展示列表决定奖励归属。
+
+每个榜/代次固定producer、source_epoch和连续source_cursor；批次分数与完整摘要收据同事务。重复游标核同一内容，缺口与变更重放拒绝。SET、SET_IF_HIGHER和INCREMENT保留确定的同分顺序（先达成时间、再实体ID），溢出拒绝。分页、总数、本人和榜状态读取同一SQL快照，空period/generation可查最新可见代次。
+
+来源停止本代写后提供最终cursor；榜端确认全部游标到齐，原子写封榜状态、TopN静态快照及所有邮件奖励意图。奖励意图通过独立租约工作器按固定reward_id投递MailAdmin，传输结局未知仍用原载荷和原ID重投；不直接争用SYSTEM_CREDIT。奖励邮件的到期时间由封榜意图时间固定，重投不会延长它或改变摘要。隐藏一代只隐藏入口，不删除未投奖励、收据或封榜快照。
+
+真实TiDB回归：Go榜2/2；Java榜4/4，覆盖双实例同cursor只增一次、改载荷/跳号/未到最终cursor拒绝、封榜后拒写、快照/发奖意图故障整事务回滚、worker重启保留邮件幂等键、隐藏代次不丢奖励。Java同时验证每个实际物理连接的TiDB强读会话；两个JAR真实启动及客户端RankClient3/3证据见 `build/mail-rank-complete-20261015/`。来源侧评分SQL/outbox/停写屏障由匹配域实现，整链部署和跨区故障验收仍须与其合并验证；本节不代替该证据，也不宣称容量结论。

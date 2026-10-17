@@ -132,6 +132,14 @@ service LoginPreGate {
 | 410 | —          | queue_token 过期 | 丢 token,重调 `/api/assign-gate` |
 | 429 | —          | 限流硬拒(IP 风暴 / 账号冷却) | 退避后重试或显示错误 |
 
+> **(2026-10-15 更正,上表「客户端动作」列原文保留)** 负责人 2026-10-15 定了持有 `queue_token` 时的客户端契约,以 `docs/design/open-server-rate-limit-design.md` §11.5 的 2026-10-15 更正与补注为准。上表按此改读:
+> - `100 "login"`:拿到 token 后一律轮询 `/api/queue-status`,不再是「sleep `retryAfterMs`」。每次等待 = max(`retryAfterMs`, 2s) + [0, 20%] 均匀抖动;queue-status 连续失败时下限从 2s 起翻倍,封顶 30s,成功一次即复位。
+> - `100 "ratelimit"` 与 `429`:上表动作只适用于**不持** `queue_token` 的请求;429 的「退避」指 30/60/120s。
+>   持 token 的客户端只在 queue-status 本身失败(网络错误 / HTTP 非 200 / `code=500`)时带 token 重调一次 assign-gate 作恢复。
+>   重入回这两种时保留 token、回到 queue-status 轮询,**不**退避重调 assign-gate,否则已被放行的玩家会错过 `AdmitTTL`(60s)放行窗口。
+> - 表里未列的 `503`(`zone_maintenance` / `zone_closed` / `zone_not_open`)与 `404 zone_not_found`,由 gateway 区服准入在 assign-gate 与 queue-status 上都可能返回。持 token 时是终态:不重入,按错误结束。
+> - `410` 一行不变。
+
 ---
 
 ## 5. 入队/出队判定
@@ -169,6 +177,15 @@ service LoginPreGate {
 > - token 索引或 meta 不在、meta 损坏:EXPIRED(`meta_gone`),不变。
 >
 > 仍会停在名次 0 的只剩 `PopAdmit` 在写放行槽之前丢掉的条目(`pickFn` 返回 `(nil, nil)`、Marshal 失败、写放行槽的 MULTI 失败,§14 第 7 条),这类条目没有 `admitted_at`,与在途窗口无法区分。回包丢失时那张 gate 票仍找不回来,客户端收到 410 后从队尾重新排;Java 版对取走后再查同样回 410,另给取走加了请求号,让 go-redis 超时重发能拿回同一张票(`spec_G4b-G.md` §5.8 第 4 条),本仓库没有做。`queue:meta:{queueId}` 的字段因此多一个 `admitted_at`(§3 键表未列)。
+>
+> **(2026-10-15 补注,上面第 1 条与末段;原文保留;已落码,未编译、未测试,待 Codex 验证)** 同日复查后,`PopAdmit` 写放行的方式又改了一次:
+>
+> - 放行槽、`admitted_at`、在途占位改由一段脚本 `admitEntryScript` 写(`Script.Run`,即 `EVALSHA`,遇到 `NOSCRIPT` 回退 `EVAL`),不再是 MULTI{`SET`, `markAdmittedScript`, `admittedHoldScript`};`markAdmittedScript` 已删除。三者对其它客户端仍同时可见,「看得到 `admitted_at`」⇒「放行槽也已写过」照旧成立,上面 `Lookup` 的判定顺序不变。
+> - 脚本先做两道只读判定:**meta 不在**(条目在队里待满 `QueueEntryTTL`,token 索引与排队令牌同时失效,再没人取得到)→ 整条丢弃,不写放行槽、不占名额、不计入放行数,每批一行 INFO(`reason=meta_gone`);**`admitted_at` 已在** → 什么都不写、计入放行数。第二道是改成单条命令的必要配套:go-redis 对单条命令在读超时 / 连接断开后会自动重发,原来的 MULTI 读失败不重发;不加这道,重发会写出第二个放行槽、签出第二张 gate 票。
+> - `ZPOPMIN` 之后的写入不再随调用方 ctx(dispatcher 的 drainCtx)取消,改用 `context.WithoutCancel`:没有取消时不设截止,开区大批次不会被截断;看到停服或丢租约的取消之后,剩下的写入再给 3s 预算(`popAdmitWriteBudget`,自看到取消时起算)。停服、丢租约因此不再整批丢掉已弹出的条目。写入出错不回填队列,每批汇总一行 ERROR(`reason=write_failed`)。
+> - `QueueEntryTTL` 必须为正、`AdmitTTL` 不小于 1ms(`loginqueue.ValidateTTLs`;放行脚本的 `SET PX` 取整到毫秒,亚毫秒会成为 `PX 0` 被拒):起服时 `initLoginQueue` 校验,`PopAdmit` 弹出之前也校验。
+>
+> 末段「仍会停在名次 0」的路径因此变为:取消之后写入超出 3s 预算、Redis 出错(含 noeviction 写满)、进程被强杀、`pickFn` 返回 `(nil, nil)`、Marshal 失败;「写放行槽的 MULTI 失败」一项改读「放行脚本执行失败」。详见 §14 第 7、8 条补注。
 
 ### FreeSlots 公式
 
@@ -379,6 +396,15 @@ AssignGate(account, deviceId, zoneId)
 
 robot 的 queue-aware 实现见 `robot/main.go::assignGateHTTPLocal` + `robot/http_assign_gate.go::AssignGateWithQueue`。
 
+> **(2026-10-15 更正,上面协议树原文保留)** 上树是排队初版的口径,与负责人 2026-10-15 定的客户端契约有三处出入,以 `docs/design/open-server-rate-limit-design.md` §11.5 的 2026-10-15 更正与补注为准:
+> - 「每 retryAfterMs 调 QueryQueueStatus」改为:每次等待 max(retryAfterMs, 2s) + [0, 20%] 抖动;QueryQueueStatus 连续失败时下限从 2s 起翻倍,封顶 30s,成功一次即复位。
+> - 持 queueToken 时,只有 QueryQueueStatus 本身失败(网络错误 / HTTP 非 200 / gateway `code=500`)才带同一 token 重调一次 AssignGate 作恢复。重入回 `queueSource="ratelimit"` 或 429 时保留 token、回到轮询,不退避重调。
+>   上树 `queueSource="ratelimit"` 一支(重调 AssignGate、无 queueToken)只适用于还没拿到 token 的请求。
+> - gateway 区服准入回 503 zone_* 或 404 zone_not_found(上树未列)是终态:不重入,按错误结束。status=3(gateway 回 410)仍是丢 queueToken、不带 token 重调 AssignGate,同上树。
+>
+> 上一行 robot 的实现由另一名代理同批改为此口径;本注写下时未核对,未编译、未运行。
+> (2026-10-16 核对补注)主会话已静态核对 robot 实现与上述口径一致(见设计稿 §11.5 补注的「落地状态」),仍未编译、未运行。
+
 ---
 
 ## 10. 配置(login.yaml `Queue` 段)
@@ -491,6 +517,8 @@ q_entered=4080 q_admitted=920 q_expired=3 q_avg_wait=28s q_max_rank=4078
    - **(2026-10-15 更正:已修;已落码,未编译、未测试,待 Codex 验证)** 取走之后再查,以及放行槽没人来取、按 `AdmitTTL` 过期之后再查,都回 EXPIRED(gateway 410,原因 `admit_window_passed`),判据是 meta 里的 `admitted_at`,见 §5 决策树后的更正。回包丢失时 gate 票仍找不回来,客户端从队尾重新排。PopAdmit 写放行槽之前丢掉的条目仍停在名次 0 直到 meta 过期(第 7 条)。
 7. **`PopAdmit` 不是单段 Lua**(2026-10-13 登记,既有):「FreeSlots 读占位数 → ZPOPMIN → 逐条写占位」是多次往返,一批把队列弹空之后、占位逐条写完之前,快速通道看到「队列空、占位还没写全」可以再占进来,任一时刻在途 ≤ 2 ×(capacity − online)。`pickFn` 返回 `(nil, nil)`、Marshal 失败、MULTI 失败时条目丢失(G1b 规格 §4.5 第 1 条)。Java 版把弹出、算空位、写占位放在一段 Lua 里(`spec_G4b-G.md` §5.4、§5.8 第 2 条)。
 8. **在途占位脚本只有 miniredis 上的证据**(2026-10-15 登记):G4b-G 的计数、快速通道与 `admittedHoldScript` 三段脚本(含 10-15 的条件续期、MULTI 里的 `EVAL`)只有 miniredis 单测覆盖(单测本身也还待 Codex 执行),没有任何真实 Redis 上的运行证据。负责人 2026-10-15 定为**硬门槛**:G4b-2 打开排队之前,`spec_G4b-G.md` §8.4 的最小冒烟必须在真实 Redis 7.x 上跑通并记进 `docs/PROGRESS.md`,否则任何环境都不打开排队(`spec_G4b.md` §7 合入门槛)。
+   - **(2026-10-15 补注,第 7、8 条;已落码,未编译、未测试)** 第 7 条:写放行改为单段脚本 `admitEntryScript`(见 §5 决策树后的补注),弹出之后的写入用 `WithoutCancel`,看到取消之后再给 3s 预算(没有取消时不截断),停服或丢租约不再丢整批;写入出错每批一行 ERROR。弹出本身仍不在这段脚本里,本条「不是单段 Lua」的其余结论(快速通道可再占进来、在途 ≤ 2×)不变。仍丢条目的路径:取消之后超出预算、Redis 出错、强杀、`pickFn` 回 `(nil, nil)`、Marshal 失败。其中 **noeviction 写满**会让每拍弹出的整批全部写失败、几拍之内把队列弹空、所有人停在名次 0 约 1h:`ZPOPMIN` 不带 DENYOOM 照常成功,写入脚本被拒。根治要把弹出与写入合成一段 Lua、用 `#!lua` 声明 flags 且不带 `allow-oom`(Redis ≥ 7,miniredis 不支持,只能在真实 Redis 上验证),**待负责人定**;上线前至少给 redis-queue 配内存水位告警。另:锁续期单次失败不会触发丢租约(`onLost` 只在超过 fence 窗口或属主已换人时调用)。第 8 条:真实 Redis 冒烟改为覆盖 `admitEntryScript`(直接 `EVALSHA` / `EVAL`,不再是 MULTI 里的 `EVAL`)。
+9. **排队超过 `QueueEntryTTL` 会被弹回队尾**(2026-10-15 登记,既有,**待负责人定**):meta、token 索引、排队令牌只在 `Enqueue` 时设一次 `QueueEntryTTL`(1h),等待中不续期。等待超过 1h 的玩家下一次查询回 EXPIRED(handler 在 `Lookup` 之前先校验排队令牌的 HMAC 过期时刻,令牌与 meta 同时到期,所以原因通常是 `ttl`,只有令牌按秒取整多出的不到 1s 内才是 `meta_gone`;监控看 `login_queue_expired_total{reason="ttl"}`),丢 token 从队尾重排;他原来的队列成员留在 ZSET 里,轮到时被 `admitEntryScript` 按 meta 不在丢弃(不再白占名额)。开服首日若等待可能超过 1h,要么调大 `QueueEntryTTL`,要么在查询时续期 meta / token 索引 / 令牌(需同步改令牌过期语义,Java 版对齐),由负责人决定。
 
 ---
 

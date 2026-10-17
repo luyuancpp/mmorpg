@@ -51,6 +51,10 @@ func TestEtcYamlContractValues(t *testing.T) {
 	if c.CoreRedis.Host == "" || c.CoreRedis.DB != 0 {
 		t.Errorf("CoreRedis = %+v:段名必须逐字是 CoreRedis,DB 必须是 0(owner_epoch / location 所在库)", c.CoreRedis)
 	}
+	// 连接池上限要显式写正整数:k8s_deploy.ps1 把它镜像进 ConfigMap 并要求正整数,Redis 连接总账读同一个键。
+	if c.CoreRedis.PoolSize <= 0 {
+		t.Errorf("CoreRedis.PoolSize = %d, want > 0(共享 Redis 连接总账按它记账)", c.CoreRedis.PoolSize)
+	}
 	if len(c.Kafka.Brokers) == 0 {
 		t.Error("Kafka.Brokers 为空:段名写错或整段漏写")
 	}
@@ -146,6 +150,7 @@ func TestValidate(t *testing.T) {
 		{"MySQL.Host 为空", func(c *Config) { c.MySQL.Host = "" }},
 		{"连接池非正", func(c *Config) { c.MySQL.MaxOpenConn = 0 }},
 		{"CoreRedis 为空", func(c *Config) { c.CoreRedis.Host = "" }},
+		{"CoreRedis.PoolSize 为负", func(c *Config) { c.CoreRedis.PoolSize = -1 }},
 		{"Kafka 为空", func(c *Config) { c.Kafka.Brokers = nil }},
 		{"Kafka 超时非正", func(c *Config) { c.Kafka.WriteTimeoutMs = 0 }},
 		{"DataServiceRpc 没有目标", func(c *Config) { c.DataServiceRpc = zrpc.RpcClientConf{} }},
@@ -163,6 +168,11 @@ func TestValidate(t *testing.T) {
 		{"gauge 间隔越界", func(c *Config) { c.PlayerInbox.GaugeIntervalSeconds = 0 }},
 		{"对账间隔越界", func(c *Config) { c.PlayerInbox.ReconcileIntervalMinutes = 1 }},
 		{"对账窗口越界", func(c *Config) { c.PlayerInbox.ReconcileWindowHours = 0 }},
+		// 评审 L4:窗口必须覆盖至少两轮间隔(24h×60 = 1440 < 2×721)。
+		{"对账窗口不足两轮间隔", func(c *Config) { c.PlayerInbox.ReconcileIntervalMinutes = 721 }},
+		{"对账窗口短于一个间隔", func(c *Config) {
+			c.PlayerInbox.ReconcileWindowHours, c.PlayerInbox.ReconcileIntervalMinutes = 1, 120
+		}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -178,6 +188,11 @@ func TestValidate(t *testing.T) {
 	ok.PlayerInbox.ReconcileWindowHours = 0
 	if err := ok.Validate(); err != nil {
 		t.Errorf("对账关闭时不校验窗口: %v", err)
+	}
+	ok = validConfig()
+	ok.PlayerInbox.ReconcileIntervalMinutes = 720 // 边界:24h×60 = 2×720
+	if err := ok.Validate(); err != nil {
+		t.Errorf("窗口恰好覆盖两轮间隔应通过: %v", err)
 	}
 	ok = validConfig()
 	ok.PlayerInbox.AdminToken = strings.Repeat("k", MinAdminTokenBytes)

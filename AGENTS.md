@@ -274,7 +274,7 @@
 - **节点摘除只在 `queueInLoop` 里做**，不在连接自己的回调栈上。
 - **关机先排空再 `quit()`**：`quit()` 经**两跳 `queueInLoop`** 排到队列末尾，靠 FIFO 让排队的 `forceCloseInLoop`（第一趟）与 `connectDestroyed`（第二趟）都跑完；少一趟就是 `TcpConnection.cc:71` 或 `Channel.cc:43` 的 assert。关闭完成标记和通知必须在最后一跳的 `quit()` 之后、完成锁内发出，解锁后不再访问 Node，保证析构等待与 fallback 不会提前结束。**不要用定时器**：Windows 的 loop 是 `poll → handleEvents → timerQueue_->loop() → doPendingFunctors`，定时器恰在 N+1 趟到期时 `quit_` 先置位、只剩一趟——它"通常"能跑完，不是"必然"。
 
-新写或修改任何持有连接、绑进回调的类时只问两句：**"我存的是 weak 吗？""我绑的是 weak 吗？"** 两个都是，这一类问题与你无关。参考实现：`RpcChannel`（只存 weak 连接，超时 tick 与消息回调只绑 `weak_ptr<RpcChannel>`）、`RpcClient::connect()`、`RpcSession`（只存 weak channel）、`RpcDoneCallback`（延后回复只持 weak channel）、`BattleClientEdge::DirectSession`。回归测试：`cpp/tests/rpc_controller_test/rpc_client_lifecycle_test.cpp`、`rpc_channel_loopback_test.cpp`。
+新写或修改任何持有连接、绑进回调的类时只问两句：**"我存的是 weak 吗？""我绑的是 weak 吗？"** 两个都是，这一类问题与你无关。参考实现：`RpcChannel`（只存 weak 连接，超时 tick 与消息回调只绑 `weak_ptr<RpcChannel>`）、`RpcClient::connect()`、`RpcSession`（只存 weak channel）、`RpcDoneCallback`（延后回复只持 weak channel）、`BattleClientEdge::DirectSession`、`muduo_grpc::Server`（gRPC 服务端，TcpServer 的等价物：连接表是 `TcpConnectionPtr` 的唯一强持有者，Acceptor / 连接 / 定时器 / `queueInLoop` 回调一律绑 `weak_ptr<Server>`，Acceptor 与 Server 只在排队任务里或 loop 外析构）、`muduo_grpc::ServerCall`（可拷贝的入站调用完成句柄，只持 `weak_ptr<Server>`，最后一个副本析构仍未完成时回失败）。回归测试：`cpp/tests/rpc_controller_test/rpc_client_lifecycle_test.cpp`、`rpc_channel_loopback_test.cpp`、`cpp/tests/muduo_grpc_test/server_test.cpp`(gRPC 服务端生命周期)。
 
 ## 12. 双版本服务器（C++/Go 版 + Java 版，强制）
 

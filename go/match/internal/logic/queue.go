@@ -218,6 +218,24 @@ func isPlayerBattleLocked(svcCtx *svc.ServiceContext, playerId uint64) (bool, er
 
 // loadTicket 读取玩家 ticket;不存在返回 (nil, nil)。
 func loadTicket(svcCtx *svc.ServiceContext, playerId uint64) (*queueTicket, error) {
+	if svcCtx.Authority != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		t, e := svcCtx.Authority.Ticket(ctx, playerId)
+		if e != nil {
+			return nil, e
+		}
+		if t == nil || t.State == 0 || t.State >= 4 {
+			return nil, nil
+		}
+		state := ticketStateMatched
+		if t.State == 1 {
+			state = ticketStateQueued
+		} else if t.State == 3 {
+			state = ticketStateReady
+		}
+		return &queueTicket{Ticket: t.Ticket, Mode: int32(t.Mode), Config: t.ConfigId, State: state, EnqueuedAtMs: t.EnqueuedMs, ZoneId: t.ZoneId, Rating: float64(t.RatingCenti) / 100, TeamId: t.TeamId}, nil
+	}
 	fields, err := svcCtx.MatchRedis.Hgetall(matchTicketKey(playerId))
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -259,6 +277,9 @@ func createTicketIfAbsent(svcCtx *svc.ServiceContext, playerId uint64, t *queueT
 // 与 go-zero Eval 行为完全一致。t.TeamId 非 0 才多写 team_id 字段,其余票据的字段集不变。
 // 出错时服务端是否已写入未知(超时 / 断连 / 集群重试),调用方回滚时要把它算进去。
 func createTicketIfAbsentCtx(ctx context.Context, svcCtx *svc.ServiceContext, playerId uint64, t *queueTicket, ttl int) (bool, error) {
+	if svcCtx.Authority != nil {
+		return false, errors.New("全球直接开局必须在业务提交点原子占用全员并持久成局")
+	}
 	args := []any{
 		strconv.Itoa(ttl),
 		ticketFieldTicket, t.Ticket,

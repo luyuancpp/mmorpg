@@ -9,12 +9,13 @@
 #include <string>
 #include <vector>
 
-#include <grpcpp/grpcpp.h>
 #include "muduo/base/Logging.h"
+#include "muduo_grpc/channel.h"
 
 #include "grpc_client/data_service/data_service_grpc_client.h"
 #include "modules/id_segment/guid_segment_registry.h"
 #include "node/system/grpc_call_deadline.h"
+#include "node/system/node/muduo_grpc_channel_slot.h"
 #include "node/system/node/node.h"
 #include "node_config_manager.h"
 #include "proto/common/base/node.pb.h"
@@ -56,15 +57,15 @@ namespace
 
     // 所有种类共用的 DataService 传输层。
     //
-    // 为什么单飞:生成的 handler 只拿到 (ClientContext, Response),响应里没有 biz_tag,
-    // 发送侧也拿不到 ClientContext 的地址,所以同一时刻若有两种在途就分不清谁是谁。
+    // 为什么单飞:生成的全局 handler 只拿到 (GrpcReplyContext, Response),响应里没有 biz_tag,
+    // 应答上下文也只带状态与响应 metadata、不带本次调用的身份,所以同一时刻若有两种在途就分不清谁是谁。
     // 共享路径上同一时刻只放一个在途请求,响应必然属于它 —— 代价是三种同时冷启动时串行领三次
     // (毫秒级),运行期预取本来就稀疏,互不打扰。
     class IdSegmentTransport
     {
     public:
         bool Send(GuidKind kind, uint32_t step);
-        void OnResponse(const grpc::ClientContext &ctx, const ::data_service::AllocateIdSegmentResponse &resp);
+        void OnResponse(const GrpcReplyContext &ctx, const ::data_service::AllocateIdSegmentResponse &resp);
         void OnFailure(const GrpcCallFailure &failure);
 
     private:
@@ -81,21 +82,22 @@ namespace
 
     thread_local IdSegmentTransport tlsIdSegmentTransport;
 
-    // 只在候选里挑**已经建好 gRPC stub 且通道 READY** 的节点:ConnectToGrpcNode 先 emplace channel /
-    // stub 再 emplace NodeInfo,三者同在才是可用连接。DataService 是全局池(node_util.h
+    // 只在候选里挑**挂着 muduo_grpc 通道且通道 READY** 的节点:ConnectToGrpcNode 先 emplace MuduoGrpcChannelPtr
+    // 再 emplace NodeInfo,两者同在才是可用连接。DataService 是全局池(node_util.h
     // IsZoneScopedNodeType 注释:所有 zone 共享一个逻辑池),所以不比对 zone_id;多实例随机分摊领段压力。
     //
-    // 为什么要看通道状态:通道不 READY 时发出去也只会换回一次 UNAVAILABLE 失败通知,白占共享路径;
-    // 直接返回"发不出去",客户端按 500ms→5s 退避,冷启动时 data_service 一连上就能领到段。
-    // try_to_connect=true 顺手把空闲超时后 IDLE 的通道踢回 CONNECTING。
+    // 为什么要看通道状态:通道不 READY 时发出去,TRANSIENT_FAILURE 立即换回 UNAVAILABLE;IDLE / CONNECTING 则排队等连接,
+    // 连不上就占着共享路径直到 deadline 才失败。直接返回"发不出去",客户端按 500ms→5s 退避,冷启动时 data_service
+    // 一连上就能领到段。
+    // GetState(true) 顺手把 READY 连接断开后回到 IDLE 的通道踢回 CONNECTING(docs/design/grpc-muduo-transport.md §5)。
     entt::entity IdSegmentTransport::PickReadyDataServiceNode()
     {
         auto &registry = tlsNodeContextManager.GetRegistry(DataServiceNodeService);
         std::vector<entt::entity> ready;
-        for (auto entity : registry.view<NodeInfo, data_service::DataServiceStubPtr, std::shared_ptr<grpc::Channel>>())
+        for (auto entity : registry.view<NodeInfo, MuduoGrpcChannelPtr>())
         {
-            const auto &channel = registry.get<std::shared_ptr<grpc::Channel>>(entity);
-            if (channel && channel->GetState(/*try_to_connect=*/true) == GRPC_CHANNEL_READY)
+            const auto &channel = registry.get<MuduoGrpcChannelPtr>(entity);
+            if (channel && channel->GetState(/*tryToConnect=*/true) == muduo_grpc::ConnectivityState::kReady)
             {
                 ready.push_back(entity);
             }
@@ -175,16 +177,16 @@ namespace
         return echoed == raw || echoed == Base64Encode(raw);
     }
 
-    void IdSegmentTransport::OnResponse(const grpc::ClientContext &ctx,
+    void IdSegmentTransport::OnResponse(const GrpcReplyContext &ctx,
                                         const ::data_service::AllocateIdSegmentResponse &resp)
     {
         std::optional<GuidKind> owner;
 
         // ① 精确归属:服务端若回显了请求编号,按它路由(今天的 Go 侧还没有,这是留给它的接口)。
-        const auto &meta = ctx.GetServerInitialMetadata();
-        if (const auto it = meta.find(kSeqMetadataKey); it != meta.end())
+        // 回显看响应头(初始 metadata),值是收到的原样文本,与改前官方客户端读到的响应头同义。
+        if (const std::string *echoedValue = ctx.FindInitialMetadata(kSeqMetadataKey); echoedValue != nullptr)
         {
-            const std::string echoed(it->second.data(), it->second.size());
+            const std::string &echoed = *echoedValue;
             if (SeqMatches(inflight_, echoed))
             {
                 owner = inflight_->kind;
@@ -229,8 +231,7 @@ namespace
     void IdSegmentTransport::OnFailure(const GrpcCallFailure &failure)
     {
         std::ostringstream why;
-        why << "gRPC " << failure.method << " code=" << static_cast<int>(failure.status.error_code())
-            << " msg=" << failure.status.error_message();
+        why << "gRPC " << failure.method << " code=" << failure.code() << " msg=" << failure.message();
 
         const std::string *sentSeq = failure.FindSentMetadata(kSeqMetadataKey);
         if (sentSeq != nullptr && SeqMatches(inflight_, *sentSeq))
@@ -264,7 +265,7 @@ namespace
 void InitDataServiceReply()
 {
     data_service::AsyncDataServiceAllocateIdSegmentHandler =
-        [](const grpc::ClientContext &ctx, const ::data_service::AllocateIdSegmentResponse &resp)
+        [](const GrpcReplyContext &ctx, const ::data_service::AllocateIdSegmentResponse &resp)
     { tlsIdSegmentTransport.OnResponse(ctx, resp); };
     data_service::AsyncDataServiceAllocateIdSegmentFailedHandler =
         [](const GrpcCallFailure &failure, const ::data_service::AllocateIdSegmentRequest & /*request*/)

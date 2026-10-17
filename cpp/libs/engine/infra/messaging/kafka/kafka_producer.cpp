@@ -69,10 +69,10 @@ bool KafkaProducer::createProducer(const std::string& brokers) {
 	}
 	// 幂等生产者:内部重试时同一分区内保序、不重复(隐含 acks=all、max.in.flight<=5、retries 不封顶,
 	// 这三项由 librdkafka 自行调整,这里**不要**再显式设置——设了不相容的值会让 create 直接失败)。
-	// 设置失败不当成致命错误:退回旧的非幂等行为并大声报出来,总比所有 C++ 节点一条消息都发不出去强。
+	// all ACK 是结果日志提交点；配置失败不能冒充已耐久确认。
 	if (conf->set("enable.idempotence", "true", errstr) != RdKafka::Conf::CONF_OK) {
-		LOG_ERROR << "Kafka producer: failed to set enable.idempotence, falling back to non-idempotent delivery"
-			<< " (per-key ordering is NOT guaranteed across internal retries): " << errstr;
+		LOG_ERROR << "Kafka producer: required idempotent all-ack policy unavailable: " << errstr;
+		return false;
 	}
 	// 显式钉住分区器 = 玩家存盘 DBTask 的分区契约:partition = CRC-32/IEEE(key) mod N(按 uint32 取模),
 	// key 为玩家 id 的十进制 ASCII(见 player.h DbTaskKafkaKey)。login 发读请求用的是同一个函数

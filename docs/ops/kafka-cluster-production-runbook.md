@@ -39,10 +39,14 @@
 
 新建 `deploy/docker-compose.kafka-cluster.yml`:
 
+> 2026-10-16:镜像改为与仓库同一个钉版引用(`deploy/docker-compose.yml`、`deploy/k8s/manifests/infra/kafka.yaml`、
+> `kafka-topic-init.yaml` 四处相同,见 `deploy/k8s/README.md`「镜像钉版本」);换版本时与那四处同改,本 runbook 的两处示例一并更新。
+> 钉版已落码,未验证:digest 与入口命令待 Codex 按 V3 核对(见 `docs/ops/godb-pipeline-launch-todo.md` §6.2),现网 broker 版本待 V0 核对。
+
 ```yaml
 services:
   kafka-1:
-    image: apache/kafka:latest
+    image: apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837
     container_name: kafka-1
     hostname: kafka-1
     environment:
@@ -129,13 +133,25 @@ kafkautil.EnsureTopics(brokers, []TopicSpec{{
 > [`db-task-kafka-partition-contract.md`](../design/db-task-kafka-partition-contract.md)
 > 停写、排空，并同时切换 login/db 的 `TopicGeneration`。
 
+> 2026-10-16 补注(S5b,已落码,未编译、未测试,待 Codex 验证):`TopicSpec` 现有 `RetentionBytes`(每分区 topic 级
+> `retention.bytes`:0 = 不管理、沿用 broker 缺省;>0 = 建 topic 时带上并在每次启动时与 `retention.ms` 一起增量设置;<0 拒绝)。
+> db 与 login 各自的 `KafkaConfig.RetentionBytes`(optional)把它传给 `EnsureTopics`;K8s 上由 `k8s_deploy.ps1` 按 Kafka 盘预算
+> 同值渲染进两个 ConfigMap,盘的大小与 db_task 的保留量在同一个公式里对账,见 `deploy/k8s/README.md`「Kafka 磁盘预算与 db_task retention.bytes」。
+> 自建 3 broker 集群时同样要按「PVC ≥ 1.3 × Σ(分区数 × (retention.bytes + segment)) + 审计与其它 topic 预留」核对每个 broker 的盘。
+
 ### Step 4: 旧数据迁移(只在切换时做)
 
 如果之前有单 broker 跑过的数据需要保留:
+
+> 注(2026-10-16):Kafka 4.0 已移除 MirrorMaker 1,4.x 镜像里没有下面示例用的 `kafka-mirror-maker.sh`;
+> 要复制应改用 MirrorMaker 2(`/opt/kafka/bin/connect-mirror-maker.sh <mm2.properties>`)。示例与 MM2 写法都未验证,流程本身不重写。
+> 另外,复制 db_task 的 backlog 不等于保留同一分区映射与 applied cursor 的因果关系,db_task 迁集群仍须按
+> [`db-task-kafka-partition-contract.md`](../design/db-task-kafka-partition-contract.md) 停写、排空。
+
 ```bash
 # 用 mirror-maker 把旧 broker 的消息复制到新集群
 docker run --rm \
-  apache/kafka:latest \
+  apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837 \
   /opt/kafka/bin/kafka-mirror-maker.sh \
     --consumer.config consumer.properties \
     --producer.config producer.properties \
@@ -147,7 +163,9 @@ docker run --rm \
 ### Step 5: 切流验证
 
 1. 先把 1 个 zone 的 login service 指向新集群,观察 1 小时
-2. 验证 `kafka-consumer-groups.sh --describe` 没有 lag
+2. 验证 `kafka-consumer-groups.sh --describe` 没有 lag(2026-10-16 起 go/db 的消费组按 zone 拆:本机单 zone 默认启动是
+   `db_rpc_consumer_group`,`-Zone N` 启动与 K8s 切组后是 `db_rpc_consumer_group_z<ZoneId>`;只看本 zone 的 db_task topic 那几行,
+   见 `docs/design/db-consumer-group-per-zone.md`)
 3. 验证 `db.stderr.log` 没有 send error
 4. 全部 zone 切换
 

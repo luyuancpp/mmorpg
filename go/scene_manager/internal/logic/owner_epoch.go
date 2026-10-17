@@ -52,7 +52,35 @@ import (
 // 单独淘汰)时不铸造,先按 N 补种(SET NX)。推导与残余见 enterscenelogic.go 的 sameNodeZeroMint。
 // ---------------------------------------------------------------------------
 
-// luaMintEpochAndSetLocation:「当前 epoch == ARGV[1] 才 INCR 并写 location」。
+// luaLocationExpectCheck 是两段落点 Lua 共用的「location 原文期望」检查(scene-enter-chain-residuals.md §5.2 ③),
+// 拼进 luaMintEpochAndSetLocation / luaSetLocationIfEpoch,只在这一处定义:
+//
+//	ARGV[4] = 模式:"missing"(location 必须不存在)/ "present"(location 必须逐字节等于 ARGV[5])/
+//	          缺省、空串或 "any"(不检查,只供测试夹具与 UpdatePlayerLocation)
+//	ARGV[5] = present 时的期望原文 —— 本次 EnterScene 开头观察到的 location 原文
+//
+// 不符返回 0(与 epoch CAS 失败同一个返回值,调用方都翻成 errOwnerEpochConflict → 19,Redis 一个字节都没改)。
+// 未知模式按不符处理(fail-closed):Go 侧只发上面三种,出现别的值说明 Lua 与 Go 的约定被改岔了。
+//
+// 为什么要比原文:没有它时,A 在 B 更新身份之前完成观察与身份判定,之后仍能用同一个 epoch 覆盖掉 B 写入的
+// 身份,身份判定就形同虚设;首次落点(missing)同理,观察时没有 location、提交前被别人写入也要拒。
+// 现有直接 EVAL 两段脚本、只传 3 个 ARGV 的测试按缺省 = any 照常通过。
+const luaLocationExpectCheck = `
+local expect_mode = ARGV[4]
+if expect_mode == "missing" then
+    if redis.call("EXISTS", KEYS[2]) == 1 then
+        return 0
+    end
+elseif expect_mode == "present" then
+    if redis.call("GET", KEYS[2]) ~= ARGV[5] then
+        return 0
+    end
+elseif expect_mode ~= nil and expect_mode ~= "" and expect_mode ~= "any" then
+    return 0
+end
+`
+
+// luaMintEpochAndSetLocation:「当前 epoch == ARGV[1] 且 location 符合期望才 INCR 并写 location」。
 //
 //	KEYS[1] = player:{id}:owner_epoch
 //	KEYS[2] = player:{id}:location
@@ -60,9 +88,11 @@ import (
 //	ARGV[1] = 调用方读到的当前 epoch(十进制;键不存在按 "0")
 //	ARGV[2] = 已带上 epoch+1 的 PlayerLocation 字节
 //	ARGV[3] = 本次放行所凭的 handoff 标记原文;空串 = 本次不凭标记(首次落点 / 等待落点)
+//	ARGV[4] / ARGV[5] = location 原文期望,见 luaLocationExpectCheck
 //
-// 返回 INCR 之后的新 epoch;epoch CAS 不过返回 0;标记已不是预检时那一份返回 -1。
-// 两种失败都什么都不改。键不存在时 GET 给 false,与 "0" 归一后比对(首次铸造)。
+// 分支顺序:epoch 比对(含下面的重放识别,放在原文检查之前、保持不变)→ location 期望 → 标记比对 → INCR + SET。
+// 返回 INCR 之后的新 epoch;epoch CAS 不过或 location 已不是观察时那一份返回 0;标记已不是预检时那一份返回 -1。
+// 失败都什么都不改,返回值集合与加原文期望之前相同。键不存在时 GET 给 false,与 "0" 归一后比对(首次铸造)。
 // 回滚只 INCR、从不把键退回旧值(见 luaRollbackPlayerPlacement),所以不存在「回滚之后
 // 再铸出同一个值」。
 //
@@ -113,6 +143,7 @@ if cur ~= ARGV[1] then
     end
     return 0
 end
+` + luaLocationExpectCheck + `
 if ARGV[3] ~= "" and redis.call("GET", KEYS[3]) ~= ARGV[3] then
     return -1
 end
@@ -121,12 +152,16 @@ redis.call("SET", KEYS[2], ARGV[2])
 return minted
 `
 
-// luaSetLocationIfEpoch:「当前 epoch == ARGV[1] 才写 location」,**不铸造**。
-// 持有者没换的落点(同节点换图、dev 旁路下无标记的跨节点交接)用它:location 里
-// 记的 epoch 就是 ARGV[1] 本身。KEYS / ARGV 布局与 luaMintEpochAndSetLocation 相同。
+// luaSetLocationIfEpoch:「当前 epoch == ARGV[1] 且 location 符合期望才写 location」,**不铸造**。
+// 持有者没换的落点(同节点换图、dev 旁路下无标记的跨节点交接、samePlacement 的身份写)用它:location 里
+// 记的 epoch 就是 ARGV[1] 本身。KEYS / ARGV 布局与 luaMintEpochAndSetLocation 相同(ARGV[3] 不用)。
 //
-// 返回 1 = 已写;0 = epoch 被并发请求推进过,什么都没改。不能像铸造版那样返回
-// epoch 本身:期望值为 0(旧版从未铸造)时成功与冲突就分不开了。
+// 分支顺序:epoch 不符返回 0 → location 已逐字节等于 ARGV[2] 返回 1 → location 期望不符返回 0 → SET 并返回 1。
+// 第二步是 go-redis 原样重发 EVAL 时的幂等:首发已写、应答丢了,重发看到的 location 已是本次要写的值,
+// 不再等于观察原文;不先认它,重发会被原文期望误拒成 19。状态与「本次写入」逐字节相同,认成功不会多改任何东西。
+//
+// 返回 1 = 已写(或已是要写的值);0 = epoch 被并发推进,或 location 已不是观察时那一份,什么都没改。
+// 不能像铸造版那样返回 epoch 本身:期望值为 0(旧版从未铸造)时成功与冲突就分不开了。
 const luaSetLocationIfEpoch = `
 local cur = redis.call("GET", KEYS[1])
 if cur == false then
@@ -135,6 +170,10 @@ end
 if cur ~= ARGV[1] then
     return 0
 end
+if redis.call("GET", KEYS[2]) == ARGV[2] then
+    return 1
+end
+` + luaLocationExpectCheck + `
 redis.call("SET", KEYS[2], ARGV[2])
 return 1
 `
@@ -256,8 +295,9 @@ const (
 	rollbackOutcomePlanError         = "plan_error"
 )
 
-// errOwnerEpochConflict 表示铸造 epoch 时 CAS 失败:有并发的 EnterScene 抢先推进了
-// epoch。Redis 未被改动,调用方翻成 constants.ErrOwnerEpochConflict(可重试)。
+// errOwnerEpochConflict 表示落点 CAS 失败:epoch 或 location 被并发推进 —— 有并发的 EnterScene 抢先推进了
+// epoch,或 location 原文在本次观察之后被改写 / 删除(luaLocationExpectCheck)。Redis 未被改动,调用方翻成
+// constants.ErrOwnerEpochConflict(可重试)。
 var errOwnerEpochConflict = errors.New("owner epoch advanced by a concurrent EnterScene")
 
 // errHandoffWithdrawn 表示预检时读到的 handoff 标记在落点那一刻已经不在(或被换过):

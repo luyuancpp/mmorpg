@@ -152,6 +152,9 @@ void PruneBelowWatermark(AssetOpStreamLedger& ledger, uint64_t watermark) {
     drop = 0;
     while (drop < ledger.partial_seqs_size() && ledger.partial_seqs(drop) <= watermark) ++drop;
     RemoveFirst(*ledger.mutable_partial_seqs(), drop);
+    drop = 0;
+    while (drop < ledger.receipts_size() && ledger.receipts(drop).seq() <= watermark) ++drop;
+    RemoveFirst(*ledger.mutable_receipts(), drop);
 }
 
 // seq 是否超出同纪元跳号上限。max_seq 接近 uint64 上限时上限不可表示,此时任何 seq 都不算超。
@@ -208,7 +211,7 @@ std::string ValidateStreamLedger(const AssetOpStreamLedger& ledger, int index) {
     }
 
     if (ledger.partial_seqs_size() > kAssetOpMaxPartialSeqs) {
-        return prefix + "partial_seqs count=" + std::to_string(ledger.partial_seqs_size()) + " exceeds 64";
+        return prefix + "partial_seqs count=" + std::to_string(ledger.partial_seqs_size()) + " exceeds window";
     }
     previous = 0;
     for (int i = 0; i < ledger.partial_seqs_size(); ++i) {
@@ -221,6 +224,16 @@ std::string ValidateStreamLedger(const AssetOpStreamLedger& ledger, int index) {
         if (!TestBit(ledger, BitGroup::kApplied, static_cast<uint32_t>(seq - watermark - 1))) {
             return prefix + "partial_seqs bit is not applied,seq=" + std::to_string(seq);
         }
+    }
+    previous = 0;
+    for (const auto& receipt : ledger.receipts()) {
+        if (receipt.seq() <= previous || receipt.seq() <= watermark || receipt.seq() > watermark + kAssetOpWindowBits ||
+            receipt.request_digest().size() != 32 || receipt.correlation_id() == 0 || !receipt.has_snapshot()) return prefix + "invalid instance receipt";
+        previous = receipt.seq();
+        if (!TestBit(ledger, BitGroup::kApplied, static_cast<uint32_t>(receipt.seq() - watermark - 1))) return prefix + "receipt without applied outcome";
+        if (receipt.snapshot().ByteSizeLong() > kAssetOpMaxSnapshotBytes) return prefix + "oversized instance receipt";
+        for (const auto& item : receipt.snapshot().items()) if (item.instance_proto().empty() || item.instance_proto().size() > kAssetOpMaxInstanceBytes) return prefix + "invalid item receipt payload";
+        if (receipt.snapshot().has_pet() && (receipt.snapshot().pet().instance_proto().empty() || receipt.snapshot().pet().instance_proto().size() > kAssetOpMaxInstanceBytes)) return prefix + "invalid pet receipt payload";
     }
     return std::string();
 }
@@ -306,6 +319,7 @@ void ResetAssetOpStreamForEpoch(AssetOpStreamLedger& ledger, uint64_t epoch) {
     ledger.clear_applied_bits();
     ledger.clear_rejections();
     ledger.clear_partial_seqs();
+    ledger.clear_receipts();
     EnsureWindowWords(ledger);
 }
 
@@ -352,6 +366,9 @@ bool RecordAssetOpOutcome(AssetOpStreamLedger& ledger, uint64_t epoch, uint64_t 
 }
 
 std::string ValidateAssetOpLedger(const PlayerAssetOpLedgerComp& comp) {
+    size_t receiptBytes = 0;
+    for (const auto& stream : comp.streams()) for (const auto& receipt : stream.receipts()) receiptBytes += receipt.ByteSizeLong();
+    if (receiptBytes > kAssetOpMaxPlayerReceiptBytes) return "asset receipts exceed player byte limit";
     uint64_t previousStream = 0;
     for (int i = 0; i < comp.streams_size(); ++i) {
         const auto& ledger = comp.streams(i);

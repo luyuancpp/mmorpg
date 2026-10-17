@@ -20,7 +20,6 @@
 #include "services/battle/data/battle_table_fingerprint.h"
 #include "proto/contracts/kafka/scene_command.pb.h"
 #include "handler/event/scene_kafka_command_router.h"
-#include "handler/local_event/scene_local_events.h"
 #include "id_segment_bootstrap.h"
 #include "modules/id_segment/guid_segment_registry.h"
 
@@ -105,7 +104,6 @@ int main(int argc, char *argv[])
                   &handler);
 
         node::entry::detail::ApplyPostConstructionHooks<SceneNodeHooks>(node);
-        scene_local_events::RegisterAll();
 
         // 断线释放标记(A1′)的"本节点身份当前有效"探针(cross-zone-scene-travel.md §12.6.4 M3):
         // EtcdService::IsIdentityConfirmedFresh —— lease 已授予、不在重注册中(分配键 CAS 尚未裁定)、
@@ -117,7 +115,8 @@ int main(int argc, char *argv[])
         PlayerLifecycleSystem::SetNodeIdentityProbe([&node]()
             { return node.GetServiceDiscoveryManager().etcdService.IsIdentityConfirmedFresh(); });
 
-        node.RegisterGrpcService(&context->grpcService);
+        // context 先于 node 构造、晚于 node 析构:方法表闭包捕获 grpcService 的 this,服务必须活过 Node。
+        node.RegisterGrpcService(context->grpcService);
 
         node::entry::detail::InstallSignalHandlers(loop);
 
@@ -199,8 +198,8 @@ int main(int argc, char *argv[])
         };
         node.SetBeforeShutdown(exitAllPlayers);
 
-		// 每次轮询都重新扫描在线实体。gRPC / Kafka 入口已经由 Node 封住,但停机
-		// 瞬间已经排入 EventLoop 的请求仍可能晚一拍创建玩家;不能只信首次快照。
+		// 每次轮询都重新扫描在线实体。Kafka 入口已经由 Node 封住;gRPC 在 OnGrpcServerDrained 之前仍在排空,
+		// 已收完的调用照常派发,停机瞬间已经排入 EventLoop 的请求也会执行,都可能晚一拍创建玩家;不能只信首次快照。
 		node.SetShutdownDrainComplete([&context](Node &n)
 									  {
 			auto view = tlsEcs.actorRegistry.view<Player>();
@@ -284,8 +283,8 @@ int main(int argc, char *argv[])
 			}
 			else if (!drained)
 			{
-				// gRPC 完全退场前 predicate 可能短暂为 true,后续在途任务又
-				// 追加玩家。重置后只有最终稳定状态才会保留 complete 日志。
+				// gRPC 排空完成(OnGrpcServerDrained)之前 predicate 可能短暂为 true,之后派发的
+				// 调用又追加玩家。重置后只有最终稳定状态才会保留 complete 日志。
 				context->shutdownDrainLogged = false;
 			}
 			return drained; });
@@ -388,7 +387,6 @@ int main(int argc, char *argv[])
 
         loop.loop();
 		} // 异常 quit 时先让 Node 析构兜底完成业务 drain,Redis 此时仍保持可用。
-		scene_local_events::UnregisterAll();
 
 		// Node 已析构:身份探针捕获的引用从此悬空,立即清掉(之后不再跑 loop,A1′ 也不会再被调用)。
 		PlayerLifecycleSystem::SetNodeIdentityProbe({});

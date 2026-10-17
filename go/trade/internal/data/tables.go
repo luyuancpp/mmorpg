@@ -27,5 +27,7 @@ func Tables() []proto.Message {
 		// (它相对 go/db 修掉的正是这个缺口),所以已经建过库的环境不需要手工 DDL。
 		&tradepb.TradePlayerOpSeqRecord{},
 		&tradepb.TradeAssetOpRecord{},
+		&tradepb.TradeCommerceRecord{},
+		&tradepb.TradeCommerceGuardRecord{},
 	}
 }

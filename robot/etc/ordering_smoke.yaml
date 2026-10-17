@@ -1,7 +1,8 @@
-# ordering-smoke 配置:单机器人验证「同一会话经路由服的请求按收包顺序执行」
-# (docs/design/client-request-ordering.md §1.3 / §12 批次 R;场景实现见 robot/ordering_smoke_scenario.go)
+# ordering-smoke 配置:验证「同一会话经路由服的请求按收包顺序执行」
+# (docs/design/client-request-ordering.md §1.3 / §12 批次 R;场景实现见 robot/ordering_smoke_scenario.go,
+#  O5–O7 见 robot/ordering_smoke_groups.go)
 #
-# 流程:O1 登录进场
+# 流程:先跑 O5–O7(三组独立账号,不碰主机器人,见下文);再由主机器人 robot_9901 做 O1 登录进场
 #       → O2 清场:GetQueueStatus(153)必须是 NOT_QUEUED(上一轮残留会直接失败并说明)
 #       → O3 重复 20 轮:不等回包连发 JoinQueue(157,1V1)→ CancelQueue(148,不带票号),等两条回包都到,
 #          再查 GetQueueStatus。客户端意图是「加入后取消」,最终必须不在队列里;停在 QUEUED 就是执行顺序被颠倒,
@@ -17,17 +18,40 @@
 #   3. 环境里没有别的玩家在排 1V1:否则本机器人可能在 Join 与 Cancel 之间被凑走(O3-status 报前置条件不满足)。
 #   4. robot_9901 不在任何队伍里、没有未收尾的匹配票据。前缀必须是 robot_ 才会命中 login 侧 DevPasswordAuth。
 #   5. 从 robot/ 目录运行(table_dir 是相对路径)。
+#   6. O5–O7 另需 guild、friend、data_service 已启动(login 本来就要;O5–O7 任一组非乱序失败即整场退出,
+#      O1–O3 不再跑),并且:
+#      - robot_9902(帮主)/ robot_9903(申请人)首次在 zone_id 建角:申请要求申请人与帮会同归属区,不同区回 kGuildNotFound;
+#      - robot_9904 / robot_9905 之间没有拉黑关系(本场景从不拉黑,AddFriend 回 kFriendBlocked 即前置不满足);
+#      - robot_9906 没有别的进程同时在登(O7 每轮新开连接重复登录,同账号并发登录会回 kLoginInProgress)。
+#   7. 同一分钟内最多连跑两次:O5 每次申请 5 次、O6 每次发好友申请 5 次,两者的每分钟配额都是 10(固定 60s 窗口);
+#      第三次会撞 kRateLimitExceeded(失败原因里写明,等一分钟再跑)。
+#
+# O5–O7(各用独立账号与连接,先于 O1 跑;判定方式与 O3 相同:不等回包连发 → 等两条回包 → 查权威状态 →
+# 与「后发的那条最后执行」比较,对不上记乱序并收尾,全部轮次跑完再汇总):
+#   O5 帮会 5 轮:robot_9902 建临时帮,robot_9903 连发 ApplyJoinGuild(218)→ CancelGuildApplication(219),
+#      帮主 ListGuildApplications(221)里不得还有申请人;两条并发撞锁回 kGuildBusyRetry 也记乱序;全部轮次后解散临时帮。
+#   O6 好友 5 轮:robot_9905 先 AddFriend(234)给 robot_9904,robot_9904 连发 AcceptFriend(238)→ RemoveFriend(11),
+#      双方 GetFriendList(12)都不得看到对方。
+#   O7 登录 3 轮:robot_9906 先完整登录一次拿 player_id;此后每轮新连接不等 Login(48)回包就发 EnterGame(26),
+#      EnterGame 不得回 kLoginSessionNotFound(未登录),且最终收到进场推送。
+#   清场:O5 / O6 开始前把上一次运行的残留安全清掉(撤回申请、退帮 / 解散、删好友、拒绝待处理申请)再复核,仍不干净才失败。
+#   汇总:各组的乱序不当场退出(各打一行 [ordering-smoke] REORDERED step=…),接着跑后面的组与 O1–O3;
+#      O3 跑完后,O5–O7 与 O3 的乱序汇总成一行 ORDERING_SMOKE_FAIL,step 是逗号分隔的乱序步骤,reason 逐条写原因。
+#      所以上面「预期」里的 step=O3-order 只是 O3 自己乱序时的那一项;lane 上线之前一次运行通常会看到
+#      step=O5-order,O6-order,O7-order,O3-order 中的若干项(乱序是概率事件)。上线之后必须每轮都通过。
+#      O1–O3 中途非乱序失败时,FAIL 行只写那一步,此前 O5–O7 的乱序见它上面的 REORDERED 行。
 #
 # 用法(robot/ 目录下):
 #   .\robot.exe -c etc/ordering_smoke.yaml
 # 退出码 0 = 全部轮次按发送顺序执行(日志有 ORDERING_SMOKE_OK player_id=… rounds=20 一行);
-# 退出码 1 = 任一步失败(ORDERING_SMOKE_FAIL step=… reason=…)。每步通过另有一行 [ordering-smoke] PASS step=…。
-# 跑一轮约 30 秒。
+# 退出码 1 = 任一步失败(ORDERING_SMOKE_FAIL step=… reason=…;乱序汇总时 step 是逗号分隔的列表,见上文 O5–O7 段)。
+# 每步通过另有一行 [ordering-smoke] PASS step=…(O5–O7 的轮数打在各自 step=O5-order / O6-order / O7-order 的 PASS 行里)。
+# 跑一轮约 1.5 分钟:O5–O7 约 50 秒(5 个账号各登录一次,O7 另有 3 次新连接登录),O1–O3 约 30 秒。
 
 gateway_addr: "http://127.0.0.1:8081" # Gateway HTTP endpoint(/api/assign-gate)
 zone_id: 1 # 目标 zone
-robot_count: 1 # 语义占位:本模式固定单机器人
-account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号 robot_9901
+robot_count: 1 # 语义占位:本模式的账号固定(主机器人 robot_9901,O5–O7 另用 robot_9902–9906)
+account_fmt: "robot_%04d" # 保留骨架字段;本模式用固定账号 robot_9901–9906
 password: "123456"
 skill_ids: [] # 本模式不放技能
 table_dir: "../generated/tables"

@@ -1,5 +1,7 @@
 # Bag 回档可行性分析(per-service rollback)
 
+> 2026-10-15 起 `ItemStore` 不再使用 entt，§1.4 的 `itemRegistry_` 已不存在。
+
 > **⚠️ 状态说明(2026-09-20):本文与它指向的 `cross-zone-readiness-audit.md §3 三件套` 都已是历史方案,正文保留为历史,不得据此排期。**
 > - 「三件套」要修补的 Kafka 搬数据链(`player_migrate` / `player_migrate_ack` / `CrossZoneReaper`)已在跨 zone 传送阶段 3(2026-09-18)整条删除;跨 zone 不再经 `PlayerAllData` 传输数据,而是重定向 + 目标 zone 从盘上直接加载。现状以 [`cross-zone-scene-travel.md`](cross-zone-scene-travel.md) CZ-1 / §11.3 为准。
 > - 「bag 持久化是跨 zone 硬阻塞」的前提已不成立:bag 已接进普通存盘链(`player_database_loader.cpp` 的 `bag_marshal::Marshal / Unmarshal`)。

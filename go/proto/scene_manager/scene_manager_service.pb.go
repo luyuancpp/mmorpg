@@ -346,10 +346,14 @@ type EnterSceneRequest struct {
 	// 并在放行后开始计冷却;目标不是分线(按 id 进副本 / 镜像)时本字段不产生任何效果。
 	// 进 request_id 指纹(它是业务语义);proto3 不序列化 false,不带它的请求指纹与加字段前逐字节相同。
 	ClientChannelPick bool `protobuf:"varint,11,opt,name=client_channel_pick,json=clientChannelPick,proto3" json:"client_channel_pick,omitempty"`
-	// 登录代次(docs/design/scene-enter-session-fence.md):login 每条登录链持玩家锁铸造一次的单调值,
-	// 随 RoutePlayerEvent 原样下发,供 scene 入场栅栏区分新旧会话。scene_manager 只透传、不校验。
-	// - 0 = 调用方没有代次:scene 节点自发的 EnterScene(换图 / 跟随 / 疏散 / 交接重发 / 镜像进场)
-	//   一律填 0,它们的路由到 gate 后由会话已知代次盖章;旧版 login 同样为 0。
+	// 登录代次(docs/design/scene-enter-session-fence.md、scene-enter-chain-residuals.md §5):
+	// 与 session_id 一起构成本请求代表的会话身份。
+	// - login 发起:本链铸出的代次(每条登录链持玩家锁铸造一次的单调值)。
+	// - scene 自发(换图 / 跟随 / 疏散 / 交接重发 / 镜像进场):实体已放行的代次,只在请求会话号与实体会话一致时
+	//   才填,可落后于会话记录;旧版 scene 填 0。
+	// - 0 = 调用方没有代次(旧版 login / 旧版 scene),落点身份裁决按 legacy 放行。
+	// - scene_manager 用它做落点会话身份裁决(陈旧登录 / 会话冲突回私有码 25),同时仍原样放进
+	//   RoutePlayerEvent.login_generation 下发,gate 对同一角色取 max,scene 入场栅栏照旧裁决。
 	// - 不进 request_id 的去重指纹(算指纹前清零,与 correlation_id 同理):login 的重试复用同一个
 	//   request_id,但每条登录链铸出的代次都不同,进指纹会把合法重试判成幂等冲突。
 	LoginGeneration uint64 `protobuf:"varint,12,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
@@ -654,9 +658,13 @@ type LeaveSceneRequest struct {
 	SceneId   uint64                 `protobuf:"varint,2,opt,name=scene_id,json=sceneId,proto3" json:"scene_id,omitempty"`
 	RequestId string                 `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	// Zone ID: which zone the target scene belongs to.
-	ZoneId        uint32 `protobuf:"varint,4,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ZoneId uint32 `protobuf:"varint,4,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`
+	// 被清理的那条会话记录的原值,由 player_locator 从被删的 PlayerSession 里取。0 / 0 = 旧版调用方,按旧行为删除。
+	// scene_manager 拿它与 location 里记的会话身份比较,location 已属于更新的登录时不删(scene-enter-chain-residuals.md §3)。
+	SessionId       uint32 `protobuf:"varint,5,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	LoginGeneration uint64 `protobuf:"varint,6,opt,name=login_generation,json=loginGeneration,proto3" json:"login_generation,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *LeaveSceneRequest) Reset() {
@@ -717,6 +725,20 @@ func (x *LeaveSceneRequest) GetZoneId() uint32 {
 	return 0
 }
 
+func (x *LeaveSceneRequest) GetSessionId() uint32 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *LeaveSceneRequest) GetLoginGeneration() uint64 {
+	if x != nil {
+		return x.LoginGeneration
+	}
+	return 0
+}
+
 var File_proto_scene_manager_scene_manager_service_proto protoreflect.FileDescriptor
 
 const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
@@ -773,13 +795,16 @@ const file_proto_scene_manager_scene_manager_service_proto_rawDesc = "" +
 	"\x10target_gate_port\x18\x02 \x01(\rR\x0etargetGatePort\x12#\n" +
 	"\rtoken_payload\x18\x03 \x01(\fR\ftokenPayload\x12'\n" +
 	"\x0ftoken_signature\x18\x04 \x01(\fR\x0etokenSignature\x12%\n" +
-	"\x0etoken_deadline\x18\x05 \x01(\x03R\rtokenDeadline\"\x83\x01\n" +
+	"\x0etoken_deadline\x18\x05 \x01(\x03R\rtokenDeadline\"\xcd\x01\n" +
 	"\x11LeaveSceneRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x19\n" +
 	"\bscene_id\x18\x02 \x01(\x04R\asceneId\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x03 \x01(\tR\trequestId\x12\x17\n" +
-	"\azone_id\x18\x04 \x01(\rR\x06zoneId*[\n" +
+	"\azone_id\x18\x04 \x01(\rR\x06zoneId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x05 \x01(\rR\tsessionId\x12)\n" +
+	"\x10login_generation\x18\x06 \x01(\x04R\x0floginGeneration*[\n" +
 	"\tSceneType\x12\x1a\n" +
 	"\x16SCENE_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SCENE_TYPE_MAIN_WORLD\x10\x01\x12\x17\n" +

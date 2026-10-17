@@ -18,6 +18,8 @@
 #include "agones/agones_gameserver_lifecycle.h"
 #include "agones/agones_gameserver_status.h"
 #include "agones/agones_rest_client.h"
+// muduo 头必须最后包含:Windows 适配头会 #define pid_t / off_t 等名字,还会带进 Windows.h。
+#include "muduo/net/EventLoop.h"
 
 // Agones 生命周期状态机、GameServer JSON 解析与客户端地址来源的单元测试。
 //
@@ -27,6 +29,9 @@
 //
 // 2026-09-29:被测代码由 cpp/nodes/scene/agones/ 下沉到 cpp/libs/engine/infra/agones/,
 // 并按 D85 改名(SceneLifecycle -> GameServerLifecycle 等);工程名不变。
+//
+// 2026-10-16:新增异步许可(AcquireAllocationPermitAsync,grpc-muduo-transport.md §15.9)用例,
+// 测试线程自建 muduo EventLoop,用 runAfter 收尾,不起额外线程、不写死循环。
 
 namespace
 {
@@ -400,8 +405,8 @@ TEST(AgonesLifecycleTest, AllocatedWithNoSceneReconcilesBackToReady)
 	EXPECT_EQ(0, h.lifecycle.UnitCount());
 }
 
-// gRPC 线程通过 gate 后,CreateScene 还要排队进入 EventLoop。这个窗口也算
-// "在途创建":旧的最后一个 Scene 被销毁时不能抢先回 Ready。
+// 许可放行后,CreateScene 的许可回调还要排队进入 EventLoop(经 queueInLoop 投递)才进 Handle*。
+// 这个窗口也算"在途创建":旧的最后一个 Scene 被销毁时不能抢先回 Ready。
 TEST(AgonesLifecycleTest, PendingAllocationPermitPreventsPrematureReady)
 {
 	Harness h;
@@ -710,7 +715,8 @@ TEST(AgonesLifecycleTest, SlowHttpDoesNotBlockCallerBeyondTimeout)
 	lifecycle.Stop();
 }
 
-// EventLoop 上的调用方用非阻塞版本:立刻返回 false,并且踢起一次异步 allocate。
+// EventLoop 上的 RPC0 CreateScene 用非阻塞版本:立刻返回 false,并且踢起一次异步 allocate
+// (gRPC 守护段用 AcquireAllocationPermitAsync,见文件末尾的 AgonesAsyncPermitTest)。
 TEST(AgonesLifecycleTest, NonBlockingGateReturnsImmediatelyAndKicksAllocate)
 {
 	Harness h;
@@ -1742,4 +1748,534 @@ TEST(AgonesLifecycleTest, LateAllocateWithWaiterPresentIsNotReturnedToReady)
 	}
 
 	lifecycle.Stop();
+}
+
+// ---------------------------------------------------------------------------
+// 2026-10-16 第 4 批 §15.9:EventLoop 上的异步许可(AcquireAllocationPermitAsync)
+// ---------------------------------------------------------------------------
+
+namespace
+{
+	using agones::GameServerLifecycle;
+
+	// 在测试线程自建的 loop 上转,直到 done() 为真或超时;返回 done() 的最终结果。
+	// runEvery 只做条件检查,runAfter 到点无条件收尾;不起线程、不写死循环。不能在 loop 自己的回调里调用。
+	bool RunLoopUntil(muduo::net::EventLoop& loop, const std::function<bool()>& done, std::chrono::milliseconds timeout)
+	{
+		if (done())
+		{
+			return true;
+		}
+		const muduo::net::TimerId check = loop.runEvery(0.005, [&loop, &done] {
+			if (done())
+			{
+				loop.quit();
+			}
+		});
+		const muduo::net::TimerId giveUp = loop.runAfter(std::chrono::duration<double>(timeout).count(),
+			[&loop] { loop.quit(); });
+		loop.loop();
+		loop.cancel(check);
+		loop.cancel(giveUp);
+		return done();
+	}
+
+	// 无条件转满 duration:让已排队的投递跑完,也给"不该再有回调"的断言留出观察窗口。
+	void RunLoopFor(muduo::net::EventLoop& loop, std::chrono::milliseconds duration)
+	{
+		RunLoopUntil(loop, [] { return false; }, duration);
+	}
+
+	long long ElapsedMs(std::chrono::steady_clock::time_point begin)
+	{
+		return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin).count();
+	}
+
+	// 一次异步许可回调的记录。回调只在测试线程(loop 线程)上执行,不需要原子量;
+	// 由回调与测试以 shared_ptr 共享,回调闭包晚于用例变量析构也不悬空。
+	struct PermitOutcome
+	{
+		int calls = 0;
+		bool granted = false;
+	};
+
+	// 只记录、不保留 permit:permit 随回调返回析构(相当于参数非法 / 幂等命中而没建出单元)。
+	GameServerLifecycle::AllocationPermitCallback RecordPermit(const std::shared_ptr<PermitOutcome>& outcome)
+	{
+		return [outcome](GameServerLifecycle::AllocationPermit permit) {
+			++outcome->calls;
+			outcome->granted = static_cast<bool>(permit);
+		};
+	}
+
+	// 记录并在持有 permit 期间建出单元(正常的创建路径:permit 活到单元建完)。
+	GameServerLifecycle::AllocationPermitCallback RecordPermitAndCreateUnit(
+		const std::shared_ptr<PermitOutcome>& outcome, GameServerLifecycle& lifecycle, std::uint64_t unitKey)
+	{
+		return [outcome, &lifecycle, unitKey](GameServerLifecycle::AllocationPermit permit) {
+			++outcome->calls;
+			outcome->granted = static_cast<bool>(permit);
+			if (permit)
+			{
+				lifecycle.OnUnitCreated(unitKey);
+			}
+		};
+	}
+
+	bool AllCalled(const std::vector<std::shared_ptr<PermitOutcome>>& outcomes)
+	{
+		for (const auto& outcome : outcomes)
+		{
+			if (outcome->calls == 0)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	// 异步许可用例的夹具:测试线程自建 EventLoop,所有 Acquire 都在这个线程上调。
+	// 析构函数体先在 loop 还活着时 Stop()(残留等待者的拒绝排进 loop 队列);随后按声明逆序先销毁 loop
+	// (队列里没跑的投递随之析构,放行的 permit 照常记账),最后才销毁 lifecycle ——
+	// lifecycle 必须活得比 loop 队列里的 permit 久。
+	struct AsyncHarness
+	{
+		GameServerLifecycle lifecycle;
+		muduo::net::EventLoop loop;
+
+		~AsyncHarness() { lifecycle.Stop(); }
+	};
+
+	// GET /gameserver 可被卡住、响应体可脚本化的 sidecar:让 worker 停在排空轮询里,
+	// 制造"异步等待者已登记、worker 腾不出手处理 allocate"的窗口。
+	struct HeldDrainPollState
+	{
+		std::mutex mutex;
+		std::condition_variable cv;
+		std::string body;
+		bool holdGets = false;
+		bool getHeld = false;
+		int allocateCalls = 0;
+	};
+
+	class HoldableDrainPollTransport final : public agones::HttpTransport
+	{
+	public:
+		explicit HoldableDrainPollTransport(std::shared_ptr<HeldDrainPollState> state)
+			: state_(std::move(state))
+		{
+		}
+
+		agones::HttpResponse Post(const std::string& url,
+			const std::string&,
+			const agones::HttpTimeouts&) override
+		{
+			if (url.find("/allocate") != std::string::npos)
+			{
+				std::lock_guard<std::mutex> lock(state_->mutex);
+				++state_->allocateCalls;
+			}
+
+			agones::HttpResponse response;
+			response.transportOk = true;
+			response.statusCode = 200;
+			return response;
+		}
+
+		agones::HttpResponse Get(const std::string&, const agones::HttpTimeouts&) override
+		{
+			std::unique_lock<std::mutex> lock(state_->mutex);
+			if (state_->holdGets)
+			{
+				state_->getHeld = true;
+				state_->cv.notify_all();
+				state_->cv.wait(lock, [this] { return !state_->holdGets; });
+			}
+
+			agones::HttpResponse response;
+			response.transportOk = true;
+			response.statusCode = 200;
+			response.body = state_->body;
+			return response;
+		}
+
+	private:
+		std::shared_ptr<HeldDrainPollState> state_;
+	};
+
+} // namespace
+
+// Disabled:放行;即使当场可判定,也经 queueInLoop 投递,不在调用栈内回调。
+TEST(AgonesAsyncPermitTest, DisabledGrantsButNeverCallsBackInline)
+{
+	AsyncHarness h;
+	h.lifecycle.StartDisabled();
+
+	auto outcome = std::make_shared<PermitOutcome>();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(outcome));
+	EXPECT_EQ(0, outcome->calls);
+
+	ASSERT_TRUE(RunLoopUntil(h.loop, [&] { return outcome->calls > 0; }, 3000ms));
+	RunLoopFor(h.loop, 30ms);
+	EXPECT_EQ(1, outcome->calls);
+	EXPECT_TRUE(outcome->granted);
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+}
+
+// 已 Allocated:立即放行、不再发 allocate,但仍经投递,不在调用栈内回调。
+TEST(AgonesAsyncPermitTest, AllocatedGrantsImmediatelyButStillDelivers)
+{
+	auto sidecar = std::make_shared<FakeSidecar>();
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<FakeTransport>(sidecar), "http://127.0.0.1:9358", FastOptions());
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+	{
+		auto permit = h.lifecycle.AcquireAllocationPermitBlocking();
+		ASSERT_TRUE(permit);
+		h.lifecycle.OnUnitCreated(1);
+	}
+	ASSERT_EQ(agones::LifecycleState::Allocated, h.lifecycle.State());
+
+	auto outcome = std::make_shared<PermitOutcome>();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(outcome));
+	EXPECT_EQ(0, outcome->calls);
+
+	ASSERT_TRUE(RunLoopUntil(h.loop, [&] { return outcome->calls > 0; }, 3000ms));
+	RunLoopFor(h.loop, 30ms);
+	EXPECT_EQ(1, outcome->calls);
+	EXPECT_TRUE(outcome->granted);
+	EXPECT_EQ(1, sidecar->CallCount("/allocate"));
+	EXPECT_EQ(agones::LifecycleState::Allocated, h.lifecycle.State()); // 单元 1 还在
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+}
+
+// 第一个单元之前:两个创建请求都在 Ready 时到来,只 allocate 一次,随后都放行并建出单元。
+TEST(AgonesAsyncPermitTest, FirstUnitAllocatesOnceThenGrants)
+{
+	auto sidecar = std::make_shared<FakeSidecar>();
+	auto options = FastOptions();
+	options.allocateWaitTimeout = 3000ms;
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<FakeTransport>(sidecar), "http://127.0.0.1:9358", options);
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+
+	auto first = std::make_shared<PermitOutcome>();
+	auto second = std::make_shared<PermitOutcome>();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermitAndCreateUnit(first, h.lifecycle, 1));
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermitAndCreateUnit(second, h.lifecycle, 2));
+	EXPECT_EQ(0, first->calls);
+	EXPECT_EQ(0, second->calls);
+
+	ASSERT_TRUE(RunLoopUntil(h.loop, [&] { return first->calls > 0 && second->calls > 0; }, 3000ms));
+	RunLoopFor(h.loop, 30ms);
+	EXPECT_EQ(1, first->calls);
+	EXPECT_EQ(1, second->calls);
+	EXPECT_TRUE(first->granted);
+	EXPECT_TRUE(second->granted);
+	EXPECT_EQ(1, sidecar->CallCount("/allocate"));
+	EXPECT_EQ(2, h.lifecycle.UnitCount());
+	EXPECT_EQ(agones::LifecycleState::Allocated, h.lifecycle.State());
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+}
+
+// allocate 失败:由 worker 的失败结果当场拒绝,不等满等待上限。
+TEST(AgonesAsyncPermitTest, AllocateFailureRefusesWithoutWaitingForTimeout)
+{
+	auto sidecar = std::make_shared<FakeSidecar>();
+	sidecar->FailAlways("/allocate");
+	auto options = FastOptions();
+	options.allocateWaitTimeout = 3000ms;
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<FakeTransport>(sidecar), "http://127.0.0.1:9358", options);
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+
+	auto outcome = std::make_shared<PermitOutcome>();
+	const auto begin = std::chrono::steady_clock::now();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(outcome));
+	ASSERT_TRUE(RunLoopUntil(h.loop, [&] { return outcome->calls > 0; }, 3000ms));
+	const long long elapsedMs = ElapsedMs(begin);
+	RunLoopFor(h.loop, 30ms);
+
+	EXPECT_EQ(1, outcome->calls);
+	EXPECT_FALSE(outcome->granted);
+	EXPECT_LT(elapsedMs, 2000);
+	EXPECT_EQ(options.allocateMaxAttempts, sidecar->CallCount("/allocate"));
+	EXPECT_EQ(agones::LifecycleState::Ready, h.lifecycle.State());
+	EXPECT_EQ(0, h.lifecycle.UnitCount());
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+}
+
+// allocate 卡在 sidecar:loop 定时器按时(不早于上限)拒绝;等待者出表后 allocate 才晚到成功,
+// 零单元、零在途许可,必须收口回 Ready,且不会再回调一次。
+TEST(AgonesAsyncPermitTest, WaitTimeoutRefusesOnTimeAndLateAllocateReturnsToReady)
+{
+	auto state = std::make_shared<HeldAllocateState>();
+	state->holdAllocate = true;
+	auto options = FastOptions();
+	options.allocateWaitTimeout = 150ms;
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<HoldableAllocateTransport>(state), "http://127.0.0.1:9358", options);
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+
+	auto outcome = std::make_shared<PermitOutcome>();
+	const auto begin = std::chrono::steady_clock::now();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(outcome));
+	const bool answered = RunLoopUntil(h.loop, [&] { return outcome->calls > 0; }, 3000ms);
+	const long long elapsedMs = ElapsedMs(begin);
+
+	// 先放行 allocate 再断言:断言失败时 worker 不会卡在 sidecar 里,Stop() 才 join 得回来。
+	const bool held = WaitAllocateHeld(*state);
+	const agones::LifecycleState stateWhileHeld = h.lifecycle.State();
+	ReleaseAllocate(*state);
+	ASSERT_TRUE(answered);
+	ASSERT_TRUE(held);
+	EXPECT_EQ(1, outcome->calls);
+	EXPECT_FALSE(outcome->granted);
+	EXPECT_GE(elapsedMs, 150); // steady 复核:不早于上限
+	EXPECT_LT(elapsedMs, 1500);
+	EXPECT_EQ(agones::LifecycleState::Allocating, stateWhileHeld);
+
+	// /ready 共 2 次:启动 1 次 + 晚到收口 1 次。
+	ASSERT_TRUE(WaitUntil([&] { return ReadyCalls(*state) >= 2; }, 3000ms));
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+	EXPECT_EQ(1, AllocateCalls(*state));
+	EXPECT_EQ(0, h.lifecycle.UnitCount());
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+
+	RunLoopFor(h.loop, 30ms);
+	EXPECT_EQ(1, outcome->calls);
+}
+
+// allocate 慢但等待者还在:晚到结果放行等待者,保持 Allocated,不做晚到收口(没有多出来的 /ready)。
+TEST(AgonesAsyncPermitTest, LateAllocateWithWaiterPresentGrantsAndStaysAllocated)
+{
+	auto state = std::make_shared<HeldAllocateState>();
+	state->holdAllocate = true;
+	auto options = FastOptions();
+	options.allocateWaitTimeout = 3000ms;
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<HoldableAllocateTransport>(state), "http://127.0.0.1:9358", options);
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+
+	auto outcome = std::make_shared<PermitOutcome>();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermitAndCreateUnit(outcome, h.lifecycle, 1));
+	// allocate 卡住时等待者一定已登记:Acquire 先登记、再踢 allocate。
+	const bool held = WaitAllocateHeld(*state);
+	RunLoopFor(h.loop, 30ms);
+	const int callsWhileHeld = outcome->calls;
+	ReleaseAllocate(*state);
+	ASSERT_TRUE(held);
+	EXPECT_EQ(0, callsWhileHeld);
+
+	ASSERT_TRUE(RunLoopUntil(h.loop, [&] { return outcome->calls > 0; }, 3000ms));
+	// 给 worker 留出处理挂起请求的时间:若误做收口,这里已发出第 2 次 /ready 并离开 Allocated。
+	RunLoopFor(h.loop, 80ms);
+	EXPECT_EQ(1, outcome->calls);
+	EXPECT_TRUE(outcome->granted);
+	EXPECT_EQ(agones::LifecycleState::Allocated, h.lifecycle.State());
+	EXPECT_EQ(1, h.lifecycle.UnitCount());
+	EXPECT_EQ(1, ReadyCalls(*state));
+	EXPECT_EQ(1, AllocateCalls(*state));
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+}
+
+// 等待期间开始排空:由排空结算点拒绝(不等满上限),挂起的 allocate 被丢弃,一次 /allocate 都不发。
+TEST(AgonesAsyncPermitTest, DrainStartingWhileWaitingRefusesPermit)
+{
+	auto state = std::make_shared<HeldDrainPollState>();
+	state->body = GameServerWithLabels("{}");
+	auto options = DrainOptions();
+	options.allocateWaitTimeout = 3000ms;
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<HoldableDrainPollTransport>(state), "http://127.0.0.1:9358", options);
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+	EXPECT_FALSE(h.lifecycle.IsDraining());
+
+	// 卡住下一次排空轮询的 GET,让 worker 停在 DoPollDrain 里。
+	bool held = false;
+	{
+		std::unique_lock<std::mutex> lock(state->mutex);
+		state->holdGets = true;
+		held = state->cv.wait_for(lock, 3000ms, [&] { return state->getHeld; });
+		if (!held)
+		{
+			state->holdGets = false;
+		}
+	}
+	state->cv.notify_all();
+	ASSERT_TRUE(held);
+
+	auto outcome = std::make_shared<PermitOutcome>();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(outcome));
+	RunLoopFor(h.loop, 30ms);
+	const int callsWhileHeld = outcome->calls;
+
+	// 放行 GET,返回带排空标签的响应。先放行再断言,免得 worker 卡死、Stop() join 不回来。
+	{
+		std::lock_guard<std::mutex> lock(state->mutex);
+		state->body = GameServerWithLabels(R"({"mmorpg.io/drain":"true"})");
+		state->holdGets = false;
+	}
+	state->cv.notify_all();
+	EXPECT_EQ(0, callsWhileHeld);
+
+	const auto begin = std::chrono::steady_clock::now();
+	ASSERT_TRUE(RunLoopUntil(h.loop, [&] { return outcome->calls > 0; }, 3000ms));
+	const long long elapsedMs = ElapsedMs(begin);
+	RunLoopFor(h.loop, 50ms);
+
+	EXPECT_EQ(1, outcome->calls);
+	EXPECT_FALSE(outcome->granted);
+	EXPECT_LT(elapsedMs, 2000);
+	EXPECT_TRUE(h.lifecycle.IsDraining());
+	EXPECT_EQ(agones::LifecycleState::Ready, h.lifecycle.State());
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+	std::lock_guard<std::mutex> lock(state->mutex);
+	EXPECT_EQ(0, state->allocateCalls);
+}
+
+// 在 loop 线程上 Stop():3 个等待者各拒绝一次(经投递,不在 Stop 栈内回调);之后的 Acquire 立即拒绝(仍经投递)。
+TEST(AgonesAsyncPermitTest, StopOnLoopRefusesEveryWaiterOnceAndLaterCallsImmediately)
+{
+	auto sidecar = std::make_shared<FakeSidecar>();
+	sidecar->FailAlways("/ready");
+	auto options = FastOptions();
+	// /ready 一直失败、退避可被 Stop 打断:worker 停在 Starting,等待者只能由 Stop 或超时裁决。
+	options.readyMaxAttempts = 1000;
+	options.readyInitialBackoff = 20ms;
+	options.readyMaxBackoff = 20ms;
+	options.allocateWaitTimeout = 3000ms;
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<FakeTransport>(sidecar), "http://127.0.0.1:9358", options);
+	ASSERT_EQ(agones::LifecycleState::Starting, h.lifecycle.State());
+
+	std::vector<std::shared_ptr<PermitOutcome>> waiters;
+	for (int i = 0; i < 3; ++i)
+	{
+		waiters.push_back(std::make_shared<PermitOutcome>());
+		h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(waiters.back()));
+	}
+	RunLoopFor(h.loop, 30ms);
+	for (const auto& waiter : waiters)
+	{
+		EXPECT_EQ(0, waiter->calls); // Starting 下只能等
+	}
+
+	h.lifecycle.Stop();
+	for (const auto& waiter : waiters)
+	{
+		EXPECT_EQ(0, waiter->calls); // 拒绝排进 loop 队列,不在 Stop 栈内回调
+	}
+	EXPECT_EQ(agones::LifecycleState::Stopped, h.lifecycle.State());
+
+	auto late = std::make_shared<PermitOutcome>();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(late));
+	EXPECT_EQ(0, late->calls);
+
+	std::vector<std::shared_ptr<PermitOutcome>> everyone = waiters;
+	everyone.push_back(late);
+	const auto begin = std::chrono::steady_clock::now();
+	ASSERT_TRUE(RunLoopUntil(h.loop, [&] { return AllCalled(everyone); }, 3000ms));
+	const long long elapsedMs = ElapsedMs(begin);
+	RunLoopFor(h.loop, 50ms);
+
+	for (const auto& outcome : everyone)
+	{
+		EXPECT_EQ(1, outcome->calls);
+		EXPECT_FALSE(outcome->granted);
+	}
+	EXPECT_LT(elapsedMs, 2000); // 由 Stop 裁决,不是等满上限
+	EXPECT_EQ(0, sidecar->CallCount("/allocate"));
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+}
+
+// allocate 结果与 Stop() 并发:worker 结算点与 Stop 的摘表争同一把锁,谁先摘下谁裁决。
+// 不论哪边赢,每个等待者恰好回调一次;同一代的等待者要么全部放行、要么全部拒绝;
+// 回调保留的 permit 全部析构后在途计数归 0。先后取决于调度,因此连跑几轮。
+TEST(AgonesAsyncPermitTest, AllocateRacingStopResolvesEachWaiterExactlyOnce)
+{
+	constexpr int kRounds = 5;
+	constexpr int kWaiters = 4;
+	// 每轮一个新的 lifecycle(Stop 是终态)。全部声明在 loop 之前:loop 先析构,队列里没跑的投递
+	// 析构时 permit 记账的对象还在。
+	std::vector<std::unique_ptr<GameServerLifecycle>> lifecycles;
+	muduo::net::EventLoop loop;
+
+	for (int round = 0; round < kRounds; ++round)
+	{
+		auto state = std::make_shared<HeldAllocateState>();
+		state->holdAllocate = true;
+		auto options = FastOptions();
+		options.allocateWaitTimeout = 3000ms;
+		lifecycles.push_back(std::make_unique<GameServerLifecycle>());
+		GameServerLifecycle& lifecycle = *lifecycles.back();
+		lifecycle.Start(std::make_unique<HoldableAllocateTransport>(state), "http://127.0.0.1:9358", options);
+		ASSERT_TRUE(lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms)) << "round " << round;
+
+		using PermitHolder = std::vector<std::shared_ptr<GameServerLifecycle::AllocationPermit>>;
+		auto heldPermits = std::make_shared<PermitHolder>();
+		std::vector<std::shared_ptr<PermitOutcome>> outcomes;
+		for (int i = 0; i < kWaiters; ++i)
+		{
+			auto outcome = std::make_shared<PermitOutcome>();
+			outcomes.push_back(outcome);
+			lifecycle.AcquireAllocationPermitAsync(loop,
+				[outcome, heldPermits](GameServerLifecycle::AllocationPermit permit) {
+					++outcome->calls;
+					outcome->granted = static_cast<bool>(permit);
+					// 保留 permit,稍后统一析构,验证在途计数的记账。
+					heldPermits->push_back(std::make_shared<GameServerLifecycle::AllocationPermit>(std::move(permit)));
+				});
+		}
+
+		const bool allocateHeld = WaitAllocateHeld(*state);
+		// 放行 allocate 后立刻在 loop 线程上 Stop;Stop 的 join 等 worker 把这次 allocate 收完。
+		ReleaseAllocate(*state);
+		lifecycle.Stop();
+		ASSERT_TRUE(allocateHeld) << "round " << round;
+
+		ASSERT_TRUE(RunLoopUntil(loop, [&] { return AllCalled(outcomes); }, 3000ms)) << "round " << round;
+		RunLoopFor(loop, 30ms);
+
+		std::size_t granted = 0;
+		for (const auto& outcome : outcomes)
+		{
+			EXPECT_EQ(1, outcome->calls) << "round " << round;
+			if (outcome->granted)
+			{
+				++granted;
+			}
+		}
+		EXPECT_TRUE(granted == 0 || granted == static_cast<std::size_t>(kWaiters))
+			<< "round " << round << " granted=" << granted;
+		EXPECT_EQ(granted, lifecycle.PendingPermitCount()) << "round " << round;
+		heldPermits->clear();
+		EXPECT_EQ(0u, lifecycle.PendingPermitCount()) << "round " << round;
+		EXPECT_EQ(agones::LifecycleState::Stopped, lifecycle.State()) << "round " << round;
+		EXPECT_EQ(1, AllocateCalls(*state)) << "round " << round;
+	}
+}
+
+// 回调不保留 permit、也没建出单元(参数非法 / 幂等命中):permit 随回调返回析构,零单元零在途 -> 收口回 Ready。
+TEST(AgonesAsyncPermitTest, DroppedPermitWithZeroUnitsReturnsToReady)
+{
+	auto sidecar = std::make_shared<FakeSidecar>();
+	auto options = FastOptions();
+	options.allocateWaitTimeout = 3000ms;
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<FakeTransport>(sidecar), "http://127.0.0.1:9358", options);
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+
+	auto outcome = std::make_shared<PermitOutcome>();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(outcome));
+	ASSERT_TRUE(RunLoopUntil(h.loop, [&] { return outcome->calls > 0; }, 3000ms));
+	EXPECT_EQ(1, outcome->calls);
+	EXPECT_TRUE(outcome->granted);
+
+	// /ready 共 2 次:启动 1 次 + permit 析构后的零单元收口 1 次。
+	ASSERT_TRUE(WaitUntil([&] { return sidecar->CallCount("/ready") >= 2; }, 3000ms));
+	ASSERT_TRUE(h.lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+	EXPECT_EQ(0, h.lifecycle.UnitCount());
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+	EXPECT_EQ(1, sidecar->CallCount("/allocate"));
 }

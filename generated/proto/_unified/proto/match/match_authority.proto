@@ -1,0 +1,156 @@
+syntax = "proto3";
+package match;
+option go_package = "proto/match";
+import "proto/db/proto_option.proto";
+import "proto/match/match_network.proto";
+
+message MatchNetworkProfile {
+  string plan_id = 1;
+  string session_binding = 2;
+  repeated NetworkProbeReceipt receipts = 3;
+}
+
+// 仅服务端存储契约；全部副本必须连接同一 TiDB 事务域。
+message MatchNetworkProfileRecord {
+  option (OptionTableName) = "match_network_profile";
+  option (OptionPrimaryKey) = "player_id";
+  uint64 player_id = 1;
+  bytes payload = 2;
+  uint64 expires_ms = 3;
+}
+
+message MatchAuthorityTicketRecord {
+  option (OptionTableName) = "match_authority_ticket";
+  option (OptionPrimaryKey) = "player_id";
+  option (OptionIndex) = "state,mode,config_id,team_size,enqueued_ms;formation_id";
+  uint64 player_id = 1;
+  string ticket = 2;
+  string request_id = 3;
+  uint32 mode = 4;
+  uint32 config_id = 5;
+  uint32 team_size = 6;
+  uint32 state = 7; // 1排队、2成局、3已建房、4终态；禁止 TTL 自动释放成局成员。
+  uint64 enqueued_ms = 8;
+  uint64 not_before_ms = 9;
+  uint32 zone_id = 10;
+  int64 rating_centi = 11;
+  uint64 formation_id = 12;
+  uint64 team_id = 13;
+  bytes network_profile = 14;
+  uint64 expires_ms = 15;
+  uint32 selected_region = 16;
+}
+
+// 不能随当前票据覆盖或过期：否则旧 Join 在新一轮结束后重放会复活。
+message MatchJoinIntentRecord {
+  option (OptionTableName) = "match_join_intent";
+  option (OptionPrimaryKey) = "player_id,request_high,request_low";
+  uint64 player_id = 1;
+  string request_id = 2;
+  bytes ticket_record = 3; // 首次已接纳的 MatchAuthorityTicketRecord；先撤销的未知请求为空。
+  bool cancelled = 4;
+  uint64 request_high = 5; // UUID 的前64位原值；整数复合主键符合 D-14，不截断哈希。
+  uint64 request_low = 6;
+}
+
+// 整队/活动/挑战接受与全组占用、成局行在同一 SQL 事务提交。
+message MatchDirectIntentRecord {
+  option (OptionTableName) = "match_direct_intent";
+  option (OptionPrimaryKey) = "kind,owner_id,request_high,request_low";
+  uint32 kind = 1; // 1整队、2活动、3挑战。
+  uint64 owner_id = 2; // 整队的发起玩家、活动的帮会、挑战的应战玩家。
+  uint64 request_high = 3;
+  uint64 request_low = 4;
+  bytes payload = 5; // 无随机节点/票号的规范业务载荷，重试逐字节核对。
+  uint64 battle_id = 6;
+}
+
+message MatchFormationMember {
+  uint64 player_id = 1;
+  string ticket = 2;
+}
+message MatchFormationRecord {
+  option (OptionTableName) = "match_formation";
+  option (OptionPrimaryKey) = "battle_id";
+  option (OptionIndex) = "state,retry_at_ms";
+  uint64 battle_id = 1;
+  string operation_id = 2;
+  uint32 state = 3; // 1待备战、2已持久化创建请求、3结果未知、4成功、5已安全中止。
+  uint32 physical_region = 4;
+  uint32 target_node_id = 5;
+  string target_instance_id = 6;
+  string target_endpoint = 7;
+  uint32 mode = 8;
+  uint32 config_id = 9;
+  repeated MatchFormationMember members = 10;
+  bytes create_request = 11;
+  uint64 created_ms = 12;
+  uint64 deadline_ms = 13;
+  uint64 retry_at_ms = 14;
+  bytes activity_context = 15; // 备战前崩溃恢复也保留活动归属，内容为BattleActivityContext。
+  bool requeue_on_failure = 16; // 排队失败保持原票号与最早等待；整队/点名不能拆散回队。
+  repeated MatchPreparedEndpoint prepared = 17; // 备战时真实端点；恢复取消不能重新猜玩家当前所在场景。
+}
+message MatchPreparedEndpoint {
+  uint64 player_id = 1;
+  string endpoint = 2;
+}
+
+message MatchRatingRecord {
+  option (OptionTableName) = "match_rating";
+  option (OptionPrimaryKey) = "player_id";
+  uint64 player_id = 1;
+  int64 rating_centi = 2;
+  uint64 games = 3;
+  uint64 updated_ms = 4;
+}
+message MatchRatingAppliedRecord {
+  option (OptionTableName) = "match_rating_applied";
+  option (OptionPrimaryKey) = "battle_id";
+  uint64 battle_id = 1;
+  bytes payload_digest = 2;
+  uint64 applied_ms = 3;
+}
+// 停写标记与最终游标和每次评分事务争同一行锁；不依赖墙钟猜最后一批。
+message MatchRankSourceRecord {
+  option (OptionTableName) = "match_rank_source";
+  option (OptionPrimaryKey) = "source_epoch";
+  uint64 source_epoch = 1;
+  uint64 produced_cursor = 2;
+  uint64 committed_cursor = 3;
+  uint64 board_id = 4;
+  bool stopped = 5;
+}
+message MatchRankOutboxRecord {
+  option (OptionTableName) = "match_rank_outbox";
+  option (OptionPrimaryKey) = "source_epoch,source_cursor";
+  uint64 source_epoch = 1;
+  uint64 source_cursor = 2;
+  uint64 request_id = 3;
+  bytes entries = 4; // 确定性序列化 SubmitRankScoresRequest（未签名）；重投只重签 auth。
+}
+
+// 完整结算来源归档；只由收到的Kafka原字节写入，不作为第二套资产权威或自动补发队列。
+message MatchBattleCompletionRecord {
+  option (OptionTableName) = "match_battle_completion";
+  option (OptionPrimaryKey) = "battle_id";
+  uint64 battle_id = 1;
+  bytes raw_payload = 2;
+  bytes payload_digest = 3;
+  uint32 format_version = 4;
+  uint64 archived_ms = 5;
+  string source_topic = 6;
+  int32 source_partition = 7;
+  int64 source_offset = 8;
+}
+
+// 与整局原件同一事务登记；稳定身份为battle_id+player_id，保留到显式迁移/恢复流程接管。
+message MatchBattleSettlementSourceRecord {
+  option (OptionTableName) = "match_battle_settlement_source";
+  option (OptionPrimaryKey) = "battle_id,player_id";
+  uint64 battle_id = 1;
+  uint64 player_id = 2;
+  bytes settlement_proto = 3;
+  bytes payload_digest = 4;
+  uint64 archived_ms = 5;
+}

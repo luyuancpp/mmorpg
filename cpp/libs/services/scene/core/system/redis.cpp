@@ -5,6 +5,8 @@
 #include "player/system/db_task_dispatch_system.h"
 #include "player/system/dirty_save_stats.h"
 #include "player/system/player_lifecycle.h"
+#include "player/system/release_fence.h" // [ReleaseFence] 汇总行
+#include "player/system/save_seq.h"      // [SaveSeq] 汇总行
 #include "thread_context/ecs_context.h"
 #include "thread_context/redis_manager.h"
 
@@ -89,8 +91,10 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
     static constexpr double kQueueSnapshotIntervalSec = 30.0;
     // lastEnterFence:上一次打出 [EnterFence] 时的计数(只在本定时器里读写,逻辑线程上;初值全 0 = 第一次有计数就打)。
     // lastDbTaskDispatch:上一次打出 [DbTaskDispatch] 时的计数(同上,只在本定时器里读写)。
+    // lastReleaseFence:上一次打出 [ReleaseFence] 时的计数(同上,只在本定时器里读写)。
     snapshotTimerId_ = loop->runEvery(kQueueSnapshotIntervalSec, [this, lastEnterFence = enter_fence_stats::Snapshot{},
-                                                                  lastDbTaskDispatch = db_task_dispatch_stats::Snapshot{}]() mutable
+                                                                  lastDbTaskDispatch = db_task_dispatch_stats::Snapshot{},
+                                                                  lastReleaseFence = release_fence_stats::Snapshot{}]() mutable
                                       {
         if (playerRedis)
         {
@@ -124,6 +128,22 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
                      << " home_zone_unknown=" << ownerStats.homeZoneUnknown
                      << " owner_epoch_unknown=" << ownerStats.ownerEpochUnknown;
         }
+        // 存盘序号发号器的异常计数(save_seq.h 的 save_seq_stats;db-write-fencing-mysql.md §7.2)。单独一行、单独前缀,
+        // 不动上面几行的解析格式。key=value 平铺、进程启动以来的累计值;三项正常都应恒 0,任一非 0 才打,级别 WARN
+        // (有坏数据或 scene 主机时钟超前,含义见 save_seq_stats)。玩家号不进这一行。
+        const auto saveSeqStats = save_seq_stats::Read();
+        if (saveSeqStats.Any())
+        {
+            std::string line = "[SaveSeq]";
+            for (std::size_t i = 0; i < saveSeqStats.values.size(); ++i)
+            {
+                line += ' ';
+                line += save_seq_stats::kCounterNames[i];
+                line += '=';
+                line += std::to_string(saveSeqStats.values[i]);
+            }
+            LOG_WARN << line;
+        }
         // 入场会话栅栏的结论计数(enter_fence.h 的 enter_fence_stats;scene-enter-session-fence.md §5.7)。单独一行、单独前缀,
         // 不动上面两行的解析格式。key=value 平铺、进程启动以来的累计值,有变化才打;这一拍里拒绝类计数有增长时升 WARN
         // (挡下了跨会话的陈旧入场,或混版窗口里的无代次顶号),否则 INFO(admit_legacy 在 login 全量铸造后应恒为 0)。
@@ -149,6 +169,32 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
                 LOG_INFO << line;
             }
             lastEnterFence = fenceStats;
+        }
+        // ReleasePlayer 归属栅栏的结论计数(release_fence.h 的 release_fence_stats;scene-enter-chain-residuals.md §4.4)。
+        // 单独一行、单独前缀,不动上面几行的解析格式。key=value 平铺、进程启动以来的累计值,有变化才打;这一拍里
+        // skip_stale_release / skip_ahead_of_holder / release_cache_unknown 有增长时升 WARN(release_fence::Alarming),否则 INFO。
+        // release_unversioned 在 scene_manager 全量升级后应恒为 0;not_found 是成功交接后的常态。
+        const auto releaseFenceStats = release_fence_stats::Read();
+        if (releaseFenceStats != lastReleaseFence)
+        {
+            std::string line = "[ReleaseFence]";
+            for (std::size_t i = 0; i < releaseFenceStats.verdicts.size(); ++i)
+            {
+                line += ' ';
+                line += release_fence::kVerdictNames[i];
+                line += '=';
+                line += std::to_string(releaseFenceStats.verdicts[i]);
+            }
+            line += " not_found=" + std::to_string(releaseFenceStats.notFound);
+            if (releaseFenceStats.AlarmingIncreaseSince(lastReleaseFence))
+            {
+                LOG_WARN << line;
+            }
+            else
+            {
+                LOG_INFO << line;
+            }
+            lastReleaseFence = releaseFenceStats;
         }
         // DBTask 投递记账(db_task_dispatch_system.h 的 db_task_dispatch_stats)。单独一行、单独前缀,不动上面几行的
         // 解析格式。key=value 平铺、进程启动以来的累计值;计数有变化或还有未落定玩家时才打。这一拍里出现「MySQL 可能

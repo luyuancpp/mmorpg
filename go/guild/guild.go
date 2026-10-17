@@ -39,6 +39,7 @@ import (
 	"shared/buildinfo"
 	"shared/grpcstats"
 	"shared/idsegment"
+	"shared/kafkautil"
 	"shared/killswitch"
 	"shared/safego"
 	"shared/serverbase"
@@ -84,6 +85,10 @@ func main() {
 	if *migrateOnly {
 		os.Exit(runMigration(config.AppConfig))
 	}
+	// 全局历练不能在结果topic只有单副本时先注册服务、开放开战，再后台重试。
+	if err := ensureTrialResultTopic(config.AppConfig, kafkautil.EnsureTopics); err != nil {
+		logx.Must(fmt.Errorf("guild global result topic durability: %w", err))
+	}
 
 	svcCtx := svc.NewServiceContext(config.AppConfig)
 	defer svcCtx.Stop()
@@ -112,7 +117,7 @@ func main() {
 	}
 
 	// 表结构不对的实例不能对外服务,也不能注册进 etcd:建表 / 核对放在节点注册之前。
-	if err := ensureSchema(context.Background(), svcCtx.DB, config.AppConfig, schemamigrate.Up, schemamigrate.Plan); err != nil {
+	if err := ensureStartupSchema(config.AppConfig); err != nil {
 		logx.Must(err)
 	}
 
@@ -148,6 +153,10 @@ func main() {
 	host, port, err := splitHostPort(config.AppConfig.ListenOn)
 	if err != nil {
 		logx.Must(fmt.Errorf("parse listen address: %w", err))
+	}
+	host, err = nodeAdvertiseHost(host)
+	if err != nil {
+		logx.Must(err)
 	}
 
 	n, err := node.NewNode(nodeType, host, port)
@@ -276,10 +285,14 @@ func main() {
 		if err != nil {
 			logx.Must(fmt.Errorf("guild asset pipeline: %w", err))
 		}
-		// 离线读账本(B5d-1,07-rollback-fail-closed.md §7.8.3):必须紧跟建管线、在把 Loop 交给同步投递路径
-		// (下面的 EconomyDeps.Loop / ActivityDeps.Loop)与 Start 之前接上 —— Loop.Ledger 是无锁字段。
-		// 没配 DataServiceRpc 时客户端为 nil,方法内保持 Ledger=nil 并打 INFO(离线读账本是优化,不是正确性路径)。
+		// 已落盘账本(离线读账本 / 自动放弃;AssetOp.RequireSQLCommit 打开时也是在线终结的 SQL 提交证据)
+		// 必须紧跟建管线、在把 Loop 交给同步投递路径(下面的 EconomyDeps.Loop / ActivityDeps.Loop)与 Start 之前接上
+		// —— Loop.Ledger 是无锁字段。没配 DataServiceRpc 时方法保持 Ledger=nil;开关打开时随后的 CheckWiring 拒启
+		// (docs/design/db-write-fencing-mysql.md §6.6),开关关闭时按 HEAD 口径只是少了离线读账本与自动放弃。
 		assetPipe.AttachPersistedLedger(svcCtx.DataServiceClient)
+		if err := assetPipe.Loop.CheckWiring(); err != nil {
+			logx.Must(fmt.Errorf("guild asset pipeline wiring: %w", err))
+		}
 		// 日对账 + 自动放弃(落地恢复 §6.2 / §6.3)的选主:锁在 guild 全局 Redis(全体副本共享),只有当选副本跑维护。
 		// 同样必须在 Start 之前接上。竞选者标识用节点 uuid(每个进程实例唯一,与历练巡检租约的持有者标识同源)。
 		// 自动放弃另需 Loop.Ledger(上一行;没配 DataServiceRpc 时不放弃)与 Loop.Locator(NewAssetPipeline 已接),缺一不跑。
@@ -485,7 +498,8 @@ func main() {
 	defer stopTrialBackground()
 
 	// 结果消费者只看"结果消费是否打开"(TrialResultActive),**不看 MatchRpc 配没配**:运维删掉 MatchRpc 来关历练时,
-	// 关之前已经开打的对局仍要结算。Kafka 此刻连不上不拒启(帮会其余功能不依赖它),消费者在后台每 30s 重试。
+	// 关之前已经开打的对局仍要结算。全局模式已在注册前严格核验topic；
+	// 仅显式本地旧MySQL模式保留首次连接失败后后台每30s恢复的兼容行为。
 	if trialResultActive {
 		stopTrialResults, err := startTrialResultConsumer(config.AppConfig, guildLogic)
 		if err != nil {
@@ -561,12 +575,7 @@ const trialResultsPoint = "guild.kafka.trial_results"
 //   - 两个计数出口:指标在 logic 包注册,消费者(internal/kafka)不 import logic,经回调计数。
 func startTrialResultConsumer(c config.Config, guildLogic *logic.GuildLogic) (stop func(), err error) {
 	resultConf := c.Activity.TrialResult
-	consumer, err := guildkafka.NewTrialResultConsumer(guildkafka.TrialResultConsumerConfig{
-		Brokers:    c.Kafka.Brokers,
-		Topic:      resultConf.Topic,
-		GroupID:    resultConf.GroupID,
-		Partitions: resultConf.Partitions,
-	}, func(ctx context.Context, ev *kafkapb.BattleResultEvent) error {
+	consumer, err := guildkafka.NewTrialResultConsumer(trialConsumerConfigFrom(c), func(ctx context.Context, ev *kafkapb.BattleResultEvent) error {
 		_, err := guildLogic.SettleTrialResult(ctx, ev)
 		return err
 	}, guildkafka.TrialResultCounters{
@@ -589,6 +598,22 @@ func startTrialResultConsumer(c config.Config, guildLogic *logic.GuildLogic) (st
 		cancel()
 		<-done
 	}, nil
+}
+
+func trialConsumerConfigFrom(c config.Config) guildkafka.TrialResultConsumerConfig {
+	return guildkafka.TrialResultConsumerConfig{
+		Brokers: c.Kafka.Brokers, Topic: c.Activity.TrialResult.Topic,
+		GroupID: c.Activity.TrialResult.GroupID, Partitions: c.Activity.TrialResult.Partitions,
+		RequireDurability: c.MySQL.RequiresTiDB(),
+	}
+}
+
+func ensureTrialResultTopic(c config.Config, ensure func([]string, []kafkautil.TopicSpec) error) error {
+	if !c.MySQL.RequiresTiDB() || !c.TrialResultActive() {
+		return nil
+	}
+	cfg := trialConsumerConfigFrom(c)
+	return ensure(cfg.Brokers, []kafkautil.TopicSpec{cfg.TopicSpec()})
 }
 
 // logTrialClosedReason 在同道历练因为**配置**而关闭时打一行原因(开着时什么都不打)。
@@ -764,14 +789,9 @@ func missingIndexError(r schemamigrate.Report) error {
 // 只打印库名,不打印 DSN(含口令)。
 func runMigration(c config.Config) int {
 	fmt.Printf("guild schema migration: database=%s\n", data.DatabaseName)
-	db, err := sql.Open("mysql", c.MySQL.DataSource)
-	if err == nil {
-		var pingCtx context.Context
-		var cancel context.CancelFunc
-		pingCtx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-		err = db.PingContext(pingCtx)
-		cancel()
-	}
+	pingCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	db, err := svc.OpenSchemaMySQL(pingCtx, c.MySQL)
+	cancel()
 	if err != nil {
 		code := schemamigrate.ExitCode(schemamigrate.Report{}, err)
 		fmt.Fprintf(os.Stderr, "schema migration FAILED (exit %d): %v\n", code, err)
@@ -798,6 +818,17 @@ func runMigration(c config.Config) int {
 			data.DatabaseName, len(report.Statements))
 	}
 	return code
+}
+
+func ensureStartupSchema(c config.Config) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	db, err := svc.OpenSchemaMySQL(ctx, c.MySQL)
+	cancel()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	return ensureSchema(context.Background(), db, c, schemamigrate.Up, schemamigrate.Plan)
 }
 
 // reportLines 把迁移报告展开成可读行(Statements / Warnings / Manual 各一段)。
@@ -837,4 +868,22 @@ func splitHostPort(address string) (string, uint32, error) {
 		return "", 0, err
 	}
 	return host, uint32(portInt), nil
+}
+
+// POD_IP来自编排器的显式注入；通配监听地址不能作为场景和路由服的拨号目标。
+func nodeAdvertiseHost(listenHost string) (string, error) {
+	if value, present := os.LookupEnv("POD_IP"); present {
+		ip := net.ParseIP(strings.TrimSpace(value))
+		if ip == nil || ip.IsUnspecified() {
+			return "", errors.New("POD_IP必须是可拨号的非通配IP地址")
+		}
+		return ip.String(), nil
+	}
+	if listenHost == "" {
+		return "", errors.New("通配监听必须显式注入POD_IP作为帮会注册地址")
+	}
+	if ip := net.ParseIP(listenHost); ip != nil && ip.IsUnspecified() {
+		return "", errors.New("通配监听必须显式注入POD_IP作为帮会注册地址")
+	}
+	return listenHost, nil
 }

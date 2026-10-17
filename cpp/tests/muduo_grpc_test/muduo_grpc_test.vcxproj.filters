@@ -26,6 +26,9 @@
     <ClCompile Include="etcd_transport_helpers_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="event_loop_wakeup_test.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="go_interop_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -33,6 +36,18 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="muduo_test_loop.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="server_interop_test.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="server_session_test.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="server_test.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="test_h2_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="test_h2_peer.cpp">
@@ -47,6 +62,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="muduo_test_loop.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="test_h2_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="test_h2_peer.h">

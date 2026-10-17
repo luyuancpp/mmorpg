@@ -357,7 +357,11 @@ func TestDeferAndDeadLetterCounters(t *testing.T) {
 		w, _, _ := newTestWorker(t, 0)
 		before := deadLetter(metrics.DeadLetterPoison)
 		msg := &sarama.ConsumerMessage{Topic: w.topic, Partition: 0, Offset: 80, Value: []byte{0xff, 0x00, 0xff}}
-		require.NoError(t, persistPoisonMessage(w.ctx, w.redisClient, w.retryDeadQueueKey, msg, errors.New("bad payload")))
+		// 入队层换成 submit + done(S1);directEnqueue 在 submit 返回前就调 done,channel 只为接结果。
+		dlqErr := make(chan error, 1)
+		persistPoisonMessage(w.ctx, directEnqueue{rc: w.redisClient}, w.retryDeadQueueKey, msg, errors.New("bad payload"),
+			func(err error) { dlqErr <- err })
+		require.NoError(t, <-dlqErr)
 		assert.Equal(t, before+1, deadLetter(metrics.DeadLetterPoison))
 	})
 	t.Run("poison via ConsumeClaim", func(t *testing.T) {

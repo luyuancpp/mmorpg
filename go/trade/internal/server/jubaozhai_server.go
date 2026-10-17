@@ -18,6 +18,13 @@ type JubaozhaiServer struct {
 	deps logic.Deps
 }
 
+func (s *JubaozhaiServer) ListOfficialSkus(ctx context.Context, in *tradepb.ListOfficialSkusRequest) (*tradepb.ListOfficialSkusResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).ListOfficialSkus(in)
+}
+func (s *JubaozhaiServer) CreateOfficialOrder(ctx context.Context, in *tradepb.CreateOfficialOrderRequest) (*tradepb.CommerceOrderResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).CreateOfficialOrder(in)
+}
+
 func NewJubaozhaiServer(deps logic.Deps) *JubaozhaiServer {
 	return &JubaozhaiServer{deps: deps}
 }
@@ -40,4 +47,59 @@ func (s *JubaozhaiServer) SetFavorite(ctx context.Context, in *tradepb.SetFavori
 // GetMyShelf 取调用者自己的货架。
 func (s *JubaozhaiServer) GetMyShelf(ctx context.Context, in *tradepb.GetMyShelfRequest) (*tradepb.GetMyShelfResponse, error) {
 	return logic.NewJubaozhaiLogic(ctx, s.deps).GetMyShelf(in)
+}
+
+func (s *JubaozhaiServer) GetCommerceOrder(ctx context.Context, in *tradepb.GetCommerceOrderRequest) (*tradepb.CommerceOrderResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).GetCommerceOrder(in)
+}
+func (s *JubaozhaiServer) CancelCommerceOrder(ctx context.Context, in *tradepb.CancelCommerceOrderRequest) (*tradepb.CommerceOrderResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).CancelCommerceOrder(in)
+}
+func (s *JubaozhaiServer) ListCommerceOrders(ctx context.Context, in *tradepb.ListCommerceOrdersRequest) (*tradepb.ListCommerceOrdersResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).ListCommerceOrders(in)
+}
+func (s *JubaozhaiServer) CreatePlayerTrade(ctx context.Context, in *tradepb.CreatePlayerTradeRequest) (*tradepb.CommerceOrderResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).CreatePlayerTrade(in)
+}
+func (s *JubaozhaiServer) ConfirmPlayerTrade(ctx context.Context, in *tradepb.ConfirmPlayerTradeRequest) (*tradepb.CommerceOrderResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).ConfirmPlayerTrade(in)
+}
+func (s *JubaozhaiServer) CreateConsignment(ctx context.Context, in *tradepb.CreateConsignmentRequest) (*tradepb.CommerceOrderResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).CreateConsignment(in)
+}
+func (s *JubaozhaiServer) BuyConsignment(ctx context.Context, in *tradepb.BuyConsignmentRequest) (*tradepb.CommerceOrderResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).BuyConsignment(in)
+}
+func (s *JubaozhaiServer) CancelConsignment(ctx context.Context, in *tradepb.CancelConsignmentRequest) (*tradepb.CommerceOrderResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).CancelConsignment(in)
+}
+func (s *JubaozhaiServer) PlaceMarketOrder(ctx context.Context, in *tradepb.PlaceMarketOrderRequest) (*tradepb.MarketOrderResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).PlaceMarketOrder(in)
+}
+func (s *JubaozhaiServer) CancelMarketOrder(ctx context.Context, in *tradepb.CancelMarketOrderRequest) (*tradepb.MarketOrderResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).CancelMarketOrder(in)
+}
+func (s *JubaozhaiServer) ListMarketOrders(ctx context.Context, in *tradepb.ListMarketOrdersRequest) (*tradepb.ListMarketOrdersResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).ListMarketOrders(in)
+}
+func (s *JubaozhaiServer) GetMarketDepth(ctx context.Context, in *tradepb.GetMarketDepthRequest) (*tradepb.GetMarketDepthResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).GetMarketDepth(in)
+}
+func (s *JubaozhaiServer) CreateAuctionLot(ctx context.Context, in *tradepb.CreateAuctionLotRequest) (*tradepb.AuctionLotResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).CreateAuctionLot(in)
+}
+func (s *JubaozhaiServer) PlaceAuctionBid(ctx context.Context, in *tradepb.PlaceAuctionBidRequest) (*tradepb.AuctionLotResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).PlaceAuctionBid(in)
+}
+func (s *JubaozhaiServer) GetAuctionLot(ctx context.Context, in *tradepb.GetAuctionLotRequest) (*tradepb.AuctionLotResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).GetAuctionLot(in)
+}
+func (s *JubaozhaiServer) CancelAuctionLot(ctx context.Context, in *tradepb.CancelAuctionLotRequest) (*tradepb.AuctionLotResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).CancelAuctionLot(in)
+}
+func (s *JubaozhaiServer) BrowseCommerceOffers(ctx context.Context, in *tradepb.BrowseCommerceOffersRequest) (*tradepb.BrowseCommerceOffersResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).BrowseCommerceOffers(in)
+}
+func (s *JubaozhaiServer) ListTradeMarkets(ctx context.Context, in *tradepb.ListTradeMarketsRequest) (*tradepb.ListTradeMarketsResponse, error) {
+	return logic.NewJubaozhaiLogic(ctx, s.deps).ListTradeMarkets(in)
 }

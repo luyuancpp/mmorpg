@@ -217,7 +217,8 @@ type AddFriendLimits struct {
 //   - 代价:RC 下同一事务内两次普通 SELECT 可能读到不同结果(每条语句各取一份新快照)。
 //     所以"判定读必须在守卫之后"不是可选优化;守卫之后的探针用锁定读还是普通读,
 //     取决于该次读的对象是否已被守卫覆盖 —— 逐处理由写在 AddFriendRequest 的 ⑤⑥ 旁边。
-//   - 事务**之外**的自动提交语句(ensure 的补行、Unblock / sweep 的 DELETE)不经过 BeginTx,
+//   - 事务**之外**的自动提交语句(ensure 的补行、sweep 的 DELETE;Unblock 2026-10-16 起改为单语句 RC 事务,
+//     理由见该函数)不经过 BeginTx,
 //     它们的隔离级别来自连接会话:svc.BuildDSN 用 transaction_isolation 把整个连接池设成 RC,
 //     否则它们会落回服务器全局默认的 REPEATABLE-READ、重新拿间隙锁 / next-key 锁。
 //   - 前提是 binlog_format=ROW(RC + STATEMENT 格式的 binlog 不安全)。

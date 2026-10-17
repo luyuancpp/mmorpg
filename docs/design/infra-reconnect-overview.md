@@ -23,7 +23,7 @@ Updated: 2026-04-05
 | Middleware | Library | Auto-Reconnect | Notes |
 |-----------|---------|---------------|-------|
 | Redis | go-redis v9 / go-zero redis | Yes (library) | Connection pool with auto-reconnect. No custom retry wrappers. |
-| Kafka (login) | IBM/sarama | Yes (library + custom) | Partition unavailability tracking, consistent hash remap, transaction recovery. |
+| Kafka (login) | IBM/sarama | Yes (library + custom) | db_task 主生产者按分区契约 CRC-32 mod N 分区(`kafkautil.NewDBTaskPartitioner`,与 C++ librdkafka `consistent_random` 同一个函数,见 `docs/design/db-task-kafka-partition-contract.md`);分区漂移时永久 fence;重连和重试靠 sarama(`Retry.Max`);控制面命令走 plainProducer 的显式分区。(2026-10-16 订正:原文写的 Partition unavailability tracking / consistent hash remap 从来没生效,已删除;已落码,未编译、未测试,待 Codex 验证) |
 | Kafka (db) | IBM/sarama | Yes (library + custom) | ConsumerGroup auto-reconnect loop, Redis-backed retry queue, dead letter queue. |
 | Kafka (scene_mgr, player_loc) | segmentio/kafka-go | Yes (library) | `kafka.Writer` handles leader discovery. Fire-and-forget. |
 | MySQL | go-sql-driver + database/sql | Yes (pool) | `SetConnMaxLifetime(5min)` prevents stale connections after MySQL restart. |

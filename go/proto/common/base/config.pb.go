@@ -635,10 +635,11 @@ func (x *BaseDeployConfig) GetDbTaskTopicGeneration() uint32 {
 
 // Game config
 type GameConfig struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	SceneNodeType uint32                      `protobuf:"varint,1,opt,name=scene_node_type,json=sceneNodeType,proto3" json:"scene_node_type,omitempty"` // Scene node type
-	ZoneId        uint32                      `protobuf:"varint,2,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`                        // Zone ID
-	ZoneRedis     *GameConfig_ZoneRedisConfig `protobuf:"bytes,7,opt,name=zone_redis,json=zoneRedis,proto3" json:"zone_redis,omitempty"`                // Zone Redis config
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	SceneNodeType uint32                        `protobuf:"varint,1,opt,name=scene_node_type,json=sceneNodeType,proto3" json:"scene_node_type,omitempty"` // Scene node type
+	ZoneId        uint32                        `protobuf:"varint,2,opt,name=zone_id,json=zoneId,proto3" json:"zone_id,omitempty"`                        // Zone ID
+	ZoneRedis     *GameConfig_ZoneRedisConfig   `protobuf:"bytes,7,opt,name=zone_redis,json=zoneRedis,proto3" json:"zone_redis,omitempty"`                // Zone Redis config
+	PlayerInbox   *GameConfig_PlayerInboxConfig `protobuf:"bytes,8,opt,name=player_inbox,json=playerInbox,proto3" json:"player_inbox,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -690,6 +691,13 @@ func (x *GameConfig) GetZoneId() uint32 {
 func (x *GameConfig) GetZoneRedis() *GameConfig_ZoneRedisConfig {
 	if x != nil {
 		return x.ZoneRedis
+	}
+	return nil
+}
+
+func (x *GameConfig) GetPlayerInbox() *GameConfig_PlayerInboxConfig {
+	if x != nil {
+		return x.PlayerInbox
 	}
 	return nil
 }
@@ -763,6 +771,64 @@ func (x *GameConfig_ZoneRedisConfig) GetDb() uint32 {
 	return 0
 }
 
+// 玩家持久收件箱的 scene 消费端(docs/design/player-inbox-service.md §3.3、§7.3、§11.7)。
+// 由 readGameConfig 手工逐键解析(cpp/libs/engine/config/config.cpp),yaml 键名 player_inbox。
+// **整段或单键缺失时加载器显式取默认值**,不依赖 proto3 的 0:
+//
+//	consumer_enabled        默认 false = 不发 Fetch,账本字段照常随存档往返(这就是回滚下限,§11.7 第 4 步);
+//	periodic_fetch_minutes  默认 30 = 在线有界兜底周期(分钟,±20% 抖动);0 = 关闭兜底(0 有含义,所以不能当缺省值)。
+type GameConfig_PlayerInboxConfig struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	ConsumerEnabled      bool                   `protobuf:"varint,1,opt,name=consumer_enabled,json=consumerEnabled,proto3" json:"consumer_enabled,omitempty"`
+	PeriodicFetchMinutes uint32                 `protobuf:"varint,2,opt,name=periodic_fetch_minutes,json=periodicFetchMinutes,proto3" json:"periodic_fetch_minutes,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *GameConfig_PlayerInboxConfig) Reset() {
+	*x = GameConfig_PlayerInboxConfig{}
+	mi := &file_proto_common_base_config_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GameConfig_PlayerInboxConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GameConfig_PlayerInboxConfig) ProtoMessage() {}
+
+func (x *GameConfig_PlayerInboxConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_base_config_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GameConfig_PlayerInboxConfig.ProtoReflect.Descriptor instead.
+func (*GameConfig_PlayerInboxConfig) Descriptor() ([]byte, []int) {
+	return file_proto_common_base_config_proto_rawDescGZIP(), []int{6, 1}
+}
+
+func (x *GameConfig_PlayerInboxConfig) GetConsumerEnabled() bool {
+	if x != nil {
+		return x.ConsumerEnabled
+	}
+	return false
+}
+
+func (x *GameConfig_PlayerInboxConfig) GetPeriodicFetchMinutes() uint32 {
+	if x != nil {
+		return x.PeriodicFetchMinutes
+	}
+	return 0
+}
+
 var File_proto_common_base_config_proto protoreflect.FileDescriptor
 
 const file_proto_common_base_config_proto_rawDesc = "" +
@@ -820,18 +886,22 @@ const file_proto_common_base_config_proto_rawDesc = "" +
 	"\x16audit_topic_generation\x18\x14 \x01(\rR\x14auditTopicGeneration\x122\n" +
 	"\vgrpc_client\x18\x15 \x01(\v2\x11.GrpcClientConfigR\n" +
 	"grpcClient\x127\n" +
-	"\x18db_task_topic_generation\x18\x16 \x01(\rR\x15dbTaskTopicGeneration\"\xf0\x01\n" +
+	"\x18db_task_topic_generation\x18\x16 \x01(\rR\x15dbTaskTopicGeneration\"\xa8\x03\n" +
 	"\n" +
 	"GameConfig\x12&\n" +
 	"\x0fscene_node_type\x18\x01 \x01(\rR\rsceneNodeType\x12\x17\n" +
 	"\azone_id\x18\x02 \x01(\rR\x06zoneId\x12:\n" +
 	"\n" +
-	"zone_redis\x18\a \x01(\v2\x1b.GameConfig.ZoneRedisConfigR\tzoneRedis\x1ae\n" +
+	"zone_redis\x18\a \x01(\v2\x1b.GameConfig.ZoneRedisConfigR\tzoneRedis\x12@\n" +
+	"\fplayer_inbox\x18\b \x01(\v2\x1d.GameConfig.PlayerInboxConfigR\vplayerInbox\x1ae\n" +
 	"\x0fZoneRedisConfig\x12\x12\n" +
 	"\x04host\x18\x03 \x01(\tR\x04host\x12\x12\n" +
 	"\x04port\x18\x04 \x01(\rR\x04port\x12\x1a\n" +
 	"\bpassword\x18\x05 \x01(\tR\bpassword\x12\x0e\n" +
-	"\x02db\x18\x06 \x01(\rR\x02dbB\x13Z\x11proto/common/baseb\x06proto3"
+	"\x02db\x18\x06 \x01(\rR\x02db\x1at\n" +
+	"\x11PlayerInboxConfig\x12)\n" +
+	"\x10consumer_enabled\x18\x01 \x01(\bR\x0fconsumerEnabled\x124\n" +
+	"\x16periodic_fetch_minutes\x18\x02 \x01(\rR\x14periodicFetchMinutesB\x13Z\x11proto/common/baseb\x06proto3"
 
 var (
 	file_proto_common_base_config_proto_rawDescOnce sync.Once
@@ -845,17 +915,18 @@ func file_proto_common_base_config_proto_rawDescGZIP() []byte {
 	return file_proto_common_base_config_proto_rawDescData
 }
 
-var file_proto_common_base_config_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_proto_common_base_config_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_proto_common_base_config_proto_goTypes = []any{
-	(*ServiceConfig)(nil),              // 0: ServiceConfig
-	(*KafkaConfig)(nil),                // 1: KafkaConfig
-	(*IdSegmentKindConfig)(nil),        // 2: IdSegmentKindConfig
-	(*IdSegmentConfig)(nil),            // 3: IdSegmentConfig
-	(*GrpcClientConfig)(nil),           // 4: GrpcClientConfig
-	(*BaseDeployConfig)(nil),           // 5: BaseDeployConfig
-	(*GameConfig)(nil),                 // 6: GameConfig
-	nil,                                // 7: GrpcClientConfig.CallDeadlineMsEntry
-	(*GameConfig_ZoneRedisConfig)(nil), // 8: GameConfig.ZoneRedisConfig
+	(*ServiceConfig)(nil),                // 0: ServiceConfig
+	(*KafkaConfig)(nil),                  // 1: KafkaConfig
+	(*IdSegmentKindConfig)(nil),          // 2: IdSegmentKindConfig
+	(*IdSegmentConfig)(nil),              // 3: IdSegmentConfig
+	(*GrpcClientConfig)(nil),             // 4: GrpcClientConfig
+	(*BaseDeployConfig)(nil),             // 5: BaseDeployConfig
+	(*GameConfig)(nil),                   // 6: GameConfig
+	nil,                                  // 7: GrpcClientConfig.CallDeadlineMsEntry
+	(*GameConfig_ZoneRedisConfig)(nil),   // 8: GameConfig.ZoneRedisConfig
+	(*GameConfig_PlayerInboxConfig)(nil), // 9: GameConfig.PlayerInboxConfig
 }
 var file_proto_common_base_config_proto_depIdxs = []int32{
 	2, // 0: IdSegmentConfig.kinds:type_name -> IdSegmentKindConfig
@@ -865,11 +936,12 @@ var file_proto_common_base_config_proto_depIdxs = []int32{
 	3, // 4: BaseDeployConfig.id_segment:type_name -> IdSegmentConfig
 	4, // 5: BaseDeployConfig.grpc_client:type_name -> GrpcClientConfig
 	8, // 6: GameConfig.zone_redis:type_name -> GameConfig.ZoneRedisConfig
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	9, // 7: GameConfig.player_inbox:type_name -> GameConfig.PlayerInboxConfig
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_base_config_proto_init() }
@@ -883,7 +955,7 @@ func file_proto_common_base_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_base_config_proto_rawDesc), len(file_proto_common_base_config_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

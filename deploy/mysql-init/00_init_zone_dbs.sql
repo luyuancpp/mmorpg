@@ -82,4 +82,10 @@ GRANT ALL PRIVILEGES ON `mmorpg_friend`.* TO 'appuser'@'%';
 CREATE DATABASE IF NOT EXISTS mmorpg_player_inbox DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 GRANT ALL PRIVILEGES ON `mmorpg_player_inbox`.* TO 'appuser'@'%';
 
+-- 新服务只在此处预建独占库，业务表仍由各服务 -migrate 创建。
+CREATE DATABASE IF NOT EXISTS mmorpg_mail DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON `mmorpg_mail`.* TO 'appuser'@'%';
+CREATE DATABASE IF NOT EXISTS mmorpg_rank DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+GRANT ALL PRIVILEGES ON `mmorpg_rank`.* TO 'appuser'@'%';
+
 FLUSH PRIVILEGES;

@@ -17,6 +17,10 @@ service SceneNodeGrpc {
   // when the player is being routed to a different scene node (cross-node scene
   // change). The old node persists the player to Redis, drops the entity, and
   // frees the session mapping so the new node can load fresh from Redis.
+  // 释放栅栏(docs/design/scene-enter-chain-residuals.md §4):
+  // - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
+  // - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
+  //   落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
   rpc ReleasePlayer(ReleasePlayerRequest) returns (Empty) {}
 
   // ---- 回合制战斗 gather 管线(docs/design/turn-based-battle-server.md §3.1/§5.3)----
@@ -34,6 +38,8 @@ service SceneNodeGrpc {
   // 未见过的 seq 记 REJECTED 占位(reason=0);见过则回原结局。允许用于任何流。
   rpc AssetAbortDebit(AssetOpRequest) returns (AssetOpResponse) {}
   rpc AssetCredit(AssetOpRequest) returns (AssetOpResponse) {}
+  // 交易库已持久保存托管快照后释放场景收据；幂等，不改变玩家资产与原始结局。
+  rpc AssetAckReceipt(AssetOpRequest) returns (AssetOpResponse) {}
 }
 
 message ReleasePlayerRequest {
@@ -42,4 +48,8 @@ message ReleasePlayerRequest {
   uint64 target_scene_id = 2;
   // Optional: target node id the player is moving to (for logging only).
   string target_node_id = 3;
+  // SM 本次 EnterScene 观察到、并用于落点 CAS 的 owner_epoch,即旧节点在提交时刻应持有的那一代。
+  // scene 只在本地缓存 PlayerOwnerEpochComp.epoch 与它相等时释放;缓存为 0 时按旧行为释放并计数;其余忽略。
+  // 0 = 旧版调用方或尚未铸造,按旧行为释放并计数。不进存盘,不与 login_generation 混用。
+  uint64 expected_owner_epoch = 4;
 }

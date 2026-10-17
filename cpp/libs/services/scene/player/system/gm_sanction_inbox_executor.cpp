@@ -33,11 +33,6 @@ namespace
 		return tipId == static_cast<uint32_t>(kSuccess) ? Applied() : Rejected(tipId);
 	}
 
-	uint64_t GuidForLog(entt::entity player)
-	{
-		const auto *guid = tlsEcs.actorRegistry.try_get<PlayerGuidComp>(player);
-		return guid != nullptr ? guid->value : 0;
-	}
 
 	// 币种必须在 CurrencyType 范围内。纯判定,与 CurrencySystem 的同名校验同口径;放在执行器里先判,
 	// 是为了把"载荷写错了"统一报成 kPlayerInboxPayloadInvalid,而不是原语的通用 kInvalidParameter。
@@ -56,7 +51,7 @@ namespace
 		}
 		LOG_ERROR << "[PlayerInbox] " << executor
 				  << " deferred: persisted currency component missing (load invariant broken) player_id="
-				  << GuidForLog(player)
+				  << tlsEcs.GetPlayerId(player)
 				  << " has_currency=" << tlsEcs.actorRegistry.all_of<CurrencyComp>(player)
 				  << " has_player_currency=" << tlsEcs.actorRegistry.all_of<PlayerCurrencyComp>(player);
 		return false;

@@ -540,12 +540,17 @@ function Show-PeakShavingPlan {
     - **契约**：持有 `queue_token` 的客户端一律用 `/api/queue-status` 轮询排位与取票。这个端点不过限流器；排队开着时与 assign-gate 重入走同一个 `Lookup`，能取走放行票；排队关着时回 EXPIRED → 410。带 token 重调 assign-gate 只作为 `/api/queue-status` 本身失败（网络错误 / 5xx）后的恢复手段。重入回 `code=100, queue_source="ratelimit"` 或 `code=429` 时，回到 `/api/queue-status` 轮询（间隔取 `retry_after_ms`，为 0 时取 2s），不再按 30/60/120s 退避重调 assign-gate。收到 410 时丢掉 token，重新调 assign-gate。服务端回包格式不变，J0 的 fail-closed 取舍不变。
     - **理由**：状态查询走专用的状态端点，入口端点只管入场；限流不该让已被放行的玩家错过 AdmitTTL 60s 的放行窗口。
     - **login 侧兜底（另一项改动）**：放行窗口过后，login 对该 token 改回 EXPIRED（`go/login/internal/logic/pkg/loginqueue/queue.go`，由另一名代理落码，本注未核对其实现）。所以旧客户端即使仍按 30/60/120s 退避重调 assign-gate，窗口过后也会拿到确定的 410、丢 token 重新入队，而不是卡在名次 0 约 1h。上面 10-15 更正末尾「剩余缺口（login 侧）」一句由这项改动处理。旧客户端仍会错过这一次放行，所以客户端仍要按新契约改。
+      （2026-10-16 核对补注：login 侧实现已经过交错复查与对抗核实；同日放行写入改为单段脚本 `admitEntryScript`，见 `login-queue-2026-05.md` §5 决策树后的补注。仍未编译、未运行。）
     - **本仓库已落地（未编译、未运行，待 Codex 验证）**：
       - gateway 只改注释：`AssignGateRequest.java` 的 `queueToken` Javadoc、`AssignGateController.java` 限流调用前的注释。代码不变。
       - 设计稿 §11.3 #9 与 §11.5 追加 2026-10-15 更正。
       - robot 按新契约实现：状态机收进 `robot/http_assign_gate.go` 的 `AssignGateWithQueue`，`robot/main.go` 的 `assignGateHTTPLocal` 改为委托给它；新增用例 `robot/http_assign_gate_test.go`。robot 不持 token 时遇到 429 仍直接返回错误（R2 口径不变），持 token 时 429 回到轮询。
       - 上面「顺带」一条指出的 `robot/main.go:712-713` 错误注释已随旧循环删除。本节 J0「客户端契约」正文引用的 `robot/main.go:666-670` 已随之失效。
     - **待跟进**：独立客户端 `../mmorpg-client` 按上面的契约改（另仓，本任务未获授权、未读取）；Java 版对齐由主会话登记 `PARITY.md`（AGENTS.md §12）。时限不变：登录排队的合入门槛放开之前，客户端改动要排进同一批。
+    - **（2026-10-15 补注：轮询间隔下限、连续失败退避、恢复重入的触发范围；负责人按「最标准」定，主会话定细则；上面「契约」一条原文保留）** 「契约」一条里的「间隔取 `retry_after_ms`，为 0 时取 2s」与「本身失败（网络错误 / 5xx）」改为按下面执行：
+      - 持 token 时每次轮询前等待 = max(`retry_after_ms`, 下限) + [0, 20%] 均匀抖动。下限平时为 2s；queue-status 连续失败 n 次时为 2s·2^(n−1)，封顶 30s（不超过 AdmitTTL 60s 的一半）。queue-status 回一次非失败回包即复位，恢复重入的回包不复位。
+      - 「queue-status 本身失败」只指网络错误、HTTP 非 200、回包 `code=500`，只有这三类才带 token 重调一次 assign-gate 作恢复。`503 zone_*`（`zone_maintenance` / `zone_closed` / `zone_not_open`）与 `404 zone_not_found` 是终态，不重入，按错误结束。
+      - 全文见设计稿 §11.5 的 2026-10-15 补注，包括恢复重入各种回包的处理、gateway 回包恒为 HTTP 200 的前提与落地状态，此处不重复。
 - **测试**：新增 `src/test/java/com/game/gateway/controller/AssignGateControllerTest.java`（纯 Mockito，mock `AssignGateService` / `AssignGateRateLimiter` / `ClientIpResolver`，不起 Spring 上下文）：
   - `reentryWithQueueToken_stillRateLimited`：limiter 返回 `deny("IP_RATE_LIMIT")` 时回 code=429，`verify(assignGateService, never()).assignGate(any())`；
   - `reentryWithQueueToken_skipsAccountCooldown`：`verify(limiter).check(eq(1L), anyString(), isNull())`；
@@ -738,6 +743,12 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
 > - login 侧同批改为放行窗口过后回 EXPIRED（另一项改动）。旧客户端即使仍按退避重调，窗口过后也拿到确定的 410，而不是卡在名次 0 约 1h。
 >
 > 细节与落地状态见 §4.10 J0「客户端契约」下的负责人 2026-10-15 决定注。
+>
+> **#10 的 2026-10-15 补注（上面决定原文保留）**：决定第 1、2 条里的「网络错误 / 5xx」与「间隔取 `retry_after_ms`，为 0 时取 2s」已细化：
+> - 只有网络错误、HTTP 非 200、回包 `code=500` 才触发恢复重入；`503 zone_*` 与 `404 zone_not_found` 是终态，不重入。
+> - 持 token 时轮询间隔 = max(`retry_after_ms`, 2s) + [0, 20%] 抖动；queue-status 连续失败时下限从 2s 起翻倍，封顶 30s，成功一次即复位。
+>
+> #10 的偏离、理由与代价不变。全文见设计稿 §11.5 的 2026-10-15 补注；§4.10 J0 决定注下有同一摘要。
 
 ---
 
@@ -794,6 +805,7 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
     - 方案 A（建议）：另立 **G4b-G**（Go，`go/login/internal/logic/pkg/loginqueue`），照 Java 版有意差异 ②③ 修：在途占位改为新键 `admitted:zset:zone:{z}` 的 ZSET（分数 = 到期毫秒），`AdmittedCount` 先 `ZREMRANGEBYSCORE -inf now` 再 `ZCARD`（同一段 Lua），快速通道 Lua 与 dispatcher 放行都改 ZADD；consume 不 ZREM，而是把分数改成「现在 + 15s」（覆盖 gate 每几秒发布一次人数的滞后）。用新键名而不是原地改类型，避免新旧版本混跑时 `WRONGTYPE`；K8s 上排队从没开过，没有存量状态要迁移。单测用 miniredis 覆盖：持续快速通道下余量不归零、consume 后 15s 内不超发、旧键不再被写。合入顺序 G1b → G4b-G → G4b-2。**2026-10-13 已拍板（方案 A）**，规格见 `spec_G4b-G.md`。
     - 方案 B：负责人书面接受 R15，开服当天靠 L-14 的曲线与 `-LoginQueue off` 兜底。
 12. **（评审补）开服档的排队轮询间隔**：`DefaultRetryAfterMs` 现镜像 login.yaml 的 2000（每个在排玩家每秒 0.5 次 `Lookup`，R16）。是否在 `PeakShavingLaunchTier` 里加一项、开服档写 5000 之类的值（排位更新变慢，Redis 压力降到 2/5）？本规格默认不加（YAGNI），等 L-14 的 Redis 曲线再定。
+    - **（2026-10-16 补注）** 按 2026-10-15 定的客户端契约（设计稿 `open-server-rate-limit-design.md` §11.5 的 2026-10-15 补注），持 token 的客户端每次轮询至少等 2s 并加 [0, 20%] 抖动。所以 `DefaultRetryAfterMs` 调**低**于 2000 不再能让客户端查得更快，只有调**高**（例如开服档 5000）才生效；R16 的「约 2.5·Q ops/s」按 2s 计，是新契约下**正常轮询**的上界（抖动只会让它更低）。queue-status 失败期间不在此列：每个失败周期还会多一次带 token 的 assign-gate 恢复重入，过了限流器就多一次 `Lookup`，第一个失败周期（等 2s）内 `Lookup` 最多翻倍，之后随退避（4s、8s…封顶 30s）回落。本条的取舍不变，仍等 L-14 的 Redis 曲线。
 
 ---
 
@@ -833,6 +845,13 @@ try { ./mvnw.cmd -q test "-Dtest=AssignGateRateLimiterTest,AssignGateControllerT
   - `429` 时，按 30/60/120s 指数退避并加抖动；
   - `410` 时，丢掉 `queue_token`，重新调 assign-gate；
   - （评审补，J0 之后）带 `queue_token` 重调 assign-gate 拿到 `code=100, queue_source="ratelimit"`（不带新 token）时，保留原 token，按 `retry_after_ms` 重试，不要当成排位丢失。
+  - **（2026-10-15 更正，上面四条原文保留）** 上面四条是 J0 当时的口径，对持有 `queue_token` 的客户端已部分作废：
+    - 第 4 条（带 token 拿到 `ratelimit` 排队时按 `retry_after_ms` 重调 assign-gate）作废；
+    - 第 2 条（429 按 30/60/120s 退避）只适用于不持 token 的请求；
+    - 第 1 条对持 token 的客户端改为轮询 `/api/queue-status`，间隔见下；
+    - 第 3 条（410 丢 token 重调 assign-gate）不变。
+    - 现行口径：持 token 一律轮询 `/api/queue-status`，每次等待 = max(`retry_after_ms`, 2s) + [0, 20%] 抖动，连续失败时下限从 2s 起翻倍、封顶 30s。只有它本身失败（网络错误 / HTTP 非 200 / `code=500`）才带 token 重调一次 assign-gate 作恢复；重入回 `ratelimit` 排队或 429 时保留 token、回到轮询。`503 zone_*` 与 `404 zone_not_found` 是终态，不重入。
+    - 逐条见设计稿 §11.5 的 2026-10-15 更正与补注。客户端改动在另仓 `../mmorpg-client`，要另开客户端任务（AGENTS.md §12，两版同批）。
 
 ---
 

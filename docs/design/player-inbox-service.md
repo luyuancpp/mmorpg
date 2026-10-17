@@ -1602,7 +1602,7 @@ P2 的积压缺口（都在 HEAD 上核过）：
 | `tools/proto_generator/protogen/etc/proto_gen.yaml` | domain_meta 加 `player_inbox` 块 | 照 trade 块 `:421-433`，新块放在 `:433` 后。 |
 | **`tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`**（两份报告都漏了） | 同上，加同样的块 | 这份副本在 `ab0f27907` 纳入跟踪，和默认配置只差 `:244` 一行。漏改的话，用它生成时整个域不会被解析，消息号也会丢（`:512` 的 DV-5 注释）。 |
 | `data/tip/Tip.xlsx` | 加组头 `//player_inbox_error base=29000 width=1000`，后面接 15 个码 | 最后一个组头在 A314（`//equip_error base=28000`），数据范围是 A1:C336，新内容从第 337 行起。只有 `kPlayerInboxStoreUnavailable` 的 fault 列填 1（设计 §5.3）。`segments.go:30-50` 最高到 28000，表里也没有 29000。 |
-| `.gitignore` | 加 `go/player_inbox/generated/` | 放在 `:163` 后，照 `:162-163`。 |
+| `.gitignore` | ~~加 `go/player_inbox/generated/`~~ **2026-10-16 订正：不忽略，跟踪 `go/player_inbox/generated/pb/game/`** | 原口径「照 trade」不成立：trade / chat 忽略该目录的前提是服务代码不引用它，而收件箱的 `internal/svc/servicecontext.go` 用了 `game.PlayerInboxNotifyEventEventId`（在线提醒的事件号），忽略之后干净检出编不过（CI `go-modules-ci.yml` 直接 `go build ./...`，不跑生成）。改照 friend / match / guild 跟踪自己的 `generated/pb/game`；proto-gen 重写它时随生成产物一起提交。 |
 
 **C++ 源码（2 个）**
 
@@ -1667,7 +1667,7 @@ P2 的积压缺口（都在 HEAD 上核过）：
 | 修改：号表 | `proto/{message_id,event_id}.txt` 加 6 份镜像；9 个 Go 服务加 robot 的 `message_id.go`（10 个）；9 个 `event_id.go` | 27 |
 | 修改：tip 汇总 | `go/shared/generated/tip/{segments,faults}.go`、`tip_text.json`、`tip_enum_ids.json` | 4 |
 | 待定 | `config.proto` 的产物 / D9 注释的产物 | +6 / +3–6 |
-| 不进版本库 | `go/player_inbox/generated/**`（被 `.gitignore` 忽略） | — |
+| 进版本库（2026-10-16 订正，原写「被 `.gitignore` 忽略」） | `go/player_inbox/generated/pb/game/{event_id,message_id}.go`：服务代码引用事件号，必须随仓库跟踪，见本附录 B 组 `.gitignore` 一行 | 2 |
 
 另外几点：
 - 生成器不写 `robot/vendor`（protogen 源码里搜不到 vendor）。`generated/robot/proto` 从 2026-08-04 起没更新过。两者都不计入。

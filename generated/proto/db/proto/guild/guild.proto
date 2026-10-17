@@ -240,7 +240,8 @@ message GuildChangedS2C {
 // 客户端遇到任何非 0 tip 都会中断后续刷新,PENDING 塞进去会让一笔正常的单看起来像失败。
 
 // 客户端可见的资产订单状态。guild_db.proto 的 GuildAssetOpStatus 是库内状态、不下发客户端,
-// 这里另起一个;两者数值逐项相同,服务端按值直接转换(新增状态必须两边同加)。
+// 这里另起一个;数值 1..5 与库内逐项相同。库内 ABANDONED(6,自动放弃)是库内专用状态,
+// 由 logic.orderViewOf 显式映射为 ABORTED,不新增客户端枚举;服务端不按值转换,库内新增状态时在那里显式补映射。
 enum GuildAssetOrderStatus {
   GUILD_ASSET_ORDER_STATUS_UNSPECIFIED     = 0;
   GUILD_ASSET_ORDER_STATUS_PENDING         = 1;  // 结算中 / 待发放
@@ -313,8 +314,20 @@ message GetGuildDonateOptionsResponse {
   repeated GuildDonationView recent_results    = 7;  // 本人 10 分钟内进入终态的捐献,<=5,新的在前
 }
 
+// ── client_request_id(DonateToGuild / BuyGuildShopGoods 的客户端幂等键)──
+// 设计:docs/design/guild-phase2/05-economy.md 顶部「客户端幂等键」覆盖块。
+// 0 = 旧客户端:不去重,行为与加字段之前完全相同(超时后重发会再扣一次)。
+// 非 0:玩家每发起一次捐献 / 兑换生成一个新键;这一次操作的所有重发(超时、信封 1003、断线重连、kGuildBusyRetry)
+// 都带**同一个**键,收到带订单视图(donation / order)的回包或其它业务拒绝之后才换键。键在同一玩家的两个方法之间共用一个空间。
+// 服务端按 (玩家, 键) 去重:同一个键至多写成一笔指令;重发回首次那笔指令的**当前**视图(op_id 相同,status 可能已从结算中变为终态),
+// 不再发号、不再扣。同一个键换了参数(另一个 donate_id / goods_id / count,或跨方法复用)回 kInvalidParameter(1005)、不写入。
+// 去重记录与指令同事务写入;只有写成了指令的请求才留记录(被拒绝的请求没有副作用,用同一个键重发会重新判定)。
+// 记录保留 AssetOp.TerminalRetentionDays(默认 30 天、下限 7 天),之后同一个键会被当成新请求 —— 键必须在这段时间内不重复。
+
 message DonateToGuildRequest {
   uint32 donate_id = 1;
+  uint64 client_request_id = 2;  // 见上方 client_request_id 说明
+  uint64 expected_guild_id = 3;  // 非0绑定发起时的帮会；未提交的旧请求不得在换帮后首次执行
 }
 message DonateToGuildResponse {
   TipInfoMessage error_message = 1;
@@ -344,8 +357,10 @@ message GetGuildShopResponse {
 }
 
 message BuyGuildShopGoodsRequest {
-  uint32 goods_id = 1;
-  uint32 count    = 2;  // 份数,1..GuildShopGoodsView.max_buy_count
+  uint32 goods_id          = 1;
+  uint32 count             = 2;  // 份数,1..GuildShopGoodsView.max_buy_count
+  uint64 client_request_id = 3;  // 见 DonateToGuildRequest 上方的 client_request_id 说明;count=0 与 count=1 视为同一参数
+  uint64 expected_guild_id = 4;  // 非0绑定原帮会，事务仍按该帮会复核成员；0兼容旧端
 }
 message BuyGuildShopGoodsResponse {
   TipInfoMessage error_message = 1;

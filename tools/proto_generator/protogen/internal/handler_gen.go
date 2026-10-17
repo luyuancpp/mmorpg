@@ -100,7 +100,7 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 	{{ .CppResponse }}* response,
 	::google::protobuf::Closure* done)
 {
-{{ .Code -}}
+{{ .Code }}
 }
 {{ else }}
 {{- $.YourCodePair -}}

@@ -34,6 +34,13 @@ class BattleNode final {
   class StubInterface {
    public:
     virtual ~StubInterface() {}
+    virtual ::grpc::Status QueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::QueryBattleCreationResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::QueryBattleCreationResponse>> AsyncQueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::QueryBattleCreationResponse>>(AsyncQueryBattleCreationRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::QueryBattleCreationResponse>> PrepareAsyncQueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::QueryBattleCreationResponse>>(PrepareAsyncQueryBattleCreationRaw(context, request, cq));
+    }
     virtual ::grpc::Status CreateBattle(::grpc::ClientContext* context, const ::CreateBattleRequest& request, ::CreateBattleResponse* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::CreateBattleResponse>> AsyncCreateBattle(::grpc::ClientContext* context, const ::CreateBattleRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::CreateBattleResponse>>(AsyncCreateBattleRaw(context, request, cq));
@@ -72,6 +79,8 @@ class BattleNode final {
     class async_interface {
      public:
       virtual ~async_interface() {}
+      virtual void QueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest* request, ::QueryBattleCreationResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void QueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest* request, ::QueryBattleCreationResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void CreateBattle(::grpc::ClientContext* context, const ::CreateBattleRequest* request, ::CreateBattleResponse* response, std::function<void(::grpc::Status)>) = 0;
       virtual void CreateBattle(::grpc::ClientContext* context, const ::CreateBattleRequest* request, ::CreateBattleResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       virtual void DestroyBattle(::grpc::ClientContext* context, const ::DestroyBattleRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) = 0;
@@ -87,6 +96,8 @@ class BattleNode final {
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::QueryBattleCreationResponse>* AsyncQueryBattleCreationRaw(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::QueryBattleCreationResponse>* PrepareAsyncQueryBattleCreationRaw(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::CreateBattleResponse>* AsyncCreateBattleRaw(::grpc::ClientContext* context, const ::CreateBattleRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::CreateBattleResponse>* PrepareAsyncCreateBattleRaw(::grpc::ClientContext* context, const ::CreateBattleRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::Empty>* AsyncDestroyBattleRaw(::grpc::ClientContext* context, const ::DestroyBattleRequest& request, ::grpc::CompletionQueue* cq) = 0;
@@ -101,6 +112,13 @@ class BattleNode final {
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
+    ::grpc::Status QueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::QueryBattleCreationResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::QueryBattleCreationResponse>> AsyncQueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::QueryBattleCreationResponse>>(AsyncQueryBattleCreationRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::QueryBattleCreationResponse>> PrepareAsyncQueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::QueryBattleCreationResponse>>(PrepareAsyncQueryBattleCreationRaw(context, request, cq));
+    }
     ::grpc::Status CreateBattle(::grpc::ClientContext* context, const ::CreateBattleRequest& request, ::CreateBattleResponse* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::CreateBattleResponse>> AsyncCreateBattle(::grpc::ClientContext* context, const ::CreateBattleRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::CreateBattleResponse>>(AsyncCreateBattleRaw(context, request, cq));
@@ -139,6 +157,8 @@ class BattleNode final {
     class async final :
       public StubInterface::async_interface {
      public:
+      void QueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest* request, ::QueryBattleCreationResponse* response, std::function<void(::grpc::Status)>) override;
+      void QueryBattleCreation(::grpc::ClientContext* context, const ::QueryBattleCreationRequest* request, ::QueryBattleCreationResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void CreateBattle(::grpc::ClientContext* context, const ::CreateBattleRequest* request, ::CreateBattleResponse* response, std::function<void(::grpc::Status)>) override;
       void CreateBattle(::grpc::ClientContext* context, const ::CreateBattleRequest* request, ::CreateBattleResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       void DestroyBattle(::grpc::ClientContext* context, const ::DestroyBattleRequest* request, ::Empty* response, std::function<void(::grpc::Status)>) override;
@@ -160,6 +180,8 @@ class BattleNode final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
+    ::grpc::ClientAsyncResponseReader< ::QueryBattleCreationResponse>* AsyncQueryBattleCreationRaw(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::QueryBattleCreationResponse>* PrepareAsyncQueryBattleCreationRaw(::grpc::ClientContext* context, const ::QueryBattleCreationRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::CreateBattleResponse>* AsyncCreateBattleRaw(::grpc::ClientContext* context, const ::CreateBattleRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::CreateBattleResponse>* PrepareAsyncCreateBattleRaw(::grpc::ClientContext* context, const ::CreateBattleRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::Empty>* AsyncDestroyBattleRaw(::grpc::ClientContext* context, const ::DestroyBattleRequest& request, ::grpc::CompletionQueue* cq) override;
@@ -170,6 +192,7 @@ class BattleNode final {
     ::grpc::ClientAsyncResponseReader< ::Empty>* PrepareAsyncRemoveObserverRaw(::grpc::ClientContext* context, const ::RemoveObserverRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::IssueBattleTicketResponse>* AsyncIssueBattleTicketRaw(::grpc::ClientContext* context, const ::IssueBattleTicketRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::IssueBattleTicketResponse>* PrepareAsyncIssueBattleTicketRaw(::grpc::ClientContext* context, const ::IssueBattleTicketRequest& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_QueryBattleCreation_;
     const ::grpc::internal::RpcMethod rpcmethod_CreateBattle_;
     const ::grpc::internal::RpcMethod rpcmethod_DestroyBattle_;
     const ::grpc::internal::RpcMethod rpcmethod_AddObserver_;
@@ -182,6 +205,7 @@ class BattleNode final {
    public:
     Service();
     virtual ~Service();
+    virtual ::grpc::Status QueryBattleCreation(::grpc::ServerContext* context, const ::QueryBattleCreationRequest* request, ::QueryBattleCreationResponse* response);
     virtual ::grpc::Status CreateBattle(::grpc::ServerContext* context, const ::CreateBattleRequest* request, ::CreateBattleResponse* response);
     virtual ::grpc::Status DestroyBattle(::grpc::ServerContext* context, const ::DestroyBattleRequest* request, ::Empty* response);
     virtual ::grpc::Status AddObserver(::grpc::ServerContext* context, const ::AddObserverRequest* request, ::AddObserverResponse* response);
@@ -189,12 +213,32 @@ class BattleNode final {
     virtual ::grpc::Status IssueBattleTicket(::grpc::ServerContext* context, const ::IssueBattleTicketRequest* request, ::IssueBattleTicketResponse* response);
   };
   template <class BaseClass>
+  class WithAsyncMethod_QueryBattleCreation : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithAsyncMethod_QueryBattleCreation() {
+      ::grpc::Service::MarkMethodAsync(0);
+    }
+    ~WithAsyncMethod_QueryBattleCreation() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryBattleCreation(::grpc::ServerContext* /*context*/, const ::QueryBattleCreationRequest* /*request*/, ::QueryBattleCreationResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestQueryBattleCreation(::grpc::ServerContext* context, ::QueryBattleCreationRequest* request, ::grpc::ServerAsyncResponseWriter< ::QueryBattleCreationResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithAsyncMethod_CreateBattle : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_CreateBattle() {
-      ::grpc::Service::MarkMethodAsync(0);
+      ::grpc::Service::MarkMethodAsync(1);
     }
     ~WithAsyncMethod_CreateBattle() override {
       BaseClassMustBeDerivedFromService(this);
@@ -205,7 +249,7 @@ class BattleNode final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestCreateBattle(::grpc::ServerContext* context, ::CreateBattleRequest* request, ::grpc::ServerAsyncResponseWriter< ::CreateBattleResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -214,7 +258,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_DestroyBattle() {
-      ::grpc::Service::MarkMethodAsync(1);
+      ::grpc::Service::MarkMethodAsync(2);
     }
     ~WithAsyncMethod_DestroyBattle() override {
       BaseClassMustBeDerivedFromService(this);
@@ -225,7 +269,7 @@ class BattleNode final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestDestroyBattle(::grpc::ServerContext* context, ::DestroyBattleRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -234,7 +278,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_AddObserver() {
-      ::grpc::Service::MarkMethodAsync(2);
+      ::grpc::Service::MarkMethodAsync(3);
     }
     ~WithAsyncMethod_AddObserver() override {
       BaseClassMustBeDerivedFromService(this);
@@ -245,7 +289,7 @@ class BattleNode final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAddObserver(::grpc::ServerContext* context, ::AddObserverRequest* request, ::grpc::ServerAsyncResponseWriter< ::AddObserverResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -254,7 +298,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_RemoveObserver() {
-      ::grpc::Service::MarkMethodAsync(3);
+      ::grpc::Service::MarkMethodAsync(4);
     }
     ~WithAsyncMethod_RemoveObserver() override {
       BaseClassMustBeDerivedFromService(this);
@@ -265,7 +309,7 @@ class BattleNode final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRemoveObserver(::grpc::ServerContext* context, ::RemoveObserverRequest* request, ::grpc::ServerAsyncResponseWriter< ::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -274,7 +318,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_IssueBattleTicket() {
-      ::grpc::Service::MarkMethodAsync(4);
+      ::grpc::Service::MarkMethodAsync(5);
     }
     ~WithAsyncMethod_IssueBattleTicket() override {
       BaseClassMustBeDerivedFromService(this);
@@ -285,23 +329,50 @@ class BattleNode final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestIssueBattleTicket(::grpc::ServerContext* context, ::IssueBattleTicketRequest* request, ::grpc::ServerAsyncResponseWriter< ::IssueBattleTicketResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_CreateBattle<WithAsyncMethod_DestroyBattle<WithAsyncMethod_AddObserver<WithAsyncMethod_RemoveObserver<WithAsyncMethod_IssueBattleTicket<Service > > > > > AsyncService;
+  typedef WithAsyncMethod_QueryBattleCreation<WithAsyncMethod_CreateBattle<WithAsyncMethod_DestroyBattle<WithAsyncMethod_AddObserver<WithAsyncMethod_RemoveObserver<WithAsyncMethod_IssueBattleTicket<Service > > > > > > AsyncService;
+  template <class BaseClass>
+  class WithCallbackMethod_QueryBattleCreation : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_QueryBattleCreation() {
+      ::grpc::Service::MarkMethodCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::QueryBattleCreationRequest, ::QueryBattleCreationResponse>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::QueryBattleCreationRequest* request, ::QueryBattleCreationResponse* response) { return this->QueryBattleCreation(context, request, response); }));}
+    void SetMessageAllocatorFor_QueryBattleCreation(
+        ::grpc::MessageAllocator< ::QueryBattleCreationRequest, ::QueryBattleCreationResponse>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::QueryBattleCreationRequest, ::QueryBattleCreationResponse>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_QueryBattleCreation() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryBattleCreation(::grpc::ServerContext* /*context*/, const ::QueryBattleCreationRequest* /*request*/, ::QueryBattleCreationResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* QueryBattleCreation(
+      ::grpc::CallbackServerContext* /*context*/, const ::QueryBattleCreationRequest* /*request*/, ::QueryBattleCreationResponse* /*response*/)  { return nullptr; }
+  };
   template <class BaseClass>
   class WithCallbackMethod_CreateBattle : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_CreateBattle() {
-      ::grpc::Service::MarkMethodCallback(0,
+      ::grpc::Service::MarkMethodCallback(1,
           new ::grpc::internal::CallbackUnaryHandler< ::CreateBattleRequest, ::CreateBattleResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::CreateBattleRequest* request, ::CreateBattleResponse* response) { return this->CreateBattle(context, request, response); }));}
     void SetMessageAllocatorFor_CreateBattle(
         ::grpc::MessageAllocator< ::CreateBattleRequest, ::CreateBattleResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::CreateBattleRequest, ::CreateBattleResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -322,13 +393,13 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_DestroyBattle() {
-      ::grpc::Service::MarkMethodCallback(1,
+      ::grpc::Service::MarkMethodCallback(2,
           new ::grpc::internal::CallbackUnaryHandler< ::DestroyBattleRequest, ::Empty>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::DestroyBattleRequest* request, ::Empty* response) { return this->DestroyBattle(context, request, response); }));}
     void SetMessageAllocatorFor_DestroyBattle(
         ::grpc::MessageAllocator< ::DestroyBattleRequest, ::Empty>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::DestroyBattleRequest, ::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -349,13 +420,13 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_AddObserver() {
-      ::grpc::Service::MarkMethodCallback(2,
+      ::grpc::Service::MarkMethodCallback(3,
           new ::grpc::internal::CallbackUnaryHandler< ::AddObserverRequest, ::AddObserverResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::AddObserverRequest* request, ::AddObserverResponse* response) { return this->AddObserver(context, request, response); }));}
     void SetMessageAllocatorFor_AddObserver(
         ::grpc::MessageAllocator< ::AddObserverRequest, ::AddObserverResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::AddObserverRequest, ::AddObserverResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -376,13 +447,13 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_RemoveObserver() {
-      ::grpc::Service::MarkMethodCallback(3,
+      ::grpc::Service::MarkMethodCallback(4,
           new ::grpc::internal::CallbackUnaryHandler< ::RemoveObserverRequest, ::Empty>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::RemoveObserverRequest* request, ::Empty* response) { return this->RemoveObserver(context, request, response); }));}
     void SetMessageAllocatorFor_RemoveObserver(
         ::grpc::MessageAllocator< ::RemoveObserverRequest, ::Empty>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(4);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::RemoveObserverRequest, ::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -403,13 +474,13 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithCallbackMethod_IssueBattleTicket() {
-      ::grpc::Service::MarkMethodCallback(4,
+      ::grpc::Service::MarkMethodCallback(5,
           new ::grpc::internal::CallbackUnaryHandler< ::IssueBattleTicketRequest, ::IssueBattleTicketResponse>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::IssueBattleTicketRequest* request, ::IssueBattleTicketResponse* response) { return this->IssueBattleTicket(context, request, response); }));}
     void SetMessageAllocatorFor_IssueBattleTicket(
         ::grpc::MessageAllocator< ::IssueBattleTicketRequest, ::IssueBattleTicketResponse>* allocator) {
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(4);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(5);
       static_cast<::grpc::internal::CallbackUnaryHandler< ::IssueBattleTicketRequest, ::IssueBattleTicketResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
@@ -424,15 +495,32 @@ class BattleNode final {
     virtual ::grpc::ServerUnaryReactor* IssueBattleTicket(
       ::grpc::CallbackServerContext* /*context*/, const ::IssueBattleTicketRequest* /*request*/, ::IssueBattleTicketResponse* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_CreateBattle<WithCallbackMethod_DestroyBattle<WithCallbackMethod_AddObserver<WithCallbackMethod_RemoveObserver<WithCallbackMethod_IssueBattleTicket<Service > > > > > CallbackService;
+  typedef WithCallbackMethod_QueryBattleCreation<WithCallbackMethod_CreateBattle<WithCallbackMethod_DestroyBattle<WithCallbackMethod_AddObserver<WithCallbackMethod_RemoveObserver<WithCallbackMethod_IssueBattleTicket<Service > > > > > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
+  template <class BaseClass>
+  class WithGenericMethod_QueryBattleCreation : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithGenericMethod_QueryBattleCreation() {
+      ::grpc::Service::MarkMethodGeneric(0);
+    }
+    ~WithGenericMethod_QueryBattleCreation() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryBattleCreation(::grpc::ServerContext* /*context*/, const ::QueryBattleCreationRequest* /*request*/, ::QueryBattleCreationResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
   template <class BaseClass>
   class WithGenericMethod_CreateBattle : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_CreateBattle() {
-      ::grpc::Service::MarkMethodGeneric(0);
+      ::grpc::Service::MarkMethodGeneric(1);
     }
     ~WithGenericMethod_CreateBattle() override {
       BaseClassMustBeDerivedFromService(this);
@@ -449,7 +537,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_DestroyBattle() {
-      ::grpc::Service::MarkMethodGeneric(1);
+      ::grpc::Service::MarkMethodGeneric(2);
     }
     ~WithGenericMethod_DestroyBattle() override {
       BaseClassMustBeDerivedFromService(this);
@@ -466,7 +554,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_AddObserver() {
-      ::grpc::Service::MarkMethodGeneric(2);
+      ::grpc::Service::MarkMethodGeneric(3);
     }
     ~WithGenericMethod_AddObserver() override {
       BaseClassMustBeDerivedFromService(this);
@@ -483,7 +571,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_RemoveObserver() {
-      ::grpc::Service::MarkMethodGeneric(3);
+      ::grpc::Service::MarkMethodGeneric(4);
     }
     ~WithGenericMethod_RemoveObserver() override {
       BaseClassMustBeDerivedFromService(this);
@@ -500,7 +588,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_IssueBattleTicket() {
-      ::grpc::Service::MarkMethodGeneric(4);
+      ::grpc::Service::MarkMethodGeneric(5);
     }
     ~WithGenericMethod_IssueBattleTicket() override {
       BaseClassMustBeDerivedFromService(this);
@@ -512,12 +600,32 @@ class BattleNode final {
     }
   };
   template <class BaseClass>
+  class WithRawMethod_QueryBattleCreation : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_QueryBattleCreation() {
+      ::grpc::Service::MarkMethodRaw(0);
+    }
+    ~WithRawMethod_QueryBattleCreation() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryBattleCreation(::grpc::ServerContext* /*context*/, const ::QueryBattleCreationRequest* /*request*/, ::QueryBattleCreationResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestQueryBattleCreation(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
   class WithRawMethod_CreateBattle : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_CreateBattle() {
-      ::grpc::Service::MarkMethodRaw(0);
+      ::grpc::Service::MarkMethodRaw(1);
     }
     ~WithRawMethod_CreateBattle() override {
       BaseClassMustBeDerivedFromService(this);
@@ -528,7 +636,7 @@ class BattleNode final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestCreateBattle(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -537,7 +645,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_DestroyBattle() {
-      ::grpc::Service::MarkMethodRaw(1);
+      ::grpc::Service::MarkMethodRaw(2);
     }
     ~WithRawMethod_DestroyBattle() override {
       BaseClassMustBeDerivedFromService(this);
@@ -548,7 +656,7 @@ class BattleNode final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestDestroyBattle(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -557,7 +665,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_AddObserver() {
-      ::grpc::Service::MarkMethodRaw(2);
+      ::grpc::Service::MarkMethodRaw(3);
     }
     ~WithRawMethod_AddObserver() override {
       BaseClassMustBeDerivedFromService(this);
@@ -568,7 +676,7 @@ class BattleNode final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestAddObserver(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -577,7 +685,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_RemoveObserver() {
-      ::grpc::Service::MarkMethodRaw(3);
+      ::grpc::Service::MarkMethodRaw(4);
     }
     ~WithRawMethod_RemoveObserver() override {
       BaseClassMustBeDerivedFromService(this);
@@ -588,7 +696,7 @@ class BattleNode final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestRemoveObserver(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -597,7 +705,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_IssueBattleTicket() {
-      ::grpc::Service::MarkMethodRaw(4);
+      ::grpc::Service::MarkMethodRaw(5);
     }
     ~WithRawMethod_IssueBattleTicket() override {
       BaseClassMustBeDerivedFromService(this);
@@ -608,8 +716,30 @@ class BattleNode final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestIssueBattleTicket(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(5, context, request, response, new_call_cq, notification_cq, tag);
     }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_QueryBattleCreation : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_QueryBattleCreation() {
+      ::grpc::Service::MarkMethodRawCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->QueryBattleCreation(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_QueryBattleCreation() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status QueryBattleCreation(::grpc::ServerContext* /*context*/, const ::QueryBattleCreationRequest* /*request*/, ::QueryBattleCreationResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* QueryBattleCreation(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithRawCallbackMethod_CreateBattle : public BaseClass {
@@ -617,7 +747,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_CreateBattle() {
-      ::grpc::Service::MarkMethodRawCallback(0,
+      ::grpc::Service::MarkMethodRawCallback(1,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->CreateBattle(context, request, response); }));
@@ -639,7 +769,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_DestroyBattle() {
-      ::grpc::Service::MarkMethodRawCallback(1,
+      ::grpc::Service::MarkMethodRawCallback(2,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->DestroyBattle(context, request, response); }));
@@ -661,7 +791,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_AddObserver() {
-      ::grpc::Service::MarkMethodRawCallback(2,
+      ::grpc::Service::MarkMethodRawCallback(3,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->AddObserver(context, request, response); }));
@@ -683,7 +813,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_RemoveObserver() {
-      ::grpc::Service::MarkMethodRawCallback(3,
+      ::grpc::Service::MarkMethodRawCallback(4,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->RemoveObserver(context, request, response); }));
@@ -705,7 +835,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawCallbackMethod_IssueBattleTicket() {
-      ::grpc::Service::MarkMethodRawCallback(4,
+      ::grpc::Service::MarkMethodRawCallback(5,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
                    ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->IssueBattleTicket(context, request, response); }));
@@ -722,12 +852,39 @@ class BattleNode final {
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
+  class WithStreamedUnaryMethod_QueryBattleCreation : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithStreamedUnaryMethod_QueryBattleCreation() {
+      ::grpc::Service::MarkMethodStreamed(0,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::QueryBattleCreationRequest, ::QueryBattleCreationResponse>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::QueryBattleCreationRequest, ::QueryBattleCreationResponse>* streamer) {
+                       return this->StreamedQueryBattleCreation(context,
+                         streamer);
+                  }));
+    }
+    ~WithStreamedUnaryMethod_QueryBattleCreation() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status QueryBattleCreation(::grpc::ServerContext* /*context*/, const ::QueryBattleCreationRequest* /*request*/, ::QueryBattleCreationResponse* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedQueryBattleCreation(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::QueryBattleCreationRequest,::QueryBattleCreationResponse>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
   class WithStreamedUnaryMethod_CreateBattle : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_CreateBattle() {
-      ::grpc::Service::MarkMethodStreamed(0,
+      ::grpc::Service::MarkMethodStreamed(1,
         new ::grpc::internal::StreamedUnaryHandler<
           ::CreateBattleRequest, ::CreateBattleResponse>(
             [this](::grpc::ServerContext* context,
@@ -754,7 +911,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_DestroyBattle() {
-      ::grpc::Service::MarkMethodStreamed(1,
+      ::grpc::Service::MarkMethodStreamed(2,
         new ::grpc::internal::StreamedUnaryHandler<
           ::DestroyBattleRequest, ::Empty>(
             [this](::grpc::ServerContext* context,
@@ -781,7 +938,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_AddObserver() {
-      ::grpc::Service::MarkMethodStreamed(2,
+      ::grpc::Service::MarkMethodStreamed(3,
         new ::grpc::internal::StreamedUnaryHandler<
           ::AddObserverRequest, ::AddObserverResponse>(
             [this](::grpc::ServerContext* context,
@@ -808,7 +965,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_RemoveObserver() {
-      ::grpc::Service::MarkMethodStreamed(3,
+      ::grpc::Service::MarkMethodStreamed(4,
         new ::grpc::internal::StreamedUnaryHandler<
           ::RemoveObserverRequest, ::Empty>(
             [this](::grpc::ServerContext* context,
@@ -835,7 +992,7 @@ class BattleNode final {
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_IssueBattleTicket() {
-      ::grpc::Service::MarkMethodStreamed(4,
+      ::grpc::Service::MarkMethodStreamed(5,
         new ::grpc::internal::StreamedUnaryHandler<
           ::IssueBattleTicketRequest, ::IssueBattleTicketResponse>(
             [this](::grpc::ServerContext* context,
@@ -856,9 +1013,9 @@ class BattleNode final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedIssueBattleTicket(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::IssueBattleTicketRequest,::IssueBattleTicketResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_CreateBattle<WithStreamedUnaryMethod_DestroyBattle<WithStreamedUnaryMethod_AddObserver<WithStreamedUnaryMethod_RemoveObserver<WithStreamedUnaryMethod_IssueBattleTicket<Service > > > > > StreamedUnaryService;
+  typedef WithStreamedUnaryMethod_QueryBattleCreation<WithStreamedUnaryMethod_CreateBattle<WithStreamedUnaryMethod_DestroyBattle<WithStreamedUnaryMethod_AddObserver<WithStreamedUnaryMethod_RemoveObserver<WithStreamedUnaryMethod_IssueBattleTicket<Service > > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_CreateBattle<WithStreamedUnaryMethod_DestroyBattle<WithStreamedUnaryMethod_AddObserver<WithStreamedUnaryMethod_RemoveObserver<WithStreamedUnaryMethod_IssueBattleTicket<Service > > > > > StreamedService;
+  typedef WithStreamedUnaryMethod_QueryBattleCreation<WithStreamedUnaryMethod_CreateBattle<WithStreamedUnaryMethod_DestroyBattle<WithStreamedUnaryMethod_AddObserver<WithStreamedUnaryMethod_RemoveObserver<WithStreamedUnaryMethod_IssueBattleTicket<Service > > > > > > StreamedService;
 };
 
 

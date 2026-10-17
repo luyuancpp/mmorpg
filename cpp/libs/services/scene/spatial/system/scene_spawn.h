@@ -37,6 +37,7 @@ public:
 	//   - useSceneSpawn=true → 换地图时直接采用目标出生点,不复用旧地图坐标。
 	// 返回 true 表示位置被改写(调用方可据此打日志/置脏位)。
 	// 必须在 SceneEntityComp 绑定之后、自身 ActorCreate 下发之前调用。
+	// Transform 是持久组件，调用方须先确认存在；缺失时只记错误，不创建、不改写，返回 false。
 	static bool EnsureValidEnterLocation(entt::entity player, SceneEntity scene, bool useSceneSpawn = false);
 
 	// 玩家当前所在场景的合法兜底点:移动裁决发现"服务器当前位置与上报位置
