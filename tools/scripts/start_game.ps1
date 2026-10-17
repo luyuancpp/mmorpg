@@ -7,9 +7,9 @@
     运行日志：run/logs/game-launcher。服务在后台运行，关闭启动窗口不影响服务。
 .PARAMETER GateRouterMode
     gate 的客户端 RPC 路由模式（环境变量 GATE_CLIENT_RPC_ROUTER，cpp/nodes/gate/gate_router_mode.h），
-    默认 '1' = 开：gate 只连 client_rpc_router，登录 / 匹配 / 聊天 / 帮会 / 好友 / 聚宝斋都经路由服转发。
-    '0' = 回退到旧的逐服务直连：**直连模式下 chat / guild / friend / trade 不可达**——gate 直连白名单（cpp/nodes/gate/main.cpp）里没有
-    Chat / Guild / Friend / Trade，进程照样在跑，但任何玩家的这些请求都到不了它们（docs/design/client-rpc-router.md D34）。
+    默认 '1' = 开：gate 只连 client_rpc_router，登录 / 匹配 / 聊天 / 帮会 / 好友 / 聚宝斋 / 邮件都经路由服转发。
+    '0' = 回退到旧的逐服务直连：**直连模式下 chat / guild / friend / trade / mail 不可达**——gate 直连白名单（cpp/nodes/gate/main.cpp）里没有
+    Chat / Guild / Friend / Trade / Mail，进程照样在跑，但任何玩家的这些请求都到不了它们（docs/design/client-rpc-router.md D34）。
     只用于排障回退，回退前先 killswitch 关这些方法并公告。
     战斗与本开关无关：两种模式下战斗都只走客户端 ↔ battle 直连，gate 不再中继战斗（turn-based §22 D66）。
     翻转落在部署层、不改 C++ 默认值：gate 进程启动时读一次该变量并缓存，所以只对本次新拉起的 gate 生效；
@@ -60,6 +60,14 @@ $optionalServices += 'friend'
 #（Test-UsesKafkaCommandContract）。单独追加，不改上面的数组。
 $services += 'player_inbox'
 $optionalServices += 'player_inbox'
+# 邮件 mail（docs/design/mail-system.md）：与 trade / friend 同形态的新服务，同样按可选处理，两种情况跳过它：
+#   1. 缺 exe（第 1 步，与 chat / guild / trade / friend 同一逻辑）；
+#   2. MySQL 独占库 mmorpg_mail 未就绪（第 2 步 MySQL 健康后预检：库不存在或 appuser 无权限）。
+# 取舍依据与 trade 逐字相同（AGENTS §11.3）：为邮件拖垮登录 / 匹配不可接受；fail-closed 仍在 mail 进程自身（库不在即拒启）。
+# 客户端请求只承诺路由服模式可达（D-12）。它经 gate-cmd 推新邮件提醒，所以登记为 Kafka 命令契约生产者（Test-UsesKafkaCommandContract）。
+# 依赖第 3 步已起的 data_service（号段）；MailAdmin 令牌由 go_services.ps1 的 Start-ServiceInstance 只给 mail 注入。单独追加，不改上面的数组。
+$services += 'mail'
+$optionalServices += 'mail'
 $skippedServices = @()
 $gatewayUrl = 'http://127.0.0.1:8081'
 $oldPath = $env:PATH
@@ -303,12 +311,14 @@ function Invoke-Dev([string]$Label, [string[]]$Arguments) {
     $reply.Err | Set-Content -LiteralPath (Join-Path $logDir "$Label.stderr.log")
     if ($reply.Code -ne 0) { throw "$Label 启动失败，查看 $logDir 下同名日志。" }
 }
-# friend / guild 的异步推送经 shared/kafkautil 写 gate-cmd,必须与 gate 使用同一代主题。
+# friend / guild / mail 的异步推送经 shared/kafkautil 写 gate-cmd,必须与 gate 使用同一代主题。
 # chat v1 只读写 Redis 历史,trade 资产通道走 gRPC,db/router 也不生产命令主题;不纳入此契约。
 # 校验与落记录共用名单,防止服务被复用后才在第一次推送时暴露旧 generation。
 function Test-UsesKafkaCommandContract([string]$Name) {
     # player_inbox:在线提醒(PlayerInboxNotifyEvent)发往 scene-cmd,与 guild / friend 的推送同为命令主题生产者。
-    return $Name -in @('gate','scene','battle','login','scene_manager','player_locator','match','guild','friend','player_inbox')
+    # mail:新邮件提醒(NotifyMailEvent)经 kafkautil.PushToPlayer 发往 gate-cmd_g<N>;用旧代主题起来的 mail 被静默复用,
+    # 推送会写进没人消费的旧主题。
+    return $Name -in @('gate','scene','battle','login','scene_manager','player_locator','match','guild','friend','player_inbox','mail')
 }
 # 已运行进程不会重新读取进程环境；记录本启动器实际拉起的 PID 与启动时间，防止换代后复用旧进程。
 function Assert-RunningCommandContract($Process) {
@@ -568,8 +578,34 @@ try {
                 Write-Host '  Rerun this startup script after creating the database.'
             }
         }
+        if ('mail' -notin $skippedServices) {
+            # 邮件 mail 的库预检，与上面 trade / friend 同一套做法（取舍依据见脚本顶部 $optionalServices 处）。
+            # 以 appuser 身份查 information_schema.SCHEMATA，一次覆盖「库存在」和「已授权」；密码只在容器内由 sh 展开。
+            $mailDbProblem = ''
+            try {
+                $mailDbProbe = Invoke-Docker @('exec','mysql','sh','-c','mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -N -B -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ''mmorpg_mail''"')
+                if ($mailDbProbe.Code -ne 0) {
+                    $mailDbProblem = "Query failed (docker exec exit code $($mailDbProbe.Code))"
+                } elseif ($mailDbProbe.Out.Trim() -cne 'mmorpg_mail') {
+                    $mailDbProblem = 'Database missing or appuser lacks permission'
+                }
+            } catch {
+                $mailDbProblem = "Query exception: $($_.Exception.Message)"
+            }
+            if ($mailDbProblem) {
+                $skippedServices += 'mail'
+                # 补建命令：PowerShell 7 里整行粘贴执行；root 密码取自容器环境变量，不回显。建库 / 授权与 deploy/mysql-init/00_init_zone_dbs.sql 等价。
+                $mailDbFixCommand = @'
+  docker --context desktop-linux exec mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS mmorpg_mail DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON mmorpg_mail.* TO appuser@''%''; FLUSH PRIVILEGES;"'
+'@
+                Write-Warning "Mail database mmorpg_mail is not ready ($mailDbProblem); skipping mail (mail requests will return service unavailable). Other services will start normally."
+                Write-Host '  Existing MySQL volumes do not rerun deploy/mysql-init. Use root to create the missing database and grant access once (run the following command in PowerShell 7):' -ForegroundColor Yellow
+                Write-Host $mailDbFixCommand -ForegroundColor Yellow
+                Write-Host '  Rerun this startup script after creating the database.'
+            }
+        }
         Write-Step '3/6 Start persistence services'
-        # 命令生产者(含 friend / guild 推送)由 dev_tools 子进程继承与 C++ 消费者相同的契约。
+        # 命令生产者(含 friend / guild / mail 推送)由 dev_tools 子进程继承与 C++ 消费者相同的契约。
         $env:KAFKA_COMMAND_TOPIC_PARTITIONS = [string]$kafkaContract.Partitions
         $env:KAFKA_COMMAND_TOPIC_GENERATION = [string]$kafkaContract.Generation
         $goRecords = Repair-PidRecords 'go_services.pid.json'
@@ -611,7 +647,7 @@ try {
         if ($GateRouterMode -eq '1') {
             Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=1 (forward through client_rpc_router; battle uses direct battle connections only)'
         } else {
-            Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=0 (direct mode: chat / guild / friend / trade are unreachable; battle still uses direct battle connections)' -ForegroundColor Yellow
+            Write-Host '  gate routing mode: GATE_CLIENT_RPC_ROUTER=0 (direct mode: chat / guild / friend / trade / mail are unreachable; battle still uses direct battle connections)' -ForegroundColor Yellow
         }
         Invoke-Dev 'gate' @('-Command','cpp-node-start','-CppNodes','gate','-GateCount','1','-SceneCount','0','-BattleCount','0','-Zone','1','-NodeIp','loopback')
         Assert-NodeStartup 'gate'
@@ -637,6 +673,9 @@ try {
         # 玩家收件箱 player_inbox 单独一批，理由同 trade / friend（空列表 = 全部服务）。它依赖第 3 步已起的 data_service
         #（玩家存在校验 / 对账读账本，NonBlock 拨号）；scene 已在第 4 步起来，不等它（弱依赖，IB-7）。
         if ('player_inbox' -notin $skippedServices) { Start-LocalGoServices @('player_inbox') }
+        # 邮件 mail 单独一批，理由同 trade / friend（被跳过时不调用，空列表 = 全部服务）。它依赖第 3 步已起的 data_service
+        #（mail_id / sys_mail_id 号段，NonBlock 拨号）；MailAdmin 令牌由 go_services.ps1 的 Start-ServiceInstance 只给 mail 注入。
+        if ('mail' -notin $skippedServices) { Start-LocalGoServices @('mail') }
         $gatewayProcess = Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'java.exe' -and $_.CommandLine -and $_.CommandLine.Contains($jar.FullName) } | Select-Object -First 1
         if (-not $gatewayProcess) {
             if (Test-Tcp 8081) { throw '8081 端口被其他程序占用，未启动重复网关。' }

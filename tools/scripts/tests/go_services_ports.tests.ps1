@@ -18,6 +18,8 @@ if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
 foreach ($definition in $ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
     . ([scriptblock]::Create($definition.Extent.Text))
 }
+# go_services.ps1 顶层 dot-source 的 MailAdmin 本机令牌库(只加载函数):AST 只抽本文件的函数,不执行顶层语句,mail 用例要它。
+. (Join-Path $PSScriptRoot '../lib/mail_admin_dev_token.ps1')
 
 $testRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('mmorpg-go-ports-tests-' + [guid]::NewGuid().ToString('N'))
 $RepoRoot = $testRoot
@@ -61,7 +63,8 @@ function Get-Process {
 }
 function Start-Process {
     [CmdletBinding()] param($FilePath, $ArgumentList, $WorkingDirectory, $RedirectStandardOutput, $RedirectStandardError, [switch]$PassThru, $WindowStyle)
-    $script:Starts += [pscustomobject]@{ FilePath = $FilePath; Arguments = $ArgumentList }
+    # MailToken:启动那一刻父进程环境里的 MailAdmin 令牌 = 子进程会继承到的值(只给 mail 注入的用例看它)。
+    $script:Starts += [pscustomobject]@{ FilePath = $FilePath; Arguments = $ArgumentList; MailToken = [Environment]::GetEnvironmentVariable('MMORPG_MAIL_ADMIN_TOKEN') }
     return [pscustomobject]@{ Id = 1000 + $script:Starts.Count }
 }
 function Stop-Process { throw '测试禁止终止进程' }
@@ -234,6 +237,34 @@ try {
         $script:Listeners = @([pscustomobject]@{ LocalPort = 50850; OwningProcess = 88 })
         Assert-Equal $true (Wait-TcpListenReady -Port 50850 -ProcessId 77 -TimeoutSeconds 0 -AllowChildProcess) 'go run 包装进程的实际服务子进程可就绪'
         Assert-Equal $false (Wait-TcpListenReady -Port 50850 -ProcessId 77 -TimeoutSeconds 0) 'exe 模式严格要求目标 PID'
+    }
+    Test-Case '只给 mail 注入 MailAdmin 令牌:起 mail 时子进程拿得到(≥32 字节),起 chat 时拿不到;启动后父进程还原为没设' {
+        Reset-TestState
+        $envName = 'MMORPG_MAIL_ADMIN_TOKEN'
+        $outerToken = [Environment]::GetEnvironmentVariable($envName)
+        Remove-Item "Env:$envName" -ErrorAction SilentlyContinue
+        $ServiceCatalogue['mail'] = @{ Dir = 'mail'; Entry = 'mail.go'; Port = 50900; Desc = '邮件'; ConfigFlag = '-f'; ConfigFile = 'etc/mail.yaml'; AllowMultiInstance = $true; Tier = 1 }
+        try {
+            # 临时根当仓库根:令牌库只认有 go/mail/etc/mail.yaml 的目录,下面这份派生配置的源文件正好就是它。
+            New-Item -ItemType Directory -Path (Join-Path $GoRoot 'mail/etc') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $GoRoot 'mail/etc/mail.yaml') -Value "ListenOn: 0.0.0.0:50900`nZoneId: 1"
+            Set-Content -LiteralPath (Join-Path $GoBinDir 'mail.exe') -Value '进程桩占位文件'
+            $Services = @('chat', 'mail')
+            Invoke-Start -UseExe 6>$null
+            $mailStart = @($script:Starts | Where-Object { $_.FilePath -like '*mail.exe' })
+            $chatStart = @($script:Starts | Where-Object { $_.FilePath -like '*chat.exe' })
+            Assert-Equal 1 $mailStart.Count '夹具前提:mail 恰好启动一次'
+            Assert-Equal 1 $chatStart.Count '夹具前提:chat 恰好启动一次'
+            Assert-True ($null -ne $mailStart[0].MailToken -and $mailStart[0].MailToken.Trim().Length -ge 32) '起 mail 那一刻环境里有 ≥32 字节的令牌(go/mail 不足 32 字节即静默停用 MailAdmin)'
+            Assert-Equal $null $chatStart[0].MailToken '起 chat 时环境里没有令牌(最小权限:只给 mail)'
+            Assert-Equal $null ([Environment]::GetEnvironmentVariable($envName)) '启动后父进程还原为没设(后面起的服务不继承)'
+            Assert-True (Test-Path -LiteralPath (Join-Path $testRoot 'run/secrets/mail-admin-dev.env')) '令牌落在 RepoRoot 的 run/secrets 下(run/* 已被 .gitignore 覆盖)'
+        }
+        finally {
+            $ServiceCatalogue.Remove('mail')
+            if ($null -eq $outerToken) { Remove-Item "Env:$envName" -ErrorAction SilentlyContinue }
+            else { [Environment]::SetEnvironmentVariable($envName, $outerToken) }
+        }
     }
     Test-Case '目标已经退出时不能被残留监听判就绪' {
         Reset-TestState

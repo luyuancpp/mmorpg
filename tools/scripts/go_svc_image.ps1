@@ -174,6 +174,12 @@ $Catalogue = [ordered]@{
     # 与路由服成对发布。go.mod 的 replace schemamigrate => ../schemamigrate 与 trade 同形态,由 Dockerfile.go-svc 通用的 COPY schemamigrate/ 带入;
     # proto2mysql 的 replace 是远程仓名映射(不是本地目录),不走 ExternalReplaceStages。同一镜像既跑 guild Deployment,也跑 guild-migrate Job。
     guild           = @{ Dir = "guild";           Entry = "guild.go";               ImageName = "mmorpg-guild" }
+    # 邮件 mail(docs/design/mail-system.md §7.2 ②):与 k8s_deploy.ps1 $GoSvcCatalogue 的 mail 条目配对(ImageName 必须一致)。
+    # 客户端请求只经路由服可达,与路由服成对发布;MailAdmin 是运维直连入口。go/mail/go.mod 的 replace proto / shared / schemamigrate
+    # 都在 go/ 之内,由 Dockerfile.go-svc 通用的 COPY 带入;proto2mysql 是远程仓名映射,不走 ExternalReplaceStages,**不需要改 Dockerfile**。
+    # 同一镜像既跑 mail Deployment,也跑 mail-migrate Job(args 加 -migrate,D-14)。镜像只编 mail.go;cmd/mailadmin 不进镜像。
+    # ⚠ 镜像里要编得过:本条目只能在 mail 的 proto-gen 产物(go/proto/mail、go/mail/generated)入库之后存在(mail-system.md §12.3)。
+    mail            = @{ Dir = "mail";            Entry = "mail.go";                ImageName = "mmorpg-mail" }
 }
 
 # 先把每个元素再按逗号拆一次,兼容 "a,b"(单字符串)和 a,b(数组)两种传法。

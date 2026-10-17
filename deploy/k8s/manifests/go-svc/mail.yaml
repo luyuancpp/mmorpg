@@ -1,0 +1,175 @@
+# mail:全局邮件(系统邮件 / 定向邮件 / 领取短路 + 新信 S2C 推送;docs/design/mail-system.md)。
+#
+# **全局池,只部署到 mmorpg-infra namespace 一次,不进任何 zone namespace。**
+# 邮件按全局唯一的 player_id 与号段 id 存(mail_personal / mail_system / mail_system_state / mail_box 四张表都没有 zone 列),
+# 服务代码禁止按 zone 分支(契约 §0);客户端经 gate → client-rpc-router 到达,路由服对 MailNodeService 不做 zone 过滤。
+# go/mail/etc/mail.yaml 里的 ZoneId 只影响 etcd 注册路径,不是业务分区键。
+# k8s_deploy.ps1 的 $GoSvcCatalogue 里该条目标了 Global = $true,zone-up 会跳过它,
+# infra-up / all-up 在基础设施阶段部署。ConfigMap go-svc-mail-config 由脚本生成。
+#
+# 库与表(port-decisions D-14):
+#   - 独占库 mmorpg_mail 由 mysql-init-sql ConfigMap 带入的 deploy/mysql-init/00_init_zone_dbs.sql 预建 + GRANT appuser
+#     (建库只登记那一处;initdb 只对空 PVC 生效,存量 PVC 手工补,见 deploy/k8s/README.md「邮件 mail」)。
+#   - 表由同目录 mail-migrate.yaml 这个 Job(同一镜像 + 同一 ConfigMap,`-migrate`)按 proto/mail/mail_table.proto 建。
+#     k8s_deploy.ps1 在本 Deployment **之前**先 delete 再 apply 它(上一次的 Job 还在途则先等它结束,绝不删在途 Job)。
+#     staging/prod **恒等** Job Complete 才 apply 本文件,Failed / 超时即中断发布(D-14 第 4 条,不受 -WaitReady 控制);
+#     dev 档只在 -WaitReady 下等。
+#   - staging/prod 的 ConfigMap 固定 Schema.AutoMigrate=false:启动路径只跑一次只读 plan,有待执行语句或需人工项就拒绝启动
+#     (fail-closed,日志打印补救命令),所以 Job 没跑成功时这里会 CrashLoop —— 这是预期,先看 `kubectl logs job/mail-migrate`。
+#
+# 可达性:只有 ClientPlayerMail 走路由模式(D-12)。gate 的 GATE_CLIENT_RPC_ROUTER 在 K8s 上默认 "1"(k8s_deploy.ps1 -GateRouterMode,
+# turn-based §22 D75);以 -GateRouterMode 0 回退时这份 Deployment 照样起得来、探针绿,但玩家够不着(与 chat / friend / trade 同口径)。
+# MailAdmin(SendPersonalMail / SendSystemMail)不经 gate:运维直连 Service mail:50900,gRPC metadata 带 x-mail-admin-token。
+#
+# Kafka 命令 topic 的分区契约(gate-cmd_g<N>,mail 的 S2C NotifyMailEvent 经它到收件人所在 zone 的 gate):
+#   **本文件不写 KAFKA_COMMAND_TOPIC_PARTITIONS / KAFKA_COMMAND_TOPIC_GENERATION / KAFKA_TOPIC_REPLICATION_FACTOR** —— 这几个变量由
+#   k8s_deploy.ps1 的 Add-GoSvcCommandTopicEnv / Add-GoSvcTopicReplicationEnv 统一注入到下面唯一的 env: 段
+#   (mail 的推送用 kafkacmd.CommandPartitionBalancer,必须拿到与 gate 同一代的分区契约;manifest 里手写会被部署脚本拒绝)。
+#
+# MailAdmin 令牌:容器内变量名必须是 MMORPG_MAIL_ADMIN_TOKEN(go/mail/internal/config 的 AdminTokenEnv 写死这个名字)。
+#   **本文件不手写它**:k8s_deploy.ps1 在部署侧环境变量 MMORPG_MAIL_ADMIN_TOKEN 非空时,经 Secret mail-admin-auth(key token)
+#   追加 secretKeyRef(Add-GoSvcSecretEnv;手写同名变量会被脚本拒绝)。未注入 = 不建 Secret、不注入 env,
+#   mail 启动横幅打 mail_admin=disabled,MailAdmin 全部回 PermissionDenied(fail-closed);客户端读信 / 删信照常。
+#
+# 连接数:ConfigMap 的 MySQL.MaxOpenConn × replicas(外加 migrate Job 的连接)已登记进 MySQL 连接总账(Get-MysqlConnectionLedgerInputs
+# 的 MailReplicas / MailMaxOpen),共享 Redis 的连接已登记进 Redis 连接总账(Get-RedisConnectionLedgerInputs 的 mail 一行)。
+apiVersion: v1
+kind: Service
+metadata:
+  name: mail
+  labels:
+    app: mail
+    tier: go-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: mail
+  ports:
+    - name: grpc
+      port: 50900
+      targetPort: 50900
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail
+  labels:
+    app: mail
+    tier: go-svc
+spec:
+  # 多实例安全:定向发件在单条 MySQL 事务里(mail_box 守卫行 FOR UPDATE + 幂等唯一键 uk_mail_personal / uk_mail_system 判重),
+  # 读 / 删 / 系统邮件状态都是条件写,实例之间不需要协调;mail_id / sys_mail_id 由 data_service 号段发(biz_tag = mail),
+  # node_id 由 etcd CAS 分配(go/shared/noderegistry),路由服随机挑。
+  # 启动期迁移(仅 dev 档 AutoMigrate=true)由 go/schemamigrate 的 GET_LOCK 串行化,两副本同时起不会并发 DDL。
+  # ⚠ 过期邮件的 sweep 在**每个副本**里都跑(不选主,见 mail.go 的启动横幅 sweep 行):
+  #   它是幂等的分批 DELETE … LIMIT,先删 mail_system_state 再删系统行,两个副本同时清只是各删一批;默认 Mode=report_only 不删任何行。
+  # replicas>=2 是「容错不降级」的最低冗余。崩溃切换窗口 = ConfigMap 的 LeaseTTL(路由服 PickRandom 不看连接状态)。
+  # 改副本数要同步核对 MySQL / Redis 连接总账(Get-ManifestDeploymentReplicas 读这一行,全文只能有这一处两格缩进的 replicas)。
+  replicas: 2
+  # 先起新的、Ready 之后再停旧的:滚动期间不出现零副本(与连接总账「滚动多 1 个实例」的前提一致)。
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: mail
+  template:
+    metadata:
+      labels:
+        app: mail
+        tier: go-svc
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9240"
+        prometheus.io/path: "/metrics"
+        # MailAdmin 令牌指纹(SHA-256 前 12 位,不可反推):k8s_deploy.ps1 的 Apply-OneGoSvc 替换占位,未注入令牌时写 disabled。
+        # secretKeyRef 只在容器启动时读;只轮换 Secret 时 Pod 模板不变、apply 是 no-op,旧令牌一直有效 ——
+        # 指纹进模板后,令牌一变即滚动。不要手改这一行,也不要绕过脚本直接 apply 本文件。
+        mmorpg.io/mail-admin-token-hash: "PLACEHOLDER_MAIL_ADMIN_TOKEN_HASH"
+    spec:
+      affinity:
+        podAntiAffinity:
+          # 两个副本尽量不落同一节点,否则单节点故障等于全池不可用
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: mail
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: mail
+          image: PLACEHOLDER_IMAGE
+          imagePullPolicy: PLACEHOLDER_PULL_POLICY
+          # MMORPG_MAIL_ADMIN_TOKEN、KAFKA_COMMAND_TOPIC_*、KAFKA_TOPIC_REPLICATION_FACTOR 都不在这里手写(见文件头),由脚本注入。
+          env:
+            - name: GOLANG_PROTOBUF_REGISTRATION_CONFLICT
+              value: warn
+            # C++ 约定注册(MailNodeService.rpc)写进 NodeInfo 的对外 IP(mail.go 的 advertisedHost 优先读它):
+            # ListenOn 是 0.0.0.0,不能原样写;不注入时退回第一块非 loopback 网卡,
+            # 多网卡 / sidecar / 部分 CNI 下可能选错,路由服拨不通。
+            # 与 friend.yaml / trade.yaml / data-service.yaml 同一写法。
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          args: ["-f", "/app/etc/mail.yaml"]
+          ports:
+            - containerPort: 50900
+              name: grpc
+            # 与 ConfigMap 的 MetricsListenAddr ":9240" 及上面 prometheus.io/port 注解一致(9240 = mail)
+            - containerPort: 9240
+              name: metrics
+          readinessProbe:
+            grpc:
+              port: 50900
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            grpc:
+              port: 50900
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          lifecycle:
+            preStop:
+              # 先留 5s 让 Service 摘掉 endpoint;etcd 注册(noderegistry.Close)由进程收到 SIGTERM 后
+              # 在 grpc Stop 之前删除,路由服 watch 到删除后不再挑这个实例。
+              # 5s + mail.go 的 24s 硬截止 = 29s,必须 < 下面的 terminationGracePeriodSeconds(30),
+              # 否则 kubelet 会在进程自己收尾完成之前 SIGKILL,etcd 注册只能等 LeaseTTL 过期。
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+          volumeMounts:
+            - name: svc-config
+              mountPath: /app/etc
+              readOnly: true
+            # 不挂 snowflake-cache:mail_id / sys_mail_id 只由 data_service 号段发(IdSegment.FallbackToSnowflake 固定 false),
+            # 不接 snowflakealloc,没有启动期槽位草稿要缓存。
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            # 全文只能有这一个 CPU limit,且不超过 2 核:Redis 连接总账按 GOMAXPROCS = 2 计 go-zero 池上限。
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: svc-config
+          configMap:
+            name: go-svc-mail-config
+---
+# PDB 与主 manifest 同文件:k8s_deploy.ps1 只 apply 目录条目里的主 manifest。
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: mail-pdb
+  labels:
+    app: mail
+    tier: go-svc
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: mail

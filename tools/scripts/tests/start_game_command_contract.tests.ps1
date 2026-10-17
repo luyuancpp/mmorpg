@@ -35,7 +35,8 @@ function Write-TestRecords($Records) { $Records | ConvertTo-Json -Depth 4 | Set-
 try {
     New-Item -ItemType Directory -Path (Split-Path -Parent $recordPath) -Force | Out-Null
     # player_inbox:在线提醒(PlayerInboxNotifyEvent)发往 scene-cmd,与 friend / guild 的推送同为命令主题生产者。
-    foreach ($serviceName in @('friend','guild','player_inbox')) {
+    # mail:新邮件提醒(NotifyMailEvent)经 gate-cmd_g<N> 推送,同为命令主题生产者(docs/design/mail-system.md §12.3)。
+    foreach ($serviceName in @('friend','guild','player_inbox','mail')) {
         Test-Case "$serviceName 缺少可信启动记录时拒绝复用" {
             Write-TestRecords @{}
             $process = [pscustomobject]@{ Name = "$serviceName.exe"; ProcessId = 77 }
