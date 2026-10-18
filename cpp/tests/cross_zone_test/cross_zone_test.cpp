@@ -3450,7 +3450,7 @@ TEST(RelocateConfirmKick, UnverifiableKickOnlyWhenSceneManagerCannotHaveGrantedO
         EXPECT_FALSE(rc::ShouldKickUnverified(evidence, true, false)) << rc::EvidenceName(evidence);
     }
 
-    // ⑤ 第三个入参的来源:PlayerLifecycleSystem::SmRejectedBeforeAnyPlacementWrite 的白名单 —— 这八个码在 scene_manager 里的
+    // ⑤ 第三个入参的来源:PlayerLifecycleSystem::SmRejectedBeforeAnyPlacementWrite 的白名单 —— 这九个码在 scene_manager 里的
     //    每一个出处都早于本请求的落点写。数值手抄自 go/scene_manager/internal/constants/errors.go(两边没有共享的生成物),
     //    钉在这里:那边改号而 player_lifecycle.h 没跟,盲踢就会打到已放行的会话。18 引用既有常量,不再写字面量。
     struct PinnedSmCode
@@ -3467,6 +3467,8 @@ TEST(RelocateConfirmKick, UnverifiableKickOnlyWhenSceneManagerCannotHaveGrantedO
         {PlayerLifecycleSystem::kSmErrSceneReentryBarrier, 17, "ErrSceneReentryBarrier"},
         {PlayerLifecycleSystem::kSmErrHomeZoneUnavailable, 20, "ErrHomeZoneUnavailable"},
         {PlayerLifecycleSystem::kSmErrHomeZoneMerging, 21, "ErrHomeZoneMerging"},
+        // 25 的唯一出处是落点会话身份判定 decidePlacementIdentity,早于一切预占与写(scene-enter-chain-residuals.md §5.2 ⑤)。
+        {PlayerLifecycleSystem::kSmErrPlacementSessionSuperseded, 25, "ErrPlacementSessionSuperseded"},
     };
     for (const auto &pinned : pinnedCodes)
     {
@@ -6496,17 +6498,3 @@ TEST(ActingLoginGeneration, MatchingSessionYieldsGeneration)
     static_assert(ef::ActingLoginGeneration(&kActingIdentity, kSessionAtExit) == 9, "纯函数,可在编译期求值");
 }
 
-TEST(RelocateConfirmKick, PlacementSessionSupersededIsRejectedBeforeAnyPlacementWrite)
-{
-    // 码 25 ErrPlacementSessionSuperseded(设计 §5.2 ⑤):唯一出处是 scene_manager 的落点会话身份判定,早于一切预占与写。
-    // 设计 §5.7 要求把它并进上面 UnverifiableKickOnlyWhenSceneManagerCannotHaveGrantedOurs 的 pinnedCodes;那一处有
-    // 别的会话的在途改动,本批只在文件末尾追加,在途改动合入后再并回那张表(同一份白名单知识只留一处)。
-    EXPECT_EQ(PlayerLifecycleSystem::kSmErrPlacementSessionSuperseded, 25u) << "ErrPlacementSessionSuperseded";
-    // 不写 static_assert:第一轮红跑要在白名单缺这一项时照常编译、以运行期失败复现(设计 §8)。
-    EXPECT_TRUE(PlayerLifecycleSystem::SmRejectedBeforeAnyPlacementWrite(
-        PlayerLifecycleSystem::kSmErrPlacementSessionSuperseded));
-    EXPECT_TRUE(rc::ShouldKickUnverified(rc::Evidence::kReplyRejected, false,
-                                         PlayerLifecycleSystem::SmRejectedBeforeAnyPlacementWrite(
-                                             PlayerLifecycleSystem::kSmErrPlacementSessionSuperseded)))
-        << "落点会话身份已被取代:scene_manager 一个字节都没改,读不到 Redis 时可以踢";
-}

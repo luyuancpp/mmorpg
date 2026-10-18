@@ -174,7 +174,8 @@ private:
     int sessionDepth_{0};
     bool flushDeferred_{false};
 
-    // muduo 定时器按墙钟走:截止点另记一份 steady_clock,到点复核,未到就按剩余时间重新上弦。
+    // muduo 定时器已按单调时钟到期;截止点仍另记一份 steady_clock,到点复核,未到就按剩余时间重新上弦
+    // (兜住秒→微秒截断造成的微秒级早到)。
     muduo::net::TimerId connectTimer_;
     bool connectTimerArmed_{false};
     std::chrono::steady_clock::time_point connectDeadline_{};

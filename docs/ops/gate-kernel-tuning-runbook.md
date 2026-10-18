@@ -101,6 +101,63 @@ securityContext:
       value: "65535"
 ```
 
+### 3.1 K8s / 容器:进程自抬软限、硬限不够就拒启(2026-10-18 补充)
+
+上面的 limits.d 与 systemd 写法对裸机 / VM 仍然适用;容器里它们不生效,由下面这套接管。
+
+**C++ 节点自己抬软限**(`cpp/libs/engine/core/node/system/node/open_file_limit.h`,`Node::Initialize` 在读完配置、开任何网络 fd 之前调用,仅 Linux;gate / scene / battle 三类都覆盖):
+
+- getrlimit 后把软限抬到 min(硬限, 1048576),只抬不降、不动硬限(非 root 也能做)。
+- 需求 = 客户端面准入上限 + 4096 余量:gate = `GateMaxConnections` + 4096(默认 24096),battle = `BattleMaxConnections` + 4096(默认 8192),scene = 4096。配 0(仅 dev/test 合法)按 0 算。
+- 余量 4096 是推算,只是拒启门槛,进程实际可用的是抬起来的软限:gate 直连模式约 2Z 条到全服 scene_manager,scene 约 4Z 条到全服 SM / DS(Z ≈ 200~445,2000 万在线口径),都在 4096 以内;Z 超过约 900 或副本数变多时要重新核这个常数(推导见头文件注释)。
+- 抬完仍低于需求:缺省**拒绝启动**,stderr 一行 `FATAL open file limit config: role=... soft=... hard=... required=... shortfall=...`(`kubectl logs --previous` 可见),Pod 进 CrashLoop。多副本形态下新 Pod 起不来只会让滚动停住、旧 Pod 继续服务;全新 zone-up 则整个 zone 起不来。
+- 每次启动 stdout 都有一行(`kubectl logs` 可见,日志文件里也有一份):
+  `[open_file_limit] role=gate verdict=ok mode=enforce required=24096 client_cap=20000 cap_key=GateMaxConnections reserve=4096 soft_before=1024 soft=524288 hard=524288 raise=ok`
+- 为什么不在清单里做:K8s 没有按容器的 ulimit 字段;initContainer 改不了别的进程的限值;特权 prlimit 已否决(见 [gate 准入设计](../design/gate-connection-admission-control.md) P0-1);启动壳里的 `ulimit -n` 与进程自抬是同一件事,不做两份。
+
+**硬限只能在节点运行时层面改**(以下是外部常识,未在本仓实测):
+
+- containerd / dockerd 的 systemd drop-in,例如 `/etc/systemd/system/containerd.service.d/limits.conf` 写 `[Service]` + `LimitNOFILE=1048576`,然后 `systemctl daemon-reload && systemctl restart containerd`;只影响之后新建的容器。
+- 或在 CRI 的 base_runtime_spec 里写 `rlimits`(RLIMIT_NOFILE)。
+- 托管集群按云厂商的节点镜像 / 节点池配置改。这些都是集群运维,不在本仓。
+
+**上线前置(硬性:发布带本项的镜像之前先做,别默认「大家会先读硬限」)**:
+
+1. 在每个目标集群的每个节点池上,从现有旧 Pod 读一次容器 nofile。gate / scene 的启动命令不是 `exec`,PID 1 可能是 `sh`,**不要读 `/proc/1/limits`**,按进程名找 pid:
+   ```bash
+   kubectl -n <ns> exec <pod> -c <容器名> -- sh -c 'for p in /proc/[0-9]*; do n=$(cat $p/comm 2>/dev/null); case "$n" in gate|scene|battle) echo $n; grep "Max open files" $p/limits;; esac; done'
+   ```
+   容器名即节点名(gate / scene / battle);battle 在全局池的命名空间。把 soft / hard 连同集群、节点池、containerd 版本记进 `docs/PROGRESS.md`。
+2. 硬限 ≥ 需求(按该环境实际配置算)才发新镜像。不够时两条路:
+   - 改节点运行时的 `LimitNOFILE`(见上;集群运维),或调低 `GateMaxConnections` / `BattleMaxConnections` 并加台数;
+   - 临时把豁免开关设为 `warn`(见下),先起服,再排期改硬限。
+3. 发布后核对:`kubectl -n <ns> logs <pod> -c <容器名> | grep '\[open_file_limit\]'`,每类都应是 `verdict=ok`;再跑一次第 1 步的 exec,进程软限应等于 min(旧 hard, 1048576)。
+
+**运维豁免开关 `NODE_OPEN_FILE_LIMIT_MODE`**:
+
+- 取值 `enforce`(缺省;未设置、空串同)与 `warn`,只认小写。其他值一律按 `enforce` 处理,并打一行 `[open_file_limit] WARN invalid NODE_OPEN_FILE_LIMIT_MODE='...', falling back to enforce`——拼错开关不会意外放行。
+- `warn`:不够也继续启动,stdout 与日志各打一行 `[open_file_limit] WARN exemption active (NODE_OPEN_FILE_LIMIT_MODE=warn): role=... soft=... required=... shortfall=...`。该节点能承载的连接数以实际软限为准,超出的连接在 accept 时 EMFILE(G7 / G8 那一串),所以只用于应急,不是常态配置。C++ 节点没有指标出口,豁免只能从这行日志查到。
+- 与 `GATE_RUN_MODE` / `SCENE_RUN_MODE` / `BATTLE_RUN_MODE`、GM 开关无关(scene 的运行模式同时决定 GM 放行,两件事不绑在一起)。
+- K8s 生成器(`tools/scripts/k8s_deploy.ps1`)**目前没有接线**这个变量。临时手设只对 Deployment 形态直接生效(gate StatefulSet 是 OnDelete,设完还要逐台删 Pod;Agones Fleet 要改 Fleet 模板):
+  ```bash
+  kubectl -n <ns> set env deployment/<名字> NODE_OPEN_FILE_LIMIT_MODE=warn
+  # 撤销必须显式做:set env 加的变量不在 last-applied 里,k8s_deploy 的 apply 不会删它
+  kubectl -n <ns> set env deployment/<名字> NODE_OPEN_FILE_LIMIT_MODE-
+  ```
+- 裸机 / staging 主机:启动节点前 `export NODE_OPEN_FILE_LIMIT_MODE=warn`(见 [linux-staging-stress-runbook.md](./linux-staging-stress-runbook.md) A.1)。
+
+**紧急回退**:本项不改 proto、配置键、ConfigMap 与 K8s 模板,回退就是换回旧镜像 tag(已推送的不可变 git sha tag)。不要用 `k8s-release-zone`,它会从当前工作区重新构建并推送镜像:
+
+```powershell
+# zone 内 gate / scene;其余参数与本次发布完全一致(-ReleaseProfile / -OpsProfile / -GateRouterMode / -ClientEntryMode 等)
+pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up `
+  -ZoneName <zone> -ZoneId <id> -ReleaseProfile <dev|staging|prod> -OpsProfile <同发布时> `
+  -NodeImage ghcr.io/luyuancpp/mmorpg-node:<旧 git sha> -WaitReady
+# battle 是全局池,只在 infra-up 路径部署:同样的参数改用 -Command k8s-infra-up,-NodeImage 同上
+```
+
+同一镜像若还带了别的会改 ConfigMap 的改动,按那项改动自己的回滚说明处理(通常是用旧 commit 重跑 zone-up)。
+
 ---
 
 ## 四、多源 IP(单 IP 端口耗尽时)

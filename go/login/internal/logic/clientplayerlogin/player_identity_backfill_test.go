@@ -414,7 +414,8 @@ func newEnterWiringHarness(t *testing.T, players []*pbbase.AccountSimplePlayer, 
 		t.Fatalf("seed account blob: %v", err)
 	}
 	playerBlob, err := proto.Marshal(&dbpb.PlayerAllData{
-		PlayerDatabaseData: &dbpb.PlayerDatabase{PlayerId: identityPlayerID},
+		PlayerDatabaseData:   &dbpb.PlayerDatabase{PlayerId: identityPlayerID},
+		PlayerDatabase_1Data: &dbpb.PlayerDatabase_1{PlayerId: identityPlayerID},
 	})
 	if err != nil {
 		t.Fatalf("marshal player blob: %v", err)

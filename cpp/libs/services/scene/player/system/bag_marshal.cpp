@@ -56,6 +56,9 @@ namespace
 // 动态包传 bagType = 0(那里由 bag_id 指认包,该字段无意义,等于 proto 默认值、不上线)。
 void ItemToEntry(const ItemComp& item, uint32_t pos, uint32_t bagType, ItemEntry& entry)
 {
+    // ItemEntry 的字段号与 ItemComp 不同，不能合并顶层 UnknownFieldSet。
+    // 完整实例是权威，旧字段仅由它计算兼容投影。
+    entry.mutable_instance()->CopyFrom(item);
     entry.set_item_uuid(item.item_id());
     entry.set_config_id(item.config_id());
     entry.set_stack_size(item.size());
@@ -78,6 +81,8 @@ void ItemToEntry(const ItemComp& item, uint32_t pos, uint32_t bagType, ItemEntry
 // ItemEntry -> ItemComp。pos / bag_type 不进实例,由调用方单独读 entry.pos()。
 ItemComp ItemFromEntry(const ItemEntry& entry)
 {
+    if (entry.has_instance()) return entry.instance();
+    // 无完整实例的旧档，继续按既有字段还原；正常保存时补齐 instance。
     ItemComp item;
     item.set_item_id(entry.item_uuid());
     item.set_config_id(entry.config_id());

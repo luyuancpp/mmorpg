@@ -163,8 +163,10 @@ void Connector::connecting(int sockfd)
   channel_.reset(new Channel(loop_, sockfd));
   // LOCAL DELTA(只去掉上游这两行的 FIXME: unsafe,绑定照旧是裸 this):属于 AGENTS.md §11.7
   // 「与被绑对象同寿命的成员」例外。回调存在 channel_ 里,channel_ 由本对象独占,只由 Channel::handleEvent
-  // 在 channel_ 登记于 Poller 期间调用;登记只在 removeAndResetChannel 里摘除,摘除后不再派发,
-  // 而它排队的 resetChannel 持有 shared_from_this(),所以 channel_ 能派发回调时本对象必然还活着。
+  // 在 channel_ 登记于 Poller 期间调用;登记只在 removeAndResetChannel 里摘除,摘除后不会再有新的派发
+  // (同一次 handleEvent 余下的回调仍会执行:连接失败常是 error 与 write 同报,handleError 摘除后
+  // handleWrite 看到 kDisconnected 什么也不做),而摘除时排队的 resetChannel 持有 shared_from_this(),
+  // 所以 channel_ 能派发回调时(含上述余下的回调)本对象必然还活着。
   // 登记期间(kConnecting)TcpClient 没有连接(TcpClient 正常用法),~TcpClient 会走 stop(),排队的 stopInLoop
   // 同样持有 shared_ptr,摘除前本对象不会析构。
   channel_->setWriteCallback(

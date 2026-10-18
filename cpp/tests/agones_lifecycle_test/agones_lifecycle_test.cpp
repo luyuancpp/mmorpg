@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -10,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <stop_token>
 #include <string>
@@ -35,6 +37,10 @@
 // 2026-10-16:新增异步许可(AcquireAllocationPermitAsync,grpc-muduo-transport.md §15.9)用例,
 // 测试线程自建 muduo EventLoop,用 runAfter 收尾,不起额外线程、不写死循环。
 // 同日补 Stop() 有界返回(§15.16 第 1 条)用例:可取消的 fake 传输把 /allocate 卡到取消令牌置位为止。
+// 2026-10-17 补停止语义的两处收紧:阻塞等待方与 worker 写入 Allocated 竞争时 Stop() 之后一律拒绝;
+// Stop() 之前已 RequestShutdown() 的 /shutdown 在 worker 退出前恰好发出一次。
+// 同日补不走 Stop()、单独 RequestShutdown() 的两处边角(grpc-muduo-transport.md §15.17):ShuttingDown 是终态,
+// 挂起的 allocate 被丢弃、等待方一律拒绝;RequestShutdown() 幂等,/shutdown 全程最多一次。
 
 namespace
 {
@@ -2468,7 +2474,8 @@ namespace
 } // namespace
 
 // allocate 在途时于 loop 线程上 Stop():在途请求随取消令牌中止,Stop 远早于 allocate 最坏耗时返回
-// (本例不中止就要等 fake 的 10s 兜底上限,再加 10s 退避);异步等待者恰好被拒绝一次,在途许可归零,不再重试。
+// (本例不中止就要等满 fake 的 10s 兜底上限;退避期间 Stop 由 stopRequested_ 立即打断,与令牌无关);
+// 异步等待者恰好被拒绝一次,在途许可归零,不再重试。
 TEST(AgonesStopCancelTest, StopAbortsInFlightAllocateAndRefusesWaiterOnce)
 {
 	auto state = std::make_shared<CancellableSidecarState>();
@@ -2568,4 +2575,498 @@ TEST(AgonesStopCancelTest, StopDoesNotAbortInFlightShutdown)
 	EXPECT_EQ(1, counts.shutdownCompleted);
 	EXPECT_FALSE(counts.shutdownTokenCancellable);
 	EXPECT_EQ(0, counts.abandonableWithoutToken);
+}
+
+// RequestShutdown() 之后、worker 还没取走就 Stop():/shutdown 仍必须送达,且恰好一次。
+// worker 卡在一次可放弃的 /allocate 里,RequestShutdown() 时取不走请求;Stop() 经令牌中止 /allocate 后 worker
+// 回到主循环,先发 /shutdown(不带可取消令牌)再退出。Stop() 之后的 RequestShutdown() 与重复 Stop() 都不补发。
+TEST(AgonesStopCancelTest, ShutdownRequestedBeforeStopIsDeliveredExactlyOnce)
+{
+	auto state = std::make_shared<CancellableSidecarState>();
+	state->holdAllocate = true;
+	auto options = FastOptions();
+	options.allocateWaitTimeout = 30000ms;
+	agones::GameServerLifecycle lifecycle;
+	lifecycle.Start(std::make_unique<CancellableTransport>(state), "http://127.0.0.1:9358", options);
+	ASSERT_TRUE(lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+
+	// 非阻塞踢起 allocate(不等结果),让 worker 卡在 /allocate 里腾不出手取 shutdown 请求。
+	EXPECT_FALSE(lifecycle.EnsureAllocatedNonBlocking());
+	ASSERT_TRUE(WaitCancellableAllocateEntered(*state));
+
+	lifecycle.RequestShutdown();
+	const auto begin = std::chrono::steady_clock::now();
+	lifecycle.Stop();
+	const long long stopMs = ElapsedMs(begin);
+
+	// /shutdown 不卡:Stop() 的耗时只有中止 /allocate 与一次 /shutdown。
+	EXPECT_LT(stopMs, 1000);
+	EXPECT_EQ(agones::LifecycleState::Stopped, lifecycle.State());
+	CancellableCounts counts = Counts(*state);
+	EXPECT_EQ(1, counts.allocateCalls);
+	EXPECT_EQ(1, counts.allocateCancelled);
+	EXPECT_EQ(1, counts.shutdownCalls);
+	EXPECT_EQ(1, counts.shutdownCompleted);
+	EXPECT_FALSE(counts.shutdownTokenCancellable);
+	EXPECT_EQ(0, counts.abandonableWithoutToken);
+
+	lifecycle.RequestShutdown();
+	lifecycle.Stop();
+	counts = Counts(*state);
+	EXPECT_EQ(1, counts.shutdownCalls);
+}
+
+// worker 空闲时 RequestShutdown() 紧接 Stop():worker 可能先取走请求(Stop 等在途 /shutdown 完成),也可能还没取走
+// (退出前补发)。先后取决于调度,两种情况都必须恰好一次 /shutdown,因此连跑几轮。
+TEST(AgonesStopCancelTest, ShutdownRequestedRightBeforeStopOnIdleWorkerIsDeliveredExactlyOnce)
+{
+	constexpr int kRounds = 5;
+	for (int round = 0; round < kRounds; ++round)
+	{
+		auto state = std::make_shared<CancellableSidecarState>();
+		agones::GameServerLifecycle lifecycle;
+		lifecycle.Start(std::make_unique<CancellableTransport>(state), "http://127.0.0.1:9358", FastOptions());
+		ASSERT_TRUE(lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms)) << "round " << round;
+
+		lifecycle.RequestShutdown();
+		lifecycle.Stop();
+
+		EXPECT_EQ(agones::LifecycleState::Stopped, lifecycle.State()) << "round " << round;
+		const CancellableCounts counts = Counts(*state);
+		EXPECT_EQ(1, counts.shutdownCalls) << "round " << round;
+		EXPECT_EQ(1, counts.shutdownCompleted) << "round " << round;
+		EXPECT_FALSE(counts.shutdownTokenCancellable) << "round " << round;
+	}
+}
+
+namespace
+{
+	// 阻塞等待方与 Stop() 竞争用的 sidecar。/allocate 卡到 Stop() 置位取消令牌为止,随后照常返回成功 ——
+	// 模拟响应恰在中止生效前到达:AbandonedByStop 不成立,worker 照常写入 Allocated。
+	// 同时用停止回调把 Stop() 拦在 request_stop() 里直到测试放行:Stop() 唤醒等待方的 notify_all 因此晚于
+	// worker 写入 Allocated,阻塞等待方只会被 worker 写入之后的 notify 唤醒,醒来时必然是「已停 + Allocated」——
+	// 正是要钉住的竞态,每次都命中,不靠调度碰运气。
+	struct StopRaceState
+	{
+		std::mutex mutex;
+		std::condition_variable cv;
+		bool allocateEntered = false;
+		bool stopObserved = false;
+		bool releaseStop = false;
+		int allocateCalls = 0;
+		// 停止回调必须活过 /allocate 的 Post:回调在 Stop() 线程里阻塞期间,worker 要先返回并写入 Allocated
+		// (回调对象放在 Post 栈上的话,析构会等回调跑完,两边互等)。只由 worker 线程 emplace 一次;
+		// 测试放行之后回调已经返回,随本对象析构时不阻塞。
+		std::optional<std::stop_callback<std::function<void()>>> stopHook;
+	};
+
+	class StopRaceAllocateTransport final : public agones::HttpTransport
+	{
+	public:
+		explicit StopRaceAllocateTransport(std::shared_ptr<StopRaceState> state)
+			: state_(std::move(state))
+		{
+		}
+
+		agones::HttpResponse Post(const std::string& url,
+			const std::string& body,
+			const agones::HttpTimeouts& timeouts) override
+		{
+			return Post(url, body, timeouts, std::stop_token{});
+		}
+
+		agones::HttpResponse Get(const std::string&, const agones::HttpTimeouts&) override
+		{
+			agones::HttpResponse failed;
+			failed.error = "fake: no gameserver";
+			return failed;
+		}
+
+		agones::HttpResponse Post(const std::string& url,
+			const std::string&,
+			const agones::HttpTimeouts&,
+			std::stop_token cancel) override
+		{
+			if (url.find("/allocate") == std::string::npos)
+			{
+				return Succeeded();
+			}
+			{
+				std::lock_guard<std::mutex> lock(state_->mutex);
+				if (++state_->allocateCalls > 1)
+				{
+					return Succeeded(); // 只卡第一次
+				}
+			}
+
+			// 在 state 锁外登记:令牌若已置位,构造函数会就地调用回调,而回调要拿 state 锁。
+			// 回调只弱持有 state,不与 state 里的 stopHook 成环。
+			state_->stopHook.emplace(cancel,
+				std::function<void()>([weak = std::weak_ptr<StopRaceState>(state_)] {
+					const std::shared_ptr<StopRaceState> state = weak.lock();
+					if (!state)
+					{
+						return;
+					}
+					std::unique_lock<std::mutex> lock(state->mutex);
+					state->stopObserved = true;
+					state->cv.notify_all();
+					// 把 Stop() 拦在这里:放行之前它走不到唤醒等待方的 notify_all。兜底上限只防用例挂死。
+					state->cv.wait_for(lock, kFakeHoldSafetyCap, [&state] { return state->releaseStop; });
+				}));
+
+			std::unique_lock<std::mutex> lock(state_->mutex);
+			state_->allocateEntered = true;
+			state_->cv.notify_all();
+			if (!state_->cv.wait_for(lock, kFakeHoldSafetyCap, [this] { return state_->stopObserved; }))
+			{
+				agones::HttpResponse failed;
+				failed.error = "fake: hold safety cap reached";
+				return failed;
+			}
+			return Succeeded(); // 响应恰在中止生效前到达
+		}
+
+	private:
+		static agones::HttpResponse Succeeded()
+		{
+			agones::HttpResponse response;
+			response.transportOk = true;
+			response.statusCode = 200;
+			return response;
+		}
+
+		std::shared_ptr<StopRaceState> state_;
+	};
+
+	// 在 state 锁内等 predicate 成立,最多 3s。
+	template <typename Predicate>
+	bool WaitStopRace(StopRaceState& state, Predicate predicate)
+	{
+		std::unique_lock<std::mutex> lock(state.mutex);
+		return state.cv.wait_for(lock, 3000ms, predicate);
+	}
+
+	void ReleaseStopRace(StopRaceState& state)
+	{
+		{
+			std::lock_guard<std::mutex> lock(state.mutex);
+			state.releaseStop = true;
+		}
+		state.cv.notify_all();
+	}
+
+} // namespace
+
+// 阻塞等待方与 Stop() 竞争:Stop() 已置停止标志之后,在途 /allocate 恰在中止生效前成功、worker 抢先写入 Allocated,
+// 阻塞等待方醒来看到「已停 + Allocated」。必须一律拒绝、不留在途许可 —— 与「已停即拒绝」、异步等待方由 Stop()
+// 统一拒绝同一口径:Stop() 之后不再签发任何许可。fake 把 Stop() 拦在 request_stop() 里,竞态每次都命中。
+TEST(AgonesStopCancelTest, BlockingWaitersAreRefusedWhenAllocatedRacesStop)
+{
+	auto state = std::make_shared<StopRaceState>();
+	auto options = FastOptions();
+	options.allocateWaitTimeout = 5000ms; // 等待方只由 worker 的结果或 Stop() 唤醒,不让超时抢先
+	GameServerLifecycle lifecycle;
+	lifecycle.Start(std::make_unique<StopRaceAllocateTransport>(state), "http://127.0.0.1:9358", options);
+	ASSERT_TRUE(lifecycle.WaitForState(agones::LifecycleState::Ready, 3000ms));
+
+	constexpr int kWaiters = 3;
+	// 每个等待方把 permit 存进自己的槽位(不同元素,无数据竞争),Stop() 返回之后再统一析构,验证在途计数。
+	std::vector<std::unique_ptr<GameServerLifecycle::AllocationPermit>> held(kWaiters);
+	std::atomic<int> answered{ 0 };
+	std::vector<std::thread> waiters;
+	for (int i = 0; i < kWaiters; ++i)
+	{
+		waiters.emplace_back([&lifecycle, &held, &answered, i] {
+			held[i] = std::make_unique<GameServerLifecycle::AllocationPermit>(lifecycle.AcquireAllocationPermitBlocking());
+			++answered;
+		});
+	}
+	// /allocate 卡住时第一个等待方必然已在有界等待里(worker 只能在它 wait_for 放锁之后取到请求);
+	// 留一点时间让其余等待方也进入等待。个别晚于 Stop() 到达的走「已停即拒绝」,结论相同。
+	const bool entered = WaitStopRace(*state, [&state] { return state->allocateEntered; });
+	std::this_thread::sleep_for(30ms);
+
+	std::future<void> stopped = std::async(std::launch::async, [&lifecycle] { lifecycle.Stop(); });
+	// Stop() 已置停止标志、正被拦在 request_stop() 里;worker 拿到成功响应、写入 Allocated 并唤醒等待方。
+	const bool stopObserved = WaitStopRace(*state, [&state] { return state->stopObserved; });
+	const bool allocatedWhileStopping = lifecycle.WaitForState(agones::LifecycleState::Allocated, 3000ms);
+	const bool allAnswered = WaitUntil([&answered] { return answered.load() == kWaiters; }, 3000ms);
+	// 先放行 Stop() 再断言:任何一步失败时 Stop() 都能返回、等待方都能被唤醒,用例不会挂死。
+	ReleaseStopRace(*state);
+	for (std::thread& waiter : waiters)
+	{
+		waiter.join();
+	}
+	const bool stopReturned = stopped.wait_for(5000ms) == std::future_status::ready;
+
+	ASSERT_TRUE(entered);
+	ASSERT_TRUE(stopObserved);
+	ASSERT_TRUE(allocatedWhileStopping);
+	EXPECT_TRUE(allAnswered); // 等待方由 worker 写入 Allocated 之后的 notify 唤醒,不必等 Stop() 放行
+	ASSERT_TRUE(stopReturned);
+
+	int granted = 0;
+	for (const auto& permit : held)
+	{
+		if (permit && *permit)
+		{
+			++granted;
+		}
+	}
+	EXPECT_EQ(0, granted);
+	EXPECT_EQ(0u, lifecycle.PendingPermitCount());
+	held.clear();
+	EXPECT_EQ(0u, lifecycle.PendingPermitCount());
+	EXPECT_EQ(agones::LifecycleState::Stopped, lifecycle.State());
+	std::lock_guard<std::mutex> lock(state->mutex);
+	EXPECT_EQ(1, state->allocateCalls);
+}
+
+// ---------------------------------------------------------------------------
+// 2026-10-17 §15.17:不走 Stop()、单独 RequestShutdown() 时 ShuttingDown 是终态,RequestShutdown() 幂等
+// ---------------------------------------------------------------------------
+
+namespace
+{
+	// 按发出顺序记录 POST 端点的 sidecar。启用排空时 worker 进主循环前会同步读一次 GET /gameserver,
+	// 卡住它即得到"worker 腾不出手、allocate 与 /shutdown 请求同时挂起"的窗口;/shutdown 可卡住,得到"在途"窗口。
+	// GET 的卡住同时监听取消令牌:用例中途失败时 Stop() 仍能中止它。/shutdown 不带令牌,只有兜底上限。
+	struct ShutdownOrderState
+	{
+		std::mutex mutex;
+		std::condition_variable_any cv;
+		std::vector<std::string> posts;
+		bool holdGet = false;
+		bool getHeld = false;
+		bool holdShutdown = false;
+		bool shutdownHeld = false;
+	};
+
+	class ShutdownOrderTransport final : public agones::HttpTransport
+	{
+	public:
+		explicit ShutdownOrderTransport(std::shared_ptr<ShutdownOrderState> state)
+			: state_(std::move(state))
+		{
+		}
+
+		agones::HttpResponse Post(const std::string& url,
+			const std::string& body,
+			const agones::HttpTimeouts& timeouts) override
+		{
+			return Post(url, body, timeouts, std::stop_token{});
+		}
+
+		agones::HttpResponse Get(const std::string& url, const agones::HttpTimeouts& timeouts) override
+		{
+			return Get(url, timeouts, std::stop_token{});
+		}
+
+		agones::HttpResponse Post(const std::string& url,
+			const std::string&,
+			const agones::HttpTimeouts&,
+			std::stop_token) override
+		{
+			const std::string endpoint = url.substr(url.find_last_of('/'));
+			std::unique_lock<std::mutex> lock(state_->mutex);
+			state_->posts.push_back(endpoint);
+			state_->cv.notify_all();
+			if (endpoint == "/shutdown" && state_->holdShutdown)
+			{
+				state_->shutdownHeld = true;
+				state_->cv.notify_all();
+				state_->cv.wait_for(lock, kFakeHoldSafetyCap, [this] { return !state_->holdShutdown; });
+			}
+			agones::HttpResponse response;
+			response.transportOk = true;
+			response.statusCode = 200;
+			return response;
+		}
+
+		agones::HttpResponse Get(const std::string&, const agones::HttpTimeouts&, std::stop_token cancel) override
+		{
+			std::unique_lock<std::mutex> lock(state_->mutex);
+			if (state_->holdGet)
+			{
+				state_->getHeld = true;
+				state_->cv.notify_all();
+				state_->cv.wait_for(lock, cancel, kFakeHoldSafetyCap, [this] { return !state_->holdGet; });
+			}
+			// 读失败:排空判定保持初值"未排空",与用例无关。
+			agones::HttpResponse failed;
+			failed.error = "fake: no gameserver";
+			return failed;
+		}
+
+	private:
+		std::shared_ptr<ShutdownOrderState> state_;
+	};
+
+	// 只借排空的那次同步 GET 卡住 worker:轮询间隔远长于用例窗口,之后不再有 GET。
+	agones::LifecycleOptions ShutdownOrderOptions()
+	{
+		agones::LifecycleOptions options = FastOptions();
+		options.drainLabelKey = "mmorpg.io/drain";
+		options.drainPollInterval = 60000ms;
+		options.allocateWaitTimeout = 5000ms; // 等待方只能由 ShuttingDown 裁决,不让超时抢先
+		return options;
+	}
+
+	// 等 worker 卡在 GET 里(此时 RunInitialReady 已写入 Ready)。等不到就放行。
+	bool WaitOrderGetHeld(ShutdownOrderState& state)
+	{
+		std::unique_lock<std::mutex> lock(state.mutex);
+		const bool held = state.cv.wait_for(lock, 3000ms, [&state] { return state.getHeld; });
+		if (!held)
+		{
+			state.holdGet = false;
+			state.cv.notify_all();
+		}
+		return held;
+	}
+
+	void ReleaseOrderGet(ShutdownOrderState& state)
+	{
+		{
+			std::lock_guard<std::mutex> lock(state.mutex);
+			state.holdGet = false;
+		}
+		state.cv.notify_all();
+	}
+
+	// 等 /shutdown 卡在 sidecar 里。等不到就放行。
+	bool WaitOrderShutdownHeld(ShutdownOrderState& state)
+	{
+		std::unique_lock<std::mutex> lock(state.mutex);
+		const bool held = state.cv.wait_for(lock, 3000ms, [&state] { return state.shutdownHeld; });
+		if (!held)
+		{
+			state.holdShutdown = false;
+			state.cv.notify_all();
+		}
+		return held;
+	}
+
+	void ReleaseOrderShutdown(ShutdownOrderState& state)
+	{
+		{
+			std::lock_guard<std::mutex> lock(state.mutex);
+			state.holdShutdown = false;
+		}
+		state.cv.notify_all();
+	}
+
+	int OrderPostCount(ShutdownOrderState& state, const std::string& endpoint)
+	{
+		std::lock_guard<std::mutex> lock(state.mutex);
+		return static_cast<int>(std::count(state.posts.begin(), state.posts.end(), endpoint));
+	}
+
+	// 等 /shutdown 之后出现一次 /health。worker 的优先级是 shutdown > allocate > health:看到这次 /health,
+	// 说明取走 /shutdown 时挂起的请求都已处理完(误发的 /allocate 或第二次 /shutdown 都会排在它前面)。
+	bool WaitOrderHealthAfterShutdown(ShutdownOrderState& state)
+	{
+		std::unique_lock<std::mutex> lock(state.mutex);
+		return state.cv.wait_for(lock, 3000ms, [&state] {
+			const auto shutdown = std::find(state.posts.begin(), state.posts.end(), "/shutdown");
+			return shutdown != state.posts.end() && std::find(shutdown, state.posts.end(), "/health") != state.posts.end();
+		});
+	}
+
+} // namespace
+
+// 不走 Stop()、单独 RequestShutdown():取走 /shutdown 之前就挂起的 allocate 不得把状态改回 Allocating / Allocated。
+// worker 卡在进主循环前的 GET 里,期间三类调用方(非阻塞踢、异步等待、阻塞等待)都挂上 allocate,随后 RequestShutdown();
+// 放行后 worker 先取 /shutdown(优先级最高)再取挂起的 allocate —— 必须丢弃、不发 /allocate。等待中的许可一律拒绝,
+// 且远早于等待上限(不等满再误报"allocate 未确认")。修复前 allocate 照常发出,两类等待方都被放行。
+TEST(AgonesShutdownTest, PendingAllocateIsDiscardedOnceShuttingDown)
+{
+	auto state = std::make_shared<ShutdownOrderState>();
+	state->holdGet = true;
+	AsyncHarness h;
+	h.lifecycle.Start(std::make_unique<ShutdownOrderTransport>(state), "http://127.0.0.1:9358", ShutdownOrderOptions());
+	ASSERT_TRUE(WaitOrderGetHeld(*state));
+	EXPECT_EQ(agones::LifecycleState::Ready, h.lifecycle.State());
+
+	EXPECT_FALSE(h.lifecycle.EnsureAllocatedNonBlocking());
+	auto asyncOutcome = std::make_shared<PermitOutcome>();
+	h.lifecycle.AcquireAllocationPermitAsync(h.loop, RecordPermit(asyncOutcome));
+	std::atomic<bool> blockingAnswered{ false };
+	std::atomic<bool> blockingGranted{ true };
+	std::atomic<long long> blockingWaitMs{ -1 };
+	std::thread blockingWaiter([&h, &blockingAnswered, &blockingGranted, &blockingWaitMs] {
+		const auto begin = std::chrono::steady_clock::now();
+		// permit 是临时量,本语句结束即析构:放行时也照常归还在途计数。
+		blockingGranted = static_cast<bool>(h.lifecycle.AcquireAllocationPermitBlocking());
+		blockingWaitMs = ElapsedMs(begin);
+		blockingAnswered = true;
+	});
+	// 留一点时间让阻塞等待方进入等待;它若晚于 ShuttingDown 才到,走当场拒绝,结论相同。
+	std::this_thread::sleep_for(30ms);
+
+	h.lifecycle.RequestShutdown();
+	ReleaseOrderGet(*state);
+
+	const bool asyncAnswered = RunLoopUntil(h.loop, [&] { return asyncOutcome->calls > 0; }, 3000ms);
+	const bool sawHealthAfterShutdown = WaitOrderHealthAfterShutdown(*state);
+	const bool blockingDone = WaitUntil([&] { return blockingAnswered.load(); }, 3000ms);
+	blockingWaiter.join();
+	RunLoopFor(h.loop, 30ms); // 不该再有第二次回调
+
+	ASSERT_TRUE(asyncAnswered);
+	EXPECT_EQ(1, asyncOutcome->calls);
+	EXPECT_FALSE(asyncOutcome->granted);
+	ASSERT_TRUE(blockingDone);
+	EXPECT_FALSE(blockingGranted.load());
+	EXPECT_LT(blockingWaitMs.load(), 3000); // 等待上限 5000ms:由 ShuttingDown 裁决,不是等满超时
+	ASSERT_TRUE(sawHealthAfterShutdown);
+	EXPECT_EQ(0, OrderPostCount(*state, "/allocate"));
+	EXPECT_EQ(1, OrderPostCount(*state, "/shutdown"));
+	EXPECT_EQ(agones::LifecycleState::ShuttingDown, h.lifecycle.State());
+	EXPECT_EQ(0u, h.lifecycle.PendingPermitCount());
+
+	// 之后的调用当场拒绝,不再挂 allocate。
+	EXPECT_FALSE(h.lifecycle.EnsureAllocatedNonBlocking());
+	EXPECT_FALSE(h.lifecycle.AcquireAllocationPermitBlocking());
+
+	h.lifecycle.Stop();
+	EXPECT_EQ(0, OrderPostCount(*state, "/allocate"));
+	EXPECT_EQ(agones::LifecycleState::Stopped, h.lifecycle.State());
+}
+
+// RequestShutdown() 幂等:挂起时重复调、/shutdown 在途时再调、发出之后再调,都不补发。
+// 最后 Stop():Stop() 之前收下的请求会在 worker 退出前送达,任何一次被误收下的重复请求都会在这里多出一次 /shutdown,
+// 计数因此是确定的。修复前在途时再调会被收下,/shutdown 发两次。
+TEST(AgonesShutdownTest, RepeatedRequestShutdownIssuesShutdownOnce)
+{
+	auto state = std::make_shared<ShutdownOrderState>();
+	state->holdGet = true;
+	state->holdShutdown = true;
+	agones::GameServerLifecycle lifecycle;
+	lifecycle.Start(std::make_unique<ShutdownOrderTransport>(state), "http://127.0.0.1:9358", ShutdownOrderOptions());
+	const bool getHeld = WaitOrderGetHeld(*state);
+
+	// worker 卡在 GET 里取不走请求:挂起期间重复调。
+	lifecycle.RequestShutdown();
+	lifecycle.RequestShutdown();
+	ReleaseOrderGet(*state);
+
+	// /shutdown 在途:状态已是 ShuttingDown,再调必须忽略。
+	const bool shutdownHeld = WaitOrderShutdownHeld(*state);
+	const agones::LifecycleState stateWhileInFlight = lifecycle.State();
+	lifecycle.RequestShutdown();
+	ReleaseOrderShutdown(*state);
+
+	// 发出之后再调,同样忽略。
+	const bool sawHealthAfterShutdown = WaitOrderHealthAfterShutdown(*state);
+	lifecycle.RequestShutdown();
+	lifecycle.Stop();
+
+	ASSERT_TRUE(getHeld);
+	ASSERT_TRUE(shutdownHeld);
+	EXPECT_EQ(agones::LifecycleState::ShuttingDown, stateWhileInFlight);
+	EXPECT_TRUE(sawHealthAfterShutdown);
+	EXPECT_EQ(1, OrderPostCount(*state, "/shutdown"));
+	EXPECT_EQ(agones::LifecycleState::Stopped, lifecycle.State());
 }

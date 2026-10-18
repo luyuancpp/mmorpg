@@ -440,7 +440,7 @@ W2 提交要按 hunk 排除下列内容，它们属于别的会话：
   ReleaseFenceEcs.LateReleaseOnReturnedEntityIgnored
   ReleaseFenceEcs.AheadOfHolderIgnored
   ReleaseFenceEcs.StaleReleaseOnExitingEntityDoesNotMerge
-  RelocateConfirmKick.PlacementSessionSupersededIsRejectedBeforeAnyPlacementWrite
+  RelocateConfirmKick.UnverifiableKickOnlyWhenSceneManagerCannotHaveGrantedOurs（2026-10-18 起码 25 已并入该用例的 pinnedCodes，原末尾单列用例已删；第一轮删掉白名单里的 25 后，它会在 pinnedCodes 循环里失败）
 其余（ReleaseFence.*、EqualEpochReleases、UnversionedReleaseKeepsLegacy、CacheUnknownReleasesAndCounts、HandoffInFlightStillIgnored、PlayerNotOnThisNodeIsIdempotent、ActingLoginGeneration.*、原有 RelocateConfirmKick.*）全绿。不应出现崩溃。保存完整输出作为 AGENTS §11.4 的红跑证据。
 还原：手工把上面三处改回原样，再用 git diff 核对这两个文件只剩本组的改动。
 

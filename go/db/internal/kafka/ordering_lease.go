@@ -1,7 +1,7 @@
 package kafka
 
 // ordering_lease.go —— 跨实例排序锁 distributed:lock:kafka:ordering:{topic}:{key}:{msgType} 的租约:取锁、续租看门狗、
-// 写 SQL 前的本地截止时间复核、共享缓存回写前的核锁、释放(docs/design/db-task-pipeline-bottlenecks.md G1)。
+// 写 SQL 前的本地截止时间复核、令牌发布 / 推进脚本的核锁、释放(docs/design/db-task-pipeline-bottlenecks.md G1)。
 //
 // G1 治标做的四件事:
 //  1. 写 SQL 的 ctx 来自租约(beginSQL),只在失租时取消;claim 被收回、进程停机、worker ctx 取消都不取消正在跑的
@@ -9,8 +9,9 @@ package kafka
 //     才提交,造成回档。所以只有「锁已经不归我 / 快要不归我」时才取消,而且 SQL 在途时被取消的,释放阶段不删锁,
 //     留给 TTL 过期(sqlAbandoned)。不用带 deadline 的 ctx:context.DeadlineExceeded 会被 storeerr 归成
 //     conn_lost,误触发探活与库级冷却。
-//  2. 核锁(verify,带 token 的 Lua 续期)在 runDBOp 里执行,位置是「落库后复核之后、共享缓存回写之前」:
-//     失租的写不发布缓存,也就不会推进游标与 applied epoch。
+//  2. applied / equal 在落库后复核之后,由同一 Lua 核 token 并发布缓存 / SQL 证据;游标与 applied epoch 的
+//     推进也由带 token 的 Lua 原子完成。older_seq 不发布缓存,只走 verify 核锁后确认。脚本返回 0 记
+//     owner_changed,核锁或令牌脚本往返失败记 verify_error;失租不发布缓存,也不推进游标与 applied epoch。
 //  3. 续租在本地单调时钟的截止时间(validUntil − margin)之内有界退避重试:首次 500ms、逐次翻倍、封顶 5s、±20% 抖动,
 //     单次调用预算 3s,每轮故障最多 10 次。用尽次数记 renew_exhausted,到截止时间记 renew_deadline,两者都失租并
 //     取消 SQL;续租发现易主时立即失租(owner_changed),不重试。旧实现出错一次就放弃,一次 Redis 抖动就会被放大成失租。
@@ -24,7 +25,7 @@ package kafka
 //   - owner_changed 时锁已经不归本实例,「锁留到 TTL」挡不住已经持锁的别的实例;窗口只是缩小了。
 //   - 本地截止时间依赖本进程的单调时钟:虚拟机暂停恢复后,SQL goroutine 可能抢在看门狗之前发出语句。
 //     beginSQL 只在发 SQL 前复核一次,缩小窗口,不能关闭。
-//   根治靠条件写(docs/design/db-write-fencing-mysql.md)。
+//   持久化防线另由条件写提供(docs/design/db-write-fencing-mysql.md),不能把租约成功当作 SQL 围栏。
 
 import (
 	"context"
@@ -32,6 +33,7 @@ import (
 	"db/internal/metrics"
 	"errors"
 	"fmt"
+	"github.com/redis/go-redis/v9"
 	"math/rand/v2"
 	db_proto "proto/db"
 	"sync"
@@ -339,6 +341,31 @@ func (l *orderingLease) verify(ctx context.Context) error {
 	return nil
 }
 
+// runTokenScript 把核令牌、发布和续期合并；取消和单步超时不伪判失租。
+func (l *orderingLease) runTokenScript(ctx context.Context, script *redis.Script, keys []string, args ...interface{}) (int64, error) {
+	if err := l.lost(); err != nil {
+		return 0, err
+	}
+	start := l.timing.now()
+	argv := append([]interface{}{l.timing.ttl.Milliseconds()}, args...)
+	result, err := l.result.RunTokenScript(ctx, script, keys, argv...)
+	if err != nil {
+		var serverErr redis.Error
+		if ctx.Err() == nil && !errors.As(err, &serverErr) {
+			l.setLost(metrics.LeaseLostVerifyError, err)
+		}
+		return 0, fmt.Errorf("%w: %w", errFenceRedis, err)
+	}
+	if result == 0 {
+		l.setLost(metrics.LeaseLostOwnerChanged, errors.New("令牌脚本发现锁已易主"))
+		return 0, l.lost()
+	}
+	if result > 0 {
+		l.extendValidUntil(start.Add(l.timing.ttl))
+	}
+	return result, nil
+}
+
 // releaseOrderingLock 收掉看门狗并释放锁。SQL 在途时被失租取消的不删锁,留给 TTL。
 //
 // Release must still run after the caller's context is canceled: the worker context is canceled by Stop() before
@@ -371,6 +398,8 @@ func releaseOrderingLock(ctx context.Context, lease *orderingLease, task *db_pro
 		metrics.CountOrderingLockRelease(metrics.LockReleaseError)
 		logx.Errorf("release cross-instance ordering lock failed: taskID=%s key=%d msgType=%s err=%v",
 			task.TaskId, task.Key, task.MsgType, err)
+	case !released && lease.lost() != nil:
+		metrics.CountOrderingLockRelease(metrics.LockReleaseSkippedSQLAbandoned)
 	case !released:
 		lease.mu.Lock()
 		sqlStarted := lease.sqlStarted

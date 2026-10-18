@@ -56,6 +56,7 @@ func sqlLedgerFixture(applied bool, ops ...Op) *fakeLedger {
 			stream.MaxSeq = op.Seq
 		}
 		markSeen(stream, op.Seq, applied)
+		stream.Receipts = append(stream.Receipts, identityReceiptFixture(op))
 	}
 	return &fakeLedger{ledger: comp}
 }
@@ -215,7 +216,7 @@ func TestSQLProofRetainsCompleteEscrowReceipt(t *testing.T) {
 	if err != nil || got.Finalized {
 		t.Fatalf("SQL 缺托管原件时不得终结: %+v %v", got, err)
 	}
-	digest := escrowReceiptDigest(op)
+	digest, _ := receiptDigest(op)
 	reader.ledger.Streams[0].Receipts = []*componentpb.AssetOpReceipt{{Seq: op.Seq, CorrelationId: op.CorrelationID, RequestDigest: digest[:], Snapshot: &assetpb.AssetSnapshot{Items: []*assetpb.AssetItemInstance{{ItemUuid: 99, InstanceProto: []byte{1, 2, 3}}}}}}
 	res, err := loop.verifySQLCommit(context.Background(), op, resultApplied(true))
 	if err != nil || !res.Durable || len(res.Snapshot.GetItems()) != 1 {

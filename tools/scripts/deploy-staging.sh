@@ -88,6 +88,26 @@ is_port_listen() {
   ss -ltn 2>/dev/null | grep -qE "[:.]$1[[:space:]]"
 }
 
+# C++ 节点启动后的存活检查(2026-10-18)。节点在 Linux 上会把 RLIMIT_NOFILE 软限自抬到硬限,
+# 硬限低于需求(gate = GateMaxConnections + 4096,scene = 4096)时拒绝启动,stderr 一行
+# "FATAL open file limit config: ..."。不查的话脚本照样打印 all services up,原因只落在
+# run/logs/cpp_nodes/<node>.log 里。先认拒启行(原因更具体),再看进程是否还在。
+check_cpp_node_started() {
+  local node=$1
+  local logfile="${LOG_DIR}/cpp_nodes/${node}.log"
+  local pid; pid=$(cat "${PID_DIR}/${node}.pid")
+  local refusal
+  refusal=$(grep -m1 'FATAL open file limit config:' "$logfile" 2>/dev/null || true)
+  if [[ -n "$refusal" ]]; then
+    die "$node refused to start: ${refusal} -- raise the hard nofile limit of this shell (docs/ops/linux-staging-stress-runbook.md A.1), or export NODE_OPEN_FILE_LIMIT_MODE=warn for a temporary exemption"
+  fi
+  if ! kill -0 "$pid" 2>/dev/null; then
+    die "$node (pid $pid) exited during startup; check ${logfile}"
+  fi
+  # 打出 fd 限值行(以及豁免生效时的 WARN 行),便于确认实际软限。
+  grep '\[open_file_limit\]' "$logfile" 2>/dev/null | while read -r line; do log "  $node: $line"; done || true
+}
+
 # ── Subcommands ────────────────────────────────────────────────────
 cmd_start() {
   log "checking docker infra (redis/etcd/mysql/kafka)..."
@@ -134,6 +154,7 @@ cmd_start() {
     "${REPO_ROOT}/bin/scene" > "${LOG_DIR}/cpp_nodes/scene.log" 2>&1 &
     echo $! > "${PID_DIR}/scene.pid"
     sleep 2
+    check_cpp_node_started scene
   else
     log "  WARN: bin/scene missing — skipping (build cpp before re-running)"
   fi
@@ -141,6 +162,7 @@ cmd_start() {
     "${REPO_ROOT}/bin/gate" > "${LOG_DIR}/cpp_nodes/gate.log" 2>&1 &
     echo $! > "${PID_DIR}/gate.pid"
     sleep 5
+    check_cpp_node_started gate
   else
     log "  WARN: bin/gate missing — skipping"
   fi

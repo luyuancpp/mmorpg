@@ -65,6 +65,15 @@ func main() {
 	stats := metrics.NewStats()
 	robotStatsRef = stats
 
+	if cfg.Mode == "asset-arrival-prepare" {
+		if err := RunAssetArrivalPrepare(cfg, stats); err != nil {
+			zap.L().Error("ASSET_ARRIVAL_PREPARE_FAIL", zap.Error(err))
+			_ = zap.L().Sync()
+			os.Exit(1)
+		}
+		return
+	}
+
 	// 跟随跨区重定向(msg 124)后要在新 gate 上重跑 Login + EnterGame,而"用哪种认证"
 	// 只有 main 知道(cfg.AuthType / 密码 / SA-Token / access_token)。pkg 层不能反向
 	// import main,所以把实现注册进去。见 pkg/redirect.go 与

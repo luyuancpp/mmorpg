@@ -21,6 +21,10 @@ import (
 //     合服后照常投递,**不需要任何重映射**。这里只报 PENDING 条数(info),给维护单一个量级。
 //     库 / 表不存在(1049 / 1146)报 warn「NOT VERIFIED」:多半是这个环境还没部署收件箱,合服本身不受影响,
 //     但不能看起来像「查过了、是 0」;其余错误一律 INFRA(exit 2),理由同 auditFriend。
+//     这里只做全表计数,**不按 player_id 算 shard**。收件箱三张表的 shard = mix64(player_id) % 64
+//     (splitmix64 终结函数,唯一计算入口 go/player_inbox/internal/inbox/shard.go RowShard;不是 player_id % 64)。
+//     将来要按玩家点查,必须逐字镜像那个函数并用它的单测参考值自检(TestMix64MatchesSplitMix64),
+//     同时在 shard.go 的「镜像」一段登记;本 module 不能 import go/player_inbox。
 //
 // 只登记在合服前门禁组(runAuditMode 的 !verify 分支):合服后没有收件箱特有的断言 —— 条目不随 zone 走,
 // 账本随玩家行一起被拷贝,由 verify:manifest_rows 覆盖。

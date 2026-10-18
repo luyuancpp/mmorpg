@@ -2,9 +2,17 @@ package kafka
 
 import (
 	"context"
+	"db/internal/metrics"
 	"errors"
 	"fmt"
+	"github.com/redis/go-redis/v9"
+	"github.com/zeromicro/go-zero/core/logx"
+	playerpb "proto/common/database"
+	"shared/ownerepoch"
+	"strconv"
+	"sync"
 	"sync/atomic"
+	"time"
 
 	db_config "db/internal/config"
 
@@ -14,12 +22,18 @@ import (
 	dbpb "proto/db"
 )
 
-// fencingDual 为 true 时玩家两张表走行内围栏并发布资产 SQL 提交证据;false(缺省)= legacy,照旧普通 Save。
+// fencingDual 为 true 时玩家两张表走行内围栏并发布资产 SQL 提交证据;false(缺省)= legacy,更新保留已有围栏但不拒写。
 var fencingDual atomic.Bool
+var fencingEpochOverride atomic.Bool
 
 // SetFencingMode 设置行内围栏模式。**启动期设置一次、运行中不可改**:只在 db.go 启动、构造消费者之前调用;
 // 运行中切换会让同一玩家的相邻两笔写分别走两种语义。测试里改它须用 t.Cleanup 复位成 legacy。
 func SetFencingMode(mode string) error {
+	for _, msg := range []proto.Message{&playerpb.PlayerDatabase{}, &playerpb.PlayerDatabase_1{}} {
+		if !isFenceTable(msg.ProtoReflect().Descriptor()) {
+			return fmt.Errorf("已知玩家表缺少正确围栏字段: %T", msg)
+		}
+	}
 	switch mode {
 	case "", db_config.FencingModeLegacy:
 		fencingDual.Store(false)
@@ -31,108 +45,184 @@ func SetFencingMode(mode string) error {
 	return nil
 }
 
-// 旧归属/旧存盘已被 SQL 拒绝。这是终局过期写，不能再发布它携带的旧缓存。
-var errPlayerRowStale = errors.New("玩家 SQL 行版本已更新")
+// writeOutcome 是 SQL 正常应答的业务结局；拒写不能冒充成功推进游标。
+type writeOutcome struct {
+	kind        string
+	storedEpoch uint64
+}
 
-// 行在非锁定探测与锁定读之间消失。可重试：下一轮重新探测后走插入分支。
+const (
+	writeApplied        = "applied"
+	writeEqual          = "equal"
+	writeOlder          = "older_seq"
+	writeStaleOwner     = "stale_owner"
+	writeLegacyAfterSeq = "legacy_after_seq"
+)
+
+func (o writeOutcome) publishes() bool {
+	return o.kind == writeApplied || o.kind == writeEqual
+}
+
+var fenceTableMetadata sync.Map
+
+func isFenceTable(desc protoreflect.MessageDescriptor) bool {
+	if cached, ok := fenceTableMetadata.Load(desc.FullName()); ok {
+		return cached.(bool)
+	}
+	valid := true
+	defer func() { fenceTableMetadata.Store(desc.FullName(), valid) }()
+	for _, name := range []protoreflect.Name{"fence_owner_epoch", "fence_save_seq"} {
+		f := desc.Fields().ByName(name)
+		if f == nil || f.Kind() != protoreflect.Uint64Kind || f.IsList() || f.IsMap() || f.HasOptionalKeyword() {
+			valid = false
+			return false
+		}
+	}
+	return true
+}
+func fenceClass(epoch, seq uint64) string {
+	if epoch == 0 {
+		return "legacy_zero"
+	}
+	if seq == 0 {
+		return "legacy_epoch"
+	}
+	return "seq"
+}
+
 var errPlayerRowVanished = errors.New("玩家 SQL 行在探测与加锁之间消失")
 
-// savePlayerRow 使用现有 proto2mysql 的插入与主键行锁事务，不引入第二套 SQL 映射器。
-// 行不存在：自动提交地 INSERT；行存在：事务内 FOR UPDATE 命中记录锁（无间隙锁）后按版本裁决再 Save。
-// 返回 handled=false 时调用者沿用普通表 Save。玩家行一旦收到带版本的写，旧生产者不能覆盖它。
-func savePlayerRow(ctx context.Context, store *proto2mysql.DB, task *dbpb.DBTask, msg proto.Message) (bool, error) {
+// savePlayerRow 是 v0.2.0 过渡原语：已存在行锁定比较；新行直接 INSERT，撞唯一键后重读。
+// legacy 更新也保留已有围栏；拒写不发布。equal 不比较内容，但只能从当前 SQL 行补发真实证据。
+func savePlayerRow(ctx context.Context, store *proto2mysql.DB, task *dbpb.DBTask, msg proto.Message) (bool, writeOutcome, error) {
 	desc := msg.ProtoReflect().Descriptor()
-	if desc.FullName() != "player_database" && desc.FullName() != "player_database_1" {
-		return false, nil
+	if !isFenceTable(desc) {
+		return false, writeOutcome{}, nil
 	}
+	id := desc.Fields().ByName("player_id")
+	fo, fs := desc.Fields().ByName("fence_owner_epoch"), desc.Fields().ByName("fence_save_seq")
+	if id == nil || id.Kind() != protoreflect.Uint64Kind || msg.ProtoReflect().Get(id).Uint() != task.GetKey() {
+		return true, writeOutcome{}, errors.New("玩家 SQL 行身份与任务不符")
+	}
+	if task.SaveSeq != 0 && task.OwnerEpoch == 0 {
+		return true, writeOutcome{}, errors.New("存盘序号缺少归属纪元")
+	}
+	class := fenceClass(task.OwnerEpoch, task.SaveSeq)
+	if msg.ProtoReflect().Get(fo).Uint() != 0 || msg.ProtoReflect().Get(fs).Uint() != 0 {
+		metrics.CountFenceBodyMismatch()
+		logx.Errorf("FENCE-BODY-MISMATCH taskID=%s", task.TaskId)
+	}
+	epoch, seq := task.OwnerEpoch, task.SaveSeq
 	if !fencingDual.Load() {
-		// legacy:不判围栏,调用者照旧普通 Save(HEAD 语义)。这是 C++ 回滚到旧版时不静默丢盘的保障(设计 §8)。
-		return false, nil
-	}
-	idField := desc.Fields().ByName("player_id")
-	epochField := desc.Fields().ByName("fence_owner_epoch")
-	seqField := desc.Fields().ByName("fence_save_seq")
-	if idField == nil || epochField == nil || seqField == nil {
-		return true, fmt.Errorf("玩家 SQL 围栏字段缺失")
-	}
-	if msg.ProtoReflect().Get(idField).Uint() != task.GetKey() {
-		return true, fmt.Errorf("玩家 SQL 行身份与任务不符")
-	}
-	epoch, seq := task.GetOwnerEpoch(), task.GetSaveSeq()
-	versioned := epoch != 0 && seq != 0
-	if seq != 0 && epoch == 0 {
-		return true, fmt.Errorf("存盘序号缺少归属纪元")
-	}
-	target := proto.Clone(msg)
-	// 版本只认生产信封，不接受载荷自行声称另一版本。旧生产者按未版本化写处理。
-	if !versioned {
 		epoch, seq = 0, 0
 	}
-	target.ProtoReflect().Set(epochField, protoreflect.ValueOfUint64(epoch))
-	target.ProtoReflect().Set(seqField, protoreflect.ValueOfUint64(seq))
-
-	// 行不存在时不能在锁定读事务里插入：go/db 跑在服务器全局 RR 上，对不存在主键的 FOR UPDATE 会取间隙锁，
-	// 两个不同新号并发首存落在同一间隙时互相挡住插入意向锁而 1213，锁集越出「本玩家」（2026-10-16 真库复现，
-	// 见 docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md §9.6.3）。所以先非锁定地判断行在不在，
-	// 不在就自动提交地直接 INSERT；不同主键的插入意向锁互相兼容。
+	msg.ProtoReflect().Set(fo, protoreflect.ValueOfUint64(epoch))
+	msg.ProtoReflect().Set(fs, protoreflect.ValueOfUint64(seq))
+	target := proto.Clone(msg)
 	probe := msg.ProtoReflect().Type().New().Interface()
-	probe.ProtoReflect().Set(idField, protoreflect.ValueOfUint64(task.GetKey()))
+	probe.ProtoReflect().Set(id, protoreflect.ValueOfUint64(task.Key))
 	exists, err := store.WithContext(ctx).ExistsByPK(probe)
 	if err != nil {
-		return true, err
+		metrics.CountFenceWrite(class, "error")
+		return true, writeOutcome{}, err
 	}
 	if !exists {
 		err = store.WithContext(ctx).Insert(target)
 		if err == nil {
-			proto.Reset(msg)
-			proto.Merge(msg, target)
-			return true, nil
+			metrics.CountFenceWrite(class, "inserted")
+			return true, writeOutcome{kind: writeApplied}, nil
 		}
 		if !errors.Is(err, proto2mysql.ErrDuplicateKey) {
-			return true, err
+			metrics.CountFenceWrite(class, "error")
+			return true, writeOutcome{}, err
 		}
-		// 撞 1062 只可能是同一玩家的另一笔首写已提交：落到下面的锁定比较，按版本裁决。
-		// 不能用 Save 的「撞 1062 后按主键 UPDATE」兜底，那会绕过围栏、用旧版本覆盖新版本。
 	}
-
-	stale := false
+	outcome := writeOutcome{kind: writeApplied}
 	err = store.WithContext(ctx).RunInTransaction(func(tx *proto2mysql.DB) error {
 		current := msg.ProtoReflect().Type().New().Interface()
-		current.ProtoReflect().Set(idField, protoreflect.ValueOfUint64(task.GetKey()))
-		err := tx.FindOneByPKForUpdate(current)
-		if errors.Is(err, proto2mysql.ErrNoRowsFound) {
-			// 行在探测与加锁之间被删（只有运维工具会删玩家行）：此时已持间隙锁，不在这个事务里插入，交给重试重新探测。
-			return errPlayerRowVanished
-		}
-		if err != nil {
+		current.ProtoReflect().Set(id, protoreflect.ValueOfUint64(task.Key))
+		if err := tx.FindOneByPKForUpdate(current); err != nil {
+			if errors.Is(err, proto2mysql.ErrNoRowsFound) {
+				return errPlayerRowVanished
+			}
 			return err
 		}
-		oldEpoch := current.ProtoReflect().Get(epochField).Uint()
-		oldSeq := current.ProtoReflect().Get(seqField).Uint()
-		if epoch < oldEpoch || epoch == oldEpoch && seq < oldSeq {
-			// 原任务不能写，但发布阶段须使用实际 SQL 行，避免迟到 offset 越过此前失败的缓存补发。
-			proto.Reset(target)
-			proto.Merge(target, current)
-			stale = true
-			return nil
+		oldEpoch, oldSeq := current.ProtoReflect().Get(fo).Uint(), current.ProtoReflect().Get(fs).Uint()
+		outcome.storedEpoch = oldEpoch
+		if !fencingDual.Load() {
+			target.ProtoReflect().Set(fo, protoreflect.ValueOfUint64(oldEpoch))
+			target.ProtoReflect().Set(fs, protoreflect.ValueOfUint64(oldSeq))
+			return tx.Save(target)
 		}
-		if versioned && epoch == oldEpoch && seq == oldSeq {
-			// 同 (epoch, seq) 按幂等生产者口径视为重放，不比内容（db-write-fencing-mysql.md v0.4 §14 第 12 条）：
-			// proto2mysql 把置位的空子消息写成空串、读回为未置位，而 C++ 总是置位全部子消息，按内容比对会把正常重放
-			// 误判成冲突。发布阶段用 SQL 当前行，缓存与资产证据跟 MySQL 一致（先提交者为准）。跨进程撞号的根治是
-			// v0.4 §7.2 的 C++ 进程级发号器（墙钟下限），它落码之前撞号时以 SQL 行为准。
-			proto.Reset(target)
-			proto.Merge(target, current)
-			return nil
+		switch {
+		case epoch == 0 && (oldEpoch != 0 || oldSeq != 0):
+			outcome.kind = writeLegacyAfterSeq
+		case epoch < oldEpoch:
+			outcome.kind = writeStaleOwner
+		case epoch != 0 && seq != 0 && epoch == oldEpoch && seq < oldSeq:
+			outcome.kind = writeOlder
+		case epoch != 0 && seq != 0 && epoch == oldEpoch && seq == oldSeq:
+			outcome.kind = writeEqual
+			// 首次 SQL 提交后若未发布证据就丢租，重放载荷也不能伪造已提交账本。
+			proto.Reset(msg)
+			proto.Merge(msg, current)
+		default:
+			if seq == 0 && epoch != 0 && oldEpoch == epoch {
+				target.ProtoReflect().Set(fs, protoreflect.ValueOfUint64(oldSeq))
+			}
+			return tx.Save(target)
 		}
-		return tx.Save(target)
+		return nil
 	})
-	if err == nil {
-		proto.Reset(msg)
-		proto.Merge(msg, target)
-		if stale {
-			return true, errPlayerRowStale
+	if err != nil {
+		label := "error"
+		if errors.Is(err, errPlayerRowVanished) {
+			label = "race"
 		}
+		metrics.CountFenceWrite(class, label)
+		return true, outcome, err
 	}
-	return true, err
+	label := outcome.kind
+	if label == writeApplied {
+		label = "updated"
+	}
+	if outcome.kind != writeStaleOwner {
+		metrics.CountFenceWrite(class, label)
+	}
+	if outcome.kind != writeStaleOwner && (!outcome.publishes() || outcome.kind == writeEqual) {
+		metrics.CountFenceRejectedBytes(label, len(task.Body))
+	}
+	return true, outcome, nil
+}
+
+func SetFencingEpochOverride(enabled bool) { fencingEpochOverride.Store(enabled) }
+
+// ownerCounterRegressed 只比较已落库epoch与已铸造计数器；缺键等于0，读失败不能假装未倒退。
+func (w *worker) ownerCounterRegressed(playerID, stored uint64) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(w.ctx), orderingLockReleaseTimeout)
+	defer cancel()
+	start := time.Now()
+	rc := w.ownerEpochRedis
+	if rc == nil {
+		rc = w.redisClient
+	}
+	raw, err := rc.Get(ctx, ownerepoch.OwnerEpochKey(playerID)).Result()
+	metrics.ObserveRedisStep("write", metrics.RedisStepOwnerEpochProbe, time.Since(start))
+	if errors.Is(err, redis.Nil) {
+		if stored > 0 {
+			logx.Errorf("OWNER-EPOCH-REGRESSED playerID=%d counterEpoch=0 committedEpoch=%d", playerID, stored)
+		}
+		return stored > 0, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("%w: owner counter: %w", errFenceRedis, err)
+	}
+	epoch, err := ownerepoch.ParseEpoch(raw)
+	if err != nil || strconv.FormatUint(epoch, 10) != raw {
+		return false, fmt.Errorf("%w: owner counter is not canonical uint64", errFenceRedis)
+	}
+	if epoch < stored {
+		logx.Errorf("OWNER-EPOCH-REGRESSED playerID=%d counterEpoch=%d committedEpoch=%d", playerID, epoch, stored)
+	}
+	return epoch < stored, nil
 }

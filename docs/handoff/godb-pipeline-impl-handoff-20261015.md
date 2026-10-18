@@ -187,3 +187,42 @@ go/db 这条线（R1 → R2 → R3）**必须串行**：三项都改 `key_ordere
 2. **C++**：MSBuild 串行 `/m:1`，先编 scene 库（CMakeLists.txt / scene.vcxproj 已登记新文件），再编 `kafka_command_test`、`cross_zone_test` 并运行。
 3. **PowerShell**：跑 `tools/scripts/tests/` 下本轮改过和新增的 `*.tests.ps1`，以及 `test_stress_summarize.ps1`。
 4. **上线前**：按[上线待做](../ops/godb-pipeline-launch-todo.md)与各设计文档的 rollout 节执行，比如 kcat 抽样核对 C++ 写消息守契约、V0 核对现网 broker 版本、本机双 db 实例复验。
+
+---
+
+## 7. 2026-10-16 ~ 10-17 接手会话进展（Claude，未编译、未测试；进行中，最终版见本节末「收尾」）
+
+> 接手会话按 §3 做 R1 → R7，用工作流分批落码并逐批对抗复核。代码大部分已随用户快照 `e76f6f747` 及之后的提交入库。本节先写进仓库，防止会话中断丢失进度。
+
+### 7.1 已完成
+
+| 项 | 内容 | 关键结论 / 偏离 |
+|---|---|---|
+| R1 | 核实 A3（S4 go/db）并补修 | A3 基本落全。新发现并修复：停机第③步 `consumer.Close()` 抢 sarama `consumerGroup.lock`，与第④步互等。修法：`claimAcker.untrack`、三处 select 加 pullStop 分支、第②步超时先 `c.cancel()`。偏离三处：consumeCtx 随撤拉取取消；runDBOp 在 sqlCtx 已取消时返回 `context.Cause(sqlCtx)`；`errOrderingLeaseLost` 文本改了 |
+| R2 | ④ + WAITAOF（go/db） | 新文件 `durable_enqueue.go`、`retry_routing.go`、`cmd/retry_requeue`；Stop 六步。偏离：再平衡、让出、失败收尾时，等到的异步确认不提交位点（修订稿 §1.6 说会提交），只有停机排空会先等再提交 |
+| R3 | 保留期 Go | `TopicSpec.RetentionBytes`，db / login 的 `KafkaConfig.RetentionBytes` |
+| R4 | k8s_deploy ③ | 四种 ConfigMap 形状、决策表、kafka-0 exec（带小堆）、全新集群探测、db.yaml 注解占位 |
+| R5a / R5b | 部署与告警 | Kafka 盘预算（行为变化：非 dev 缺 zones 配置时拒绝）、`minReadySeconds`、四组告警与新告警文件、副本数门禁、ConfigMap 镜像 RetryRouting / WaitAOF / `Fencing.Mode`；Redis 总账 db 行 `Fixed=2` |
+| R6a | ③ / S5 两份新设计文档与 ①③S4 订正 | `db-consumer-group-per-zone.md`、`db-task-delivery-and-retention.md`，另订正 14 份文档 |
+| R7 | 全批语义复核（5 个复核面 × 对抗复核）与修复 | go/db 9 条：双属主窗口可见化、滞留收据重搬表、认领与 ack 的 nonce 防重、重新入组退避、`retry_requeue` 退出码 4/5 与 `-zone` 必填。C++ 3 条：停机清单改在 Node 拆除前钩子里做；永久 Kafka 错误不再无限期保留实体。脚本 8 条：交接闸能力校验、禁止 db_task 同名重建、第 0 步 e、按 TopicGeneration 推导 topic、合服 P3 全覆盖等 |
+
+### 7.2 负责人裁决（2026-10-17）
+
+- **回档语义 = 丢弃 TargetTime 之后的写**。落法：Step 5 改用 `-ToLatest`；Step 4 / 5 之间盘点并拦下本 topic 的重试收据；不清游标。还要核实共享 DB0 里本 zone 玩家缓存的处理，避免读缓存再存盘把回档抵消。**脚本尚未落码（R8）**。
+
+### 7.3 进行中 / 未做
+
+- R6b：④ 设计文档 `db-retry-owner-routing.md`、④ 周边文档与告警、R7 三块修复的文档同步。
+- R8：按 7.2 落回档脚本，并把文档改为「已裁决」。
+- 登记：`docs/README.md` 三份新设计文档、PROGRESS、Java `PARITY.md`。
+- 待负责人：死信按 (topic, partition, offset) 去重与副本数硬上界（与 L-04 第 2 批死信工具一起定）；`dirty_save::IsEqual` 是否剥离 `stress_test_probe`；分区告警是否给 op="other" 补规则。
+
+### 7.4 与「落地恢复与围栏」会话（已停，交其接手方）
+
+- 它加了 `ServerConfig.Fencing.Mode`（legacy | dual，缺省 legacy），k8s_deploy 原样镜像，没有逐 zone 覆盖。
+- 它已把 handleTask 成功分支改成 `advanceApplied`（`player_cache_publish.go`），`metrics.RedisSteps` 扩到 12 个，`stress_summarize` 2e 段已同步。
+- **未送达的核对请求**（发出时对方会话已停）：
+  - `advanceApplied` 与 R7 改成 nonce 防重的 `ackRetryReceipt`，先后顺序是否正确；
+  - 围栏 v0.4 的被拒写进死信时，应复用 R2 的 `persistBeforeAck`；
+  - `db-task.ordering-lease` 告警里的 `lease_verify` / `verify_error`，是否随令牌发布脚本改了语义。
+- R7 在 go/db 动过的函数：ConsumeClaim（带名字的返回值）、Start（`consumer.Errors()` 协程）、`requeueRevokedRetry` / `moveClaimedRetry` / `moveClaimedRetryToDead` / `deferFailedTask` 重试分支 / `deadLetterRetry`（登记待重搬）、`claimFrom` / `ackRetryReceipt`（nonce）、消费循环（重新入组退避）。新文件：`consumer_group_errors.go`、`retry_stranded.go`、`rejoin_backoff.go` 及各自测试。

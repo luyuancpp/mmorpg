@@ -156,9 +156,8 @@ func existingSnapshotGuidsSQL(n int) string {
 
 // insertSnapshotIfGuidAbsentLegacySQL 是唯一键**还不存在**时的去重写法(审计 #11 第二步之前的生产路径)。
 //
-// 现在它只在两种局面下使用,由建 store 时的一次探测决定(见 SnapshotStore.uniqueGuidKey):
-// 表结构还没跑过 uk_snapshot_guid_nz 的迁移(含刚刚回滚 DDL 的窗口),以及 TiDB
-// (官方文档不支持 ALTER 加 STORED 生成列,见 schema.go 的 ensureNullableUniqueKey)。
+// 现在它只用于 MySQL 尚未迁移或刚刚回滚 DDL 的兼容窗口，由建 store 时的一次探测决定。
+// TiDB 没有 RR 间隙锁，缺少真实唯一约束时直接拒绝建池，不走此退路。
 // 它的去重靠 REPEATABLE READ 下 INSERT ... SELECT 源端的**加锁读**,代价是并发写者会在
 // idx(snapshot_guid) 的同一段间隙上互等插入意向锁而成环 —— 那正是唯一键要消掉的东西。
 const insertSnapshotIfGuidAbsentLegacySQL = `INSERT INTO player_snapshot
@@ -179,8 +178,7 @@ const (
 )
 
 // uniqueGuidKeyProbeTimeout 是建 store 时探测唯一键的时限。
-// 探测只是一条 INFORMATION_SCHEMA 点查;探不到不影响功能(退回 NOT EXISTS 形态),
-// 所以宁可短超时放过,也不要让它把服务启动拖住。
+// 探测包含版本与 INFORMATION_SCHEMA 只读查询；TiDB 超时或缺约束拒启，MySQL 保留旧兼容路径。
 const uniqueGuidKeyProbeTimeout = 5 * time.Second
 
 // SnapshotStore provides CRUD operations for player snapshots and audit logs.
@@ -190,10 +188,10 @@ type SnapshotStore struct {
 	db *sql.DB
 
 	// uniqueGuidKey = 建 store 时探到 player_snapshot 上有 uk_snapshot_guid_nz,
-	// **且**它约束的 snapshot_guid_nz 确实是那条表达式算出的 STORED 生成列(两条缺一不可,见 NewSnapshotStore)。
+	// **且**它只覆盖完整的 snapshot_guid_nz 列，列符合对应方言的可空 uint64 生成表达式。
 	//
 	// 为什么要探、而不是直接假设它在:这个键是一次独立的 DDL 迁移(审计 #11 第二步),
-	// 而"迁移还没跑 / 刚回滚 / 对端是 TiDB"这三种局面都真实存在。假设它在的后果是最坏的一种 ——
+	// 而“迁移还没跑 / 刚回滚”都可能发生。假设它在的后果是最坏的一种 ——
 	// 普通 INSERT 不会撞 1062,于是同一个 guid 静默落成两行,零报错。探一次的代价是启动期一条点查。
 	//
 	// 探测结果只读一次、之后不再变:运行期不接受"DDL 半路被加上/删掉"。真发生了(人工跑迁移 /
@@ -222,21 +220,17 @@ func NewSnapshotStore(cfg MySQLConfig) (*SnapshotStore, error) {
 	s := &SnapshotStore{db: db}
 	ctx, cancel := context.WithTimeout(context.Background(), uniqueGuidKeyProbeTimeout)
 	defer cancel()
-	// 探测失败按"键不在"处理(fail-safe 到**功能正确**的那一侧):NOT EXISTS 形态在有键和无键的
-	// 表上都去重正确,而普通 INSERT 只在有键时才去重。所以猜错方向的代价是多承担一次间隙锁死锁重试,
-	// 不是静默写重复行。
-	// 必须用 hasUniqueIndex 而不是"按名字数一下索引在不在":一个**同名的非唯一索引**会让这里探成 true,
-	// 写路径切到 ODKU,而 ODKU 在没有唯一约束的表上永远撞不到重复键 —— 同一 guid 静默落成多行。
-	// 形状不符时它返回错误,下面按"键不在"处理并把原因打出来(退路的去重在有键无键的表上都正确)。
-	//
-	// 索引形状对**还不够**:键可能挂在一个同名的**普通列**上(迁移的 ADD COLUMN 被兼容层降级、
-	// 或有人手工加过这一列),那种列恒为 NULL(约束不到任何行)或恒为 0(第二条 GM 行就撞键)。
-	// 所以列的形状也要探一次,两条都成立才敢把写路径切到 ODKU —— 判据与迁移侧
-	// (ensureNullableUniqueKey 的快路径)逐条一致,免得两处对"键在不在"给出不同答案。
-	hasKey, err := hasUniqueIndex(ctx, db, cfg.DBName, PlayerSnapshotTableName, SnapshotGuidUniqueKey)
+	key, isTiDB, err := nullableUniqueKeyForServer(ctx, db, snapshotGuidNullableKey)
+	if err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("snapshot GUID 方言探测失败: %w", err)
+	}
+	// 与迁移使用同一判据：索引恰好覆盖生成列全长，列形态、表达式与 uint64/NULL 语义一致。
+	// MySQL 的 NOT EXISTS 退路依赖 RR 间隙锁；TiDB 不具备此前提，不能把探测失败当成功建池。
+	hasKey, err := hasNullableUniqueIndex(ctx, db, cfg.DBName, key)
 	if err == nil && hasKey {
 		var hasCol bool
-		hasCol, err = hasGeneratedColumn(ctx, db, cfg.DBName, PlayerSnapshotTableName, SnapshotGuidNzColumn, snapshotGuidNzExpr)
+		hasCol, err = hasGeneratedColumn(ctx, db, cfg.DBName, key.table, key.column, key.columnExpr, key.columnStorage)
 		if err == nil && !hasCol {
 			err = fmt.Errorf("唯一键 %s 在,但它约束的列 %s 不存在(键在、列坏的中间态)",
 				SnapshotGuidUniqueKey, SnapshotGuidNzColumn)
@@ -244,6 +238,13 @@ func NewSnapshotStore(cfg MySQLConfig) (*SnapshotStore, error) {
 		if err != nil {
 			hasKey = false
 		}
+	}
+	if isTiDB && (err != nil || !hasKey) {
+		_ = db.Close()
+		if err == nil {
+			err = fmt.Errorf("唯一约束 %s 缺失", SnapshotGuidUniqueKey)
+		}
+		return nil, fmt.Errorf("TiDB 快照 GUID 唯一约束不可用，拒绝启用写池；先停写并执行正式 -migrate: %w", err)
 	}
 	if err != nil {
 		logx.Errorf("[SnapshotStore] Failed to inspect %s.%s (%v): treating unique key as absent; snapshot deduplication falling back to "+
@@ -259,9 +260,7 @@ func NewSnapshotStore(cfg MySQLConfig) (*SnapshotStore, error) {
 	} else if err == nil {
 		logx.Errorf("[SnapshotStore] %s.%s absent: snapshot deduplication falls back to INSERT...SELECT...NOT EXISTS. "+
 			"On MySQL, run data_service -f <yaml> -migrate to create the key (additive only), then restart this service to switch to ODKU "+
-			"and eliminate the fallback statement's gap-lock cycle on idx(snapshot_guid); "+
-			"if the server is TiDB and migration still succeeded, someone enabled MigrateOptions.AllowMissingGuidUniqueKey -- "+
-			"snapshot guid deduplication is disabled on this instance (TiDB has no gap locks, so NOT EXISTS deduplication is invalid); see ensureNullableUniqueKey in schema.go",
+			"and eliminate the fallback statement's gap-lock cycle on idx(snapshot_guid)",
 			PlayerSnapshotTableName, SnapshotGuidUniqueKey)
 	}
 	return s, nil
@@ -315,7 +314,7 @@ func (s *SnapshotStore) InsertSnapshot(ctx context.Context, row *SnapshotRow) (u
 //
 // # 去重由库上的可空唯一键兜住
 //
-// 事实源是 player_snapshot 上的存储型生成列 snapshot_guid_nz = NULLIF(snapshot_guid, 0)
+// 事实源是 player_snapshot 上把零 GUID 映射为 NULL、保留非零值的可空生成列及其唯一键，
 // 与建在它上面的 uk_snapshot_guid_nz(DDL 与回滚方案见 schema.go 的 nullableUniqueKeys)。
 // GM 行 guid 恒为 0 → 这一列是 NULL → 唯一键不约束它们,任意多条 GM 行照样能落;
 // source=1 的 C++ 快照 guid 非 0,按 guid 严格唯一。
@@ -326,7 +325,7 @@ func (s *SnapshotStore) InsertSnapshot(ctx context.Context, row *SnapshotRow) (u
 // 拆成"先 SELECT 再 INSERT"的老写法在两次往返之间没有任何约束,滚动更新窗口里(或本地多开)
 // 两个消费者实例足以把同一条快照写成两行。
 //
-// 唯一键不存在时(迁移还没跑、DDL 刚回滚、对端是 TiDB)退回 insertSnapshotIfGuidAbsentLegacySQL,
+// MySQL 唯一键不存在时(迁移还没跑、DDL 刚回滚)退回 insertSnapshotIfGuidAbsentLegacySQL，
 // 由建 store 时的一次探测选定(见 SnapshotStore.uniqueGuidKey)。两条语句的返回语义完全一致,
 // 调用方看不出区别。
 //
@@ -369,7 +368,7 @@ func (s *SnapshotStore) InsertSnapshot(ctx context.Context, row *SnapshotRow) (u
 //
 // # 有界重试为什么还留着,以及它的收敛论证
 //
-// 留着是为了**退路那条语句**:唯一键不存在时(迁移未跑 / DDL 刚回滚 / 对端是 TiDB)走
+// 留着是为了 MySQL 的退路语句：唯一键不存在时(迁移未跑 / DDL 刚回滚)走
 // insertSnapshotIfGuidAbsentLegacySQL,它的间隙环真实存在且 SQL 层去不掉
 // (回归 TestSnapshotStore_LegacyGapDeadlockIsAbsorbedInPlace)。唯一键路径上它只是纯兜底:
 // 按上面的推演不该再撞 1213,真撞上了说明推演与实现对不上,日志会明说(见下面 reruns>0 的分支)。
@@ -400,8 +399,7 @@ func (s *SnapshotStore) InsertSnapshot(ctx context.Context, row *SnapshotRow) (u
 //   - **不要**把那条语句或 DSN 改成 READ COMMITTED 来"消掉间隙锁":RC 下子查询是一致性读、不加任何锁,
 //     两个并发写者会同时判定"不存在"并各插一行,去重直接失效。
 //   - 同理它在没有间隙锁的库上(TiDB)本就不成立。所以 TiDB 上必须先把可空唯一约束落下来,
-//     不能靠这条退路。ensureNullableUniqueKey 因此在 TiDB 上 **fail-closed**:建不出这个键就让迁移失败,
-//     除非有人用 MigrateOptions.AllowMissingGuidUniqueKey 显式放行(放行 = 明确接受本实例去重失效)。
+//     不能靠这条退路。迁移和建池都会在唯一约束缺失或不符时拒绝继续，不提供 TiDB 绕过开关。
 //     所以运行期真的走到这条退路,只有"MySQL 上迁移还没跑 / DDL 刚回滚"两种局面。
 //
 // idx(snapshot_guid) 由 store.MigrateSchema 的 ensureIndexes 保证存在;唯一键路径不依赖它,

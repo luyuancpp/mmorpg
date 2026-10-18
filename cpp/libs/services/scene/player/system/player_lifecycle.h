@@ -200,8 +200,9 @@ namespace owner_epoch_stats
 //                          StartTravelHandoff 快路径补写之后不可达,应恒为 0;非 0 = 冻结越过了上限(唯一允许的例外)
 //   freeze_unstamped       交接组件上的单调冻结起点(frozenAtSteady)没打点、被上限扫描就地补记的次数。应恒为 0,
 //                          非 0 = 有一条挂交接组件的路径漏写了它(只会晚处置,不会提前销毁)
-//   watchdog_early_fire    存盘 / 应答看门狗比单调截止时刻早 1s 以上被 muduo(按墙钟)唤醒、按剩余时间重挂的次数。
-//                          非 0 = 墙钟向前跳过 ≥1s(对时 / 人工改时间)
+//   watchdog_early_fire    存盘 / 应答看门狗比单调截止时刻早 1s 以上被 muduo 唤醒、按剩余时间重挂的次数。muduo 定时器
+//                          已按单调时钟到期,应恒为 0;非 0 = 链进来的 muduo 没带单调时钟改动(如 Linux 未应用 overlay)
+//                          且墙钟向前跳过 ≥1s(对时 / 人工改时间)
 //   handoff_fastpath_forced 交接快路径判"盘上已是同一份"、但该 key 还有在途 / 排队中的存盘,改走一次真实存盘再写标记的
 //                          次数(与退出链的 exit_fastpath_deferred 同一写法)。趋势值
 //   ── GO-2 根治:源端原子取证的三种新结论(travel_outcome::Ownership,cross-zone-scene-travel.md §12.8 判定表)──
@@ -1404,6 +1405,8 @@ public:
 	//                                  无法再重存时(交接已发起)带着 MySQL 落后收尾(exit_unsynced),返回 true;
 	//                                  拒存(持久组件缺失)时 fail-closed 保留实体,返回 false;
 	//   有投递失败、已到上限          → 保留实体,返回 false。
+	//   欠账的失败是永久性的          → 不论轮次、不等剩下的回执,带着 MySQL 落后收尾(exit_unsynced,ERROR 带错误码),
+	//   (DbTaskDispatchSystem::PermanentFailure,消息过大 / 无写权限等)  返回 true。
 	// 实体无效或意图组件缺失时沿用旧行为直接收尾、返回 true。返回 true 之后调用方不得再用实体上的任何组件指针。
 	static bool FinishExitOrAwaitDbTaskAck(Guid playerId);
 
@@ -1642,14 +1645,14 @@ private:
 	// 首次挂的看门狗不取消、总是先于重挂的到期:它带进去的 kNoReply 会被交接组件上记下的应答证据覆盖
 	// (travel_outcome::EffectiveEvidence),所以重挂那个随后多半是代际不符的 no-op,这是预期行为。
 	// 只按值捕获 playerId + 代际 + 证据 + 原因文本,回调里按 id 回查实体(§11.7)。
-	// 预算 travel_freeze_cap::kReplyBudget(30s):muduo 定时器唤醒(按墙钟),按单调截止时刻复核 —— 提前 1s 以上醒来
+	// 预算 travel_freeze_cap::kReplyBudget(30s):muduo 定时器唤醒(已按单调时钟到期),仍按单调截止时刻复核 —— 提前 1s 以上醒来
 	// 就按剩余时间重挂(计 watchdog_early_fire),容差 1s 以内直接执行。重挂次数不封顶,整段冻结由冻结硬上限封顶。
 	static void ArmTravelReplyWatchdog(Guid playerId, uint64_t requestedAtMs, travel_outcome::Evidence evidence,
 									   std::string reason);
 
 	// 存盘阶段看门狗:覆盖"已冻结、存盘在途、交接还没发起(requestedAtMs == 0)"这一段 ——
 	// 应答看门狗要到 EnterScene 发出才挂,Redis 长时间不可用时本看门狗是这一段的主兜底;它没能按时触发时
-	// (例如墙钟回拨推迟了 muduo 定时器),存盘晚于 35s 才落地的由晚发闸(BeginTravelHandoff 的 set_mark 阶段)
+	// (例如 loop 长时间阻塞推迟了 muduo 定时器),存盘晚于 35s 才落地的由晚发闸(BeginTravelHandoff 的 set_mark 阶段)
 	// 拦下不写标记,一直不落地的由 70s 冻结上限的"标记未发出 → 解冻"分支(ExpireTravelFreeze)收住。
 	// 到期仍未发起就直接 AbortTravelHandoff(标记没写,不可能已被放行)。代际用 PlayerFrozenComp.frozenAtMs。
 	// 预算 travel_freeze_cap::kSaveBudget(30s),与应答看门狗同样按单调截止时刻复核(容差 1s)。

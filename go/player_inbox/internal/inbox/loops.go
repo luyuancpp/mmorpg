@@ -22,7 +22,8 @@ import (
 //   - 补发的每一步都是 next_seq CAS,重叠执行最多多发一次提醒。
 //   - gauge 只由领导者产出,卸任时归零,避免 max() 聚合里留着卸任副本的旧值。
 //   - 对账只读;不一致行数是领导者产出的 gauge,重叠期间两个副本各报一份,告警取 max(),不影响结论。
-//     当选后第一轮对账只等 1–5 分钟(随机错开),不等满一个间隔;之后按间隔跑,起始分片按墙钟轮转(评审 M5 / L4)。
+//     当选后第一轮对账只等 1–5 分钟(随机错开),不等满一个间隔;之后按间隔跑,起始分片按墙钟轮转(评审 M5 / L4),
+//     每轮前移 reconcileStartStride 片;gauge 是本任期各分片最近一次读数之和(reconcileTally,评审 R1)。
 //
 // 关停(设计 §10):先取消循环与选举,有界等待它们退出,再由装配层关连接池 —— Run 返回即全部轮次已结束。
 
@@ -147,7 +148,9 @@ func (l *Loops) whileLeader(lctx context.Context) {
 	if l.cfg.ReconcileInterval > 0 {
 		first := reconcileFirstDelay(l.cfg.ReconcileInterval, l.jitter)
 		logx.Infof("[player_inbox] First reconcile round in %v, then every %v", first, l.cfg.ReconcileInterval)
-		everyAfter(lctx, &wg, "player_inbox.reconcile", first, l.cfg.ReconcileInterval, l.reconcileRound)
+		tally := &reconcileTally{} // 本任期的分片读数,只由对账这一个 goroutine 读写
+		everyAfter(lctx, &wg, "player_inbox.reconcile", first, l.cfg.ReconcileInterval,
+			func(ctx context.Context) { l.reconcileRound(ctx, tally) })
 	}
 	<-lctx.Done()
 	wg.Wait()
@@ -203,14 +206,51 @@ func reconcileFirstDelay(interval time.Duration, jitter func(time.Duration) time
 	return min(reconcileFirstDelayMin+j, interval)
 }
 
-// reconcileStartShard 是一轮对账的起始分片:墙钟落在第几个间隔,(nowMs / intervalMs) % 64(评审 M5)。
-// 不依赖内存状态:易主后新领导者从同一个位置接着轮转;某一轮被截断时,下一轮从下一片起步,高号分片不会永远轮不到。
+// reconcileStartShard 是一轮对账的起始分片:墙钟落在第 k = nowMs / intervalMs 个间隔,起点 = k × stride % 64
+// (stride = reconcileStartStride,评审 M5 / R1)。不依赖内存状态:易主后新领导者从同一个位置接着轮转。
+//
+// 为什么步长是 stride 而不是 1:每轮至少读完从起点起的 stride 片(collectFinalized 的覆盖下界),起点每轮前移
+// stride 片,相邻轮次的必读段首尾相接,连续 reconcileFullCycleRounds 轮覆盖全部 64 片 —— 不论截断多严重。
+// 步长 1 时截断持续的那段时间里,一轮只读到 [start, start+c),窗口内 W 轮总共只碰得到 c+W−1 片。
 func reconcileStartShard(nowMs uint64, interval time.Duration) uint32 {
 	intervalMs := interval.Milliseconds()
 	if intervalMs <= 0 {
 		return 0
 	}
-	return uint32((nowMs / uint64(intervalMs)) % ShardCount)
+	k := (nowMs / uint64(intervalMs)) % ShardCount // 先取模:k × stride 不会溢出
+	return uint32((k * reconcileStartStride) % ShardCount)
+}
+
+// reconcileTally 是一个任期内各分片最近一次对账读数(评审 R1),player_inbox_reconcile_inconsistent_rows 取它们的和。
+//
+// 截断的轮次只覆盖从起点起的一部分分片。只拿「本轮」读数写 gauge 的话,不一致的行一旦落在本轮没读完的分片里,
+// 读数就掉回 0、critical 告警跟着消失,而那一行还在窗口里、问题并没有处理。所以按分片记:
+//   - 本轮读完的分片(ShardTally.Complete)用本轮读数覆盖 —— 处置之后能降下来;
+//   - 只核对了一部分的分片取 max(旧读数, 本轮读数):发现的不一致是确凿的下界,一处没发现不能证明已经一致;
+//   - 本轮没读到的分片保留旧读数。
+//
+// 截断持续时每片至多隔 reconcileFullCycleRounds 轮读完一次,所以各片读数至多滞后这么多轮。
+// 任期开始时全为 0(新领导者在头几轮读到之前是偏低的下界;卸任时 whileLeader 把 gauge 归零)。
+// 只由本任期的对账 goroutine 读写(everyAfter 串行跑各轮),不加锁。
+type reconcileTally struct {
+	byShard [ShardCount]int
+}
+
+// apply 记入一轮的分片读数,返回全部分片读数之和。
+func (t *reconcileTally) apply(shards []ShardTally) int {
+	for _, s := range shards {
+		shard := s.Shard % ShardCount
+		if s.Complete {
+			t.byShard[shard] = s.Inconsistent
+		} else {
+			t.byShard[shard] = max(t.byShard[shard], s.Inconsistent)
+		}
+	}
+	total := 0
+	for _, n := range t.byShard {
+		total += n
+	}
+	return total
 }
 
 // reconcileRoundResult 把一轮对账的错误折成 player_inbox_reconcile_rounds_total 的 result:
@@ -227,13 +267,6 @@ func reconcileRoundResult(ctx context.Context, err error) string {
 	default:
 		return reconcileRoundError
 	}
-}
-
-// reconcileGaugeUpdates 报告这一轮的结果要不要写进 player_inbox_reconcile_inconsistent_rows:
-// 跑完的轮次(ok,含截断)照实写;失败 / 超时的轮次只核对了一部分,发现了不一致就写(那是确凿的下界),
-// 一处都没发现则保留上一轮的读数 —— 半截轮次的 0 不能证明「已经一致」。
-func reconcileGaugeUpdates(result string, inconsistent int) bool {
-	return result == reconcileRoundOK || (result != "" && inconsistent > 0)
 }
 
 func (l *Loops) nowMs() uint64 {
@@ -317,8 +350,9 @@ func (l *Loops) gaugeRound(ctx context.Context) {
 }
 
 // reconcileRound 跑一轮定时对账(设计 §9.3):窗口 [now − ReconcileWindow, now],起始分片按墙钟轮转;
-// 记 reconcile_rounds_total{result},按 reconcileGaugeUpdates 刷新不一致行数 gauge。
-func (l *Loops) reconcileRound(ctx context.Context) {
+// 记 reconcile_rounds_total{result},把本轮的分片读数记进 tally,再以各片读数之和刷新不一致行数 gauge。
+// 收集阶段就失败的轮次没有分片读数,gauge 保持原值。tally 属于当前任期(whileLeader 建)。
+func (l *Loops) reconcileRound(ctx context.Context, tally *reconcileTally) {
 	nowMs := l.nowMs()
 	window := uint64(l.cfg.ReconcileWindow.Milliseconds())
 	since := uint64(0)
@@ -332,14 +366,17 @@ func (l *Loops) reconcileRound(ctx context.Context) {
 		return // 领导权丢失 / 关停:不计数、不刷新 gauge(卸任时 whileLeader 会把它归零)
 	}
 	metrics.ObserveReconcileRound(result)
-	if reconcileGaugeUpdates(result, res.Inconsistent) {
-		metrics.SetReconcileInconsistent(res.Inconsistent)
+	metrics.SetReconcileInconsistent(tally.apply(res.Shards))
+	if res.Truncated && l.cfg.ReconcileWindow < reconcileFullCycleRounds*l.cfg.ReconcileInterval {
+		logx.Errorf("[player_inbox] Reconcile window %v is shorter than %d intervals of %v: while rounds stay truncated, "+
+			"some shards may not be fully read even once before their rows leave the window",
+			l.cfg.ReconcileWindow, reconcileFullCycleRounds, l.cfg.ReconcileInterval)
 	}
 	switch result {
 	case reconcileRoundTimeout:
 		logx.Errorf("[player_inbox] Reconcile round ran out of its %v budget after checking %d of %d players (start_shard=%d); "+
-			"unchecked rows are retried next round", min(l.cfg.ReconcileInterval, roundBudgetCap),
-			res.PlayersChecked, res.PlayersPlanned, start)
+			"unchecked rows are left to later rounds and their shards keep the previous gauge readings",
+			min(l.cfg.ReconcileInterval, roundBudgetCap), res.PlayersChecked, res.PlayersPlanned, start)
 	case reconcileRoundError:
 		logx.Errorf("[player_inbox] Reconcile round failed after checking %d of %d players (start_shard=%d): %v",
 			res.PlayersChecked, res.PlayersPlanned, start, err)

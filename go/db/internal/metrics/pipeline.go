@@ -7,13 +7,17 @@ package metrics
 //
 // 全部 label 都是封闭集合,不含 player_id(AGENTS.md §9):
 //
-//	db_task_redis_step_seconds{op,step}       op 2 个取值 × step 11 个取值
-//	db_ordering_guard_total{outcome}          5 个取值
+//	db_task_redis_step_seconds{op,step}       op 2 个取值 × step 12 个取值
+//	db_ordering_guard_total{outcome}          7 个取值
 //	db_subshard_batch_size                    无 label
 //	db_ordering_lease_lost_total{reason}      4 个取值
 //	db_ordering_lease_renew_retry_total       无 label
 //	db_ordering_lock_release_total{outcome}   4 个取值
 //	db_redis_pool_*{redis_client}             main | placement
+//	db_fence_write_total{class,outcome}       34 个合法组合
+//	db_fence_cache_publish_total{path,result} 6 个合法组合
+//	db_fence_body_mismatch_total             无 label
+//	db_fence_rejected_bytes_total{outcome}    6 个取值
 //
 // 指标名与取值和 tools/scripts/stress_summarize.ps1 的 2d / 2e 段逐字对应(那边按精确 key 读序列);
 // 改名或改取值要同改脚本、test_stress_summarize.ps1 与本包的 TestRedisStepNamesPinned。
@@ -43,9 +47,12 @@ var (
 		Subsystem: subsystem,
 		Name:      "task_redis_step_seconds",
 		Help: "Latency of each Redis round trip on the db task path, timed at the call site (one observation per round trip). " +
-			"op: read | write. step: lock_acquire | cursor_get | epoch_get | placement_lookup | expand_get | placement_recheck | " +
-			"lease_verify | cache_set | cursor_set | epoch_mark | lock_release. Read tasks only have placement_lookup, expand_get, " +
-			"placement_recheck and cache_set. Retry claims, LREM and the periodic lease renewals are not included.",
+			"op: read | write. step: lock_acquire | cursor_get | epoch_get | owner_epoch_probe | placement_lookup | expand_get | placement_recheck | " +
+			"lease_verify | cache_publish | cache_set | applied_advance | lock_release. Read tasks only have placement_lookup, expand_get, " +
+			"placement_recheck and cache_set (SET NX). Write tasks use lease_verify only for older_seq, cache_publish for the atomic " +
+			"token/cache/proof publication and applied_advance for the atomic token/cursor/epoch advance. Retry claims, LREM and " +
+			"the periodic lease renewals are not included. The cache_set and lease_verify semantics differ from Round 20; cursor_set " +
+			"and epoch_mark were replaced, so those columns must not be subtracted directly from the old baseline.",
 		Buckets: redisStepBuckets,
 	}, []string{"op", "step"})
 
@@ -55,7 +62,7 @@ var (
 		Subsystem: subsystem,
 		Name:      "ordering_guard_total",
 		Help: "Applied-cursor ordering guard verdicts on write tasks (orderingForTask). outcome: apply | apply_no_cursor " +
-			"(no applied cursor yet, applied as a first write) | stale | incomparable | error (cursor read or parse failed).",
+			"(no applied cursor yet, applied as a first write) | stale | incomparable | error (cursor read or parse failed) | stale_no_epoch | epoch_override (the last two are subsets of stale).",
 	}, []string{"outcome"})
 
 	// subShardBatchSize 是子 shard 每次合并进 processTaskBatch 的任务数(合并去重之前)。
@@ -71,9 +78,10 @@ var (
 	orderingLeaseLostTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "ordering_lease_lost_total",
-		Help: "Cross-instance ordering lock leases lost. reason: owner_changed (another instance holds the lock) | " +
+		Help: "Cross-instance ordering lock leases lost. reason: owner_changed (renewal, verification, token publication or " +
+			"applied advance found that the lock is no longer owned) | " +
 			"renew_exhausted (renewal failed the maximum number of times) | renew_deadline (no successful renewal before the " +
-			"local deadline) | verify_error (the token-checked extend before cache publication failed). A lost lease cancels " +
+			"local deadline) | verify_error (the older_seq token verification or a token publication/advance round trip failed). A lost lease cancels " +
 			"the write's in-flight SQL; it is not a fence.",
 	}, []string{"reason"})
 
@@ -102,22 +110,23 @@ const (
 	RedisStepLockAcquire      = "lock_acquire"      // 排序锁 SETNX
 	RedisStepCursorGet        = "cursor_get"        // applied 游标 GET
 	RedisStepEpochGet         = "epoch_get"         // applied owner epoch GET(任务带 epoch 时)
+	RedisStepOwnerEpochProbe  = "owner_epoch_probe" // owner epoch 计数器探测
 	RedisStepPlacementLookup  = "placement_lookup"  // 选库 MGET 落点记录 + home_zone
 	RedisStepExpandGet        = "expand_get"        // 扩容状态 GET(离线扩容模式下跳过)
 	RedisStepPlacementRecheck = "placement_recheck" // 落库后复核 MGET
-	RedisStepLeaseVerify      = "lease_verify"      // 缓存回写前的核锁(带 token 的 Lua 续期)
-	RedisStepCacheSet         = "cache_set"         // 共享缓存回写 SET
-	RedisStepCursorSet        = "cursor_set"        // applied 游标 SET
-	RedisStepEpochMark        = "epoch_mark"        // applied owner epoch 只升不降(Lua)
+	RedisStepLeaseVerify      = "lease_verify"      // 写任务仅 older_seq 路径核锁(带 token 的 Lua 续期)
+	RedisStepCachePublish     = "cache_publish"     // 写路径同一 Lua 核 token 并发布缓存 / SQL 证据
+	RedisStepCacheSet         = "cache_set"         // 读路径共享缓存 SET NX
+	RedisStepAppliedAdvance   = "applied_advance"   // 同一 Lua 核 token 并推进 applied 游标 / epoch
 	RedisStepLockRelease      = "lock_release"      // 排序锁释放(带 token 的 Lua DEL)
 )
 
-// RedisSteps 是 11 个 step 取值,按一条写任务的执行顺序排列。stress_summarize.ps1 的 2e 段按同样的名字与顺序
+// RedisSteps 是 12 个 step 取值,按一条写任务的执行顺序排列。stress_summarize.ps1 的 2e 段按同样的名字与顺序
 // 出列;两边一一对应,改名 / 合并 step 时同改脚本、test_stress_summarize.ps1 与 TestRedisStepNamesPinned。
 var RedisSteps = []string{
-	RedisStepLockAcquire, RedisStepCursorGet, RedisStepEpochGet, RedisStepPlacementLookup, RedisStepExpandGet,
-	RedisStepPlacementRecheck, RedisStepLeaseVerify, RedisStepCacheSet, RedisStepCursorSet, RedisStepEpochMark,
-	RedisStepLockRelease,
+	RedisStepLockAcquire, RedisStepCursorGet, RedisStepEpochGet, RedisStepOwnerEpochProbe,
+	RedisStepPlacementLookup, RedisStepExpandGet, RedisStepPlacementRecheck, RedisStepLeaseVerify,
+	RedisStepCachePublish, RedisStepCacheSet, RedisStepAppliedAdvance, RedisStepLockRelease,
 }
 
 // db_ordering_guard_total 的 outcome 取值。
@@ -127,9 +136,11 @@ const (
 	OrderingStale         = "stale"
 	OrderingIncomparable  = "incomparable"
 	OrderingError         = "error"
+	OrderingStaleNoEpoch  = "stale_no_epoch"
+	OrderingEpochOverride = "epoch_override"
 )
 
-var orderingGuardOutcomes = []string{OrderingApply, OrderingApplyNoCursor, OrderingStale, OrderingIncomparable, OrderingError}
+var orderingGuardOutcomes = []string{OrderingApply, OrderingApplyNoCursor, OrderingStale, OrderingIncomparable, OrderingError, OrderingStaleNoEpoch, OrderingEpochOverride}
 
 // db_ordering_lease_lost_total 的 reason 取值。
 const (
@@ -167,6 +178,7 @@ func registerPipeline() {
 		for _, outcome := range lockReleaseOutcomes {
 			orderingLockReleaseTotal.WithLabelValues(outcome).Add(0)
 		}
+		registerFence()
 	})
 }
 
@@ -320,4 +332,94 @@ func RegisterRedisPools(main, placement RedisPoolClient) {
 	if err := prometheus.Register(NewRedisPoolCollector(main, placement)); err != nil {
 		logx.Errorf("[metrics] register redis pool collector failed (db_redis_pool_* unavailable): %v", err)
 	}
+}
+
+// 围栏指标使用固定业务取值,不以玩家身份作 label。预建仅包含设计允许的组合,不能把 unfenced 的写误算成围栏拒绝。
+var fenceClasses = []string{"seq", "legacy_epoch", "legacy_zero"}
+var fenceWriteOutcomes = []string{
+	"updated", "inserted", "unchanged", "equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "race", "error",
+}
+var fenceUnfencedOutcomes = []string{"updated", "inserted", "unchanged", "error"}
+var fenceCacheWriteResults = []string{"written", "not_owner", "evidence_ahead", "evidence_conflict"}
+var fenceCacheReadResults = []string{"written", "exists"}
+var fenceRejectedOutcomes = []string{"equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "epoch_override"}
+
+var (
+	fenceWriteTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "fence_write_total",
+		Help: "SQL write outcomes. class: seq | legacy_epoch | legacy_zero | unfenced. outcome: updated | inserted | unchanged | " +
+			"equal | older_seq | stale_owner | owner_epoch_regressed | legacy_after_seq | race | error. Unfenced writes only use " +
+			"updated, inserted, unchanged or error. The transitional SQL implementation reports updated for both changed and unchanged rows.",
+	}, []string{"class", "outcome"})
+	fenceCacheTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "fence_cache_publish_total",
+		Help: "Atomic token/cache/SQL-proof publication and read SET NX outcomes. path=write result: written | not_owner | " +
+			"evidence_ahead | evidence_conflict; path=read result: written | exists. Evidence ahead is also counted as written " +
+			"when the cache was published while preserving the newer proof.",
+	}, []string{"path", "result"})
+	fenceBodyMismatch = prometheus.NewCounter(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "fence_body_mismatch_total",
+		Help:      "Producer bodies unexpectedly carried nonzero fence metadata; counted in both legacy and dual modes.",
+	})
+	fenceRejectedBytes = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "fence_rejected_bytes_total",
+		Help: "Row-body bytes submitted by SQL writes rejected by fences. outcome: equal | older_seq | stale_owner | " +
+			"owner_epoch_regressed | legacy_after_seq | epoch_override. Epoch override counts rejected writes admitted by the ordering override.",
+	}, []string{"outcome"})
+	fenceOnce sync.Once
+)
+
+func registerFence() {
+	fenceOnce.Do(func() {
+		prometheus.MustRegister(fenceWriteTotal, fenceCacheTotal, fenceBodyMismatch, fenceRejectedBytes)
+		for _, class := range fenceClasses {
+			for _, outcome := range fenceWriteOutcomes {
+				fenceWriteTotal.WithLabelValues(class, outcome).Add(0)
+			}
+		}
+		for _, outcome := range fenceUnfencedOutcomes {
+			fenceWriteTotal.WithLabelValues("unfenced", outcome).Add(0)
+		}
+		for _, result := range fenceCacheWriteResults {
+			fenceCacheTotal.WithLabelValues("write", result).Add(0)
+		}
+		for _, result := range fenceCacheReadResults {
+			fenceCacheTotal.WithLabelValues("read", result).Add(0)
+		}
+		fenceBodyMismatch.Add(0)
+		for _, outcome := range fenceRejectedOutcomes {
+			fenceRejectedBytes.WithLabelValues(outcome).Add(0)
+		}
+	})
+}
+
+// CountFenceWrite 记一次 SQL 围栏结局,class 与 outcome 使用上述固定词表。
+func CountFenceWrite(class, outcome string) {
+	registerFence()
+	fenceWriteTotal.WithLabelValues(class, outcome).Inc()
+}
+
+// CountFenceCache 记一次令牌发布或读路径 SET NX 的结果,path 与 result 使用上述固定词表。
+func CountFenceCache(path, result string) {
+	registerFence()
+	fenceCacheTotal.WithLabelValues(path, result).Inc()
+}
+
+// CountFenceBodyMismatch 记一次生产者 body 错带非零围栏字段。
+func CountFenceBodyMismatch() {
+	registerFence()
+	fenceBodyMismatch.Inc()
+}
+
+// CountFenceRejectedBytes 记被围栏拒绝的 SQL 行载荷字节数;空载荷不增加计数。
+func CountFenceRejectedBytes(outcome string, n int) {
+	registerFence()
+	if n <= 0 {
+		return
+	}
+	fenceRejectedBytes.WithLabelValues(outcome).Add(float64(n))
 }

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
+	"fmt"
 	"time"
 
 	"player_inbox/internal/constants"
@@ -362,6 +364,51 @@ func voidOutcomeOf(action voidAction, state inboxpb.PlayerInboxItemState) voidOu
 	}
 }
 
+// auditRowFor 组出要写的一整行审计(评审 L9)。条目终态行 30 天后物理删除、审计行永不删除,所以审计要能独自
+// 回答「做了什么」:
+//   - 身份(player_id / domain / seq)、动作、「谁、为什么」(operator / peer_addr / reason / created_ms)
+//     与 void_reason 取调用方 a;void_reason 取请求的原因而不是条目列 —— 挂指令时条目列是在同一事务里刚改的,
+//     调用方手里的条目快照可能还是旧值;
+//   - msg_type / request_id / issued_at_ms / content_sha256 / payload 一律取自条目行 item,a 里的同名字段被忽略:
+//     条目内容入箱后不再改,只认这一个来源(DRY),审计记下的就是实际投递 / 作废的那一份字节;
+//   - shard 按 player_id 重算(同 InsertAudit 原口径)。
+//
+// a 与 item 的身份对不上返回 error(fail-closed):宁可让整个事务回滚,也不写出一行张冠李戴的审计。
+func auditRowFor(item *inboxpb.PlayerInboxItemRow, a *inboxpb.PlayerInboxAudit) (*inboxpb.PlayerInboxAudit, error) {
+	if item == nil || a == nil {
+		return nil, errors.New("inbox: audit needs both the item row and the audit fields")
+	}
+	if item.GetPlayerId() != a.GetPlayerId() || item.GetDomain() != a.GetDomain() || item.GetSeq() != a.GetSeq() {
+		return nil, fmt.Errorf("inbox: audit for player=%d domain=%d seq=%d does not match item player=%d domain=%d seq=%d",
+			a.GetPlayerId(), a.GetDomain(), a.GetSeq(), item.GetPlayerId(), item.GetDomain(), item.GetSeq())
+	}
+	// 零字节载荷(如 currency_type=0 的封锁)写成空串而不是 NULL,与条目行同一口径(store_enqueue.go)。
+	payload, digest := item.GetPayload(), item.GetContentSha256()
+	if payload == nil {
+		payload = []byte{}
+	}
+	if digest == nil {
+		digest = []byte{}
+	}
+	return &inboxpb.PlayerInboxAudit{
+		Shard:         RowShard(a.GetPlayerId()),
+		PlayerId:      a.GetPlayerId(),
+		Domain:        a.GetDomain(),
+		Seq:           a.GetSeq(),
+		Action:        a.GetAction(),
+		Operator:      a.GetOperator(),
+		PeerAddr:      a.GetPeerAddr(),
+		Reason:        a.GetReason(),
+		CreatedMs:     a.GetCreatedMs(),
+		MsgType:       item.GetMsgType(),
+		RequestId:     item.GetRequestId(),
+		IssuedAtMs:    item.GetIssuedAtMs(),
+		ContentSha256: digest,
+		Payload:       payload,
+		VoidReason:    a.GetVoidReason(),
+	}, nil
+}
+
 // ── 强制作废(VoidItem mode=FORCE_MISMATCH)──────────────────────────────
 
 const (
@@ -414,8 +461,8 @@ func decideForceVoidLocked(row *inboxpb.PlayerInboxItemRow, ledger *componentpb.
 //     被裁决过 —— 都可能已执行 → REQUEST_IN_LEDGER;
 //   - 水位已过而环里没有这个 seq(UNKNOWN 一类,原结局已挤出环):可能已执行 → SEQ_NOT_IN_RING;
 //   - 账本没有该域或水位没到:消费方还没裁决它,停用原因不是 MISMATCH → NOT_DECIDED;
-//   - 读不到存档 → LEDGER_ABSENT;账本结构不合法(validLedger)→ LEDGER_INVALID:那种账本在 scene 侧整份判坏,
-//     根本走不到回放核对,更不能拿来当证据。
+//   - 读不到存档 → LEDGER_ABSENT;账本结构不合法(validLedger,含某域环超过 ledgerRecentCapacity 条)→ LEDGER_INVALID:
+//     那种账本在 scene 侧被 ValidateLedger 整份判坏,根本走不到回放核对,更不能拿来当证据(评审 R2)。
 func proveNeverExecuted(row *inboxpb.PlayerInboxItemRow, ledger *componentpb.PlayerInboxLedgerComp, found bool) forceVoidProof {
 	if row.GetDeliveryCount() == 0 {
 		return forceVoidProof{verdict: forceVoidNotDelivered}
@@ -464,15 +511,19 @@ func findCursor(ledger *componentpb.PlayerInboxLedgerComp, domain uint32) *compo
 	return nil
 }
 
-// validLedger 校验已落盘账本能不能当证据,整份检查,与 C++ player_inbox_rules::ValidateLedger 同口径:
-// 各域 domain 非 0 且唯一;每个域的环 seq 非 0、严格升序、都不超过 decided_through,结局是可记账的
-// APPLIED / REJECTED / SKIPPED。另加一条 request_id 非 0:入箱拒收 request_id=0,环里出现 0 只可能是数据已坏,
-// 把它当成「另一个 request_id」会凭空造出证明。环的条数上限与证明无关,不查。
+// validLedger 校验已落盘账本能不能当证据(强制作废的证明、两个对账入口共用),整份检查,
+// 与 C++ player_inbox_rules::ValidateLedger 逐条同口径:各域 domain 非 0 且唯一;每个域的环不超过
+// ledgerRecentCapacity 条;环 seq 非 0、严格升序、都不超过 decided_through,结局是可记账的 APPLIED / REJECTED / SKIPPED。
+// 另加一条 request_id 非 0:入箱拒收 request_id=0,环里出现 0 只可能是数据已坏,把它当成「另一个 request_id」
+// 会凭空造出证明。
+//
+// 环长也要查(评审 R2):超长的环 scene 侧整份判坏、挂停用,消费方自己都不认这份账本,它里面的「同 seq 另一个
+// request_id」证明不了任何事;对账的空洞判定(finalizedLedgerGap 的「环满」边界)同样以环长 ≤ 容量为前提。
 // 别的域坏了也整份拒绝:scene 侧同样整份判坏,而且同一份 blob 里出现坏数据时,这个域的读数也不该再信。
 func validLedger(ledger *componentpb.PlayerInboxLedgerComp) bool {
 	seen := make(map[uint32]bool, len(ledger.GetCursors()))
 	for _, c := range ledger.GetCursors() {
-		if c.GetDomain() == 0 || seen[c.GetDomain()] {
+		if c.GetDomain() == 0 || seen[c.GetDomain()] || len(c.GetRecent()) > ledgerRecentCapacity {
 			return false
 		}
 		seen[c.GetDomain()] = true
@@ -588,7 +639,22 @@ func ageSeconds(nowMs, sinceMs uint64) float64 {
 const (
 	notifyRetryMin = 30 * time.Second
 	notifyRetryMax = 30 * time.Minute
+	// notifyNodeMissingSettleAfter:NotifyNodeMissing(镜像已同步却查不到节点)悬了这么久仍查不到,补发就落定(评审 R3)。
+	// 取 1 小时:租约抖动 / watch 重连 / 注册延迟都在秒到分钟级,退避(30s → 30min 封顶)期间重试 6–7 次足够等到它恢复;
+	// scene 侧在线有界兜底默认 30 分钟 ±20%(最长 36 分钟),真在线的玩家到这时已自己拉过。再往后只剩
+	// 「location 停在一个真没了的节点上、玩家没再落地」,留着只会一直把积压告警顶亮,交给落地拉取。
+	notifyNodeMissingSettleAfter = time.Hour
 )
+
+// notifyGivesUp 报告补发这一次没落定的提醒是否就此落定(清 notify_due_ms 而不是推迟):
+// 只有 NotifyNodeMissing、且已悬了 notifyNodeMissingSettleAfter 以上(nowMs − pendingSinceMs,口径同 notifyRetryDueMs)。
+// pendingSinceMs 为 0 或不早于 nowMs(时钟回拨)时按刚开始悬算,不落定。
+func notifyGivesUp(result NotifyResult, nowMs, pendingSinceMs uint64) bool {
+	if result != NotifyNodeMissing || pendingSinceMs == 0 || pendingSinceMs >= nowMs {
+		return false
+	}
+	return nowMs-pendingSinceMs >= uint64(notifyNodeMissingSettleAfter.Milliseconds())
+}
 
 // notifyRetryDueMs 是一次补发没落定之后 notify_due_ms 的新值:nowMs + 退避,退避 = 这条提醒已经悬了多久
 // (nowMs − pendingSinceMs),钳到 [30s, 30min]。每次没落定都把「已悬时长」再等一遍,重试间隔因此按 2 倍递增
@@ -612,23 +678,9 @@ func notifyRetryDueMs(nowMs, pendingSinceMs uint64) uint64 {
 // ledgerRecentCapacity 是消费方每域最近结局环的容量。**三处必须同值**:C++ player_inbox_rules.h 的
 // kRecentCapacity(32;RecordDecision 超出即挤掉最旧的,ValidateLedger 拒绝更长的环)、Java 版落码时的对应常量
 // (PARITY.md 收件箱一行,目前待做)、这里。对账靠它区分两种环:不满 = 从没裁剪过,每个记过账的结局都还在环里;
-// 满 = 更早的结局可能已被挤出,早于环头的 seq 无从核对。
+// 满 = 更早的结局可能已被挤出,早于环头的 seq 无从核对。validLedger 拒绝超过它的环(同 C++ ValidateLedger)。
+// reconcile_test.go 的 TestLedgerRecentCapacityMatchesConsumer 从 C++ 头文件里读出 kRecentCapacity 逐值比对。
 const ledgerRecentCapacity = 32
-
-// reconcileLedgerUsable 报告已落盘账本能不能拿来对账:validLedger 的整份结构检查,另加每域环不超过
-// ledgerRecentCapacity 条(C++ ValidateLedger 同样拒绝;环长与强制作废的证明无关,却是空洞判定的前提)。
-// 不能用的账本,对账结论是 unknown / error,**不是「无差异」**。
-func reconcileLedgerUsable(ledger *componentpb.PlayerInboxLedgerComp) bool {
-	if !validLedger(ledger) {
-		return false
-	}
-	for _, c := range ledger.GetCursors() {
-		if len(c.GetRecent()) > ledgerRecentCapacity {
-			return false
-		}
-	}
-	return true
-}
 
 // ledgerGap 是一条由消费方终结的行在已落盘账本里的缺口种类。只进日志;对外的 diff kind 一律是 FINAL_NOT_IN_LEDGER。
 type ledgerGap uint8
@@ -659,7 +711,7 @@ func (g ledgerGap) String() string {
 
 // finalizedLedgerGap 是两个对账入口(ReconcilePlayer 的 reconcileDiff、定时对账的 ledgerMismatches)共用的谓词:
 // 一条收件箱行的结局在已落盘账本里有没有对应(设计 §9.3、评审 M6)。cursor 是账本里该域的游标(nil = 没有该域),
-// 账本须先过 reconcileLedgerUsable(环按 seq 严格升序、≤ 32 条)。按顺序:
+// 账本须先过 validLedger(环按 seq 严格升序、≤ 32 条)。按顺序:
 //
 //  1. 不是消费方终结的终态行(PENDING、finalized_by=ADMIN)→ 不比对;
 //  2. seq > decided_through → gapBeyondWatermark(四种终态都比,含 SETTLED_UNKNOWN);
@@ -718,7 +770,7 @@ func finalizedRefOfRow(row *inboxpb.PlayerInboxItemRow) FinalizedRef {
 //   - diffs:逐行按 reconcileDiff 与账本里该域的游标(含最近结局环)比对,只列有差异的行,顺序同 rows
 //     (按 domain、seq 升序读出)。
 //
-// streams 按域给出流行(没有流的域不在 map 里);ledger 是已落盘账本(非 nil,调用方已确认 reconcileLedgerUsable)。
+// streams 按域给出流行(没有流的域不在 map 里);ledger 是已落盘账本(非 nil,调用方已确认 validLedger)。
 func reconcileReport(domains []inboxpb.PlayerInboxDomain, streams map[inboxpb.PlayerInboxDomain]*inboxpb.PlayerInboxStream,
 	ledger *componentpb.PlayerInboxLedgerComp, rows []*inboxpb.PlayerInboxItemRow) (
 	cursors []*inboxpb.PlayerInboxReconcileCursor, diffs []*inboxpb.PlayerInboxReconcileDiff) {
@@ -757,7 +809,7 @@ type ledgerMismatch struct {
 
 // ledgerMismatches 是定时对账对一名玩家的判定(设计 §9.3):refs 是这名玩家最近由消费方终结的行,
 // 逐行按 finalizedLedgerGap 与账本里该域的游标比对(与 ReconcilePlayer 同一个谓词),返回有缺口的那些,顺序同 refs。
-// ledger 须已过 reconcileLedgerUsable。
+// ledger 须已过 validLedger。
 func ledgerMismatches(refs []FinalizedRef, ledger *componentpb.PlayerInboxLedgerComp) []ledgerMismatch {
 	var out []ledgerMismatch
 	for _, f := range refs {

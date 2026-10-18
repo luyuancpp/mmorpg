@@ -1117,6 +1117,49 @@ TEST_F(ServerSessionTest, RefuseVerdictResetsWithRefusedStream)
     EXPECT_TRUE(h_.observer.aborted.empty());
 }
 
+// 排空到期要立即拒掉的流以会话状态为准(§15.17):头部已被接受、请求还没收完因而未派发、本端也还没应答 —— 按 id 升序。
+// 已派发的、头部阶段被拒的、对端已 RST 的都不在其中;拒掉之后流已标记应答,RST 写出之前(仍在会话的流表里)就不再列出,
+// 之后收完请求也不再交给上层。
+TEST_F(ServerSessionTest, AcceptedUndispatchedStreamsListsOnlyRequestsStillUploading)
+{
+    const std::string refuseAtHeaders = "/scene_node.SceneNodeGrpc/RefuseAtHeaders";
+    h_.observer.headersVerdict = [refuseAtHeaders](int32_t, const RequestHeaders &headers)
+    { return headers.path == refuseAtHeaders ? RefuseVerdict() : ServerSession::Verdict{}; };
+    const std::string frame = TestH2Peer::Frame("payload");
+
+    const int32_t uploading = h_.client.OpenStream(GrpcRequest(), false);
+    ASSERT_GT(uploading, 0);
+    ASSERT_TRUE(h_.client.SendData(uploading, std::string_view(frame).substr(0, 3), false));
+    const int32_t dispatched = SendUnary(GrpcRequest());
+    const int32_t refused = h_.client.OpenStream(GrpcRequest(refuseAtHeaders), false);
+    ASSERT_GT(refused, 0);
+    const int32_t reset = h_.client.OpenStream(GrpcRequest(), false);
+    ASSERT_GT(reset, 0);
+    const int32_t headersOnly = h_.client.OpenStream(GrpcRequest(), false);
+    ASSERT_GT(headersOnly, 0);
+    ASSERT_TRUE(h_.Pump());
+    ASSERT_TRUE(h_.client.SendRstStream(reset, h2::kCancel));
+    ASSERT_TRUE(h_.Pump());
+    ASSERT_EQ(h_.observer.completed.count(dispatched), 1u);
+    ASSERT_EQ(h_.observer.headerCalls.count(reset), 1u);
+
+    EXPECT_EQ(h_.server.AcceptedUndispatchedStreams(), (std::vector<int32_t>{uploading, headersOnly}));
+
+    for (const int32_t streamId : h_.server.AcceptedUndispatchedStreams())
+    {
+        EXPECT_TRUE(h_.server.RefuseStream(streamId));
+    }
+    EXPECT_TRUE(h_.server.AcceptedUndispatchedStreams().empty());
+    // 对端随后把请求传完:流已应答,不再交给上层。
+    ASSERT_TRUE(h_.client.SendData(uploading, std::string_view(frame).substr(3), true));
+    ASSERT_TRUE(h_.Pump());
+    EXPECT_EQ(h_.observer.completed.count(uploading), 0u);
+    const std::string refusedTrace = "R" + std::to_string(h2::kRefusedStream);
+    EXPECT_EQ(FrameTrace(StreamOf(h_.client, uploading)), refusedTrace);
+    EXPECT_EQ(FrameTrace(StreamOf(h_.client, headersOnly)), refusedTrace);
+    EXPECT_TRUE(h_.server.AcceptedUndispatchedStreams().empty());
+}
+
 // ── metadata 收取规则(§15.5.4) ─────────────────────────────────────────
 
 TEST_F(ServerSessionTest, MetadataKeepsOnlyCustomKeysInWireOrder)

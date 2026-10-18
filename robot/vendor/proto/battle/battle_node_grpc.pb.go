@@ -20,17 +20,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BattleNode_CreateBattle_FullMethodName      = "/BattleNode/CreateBattle"
-	BattleNode_DestroyBattle_FullMethodName     = "/BattleNode/DestroyBattle"
-	BattleNode_AddObserver_FullMethodName       = "/BattleNode/AddObserver"
-	BattleNode_RemoveObserver_FullMethodName    = "/BattleNode/RemoveObserver"
-	BattleNode_IssueBattleTicket_FullMethodName = "/BattleNode/IssueBattleTicket"
+	BattleNode_QueryBattleCreation_FullMethodName = "/BattleNode/QueryBattleCreation"
+	BattleNode_CreateBattle_FullMethodName        = "/BattleNode/CreateBattle"
+	BattleNode_DestroyBattle_FullMethodName       = "/BattleNode/DestroyBattle"
+	BattleNode_AddObserver_FullMethodName         = "/BattleNode/AddObserver"
+	BattleNode_RemoveObserver_FullMethodName      = "/BattleNode/RemoveObserver"
+	BattleNode_IssueBattleTicket_FullMethodName   = "/BattleNode/IssueBattleTicket"
 )
 
 // BattleNodeClient is the client API for BattleNode service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BattleNodeClient interface {
+	QueryBattleCreation(ctx context.Context, in *QueryBattleCreationRequest, opts ...grpc.CallOption) (*QueryBattleCreationResponse, error)
 	CreateBattle(ctx context.Context, in *CreateBattleRequest, opts ...grpc.CallOption) (*CreateBattleResponse, error)
 	DestroyBattle(ctx context.Context, in *DestroyBattleRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	AddObserver(ctx context.Context, in *AddObserverRequest, opts ...grpc.CallOption) (*AddObserverResponse, error)
@@ -44,6 +46,16 @@ type battleNodeClient struct {
 
 func NewBattleNodeClient(cc grpc.ClientConnInterface) BattleNodeClient {
 	return &battleNodeClient{cc}
+}
+
+func (c *battleNodeClient) QueryBattleCreation(ctx context.Context, in *QueryBattleCreationRequest, opts ...grpc.CallOption) (*QueryBattleCreationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryBattleCreationResponse)
+	err := c.cc.Invoke(ctx, BattleNode_QueryBattleCreation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *battleNodeClient) CreateBattle(ctx context.Context, in *CreateBattleRequest, opts ...grpc.CallOption) (*CreateBattleResponse, error) {
@@ -100,6 +112,7 @@ func (c *battleNodeClient) IssueBattleTicket(ctx context.Context, in *IssueBattl
 // All implementations must embed UnimplementedBattleNodeServer
 // for forward compatibility.
 type BattleNodeServer interface {
+	QueryBattleCreation(context.Context, *QueryBattleCreationRequest) (*QueryBattleCreationResponse, error)
 	CreateBattle(context.Context, *CreateBattleRequest) (*CreateBattleResponse, error)
 	DestroyBattle(context.Context, *DestroyBattleRequest) (*base.Empty, error)
 	AddObserver(context.Context, *AddObserverRequest) (*AddObserverResponse, error)
@@ -115,6 +128,9 @@ type BattleNodeServer interface {
 // pointer dereference when methods are called.
 type UnimplementedBattleNodeServer struct{}
 
+func (UnimplementedBattleNodeServer) QueryBattleCreation(context.Context, *QueryBattleCreationRequest) (*QueryBattleCreationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method QueryBattleCreation not implemented")
+}
 func (UnimplementedBattleNodeServer) CreateBattle(context.Context, *CreateBattleRequest) (*CreateBattleResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateBattle not implemented")
 }
@@ -149,6 +165,24 @@ func RegisterBattleNodeServer(s grpc.ServiceRegistrar, srv BattleNodeServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&BattleNode_ServiceDesc, srv)
+}
+
+func _BattleNode_QueryBattleCreation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryBattleCreationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BattleNodeServer).QueryBattleCreation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BattleNode_QueryBattleCreation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BattleNodeServer).QueryBattleCreation(ctx, req.(*QueryBattleCreationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _BattleNode_CreateBattle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -248,6 +282,10 @@ var BattleNode_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "BattleNode",
 	HandlerType: (*BattleNodeServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "QueryBattleCreation",
+			Handler:    _BattleNode_QueryBattleCreation_Handler,
+		},
 		{
 			MethodName: "CreateBattle",
 			Handler:    _BattleNode_CreateBattle_Handler,

@@ -228,9 +228,12 @@ std::string ValidateStreamLedger(const AssetOpStreamLedger& ledger, int index) {
     previous = 0;
     for (const auto& receipt : ledger.receipts()) {
         if (receipt.seq() <= previous || receipt.seq() <= watermark || receipt.seq() > watermark + kAssetOpWindowBits ||
-            receipt.request_digest().size() != 32 || receipt.correlation_id() == 0 || !receipt.has_snapshot()) return prefix + "invalid instance receipt";
+            receipt.request_digest().size() != 32) return prefix + "invalid request identity receipt";
         previous = receipt.seq();
-        if (!TestBit(ledger, BitGroup::kApplied, static_cast<uint32_t>(receipt.seq() - watermark - 1))) return prefix + "receipt without applied outcome";
+        const auto bit = static_cast<uint32_t>(receipt.seq() - watermark - 1);
+        if (!TestBit(ledger, BitGroup::kSeen, bit)) return prefix + "receipt without seen outcome";
+        if (receipt.has_snapshot() && (!TestBit(ledger, BitGroup::kApplied, bit) || receipt.correlation_id() == 0))
+            return prefix + "instance receipt without applied outcome or correlation";
         if (receipt.snapshot().ByteSizeLong() > kAssetOpMaxSnapshotBytes) return prefix + "oversized instance receipt";
         for (const auto& item : receipt.snapshot().items()) if (item.instance_proto().empty() || item.instance_proto().size() > kAssetOpMaxInstanceBytes) return prefix + "invalid item receipt payload";
         if (receipt.snapshot().has_pet() && (receipt.snapshot().pet().instance_proto().empty() || receipt.snapshot().pet().instance_proto().size() > kAssetOpMaxInstanceBytes)) return prefix + "invalid pet receipt payload";
@@ -367,7 +370,8 @@ bool RecordAssetOpOutcome(AssetOpStreamLedger& ledger, uint64_t epoch, uint64_t 
 
 std::string ValidateAssetOpLedger(const PlayerAssetOpLedgerComp& comp) {
     size_t receiptBytes = 0;
-    for (const auto& stream : comp.streams()) for (const auto& receipt : stream.receipts()) receiptBytes += receipt.ByteSizeLong();
+    // 摘要由每流 1024 个窗口位置与固定 32 字节自然限界；大原件另计预算，ACK 后即可释放。
+    for (const auto& stream : comp.streams()) for (const auto& receipt : stream.receipts()) receiptBytes += receipt.snapshot().ByteSizeLong();
     if (receiptBytes > kAssetOpMaxPlayerReceiptBytes) return "asset receipts exceed player byte limit";
     uint64_t previousStream = 0;
     for (int i = 0; i < comp.streams_size(); ++i) {

@@ -160,25 +160,42 @@ const AssetOpReceipt* FindReceipt(const AssetOpStreamLedger& ledger, uint64_t se
 	return nullptr;
 }
 
-bool HasReceiptRoom(const PlayerAssetOpLedgerComp& comp, const AssetSnapshot& snapshot)
-{
-	if (snapshot.ByteSizeLong() > kSnapshotBytesLimit) return false;
-	size_t size = snapshot.ByteSizeLong() + 128;
-	for (const auto& stream : comp.streams()) for (const auto& receipt : stream.receipts()) size += receipt.ByteSizeLong();
-	return size <= kPlayerReceiptBytesLimit;
-}
-
 void StoreReceipt(PlayerAssetOpLedgerComp& comp, const AssetOpRequest& request, const AssetSnapshot& snapshot)
 {
-	if (snapshot.items_size() == 0 && !snapshot.has_pet()) return;
 	auto& ledger = MutableAssetOpStream(comp, request.stream());
-	auto* receipt = ledger.add_receipts();
+	AssetOpReceipt* receipt = nullptr;
+	for (auto& existing : *ledger.mutable_receipts())
+	{
+		if (existing.seq() == request.seq()) { receipt = &existing; break; }
+	}
+	if (receipt == nullptr) receipt = ledger.add_receipts();
 	receipt->set_seq(request.seq());
 	receipt->set_correlation_id(request.correlation_id());
 	receipt->set_request_digest(ReceiptDigest(request));
-	*receipt->mutable_snapshot() = snapshot;
+	if (snapshot.items_size() != 0 || snapshot.has_pet()) *receipt->mutable_snapshot() = snapshot;
+	else receipt->clear_snapshot();
 	std::sort(ledger.mutable_receipts()->begin(), ledger.mutable_receipts()->end(),
 		[](const auto& lhs, const auto& rhs) { return lhs.seq() < rhs.seq(); });
+}
+
+bool ReceiptMatches(const AssetOpReceipt* receipt, const AssetOpRequest& request)
+{
+	return receipt != nullptr && receipt->correlation_id() == request.correlation_id() &&
+		receipt->request_digest() == ReceiptDigest(request);
+}
+
+bool HasReceiptRoom(const PlayerAssetOpLedgerComp& comp, const AssetOpRequest& request, const AssetSnapshot& snapshot)
+{
+	if (snapshot.ByteSizeLong() > kSnapshotBytesLimit) return false;
+	// 预算按本次滑窗/换纪元后的状态核算，不能被即将剪掉的旧原件永久堵住。
+	// 资产 RPC 非 tick 热路径；有界复制同时避免预检修改真实账本。
+	auto prospective = comp;
+	auto& ledger = MutableAssetOpStream(prospective, request.stream());
+	if (!RecordAssetOpOutcome(ledger, request.stream_epoch(), request.seq(), AssetOpRecordKind::kApplied, 0)) return false;
+	StoreReceipt(prospective, request, snapshot);
+	size_t size = 0;
+	for (const auto& stream : prospective.streams()) for (const auto& receipt : stream.receipts()) size += receipt.snapshot().ByteSizeLong();
+	return size <= kPlayerReceiptBytesLimit;
 }
 
 // ── 响应小工具 ──────────────────────────────────────────────────────────────
@@ -210,8 +227,7 @@ using player_mutability::IsPlayerMutable;
 // 只看"确实落盘的字节":PlayerLastPersistedSnapshotComp.snapshot 是
 // HandlePlayerAsyncSaved 回调里写入的、刚写进 Redis 的整份 PlayerAllData。
 // 某 seq 的结局出现在这份快照的账本里 = durable。不另建"已持久化水位",不存在两份真相。
-bool IsAssetOpDurable(entt::entity player, AssetOpStream stream, uint64_t epoch, uint64_t seq,
-					  bool expectApplied)
+bool IsAssetOpDurable(entt::entity player, const AssetOpRequest& request, bool expectApplied)
 {
 	const auto* snapshotComp = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
 	if (snapshotComp == nullptr || !snapshotComp->HasSnapshot())
@@ -220,13 +236,14 @@ bool IsAssetOpDurable(entt::entity player, AssetOpStream stream, uint64_t epoch,
 	}
 
 	const auto& persisted = snapshotComp->snapshot->player_database_data().asset_op_ledger();
-	const auto* ledger = FindAssetOpStream(persisted, stream);
-	if (ledger == nullptr || ledger->stream_epoch() != epoch)
+	const auto* ledger = FindAssetOpStream(persisted, request.stream());
+	if (ledger == nullptr || ledger->stream_epoch() != request.stream_epoch() ||
+		!ReceiptMatches(FindReceipt(*ledger, request.seq()), request))
 	{
 		return false;
 	}
 
-	const auto state = ClassifyAssetOpSeq(ledger, epoch, seq);
+	const auto state = ClassifyAssetOpSeq(ledger, request.stream_epoch(), request.seq());
 	if (state == AssetOpSeqState::kApplied || state == AssetOpSeqState::kRejected)
 	{
 		const bool appliedOnDisk = (state == AssetOpSeqState::kApplied);
@@ -234,8 +251,8 @@ bool IsAssetOpDurable(entt::entity player, AssetOpStream stream, uint64_t epoch,
 		{
 			// 盘上的结局与内存里的结局不同:结局固定(I2)被破坏,只可能是 bug。
 			// 不敢报 durable,让 Go 继续重查并告警。
-			LOG_ERROR << "[AssetOp] Snapshot outcome differs from in-memory outcome stream=" << static_cast<int>(stream)
-					  << " epoch=" << epoch << " seq=" << seq
+			LOG_ERROR << "[AssetOp] Snapshot outcome differs from in-memory outcome stream=" << static_cast<int>(request.stream())
+					  << " epoch=" << request.stream_epoch() << " seq=" << request.seq()
 					  << " on_disk=" << AssetOpSeqStateName(state)
 					  << " expect_applied=" << expectApplied;
 			return false;
@@ -262,7 +279,7 @@ bool PersistAndProbeDurable(entt::entity player, const ::AssetOpRequest& request
 {
 	const bool wrote = RequestAssetOpPersist(player, nowMs);
 	const bool durable =
-		IsAssetOpDurable(player, request.stream(), request.stream_epoch(), request.seq(), expectApplied);
+		IsAssetOpDurable(player, request, expectApplied);
 	if (!wrote && !durable)
 	{
 		// bool facade 分不出相等跳过、交接跳过和拒存。这里只报告未排入新写且缺少落盘证据,
@@ -279,15 +296,11 @@ bool PersistAndProbeDurable(entt::entity player, const ::AssetOpRequest& request
 void AnswerSeenSeq(entt::entity player, const AssetOpStreamLedger& ledger, const ::AssetOpRequest& request,
 				   AssetOpSeqState state, int64_t nowMs, ::AssetOpResponse& response)
 {
-	if (const auto* receipt = FindReceipt(ledger, request.seq()))
-	{
-		if (receipt->correlation_id() != request.correlation_id() || receipt->request_digest() != ReceiptDigest(request))
-		{
-			Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle);
-			return;
-		}
-		*response.mutable_snapshot() = receipt->snapshot();
-	}
+	const auto* receipt = FindReceipt(ledger, request.seq());
+	// 旧位图没有原请求身份，不能替新请求背书；也不能清账本后重新扣发。
+	if (!ReceiptMatches(receipt, request))
+	{ Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle); return; }
+	if (receipt->has_snapshot()) *response.mutable_snapshot() = receipt->snapshot();
 	const bool applied = (state == AssetOpSeqState::kApplied);
 	if (applied)
 	{
@@ -305,7 +318,7 @@ void AnswerSeenSeq(entt::entity player, const AssetOpStreamLedger& ledger, const
 	}
 
 	bool durable =
-		IsAssetOpDurable(player, request.stream(), request.stream_epoch(), request.seq(), applied);
+		IsAssetOpDurable(player, request, applied);
 	if (IsPlayerMutable(player))
 	{
 		const auto* persistRequest = tlsEcs.actorRegistry.try_get<PlayerAssetOpPersistRequestComp>(player);
@@ -341,7 +354,9 @@ bool RecordOutcome(PlayerAssetOpLedgerComp& ledgerComp, const ::AssetOpRequest& 
 	}
 
 	auto& ledger = MutableAssetOpStream(ledgerComp, request.stream());
-	return RecordAssetOpOutcome(ledger, request.stream_epoch(), request.seq(), kind, reasonTipId);
+	if (!RecordAssetOpOutcome(ledger, request.stream_epoch(), request.seq(), kind, reasonTipId)) return false;
+	StoreReceipt(ledgerComp, request, AssetSnapshot{});
+	return true;
 }
 
 // 记一次拒绝并答复。reasonTipId = 0 是"中止占位"。
@@ -600,7 +615,7 @@ void ApplyDebit(entt::entity player, PlayerAssetOpLedgerComp& ledgerComp, const 
 		}
 		if (!snapshot.has_pet()) { RejectAndRecord(player, ledgerComp, request, kAssetInvalidBundle, nowMs, response); return; }
 	}
-	if (!HasReceiptRoom(ledgerComp, snapshot)) { Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetBagFull); return; }
+	if (!HasReceiptRoom(ledgerComp, request, snapshot)) { Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetBagFull); return; }
 	// 所有可预知失败均在副作用前复核。提交阶段若内部不变量损坏，记 partial 阻止对侧入账。
 	bool mutated = false;
 	uint32_t error = kSuccess;
@@ -975,6 +990,10 @@ void Decide(AssetOpRpc rpc, const ::AssetOpRequest& request, ::AssetOpResponse& 
 		return;
 	}
 
+	// APPLIED、REJECTED 和中止都须保存窗口内身份；预算拒绝必须先于任何资产改动。
+	if (!HasReceiptRoom(*ledgerComp, request, AssetSnapshot{}))
+	{ Answer(response, ASSET_OP_OUTCOME_RETRY, kAssetBagFull); return; }
+
 	// 6. 中止占位:给未见 seq 记一个 REJECTED(reason=0),此后这条 seq 永远拒绝。
 	// 战斗中也允许:它不改任何资产,只关一扇门。
 	if (isAbort)
@@ -1096,25 +1115,37 @@ void PlayerAssetOpSystem::AckReceipt(const ::AssetOpRequest& request, ::AssetOpR
 	for (auto& stream : *comp->mutable_streams())
 	{
 		if (stream.stream() != request.stream() || stream.stream_epoch() != request.stream_epoch()) continue;
-		for (int index = 0; index < stream.receipts_size(); ++index) if (stream.receipts(index).seq() == request.seq())
+		if (request.seq() <= stream.watermark())
 		{
-			if (stream.receipts(index).correlation_id() != request.correlation_id())
-			{ Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle); return; }
-			stream.mutable_receipts()->DeleteSubrange(index, 1);
-			RequestAssetOpPersist(player, nowMs);
+			// 仅清理已在业务 SQL 保存原件的待办；不能据此恢复原资产结局。
 			Answer(response, ASSET_OP_OUTCOME_APPLIED, 0);
 			return;
 		}
-		// 重复 ACK 不改业务结局。Go 仍须核对 SQL 证据中收据已移除，不能只信此 Redis 确认。
-		Answer(response, ASSET_OP_OUTCOME_APPLIED, 0);
-		const auto* persisted = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
-		if (persisted != nullptr && persisted->HasSnapshot())
+		for (auto& receipt : *stream.mutable_receipts()) if (receipt.seq() == request.seq())
 		{
-			const auto* saved = FindAssetOpStream(persisted->snapshot->player_database_data().asset_op_ledger(), request.stream());
-			response.set_durable(saved != nullptr && saved->stream_epoch() == request.stream_epoch() && FindReceipt(*saved, request.seq()) == nullptr);
+			if (!ReceiptMatches(&receipt, request) ||
+				ClassifyAssetOpSeq(&stream, request.stream_epoch(), request.seq()) != AssetOpSeqState::kApplied ||
+				IsAssetOpPartial(stream, request.seq()))
+			{ Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle); return; }
+			// 原件已入交易 SQL 才能 ACK；释放大快照，保留窗口内请求身份。
+			const bool changed = receipt.has_snapshot();
+			receipt.clear_snapshot();
+			const auto* last = tlsEcs.actorRegistry.try_get<PlayerAssetOpPersistRequestComp>(player);
+			if (changed || last == nullptr || nowMs - last->lastRequestMs >= kAssetOpResaveMinIntervalMs)
+				RequestAssetOpPersist(player, nowMs);
+			Answer(response, ASSET_OP_OUTCOME_APPLIED, 0);
+			const auto* persisted = tlsEcs.actorRegistry.try_get<PlayerLastPersistedSnapshotComp>(player);
+			if (persisted != nullptr && persisted->HasSnapshot())
+			{
+				const auto* saved = FindAssetOpStream(persisted->snapshot->player_database_data().asset_op_ledger(), request.stream());
+				const auto* savedReceipt = saved == nullptr ? nullptr : FindReceipt(*saved, request.seq());
+				response.set_durable(saved != nullptr && saved->stream_epoch() == request.stream_epoch() &&
+					ReceiptMatches(savedReceipt, request) && !savedReceipt->has_snapshot());
+			}
+			return;
 		}
-		const auto* last = tlsEcs.actorRegistry.try_get<PlayerAssetOpPersistRequestComp>(player);
-		if (last == nullptr || nowMs - last->lastRequestMs >= kAssetOpResaveMinIntervalMs) RequestAssetOpPersist(player, nowMs);
+		// 旧位图无摘要不等于完成释放，交由业务待办保持 UNKNOWN。
+		Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle);
 		return;
 	}
 	Answer(response, ASSET_OP_OUTCOME_UNKNOWN, kAssetInvalidBundle);

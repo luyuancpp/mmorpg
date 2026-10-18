@@ -117,3 +117,25 @@
 3. 被拒写进死信复用 `quarantineOrderingConflict` 的 R2 路径（Kafka 分支 `persistBeforeAck` 异步确认，`CountTaskDeadLetter` 只在确认成功后计数），不另写同步 LPUSH。
 4. older_seq 先 confirm 再 ack；confirm 失败按现有「可重试、不推进游标」处理。
 5. `db_fence_write_total` 等新指标追加在 `metrics.go` 现有指标之后，label 为封闭集合，不带 player_id。
+
+## 8. 2026-10-17 统一接手 Go 围栏续批（Codex，实施中）
+
+负责人本轮明确授权统一接手剩余围栏代码，保留已有 R2/R3/R7 改动并完成附件及交易到账闭环；本批不再等待 §7.1 的旧开工信号。路线继续采用 v0.4，不新增平行围栏。尚未编译、测试或部署。
+
+本批负责 go/db 的行内围栏结局、令牌发布、游标与 epoch 原子推进、冷读 NX、计数器回退探测、对应指标与压测汇总固定契约和回归测试。预计 24 个手写文件；若超出则分批报告。精确边界：`internal/kafka/{key_ordered_consumer,player_row_fence,player_cache_publish,ordering_lease,store_failure}.go` 及相关既有测试、`internal/locker/locker.go`、`internal/config/config.go`、`db.go`、`etc/db.yaml`、`internal/metrics/{metrics,pipeline,metrics_test}.go`、`tools/scripts/{stress_summarize,test_stress_summarize}.ps1`、`deploy/k8s/db-task-retry-alerts.yaml`。独立 SQL 收据读取与冷登录屏障由本轮主线统一处理，本批不改这些入口。
+
+
+### 8.1 Go 核心批文件交付（2026-10-17，待主线统一测试）
+
+Go 核心子批共 24 个手写文件（含本交接与设计附注），按两个接缝审阅：SQL 结局/Redis 原子发布与相应既有测试；玩家主池/placement 池的强会话约束和可选 owner 计数器连接配置。指标、汇总脚本、告警及 ordering_lease 文首说明已交由本轮独立切片接手。没有改 R2/R3 的重试认领、R7 的分区世代校验或独立 SQL reader 契约。
+
+真实 SQL 入口回归 `TestIntegrationSQLCommitLeaseLossReplayAndOldEpochEvidence` 验证资产+收据同一行提交、提交后失租不发布、异载荷 equal 重投只发布 SQL 旧账本、older 不推进 offset、新 epoch override 与旧 epoch 不能改资产证据；`TestIntegrationPlayerSQLFenceLegacyCompatibilityKeepsCommittedFence` 验证 legacy 保列和 class-2 保 seq。夹具使用随机库，须主线显式设置 `ASSET_FENCE_TEST_DSN`（不含库名）与 `ASSET_FENCE_REQUIRE_TIDB=1` 后运行，不能把跳过视为通过。
+
+本子批未执行 go test/build；主线正在统一编译与验收。源码 SHA 清单保存在忽略的 `build/asset-fence-20261017/go-db-owned-source-sha.json`，最终证据必须对应该清单或更新后的清单。`epoch-raise` 运维命令、迁移现有无屏障存档与生产灰度/容量验证未在本子批实施，不能据代码落地宣称 2000 万同时在线能力。
+
+## 8. 状态订正（2026-10-18）
+
+- **go/db 结局处理已由 Codex 完成**：负责人 2026-10-17 授权 Codex 统一接手剩余 Go 围栏（「旧交接 §7.1 的等待信号不再阻挡本批」），§7 表里「go/db 结局处理」一行与 §7.1 的开工信号不再适用。Codex 落了明确写结局、令牌 / 租约校验与缓存 / SQL 证据 / 双表 ACK 原子发布、被拒任务沿 R2 持久化后 ACK 路径、C++ 父快照 pending 与补投索引等，并有真库、C++ 单测与隔离双区实跑证据（邮件与交易到账各 1/1）。记录见 `docs/PROGRESS.md` 的「2026-10-17 附件/交易到账与 SQL 围栏统一续批」「…双区闭环补验」两条，证据在 `build/asset-arrival-20261017/`。默认仍是 legacy，切 dual 与停旧写者门禁未切生产。
+- **本线 2026-10-18 收尾**：码 25 并回 `pinnedCodes`（W3-2）；新增告警 `SceneManagerPlacementIdentityConflict`（scene-manager-alerts.yaml）与 `AssetOpAbandonSqlEvidenceBehind`（asset-channel-alerts.yaml）；资产证据异常告警已由 Codex 以 `DbAssetSQLCommitAnomaly`（owner-epoch-alerts.yaml）覆盖，不再另加。
+- **仍待 Codex 验证（本线交付、尚无运行记录）**：客户端接线、robot sync-smoke、进场链 a–e 三组，以及 C++ 发号器的 `save_seq_test`（Codex 的 C++ 证据覆盖了 currency / bag，未提 cross_zone_test）。命令见 [codex-verification.md](codex-verification.md)。
+- **仍登记、另立项**：keep_newer 速率阈值（等上线基线）；e 方案 C、C-F8、§9 残余 7、6b 多算一人（已提新任务卡片）；W3-1 盖章接线行为测试；容差改 scene 配置键；scene 主机时钟偏差监控；自动放弃第二条放行条件（需 proto 带证据版本）；proto2mysql v0.3.0 发版（负责人）。

@@ -9,8 +9,14 @@
     Modes (exactly one):
       • -ToDatetime: reset to a specific UTC timestamp (PITR-style)
       • -ToEarliest / -ToLatest: reset to topic boundaries
-      • -DeleteAndRecreateTopic: nuke the topic and recreate it (most aggressive — used
-        when the rollback target time is older than topic retention)
+      • -DeleteAndRecreateTopic: nuke the topic and recreate it (most aggressive).
+        db_task topic(db_task_zone_<id>[_g<gen>])一律拒绝(2026-10-17,R7 复核 [1]):go/db 的已落库游标
+        consumer:applied:<topic>:<key>:<type> 只按 topic 名区分、永不过期,且在共享 DB0 里(回档 Step 4 的防护恰好不清它)。
+        同名重建后各分区 offset 从 0 重新开始,新存盘的 seq 都不大于旧游标,被判为 orderingStale:跳过落库、照常提交位点,
+        存盘静默丢失,直到新 offset 追上旧值。要换一个空 topic,走 ServerConfig.Kafka.TopicGeneration 换代(新 topic 名就是新的游标命名空间;
+        go/db、login、merge_zone、k8s_deploy 都按它推导 topic 名)。
+        其它 topic:必须显式给 -Partitions 与 -ReplicationFactor,且都要等于现有 topic 的分区数与副本数(先 describe 核对,读不到就拒绝);
+        删除后等 topic 消失(--list 失败或 30s 超时即失败,不 create),重建后再 describe 复核。
       • -FinalizeHandoff: 交接收尾(docs/design/db-consumer-group-per-zone.md §5)。go/db 的消费组按 zone 拆分后,
         每次正向(db_rpc_consumer_group → db_rpc_consumer_group_z<id>)或反向交接完成,都要删除旧组在本 topic 上的位点:
         先逐分区确认新权威组(-Group)已接手(有数值位点且不小于旧组;没有位点的分区只在 earliest == latest 即空分区时放行),
@@ -69,13 +75,14 @@
         -FinalizeHandoff
 
 .EXAMPLE
-    # Nuclear: delete topic and recreate (zone rollback fallback when binlog spans > retention)
+    # Nuclear: delete a (non db_task) topic and recreate it with the same partition count / replication factor.
+    # db_task_zone_<id>[_g<gen>] is refused: bump go/db ServerConfig.Kafka.TopicGeneration instead (see .DESCRIPTION).
     pwsh -File tools/scripts/kafka_offset_reset.ps1 `
         -BootstrapServer kafka:9092 `
-        -Topic db_task_zone_101 `
+        -Topic <topic> `
         -DeleteAndRecreateTopic `
-        -Partitions 5 `
-        -ReplicationFactor 1 `
+        -Partitions <现有分区数> `
+        -ReplicationFactor <现有副本数> `
         -Apply
 #>
 param(
@@ -98,7 +105,10 @@ param(
     # Required when -DeleteAndRecreateTopic / -FinalizeHandoff / -RetireGroup.
     # 重置模式下给了(> 0)就要求重置计划覆盖 0..N-1;取 go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt。
     [int]$Partitions = 0,
-    [int]$ReplicationFactor = 1,
+    # -DeleteAndRecreateTopic 必填(> 0),且必须等于现有 topic 的副本数。0 = 没给。
+    # 以前缺省为 1:3 broker 档(min.insync.replicas=2)上重建出 RF=1 的 topic,acks=all 的写全部 NotEnoughReplicas,
+    # go/shared/kafkautil 的启动校验也会判 replication contract mismatch。
+    [int]$ReplicationFactor = 0,
 
     # Path to the Kafka CLI (default: assume on PATH).
     # On a typical Confluent / Apache Kafka install:
@@ -177,6 +187,9 @@ function Invoke-KafkaToolCaptured {
         $code = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $prevErrorAction
+        # 退出码只经返回值报告。全局 LASTEXITCODE 复位为 0:被判为可接受的非 0(如「组不存在」的 describe)不能漏到调用方 ——
+        # k8s_zone_rollback.ps1 Step 5 与 dev_tools.ps1 按 $LASTEXITCODE 判定本脚本成败(R7 复核 [5])。
+        $global:LASTEXITCODE = 0
     }
     return [pscustomobject]@{ Lines = $lines; ExitCode = $code }
 }
@@ -322,6 +335,65 @@ function Remove-RetiredGroupTopicOffsets {
     Write-Host "  OK: group $RetireGroup has no committed offsets on $Topic anymore" -ForegroundColor Green
 }
 
+<#
+.SYNOPSIS
+    解析 kafka-topics.sh --describe --topic <t> 的摘要行,返回 @{ PartitionCount [int]; ReplicationFactor [int] };找不到就 throw(纯函数)。
+.DESCRIPTION
+    摘要行形如 "Topic: t<TAB>TopicId: x<TAB>PartitionCount: 5<TAB>ReplicationFactor: 3<TAB>Configs: …"(旧版本冒号后没有空格),
+    只认 topic 名与 -Topic 完全相同的那一行;同一 topic 出现两行摘要也 throw(不猜)。
+#>
+function ConvertFrom-KafkaTopicDescribe {
+    param(
+        [AllowEmptyCollection()][AllowNull()][string[]]$Lines,
+        [Parameter(Mandatory = $true)][string]$Topic
+    )
+    $found = @()
+    foreach ($raw in @($Lines | ForEach-Object { "$_" })) {
+        $match = [regex]::Match($raw, '^\s*Topic:\s*(?<t>\S+)\s.*?PartitionCount:\s*(?<p>\d+)\s+ReplicationFactor:\s*(?<r>\d+)')
+        if ($match.Success -and $match.Groups['t'].Value -ceq $Topic) {
+            $found += [pscustomobject]@{ PartitionCount = [int]$match.Groups['p'].Value; ReplicationFactor = [int]$match.Groups['r'].Value }
+        }
+    }
+    if ($found.Count -ne 1) {
+        throw "kafka-topics --describe 的输出里 topic $Topic 的 PartitionCount / ReplicationFactor 摘要行有 $($found.Count) 行(期望恰好 1 行),读不出现有 topic 的分区数与副本数"
+    }
+    return $found[0]
+}
+
+<#
+.SYNOPSIS
+    删除 topic 之后等它从 --list 里消失;--list 失败或超时都 throw(不进入 create)。
+.DESCRIPTION
+    Kafka 的删除是异步的。以前 --list 失败时 2>$null 让判断结果为空、被当成「已消失」,30s 超时也照样 create。
+    超时用单调时钟(Stopwatch)计,-TimeoutSec 0 = 只看一次。throw 时 topic 可能已删、尚未重建:broker 开着 auto.create.topics.enable 时
+    producer 会把它自动建成 num.partitions(=1)个分区,错误文本要求先停掉该 topic 的生产者再手工重建。
+#>
+function Wait-KafkaTopicDeleted {
+    param(
+        [Parameter(Mandatory = $true)][string]$TopicTool,
+        [Parameter(Mandatory = $true)][string]$BootstrapServer,
+        [Parameter(Mandatory = $true)][string]$Topic,
+        [Parameter(Mandatory = $true)][int]$TimeoutSec,
+        [int]$PollMilliseconds = 1000,
+        [Parameter(Mandatory = $true)][string]$RecreateHint
+    )
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($true) {
+        $listed = Invoke-KafkaToolCaptured -Tool $TopicTool -Arguments @("--bootstrap-server", $BootstrapServer, "--list")
+        try {
+            Assert-KafkaToolOutputClean -Lines $listed.Lines -ExitCode $listed.ExitCode -Tool "kafka-topics --list" -Consequence '判不出 topic 是否已删除'
+        }
+        catch {
+            throw "删除之后读不到 topic 列表,没有重建 ${Topic}:$($_.Exception.Message)。$RecreateHint"
+        }
+        if (@($listed.Lines | Where-Object { "$_".Trim() -ceq $Topic }).Count -eq 0) { return }
+        if ($stopwatch.Elapsed.TotalSeconds -ge $TimeoutSec) {
+            throw "topic $Topic 在删除之后 ${TimeoutSec}s 内仍在 --list 里(删除仍在进行),没有重建。$RecreateHint"
+        }
+        Start-Sleep -Milliseconds $PollMilliseconds
+    }
+}
+
 # ── Validate exactly one mode ─────────────────────────────────────
 $modes = @()
 if ($ToDatetime -ne "")        { $modes += "ToDatetime" }
@@ -355,6 +427,16 @@ if ($RetireGroup -ne "") {
         throw "-RetireGroup 不能等于 -Group($Group):那会删掉权威组自己在 $Topic 上的位点"
     }
 }
+# -DeleteAndRecreateTopic 的两条拒绝放在参数组合校验之后(参数组合本身错了先报组合错误),都早于解析任何 Kafka 工具。
+if ($DeleteAndRecreateTopic -and (Test-DbTaskTopicName -Topic $Topic)) {
+    throw ("-DeleteAndRecreateTopic 拒绝 db_task topic $Topic(尚未做任何改动):go/db 的已落库游标 consumer:applied:${Topic}:* 只按 topic 名区分、永不过期," +
+        "且在共享 DB0 里(回档 Step 4 不清它)。同名重建后 offset 从 0 重新开始,新存盘的 seq 都不大于旧游标,被判为 orderingStale 静默跳过,存盘丢失。" +
+        "要换一个空 topic,把 go/db / go/login 的 Kafka.TopicGeneration 加一(新 topic 名即新的游标命名空间,go/db、login、merge_zone、k8s_deploy 都按它推导)," +
+        "按 docs/design/db-task-kafka-partition-contract.md「离线扩容流程」换代;只想回到某个时间点,用 -ToDatetime / -ToEarliest / -ToLatest。")
+}
+if ($DeleteAndRecreateTopic -and $ReplicationFactor -le 0) {
+    throw "-DeleteAndRecreateTopic 必须显式给 -ReplicationFactor <副本数 > 0>,且等于现有 topic 的副本数(以前缺省 1:3 broker 档 min.insync.replicas=2 下重建出的 topic 写入全部 NotEnoughReplicas)"
+}
 
 $verb = if ($Apply) { "APPLY" } else { "DRY-RUN" }
 Write-Host "=== Kafka offset reset ($verb) ===" -ForegroundColor Cyan
@@ -370,36 +452,51 @@ Write-Host ""
 # ── DeleteAndRecreateTopic ────────────────────────────────────────
 if ($DeleteAndRecreateTopic) {
     $topicTool = Resolve-KafkaTool "kafka-topics.sh"
+    $createArgs = @("--bootstrap-server", $BootstrapServer, "--create", "--topic", $Topic, "--partitions", "$Partitions", "--replication-factor", "$ReplicationFactor")
+    $recreateHint = ("topic 此时可能已删除、尚未重建:broker 开着 auto.create.topics.enable 时 producer 会把它自动建成默认分区数(num.partitions)。" +
+        "立即停掉该 topic 的全部生产者,手工执行 kafka-topics.sh $($createArgs -join ' '),describe 核对 PartitionCount=$Partitions ReplicationFactor=$ReplicationFactor 后再恢复。")
 
+    # 删除之前先核对现有 topic 的分区数与副本数:读不到就不删(fail-closed)。重建必须保持原契约 ——
+    # 分区数变了等于换了按 key 的分区函数(要走 TopicGeneration 换代),副本数变了会撞上 min.insync.replicas 与启动校验。
     Write-Host "Step 1: describe (pre-delete)" -ForegroundColor Yellow
-    & $topicTool --bootstrap-server $BootstrapServer --describe --topic $Topic
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  (topic may not exist yet — continuing)"
+    $before = Invoke-KafkaToolCaptured -Tool $topicTool -Arguments @("--bootstrap-server", $BootstrapServer, "--describe", "--topic", $Topic)
+    $before.Lines | ForEach-Object { Write-Host "    $_" }
+    Assert-KafkaToolOutputClean -Lines $before.Lines -ExitCode $before.ExitCode -Tool "kafka-topics --describe" -Consequence "读不到 topic $Topic 的现状,没有删除任何东西"
+    $current = ConvertFrom-KafkaTopicDescribe -Lines $before.Lines -Topic $Topic
+    if ($current.PartitionCount -ne $Partitions -or $current.ReplicationFactor -ne $ReplicationFactor) {
+        throw ("拒绝删除 topic $Topic(尚未做任何改动):现有 PartitionCount=$($current.PartitionCount) ReplicationFactor=$($current.ReplicationFactor)," +
+            "与本次 -Partitions $Partitions -ReplicationFactor $ReplicationFactor 不一致。重建必须保持原分区数与副本数;要改分区数走 TopicGeneration 换代。")
     }
 
     if (-not $Apply) {
-        Write-Host "[DRY-RUN] Would delete topic '$Topic' and recreate with partitions=$Partitions rf=$ReplicationFactor" -ForegroundColor Yellow
+        Write-Host "[DRY-RUN] Would delete topic '$Topic' and recreate with partitions=$Partitions rf=$ReplicationFactor (matches the existing topic)" -ForegroundColor Yellow
         exit 0
     }
 
     Write-Host "Step 2: delete" -ForegroundColor Yellow
-    & $topicTool --bootstrap-server $BootstrapServer --delete --topic $Topic
-    if ($LASTEXITCODE -ne 0) { throw "kafka-topics --delete failed" }
+    $deleted = Invoke-KafkaToolCaptured -Tool $topicTool -Arguments @("--bootstrap-server", $BootstrapServer, "--delete", "--topic", $Topic)
+    $deleted.Lines | ForEach-Object { Write-Host "    $_" }
+    Assert-KafkaToolOutputClean -Lines $deleted.Lines -ExitCode $deleted.ExitCode -Tool "kafka-topics --delete" -Consequence "删除是否生效不确定。$recreateHint"
 
-    # Kafka delete is async; wait for it to disappear before recreating.
-    $deadline = (Get-Date).AddSeconds(30)
-    while ((Get-Date) -lt $deadline) {
-        $exists = (& $topicTool --bootstrap-server $BootstrapServer --list 2>$null) -match "^$([regex]::Escape($Topic))$"
-        if (-not $exists) { break }
-        Start-Sleep -Seconds 1
-    }
+    # Kafka 的删除是异步的:等它从 --list 里消失再 create;--list 失败或超时都 throw,不 create。
+    Wait-KafkaTopicDeleted -TopicTool $topicTool -BootstrapServer $BootstrapServer -Topic $Topic -TimeoutSec 30 -RecreateHint $recreateHint
 
     Write-Host "Step 3: create" -ForegroundColor Yellow
-    & $topicTool --bootstrap-server $BootstrapServer --create `
-        --topic $Topic --partitions $Partitions --replication-factor $ReplicationFactor
-    if ($LASTEXITCODE -ne 0) { throw "kafka-topics --create failed" }
+    $created = Invoke-KafkaToolCaptured -Tool $topicTool -Arguments $createArgs
+    $created.Lines | ForEach-Object { Write-Host "    $_" }
+    Assert-KafkaToolOutputClean -Lines $created.Lines -ExitCode $created.ExitCode -Tool "kafka-topics --create" -Consequence "topic $Topic 已删除但重建失败。$recreateHint"
 
-    Write-Host "OK: topic '$Topic' recreated with $Partitions partitions" -ForegroundColor Green
+    Write-Host "Step 4: describe (post-create)" -ForegroundColor Yellow
+    $after = Invoke-KafkaToolCaptured -Tool $topicTool -Arguments @("--bootstrap-server", $BootstrapServer, "--describe", "--topic", $Topic)
+    $after.Lines | ForEach-Object { Write-Host "    $_" }
+    Assert-KafkaToolOutputClean -Lines $after.Lines -ExitCode $after.ExitCode -Tool "kafka-topics --describe" -Consequence "重建之后读不到 topic $Topic 的现状。$recreateHint"
+    $recreated = ConvertFrom-KafkaTopicDescribe -Lines $after.Lines -Topic $Topic
+    if ($recreated.PartitionCount -ne $Partitions -or $recreated.ReplicationFactor -ne $ReplicationFactor) {
+        throw ("topic $Topic 重建之后是 PartitionCount=$($recreated.PartitionCount) ReplicationFactor=$($recreated.ReplicationFactor)," +
+            "不是期望的 $Partitions / $ReplicationFactor(可能在删除与重建之间被 producer 自动创建了)。$recreateHint")
+    }
+
+    Write-Host "OK: topic '$Topic' recreated with $Partitions partitions, replication factor $ReplicationFactor" -ForegroundColor Green
     exit 0
 }
 
@@ -484,8 +581,13 @@ if ($planProblems.Count -gt 0) {
 }
 
 if ($Apply) {
-    # 复核必须先于删除 -RetireGroup 的位点:重置静默无效时再删掉旧组位点,两组都没有位点,
-    # go/db 会从 Oldest 重放整个保留期(回档 Step 4 已 FLUSHDB 清掉游标,写不会被游标吸收)。
+    # 复核必须先于删除 -RetireGroup 的位点:重置静默无效时再删掉旧组位点,两组都没有位点,go/db 会从 Oldest 重放整个保留期。
+    # 重放的写是否被游标吸收取决于 Redis 里的 consumer:applied 游标还在不在,不能假定回档清过它(R7 复核 [4]):
+    #   - K8s 上游标在共享 DB0,回档 Step 4 的 FLUSHDB 防护(k8s_zone_rollback.ps1 Get-SharedRedisGuardPatterns 含 consumer:applied*)
+    #     恰好拒绝清它:已落过库的消息 seq 不大于游标,判 stale 吸收;从未推进过游标的(zone-down 时的积压、本 topic 的重试收据)照常落库;
+    #   - 游标被清(本机单库,或带 -ConfirmFlushSharedRedis)时没有游标,按 apply_no_cursor 全部重新落库。
+    # 回档要「丢弃 TargetTime 之后的写」还是「从 TargetTime 起灾难恢复重放」尚待负责人裁决(docs/design/zone_data_rollback.md、
+    # db-consumer-group-per-zone.md §3(d) 与回档脚本 Step 5 现有说法不一致),本脚本只负责把位点改到计划值并复核。
     Write-Host "Step: verify committed offsets of $Group on $Topic equal the plan" -ForegroundColor Yellow
     $afterReset = Invoke-KafkaConsumerGroupDescribe -CgTool $cgTool -BootstrapServer $BootstrapServer -Group $Group -Topic $Topic
     $verifyProblems = Get-ResetVerificationProblems -Plan $plan -Described $afterReset -Partitions $Partitions
@@ -506,3 +608,8 @@ if ($Apply) {
         Write-Host "[DRY-RUN] With -Apply, once the reset is verified, committed offsets of $RetireGroup on $Topic are deleted (kafka-consumer-groups.sh --delete-offsets)." -ForegroundColor Yellow
     }
 }
+# 成功路径显式以 0 退出,与 -FinalizeHandoff / -DeleteAndRecreateTopic 两个分支一致;失败一律 throw(R7 复核 [5])。
+# 调用方(k8s_zone_rollback.ps1 Step 5 与第 0 步 d、dev_tools.ps1 kafka-offset-reset)按 $LASTEXITCODE 判定成败:不显式 exit 时,
+# 它停在最后一次原生调用的退出码上 —— 「组不存在」的 describe 在有的 Kafka 版本以非 0 退出、被判为 missing 后正常返回,
+# 回档就会在 PITR / FLUSHDB 之后把成功判成失败。
+exit 0

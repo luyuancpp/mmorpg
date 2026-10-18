@@ -150,6 +150,7 @@
 
 - `task:result:notify` 统一方案:
   - DBTask 加 `string reply_instance = 9;`(9 号空闲,`proto/db/db_task.proto:10-21`);
+    - **2026-10-18 更正**:字段号最终为 **10**(9 号已给 `save_seq`,godb 交接 §5 第 13 项)。第 1 批(proto、`go/shared/taskresult`、login 双订与读任务填回复目标)已落码,未编译、待 Codex 验证;go/db 按回复目标发布与计数是第 2 批。校验规则以 `go/shared/taskresult.ValidReplyInstance` 为准(与上面的正则同义)。
   - go/db 按 `^[A-Za-z0-9-]{1,64}$` 校验后发 `task:result:notify:<id>`,不合法就回落旧频道并计数;**只单发,不双发**;
   - 新 login 永久同时订阅新旧两条频道;
   - C++ scene 也生产 DBTask(`player_lifecycle.cpp:3713`),pb 要重新生成并全量编译;

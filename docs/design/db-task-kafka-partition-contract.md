@@ -56,8 +56,13 @@ Kafka 扩分区会重映射一部分 key；新 partition 的 offset 与旧 parti
    2026-10-16 起还有按原始分区拆开的 ready 列表 `kafka:retry:queue:{topic}:p{N}`（④ 重试只交给分区属主，
    `ServerConfig.Kafka.RetryRouting: owner` 时写入；键名见 `go/db/internal/kafka/retry_routing.go` 的
    `retryPartitionReadyKey`），同样都要为 0：用 `redis-cli --scan --pattern 'kafka:retry:queue:{topic}:p*'`
-   列出后逐个 `LLEN`；或在 `go/db` 下跑 `go run ./cmd/retry_requeue -f etc/db.yaml -check`（只读盘点，
+   列出后逐个 `LLEN`；或在 `go/db` 下跑 `go run ./cmd/retry_requeue -f etc/db.yaml -zone <zone> -check`（只读盘点，
    有非空的按分区 ready 列表时以退出码 3 结束）。已落码，未编译、未测试，待 Codex 验证。
+   2026-10-17 更正（R7 复核）：`-zone` 必填：R7 之前缺省取配置文件里的 ZoneId，漏了会盘点别的 zone 的 topic 并以 0 退出（fail-open）；现在不给 `-zone` 直接以退出码 1 退出，一条不动（`resolveTarget`）；
+   代次取 `-f` 配置的 `TopicGeneration`，这一步查的是旧 generation，配置已改成新代时加 `-topic-generation <旧代>`。
+   只有退出码 0 才算通过：目标看起来没在用（登记表为空、所有重试列表都是 0，多半是参数指错）以 4 结束，
+   登记表里还有登记为 owner 模式的实例以 5 结束，参数 / 配置 / Redis 出错以 1 结束（`go/db/cmd/retry_requeue/main.go` 的
+   `exitTargetUnused` = 4、`exitOwnerInstances` = 5、`exitError` = 1，p* 非 0 是 `exitResidual` = 3）。已落码，未编译、未测试，待 Codex 验证。
 4. 停止旧 db consumer。此时 MySQL 已包含旧 generation 的最终状态。
 5. 在 login 与 db 配置中同时设置 `TopicGeneration: 2`、`PartitionCnt: 20`、
    `InitialPartition: 20`（login），并在同一次提交里把 C++ 的
@@ -97,7 +102,7 @@ Kafka 扩分区会重映射一部分 key；新 partition 的 offset 与旧 parti
 ## 分区函数契约（2026-10-16，① 读写分区对齐）
 
 > 状态：已落码，未编译、未测试，待 Codex 验证。Go 与 C++ 代码已随 `a7c510d65` / `592d7e718` / `0f6690604` 等快照提交入库；
-> 告警文件 `deploy/k8s/db-task-partition-alerts.yaml` 截至 2026-10-16 工作区尚未提交。验证与上线清单见 [上线待做](../ops/godb-pipeline-launch-todo.md) §5。
+> 告警文件 `deploy/k8s/db-task-partition-alerts.yaml` 随 `e76f6f747` 入库。验证与上线清单见 [上线待做](../ops/godb-pipeline-launch-todo.md) §5。
 
 ### 契约
 
@@ -178,6 +183,12 @@ C++ 发送路径；**以后若加「从 yaml 透传 librdkafka 参数」的能�
    测的是运行时加载的 `rdkafka.dll`，「运行时库就是 vendored 版本」因此成了被测条件（复核意见）。
 6. 冷读冒烟删键前「确认 W 真的到了 broker」改为在 Kafka 侧确认（复核意见，见下文第 2 步）：scene 日志
    "[SavePlayerToRedis] Player … saved to Redis, DB write tasks enqueued" 在发送失败时也会打印，`send` 成功也只说明进了 librdkafka 本地队列。
+   **2026-10-17 更正（R7 复核）**：「发送失败时也会打印」这处已修。`cpp/libs/services/scene/player/system/player_lifecycle.cpp` 的
+   `SavePlayerToRedisImpl` 里的 `publishDbTasks` 按是否全部入队分两种文案：两张子表的 DBTask 都同步入队，才打原文 `saved to Redis, DB write tasks enqueued`；
+   没全入队时先有逐条的 ERROR `[SavePlayerToRedis] Kafka send failed: …` 与汇总 ERROR `not every DB write task was queued to Kafka`，
+   再打 INFO `saved to Redis, DB write tasks NOT all queued (see the ERROR above)`，不再出现 `DB write tasks enqueued`。
+   全部入队也只说明进了 librdkafka 本地队列、不等于 acks=all，所以第 2 步仍以 Kafka 侧的 end offset 与抽样复核为准，不变。
+   已落码，未编译、未测试，待 Codex 验证。
 
 ---
 
@@ -247,7 +258,7 @@ C++ 发送路径；**以后若加「从 yaml 透传 librdkafka 参数」的能�
 2. **在 Kafka 侧确认写 W 已到 broker**：登出前记下该玩家所在分区 p = `DBTaskPartition(key, N)` 的 end offset（`kafka-get-offsets.sh --time -1`）；
    登出、看到存盘日志后确认这个 end offset 增长了；再用 console consumer `--partition p --offset <旧 end>` 抽到 key=<id>、op=write 的那条
    （复用上面的抽样复核器解析）；同时确认该玩家没有 "Kafka send failed" 日志。以上都满足才允许删键。
-3. 从父键解出 W 的 `test_seq`；删掉父键与两个子表键（键名规则见 dataloader 的 `buildParentKey` / `buildCacheKey`），不要删 `consumer:applied*` 键。
+3. 从父键解出 W 的 `test_seq`；删掉父键与两个子表键（父键见 login dataloader `go/login/internal/logic/pkg/dataloader/data_loader.go` 的 `buildParentKey`，子表键见 `go/db/internal/kafka/key_ordered_consumer.go` 的 `buildCacheKey`，格式 `{MsgType}:{key}`），不要删 `consumer:applied*` 键。
 4. robot 再次登录（login 日志出现 "LoadSync: sending … DB read tasks"），2 秒内拉起 go/db。
 5. 判定：预加载超时（`entergame_total{result="preload_failed"}` 加 1、日志出现 "task result wait timed out"）判为不确定、重跑；进场成功后解码父键里的
    `player_database.stress_test_probe.test_seq`，等于 W 判通过，小于 W 判失败。至少 5 次有结论且全部通过。
@@ -287,7 +298,7 @@ go/db 的读后写屏障（`processTaskBatch`：反向那一遍里读遇到同 (
 4. 父键缺失、子表缓存还在：login（`ensure_player_all_data_async.go`）逐张子表判断，命中的直接用缓存、不发读；**部分命中时拼出来的是新旧混合档**。
 5. 再平衡排空超时后旧实例仍在执行的写（G1，见[瓶颈文档](db-task-pipeline-bottlenecks.md) §4.4）。
 
-**放大效应**：`publishDBReadResult` 会把读结果回写子表缓存（`{MsgType}:{key}`，TTL 为 `cacheTTL`，缺省 24h），缺口 1 / 2 / 3 / 5 里读到的旧值
+**放大效应**：`publishDBReadResult` 会把读结果回写子表缓存（`{MsgType}:{key}`，TTL 取 `ServerConfig.RedisClient.DefaultTTLSeconds`：`go/db/etc/db.yaml` 与 K8s db ConfigMap 均为 3600s；配置 ≤ 0 时 `cacheTTL` 才回落 24h），缺口 1 / 2 / 3 / 5 里读到的旧值
 因此会延续到缓存过期，并经缺口 4 在后续冷登录里被直接复用。
 
 **触发条件**：C++ 无 TTL 地 SET 父键；本机 Redis 是 `noeviction`（`deploy/docker-compose.yml`），K8s 的 `redis.yaml` 不设 `--maxmemory`，所以现网不存在驱逐。

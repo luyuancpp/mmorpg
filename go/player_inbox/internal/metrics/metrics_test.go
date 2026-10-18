@@ -7,6 +7,10 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -71,7 +75,8 @@ func hasAll(have map[string]bool, want ...string) bool {
 
 // TestRegisterExposesEveryMetric 钉住 Register(设计 §9.4):全部指标挂进默认注册表、带 player_inbox_ 前缀;
 // 连接池指标带 db_name="player_inbox";critical / 结果类计数器预建零值序列;重复调用不 panic(只注册一次)。
-// Register 进程内只生效一次,所以它的断言集中在这一个用例里,别的用例不调 Register。
+// Register 进程内只生效一次,所以它的断言集中在这一个用例里;别的用例要调 Register 就传同一种假库
+// (TestAlertRulesReferenceRegisteredMetrics),谁先跑结果都一样。
 func TestRegisterExposesEveryMetric(t *testing.T) {
 	logtest.Discard(t)
 	db, err := sql.Open(fakeDriverName, "")
@@ -104,13 +109,15 @@ func TestRegisterExposesEveryMetric(t *testing.T) {
 	}
 
 	// 零值序列:「从未发生」与「指标不存在」在告警规则里必须分得开。
-	// 评审 L6 拆出 nodes_unsynced / node_ambiguous(会自愈、留给补发),no_node 只剩不可恢复、已落定的两种。
+	// 评审 L6 拆出 nodes_unsynced / node_ambiguous(会自愈、留给补发);评审 R3 再拆出 node_missing(镜像已同步却查不到
+	// 节点,可能只是租约抖动,按退避重试),no_node 只剩「位置记录既无节点也无 epoch」这一种已落定的结局。
 	if got := labelValues(families["player_inbox_notify_total"], "result"); !hasAll(got,
-		"sent", "offline", "awaiting_placement", "no_node", "empty_uuid", "error", "nodes_unsynced", "node_ambiguous") {
+		"sent", "offline", "awaiting_placement", "no_node", "empty_uuid", "error", "nodes_unsynced", "node_ambiguous",
+		"node_missing") {
 		t.Errorf("notify_total 的预建序列 = %v", got)
 	}
-	if got := NotifyResultLabels(); len(got) != 8 {
-		t.Errorf("NotifyResultLabels = %v, want 8 个(与 inbox.NotifyResult 逐一对应,见 TestNotifyResultLabelsArePreregistered)", got)
+	if got := NotifyResultLabels(); len(got) != 9 {
+		t.Errorf("NotifyResultLabels = %v, want 9 个(与 inbox.NotifyResult 逐一对应,见 TestNotifyResultLabelsArePreregistered)", got)
 	}
 	if got := labelValues(families["player_inbox_reconcile_ledger_read_total"], "result"); !hasAll(got, "found", "absent", "error", "invalid") {
 		t.Errorf("reconcile_ledger_read_total 的预建序列 = %v", got)
@@ -142,6 +149,90 @@ func TestRegisterExposesEveryMetric(t *testing.T) {
 					t.Errorf("%s 带了玩家维度的标签 %s", name, label)
 				}
 			}
+		}
+	}
+}
+
+// alertRulesFile 是收件箱的 Prometheus 告警规则,相对本包目录(go/player_inbox/internal/metrics,go test 的工作目录)。
+var alertRulesFile = filepath.Join("..", "..", "..", "..", "deploy", "k8s", "player-inbox-alerts.yaml")
+
+// alertMetricName 匹配告警文件里的收件箱指标名。\b 排除库名 mmorpg_player_inbox 这类词的后半截。
+var alertMetricName = regexp.MustCompile(`\bplayer_inbox_[a-z0-9_]+`)
+
+// TestAlertRulesReferenceRegisteredMetrics 是告警文件与指标注册之间的机械守卫(评审 L11 / A 批复核 R1):
+// player-inbox-alerts.yaml 里凡是以 player_inbox_ 开头的词(表达式、注释、描述都算,文件头写明了这条约定)
+// 都必须是 Register 之后默认注册表里真有的指标。
+//
+// 起因:L11 把 reconcile_mismatch_total 计数器换成 gauge,唯一引用它的 critical 告警没跟着改;
+// increase() 对不存在的序列返回空集,告警静默失效,而全仓没有任何测试会红。
+//
+// 名字的对应:计数器在本包 Name 里就写成 xxx_total,Gather 给的族名本身带 _total,不用剥;直方图 / 摘要在表达式里
+// 写的是 _bucket / _sum / _count 序列,按后缀还原成族名、并核对族的类型再比。
+// 文件读不到、一个名字都抽不到都判红:这条守卫不能静默失效。
+func TestAlertRulesReferenceRegisteredMetrics(t *testing.T) {
+	logtest.Discard(t)
+	raw, err := os.ReadFile(alertRulesFile)
+	if err != nil {
+		t.Fatalf("读告警规则 %s 失败(移动了文件就同步改这里): %v", alertRulesFile, err)
+	}
+	seen := map[string]bool{}
+	for _, m := range alertMetricName.FindAll(raw, -1) {
+		seen[string(m)] = true
+	}
+	if len(seen) == 0 {
+		t.Fatalf("%s 里一个 player_inbox_* 名字都没抽到(改了写法就同步改这里的正则)", alertRulesFile)
+	}
+	names := make([]string, 0, len(seen))
+	for n := range seen {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+
+	db, err := sql.Open(fakeDriverName, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	// Register 进程内只生效一次;本用例与 TestRegisterExposesEveryMetric 谁先跑都带上同一种假库,结果一样。
+	Register(db)
+	// 没有预置序列的向量要有过一条子序列才会出现在 Gather 里。只建子序列、不加数,不影响别的用例按增量断言。
+	enqueueTotal.WithLabelValues("gm_block_currency_gain", "created")
+	fetchTotal.WithLabelValues("scene_gm_sanction", "match", "locked")
+	ackTotal.WithLabelValues("scene_gm_sanction", "finalized")
+	voidTotal.WithLabelValues("scene_gm_sanction", "cancelled", "force")
+
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("Gather: %v", err)
+	}
+	kinds := make(map[string]string, len(families)) // 族名 → 类型(COUNTER / GAUGE / HISTOGRAM / SUMMARY …)
+	for _, f := range families {
+		kinds[f.GetName()] = f.GetType().String()
+	}
+	registered := func(name string) bool {
+		if _, ok := kinds[name]; ok {
+			return true
+		}
+		for _, suffix := range []string{"_bucket", "_sum", "_count"} {
+			base, ok := strings.CutSuffix(name, suffix)
+			if !ok {
+				continue
+			}
+			switch kinds[base] {
+			case "HISTOGRAM":
+				return true
+			case "SUMMARY":
+				if suffix != "_bucket" {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	for _, name := range names {
+		if !registered(name) {
+			t.Errorf("%s 引用了 %s,默认注册表里没有这个指标:要么指标已改名 / 删除(同步改告警文件),"+
+				"要么它是没有预置序列的向量(在本用例开头给它建一条子序列)", alertRulesFile, name)
 		}
 	}
 }

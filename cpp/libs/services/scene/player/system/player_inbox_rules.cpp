@@ -19,6 +19,11 @@ namespace player_inbox_rules
 		static_assert(std::size(kDurabilityNames) == static_cast<std::size_t>(Durability::kCount),
 					  "名字表与 Durability 脱节");
 
+		constexpr const char *kItemActionNames[] = {"execute",     "skip_voided",   "replay",
+													"ack_unknown", "halt_mismatch", "halt_unknown_directive"};
+		static_assert(std::size(kItemActionNames) == static_cast<std::size_t>(ItemAction::kCount),
+					  "名字表与 ItemAction 脱节");
+
 		// 环按 seq 升序且 ≤ kRecentCapacity 条:线性扫即可,不值得为 32 条建索引。
 		const PlayerInboxDecision *FindRecent(const PlayerInboxDomainCursor &cursor, uint64_t seq)
 		{
@@ -175,15 +180,50 @@ namespace player_inbox_rules
 		{
 			return DeliveryClass::kUnknown;
 		}
-		if (recorded->request_id() != requestId || recorded->msg_type() != msgType)
-		{
-			return DeliveryClass::kMismatch;
-		}
+		// 先拷再核对:kMismatch 时也要把账本里那一条带出去,否则停用那行 ERROR 的 ledger_request_id /
+		// ledger_msg_type 恒为 0,值班会误判成"账本损坏"而不是"同 seq 被另一个请求占用"(评审 F4)。
+		// 拷出来的只供日志,能不能回放由返回值决定(契约见头文件)。
 		if (replayed != nullptr)
 		{
 			*replayed = *recorded;
 		}
+		if (recorded->request_id() != requestId || recorded->msg_type() != msgType)
+		{
+			return DeliveryClass::kMismatch;
+		}
 		return DeliveryClass::kReplay;
+	}
+
+	const char *ItemActionName(ItemAction action)
+	{
+		const auto index = static_cast<std::size_t>(action);
+		return index < std::size(kItemActionNames) ? kItemActionNames[index] : "?";
+	}
+
+	ItemAction PlanItem(DeliveryClass deliveryClass, uint32_t directive)
+	{
+		switch (deliveryClass)
+		{
+		case DeliveryClass::kReplay:
+			return ItemAction::kReplay;
+		case DeliveryClass::kUnknown:
+			return ItemAction::kAckUnknown;
+		case DeliveryClass::kNew:
+			break;
+		case DeliveryClass::kMismatch:
+		case DeliveryClass::kCount:
+		default:
+			return ItemAction::kHaltMismatch;
+		}
+		if (directive == static_cast<uint32_t>(player_inbox::PLAYER_INBOX_DIRECTIVE_VOID))
+		{
+			return ItemAction::kSkipVoided;
+		}
+		if (directive != static_cast<uint32_t>(player_inbox::PLAYER_INBOX_DIRECTIVE_NONE))
+		{
+			return ItemAction::kHaltUnknownDirective;
+		}
+		return ItemAction::kExecute;
 	}
 
 	const char *DurabilityName(Durability durability)
@@ -239,5 +279,10 @@ namespace player_inbox_rules
 		}
 		constexpr uint64_t kMsPerMinute = 60ULL * 1000ULL;
 		return ApplyJitter(static_cast<uint64_t>(minutes) * kMsPerMinute, jitterPermille, kPeriodicJitterPercent);
+	}
+
+	bool IsStuckWarnDue(uint32_t failStreak)
+	{
+		return failStreak != 0 && failStreak % kStuckWarnEveryFailures == 0;
 	}
 } // namespace player_inbox_rules

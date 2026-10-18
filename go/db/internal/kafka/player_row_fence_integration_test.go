@@ -1,12 +1,20 @@
 package kafka
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"database/sql"
+	"db/internal/logic/pkg/proto_sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"github.com/stretchr/testify/require"
 	"os"
+	assetpb "proto/common/asset"
+	"shared/assetop"
+	"shared/ownerepoch"
+	"shared/savebarrier"
 	"sync"
 	"testing"
 	"time"
@@ -63,7 +71,7 @@ func openAssetFenceFixture(t *testing.T) *proto2mysql.DB {
 	if err = model.OpenDB(handle, name); err != nil {
 		t.Fatal(err)
 	}
-	// 这些用例验证 dual 下的行内围栏;缺省 legacy 时 savePlayerRow 直接让调用者走普通 Save。
+	// 这些用例验证 dual 下的行内围栏；legacy 的更新保留字段由专项真库用例验证。
 	if err := SetFencingMode(db_config.FencingModeDual); err != nil {
 		t.Fatal(err)
 	}
@@ -83,11 +91,16 @@ func fenceRow(balance uint64) *playerpb.PlayerDatabase {
 	return &playerpb.PlayerDatabase{PlayerId: 42, Currency: &componentpb.CurrencyComp{Values: []uint64{0, balance}}}
 }
 
+var errPlayerRowStale = errors.New("测试期拒写结局适配")
+
 func writeFence(t *testing.T, model *proto2mysql.DB, epoch, seq, balance uint64) error {
 	t.Helper()
-	handled, err := savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: 42, OwnerEpoch: epoch, SaveSeq: seq}, fenceRow(balance))
+	handled, outcome, err := savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: 42, OwnerEpoch: epoch, SaveSeq: seq}, fenceRow(balance))
 	if !handled {
 		t.Fatal("玩家行未进入 SQL 围栏")
+	}
+	if err == nil && !outcome.publishes() {
+		return errPlayerRowStale
 	}
 	return err
 }
@@ -114,7 +127,7 @@ func TestIntegrationPlayerSQLFenceRejectsLateAndConflictingWrites(t *testing.T) 
 	if err := writeFence(t, model, 10, 2, 80); err != nil {
 		t.Fatal(err)
 	}
-	for _, v := range [][2]uint64{{10, 1}, {10, 0}, {0, 0}, {9, 999999}} {
+	for _, v := range [][2]uint64{{10, 1}, {0, 0}, {9, 999999}} {
 		if err := writeFence(t, model, v[0], v[1], 999); !errors.Is(err, errPlayerRowStale) {
 			t.Fatalf("旧存盘必须拒绝 %v: %v", v, err)
 		}
@@ -145,7 +158,7 @@ func TestIntegrationPlayerSQLFenceSerializesConcurrentSaves(t *testing.T) {
 		group.Add(1)
 		go func(seq uint64) {
 			defer group.Done()
-			_, err := savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: 42, OwnerEpoch: 12, SaveSeq: seq}, fenceRow(seq))
+			_, _, err := savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: 42, OwnerEpoch: 12, SaveSeq: seq}, fenceRow(seq))
 			if err != nil && !errors.Is(err, errPlayerRowStale) {
 				failures <- err
 			}
@@ -166,7 +179,7 @@ func TestIntegrationPlayerSQLFenceSerializesConcurrentSaves(t *testing.T) {
 	cancelled, cancel := context.WithCancel(context.Background())
 	cancel()
 	before := proto.Clone(got)
-	if _, err := savePlayerRow(cancelled, model, &dbpb.DBTask{Key: 42, OwnerEpoch: 12, SaveSeq: 18}, fenceRow(18)); err == nil {
+	if _, _, err := savePlayerRow(cancelled, model, &dbpb.DBTask{Key: 42, OwnerEpoch: 12, SaveSeq: 18}, fenceRow(18)); err == nil {
 		t.Fatal("取消的写不得提交")
 	}
 	got = &playerpb.PlayerDatabase{PlayerId: 42}
@@ -196,7 +209,7 @@ func TestIntegrationPlayerSQLFenceConcurrentFirstSavesOfDifferentPlayersDoNotDea
 			go func(playerID uint64) {
 				defer group.Done()
 				<-start
-				_, err := savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: playerID, OwnerEpoch: 7, SaveSeq: 1}, fenceRowFor(playerID, playerID))
+				_, _, err := savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: playerID, OwnerEpoch: 7, SaveSeq: 1}, fenceRowFor(playerID, playerID))
 				if err != nil {
 					failures <- err
 				}
@@ -235,12 +248,12 @@ func TestIntegrationPlayerSQLFenceConcurrentFirstSavesOfSamePlayerKeepMaxVersion
 			defer group.Done()
 			<-start
 			task := &dbpb.DBTask{Key: playerID, OwnerEpoch: 3, SaveSeq: seq}
-			_, err := savePlayerRow(context.Background(), model, task, fenceRowFor(playerID, seq))
+			_, _, err := savePlayerRow(context.Background(), model, task, fenceRowFor(playerID, seq))
 			// 已登记的残余窗口（v0.4 §4.8 先行修复注）：同一玩家首个自动提交 INSERT 回滚、后面排着 ≥2 笔时
 			// 会 1213。生产上同一玩家的写由 key 分片加排序租约串行到不了；这里 8 路故意并发，按管线的重试吸收一次。
 			var myErr *mysql.MySQLError
 			if errors.As(err, &myErr) && myErr.Number == 1213 {
-				_, err = savePlayerRow(context.Background(), model, task, fenceRowFor(playerID, seq))
+				_, _, err = savePlayerRow(context.Background(), model, task, fenceRowFor(playerID, seq))
 			}
 			if err != nil && !errors.Is(err, errPlayerRowStale) {
 				failures <- err
@@ -260,4 +273,140 @@ func TestIntegrationPlayerSQLFenceConcurrentFirstSavesOfSamePlayerKeepMaxVersion
 	if got.FenceSaveSeq != 8 || got.Currency.Values[1] != 8 {
 		t.Fatalf("最终只能保留最大保存版本: %v", got)
 	}
+}
+
+// 真实 SQL 资产行先提交，再模拟令牌易主：没有缓存/证据/游标；重投 equal 后才一起发布。
+// Redis 只用隔离 miniredis 执行真实 Lua，SQL 从未由 handler 替身冒充成功。
+func TestIntegrationSQLCommitLeaseLossReplayAndOldEpochEvidence(t *testing.T) {
+	model := openAssetFenceFixture(t)
+	w, mr, _ := newTestWorker(t, 0)
+	storesOf(t, w).stores[testZoneID] = &proto_sql.GameDB{SqlModel: model}
+	dbOpHandlers["write"] = handleDBWriteOp
+	ledger := &componentpb.PlayerAssetOpLedgerComp{Streams: []*componentpb.AssetOpStreamLedger{{StreamEpoch: 1, MaxSeq: 1, SeenBits: []uint64{1}, AppliedBits: []uint64{1}, Receipts: []*componentpb.AssetOpReceipt{{Seq: 1, RequestDigest: bytes.Repeat([]byte{0x31}, 32), CorrelationId: 91}}}}}
+	row := fenceRow(100)
+	row.AssetOpLedger = ledger
+	makeTask := func(epoch, saveSeq, cursor, balance uint64) *workerTask {
+		next := proto.Clone(row).(*playerpb.PlayerDatabase)
+		next.Currency.Values[1] = balance
+		raw, err := proto.Marshal(next)
+		require.NoError(t, err)
+		return &workerTask{dbTask: &dbpb.DBTask{Key: 42, Op: "write", MsgType: "player_database", TaskId: fmt.Sprintf("fence-e%d-s%d-c%d", epoch, saveSeq, cursor), OwnerEpoch: epoch, SaveSeq: saveSeq, Body: raw}, seq: cursor, originPartition: 0, hasOriginPartition: true}
+	}
+	require.NoError(t, w.redisClient.Set(w.ctx, ownerepoch.OwnerEpochKey(42), "7", 0).Err())
+	first := makeTask(7, 9, 10, 100)
+	// 保留真实 SQL 入口，仅在其返回后切换锁令牌，复现已提交但发布前失租。
+	dbOpHandlers["write"] = func(ctx context.Context, store *proto2mysql.DB, task *dbpb.DBTask, msg proto.Message) (writeOutcome, error) {
+		outcome, err := handleDBWriteOp(ctx, store, task, msg)
+		if err == nil {
+			require.NoError(t, mr.Set(orderingLockRedisKey(w, task), "successor"))
+		}
+		return outcome, err
+	}
+	firstSession := attachKafkaClaim(t, w, first)
+	w.handleTask(first, false)
+	require.Equal(t, []int64{9}, firstSession.marked(), "重试副本落稳后才能确认 Kafka")
+	sqlRow := &playerpb.PlayerDatabase{PlayerId: 42}
+	require.NoError(t, model.FindOneByPK(sqlRow))
+	require.Equal(t, uint64(100), sqlRow.Currency.Values[1])
+	require.Equal(t, uint64(7), sqlRow.FenceOwnerEpoch)
+	require.Equal(t, uint64(9), sqlRow.FenceSaveSeq)
+	require.True(t, proto.Equal(ledger, sqlRow.AssetOpLedger), "资产与操作收据必须处于同一 SQL 行")
+	for _, key := range []string{buildCacheKey(first.dbTask), assetop.SQLCommitKey(42), savebarrier.Key(42), appliedSeqKey(w.topic, 42, "player_database"), appliedEpochKey(w.topic, 42, "player_database")} {
+		require.False(t, mr.Exists(key), key)
+	}
+	require.Equal(t, int64(1), redisListLen(t, w, w.retryQueueKey))
+	require.NoError(t, w.redisClient.Del(w.ctx, orderingLockRedisKey(w, first.dbTask)).Err())
+	dbOpHandlers["write"] = handleDBWriteOp
+	retry := claimRetry(t, w)
+	require.NotNil(t, retry)
+	// 同 (E,S) 的不同载荷仍判 equal，但发布内容只能来自先提交的 SQL 行。
+	forged := proto.Clone(row).(*playerpb.PlayerDatabase)
+	forged.Currency.Values[1] = 999
+	forged.AssetOpLedger.Streams[0].Receipts[0].RequestDigest = bytes.Repeat([]byte{0x99}, 32)
+	forgedRaw, err := proto.Marshal(forged)
+	retry.dbTask.Body = forgedRaw
+	require.NoError(t, err)
+	w.handleTask(retry, false)
+	require.Zero(t, redisListLen(t, w, w.retryProcessingKey))
+	require.Zero(t, redisListLen(t, w, w.retryQueueKey))
+	raw, err := w.redisClient.HGet(w.ctx, assetop.SQLCommitKey(42), "data").Bytes()
+	require.NoError(t, err)
+	commit := &assetpb.PlayerAssetSQLCommit{}
+	require.NoError(t, proto.Unmarshal(raw, commit))
+	ledgerRaw, err := (proto.MarshalOptions{Deterministic: true}).Marshal(sqlRow.AssetOpLedger)
+	require.NoError(t, err)
+	require.Equal(t, uint64(7), commit.OwnerEpoch)
+	require.Equal(t, uint64(9), commit.SaveSeq)
+	require.Equal(t, ledgerRaw, commit.LedgerProto)
+	require.Equal(t, savebarrier.Version(7, 9), mr.HGet(savebarrier.Key(42), "player_database"))
+	cursorBefore, err := w.redisClient.Get(w.ctx, appliedSeqKey(w.topic, 42, "player_database")).Result()
+	require.NoError(t, err)
+	// SQL older_seq 不推进高 Kafka offset，也不改变收据；它仍需通过 placement + token 核验。
+	older := makeTask(7, 8, 11, 999)
+	session := attachKafkaClaim(t, w, older)
+	w.handleTask(older, false)
+	require.Equal(t, []int64{10}, session.marked())
+	cursorAfter, err := w.redisClient.Get(w.ctx, appliedSeqKey(w.topic, 42, "player_database")).Result()
+	require.NoError(t, err)
+	require.Equal(t, cursorBefore, cursorAfter)
+	// 新 owner 从较低 Kafka offset 兜底：override 原子改写 cursor，SQL 与证据进入新 epoch。
+	fencingEpochOverride.Store(true)
+	t.Cleanup(func() { fencingEpochOverride.Store(false) })
+	require.NoError(t, w.redisClient.Set(w.ctx, ownerepoch.OwnerEpochKey(42), "8", 0).Err())
+	newer := makeTask(8, 1, 5, 80)
+	w.handleTask(newer, false)
+	sqlRow = &playerpb.PlayerDatabase{PlayerId: 42}
+	require.NoError(t, model.FindOneByPK(sqlRow))
+	require.Equal(t, uint64(8), sqlRow.FenceOwnerEpoch)
+	require.Equal(t, uint64(80), sqlRow.Currency.Values[1])
+	cacheBefore, err := w.redisClient.Get(w.ctx, buildCacheKey(first.dbTask)).Bytes()
+	require.NoError(t, err)
+	proofBefore, err := w.redisClient.HGet(w.ctx, assetop.SQLCommitKey(42), "data").Bytes()
+	require.NoError(t, err)
+	stale := makeTask(7, 999, 12, 999)
+	w.handleTask(stale, false)
+	actual, err := w.redisClient.Get(w.ctx, buildCacheKey(first.dbTask)).Bytes()
+	require.NoError(t, err)
+	require.Equal(t, cacheBefore, actual)
+	actual, err = w.redisClient.HGet(w.ctx, assetop.SQLCommitKey(42), "data").Bytes()
+	require.NoError(t, err)
+	require.Equal(t, proofBefore, actual)
+	sqlRow = &playerpb.PlayerDatabase{PlayerId: 42}
+	require.NoError(t, model.FindOneByPK(sqlRow))
+	require.Equal(t, uint64(80), sqlRow.Currency.Values[1])
+	require.Equal(t, uint64(8), sqlRow.FenceOwnerEpoch)
+}
+
+func TestIntegrationPlayerSQLFenceLegacyCompatibilityKeepsCommittedFence(t *testing.T) {
+	model := openAssetFenceFixture(t)
+	require.NoError(t, writeFence(t, model, 20, 6, 100))
+	require.NoError(t, SetFencingMode("legacy"))
+	input := fenceRow(90)
+	input.FenceOwnerEpoch = 99
+	input.FenceSaveSeq = 99
+	handled, outcome, err := savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: 42, OwnerEpoch: 21, SaveSeq: 1}, input)
+	require.True(t, handled)
+	require.NoError(t, err)
+	require.True(t, outcome.publishes())
+	got := &playerpb.PlayerDatabase{PlayerId: 42}
+	require.NoError(t, model.FindOneByPK(got))
+	require.Equal(t, uint64(20), got.FenceOwnerEpoch)
+	require.Equal(t, uint64(6), got.FenceSaveSeq)
+	require.Equal(t, uint64(90), got.Currency.Values[1])
+	require.Zero(t, input.FenceOwnerEpoch)
+	require.NoError(t, SetFencingMode("dual"))
+	_, outcome, err = savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: 42, OwnerEpoch: 20}, fenceRow(80))
+	require.NoError(t, err)
+	require.Equal(t, writeApplied, outcome.kind)
+	got = &playerpb.PlayerDatabase{PlayerId: 42}
+	require.NoError(t, model.FindOneByPK(got))
+	require.Equal(t, uint64(6), got.FenceSaveSeq)
+	require.Equal(t, uint64(80), got.Currency.Values[1])
+	_, outcome, err = savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: 42}, fenceRow(999))
+	require.NoError(t, err)
+	require.Equal(t, writeLegacyAfterSeq, outcome.kind)
+	_, outcome, err = savePlayerRow(context.Background(), model, &dbpb.DBTask{Key: 42, OwnerEpoch: 19, SaveSeq: 99}, fenceRow(999))
+	require.NoError(t, err)
+	require.Equal(t, writeStaleOwner, outcome.kind)
+	require.Equal(t, uint64(20), outcome.storedEpoch)
 }

@@ -1,7 +1,7 @@
 # 节点间 muduo RPC:每次调用的回调、延后回包与完整的完成语义(RpcChannel 改造)
 
 > 状态:**批 1–5 已实施,未编译,待 Codex 验证**(2026-10-15,Claude)。用户授权实施到第 5 批,升级口径选「同 zone 停服一次切换」;
-> 实施与本文的偏离、未做项与验证步骤见 §18。批 6(玩家回包死链)与 gRPC 每次调用回调见 §19(2026-10-15 续,未编译)。**批 7 与剩余调用点迁移已实施,见 §20**(2026-10-16;第一步已 regen,rpc / scene / gate 随 Codex 的整组串行构建编过;§20.3 的第二步(四个方法删 proto)未 regen、未编译;专项测试都未跑);任务来源是交接 [`docs/handoff/rpc-channel-batch7-handoff-20261015.md`](../handoff/rpc-channel-batch7-handoff-20261015.md)。
+> 实施与本文的偏离、未做项与验证步骤见 §18。批 6(玩家回包死链)与 gRPC 每次调用回调见 §19(2026-10-15 续,未编译)。**批 7 与剩余调用点迁移已实施,见 §20**(2026-10-16;两步都已 regen,`message_id.txt` 共 8 条墓碑;生成器测试随 Codex 后续验证通过;C++ 第一步随 Codex 整组串行构建编过,第二步之后的整解构建被无关的 `world.cpp` 缺 include 阻断;C++ 专项测试都未跑,见 §20.7);任务来源是交接 [`docs/handoff/rpc-channel-batch7-handoff-20261015.md`](../handoff/rpc-channel-batch7-handoff-20261015.md)。
 > 本文不引用此前任何会话的方案为既定结论;`build/rpc-lambda-tools/`(被 .gitignore 忽略的早先尝试)不是本设计的一部分。
 > 事实核对基线:`54c9d775d`(2026-10-15 03:08)。行号以该提交为准,并发会话仍在改 gate 相关文件,动手前须重新核对。
 
@@ -205,7 +205,8 @@ struct OutstandingCall {
 - 每 channel 一个**惰性 tick**:有在途调用时 `runAfter(0.1s)`,触发后 `SweepTimeouts(now)`,仍有在途且未关闭才续挂;**从不 cancel**。
   tick 只捕获 `weak_ptr<RpcChannel>`,channel 没了 lock 失败即结束。不用"每调用一个 muduo Timer"(每次 new Timer + 两次 std::set 操作,
   且 gate 每条请求类客户端消息都是一次调用)。精度 ±100ms,RPC 超时是秒级;短于 100ms 的超时精度不保证。
-- 墙钟回拨会推迟 tick 唤醒(muduo Timestamp 是 gettimeofday)——引擎级残余,与 `RunAtMonotonic` 已登记的同一残余(`player_lifecycle.cpp:371-382`),本轮不解决;
+- ~~墙钟回拨会推迟 tick 唤醒(muduo Timestamp 是 gettimeofday)——引擎级残余,与 `RunAtMonotonic` 已登记的同一残余(`player_lifecycle.cpp:371-382`),本轮不解决;~~
+  *(2026-10-16:muduo `TimerQueue` 已改按单调时钟到期,此残余消除,见 [muduo-timer-cancellation-hazards.md](muduo-timer-cancellation-hazards.md)「定时器时钟」。)*
   计 `max_sweep_lateness_ms`(发现过期时刻 − 截止时刻)用以区分 loop 积压与时钟问题。
 - 测试接缝:`SweepTimeouts(SteadyTime now)` 公开(loop 线程调用),单测不依赖墙钟:CallMethod 前后取 t0/t1,真实截止必在 `[t0+T, t1+T]`;
   `SweepTimeouts(t0+T-1ns)` 必不过期、`SweepTimeouts(t1+T)` 必过期;用例超时一律设 1h,真实 tick 永不误触发。
@@ -340,6 +341,15 @@ B 回 A 的包也还能发出。契约写明:关机期间 done 里再 queueInLoo
 enableRetry 重连建出的 channel 一出生就是关闭态(`RpcClient::CloseChannel` 置位),新连接上不会再登记在途调用。残余:这段窗口里对已关闭 channel
 发起的 `CallMethod` 以 kNotSent 经 queueInLoop 投递,若排在拆除之后执行,回调里只能做 weak / try_get 查找(契约 (b) 本来就要求),不得依赖 ECS 与日志;
 Finalize 之后 acceptor 仍在监听,新连入的入站连接会建出未关闭的 channel(今天 scene 侧只经它单向推送)——这是既有问题,只登记。
+
+**2026-10-17 补:拆除前钩子(R7;已落码,未编译、未测试,待 Codex 验证)**。阶段 1 多了一个业务钩子 `Node::SetBeforeTeardown(BeforeTeardownFn)`(`node.h`,`using BeforeTeardownFn = std::function<void(Node &)>`)。
+`FinalizeTeardownInLoop` 在 `kafkaManager.Shutdown()`(producer 最后一次有界 flush)之后、`tlsRedis.Shutdown()` 之前调它,用成员 `beforeTeardownRan_` 保证每个 Node **只调一次**:
+gRPC 本地延后完成未排空(`GrpcClientLocalCompletionsDrained()` 为假)时本函数会 `queueInLoop` 重入自身让一轮,重入时不再调钩子(`kafkaManager.Shutdown()` 重入只返回缓存结果,不再 flush)。
+普通停机、身份冲突停机(冲突 drain 结束后走 `Shutdown()`)与 `~Node` 的兜底排空都经过 `FinalizeTeardownInLoop`,三条路都会调到它。调用时刻 Redis、ECS、节点注册表都还没拆,异步日志还在写文件;
+钩子只用来停掉还会推进业务的定时器、把仍未落定的事打进日志,不得再发起需要等待的异步工作,也不得同步阻塞(`node.h` 的 `SetBeforeTeardown` 注释)。
+目前只有 scene 设置了它(`cpp/nodes/scene/main.cpp`:`tlsRedisSystem.StopDbTaskDispatch()`,停 DBTask 回执 Pump 并打未落定玩家清单,见 [db-task-delivery-and-retention.md](db-task-delivery-and-retention.md) §A.5「停机」);gate / battle 没设,行为不变。
+以现行代码为准,阶段 1 的实际顺序是 `kafkaManager.Shutdown()` → 拆除前钩子(只一次)→ `tlsRedis.Shutdown()` →(需要时让轮)→ `tlsNodeContextManager.Clear()` → `tlsEcs.Clear()` → `logSystem.stop()` → 两跳 quit。
+上面第 2 条列的 ReleaseNodeId、etcd(`serviceDiscoveryManager.Shutdown()`)与 `clear<MuduoGrpcChannelPtr>`,现行代码里都已在阶段 0(`FinalizeShutdownInLoop`)执行。
 
 ## 7. 迟到回包与身份
 
@@ -580,6 +590,8 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 ### 18.2 已知行为变化(上线前需知)
 
 - gate 对**内层 Empty** 的客户端消息(移动类)单向发送:scene 对这类消息用 `SendErrorToClient` 填的错误应答(如玩家未载入)不再回到客户端,只在 scene 日志可见。
+  (2026-10-16 更正:这类消息在 `ProcessClientPlayerMessage` 里早返回、只记日志,从未经过 `SendErrorToClient`;后者唯一的调用方是已退役的 `Scene.InvokePlayerService`,
+  已随 §20.3 删除。行为结论「错误应答不回客户端,只在 scene 日志可见」不变。)
 - 内层非 Empty 的消息,scene 调用失败(12s 超时 / 断连 / 未发出 / 对端拒绝)时客户端收到带请求 id 的 1003;以前没有回执,只能等客户端自己的 15s 超时。
 - 握手应答丢失 3s 后重试(以前要等重连);对端自报身份与本端实体不一致时拒绝这次握手。
 - 外部 GM 工具调用 `GmGracefulShutdown` 必须带非 0 的调用 id 才能收到应答(`SECURITY.md`)。
@@ -619,7 +631,7 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 6. 测试:`rpc_controller_test` Rebuild 后全量与 `--gtest_filter=InflightIndex*:RpcChannel*:RpcChain* --gtest_shuffle --gtest_repeat=50`;
    `routing_identity`、`gate_security`;router_lane 独立 g++ 编译(命令已加 `-I cpp/libs/engine/core`)。
 7. 冒烟:`travel_smoke` 与 robot_smoke,gate / scene 日志里握手成功、`[RpcChannel] summary` 的 timeout / late_reply / legacy_id0_reply 为 0、
-   `Rejected deprecated RPC` 为 0、客户端请求类消息有回包。(批 7 起这条日志的关键字改为 `Rejected retired RPC`,冒烟判据见 §20.7。)
+   `Rejected deprecated RPC` 为 0、客户端请求类消息有回包。(批 7 已删掉产生这条日志的拒绝函数,关键字不再存在;现行冒烟判据见 §20.7 第 4 步。)
 8. 微基准 `DISABLED_RpcChannelBench.*` 改动前后各跑一次出对比表;没有对比表不声称「无性能回退」(AGENTS §6)。
 
 ### 18.5 遗留
@@ -717,11 +729,12 @@ WARN 的条数和 message_id.txt 的 diff(只改行、只追加、不删行)。
   卡在上限内;同批删掉只被它们使用的 `RegisterGameNodeSessionRequest` / `Response`(message.proto)、`BindSessionToGateRequest` / `Response`
   (gate_service.proto)、`NodeRouteMessageResponse`(message.proto)。`NodeRouteMessageRequest` 仍被 `Gate.SendMessageToPlayer` 使用,保留。
   全仓(C++ 非生成、Go、robot、Java 代码)没有这些消息的手写使用者。
-- regen 之前生成头仍声明这四个方法,所以守护段里先就地 `controller->SetFailed("<method> is retired: removed from proto, message id N is tombstoned")`
-  (调用方得到 `RPC_ERROR(HANDLER_FAILED)` / `kRemoteFailed`),regen 后方法连同守护段被生成器去掉,不留死代码。`RejectRetiredCall` 与它用的
+- regen 之前生成头仍声明这四个方法,所以守护段里先就地 `controller->SetFailed(...)` 作过渡(调用方得到 `RPC_ERROR(HANDLER_FAILED)` / `kRemoteFailed`);
+  当晚 regen 后方法连同守护段已被生成器去掉,不留死代码。`RejectRetiredCall` 与它用的
   `rpc_channel_stats.h` include 已从两个 handler 删除。regen 之后墓碑号是注册表空槽:新二进制本地发不出(`kNotSent`「message id not dispatchable」);
   旧二进制的对端发来时,服务端在派发前回 `RPC_ERROR(INVALID_REQUEST)`(`rpc_channel.cpp` 的 `IsDispatchableMessageId` 判据),调用方得到 `kRemoteRejected`、确定未执行。
-- `SendErrorToClient` 的调用方只有这两个 scene 方法,`cpp/libs/engine/core/network/error_handling_system.h` 连同 `core.vcxproj` / `.filters` 条目一并删除。
+- `SendErrorToClient` 唯一的调用方是 `Scene.InvokePlayerService`(七处全在它的方法体里;`Scene.SendMessageToPlayer` 与 `ProcessClientPlayerMessage` 从未调用),
+  `cpp/libs/engine/core/network/error_handling_system.h` 连同 `core.vcxproj` / `.filters` 条目一并删除。
 - 没有为退役写专门的自动化回归:regen 后方法不存在,墓碑号由 `IsDispatchableMessageId` 的既有测试覆盖;替代验证见 §20.7 第 4 步。
 
 ### 20.4 剩余调用点迁移(交接 §3 (a)–(d))
@@ -748,28 +761,35 @@ WARN 的条数和 message_id.txt 的 diff(只改行、只追加、不删行)。
 `proto/README.md`、`proto/friend/friend.proto`(旧发号注释改为历史说明)、`robot/travel_smoke_wire.go`、`client_gm_gate_test.cpp`、`player_service_interface.h`、
 `player_currency_handler.cpp` / `player_rollback_handler.cpp` 守护段注释;`guild-phase2/04-asset-channel.md`、`player-handler-deferred-reply.md`、
 `async-load-disconnect-reconnect-race.md`、`cross-zone-scene-travel.md`、`client-access-band-routing.md`、`reliable-player-inbox-20261014.md`
-各追加一句补注(不改旧结论);`cpp/nodes/gate/gate_gm_client_messages.h` 里「proto 一改就漂移」的注释按墓碑规则改写。日志关键字由 `Rejected deprecated RPC` 改为 `Rejected retired RPC`(§18.4 第 7 步已加指针)。
+各追加一句补注(不改旧结论);`cpp/nodes/gate/gate_gm_client_messages.h` 里「proto 一改就漂移」的注释按墓碑规则改写。第一步曾把日志关键字由 `Rejected deprecated RPC`
+改为 `Rejected retired RPC`;第二步删掉 `RejectRetiredCall` 后两个关键字都已不存在,现行判据见 §20.7 第 4 步(§18.4 第 7 步已加指针)。
 `player_lifecycle.cpp` 约 167 行(RpcSession 断连时的行为)与约 2690 行(会话绑定的用途)两处过时注释也已更正(只改注释行,未碰 `IsSceneChangeBusy`);
 `docs/design/error-reporting.md` 对 `SendErrorToClient` 的引用加了删除说明。
 
 ### 20.7 验证
 
-已有证据(不是针对本批的专项验证,且**只覆盖第一步**):Codex 2026-10-16 05:41–05:52 在共享工作区串行构建 rpc、scene、gate 等工程全部退出 0,时间晚于第一步 C++ 文件的最后改动
-(05:21)。第二步(10:24 之后的 proto 删除、四个守护段改写、删 error_handling_system.h 与工程条目、player_lifecycle.cpp 注释)未 regen、未编译、未测试;同一条记录写有生成器 cmd / prototools 测试、vet 与完整 proto-gen-build / proto-gen-run 退出 0(`docs/PROGRESS.md` 当日「全球大厅续批 C++ 最终构建」条)。
-未跑:protogen `internal/generator/cpp` 的新测试、`rpc_controller_test`、`proto_field_checker_test`、`routing_identity_test`、dev_tools 的 Pester 测试、冒烟。
+已有证据(都不是针对本批的专项验证):
+
+- 第一步:Codex 2026-10-16 05:41–05:52 在共享工作区串行构建 rpc、scene、gate 等工程全部退出 0,时间晚于第一步 C++ 文件的最后改动(05:21)
+  (`docs/PROGRESS.md` 当日「全球大厅续批 C++ 最终构建」条)。
+- 第二步:当晚 23:31 有会话用新生成器 regen,结果核对过——`message_id.txt` 0–313 连续、8 条墓碑(1 / 40 / 41 / 42 / 56 / 74 / 78 / 81)、
+  `kMaxRpcMethodCount = 314`,两个 handler 头不再声明这四个方法,守护段随方法一起消失。Codex 随后的验证(PROGRESS「C++ gRPC muduo 第 3–5 批:Codex 验证续跑」条)
+  记录 `proto-gen-build` 与生成器 `go test ./internal/... ./cmd` 全部通过,proto / core / rpc 等库编过;整解构建被 `cpp/libs/services/scene/world/world.cpp`
+  缺 `tlsEcs` 声明阻断(与本批无关,工作区已有人补 include),gate / scene 节点在第二步之后尚无编译证据。
+- 未跑:`rpc_controller_test`、`proto_field_checker_test`、`routing_identity_test`、dev_tools 的 Pester 测试、冒烟。
 
 1. protogen:`cd tools/proto_generator/protogen; $env:GOTOOLCHAIN='local'`;`gofmt -l ./internal ./cmd` 无输出;`go vet ./internal/... ./cmd`;
    `go test -mod=readonly ./internal/... ./cmd`(重点 `TestAssignMessageIds*`、`TestCheckMessageIdInputComplete*`、`TestParseMessageIdFile*`、`TestRender*`、
    `TestRpcMethodMetaInitLinesHaveNoHandler`、`TestGenerateWithSuffixSkipsReservedMessageIds`)。
-2. 不动点:`proto-gen-build` 后连跑两次 `proto-gen-run -UseBinary -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`,第二次零 diff;
-   第一次 regen 应恰好打 4 条「RPC method no longer in proto」WARN(1 / 40 / 42 / 56;若同时有别的会话删方法而超过 4 条会 Fatal,先核对再决定是否放行);
-   `git diff proto/message_id.txt` 只有 1 / 40 / 41 / 42 / 56 / 74 / 78 / 81 八行改成墓碑与他人的追加行、没有删行;`gate_service_handler.h` / `scene_handler.h`
-   不再声明这四个方法;`git -C ..\mmorpg-client status` 不变。批 7 不走 dev.bat(它用默认 yaml,会写客户端仓)。
+2. 不动点(两步的 regen 都已由并发会话完成,这里是复核):`proto-gen-build` 后连跑两次
+   `proto-gen-run -UseBinary -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`,两次都不应出现「RPC method no longer in proto」WARN,
+   `proto/message_id.txt` 零 diff(仍是 8 条墓碑、无删行),第二次整体零 diff;`git -C ..\mmorpg-client status` 不变。批 7 不走 dev.bat(它用默认 yaml,会写客户端仓)。
 3. C++:`rpc_controller_test`(Rebuild)、`proto_field_checker_test`、`routing_identity_test` 串行 `/m:1` 编译并运行;`rpc_controller_test.exe` 另跑
    `--gtest_filter=RpcClientLoopback.*:RpcSessionDeathTest.*:RpcChannel*:RpcChain* --gtest_shuffle --gtest_repeat=50`。
 4. 冒烟:`robot -c etc/travel_smoke.yaml` 与 robot_smoke;握手成功;`[RpcChannel] summary` 的 timeout / late_reply / legacy_id0_reply 为 0;
-   `Rejected retired RPC` 与 `Rejected deprecated RPC` 都为 0(regen 后这两个关键字在代码里都已不存在)。退役方法的替代验证(可选,需要能发原始帧的工具):regen 后
-   向 scene 发 1 / 40、向 gate 发 42 / 56,应得 `RPC_ERROR(INVALID_REQUEST)`(`kRemoteRejected`)。
+   gate / scene 日志里 `[RpcChannel] rejecting request: message_id=(1|40|41|42|56|74|78|81) ` 为 0(有就说明还有旧二进制在发已删方法,
+   `rpc_channel.cpp` 的 `RejectRequest` 日志);`Rejected retired RPC` / `Rejected deprecated RPC` 这两个旧关键字代码里已不存在,不用再查。
+   退役方法的替代验证(可选,需要能发原始帧的工具):向 scene 发 1 / 40、向 gate 发 42 / 56,应得 `RPC_ERROR(INVALID_REQUEST)`(`kRemoteRejected`)。
 5. `pwsh -NoProfile -File tools/scripts/tests/dev_tools_proto_gen_exit.tests.ps1`:`total=35 pass=35 fail=0`。
 6. robot:regen 之后 `cd robot; go mod vendor; go build -mod=vendor ./...`(vendor 会带上 go/proto 下别人未提交的改动,逐 hunk 审)。
 7. Java:主仓提交本批后在 Java 仓重跑 ContractSync(当前 Java 工作区已同步了带墓碑的副本,但 `SOURCE.properties` 记的提交与内容对不上),

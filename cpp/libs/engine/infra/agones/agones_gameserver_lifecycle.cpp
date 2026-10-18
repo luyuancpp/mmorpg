@@ -160,6 +160,7 @@ namespace agones
 		cv_.notify_all();
 
 		// 有界:在途请求被中止、重试与退避立即退出,join 不再等满 allocate 的重试链(见头文件 Stop())。
+		// 唯一多等的是挂起或在途的 /shutdown:worker 退出前送达它,最多多 timeouts.total。
 		worker_.join();
 
 		std::lock_guard<std::mutex> lock(mutex_);
@@ -214,7 +215,10 @@ namespace agones
 
 	bool GameServerLifecycle::WaitSatisfiedLocked(std::uint64_t startGeneration) const
 	{
+		// ShuttingDown 是终态(不走 Stop 时一直停在这里):挂起的 allocate 会被 worker 丢弃,不会再有结果,
+		// 等下去只会等满上限再误报"allocate 未确认"。
 		return state_ == LifecycleState::Allocated
+			|| state_ == LifecycleState::ShuttingDown
 			|| allocateResultGeneration_ != startGeneration
 			|| stopRequested_
 			|| draining_;
@@ -222,6 +226,24 @@ namespace agones
 
 	bool GameServerLifecycle::FinishWaitLocked(bool reservePermit)
 	{
+		if (stopRequested_ || state_ == LifecycleState::Stopped)
+		{
+			// 等待期间 Stop():与 DecideWithoutWaitLocked「已停即拒绝」、异步等待方由 Stop() 统一拒绝同一口径 ——
+			// 停止标志置位之后不再签发任何许可。worker 抢先拿锁写入 Allocated(在途 /allocate 恰在中止生效前成功)
+			// 时也一样拒绝:实例随 Pod 删除作废,放行只会让一个创建落进正在停机的进程,并留下在途许可。
+			// 判定放在排空与状态之前:醒来的原因是停机,就按停机报,不误报成"allocate 未确认"的 ERROR。
+			// 异步等待方走不到这里:Stop() 在置位 stopRequested_ 的同一临界区里已摘下全部异步等待者,
+			// 此后的异步调用由 DecideWithoutWaitLocked 当场拒绝,不再登记。
+			LOG_WARN << "[Agones] refusing allocation permit: lifecycle stopped while waiting for allocate";
+			return false;
+		}
+		if (state_ == LifecycleState::ShuttingDown)
+		{
+			// 等待期间进程决定自我终止(RequestShutdown,不走 Stop):与 DecideWithoutWaitLocked 同一口径拒绝。
+			// worker 取走 /shutdown 时与写入 ShuttingDown 同一临界区结算等待者,挂起的 allocate 随后被丢弃。
+			LOG_WARN << "[Agones] refusing allocation permit: process started shutting down while waiting for allocate";
+			return false;
+		}
 		if (draining_)
 		{
 			// 等待期间进入排空:通常是 worker 在处理挂起的 allocate 之前先读到了标签(allocate 随后被
@@ -402,7 +424,7 @@ namespace agones
 		std::uint64_t waiterId,
 		std::chrono::steady_clock::duration delay)
 	{
-		// muduo 定时器按墙钟到期,ExpireAsyncWaiter 再按 steady 复核;下限 1ms,避免两种时钟的舍入差让定时器空转。
+		// muduo 定时器已按单调时钟到期,ExpireAsyncWaiter 仍按 steady 复核;下限 1ms,避免秒→微秒截断让定时器空转。
 		const std::chrono::steady_clock::duration clamped =
 			std::max<std::chrono::steady_clock::duration>(delay, std::chrono::milliseconds(1));
 		loop.runAfter(std::chrono::duration<double>(clamped).count(),
@@ -430,7 +452,7 @@ namespace agones
 			const auto now = std::chrono::steady_clock::now();
 			if (now < it->second.deadline)
 			{
-				// 墙钟比 steady 先到点(墙钟被向前调或舍入):按剩余 steady 时长重新上弦。
+				// 定时器比 steady 截止点早到(秒→微秒截断等):按剩余 steady 时长重新上弦。
 				muduo::net::EventLoop& loop = it->second.loop.get();
 				const std::chrono::steady_clock::duration remaining = it->second.deadline - now;
 				lock.unlock();
@@ -565,8 +587,23 @@ namespace agones
 	{
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
-			if (state_ == LifecycleState::Disabled || state_ == LifecycleState::Stopped)
+			if (state_ == LifecycleState::Disabled)
 			{
+				return;
+			}
+			if (stopRequested_ || state_ == LifecycleState::Stopped)
+			{
+				// 与 Stop() 在同一把锁上线性化:Stop() 之前收下的请求一定发出(worker 退出前先发 /shutdown,
+				// 见 WorkerMain 的优先级);Stop() 开始之后才来的一律忽略,不让发不发取决于 worker 是否已退出。
+				LOG_WARN << "[Agones] RequestShutdown ignored: lifecycle already stopping";
+				return;
+			}
+			if (shutdownRequested_ || state_ == LifecycleState::ShuttingDown)
+			{
+				// 幂等:/shutdown 挂起或已取走(在途 / 已发出)时再调不补发第二次。worker 取走请求与写入 ShuttingDown
+				// 在同一临界区,这里两个条件之间没有空档。/shutdown 单次尝试,失败只打 ERROR,不靠重复调用重试。
+				LOG_WARN << "[Agones] RequestShutdown ignored: shutdown already "
+						 << (shutdownRequested_ ? "pending" : "issued");
 				return;
 			}
 			shutdownRequested_ = true;
@@ -726,6 +763,9 @@ namespace agones
 			// allocate 时已判过未排空才走到这里,而 DoAllocate 同在 worker 上执行,期间 draining_ 不会变。
 			if (allocated)
 			{
+				// 已 Stop() 而在途 /allocate 恰在中止生效前成功时也照常写入 Allocated(与 sidecar 一致):
+				// 不会因此签发许可 —— 阻塞等待方醒来按已停拒绝(FinishWaitLocked),异步等待方早已由 Stop() 摘表;
+				// worker 回到主循环即按停止退出(有挂起的 /shutdown 时先送达)。
 				LOG_INFO << "[Agones] ALLOCATED";
 				// 非阻塞调用方稍后会来取:触发本次 allocate 的那次踢(快照),或 HTTP 在途期间新踢的
 				// (成员;它们的挂起请求下面就地清掉,由这次成功满足)。失败分支不碰成员:在途期间新踢的
@@ -805,12 +845,10 @@ namespace agones
 
 	void GameServerLifecycle::DoShutdown()
 	{
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			state_ = LifecycleState::ShuttingDown;
-		}
-		// 刻意不带停止令牌:/shutdown 是进程决定自我终止时必须送达的最终请求,Stop() 不中止它,
-		// 在途时 Stop() 的 join 等它完成(最多 timeouts.total)。
+		// ShuttingDown 已由 WorkerMain 在取走请求的同一临界区写入并结算等待者(见那里的注释)。
+		// 刻意不带停止令牌:/shutdown 是进程决定自我终止时必须送达的最终请求,Stop() 不中止它。
+		// 在途时 Stop() 的 join 等它完成;Stop() 之前已请求、worker 还没取走的,worker 退出前先发出它
+		// (WorkerMain 里 shutdown 优先于停止)。两种情况 Stop() 都多等最多 timeouts.total。
 		const HttpResponse response = client_->Shutdown();
 		if (!response.Ok())
 		{
@@ -948,6 +986,8 @@ namespace agones
 			WorkerAction action = WorkerAction::None;
 			// 取走 allocate 时转存的非阻塞标记快照,交给 DoAllocate(见头文件 nonBlockingAllocateKicked_)。
 			bool allocateKickedByNonBlocking = false;
+			// 取走 /shutdown 时结算出的异步等待者,解锁后、发 HTTP 之前投递。
+			std::vector<PermitDelivery> shutdownDeliveries;
 
 			{
 				std::unique_lock<std::mutex> lock(mutex_);
@@ -956,22 +996,43 @@ namespace agones
 					return stopRequested_ || allocateRequested_ || readyRequested_ || shutdownRequested_;
 				});
 
-				if (stopRequested_)
-				{
-					return;
-				}
-
-				// 优先级:shutdown > allocate > 回 Ready > 排空轮询 > health。
+				// 优先级:shutdown > 停止 > allocate > 回 Ready > 排空轮询 > health。
+				// shutdown 排在停止前面:Stop() 之前已 RequestShutdown()、worker 还没取走时(典型是 worker 正在
+				// 一次可放弃请求里,被 Stop() 中止后回到这里),退出前先送达 /shutdown,下一轮再按停止退出。
+				// 这是 worker 唯一的退出点,所以挂起的 /shutdown 不会被 Stop() 吞掉;RequestShutdown() 与 Stop()
+				// 在同一把锁上线性化,Stop() 之后的请求被拒,不会在这里多发。
 				// allocate 排在回 Ready 前面,避免"最后一个销毁 + 立刻又创建"时
 				// 先发一个多余的 /ready 再发 /allocate。
 				if (shutdownRequested_)
 				{
 					shutdownRequested_ = false;
+					// 状态必须在释放 mutex、发 HTTP 之前切换(与 Allocating / ReturningToReady 同理):
+					//  - RequestShutdown 看到 ShuttingDown 即忽略,/shutdown 在途时不会再排第二次;
+					//  - 新的许可请求当场拒绝,不再置位 allocateRequested_。
+					// ShuttingDown 是终态(不走 Stop 时一直停在这里,Stop 后转 Stopped)。结算点:等待方的谓词
+					// 把 ShuttingDown 视为成立、裁决一律拒绝;阻塞等待方由 notify_all 唤醒。此前挂起的 allocate
+					// 留到下一轮,由 allocate 分支丢弃。
+					state_ = LifecycleState::ShuttingDown;
+					ResolveAsyncWaitersLocked(shutdownDeliveries, false);
+					cv_.notify_all();
 					action = WorkerAction::Shutdown;
+				}
+				else if (stopRequested_)
+				{
+					return;
 				}
 				else if (allocateRequested_)
 				{
 					allocateRequested_ = false;
+					if (state_ == LifecycleState::ShuttingDown)
+					{
+						// 取走 /shutdown 之前就挂起的 allocate(shutdown 优先,先被取走):进程正在自我终止,
+						// 不得再把状态改回 Allocating / Allocated。等待方已在取走 /shutdown 时被拒绝;
+						// 丢弃的请求不再有结果,非阻塞标记一并清掉。回 Ready 请求留给下面的分支照常丢弃。
+						nonBlockingAllocateKicked_ = false;
+						LOG_WARN << "[Agones] pending allocate discarded: process is shutting down";
+						continue;
+					}
 					if (draining_)
 					{
 						// 等待方已因排空被拒绝。保留挂起的回 Ready 请求,下一轮照常处理。
@@ -1033,6 +1094,7 @@ namespace agones
 					// 否则是虚假唤醒,回到循环顶部按截止时间继续等。
 				}
 			}
+			DeliverPermits(std::move(shutdownDeliveries));
 
 			switch (action)
 			{

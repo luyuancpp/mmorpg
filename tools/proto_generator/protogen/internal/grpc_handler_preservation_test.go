@@ -199,6 +199,54 @@ func TestGrpcServiceHandler_RegenerationPreservesBattleCustomSections(t *testing
 	}
 }
 
+// 回归(上一轮评审遗留):守护段里出现 Handle* 查找键的字面量(注释、带类名限定的调用、段内顶格的行)不得把 codeParser 拉回那个方法。
+// 修复前 grpc.<M>.guard 里写一句「与 SceneNodeGrpcImpl::HandleCreateScene( 同口径」,重生成后 HandleCreateScene 的手写体
+// 就被覆盖成只剩结束标记(连开始标记都没有),且全程不报错。
+func TestGrpcServiceHandler_LookupKeyLiteralsInSectionsKeepHandleBodies(t *testing.T) {
+	setGrpcPreservationTestConfig(t)
+	methods := buildGrpcHandlerTestMethods()
+	dir := t.TempDir()
+	headerPath := filepath.Join(dir, "scene_node_service.h")
+	cppPath := filepath.Join(dir, "scene_node_service.cpp")
+	createKey := GenerateGrpcHandlerNameWrapper(methods[0], "")  // CreateScene
+	destroyKey := GenerateGrpcHandlerNameWrapper(methods[1], "") // DestroyScene
+
+	firstCode := "#include <memory>\n// 入口见 " + createKey + "request, response)"
+	createBody := "    create_scene_impl(*request, *response); // 与 " + destroyKey + "request) 同一套校验"
+	destroyBody := "    destroy_scene_impl(*request);"
+	createGuard := "    // 准入口径与 " + createKey + "request, response) 一致\n" +
+		"    " + destroyKey + "request);\n" +
+		createKey + "nullptr, nullptr); // 段内顶格的行同样不认"
+	releaseGuard := "    // 释放前复用 " + destroyKey + "request) 的校验"
+	cpp := GetGrpcServiceHandlerCppStr(cppPath, methods, "", "")
+	cpp = fillGrpcPreservationSection(t, cpp, "", "", firstCode)
+	cpp = fillGrpcPreservationSection(t, cpp, "void "+createKey, "", createBody)
+	cpp = fillGrpcPreservationSection(t, cpp, "void "+destroyKey, "", destroyBody)
+	cpp = fillGrpcPreservationSection(t, cpp, "", "grpc.CreateScene.guard", createGuard)
+	cpp = fillGrpcPreservationSection(t, cpp, "", "grpc.ReleasePlayer.guard", releaseGuard)
+	writeGrpcPreservationFile(t, cppPath, cpp)
+
+	var previous string
+	for pass := 0; pass < 3; pass++ {
+		if _, err := GetGrpcServiceHandlerHeadFromFileStr(headerPath, methods); err != nil {
+			t.Fatalf("第 %d 次头文件预检不应拒绝: %v", pass+1, err)
+		}
+		generated := GetGrpcServiceHandlerCppStr(cppPath, methods, "", "")
+		for _, body := range []string{firstCode, createBody, destroyBody, createGuard, releaseGuard} {
+			assertGrpcPreservedOnce(t, generated, body, "含查找键字面量的自定义代码")
+		}
+		for _, key := range []string{createKey, destroyKey} {
+			assertGrpcPreservedOnce(t, generated, "void "+key, "Handle* 定义行")
+		}
+		assertGrpcPreservationOrder(t, generated, "void "+createKey, _config.Global.Naming.YourCodeBegin+"\n"+createBody)
+		if pass > 0 && generated != previous {
+			t.Fatalf("第 %d 次重生成发生字节漂移", pass+1)
+		}
+		previous = generated
+		writeGrpcPreservationFile(t, cppPath, generated)
+	}
+}
+
 // 旧模板文件里新骨架没有位置的段全部为空时照常迁入新骨架:FirstCode 与当前方法的 Handle* 逐字保留,旧包装函数与空旧段丢弃。
 // 同时覆盖不依赖当前 proto 方法表的几种形状:包装函数缺无名段(更早的旧文件)、包装函数签名折行、
 // proto 已删除的方法 Create(与 CreateScene 同名前缀;它的 Handle* 体、包装函数无名段与两个命名段都为空)。
@@ -328,7 +376,7 @@ func TestGrpcServiceHandler_LegacyNonEmptySectionsRefuseGeneration(t *testing.T)
 			notWant:     []string{"Create:" + legacyGrpcPreDispatchSectionName, "CreateScene:"},
 		},
 		{
-			// 旧实现按 "<Svc>Impl::<M>(grpc::ServerContext" 逐行查找,这三种折行签名里的无名段都会被静默丢弃。
+			// 按 "<Svc>Impl::<M>(grpc::ServerContext" 逐行查找(§15.16 第 5 条修复前的写法)会漏掉这三种折行签名,其中的无名段被静默丢弃。
 			name:    "折行签名的旧包装函数",
 			methods: buildGrpcHandlerTestMethods(),
 			fold:    []string{"CreateScene", "DestroyScene", "PrepareBattle"},
@@ -379,7 +427,8 @@ func TestGrpcServiceHandler_LegacyNonEmptySectionsRefuseGeneration(t *testing.T)
 
 // 新骨架文件里新生成带不走的非空无名段同样拒绝生成(checkLegacyGrpcSections 不只看旧模板):
 // proto 已删除方法的 Handle* 体(先于该方法遗留的 grpc.<M>.guard「未识别」报出)、签名里找不到查找键的 Handle*、
-// Handle* 里第一个段之后的无名段、<M>() 里的无名段。
+// 查找键只在签名续行里的 Handle*(codeParser 只在签名起始行认键)、Handle* 里第一个段之后的无名段(两段时只列一行、按段计数)、
+// <M>() 里的无名段、FirstCode 之后插在函数之间的无名段(codeParser 只把文件第一个段当 FirstCode)。
 func TestGrpcServiceHandler_UnconsumedUnnamedSectionsRefuseGeneration(t *testing.T) {
 	setGrpcPreservationTestConfig(t)
 	methods := buildGrpcHandlerTestMethods()
@@ -390,6 +439,7 @@ func TestGrpcServiceHandler_UnconsumedUnnamedSectionsRefuseGeneration(t *testing
 		fileMethods RPCMethods // 生成初始骨架用的方法表,为空时同 methods
 		edit        func(t *testing.T, cpp string) string
 		want        string
+		lost        int // 报错开头的非空段数,0 表示 1
 	}{
 		{
 			name:        "proto 已删除方法的 Handle* 体",
@@ -408,6 +458,16 @@ func TestGrpcServiceHandler_UnconsumedUnnamedSectionsRefuseGeneration(t *testing
 			want: "DestroyScene:" + orphanGrpcHandleSectionName("DestroyScene"),
 		},
 		{
+			// 起始行认出的是别的限定名,查找键只出现在缩进的续行里:codeParser 不在续行上认键、带不走这个段,必须报出。
+			name: "查找键只在签名续行里",
+			edit: func(t *testing.T, cpp string) string {
+				cpp = fillGrpcPreservationSection(t, cpp, "void SceneNodeGrpcImpl::HandleDestroyScene(", "", "    destroy_impl(*request);")
+				return replaceGrpcFixtureOnce(t, cpp, "void SceneNodeGrpcImpl::HandleDestroyScene(",
+					"void SceneNodeGrpcImpl::Wrapper(int unused,\n    SceneNodeGrpcImpl::HandleDestroyScene(")
+			},
+			want: "DestroyScene:" + orphanGrpcHandleSectionName("DestroyScene"),
+		},
+		{
 			name: "Handle* 里第一个段之后的无名段",
 			edit: func(t *testing.T, cpp string) string {
 				cpp = fillGrpcPreservationSection(t, cpp, "void SceneNodeGrpcImpl::HandleCreateScene(", "", "    create_impl();")
@@ -417,12 +477,30 @@ func TestGrpcServiceHandler_UnconsumedUnnamedSectionsRefuseGeneration(t *testing
 			want: "CreateScene:" + orphanGrpcHandleSectionName("CreateScene"),
 		},
 		{
+			name: "Handle* 里第一个段之后的两个无名段",
+			edit: func(t *testing.T, cpp string) string {
+				cpp = fillGrpcPreservationSection(t, cpp, "void SceneNodeGrpcImpl::HandleCreateScene(", "", "    create_impl();")
+				return replaceGrpcFixtureOnce(t, cpp, "    create_impl();\n"+end+"\n",
+					"    create_impl();\n"+end+"\n"+begin+"\n    extra_impl();\n"+end+"\n"+begin+"\n    // 第二段\n"+end+"\n")
+			},
+			want: "CreateScene:" + orphanGrpcHandleSectionName("CreateScene") + "(2 段)",
+			lost: 2,
+		},
+		{
 			name: "<M>() 里的无名段",
 			edit: func(t *testing.T, cpp string) string {
 				anchor := "    [[maybe_unused]] const ::PrepareBattleRequest* request = &call->request();\n"
 				return replaceGrpcFixtureOnce(t, cpp, anchor, anchor+"    "+begin+"\n    reject_early();\n    "+end+"\n")
 			},
 			want: "PrepareBattle:" + strayGrpcUnnamedSectionName,
+		},
+		{
+			name: "FirstCode 之后的函数外无名段",
+			edit: func(t *testing.T, cpp string) string {
+				anchor := "void SceneNodeGrpcImpl::RegisterMethods("
+				return replaceGrpcFixtureOnce(t, cpp, anchor, begin+"\n// 手写的辅助说明\n"+end+"\n\n"+anchor)
+			},
+			want: outsideGrpcFunctionLabel + ":" + strayGrpcUnnamedSectionName,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -437,14 +515,23 @@ func TestGrpcServiceHandler_UnconsumedUnnamedSectionsRefuseGeneration(t *testing
 			cpp := tc.edit(t, GetGrpcServiceHandlerCppStr(cppPath, fileMethods, "", ""))
 			writeGrpcPreservationFile(t, cppPath, cpp)
 
-			if header, err := GetGrpcServiceHandlerHeadFromFileStr(headerPath, methods); err == nil {
+			header, err := GetGrpcServiceHandlerHeadFromFileStr(headerPath, methods)
+			if err == nil {
 				t.Fatalf("新生成带不走的非空无名段必须让头文件预检拒绝生成:\n%s", header)
-			} else {
-				assertLegacyGrpcSectionListing(t, err.Error(), cppPath, []string{tc.want}, nil)
 			}
-			assertLegacyGrpcSectionListing(t, recoverGrpcGenerationPanic(t, func() {
+			lost := tc.lost
+			if lost == 0 {
+				lost = 1
+			}
+			head := fmt.Sprintf("%d 个守护段非空", lost)
+			for _, message := range []string{err.Error(), recoverGrpcGenerationPanic(t, func() {
 				GetGrpcServiceHandlerCppStr(cppPath, methods, "", "")
-			}), cppPath, []string{tc.want}, nil)
+			})} {
+				assertLegacyGrpcSectionListing(t, message, cppPath, []string{tc.want}, nil)
+				if !strings.HasPrefix(message, head) {
+					t.Fatalf("报错开头应按段计数 %q\n%s", head, message)
+				}
+			}
 			assertGrpcFileContent(t, cppPath, cpp)
 		})
 	}
@@ -516,6 +603,69 @@ func TestGrpcServiceHandler_HeaderRejectsMalformedNamedSections(t *testing.T) {
 			}
 		})
 	}
+}
+
+// 头文件里的无名段与 cpp 同口径 fail-closed:骨架只渲染三个命名段,非空无名段在新生成里没有位置 ——
+// 拒绝生成并逐行列出「文件:开始标记所在行」,空的不列;全部为空时照常生成并丢弃(与首次生成的骨架逐字相同)。
+func TestGrpcServiceHandler_HeaderUnnamedSections(t *testing.T) {
+	setGrpcPreservationTestConfig(t)
+	methods := buildBattleGrpcPreservationMethods()
+	begin := _config.Global.Naming.YourCodeBegin
+	end := _config.Global.Naming.YourCodeEnd
+	pair := _config.Global.Naming.YourCodePair
+	dir := t.TempDir()
+	headerPath := filepath.Join(dir, "battle_node.h")
+	fresh, err := GetGrpcServiceHandlerHeadFromFileStr(headerPath, methods)
+	if err != nil {
+		t.Fatalf("新建头文件失败: %v", err)
+	}
+
+	t.Run("非空无名段拒绝生成", func(t *testing.T) {
+		// 类外一个非空、一个空,类内一个非空(缩进)。
+		header := replaceGrpcFixtureOnce(t, fresh, "class BattleNodeImpl final",
+			begin+"\n#include \"lost.h\"\n"+end+"\n"+pair+"\n\nclass BattleNodeImpl final")
+		header = replaceGrpcFixtureOnce(t, header, "    muduo::net::EventLoop& loop_;\n",
+			"    muduo::net::EventLoop& loop_;\n    "+begin+"\n    int lost_ = 0;\n    "+end+"\n")
+		var unnamedLines []int
+		for i, line := range strings.Split(header, "\n") {
+			if strings.TrimSpace(line) == begin {
+				unnamedLines = append(unnamedLines, i+1)
+			}
+		}
+		if len(unnamedLines) != 3 {
+			t.Fatalf("夹具应有 3 个无名段: %v", unnamedLines)
+		}
+		writeGrpcPreservationFile(t, headerPath, header)
+
+		generated, err := GetGrpcServiceHandlerHeadFromFileStr(headerPath, methods)
+		if err == nil {
+			t.Fatalf("头文件非空无名段必须拒绝生成,不能静默丢弃:\n%s", generated)
+		}
+		message := err.Error()
+		if !strings.HasPrefix(message, "头文件有 2 个无名守护段非空") {
+			t.Fatalf("报错开头应按非空段计数:\n%s", message)
+		}
+		for i, line := range unnamedLines {
+			location := fmt.Sprintf("%s:%d", headerPath, line)
+			listed := strings.Contains(message, location+"\n") || strings.HasSuffix(message, location)
+			if wantListed := i != 1; listed != wantListed {
+				t.Fatalf("第 %d 个无名段(第 %d 行)是否列出不对: listed=%v want=%v\n%s", i+1, line, listed, wantListed, message)
+			}
+		}
+		assertGrpcFileContent(t, headerPath, header)
+	})
+
+	t.Run("空无名段丢弃", func(t *testing.T) {
+		header := replaceGrpcFixtureOnce(t, fresh, "class BattleNodeImpl final", pair+"\n\nclass BattleNodeImpl final")
+		writeGrpcPreservationFile(t, headerPath, header)
+		generated, err := GetGrpcServiceHandlerHeadFromFileStr(headerPath, methods)
+		if err != nil {
+			t.Fatalf("全空的无名段应照常生成: %v", err)
+		}
+		if generated != fresh {
+			t.Fatalf("空无名段应被丢弃,结果应与首次生成的骨架逐字相同:\n%s", generated)
+		}
+	})
 }
 
 // .h 预检对同名 .cpp 做与 .cpp 生成相同的检查:cpp 里的坏段或未识别段也让头文件拒绝生成。

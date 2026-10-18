@@ -140,7 +140,10 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 
 - [async-load-disconnect-reconnect-race.md](design/async-load-disconnect-reconnect-race.md) — 异步加载竞态：Redis 加载期间的断线与重连
 - [data_service_role_and_scope.md](design/data_service_role_and_scope.md) — data_service 定位与边界
+- [db-consumer-group-per-zone.md](design/db-consumer-group-per-zone.md) — go/db 存盘消费组按 zone 拆分与不停服交接
+- [db-retry-owner-routing.md](design/db-retry-owner-routing.md) — go/db 重试只交给分区属主（④）与 Kafka 源入队的落盘确认（WAITAOF）
 - [db-service-root-credentials.md](design/db-service-root-credentials.md) — go/db 的 MySQL 凭据与建库边界
+- [db-task-delivery-and-retention.md](design/db-task-delivery-and-retention.md) — scene DBTask 投递失败后的重存与 db_task 保留期 / Kafka 盘预算（S5）
 - [db-task-kafka-partition-contract.md](design/db-task-kafka-partition-contract.md) — DB Task Kafka 分区不可变契约
 - [db-task-pipeline-bottlenecks.md](design/db-task-pipeline-bottlenecks.md) — 玩家存盘管线(go/db)的瓶颈、不停服转移与修复计划
 - [db-task-store-unavailable-deferral.md](design/db-task-store-unavailable-deferral.md) — go/db 存盘任务：存储不可用时延后、不进死信（L-04）设计评审稿
@@ -212,6 +215,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 
 #### 协议与配表工具链
 
+- [published-contract-compatibility-20261017.md](design/published-contract-compatibility-20261017.md) — 两套已发布契约的合并兼容方案（双入口方向已批准；来源与实施状态见文内）
 - [excel-6row-header-format.md](design/excel-6row-header-format.md) — 配置表格式说明入口（旧六行表头已停用） · [EN](design/excel-6row-header-format_en.md) · [中文](design/excel-6row-header-format_zh.md)
 - [generated-table-header-decoupling-plan.md](design/generated-table-header-decoupling-plan.md) — 交接：mmorpg 导表器生成头文件解耦（①exprtk ②FK声明化 ③muduo）
 - [pbgen_notes.md](design/pbgen_notes.md) — Proto-Gen (pbgen) Notes · [EN](design/pbgen_notes_en.md) · [中文](design/pbgen_notes_zh.md)

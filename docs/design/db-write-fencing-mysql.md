@@ -1,5 +1,7 @@
 # 玩家存盘 MySQL 条件写（围栏）：go/db、C++、proto、schema 详细设计
 
+> **2026-10-17 实施状态补充（Codex，未提交）**：负责人已授权统一接手并保留各线改动；下文 v0.4 草案的「未落码」和旧会话等待信号属于历史状态。当前工作区已合并 SQL 行内围栏、真实锁定行收据、双表 SQL ACK、父快照持久补投、缺父键强读恢复及交接标记 SQL 屏障；定向 C++ 构建和完整受影响单测通过。隔离 zone 990017/990018 的真实邮件和跨区交易到账测试均已执行通过、0 跳过，含 SQL 行锁负例、原件成长保留和真实重投。证据见 `build/asset-arrival-20261017/fullstack/logs/fullstack-mail-2.result.json`、`fullstack-trade-1.result.json` 与 `docs/PROGRESS.md` 本日追加条目。默认 `legacy`、历史屏障维护补种及停旧写者切换门禁仍在；此状态不表示已生产切换、Redis Cluster 同槽支持、跨洲故障或目标容量验收。
+
 > **状态**：设计稿 v0.4（2026-10-16，Claude）。v0.4 由两件事触发：一是 v0.3 的补审（[fence-v03-review.md](../handoff/landing-fencing-takeover-20261016/fence-v03-review.md)，fix_plan 第二节 1–9 条全部采纳）；二是工作区里出现了一套来源不明的在途围栏实现（[fence-inflight.md](../handoff/landing-fencing-takeover-20261016/fence-inflight.md)，来源是「全域到账续批」写入方）。负责人 2026-10-16 拍板：在途实现由本线「合并并继续，按最标准的做」。**路线以 v0.3 为准，把在途实现收敛过来**（§0.2），保留在途已占的号位 `DBTask.save_seq = 9`、`PlayerAllData.last_save_seq = 7`。§14 的待拍板项按负责人授权取推荐项定稿，只剩两项要负责人亲自确认。**仍未落码、未编译、未测试**（AGENTS.md §10.1）。各版来由见 §17。
 > **实现归属**：由「落地恢复与围栏」接手线落码（[接手记录](../handoff/landing-fencing-takeover-20261016/README.md) §3.4、§5 第 3 批），go/db 会话不做。落码前置见 §0.2「合并前置」：① 「全域到账续批」写入方对围栏相关文件停手；② go/db 存盘管线接手会话发来 R2 / R3 落完后的文件清单。L-04 第 1 批（[db-task-store-unavailable-deferral.md](db-task-store-unavailable-deferral.md) v0.3）已在工作区，本文在它的接口上实现。
 > **范围**：C++ scene → Kafka `db_task_zone_*` → go/db → MySQL 这条玩家存盘链。给两张玩家表加围栏列 `(fence_owner_epoch, fence_save_seq)`，go/db 改为条件写。v0.4 起还包括在途实现带进来的消费方「资产 SQL 提交证据」（§6.6）。
@@ -75,6 +77,8 @@
 | 22 | PL `IsPersistedPayloadCurrent` 两侧清 `last_save_seq` 与四个 `fence_*` | 退出收敛比较不受序号影响 | **保留** | 退出收敛路径，不在热路径；对 `fence_*` 的清除作为防御保留 |
 | 23 | PL `SavePlayerForAssetCommit`（不走快路径的强制存盘）| 资产操作强制整份写 | **保留**（属资产通道）| 交付说明注明 DBTask 量会上升，压测前后对比 |
 | 24 | 生成物 | `go/proto`、`cpp/generated` 已含 9 / 7；`robot/vendor/proto/db/db_task.pb.go` 与 `generated/robot/proto/db/db_task.proto` 还没有 | **重生** | 改完注释后按 §11 第 1 步用 no-unity 配置重生，逐个核对 |
+
+> **2026-10-18 更正**：第 1 行「写明 10 号预留给 `reply_instance`」已过时，10 号已由 `reply_instance` 使用，见 §3.1 同日更正。
 
 **在途实现与本文一致、直接沿用的部分**：号位 9 / 7；三路 max 播种；两张子表共用同一个 save_seq；epoch 为 0 时 DBTask 不带序号；写 SQL 用租约的 ctx；证据只在 SQL 成功、复核与核锁通过之后发布；证据键 `player:{id}:asset_sql_commit` 用 `{player_id}` 作 hash tag；版本串 `%020d:%020d` 能容纳 uint64 全范围。
 
@@ -156,6 +160,7 @@ class-3 在现行代码里很难走到：scene_manager 的路由一律带观察�
 - **2026-10-16 现状**：在途实现已声明 `uint64 save_seq = 9;`（未提交），注释是「同一玩家同一 owner_epoch 内严格递增；与 SQL 行版本一起校验」，没写 10 号预留，8 号注释也没订正 [C]。保留字段，落码时把注释换成下面的口径（§0.2 第 1 行）。
 - 语义：生产者按玩家发出的存盘序号，同一玩家只增不减；0 表示生产者没有发号（旧版 C++，或该次存盘的 owner_epoch 为 0）。
 - 注释定稿（落码照抄，可调措辞不改语义）：「scene 进程级发号器按玩家发出的存盘序号：同一玩家只增不减（跨实体重建、跨进程靠加载播种与墙钟下限，见 db-write-fencing-mysql.md §7）；0 = 生产者未发号。go/db 把 (owner_epoch, save_seq) 盖成 MySQL 行内围栏。10 号预留给全局单点交接的 reply_instance，不得占用。」
+- **2026-10-18 更正**：10 号已由 `reply_instance` 使用（task:result 读回执通知按 login 实例分频道第 1 批：`proto/db/db_task.proto` 已声明 `string reply_instance = 10;` 并写了语义注释，未编译，待 Codex 重生成）。上一条注释定稿的末句「10 号预留给全局单点交接的 reply_instance，不得占用」落码时改为「10 号为 reply_instance」或直接删去，不要再写「预留」，否则 proto 里相邻两段注释自相矛盾。本节第 1 条、§0.2 逐条去留第 1 行与 §14 已定第 1 条里「10 号预留」的说法同此更正。
 - 顺带订正 8 号字段的注释（:18-19）：现在比对的是「已落库的最大 epoch」（`consumer:applied_epoch:*`，KOC 的 `appliedEpochKey` / `checkOwnerEpoch` / `guardOwnerEpoch`），不是 `player:{key}:owner_epoch`。
 
 ### 3.2 玩家表（`proto/common/database/mysql_database_table.proto`）
@@ -1305,6 +1310,8 @@ v0.4 按「合并在途实现 + 补审修订」重列。归属一列：**本线*
 | 20 | `epoch-raise` 的余量 K 与「先排空」二选一（§9.1 第 c 步）| **已定（2026-10-16，负责人授权按最标准取推荐项）**：常数 K（建议 10^6 量级），不要求先排空；第 7 条落地后 K 可取当前毫秒 |
 | 23 | 资产 SQL 提交证据是否作为资产终结与自动放弃的硬前提，以及 `dual` 之前的退化（fence-inflight.md 新问题，§6.6）| **已定（2026-10-16，README §3.4 资产通道）**：按 zone 开关，缺省关、关时行为同 HEAD；打开条件是该 zone 已 `dual` 且已上新 C++；自动放弃要求 Redis blob 与 SQL 证据都「未见」，或证据版本 ≥ 父键 `last_save_seq`；上线与回退顺序见 §8.7 |
 
+> **2026-10-18 更正**：第 1 条的 10 号已由 `reply_instance` 使用，不再是预留，见 §3.1 同日更正。
+
 **仍需负责人亲自确认**（只剩这两项）：
 
 | # | 事项 | 本线的建议 |
@@ -1477,3 +1484,56 @@ v0.4 按「合并在途实现 + 补审修订」重列。归属一列：**本线*
 | fence-decisions.md 13 项 | 逐项推荐 | §14 第 5–20 条定稿；第 1 项（§14 第 12 条）不按其推荐，理由写在该行 |
 | go/db 会话 R1 | stale 分支不得跳过 confirm / verify；handled 分支 `storeerr.Tag`；日志英文与计数器 | §0.2 末段、§4.5（「只有丢弃需要证明」）、§4.1、§10「日志」 |
 | go/db 会话 `runDBOp` 定稿顺序 | lease.beginSQL → SQL → finish → 失租分支 → reportStoreResult → 被拒结局返回 → confirm → verify → 缓存 SET；成功分支 markAppliedSeq → markAppliedOwnerEpoch → LREM / ack | §4.5 按此插入结局出口、合并两组步骤，不改先后 |
+
+
+### 2026-10-17 统一接手落码附注（实施中，尚未完成运行验收）
+
+本轮负责人明确授权解除旧交接等待并统一接手 Go 围栏，与 C++ 父快照 pending / 登录冷加载屏障合并同一链路。保留 v0.4 的 SQL 结局、legacy/class-2 兼容、override 门禁及 R2 持久化后 ACK 入口。
+
+`equal` 仍不比较载荷内容，但缓存与 `PlayerAssetSQLCommit` 必须从同一事务已锁定读取的 SQL `current` 行回填后发布。原因：第一笔 SQL 提交后可能在发布证据前失租；相同 `(owner_epoch, save_seq)` 的第二笔即使载荷不同，也只能证明真实已提交的账本。此处理不增加 SQL 往返，不改变 equal 的幂等分类；对应真实 SQL 回归覆盖首笔提交后换令牌、重投异载荷 equal 的证据真实性。
+
+DB 令牌发布脚本另带 `player:{id}:save_barrier`，只在 `dual` / class-1 的 `applied|equal` 后单调 ACK `player_database` 或 `player_database_1`，绝不写 `pending`；同版证据冲突在任何缓存、证据与屏障写入之前拒绝。父快照写者由同一 guard 检查后写 `pending`，且父写成功回调后才投递两表 SQL 任务。新屏障/资产证据有 `{id}`，现有排序锁、缓存和 owner_epoch 旧键未迁移；多键 Lua 当前前提是同一 Redis 实例，不能据此声称 Redis Cluster 同槽已完成。
+
+玩家主池与额外 placement 池复用 `shared/authoritysql` 当前会话初始化；`ServerConfig.Database.RequireTiDB=true` 时每条新物理连接固定 RC、pessimistic、leader、strict、空 snapshot、staleness=0 与 low-resolution TSO=OFF，并在投入使用前探测。false 仅兼容本地 MySQL RC，不承诺 TiDB 全球数据层语义。`ServerConfig.OwnerEpochRedis` 可选，只读核心实例计数器；缺省复用主 Redis，独立连接在消费者停止后关闭。
+
+### 2026-10-17 C++ 父快照提交屏障与 SQL 任务准入
+
+`MessageAsyncClient::SaveWithCommitBarrier` 用同一 Lua 检查旧 owner 键、父缓存类型、屏障 hash 与分桶待投 ZSET,成功才同时 SET 父缓存、HSET `pending` 与完整两条 DBTask 意图、ZADD 待投玩家。版本为 `%020d:%020d` 的 41 字节 `(owner_epoch, save_seq)`（每段 uint64）,逐字节比较且拒绝溢出;已有 pending 不得倒退。旧 owner 键继续使用 `player:123:owner_epoch`,新屏障使用真实花括号 `player:{123}:save_barrier`,当前部署前提仍是同一 Redis 实例,不宣称 Cluster 同槽。owner 缺失属于恢复故障,不自动补种;owner 不等才是废黜。所有参数、TYPE、玩家键身份、存量版本与完整意图检查先于任何写入,避免 Lua 报错留下部分副作用。索引/topic 的 zone 沿用 DB storage 区号 1..999999,topic 世代沿用 uint32 且第一代无后缀;分桶按玩家十进制逐位求余 64,不把 uint64 转 double。
+
+每份完整快照携带自己的提交钩子,每份实际成功写入 Redis 的值都立即执行一次,先投递两张完整子表 DBTask、登记投递票据,然后才发出下一份排队快照;全局 `HandlePlayerAsyncSaved` 仍只对最终最新值发布。只有未下发就被合并的中间值、拒绝、错误和旧连接回调不能投递 SQL 任务。钩子前崩溃仍可由持久意图补投;未下发的中间快照被最新完整状态涵盖。钩子与回包同线程,保留本次在途登记直至钩子结束,允许重入 Save;钩子后重新查 key 与 element 身份,不跨钩子持有 map iterator。两张完整任务必须在写父键前全部序列化成功,严格 API 强制显式非空意图,没有绕过意图的旧重载,参数或序列化失败向调用方返回拒绝。钩子只按值持有不可变任务字节和玩家号、home zone、topic、owner epoch、save seq,不捕获 ECS 引用或 Node 裸指针。epoch=0 的旧兼容路径也在父写成功后才投递 SQL,但不提供严格 pending/outbox 屏障,仍受全 writer 升级门禁约束。
+
+`HandlePlayerAsyncLoadFailed(DataNotFound)` 一律走载入失败通知、会话映射清理与 `AbandonInheritClear`,不能把缓存缺失解释成新号。`HandlePlayerAsyncLoaded` 在消费 pending 或暂存 A2′ 载入结果之前要求两张子表的 player_id 都等于当前非零玩家号,空 ID 或串号均走同一失败链,不再依据异步 key 补 ID。新号的父缓存已由 login `SeedNewPlayerAllData` 预种双 ID,合法种子的 registration_timestamp 仍为 0,继续由 `InitPlayerFromAllData` 完成首次注册;冷加载无法证明 SQL 两行与屏障齐备时拒绝入场。运行验收由 Codex 统一安排,本切片不单独启动 MSBuild。
+
+归属交接不能只等父 Redis 成功:新 epoch 会令尚未落库的旧 epoch 任务被拒绝。`BeginTravelHandoff` 改用同实例三键 Lua（旧 owner、save_barrier、旧 handoff）,仅当 owner 仍同代、pending 合法且属于该 owner、两 SQL ACK 都精确等于 pending 时,才在同一原子段 SET 原格式标记并保留原 300 秒 TTL。双 ACK 未齐返回 0 且不写标记,释放本次请求占位与 markEpoch,按原冻结代次每 250 毫秒重查;截止固定在冻结起点后的 35 秒,不因重试滑动。0 状态仍受原存盘看门狗与 70 秒冻结硬上限约束。只有明确 1 才发 SceneManager;owner 已变则不存盘销毁旧实体,不采纳新 epoch;明确错误不留标记,连接断开或异常回包仍按原未知结果取证,不能直接解冻。timer 与回包都按玩家号和单调冻结代次回查,退出、新代次或另一条标记命令在途时旧 timer 失效。实际 Lua 的连续 0→0→1 / 错型 / 错版 / owner 变化回归与纯单调时间接缝、wiring 契约同批覆盖;ECS 与 muduo timer 贯通运行尚待单独宿主验收,源码契约不替代该证据。
+
+### 2026-10-17 登录冷恢复与恢复运维门禁（实施中）
+
+登录预检通过同一 Lua 读取父快照、旧 owner 键和新提交屏障；已有 pending 时，两张表 ACK 必须都精确等于 pending，缺失、畸形、越界、不齐或 Redis 故障一律拒绝。已有父快照的 player_id 与 last_save_seq 也必须匹配。没有屏障时，只放行 owner 尚未铸造的建角种子及下段明确列出的身份补齐状态；历史快照、历史 owner、零围栏但已有业务数据的 SQL 行都不得冒充新号。
+
+首次身份补齐到首次 owner 之间的中断允许重试：owner=0、无 pending 时，父键还可仅含 login 权威补齐的 class/name/appearance_id/gender。检查在副本中只清除这四个字段，并仅移除由此真正变空的两个组件，最后仍须与完整建角种子 proto.Equal；未知字段、注册时间、任意资产或其他组件均不忽略，原父字节不回写。已铸造 owner 却无屏障仍明确拒绝。组合回归使用真实 Seed→backfill CAS→正式 Ensure，不以手工写身份代替整条路径；正例先红后绿，负例覆盖1金币/已注册/顶层与嵌套unknown。
+
+父键缺失一律通过现有 Kafka DB read/dispatcher 读取真实 SQL 两行，不再从 Redis 子表缓存拼接。两行的身份与围栏必须精确等于本次捕获的 pending；组装父键继承该 save_seq。提交用 Lua 再核 owner 和 pending 未变、两 ACK 仍齐，最后 SET NX，不能覆盖期间写入的新父快照。回调时间原点在发送前固定，消除同步发送与结果回调的读写竞态。发送和回调登记只增加接口测试接缝，不改变 Kafka 协议。
+
+这是需要整批切换的协议：必须先迁完两张 SQL 表、升级所有 DB 为 dual 与所有 scene/login 写者、停止并排空旧 class-2/class-3 与旧 topic/retry，确认旧进程不能恢复写入，再启用资产 SQL 终结。对旧存档，首次上线需在停写期间核对两行同版后建立 pending/双 ACK；不能直接在活跃存档上猜一个版本补种。当前代码遇到尚未迁移的历史数据会明确拒绝，不声称滚动混用旧写者仍可用。
+
+合服/撤销与 PITR 必须清除受影响玩家的父缓存、子缓存、asset_sql_commit 与 save_barrier；旧 ACK 指向旧 SQL，不能保留。清理之后仍须保持维护闸，完成归属计数器恢复并从同一强读权威库核对两行同版、重建屏障，才可放流。两行不同版、在途写尚未排空、旧实例仍可能写入时禁止恢复。删除后仅等待一次新存盘不足以解锁冷加载；当前未提供自动线上补种或已演练的跨区域灾备结论。
+
+### 2026-10-17 收据身份与父快照投递恢复补充（实施契约）
+
+资产账本负责把请求身份、资产改动和结果放进同一份玩家 SQL 快照；邮件、交易、帮会工作器只凭真实 SQL 快照中的相同身份终结业务。所有 APPLIED、部分 APPLIED、REJECTED 与中止均保存已有 `AssetOpReceipt` 的 seq、32 字节摘要和 correlation；不再只给托管实例记摘要。C++/Go 沿用固定 `debit` canonical、保留 caller、时间置零、签名清空的摘要格式，apply 转 abort 不变。Java 使用既有内部 protobuf 摘要与 caller/stream 白名单，两版内部玩家记录不混库。
+
+ACK 只释放大 snapshot，保留窗口内摘要；窗口宽 1024，滑窗或换流纪元按既有规则剪枝，不能称全历史永久收据。摘要由每流唯一有序窗口位置与固定长度限界，原有 256 KiB 玩家额度只计托管 snapshot；按本次换纪元/剪枝后的候选状态预检，不能让已可剪掉的旧快照堵死新操作。旧档只有 bitmap 时保留原结局、不重置账本，但不能替未知请求背书：该请求 UNKNOWN，不重复扣发。已在交易 SQL 保存原件和原 APPLIED 证明的 ACK 待办，滑出窗口后仅允许结束清理，不能据此确认原资产结局。所有终结消费入口必须一起升级，旧写者可能删除摘要，不能混跑并宣称同一身份协议成立。
+
+为补父 Lua 成功但 scene 在投 Kafka 前退出的窗口，沿已有 `save_barrier` 保存持久投递意图，不新增玩家资产权威。严格保存 API 显式接收完整两条既有 DBTask 序列化字节和目标 topic；只构造任务提前，真实发送仍在父提交钩子中。严格 owner 非零但 home_zone 未知时拒绝，不能回退到当前进程 zone。
+
+Lua 契约固定为四个 KEYS（父键、旧 owner 键、barrier hash、分桶 pending ZSET）及七个 ARGV（父 bytes、owner 十进制、41 字节版本、topic、两条 DBTask bytes、player 十进制）。barrier 同时写 `pending` 和 `outbox_version/outbox_topic/outbox_player_database/outbox_player_database_1`，索引键 `player:save_pending:<home_zone>:<player_id % 64>`，member 为 player 十进制，初始 score=0。所有 key TYPE、彼此不别名、版本与载荷约束先验，任何拒绝均无部分写入。同 pending 版本重试还须父 bytes 完全相同；有原意图则 topic 与两条任务 bytes 也须完全相同。父缺失不得拿相同版本重新覆盖组装。
+
+go/db 有界补投工作器读取本 zone 的 64 桶 due 索引，严格校验任务身份、表类型、版本和允许的 topic，不改变原 epoch/seq/业务号，以玩家号作 Kafka key。失败和未齐双 ACK 的项 CAS 重排到下次时间，防止坏前缀饿死其他玩家；进程内预算使用单调截止，索引 score 的毫秒时间只作调度，不参与版本/GUID 比较。仅捕获 pending 未变且两张 SQL ACK 都精确等于它，才原子清意图与索引；不能以 broker ACK 当 SQL 已提交。home_zone 改变留下的旧索引由工作器按当前意图 topic 进行 CAS 迁移/清理，迁移目标须通过命名与世代白名单，不允许任意 topic。
+
+此补投使用与父键同一 Redis 主实例，不能把只读 OwnerEpochRedis 错当父数据存储。父写、barrier 与索引原子范围仍为单实例 Lua，Redis 的 AOF/持久化与恢复门禁必须配置；它不是跨 Redis/Kafka/TiDB 的分布式事务。资产最终成功仍只由 TiDB 强读证据决定。合服/PITR 清 barrier 时也须同步清受影响玩家的 pending 索引；未完成的意图不得在维护恢复时静默丢弃。
+
+DBTask TopicGeneration 换代的排空集合同时包含旧代 Kafka、retry 与本节 pending outbox。离线玩家也可能只留下旧 topic 的完整意图,不能在它未获双 ACK 时先把全体 worker 切到只认新代的白名单;须在旧代完成提交并清理意图 / 索引,或执行明确设计的维护迁移后再切换。当前实现不把任意旧 topic 自动放行,未提供自动跨世代搬运。
+
+合服/撤销的 `merge_zone` P4 同时核对待变更 zone 的全部64桶 ZCARD=0；索引不分世代，因此旧代残留也会拒绝。Redis故障、错型、异常响应均不能当空。检查发生在 SQL 行复制/删除、映射变更和缓存清理之前；停止 scene 后须让原 DB 补投器完成双 ACK 回收，再停止 DB 并执行维护，不能只看 Kafka lag=0 就删 barrier。PITR 则必须先保存并逐笔裁决尚未提交的原意图，再清受影响玩家自己的索引 member；禁止 DEL 整桶误删其他玩家。当前没有已演练的自动历史屏障补种工具，删除屏障后继续保持维护闸。
+
+账本窗口保留五流各1024个摘要后，不能继续套用普通组件256KiB的列闸。`BlobGuardConfig.WithDefaults`统一补齐`player_database.asset_op_ledger`专列1MiB，普通列仍256KiB，整行仍1MiB；配置显式给出的正值覆盖默认，包括更小的限制。当前实际依赖`github.com/luyuan-cpp/proto2mysql v0.2.0`的SQL二进制参数是裸protobuf；既有BlobGuard仍按base64长度保守计费，本轮保留该算法和指标口径以避免隐式扩大所有玩家行，不能把预算计费值称为真实物理存储量。托管snapshot本身的256KiB上限仍在资产模块执行，不随列预算放宽。满窗口账本与其他组件合计超过整行额度仍明确拒写，不能只看账本单列通过。保留原整行保守上限也维持现有Kafka大小约束：本仓librdkafka默认`message.max.bytes=1000000`，当前producer未覆盖；此轮没有同步提高消息、broker或消费者限制，不能把整行改成2MiB后仍声称发送链支持。对照回归直接调用当前依赖的`pbconv.SerializeFieldValue`核对真实SQL参数字节，另外记录保守预算，禁止用测试里的人工base64推测当前数据库格式。

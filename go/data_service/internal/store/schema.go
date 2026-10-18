@@ -848,7 +848,7 @@ func primaryKeyColumns(ctx context.Context, db *sql.DB, dbName, tableName string
 const PlayerSnapshotTableName = "player_snapshot"
 
 const (
-	// SnapshotGuidNzColumn 是 player_snapshot 上"去掉 0 之后的 snapshot_guid"存储型生成列。
+	// SnapshotGuidNzColumn 是 player_snapshot 上“去掉 0 之后的 snapshot_guid”可空生成列。
 	// nz = non-zero:guid=0 的 GM 行在这一列上是 NULL。
 	SnapshotGuidNzColumn = "snapshot_guid_nz"
 	// SnapshotGuidUniqueKey 是建在 SnapshotGuidNzColumn 上的唯一键名。
@@ -924,7 +924,7 @@ const (
 	// 所以 GM 行可以有任意多条,而 source=1 的 C++ 快照按 guid 严格唯一 —— 这正是
 	// proto 注释里"UNIQUE 会让第二条 GM 行就撞键"那个障碍的解法。
 	//
-	// STORED 而不是 VIRTUAL:值实打实落盘,唯一键与点查都直接读列,不必每次求表达式。
+	// MySQL 保留 STORED：值实打实落盘，沿用既有 DDL；TiDB 的 VIRTUAL 形态在下方单独定义。
 	// 代价是 MySQL 手册明确说的 "ADD COLUMN is not an in-place operation for stored columns"
 	// —— 这条 ALTER 会**重建整张表**。所以它必须由部署阶段的 `data_service -f <yaml> -migrate`
 	// 执行(不设时限),不要指望启动期 AutoMigrate 的 5 分钟(svc.autoMigrateTimeout)够用;
@@ -941,6 +941,13 @@ const (
 		" GENERATED ALWAYS AS (" + snapshotGuidNzExpr + ") STORED" +
 		" COMMENT '非 proto 列:NULLIF(snapshot_guid,0),GM 行(guid=0)在此为 NULL,供 uk_snapshot_guid_nz 做可空唯一约束'"
 
+	// TiDB 不支持 ALTER 添加 STORED 列，也不支持生成表达式中的 NULLIF。
+	// VIRTUAL 列上的唯一索引仍由数据库约束；CASE 保持零为 NULL、非零 GUID 原值。
+	snapshotGuidNzTiDBExpr      = "CASE WHEN `snapshot_guid` = 0 THEN NULL ELSE `snapshot_guid` END"
+	snapshotGuidNzTiDBColumnDDL = "ALTER TABLE `player_snapshot` ADD COLUMN `snapshot_guid_nz` bigint unsigned" +
+		" GENERATED ALWAYS AS (" + snapshotGuidNzTiDBExpr + ") VIRTUAL" +
+		" COMMENT '非 proto 列:零 GUID 映射为 NULL，非零 GUID 由唯一索引约束'"
+
 	// snapshotGuidNzUniqueDDL 建唯一键。必须与列分成两条语句下发:MySQL 对 STORED 生成列的
 	// ADD COLUMN 是拷表操作,把建索引并进同一条 ALTER 只会让那次重建更长、失败时更难判断进度。
 	snapshotGuidNzUniqueDDL = "ALTER TABLE `player_snapshot` ADD UNIQUE KEY `uk_snapshot_guid_nz` (`snapshot_guid_nz`)"
@@ -952,12 +959,13 @@ const (
 // 做成清单而不是在 migrateSchemaOn 里写 if 分支,理由与 bootstrapTables 相同:
 // "哪些表有非 proto 驱动的列与键"这件事只该有一处答案。再加一条 = 在 nullableUniqueKeys 里加一项。
 type nullableUniqueKey struct {
-	table      string // 表名
-	column     string // 生成列名
-	columnExpr string // 生成列的表达式(回读复核时与 GENERATION_EXPRESSION 比,见 hasGeneratedColumn)
-	columnDDL  string // 追加生成列的 ALTER(表已有**形状相符**的此列时跳过)
-	indexName  string // 唯一键名
-	indexDDL   string // 建唯一键的 ALTER(键已存在时整步跳过)
+	table         string // 表名
+	column        string // 生成列名
+	columnExpr    string // 生成列的表达式(回读复核时与 GENERATION_EXPRESSION 比,见 hasGeneratedColumn)
+	columnStorage string // INFORMATION_SCHEMA.EXTRA 中必须具有的生成列形态
+	columnDDL     string // 追加生成列的 ALTER(表已有**形状相符**的此列时跳过)
+	indexName     string // 唯一键名
+	indexDDL      string // 建唯一键的 ALTER(键已存在时整步跳过)
 
 	// sourceColumn 是生成列的源列;去重按它分组。
 	// zeroValue 是"不参与唯一约束"的那个值(映射成 NULL 的值),去重时排除它。
@@ -966,16 +974,36 @@ type nullableUniqueKey struct {
 }
 
 // nullableUniqueKeys 当前只有一条:player_snapshot 按 snapshot_guid 去重(审计 #11)。
-var nullableUniqueKeys = []nullableUniqueKey{{
-	table:        PlayerSnapshotTableName,
-	column:       SnapshotGuidNzColumn,
-	columnExpr:   snapshotGuidNzExpr,
-	columnDDL:    snapshotGuidNzColumnDDL,
-	indexName:    SnapshotGuidUniqueKey,
-	indexDDL:     snapshotGuidNzUniqueDDL,
-	sourceColumn: "snapshot_guid",
-	zeroValue:    0,
-}}
+var snapshotGuidNullableKey = nullableUniqueKey{
+	table:         PlayerSnapshotTableName,
+	column:        SnapshotGuidNzColumn,
+	columnExpr:    snapshotGuidNzExpr,
+	columnStorage: "STORED GENERATED",
+	columnDDL:     snapshotGuidNzColumnDDL,
+	indexName:     SnapshotGuidUniqueKey,
+	indexDDL:      snapshotGuidNzUniqueDDL,
+	sourceColumn:  "snapshot_guid",
+	zeroValue:     0,
+}
+
+var nullableUniqueKeys = []nullableUniqueKey{snapshotGuidNullableKey}
+
+// 迁移与运行期探测使用同一方言契约，避免列已建成但 store 仍按另一种表达式退回不安全路径。
+func nullableUniqueKeyForServer(ctx context.Context, db *sql.DB, k nullableUniqueKey) (nullableUniqueKey, bool, error) {
+	isTiDB, _, err := serverIsTiDB(ctx, db)
+	if err != nil {
+		return k, false, err
+	}
+	if isTiDB {
+		if k.table != PlayerSnapshotTableName || k.column != SnapshotGuidNzColumn {
+			return k, true, fmt.Errorf("table %s: 未定义 TiDB 可空唯一列契约", k.table)
+		}
+		k.columnExpr = snapshotGuidNzTiDBExpr
+		k.columnDDL = snapshotGuidNzTiDBColumnDDL
+		k.columnStorage = "VIRTUAL GENERATED"
+	}
+	return k, isTiDB, nil
+}
 
 const (
 	// snapshotGuidDedupeGuidsPerBatch 一批处理多少个重复 guid。
@@ -999,8 +1027,7 @@ const (
 //  1. 唯一键已存在**且确实是唯一索引**、**且它约束的那一列确实是形状相符的生成列** → 整步跳过
 //     (幂等的快路径)。两个条件缺一不可,理由见快路径里那段注释。
 //     同名的非唯一索引 / 同名的普通列在这里直接判错,不当成"已存在"(见 hasUniqueIndex / hasGeneratedColumn)。
-//  2. TiDB → **报错停住**(官方文档明确建不出来);只有 MigrateOptions.AllowMissingGuidUniqueKey
-//     显式打开时才放行,并在日志里写明"本实例的快照 guid 去重已失效"。
+//  2. 按服务端选择生成列：MySQL 保留 NULLIF + STORED，TiDB 使用 CASE + VIRTUAL；两者都必须建出唯一键。
 //  3. 去重历史重复行 —— 必须在建键**之前**:有重复行时 ADD UNIQUE KEY 会以 1062 失败。
 //  4. 追加生成列(已存在**且形状相符**则跳过;同名的普通列在这里判错,见 hasGeneratedColumn)。
 //  5. 建唯一键。
@@ -1019,7 +1046,12 @@ func ensureNullableUniqueKeys(ctx context.Context, db *sql.DB, dbName, tableName
 }
 
 func ensureNullableUniqueKey(ctx context.Context, db *sql.DB, dbName string, k nullableUniqueKey, opts MigrateOptions) error {
-	hasKey, err := hasUniqueIndex(ctx, db, dbName, k.table, k.indexName)
+	var err error
+	k, _, err = nullableUniqueKeyForServer(ctx, db, k)
+	if err != nil {
+		return err
+	}
+	hasKey, err := hasNullableUniqueIndex(ctx, db, dbName, k)
 	if err != nil {
 		return err
 	}
@@ -1031,7 +1063,7 @@ func ensureNullableUniqueKey(ctx context.Context, db *sql.DB, dbName string, k n
 		// 迁移变成"成功",写路径切到 ODKU,而唯一键挂在一个恒为 NULL 的普通列上 ——
 		// 同一个 guid 静默落成多行、全程零报错,正是本步骤要消灭的形态。
 		// 所以快路径必须把列的形状也校验一遍,把那次 fail-closed 钉住,不让它在重跑时翻成放行。
-		hasCol, err := hasGeneratedColumn(ctx, db, dbName, k.table, k.column, k.columnExpr)
+		hasCol, err := hasGeneratedColumn(ctx, db, dbName, k.table, k.column, k.columnExpr, k.columnStorage)
 		if err != nil {
 			return err
 		}
@@ -1046,49 +1078,17 @@ func ensureNullableUniqueKey(ctx context.Context, db *sql.DB, dbName string, k n
 		return nil
 	}
 
-	isTiDB, version, err := serverIsTiDB(ctx, db)
+	hasCol, err := hasGeneratedColumn(ctx, db, dbName, k.table, k.column, k.columnExpr, k.columnStorage)
 	if err != nil {
 		return err
 	}
-	if isTiDB {
-		// TiDB 上这条 DDL 建不出来(官方文档两条限制,2026-09-29 复核仍然属实):
-		// 「You cannot add a stored generated column through ALTER TABLE」与「NULLIF() 不支持」
-		// —— https://docs.pingcap.com/tidb/stable/generated-columns/
-		//
-		// 建不出来就必须**停**,不能打一条 Errorf 然后 return nil:那样迁移照常成功、服务照常启动,
-		// 而 TiDB 上的实际后果是 #11 的整个根治静默失效 —— 唯一键没有,退路那条
-		// INSERT...SELECT...NOT EXISTS 又依赖 RR 的间隙加锁读,TiDB 没有间隙锁,
-		// 两个并发写者会同时判定"不存在"各插一行,同一 guid 多行落库且全程零报错。
-		// 这正是本步骤要消灭的失败形态,所以与紧邻的 assertNullableUniqueKey 同口径:fail-closed
-		// (AGENTS.md §11.3 数据完整性路径默认 fail-closed)。AutoMigrate 路径会因此把三个 store 置 nil、
-		// 业务立刻拒绝 —— 症状明确,好过安静地写重复行。
-		if !opts.AllowMissingGuidUniqueKey {
-			return fmt.Errorf("table %s: 服务端是 TiDB(%s),建不出 %s(官方文档:不支持 ALTER 添加 STORED 生成列、"+
-				"且不支持 NULLIF();https://docs.pingcap.com/tidb/stable/generated-columns/)。"+
-				"没有这个键,同一个 %s 会静默落成多行(退路的 NOT EXISTS 去重依赖 RR 间隙锁,TiDB 上不成立),"+
-				"所以迁移在这里停住。两条出路:(1) 先定下 TiDB 形态的可空唯一约束再迁 —— "+
-				"候选是建表时就写进 CREATE TABLE、或改 VIRTUAL 生成列 + CASE WHEN 表达式;"+
-				"(2) 明确接受「本实例的快照 guid 去重失效」,由配置显式打开 MigrateOptions.AllowMissingGuidUniqueKey 放行",
-				k.table, version, k.indexName, k.sourceColumn)
-		}
-		logx.Errorf("[schema] table %s: skipping %s -- server is TiDB(%s) and AllowMissingGuidUniqueKey explicitly enabled. "+
-			"Snapshot guid deduplication is disabled on this instance: the same %s can produce multiple rows without any error. "+
-			"This is deliberate bypass, not an ignorable warning -- nullable unique constraints for TiDB remain undecided",
-			k.table, k.indexName, version, k.sourceColumn)
-		return nil
-	}
-
+	// 存量列形状错误时，在历史清重的第一个 DELETE 之前拒绝，不能边删数据边发现配置错误。
 	if err := dedupeBySourceColumn(ctx, db, k, opts); err != nil {
 		return err
 	}
-
-	hasCol, err := hasGeneratedColumn(ctx, db, dbName, k.table, k.column, k.columnExpr)
-	if err != nil {
-		return err
-	}
 	if !hasCol {
-		logx.Infof("[schema] table %s: adding stored generated column %s (rebuilds the table; prefer `data_service -f <yaml> -migrate`)",
-			k.table, k.column)
+		logx.Infof("[schema] table %s: adding %s column %s (use offline data_service -migrate)",
+			k.table, k.columnStorage, k.column)
 		if _, err := db.ExecContext(ctx, k.columnDDL); err != nil {
 			return fmt.Errorf("add generated column %s.%s: %w", k.table, k.column, err)
 		}
@@ -1107,11 +1107,11 @@ func ensureNullableUniqueKey(ctx context.Context, db *sql.DB, dbName string, k n
 // assertNullableUniqueKey 复核生成列与唯一键都已就位**且形状正确**。
 // 建出来之后立刻回读,而不是相信 ExecContext 没报错:ALTER 在个别兼容层(代理 / 旧版本)上
 // 会被解析后忽略,那种"成功"正是这条键最不能出现的失败形态 —— 键不在而写入路径以为它在。
-// 形状(STORED 生成列 + 表达式、NON_UNIQUE=0)由 hasGeneratedColumn / hasUniqueIndex 判,
+// 形状(对应方言的可空 uint64 生成列 + 表达式、单列完整唯一键)由同一组探针判，
 // 它们在形状不符时直接返回错误:把 UNIQUE 降级成普通索引、把生成列建成普通列的兼容层,
 // 与"解析后忽略"落在同一个威胁模型里,只按名字回读认不出来。
 func assertNullableUniqueKey(ctx context.Context, db *sql.DB, dbName string, k nullableUniqueKey) error {
-	hasCol, err := hasGeneratedColumn(ctx, db, dbName, k.table, k.column, k.columnExpr)
+	hasCol, err := hasGeneratedColumn(ctx, db, dbName, k.table, k.column, k.columnExpr, k.columnStorage)
 	if err != nil {
 		return err
 	}
@@ -1120,7 +1120,7 @@ func assertNullableUniqueKey(ctx context.Context, db *sql.DB, dbName string, k n
 			"refusing to continue (the unique key on it is the only enforcement of one-row-per-%s)",
 			k.table, k.column, k.sourceColumn)
 	}
-	hasKey, err := hasUniqueIndex(ctx, db, dbName, k.table, k.indexName)
+	hasKey, err := hasNullableUniqueIndex(ctx, db, dbName, k)
 	if err != nil {
 		return err
 	}
@@ -1356,27 +1356,34 @@ func loadDuplicateBatch(ctx context.Context, db *sql.DB, k nullableUniqueKey, af
 // 会被解析后忽略",而把 UNIQUE 悄悄降级成普通 INDEX、把生成列悄悄建成普通列,正落在同一个模型里;
 // 人工加过同名列 / 同名索引的存量库也一样。
 
-// hasGeneratedColumn 判定这一列在、且确实是 wantExpr 算出的 **STORED 生成列**。
+// hasGeneratedColumn 判定这一列在，且是要求的表达式与生成列形态。
 // 只看列名会放过"有人手工加了一个同名普通列"的库:那时迁移跳过 ADD COLUMN,
 // 唯一键就建到了一个恒为 NULL(约束不到任何行)或恒为 0(第二条 GM 行就撞键)的普通列上。
 // 判不出形状时返回错误而不是 false —— false 会让调用方去 ADD COLUMN,撞上"列已存在"的 1060,
 // 错误文案指不到真正的原因。
-func hasGeneratedColumn(ctx context.Context, db *sql.DB, dbName, tableName, column, wantExpr string) (bool, error) {
+func hasGeneratedColumn(ctx context.Context, db *sql.DB, dbName, tableName, column, wantExpr, wantStorage string) (bool, error) {
 	var extra, genExpr sql.NullString
+	var columnType, nullable string
 	err := db.QueryRowContext(ctx,
-		`SELECT EXTRA, GENERATION_EXPRESSION FROM INFORMATION_SCHEMA.COLUMNS
-		  WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`, dbName, tableName, column).Scan(&extra, &genExpr)
+		`SELECT EXTRA, GENERATION_EXPRESSION, COLUMN_TYPE, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
+		  WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`, dbName, tableName, column).Scan(&extra, &genExpr, &columnType, &nullable)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
 	if err != nil {
 		return false, fmt.Errorf("look up column %s.%s: %w", tableName, column, err)
 	}
-	if !strings.Contains(strings.ToUpper(extra.String), "STORED GENERATED") {
-		return false, fmt.Errorf("table %s: 列 %s 已存在但不是 STORED 生成列(EXTRA=%q):"+
+	// uint64 GUID 不能经有符号或更窄的列折叠；零值必须可映射为 NULL，供多个 GM 快照共存。
+	typ := strings.ToLower(strings.Join(strings.Fields(columnType), " "))
+	if (typ != "bigint unsigned" && typ != "bigint(20) unsigned") || nullable != "YES" {
+		return false, fmt.Errorf("table %s: 生成列 %s 必须是可空 BIGINT UNSIGNED，实际 COLUMN_TYPE=%q IS_NULLABLE=%q，拒绝继续",
+			tableName, column, columnType, nullable)
+	}
+	if !strings.Contains(strings.ToUpper(extra.String), wantStorage) {
+		return false, fmt.Errorf("table %s: 列 %s 已存在但不是要求的 %s 生成列(EXTRA=%q):"+
 			"唯一键建在它上面约束不到任何东西,拒绝继续。先人工确认这一列是谁加的,"+
 			"确认可丢弃后 `ALTER TABLE %s DROP COLUMN %s` 再重跑迁移",
-			tableName, column, extra.String, tableName, column)
+			tableName, column, wantStorage, extra.String, tableName, column)
 	}
 	if got, want := normalizeSQLExpr(genExpr.String), normalizeSQLExpr(wantExpr); got != want {
 		return false, fmt.Errorf("table %s: 生成列 %s 的表达式是 %q,与本迁移要求的 %q 不一致:"+
@@ -1384,6 +1391,31 @@ func hasGeneratedColumn(ctx context.Context, db *sql.DB, dbName, tableName, colu
 			tableName, column, genExpr.String, wantExpr)
 	}
 	return true, nil
+}
+
+// hasNullableUniqueIndex 还核实索引恰好覆盖生成列全长。
+// UNIQUE(guid_nz,id) 只约束二元组，UNIQUE(id) 也不会去重 GUID；同名不足以证明每个非零 GUID 只有一行。
+// 复用既有唯一索引元数据读取；其他域的 hasUniqueIndex 判据保持原契约。
+func hasNullableUniqueIndex(ctx context.Context, db *sql.DB, dbName string, k nullableUniqueKey) (bool, error) {
+	hasKey, err := hasUniqueIndex(ctx, db, dbName, k.table, k.indexName)
+	if err != nil || !hasKey {
+		return hasKey, err
+	}
+	indexes, err := loadUniqueIndexColumns(ctx, db, dbName, k.table)
+	if err != nil {
+		return false, err
+	}
+	for name, index := range indexes {
+		if !strings.EqualFold(name, k.indexName) {
+			continue
+		}
+		if !index.prefixed && len(index.cols) == 1 && strings.EqualFold(index.cols[0], k.column) {
+			return true, nil
+		}
+		return false, fmt.Errorf("table %s: 唯一索引 %s 必须仅覆盖完整列 %s，实际 columns=%v prefixed=%t，拒绝继续",
+			k.table, k.indexName, k.column, index.cols, index.prefixed)
+	}
+	return false, fmt.Errorf("table %s: 唯一索引 %s 元数据在探测期间变化，拒绝继续", k.table, k.indexName)
 }
 
 // normalizeSQLExpr 把 MySQL 回读的表达式与我们写下的 DDL 片段拉到同一形态再比:
@@ -1485,14 +1517,8 @@ type MigrateOptions struct {
 	// 因为运行期补种在生产是关着的,漏掉的 tag 会让 AllocateIdSegment 直接拒绝)。
 	BootstrapTags []string
 
-	// AllowMissingGuidUniqueKey 允许在**建不出** player_snapshot 的可空唯一键时继续迁移(目前只有 TiDB)。
-	//
-	// 默认 false = fail-closed:建不出来就让 MigrateSchema 失败。打开它等于明确接受
-	// 「本实例的快照 guid 去重失效,同一个 guid 可以落成多行且零报错」,所以只能由**配置显式**打开,
-	// 不允许任何代码路径"顺手"置 true;打开之后启动日志会逐条写明失效范围(见 ensureNullableUniqueKey)。
-	//
-	// 注:把它接到 yaml 配置项上要改 internal/config 与 internal/svc,不在本次改动范围内
-	// (那两处归别的改动),所以现在它只有零值一条路 —— 即 TiDB 上迁移必然失败,这正是期望行为。
+	// AllowMissingGuidUniqueKey 仅保留旧调用方源码兼容，已不再允许绕过唯一约束。
+	// TiDB 采用 CASE + VIRTUAL 后，所有方言都必须通过相同唯一性验收。
 	AllowMissingGuidUniqueKey bool
 
 	// LockWait 是等迁移锁(见 acquireMigrateLock)的上限。0 = defaultMigrateLockWait;

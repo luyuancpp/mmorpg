@@ -269,12 +269,12 @@ func TestOrderingLease_BeginSQLPastLocalDeadline(t *testing.T) {
 	fc.advance(orderingLockTTL - orderingLeaseSafetyMargin)
 
 	calls := 0
-	handler := func(context.Context, *proto2mysql.DB, *db_proto.DBTask, proto.Message) error {
+	handler := func(context.Context, *proto2mysql.DB, *db_proto.DBTask, proto.Message) (writeOutcome, error) {
 		calls++
-		return nil
+		return writeOutcome{kind: writeApplied}, nil
 	}
 	route := &placementRoute{router: w.placement, op: "write", key: task.Key, storageID: testZoneID, store: proto2mysql.NewDB()}
-	err := runDBOp(context.Background(), w.redisClient, task, &db_proto.TaskResult{}, handler, route, lease)
+	err := runDBOpError(context.Background(), w.redisClient, task, &db_proto.TaskResult{}, handler, route, lease)
 
 	require.ErrorIs(t, err, errOrderingLeaseLost)
 	assert.Zero(t, calls, "no SQL may be sent past the local deadline")
@@ -378,10 +378,10 @@ func TestOrderingLease_VerifyExtendsDeadline(t *testing.T) {
 
 func TestLeaseMarginCoversLockWaits(t *testing.T) {
 	cases := []struct {
-		name            string
-		lockWait, inno  int
-		margin          time.Duration
-		wantErr         bool
+		name           string
+		lockWait, inno int
+		margin         time.Duration
+		wantErr        bool
 	}{
 		{name: "defaults 10+10+5 fit in 30s", lockWait: 10, inno: 10, margin: orderingLeaseSafetyMargin},
 		{name: "lock_wait_timeout disabled", lockWait: -1, inno: 10, margin: orderingLeaseSafetyMargin, wantErr: true},

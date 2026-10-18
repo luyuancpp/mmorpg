@@ -289,6 +289,16 @@ int main(int argc, char *argv[])
 			}
 			return drained; });
 
+        // 拆除前钩子(Node::SetBeforeTeardown):producer 最后一次有界 flush 刚做完、回执已进 DBTask 账本,
+        // 日志 / ECS / Redis 都还活着 —— 停掉 DBTask 回执 Pump 并收账。停机时 Kafka 慢或不可用,停在回执闸门上
+        // (kAwaitAck / kRetainExhausted)的玩家就在这一刻打进那行
+        // "[DbTaskDispatch] shutting down with N player(s) whose MySQL copy may lag Redis ... ids=[...]"
+        // (合服 / 回档以 MySQL 为准时追查旧档的唯一证据)。以前它只在 Node 析构之后的 tlsRedisSystem.Shutdown() 里打,
+        // 那时 logSystem 已停、gNodeAtomic 已置空,Linux 上静默丢失;Pump 也一直跑到那时,会在半拆的节点上推下线收尾。
+        // 两种停机路径都经过这里;下面 Node 作用域之后的 tlsRedisSystem.Shutdown() 仍保留为幂等兜底。
+        node.SetBeforeTeardown([](Node &)
+                               { tlsRedisSystem.StopDbTaskDispatch(); });
+
         // 身份冲突(etcd 租约过期 / node_id 被别人抢走)和普通 SIGTERM 不是一回事:
         // 这台节点马上就不再是 node_id 的合法持有者,但玩家的 gate 会话还连着。
         // 所以除了存盘,还要把玩家改派到别的 scene node 的大世界频道 ——
@@ -392,7 +402,8 @@ int main(int argc, char *argv[])
 		PlayerLifecycleSystem::SetNodeIdentityProbe({});
 
 		// Node 正常 finalizer 已先 free Hiredis;这里是幂等兜底,随后才销毁
-		// 仍由 SceneRuntimeContext 持有的 MessageAsyncClient。
+		// 仍由 SceneRuntimeContext 持有的 MessageAsyncClient。DBTask 收账正常已在拆除前钩子里做过,
+		// tlsRedisSystem.Shutdown() 里的那次是空操作(此刻打的日志在 Linux 上已写不进文件)。
 		tlsRedis.Shutdown();
 		tlsRedisSystem.Shutdown();
 

@@ -1351,3 +1351,207 @@ func TestRouteStore_TiDBClusteredShardsAndPresplit(t *testing.T) {
 		"R12 中段游标不许全表扫描(否则键集翻页每页都从表头扫起,audit 方向 A 与全量预热是 O(N²/页大小))")
 	explainTiDB("R12 零游标", scanStmt(store.RouteScanCursor{}))
 }
+
+// ── 冻结、解冻与反向修库(第 1b-1 批)──────────────────────────────────────────────
+
+// freezeCtx 是冻结 / 解冻调用的时限(store.RouteFreezeTimeoutMin,见它的注释)。
+func freezeCtx(t *testing.T) context.Context {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), store.RouteFreezeTimeoutMin)
+	t.Cleanup(cancel)
+	return ctx
+}
+
+// readReconcileWatermark 读 route_reconcile(id=1).watermark_ms。
+func readReconcileWatermark(t *testing.T, db *storetest.DB) uint64 {
+	t.Helper()
+	var wm uint64
+	require.NoError(t, db.Raw.QueryRow("SELECT watermark_ms FROM route_reconcile WHERE id = 1").Scan(&wm))
+	return wm
+}
+
+// TestRouteStore_RepairFromCacheRestoresRolledBackRows:模拟库回档 —— 库里是 rev 3 的旧值,缓存里是 rev 5 的新值。
+// 可写时修库拒绝;冻结后修库把缓存那一版连同 rev 写回库(rev = maprev,不是 +1),缓存有而库没有的玩家插入;
+// 原样重跑全部 Matched、updated_at_ms 不变(幂等);冻结期 W1 拒写;解冻之后 W1 恢复。只比较相等与相对大小,不依赖墙钟。
+func TestRouteStore_RepairFromCacheRestoresRolledBackRows(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	st := newRouteStore(t, db)
+	ctx := context.Background()
+
+	seeded, err := st.ImportRoutes(ctx, []store.RouteImportRow{{PlayerID: 8101, HomeZone: 7, MapRev: 3}}, false)
+	require.NoError(t, err)
+	require.Equal(t, 1, seeded.Inserted)
+
+	cache := []store.RouteImportRow{
+		{PlayerID: 8101, HomeZone: 8, Placement: &placement.Record{StorageID: 1000000, Version: 1}, MapRev: 5},
+		{PlayerID: 8102, HomeZone: 7, MapRev: 2},
+	}
+	_, err = st.RepairRoutesFromCache(ctx, cache, store.RouteRepairOptions{})
+	require.ErrorIs(t, err, store.ErrRouteNotFrozen, "可写时不许反向修库")
+
+	changed, err := st.FreezeRouteWriters(freezeCtx(t))
+	require.NoError(t, err)
+	require.True(t, changed)
+	changed, err = st.FreezeRouteWriters(freezeCtx(t))
+	require.NoError(t, err)
+	assert.False(t, changed, "二次冻结是 no-op")
+	_, err = st.RegisterHome(ctx, store.RouteRegisterRequest{PlayerID: 8199, HomeZone: 7})
+	require.ErrorIs(t, err, store.ErrRouteNotWritable, "冻结期 W1 拒写")
+
+	ids := []uint64{8101, 8102}
+	before, err := st.GetRoutes(ctx, ids)
+	require.NoError(t, err)
+	dry, err := st.RepairRoutesFromCache(ctx, cache, store.RouteRepairOptions{DryRun: true})
+	require.NoError(t, err)
+	assert.Equal(t, 1, dry.Restored)
+	assert.Equal(t, 1, dry.Inserted)
+	afterDry, err := st.GetRoutes(ctx, ids)
+	require.NoError(t, err)
+	assert.Equal(t, before, afterDry, "dry-run 必须零写入")
+
+	stats, err := st.RepairRoutesFromCache(ctx, cache, store.RouteRepairOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, 1, stats.Restored)
+	assert.Equal(t, 1, stats.Inserted)
+	after, err := st.GetRoutes(ctx, ids)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(5), after[8101].Rev, "rev 置为 maprev,不是 +1")
+	assert.Equal(t, uint32(8), after[8101].HomeZone)
+	assert.Equal(t, uint32(1000000), after[8101].StorageID)
+	assert.Equal(t, uint64(2), after[8102].Rev, "新行 rev = maprev")
+	assert.Equal(t, before[8101].CreatedAtMs, after[8101].CreatedAtMs, "覆盖不动 created_at_ms")
+
+	again, err := st.RepairRoutesFromCache(ctx, cache, store.RouteRepairOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, 2, again.Matched, "重跑幂等")
+	assert.Zero(t, again.Restored+again.Inserted+again.Filled+len(again.TiesResolved))
+	afterAgain, err := st.GetRoutes(ctx, ids)
+	require.NoError(t, err)
+	assert.Equal(t, after, afterAgain, "重跑零变更(含 updated_at_ms)")
+
+	mi := []store.MergedIntoRow{{SrcZone: 201, DstZone: 202, RunID: "201-202-20261018T000000Z-abcd1234"}}
+	miStats, err := st.RepairMergedIntoFromCache(ctx, mi, false)
+	require.NoError(t, err)
+	assert.Equal(t, 1, miStats.Inserted)
+	miStats, err = st.RepairMergedIntoFromCache(ctx, mi, false)
+	require.NoError(t, err)
+	assert.Equal(t, 1, miStats.Matched)
+
+	changed, err = st.UnfreezeRouteWriters(freezeCtx(t), 0)
+	require.NoError(t, err)
+	require.True(t, changed)
+	_, err = st.RepairRoutesFromCache(ctx, cache, store.RouteRepairOptions{})
+	require.ErrorIs(t, err, store.ErrRouteNotFrozen, "解冻之后不许再修库")
+	res, err := st.RegisterHome(ctx, store.RouteRegisterRequest{PlayerID: 8199, HomeZone: 7})
+	require.NoError(t, err)
+	assert.Equal(t, store.RouteRegisterInserted, res.Outcome, "解冻之后 W1 恢复")
+}
+
+// TestRouteStore_RepairTieReportedUnlessResolved:同 rev 而值不同的平局默认只报告、不写;显式 ResolveTies 才用缓存覆盖(rev 不变);
+// 覆盖之后再跑就是 Matched。
+func TestRouteStore_RepairTieReportedUnlessResolved(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	st := newRouteStore(t, db)
+	ctx := context.Background()
+
+	_, err := st.ImportRoutes(ctx, []store.RouteImportRow{{PlayerID: 8201, HomeZone: 7, MapRev: 4}}, false)
+	require.NoError(t, err)
+	_, err = st.FreezeRouteWriters(freezeCtx(t))
+	require.NoError(t, err)
+	before, ok := readRoute(t, st, 8201)
+	require.True(t, ok)
+
+	cache := []store.RouteImportRow{{PlayerID: 8201, HomeZone: 9, MapRev: 4}}
+	stats, err := st.RepairRoutesFromCache(ctx, cache, store.RouteRepairOptions{})
+	require.NoError(t, err)
+	require.Len(t, stats.Ties, 1)
+	assert.Empty(t, stats.TiesResolved)
+	unchanged, _ := readRoute(t, st, 8201)
+	assert.Equal(t, before, unchanged, "默认只报告平局,一个字节都不改")
+
+	stats, err = st.RepairRoutesFromCache(ctx, cache, store.RouteRepairOptions{ResolveTies: true})
+	require.NoError(t, err)
+	require.Len(t, stats.TiesResolved, 1)
+	resolved, _ := readRoute(t, st, 8201)
+	assert.Equal(t, uint32(9), resolved.HomeZone, "ResolveTies 用缓存覆盖")
+	assert.Equal(t, uint64(4), resolved.Rev, "平局覆盖 rev 不变")
+
+	stats, err = st.RepairRoutesFromCache(ctx, cache, store.RouteRepairOptions{ResolveTies: true})
+	require.NoError(t, err)
+	assert.Equal(t, 1, stats.Matched)
+}
+
+// TestRouteStore_FreezeUnfreezeRoundTrip:解冻按 GREATEST 抬水位(只增不减)、generation 不换;已可写时解冻是 no-op、水位不动。
+func TestRouteStore_FreezeUnfreezeRoundTrip(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	st := newRouteStore(t, db)
+	ctx := context.Background()
+
+	meta0, err := st.ReadRouteMeta(ctx)
+	require.NoError(t, err)
+	require.False(t, meta0.Frozen())
+	wm0 := readReconcileWatermark(t, db)
+
+	changed, err := st.UnfreezeRouteWriters(freezeCtx(t), wm0+12345)
+	require.NoError(t, err)
+	assert.False(t, changed, "已可写时解冻是 no-op")
+	assert.Equal(t, wm0, readReconcileWatermark(t, db), "no-op 不抬水位")
+
+	_, err = st.FreezeRouteWriters(freezeCtx(t))
+	require.NoError(t, err)
+	frozen, err := st.ReadRouteMeta(ctx)
+	require.NoError(t, err)
+	require.True(t, frozen.Frozen())
+
+	changed, err = st.UnfreezeRouteWriters(freezeCtx(t), wm0+12345)
+	require.NoError(t, err)
+	require.True(t, changed)
+	assert.Equal(t, wm0+12345, readReconcileWatermark(t, db), "解冻先把水位抬到要求值")
+	meta1, err := st.ReadRouteMeta(ctx)
+	require.NoError(t, err)
+	assert.False(t, meta1.Frozen())
+	assert.Equal(t, meta0.Generation, meta1.Generation, "解冻不换 generation(偏离 B1)")
+
+	_, err = st.FreezeRouteWriters(freezeCtx(t))
+	require.NoError(t, err)
+	changed, err = st.UnfreezeRouteWriters(freezeCtx(t), wm0+100)
+	require.NoError(t, err)
+	require.True(t, changed)
+	assert.Equal(t, wm0+12345, readReconcileWatermark(t, db), "水位只增不减(GREATEST)")
+}
+
+// TestRouteStore_UnfreezeWaitsForRepairMetaLock:反向修库的写事务持着 route_meta(id=1) 的行锁(R18x)时,解冻的 R22 必须等它
+// —— 这是「冻结期内修库」在提交点仍成立的依据(普通读复核做不到)。用同一段生产文本在另一个事务里持锁扮演修库:
+// 解冻等满会话锁等待 1s 后以 1205 失败、整笔回滚(水位不动、仍冻结);持锁方回滚之后解冻照常成功。
+func TestRouteStore_UnfreezeWaitsForRepairMetaLock(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	st := newRouteStore(t, db)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	_, err := st.FreezeRouteWriters(freezeCtx(t))
+	require.NoError(t, err)
+	wm0 := readReconcileWatermark(t, db)
+
+	holder, err := db.Raw.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	require.NoError(t, err)
+	defer func() { _ = holder.Rollback() }()
+	var generation string
+	var writable uint64
+	require.NoError(t, holder.QueryRowContext(ctx, store.RouteLockMetaSQLForTest).Scan(&generation, &writable))
+	require.Zero(t, writable)
+
+	changed, err := st.UnfreezeRouteWriters(freezeCtx(t), wm0+777)
+	var me *mysql.MySQLError
+	require.Truef(t, errors.As(err, &me) && me.Number == 1205, "解冻必须排在修库事务之后、等满 1s 以 1205 失败,got (%t, %v)", changed, err)
+	assert.False(t, changed)
+	meta, err := st.ReadRouteMeta(ctx)
+	require.NoError(t, err)
+	assert.True(t, meta.Frozen(), "1205 之后整笔回滚:仍冻结")
+	assert.Equal(t, wm0, readReconcileWatermark(t, db), "1205 之后整笔回滚:水位不动")
+
+	require.NoError(t, holder.Rollback())
+	changed, err = st.UnfreezeRouteWriters(freezeCtx(t), wm0+777)
+	require.NoError(t, err)
+	assert.True(t, changed)
+}

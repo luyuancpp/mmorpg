@@ -93,7 +93,10 @@ func (p *commandProbe) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
 	return func(ctx context.Context, cmd redis.Cmder) error {
 		p.observe(cmd)
 		err := next(ctx, cmd)
-		p.maybeCancel(cmd)
+		// hook返回前cmd.Err尚未由外层赋值；NOSCRIPT不能被误当成成功写种子。
+		if err == nil {
+			p.maybeCancel(cmd)
+		}
 		return err
 	}
 }

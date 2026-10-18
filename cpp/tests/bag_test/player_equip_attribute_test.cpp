@@ -62,6 +62,7 @@
 #include "proto/common/component/player_pet_comp.pb.h"
 #include "proto/common/component/player_skill_comp.pb.h"
 #include "proto/scene/player_attribute.pb.h"
+#include "services/scene/player/system/bag_marshal.h"
 #include "services/scene/player/system/equip_attribute_rules.h"
 #include "services/scene/player/system/player_attribute.h"
 #include "services/scene/player/system/player_data_loader.h"

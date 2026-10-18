@@ -44,6 +44,8 @@
 #include "grpc_client/data_service/data_service_grpc_client.h"
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/TimerId.h"
+#include "network/node_utils.h"
+#include "thread_context/node_context_manager.h"
 #include "muduo_grpc/channel.h"
 #include "muduo_grpc/method_table.h"
 #include "muduo_grpc/server.h"
@@ -358,6 +360,115 @@ TEST_F(GrpcClientLoopbackTest, ServerShutdownCompletesStartedCallWithUnavailable
     EXPECT_EQ(server_->connectionCount(), 0u);
     EXPECT_EQ(*globalReplyCalls_, 0);
     EXPECT_EQ(*globalFailedCalls_, 0);
+}
+
+
+// 合并保留:节点摘通道时,生成客户端的在途调用与随后本地拒绝都异步失败一次;
+// 夹具原本另存一份通道,先放掉它,让实体组件成为唯一所有者,才能验证真实析构路径。
+TEST_F(GrpcClientLoopbackTest, ChannelRemovalFailsOutstandingCallAndRejectsLaterCallThroughFailureHandler)
+{
+    const std::weak_ptr<muduo_grpc::Channel> weakChannel = channel_;
+    channel_.reset();
+    const auto failedPlayers = std::make_shared<std::vector<uint64_t>>();
+    data_service::AsyncDataServiceLoadPlayerDataFailedHandler =
+        [failedPlayers, weakChannel, calls = globalFailedCalls_](const GrpcCallFailure &failure,
+                                                               const LoadPlayerDataRequest &failedRequest)
+        {
+            ++*calls;
+            EXPECT_EQ(failure.code(), kGrpcStatusUnavailable);
+            EXPECT_TRUE(weakChannel.expired()) << "失败回调在通道析构之后才执行,不得借用通道";
+            failedPlayers->push_back(failedRequest.player_id());
+        };
+    LoadPlayerDataRequest request;
+    request.set_player_id(43);
+    data_service::SendDataServiceLoadPlayerData(registry_, nodeEntity_, request);
+    ASSERT_FALSE(weakChannel.expired());
+    EXPECT_EQ(weakChannel.lock()->outstandingCalls(), 1u);
+    registry_.remove<MuduoGrpcChannelPtr>(nodeEntity_);
+    EXPECT_TRUE(weakChannel.expired()) << "生成层与调用状态都不得持有通道的强引用";
+    EXPECT_FALSE(HasUsableGrpcClient(registry_, nodeEntity_));
+    request.set_player_id(44);
+    data_service::SendDataServiceLoadPlayerData(registry_, nodeEntity_, request);
+    EXPECT_TRUE(failedPlayers->empty()) << "摘通道与之后的本地拒绝都不得在当前栈内回调";
+    EXPECT_FALSE(GrpcClientLocalCompletionsDrained()) << "摘通道后的调用走本地拒绝,不再发往网络";
+    ASSERT_TRUE(RunLoopUntil([&] {
+        return failedPlayers->size() == 2 && GrpcClientLocalCompletionsDrained();
+    }, kLiveness));
+    RunLoopFor(50ms);
+    ASSERT_EQ(failedPlayers->size(), 2u) << "每个调用恰好一次";
+    EXPECT_EQ((*failedPlayers)[0], 43u) << "~Channel 先排队,在途调用先完成";
+    EXPECT_EQ((*failedPlayers)[1], 44u);
+    EXPECT_EQ(*globalFailedCalls_, 2);
+    EXPECT_EQ(*globalReplyCalls_, 0);
+}
+
+// 合并保留:带 done 的在途调用在通道析构后以 UNAVAILABLE 完成一次;
+// 摘通道后的新调用同样异步拒绝一次,两者都不回退到全局处理器。
+TEST_F(GrpcClientLoopbackTest, PerCallDoneCompletesUnavailableAfterChannelIsRemoved)
+{
+    const std::weak_ptr<muduo_grpc::Channel> weakChannel = channel_;
+    channel_.reset();
+    const auto outstanding = std::make_shared<Observed>();
+    const auto rejected = std::make_shared<Observed>();
+    LoadPlayerDataRequest request;
+    request.set_player_id(45);
+    data_service::SendDataServiceLoadPlayerData(
+        registry_, nodeEntity_, request,
+        [outstanding, weakChannel](const GrpcCallOutcome &outcome, const LoadPlayerDataResponse *reply)
+        {
+            ++outstanding->calls;
+            outstanding->code = outcome.code;
+            outstanding->hadReply = reply != nullptr;
+            EXPECT_TRUE(weakChannel.expired()) << "done 在通道析构之后才执行,不得捕获通道或实体组件";
+        });
+    ASSERT_FALSE(weakChannel.expired());
+    EXPECT_EQ(weakChannel.lock()->outstandingCalls(), 1u);
+    registry_.remove<MuduoGrpcChannelPtr>(nodeEntity_);
+    EXPECT_TRUE(weakChannel.expired());
+    data_service::SendDataServiceLoadPlayerData(
+        registry_, nodeEntity_, request,
+        [rejected](const GrpcCallOutcome &outcome, const LoadPlayerDataResponse *reply)
+        {
+            ++rejected->calls;
+            rejected->code = outcome.code;
+            rejected->hadReply = reply != nullptr;
+        });
+    EXPECT_EQ(outstanding->calls, 0) << "摘通道不得在当前栈内执行 done";
+    EXPECT_EQ(rejected->calls, 0) << "本地拒绝也不得在 Send 栈内同步回调";
+    EXPECT_FALSE(GrpcClientLocalCompletionsDrained()) << "摘通道后的调用走本地拒绝,不再发往网络";
+    ASSERT_TRUE(RunLoopUntil([&] {
+        return outstanding->calls == 1 && rejected->calls == 1 && GrpcClientLocalCompletionsDrained();
+    }, kLiveness));
+    RunLoopFor(50ms);
+    EXPECT_EQ(outstanding->calls, 1) << "恰好一次";
+    EXPECT_EQ(outstanding->code, kGrpcStatusUnavailable);
+    EXPECT_FALSE(outstanding->hadReply);
+    EXPECT_EQ(rejected->calls, 1);
+    EXPECT_EQ(rejected->code, kGrpcStatusUnavailable);
+    EXPECT_FALSE(rejected->hadReply);
+    EXPECT_EQ(*globalReplyCalls_, 0);
+    EXPECT_EQ(*globalFailedCalls_, 0);
+}
+
+// 合并保留:直接调用生产适配层,而非只给纯 Pick 喂候选。
+// 当前通道没有公开 Close API;节点摘除 / 关机阶段 0 的关闭动作是先摘组件,原测试也按此契约验证。
+TEST_F(GrpcClientLoopbackTest, SceneManagerSelectionRejectsSnapshotOnlyAndClosingEntities)
+{
+    const auto type = common::base::SceneManagerNodeService;
+    auto &registry = tlsNodeContextManager.GetRegistry(type);
+    ASSERT_EQ(registry.view<NodeInfo>().size(), 0u) << "本例不覆盖其他测试遗留的节点";
+    const auto snapshotOnly = registry.create();
+    registry.emplace<NodeInfo>(snapshotOnly).set_node_type(type);
+    EXPECT_EQ(GetSceneManagerEntity(77), static_cast<entt::entity>(entt::null));
+    const auto connected = registry.create();
+    registry.emplace<NodeInfo>(connected).set_node_type(type);
+    registry.emplace<MuduoGrpcChannelPtr>(connected, channel_);
+    EXPECT_EQ(GetSceneManagerEntity(77), connected);
+    registry.remove<MuduoGrpcChannelPtr>(connected);
+    EXPECT_EQ(GetSceneManagerEntity(77), static_cast<entt::entity>(entt::null));
+    // 本例创建后不用 ASSERT,三个生产查询无论成功与否都只清理本例两实体。
+    registry.destroy(connected);
+    registry.destroy(snapshotOnly);
 }
 
 } // namespace

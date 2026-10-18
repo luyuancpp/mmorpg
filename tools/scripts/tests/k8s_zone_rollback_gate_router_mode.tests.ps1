@@ -32,6 +32,8 @@
         go/db/etc/db.yaml(读不到即拒);回档一律落到 zone 组 —— Step 5 带 Group=<基名>_z<id>、RetireGroup=<基名>、Partitions,
         Step 6 带 -DbConsumerGroup zone;Step 2 排空等待已删除;第 0 步 c 的 LAG 快照只告警、只计本 topic;第 0 步 d 在
         zone 组没有位点时以 dry-run 预演 Step 5,预演失败或 describe 判不出都在停服之前拒绝;-KafkaGroup 与 legacy 组相同时入口即拒。
+      - R7 复核(2026-10-17):topic 按 db.yaml 的 TopicGeneration 推导,显式 -KafkaTopic 与推导值不同即入口拒绝;第 0 步 e 按 Step 6 的路径
+        (kubectl exec 进 kafka-0,同一 -KubeContext、dev_tools.ps1 默认 infra namespace)预读两组位点,读不到或与本机 CLI 不一致都在停服之前拒绝。
       - dev_tools.ps1 的 k8s-zone-rollback 入口:全部入口参数与 -KubeContext / -KubeConfig 真正转到回滚脚本
         (以前 -KubeContext 被静默吞掉,回滚落到 kubectl 当前 context);-AllowDisruptiveSwitch 同样转给回滚脚本,
         由它只透传到 Step 6、不下传 Step 1;Invoke-K8sImage 拒绝 -LoginDevPasswordAuth(k8s_image.ps1 不部署 login),
@@ -296,7 +298,7 @@ function New-KubectlReply {
 
 <#
 .SYNOPSIS
-    在进程内的沙箱里跑一遍 k8s_zone_rollback.ps1,返回 @{ Error; Output; KubectlCalls; DevToolsCalls; DevToolsBound; KafkaCliCalls; KafkaResetBound }。
+    在进程内的沙箱里跑一遍 k8s_zone_rollback.ps1,返回 @{ Error; Output; KubectlCalls; DevToolsCalls; DevToolsBound; KafkaCliCalls; KafkaExecCalls; KafkaResetBound }。
 
 .DESCRIPTION
     预检只在 -Apply 下读集群,子进程 dry-run 覆盖不到,所以在进程内跑:沙箱是 <tmp>/<guid>/tools/scripts(被测脚本、
@@ -318,6 +320,14 @@ function New-KubectlReply {
 
 .PARAMETER KafkaResetDryRunExit
     假 kafka_offset_reset.ps1 在不带 -Apply 的调用(第 0 步 d 的预演)上的退出码;0 = 成功。
+
+.PARAMETER KafkaExecOutput
+    第 0 步 e 的 kubectl exec(进 kafka-0 跑 describe)的回应:@{ Lines; ExitCode } 对每次 exec 原样返回;
+    缺省 = 与假 kafka-consumer-groups.sh 同一份事实(同一个 Kafka):注入了 -KafkaCliOutput 的 Lines 就回同样的行,否则回「组不存在」。
+    exec 调用单独记在 KafkaExecCalls 里,不进 KubectlCalls(那是第 0 步 a 的入口现状读)。
+
+.PARAMETER DevToolsInfraNamespaceDefault
+    假 dev_tools.ps1 参数块里 -InfraNamespace 的默认值(第 0 步 e 按语法树读它,得知 Step 6 用哪个 infra namespace);空串 = 不给默认值(读不出)。
 
 .PARAMETER DbYamlContent
     给了就用它作沙箱里的 go/db/etc/db.yaml,不拷仓库那份;-OmitDbYaml 则不放这个文件。
@@ -351,6 +361,8 @@ function Invoke-RollbackInSandbox {
         [string]$DryRunFailMessage = 'k8s_deploy.ps1 静态预检失败(假)',
         [hashtable]$KafkaCliOutput = @{},
         [int]$KafkaResetDryRunExit = 0,
+        [hashtable]$KafkaExecOutput = @{},
+        [AllowEmptyString()][string]$DevToolsInfraNamespaceDefault = 'contract-infra',
         [string[]]$DbYamlContent = $null,
         [switch]$OmitDbYaml,
         [switch]$Apply
@@ -401,7 +413,7 @@ function Invoke-RollbackInSandbox {
 param($Command, $ZoneName, $ZoneId, $NodeImage, $NamespacePrefix, [switch]$WaitReady, $GateRouterMode = "<unset>", $ReleaseProfile,
     $ClientEntryMode, $ClientPublicHost, $GateClientHostTemplate, $GateNodePortBase, $GateExternalTrafficPolicy, $GateServiceType,
     $RequireClientEndpoint, [switch]$LoginDevPasswordAuth, [switch]$AllowDisruptiveSwitch, $GatewayIngressHost, $GatewayIngressClassName,
-    $GatewayIngressTlsSecret, $GatewayTrustedProxies, $KubeContext, $KubeConfig, $DbConsumerGroup, [switch]$DryRun)
+    $GatewayIngressTlsSecret, $GatewayTrustedProxies, $KubeContext, $KubeConfig, $DbConsumerGroup, __INFRA_PARAM__[switch]$DryRun)
 $label = if ($DryRun) { "$Command/dry-run" } else { $Command }
 Add-Content -LiteralPath '__CALLS__' -Encoding utf8 -Value "$label GateRouterMode=$GateRouterMode"
 $boundParameters = $PSBoundParameters
@@ -416,7 +428,9 @@ exit 0
             'exit' { "Write-Host '$failMessage'; exit 3" }
             default { '' }
         }
-        $fakeDevTools = $fakeDevTools.Replace('__CALLS__', $devToolsRecord.Replace("'", "''")).Replace('__BOUND__', $devToolsBound.Replace("'", "''")).Replace('__DRYRUN_FAIL__', $dryRunFailCode)
+        # 第 0 步 e 按语法树读 dev_tools.ps1 的 -InfraNamespace 默认值(Step 6 不传它,就用这个默认值);被调时不传它,不影响记账。
+        $infraParam = if ([string]::IsNullOrEmpty($DevToolsInfraNamespaceDefault)) { '$InfraNamespace, ' } else { ('$InfraNamespace = "{0}", ' -f $DevToolsInfraNamespaceDefault) }
+        $fakeDevTools = $fakeDevTools.Replace('__CALLS__', $devToolsRecord.Replace("'", "''")).Replace('__BOUND__', $devToolsBound.Replace("'", "''")).Replace('__DRYRUN_FAIL__', $dryRunFailCode).Replace('__INFRA_PARAM__', $infraParam)
         Set-Content -LiteralPath (Join-Path $sandboxDir 'dev_tools.ps1') -Encoding utf8 -Value $fakeDevTools
         # 假 kafka_offset_reset.ps1 同样声明全部参数并关掉位置绑定:数组 splatting 之类的错位会直接报错,而不是静默记错账。
         $kafkaResetBound = Join-Path $sandboxDir 'kafka_offset_reset.bound.txt'
@@ -434,7 +448,21 @@ exit 0
         Set-Content -LiteralPath (Join-Path $sandboxDir 'kafka_offset_reset.ps1') -Encoding utf8 -Value $fakeKafkaReset
 
         $fakeKubectlCalls = [System.Collections.Generic.List[string]]::new()
+        $fakeKafkaExecCalls = [System.Collections.Generic.List[string]]::new()
         function kubectl {
+            $kubectlArgList = @($args | ForEach-Object { "$_" })
+            # 第 0 步 e:exec 进 kafka-0 跑 describe。单独记账;缺省回与假 kafka-consumer-groups.sh 同一份事实(同一个 Kafka)。
+            if ($kubectlArgList -ccontains 'exec') {
+                $fakeKafkaExecCalls.Add(($kubectlArgList -join ' '))
+                $execReply = if ($KafkaExecOutput.ContainsKey('Lines')) { $KafkaExecOutput } elseif ($KafkaCliOutput.ContainsKey('Lines')) { $KafkaCliOutput } else { $null }
+                if ($null -ne $execReply) {
+                    $global:LASTEXITCODE = if ($execReply.ContainsKey('ExitCode')) { $execReply.ExitCode } else { 0 }
+                    return $execReply.Lines
+                }
+                $execGroup = [regex]::Match($kubectlArgList[-1], '--group (\S+)\s*$').Groups[1].Value
+                $global:LASTEXITCODE = 0
+                return "Error: Consumer group '$execGroup' does not exist."
+            }
             $fakeKubectlCalls.Add(($args -join ' '))
             if ($KubectlReply.ContainsKey('Throw')) {
                 throw [System.Management.Automation.CommandNotFoundException]::new($KubectlReply.Throw)
@@ -485,6 +513,7 @@ exit 0
             DevToolsCalls   = @(if (Test-Path -LiteralPath $devToolsRecord) { Get-Content -LiteralPath $devToolsRecord -Encoding utf8 })
             DevToolsBound   = @(if (Test-Path -LiteralPath $devToolsBound) { Get-Content -LiteralPath $devToolsBound -Encoding utf8 })
             KafkaCliCalls   = @($fakeKafkaCliCalls)
+            KafkaExecCalls  = @($fakeKafkaExecCalls)
             KafkaResetBound = @(if (Test-Path -LiteralPath $kafkaResetBound) { Get-Content -LiteralPath $kafkaResetBound -Encoding utf8 })
         }
     }
@@ -894,6 +923,86 @@ Test-Case '子进程 dry-run:Step 5 打印 zone 组与 RetireGroup,Step 6 带 -D
     Assert-Match -Text (Get-ZoneUpArgsLine -Output $run.Output) -Pattern '(^|\s)-DbConsumerGroup zone(\s|$)' -Because 'Step 6 显式落到 zone 组'
     Assert-Match -Text $run.Output -Pattern ("group=" + [regex]::Escape($ZoneGroup) + " retire=" + [regex]::Escape($DbGroupBase) + '(\s|$)') -Because '摘要要写明重置哪个组、退役哪个组'
     Assert-NotMatch -Text $run.Output -Pattern 'Step 2: drain' -Because 'Step 2 已删除'
+}
+
+# ─────────────────────────────────────────────────────────────────
+# R7 复核(2026-10-17):[6] topic 世代号从 db.yaml 推导;[2] 第 0 步 e 按 Step 6 的访问路径预读 Kafka 位点
+# ─────────────────────────────────────────────────────────────────
+
+Test-Case '[6] TopicGeneration 2:第 0 步 d 与 Step 5 都作用在 <topic>_g2;显式 -KafkaTopic 与推导值不同即入口拒绝;世代号缺失 / 非法同样拒绝' {
+    $gen2 = @('ServerConfig:', '  Kafka:', '    GroupID: "custom_db_group"', '    TopicGeneration: 2', '    PartitionCnt: 4')
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DbYamlContent $gen2
+    Assert-True -Condition ($null -eq $run.Error) -Because "TopicGeneration 2 下全流程不该失败。错误: $($run.Error)"
+    Assert-Equal -Expected 2 -Actual $run.KafkaResetBound.Count -Because "第 0 步 d 预演一次、Step 5 执行一次。实际: $($run.KafkaResetBound -join ' | ')"
+    foreach ($line in $run.KafkaResetBound) {
+        Assert-BoundPair -Line $line -Pair 'Topic=db_task_zone_101_g2' -Because '世代号 > 1 时真实 topic 带 _g<gen>,与 Step 6 的 k8s_deploy.ps1 读的是同一个'
+    }
+    Assert-Match -Text $run.Output -Pattern 'topic=db_task_zone_101_g2(\s|$)' -Because '摘要要写明推导出的 topic'
+
+    $same = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ KafkaTopic = 'db_task_zone_101_g2' } + $KafkaCaseArgs) -DbYamlContent $gen2
+    Assert-True -Condition ($null -eq $same.Error) -Because "显式 -KafkaTopic 等于推导值时放行。错误: $($same.Error)"
+
+    $stale = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ KafkaTopic = 'db_task_zone_101' } + $KafkaCaseArgs) -DbYamlContent $gen2
+    Assert-True -Condition ($null -ne $stale.Error) -Because '沿用旧命令传了上一代 topic,必须拒绝:Step 5 会重置旧 topic,真实 topic 上的位点不动'
+    Assert-Match -Text $stale.Error -Pattern '-KafkaTopic db_task_zone_101 与按 go/db/etc/db\.yaml\(TopicGeneration=2\)推导的 db_task_zone_101_g2 不一致' -Because '错误文本要点明两个 topic'
+    Assert-Equal -Expected 0 -Actual ($stale.DevToolsCalls.Count + $stale.KafkaCliCalls.Count + $stale.KafkaExecCalls.Count + $stale.KafkaResetBound.Count) -Because '入口校验早于任何步骤与读 Kafka'
+
+    foreach ($case in @(
+            @{ Label = '缺 TopicGeneration'; Lines = @('ServerConfig:', '  Kafka:', '    GroupID: "custom_db_group"', '    PartitionCnt: 4') }
+            @{ Label = 'TopicGeneration 为负'; Lines = @('ServerConfig:', '  Kafka:', '    GroupID: "custom_db_group"', '    TopicGeneration: -1', '    PartitionCnt: 4') }
+            @{ Label = 'TopicGeneration 不是整数'; Lines = @('ServerConfig:', '  Kafka:', '    GroupID: "custom_db_group"', '    TopicGeneration: abc', '    PartitionCnt: 4') }
+        )) {
+        $bad = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DbYamlContent $case.Lines
+        Assert-True -Condition ($null -ne $bad.Error) -Because "$($case.Label):拼不出 topic 名必须拒绝(fail-closed)"
+        Assert-Match -Text $bad.Error -Pattern 'ServerConfig\.Kafka\.TopicGeneration' -Because "$($case.Label):错误文本要点明读不到哪个键"
+        Assert-Equal -Expected 0 -Actual $bad.DevToolsCalls.Count -Because "$($case.Label):入口校验早于任何步骤"
+    }
+}
+
+Test-Case '[2] 第 0 步 e:停服之前按 Step 6 的路径(kubectl exec 进 kafka-0,同一 context、dev_tools 默认 infra namespace)读两组位点' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs (@{ KubeContext = 'kind-mmorpg' } + $KafkaCaseArgs)
+    Assert-True -Condition ($null -eq $run.Error) -Because "两条路径一致时不该被拦。错误: $($run.Error)"
+    Assert-Equal -Expected 2 -Actual $run.KafkaExecCalls.Count -Because "zone 组与 legacy 组各 exec 一次。实际: $($run.KafkaExecCalls -join ' | ')"
+    foreach ($pair in @(@{ Index = 0; Group = $ZoneGroup }, @{ Index = 1; Group = $DbGroupBase })) {
+        $want = "--context kind-mmorpg exec -n contract-infra kafka-0 -c kafka -- /bin/sh -c KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group $($pair.Group)"
+        Assert-Equal -Expected $want -Actual $run.KafkaExecCalls[$pair.Index] -Because '与 k8s_deploy.ps1 Read-DbGroupTopicFacts 同一条命令(lib Get-DbGroupDescribeExecArgs)、同一 -KubeContext、dev_tools.ps1 默认的 infra namespace'
+    }
+    $factsAt = $run.Output.IndexOf('Step 6 Kafka facts readable')
+    $stopAt = $run.Output.IndexOf('Step 1: k8s-zone-down')
+    Assert-True -Condition ($factsAt -ge 0 -and $stopAt -gt $factsAt) -Because '第 0 步 e 必须在 Step 1 停服之前'
+}
+
+Test-Case '[2] 第 0 步 e:exec 读不到(缺 pods/exec、kafka-0 未就绪)或与本机 CLI 不一致,都在停服之前拒绝,Step 5 不执行' {
+    $forbidden = @{ Lines = @('Error from server (Forbidden): pods "kafka-0" is forbidden: User "deployer" cannot create resource "pods/exec" in API group ""'); ExitCode = 1 }
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -KafkaExecOutput $forbidden
+    Assert-RefusedBeforeStop -Run $run -Label 'exec Forbidden' -HintPattern 'pods/exec'
+    Assert-Match -Text $run.Error -Pattern 'Step 6' -Because '错误文本要说明这是 Step 6 将走的路径'
+    Assert-Equal -Expected 0 -Actual @($run.KafkaResetBound | Where-Object { $_ -match '(^|;)Apply=True(;|$)' }).Count -Because 'Step 5 不能执行'
+
+    # exec 里 zone 组在本 topic 上有位点,本机 CLI(缺省)说组不存在:两条路径指向的不是同一个 Kafka。
+    $header = 'GROUP  TOPIC  PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CONSUMER-ID  HOST  CLIENT-ID'
+    $other = @{ Lines = @($header, "$ZoneGroup  $SandboxTopic  0  10  15  5  -  -  -"); ExitCode = 0 }
+    $mismatch = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -KafkaExecOutput $other
+    Assert-RefusedBeforeStop -Run $mismatch -Label '两条路径不一致' -HintPattern '两条访问路径看到的 Kafka 不一致'
+    Assert-Match -Text $mismatch.Error -Pattern ([regex]::Escape("消费组 $ZoneGroup 在 $SandboxTopic 上:kafka-0 里读到 offsets,本机 CLI 读到 missing")) -Because '要逐组列出两边的结论'
+    Assert-Equal -Expected 0 -Actual @($mismatch.KafkaResetBound | Where-Object { $_ -match '(^|;)Apply=True(;|$)' }).Count -Because 'Step 5 不能执行'
+
+    $unreadable = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs -DevToolsInfraNamespaceDefault ''
+    Assert-RefusedBeforeStop -Run $unreadable -Label 'dev_tools 默认 infra namespace 读不出' -HintPattern '-InfraNamespace 默认值'
+    Assert-Equal -Expected 0 -Actual $unreadable.KafkaExecCalls.Count -Because '不知道去哪个 namespace 就不 exec'
+}
+
+Test-Case '[2] 第 0 步 e:dry-run 只预告 exec 命令,不执行;子进程 dry-run 读得出真 dev_tools.ps1 的默认 infra namespace' {
+    $run = Invoke-RollbackInSandbox -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $KafkaCaseArgs
+    Assert-True -Condition ($null -eq $run.Error) -Because "dry-run 不该失败。错误: $($run.Error)"
+    Assert-Equal -Expected 0 -Actual $run.KafkaExecCalls.Count -Because 'dry-run 不读集群'
+    foreach ($group in @($ZoneGroup, $DbGroupBase)) {
+        Assert-Match -Text $run.Output -Pattern ('kubectl exec -n contract-infra kafka-0 -c kafka -- /bin/sh -c [^\r\n]*--describe --group ' + [regex]::Escape($group) + '(\r?\n|$)') -Because "dry-run 要预告 -Apply 时对 $group 的 exec"
+    }
+    $sub = Invoke-RollbackDryRun
+    Assert-Equal -Expected 0 -Actual $sub.ExitCode -Because "子进程 dry-run 不该失败。输出: $($sub.Output)"
+    Assert-Match -Text $sub.Output -Pattern 'kubectl exec -n [A-Za-z0-9.-]+ kafka-0 -c kafka -- ' -Because '真 dev_tools.ps1 的 -InfraNamespace 默认值必须能按语法树读成字面常量,否则 -Apply 永远在第 0 步 e 被拒'
+    Assert-NotMatch -Text $sub.Output -Pattern '<unreadable>' -Because '同上'
 }
 
 # ─────────────────────────────────────────────────────────────────

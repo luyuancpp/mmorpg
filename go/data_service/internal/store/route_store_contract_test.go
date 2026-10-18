@@ -131,6 +131,20 @@ func routeStmtLabel(query string) string {
 		return "R15"
 	case routeReconcileSeedSQL:
 		return "R16"
+	case routeRepairOverwriteSQL:
+		return "R17"
+	case routeReadMetaSQL:
+		return "R18"
+	case routeLockMetaSQL:
+		return "R18x"
+	case routeFreezeSQL:
+		return "R19"
+	case routeLockReconcileWatermarkSQL:
+		return "R20"
+	case routeRaiseWatermarkSQL:
+		return "R21"
+	case routeUnfreezeSQL:
+		return "R22"
 	case routeLockProbeGuardSQL:
 		return "PROBE_GUARD"
 	case routeProbeShardCheckSQL:
@@ -2079,4 +2093,333 @@ func TestPrepareTiDBContract(t *testing.T) {
 			t.Fatalf("入参非法却发了语句:%v", got)
 		}
 	})
+}
+
+// ── 冻结、解冻与反向修库(第 1b-1 批)──────────────────────────────────────────────
+
+const fakeRouteGeneration = "0123456789abcdef0123456789abcdef"
+
+// replyMeta 是 R18 / R18x 读到的 route_meta 行(generation, writable)。
+func replyMeta(writable int64) fakeRouteReply {
+	return fakeRouteReply{rows: [][]driver.Value{{fakeRouteGeneration, writable}}}
+}
+
+// repairContractRows 一批覆盖反向修库五种判定的缓存行(player_id 升序;行片依次 36 / 22 / 8 / 58 / 44,同 importContractRows)。
+func repairContractRows() []RouteImportRow {
+	return []RouteImportRow{
+		// 库无行 → 插入,rev = maprev
+		{PlayerID: 100, HomeZone: 7, MapRev: 5},
+		// 库 rev 2 < maprev 4 → 整行覆盖
+		{PlayerID: 150, HomeZone: 8, Placement: &placement.Record{StorageID: 1000000, Version: 1}, MapRev: 4},
+		// 无 maprev、库 home 为 NULL → 退回导入语义补列
+		{PlayerID: 200, HomeZone: 7, Placement: &placement.Record{StorageID: 7, Version: 1}},
+		// 库 rev 3 = maprev、home 是 8 → 平局
+		{PlayerID: 250, HomeZone: 7, MapRev: 3},
+		// 库 rev 9 > maprev → 库领先,不动
+		{PlayerID: 300, HomeZone: 7, MapRev: 5},
+	}
+}
+
+// repairContractExisting 是 R8 读到的已有行(对应 150..300)。
+func repairContractExisting() [][]driver.Value {
+	return [][]driver.Value{
+		routeRowValues(150, 7, 0, 0, "", 2),
+		routeRowValues(200, 0, 7, 1, "", 2),
+		routeRowValues(250, 8, 0, 0, "", 3),
+		routeRowValues(300, 7, 0, 0, "", 9),
+	}
+}
+
+// TestRepairRoutesFromCacheRefusedWhenWritable:writable=1 时反向修库在第一句(R18x 加锁复核)就拒绝,回滚、零写入;
+// dry-run 同样拒绝(R18 普通读),不读玩家行。
+func TestRepairRoutesFromCacheRefusedWhenWritable(t *testing.T) {
+	ctx := context.Background()
+	st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+		"R18x": {replyMeta(1)},
+		"R18":  {replyMeta(1)},
+	}})
+	if _, err := st.RepairRoutesFromCache(ctx, repairContractRows(), RouteRepairOptions{}); !errors.Is(err, ErrRouteNotFrozen) {
+		t.Fatalf("err = %v, want ErrRouteNotFrozen", err)
+	}
+	if _, err := st.RepairRoutesFromCache(ctx, repairContractRows(), RouteRepairOptions{DryRun: true}); !errors.Is(err, ErrRouteNotFrozen) {
+		t.Fatalf("dry-run err = %v, want ErrRouteNotFrozen", err)
+	}
+	want := []string{"BEGIN", "R18x", "ROLLBACK", "R18"}
+	if got := fake.labels(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("语句序列不对(可写时不许读写任何玩家行):\n got=%v\nwant=%v", got, want)
+	}
+}
+
+// TestRepairRoutesFromCacheStatementSequence:R18x(加锁复核冻结态,提交点复核)→ R8(按聚簇键升序加锁读)→ R7 → R9 → R17 → COMMIT;
+// 平局默认只报告不写,-resolve-ties=cache 时多一条 R17(rev 不变)。R17 的 rev 是 maprev、CAS 条件是读到的库 rev。
+func TestRepairRoutesFromCacheStatementSequence(t *testing.T) {
+	ctx := context.Background()
+	wantR8 := []driver.Value{
+		uint64(8), uint64(200),
+		uint64(22), uint64(150),
+		uint64(36), uint64(100),
+		uint64(44), uint64(300),
+		uint64(58), uint64(250),
+	}
+	wantR7 := []driver.Value{uint64(36), uint64(100), uint64(7), nil, nil, nil, uint64(5), fakeRouteWriter}
+	wantR9 := []driver.Value{uint64(7), uint64(7), uint64(1), nil, fakeRouteWriter, uint64(8), uint64(200), uint64(2)}
+	wantRestore := []driver.Value{uint64(8), uint64(1000000), uint64(1), nil, uint64(4), fakeRouteWriter, uint64(22), uint64(150), uint64(2)}
+	wantTie := []driver.Value{uint64(7), nil, nil, nil, uint64(3), fakeRouteWriter, uint64(58), uint64(250), uint64(3)}
+
+	for _, tc := range []struct {
+		name        string
+		resolveTies bool
+		wantLabels  []string
+		wantR17     [][]driver.Value
+	}{
+		{"平局只报告", false, []string{"BEGIN", "R18x", "R8", "R7", "R9", "R17", "COMMIT"}, [][]driver.Value{wantRestore}},
+		{"平局按缓存覆盖", true, []string{"BEGIN", "R18x", "R8", "R7", "R9", "R17", "R17", "COMMIT"}, [][]driver.Value{wantRestore, wantTie}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r17 := make([]fakeRouteReply, len(tc.wantR17))
+			for i := range r17 {
+				r17[i] = replyAffected(1)
+			}
+			st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+				"R18x": {replyMeta(0)},
+				"R8":   {{rows: repairContractExisting()}},
+				"R7":   {replyAffected(1)},
+				"R9":   {replyAffected(1)},
+				"R17":  r17,
+			}})
+			stats, err := st.RepairRoutesFromCache(ctx, repairContractRows(), RouteRepairOptions{ResolveTies: tc.resolveTies})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if stats.Inserted != 1 || stats.Restored != 1 || stats.Filled != 1 || stats.DBAhead != 1 || stats.Matched != 0 || len(stats.Conflicts) != 0 {
+				t.Fatalf("stats = %+v", stats)
+			}
+			if tc.resolveTies {
+				if len(stats.Ties) != 0 || len(stats.TiesResolved) != 1 || stats.TiesResolved[0].PlayerID != 250 {
+					t.Fatalf("resolve-ties: ties=%+v resolved=%+v, want 250 已覆盖", stats.Ties, stats.TiesResolved)
+				}
+			} else if len(stats.Ties) != 1 || stats.Ties[0].PlayerID != 250 || len(stats.TiesResolved) != 0 {
+				t.Fatalf("ties=%+v resolved=%+v, want 250 只报告", stats.Ties, stats.TiesResolved)
+			}
+			if got := fake.labels(); !reflect.DeepEqual(got, tc.wantLabels) {
+				t.Fatalf("语句序列不对:\n got=%v\nwant=%v", got, tc.wantLabels)
+			}
+			if got := fake.callsWithLabel("R18x")[0].sql; got != routeLockMetaSQL || !strings.HasSuffix(got, " FOR UPDATE") {
+				t.Fatalf("修库事务的第一句必须是 route_meta 的加锁读(提交点复核冻结态):%q", got)
+			}
+			if r8 := fake.callsWithLabel("R8")[0]; r8.sql != routeSelectRowsSQL(5, true) || !reflect.DeepEqual(r8.args, wantR8) {
+				t.Fatalf("R8 = %q %#v, want %q %#v", r8.sql, r8.args, routeSelectRowsSQL(5, true), wantR8)
+			}
+			if r7 := fake.callsWithLabel("R7")[0]; r7.sql != routeImportInsertSQL(1) || !reflect.DeepEqual(r7.args, wantR7) {
+				t.Fatalf("R7 = %q %#v, want %#v(rev 必须是 maprev)", r7.sql, r7.args, wantR7)
+			}
+			if r9 := fake.callsWithLabel("R9")[0]; !reflect.DeepEqual(r9.args, wantR9) {
+				t.Fatalf("R9 实参 = %#v, want %#v(无 maprev 退回导入语义)", r9.args, wantR9)
+			}
+			got := fake.callsWithLabel("R17")
+			for i := range tc.wantR17 {
+				if !reflect.DeepEqual(got[i].args, tc.wantR17[i]) {
+					t.Fatalf("第 %d 次 R17 实参 = %#v\nwant %#v(rev 置为 maprev、按聚簇键升序、CAS 读到的库 rev)", i, got[i].args, tc.wantR17[i])
+				}
+			}
+		})
+	}
+
+	t.Run("R17不是恰好1行_回滚报错", func(t *testing.T) {
+		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+			"R18x": {replyMeta(0)},
+			"R8":   {{rows: repairContractExisting()}},
+			"R7":   {replyAffected(1)},
+			"R9":   {replyAffected(1)},
+			"R17":  {replyAffected(0)},
+		}})
+		if _, err := st.RepairRoutesFromCache(ctx, repairContractRows(), RouteRepairOptions{}); err == nil || !strings.Contains(err.Error(), "CAS affected 0 rows") {
+			t.Fatalf("err = %v, want CAS affected 0 rows", err)
+		}
+		if got := fake.labels(); got[len(got)-1] != "ROLLBACK" {
+			t.Fatalf("CAS 不对必须整批回滚:%v", got)
+		}
+	})
+}
+
+// TestRepairRoutesFromCacheDryRunOpensNoTx:dry-run 只发 R18 与 R8 的不加锁形态,不开事务,统计与真跑相同。
+func TestRepairRoutesFromCacheDryRunOpensNoTx(t *testing.T) {
+	st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+		"R18":  {replyMeta(0)},
+		"R8ro": {{rows: repairContractExisting()}},
+	}})
+	stats, err := st.RepairRoutesFromCache(context.Background(), repairContractRows(), RouteRepairOptions{DryRun: true})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if stats.Inserted != 1 || stats.Restored != 1 || stats.Filled != 1 || stats.DBAhead != 1 || len(stats.Ties) != 1 {
+		t.Fatalf("dry-run stats = %+v", stats)
+	}
+	if got := fake.labels(); !reflect.DeepEqual(got, []string{"R18", "R8ro"}) {
+		t.Fatalf("dry-run 发了 %v,want 只有两条不加锁的读", got)
+	}
+}
+
+// TestRepairMergedIntoRequiresFrozen:合走标记的反向修库与导入同一个循环,但开关反过来:可写时拒绝(写事务里 R18x 加锁复核,
+// dry-run 先 R18 普通读);冻结时照常插入 / 比对,永不删除。
+func TestRepairMergedIntoRequiresFrozen(t *testing.T) {
+	ctx := context.Background()
+	rows := []MergedIntoRow{{SrcZone: 101, DstZone: 102, RunID: "101-102-a"}}
+
+	t.Run("可写时拒绝", func(t *testing.T) {
+		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+			"R18x": {replyMeta(1)},
+			"R18":  {replyMeta(1)},
+		}})
+		if _, err := st.RepairMergedIntoFromCache(ctx, rows, false); !errors.Is(err, ErrRouteNotFrozen) {
+			t.Fatalf("err = %v, want ErrRouteNotFrozen", err)
+		}
+		if _, err := st.RepairMergedIntoFromCache(ctx, rows, true); !errors.Is(err, ErrRouteNotFrozen) {
+			t.Fatalf("dry-run err = %v, want ErrRouteNotFrozen", err)
+		}
+		if got, want := fake.labels(), []string{"BEGIN", "R18x", "ROLLBACK", "R18"}; !reflect.DeepEqual(got, want) {
+			t.Fatalf("语句序列不对:\n got=%v\nwant=%v", got, want)
+		}
+	})
+
+	t.Run("冻结时插入", func(t *testing.T) {
+		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+			"R18x": {replyMeta(0)},
+			"R10":  {replyAffected(1)},
+		}})
+		stats, err := st.RepairMergedIntoFromCache(ctx, rows, false)
+		if err != nil || stats.Inserted != 1 {
+			t.Fatalf("RepairMergedIntoFromCache = (%+v, %v), want inserted=1", stats, err)
+		}
+		if got, want := fake.labels(), []string{"BEGIN", "R18x", "R10", "COMMIT"}; !reflect.DeepEqual(got, want) {
+			t.Fatalf("语句序列不对:\n got=%v\nwant=%v", got, want)
+		}
+	})
+
+	t.Run("导入仍要求可写", func(t *testing.T) {
+		// 抽出公共循环之后导入的开关不能跟着变:回归 ImportMergedInto 的第一句仍是 R1。
+		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+			"R1": {fakeRouteReply{rows: [][]driver.Value{{int64(0)}}}},
+		}})
+		if _, err := st.ImportMergedInto(ctx, rows, false); !errors.Is(err, ErrRouteNotWritable) {
+			t.Fatalf("err = %v, want ErrRouteNotWritable", err)
+		}
+		if got, want := fake.labels(), []string{"BEGIN", "R1", "ROLLBACK"}; !reflect.DeepEqual(got, want) {
+			t.Fatalf("语句序列不对:\n got=%v\nwant=%v", got, want)
+		}
+	})
+}
+
+// TestFreezeRouteWritersIdempotent:R19 受影响 1 行 = 本次冻结;0 行时用 R18 区分「本来就冻结」与「缺行」。
+func TestFreezeRouteWritersIdempotent(t *testing.T) {
+	ctx := context.Background()
+	for _, tc := range []struct {
+		name        string
+		replies     map[string][]fakeRouteReply
+		wantChanged bool
+		wantErr     error
+		wantLabels  []string
+	}{
+		{"冻结", map[string][]fakeRouteReply{"R19": {replyAffected(1)}}, true, nil, []string{"R19"}},
+		{"已冻结", map[string][]fakeRouteReply{"R19": {replyAffected(0)}, "R18": {replyMeta(0)}}, false, nil, []string{"R19", "R18"}},
+		{"缺行", map[string][]fakeRouteReply{"R19": {replyAffected(0)}, "R18": {replyNoRows}}, false, ErrRouteMetaMissing, []string{"R19", "R18"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			st, fake := newFakeRouteStore(t, fakeRouteScript{replies: tc.replies})
+			changed, err := st.FreezeRouteWriters(ctx)
+			if changed != tc.wantChanged || !errors.Is(err, tc.wantErr) || (tc.wantErr == nil && err != nil) {
+				t.Fatalf("FreezeRouteWriters = (%t, %v), want (%t, %v)", changed, err, tc.wantChanged, tc.wantErr)
+			}
+			if got := fake.labels(); !reflect.DeepEqual(got, tc.wantLabels) {
+				t.Fatalf("语句序列不对:\n got=%v\nwant=%v", got, tc.wantLabels)
+			}
+		})
+	}
+
+	t.Run("0行但读回仍可写_报错不猜", func(t *testing.T) {
+		st, _ := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+			"R19": {replyAffected(0)}, "R18": {replyMeta(1)},
+		}})
+		if changed, err := st.FreezeRouteWriters(ctx); changed || err == nil {
+			t.Fatalf("FreezeRouteWriters = (%t, %v), want 报错", changed, err)
+		}
+	})
+}
+
+// TestUnfreezeRaisesWatermarkBeforeFlippingWritable:R20(锁对账行)→ R18 → R21(抬水位)→ R22(翻 writable)→ COMMIT,
+// 顺序钉死;要求的水位不高于当前值时不发 R21。
+func TestUnfreezeRaisesWatermarkBeforeFlippingWritable(t *testing.T) {
+	ctx := context.Background()
+	wm := func(v int64) fakeRouteReply { return fakeRouteReply{rows: [][]driver.Value{{v}}} }
+
+	st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+		"R20": {wm(1_000)}, "R18": {replyMeta(0)}, "R21": {replyAffected(1)}, "R22": {replyAffected(1)},
+	}})
+	changed, err := st.UnfreezeRouteWriters(ctx, 5_000)
+	if err != nil || !changed {
+		t.Fatalf("UnfreezeRouteWriters = (%t, %v), want (true, nil)", changed, err)
+	}
+	if got, want := fake.labels(), []string{"BEGIN", "R20", "R18", "R21", "R22", "COMMIT"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("语句序列不对(先抬水位再翻 writable):\n got=%v\nwant=%v", got, want)
+	}
+	if got := fake.callsWithLabel("R21")[0].args; !reflect.DeepEqual(got, []driver.Value{uint64(5_000)}) {
+		t.Fatalf("R21 实参 = %#v, want 要求的最低水位 5000", got)
+	}
+
+	st, fake = newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+		"R20": {wm(9_000)}, "R18": {replyMeta(0)}, "R22": {replyAffected(1)},
+	}})
+	if changed, err := st.UnfreezeRouteWriters(ctx, 5_000); err != nil || !changed {
+		t.Fatalf("UnfreezeRouteWriters = (%t, %v), want (true, nil)", changed, err)
+	}
+	if got, want := fake.labels(), []string{"BEGIN", "R20", "R18", "R22", "COMMIT"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("库水位已不低于要求值时不该发 R21:\n got=%v\nwant=%v", got, want)
+	}
+
+	t.Run("R22不是恰好1行_回滚报错", func(t *testing.T) {
+		// writable 被人手工写成了 0 / 1 以外的值:R22 只从 0 翻回 1,命中 0 行就拒绝。
+		st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+			"R20": {wm(1_000)}, "R18": {replyMeta(2)}, "R22": {replyAffected(0)},
+		}})
+		if changed, err := st.UnfreezeRouteWriters(ctx, 0); changed || err == nil {
+			t.Fatalf("UnfreezeRouteWriters = (%t, %v), want 报错", changed, err)
+		}
+		if got := fake.labels(); got[len(got)-1] != "ROLLBACK" {
+			t.Fatalf("必须整笔回滚:%v", got)
+		}
+	})
+}
+
+// TestUnfreezeAlreadyWritableIsNoop:已经可写时整笔回滚、一条写都不发(水位也不抬),changed=false;
+// 缺对账行回 ErrRouteReconcileMissing。
+func TestUnfreezeAlreadyWritableIsNoop(t *testing.T) {
+	ctx := context.Background()
+	st, fake := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{
+		"R20": {fakeRouteReply{rows: [][]driver.Value{{int64(1_000)}}}}, "R18": {replyMeta(1)},
+	}})
+	changed, err := st.UnfreezeRouteWriters(ctx, 5_000)
+	if err != nil || changed {
+		t.Fatalf("UnfreezeRouteWriters = (%t, %v), want (false, nil)", changed, err)
+	}
+	if got, want := fake.labels(), []string{"BEGIN", "R20", "R18", "ROLLBACK"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("语句序列不对:\n got=%v\nwant=%v", got, want)
+	}
+
+	st, _ = newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{"R20": {replyNoRows}}})
+	if _, err := st.UnfreezeRouteWriters(ctx, 0); !errors.Is(err, ErrRouteReconcileMissing) {
+		t.Fatalf("err = %v, want ErrRouteReconcileMissing", err)
+	}
+}
+
+// TestReadRouteMetaMissingRow:R18 读不到行 → ErrRouteMetaMissing;读得到时原样返回 generation 与 writable。
+func TestReadRouteMetaMissingRow(t *testing.T) {
+	ctx := context.Background()
+	st, _ := newFakeRouteStore(t, fakeRouteScript{replies: map[string][]fakeRouteReply{"R18": {replyNoRows, replyMeta(0)}}})
+	if _, err := st.ReadRouteMeta(ctx); !errors.Is(err, ErrRouteMetaMissing) {
+		t.Fatalf("err = %v, want ErrRouteMetaMissing", err)
+	}
+	m, err := st.ReadRouteMeta(ctx)
+	if err != nil || m != (RouteMeta{Generation: fakeRouteGeneration, Writable: 0}) || !m.Frozen() {
+		t.Fatalf("ReadRouteMeta = (%+v, %v)", m, err)
+	}
 }

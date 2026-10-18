@@ -1031,7 +1031,7 @@ func TestRetryRouting_RetryDoneOnEveryExit(t *testing.T) {
 			assert.Len(t, e.f.h.callsForKey(9801), 1, "the older write is superseded")
 		}},
 		{name: "handler panic", run: func(t *testing.T, e *env) {
-			dbOpHandlers["write"] = func(context.Context, *proto2mysql.DB, *db_proto.DBTask, proto.Message) error {
+			dbOpHandlers["write"] = func(context.Context, *proto2mysql.DB, *db_proto.DBTask, proto.Message) (writeOutcome, error) {
 				panic("injected handler panic")
 			}
 			pl, _ := routedPayload(t, 9802, 5, 0, 0)

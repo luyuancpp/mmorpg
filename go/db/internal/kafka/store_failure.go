@@ -82,6 +82,12 @@ func deferReason(cause error) string {
 		return kind.Reason()
 	}
 	switch {
+	case errors.Is(cause, errPlayerRowVanished):
+		return metrics.DeferFenceRace
+	case errors.Is(cause, errFenceEvidenceConflict):
+		return metrics.DeferFenceEvidenceConflict
+	case errors.Is(cause, errFenceRedis):
+		return metrics.DeferRedisUnavailable
 	case errors.Is(cause, proto_sql.ErrStoreCoolingDown):
 		return metrics.DeferStoreCooldown
 	case errors.Is(cause, errPlacementStoreUnavailable):

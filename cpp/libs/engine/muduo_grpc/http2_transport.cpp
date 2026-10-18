@@ -110,7 +110,8 @@ void Http2Transport::Connect()
 
 void Http2Transport::ArmConnectTimer()
 {
-    // muduo 定时器按墙钟走,只当唤醒提示;到点按 steady_clock 复核(HandleConnectTimeout),墙钟前跳不会误判超时。
+    // muduo 定时器已按单调时钟到期,墙钟跳变不影响;到点仍按 steady_clock 复核(HandleConnectTimeout),
+    // 兜住秒→微秒截断造成的微秒级早到,不会误判超时。
     std::weak_ptr<Http2Transport> weakSelf = weak_from_this();
     const auto remaining = connectDeadline_ - std::chrono::steady_clock::now();
     connectTimer_ = loop_.runAfter(ToSeconds(remaining) + 0.001, [weakSelf]
@@ -280,7 +281,7 @@ void Http2Transport::HandleKeepaliveTimer()
     {
         return;
     }
-    // §13.3:有活跃流、且距最近收到的帧已满 keepaliveTime 才发;按 steady_clock 判,墙钟跳变只影响检查时机。
+    // §13.3:有活跃流、且距最近收到的帧已满 keepaliveTime 才发;按 steady_clock 判(muduo 定时器也按单调时钟到期,墙钟跳变不影响检查时机)。
     const auto now = std::chrono::steady_clock::now();
     const auto idle = now - lastFrameReceivedAt_;
     if (ready() && session_ && ActiveStreamCount() > 0 && !probeOutstanding_ && idle >= options_.keepaliveTime)
@@ -448,7 +449,7 @@ void Http2Transport::HandleConnectTimeout()
     }
     if (std::chrono::steady_clock::now() < connectDeadline_)
     {
-        ArmConnectTimer(); // 墙钟前跳让定时器早到:按单调钟剩余时间重新上弦
+        ArmConnectTimer(); // 定时器早到(秒→微秒截断等):按单调钟剩余时间重新上弦
         return;
     }
     LOG_WARN << "muduo_grpc connect to " << target_ << " timed out after " << options_.connectTimeout.count()
@@ -470,7 +471,7 @@ void Http2Transport::HandleProbeTimeout(uint64_t probeGeneration)
     }
     if (std::chrono::steady_clock::now() < probeDeadline_)
     {
-        ArmProbeTimer(probeGeneration); // 墙钟前跳让定时器早到:按单调钟剩余时间重新上弦
+        ArmProbeTimer(probeGeneration); // 定时器早到(秒→微秒截断等):按单调钟剩余时间重新上弦
         return;
     }
     LOG_WARN << "muduo_grpc connection to " << target_ << " did not acknowledge a liveness PING within "

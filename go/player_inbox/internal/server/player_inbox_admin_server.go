@@ -39,7 +39,7 @@ func NewAdminServer(store AdminStore, sanction logic.GmSanctionDeps, ledgers inb
 func (s *AdminServer) GmSanctionPlayer(ctx context.Context, in *inboxpb.GmSanctionPlayerRequest) (*inboxpb.GmSanctionPlayerResponse, error) {
 	ctx, cancel := withBudget(ctx, s.budget)
 	defer cancel()
-	return logic.GmSanctionPlayer(ctx, s.sanction, in, PeerAddr(ctx)), nil
+	return logic.GmSanctionPlayer(ctx, s.sanction, in, inbox.PeerAddr(ctx)), nil
 }
 
 // GetSummary 按玩家列出各域流的概况与 max_fence_epoch。
@@ -93,7 +93,7 @@ func (s *AdminServer) VoidItem(ctx context.Context, in *inboxpb.VoidPlayerInboxI
 		Reason:   in.GetReason(),
 		Operator: in.GetOperator(),
 		Note:     in.GetNote(),
-		PeerAddr: PeerAddr(ctx),
+		PeerAddr: inbox.PeerAddr(ctx),
 		Mode:     in.GetMode(),
 	}, s.ledgers)
 	if err != nil {

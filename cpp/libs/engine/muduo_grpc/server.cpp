@@ -321,18 +321,21 @@ public:
             finalGoawayRequested_ = false;
             SubmitFinalGoaway();
         }
-        FlushOutput(); // 首次:本端 SETTINGS;之后:SETTINGS ACK / PING ACK / WINDOW_UPDATE / 早拒
+        // 首次:本端 SETTINGS;之后:SETTINGS ACK / PING ACK / WINDOW_UPDATE / 早拒,以及对端 WINDOW_UPDATE 放行的应答 DATA;
+        // 优雅关闭期间对端 RST / WINDOW_UPDATE 让最后的流关闭后,也由这里判定写半关。
+        FlushOutput();
     }
 
     // 照抄 Http2Transport::FlushOutput 的 sessionDepth_ / flushDeferred_:不在会话回调栈里重入 nghttp2;
-    // 输出缓冲达到上限就暂停取帧,writeComplete 后继续。写半关之前的最终冲出走 FlushFinalFrames,不受上限限制。
+    // 输出缓冲达到上限就暂停取帧,writeComplete 后继续。优雅关闭期间同样守这个上限:写半关要等会话把帧全部交出
+    // (ShutdownWriteWhenSessionDone),连接在此之前照常读写,不需要「忽略上限一次取完」的最终冲出。
     void FlushOutput()
     {
         for (;;)
         {
-            if (closed_ || !session_.receivedAnyBytes())
+            if (closed_ || closing_ || !session_.receivedAnyBytes())
             {
-                return; // 收到对端首字节之前不写(会话层也有同样的检查)
+                return; // 已摘表 / 已写半关 / 已 forceClose:不再写;收到对端首字节之前不写(会话层也有同样的检查)
             }
             if (sessionDepth_ > 0)
             {
@@ -342,21 +345,21 @@ public:
             const auto conn = tcp_.lock();
             if (!conn || !conn->connected())
             {
-                return; // 已写半关或已断开:不再写(写半关之前 CloseGracefully 已把已提交的帧全部冲出)
+                return; // 已断开
             }
             if (conn->outputBuffer()->readableBytes() >= maxPendingOutputBytes_)
             {
-                return;
+                return; // writeComplete 后继续;能否写半关也到那时再判断
             }
             flushDeferred_ = false;
-            const Status status = DrainSessionInto(*conn, true);
+            const Status status = DrainSessionInto(*conn);
             if (!status.ok())
             {
-                // nghttp2 因对端违约发出了带错误码的 GOAWAY(字节已交给 send),或 mem_send 失败:
-                // 冲出剩余的帧再写半关,宽限到期 forceClose(§15.5.6「尽力冲出后 forceClose」)。
+                // nghttp2 因对端违约发出了带错误码的 GOAWAY(字节已交给 send),或 mem_send 失败:会话从此既不读也不写
+                // (ShouldClose 为真),下面随即写半关;进入优雅关闭让硬上限照常兜底(§15.5.6「尽力冲出后 forceClose」)。
                 ReportProtocolError(status);
-                CloseGracefully();
-                return;
+                StartGracefulClose();
+                break;
             }
             if (!deferred_.empty())
             {
@@ -368,11 +371,7 @@ public:
                 break;
             }
         }
-        // 最终 GOAWAY 已写出且没有打开的流、或对端 GOAWAY 后没有流、或会话被终止:写半关,宽限后 forceClose。
-        if (!closing_ && session_.ShouldClose())
-        {
-            CloseGracefully();
-        }
+        ShutdownWriteWhenSessionDone();
     }
 
     // CompleteCall 的应答出口。对端已走(流已关闭 / 已应答)时 Submit* 返回 false,忽略即可。
@@ -430,31 +429,38 @@ public:
         }
         shutdownStarted_ = true;
         closeGrace_ = closeGrace;
-        if (closing_)
+        if (closing_ || gracefulCloseStarted_)
         {
-            return; // 已在写半关(协议错误 / 对端 GOAWAY):不再发 GOAWAY
+            return; // 已在关闭(协议错误 / 对端 GOAWAY 之后):不再发 GOAWAY
         }
         session_.SubmitShutdownNotice();
         pingDeadline_ = SteadyClock::now() + goawayPingTimeout;
         ArmPingTimer();
     }
 
-    // 排空到期(§15.10):补最终 GOAWAY,然后优雅关闭 —— CloseGracefully 先把刚提交的 REFUSED / UNAVAILABLE
-    // 与最终 GOAWAY 全部交给输出缓冲(输出被背压时也一样),再写半关;宽限到期 forceClose。
-    // 已在关闭(此前已写半关或已 forceClose)时 CloseGracefully 不再冲出:写半关之后 TcpConnection::send 本来就丢弃字节。
-    void ExpireDrain()
+    // 排空到期(§15.10)。Server 已把调用表里的调用全部收口(业务未开始 → REFUSED_STREAM,已开始 → UNAVAILABLE);
+    // 这里再拒掉请求体还在上传的流、补最终 GOAWAY,然后进入优雅关闭 —— 不立即写半关:连接继续读写,已提交的应答
+    // (含被对端流控窗口卡住、要等对端 WINDOW_UPDATE 才能发的 DATA 与 trailers)全部写出、所有流都关闭之后才写半关;
+    // closeGrace 从这一刻起算,是硬上限,到期仍没关就 forceClose。此后到达的新流(id 大于最终 GOAWAY 的 last_stream_id)
+    // 不会交给 Server:写出之前到达的由 nghttp2 在 GOAWAY 写出时关掉,之后到达的直接忽略,客户端都按 last_stream_id
+    // 判为未处理(见 ServerSession::SubmitFinalGoaway);到期时头部还没收完的老流,收完头部时由 Server 回 REFUSED_STREAM。
+    // 不在这里冲出:调用方(Server::OnDrainTimer)标记 dirty,批处理结束时按背压统一冲出。
+    // 返回本次拒掉的上传中流的个数(调用方计入 refused_on_shutdown)。调用方保证不在会话回调栈里。
+    size_t ExpireDrain()
     {
-        if (closed_)
+        if (closed_ || closing_)
         {
-            return;
+            return 0; // 已写半关或已 forceClose:之后什么都写不出去
         }
         if (!session_.receivedAnyBytes())
         {
             ForceClose();
-            return;
+            return 0;
         }
+        const size_t refusedUploads = RefuseUnfinishedRequests();
         SubmitFinalGoaway();
-        CloseGracefully();
+        StartGracefulClose();
+        return refusedUploads;
     }
 
     void ForceClose()
@@ -555,8 +561,9 @@ private:
         }
     }
 
-    // 头部收完时刻按流登记,收完请求时取走。头部之后被对端 RST 或被 nghttp2 关掉的流不会再有回调,
+    // 头部收完时刻按流登记,收完请求时取走;只用于截止起算。头部之后被对端 RST 或被 nghttp2 关掉的流不会再有回调,
     // 记录会残留:超过上限就丢掉最老的一半(流 id 单调递增;被丢的流若仍在上传,截止退回从收完时起算)。
+    // 排空到期要拒的上传中流不看这份记录(见 RefuseUnfinishedRequests),修剪不影响停机。
     void RememberHeadersTime(int32_t streamId)
     {
         headersReceivedAt_[streamId] = SteadyClock::now();
@@ -631,65 +638,76 @@ private:
         session_.SubmitFinalGoaway();
     }
 
-    // 把 nghttp2 里排队的帧交给 muduo。respectBackpressure:输出缓冲达到 maxPendingOutputBytes_ 就先停
-    // (writeComplete 后由 FlushOutput 继续);为假时一次取完,只用于写半关之前的最终冲出(FlushFinalFrames)。
+    // 把 nghttp2 里排队的帧交给 muduo;输出缓冲达到 maxPendingOutputBytes_ 就先停(writeComplete 后由 FlushOutput 继续)。
     // 调用方保证不在会话回调栈里(sessionDepth_ == 0)。
-    Status DrainSessionInto(muduo::net::TcpConnection &conn, bool respectBackpressure)
+    Status DrainSessionInto(muduo::net::TcpConnection &conn)
     {
         ++sessionDepth_;
-        const Status status = session_.DrainOutput([this, &conn, respectBackpressure](std::string_view chunk)
+        const Status status = session_.DrainOutput([this, &conn](std::string_view chunk)
                                                    {
             conn.send(chunk.data(), static_cast<int>(chunk.size()));
-            return !respectBackpressure || conn.outputBuffer()->readableBytes() < maxPendingOutputBytes_; });
+            return conn.outputBuffer()->readableBytes() < maxPendingOutputBytes_; });
         --sessionDepth_;
         return status;
     }
 
-    // 写半关之前的最终冲出(§15.16 第 2 条):把 nghttp2 里已提交的帧全部交给输出缓冲,这一次不看
-    // maxPendingOutputBytes_。写半关之后连接不再是 kConnected,TcpConnection::send 直接丢弃字节,
-    // 此刻还留在 nghttp2 里的 REFUSED_STREAM / UNAVAILABLE / 最终 GOAWAY 就再也写不出去,对端只看到 EOF。
-    // 量有界:控制帧(若干 RST_STREAM / trailers-only / GOAWAY)加上对端流控窗口允许的、已提交应答的 DATA ——
-    // 后者本来就在内存里(只是从 nghttp2 挪进输出缓冲),写不出去时由宽限到期的 forceClose 一并释放。
-    void FlushFinalFrames(muduo::net::TcpConnection &conn)
+    // 排空到期时请求体还在上传的流(头部已被接受、请求还没收完):业务必然没开始,立即回 REFUSED_STREAM
+    // (RFC 9113 §8.7「未处理」,grpc-go 透明重试到新连接),不等对端传完再拒,也不让它拖住写半关直到硬上限。
+    // 流集合以会话的状态为准(ServerSession::AcceptedUndispatchedStreams),不用 headersReceivedAt_:那份记录有上限,
+    // 超限修剪后慢上传的流会漏拒,只能等它传完或等 closeGrace 硬上限。headersReceivedAt_ 只为截止起算,这些流都已拒掉,一并清空。
+    // 调用方保证不在会话回调栈里(ServerSession 的约定)。
+    size_t RefuseUnfinishedRequests()
     {
-        if (sessionDepth_ > 0 || !conn.connected() || !session_.receivedAnyBytes())
+        size_t refused = 0;
+        for (const int32_t streamId : session_.AcceptedUndispatchedStreams())
         {
-            // 调用方(CloseGracefully)都在会话回调栈之外、写半关之前,前两条不会成立;
-            // 收到对端首字节之前本来就一个字节都不写(§15.5.1)。
-            return;
-        }
-        do
-        {
-            ApplyDeferredResponses();
-            const Status status = DrainSessionInto(conn, false);
-            if (!status.ok())
+            if (session_.RefuseStream(streamId))
             {
-                // 已在关闭:只计数,不再升级处理;已交出的字节照常随 FIN 发出。
-                ReportProtocolError(status);
+                ++refused;
             }
-        } while (!deferred_.empty());
-        flushDeferred_ = false;
+        }
+        headersReceivedAt_.clear();
+        return refused;
     }
 
-    // 优雅关闭 = 先把已提交的帧全部写进输出缓冲(FlushFinalFrames),再写半关 —— muduo 在输出缓冲写空之后才真正
-    // shutdownWrite(发 FIN);closeGrace 是硬上限,到期 forceClose(对端不读、输出缓冲写不空时由它兜底)。
-    // 只在会话回调栈之外调用(FlushOutput 在栈内直接返回;ExpireDrain 来自排空定时器)。
-    void CloseGracefully()
+    // 进入优雅关闭(排空到期、协议错误,或会话已无事可做):从这一刻起算 closeGrace 硬上限,到期仍没关就 forceClose
+    // (对端始终不给流控窗口、不读导致输出缓冲写不空、或收到 FIN 后迟迟不关)。不在这里写半关:连接照常读
+    // (对端的 WINDOW_UPDATE / RST_STREAM / PING ACK)、照常按背压取帧写出,由 ShutdownWriteWhenSessionDone 在会话
+    // 既不想读也不想写时写半关(写半关时机与 grpc-go 优雅停机、nghttpx 同口径;硬上限相当于 GracefulStop 超时后的 Stop)。
+    // 幂等:硬上限只按第一次进入的时刻算。
+    void StartGracefulClose()
     {
-        if (closing_ || closed_)
+        if (closed_ || closing_ || gracefulCloseStarted_)
         {
             return;
         }
-        closing_ = true;
+        gracefulCloseStarted_ = true;
+        graceDeadline_ = SteadyClock::now() + closeGrace_;
+        ArmGraceTimer();
+    }
+
+    // 写半关的唯一入口:会话既不想读也不想写(ServerSession::ShouldClose,即 nghttp2_session_want_read 与 want_write
+    // 都为 0)才写半关。正常关闭时这意味着最终 GOAWAY 已写出(或收到了对端 GOAWAY)且所有流都已关闭 —— 已提交应答的
+    // DATA 与 trailers 都已交给 muduo。只看 want_write 不够:被对端流控窗口卡住的 DATA 不算「想写」,但它所在的流还没关,
+    // want_read 仍为真,所以会一直等到对端给窗口、写完 trailers(或硬上限到期)。会话被终止(带错误码的 GOAWAY 已写出、
+    // 致命错误)时也为真。写半关之后 muduo 先把输出缓冲写空再发 FIN(shutdownInLoop 在 isWriting 时推迟到 handleWrite
+    // 写空之后),此后 TcpConnection::send 丢弃字节 —— 这时会话已没有要写的帧。
+    // 对端 GOAWAY 这类直接满足条件的路径没有经过 StartGracefulClose,在这里补上硬上限(对端不读、写不空时由它 forceClose)。
+    // 调用方保证不在会话回调栈里(只从 FlushOutput 的尾部调用)。
+    void ShutdownWriteWhenSessionDone()
+    {
+        if (closed_ || closing_ || !session_.ShouldClose())
+        {
+            return;
+        }
         const auto conn = tcp_.lock();
         if (!conn)
         {
             return;
         }
-        FlushFinalFrames(*conn);
+        StartGracefulClose();
+        closing_ = true;
         conn->shutdown();
-        graceDeadline_ = SteadyClock::now() + closeGrace_;
-        ArmGraceTimer();
     }
 
     void ArmHandshakeTimer()
@@ -713,7 +731,7 @@ private:
         }
         if (SteadyClock::now() < handshakeDeadline_)
         {
-            ArmHandshakeTimer(); // 墙钟前跳让定时器早到:按单调钟剩余时间重新上弦
+            ArmHandshakeTimer(); // 定时器早到(秒→微秒截断等):按单调钟剩余时间重新上弦
             return;
         }
         if (const auto server = server_.lock())
@@ -824,14 +842,15 @@ private:
     int sessionDepth_{0};
     bool flushDeferred_{false};
     bool closed_{false};                 // 已摘表
-    bool closing_{false};                // 已写半关或已 forceClose
+    bool closing_{false};                // 已写半关或已 forceClose:不再写
+    bool gracefulCloseStarted_{false};   // 已进入优雅关闭(硬上限已上弦);写半关要等会话既不想读也不想写
     bool shutdownStarted_{false};        // 已发第一段 GOAWAY
     bool finalGoawayRequested_{false};   // PING ACK 已到,等 Receive 返回后提交第二段
     bool protocolErrorReported_{false};
 
-    std::chrono::milliseconds closeGrace_{ServerShutdownOptions{}.closeGrace};
+    std::chrono::milliseconds closeGrace_{ServerShutdownOptions{}.closeGrace};   // 优雅关闭的硬上限,从进入时起算
 
-    // muduo 定时器按墙钟走,只当唤醒提示;到点按 steady_clock 复核。
+    // muduo 定时器已按单调时钟到期;到点仍按 steady_clock 复核(兜住秒→微秒截断造成的早到)。
     muduo::net::TimerId handshakeTimer_;
     bool handshakeTimerArmed_{false};
     SteadyClock::time_point handshakeDeadline_{};
@@ -1208,7 +1227,9 @@ ServerSession::Verdict Server::AcceptCall(detail::ServerConnection &connection, 
 {
     if (phase_ == Phase::kDrainExpired || phase_ == Phase::kDrained)
     {
-        ++stats_.refusedOnShutdown; // 排空到期之后才收完的流
+        // 防御:到期时仍在上传的流已被 ExpireDrain 按会话状态全部拒掉(ServerSession::AcceptedUndispatchedStreams),
+        // 到期之后才收完头部的流在 RouteRequest 就被拒,正常走不到这里。真走到了也不派发,同样回 REFUSED_STREAM。
+        ++stats_.refusedOnShutdown;
         return RefuseVerdict();
     }
     const auto found = methodIndex_.find(std::string_view(headers.path));
@@ -1520,8 +1541,8 @@ void Server::ArmDeadlineTimer()
     {
         loop_.cancel(deadlineTimer_);
     }
-    // muduo 定时器按墙钟走,只当唤醒提示;到点后用 steady_clock 复核,未到就重新上弦(照 Channel)。
-    // 加 1ms 余量,避免墙钟与单调钟的取整差让定时器早到一点而空转一轮。
+    // muduo 定时器已按单调时钟到期;到点仍用 steady_clock 复核,未到就重新上弦(照 Channel),
+    // 兜住秒→微秒截断造成的微秒级早到。加 1ms 余量,避免这点截断让定时器早到一点而空转一轮。
     const std::weak_ptr<Server> weakSelf = weak_from_this();
     deadlineTimer_ = loop_.runAfter(ToSeconds(earliest - SteadyClock::now()) + 0.001, [weakSelf]
                                     {
@@ -1680,8 +1701,9 @@ void Server::OnDrainTimer()
                 ++refused;
             }
         }
-        // 所有连接补最终 GOAWAY、冲出上面提交的 RST / trailers(不受背压阈值限制),然后写半关;宽限到期 forceClose。
-        // 冲出发生在 ExpireDrain 里、写半关之前;本作用域结束时 FlushDirtyConnections 看到的已是写半关的连接,什么都不做。
+        // 所有连接:拒掉请求体还在上传的流、补最终 GOAWAY,进入优雅关闭(closeGrace 从此刻起算,是硬上限)。
+        // 不立即写半关:本作用域结束时 FlushDirtyConnections 按背压把上面提交的 RST / trailers 与最终 GOAWAY 交给输出缓冲,
+        // 之后连接继续读写,会话把已提交的帧(含被对端流控窗口卡住的应答 DATA)全部写出、所有流关闭才写半关。
         std::vector<std::shared_ptr<detail::ServerConnection>> remaining;
         remaining.reserve(connections_.size());
         for (const auto &entry : connections_)
@@ -1690,7 +1712,10 @@ void Server::OnDrainTimer()
         }
         for (const auto &connection : remaining)
         {
-            connection->ExpireDrain();
+            const size_t refusedUploads = connection->ExpireDrain();
+            stats_.refusedOnShutdown += refusedUploads;
+            refused += refusedUploads;
+            MarkConnectionDirty(connection->id());
         }
     }
     LOG_WARN << "[GrpcServer] " << listenAddress_ << ": drain timeout after " << shutdownOptions_.drainTimeout.count()

@@ -39,6 +39,12 @@ import (
 //	redis_rev_ahead      maprev 合法且大于库里的 rev:库被回档的信号(提案 M3)
 //
 // 墓碑行(home 与落点都是 NULL)视为没有记录。maprev 缺席不算差异:第 1a 批 redis 模式下没有任何写者写它。
+//
+// 冻结期恢复口径(-frozen-recovery,2026-10-18 第 1b-1 批):全局库回档后的恢复流程 freeze → reconcile-from-cache → audit → unfreeze
+// 里,反向修库只有「缓存 → 库」一个方向,冻结期间也没有人把库推回缓存,于是库里独有的行(回档前发布失败的孤儿行、回档后到冻结前
+// 提交而发布失败的行)一定计成 db_only_unpublished,audit 永远到不了 0。这个口径下 db_only_unpublished 照常计数、照常打明细,
+// 但**不计入退出码**;其余类别必须为 0。这些行解冻之后由第 1b-2 批 leader 的增量推送补到缓存(1b-2 之前仍只能等 audit 人工核对)。
+// 只在冻结时才有意义(可写时孤儿行与「Redis 丢了已确认的发布」分不开),是否冻结由入口(routetoolcli)先查。
 
 // AuditOptions 是 audit 的参数(cmd/route_tool 的命令行一一对应)。
 type AuditOptions struct {
@@ -57,6 +63,8 @@ type AuditOptions struct {
 	Stderr io.Writer
 	// Sleep 是复核前的等待;nil = 按 RecheckDelay 真睡(可被 ctx 取消)。单测注入它,在等待期间改两边的数据。
 	Sleep func(ctx context.Context, d time.Duration) error
+	// FrozenRecovery 是冻结期恢复口径(见文件头):db_only_unpublished 不计入退出码。调用方保证此时映射写者已冻结。
+	FrozenRecovery bool
 }
 
 func (o AuditOptions) validate() error {
@@ -98,12 +106,23 @@ type AuditReport struct {
 	// RedisFencesActive 与 TransientCleared 只做提示,不算差异。
 	RedisFencesActive int
 	TransientCleared  int
+
+	// FrozenRecovery 记下本次是否按冻结期恢复口径判退出码(AuditOptions.FrozenRecovery 原样带出;不进统计行)。
+	FrozenRecovery bool
 }
 
-// Differences 是全部差异计数之和(不含 RedisFencesActive / TransientCleared),非 0 = 退出码 1。
+// Differences 是全部差异计数之和(不含 RedisFencesActive / TransientCleared)。
 func (r AuditReport) Differences() int {
 	return r.DBOnlyUnpublished + r.MissingInRedis + r.MissingInDB + r.ValueMismatch + r.RedisMalformed +
 		r.DBInvalid + r.RedisRevAhead + r.MergedIntoMissingInRedis + r.MergedIntoMissingInDB + r.MergedIntoMismatch
+}
+
+// BlockingDifferences 是决定退出码的差异数,非 0 = 退出码 1:默认等于 Differences;冻结期恢复口径下不含 db_only_unpublished。
+func (r AuditReport) BlockingDifferences() int {
+	if r.FrozenRecovery {
+		return r.Differences() - r.DBOnlyUnpublished
+	}
+	return r.Differences()
 }
 
 // SummaryLine 是 stdout 唯一的一行。
@@ -116,12 +135,12 @@ func (r AuditReport) SummaryLine() string {
 		r.MergedIntoMissingInDB, r.MergedIntoMismatch, r.RedisFencesActive, r.TransientCleared)
 }
 
-// AuditExitCode 把一次 audit 的结果映射成退出码:出错 2,有差异 1(db_only_unpublished 也算),否则 0。
+// AuditExitCode 把一次 audit 的结果映射成退出码:出错 2,有差异 1(db_only_unpublished 也算,冻结期恢复口径除外),否则 0。
 func AuditExitCode(rep AuditReport, err error) int {
 	switch {
 	case err != nil:
 		return ExitFailed
-	case rep.Differences() > 0:
+	case rep.BlockingDifferences() > 0:
 		return ExitAttention
 	default:
 		return ExitClean
@@ -299,6 +318,7 @@ func Audit(ctx context.Context, rd mappingReader, db routeDB, opts AuditOptions)
 		firstCounts: make(map[diffKind]int),
 		candidates:  make(map[uint64]playerDiff),
 	}
+	a.report.FrozenRecovery = opts.FrozenRecovery
 
 	steps := []func(context.Context) error{a.checkFences, a.auditDBRows, a.auditRedisKeys, a.auditMergedInto, a.settle}
 	for _, step := range steps {
@@ -308,6 +328,12 @@ func Audit(ctx context.Context, rd mappingReader, db routeDB, opts AuditOptions)
 		}
 	}
 	a.detail.finish()
+	if opts.FrozenRecovery {
+		// 统计行的格式不变(脚本照旧解析);口径写在 stderr。
+		fmt.Fprintf(opts.Stderr, "NOTE: -frozen-recovery: db_only_unpublished=%d is reported but not counted in the exit code "+
+			"(rows only the DB has; the reconcile leader of batch 1b-2 pushes them to the cache after unfreeze); every other category must be 0\n",
+			a.report.DBOnlyUnpublished)
+	}
 	fmt.Fprintln(opts.Stdout, a.report.SummaryLine())
 	return a.report, nil
 }

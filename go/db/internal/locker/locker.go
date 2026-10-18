@@ -24,7 +24,6 @@ type TryLockResult struct {
 	redis     redis.Cmdable
 }
 
-
 func NewRedisLocker(redisClient redis.Cmdable, prefix ...string) *RedisLocker {
 	lockPrefix := "distributed:lock:"
 	if len(prefix) > 0 && prefix[0] != "" {
@@ -127,4 +126,15 @@ func (tlr *TryLockResult) Extend(ctx context.Context, extendTTL time.Duration) (
 	}
 
 	return expireResult == 1, nil
+}
+
+// RunTokenScript 在锁所在实例执行脚本，令牌只在本模块注入，不向调用方暴露。
+// keys 只列业务键；排序锁键与令牌始终位于 KEYS[1] / ARGV[1]。
+func (tlr *TryLockResult) RunTokenScript(ctx context.Context, script *redis.Script, keys []string, args ...interface{}) (int64, error) {
+	if tlr == nil || !tlr.locked {
+		return 0, nil
+	}
+	allKeys := append([]string{tlr.lockKey}, keys...)
+	allArgs := append([]interface{}{tlr.lockValue}, args...)
+	return script.Run(ctx, tlr.redis, allKeys, allArgs...).Int64()
 }

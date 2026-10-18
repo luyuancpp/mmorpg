@@ -62,6 +62,11 @@ func httpQueueStatus(gatewayAddr, queueToken string, zoneId uint32, timeout time
 }
 
 func postJSON(url string, payload any, timeout time.Duration) (*httpAssignGateResponse, error) {
+	return postJSONWithClient(sharedHTTPClient, url, payload, timeout)
+}
+
+// postJSONWithClient 让受限的本机准备入口禁用重定向，仍共用正文编码和错误脱敏规则。
+func postJSONWithClient(client *http.Client, url string, payload any, timeout time.Duration) (*httpAssignGateResponse, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("encode body: %w", err)
@@ -73,7 +78,7 @@ func postJSON(url string, payload any, timeout time.Duration) (*httpAssignGateRe
 		return nil, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpResp, err := sharedHTTPClient.Do(httpReq)
+	httpResp, err := client.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("POST %s: %w", url, err)
 	}

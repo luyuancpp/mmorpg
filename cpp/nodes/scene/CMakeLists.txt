@@ -84,7 +84,6 @@ add_definitions(-DMMORPG_AGONES_CURL=1)
 
 set(SOURCE_FILES
     handler/event/scene_kafka_command_router.cpp
-    handler/event/player_migration_event_handler.cpp
     handler/event/team_event_handler.cpp
     handler/event/player_inbox_event_handler.cpp
     handler/rpc/scene_admin_handler.cpp

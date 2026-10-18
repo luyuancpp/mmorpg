@@ -55,9 +55,12 @@ ServerConfig:
     # 取值大小写敏感,拼错拒启。环境变量 DB_RETRY_ROUTING 优先于本键,只用于单 zone 金丝雀;每个实例的启动日志
     # "retry routing: mode=… source=…" 与指标 db_retry_routing_mode 是核对依据。K8s 上改值后必须 rollout restart。
     # 切 owner 之前该 zone 的每个 db 都必须已是新版本;回滚到不认识 p* 的旧镜像之前,先切回 shared 并等 p* 归零
-    # (go run ./cmd/retry_requeue -check),已经回滚的立即执行 go run ./cmd/retry_requeue 搬回。
+    # (go run ./cmd/retry_requeue -f etc/db.yaml -zone <ZoneId> -check;-zone 必填,退出码 0 才算归零,3/4/5 见工具文件头),
+    # 已经回滚的立即执行同一命令去掉 -check 搬回(步骤见 docs/ops/release-checklist.md「go/db 回滚到 S1」一条)。
     RetryRouting: shared
   Database:
+    # 全球数据层必须使用当前 TiDB leader 严格读；MySQL 本地兼容配置可显式置 false。
+    RequireTiDB: true
     Hosts: "127.0.0.1:3306"
     User: "root"
     Passwd: "Mmorpg#2026db"
@@ -142,15 +145,21 @@ ServerConfig:
   # 上限按**设计期望**定,不是按 MEDIUMBLOB 的 16MB 定 —— 按 16MB 设等于没设,
   # 等它触发时单次存盘早就把 MySQL 往返 + Redis 写回一起拖垮了。
   # 玩家单个组件 blob 的设计量级是个位数 KB,256KiB 已留一到两个数量级余量。
-  # 量的是**入库字节**:proto2mysql 把子消息 base64 后再入库,≈ 序列化字节 ×4/3。
+  # 沿用 base64.EncodedLen(序列化字节) 的保守计费/历史指标口径；不是真实入库量。
+  # 当前 proto2mysql v0.2.0 向 SQL 传裸 protobuf/bytes，本轮不改变生产计费算法。
   # 观测:db_blob_bytes{table,column} / db_blob_row_bytes{table} 两个 histogram
   #      (看 p99,不是 max)+ db_blob_guard_total{table,column,level} 计数。
   BlobGuard:
-    MaxColumnBytes: 262144   # 256 KiB / 列
-    MaxRowBytes: 1048576     # 1 MiB / 行(所有 blob 列之和)
+    MaxColumnBytes: 262144   # 256 KiB / 列(保守计费)
+    MaxRowBytes: 1048576     # 1 MiB / 行(所有 blob 列的保守计费之和)
     WarnRatio: 0.8           # 到 80% 打 WARN + counter,仍放行
     ReportOnly: false        # 超限拒写。灰度期可临时设 true 先只观测
     PerTable:
+      # 五流各 1024 条身份与总共 256 KiB 托管原件须在兼容保守计费下通过。
+      # 只放宽账本列；同表其他组件仍受上面的 256 KiB 约束。
+      player_database:
+        ColumnBytes:
+          asset_op_ledger: 1048576
       # 快照天然就大,单独放宽;它不走 db_task 路径,这里只是把口径写明白。
       player_snapshot:
         MaxColumnBytes: 8388608
@@ -161,6 +170,7 @@ ServerConfig:
   # 启动日志 "player row fencing: mode=" 一行是核对依据。K8s 的 db ConfigMap 由 k8s_deploy.ps1 原样镜像本键(没有逐 zone 覆盖)。
   Fencing:
     Mode: legacy
+    EpochOverride: false
 
 # ── 玩家存储落点(docs/design/player-storage-placement.md §6)────────────────
 # 每条读 / 写任务按 player:placement:{id}(落点记录)与 player:zone:{id}(home_zone)选库:

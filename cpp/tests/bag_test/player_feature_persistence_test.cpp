@@ -31,6 +31,7 @@
 #include "proto/scene/player_state_attribute_sync.pb.h"
 #include "proto/scene/scene_info.pb.h"
 #include "modules/mission/mission_events.h"
+#include "services/scene/combat/skill/comp/skill_comp.h"
 #include "services/scene/player/comp/last_persisted_snapshot_comp.h"
 #include "services/scene/player/system/player_data_loader.h"
 #include "services/scene/player/system/player_lifecycle.h"

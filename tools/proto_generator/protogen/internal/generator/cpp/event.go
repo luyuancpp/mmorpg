@@ -13,6 +13,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"protogen/internal"
 	_config "protogen/internal/config"
 	utils2 "protogen/internal/utils"
 	"protogen/logger"
@@ -108,80 +109,32 @@ func buildEventHandlerSignature(className, qualifiedTypeName, eventName string) 
 }
 
 // extractUserCodeBlocks extracts user-written code blocks from each event handler function in a .cpp file.
+//
+// 与 handler 生成器共用 internal.ReadCodeSectionsByKeys 的取段规则(internal/code_parser.go 的 codeParser):
+// 守护段内不认查找键、函数体内不认签名、以 ";" 结尾的声明不进入方法、不归任何方法的段整段跳过。
+// 修复前这里每一行都匹配签名 —— 守护段里出现某个事件 handler 的签名字面量(注释、手写的转调)会把解析拉进那个方法,
+// 随后的结束标记把它已取到的代码覆盖成只剩结束标记;FirstCode 缺失时第一个方法段会被当成全局段。
+// 结构损坏或带不走的非空段返回 error(拒绝生成,不吞代码);文件不存在时全部取默认空段。
+// 返回的 codeMap 以 methodSignatures 原样(含行尾换行)为键,值去掉行尾换行,供模板按 .Signature 取用。
 func extractUserCodeBlocks(cppPath string, methodSignatures []string) (map[string]string, string, error) {
-	codeMap := make(map[string]string)
-
-	file, err := os.Open(cppPath)
+	// 签名带行尾换行(buildEventHandlerSignature);查找键去掉它,在签名起始行上逐字匹配,CRLF 文件同样认得出。
+	keys := make([]string, 0, len(methodSignatures))
+	for _, signature := range methodSignatures {
+		keys = append(keys, strings.TrimRight(signature, "\r\n"))
+	}
+	sections, err := internal.ReadCodeSectionsByKeys(cppPath, keys)
 	if err != nil {
 		return nil, "", err
 	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	var (
-		globalCode    string
-		currentMethod string
-		currentCode   string
-		inGlobalCode  bool
-		inMethodCode  bool
-		globalHandled bool
-	)
-
-	for scanner.Scan() {
-		line := scanner.Text() + "\n"
-
-		if inGlobalCode {
-			globalCode += line
-			if strings.Contains(line, _config.Global.Naming.YourCodeEnd) {
-				inGlobalCode = false
-			}
-			continue
-		}
-		if !globalHandled && strings.Contains(line, _config.Global.Naming.YourCodeBegin) {
-			globalCode = line
-			inGlobalCode = true
-			globalHandled = true
-			continue
-		}
-
-		if currentMethod == "" {
-			for _, signature := range methodSignatures {
-				if strings.Contains(line, signature) {
-					currentMethod = signature
-					break
-				}
-			}
-		}
-
-		if currentMethod != "" {
-			if strings.Contains(line, _config.Global.Naming.YourCodeBegin) {
-				inMethodCode = true
-				currentCode += line
-			} else if strings.Contains(line, _config.Global.Naming.YourCodeEnd) {
-				currentCode += line
-				codeMap[currentMethod] = currentCode
-				currentMethod = ""
-				currentCode = ""
-				inMethodCode = false
-			} else if inMethodCode {
-				currentCode += line
-			}
-		}
+	if err := internal.RefuseLostCodeSections(cppPath, sections); err != nil {
+		return nil, "", err
 	}
 
-	if globalCode == "" {
-		globalCode = _config.Global.Naming.YourCodePair
+	codeMap := make(map[string]string, len(methodSignatures))
+	for i, signature := range methodSignatures {
+		codeMap[signature] = utils2.TrimTrailingLineBreaks(sections.CodeMap[keys[i]])
 	}
-	globalCode = utils2.TrimTrailingLineBreaks(globalCode)
-
-	for _, signature := range methodSignatures {
-		if _, exists := codeMap[signature]; !exists {
-			codeMap[signature] = utils2.TrimTrailingLineBreaks(_config.Global.Naming.YourCodePair)
-			continue
-		}
-		codeMap[signature] = utils2.TrimTrailingLineBreaks(codeMap[signature])
-	}
-	return codeMap, globalCode, scanner.Err()
+	return codeMap, utils2.TrimTrailingLineBreaks(sections.FirstCode), nil
 }
 
 // EventTemplateData holds data for rendering templates.
@@ -277,7 +230,8 @@ func generateEventHandlerFiles(wg *sync.WaitGroup, file os.DirEntry, protoRelati
 
 	userCodeBlocks, globalCode, err := extractUserCodeBlocks(cppFilePath, handlerSignatures)
 	if err != nil {
-		logger.Global.Warn("Failed to read user code",
+		// 读失败或守护段带不走时继续渲染,会把自定义代码覆盖成空段:拒绝生成(与 handler 生成器同口径)。
+		logger.Global.Fatal("Refusing to regenerate event handler: user code sections cannot be preserved",
 			zap.String("cpp_file", cppFilePath),
 			zap.Error(err),
 		)

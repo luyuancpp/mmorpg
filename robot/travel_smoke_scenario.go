@@ -72,8 +72,8 @@ import (
 // 帮会二期预留 9211-9219)、team-smoke(9301-9304)、trade-smoke(9401-9403)错开,避免并行冒烟互相顶号。
 // 不用 95xx:docs/design/guild-phase2/04-asset-channel.md 已把 robot_9501 预留给资产通道冒烟,
 // 那个冒烟要精确核对金币账本,而本场景每轮会给账号净加金币,两者不能共用账号。
+// travel_smoke.account 缺省沿用 robot_9601；显式账号仍必须匹配当前 login 的开发账号白名单。
 // 必须是**首次在 home_zone 建角**的账号:home zone 在建角时登记,之后不随登录区变化。
-const travelSmokeAccount = "robot_9601"
 
 const (
 	// 单次请求 / 回包的等待预算(金币读写、负向传送的同步回包)。
@@ -212,9 +212,9 @@ func RunTravelSmoke(cfg *config.Config) {
 	homeCfg := *cfg
 	homeCfg.ZoneID = sc.HomeZone
 	var err error
-	bot, err = travelSmokeLogin(&homeCfg, travelSmokeAccount, stats)
+	bot, err = travelSmokeLogin(&homeCfg, sc.Account, stats)
 	if err != nil {
-		fail("login", "account=%s zone=%d err=%v", travelSmokeAccount, sc.HomeZone, err)
+		fail("login", "account=%s zone=%d err=%v", sc.Account, sc.HomeZone, err)
 	}
 	homeGate := bot.gateAddr()
 	if bot.countSince(0, game.SceneClientPlayerCommonRedirectToGateMessageId) > 0 {

@@ -63,9 +63,13 @@ func (s *Store) readEpochBound(ctx context.Context, playerID uint64) (uint64, er
 
 // reportFenceReject 记录围栏拒绝的日志与指标。STALE 返回前再读一次 R 做分类(设计 §7.8):
 // R ≤ req 记 fence_regressed(critical),否则 zombie;分类读失败只记 unclassified,不改变 STALE 本身。
+//
+// 每条日志都带发送方身份(评审 L10):peer = gRPC 对端地址(不可伪造),scene_node_id = 请求自报的节点号
+// (只用于日志,0 = 旧版 scene 没填)。告警描述让值班按它们定位是哪台 scene 发的。
 func (s *Store) reportFenceReject(ctx context.Context, rpc string, v inboxpb.PlayerInboxFenceVerdict,
-	playerID uint64, domain inboxpb.PlayerInboxDomain, req, fence uint64) {
+	playerID uint64, domain inboxpb.PlayerInboxDomain, req, fence uint64, sceneNodeID uint32) {
 	log := logx.WithContext(ctx)
+	peerAddr := PeerAddr(ctx)
 	switch v {
 	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_STALE:
 		kind := StaleUnclassified
@@ -74,18 +78,22 @@ func (s *Store) reportFenceReject(ctx context.Context, rpc string, v inboxpb.Pla
 		}
 		if kind == StaleFenceRegressed {
 			metrics.IncFenceRegressed()
-			log.Errorf("[player_inbox] %s STALE classified fence_regressed player=%d domain=%d req_epoch=%d fence=%d: "+
-				"core Redis owner_epoch went backwards; run epoch-raise per db-write-fencing-mysql.md §9.1 (inbox max_fence_epoch "+
-				"is a max source); never reset the fence", rpc, playerID, domain, req, fence)
+			log.Errorf("[player_inbox] %s STALE classified fence_regressed player=%d domain=%d req_epoch=%d fence=%d "+
+				"peer=%s scene_node_id=%d: core Redis owner_epoch went backwards; run epoch-raise per db-write-fencing-mysql.md §9.1 "+
+				"(inbox max_fence_epoch is a max source); never reset the fence",
+				rpc, playerID, domain, req, fence, peerAddr, sceneNodeID)
 			return
 		}
-		log.Infof("[player_inbox] %s STALE (%s) player=%d domain=%d req_epoch=%d fence=%d", rpc, kind, playerID, domain, req, fence)
+		log.Infof("[player_inbox] %s STALE (%s) player=%d domain=%d req_epoch=%d fence=%d peer=%s scene_node_id=%d",
+			rpc, kind, playerID, domain, req, fence, peerAddr, sceneNodeID)
 	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_AHEAD:
 		metrics.IncEpochAhead()
-		log.Errorf("[player_inbox] %s EPOCH_AHEAD player=%d domain=%d req_epoch=%d fence=%d: request epoch exceeds core Redis "+
-			"owner_epoch (defect or forgery); no state changed", rpc, playerID, domain, req, fence)
+		log.Errorf("[player_inbox] %s EPOCH_AHEAD player=%d domain=%d req_epoch=%d fence=%d peer=%s scene_node_id=%d: "+
+			"request epoch exceeds core Redis owner_epoch (defect or forgery); no state changed",
+			rpc, playerID, domain, req, fence, peerAddr, sceneNodeID)
 	case inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED:
-		log.Errorf("[player_inbox] %s EPOCH_REQUIRED player=%d domain=%d: owner_epoch=0 rejected (fail-closed)", rpc, playerID, domain)
+		log.Errorf("[player_inbox] %s EPOCH_REQUIRED player=%d domain=%d peer=%s scene_node_id=%d: owner_epoch=0 rejected (fail-closed)",
+			rpc, playerID, domain, peerAddr, sceneNodeID)
 	}
 }
 
@@ -114,7 +122,7 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 	if reqEpoch == 0 {
 		resp.Fence = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED
 		resp.ErrorMessage = tipOf(constants.ErrEpochRequired)
-		s.reportFenceReject(ctx, "Fetch", resp.Fence, req.GetPlayerId(), domain, reqEpoch, 0)
+		s.reportFenceReject(ctx, "Fetch", resp.Fence, req.GetPlayerId(), domain, reqEpoch, 0, req.GetSceneNodeId())
 		metrics.ObserveFetch(dl, FenceLabel(resp.Fence), fetchPathFast)
 		return resp, nil
 	}
@@ -146,7 +154,7 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 		resp.Fence = v
 		if !FenceAllows(v) {
 			resp.ErrorMessage = tipOf(fenceRejectTip(v))
-			s.reportFenceReject(ctx, "Fetch", v, playerID, domain, reqEpoch, snap.GetFenceEpoch())
+			s.reportFenceReject(ctx, "Fetch", v, playerID, domain, reqEpoch, snap.GetFenceEpoch(), req.GetSceneNodeId())
 		}
 		metrics.ObserveFetch(dl, FenceLabel(v), fetchPathFast)
 		return resp, nil
@@ -230,7 +238,7 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 	resp.Fence = verdict
 	if !FenceAllows(verdict) {
 		resp.ErrorMessage = tipOf(fenceRejectTip(verdict))
-		s.reportFenceReject(ctx, "Fetch", verdict, playerID, domain, reqEpoch, lockedFence)
+		s.reportFenceReject(ctx, "Fetch", verdict, playerID, domain, reqEpoch, lockedFence, req.GetSceneNodeId())
 		metrics.ObserveFetch(dl, FenceLabel(verdict), fetchPathLocked)
 		return resp, nil
 	}
@@ -252,7 +260,7 @@ func (s *Store) Fetch(ctx context.Context, req *inboxpb.FetchPlayerInboxRequest)
 	}
 	for _, it := range items {
 		if it.GetDeliveryCount() >= constants.DeliveryWarnThreshold {
-			log.Errorf("[player_inbox] Item delivered %d times without ack player=%d domain=%d seq=%d msg_type=%d scene_node=%d: "+
+			log.Errorf("[player_inbox] Item delivered %d times without ack player=%d domain=%d seq=%d msg_type=%d scene_node_id=%d: "+
 				"possible poison message; consider VoidItem(QUARANTINED)",
 				it.GetDeliveryCount(), playerID, domain, it.GetSeq(), it.GetMsgType(), req.GetSceneNodeId())
 		}
@@ -313,7 +321,7 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 	if reqEpoch == 0 {
 		resp.Fence = inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED
 		resp.ErrorMessage = tipOf(constants.ErrEpochRequired)
-		s.reportFenceReject(ctx, "Ack", resp.Fence, playerID, domain, reqEpoch, 0)
+		s.reportFenceReject(ctx, "Ack", resp.Fence, playerID, domain, reqEpoch, 0, req.GetSceneNodeId())
 		metrics.ObserveAck(dl, FenceLabel(resp.Fence))
 		return resp, nil
 	}
@@ -418,7 +426,7 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 	resp.Fence = verdict
 	if !FenceAllows(verdict) {
 		resp.ErrorMessage = tipOf(fenceRejectTip(verdict))
-		s.reportFenceReject(ctx, "Ack", verdict, playerID, domain, reqEpoch, lockedFence)
+		s.reportFenceReject(ctx, "Ack", verdict, playerID, domain, reqEpoch, lockedFence, req.GetSceneNodeId())
 		metrics.ObserveAck(dl, FenceLabel(verdict))
 		return resp, nil
 	}
@@ -429,10 +437,12 @@ func (s *Store) Ack(ctx context.Context, req *inboxpb.AckPlayerInboxRequest) (*i
 
 // reportAckResults 记 Ack 逐条结果的指标;协议异常与 SETTLED_UNKNOWN 都记 ERROR(logx 没有 WARN 级;
 // 告警分级由第 4 批的规则按 ack_total{result} 区分 critical / warning)。
+// ERROR 日志带发送方身份 peer / scene_node_id(评审 L10,口径同 reportFenceReject)。
 func (s *Store) reportAckResults(ctx context.Context, playerID uint64, domain inboxpb.PlayerInboxDomain,
 	req *inboxpb.AckPlayerInboxRequest, results []*inboxpb.PlayerInboxAckItem) {
 	dl := DomainLabel(domain)
 	log := logx.WithContext(ctx)
+	peerAddr, sceneNodeID := PeerAddr(ctx), req.GetSceneNodeId()
 	for i, res := range results {
 		label := ackMetricLabel(res)
 		metrics.ObserveAck(dl, label)
@@ -442,14 +452,14 @@ func (s *Store) reportAckResults(ctx context.Context, playerID uint64, domain in
 		}
 		switch {
 		case label == ackLabelSettledUnknown: // warning 告警单列(设计 §9.4)
-			log.Errorf("[player_inbox] Item settled as SETTLED_UNKNOWN player=%d domain=%d seq=%d request_id=%d epoch=%d: "+
-				"consumer watermark passed it but its outcome left the recent ring; verify via reconcile",
-				playerID, domain, res.GetSeq(), report.GetRequestId(), req.GetOwnerEpoch())
+			log.Errorf("[player_inbox] Item settled as SETTLED_UNKNOWN player=%d domain=%d seq=%d request_id=%d epoch=%d "+
+				"peer=%s scene_node_id=%d: consumer watermark passed it but its outcome left the recent ring; verify via reconcile",
+				playerID, domain, res.GetSeq(), report.GetRequestId(), req.GetOwnerEpoch(), peerAddr, sceneNodeID)
 		case isAckAnomaly(res.GetResult()):
 			log.Errorf("[player_inbox] Ack protocol anomaly result=%s player=%d domain=%d seq=%d reported_outcome=%d "+
-				"reported_request_id=%d row_state=%d epoch=%d: row unchanged; consumer halts this domain",
+				"reported_request_id=%d row_state=%d epoch=%d peer=%s scene_node_id=%d: row unchanged; consumer halts this domain",
 				AckResultLabel(res.GetResult()), playerID, domain, res.GetSeq(), report.GetOutcome(),
-				report.GetRequestId(), res.GetState(), req.GetOwnerEpoch())
+				report.GetRequestId(), res.GetState(), req.GetOwnerEpoch(), peerAddr, sceneNodeID)
 		}
 	}
 }

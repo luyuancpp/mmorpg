@@ -77,6 +77,10 @@ for (const Entry& it : expired)
 | `third_party/muduo-linux` | ❌ | **Linux 全部** |
 | `third_party/grpc/third_party/...` | — | 无关 |
 
+*（2026-10-17 批注：上表与下一句是写作时的现状，已过时。Linux 的守卫已于 2026-08-02 以
+`tools/archived/muduo_linux_overlay/muduo/net/TimerQueue.cc` 的 LOCAL DELTA (1) 补上，由
+`setup_dependencies.sh` 覆盖到 `third_party/muduo-linux`；`third_party/muduo` 只作头文件来源，守卫在 `.cc` 里，与它无关。）*
+
 **所以 Linux 侧目前没有这个保护**，同一个崩溃在 Linux 节点上是敞开的。
 `third_party/muduo-linux` 是子模块，只有指针会被提交，直接改它的工作区活不过一次
 clone —— 要补必须走 `tools/archived/muduo_linux_overlay/`（见
@@ -103,6 +107,9 @@ clone —— 要补必须走 `tools/archived/muduo_linux_overlay/`（见
 | 同批次被取消/重设，宿主还在 | 存活 | `TimerTaskComp::generation` |
 
 ## 另一处两端不一致：定时器精度差一个数量级
+
+> 2026-10-17 订正:本节描述的是旧状态。Windows 的 `EventLoop::loop()` 早已改用 `TimerQueue::nextTimeoutMs` 计算 poll 超时(最近一个定时器的剩余时间,上限 100ms),
+> 第 3 批又修好了 Windows 的 `wakeup()`,短定时器不再被 100ms 粒度拖住;定时器到期判断也已改为单调时钟(见上文「定时器时钟」一节)。下文保留作历史。
 
 `cpp/libs/engine/muduo_windows/src/muduo/net/EventLoop.cc`：
 
@@ -141,6 +148,52 @@ Windows ~108ms。技能吟唱 / 后摇 / 引导间隔全部受影响。在 Windo
 poll 周期，在 Windows 上会拿到"定时器只触发了一次"的假象。改成在回调里数够次数
 就 `loop.quit()`，另配一个明显偏大的 `runAfter` 兜底。本文件的两条重复/自重设
 用例最初就栽在这上面。
+
+## 定时器时钟：改为单调时钟（2026-10-16，未编译）
+
+**问题。** 上游 muduo 的 `TimerQueue` 按墙钟到期：到期判断、上弦时长、重复定时器的下一次
+到期全用 `Timestamp::now()`（Windows 上是 `gettimeofday` → `system_clock`）。Linux 的 timerfd
+虽然建成 `CLOCK_MONOTONIC`，上弦时长仍按墙钟差算。墙钟回拨 N 秒（NTP 步进、人工改时间），
+所有定时器——调用截止、建连、探测、业务看门狗——都晚 N 秒；前跳则提前。业务侧"到点按
+steady_clock 复核、未到就重挂"只兜得住前跳，兜不住回拨（`grpc-muduo-transport.md` §6 登记过的已知限制）。
+
+**做法（与 POSIX timerfd `CLOCK_MONOTONIC`、`asio::steady_timer` 同一口径）。**
+
+- `TimerQueue::monotonicNow()`：`steady_clock` 的微秒读数，借 `Timestamp` 承载（复用 `addTime` /
+  `operator<` 与 `Timer` 字段）。**它不是 epoch 时间**：原点约为开机时刻，只能与同一时钟的读数
+  相减、比较，不能格式化成日期、不能与 `Timestamp::now()` 混算。
+- 队列里 `Timer::expiration()` 一律在单调域；`handleRead` / `getExpired` / `reset` / `Timer::restart`、
+  Windows 的 `nextTimeoutMs`、Linux 的 `howMuchTimeFromNow` 全部取单调 now。
+- `EventLoop::runAfter` / `runEvery`：单调 now 加时长。
+- `EventLoop::runAt(墙钟时刻)`：调用时一次性换算，`monoWhen = monoNow + (wallTime − wallNow)`
+  （`TimerQueue::monotonicFromWall`，纯函数）。公开 API 不变；语义变为"等价于
+  `runAfter(time − now)`"，之后墙钟再跳也不跟随。需要"墙钟到某一刻才触发"的整点类任务，
+  到点后自己按墙钟复核。现在生产代码没有 `runAt` 调用方（只有 `TimerTaskComp::RunAt` 转发与测试）。
+  两只表显式先读墙钟、后读单调钟（不靠实参求值顺序）：两次读数之间被抢占时，截止时刻只会偏晚、不会偏早。
+- `reset()` 不再用 `nextExpire.valid()`（> 0）判断"还有没有下一个"：由很久以前的墙钟时刻换算来的
+  单调值可以 ≤ 0，改为直接看队列是否为空。
+- 墙钟只用于对外显示：`pollReturnTime()`、日志时间戳不变。TRACE 日志里 `TimerQueue::handleRead()`
+  打印的 now 改标 `at monotonic`。
+
+**各树落点。**
+
+| 树 | 改动 |
+|---|---|
+| `cpp/libs/engine/muduo_windows/src` | `TimerQueue.{h,cc}`、`EventLoop.cc`；`EventLoop.h` / `Timer.h` 只加注释 |
+| `third_party/muduo`（Windows 使用方 include 的头副本） | `TimerQueue.h` / `EventLoop.h` / `Timer.h` 与上一行逐字一致（`TimerQueue.h` 顺带补齐原先缺的 `nextTimeoutMs` 声明） |
+| `tools/archived/muduo_linux_overlay` | `TimerQueue.cc`（LOCAL DELTA (2)）、新增 `TimerQueue.h` / `EventLoop.cc` 覆盖件；三者必须一起生效 |
+
+类布局都不变（只加静态成员函数），`EventLoop.h` 公开 API 不变。
+
+**业务侧的 steady 复核保留。** `muduo_grpc` 的截止 / 建连 / 探测 / 排空定时器、`RunAtMonotonic`
+（跨区换图看门狗）、agones 等待者都另记一份 `steady_clock` 截止点，到点复核、未到就按剩余时间重挂。
+改为单调时钟后它们不再需要兜墙钟跳变，但仍兜得住"秒数转微秒的截断让定时器早到一点"，且无害，
+所以保留，只把注释改准。
+
+**测试。** `timer_queue_unit_test` 的 `TimerClockTest.*`：换算纯函数的偏移与保序、`monotonicNow`
+不回退、过去墙钟时刻乱序挂仍按墙钟先后触发、1970 年的墙钟时刻（单调域为负）照常触发且后续定时器
+照常上弦、`runAt` 与 `runAfter` 同域比较、Windows `nextTimeoutMs` 按单调时钟倒数。不改系统时钟；
+"墙钟回拨后定时器不再晚到"的端到端效果需在可改系统时间的环境里手工验证。
 
 ## 写定时器的规约
 

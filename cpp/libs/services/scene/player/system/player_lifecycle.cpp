@@ -30,7 +30,9 @@
 #include "player/system/db_task_dispatch_system.h"
 #include "player/system/dirty_save_stats.h"
 #include "player/system/handoff_mark_withdraw.h"
+#include "player/system/handoff_sql_barrier.h"
 #include "player/system/player_data_loader.h"
+#include "player/system/player_inbox_system.h" // FinishExitAfterPersist:销毁前尽力补发收件箱 Ack(评审 M4)
 #include "player/system/release_fence.h" // HandleReleaseFromSceneManager 的纯判定与计数
 #include "engine/core/type_define/type_define.h"
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -383,13 +385,13 @@ namespace
 	// 在 muduo 定时器上挂一个"按单调截止时刻 dueAt 执行 fn"的一次性任务。当前线程没有 EventLoop(单测宿主)时
 	// 什么都不挂、返回 false,调用方自己决定怎么记录。
 	//
-	// 为什么要复核:muduo 的定时器按 Timestamp::now 到期,Windows 上那是 gettimeofday → system_clock(墙钟),
-	// 与 steady_clock 是两只独立的时钟。墙钟向前跳(对时 / 人工改时间)会让 runAfter 提前醒来,看门狗提前裁决 ——
-	// 应答看门狗落进 scene_manager "铸造 → 路由 / 回滚"窗口就会读到一个即将被回滚的 epoch(见 kReplyBudget 的下限约束)。
+	// 为什么还要复核:muduo 的 TimerQueue 自 2026-10-16 起按单调时钟到期(docs/design/muduo-timer-cancellation-hazards.md
+	// 「定时器时钟」),墙钟前跳 / 回拨都不再让 runAfter 提前或推迟。复核保留为纵深防御:链进来的 muduo 若没带这项
+	// 改动(例如 Linux 未应用 overlay),墙钟前跳会让看门狗提前裁决 —— 应答看门狗落进 scene_manager
+	// "铸造 → 路由 / 回滚"窗口就会读到一个即将被回滚的 epoch(见 kReplyBudget 的下限约束)。
 	// 所以醒来后按 steady_clock 再看一眼:离 dueAt 还差超过 travel_freeze_cap::kEarlyFireTolerance(1s)就按剩余时间
-	// 重挂并计 watchdog_early_fire;差 1s 以内(含两只时钟的频率差与微秒截断造成的毫秒级伪提前)直接执行,
+	// 重挂并计 watchdog_early_fire;差 1s 以内(微秒截断造成的伪提前)直接执行,
 	// 正常运行不会抬高这个计数。每次重挂的剩余时间严格变小,次数有界。
-	// 墙钟**回拨**会把定时器推迟,这里管不了(引擎级残余,见 travel_freeze_cap.h 文件头)。
 	// 回调只按值捕获截止时刻与 fn,不绑任何对象(AGENTS §11.7);fn 自己也只能按值捕获 id 与代际。
 	bool RunAtMonotonic(travel_freeze_cap::Clock::time_point dueAt, std::function<void()> fn)
 	{
@@ -1978,26 +1980,10 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoadFailed(Guid playerId,
 {
 	using LoadFailureReason = MessageAsyncClient<Guid, PlayerAllData>::LoadFailureReason;
 
-	// DataNotFound: NIL after exhausting retries. Treat as a brand-new player
-	// whose DB rows do not exist yet (CreatePlayer only writes account meta;
-	// PlayerAllData parent key is first written by Scene's own SavePlayerToRedis,
-	// so a first-time login will always observe NIL here). Hand off to the
-	// existing new-player branch in HandlePlayerAsyncLoaded by feeding it an
-	// empty PlayerAllData -- it detects player_database_data().player_id()==0
-	// and stamps the playerId from the async-load key.
-	if (reason == LoadFailureReason::DataNotFound)
-	{
-		LOG_INFO << "HandlePlayerAsyncLoadFailed: no Redis data for player " << playerId
-				 << " after retries, treating as brand-new player";
-		PlayerAllData empty;
-		HandlePlayerAsyncLoaded(playerId, empty);
-		return;
-	}
-
-	// RedisError: connection lost, parse failure, or unexpected reply type.
-	// We cannot proceed -- notify the client (if a session is still bound) so
-	// it leaves the loading screen instead of hanging, then drop pending state.
-	LOG_ERROR << "HandlePlayerAsyncLoadFailed: Redis load failed for player " << playerId;
+	// 新号由 login 预种父快照。NIL 重试耗尽也不能证明新号,否则缓存丢失会凭空覆盖玩家资产。
+	// 与 Redis 故障共用失败通知、清 pending 与继承围栏补写,始终不构造空存档。
+	LOG_ERROR << "HandlePlayerAsyncLoadFailed: Redis load failed for player " << playerId
+			  << " reason=" << (reason == LoadFailureReason::DataNotFound ? "data_not_found" : "redis_error");
 
 	auto pendingIt = tlsPendingEnterMap.find(playerId);
 	if (pendingIt != tlsPendingEnterMap.end())
@@ -2013,7 +1999,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoadFailed(Guid playerId,
 		// 载入放弃:A2′ 若已删掉(或可能删掉)epoch == N 的标记,补写回去(M7)。
 		const InheritClearState inheritClear = std::move(pendingIt->second.inheritClear);
 		tlsPendingEnterMap.erase(pendingIt);
-		AbandonInheritClear(playerId, inheritClear, "load failed with a Redis error");
+		AbandonInheritClear(playerId, inheritClear, "load failed without an authoritative parent snapshot");
 	}
 }
 
@@ -2078,6 +2064,16 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 		return;
 	}
 
+	// login 的合法新号种子也必须给两张子表写入本玩家 ID。缺失或串号不能据异步 key 补成新号,
+	// 否则损坏的旧存档会进入 registration_timestamp 首次注册分支并覆盖真实资产。
+	if (playerId == kInvalidGuid || message.player_database_data().player_id() != playerId ||
+		message.player_database_1_data().player_id() != playerId)
+	{
+		LOG_ERROR << "HandlePlayerAsyncLoaded: 父快照双表身份与当前玩家不符,拒绝载入 player=" << playerId;
+		HandlePlayerAsyncLoadFailed(playerId, MessageAsyncClient<Guid, PlayerAllData>::LoadFailureReason::RedisError);
+		return;
+	}
+
 	// A2′ 闸门(§12.6.3 第三步,M10 三态):只认"针对本 ctx.ownerEpoch 的那一次清理返回了非 -1"。
 	// 不对 enter_gs_type == 0 fail-open:首登与重登走同一道闸。
 	{
@@ -2104,24 +2100,7 @@ void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(Guid playerId, const PlayerA
 	PlayerEnterContext ctx = std::move(pendingIt->second);
 	tlsPendingEnterMap.erase(pendingIt);
 
-	// If the loaded data has player_id=0, this is a brand-new player whose DB
-	// rows don't exist yet (CreatePlayer only creates an account entry), or an
-	// orphan after zone rollback.  In either case, set the player_id from the
-	// async-load key and let InitPlayerFromAllData handle first-time registration
-	// via the registration_timestamp check.
-	const PlayerAllData *data = &message;
-	PlayerAllData patchedMessage;
-	if (message.player_database_data().player_id() == 0)
-	{
-		LOG_INFO << "HandlePlayerAsyncLoaded: No existing DB data for player " << playerId
-				 << ", will initialize as new player";
-		patchedMessage = message;
-		patchedMessage.mutable_player_database_data()->set_player_id(playerId);
-		patchedMessage.mutable_player_database_1_data()->set_player_id(playerId);
-		data = &patchedMessage;
-	}
-
-	InitPlayerFromAllData(*data, ctx);
+	InitPlayerFromAllData(message, ctx);
 }
 
 void PlayerLifecycleSystem::HandlePlayerAsyncSaved(Guid playerId, PlayerAllData &message)
@@ -3268,6 +3247,7 @@ void PlayerLifecycleSystem::FinishExitAfterPersist(Guid playerId)
 	// A1′ 断线释放标记(§12.6.3 第二步):改派之后(改派消费了票据就由它写标记,A1′ 不覆盖)、摘会话之前
 	// (实体、意图组件、owner_epoch 此刻都还在)。条件与计数见 WriteExitReleaseMarkIfEligible。
 	WriteExitReleaseMarkIfEligible(playerId, playerEntity, relocateTicketConsumed, exitWonOverIssuedHandoff);
+	PlayerInboxSystem::OnPlayerLeaving(playerEntity); // 退出存盘已收敛:只对已落盘的待确认结局补发 Ack,不等回包(评审 M4)
 
 	RemovePlayerSession(playerId);
 	LOG_INFO << "Player session removed";
@@ -3299,11 +3279,27 @@ bool PlayerLifecycleSystem::FinishExitOrAwaitDbTaskAck(Guid playerId)
 
 	const uint32_t inFlight = DbTaskDispatchSystem::InFlight(playerId);
 	const bool needsResave = DbTaskDispatchSystem::NeedsResave(playerId);
-	switch (player_exit::DecideDbTaskGate(inFlight, needsResave, intent->dbTaskResaveRounds,
+	// 欠账那一代里有永久失败(消息过大 / 无写权限等)时带回错误描述,只在需要重存时才有意义。
+	const std::optional<std::string> permanentFailure =
+		needsResave ? DbTaskDispatchSystem::PermanentFailure(playerId) : std::nullopt;
+	switch (player_exit::DecideDbTaskGate(inFlight, needsResave, permanentFailure.has_value(), intent->dbTaskResaveRounds,
 										  player_exit::kMaxExitDbTaskResaveRounds))
 	{
 	case player_exit::DbTaskGateDecision::kFinish:
 		intent->awaitingDbTaskAck = false;
+		FinishExitAfterPersist(playerId);
+		return true;
+	case player_exit::DbTaskGateDecision::kFinishUnsynced:
+		// 欠账的那次失败是永久性的:按当前内存重存也必然失败(Kafka 恢复不会让消息变小,权限也不会自己修好)。
+		// 保留实体没有出口 —— 改动前它会在几次 Redis RTT 内耗尽轮次、被无限期保留,停机时必然跑满 drain 预算。
+		// 带着 MySQL 落后收尾,由新属主的首存补写(仍撞同一错误时同样补不上,这行 ERROR 与计数可查)。剩下的在途票据
+		// 不等:成败都改变不了结论;DestroyPlayer → OnPlayerGone 在它们落定后回收条目并计 orphan_unsynced。
+		intent->awaitingDbTaskAck = false;
+		db_task_dispatch_stats::Inc(db_task_dispatch_stats::Counter::kExitUnsynced);
+		LOG_ERROR << "FinishExitOrAwaitDbTaskAck: exiting player " << playerId
+				  << " has a DB write task that Kafka permanently rejects (err=" << permanentFailure.value_or("?")
+				  << "); re-saving cannot help, finishing exit with MySQL lagging Redis (in_flight=" << inFlight
+				  << ", metric=exit_db_task_unsynced)";
 		FinishExitAfterPersist(playerId);
 		return true;
 	case player_exit::DbTaskGateDecision::kAwaitAck:
@@ -4315,10 +4311,17 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	stresstest_probe::StampPlayerDatabase(*message->mutable_player_database_data());
 	stresstest_probe::StampPlayerDatabase1(*message->mutable_player_database_1_data());
 
+	// 严格归属路径必须有真实 home_zone,不能把跨区玩家的持久投递意图挂到进程所在区。
+	uint64_t ownerEpoch = 0;
+	if (const auto *epochComp = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player))
+	{
+		ownerEpoch = epochComp->epoch;
+	}
+
 	// ── 归属(CZ-2 / CZ-3):落库目的地按 home_zone 选,不按进程 zone ────────────────
 	// 访客在别的 zone 玩,数据仍归 home_zone;topic 选错 = 玩家数据落进别人的库,回家即回档。
-	// home_zone 未知时 fail-closed 用进程 zone(改动前的行为),但必须 WARN + 计数,
-	// 不许静默(不变量 §6.2)。放在快路径之后:没写盘的调用不该计入。
+	// home_zone 未知时严格路径拒绝;仅 epoch=0 旧兼容路径保留进程 zone 回落与计数。
+	// 放在快路径之后:没写盘的调用不该计入。
 	uint32_t homeZoneId = 0;
 	if (const auto *homeZone = tlsEcs.actorRegistry.try_get<PlayerHomeZoneComp>(player))
 	{
@@ -4327,6 +4330,11 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	if (homeZoneId == 0)
 	{
 		owner_epoch_stats::IncHomeZoneUnknown();
+		if (ownerEpoch != 0)
+		{
+			LOG_ERROR << "[SavePlayerToRedis] strict save refused: home_zone missing for player " << playerId;
+			return SaveResult::kRejected;
+		}
 		homeZoneId = GetZoneId();
 		// 逐次只打 DEBUG:滚动升级窗口(旧 gate / 旧 scene_manager 不带 home_zone_id)里每个玩家
 		// 每次存盘都会走到这里,WARN 会刷屏。"不静默"由计数 + redis.cpp 里每 30s 一行的
@@ -4337,26 +4345,8 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	}
 
 	// ── owner_epoch(CZ-4 ①):Redis 写带 CAS,DBTask 带 epoch ────────────────────────
-	// epoch != 0:Save 的 guard 重载在 Lua 里原子比对 player:{id}:owner_epoch == 期望值,不等
-	//            即拒绝并回调 HandlePlayerSaveRejected(本节点已被废黜)。
-	// epoch == 0:旧版 Go 未铸造的兼容窗口,走无守卫的旧 Save,计数以便升级完成后核对恒 0。
-	uint64_t ownerEpoch = 0;
-	if (const auto *epochComp = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player))
-	{
-		ownerEpoch = epochComp->epoch;
-	}
-	if (ownerEpoch != 0)
-	{
-		tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId,
-												  player_ownership::OwnerEpochRedisKey(playerId),
-												  std::to_string(ownerEpoch));
-	}
-	else
-	{
-		owner_epoch_stats::IncOwnerEpochUnknown();
-		tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId);
-	}
-
+	// epoch != 0:父缓存、pending 与完整两条 SQL 投递意图在同一 Lua 内检查旧 owner 键并提交。
+	// epoch == 0:旧版兼容窗口仍不提供严格 pending 证明,但 SQL 同样等父缓存成功后投递。
 	// Send each sub-table as a separate DBTask (matching how login reads per-table)
 	const std::string playerIdStr = DbTaskKafkaKey(playerId); // Kafka key 与 Go 侧 kafkautil.DBTaskKey 逐字节相同(分区契约),task_id 前缀沿用同一串
 	// 世代号来自部署配置(DbTaskTopicGeneration,缺键 / 0 = 第一代,名字不带后缀),必须与 go/db、
@@ -4365,72 +4355,103 @@ PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(
 	const std::string dbTaskTopic = GetDbTaskTopic(
 		homeZoneId, tlsNodeConfigManager.GetBaseDeployConfig().db_task_topic_generation());
 
-	// DBTask 投递记账(DbTaskDispatchSystem):本次存盘领一个代号,每条 DBTask 一张票据(关联号随消息进 Kafka、
-	// 回执时带回)。任何一条没入队(序列化失败 / 同步被拒)或之后回执失败,该玩家记一笔「欠 MySQL 一次整份写」:
-	// 下一次存盘的 dirty-save 快路径让路,下线收尾等回执、必要时重存。返回值语义不变(kQueued = 已发出 Redis 存盘)。
-	const db_task_dispatch::SaveGeneration saveGeneration = DbTaskDispatchSystem::BeginSave(playerId);
-	bool allDbTasksQueued = true;
-
-	auto sendSubTableTask = [&](const google::protobuf::Message &subMsg)
+	// 先完成全部序列化,任意一表失败都不得写父缓存。意图只保存既有 DBTask 原字节,
+	// 不在 Redis Lua 里解析 protobuf,也不在重试或补投时重新铸造任务身份。
+	auto intent = std::make_shared<RedisSaveCommitIntent>();
+	intent->index_key = "player:save_pending:" + std::to_string(homeZoneId) + ":" +
+		std::to_string(playerId % RedisSaveCommitIntent::kIndexBuckets);
+	intent->topic = dbTaskTopic;
+	auto serializeSubTableTask = [&](const google::protobuf::Message &subMsg, std::string &dbTaskBytes)
 	{
 		const std::string tableName(subMsg.GetDescriptor()->full_name());
-
 		std::string bodyBytes;
 		if (!subMsg.SerializeToString(&bodyBytes))
 		{
-			LOG_ERROR << "[SavePlayerToRedis] Serialize failed: table=" << tableName
-					  << " player=" << playerId;
-			DbTaskDispatchSystem::MarkLocalFailure(playerId, saveGeneration);
-			allDbTasksQueued = false;
-			return;
+			LOG_ERROR << "[SavePlayerToRedis] Serialize failed: table=" << tableName << " player=" << playerId;
+			return false;
 		}
-
 		taskpb::DBTask dbTask;
 		dbTask.set_key(playerId);
 		dbTask.set_op("write");
 		dbTask.set_msg_type(tableName);
 		dbTask.set_body(std::move(bodyBytes));
 		dbTask.set_task_id(playerIdStr + ":" + tableName + ":" + std::to_string(TimeSystem::NowMillisecondsUTC()));
-		// Redis 侧的 CAS 挡不住这条通道:被废黜节点的 DBTask 仍可能后到并覆盖 MySQL。
-		// db 服务落库前比对(reentry-barrier §6.3);0 表示兼容窗口放行。
 		dbTask.set_owner_epoch(ownerEpoch);
-		// 两张子表共用同一个 save_seq(db-write-fencing-mysql.md §7.2)。epoch 为 0 时不带序号:go/db 对「有 seq、无 epoch」
-		// 无法判定(class-3 只看 epoch,§2);父键里的 last_save_seq 照样写了,播种来源不断。
+		// 两表同序号;epoch=0 的兼容任务仍不带 seq,不能伪装成严格围栏任务。
 		dbTask.set_save_seq(ownerEpoch == 0 ? 0 : saveSeq);
-
-		std::string dbTaskBytes;
 		if (!dbTask.SerializeToString(&dbTaskBytes))
 		{
-			LOG_ERROR << "[SavePlayerToRedis] DBTask serialize failed: table=" << tableName
-					  << " player=" << playerId;
-			DbTaskDispatchSystem::MarkLocalFailure(playerId, saveGeneration);
-			allDbTasksQueued = false;
-			return;
+			LOG_ERROR << "[SavePlayerToRedis] DBTask serialize failed: table=" << tableName << " player=" << playerId;
+			return false;
 		}
+		return true;
+	};
+	if (!serializeSubTableTask(message->player_database_data(), intent->player_database_task) ||
+		!serializeSubTableTask(message->player_database_1_data(), intent->player_database_1_task))
+	{
+		return SaveResult::kRejected;
+	}
+	const auto commitIntent = std::shared_ptr<const RedisSaveCommitIntent>(std::move(intent));
 
-		const auto sent =
-			DbTaskDispatchSystem::SendDbTask(playerId, saveGeneration, dbTaskTopic, dbTaskBytes, playerIdStr);
-		if (!sent.queued)
+	// 只按值持有不可变任务字节与路由元数据,不借用 ECS 或 Node。每份实际提交都登记 SQL 票据,
+	// 未下发就合并的快照不执行钩子;全局 HandlePlayerAsyncSaved 仍只对最终最新值发布。
+	// Lua 与钩子之间崩溃由 outbox 补投,钩子仍先于全局退出 / 交接判定登记票据。
+	auto publishDbTasks = [commitIntent, playerId, homeZoneId, ownerEpoch, saveSeq, playerIdStr, dbTaskTopic]()
+	{
+		const db_task_dispatch::SaveGeneration saveGeneration = DbTaskDispatchSystem::BeginSave(playerId);
+		bool allDbTasksQueued = true;
+		auto sendTask = [&](const std::string &dbTaskBytes)
 		{
-			allDbTasksQueued = false;
-			LOG_ERROR << "[SavePlayerToRedis] Kafka send failed: table=" << tableName
-					  << " player=" << playerId << " topic=" << dbTaskTopic
-					  << " err=" << sent.error;
+			const auto sent = DbTaskDispatchSystem::SendDbTask(playerId, saveGeneration, dbTaskTopic, dbTaskBytes, playerIdStr);
+			if (!sent.queued)
+			{
+				allDbTasksQueued = false;
+				LOG_ERROR << "[SavePlayerToRedis] Kafka send failed: player=" << playerId << " topic=" << dbTaskTopic
+						  << " err=" << sent.error;
+			}
+		};
+
+		sendTask(commitIntent->player_database_task);
+		sendTask(commitIntent->player_database_1_task);
+		DbTaskDispatchSystem::FinishSave(playerId, saveGeneration, allDbTasksQueued);
+		// 收尾这行 INFO 按是否全部入队分两种文案:只有两张子表都同步入队才写 "DB write tasks enqueued"
+		// (cross-zone-failure-test-runbook 按它核对 home_zone 的 topic),没全入队时不能再报这句,否则日志等于自报一次假的成功。
+		// 注意即使全部入队,也只是进了 librdkafka 的本地队列,不等于 acks=all;W 是否真到 broker 以分区契约文档冷读冒烟第 2 步
+		// (broker 侧 end offset + 抽样复核器)为准,不以这行为准。
+		if (allDbTasksQueued)
+		{
+			LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis, DB write tasks enqueued"
+					 << " (topic=" << dbTaskTopic << ", home_zone=" << homeZoneId
+					 << ", owner_epoch=" << ownerEpoch << ", save_seq=" << saveSeq << ")";
+		}
+		else
+		{
+			LOG_ERROR << "[SavePlayerToRedis] player " << playerId << ": not every DB write task was queued to Kafka (topic="
+					  << dbTaskTopic << "); MySQL awaits durable outbox replay or a later full save"
+					  << " (metric=db_task_produce_rejected)";
+			LOG_INFO << "[SavePlayerToRedis] Player " << playerId
+					 << " saved to Redis, DB write tasks NOT all queued (see the ERROR above)"
+					 << " (topic=" << dbTaskTopic << ", owner_epoch=" << ownerEpoch << ", save_seq=" << saveSeq << ")";
 		}
 	};
-
-	sendSubTableTask(message->player_database_data());
-	sendSubTableTask(message->player_database_1_data());
-	DbTaskDispatchSystem::FinishSave(playerId, saveGeneration, allDbTasksQueued);
-	if (!allDbTasksQueued)
+	if (ownerEpoch != 0)
 	{
-		LOG_ERROR << "[SavePlayerToRedis] player " << playerId << ": not every DB write task was queued to Kafka (topic="
-				  << dbTaskTopic << "); MySQL lags Redis until the next save re-sends the full state"
-				  << " (metric=db_task_produce_rejected)";
+		const std::string epochText = std::to_string(ownerEpoch);
+		const std::string seqText = std::to_string(saveSeq);
+		const std::string version = std::string(20 - epochText.size(), '0') + epochText + ":" +
+			std::string(20 - seqText.size(), '0') + seqText;
+		if (!tlsRedisSystem.GetPlayerDataRedis()->SaveWithCommitBarrier(message, playerId,
+			player_ownership::OwnerEpochRedisKey(playerId), epochText,
+			"player:{" + playerIdStr + "}:save_barrier", version, commitIntent, std::move(publishDbTasks)))
+		{
+			return SaveResult::kRejected;
+		}
 	}
-
-	LOG_INFO << "[SavePlayerToRedis] Player " << playerId << " saved to Redis, DB write tasks enqueued"
-			 << " (topic=" << dbTaskTopic << ", owner_epoch=" << ownerEpoch << ", save_seq=" << saveSeq << ")";
+	else
+	{
+		owner_epoch_stats::IncOwnerEpochUnknown();
+		tlsRedisSystem.GetPlayerDataRedis()->Save(message, playerId, std::move(publishDbTasks));
+	}
 	return SaveResult::kQueued;
 }
 
@@ -4547,7 +4568,7 @@ void PlayerLifecycleSystem::DestroyDeposedPlayer(Guid playerId, const char *reas
 //                       ──▶ StartTravelHandoff(目标 = 本 zone)
 //
 //   StartTravelHandoff:挂 PlayerTravelHandoffComp + PlayerFrozenComp ──▶ SavePlayerToRedis
-//   存盘落地 ──▶ BeginTravelHandoff:SET player:{id}:handoff "{epoch}:{now}" EX 300
+	//   父缓存落地 ──▶ BeginTravelHandoff:双 SQL ACK == pending 后同 Lua SET handoff "{epoch}:{now}" EX 300
 //            ──▶ RequestTravelEnterScene:取号记到交接组件 → scene_manager.EnterScene(ZoneId=目标, SceneId, SceneConfId)
 //            ──▶ DispatchEnterSceneReply(号匹配本代交接;旧版 SM 不回显时按 player_id)
 //            ──▶ HandleTravelEnterSceneReply:Redirect(跨 zone 放行)      → DestroyDeposedPlayer
@@ -4794,7 +4815,7 @@ uint32_t PlayerLifecycleSystem::StartTravelHandoff(entt::entity player, uint32_t
 	if (saveResult == SaveResult::kQueued)
 	{
 		// 存盘在途。Redis 断连时这次写会留在重试队列里,落地回调可能很久都不来,而应答看门狗要到
-		// EnterScene 发出之后才挂 —— 存盘看门狗是这一段的主兜底;它没能按时触发时(例如墙钟回拨推迟了 muduo
+		// EnterScene 发出之后才挂 —— 存盘看门狗是这一段的主兜底;它没能按时触发时(例如 loop 长时间阻塞推迟了 muduo
 		// 定时器),存盘晚于 35s 才落地的由晚发闸(set_mark 阶段)拦下不写标记,一直不落地的由 70s 冻结上限的
 		// "标记未发出 → 解冻"分支收住。
 		ArmTravelSaveWatchdog(playerId, frozenAtMs);
@@ -4814,7 +4835,7 @@ uint32_t PlayerLifecycleSystem::StartTravelHandoff(entt::entity player, uint32_t
 void PlayerLifecycleSystem::ArmTravelSaveWatchdog(Guid playerId, int64_t frozenAtMs)
 {
 	// 只捕获 id + 代际(frozenAtMs:这一段 requestedAtMs 还是 0,分不出是哪一次交接)。不保存 TimerId、不取消。
-	// 截止时刻按单调时钟定,muduo(按墙钟)提前唤醒时由 RunAtMonotonic 按剩余时间重挂。
+	// 截止时刻按单调时钟定,muduo 提前唤醒(纵深防御,见 RunAtMonotonic)时由 RunAtMonotonic 按剩余时间重挂。
 	// 单测 / 无 loop 的宿主挂不上(RunAtMonotonic 返回 false):同 ArmTravelReplyWatchdog,只靠落地回调与
 	// "退出优先"收敛;生产节点另有冻结上限兜底。
 	RunAtMonotonic(travel_freeze_cap::Clock::now() + travel_freeze_cap::kSaveBudget, [playerId, frozenAtMs]()
@@ -5327,7 +5348,7 @@ void PlayerLifecycleSystem::BeginTravelHandoff(Guid playerId)
 	// 晚发闸(set_mark 阶段):冻结已超过 travel_freeze_cap::kDispatchWindow(35s)就不再写标记。此刻 SET 还没发出,
 	// 不可能已被放行(不变量 I0),解冻安全。这一步保证之后发出的 SET / EnterScene 都来得及在冻结上限(70s)之前被
 	// 应答看门狗 + 一次核实收敛。存盘看门狗(30s ≤ 35s)正常会先到并解冻,这里是纵深防御:只在它没能按时触发
-	// (墙钟回拨把 muduo 定时器推迟了等)时才会生效。排在 epoch 检查之前:窗口已关时不论别的条件如何都不写。
+	// (loop 长时间阻塞把 muduo 定时器推迟了等)时才会生效。排在 epoch 检查之前:窗口已关时不论别的条件如何都不写。
 	{
 		const auto now = travel_freeze_cap::Clock::now();
 		const auto frozenFor = ElapsedSinceFreeze(*travel, playerId, now);
@@ -5364,22 +5385,71 @@ void PlayerLifecycleSystem::BeginTravelHandoff(Guid playerId)
 	}
 
 	const uint64_t nowMs = TimeSystem::NowMillisecondsUTC();
+	if (nowMs == 0)
+	{
+		AbortTravelHandoff(playerId, "handoff request timestamp is zero");
+		return;
+	}
 	const std::string key = player_ownership::HandoffRedisKey(playerId);
 	const std::string value = player_ownership::HandoffRedisValue(ownerEpoch, nowMs);
+	const std::string ownerKey = player_ownership::OwnerEpochRedisKey(playerId);
+	const std::string barrierKey = "player:{" + std::to_string(playerId) + "}:save_barrier";
+	const std::string epochText = std::to_string(ownerEpoch);
+	const auto frozenAt = travel->frozenAtSteady;
 
 	// 先占住代际再发命令:回调与看门狗都拿它判断"还是不是这一次传送"。
 	travel->requestedAtMs = nowMs;
 
 	const int ret = redis->command(
-		[playerId, nowMs](hiredis::Hiredis *, redisReply *reply)
+		[playerId, nowMs, frozenAt](hiredis::Hiredis *, redisReply *reply)
 		{
+			// 墙钟请求号之外再比单调冻结代次,旧连接 / 已退出 / 已重建的回包不能修改新交接。
+			const auto entity = tlsEcs.GetPlayer(playerId);
+			auto *current = tlsEcs.actorRegistry.valid(entity)
+				? tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(entity) : nullptr;
+			if (current == nullptr || current->requestedAtMs != nowMs || current->frozenAtSteady != frozenAt)
+			{
+				return;
+			}
 			if (reply != nullptr && reply->type == REDIS_REPLY_ERROR)
 			{
 				// 服务端明确报错 = SET 确定没生效。只处置同一代交接(代际 = nowMs),理由见头文件。
 				HandleTravelMarkWriteRejected(playerId, nowMs, reply->str != nullptr ? reply->str : "");
 				return;
 			}
-			if (reply == nullptr)
+			if (reply != nullptr && reply->type == REDIS_REPLY_INTEGER && reply->integer == 0)
+			{
+				// Lua 明确未写标记。释放本次占位,只在原冻结代次和 35s 单调窗口内等待 SQL ACK。
+				// 原存盘看门狗此刻仍可安全 Abort;不能把等待 ACK 误当成 EnterScene 已发。
+				current->requestedAtMs = 0;
+				current->markEpoch = 0;
+				const auto dueAt = handoff_sql_barrier::RetryDueAt(frozenAt, travel_freeze_cap::Clock::now());
+				if (!RunAtMonotonic(dueAt, [playerId, frozenAt]()
+				{
+					const auto waitingEntity = tlsEcs.GetPlayer(playerId);
+					const auto *waiting = tlsEcs.actorRegistry.valid(waitingEntity)
+						? tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(waitingEntity) : nullptr;
+					if (waiting == nullptr || !handoff_sql_barrier::IsCurrentWait(frozenAt, waiting->frozenAtSteady,
+						waiting->requestedAtMs, tlsEcs.actorRegistry.any_of<UnregisterPlayer>(waitingEntity)))
+					{
+						return;
+					}
+					BeginTravelHandoff(playerId); // 入口再按冻结起点复核 35s 晚发闸。
+				}))
+				{
+					AbortTravelHandoff(playerId, "cannot schedule SQL handoff barrier retry");
+				}
+				return;
+			}
+			if (reply != nullptr && reply->type == REDIS_REPLY_INTEGER && reply->integer == -1)
+			{
+				// 同一冻结代次已被 Redis 归属明确废黜。不能解冻旧内存,也不能采纳读到的新 epoch 再存盘。
+				current->requestedAtMs = 0;
+				current->markEpoch = 0;
+				DestroyDeposedPlayer(playerId, "handoff_sql_owner_rejected");
+				return;
+			}
+			if (reply == nullptr || reply->type != REDIS_REPLY_INTEGER || reply->integer != 1)
 			{
 				// 结果**未知**,不是「确定没写」:hiredis 在连接断开时会用空 reply 回调所有挂起
 				// 命令(muduo_windows/.../Hiredis.cc),而这条 SET 可能已经被 Redis 执行了。
@@ -5400,20 +5470,11 @@ void PlayerLifecycleSystem::BeginTravelHandoff(Guid playerId)
 									 travel_outcome::Evidence::kMarkWriteUnknown);
 				return;
 			}
-			// 回调期间实体可能已被退出流程销毁或换了一代,RequestTravelEnterScene 自己按 id 回查。
-			const auto entity = tlsEcs.GetPlayer(playerId);
-			const auto *current = tlsEcs.actorRegistry.valid(entity)
-									  ? tlsEcs.actorRegistry.try_get<PlayerTravelHandoffComp>(entity)
-									  : nullptr;
-			if (current == nullptr || current->requestedAtMs != nowMs)
-			{
-				LOG_INFO << "[ZoneTravel] handoff mark landed but travel intent is gone/replaced for player "
-						 << playerId << "; not requesting EnterScene";
-				return;
-			}
 			RequestTravelEnterScene(playerId);
 		},
-		"SET %s %s EX %d", key.c_str(), value.c_str(), player_ownership::kHandoffMarkTtlSec);
+		"EVAL %s 3 %b %b %b %b %b %d", handoff_sql_barrier::kPublishMarkLua,
+		ownerKey.data(), ownerKey.size(), barrierKey.data(), barrierKey.size(), key.data(), key.size(),
+		epochText.data(), epochText.size(), value.data(), value.size(), player_ownership::kHandoffMarkTtlSec);
 	if (ret != REDIS_OK)
 	{
 		// 命令没进 hiredis 的输出缓冲,标记确定没写:markEpoch 保持 0,Abort 不需要撤回。
@@ -5552,7 +5613,7 @@ void PlayerLifecycleSystem::ArmTravelReplyWatchdog(Guid playerId, uint64_t reque
 												   travel_outcome::Evidence evidence, std::string reason)
 {
 	// 只按值捕获 id + 代际 + 证据 + 原因文本,不绑任何对象(§11.7)。不保存 TimerId、不取消:到期时代际
-	// 不符即 no-op,比维护一张定时器表更简单。截止时刻按单调时钟定,muduo(按墙钟)提前唤醒时由 RunAtMonotonic
+	// 不符即 no-op,比维护一张定时器表更简单。截止时刻按单调时钟定,muduo 提前唤醒(纵深防御)时由 RunAtMonotonic
 	// 按剩余时间重挂(重挂时 lambda 随 std::function 复制,reason 一并复制)。
 	const bool armed = RunAtMonotonic(
 		travel_freeze_cap::Clock::now() + travel_freeze_cap::kReplyBudget,
@@ -6184,7 +6245,7 @@ void PlayerLifecycleSystem::ExpireTravelFreeze(Guid playerId, travel_freeze_cap:
 		return;
 	case travel_freeze_cap::FreezeCapAction::kUnfreeze:
 		// 标记从没发出:不可能已被放行(I0),解冻 + 失败 tip。30s 存盘看门狗正常早就处理了,这一支应恒不出现;
-		// 出现说明存盘看门狗没能按时触发(墙钟回拨推迟了 muduo 定时器等)。
+		// 出现说明存盘看门狗没能按时触发(loop 长时间阻塞推迟了 muduo 定时器等)。
 		travel_handoff_stats::Inc(travel_handoff_stats::Get().freezeCapReached);
 		LOG_WARN << "[ZoneTravel][FreezeCap] player=" << playerId << " action="
 				 << travel_freeze_cap::FreezeCapActionName(action) << " target_zone=" << travel->targetZoneId

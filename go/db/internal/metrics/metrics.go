@@ -95,7 +95,7 @@ var (
 	ownerEpochGuardTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "owner_epoch_guard_total",
-		Help:      "Owner-epoch guard verdicts on write tasks. outcome: match | legacy_zero | first | advance | stale | read_error.",
+		Help:      "Owner-epoch guard verdicts on write tasks. outcome: match | legacy_zero | first | advance | stale | read_error | regressed (the owner epoch counter is behind the applied epoch or SQL fence).",
 	}, []string{"outcome"})
 
 	// staleOwnerWriteRejectedTotal 是 cross-zone-scene-travel.md §6 不变量 3 点名的健康信号:
@@ -141,14 +141,14 @@ var (
 	taskDeferredTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "task_deferred_total",
-		Help:      "Tasks pushed back to the retry queue instead of completing. op: read | write | unknown. reason: conn_refused | conn_lost | store_readonly | store_busy | store_cooldown | store_open_failed | ordering_lock_busy | lease_lost | placement_frozen | placement_moved | expand_lock_busy | redis_unavailable | other.",
+		Help:      "Tasks pushed back to the retry queue instead of completing. op: read | write | unknown. reason: conn_refused | conn_lost | store_readonly | store_busy | store_cooldown | store_open_failed | ordering_lock_busy | fence_race | fence_evidence_conflict | lease_lost | placement_frozen | placement_moved | expand_lock_busy | redis_unavailable | other.",
 	}, []string{"op", "reason"})
 
 	// taskDeadLetterTotal 在每个死信写入点成功写入后计数。
 	taskDeadLetterTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "task_dead_letter_total",
-		Help:      "Tasks moved into kafka:dead:queue:{topic}. reason: budget_exhausted | malformed_payload | legacy_payload | invalid_partition | ordering_incomparable | stale_topic | missing_required | poison.",
+		Help:      "Tasks moved into kafka:dead:queue:{topic}. reason: budget_exhausted | malformed_payload | legacy_payload | invalid_partition | ordering_incomparable | stale_topic | missing_required | poison | fence_stale_owner | fence_legacy_after_seq | owner_epoch_regressed.",
 	}, []string{"reason"})
 
 	// taskReadAbandonedTotal 记读任务被放弃的次数:读不改数据,不进死信。
@@ -199,6 +199,9 @@ func register() {
 			taskDeferredTotal, taskDeadLetterTotal, taskReadAbandonedTotal, retryQueueLength)
 		// 计数器序列从无到 1 时 increase() 会漏掉第一次(deploy/k8s/owner-epoch-alerts.yaml 记过这条经验),
 		// 所以告警要用到的取值先以 0 建出序列。
+		for _, outcome := range ownerEpochGuardOutcomes {
+			ownerEpochGuardTotal.WithLabelValues(outcome).Add(0)
+		}
 		for _, op := range []string{"read", "write"} {
 			for _, reason := range deferReasons {
 				taskDeferredTotal.WithLabelValues(op, reason).Add(0)
@@ -249,47 +252,58 @@ func register() {
 			}
 		}
 		claimAcquiredTotal.Add(0)
+		// 待重搬收据与消费组错误(R7 复核):告警按固定名字与 source 取值写,先建出序列。
+		prometheus.MustRegister(retryStrandedReceipts, consumerGroupErrorsTotal)
+		retryStrandedReceipts.Set(0)
+		for _, source := range consumerGroupErrorSources {
+			consumerGroupErrorsTotal.WithLabelValues(source).Add(0)
+		}
 	})
 }
 
 // 延后原因(db_task_deferred_total 的 reason)。前四个与 storeerr.Kind.Reason() 的取值一一对应。
 const (
-	DeferConnRefused      = "conn_refused"       // 连接数满(1040 / 1203 / 1226):服务端在应答,只拒新连接
-	DeferConnLost         = "conn_lost"          // 连接断开或连不上
-	DeferStoreReadOnly    = "store_readonly"     // 库只读(主从切换期间)
-	DeferStoreBusy        = "store_busy"         // 锁等待超时、死锁、TiDB 写冲突
-	DeferStoreCooldown    = "store_cooldown"     // 库在冷却期内(已确认不可达),选库时直接挡回
-	DeferStoreOpenFailed  = "store_open_failed"  // 按需打开落点库失败
-	DeferOrderingLockBusy = "ordering_lock_busy" // 排序锁被上一任持有者占着
-	DeferLeaseLost        = "lease_lost"         // 排序锁失租(SQL 前 / SQL 中被取消 / 写完核锁时发现)
-	DeferPlacementFrozen  = "placement_frozen"   // 搬库冻结中
-	DeferPlacementMoved   = "placement_moved"    // 落库后复核发现落点变了
-	DeferExpandLockBusy   = "expand_lock_busy"   // 扩容锁被占
-	DeferRedisUnavailable = "redis_unavailable"  // Redis 侧的网络错误或超时(守卫、选库、复核、缓存)
-	DeferOther            = "other"              // 其它:SQL 的非存储侧错误、编程错误等,照旧耗预算
+	DeferConnRefused           = "conn_refused"            // 连接数满(1040 / 1203 / 1226):服务端在应答,只拒新连接
+	DeferConnLost              = "conn_lost"               // 连接断开或连不上
+	DeferStoreReadOnly         = "store_readonly"          // 库只读(主从切换期间)
+	DeferStoreBusy             = "store_busy"              // 锁等待超时、死锁、TiDB 写冲突
+	DeferStoreCooldown         = "store_cooldown"          // 库在冷却期内(已确认不可达),选库时直接挡回
+	DeferStoreOpenFailed       = "store_open_failed"       // 按需打开落点库失败
+	DeferOrderingLockBusy      = "ordering_lock_busy"      // 排序锁被上一任持有者占着
+	DeferFenceEvidenceConflict = "fence_evidence_conflict" // 同一围栏版本的 SQL 证据内容冲突
+	DeferFenceRace             = "fence_race"              // 条件写竞态,仍耗重试预算
+	DeferLeaseLost             = "lease_lost"              // 排序锁失租(SQL 前 / SQL 中被取消 / 写完核锁时发现)
+	DeferPlacementFrozen       = "placement_frozen"        // 搬库冻结中
+	DeferPlacementMoved        = "placement_moved"         // 落库后复核发现落点变了
+	DeferExpandLockBusy        = "expand_lock_busy"        // 扩容锁被占
+	DeferRedisUnavailable      = "redis_unavailable"       // Redis 侧的网络错误或超时(守卫、选库、复核、缓存)
+	DeferOther                 = "other"                   // 其它:SQL 的非存储侧错误、编程错误等,照旧耗预算
 )
 
 var deferReasons = []string{
 	DeferConnRefused, DeferConnLost, DeferStoreReadOnly, DeferStoreBusy, DeferStoreCooldown, DeferStoreOpenFailed,
-	DeferOrderingLockBusy, DeferLeaseLost, DeferPlacementFrozen, DeferPlacementMoved, DeferExpandLockBusy,
+	DeferFenceEvidenceConflict, DeferFenceRace, DeferOrderingLockBusy, DeferLeaseLost, DeferPlacementFrozen, DeferPlacementMoved, DeferExpandLockBusy,
 	DeferRedisUnavailable, DeferOther,
 }
 
 // 进死信的原因(db_task_dead_letter_total 的 reason)。
 const (
-	DeadLetterBudgetExhausted      = "budget_exhausted"      // 写任务的重试次数用完
-	DeadLetterMalformedPayload     = "malformed_payload"     // 重试载荷解不出来
-	DeadLetterLegacyPayload        = "legacy_payload"        // 旧格式重试载荷,没有可信的原始分区
-	DeadLetterInvalidPartition     = "invalid_partition"     // 原始分区越界或为负
-	DeadLetterOrderingIncomparable = "ordering_incomparable" // 游标不可比(跨分区等)
-	DeadLetterStaleTopic           = "stale_topic"           // 写所在 topic 的 zone 不是玩家的 home_zone
-	DeadLetterMissingRequired      = "missing_required"      // Placement.Required=true 且无落点记录的写
-	DeadLetterPoison               = "poison"                // Kafka 消息解不出 DBTask
+	DeadLetterFenceStaleOwner      = "fence_stale_owner"      // SQL 围栏拒绝旧持有者
+	DeadLetterFenceLegacyAfterSeq  = "fence_legacy_after_seq" // 带序号写之后又来了无序号写
+	DeadLetterOwnerEpochRegressed  = "owner_epoch_regressed"  // 计数器低于已落库 epoch,保留证据不得自动回灌
+	DeadLetterBudgetExhausted      = "budget_exhausted"       // 写任务的重试次数用完
+	DeadLetterMalformedPayload     = "malformed_payload"      // 重试载荷解不出来
+	DeadLetterLegacyPayload        = "legacy_payload"         // 旧格式重试载荷,没有可信的原始分区
+	DeadLetterInvalidPartition     = "invalid_partition"      // 原始分区越界或为负
+	DeadLetterOrderingIncomparable = "ordering_incomparable"  // 游标不可比(跨分区等)
+	DeadLetterStaleTopic           = "stale_topic"            // 写所在 topic 的 zone 不是玩家的 home_zone
+	DeadLetterMissingRequired      = "missing_required"       // Placement.Required=true 且无落点记录的写
+	DeadLetterPoison               = "poison"                 // Kafka 消息解不出 DBTask
 )
 
 var deadLetterReasons = []string{
 	DeadLetterBudgetExhausted, DeadLetterMalformedPayload, DeadLetterLegacyPayload, DeadLetterInvalidPartition,
-	DeadLetterOrderingIncomparable, DeadLetterStaleTopic, DeadLetterMissingRequired, DeadLetterPoison,
+	DeadLetterOrderingIncomparable, DeadLetterStaleTopic, DeadLetterMissingRequired, DeadLetterPoison, DeadLetterFenceStaleOwner, DeadLetterFenceLegacyAfterSeq, DeadLetterOwnerEpochRegressed,
 }
 
 // 读任务被放弃的原因(db_task_read_abandoned_total 的 reason)。
@@ -543,7 +557,35 @@ var (
 		Name:      "claim_acquired_total",
 		Help:      "Partition claims registered by ConsumeClaim (one per claim start); used to tell rebalance-time revocations from anomalies.",
 	})
+
+	// retryStrandedReceipts 是本实例「已认领进自己 processing、该搬走却因 Redis 出错没搬成」的收据数(retry_stranded.go):
+	// 重试协程每拍重搬,搬成或确认已不在 processing 才摘掉。单独无 label,告警按固定名字引用;持续 > 0 说明 Redis
+	// 一直拒绝这次搬移(处置见 runbook)。没有这张表时,这类收据只能等本实例重启或停机 release 才回到收件箱。
+	retryStrandedReceipts = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "retry_stranded_receipts",
+		Help:      "Retry receipts claimed into this instance's processing list whose move (requeue after revocation, misroute fix, reschedule, dead letter) failed on a Redis error; they are moved again on every retry tick. Stays > 0 while Redis keeps refusing the move.",
+	})
+
+	// consumerGroupErrorsTotal 是 sarama 消费组错误通道(Consumer.Return.Errors=true)上收到的错误数,按来源分
+	// (consumer_group_errors.go)。这些错误 sarama 不打日志、通道满了就丢;以前没有任何代码读它,心跳失败、位点提交失败
+	// 完全不可见。heartbeat 非 0 时本成员可能已被 coordinator 逐出,而本进程要过一段时间才察觉(双属主窗口,
+	// retry_routing.go 文件头)。
+	consumerGroupErrorsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "consumer_group_errors_total",
+		Help:      "Errors received on the sarama consumer group error channel. source: heartbeat (group level, not tied to a partition: heartbeat / coordinator lookup; the coordinator may already have evicted this member) | partition (per partition from sarama: offset commit or fetch) | claim (returned by this process's ConsumeClaim).",
+	}, []string{"source"})
 )
+
+// db_consumer_group_errors_total 的 source 取值。
+const (
+	ConsumerGroupErrorHeartbeat = "heartbeat" // 不属于某个分区的组级错误:心跳、找 coordinator
+	ConsumerGroupErrorPartition = "partition" // sarama 自己的分区级错误:位点提交或拉取(两者在错误通道上无法区分)
+	ConsumerGroupErrorClaim     = "claim"     // 本进程 ConsumeClaim 返回的错误
+)
+
+var consumerGroupErrorSources = []string{ConsumerGroupErrorHeartbeat, ConsumerGroupErrorPartition, ConsumerGroupErrorClaim}
 
 // db_retry_route_total / db_retry_routing_mode 的 mode 取值(stress_summarize.ps1 2f 段按这两个字符串读)。
 const (
@@ -659,6 +701,18 @@ func CountClaimAcquired() {
 	claimAcquiredTotal.Inc()
 }
 
+// SetRetryStrandedReceipts 更新本实例待重搬的收据数。
+func SetRetryStrandedReceipts(n int) {
+	register()
+	retryStrandedReceipts.Set(float64(n))
+}
+
+// CountConsumerGroupError 记一次 sarama 消费组错误,source 用 ConsumerGroupError* 常量。
+func CountConsumerGroupError(source string) {
+	register()
+	consumerGroupErrorsTotal.WithLabelValues(source).Inc()
+}
+
 // CountTaskDeadLetterN 一次记 n 条进死信(分拣脚本一次搬多条坏载荷),reason 用 DeadLetter* 常量;n ≤ 0 时什么都不做。
 func CountTaskDeadLetterN(reason string, n int) {
 	if n <= 0 {
@@ -763,7 +817,7 @@ func SetPlacementOpenStores(n int) {
 }
 
 // 归属 epoch 守卫的 outcome label 取值。与 internal/kafka 的守卫判定一一对应;
-// 集合有界(6 个),不含 player_id 等高基数维度(AGENTS.md §9)。
+// 集合有界(7 个),不含 player_id 等高基数维度(AGENTS.md §9)。
 const (
 	OwnerEpochMatch      = "match"       // 任务 epoch == 已落库的最大 epoch:同一持有者的后续写,放行
 	OwnerEpochLegacyZero = "legacy_zero" // 任务 epoch == 0:旧版生产者,兼容窗口内放行不比对
@@ -771,7 +825,12 @@ const (
 	OwnerEpochAdvance    = "advance"     // 任务 epoch > 已落库的最大 epoch:归属变更后新主的第一笔写,放行
 	OwnerEpochStale      = "stale"       // 任务 epoch < 已落库的最大 epoch:新主落库之后才到的老 epoch 写,拒绝
 	OwnerEpochReadError  = "read_error"  // Redis 读失败:按可重试错误处理,不放行也不丢
+	OwnerEpochRegressed  = "regressed"   // 计数器低于 applied epoch 或 SQL 行围栏:拒绝并保留证据
 )
+
+var ownerEpochGuardOutcomes = []string{
+	OwnerEpochMatch, OwnerEpochLegacyZero, OwnerEpochFirst, OwnerEpochAdvance, OwnerEpochStale, OwnerEpochReadError, OwnerEpochRegressed,
+}
 
 // CountOwnerEpochGuard 记一次守卫判定。outcome 用上面的 OwnerEpoch* 常量。
 func CountOwnerEpochGuard(outcome string) {

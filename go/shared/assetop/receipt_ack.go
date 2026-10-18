@@ -8,7 +8,7 @@ import (
 
 // AcknowledgeReceipt 供交易库已提交托管快照后的可靠 ACK 待办使用。
 // 前置：业务SQL已保存原操作的APPLIED证明与完整托管原件，才可创建ACK待办。
-// done=true须证明SQL收据已释放；窗口内还复核原APPLIED，RPC成功不等于完成。
+// done=true须证明SQL收据身份仍匹配且托管原件已释放；RPC成功不等于完成。
 // 已滑出窗口的操作不能再分类，但原件已在业务SQL；仅结束清理，不据此完成原资产操作。
 // done=false 保留相同待办，离线、证据缓存丢失、SQL 在途均可重投，不另占资产 seq。
 //
@@ -41,13 +41,18 @@ func AcknowledgeReceipt(ctx context.Context, applier Applier, reader LedgerReade
 		if stream.GetStream() != req.GetStream() || stream.GetStreamEpoch() != req.GetStreamEpoch() {
 			continue
 		}
-		for _, receipt := range stream.GetReceipts() {
-			if receipt.GetSeq() == req.GetSeq() {
-				return false, nil
-			}
-		}
 		if req.GetSeq() <= stream.GetWatermark() {
+			// 已保存原件的业务只做清理；窗口外不再认位图结局。
+			for _, receipt := range stream.GetReceipts() {
+				if receipt.GetSeq() == req.GetSeq() {
+					return false, nil
+				}
+			}
 			return true, nil
+		}
+		receipt := matchingReceipt(ledger, requestOp(req))
+		if receipt == nil || snapshotHasInstances(receipt.GetSnapshot()) {
+			return false, nil
 		}
 		outcome, partial, _ := ClassifyPersisted(ledger, req.GetStream(), req.GetStreamEpoch(), req.GetSeq())
 		return outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_APPLIED && !partial, nil

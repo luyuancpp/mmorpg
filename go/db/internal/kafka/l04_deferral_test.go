@@ -303,8 +303,8 @@ func TestConsumeOneRetryTask_ExhaustedReadIsDroppedNotDeadLettered(t *testing.T)
 // 载荷逐字节不变;deferred{write,conn_lost} 每轮 +1。
 func TestStoreDeferral_RetryWriteKeepsBudgetAndPayload(t *testing.T) {
 	w, _, _ := newTestWorker(t, 0)
-	dbOpHandlers["write"] = func(context.Context, *proto2mysql.DB, *db_proto.DBTask, proto.Message) error {
-		return storeTagged(storeerr.KindConnLost)
+	dbOpHandlers["write"] = func(context.Context, *proto2mysql.DB, *db_proto.DBTask, proto.Message) (writeOutcome, error) {
+		return writeOutcome{kind: writeApplied}, storeTagged(storeerr.KindConnLost)
 	}
 	task := makeWriteTask(t, 9441, placementTestMsgType, 10).dbTask
 	require.NoError(t, saveToRetryQueue(w.ctx, w.redisClient, w.retryQueueKey, task, 10, 0))

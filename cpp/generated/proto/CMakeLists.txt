@@ -59,7 +59,6 @@ set(SOURCE_FILES
     common/component/frame_comp.pb.cc
     common/component/node_player_comp.pb.cc
     common/component/item_base_comp.pb.cc
-    common/component/item_comp.pb.cc
     common/component/mission_comp.pb.cc
     common/component/npc_comp.pb.cc
     common/component/player_async_comp.pb.cc

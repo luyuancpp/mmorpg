@@ -1213,6 +1213,9 @@ type AckPlayerInboxRequest struct {
 	OwnerEpoch    uint64                       `protobuf:"varint,3,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`
 	CorrelationId uint64                       `protobuf:"varint,4,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	Decisions     []*PlayerInboxDecisionReport `protobuf:"bytes,5,rep,name=decisions,proto3" json:"decisions,omitempty"` // ≤ 32 条,按 seq 升序
+	// 只用于日志(同 FetchPlayerInboxRequest.scene_node_id):服务端把它与 gRPC 对端地址一起打进围栏 / Ack 异常的
+	// ERROR 日志,值班按它定位发送方(评审 L10)。不参与任何判定;0 = 旧版 scene 没填。
+	SceneNodeId   uint32 `protobuf:"varint,6,opt,name=scene_node_id,json=sceneNodeId,proto3" json:"scene_node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1280,6 +1283,13 @@ func (x *AckPlayerInboxRequest) GetDecisions() []*PlayerInboxDecisionReport {
 		return x.Decisions
 	}
 	return nil
+}
+
+func (x *AckPlayerInboxRequest) GetSceneNodeId() uint32 {
+	if x != nil {
+		return x.SceneNodeId
+	}
+	return 0
 }
 
 type PlayerInboxAckItem struct {
@@ -1512,14 +1522,15 @@ const file_proto_player_inbox_player_inbox_proto_rawDesc = "" +
 	"\aoutcome\x18\x02 \x01(\x0e2 .player_inbox.PlayerInboxOutcomeR\aoutcome\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\rR\x06reason\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x04 \x01(\x04R\trequestId\"\xfc\x01\n" +
+	"request_id\x18\x04 \x01(\x04R\trequestId\"\xa0\x02\n" +
 	"\x15AckPlayerInboxRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x127\n" +
 	"\x06domain\x18\x02 \x01(\x0e2\x1f.player_inbox.PlayerInboxDomainR\x06domain\x12\x1f\n" +
 	"\vowner_epoch\x18\x03 \x01(\x04R\n" +
 	"ownerEpoch\x12%\n" +
 	"\x0ecorrelation_id\x18\x04 \x01(\x04R\rcorrelationId\x12E\n" +
-	"\tdecisions\x18\x05 \x03(\v2'.player_inbox.PlayerInboxDecisionReportR\tdecisions\"\x9c\x01\n" +
+	"\tdecisions\x18\x05 \x03(\v2'.player_inbox.PlayerInboxDecisionReportR\tdecisions\x12\"\n" +
+	"\rscene_node_id\x18\x06 \x01(\rR\vsceneNodeId\"\x9c\x01\n" +
 	"\x12PlayerInboxAckItem\x12\x10\n" +
 	"\x03seq\x18\x01 \x01(\x04R\x03seq\x12:\n" +
 	"\x06result\x18\x02 \x01(\x0e2\".player_inbox.PlayerInboxAckResultR\x06result\x128\n" +

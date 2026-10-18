@@ -3339,6 +3339,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AckPlayerInboxRequest final : publi
     kOwnerEpochFieldNumber = 3,
     kCorrelationIdFieldNumber = 4,
     kDomainFieldNumber = 2,
+    kSceneNodeIdFieldNumber = 6,
   };
   // repeated .player_inbox.PlayerInboxDecisionReport decisions = 5;
   [[nodiscard]] int decisions_size()
@@ -3401,11 +3402,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AckPlayerInboxRequest final : publi
   void _internal_set_domain(::player_inbox::PlayerInboxDomain value);
 
   public:
+  // uint32 scene_node_id = 6;
+  void clear_scene_node_id() ;
+  [[nodiscard]] ::uint32_t scene_node_id() const;
+  void set_scene_node_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_scene_node_id() const;
+  void _internal_set_scene_node_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:player_inbox.AckPlayerInboxRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 5,
+      ::google::protobuf::internal::TcParseTable<3, 6,
                           1, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -3439,6 +3450,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED AckPlayerInboxRequest final : publi
     ::uint64_t owner_epoch_;
     ::uint64_t correlation_id_;
     int domain_;
+    ::uint32_t scene_node_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -4820,6 +4832,30 @@ inline ::google::protobuf::RepeatedPtrField<::player_inbox::PlayerInboxDecisionR
 AckPlayerInboxRequest::_internal_mutable_decisions() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.decisions_;
+}
+
+// uint32 scene_node_id = 6;
+inline void AckPlayerInboxRequest::clear_scene_node_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_node_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint32_t AckPlayerInboxRequest::scene_node_id() const {
+  // @@protoc_insertion_point(field_get:player_inbox.AckPlayerInboxRequest.scene_node_id)
+  return _internal_scene_node_id();
+}
+inline void AckPlayerInboxRequest::set_scene_node_id(::uint32_t value) {
+  _internal_set_scene_node_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:player_inbox.AckPlayerInboxRequest.scene_node_id)
+}
+inline ::uint32_t AckPlayerInboxRequest::_internal_scene_node_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.scene_node_id_;
+}
+inline void AckPlayerInboxRequest::_internal_set_scene_node_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.scene_node_id_ = value;
 }
 
 // -------------------------------------------------------------------

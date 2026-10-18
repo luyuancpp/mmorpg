@@ -4,8 +4,8 @@
 // 不起线程、不死循环。客户端两种:
 //   * muduo_grpc::Channel —— 标准 gRPC 客户端(与生产上 Go 调用方同一套线上字节);
 //   * RawConnection —— muduo TcpClient + 内存 nghttp2 客户端(TestH2Client)或裸字节:发 Channel 永远不会发的东西
-//     (RST_STREAM、grpc-timeout 0、HTTP/1.1、只连不发、只发 magic、停止读取造成背压),并直接观察线上的 GOAWAY / RST
-//     以及 EOF 之前到达了哪些帧。
+//     (RST_STREAM、grpc-timeout 0、HTTP/1.1、只连不发、只发 magic、停止读取造成背压、用很小的流控窗口卡住应答、
+//     请求体只传一半),并直接观察线上的 GOAWAY / RST 以及 EOF 之前到达了哪些帧。
 //
 // 生命周期(AGENTS.md §11.7):RawConnection 只存 weak_ptr<TcpConnection>,绑进 TcpClient 回调的是 weak_ptr<自己>。
 // handler 只捕获 shared_ptr<HandlerState> 与 loop 引用;保存的 ServerCall 只弱引用 Server。
@@ -82,6 +82,10 @@ constexpr char kBattleNotAllocatable[] = "battle_not_allocatable";
 // 背压用例的应答大小(见夹具 StartBackpressuredCalls)与 HTTP/2 流控窗口上限(RFC 9113 §6.9.1:2^31-1)。
 constexpr size_t kBackpressureResponseBytes = 32 * 1024 * 1024;
 constexpr int32_t kMaxWindowBytes = 0x7fffffff;
+// 流控用例:客户端流级接收窗口只有 16KiB,应答 256KiB —— 窗口内的一段发出之后,剩余 DATA 与 trailers 被 HTTP/2 流控
+// 卡在服务端的 nghttp2 里(不是卡在输出缓冲:16KiB 加控制帧远小于回环上的内核缓冲)。
+constexpr uint32_t kSmallStreamWindowBytes = 16 * 1024;
+constexpr size_t kFlowControlledResponseBytes = 256 * 1024;
 
 // ── 被测服务 ─────────────────────────────────────────────────────────────
 
@@ -578,7 +582,8 @@ protected:
     // 背压用例(§15.16 第 2 条)的共同准备。客户端把流级与连接级接收窗口都开到 2^31-1,否则服务端先被 HTTP/2
     // 流控卡住、到不了输出缓冲;三个调用都派发之后客户端停止读取,再完成一个 32MiB 的应答 —— 远超回环上两端
     // 内核缓冲(Linux tcp_wmem / tcp_rmem 上限默认 4MiB / 6MiB)加 1MiB 背压阈值,服务端输出缓冲必然到达阈值,
-    // 剩余的 DATA 积在 nghttp2 里。之后排空到期提交的 REFUSED / UNAVAILABLE / 最终 GOAWAY 都排在它们后面。
+    // 剩余的 DATA 积在 nghttp2 里。之后排空到期提交的 REFUSED / UNAVAILABLE / 最终 GOAWAY 要等输出缓冲里积压的 DATA
+    // 写出去之后才能写出。
     struct BackpressuredCalls
     {
         RawConnectionPtr raw;
@@ -1144,8 +1149,8 @@ TEST_F(ServerLoopbackTest, DrainTimeoutRefusesUnstartedAndFailsStartedCalls)
 
 TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureForceClosesAfterCloseGrace)
 {
-    // 对端停止读取、服务端输出被背压时排空到期:不 assert,onDrained 恰好一次;写半关之后输出缓冲写不空、
-    // 对端也不关,连接由 closeGrace 硬上限 forceClose。
+    // 对端停止读取、服务端输出被背压时排空到期:不 assert,onDrained 恰好一次。积压的应答写不完,会话一直有帧要写,
+    // 所以始终不写半关;对端也不关,连接由从排空到期起算的 closeGrace 硬上限 forceClose。
     const BackpressuredCalls calls = StartBackpressuredCalls();
     ASSERT_NE(calls.raw, nullptr);
 
@@ -1160,8 +1165,10 @@ TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureForceClosesAfterCloseGra
     RunFor(200ms);
 
     EXPECT_EQ(drained->count, 1) << "onDrained exactly once";
-    // 宽限从排空到期时的写半关起算(steady 复核,不会早到):连接只能是 closeGrace 到期被强关的。
+    // 硬上限从排空到期那一刻起算(steady 复核,不会早到):连接只能是 closeGrace 到期被强关的;
+    // 它是上限,不会因为积压一直写不完而往后拖(上界留足调度余量)。
     EXPECT_GE(drained->firstAt - shutdownAt, shutdown.drainTimeout + shutdown.closeGrace);
+    EXPECT_LT(drained->firstAt - shutdownAt, shutdown.drainTimeout + shutdown.closeGrace + 2000ms);
     EXPECT_EQ(server_->connectionCount(), 0u);
     EXPECT_EQ(Stats().refusedOnShutdown, 1u);
     EXPECT_EQ(Stats().unavailableOnShutdown, 1u);
@@ -1171,8 +1178,10 @@ TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureForceClosesAfterCloseGra
 
 TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureFlushesEverythingBeforeTheHalfClose)
 {
-    // §15.16 第 2 条的回归用例:排空到期时输出被背压,排在积压 DATA 之后的 REFUSED / UNAVAILABLE / 最终 GOAWAY
-    // 也必须在写半关之前交给输出缓冲。修复前它们留在 nghttp2 里,写半关之后再也写不出去,对端读完积压只看到 EOF。
+    // §15.16 第 2 条的回归用例:排空到期时输出被背压,REFUSED / UNAVAILABLE / 最终 GOAWAY 只能排在积压的 DATA 之后,
+    // 它们也必须在 EOF 之前送达。最初它们留在 nghttp2 里,排空到期立即写半关之后再也写不出去,对端读完积压只看到 EOF。
+    // 现在排空到期不写半关:对端恢复读取后服务端照常按背压逐段写出(nghttp2 让控制帧排在 DATA 前面),
+    // 会话把帧全部交出、所有流关闭之后才写半关。
     const BackpressuredCalls calls = StartBackpressuredCalls();
     ASSERT_NE(calls.raw, nullptr);
     calls.raw->SnapshotAtDisconnect({calls.big, calls.waiting, calls.started});
@@ -1181,13 +1190,14 @@ TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureFlushesEverythingBeforeT
     ServerShutdownOptions shutdown;
     shutdown.drainTimeout = 300ms;
     shutdown.goawayPingTimeout = 100ms;
-    shutdown.closeGrace = 20000ms; // 只作硬上限:冲完之后发 FIN,对端读到 EOF 即关,远早于宽限
+    shutdown.closeGrace = 20000ms; // 只作硬上限:全部写完之后才发 FIN,对端读到 EOF 即关,远早于宽限
     const auto shutdownAt = std::chrono::steady_clock::now();
     server_->BeginShutdown(shutdown, RecordDrain(drained));
-    // 排空到期:两个调用已收口,应答已提交;客户端此前一直没读,什么都还没看到。
+    // 排空到期:两个调用已收口,应答已提交;客户端此前一直没读,什么都还没看到,连接照常保持。
     ASSERT_TRUE(RunUntil([&] { return Stats().refusedOnShutdown == 1 && Stats().unavailableOnShutdown == 1; }, 5s));
     EXPECT_FALSE(calls.raw->h2().FindStream(calls.waiting)->rstReceived);
     EXPECT_EQ(drained->count, 0);
+    EXPECT_EQ(server_->connectionCount(), 1u);
 
     calls.raw->StartReading();
     ASSERT_TRUE(RunUntil([&] { return calls.raw->disconnected(); }, 15s));
@@ -1216,6 +1226,253 @@ TEST_F(ServerLoopbackTest, DrainTimeoutUnderBackpressureFlushesEverythingBeforeT
     EXPECT_EQ(drained->count, 1) << "onDrained exactly once";
     EXPECT_EQ(server_->connectionCount(), 0u);
     EXPECT_EQ(Stats().dropped, 0u);
+}
+
+TEST_F(ServerLoopbackTest, DrainTimeoutKeepsWritingAFlowControlledResponseUntilThePeerOpensTheWindow)
+{
+    // 排空到期时,已 FinishOk 的应答 DATA 正被对端流级窗口卡住(nghttp2 取不出来,服务端输出缓冲是空的)。
+    // 修复前排空到期立即写半关:对端随后发 WINDOW_UPDATE 放出来的 DATA 再也写不出去,对端读完窗口内的那一段就看到
+    // EOF(grpc-go 报 UNAVAILABLE)。现在连接继续读写,对端收齐 DATA 与 trailers 之后才见 EOF。
+    ASSERT_NE(StartServer(), nullptr);
+    TestH2ClientOptions h2Options;
+    h2Options.initialSettings = {{h2::kSettingsInitialWindowSize, kSmallStreamWindowBytes}};
+    const auto raw = MakeRaw(RawConnection::Mode::kHttp2, true, std::move(h2Options));
+    RunFor(100ms); // SETTINGS / ACK 往返完成:服务端按客户端的小流级窗口发数据,客户端也按小窗口收
+    const int32_t big = SendRawRequest(*raw, kHoldPath, std::nullopt);
+    const int32_t waiting = SendRawRequest(*raw, kHoldNotStartedPath, std::nullopt);
+    const int32_t started = SendRawRequest(*raw, kHoldPath, std::nullopt);
+    ASSERT_TRUE(RunUntil([&] { return state_->held.size() == 3; }, 5s));
+    raw->SnapshotAtDisconnect({big, waiting, started});
+
+    // 客户端停止读取:窗口内的 16KiB 发出之后不会再有 WINDOW_UPDATE,剩余 DATA 与 trailers 被流控卡在 nghttp2 里。
+    // 派发按请求收完的先后(先进先出):held[0] 是 big。
+    raw->StopReading();
+    const std::string response(kFlowControlledResponseBytes, 'y');
+    state_->held.front().FinishOk(response);
+    RunFor(200ms);
+
+    const auto drained = std::make_shared<DrainRecord>();
+    ServerShutdownOptions shutdown;
+    shutdown.drainTimeout = 300ms;
+    shutdown.goawayPingTimeout = 100ms; // 对端不读,PING ACK 不会来:满时长后直接提交第二段
+    shutdown.closeGrace = 20000ms;      // 只作硬上限:应答写完之后才发 FIN,对端读到 EOF 即关,远早于宽限
+    const auto shutdownAt = std::chrono::steady_clock::now();
+    server_->BeginShutdown(shutdown, RecordDrain(drained));
+    ASSERT_TRUE(RunUntil([&] { return Stats().refusedOnShutdown == 1 && Stats().unavailableOnShutdown == 1; }, 5s));
+    RunFor(200ms);
+    EXPECT_EQ(server_->connectionCount(), 1u) << "the connection stays open while a committed response is blocked";
+    EXPECT_EQ(drained->count, 0);
+
+    // 对端恢复读取:读到窗口内的 DATA 后自动回 WINDOW_UPDATE,服务端在同一条连接上把 DATA 与 trailers 写完才写半关。
+    raw->StartReading();
+    ASSERT_TRUE(RunUntil([&] { return raw->disconnected(); }, 10s));
+    EXPECT_FALSE(raw->h2Failed()) << raw->h2().lastError();
+
+    const auto &atEof = raw->streamsAtDisconnect();
+    ASSERT_EQ(atEof.size(), 3u);
+    const H2Stream &bigAtEof = atEof.at(big);
+    EXPECT_EQ(bigAtEof.body.size(), kFlowControlledResponseBytes + 5) << "every DATA byte must arrive before the EOF";
+    EXPECT_TRUE(bigAtEof.body == TestH2Peer::Frame(response));
+    EXPECT_EQ(GrpcStatusOf(bigAtEof).value_or(""), "0") << "the trailers must arrive before the EOF";
+    EXPECT_TRUE(bigAtEof.endStreamReceived);
+    EXPECT_TRUE(atEof.at(waiting).rstReceived);
+    EXPECT_EQ(atEof.at(waiting).rstErrorCode, h2::kRefusedStream);
+    EXPECT_EQ(GrpcStatusOf(atEof.at(started)).value_or(""), "14");
+    EXPECT_EQ(GrpcMessageOf(atEof.at(started)), "server shutting down");
+    ASSERT_FALSE(raw->goawaysAtDisconnect().empty());
+    EXPECT_EQ(raw->goawaysAtDisconnect().back().lastStreamId, started);
+    EXPECT_EQ(raw->goawaysAtDisconnect().back().errorCode, h2::kNoError);
+
+    ASSERT_TRUE(RunUntil([&] { return drained->count > 0; }, 5s));
+    // 早于宽限到期:连接是对端读到 EOF 后关闭的,不是 forceClose。
+    EXPECT_LT(drained->firstAt - shutdownAt, shutdown.drainTimeout + shutdown.closeGrace);
+    RunFor(100ms);
+    EXPECT_EQ(drained->count, 1) << "onDrained exactly once";
+    EXPECT_EQ(server_->connectionCount(), 0u);
+    EXPECT_EQ(Stats().inFlight, 0u);
+    EXPECT_EQ(Stats().dropped, 0u);
+}
+
+TEST_F(ServerLoopbackTest, DrainTimeoutForceClosesWhenThePeerNeverOpensTheWindow)
+{
+    // 对端照常读取,却始终不给流控窗口(INITIAL_WINDOW_SIZE = 0):已 FinishOk 的应答一个 DATA 字节都发不出去。
+    // 排空到期后控制帧照常送达,但写半关要等这条流写完 —— 等不到,从排空到期起算的 closeGrace 硬上限到期 forceClose;
+    // 不 assert,onDrained 恰好一次。
+    ASSERT_NE(StartServer(), nullptr);
+    TestH2ClientOptions h2Options;
+    h2Options.initialSettings = {{h2::kSettingsInitialWindowSize, 0u}};
+    const auto raw = MakeRaw(RawConnection::Mode::kHttp2, true, std::move(h2Options));
+    RunFor(100ms); // SETTINGS / ACK 往返完成:服务端看到的流级发送窗口是 0
+    const int32_t blocked = SendRawRequest(*raw, kHoldPath, std::nullopt);
+    const int32_t waiting = SendRawRequest(*raw, kHoldNotStartedPath, std::nullopt);
+    const int32_t started = SendRawRequest(*raw, kHoldPath, std::nullopt);
+    ASSERT_TRUE(RunUntil([&] { return state_->held.size() == 3; }, 5s));
+    raw->SnapshotAtDisconnect({blocked, waiting, started});
+    state_->held.front().FinishOk("blocked by flow control");
+    // 应答头不受流控,照常送达;DATA 与 trailers 卡在服务端。
+    ASSERT_TRUE(RunUntil([&]
+                         {
+        const H2Stream *stream = raw->h2().FindStream(blocked);
+        return stream != nullptr && !stream->responseHeaders.empty(); }, 5s));
+
+    const auto drained = std::make_shared<DrainRecord>();
+    ServerShutdownOptions shutdown;
+    shutdown.drainTimeout = 300ms;
+    shutdown.goawayPingTimeout = 100ms;
+    shutdown.closeGrace = 1000ms;
+    const auto shutdownAt = std::chrono::steady_clock::now();
+    server_->BeginShutdown(shutdown, RecordDrain(drained));
+    // 排空到期:REFUSED / UNAVAILABLE / 最终 GOAWAY 都不受流控,对端照常收到。
+    ASSERT_TRUE(RunUntil([&]
+                         {
+        const H2Stream *a = raw->h2().FindStream(waiting);
+        const H2Stream *b = raw->h2().FindStream(started);
+        return a != nullptr && b != nullptr && a->rstReceived && GrpcStatusOf(*b).has_value(); }, 5s));
+    const auto expiredAt = std::chrono::steady_clock::now();
+    RunFor(300ms); // 远小于 closeGrace
+    EXPECT_FALSE(raw->disconnected()) << "no FIN while a committed response is still blocked by flow control";
+    EXPECT_EQ(server_->connectionCount(), 1u);
+    EXPECT_EQ(drained->count, 0);
+
+    ASSERT_TRUE(RunUntil([&] { return drained->count > 0; }, 5s));
+    RunFor(200ms);
+    EXPECT_EQ(drained->count, 1) << "onDrained exactly once";
+    // 硬上限从排空到期那一刻起算(steady 复核,不会早到),也不会往后拖(上界留足调度余量)。
+    EXPECT_GE(drained->firstAt - shutdownAt, shutdown.drainTimeout + shutdown.closeGrace);
+    EXPECT_LT(drained->firstAt - expiredAt, shutdown.closeGrace + 1000ms);
+    EXPECT_EQ(server_->connectionCount(), 0u);
+    EXPECT_EQ(Stats().refusedOnShutdown, 1u);
+    EXPECT_EQ(Stats().unavailableOnShutdown, 1u);
+    EXPECT_EQ(Stats().inFlight, 0u);
+    EXPECT_EQ(Stats().dropped, 0u);
+
+    ASSERT_TRUE(RunUntil([&] { return raw->disconnected(); }, 2s));
+    const auto &atClose = raw->streamsAtDisconnect();
+    ASSERT_EQ(atClose.size(), 3u);
+    EXPECT_TRUE(atClose.at(blocked).body.empty()) << "the peer never opened the window";
+    EXPECT_FALSE(GrpcStatusOf(atClose.at(blocked)).has_value()) << "the blocked response never completed";
+    EXPECT_EQ(atClose.at(waiting).rstErrorCode, h2::kRefusedStream);
+    EXPECT_EQ(GrpcStatusOf(atClose.at(started)).value_or(""), "14");
+    ASSERT_FALSE(raw->goawaysAtDisconnect().empty());
+    EXPECT_EQ(raw->goawaysAtDisconnect().back().lastStreamId, started);
+    EXPECT_EQ(raw->goawaysAtDisconnect().back().errorCode, h2::kNoError);
+}
+
+TEST_F(ServerLoopbackTest, DrainTimeoutRefusesStreamsStillUploadingTheRequest)
+{
+    // 排空到期时请求体还在上传的流:业务必然没开始,立即回 REFUSED_STREAM(对端可透明重试),不等它传完,
+    // 也不让它拖住写半关直到硬上限;它从头到尾都不会被派发。
+    ASSERT_NE(StartServer(), nullptr);
+    const auto raw = MakeRaw(RawConnection::Mode::kHttp2);
+    RunFor(100ms); // 握手完成(服务端 SETTINGS / ACK 往返)
+    const std::string frame = TestH2Peer::Frame("half uploaded payload");
+    const int32_t uploading = raw->h2().OpenStream(GrpcRequestHeaders(kEchoPath), false);
+    ASSERT_GT(uploading, 0) << raw->h2().lastError();
+    ASSERT_TRUE(raw->h2().SendData(uploading, std::string_view(frame).substr(0, frame.size() / 2), false))
+        << raw->h2().lastError();
+    raw->Flush();
+    RunFor(100ms); // 服务端已收下头部(路由通过)与前一半请求体
+    raw->SnapshotAtDisconnect({uploading});
+
+    const auto drained = std::make_shared<DrainRecord>();
+    ServerShutdownOptions shutdown;
+    shutdown.drainTimeout = 300ms;
+    shutdown.goawayPingTimeout = 100ms;
+    shutdown.closeGrace = 20000ms; // 只作硬上限
+    const auto shutdownAt = std::chrono::steady_clock::now();
+    server_->BeginShutdown(shutdown, RecordDrain(drained));
+    ASSERT_TRUE(RunUntil([&]
+                         {
+        const H2Stream *stream = raw->h2().FindStream(uploading);
+        return stream != nullptr && stream->rstReceived; }, 5s));
+    EXPECT_EQ(raw->h2().FindStream(uploading)->rstErrorCode, h2::kRefusedStream);
+    EXPECT_TRUE(raw->h2().FindStream(uploading)->responseHeaders.empty());
+    EXPECT_EQ(Stats().refusedOnShutdown, 1u);
+    EXPECT_EQ(Stats().unavailableOnShutdown, 0u);
+
+    // 没有别的流:最终 GOAWAY 已写出,REFUSED 写出后流即关闭,会话既不想读也不想写 → 写半关;对端读到 EOF 即关。
+    ASSERT_TRUE(RunUntil([&] { return drained->count > 0 && raw->disconnected(); }, 5s));
+    EXPECT_LT(drained->firstAt - shutdownAt, shutdown.drainTimeout + shutdown.closeGrace);
+    RunFor(100ms);
+    EXPECT_EQ(drained->count, 1) << "onDrained exactly once";
+    EXPECT_EQ(state_->invocations, 0u) << "a request still uploading at drain expiry is never dispatched";
+    EXPECT_EQ(Stats().dispatched, 0u);
+    EXPECT_EQ(Stats().inFlight, 0u);
+    ASSERT_FALSE(raw->goawaysAtDisconnect().empty());
+    EXPECT_EQ(raw->goawaysAtDisconnect().back().lastStreamId, uploading);
+    EXPECT_EQ(raw->goawaysAtDisconnect().back().errorCode, h2::kNoError);
+}
+
+TEST_F(ServerLoopbackTest, DrainTimeoutRefusesUploadingStreamsEvenAfterHeaderTimesAreTrimmed)
+{
+    // §15.17:头部收完时刻的记录只为截止起算,有上限 —— 对端在头部之后 RST 的流不会再有回调、记录残留,超限即修剪最老的一半。
+    // 修复前排空到期按这份记录拒上传中的流:慢上传的老流被修剪掉之后漏拒,只能等它传完、或等 closeGrace 硬上限 forceClose。
+    // 现在按会话状态枚举(ServerSession::AcceptedUndispatchedStreams),修剪不影响停机。
+    ServerOptions options = QuietOptions();
+    options.session.maxConcurrentStreams = 8;
+    ASSERT_NE(StartServer(options), nullptr);
+    const auto raw = MakeRaw(RawConnection::Mode::kHttp2);
+    RunFor(100ms); // 握手完成(服务端 SETTINGS / ACK 往返)
+
+    // 慢上传的流:id 最小,修剪时最先被丢。
+    const std::string frame = TestH2Peer::Frame("half uploaded payload");
+    const int32_t uploading = raw->h2().OpenStream(GrpcRequestHeaders(kEchoPath), false);
+    ASSERT_GT(uploading, 0) << raw->h2().lastError();
+    ASSERT_TRUE(raw->h2().SendData(uploading, std::string_view(frame).substr(0, frame.size() / 2), false))
+        << raw->h2().lastError();
+    raw->Flush();
+    RunFor(50ms);
+
+    // 记录上限与 server.cpp 同式:max(16, 2 × maxConcurrentStreams) = 16。再开 20 个流,每个收完头部(路由通过、登记时刻)
+    // 后由对端 RST:记录残留,总数越过上限,最老的(含 uploading)被修剪。分批开,同时打开的流不超过 maxConcurrentStreams。
+    constexpr int kResidualStreams = 20;
+    constexpr int kBatch = 4;
+    for (int opened = 0; opened < kResidualStreams; opened += kBatch)
+    {
+        std::vector<int32_t> batch;
+        for (int i = 0; i < kBatch; ++i)
+        {
+            const int32_t streamId = raw->h2().OpenStream(GrpcRequestHeaders(kEchoPath), false);
+            ASSERT_GT(streamId, 0) << raw->h2().lastError();
+            batch.push_back(streamId);
+        }
+        raw->Flush();
+        RunFor(30ms);
+        for (const int32_t streamId : batch)
+        {
+            ASSERT_TRUE(raw->h2().SendRstStream(streamId, h2::kCancel)) << raw->h2().lastError();
+        }
+        raw->Flush();
+        RunFor(30ms);
+    }
+    raw->SnapshotAtDisconnect({uploading});
+
+    const auto drained = std::make_shared<DrainRecord>();
+    ServerShutdownOptions shutdown;
+    shutdown.drainTimeout = 300ms;
+    shutdown.goawayPingTimeout = 100ms;
+    shutdown.closeGrace = 20000ms; // 只作硬上限:修复前漏拒的流要拖到这里才被 forceClose
+    const auto shutdownAt = std::chrono::steady_clock::now();
+    server_->BeginShutdown(shutdown, RecordDrain(drained));
+    ASSERT_TRUE(RunUntil([&]
+                         {
+        const H2Stream *stream = raw->h2().FindStream(uploading);
+        return stream != nullptr && stream->rstReceived; }, 5s))
+        << "a stream still uploading at drain expiry must be refused even if its header time was trimmed";
+    EXPECT_EQ(raw->h2().FindStream(uploading)->rstErrorCode, h2::kRefusedStream);
+    EXPECT_TRUE(raw->h2().FindStream(uploading)->responseHeaders.empty());
+    EXPECT_EQ(Stats().refusedOnShutdown, 1u) << "the reset streams are already closed and are not refused again";
+    EXPECT_EQ(Stats().unavailableOnShutdown, 0u);
+
+    // 拒掉之后没有打开的流:最终 GOAWAY 已写出、会话既不想读也不想写 → 写半关,对端读到 EOF 即关,远早于硬上限。
+    ASSERT_TRUE(RunUntil([&] { return drained->count > 0 && raw->disconnected(); }, 5s));
+    EXPECT_LT(drained->firstAt - shutdownAt, shutdown.drainTimeout + shutdown.closeGrace);
+    RunFor(100ms);
+    EXPECT_EQ(drained->count, 1) << "onDrained exactly once";
+    EXPECT_TRUE(raw->streamsAtDisconnect().at(uploading).rstReceived) << "REFUSED_STREAM must reach the peer before the EOF";
+    EXPECT_EQ(state_->invocations, 0u);
+    EXPECT_EQ(Stats().dispatched, 0u);
+    EXPECT_EQ(Stats().inFlight, 0u);
 }
 
 TEST_F(ServerLoopbackTest, ChannelSharesTheServerAddressRule)

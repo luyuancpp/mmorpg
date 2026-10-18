@@ -608,7 +608,7 @@ func TestCreatePlayer_IDProbeRequestDoneMidProbeIsNotProbeError(t *testing.T) {
 // 钉不住 tryReserveName 开头的预检,由本用例补上。
 //
 // 那条预检早已存在,本用例不属于「修复前红」,而是守住它:去掉 tryReserveName 开头的 ctx 预检(或挪到
-// reserveNameOnce 之后),假 data_service 不看 ctx、照样回 OK,6c'' 随后放弃并释放,调用序列变成
+// reserveNameOnce 之后),假 data_service 不看 ctx、照样回 OK,6c” 随后放弃并释放,调用序列变成
 // reserve,release,在 data_service calls 断言处即红。
 func TestCreatePlayer_IDProbeClearThenDeadlineSendsNoReserve(t *testing.T) {
 	n := newNameHarness(t)
@@ -728,5 +728,38 @@ func TestEnterGame_SeededNewPlayerTakesFastPath(t *testing.T) {
 	}
 	if n, err := h.rdb.Exists(ctx, seedSubCacheKeys(identityPlayerID)...).Result(); err != nil || n != 0 {
 		t.Fatalf("sub cache keys present = %d / err %v, want 0 (no DB read on the fast path)", n, err)
+	}
+}
+
+// 身份CAS之后、SceneManager铸造owner之前中断，不得把仍无任何资产的新号永久锁死。
+func TestSeededPlayerCanRetryAfterIdentityBackfillBeforeFirstOwner(t *testing.T) {
+	l, rc, _, _ := newIdentityBackfillHarness(t, &pbdb.PlayerDatabase{PlayerId: identityPlayerID})
+	ctx := context.Background()
+	if err := rc.Del(ctx, identityBlobKey()).Err(); err != nil {
+		t.Fatal(err)
+	}
+	if result, err := dataloader.SeedNewPlayerAllData(ctx, rc, identityPlayerID); err != nil || result != dataloader.SeedWritten {
+		t.Fatalf("正式建角种子失败: %v/%v", result, err)
+	}
+	state := identityState(3, "云中君")
+	state.appearanceID, state.gender = "appearance-verified", 2
+	if err := l.backfillPlayerIdentity(ctx, nil, state); err != nil {
+		t.Fatal(err)
+	}
+	before, player := readIdentityBlob(t, rc)
+	if player.GetUint32PbComponent().GetClass() != 3 || player.GetProfileComponent().GetAppearanceId() != state.appearanceID {
+		t.Fatal("正式身份补齐未执行")
+	}
+	// 未执行SetSession/EnterScene，重试必须走正式Ensure且不发SQL读、不重建父键。
+	calls := 0
+	dataloader.EnsurePlayerAllDataInRedisAsync(ctx, rc, nil, nil, identityPlayerID, 0, func(err error) {
+		calls++
+		if err != nil {
+			t.Errorf("首次owner之前的身份补齐种子被拒: %v", err)
+		}
+	})
+	after, _ := readIdentityBlob(t, rc)
+	if calls != 1 || !bytes.Equal(before, after) {
+		t.Fatal("重试改写了已有身份或没有完成一次")
 	}
 }

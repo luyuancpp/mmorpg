@@ -648,7 +648,7 @@ func TestLedgerReadFinalizesSeenOffline(t *testing.T) {
 		return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_NOT_HERE, Local: true}, nil
 	}}
 	loop, m := newTestLoop(t, store, applier, nil)
-	loop.Ledger = &fakeLedger{ledger: ledgerWithApplied(op.Stream, op.StreamEpoch, op.Seq, false)}
+	loop.Ledger = sqlLedgerFixture(true, op)
 
 	processed, err := loop.ProcessOne(context.Background(), op)
 	if err != nil {

@@ -107,12 +107,21 @@
   - 门禁只认在本 topic 上至少有一行数值 CURRENT-OFFSET 的**唯一权威组**,只对它算 LAG(`resolveAuthoritativeLag`)。两组都有位点就拒绝(`more than one candidate group holds committed offsets on topic …`),
     先用 `tools/scripts/kafka_offset_reset.ps1 -FinalizeHandoff` 收尾;两组都没有位点(`no candidate group holds committed offsets on topic …`)或 CLI 读不出,同样拒绝。
     不取「各组 LAG 最小值」:冻结在高位的旧组 LAG 可以是 0,会替真正在消费的组担保(fail-open)。
+  - 〔2026-10-17 补,R7 复核 scripts [3] / [8];已落码,未编译、未测试,待 Codex 验证〕
+    - 权威组的 LAG 合计为 0 之后,工具再用 `kafka-get-offsets --time -2 / -1` 取 topic 每个分区的日志边界,逐分区证明:每个非空分区(earliest ≠ latest)都有数值 CURRENT-OFFSET 的行,且该分区 LAG = 0;
+      earliest 与 latest 的分区集合要相同,describe 里出现的分区 get-offsets 里都要有(`tools/merge_zone/preflight.go::verifyAuthoritativeCoverage`)。不过时报 `cannot prove topic <T> is drained (<n> problem(s)): …`。
+      起因:源区 db 停了、权威组是 Empty 时,describe 只列出提交过位点的分区,从没提交过却已有消息的分区不出现,只看合计会放行。
+    - 「组不存在」文案只在 describe 没有表头时才认定组不存在;文案与本 topic 的数值位点同时出现,按矛盾输出拒绝(`groupMissingInDescribe`)。
   - `-kafka-group` 显式给值时只看这一个组。本机单 zone 默认启动是裸名 `db_rpc_consumer_group`,`-Zone N` 启动是 `db_rpc_consumer_group_zN`,两种都在候选里;
     本机混用过两种启动方式、两组都有位点时,用 `-MergeKafkaGroup` 显式指定实际在跑的组。
 - `dev_tools.ps1` 从 `go/db/etc/db.yaml` 现读 TopicGeneration 并转发 `-kafka-topic-generation`(`-MergeKafkaTopicGeneration` 覆盖)。**组名不再转发**(2026-10-15,`Get-MergeZoneArgs`):
   由工具按 zone 推导并认定唯一权威组;`-MergeKafkaGroup` 只用于显式覆盖,非空才转成 `-kafka-group`。`dev_tools.ps1` 不转发 `-kafka-legacy-group`。
   以前「必须绕过 ps1 手敲 `go run`」的变通已经不需要了。
 - 注意:`dev_tools.ps1` 里 `-RollbackKafkaTopic` 的默认值仍是旧名 `db_task_topic`,但那是 `k8s-zone-rollback` 的参数,与合服无关。
+  > 2026-10-16 更正:`-RollbackKafkaTopic` 缺省已是空串(`dev_tools.ps1` 参数块),由 `k8s_zone_rollback.ps1` 按 `-ZoneId` 推导为 `db_task_zone_<id>`。
+  > 该脚本推不出世代后缀:`go/db/etc/db.yaml` 的 `ServerConfig.Kafka.TopicGeneration` > 1 时真实名字是 `db_task_zone_<id>_g<gen>`,必须显式传 `-RollbackKafkaTopic`(脚本不读、也不校验世代号;漏传时 Step 5 重置的不是 go/db 实际消费的 topic)。
+  > 2026-10-17 再更正(R7 复核 scripts [6];已落码,未编译、未测试,待 Codex 验证):上一条的第二行已过时。`k8s_zone_rollback.ps1` 入口现在读 `ServerConfig.Kafka.TopicGeneration`(必须是非负整数),
+  > 用 lib 的 `Get-DbTaskTopicName` 推导出带世代后缀的名字;`-RollbackKafkaTopic` 留空即可,显式给了却与推导值不同会在入口拒绝。详见 [zone_data_rollback.md](../design/zone_data_rollback.md)「2026-10-15 修订」。
 
 ---
 
@@ -305,6 +314,8 @@ K8s 上 db Pod 因此 CrashLoop 时,集群里没有 db-migrate Job,db 镜像也�
 
 **P3 的取证方式**:这条检查保护的是「玩家最后一次存盘有没有落库」,不能省。三选一:
 - `-MergeKafkaConsumerGroupsCmd <kafka-consumer-groups.sh|.bat>` + `-MergeKafkaBootstrap <host:port>`:**生产用法,真查**;
+  - 〔2026-10-17 补,已落码,未编译、未测试,待 Codex 验证〕执行机上还必须有**同目录、同扩展名**的 `kafka-get-offsets`(`…/kafka-consumer-groups.sh` → `…/kafka-get-offsets.sh`,`.bat` 同理;
+    由 `tools/merge_zone/preflight.go::kafkaGetOffsetsCmdFor` 推导)。P3 在 LAG 合计为 0 之后用它做全覆盖检查(§2.3),推导不出或执行失败 P3 即拒绝。传的路径文件名里必须含 `kafka-consumer-groups`。
 - `-MergeAssumeKafkaDrained`:运维显式声明「我用别的手段确认排空了」,日志里会留一条刺眼记录,**这条声明进事故复盘**;
 - 两个都不给 ⇒ **拒绝执行**(默认绝不是「查不到就当 0」)。
 
@@ -488,6 +499,9 @@ curl -X POST https://<gateway>/admin/zones/<DST_ID>/maintenance \
 ### Step 2 [15 min] 排空源区存盘,再 zone-down(source + target 都要)
 
 **先排空、再删 namespace。** 玩家下线时 scene 发出的最后一次存盘在 `db_task_zone_<src>` 上,由**源区自己的** go/db 消费落库。`k8s-zone-down` 连 go/db 一起删,删早了这些存盘就留在 topic 里,T-0 的 P3 / P4 必然不过。
+> 〔2026-10-17 补,R7 复核 scripts [3];已落码,未编译、未测试,待 Codex 验证〕「P3 必然不过」以前有一个漏洞:积压落在权威组**从没提交过位点**的分区上时(例如新 zone 或新世代 topic 刚收到第一批存盘,
+> 或 db 卡在某分区首条消息上 CrashLoop 到 zone-down),Empty 组的 describe 根本不列出这个分区,其余分区 LAG 都是 0,合计为 0,P3 会放行,那批存盘就此留在源 topic、再没人消费。
+> 现在 P3 在合计为 0 之后再用 `kafka-get-offsets` 逐个非空分区核对(§2.3),这句话才成立。执行机必须有与 `-MergeKafkaConsumerGroupsCmd` **同目录、同扩展名**的 `kafka-get-offsets`(§5「P3 的取证方式」)。
 
 1. **停源区的 gate 与所有 scene**,go 服务(尤其 db)保持运行:
    ```bash

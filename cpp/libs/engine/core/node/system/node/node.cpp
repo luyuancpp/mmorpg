@@ -35,6 +35,7 @@
 #include "node/system/node/node_connector.h"
 #include "node/system/node/muduo_grpc_channel_slot.h"
 #include "node/system/node/client_endpoint.h"
+#include "node/system/node/open_file_limit.h"
 #include "thread_context/node_context_manager.h"
 #include "muduo_grpc/address.h"
 #include "muduo_grpc/method_table.h"
@@ -49,12 +50,16 @@
 #include <cstdlib>
 #include <limits>
 #include <optional>
+#ifdef __linux__
+#include <sys/resource.h>
+#endif
 
 namespace
 {
 	std::atomic<Node *> gNodeAtomic{nullptr};
 	// gRPC 服务端排空预算(docs/design/grpc-muduo-transport.md §15.3 Q4、§15.10):从 BeginShutdown 起算 2s;
-	// 第二段 GOAWAY 在 PING ACK 或满 1s 时发;排空到期后半关,再宽限 1s 强制关闭。总上限约 3s。
+	// 第二段 GOAWAY 在 PING ACK 或满 1s 时发;排空到期后连接继续读写,已提交的应答(含被对端流控卡住的 DATA)写完、
+	// 所有流关闭才半关;closeGrace 1s 从排空到期起算,是硬上限,到期强制关闭。总上限约 3s。
 	constexpr std::chrono::milliseconds kGrpcDrainTimeout{2000};
 	constexpr std::chrono::milliseconds kGrpcGoawayPingTimeout{1000};
 	constexpr std::chrono::milliseconds kGrpcCloseGrace{1000};
@@ -393,6 +398,97 @@ namespace
 		std::abort(); // LOG_FATAL 已 abort;这一行只为让 [[noreturn]] 对编译器成立
 	}
 
+#ifdef __linux__
+	// fd 限值行同时写 stdout 与日志:Linux 上 muduo 日志只进异步文件,stdout 是 kubectl logs 唯一看得到它的地方
+	// (写法同 gate_version::PrintStartupLine,不受 LogLevel 过滤);日志文件那份由 sidecar 送 Loki。
+	void EmitOpenFileLimitLine(const std::string &line, bool warn)
+	{
+		std::fputs(line.c_str(), stdout);
+		std::fputc('\n', stdout);
+		std::fflush(stdout);
+		if (warn)
+		{
+			LOG_WARN << line;
+		}
+		else
+		{
+			LOG_INFO << line;
+		}
+	}
+
+	uint64_t FromRlim(rlim_t value)
+	{
+		return value == RLIM_INFINITY ? open_file_limit::kUnlimited : static_cast<uint64_t>(value);
+	}
+#endif
+
+	// fd 上限(RLIMIT_NOFILE)启动门槛,判定规则、余量与取舍见 open_file_limit.h。只在 Linux 上执行,Windows 本地开发不受影响。
+	// 软限抬到 min(硬限, 1048576),只抬不降、不动硬限;抬完仍低于「客户端面准入上限 + 余量」时:
+	// 缺省(enforce)经 FatalStartupConfig 先写 stderr 再拒启;NODE_OPEN_FILE_LIMIT_MODE=warn 时只打 WARN 继续启动。
+	// C++ 节点没有 Prometheus 出口(gate 准入设计 G13),所以豁免与缺口只进 stdout 与日志,不出指标。
+	void EnsureOpenFileLimitOrDie(uint32_t nodeType, const BaseDeployConfig &deploy)
+	{
+#ifdef __linux__
+		const char *rawMode = std::getenv(open_file_limit::kModeEnv);
+		const open_file_limit::ModeSetting mode = open_file_limit::ParseMode(rawMode);
+		if (!mode.recognized)
+		{
+			EmitOpenFileLimitLine(open_file_limit::FormatInvalidModeLine(rawMode), true);
+		}
+
+		const std::string role = NodeUtils::NodeTypeToShortName(nodeType);
+		const open_file_limit::ClientCap cap = open_file_limit::ClientConnectionCapFor(nodeType, deploy);
+		const uint64_t required = open_file_limit::RequiredOpenFiles(cap.connections);
+
+		struct rlimit current{};
+		if (::getrlimit(RLIMIT_NOFILE, &current) != 0)
+		{
+			// 对合法指针 getrlimit 不会失败;真失败说明运行环境异常,无法核实即拒启。
+			// 豁免开关只豁免「限值不够」,不豁免「无法核实」。
+			const int err = errno;
+			FatalStartupConfig("open file limit",
+							   "role=" + role + " getrlimit(RLIMIT_NOFILE) failed errno=" + std::to_string(err));
+		}
+
+		const open_file_limit::Outcome outcome = open_file_limit::Evaluate(
+			{FromRlim(current.rlim_cur), FromRlim(current.rlim_max)},
+			required,
+			[&current](uint64_t target) -> int
+			{
+				// 只改软限,硬限原样带回;target 恒为有限值(≤ max(kSoftLimitCeiling, required))。
+				// 内核要求新的 rlim_max ≤ fs.nr_open:硬限是 RLIM_INFINITY、或设硬限之后 fs.nr_open 被调低时,
+				// 原样带回会得到 EPERM。这里不降硬限重试,按「抬升失败」如实判定,errno 进启动行。
+				struct rlimit raised = current;
+				raised.rlim_cur = static_cast<rlim_t>(target);
+				if (::setrlimit(RLIMIT_NOFILE, &raised) == 0)
+				{
+					return 0;
+				}
+				const int err = errno;
+				return err != 0 ? err : EINVAL;
+			});
+
+		const bool clean = outcome.verdict == open_file_limit::Verdict::kOk && outcome.raiseErrno == 0;
+		EmitOpenFileLimitLine(open_file_limit::FormatStartupLine(role, cap, mode.mode, outcome), !clean);
+
+		switch (open_file_limit::ActionFor(outcome.verdict, mode.mode))
+		{
+		case open_file_limit::Action::kProceed:
+			return;
+		case open_file_limit::Action::kProceedExempted:
+			EmitOpenFileLimitLine(open_file_limit::FormatExemptionWarning(role, outcome), true);
+			return;
+		case open_file_limit::Action::kRefuse:
+			break;
+		}
+		FatalStartupConfig("open file limit", open_file_limit::FormatRefusalReason(role, cap, outcome));
+#else
+		(void)nodeType;
+		(void)deploy;
+		LOG_DEBUG << "Open file limit check skipped: RLIMIT_NOFILE handling is Linux-only";
+#endif
+	}
+
 	std::string FormatEndpoint(const EndpointComp &endpoint)
 	{
 		return endpoint.ip() + ":" + std::to_string(endpoint.port());
@@ -529,6 +625,13 @@ void Node::Initialize()
 	RegisterHandlers();
 	LoadConfigs();
 	InitLogSystem();
+	// fd 上限门槛(容量模型 A0-2、gate 准入 G4 / P0-1)。这里是第一个配置已读、又还没开任何网络 fd 的位置:
+	// 此后 InitRpcServer 连 Redis、InitKafka、InitEtcdService 都要 fd,软限必须在它们之前抬好,拒启也要在注册进 etcd、
+	// 开始接流量之前。gate / scene / battle 都经过这里,以后新增的 C++ 节点自动覆盖。
+	// 缺省 fail-closed:fd 不够时 gate 的唯一 IO 线程会 EMFILE 忙循环、scene 的 Redis / Kafka / etcd 重连失败,
+	// 比起不来更糟;节点都是多副本,新 Pod 拒启只会让滚动停住。运维豁免只认 NODE_OPEN_FILE_LIMIT_MODE=warn,
+	// 与 *_RUN_MODE 无关(scene 的运行模式同时决定 GM 放行,不能为绕过这条检查去开 GM)。
+	EnsureOpenFileLimitOrDie(GetNodeType(), tlsNodeConfigManager.GetBaseDeployConfig());
 	// 生成的 gRPC 客户端的 deadline 必须在发出第一个请求(InitEtcdService 里的 etcd Range / LeaseGrant)之前就位;
 	// 放在 InitLogSystem 之后,被忽略的配置项与生效值才进日志文件。
 	grpc_call_deadline::Apply(tlsNodeConfigManager.GetBaseDeployConfig().grpc_client());
@@ -847,9 +950,9 @@ void Node::ShutdownGrpcServer()
 	// 排空全部在 loop 内完成(docs/design/grpc-muduo-transport.md §15.10),不再起关机线程:Handle* 都是同步的,
 	// 没有谁阻塞着等 loop。BeginShutdown 依次:置排空标志(此后 ServerCall::ServerDraining() 为真)→ 把 Acceptor
 	// 移进排队任务销毁(停听)→ 每条连接发第一段 GOAWAY + PING(没收到过字节的直接关)→ 上弦排空定时器。
-	// 已收完的调用照常派发;PING ACK 或满 1s 发最终 GOAWAY;2s 到期未开始的回 REFUSED_STREAM、已开始的回
-	// UNAVAILABLE,再宽限 1s 强制关闭。连接表为空时 onDrained 经 queueInLoop 投递,按 FIFO 排在最后一个
-	// connectDestroyed 之后。
+	// 已收完的调用照常派发;PING ACK 或满 1s 发最终 GOAWAY;2s 到期未开始的(含请求体还在上传的)回 REFUSED_STREAM、
+	// 已开始的回 UNAVAILABLE,之后连接继续读写到已提交的帧全部写出、所有流关闭才半关,从到期起最多再宽限 1s 强制关闭。
+	// 连接表为空时 onDrained 经 queueInLoop 投递,按 FIFO 排在最后一个 connectDestroyed 之后。
 	// onDrained 恰好一次、永不在本调用栈内执行,所以 ShutdownInLoop 随后的 MaybeFinalize 必然看到「未排空」直接返回。
 	// 回调捕获 this:与本类其它排队任务同理,shutdownComplete_ 只在收尾的两跳 quit 之后置位,~Node 会等它
 	// (loop 异常退出时重新驱动 loop),所以投递到时 Node 一定还在。
@@ -1256,6 +1359,18 @@ void Node::FinalizeTeardownInLoop()
 	// node_id / 端口的重试定时器由 serviceDiscoveryManager.Shutdown() -> EtcdService::Shutdown()
 	// 取消,不在这里。
 	kafkaManager.Shutdown();
+	// 拆除前钩子(SetBeforeTeardown):排在 producer 最后一次有界 flush 之后(重入时 kafkaManager.Shutdown 只返回缓存结果,
+	// 不再 flush),排在 Redis / ECS / 注册表拆除与 logSystem.stop() 之前 —— 业务在这里停掉自己的定时器并把未落定的事
+	// 打进日志(scene:DBTask 回执 Pump 与未落定玩家清单)。只在第一次进入时调用:下面的让轮会重入本函数,
+	// 先停掉的定时器也就不会在让轮期间、在半拆的节点上再推业务。
+	if (!beforeTeardownRan_)
+	{
+		beforeTeardownRan_ = true;
+		if (beforeTeardownFn_)
+		{
+			beforeTeardownFn_(*this);
+		}
+	}
 	// Hiredis 持有 muduo Channel 和待回调命令;必须在 EventLoop 与 Scene
 	// MessageAsyncClient 回调目标都存活时释放。
 	tlsRedis.Shutdown();

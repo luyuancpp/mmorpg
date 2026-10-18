@@ -10123,3 +10123,263 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **验证**：只读场景探针先红后绿；最终两快照相隔 75.1 秒、exit 0、失败 0，11 个业务服务镜像匹配且重启增量 0，7 个 go-zero 与 10 类 NodeInfo 有效，网关三项 health UP、zone-1 OPEN、DB metrics 与 28000/28010 连通。证据：`build/codex-visual-demo-20261016/runtime-reboot-readiness-20261017-033730-030.json`（SHA256 `cfab2bfbe5320c2d495c474bc5a4b9856767e9aef5154839028e3215b8069b3b`）；相关 Kafka、号段红绿诊断也保留在同目录。
 - **用户手测**：用户要求自行进游戏，已打开既有试玩登录窗口；本次没有启动自动 PVE、移动或导航测试，不以重启健康检查替代游戏与画面验收。旧完整 moveTest 失败和视觉未验收状态保留。
 - **剩余项与 Java 版**：本次恢复运行态，未改冷启动时 store 初始化失败后的自动恢复逻辑；再次整机重启应核对存储能力。已恢复同仓 Java 网关；独立 Java 整版本轮未构建，没有新增玩法功能，对应 Java 版本号无。未 commit、push 或 tag。
+
+## 2026-10-16 补充:RpcChannel 批 7 收尾——评审遗留的文字类问题修完(Claude,只改文档与注释,未编译)
+
+- **来由**:用户「继续做完给我」。上一条第二步的只读评审留下 9 条问题(1 条中等已当场修),本条修完其余 8 条。
+- **现状核对**:当晚 23:31 已有会话用新生成器 regen 第二步。`proto/message_id.txt` 0–313 连续,共 8 条墓碑(1 / 40 / 41 / 42 / 56 / 74 / 78 / 81);`kMaxRpcMethodCount = 314`;两个 handler 头不再声明已删方法,守护段里的过渡 `SetFailed` 随方法一起消失。所以评审说的「拒绝文案自相矛盾」那条已随 regen 失效,不用改。
+- **改动**:
+  - [muduo-rpc-channel.md](design/muduo-rpc-channel.md) 文首状态与 §20.7 的证据分两步写清。
+  - §20.7 第 2 步改为复核口径(再跑 regen 应零 diff、无墓碑 WARN)。
+  - 冒烟第 4 步改用现存日志 `[RpcChannel] rejecting request: message_id=(1|40|41|42|56|74|78|81) `;两个旧关键字已不存在,§18.4 与 §20.6 的指针同步改。
+  - 更正 `SendErrorToClient` 的调用方:只有 `Scene.InvokePlayerService` 一个,涉及 §20.3、§18.2、`error-reporting.md`。
+  - 其他:`service_register_info_test.go` 的夹具注释与用例头注释;`player-inbox-service.md` 补注;`docs/notes/NOTES_{zh,en}.md` 的 #70。
+- **验证证据**:Codex 记录(「C++ gRPC muduo 第 3–5 批:Codex 验证续跑」条)写明 `proto-gen-build` 与生成器 `go test ./internal/... ./cmd` 全部通过,proto / core / rpc 等库编过。整解被无关的 `world.cpp` 缺 include 阻断,工作区已有人补上。gate / scene 节点在第二步之后尚无编译证据;C++ 测试与冒烟未跑。
+- **Java 版(AGENTS §12)**:Java 仓 `PARITY.md` 第 66、68 行各补一句「基线入口已于批 7 删除」;另在 `docs/porting/inventory/gate.md` 与 `docs/design/reliable-player-inbox-20261014.md` 补注。Java 代码不涉及。主仓提交后需重跑 ContractSync。
+- **文件**:`docs/design/{muduo-rpc-channel.md,error-reporting.md,player-inbox-service.md}`、`docs/notes/{NOTES_zh.md,NOTES_en.md}`、`tools/proto_generator/protogen/internal/generator/cpp/service_register_info_test.go`(注释);Java 仓 `PARITY.md`、`docs/porting/inventory/gate.md`、`docs/design/reliable-player-inbox-20261014.md`。
+
+## 2026-10-17 补充:message_id 小域防护与 instance / player_locator 域登记的验证现状(Claude,只读核对,未跑任何命令)
+
+- **提交**:2026-10-16「message_id 墓碑:小域整域漏读改为按域中止」与「proto 域登记:删除死代码 instance、补配 player_locator 域」两条的全部文件改动已随 `e76f6f747` 提交(descriptor.go / descriptor_test.go / service_register_info.go 注释 / 两份 yaml 删 slg 加 player_locator / 删 proto/instance 及副本)。
+- **已有运行证据**:Codex 2026-10-16 22:47 的 `build/verification/grpc-muduo-codex-20261016/02-generator-tests.log` 中 `protogen/internal/prototools` ok;`descriptor_test.go` 最后修改于 08:50,该轮已覆盖 6 个新用例。23:31 的 regen 写出 `proto/message_id.txt`(带按域中止检查的生成器,未中止):0–313 连续无空洞,新增 307–313 共 7 条 `PlayerLocator*`,墓碑仍为批 7 的 8 条(1 / 40 / 41 / 42 / 56 / 74 / 78 / 81),slg 删除与 instance 删除都没有产生新墓碑。player_locator 的 pb / grpc_client / service_metadata / Go 生成物已提交。
+- **仍未验证**:`go vet ./internal/... ./cmd`(Codex 日志只有 go test);`e76f6f747` 之后再跑一次 no-unity regen 是否零 diff;新增 player_locator C++ 生成物的编译(23:34 的串行整解被无关的 `world.cpp` 缺 include 阻断)。
+- **Java 版(AGENTS §12)**:不适用,同前两条;对应 Java 版本号无。
+
+## 2026-10-17 开服线:负责人拍板四项 + 剩余工作移交(Claude,只改文档)
+
+- **负责人拍板**(10-17,对应 10-16「开服线剩余工作调研」条目的待拍板项):
+  1. **核心 Redis 路线**:单元化 + 单元内 Cluster 分片(两者叠加)。G4a 修订稿以此为准;连带把 D12 / CZ-2 改写为「逻辑单一、物理按 `{player_id}` 分片」,C++ 要接集群客户端。
+  2. **B0-3 task:result 分频道**:授权超过 30 个文件。先用 PUBLISH,SPUBLISH 推迟到上 Cluster 那批;分两批落码:第 1 批 proto + go/shared + login,第 2 批 go/db 侧,等 go/db 接手线和围栏线的空档。偏离容量模型 A0-5 的原定做法,由本次拍板认可。
+  3. **B0-1**:gate 索引在会话 Lua 里原子维护(容量模型 A0-4 的做法)。
+  4. **其余按推荐**:
+     - B0-4 缺省拒启,另加运维豁免开关(环境变量,缺省 enforce,生效时打 WARN 并出指标);
+     - D1 1b-2 先用单个就绪标记加指标,压测后再定是否按片;回档检测容差取 0(fail-closed);
+     - 存量 `dirty_keys_set` 清理暂不执行,等负责人指定环境。
+- **已落码**(10-16,已随整区快照入库,未编译、未测试):B0-2、过时注释(9 处)、B0-5。详见 10-16 的三条条目。
+- **为什么停**:周额度已用到 91%,同一账号上有多个会话在并行消耗。D1 1b-1 约 19 个文件,开工有中途撞限、留下半截改动的风险,负责人选择停在这里,等重置后再做。
+- **剩余工作**(按顺序;规格都在 `docs/handoff/launch-readiness-20261013/`,每份后半是核实意见,落码前必须吸收):
+  1. **D1 1b-1**(`spec_D1_batch1b_scout.md` 的 1b-1 部分)。主会话已定的修法:
+     - 修库事务内用 `SELECT writable FROM route_meta WHERE id=1 FOR UPDATE` 复核冻结态;
+     - 迁移 cmd/route_tool 的测试时保留 `TestRouteTool*` 原名,并在提案里更正前几批验证命令的路径;
+     - 修库同页先去重;
+     - unfreeze 读不到有效标记、或标记身份与当前 Redis 不符时,退出码 2,只有显式 `-cache-was-not-verified-acknowledged` 才放行;
+     - 冻结语句超时不小于 max(5s, 缓存表租约 + 2s);`ALTER TABLE route_meta CACHE` 留给 TiDB Phase 1;
+     - 冻结期 audit 允许 db_only_unpublished(加 `-frozen-recovery` 口径);
+     - runbook 默认用一次性 Job / Pod(同镜像同 ConfigMap)跑 route-tool,不 exec 进在役 Pod;
+     - 标记版本号大于已知值时只记日志,不删也不信任;Redis 连接带上 mapping.User。
+     - 另外核实并处理 B0-5 实现者发现的问题:go-zero 熔断时 `route_publish.go` 的发布被 `ClassifyPublishReply` 归为 ErrUnexpectedPublishReply 而不再重试,注释「回调根本没被调用」也与实际不符。
+  2. **D1 1b-2**:先补核实意见的两条 must 再落码(Arm=false 时 catch-up 收尾要设已验证身份,减法饱和到 0;增量游标经 cache_verified_ms 持久化),同时吸收 should(leader ID 长度、关停顺序、gauge 按 leader 过滤、连不上 Redis 时让出租约等)。
+  3. **B0-1**:先按核实意见的三条 must 重写控制面(就绪标记改租约加 Redis 侧代次 CAS;etcd 出错只跳过当拍;连续失败主动让位;审计时机持久化到 Redis),再落码;K8s 暴露 player_locator /metrics 要同批做,或在文档里列为阻塞项。
+  4. **B0-3** 第 1 批,然后第 2 批。
+  5. **B0-4**:吸收 should(补 deploy-staging.sh 存活检查、run_cpp_tests.ps1 登记、Java 对等说法更正),豁免开关按上面的拍板做。
+  6. **G4a 修订稿**(`spec_G4a_revision_scout.md` 第一部分):按拍板的路线写,吸收三条 must,其中包括登记 db-write-fencing v0.4「排序锁 / 子表缓存 / 证据三键同实例」的依赖。
+  7. 零碎:过时注释跳过的 3 处(`go/match/etc/match_service.yaml`、k8s_deploy.ps1、deploy/k8s/README.md),建议文案在 10-16「共享 Redis 淘汰策略过时注释更正」条目里;B0-2 的 followups 见其条目。
+- **Java 版(AGENTS §12)**:对应 Java 版本号:无。本条只是记录拍板与移交。
+
+## 2026-10-17 本机 C++ Docker 试玩环境恢复与登录排障（Codex）
+
+- 用户要求启动 C++ 仓游戏服务器到本地 Docker；复用 `codex-visual-demo-20261016` 的现有容器与冻结镜像。游戏 Kafka 退出 255，原地启动一次后 healthy；MySQL healthy 后仅原地重启 DataService 一次，四类 SQL store 的 pools 从 0 恢复为 1，scene 领取号段并进入 dependency ready。未重编、清库、迁移、重建 topic 或修改其他 Docker 项目。
+- 只读稳定检查前后间隔 75.1 秒，11 个业务服务镜像均匹配、重启增量 0、注册与网关健康检查通过、zone-1 OPEN，客户端 28000/28010 连通。四个 Kafka topic 的 ID、分区数、保留配置与旧证据相同，521 个分区可用。证据：`build/codex-visual-demo-20261016/runtime-reboot-readiness-20261017-040636-894.json`、`runtime-recovery-actions-20261017-040712-607.json`。
+- 用户反馈登录失败：服务端两次密码认证返回 invalid credentials。用既有 `dev_visual_demo` 与私有 demo.env 中的口令做单次 HTTP 登录，HTTP 200、code 0、返回 1 个角色；未输出口令和令牌。已打开现有本地试玩登录助手供用户复制账号和口令到 Unity；本次未代用户进服、创建角色或执行玩法测试。证据：`build/codex-visual-demo-20261016/login-readiness-20261017-0410.json`。
+- Java 版：本次仅恢复 C++ 仓的现有运行态（含同仓 Java 网关），未新增玩法或修改客户端契约，独立 Java 版不涉及。未 commit、push 或 tag。
+
+## 2026-10-16 重启续接：R07 完整个人来源归档 Phase A（两版；节点链接待收尾）
+
+- **已落码**：BattleResultEvent 追加完整个人 settlements 与格式版本1；确认模式在Kafka all ACK前固定一次全员结算与原bytes，ACK后终局150和旧R07投递复用该来源。C++直接解析已ACK的ResultCommit载荷，来源缺失时不广播终局、不删房；两版统一960KiB上限，校验成员/队伍/对局/终局/回合数，0仅兼容无个人载荷的历史结果，空消息/0夹新载荷/未知版本拒绝。
+- **来源归档**：两版match先把收到的Kafka原bytes、SHA与全部个人来源同SQL事务提交，再评分、推进消费位点；关闭评分仍消费并归档，来源失败有限重试后关闭reader，保留原位点。新增表走各自proto/schema迁移，未手写并行DDL。仅来源表，无新资产应用、补发、销账或伪造owner版本。
+- **Go运行证据**：Authority整包18个顶层与19个子用例通过、0跳过，其中14个真TiDB（新增3个覆盖异wire冲突/全员回滚/8并发幂等）；消费者8/8；合并解除后主包9顶层+5子用例、全模块build/vet均exit0。官方重新生成后162旧Go绑定SHA全同，6核心源SHA全同。见build/r07-source-20261016/go-source-archive-proof.json与go-source-archive-postmerge-proof.json。
+- **真实恢复证据**：唯一新增集成用例实际连接独立三broker及TiDB，RF3/ISR3/minISR2/acks=all。SQL闭池连续失败3次后关闭reader，broker位点仍-1、SQL0行；同组新reader恢复同raw，原件/SHA/2人来源同事务可见后位点到1；同raw再投仍1+2行、保留首次来源位点0，broker到2。最终7.46秒、1/1、0失败/跳过，compile/run/vet均0；随机库、topic/group及专用三容器/三卷/网络均清理完成。新卷权限首次失败与一条清理后describe的取证竞态保留，未伪作业务失败。见go-kafka-source-recovery-proof.json。
+- **Java对应版本0.1.0-SNAPSHOT**：干净clean install及最终六类97/97，含11真TiDB，0失败/错误/跳过；969输入SHA与隔离副本相同，四jar/六类XML封存。旧广测4282通过、313环境门控未运行单独保留，最终97覆盖唯一后改KafkaSink。见Java仓build/r07-source-20261016/java-r07-source-final-proof-20261017.json；architecture.md和PARITY.md已登记。
+- **C++当前证据**：官方proto-gen-build/run两轮及合并后proto库成功，battle库/turn测试工程串行构建成功，238/238、0失败/错误/禁用/跳过（新增3项完整来源/未知ACK/超限回归），测试EXE SHA未变。battle节点TU与裸指针门禁通过，首次链接因18小时前旧rpc.lib包含已删除消息的15个UNDEF失败；并行构建线已重建该依赖且旧UNDEF归零，本任务等待MSBuild资源释放后只重链battle。未把旧节点EXE冒充本批成功。
+- **同步与剩余范围**：完整官方生成已走授权客户端配置，独立客户端工作区干净，本批没有新的客户端可见协议或交互变化。来源归档不等于个人资产已到账；上线必须先建表并升级消费组全部match，再启用format1生产者。SQL拒写游标、租约+缓存+证据原子发布、父快照冷加载屏障仍由围栏主线收口；PrepareBattle尚无真实个人source owner/save_seq，现有DataService SQL证明是go/db发布到Redis的证据且仅资产账本，不能当独立SQL强读或战斗到账收据。完整R07应用/SQL收据/互斥切换、两版完整进程链、多区域故障与容量另行验收；本批没有生产操作、提交或推送。
+
+## 2026-10-17 R07 来源归档 Phase A 最终收尾（Codex）
+
+- C++ battle节点在其他MSBuild退出后按 `/m:1 /p:CL_MPCount=1` 最终构建exit 0，裸指针门禁通过，已生成本批battle.exe。此前旧rpc.lib的15个已删协议UNDEF已随依赖重建消失；12分钟资源等待超时期间没有执行链接，失败/等待日志均保留。
+- C++ 238/238、Go真实三broker→TiDB恢复1/1及Java97/97（含11真TiDB）证据汇总至 `build/r07-source-20261016/r07-phase-a-final-proof-20261017.json`，SHA256 `47066CEA229F2445F12B5DD792CAB167D214804E187C79E40DBB2BE8E84CB18A`。9个C++/proto来源及测试EXE与验收快照SHA一致，来源实现已由外部并行提交包含于b41efa219；本任务未执行commit/push/tag。
+- Java对应版本0.1.0-SNAPSHOT，PARITY已更新最终证据。官方生成包含客户端，本批无新交互；未新跑Unity，当前客户端的并行UI及PlayMode修改保留。仅完整来源归档切片完成，个人资产SQL到账收据及owner/source/父快照屏障、旧R07互斥切换仍待，不能宣称全局资产到账闭环或两千万在线已验。
+- 继续独立于资产围栏的下一批：两版真实评分SQL/outbox→通用榜→MailAdmin→邮箱列表，注入提交后回包丢失与奖励工作器重启；设计范围见leaderboard-system.md末节。Docker曾关闭导致TiDB不可达，已hidden启动既有Docker Desktop，原TiDB/PD/TiKV自动恢复且TiDB healthy；未清现有数据，也未启动本批不需要的Redis。
+
+## 2026-10-17 两版评分至排行榜奖励邮件整链收尾（Codex）
+
+- 新增Go三个跨服务集成测试文件、Java两个专用整链测试及game-rank隔离测试profile；无生产业务/proto/客户端修改。真实评分SQL/outbox→鉴权RPC→连续游标→源停代→封榜快照/奖励意图→真实MailAdmin→玩家权威邮箱列表，未手工写入业务成功终态。
+- Go实际排行榜子进程重启后，邮件已提交而首次回复Unavailable的奖励按原reward_id、原载荷、原到期时间重投，仍回同mail_id；重复评分/投榜/封榜无重复奖励、游标未齐拒封榜、停代后评分事务回滚。真实TiDB整链1/1、11.74秒、0失败/跳过；三个程序编译及相关包vet均0，629输入SHA未变。首次Windows CreateProcess AccessDenied发生于业务调用前，原EXE启动探针通过后单次重跑成功；原日志保留，未改安全配置，根因未宣称已证实。
+- Java 0.1.0-SNAPSHOT真实Triple整链1/1、23.32秒，14 reactor clean test通过；默认profile clean verify另有9 reactor和原榜4/4真TiDB通过，均0失败/错误/跳过，默认Boot包无新增服务测试依赖，2324输入SHA一致。仅重建仓储/工作器而非JVM重启；Dubbo实际anyhost监听，不能称严格回环。首次依赖版本与测试夹具解析编译错误保留，修正后才重跑。
+- 两版自身随机库、Go夹具进程及JavaRPC端口清理完成，未清共享数据。汇总proof：`build/rank-mail-chain-20261017/two-version-rank-mail-chain-proof-20261017.json`，SHA256 `0A5BC76B3DC3F6AB0B6EF562A42C3DB7D1B69AD7C21D4F7DCB2CAC1BCD4EB644`；已复核20个证据文件摘要。主仓leaderboard/mail设计与Java architecture §4.24.3、PARITY同步登记。
+- 本批验收到奖励邮件持久可见，未新跑Unity、未变客户端契约且保留其并行修改。附件/交易资产scene到账、个人SQL收据、真实source owner/save_seq、SQL拒写游标及归属/父快照屏障、旧R07互斥切换仍待；未冒称多区域故障、真支付或两千万CCU已验。未commit/push/tag。
+
+
+## 2026-10-17 ECS 第 6 批续接：保留合并现场与两套已发布契约兼容方案（Codex，整批未完成）
+
+- 负责人授权接手 origin/main 合并，并要求不覆盖、丢弃他会话工作。原 72 冲突拍现场时，外部执行者清除合并状态并继续提交；当前无 MERGE_HEAD 不代表远端 6965aa6a78 已融合。本会话未 reset/abort/add/commit，忽略目录 merge-tree 候选仍为 72 冲突，未改用户工作树或索引；证据 build/ecs-refactor/batch6/merge-preview-20261017T043948Z/manifest.json。
+- 负责人确认队伍 tag3、邮件枚举与 tip 两边均已发布，要求先制定兼容方案。已新增 docs/design/published-contract-compatibility-20261017.md 并登记索引：邮件还存在分页、正文、删除、提示载荷不兼容；现有登录/会话无可靠版本标识，待合入提交也无邮件消息号清单。推荐两个确定的契约入口与渐进迁移，保留旧功能及当前 SQL/HMAC/资产围栏；入口选择、实际发布清单、旧队伍意图和存量邮件迁移规则待负责人决定，未选一边改号或猜码。
+- T8.9 接线和新 muduo API 只读核对一致，迁移旧接口混写已消失。其他会话正串行编译 scene/game.sln，本会话两次中间 core 构建均在并发保护阶段退出，未启动第二个 MSBuild，不作编译红/绿证据。当前生成器仍有新保存，正式 no-unity 生成与后续整批验收尚未开始。
+- 剩余红测两条 PrepareOnly exit 0，7 组变异锚点有效；T2 保留最新 ReleaseFence、废黜重入和存盘通道，未回退主树。3 项远端 gRPC 测试已适配当前 API，仅存忽略目录，git apply --check exit 0，未 apply/编译。Go 12 冲突与无版本识别证据已准备，不能以旧池/旧鉴权/旧号段表覆盖现有实现。
+- 任务单已追加 §11 真实状态；T10 仍按 13 个 protobuf 值表、3 个普通 C++ 仅类型名。最终生成、生成器测试、game.sln、13 工程顺序验证、剩余隔离红测、签名 GM 与跨节点冒烟仍待，不能宣称整批完成。
+- Java 对应版本 0.1.0-SNAPSHOT，本批 ContractSync/Maven/零冷却红绿与 PARITY 完成登记仍待 §6 第 5 步；准备补丁以当前 Java 修改为基础，两个已发布契约也必须分版本兼容。本轮未读改客户端仓、未手改生成物、未 commit/push/tag、未改审计 HEAD。
+
+## 2026-10-17 删除 gRPC 全局应答处理器：前置构建受阻（Codex）
+
+- 用户授权继续删除并完成 §15.14 验证，要求保留本人及并行会话改动。本任务未提交、暂存、推送或回退；全局处理器删除仍全部保留在仓库外候选，尚未合入主仓。
+- 已执行生成器 build、`go test ./internal/... ./cmd -count=1`，均成功；scene/battle 的 `--grpc-handler` 定向生成两轮，4 个 handler 及 `proto/message_id.txt` 字节 SHA 不变，守护段业务正向检查通过，禁用旧 gRPC/阻塞调用的负向检查零命中。证据在 `%TEMP%/codex-global-handler-20261016-01/01b-proto-gen-build.log`、`02b-generator-tests.log`、`03-handler-result.txt`。
+- 本任务此前仅为 `world.cpp` 补直接依赖 `thread_context/ecs_context.h`。另一验证会话随后以 `/m:1 /p:CL_MPCount=1` 执行同一 `game.sln` 前置全解，gate 静态门禁首先报 `client_message_processor.cpp(231,29): use of undeclared identifier 'tlsEcs'`，随后 MSB3073。完整日志：`build/verification/grpc-muduo-codex-20261017/04-game-build.log`；本任务已将首错上下文保存到上述仓库外证据目录的 `04-game-first-failure.txt`。
+- 按 AGENTS.md §10.2 保存首错后停止，不自动修复或重试。C++ 基线单测、Go/C++ 互通、Linux、独立冒烟、线程、关机及探针均未在本任务完成，不能宣称第 3 批已验证或全局处理器已删除。
+- 外候选已准备 A–D 的逐文件原件、SHA、差异及阶段依赖；通过三方刷新保留并行文档/部署契约变动，写回前仍须重新逐文件核对。只读复核补到了 gate 直连回调的会话代次校验，以及镜像迟到完成的令牌/有效期与新换图提交后撤销旧资格；这些均未合入、未编译测试，不能作为运行证据。`evidence-index.json` 与 `cas-audit-latest.json` 保存在同一仓库外目录。
+- Java 版：本清单的生成器及内部 gRPC 接线不涉及客户端契约；blissful 镜像行为候选尚未合入，Java 对齐状态仍以其既有 PARITY 登记及 3028/1003 差异为准。本轮未修改 Java 仓库。
+## 2026-10-17 C++ gRPC muduo 第 3–5 批：Codex 重启后续验，gate 显式依赖阻断（未提交）
+
+- **范围**：承接负责人“继续”，保留工作区其他会话改动，不重跑既有 17 个评审。前次 `world.cpp` 缺少 `thread_context/ecs_context.h` 已由其他会话补齐；本轮没有重复修改源码。
+- **生成器与生成一致性**：当前 HEAD `360d56ae5` 下重新执行 `proto-gen-build`、`go test ./internal/... ./cmd`，均 exit 0；使用 no-unity 配置对 scene / battle `--grpc-handler` 连续生成两轮，4 个 handler 与 `proto/message_id.txt` SHA256 全同，覆盖当前 CreateScene 停机拒绝分支。正向文案与负向依赖检查通过，生成器输入在验证期间未变化。
+- **Windows 构建**：确认其他 MSBuild 已结束后，以 `/m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1` 运行整解。scene 服务 54 个翻译单元的裸指针门禁通过，`scene.lib`、`muduo_grpc.lib` 等基础/服务库构建成功，前次 world.cpp 阻断已消除；全部成功工程见 `04-successful-projects.txt`。这不是整解成功证据。
+- **新首错与停止原因**：gate 节点 `cpp/nodes/gate/handler/rpc/client_message_processor.cpp:231` 使用 `tlsEcs`，文件未显式包含其声明头，clang-query 报 `use of undeclared identifier 'tlsEcs'`，门禁 exit 2、MSBuild MSB3073。本轮已在发现首错后终止自己的 MSBuild 子树，保留现场，按 AGENTS.md §10.2 等待决定；建议补 `#include "thread_context/ecs_context.h"` 后再串行续跑，未自动重试或跳过门禁。
+- **并行工作与证据边界**：构建期间其他会话更新了 `muduo_grpc/server.{h,cpp}`，输入漂移单独记录在 `cpp-input-drift-final.json`；其后的 muduo_grpc 库构建已读取更新文件。尚未运行新 C++ 单测、Go shared assetop/grpcinterop、真实互通、Linux、Node 业务冒烟、线程与带流量关机、100 次探针。冻结试玩容器未动，其健康记录不替代本轮验证。
+- **日志**：`build/verification/grpc-muduo-codex-20261017/`，入口 `verification-summary.json`；首错 `04-first-failure.txt`、完整构建 `04-game-build.log`、停止状态 `04-build-status.json`。重启前 `grpc-muduo-codex-20261016/` 全部保留。
+- **Java 版（AGENTS.md §12）**：仅验证 C++ 内部传输替换，客户端契约未变，Java 版不适用；对应 Java 版本号无。未提交、推送或打 tag。
+
+## 2026-10-17 C++ gRPC 迁到 muduo 驱动·第 4 批待拍板项按最标准做法落码与收尾(Claude,未编译、未测试)
+
+- **来由**:负责人 10-16「除了 codex 其他的你按最标准的做」「全部做完给我」。设计 [grpc-muduo-transport.md](design/grpc-muduo-transport.md) §15.16 七条状态与 §15.17 收尾已更新。
+- **§15.16 七条**:① Agones `Stop()` 有界返回(`std::stop_token` + libcurl 进度回调中止可放弃请求,最坏约 1s;/shutdown 必须送达,挂起时 worker 退出前先送达;Stop 后阻塞等待方也拒绝);② 服务端优雅关闭改为「写半关以 nghttp2 want_read / want_write 同为 0 为准,被对端流控卡住的已完成应答也写完再 FIN,closeGrace 从排空到期起算作硬上限,上传中的流立即 REFUSED」;③ 停机时 CreateScene 等许可被拒回 `scene_node_shutting_down` 只打 WARN;④ `StartGrpcServer` 在关机开始后不启动、不发布发现键;⑤ 生成器旧段检测全覆盖 + 共享 `codeParser` 查找键劫持根因修复 + `.h` 非空无名段 fail-closed;⑥ 守卫新增 `NODE_GRPC_RUNTIME_GUARD_FATAL`(CI / 冒烟 fail-closed);⑦ AGENTS.md §11.7 补 `muduo_grpc::Server` / `ServerCall`。
+- **收尾**:muduo 定时器改单调时钟(三份树,Linux 三份 overlay 须同提交);删除 `RpcClient` 启动宽限(依据已过时);`Connector` start / resetChannel 改绑 `shared_from_this`;`channel.cpp` 改用 `address.h` 的 `IsCanonicalIpv4`;修 ECS T8.9 用例 `ConnectionObserverReportsUpAndDownWithoutDispatcher` 的 Debug 断言中止(先 forceClose 再析构服务端);两处过时注释(`player_lifecycle.cpp`、`cross_zone_test.cpp`)。
+- **提交状态**:期间多次整区快照提交(e76f6f747、b41efa219、09d566924、fddc12b1a、360d56ae5 等)已把部分改动带进 HEAD;剩余工作区改动需整批提交,尤其 Agones 一组与 Linux 定时器 overlay,单独提交会不一致。
+- **交 Codex**:串行 `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64`;单编 rpc_controller_test、muduo_grpc_test、agones_lifecycle_test、timer_queue_unit_test;`run_cpp_tests.ps1 -Filter muduo_grpc / agones / rpc_controller / timer`(重点新用例:`AgonesStopCancelTest.*`、`ServerLoopbackTest.DrainTimeout*`、`TimerClockTest.*`、`RpcClientLoopback.OutboundDisconnectRightAfterConnectLogsWarn`、`RpcClientLoopback.ConnectionObserverReportsUpAndDownWithoutDispatcher`,排空相关用例 `--gtest_repeat=20`);`tools/proto_generator/protogen` 下先 `proto-gen-build` 再 `go test ./internal/... ./cmd`(codeParser 改动影响所有 handler 生成器,要全量);Linux `setup_dependencies.sh`(overlay 日志应列出 TimerQueue.h/.cc、EventLoop.cc、Connector.*)+ `build_linux.sh`;WSAPoll 对拒连 / 对端 FIN 的 revents 实测。
+- **后续(未做,见 §15.17 末条)**:Agones 单独 RequestShutdown 的 ShuttingDown 守护与幂等、codeParser 函数体跟踪 / event.go 同类问题 / handler_gen 结构预检、`headersReceivedAt_` 修剪、Windows Hiredis POLLHUP(待实测)。
+- **Java 版(AGENTS §12)**:均为 C++ 服务端内部实现,不涉及客户端契约,不适用;对应 Java 版本号:无。
+
+## 2026-10-17 RpcChannel 批 7：Codex 执行指定验证，routing_identity_test 编译阻断（未提交）
+
+- **范围**：按用户限定，只接手三个 C++ 测试的编译与运行、robot vendor 刷新、主仓提交后的 Java ContractSync；未改业务代码、工程配置或 proto，未重新执行整套 regen。
+- **C++**：`rpc_controller_test` Rebuild 和 `proto_field_checker_test` Build 均退出 0；`routing_identity_test` Build 退出 1。首错为 `cpp/libs/services/gate/session/comp/pending_scene_entry_comp.h:21` 的 C2447，随后出现多处头文件语法解析错误。该工程 Debug|x64 的 AdditionalOptions 为 `/bigobj %(AdditionalOptions)`，缺 `/utf-8`；编码配置是待确认原因，未通过修改选项后重编确认。按 AGENTS.md §10.2 停止，没有重试或修改代码；三个测试及指定 RPC 随机 50 轮均尚未运行，不能视为测试通过。
+- **构建过程**：本轮所需库的前 13 个工程均退出 0；自己的 scene 构建在执行会话中断前没有留下最终退出码。恢复时发现另一会话正在构建同一工作区，等待其释放资源后才开始三个测试工程，未并发执行本仓 MSBuild。共享 scene 库由另一会话成功生成，原 world.cpp 检查阻断未复现；未声称全解或节点构建通过。
+- **robot**：在 robot 目录执行 `go mod vendor` 退出 0，更新 24 个已有文件、新增 16 个文件；除 modules.txt 外的 39 份源码与 go/proto、go/shared 生成源逐字节一致，go.mod / go.sum 未变。刷新包含此前其他任务尚未同步进 vendor 的契约；未另跑 robot 构建或冒烟。
+- **Java 版**：主仓 `360d56ae5` 已包含批 7，因此提交前置条件已满足。从该固定提交导出 ContractSync 输入快照，未带入工作区未提交的 player_inbox proto；ContractSync 退出 0，最终 `--check` 退出 0。234 个受管文件仅 contract/SOURCE.properties 的来源号由 fddc12b1a 更新至 360d56ae5；本次按用户限定未运行 Maven、未改 PARITY 或其他 Java 文档，对应 Java HEAD 为 0477cc0。
+- **证据**：`build/verification/rpc-batch7-20261017-000415/summary.json`、`cpp-test-build-results.json`、`routing_identity_test-build.log`、`robot-vendor-source-check.json`、`java-contract-result.json`。没有 commit、push 或 tag。
+
+## 2026-10-17 ECS 第 6 批：正式 no-unity 生成完成，全解构建新阻断（Codex，未提交）
+
+- 在其他会话最新修改基础上接续，没有回退或覆盖；T10 保持 13 个 protobuf 值表、3 个普通 C++ 只列类型名。gate 补直接 ecs_context.h，保留原测试并增入三条适配当前 muduo API 的入站回归；routing_identity_test 的 Debug|x64 仅补 /utf-8，尚无本批运行通过证据。
+- 正式生成 00–09 原生退出全部为 0：proto-gen-build、完整 no-unity proto-gen-run、robot go mod vendor、生成器 go test ./internal/... 及前后守护/编号核对；28 文件的 131 非空守护段保留，消息/事件编号无增改，14 精确孤儿和 9 清单中 18 引用已按记录清理，事件源保留。证据 build/ecs-refactor/batch6/generation-20261017T045318632Z/。生成后另一会话的 player_inbox_admin.proto 注释更新已保留，需下一轮正式生成刷新证据。
+- 串行全解命令 game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1。gate.exe、scene.exe 及多个库已生成，但全解失败，不能宣称构建或整批测试通过。首错 bag_test/player_equip_attribute_test.cpp:976、1005 缺 bag_marshal 声明（只读定位缺直接头文件）；后 currency_test 对现存 PlanItem/IsStuckWarnDue 定义链接失败。构建期间 11 个输入文件改变，保留全部变动，不猜失配原因或改写他人实现。
+- 按 AGENTS.md §10.2 保存原生首错后停止自己的 MSBuild 子树，驱动退出 1；停止工具一个已退出子进程报告失败，复核原树全部 PID 均无存活，未操作其他会话进程。证据 build/ecs-refactor/batch6/full-cpp-20261017T045823501Z/（game.build.log、result.json、first-error-context.txt、stop-confirmation.json）。未重试，第二轮生成、18 Go 构建、13 C++ 正式测试、剩余变异/T2 红证据及实际冒烟均未运行；任务单追加 §12，整批未完成。
+- 两个契约入口方向已获负责人确认，按最新 Claude 修改接续；第二套入口尚未实施/验证，发布编号不猜测。未改审计 HEAD，未 commit/push/tag，未读改独立客户端。
+- Java 版：现有 0.1.0-SNAPSHOT、HEAD 0477cc0；本批 ContractSync、Maven、真实零冷却红绿及 PARITY 完成登记尚未执行。准备已保留现有共享修改，全解失败使 §6 第 5 步硬阻断；不得将其他会话此前的 ContractSync 证据当成本批完成。
+## 2026-10-17 C++ gRPC muduo 五项验证续跑：前次头依赖修正，新 bag_test 直接依赖阻断（Codex，未提交）
+
+- **范围与顺序**：接手负责人“没做的帮我做”，先读启动门禁并确认当前无 MSBuild；公开只读查询无开放 PR/Issue。以 `game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1` 执行单工程、单编译进程构建，未绕过裸指针检查。
+- **消除前次阻断**：保留他会话所有改动；确认 `player_equip_attribute_test.cpp` 无工作区改动且此前已有明确红日志，仅为该文件增加 `services/scene/player/system/bag_marshal.h`。本轮该文件 clang 检查通过，原 bag_marshal 未声明错误消失。currency 的 PlanItem/IsStuckWarnDue 实现与工程登记均在，旧库缺符号；本轮已重建 scene.lib，但 currency 尚未完成链接，不宣称该链接错误已消除。
+- **实际构建证据**：infra/core/config/thread_context/session/scene/muduo_grpc/modules/gate 的相应裸指针门禁通过；scene.lib、muduo_grpc.lib 等库以及 gate.exe、scene.exe、aoi_test.exe 已生成。全解未通过。新首错为 `cpp/tests/bag_test/player_feature_persistence_test.cpp:85` 的 SkillContextCompMap、`:87` 的 CastingTimerComp 未声明，bag_test 门禁 exit 2、MSB3073。两类及其同组定时器定义位于 `services/scene/combat/skill/comp/skill_comp.h`，失败测试未直接包含该头；仅在证据目录准备一行 include 的完整候选，未应用。
+- **停止与证据边界**：按 AGENTS.md §10.2 在新首错后停止自己的 5 个进程子树，MSBuild 因主动终止退出 -1；复核原树无存活进程。未重试、未编独立测试工程、未跑 C++ 单测或20轮排空、未在本轮重跑生成器及定向生成、未执行 Linux setup/build/线程关机冒烟、未实测 WSAPoll。当前 code_parser.go/code_parser_test.go 已不同于前次生成器验证输入，旧成功证据不能覆盖当前版本。
+- **输入与日志**：构建期间4个C++输入变化：本任务一行 include、并行 agones 测试及 currency 工程/新测试文件；均保留。证据 `build/verification/grpc-muduo-followup-20261017-014953/`：`verification-summary.json`、`01-game-build.log`、`01-first-error-context.txt`、`01-first-failed-project-first50.txt`、停止与输入漂移记录。候选文本 patch 的首次 `git apply --check` 失败，未应用/重试；另存保留实际换行的 `next-fix-candidate.cpp` 供审阅。
+- **Java 版（AGENTS.md §12）**：本轮仅C++测试直接头依赖与内部传输验证，不涉及客户端契约，Java不适用；对应Java版本号无。未读改客户端仓，未提交、推送或打tag。
+
+## 2026-10-17 C++ gRPC muduo 线·§15.17 既有边角问题收口(Claude,未编译、未测试)
+
+- **来由**:§15.17 末条「评审中发现、早于本批的边角问题」,由会话按「最标准做法」逐项落码并补回归用例。设计 [grpc-muduo-transport.md](design/grpc-muduo-transport.md) §15.17 末条已标记,细节见新增 §15.17.1。Windows `Channel.cc` 对 Hiredis channel 只有 POLLHUP 的处理**未动**,等 Codex 实测 WSAPoll revents 后再定。
+- **Agones**(`cpp/libs/engine/infra/agones/agones_gameserver_lifecycle.{h,cpp}`):worker 取走 /shutdown 时在同一临界区写入 `ShuttingDown`、结算异步等待者并唤醒阻塞等待方;`ShuttingDown` 是终态 —— allocate 分支遇它丢弃挂起请求并清 `nonBlockingAllocateKicked_`,`WaitSatisfiedLocked` / `FinishWaitLocked` 视其为终态拒绝;`RequestShutdown` 在已有挂起请求或已是 `ShuttingDown` 时忽略并打 WARN,/shutdown 全程最多一次。用例 `AgonesShutdownTest.PendingAllocateIsDiscardedOnceShuttingDown`、`AgonesShutdownTest.RepeatedRequestShutdownIssuesShutdownOnce`。
+- **生成器**(`tools/proto_generator/protogen/internal`):`codeParser` 改为按查找键取段(`ReadCodeSectionsByKeys`),函数边界与 grpc 扫描器同一套签名累积规则(`{` 结尾进函数体、`;` 放弃、新起始行重匹配、函数体内不认查找键),并把结构损坏与带不走的非空段记进 `CodeSections.Problems`;`handler_gen` / `player_service_gen` 的 .cpp 与 .h(新增 `Get*HeadFromFileStr`,`generator/cpp/handlers.go` 三处配置接上)取段前据此拒绝生成,不再丢弃读错误;gRPC 生成器只补读错误处理;`generator/cpp/event.go` 的 `extractUserCodeBlocks` 改走同一套规则,问题或读失败即 `Fatal`(原为 WARN 后照常覆盖),新文件取默认空段对。宽松入口 `ReadCodeSectionsFromFile` 结果不变。新增 / 扩展用例见 §15.17.1 第 2 条(含新文件 `internal/generator/cpp/event_user_code_test.go`);落码前用 awk 按新规则模拟工作区 21 个 handler / 事件 handler 文件,无误报。
+- **muduo_grpc 服务端**(`cpp/libs/engine/muduo_grpc/server_session.{h,cpp}`、`server.cpp`):新增 `ServerSession::AcceptedUndispatchedStreams()`,排空到期改按会话状态拒上传中的流,`headersReceivedAt_` 只留截止起算用途,修剪不再影响停机。用例 `ServerSessionTest.AcceptedUndispatchedStreamsListsOnlyRequestsStillUploading`、`ServerLoopbackTest.DrainTimeoutRefusesUploadingStreamsEvenAfterHeaderTimesAreTrimmed`。
+- **交 Codex(按序,MSBuild 一律串行 `/m:1`)**:
+  1. 生成器(仓库根):`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-build`;再在 `tools/proto_generator/protogen` 下 `go test ./internal/... ./cmd -count=1`(codeParser 影响全部 handler 生成器,须全量),重点 `go test ./internal -run "TestReadCodeSections|TestHandlerGenerators|TestGrpcServiceHandler|TestScanGrpcCppSections" -count=1 -v` 与 `go test ./internal/generator/cpp -run "TestExtractUserCodeBlocks|TestKafkaEventHandlers|TestNodeLevelServices|TestPlayerServiceGenerates" -count=1 -v`。通过标准:全绿,工作区回归用例不 Skip。
+  2. 生成一致性(仓库根):`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml` 连跑两轮;通过标准:不出现「拒绝生成」panic / Fatal,`cpp/nodes/{scene,gate}/handler/{rpc,rpc/player,event}` 与 `cpp/nodes/{scene,battle}/handler/grpc` 下 handler 的 .h / .cpp 两轮前后 SHA256 全同(与生成前比只允许他会话已有改动)。若被拒,保留完整报错(列出了文件:行号:原因)。
+  3. C++:`msbuild game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1`(Agones 与 muduo_grpc 库被 scene / battle 节点链接);再 `pwsh tools/scripts/run_cpp_tests.ps1 -Build -Filter agones_lifecycle` 与 `-Filter muduo_grpc`。定向重复:`build\cpp\tests\agones_lifecycle_test.exe --gtest_filter=AgonesShutdownTest.*:AgonesStopCancelTest.*:AgonesAsyncPermitTest.* --gtest_repeat=20`、`build\cpp\tests\muduo_grpc_test.exe --gtest_filter=ServerLoopbackTest.DrainTimeout*:ServerSessionTest.AcceptedUndispatched* --gtest_repeat=20`。失败时保留 MSBuild 首错上下文与 gtest 完整输出。
+  4. Linux:`build_linux.sh` 编过 infra / muduo_grpc(Agones 的 libcurl 传输只在 Linux 编译)。
+- **改动文件**:上列源码;测试 `cpp/tests/agones_lifecycle_test/agones_lifecycle_test.cpp`、`cpp/tests/muduo_grpc_test/{server_test,server_session_test}.cpp`、`internal/code_parser_test.go`、`internal/generator/cpp/event_user_code_test.go`(新);生成器 `internal/{code_parser,handler_gen,player_service_gen,grpc_handler_gen}.go`、`internal/generator/cpp/{event,handlers}.go`。均在同一工作区他会话未提交改动之上叠加,未提交。
+- **Java 版(AGENTS §12)**:均为 C++ 节点内部、服务端传输与仓内生成器,不涉及客户端契约,不适用;对应 Java 版本号:无。未读改客户端仓、Java 仓,未提交、推送或打 tag。
+
+## 2026-10-17 C++ gRPC muduo 线·§15.17.1 对抗评审遗留收口(Claude,未编译、未测试)
+
+- **来由**:上一条三项经对抗评审确认无回归(23 个现有生成文件新旧解析逐字节一致、20 万次模糊测试 checked 路径无静默丢段),评审另列四条既有问题,负责人要求「全部做完」。细节见 [grpc-muduo-transport.md](design/grpc-muduo-transport.md) §15.17.1 第 4 条。
+- **[medium] gRPC 生成器也按 codeParser 的 Problems 拒绝**:`CodeSections.Problems` 改为带类别的 `[]CodeSectionProblem`(结构损坏 / 无处安放 / 被覆盖,跳过的命名段带名字)。`validateGrpcHandlerCppSections` 在原三步之后按 Problems 拒绝、只放过当前方法的 `grpc.<M>.guard`,并把同一次解析交回 `GetGrpcServiceHandlerCppStr` 渲染(生成器不再走宽松入口)。补上扫描器放行、codeParser 会静默丢代码的三种形状:第一个段落在没有段的现行 Handle* 之后的函数外、同一 Handle* `#if`/`#else` 定义两次、段内某行夹带结束标记文本。
+- **[low]** FirstCode 若落在签名不对应当前方法的函数体内,非空即记 `CodeSectionUnplaced`(宽松结果不变);codeParser 注释与 §15.17.1 的 FirstCode 说法统一。**[low]** codeParser 与 `scanGrpcCppSections` 同批用 `isFunctionBodyEnd`:顶格 `}` / `};`、行尾空白不计;行首仍须顶格(缩进的 `}` 是嵌套块)。**[doc]** §15.9 结算点清单与两个等待谓词的说明补 `ShuttingDown`。已知不改三条(RequestShutdown 以 worker 取走时刻生效、/shutdown 只试一次、RunInitialReady 不看挂起 shutdown)登记在 §15.17.1。
+- **改动文件**:`tools/proto_generator/protogen/internal/{code_parser,grpc_code_sections,grpc_handler_gen}.go`、`code_parser_test.go`(problems 表补两例并校验类别 / 段名、新增 FirstCode 落在函数体内与函数体结束行两例、工作区回归对 gRPC 文件补预检不误报断言)、新文件 `grpc_code_section_consistency_test.go`(三种形状 + guard 对照、扫描器函数体结束行);`docs/design/grpc-muduo-transport.md` §15.9 / §15.17.1。gofmt 通过,未编译未测试。
+- **交 Codex**:与上一条第 1、2 步相同(`proto-gen-build`;`tools/proto_generator/protogen` 下 `go test ./internal/... ./cmd -count=1`;no-unity `proto-gen-run` 两轮 SHA 一致、不出现拒绝生成)。重点 `go test ./internal -run "TestGrpcServiceHandler|TestScanGrpcCppSections|TestReadCodeSections|TestHandlerGenerators" -count=1 -v`,新用例 `TestGrpcServiceHandler_RefusesShapesTheScannerAcceptsButCodeParserDrops`、`TestScanGrpcCppSections_FunctionBodyEndsOnTopLevelBraceVariants`、`TestReadCodeSections_FunctionBodyEndsOnTopLevelBraceVariants`、`TestReadCodeSectionsByKeys_FirstSectionInsideUnrecognizedFunctionIsReported`;`TestReadCodeSections_WorkspaceHandlersParseUnchanged` 与 `TestGrpcServiceHandler_WorkspaceHandlersRegenerateWithoutFalsePositive` 不得 Skip、不得误报。C++ 本条无改动。
+- **Java 版(AGENTS §12)**:仓内生成器与文档,不涉及客户端契约,不适用;对应 Java 版本号:无。未提交、推送或打 tag。
+
+## 2026-10-17 附件/交易到账与 SQL 围栏统一续批（Codex，未提交，双区实跑继续）
+
+- **授权与范围**：负责人明确授权统一接手剩余 Go 围栏并保留各线既有改动；继续 C++/Go、Java 与独立客户端同步。旧交接 §7.1 的等待信号不再阻挡本批。保持 C++ 玩家资产权威，不迁 player/inventory/mission 或场景管理；不提交、推送、打 tag 或触碰生产。
+- **数据闭环实现**：Go DB 的 SQL 行内围栏、明确写结局、令牌/租约校验与缓存/SQL 证据/双表 ACK 原子发布已合并。equal 重投只从同事务锁定的真实 SQL 行发布证据；被拒任务沿既有 R2 持久化后 ACK 路径。C++ 严格父快照 Lua 同写 pending、完整两条原始 DBTask 意图与 64 桶补投索引；实际父写成功后才投 Kafka。Go 有界补投器仅凭两表 SQL ACK 精确等于 pending 清理。登录父缓存缺失强读双 SQL 行并 CAS/NX 回填，历史无屏障数据失败关闭，维护补种工具尚未完成。
+- **资产与归属**：所有结果保留请求摘要与 correlation；ACK 只释放托管 snapshot，旧 bitmap 不替未知身份背书。完整 ItemComp 通过正式 proto 的 ItemEntry.instance 持久化，成长/未知字段保留；旧 writer 必须排空。handoff 标记在同 Lua 核旧 owner 与双 SQL ACK 后发布，等待受原冻结代次和单调截止约束。merge/PITR 同步处理屏障与 outbox，不能只看 Kafka lag。当前多键 Lua 要求同一 Redis 实例，未宣称 Redis Cluster 同槽已支持。
+- **正式 C++ 证据**：三目标 currency_test/bag_test/scene 串行 build03 exit 0，gate 单目标 exit 0。最终完整 currency 239/239、bag 592/592，0 跳过；真实 Redis 用例运行。前一版 UTC/本地时间混比造成的 freshness 误判已明确作废，正常补编重链并全量重测。1451 生产输入、26 测试输入无漂移，29 消费对象无陈旧，四产物全部实际链接输入不晚于 exe。新 scene SHA E356C286…B8C9801，gate A9510F70…ADA2060。未重跑整个 game.sln，未把外部整解失败记录覆盖成成功。
+- **Go 证据**：最终 Kafka 包 266 顶层通过（含真实 TiDB/Redis）；shared assetop 369 项含子用例通过、9 个既有真 MySQL 条件跳过，不能合并计数或把跳过当实库证明。补投 25 项含真实 Redis 工作器重建通过；merge 180 顶层通过；login/clientplayerlogin 120 顶层通过、dataloader 18 顶层通过。DB 大字段回归按当前 proto2mysql v0.2.0 的真实裸 protobuf SQL 参数核对，同时保留兼容的保守预算；账本列 1 MiB、普通列 256 KiB、整行仍 1 MiB，不暗改 Kafka 大小。
+- **TiDB 运行问题与修正**：正式 data_service 迁移原来使用 TiDB 不支持的 STORED/NULLIF 非零 GUID 唯一索引；修为 TiDB CASE/VIRTUAL，严格核精确单列 unique、uint64/NULL/表达式形状，缺失或失真拒绝建池。真实 RED→GREEN：同源 Linux 默认 store 84 顶层通过、0 跳过，含两条真 TiDB 和七种坏结构反例。Windows 第二轮 test exe 在 RUN 前被 OS 拒绝，未计绿；正式 DS02 build/vet 与 native -migrate 实际通过。
+- **Java 对齐（0.1.0-SNAPSHOT）**：A/B 资产身份、完整原件、同 epoch 保存生命周期及每物理 TiDB 连接的强读/悲观/RC 策略已实现。16 模块 verify 255 项=251 通过/4 既有 H2 条件跳过；真实 TiDB 14/14、0 跳过，证据是同 JVM 对象重建，不是多进程/跨洲故障。对应 Java PARITY.md 已追加。主仓 Java 入口网关的正式 DDL/JPA 类型不一致另有实际红绿：新 clean package 137 项=133 通过/4 真 MySQL 条件跳过；新 jar 正式启动成功。
+- **客户端/脚本**：本次新运行时 480 源编译 0 错误，实际 NUnit 35/35；只有权威终态全部拉取完成才触发一次背包刷新，不用 PENDING/部分页乐观到账。k8s 契约 211/211，stress 汇总解析回归通过；均未代替 Unity UI 宿主或容量压测。
+- **隔离双区实跑正在继续**：专用 zone 990017/990018、Redis 26379、etcd 22379、Kafka 29092；旧 4000/14000 TiDB 的 CHECK 全局 OFF，未修改其参数或业务表。另起本轮独立 TiDB/PD/TiKV（本机既有 v8.5.2 镜像、24000），仅新 cluster 开 CHECK，四库与目录种子已建，正式迁移正在执行。Windows db-migrate/db/login 的正常 PE 在 CLI 前被 OS 拒绝，原失败保留，改用同源码标准 Linux 入口，不修改 ACL 或安全保护。邮件/交易 fullstack 测试已补 SQL 行锁负例、终态同步 SQL 核验、原四腿真实重投与两次正式 1 币转售屏障，已编译，但尚未执行该双区链，不能说已经到账贯通。
+- **证据入口与边界**：build/asset-arrival-20261017/ 下 cpp-save-outbox-slice-final-validation.json、go-verification-groups-final.json、fullstack/data-service-guid-final.json 与 fullstack/fullstack-arrival-tests-source-freeze-02.json；Java 仓 build/asset-arrival-20261017/。没有多区域分区/灾备演练、2000 万并发或 1 亿 DAU 容量结论；整个跨玩家交易为托管重试状态机，不能称单笔全局 SQL 事务。完整 ECS/muduo 重试定时器宿主和实际跨节点旧实例拒写尚未实跑，不能拿场景刷新成功代替。
+
+## 2026-10-17 C++ gRPC muduo 线·§15.17.1 评审遗留收口与核对(Claude,未编译、未测试)
+
+- **评审遗留四条已收**(后续会话落码):gRPC 生成器也按 `codeParser` 带类别的 `Problems` 拒绝(只放过落在 `<M>()` 里的 `grpc.<M>.guard`),堵住三种静默丢代码形状;FirstCode 落在非现行方法函数体内记 Problem;函数体结束行放宽为顶格 `}` / `};`(codeParser 与 `scanGrpcCppSections` 同批);设计 §15.9 补 Agones `ShuttingDown` 结算点。
+- **核对**:只读推演跑遍工作区 23 个生成式 handler 文件零误报、段与 HEAD 逐字节一致;新增拒绝第四种形状(无段 `Handle*` 结束括号带注释时把后面的 guard 当成体),`grpc_handler_gen.go` 加 `refuseNamedSectionsTakenAsUnnamed`,`grpc_code_section_consistency_test.go` 补第 4 例。记录见设计 §15.17.1 第 4 条末尾。
+- **交 Codex**:`tools/proto_generator/protogen` 下先 `go test ./internal/ -run 'TestGrpcServiceHandler_|TestReadCodeSections|TestScanGrpcCppSections|TestReadNamedGrpcCodeSections|TestHandlerGenerators' -count=1 -v`,再 `go test ./internal/... ./cmd -count=1`;重点 `TestGrpcServiceHandler_RefusesShapesTheScannerAcceptsButCodeParserDrops`(4 个子例 + 对照)、`TestReadCodeSections_WorkspaceHandlersParseUnchanged`、`TestGrpcServiceHandler_WorkspaceHandlersRegenerateWithoutFalsePositive`;之后 `proto-gen-build` + `proto-gen-run`(no-unity)连跑两轮,handler 文件两轮 SHA256 全同。
+- **Java 版(AGENTS §12)**:仓内生成器改动,不涉及客户端契约,不适用;对应 Java 版本号:无。
+
+## 2026-10-17 附件/交易到账与 SQL 围栏双区闭环补验（Codex，未提交）
+
+- **本条补充前面“正在继续”的状态，保留全部旧记录**：本机独立 TiDB 24000、Redis 26379、etcd 22379、Kafka 29092，zone 990017/990018 的真实 C++ scene/gate、Go DB/login/DataService/定位链及入口网关已共同运行。只在本轮新集群启用 CHECK；正式四库迁移、错误分片 3819 反例及有效分片回滚通过，未改旧 4000/14000 集群。Windows db/login 正常 PE 的 OS 拒绝保留；用同源 Linux 标准产物接入，738 源输入复核无漂移。GoZero/自有 etcd AutoSync 会转到成员发布的回环地址，因此仅在四个本轮容器装透明回环转发，保留重连旧 lease 尾错和一次独立磁盘瞬断，最终四 RPC 注册/租约与水位均恢复；没有改生产协议或放宽门禁。
+- **邮件实际 1/1、0 跳过**：03 二进制的第二次运行 exit 0。真实持有玩家 SQL 行锁时，Redis 已有同身份 APPLIED 和摘要，玩家 SQL 仍旧、邮件仍 PENDING；释放锁后首次观察 CLAIMED 即核真实 SQL 与 DataService 同账本。附件 +17 金币和一个物品实例实际到账；原请求真实重投、重复领取及另一封 +1 金币的正式新 SQL 屏障均通过，只有一条领取意图。首轮失败是随机测试库遗漏正式 guild_member 依赖，未发生附件应用；按 GuildMemberRecord 建空 schema 并实际执行可见性预检后补跑，未插假帮会成员或改领取校验。
+- **交易实际 1/1、0 跳过**：03 二进制首跑 exit 0。一区原成长装备 GUID 40001 经正式寄售和四腿工作器转到二区买家，17 金币结算、完整原件成长与唯一归属通过。业务购买重投及最初四笔资产 RPC 原样重投后，再完成两次正式 1 金币转售，双方后续 SQL seq 均前进、净币不变、原收据摘要/correlation 不变；终态及 ACK 完成后检查最终 SQL。不能把该测试描述成邮件那样的“首次观测终态瞬间查库”。奖励/金币/原件保留在专用角色，随机业务测试库按自身清理钩子删除，没有回滚或手工种玩家资产。
+- **真实严格交接往返 1/1**：未开启 AllowUnsafeCrossNodeHandoff 或 AllowGateZoneAsHomeZone；同 player 2 从一区到二区并回家，双次重定向票据绑定和 gate 切换、非法 zone/地图拒绝、访客区停留 35 秒后继续读写、金币 11→18 不回档均通过。冒烟首轮固定 robot_9601 被本轮窄白名单拒绝，未发生资产操作；为既有 travel_smoke 增加可选 account（空值兼容原账号，校验 robot_ 前缀、空白及 191 字符界限），不放宽登录白名单。公共配置 RED→GREEN、robot 主包 82/config 2 顶层测试全过、0 跳过，fresh build/vet exit 0，四源冻结无漂移；只替换新冒烟程序，没有覆盖仍在保活的旧程序。该实跑覆盖正常真实 ECS/muduo 交接；缺 ACK 的实际场景宿主延迟及复活旧 C++ 进程拒写故障注入仍未执行，不能只凭往返成功替代这些负例。
+- **SQL 屏障与补投收尾**：三个专用角色的 pending 与两张表 SQL ACK 精确一致；两区各 64 桶只读核对索引总成员为 0，原任务意图均已回收。主线负责停止自己的角色和隔离服务，保留卷、玩家数据与证据，不碰其他会话。C++ 1451 生产输入在本次实跑后仍无漂移；前面 currency 239/239、bag 592/592 和 fresh scene/gate 的构建证据继续有效。
+- **双版本与客户端**：Java 0.1.0-SNAPSHOT 的本批 29 归属文件与真实 TiDB B02 的 2371 输入复核无漂移；默认 16 模块 verify 255 run=251 pass+4 既有条件 skip，真实 TiDB 14/14、0 skip，仍是同 JVM 重建而非完整 Dubbo 宿主链。默认 B04 历史输入与当前有三个后续修正的真库测试夹具差异，已由 B02 覆盖，不能改称全输入当前相同。客户端五源、480 运行时编译输入及 NUnit 输入均无漂移，实际 35/35（邮件 15、交易 16、恢复存储 4），未运行 Unity UI 宿主。
+- **证据**：build/asset-arrival-20261017/fullstack/ 下 logs/fullstack-mail-2.{stdout.log,result.json}、logs/fullstack-trade-1.{stdout.log,result.json}、fullstack-arrival-tests-source-freeze-03.json、travel-fence-smoke02.result.json、robot-travel02-verification-final.json、save-barriers-final-readonly.json、owncluster-bootstrap-migrate-final05.json、linux-four-relay-recovery-final-07.json；源码/二进制 SHA 与实际执行结果一一对应。最终汇总入口 final-closure-proof.json。
+- **生产边界与已知后续**：尚未进行跨洲分区/灾备、两千万并发或一亿 DAU 压测；跨玩家交易是托管重试状态机，不是一笔全局 SQL 事务。多键 Lua 要求同 Redis 实例；默认 legacy 与停旧写者门禁未切生产，历史屏障维护补种工具尚未完成。本批另只读确认登录默认 StatInterceptor 的认证请求正文日志及 SA-Token provider 的错误/成功日志存在敏感字段缺口，未扩大为认证专项或宣称生产安全日志已验，生产准入前须独立修复并补脱敏回归；本条不记录凭据。未 commit/push/tag。
+
+- **本批停止复核补记**：排空证据确认后，已停止经进程路径/启动时间及容器 ID/网络校验的 11 个原生服务、4 个 Linux db/login 容器和 6 个独立基础设施容器，supervisor 已正常结束；复核本批 PID 与容器均无运行残留，未删卷或玩家资产。收据为 fullstack/owned-shutdown-verification-final.json，最终汇总为 fullstack/final-closure-proof.json。
+
+## 2026-10-18 gRPC 迁移验收状态复核（Codex，仍未全部完成）
+
+- 应负责人询问核对最新工作区与运行证据：前次 gate 的 `ecs_context.h` 缺失及后续 bag 测试头依赖均已由其他工作补齐。10月17日资产线已有 fresh scene/gate 构建、currency 239/239、bag 592/592，以及真实 CreateScene、AssetDebit/Credit/AckReceipt、严格跨区往返成功；详见 `build/asset-arrival-20261017/fullstack/final-closure-proof.json`。仅复用其已执行范围，不改写成整解或全部 gRPC 专项通过。
+- 本轮实际执行：`proto-gen-build` exit 0；最新生成器指定守护段专项回归 exit 0；`go test ./internal/... ./cmd -count=1` 全包成功。生成器输入前后 SHA256 无漂移。证据：`build/verification/grpc-muduo-codex-20261018-005135/` 的 `01-proto-gen-build.log`、`02-generator-focused.log`、`03-generator-full.log`、`generator-input-drift.json`。
+- 当前另一个会话“执行 C++ 与生成器验证”已在 `build/verification/grpc-muduo-resume-20261018-005120/01-game.log` 串行运行本轮整解 `/m:1 /p:CL_MPCount=1`，复核时尚未结束。本会话没有另启 MSBuild、再次生成 handler 或重跑旧评审，避免重复构建与在构建期间改写生成物。
+- 新发现的既有运行证据：资产线两区 scene 日志出现 `GOAWAY: invalid last_stream_id` WARN，最终 protocol_errors 为2/3；位置分别为 `fullstack/logs/scene-990017.20261017T070422990.stdout.log:3710`、`scene-990018.20261017T070423690.stdout.log:3447`。业务成功不能替代协议互通专项，此异常尚未在本会话复现、诊断或修复。
+- 仍待：本轮整解成功收据、指定 C++ 专项测试/排空重复测试、真实 ServerInterop、Linux C++ 构建与线程名、battle 完整流程、带流量 Node 关机、100次探针。Docker 服务只读检查显示 Linux 引擎管道不存在，未启动/重启任何容器或改旧试玩数据。状态与复用证据索引：本轮目录 `reused-evidence.json`、`docker-readiness.json`。
+- Java版：本轮仅C++内部传输与仓内生成器验证，不涉及客户端契约，Java不适用，对应版本无。未修改业务源码、未提交/推送/tag。
+
+## 2026-10-18 落地恢复与围栏接手线:状态订正与小收尾(Claude,未编译)
+
+- **订正**:go/db 围栏结局处理已由 Codex 按负责人 10-17 授权完成并实跑(见 10-17 两条 Codex 条目),本线交接 README §7 / §7.1 的「等开工信号」不再适用,已在 README §8 记明。
+- **收尾**:`cpp/tests/cross_zone_test/cross_zone_test.cpp` 把码 25 并回 `pinnedCodes`、注释改「九个码」、删末尾单列用例(W3-2);`deploy/k8s/scene-manager-alerts.yaml` 新增 `SceneManagerPlacementIdentityConflict`(会话身份冲突,正常恒 0);`deploy/k8s/asset-channel-alerts.yaml` 新增 `AssetOpAbandonSqlEvidenceBehind`。设计 `scene-enter-chain-residuals.md` §13 与 Codex 命令汇总同步。
+- **待 Codex**:客户端接线、robot sync-smoke、a–e 三组、`save_seq_test`(见 [codex-verification.md](handoff/landing-fencing-takeover-20261016/codex-verification.md);W3 第一轮红跑的码 25 判据改为 `RelocateConfirmKick.UnverifiableKickOnlyWhenSceneManagerCannotHaveGrantedOurs`)。
+- **Java 版**:测试与告警为本仓内部,不适用;对应 Java 版本号无。
+
+## 2026-10-18 gRPC 验收串行续跑：configuration_table_test 编码阻断（Codex）
+
+- 用户授权继续前次 bag 头依赖修正后的验收；启动时确认 `player_feature_persistence_test.cpp` 的 `skill_comp.h` 已由其他工作补上，原样保留。本轮真实执行 `msbuild game.sln /m:1 /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1 /nr:false`，04:51:22Z 至 05:06:07Z；gate/scene/battle 三节点与 bag_test/currency_test 均成功生成，不能据此宣称整解通过或这些单测已运行。
+- 首个新阻断是 `configuration_table_test`：`cpp/generated/table/code/testmultikey_table.h(55,14)` C2059，此前有 C4819（当前代码页936）与 C4010。只读核对发现该测试工程其他三配置均有 `/utf-8`，唯 Debug|x64 的 AdditionalOptions 只有 `/bigobj`；同类 bag/config 工程已使用 `/utf-8`。最小待批准修正为该配置补 `/utf-8`，只准备补丁，未手改生成头、未改项目、未重试。假设尚需实际重编确认。
+- 按 AGENTS §10.2 在首错后停止本轮 MSBuild 自有进程树，结果 exit -1 为主动停止；最终没有残留 MSBuild/cl/link/clang-query。本轮四专项完成构建、四过滤测试、repeat20、Go共享/真实ServerInterop、handler全量与定向生成、Linux setup/build/线程与关机冒烟、WSAPoll实测均仍未执行完，等待负责人决定后继续。
+- 新增测试脚本可选 `-LogDir`，保留各EXE完整stdout/stderr，默认行为不变；PowerShell AST解析无错误，尚未实际运行验证。Linux recipe与原生WSAPoll探针仅在忽略证据目录准备，未执行。没有启动Docker、修改系统环境或触碰旧试玩数据。
+- 复用同日另一会话的 `proto-gen-build`、指定守护段专项和 `go test ./internal/... ./cmd -count=1` 成功原始日志，三退出码均0；本轮独立核对114个Go/模板/module输入无修改、无新增。生成器工作区解析与scene/battle回归在专项日志中实际PASS。该证据不能代替后续全量/定向生成或C++验收。另一会话PROGRESS提及旧资产冒烟的GOAWAY WARN及非零protocol_errors，仍属后续真实协议互通/冒烟待核查项。
+- 证据：`build/verification/grpc-muduo-resume-20261018-005120/verification-summary.json`、`01-game.log`、`01-game-first-error.txt`、`01-game-stop.json`、`proposed-configuration-table-utf8.patch`、`generator-reuse-input-check.json`。1583个C++初始输入复核仅 `cross_zone_test.cpp` 有其他工作漂移，原样保留；未把旧产物替换为成功收据。
+- Java版：本轮仅C++内部传输、仓内生成器与验证脚本，不涉及客户端契约，Java不适用，对应版本无。未commit、push或tag。
+
+## 2026-10-18 全局 gRPC 应答处理器删除：前置验证首错停止（Codex，尚未合入删除）
+
+- **通过**：先 `proto-gen-build`，再在生成器目录执行 `go test ./internal/... ./cmd -count=1`，均退出 0。使用 no-unity 配置对 scene / battle 定向生成两轮，四个 handler 和 `proto/message_id.txt` 字节不变，正向 / 负向检查符合 §15.14。首次从仓库根启动定向命令因配置输出根解析错误在读取 proto 前失败；保留该日志，切换生成器目录后执行成功，未写仓外产物。
+- **Windows 前置失败**：复核另一验证会话已运行的串行 `game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1`，05:06:07 UTC 在 `configuration_table_test` 遇首个新错：`cpp/generated/table/code/testmultikey_table.h(55,14): error C2059: 语法错误:“[”`。驱动按 AGENTS.md §10.2 停止，退出 -1；不自动重试，不手改生成头，不绕过测试。生成器通过不等于第 3 批完整构建通过。
+- **证据**：`build/verification/grpc-muduo-resume-20261018-005120/01-game.log` / `01-game-result.json` / `01-game-stop.json`；本轮摘要、首工程前 50 行及首错上下文位于 `build/verification/global-handler-20261018/04-*`。构建前 1583 个输入最终复核仅跨区测试的重复断言收口发生变化，已保留；未启动第二个并行 MSBuild。
+- **删除尚未合入**：A 的 25 文件外候选已三方刷新，保留 SQL 围栏、收件箱新测试及跨区九码断言收口；候选跨区测试 246 项。BCD 的 45 项阶段候选、6 项依赖字节核对通过，但 `scene-enter-chain-residuals.md` 又有主仓漂移，下次应用前必须三方刷新，不能覆盖。Java 对应 TTL / 权威落点撤销 / 战斗完成复核的 6 文件候选仅保存于仓库外，未编译测试。外候选根为 `C:/Users/luyua/AppData/Local/Temp/codex-global-handler-20261016-01`，不得把候选准备记成实现完成。
+- **未执行**：A0 四项基线、A/B/C/D 实际合入与验证、指定 C++ 单测（含 W1-45 的 11 项 router_lane）、Go / grpc-go 互通、Linux、独立冒烟 / 线程 / 关机 / 探针。按首错停止规则等待是否先修复失败工程的决策；用户及其它会话的既有改动均保留，未提交、未推送。
+
+## 2026-10-18 客户端请求保序·Java game-login 两项残留补齐(Claude,未编译、未测试,待 Codex 验证)
+
+- **范围**:补齐 2026-10-16「交接剩余两块续做」与「收尾」两条登记的 Java login 残留：建角 / 夺权事务没有时限，以及 sessionClosed 之后设备登记的迟到写。设计依据是 [client-request-ordering.md](design/client-request-ordering.md) §6.1。
+- **带时限事务**：`game-player-store` 的 `PlayerStore` 新增 `createPlayerWithinCap(…, Duration)` 与 `claimOwnership(long, Duration)`，照 `handOffOwnership` 的写法走 `transaction(timeout)`。进事务时与提交前各按纳秒复核一次调用方截止，到点 `setRollbackOnly`；语句 / 事务超时同样折成新结局 `TIMED_OUT` / `TimedOut`。`CreatePlayerHandler`(TIMED_OUT 回 2020)与 `EnterGameHandler`(TimedOut 回 2005、不请让出)传入从受理时刻起算的剩余预算。
+- **关闭墓碑**：sessionClosed 改走 `LoginDevices.close`，在反查键写 60 s 墓碑。`admit` 遇墓碑回 CLOSED(登录 / 续期回 2018);`bind` 遇墓碑不记归属，并撤销这次登录的登记；进场指令的 `leave` 不留也不清墓碑。
+- **测试**：新增 `PlayerStoreSqlTest` 7 例(其中真 MySQL 2 例),login 侧新增 12 例，既有 mock 改按新重载匹配。
+- **mmorpg**:不需要改(Go 版事务受 ctx 约束,login 会话栅栏已覆盖断线先于登录)。
+- **Java 版本号**:0.1.0-SNAPSHOT,未提交(基线 Java `0477cc0`);PARITY.md 第 158 行末尾已追加。
+- **交 Codex**:在 `D:\luyuan\xuanming-server-mmo` 下执行，不要传 `-Dgame.namespace`。
+  - 必跑 `./mvnw -B -pl game-player-store,game-login -am clean test`,要求 0 failure / 0 error。
+  - 真库 / 真 Redis 加 `-Dgame.it.mysql=jdbc:mysql://127.0.0.1:3306 -Dtest=PlayerStoreSqlTest`,以及 `-Dgame.it.redis=redis://127.0.0.1:6379 -Dtest=RedisLoginDevicesIntegrationTest`,新增用例必须是 PASS 而不是 SKIP。
+  - 下游编译核对 `./mvnw -B -pl game-data -am -DskipTests test-compile`。
+
+## 2026-10-18 落地恢复与围栏交接验证首轮（Codex，格式门禁停止，未完成整体验收）
+
+- **已执行通过**：客户端 Roslyn 编译 480 源、0 错误；Unity 6000.6.0f1 指定 EditMode 筛选实际 193/193、0 跳过，交接重点用例均执行，1319 输入前后无漂移。robot gofmt 无输出、vendor build 成功，TestSyncSmoke 18 顶层 + 69 子例全部通过、0 跳过，1537 输入无漂移。go/db 的 TestConfigValidateRejects / TestEtcYamlRetryKeysValid 实跑含子例 20/20、0 跳过，覆盖缺省/legacy/dual 与非法大小写/模式。
+- **复用范围**：ECS 第6批本日 generation-refresh-20261018T050843676Z-9202f0d7 已完成两轮 no-unity 全量生成、守护段/编号保持和生成器全包测试；核对231源输入及114生成器输入均无漂移。本轮未重复生成，不把两轮幂等证据当成W1/W2改proto前的独立差异基线。另一线 full-cpp-20261018T051013798Z 串行整解仍在运行，本线未另启MSBuild，不宣称整解或C++专项通过。
+- **红跑边界**：W1仅在TEMP完整Go副本切红，locator恰为4绿2预期红；login强制红均复现，含子例36绿12红、0跳过，无编译错或预期外失败。三文件SHA恢复精确一致，1433文件副本恢复后零漂移，主仓从未切红；sessionmanager红跑及主仓全绿/vet未启动。W2因HEAD已含修复，核对引入提交e76f6f747的父9147a1fb0f03d8e19f25e3cd58bb72315256962e六文件与5b接缝，在TEMP复原旧行为；随后红测被全线停止中断，不能计完整预期红证据，全部绿步骤未跑。
+- **首个阻断与停止依据**：资产通道第0步gofmt -l原生退出0，但输出go/trade/internal/svc/assetchannel.go；交接要求无输出。gofmt -d显示仅283行注释列表后缺一个空注释行。按AGENTS.md §10.2先报告并等决策，未格式化源码、未自动重试，资产Go的vet/build/test均未开始。其他并行工作期间修改data_service/internal/store/route_store.go及route_store_test.go，均保留，续跑须重新冻结输入。
+- **未执行**：剩余Go红绿/vet与资产分组、C++ routing/cross/SaveSeq及bag/currency/aoi/skill影响验证、两条新告警的工具验证、一区/双区sync-smoke。默认联机infra端口不齐，未启动/清理既有Docker试玩环境。容差配置、盖章行为测试、e方案C、同场景换节点人数仍另立项。
+- **证据**：build/verification/landing-fencing-main-20261018-051900/verification-summary.json 汇总所有子组；客户端在独立仓Logs/landing-fencing-20261018-20261018-011237；本仓robot/W1/W2/assetgo同前缀目录保留完整日志、SHA与退出码。Java版本本轮未改：落地摘要依既有用户决定登记待做，进场链PARITY仍含不适用/待核，不能宣称双版已闭环。未commit、push或tag。

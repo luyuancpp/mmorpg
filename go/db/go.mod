@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/luyuancpp/proto2mysql v0.2.0
 	github.com/redis/go-redis/v9 v9.18.0
+	github.com/segmentio/kafka-go v0.4.47
 	github.com/stretchr/testify v1.11.1
 	github.com/zeromicro/go-zero v1.10.0
 	google.golang.org/grpc v1.79.3
@@ -19,7 +20,6 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/segmentio/kafka-go v0.4.47 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	gorm.io/gorm v1.30.0 // indirect

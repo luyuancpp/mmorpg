@@ -1,9 +1,15 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <limits>
 #include <memory>
+#include <random>
+#include <regex>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -18,6 +24,7 @@
 #include "modules/currency/system/currency_system.h"
 #include "modules/transaction_log/anomaly_detector.h"
 #include "player/comp/player_frozen_comp.h" // 冻结用例:IsCrossZoneFrozen 就是 any_of<PlayerFrozenComp>
+#include "player/system/handoff_sql_barrier.h"
 #include "proto/common/component/currency_comp.pb.h"
 #include "table/proto/tip/asset_error_tip.pb.h" // kAssetFrozen / kAssetBlocked / kAssetCurrencyInsufficient
 #include "table/proto/tip/common_error_tip.pb.h"
@@ -99,11 +106,11 @@ struct MessageAsyncClientTestPeer
         return element;
     }
 
-    // 两个 ScriptSlot 里实际会经 EVALSHA / EVAL 发出的脚本文本(普通存盘、带 guard 存盘)。
+    // 三个 ScriptSlot 里实际会经 EVALSHA / EVAL 发出的脚本文本。
     // 断言打在发出的文本上而不是常量名上:槽位换绑到别的常量也逃不过。
     static std::vector<std::string_view> SaveScriptSources(const Client& client)
     {
-        return {client.save_script_.source, client.guard_script_.source};
+        return {client.save_script_.source, client.guard_script_.source, client.barrier_script_.source};
     }
 };
 
@@ -633,6 +640,17 @@ std::shared_ptr<CurrencyComp> MarkedCurrency(uint64_t marker)
     return value;
 }
 
+// Lua 把既有 DBTask 视为不透明字节,这里带 NUL 以守住 hiredis 的二进制参数契约。
+std::shared_ptr<const RedisSaveCommitIntent> CommitIntentForTest(Guid playerId)
+{
+    auto intent = std::make_shared<RedisSaveCommitIntent>();
+    intent->index_key = "player:save_pending:1:" + std::to_string(playerId % RedisSaveCommitIntent::kIndexBuckets);
+    intent->topic = "db_task_zone_1";
+    intent->player_database_task = std::string("first\0task", 10);
+    intent->player_database_1_task = std::string("second\0task", 11);
+    return intent;
+}
+
 uint64_t MarkerOf(const CurrencyComp& value)
 {
     return value.values_size() > 0 ? value.values(0) : 0;
@@ -768,6 +786,309 @@ TEST(CurrencyTest, RedisSaveSupersededPendingRetriesNewestAfterError)
     EXPECT_EQ(2u, savedMarker);
     EXPECT_EQ(0u, client.pending_save_count());
     EXPECT_EQ(0u, client.in_flight_save_count());
+}
+
+// 每份实写成功的快照立即准入 SQL,只有未下发就被合并的中间值不执行;全局退出回调仍等最新值。
+TEST(CurrencyTest, RedisCommittedHooksFollowActualWritesBeforeNewestSaveCallback)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+    Client::HiredisPtr hiredis;
+    Client client(hiredis);
+    std::vector<int> events;
+    client.SetSaveCallback([&](Guid, CurrencyComp&) { events.push_back(3); });
+    constexpr Guid kPlayerId = 10021;
+    const auto old = Peer::TrackGuardedSave(client, kPlayerId, "player:10021:owner_epoch", "7");
+    old->barrier_key = "player:{10021}:save_barrier";
+    old->barrier_version = "00000000000000000007:00000000000000000001";
+    old->commit_intent = CommitIntentForTest(kPlayerId);
+    old->committed_callback = [&] { events.push_back(1); };
+    client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:10021:owner_epoch", "7",
+        "player:{10021}:save_barrier", "00000000000000000007:00000000000000000002", CommitIntentForTest(kPlayerId), [&] { events.push_back(4); });
+    client.SaveWithCommitBarrier(MarkedCurrency(3), kPlayerId, "player:10021:owner_epoch", "7",
+        "player:{10021}:save_barrier", "00000000000000000007:00000000000000000003", CommitIntentForTest(kPlayerId), [&] { events.push_back(2); });
+    auto ok = IntegerReply(1);
+    Peer::DeliverSaved(client, &ok, old);
+    EXPECT_EQ((std::vector<int>{1}), events) << "A 已提交而 B 未成功,此时崩溃也必须有 A 的 SQL 任务";
+    const auto latest = Peer::IssuePendingForTest(client, kPlayerId);
+    ASSERT_NE(nullptr, latest);
+    EXPECT_EQ("player:{10021}:save_barrier", latest->barrier_key);
+    EXPECT_EQ("00000000000000000007:00000000000000000003", latest->barrier_version);
+    ASSERT_NE(nullptr, latest->commit_intent);
+    EXPECT_EQ(CommitIntentForTest(kPlayerId)->player_database_task, latest->commit_intent->player_database_task);
+    EXPECT_EQ(CommitIntentForTest(kPlayerId)->player_database_1_task, latest->commit_intent->player_database_1_task);
+    Peer::DeliverSaved(client, &ok, latest);
+    EXPECT_EQ((std::vector<int>{1, 2, 3}), events) << "未下发的中间值不能准入 SQL";
+    Peer::DeliverSaved(client, &ok, old);
+    Peer::DeliverSaved(client, &ok, latest);
+    EXPECT_EQ((std::vector<int>{1, 2, 3}), events) << "旧连接与重复回包不能再次准入 SQL";
+}
+
+TEST(CurrencyTest, RedisCommitBarrierErrorsNeverAdmitSql)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+    Client::HiredisPtr hiredis;
+    Client client(hiredis);
+    int committed = 0;
+    int saved = 0;
+    client.SetSaveCallback([&](Guid, CurrencyComp&) { ++saved; });
+    constexpr Guid kPlayerId = 10022;
+    client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10022:owner_epoch", "7",
+        "player:{10022}:save_barrier", "00000000000000000007:00000000000000000001", CommitIntentForTest(kPlayerId), [&] { ++committed; });
+    auto issued = Peer::IssuePendingForTest(client, kPlayerId);
+    ASSERT_NE(nullptr, issued);
+    Peer::DeliverSaved(client, nullptr, issued);
+    auto error = ErrorReply();
+    issued = Peer::IssuePendingForTest(client, kPlayerId);
+    ASSERT_NE(nullptr, issued);
+    Peer::DeliverSaved(client, &error, issued);
+    auto malformedAck = IntegerReply(2);
+    issued = Peer::IssuePendingForTest(client, kPlayerId);
+    ASSERT_NE(nullptr, issued);
+    Peer::DeliverSaved(client, &malformedAck, issued);
+    EXPECT_EQ(0, committed);
+    EXPECT_EQ(0, saved);
+    EXPECT_EQ(1u, client.pending_save_count());
+    issued = Peer::IssuePendingForTest(client, kPlayerId);
+    ASSERT_NE(nullptr, issued);
+    auto ok = IntegerReply(1);
+    Peer::DeliverSaved(client, &ok, issued);
+    EXPECT_EQ(1, committed);
+    EXPECT_EQ(1, saved);
+}
+
+TEST(CurrencyTest, RedisCommittedHookCanReenterSaveWithoutPublishingOldCompletion)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+    Client::HiredisPtr hiredis;
+    Client client(hiredis);
+    std::vector<int> events;
+    client.SetSaveCallback([&](Guid, CurrencyComp&) { events.push_back(3); });
+    constexpr Guid kPlayerId = 10024;
+    const auto old = Peer::TrackSave(client, kPlayerId, MarkedCurrency(1));
+    old->committed_callback = [&] {
+        EXPECT_EQ(1u, client.in_flight_save_count()) << "钩子期间保留在途登记,重入同 key 只能排队";
+        events.push_back(1);
+        client.Save(MarkedCurrency(2), kPlayerId, [&] { events.push_back(2); });
+        // 模拟重入其他玩家已连接的 Save 导致 saving_queue_ 扩容,不能跨钩子保存 iterator。
+        for (Guid other = 20000; other < 20100; ++other)
+        {
+            Peer::TrackSave(client, other, MarkedCurrency(9));
+        }
+    };
+    auto ok = IntegerReply(1);
+    Peer::DeliverSaved(client, &ok, old);
+    EXPECT_EQ((std::vector<int>{1}), events);
+    const auto latest = Peer::IssuePendingForTest(client, kPlayerId);
+    ASSERT_NE(nullptr, latest);
+    EXPECT_EQ(2u, MarkerOf(*latest->message_value));
+    Peer::DeliverSaved(client, &ok, latest);
+    EXPECT_EQ((std::vector<int>{1, 2, 3}), events);
+    Peer::DeliverSaved(client, &ok, old);
+    EXPECT_EQ((std::vector<int>{1, 2, 3}), events);
+}
+
+TEST(CurrencyTest, RedisCommitBarrierRejectionDiscardsSameOwnerHooks)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    using Peer = MessageAsyncClientTestPeer<Guid, CurrencyComp>;
+    Client::HiredisPtr hiredis;
+    Client client(hiredis);
+    int committed = 0;
+    int rejected = 0;
+    client.SetSaveRejectedCallback([&](Guid, const std::string&, const std::string&) { ++rejected; });
+    constexpr Guid kPlayerId = 10023;
+    const auto old = Peer::TrackGuardedSave(client, kPlayerId, "player:10023:owner_epoch", "7");
+    old->committed_callback = [&] { ++committed; };
+    client.SaveWithCommitBarrier(MarkedCurrency(2), kPlayerId, "player:10023:owner_epoch", "7",
+        "player:{10023}:save_barrier", "00000000000000000007:00000000000000000002", CommitIntentForTest(kPlayerId), [&] { ++committed; });
+    auto no = IntegerReply(0);
+    Peer::DeliverSaved(client, &no, old);
+    EXPECT_EQ(0, committed);
+    EXPECT_EQ(1, rejected);
+    EXPECT_EQ(0u, client.pending_save_count());
+}
+
+TEST(CurrencyTest, RedisCommitBarrierRequiresCompleteOutboxBeforeQueueing)
+{
+    using Client = MessageAsyncClient<Guid, CurrencyComp>;
+    Client::HiredisPtr hiredis;
+    Client client(hiredis);
+    int committed = 0;
+    constexpr Guid kPlayerId = 10025;
+    const auto enqueue = [&](std::shared_ptr<const RedisSaveCommitIntent> intent) {
+        return client.SaveWithCommitBarrier(MarkedCurrency(1), kPlayerId, "player:10025:owner_epoch", "7",
+            "player:{10025}:save_barrier", "00000000000000000007:00000000000000000001", std::move(intent), [&] { ++committed; });
+    };
+    EXPECT_FALSE(enqueue({}));
+    for (int field = 0; field < 4; ++field)
+    {
+        auto intent = std::make_shared<RedisSaveCommitIntent>(*CommitIntentForTest(kPlayerId));
+        if (field == 0) intent->index_key.clear();
+        if (field == 1) intent->topic.clear();
+        if (field == 2) intent->player_database_task.clear();
+        if (field == 3) intent->player_database_1_task.clear();
+        EXPECT_FALSE(enqueue(std::move(intent))) << "缺失字段=" << field;
+    }
+    EXPECT_EQ(0u, client.pending_save_count());
+    EXPECT_EQ(0u, client.in_flight_save_count());
+    EXPECT_EQ(0, committed);
+    EXPECT_TRUE(enqueue(CommitIntentForTest(kPlayerId)));
+    EXPECT_EQ(1u, client.pending_save_count());
+}
+
+namespace
+{
+// currency_test 不链接节点生命周期宿主;沿源码契约守住“缓存丢失不建空号”和唯一 SQL 准入点。
+std::string ReadPlayerLifecycleSourceForContract()
+{
+    const std::filesystem::path relative = "cpp/libs/services/scene/player/system/player_lifecycle.cpp";
+    for (auto root : {std::filesystem::path(__FILE__).parent_path(), std::filesystem::current_path()})
+    {
+        while (!root.empty())
+        {
+            std::ifstream stream(root / relative, std::ios::binary);
+            if (stream)
+            {
+                std::string source{std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>()};
+                source.erase(std::remove(source.begin(), source.end(), '\r'), source.end());
+                return source;
+            }
+            const auto parent = root.parent_path();
+            if (parent == root) break;
+            root = parent;
+        }
+    }
+    return {};
+}
+} // namespace
+
+TEST(CurrencyTest, PlayerLoadFailureNeverCreatesEmptyPlayerSourceContract)
+{
+    const auto source = ReadPlayerLifecycleSourceForContract();
+    ASSERT_FALSE(source.empty()) << "找不到生命周期源码,不能跳过资产恢复契约";
+    const auto start = source.find("void PlayerLifecycleSystem::HandlePlayerAsyncLoadFailed(");
+    ASSERT_NE(std::string::npos, start);
+    const auto end = source.find("\nvoid PlayerLifecycleSystem::HandlePlayerAsyncSaveFailed(", start);
+    ASSERT_NE(std::string::npos, end);
+    const auto body = source.find('{', start);
+    ASSERT_LT(body, end);
+    const auto failure = source.substr(body, end - body);
+    EXPECT_EQ(std::string::npos, failure.find("HandlePlayerAsyncLoaded("));
+    // 类型别名可以引用 PlayerAllData,禁止的是构造空对象来伪装一次成功载入。
+    EXPECT_FALSE(std::regex_search(failure,
+        std::regex(R"(\bPlayerAllData\s+[A-Za-z_][A-Za-z_0-9]*\s*(?:;|\{\s*\}\s*;))")));
+    EXPECT_FALSE(std::regex_search(failure, std::regex(R"(\bPlayerAllData\s*(?:\{\s*\}|\(\s*\)))")));
+    EXPECT_NE(std::string::npos, failure.find("SendTipToPendingSession("));
+    EXPECT_NE(std::string::npos, failure.find("EraseSessionMappingIfOwned("));
+    EXPECT_NE(std::string::npos, failure.find("tlsPendingEnterMap.erase("));
+    EXPECT_NE(std::string::npos, failure.find("AbandonInheritClear("));
+}
+
+TEST(CurrencyTest, PlayerLoadRejectsMissingOrForeignSubTableIdentitySourceContract)
+{
+    const auto source = ReadPlayerLifecycleSourceForContract();
+    ASSERT_FALSE(source.empty()) << "找不到生命周期源码,不能跳过载入身份契约";
+    const auto start = source.find("void PlayerLifecycleSystem::HandlePlayerAsyncLoaded(");
+    ASSERT_NE(std::string::npos, start);
+    const auto end = source.find("\nvoid PlayerLifecycleSystem::HandlePlayerAsyncSaved(", start);
+    ASSERT_NE(std::string::npos, end);
+    const auto load = source.substr(start, end - start);
+    const auto reject = load.find("if (playerId == kInvalidGuid || message.player_database_data().player_id() != playerId ||");
+    ASSERT_NE(std::string::npos, reject);
+    const auto secondIdentity = load.find("message.player_database_1_data().player_id() != playerId", reject);
+    ASSERT_NE(std::string::npos, secondIdentity);
+    const auto fail = load.find("HandlePlayerAsyncLoadFailed(playerId, MessageAsyncClient<Guid, PlayerAllData>::LoadFailureReason::RedisError);", secondIdentity);
+    ASSERT_NE(std::string::npos, fail);
+    const auto gate = load.find("exit_release_mark::DecideInheritGate(");
+    const auto consume = load.find("PlayerEnterContext ctx = std::move(pendingIt->second);");
+    const auto initialize = load.find("InitPlayerFromAllData(message, ctx);");
+    ASSERT_NE(std::string::npos, gate);
+    ASSERT_NE(std::string::npos, consume);
+    ASSERT_NE(std::string::npos, initialize);
+    EXPECT_LT(fail, gate) << "损坏存档不能暂存为可恢复的 A2′ 载入结果";
+    EXPECT_LT(fail, consume) << "失败处理必须还能取得待入场上下文并补写继承围栏";
+    EXPECT_LT(consume, initialize);
+    EXPECT_EQ(std::string::npos, load.find("set_player_id("));
+    EXPECT_EQ(std::string::npos, load.find("patchedMessage"));
+    EXPECT_EQ(std::string::npos, load.find("registration_timestamp()"))
+        << "合法新号双 ID 已由种子提供,首次注册仍由 InitPlayerFromAllData 统一处理";
+}
+
+TEST(CurrencyTest, PlayerSqlTasksRequireParentCommitSourceContract)
+{
+    const auto source = ReadPlayerLifecycleSourceForContract();
+    ASSERT_FALSE(source.empty()) << "找不到生命周期源码,不能跳过资产恢复契约";
+    const auto start = source.find("PlayerLifecycleSystem::SaveResult PlayerLifecycleSystem::SavePlayerToRedisImpl(");
+    ASSERT_NE(std::string::npos, start);
+    const auto end = source.find("\nvoid PlayerLifecycleSystem::HandlePlayerSaveRejected(", start);
+    ASSERT_NE(std::string::npos, end);
+    const auto save = source.substr(start, end - start);
+    const auto hook = save.find("auto publishDbTasks = [commitIntent,");
+    ASSERT_NE(std::string::npos, hook) << "SQL 准入必须持有不可变任务原字节";
+    const auto hookEnd = save.find("\n\t};\n\tif (ownerEpoch != 0)", hook);
+    ASSERT_NE(std::string::npos, hookEnd);
+    const auto submit = save.find("DbTaskDispatchSystem::SendDbTask(");
+    ASSERT_NE(std::string::npos, submit);
+    EXPECT_GT(submit, hook);
+    EXPECT_LT(submit, hookEnd);
+    EXPECT_EQ(std::string::npos, save.find("DbTaskDispatchSystem::SendDbTask(", submit + 1));
+    const auto admitted = save.substr(hook, hookEnd - hook);
+    EXPECT_NE(std::string::npos, admitted.find("sendTask(commitIntent->player_database_task);"));
+    EXPECT_NE(std::string::npos, admitted.find("sendTask(commitIntent->player_database_1_task);"));
+    EXPECT_EQ(std::string::npos, admitted.find("SerializeToString(")) << "提交后不能重新序列化另一份意图";
+    EXPECT_NE(std::string::npos, admitted.find("DbTaskDispatchSystem::FinishSave("));
+    const auto prepared = save.substr(0, hook);
+    EXPECT_NE(std::string::npos, prepared.find("serializeSubTableTask(message->player_database_data(), intent->player_database_task)"));
+    EXPECT_NE(std::string::npos, prepared.find("serializeSubTableTask(message->player_database_1_data(), intent->player_database_1_task)"));
+    EXPECT_NE(std::string::npos, prepared.find("playerId % RedisSaveCommitIntent::kIndexBuckets"));
+    EXPECT_NE(std::string::npos, prepared.find("strict save refused: home_zone missing"));
+    const auto dispatch = save.substr(hookEnd);
+    EXPECT_NE(std::string::npos, dispatch.find("SaveWithCommitBarrier(message, playerId,"));
+    EXPECT_NE(std::string::npos, dispatch.find("\"player:{\" + playerIdStr + \"}:save_barrier\", version, commitIntent, std::move(publishDbTasks)"));
+    EXPECT_NE(std::string::npos, dispatch.find("Save(message, playerId, std::move(publishDbTasks))"));
+}
+
+TEST(CurrencyTest, TravelSqlBarrierRetryKeepsOriginalDeadlineAndGeneration)
+{
+    using namespace std::chrono;
+    using Clock = travel_freeze_cap::Clock;
+    const auto frozenAt = Clock::time_point{} + seconds(100);
+    EXPECT_EQ(frozenAt + milliseconds(250), handoff_sql_barrier::RetryDueAt(frozenAt, frozenAt));
+    EXPECT_EQ(frozenAt + seconds(35), handoff_sql_barrier::RetryDueAt(frozenAt, frozenAt + milliseconds(34900)));
+    EXPECT_EQ(frozenAt + seconds(35), handoff_sql_barrier::RetryDueAt(frozenAt, frozenAt + seconds(90)))
+        << "重查不能按次数滑动 35s 原始截止";
+    EXPECT_TRUE(handoff_sql_barrier::IsCurrentWait(frozenAt, frozenAt, 0, false));
+    EXPECT_FALSE(handoff_sql_barrier::IsCurrentWait(frozenAt, frozenAt, 0, true)) << "退出后旧 timer 不触交接";
+    EXPECT_FALSE(handoff_sql_barrier::IsCurrentWait(frozenAt, frozenAt + milliseconds(1), 0, false))
+        << "旧冻结代次不能触发新交接";
+    EXPECT_FALSE(handoff_sql_barrier::IsCurrentWait(frozenAt, frozenAt, 123, false))
+        << "另一条命令在途或已发标记时不能重发";
+}
+
+TEST(CurrencyTest, TravelHandoffMarkRequiresAtomicSqlBarrierSourceContract)
+{
+    const auto source = ReadPlayerLifecycleSourceForContract();
+    ASSERT_FALSE(source.empty());
+    const auto start = source.find("void PlayerLifecycleSystem::BeginTravelHandoff(");
+    ASSERT_NE(std::string::npos, start);
+    const auto end = source.find("\nvoid PlayerLifecycleSystem::HandleTravelMarkWriteRejected(", start);
+    ASSERT_NE(std::string::npos, end);
+    const auto begin = source.substr(start, end - start);
+    EXPECT_NE(std::string::npos, begin.find("handoff_sql_barrier::kPublishMarkLua"));
+    EXPECT_EQ(std::string::npos, begin.find("\"SET %s %s EX %d\"")) << "不能绕过 SQL ACK 原子复核";
+    EXPECT_NE(std::string::npos, begin.find("current->frozenAtSteady != frozenAt"));
+    EXPECT_NE(std::string::npos, begin.find("handoff_sql_barrier::RetryDueAt(frozenAt,"));
+    EXPECT_NE(std::string::npos, begin.find("handoff_sql_barrier::IsCurrentWait(frozenAt,"));
+    EXPECT_NE(std::string::npos, begin.find("current->requestedAtMs = 0;"));
+    EXPECT_NE(std::string::npos, begin.find("current->markEpoch = 0;"));
+    EXPECT_NE(std::string::npos, begin.find("DestroyDeposedPlayer(playerId, \"handoff_sql_owner_rejected\")"));
+    const auto send = begin.find("RequestTravelEnterScene(playerId);");
+    ASSERT_NE(std::string::npos, send);
+    EXPECT_EQ(std::string::npos, begin.find("RequestTravelEnterScene(playerId);", send + 1));
+    EXPECT_GT(send, begin.find("reply->integer != 1")) << "只有明确 1 能发 SM";
 }
 
 // Q2:HasUnsettledSave 看"在途或排队",按 key 区分,只读;在成功回调里恒为 false。
@@ -938,16 +1259,16 @@ LuaScriptScan ScanLuaScript(std::string_view lua)
 }
 } // namespace
 
-// A0-4 回归:客户端实际发出的两段存盘脚本只访问 KEYS[] 声明的键。
+// A0-4 回归:客户端实际发出的三段存盘脚本只访问 KEYS[] 声明的键。
 // 写死的全局键在全服共享 Redis 上是所有 scene 共打的单键、随累计存盘玩家数无界增长,
 // 也挡住 Redis Cluster(docs/design/capacity-model-hok-scale.md A0-4)。
 // 修复前这条红:两段脚本都 SADD 一个写死的全局集合 'dirty_keys_set'。
 // 判定口径(三条一起才覆盖非首参位置的写死键,如 SMOVE KEYS[1] 'g' m、DEL KEYS[1] 'g'):
 //   1. 每条 redis.call 的首个参数整串恰好是 KEYS[n],派生键(KEYS[1] .. ':x')不算;
-//   2. 除命令名外脚本里没有任何字符串字面量,写死键名或拼出派生键都得带字面量;
+//   2. 除命令名外只有严格屏障明确枚举的类型 / 格式 / hash 字段 / 错误文案,拒绝额外键名或派生后缀;
 //   3. 旧版全服集合的名字不再出现。
-// 判定前提:目前每条 redis.call 的首个参数都是键,脚本里也没有选项字面量(如 'EX')或字面量比较;
-// 以后加无键命令(如 TIME)或这类字面量,要同步改本用例。
+// 判定前提:目前每条 redis.call 的首个参数都是键;严格屏障的非键字面量逐项登记,
+// 以后加无键命令(如 TIME)、选项(如 'EX')或格式比较,要同步改本用例。
 // 已知盲区:经 ARGV 传入、落在非首参位置的键(RENAME KEYS[1] ARGV[2])需按命令元数判定,本用例不覆盖。
 TEST(CurrencyTest, RedisSaveScriptsTouchOnlyDeclaredKeys)
 {
@@ -978,6 +1299,21 @@ TEST(CurrencyTest, RedisSaveScriptsTouchOnlyDeclaredKeys)
         }
         for (const std::string_view literal : scan.strayLiterals)
         {
+            const std::vector<std::string_view> barrierLiterals{
+                "'string'", "':'", "'^%d+:%d+$'", "'18446744073709551615'", "'0'", "'^%d+$'", "'none'", "'hash'", "'pending'",
+                "'4294967295'", "'^db_task_zone_([1-9]%d*)$'", "'^db_task_zone_([1-9]%d*)_g([1-9]%d*)$'", "'1'", "'zset'",
+                "'^player:save_pending:([1-9]%d*):(%d+)$'", "'outbox_version'", "'outbox_topic'", "'outbox_player_database'", "'outbox_player_database_1'",
+                "'SAVE_BARRIER invalid key type or missing owner'", "'SAVE_BARRIER invalid version'",
+                "'SAVE_BARRIER invalid stored version'", "'SAVE_BARRIER version regression'", "'SAVE_BARRIER keys must differ'",
+                "'SAVE_BARRIER invalid argument count'", "'SAVE_BARRIER empty key'", "'SAVE_BARRIER invalid outbox'",
+                "'SAVE_BARRIER invalid bucket'", "'SAVE_BARRIER invalid stored outbox'", "'SAVE_BARRIER same version conflict'",
+                "'player:'", "':owner_epoch'", "'player:{'", "'}:save_barrier'", "'SAVE_BARRIER player key mismatch'",
+            };
+            if (script == kSaveWithCommitBarrierLuaScript &&
+                std::find(barrierLiterals.begin(), barrierLiterals.end(), literal) != barrierLiterals.end())
+            {
+                continue;
+            }
             ADD_FAILURE() << "存盘脚本里有命令名以外的字符串字面量 " << literal
                           << "(写死键名或拼派生键;确属选项 / 比较用字面量时同步改本用例):\n" << script;
         }
@@ -1010,6 +1346,14 @@ bool TestRedisAddr(std::string& host, uint16_t& port)
     }
     port = static_cast<uint16_t>(parsed);
     return true;
+}
+
+// 随机性只隔离集成夹具身份,不参与结局或时间断言;写前还会断言三键均未占用。
+Guid IsolatedRedisPlayerIdForTest()
+{
+    std::random_device entropy;
+    const auto value = (static_cast<uint64_t>(entropy()) << 32) | static_cast<uint64_t>(entropy());
+    return value == 0 ? 1 : value;
 }
 
 // 在 loop 上跑到连接回调或 3 秒超时。
@@ -1104,6 +1448,331 @@ private:
     }
 };
 } // namespace
+
+// 严格 Lua 的零部分写回归,不依赖异步宿主:每个错误都必须让父键与 pending 保持原样。
+TEST(CurrencyTest, RedisCommitBarrierSemanticsAgainstRealRedis)
+{
+    std::string host;
+    uint16_t port = 0;
+    if (!TestRedisAddr(host, port)) GTEST_SKIP() << "需要专用 MMORPG_TEST_REDIS_ADDR";
+    SyncRedisForTest sync;
+    ASSERT_TRUE(sync.Connect(host, port));
+    const Guid testPlayerId = IsolatedRedisPlayerIdForTest();
+    const std::string member = std::to_string(testPlayerId);
+    const std::string parentKey = "CurrencyComp:" + member;
+    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string barrierKey = "player:{" + member + "}:save_barrier";
+    const auto intent = CommitIntentForTest(testPlayerId);
+    const std::string& indexKey = intent->index_key;
+    ASSERT_EQ(0LL, sync.Exists(parentKey));
+    ASSERT_EQ(0LL, sync.Exists(ownerKey));
+    ASSERT_EQ(0LL, sync.Exists(barrierKey));
+    struct Cleanup
+    {
+        SyncRedisForTest& sync;
+        const std::string& parent;
+        const std::string& owner;
+        const std::string& barrier;
+        const std::string& index;
+        const std::string& member;
+        ~Cleanup()
+        {
+            sync.Del(parent); sync.Del(owner); sync.Del(barrier);
+            freeReplyObject(redisCommand(sync.context.get(), "ZREM %b %b", index.data(), index.size(), member.data(), member.size()));
+        }
+    } cleanup{sync, parentKey, ownerKey, barrierKey, indexKey, member};
+    sync.Del(parentKey);
+    sync.Del(ownerKey);
+    sync.Del(barrierKey);
+    using Reply = std::unique_ptr<redisReply, decltype(&freeReplyObject)>;
+    const auto version = [](const std::string& owner, const std::string& seq) {
+        return std::string(20 - owner.size(), '0') + owner + ":" + std::string(20 - seq.size(), '0') + seq;
+    };
+    const auto setPending = [&](const std::string& value) {
+        Reply cleared(static_cast<redisReply*>(redisCommand(sync.context.get(),
+            "HDEL %b outbox_version outbox_topic outbox_player_database outbox_player_database_1", barrierKey.data(), barrierKey.size())), &freeReplyObject);
+        ASSERT_NE(nullptr, cleared);
+        ASSERT_EQ(REDIS_REPLY_INTEGER, cleared->type);
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "HSET %b pending %b",
+            barrierKey.data(), barrierKey.size(), value.data(), value.size())), &freeReplyObject);
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_INTEGER, reply->type);
+    };
+    const auto field = [&](const std::string& name) {
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "HGET %b %b",
+            barrierKey.data(), barrierKey.size(), name.data(), name.size())), &freeReplyObject);
+        return reply != nullptr && reply->type == REDIS_REPLY_STRING ? std::string(reply->str, reply->len) : "(nil)";
+    };
+    const auto pending = [&]() { return field("pending"); };
+    const auto saveIntent = [&](const std::string& owner, const std::string& token, const std::string& body,
+        const RedisSaveCommitIntent& incoming) {
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "EVAL %s 4 %b %b %b %b %b %b %b %b %b %b %b",
+            kSaveWithCommitBarrierLuaScript, parentKey.data(), parentKey.size(), ownerKey.data(), ownerKey.size(),
+            barrierKey.data(), barrierKey.size(), incoming.index_key.data(), incoming.index_key.size(),
+            body.data(), body.size(), owner.data(), owner.size(), token.data(), token.size(),
+            incoming.topic.data(), incoming.topic.size(), incoming.player_database_task.data(), incoming.player_database_task.size(),
+            incoming.player_database_1_task.data(), incoming.player_database_1_task.size(), member.data(), member.size())), &freeReplyObject);
+        if (reply == nullptr) return -99LL;
+        if (reply->type == REDIS_REPLY_ERROR) return -1LL;
+        return reply->type == REDIS_REPLY_INTEGER ? reply->integer : -99LL;
+    };
+    const auto save = [&](const std::string& owner, const std::string& token, const std::string& body) {
+        return saveIntent(owner, token, body, *intent);
+    };
+    const auto indexScore = [&]() {
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "ZSCORE %b %b",
+            indexKey.data(), indexKey.size(), member.data(), member.size())), &freeReplyObject);
+        return reply != nullptr && reply->type == REDIS_REPLY_STRING ? std::string(reply->str, reply->len) : "(nil)";
+    };
+    const auto expectFirst = [&]() {
+        EXPECT_EQ("first", sync.Get(parentKey));
+        EXPECT_EQ(version("5", "1"), pending());
+        EXPECT_EQ(version("5", "1"), field("outbox_version"));
+        EXPECT_EQ(intent->topic, field("outbox_topic"));
+        EXPECT_EQ(intent->player_database_task, field("outbox_player_database"));
+        EXPECT_EQ(intent->player_database_1_task, field("outbox_player_database_1"));
+        EXPECT_EQ("0", indexScore());
+    };
+
+    sync.Set(ownerKey, "5");
+    ASSERT_EQ(1LL, save("5", version("5", "1"), "first"));
+    expectFirst(); // 模拟 Lua 后立即崩溃:没有 hook / Kafka,完整补投字节已原子留存。
+    EXPECT_EQ(1LL, save("5", version("5", "1"), "first"));
+    EXPECT_EQ(-1LL, save("5", version("5", "1"), "different-parent"));
+    for (int changed = 0; changed < 3; ++changed)
+    {
+        auto conflicting = *intent;
+        if (changed == 0) conflicting.topic = "db_task_zone_1_g2";
+        if (changed == 1) conflicting.player_database_task += "different";
+        if (changed == 2) conflicting.player_database_1_task += "different";
+        EXPECT_EQ(-1LL, saveIntent("5", version("5", "1"), "first", conflicting));
+        expectFirst();
+    }
+    for (int missing = 0; missing < 3; ++missing)
+    {
+        auto incomplete = *intent;
+        if (missing == 0) incomplete.topic.clear();
+        if (missing == 1) incomplete.player_database_task.clear();
+        if (missing == 2) incomplete.player_database_1_task.clear();
+        EXPECT_EQ(-1LL, saveIntent("5", version("5", "2"), "empty-outbox", incomplete));
+        expectFirst();
+    }
+    auto badRoute = *intent;
+    badRoute.topic = "db_task_zone_2";
+    EXPECT_EQ(-1LL, saveIntent("5", version("5", "2"), "wrong-zone", badRoute));
+    badRoute.topic = "db_task_zone_1_g1";
+    EXPECT_EQ(-1LL, saveIntent("5", version("5", "2"), "noncanonical-generation", badRoute));
+    badRoute.index_key = "player:save_pending:1:64";
+    badRoute.topic = intent->topic;
+    EXPECT_EQ(-1LL, saveIntent("5", version("5", "2"), "wrong-bucket", badRoute));
+    badRoute.index_key = "player:save_pending:1000000:" + std::to_string(testPlayerId % RedisSaveCommitIntent::kIndexBuckets);
+    badRoute.topic = "db_task_zone_1000000";
+    EXPECT_EQ(-1LL, saveIntent("5", version("5", "2"), "unsupported-storage-zone", badRoute));
+    expectFirst();
+    // 索引错误类型必须先于父 SET 被发现;用专用错误索引键,不破坏真实分桶其他成员。
+    const std::string wrongIndex = "player:save_pending:4294967295:" + std::to_string(testPlayerId % RedisSaveCommitIntent::kIndexBuckets);
+    ASSERT_EQ(0LL, sync.Exists(wrongIndex)) << "专用错误类型夹具键已被占用";
+    sync.Set(wrongIndex, "blocked");
+    auto wrongType = *intent;
+    wrongType.index_key = wrongIndex;
+    wrongType.topic = "db_task_zone_4294967295";
+    EXPECT_EQ(-1LL, saveIntent("5", version("5", "2"), "wrong-index-type", wrongType));
+    EXPECT_EQ("blocked", sync.Get(wrongIndex));
+    sync.Del(wrongIndex);
+    expectFirst();
+    const auto aliasVersion = version("5", "2");
+    Reply alias(static_cast<redisReply*>(redisCommand(sync.context.get(), "EVAL %s 4 %b %b %b %b ignored 5 %b %b %b %b %b",
+        kSaveWithCommitBarrierLuaScript, parentKey.data(), parentKey.size(), ownerKey.data(), ownerKey.size(),
+        parentKey.data(), parentKey.size(), indexKey.data(), indexKey.size(), aliasVersion.data(), aliasVersion.size(),
+        intent->topic.data(), intent->topic.size(), intent->player_database_task.data(), intent->player_database_task.size(),
+        intent->player_database_1_task.data(), intent->player_database_1_task.size(), member.data(), member.size())), &freeReplyObject);
+    ASSERT_NE(nullptr, alias);
+    EXPECT_EQ(REDIS_REPLY_ERROR, alias->type);
+    expectFirst();
+    sync.Del(parentKey);
+    EXPECT_EQ(-1LL, save("5", version("5", "1"), "first")) << "同版不能从意图猜出缺失父键";
+    EXPECT_EQ(0LL, sync.Exists(parentKey));
+    EXPECT_EQ(version("5", "1"), pending());
+    sync.Set(parentKey, "first");
+    // 不完整和错版的历史意图也不得被新版本静默覆盖。
+    Reply partial(static_cast<redisReply*>(redisCommand(sync.context.get(), "HDEL %b outbox_player_database_1",
+        barrierKey.data(), barrierKey.size())), &freeReplyObject);
+    ASSERT_NE(nullptr, partial);
+    EXPECT_EQ(-1LL, save("5", version("5", "2"), "partial-stored-outbox"));
+    EXPECT_EQ("first", sync.Get(parentKey));
+    EXPECT_EQ("(nil)", field("outbox_player_database_1"));
+    setPending(version("5", "1"));
+    EXPECT_EQ(1LL, save("5", version("5", "1"), "first")) << "完成清理后的同版原字节可重新登记意图";
+    expectFirst();
+    sync.Set(ownerKey, "6");
+    EXPECT_EQ(0LL, save("5", version("5", "2"), "deposed"));
+    EXPECT_EQ("first", sync.Get(parentKey));
+    EXPECT_EQ(version("5", "1"), pending());
+    sync.Del(ownerKey);
+    EXPECT_EQ(-1LL, save("5", version("5", "2"), "missing-owner"));
+    EXPECT_EQ(0LL, sync.Exists(ownerKey)) << "严格路径不能自动补种旧 owner";
+    EXPECT_EQ("first", sync.Get(parentKey));
+    EXPECT_EQ(version("5", "1"), pending());
+
+    Reply ownerList(static_cast<redisReply*>(redisCommand(sync.context.get(), "LPUSH %b blocked", ownerKey.data(), ownerKey.size())), &freeReplyObject);
+    ASSERT_NE(nullptr, ownerList);
+    ASSERT_EQ(REDIS_REPLY_INTEGER, ownerList->type);
+    EXPECT_EQ(-1LL, save("5", version("5", "2"), "wrong-owner-type"));
+    EXPECT_EQ("first", sync.Get(parentKey));
+    EXPECT_EQ(version("5", "1"), pending());
+    sync.Del(ownerKey);
+    sync.Set(ownerKey, "5");
+    sync.Del(barrierKey);
+    sync.Set(barrierKey, "wrong-type");
+    EXPECT_EQ(-1LL, save("5", version("5", "2"), "partial-parent"));
+    EXPECT_EQ("first", sync.Get(parentKey)) << "HSET 类型错误前必须先校验,不得已 SET 父键";
+    EXPECT_EQ("wrong-type", sync.Get(barrierKey));
+    sync.Del(barrierKey);
+    setPending("bad-version");
+    EXPECT_EQ(-1LL, save("5", version("5", "2"), "bad-pending"));
+    EXPECT_EQ("first", sync.Get(parentKey));
+    EXPECT_EQ("bad-version", pending());
+    setPending("00000000000000000005:18446744073709551616");
+    EXPECT_EQ(-1LL, save("5", version("5", "2"), "overflow-pending"));
+    EXPECT_EQ("first", sync.Get(parentKey));
+    EXPECT_EQ("00000000000000000005:18446744073709551616", pending());
+
+    setPending(version("5", "9007199254740993"));
+    EXPECT_EQ(-1LL, save("5", version("5", "9007199254740992"), "rounded-backwards"));
+    EXPECT_EQ("first", sync.Get(parentKey));
+    EXPECT_EQ(version("5", "9007199254740993"), pending());
+    EXPECT_EQ(-1LL, save("5", version("6", "1"), "owner-token-mismatch"));
+    EXPECT_EQ(-1LL, save("5", "00000000000000000005:18446744073709551616", "overflow-seq"));
+    EXPECT_EQ(-1LL, save("5", "18446744073709551616:00000000000000000001", "overflow-owner"));
+    EXPECT_EQ("first", sync.Get(parentKey));
+    EXPECT_EQ(version("5", "9007199254740993"), pending());
+
+    sync.Del(parentKey);
+    Reply list(static_cast<redisReply*>(redisCommand(sync.context.get(), "LPUSH %b blocked", parentKey.data(), parentKey.size())), &freeReplyObject);
+    ASSERT_NE(nullptr, list);
+    ASSERT_EQ(REDIS_REPLY_INTEGER, list->type);
+    EXPECT_EQ(-1LL, save("5", version("5", "9007199254740994"), "wrong-parent-type"));
+    EXPECT_EQ(version("5", "9007199254740993"), pending());
+    sync.Del(parentKey);
+    sync.Set(ownerKey, "18446744073709551615");
+    EXPECT_EQ(1LL, save("18446744073709551615", version("18446744073709551615", "18446744073709551615"), "uint64-max"));
+    EXPECT_EQ("uint64-max", sync.Get(parentKey));
+    EXPECT_EQ(version("18446744073709551615", "18446744073709551615"), pending());
+    EXPECT_EQ(version("18446744073709551615", "18446744073709551615"), field("outbox_version"));
+    EXPECT_EQ(intent->player_database_task, field("outbox_player_database"));
+    EXPECT_EQ(intent->player_database_1_task, field("outbox_player_database_1"));
+    EXPECT_EQ("0", indexScore());
+}
+
+TEST(CurrencyTest, TravelSqlBarrierWaitsForBothSqlAcksAgainstRealRedis)
+{
+    std::string host;
+    uint16_t port = 0;
+    if (!TestRedisAddr(host, port)) GTEST_SKIP() << "需要专用 MMORPG_TEST_REDIS_ADDR";
+    SyncRedisForTest sync;
+    ASSERT_TRUE(sync.Connect(host, port));
+    const auto member = std::to_string(IsolatedRedisPlayerIdForTest());
+    const std::string ownerKey = "player:" + member + ":owner_epoch";
+    const std::string barrierKey = "player:{" + member + "}:save_barrier";
+    const std::string markKey = "player:" + member + ":handoff";
+    ASSERT_EQ(0LL, sync.Exists(ownerKey));
+    ASSERT_EQ(0LL, sync.Exists(barrierKey));
+    ASSERT_EQ(0LL, sync.Exists(markKey));
+    struct Cleanup
+    {
+        SyncRedisForTest& sync;
+        const std::string& owner;
+        const std::string& barrier;
+        const std::string& mark;
+        ~Cleanup() { sync.Del(owner); sync.Del(barrier); sync.Del(mark); }
+    } cleanup{sync, ownerKey, barrierKey, markKey};
+    sync.Del(ownerKey); sync.Del(barrierKey); sync.Del(markKey);
+    using Reply = std::unique_ptr<redisReply, decltype(&freeReplyObject)>;
+    const std::string version = "00000000000000000005:00009007199254740993";
+    const std::string newer = "00000000000000000005:00009007199254740994";
+    const auto setField = [&](const std::string& name, const std::string& value) {
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "HSET %b %b %b",
+            barrierKey.data(), barrierKey.size(), name.data(), name.size(), value.data(), value.size())), &freeReplyObject);
+        ASSERT_NE(nullptr, reply);
+        ASSERT_EQ(REDIS_REPLY_INTEGER, reply->type);
+    };
+    const auto publish = [&](const std::string& marker) {
+        Reply reply(static_cast<redisReply*>(redisCommand(sync.context.get(), "EVAL %s 3 %b %b %b 5 %b 300",
+            handoff_sql_barrier::kPublishMarkLua, ownerKey.data(), ownerKey.size(), barrierKey.data(), barrierKey.size(),
+            markKey.data(), markKey.size(), marker.data(), marker.size())), &freeReplyObject);
+        if (reply == nullptr) return -99LL;
+        if (reply->type == REDIS_REPLY_ERROR) return -2LL;
+        return reply->type == REDIS_REPLY_INTEGER ? reply->integer : -99LL;
+    };
+    const std::string marker = "5:1000";
+    sync.Set(ownerKey, "5");
+    setField("pending", version);
+    // 连续 0 -> 0 -> 1,只有双 SQL ACK 齐备的那一次可以建立标记,此前不得请求归属推进。
+    EXPECT_EQ(0LL, publish(marker));
+    EXPECT_EQ(0LL, sync.Exists(markKey));
+    setField("player_database", version);
+    EXPECT_EQ(0LL, publish(marker));
+    EXPECT_EQ(0LL, sync.Exists(markKey));
+    setField("player_database_1", version);
+    EXPECT_EQ(1LL, publish(marker));
+    EXPECT_EQ(marker, sync.Get(markKey));
+    Reply alias(static_cast<redisReply*>(redisCommand(sync.context.get(), "EVAL %s 3 %b %b %b 5 %b 300",
+        handoff_sql_barrier::kPublishMarkLua, ownerKey.data(), ownerKey.size(), barrierKey.data(), barrierKey.size(),
+        barrierKey.data(), barrierKey.size(), marker.data(), marker.size())), &freeReplyObject);
+    ASSERT_NE(nullptr, alias);
+    EXPECT_EQ(REDIS_REPLY_ERROR, alias->type);
+    EXPECT_EQ(marker, sync.Get(markKey));
+    Reply ttl(static_cast<redisReply*>(redisCommand(sync.context.get(), "TTL %b", markKey.data(), markKey.size())), &freeReplyObject);
+    ASSERT_NE(nullptr, ttl);
+    ASSERT_EQ(REDIS_REPLY_INTEGER, ttl->type);
+    EXPECT_GT(ttl->integer, 0);
+    EXPECT_LE(ttl->integer, 300);
+    sync.Del(markKey);
+    setField("pending", newer);
+    EXPECT_EQ(0LL, publish("5:1001")) << "旧双 ACK 不能释放更新快照";
+    EXPECT_EQ(0LL, sync.Exists(markKey));
+    setField("player_database", newer);
+    EXPECT_EQ(0LL, publish("5:1001"));
+    EXPECT_EQ(0LL, sync.Exists(markKey));
+    setField("player_database_1", newer);
+    EXPECT_EQ(1LL, publish("5:1001"));
+    EXPECT_EQ("5:1001", sync.Get(markKey));
+    sync.Del(markKey);
+
+    sync.Set(ownerKey, "6");
+    EXPECT_EQ(-1LL, publish("5:1002"));
+    EXPECT_EQ(0LL, sync.Exists(markKey));
+    sync.Set(ownerKey, "5");
+    setField("pending", "00000000000000000006:00000000000000000001");
+    EXPECT_EQ(-2LL, publish("5:1002"));
+    EXPECT_EQ(0LL, sync.Exists(markKey));
+    setField("pending", newer);
+    setField("player_database", "00000000000000000005:18446744073709551616");
+    EXPECT_EQ(-2LL, publish("5:1002"));
+    EXPECT_EQ(0LL, sync.Exists(markKey));
+    setField("player_database", newer);
+    EXPECT_EQ(-2LL, publish("6:1002"));
+    EXPECT_EQ(0LL, sync.Exists(markKey));
+    sync.Del(ownerKey);
+    EXPECT_EQ(-2LL, publish("5:1002"));
+    EXPECT_EQ(0LL, sync.Exists(ownerKey)) << "门禁不补种归属";
+    sync.Set(ownerKey, "5");
+    sync.Del(barrierKey);
+    sync.Set(barrierKey, "blocked");
+    EXPECT_EQ(-2LL, publish("5:1002"));
+    EXPECT_EQ("blocked", sync.Get(barrierKey));
+    EXPECT_EQ(0LL, sync.Exists(markKey));
+    sync.Del(barrierKey);
+    setField("pending", newer); setField("player_database", newer); setField("player_database_1", newer);
+    Reply wrongType(static_cast<redisReply*>(redisCommand(sync.context.get(), "LPUSH %b blocked", markKey.data(), markKey.size())), &freeReplyObject);
+    ASSERT_NE(nullptr, wrongType);
+    ASSERT_EQ(REDIS_REPLY_INTEGER, wrongType->type);
+    EXPECT_EQ(-2LL, publish("5:1002"));
+    Reply listValue(static_cast<redisReply*>(redisCommand(sync.context.get(), "LINDEX %b 0", markKey.data(), markKey.size())), &freeReplyObject);
+    ASSERT_NE(nullptr, listValue);
+    ASSERT_EQ(REDIS_REPLY_STRING, listValue->type);
+    EXPECT_EQ("blocked", std::string(listValue->str, listValue->len));
+}
 
 // Q3(颠倒的回归用例):已连接、无在途、排队里有一份失败后等退避的旧值时,新值不得被直接发出。
 // 修复前这条红:新值被 IssueSave 发出(在途 1),排队里仍是更旧的 S1。只需要"已连接"这一状态,不等回包。

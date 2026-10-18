@@ -482,7 +482,8 @@ type KafkaConfig struct {
 	RetentionMs int64 `json:",default=2592000000"`
 
 	// SnapshotBatchMaxRows:player_snapshot 每个分区一批最多多少条消息(含被跳过的坏消息),[1, MaxSnapshotBatchMaxRows]。
-	// 0 = 没配 = 1(逐条,现状)。>1 时多行 ODKU 一条语句落库、成功后提交本批最高 offset;批量失败自动逐条兜底。
+	// 0 = 没配 = 1(逐条,现状)。>1 时预读剔除已存在的 guid、按 guid 升序一条普通多行 INSERT 落库
+	// (撞 1062 转逐行,见 store.InsertSnapshotsIfGuidAbsent),成功后提交本批最高 offset;批量失败自动逐条兜底。
 	SnapshotBatchMaxRows int `json:",optional"`
 	// SnapshotBatchMaxBytes:一批 data 字节的**软上限**,[MinSnapshotBatchMaxBytes, MaxSnapshotBatchMaxBytes];
 	// 0 = 没配 = DefaultSnapshotBatchMaxBytes。每加入一条后检查,累计 >= 它即落库,所以一批最多超出「一条消息」的大小。

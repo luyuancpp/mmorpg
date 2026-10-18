@@ -11,69 +11,86 @@ import (
 	_config "protogen/internal/config"
 )
 
+// grpcUnnamedSection 是 readNamedGrpcCodeSections 读到的一个无名守护段:Line 是开始标记所在行号(从 1 计),Code 含首尾标记。
+type grpcUnnamedSection struct {
+	Line int
+	Code string
+}
+
+// readNamedGrpcCodeSections 读出 path 里的命名守护段(名字 → 含首尾标记的代码)与全部无名守护段(按出现顺序)。
 // 命名守护段用于 RPC 的准入段(grpc.<M>.guard)与头文件声明，避免靠段落顺序识别代码。
-// 沿用既有 BEGIN/END 标记，仅在 BEGIN 后追加名称；FirstCode 与 Handle* 的无名段仍由原解析器读取。
-// 新骨架没有位置的段(旧模板段、proto 已删除方法的 Handle* 体等)只用于检测:scanGrpcCppSections → checkLegacyGrpcSections。
-func readNamedGrpcCodeSections(path string) (map[string]string, error) {
+// 沿用既有 BEGIN/END 标记，仅在 BEGIN 后追加名称。无名段的去留由调用方决定:
+//   - cpp:FirstCode 与 Handle* 体由 codeParser 读取,新骨架没有位置的(旧模板段、proto 已删除方法的 Handle* 体等)
+//     由 scanGrpcCppSections → checkLegacyGrpcSections 检出;
+//   - 头文件:骨架只有三个命名段,非空无名段一律拒绝(checkGrpcHeaderUnnamedSections)。
+//
+// 结构损坏(嵌套、孤立的结束标记、未闭合、命名段缺名或重名)一律报错。文件不存在视为没有守护段。
+func readNamedGrpcCodeSections(path string) (map[string]string, []grpcUnnamedSection, error) {
 	sections := make(map[string]string)
 	file, err := os.Open(path)
 	if os.IsNotExist(err) {
-		return sections, nil
+		return sections, nil, nil
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer file.Close()
 
 	prefix := _config.Global.Naming.YourCodeBegin + ":"
+	var unnamed []grpcUnnamedSection
 	var name string
 	inSection := false
+	lineNumber, beginLine := 0, 0
 	var code strings.Builder
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
+		lineNumber++
 		trimmed := strings.TrimSpace(line)
-		if trimmed == _config.Global.Naming.YourCodeBegin || strings.HasPrefix(trimmed, prefix) {
+		if isCodeSectionBeginMarker(trimmed) {
 			if inSection {
-				return nil, fmt.Errorf("%s：守护段内不能嵌套守护段", path)
+				return nil, nil, fmt.Errorf("%s：守护段内不能嵌套守护段", path)
 			}
 			inSection = true
+			beginLine = lineNumber
 			if strings.HasPrefix(trimmed, prefix) {
 				name = strings.TrimSpace(strings.TrimPrefix(trimmed, prefix))
 				if name == "" {
-					return nil, fmt.Errorf("%s：命名守护段缺少名称", path)
+					return nil, nil, fmt.Errorf("%s：命名守护段缺少名称", path)
 				}
 				if _, exists := sections[name]; exists {
-					return nil, fmt.Errorf("%s：守护段 %s 重复", path, name)
+					return nil, nil, fmt.Errorf("%s：守护段 %s 重复", path, name)
 				}
-				code.WriteString(line + "\n")
 			}
+			code.WriteString(line + "\n")
 			continue
 		}
 		if trimmed == _config.Global.Naming.YourCodeEnd {
 			if !inSection {
-				return nil, fmt.Errorf("%s：守护段结束标记没有对应开始标记", path)
+				return nil, nil, fmt.Errorf("%s：守护段结束标记没有对应开始标记", path)
 			}
+			code.WriteString(line + "\n")
 			if name != "" {
-				code.WriteString(line + "\n")
 				sections[name] = strings.TrimRight(code.String(), "\n")
+			} else {
+				unnamed = append(unnamed, grpcUnnamedSection{Line: beginLine, Code: strings.TrimRight(code.String(), "\n")})
 			}
 			name = ""
 			inSection = false
 			code.Reset()
 			continue
 		}
-		if name != "" {
+		if inSection {
 			code.WriteString(line + "\n")
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if inSection {
-		return nil, fmt.Errorf("%s：守护段尚未闭合", path)
+		return nil, nil, fmt.Errorf("%s：守护段尚未闭合", path)
 	}
-	return sections, nil
+	return sections, unnamed, nil
 }
 
 // allowedNames 照常接受；emptyOnlyNames 是已退役的旧段名(如 grpc.<M>.in_loop / post_dispatch)，
@@ -132,9 +149,10 @@ type grpcCppSection struct {
 }
 
 // scanGrpcCppSections 把 handler cpp 切成「顶格函数的签名」与「守护段」两张表,供旧段检查使用,不依赖当前 proto 的方法列表。
-//   - 边界规则与 codeParser 一致:守护段内的自定义代码不参与边界识别;函数体在顶格的 "}" 处结束。
+//   - 边界规则与 codeParser 一致:守护段内的自定义代码既不参与边界识别,也不认函数签名;函数体在顶格的 "}" 或 "};" 处结束(isFunctionBodyEnd,行尾空白不计);
+//     函数起始行与 codeParser 认查找键的行用同一判定(isCppSignatureLine)。
 //   - 签名从起始行累积到以 "{" 结尾的行,行间保留换行,折行签名可以整体匹配;累积途中遇到以 ";" 结尾的行
-//     (声明)或顶格 "}" 即放弃,遇到新的起始行则从新行重来。
+//     (声明)或函数体结束行(isFunctionBodyEnd)即放弃,遇到新的起始行则从新行重来。
 //   - 标记规则与 readNamedGrpcCodeSections 一致(整行恰为开始 / 命名开始 / 结束标记),嵌套、孤立的结束标记、未闭合一律报错。
 //
 // 文件不存在视为空文件。
@@ -148,7 +166,6 @@ func scanGrpcCppSections(path string) ([]string, []grpcCppSection, error) {
 	}
 	defer file.Close()
 
-	begin := _config.Global.Naming.YourCodeBegin
 	end := _config.Global.Naming.YourCodeEnd
 	var signatures []string
 	var sections []grpcCppSection
@@ -161,7 +178,7 @@ func scanGrpcCppSections(path string) ([]string, []grpcCppSection, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		trimmed := strings.TrimSpace(line)
-		isBegin := trimmed == begin || strings.HasPrefix(trimmed, begin+":")
+		isBegin := isCodeSectionBeginMarker(trimmed)
 		switch {
 		case inSection && isBegin:
 			return nil, nil, fmt.Errorf("%s：守护段内不能嵌套守护段", path)
@@ -175,13 +192,12 @@ func scanGrpcCppSections(path string) ([]string, []grpcCppSection, error) {
 			}
 		case isBegin:
 			inSection = true
-			name := strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(trimmed, begin), ":"))
-			section = grpcCppSection{Name: name, Function: function}
+			section = grpcCppSection{Name: codeSectionName(trimmed), Function: function}
 			code.WriteString(line + "\n")
 		case trimmed == end:
 			return nil, nil, fmt.Errorf("%s：守护段结束标记没有对应开始标记", path)
 		case inBody:
-			if line == "}" {
+			if isFunctionBodyEnd(line) {
 				function, inBody = -1, false
 			}
 		case isGrpcCppFunctionStart(line):
@@ -201,22 +217,20 @@ func scanGrpcCppSections(path string) ([]string, []grpcCppSection, error) {
 	return signatures, sections, nil
 }
 
-// grpcSignatureProgress 处理签名里的一行:以 "{" 结尾即进入函数体;以 ";" 结尾(只是声明)或是顶格 "}" 即放弃,
-// 回到函数外;否则继续累积。返回新的函数下标与是否已进入函数体。
+// grpcSignatureProgress 处理签名里的一行:以 "{" 结尾即进入函数体;以 ";" 结尾(只是声明)或是函数体结束行
+// (isFunctionBodyEnd:顶格的 "}" / "};",与 codeParser 同口径)即放弃,回到函数外;否则继续累积。返回新的函数下标与是否已进入函数体。
 func grpcSignatureProgress(function int, line, trimmed string) (int, bool) {
 	switch {
 	case strings.HasSuffix(trimmed, "{"):
 		return function, true
-	case strings.HasSuffix(trimmed, ";") || line == "}":
+	case strings.HasSuffix(trimmed, ";") || isFunctionBodyEnd(line):
 		return -1, false
 	}
 	return function, false
 }
 
-// isGrpcCppFunctionStart:顶格(不以空白开头)、不是预处理指令或行注释、且含 "<Svc>Impl::<Name>" 的行。
+// isGrpcCppFunctionStart:签名行(isCppSignatureLine:顶格、不是预处理指令或行注释)且含 "<Svc>Impl::<Name>"。
+// 与 codeParser 认查找键同一判定:codeParser 能在其上认出 Handle* 查找键的行,这里必然认作函数起始行。
 func isGrpcCppFunctionStart(line string) bool {
-	if line == "" || line[0] == ' ' || line[0] == '\t' || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
-		return false
-	}
-	return grpcImplFunctionPattern.MatchString(line)
+	return isCppSignatureLine(line) && grpcImplFunctionPattern.MatchString(line)
 }

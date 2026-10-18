@@ -175,6 +175,13 @@ redis-cli -h <redis-host> FLUSHDB
 步骤 4: Kafka 处理
 ──────────────────
 # 清空 db_task_topic，防止回档时间点之后的写入消息被重放
+# (2026-10-16 更正,下面两行原文不删:方式 A 不适用于现行管线。topic 名是 db_task_zone_<id>[_g<gen>],分区数是数据顺序协议的一部分,
+#  取 go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt(现为 10,不是 5);同名删除重建后 offset 从 0 重新开始,go/db 的永久
+#  applied cursor(consumer:applied:<topic>:<key>:<msgType>)仍记着旧 offset,新写会被 orderingForTask 判陈旧(同分区)或不可比(分区数变了)。删除重建等同换代,须按
+#  db-task-kafka-partition-contract.md「离线扩容流程」执行;一键脚本 k8s_zone_rollback.ps1 的 Step 5 只用方式 B(-ToDatetime))
+# (2026-10-17 更正:kafka_offset_reset.ps1 -DeleteAndRecreateTopic 现在对 db_task topic(db_task_zone_<id>[_g<gen>],判据 lib Test-DbTaskTopicName)
+#  一律拒绝,要换一个空 topic 只能把 ServerConfig.Kafka.TopicGeneration 加一换代,不提供同名重建的逃生口。
+#  第一行「防止回档时间点之后的写入消息被重放」在 K8s 上也不成立,见下方「2026-10-17 修订」的「回档的 Kafka 语义(待负责人裁决)」)
 # 方式 A: 删除并重建 topic
 kafka-topics.sh --delete --topic db_task_topic --bootstrap-server <broker>
 kafka-topics.sh --create --topic db_task_topic --partitions 5 --bootstrap-server <broker>
@@ -204,6 +211,8 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
 | Kafka 必须处理 | 不清空 topic/offset 会导致旧消息重放覆盖回档数据 |
 | MySQL 必须先恢复 | 它是唯一的持久化真相源（source of truth） |
 | 串行保证 | Kafka partition key = `player_id`，同玩家写入串行执行 |
+
+> **2026-10-17 更正**：「Kafka 必须处理」一行的说法在现行管线上不完整。go/db 有按 topic 的已落库游标，K8s 上它与各 zone 缓存同在共享 Redis DB0、回档不清；重置位点之后哪些写会重放、哪些被吸收，取决于游标还在不在。现状与两个互斥方案见下方「2026-10-17 修订」的「回档的 Kafka 语义（待负责人裁决）」。
 
 ### 2026-09-29 修订:第 0 步预检与不粘滞的部署参数
 
@@ -265,8 +274,9 @@ DryRun 冒烟:`pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-rollback
 **组名与分区数**:脚本入口用 `Get-YamlScalar` 现读 `go/db/etc/db.yaml` 的 `ServerConfig.Kafka.GroupID`(基名)与 `ServerConfig.Kafka.PartitionCnt`(必须是正整数),
 读不到即拒绝,此时尚未产生任何改动。`-KafkaGroup` 留空推导为 `<基名>_z<ZoneId>`;新增 `-KafkaLegacyGroup`,留空推导为 `<基名>`;两者相同(区分大小写比较)入口即拒。
 摘要行 `kafka` 一栏变为 `<bootstrap> topic=<topic> group=<zone 组> retire=<legacy 组> partitions=<N>`。
+(2026-10-17 补,R7 复核 scripts [6]:topic 不再只按 `-ZoneId` 拼。入口读完 `PartitionCnt` 之后再读 `ServerConfig.Kafka.TopicGeneration`,必须是非负整数,读不到即拒;用 lib 的 `Get-DbTaskTopicName` 推导,世代 ≤1 为 `db_task_zone_<id>`,否则 `db_task_zone_<id>_g<gen>`。`-KafkaTopic` 留空即用推导值;显式给了却与推导值不同(区分大小写),入口即拒,此时尚未产生任何改动。理由:Step 6 的 `k8s_deploy.ps1` 只按 db.yaml 的世代号读 topic,第 0 步与 Step 5 改的若是另一个 topic,真实 topic 上的位点不会动,全程不报错。`dev_tools.ps1` 的 `-RollbackKafkaTopic` 缺省为空串。)
 
-**第 0 步由两部分扩为 a–d**(上文「第 0 步」的 1 / 2 即脚本里的 a / b)。a、b、d 都过才进 Step 1,c 只告警:
+**第 0 步由两部分扩为 a–d**(上文「第 0 步」的 1 / 2 即脚本里的 a / b;2026-10-17 起再加 e)。a、b、d、e 都过才进 Step 1,c 只告警:
 
 - **c. Kafka LAG 只读快照**(`Show-KafkaTopicLagSnapshot`):只在 `-Apply` 下执行,dry-run 只打印两条 `kafka-consumer-groups.sh --describe --group <组>` 命令。
   - 对 zone 组与 legacy 组各 describe 一次,只打印本 topic 的分区 / current / end / lag 与 LAG 合计,别的 topic 的行不计入;组不存在时打印 `(group does not exist)`。
@@ -277,7 +287,11 @@ DryRun 冒烟:`pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-rollback
     即 dry-run,不带 `-Apply` 与 `-RetireGroup`。计划不完整、抛错或退出码非 0,都在停服之前拒绝。
   - describe 本身失败同样拒绝:判不出就无法证明 Step 5 走得通。
   - 已知局限(未处理):zone 组在本 topic 上没有已提交位点、却仍有活跃成员时(例如以 final(Z) 运行、但从未写入过的 zone),dry-run 重置会因组不是 Empty 被 Kafka 拒绝,回档在停服前被拒。
-- c / d 直接调用 PATH 上的 `kafka-consumer-groups.sh`(本脚本没有 `-KafkaBin`),执行机必须装有 Kafka CLI 且连得到 `-KafkaBootstrap`。
+- **e. Step 6 的 Kafka 读法预检**(`Assert-Step6KafkaFactsReadable`,2026-10-17,R7 复核 scripts [2]):只在 `-Apply` 下、第 0 步 d 之后、Step 1 之前执行;dry-run 只打印两条将要执行的 `kubectl … exec -n <infra ns> kafka-0 -c kafka -- /bin/sh -c "… kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group <组>"`。
+  - 起因:Step 6 的 `k8s_deploy.ps1` 在写路径入口经 `kubectl exec` 进 kafka-0 读两组位点,读不到就拒绝部署;以前第 0 步只用本机 CLI,部署账号缺 `pods/exec`、kafka-0 正在重启或容器名不对时,各项预检全过,直到 Step 6 才失败。
+  - 与 Step 6 走同一条路径:lib 的同一份命令与分类(`Get-DbGroupDescribeExecArgs` / `Resolve-DbGroupDescribeExecResult`)、同一个 kubectl 出口(`Invoke-ClientEntryKubectl`)、同一组 `-KubeContext` / `-KubeConfig`;infra namespace 按语法树读 `dev_tools.ps1` 的 `-InfraNamespace` 默认值(Step 6 不传它,用的就是这个,现为 `mmorpg-infra`),读不出即拒绝。
+  - 对 zone 组与 legacy 组各 exec 一次,exec 失败或输出判不出即在停服之前拒绝;再逐组与本机 CLI(`-KafkaBootstrap`)比对「本 topic 上有没有已提交位点」,两边结论不同(多半是两者指向了不同的 Kafka)同样拒绝。只比有无、不比位点值:停服之前 db 还在消费。本机 describe 失败也拒绝。
+- c / d / e 直接调用 PATH 上的 `kafka-consumer-groups.sh`(本脚本没有 `-KafkaBin`),执行机必须装有 Kafka CLI 且连得到 `-KafkaBootstrap`;e 另外要求部署账号对 infra namespace 的 kafka-0 有 `pods/exec` 权限。
 
 **Step 2 已删除**,编号 3–7 不变。`k8s_zone_rollback.ps1` 的 `-KafkaDrainTimeoutSec` 与 `dev_tools.ps1` 的 `-RollbackKafkaDrainTimeoutSec` 一并删除。
 理由:Step 5 本来就把位点拨回 TargetTime,排空没有意义。
@@ -297,6 +311,9 @@ DryRun 冒烟:`pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-rollback
 - 仍有订阅者时(本 zone 的 namespace 没删干净、留有 db 实例),Step 5 失败。这时 zone 已停、MySQL 已回档、Redis 已清:清掉残留实例后,**单独重跑脚本打印的那条
   `kafka_offset_reset.ps1` 命令**(带 `-Apply`;重跑时旧组若已没有本 topic 的位点,退役一步打印 `nothing to retire`),再单独跑 Step 6。
 - `-RetireGroup` 必须配 `-Partitions > 0`,不能等于 `-Group`,不能与 `-DeleteAndRecreateTopic` 同用,违反任一条即在入口拒绝。
+- (2026-10-17 补,R7 复核 scripts [1] / [5])`kafka_offset_reset.ps1` 的其余参数约束与退出码:
+  - `-DeleteAndRecreateTopic` 对 db_task topic(`db_task_zone_<id>` 或带 `_g<gen>`,lib `Test-DbTaskTopicName`)一律拒绝,改走 `TopicGeneration` 换代;对其它 topic 必须显式给 `-ReplicationFactor`(缺省 0 = 没给)且等于现有副本数,删除前先 describe 核对分区数与副本数,读不到或不一致都不删;删除后最多等 30s(单调时钟)确认 topic 已从 `--list` 消失,`--list` 失败或超时即抛出、不 create;create 失败或重建后复核不对,提示先停生产者再手工重建。细节见设计文档 §5。
+  - 重置模式的成功路径以 `exit 0` 结束,`Invoke-KafkaToolCaptured` 在 finally 里把 `LASTEXITCODE` 复位为 0。以前「组不存在」的 describe 以非 0 退出、被判为 missing 后正常返回,Step 5 会在 PITR / FLUSHDB 之后把成功判成失败。
 
 **Step 6:显式 `-DbConsumerGroup zone`,真跑时落到最终形状 final(Z)。** `$upArgs.DbConsumerGroup = 'zone'`,第 0 步 b 的静态预检用的是同一份参数。
 
@@ -310,6 +327,8 @@ DryRun 冒烟:`pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-rollback
 - **回档之后,该 zone 一律以 zone 组为权威**:仍在 legacy 组上的 zone 借回档迁到 zone 组。这是行为变化。
 - 剩余风险:Kafka 位点直到 Step 6 才读,第 0 步不读。部署账号缺 `pods/exec` 权限或 kafka-0 未就绪时,`k8s_deploy.ps1` 会在任何写操作之前拒绝,但这时 zone 已停服、数据已回档;
   修好之后,按脚本打印的 Step 6 那一行单独重跑 `dev_tools.ps1 -Command k8s-zone-up … -DbConsumerGroup zone`。
+  (2026-10-17 更正:这条已在停服前覆盖。第 0 步 e 用 Step 6 的同一条路径预读两组位点,缺 `pods/exec`、kafka-0 未就绪都在 Step 1 之前拒绝。剩下的只是第 0 步 e 与 Step 6 之间的窗口:中间隔着 MySQL PITR,kafka-0 在这段时间里重启仍会让 Step 6 拒绝,处置同上。)
+- Step 6 渲染的是最终形状(`Source=explicit-already-authoritative`),不触发 `k8s_deploy.ps1` 2026-10-17 新增的交接闸能力校验(那一项只在要渲染交接形状时才抓 db Pod 的 `/metrics`),所以回档不需要 `pods/proxy` 权限。
 - Step 5 的退役没做成(两组在本 topic 上都有位点)时,显式 zone 模式同样拒绝,并打印两种 `-FinalizeHandoff` 收尾命令。回档场景下应重跑 Step 5,不要照那条提示收尾。
 - Step 6 必须部署 db:`dev_tools.ps1` 的 `-GoSvcRegistry` 缺省非空。显式 `-DbConsumerGroup` 配上不部署 db 的运行(没给 `-GoSvcRegistry`,或带了 `-SkipGoSvc`)时,`k8s_deploy.ps1` 在写路径入口拒绝。
 
@@ -338,6 +357,46 @@ DryRun 冒烟:`pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-rollback
 期望摘要含 `group=db_rpc_consumer_group_z101 retire=db_rpc_consumer_group partitions=10`,Step 5 行含 `-RetireGroup db_rpc_consumer_group` 与 `-Partitions 10`,
 Step 6 行含 `-DbConsumerGroup zone`,输出里没有 Step 2 的排空等待。
 
+### 2026-10-17 修订:R7 复核后的脚本修复与回档的 Kafka 语义(待负责人裁决)
+
+**状态:已落码,未编译、未测试,待 Codex 验证。** 本节按 2026-10-17 工作区的 `tools/scripts/k8s_zone_rollback.ps1`、`tools/scripts/kafka_offset_reset.ps1`、`tools/scripts/lib/kafka_consumer_groups.ps1`、
+`tools/scripts/dev_tools.ps1` 写;回档语义一项只改了注释,行为没有改。设计细节见 [db-consumer-group-per-zone.md](./db-consumer-group-per-zone.md) §5、§6。
+
+**已并入上文「2026-10-15 修订」的修复**(那一节里标了「2026-10-17」):
+- 第 0 步 e `Assert-Step6KafkaFactsReadable`:停服前按 Step 6 的同一条 `kubectl exec` 路径预读两组位点,并与本机 CLI 比对有无位点(R7 [2]);上文「剩余风险:Kafka 位点直到 Step 6 才读」因此已在停服前覆盖。
+- topic 按 `ServerConfig.Kafka.TopicGeneration` 推导,显式 `-KafkaTopic` 与推导值不一致即拒(R7 [6])。
+- `kafka_offset_reset.ps1`:`-DeleteAndRecreateTopic` 对 db_task topic 一律拒绝、`-ReplicationFactor` 必填且须与现有一致、删除等待超时即抛出(R7 [1]);重置模式以 `exit 0` 结束、`LASTEXITCODE` 复位(R7 [5])。上文步骤 4 的「方式 A」对 db_task 已不可用,要换空 topic 只能换代。
+
+**回档的 Kafka 语义(待负责人裁决,R7 复核 scripts [4])**
+
+现状(按代码):
+- 本文步骤 4 写「清空 db_task_topic,防止回档时间点之后的写入消息被重放」,「关键安全点」写「不清空 topic/offset 会导致旧消息重放覆盖回档数据」,脚本头 Step 5 写「avoids replaying post-target writes」。三处都默认「拨回位点 = 从 TargetTime 起重放,且重放会覆盖回档数据」,在现行管线上都不准确。
+- go/db 写任务有按 topic 的已落库游标 `consumer:applied:<topic>:<key>:<msgType>` 与归属 epoch `consumer:applied_epoch:<topic>:<key>:<msgType>`(`go/db/internal/kafka/key_ordered_consumer.go` 的 `appliedSeqKey` / `appliedEpochKey`),seq 不大于游标的写判 stale,不落库。
+- K8s 上游标与各 zone 的缓存、映射、重试收据同在共享 Redis DB0。Step 4 的 FLUSHDB 防护(`Get-SharedRedisGuardPatterns` 含 `consumer:applied*`、`kafka:retry*`)在这个库上必拒,能走通的只有两种:不给 `-RedisHost`,Step 4 被跳过,游标不清;带 `-ConfirmFlushSharedRedis`,连所有 zone 的游标、映射与重试收据一起清。
+- 游标还在时,Step 5 把 zone 组拨回 TargetTime 之后:
+  - TargetTime 之后已经落过库的消息被游标判 stale 吸收,不写 MySQL,所以「从 TargetTime 起重放」在 K8s 上不成立;
+  - zone-down 时还没消费的积压,seq 大于游标,照常落库;
+  - 共享 DB0 里本 topic 的重试收据(`kafka:retry:queue:<topic>`、`kafka:retry:queue:<topic>:p<N>`、`kafka:retry:processing:<topic>:<实例>` 与旧版的 `kafka:retry:processing:<topic>`)从未推进过游标,Step 6 之后照常重试落库;
+  - 后两类是 TargetTime 之后的写,会落进 PITR 之后的 MySQL,部分玩家回到回档前的状态,所以「丢弃」也不完整。
+- 游标被清时(本机单库,或带 `-ConfirmFlushSharedRedis`),没有游标的写按 `apply_no_cursor` 全部重新落库(`db_ordering_guard_total{outcome="apply_no_cursor"}`),TargetTime 之后的写全部重放,回档等于没做。
+
+两个方案(互斥,修法与代价):
+
+| | (A) 丢弃 TargetTime 之后的写 | (B) 从 TargetTime 起灾难恢复重放 |
+|---|---|---|
+| 做法 | Step 5 改为 `-ToLatest`;在 Step 4 / 5 之间盘点并拦截本 topic 的重试收据(上面列的 ready / 按分区 ready / processing 键) | Step 5 之前只清本 topic 的游标:`SCAN` 匹配 `consumer:applied:<topic>:*` 与 `consumer:applied_epoch:<topic>:*`,逐页 `UNLINK`;第 0 步加一条校验:TargetTime 不早于各分区的日志起点,否则重放不全。**现在没有这条校验** |
+| 结果 | MySQL 停在 PITR 的 TargetTime | MySQL 先回到 TargetTime,再由 Kafka 追平到 zone-down 时的状态 |
+| 适用 | 撤销 TargetTime 之后的错误写(误操作、刷资源、坏版本) | MySQL 丢数据或损坏,要从 Kafka 补回 |
+| 代价 | 要新写盘点与拦截收据的工具,并与 go/db 的重试键(`retry_routing.go` / `retry_ownership.go`)和 `go/db/cmd/retry_requeue` 口径一致;zone-down 前最后一批存盘一起丢,回档点完全由 PITR 决定 | 撤销不了错误写,重放会把它们再写一遍;要在共享 DB0 上按 topic 批量删键,pattern 里 topic 之后必须带冒号、topic 先做 glob 转义,逐页执行、任一页出错即停;重放量受保留期与 PVC 限制;「不早于日志起点」的判据还要设计 |
+
+两个方案都要另外核实的一点(推断,没有核对过):`--to-datetime` 按消息时间戳取位点,时间戳早于 TargetTime、但 TargetTime 那一刻还没被消费的积压,既不在 PITR 之后的 MySQL 里,也不在拨回之后的重放范围内。
+
+裁决之前,按现有代码执行回档得到的是上面「现状」的混合语义。
+
+**Codex 验证**(Claude 未执行):在仓库根逐个执行 `pwsh -NoProfile -File tools/scripts/tests/<名>.tests.ps1`,名字为 `kafka_offset_reset_output_guard`、`dev_tools_kafka_offset_reset`、
+`k8s_zone_rollback_gate_router_mode`(需要 PATH 上有 git)、`k8s_zone_rollback_flush_guard`、`k8s_deploy_contract`、`k8s_migrate_gate`、`k8s_client_entry_contract`,通过标准 `fail=0`,
+失败时保留全部 `[FAIL]` 行。
+
 ---
 
 ## 3. 当前缺失基建
@@ -346,7 +405,7 @@ Step 6 行含 `-DbConsumerGroup zone`,输出里没有 Step 2 的排空等待。
 |--------|------|------|--------|
 | MySQL 定时备份 + binlog 归档 | ✅ **已落地 (2026-05-15)** | `deploy/k8s/manifests/infra/mysql.yaml`(PVC + binlog on)+ `mysql-backup-cronjob.yaml`(每天 03:17 UTC dump + binlog 复制),SOP 见 [`docs/ops/mysql-backup-pitr-runbook.md`](../ops/mysql-backup-pitr-runbook.md) | ~~高~~ |
 | Redis RDB/AOF 定期快照归档 | 未做 | 当前 `--appendonly yes` 保证持久化，但无历史时间点恢复能力 | 低（可 FLUSHDB） |
-| Kafka offset 回档工具 | ✅ **已落地 (2026-05-15)** | `tools/scripts/kafka_offset_reset.ps1`(支持 to-datetime / to-earliest / to-latest / delete-and-recreate-topic 4 种模式,默认 dry-run),注册为 `dev_tools.ps1 -Command kafka-offset-reset` | ~~中~~ |
+| Kafka offset 回档工具 | ✅ **已落地 (2026-05-15)** | `tools/scripts/kafka_offset_reset.ps1`(支持 to-datetime / to-earliest / to-latest / delete-and-recreate-topic 4 种模式,默认 dry-run),注册为 `dev_tools.ps1 -Command kafka-offset-reset`。**2026-10-17 更正**:delete-and-recreate-topic 对 db_task topic 一律拒绝(改走 TopicGeneration 换代),对其它 topic 要求 `-ReplicationFactor` 与现有一致;另有 2026-10-15 起的 FinalizeHandoff 模式,见上文「2026-10-17 修订」(已落码,未编译、未测试,待 Codex 验证) | ~~中~~ |
 | 一键 zone 回档脚本 | ✅ **已落地 (2026-05-15)** | `tools/scripts/k8s_zone_rollback.ps1`(7 步:zone-down / Kafka drain / MySQL PITR 提示暂停 / Redis FLUSHDB / kafka-offset-reset / zone-up / 验证清单),注册为 `dev_tools.ps1 -Command k8s-zone-rollback`,默认 dry-run。**2026-09-29 更正**:现为「第 0 步预检 + 7 步」,见上文「## 3. 整 Zone 灾难恢复级回档」下的「2026-09-29 修订:第 0 步预检与不粘滞的部署参数」(本文有两个「## 3.」标题,指的是前一个)。**2026-10-15 更正**:Step 2(Kafka drain)已删除,第 0 步增加 c(LAG 只读快照)/ d(Step 5 预演),Step 5 重置 zone 组 `db_rpc_consumer_group_z<id>` 并退役 legacy 组在本 topic 上的位点,Step 6 落到 final(Z),见同处「2026-10-15 修订」(已落码,未编译、未测试,待 Codex 验证) | ~~中~~ |
 | 备份异地归档(S3/OSS) | 未做 | PVC 只防 pod 重启,不防整个集群 / 机房挂 | 高(生产前必做) |
 | 跨服务离线 epoch 回档栅栏 | 未做（应用级回档 fail-closed） | login/player_locator 阻断新会话，Scene 排空存盘，Kafka/db 携带并校验 epoch | P0（重启应用级回档前） |
@@ -359,3 +418,4 @@ Step 6 行含 `-DbConsumerGroup zone`,输出里没有 Step 2 的排空等待。
 - **自建 MySQL**：必须配置 `log-bin`、定期 `mysqldump` CronJob、binlog 归档到对象存储
 - **Redis**：zone 回档时直接 FLUSHDB，无需额外备份
 - **Kafka**：回档后最安全的做法是清空 `db_task_topic`，避免旧消息重放
+  - 2026-10-17 更正：现行管线不能清空或同名重建 db_task topic（go/db 的已落库游标按 topic 名区分、永不过期，同名重建后的新存盘会被判陈旧丢弃；`kafka_offset_reset.ps1 -DeleteAndRecreateTopic` 已拒绝），回档只拨位点；拨位点之后哪些写会重放，见上文「2026-10-17 修订」的「回档的 Kafka 语义（待负责人裁决）」。

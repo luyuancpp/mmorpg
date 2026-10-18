@@ -144,6 +144,10 @@ public:
     bool finalGoawaySubmitted() const { return finalGoawaySubmitted_; }
     // nghttp2 还没关闭的流(含请求没收完的、已派发等应答的)。
     size_t OpenStreamCount() const { return streams_.size(); }
+    // 头部已被接受(OnRequestHeaders 返回 kAccept)、请求还没收完因而未派发(OnRequestComplete 没返回 kAccept)、
+    // 本端也还没应答的流,即请求体还在上传的流;按 id 升序。业务必然没开始:上层排空到期时据此立即 RefuseStream(§15.10),
+    // 不依赖自己的旁路记录(那份记录有上限、会被修剪)。头部还没收完的流不在其中,收完头部时由 Observer 判定。
+    std::vector<int32_t> AcceptedUndispatchedStreams() const;
     // 既不想读也不想写(GOAWAY 已发出或收到且没有活跃的流,或会话被终止),或者出过致命错误。
     bool ShouldClose() const;
 

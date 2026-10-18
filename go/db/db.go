@@ -6,6 +6,7 @@ import (
 	"db/internal/kafka"
 	"db/internal/logic/pkg/proto_sql"
 	"db/internal/metrics"
+	"db/internal/saveoutbox"
 	server "db/internal/server/db"
 	"db/internal/svc"
 	"flag"
@@ -142,7 +143,12 @@ func main() {
 	if err := kafka.SetFencingMode(fencingMode); err != nil {
 		panic(fmt.Sprintf("fencing mode rejected: %v", err))
 	}
-	logx.Infof("player row fencing: mode=%s", fencingMode)
+	kafka.SetFencingEpochOverride(config.AppConfig.ServerConfig.Fencing.EpochOverride)
+	if fencingMode == config.FencingModeLegacy && config.AppConfig.ServerConfig.Fencing.EpochOverride {
+		logx.Errorf("Fencing.EpochOverride ignored in legacy mode")
+	}
+
+	logx.Infof("player row fencing: mode=%s epoch_override=%v", fencingMode, config.AppConfig.ServerConfig.Fencing.EpochOverride && fencingMode == config.FencingModeDual)
 
 	// Initialize Kafka consumer
 	kafkaConsumer, err := kafka.NewKeyOrderedKafkaConsumer(
@@ -160,6 +166,14 @@ func main() {
 	if err := kafkaConsumer.Start(); err != nil {
 		panic(fmt.Sprintf("failed to start Kafka consumer: %v", err))
 	}
+
+	// 父快照Lua中保存的原始任务意图跨scene崩溃恢复；Kafka确认后仍等两表SQL双ACK才清理。
+	// 装配使用可写主父缓存Redis，与只读OwnerEpochRedis区分；跨实例拓扑未支持时拒启。
+	saveReplay, err := saveoutbox.Start(context.Background(), config.AppConfig, ctx.RedisClient, ctx.PlacementRedis)
+	if err != nil {
+		panic(fmt.Sprintf("save outbox recovery rejected: %v", err))
+	}
+	defer saveReplay.Stop()
 
 	// Start Prometheus /metrics endpoint (no-op when MetricsListenAddr empty).
 	metrics.Start(config.AppConfig.MetricsListenAddr)

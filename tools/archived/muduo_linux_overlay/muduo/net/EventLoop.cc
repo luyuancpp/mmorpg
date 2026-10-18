@@ -6,6 +6,19 @@
 
 // Author: Shuo Chen (chenshuo at chenshuo dot com)
 
+// ---------------------------------------------------------------------------
+// LOCAL OVERLAY -- 由 tools/archived/setup_dependencies.sh 在配置 muduo 之前
+// 拷到 third_party/muduo-linux/muduo/net/EventLoop.cc。
+//
+// 除标 LOCAL DELTA 的 runAt / runAfter / runEvery 外与上游逐字一致:定时器改按单调时钟到期,
+// runAt 的墙钟时刻在调用时一次性换算到单调域,runAfter / runEvery 直接用单调 now 加时长。
+// 必须与同目录 TimerQueue.h / TimerQueue.cc 覆盖件一起生效(TimerQueue::addTimer 的 when
+// 已改为单调域)。Windows 侧同一改动在 cpp/libs/engine/muduo_windows/src/muduo/net/EventLoop.cc。
+// EventLoop.h 不覆盖:公开 API 与类布局都不变。
+//
+// 升级 muduo 子模块时:用新的上游文件覆盖本文件,再逐处补回 LOCAL DELTA。
+// ---------------------------------------------------------------------------
+
 #include "muduo/net/EventLoop.h"
 
 #include "muduo/base/Logging.h"
@@ -176,21 +189,29 @@ size_t EventLoop::queueSize() const
   return pendingFunctors_.size();
 }
 
+// LOCAL DELTA:TimerQueue 按单调时钟到期(见 TimerQueue::monotonicNow)。runAt 的 time 是墙钟时刻,
+// 在这里一次性换算成单调截止时刻,之后墙钟再跳也不改变它何时到期(等价于 runAfter(time - now));
+// runAfter / runEvery 直接用单调 now 加时长,不经墙钟往返。
 TimerId EventLoop::runAt(Timestamp time, TimerCallback cb)
 {
-  return timerQueue_->addTimer(std::move(cb), time, 0.0);
+  // 先读墙钟、后读单调钟,顺序必须显式(函数实参的求值顺序未指定):两次读数之间线程若被抢占 P,
+  // 先墙后单调只会让截止时刻晚 P;反过来会让定时器比墙钟时刻早 P 触发。
+  const Timestamp wallNow = Timestamp::now();
+  const Timestamp monoNow = TimerQueue::monotonicNow();
+  const Timestamp when = TimerQueue::monotonicFromWall(time, wallNow, monoNow);
+  return timerQueue_->addTimer(std::move(cb), when, 0.0);
 }
 
 TimerId EventLoop::runAfter(double delay, TimerCallback cb)
 {
-  Timestamp time(addTime(Timestamp::now(), delay));
-  return runAt(time, std::move(cb));
+  const Timestamp when(addTime(TimerQueue::monotonicNow(), delay));
+  return timerQueue_->addTimer(std::move(cb), when, 0.0);
 }
 
 TimerId EventLoop::runEvery(double interval, TimerCallback cb)
 {
-  Timestamp time(addTime(Timestamp::now(), interval));
-  return timerQueue_->addTimer(std::move(cb), time, interval);
+  const Timestamp when(addTime(TimerQueue::monotonicNow(), interval));
+  return timerQueue_->addTimer(std::move(cb), when, interval);
 }
 
 void EventLoop::cancel(TimerId timerId)

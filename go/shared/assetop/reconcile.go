@@ -1,10 +1,8 @@
 package assetop
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -908,34 +906,34 @@ func (l *Loop) verifySQLCommit(ctx context.Context, op Op, res Result) (Result, 
 		l.metrics.incLedgerRead("unseen")
 		return res, nil
 	}
+	proved := resultWithReceipt(ledger, op, Result{Outcome: outcome, Reason: reason, Durable: true, SQLCommitted: true, Partial: partial})
+	if !proved.Terminal() {
+		l.metrics.incLedgerRead("unseen")
+		return proved, nil
+	}
 	if outcome != res.Outcome {
 		return res, ErrOutcomeFlip
 	}
-	res.Durable = true
-	res.SQLCommitted = true
-	res.Partial = res.Partial || partial
-	if reason != 0 {
-		res.Reason = reason
+	proved.Partial = proved.Partial || res.Partial
+	if proved.Reason == 0 {
+		proved.Reason = res.Reason
 	}
-	return resultWithReceipt(ledger, op, res), nil
+	return proved, nil
 }
 
 func resultWithReceipt(ledger *componentpb.PlayerAssetOpLedgerComp, op Op, res Result) Result {
 	res.Snapshot = nil
-	digest := escrowReceiptDigest(op)
-	for _, stream := range ledger.GetStreams() {
-		if stream.GetStream() != op.Stream || stream.GetStreamEpoch() != op.StreamEpoch {
-			continue
-		}
-		for _, receipt := range stream.GetReceipts() {
-			if receipt.GetSeq() == op.Seq && receipt.GetCorrelationId() == op.CorrelationID &&
-				bytes.Equal(receipt.GetRequestDigest(), digest[:]) && receiptSnapshotMatches(op, receipt.GetSnapshot()) {
-				res.Snapshot = proto.Clone(receipt.GetSnapshot()).(*assetpb.AssetSnapshot)
-			}
-		}
+	receipt := matchingReceipt(ledger, op)
+	if receipt == nil {
+		return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_UNKNOWN}
 	}
-	if escrowAwaitsReceipt(op, res) {
-		res.Durable = false // 托管只认与扣出一起落盘的原始实例结果(开关打开时即 SQL 证据里的那份)
+	if res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_APPLIED && escrowsInstances(op) {
+		if !receiptSnapshotMatches(op, receipt.GetSnapshot()) {
+			return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_UNKNOWN}
+		}
+		res.Snapshot = proto.Clone(receipt.GetSnapshot()).(*assetpb.AssetSnapshot)
+	} else if snapshotHasInstances(receipt.GetSnapshot()) {
+		return Result{Outcome: assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_UNKNOWN}
 	}
 	return res
 }
@@ -962,14 +960,6 @@ func escrowsInstances(op Op) bool {
 // escrowAwaitsReceipt:APPLIED 的实例扣出却没有可用原件。这时不能终结,否则托管方拿不到过户所需的完整实例。
 func escrowAwaitsReceipt(op Op, res Result) bool {
 	return res.Outcome == assetpb.AssetOpOutcome_ASSET_OP_OUTCOME_APPLIED && escrowsInstances(op) && res.Snapshot == nil
-}
-
-// 完整实例扣出只属于 trade；摘要与 C++ ReceiptDigest 的稳定 debit 信封一致。
-// 时间戳与签名不属于业务身份，重试不会改变摘要。
-func escrowReceiptDigest(op Op) [sha256.Size]byte {
-	req := op.Request()
-	req.Auth = &assetpb.AssetOpAuth{Caller: "trade"}
-	return sha256.Sum256(Canonical(RPCDebit, req, 0))
 }
 
 func receiptSnapshotMatches(op Op, snapshot *assetpb.AssetSnapshot) bool {
@@ -1148,10 +1138,15 @@ func (l *Loop) tryPersistedLedger(ctx context.Context, op Op, res Result) Result
 		l.metrics.incLedgerRead("unseen")
 		return res
 	}
+	proved := resultWithReceipt(ledger, op, Result{Outcome: outcome, Reason: reason, Durable: true, SQLCommitted: l.cfg.RequireSQLCommit, Partial: partial})
+	if !proved.Terminal() {
+		l.metrics.incLedgerRead("unseen")
+		return proved
+	}
 	l.metrics.incLedgerRead("finalized")
 	logx.Infof("[AssetOp] Persisted outcome read offline; finalization possible op_id=%d stream=%d seq=%d outcome=%s partial=%t",
 		op.OpID, op.Stream, op.Seq, outcomeLabel(outcome), partial)
-	return resultWithReceipt(ledger, op, Result{Outcome: outcome, Reason: reason, Durable: true, SQLCommitted: l.cfg.RequireSQLCommit, Partial: partial})
+	return proved
 }
 
 // readFinalLedger 读「终结所认的那份已落盘账本」:开关打开读 SQL 提交证据,关闭读 Redis 父键 blob(HEAD 口径)。

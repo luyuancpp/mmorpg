@@ -997,3 +997,7 @@ Java `java-mail-notify-sql-redis.log`邮件9/9真实TiDB加Redis测试通过、0
 ### 2026-10-16 上线门禁：附件发奖依赖 go/db 切 dual(负责人拍板)
 
 附件发奖的 Finalize 强制要求资产 SQL 提交证据(`go/mail/mail.go` 固定打开 `RequireSQLCommit` 并在启动时 `CheckWiring`),而证据只在 go/db `Fencing.Mode=dual` 时发布(缺省 `legacy` 不发布)。所以**附件发奖上线前,必须先把它会投递到的每个 zone 的 go/db 按 [db-write-fencing-mysql.md](db-write-fencing-mysql.md) §8.3 切到 `dual`,并走完 §8.7 的上线顺序**;在此之前不对玩家开放附件发奖(不部署发奖链路或不放行发件入口),否则待办会一直停在 AwaitDurable。任一 zone 回退 `legacy` 之前先关该 zone 的发奖入口。
+
+### 2026-10-17 排行榜奖励邮件真实调用链补充
+
+两版已从实际评分SQL/outbox，经真实排行榜RPC、停代封榜及奖励工作器调用MailAdmin，再由玩家邮箱入口核对唯一邮件。注入邮件已提交但首次成功回复丢失后，Go重启排行榜测试进程、Java重建仓储与工作器，均按原reward_id及完整载荷确认原mail_id，不新增邮件；Go整链1/1、Java整链1/1及默认榜回归4/4均零失败/跳过。完整范围、清理和证据统一见 [leaderboard-system.md](leaderboard-system.md) 的“2026-10-17 来源至奖励邮件的整链验收”；本批止于邮件持久可见，不证明附件实际到账，也不改变上述上线门禁。

@@ -4,12 +4,21 @@ package inbox
 // store_integration_test.go(-tags integration + 真库)覆盖;这里钉住「读出之后怎么判、写回什么」。
 
 import (
+	"bytes"
+	"context"
+	"net"
+	"regexp"
+	"strings"
 	"testing"
 
 	"player_inbox/internal/constants"
 	"player_inbox/internal/metrics"
 
 	inboxpb "proto/player_inbox"
+
+	"github.com/zeromicro/go-zero/core/logx/logtest"
+	"google.golang.org/grpc/peer"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -242,6 +251,222 @@ func TestVoidOutcomeOf(t *testing.T) {
 	for _, tc := range cases {
 		if got := voidOutcomeOf(tc.action, tc.state); got != tc.want {
 			t.Errorf("%s: got %+v, want %+v", tc.name, got, tc.want)
+		}
+	}
+}
+
+// TestAuditRowFor 钉住审计行的组装(评审 L9 回归):条目终态行 30 天后物理删除、审计行永不删除,
+// 审计必须独自回答「做了什么」。msg_type / request_id / issued_at_ms / 内容摘要 / 载荷一律取自条目行
+// (调用方传入的同名值被忽略,shard 按 player_id 重算);「谁、为什么」与 void_reason 取调用方;
+// 与条目对不上的审计 fail-closed(不写出一行张冠李戴的记录)。
+func TestAuditRowFor(t *testing.T) {
+	const pid, seq, requestID = uint64(42), uint64(77), uint64(9001)
+	payload := []byte{8, 3}
+	issued := testNowMs - 5
+	item := &inboxpb.PlayerInboxItemRow{
+		Shard: RowShard(pid), PlayerId: pid, Domain: uint32(gmDomain), Seq: seq,
+		MsgType: uint32(gmBlock), RequestId: requestID, IssuedAtMs: issued,
+		ContentSha256: ContentSHA256(gmBlock, issued, payload), Payload: payload,
+		OperatorName: "ops_producer", Note: "条目自己的 note 不进审计",
+	}
+	in := &inboxpb.PlayerInboxAudit{
+		Shard: (RowShard(pid) + 1) % ShardCount, PlayerId: pid, Domain: uint32(gmDomain), Seq: seq,
+		Action:   uint32(inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_VOID),
+		Operator: "ops_alice", PeerAddr: "10.0.0.5:51234", Reason: "工单 #7", CreatedMs: testNowMs,
+		// 调用方给的内容列一律忽略:内容只认条目这一个来源。
+		MsgType: uint32(gmDebt), RequestId: 1, IssuedAtMs: 1, ContentSha256: []byte("forged"), Payload: []byte("forged"),
+		VoidReason: uint32(inboxpb.PlayerInboxVoidReason_PLAYER_INBOX_VOID_CANCELLED),
+	}
+	got, err := auditRowFor(item, in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := &inboxpb.PlayerInboxAudit{
+		Shard: RowShard(pid), PlayerId: pid, Domain: uint32(gmDomain), Seq: seq,
+		Action:   uint32(inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_VOID),
+		Operator: "ops_alice", PeerAddr: "10.0.0.5:51234", Reason: "工单 #7", CreatedMs: testNowMs,
+		MsgType: uint32(gmBlock), RequestId: requestID, IssuedAtMs: issued,
+		ContentSha256: item.GetContentSha256(), Payload: payload,
+		VoidReason: uint32(inboxpb.PlayerInboxVoidReason_PLAYER_INBOX_VOID_CANCELLED),
+	}
+	if !proto.Equal(got, want) {
+		t.Fatalf("auditRowFor = %+v\nwant %+v", got, want)
+	}
+	if !bytes.Equal(ContentSHA256(inboxpb.PlayerInboxMessageType(got.GetMsgType()), got.GetIssuedAtMs(), got.GetPayload()),
+		got.GetContentSha256()) {
+		t.Fatal("审计行的摘要必须能由它自己的 msg_type / issued_at_ms / payload 复算")
+	}
+
+	// 合法的零字节载荷(currency_type=0 的封锁)写成空串而不是 NULL,与条目行同一口径。
+	empty := proto.Clone(item).(*inboxpb.PlayerInboxItemRow)
+	empty.Payload, empty.ContentSha256 = nil, nil
+	if got, err := auditRowFor(empty, in); err != nil || got.Payload == nil || got.ContentSha256 == nil {
+		t.Fatalf("零字节载荷: got %+v err=%v, want 非 nil 的空串", got, err)
+	}
+
+	// 与条目对不上 → error,不写审计。
+	for name, mutate := range map[string]func(a *inboxpb.PlayerInboxAudit){
+		"player_id 不同": func(a *inboxpb.PlayerInboxAudit) { a.PlayerId++ },
+		"domain 不同":    func(a *inboxpb.PlayerInboxAudit) { a.Domain++ },
+		"seq 不同":       func(a *inboxpb.PlayerInboxAudit) { a.Seq++ },
+	} {
+		bad := proto.Clone(in).(*inboxpb.PlayerInboxAudit)
+		mutate(bad)
+		if got, err := auditRowFor(item, bad); err == nil {
+			t.Errorf("%s: 应 fail-closed,got %+v", name, got)
+		}
+	}
+	if _, err := auditRowFor(nil, in); err == nil {
+		t.Error("条目为 nil 应报错")
+	}
+	if _, err := auditRowFor(item, nil); err == nil {
+		t.Error("审计为 nil 应报错")
+	}
+}
+
+// TestRegisteredPayloadsFitAudit 钉住审计表原样存载荷时的体量前提(评审 L9):审计行永不自动删除,
+// 每条处置 / 作废都复制一份载荷。v1 只有 GM 类型、载荷上限 ≤ 1KiB;登记更大载荷的类型时这里会红,
+// 先重新评估审计表的体量(或改为只存摘要)再放宽。
+func TestRegisteredPayloadsFitAudit(t *testing.T) {
+	const auditPayloadBudget = 1024
+	r := mustRegistry(t)
+	if len(r.types) == 0 {
+		t.Fatal("注册表没有任何类型")
+	}
+	for typ, e := range r.types {
+		if e.Spec.GetMaxPayloadBytes() > auditPayloadBudget {
+			t.Errorf("%v 的 max_payload_bytes = %d,超过审计表按原样存载荷的预算 %d", typ, e.Spec.GetMaxPayloadBytes(), auditPayloadBudget)
+		}
+	}
+}
+
+// ── 日志里的发送方身份(评审 L10)───────────────────────────────────────
+// 告警(deploy/k8s/player-inbox-alerts.yaml PlayerInboxEpochAhead 等)让值班按 ERROR 日志里的 scene_node_id
+// 定位发送方;只有 player_id 时找不到是哪台 scene 发的。对端地址是唯一不可伪造的部分,scene_node_id 是自报的线索。
+
+const (
+	logTestPeer      = "10.0.0.5:51234"
+	logTestSceneNode = uint32(9)
+)
+
+func peerContext(t *testing.T) context.Context {
+	t.Helper()
+	addr, err := net.ResolveTCPAddr("tcp", logTestPeer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return peer.NewContext(context.Background(), &peer.Peer{Addr: addr})
+}
+
+// fixedEpochs 是只读的 R:STALE 分类时读一次。
+type fixedEpochs uint64
+
+func (e fixedEpochs) OwnerEpoch(context.Context, uint64) (uint64, error) { return uint64(e), nil }
+
+func requireSender(t *testing.T, what, logs string) {
+	t.Helper()
+	for _, want := range []string{"peer=" + logTestPeer, "scene_node_id=9"} {
+		if !strings.Contains(logs, want) {
+			t.Errorf("%s: 日志缺 %q:\n%s", what, want, logs)
+		}
+	}
+}
+
+// TestFenceRejectLogsCarrySender:Fetch / Ack 的围栏拒绝日志带对端地址与 scene_node_id。
+// EPOCH_REQUIRED 走公开入口(不碰库);EPOCH_AHEAD 与 STALE(fence_regressed)直接调 reportFenceReject。
+func TestFenceRejectLogsCarrySender(t *testing.T) {
+	s := &Store{registry: mustRegistry(t), epochs: fixedEpochs(3)}
+	ctx := peerContext(t)
+
+	logs := logtest.NewCollector(t)
+	resp, err := s.Fetch(ctx, &inboxpb.FetchPlayerInboxRequest{
+		PlayerId: 42, Domain: gmDomain, OwnerEpoch: 0, SceneNodeId: logTestSceneNode,
+	})
+	if err != nil || resp.GetFence() != inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED {
+		t.Fatalf("Fetch epoch=0: %+v %v", resp, err)
+	}
+	requireSender(t, "Fetch EPOCH_REQUIRED", logs.String())
+
+	logs.Reset()
+	ack, err := s.Ack(ctx, &inboxpb.AckPlayerInboxRequest{
+		PlayerId: 42, Domain: gmDomain, OwnerEpoch: 0, SceneNodeId: logTestSceneNode,
+		Decisions: []*inboxpb.PlayerInboxDecisionReport{{Seq: 1, Outcome: outApplied, RequestId: 1}},
+	})
+	if err != nil || ack.GetFence() != inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_REQUIRED {
+		t.Fatalf("Ack epoch=0: %+v %v", ack, err)
+	}
+	requireSender(t, "Ack EPOCH_REQUIRED", logs.String())
+
+	logs.Reset()
+	s.reportFenceReject(ctx, "Ack", inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_EPOCH_AHEAD, 42, gmDomain, 7, 5, logTestSceneNode)
+	requireSender(t, "EPOCH_AHEAD", logs.String())
+
+	logs.Reset()
+	// R = 3 ≤ req = 4 < fence = 5:核心 Redis 的 owner_epoch 回退了(fence_regressed,critical)。
+	s.reportFenceReject(ctx, "Fetch", inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_STALE, 42, gmDomain, 4, 5, logTestSceneNode)
+	if out := logs.String(); !strings.Contains(out, "fence_regressed") {
+		t.Fatalf("STALE 应分类为 fence_regressed:\n%s", out)
+	}
+	requireSender(t, "STALE fence_regressed", logs.String())
+}
+
+// TestAckResultLogsCarrySender:Ack 逐条的协议异常与 SETTLED_UNKNOWN 日志带对端地址与 scene_node_id。
+func TestAckResultLogsCarrySender(t *testing.T) {
+	s := &Store{}
+	ctx := peerContext(t)
+	ackOf := func(report *inboxpb.PlayerInboxDecisionReport) *inboxpb.AckPlayerInboxRequest {
+		return &inboxpb.AckPlayerInboxRequest{
+			PlayerId: 42, Domain: gmDomain, OwnerEpoch: 5, SceneNodeId: logTestSceneNode,
+			Decisions: []*inboxpb.PlayerInboxDecisionReport{report},
+		}
+	}
+
+	logs := logtest.NewCollector(t)
+	s.reportAckResults(ctx, 42, gmDomain, ackOf(&inboxpb.PlayerInboxDecisionReport{Seq: 10, Outcome: outApplied, RequestId: 999}),
+		[]*inboxpb.PlayerInboxAckItem{{Seq: 10, Result: inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_MISMATCH, State: statePending}})
+	if out := logs.String(); !strings.Contains(out, "Ack protocol anomaly") {
+		t.Fatalf("应记协议异常:\n%s", out)
+	}
+	requireSender(t, "Ack MISMATCH", logs.String())
+
+	logs.Reset()
+	s.reportAckResults(ctx, 42, gmDomain, ackOf(&inboxpb.PlayerInboxDecisionReport{Seq: 11, Outcome: outUnknown, RequestId: 11}),
+		[]*inboxpb.PlayerInboxAckItem{{Seq: 11, Result: inboxpb.PlayerInboxAckResult_PLAYER_INBOX_ACK_FINALIZED, State: stateUnknown}})
+	if out := logs.String(); !strings.Contains(out, "SETTLED_UNKNOWN") {
+		t.Fatalf("应记 SETTLED_UNKNOWN:\n%s", out)
+	}
+	requireSender(t, "Ack SETTLED_UNKNOWN", logs.String())
+}
+
+// TestPeerAddr:有对端时回 ip:port,取不到时回 "unknown"(审计的 peer_addr 与日志共用)。
+func TestPeerAddr(t *testing.T) {
+	if got := PeerAddr(context.Background()); got != "unknown" {
+		t.Fatalf("PeerAddr(无对端) = %q, want unknown", got)
+	}
+	if got := PeerAddr(peerContext(t)); got != logTestPeer {
+		t.Fatalf("PeerAddr = %q, want %q", got, logTestPeer)
+	}
+}
+
+// ── 集成测试护栏(评审 L14)───────────────────────────────────────────────
+
+// inboxTestDBNamePattern:store_integration_test.go 每个用例都 DROP 收件箱三张表与 schema_migrations,
+// 只许碰这两类一次性库。appuser 对 mmorpg_player_inbox / testdb / zone_N_db / mmorpg_trade 都有 ALL 权限,
+// 黑名单挡不住 DSN 指错,所以用白名单(照 go/guild 的 guildTestDBNamePattern)。
+// 放在不带 integration 标签的文件里:集成用例用它,下面的单测不带标签也能钉住它。
+var inboxTestDBNamePattern = regexp.MustCompile(`^(player_inbox_it|player_inbox_it_\d+_\d+)$`)
+
+func TestInboxTestDBNamePattern(t *testing.T) {
+	for _, ok := range []string{"player_inbox_it", "player_inbox_it_123_4"} {
+		if !inboxTestDBNamePattern.MatchString(ok) {
+			t.Errorf("%q 应被接受", ok)
+		}
+	}
+	for _, bad := range []string{
+		"mmorpg_player_inbox", "testdb", "zone_1_db", "mmorpg_trade", "guild_test", "trade_it", "player_inbox_it2", "",
+	} {
+		if inboxTestDBNamePattern.MatchString(bad) {
+			t.Errorf("%q 必须被拒绝", bad)
 		}
 	}
 }

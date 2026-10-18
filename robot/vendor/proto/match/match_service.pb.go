@@ -163,7 +163,10 @@ type JoinQueueRequest struct {
 	//   2..上限  = 进这个人数档的队列,凑满即开
 	//   超过上限 = 拒绝(kMatchModeNotOpen)
 	// 上限 = match 配置 PveTeamSizeByConfigId[battle_config_id],且不超过引擎每队上限 5。
-	TeamSize      uint32 `protobuf:"varint,7,opt,name=team_size,json=teamSize,proto3" json:"team_size,omitempty"`
+	TeamSize uint32 `protobuf:"varint,7,opt,name=team_size,json=teamSize,proto3" json:"team_size,omitempty"`
+	// 同一玩家意图重放必须复用；为空只允许未启用全球权威的开发兼容模式。
+	RequestId     string `protobuf:"bytes,8,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	NetworkPlanId string `protobuf:"bytes,9,opt,name=network_plan_id,json=networkPlanId,proto3" json:"network_plan_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -248,6 +251,20 @@ func (x *JoinQueueRequest) GetTeamSize() uint32 {
 	return 0
 }
 
+func (x *JoinQueueRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *JoinQueueRequest) GetNetworkPlanId() string {
+	if x != nil {
+		return x.NetworkPlanId
+	}
+	return ""
+}
+
 type JoinQueueResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ErrorCode     uint32                 `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`      // 0 = success
@@ -309,9 +326,11 @@ func (x *JoinQueueResponse) GetErrorMessage() *base.TipInfoMessage {
 }
 
 type CancelQueueRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	QueueTicket   string                 `protobuf:"bytes,2,opt,name=queue_ticket,json=queueTicket,proto3" json:"queue_ticket,omitempty"` // Ticket to cancel
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId    uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	QueueTicket string                 `protobuf:"bytes,2,opt,name=queue_ticket,json=queueTicket,proto3" json:"queue_ticket,omitempty"` // Ticket to cancel
+	// 对未知结果的 Join 也能撤销；与原 Join 共用编号，服务端永久阻止该意图迟到入队。
+	RequestId     string `protobuf:"bytes,3,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -360,9 +379,17 @@ func (x *CancelQueueRequest) GetQueueTicket() string {
 	return ""
 }
 
+func (x *CancelQueueRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
 type GetQueueStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId      uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	RequestId     string                 `protobuf:"bytes,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"` // 查询本次 Join 的撤销提交证据；不改变当前票据身份。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -404,11 +431,23 @@ func (x *GetQueueStatusRequest) GetPlayerId() uint64 {
 	return 0
 }
 
+func (x *GetQueueStatusRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
 type GetQueueStatusResponse struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	State                QueueState             `protobuf:"varint,1,opt,name=state,proto3,enum=match.QueueState" json:"state,omitempty"`
 	EstimatedWaitSeconds uint32                 `protobuf:"varint,2,opt,name=estimated_wait_seconds,json=estimatedWaitSeconds,proto3" json:"estimated_wait_seconds,omitempty"` // Server-estimated wait time
 	QueuedSeconds        uint32                 `protobuf:"varint,3,opt,name=queued_seconds,json=queuedSeconds,proto3" json:"queued_seconds,omitempty"`                        // How long the player has been waiting
+	QueueTicket          string                 `protobuf:"bytes,4,opt,name=queue_ticket,json=queueTicket,proto3" json:"queue_ticket,omitempty"`
+	BattleId             uint64                 `protobuf:"varint,5,opt,name=battle_id,json=battleId,proto3" json:"battle_id,omitempty"`
+	SelectedRegion       uint32                 `protobuf:"varint,6,opt,name=selected_region,json=selectedRegion,proto3" json:"selected_region,omitempty"`
+	RetryAfterMs         uint32                 `protobuf:"varint,7,opt,name=retry_after_ms,json=retryAfterMs,proto3" json:"retry_after_ms,omitempty"`
+	RequestCancelled     bool                   `protobuf:"varint,8,opt,name=request_cancelled,json=requestCancelled,proto3" json:"request_cancelled,omitempty"` // 对上述 request_id 的 SQL 撤销墓碑已提交；NOT_QUEUED 单独不构成此证据。
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -462,6 +501,41 @@ func (x *GetQueueStatusResponse) GetQueuedSeconds() uint32 {
 		return x.QueuedSeconds
 	}
 	return 0
+}
+
+func (x *GetQueueStatusResponse) GetQueueTicket() string {
+	if x != nil {
+		return x.QueueTicket
+	}
+	return ""
+}
+
+func (x *GetQueueStatusResponse) GetBattleId() uint64 {
+	if x != nil {
+		return x.BattleId
+	}
+	return 0
+}
+
+func (x *GetQueueStatusResponse) GetSelectedRegion() uint32 {
+	if x != nil {
+		return x.SelectedRegion
+	}
+	return 0
+}
+
+func (x *GetQueueStatusResponse) GetRetryAfterMs() uint32 {
+	if x != nil {
+		return x.RetryAfterMs
+	}
+	return 0
+}
+
+func (x *GetQueueStatusResponse) GetRequestCancelled() bool {
+	if x != nil {
+		return x.RequestCancelled
+	}
+	return false
 }
 
 type ChallengePlayerRequest struct {
@@ -1290,7 +1364,7 @@ var File_proto_match_match_service_proto protoreflect.FileDescriptor
 
 const file_proto_match_match_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1fproto/match/match_service.proto\x12\x05match\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1bproto/common/base/tip.proto\x1a proto/battle/player_battle.proto\"\x87\x02\n" +
+	"\x1fproto/match/match_service.proto\x12\x05match\x1a\x1bproto/db/proto_option.proto\x1a\x1dproto/common/base/empty.proto\x1a\x1bproto/common/base/tip.proto\x1a proto/battle/player_battle.proto\x1a\x1fproto/match/match_network.proto\"\xce\x02\n" +
 	"\x10JoinQueueRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12$\n" +
 	"\x04mode\x18\x02 \x01(\x0e2\x10.match.MatchModeR\x04mode\x12\"\n" +
@@ -1298,21 +1372,33 @@ const file_proto_match_match_service_proto_rawDesc = "" +
 	"\x10party_member_ids\x18\x04 \x03(\x04B\x02\x18\x01R\x0epartyMemberIds\x12\x17\n" +
 	"\azone_id\x18\x05 \x01(\rR\x06zoneId\x12(\n" +
 	"\x10battle_config_id\x18\x06 \x01(\rR\x0ebattleConfigId\x12\x1b\n" +
-	"\tteam_size\x18\a \x01(\rR\bteamSize\"\x8b\x01\n" +
+	"\tteam_size\x18\a \x01(\rR\bteamSize\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\b \x01(\tR\trequestId\x12&\n" +
+	"\x0fnetwork_plan_id\x18\t \x01(\tR\rnetworkPlanId\"\x8b\x01\n" +
 	"\x11JoinQueueResponse\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x01 \x01(\rR\terrorCode\x12!\n" +
 	"\fqueue_ticket\x18\x02 \x01(\tR\vqueueTicket\x124\n" +
-	"\rerror_message\x18\x03 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"T\n" +
+	"\rerror_message\x18\x03 \x01(\v2\x0f.TipInfoMessageR\ferrorMessage\"s\n" +
 	"\x12CancelQueueRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12!\n" +
-	"\fqueue_ticket\x18\x02 \x01(\tR\vqueueTicket\"4\n" +
+	"\fqueue_ticket\x18\x02 \x01(\tR\vqueueTicket\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x03 \x01(\tR\trequestId\"S\n" +
 	"\x15GetQueueStatusRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\"\x9e\x01\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x02 \x01(\tR\trequestId\"\xda\x02\n" +
 	"\x16GetQueueStatusResponse\x12'\n" +
 	"\x05state\x18\x01 \x01(\x0e2\x11.match.QueueStateR\x05state\x124\n" +
 	"\x16estimated_wait_seconds\x18\x02 \x01(\rR\x14estimatedWaitSeconds\x12%\n" +
-	"\x0equeued_seconds\x18\x03 \x01(\rR\rqueuedSeconds\"\x89\x01\n" +
+	"\x0equeued_seconds\x18\x03 \x01(\rR\rqueuedSeconds\x12!\n" +
+	"\fqueue_ticket\x18\x04 \x01(\tR\vqueueTicket\x12\x1b\n" +
+	"\tbattle_id\x18\x05 \x01(\x04R\bbattleId\x12'\n" +
+	"\x0fselected_region\x18\x06 \x01(\rR\x0eselectedRegion\x12$\n" +
+	"\x0eretry_after_ms\x18\a \x01(\rR\fretryAfterMs\x12+\n" +
+	"\x11request_cancelled\x18\b \x01(\bR\x10requestCancelled\"\x89\x01\n" +
 	"\x16ChallengePlayerRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12(\n" +
 	"\x10target_player_id\x18\x02 \x01(\x04R\x0etargetPlayerId\x12(\n" +
@@ -1383,8 +1469,10 @@ const file_proto_match_match_service_proto_rawDesc = "" +
 	"\x13QUEUE_STATE_MATCHED\x10\x02\x12\x15\n" +
 	"\x11QUEUE_STATE_READY\x10\x03\x12\x18\n" +
 	"\x14QUEUE_STATE_ENTERING\x10\x04\x12\x1a\n" +
-	"\x16QUEUE_STATE_NOT_QUEUED\x10\x052\x82\x06\n" +
-	"\fMatchService\x12@\n" +
+	"\x16QUEUE_STATE_NOT_QUEUED\x10\x052\xbf\a\n" +
+	"\fMatchService\x12^\n" +
+	"\x13GetNetworkProbePlan\x12!.match.GetNetworkProbePlanRequest\x1a\".match.GetNetworkProbePlanResponse\"\x00\x12[\n" +
+	"\x12CommitNetworkProbe\x12 .match.CommitNetworkProbeRequest\x1a!.match.CommitNetworkProbeResponse\"\x00\x12@\n" +
 	"\tJoinQueue\x12\x17.match.JoinQueueRequest\x1a\x18.match.JoinQueueResponse\"\x00\x122\n" +
 	"\vCancelQueue\x12\x19.match.CancelQueueRequest\x1a\x06.Empty\"\x00\x12O\n" +
 	"\x0eGetQueueStatus\x12\x1c.match.GetQueueStatusRequest\x1a\x1d.match.GetQueueStatusResponse\"\x00\x12R\n" +
@@ -1433,9 +1521,13 @@ var file_proto_match_match_service_proto_goTypes = []any{
 	(*MatchResult)(nil),                        // 19: match.MatchResult
 	(*MatchTeam)(nil),                          // 20: match.MatchTeam
 	(*base.TipInfoMessage)(nil),                // 21: TipInfoMessage
-	(*battle.RequestBattleTicketRequest)(nil),  // 22: RequestBattleTicketRequest
-	(*base.Empty)(nil),                         // 23: Empty
-	(*battle.RequestBattleTicketResponse)(nil), // 24: RequestBattleTicketResponse
+	(*GetNetworkProbePlanRequest)(nil),         // 22: match.GetNetworkProbePlanRequest
+	(*CommitNetworkProbeRequest)(nil),          // 23: match.CommitNetworkProbeRequest
+	(*battle.RequestBattleTicketRequest)(nil),  // 24: RequestBattleTicketRequest
+	(*GetNetworkProbePlanResponse)(nil),        // 25: match.GetNetworkProbePlanResponse
+	(*CommitNetworkProbeResponse)(nil),         // 26: match.CommitNetworkProbeResponse
+	(*base.Empty)(nil),                         // 27: Empty
+	(*battle.RequestBattleTicketResponse)(nil), // 28: RequestBattleTicketResponse
 }
 var file_proto_match_match_service_proto_depIdxs = []int32{
 	0,  // 0: match.JoinQueueRequest.mode:type_name -> match.MatchMode
@@ -1449,28 +1541,32 @@ var file_proto_match_match_service_proto_depIdxs = []int32{
 	17, // 8: match.SpectateBattleRecord.summary:type_name -> match.BattleWatchSummary
 	0,  // 9: match.MatchResult.mode:type_name -> match.MatchMode
 	20, // 10: match.MatchResult.teams:type_name -> match.MatchTeam
-	2,  // 11: match.MatchService.JoinQueue:input_type -> match.JoinQueueRequest
-	4,  // 12: match.MatchService.CancelQueue:input_type -> match.CancelQueueRequest
-	5,  // 13: match.MatchService.GetQueueStatus:input_type -> match.GetQueueStatusRequest
-	7,  // 14: match.MatchService.ChallengePlayer:input_type -> match.ChallengePlayerRequest
-	9,  // 15: match.MatchService.RespondChallenge:input_type -> match.RespondChallengeRequest
-	11, // 16: match.MatchService.NotifyChallengeInvite:input_type -> match.ChallengeInviteS2C
-	12, // 17: match.MatchService.NotifyChallengeResult:input_type -> match.ChallengeResultS2C
-	13, // 18: match.MatchService.WatchBattle:input_type -> match.WatchBattleRequest
-	22, // 19: match.MatchService.RequestBattleTicket:input_type -> RequestBattleTicketRequest
-	15, // 20: match.MatchService.ListWatchableBattles:input_type -> match.ListWatchableBattlesRequest
-	3,  // 21: match.MatchService.JoinQueue:output_type -> match.JoinQueueResponse
-	23, // 22: match.MatchService.CancelQueue:output_type -> Empty
-	6,  // 23: match.MatchService.GetQueueStatus:output_type -> match.GetQueueStatusResponse
-	8,  // 24: match.MatchService.ChallengePlayer:output_type -> match.ChallengePlayerResponse
-	10, // 25: match.MatchService.RespondChallenge:output_type -> match.RespondChallengeResponse
-	23, // 26: match.MatchService.NotifyChallengeInvite:output_type -> Empty
-	23, // 27: match.MatchService.NotifyChallengeResult:output_type -> Empty
-	14, // 28: match.MatchService.WatchBattle:output_type -> match.WatchBattleResponse
-	24, // 29: match.MatchService.RequestBattleTicket:output_type -> RequestBattleTicketResponse
-	16, // 30: match.MatchService.ListWatchableBattles:output_type -> match.ListWatchableBattlesResponse
-	21, // [21:31] is the sub-list for method output_type
-	11, // [11:21] is the sub-list for method input_type
+	22, // 11: match.MatchService.GetNetworkProbePlan:input_type -> match.GetNetworkProbePlanRequest
+	23, // 12: match.MatchService.CommitNetworkProbe:input_type -> match.CommitNetworkProbeRequest
+	2,  // 13: match.MatchService.JoinQueue:input_type -> match.JoinQueueRequest
+	4,  // 14: match.MatchService.CancelQueue:input_type -> match.CancelQueueRequest
+	5,  // 15: match.MatchService.GetQueueStatus:input_type -> match.GetQueueStatusRequest
+	7,  // 16: match.MatchService.ChallengePlayer:input_type -> match.ChallengePlayerRequest
+	9,  // 17: match.MatchService.RespondChallenge:input_type -> match.RespondChallengeRequest
+	11, // 18: match.MatchService.NotifyChallengeInvite:input_type -> match.ChallengeInviteS2C
+	12, // 19: match.MatchService.NotifyChallengeResult:input_type -> match.ChallengeResultS2C
+	13, // 20: match.MatchService.WatchBattle:input_type -> match.WatchBattleRequest
+	24, // 21: match.MatchService.RequestBattleTicket:input_type -> RequestBattleTicketRequest
+	15, // 22: match.MatchService.ListWatchableBattles:input_type -> match.ListWatchableBattlesRequest
+	25, // 23: match.MatchService.GetNetworkProbePlan:output_type -> match.GetNetworkProbePlanResponse
+	26, // 24: match.MatchService.CommitNetworkProbe:output_type -> match.CommitNetworkProbeResponse
+	3,  // 25: match.MatchService.JoinQueue:output_type -> match.JoinQueueResponse
+	27, // 26: match.MatchService.CancelQueue:output_type -> Empty
+	6,  // 27: match.MatchService.GetQueueStatus:output_type -> match.GetQueueStatusResponse
+	8,  // 28: match.MatchService.ChallengePlayer:output_type -> match.ChallengePlayerResponse
+	10, // 29: match.MatchService.RespondChallenge:output_type -> match.RespondChallengeResponse
+	27, // 30: match.MatchService.NotifyChallengeInvite:output_type -> Empty
+	27, // 31: match.MatchService.NotifyChallengeResult:output_type -> Empty
+	14, // 32: match.MatchService.WatchBattle:output_type -> match.WatchBattleResponse
+	28, // 33: match.MatchService.RequestBattleTicket:output_type -> RequestBattleTicketResponse
+	16, // 34: match.MatchService.ListWatchableBattles:output_type -> match.ListWatchableBattlesResponse
+	23, // [23:35] is the sub-list for method output_type
+	11, // [11:23] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
 	11, // [11:11] is the sub-list for extension extendee
 	0,  // [0:11] is the sub-list for field type_name
@@ -1481,6 +1577,7 @@ func file_proto_match_match_service_proto_init() {
 	if File_proto_match_match_service_proto != nil {
 		return
 	}
+	file_proto_match_match_network_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -26,6 +26,7 @@
 - kafka **必须 ≥3 broker**(消除 dev 单 broker 偶发 Exited(255))
 - gate 主机必须先按 `gate-kernel-tuning-runbook.md` 跑 sysctl
 - ulimit -n ≥ 1048576(写到 systemd unit 或 `/etc/security/limits.d/`)
+  - **2026-10-18 补注**:C++ 节点(gate / scene / battle)启动时会把 RLIMIT_NOFILE **软限**自抬到 min(硬限, 1048576),所以这里真正要保证的是启动它们的 shell 的**硬限**(`ulimit -Hn`)。硬限低于需求就**拒绝启动**:gate = `GateMaxConnections` + 4096(默认 24096),battle = `BattleMaxConnections` + 4096(默认 8192),scene = 4096;stderr 一行 `FATAL open file limit config: ...`。每次启动 stdout 都有一行 `[open_file_limit] role=... verdict=... mode=... required=... soft=... hard=...`。`tools/scripts/deploy-staging.sh start` 在 sleep 之后会检查 gate / scene 是否还活着并 grep 这条拒启行,命中就报错退出。硬限一时改不了又必须先起服时,在启动前 `export NODE_OPEN_FILE_LIMIT_MODE=warn`(运维豁免:只打一行 WARN 写明缺口、继续启动,超出软限的连接会 EMFILE;与 `GATE_RUN_MODE` 等运行模式无关),压测结论按实际软限解读。细节见 [gate-kernel-tuning-runbook.md](./gate-kernel-tuning-runbook.md) §三。
 - redis-cli 在压测主机的 PATH 里(`stress-linux-tier.sh` wipe 阶段需要)
 
 ### A.2 镜像 / 二进制
@@ -97,6 +98,9 @@ start_service login login.yaml
 # 若启用 GATE_CLIENT_RPC_ROUTER=1,必须先部署并验证 client_rpc_router,不能只改开关。
 # 验证 gate 在 etcd 注册:
 etcdctl get --prefix GateNodeService.rpc/zone --keys-only
+# (2026-10-18)确认 fd 限值:每个节点的 stdout 里有一行 [open_file_limit] ... verdict=ok;
+# 出现 "FATAL open file limit config:" 说明这个 shell 的硬限不够,节点已拒启,见 A.1 补注。
+grep -h '\[open_file_limit\]\|FATAL open file limit' run/logs/cpp_nodes/scene.log run/logs/cpp_nodes/gate.log
 
 # 5. 起 Java Gateway
 java -jar java/gateway_node/target/gateway-node-0.0.1-SNAPSHOT.jar >run/logs/java/gateway.log 2>&1 &

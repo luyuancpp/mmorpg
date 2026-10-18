@@ -317,7 +317,9 @@
     [switch]$KafkaToLatest,
     [switch]$KafkaDeleteAndRecreate,
     [int]$KafkaPartitions = 0,
-    [int]$KafkaReplicationFactor = 1,
+    # 0 = 没给(不透传)。-KafkaDeleteAndRecreate 时 kafka_offset_reset.ps1 要求显式给出、且等于现有 topic 的副本数;
+    # 以前缺省 1 且只在 ≠ 1 时透传,单 broker 档显式给 1 也传不下去。
+    [int]$KafkaReplicationFactor = 0,
     [string]$KafkaBin = "",
     # 转给 kafka_offset_reset.ps1 -RetireGroup / -FinalizeHandoff(db_task 消费组交接收尾与回档退役旧组位点,
     # 见 docs/design/db-consumer-group-per-zone.md §5)。都要配 -KafkaPartitions(> 0)。
@@ -333,8 +335,8 @@
     [string]$RollbackRedisPort = "6379",
     [string]$RollbackRedisPassword = "",
     [int]$RollbackRedisDB = 0,
-    # 留空 = 由 k8s_zone_rollback.ps1 按 -ZoneId 推导 db_task_zone_<id>。
-    # 旧默认 "db_task_topic" 全仓不存在,会静默重置一个空 topic。
+    # 留空 = 由 k8s_zone_rollback.ps1 按 -ZoneId 与 go/db/etc/db.yaml 的 TopicGeneration 推导 db_task_zone_<id>[_g<gen>];
+    # 显式给了却与推导值不同,回滚脚本在入口拒绝。旧默认 "db_task_topic" 全仓不存在,会静默重置一个空 topic。
     [string]$RollbackKafkaTopic = "",
     # 留空 = 由 k8s_zone_rollback.ps1 按 go/db/etc/db.yaml 的 GroupID 基名推导:-RollbackKafkaGroup 为 <基名>_z<ZoneId>
     # (回档后的权威组,Step 5 重置它),-RollbackKafkaLegacyGroup 为 <基名>(Step 5 删除它在本 topic 上的位点)。
@@ -1665,10 +1667,10 @@ switch ($Command) {
         if ($KafkaDeleteAndRecreate)          { $kArgs.DeleteAndRecreateTopic = $true }
         if ($KafkaFinalizeHandoff)            { $kArgs.FinalizeHandoff = $true }
         if ($KafkaPartitions -gt 0)           { $kArgs.Partitions = $KafkaPartitions }
-        if ($KafkaReplicationFactor -ne 1)    { $kArgs.ReplicationFactor = $KafkaReplicationFactor }
+        if ($KafkaReplicationFactor -gt 0)    { $kArgs.ReplicationFactor = $KafkaReplicationFactor }
         if ($KafkaBin -ne "")                 { $kArgs.KafkaBin = $KafkaBin }
         if ($KafkaApply)                      { $kArgs.Apply = $true }
-        # 被调脚本以 exit 结束时(DeleteAndRecreateTopic / FinalizeHandoff)只设 $LASTEXITCODE、不抛,先清零再判,失败不得当成成功。
+        # 被调脚本三种模式的成功路径都以 exit 0 结束、失败一律 throw;以 exit 结束时只设 $LASTEXITCODE、不抛,先清零再判,失败不得当成成功。
         $global:LASTEXITCODE = 0
         & (Join-Path $ScriptDir "kafka_offset_reset.ps1") @kArgs
         if ($LASTEXITCODE -ne 0) { throw "kafka_offset_reset.ps1 failed (exit code $LASTEXITCODE)" }

@@ -13,6 +13,7 @@ import (
 	"os"
 	_ "proto/common/database"
 	"regexp"
+	"shared/authoritysql"
 	"strconv"
 	"strings"
 	"time"
@@ -278,9 +279,17 @@ func isUnknownDatabaseError(err error) bool {
 	return false
 }
 
+func newPlayerConnector(cfg *mysql.Config) (driver.Connector, error) {
+	inner, err := mysql.NewConnector(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return authoritysql.PinCurrentSession(inner, config.AppConfig.ServerConfig.Database.RequireTiDB), nil
+}
+
 func openDB(policy DDLPolicy) error {
 	mysqlConfig := newServiceMysqlConfig()
-	conn, err := mysql.NewConnector(mysqlConfig)
+	conn, err := newPlayerConnector(mysqlConfig)
 	if err != nil {
 		return fmt.Errorf("create MySQL connector: %w", err)
 	}
@@ -302,7 +311,7 @@ func openDB(policy DDLPolicy) error {
 			return err
 		}
 
-		conn, err = mysql.NewConnector(mysqlConfig)
+		conn, err = newPlayerConnector(mysqlConfig)
 		if err != nil {
 			return fmt.Errorf("create MySQL connector after database creation: %w", err)
 		}
@@ -315,6 +324,13 @@ func openDB(policy DDLPolicy) error {
 	}
 
 	if err := assertConnectedDatabase(databaseHandle); err != nil {
+		_ = databaseHandle.Close()
+		return err
+	}
+
+	checkCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := authoritysql.AssertCurrentSession(checkCtx, databaseHandle, config.AppConfig.ServerConfig.Database.RequireTiDB); err != nil {
 		_ = databaseHandle.Close()
 		return err
 	}

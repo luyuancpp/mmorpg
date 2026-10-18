@@ -726,3 +726,22 @@ DryRun 用例:
     - scene 先于 db / login 发 DBTask 时,broker 会把 db_task 自动建成 1 分区,导致 db 启动 panic;
     - 生产端没开压缩,message.max.bytes 三处没对齐。
 13. 设计速率是推算值。账本行打出的 implied buffer 只是估计,不能当成承诺的缓冲时长;回档 TargetTime 超过实际缓冲时会重放不全。
+
+## 2026-10-16 更正
+
+> 本节是追加的更正,上文原文不改。来源是 R7 语义复核的 C++ 修复(截至 2026-10-17 工作区,**已落码,未编译、未测试,待 Codex 验证**)。现行设计以 [`docs/design/db-task-delivery-and-retention.md`](../../design/db-task-delivery-and-retention.md) §A.4、§A.5、§A.7–§A.9、§A.11–§A.13 为准;S5a 其余与代码的差异(返回值改成 `SaveResult`、拒存改为丢弃等)见该文 §A.13,这里不重复。
+
+1. **停机收账的时刻已修(对应 B-06 末句、B-08、「逐文件改动」redis.cpp 一节最后一条、风险 4)**。原文写 `DbTaskDispatchSystem::Shutdown` 只在 `RedisSystem::Shutdown` 里调、由 scene main.cpp 在 Node 析构之后显式调到。那一刻 `logSystem.stop()` 已执行、`gNodeAtomic` 已置空,Linux 上「`[DbTaskDispatch] shutting down with N player(s) ...`」这行写不进日志文件,风险 4 说的「证据」实际会丢;50ms Pump 也一直跑到那时。现在:
+   - `Node`(`cpp/libs/engine/core/node/system/node/node.h`)新增拆除前钩子 `SetBeforeTeardown(BeforeTeardownFn)`。`Node::FinalizeTeardownInLoop` 在 `kafkaManager.Shutdown()`(producer 最后一次有界 flush)之后、`tlsRedis.Shutdown()` / 节点注册表 / `tlsEcs.Clear()` / `logSystem.stop()` 之前调它,成员 `beforeTeardownRan_` 保证只调一次。普通停机、身份冲突停机与 `~Node` 的兜底排空都经过这里。
+   - `RedisSystem` 新增 `StopDbTaskDispatch()`:先取消 Pump 定时器,再调 `DbTaskDispatchSystem::Shutdown()`,幂等。`RedisSystem::Shutdown()` 改为复用它,只作兜底。
+   - `cpp/nodes/scene/main.cpp` 挂上 `node.SetBeforeTeardown([](Node &){ tlsRedisSystem.StopDbTaskDispatch(); })`;Node 作用域之后原有的 `tlsRedisSystem.Shutdown()` 保留,此时是空操作。
+   - `KafkaManager::Shutdown` 在有界 flush 没排空时的 ERROR 末尾加了 ` tracked=<M>`(`KafkaManager shut down with producer messages still in flight. pending=<N> tracked=<M>`),替代 `KafkaProducer` 析构时那行在 Linux 上同样会丢的 `[Kafka] producer destroyed with N tracked messages still awaiting delivery reports`。
+2. **永久性错误已从「无限期保留」里剔除(对应 B-06 第 1、2 条,「逐文件改动」player_exit_intent.h 一节的 `DbTaskGateDecision` / `DecideDbTaskGate`,player_lifecycle.cpp ⑦ 的「分四支」,待决项第 1 条)**。原文的闸门不区分错误种类:消息过大这类同步拒绝在几次 Redis RTT 内就耗尽 3 轮,进 `kRetainExhausted` 后没有出口能补上,只能等停机看门狗。现在:
+   - `cpp/libs/engine/infra/messaging/kafka/kafka_producer_policy.h` 新增纯函数 `IsPermanentMessageError(RdKafka::ErrorCode)`。判为永久的有 `ERR_MSG_SIZE_TOO_LARGE`、`ERR_RECORD_LIST_TOO_LARGE`、`ERR_INVALID_RECORD`、`ERR_TOPIC_AUTHORIZATION_FAILED`、`ERR__INVALID_ARG`;拿不准的(`ERR_INVALID_MSG`、unknown topic 两种、`ERR__STATE` / `ERR__FATAL` / `ERR__QUEUE_FULL` / 超时 / purge 等)一律按可重试。
+   - 决策变为五支:`DbTaskGateDecision` 新增 `kFinishUnsynced`(名字 `finish_unsynced`),`DecideDbTaskGate(inFlight, needsResave, failureIsPermanent, rounds, maxRounds)`。欠账且失败是永久的时,不论轮次、也不等剩下的回执,直接收尾:计 `exit_unsynced`,打 ERROR `FinishExitOrAwaitDbTaskAck: exiting player X has a DB write task that Kafka permanently rejects (err=<code> (<err2str>)); re-saving cannot help, finishing exit with MySQL lagging Redis (in_flight=N, metric=exit_db_task_unsynced)`,然后 `FinishExitAfterPersist`;账本条目由 `OnPlayerGone` 回收并计 `orphan_unsynced`(没有在途票据时当场,有则等它们落定)。
+   - `kMaxExitDbTaskResaveRounds = 3` 与 `kRetainExhausted` 只管可重试的失败。待决项第 1 条「Kafka 不可用时下线实体被保留」的口径不变,只是不再包括永久错误。瞬时的同步拒绝(可重试错误)在入口被拒、不进待办、几轮内耗尽轮次,仍按已接受的风险处理,没有加按实体限频。
+3. **监听器不再把错误码折成 bool(对应「逐文件改动」db_task_dispatch_system.h 一节的 `Initialize` 与 `OnDeliveryReport` 两条、「接口」一节)**。原文 `OnDeliveryReport(r.correlationId, r.err == RdKafka::ERR_NO_ERROR)`。现在:
+   - 监听器原样传错误码:`OnDeliveryReport(db_task_dispatch::Ticket, std::int32_t kafkaErrorCode)`,旧的 `bool` 重载标为 `= delete`(防止 `true` 被静默转成错误码 1);同步拒绝的错误码也原样进账本。
+   - `db_task_dispatch::Ledger` 新增 `FailureKind`(`kRetryable` / `kPermanent`)、`Failure{kind, code}`,`OnProduceRejected` / `MarkLocalFailure` / `OnDelivery` 多一个 `Failure` 参数(缺省可重试,即原语义),新增 `PermanentFailureCode`;`DbTaskDispatchSystem` 新增 `PermanentFailure`(返回 `"<code> (<err2str>)"`)。
+   - 计数器名表 `kCounterNames`、`[DbTaskDispatch]` 行格式与各 `metric=` 标签都没变;`exit_unsynced` 的含义扩为「交接已发起,或失败是永久的」。
+4. **存盘收尾的 INFO 文案分两种(对应「接口」一节的运行期日志文本)**。两条 DBTask 都同步入队时仍打 `[SavePlayerToRedis] Player X saved to Redis, DB write tasks enqueued (...)`;没全入队时先打原有的汇总 ERROR,再打 INFO `[SavePlayerToRedis] Player X saved to Redis, DB write tasks NOT all queued (see the ERROR above) (...)`。「enqueued」只表示进了 librdkafka 本地队列,不等于 acks=all。

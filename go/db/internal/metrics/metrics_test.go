@@ -283,17 +283,17 @@ func TestRedisPoolCollector_SeparatePlacementClient(t *testing.T) {
 	}
 }
 
-// writePathRedisSteps 是一条写任务依次经过的 Redis 往返(G1 治标之后:核锁在复核之后、缓存回写之前)。
+// writePathRedisSteps 钉住 v0.4 的固定列集合;条件路径可能跳过某步,cache_set 只用于读路径 SET NX。
 var writePathRedisSteps = []string{
-	"lock_acquire", "cursor_get", "epoch_get", "placement_lookup", "expand_get", "placement_recheck",
-	"lease_verify", "cache_set", "cursor_set", "epoch_mark", "lock_release",
+	"lock_acquire", "cursor_get", "epoch_get", "owner_epoch_probe", "placement_lookup", "expand_get", "placement_recheck",
+	"lease_verify", "cache_publish", "cache_set", "applied_advance", "lock_release",
 }
 
-// TestRedisStepNamesPinned 钉住 11 个 step 的名字与顺序:tools/scripts/stress_summarize.ps1 的 2e 段按这些名字
+// TestRedisStepNamesPinned 钉住 12 个 step 的名字与顺序:tools/scripts/stress_summarize.ps1 的 2e 段按这些名字
 // 与顺序出列,改名 / 合并 step 必须同改脚本与 test_stress_summarize.ps1。
 func TestRedisStepNamesPinned(t *testing.T) {
-	if len(RedisSteps) != 11 {
-		t.Fatalf("RedisSteps has %d entries, want 11: %v", len(RedisSteps), RedisSteps)
+	if len(RedisSteps) != 12 {
+		t.Fatalf("RedisSteps has %d entries, want 12: %v", len(RedisSteps), RedisSteps)
 	}
 	seen := map[string]bool{}
 	for _, step := range RedisSteps {
@@ -361,7 +361,7 @@ func TestPipelineCountersPrecreated(t *testing.T) {
 	}
 	want := map[string][]string{
 		"db_ordering_guard_total": {"outcome=apply", "outcome=apply_no_cursor", "outcome=stale", "outcome=incomparable",
-			"outcome=error"},
+			"outcome=error", "outcome=stale_no_epoch", "outcome=epoch_override"},
 		"db_ordering_lease_lost_total": {"reason=owner_changed", "reason=renew_exhausted", "reason=renew_deadline",
 			"reason=verify_error"},
 		"db_ordering_lock_release_total": {"outcome=released", "outcome=not_owner", "outcome=error",
@@ -372,6 +372,54 @@ func TestPipelineCountersPrecreated(t *testing.T) {
 		for _, s := range series {
 			if !present[family][s] {
 				t.Fatalf("%s{%s} was not pre-created", family, s)
+			}
+		}
+	}
+}
+
+// TestFenceSeriesPrecreated 钉住 v0.4 的封闭词表与首抓取可见性,避免 critical 告警漏掉从无到 1 的第一次。
+func TestFenceSeriesPrecreated(t *testing.T) {
+	register()
+	registerPipeline()
+
+	var writes []string
+	for _, class := range []string{"seq", "legacy_epoch", "legacy_zero"} {
+		for _, outcome := range []string{"updated", "inserted", "unchanged", "equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "race", "error"} {
+			writes = append(writes, class+"|"+outcome)
+		}
+	}
+	for _, outcome := range []string{"updated", "inserted", "unchanged", "error"} {
+		writes = append(writes, "unfenced|"+outcome)
+	}
+	assertExactSeries(t, "db_fence_write_total", []string{"class", "outcome"}, writes, true)
+	assertExactSeries(t, "db_fence_cache_publish_total", []string{"path", "result"}, []string{
+		"write|written", "write|not_owner", "write|evidence_ahead", "write|evidence_conflict", "read|written", "read|exists",
+	}, true)
+	assertExactSeries(t, "db_fence_body_mismatch_total", nil, []string{""}, true)
+	assertExactSeries(t, "db_fence_rejected_bytes_total", []string{"outcome"}, []string{
+		"equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "epoch_override",
+	}, true)
+	assertExactSeries(t, "db_owner_epoch_guard_total", []string{"outcome"}, []string{
+		"match", "legacy_zero", "first", "advance", "stale", "read_error", "regressed",
+	}, true)
+	if OwnerEpochRegressed != "regressed" {
+		t.Fatalf("owner counter regression label = %q, want regressed", OwnerEpochRegressed)
+	}
+	for _, family := range []struct {
+		name    string
+		labels  []string
+		entries []string
+	}{
+		{"db_task_deferred_total", []string{"op", "reason"}, []string{"read|fence_race", "write|fence_race", "read|fence_evidence_conflict", "write|fence_evidence_conflict"}},
+		{"db_task_dead_letter_total", []string{"reason"}, []string{"fence_stale_owner", "fence_legacy_after_seq", "owner_epoch_regressed"}},
+	} {
+		got, found := seriesValues(t, family.name, family.labels...)
+		if !found {
+			t.Fatalf("%s was not registered", family.name)
+		}
+		for _, key := range family.entries {
+			if value, ok := got[key]; !ok || value != 0 {
+				t.Fatalf("%s{%s} = %v (found=%v), want a pre-created 0", family.name, key, value, ok)
 			}
 		}
 	}
@@ -576,5 +624,21 @@ func TestObserveDurableEnqueueSkipsCanceledInHistogram(t *testing.T) {
 	ObserveDurableEnqueue(DurableTargetDead, DurableOK, 10*time.Millisecond)
 	if histogramCount() != beforeHist+1 || counter(DurableOK) != beforeOK+1 {
 		t.Fatal("an ok enqueue must be counted and observed")
+	}
+}
+
+// TestStrandedAndConsumerGroupErrorSeriesPrecreated 钉住 R7 复核新增的两个指标:db_retry_stranded_receipts(无 label 的
+// 仪表)与 db_consumer_group_errors_total{source} 的三个取值。告警按这些名字与取值写,register() 之后必须已以 0 存在;
+// 常量与字面量一一对应,改名先红。
+func TestStrandedAndConsumerGroupErrorSeriesPrecreated(t *testing.T) {
+	register()
+	assertExactSeries(t, "db_retry_stranded_receipts", nil, []string{""}, false)
+	assertExactSeries(t, "db_consumer_group_errors_total", []string{"source"}, []string{"heartbeat", "partition", "claim"}, false)
+	for _, pin := range [][2]string{
+		{ConsumerGroupErrorHeartbeat, "heartbeat"}, {ConsumerGroupErrorPartition, "partition"}, {ConsumerGroupErrorClaim, "claim"},
+	} {
+		if pin[0] != pin[1] {
+			t.Fatalf("alert pinned label value changed: got %q, want %q", pin[0], pin[1])
+		}
 	}
 }

@@ -69,9 +69,3 @@ func TestAdminAuthCoversEveryAdminMethod(t *testing.T) {
 		}
 	}
 }
-
-func TestPeerAddrWithoutPeer(t *testing.T) {
-	if got := PeerAddr(context.Background()); got != "unknown" {
-		t.Fatalf("PeerAddr = %q, want unknown", got)
-	}
-}

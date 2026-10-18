@@ -424,7 +424,7 @@ Pulled from ❌ Not done — infrastructure gaps that hurt when production break
 | #27 | Production fast localization (IO/CPU) | Go side has pprof + prometheus | C++ side lacks CPU/IO tools | M | #152 |
 | #39 | Per-player traffic saturated | `traffic_statistics` + `gate_client_high_water_mark` | Per-player over-limit handling | S | — |
 | #40 | Server traffic saturated | Java gateway `RateLimitConfig` + `WaveSchedule` | Server-saturation degrade logic | M | — |
-| #70 | Stack + protocol on error code | stacktrace + error_handling_system exist | Unified error-code-triggered hook | **S** | — |
+| #70 | Stack + protocol on error code | stacktrace exists; error_handling_system.h (SendErrorToClient) was removed on 2026-10-16 together with the retired Scene.InvokePlayerService (muduo-rpc-channel.md §20.3) | Unified error-code-triggered hook | **S** | — |
 | #100 | Low-level error logging | LOG_ERROR / SPDLOG_ERROR scattered | Unified low-level error log spec | S | — |
 | #125 | Log protocol + error on failed RPC | `game_channel.cpp` records message_id+error | 2D protocol×error_code log | S | #70 |
 | #216 | SIGUSR1 dumps all-thread stacks | `PrintDefaultStackTrace()` exists | Register signal handler entry | **S** | — |

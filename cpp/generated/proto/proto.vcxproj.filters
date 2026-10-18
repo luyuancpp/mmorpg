@@ -102,9 +102,6 @@
     <ClCompile Include="common\component\item_base_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="common\component\item_comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="common\component\mission_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -444,9 +441,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\component\item_base_comp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="common\component\item_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="common\component\mission_comp.pb.h">

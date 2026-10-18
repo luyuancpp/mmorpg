@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <deque>
 #include <iterator>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -28,6 +29,13 @@
 // 内部的 poll 里就派发),也可能晚于下一次存盘才到;两种顺序下结论都一样,不需要额外的时序约定。
 // 一次失败之后,只有之后某次存盘的 DBTask **全部**同步入队、且没有代号 ≥ 它的失败回执,NeedsResave 才自然解除;
 // 那次存盘自己的回执再失败,又会重新置位。
+//
+// 失败种类(FailureKind):每次失败另记它是否「永久」—— 按当前内存重发同样形状的消息也必然失败(消息过大、无权限等,
+// 判据是 kafka_producer_policy::IsPermanentMessageError,由粘合层翻译后传入)。账本只多记两个值:
+//   maxPermanentFailed  出过永久失败的最大代号;
+//   permanentFailureCode 那一代最后一次永久失败的错误码(对账本不透明,粘合层定义含义,只给日志用)。
+// PermanentFailureCode 只在「欠 MySQL 的那一代(maxFailed)里有永久失败」时有值:重存没有收益,下线收尾据此不再保留实体。
+// 更新的一代只出了可重试的失败时它就没有值了 —— 结论永远跟着最新一次失败走。
 //
 // 线程模型:单个 loop 线程独占(scene 主循环),不加锁。
 namespace db_task_dispatch
@@ -67,6 +75,23 @@ namespace db_task_dispatch
 		return index < kDeliveryEffectCount ? kDeliveryEffectNames[index] : "?";
 	}
 
+	// 一次失败能不能靠按当前内存重发补回来。底层类型数的是种类数(AGENTS §11.2)。
+	enum class FailureKind : std::uint8_t
+	{
+		kRetryable, // 重发可能成功:队列满、超时、broker 不可用、fatal 冷却期、本地序列化失败、票据超时……
+		kPermanent, // 重发也必然失败:消息过大、无写权限、参数非法(kafka_producer_policy::IsPermanentMessageError)
+
+		kCount
+	};
+
+	// 一次失败的种类与错误码。code 对账本不透明(scene 粘合层放的是 RdKafka::ErrorCode 原值),只在 kPermanent 时被记下。
+	// 缺省 = 可重试、无错误码,即改动前的语义。
+	struct Failure
+	{
+		FailureKind kind{FailureKind::kRetryable};
+		std::int32_t code{0};
+	};
+
 	struct DeliveryOutcome
 	{
 		PlayerId playerId{0};
@@ -99,25 +124,28 @@ namespace db_task_dispatch
 		// send() 内部的 poll 里就到,那时票据必须已经在账上。
 		Ticket IssueTicket(PlayerId playerId, SaveGeneration generation, Clock::time_point now);
 
-		// 同步发送被拒(没有入队,永远不会有回执):inFlight - 1、记失败、销票。票据不认识时什么都不做。
-		void OnProduceRejected(Ticket ticket);
+		// 同步发送被拒(没有入队,永远不会有回执):inFlight - 1、按 failure 记失败、销票。票据不认识时什么都不做。
+		void OnProduceRejected(Ticket ticket, Failure failure = {});
 
-		// 本地失败(序列化失败等,根本没走到发送):记失败。
-		void MarkLocalFailure(PlayerId playerId, SaveGeneration generation);
+		// 本地失败(序列化失败等,根本没走到发送;或没有回执监听器时的同步拒绝):按 failure 记失败。
+		void MarkLocalFailure(PlayerId playerId, SaveGeneration generation, Failure failure = {});
 
 		// 本次存盘的 DBTask 都发完了。allQueued = 每一条都同步入队;否则这一代也记为失败(调用方通常已经经
 		// OnProduceRejected / MarkLocalFailure 记过,这里再记一次是防御,不改变结论)。
 		void FinishSave(PlayerId playerId, SaveGeneration generation, bool allQueued);
 
 		// 票据有了结局(librdkafka 回执、重建时的合成失败、超时兜底)。票据不认识,或玩家条目已被回收,
-		// 返回 kUnknownTicket(后者同样销票)。
-		DeliveryOutcome OnDelivery(Ticket ticket, bool delivered);
+		// 返回 kUnknownTicket(后者同样销票)。failure 只在 delivered = false 时有意义(超时兜底按缺省的可重试记)。
+		DeliveryOutcome OnDelivery(Ticket ticket, bool delivered, Failure failure = {});
 
 		// 超时兜底:按发票顺序检查,发出已满 timeout 仍没有结局的票据按投递失败处理。已经有结局的票据直接跳过;
 		// 碰到第一张还没到期的活票据就停(发票顺序 = 时间顺序)。
 		std::vector<DeliveryOutcome> ExpireStale(Clock::time_point now, Clock::duration timeout);
 
 		bool NeedsResave(PlayerId playerId) const;
+		// 欠 MySQL 的那一代(代号最大的失败)里出过永久失败时,返回那次失败的错误码;否则(不欠、没有条目、
+		// 或最新一次失败只是可重试的)返回空。为真时按当前内存重存也必然失败。
+		std::optional<std::int32_t> PermanentFailureCode(PlayerId playerId) const;
 		std::uint32_t InFlight(PlayerId playerId) const;
 		// 没有在途票据、也不欠重存。没有条目视为已落定。
 		bool IsSettled(PlayerId playerId) const;
@@ -142,6 +170,8 @@ namespace db_task_dispatch
 			std::uint32_t inFlight{0};
 			SaveGeneration lastFullyQueued{0};
 			SaveGeneration maxFailed{0};
+			SaveGeneration maxPermanentFailed{0};
+			std::int32_t permanentFailureCode{0};
 		};
 
 		struct TicketInfo
@@ -153,6 +183,8 @@ namespace db_task_dispatch
 
 		static bool StateNeedsResave(const PlayerState &state);
 		static bool StateIsSettled(const PlayerState &state);
+		// 第 generation 代出了一次失败:前移 maxFailed;永久失败另前移 maxPermanentFailed 并记下错误码。
+		static void RecordFailure(PlayerState &state, SaveGeneration generation, Failure failure);
 		// inFlight - 1;已经是 0 时不下溢,打 ERROR 并钳在 0(说明账本与票据表不一致)。
 		static void DecrementInFlight(PlayerState &state, PlayerId playerId);
 

@@ -6,13 +6,12 @@ import (
 	"testing"
 
 	assetpb "proto/common/asset"
-	componentpb "proto/common/component"
 )
 
-func TestReceiptAckWaitsForIndependentSQLRemoval(t *testing.T) {
+func TestReceiptAckWaitsForIndependentSQLSnapshotRelease(t *testing.T) {
 	op := testOp(1)
 	op.Stream = assetpb.AssetOpStream_ASSET_OP_STREAM_TRADE_DEBIT
-	req := &assetpb.AssetOpRequest{PlayerId: op.PlayerID, Stream: op.Stream, StreamEpoch: op.StreamEpoch, Seq: op.Seq, CorrelationId: op.CorrelationID}
+	req := op.Request()
 	for _, tc := range []struct {
 		name    string
 		reader  *fakeLedger
@@ -26,7 +25,7 @@ func TestReceiptAckWaitsForIndependentSQLRemoval(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.receipt {
-				tc.reader.ledger.Streams[0].Receipts = []*componentpb.AssetOpReceipt{{Seq: op.Seq, CorrelationId: op.CorrelationID}}
+				tc.reader.ledger.Streams[0].Receipts[0].Snapshot = &assetpb.AssetSnapshot{Items: []*assetpb.AssetItemInstance{{ItemUuid: 99, InstanceProto: []byte{1}}}}
 			}
 			applier := &fakeApplier{fn: func(rpc RPC, got *assetpb.AssetOpRequest) (Result, error) {
 				if rpc != RPCAckReceipt || got != req {
@@ -58,6 +57,7 @@ func TestReceiptCleanupPastWindowDoesNotLeavePermanentAckBacklog(t *testing.T) {
 	stream := reader.ledger.Streams[0]
 	stream.Watermark = op.Seq
 	stream.MaxSeq = op.Seq
+	stream.Receipts = nil // 场景端随窗口滑动裁掉旧身份，不是 ACK 删除。
 	for i := range stream.SeenBits {
 		stream.SeenBits[i] = 0
 		stream.AppliedBits[i] = 0

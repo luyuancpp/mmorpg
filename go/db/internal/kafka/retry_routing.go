@@ -3,10 +3,20 @@ package kafka
 // 重试只交给分区属主(docs/design/db-retry-owner-routing.md,存盘管线 S1 ④)。
 //
 // 属主判据只有一个:本进程此刻有没有这个分区的 sarama claim(ConsumeClaim 正在跑、claimCtx 未取消)。不用 Setup /
-// Cleanup 判属主:Setup 早于 ConsumeClaim 开始,Cleanup 晚于排空结束。sarama v1.43.1 默认 Range + eager,新属主要等
-// 全组退出上一代 claim 才拿到分区,所以「claim 活着」与「本进程是该分区此刻唯一的执行者」同时成立。ConsumeClaim
-// 进出时在 ownedPartitions 里登记 / 摘除一份 claimLease(登记放在 claimCtx 最终派生完成之后、主循环之前),重试协程
-// 只对存活的租约认领。
+// Cleanup 判属主:Setup 早于 ConsumeClaim 开始,Cleanup 晚于排空结束。ConsumeClaim 进出时在 ownedPartitions 里登记 /
+// 摘除一份 claimLease(登记放在 claimCtx 最终派生完成之后、主循环之前),重试协程只对存活的租约认领。
+//
+// 「claim 活着 ⇒ 本进程是该分区此刻唯一的执行者」只在 coordinator 没有逐出本成员时成立(R7 复核)。sarama v1.43.1 默认
+// Range + eager,新属主要等全组退出上一代 claim 才拿到分区 —— 前提是上一代自己参加了再平衡。本成员到 coordinator 的
+// 连接半开或 coordinator 卡顿时,coordinator 在 Session.Timeout(10s)后把本成员逐出、完成再平衡,新属主拿到分区并开始
+// 执行;本进程这边的心跳请求要等满 Net.ReadTimeout(sarama 缺省 30s)才失败,之后每次重试同样受 30s 约束、最多
+// Metadata.Retry.Max+1 次,才取消会话。所以从被逐出到本进程察觉,存在约 Net.ReadTimeout(旧连接半开、重连正常时,
+// 重连后的心跳立即回 UnknownMemberId)到 (Metadata.Retry.Max+1)×Net.ReadTimeout(到 coordinator 持续分区时)的双属主
+// 窗口:本进程的 claimCtx 与租约仍然存活,继续从 p{P} 认领执行,与新属主并发。再平衡排空超时(drainAfterStop 等满
+// drainTimeout)之后仍在跑的重试也是同类重叠。这两种重叠的正确性都只靠排序锁与 applied 游标兜底(与 shared 模式相同;
+// 每条收据经 RPOPLPUSH 只会被一个实例认领),两边的执行都计 executed,DbRetryNonOwnerExecutionInOwnerZone 看不见;
+// 心跳与位点提交失败经 sarama 的错误通道计 db_consumer_group_errors_total 并限速打 ERROR(consumer_group_errors.go),
+// 用来定位窗口。不调小 Net.ReadTimeout:sarama 读 JoinGroup 响应也用它,长再平衡时会超时。
 //
 // 收据(重试载荷)任一时刻恰在下面一处(派发给 worker 的那份在途任务,收据仍留在认领者的 processing 里):
 //   - 共享收件箱 kafka:retry:queue:{topic}:回收、停机归还、旧版实例、人工重投、shared 模式的失败都进这里;
@@ -24,6 +34,10 @@ package kafka
 // 拿不到分区的实例(热备)只分拣与回收孤儿。重试的 SQL 及其后的 Redis 步骤仍用 w.ctx:已经开始的重试持锁跑完,
 // 比半途撤掉更安全。
 // RetryRouting=shared:今天的语义,另外每拍兜底排空 p*(从 owner 回滚的路径)。
+//
+// 已认领进本实例 processing、该搬走却因 Redis 出错没搬成的收据(撤销搬回、misrouted、失败写回、进死信)登记进待重搬表
+// (retry_stranded.go),重试协程每拍在分拣与认领之前重搬;搬不动时它们仍留在本实例 processing,停机 release 照旧兜底。
+// 本实例续租着、reclaimOnce 跳过自己,没有这张表时它们要等重启才回到收件箱。
 //
 // 回收、停机归还、旧共享列表一律回共享收件箱,由 owner 实例重新分拣(回收与路由解耦)。回退到不认识 p* 的旧版之前
 // 必须先切 shared 并等 p* 归零,或执行 go/db/cmd/retry_requeue(RequeuePartitionedRetries)。
@@ -407,13 +421,25 @@ func (o *ownedPartitions) liveCountLocked() int {
 // claimFrom 与 claim 走同一个 retryClaimScript(先续租、再 RPOPLPUSH 进本实例 processing,同一个原子操作,
 // 文件头的不变量不变),只是从调用方给出的 ready 列表认领 —— owner 模式下是 p{P}。readyKey 为空时报错,
 // 不退回共享键。ready 为空时返回 redis.Nil。
+//
+// 每次调用带一个新 nonce,go-redis 的内部重发因此是幂等的(retry_ownership.go 文件头「认领的幂等」)。返回 redis.Nil
+// 以外的错误时结果未知:记进 unresolved,由下一拍的 resolveUnresolvedClaims 把可能已认领的那条搬回 readyKey。
 func (o *retryOwnership) claimFrom(ctx context.Context, readyKey string) ([]byte, error) {
 	if readyKey == "" {
 		return nil, errors.New("retry claim: ready key is empty")
 	}
-	value, err := o.rc.Eval(ctx, retryClaimScript,
-		[]string{readyKey, o.processingKey, o.instancesKey}, o.instanceID, o.lease.Milliseconds()).Result()
+	nonce, err := newRetryGuardNonce()
 	if err != nil {
+		return nil, err
+	}
+	recordKey := retryGuardKey("claim", o.processingKey, nonce)
+	value, err := o.rc.Eval(ctx, retryClaimScript,
+		[]string{readyKey, o.processingKey, o.instancesKey, recordKey, o.modesKey},
+		o.instanceID, o.lease.Milliseconds(), retryGuardTTL.Milliseconds(), o.routingMode).Result()
+	if err != nil {
+		if !errors.Is(err, redis.Nil) {
+			o.noteUnresolvedClaim(readyKey, recordKey)
+		}
 		return nil, err
 	}
 	payload, ok := value.(string)
@@ -689,29 +715,40 @@ func (c *KeyOrderedKafkaConsumer) consumeOneOwnedRetry(l *claimLease) bool {
 }
 
 // moveClaimedRetry 把认领到本实例 processing 的收据原字节搬到 dest(misrouted / 派发前撤销),成功计
-// db_retry_route_total{mode=当前模式, action}。失败时收据留在本实例 processing:本实例持续续租,别人不会回收,
-// 直到停机 release 才归还(与 deferFailedTask 的失败语义相同)。
+// db_retry_route_total{mode=当前模式, action}。Redis 出错时登记进待重搬表(retry_stranded.go),下一拍重搬、搬成再计数;
+// 没有这张表(直接拼结构体的单测)或收据已不在 processing 时只打 ERROR,收据留在本实例 processing 直到停机 release。
 func (c *KeyOrderedKafkaConsumer) moveClaimedRetry(receipt []byte, dest, action string) bool {
+	mode := c.retryRouteMode()
 	moved, err := moveRetryReceipt(c.ctx, c.redisClient, c.retryProcessingKey, dest, receipt, receipt)
-	if err != nil || !moved {
-		if c.ctx.Err() != nil {
-			// 停机:消费者已被取消,搬不动是预期的;收据在本实例 processing,Stop 第⑤步归还收件箱。
-			logx.Infof("shutdown: claimed retry left in processing for shutdown release: dest=%s action=%s", dest, action)
-			return false
-		}
-		logx.Errorf("retry receipt move failed; receipt stays in this instance's processing list until shutdown release: dest=%s action=%s moved=%v err=%v",
-			dest, action, moved, err)
+	if err == nil && moved {
+		metrics.CountRetryRoute(mode, action)
+		return true
+	}
+	if c.ctx.Err() != nil {
+		// 停机:消费者已被取消,搬不动是预期的;收据在本实例 processing,Stop 第⑤步归还收件箱。
+		logx.Infof("shutdown: claimed retry left in processing for shutdown release: dest=%s action=%s", dest, action)
 		return false
 	}
-	metrics.CountRetryRoute(c.retryRouteMode(), action)
-	return true
+	if err != nil && c.stranded.add(strandedRetry{
+		processingKey: c.retryProcessingKey, dest: dest, receipt: receipt, replacement: receipt, what: action,
+		onMoved: func() { metrics.CountRetryRoute(mode, action) },
+	}) {
+		logx.Errorf("retry receipt move failed; queued for a re-move on the next retry tick: dest=%s action=%s err=%v",
+			dest, action, err)
+		return false
+	}
+	logx.Errorf("retry receipt move failed; receipt stays in this instance's processing list until shutdown release: dest=%s action=%s moved=%v err=%v",
+		dest, action, moved, err)
+	return false
 }
 
 // requeueRevokedRetry 把 claim 已撤销的重试收据原样(原字节,RetryCount 未写回)搬回 p{origin}:不执行、不耗预算。
 // handleTask 在入口与 SQL 之前复核 claim 时调用;排序锁若已拿到,由 handleTask 既有的 defer 释放。
-// 搬不动时收据留在本实例 processing,直到停机 release 归还收件箱。
+// Redis 出错时登记进待重搬表,由重试协程下一拍重搬(retry_stranded.go);没有这张表时收据留在本实例 processing,
+// 直到停机 release 归还收件箱。
 func (w *worker) requeueRevokedRetry(task *workerTask, reason string) {
 	dest := w.retryReadyKeyFor(task.originPartition)
+	mode := w.retryRouteMode()
 	moved, err := moveRetryReceipt(w.ctx, w.redisClient, w.retryProcessingKey, dest, task.retryReceipt, task.retryReceipt)
 	if err != nil || !moved {
 		if w.ctx.Err() != nil {
@@ -720,11 +757,20 @@ func (w *worker) requeueRevokedRetry(task *workerTask, reason string) {
 				task.dbTask.GetTaskId(), task.originPartition, reason)
 			return
 		}
+		if err != nil && w.stranded.add(strandedRetry{
+			processingKey: w.retryProcessingKey, dest: dest, receipt: task.retryReceipt, replacement: task.retryReceipt,
+			what:    fmt.Sprintf("%s taskID=%s", metrics.RetryRouteRequeuedRevoked, task.dbTask.GetTaskId()),
+			onMoved: func() { metrics.CountRetryRoute(mode, metrics.RetryRouteRequeuedRevoked) },
+		}) {
+			logx.Errorf("requeue revoked retry failed; queued for a re-move on the next retry tick: taskID=%s partition=%d dest=%s reason=%s err=%v",
+				task.dbTask.GetTaskId(), task.originPartition, dest, reason, err)
+			return
+		}
 		logx.Errorf("requeue revoked retry failed; receipt stays in this instance's processing list until shutdown release: taskID=%s partition=%d dest=%s reason=%s moved=%v err=%v",
 			task.dbTask.GetTaskId(), task.originPartition, dest, reason, moved, err)
 		return
 	}
-	metrics.CountRetryRoute(w.retryRouteMode(), metrics.RetryRouteRequeuedRevoked)
+	metrics.CountRetryRoute(mode, metrics.RetryRouteRequeuedRevoked)
 	logx.Debugf("revoked retry requeued untouched: taskID=%s partition=%d dest=%s reason=%s",
 		task.dbTask.GetTaskId(), task.originPartition, dest, reason)
 }
@@ -906,6 +952,9 @@ type RetryQueueDepthReport struct {
 	LegacyProcessing int64
 	// Instances 是登记表 kafka:retry:instances:{topic} 里的实例 → 它的 processing 长度。
 	Instances map[string]int64
+	// InstanceModes 是登记表里每个实例 → 它登记的生效模式(metrics.RetryModeOwner / RetryModeShared,模式 HASH
+	// kafka:retry:instance_mode:{topic});没登记(本版本之前的镜像)为空串。键集合与 Instances 相同。
+	InstanceModes map[string]string
 }
 
 // PartitionedTotal 是全部 p 键长度之和(回滚前置条件「p* 全 0」看它)。
@@ -917,9 +966,30 @@ func (r RetryQueueDepthReport) PartitionedTotal() int64 {
 	return total
 }
 
-// RetryQueueDepths 盘点 topic 的重试链路:各列表 LLEN、ZRANGE 登记表、SCAN p*。只读;任一读失败返回 error。
+// OwnerInstances 是登记表里登记为 owner 模式的实例,按名字排序。回滚前置条件「该 zone 没有 owner 实例」看它;
+// 只看得见本版本起的实例(旧镜像不登记模式,见 InstanceModes)。登记表里租约已过期、还没被回收的实例也算:
+// 它可能只是续租失败、仍在分拣,宁可拦下。
+func (r RetryQueueDepthReport) OwnerInstances() []string {
+	var owners []string
+	for id, mode := range r.InstanceModes {
+		if mode == metrics.RetryModeOwner {
+			owners = append(owners, id)
+		}
+	}
+	sort.Strings(owners)
+	return owners
+}
+
+// LooksUnused 报告盘点的目标看起来是否根本没在用:登记表为空,且共享收件箱、死信、旧共享 processing 与全部 p* 都是 0。
+// 正常回滚前 shared 实例在线、紧急回滚后旧镜像实例也在续租,登记表都不为空;全为空多半是 topic / Redis / DB / zone 指错了
+// (所有键都不存在时盘点照样全 0、不报错)。只有该 zone 全部 go/db 都已正常停机时才会真的全空。
+func (r RetryQueueDepthReport) LooksUnused() bool {
+	return len(r.Instances) == 0 && r.Shared == 0 && r.Dead == 0 && r.LegacyProcessing == 0 && r.PartitionedTotal() == 0
+}
+
+// RetryQueueDepths 盘点 topic 的重试链路:各列表 LLEN、ZRANGE 登记表、HMGET 模式 HASH、SCAN p*。只读;任一读失败返回 error。
 func RetryQueueDepths(ctx context.Context, rc redis.Cmdable, topic string, partitionCount int32) (RetryQueueDepthReport, error) {
-	report := RetryQueueDepthReport{Partitioned: map[string]int64{}, Instances: map[string]int64{}}
+	report := RetryQueueDepthReport{Partitioned: map[string]int64{}, Instances: map[string]int64{}, InstanceModes: map[string]string{}}
 	if err := validateRetryQueueTarget(topic, partitionCount); err != nil {
 		return report, err
 	}
@@ -965,6 +1035,21 @@ func RetryQueueDepths(ctx context.Context, rc redis.Cmdable, topic string, parti
 		if report.Instances[id], err = llen(retryInstanceProcessingKey(topic, id)); err != nil {
 			return report, err
 		}
+	}
+	if len(instances) == 0 {
+		return report, nil
+	}
+	modes, err := rc.HMGet(ctx, retryInstanceModesKey(topic), instances...).Result()
+	if err != nil {
+		return report, fmt.Errorf("retry queue depths: hmget %s: %w", retryInstanceModesKey(topic), err)
+	}
+	if len(modes) != len(instances) {
+		return report, fmt.Errorf("retry queue depths: hmget %s returned %d values for %d instances",
+			retryInstanceModesKey(topic), len(modes), len(instances))
+	}
+	for i, id := range instances {
+		mode, _ := modes[i].(string) // nil = 没登记
+		report.InstanceModes[id] = mode
 	}
 	return report, nil
 }

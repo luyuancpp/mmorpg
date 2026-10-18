@@ -162,6 +162,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="client_endpoint_test.cpp" />
+    <!-- fd 上限启动门槛(open_file_limit.h,纯头文件):同属「判错即 Node 拒启」的启动纯判定,只依赖 proto.lib 的 BaseDeployConfig。 -->
+    <ClCompile Include="open_file_limit_test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets"></ImportGroup>

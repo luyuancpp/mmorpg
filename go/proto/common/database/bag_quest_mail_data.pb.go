@@ -70,7 +70,11 @@ type ItemEntry struct {
 	// presence 有语义:有这一段 = 该实例已掷过属性(哪怕 0 条)。存盘 / 读盘
 	// 只在 has_equip() 时拷贝,否则还原后会被当成「没初始化过」再掷一次。
 	// 字段号取 14:6–12 仍留给上面那张 TODO 表。
-	Equip         *component.EquipInstanceData `protobuf:"bytes,14,opt,name=equip,proto3" json:"equip,omitempty"`
+	Equip *component.EquipInstanceData `protobuf:"bytes,14,opt,name=equip,proto3" json:"equip,omitempty"`
+	// 完整实例权威。存盘/读盘整份复制，保留成长数据、presence 与未来 unknown fields。
+	// 上方实例标量只作为旧读者兼容投影；有 instance 时不得再用投影重建实例。
+	// 旧档没有本字段时走旧转换，下次正常保存补齐；禁止混跑会丢本字段的旧写者。
+	Instance      *component.ItemComp `protobuf:"bytes,15,opt,name=instance,proto3" json:"instance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -150,6 +154,13 @@ func (x *ItemEntry) GetAcquireSeq() uint64 {
 func (x *ItemEntry) GetEquip() *component.EquipInstanceData {
 	if x != nil {
 		return x.Equip
+	}
+	return nil
+}
+
+func (x *ItemEntry) GetInstance() *component.ItemComp {
+	if x != nil {
+		return x.Instance
 	}
 	return nil
 }
@@ -717,7 +728,7 @@ var File_proto_common_database_bag_quest_mail_data_proto protoreflect.FileDescri
 
 const file_proto_common_database_bag_quest_mail_data_proto_rawDesc = "" +
 	"\n" +
-	"/proto/common/database/bag_quest_mail_data.proto\x1a+proto/common/component/item_base_comp.proto\x1a)proto/common/component/mission_comp.proto\"\xdc\x01\n" +
+	"/proto/common/database/bag_quest_mail_data.proto\x1a+proto/common/component/item_base_comp.proto\x1a)proto/common/component/mission_comp.proto\"\x83\x02\n" +
 	"\tItemEntry\x12\x1b\n" +
 	"\titem_uuid\x18\x01 \x01(\x04R\bitemUuid\x12\x1b\n" +
 	"\tconfig_id\x18\x02 \x01(\rR\bconfigId\x12\x1d\n" +
@@ -727,7 +738,8 @@ const file_proto_common_database_bag_quest_mail_data_proto_rawDesc = "" +
 	"\bbag_type\x18\x05 \x01(\rR\abagType\x12\x1f\n" +
 	"\vacquire_seq\x18\r \x01(\x04R\n" +
 	"acquireSeq\x12(\n" +
-	"\x05equip\x18\x0e \x01(\v2\x12.EquipInstanceDataR\x05equip\"\x94\x02\n" +
+	"\x05equip\x18\x0e \x01(\v2\x12.EquipInstanceDataR\x05equip\x12%\n" +
+	"\binstance\x18\x0f \x01(\v2\t.ItemCompR\binstance\"\x94\x02\n" +
 	"\n" +
 	"BagAllData\x12 \n" +
 	"\x05items\x18\x01 \x03(\v2\n" +
@@ -799,23 +811,25 @@ var file_proto_common_database_bag_quest_mail_data_proto_goTypes = []any{
 	(*MailAllData)(nil),                 // 6: MailAllData
 	(*BagAllData_DynamicBagData)(nil),   // 7: BagAllData.DynamicBagData
 	(*component.EquipInstanceData)(nil), // 8: EquipInstanceData
-	(*component.MissionListComp)(nil),   // 9: MissionListComp
+	(*component.ItemComp)(nil),          // 9: ItemComp
+	(*component.MissionListComp)(nil),   // 10: MissionListComp
 }
 var file_proto_common_database_bag_quest_mail_data_proto_depIdxs = []int32{
-	8, // 0: ItemEntry.equip:type_name -> EquipInstanceData
-	0, // 1: BagAllData.items:type_name -> ItemEntry
-	7, // 2: BagAllData.dynamic_bags:type_name -> BagAllData.DynamicBagData
-	9, // 3: QuestScopeData.mission_list:type_name -> MissionListComp
-	2, // 4: QuestAllData.active:type_name -> QuestEntry
-	3, // 5: QuestAllData.scopes:type_name -> QuestScopeData
-	0, // 6: MailEntry.attached_items:type_name -> ItemEntry
-	5, // 7: MailAllData.mails:type_name -> MailEntry
-	0, // 8: BagAllData.DynamicBagData.items:type_name -> ItemEntry
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	8,  // 0: ItemEntry.equip:type_name -> EquipInstanceData
+	9,  // 1: ItemEntry.instance:type_name -> ItemComp
+	0,  // 2: BagAllData.items:type_name -> ItemEntry
+	7,  // 3: BagAllData.dynamic_bags:type_name -> BagAllData.DynamicBagData
+	10, // 4: QuestScopeData.mission_list:type_name -> MissionListComp
+	2,  // 5: QuestAllData.active:type_name -> QuestEntry
+	3,  // 6: QuestAllData.scopes:type_name -> QuestScopeData
+	0,  // 7: MailEntry.attached_items:type_name -> ItemEntry
+	5,  // 8: MailAllData.mails:type_name -> MailEntry
+	0,  // 9: BagAllData.DynamicBagData.items:type_name -> ItemEntry
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_database_bag_quest_mail_data_proto_init() }

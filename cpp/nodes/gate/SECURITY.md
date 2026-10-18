@@ -256,6 +256,10 @@ gate 启动会打两条 `[gate_version]` 单行记录(直写 stdout,不受 `LogL
 > 其中三条与本文档直接相关、且**会让本节描述的闸门失效**的结论：
 > ① 进程从不 `setrlimit`、k8s 也没有对应字段，真正先生效的上限很可能是 `RLIMIT_NOFILE` soft=1024，
 > 那样 `GateMaxConnections` 这条分支永远执行不到；
+> **（2026-10-18 更正 ①，未编译、未验证）** 节点启动时已在引擎 `Node::Initialize` 里把软限自抬到 min(硬限, 1048576)，
+> 抬完仍低于 `GateMaxConnections` + 4096 就拒绝启动（运维豁免只认 `NODE_OPEN_FILE_LIMIT_MODE=warn`）；
+> k8s 仍没有对应字段，硬限取决于节点上的容器运行时，上线前要先读一次各节点池的硬限。
+> 见设计文档 G4 / P0-1 的 2026-10-18 落码说明与 `docs/ops/gate-kernel-tuning-runbook.md` §3.1。
 > ② `LogLevel: 2` 在 muduo 枚举里是 **INFO 而非注释所写的 WARN**，而 `TcpServer` 对每条连接的
 > 建立与移除各有一行无条件 `LOG_INFO`——本节称道的采样纪律被上游抵消；
 > ③ 补上「未认证连接独立预算 + 死线」约 20 行、不需要改 muduo，是投入产出比最高的一条。

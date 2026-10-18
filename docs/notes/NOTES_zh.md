@@ -423,7 +423,7 @@
 | #27 | 线上快速定位(IO/CPU) | Go 侧 pprof+prometheus | C++ 侧无 CPU/IO 工具 | M | #152 |
 | #39 | 个人流量满 | `traffic_statistics` + `gate_client_high_water_mark` | 个人流量超限处理 | S | — |
 | #40 | 服务器流量满 | Java 网关 `RateLimitConfig` + `WaveSchedule` | 服务器满载降级逻辑 | M | — |
-| #70 | 错误码打堆栈+协议 | stacktrace + error_handling_system 存在 | 错误码触发统一 hook | **S** | — |
+| #70 | 错误码打堆栈+协议 | stacktrace 存在;error_handling_system.h(SendErrorToClient)已于 2026-10-16 随 Scene.InvokePlayerService 退役删除(muduo-rpc-channel.md §20.3) | 错误码触发统一 hook | **S** | — |
 | #100 | 底层错误日志 | 多处 LOG_ERROR/SPDLOG_ERROR | 统一底层错误日志规范 | S | — |
 | #125 | RPC 错误记协议+错误 | `game_channel.cpp` 记 message_id+error | 协议×错误码二维日志 | S | #70 |
 | #216 | SIGUSR1 打印所有线程堆栈 | `PrintDefaultStackTrace()` 已有 | 注册 signal handler 入口 | **S** | — |

@@ -128,15 +128,17 @@ func (s *Store) Void(ctx context.Context, p VoidParams, ledgers LedgerReader) (*
 		case voidAlreadyRequested:
 			state = inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_PENDING
 		}
-		return InsertAudit(ctx, tx, &inboxpb.PlayerInboxAudit{
-			PlayerId:  p.PlayerID,
-			Domain:    uint32(p.Domain),
-			Seq:       p.Seq,
-			Action:    uint32(inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_VOID),
-			Operator:  p.Operator,
-			PeerAddr:  p.PeerAddr,
-			Reason:    p.Note,
-			CreatedMs: nowMs,
+		// 内容列(msg_type / request_id / 载荷等)取自上面读到的 row(评审 L9);void_reason 记本次请求的原因。
+		return insertAuditForItem(ctx, tx, row, &inboxpb.PlayerInboxAudit{
+			PlayerId:   p.PlayerID,
+			Domain:     uint32(p.Domain),
+			Seq:        p.Seq,
+			Action:     uint32(inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_VOID),
+			Operator:   p.Operator,
+			PeerAddr:   p.PeerAddr,
+			Reason:     p.Note,
+			CreatedMs:  nowMs,
+			VoidReason: uint32(p.Reason),
 		})
 	})
 	if err != nil {
@@ -242,15 +244,17 @@ func (s *Store) forceVoid(ctx context.Context, p VoidParams, ledgers LedgerReade
 			return err
 		}
 		state = inboxpb.PlayerInboxItemState_PLAYER_INBOX_ITEM_VOIDED
-		return InsertAudit(ctx, tx, &inboxpb.PlayerInboxAudit{
-			PlayerId:  p.PlayerID,
-			Domain:    uint32(p.Domain),
-			Seq:       p.Seq,
-			Action:    uint32(inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_FORCE_VOID),
-			Operator:  p.Operator,
-			PeerAddr:  p.PeerAddr,
-			Reason:    p.Note,
-			CreatedMs: nowMs,
+		// 证明成立时 row 非 nil(decideForceVoidLocked 对 nil 判 voidNotFound);内容列取自它(评审 L9)。
+		return insertAuditForItem(ctx, tx, row, &inboxpb.PlayerInboxAudit{
+			PlayerId:   p.PlayerID,
+			Domain:     uint32(p.Domain),
+			Seq:        p.Seq,
+			Action:     uint32(inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_FORCE_VOID),
+			Operator:   p.Operator,
+			PeerAddr:   p.PeerAddr,
+			Reason:     p.Note,
+			CreatedMs:  nowMs,
+			VoidReason: uint32(p.Reason),
 		})
 	})
 	if err != nil {

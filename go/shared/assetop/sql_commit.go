@@ -3,6 +3,7 @@ package assetop
 import (
 	"context"
 	"fmt"
+	"shared/savebarrier"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -24,7 +25,7 @@ func SQLCommitKey(playerID uint64) string {
 // SQLCommitVersion 是证据版本串：两段 20 位定宽十进制（容纳 uint64 全范围），中间一个冒号，共 41 字节。
 // 定宽之后逐字节比较的先后就是 (owner_epoch, save_seq) 的字典序，Lua 里不必也不能把它转成数字比较。
 func SQLCommitVersion(ownerEpoch, saveSeq uint64) string {
-	return fmt.Sprintf("%020d:%020d", ownerEpoch, saveSeq)
+	return savebarrier.Version(ownerEpoch, saveSeq)
 }
 
 // publishSQLCommitScript 只升不降地发布证据。KEYS[1] 证据键；ARGV[1] 版本串（SQLCommitVersion）；ARGV[2] 证据内容。

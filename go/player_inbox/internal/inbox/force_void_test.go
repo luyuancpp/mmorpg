@@ -63,6 +63,19 @@ func TestProveNeverExecuted(t *testing.T) {
 	mismatchedType.MsgType = uint32(gmUnblock)
 	unknownOutcome := fvDecision(fvSeq, fvOtherRequestID)
 	unknownOutcome.Outcome = uint32(outUnknown)
+	// ringOf 是 seq 1..n 连续、水位 = n 的环,request_id = seq + 1000(都不是本行的 2),只有 seq=20 记的是另一个
+	// request_id —— 除环长之外,都是证明成立的形状。
+	ringOf := func(n int) *componentpb.PlayerInboxLedgerComp {
+		ds := make([]*componentpb.PlayerInboxDecision, 0, n)
+		for seq := uint64(1); seq <= uint64(n); seq++ {
+			requestID := seq + 1000
+			if seq == fvSeq {
+				requestID = fvOtherRequestID
+			}
+			ds = append(ds, fvDecision(seq, requestID))
+		}
+		return fvLedger(fvCursor(gmDomain, uint64(n), ds...))
+	}
 
 	cases := []struct {
 		name   string
@@ -77,6 +90,13 @@ func TestProveNeverExecuted(t *testing.T) {
 		{"别的域的游标不参与证明(那里出现本行的 seq / request_id 也无关)", fvRow(),
 			fvLedger(fvCursor(2, 30, fvDecision(fvSeq, fvRequestID)), fvCursor(gmDomain, 30, fvDecision(fvSeq, fvOtherRequestID))),
 			true, forceVoidProven},
+		{"满环 32 条照常证明", fvRow(), ringOf(ledgerRecentCapacity), true, forceVoidProven},
+		// 评审 R2 的回归:原实现的 validLedger 不查环长,33 条的环会判 PROVEN;而 scene 侧 ValidateLedger 拒绝
+		// 超过 32 条的环、整份判坏并停用收件箱 —— 消费方自己都不认的账本,不能拿来证明「从未执行」。
+		{"环 33 条:scene 侧整份判坏,不得当证据", fvRow(), ringOf(ledgerRecentCapacity + 1), true, forceVoidLedgerInvalid},
+		{"别的域的环 33 条:整份判坏", fvRow(),
+			fvLedger(fvCursor(2, 33, ringOf(ledgerRecentCapacity + 1).GetCursors()[0].GetRecent()...),
+				fvCursor(gmDomain, 30, fvDecision(fvSeq, fvOtherRequestID))), true, forceVoidLedgerInvalid},
 
 		{"从未投递 → 改用普通模式", undelivered, fvProvingLedger(), true, forceVoidNotDelivered},
 		{"读不到存档", fvRow(), nil, false, forceVoidLedgerAbsent},

@@ -3,6 +3,7 @@ package inbox
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"player_inbox/internal/constants"
 	"player_inbox/internal/metrics"
@@ -102,11 +103,12 @@ func (s *Store) DueNotifications(ctx context.Context, shard uint32, dueBeforeMs 
 }
 
 // ResendNotify 给一条到期提醒补发一次(设计 §6.3、评审 L6)。ctx 是本轮补发的 ctx,单次提醒的预算由本函数加。
-//   - 落定(送达 / 离线 / 等待落点 / 不可恢复的无节点):按读出时的 next_seq 做 CAS 置 0;
-//   - 没落定(Kafka / Redis 故障、镜像未同步、节点身份歧义、uuid 为空):在同一个 next_seq CAS 里把 notify_due_ms
-//     推到 notifyRetryDueMs 给出的时刻,到点之前不再被 DueNotifications 读到,不再每轮占着分片队头。
+//   - 落定(送达 / 离线 / 等待落点 / 位置记录残缺):按读出时的 next_seq 做 CAS 置 0;
+//   - 镜像已同步却查不到节点、且已悬满 notifyNodeMissingSettleAfter(notifyGivesUp,评审 R3):同样 CAS 置 0,打 ERROR;
+//   - 其余没落定(Kafka / Redis 故障、镜像未同步、节点身份歧义、uuid 为空、刚开始查不到节点):在同一个 next_seq CAS 里
+//     把 notify_due_ms 推到 notifyRetryDueMs 给出的时刻,到点之前不再被 DueNotifications 读到,不再每轮占着分片队头。
 //
-// 两种 CAS 失败都无害:这期间又有新的入箱,notify_due_ms 已被它写成 now,补发循环照常尽快处理。
+// CAS 失败都无害:这期间又有新的入箱,notify_due_ms 已被它写成 now,补发循环照常尽快处理。
 func (s *Store) ResendNotify(ctx context.Context, d NotifyDue) NotifyResult {
 	notifyCtx, cancel := context.WithTimeout(ctx, resendNotifyTimeout)
 	result := s.notifyAndClear(notifyCtx, d.PlayerID, d.Domain, d.NextSeq)
@@ -114,7 +116,19 @@ func (s *Store) ResendNotify(ctx context.Context, d NotifyDue) NotifyResult {
 	if result.Settled() {
 		return result
 	}
-	dueMs := notifyRetryDueMs(s.nowMs(), d.PendingSinceMs)
+	nowMs := s.nowMs()
+	if notifyGivesUp(result, nowMs, d.PendingSinceMs) {
+		// 落定用本轮的 ctx:提醒可能已耗尽它自己的预算。
+		logx.WithContext(ctx).Errorf("[player_inbox] Notify resend settled after the scene node stayed missing from the synced "+
+			"node mirror for %v player=%d domain=%d (location points at a node that is gone; left to the landing fetch)",
+			time.Duration(nowMs-d.PendingSinceMs)*time.Millisecond, d.PlayerID, d.Domain)
+		if _, err := s.ClearNotifyDue(ctx, d.PlayerID, d.Domain, d.NextSeq); err != nil {
+			logx.WithContext(ctx).Errorf("[player_inbox] Clearing notify_due after giving up failed player=%d domain=%d: %v "+
+				"(resend loop retries it next round)", d.PlayerID, d.Domain, err)
+		}
+		return result
+	}
+	dueMs := notifyRetryDueMs(nowMs, d.PendingSinceMs)
 	if _, err := s.DeferNotifyDue(ctx, d.PlayerID, d.Domain, d.NextSeq, dueMs); err != nil {
 		// 推迟失败只是这一行下一轮还会被扫到(退避前的行为),不丢提醒。
 		logx.WithContext(ctx).Errorf("[player_inbox] Notify resend not settled (result=%s) and deferring notify_due failed "+

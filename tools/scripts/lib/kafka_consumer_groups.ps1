@@ -22,6 +22,13 @@
     GroupIdNotFoundException / GROUP_ID_NOT_FOUND)是按版本行为推定的;钉版 apache/kafka:4.3.1 上的原文
     由 Codex 实测(设计文档 §11 的 V3 (b)(h)(i)),拿到后两边同步补正则,并把原文追加为测试 fixture。
     原文一条都不命中时现有逻辑已是 fail-closed(无表头 → throw),只是会把"组不存在"误报成失败。
+    白名单命中只在**没有表头**时才认定 missing(2026-10-17,R7 复核 [8]):白名单在整段输出上匹配,管理客户端在新旧 describe API
+    之间回退时可能先往 stderr 打一行带 GroupIdNotFoundException 的 WARN、随后照常打印表格。白名单命中又有表头时:
+    本 topic 有数值位点即矛盾输出,throw;没有数值位点则两种读法都是「没有位点」,交给常规判定。Go 侧 groupMissingInDescribe 同口径。
+
+    db 消费组在 K8s 上的位点读法(kubectl exec 进 kafka-0 的命令与结果分类)也只在这里一份(Get-DbGroupDescribeExecArgs /
+    Resolve-DbGroupDescribeExecResult):k8s_deploy.ps1 写路径入口判组与 k8s_zone_rollback.ps1 第 0 步 e 停服前预检共用,
+    两边走同一条访问路径。这两个函数只拼参数、只分类,kubectl 本身仍由调用方执行。
 #>
 
 <#
@@ -170,12 +177,17 @@ function Get-KafkaCommittedOffsetMap {
 
 .DESCRIPTION
     判定顺序(先命中先返回):
-      1. 命中「组不存在」白名单 → missing(不论退出码:不同版本对不存在的组退出码不一致);
+      1. 命中「组不存在」白名单:
+         a. 没有表头 → missing(不论退出码:不同版本对不存在的组退出码不一致);
+         b. 有表头且本 topic 有数值 CURRENT-OFFSET → throw(矛盾输出:一边说组不存在、一边列出已提交位点,不猜哪一边为真;
+            当成 missing 会让 keep 去掉交接闸、显式切组跳过 F2,当成 offsets 则可能把别处的 WARN 当真);
+         c. 有表头但本 topic 没有数值位点 → 不认定 missing,继续往下判(两种读法都是「没有位点」,Error 行 / 退出码照旧 throw);
       2. 有行首 "Error:" 的行,或退出码非 0 → throw;
       3. 找到表头 → 只看本 topic 的行,有数值 CURRENT-OFFSET 即 offsets,否则 no-offsets
          (组在但没人订阅本 topic、或订阅了还没提交过,都是 no-offsets);
       4. 没有表头但有 "has no active members" → no-offsets(Empty 组一个已提交位点都没有时 CLI 不打表头);
       5. 其余一律 throw(无法解析 describe 输出)。
+    规则 1 与 tools/merge_zone/preflight.go 的 groupMissingInDescribe 同口径,改一边必须同步另一边。
 #>
 function Resolve-KafkaGroupTopicOffsets {
     param(
@@ -187,7 +199,16 @@ function Resolve-KafkaGroupTopicOffsets {
     $allLines = @($Lines | ForEach-Object { "$_" })
     $text = $allLines -join "`n"
     if (Test-KafkaGroupMissingText -Text $text) {
-        return [pscustomobject]@{ State = 'missing'; Committed = @{}; Rows = @() }
+        $missingParsed = ConvertFrom-KafkaConsumerGroupDescribe -Lines $allLines -Topic $Topic
+        if (-not $missingParsed.HeaderFound) {
+            return [pscustomobject]@{ State = 'missing'; Committed = @{}; Rows = @() }
+        }
+        $missingCommitted = Get-KafkaCommittedOffsetMap -Parsed $missingParsed
+        if ($missingCommitted.Count -gt 0) {
+            $partitionsText = (@($missingCommitted.Keys | Sort-Object) -join ',')
+            throw ("kafka-consumer-groups --describe 的输出自相矛盾,按读不到处理:既命中「组不存在」文案,又列出了 topic $Topic 在分区 $partitionsText 上的已提交位点。" +
+                "不猜哪一边为真;拿到该 Kafka 版本的原文后同步修正白名单(lib Get-KafkaGroupMissingPatterns 与 tools/merge_zone/preflight.go consumerGroupMissingPatterns)。")
+        }
     }
     $errorLines = @($allLines | Where-Object { $_ -match '^\s*Error:' })
     if ($ExitCode -ne 0 -or $errorLines.Count -gt 0) {
@@ -312,6 +333,9 @@ function ConvertTo-KafkaPartitionMap {
         否则是问题(新组还没接手这个分区,删掉旧组位点后就再也找不回续接点);
       - 新组与旧组都有位点、且新组 < 旧组 → 问题(新组落后于旧组,删掉旧组位点会丢掉这段进度,也说明交接方向可能弄反了)。
     旧组在 p 上没有位点时不比较。
+    -Partitions 必须等于 topic 的实际分区数(与 kafka_offset_reset.ps1 Get-ResetPlanProblems 同一口径):kafka-get-offsets 列出、
+    或新 / 旧组位点表里出现任何 ≥ N 的分区都报问题。随后的 --delete-offsets --topic 不带分区范围,会删掉旧组在**全部**分区上的位点;
+    -Partitions 手敲小了时,超出部分的分区没被检查,新组还没接手的分区的冻结续接点就此丢失。
 #>
 function Test-HandoffFinalizeReady {
     param(
@@ -331,6 +355,10 @@ function Test-HandoffFinalizeReady {
     $old = ConvertTo-KafkaPartitionMap -Map $OldOffsets
     $low = ConvertTo-KafkaPartitionMap -Map $Earliest
     $high = ConvertTo-KafkaPartitionMap -Map $Latest
+    $outOfRange = @(@($low.Keys) + @($high.Keys) + @($new.Keys) + @($old.Keys) | Where-Object { [int]$_ -ge $Partitions } | ForEach-Object { [int]$_ } | Sort-Object -Unique)
+    foreach ($p in $outOfRange) {
+        $problems.Add("分区 ${p}:超出 -Partitions $Partitions(kafka-get-offsets 或两组的位点里出现了它);topic 的实际分区数与 -Partitions / go/db/etc/db.yaml PartitionCnt 不一致,--delete-offsets 会删掉旧组在全部分区上的位点,超出部分没有检查")
+    }
     for ($p = 0; $p -lt $Partitions; $p++) {
         if (-not $low.ContainsKey($p) -or -not $high.ContainsKey($p)) {
             $problems.Add("分区 ${p}:kafka-get-offsets 没有给出 earliest / latest,判不出是不是空分区")
@@ -363,4 +391,59 @@ function Get-DbTaskTopicName {
     $base = "db_task_zone_$ZoneId"
     if ($Generation -le 1) { return $base }
     return "${base}_g$Generation"
+}
+
+<#
+.SYNOPSIS
+    -Topic 是不是 Get-DbTaskTopicName 规则下的 db_task topic(db_task_zone_<id> 或 db_task_zone_<id>_g<gen>,大小写敏感)。纯函数。
+    kafka_offset_reset.ps1 -DeleteAndRecreateTopic 据此拒绝同名重建(go/db 的已落库游标按 topic 名区分、永不过期)。
+#>
+function Test-DbTaskTopicName {
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Topic)
+
+    return ($Topic -cmatch '^db_task_zone_\d+(_g\d+)?$')
+}
+
+<#
+.SYNOPSIS
+    kubectl exec 进 infra namespace 的 kafka-0(kafka 容器)describe 一个 db 消费组的 kubectl 参数(纯函数:只拼参数,不执行)。
+
+.DESCRIPTION
+    k8s_deploy.ps1 Read-DbGroupTopicFacts(写路径入口判组)与 k8s_zone_rollback.ps1 第 0 步 e(停服之前确认 Step 6 读得到同一份事实)
+    共用这一份命令:同一个 kafka-0、同一个容器、同一个 CLI 与 bootstrap,回档预检过了的路径就是 Step 6 要走的路径。
+    KAFKA_HEAP_OPTS 在命令里覆盖成小堆,与 kafka.yaml 探针命令同一写法:容器 env 里 broker 自己的大堆参数会被 /opt/kafka/bin/*.sh 继承,
+    在 broker 的 memory limit 里再起一个大堆 JVM 会把 kafka-0 撑到 OOMKilled。所以经 /bin/sh -c 执行,组名先过字符集
+    ^[A-Za-z0-9._-]+$(与 k8s_deploy.ps1 Assert-DbConsumerGroupName 同一集合),不合格即 throw。
+    返回值交给调用方的 kubectl 出口(lib/k8s_client_entry.ps1 Invoke-ClientEntryKubectl,带 -KubeContext / -KubeConfig)执行。
+#>
+function Get-DbGroupDescribeExecArgs {
+    param(
+        [Parameter(Mandatory = $true)][string]$InfraNamespace,
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Group
+    )
+
+    if ($Group -cnotmatch '^[A-Za-z0-9._-]+$') {
+        throw "消费组名 '$Group' 不合法(空值,或含 [A-Za-z0-9._-] 以外的字符),不能拼进 kafka-0 里的 sh -c 命令行。"
+    }
+    $describe = "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group $Group"
+    return , @('exec', '-n', $InfraNamespace, 'kafka-0', '-c', 'kafka', '--', '/bin/sh', '-c', $describe)
+}
+
+<#
+.SYNOPSIS
+    把 Get-DbGroupDescribeExecArgs 那次 kubectl exec 的结果(@{ ExitCode; Stdout; Stderr },Invoke-ClientEntryKubectl -CaptureOutput 的返回值)
+    交给 Resolve-KafkaGroupTopicOffsets 分类,返回同一个 @{ State; Committed; Rows };判不出就 throw。纯函数。
+
+.DESCRIPTION
+    stdout 与 stderr 拆行后合并:「组不存在」那行在不同版本里可能打到任一路。exec 本身失败(缺 pods/exec 权限、kafka-0 不存在或未就绪、
+    容器名不对)表现为退出码非 0 且没有表头,与「Error:」行、无法解析的输出一样按读不到 throw(fail-closed)。
+#>
+function Resolve-DbGroupDescribeExecResult {
+    param(
+        [Parameter(Mandatory = $true)]$Result,
+        [Parameter(Mandatory = $true)][string]$Topic
+    )
+
+    $lines = @(([string]$Result.Stdout) -split "`r?`n") + @(([string]$Result.Stderr) -split "`r?`n")
+    return (Resolve-KafkaGroupTopicOffsets -Lines $lines -ExitCode ([int]$Result.ExitCode) -Topic $Topic)
 }

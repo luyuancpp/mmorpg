@@ -63,6 +63,8 @@ public:
     // 返回 true 表示普通停机前的业务收尾已经落地,可以开始拆网络和运行时。
     // 不设置时视为 before-shutdown hook 是同步的。
     using ShutdownDrainCompleteFn = std::function<bool(Node &)>;
+    // 拆除前的最后一个业务时刻,见 SetBeforeTeardown。
+    using BeforeTeardownFn = std::function<void(Node &)>;
     using OnConflictShutdownFn = std::function<void(Node &, NodeIdConflictReason)>;
     // 返回 true 表示"身份冲突后的收尾(存盘 / 迁移玩家)已经全部落地,可以退出了"。
     // 不设置时视为收尾是同步的,hook 返回即退出(gate 就是这种)。
@@ -118,6 +120,17 @@ public:
     Node &SetShutdownDrainComplete(ShutdownDrainCompleteFn fn)
     {
         shutdownDrainCompleteFn_ = std::move(fn);
+        return *this;
+    }
+    // 拆除前钩子:普通停机与身份冲突停机(含 loop 异常退出后 ~Node 的兜底排空)都会经 FinalizeTeardownInLoop 调用它,
+    // 每个 Node **至多一次**(走到拆除才调),在 loop 线程上。
+    // 时刻:Kafka producer 的最后一次有界 flush(kafkaManager.Shutdown)刚做完、它派发的投递回执已进调用方的账本;
+    // Redis(tlsRedis)、ECS、节点注册表都还没拆,异步日志也还在写文件。适合「停掉还会推进业务的定时器 + 把停机时
+    // 仍未落定的事打进日志」这类收账动作:Node 析构之后 AsyncOutput 在 Linux 上什么都不写,那时打的日志会静默丢失。
+    // 钩子里不得再发起需要等待的异步工作(之后只剩拆除),也不得同步阻塞。
+    Node &SetBeforeTeardown(BeforeTeardownFn fn)
+    {
+        beforeTeardownFn_ = std::move(fn);
         return *this;
     }
     Node &SetOnConflictShutdown(OnConflictShutdownFn fn)
@@ -297,6 +310,9 @@ protected:
     KafkaHandlersFn kafkaHandlersFn_;
     BeforeShutdownFn beforeShutdownFn_;
     ShutdownDrainCompleteFn shutdownDrainCompleteFn_;
+    BeforeTeardownFn beforeTeardownFn_;
+    // FinalizeTeardownInLoop 会因 gRPC 本地延后完成未排空而重入;钩子只在第一次进入时调用。
+    bool beforeTeardownRan_{false};
     OnConflictShutdownFn onConflictShutdownFn_;
     ConflictDrainCompleteFn conflictDrainCompleteFn_;
     bool conflictShutdownStarted_{false};

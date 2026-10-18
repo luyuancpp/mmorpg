@@ -165,6 +165,26 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
 - [ ] **部署上一版本**:沿用 `k8s_deploy.ps1` 既有部署命令,`-ReleaseProfile prod`,镜像参数换成上一版:`-NodeImage <registry>/mmorpg-node:<image_tag>`、`-GoSvcTag <image_tag>`、`-JavaSvcTag <image_tag>`。
 - [ ] **快速回滚单个 Deployment**:`kubectl rollout undo`(附录 E.2 三级回滚的第 3 级)。它的前提是新旧 revision 的 tag 不同且不可变,本流水线的 `vX.Y.Z-<commit>` tag 满足。
   - **gateway 例外(2026-10-16 补注)**:gateway 的上一个 revision 早于 2026-10-15「探针改走独立管理端口 8082」时,**不要**对 gateway 做 `kubectl rollout undo`。undo 只退 Pod 模板(探针回到 8081),`java-svc-gateway-config` 仍是 `management.server.port: 8082`,三个探针全部失败,startupProbe 约 600s 后杀容器并反复重启,rollout 卡到 progressDeadline,回滚不生效。改用旧 commit 重跑 `k8s_deploy.ps1 zone-up`(ConfigMap 与 Pod 模板同批生成);详见 [deploy/k8s/README.md](../../deploy/k8s/README.md)「gateway 探针、管理端口与回退口径」。更一般地,`rollout undo` 还隐含「旧 revision 与当前 ConfigMap 兼容」这一前提,ConfigMap 不随 undo 回退。
+- [ ] **go/db 回滚到 S1(重试只交给分区属主)之前的版本**(2026-10-17 补;已落码,未编译、未测试,待 Codex 验证):先按 [db-retry-owner-routing.md](../design/db-retry-owner-routing.md) §10 切回 RetryRouting=shared 并 rollout restart,用 `go/db/cmd/retry_requeue -check` 确认所有 `kafka:retry:queue:{topic}:p*` 为 0,再回滚镜像。旧版本只认共享收件箱 `kafka:retry:queue:{topic}`、看不到 p*,直接回滚会让其中的存盘滞留(它们在 Redis 里只有这一份);已经回滚的,立即执行 retry_requeue 搬回(告警 DbRetryPartitionedStranded)。上面「部署上一版本」(`-GoSvcTag <上一版>`)与「快速回滚单个 Deployment」(`kubectl rollout undo deploy/db`)两条路径都适用;步骤:
+  1. **切回 shared 并等滚动完成**(`<zone ns>` 即 `mmorpg-zone-<z>`):配置里是 owner 时,把 `go/db/etc/db.yaml` 的 `RetryRouting` 改回 `shared` → `k8s_deploy.ps1 zone-up` → `kubectl -n <zone ns> rollout restart deploy/db` → `kubectl -n <zone ns> rollout status deploy/db`(只改 ConfigMap 不会滚动 db);金丝雀留下的环境变量用 `kubectl -n <zone ns> set env deploy/db DB_RETRY_ROUTING-` 去掉(同样触发滚动,也要等 rollout status)。`kubectl set env` 加的变量不在 last-applied 里,`k8s_deploy` 的 apply 不会删它,且环境变量优先于配置键,必须单独去掉。
+  2. **三项人工核对**(retry_requeue 的退出码 5 只看得见会登记模式的 go/db,更早的 S1 镜像不登记,所以这三项不能省):
+     - 每个 db Pod 的 `db_retry_routing_mode{mode="owner"}` 都是 0(Prometheus 查 `db_retry_routing_mode{namespace="<zone ns>", mode="owner"}`;S1 之前的 Pod 没有这条序列,不算 owner);
+     - `kubectl -n <zone ns> set env deploy/db --list` 里没有 `DB_RETRY_ROUTING=owner`;
+     - `kubectl -n <zone ns> rollout status deploy/db` 已完成。
+  3. **只读盘点,按退出码判断**(工作目录 `go/db`;`-zone` 必填:R7 之前缺省取配置文件里的 ZoneId,漏了会盘点别的 zone 的 topic 并以 0 退出(fail-open);现在不给 `-zone` 直接以退出码 1 退出,一条不动;K8s 上 go/db 的 `RedisClient` 是 `redis.<InfraNamespace>:6379`、DB 0;口令只经环境变量传入,名字由 `-redis-password-env` 指定,不上命令行):
+     ```powershell
+     kubectl -n <InfraNamespace> port-forward svc/redis 16379:6379
+     go run ./cmd/retry_requeue -f etc/db.yaml -zone <z> -redis 127.0.0.1:16379 -redis-db 0 -redis-password-env REDIS_PASSWORD -check
+     ```
+     `REDIS_PASSWORD` 是执行者自己设的环境变量(名字可换);Redis 不设口令的档位(dev)去掉 `-redis-password-env`,口令取 `-f` 配置里的值(仓库自带的为空)。
+     topic 由 `-f` 配置的 `ServerConfig.Kafka.TopicGeneration` 推导,该 zone 的代次与本地配置不同时加 `-topic-generation <N>`。**只有退出码 0 才允许回滚**:
+     - 0:p* 全 0,且登记表里没有 owner 实例、目标在用;
+     - 3:p* 还有存盘。shared 实例每拍兜底排空 p*,稍后重跑;一直不降时看 DbRetryPartitionedNoProgress、本 zone 主库是否在冷却;
+     - 4:目标看起来没在用(登记表为空,共享收件箱、死信、旧共享 processing、全部 p* 都是 0),多半是 `-f` / `-zone` / `-topic-generation` / `-redis` / `-redis-db` 指错了,核对后重跑;只有该 zone 的 go/db 已全部停机时才加 `-allow-empty-target`;
+     - 5:登记表里还有登记为 owner 模式的实例(输出逐行列出实例名与模式),回到第 1 步;
+     - 1:参数、配置、Redis 连接或盘点出错,修好原因后重跑。
+  4. **回滚镜像时认准 revision**:第 1 步的 `rollout restart` / `set env` 本身会生成新的 revision,之后不带参数的 `kubectl rollout undo deploy/db` 回到的是切换前那个 S1 revision,不是 S1 之前的镜像。先 `kubectl -n <zone ns> rollout history deploy/db` 找到 S1 之前镜像的 revision,用 `kubectl -n <zone ns> rollout undo deploy/db --to-revision=<N>`;或者走「部署上一版本」。ConfigMap 里的 `RetryRouting` / `WaitAOF*` 不用先改:go/db 用的 go-zero v1.10.0 忽略未知键(`go/db/internal/config/config_test.go` 的 `TestConfigLoaderIgnoresUnknownKeys` 守住)。回滚完成后建议再跑一次第 3 步确认 p* 仍为 0(回到的镜像早于按实例 processing 列表、不往登记表里写时,共享收件箱、死信、旧共享 processing(`kafka:retry:processing:{topic}`,这类镜像的在途收据就在这里)也都为 0 时以 4 退出,参数核对无误即可;旧共享 processing 非 0、p* 为 0 时以 0 退出)。
+  5. **已经回滚了(没做上面几步,或紧急回滚)**:约 10 分钟内会响 DbRetryPartitionedStranded。立即按第 2 步核对(此时 db 应已全是 S1 之前的镜像),用第 3 步同一组参数先跑 `-check`,再去掉 `-check` 执行搬回(把 p* 搬回共享收件箱;同样过退出码 4 / 5 两道门,一条不动就退出;可重入,中途失败修好原因后重跑)。搬完它会再盘点一次,退出码 0 才算搬完,3 表示还有实例在把收件箱分拣回 p*。搬回完成之前不要清理任何 Redis 键,也不要重启或清空这台 Redis。告警按 Prometheus 里 6h 内的最后样本判定,搬回之后窗口内仍会响,以 `-check` 退出码 0 为准并静默。
 - [ ] **回滚后核对**:按 §3.1 确认 Pod `imageID` digest、启动版本行、`/app/BUILD_INFO` 都已是上一版本;再做附录 E.3"回滚后必做"。
 - **数据不随代码回滚**:库结构迁移只前进(`go/schemamigrate` 只有 `Up`;trade 的迁移 Job 以 `-migrate` 运行),回滚前确认上一版本能在当前库结构上运行。需要把数据回到某个时间点时走 `tools/scripts/k8s_zone_rollback.ps1`(`-NodeImage` 必填,且必须是不可变引用)与 [zone_data_rollback.md](../design/zone_data_rollback.md)。
 

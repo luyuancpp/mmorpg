@@ -100,7 +100,7 @@ func main() {
 	conf.MustLoad(*configFile, &c)
 
 	if *migrateOnly {
-		os.Exit(runMigration(c, *allowModify, svc.OpenMySQL, schemamigrate.Up))
+		os.Exit(runMigration(c, *allowModify, svc.OpenMySQL, schemamigrate.Up, checkRowShardLayout))
 	}
 	if err := runPlayerInbox(c); err != nil {
 		fmt.Fprintf(os.Stderr, "[player_inbox] %v\n", err)
@@ -167,7 +167,7 @@ func runPlayerInbox(c config.Config) (runErr error) {
 	}()
 
 	// 建表 / 查表(D-14 第 4 条)。放在起 gRPC 之前:表不对的收件箱一个请求都不该接。
-	if err := ensureSchema(context.Background(), svcCtx.DB, c, schemamigrate.Up, schemamigrate.Plan); err != nil {
+	if err := ensureSchema(context.Background(), svcCtx.DB, c, schemamigrate.Up, schemamigrate.Plan, checkRowShardLayout); err != nil {
 		return err
 	}
 	if exitRequested(ctx) {
@@ -348,9 +348,18 @@ func schemaOptions() schemamigrate.Options {
 	}
 }
 
+// rowLayoutCheck 是「表结构对齐之后、接请求之前」的数据布局核对,形状同 inbox.CheckRowShards(单测注入假实现)。
+type rowLayoutCheck func(ctx context.Context, db *sql.DB) error
+
+// checkRowShardLayout 是生产用的布局核对:shard 列与 RowShard(player_id) 不符的行(典型是 2026-10-16 分片公式改为
+// mix64 之前写出的开发库存量)对按玩家的读写静默不可见,会破坏幂等,所以必须在接请求之前拒绝(评审 L5 / R3)。
+func checkRowShardLayout(ctx context.Context, db *sql.DB) error {
+	return inbox.CheckRowShards(ctx, db)
+}
+
 // ensureSchema 是启动期建表策略(D-14 第 4 条,同 go/trade):AutoMigrate 没写或 true 跑 Up(出错 / 需人工项即拒启);
-// false 只跑只读 Plan,有待执行语句或需人工项即拒启并带补救命令。
-func ensureSchema(ctx context.Context, db *sql.DB, c config.Config, up, plan schemaRunner) error {
+// false 只跑只读 Plan,有待执行语句或需人工项即拒启并带补救命令。表结构对齐之后再跑一次行布局核对,不一致即拒启。
+func ensureSchema(ctx context.Context, db *sql.DB, c config.Config, up, plan schemaRunner, check rowLayoutCheck) error {
 	opts := schemaOptions()
 	if c.ShouldAutoMigrate() {
 		report, err := up(ctx, db, opts)
@@ -362,7 +371,7 @@ func ensureSchema(ctx context.Context, db *sql.DB, c config.Config, up, plan sch
 			return fmt.Errorf("[player_inbox] startup schema migration found %d manual item(s) (database %s), refusing to start: %s",
 				len(report.Manual), data.DatabaseName, strings.Join(report.Manual, "; "))
 		}
-		return nil
+		return checkLayoutBeforeServing(ctx, db, check)
 	}
 
 	report, err := plan(ctx, db, opts)
@@ -376,11 +385,20 @@ func ensureSchema(ctx context.Context, db *sql.DB, c config.Config, up, plan sch
 			"(%d pending statement(s), %d manual item(s)), refusing to start; run %s first",
 			data.DatabaseName, len(report.Statements), len(report.Manual), migrateRemedyCommand)
 	}
+	return checkLayoutBeforeServing(ctx, db, check)
+}
+
+// checkLayoutBeforeServing 跑行布局核对;不一致或核对本身失败都拒启(fail-closed:核对不了就不能断言没有隐形行)。
+func checkLayoutBeforeServing(ctx context.Context, db *sql.DB, check rowLayoutCheck) error {
+	if err := check(ctx, db); err != nil {
+		return fmt.Errorf("[player_inbox] row shard layout check failed (database %s), refusing to start: %w", data.DatabaseName, err)
+	}
 	return nil
 }
 
 // runMigration 是 -migrate 的实现:只连 MySQL。输出走 stdout / stderr,退出码按 schemamigrate.ExitCode(D-14)。
-func runMigration(c config.Config, allowModify bool, openMySQL func(config.MySQLConf) (*sql.DB, error), up schemaRunner) int {
+// 迁移成功之后再跑行布局核对:不一致按「需人工」退出(ExitManual),让 K8s Job 停下而不是反复重试。
+func runMigration(c config.Config, allowModify bool, openMySQL func(config.MySQLConf) (*sql.DB, error), up schemaRunner, check rowLayoutCheck) int {
 	fmt.Printf("player_inbox schema migration: %s\n", svc.MySQLTarget(c.MySQL))
 	db, err := openMySQL(c.MySQL)
 	if err != nil {
@@ -403,6 +421,11 @@ func runMigration(c config.Config, allowModify bool, openMySQL func(config.MySQL
 	default:
 		fmt.Printf("schema migration OK: %s synced from proto/player_inbox/player_inbox_table.proto (%d statement(s) executed)\n",
 			data.DatabaseName, len(report.Statements))
+		if err := check(context.Background(), db); err != nil {
+			fmt.Fprintf(os.Stderr, "row shard layout check FAILED (exit %d): %v\n", schemamigrate.ExitManual, err)
+			return schemamigrate.ExitManual
+		}
+		fmt.Println("row shard layout check OK")
 	}
 	return code
 }

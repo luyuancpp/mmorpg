@@ -60,6 +60,16 @@ namespace
 		thread_local State state;
 		return state;
 	}
+
+	// Kafka 错误码 → 账本的失败记录。错误码原样记下(只给日志用),种类按 kafka_producer_policy 的集中分类。
+	db_task_dispatch::Failure ClassifyKafkaFailure(RdKafka::ErrorCode err)
+	{
+		db_task_dispatch::Failure failure;
+		failure.kind = kafka_producer_policy::IsPermanentMessageError(err) ? db_task_dispatch::FailureKind::kPermanent
+																		   : db_task_dispatch::FailureKind::kRetryable;
+		failure.code = static_cast<std::int32_t>(err);
+		return failure;
+	}
 } // namespace
 
 void DbTaskDispatchSystem::Initialize(SettledHandler onSettled)
@@ -68,8 +78,9 @@ void DbTaskDispatchSystem::Initialize(SettledHandler onSettled)
 	state.onSettled = std::move(onSettled);
 	state.initialized = true;
 	// 无捕获 lambda,转调静态函数:不绑任何对象(AGENTS §11.7)。在 dr_cb / 重建栈里同步执行,只记账。
+	// 错误码原样传下去(不折成 bool):账本要据此区分可重试 / 永久失败。
 	KafkaProducer::Instance().setDeliveryListener([](const KafkaProducer::DeliveryReport &report)
-												  { OnDeliveryReport(report.correlationId, report.err == RdKafka::ERR_NO_ERROR); });
+												  { OnDeliveryReport(report.correlationId, static_cast<std::int32_t>(report.err)); });
 }
 
 void DbTaskDispatchSystem::Shutdown()
@@ -77,13 +88,15 @@ void DbTaskDispatchSystem::Shutdown()
 	auto &state = GetState();
 	if (!state.initialized)
 	{
-		return; // 幂等:RedisSystem 析构里的第二次调用走这里
+		return; // 幂等:main.cpp 在 Node 析构之后的 RedisSystem::Shutdown(兜底)、以及析构里的再一次调用都走这里
 	}
 	state.initialized = false;
 	KafkaProducer::Instance().setDeliveryListener(nullptr);
 
 	// 停机时还没落定的玩家:在途回执来不及等,或投递失败没能重存。Redis 里有最新数据(下次登录自愈),
 	// 但合服、回档这类以 MySQL 为准的操作会读到旧档 —— 这行就是事后追查的证据。
+	// 生产上第一次调用来自 Node 的拆除前钩子(RedisSystem::StopDbTaskDispatch):producer 最后一次 flush 已计入账本、
+	// 日志还在写文件。Node 析构之后才打的话,Linux 上 AsyncOutput 什么都不写,这行会静默丢失。
 	if (const std::size_t unsettled = state.ledger.UnsettledPlayerCount(); unsettled > 0)
 	{
 		const auto ids = state.ledger.UnsettledPlayers(kShutdownUnsettledLogLimit);
@@ -125,7 +138,7 @@ DbTaskDispatchSystem::SendResult DbTaskDispatchSystem::SendDbTask(Guid playerId,
 		const RdKafka::ErrorCode err = KafkaProducer::Instance().send(topic, payload, key);
 		if (err != RdKafka::ERR_NO_ERROR)
 		{
-			state.ledger.MarkLocalFailure(playerId, generation);
+			state.ledger.MarkLocalFailure(playerId, generation, ClassifyKafkaFailure(err));
 			db_task_dispatch_stats::Inc(Counter::kProduceRejected);
 			result.error = RdKafka::err2str(err);
 			return result;
@@ -141,8 +154,9 @@ DbTaskDispatchSystem::SendResult DbTaskDispatchSystem::SendDbTask(Guid playerId,
 	const RdKafka::ErrorCode err = KafkaProducer::Instance().sendTracked(topic, payload, key, ticket);
 	if (err != RdKafka::ERR_NO_ERROR)
 	{
-		// 没入队 = 永远不会有回执(kafka_producer.h「逐条回执契约」):立即销票、记失败。
-		state.ledger.OnProduceRejected(ticket);
+		// 没入队 = 永远不会有回执(kafka_producer.h「逐条回执契约」):立即销票、记失败。错误码原样进账本:
+		// 消息过大(超过 message.max.bytes,produce() 内同步校验)这类永久错误,下线收尾据此不再重存、不保留实体。
+		state.ledger.OnProduceRejected(ticket, ClassifyKafkaFailure(err));
 		db_task_dispatch_stats::Inc(Counter::kProduceRejected);
 		result.error = RdKafka::err2str(err);
 		return result;
@@ -167,6 +181,16 @@ bool DbTaskDispatchSystem::NeedsResave(Guid playerId)
 	return GetState().ledger.NeedsResave(playerId);
 }
 
+std::optional<std::string> DbTaskDispatchSystem::PermanentFailure(Guid playerId)
+{
+	const auto code = GetState().ledger.PermanentFailureCode(playerId);
+	if (!code)
+	{
+		return std::nullopt;
+	}
+	return std::to_string(*code) + " (" + RdKafka::err2str(static_cast<RdKafka::ErrorCode>(*code)) + ")";
+}
+
 std::uint32_t DbTaskDispatchSystem::InFlight(Guid playerId)
 {
 	return GetState().ledger.InFlight(playerId);
@@ -184,12 +208,15 @@ void DbTaskDispatchSystem::OnPlayerGone(Guid playerId)
 	}
 }
 
-void DbTaskDispatchSystem::OnDeliveryReport(db_task_dispatch::Ticket ticket, bool delivered)
+void DbTaskDispatchSystem::OnDeliveryReport(db_task_dispatch::Ticket ticket, std::int32_t kafkaErrorCode)
 {
 	// 在 KafkaProducer 的 dr_cb / 重建栈里同步执行:只改账本、计数、压待办。不碰 ECS(组件集合此刻可能正被
 	// 调用 send() 的那段代码持有引用),也不打逐条日志(生产者自己已按限流记了失败)。
 	auto &state = GetState();
-	const db_task_dispatch::DeliveryOutcome outcome = state.ledger.OnDelivery(ticket, delivered);
+	const auto err = static_cast<RdKafka::ErrorCode>(kafkaErrorCode);
+	const bool delivered = err == RdKafka::ERR_NO_ERROR;
+	const db_task_dispatch::DeliveryOutcome outcome =
+		state.ledger.OnDelivery(ticket, delivered, delivered ? db_task_dispatch::Failure{} : ClassifyKafkaFailure(err));
 	switch (outcome.effect)
 	{
 	case db_task_dispatch::DeliveryEffect::kDelivered:

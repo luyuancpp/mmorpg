@@ -27,8 +27,8 @@
        go-redis 连接池等待与超时;缺序列打印 n/a]
           when | w_sql w_task w_queue w_e2e | r_sql r_task | batch | no_cursor lease_lost rel_notown | rpool_wait rpool_tmo
 
-      [DB Redis steps(Round 20+,*_db 快照):写任务 11 个 Redis 往返的均值与合计;缺序列打印 n/a]
-          when | lock_acq cur_get ep_get plc_lkp exp_get plc_rck verify cache cur_set ep_mark lock_rel | sum
+      [DB Redis steps(Round 20+ / 围栏 v0.4,*_db 快照):12 个固定列只读写任务均值与合计;缺序列打印 n/a]
+          when | lock_acq cur_get ep_get owner_ep plc_lkp exp_get plc_rck verify publish cache_nx advance lock_rel | sum
 
       [DB retry routing(*_db 快照):重试路由模式、四个重试列表长度、路由动作计数;缺序列打印 n/a]
           when | mode | q_ready q_part q_proc q_dead | exec nonowner fwd revoked misrouted rt_dead
@@ -721,21 +721,25 @@ if ($dbSnapshots.Count -gt 0) {
     }
 
     # ----- 2e. DB Redis steps --------------------------------------------
-    # 写任务每个 Redis 往返的均值。11 个 step 的名字与顺序同 go/db/internal/metrics/pipeline.go 的 RedisSteps
+    # 写任务每个 Redis 往返的均值。12 个 step 的名字与顺序同 go/db/internal/metrics/pipeline.go 的 RedisSteps
     # (按写路径顺序),一一对应;那边改名 / 合并 step 时,这里、test_stress_summarize.ps1 与 TestRedisStepNamesPinned 同改。
     # 只读 op="write";读任务只有 placement_lookup / expand_get / placement_recheck / cache_set 四步,不进本表。
+    # 围栏 v0.4 起 cache_set 只剩读路径 SET NX,写任务这列应为 n/a;lease_verify 只剩 older_seq 条件路径。
+    # cache_publish 合并写路径核锁与缓存发布,applied_advance 合并 cursor_set / epoch_mark。
+    # R20 的 cache_set / lease_verify 含义已变、cursor_set / epoch_mark 已移除,新旧列不能直接相减。
     # 均值保留两位小数(Redis 往返常在 0.1ms 量级,一位小数分不开)。sum = 有序列的各步均值之和,
     # 近似一条写任务花在 Redis 往返上的时间;某步没有序列时不计入,全部没有打印 n/a。
-    $redisSteps = @('lock_acquire', 'cursor_get', 'epoch_get', 'placement_lookup', 'expand_get', 'placement_recheck',
-                    'lease_verify', 'cache_set', 'cursor_set', 'epoch_mark', 'lock_release')
-    $rsFmt = "  {0,-30} {1,-8} {2,-8} {3,-8} {4,-8} {5,-8} {6,-8} {7,-8} {8,-8} {9,-8} {10,-8} {11,-8} {12}"
+    $redisSteps = @('lock_acquire', 'cursor_get', 'epoch_get', 'owner_epoch_probe', 'placement_lookup', 'expand_get', 'placement_recheck',
+                    'lease_verify', 'cache_publish', 'cache_set', 'applied_advance', 'lock_release')
+    $rsFmt = "  {0,-30} {1,-8} {2,-8} {3,-8} {4,-8} {5,-8} {6,-8} {7,-8} {8,-8} {9,-8} {10,-8} {11,-8} {12,-8} {13}"
     Write-Host ""
-    Write-Host "=== DB Redis steps (db_task_redis_step_seconds{op=`"write`"} avg, Round 20+) ===" -ForegroundColor Yellow
+    Write-Host "=== DB Redis steps (db_task_redis_step_seconds{op=`"write`"} avg, fence v0.4) ===" -ForegroundColor Yellow
+    Write-Host '  口径: verify 仅 older_seq;cache_nx 仅读路径(本表通常 n/a);publish / advance 已合并旧步骤,勿直接减 R20 对应列。'
     Write-Host ""
-    Write-Host ($rsFmt -f 'snapshot', 'lock_acq', 'cur_get', 'ep_get', 'plc_lkp', 'exp_get', 'plc_rck', 'verify', 'cache',
-        'cur_set', 'ep_mark', 'lock_rel', 'sum')
-    Write-Host ($rsFmt -f '--------', '--------', '-------', '------', '-------', '-------', '-------', '------', '-----',
-        '-------', '-------', '--------', '---')
+    Write-Host ($rsFmt -f 'snapshot', 'lock_acq', 'cur_get', 'ep_get', 'owner_ep', 'plc_lkp', 'exp_get', 'plc_rck', 'verify',
+        'publish', 'cache_nx', 'advance', 'lock_rel', 'sum')
+    Write-Host ($rsFmt -f '--------', '--------', '-------', '------', '--------', '-------', '-------', '-------', '------',
+        '-------', '--------', '-------', '--------', '---')
 
     foreach ($snap in $dbSnapshots) {
         $m = Read-PromSnapshot $snap.FullName

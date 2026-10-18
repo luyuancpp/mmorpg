@@ -692,8 +692,9 @@ void Channel::ArmDeadlineTimer()
     {
         loop_.cancel(deadlineTimer_);
     }
-    // muduo 定时器按墙钟走,只当唤醒提示;到点后用 steady_clock 复核,未到就重新 arm(§6)。
-    // 加 1ms 余量,避免墙钟与单调钟的取整差让定时器早到一点而空转一轮。
+    // muduo 定时器已按单调时钟到期(muduo-timer-cancellation-hazards.md「定时器时钟」),墙钟跳变不再影响;
+    // 到点仍用 steady_clock 复核,未到就重新 arm(§6),兜住秒→微秒截断造成的微秒级早到。
+    // 加 1ms 余量,避免这点截断让定时器早到一点而空转一轮。
     const double delaySeconds = ToSeconds(earliest - std::chrono::steady_clock::now()) + 0.001;
     std::weak_ptr<Channel> weakSelf = weak_from_this();
     deadlineTimer_ = loop_.runAfter(delaySeconds, [weakSelf]

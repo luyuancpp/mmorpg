@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -59,5 +60,32 @@ func TestConsumerServerFoldsFaultsInBand(t *testing.T) {
 	fetch, err = s.FetchItems(context.Background(), &inboxpb.FetchPlayerInboxRequest{PlayerId: 8})
 	if err != nil || fetch.GetErrorMessage() != nil || fetch.GetFence() != inboxpb.PlayerInboxFenceVerdict_PLAYER_INBOX_FENCE_NO_STREAM {
 		t.Fatalf("成功路径应原样透传: %+v, %v", fetch, err)
+	}
+}
+
+// TestConsumerServerFaultLogsUseSceneNodeIDKey 是评审 R5 的回归:Fetch / Ack 故障的 ERROR 日志用 scene_node_id= 这个键,
+// 与围栏 / Ack 异常日志、告警描述(player-inbox-alerts.yaml)和 runbook 同一写法 —— 值班按 |= "scene_node_id=9"
+// 查 Loki 时不会漏掉这两条。原实现写的是 scene_node=。
+func TestConsumerServerFaultLogsUseSceneNodeIDKey(t *testing.T) {
+	logs := logtest.NewCollector(t)
+	s := NewPlayerInboxServer(&fakeConsumer{err: errors.New("db down")}, 2500*time.Millisecond)
+	domain := inboxpb.PlayerInboxDomain_PLAYER_INBOX_DOMAIN_SCENE_GM_SANCTION
+	if _, err := s.FetchItems(context.Background(), &inboxpb.FetchPlayerInboxRequest{PlayerId: 7, Domain: domain, SceneNodeId: 9}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.AckItems(context.Background(), &inboxpb.AckPlayerInboxRequest{PlayerId: 7, Domain: domain, SceneNodeId: 9}); err != nil {
+		t.Fatal(err)
+	}
+	out := logs.String()
+	for _, want := range []string{"FetchItems failed", "AckItems failed"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("日志缺 %q:\n%s", want, out)
+		}
+	}
+	if n := strings.Count(out, "scene_node_id=9"); n != 2 {
+		t.Fatalf("两条故障日志都应带 scene_node_id=9,找到 %d 处:\n%s", n, out)
+	}
+	if strings.Contains(out, "scene_node=") {
+		t.Fatalf("不应再出现 scene_node= 这个键:\n%s", out)
 	}
 }

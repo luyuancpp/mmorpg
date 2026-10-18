@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -237,12 +238,8 @@ protected:
 
 	static ::AssetOpRequest MakeAbortRequest(uint64_t seq, uint64_t epoch = kTestEpoch)
 	{
-		::AssetOpRequest request;
-		request.set_player_id(kTestPlayerId);
-		request.set_stream(ASSET_OP_STREAM_GUILD_DEBIT);
-		request.set_seq(seq);
-		request.set_stream_epoch(epoch);
-		return request;
+		// 正式 outbox 中止重投保留原币包、业务号及 tx，仅改 RPC 与签名。
+		return MakeCurrencyRequest(ASSET_OP_STREAM_GUILD_DEBIT, seq, 30, TX_GUILD_DONATE, 77, epoch);
 	}
 
 	// 一次完整的扣款调用(默认 GUILD_DEBIT / TX_GUILD_DONATE)。
@@ -590,8 +587,13 @@ TEST_F(AssetOpSystemTest, DebitBundleInvalidRecorded)
 	EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), response.reason().id());
 	EXPECT_EQ(100u, Gold());
 
-	// 已记账:换成合法包重投同 seq,仍然是拒绝。
-	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, CallDebit(1, 30).outcome());
+	// 已记账的结局只证明原始请求;同 seq 改成另一份合法包不能借用其收据。
+	::AssetOpResponse itemReplay;
+	PlayerAssetOpSystem::Debit(withItem, itemReplay);
+	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, itemReplay.outcome());
+	EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), itemReplay.reason().id());
+	EXPECT_EQ(100u, Gold());
+	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, CallDebit(1, 30).outcome());
 	EXPECT_EQ(100u, Gold());
 
 	// 2 条货币同样违反 Debit v1 的"恰好 1 条货币、0 件物品"(§4.14.2 点名的第二个子例);
@@ -607,7 +609,12 @@ TEST_F(AssetOpSystemTest, DebitBundleInvalidRecorded)
 	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, twoResponse.outcome());
 	EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), twoResponse.reason().id());
 	EXPECT_EQ(100u, Gold());
-	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, CallDebit(2, 30).outcome()) << "已记账";
+	::AssetOpResponse twoReplay;
+	PlayerAssetOpSystem::Debit(twoCurrencies, twoReplay);
+	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, twoReplay.outcome()) << "原请求已记账";
+	EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), twoReplay.reason().id());
+	EXPECT_EQ(100u, Gold());
+	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, CallDebit(2, 30).outcome()) << "变包不能借用原收据";
 	EXPECT_EQ(100u, Gold());
 }
 
@@ -632,7 +639,12 @@ TEST_F(AssetOpSystemTest, UnsupportedP2FieldsRejectedAndRecorded)
 	EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), petResponse.reason().id());
 	EXPECT_EQ(100u, Gold()) << "拒绝不改资产";
 	EXPECT_NE(nullptr, Ledger(ASSET_OP_STREAM_GUILD_DEBIT)) << "已记账:结局固定";
-	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, CallDebit(1, 30).outcome()) << "同一 seq 重查取回同一结局";
+	::AssetOpResponse petReplay;
+	PlayerAssetOpSystem::Debit(withPet, petReplay);
+	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, petReplay.outcome()) << "原请求重查取回同一结局";
+	EXPECT_EQ(static_cast<uint32_t>(kAssetInvalidBundle), petReplay.reason().id());
+	EXPECT_EQ(100u, Gold());
+	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, CallDebit(1, 30).outcome()) << "同 seq 变包没有匹配身份的收据";
 	EXPECT_EQ(100u, Gold());
 
 	// item_uuids 同理,Credit 方向也一样。
@@ -981,27 +993,122 @@ TEST_F(AssetOpSystemTest, OwnerEpochMintedLaterAppliesSameSeq)
 }
 TEST_F(AssetOpSystemTest, ReceiptAckRequiresMatchingCorrelationAndKeepsOriginalOutcome)
 {
+	ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player_, kCurrencyGold, 100));
+	auto ack = MakeCurrencyRequest(ASSET_OP_STREAM_TRADE_DEBIT, 1, 30, TX_TRADE);
+	SignForTest("debit", ack, "trade");
+	::AssetOpResponse response;
+	PlayerAssetOpSystem::Debit(ack, response);
+	ASSERT_EQ(ASSET_OP_OUTCOME_APPLIED, response.outcome());
 	auto& comp = tlsEcs.actorRegistry.get<PlayerAssetOpLedgerComp>(player_);
 	auto& stream = MutableAssetOpStream(comp, ASSET_OP_STREAM_TRADE_DEBIT);
-	ASSERT_TRUE(RecordAssetOpOutcome(stream, kTestEpoch, 1, AssetOpRecordKind::kApplied, 0));
-	auto* receipt = stream.add_receipts();
-	receipt->set_seq(1); receipt->set_correlation_id(77); receipt->set_request_digest(std::string(32, 'd'));
+	ASSERT_EQ(1, stream.receipts_size());
+	auto* receipt = stream.mutable_receipts(0);
 	receipt->mutable_snapshot()->add_items()->set_item_uuid(123);
-	::AssetOpRequest ack;
-	ack.set_player_id(kTestPlayerId); ack.set_stream(ASSET_OP_STREAM_TRADE_DEBIT);
-	ack.set_seq(1); ack.set_stream_epoch(kTestEpoch); ack.set_correlation_id(78);
+	const auto digest = receipt->request_digest();
+	const int beforeAck = g_persistCalls;
+	ack.set_correlation_id(78);
 	SignForTest("ack_receipt", ack, "trade");
-	::AssetOpResponse response;
 	PlayerAssetOpSystem::AckReceipt(ack, response);
 	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, response.outcome());
 	EXPECT_EQ(1, stream.receipts_size());
-	EXPECT_EQ(0, g_persistCalls);
+	EXPECT_EQ(beforeAck, g_persistCalls);
+	ack.set_correlation_id(77); ack.mutable_bundle()->mutable_currencies(0)->set_amount(31);
+	SignForTest("ack_receipt", ack, "trade");
+	PlayerAssetOpSystem::AckReceipt(ack, response);
+	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, response.outcome()) << "同业务号的异载荷也不能释放原件";
+	EXPECT_TRUE(stream.receipts(0).has_snapshot());
+	ack.mutable_bundle()->mutable_currencies(0)->set_amount(30);
 	ack.set_correlation_id(77); SignForTest("ack_receipt", ack, "trade");
 	PlayerAssetOpSystem::AckReceipt(ack, response);
 	EXPECT_EQ(ASSET_OP_OUTCOME_APPLIED, response.outcome());
-	EXPECT_EQ(0, stream.receipts_size());
+	ASSERT_EQ(1, stream.receipts_size());
+	EXPECT_FALSE(stream.receipts(0).has_snapshot());
+	EXPECT_EQ(digest, stream.receipts(0).request_digest());
 	EXPECT_EQ(AssetOpSeqState::kApplied, ClassifyAssetOpSeq(&stream, kTestEpoch, 1));
-	EXPECT_EQ(1, g_persistCalls);
+	EXPECT_EQ(beforeAck + 1, g_persistCalls);
+	EXPECT_FALSE(response.durable());
+	CompleteFakeSave();
+	PlayerAssetOpSystem::AckReceipt(ack, response);
+	EXPECT_TRUE(response.durable());
+	EXPECT_EQ(70u, Gold());
+}
+
+TEST_F(AssetOpSystemTest, CoinAndRejectedReplaysRequireOriginalIdentity)
+{
+	ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player_, kCurrencyGold, 100));
+	ASSERT_EQ(ASSET_OP_OUTCOME_APPLIED, CallDebit(1, 30).outcome());
+	CompleteFakeSave();
+	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, CallDebit(1, 31).outcome());
+	EXPECT_EQ(70u, Gold());
+	ASSERT_EQ(ASSET_OP_OUTCOME_REJECTED, CallDebit(2, 100).outcome());
+	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, CallDebit(2, 1).outcome());
+	EXPECT_EQ(ASSET_OP_OUTCOME_REJECTED, CallDebit(2, 100).outcome());
+	EXPECT_EQ(70u, Gold());
+	ASSERT_EQ(2, Ledger(ASSET_OP_STREAM_GUILD_DEBIT)->receipts_size());
+	EXPECT_TRUE(ValidateAssetOpLedger(tlsEcs.actorRegistry.get<PlayerAssetOpLedgerComp>(player_)).empty());
+}
+
+TEST_F(AssetOpSystemTest, MailCreditReplayRequiresOriginalIdentity)
+{
+	auto request = MakeCurrencyRequest(ASSET_OP_STREAM_SYSTEM_CREDIT, 1, 17, TX_MAIL_ATTACHMENT);
+	SignForTest("credit", request, "mail");
+	::AssetOpResponse response;
+	PlayerAssetOpSystem::Credit(request, response);
+	ASSERT_EQ(ASSET_OP_OUTCOME_APPLIED, response.outcome());
+	CompleteFakeSave();
+	request.mutable_bundle()->mutable_currencies(0)->set_amount(18);
+	SignForTest("credit", request, "mail");
+	PlayerAssetOpSystem::Credit(request, response);
+	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, response.outcome());
+	EXPECT_EQ(17u, Gold());
+	EXPECT_FALSE(response.durable());
+}
+
+TEST_F(AssetOpSystemTest, LegacySeenBitmapWithoutIdentityNeverProvesNewRequest)
+{
+	auto& comp = tlsEcs.actorRegistry.get<PlayerAssetOpLedgerComp>(player_);
+	auto& stream = MutableAssetOpStream(comp, ASSET_OP_STREAM_GUILD_DEBIT);
+	ASSERT_TRUE(RecordAssetOpOutcome(stream, kTestEpoch, 1, AssetOpRecordKind::kApplied, 0));
+	ASSERT_EQ(kSuccess, CurrencySystem::AddCurrency(player_, kCurrencyGold, 70));
+	CompleteFakeSave();
+	const auto response = CallDebit(1, 30);
+	EXPECT_EQ(ASSET_OP_OUTCOME_UNKNOWN, response.outcome());
+	EXPECT_FALSE(response.durable());
+	EXPECT_EQ(70u, Gold());
+	EXPECT_EQ(0, g_persistCalls);
+	EXPECT_TRUE(ValidateAssetOpLedger(comp).empty()) << "兼容旧档，不清账本、不重复应用";
+}
+
+TEST_F(AssetOpSystemTest, FiveFullIdentityWindowsDoNotConsumeSnapshotBudgetOrBlockPruning)
+{
+	auto& comp = tlsEcs.actorRegistry.get<PlayerAssetOpLedgerComp>(player_);
+	const auto max = (std::numeric_limits<uint64_t>::max)();
+	const auto watermark = max - 2048;
+	for (const auto kind : {ASSET_OP_STREAM_GUILD_DEBIT, ASSET_OP_STREAM_GUILD_CREDIT,
+		ASSET_OP_STREAM_TRADE_DEBIT, ASSET_OP_STREAM_TRADE_CREDIT, ASSET_OP_STREAM_SYSTEM_CREDIT})
+	{
+		auto& ledger = MutableAssetOpStream(comp, kind);
+		ledger.set_stream_epoch(kTestEpoch);
+		ledger.set_watermark(watermark);
+		ledger.set_max_seq(watermark + kAssetOpWindowBits);
+		for (int word = 0; word < kAssetOpWindowWords; ++word) ledger.set_seen_bits(word, max);
+		for (uint64_t offset = 1; offset <= kAssetOpWindowBits; ++offset)
+		{
+			auto* receipt = ledger.add_receipts();
+			receipt->set_seq(watermark + offset);
+			receipt->set_correlation_id(max);
+			receipt->set_request_digest(std::string(32, 'd'));
+		}
+	}
+	ASSERT_GT(comp.ByteSizeLong(), kAssetOpMaxPlayerReceiptBytes);
+	ASSERT_TRUE(ValidateAssetOpLedger(comp).empty());
+	const auto response = CallAbort(watermark + kAssetOpWindowBits + 1);
+	ASSERT_EQ(ASSET_OP_OUTCOME_REJECTED, response.outcome());
+	const auto* ledger = Ledger(ASSET_OP_STREAM_GUILD_DEBIT);
+	ASSERT_NE(nullptr, ledger);
+	EXPECT_EQ(watermark + 1, ledger->watermark());
+	EXPECT_EQ(kAssetOpWindowBits, static_cast<uint32_t>(ledger->receipts_size()));
+	EXPECT_TRUE(ValidateAssetOpLedger(comp).empty());
 }
 
 TEST_F(AssetOpSystemTest, CompleteItemEscrowReplayAndCreditKeepIdentityGrowthAndUnknownFields)

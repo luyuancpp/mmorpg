@@ -74,6 +74,76 @@ func (x *AssetOpRejection) GetReasonTipId() uint32 {
 	return 0
 }
 
+// 托管扣出结果随资产和幂等账本一起保存；丢回包时可重取原始实例。
+// 与 1024 位窗口同寿命，流分配端 MaxSpan=512，未决操作不会被提前淘汰。
+type AssetOpReceipt struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Seq           uint64                 `protobuf:"varint,1,opt,name=seq,proto3" json:"seq,omitempty"`
+	RequestDigest []byte                 `protobuf:"bytes,2,opt,name=request_digest,json=requestDigest,proto3" json:"request_digest,omitempty"`
+	Snapshot      *asset.AssetSnapshot   `protobuf:"bytes,3,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
+	CorrelationId uint64                 `protobuf:"varint,4,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AssetOpReceipt) Reset() {
+	*x = AssetOpReceipt{}
+	mi := &file_proto_common_component_asset_op_ledger_comp_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AssetOpReceipt) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AssetOpReceipt) ProtoMessage() {}
+
+func (x *AssetOpReceipt) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_common_component_asset_op_ledger_comp_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AssetOpReceipt.ProtoReflect.Descriptor instead.
+func (*AssetOpReceipt) Descriptor() ([]byte, []int) {
+	return file_proto_common_component_asset_op_ledger_comp_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *AssetOpReceipt) GetSeq() uint64 {
+	if x != nil {
+		return x.Seq
+	}
+	return 0
+}
+
+func (x *AssetOpReceipt) GetRequestDigest() []byte {
+	if x != nil {
+		return x.RequestDigest
+	}
+	return nil
+}
+
+func (x *AssetOpReceipt) GetSnapshot() *asset.AssetSnapshot {
+	if x != nil {
+		return x.Snapshot
+	}
+	return nil
+}
+
+func (x *AssetOpReceipt) GetCorrelationId() uint64 {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return 0
+}
+
 // 单条流的账本。窗口覆盖 (watermark, watermark + 1024]。
 // 位 i(i∈[0,1024))对应 seq = watermark + 1 + i;第 i/64 个字、第 i%64 位。
 type AssetOpStreamLedger struct {
@@ -85,14 +155,15 @@ type AssetOpStreamLedger struct {
 	Rejections    []*AssetOpRejection    `protobuf:"bytes,5,rep,name=rejections,proto3" json:"rejections,omitempty"`                               // 按 seq 升序,<= 64 条,只收窗口内的 REJECTED
 	MaxSeq        uint64                 `protobuf:"varint,6,opt,name=max_seq,json=maxSeq,proto3" json:"max_seq,omitempty"`                        // 本纪元见过的最大 seq;跳号上限 seq <= max_seq + 1024
 	StreamEpoch   uint64                 `protobuf:"varint,7,opt,name=stream_epoch,json=streamEpoch,proto3" json:"stream_epoch,omitempty"`         // 本账本所属纪元;请求纪元更大时整条流重置(§4.29)
-	PartialSeqs   []uint64               `protobuf:"varint,8,rep,packed,name=partial_seqs,json=partialSeqs,proto3" json:"partial_seqs,omitempty"`  // 升序,<= 64 条,只收窗口内"部分发放"的 APPLIED seq
+	PartialSeqs   []uint64               `protobuf:"varint,8,rep,packed,name=partial_seqs,json=partialSeqs,proto3" json:"partial_seqs,omitempty"`  // 升序，保留完整1024位窗口；不得因首次回包丢失而忘记部分发放
+	Receipts      []*AssetOpReceipt      `protobuf:"bytes,9,rep,name=receipts,proto3" json:"receipts,omitempty"`                                   // 按 seq 升序，只保存本窗口内有实例的结果
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AssetOpStreamLedger) Reset() {
 	*x = AssetOpStreamLedger{}
-	mi := &file_proto_common_component_asset_op_ledger_comp_proto_msgTypes[1]
+	mi := &file_proto_common_component_asset_op_ledger_comp_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -104,7 +175,7 @@ func (x *AssetOpStreamLedger) String() string {
 func (*AssetOpStreamLedger) ProtoMessage() {}
 
 func (x *AssetOpStreamLedger) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_component_asset_op_ledger_comp_proto_msgTypes[1]
+	mi := &file_proto_common_component_asset_op_ledger_comp_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -117,7 +188,7 @@ func (x *AssetOpStreamLedger) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssetOpStreamLedger.ProtoReflect.Descriptor instead.
 func (*AssetOpStreamLedger) Descriptor() ([]byte, []int) {
-	return file_proto_common_component_asset_op_ledger_comp_proto_rawDescGZIP(), []int{1}
+	return file_proto_common_component_asset_op_ledger_comp_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AssetOpStreamLedger) GetStream() asset.AssetOpStream {
@@ -176,6 +247,13 @@ func (x *AssetOpStreamLedger) GetPartialSeqs() []uint64 {
 	return nil
 }
 
+func (x *AssetOpStreamLedger) GetReceipts() []*AssetOpReceipt {
+	if x != nil {
+		return x.Receipts
+	}
+	return nil
+}
+
 type PlayerAssetOpLedgerComp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Streams       []*AssetOpStreamLedger `protobuf:"bytes,1,rep,name=streams,proto3" json:"streams,omitempty"` // 按 stream 升序,每流至多一条;首次记账时创建
@@ -185,7 +263,7 @@ type PlayerAssetOpLedgerComp struct {
 
 func (x *PlayerAssetOpLedgerComp) Reset() {
 	*x = PlayerAssetOpLedgerComp{}
-	mi := &file_proto_common_component_asset_op_ledger_comp_proto_msgTypes[2]
+	mi := &file_proto_common_component_asset_op_ledger_comp_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -197,7 +275,7 @@ func (x *PlayerAssetOpLedgerComp) String() string {
 func (*PlayerAssetOpLedgerComp) ProtoMessage() {}
 
 func (x *PlayerAssetOpLedgerComp) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_common_component_asset_op_ledger_comp_proto_msgTypes[2]
+	mi := &file_proto_common_component_asset_op_ledger_comp_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -210,7 +288,7 @@ func (x *PlayerAssetOpLedgerComp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlayerAssetOpLedgerComp.ProtoReflect.Descriptor instead.
 func (*PlayerAssetOpLedgerComp) Descriptor() ([]byte, []int) {
-	return file_proto_common_component_asset_op_ledger_comp_proto_rawDescGZIP(), []int{2}
+	return file_proto_common_component_asset_op_ledger_comp_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PlayerAssetOpLedgerComp) GetStreams() []*AssetOpStreamLedger {
@@ -227,7 +305,12 @@ const file_proto_common_component_asset_op_ledger_comp_proto_rawDesc = "" +
 	"1proto/common/component/asset_op_ledger_comp.proto\x1a!proto/common/asset/asset_op.proto\"H\n" +
 	"\x10AssetOpRejection\x12\x10\n" +
 	"\x03seq\x18\x01 \x01(\x04R\x03seq\x12\"\n" +
-	"\rreason_tip_id\x18\x02 \x01(\rR\vreasonTipId\"\xad\x02\n" +
+	"\rreason_tip_id\x18\x02 \x01(\rR\vreasonTipId\"\x9c\x01\n" +
+	"\x0eAssetOpReceipt\x12\x10\n" +
+	"\x03seq\x18\x01 \x01(\x04R\x03seq\x12%\n" +
+	"\x0erequest_digest\x18\x02 \x01(\fR\rrequestDigest\x12*\n" +
+	"\bsnapshot\x18\x03 \x01(\v2\x0e.AssetSnapshotR\bsnapshot\x12%\n" +
+	"\x0ecorrelation_id\x18\x04 \x01(\x04R\rcorrelationId\"\xda\x02\n" +
 	"\x13AssetOpStreamLedger\x12&\n" +
 	"\x06stream\x18\x01 \x01(\x0e2\x0e.AssetOpStreamR\x06stream\x12\x1c\n" +
 	"\twatermark\x18\x02 \x01(\x04R\twatermark\x12\x1b\n" +
@@ -238,7 +321,8 @@ const file_proto_common_component_asset_op_ledger_comp_proto_rawDesc = "" +
 	"rejections\x12\x17\n" +
 	"\amax_seq\x18\x06 \x01(\x04R\x06maxSeq\x12!\n" +
 	"\fstream_epoch\x18\a \x01(\x04R\vstreamEpoch\x12!\n" +
-	"\fpartial_seqs\x18\b \x03(\x04R\vpartialSeqs\"I\n" +
+	"\fpartial_seqs\x18\b \x03(\x04R\vpartialSeqs\x12+\n" +
+	"\breceipts\x18\t \x03(\v2\x0f.AssetOpReceiptR\breceipts\"I\n" +
 	"\x17PlayerAssetOpLedgerComp\x12.\n" +
 	"\astreams\x18\x01 \x03(\v2\x14.AssetOpStreamLedgerR\astreamsB\x18Z\x16proto/common/componentb\x06proto3"
 
@@ -254,22 +338,26 @@ func file_proto_common_component_asset_op_ledger_comp_proto_rawDescGZIP() []byte
 	return file_proto_common_component_asset_op_ledger_comp_proto_rawDescData
 }
 
-var file_proto_common_component_asset_op_ledger_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_common_component_asset_op_ledger_comp_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_common_component_asset_op_ledger_comp_proto_goTypes = []any{
 	(*AssetOpRejection)(nil),        // 0: AssetOpRejection
-	(*AssetOpStreamLedger)(nil),     // 1: AssetOpStreamLedger
-	(*PlayerAssetOpLedgerComp)(nil), // 2: PlayerAssetOpLedgerComp
-	(asset.AssetOpStream)(0),        // 3: AssetOpStream
+	(*AssetOpReceipt)(nil),          // 1: AssetOpReceipt
+	(*AssetOpStreamLedger)(nil),     // 2: AssetOpStreamLedger
+	(*PlayerAssetOpLedgerComp)(nil), // 3: PlayerAssetOpLedgerComp
+	(*asset.AssetSnapshot)(nil),     // 4: AssetSnapshot
+	(asset.AssetOpStream)(0),        // 5: AssetOpStream
 }
 var file_proto_common_component_asset_op_ledger_comp_proto_depIdxs = []int32{
-	3, // 0: AssetOpStreamLedger.stream:type_name -> AssetOpStream
-	0, // 1: AssetOpStreamLedger.rejections:type_name -> AssetOpRejection
-	1, // 2: PlayerAssetOpLedgerComp.streams:type_name -> AssetOpStreamLedger
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	4, // 0: AssetOpReceipt.snapshot:type_name -> AssetSnapshot
+	5, // 1: AssetOpStreamLedger.stream:type_name -> AssetOpStream
+	0, // 2: AssetOpStreamLedger.rejections:type_name -> AssetOpRejection
+	1, // 3: AssetOpStreamLedger.receipts:type_name -> AssetOpReceipt
+	2, // 4: PlayerAssetOpLedgerComp.streams:type_name -> AssetOpStreamLedger
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_proto_common_component_asset_op_ledger_comp_proto_init() }
@@ -283,7 +371,7 @@ func file_proto_common_component_asset_op_ledger_comp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_common_component_asset_op_ledger_comp_proto_rawDesc), len(file_proto_common_component_asset_op_ledger_comp_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

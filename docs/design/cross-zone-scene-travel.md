@@ -1075,7 +1075,7 @@ C-5(客户端收到 34 是否一定断线)已由 §12.5.4 解除。
    - `ArmTravelSaveWatchdog` / `ArmTravelReplyWatchdog` 改用 `RunAtMonotonic(steady 截止时刻, 原函数体)`。
    - 定时器醒来时,若离截止时刻还差 1s 以上,就按剩余时间重挂,计 `watchdog_early_fire`,打 WARN `[ZoneTravel] handoff watchdog fired …ms before its monotonic deadline`。
    - 设 1s 容差的原因:两只时钟的频率差和微秒截断,会造成毫秒级的伪提前;有了容差,正常运行不会抬高这个计数。
-   - 墙钟前跳不会让任何判定提前。墙钟回拨仍会推迟所有 muduo 定时器,见残余。
+   - 墙钟前跳不会让任何判定提前。墙钟回拨仍会推迟所有 muduo 定时器,见残余。*(2026-10-16 批注:muduo `TimerQueue` 已改按单调时钟到期,墙钟前跳 / 回拨都不再影响定时器,这条复核降为纵深防御、正常运行不触发;见 [muduo-timer-cancellation-hazards.md](muduo-timer-cancellation-hazards.md)「定时器时钟」。)*
 6. **1s 扫描为什么自己挂定时器**
    - 扫描由 `EnsureTravelFreezeCapTimer` 在第一次 `StartTravelHandoff` 时挂上,回调调 `EnforceTravelFreezeCaps(now)`,先收集到期的玩家,再由 `ExpireTravelFreeze` 逐个处置。
    - 不借 RedisSystem 的节拍,与 §12.6.10 第 16 条的取舍不同。原因:那一条说的是 Redis 命令重试(撤回、A2′),它们必须和重连回调成对驱动;本扫描是生命周期截止时刻,不发 Redis 命令,也不该随 RedisSystem 的 BeginShutdown 一起被取消。
@@ -1147,7 +1147,8 @@ C-5(客户端收到 34 是否一定断线)已由 §12.5.4 解除。
 **残余**
 - **"服务端最迟约 71s 出结论"有两个例外**:
   - 收口时有未落地存盘,会推迟销毁。redis_client 在 Redis 不可用时无限重试、从不放弃,所以这种推迟没有上界。按推理,快路径补写之后这一支不可达。
-  - 墙钟回拨 X 秒,会把包括 1s 扫描在内的所有 muduo 定时器推迟最多 X 秒。这是引擎级问题,本项不修。
+  - ~~墙钟回拨 X 秒,会把包括 1s 扫描在内的所有 muduo 定时器推迟最多 X 秒。这是引擎级问题,本项不修。~~
+    *(2026-10-16 批注:已由 muduo 定时器改单调时钟消除,见 [muduo-timer-cancellation-hazards.md](muduo-timer-cancellation-hazards.md)「定时器时钟」;未编译,待验证。)*
 - **上限到期一律踢线,可能多踢一次**:
   - 同 zone:交接其实已放行、会话已改绑时,34 会断掉这条合法会话。gate 不核对 34 来自哪个节点,精确修法属于 §12.5.6 残余 1 的另案。
   - 跨 zone:34 可能先于一次迟到但成功的 124 到达。

@@ -2,11 +2,76 @@ package config
 
 import (
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/zeromicro/go-zero/core/conf"
 )
+
+func TestBlobGuardColumnDefaultsAndIsolation(t *testing.T) {
+	input := BlobGuardConfig{PerTable: map[string]BlobTableLimit{
+		"player_database": {ColumnBytes: map[string]int64{"currency": 1234}},
+		"player_snapshot": {MaxColumnBytes: 8 << 20, ColumnBytes: map[string]int64{"data": 7 << 20}},
+	}}
+	got := input.WithDefaults()
+	player := got.PerTable["player_database"]
+	if got.MaxColumnBytes != 256<<10 || got.MaxRowBytes != 1<<20 || got.ReportOnly ||
+		player.MaxRowBytes != 0 || player.MaxColumnBytes != 0 || player.ColumnBytes["asset_op_ledger"] != 1<<20 {
+		t.Fatalf("资产账本默认预算未精准装配: %+v / %+v", got, player)
+	}
+	if player.ColumnBytes["currency"] != 1234 || got.PerTable["player_snapshot"].ColumnBytes["data"] != 7<<20 {
+		t.Fatal("已有列预算必须保留")
+	}
+	if input.MaxColumnBytes != 0 || input.PerTable["player_database"].MaxRowBytes != 0 ||
+		len(input.PerTable["player_database"].ColumnBytes) != 1 {
+		t.Fatal("回填默认不得修改输入配置")
+	}
+	got.PerTable["player_database"].ColumnBytes["currency"] = 9
+	got.PerTable["player_snapshot"].ColumnBytes["data"] = 10
+	delete(got.PerTable, "player_snapshot")
+	if input.PerTable["player_database"].ColumnBytes["currency"] != 1234 ||
+		input.PerTable["player_snapshot"].ColumnBytes["data"] != 7<<20 {
+		t.Fatal("表和列两层 map 必须独立克隆")
+	}
+	var normalized Config
+	normalized.Normalize()
+	before := normalized.ServerConfig.BlobGuard.WithDefaults()
+	normalized.Normalize()
+	if !reflect.DeepEqual(before, normalized.ServerConfig.BlobGuard) {
+		t.Fatal("多次 Normalize 不得改变资产账本默认预算")
+	}
+}
+
+func TestBlobGuardColumnYamlAndExplicitSmallerLimits(t *testing.T) {
+	var holder struct {
+		BlobGuard BlobGuardConfig `json:"BlobGuard,optional"`
+	}
+	text := "BlobGuard:\n  MaxColumnBytes: 1024\n  MaxRowBytes: 2048\n  WarnRatio: 0.5\n  PerTable:\n    player_database:\n      MaxColumnBytes: 512\n      MaxRowBytes: 1536\n      ColumnBytes:\n        asset_op_ledger: 768\n        currency: 256\n"
+	if err := conf.LoadFromYamlBytes([]byte(text), &holder); err != nil {
+		t.Fatalf("列覆盖 YAML 必须可解析: %v", err)
+	}
+	got := holder.BlobGuard.WithDefaults()
+	player := got.PerTable["player_database"]
+	if got.MaxColumnBytes != 1024 || got.MaxRowBytes != 2048 || got.WarnRatio != 0.5 ||
+		player.MaxColumnBytes != 512 || player.MaxRowBytes != 1536 ||
+		player.ColumnBytes["asset_op_ledger"] != 768 || player.ColumnBytes["currency"] != 256 {
+		t.Fatalf("显式更小预算不能被默认放宽: %+v / %+v", got, player)
+	}
+	data, err := os.ReadFile("../../etc/db.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var example Config
+	if err := conf.LoadFromYamlBytes(data, &example); err != nil {
+		t.Fatalf("示例 YAML 解析失败: %v", err)
+	}
+	player = example.ServerConfig.BlobGuard.PerTable["player_database"]
+	if player.MaxRowBytes != 0 || player.ColumnBytes["asset_op_ledger"] != 1<<20 ||
+		example.ServerConfig.BlobGuard.MaxColumnBytes != 256<<10 || example.ServerConfig.BlobGuard.MaxRowBytes != 1<<20 {
+		t.Fatalf("示例必须显式声明精准预算，不能靠 Normalize 掩盖漏键: %+v", example.ServerConfig.BlobGuard)
+	}
+}
 
 // placementHolder 只含 Placement 一个字段,标签与 Config 上的完全相同,用来单独钉住 go-zero 对这一段的解析语义,
 // 不必为了单测凑齐 Config 的其余必填段。

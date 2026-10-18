@@ -72,6 +72,9 @@
   拆出独立 controller 是下一步(需要另一个 StatefulSet),本次不做。
 - **加 broker 不会自动搬分区**:新 broker 起来后已有 topic 的副本仍在老 broker 上,要用 `kafka-reassign-partitions.sh` 挪。
 - **镜像是浮动 tag `apache/kafka:latest`**(既有问题):多 broker 滚动重启时可能拉到不同版本,生产上应钉版本。
+  > **2026-10-16 更正**:已钉 `apache/kafka:4.3.1@sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837`,
+  > 四处同值(`deploy/docker-compose.yml` 的 kafka 与 kafka-topic-init、`deploy/k8s/manifests/infra/kafka.yaml`、`deploy/k8s/manifests/infra/kafka-topic-init.yaml`),
+  > 核对与升级步骤见 `deploy/k8s/README.md`「镜像钉版本」。已落码,未编译、未测试,待 Codex 验证。
 - **就绪探针**沿用 `kafka-broker-api-versions.sh`:它会逐个询问集群成员,别的 broker 不在时对那个节点报错但整体以 0 退出。
   这一点依赖工具实现,**上线前必须在 kind 上实测**(见 §2.5 第 3 步)。
 - 本机 docker-compose 仍是单 broker,`KAFKA_TOPIC_REPLICATION_FACTOR` 不设,取默认 1。
@@ -116,6 +119,8 @@
 | `kafka:retry:instances:{topic}` | ZSET | 实例登记表,score = 租约到期毫秒,统一取 Redis 的 `TIME`(新) |
 | `kafka:retry:processing:{topic}` | LIST | 旧版共享列表:新版只回收、不写入 |
 
+> **2026-10-17 更正**:上表 `kafka:retry:queue:{topic}`「ready,所有实例共享(不变)」已过时。④ 重试只交给分区属主起,ready 拆成共享「未分拣收件箱」`kafka:retry:queue:{topic}` 与按原始分区的 `kafka:retry:queue:{topic}:p{N}`(LIST,`RetryRouting=owner` 时写入;owner 实例只认领自己持有 claim 的分区,shared 实例每拍兜底排空全部非空的 p*(本 zone 主库冷却时整拍跳过),从 owner 回滚就靠这一点);另增实例模式 HASH `kafka:retry:instance_mode:{topic}` 与认领 / ack 防重记录 `kafka:retry:guard:*`(TTL 5 分钟),认领脚本也改为带 nonce。键表、两种模式、混跑与回滚以 [db-retry-owner-routing.md](db-retry-owner-routing.md) 为准。已落码,未编译、未测试,待 Codex 验证。
+
 - `instanceID` 默认 `<主机名>:<ListenOn 端口>`(K8s 上主机名即 Pod 名;本机多开时端口不同),可用 `Kafka.RetryInstanceId` 覆盖。
   租约 `Kafka.RetryLeaseSeconds` 默认 30(下限 10),续租与回收周期是它的三分之一。
 - **认领**:一个 Lua 脚本里先续租、再 `RPOPLPUSH ready → processing:{me}`。
@@ -150,6 +155,7 @@
   zone 多了这是个明显的耦合。改成按 zone 命名需要同步 `tools/merge_zone` 的 `-kafka-group` 默认值、`k8s_zone_rollback.ps1`、
   `dev_tools.ps1`、`stress_summarize.ps1`、`kafka_offset_reset.ps1` 与运行手册,而且要先确认 merge_zone 对「组里没有该 topic 位点」的判定是
   fail-closed 的(否则门禁会静默放行)。**本次没做,单列为后续项。**
+  > **2026-10-16 更新**:已落码,未编译、未测试,待 Codex 验证,见 [db-consumer-group-per-zone.md](db-consumer-group-per-zone.md)。
 - 有效并行度上限 = 分区数(`Kafka.PartitionCnt`,现为 10);不要配 HPA(eager rebalance,成员变化全员暂停)。
 - 连接预算:每实例最多 60 条 MySQL 连接 + 每个额外落点库 8 条;2 副本 × 4 个 zone = 480,已贴近 `max_connections = 500`(见 §6)。
   > **2026-10-12 更正(只读核算,未实测)**:480 = 2 × 4 × 60,只算了 go/db 主池。同一台 MySQL 上的全部客户端要加总:

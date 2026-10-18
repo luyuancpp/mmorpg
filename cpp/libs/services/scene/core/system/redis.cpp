@@ -79,7 +79,8 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
     // DBTask 投递回执的驱动点(DbTaskDispatchSystem::Pump):poll() 派发回执 → 330s 票据超时兜底 → 把落定的玩家交给
     // PlayerLifecycleSystem::OnDbTaskDispatchSettled。回执只在本线程的 poll / flush / send 里派发,空闲节点上没有 send()
     // 来驱动,下线收尾会一直等;50ms 让收尾正常只多 ≤ 50ms。BeginShutdown **不**取消它:停机 drain 期间被保留 / 等回执的
-    // 退出实体要靠它推完(停机谓词按 IsSaveInFlight 等这些实体)。lambda 无捕获,不绑 this。
+    // 退出实体要靠它推完(停机谓词按 IsSaveInFlight 等这些实体)。取消在 StopDbTaskDispatch(Node 的拆除前钩子,
+    // producer 最后一次 flush 之后)。lambda 无捕获,不绑 this。
     static constexpr double kDbTaskDispatchPumpIntervalSec = 0.05;
     dbTaskPumpTimerId_ = loop->runEvery(kDbTaskDispatchPumpIntervalSec, []
                                         { DbTaskDispatchSystem::Pump(); });
@@ -306,6 +307,25 @@ void RedisSystem::BeginShutdown()
 	}
 }
 
+void RedisSystem::StopDbTaskDispatch()
+{
+	// loop_ 为空 = Initialize 没跑过(监听器也没登记)或已 Shutdown(已收过账):什么都不做。这也保证析构里的第二次
+	// Shutdown 不会在 thread_local 析构期间再碰 KafkaProducer。
+	if (!loop_.has_value())
+	{
+		return;
+	}
+	// 先停 Pump 再注销监听器:之后不会再有 Pump 把落定的玩家交给下线收尾(Node 拆除前钩子之后的让轮里,Redis 已释放、
+	// etcd 已注销,那时推收尾只会制造写失败与告警噪声)。未落定的玩家由 DbTaskDispatchSystem::Shutdown 打一行 ERROR 留证;
+	// 它自身幂等,第二次调用不再打。
+	if (dbTaskPumpTimerActive_)
+	{
+		loop_->get().cancel(dbTaskPumpTimerId_);
+		dbTaskPumpTimerActive_ = false;
+	}
+	DbTaskDispatchSystem::Shutdown();
+}
+
 void RedisSystem::Shutdown()
 {
 	BeginShutdown();
@@ -325,14 +345,8 @@ void RedisSystem::Shutdown()
             loop.cancel(snapshotTimerId_);
             snapshotTimerActive_ = false;
         }
-        if (dbTaskPumpTimerActive_)
-        {
-            loop.cancel(dbTaskPumpTimerId_);
-            dbTaskPumpTimerActive_ = false;
-        }
-        // 先停 Pump 再注销监听器;未落定的玩家在这里打一行 ERROR 留证。放在 loop_ 有值的分支里:析构里的
-        // 第二次 Shutdown 走不到这里(Shutdown 自身也幂等),不会在 thread_local 析构期间再碰 KafkaProducer。
-        DbTaskDispatchSystem::Shutdown();
+        // 正常停机时 Node 的拆除前钩子已经调过(那时日志还活着),这里是幂等兜底:钩子没挂上 / 没走到拆除时才真正生效。
+        StopDbTaskDispatch();
     }
 	tlsRedis.SetReconnectCallback({});
     playerRedis.reset();

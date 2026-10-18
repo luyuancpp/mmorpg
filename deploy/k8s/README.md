@@ -825,6 +825,11 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
   值从 `go/player_inbox/etc/player_inbox.yaml` 镜像(`Name` / `Timeout` / `LeaseTTL` / `MySQL.DBName|MaxOpenConn|MaxIdleConn` / `DataServiceRpc.Timeout` /
   `Kafka.WriteTimeoutMs` / `PlayerInbox.EnqueueTypes` 与六个后台循环参数,dev 档另镜像 `Mode` / `Schema.AutoMigrate`);`MySQL.Host`、`CoreRedis.Host`、
   `Kafka.Brokers`、`DataServiceRpc.Etcd.Key` 的**值**由模板按集群形态写死,但**键**必须在服务 yaml 里出现,生成期逐个核对(go-zero 对写错的键静默忽略)。
+  - **顶层 `Middlewares` 段整段复制**(评审 L12,`Get-AuthoritativeYamlBlock`):服务 yaml 的 `Middlewares.StatConf.IgnoreContentMethods` 列出
+    `/player_inbox.PlayerInbox/FetchItems` 与 `/player_inbox.PlayerInbox/AckItems`,只屏蔽这两个方法的请求体日志(方法名、耗时、慢调用照常记;
+    `PlayerInboxAdmin` 不屏蔽,它的请求体是审计线索)。go-zero 的 `Middlewares.Stat` 缺省 true,Go 侧 `config.Validate` 在 Stat 开着时要求两个方法都在列表里,
+    缺了 player-inbox 与 `player-inbox-migrate` Job(同一份 ConfigMap)都拒启。**硬前置**:带这条校验的 Go 版本不能早于带这一段的部署脚本上线,
+    旧脚本渲染出的 ConfigMap 会让新版 Go 拒启;反过来没问题,这一段是 go-zero `RpcServerConf` 自带的键,旧版 Go 照常加载。
 - **端口登记必须逐字一致**:`go_services.ps1` 的 `Port = 50950`、服务 yaml 的 `ListenOn` / `MetricsListenAddr ":9270"`、`$GoSvcCatalogue` 的 `Port`、
   生成的 ConfigMap、本 manifest 的 Service / `containerPort` / 探针 / `prometheus.io/port`(D14)。
 - **运维口令**(`PlayerInbox.AdminToken`,设计 §1.6):常驻,**不与 data_service 回档口令共用**。部署侧从环境变量 `MMORPG_PLAYER_INBOX_ADMIN_TOKEN`
@@ -849,9 +854,20 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
   上线顺序第 1 步(runbook §上线顺序)。合服前审计 `tools/merge_zone` 的 `player_inbox` 行会核对源 / 目标 zone 库都已有这一列。
 - **入箱开关**:`PlayerInbox.EnqueueTypes` 镜像服务 yaml(各档位一致,白名单进 git、可审),每项必须是 `PlayerInboxMessageType` 的枚举名,否则生成期 throw。
   第一次部署时必须为空(`[]`);**全部 scene 打开 `consumer_enabled` 之后**才在服务 yaml 里填上并重跑 `infra-up`(上线顺序第 6 步)。
-- **消费开关**:新参数 `-PlayerInboxConsumer off|on`(默认 off,不粘滞)写进 `node-config` 的 `game_config.yaml` → `player_inbox.consumer_enabled`;
-  只写这一个键,`periodic_fetch_minutes` 缺席时 scene 加载器取默认 30。off 就是回滚下限(上线第 4 步);全部 zone 的 scene 升级完成后
-  才逐 zone `zone-up -PlayerInboxConsumer on` 并滚动 scene(第 5 步;ConfigMap 变了不会自己重启 C++ 进程)。包装入口(dev_tools / k8s_image)不透传它。
+- **消费开关**(2026-10-17 起,交接 `docs/handoff/player-inbox-handoff-20261015.md` §6 H1):权威值只有 git 跟踪的 `bin/etc/game_config.yaml`
+  的 `player_inbox.consumer_enabled`,与入箱白名单同口径。`node-config` 的 `game_config.yaml` 把 `player_inbox` 段从那里整段复制
+  (`Get-AuthoritativeYamlBlock`,`periodic_fetch_minutes` 跟着走),不读集群现状(zone-rollback 会删 namespace)。值只认小写 `true` / `false`,
+  缺键或写成 `yes` 等都在生成期 throw。
+  - **开消费 = 改 yaml 并提交**:把 `consumer_enabled` 改成 `true` 并提交,再逐 zone `zone-up` 并滚动 scene(上线第 5 步;ConfigMap 变了
+    不会自己重启 C++ 进程)。`false` 就是回滚下限(第 4 步)。这份 yaml 本机 scene 也读,改了本机同时生效。
+  - 以前的 `-PlayerInboxConsumer off|on` 默认 off、不粘滞、包装入口不透传,打开消费之后任何一次 `k8s-release-zone` / `zone-up` / `zone-rollback`
+    都会把它写回 false。现在这个参数**只核对、不改值**:留空 = 不核对;给 `on` / `off` 时必须与 yaml 一致,不一致在任何写操作之前拒绝并提示去改 yaml。
+    包装入口不透传它,也不需要透传。
+  - **写前门禁**(`Assert-PlayerInboxConsumerGate`,`zone-up` / `all-up` / `infra-up` 都判):yaml 里消费端是 `false`、而服务 yaml 的
+    `PlayerInbox.EnqueueTypes` 非空时,在任何写操作之前拒绝部署。这种状态下 GM 处置照样回 `created=true`,却没有 scene 执行,条目
+    `delivery_count=0`,进不了任何告警。明知如此仍要部署(例如紧急关消费),直接调本脚本并显式传 `-AllowPlayerInboxConsumerOff`
+    (只放行、打一条警告,不改渲染值;包装入口不透传)。正常关消费的顺序是先把 `EnqueueTypes` 改回 `[]` 并重跑 `infra-up`,再关 `consumer_enabled`。
+    放行时写路径打一行 `player-inbox consumer gate: consumer_enabled=... enqueue_types=N ... OK`。
 - **连接数**:`MySQL.MaxOpenConn`(以服务 yaml 为准,规划按 20)× 2 副本已登记进 MySQL 连接总账(`PlayerInboxReplicas` / `PlayerInboxMaxOpen`);
   按公式手算规划档峰值 1620 → 1700(未运行)。
 - **告警**:`deploy/k8s/player-inbox-alerts.yaml`(PrometheusRule,与 `owner-epoch-alerts.yaml` 同法安装):

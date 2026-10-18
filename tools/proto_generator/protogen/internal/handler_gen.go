@@ -1,6 +1,9 @@
 package internal
 
 import (
+	"fmt"
+	"path/filepath"
+	"strings"
 	"text/template"
 
 	_config "protogen/internal/config"
@@ -113,7 +116,12 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 	}
 
 	emptyStr := ""
-	yourCodesMap, firstCode, _ := ReadCodeSectionsFromFile(dst, &methods, GenerateMethodHandlerNameWrapper, emptyStr)
+	// 结构损坏(未闭合 / 嵌套 / 孤立的结束标记)、带不走的非空段(签名不对应当前方法的函数里的段、方法体里第一个段之后的段、
+	// FirstCode 之后函数外的段)一律拒绝生成,与 gRPC 生成器同口径;字符串接口的调用方只在返回后才写文件。
+	yourCodesMap, firstCode, err := readCheckedCodeSections(dst, &methods, GenerateMethodHandlerNameWrapper, emptyStr)
+	if err != nil {
+		panic(err)
+	}
 
 	firstMethodInfo := methods[0]
 
@@ -139,6 +147,31 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 	}
 
 	return utils.ExecuteTemplate("serviceHandlerCpp", tmplStr, data)
+}
+
+// GetServiceHandlerHeadFromFileStr:头文件本身不含守护段,但 .h 与 .cpp 由通用管线分别生成、互不等待(handlers.go / handler.go)——
+// 先对同名 .cpp 做与 GetServiceHandlerCppStr 相同的取段预检,出错时 .h 也不写,不留下「新 .h 配旧 .cpp」(与 gRPC 生成器同口径)。
+func GetServiceHandlerHeadFromFileStr(dst string, methods RPCMethods) (string, error) {
+	if len(methods) > 0 {
+		if err := precheckHandlerCppForHeader(dst, methods, GenerateMethodHandlerNameWrapper, ""); err != nil {
+			return "", err
+		}
+	}
+	return GetServiceHandlerHeadStr(methods)
+}
+
+// precheckHandlerCppForHeader 对头文件 headerPath 的同名 .cpp(与 handler.go 写 .cpp 的路径同式:文件名转小写、换扩展名)
+// 做取段预检。推不出 .cpp 路径就报错 —— 预检做不了就不生成,不能默默跳过。
+func precheckHandlerCppForHeader(headerPath string, methods RPCMethods, methodFunc MethodNameFunc, funcParam string) error {
+	headerExt := _config.Global.FileExtensions.HandlerH
+	cppExt := _config.Global.FileExtensions.HandlerCpp
+	if headerExt == "" || cppExt == "" || !strings.HasSuffix(headerPath, headerExt) {
+		return fmt.Errorf("%s：无法推出同名 handler cpp(handler_h=%q handler_cpp=%q)，拒绝在未预检守护段时生成头文件",
+			headerPath, headerExt, cppExt)
+	}
+	dir, base := filepath.Split(strings.TrimSuffix(headerPath, headerExt))
+	_, _, err := readCheckedCodeSections(dir+strings.ToLower(base)+cppExt, &methods, methodFunc, funcParam)
+	return err
 }
 
 // GenerateMethodHandlerNameWrapper generates the method handler name.

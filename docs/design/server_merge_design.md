@@ -110,6 +110,10 @@ P3  preflight   db_task_zone_{src}[_g{gen}] 在唯一权威组上 LAG=0(2026-10-
                 两组都有(交接没收尾,先 kafka_offset_reset.ps1 -FinalizeHandoff)/ 都没有 / CLI 读不出一律拒绝
                 (preflight.go::resolveAuthoritativeLag;设计 db-consumer-group-per-zone.md §7)
 P4  preflight   kafka:{retry,processing,dead}:queue:<topic> 三个列表都空
+                (2026-10-16 更正)另含每个 db 实例的 kafka:retry:processing:<topic>:<实例>(实例取自 ZSET
+                kafka:retry:instances:<topic>,db 多实例起),以及经 SCAN MATCH 发现的 kafka:retry:queue:<topic>:p*
+                (2026-10-15 起,④ 按分区 ready 列表;已落码,未编译、未测试,待 Codex 验证);任一读不到整体拒绝
+                (preflight.go::dbTaskQueueKeys;见 merge-zone-runbook.md §5 P4 行)
 P5  preflight   源区玩家没有在持的 lock:player:{id}
 P6  preflight   源区玩家没有 player:session:{id}
 F   fence       merge:in_progress:{src} 与 {dst} 同时打标(见 §3.5)

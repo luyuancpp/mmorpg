@@ -311,3 +311,104 @@ unless on (namespace) (sum by (namespace) (increase(db_claim_acquired_total[10m]
 10. Java 仓库 D:\luyuan\xuanming-server-mmo\PARITY.md 追加一行「不适用」，不计入本仓库文件数；PROGRESS 条目写「对应 Java 版本号：无（不适用）」。
 
 11. 交付说明里如实写出以下几点：WAITAOF 偏离原规格、改为异步确认，以及理由；stress_summarize 2f 缺 owned/aof 列；no-single-node 文档与 L-04 设计稿 §9 未同步；告警语法是否经过 promtool 验证以 Codex 结果为准。
+
+## 2026-10-16 更正
+
+> 本节是 R7 语义复核（godb 区域第 [0]、[7]、[8] 条）之后按**已落码的代码**做的更正，上文原文保留不动；冲突处以本节和代码为准。代码状态：已落码，未编译、未测试，待 Codex 验证。完整说明见 [db-retry-owner-routing.md](../../design/db-retry-owner-routing.md) §7.4、§10.3、§10.4、§15。
+
+### 1. 位点语义：裁决第 1 条与 §1.6
+
+**原文**
+
+- 裁决第 1 条：「位点提交的延迟上界是排队时间加单批预算 5s，小于 claimDrainTimeout 10s，所以正常再平衡和停机排空都等得到确认」。
+- §1.6：「正常再平衡与停机排空时，acker.pending 包含异步请求，这时入队层仍然活着，能等到确认后再提交」。
+
+**代码口径**：只有两条收尾路径会等确认到了再标记，并在会话释放时提交：
+
+- 停机排空：`go/db/internal/kafka/key_ordered_consumer.go` 的 `drainClaimForShutdown`；
+- 「消息通道关闭、会话仍在」的排空：`ConsumeClaim` 里 `claim.Messages()` 关闭的分支。
+
+**其余收尾一律不提交**：再平衡（`session canceled`、`claim canceled before dispatch`）、交接让出（`handoff peer reclaimed partition`）、失败收尾（`offset durability failure`、`failure before dispatch`、`worker canceled before dispatch`），以及上述分支里的「… while draining」，都走 `ConsumeClaim` 内的 `drainAfterStop`。它的第一步 `acker.stop()` 置 failed、清空 completed，之后等到的确认只摘 tracked、**不再标记位点**。等确认的 offset 及其后已完成的 offset 一律由新属主重投，靠 applied 游标与 seq 吸收（前提是游标没有随 Redis 回退）。
+
+**作废范围是本实例全部 claim**：sarama v1.43.1 任一 ConsumeClaim 返回都会取消整个会话，所以一个分区确认失败，本实例其余 claim 都走「session canceled → drainAfterStop」。
+
+**依据**：`drainAfterStop` 上方的注释；`go/db/internal/kafka/durable_enqueue.go` 文件头「claim 收尾时」一节；单测 `claim_acker_stop_test.go` 的 `TestClaimAcker_StopDropsLateConfirmations`。R7 [0] 选了 (a)：不改行为，改规格与设计文档。
+
+**量级**（推算，未实测）：
+
+- 稳态下入队很少，几乎没有额外重投。
+- MySQL 故障期间每条写都走入队。按设计峰值 2000 task/s/zone、10 分区、everysec 平均 0.5s（最坏 1s）估算，每次再平衡每分区多重投约 100～200 条，等满单批预算时最多约 1000 条；重复的重试副本也是同一量级。
+- 数据不丢。
+
+**仍然成立的部分**：「确认到达的等待上界 = 排队 + 5s」，以及 §11「同分区位点提交最多晚约 5s」，都只对不收尾的正常运行成立。要让再平衡也「等确认再提交」，须在非失败原因下改成先 `waitClaimDrained`、再 `acker.stop`；这会改变「再平衡立即撤 claimCtx」的既有语义，须另立设计。
+
+### 2. 排空顺序：§3、裁决第 5 条 ② 与原规格
+
+**原文**：修订稿 §3 第 2 条、裁决第 5 条 ②、「给实现者的说明」第 4 条写「每条排空路径的第一步都是 lease.close()」「drainAfterStop 的第一步是 lease.close()」。§3 同一条的括注又写「drainAfterStop（在 acker.stop() 之后）」，前后矛盾。
+
+**代码口径**：
+
+| 排空路径 | 顺序 |
+|---|---|
+| `drainAfterStop` | `acker.stop()` → `lease.close()` → `waitClaimDrained(acker, lease, drainLimit)` |
+| `drainClaimForShutdown` | 第一步 `lease.close()`，再等 `claimDrained`，超时或 `consumerDone` 时才 `acker.stop()` |
+| 消息通道关闭分支 | 第一步 `lease.close()`，再等 `claimDrained` |
+
+原规格「逐文件改动 / key_ordered_consumer.go」第 15 条写的「drainAfterStop:acker.stop() → lease.close() → waitClaimDrained」与代码一致，**保留原规格的说法**。
+
+**规则应改读为**：每条排空路径在开始等待之前都先 `lease.close()`（不再接新的 owner 重试认领）；`drainAfterStop` 里 `acker.stop()` 先于 `lease.close()`，因此等待期间到达的确认不标记（见上面第 1 条）。
+
+### 3. 回滚前置命令：§8 的 release-checklist 条目与 §10
+
+原文命令 `go run ./cmd/retry_requeue -check`（原规格「上线与回滚」同此）缺 `-zone`，也没有退出码 4 / 5 与人工核对。按 `go/db/cmd/retry_requeue/main.go` 更正如下。
+
+**命令**（工作目录 `go/db`）：
+
+```
+go run ./cmd/retry_requeue -f etc/db.yaml -zone <z> -check
+```
+
+- `-zone` 必填（`resolveTarget`）。配置文件里的 `ZoneId` 不作缺省，没给时以 1 退出。
+- K8s 上加 `-redis 127.0.0.1:<port-forward 端口> -redis-password-env <存口令的环境变量名>`，口令不上命令行。
+- zone 已换代时加 `-topic-generation <g>`。
+
+**退出码**（`exitError` / `exitResidual` / `exitTargetUnused` / `exitOwnerInstances`）：**只有 0 才允许回滚镜像**。
+
+| 退出码 | 含义 |
+|---|---|
+| 0 | p* 全 0，且两道门都过 |
+| 1 | 参数、配置、Redis 或盘点出错 |
+| 2 | 参数解析失败（Go `flag` 包缺省行为） |
+| 3 | p* 非 0（搬回之后仍非 0 也是 3） |
+| 4 | 目标看起来没在用（登记表为空、所有重试列表都是 0）。多半是 topic / Redis / DB / zone / 代次指错；只有该 zone 全部 go/db 都已正常停机时才加 `-allow-empty-target` 放行 |
+| 5 | 模式 HASH `kafka:retry:instance_mode:{topic}` 里还有实例登记为 owner；搬回也一条不动 |
+
+**三项人工核对**：退出码 5 只看得见 R7 起登记模式的版本，更早的 S1 镜像不登记模式，所以 `preconditionLine` 打印的三项仍要人工做：
+
+1. 各 db Pod 的 `db_retry_routing_mode{mode="owner"}` 都是 0；
+2. db Deployment 的 env 里没有 `DB_RETRY_ROUTING=owner`。`kubectl set env` 加的变量不在 last-applied 里，`k8s_deploy.ps1` 的 apply 不会删，而且环境变量优先于配置键；
+3. `kubectl -n mmorpg-zone-<z> rollout status deploy/db` 已完成（只改 ConfigMap 不会滚动 db）。
+
+**release-checklist 条目应写成**：
+
+> 先切回 RetryRouting=shared（zone-up + rollout restart + rollout status，有金丝雀 env 时 `set env … DB_RETRY_ROUTING-`）→ 做上面三项人工核对 → `go run ./cmd/retry_requeue -f etc/db.yaml -zone <z> -check` 以退出码 0 退出 → 再回滚镜像；已经回滚的，立即执行 retry_requeue 搬回（告警 DbRetryPartitionedStranded）。
+
+紧急搬回同样必须带 `-zone`。
+
+`docs/ops/release-checklist.md` §4 的「go/db 回滚到 S1(重试只交给分区属主)之前的版本」已于 2026-10-17 按此口径补上，另外多写了两点：
+
+- `rollout restart` / `set env` 会生成新的 revision，回滚要用 `rollout undo --to-revision=<S1 之前的 revision>`；
+- 回滚之后再跑一次 `-check`。
+
+执行以该条目为准。
+
+### 4. 其它与代码不一致处（索引）
+
+以下差异的完整说明见设计文档 §15，本节只列出：
+
+- DbRetryPartitionedNoProgress 的冷却抑制在代码里收窄为 `db_store_cooldown_stores{pool="home"}`（理由见设计文档 §11）。
+- 重复副本的来源不止「网络错误与 Kafka 重投」（设计文档 §7.6）。
+- R7 新增了几项规格里没有的内容（设计文档 §7.8–§7.10、§10.4）：待重搬收据表与 `db_retry_stranded_receipts`；认领 / ack 的 nonce 防重（`kafka:retry:guard:*`，TTL 5 分钟）；重新入组退避；`db_consumer_group_errors_total`；`-topic-generation` 与 `-allow-empty-target`。
+- §6 的告警清单在代码里多了 R7 的两条：DbRetryStrandedReceipts（warning，for 10m）、DbConsumerGroupHeartbeatErrors（info）。
+- D5 修订块已于 2026-10-17 写进 `global-data-layer-tidb-decision.md`。
+

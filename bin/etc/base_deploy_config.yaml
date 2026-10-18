@@ -133,6 +133,10 @@ GateTokenSecret: "local-dev-gate-token-secret-0123456789abcdef"
 #
 # 取值:按本 gate 期望承载的在线数留出余量(握手中、将断未断的连接都占额度),
 # 并确保不超过进程的 fd 上限(ulimit -n 要大于本值 + 节点间连接 + 日志等)。
+# (2026-10-18 补注)Linux 上节点启动时会把 RLIMIT_NOFILE 软限自抬到 min(硬限, 1048576),抬完仍小于
+# 本值 + 4096 就拒绝启动(cpp/libs/engine/core/node/system/node/open_file_limit.h);硬限由节点上的容器
+# 运行时 / systemd 决定,K8s 清单里声明不了。应急豁免:环境变量 NODE_OPEN_FILE_LIMIT_MODE=warn
+# (见 docs/ops/gate-kernel-tuning-runbook.md §三)。
 # 20000 是单 gate 的保守默认;真实容量要靠压测定,别照抄。
 # 上界 131071 为所有 node_id 保留 UINT32_MAX 拒连哨兵,也避免 session-id
 # 空间占满后碰撞重试永久自旋。
@@ -146,6 +150,7 @@ BattleTokenSecret: "local-dev-battle-token-secret-fedcba9876543210"
 
 # battle 节点客户端面并发直连上限(语义同 GateMaxConnections;0 仅 dev/test 允许)。
 # 回合制房间人数有界:参战 ≤10 + 观众 ≤20 每房,按单节点期望房间数留余量。
+# (2026-10-18 补注)fd 门槛同 GateMaxConnections:Linux 上软限抬到硬限后仍小于本值 + 4096 就拒绝启动。
 BattleMaxConnections: 4096
 
 # 审计 topic(流水 / 快照)的世代号,进有效 topic 名:transaction_log_topic_g<N> / player_snapshot_topic_g<N>。

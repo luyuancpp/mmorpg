@@ -38,6 +38,7 @@ func (l Level) String() string {
 type TableLimit struct {
 	MaxColumnBytes int64
 	MaxRowBytes    int64
+	ColumnBytes    map[string]int64
 }
 
 // Limits 是大字段闸的判定参数。
@@ -64,16 +65,24 @@ func (l Limits) forTable(table string) (maxColumn, maxRow int64) {
 	return maxColumn, maxRow
 }
 
-// ColumnMeasure 是单个 blob 列的量测结果。
+// 指定列优先于表级与全局列预算，行总预算仍由 forTable 独立执行。
+func (l Limits) forColumn(table, column string) int64 {
+	if limit := l.PerTable[table].ColumnBytes[column]; limit > 0 {
+		return limit
+	}
+	limit, _ := l.forTable(table)
+	return limit
+}
+
+// ColumnMeasure 是单个 blob 列的量测结果；预算与指标沿用既有保守计费口径。
 type ColumnMeasure struct {
 	Column string
 	// PayloadBytes 是子消息 / bytes 字段序列化后的原始字节数。
 	PayloadBytes int64
-	// StoredBytes 是**真正进 MEDIUMBLOB 的字节数**。
-	// proto2mysql 走 pbconv.SerializeFieldAsString,把子消息 base64 之后再入库,
-	// 所以入库量 = base64.EncodedLen(PayloadBytes) ≈ PayloadBytes × 4/3。
-	// 闸门必须量这个数:它才是撞 MEDIUMBLOB 上限、占连接带宽、被原样写回
-	// Redis 的那个数。
+	// StoredBytes 是兼容既有阈值、日志与指标的保守计费字节数，
+	// 按 base64.EncodedLen(PayloadBytes) 计算，不代表真实 SQL 参数或磁盘占用。
+	// 当前 proto2mysql v0.2.0 的 pbconv.SerializeFieldValue 对消息/bytes 返回裸字节；
+	// 本轮保留旧计费算法，避免迁移口径时顺带放宽保护闸与改变历史指标。
 	StoredBytes int64
 	Limit       int64
 	Level       Level
@@ -81,8 +90,9 @@ type ColumnMeasure struct {
 
 // Result 是一次落库前量测的完整结果。
 type Result struct {
-	Table            string
-	Columns          []ColumnMeasure
+	Table   string
+	Columns []ColumnMeasure
+	// TotalStoredBytes 是各 blob 列保守计费之和，口径同 ColumnMeasure.StoredBytes。
 	TotalStoredBytes int64
 	RowLimit         int64
 	RowLevel         Level
@@ -123,9 +133,9 @@ func (e *ErrBlobTooLarge) Error() string {
 
 // Observer 接收量测数据。metrics 包实现它;测试可以传 nil。
 type Observer interface {
-	// ObserveBlobBytes 记录单列入库字节(histogram —— 要看 p99,不是 max)。
+	// ObserveBlobBytes 记录单列保守计费字节，沿用既有 histogram 口径。
 	ObserveBlobBytes(table, column string, bytes int64)
-	// ObserveRowBytes 记录整行 blob 入库字节之和。
+	// ObserveRowBytes 记录整行 blob 保守计费字节之和。
 	ObserveRowBytes(table string, bytes int64)
 	// CountGate 记录一次 warn / reject。
 	CountGate(table, column, level string)
@@ -155,11 +165,10 @@ func NewGuard(limits Limits, obs Observer) *Guard {
 // Limits 返回生效的判定参数(启动日志与测试用)。
 func (g *Guard) Limits() Limits { return g.limits }
 
-// Measure 量出一条待落库消息的每个 blob 列入库字节数。
+// Measure 量出一条待落库消息的原始载荷与保守计费字节数。
 //
-// 只量 bytes / message 两种 kind:proto2mysql 的类型映射里只有这两种落到
-// MEDIUMBLOB,标量列不可能撑爆。repeated / map 字段被 proto2mysql 的
-// SerializeFieldAsString 直接拒绝(表结构里也没有),这里一并跳过。
+// 沿用既有量测边界：只量非 repeated/map 的 bytes / message 两种 kind，
+// 计费使用 base64 长度；当前 SQL 编码为裸字节，见 ColumnMeasure.StoredBytes。
 func Measure(table string, msg proto.Message) Result {
 	result := Result{Table: table}
 	if msg == nil {
@@ -207,12 +216,13 @@ func Measure(table string, msg proto.Message) Result {
 // 返回的 Result 始终有效(即便返回了 error),调用方可以据此打日志。
 func (g *Guard) Check(table string, msg proto.Message) (Result, error) {
 	result := Measure(table, msg)
-	maxColumn, maxRow := g.limits.forTable(table)
-	columnWarn := int64(float64(maxColumn) * g.limits.WarnRatio)
+	_, maxRow := g.limits.forTable(table)
 	rowWarn := int64(float64(maxRow) * g.limits.WarnRatio)
 
 	for i := range result.Columns {
 		c := &result.Columns[i]
+		maxColumn := g.limits.forColumn(table, c.Column)
+		columnWarn := int64(float64(maxColumn) * g.limits.WarnRatio)
 		c.Limit = maxColumn
 		switch {
 		case c.StoredBytes > maxColumn:

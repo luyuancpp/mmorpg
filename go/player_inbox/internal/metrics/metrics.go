@@ -50,8 +50,10 @@ var (
 	notifyTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: namespace, Name: "notify_total",
 		Help: "Online notify attempts by result. Settled (notify_due cleared): sent|offline|awaiting_placement|no_node " +
-			"(no_node = location node not in the synced scene node mirror, or location has neither node nor epoch; left to the landing fetch). " +
-			"Retried with backoff: error|empty_uuid|nodes_unsynced|node_ambiguous.",
+			"(no_node = location has neither node nor epoch; left to the landing fetch). " +
+			"Retried with backoff: error|empty_uuid|nodes_unsynced|node_ambiguous|node_missing " +
+			"(node_missing = location node not in the synced scene node mirror, e.g. an etcd lease flap; " +
+			"settled by the resend loop once the notify has been pending for an hour).",
 	}, []string{"result"})
 
 	cursorAheadTotal = prometheus.NewCounter(prometheus.CounterOpts{
@@ -71,11 +73,15 @@ var (
 
 	// reconcileInconsistentRows 取代了原来的 reconcile_mismatch_total 计数器(评审 L11):同一处不一致只要还在
 	// 24h 窗口里,每轮都会再被发现一次,累加进计数器会让 critical 告警挂满约 25 小时。它是「当前」读数,只由领导者产出。
+	// 读数 = 本任期各分片最近一次对账读数之和(inbox.reconcileTally,评审 R1):截断的轮次只覆盖一部分分片,
+	// 没读到的分片沿用上次读数,所以不一致的行不会因为它的分片本轮没轮到就从 gauge 里消失。
 	reconcileInconsistentRows = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace, Name: "reconcile_inconsistent_rows",
 		Help: "Consumer-finalized rows in the reconcile window whose outcome the persisted ledger does not hold " +
-			"(beyond the watermark, missing from the recent ring, or a different item/outcome at that seq), " +
-			"as of the latest reconcile round (leader-only; aggregate with max()). A level, not an event count. Critical.",
+			"(beyond the watermark, missing from the recent ring, or a different item/outcome at that seq): " +
+			"sum over the 64 shards of each shard's latest reading in this leader's term (truncated rounds keep the readings " +
+			"of shards they did not reach; partially checked shards never go down). Leader-only; aggregate with max(). " +
+			"A level, not an event count. Critical.",
 	})
 
 	reconcileTruncatedTotal = prometheus.NewCounter(prometheus.CounterOpts{
@@ -169,7 +175,8 @@ func ObserveNotify(result string) { notifyTotal.WithLabelValues(result).Inc() }
 
 // notifyResults 是 notify_total{result} 的全部取值(Register 预建零值序列),与 inbox.NotifyResult.String 逐一对应
 // (inbox 的 TestNotifyResultLabelsArePreregistered 钉住两边不脱节)。
-var notifyResults = []string{"sent", "offline", "awaiting_placement", "no_node", "empty_uuid", "error", "nodes_unsynced", "node_ambiguous"}
+var notifyResults = []string{"sent", "offline", "awaiting_placement", "no_node", "empty_uuid", "error", "nodes_unsynced",
+	"node_ambiguous", "node_missing"}
 
 // NotifyResultLabels 返回 notify_total{result} 的全部取值(副本,调用方改了也不影响预建)。
 func NotifyResultLabels() []string { return append([]string(nil), notifyResults...) }
@@ -191,7 +198,7 @@ func ObserveReconcileRound(result string) { reconcileRoundsTotal.WithLabelValues
 // IncReconcileTruncated 记一轮没有覆盖完整个窗口的对账。
 func IncReconcileTruncated() { reconcileTruncatedTotal.Inc() }
 
-// SetReconcileInconsistent 写入领导者最近一轮对账发现的不一致行数(critical 告警按 max() 取它)。
+// SetReconcileInconsistent 写入领导者当前的不一致行数(各分片最近一次读数之和,critical 告警按 max() 取它)。
 func SetReconcileInconsistent(n int) { reconcileInconsistentRows.Set(float64(max(n, 0))) }
 
 // ResetReconcileInconsistent 在卸任时把本副本的不一致行数归零,理由同 ResetScanGauges。

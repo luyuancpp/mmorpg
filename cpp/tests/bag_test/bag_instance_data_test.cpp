@@ -12,6 +12,7 @@
 // 并恢复其它用例使用的号段基线 —— 不依赖别的文件的用例先跑或后跑。
 
 #include <gtest/gtest.h>
+#include <google/protobuf/unknown_field_set.h>
 
 #include <cstdint>
 #include <functional>
@@ -951,6 +952,60 @@ TEST_F(BagInstanceDataTest, DynamicBagMarshalRoundTripKeepsEquipPresenceAndConte
 	EXPECT_EQ(5u, restoredBag.GetItemPosByGuid(kGuidB));
 	EXPECT_EQ(6u, restoredBag.GetItemPosByGuid(kGuidC));
 	EXPECT_TRUE(restoredBag.IsLayerConsistent());
+}
+
+TEST_F(BagInstanceDataTest, FixedAndDynamicSqlSnapshotRoundTripKeepsCompleteInstanceUnknownFields)
+{
+	const auto source = NewPlayer();
+	auto& bags = tlsEcs.actorRegistry.emplace<PlayerBagsComp>(source);
+	auto item = MakeRolledInstance(kGuidA, kEquipA);
+	item.GetReflection()->MutableUnknownFields(&item)->AddVarint(100, 456);
+	item.mutable_equip()->GetReflection()->MutableUnknownFields(item.mutable_equip())->AddLengthDelimited(101, "future-growth");
+	bags.bags[kInventory].RestoreItems({{item, 3}});
+	item.set_item_id(kGuidB);
+	bags.dynamicBags_[kDynamicBagId].RestoreItems({{item, 5}});
+	const auto fixedBefore = Capture(bags.bags[kInventory]);
+	const auto dynamicBefore = Capture(bags.dynamicBags_[kDynamicBagId]);
+	BagAllData wire;
+	bag_marshal::Marshal(source, wire);
+	ASSERT_EQ(1, wire.items_size());
+	ASSERT_TRUE(wire.items(0).has_instance());
+	ASSERT_EQ(1, wire.dynamic_bags_size());
+	ASSERT_TRUE(wire.dynamic_bags(0).items(0).has_instance());
+	BagAllData parsed;
+	ASSERT_TRUE(parsed.ParseFromString(wire.SerializeAsString()));
+	const auto dest = NewPlayer();
+	bag_marshal::Unmarshal(dest, parsed);
+	const auto& restored = tlsEcs.actorRegistry.get<PlayerBagsComp>(dest);
+	EXPECT_EQ(fixedBefore, Capture(restored.bags[kInventory]));
+	const auto dynamic = restored.dynamicBags_.find(kDynamicBagId);
+	ASSERT_NE(restored.dynamicBags_.end(), dynamic);
+	EXPECT_EQ(dynamicBefore, Capture(dynamic->second));
+}
+
+TEST_F(BagInstanceDataTest, LegacyItemEntryIsUpgradedWithoutChangingInstanceOrLayout)
+{
+	const auto player = NewPlayer();
+	BagAllData legacy;
+	legacy.add_capacities(20);
+	auto* entry = legacy.add_items();
+	entry->set_item_uuid(kGuidA);
+	entry->set_config_id(kEquipA);
+	entry->set_stack_size(1);
+	entry->set_pos(3);
+	entry->set_acquire_seq(41);
+	entry->mutable_equip()->set_enhance_level(7);
+	bag_marshal::Unmarshal(player, legacy);
+	BagAllData upgraded;
+	bag_marshal::Marshal(player, upgraded);
+	ASSERT_EQ(1, upgraded.items_size());
+	const auto& saved = upgraded.items(0);
+	ASSERT_TRUE(saved.has_instance());
+	EXPECT_EQ(kGuidA, saved.instance().item_id());
+	EXPECT_EQ(kEquipA, saved.instance().config_id());
+	EXPECT_EQ(41u, saved.instance().acquire_seq());
+	EXPECT_EQ(7u, saved.instance().equip().enhance_level());
+	EXPECT_EQ(3u, saved.pos());
 }
 
 // 还原的整份重载:equip 与 acquire_seq 原样保留;位置参数重载仍然可用且等价于"没有 equip"。

@@ -9,7 +9,8 @@
 # task_read_abandoned_total / retry_queue_length / store_cooldown_stores;
 # ④ 与 WAITAOF:retry_route_total / owned_partitions / retry_routing_mode / durable_enqueue_total / claim_acquired_total,
 # retry_queue_length 另有 queue="partitioned"(各 p{N} 之和);同一批的 ordering_lock_busy_total 与
-# durable_enqueue_seconds 只进看板、不设告警;
+# durable_enqueue_seconds 只进看板、不设告警;R7 复核新增 retry_stranded_receipts(无 label,每个 Pod 一份)与
+# consumer_group_errors_total{source=heartbeat|partition|claim},后者只对 heartbeat 设 info 告警,partition / claim 只进看板;
 # consumer_group_handoff_waiting_seconds / consumer_group_handoff_gate_total / consumer_group_handoff_total /
 # consumer_group_handoff_conflict_total,同一批的 consumer_group_rebalance_gap_seconds 与
 # consumer_group_handoff_wait_seconds 两个直方图只进看板、不设告警);
@@ -32,7 +33,8 @@
 #     ready 与 partitioned 互不重叠,DbTaskRetryQueueGrowing 先按 pod 相加再取 max。S1 之前的 Pod 不报 partitioned。
 #   - 计数器在进程启动时就以 0 建出全部 reason 的序列,increase 能抓到第一次。排序锁租约(pipeline.go registerPipeline)
 #     与交接闸(metrics.go register)的计数器同样在 metrics.Start 暴露端点之前以 0 建出全部取值;④ 与 WAITAOF 的
-#     计数器(retry_route 2×6、durable_enqueue 2×4、claim_acquired)也一样。db_retry_queue_length 例外:重试循环每拍采样后才有。
+#     计数器(retry_route 2×6、durable_enqueue 2×4、claim_acquired)也一样;R7 新增的 consumer_group_errors 三个 source 以 0 建出,
+#     retry_stranded_receipts 以 0 设值。db_retry_queue_length 例外:重试循环每拍采样后才有。
 #   - db_retry_routing_mode 每个 S1 版 Pod 恰好两条序列(mode=shared|owner,生效的为 1、另一条为 0),S1 之前的 Pod 没有:
 #     DbRetryPartitionedStranded 只看有没有这条指标的序列,DbZoneNoPartitionClaims 数 mode="owner" 的序列条数(一条 = 一个 S1 版 Pod),
 #     都不看取值。
@@ -92,10 +94,11 @@ spec:
               {{ $value }} 个 {{ $labels.pool }} 类的库被探活确认连不上,go/db 已停止向它发 SQL(每约 5 秒探活一次)。
               存盘在延后,不会丢;需要读库的冷登录会直接失败。查 MySQL 是否在重启、网络是否可达。
 
-        # 有新任务进了死信。写任务进死信 = 这笔存盘不会自动落库。
+        # 有新任务进了死信。三类围栏隔离由 owner-epoch-alerts.yaml 的 critical 单独报,避免先收到低级别重复告警。
+        # fence_evidence_conflict 是延后原因;耗尽预算后的 budget_exhausted 仍由本规则报。
         - alert: DbTaskDeadLetterAdded
           expr: |
-            sum by (namespace, reason) (increase(db_task_dead_letter_total[10m])) > 0
+            sum by (namespace, reason) (increase(db_task_dead_letter_total{reason!~"fence_stale_owner|fence_legacy_after_seq|owner_epoch_regressed"}[10m])) > 0
           for: 0m
           labels:
             severity: warning
@@ -195,9 +198,14 @@ spec:
               (没有一条 db_retry_routing_mode 序列:全是 S1 之前的镜像,或 db 全停),这些存盘不会自动落库;它们在 Redis 里只有这一份,不要重启或清空这台 Redis。
               db 全停、之后拉起的仍是 S1 及以后的镜像时,拉起即可(shared 实例每拍兜底排空 p*,owner 实例处理自己持有分区的 p{N})。
               否则先确认本 zone 每个 go/db 都是 S1 之前的镜像或 RetryRouting=shared(owner 实例会把收件箱重新分拣回 p*),再用 go/db/cmd/retry_requeue
-              (工作目录 go/db):先 go run ./cmd/retry_requeue -f etc/db.yaml -check(只读盘点,p* 全 0 以退出码 0 退出,p* 非 0 以退出码 3 退出,
-              参数 / 配置 / Redis 出错以 1 退出;连 K8s 上的 zone Redis 用 -zone / -redis / -redis-password-env,口令只经环境变量),
-              再去掉 -check 执行搬回共享收件箱 kafka:retry:queue:{topic};搬完它会再盘点一次,p* 仍非 0 时同样以 3 退出。
+              (工作目录 go/db;-zone 必填:R7 之前缺省取配置文件里的 ZoneId,漏了会盘点别的 zone 并以 0 退出;现在不给 -zone 直接以退出码 1 退出,一条不动):
+              先 go run ./cmd/retry_requeue -f etc/db.yaml -zone <zone> -check(只读盘点;连 K8s 上的 Redis 加 -redis / -redis-db / -redis-password-env,
+              口令只经环境变量;该 zone 的代次与本地配置不同时加 -topic-generation),按退出码判断:0 = p* 全 0;3 = p* 非 0;
+              4 = 目标看起来没在用(登记表为空、所有重试列表都是 0,多半是 -f / -zone / -topic-generation / -redis / -redis-db 指错,只有该 zone 的 go/db 全停时才加 -allow-empty-target);
+              5 = 登记表里还有登记为 owner 模式的实例(先切 shared 并等滚动完成);1 = 参数 / 配置 / Redis 出错。
+              退出码 5 只看得见会登记模式的 go/db,三项人工核对仍要做:各 db Pod 的 db_retry_routing_mode{mode="owner"} 为 0;
+              kubectl -n {{ $labels.namespace }} set env deploy/db --list 里没有 DB_RETRY_ROUTING=owner;rollout status deploy/db 已完成。
+              再去掉 -check 执行搬回共享收件箱 kafka:retry:queue:{topic}(同样过 4 / 5 两道门,可重入);搬完它会再盘点一次,p* 仍非 0 时以 3 退出,0 才算搬完。
               局限:本条只看 Prometheus 里 6h 内的最后样本。搬回之后窗口内本条仍会响,以 -check 退出码 0 为准并静默;
               窗口过后本条会自行消失,但这不代表已处理,只能以 retry_requeue -check 的结果为准(回滚前置见 docs/ops/release-checklist.md)。
 
@@ -283,6 +291,49 @@ spec:
               error = LPUSH / WAITAOF 被确定性拒绝、WAITAOF 回复形状不对,或关闭 WAITAOF 时 4 次 LPUSH 全部失败(这条路径上网络错误计 error)。
               查 Redis 的 AOF / fsync(INFO persistence、磁盘延迟)、go/db 到 Redis 的连通性与副本状态;go/db 日志搜「DATA-LOSS PREVENTED」。
               不要靠关掉 WAITAOF(WaitAOFNumLocal / WaitAOFNumReplicas 写 0)来止血,除非负责人同意。
+              未确认时 LPUSH 早已生效,重投时会再推一份:事故期间死信(target=dead,队头是毒消息等确定性进死信的消息时每个周期一份)会积累字节相同的副本,
+              重试队列里的同 seq 副本由游标吸收。重新入组退避(1s 起翻倍、封顶 30s,go/db 日志「consumer group rejoin delayed」)只限速,副本数没有硬上界;
+              事后处置死信时按 (topic, partition, offset) 去重(或按 taskID),不要把副本当成多笔不同的存盘。
+
+        # 本 Pod 有已认领进自己 processing 的重试收据,出口搬移(claim 撤销后搬回 p{origin}、misrouted 挪回原分区、失败写回 ready、进死信)
+        # 因 Redis 出错一直没搬成(go/db/internal/kafka/retry_stranded.go)。gauge 无 label、每个 Pod 一份,所以按 pod 报。
+        # 重试协程约每秒一拍,在分拣与认领之前重搬(每拍最多 100 条),Redis 恢复后很快归零;for 10m 只报持续拒绝。
+        - alert: DbRetryStrandedReceipts
+          expr: |
+            max by (namespace, pod) (db_retry_stranded_receipts) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} 有重试收据搬不走,滞留在本实例 processing"
+            description: >-
+              {{ $labels.pod }} 有 {{ $value }} 条重试收据已认领进它自己的 processing 列表 kafka:retry:processing:{topic}:{实例名},
+              出口搬移(撤销搬回 p{origin} / misrouted / 失败写回 / 进死信)因 Redis 出错持续 10 分钟没搬成。搬成之前这些存盘不会执行;
+              本实例一直续租,别的实例不会回收它们。owner 重试的 Kafka 位点早已提交,收据是那笔存盘在 Redis 里唯一的副本:不要清空这台 Redis,不要手工删 processing。
+              先按 go/db 日志「stranded retry receipt still cannot be moved」里的 dest / err 查原因(Redis 不可用、目的键类型不对等)并修好。
+              仍不归零时重启该 Pod:kubectl -n {{ $labels.namespace }} delete pod {{ $labels.pod }}(由 Deployment 拉起新 Pod),
+              或 kubectl -n {{ $labels.namespace }} rollout restart deploy/db 整体滚动。正常停机时 release 把本实例 processing 整表还回共享收件箱
+              kafka:retry:queue:{topic}(go/db 日志「returned … unfinished retry receipts to the ready queue on shutdown」;失败写回里更新过的重试次数随之丢失,这一次尝试不计);
+              release 本身也要写 Redis,失败或进程被强杀时,这些收据等租约过期后由别的实例回收。重启之后核对该实例名下的 processing 已空。
+
+        # 本 Pod 的 sarama 消费组错误通道收到组级错误(source="heartbeat":心跳、找 coordinator;go/db/internal/kafka/consumer_group_errors.go)。
+        # 它对应 retry_routing.go 文件头写的双属主窗口:coordinator 可能已把本成员逐出、分区交给了别人,本进程还没察觉。
+        # R7 复核把它列为可选;定为 info,不呼人。source="partition"(位点提交或拉取)与 source="claim"(ConsumeClaim 返回的错误)只进看板。
+        - alert: DbConsumerGroupHeartbeatErrors
+          expr: |
+            sum by (namespace, pod) (increase(db_consumer_group_errors_total{source="heartbeat"}[10m])) > 0
+          for: 0m
+          labels:
+            severity: info
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} 的 go/db 消费组心跳 / coordinator 出错"
+            description: >-
+              过去 10 分钟 {{ $labels.pod }} 的消费组错误通道收到约 {{ $value | printf "%.0f" }} 条组级错误(source=heartbeat:心跳或找 coordinator 失败)。
+              这时 coordinator 可能已在 Session.Timeout(10s)后把本成员逐出、把分区交给别的成员,而本进程要过约 Net.ReadTimeout(sarama 缺省 30s)
+              到 (Metadata.Retry.Max+1)×Net.ReadTimeout 才察觉:这段双属主窗口里本实例的 claim 与租约仍然存活,RetryRouting=owner 时它仍从 p{N} 认领执行,
+              与新属主并发;正确性只靠排序锁与 applied 游标兜底(与 shared 模式相同),两边都计 executed,DbRetryNonOwnerExecutionInOwnerZone 看不见。
+              偶发(broker 滚动、coordinator 迁移)可忽略;持续出现时查本 Pod 到 coordinator 所在 broker 的网络与 broker 负载,
+              按 go/db 日志「kafka consumer group error: source=heartbeat」定位时段,并看同一时段 DbOrderingLockReleasedNotOwned / DbOrderingLeaseLost 是否也在响。
 
     # G1 排序锁租约(go/db/internal/kafka/ordering_lease.go;组名被 ordering_lease.go 文件头注释逐字引用,
     # metrics/pipeline.go 的注释指向本文件,改组名同改两处)。
@@ -305,7 +356,7 @@ spec:
             description: >-
               过去 10 分钟约 {{ $value | printf "%.0f" }} 次释放排序锁时发现锁已过期或被别的实例接手(not_owner)。
               持锁期间别的实例可能已经写下该玩家更新的版本,本实例的整行写可能晚于它落库,MySQL 可能停在旧档,直到该玩家下一次存盘。
-              G1 治标(续租看门狗、写 SQL 前复核本地截止时间、共享缓存回写前核锁)只缩小这个窗口,不是栅栏;根治靠 MySQL 条件写。
+              排序租约(续租看门狗、写 SQL 前复核截止时间、令牌发布与推进脚本)只缩小窗口,不能撤回 SQL;持久化防线另由 MySQL 条件写提供。
               处置:按 go/db 日志「ordering lock already expired or taken over at release」里的 key / msgType 抽样核对 MySQL 行与 Redis PlayerAllData;
               日志里 sqlStarted=false 的条目没有发过 SQL,不涉及 MySQL 回档。
               同时查同一时段的 Redis 延迟、节点或虚拟机暂停,以及 DbOrderingLeaseLost 是否也在响。
@@ -323,10 +374,10 @@ spec:
               过去 10 分钟约 {{ $value | printf "%.0f" }} 次排序锁失租(原因 {{ $labels.reason }})。
               失租后这条写被取消或作废,记为 db_task_deferred_total 的 lease_lost 延后重试(照旧耗重试预算):失租在 SQL 之前则一条 SQL 都不发,在 SQL 之后则不回写共享缓存、不推进游标。
               SQL 已在途时被取消的,释放阶段不删锁,锁留给 TTL(2 分钟)过期,该玩家的存盘最多排队约 2 分钟(go/db 日志「ordering lock kept until TTL」)。
-              owner_changed = 续租或核锁时发现别的实例已持有这把锁(锁在本实例持有期间过期并被接手,同时留意 DbOrderingLockReleasedNotOwned);
+              owner_changed = 续租、older_seq 核锁、令牌发布或游标推进脚本发现锁已不归本实例(脚本返回 0;同时留意 DbOrderingLockReleasedNotOwned);
               renew_exhausted = Redis 续租连续失败到上限(10 次);renew_deadline = 到本地截止时间(锁最早可能过期的时刻减 30s 余量)仍没有续租成功;
-              verify_error = 共享缓存回写前的核锁调用本身失败。
-              G1 治标不是栅栏:已经进了 MySQL 的语句撤不回,owner_changed 时窗口只是缩小了。
+              verify_error = older_seq 核锁调用失败,或令牌发布 / 推进脚本的 Redis 往返失败。
+              租约本身不是栅栏:已经进了 MySQL 的语句撤不回;持久化防线另由 MySQL 条件写提供。
               查同一时段的 Redis 延迟与可用性、节点或虚拟机暂停,以及 db_ordering_lease_renew_retry_total 是否在涨。
 
     # 消费组按 zone 拆分的不停服交接闸(go/db/internal/kafka/group_handoff.go;组名被 metrics.go 的注释引用)。

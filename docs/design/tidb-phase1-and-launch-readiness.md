@@ -372,6 +372,7 @@ login 只在 `PasswordAuth` 开启时连库。它的存量迁移脚本是 MySQL 
    - (a) 各 zone 用 `kubectl scale` 把 gate 和全部 scene 缩到 0，**不删 namespace**，go/db 和 data_service 保持运行。全局的 trade、friend、guild，以及其它直连库的服务，也缩到 0。
    - (b) 等以下几项全部排空：
      - 各 `db_task_zone_*` 在 `db_rpc_consumer_group` 里的 LAG 为 0；
+       - **（2026-10-16 更正，上一条不删；已落码，未编译、未测试，待 Codex 验证）** 按 zone 拆组后，以本 zone 线上 `go-svc-db-config` 的有效组为准查 LAG：切组收尾后是 `db_rpc_consumer_group_z<ZoneId>`，尚未切组的 zone 仍是 legacy 组 `db_rpc_consumer_group`，交接没收尾时两组都看。已切组的 zone 只查 legacy 组看到的是冻结或已删除的位点，证明不了已排空。查法见 `merge-zone-runbook.md` §8 Step 2。
      - `kafka:retry:*`、`kafka:dead:queue:*` 以及每个实例的 processing 列表都为 0（键名和查法见 `merge-zone-runbook.md` §8 Step 2）；
      - `transaction_log` 和 `player_snapshot` 两个全局消费组（`data_service.yaml:216-220`）的 LAG 为 0。
      死信怎么处置由人决定（决策文档风险 #10）。

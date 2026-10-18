@@ -222,6 +222,49 @@ func TestScanGrpcCppSections_Boundaries(t *testing.T) {
 	}
 }
 
+// readNamedGrpcCodeSections 同时交出无名段(供头文件 fail-closed 检查):按出现顺序,行号是开始标记所在行(从 1 计),
+// 段文本含首尾标记;命名段照旧按名字返回、不混进无名段;CRLF 与 LF 结果相同。
+func TestReadNamedGrpcCodeSections_ReturnsUnnamedSectionsWithLines(t *testing.T) {
+	setParserTestNaming(t)
+	begin := _config.Global.Naming.YourCodeBegin
+	end := _config.Global.Naming.YourCodeEnd
+	lines := []string{
+		"#pragma once",
+		begin,
+		"#include \"lost.h\"",
+		end,
+		begin + ": grpc.header.includes",
+		"#include \"kept.h\"",
+		end,
+		"class BattleNodeImpl final",
+		"{",
+		"    " + begin,
+		"    " + end,
+		"};",
+	}
+	for _, newline := range []string{"\n", "\r\n"} {
+		named, unnamed, err := readNamedGrpcCodeSections(writeParserTempFile(t, strings.Join(lines, newline)+newline))
+		if err != nil {
+			t.Fatalf("读取失败(换行 %q): %v", newline, err)
+		}
+		if got, want := named["grpc.header.includes"], begin+": grpc.header.includes\n#include \"kept.h\"\n"+end; len(named) != 1 || got != want {
+			t.Fatalf("命名段不对(换行 %q): %q", newline, named)
+		}
+		want := []grpcUnnamedSection{
+			{Line: 2, Code: begin + "\n#include \"lost.h\"\n" + end},
+			{Line: 10, Code: "    " + begin + "\n    " + end},
+		}
+		if len(unnamed) != len(want) {
+			t.Fatalf("无名段数量不对(换行 %q): %+v", newline, unnamed)
+		}
+		for i := range want {
+			if unnamed[i] != want[i] {
+				t.Fatalf("第 %d 个无名段不对(换行 %q): got=%+v want=%+v", i, newline, unnamed[i], want[i])
+			}
+		}
+	}
+}
+
 // buildGrpcHandlerTestMethods 照 proto/scene_manager/scene_node_service.proto 的 SceneNodeGrpc(package scene_node,9 个 unary)。
 func buildGrpcHandlerTestMethods() RPCMethods {
 	fd := &descriptorpb.FileDescriptorProto{

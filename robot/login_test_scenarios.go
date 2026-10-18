@@ -264,7 +264,16 @@ func connectAndVerify(host string, port int, account string, tokenPayload, token
 	gc.Account = account
 	time.Sleep(200 * time.Millisecond)
 	if len(tokenPayload) > 0 {
-		if err := gc.VerifyGateToken(tokenPayload, tokenSig); err != nil {
+		verify := func() error { return gc.VerifyGateToken(tokenPayload, tokenSig) }
+		if loginTestCfg != nil && loginTestCfg.Mode == "asset-arrival-prepare" {
+			// 只限制专用准备入口；既有场景的握手行为保持原样。
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			err = waitAssetArrivalVerification(ctx, verify)
+			cancel()
+		} else {
+			err = verify()
+		}
+		if err != nil {
 			gc.Close()
 			return nil, fmt.Errorf("token verify: %w", err)
 		}

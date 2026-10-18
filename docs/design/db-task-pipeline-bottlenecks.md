@@ -151,7 +151,7 @@
 | G3 | 高 | 先判 seq 后判 epoch | 新主的写在重试队列时,老主迟到写先落库并推进游标,MySQL 停在老主状态 [I] | 按 `(epoch, seq)` 字典序比较,与 G1 同批 |
 | G4 | 高 | 重试不绑分区属主;读不拿锁且无条件写子表缓存;读写不同分区 | 子表缓存被旧值覆盖(TTL 3600 秒) | 修复项 ①④;缓存改 CAS 写 |
 | G5 | 中 | 游标/epoch 缺键放行;游标可能倒退;两张子表不原子 | 旧版本重新通过守卫 | Lua 取最大值单调推进(纯 SETNX 会让游标推不动) |
-| G6 | 中(可用性) | 共用消费组;Stop 先 cancel 导致必等 10 秒;readiness 不反映入组 | 所有 zone 暂停;冷登录可能失败 | 修复项 ③;Stop 改成先撤拉取再等 worker;minReadySeconds(治标已落码,未编译未测试,见 §7;`minReadySeconds: 20` 已进 `deploy/k8s/manifests/go-svc/db.yaml`,截至 2026-10-16 工作区未提交,下一次 db 滚动时生效) |
+| G6 | 中(可用性) | 共用消费组;Stop 先 cancel 导致必等 10 秒;readiness 不反映入组 | 所有 zone 暂停;冷登录可能失败 | 修复项 ③;Stop 改成先撤拉取再等 worker;minReadySeconds(治标已落码,未编译未测试,见 §7;`minReadySeconds: 20` 已进 `deploy/k8s/manifests/go-svc/db.yaml`,随 `e76f6f747` 入库,下一次 db 滚动时生效) |
 | G7 | 中 | 停机路径没有自动化测试;两副本改动未编译 | 结论只是静态推断 | Codex 按 no-single-node-horizontal-scaling-20261001.md §3.5 做双实例杀进程、kind 删 Pod 实测 |
 | G8 | 中 | gate 滚动断会话;没有运行时版本握手 | 违背"玩家在线不受影响" | gate 单独设计;发版说明写最低可混跑版本 |
 | G9 | 低 | go_services.ps1 用 `Stop-Process -Force` 停进程(旧版 `tools/scripts/go_services.ps1` 的 `Invoke-Stop`) | 本机停 db 等同崩溃 | 先发 Ctrl+C,超时再强杀(治标已落码,未编译未测试,见 §7) |
@@ -404,8 +404,8 @@ pwsh -File tools/scripts/test_stress_summarize.ps1
 
 ### S4 落码(G1 治标与 go/db 小项)
 
-> 2026-10-16 补。状态:**已落码,未编译、未测试,待 Codex 验证**。go/db 部分随 `de4960bee` 入库(其后 R1 语义复核的补修——§4.4「G6 停机顺序」那三处与对应用例——以及 R2(④)对 KOC、`store_failure.go` 等同批文件的改动,截至 2026-10-16 在工作区、未提交);
-> 脚本随 `a7c510d65` / `0f6690604` 入库;`deploy/k8s/manifests/go-svc/db.yaml` 的 `minReadySeconds: 20` 与 `deploy/k8s/db-task-retry-alerts.yaml` 的 `db-task.ordering-lease` 组在工作区、未提交。
+> 2026-10-16 补。状态:**已落码,未编译、未测试,待 Codex 验证**。go/db 部分随 `de4960bee` 入库(其后 R1 语义复核的补修——§4.4「G6 停机顺序」那三处与对应用例——以及 R2(④)对 KOC、`store_failure.go` 等同批文件的改动,随 `e76f6f747` 入库);
+> 脚本随 `a7c510d65` / `0f6690604` 入库;`deploy/k8s/manifests/go-svc/db.yaml` 的 `minReadySeconds: 20` 与 `deploy/k8s/db-task-retry-alerts.yaml` 的 `db-task.ordering-lease` 组随 `e76f6f747` 入库。
 > 规格:`docs/handoff/godb-pipeline-impl-20261015/S4-g1-and-small-items-spec.md`(没有单独复核);落码阶段 A3 因额度中断没有报告,由 R1 对照代码核实补完。验证与上线清单见[上线待做](../ops/godb-pipeline-launch-todo.md) §4。
 
 | 项 | 文件 / 符号 | 要点 |

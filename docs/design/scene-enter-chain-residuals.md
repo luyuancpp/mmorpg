@@ -1472,7 +1472,7 @@ Java 侧 `--check` 会报契约漂移。Java 仓须同批运行 `java tools/Cont
   - LeaveScene 在 switch 之后加了一道防御:判定结果不是删除类就保留 location 并记 Error(防以后新增结论漏改分支)。
   - 复核顺带确认:原文期望也堵住了旧的 6b 双扣——LeaveScene 删除与落点之间不会再各扣一次人数。§10 里登记的「同 scene_id 换节点多算一人」仍另立项。
   - 新增包级 `releasePlayerRetryBackoffs`(默认仍 1s、3s,只为测试缩短等待)。
-- 未做:`keep_newer` 速率告警规则(`deploy/k8s/scene-manager-alerts.yaml` 不在 W2 文件集,阈值等上线后看基线再定;计数器与告警表达式说明已写在 `metrics.go` 注释)。
+- 未做:`keep_newer` 速率告警规则(阈值等上线后看基线再定;计数器与告警表达式说明已写在 `metrics.go` 注释)。2026-10-18 已先在 `deploy/k8s/scene-manager-alerts.yaml` 加确定性告警 `SceneManagerPlacementIdentityConflict`(`conflict` / `keep_conflict` 出现即 critical,正常恒 0)。
 - 提交时按 hunk 排除别的会话的改动:`enterscenelogic.go` 的 G4a 注释段、`scene_node_client.go` 的 CreateScene 注释、`metrics.go` 的 load_refresh、`scene_node_service.proto` 的 AssetAckReceipt 两行。
 
 ### 13.3 W3(b / c / d 的 C++ scene 侧)
@@ -1480,7 +1480,7 @@ Java 侧 `--check` 会报契约漂移。Java 仓须同批运行 `java tools/Cont
 - 落地:`release_fence.h`(判定表 + 名表 + static_assert + 原子计数)、`enter_fence::ActingLoginGeneration`、`HandleReleaseFromSceneManager`(守护段只剩一行委托)、`[ReleaseFence]` 30s 汇总、码 25 入白名单、三处发送点盖章(`RequestSceneChange`、`RequestTravelEnterScene`、疏散票据副本)、B5「先抬 epoch 后摘交接组件」顺序注释。
 - 后续项(登记,本批不做):
   - **W3-1 盖章接线没有行为测试**:三处发送点的接线(比较哪个会话、在实体销毁前算、写进票据副本)目前只靠静态阅读和纯函数单测守住。补法是把请求组装收成纯函数或给 `SendCorrelatedEnterScene` 加测试捕获接缝;`player_lifecycle.cpp` 仍在被别的会话并发修改,等它稳定后另做。
-  - **W3-2 码 25 的钉值**:`cross_zone_test.cpp` 的 `pinnedCodes` 一段有别人在途改动,本批在文件末尾单写了 `RelocateConfirmKick.PlacementSessionSupersededIsRejectedBeforeAnyPlacementWrite`;在途改动合入后把 25 并回 `pinnedCodes`、注释改「九个码」、删掉末尾那条(DRY)。Go 侧另有 `TestErrPlacementSessionSupersededIsPinnedTo25`。
+  - **W3-2 码 25 的钉值(2026-10-18 已收)**:在途改动随快照入库后,25 已并回 `RelocateConfirmKick.UnverifiableKickOnlyWhenSceneManagerCannotHaveGrantedOurs` 的 `pinnedCodes`、注释改「九个码」,末尾单列的 `…PlacementSessionSupersededIsRejectedBeforeAnyPlacementWrite` 已删(DRY)。Go 侧另有 `TestErrPlacementSessionSupersededIsPinnedTo25`。
   - 「可选:在可测宿主里验证盖章」没做(现有宿主断言不许发真实 RPC)。
 
 ### 13.4 Java 版(AGENTS §12)

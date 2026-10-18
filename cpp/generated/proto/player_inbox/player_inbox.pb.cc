@@ -1789,11 +1789,11 @@ constexpr AckPlayerInboxRequest::ParseTableT_ AckPlayerInboxRequest::InternalGen
     {
       PROTOBUF_FIELD_OFFSET(AckPlayerInboxRequest, _impl_._has_bits_),
       0, // no _extensions_
-      5, 56,  // max_field_number, fast_idx_mask
+      6, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967264,  // skipmap
+      4294967232,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      5,  // num_field_entries
+      6,  // num_field_entries
       1,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -1824,7 +1824,10 @@ constexpr AckPlayerInboxRequest::ParseTableT_ AckPlayerInboxRequest::InternalGen
       {::_pbi::TcParser::FastMtR1,
        {42, 0, 0,
         PROTOBUF_FIELD_OFFSET(AckPlayerInboxRequest, _impl_.decisions_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint32 scene_node_id = 6;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(AckPlayerInboxRequest, _impl_.scene_node_id_), 5>(),
+       {48, 5, 0,
+        PROTOBUF_FIELD_OFFSET(AckPlayerInboxRequest, _impl_.scene_node_id_)}},
       {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
@@ -1839,6 +1842,8 @@ constexpr AckPlayerInboxRequest::ParseTableT_ AckPlayerInboxRequest::InternalGen
       {PROTOBUF_FIELD_OFFSET(AckPlayerInboxRequest, _impl_.correlation_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // repeated .player_inbox.PlayerInboxDecisionReport decisions = 5;
       {PROTOBUF_FIELD_OFFSET(AckPlayerInboxRequest, _impl_.decisions_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint32 scene_node_id = 6;
+      {PROTOBUF_FIELD_OFFSET(AckPlayerInboxRequest, _impl_.scene_node_id_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -1865,7 +1870,8 @@ inline constexpr AckPlayerInboxRequest::Impl_::Impl_(
         player_id_{::uint64_t{0u}},
         owner_epoch_{::uint64_t{0u}},
         correlation_id_{::uint64_t{0u}},
-        domain_{static_cast< ::player_inbox::PlayerInboxDomain >(0)} {}
+        domain_{static_cast< ::player_inbox::PlayerInboxDomain >(0)},
+        scene_node_id_{0u} {}
 
 template <typename>
 constexpr AckPlayerInboxRequest::AckPlayerInboxRequest(::_pbi::ConstantInitialized,
@@ -2069,17 +2075,19 @@ const ::uint32_t
         3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_inbox::AckPlayerInboxRequest, _impl_._has_bits_),
-        8, // hasbit index offset
+        9, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::player_inbox::AckPlayerInboxRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::player_inbox::AckPlayerInboxRequest, _impl_.domain_),
         PROTOBUF_FIELD_OFFSET(::player_inbox::AckPlayerInboxRequest, _impl_.owner_epoch_),
         PROTOBUF_FIELD_OFFSET(::player_inbox::AckPlayerInboxRequest, _impl_.correlation_id_),
         PROTOBUF_FIELD_OFFSET(::player_inbox::AckPlayerInboxRequest, _impl_.decisions_),
+        PROTOBUF_FIELD_OFFSET(::player_inbox::AckPlayerInboxRequest, _impl_.scene_node_id_),
         1,
         4,
         2,
         3,
         0,
+        5,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_inbox::PlayerInboxAckItem, _impl_._has_bits_),
         6, // hasbit index offset
@@ -2117,8 +2125,8 @@ static const ::_pbi::MigrationSchema
         {72, sizeof(::player_inbox::FetchPlayerInboxResponse)},
         {89, sizeof(::player_inbox::PlayerInboxDecisionReport)},
         {100, sizeof(::player_inbox::AckPlayerInboxRequest)},
-        {113, sizeof(::player_inbox::PlayerInboxAckItem)},
-        {122, sizeof(::player_inbox::AckPlayerInboxResponse)},
+        {115, sizeof(::player_inbox::PlayerInboxAckItem)},
+        {124, sizeof(::player_inbox::AckPlayerInboxResponse)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -2172,83 +2180,84 @@ const char descriptor_table_protodef_proto_2fplayer_5finbox_2fplayer_5finbox_2ep
     "\n\031PlayerInboxDecisionReport\022\013\n\003seq\030\001 \001(\004"
     "\0221\n\007outcome\030\002 \001(\0162 .player_inbox.PlayerI"
     "nboxOutcome\022\016\n\006reason\030\003 \001(\r\022\022\n\nrequest_i"
-    "d\030\004 \001(\004\"\304\001\n\025AckPlayerInboxRequest\022\021\n\tpla"
+    "d\030\004 \001(\004\"\333\001\n\025AckPlayerInboxRequest\022\021\n\tpla"
     "yer_id\030\001 \001(\004\022/\n\006domain\030\002 \001(\0162\037.player_in"
     "box.PlayerInboxDomain\022\023\n\013owner_epoch\030\003 \001"
     "(\004\022\026\n\016correlation_id\030\004 \001(\004\022:\n\tdecisions\030"
     "\005 \003(\0132\'.player_inbox.PlayerInboxDecision"
-    "Report\"\210\001\n\022PlayerInboxAckItem\022\013\n\003seq\030\001 \001"
-    "(\004\0222\n\006result\030\002 \001(\0162\".player_inbox.Player"
-    "InboxAckResult\0221\n\005state\030\003 \001(\0162\".player_i"
-    "nbox.PlayerInboxItemState\"\205\002\n\026AckPlayerI"
-    "nboxResponse\022&\n\rerror_message\030\001 \001(\0132\017.Ti"
-    "pInfoMessage\022\021\n\tplayer_id\030\002 \001(\004\022/\n\006domai"
-    "n\030\003 \001(\0162\037.player_inbox.PlayerInboxDomain"
-    "\022\026\n\016correlation_id\030\004 \001(\004\0224\n\005fence\030\005 \001(\0162"
-    "%.player_inbox.PlayerInboxFenceVerdict\0221"
-    "\n\007results\030\006 \003(\0132 .player_inbox.PlayerInb"
-    "oxAckItem*V\n\020PlayerInboxClass\022\"\n\036PLAYER_"
-    "INBOX_CLASS_UNSPECIFIED\020\000\022\036\n\032PLAYER_INBO"
-    "X_CLASS_DURABLE\020\001*^\n\027PlayerInboxProducer"
-    "Kind\022%\n!PLAYER_INBOX_PRODUCER_UNSPECIFIE"
-    "D\020\000\022\034\n\030PLAYER_INBOX_PRODUCER_GM\020\001*n\n\021Pla"
-    "yerInboxDomain\022#\n\037PLAYER_INBOX_DOMAIN_UN"
-    "SPECIFIED\020\000\0224\n%PLAYER_INBOX_DOMAIN_SCENE"
-    "_GM_SANCTION\020\001\032\t\212\212\315\001\004\010@\020\001*\330\002\n\026PlayerInbo"
-    "xMessageType\022 \n\034PLAYER_INBOX_MSG_UNSPECI"
-    "FIED\020\000\022\\\n\'PLAYER_INBOX_MSG_GM_BLOCK_CURR"
-    "ENCY_GAIN\020\001\032/\222\212\315\001*\010\001\020\001\032\"player_inbox.GmC"
-    "urrencyGainPayload @\022^\n)PLAYER_INBOX_MSG"
-    "_GM_UNBLOCK_CURRENCY_GAIN\020\002\032/\222\212\315\001*\010\001\020\001\032\""
-    "player_inbox.GmCurrencyGainPayload @\022^\n("
-    "PLAYER_INBOX_MSG_GM_ATTACH_CURRENCY_DEBT"
-    "\020\003\0320\222\212\315\001+\010\001\020\001\032\"player_inbox.GmCurrencyDe"
-    "btPayload \200\010*\334\001\n\024PlayerInboxItemState\022!\n"
-    "\035PLAYER_INBOX_ITEM_UNSPECIFIED\020\000\022\035\n\031PLAY"
-    "ER_INBOX_ITEM_PENDING\020\001\022\035\n\031PLAYER_INBOX_"
-    "ITEM_APPLIED\020\002\022\036\n\032PLAYER_INBOX_ITEM_REJE"
-    "CTED\020\003\022\034\n\030PLAYER_INBOX_ITEM_VOIDED\020\004\022%\n!"
-    "PLAYER_INBOX_ITEM_SETTLED_UNKNOWN\020\005*X\n\024P"
-    "layerInboxDirective\022\037\n\033PLAYER_INBOX_DIRE"
-    "CTIVE_NONE\020\000\022\037\n\033PLAYER_INBOX_DIRECTIVE_V"
-    "OID\020\001*~\n\025PlayerInboxVoidReason\022!\n\035PLAYER"
-    "_INBOX_VOID_UNSPECIFIED\020\000\022\037\n\033PLAYER_INBO"
-    "X_VOID_CANCELLED\020\001\022!\n\035PLAYER_INBOX_VOID_"
-    "QUARANTINED\020\002*\205\001\n\024PlayerInboxFinalizer\022&"
-    "\n\"PLAYER_INBOX_FINALIZER_UNSPECIFIED\020\000\022#"
-    "\n\037PLAYER_INBOX_FINALIZER_CONSUMER\020\001\022 \n\034P"
-    "LAYER_INBOX_FINALIZER_ADMIN\020\002*\303\001\n\022Player"
-    "InboxOutcome\022$\n PLAYER_INBOX_OUTCOME_UNS"
-    "PECIFIED\020\000\022 \n\034PLAYER_INBOX_OUTCOME_APPLI"
-    "ED\020\001\022!\n\035PLAYER_INBOX_OUTCOME_REJECTED\020\002\022"
-    " \n\034PLAYER_INBOX_OUTCOME_SKIPPED\020\003\022 \n\034PLA"
-    "YER_INBOX_OUTCOME_UNKNOWN\020\004*\244\002\n\027PlayerIn"
-    "boxFenceVerdict\022\"\n\036PLAYER_INBOX_FENCE_UN"
-    "SPECIFIED\020\000\022 \n\034PLAYER_INBOX_FENCE_NO_STR"
-    "EAM\020\001\022\034\n\030PLAYER_INBOX_FENCE_FIRST\020\002\022\034\n\030P"
-    "LAYER_INBOX_FENCE_MATCH\020\003\022\036\n\032PLAYER_INBO"
-    "X_FENCE_ADVANCE\020\004\022\034\n\030PLAYER_INBOX_FENCE_"
-    "STALE\020\005\022%\n!PLAYER_INBOX_FENCE_EPOCH_REQU"
-    "IRED\020\006\022\"\n\036PLAYER_INBOX_FENCE_EPOCH_AHEAD"
-    "\020\007*\250\002\n\024PlayerInboxAckResult\022 \n\034PLAYER_IN"
-    "BOX_ACK_UNSPECIFIED\020\000\022\036\n\032PLAYER_INBOX_AC"
-    "K_FINALIZED\020\001\022!\n\035PLAYER_INBOX_ACK_ALREAD"
-    "Y_SAME\020\002\022\035\n\031PLAYER_INBOX_ACK_CONFLICT\020\003\022"
-    " \n\034PLAYER_INBOX_ACK_UNKNOWN_SEQ\020\004\022\"\n\036PLA"
-    "YER_INBOX_ACK_NOT_DELIVERED\020\005\022\'\n#PLAYER_"
-    "INBOX_ACK_SKIP_NOT_REQUESTED\020\006\022\035\n\031PLAYER"
-    "_INBOX_ACK_MISMATCH\020\0072\305\001\n\013PlayerInbox\022]\n"
-    "\nFetchItems\022%.player_inbox.FetchPlayerIn"
-    "boxRequest\032&.player_inbox.FetchPlayerInb"
-    "oxResponse\"\000\022W\n\010AckItems\022#.player_inbox."
-    "AckPlayerInboxRequest\032$.player_inbox.Ack"
-    "PlayerInboxResponse\"\000:i\n\027OptionPlayerInb"
-    "oxDomain\022!.google.protobuf.EnumValueOpti"
-    "ons\030\241\321\031 \001(\0132#.player_inbox.PlayerInboxDo"
-    "mainSpec:e\n\025OptionPlayerInboxType\022!.goog"
-    "le.protobuf.EnumValueOptions\030\242\321\031 \001(\0132!.p"
-    "layer_inbox.PlayerInboxTypeSpecB\036Z\031playe"
-    "r_inbox/player_inbox\200\001\000b\006proto3"
+    "Report\022\025\n\rscene_node_id\030\006 \001(\r\"\210\001\n\022Player"
+    "InboxAckItem\022\013\n\003seq\030\001 \001(\004\0222\n\006result\030\002 \001("
+    "\0162\".player_inbox.PlayerInboxAckResult\0221\n"
+    "\005state\030\003 \001(\0162\".player_inbox.PlayerInboxI"
+    "temState\"\205\002\n\026AckPlayerInboxResponse\022&\n\re"
+    "rror_message\030\001 \001(\0132\017.TipInfoMessage\022\021\n\tp"
+    "layer_id\030\002 \001(\004\022/\n\006domain\030\003 \001(\0162\037.player_"
+    "inbox.PlayerInboxDomain\022\026\n\016correlation_i"
+    "d\030\004 \001(\004\0224\n\005fence\030\005 \001(\0162%.player_inbox.Pl"
+    "ayerInboxFenceVerdict\0221\n\007results\030\006 \003(\0132 "
+    ".player_inbox.PlayerInboxAckItem*V\n\020Play"
+    "erInboxClass\022\"\n\036PLAYER_INBOX_CLASS_UNSPE"
+    "CIFIED\020\000\022\036\n\032PLAYER_INBOX_CLASS_DURABLE\020\001"
+    "*^\n\027PlayerInboxProducerKind\022%\n!PLAYER_IN"
+    "BOX_PRODUCER_UNSPECIFIED\020\000\022\034\n\030PLAYER_INB"
+    "OX_PRODUCER_GM\020\001*n\n\021PlayerInboxDomain\022#\n"
+    "\037PLAYER_INBOX_DOMAIN_UNSPECIFIED\020\000\0224\n%PL"
+    "AYER_INBOX_DOMAIN_SCENE_GM_SANCTION\020\001\032\t\212"
+    "\212\315\001\004\010@\020\001*\330\002\n\026PlayerInboxMessageType\022 \n\034P"
+    "LAYER_INBOX_MSG_UNSPECIFIED\020\000\022\\\n\'PLAYER_"
+    "INBOX_MSG_GM_BLOCK_CURRENCY_GAIN\020\001\032/\222\212\315\001"
+    "*\010\001\020\001\032\"player_inbox.GmCurrencyGainPayloa"
+    "d @\022^\n)PLAYER_INBOX_MSG_GM_UNBLOCK_CURRE"
+    "NCY_GAIN\020\002\032/\222\212\315\001*\010\001\020\001\032\"player_inbox.GmCu"
+    "rrencyGainPayload @\022^\n(PLAYER_INBOX_MSG_"
+    "GM_ATTACH_CURRENCY_DEBT\020\003\0320\222\212\315\001+\010\001\020\001\032\"pl"
+    "ayer_inbox.GmCurrencyDebtPayload \200\010*\334\001\n\024"
+    "PlayerInboxItemState\022!\n\035PLAYER_INBOX_ITE"
+    "M_UNSPECIFIED\020\000\022\035\n\031PLAYER_INBOX_ITEM_PEN"
+    "DING\020\001\022\035\n\031PLAYER_INBOX_ITEM_APPLIED\020\002\022\036\n"
+    "\032PLAYER_INBOX_ITEM_REJECTED\020\003\022\034\n\030PLAYER_"
+    "INBOX_ITEM_VOIDED\020\004\022%\n!PLAYER_INBOX_ITEM"
+    "_SETTLED_UNKNOWN\020\005*X\n\024PlayerInboxDirecti"
+    "ve\022\037\n\033PLAYER_INBOX_DIRECTIVE_NONE\020\000\022\037\n\033P"
+    "LAYER_INBOX_DIRECTIVE_VOID\020\001*~\n\025PlayerIn"
+    "boxVoidReason\022!\n\035PLAYER_INBOX_VOID_UNSPE"
+    "CIFIED\020\000\022\037\n\033PLAYER_INBOX_VOID_CANCELLED\020"
+    "\001\022!\n\035PLAYER_INBOX_VOID_QUARANTINED\020\002*\205\001\n"
+    "\024PlayerInboxFinalizer\022&\n\"PLAYER_INBOX_FI"
+    "NALIZER_UNSPECIFIED\020\000\022#\n\037PLAYER_INBOX_FI"
+    "NALIZER_CONSUMER\020\001\022 \n\034PLAYER_INBOX_FINAL"
+    "IZER_ADMIN\020\002*\303\001\n\022PlayerInboxOutcome\022$\n P"
+    "LAYER_INBOX_OUTCOME_UNSPECIFIED\020\000\022 \n\034PLA"
+    "YER_INBOX_OUTCOME_APPLIED\020\001\022!\n\035PLAYER_IN"
+    "BOX_OUTCOME_REJECTED\020\002\022 \n\034PLAYER_INBOX_O"
+    "UTCOME_SKIPPED\020\003\022 \n\034PLAYER_INBOX_OUTCOME"
+    "_UNKNOWN\020\004*\244\002\n\027PlayerInboxFenceVerdict\022\""
+    "\n\036PLAYER_INBOX_FENCE_UNSPECIFIED\020\000\022 \n\034PL"
+    "AYER_INBOX_FENCE_NO_STREAM\020\001\022\034\n\030PLAYER_I"
+    "NBOX_FENCE_FIRST\020\002\022\034\n\030PLAYER_INBOX_FENCE"
+    "_MATCH\020\003\022\036\n\032PLAYER_INBOX_FENCE_ADVANCE\020\004"
+    "\022\034\n\030PLAYER_INBOX_FENCE_STALE\020\005\022%\n!PLAYER"
+    "_INBOX_FENCE_EPOCH_REQUIRED\020\006\022\"\n\036PLAYER_"
+    "INBOX_FENCE_EPOCH_AHEAD\020\007*\250\002\n\024PlayerInbo"
+    "xAckResult\022 \n\034PLAYER_INBOX_ACK_UNSPECIFI"
+    "ED\020\000\022\036\n\032PLAYER_INBOX_ACK_FINALIZED\020\001\022!\n\035"
+    "PLAYER_INBOX_ACK_ALREADY_SAME\020\002\022\035\n\031PLAYE"
+    "R_INBOX_ACK_CONFLICT\020\003\022 \n\034PLAYER_INBOX_A"
+    "CK_UNKNOWN_SEQ\020\004\022\"\n\036PLAYER_INBOX_ACK_NOT"
+    "_DELIVERED\020\005\022\'\n#PLAYER_INBOX_ACK_SKIP_NO"
+    "T_REQUESTED\020\006\022\035\n\031PLAYER_INBOX_ACK_MISMAT"
+    "CH\020\0072\305\001\n\013PlayerInbox\022]\n\nFetchItems\022%.pla"
+    "yer_inbox.FetchPlayerInboxRequest\032&.play"
+    "er_inbox.FetchPlayerInboxResponse\"\000\022W\n\010A"
+    "ckItems\022#.player_inbox.AckPlayerInboxReq"
+    "uest\032$.player_inbox.AckPlayerInboxRespon"
+    "se\"\000:i\n\027OptionPlayerInboxDomain\022!.google"
+    ".protobuf.EnumValueOptions\030\241\321\031 \001(\0132#.pla"
+    "yer_inbox.PlayerInboxDomainSpec:e\n\025Optio"
+    "nPlayerInboxType\022!.google.protobuf.EnumV"
+    "alueOptions\030\242\321\031 \001(\0132!.player_inbox.Playe"
+    "rInboxTypeSpecB\036Z\031player_inbox/player_in"
+    "box\200\001\000b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_2eproto_deps[2] = {
@@ -2259,7 +2268,7 @@ static ::absl::once_flag descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbo
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_2eproto = {
     false,
     false,
-    4511,
+    4534,
     descriptor_table_protodef_proto_2fplayer_5finbox_2fplayer_5finbox_2eproto,
     "proto/player_inbox/player_inbox.proto",
     &descriptor_table_proto_2fplayer_5finbox_2fplayer_5finbox_2eproto_once,
@@ -4829,9 +4838,9 @@ AckPlayerInboxRequest::AckPlayerInboxRequest(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, domain_) -
+           offsetof(Impl_, scene_node_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::domain_));
+               sizeof(Impl_::scene_node_id_));
 
   // @@protoc_insertion_point(copy_constructor:player_inbox.AckPlayerInboxRequest)
 }
@@ -4850,9 +4859,9 @@ inline void AckPlayerInboxRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE ar
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, domain_) -
+           offsetof(Impl_, scene_node_id_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::domain_));
+               sizeof(Impl_::scene_node_id_));
 }
 AckPlayerInboxRequest::~AckPlayerInboxRequest() {
   // @@protoc_insertion_point(destructor:player_inbox.AckPlayerInboxRequest)
@@ -4905,10 +4914,10 @@ PROTOBUF_NOINLINE void AckPlayerInboxRequest::Clear() {
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     _impl_.decisions_.Clear();
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001eU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003eU)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.domain_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.domain_));
+        reinterpret_cast<char*>(&_impl_.scene_node_id_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.scene_node_id_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -4982,6 +4991,15 @@ PROTOBUF_NOINLINE void AckPlayerInboxRequest::Clear() {
     }
   }
 
+  // uint32 scene_node_id = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_scene_node_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          6, this_._internal_scene_node_id(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -5007,7 +5025,7 @@ PROTOBUF_NOINLINE void AckPlayerInboxRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     // repeated .player_inbox.PlayerInboxDecisionReport decisions = 5;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1UL * this_._internal_decisions_size();
@@ -5043,6 +5061,13 @@ PROTOBUF_NOINLINE void AckPlayerInboxRequest::Clear() {
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_domain());
       }
     }
+    // uint32 scene_node_id = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_scene_node_id() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_scene_node_id());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -5062,7 +5087,7 @@ void AckPlayerInboxRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _this->_internal_mutable_decisions()->InternalMergeFromWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), arena,
@@ -5088,6 +5113,11 @@ void AckPlayerInboxRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.domain_ = from._impl_.domain_;
       }
     }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_scene_node_id() != 0) {
+        _this->_impl_.scene_node_id_ = from._impl_.scene_node_id_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
@@ -5108,8 +5138,8 @@ void AckPlayerInboxRequest::InternalSwap(AckPlayerInboxRequest* PROTOBUF_RESTRIC
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.decisions_.InternalSwap(&other->_impl_.decisions_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(AckPlayerInboxRequest, _impl_.domain_)
-      + sizeof(AckPlayerInboxRequest::_impl_.domain_)
+      PROTOBUF_FIELD_OFFSET(AckPlayerInboxRequest, _impl_.scene_node_id_)
+      + sizeof(AckPlayerInboxRequest::_impl_.scene_node_id_)
       - PROTOBUF_FIELD_OFFSET(AckPlayerInboxRequest, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));

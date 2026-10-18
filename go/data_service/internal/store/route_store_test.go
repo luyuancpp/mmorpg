@@ -263,6 +263,13 @@ func allRouteSQLForTest() map[string]string {
 		"R14":             routeListMergedIntoSQL,
 		"R15":             routeMetaSeedSQL,
 		"R16":             routeReconcileSeedSQL,
+		"R17":             routeRepairOverwriteSQL,
+		"R18":             routeReadMetaSQL,
+		"R18x":            routeLockMetaSQL,
+		"R19":             routeFreezeSQL,
+		"R20":             routeLockReconcileWatermarkSQL,
+		"R21":             routeRaiseWatermarkSQL,
+		"R22":             routeUnfreezeSQL,
 		"P0":              routeLockProbeGuardSQL,
 		"P4":              routeProbeShardCheckSQL,
 		"P5":              routeProbeShardModulusSQL,
@@ -390,6 +397,235 @@ func TestNoPlayerRouteWritesOutsideRouteStore(t *testing.T) {
 	if len(offenders) > 0 {
 		t.Fatalf("player_route 的写入只许出现在 %s(提案 §4.1-6),以下位置绕过了它:\n%s",
 			allowed, strings.Join(offenders, "\n"))
+	}
+}
+
+// TestRouteMetaAndReconcileWritesOnlyInStoreFiles(第 1b-1 批):route_meta 的可写开关与 route_reconcile 的水位 / 租约
+// 也只许本 store 写。绕过它的写者(例如在服务里手写一句 UPDATE route_meta SET writable=1)会跳过「解冻前先抬水位」
+// 「修库持 meta 行锁」这些顺序约束。做法与 TestNoPlayerRouteWritesOutsideRouteStore 相同(只看字符串字面量)。
+// 第 1b-2 批新增 internal/store/route_reconcile.go(对账 leader 的 SQL)时把它加进 allowed。
+func TestRouteMetaAndReconcileWritesOnlyInStoreFiles(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatalf("resolve go/data_service root: %v", err)
+	}
+	write := regexp.MustCompile("(?i)(INSERT\\s+INTO|UPDATE|DELETE\\s+FROM|REPLACE\\s+INTO|TRUNCATE\\s+TABLE)\\s+`?(" +
+		RouteMetaTableName + "|" + RouteReconcileTableName + ")\\b")
+	allowed := map[string]bool{"internal/store/route_store.go": true}
+
+	var files, allowedHits int
+	var offenders []string
+	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.IsDir() {
+			switch d.Name() {
+			case "generated", "vendor", "testdata":
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		rel = filepath.ToSlash(rel)
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.SkipObjectResolution)
+		if err != nil {
+			return err
+		}
+		files++
+		ast.Inspect(file, func(n ast.Node) bool {
+			lit, ok := n.(*ast.BasicLit)
+			if !ok || lit.Kind != token.STRING {
+				return true
+			}
+			s, err := strconv.Unquote(lit.Value)
+			if err != nil || !write.MatchString(s) {
+				return true
+			}
+			if allowed[rel] {
+				allowedHits++
+			} else {
+				offenders = append(offenders, rel+": "+s)
+			}
+			return true
+		})
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk %s: %v", root, err)
+	}
+	if files == 0 {
+		t.Fatalf("在 %s 下一个 .go 文件都没扫到:守卫失效", root)
+	}
+	// 至少 R15 / R16(种行)、R19(冻结)、R21(抬水位)、R22(解冻)五条。
+	if allowedHits < 5 {
+		t.Fatalf("允许的文件里只匹配到 %d 条 route_meta / route_reconcile 写语句(至少应有 R15 / R16 / R19 / R21 / R22):正则失效", allowedHits)
+	}
+	if len(offenders) > 0 {
+		t.Fatalf("route_meta / route_reconcile 的写入只许出现在 %v,以下位置绕过了它:\n%s", allowed, strings.Join(offenders, "\n"))
+	}
+}
+
+// TestRouteRepairOverwriteSQLBindsMapRevNotIncrement:R17 把 rev **置为** maprev(两边 rev 相同,之后的发布 / audit 才认得出
+// 是同一版),不是 rev + 1;按聚簇键定位、按读到的 rev 做 CAS;占位符恰好 9 个(实参顺序由契约用例
+// TestRepairRoutesFromCacheStatementSequence 钉住)。
+func TestRouteRepairOverwriteSQLBindsMapRevNotIncrement(t *testing.T) {
+	stmt := routeRepairOverwriteSQL
+	if strings.Contains(stmt, "rev + 1") || !strings.Contains(stmt, " rev = ?, ") {
+		t.Fatalf("R17 必须把 rev 置为实参(maprev),不是 +1:%q", stmt)
+	}
+	if !strings.HasSuffix(stmt, " WHERE route_shard = ? AND player_id = ? AND rev = ?") {
+		t.Fatalf("R17 必须按聚簇键定位并按读到的 rev 做 CAS:%q", stmt)
+	}
+	if n := strings.Count(stmt, "?"); n != 9 {
+		t.Fatalf("R17 有 %d 个占位符,want 9(home、storage、version、frozen、rev、writer、行片、player_id、库 rev)", n)
+	}
+	if !strings.Contains(stmt, "updated_at_ms = "+dbNowMsSQL) {
+		t.Fatalf("R17 的 updated_at_ms 必须取库时钟:%q", stmt)
+	}
+}
+
+// TestDecideRepair 覆盖反向修库判定表(decideRepair,提案 §11.2「第 1b 批」D5)的每一格。
+func TestDecideRepair(t *testing.T) {
+	const player uint64 = 90002
+	stable := func(s uint32, v uint64) *placement.Record { return &placement.Record{StorageID: s, Version: v} }
+	frozen := &placement.Record{StorageID: 7, Version: 2, Frozen: true, RunID: "run-b"}
+	dbRow := func(home, storage uint32, version uint64, frozenRun string, rev uint64) *RouteRow {
+		return &RouteRow{PlayerID: player, HomeZone: home, StorageID: storage, PlacementVersion: version,
+			FrozenRunID: frozenRun, Rev: rev, UpdatedBy: "old", CreatedAtMs: 11, UpdatedAtMs: 22}
+	}
+
+	for _, tc := range []struct {
+		name        string
+		db          *RouteRow
+		cache       RouteImportRow
+		resolveTies bool
+		want        repairAction
+		wantRow     RouteRow // 只对 insert / restore / tie_resolved / fill 有意义
+	}{
+		{
+			name:    "库无行_rev取maprev",
+			cache:   RouteImportRow{PlayerID: player, HomeZone: 7, Placement: stable(7, 1), MapRev: 5},
+			want:    repairInsert,
+			wantRow: RouteRow{PlayerID: player, HomeZone: 7, StorageID: 7, PlacementVersion: 1, Rev: 5},
+		},
+		{
+			name:    "库无行_无maprev_rev取1",
+			cache:   RouteImportRow{PlayerID: player, HomeZone: 7},
+			want:    repairInsert,
+			wantRow: RouteRow{PlayerID: player, HomeZone: 7, Rev: 1},
+		},
+		{
+			name:    "maprev大于库rev_整行覆盖_rev置为maprev",
+			db:      dbRow(7, 0, 0, "", 3),
+			cache:   RouteImportRow{PlayerID: player, HomeZone: 7, Placement: frozen, MapRev: 5},
+			want:    repairRestore,
+			wantRow: RouteRow{PlayerID: player, HomeZone: 7, StorageID: 7, PlacementVersion: 2, FrozenRunID: "run-b", Rev: 5},
+		},
+		{
+			name:    "maprev大于库rev_缓存没有落点_库的落点也清掉",
+			db:      dbRow(7, 7, 1, "", 3),
+			cache:   RouteImportRow{PlayerID: player, HomeZone: 8, MapRev: 4},
+			want:    repairRestore,
+			wantRow: RouteRow{PlayerID: player, HomeZone: 8, Rev: 4},
+		},
+		{
+			name:    "maprev大于库rev_库里是墓碑",
+			db:      dbRow(0, 0, 0, "", 1),
+			cache:   RouteImportRow{PlayerID: player, HomeZone: 7, MapRev: 2},
+			want:    repairRestore,
+			wantRow: RouteRow{PlayerID: player, HomeZone: 7, Rev: 2},
+		},
+		{
+			name:  "maprev小于库rev_库领先_不动",
+			db:    dbRow(8, 0, 0, "", 9),
+			cache: RouteImportRow{PlayerID: player, HomeZone: 7, MapRev: 5},
+			want:  repairDBAhead,
+		},
+		{
+			name:  "同rev同值_match",
+			db:    dbRow(7, 7, 2, "run-b", 5),
+			cache: RouteImportRow{PlayerID: player, HomeZone: 7, Placement: frozen, MapRev: 5},
+			want:  repairMatch,
+		},
+		{
+			name:  "同rev异值_默认只报告",
+			db:    dbRow(8, 0, 0, "", 5),
+			cache: RouteImportRow{PlayerID: player, HomeZone: 7, MapRev: 5},
+			want:  repairTie,
+		},
+		{
+			name:  "同rev_冻结态与稳定态视为不同_平局",
+			db:    dbRow(7, 7, 2, "", 5),
+			cache: RouteImportRow{PlayerID: player, HomeZone: 7, Placement: frozen, MapRev: 5},
+			want:  repairTie,
+		},
+		{
+			name:        "同rev异值_resolve-ties=cache_覆盖且rev不变",
+			db:          dbRow(8, 0, 0, "", 5),
+			cache:       RouteImportRow{PlayerID: player, HomeZone: 7, MapRev: 5},
+			resolveTies: true,
+			want:        repairTieResolved,
+			wantRow:     RouteRow{PlayerID: player, HomeZone: 7, Rev: 5},
+		},
+		{
+			name:        "同rev同值_resolve-ties也是match",
+			db:          dbRow(7, 0, 0, "", 5),
+			cache:       RouteImportRow{PlayerID: player, HomeZone: 7, MapRev: 5},
+			resolveTies: true,
+			want:        repairMatch,
+		},
+		{
+			name:    "无maprev_退回导入语义_补NULL列",
+			db:      dbRow(0, 7, 1, "", 2),
+			cache:   RouteImportRow{PlayerID: player, HomeZone: 7, Placement: stable(7, 1)},
+			want:    repairFill,
+			wantRow: RouteRow{PlayerID: player, HomeZone: 7, StorageID: 7, PlacementVersion: 1, Rev: 2, UpdatedBy: "old", CreatedAtMs: 11, UpdatedAtMs: 22},
+		},
+		{
+			name:  "无maprev_两边不同_冲突不覆盖",
+			db:    dbRow(8, 0, 0, "", 2),
+			cache: RouteImportRow{PlayerID: player, HomeZone: 7},
+			want:  repairConflict,
+		},
+		{
+			name:  "无maprev_库有缓存无_db_ahead",
+			db:    dbRow(7, 7, 1, "", 2),
+			cache: RouteImportRow{PlayerID: player, HomeZone: 7},
+			want:  repairDBAhead,
+		},
+		{
+			name:  "无maprev_一致_match",
+			db:    dbRow(7, 0, 0, "", 2),
+			cache: RouteImportRow{PlayerID: player, HomeZone: 7},
+			want:  repairMatch,
+		},
+		{
+			name:        "库行本身不合法_即使maprev更大也只报冲突",
+			db:          dbRow(7, 7, 0, "", 2),
+			cache:       RouteImportRow{PlayerID: player, HomeZone: 7, Placement: stable(7, 1), MapRev: 9},
+			resolveTies: true,
+			want:        repairConflict,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := decideRepair(tc.db, tc.cache, tc.resolveTies)
+			if got.action != tc.want {
+				t.Fatalf("decideRepair = %s, want %s", got.action, tc.want)
+			}
+			switch tc.want {
+			case repairInsert, repairRestore, repairTieResolved, repairFill:
+				if got.row != tc.wantRow {
+					t.Fatalf("decideRepair row = %+v\nwant %+v", got.row, tc.wantRow)
+				}
+			}
+		})
 	}
 }
 

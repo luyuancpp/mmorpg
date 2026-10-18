@@ -287,10 +287,10 @@ func TestConsumeClaim_ShutdownDrainTimeoutCancelsRest(t *testing.T) {
 func TestConsumeClaim_RebalanceStillCancelsClaim(t *testing.T) {
 	f := newShutdownFixture(t)
 	ctxSeen := make(chan context.Context, 1)
-	dbOpHandlers["read"] = func(ctx context.Context, _ *proto2mysql.DB, _ *db_proto.DBTask, _ proto.Message) error {
+	dbOpHandlers["read"] = func(ctx context.Context, _ *proto2mysql.DB, _ *db_proto.DBTask, _ proto.Message) (writeOutcome, error) {
 		ctxSeen <- ctx
 		<-f.gate
-		return nil
+		return writeOutcome{kind: writeApplied}, nil
 	}
 	read := makeReadTask(t, 9390, placementTestMsgType, "rebalance").dbTask
 	f.claim.messages <- kafkaMessageFor(t, f.w.topic, 0, 0, read)

@@ -1138,7 +1138,7 @@ var File_proto_trade_jubaozhai_proto protoreflect.FileDescriptor
 
 const file_proto_trade_jubaozhai_proto_rawDesc = "" +
 	"\n" +
-	"\x1bproto/trade/jubaozhai.proto\x12\x05trade\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\"\xcd\x03\n" +
+	"\x1bproto/trade/jubaozhai.proto\x12\x05trade\x1a\x1bproto/db/proto_option.proto\x1a\x1bproto/common/base/tip.proto\x1a\x1aproto/trade/commerce.proto\"\xcd\x03\n" +
 	"\x0eListingSummary\x12\x1d\n" +
 	"\n" +
 	"listing_id\x18\x01 \x01(\x04R\tlistingId\x122\n" +
@@ -1249,13 +1249,33 @@ const file_proto_trade_jubaozhai_proto_rawDesc = "" +
 	"\vMarketScope\x12\x1c\n" +
 	"\x18MARKET_SCOPE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11MARKET_SCOPE_ZONE\x10\x01\x12\x17\n" +
-	"\x13MARKET_SCOPE_GLOBAL\x10\x022\xcb\x02\n" +
+	"\x13MARKET_SCOPE_GLOBAL\x10\x022\xcd\x0f\n" +
 	"\x15ClientPlayerJubaozhai\x12M\n" +
 	"\x0eBrowseListings\x12\x1c.trade.BrowseListingsRequest\x1a\x1d.trade.BrowseListingsResponse\x12S\n" +
 	"\x10GetListingDetail\x12\x1e.trade.GetListingDetailRequest\x1a\x1f.trade.GetListingDetailResponse\x12D\n" +
 	"\vSetFavorite\x12\x19.trade.SetFavoriteRequest\x1a\x1a.trade.SetFavoriteResponse\x12A\n" +
 	"\n" +
-	"GetMyShelf\x12\x18.trade.GetMyShelfRequest\x1a\x19.trade.GetMyShelfResponse\x1a\x05\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x11Z\vproto/trade\x80\x01\x00b\x06proto3"
+	"GetMyShelf\x12\x18.trade.GetMyShelfRequest\x1a\x19.trade.GetMyShelfResponse\x12S\n" +
+	"\x10ListOfficialSkus\x12\x1e.trade.ListOfficialSkusRequest\x1a\x1f.trade.ListOfficialSkusResponse\x12V\n" +
+	"\x13CreateOfficialOrder\x12!.trade.CreateOfficialOrderRequest\x1a\x1c.trade.CommerceOrderResponse\x12P\n" +
+	"\x10GetCommerceOrder\x12\x1e.trade.GetCommerceOrderRequest\x1a\x1c.trade.CommerceOrderResponse\x12V\n" +
+	"\x13CancelCommerceOrder\x12!.trade.CancelCommerceOrderRequest\x1a\x1c.trade.CommerceOrderResponse\x12Y\n" +
+	"\x12ListCommerceOrders\x12 .trade.ListCommerceOrdersRequest\x1a!.trade.ListCommerceOrdersResponse\x12R\n" +
+	"\x11CreatePlayerTrade\x12\x1f.trade.CreatePlayerTradeRequest\x1a\x1c.trade.CommerceOrderResponse\x12T\n" +
+	"\x12ConfirmPlayerTrade\x12 .trade.ConfirmPlayerTradeRequest\x1a\x1c.trade.CommerceOrderResponse\x12R\n" +
+	"\x11CreateConsignment\x12\x1f.trade.CreateConsignmentRequest\x1a\x1c.trade.CommerceOrderResponse\x12L\n" +
+	"\x0eBuyConsignment\x12\x1c.trade.BuyConsignmentRequest\x1a\x1c.trade.CommerceOrderResponse\x12R\n" +
+	"\x11CancelConsignment\x12\x1f.trade.CancelConsignmentRequest\x1a\x1c.trade.CommerceOrderResponse\x12N\n" +
+	"\x10PlaceMarketOrder\x12\x1e.trade.PlaceMarketOrderRequest\x1a\x1a.trade.MarketOrderResponse\x12P\n" +
+	"\x11CancelMarketOrder\x12\x1f.trade.CancelMarketOrderRequest\x1a\x1a.trade.MarketOrderResponse\x12S\n" +
+	"\x10ListMarketOrders\x12\x1e.trade.ListMarketOrdersRequest\x1a\x1f.trade.ListMarketOrdersResponse\x12M\n" +
+	"\x0eGetMarketDepth\x12\x1c.trade.GetMarketDepthRequest\x1a\x1d.trade.GetMarketDepthResponse\x12M\n" +
+	"\x10CreateAuctionLot\x12\x1e.trade.CreateAuctionLotRequest\x1a\x19.trade.AuctionLotResponse\x12K\n" +
+	"\x0fPlaceAuctionBid\x12\x1d.trade.PlaceAuctionBidRequest\x1a\x19.trade.AuctionLotResponse\x12G\n" +
+	"\rGetAuctionLot\x12\x1b.trade.GetAuctionLotRequest\x1a\x19.trade.AuctionLotResponse\x12M\n" +
+	"\x10CancelAuctionLot\x12\x1e.trade.CancelAuctionLotRequest\x1a\x19.trade.AuctionLotResponse\x12_\n" +
+	"\x14BrowseCommerceOffers\x12\".trade.BrowseCommerceOffersRequest\x1a#.trade.BrowseCommerceOffersResponse\x12S\n" +
+	"\x10ListTradeMarkets\x12\x1e.trade.ListTradeMarketsRequest\x1a\x1f.trade.ListTradeMarketsResponse\x1a\x05\x88\xa8\xc3\x01\x01B\x14\x98\xd4a\x11Z\vproto/trade\x80\x01\x00b\x06proto3"
 
 var (
 	file_proto_trade_jubaozhai_proto_rawDescOnce sync.Once
@@ -1272,23 +1292,52 @@ func file_proto_trade_jubaozhai_proto_rawDescGZIP() []byte {
 var file_proto_trade_jubaozhai_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
 var file_proto_trade_jubaozhai_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_proto_trade_jubaozhai_proto_goTypes = []any{
-	(ListingCategory)(0),             // 0: trade.ListingCategory
-	(ListingTab)(0),                  // 1: trade.ListingTab
-	(ListingSection)(0),              // 2: trade.ListingSection
-	(ListingSort)(0),                 // 3: trade.ListingSort
-	(ListingPhase)(0),                // 4: trade.ListingPhase
-	(MarketScope)(0),                 // 5: trade.MarketScope
-	(*ListingSummary)(nil),           // 6: trade.ListingSummary
-	(*ListingDetail)(nil),            // 7: trade.ListingDetail
-	(*BrowseListingsRequest)(nil),    // 8: trade.BrowseListingsRequest
-	(*BrowseListingsResponse)(nil),   // 9: trade.BrowseListingsResponse
-	(*GetListingDetailRequest)(nil),  // 10: trade.GetListingDetailRequest
-	(*GetListingDetailResponse)(nil), // 11: trade.GetListingDetailResponse
-	(*SetFavoriteRequest)(nil),       // 12: trade.SetFavoriteRequest
-	(*SetFavoriteResponse)(nil),      // 13: trade.SetFavoriteResponse
-	(*GetMyShelfRequest)(nil),        // 14: trade.GetMyShelfRequest
-	(*GetMyShelfResponse)(nil),       // 15: trade.GetMyShelfResponse
-	(*base.TipInfoMessage)(nil),      // 16: TipInfoMessage
+	(ListingCategory)(0),                 // 0: trade.ListingCategory
+	(ListingTab)(0),                      // 1: trade.ListingTab
+	(ListingSection)(0),                  // 2: trade.ListingSection
+	(ListingSort)(0),                     // 3: trade.ListingSort
+	(ListingPhase)(0),                    // 4: trade.ListingPhase
+	(MarketScope)(0),                     // 5: trade.MarketScope
+	(*ListingSummary)(nil),               // 6: trade.ListingSummary
+	(*ListingDetail)(nil),                // 7: trade.ListingDetail
+	(*BrowseListingsRequest)(nil),        // 8: trade.BrowseListingsRequest
+	(*BrowseListingsResponse)(nil),       // 9: trade.BrowseListingsResponse
+	(*GetListingDetailRequest)(nil),      // 10: trade.GetListingDetailRequest
+	(*GetListingDetailResponse)(nil),     // 11: trade.GetListingDetailResponse
+	(*SetFavoriteRequest)(nil),           // 12: trade.SetFavoriteRequest
+	(*SetFavoriteResponse)(nil),          // 13: trade.SetFavoriteResponse
+	(*GetMyShelfRequest)(nil),            // 14: trade.GetMyShelfRequest
+	(*GetMyShelfResponse)(nil),           // 15: trade.GetMyShelfResponse
+	(*base.TipInfoMessage)(nil),          // 16: TipInfoMessage
+	(*ListOfficialSkusRequest)(nil),      // 17: trade.ListOfficialSkusRequest
+	(*CreateOfficialOrderRequest)(nil),   // 18: trade.CreateOfficialOrderRequest
+	(*GetCommerceOrderRequest)(nil),      // 19: trade.GetCommerceOrderRequest
+	(*CancelCommerceOrderRequest)(nil),   // 20: trade.CancelCommerceOrderRequest
+	(*ListCommerceOrdersRequest)(nil),    // 21: trade.ListCommerceOrdersRequest
+	(*CreatePlayerTradeRequest)(nil),     // 22: trade.CreatePlayerTradeRequest
+	(*ConfirmPlayerTradeRequest)(nil),    // 23: trade.ConfirmPlayerTradeRequest
+	(*CreateConsignmentRequest)(nil),     // 24: trade.CreateConsignmentRequest
+	(*BuyConsignmentRequest)(nil),        // 25: trade.BuyConsignmentRequest
+	(*CancelConsignmentRequest)(nil),     // 26: trade.CancelConsignmentRequest
+	(*PlaceMarketOrderRequest)(nil),      // 27: trade.PlaceMarketOrderRequest
+	(*CancelMarketOrderRequest)(nil),     // 28: trade.CancelMarketOrderRequest
+	(*ListMarketOrdersRequest)(nil),      // 29: trade.ListMarketOrdersRequest
+	(*GetMarketDepthRequest)(nil),        // 30: trade.GetMarketDepthRequest
+	(*CreateAuctionLotRequest)(nil),      // 31: trade.CreateAuctionLotRequest
+	(*PlaceAuctionBidRequest)(nil),       // 32: trade.PlaceAuctionBidRequest
+	(*GetAuctionLotRequest)(nil),         // 33: trade.GetAuctionLotRequest
+	(*CancelAuctionLotRequest)(nil),      // 34: trade.CancelAuctionLotRequest
+	(*BrowseCommerceOffersRequest)(nil),  // 35: trade.BrowseCommerceOffersRequest
+	(*ListTradeMarketsRequest)(nil),      // 36: trade.ListTradeMarketsRequest
+	(*ListOfficialSkusResponse)(nil),     // 37: trade.ListOfficialSkusResponse
+	(*CommerceOrderResponse)(nil),        // 38: trade.CommerceOrderResponse
+	(*ListCommerceOrdersResponse)(nil),   // 39: trade.ListCommerceOrdersResponse
+	(*MarketOrderResponse)(nil),          // 40: trade.MarketOrderResponse
+	(*ListMarketOrdersResponse)(nil),     // 41: trade.ListMarketOrdersResponse
+	(*GetMarketDepthResponse)(nil),       // 42: trade.GetMarketDepthResponse
+	(*AuctionLotResponse)(nil),           // 43: trade.AuctionLotResponse
+	(*BrowseCommerceOffersResponse)(nil), // 44: trade.BrowseCommerceOffersResponse
+	(*ListTradeMarketsResponse)(nil),     // 45: trade.ListTradeMarketsResponse
 }
 var file_proto_trade_jubaozhai_proto_depIdxs = []int32{
 	0,  // 0: trade.ListingSummary.category:type_name -> trade.ListingCategory
@@ -1310,12 +1359,52 @@ var file_proto_trade_jubaozhai_proto_depIdxs = []int32{
 	10, // 16: trade.ClientPlayerJubaozhai.GetListingDetail:input_type -> trade.GetListingDetailRequest
 	12, // 17: trade.ClientPlayerJubaozhai.SetFavorite:input_type -> trade.SetFavoriteRequest
 	14, // 18: trade.ClientPlayerJubaozhai.GetMyShelf:input_type -> trade.GetMyShelfRequest
-	9,  // 19: trade.ClientPlayerJubaozhai.BrowseListings:output_type -> trade.BrowseListingsResponse
-	11, // 20: trade.ClientPlayerJubaozhai.GetListingDetail:output_type -> trade.GetListingDetailResponse
-	13, // 21: trade.ClientPlayerJubaozhai.SetFavorite:output_type -> trade.SetFavoriteResponse
-	15, // 22: trade.ClientPlayerJubaozhai.GetMyShelf:output_type -> trade.GetMyShelfResponse
-	19, // [19:23] is the sub-list for method output_type
-	15, // [15:19] is the sub-list for method input_type
+	17, // 19: trade.ClientPlayerJubaozhai.ListOfficialSkus:input_type -> trade.ListOfficialSkusRequest
+	18, // 20: trade.ClientPlayerJubaozhai.CreateOfficialOrder:input_type -> trade.CreateOfficialOrderRequest
+	19, // 21: trade.ClientPlayerJubaozhai.GetCommerceOrder:input_type -> trade.GetCommerceOrderRequest
+	20, // 22: trade.ClientPlayerJubaozhai.CancelCommerceOrder:input_type -> trade.CancelCommerceOrderRequest
+	21, // 23: trade.ClientPlayerJubaozhai.ListCommerceOrders:input_type -> trade.ListCommerceOrdersRequest
+	22, // 24: trade.ClientPlayerJubaozhai.CreatePlayerTrade:input_type -> trade.CreatePlayerTradeRequest
+	23, // 25: trade.ClientPlayerJubaozhai.ConfirmPlayerTrade:input_type -> trade.ConfirmPlayerTradeRequest
+	24, // 26: trade.ClientPlayerJubaozhai.CreateConsignment:input_type -> trade.CreateConsignmentRequest
+	25, // 27: trade.ClientPlayerJubaozhai.BuyConsignment:input_type -> trade.BuyConsignmentRequest
+	26, // 28: trade.ClientPlayerJubaozhai.CancelConsignment:input_type -> trade.CancelConsignmentRequest
+	27, // 29: trade.ClientPlayerJubaozhai.PlaceMarketOrder:input_type -> trade.PlaceMarketOrderRequest
+	28, // 30: trade.ClientPlayerJubaozhai.CancelMarketOrder:input_type -> trade.CancelMarketOrderRequest
+	29, // 31: trade.ClientPlayerJubaozhai.ListMarketOrders:input_type -> trade.ListMarketOrdersRequest
+	30, // 32: trade.ClientPlayerJubaozhai.GetMarketDepth:input_type -> trade.GetMarketDepthRequest
+	31, // 33: trade.ClientPlayerJubaozhai.CreateAuctionLot:input_type -> trade.CreateAuctionLotRequest
+	32, // 34: trade.ClientPlayerJubaozhai.PlaceAuctionBid:input_type -> trade.PlaceAuctionBidRequest
+	33, // 35: trade.ClientPlayerJubaozhai.GetAuctionLot:input_type -> trade.GetAuctionLotRequest
+	34, // 36: trade.ClientPlayerJubaozhai.CancelAuctionLot:input_type -> trade.CancelAuctionLotRequest
+	35, // 37: trade.ClientPlayerJubaozhai.BrowseCommerceOffers:input_type -> trade.BrowseCommerceOffersRequest
+	36, // 38: trade.ClientPlayerJubaozhai.ListTradeMarkets:input_type -> trade.ListTradeMarketsRequest
+	9,  // 39: trade.ClientPlayerJubaozhai.BrowseListings:output_type -> trade.BrowseListingsResponse
+	11, // 40: trade.ClientPlayerJubaozhai.GetListingDetail:output_type -> trade.GetListingDetailResponse
+	13, // 41: trade.ClientPlayerJubaozhai.SetFavorite:output_type -> trade.SetFavoriteResponse
+	15, // 42: trade.ClientPlayerJubaozhai.GetMyShelf:output_type -> trade.GetMyShelfResponse
+	37, // 43: trade.ClientPlayerJubaozhai.ListOfficialSkus:output_type -> trade.ListOfficialSkusResponse
+	38, // 44: trade.ClientPlayerJubaozhai.CreateOfficialOrder:output_type -> trade.CommerceOrderResponse
+	38, // 45: trade.ClientPlayerJubaozhai.GetCommerceOrder:output_type -> trade.CommerceOrderResponse
+	38, // 46: trade.ClientPlayerJubaozhai.CancelCommerceOrder:output_type -> trade.CommerceOrderResponse
+	39, // 47: trade.ClientPlayerJubaozhai.ListCommerceOrders:output_type -> trade.ListCommerceOrdersResponse
+	38, // 48: trade.ClientPlayerJubaozhai.CreatePlayerTrade:output_type -> trade.CommerceOrderResponse
+	38, // 49: trade.ClientPlayerJubaozhai.ConfirmPlayerTrade:output_type -> trade.CommerceOrderResponse
+	38, // 50: trade.ClientPlayerJubaozhai.CreateConsignment:output_type -> trade.CommerceOrderResponse
+	38, // 51: trade.ClientPlayerJubaozhai.BuyConsignment:output_type -> trade.CommerceOrderResponse
+	38, // 52: trade.ClientPlayerJubaozhai.CancelConsignment:output_type -> trade.CommerceOrderResponse
+	40, // 53: trade.ClientPlayerJubaozhai.PlaceMarketOrder:output_type -> trade.MarketOrderResponse
+	40, // 54: trade.ClientPlayerJubaozhai.CancelMarketOrder:output_type -> trade.MarketOrderResponse
+	41, // 55: trade.ClientPlayerJubaozhai.ListMarketOrders:output_type -> trade.ListMarketOrdersResponse
+	42, // 56: trade.ClientPlayerJubaozhai.GetMarketDepth:output_type -> trade.GetMarketDepthResponse
+	43, // 57: trade.ClientPlayerJubaozhai.CreateAuctionLot:output_type -> trade.AuctionLotResponse
+	43, // 58: trade.ClientPlayerJubaozhai.PlaceAuctionBid:output_type -> trade.AuctionLotResponse
+	43, // 59: trade.ClientPlayerJubaozhai.GetAuctionLot:output_type -> trade.AuctionLotResponse
+	43, // 60: trade.ClientPlayerJubaozhai.CancelAuctionLot:output_type -> trade.AuctionLotResponse
+	44, // 61: trade.ClientPlayerJubaozhai.BrowseCommerceOffers:output_type -> trade.BrowseCommerceOffersResponse
+	45, // 62: trade.ClientPlayerJubaozhai.ListTradeMarkets:output_type -> trade.ListTradeMarketsResponse
+	39, // [39:63] is the sub-list for method output_type
+	15, // [15:39] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name
 	15, // [15:15] is the sub-list for extension extendee
 	0,  // [0:15] is the sub-list for field type_name
@@ -1326,6 +1415,7 @@ func file_proto_trade_jubaozhai_proto_init() {
 	if File_proto_trade_jubaozhai_proto != nil {
 		return
 	}
+	file_proto_trade_commerce_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -12,7 +12,7 @@
     It will NOT do the destructive steps without -Apply. Default is dry-run.
 
     What it does (in order):
-      0. 预检(只读,先于停服;dry-run 只预告,不执行),a / b / d 都过了才进 Step 1(c 只告警):
+      0. 预检(只读,先于停服;dry-run 只预告,不执行),a / b / d / e 都过了才进 Step 1(c 只告警):
          a. 集群现状:以下三项凡是留空的,都要与集群现状核对,一次 kubectl 读 zone namespace 里的
             gate(StatefulSet 或 Deployment,两种形态都认)与 Ingress gateway:
               - -GateRouterMode 留空:gate 模板当前的 GATE_CLIENT_RPC_ROUTER 须与 k8s_deploy.ps1 的 -GateRouterMode 默认值一致;
@@ -31,6 +31,10 @@
             kafka_offset_reset.ps1 的 dry-run 对 zone 组按 TargetTime 生成重置计划,计划不完整或失败即在停服之前拒绝 ——
             Kafka 不能为 zone 组建出完整计划时,拖到 Step 5 才发现,zone 已停服、MySQL 已回档、Redis 已清。
             describe 本身失败同样拒绝(判不出就无法证明 Step 5 走得通)。
+         e. Step 6 的 Kafka 读法(2026-10-17,R7 复核 [2]):Step 6 的 k8s_deploy.ps1 经 kubectl exec 进 infra namespace 的 kafka-0
+            读两组位点(lib Get-DbGroupDescribeExecArgs,同一组 -KubeContext / -KubeConfig;infra namespace 取 dev_tools.ps1 的默认值,
+            Step 6 就用它),这里先用同一条路径读一遍:exec 失败(缺 pods/exec、kafka-0 未就绪)或判不出即拒绝;再逐组与本机 CLI
+            (-KafkaBootstrap)比对「本 topic 上有没有已提交位点」,不一致(两条路径指向不同的 Kafka)同样拒绝。
       1. `k8s-zone-down -ZoneName <zone>` — stop all writers(删掉整个 zone namespace)
       2. (已删除,2026-10-15)原来是 zone-down 之后等 Kafka LAG 排空。zone-down 之后本 zone 的 db 已停,LAG 不可能排空,
          以前必然等满超时再「proceeding anyway」;而 Step 5 本来就把位点拨回 TargetTime,排空没有意义。
@@ -44,6 +48,11 @@
          仍在 legacy 组上的 zone 借此迁到 zone 组(docs/design/db-consumer-group-per-zone.md §6)。
          legacy 组即使还有别的 zone 的成员,只要没有成员订阅本 topic,broker 就允许删除;仍有订阅者时脚本在这一步失败
          (zone 已停、数据已回档,清掉残留实例后单独重跑 kafka_offset_reset.ps1 的同一条命令)。
+         ⚠️ 已知问题,回档语义待负责人裁决(R7 复核 [4],未改行为):上面「avoids replaying post-target writes」只在 Redis 里的
+         consumer:applied 游标都还在时近似成立 —— K8s 上游标在共享 DB0、Step 4 的防护不清它,TargetTime 之后已落库的消息重放时被判 stale 吸收,
+         但 zone-down 时尚未消费的积压与 DB0 里本 topic 的重试收据从未推进过游标,照常落进 PITR 之后的 MySQL,部分玩家回到回档前的状态;
+         游标被清(本机单库,或带 -ConfirmFlushSharedRedis)时则全部重新落库,回档等于没做。二选一:「丢弃」语义改 Step 5 为 -ToLatest 并在
+         Step 4 / 5 之间盘点重试收据;「灾难恢复重放」语义在 Step 5 之前清本 topic 的游标。
       6. `k8s-zone-up -ZoneName <zone> -ZoneId <id>` — restart zone
          显式传 -DbConsumerGroup zone:Step 5 之后 zone 组有完整位点、legacy 组在本 topic 上没有位点,k8s_deploy.ps1 的决策表
          因此落到最终形状(db ConfigMap 写 `GroupID: "<zone 组>"`,不带 GroupHandoffFrom),任何镜像都能起。
@@ -127,12 +136,13 @@ param(
 
     # Kafka cluster bootstrap.
     [string]$KafkaBootstrap = "kafka:9092",
-    # 留空 = 按 -ZoneId 推导成 db_task_zone_<id>（go/db 与 go/login 两侧都是这么拼的:
-    # go/db/internal/config.go DbTaskTopic / go/login/internal/config/config.go）。
+    # 留空 = 按 -ZoneId 与 go/db/etc/db.yaml 的 ServerConfig.Kafka.TopicGeneration 推导(lib Get-DbTaskTopicName:
+    # 世代 ≤ 1 为 db_task_zone_<id>,否则 db_task_zone_<id>_g<gen>;与 go/db DbTaskTopicForGeneration、go/login 同规则,
+    # 也与 Step 6 的 k8s_deploy.ps1 Initialize-DbConsumerGroupPlans 读的是同一个键)。
     # 旧默认值 "db_task_topic" 是个**全仓不存在的 topic** —— offset reset 会「成功」地
     # 重置一个空 topic，回滚后 go/db 照样重放目标时间点之后的写入。
-    # go/db 的 Kafka.TopicGeneration > 1 时真实名字带 _g<gen> 后缀，这里推不出来,
-    # 必须显式传 -KafkaTopic。
+    # 显式给了却与推导值不同即在入口拒绝(2026-10-17,R7 复核 [6]):Step 6 只按 db.yaml 的世代号读 topic,
+    # 第 0 步 d 与 Step 5 改的若是另一个 topic,真实 topic 上的位点根本没动,而全程没有任何报错。
     [string]$KafkaTopic = "",
     # go/db 存盘消费组(docs/design/db-consumer-group-per-zone.md)。留空 = 按 go/db/etc/db.yaml 的
     # ServerConfig.Kafka.GroupID 基名推导:-KafkaGroup 为 <基名>_z<ZoneId>(回档后的权威组,Step 5 重置它),
@@ -239,8 +249,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# topic 名必须与 go/db 实际消费的一致,否则第 5 步会「成功」重置一个不存在的 topic。
-if ($KafkaTopic -eq "") { $KafkaTopic = "db_task_zone_$ZoneId" }
+# topic 名必须与 go/db 实际消费的一致,否则第 5 步会「成功」重置一个不存在的 topic;推导在入口读 db.yaml 之后(见 TopicGeneration 那段)。
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 
@@ -254,7 +263,8 @@ $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 
 <#
 .SYNOPSIS
-    读 k8s_deploy.ps1 参数块里若干参数的默认值,返回 @{ 参数名 = 默认值 | $null };某项不是字符串字面常量或读不到时为 $null。
+    读部署脚本(k8s_deploy.ps1;第 0 步 e 另读 dev_tools.ps1 的 -InfraNamespace)参数块里若干参数的默认值,
+    返回 @{ 参数名 = 默认值 | $null };某项不是字符串字面常量或读不到时为 $null。
 
 .DESCRIPTION
     部署层默认值只允许存在于 k8s_deploy.ps1 一处(-GateRouterMode:turn-based §22 D75;-ClientEntryMode:集群外入口 D80):
@@ -883,6 +893,67 @@ function Invoke-Step5Rehearsal {
     Write-Host "  Step 5 rehearsal passed: Kafka produced a complete reset plan for $ZoneGroup on $Topic" -ForegroundColor Green
 }
 
+<#
+.SYNOPSIS
+    第 0 步 e(只在 -Apply 下、Step 1 之前):按 Step 6 的同一条访问路径读 zone 组与 legacy 组在本 topic 上的位点;
+    读不到,或与本机 CLI(-KafkaBootstrap)的结论不一致,都在停服之前抛出。
+
+.DESCRIPTION
+    Step 6 的 k8s_deploy.ps1(显式 -DbConsumerGroup zone)在写路径入口经 kubectl exec 进 infra namespace 的 kafka-0 读位点
+    (Read-DbGroupTopicFacts),读不到就拒绝部署。以前第 0 步覆盖不到这条路径:b 的静态预检带 -DryRun、不读集群,c / d 用的是本机 CLI 加
+    -KafkaBootstrap。于是部署账号缺 pods/exec、kafka-0 正在重启、容器名不对时,各项预检全过,直到 Step 6 才失败 —— 那时 zone 已停服、
+    MySQL 已回档、Redis 已清,照提示重跑仍要同一个 exec(R7 复核 [2])。
+    这里用 lib 的同一份命令(Get-DbGroupDescribeExecArgs)与分类(Resolve-DbGroupDescribeExecResult)、同一个 kubectl 出口
+    (lib/k8s_client_entry.ps1 Invoke-ClientEntryKubectl)、同一组 -KubeContext / -KubeConfig 与 Step 6 将用的 infra namespace,
+    对两组各 exec 一次;exec 失败或输出判不出即拒绝。
+    再与本机 CLI 逐组比对「本 topic 上有没有已提交位点」:两条路径是两个访问入口(-KafkaBootstrap 可能经端口转发或 hosts 指向别的集群),
+    第 0 步 d 与 Step 5 改的是前者、Step 6 读的是后者,两边结论不同即拒绝。只比有无、不比位点值:停服之前 db 仍在消费,位点随时前进。
+    本机 describe 失败同样拒绝(第 0 步 d 本来就要求本机 CLI 可用)。
+#>
+function Assert-Step6KafkaFactsReadable {
+    param(
+        [Parameter(Mandatory = $true)][string]$InfraNamespace,
+        [Parameter(Mandatory = $true)][string]$Bootstrap,
+        [Parameter(Mandatory = $true)][string]$Topic,
+        [Parameter(Mandatory = $true)][string]$ZoneGroup,
+        [Parameter(Mandatory = $true)][string]$LegacyGroup,
+        [AllowEmptyString()][string]$KubeContext = '',
+        [AllowEmptyString()][string]$KubeConfig = ''
+    )
+
+    $refusal = "k8s-zone-rollback 在停服之前拒绝执行,尚未产生任何改动:"
+    $mismatches = @()
+    foreach ($group in @($ZoneGroup, $LegacyGroup)) {
+        try {
+            $execResult = Invoke-ClientEntryKubectl -KubectlArgs (Get-DbGroupDescribeExecArgs -InfraNamespace $InfraNamespace -Group $group) `
+                -KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+            $execState = Resolve-DbGroupDescribeExecResult -Result $execResult -Topic $Topic
+        }
+        catch {
+            throw ($refusal + "Step 6 的 k8s_deploy.ps1 要 kubectl exec 进 $InfraNamespace 的 kafka-0 读消费组 $group 在 $Topic 上的位点,现在就读不到;" +
+                "拖到 Step 6 才失败时 zone 已停服、数据已回档。检查部署账号的 pods/exec 权限、kafka-0 是否就绪(多 broker 档 kafka-0 重启时同样读不到)、" +
+                "-KubeContext / -KubeConfig 是否指向目标集群后重跑。`n原因:$($_.Exception.Message)")
+        }
+        try {
+            $localDescribe = Invoke-KafkaGroupDescribe -Bootstrap $Bootstrap -Group $group
+            $localState = Resolve-KafkaGroupTopicOffsets -Lines $localDescribe.Lines -ExitCode $localDescribe.ExitCode -Topic $Topic
+        }
+        catch {
+            throw ($refusal + "本机 kafka-consumer-groups.sh(-KafkaBootstrap $Bootstrap)读不到消费组 $group 在 $Topic 上的位点,无法与 Step 6 的读法核对。" +
+                "`n原因:$($_.Exception.Message)")
+        }
+        Write-Host "  group ${group}: kubectl exec kafka-0 -> $($execState.State); local CLI (-KafkaBootstrap $Bootstrap) -> $($localState.State)"
+        if (($execState.State -ceq 'offsets') -ne ($localState.State -ceq 'offsets')) {
+            $mismatches += "消费组 $group 在 $Topic 上:kafka-0 里读到 $($execState.State),本机 CLI 读到 $($localState.State)"
+        }
+    }
+    if ($mismatches.Count -gt 0) {
+        throw ($refusal + "两条访问路径看到的 Kafka 不一致,-KafkaBootstrap 与 -KubeContext 指向的可能不是同一个 Kafka 集群:`n  - " + ($mismatches -join "`n  - ") +
+            "`n第 0 步 d 与 Step 5 改的是 -KafkaBootstrap 那一个,Step 6 读的是 -KubeContext 集群 $InfraNamespace 里的 kafka-0;核对两者后重跑。")
+    }
+    Write-Host "  Step 6 Kafka facts readable via kubectl exec, consistent with the local CLI" -ForegroundColor Green
+}
+
 # 回滚目标必须是不可变 tag,否则"回到旧版本"根本没发生。
 $rollbackTag = Get-ImageTagFromRef -ImageRef $NodeImage
 $rollbackChk = Test-ImmutableImageTag -Tag $rollbackTag
@@ -912,6 +983,22 @@ $dbPartitionCnt = Get-YamlScalar -Path $dbYamlPath -KeyPath 'ServerConfig.Kafka.
 $kafkaPartitionCount = 0
 if (-not $dbPartitionCnt.Found -or -not [int]::TryParse([string]$dbPartitionCnt.Value, [ref]$kafkaPartitionCount) -or $kafkaPartitionCount -le 0) {
     throw "k8s-zone-rollback 拒绝执行,尚未产生任何改动:读不到 go/db/etc/db.yaml 的 ServerConfig.Kafka.PartitionCnt,或不是正整数('$($dbPartitionCnt.Value)' $($dbPartitionCnt.Reason)),Step 5 无法逐分区复核位点。"
+}
+# db_task topic 的世代号:Step 6 的 k8s_deploy.ps1 按同一个键推导本 zone 的 topic(Initialize-DbConsumerGroupPlans),
+# 第 0 步 c / d / e 与 Step 5 必须作用在同一个 topic 上。规则与 k8s_deploy.ps1 相同:非负整数,读不到即拒(fail-closed)。
+$dbTopicGeneration = Get-YamlScalar -Path $dbYamlPath -KeyPath 'ServerConfig.Kafka.TopicGeneration'
+$kafkaTopicGeneration = 0
+if (-not $dbTopicGeneration.Found -or -not [int]::TryParse([string]$dbTopicGeneration.Value, [ref]$kafkaTopicGeneration) -or $kafkaTopicGeneration -lt 0) {
+    throw "k8s-zone-rollback 拒绝执行,尚未产生任何改动:读不到 go/db/etc/db.yaml 的 ServerConfig.Kafka.TopicGeneration,或不是非负整数('$($dbTopicGeneration.Value)' $($dbTopicGeneration.Reason)),拼不出本 zone 的 db_task topic 名。"
+}
+$derivedKafkaTopic = Get-DbTaskTopicName -ZoneId $ZoneId -Generation $kafkaTopicGeneration
+if ([string]::IsNullOrWhiteSpace($KafkaTopic)) {
+    $KafkaTopic = $derivedKafkaTopic
+}
+elseif ($KafkaTopic -cne $derivedKafkaTopic) {
+    throw ("k8s-zone-rollback 拒绝执行,尚未产生任何改动:-KafkaTopic $KafkaTopic 与按 go/db/etc/db.yaml(TopicGeneration=$kafkaTopicGeneration)推导的 $derivedKafkaTopic 不一致。" +
+        "Step 6 的 k8s_deploy.ps1 只按 db.yaml 的世代号读 topic:第 0 步与 Step 5 改的若是另一个 topic,真实 topic 上的位点不会动。" +
+        "-KafkaTopic 留空即按推导值;要回档的确实是另一代 topic,先把工作树的 go/db/etc/db.yaml 对齐到该 zone 实际部署的世代号。")
 }
 if ([string]::IsNullOrWhiteSpace($KafkaGroup)) { $KafkaGroup = "$($dbGroupBase.Value)_z$ZoneId" }
 if ([string]::IsNullOrWhiteSpace($KafkaLegacyGroup)) { $KafkaLegacyGroup = [string]$dbGroupBase.Value }
@@ -1057,6 +1144,28 @@ if ($Apply) {
         -ZoneGroup $KafkaGroup -TargetTime $TargetTime -Partitions $kafkaPartitionCount
 } else {
     Write-Host "  (not executed during dry-run; -Apply rejects a failed describe or an incomplete reset plan before shutdown)" -ForegroundColor Yellow
+}
+# 第 0 步 e:Step 6 的 k8s_deploy.ps1 读位点的那条路径(kubectl exec 进 infra namespace 的 kafka-0)现在就要读得通,并与本机 CLI 一致。
+# infra namespace 取 Step 6 实际会用的值:Step 6 经 dev_tools.ps1 k8s-zone-up 部署、不传 -InfraNamespace,即 dev_tools.ps1 的参数默认值
+# (按语法树读,不在本脚本抄一份;读不出即拒绝)。
+$devToolsPath = Join-Path $ScriptDir "dev_tools.ps1"
+$step6InfraNamespace = (Get-DeployParamDefaults -DeployScriptPath $devToolsPath -Names @('InfraNamespace'))['InfraNamespace']
+$step6InfraText = if ([string]::IsNullOrWhiteSpace($step6InfraNamespace)) { '<unreadable>' } else { $step6InfraNamespace }
+Write-Host "  Step 6 Kafka facts check (same path as k8s_deploy.ps1 Read-DbGroupTopicFacts; compared with the local CLI on $KafkaTopic):"
+foreach ($factGroup in @($KafkaGroup, $KafkaLegacyGroup)) {
+    # 只用于打印;-Apply 时由 Assert-Step6KafkaFactsReadable 经 Invoke-ClientEntryKubectl 执行同一份参数。
+    $factArgs = @(Get-ClientEntryKubectlBaseArgs -KubeContext $KubeContext -KubeConfig $KubeConfig) + @(Get-DbGroupDescribeExecArgs -InfraNamespace $step6InfraText -Group $factGroup)
+    Write-Host "    kubectl $($factArgs -join ' ')"
+}
+if ($Apply) {
+    if ([string]::IsNullOrWhiteSpace($step6InfraNamespace)) {
+        throw ("k8s-zone-rollback 在停服之前拒绝执行,尚未产生任何改动:读不到 $devToolsPath 的 -InfraNamespace 默认值(不是字面常量或文件无法解析)," +
+            "不知道 Step 6 会去哪个 infra namespace 的 kafka-0 读消费组位点。")
+    }
+    Assert-Step6KafkaFactsReadable -InfraNamespace $step6InfraNamespace -Bootstrap $KafkaBootstrap -Topic $KafkaTopic `
+        -ZoneGroup $KafkaGroup -LegacyGroup $KafkaLegacyGroup -KubeContext $KubeContext -KubeConfig $KubeConfig
+} else {
+    Write-Host "  (not executed during dry-run; -Apply rejects an unreadable kubectl exec or a mismatch with the local CLI before shutdown)" -ForegroundColor Yellow
 }
 Write-Host ""
 

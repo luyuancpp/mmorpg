@@ -90,8 +90,8 @@ const (
 	PlayerInboxForceVoidVerdict_PLAYER_INBOX_FORCE_VOID_NOT_DECIDED       PlayerInboxForceVoidVerdict = 4 // 账本水位没到这个 seq:消费方还没裁决它,停用原因不是 MISMATCH
 	PlayerInboxForceVoidVerdict_PLAYER_INBOX_FORCE_VOID_SEQ_NOT_IN_RING   PlayerInboxForceVoidVerdict = 5 // 水位已过但环里没有这个 seq(UNKNOWN 一类):原结局已挤出环,可能已执行
 	PlayerInboxForceVoidVerdict_PLAYER_INBOX_FORCE_VOID_REQUEST_IN_LEDGER PlayerInboxForceVoidVerdict = 6 // 环里出现过本行的 request_id(同 seq = 回放或类型不符,或别的 seq):可能已执行
-	// 账本结构不合法,整份检查、与 scene 判账本损坏同口径(任一域:domain 为 0 或重复 / 环非严格升序 /
-	// seq 为 0 / 越过水位 / 结局不可记;另加 request_id 为 0)。这种账本 scene 侧整份停用,不会走到 MISMATCH。
+	// 账本结构不合法,整份检查、与 scene 判账本损坏同口径(任一域:domain 为 0 或重复 / 环超过 32 条 /
+	// 环非严格升序 / seq 为 0 / 越过水位 / 结局不可记;另加 request_id 为 0)。这种账本 scene 侧整份停用,不会走到 MISMATCH。
 	PlayerInboxForceVoidVerdict_PLAYER_INBOX_FORCE_VOID_LEDGER_INVALID PlayerInboxForceVoidVerdict = 7
 )
 

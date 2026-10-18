@@ -620,6 +620,20 @@ bool ServerSession::ShouldClose() const
     return nghttp2_session_want_read(session_.get()) == 0 && nghttp2_session_want_write(session_.get()) == 0;
 }
 
+std::vector<int32_t> ServerSession::AcceptedUndispatchedStreams() const
+{
+    std::vector<int32_t> streamIds;
+    for (const auto &[streamId, stream] : streams_)
+    {
+        if (stream->headersAccepted && !stream->dispatched && !stream->responded)
+        {
+            streamIds.push_back(streamId);
+        }
+    }
+    std::sort(streamIds.begin(), streamIds.end()); // streams_ 是无序表:按 id 排,拒绝顺序与线上帧序确定
+    return streamIds;
+}
+
 ServerSession::StreamState *ServerSession::FindStream(int32_t streamId)
 {
     const auto it = streams_.find(streamId);

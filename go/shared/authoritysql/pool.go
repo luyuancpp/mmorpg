@@ -23,8 +23,9 @@ var tidbSettings = []string{
 }
 
 type connector struct {
-	inner driver.Connector
-	tidb  bool
+	inner        driver.Connector
+	tidb         bool
+	keepLockWait bool
 }
 
 func (c connector) Driver() driver.Driver { return c.inner.Driver() }
@@ -38,7 +39,10 @@ func (c connector) Connect(ctx context.Context) (driver.Conn, error) {
 		_ = conn.Close()
 		return nil, errors.New("SQL驱动不支持会话初始化")
 	}
-	statements := []string{"SET SESSION transaction_isolation='READ-COMMITTED'", "SET SESSION sql_mode='STRICT_TRANS_TABLES'", "SET SESSION innodb_lock_wait_timeout=1"}
+	statements := []string{"SET SESSION transaction_isolation='READ-COMMITTED'", "SET SESSION sql_mode='STRICT_TRANS_TABLES'"}
+	if !c.keepLockWait {
+		statements = append(statements, "SET SESSION innodb_lock_wait_timeout=1")
+	}
 	if c.tidb {
 		statements = append(statements, tidbSettings...)
 	}
@@ -49,6 +53,33 @@ func (c connector) Connect(ctx context.Context) (driver.Conn, error) {
 		}
 	}
 	return conn, nil
+}
+
+// PinCurrentSession 复用既有权威 SQL 会话初始化；调用方保留自己的连接池与锁等待预算。
+// requireTiDB=true 时 TiDB 专用 SET 在每条物理连接建立时执行，接到 MySQL 必须失败。
+func PinCurrentSession(inner driver.Connector, requireTiDB bool) driver.Connector {
+	return connector{inner: inner, tidb: requireTiDB, keepLockWait: true}
+}
+
+// AssertCurrentSession 在业务池投入使用前确认强读口径；MySQL 模式只承诺本地 RC。
+func AssertCurrentSession(ctx context.Context, db *sql.DB, requireTiDB bool) error {
+	if !requireTiDB {
+		var isolation string
+		if err := db.QueryRowContext(ctx, "SELECT @@transaction_isolation").Scan(&isolation); err != nil || isolation != "READ-COMMITTED" {
+			return errors.New("玩家SQL隔离级别不是READ-COMMITTED")
+		}
+		return nil
+	}
+	var version string
+	if err := db.QueryRowContext(ctx, "SELECT tidb_version()").Scan(&version); err != nil {
+		return errors.New("权威SQL必须连接TiDB")
+	}
+	var mode, isolation, replica, consistency, snapshot string
+	var stale, low int64
+	if err := db.QueryRowContext(ctx, "SELECT @@tidb_txn_mode,@@transaction_isolation,@@tidb_read_staleness,@@tidb_low_resolution_tso,@@tidb_replica_read,@@tidb_read_consistency,@@tidb_snapshot").Scan(&mode, &isolation, &stale, &low, &replica, &consistency, &snapshot); err != nil || mode != "pessimistic" || isolation != "READ-COMMITTED" || stale != 0 || low != 0 || replica != "leader" || consistency != "strict" || snapshot != "" {
+		return errors.New("权威SQL强读会话不符")
+	}
+	return nil
 }
 
 // Open 不记录DSN；新物理连接逐条清历史快照后再关闭staleness，禁止URL绕过。

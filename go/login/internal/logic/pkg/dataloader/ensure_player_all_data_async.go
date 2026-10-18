@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"login/internal/dispatcher"
-	"login/internal/kafka"
 	db_proto "proto/db"
 	"strconv"
 	"sync"
@@ -16,6 +15,14 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"google.golang.org/protobuf/proto"
 )
+
+// 通过同一调用面注入发送与回调登记；冷恢复测试不需要绕过 SQL 回包校验。
+type readResultRegistrar interface {
+	Register(string, time.Duration, dispatcher.ResultCallback)
+	// ReplyInstance 是登记方的读回执回复目标;与 Register 放在同一接口,保证写进读任务的
+	// 回复目标与接住回调的是同一个对象(见 dispatcher.TaskResultDispatcher.ReplyInstance)。
+	ReplyInstance() string
+}
 
 // EnsurePlayerAllDataInRedisAsync guarantees that the
 // `PlayerAllData:{playerId}` Redis parent key exists and invokes `onComplete`
@@ -39,8 +46,8 @@ import (
 func EnsurePlayerAllDataInRedisAsync(
 	ctx context.Context,
 	rc redis.Cmdable,
-	disp *dispatcher.TaskResultDispatcher,
-	producer *kafka.KeyOrderedKafkaProducer,
+	disp readResultRegistrar,
+	producer dbTaskProducer,
 	playerId uint64,
 	perTaskTTL time.Duration,
 	onComplete func(error),
@@ -49,17 +56,21 @@ func EnsurePlayerAllDataInRedisAsync(
 	parent := newPlayerAllDataSkeleton(playerId)
 	parentKey := buildParentKey(parent, playerId)
 
-	// Stage 1: parent-key EXISTS check.
+	// 预检与最终发布都复核归属和 SQL 提交屏障；Redis 故障不能按缓存未命中继续。
 	cacheCheckStart := time.Now()
-	exists, existsErr := rc.Exists(ctx, parentKey).Result()
+	snapshot, snapshotErr := beginParentLoad(ctx, rc, parentKey, playerId)
 	hitLabel := "miss"
-	if existsErr == nil && exists > 0 {
+	if snapshotErr == nil && snapshot.raw != "" {
 		hitLabel = "hit"
 	}
 	cacheCheckSeconds.ObserveFloat(time.Since(cacheCheckStart).Seconds(), hitLabel)
+	if snapshotErr != nil {
+		onComplete(snapshotErr)
+		return
+	}
 
 	// Fast path
-	if existsErr == nil && exists > 0 {
+	if snapshot.raw != "" {
 		onComplete(nil)
 		return
 	}
@@ -74,16 +85,10 @@ func EnsurePlayerAllDataInRedisAsync(
 	var tasks []*dbReadTask
 	subs := collectSubMessages(parent)
 
-	// Stage 2: sub-table cache GET loop.
+	// 父键缺失时强制读两张 SQL 行。子表缓存可能落后，不能作为恢复权威。
 	subCacheStart := time.Now()
 	for _, sub := range subs {
 		subKey := fmt.Sprintf("%s:%s", sub.ProtoReflect().Descriptor().FullName(), playerIdStr)
-		if val, err := rc.Get(ctx, subKey).Bytes(); err == nil && val != nil {
-			if proto.Unmarshal(val, sub) == nil {
-				continue
-			}
-			logx.Errorf("EnsurePlayerAllDataInRedisAsync: sub cache parse failed key=%s, falling back to DB", subKey)
-		}
 		taskID := uuid.NewString()
 		tasks = append(tasks, &dbReadTask{taskID: taskID, message: sub, subKey: subKey})
 		pending = append(pending, pendingRead{taskID: taskID, sub: sub})
@@ -97,7 +102,7 @@ func EnsurePlayerAllDataInRedisAsync(
 	)
 
 	if len(tasks) == 0 {
-		if err := saveToRedis(ctx, rc, parentKey, parent, playerAllDataParentTTL); err != nil {
+		if err := snapshot.publish(ctx, rc, parentKey, playerId, parent); err != nil {
 			onComplete(fmt.Errorf("set parent key %s: %w", parentKey, err))
 			return
 		}
@@ -120,7 +125,8 @@ func EnsurePlayerAllDataInRedisAsync(
 	// callbackWaitStart captures t0 for stage 5 (Kafka-sent → finalize).
 	// It is set inside the closure-returning helper so all timers use the
 	// same clock origin; finalize then observes against this when it fires.
-	var callbackWaitStart time.Time
+	// 回调可能在 SendTasks 返回前到达；时间原点在发布前固定，避免读写竞态。
+	callbackWaitStart := time.Now()
 
 	finalize := func() {
 		fireOnce.Do(func() {
@@ -142,7 +148,7 @@ func EnsurePlayerAllDataInRedisAsync(
 				onComplete(fmt.Errorf("%s", *errPtr))
 				return
 			}
-			if err := saveToRedis(ctx, rc, parentKey, parent, playerAllDataParentTTL); err != nil {
+			if err := snapshot.publish(ctx, rc, parentKey, playerId, parent); err != nil {
 				onComplete(fmt.Errorf("set parent key %s: %w", parentKey, err))
 				return
 			}
@@ -169,7 +175,10 @@ func EnsurePlayerAllDataInRedisAsync(
 				firstErr.CompareAndSwap(nil, &errStr)
 				return
 			}
-			if !res.Success {
+			if res == nil || !res.Success {
+				if res == nil {
+					res = &db_proto.TaskResult{Error: "empty SQL read result"}
+				}
 				errStr := fmt.Sprintf("db read failed for task %s: %s", p.taskID, res.Error)
 				firstErr.CompareAndSwap(nil, &errStr)
 				return
@@ -185,13 +194,18 @@ func EnsurePlayerAllDataInRedisAsync(
 				}
 				mu.Unlock()
 			}
+			if validationErr := snapshot.validateSQLSub(p.sub, playerId); validationErr != nil {
+				errStr := fmt.Sprintf("task %s: %v", p.taskID, validationErr)
+				firstErr.CompareAndSwap(nil, &errStr)
+			}
 		})
 	}
 	dispatcherRegisterSeconds.ObserveFloat(time.Since(registerStart).Seconds())
 
 	// Stage 4: Kafka SyncProducer.SendMessages call.
 	kafkaSendStart := time.Now()
-	if err := sendDBReadRequests(ctx, producer, tasks, playerId, playerIdStr); err != nil {
+	// 回复目标必须取自上面登记回调的同一个 disp,通知才会投到持有这些回调的进程。
+	if err := sendDBReadRequests(ctx, producer, tasks, playerId, playerIdStr, disp.ReplyInstance()); err != nil {
 		kafkaSendSeconds.ObserveFloat(time.Since(kafkaSendStart).Seconds(), resultFailed)
 		errStr := fmt.Sprintf("send db read tasks: %v", err)
 		firstErr.CompareAndSwap(nil, &errStr)
@@ -203,7 +217,4 @@ func EnsurePlayerAllDataInRedisAsync(
 	}
 	kafkaSendSeconds.ObserveFloat(time.Since(kafkaSendStart).Seconds(), resultSuccess)
 
-	// Mark t0 for stage 5; the first callback that fires (and eventually
-	// finalize) will observe against this.
-	callbackWaitStart = time.Now()
 }

@@ -138,6 +138,8 @@ type PlayerInboxConf struct {
 	ReconcileIntervalMinutes int `json:",default=60"`
 	// ReconcileWindowHours:对账只看最近这么多小时内由消费方终结的行(设计 §9.3:24 小时)。
 	// 必须覆盖至少两轮间隔(ReconcileWindowHours×60 ≥ 2×ReconcileIntervalMinutes),见 Validate。
+	// 轮次持续被截断时,每片至多隔 16 轮才读完一次(inbox.reconcileFullCycleRounds,评审 R1):窗口不足 16 个间隔时
+	// 有的分片可能整个窗口都轮不到(此时每轮截断都打 ERROR)。默认 24 小时 / 60 分钟 = 24 轮。
 	ReconcileWindowHours int `json:",default=24"`
 }
 

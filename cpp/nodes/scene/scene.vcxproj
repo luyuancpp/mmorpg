@@ -198,7 +198,6 @@
   <ItemGroup>
     <ClCompile Include="handler\event\scene_kafka_command_router.cpp" />
     <ClCompile Include="handler\event\battle_event_handler.cpp" />
-    <ClCompile Include="handler\event\player_migration_event_handler.cpp" />
     <ClCompile Include="handler\event\team_event_handler.cpp" />
     <ClCompile Include="handler\event\player_inbox_event_handler.cpp" />
     <ClCompile Include="handler\rpc\player\player_movement_handler.cpp" />
@@ -226,7 +225,6 @@
     <ClInclude Include="handler\event\scene_kafka_command_router.h" />
     <ClInclude Include="id_segment_bootstrap.h" />
     <ClInclude Include="handler\event\battle_event_handler.h" />
-    <ClInclude Include="handler\event\player_migration_event_handler.h" />
     <ClInclude Include="handler\event\team_event_handler.h" />
     <ClInclude Include="handler\event\player_inbox_event_handler.h" />
     <ClInclude Include="handler\rpc\player\player_movement_handler.h" />

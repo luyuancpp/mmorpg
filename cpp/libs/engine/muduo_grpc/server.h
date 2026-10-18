@@ -79,7 +79,7 @@ struct ServerOptions
     ServerSessionOptions session;
     size_t maxSendMessageBytes{4 * 1024 * 1024};
     size_t maxPendingOutputBytes{1024 * 1024};          // 输出缓冲超过就暂停从 nghttp2 取帧,writeComplete 后继续;
-                                                        // 写半关之前的最终冲出不受它限制(见 ServerShutdownOptions::closeGrace)
+                                                        // 优雅关闭期间同样如此(写半关要等会话把帧全部交出,见 ServerShutdownOptions::closeGrace)
     size_t maxInFlightCalls{1024};                      // 全节点在途(排队 + 已派发未完成);超限回 RESOURCE_EXHAUSTED
     size_t maxDispatchPerTurn{64};                      // 派发泵每轮最多派发几个(至少 1 个)
     std::chrono::microseconds dispatchTurnBudget{2000}; // 派发泵每轮累计耗时上限(至少派发 1 个)
@@ -91,8 +91,11 @@ struct ServerShutdownOptions
 {
     std::chrono::milliseconds drainTimeout{2000};       // 从 BeginShutdown 起算
     std::chrono::milliseconds goawayPingTimeout{1000};  // 第二段 GOAWAY:收到 PING ACK 或满这个时长,取先到者
-    // 优雅关闭 = 先把 nghttp2 里已提交的帧全部交给输出缓冲(这一次不看 maxPendingOutputBytes),再写半关
-    // (muduo 在输出缓冲写空之后才发 FIN);从写半关起算这个宽限,是硬上限:对端不读导致写不空、或对端迟迟不关,
+    // 写半关只在会话既不想读也不想写时发生:已提交的应答连同被对端流控窗口卡住的 DATA 与 trailers 都已写出、所有流都已
+    // 关闭(最终 GOAWAY 已写出或收到了对端 GOAWAY),或会话因协议错误终止;muduo 在输出缓冲写空之后才发 FIN。
+    // 排空到期时不立即写半关:连接继续读(对端的 WINDOW_UPDATE / RST_STREAM / PING ACK)并继续按背压从 nghttp2 取帧写出,
+    // 直到满足上面的条件;期间的新流一律不处理(见 Phase::kDrainExpired)。这个宽限从进入优雅关闭那一刻起算(排空到期时
+    // 即到期那一刻;条件已满足的路径即写半关那一刻),是硬上限:对端始终不给窗口、不读导致写不空、或收到 FIN 后迟迟不关,
     // 到期一律 forceClose。
     std::chrono::milliseconds closeGrace{1000};
 };
@@ -120,7 +123,7 @@ struct ServerStatsSnapshot
     uint64_t deadlineAfterStart{0};
     uint64_t cancelledBeforeStart{0};    // 对端 RST / 断连时业务还没开始
     uint64_t abortedAfterStart{0};       // 对端 RST / 断连时业务已开始
-    uint64_t refusedOnShutdown{0};       // 排空到期回 REFUSED_STREAM(含到期之后才开 / 才收完的流)
+    uint64_t refusedOnShutdown{0};       // 排空到期回 REFUSED_STREAM(含到期时请求体还在上传的流、到期之后才开 / 才收完的流)
     uint64_t unavailableOnShutdown{0};   // 排空到期时业务已开始,回 UNAVAILABLE "server shutting down"
     uint64_t lateFinish{0};              // 调用已收口之后的 Finish*
     uint64_t dropped{0};                 // 句柄全部丢弃仍未完成(程序缺陷信号)
@@ -167,6 +170,8 @@ public:
     // 内部顺序(§15.10):a 置排空;b Acceptor 移进 queueInLoop 闭包销毁(停听,销毁前到达的接入一律 close);
     // c 每条连接:收到过字节 → GOAWAY(2^31-1) + PING,上弦 goawayPingTimeout;没收到过 → forceClose;
     // d 上弦 drainTimeout 排空定时器(steady 复核);e 已满足排空条件 → queueInLoop(onDrained)。
+    // 排空到期:业务未开始的调用与请求体还在上传的流回 REFUSED_STREAM、已开始的回 UNAVAILABLE "server shutting down",
+    // 每条连接补最终 GOAWAY 后进入优雅关闭(见 ServerShutdownOptions::closeGrace);连接表为空即投递 onDrained。
     void BeginShutdown(ServerShutdownOptions options, std::function<void()> onDrained);
 
     // 以下四个读的是 loop 独占的可变状态:同样断言在 loop 线程(见文件头「线程」)。
@@ -187,7 +192,8 @@ private:
         kCreated,
         kRunning,
         kDraining,       // BeginShutdown 之后:已接受的流照常处理
-        kDrainExpired,   // 排空到期:新流一律 REFUSED_STREAM
+        kDrainExpired,   // 排空到期:到达 Server 的流(头部此刻才收完的、请求体还在上传的)一律 REFUSED_STREAM;
+                         // id 大于最终 GOAWAY last_stream_id 的新流不会到 Server(nghttp2 关掉或忽略)
         kDrained,        // 连接表已空,onDrained 已投递
     };
 
@@ -341,7 +347,7 @@ private:
     std::chrono::steady_clock::time_point drainStartedAt_{};
     std::chrono::steady_clock::time_point drainDeadline_{};
 
-    // muduo 定时器按墙钟走,只当唤醒提示;到点按 steady_clock 复核,未到就按剩余时间重新上弦。
+    // muduo 定时器已按单调时钟到期;到点仍按 steady_clock 复核,未到就按剩余时间重新上弦(兜住秒→微秒截断造成的早到)。
     muduo::net::TimerId deadlineTimer_;
     bool deadlineTimerArmed_{false};
     std::chrono::steady_clock::time_point deadlineTimerFor_{};

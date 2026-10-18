@@ -33,6 +33,7 @@
 #include "proto/common/base/node.pb.h"
 #include "node/system/node/node_util.h"
 #include "node/system/node/node_events.h"
+#include "thread_context/ecs_context.h"
 #include "thread_context/node_context_manager.h"
 #include <session/manager/session_manager.h>
 #include <network/node_utils.h>

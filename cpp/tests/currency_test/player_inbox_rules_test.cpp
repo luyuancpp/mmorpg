@@ -156,6 +156,111 @@ TEST(PlayerInboxRules, ClassifyDeliveryBelowWatermarkOutsideRingIsUnknown)
 	const auto *cursor = rules::FindCursor(ledger, kGmDomain);
 	EXPECT_EQ(rules::DeliveryClass::kUnknown, rules::ClassifyDelivery(cursor, 3, 30, kDebtType, nullptr));
 	EXPECT_EQ(rules::DeliveryClass::kReplay, rules::ClassifyDelivery(cursor, 9, 90, kDebtType, nullptr));
+
+	// 环里没有可拷的:kUnknown / kNew 不动调用方传入的 replayed。
+	PlayerInboxDecision untouched = MakeDecision(77, player_inbox::PLAYER_INBOX_OUTCOME_REJECTED, 770);
+	const std::string before = untouched.SerializeAsString();
+	EXPECT_EQ(rules::DeliveryClass::kUnknown, rules::ClassifyDelivery(cursor, 3, 30, kDebtType, &untouched));
+	EXPECT_EQ(rules::DeliveryClass::kNew, rules::ClassifyDelivery(cursor, 41, 410, kDebtType, &untouched));
+	EXPECT_EQ(before, untouched.SerializeAsString());
+}
+
+// ── 判定顺序(设计 §7.6 第 3 步、§7.9,评审 M1)──────────────────────────────────
+
+namespace
+{
+	constexpr uint32_t kDirectiveNone = player_inbox::PLAYER_INBOX_DIRECTIVE_NONE;
+	constexpr uint32_t kDirectiveVoid = player_inbox::PLAYER_INBOX_DIRECTIVE_VOID;
+	constexpr uint32_t kDirectiveFromTheFuture = 99; // 本二进制不认识的指令
+	// 本二进制没有执行器的类型(版本错位:新类型先于 scene 升级被启用,或 scene 回滚到了旧版本)。
+	// PlanItem 根本不看类型;用它只是为了让场景与线上一致。
+	constexpr uint32_t kTypeFromTheFuture = 9999;
+} // namespace
+
+TEST(PlayerInboxRules, VoidedNewEntryIsSkippedWithoutConsultingTheExecutor)
+{
+	// 回归 M1:旧顺序先查执行器,一条本二进制不认识类型的条目即使被运维作废,每次登录仍先撞上"未知类型"
+	// 再次停用该域,作废指令永远解不开它。
+	PlayerInboxLedgerComp ledger;
+	RecordApplied(ledger, 1, 3);
+	const auto deliveryClass =
+		rules::ClassifyDelivery(rules::FindCursor(ledger, kGmDomain), 4, 40, kTypeFromTheFuture, nullptr);
+	ASSERT_EQ(rules::DeliveryClass::kNew, deliveryClass);
+
+	EXPECT_EQ(rules::ItemAction::kSkipVoided, rules::PlanItem(deliveryClass, kDirectiveVoid));
+	EXPECT_EQ(rules::ItemAction::kExecute, rules::PlanItem(deliveryClass, kDirectiveNone))
+		<< "没作废的新条目才交给执行器;没有执行器时由调用方停用该域";
+	EXPECT_EQ(rules::ItemAction::kHaltUnknownDirective, rules::PlanItem(deliveryClass, kDirectiveFromTheFuture))
+		<< "不认识的指令不猜";
+	EXPECT_EQ(rules::ItemAction::kSkipVoided, rules::PlanItem(rules::DeliveryClass::kNew, kDirectiveVoid))
+		<< "从未处理过的域同样适用";
+}
+
+TEST(PlayerInboxRules, VoidOnAnAlreadyDecidedEntryReplaysTheOriginalOutcome)
+{
+	// 已执行过的条目被补挂 VOID 后重投,必须回放原结局,不能报成 SKIPPED(IB-4、IB-9)。
+	// 这条钉住"不能把 VOID 判定整体提到账本分类之前":那样服务端会把已生效的处置终结成"跳过"。
+	PlayerInboxLedgerComp ledger;
+	RecordApplied(ledger, 1, 5);
+	PlayerInboxDecision replayed;
+	const auto deliveryClass =
+		rules::ClassifyDelivery(rules::FindCursor(ledger, kGmDomain), 5, 50, kDebtType, &replayed);
+	ASSERT_EQ(rules::DeliveryClass::kReplay, deliveryClass);
+
+	EXPECT_EQ(rules::ItemAction::kReplay, rules::PlanItem(deliveryClass, kDirectiveVoid));
+	EXPECT_EQ(Outcome(player_inbox::PLAYER_INBOX_OUTCOME_APPLIED), replayed.outcome()) << "回放的是 APPLIED,不是 SKIPPED";
+	EXPECT_EQ(rules::ItemAction::kReplay, rules::PlanItem(deliveryClass, kDirectiveNone));
+	EXPECT_EQ(rules::ItemAction::kReplay, rules::PlanItem(deliveryClass, kDirectiveFromTheFuture))
+		<< "重复投递只核对账本,不看指令";
+}
+
+TEST(PlayerInboxRules, AlreadyDecidedEntriesOfAnUnknownTypeAreStillAcknowledged)
+{
+	// 回放 / UNKNOWN 只报告账本里已有的事实,不需要执行器:本二进制已不认识这个类型时照样确认,不停用。
+	PlayerInboxLedgerComp ledger;
+	auto &cursor = rules::MutableCursor(ledger, kGmDomain);
+	ASSERT_TRUE(rules::RecordDecision(
+		cursor, MakeDecision(1, player_inbox::PLAYER_INBOX_OUTCOME_APPLIED, 10, kTypeFromTheFuture)));
+	for (uint64_t seq = 2; seq <= 33; ++seq)
+	{
+		ASSERT_TRUE(rules::RecordDecision(cursor, MakeDecision(seq, player_inbox::PLAYER_INBOX_OUTCOME_APPLIED, seq * 10)));
+	}
+	ASSERT_TRUE(rules::RecordDecision(
+		cursor, MakeDecision(34, player_inbox::PLAYER_INBOX_OUTCOME_REJECTED, 340, kTypeFromTheFuture, 1005)));
+	// 环里是 3..34,seq 1 已被挤出。
+
+	PlayerInboxDecision replayed;
+	const auto inRing = rules::ClassifyDelivery(&cursor, 34, 340, kTypeFromTheFuture, &replayed);
+	ASSERT_EQ(rules::DeliveryClass::kReplay, inRing);
+	EXPECT_EQ(rules::ItemAction::kReplay, rules::PlanItem(inRing, kDirectiveNone));
+	EXPECT_EQ(1005u, replayed.reason());
+
+	const auto evicted = rules::ClassifyDelivery(&cursor, 1, 10, kTypeFromTheFuture, nullptr);
+	ASSERT_EQ(rules::DeliveryClass::kUnknown, evicted);
+	EXPECT_EQ(rules::ItemAction::kAckUnknown, rules::PlanItem(evicted, kDirectiveNone));
+	EXPECT_EQ(rules::ItemAction::kAckUnknown, rules::PlanItem(evicted, kDirectiveVoid));
+}
+
+TEST(PlayerInboxRules, MismatchConfirmsNothingWhateverTheDirective)
+{
+	// MISMATCH 由服务端的强制终结解卡(VoidItem 的 FORCE_MISMATCH),scene 侧语义不变:挂了 VOID 也照样停用。
+	PlayerInboxLedgerComp ledger;
+	RecordApplied(ledger, 1, 5);
+	PlayerInboxDecision ledgerEntry;
+	const auto deliveryClass =
+		rules::ClassifyDelivery(rules::FindCursor(ledger, kGmDomain), 5, 51, kDebtType, &ledgerEntry);
+	ASSERT_EQ(rules::DeliveryClass::kMismatch, deliveryClass);
+	// 评审 F4:停用那行 ERROR 要带上账本里同一 seq 的那一条,值班才分得清"同 seq 被另一个请求占用"与账本损坏。
+	// 改动前 kMismatch 不拷,日志里的 ledger_request_id / ledger_msg_type 恒为 0。
+	EXPECT_EQ(5u, ledgerEntry.seq());
+	EXPECT_EQ(50u, ledgerEntry.request_id()) << "账本里那一条的 request_id,不是投递来的 51";
+	EXPECT_EQ(kDebtType, ledgerEntry.msg_type());
+	EXPECT_EQ(Outcome(player_inbox::PLAYER_INBOX_OUTCOME_APPLIED), ledgerEntry.outcome());
+
+	EXPECT_EQ(rules::ItemAction::kHaltMismatch, rules::PlanItem(deliveryClass, kDirectiveVoid));
+	EXPECT_EQ(rules::ItemAction::kHaltMismatch, rules::PlanItem(deliveryClass, kDirectiveNone));
+	EXPECT_EQ(rules::ItemAction::kHaltMismatch, rules::PlanItem(rules::DeliveryClass::kCount, kDirectiveNone))
+		<< "越界的分类值 fail-closed:什么都不确认";
 }
 
 // ── 落盘判定(设计 §7.7)─────────────────────────────────────────────────────
@@ -305,4 +410,40 @@ TEST(PlayerInboxRules, PeriodicDelayIsMinutesWithTwentyPercentJitterAndZeroDisab
 	EXPECT_EQ(1800000u, rules::PeriodicDelayMs(30, 500));
 	EXPECT_EQ(1440000u, rules::PeriodicDelayMs(30, 0));
 	EXPECT_EQ(2160000u, rules::PeriodicDelayMs(30, 1000));
+}
+
+TEST(PlayerInboxRules, StuckWarnRepeatsEveryFixedNumberOfFailures)
+{
+	// 评审 L13:账本损坏不会自愈,WARN 要周期性地重复;"首次"由调用方按延后原因是否刚变化判定,不在这里。
+	EXPECT_FALSE(rules::IsStuckWarnDue(0));
+	EXPECT_FALSE(rules::IsStuckWarnDue(1));
+	EXPECT_FALSE(rules::IsStuckWarnDue(rules::kStuckWarnEveryFailures - 1));
+	EXPECT_TRUE(rules::IsStuckWarnDue(rules::kStuckWarnEveryFailures));
+	EXPECT_FALSE(rules::IsStuckWarnDue(rules::kStuckWarnEveryFailures + 1));
+	EXPECT_TRUE(rules::IsStuckWarnDue(rules::kStuckWarnEveryFailures * 2));
+}
+
+TEST(PlayerInboxRules, StuckWarnGapFitsTheSceneLogAlertWindow)
+{
+	// 评审 F3:scene 日志告警一律是 count_over_time(... [10m]) > 0。两条 WARN 之间的时长 = 期间每一次退避之和
+	// (第 s 次延后打出的 WARN,要等 BackoffMs(s) 之后才有第 s+1 次延后)。取抖动上界逐次累加,再加 tick 与检查预算
+	// 的顺延余量,必须落在窗口之内,否则告警会在玩家在线期间反复自愈。原先每 60 次一条,约 50 分钟才打一行。
+	const auto worstGapMs = [](uint32_t fromStreak, uint32_t toStreak)
+	{
+		uint64_t totalMs = 0;
+		for (uint32_t streak = fromStreak; streak < toStreak; ++streak)
+		{
+			totalMs += rules::BackoffMs(streak, rules::kJitterPermilleMax);
+		}
+		return totalMs;
+	};
+	// 首条(延后原因刚变成账本损坏,failStreak = 1)到第一次到点。
+	EXPECT_LE(worstGapMs(1, rules::kStuckWarnEveryFailures) + rules::kStuckWarnSlackMs, rules::kSceneLogAlertWindowMs);
+	// 退避封顶之后相邻两次到点。
+	const uint32_t capped = rules::kStuckWarnEveryFailures * 100;
+	ASSERT_TRUE(rules::IsStuckWarnDue(capped));
+	EXPECT_LE(worstGapMs(capped, capped + rules::kStuckWarnEveryFailures) + rules::kStuckWarnSlackMs,
+			  rules::kSceneLogAlertWindowMs);
+	// 节点级停用按时间补打,同一口径。
+	EXPECT_LE(rules::kNodeStuckRelogIntervalMs + rules::kStuckWarnSlackMs, rules::kSceneLogAlertWindowMs);
 }

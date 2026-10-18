@@ -2845,3 +2845,26 @@ D:\luyuan\xuanming-server-mmo-cpp\cpp\libs\engine\core\node\system\node\node.h(3
 - **Java 版**：本批未改 Java 跟踪源码、未执行 ContractSync/Maven、未登记已完成的 PARITY 行；版本仍 0.1.0-SNAPSHOT，不能据此宣称本批已对齐。ignored java-ready/A-tests-only.patch 与 B-cooldown-and-comments.patch 已静态核对，正式步骤 5 先两条真实施法零冷却红测，再改 PlayerSkillState 唯一写入口；不扩实时伤害/Buff 框架。
 - **运行夹具**：没有启动本轮冒烟服务；仅单测使用过的本批 Redis 已核对容器 ID/label 后停止，证据 redis-fixture-stop.json；续测前重建独占 Redis 并刷新 fixture，不能沿用已停止容器。冒烟已准备逐字节固定 dev_tools→cpp_nodes 脚本与最新二进制的隔离运行根，不修改跟踪启动配置或复用演示数据。
 - **边界**：未 commit、push、tag；未回退/覆盖他会话改动；未手改生成产物；未修改审计 HEAD。继续所需的是本轮迁移 Node 源码及生成模板定型信息，随后从正式 §6 第 1 步推进。
+
+## 11. 接手合并与兼容方案回执（2026-10-17，整批仍未完成）
+
+- 负责人授权接手原 `origin/main` 合并，并明确不得覆盖、丢弃其他会话改动。原合并的 72 个冲突已拍现场快照；取快照期间外部执行者清除了合并状态并继续提交，当前 `HEAD=360d56ae5`、无 `MERGE_HEAD`。没有冲突标记不代表待合入 `6965aa6a78cba0685e5568c9f9c9cc67c2e119d3` 已融合。本会话没有执行 reset、abort、add、commit 或重新改动用户索引。
+- 只在忽略目录用 `git merge-tree` 生成候选树，仍有 72 个冲突，未写入工作树或索引；证据 `build/ecs-refactor/batch6/merge-preview-20261017T043948Z/manifest.json`。先前现场快照的部分 stage 文件受外部状态变化影响，不声称 72 项的三端字节全部拍齐；缺失端以固定 Git 提交恢复供比较，不回写覆盖。
+- 负责人确认队伍字段 3、邮件枚举及 tip 的两种含义均已发布，要求先制定兼容方案。完整核对还发现邮件分页、正文、删除回包及 S2C 方法不兼容；待合入源码没有可确认的邮件消息号发号记录。具体方案、推荐的两个契约入口、业务幂等与存量数据边界，以及仍需的发布清单见 [已发布契约兼容方案](../../design/published-contract-compatibility-20261017.md)。尚未选一边改号，也未编造兼容绑定。
+- 其他会话继续写入是负责人允许的工作方式；后续按它们最新调用点接续。当前 T8.9 接线与新 muduo API 一致，旧 Node 接口混写已消失。已有共享 MSBuild 先后构建 scene 与 game.sln，本会话两次中间 core 构建都在并发保护阶段退出，未启动第二个 MSBuild，不计编译失败或成功；正式 §6 证据仍待执行。
+- 剩余红测已按当前源码重新准备：7 组变异锚点匹配，T2 从最新源复制后只变异任务函数，ReleaseFence、废黜重入与新存盘通道逐字保留；两个 PrepareOnly 退出 0，不等于测试已运行。证据 `build/ecs-refactor/batch6-red/preflight-20261017T042418692456Z/proof.json` 与 `build/ecs-refactor/final-red-execution-matrix.json`。T1.2 已有两组实际证据，未重复跑。
+- 合并应保留的三项 gRPC 客户端测试已适配到当前 muduo API，补丁只写入忽略目录，`git apply --check` 退出 0，未 apply/编译；不能把原已删除 CQ 测试整份恢复。见 `build/ecs-refactor/batch6/merge-ready/grpc-client-three-incoming-tests.patch`。Go 12 项冲突逐项比较证据同目录 `go-preservation-review-20261017.json`，不以远端旧池、旧鉴权或旧号段表覆盖当前实现。
+- **当前任务口径**：T10 仍为 13 个 protobuf 值表、3 个普通 C++ 仅类型名。T4.1 源码已实施并已有 §10 所列 cross 证据，§9 末尾的“尚未实施”是过时汇总；其最终顺序验证仍待做。§9 的 71 行任务清单保留，不把“源码完成”改称“整批完成”。
+- **Java 版**：本批仍待 §6 第 5 步，现有版本 `0.1.0-SNAPSHOT`；两条真实施法零冷却测试与唯一写入口修复补丁已重新静态核对，不覆盖 Java 仓其他会话的 PARITY/来源信息/业务改动。本会话尚未执行本批 ContractSync、Maven、Java 红绿或签名 GM/跨节点冒烟。两个已发布契约也必须在 Java 侧明确版本边界，不能用同步一份契约代替兼容。
+- **下一步门禁**：兼容入口方案及真实发布清单确定、相关业务歧义收口后，保留最新共享修改，以新快照从 §6 第 1 步正式 no-unity 生成开始，按原顺序完成全部构建、测试、Java、冒烟与机械门禁。本轮新增跟踪改动仅为兼容设计及进度/任务回执；未手改生成产物，未 commit、push、tag，也未修改审计 HEAD。
+
+
+## 12. 正式生成与全解构建阻断回执（2026-10-17，整批未完成）
+
+- **实际生成完成**：以当前 Claude 生成器为准执行 proto-gen-build、完整 no-unity proto-gen-run、robot 的 go mod vendor 和 go test ./internal/...，00–09 原生退出均为 0。28 个受守护文件、131 个非空守护段逐字核对保留，消息号/事件号没有新增或改变；T1.10/T5.1 的 14 个精确孤儿文件和 9 个构建清单内 18 条引用已清理，事件源 proto 保留。证据 build/ecs-refactor/batch6/generation-20261017T045318632Z/；该证据不能覆盖生成后新增的协议注释。
+- **本轮必要增量**：gate/client_message_processor.cpp 补直接 ecs_context.h 依赖；三条待合入 gRPC 客户端回归已适配当前 muduo API 并在现有测试基础上应用，原三条测试及其断言保留；routing_identity_test 的 Debug|x64 AdditionalOptions 仅加入 /utf-8。三条新 RPC 测试和编码修正尚无本批运行通过证据。未改审计 HEAD。
+- **正式全解失败**：执行 game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1。最早错误为 cpp/tests/bag_test/player_equip_attribute_test.cpp:976、1005 使用未声明的 bag_marshal，静态门禁退出 2，随后 MSB3073；只读定位为缺少直接 bag_marshal.h include，当前 Marshal API 仍合法，不是 RestoreItems 的调用替换。后续 currency_test 又报 PlanItem(DeliveryClass,uint32_t)、IsStuckWarnDue(uint32_t) 的 LNK2019/LNK1120；当前两定义和 scene 工程源项均存在，不能据此虚构漏列源或重复实现。
+- **共享变动与停止**：完整输入快照记录 11 个变化文件，其中 10 个是保留的 redis/收件箱/生命周期与测试新修改，另 1 个为本批 routing 编码配置。全解不构成稳定成功证据。确认 PID/父进程/完整命令后仅停止本次 MSBuild 子树，驱动原生退出 1；停止工具因一个子进程已自行退出也返回 1，随后只读复核原树 PID 全无存活，未触碰其他会话进程。完整日志、首错与停止证据在 build/ecs-refactor/batch6/full-cpp-20261017T045823501Z/。
+- **停止后的验证边界**：按 AGENTS.md §10.2 保留首错并等待负责人决定，未自动重试、未跳过门禁。第二轮生成、18 个 Go 模块构建、13 个 C++ 测试工程的正式串行验收、余下 7 组隔离变异及 T2 九红、签名 GM/尸体/跨节点/场景计数冒烟和最终机械门禁均未执行。既有 T1/T3/T4/T6 等历史红绿证据沿 §9–§11，不冒充本批最终全绿。§9 原 71 行任务清单保留，当前仅追加真实状态。
+- **兼容入口**：负责人已批准两个契约入口各绑定原发布版本并逐步迁移，按最新 Claude 事实接续；当前仍未实施或验证第二套入口，不猜邮件已发布编号，不以一份新协议覆盖两套契约。
+- **Java 版**：当前版本 0.1.0-SNAPSHOT、HEAD 0477cc0603efe68791bfd7ee8ae62f6a864e34ac。本批仍未到 §6 第 5 步，未执行本批 ContractSync、Maven、两条真实零冷却红绿、PARITY 完成登记。准备补丁与门禁会保留其现有共享修改；第一轮 C++ 失败使后续步骤硬阻断。未 commit、push、tag，未读改独立客户端。

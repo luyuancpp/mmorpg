@@ -143,6 +143,21 @@ spec:
               被终结为 ABANDONED(docs/design/landing-recovery-sync-digest.md §6.3)。
               如需补偿,以审计行与 scene 流水为依据人工处理。
 
+        # 开关打开时,SQL 提交证据确定未见而 Redis 父键 blob 已见这笔:证据落后于父键,放弃被跳过(fail-closed)。
+        # 正常运行中不该出现,说明证据发布链有缺口或回档清理不完整(db-write-fencing-mysql.md §6.6)。
+        - alert: AssetOpAbandonSqlEvidenceBehind
+          expr: |
+            sum by (service, stream) (increase(assetop_abandon_skipped_total{reason="sql_evidence_behind"}[1h])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.service }}/{{ $labels.stream }} 有放弃候选因 SQL 证据落后被跳过"
+            description: >-
+              过去 1 小时有 {{ $value | printf "%.0f" }} 次:SQL 提交证据未见这笔 seq,但 Redis 父键账本已见。
+              自动放弃已跳过,待办保留。按 "[AssetOp] Abandon skipped: player blob has an outcome that asset SQL commit evidence has not seen" 日志定位,核对 go/db 是否在该 zone 处于 dual、
+              证据发布是否失败、回档后是否清理了证据键;不得手工放弃或伪造到账。
+
     - name: guild-trial.results
       interval: 60s
       rules:

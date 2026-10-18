@@ -5,8 +5,14 @@ package inbox
 // 真库集成测试:go test -tags integration ./internal/inbox/... -count=1 -v
 //
 // PLAYER_INBOX_TEST_MYSQL_DSN 为空则整组 Skip。⚠ 只能指向**一次性**测试库:每个用例都会 DROP 并重建
-// player_inbox_stream / player_inbox_item / player_inbox_audit / schema_migrations。DSN 必须带库名,例如
-//   appuser:apppass123@tcp(127.0.0.1:3306)/player_inbox_it?parseTime=true&charset=utf8mb4
+// player_inbox_stream / player_inbox_item / player_inbox_audit / schema_migrations。DSN 必须带库名,
+// 且库名必须是 player_inbox_it 或 player_inbox_it_<pid>_<n>(白名单 inboxTestDBNamePattern,DROP 之前断言,评审 L14);
+// 指向 mmorpg_player_inbox 等任何别的库都直接判红,不会动它的表。
+//
+// 账号:deploy/mysql-init/00_init_zone_dbs.sql 只给 appuser 授了 mmorpg_player_inbox 等业务库,**没有** player_inbox_it,
+// 也没有全局 CREATE 权限 —— 所以测试库要用 root 先建好(`CREATE DATABASE IF NOT EXISTS player_inbox_it`),DSN 也用 root:
+//   root:<root 密码>@tcp(127.0.0.1:3306)/player_inbox_it?parseTime=true&charset=utf8mb4
+// (或由 root 另行 `GRANT ALL ON player_inbox_it.* TO 'appuser'@'%'` 之后改用 appuser;密码不要写进任何被跟踪的文件。)
 // 表结构先经 schemamigrate.Up 按 proto 建出,与生产同一条路径。MySQL 需 binlog_format=ROW(RC 事务的前提)。
 //
 // # 验收开关 PLAYER_INBOX_REQUIRE_MYSQL_TESTS(与 go/trade 的 TRADE_REQUIRE_MYSQL_TESTS 同一口径)
@@ -22,11 +28,13 @@ package inbox
 // ⚠ 不带 -tags integration 时本文件不参与编译,go test 照样输出 ok —— 验收必须带标签,并在 -v 输出里逐条看到 PASS。
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -130,6 +138,13 @@ func openIntegration(t *testing.T) *itEnv {
 	var dbName string
 	if err := db.QueryRowContext(ctx, "SELECT DATABASE()").Scan(&dbName); err != nil || dbName == "" {
 		t.Fatalf("DSN 必须带库名: %v", err)
+	}
+	// 下面每个用例都会 DROP 表与 schemamigrate 台账:DSN 指错库(mmorpg_player_inbox、testdb、zone_N_db …)就会清掉
+	// 那个库的数据。所以第一条 DROP 之前按白名单断言库名(评审 L14,照 go/guild 的 guildTestDBNamePattern)。
+	if !inboxTestDBNamePattern.MatchString(dbName) {
+		t.Fatalf("测试 DSN 指向库 %q:只允许 player_inbox_it 或 player_inbox_it_<pid>_<n>"+
+			"(本组用例会 DROP 收件箱三张表与 schema_migrations,防止误删 mmorpg_player_inbox / data_service / trade / go/db 的表与台账)",
+			dbName)
 	}
 	for _, stmt := range []string{
 		"DROP TABLE IF EXISTS player_inbox_audit",
@@ -774,6 +789,110 @@ func auditRow(t *testing.T, db *sql.DB, playerID, seq uint64, action inboxpb.Pla
 	return operator, peer, reason, true
 }
 
+// auditRecord 读一整行审计(列清单与写入路径共用 auditColumns);不存在时返回 nil。
+func auditRecord(t *testing.T, db *sql.DB, playerID, seq uint64, action inboxpb.PlayerInboxAuditAction) *inboxpb.PlayerInboxAudit {
+	t.Helper()
+	a := &inboxpb.PlayerInboxAudit{}
+	err := db.QueryRowContext(itCtx(t), "SELECT "+auditColumns+" FROM player_inbox_audit"+
+		" WHERE `shard` = ? AND `player_id` = ? AND `domain` = ? AND `seq` = ? AND `action` = ?",
+		RowShard(playerID), playerID, uint32(gmDomain), seq, uint32(action)).Scan(
+		&a.Shard, &a.PlayerId, &a.Domain, &a.Seq, &a.Action, &a.Operator, &a.PeerAddr, &a.Reason, &a.CreatedMs,
+		&a.MsgType, &a.RequestId, &a.IssuedAtMs, &a.ContentSha256, &a.Payload, &a.VoidReason)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	return a
+}
+
+// TestIntegrationAuditRecordsWhatWasDone 是评审 L9 的回归:条目终态行 30 天后被清理,原来的审计行只有
+// 「谁、何时、为什么」,清理之后就看不出处置类型、载荷和 request_id。现在审计行自足:
+//   - SANCTION:msg_type / request_id / issued_at_ms / 摘要 / 载荷取自刚写出的条目行,void_reason = 0;
+//   - VOID(从未投递直接作废、已投递挂指令):内容取自被作废的那一条,void_reason = 本次请求的原因;
+//   - 摘要可由审计行自己的 msg_type / issued_at_ms / payload 复算;零字节载荷也照样记下;
+//   - 条目终态行被清理之后,审计行原样还在。
+func TestIntegrationAuditRecordsWhatWasDone(t *testing.T) {
+	e := openIntegration(t)
+	const pid = uint64(5003)
+	const ridA, ridB = uint64(31), uint64(32)
+	issuedA, issuedB := testNowMs-2_000, testNowMs-1_000
+	payloadA, payloadB := gainPayload(t, 1), gainPayload(t, 0) // currency_type=0:序列化后是零字节
+	resA, err := e.enqueue(t, pid, ridA, issuedA, payloadA)
+	if err != nil || !resA.Created {
+		t.Fatalf("入箱 a: %+v %v", resA, err)
+	}
+	resB, err := e.enqueue(t, pid, ridB, issuedB, payloadB)
+	if err != nil || !resB.Created {
+		t.Fatalf("入箱 b: %+v %v", resB, err)
+	}
+	a, b := resA.Seq, resB.Seq
+	e.epochs.set(pid, 1)
+	e.fetch(t, pid, 1, 0, 1) // 只投递 a
+
+	const (
+		sanction    = inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_SANCTION
+		voidAudit   = inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_VOID
+		noReason    = inboxpb.PlayerInboxVoidReason_PLAYER_INBOX_VOID_UNSPECIFIED
+		cancelled   = inboxpb.PlayerInboxVoidReason_PLAYER_INBOX_VOID_CANCELLED
+		quarantined = inboxpb.PlayerInboxVoidReason_PLAYER_INBOX_VOID_QUARANTINED
+	)
+	check := func(what string, got *inboxpb.PlayerInboxAudit, seq, requestID, issued uint64, payload []byte,
+		reason inboxpb.PlayerInboxVoidReason) {
+		t.Helper()
+		if got == nil {
+			t.Fatalf("%s: 审计行不存在", what)
+		}
+		if got.GetShard() != RowShard(pid) || got.GetSeq() != seq || got.GetMsgType() != uint32(gmBlock) ||
+			got.GetRequestId() != requestID || got.GetIssuedAtMs() != issued || !bytes.Equal(got.GetPayload(), payload) ||
+			!bytes.Equal(got.GetContentSha256(), ContentSHA256(gmBlock, issued, payload)) || got.GetVoidReason() != uint32(reason) {
+			t.Fatalf("%s: 审计行 = %+v", what, got)
+		}
+		if !bytes.Equal(got.GetContentSha256(),
+			ContentSHA256(inboxpb.PlayerInboxMessageType(got.GetMsgType()), got.GetIssuedAtMs(), got.GetPayload())) {
+			t.Fatalf("%s: 摘要不能由审计行自己复算: %+v", what, got)
+		}
+	}
+	check("a 入箱", auditRecord(t, e.db, pid, a, sanction), a, ridA, issuedA, payloadA, noReason)
+	check("b 入箱(零字节载荷)", auditRecord(t, e.db, pid, b, sanction), b, ridB, issuedB, payloadB, noReason)
+
+	ctx := itCtx(t)
+	void := func(seq uint64, reason inboxpb.PlayerInboxVoidReason) {
+		t.Helper()
+		if resp, err := e.store.Void(ctx, VoidParams{
+			PlayerID: pid, Domain: gmDomain, Seq: seq, Reason: reason, Operator: "ops_audit", Note: "工单 #9", PeerAddr: "127.0.0.1:4",
+		}, nil); err != nil || resp.GetErrorMessage() != nil {
+			t.Fatalf("作废 seq=%d: %+v %v", seq, resp, err)
+		}
+	}
+	void(b, cancelled)   // 从未投递 → 直接 VOIDED
+	void(a, quarantined) // 已投递 → 挂指令
+	check("b 直接作废", auditRecord(t, e.db, pid, b, voidAudit), b, ridB, issuedB, payloadB, cancelled)
+	check("a 挂指令", auditRecord(t, e.db, pid, a, voidAudit), a, ridA, issuedA, payloadA, quarantined)
+	if v := auditRecord(t, e.db, pid, a, voidAudit); v.GetOperator() != "ops_audit" || v.GetPeerAddr() != "127.0.0.1:4" ||
+		v.GetReason() != "工单 #9" {
+		t.Fatalf("「谁、为什么」仍取调用方: %+v", v)
+	}
+
+	// a 由消费方 SKIPPED 终结;保留期过后 a、b 两条终态行都被清理,审计行仍答得出「做了什么」。
+	e.fetch(t, pid, 1, 0, 0)
+	if ack := e.ack(t, pid, 1, dec(a, outSkipped, uint32(quarantined), ridA)); ack.GetResults()[0].GetState() != stateVoided {
+		t.Fatalf("a SKIPPED 应终结为 VOIDED: %+v", ack.GetResults())
+	}
+	if n, err := e.store.SweepTerminal(ctx, testNowMs+1, 500); err != nil || n != 2 {
+		t.Fatalf("清理终态行 = %d (%v), want 2", n, err)
+	}
+	if e.item(t, pid, a) != nil || e.item(t, pid, b) != nil {
+		t.Fatal("a、b 的终态行应已被清理")
+	}
+	check("清理后 a 的作废审计", auditRecord(t, e.db, pid, a, voidAudit), a, ridA, issuedA, payloadA, quarantined)
+	check("清理后 b 的入箱审计", auditRecord(t, e.db, pid, b, sanction), b, ridB, issuedB, payloadB, noReason)
+	if n := auditCount(t, e.db, pid); n != 4 {
+		t.Fatalf("审计行 = %d, want 4(2 次入箱 + 2 次作废),清理不得动审计", n)
+	}
+}
+
 // TestIntegrationForceVoid 钉住 VoidItem 强制模式在真库上的读写(设计 §7.9,评审 M1):
 //   - 证明不成立的每种情形(从未投递 / 读不到存档 / 回放 / UNKNOWN / 水位没到)都不改行、不写审计,读账本失败回故障;
 //   - 证明成立 → VOIDED(finalized_by=ADMIN、delivery_count 与先前挂的指令原样保留),open_count−1,
@@ -869,6 +988,13 @@ func TestIntegrationForceVoid(t *testing.T) {
 	if op, peer, reason, ok := auditRow(t, e.db, pid, b, inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_FORCE_VOID); !ok ||
 		op != "ops_force" || peer != "127.0.0.1:3" || reason != note {
 		t.Fatalf("FORCE_VOID 审计行: ok=%v operator=%q peer=%q reason=%q", ok, op, peer, reason)
+	}
+	// 审计行记下被终结的是哪一条(评审 L9):内容取自条目行,void_reason 是本次请求的原因。
+	if fv := auditRecord(t, e.db, pid, b, inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_FORCE_VOID); fv.GetRequestId() != 2 ||
+		fv.GetMsgType() != uint32(gmBlock) || fv.GetIssuedAtMs() != it.GetIssuedAtMs() || !bytes.Equal(fv.GetPayload(), it.GetPayload()) ||
+		!bytes.Equal(fv.GetContentSha256(), it.GetContentSha256()) ||
+		fv.GetVoidReason() != uint32(inboxpb.PlayerInboxVoidReason_PLAYER_INBOX_VOID_QUARANTINED) {
+		t.Fatalf("FORCE_VOID 审计行应记下被终结的那一条: %+v, item=%+v", fv, it)
 	}
 	if _, _, _, ok := auditRow(t, e.db, pid, b, inboxpb.PlayerInboxAuditAction_PLAYER_INBOX_AUDIT_VOID); !ok {
 		t.Fatal("先前挂指令的 VOID 审计行应原样保留")
@@ -977,7 +1103,10 @@ func TestIntegrationScanGauges(t *testing.T) {
 	e := openIntegration(t)
 	// 玩家 A:两条 PENDING,投递其中一条两次后不确认。
 	// 玩家 C:一条 PENDING,在 T0 被投递三次后不确认 —— 截止取 T0+0.5s 时它是陈旧行。
-	const pa, pb, pc = uint64(9001), uint64(9066), uint64(9067) // % 64 = 41 / 42 / 43:三个分片,覆盖跨分片折叠
+	const pa, pb, pc = uint64(9001), uint64(9066), uint64(9067) // RowShard = 46 / 32 / 13:三个分片,覆盖跨分片折叠
+	if RowShard(pa) == RowShard(pb) || RowShard(pb) == RowShard(pc) || RowShard(pa) == RowShard(pc) {
+		t.Fatalf("测试前提:三名玩家必须落在三个不同分片,got %d / %d / %d", RowShard(pa), RowShard(pb), RowShard(pc))
+	}
 	e.mustEnqueue(t, pa, 1)
 	e.mustEnqueue(t, pa, 2)
 	e.epochs.set(pa, 1)
@@ -1046,7 +1175,8 @@ func TestIntegrationScanGauges(t *testing.T) {
 //   - 退避从流行最后一次写入起算,按 2 倍递增、封顶 30 分钟;
 //   - 推迟之后积压 gauge 照样数它(按流行最后一次写入算,不看被推后的 notify_due_ms);
 //   - 期间又有入箱(next_seq 变了),旧令牌的推迟什么都不改;
-//   - 不可恢复的结局(NoNode)落定清零,交给落地拉取。
+//   - 不可恢复的结局(NoNode)落定清零,交给落地拉取;
+//   - 镜像已同步却查不到节点(NodeMissing,评审 R3)先按退避推迟,悬满 1 小时才落定清零。
 func TestIntegrationNotifyResendBackoff(t *testing.T) {
 	e := openIntegration(t)
 	const pid = uint64(6003)
@@ -1114,6 +1244,29 @@ func TestIntegrationNotifyResendBackoff(t *testing.T) {
 	}
 	if st := e.stream(t, pid); st.GetNotifyDueMs() != 0 {
 		t.Fatalf("不可恢复的结局应落定清零: %+v", st)
+	}
+
+	// 镜像已同步却查不到节点:可能只是租约抖动后的重新注册(玩家仍在线),先按退避重试,悬满 1 小时才落定。
+	e.notifier.setResult(NotifyNodeMissing)
+	t1 := now + sec(10)
+	third := e.mustEnqueue(t, pid, 3) // 入箱后那次提醒同样查不到节点:不清零,notify_due_ms = updated_ms = T1
+	e.clock.set(t1 + sec(10))
+	due, err = e.store.DueNotifications(itCtx(t), RowShard(pid), t1+sec(5), 100)
+	if err != nil || len(due) != 1 || due[0].NextSeq != third.Seq+1 || due[0].PendingSinceMs != t1 {
+		t.Fatalf("node_missing: due = %+v err=%v", due, err)
+	}
+	if got := e.store.ResendNotify(itCtx(t), due[0]); got != NotifyNodeMissing || got.Settled() {
+		t.Fatalf("ResendNotify = %s, want node_missing(没落定)", got)
+	}
+	if st := e.stream(t, pid); st.GetNotifyDueMs() != t1+sec(40) {
+		t.Fatalf("刚开始查不到节点:应按退避推迟到 T1+40s,got notify_due_ms = T1%+dms", int64(st.GetNotifyDueMs()-t1))
+	}
+	e.clock.set(t1 + uint64(notifyNodeMissingSettleAfter.Milliseconds()))
+	if got := e.store.ResendNotify(itCtx(t), due[0]); got != NotifyNodeMissing {
+		t.Fatalf("ResendNotify = %s, want node_missing", got)
+	}
+	if st := e.stream(t, pid); st.GetNotifyDueMs() != 0 {
+		t.Fatalf("悬满 1 小时仍查不到节点:应落定清零: %+v", st)
 	}
 }
 
@@ -1244,7 +1397,7 @@ func TestIntegrationReconcile(t *testing.T) {
 //   - 键集游标逐页不重不漏;sinceMs 之前的行不读;管理员终结的行不读;对账要的列都读出来。
 func TestIntegrationRecentlyFinalizedOrder(t *testing.T) {
 	e := openIntegration(t)
-	const pid = uint64(8065) // 8065 % 64 = 1
+	const pid = uint64(8065) // 分片按 RowShard(pid) 算,不写死
 	a := e.mustEnqueue(t, pid, 1).Seq
 	b := e.mustEnqueue(t, pid, 2).Seq
 	c := e.mustEnqueue(t, pid, 3).Seq
@@ -1305,5 +1458,63 @@ func TestIntegrationRecentlyFinalizedOrder(t *testing.T) {
 	}
 	if got := seqs(page(testNowMs+1, nil, 10)); len(got) != 2 || got[0] != c || got[1] != b {
 		t.Fatalf("sinceMs 之后 = %v, want [c b]", got)
+	}
+}
+
+// TestIntegrationCheckRowShards 是评审 R3 的回归,走真实路径:库里预埋按旧公式(player_id % 64)写出的一名玩家的
+// 流行 / 条目行 / 审计行,原注释声称「读出时被 checkRowShard 拒绝」并不成立 ——
+//   - 按玩家读(带 WHERE shard = RowShard(player_id))读不到它:静默不可见;
+//   - 按分片扫描(DueNotifications)读到它,整片报错;
+//   - CheckRowShards 逐表判出不一致(三张表各自都查),改回之后通过;正常写出的行从不误报。
+func TestIntegrationCheckRowShards(t *testing.T) {
+	e := openIntegration(t)
+	ctx := itCtx(t)
+	if err := CheckRowShards(ctx, e.db); err != nil {
+		t.Fatalf("空库: %v", err)
+	}
+	e.mustEnqueue(t, 9001, 1)
+	if err := CheckRowShards(ctx, e.db); err != nil {
+		t.Fatalf("正常写出的行不应报错: %v", err)
+	}
+
+	pid := uint64(9002)
+	for uint32(pid%ShardCount) == RowShard(pid) { // 取一个新旧公式落在不同分片的玩家
+		pid++
+	}
+	oldShard := uint32(pid % ShardCount)
+	e.notifier.setResult(NotifyError) // 让流行挂着 notify_due_ms,好让按分片的补发扫描读到它
+	e.mustEnqueue(t, pid, 1)
+	moveTo := func(table string, from, to uint32) {
+		t.Helper()
+		res, err := e.db.ExecContext(ctx, "UPDATE "+table+" SET `shard` = ? WHERE `shard` = ? AND `player_id` = ?", to, from, pid)
+		if err != nil {
+			t.Fatalf("改 %s 的 shard: %v", table, err)
+		}
+		if n, _ := res.RowsAffected(); n != 1 {
+			t.Fatalf("%s 里玩家 %d 应恰有 1 行,改了 %d 行", table, pid, n)
+		}
+	}
+	for _, table := range []string{streamTable, itemTable, auditTable} {
+		moveTo(table, RowShard(pid), oldShard)
+	}
+
+	if st := e.stream(t, pid); st != nil {
+		t.Fatalf("按玩家读不应看得见旧公式的流行: %+v", st)
+	}
+	if _, err := e.store.DueNotifications(ctx, oldShard, testNowMs+1, 100); err == nil {
+		t.Fatal("按分片扫描读到旧公式的流行应整片报错")
+	}
+
+	for _, table := range []string{streamTable, itemTable, auditTable} {
+		err := CheckRowShards(ctx, e.db)
+		// 错误信息的处置一段会列出全部三张表,所以按开头的「inbox: <表名> has」认是哪张表报的。
+		if err == nil || !strings.HasPrefix(err.Error(), "inbox: "+table+" has ") ||
+			!strings.Contains(err.Error(), "player_id="+strconv.FormatUint(pid, 10)) {
+			t.Fatalf("%s 里有旧公式的行,CheckRowShards 应点名这张表与玩家: %v", table, err)
+		}
+		moveTo(table, oldShard, RowShard(pid)) // 改回这一张,下一张表的旧行应接着被判出
+	}
+	if err := CheckRowShards(ctx, e.db); err != nil {
+		t.Fatalf("全部改回之后应通过: %v", err)
 	}
 }

@@ -48,6 +48,7 @@ constexpr int kAssetOpMaxRejections = 64;
 constexpr int kAssetOpMaxPartialSeqs = static_cast<int>(kAssetOpWindowBits);
 constexpr size_t kAssetOpMaxInstanceBytes = 16 * 1024;
 constexpr size_t kAssetOpMaxSnapshotBytes = 64 * 1024;
+// 只计托管 snapshot，总摘要另由每流 1024 位窗口与固定 SHA-256 长度限界。
 constexpr size_t kAssetOpMaxPlayerReceiptBytes = 256 * 1024;
 
 // 同纪元内允许的跳号上限:seq <= max_seq + 1024。超过一律 fail-closed(调用方回 UNKNOWN、

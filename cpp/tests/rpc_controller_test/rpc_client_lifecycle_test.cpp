@@ -265,20 +265,33 @@ TEST_F(RpcClientLoopback, ConnectionObserverReportsUpAndDownWithoutDispatcher)
 
     const bool reportedUp = upFuture.wait_for(5s) == std::future_status::ready;
     EXPECT_TRUE(reportedUp) << "连接观察者没有报告 UP";
-    bool forceCloseRequested = false;
+    bool serverConnSeen = false;
     if (reportedUp)
     {
-        RunInLoopAndWait([&] {
-            if (const auto connection = serverConnWeak_.lock())
+        // 不先 forceClose 再析构服务端:forceClose 把连接置成 kDisconnecting,同一 functor 里的 ~TcpServer 随即
+        // 同步 connectDestroyed,它只在 kConnected 时 disableAll,Channel::remove 的 assert(isNoneEvent()) 在 Debug
+        // 下中止整个测试进程(写法与 OutboundDisconnectRightAfterConnectLogsWarn 相同)。等服务端 accept 之后直接析构
+        // 服务端:~TcpServer 以 kConnected 走 connectDestroyed,连接释放即关 fd,客户端随后看到 DOWN;监听在同一
+        // functor 里关掉,客户端立即发起的重连只会被拒,UP==1 由夹具控制,不依赖自动重试的时间窗。
+        const auto acceptDeadline = std::chrono::steady_clock::now() + 5s;
+        bool gaveUp = false;
+        while (!serverConnSeen && !gaveUp)
+        {
+            gaveUp = std::chrono::steady_clock::now() >= acceptDeadline;
+            RunInLoopAndWait([&] {
+                serverConnSeen = !serverConnWeak_.expired();   // 不 lock:本 functor 不多持一份服务端连接
+                if (serverConnSeen || gaveUp)
+                {
+                    server_.reset();
+                }
+            });
+            if (!serverConnSeen && !gaveUp)
             {
-                connection->forceClose();
-                forceCloseRequested = true;
+                std::this_thread::sleep_for(10ms);
             }
-            // 停止接受重连，让 UP==1 由夹具控制，而不是依赖自动重试的时间窗。
-            server_.reset();
-        });
-        EXPECT_TRUE(forceCloseRequested) << "真实服务端连接不存在";
-        if (forceCloseRequested)
+        }
+        EXPECT_TRUE(serverConnSeen) << "真实服务端连接不存在";
+        if (serverConnSeen)
         {
             EXPECT_EQ(downFuture.wait_for(5s), std::future_status::ready)
                 << "服务端关闭连接后，观察者没有报告 DOWN";
@@ -764,7 +777,7 @@ TEST_F(RpcClientLoopback, DestroyingTcpClientOnItsConnectStackKeepsConnectorAliv
 //    旧实现把连上后 5s 内的断开降为 INFO(kStartupGraceSeconds),依据是旧 win_connect 阻塞 select、无条件返回 0
 //    造成的假阳性连接。d27176e04 起 win_connect 非阻塞,Connector::handleWrite 以 SO_ERROR 确认连接完成才回调 UP,
 //    依据已不存在;而宽限每条连接重新计时,对端反复「接受后立刻关」的抖动会永远停在 INFO,告警看不到。
-//    判据:连上后立即由对端关闭(远在旧的 5s 窗口之内),截获到恰好一条 WARN 级的
+//    判据:连上后立即由对端停服关闭(远在旧的 5s 窗口之内),截获到恰好一条 WARN 级的
 //    "Disconnected from server at <对端>"。旧代码这里只打 INFO → 0 条 → 红。
 //    日志输出函数与级别是进程级全局变量:装、卸都在 loop 线程上做(本例只有 loop 线程打日志),
 //    计数只由 loop 线程写,测试线程经 RunInLoopAndWait 读取,不与打日志的线程竞争。
@@ -809,31 +822,33 @@ TEST_F(RpcClientLoopback, OutboundDisconnectRightAfterConnectLogsWarn)
 
     RpcClientPtr client = ConnectClient();
 
-    // 服务端 accept 与客户端 UP 同在一个 loop 上、先后不定:等服务端连接出现再关。截止时间只作活性上限。
-    // forceClose 与停服放在同一个 functor 里:重连要等 Connector 至少 500ms 的退避,赶不上停服。
+    // 服务端 accept 与客户端 UP 同在一个 loop 上、先后不定:等服务端连接出现再停服。截止时间只作活性上限。
+    // 由停服(~TcpServer)关掉这条连接(同第 5 节),不先 forceClose:forceClose 把连接置为 kDisconnecting 并排队
+    // forceCloseInLoop,同一 functor 里的 ~TcpServer 随即在 loop 线程同步执行 connectDestroyed —— 它只在 kConnected
+    // 时 disableAll,Channel::remove 的 assert(isNoneEvent()) 在 Debug 下中止;Release 下排队的 forceCloseInLoop
+    // 之后经 handleClose 调用绑着裸 this 的 TcpServer::removeConnection(TcpServer.cc FIXME: unsafe),踩已析构的
+    // TcpServer。~TcpServer 以 kConnected 走 connectDestroyed,连接随最后一份引用释放而关 fd,客户端随后看到 DOWN。
+    // 关连接与停监听在同一个 functor 里:客户端看到 FIN 时监听已关,TcpClient::removeConnection → Connector::restart
+    // 立即发起的重连只会被拒(restart 不走 500ms 退避),本例只有一条连接、恰好一次 DOWN。
     const auto acceptDeadline = std::chrono::steady_clock::now() + 5s;
-    bool forceCloseRequested = false;
+    bool serverConnSeen = false;
     bool gaveUp = false;
-    while (!forceCloseRequested && !gaveUp)
+    while (!serverConnSeen && !gaveUp)
     {
         gaveUp = std::chrono::steady_clock::now() >= acceptDeadline;
         RunInLoopAndWait([&] {
-            if (const auto connection = serverConnWeak_.lock())
+            serverConnSeen = !serverConnWeak_.expired();   // 不 lock:本 functor 不多持一份服务端连接
+            if (serverConnSeen || gaveUp)
             {
-                connection->forceClose();
-                forceCloseRequested = true;
-            }
-            if (forceCloseRequested || gaveUp)
-            {
-                server_.reset();   // 停止接受重连:本例只有一条连接、恰好一次 DOWN
+                server_.reset();
             }
         });
-        if (!forceCloseRequested && !gaveUp)
+        if (!serverConnSeen && !gaveUp)
         {
             std::this_thread::sleep_for(10ms);
         }
     }
-    EXPECT_TRUE(forceCloseRequested) << "真实服务端连接不存在";
+    EXPECT_TRUE(serverConnSeen) << "真实服务端连接不存在";
 
     // 观察者在 DOWN 分支打完日志之后才被调用:看到 DOWN 计数时,那条断开日志已经过了输出函数。
     const auto downDeadline = std::chrono::steady_clock::now() + 5s;   // 只作活性上限,判据是 DOWN 事件本身

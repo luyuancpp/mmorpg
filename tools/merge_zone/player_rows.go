@@ -699,6 +699,11 @@ func assetSQLCommitKey(pidStr string) string {
 	return "player:{" + pidStr + "}:asset_sql_commit"
 }
 
+// 与 go/shared/savebarrier.Key 镜像；不保留可能指向回档前 SQL 的 ACK。
+func playerSaveBarrierKey(pidStr string) string {
+	return "player:{" + pidStr + "}:save_barrier"
+}
+
 // playerCacheKeys 列出一名玩家在**共享 DB 0**上合服 / 撤销时必须删掉的全部键:login / go/db 的缓存键,
 // 加上资产 SQL 提交证据键(assetSQLCommitKey)。
 // tables 传入实际发现的玩家表名(它们同时也是 MsgType),这样以后 proto
@@ -708,7 +713,7 @@ func playerCacheKeys(pid uint64, tables []string) []string {
 	names := make([]string, 0, len(defaultCacheMsgTypes)+len(tables))
 	names = append(names, defaultCacheMsgTypes...)
 	names = append(names, tables...)
-	out := make([]string, 0, len(names)+1)
+	out := make([]string, 0, len(names)+2)
 	seen := make(map[string]struct{}, len(names))
 	for _, n := range names {
 		if _, dup := seen[n]; dup {
@@ -717,7 +722,7 @@ func playerCacheKeys(pid uint64, tables []string) []string {
 		seen[n] = struct{}{}
 		out = append(out, n+":"+pidStr)
 	}
-	return append(out, assetSQLCommitKey(pidStr))
+	return append(out, assetSQLCommitKey(pidStr), playerSaveBarrierKey(pidStr))
 }
 
 // invalidatePlayerCaches 删掉这批玩家在 DB 0 上的 go/db + login 缓存,以及资产 SQL 提交证据键。
@@ -739,7 +744,7 @@ func invalidatePlayerCaches(
 	}
 	deleted := 0
 	for _, batch := range chunkUint64(ids, 200) {
-		keys := make([]string, 0, len(batch)*(len(defaultCacheMsgTypes)+len(tables)+1)) // +1:资产 SQL 提交证据键
+		keys := make([]string, 0, len(batch)*(len(defaultCacheMsgTypes)+len(tables)+2)) // +2:资产 SQL 提交证据与父快照屏障
 		for _, pid := range batch {
 			keys = append(keys, playerCacheKeys(pid, tables)...)
 		}

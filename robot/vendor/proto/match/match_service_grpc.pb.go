@@ -21,6 +21,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	MatchService_GetNetworkProbePlan_FullMethodName   = "/match.MatchService/GetNetworkProbePlan"
+	MatchService_CommitNetworkProbe_FullMethodName    = "/match.MatchService/CommitNetworkProbe"
 	MatchService_JoinQueue_FullMethodName             = "/match.MatchService/JoinQueue"
 	MatchService_CancelQueue_FullMethodName           = "/match.MatchService/CancelQueue"
 	MatchService_GetQueueStatus_FullMethodName        = "/match.MatchService/GetQueueStatus"
@@ -43,6 +45,9 @@ const (
 // 凑单成功后走 gather 协议:scene.PrepareBattle 收快照 -> battle.CreateBattle,
 // 失败按补偿矩阵回滚(设计文档 §3.2)。
 type MatchServiceClient interface {
+	// 获取受信地域探测端点；提交端点签名回执后才允许全球排队。
+	GetNetworkProbePlan(ctx context.Context, in *GetNetworkProbePlanRequest, opts ...grpc.CallOption) (*GetNetworkProbePlanResponse, error)
+	CommitNetworkProbe(ctx context.Context, in *CommitNetworkProbeRequest, opts ...grpc.CallOption) (*CommitNetworkProbeResponse, error)
 	// Player requests to join a match queue.
 	JoinQueue(ctx context.Context, in *JoinQueueRequest, opts ...grpc.CallOption) (*JoinQueueResponse, error)
 	// Player cancels their queued match request.
@@ -73,6 +78,26 @@ type matchServiceClient struct {
 
 func NewMatchServiceClient(cc grpc.ClientConnInterface) MatchServiceClient {
 	return &matchServiceClient{cc}
+}
+
+func (c *matchServiceClient) GetNetworkProbePlan(ctx context.Context, in *GetNetworkProbePlanRequest, opts ...grpc.CallOption) (*GetNetworkProbePlanResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetNetworkProbePlanResponse)
+	err := c.cc.Invoke(ctx, MatchService_GetNetworkProbePlan_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *matchServiceClient) CommitNetworkProbe(ctx context.Context, in *CommitNetworkProbeRequest, opts ...grpc.CallOption) (*CommitNetworkProbeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommitNetworkProbeResponse)
+	err := c.cc.Invoke(ctx, MatchService_CommitNetworkProbe_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *matchServiceClient) JoinQueue(ctx context.Context, in *JoinQueueRequest, opts ...grpc.CallOption) (*JoinQueueResponse, error) {
@@ -185,6 +210,9 @@ func (c *matchServiceClient) ListWatchableBattles(ctx context.Context, in *ListW
 // 凑单成功后走 gather 协议:scene.PrepareBattle 收快照 -> battle.CreateBattle,
 // 失败按补偿矩阵回滚(设计文档 §3.2)。
 type MatchServiceServer interface {
+	// 获取受信地域探测端点；提交端点签名回执后才允许全球排队。
+	GetNetworkProbePlan(context.Context, *GetNetworkProbePlanRequest) (*GetNetworkProbePlanResponse, error)
+	CommitNetworkProbe(context.Context, *CommitNetworkProbeRequest) (*CommitNetworkProbeResponse, error)
 	// Player requests to join a match queue.
 	JoinQueue(context.Context, *JoinQueueRequest) (*JoinQueueResponse, error)
 	// Player cancels their queued match request.
@@ -217,6 +245,12 @@ type MatchServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMatchServiceServer struct{}
 
+func (UnimplementedMatchServiceServer) GetNetworkProbePlan(context.Context, *GetNetworkProbePlanRequest) (*GetNetworkProbePlanResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetNetworkProbePlan not implemented")
+}
+func (UnimplementedMatchServiceServer) CommitNetworkProbe(context.Context, *CommitNetworkProbeRequest) (*CommitNetworkProbeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitNetworkProbe not implemented")
+}
 func (UnimplementedMatchServiceServer) JoinQueue(context.Context, *JoinQueueRequest) (*JoinQueueResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method JoinQueue not implemented")
 }
@@ -266,6 +300,42 @@ func RegisterMatchServiceServer(s grpc.ServiceRegistrar, srv MatchServiceServer)
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&MatchService_ServiceDesc, srv)
+}
+
+func _MatchService_GetNetworkProbePlan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNetworkProbePlanRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MatchServiceServer).GetNetworkProbePlan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MatchService_GetNetworkProbePlan_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MatchServiceServer).GetNetworkProbePlan(ctx, req.(*GetNetworkProbePlanRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MatchService_CommitNetworkProbe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommitNetworkProbeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MatchServiceServer).CommitNetworkProbe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MatchService_CommitNetworkProbe_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MatchServiceServer).CommitNetworkProbe(ctx, req.(*CommitNetworkProbeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _MatchService_JoinQueue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -455,6 +525,14 @@ var MatchService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "match.MatchService",
 	HandlerType: (*MatchServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetNetworkProbePlan",
+			Handler:    _MatchService_GetNetworkProbePlan_Handler,
+		},
+		{
+			MethodName: "CommitNetworkProbe",
+			Handler:    _MatchService_CommitNetworkProbe_Handler,
+		},
 		{
 			MethodName: "JoinQueue",
 			Handler:    _MatchService_JoinQueue_Handler,

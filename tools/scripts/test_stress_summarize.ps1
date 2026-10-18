@@ -154,16 +154,16 @@ db_task_stage_seconds_count{op="read",stage="task_total"} 2
 # TYPE db_task_redis_step_seconds histogram
 db_task_redis_step_seconds_sum{op="read",step="cache_set"} 0.009
 db_task_redis_step_seconds_count{op="read",step="cache_set"} 1
-db_task_redis_step_seconds_sum{op="write",step="cache_set"} 0.00096
-db_task_redis_step_seconds_count{op="write",step="cache_set"} 2
+db_task_redis_step_seconds_sum{op="write",step="cache_publish"} 0.00096
+db_task_redis_step_seconds_count{op="write",step="cache_publish"} 2
 db_task_redis_step_seconds_sum{op="write",step="cursor_get"} 0.00024
 db_task_redis_step_seconds_count{op="write",step="cursor_get"} 2
-db_task_redis_step_seconds_sum{op="write",step="cursor_set"} 0.00038
-db_task_redis_step_seconds_count{op="write",step="cursor_set"} 2
+db_task_redis_step_seconds_sum{op="write",step="applied_advance"} 0.00088
+db_task_redis_step_seconds_count{op="write",step="applied_advance"} 2
 db_task_redis_step_seconds_sum{op="write",step="epoch_get"} 0.00026
 db_task_redis_step_seconds_count{op="write",step="epoch_get"} 2
-db_task_redis_step_seconds_sum{op="write",step="epoch_mark"} 0.0005
-db_task_redis_step_seconds_count{op="write",step="epoch_mark"} 2
+db_task_redis_step_seconds_sum{op="write",step="owner_epoch_probe"} 0.00032
+db_task_redis_step_seconds_count{op="write",step="owner_epoch_probe"} 2
 db_task_redis_step_seconds_sum{op="write",step="expand_get"} 0.0003
 db_task_redis_step_seconds_count{op="write",step="expand_get"} 2
 db_task_redis_step_seconds_sum{op="write",step="lease_verify"} 0.00054
@@ -439,17 +439,18 @@ Assert-SectionRow -Lines $outputLines -SectionMarker 'DB write path' -SnapshotNa
     -Pattern '^\s*t18m_db\s+n/a\s+n/a\s+n/a\s+n/a\s+\|\s+n/a\s+n/a\s+\|\s+n/a\s+\|\s+n/a\s+n/a\s+n/a\s+\|\s+n/a\s+n/a\s*$' `
     -Reason "a pre-Round-20 db snapshot must print n/a, not 0"
 
-# 2e DB Redis steps:11 个 step 按 go/db/internal/metrics/pipeline.go RedisSteps 的顺序,最后一列是均值之和。
+# 2e DB Redis steps:12 个 step 按 go/db/internal/metrics/pipeline.go RedisSteps 的顺序,最后一列是均值之和。
 Assert-HeaderMatches -Lines $outputLines `
-    -Pattern 'lock_acq\s+cur_get\s+ep_get\s+plc_lkp\s+exp_get\s+plc_rck\s+verify\s+cache\s+cur_set\s+ep_mark\s+lock_rel\s+sum\s*$' `
-    -Reason "DB Redis steps table must list the 11 steps in write-path order plus sum"
-# t20m:0.21 0.12 0.13 0.34 0.15 0.36 0.27 0.48 0.19 0.25 0.11,合计 2.61(ms)。cache 列是 0.48 而不是混进读任务的 9ms。
+    -Pattern 'lock_acq\s+cur_get\s+ep_get\s+owner_ep\s+plc_lkp\s+exp_get\s+plc_rck\s+verify\s+publish\s+cache_nx\s+advance\s+lock_rel\s+sum\s*$' `
+    -Reason "DB Redis steps table must list the 12 steps in write-path order plus sum"
+# t20m:0.21 0.12 0.13 0.16 0.34 0.15 0.36 0.27 0.48 n/a 0.44 0.11,合计 2.77(ms)。
+# cache_nx 只有读任务的 9ms,本表仍须 n/a;publish 不能读成旧 cache_set 列。
 Assert-SectionRow -Lines $outputLines -SectionMarker 'DB Redis steps' -SnapshotName 't20m_db' `
-    -Pattern '^\s*t20m_db\s+0\.21ms\s+0\.12ms\s+0\.13ms\s+0\.34ms\s+0\.15ms\s+0\.36ms\s+0\.27ms\s+0\.48ms\s+0\.19ms\s+0\.25ms\s+0\.11ms\s+2\.61ms\s*$' `
+    -Pattern '^\s*t20m_db\s+0\.21ms\s+0\.12ms\s+0\.13ms\s+0\.16ms\s+0\.34ms\s+0\.15ms\s+0\.36ms\s+0\.27ms\s+0\.48ms\s+n/a\s+0\.44ms\s+0\.11ms\s+2\.77ms\s*$' `
     -Reason "each write-path Redis step avg must sit in its RedisSteps column and sum must add them up"
 Assert-SectionRow -Lines $outputLines -SectionMarker 'DB Redis steps' -SnapshotName 't18m_db' `
-    -Pattern '^\s*t18m_db(\s+n/a){12}\s*$' `
-    -Reason "a pre-Round-20 db snapshot must print n/a for all 11 steps and the sum"
+    -Pattern '^\s*t18m_db(\s+n/a){13}\s*$' `
+    -Reason "a pre-Round-20 db snapshot must print n/a for all 12 steps and the sum"
 
 # 2f DB retry routing(S1 的 db_retry_* 列由 S4 测量批输出)。
 Assert-HeaderMatches -Lines $outputLines `

@@ -170,14 +170,14 @@ func newHarness(t *testing.T) *recordingHarness {
 }
 
 func (h *recordingHarness) makeHandler(op string) dbOpHandler {
-	return func(_ context.Context, store *proto2mysql.DB, task *db_proto.DBTask, _ proto.Message) error {
+	return func(_ context.Context, store *proto2mysql.DB, task *db_proto.DBTask, _ proto.Message) (writeOutcome, error) {
 		h.mu.Lock()
 
 		// Honor injected failure plan first.
 		if remaining, ok := h.failNextOf[task.TaskId]; ok && remaining > 0 {
 			h.failNextOf[task.TaskId] = remaining - 1
 			h.mu.Unlock()
-			return fmt.Errorf("injected failure for taskID=%s op=%s", task.TaskId, op)
+			return writeOutcome{kind: writeApplied}, fmt.Errorf("injected failure for taskID=%s op=%s", task.TaskId, op)
 		}
 
 		body := append([]byte(nil), task.Body...) // deep copy, defensive
@@ -198,7 +198,7 @@ func (h *recordingHarness) makeHandler(op string) dbOpHandler {
 		if hook != nil {
 			hook(call)
 		}
-		return nil
+		return writeOutcome{kind: writeApplied}, nil
 	}
 }
 
@@ -565,23 +565,17 @@ func TestProcessTaskBatch_KafkaFailure_MustEnterRetryQueue(t *testing.T) {
 }
 
 func TestWriteBackDBCacheReturnsRedisFailure(t *testing.T) {
-	mr := miniredis.RunT(t)
-	rc := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	t.Cleanup(func() { _ = rc.Close() })
+	w, mr, _ := newTestWorker(t, 0)
 	task := makeWriteTask(t, 5005, "taskpb.TaskResult", 1)
+	lease, err := acquireOrderingLock(context.Background(), w, task.dbTask)
+	require.NoError(t, err)
+	defer releaseOrderingLock(context.Background(), lease, task.dbTask)
 	msg := &db_proto.TaskResult{Success: true, Timestamp: 1}
-
-	if err := writeBackDBCache(context.Background(), rc, task.dbTask, msg); err != nil {
-		t.Fatalf("healthy cache publication: %v", err)
-	}
-	if _, err := rc.Get(context.Background(), buildCacheKey(task.dbTask)).Bytes(); err != nil {
-		t.Fatalf("published cache value missing: %v", err)
-	}
-
-	mr.Close()
-	if err := writeBackDBCache(context.Background(), rc, task.dbTask, msg); err == nil {
-		t.Fatal("Redis publication failure must propagate so Kafka/retry is not ACKed")
-	}
+	require.NoError(t, publishDBWriteResult(context.Background(), lease, task.dbTask, msg))
+	require.True(t, mr.Exists(buildCacheKey(task.dbTask)))
+	mr.SetError("ERR injected cache failure")
+	require.Error(t, publishDBWriteResult(context.Background(), lease, task.dbTask, msg))
+	mr.SetError("")
 }
 
 // ---------------------------------------------------------------------------

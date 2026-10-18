@@ -188,7 +188,9 @@ proto/db
 proto/friend
 proto/guild
 proto/login
+proto/mail
 proto/match
+proto/rank
 proto/scene
 proto/team
 proto/trade

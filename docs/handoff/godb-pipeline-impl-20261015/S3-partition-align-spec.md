@@ -716,3 +716,17 @@ C. 本机一区联调
 15. 历史文档 architecture-current-state-vs-gaps-2026-05.md:24 仍指向 pkg/consistent。它是历史快照，不改。
 
 16. 静态核对的范围：KafkaProducer 不读任何外部 librdkafka 配置，所以源码核对就覆盖了全部 C++ 发送路径。以后如果加了从 yaml 透传 librdkafka 参数的能力，必须同时禁止覆盖 partitioner。
+
+## 2026-10-16 更正
+
+> 本节是追加的更正，上文原文不改。来源是 R7 语义复核（截至 2026-10-17 工作区）。涉及的 C++ 改动**已落码，未编译、未测试，待 Codex 验证**。
+
+1. **冷读冒烟「删键前确认 W 真的发出」的判据已被取代（对应「复核阻断项 / 修正的处理」R5 的第三条，以及「上线与回滚」C 段第 4 步 I4 冷读冒烟的第 3 小步）**。原文要求删键前先看到 scene 日志 `[SavePlayerToRedis] Player <id> saved to Redis, DB write tasks enqueued`，把它当作「W 确实发出」的证据。这个判据不成立，现行流程以 [`docs/design/db-task-kafka-partition-contract.md`](../../design/db-task-kafka-partition-contract.md)「滚动对齐步骤与观测」一节的冷读冒烟第 2 步为准：
+   - 在 Kafka 侧确认：登出前记下该玩家所在分区的 end offset，登出、看到存盘日志后确认它增长了；
+   - 用 console consumer 从旧 end offset 抽到 key=<id>、op=write 的那条（复用抽样复核器解析）；
+   - 同时确认该玩家没有 `Kafka send failed` 日志。
+   - 以上都满足才允许删键。
+2. **那行 INFO 本身的语义（`cpp/libs/services/scene/player/system/player_lifecycle.cpp` 的 `SavePlayerToRedisImpl` 末尾）**：
+   - R7 之前，发送失败时也会打 `DB write tasks enqueued`。现在只有两条 DBTask 都同步入队才打这句；没全入队时依次打 `[SavePlayerToRedis] Kafka send failed: … err=…`、汇总 ERROR `… not every DB write task was queued to Kafka … (metric=db_task_produce_rejected)` 和 INFO `[SavePlayerToRedis] Player <id> saved to Redis, DB write tasks NOT all queued (see the ERROR above) (…)`。
+   - 即使全部入队，`enqueued` 也只表示进了 librdkafka 的本地队列，不等于 acks=all。所以文案修正之后，第 1 条的 Kafka 侧确认仍是删键前唯一的判据，这行 INFO 只作辅助。
+   - 现行 INFO 的括号里是 `topic=…, home_zone=…, owner_epoch=…, save_seq=…`；原文只引用了前缀，按前缀 grep 不受影响。

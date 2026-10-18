@@ -387,11 +387,12 @@ func TestMessageIdLenCoversTombstoneAtMaxId(t *testing.T) {
 
 // 批 7 的实际场景:删掉 Gate.RouteNodeMessage / RoutePlayerMessage 与 Scene.RouteNodeStringMsg /
 // RoutePlayerStringMsg 之后,41/74/78/81 恰好 4 条新墓碑、卡线通过;注册表长度不变;其余号逐行不动、
-// 没有删行;下一个新方法接在最大号之后;再跑一遍是不动点。
+// 没有删行;下一个新方法接在最大号之后;再跑一遍是不动点。第三轮是批 7 第二步:已有这 4 条墓碑时再删
+// 1/40/42/56 四个已退役方法,已有墓碑不计入,恰好 4 条新墓碑、不放行也通过。
 func TestAssignMessageIdsRouteFamilyRemoval(t *testing.T) {
 	const fileLen = 301 // 0..300,与 2026-10-15 的 message_id.txt 同长
 	special := map[int]string{
-		1:  "Scene.SendMessageToPlayer", // Route 一族那一轮里仍是活方法(下一轮才删,见下一个用例)
+		1:  "Scene.SendMessageToPlayer", // Route 一族那一轮里仍是活方法(本用例第三轮才删)
 		40: "Scene.InvokePlayerService", // 同上
 		41: "Gate.RouteNodeMessage",
 		42: "Gate.PlayerEnterGameNode", // 同上

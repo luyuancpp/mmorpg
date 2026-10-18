@@ -62,7 +62,6 @@ set(SOURCE_FILES
     handler/event/scene_entry_dispatch.cpp
     handler/event/gate_event_handler.cpp
     handler/event/gate_kafka_command_router.cpp
-    handler/event/player_event_handler.cpp
     handler/rpc/client_message_processor.cpp
     handler/rpc/client_request_lane.cpp
     handler/rpc/router_muduo_forward.cpp
@@ -72,7 +71,6 @@ set(SOURCE_FILES
     main.cpp
     rpc_replies/register_handler.cpp
     # 2026-09-18 补登记:gate.vcxproj 有、Linux CMake 清单漏了。
-    handler/event/match_event_handler.cpp
 )
 
 find_package(absl CONFIG REQUIRED)

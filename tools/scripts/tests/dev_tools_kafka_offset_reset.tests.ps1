@@ -137,13 +137,24 @@ try {
     }
 
     Test-Case '删 topic 重建:-KafkaDeleteAndRecreate / -KafkaReplicationFactor / -KafkaBin 按名字绑定,不带 Group' {
+        # topic 用非 db_task 的名字:真脚本对 db_task_zone_* 一律拒绝同名重建(R7 复核 [1]),这里只测包装入口的透传。
         $run = Invoke-DevToolsKafkaReset -Arguments @(
-            '-KafkaTopic', 'db_task_zone_7', '-KafkaDeleteAndRecreate', '-KafkaPartitions', '5',
+            '-KafkaTopic', 'contract_recreate_topic', '-KafkaDeleteAndRecreate', '-KafkaPartitions', '5',
             '-KafkaReplicationFactor', '3', '-KafkaBin', '/opt/kafka/bin')
         Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "输出: $($run.Output)"
         Assert-BoundExactly -Run $run -Label '删 topic 重建' -Expected @{
-            BootstrapServer = 'kafka:9092'; Topic = 'db_task_zone_7'; DeleteAndRecreateTopic = 'True'
+            BootstrapServer = 'kafka:9092'; Topic = 'contract_recreate_topic'; DeleteAndRecreateTopic = 'True'
             Partitions = '5'; ReplicationFactor = '3'; KafkaBin = '/opt/kafka/bin'
+        }
+    }
+
+    Test-Case '删 topic 重建:显式 -KafkaReplicationFactor 1 也透传(以前缺省 1 且只在 ≠ 1 时透传,单 broker 档传不下去)' {
+        $run = Invoke-DevToolsKafkaReset -Arguments @(
+            '-KafkaTopic', 'contract_recreate_topic', '-KafkaDeleteAndRecreate', '-KafkaPartitions', '5', '-KafkaReplicationFactor', '1')
+        Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "输出: $($run.Output)"
+        Assert-BoundExactly -Run $run -Label '副本数 1' -Expected @{
+            BootstrapServer = 'kafka:9092'; Topic = 'contract_recreate_topic'; DeleteAndRecreateTopic = 'True'
+            Partitions = '5'; ReplicationFactor = '1'
         }
     }
 

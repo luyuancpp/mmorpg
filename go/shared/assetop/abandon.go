@@ -455,7 +455,7 @@ func seenForFinalize(ledger *componentpb.PlayerAssetOpLedgerComp, op Op, sqlComm
 	outcome, partial, reason := ClassifyPersisted(ledger, op.Stream, op.StreamEpoch, op.Seq)
 	res := resultWithReceipt(ledger, op, Result{Outcome: outcome, Reason: reason, Durable: true, SQLCommitted: sqlCommitted, Partial: partial})
 	if !res.Durable {
-		logx.Errorf("[AssetOp] Abandon skipped: persisted outcome found but escrow receipt is missing; manual handling required op_id=%d stream=%d seq=%d corr=%d",
+		logx.Errorf("[AssetOp] Abandon skipped: persisted outcome lacks matching request identity or escrow instance; manual handling required op_id=%d stream=%d seq=%d corr=%d",
 			op.OpID, op.Stream, op.Seq, op.CorrelationID)
 		return abandonSkipLedgerUnknown, Result{}
 	}

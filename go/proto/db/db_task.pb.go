@@ -34,8 +34,14 @@ type DBTask struct {
 	RetryCount int32                  `protobuf:"varint,7,opt,name=retry_count,json=retryCount,proto3" json:"retry_count,omitempty"` // Retry count (default 0, +1 per retry, for max-retry control)
 	// 生产者(scene)持有的玩家归属 epoch。db 落库前与 player:{key}:owner_epoch 比对,小于当前值即被废黜节点的迟到写,
 	// 拒绝并计数 stale_owner_write_rejected;0 表示旧版生产者未填(兼容窗口内放行)。见 scene-owner-reentry-barrier.md §6.3。
-	OwnerEpoch    uint64 `protobuf:"varint,8,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`
-	SaveSeq       uint64 `protobuf:"varint,9,opt,name=save_seq,json=saveSeq,proto3" json:"save_seq,omitempty"` // 同一玩家同一 owner_epoch 内严格递增；与 SQL 行版本一起校验
+	OwnerEpoch uint64 `protobuf:"varint,8,opt,name=owner_epoch,json=ownerEpoch,proto3" json:"owner_epoch,omitempty"`
+	SaveSeq    uint64 `protobuf:"varint,9,opt,name=save_seq,json=saveSeq,proto3" json:"save_seq,omitempty"` // 同一玩家同一 owner_epoch 内严格递增；与 SQL 行版本一起校验
+	// 读任务的回复目标：发起读的 login 进程实例标识（进程启动时生成的 UUID，见 go/login/internal/dispatcher）。
+	// go/db 把读回执的到达通知 PUBLISH 到 task:result:notify:<reply_instance>；频道名与合法性校验的唯一来源是
+	// go/shared/taskresult（1~64 字节，只含 A-Z a-z 0-9 '-'）。为空（旧版 login、写任务、工具）或不合法时，
+	// go/db 回落全服旧频道 task:result:notify。新版 login 两个频道都订、发布方每条只发一次，所以新旧版本按任意顺序
+	// 滚动升级都能送达，任一侧都可单独回滚。写任务不填。字段号依据 godb 交接 §5 第 13 项：9 给 save_seq，10 给本字段。
+	ReplyInstance string `protobuf:"bytes,10,opt,name=reply_instance,json=replyInstance,proto3" json:"reply_instance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -133,6 +139,13 @@ func (x *DBTask) GetSaveSeq() uint64 {
 	return 0
 }
 
+func (x *DBTask) GetReplyInstance() string {
+	if x != nil {
+		return x.ReplyInstance
+	}
+	return ""
+}
+
 // TaskResult: DB task execution result struct
 // Usage: consumer stores result in Redis after execution, for producer to query
 type TaskResult struct {
@@ -207,7 +220,7 @@ var File_proto_db_db_task_proto protoreflect.FileDescriptor
 
 const file_proto_db_db_task_proto_rawDesc = "" +
 	"\n" +
-	"\x16proto/db/db_task.proto\x12\x06taskpb\"\xee\x01\n" +
+	"\x16proto/db/db_task.proto\x12\x06taskpb\"\x95\x02\n" +
 	"\x06DBTask\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x04R\x03key\x12\x1d\n" +
 	"\n" +
@@ -220,7 +233,9 @@ const file_proto_db_db_task_proto_rawDesc = "" +
 	"retryCount\x12\x1f\n" +
 	"\vowner_epoch\x18\b \x01(\x04R\n" +
 	"ownerEpoch\x12\x19\n" +
-	"\bsave_seq\x18\t \x01(\x04R\asaveSeq\"n\n" +
+	"\bsave_seq\x18\t \x01(\x04R\asaveSeq\x12%\n" +
+	"\x0ereply_instance\x18\n" +
+	" \x01(\tR\rreplyInstance\"n\n" +
 	"\n" +
 	"TaskResult\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x12\n" +

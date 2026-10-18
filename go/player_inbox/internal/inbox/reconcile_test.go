@@ -10,6 +10,10 @@ package inbox
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -72,17 +76,40 @@ func rcRow(seq, requestID uint64, state inboxpb.PlayerInboxItemState, by inboxpb
 	}
 }
 
-// TestLedgerRecentCapacityMatchesConsumer 钉住环容量与消费方一致:C++ player_inbox_rules.h 的 kRecentCapacity = 32
-// (Java 版落码时同值)。改这里而不改 C++,空洞判定的「环满」边界就与消费方的裁剪对不上。
+// consumerRulesHeader 是 C++ 消费方规则头文件,相对本包目录(go/player_inbox/internal/inbox,go test 的工作目录)。
+var consumerRulesHeader = filepath.Join("..", "..", "..", "..",
+	"cpp", "libs", "services", "scene", "player", "system", "player_inbox_rules.h")
+
+// cppRecentCapacityDecl 匹配 player_inbox_rules.h 里环容量的定义(`constexpr int kRecentCapacity = 32;`)。
+var cppRecentCapacityDecl = regexp.MustCompile(`constexpr\s+int\s+kRecentCapacity\s*=\s*(\d+)\s*;`)
+
+// TestLedgerRecentCapacityMatchesConsumer 钉住环容量与消费方一致(评审 R4):从 C++ player_inbox_rules.h 里读出
+// kRecentCapacity,与 ledgerRecentCapacity 逐值比对(Java 版落码时同值)。只改一边,空洞判定的「环满」边界就与
+// 消费方的裁剪对不上,validLedger 还会把消费方合法的满环判成不合法 —— 对账整体失效。
+// 头文件读不到、定义改了写法都判红:这条守卫不能静默失效。
 func TestLedgerRecentCapacityMatchesConsumer(t *testing.T) {
-	if ledgerRecentCapacity != 32 {
-		t.Fatalf("ledgerRecentCapacity = %d, 必须与 C++ kRecentCapacity(32)同值", ledgerRecentCapacity)
+	src, err := os.ReadFile(consumerRulesHeader)
+	if err != nil {
+		t.Fatalf("读 C++ 消费方规则头文件 %s 失败(移动了文件就同步改这里): %v", consumerRulesHeader, err)
+	}
+	decls := cppRecentCapacityDecl.FindAllSubmatch(src, -1)
+	if len(decls) != 1 {
+		t.Fatalf("%s 里应恰有一处 `constexpr int kRecentCapacity = N;`,找到 %d 处(改了写法就同步改这里的正则)",
+			consumerRulesHeader, len(decls))
+	}
+	cpp, err := strconv.Atoi(string(decls[0][1]))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ledgerRecentCapacity != cpp {
+		t.Fatalf("ledgerRecentCapacity = %d, C++ kRecentCapacity = %d:两边必须同值", ledgerRecentCapacity, cpp)
 	}
 	// 同 C++ 的 static_assert:环至少装得下两批(一批在途确认、一批刚落盘,设计 §4.4)。
 	if 2*constants.FetchMaxItems > ledgerRecentCapacity {
 		t.Fatalf("环容量 %d 装不下两批 Fetch(每批 %d)", ledgerRecentCapacity, constants.FetchMaxItems)
 	}
-	if c := rcRing(100, ledgerRecentCapacity, 0); len(c.GetRecent()) != 32 || c.GetDecidedThroughSeq() != 131 {
+	if c := rcRing(100, ledgerRecentCapacity, 0); len(c.GetRecent()) != ledgerRecentCapacity ||
+		c.GetDecidedThroughSeq() != uint64(100+ledgerRecentCapacity-1) {
 		t.Fatalf("rcRing 构造的满环不对: len=%d dt=%d", len(c.GetRecent()), c.GetDecidedThroughSeq())
 	}
 }
@@ -145,8 +172,9 @@ func TestFinalizedLedgerGap(t *testing.T) {
 	}
 }
 
-// TestReconcileLedgerUsable:结构不合法或环超过 32 条的账本当不了对账证据(结论 unknown,不是「无差异」)。
-func TestReconcileLedgerUsable(t *testing.T) {
+// TestValidLedgerRingCapacity:结构不合法或环超过 32 条的账本当不了证据(对账结论 unknown,不是「无差异」;
+// 强制作废判 LEDGER_INVALID,见 TestProveNeverExecuted)。环长检查原来只在对账一侧(评审 R2),现在并进 validLedger。
+func TestValidLedgerRingCapacity(t *testing.T) {
 	cases := []struct {
 		name   string
 		ledger *componentpb.PlayerInboxLedgerComp
@@ -160,8 +188,8 @@ func TestReconcileLedgerUsable(t *testing.T) {
 			Recent: []*componentpb.PlayerInboxDecision{rcDecision(20, 2, outApplied, 0), rcDecision(10, 1, outApplied, 0)}}), false},
 	}
 	for _, tc := range cases {
-		if got := reconcileLedgerUsable(tc.ledger); got != tc.want {
-			t.Errorf("%s: usable = %v, want %v", tc.name, got, tc.want)
+		if got := validLedger(tc.ledger); got != tc.want {
+			t.Errorf("%s: valid = %v, want %v", tc.name, got, tc.want)
 		}
 	}
 }
@@ -496,9 +524,22 @@ func TestReconcileRecentRound(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := ReconcileRoundResult{Inconsistent: 1, PlayersPlanned: 5, PlayersChecked: 5}
-	if res != want {
-		t.Fatalf("res = %+v, want %+v", res, want)
+	if res.Inconsistent != 1 || res.PlayersPlanned != 5 || res.PlayersChecked != 5 || res.Truncated || len(res.Shards) != ShardCount {
+		t.Fatalf("res = %+v, want 1 处不一致、5 名玩家全部判定、未截断、64 片读数", res)
+	}
+	// 分片读数(评审 R1):A 的空洞记在分片 1;D 读失败,分片 4 的 0 只是下界(不 Complete);
+	// 读不到存档(B)与账本不合法(C)是确定的结论,不影响 Complete。
+	for i, s := range res.Shards {
+		wantInconsistent, wantComplete := 0, true
+		switch s.Shard {
+		case 1:
+			wantInconsistent = 1
+		case 4:
+			wantComplete = false
+		}
+		if s.Shard != uint32(i) || s.Inconsistent != wantInconsistent || s.Complete != wantComplete {
+			t.Errorf("Shards[%d] = %+v, want shard=%d inconsistent=%d complete=%v", i, s, i, wantInconsistent, wantComplete)
+		}
 	}
 
 	limits := reconcileLimits{pageSize: 1, perShard: 1, maxPlayers: 100, readConcurrency: 2}
@@ -506,11 +547,76 @@ func TestReconcileRecentRound(t *testing.T) {
 	if err != nil || !res.Truncated || res.Inconsistent != 0 {
 		t.Fatalf("分片 1 只核对最新的 20(一致),截掉了 10: res=%+v err=%v", res, err)
 	}
+	if s := res.Shards[1]; s.Shard != 1 || s.Complete || s.Inconsistent != 0 {
+		t.Fatalf("分片 1 被单片上限截掉了最老的行,它的 0 只是下界: %+v", s)
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	if res, err := reconcileRecent(ctx, 0, defaultReconcileLimits, m.read, ledgers); !errors.Is(err, context.Canceled) ||
-		res.PlayersChecked != 0 || res.Inconsistent != 0 {
+		res.PlayersChecked != 0 || res.Inconsistent != 0 || len(res.Shards) != 0 {
 		t.Fatalf("ctx 已结束: res=%+v err=%v", res, err)
+	}
+}
+
+// TestReconcileRecentStoppedShardIsPartial:玩家数触顶时停下的那一片只读了一部分,读数不 Complete;
+// 之前读完的分片照常 Complete;没读到的分片不出现在 Shards 里。
+func TestReconcileRecentStoppedShardIsPartial(t *testing.T) {
+	logtest.Discard(t)
+	m := &memShards{rows: map[uint32][]FinalizedRef{
+		10: shardRefs(10, 1, 2),
+		11: shardRefs(11, 1, 2), // 第 2 名玩家撞上上限 3
+		12: shardRefs(12, 1),
+	}}
+	ledgers := mapLedgers{ledgers: map[uint64]*componentpb.PlayerInboxLedgerComp{}}
+	for _, shard := range []uint32{10, 11, 12} {
+		for _, p := range []uint64{1, 2} {
+			ledgers.ledgers[playerOf(shard, p)] = rcLedger(rcCursor(gmDomain, rcDecision(10, 1, outApplied, 0)))
+		}
+	}
+	limits := reconcileLimits{pageSize: 10, perShard: 10, maxPlayers: 3, readConcurrency: 2}
+	res, err := reconcileRecent(context.Background(), 10, limits, m.read, ledgers)
+	if err != nil || !res.Truncated || res.PlayersChecked != 3 || res.Inconsistent != 0 {
+		t.Fatalf("res = %+v err=%v", res, err)
+	}
+	want := []ShardTally{{Shard: 10, Complete: true}, {Shard: 11, Complete: false}}
+	if len(res.Shards) != len(want) || res.Shards[0] != want[0] || res.Shards[1] != want[1] {
+		t.Fatalf("Shards = %+v, want %+v", res.Shards, want)
+	}
+}
+
+// TestCollectFinalizedReadsStridePrefix 钉住覆盖下界(评审 R1):生产上限下,不论玩家数在哪一片触顶,
+// 从起点起的前 reconcileStartStride 片一定读完。构造最坏情况:每片都塞满 reconcilePerShardLimit 名不同的玩家。
+func TestCollectFinalizedReadsStridePrefix(t *testing.T) {
+	if reconcileStartStride < 1 || reconcileStartStride*reconcilePerShardLimit > reconcileMaxPlayers {
+		t.Fatalf("步长 %d 与上限不匹配:前 stride 片的玩家数 %d 必须不超过玩家数上限 %d",
+			reconcileStartStride, reconcileStartStride*reconcilePerShardLimit, reconcileMaxPlayers)
+	}
+	const start = uint32(62)
+	rows := map[uint32][]FinalizedRef{}
+	for i := uint32(0); i < reconcileStartStride+2; i++ {
+		shard := (start + i) % ShardCount
+		players := make([]uint64, reconcilePerShardLimit)
+		for p := range players {
+			players[p] = uint64(p + 1)
+		}
+		rows[shard] = shardRefs(shard, players...)
+	}
+	scan, err := collectFinalized(context.Background(), start, defaultReconcileLimits, (&memShards{rows: rows}).read)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !scan.playerCapHit || scan.scanned != reconcileStartStride+1 || len(scan.capped) != 0 {
+		t.Fatalf("playerCapHit=%v scanned=%d capped=%v, want 前 %d 片读完、停在第 %d 片",
+			scan.playerCapHit, scan.scanned, scan.capped, reconcileStartStride, reconcileStartStride+1)
+	}
+	tallies, _ := scan.shardTallies()
+	for i := 0; i < reconcileStartStride; i++ {
+		if want := (start + uint32(i)) % ShardCount; tallies[i].Shard != want || !tallies[i].Complete {
+			t.Fatalf("第 %d 片 = %+v, want shard=%d 且读完", i, tallies[i], want)
+		}
+	}
+	if last := tallies[reconcileStartStride]; last.Complete || last.Shard != scan.stoppedShard {
+		t.Fatalf("停下的那一片 = %+v, want 不 Complete、shard=%d", last, scan.stoppedShard)
 	}
 }

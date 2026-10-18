@@ -91,11 +91,13 @@ type ServerConfig struct {
 	Kafka       KafkaConfig     `json:"Kafka"`
 	BlobGuard   BlobGuardConfig `json:"BlobGuard,optional"`
 	Fencing     FencingConfig   `json:"Fencing,optional"`
+	// OwnerEpochRedis 只读核心实例的 owner_epoch；缺省复用 RedisClient。
+	OwnerEpochRedis *PlacementRedisConfig `json:"OwnerEpochRedis,optional"`
 }
 
 // 玩家两张表的 MySQL 行内围栏模式(docs/design/db-write-fencing-mysql.md §4.7、§8)。
 const (
-	// FencingModeLegacy 不判围栏,玩家表照旧普通 Save,也不发布资产 SQL 提交证据。缺省值。
+	// FencingModeLegacy 不拒绝旧写，但更新保留已有行内围栏，也不发布资产 SQL 提交证据。缺省值。
 	FencingModeLegacy = "legacy"
 	// FencingModeDual 玩家两张表按 DBTask 的 (owner_epoch, save_seq) 做行内围栏条件写,并发布资产 SQL 提交证据。
 	FencingModeDual = "dual"
@@ -103,9 +105,10 @@ const (
 
 // FencingConfig 是行内围栏的开关。整段可缺省:go-zero 对整段 optional 且未出现的嵌套结构不回填 default,
 // 所以零值(空串)必须直接就是安全语义 legacy。逐 zone 切 dual,门禁见设计 §8.3;dual 切回 legacy 随时可做,
-// 但过渡实现下 legacy 期间的普通 Save 会把行内围栏写回 body 里的值(C++ 新版恒为 0),再切 dual 之前要先满足 §8.3 的排空门禁。
+// legacy 期间更新保留已有围栏，新行盖零；切换仍须满足 §8.3 的滚动门禁。
 type FencingConfig struct {
-	Mode string `json:"Mode,optional"`
+	Mode          string `json:"Mode,optional"`
+	EpochOverride bool   `json:"EpochOverride,optional"`
 }
 
 // EffectiveMode 返回生效的模式:空串按 legacy。
@@ -125,6 +128,8 @@ type DatabaseConfig struct {
 	MaxOpenConn int    `json:"MaxOpenConn"`
 	MaxIdleConn int    `json:"MaxIdleConn"`
 	Net         string `json:"Net"`
+	// RequireTiDB 强制每条玩家库物理连接使用 TiDB leader、当前严格读；false 仅兼容本地 MySQL。
+	RequireTiDB bool `json:"RequireTiDB,optional"`
 
 	// AllowedDatabases 是**外部注入**的库名白名单。
 	//
@@ -206,7 +211,7 @@ type MigrationConfig struct {
 	AdvisoryLockSeconds     int `json:"AdvisoryLockSeconds,optional"`
 }
 
-// BlobGuardConfig 是 db_task 落库路径上 pb blob 列的字节上限(大字段三档闸)。
+// BlobGuardConfig 是 db_task 落库路径上 pb blob 列的保守计费上限(大字段三档闸)。
 //
 // 档位语义:
 //   - 正常          —— 只记 histogram,零日志;
@@ -217,12 +222,12 @@ type MigrationConfig struct {
 // 设计量级是个位数 KB,16MB 的闸等于没设 —— 等它触发时行早就大到把 Save
 // 的网络往返和 Redis 写回一起拖垮了。
 type BlobGuardConfig struct {
-	// MaxColumnBytes 单个 blob 列的**入库字节**上限(0 = 用默认值)。
-	// 注意 proto2mysql 把子消息 base64 后再入库,所以入库字节 ≈ 序列化字节 × 4/3,
-	// 本字段量的是 base64 之后的那个数(也就是真正占 MEDIUMBLOB 的数)。
+	// MaxColumnBytes 单个 blob 列的保守计费上限(0 = 用默认值)。
+	// 兼容既有 base64.EncodedLen(序列化字节) 口径与指标；当前 proto2mysql v0.2.0
+	// 向 SQL 传裸 protobuf/bytes，本预算不是实际入库量，不随本轮列覆盖放宽计费算法。
 	MaxColumnBytes int64 `json:"MaxColumnBytes,optional"`
 
-	// MaxRowBytes 单行所有 blob 列入库字节之和的上限(0 = 用默认值)。
+	// MaxRowBytes 单行所有 blob 列保守计费之和的上限(0 = 用默认值)。
 	MaxRowBytes int64 `json:"MaxRowBytes,optional"`
 
 	// WarnRatio 预警水位(0 = 用默认值 0.8)。
@@ -243,6 +248,42 @@ type BlobGuardConfig struct {
 type BlobTableLimit struct {
 	MaxColumnBytes int64 `json:"MaxColumnBytes,optional"`
 	MaxRowBytes    int64 `json:"MaxRowBytes,optional"`
+	// ColumnBytes 只覆盖指定 blob 列，不能顺带放宽同表其他组件。
+	ColumnBytes map[string]int64 `json:"ColumnBytes,optional"`
+}
+
+// WithDefaults 返回独立配置，统一普通启动与未调用 InitBlobGuard 的保护闸默认值。
+// 资产账本保留五流身份和至多 256 KiB 原件；预算沿用 protobuf 的 base64 长度保守计费。
+// 显式正值（含更小的限制）原样保留；克隆两层 map，调用方后续修改互不影响。
+func (b BlobGuardConfig) WithDefaults() BlobGuardConfig {
+	if b.MaxColumnBytes <= 0 {
+		b.MaxColumnBytes = DefaultBlobMaxColumnBytes
+	}
+	if b.MaxRowBytes <= 0 {
+		b.MaxRowBytes = DefaultBlobMaxRowBytes
+	}
+	if b.WarnRatio <= 0 || b.WarnRatio > 1 {
+		b.WarnRatio = DefaultBlobWarnRatio
+	}
+	perTable := make(map[string]BlobTableLimit, len(b.PerTable)+1)
+	for table, limit := range b.PerTable {
+		columns := make(map[string]int64, len(limit.ColumnBytes))
+		for column, bytes := range limit.ColumnBytes {
+			columns[column] = bytes
+		}
+		limit.ColumnBytes = columns
+		perTable[table] = limit
+	}
+	player := perTable["player_database"]
+	if player.ColumnBytes == nil {
+		player.ColumnBytes = make(map[string]int64, 1)
+	}
+	if player.ColumnBytes["asset_op_ledger"] <= 0 {
+		player.ColumnBytes["asset_op_ledger"] = DefaultAssetLedgerMaxColumnBytes
+	}
+	perTable["player_database"] = player
+	b.PerTable = perTable
+	return b
 }
 
 // RedisConfig holds Redis connection settings.
@@ -423,12 +464,14 @@ const (
 // 256 KiB / 列:玩家单个组件 blob 的设计量级是个位数 KB,256 KiB 已经留了
 // 一到两个数量级的余量,同时比 MEDIUMBLOB 的 16 MiB 低 64 倍 —— 只有这样
 // 闸门才会在「异常增长」而不是「已经炸了」的时候响。
-// 1 MiB / 行:player_database 有 9 个 blob 列,单行总量到 1 MiB 就意味着
-// 每次存盘都要推 1 MiB 过 MySQL 连接并原样写回 Redis,那已经是事故现场。
+// 1 MiB / 行:沿用所有 blob 列的 base64 长度保守计费上限，与历史指标可比。
+// 当前 SQL 参数是裸字节，不能把此值解释为真实传输量或磁盘占用；本轮不放宽整行预算。
 const (
 	DefaultBlobMaxColumnBytes int64   = 256 * 1024
 	DefaultBlobMaxRowBytes    int64   = 1024 * 1024
 	DefaultBlobWarnRatio      float64 = 0.8
+	// 只对资产账本列放宽，玩家整行仍沿用原有 1 MiB 总预算。
+	DefaultAssetLedgerMaxColumnBytes int64 = 1024 * 1024
 )
 
 // 额外落点库连接池默认值(player-storage-placement.md §6.1)。
@@ -534,16 +577,7 @@ func (c *Config) Normalize() {
 		d.SessionInnodbLockWaitSeconds = DefaultDatabaseSessionInnodbLockWaitSeconds
 	}
 
-	b := &c.ServerConfig.BlobGuard
-	if b.MaxColumnBytes <= 0 {
-		b.MaxColumnBytes = DefaultBlobMaxColumnBytes
-	}
-	if b.MaxRowBytes <= 0 {
-		b.MaxRowBytes = DefaultBlobMaxRowBytes
-	}
-	if b.WarnRatio <= 0 || b.WarnRatio > 1 {
-		b.WarnRatio = DefaultBlobWarnRatio
-	}
+	c.ServerConfig.BlobGuard = c.ServerConfig.BlobGuard.WithDefaults()
 
 	p := &c.Placement
 	// 旧键先补默认:它是新键缺省时的回落值,也让「只写旧键」的旧部署两类库维持原来的大小。
@@ -612,6 +646,11 @@ func (c *Config) Normalize() {
 func (c *Config) Validate() error {
 	if err := c.RpcServerConf.Validate(); err != nil {
 		return err
+	}
+	if pr := c.ServerConfig.OwnerEpochRedis; pr != nil {
+		if strings.TrimSpace(pr.Hosts) == "" || pr.PoolSize < 0 || pr.DB < 0 {
+			return errors.New("ServerConfig.OwnerEpochRedis连接配置无效")
+		}
 	}
 	if mode := c.ServerConfig.Fencing.Mode; mode != "" && mode != FencingModeLegacy && mode != FencingModeDual {
 		return fmt.Errorf("ServerConfig.Fencing.Mode=%q must be exactly %q or %q (case-sensitive; empty means %q)",

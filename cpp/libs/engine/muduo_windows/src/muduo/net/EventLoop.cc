@@ -253,7 +253,11 @@ size_t EventLoop::queueSize() const
 // 换算成单调截止时刻;runAfter / runEvery 直接用单调 now 加时长,不经墙钟往返。
 TimerId EventLoop::runAt(Timestamp time, TimerCallback cb)
 {
-  const Timestamp when = TimerQueue::monotonicFromWall(time, Timestamp::now(), TimerQueue::monotonicNow());
+  // 先读墙钟、后读单调钟,顺序必须显式(函数实参的求值顺序未指定,MSVC 通常从右往左):两次读数之间
+  // 线程若被抢占 P,先墙后单调只会让截止时刻晚 P;反过来会让定时器比墙钟时刻早 P 触发。
+  const Timestamp wallNow = Timestamp::now();
+  const Timestamp monoNow = TimerQueue::monotonicNow();
+  const Timestamp when = TimerQueue::monotonicFromWall(time, wallNow, monoNow);
   return timerQueue_->addTimer(std::move(cb), when, 0.0);
 }
 

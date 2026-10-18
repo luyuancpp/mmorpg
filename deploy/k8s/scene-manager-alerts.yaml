@@ -634,3 +634,21 @@ spec:
               Usually a stale image or a typo in SCENE_NODE_TYPE env. Check pod
               env / game_config.yaml.
             runbook_url: docs/ops/scene-node-role-split.md
+
+    # --- 落点会话身份(docs/design/scene-enter-chain-residuals.md §3、§5)-------
+    - name: scene-manager.placement-identity
+      rules:
+        - alert: SceneManagerPlacementIdentityConflict
+          # 代次相等而会话不同:登录代次与会话一一对应(G2)被破坏。正常恒为 0,出现即告警。
+          # keep_newer 的速率告警需要上线后的基线定阈值,尚未配置(见 metrics.go placementIdentityTotal 注释)。
+          expr: |
+            sum by (site, verdict) (increase(scene_manager_placement_identity_total{verdict=~"conflict|keep_conflict"}[10m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "落点会话身份冲突({{ $labels.site }}/{{ $labels.verdict }})"
+            description: |
+              同一登录代次出现在两个不同会话上(scene-enter-chain-residuals.md §3.2 keep_conflict /
+              §5.2 conflict)。enter 侧已拒绝请求(码 25),leave 侧保留了 location 未删。按同期
+              scene_manager 的 Error 日志定位玩家与两个会话号,核对 login 的代次铸造(G2)。

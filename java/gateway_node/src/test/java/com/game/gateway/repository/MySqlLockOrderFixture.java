@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <h2>只许连专用测试库</h2>
  * 用例会对连上的库执行整份 schema.sql(建表 + zone_config 默认区种子)并增删测试行。库名必须以
  * {@code _it} 或 {@code _test} 结尾(例如 {@code mmorpg_it}),否则一条 DDL/DML 都不执行、直接跳过并说明原因
- * —— 绝不能污染开发库 {@code mmorpg}:schema.sql 与 deploy/mysql-init 的列类型并不完全一致,抢先建表会把分叉固化。
+ * —— 绝不能污染开发库 {@code mmorpg}:即使 schema.sql 与部署 DDL 类型一致,测试也不得向已有开发库建表或播种。
  *
  * <h2>编排:未提交的删除压着一条记录 + 两个写者排在它后面</h2>
  * 这是 MySQL 手册「Locks Set by Different SQL Statements」里 DELETE + 双 INSERT 的例子。删除提交的那一刻,两个

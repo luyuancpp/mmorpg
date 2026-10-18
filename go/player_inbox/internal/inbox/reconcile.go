@@ -22,7 +22,7 @@ import (
 //
 // 账本经 data_service.GetPlayerInboxLedger 读(它读 scene 存盘写的那份 blob,不回退读 MySQL,
 // 语义同 GetPlayerAssetOpLedger)。读不到存档(found=false)计为 unknown,不告警;读失败计 error;
-// 账本结构不合法(reconcileLedgerUsable)计 invalid —— 结论是「无法核对」,不是「无差异」。
+// 账本结构不合法(validLedger,与 C++ ValidateLedger 同口径)计 invalid —— 结论是「无法核对」,不是「无差异」。
 // 两个入口共用同一个判定谓词 finalizedLedgerGap(decide.go):比水位,也比最近结局环(评审 M6)。
 
 // LedgerReader 读一名玩家已落盘的收件箱账本。found=false = zone Redis 里没有这名玩家的 blob;
@@ -71,7 +71,7 @@ func (s *Store) ReconcilePlayer(ctx context.Context, req *inboxpb.ReconcilePlaye
 	if !found {
 		return resp, nil // unknown:读不到存档,不比对
 	}
-	if !reconcileLedgerUsable(ledger) {
+	if !validLedger(ledger) {
 		return nil, fmt.Errorf("inbox: persisted inbox ledger of player=%d is structurally invalid "+
 			"(duplicate/zero domain, ring not ascending or beyond the watermark, unrecordable outcome, zero request_id, "+
 			"or more than %d ring entries); reconcile result is unknown", req.GetPlayerId(), ledgerRecentCapacity)
@@ -113,12 +113,26 @@ const (
 	// 继续下一片 —— 一个热点分片不该吃光整轮预算。
 	reconcilePerShardLimit = 500
 	// reconcileMaxPlayers:一轮最多读多少名玩家的账本(每名一次 data_service 调用)。数到上限 = 本轮截断,
-	// 停在当前分片;下一轮的起始分片按墙钟轮转(reconcileStartShard),高号分片不会永远轮不到。
+	// 停在当前分片;下一轮的起始分片按墙钟轮转(reconcileStartShard,步长 reconcileStartStride)。
 	reconcileMaxPlayers = 2000
 	// reconcileLedgerReadConcurrency:账本读的并发路数。串行读 2000 名玩家(每次上限 LedgerReadTimeout = 2s)
 	// 会撞穿 2 分钟的轮预算;8 路时 2000 次 × 典型 10ms ≈ 2.5s,同时给 data_service 的压力有上界。
 	reconcileLedgerReadConcurrency = 8
+
+	// reconcileStartStride:相邻两轮的起始分片相差几片(评审 R1,reconcileStartShard 用)。
+	// 取 reconcileMaxPlayers / reconcilePerShardLimit = 4:一片至多收 reconcilePerShardLimit 行、也就至多这么多名
+	// 新玩家,所以不论玩家数在哪一片触顶,从起点起的前 4 片一定读完(至多单片上限那么多行)—— 这是每轮覆盖的下界。
+	// 起点每轮前移 4 片,相邻轮次的必读段首尾相接,连续 reconcileFullCycleRounds 轮必然把 64 片各读完一遍。
+	// 原来每轮只前移 1 片:截断持续时一轮只读到 [start, start+c),一行终结时若落在这一段之后 c+W−1 片以外,
+	// 直到滑出 W 轮的窗口都核对不到(默认 W = 24、c ≈ 32 时约 9/64 的行)。
+	reconcileStartStride = reconcileMaxPlayers / reconcilePerShardLimit
+	// reconcileFullCycleRounds = ⌈64 / reconcileStartStride⌉ = 16:截断持续时,每片至多隔这么多轮被读完一次。
+	// 对账窗口(ReconcileWindow)不足这么多个间隔时,截断期间有的分片可能整个窗口都轮不到(reconcileRound 打 ERROR)。
+	reconcileFullCycleRounds = (ShardCount + reconcileStartStride - 1) / reconcileStartStride
 )
+
+// 编译期断言:步长至少为 1(单片上限不得超过玩家数上限,否则「前 stride 片必读完」的下界不成立)。
+const _ uint = reconcileStartStride - 1
 
 // reconcileLimits 是一轮定时对账的工作量上限;生产取 defaultReconcileLimits,单测注入小值。
 type reconcileLimits struct {
@@ -138,23 +152,37 @@ var defaultReconcileLimits = reconcileLimits{
 // ReconcileRoundResult 是一轮定时对账的结果,供后台循环记 gauge 与轮次计数、打汇总日志。
 type ReconcileRoundResult struct {
 	// Inconsistent 是本轮发现的不一致行数。它是「当前」读数:同一处不一致只要还在窗口里,每轮都会再报一次,
-	// 所以只能进 gauge,不能累加进计数器(评审 L11)。
+	// 所以只能进 gauge,不能累加进计数器(评审 L11)。截断的轮次只覆盖一部分分片,gauge 按 Shards 逐片记(reconcileTally)。
 	Inconsistent int
 	// PlayersPlanned 是本轮收集到、要读账本的玩家数;PlayersChecked 是实际判定完的(含读失败 / 读不到 / 账本不合法)。
 	PlayersPlanned int
 	PlayersChecked int
 	// Truncated 为真:本轮没有核对完窗口内的全部行(单片读满上限,或玩家数到上限)。
 	Truncated bool
+	// Shards 是本轮读过的每一片的读数,按扫描顺序;没读到的分片不在里面。收集分片时就失败的轮次为空。
+	Shards []ShardTally
+}
+
+// ShardTally 是一轮对账在一个分片上的读数(评审 R1)。一名玩家的行全在 RowShard(player_id) 那一片,
+// 所以每名玩家的判定只归属一片。
+type ShardTally struct {
+	Shard uint32
+	// Inconsistent 是本轮在这一片发现的不一致行数。
+	Inconsistent int
+	// Complete 为真:这一片窗口内的行本轮全部核对过 —— 没被单片上限截掉、不是玩家数触顶时停下的那一片、
+	// 每名玩家都有确定的判定(读不到存档 / 账本不合法也算确定:它们不会因为下一轮重读而变)。
+	// 为假(有截断、有账本读失败、轮次中途结束)时 Inconsistent 只是下界,0 不能证明这一片已经一致。
+	Complete bool
 }
 
 // ReconcileRecent 是定时对账作业的一轮(只在领导者上跑,设计 §9.3):
 //
-//  1. 从 startShard 起环形扫描 64 个分片(下一轮的起点由调用方按墙钟轮转),逐片按键集翻页读 sinceMs 之后
-//     由消费方终结的行,直到扫满 64 片或触到上限。触到上限计 player_inbox_reconcile_truncated_total 并打 ERROR,
-//     写明停在哪片、剩几片没扫到。
+//  1. 从 startShard 起环形扫描 64 个分片(下一轮的起点由调用方按墙钟轮转,见 reconcileStartStride),逐片按键集翻页
+//     读 sinceMs 之后由消费方终结的行,直到扫满 64 片或触到上限。触到上限计 player_inbox_reconcile_truncated_total
+//     并打 ERROR,写明停在哪片、剩几片没扫到。
 //  2. 按玩家以有界并发(reconcileLedgerReadConcurrency 路)读已落盘账本。
 //  3. 逐个玩家按 ledgerMismatches 判定(与 ReconcilePlayer 同一个谓词,比水位也比环),每处不一致写一行
-//     带 player_id 的 ERROR(player_id 只进日志)。
+//     带 player_id 的 ERROR(player_id 只进日志);同时按分片记读数(ReconcileRoundResult.Shards)。
 //
 // 返回本轮结果;ctx 结束(超时 / 易主 / 关停)时返回已判定部分与 ctx.Err()。不改任何状态。
 func (s *Store) ReconcileRecent(ctx context.Context, sinceMs uint64, startShard uint32, ledgers LedgerReader) (ReconcileRoundResult, error) {
@@ -180,30 +208,40 @@ func reconcileRecent(ctx context.Context, startShard uint32, limits reconcileLim
 	if scan.truncated() {
 		res.Truncated = true
 		metrics.IncReconcileTruncated()
+		// 覆盖保证(评审 R1):每轮至少读完从起点起的 reconcileStartStride 片,起点每轮前移这么多片,
+		// 所以截断持续时每片至多隔 reconcileFullCycleRounds 轮读完一次;被单片上限截掉的是一片里最老的行,
+		// 只要这一片持续有更新的行顶着,它们就一直核对不到。
 		log.Errorf("[player_inbox] Reconcile round truncated (start_shard=%d, scanned %d/%d shards): %s; "+
-			"rows not checked this round are retried by later rounds (start shard rotates each interval); "+
-			"if this persists, shorten ReconcileWindowHours or raise the limits", startShard, scan.scanned, ShardCount,
-			scan.truncationSummary(limits))
+			"the start shard advances %d shards per interval, so while this persists each shard is fully read at least once "+
+			"every %d rounds (shards not reached keep their previous gauge readings until then), but rows cut by the "+
+			"per-shard limit (oldest first) stay unchecked while newer rows keep filling that shard; "+
+			"shorten ReconcileWindowHours or raise the limits",
+			startShard, scan.scanned, ShardCount, scan.truncationSummary(limits), reconcileStartStride, reconcileFullCycleRounds)
 	}
 
 	reads := readLedgersBounded(ctx, ledgers, scan.players, limits.readConcurrency)
+	shards, shardIndex := scan.shardTallies()
 	for i, playerID := range scan.players {
 		r := reads[i]
+		tally := &shards[shardIndex[scan.shardOf[playerID]]]
 		if ctx.Err() != nil && (!r.done || r.err != nil) {
-			continue // 轮次已结束(超时 / 易主 / 关停):没读或读到一半被打断的不算读失败,下一轮再核对
+			tally.Complete = false
+			continue // 轮次已结束(超时 / 易主 / 关停):没读或读到一半被打断的不算读失败,留给之后的轮次
 		}
 		res.PlayersChecked++
 		switch {
 		case !r.done:
+			tally.Complete = false
 			metrics.ObserveReconcileRead("error")
 			log.Errorf("[player_inbox] Reconcile ledger read did not complete player=%d (reader panicked, see %s)",
 				playerID, safego.EventGoroutinePanic)
 		case r.err != nil:
+			tally.Complete = false
 			metrics.ObserveReconcileRead("error")
 			log.Errorf("[player_inbox] Reconcile could not read persisted ledger player=%d: %v", playerID, r.err)
 		case !r.found:
 			metrics.ObserveReconcileRead("absent")
-		case !reconcileLedgerUsable(r.ledger):
+		case !validLedger(r.ledger):
 			metrics.ObserveReconcileRead("invalid")
 			log.Errorf("[player_inbox] Reconcile skipped player=%d: persisted inbox ledger is structurally invalid "+
 				"(duplicate/zero domain, ring not ascending or beyond the watermark, unrecordable outcome, zero request_id, "+
@@ -212,6 +250,7 @@ func reconcileRecent(ctx context.Context, startShard uint32, limits reconcileLim
 			metrics.ObserveReconcileRead("found")
 			for _, m := range ledgerMismatches(scan.byPlayer[playerID], r.ledger) {
 				res.Inconsistent++
+				tally.Inconsistent++
 				cursor := findCursor(r.ledger, uint32(m.ref.Domain))
 				log.Errorf("[player_inbox] Reconcile mismatch player=%d domain=%d seq=%d state=%d request_id=%d gap=%s "+
 					"ledger_decided_through=%d ring_len=%d: inbox finalized the item but the persisted ledger does not hold "+
@@ -221,6 +260,7 @@ func reconcileRecent(ctx context.Context, startShard uint32, limits reconcileLim
 			}
 		}
 	}
+	res.Shards = shards
 	return res, ctx.Err()
 }
 
@@ -233,6 +273,10 @@ type finalizedScan struct {
 	byPlayer map[uint64][]FinalizedRef
 	// players 是玩家首次出现的顺序:读账本、判定与日志都按它走,结果确定(不随 map 遍历变)。
 	players []uint64
+	// shardOf 是每名玩家的行是从哪一片读出来的(按读出时的分片记,不按 player_id 重算)。
+	shardOf map[uint64]uint32
+	// start 是起始分片;第 i 个读过的分片是 (start + i) % 64。
+	start uint32
 	// scanned 是读过的分片数(含玩家数到上限时只读了一部分的那一片)。
 	scanned int
 	// capped 是读满单片上限、仍有剩余的分片,按扫描顺序。
@@ -246,6 +290,25 @@ func (s finalizedScan) truncated() bool { return len(s.capped) > 0 || s.playerCa
 
 // unreached 是本轮一行都没读到的分片数。
 func (s finalizedScan) unreached() int { return ShardCount - s.scanned }
+
+// shardTallies 按扫描顺序给出本轮读过的每一片的初始读数(不一致数 0),以及分片 → 下标。
+// 收集阶段就截断了的分片(读满单片上限仍有剩余、玩家数触顶时停下的那一片)从一开始就不 Complete;
+// 其余先记 Complete,判定阶段再按各玩家的账本读结果下调(reconcileRecent)。
+func (s finalizedScan) shardTallies() ([]ShardTally, map[uint32]int) {
+	capped := make(map[uint32]bool, len(s.capped))
+	for _, c := range s.capped {
+		capped[c] = true
+	}
+	out := make([]ShardTally, 0, s.scanned)
+	index := make(map[uint32]int, s.scanned)
+	for i := 0; i < s.scanned; i++ {
+		shard := (s.start + uint32(i)) % ShardCount
+		stopped := s.playerCapHit && shard == s.stoppedShard
+		index[shard] = len(out)
+		out = append(out, ShardTally{Shard: shard, Complete: !capped[shard] && !stopped})
+	}
+	return out, index
+}
 
 // truncationSummary 是截断日志里「停在哪、剩多少」的那一段。
 func (s finalizedScan) truncationSummary(limits reconcileLimits) string {
@@ -266,9 +329,12 @@ func (s finalizedScan) truncationSummary(limits reconcileLimits) string {
 //     (恰好读满不算),然后继续下一片;
 //   - 新出现的玩家超过 limits.maxPlayers 时整轮停在当前分片(已收进来的玩家照常核对)。
 //
+// 覆盖下界(评审 R1):一片至多收 limits.perShard 名新玩家,所以从起点起的前 limits.maxPlayers / limits.perShard 片
+// 一定读完 —— 玩家数最早也只能在下一片触顶。生产取默认上限时这就是 reconcileStartStride。
+//
 // 读失败或 ctx 结束返回 error,此时收集结果不完整,调用方不得拿去判定「无差异」。
 func collectFinalized(ctx context.Context, startShard uint32, limits reconcileLimits, read finalizedPageReader) (finalizedScan, error) {
-	scan := finalizedScan{byPlayer: map[uint64][]FinalizedRef{}}
+	scan := finalizedScan{byPlayer: map[uint64][]FinalizedRef{}, shardOf: map[uint64]uint32{}, start: startShard}
 	for i := uint32(0); i < ShardCount; i++ {
 		if err := ctx.Err(); err != nil {
 			return scan, err
@@ -313,6 +379,7 @@ func (s *finalizedScan) collectShard(ctx context.Context, shard uint32, limits r
 					return true, nil
 				}
 				s.players = append(s.players, f.PlayerID)
+				s.shardOf[f.PlayerID] = shard
 			}
 			s.byPlayer[f.PlayerID] = append(s.byPlayer[f.PlayerID], f)
 			taken++

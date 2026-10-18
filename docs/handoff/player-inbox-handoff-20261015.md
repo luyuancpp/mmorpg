@@ -315,3 +315,66 @@
 - **M2+M3**：v1 先不开 `GM_ATTACH_CURRENCY_DEBT`，EnqueueTypes 只放封锁 / 解封。合并语义、撤销类型和单笔上限后续一起做。
 - **其余**：分三批修（Go 服务 → C++ scene → 部署 / 运维 / 文档），每批交 Codex 验证。L5 趁首次建表前把分片改成 `mix64(player_id) % 64`。M7 本次只登记为残余风险，并与资产 SQL 提交那条线协调。
 - **不在本轮**：死锁审计 #23（第 5 批前必修，§2.2 末尾）、GAP-1 / GAP-4 的可选加固。
+
+### 6.4 修复状态（2026-10-16 ~ 17，Claude 分三批派代理落码；**全部未编译、未测试，待 Codex 按 §4 验证**）
+
+**做法**：每批里的实现代理按顺序执行，互不并行写同一文件；之后由两名复核者对抗式复核，再由一个代理修掉复核确认的问题。第 A 批的 A1–A3 大部分改动已被用户快照提交（e76f6f747…360d56ae5，luyuan-cpp；VoidItem 强制模式的 proto 与 force_void_test.go 在 e76f6f747）带进 main，其余仍在工作区。
+
+| 条目 | 状态 | 落在哪里 |
+|---|---|---|
+| H1 消费开关 | 第 C 批 | 部署脚本改为从 git yaml 取值并加写前门禁（C1）；告警（C2）；scene 关闭消费时周期 WARN `metric=inbox_consumer_disabled`（C3） |
+| M1 VoidItem 解卡 | 已做 | 服务端：VoidItem `mode=FORCE_MISMATCH`，先读已落盘账本证明同 seq 是另一个 request_id 才终结为 VOIDED，带审计 FORCE_VOID（A1）。scene：先 ClassifyDelivery，kNew+VOID 直接 SKIPPED、不查执行器（B1） |
+| M2 / M3 ATTACH_DEBT | v1 不开 | `config.ParseEnqueueTypes` 启动即拒 ATTACH_DEBT；EnqueueTypes 示例只留封锁 / 解封（A3）。合并语义、撤销类型与单笔上限后续一起做 |
+| M4 已投递未确认告警 | 已做，有残余 | 服务端：告警 gauge 只算近 24h 投递的行，更老的进 `player_inbox_delivered_unacked_stale`（A3）。scene：退出收尾 `FinishExitAfterPersist` 里尽力补发一次 Ack（B2）。**残余**：已投递但退出时还没定结局的行（Fetch 在途、退出期被前置闸丢掉、DEFER 剩下的）补不了，只留日志 `metric=inbox_leave_ack result=delivered_undecided|fetch_inflight`，等下次落地 |
+| M5 对账截断 | 已做 | 起始分片按步长 4 轮转，16 轮扫遍 64 片；截断计 `player_inbox_reconcile_truncated_total` 并打 ERROR；单片 keyset 分页；账本 8 路并发读（A2 + 修复 R1） |
+| M6 环内空洞 | 已做 | `finalizedLedgerGap` 谓词两处共用；Go 常量 32 由测试从 C++ 头文件抽数比对（A2 + 修复 R4） |
+| M7 SQL 提交证据 | 只登记 | 设计 §7.10 / §8 写为残余风险（C5）；要与资产 SQL 提交那条线协调 |
+| L1 前置闸在回包时不过 | 已做（扩展） | 丢本地副本重拉；执行器 DEFER 后续做时闸不过也丢副本、先确认前缀（B1） |
+| L2 新落地重置 | 已做 | ackQueue 非空先转 kAwaitDurable 确认前缀；Ack 回 InvalidParameter 停用；StartFetch 加不变量守卫（B1） |
+| L3 状态机单测 | 已做 | 新建 `cpp/tests/currency_test/player_inbox_system_test.cpp`（34 例：第 B 批 31 例 + C3 补 3 例，含退出收尾端到端一例），已登记 vcxproj（B3 + 修复 F1/F2） |
+| L4 对账配置与易主 | 已做 | Validate 要求窗口 ≥ 2×间隔；当选后首轮 1–5 分钟；`player_inbox_reconcile_rounds_total{result}`（A2） |
+| L5 分片公式 | 已做 | `RowShard = mix64(player_id) % 64`；启动与 `-migrate` 在表结构对齐后跑 `inbox.CheckRowShards`，不一致拒启 / exit 4（A4 + 本会话接线 `player_inbox.go`） |
+| L6 提醒退避 | 已做 | 失败按 next_seq CAS 退避 30s 起封顶 30min；`node_missing` 悬满 1 小时才落定；`no_node` 只剩位置记录残缺（A3 + 修复 R3） |
+| L7 Redis 超时 | 已做 | `ContextTimeoutEnabled`、读写超时 1s、PoolSize 20（A3）；trade 同类问题登记给 trade |
+| L8 审计归因 | 只写文档 | runbook（C4） |
+| L9 审计列 | 已做 | 审计表追加字段 10–15，内容一律从条目行复制（A4） |
+| L10 发送方身份 | 已做 | 围栏 / Ack 异常日志带 peer 与 scene_node_id；Ack 请求追加 `scene_node_id = 6`，scene 已填（A4 + B1 + 修复 R5） |
+| L11 重复计数 | 已做 | 改为「当前不一致数」gauge `player_inbox_reconcile_inconsistent_rows`；告警表达式由第 C 批改（C2） |
+| L12 请求体日志 | 已做 | 服务 yaml 的 `IgnoreContentMethods` 列 Fetch / Ack，Validate 钉住（A3）；ConfigMap 由第 C 批镜像（C1，**硬前置**） |
+| L13 scene 本地停用告警 | 已做 | `metric=inbox_ledger_invalid` / `inbox_registry_broken`，补打节拍钉在 10 分钟告警窗口内（B1 + 修复 F3）；告警固定查询由第 C 批加（C2） |
+| L14 测试库守卫 | 已做 | DROP 前白名单 `^(player_inbox_it|player_inbox_it_\d+_\d+)$`（A4）；trade 同类缺口登记给 trade |
+
+**复核中新发现并已修的**：
+- 第 A 批：对账轮转覆盖不足（R1）、强制终结接受超长环（R2）、node_missing 被当成已落定（R3）、环容量测试没有真比对 C++（R4）、日志键 `scene_node=` 与 `scene_node_id=` 不统一（R5）、旧分片公式的行是「静默不可见」而不是「读出被拒」（R3 注释与行布局核对）。
+- 第 B 批：退出补发缺口（M4，已补日志）、退出收尾端到端用例缺失（F1）、旧快照下的 IB-3 用例缺失（F2）、周期 WARN 节拍与 10 分钟告警窗口不匹配（F3，节拍改为 8 次）、MISMATCH 日志里账本字段恒为 0（F4）。
+
+**部署前置（第 C 批落地之前不得部署这一版 Go）**：ConfigMap 缺 `Middlewares.StatConf` 时新版 Validate 拒启；对账 critical 告警引用的旧指标已删除。两项都在第 C 批（C1、C2）。
+
+**按推荐口径先定、可改的小取舍**（不阻塞，用户要改就说）：
+1. VoidItem 回包新增 `force_verdict = 4` 与枚举 `PlayerInboxForceVoidVerdict`，用来区分强制终结被拒的原因。这是约定之外新增的契约面，建议保留。
+2. ATTACH_DEBT 在 `ParseEnqueueTypes` 里硬拒，而不是只从默认配置里拿掉。
+3. `delivered_unacked` 计数也只算 24h 窗口；24h 是代码常量，不是配置键。
+4. Redis PoolSize 取 20（沿用 yaml 已有值）。
+5. 提醒时节点身份不明确算重试，不算落定。
+6. `ReconcilePlayer` 遇到不合法账本回 StoreUnavailable，没有在回包加 `ledger_invalid` 字段（加字段是 proto 变更）。
+7. 对账窗口没有要求 ≥ 16 个间隔：默认 24 轮满足覆盖保证，更小的配置只在截断时打 ERROR。
+8. 审计表没有加 `producer_kind` 列：v1 只有 GM 一种生产方。
+9. 同 seq、同 request_id、只有 msg_type 不同的 MISMATCH，强制终结按 fail-closed 拒绝（只可能来自数据损坏，需人工）。
+10. 退出收尾的一个快照时点缺口：`HandlePlayerAsyncSaved` 的 kFinish 分支在替换快照前就销毁实体，此时少补发一次 Ack（安全，只是少减一次残留）。
+11. Fetch 回包 tip=InvalidParameter 仍按故障退避，没有改成停用。
+12. L1 扩展到执行器 DEFER 后续做时的闸检查（见上表）。
+13. `DeliveryClassName` 在生产代码里已无调用方，保留为日志辅助。
+14. registry_broken 的周期补打没有单测（SelfCheck 没有注入点）。
+
+**登记给其他负责人**：
+- **trade**：L7 同类问题，SharedRedis 没开 `ContextTimeoutEnabled`；L14 同类缺口，`go/trade/internal/data/listing_repo_integration_test.go` 会 DROP 任意库。
+- **data_service**：`placement.RouteRowShard` 也是 `player_id % 64`，对存量 bwmarrin ID 会退化。
+
+**给 gRPC→muduo 那条线（global-handler-removal 步骤 3 重新定位用）**：
+- `player_inbox_system.cpp` 里，第 B 批改过的函数：
+  - 新增：`DropPendingForRefetch`、`EnterAwaitDurable`、`LogDeliveredUndecided`、`LogRegistryBroken`、`IsStuckDeferReason`、`PlayerInboxSystem::OnPlayerLeaving`。
+  - 修改：`ApplyPending`、`StartFetch`、`SendAck`、`ScheduleRetry`、`AfterBatchDecided`、`Initialize`、`OnPlayerLanded`、`OnAckReply`、`Tick`。
+  - 第 C 批的 C3 还会再动 `Initialize` / `Tick`。
+- `player_inbox_rules` 新增：`ItemAction`、`PlanItem`、`IsStuckWarnDue` 及相关常量；`ClassifyDelivery` 判 kMismatch 时也会拷出环里那一条，只供日志用。
+- `player_lifecycle.cpp`：`FinishExitAfterPersist` 加了一行 `OnPlayerLeaving` 调用，文件头加了一行 include。
+- `OnPlayerLeaving` 经 `SendAck` 发出的那次 Ack，回调不捕获实体，回包按 player_id 加关联号找实体。改成每次调用带回调之后，这一点要保持。

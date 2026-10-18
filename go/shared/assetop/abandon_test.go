@@ -182,7 +182,7 @@ func TestAbandonOnceSkipsWhenAnyConditionFails(t *testing.T) {
 			reason: "not_candidate", wantRelease: true},
 		// 条件 5:账本已见 → 按已见结局正常终结;读失败或给不出「确定未见」→ 跳过。
 		{name: "条件5 账本已见按已见终结", setup: func(op *Op, rig *abandonRig) {
-			rig.ledger.ledger = ledgerWithApplied(op.Stream, op.StreamEpoch, op.Seq, false)
+			rig.ledger.ledger = sqlLedgerFixture(true, *op).ledger
 		}, reason: "ledger_seen", wantFinalize: true},
 		{name: "条件5 读账本失败", setup: func(_ *Op, rig *abandonRig) {
 			rig.ledger.err = errors.New("data_service 超时")
@@ -276,7 +276,7 @@ func TestAbandonWithSQLCommitEvidence(t *testing.T) {
 			s.blob.ledger = ledgerWithApplied(op.Stream, op.StreamEpoch, op.Seq, false)
 		}, reason: "sql_evidence_behind", wantBlobRead: true},
 		{name: "证据已见按证据终结且不读父键", setup: func(op Op, s *splitLedger) {
-			s.sql.ledger = ledgerWithApplied(op.Stream, op.StreamEpoch, op.Seq, false)
+			s.sql.ledger = sqlLedgerFixture(true, op).ledger
 		}, reason: "ledger_seen", wantFinalize: true},
 		{name: "证据读失败", setup: func(_ Op, s *splitLedger) { s.sql.err = errors.New("data_service 超时") },
 			reason: "ledger_error"},

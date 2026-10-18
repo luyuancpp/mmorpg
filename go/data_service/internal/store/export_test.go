@@ -161,6 +161,10 @@ const (
 	RouteProbeShardModulusSQLForTest = routeProbeShardModulusSQL
 )
 
+// RouteLockMetaSQLForTest 是反向修库写事务的第一句(R18x,route_meta(id=1) FOR UPDATE):真库用例用同一段生产文本
+// 扮演一个正在修库的事务,证明解冻的 R22 排在它后面(TestRouteStore_UnfreezeWaitsForRepairMetaLock)。
+const RouteLockMetaSQLForTest = routeLockMetaSQL
+
 // NewRouteStoreFromDBForTest 在调用方给的池上跑探针并装出 store(失败时关掉 db)。
 // 真库用例拿一个**没有**会话变量的池(storetest 的 Raw)来证明探针 fail-closed。
 func NewRouteStoreFromDBForTest(ctx context.Context, db *sql.DB, opts RouteStoreOptions) (*RouteStore, error) {

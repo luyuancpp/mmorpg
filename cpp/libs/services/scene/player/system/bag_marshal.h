@@ -25,7 +25,8 @@
 //   docs/design/equipment-attributes.md §3.1 / §5 invariant 1.
 //   The ItemComp <-> ItemEntry mapping lives in ONE pair of file-local
 //   functions in bag_marshal.cpp shared by fixed and dynamic bags; a new
-//   instance field is added there and nowhere else.
+//   完整实例由 ItemEntry.instance=15 整份承载（含 unknown fields），旧标量仅为兼容投影；
+//   旧档无 instance 时由该转换对还原。新增实例字段不再增加镜像转换知识。
 //   Enhance level and gem inlay are NOT separate ItemEntry fields: they
 //   live inside `equip` (EquipInstanceData.enhance_level / .gems, see
 //   docs/design/equipment-enhance-inlay.md §3.1), so the whole-section

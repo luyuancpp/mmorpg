@@ -56,7 +56,7 @@ Scene ── Kafka 流水/快照 ──▶ data_service ──▶ 全局 MySQL
 | 消费者 | topic → 表 | 落库方式 | 坏消息 | DB 故障 |
 |--------|-----------|---------|--------|---------|
 | `transaction_log` | `transaction_log_topic_g1` → `transaction_log` | 攒批(200 条 / 200ms)一条多行 `INSERT IGNORE`,**先插库后提交 offset** | 解不出 proto / `tx_id=0`:跳过并提交 | 有界重试后**停下不提交**(宁可积压不许丢),supervisor 60s 后从断点续消费 |
-| `player_snapshot` | `player_snapshot_topic_g1` → `player_snapshot` | 每分区一个 worker(分区内 FIFO、先落库后提交本分区最高 offset);默认逐条,`Kafka.SnapshotBatchMaxRows > 1` 时多行批量(预读 + 普通多行 INSERT,见本格后文)。按 `snapshot_guid` 去重(唯一键 `uk_snapshot_guid_nz`:逐条用 ODKU `id = LAST_INSERT_ID(id)` 回带 id;多行批量先普通读剔除已存在的 guid 与批内重复,剩下的按 guid 升序拼**普通**多行 INSERT,撞 1062 退回逐条 —— 不用多行 ODKU:它撞已存在行时留下自增主键末尾的间隙锁直到语句结束、rebalance 重叠时成环,给自增列赋值还会在批内重复时报 1869,均为 2026-10-16 真库复现,见事故文档 docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md §9.6;键不在时退回逐行 `NOT EXISTS`),落 `source=1` | 解不出 / `snapshot_id=0` / `player_id=0` / 超 MEDIUMBLOB:跳过并随本批提交 | 同上;批量失败先逐条兜底,兜底也插不进去的那一行让整个消费者停在那里(与逐条同结局) |
+| `player_snapshot` | `player_snapshot_topic_g1` → `player_snapshot` | 每分区一个 worker(分区内 FIFO、先落库后提交本分区最高 offset);默认逐条,`Kafka.SnapshotBatchMaxRows > 1` 时多行批量(预读 + 普通多行 INSERT,见本格后文)。按 `snapshot_guid` 去重(唯一键 `uk_snapshot_guid_nz`:逐条用 ODKU `id = LAST_INSERT_ID(id)` 回带 id;多行批量先普通读剔除已存在的 guid 与批内重复,剩下的按 guid 升序拼**普通**多行 INSERT,撞 1062 退回逐条 —— 不用多行 ODKU:它撞已存在行时留下自增主键末尾的间隙锁直到语句结束、rebalance 重叠时成环,给自增列赋值还会在批内重复时报 1869,均为 2026-10-16 真库复现,见事故文档 docs/ops/incident-friend-lock-order-deadlock-2026-09-21.md §9.6;仅 MySQL 缺键兼容窗口退回逐行 `NOT EXISTS`，TiDB 缺键拒绝建池),落 `source=1` | 解不出 / `snapshot_id=0` / `player_id=0` / 超 MEDIUMBLOB:跳过并随本批提交 | 同上;批量失败先逐条兜底,兜底也插不进去的那一行让整个消费者停在那里(与逐条同结局) |
 
 生产者是 C++ scene(全局单 topic、裸 proto、key=player_id)。启动时 `kafkautil.EnsureTopics`(transaction_log 6 分区、snapshot 3 分区、保留 30 天;分区数是不可变契约)。Kafka 不可达**不拖死** data_service:第一次尝试就在后台 goroutine 里(EnsureTopics 对半死不活的 broker 要走完 sarama 30s 拨号 + 元数据重试,同步做会把 gRPC 启动和 Load/Save 一起按住),失败只记日志、每 30s 重试。指标:`kafka_consumer_up{consumer}`、`kafka_consumer_messages_total{consumer,outcome}`;两条 `kafka_consumer_up` 序列在第一次尝试**之前**就按 0 预注册,所以"消费者从来没起来"这个状态告警得到(不预注册的话那个 child series 根本不存在,`== 0` 的告警永远不触发,监控上和"服务没部署"长得一样)。
 
@@ -86,15 +86,19 @@ sarama 只读探针按 broker 视角报消费组 lag(全部分区合计与单分
 - **现有 GM 读路径一律只看 `source=0`**(`GetSnapshotByID` / `GetLatestSnapshotBefore` / `ListSnapshotsMeta` / `GetSnapshotPlayerIDsByZone`),直到回滚路径学会解 proto blob;`ListSceneSnapshotsByPlayer` 是 `source=1` 的专用读路径(尚未接 RPC)。`DeleteOldSnapshots` 两种 source 都删。
 
 ### `snapshot_guid` 去重规则
-`snapshot_guid` 是普通 INDEX **不是** UNIQUE(GM 行恒为 0,proto2mysql 做不出可空唯一列)。去重由 `InsertSnapshotIfGuidAbsent` 的**一条**语句完成:
+`snapshot_guid` 的普通索引用于查询；非零 GUID 的唯一性由额外的可空生成列 `snapshot_guid_nz` 和其单列完整唯一键 `uk_snapshot_guid_nz` 约束。生成列是可空 `BIGINT UNSIGNED`：零值映射为 `NULL`，其他值保持原 uint64 GUID。因此多个 GM 快照（`guid=0`）可以共存，同一非零 GUID 最多一行。生成列不进入 proto，列注释不使用 `pb:N`，避免与 proto2mysql 的列同步争夺所有权。
 
-```sql
-INSERT INTO player_snapshot (...) SELECT ?,... FROM DUAL
- WHERE NOT EXISTS (SELECT 1 FROM player_snapshot AS existing WHERE existing.snapshot_guid = ?)
-```
+2026-10-17 起迁移和 `NewSnapshotStore` 共用服务端方言选择：MySQL 保留既有 `NULLIF(snapshot_guid, 0)` + `STORED`；TiDB 使用 `CASE WHEN snapshot_guid = 0 THEN NULL ELSE snapshot_guid END` + `VIRTUAL`。TiDB 不支持通过 `ALTER TABLE` 添加存储生成列，也不支持生成表达式中的 `NULLIF`，但支持虚拟生成列上的唯一索引。[TiDB 生成列文档](https://docs.pingcap.com/tidb/stable/generated-columns/)
 
-存在性判断与插入在同一条语句、同一个隐式事务里,InnoDB 会在 `snapshot_guid` 索引上对那个不存在的值加间隙锁,两个并发实例写同一个 guid 只会有一个成功(另一个 0 行受影响,按"重复"计数)。以前是"先 SELECT 再 INSERT",两次往返之间没有任何锁:滚动更新窗口里新旧两个 pod 同时在线,足以把同一条快照写成两行 `source=1`。
-〔2026-10-08 更正:本节上面描述的「普通 INDEX + NOT EXISTS + 间隙锁」是唯一键建出来之前的形态,现在只是**退路**。迁移会给 `player_snapshot` 建可空唯一键 `uk_snapshot_guid_nz`,有它时去重走 `INSERT ... ON DUPLICATE KEY`,不同 guid 互不相干、不再依赖单实例;data-service 的 Deployment 已改为 2 副本 + RollingUpdate(docs/design/no-single-node-horizontal-scaling-20261001.md §4)。下面这句是当时的结论,保留为历史。〕**deploy 侧仍应把 data-service 的 Deployment 策略设成 `Recreate`**(deploy/ 由另一位负责):UNIQUE 键用不了,DB 侧的保证止步于"同一条语句 + 间隙锁",真正的单实例语义还得靠部署策略。`guid=0` 走这条入口直接报错。`transaction_log` 不需要这套:`tx_id` 是主键,重放天然被 `INSERT IGNORE` 吃掉。
+迁移快路径、DDL 后回读和建池探测使用同一组形状判据：生成列的可空 uint64 类型、存储形态与表达式必须正确，指定唯一索引必须恰好覆盖该列全长。仅名字相同的普通索引、联合唯一索引、其他列的唯一索引、普通列或不同表达式都不能放行。坏结构返回明确错误，不自动删列或重建索引。存量列的纯校验先于历史去重的第一个 `DELETE`；原有停写、迁移锁、有界清重及保留每组最小 `id` 的流程不变，零 GUID 行不参与清重。大表仍应停写后执行 `data_service -f <yaml> -migrate`，同库可重入。
+
+有真实唯一约束时，逐条入口使用 `INSERT ... ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`，重放返回原记录；多行入口沿用预读、普通多行插入和撞键后逐条兜底。`InsertSnapshotIfGuidAbsent` 拒绝零 GUID，GM 零 GUID 使用普通插入入口。`transaction_log` 继续依赖 `tx_id` 主键与 `INSERT IGNORE`，不增加另一套生成列。仅 MySQL 在缺键兼容窗口保留依赖 RR 间隙锁的 `NOT EXISTS` 退路；TiDB 没有此前提，约束缺失、形状错误或探测失败时必须关池拒启。`MigrateOptions.AllowMissingGuidUniqueKey` 只保留旧调用方源码兼容，不再提供绕过唯一约束的通道。
+
+本轮证据在 `build/asset-arrival-20261017/fullstack/`：正式 CLI 和正式迁移测试先复现旧 TiDB 预拒绝；修复后同库迁移两遍、两个零 GUID 共存、MaxUint64 重复被真实 SQL 以 1062 拒绝、四个并发写者只有一个新增行，以及原流水主键去重均通过。七种缺失或错误结构先真实复现旧写池错误放行，再由同源 Linux 默认 store 测试验证拒绝或正确补键。该组 **84 个顶层测试通过、零失败、零跳过**，其中两个顶层测试使用真实 TiDB v8.5.2，七个坏结构场景是子测试，不另加成顶层总数。最终输入、二进制 SHA、镜像、日志与容器清理记录见 `data-service-guid-final.json` 和 `dataservice-store-linux02-results.json`。本轮未启用 `integration` 构建标签，也未重跑原生 MySQL 实库套件。
+
+Windows 第一轮真实正例已通过；第二轮新测试程序在运行前被系统以 `AccessDenied` 拒绝，不能计作绿色结果。最终验证使用 Windows Go 交叉编译相同源码的静态 Linux 测试程序，在已有镜像创建的临时容器内连接同一个专用 TiDB 库；未改变 Windows 防护、旧容器或旧库全局参数，临时容器已清理。这组快照证据不代替完整服务启动或邮件、交易到账验收：`RouteStore` 还要求自己的分片 `CHECK` 真正执行；TiDB 的 `tidb_enable_check_constraint` 只有全局作用域，不能通过会话设置为共享旧实例上的新库单独启用。[TiDB 系统变量文档](https://docs.pingcap.com/tidb/stable/system-variables/#tidb_enable_check_constraint-new-in-v720)
+
+历史说明：2026-10-08 之前的普通索引加 `NOT EXISTS` 方案曾依赖 InnoDB 间隙锁与单实例部署。可空唯一键落地后，这已不再是正常写入契约，也不再据此要求 `Recreate`；当前多副本部署见 [横向扩容设计](no-single-node-horizontal-scaling-20261001.md)。
 
 ### `AllocateIdSegment(biz_tag, step) → [lo, hi)`
 - 半开区间,一经返回视为已发出、绝不重发;段内剩余号作废不回收。

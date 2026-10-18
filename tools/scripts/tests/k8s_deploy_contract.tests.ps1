@@ -2154,9 +2154,162 @@ Test-Case '玩家收件箱:node-config 与 bin/etc 都含 PlayerInboxNodeService
     Assert-Match -Text $authoritativeDeploy -Pattern '(?m)^\s*-\s*"PlayerInboxNodeService\.rpc"' -Because '本地栈读 bin/etc/base_deploy_config.yaml 的前缀表'
     $okLine = [string]($devOut -split "`r?`n" | Where-Object { $_ -match 'GrpcClient deadline budget OK' } | Select-Object -First 1)
     Assert-Match -Text $okLine -Pattern 'PlayerInboxNodeService' -Because 'Assert-GrpcClientDeadlineBudget 的目标表必须含 PlayerInboxNodeService(scene → player_inbox 的 deadline ≥ zrpc Timeout + 2000)'
-    # 消费端开关默认关(-PlayerInboxConsumer off):回滚下限版本只往返账本字段、不发 Fetch(上线顺序 §11.7 第 4 步)。
-    $nodeFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'node-config')
-    Assert-Equal -Expected 'false' -Actual (Get-FlatValue -Flat $nodeFlat -KeyPath 'data.game_config.yaml.player_inbox.consumer_enabled') -Because '不传 -PlayerInboxConsumer 时 scene 的收件箱消费端必须关着(开关不粘滞)'
+    # 消费端开关(交接 player-inbox-handoff-20261015 §6 H1):node-config 的 player_inbox 段整段复制自 git 跟踪的 bin/etc/game_config.yaml,
+    # 不由参数决定。不传 -PlayerInboxConsumer 时渲染值就是 yaml 的值 —— 以前钉的是「不传即 false」,那正是例行发布静默关掉消费的根因。
+    # 键集合与值都逐项比对:periodic_fetch_minutes 跟着同一段走,以后往这一段加键也不必回来改模板。
+    $authoritativeGame = (ConvertFrom-YamlToFlatMap -Text (Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'bin/etc/game_config.yaml') -Raw)).Scalars
+    $expectedInboxKeys = @($authoritativeGame.Keys | Where-Object { $_ -like 'player_inbox.*' })
+    Assert-True -Condition ($expectedInboxKeys -contains 'player_inbox.consumer_enabled') -Because 'bin/etc/game_config.yaml 必须显式写出 player_inbox.consumer_enabled(本断言与写前门禁的前提)'
+    $nodeGame = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'node-config')).Scalars -Prefix 'data.game_config.yaml.'
+    $renderedInboxKeys = @($nodeGame.Keys | Where-Object { $_ -like 'player_inbox.*' })
+    Assert-Equal -Expected ($expectedInboxKeys -join ',') -Actual ($renderedInboxKeys -join ',') -Because 'node-config 的 player_inbox 键集合必须与 bin/etc/game_config.yaml 逐项相同(整段复制,不增不减)'
+    foreach ($key in $expectedInboxKeys) {
+        Assert-Equal -Expected $authoritativeGame[$key] -Actual $nodeGame[$key] -Because "node-config 的 $key 必须与 bin/etc/game_config.yaml 一致(不传 -PlayerInboxConsumer 也一样,开关不由参数渲染)"
+    }
+}
+
+Test-Case '玩家收件箱:-PlayerInboxConsumer 只核对、不改值 —— 与 yaml 一致时放行且渲染值仍取 yaml;不一致时在任何写操作之前拒绝并指向 yaml' {
+    # 交接 §6 H1:任何路径都不能渲染出与 bin/etc/game_config.yaml 不同的值。参数保留下来只为把「我认为它开着 / 关着」写进发布命令。
+    $yamlValue = Get-EtcValue -RelativePath 'bin/etc/game_config.yaml' -KeyPath 'player_inbox.consumer_enabled'
+    Assert-True -Condition ($yamlValue -ceq 'true' -or $yamlValue -ceq 'false') -Because "前提:bin/etc/game_config.yaml 的 player_inbox.consumer_enabled 只能是小写 true / false(实际 '$yamlValue')"
+    $same = if ($yamlValue -ceq 'true') { 'on' } else { 'off' }
+    $other = if ($same -ceq 'on') { 'off' } else { 'on' }
+
+    $run = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-PlayerInboxConsumer', $same, '-SkipGoSvc', '-SkipJavaSvc'))
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "与 yaml 一致的 -PlayerInboxConsumer $same 必须放行。输出: $($run.Output)"
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $run.Output -Name 'node-config')
+    Assert-Equal -Expected $yamlValue -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.game_config.yaml.player_inbox.consumer_enabled') -Because '渲染值只取 yaml'
+
+    $run = Invoke-DeployDryRun -Arguments ($BaseArgs + @('-PlayerInboxConsumer', $other, '-SkipGoSvc', '-SkipJavaSvc'))
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because "与 yaml 不一致的 -PlayerInboxConsumer $other 必须拒绝部署,不能渲染出与 yaml 不同的值"
+    # 子进程的错误输出可能按控制台宽度折行,这里只断消息开头;完整文本(yaml 实际值、「去改 yaml」)由下文 AST 用例断 Exception.Message。
+    Assert-Match -Text $run.Output -Pattern "PlayerInboxConsumer $other 与 bin/etc/game_config\.yaml" -Because '错误必须点名参数值与权威文件'
+    Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl [^\r\n]*\b(apply|create|delete|patch|replace)\b' -Because '核对必须先于任何资源变更'
+}
+
+Test-Case '玩家收件箱写前门禁:zone-up 与 infra-up 的写路径入口都先过门禁,之后才有任何 kubectl 写操作' {
+    foreach ($entry in @(@{ Name = 'zone-up'; Output = $devOut }, @{ Name = 'infra-up'; Output = $battleInfraRun.Output })) {
+        $gateAt = $entry.Output.IndexOf('player-inbox consumer gate: ')
+        $firstKubectlAt = $entry.Output.IndexOf('[dry-run] kubectl')
+        Assert-True -Condition ($gateAt -ge 0) -Because "$($entry.Name) DryRun 必须经过 Assert-PlayerInboxConsumerGate(写路径入口门禁),否则守卫等于没挂"
+        Assert-True -Condition ($firstKubectlAt -lt 0 -or $gateAt -lt $firstKubectlAt) -Because "$($entry.Name) 的门禁必须先于任何 kubectl 写操作,不留半截部署"
+    }
+    Assert-Match -Text $devOut -Pattern 'player-inbox consumer gate: consumer_enabled=(true|false) \(bin/etc/game_config\.yaml\) enqueue_types=\d+ \(go/player_inbox/etc/player_inbox\.yaml\) head=\S+ worktree=(clean|dirty|unknown) live=\S+ OK' -Because '放行时打一行门禁结果,写明两个值各取自哪份文件,以及 HEAD、两份 yaml 是否已提交、线上交叉核对的结果'
+    # DryRun 不读集群:yaml 里消费端关着时 zone-up 本该读 infra 线上的白名单,DryRun 下只能写明跳过;开着时本来就不用读。
+    $yamlConsumer = Get-EtcValue -RelativePath 'bin/etc/game_config.yaml' -KeyPath 'player_inbox.consumer_enabled'
+    $expectedLive = if ($yamlConsumer -ceq 'false') { 'skipped\(dry-run\)' } else { 'not-needed' }
+    Assert-Match -Text $devOut -Pattern "player-inbox consumer gate: [^\r\n]* live=$expectedLive OK" -Because "zone-up DryRun(consumer_enabled=${yamlConsumer})的线上核对必须是 ${expectedLive}:DryRun 不读集群"
+}
+
+# 收件箱写前门禁的判定按 AST 抽出直接调用(与上文 deadline 守卫同一做法):三份输入拷到临时目录再改,不碰仓库,也不执行脚本入口。
+# 它们用到的 ConvertFrom-YamlToFlatMap / Get-YamlScalar 来自 deploy_capture.ps1 dot-source 的 release_common.ps1;$RepoRoot 由用例自己设。
+# 线上交叉核对(Read-PlayerInboxGateLiveFacts)读集群只经 Invoke-ClientEntryKubectl,用例在自己的作用域里换成假函数,不碰真集群。
+$inboxGateFunctionNames = @('Get-AuthoritativeScalar', 'Get-PlayerInboxConsumerEnabled', 'Get-PlayerInboxEnqueueTypes',
+    'ConvertFrom-PlayerInboxEnqueueTypesText', 'Assert-PlayerInboxConsumerGate', 'Read-PlayerInboxGateLiveFacts', 'Test-GlobalGoSvcDeployed')
+foreach ($inboxGateFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($inboxGateFunctionNames -contains $inboxGateFnAst.Name) {
+        Set-Item -Path "Function:script:$($inboxGateFnAst.Name)" -Value $inboxGateFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($inboxGateFnName in $inboxGateFunctionNames) {
+    if (-not (Test-Path "Function:$inboxGateFnName")) { throw "k8s_deploy.ps1 缺少函数 $inboxGateFnName(收件箱写前门禁被删了?后续断言无意义)" }
+}
+
+# 门禁读的全部文件拷到临时目录,把消费开关那一行与 EnqueueTypes 那一行换成给定内容(空串 = 删掉这个键)。返回临时根目录,调用方负责删。
+function New-PlayerInboxGateFixture {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$ConsumerLine,
+        [Parameter(Mandatory = $true)][string]$EnqueueLine
+    )
+    $root = Join-Path ([System.IO.Path]::GetTempPath()) ('player-inbox-consumer-gate-' + [guid]::NewGuid().ToString('N'))
+    foreach ($rel in @('bin/etc/game_config.yaml', 'go/player_inbox/etc/player_inbox.yaml', 'proto/player_inbox/player_inbox.proto')) {
+        $dst = Join-Path $root $rel
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dst) | Out-Null
+        Copy-Item -LiteralPath (Join-Path (Get-RepoRoot) $rel) -Destination $dst
+    }
+    # 只换顶格缩进下的真键行:注释行(# 开头)里的同名词不算。恰好一处才改,否则夹具前提不成立。
+    foreach ($edit in @(
+            @{ File = 'bin/etc/game_config.yaml'; Pattern = '(?m)^([ \t]+)consumer_enabled:[^\r\n]*'; Line = $ConsumerLine }
+            @{ File = 'go/player_inbox/etc/player_inbox.yaml'; Pattern = '(?m)^([ \t]+)EnqueueTypes:[^\r\n]*'; Line = $EnqueueLine }
+        )) {
+        $path = Join-Path $root $edit.File
+        $text = Get-Content -LiteralPath $path -Raw
+        Assert-Equal -Expected 1 -Actual ([regex]::Matches($text, $edit.Pattern).Count) -Because "夹具前提:$($edit.File) 里恰好一处 /$($edit.Pattern)/"
+        $line = $edit.Line
+        $mutated = [regex]::Replace($text, $edit.Pattern, { param($m) $m.Groups[1].Value + $line }.GetNewClosure())
+        [System.IO.File]::WriteAllText($path, $mutated, [System.Text.UTF8Encoding]::new($false))
+    }
+    return $root
+}
+
+Test-Case '玩家收件箱写前门禁:消费端关 + 入箱白名单非空时拒绝部署(点名两个文件、白名单与豁免开关),-AllowPlayerInboxConsumerOff 才放行;其余组合放行(夹具是临时目录里的配置副本,不碰仓库)' {
+    $nonEmpty = 'EnqueueTypes: [PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN, PLAYER_INBOX_MSG_GM_UNBLOCK_CURRENCY_GAIN]'
+    $cases = @(
+        @{ Consumer = 'false'; Enqueue = $nonEmpty;           Allow = $false; Rejects = $true;  Why = '消费端关、白名单非空、未豁免' }
+        @{ Consumer = 'false'; Enqueue = $nonEmpty;           Allow = $true;  Rejects = $false; Why = '显式 -AllowPlayerInboxConsumerOff' }
+        @{ Consumer = 'false'; Enqueue = 'EnqueueTypes: []';  Allow = $false; Rejects = $false; Why = '上线第 3–4 步:消费端关、白名单空(回滚下限)' }
+        @{ Consumer = 'true';  Enqueue = 'EnqueueTypes: []';  Allow = $false; Rejects = $false; Why = '上线第 5 步:消费端已开、白名单还空' }
+        @{ Consumer = 'true';  Enqueue = $nonEmpty;           Allow = $false; Rejects = $false; Why = '上线第 6 步之后的常态' }
+    )
+    foreach ($case in $cases) {
+        $root = New-PlayerInboxGateFixture -ConsumerLine "consumer_enabled: $($case.Consumer)" -EnqueueLine $case.Enqueue
+        try {
+            $RepoRoot = $root
+            $message = ''
+            $printed = ''
+            try { $printed = [string](Assert-PlayerInboxConsumerGate -AllowConsumerOff $case.Allow 6>&1 3>&1 | Out-String -Width 4096) } catch { $message = $_.Exception.Message }
+            if ($case.Rejects) {
+                Assert-Match -Text $message -Pattern '^拒绝部署' -Because "$($case.Why):必须拒绝部署,不能只打警告"
+                Assert-Match -Text $message -Pattern 'bin/etc/game_config\.yaml 的 player_inbox\.consumer_enabled=false' -Because '错误必须点名消费开关所在的文件与值'
+                Assert-Match -Text $message -Pattern 'go/player_inbox/etc/player_inbox\.yaml 的 PlayerInbox\.EnqueueTypes 非空\(PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN, PLAYER_INBOX_MSG_GM_UNBLOCK_CURRENCY_GAIN\)' -Because '错误必须点名白名单所在的文件与内容'
+                Assert-Match -Text $message -Pattern '-AllowPlayerInboxConsumerOff' -Because '错误必须写明豁免开关'
+                continue
+            }
+            Assert-Equal -Expected '' -Actual $message -Because "$($case.Why) 必须放行"
+            Assert-Match -Text $printed -Pattern "player-inbox consumer gate: consumer_enabled=$($case.Consumer) " -Because "$($case.Why):放行时打一行门禁结果"
+            if ($case.Allow) {
+                Assert-Match -Text $printed -Pattern 'AllowPlayerInboxConsumerOff 放行了「消费端关、入箱开」' -Because '豁免放行必须留下警告,说明新入箱的处置不会执行'
+            }
+            else {
+                Assert-Match -Text $printed -Pattern ' OK' -Because "$($case.Why):正常放行打 OK"
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+Test-Case '负向:收件箱消费开关只认显式写出的小写 true / false;-PlayerInboxConsumer 与 yaml 不一致时门禁拒绝(夹具是临时目录里的配置副本,不碰仓库)' {
+    foreach ($bad in @(
+            @{ Line = 'consumer_enabled: yes'; Pattern = "consumer_enabled='yes' 只能写小写 true 或 false"; Why = 'yaml-cpp 认 yes,门禁不替你猜' }
+            @{ Line = 'consumer_enabled: True'; Pattern = "consumer_enabled='True' 只能写小写 true 或 false"; Why = '大小写不同同样拒绝' }
+            @{ Line = ''; Pattern = '查不到 player_inbox\.consumer_enabled'; Why = 'C++ 缺键取 false,部署侧要求显式写出' }
+        )) {
+        $root = New-PlayerInboxGateFixture -ConsumerLine $bad.Line -EnqueueLine 'EnqueueTypes: []'
+        try {
+            $RepoRoot = $root
+            $message = ''
+            try { Assert-PlayerInboxConsumerGate 6>&1 | Out-Null } catch { $message = $_.Exception.Message }
+            Assert-Match -Text $message -Pattern $bad.Pattern -Because "$($bad.Why)(夹具行 '$($bad.Line)')"
+        }
+        finally {
+            Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    $root = New-PlayerInboxGateFixture -ConsumerLine 'consumer_enabled: true' -EnqueueLine 'EnqueueTypes: []'
+    try {
+        $RepoRoot = $root
+        Assert-PlayerInboxConsumerGate -ExpectedConsumer 'on' 6>&1 | Out-Null
+        $message = ''
+        try { Assert-PlayerInboxConsumerGate -ExpectedConsumer 'off' 6>&1 | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '-PlayerInboxConsumer off 与 bin/etc/game_config\.yaml 的 player_inbox\.consumer_enabled=true 不一致,拒绝部署' -Because 'yaml 已开消费时,发布命令写 off 必须拒绝(防止以为关了、实际开着)'
+        Assert-Match -Text $message -Pattern '改那份 yaml 并提交' -Because '错误必须告诉部署的人去改 yaml,而不是换个参数重跑'
+    }
+    finally {
+        Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 # 包装入口的透传:只从 AST 取出 dev_tools.ps1 / k8s_image.ps1 里的透传函数(照 dev_tools_merge_zone_contract.tests.ps1),
@@ -2610,6 +2763,26 @@ Test-Case '连 MySQL 的 ConfigMap 只有总账认识的那些(zone-up 三个、
     Assert-Match -Text $inboxConfig -Pattern 'Key: dataservice\.rpc' -Because '作为调用方经 dataservice.rpc 发现 data_service(玩家存在校验 / 对账读账本)'
     Assert-Match -Text $inboxConfig -Pattern 'EnqueueTypes:' -Because '入箱白名单必须显式写出(空也写 [])'
     Assert-Match -Text $inboxConfig -Pattern 'AutoMigrate: ' -Because '建表策略显式写出,staging/prod 固定 false'
+
+    # 顶层 Middlewares 段(评审 L12):go-zero 的 Middlewares.Stat 缺省 true(整段缺席也回填),Go 侧 config.Validate 在 Stat 开着时
+    # 要求 StatConf.IgnoreContentMethods 同时列出 FetchItems 与 AckItems,缺了 player-inbox 与 player-inbox-migrate Job 都拒启。
+    # ConfigMap 里整段复制自服务 yaml:键集合与值逐项相同,两个方法名必须在顶层段(ConfigMap 内缩进 4 格)下出现。
+    Assert-Match -Text $inboxConfig -Pattern '(?m)^    Middlewares:\s*$' -Because '必须有顶层 Middlewares 段(DataServiceRpc.Middlewares 是客户端的,不算)'
+    foreach ($method in @('/player_inbox.PlayerInbox/FetchItems', '/player_inbox.PlayerInbox/AckItems')) {
+        Assert-Match -Text $inboxConfig -Pattern ('(?m)^\s+-\s+' + [regex]::Escape($method) + '\s*$') -Because "IgnoreContentMethods 必须含 $method(否则 config.Validate 拒启)"
+    }
+    $authoritativeInbox = (ConvertFrom-YamlToFlatMap -Text (Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'go/player_inbox/etc/player_inbox.yaml') -Raw)).Scalars
+    $expectedMiddlewareKeys = @($authoritativeInbox.Keys | Where-Object { $_ -like 'Middlewares.*' })
+    Assert-True -Condition ($expectedMiddlewareKeys -contains 'Middlewares.StatConf.IgnoreContentMethods[0]') -Because 'go/player_inbox/etc/player_inbox.yaml 必须写出 Middlewares.StatConf.IgnoreContentMethods(本断言的前提)'
+    $renderedInbox = ConvertTo-UnprefixedScalars -Scalars (ConvertTo-FlatManifest -Block $inboxConfig).Scalars -Prefix 'data.player_inbox.yaml.'
+    $renderedMiddlewareKeys = @($renderedInbox.Keys | Where-Object { $_ -like 'Middlewares.*' })
+    Assert-Equal -Expected ($expectedMiddlewareKeys -join ',') -Actual ($renderedMiddlewareKeys -join ',') -Because 'go-svc-player-inbox-config 的 Middlewares 键集合必须与服务 yaml 逐项相同(整段复制,不增不减)'
+    foreach ($key in $expectedMiddlewareKeys) {
+        Assert-Equal -Expected $authoritativeInbox[$key] -Actual $renderedInbox[$key] -Because "go-svc-player-inbox-config 的 $key 必须与 go/player_inbox/etc/player_inbox.yaml 一致"
+    }
+    # 迁移 Job 读的是同一份 ConfigMap(conf.MustLoad 同样跑 Validate),漏了它就是「服务起得来、Job 拒启」或反过来。
+    $migrateManifest = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/manifests/go-svc/player-inbox-migrate.yaml') -Raw
+    Assert-Match -Text $migrateManifest -Pattern 'configMap:\s+name: go-svc-player-inbox-config' -Because 'player-inbox-migrate Job 必须挂同一份 ConfigMap,Middlewares 段对它同样生效'
 }
 
 Test-Case '部署写路径打印 MySQL connection ledger(zone-up DryRun)' {
@@ -2895,7 +3068,7 @@ Test-Case 'mysql-connection-alerts.yaml:PrometheusRule 形状,额外库数阈值
 # Assert-RedisCoreRestartConfirmed 读集群的那一步(Get-LiveRedisCoreTemplateDigest)在用例里给替身;写路径打印与 DryRun 产物用
 # $devOut(zone-up)/ $battleInfraRun(infra-up)核对;包装入口的透传照上面 GateRouterMode 的做法。全部不碰任何集群。
 $redisLedgerFunctionNames = @(
-    'Get-RedisConnectionPlan', 'Get-RedisMaxClientsFromManifest', 'Get-RedisPoolMirror', 'Get-RedisConnectionLedgerInputs', 'Get-RedisConnectionLedger',
+    'Get-RedisConnectionPlan', 'Get-RedisMaxClientsFromManifest', 'Get-RedisPoolMirror', 'Assert-DbOwnerEpochRedisDeployment', 'Get-RedisConnectionLedgerInputs', 'Get-RedisConnectionLedger',
     'Get-RedisPodTemplateDigest', 'Get-RedisCoreRestartVerdict', 'Assert-RedisCoreRestartConfirmed', 'Get-LiveRedisCoreTemplateDigest'
 )
 foreach ($redisLedgerFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
@@ -3917,6 +4090,8 @@ $DbGroupExecShell = "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-cons
 $dbGroupFunctionNames = @(
     'Assert-DbConsumerGroupName', 'ConvertFrom-LiveDbConsumerGroup', 'Test-DbConsumerGroupNeedsKafkaFacts', 'Resolve-DbConsumerGroupPlan',
     'New-DbConsumerGroupYaml', 'Get-DbConsumerGroupPlan', 'Read-LiveDbConfigMapYaml', 'Read-DbGroupTopicFacts',
+    # 显式交接渲染交接形状之前的线上 db 交接闸能力证明(R7 复核 [0])。
+    'Assert-LiveDbPodsHaveHandoffGate',
     'Initialize-DbConsumerGroupPlans', 'Test-ZoneDbDeployed', 'Get-AuthoritativeScalar', 'Get-ZoneNamespace',
     # all-up 分支取 zone 列表用(与 switch ($Command) 里的 Apply-Zone 同一来源)。
     'Get-ZonesFromJson', 'Resolve-ZonesConfigPath'
@@ -4015,6 +4190,41 @@ function New-DbGroupInfraNamespaceRule {
     $stdout = if ($Exists -and $ExitCode -eq 0) { 'namespace/contract-infra' } else { '' }
     $stderr = if ($ExitCode -ne 0) { 'Error from server (Forbidden): namespaces "contract-infra" is forbidden' } else { '' }
     return @{ Pattern = '^get namespace contract-infra --ignore-not-found -o name$'; ExitCode = $ExitCode; Stdout = $stdout; Stderr = $stderr }
+}
+
+# 本 zone 的 db Deployment 与 Pod(Assert-LiveDbPodsHaveHandoffGate 的第一次只读调用,R7 复核 [0])。
+# -Pods 每项 @{ Name; Phase(缺省 Running); Deleting = $true 即带 deletionTimestamp };-NoDeployment = db Deployment 不存在;-ExitCode 非 0 = 读失败。
+function New-DbGroupPodsRule {
+    param([object[]]$Pods = @(), [int]$Replicas = 2, [switch]$NoDeployment, [int]$ExitCode = 0, [string]$Namespace = 'mmorpg-zone-contract-test')
+    $items = [System.Collections.Generic.List[object]]::new()
+    if (-not $NoDeployment) {
+        $items.Add([ordered]@{ apiVersion = 'apps/v1'; kind = 'Deployment'; metadata = [ordered]@{ name = 'db'; labels = @{ app = 'db' } }; spec = [ordered]@{ replicas = $Replicas } })
+    }
+    foreach ($pod in $Pods) {
+        $metadata = [ordered]@{ name = $pod.Name; labels = @{ app = 'db' } }
+        if ($pod.Deleting) { $metadata.deletionTimestamp = '2026-10-17T03:00:00Z' }
+        $phase = if ($pod.Phase) { $pod.Phase } else { 'Running' }
+        $items.Add([ordered]@{ apiVersion = 'v1'; kind = 'Pod'; metadata = $metadata; status = [ordered]@{ phase = $phase } })
+    }
+    $stdout = if ($ExitCode -eq 0) { [ordered]@{ apiVersion = 'v1'; kind = 'List'; items = @($items) } | ConvertTo-Json -Depth 8 } else { '' }
+    $stderr = if ($ExitCode -ne 0) { 'Error from server (Forbidden): pods is forbidden: User "deployer" cannot list resource "pods"' } else { '' }
+    return @{ Pattern = ('^get deployments,pods -l app=db -n ' + [regex]::Escape($Namespace) + ' -o json --request-timeout=15s$'); ExitCode = $ExitCode; Stdout = $stdout; Stderr = $stderr }
+}
+
+# 经 API server 代理抓一个 db Pod 的 /metrics:gate = 带交接闸的二进制(以 0 预建 db_consumer_group_handoff_gate_total);
+# no-gate = 交接闸之前的二进制;forbidden = 部署账号缺 pods/proxy 权限。
+function New-DbGroupMetricsRule {
+    param(
+        [Parameter(Mandatory = $true)][string]$Pod,
+        [Parameter(Mandatory = $true)][ValidateSet('gate', 'no-gate', 'forbidden')][string]$State,
+        [string]$Namespace = 'mmorpg-zone-contract-test'
+    )
+    $pattern = '^get --raw ' + [regex]::Escape("/api/v1/namespaces/$Namespace/pods/${Pod}:9160/proxy/metrics") + ' --request-timeout=15s$'
+    switch ($State) {
+        'gate' { return @{ Pattern = $pattern; ExitCode = 0; Stderr = ''; Stdout = "# HELP db_consumer_group_handoff_gate_total Group handoff gate verdicts.`n# TYPE db_consumer_group_handoff_gate_total counter`ndb_consumer_group_handoff_gate_total{outcome=`"no_peer_offsets`"} 0`ndb_consumer_group_handoff_gate_total{outcome=`"peer_released`"} 0" } }
+        'no-gate' { return @{ Pattern = $pattern; ExitCode = 0; Stderr = ''; Stdout = "# TYPE db_task_result_total counter`ndb_task_result_total{result=`"ok`"} 12" } }
+        'forbidden' { return @{ Pattern = $pattern; ExitCode = 1; Stdout = ''; Stderr = "Error from server (Forbidden): pods `"$Pod`" is forbidden: User `"deployer`" cannot get resource `"pods/proxy`"" } }
+    }
 }
 
 # 一份 db.yaml 文本,ServerConfig.Kafka 下的组名键由调用方给(各行已带 4 格缩进)。
@@ -4181,10 +4391,10 @@ Test-Case '③ 写路径入口:-DbConsumerGroup 的入口拒绝早于 Ensure-Kub
     Assert-True -Condition ($switchAt -ge 0 -and $writeGates[0].Extent.StartOffset -lt $top[$switchAt].Extent.StartOffset) -Because '写路径门禁块先于 switch ($Command)(Apply-Infra / Apply-Zone 的写操作都在它的分支里)'
 }
 
-Test-Case '③ 读集群只在写路径入口、只在非 DryRun:Read-LiveDbConfigMapYaml / Read-DbGroupTopicFacts 只由 Initialize-DbConsumerGroupPlans 调用,且包在 if (-not $DryRun) 里' {
+Test-Case '③ 读集群只在写路径入口、只在非 DryRun:Read-LiveDbConfigMapYaml / Read-DbGroupTopicFacts / Assert-LiveDbPodsHaveHandoffGate 只由 Initialize-DbConsumerGroupPlans 调用,且包在 if (-not $DryRun) 里' {
     $initAst = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Initialize-DbConsumerGroupPlans' }, $false)
     Assert-True -Condition ($null -ne $initAst) -Because '要有 Initialize-DbConsumerGroupPlans'
-    foreach ($readerName in @('Read-LiveDbConfigMapYaml', 'Read-DbGroupTopicFacts')) {
+    foreach ($readerName in @('Read-LiveDbConfigMapYaml', 'Read-DbGroupTopicFacts', 'Assert-LiveDbPodsHaveHandoffGate')) {
         $allCalls = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $a.GetCommandName() -eq $readerName }, $true))
         Assert-Equal -Expected 1 -Actual $allCalls.Count -Because "$readerName 全脚本只能有一处调用(Invoke-ClientEntryKubectl 不看 DryRun,判断集中在写路径入口)"
         $call = $allCalls[0]
@@ -4551,6 +4761,64 @@ Test-Case '③ Initialize-DbConsumerGroupPlans:显式 zone + 全新 namespace �
     try { $null = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String } catch { $message = $_.Exception.Message }
     Assert-Match -Text $message -Pattern 'GroupID 配 GroupHandoffFrom' -Because '线上形状不合法即拒绝'
     Assert-Equal -Expected 1 -Actual $script:DbGroupKubectlCalls.Count -Because '形状不合法时不再读 Kafka'
+}
+
+Test-Case '③ R7 [0] 显式交接渲染交接形状之前,线上每个 db Pod 的 /metrics 都要有 db_consumer_group_handoff_gate_total;证明不了即在写操作之前拒绝' {
+    # go-svc-db-config 整目录挂载、进程只在启动时读:旧 ReplicaSet 的 Pod 一旦重启就读到交接形状,交接闸之前的二进制在 MustLoad 拒启。
+    $finalL = New-DbGroupLiveYaml -KafkaLines @("    GroupID: `"$DbGroupLegacy`"")
+    $forward = @((New-DbGroupConfigMapRule -DbYaml $finalL), (New-DbGroupDescribeRule -Group $DbGroupZone -State 'missing'), (New-DbGroupDescribeRule -Group $DbGroupLegacy -State 'offsets'))
+    $pods = @(@{ Name = 'db-a' }, @{ Name = 'db-b' }, @{ Name = 'db-old'; Deleting = $true }, @{ Name = 'db-evicted'; Phase = 'Failed' })
+    $runInit = {
+        param([object[]]$Rules, [string]$Mode)
+        Reset-DbGroupFixture -Rules $Rules
+        $script:DbConsumerGroup = $Mode
+        $message = ''
+        $out = ''
+        try { $out = Initialize-DbConsumerGroupPlans 6>&1 3>&1 | Out-String } catch { $message = $_.Exception.Message }
+        return [pscustomobject]@{ Message = $message; Output = $out }
+    }
+
+    # 1. 两个运行中的 Pod 都带交接闸:放行,渲染 handoff(Z←L)。在删除 / 已终结的 Pod 不抓(没有它们的规则,抓了就 throw)。
+    $ok = & $runInit ($forward + @((New-DbGroupPodsRule -Pods $pods), (New-DbGroupMetricsRule -Pod 'db-a' -State 'gate'), (New-DbGroupMetricsRule -Pod 'db-b' -State 'gate'))) 'zone'
+    Assert-Equal -Expected '' -Actual $ok.Message -Because '每个 db Pod 都带交接闸时放行'
+    Assert-Equal -Expected "handoff:$DbGroupZone<-$DbGroupLegacy" -Actual (Format-DbGroupPlan (Get-DbConsumerGroupPlan -CurrentZoneId 101)) -Because '正向交接照常渲染交接形状'
+    $scrapes = @($script:DbGroupKubectlCalls | Where-Object { $_.Line -match '^get --raw ' })
+    Assert-Equal -Expected 2 -Actual $scrapes.Count -Because '只抓运行中的两个 Pod'
+    Assert-True -Condition (@($scrapes | Where-Object { $_.KubeContext -ne 'contract-db-group-ctx' -or -not $_.CaptureOutput -or -not $_.AllowFailure }).Count -eq 0) -Because '显式带上 -KubeContext,捕获输出、退出码自己判'
+
+    # 2. 有一个 Pod 是交接闸之前的二进制:拒绝,不留计划,给出收回命令(zone → legacy,最终形状 GroupID=L)。
+    $old = & $runInit ($forward + @((New-DbGroupPodsRule -Pods $pods), (New-DbGroupMetricsRule -Pod 'db-a' -State 'gate'), (New-DbGroupMetricsRule -Pod 'db-b' -State 'no-gate'))) 'zone'
+    Assert-Match -Text $old.Message -Pattern 'Pod db-b:/metrics 里没有 db_consumer_group_handoff_gate_total' -Because '点名缺交接闸的 Pod'
+    Assert-Match -Text $old.Message -Pattern '尚未做任何写操作' -Because '拒绝早于任何写操作'
+    Assert-Match -Text $old.Message -Pattern ([regex]::Escape("-DbConsumerGroup legacy 收回到最终形状 GroupID=$DbGroupLegacy")) -Because '要给出交接 rollout 卡住后的收回办法'
+    Assert-Equal -Expected 0 -Actual $script:DbConsumerGroupPlans.Count -Because '拒绝时本 zone 不留计划'
+
+    # 3. 缺 pods/proxy 权限、4. 列 Pod 失败、5. 副本数 > 0 却没有可抓的 Pod:一律拒绝(fail-closed)。
+    $proxy = & $runInit ($forward + @((New-DbGroupPodsRule -Pods @(@{ Name = 'db-a' })), (New-DbGroupMetricsRule -Pod 'db-a' -State 'forbidden'))) 'zone'
+    Assert-Match -Text $proxy.Message -Pattern 'pods/proxy' -Because '抓不到 /metrics 时点名 pods/proxy 权限'
+    $list = & $runInit ($forward + @(New-DbGroupPodsRule -ExitCode 1)) 'zone'
+    Assert-Match -Text $list.Message -Pattern '读不到本 zone 的 db Deployment / Pod' -Because '读不到不等于没有'
+    $rebuilding = & $runInit ($forward + @(New-DbGroupPodsRule -Replicas 2 -Pods @(@{ Name = 'db-gone'; Deleting = $true }))) 'zone'
+    Assert-Match -Text $rebuilding.Message -Pattern '副本数是 2、却没有一个可检查的 db Pod' -Because '旧 ReplicaSet 正在拉起的 Pod 判不出带不带交接闸'
+
+    # 6. 反向交接同一规则,收回命令是 -DbConsumerGroup zone(最终形状 GroupID=Z)。
+    $finalZ = New-DbGroupLiveYaml -KafkaLines @("    GroupID: `"$DbGroupZone`"")
+    $reverse = @((New-DbGroupConfigMapRule -DbYaml $finalZ), (New-DbGroupDescribeRule -Group $DbGroupZone -State 'offsets'), (New-DbGroupDescribeRule -Group $DbGroupLegacy -State 'missing'))
+    $back = & $runInit ($reverse + @((New-DbGroupPodsRule -Pods @(@{ Name = 'db-a' })), (New-DbGroupMetricsRule -Pod 'db-a' -State 'no-gate'))) 'legacy'
+    Assert-Match -Text $back.Message -Pattern ([regex]::Escape("-DbConsumerGroup zone 收回到最终形状 GroupID=$DbGroupZone")) -Because '反向交接的收回方向相反'
+
+    # 7. namespace 里没有 db 进程(全新 namespace,Deployment 不存在):没有会重启进交接形状的旧 Pod,放行并告警。
+    $fresh = @((New-DbGroupConfigMapRule -DbYaml ''), (New-DbGroupDescribeRule -Group $DbGroupZone -State 'missing'), (New-DbGroupDescribeRule -Group $DbGroupLegacy -State 'offsets'))
+    $none = & $runInit ($fresh + @(New-DbGroupPodsRule -NoDeployment)) 'zone'
+    Assert-Equal -Expected '' -Actual $none.Message -Because '没有旧进程可保护时不拒绝'
+    Assert-Equal -Expected "handoff:$DbGroupZone<-$DbGroupLegacy" -Actual (Format-DbGroupPlan (Get-DbConsumerGroupPlan -CurrentZoneId 101)) -Because '全新 namespace + 只有 L 有位点 → handoff(Z←L)'
+    # Write-Warning 经 Out-String 可能在空格处折行,先把空白折叠再匹配。
+    Assert-Match -Text ($none.Output -replace '\s+', ' ') -Pattern 'has no running db process' -Because '要告警:新 Pod 不带交接闸时 rollout 卡住,以及怎么收回'
+
+    # 8. 回档 Step 6(只有 Z 有位点 → final(Z))与 keep:不渲染交接形状,不做能力校验,一次 Pod 读取都没有。
+    $rollback = & $runInit @((New-DbGroupConfigMapRule -DbYaml ''), (New-DbGroupDescribeRule -Group $DbGroupZone -State 'offsets'), (New-DbGroupDescribeRule -Group $DbGroupLegacy -State 'no-offsets')) 'zone'
+    Assert-Equal -Expected '' -Actual $rollback.Message -Because '回档行照常通过'
+    Assert-Equal -Expected 0 -Actual @($script:DbGroupKubectlCalls | Where-Object { $_.Line -match '^get (deployments,pods|--raw) ' }).Count -Because '最终形状任何二进制都能加载,不需要能力证明'
 }
 
 Test-Case '③ Initialize-DbConsumerGroupPlans:DryRun 一次集群都不读;不部署 db 时 keep 没有计划,显式模式在任何写操作之前拒绝' {
@@ -5076,7 +5344,8 @@ Test-Case 'S5b Get-LiveZoneNamespaceNames(假 kubectl):DryRun 返回 $null;只�
     Reset-S5bFixture -NamespaceReply @{ ExitCode = 0; Stdout = "contract-zone-infra`ncontract-zone-yesterday" }
     $script:DryRun = $false
     $script:InfraNamespace = 'contract-zone-infra'
-    Assert-Equal -Expected 'yesterday' -Actual (@(Get-LiveZoneNamespaceNames) -join ',') -Because 'infra namespace 恰好带同一前缀时不算 zone'
+    $infraFilteredNames = Get-LiveZoneNamespaceNames
+    Assert-Equal -Expected 'yesterday' -Actual (@($infraFilteredNames) -join ',') -Because 'infra namespace 恰好带同一前缀时不算 zone'
 
     Reset-S5bFixture -NamespaceReply @{ ExitCode = 0; Stdout = "default`nkube-system" }
     $script:DryRun = $false
@@ -5396,12 +5665,39 @@ Test-Case '④ zone-up DryRun:db ConfigMap 的 Kafka.RetryRouting 与 RedisClien
     # 切 owner(rollout 第 4 步)、redis-ha 接入时把 NumReplicas 改 1,都只改 db.yaml:ConfigMap 必须跟着走,不得留一份生成器常数。
     # 四个键在 db.yaml 里必须显式写出(Get-AuthoritativeScalar 查不到即 throw,基线 DryRun 就会失败):这里先核前提再比对。
     $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-db-config')
-    # ServerConfig.Fencing.Mode(MySQL 行内围栏开关)同一口径镜像,一并核对。
-    foreach ($keyPath in @('ServerConfig.Kafka.RetryRouting', 'ServerConfig.RedisClient.WaitAOFNumLocal', 'ServerConfig.RedisClient.WaitAOFNumReplicas', 'ServerConfig.RedisClient.WaitAOFTimeoutMs', 'ServerConfig.Fencing.Mode')) {
+    # Fencing 两个滚动开关与 RequireTiDB 的实际后端门禁同一口径镜像,一并核对。
+    foreach ($keyPath in @('ServerConfig.Kafka.RetryRouting', 'ServerConfig.RedisClient.WaitAOFNumLocal', 'ServerConfig.RedisClient.WaitAOFNumReplicas', 'ServerConfig.RedisClient.WaitAOFTimeoutMs', 'ServerConfig.Fencing.Mode', 'ServerConfig.Fencing.EpochOverride', 'ServerConfig.Database.RequireTiDB')) {
         $expected = Get-EtcValue -RelativePath $S1DbYaml -KeyPath $keyPath
         Assert-True -Condition (-not [string]::IsNullOrWhiteSpace($expected)) -Because "前提:$S1DbYaml 必须显式写出 $keyPath 的值(不写 = go/db 代码默认值,ConfigMap 镜像不出来)"
         $actual = Get-FlatValue -Flat $flat -KeyPath ('data.db.yaml.' + $keyPath)
         Assert-Equal -Expected $expected -Actual $actual -Because "go-svc-db-config 的 $keyPath 必须与 $S1DbYaml 一致(生成器不得自带常数)"
+    }
+}
+
+Test-Case '围栏部署:OwnerEpochRedis 缺省复用主池;显式独立池未登记总账前拒绝部署' {
+    $RepoRoot = Get-RepoRoot
+    Assert-DbOwnerEpochRedisDeployment
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-db-config')
+    Assert-True -Condition (-not $flat.Scalars.Contains('data.db.yaml.ServerConfig.OwnerEpochRedis')) `
+        -Because '源配置未拆池时ConfigMap也不能额外开池'
+
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('db-owner-redis-contract-' + [guid]::NewGuid().ToString('N'))
+    $fixturePath = Join-Path $tempRoot 'go/db/etc/db.yaml'
+    try {
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $fixturePath) | Out-Null
+        [System.IO.File]::WriteAllText($fixturePath, "ServerConfig:`n  OwnerEpochRedis:`n    Hosts: core-redis.invalid:6379`n    DB: 0`n    PoolSize: 8`n", [System.Text.UTF8Encoding]::new($false))
+        $RepoRoot = $tempRoot
+        $message = ''
+        try { Assert-DbOwnerEpochRedisDeployment } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern 'OwnerEpochRedis.*Redis 连接总账.*MAXCLIENTS' `
+            -Because '显式独立池必须拒绝并指出尚未登记的预算,不能静默丢配置或低估连接'
+    }
+    finally {
+        $RepoRoot = Get-RepoRoot
+        Remove-Item -LiteralPath $fixturePath -Force -ErrorAction SilentlyContinue
+        foreach ($directory in @('go/db/etc', 'go/db', 'go', '')) {
+            Remove-Item -LiteralPath (Join-Path $tempRoot $directory) -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 

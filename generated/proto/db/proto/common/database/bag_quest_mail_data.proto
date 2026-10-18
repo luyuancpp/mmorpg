@@ -110,6 +110,11 @@ message ItemEntry {
   // 只在 has_equip() 时拷贝,否则还原后会被当成「没初始化过」再掷一次。
   // 字段号取 14:6–12 仍留给上面那张 TODO 表。
   EquipInstanceData equip = 14;
+
+  // 完整实例权威。存盘/读盘整份复制，保留成长数据、presence 与未来 unknown fields。
+  // 上方实例标量只作为旧读者兼容投影；有 instance 时不得再用投影重建实例。
+  // 旧档没有本字段时走旧转换，下次正常保存补齐；禁止混跑会丢本字段的旧写者。
+  ItemComp instance = 15;
   //
   // When adding any of the above:
   //   1. uncomment the field with the exact number listed
