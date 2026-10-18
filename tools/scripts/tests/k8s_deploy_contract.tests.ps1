@@ -2205,7 +2205,8 @@ Test-Case '玩家收件箱写前门禁:zone-up 与 infra-up 的写路径入口�
 # 它们用到的 ConvertFrom-YamlToFlatMap / Get-YamlScalar 来自 deploy_capture.ps1 dot-source 的 release_common.ps1;$RepoRoot 由用例自己设。
 # 线上交叉核对(Read-PlayerInboxGateLiveFacts)读集群只经 Invoke-ClientEntryKubectl,用例在自己的作用域里换成假函数,不碰真集群。
 $inboxGateFunctionNames = @('Get-AuthoritativeScalar', 'Get-PlayerInboxConsumerEnabled', 'Get-PlayerInboxEnqueueTypes',
-    'ConvertFrom-PlayerInboxEnqueueTypesText', 'Assert-PlayerInboxConsumerGate', 'Read-PlayerInboxGateLiveFacts', 'Test-GlobalGoSvcDeployed')
+    'ConvertFrom-PlayerInboxEnqueueTypesText', 'Assert-PlayerInboxConsumerGate', 'Get-PlayerInboxGateSourceState',
+    'Read-PlayerInboxGateLiveFacts', 'Test-GlobalGoSvcDeployed')
 foreach ($inboxGateFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
     if ($inboxGateFunctionNames -contains $inboxGateFnAst.Name) {
         Set-Item -Path "Function:script:$($inboxGateFnAst.Name)" -Value $inboxGateFnAst.Body.GetScriptBlock()

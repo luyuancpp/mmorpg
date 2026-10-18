@@ -16,6 +16,7 @@ import (
 	dskafka "data_service/internal/kafka"
 	"data_service/internal/metrics"
 	"data_service/internal/noderegistry"
+	"data_service/internal/routetoolcli"
 	"data_service/internal/server"
 	"data_service/internal/store"
 	"data_service/internal/svc"
@@ -48,6 +49,43 @@ var migrateOnly = flag.Bool("migrate", false, "run the global-DB schema migratio
 
 var showVersion = flag.Bool("version", false, "打印版本信息并退出")
 
+// routeTool 是 route_tool 的主程序入口(映射持久化第 1b-1 批,2026-10-18):`data_service -f <yaml> -route-tool <子命令> [参数]`
+// 跑一个运维子命令后退出,不起 gRPC、不连别的依赖。K8s 镜像只构建单一入口 /app/service(deploy/k8s/Dockerfile.go-svc),
+// 生产上只能这样跑 route_tool(一次性 Job / Pod,runbook §9.4)。逻辑在 internal/routetoolcli,与 cmd/route_tool 同一份。
+var routeTool = flag.Bool("route-tool", false, "run a route_tool subcommand and exit: data_service -f <yaml> -route-tool <subcommand> [flags]")
+
+// entryMode 是 main 的三种入口。
+type entryMode uint8
+
+const (
+	entryServe entryMode = iota
+	entryMigrate
+	entryRouteTool
+)
+
+// selectEntry 按 flag 选入口(纯函数,data_service_entry_test.go 表驱动钉住)。args 是 flag.Args()(第一个非 flag 参数起)。
+//   - -migrate 与 -route-tool 同时给:拒绝(一次只做一件事);
+//   - -route-tool 但没有子命令:拒绝;
+//   - 没有 -route-tool 却带位置参数:拒绝 —— 以前这些参数被静默忽略,`data_service -f x.yaml audit` 会被当成一次普通启动、
+//     起一个服务进发现池,而运维以为自己跑的是审计。
+func selectEntry(migrate, routeTool bool, args []string) (entryMode, error) {
+	switch {
+	case migrate && routeTool:
+		return entryServe, errors.New("-migrate and -route-tool are mutually exclusive")
+	case routeTool && len(args) == 0:
+		return entryServe, errors.New("-route-tool needs a subcommand: data_service -f <yaml> -route-tool <subcommand> [flags]")
+	case routeTool:
+		return entryRouteTool, nil
+	case len(args) > 0:
+		return entryServe, fmt.Errorf("unexpected positional arguments %q; route_tool subcommands need -route-tool "+
+			"(data_service -f <yaml> -route-tool %s ...)", args, args[0])
+	case migrate:
+		return entryMigrate, nil
+	default:
+		return entryServe, nil
+	}
+}
+
 // killSwitchEtcdDialTimeout 与 scene_manager 建 etcd 客户端时的取值一致(5s)。
 // 只影响 killswitch 自己的 watch 连接,拨不通也只是退回全放行。
 const killSwitchEtcdDialTimeout = 5 * time.Second
@@ -74,6 +112,20 @@ const nodeRegisterListenPoll = 100 * time.Millisecond
 
 func main() {
 	flag.Parse()
+	entry, err := selectEntry(*migrateOnly, *routeTool, flag.Args())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "data_service: %v\n", err)
+		os.Exit(2)
+	}
+	if entry == entryRouteTool {
+		// route_tool 的 stdout 只许有一行统计(给脚本解析):版本行改打到 stderr,其余与下面同理(先于读配置,Job 日志可追溯)。
+		// 配置由 routetoolcli 自己用 conf.Load 读:conf.MustLoad 出错时直接退出 1,破坏 route_tool「失败一律 2」的约定。
+		fmt.Fprintln(os.Stderr, buildinfo.StartupLine("data_service"))
+		if *showVersion {
+			return
+		}
+		os.Exit(routetoolcli.Run(context.Background(), append([]string{"-f", *configFile}, flag.Args()...), os.Stdout, os.Stderr))
+	}
 	// 版本行直写 stdout,先于读配置与 logx 初始化:进程在配置 / 依赖阶段就崩溃时也已留下"跑的是哪一版"
 	// (shared/buildinfo;理由同 cpp/nodes/gate/gate_version.h 头注释)。-migrate 形态同样先打,迁移 Job 日志可追溯。
 	fmt.Println(buildinfo.StartupLine("data_service"))
@@ -84,7 +136,7 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 
-	if *migrateOnly {
+	if entry == entryMigrate {
 		os.Exit(runMigration(c))
 	}
 
