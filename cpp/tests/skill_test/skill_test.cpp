@@ -14,6 +14,7 @@
 #include "table/code/actoractionstate_table.h"
 #include "table/code/skillpermission_table.h"
 #include "table/code/buff_table.h"
+#include "table/code/class_table.h"
 #include "table/code/actoractioncombatstate_table.h"
 #include "combat/skill/comp/skill_comp.h"
 #include "combat/skill/constants/skill.h"
@@ -1084,6 +1085,7 @@ int main(int argc, char** argv) {
     ActorActionCombatStateTableManager::Instance().Load();
     SkillPermissionTableManager::Instance().Load();
     BuffTableManager::Instance().Load();
+    ClassTableManager::Instance().Load();  // player_skill_book_test:职业初始技能种子
 
     int ret = RUN_ALL_TESTS();
     tlsEcs.actorRegistry.clear(); // Clean up thread-local storage after all tests

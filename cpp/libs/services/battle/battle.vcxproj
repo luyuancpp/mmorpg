@@ -27,6 +27,7 @@
     <ClInclude Include="settlement\settlement_reply_shape.h" />
     <ClInclude Include="system\turn_battle_engine.h" />
     <ClInclude Include="system\combat_damage_rules.h" />
+    <ClInclude Include="system\class_skill_rules.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="data\battle_table_fingerprint.cpp" />

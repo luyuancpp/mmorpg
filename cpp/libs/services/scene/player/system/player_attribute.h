@@ -42,8 +42,10 @@ public:
 	//                 **不是**补增量 —— 否则脱下加血装再穿回就是一次免费回血(equipment-attributes.md §4.4、
 	//                 §5 不变量 4)。也不触发下面的「已分配 > 总量」收敛:换装不改等级、不改总点数,
 	//                 那个收敛只属于加载与等级变化。
+	//   kSkillChanged  学习 / 修习了被动职业技能(PlayerSkillSystem::UpgradeSkill):与换装同走「按比例保持」,
+	//                 不触发「已分配 > 总量」收敛(docs/design/class-skills.md §7)。
 	// 只许在末尾追加:player_event_handler / player_equip 等调用方按名字引用这些值。
-	enum class RecalcReason : uint8_t { kLoad, kLevelChanged, kAllocate, kSchemeSwitch, kReset, kEquipmentChanged };
+	enum class RecalcReason : uint8_t { kLoad, kLevelChanged, kAllocate, kSchemeSwitch, kReset, kEquipmentChanged, kSkillChanged };
 
 	// 重算二级属性(DerivedAttributesComp + BaseAttributesComp.speed / armor(职业初值)),按 reason 处理当前 HP/MP;不落库。
 	// kLoad / kLevelChanged 还会先做"已分配 > 总量"的收敛(降级 / 改表后整池清零返还),防止低等级号带着高等级面板。
@@ -54,6 +56,9 @@ public:
 	//     「85 级标准基础属性」(否则同样的加点收益会随装备浮动);
 	//   * 二级属性平加(气血 / 法力 / 物伤 / 法伤 / 速度 / 防御)在向下取整之前加进六项;
 	//   * 战斗类属性(必杀 / 连击 / 抗性 … 15 项)整块覆盖写进 DerivedAttributesComp.combat。
+	// 职业技能被动(docs/design/class-skills.md §7)同样每次现算(PlayerSkillSystem::CollectPassiveBonus,纯读):
+	//   六项二级属性在装备平加之后按比例放大;暴击被动的百分点加到 combat 的物理 / 法术必杀率上。
+	//   scene 是这几项被动唯一的消费者,战斗快照带的已经是放大后的值,引擎不再叠加。
 	// 装备数值不写 PlayerAttributeComp(bonus_values 是落库字段,留给丹药等),也不写 BaseAttributesComp 的
 	// 成长字段。唯一的例外是既有的 speed 镜像:BaseAttributesComp.speed = 重算出的速度(含装备),它每次加载
 	// 都被这里覆盖、从不作为输入,落库的那份只是缓存。
