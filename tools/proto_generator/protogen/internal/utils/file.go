@@ -147,8 +147,7 @@ func RenderTemplateToFileWithFuncs(tmplPath string, outputPath string, data any,
 		return err
 	}
 	normalized := NormalizeGeneratedLayout(buf.String())
-	WriteFileIfChangedSafe(outputPath, []byte(normalized))
-	return nil
+	return WriteFileIfChanged(outputPath, []byte(normalized))
 }
 
 // CopyFileIfChangedAsync copies a file asynchronously if content differs.

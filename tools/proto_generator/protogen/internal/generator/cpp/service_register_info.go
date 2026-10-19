@@ -397,7 +397,10 @@ func renderMessageIdFile(infos map[uint64]*internal.MethodInfo, reserved map[uin
 }
 
 func WriteMessageIdFile() {
-	utils2.WriteFileIfChanged(_config.Global.Paths.MessageIdFile, []byte(renderMessageIdFile(internal.RpcIdMethodMap, reservedMessageIdMap)))
+	if err := utils2.WriteFileIfChanged(_config.Global.Paths.MessageIdFile, []byte(renderMessageIdFile(internal.RpcIdMethodMap, reservedMessageIdMap))); err != nil {
+		logger.Global.Fatal("写入消息号清单失败", zap.String("message_id_file", _config.Global.Paths.MessageIdFile), zap.Error(err))
+		return
+	}
 }
 
 func GetProtocol(dirName string) uint32 {

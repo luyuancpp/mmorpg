@@ -81,7 +81,7 @@ func GoRobotHandlerGenerator(wg *sync.WaitGroup) {
 
 				err := generateHandlerFile(filePath, handlerName, responseType, importDir)
 				if err != nil {
-					logger.Global.Warn("Failed to generate handler file, skipping",
+					logger.Global.Fatal("生成机器人处理器文件失败",
 						zap.String("file_path", filePath),
 						zap.String("service_name", serviceName),
 						zap.String("method_name", method.Method()),

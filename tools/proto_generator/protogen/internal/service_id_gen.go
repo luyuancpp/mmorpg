@@ -215,7 +215,10 @@ func writeServiceIdHeadFile(serviceInfo []*RPCServiceInfo) {
 			zap.Error(err),
 		)
 	}
-	utils.WriteFileIfChanged(outputPath, []byte(content))
+	if err := utils.WriteFileIfChanged(outputPath, []byte(content)); err != nil {
+		logger.Global.Fatal("写入服务消息号头文件失败", zap.String("file_path", outputPath), zap.Error(err))
+		return
+	}
 
 	logger.Global.Info("Service ID header file generated",
 		zap.String("file_path", outputPath),

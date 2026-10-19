@@ -3,6 +3,8 @@ package main
 import (
 	"sync"
 
+	"go.uber.org/zap"
+
 	"protogen/internal"
 	cppGen "protogen/internal/generator/cpp"
 	cppGenOption "protogen/internal/generator/cpp/options"
@@ -12,6 +14,7 @@ import (
 	"protogen/internal/persistschema"
 	"protogen/internal/prototools"
 	protoToolsOption "protogen/internal/prototools/option"
+	"protogen/logger"
 )
 
 func runGenerationPipeline(runner *ExecutionRunner) {
@@ -72,7 +75,9 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		{Name: "persistschema.Generate", Run: persistschema.Generate},
 		{Name: "cppGen.CppGrpcCallClient", Run: cppGen.CppGrpcCallClient},
 		{Name: "protoToolsOption.ProcessAllOptions", Run: func(wg *sync.WaitGroup) {
-			protoToolsOption.ProcessAllOptions(wg, internal.FdSet)
+			if err := protoToolsOption.ProcessAllOptions(wg, internal.FdSet); err != nil {
+				logger.Global.Fatal("处理协议 option 失败", zap.Error(err))
+			}
 		}},
 	})
 	runner.RunTaskWithWG("prototools.SyncCppBuildProjects", prototools.SyncCppBuildProjects)

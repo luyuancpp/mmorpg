@@ -61,7 +61,7 @@ func GoRobotTotalHandlerGenerator(wg *sync.WaitGroup) {
 
 		err := generateTotalHandlerFile(_config.Global.Paths.RobotMsgBodyHandlerFile, handlerCases)
 		if err != nil {
-			logger.Global.Error("Failed to generate robot message handler file",
+			logger.Global.Fatal("生成机器人消息处理器文件失败",
 				zap.Error(err),
 			)
 			return

@@ -369,7 +369,10 @@ func renderEventIdFile(infos map[uint64]*ProtoEventInfo, reserved map[uint64]str
 }
 
 func WriteEventIdFile() {
-	utils2.WriteFileIfChanged(_config.Global.Paths.EventIdFile, []byte(renderEventIdFile(eventIdInfoMap, reservedEventIdMap)))
+	if err := utils2.WriteFileIfChanged(_config.Global.Paths.EventIdFile, []byte(renderEventIdFile(eventIdInfoMap, reservedEventIdMap))); err != nil {
+		logger.Global.Fatal("写入事件号清单失败", zap.String("event_id_file", _config.Global.Paths.EventIdFile), zap.Error(err))
+		return
+	}
 }
 
 // EventIdLen 是 C++ 注册表(kMaxEventCount / IsValidEventId)的长度:最大号 + 1,墓碑号也算在内。
@@ -419,7 +422,10 @@ func writeEventIdHeaderFiles() {
 		}
 
 		outputPath := _config.Global.Paths.ServiceInfoDir + headerFileName
-		utils2.WriteFileIfChanged(outputPath, []byte(builder.String()))
+		if err := utils2.WriteFileIfChanged(outputPath, []byte(builder.String())); err != nil {
+			logger.Global.Fatal("写入事件号头文件失败", zap.String("file_path", outputPath), zap.Error(err))
+			return
+		}
 	}
 
 	logger.Global.Info("Event ID header files generated",

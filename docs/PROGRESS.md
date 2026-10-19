@@ -13052,3 +13052,11 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 随后串行 `game.sln /t:Build /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1` 期间，其他操作将 HEAD 推进到 `fbf9690ec` 并开始合并 `origin/main`；本聊天未执行提交或合并。首错为 `core/network/node_utils.h:8` C2059，文件含 `<<<<<<< HEAD` 冲突标记，RPC 注册表和 mail 绑定亦出现冲突。停止时 241 个未解决文件；已核对并停止本轮自有构建进程，原生退出 -1，未自动重跑、未启动 C++ 测试，不声明当前编译通过。
 - 原件：`build/verification/grpc-call-types-20261019/`，含前像、生成对比、单测/生成日志、构建 log/binlog、首错、停止进程清单、合并冲突清单和 `result.json`。待当前合并解决后，核对迁移保留情况，补齐 config.proto / base_deploy_config.yaml / 部署说明的旧名注释并正规刷新绑定与 robot vendor，再续构建及既有测试。
 - Java 版 `0.1.0-SNAPSHOT` 使用 Dubbo Triple；本批仅 C++ 内部头文件归位，无对应 Java 功能改造或共享客户端契约变化。本聊天未提交、推送或操作客户端仓。
+
+## 2026-10-19 Codex：统一合入 main 与正式契约
+
+- 按负责人“所有东西只有 main”的要求，将本地快照与远端主干正常合并，保留存盘恢复、gRPC 公共类型、M2/M3 邮件及 SQL 权威排行榜，整合有效的补位、神秘商人、部署、清理与观测功能。被替代的 M1 邮件/Redis 排行实现不再作为第二套运行入口。
+- 统一协议字段：玩家表 `persist_schema_gen=21`、`mystery_merchant=22`，第二张玩家表 `persist_schema_gen=5`；组队保留恢复字段 `match_request_id=2` / `request_id=3`，补位字段分别使用 `regroup=3` / `target_team_size=4`。客户端移除旧未知字段桥接，改用同源正式生成属性。
+- Tip 源表保留双方码名与已发编号；新增邮件说明由导表器分配 17009/17010，神秘商人保留 30000 段。导表器支持没有 worksheet dimension 的合法表格，持久世代常量由协议生成器维护，不作为导表陈旧文件删除。
+- 使用正规导表与协议生成、同步机器人 vendor 和客户端 C# 协议/消息号；协议、消息/事件号及世代台账的四份生成快照保持同源。生成器复用现有安全文件替换，避免截断 Windows 映射文件，写入失败向上报告。
+- 本合并批次按负责人明确指令跳过测试和服务构建；生成工具构建及正式生成的成功不代表服务编译、C# 编译、真 TiDB 或双区故障验收通过。相关验证由已授权协调聊天基于最终合并来源继续执行。
