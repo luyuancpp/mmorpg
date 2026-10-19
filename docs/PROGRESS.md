@@ -9448,3 +9448,52 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   - `settlement_outbox.h` 有一处注释把累计次数写成了「连续」。
 - **文档**:no-single-node 设计文档 §5.3 与 `deploy/k8s/README.md`「代理整机消失」条已同步为已验证状态。
 - **Java 版(AGENTS §12)**:不涉及客户端契约,无对应改动;本机没有 Java 仓,未核对 `PARITY.md`,对应 Java 版本号:无。
+
+## 2026-10-19 冻结到期补读挂的登录复查不再按锁重建冻结(zone Redis 空应答修复第二轮评审 P3-1;Claude,未编译,待 Codex 验证)
+
+- **背景**:10-16 的 `b0f87c24f3`(本机 main 合并提交 `d3da69a99e`;Codex 10-17 已编译测试,见上一条补记)让 reaper 判 FIGHTING 到期后的补读
+  `RecoverPendingSettlementAfterFreezeExpiry` 没问到时记入登录复查,而复查一律重跑登录钩子第一步。10-17 第二轮只读评审的 P3-1:
+  reaper 作废时条件删锁没落地(Redis 断着就跳过,断在途中拿空应答),锁还活到 deadline+60 秒;下一拍 Redis 恢复,复查读挂起结算得 NIL,
+  转去 `RestoreBattleFreezeOnLogin` 按锁、用 ctx 里**已经过去**的期限重建 FIGHTING 冻结,`ConfirmRebuiltFreeze` 把锁续到「现在 + 60 秒」并推 `BattleReconnectS2C`。
+  玩家被冻进已结束的战斗约 30 秒、客户端弹「战斗已结束」、`battle_freeze_expired` 同一局记两次;锁每轮被续,自然过期不再兜底,Redis 恰好按节拍抖动时回路没有上限。
+- **修法(选评审建议 a,不做 b)**:复查标记带来源,冻结到期那条线只重读挂起结算、不按锁重建。
+  不选 b(期限 ≤ now 就不重建):b 抓不到 ctx 缺失时按锁 TTL 倒推出的**未来**期限(`BuildInBattleFromCtx` 会再冻最多 60 秒),还会顺带改登录重建的口径;
+  a 的变化面只在冻结到期这条线。不按锁重建不缺东西:实体一直活着,真开了新的一局由 `PrepareBattle`(或迟到确认的 `RebuildBattleFreezeFromLock`)自己挂 `InBattleComp`;
+  没删掉的旧锁不再被续期,最迟 deadline+60 秒自然过期(期间 match 排队被它挡住,与删锁跳过时的既有口径相同)。
+  1. `player_battle.h` 新增 public 枚举 `PlayerBattleSystem::PendingSettlementReadOrigin { kLoginHook, kFreezeExpiry }`(public 只因 .cpp 匿名命名空间的标记要存它)。
+     `BattleLoginRecheckComp` 从空标记改为带 `origin`;`MarkLoginRecheck` 多一个来源参数,九处调用点逐一标明(登录钩子 / 读锁 6 处,冻结到期补读 3 处)。
+     同一实体两条线都挂过时冻结到期说了算、只升不降(reaper 判过作废之后,登录钩子那一支要的按锁重建只会撞上被作废的那把锁)。
+  2. `RunLoginRechecks` 按来源重跑:`kFreezeExpiry` → `RecoverPendingSettlementAfterFreezeExpiry`(NIL 什么都不做);`kLoginHook` → `CheckPendingSettlementOnEnter`(不变)。
+  3. `ApplyPendingSettlement` 加来源参数:`kFreezeExpiry` 补应用之后不再调 `RestoreBattleFreezeOnLogin`。这一条也堵住同类窄缝:挂起记录属于更早的一局、锁却仍是刚作废的那一局时,
+     补应用后同样会按锁重建。冻结到期的**直接**补读命中也走这条;登录钩子路径不变。
+  4. 测试缝 `SetLoginRecheckRedisReadyFnForTest`:只替换 `RunLoginRechecks` 节拍开头那一次「Redis 可不可用」,重跑内部照旧看真实连接。单测用它模拟「节拍开头连接还在、
+     重跑发命令时已断开」,才走得到「摘标记 → 按来源重跑」那一支。
+  5. 日志:`metric=battle_login_recheck_scheduled` 与 `metric=battle_login_recheck_run` 都多一个 `origin=login_hook|freeze_expiry`,两条的英文说明改成不分来源的说法(仓内没有告警 / 脚本引用这两句)。
+     口径提示:冻结到期来源的复查命中挂起结算时,同样打 `metric=battle_settlement_freeze_expiry_pending_hit`,这个计数从此包含复查命中。
+  6. 注释:`settlement_outbox.h` 里 `kProbeUndetermined` 的「连续」改成「累计」(`undeterminedRounds` 只加不减;只改注释,不改行为)。
+  7. 文档:`docs/design/ecs-component-access-rules.md` 按需组件表的 `BattleLoginRecheckComp` 一行。
+- **回归测试**(`bag_test`,`PlayerBattleSettlementTest.*`;单测里没有 Redis 连接):
+  - 新增 `FreezeExpiryRecheckRecordsItsOrigin`、`FreezeExpiryOriginWinsOverLoginHookInEitherOrder`;
+    `FreezeExpiryRecheckRerunsOnlyThePendingRead`(P3-1 本身:冻结到期的复查重跑的是补读,不是登录钩子第一步,也没去读锁);
+    `LoginHookRecheckRerunsTheLoginCheck`(对照;顺带补上第二轮评审说的「节拍时 Redis 可用 → 摘标记重跑」主路径单测缺口)。
+  - 改 `PendingAppliedAfterFreezeExpiryPaysOnceWithoutRefreezing`:改走 `kFreezeExpiry`,多断言「不挂复查」(补应用之后连锁都不读)。
+    对照用例 `PendingAppliedButLockUnreadableSchedulesRecheck`(登录来源,读不了锁就挂复查)不变。
+  - 两条重跑用例用 `muduo::Logger::setOutput` 抓日志里的 `reason=` / `origin=` 分辨重跑走了哪一支(同一测试二进制的 `player_equip_attribute_test.cpp` 已有同样写法),断言都按本用例的 player_id 限定。
+  - 仍未覆盖:真实 Redis 应答下「NIL → 不重建」的回调接线,没有带假 Redis 的端到端用例,靠评审与冒烟。
+- **Codex 验证**(未编译,待 Codex 验证)。分支 `fix/freeze-expiry-recheck-source`(隔离 worktree `E:\work\xuanming-server-mmo-wt-recheck`,基于 main `72e4be6426`)。
+  worktree 的 `third_party/redis` 等子目录为空,**不能在 worktree 里直接编**:合入主工作区后在仓库根执行。`$msb` 用 `tools/scripts/run_cpp_tests.ps1` 里 `Resolve-MSBuild` 找到的那个;
+  一律串行 `/m:1`(并发会报假的 C1041 / LNK1104);不需要真实 Redis,先 `Remove-Item Env:ZONE_REDIS_PASSWORD -ErrorAction SilentlyContinue`。
+  1. `& $msb game.sln /m:1 /p:Configuration=Debug /p:Platform=x64 /nologo /v:minimal`(`player_battle.h` 与 `settlement_outbox.h` 变了:scene 库与 scene / battle 节点都要重编)
+  2. `pwsh -NoProfile -File tools/scripts/run_cpp_tests.ps1 -Build -Filter bag_test`,再 `-Filter cross_zone_test`(后者经 `EnterScene` 走到登录钩子,验这次没碰坏既有用例)
+  3. `.\build\cpp\tests\bag_test.exe --gtest_filter=PlayerBattleSettlementTest.*`,随后全量跑一次 `.\build\cpp\tests\bag_test.exe`
+  4. 可选:`routing_identity_test`(本次只改了它依赖的 `settlement_outbox.h` 一行注释)按上一条 10-16 条目的命令重编重跑一次。
+  **通过标准**:本次改动的四个代码文件没有 `error C` / `LNK`;上列新增 4 例与改动的 1 例全过;`bag_test` 全量与 10-17 基线(629 项 0 失败)相比只多这 4 例、仍 0 失败;`cross_zone_test` 照旧全过。
+  失败时保留 gtest 输出原文与第一条编译错误原文;第一条编译错误不在本次文件里时记下文件名,视为其他会话的在途改动。Linux(`build_linux.sh`)没有新增 .cpp,可选顺带编一次。
+- **残余风险 / 没做**:
+  - 登录钩子自己(玩家在删锁没落地的窗口里 REPLACE / 重登,或实体在别处重建)仍会按锁用过去的期限重建一次;那是玩家动作触发的、每次最多一轮,不是本条的无界回路。要堵就是评审建议 b,单列后续项。
+  - 已有登录来源的复查在途、同一拍 reaper 删锁 EVAL 回 ERROR 而读挂起结算成功时,复查仍可能按旧锁重建一次(双重故障,ERROR 通常两条命令一起出);未处理。
+  - 复查窗口内 `IsInBattle` 不看复查标记(10-16 条目已列)不变。
+  - 交接中保留标记的用例(`TravelHandoffKeepsLoginRecheckForLater`)仍分不清「交接中保留」与「Redis 不可用保留」两条分支;新测试缝可以用来加强,本次未做。
+  - 独立评审(只读子 agent,一轮,静态阅读):无 P0~P2;提的三条 P3(挂标记日志措辞、两处注释仍按「复查 = 登录钩子」写、命中指标口径)已改或已在上面记明;改后没有再评审。
+- **Java 版(AGENTS §12)**:服务端内部实现,不涉及客户端契约(协议、消息号、tip、配表均未动)。本机没有 Java 仓(`D:\luyuan\xuanming-server-mmo` 不存在),同类问题待在 Java 仓单独核对;
+  `PARITY.md` 未登记,对应 Java 版本号:无。

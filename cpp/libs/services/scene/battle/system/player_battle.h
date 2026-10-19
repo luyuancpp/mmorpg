@@ -111,6 +111,24 @@ public:
 	// 存盘」这一步替掉,避免单测被迫连 Redis。传 nullptr 恢复生产实现。
 	using PersistFn = bool (*)(entt::entity);
 	static void SetPersistFnForTest(PersistFn fn);
+	// RunLoginRechecks 节拍开头那一次「Redis 可不可用」的判定。生产恒为 zone Redis 的真实连接状态;
+	// 单测进程没有 Redis 连接,用它模拟「节拍开头连接还在、重跑发命令时已经断开」(真实会发生的时序),
+	// 才走得到「摘标记 → 按来源重跑」那一支。只换这一处判定,重跑里面照旧看真实连接。传 nullptr 恢复生产实现。
+	using RedisReadyFn = bool (*)();
+	static void SetLoginRecheckRedisReadyFnForTest(RedisReadyFn fn);
+
+	// 挂起结算是从哪条线读的,决定读完之后要不要按锁重建冻结(2026-10-19,zone Redis 空应答修复第二轮评审 P3-1):
+	//   kLoginHook    —— 登录钩子(OnPlayerEnterScene)与它挂的登录复查。实体可能是新建的(InBattleComp 不落库),
+	//                    没有挂起结算、或补应用之后,都要按锁重建,战斗闸才看得到在途的那一局。
+	//   kFreezeExpiry —— reaper 判 FIGHTING 到期后的补读(RecoverPendingSettlementAfterFreezeExpiry)与它挂的登录复查。
+	//                    只读 / 补应用挂起结算,**不按锁重建**(理由见 player_battle.cpp 的 BattleLoginRecheckComp)。
+	// 放在 public 只因为 player_battle.cpp 匿名命名空间里的复查标记要存它,不是对外接口。
+	enum class PendingSettlementReadOrigin : uint8_t
+	{
+		kLoginHook,
+		kFreezeExpiry,
+	};
+
 	// battle:lock 的 EX 在 deadline 之上的余量(秒):锁必须活得比 InBattleComp 久,
 	// 避免"组件还在、锁先没了"让 match 放进第二场。
 	static constexpr uint32_t kLockExtraTtlSec = 60;
@@ -145,13 +163,17 @@ private:
 	static void NotifyBattleReconnectToClient(entt::entity player);
 
 	// 应用挂起结算并清理 pending key + 锁(登录钩子 / reaper 补读的 Redis 回调侧)。
-	static void ApplyPendingSettlement(entt::entity player, const ::BattleSettlementEvent& event);
+	// origin 为 kLoginHook 时补应用之后再按锁重建一次冻结(锁可能已指向下一场);kFreezeExpiry 不重建。
+	static void ApplyPendingSettlement(entt::entity player, const ::BattleSettlementEvent& event,
+									   PendingSettlementReadOrigin origin);
 
 	// reaper 判定 FIGHTING 到期、只解冻之后,对仍在本节点的实体补读一次待结算记录(设计 §7)。
 	// 改造前这类奖励要等玩家下一次 EnterScene 才补:battle 发件箱只重投 120 秒,
 	// 玩家一直在线就一直等不到登录钩子。命中走 ApplyPendingSettlement —— 与 OnPlayerEnterScene
-	// 同一个函数、同一种身份复核(回调里实体仍有效且 Guid 仍是这个 player_id);未命中什么都不做。
-	// 没读到(Redis 不可用 / 空应答 / ERROR / 意外类型 / 命令没发出去)记入登录复查(2026-10-16),不再只留痕等下次进场。
+	// 同一个函数、同一种身份复核(回调里实体仍有效且 Guid 仍是这个 player_id),来源记 kFreezeExpiry:
+	// 补应用之后不按锁重建;未命中什么都不做。
+	// 没读到(Redis 不可用 / 空应答 / ERROR / 意外类型 / 命令没发出去)记入登录复查(2026-10-16),不再只留痕等下次进场;
+	// 复查只重跑这一次补读,不按锁重建(2026-10-19)。
 	// 解不开的记录不在这里删:留给登录钩子按原有规则清理,补读路径不扩大删除面。
 	static void RecoverPendingSettlementAfterFreezeExpiry(entt::entity player, uint64_t playerId);
 
@@ -166,15 +188,16 @@ private:
 	// 见 settlement_outbox.h 的 ClassifyLoginLockRead)。
 	static void RestoreBattleFreezeOnLogin(entt::entity player, uint64_t playerId);
 
-	// 登录钩子第一步(读挂起结算 → 没有再按锁重建冻结)。OnPlayerEnterScene 与登录复查共用。
+	// 登录钩子第一步(读挂起结算 → 没有再按锁重建冻结)。OnPlayerEnterScene 与登录钩子来源(kLoginHook)的复查共用。
 	// 没问到时记入登录复查(player_battle.cpp 的 BattleLoginRecheckComp),不按锁重建。
 	static void CheckPendingSettlementOnEnter(entt::entity player, uint64_t playerId);
 
-	// reaper 第三遍:Redis 可用时,对记入登录复查的玩家逐个摘标记并重跑 CheckPendingSettlementOnEnter;
+	// reaper 第三遍:Redis 可用时,对记入登录复查的玩家逐个摘标记并按来源重跑 —— 登录钩子挂的重跑
+	// CheckPendingSettlementOnEnter,冻结到期补读挂的重跑 RecoverPendingSettlementAfterFreezeExpiry(不按锁重建);
 	// Redis 不可用时标记保留。退出中(UnregisterPlayer)的实体摘标记不重跑,留给下次进场;
 	// 跨 zone 冻结 / 交接中的实体标记保留、本轮不跑(交接完成随实体销毁,撤销则下个节拍再跑)。
 	static void RunLoginRechecks();
 
-	// 是否记着登录复查(只读;单测与排障用)。
-	static bool IsLoginRecheckPending(entt::entity player);
+	// 是否记着登录复查(只读;单测与排障用)。记着且 originOut 非空时填上标记的来源。
+	static bool IsLoginRecheckPending(entt::entity player, PendingSettlementReadOrigin* originOut = nullptr);
 };

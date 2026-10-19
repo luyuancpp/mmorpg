@@ -109,7 +109,8 @@ namespace battle_settlement
 	{
 		kNoTarget,
 		kNotAcked,
-		// 探测连续「没问到」(空应答 / ERROR)到上限(ClassifyUndeterminedProbeRound)。不经 ClassifyUndelivered,
+		// 探测「没问到」(空应答 / ERROR)的轮次累计到上限(ClassifyUndeterminedProbeRound)。按这一条记录的整个寿命累计,
+		// 中间问到了也不清零(battle_room_manager 的 undeterminedRounds 只加不减)。不经 ClassifyUndelivered,
 		// 由调用方直接给出:这类轮次根本没走到 ClassifyRetry。
 		kProbeUndetermined,
 	};
