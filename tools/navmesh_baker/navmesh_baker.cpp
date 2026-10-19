@@ -677,7 +677,7 @@ bool ParseProbe(const std::string& text, ProbePoint& out)
 
 // 对最终网格做探针:每个点 findNearestPoly,搜索范围与 scene 侧
 // nav_query.cpp 的 kSnapExtents 完全一致(水平 ±2m、垂直 ±4m),
-// 保证"烘焙器说在网格上" ⇔ "scene 节点说在网格上"。
+// 再要求最近点与出生点误差不超过 2cm,不让运行时纠偏掩盖错误合同。
 bool ProbeNavMesh(const dtNavMesh& navMesh, const std::vector<ProbePoint>& probes)
 {
 	if (probes.empty()) return true;
@@ -697,7 +697,12 @@ bool ProbeNavMesh(const dtNavMesh& navMesh, const std::vector<ProbePoint>& probe
 		dtPolyRef ref = 0;
 		dtReal nearest[3] = {0, 0, 0};
 		const dtStatus status = query.findNearestPoly(center, extents, &filter, &ref, nearest);
-		const bool ok = dtStatusSucceed(status) && ref != 0;
+		// findNearestPoly 成功只代表附近有网格。出生点必须已经在网格上,
+		// 不能把墙外相邻格误当作合法出生点交给运行时再纠偏。
+		const bool ok = dtStatusSucceed(status) && ref != 0 &&
+			std::fabs(nearest[0] - center[0]) <= 0.02 &&
+			std::fabs(nearest[1] - center[1]) <= 0.02 &&
+			std::fabs(nearest[2] - center[2]) <= 0.02;
 		std::printf("probe unity=(%.2f,%.2f,%.2f) server=(%.2f,%.2f,%.2f): %s",
 			p.v[0], p.v[1], p.v[2], p.v[2], p.v[0], p.v[1], ok ? "ON MESH" : "OFF MESH");
 		if (ok)
@@ -709,6 +714,41 @@ bool ProbeNavMesh(const dtNavMesh& navMesh, const std::vector<ProbePoint>& probe
 		allOk = allOk && ok;
 	}
 	return allOk;
+}
+
+// 独立位图的每一个格心都要与最终 Detour 网格一致,不仅验证出生点。
+// 小区域被 Recast 丢弃、阻挡边缘扩大等问题在写正式产物之前直接拒绝。
+bool VerifyMaskCells(const dtNavMesh& navMesh, const std::vector<uint8_t>& mask)
+{
+	dtNavMeshQuery query;
+	if (dtStatusFailed(query.init(&navMesh, 2048))) return false;
+	const dtReal extents[3] = {2.0, 4.0, 2.0};
+	const dtQueryFilter filter;
+	int mismatches = 0;
+	for (int row = 0; row < kMaskResolution; ++row)
+	{
+		for (int col = 0; col < kMaskResolution; ++col)
+		{
+			const dtReal center[3] = {kPaintingMinX + (col + 0.5) * kMaskCellSize,
+				0, kPaintingMaxZ - (row + 0.5) * kMaskCellSize};
+			dtReal nearest[3] = {0, 0, 0};
+			dtPolyRef ref = 0;
+			const auto status = query.findNearestPoly(center, extents, &filter, &ref, nearest);
+			const bool onMesh = dtStatusSucceed(status) && ref != 0 &&
+				std::fabs(nearest[0] - center[0]) <= 0.02 &&
+				std::fabs(nearest[1] - center[1]) <= 0.02 &&
+				std::fabs(nearest[2] - center[2]) <= 0.02;
+			if (onMesh != MaskWalkable(mask, col, row))
+			{
+				if (mismatches < 8)
+					std::fprintf(stderr, "mask mismatch col=%d row=%d expected=%d actual=%d\n",
+						col, row, MaskWalkable(mask, col, row), onMesh);
+				++mismatches;
+			}
+		}
+	}
+	std::printf("mask cells checked=%d mismatches=%d\n", kMaskResolution * kMaskResolution, mismatches);
+	return mismatches == 0;
 }
 
 }  // namespace
@@ -787,6 +827,7 @@ int main(int argc, char** argv)
 	}
 
 	TriMesh mesh;
+	std::vector<uint8_t> independentMask;
 	if (!paintedCityPath.empty())
 	{
 		std::vector<uint8_t> mask;
@@ -795,9 +836,8 @@ int main(int argc, char** argv)
 	}
 	else if (!maskBase64Path.empty())
 	{
-		std::vector<uint8_t> mask;
-		if (!LoadMaskBase64(maskBase64Path, mask)) return 1;
-		mesh = BuildMaskGeometry(mask);
+		if (!LoadMaskBase64(maskBase64Path, independentMask)) return 1;
+		mesh = BuildMaskGeometry(independentMask);
 	}
 	else if (!LoadObj(objPath, mesh))
 	{
@@ -889,5 +929,10 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
+	if (!independentMask.empty() && !VerifyMaskCells(navMesh, independentMask))
+	{
+		std::fprintf(stderr, "error: mask/navmesh cell contract broken, refusing to write %s\n", outPath.c_str());
+		return 1;
+	}
 	return SaveNavMesh(outPath, navMesh) ? 0 : 1;
 }

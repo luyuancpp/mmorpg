@@ -9431,3 +9431,11 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   评审两视角 + 四轮修补核验,P2 与 P3 均已修(告警根因修在 go/rank,见上一条)。
   **robot 未编译、rank-smoke 未跑,Unity 里未跑 EditMode、未截图;剩余步骤见设计 §12.6「还要构建方做的」**。
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做(本机没有 Java 仓 `D:\luyuan\xuanming-server-mmo`)。
+
+## 2026-10-18 当前三张地图接入正式场景与导航（Codex）
+
+- 场景1/2/3分别接入当前主城、八仙岛、渔村;客户端`CurrentMaps20261009`的source/walkmask是唯一美术导航来源。服务端实际main/penglai/donghai三份导航均重新烘焙,没有使用旧图mask。源BaseScene.xlsx同步出生点,复用main网格的5–16行一并同步;4及17–21保持原导航/出生。
+- 新增可重复同步工具`tools/navmesh_baker/sync_current_maps.py`,导出Java可用的原字节source.json/walkmask.txt副本及三图来源清单。最终快进主干`e4aee007f`后基于全部45张最新源表重新正规导出BaseScene JSON/PB和manifest v29;44张非地图表及其清单条目与主干完全一致,保留排行榜、邮件、装备增强配置,没有手改生成产物或修改协议/schema。
+- 已验证:最新主干上MSVC Release烘焙器重新编译与13项合同测试通过;三图67500个格心与实际Detour网格查询0差异,精确出生探针通过;二次烘焙bin字节一致、源xlsx/JSON/PB清单SHA一致。schema索引发现主干MessageLimiter条数过期,用正式生成器更新81→87这一行后复查通过,源表未动。C++镜像Dockerfile与.dockerignore确认包含整份`data/scene_nav_bin`。细节见`docs/design/scene-navmesh-pipeline.md` §9。
+- 验证边界:完整scene/gate/Unity联机未运行。本机虚拟化未开,Docker daemon未运行,标准bin目录缺gate/scene/battle可执行文件。本条不宣称已完成玩家进游戏验收。
+- Java对应版本:0.1.0-SNAPSHOT,同一任务正在同步`config-data/navmesh/current_maps`与权威出生/移动校验;最终Java验证结论见Java仓库PARITY.md,本仓不替另一版提前报通过。

@@ -159,7 +159,7 @@ cd tools/data_table_exporter && py -m pytest -q
 | **GuildRule** | `GuildRule.xlsx` | `guildrule_table.proto` | 10 | 10 | 1 | — | — | — | — | — | — | — |
 | **GuildShop** | `GuildShop.xlsx` | `guildshop_table.proto` | 9 | 9 | 11 | — | — | `item_id` | `item_id→Item.id` | — | — | — |
 | **Item** | `Item.xlsx` | `item_table.proto` | 19 | 14 | 61 | — | — | `affix_rule` | `affix_rule→EquipAffixRule.id` | — | — | `base_attr` |
-| **MessageLimiter** | `MessageLimiter.xlsx` | `messagelimiter_table.proto` | 4 | 4 | 81 | — | — | — | — | — | — | — |
+| **MessageLimiter** | `MessageLimiter.xlsx` | `messagelimiter_table.proto` | 4 | 4 | 87 | — | — | — | — | — | — | — |
 | **Mirror** | `Mirror.xlsx` | `mirror_table.proto` | 3 | 3 | 2 | — | — | `scene_id` `main_scene_id` | `scene_id→BaseScene.id` `main_scene_id→World.id` | — | — | — |
 | **Mission** | `Mission.xlsx` | `mission_table.proto` | 15 | 9 | 17 | — | — | `reward_id` | `reward_id→Reward.id` `condition_id→Condition.id(组)` | `id` | — | — |
 | **Monster** | `Monster.xlsx` | `monster_table.proto` | 16 | 10 | 16 | — | — | — | — | — | — | `drop` |

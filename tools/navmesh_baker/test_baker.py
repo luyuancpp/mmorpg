@@ -51,6 +51,18 @@ class BakerContractTest(unittest.TestCase):
         self.assertIn("OFF MESH", result.stdout)
         self.assertFalse(self.out.exists())
 
+    def test_nearby_blocked_spawn_does_not_snap_into_walkable_neighbor(self):
+        # 可走矩形从 x=230 开始;229 在相邻阻挡格内,旧探针会就近吸附而误通过。
+        result = self.invoke("--mask-base64", self.mask, "--probe", "229,0,100")
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("OFF MESH", result.stdout)
+        self.assertFalse(self.out.exists())
+
+    def test_every_mask_cell_is_checked_against_final_navmesh(self):
+        result = self.invoke("--mask-base64", self.mask, "--probe", "250,0,100")
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("mask cells checked=22500 mismatches=0", result.stdout)
+
     def test_malformed_and_wrong_length_masks_are_rejected(self):
         for bad in ["?" * len(self.encoded), self.encoded[:-4],
                     self.encoded + "AAAA", "=" + self.encoded[1:]]:
