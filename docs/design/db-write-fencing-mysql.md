@@ -1654,3 +1654,13 @@ DBTask TopicGeneration 换代的排空集合同时包含旧代 Kafka、retry 与
   - `kafka/player_row_fence_mode_test.go`（空串改为 `dual`）；
   - `tools/scripts/tests/k8s_zone_rollback_discard.tests.ps1`（Fencing 缺省改为 `dual`）。
 - **Java 版**：不适用。Java 不经 Kafka / go/db 落库，没有父快照提交屏障与补投器（AGENTS §12）。
+
+**上线状态（负责人 2026-10-18 确认：尚未上线）**
+
+没有存量 zone，也没有在跑的旧版 go/db / scene / login，因此下面几条在上线前都不是阻塞项，也不需要迁移或灰度方案：
+
+- **legacy 与 dual 混跑**（§8.4 更正）、**dual → legacy 降级**（§8.6 更正）：没有需要降级或与之混跑的旧部署。
+- **不认识门禁的旧 go/db 二进制靠发布纪律排除**：没有旧二进制可排除。
+- **回档 `-Apply` 在 #3 裁决前不可用**（`k8s_zone_rollback.ps1`）：没有可回档的线上 zone。
+
+首次上线直接以「go/db `dual` + scene / login 严格提交屏障」整批起步，缺省配置即可正常登录。上面这些机制保留，供上线之后的回退、混跑与回档使用；届时再按 §8.3、§8.6 的门禁执行。上线后本段作废，改以当时的线上状态为准。

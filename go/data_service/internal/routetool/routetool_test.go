@@ -823,3 +823,129 @@ func TestRouteTiDBPrepareOutputAndExitCodes(t *testing.T) {
 		assert.Equal(t, ExitFailed, TiDBPrepareExitCode(rep, err))
 	})
 }
+
+// ── audit -require-maprev(2026-10-19 第 1b-2 批收尾)──────────────────────────────────────
+
+// runAuditWith 用小批量(2)跑一次 audit,口径开关由 opts 给(Batch / MaxReport / MaxRecheck / 输出 / Sleep 在这里填)。
+func runAuditWith(t *testing.T, rd mappingReader, db routeDB, opts AuditOptions) (AuditReport, cliRun) {
+	t.Helper()
+	var out, errOut bytes.Buffer
+	opts.Batch, opts.MaxReport, opts.MaxRecheck = 2, 100, 100
+	opts.Stdout, opts.Stderr, opts.Sleep = &out, &errOut, noSleep
+	rep, err := Audit(context.Background(), rd, db, opts)
+	return rep, cliRun{code: AuditExitCode(rep, err), stdout: out.String(), stderr: errOut.String()}
+}
+
+// maprevAuditFixture 造一份覆盖 redis_rev_behind 判据各分支的数据:
+//
+//	1 maprev = 库 rev,值一致 → 不算;2 缺 maprev(值一致)→ behind;3 maprev < 库 rev(值一致)→ behind;
+//	4 缓存三键全无 → 只计 db_only_unpublished,不重复计 behind;5 墓碑、缓存也没有 → 不算;
+//	6 缓存值畸形 → 只计 redis_malformed;7 maprev > 库 rev → redis_rev_ahead,不是 behind;
+//	8 只有 maprev(1)、库里只有落点且 rev 3 → missing_in_redis 加 behind(缓存有键,maprev 落后)。
+func maprevAuditFixture(t *testing.T) (*miniredis.Miniredis, *redis.Redis, *fakeRouteDB) {
+	t.Helper()
+	mr, rd := newMappingRedis(t)
+	db := newFakeRouteDB()
+	for _, row := range []store.RouteRow{
+		{PlayerID: 1, HomeZone: 1, Rev: 3},
+		{PlayerID: 2, HomeZone: 2, Rev: 3},
+		{PlayerID: 3, HomeZone: 3, Rev: 5},
+		{PlayerID: 4, HomeZone: 4, Rev: 2},
+		{PlayerID: 5, Rev: 2},
+		{PlayerID: 6, HomeZone: 6, Rev: 1},
+		{PlayerID: 7, HomeZone: 7, Rev: 2},
+		{PlayerID: 8, StorageID: 8, PlacementVersion: 1, Rev: 3},
+	} {
+		db.rows[row.PlayerID] = row
+	}
+	setKeys(t, mr, map[string]string{
+		"player:zone:1":   "1",
+		"player:maprev:1": "3",
+		"player:zone:2":   "2",
+		"player:zone:3":   "3",
+		"player:maprev:3": "4",
+		"player:zone:6":   "06",
+		"player:zone:7":   "7",
+		"player:maprev:7": "9",
+		"player:maprev:8": "1",
+	})
+	return mr, rd, db
+}
+
+// TestAudit_RequireMapRevCountsBehind:严格 maprev 口径下,库行不是墓碑、缓存里至少有一把键,而 maprev 缺席或小于库 rev → redis_rev_behind,
+// 计入 Differences 与退出码 1,统计行末尾多 redis_rev_behind=N,明细 DIFF kind=redis_rev_behind;复核用同一口径(两次都在才计)。
+// 与 -frozen-recovery 同用时它照常计入退出码(-frozen-recovery 只豁免 db_only_unpublished)。
+func TestAudit_RequireMapRevCountsBehind(t *testing.T) {
+	_, rd, db := maprevAuditFixture(t)
+
+	rep, run := runAuditWith(t, rd, db, AuditOptions{RequireMapRev: true})
+
+	assert.Equal(t, 3, rep.RedisRevBehind, "2、3、8")
+	assert.Equal(t, 1, rep.DBOnlyUnpublished, "4 只计 db_only_unpublished")
+	assert.Equal(t, 1, rep.RedisMalformed, "6 只计 redis_malformed")
+	assert.Equal(t, 1, rep.RedisRevAhead, "7 是 ahead 不是 behind")
+	assert.Equal(t, 1, rep.MissingInRedis, "8 的落点缓存里没有")
+	assert.True(t, rep.RequireMapRev)
+	assert.Equal(t, 7, rep.Differences())
+	assert.Equal(t, ExitAttention, run.code)
+	for _, id := range []string{"2", "3", "8"} {
+		assert.Contains(t, run.stderr, "DIFF kind=redis_rev_behind player="+id+" ")
+	}
+	for _, id := range []string{"1", "4", "5", "6", "7"} {
+		assert.NotContains(t, run.stderr, "DIFF kind=redis_rev_behind player="+id+" ")
+	}
+	assert.True(t, strings.HasSuffix(run.stdout, " transient_cleared=0 redis_rev_behind=3\n"), run.stdout)
+	assert.Contains(t, run.stderr, "NOTE: -require-maprev")
+
+	t.Run("与-frozen-recovery同用", func(t *testing.T) {
+		mr := miniredis.RunT(t)
+		rd := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"})
+		db := newFakeRouteDB()
+		db.rows[1] = store.RouteRow{PlayerID: 1, HomeZone: 1, Rev: 2} // 孤儿行:豁免
+		db.rows[2] = store.RouteRow{PlayerID: 2, HomeZone: 2, Rev: 2} // maprev 落后:不豁免
+		setKeys(t, mr, map[string]string{"player:zone:2": "2", "player:maprev:2": "1"})
+
+		rep, run := runAuditWith(t, rd, db, AuditOptions{RequireMapRev: true, FrozenRecovery: true})
+		assert.Equal(t, 1, rep.DBOnlyUnpublished)
+		assert.Equal(t, 1, rep.RedisRevBehind)
+		assert.Equal(t, 1, rep.BlockingDifferences())
+		assert.Equal(t, ExitAttention, run.code)
+
+		require.NoError(t, mr.Set("player:maprev:2", "2"))
+		rep, run = runAuditWith(t, rd, db, AuditOptions{RequireMapRev: true, FrozenRecovery: true})
+		assert.Zero(t, rep.RedisRevBehind)
+		assert.Equal(t, ExitClean, run.code, "只剩被豁免的孤儿行")
+	})
+}
+
+// TestAudit_DefaultIgnoresMapRev:默认口径(不加 -require-maprev)与 1a / 1b-1 逐字相同:maprev 缺席或落后不算差异,
+// 统计行没有 redis_rev_behind,同一份数据里只有 behind 类的行时退出码 0。
+func TestAudit_DefaultIgnoresMapRev(t *testing.T) {
+	_, rd, db := maprevAuditFixture(t)
+
+	rep, run := runAuditWith(t, rd, db, AuditOptions{})
+
+	assert.Zero(t, rep.RedisRevBehind)
+	assert.False(t, rep.RequireMapRev)
+	assert.Equal(t, 4, rep.Differences(), "db_only_unpublished、redis_malformed、redis_rev_ahead、missing_in_redis 各 1")
+	assert.NotContains(t, run.stdout, "redis_rev_behind")
+	assert.NotContains(t, run.stderr, "redis_rev_behind")
+	assert.True(t, strings.HasSuffix(run.stdout, " transient_cleared=0\n"), run.stdout)
+
+	t.Run("只有behind类的行_退出码0", func(t *testing.T) {
+		mr := miniredis.RunT(t)
+		rd := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"})
+		db := newFakeRouteDB()
+		db.rows[2] = store.RouteRow{PlayerID: 2, HomeZone: 2, Rev: 3}
+		db.rows[3] = store.RouteRow{PlayerID: 3, HomeZone: 3, Rev: 5}
+		setKeys(t, mr, map[string]string{"player:zone:2": "2", "player:zone:3": "3", "player:maprev:3": "4"})
+
+		rep, run := runAuditWith(t, rd, db, AuditOptions{})
+		assert.Equal(t, ExitClean, run.code, run.stderr)
+		assert.Zero(t, rep.Differences())
+
+		rep, run = runAuditWith(t, rd, db, AuditOptions{RequireMapRev: true})
+		assert.Equal(t, ExitAttention, run.code)
+		assert.Equal(t, 2, rep.RedisRevBehind)
+	})
+}

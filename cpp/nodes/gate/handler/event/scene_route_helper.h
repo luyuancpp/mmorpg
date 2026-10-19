@@ -124,6 +124,8 @@ bool ApplyRoute(SessionInfo& session, const uint64_t targetSceneId, const SceneN
     {
         session.pendingEnterGsType = 0;
         session.forwardedOwnerEpoch = session.ownerEpoch;
+        // LeaveGame 之后的第一次真正进场:从此按常规处理路由(IsRouteFromBeforeLeaveGame 不再拦)。
+        session.sceneRouteResetPending = false;
     }
     return true;
 }
@@ -134,6 +136,9 @@ bool ApplyRoute(SessionInfo& session, const uint64_t targetSceneId, const SceneN
 // 之前的旧路由补发(旧路由的 epoch 已过时,补发出去会让旧节点按旧代复用 / 载入实体);等新路由到达再一起转发。
 // 保留 playerId / loginGeneration / sessionVersion:下一次 BindSession 按既有规则处理(换角取新值、同角色取 max)。
 // 欠账的索引(scene_entry_dispatch.cpp 的 tlsSessionsWithPendingEntry)由调用方摘;漏摘也无害,扫描找不到欠账会自己删索引。
+// 同时置位 sceneRouteResetPending 并记下此刻的登录代次:LeaveGame 之前那条登录链发出的路由可能晚于本次重置才到
+// (已在 Kafka 里的跨节点换图、路由模式下仍在 lane 里的 EnterGame),它们由 IsRouteFromBeforeLeaveGame 认出、在路由入口丢弃,
+// 不能重新填上 lastSceneRoute。
 inline void ResetSceneRoute(SessionInfo& session)
 {
     session.SetNodeEntity(common::base::SceneNodeService, entt::null);
@@ -144,6 +149,31 @@ inline void ResetSceneRoute(SessionInfo& session)
     session.homeZoneId = 0;
     session.ownerEpoch = 0;
     session.forwardedOwnerEpoch = 0;
+    session.sceneRouteResetPending = true;
+    session.loginGenerationAtReset = session.loginGeneration;
+}
+
+// LeaveGame 重置之后到达的路由是不是属于重置之前那条登录链(location-release-binding.md §3.5 R5)。是 → 调用方在写任何会话
+// 字段之前丢弃它(RoutePlayerEventHandler),不调 ApplyRouteIdentity、不进 OnRouteDecision。不丢的话,它虽然不会被转发
+// (会话已没有场景、也没有登录类型),却会重新填上 lastSceneRoute 与 ownerEpoch,下一次 BindSession 就按这条旧路由、带着旧
+// epoch 补发,让一个已被释放(甚至已发过凭证)的旧节点按旧代重新载入玩家。
+// 判据只看登录代次:LeaveGame 之后的下一次登录在 login 侧铸出更大的代次(scene-enter-session-fence.md G1),它的路由带的是
+// 新代次;重置之前那条链的路由与 scene 自发的路由带旧代次或 0。只在重置之后、下一次进场之前生效;属于别的角色的路由不在这里
+// 判(AttemptPendingSceneEntry 的玩家围栏与 EntryForLateLoginBinding 的角色核对已经挡住它们)。
+// 这是对 fence §4"gate 不据代次丢路由"的有意例外:那条规则防的是"重登失败后仍在游戏里的换图路由被吞掉",而 LeaveGame 之后
+// 玩家已经不在游戏里,旧链的路由没有任何合法用途。
+inline bool IsRouteFromBeforeLeaveGame(const SessionInfo& session, const Guid routePlayerId,
+                                       const uint64_t routeLoginGeneration)
+{
+    if (!session.sceneRouteResetPending)
+    {
+        return false;
+    }
+    if (routePlayerId != 0 && session.playerId != kInvalidGuid && routePlayerId != session.playerId)
+    {
+        return false;
+    }
+    return routeLoginGeneration == 0 || routeLoginGeneration <= session.loginGenerationAtReset;
 }
 
 // ---------------------------------------------------------------------------
@@ -178,6 +208,12 @@ inline bool ApplyLoginBinding(SessionInfo& session, const Guid playerId, const u
     const auto change = (session.playerId == kInvalidGuid || session.playerId == playerId)
                             ? PlayerChange::kSamePlayer
                             : PlayerChange::kAnotherPlayer;
+    // LeaveGame 之后换了角色,或旧版 login 不带代次:IsRouteFromBeforeLeaveGame 的代次判据失效(另一个角色的代次序列与
+    // 重置时记下的值无关;0 代次分不出新旧),退回常规处理。换角色时旧角色的迟到路由由玩家围栏挡住。
+    if (session.sceneRouteResetPending && (change == PlayerChange::kAnotherPlayer || loginGeneration == 0))
+    {
+        session.sceneRouteResetPending = false;
+    }
     session.playerId = playerId;
     session.sessionVersion = sessionVersion;
     session.loginGeneration = MergeLoginGeneration(session.loginGeneration, loginGeneration, change);

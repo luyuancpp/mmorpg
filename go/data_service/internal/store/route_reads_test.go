@@ -66,8 +66,11 @@ func TestRouteReadHomeFenceSQLShape(t *testing.T) {
 // TestRouteFenceReadShardIsLastShard:读方读的围栏片 = MaxRouteFenceShards − 1(规格 §13.3 第 1 条),
 // 且不可能被 FenceShards < 64 的 W1 锁到(W1 锁 player_id % FenceShards < FenceShards ≤ 63)。
 func TestRouteFenceReadShardIsLastShard(t *testing.T) {
-	if routeFenceReadShard != placement.MaxRouteFenceShards-1 || routeFenceReadShard != 63 {
-		t.Fatalf("routeFenceReadShard = %d, want MaxRouteFenceShards-1 = 63", routeFenceReadShard)
+	if routeFenceReadShard != placement.MaxRouteFenceShards-1 {
+		t.Fatalf("routeFenceReadShard = %d, want MaxRouteFenceShards-1 = %d", routeFenceReadShard, placement.MaxRouteFenceShards-1)
+	}
+	if routeFenceReadShard != 63 {
+		t.Fatalf("routeFenceReadShard = %d, want 63", routeFenceReadShard)
 	}
 	for shards := uint32(1); shards < placement.MaxRouteFenceShards; shards++ {
 		got, err := placement.RouteFenceShard(uint64(shards)*1000+uint64(shards)-1, shards)

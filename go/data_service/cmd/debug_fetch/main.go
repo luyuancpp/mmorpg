@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -610,28 +611,37 @@ func ensureReadOnlyQuery(query string) error {
 	q = strings.TrimSuffix(q, ";")
 	q = strings.TrimSpace(q)
 
-	words := strings.Fields(strings.ToLower(q))
-	firstWord := words[0]
+	lower := strings.ToLower(q)
+	firstWord := strings.Fields(lower)[0]
 	switch firstWord {
 	case "select", "show", "describe", "desc", "explain":
 	default:
 		return fmt.Errorf("only read-only SELECT/SHOW/DESCRIBE/EXPLAIN queries are allowed, got %q", firstWord)
 	}
 	// 首词检查拦不住带副作用的读语句:EXPLAIN ANALYZE 会真正执行被解释的 DML,INTO OUTFILE 写服务器文件,
-	// 锁定读与用户锁会在线上主库上持锁。连接用的是业务写账号,这里按词组再拦一道;根治仍是只读账号。
-	normalized := " " + strings.Join(words, " ") + " "
-	for _, banned := range readOnlyBannedPhrases {
-		if strings.Contains(normalized, banned) {
-			return fmt.Errorf("query contains %q, which is not allowed in read-only mode", strings.TrimSpace(banned))
+	// 锁定读与用户锁会在线上主库上持锁。连接用的是业务写账号,这里再拦一道;根治仍是只读账号。
+	// 注释能把关键字拆开绕过词组匹配,排障查询用不到注释,含注释符号一律拒绝(字符串字面量里恰好出现也拒,宁可误杀)。
+	for _, marker := range []string{"/*", "--", "#"} {
+		if strings.Contains(lower, marker) {
+			return fmt.Errorf("query contains %q; comments are not allowed in read-only mode", marker)
+		}
+	}
+	for _, banned := range readOnlyBannedPatterns {
+		if banned.MatchString(lower) {
+			return fmt.Errorf("query matches %q, which is not allowed in read-only mode", banned.String())
 		}
 	}
 	return nil
 }
 
-var readOnlyBannedPhrases = []string{
-	" explain analyze ", " analyze ", " into outfile ", " into dumpfile ", " into @",
-	" for update", " for share", " lock in share mode",
-	"get_lock(", "release_lock(", "sleep(", "benchmark(",
+// readOnlyBannedPatterns 按词边界匹配,不依赖空格写法(sleep (1)、for\nupdate 都能命中)。
+// \binto\b 一并拦掉 INTO OUTFILE / DUMPFILE / @变量;ANALYZE 会误杀 SHOW ANALYZE STATUS,接受。
+var readOnlyBannedPatterns = []*regexp.Regexp{
+	regexp.MustCompile(`\banalyze\b`),
+	regexp.MustCompile(`\binto\b`),
+	regexp.MustCompile(`\bfor\s+(update|share)\b`),
+	regexp.MustCompile(`\block\s+in\s+share\s+mode\b`),
+	regexp.MustCompile(`\b(get_lock|release_lock|release_all_locks|is_free_lock|is_used_lock|sleep|benchmark|load_file)\s*\(`),
 }
 
 func normalizeSQLValue(columnName string, value any) any {
@@ -664,21 +674,29 @@ func writeJSON(v any) error {
 	if err != nil {
 		return fmt.Errorf("resolve output path: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(resolvedPath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(resolvedPath), 0o700); err != nil {
 		return fmt.Errorf("create output directory: %w", err)
 	}
 
-	// 导出的是线上玩家数据:文件只给本人读写(Windows 上权限位不生效,靠存放目录的 ACL)。
+	// 导出的是线上玩家数据:文件只给本人读写。OpenFile 的权限位只对新建文件生效,覆盖已有文件时再 Chmod 收紧
+	// (Windows 上 Chmod 只管只读位,实际访问控制靠存放目录的 ACL)。
 	file, err := os.OpenFile(resolvedPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("create output file: %w", err)
 	}
-	defer file.Close()
+	if err := file.Chmod(0o600); err != nil {
+		file.Close()
+		return fmt.Errorf("restrict output file mode: %w", err)
+	}
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(v); err != nil {
+		file.Close()
 		return err
+	}
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("close output file: %w", err)
 	}
 
 	fmt.Fprintf(os.Stderr, "debug_fetch wrote result to %s\n", resolvedPath)

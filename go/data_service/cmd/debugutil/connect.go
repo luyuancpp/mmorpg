@@ -58,17 +58,10 @@ func PasswordFromEnv(envName, fallback string) (string, error) {
 //
 // interpolateParams 保持默认关闭:参数走预处理语句的二进制协议,BIGINT UNSIGNED 读成 uint64,不经十进制字符串往返。
 func OpenMySQL(ctx context.Context, ep MySQLEndpoint, maxOpen int) (*sql.DB, error) {
-	cfg := mysql.NewConfig()
-	cfg.User = ep.User
-	cfg.Passwd = ep.Password
-	cfg.Net = strings.TrimSpace(ep.Net)
-	if cfg.Net == "" {
-		cfg.Net = "tcp"
+	cfg, err := mysqlConfig(ep)
+	if err != nil {
+		return nil, err
 	}
-	cfg.Addr = ep.Hosts
-	cfg.DBName = ep.DBName
-	cfg.ParseTime = true
-	cfg.Params = map[string]string{"charset": "utf8mb4"}
 	connector, err := mysql.NewConnector(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("build mysql connector: %w", err)
@@ -84,6 +77,53 @@ func OpenMySQL(ctx context.Context, ep MySQLEndpoint, maxOpen int) (*sql.DB, err
 		return nil, fmt.Errorf("ping mysql %s: %w", ep.Describe(), err)
 	}
 	return db, nil
+}
+
+// mysqlConfig 构造驱动配置。字符集必须走 mysql.Charset 选项:直接塞进 Params 的键会在每条连接上被原样拼成
+// `SET charset = utf8mb4` 执行(v1.8 起只有 ParseDSN 会把 charset 转成 SET NAMES),服务端报错、建连全部失败。
+func mysqlConfig(ep MySQLEndpoint) (*mysql.Config, error) {
+	cfg := mysql.NewConfig()
+	cfg.User = ep.User
+	cfg.Passwd = ep.Password
+	cfg.Net = strings.TrimSpace(ep.Net)
+	if cfg.Net == "" {
+		cfg.Net = "tcp"
+	}
+	cfg.Addr = ep.Hosts
+	cfg.DBName = ep.DBName
+	cfg.ParseTime = true
+	if err := cfg.Apply(mysql.Charset("utf8mb4", "")); err != nil {
+		return nil, fmt.Errorf("set mysql charset: %w", err)
+	}
+	return cfg, nil
+}
+
+// MySQLServerIdentity 返回实例身份(@@server_uuid)。取不到(例如 TiDB 不支持该变量)时返回空串,调用方按「未知」处理。
+func MySQLServerIdentity(ctx context.Context, q Queryer) string {
+	rows, err := q.QueryContext(ctx, "SELECT @@server_uuid")
+	if err != nil {
+		return ""
+	}
+	defer rows.Close()
+	var id sql.NullString
+	if !rows.Next() || rows.Scan(&id) != nil {
+		return ""
+	}
+	return id.String
+}
+
+// RedisServerIdentity 返回 INFO server 里的 run_id(进程级唯一);取不到时返回空串。
+func RedisServerIdentity(ctx context.Context, client redis.Cmdable) string {
+	info, err := client.Info(ctx, "server").Result()
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(info, "\n") {
+		if value, ok := strings.CutPrefix(strings.TrimSpace(line), "run_id:"); ok {
+			return value
+		}
+	}
+	return ""
 }
 
 // OpenRedis 打开一个单实例客户端并 PING。导出与导入都只连单实例:父键、owner 与屏障在同一实例
@@ -107,6 +147,9 @@ func OpenRedis(ctx context.Context, ep RedisEndpoint) (*redis.Client, error) {
 
 // CheckLocalWriteTarget 是导入工具的写前闸门:目标主机必须是本机回环地址,或在 allowHosts(逗号分隔,
 // 精确匹配主机名)里显式放行。线上数据只许进隔离环境,把生产 yaml 误当本地 yaml 是最可能的事故。
+//
+// 它挡不住「127.0.0.1 上是 port-forward 出来的生产实例」:导入端还要比对实例身份(导出包 sources 里记的
+// Redis run_id / MySQL server_uuid),目标就是导出来源时拒绝,见 debug_import 的 checkNotExportSource。
 func CheckLocalWriteTarget(what, hostPort, allowHosts string) error {
 	host := hostPort
 	if h, _, err := net.SplitHostPort(hostPort); err == nil {

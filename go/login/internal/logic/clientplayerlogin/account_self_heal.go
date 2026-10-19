@@ -29,7 +29,9 @@ const accountHealLockReleaseTimeout = time.Second
 //     2026-10-18 之前这里是无锁 GET 之后整块 SET,拿锁外读到的旧 blob 写回,会把刚建出的角色抹掉。
 //   - CAS 挡住锁过期后的迟到写;提交点复核反向索引,挡住「运维刚把它当孤儿摘掉、自愈又写回去」。
 //
-// 尽力而为:拿不到锁、CAS 冲突、Redis 出错都只打日志、不写,本函数不让 EnterGame 同步返回失败(归属已由反向索引证明),
+// 尽力而为:拿不到锁、CAS 冲突、Redis 出错都只打日志、不写,本函数不让 EnterGame 同步返回失败。归属以 EnterGame 读反向索引那一刻为准;
+// 提交点返回 -2(运维刚把它当孤儿摘掉)时也照常受理,与「账号记录命中」分支一样,运维摘除不打断已在进行的入场,
+// 只保证不把角色写回账号目录。
 // 下次入场会再试。但这不等于本次入场一定成功:存档里已有外观的角色,异步链上的外观修复 repairAccountAppearance
 // 要求账号里有这条记录,写回被跳过时它会报错,本次入场按 kEnterSceneFailed 收口(与 2026-10-18 之前写回失败时相同,
 // 有意保持 fail-closed,见 TestEnterGame_SelfHealSkippedFailsAppearanceRepair)。

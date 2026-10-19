@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"data_service/internal/routing"
+
 	assetpb "proto/common/asset"
 	databasepb "proto/common/database"
 	rollbackpb "proto/common/rollback"
@@ -54,15 +56,20 @@ type Bundle struct {
 	Analysis       BundleAnalysis `json:"analysis"`
 }
 
-// BundleSources 记录数据从哪几台实例读出(host:port/库),不含口令。
+// BundleSources 记录数据从哪几台实例读出(host:port/库),不含口令。*_id 是实例身份(Redis run_id、
+// MySQL @@server_uuid),导入端据此拒绝「写回导出来源」——port-forward 后地址都是 127.0.0.1,只看地址分不出来。
 type BundleSources struct {
-	CoreRedis    string `json:"core_redis"`
-	MappingRedis string `json:"mapping_redis"`
-	ZoneMySQL    string `json:"zone_mysql"`
-	GlobalMySQL  string `json:"global_mysql,omitempty"`
+	CoreRedis      string `json:"core_redis"`
+	CoreRedisID    string `json:"core_redis_id,omitempty"`
+	MappingRedis   string `json:"mapping_redis"`
+	MappingRedisID string `json:"mapping_redis_id,omitempty"`
+	ZoneMySQL      string `json:"zone_mysql"`
+	ZoneMySQLID    string `json:"zone_mysql_id,omitempty"`
+	GlobalMySQL    string `json:"global_mysql,omitempty"`
+	GlobalMySQLID  string `json:"global_mysql_id,omitempty"`
 }
 
-// BundleRouting 是按 go/db 同一规则(placement.EffectiveStorage)解析出的有效落点库。
+// BundleRouting 是按 go/db 同一规则(placement_route.go parsePlacementSnapshot + EffectiveStorage)解析出的有效落点库。
 type BundleRouting struct {
 	HomeZone        uint32 `json:"home_zone"`
 	HomeZonePresent bool   `json:"home_zone_present"`
@@ -72,6 +79,8 @@ type BundleRouting struct {
 	StorageDB       string `json:"storage_db"`
 	// ResolvedBy:placement | home_zone | fallback_zone | override(-database 显式指定)。
 	ResolvedBy string `json:"resolved_by"`
+	// Malformed 非空:映射或落点值畸形,线上 go/db 对该玩家读写全部 fail-closed;此时只能用 -database 指定要读的库。
+	Malformed string `json:"malformed,omitempty"`
 }
 
 // RedisEntry 是一把键在同一次 MULTI/EXEC 里读到的类型、TTL 与值。
@@ -106,7 +115,10 @@ type TableRow struct {
 	Found        bool   `json:"found"`
 	Row          *Value `json:"row,omitempty"`
 	FenceVersion string `json:"fence_version,omitempty"`
-	Error        string `json:"error,omitempty"`
+	// LiveExtraColumns:线上表有、本地检出的 proto 没有的列。SELECT 只列本地 proto 字段,这些列的数据**没有导出**;
+	// 非空说明本地检出比线上旧,导入端拒绝 -source=sql。
+	LiveExtraColumns []string `json:"live_extra_columns,omitempty"`
+	Error            string   `json:"error,omitempty"`
 }
 
 // BundleGlobal 是全局库(data_service SnapshotMySQL)里与该玩家有关的记录,只供查看,导入端不使用。
@@ -139,14 +151,22 @@ type BundleAnalysis struct {
 	Warnings    []string     `json:"warnings,omitempty"`
 }
 
-// BarrierState 摘出存盘屏障三个令牌与归属计数器。
+// BarrierState 摘出存盘屏障三个令牌、归属计数器,以及 login 冷加载会复核的另外几项(SQL 行围栏、父快照水位)。
 type BarrierState struct {
-	OwnerEpoch         string `json:"owner_epoch,omitempty"`
-	Pending            string `json:"pending,omitempty"`
-	PlayerDatabaseAck  string `json:"player_database_ack,omitempty"`
-	PlayerDatabase1Ack string `json:"player_database_1_ack,omitempty"`
-	SavePendingIndexed bool   `json:"save_pending_indexed"`
-	Conclusion         string `json:"conclusion"`
+	OwnerEpoch           string `json:"owner_epoch,omitempty"`
+	Pending              string `json:"pending,omitempty"`
+	PlayerDatabaseAck    string `json:"player_database_ack,omitempty"`
+	PlayerDatabase1Ack   string `json:"player_database_1_ack,omitempty"`
+	SavePendingIndexed   bool   `json:"save_pending_indexed"`
+	PlayerDatabaseFence  string `json:"player_database_fence,omitempty"`
+	PlayerDatabase1Fence string `json:"player_database_1_fence,omitempty"`
+	ParentPresent        bool   `json:"parent_present"`
+	ParentLastSaveSeq    uint64 `json:"parent_last_save_seq,omitempty"`
+	OutboxTerminal       string `json:"outbox_terminal,omitempty"`
+	OutboxTerminalReason string `json:"outbox_terminal_reason,omitempty"`
+	Conclusion           string `json:"conclusion"`
+	// Anomalies 是 login 冷加载会拒绝、但正常写路径不会产生的状态(人工改键、部分恢复、库被回档)。
+	Anomalies []string `json:"anomalies,omitempty"`
 }
 
 // TableDiff 对比 Redis 父快照里的子消息与 SQL 行(两侧都忽略行内围栏两列)。
@@ -272,8 +292,10 @@ func SavePendingIndexKey(homeZone uint32, playerID uint64) string {
 	return fmt.Sprintf("player:save_pending:%d:%d", homeZone, playerID%64)
 }
 
-// 下面这些键的写者在其他 Go module(login / player_locator / scene_manager)的 internal 包里,
-// 这里只能照抄格式;改格式的人搜键前缀能搜到这里。
+// 下面这些键的写者在其他 Go module(login / player_locator / scene_manager)或 data_service 的未导出函数里,
+// 这里只能照抄格式,单测也只能钉住这份副本——写者改格式时测试不会变红。改格式的人搜键前缀能搜到这里:
+// login login_constants.go / sessionmanager/login_generation.go / entergamelogic.go;player_locator keys.go;
+// scene_manager leave_release.go;data_service routing/router.go(lock:player:)。
 func playerToAccountKey(playerID uint64) string { return "player_to_account:" + u64(playerID) }
 func playerLockerKey(playerID uint64) string { return "player_locker:" + u64(playerID) }
 func loginGenerationKey(playerID uint64) string { return "player:" + u64(playerID) + ":login_generation" }
@@ -285,7 +307,6 @@ func leaveReleaseWaitKey(playerID uint64) string {
 func LocatorSessionKey(playerID uint64) string { return "player:session:" + u64(playerID) }
 func locatorLocationKey(playerID uint64) string { return "player:location:" + u64(playerID) }
 func mappingLockKey(playerID uint64) string { return "lock:player:" + u64(playerID) }
-func playerNameCacheKey(playerID uint64) string { return "player:name:" + u64(playerID) }
 
 // AccountKey 是 login 的账号角色目录键 account:<account>(值 UserAccounts;Redis 是角色目录的唯一权威)。
 func AccountKey(account string) string { return "account:" + account }
@@ -358,7 +379,7 @@ func PlayerRedisKeySpecs(playerID uint64, homeZone uint32) []RedisKeySpec {
 			Purpose: "映射修订号"},
 		{Key: mappingLockKey(playerID), Instance: RedisMapping, Kind: RedisKindString,
 			Purpose: "映射分布式锁"},
-		{Key: playerNameCacheKey(playerID), Instance: RedisMapping, Kind: RedisKindString,
+		{Key: routing.PlayerNameKey(playerID), Instance: RedisMapping, Kind: RedisKindString,
 			Purpose: "名字缓存"},
 	}
 	if homeZone != 0 {

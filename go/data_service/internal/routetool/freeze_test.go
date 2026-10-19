@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -382,4 +383,281 @@ func TestReadyMarkerScriptsOnMiniredis(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), got)
 	assert.False(t, mr.Exists(placement.RouteReadyKey))
+}
+
+// ── 2026-10-19 第 1b-2 批收尾:水位键的出口与身份解析的单一口径 ────────────────────────────────
+
+// watermarkKeyFor 编出一份 mapping:route:watermark 的合规值。
+func watermarkKeyFor(t *testing.T, gen string, watermarkMs uint64) string {
+	t.Helper()
+	raw, err := placement.EncodeRouteWatermark(placement.RouteWatermark{Generation: gen, WatermarkMs: watermarkMs})
+	require.NoError(t, err)
+	return raw
+}
+
+// runUnfreezeErr 同 runUnfreeze,另把 Unfreeze 的 error 带出来(按哨兵断言用)。
+func runUnfreezeErr(t *testing.T, rd readyMarkerRedis, db unfreezeDB, ack bool) (UnfreezeReport, cliRun, error) {
+	t.Helper()
+	var out, errOut bytes.Buffer
+	rep, err := Unfreeze(context.Background(), rd, db, UnfreezeOptions{
+		CacheUnverifiedAcknowledged: ack,
+		Timeout:                     store.RouteFreezeTimeoutMin,
+		Identity:                    func(context.Context) (RedisIdentity, error) { return testIdentity, nil },
+		Stdout:                      &out,
+		Stderr:                      &errOut,
+	})
+	return rep, cliRun{code: UnfreezeExitCode(rep, err), stdout: out.String(), stderr: errOut.String()}, err
+}
+
+// TestUnfreeze_RaisesFloorToWatermarkKey:解冻的最低水位取 max(可信标记的 watermark_ms, 世代相同的水位键的 watermark_ms)
+// (规格 §2 M3:不抬的话解冻之后 leader 下一拍就按「水位键 > 库水位」再冻结);别的世代的水位键不约束本世代;
+// 显式确认放行(没有可信标记)时水位键那一项照取。
+func TestUnfreeze_RaisesFloorToWatermarkKey(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		markerWm uint64 // 0 = 没有标记(走显式确认)
+		keyGen   string // "" = 水位键不在;"malformed" = 畸形值
+		keyWm    uint64
+		wantMin  uint64
+		wantKey  string // 解冻之后水位键的处置
+	}{
+		{"水位键更高_抬到水位键", 1000, testGeneration, 5000, 5000, WatermarkKeyKept},
+		{"标记更高_取标记_水位键跟上", 9000, testGeneration, 5000, 9000, WatermarkKeyCompareAndSet},
+		{"别的世代_不约束", 1000, "ffff", 99999, 1000, WatermarkKeyCompareAndSet},
+		{"显式确认_仍取水位键", 0, testGeneration, 7000, 7000, WatermarkKeyKept},
+		{"显式确认_别的世代_水位0_按原值删", 0, "ffff", 7000, 0, WatermarkKeyDropped},
+		{"水位键畸形_不给下限_改掉", 1000, "malformed", 0, 1000, WatermarkKeyCompareAndSet},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			mr, rd := newMappingRedis(t)
+			if tc.markerWm > 0 {
+				require.NoError(t, mr.Set(placement.RouteReadyKey, readyMarkerFor(t, testIdentity, testGeneration, tc.markerWm)))
+			}
+			switch tc.keyGen {
+			case "":
+			case "malformed":
+				require.NoError(t, mr.Set(placement.RouteWatermarkKey, `{"v":1}`))
+			default:
+				require.NoError(t, mr.Set(placement.RouteWatermarkKey, watermarkKeyFor(t, tc.keyGen, tc.keyWm)))
+			}
+			db := frozenUnfreezeDB()
+
+			rep, run, err := runUnfreezeErr(t, rd, db, tc.markerWm == 0)
+
+			require.NoError(t, err, run.stderr)
+			assert.Equal(t, ExitClean, run.code)
+			assert.Equal(t, []uint64{tc.wantMin}, db.unfreezeCalls)
+			assert.Equal(t, tc.wantMin, rep.MinWatermarkMs)
+			assert.Equal(t, tc.wantKey, rep.WatermarkKey)
+			assert.Contains(t, run.stdout, " min_watermark_ms="+strconv.FormatUint(tc.wantMin, 10)+"\n", "统计行格式不变")
+			if tc.wantKey == WatermarkKeyDropped {
+				assert.False(t, mr.Exists(placement.RouteWatermarkKey), "没有可写的正水位:按原值删掉,留给 leader 重建")
+				return
+			}
+			got, err := mr.Get(placement.RouteWatermarkKey)
+			require.NoError(t, err)
+			assert.Equal(t, watermarkKeyFor(t, testGeneration, tc.wantMin), got, "解冻之后水位键 = {库世代, 最低水位}")
+		})
+	}
+}
+
+// orderUnfreezeDB 在解冻调用那一刻记下水位键的值:钉住「先翻 writable、再改水位键」的顺序。
+type orderUnfreezeDB struct {
+	*fakeUnfreezeDB
+	mr           *miniredis.Miniredis
+	keyAtFlip    string
+	keyAtFlipSet bool
+}
+
+func (o *orderUnfreezeDB) UnfreezeRouteWriters(ctx context.Context, minWatermarkMs uint64) (bool, error) {
+	o.keyAtFlip, _ = o.mr.Get(placement.RouteWatermarkKey)
+	o.keyAtFlipSet = o.mr.Exists(placement.RouteWatermarkKey)
+	return o.fakeUnfreezeDB.UnfreezeRouteWriters(ctx, minWatermarkMs)
+}
+
+// watermarkRacingRedis 在第一次对水位键的 EVAL / SETNX 之前,先把水位键换成 value(模拟读到之后被 leader / 别的写者改过)。
+type watermarkRacingRedis struct {
+	readyMarkerRedis
+	mr    *miniredis.Miniredis
+	value string
+	raced bool
+}
+
+func (w *watermarkRacingRedis) race() error {
+	if w.raced {
+		return nil
+	}
+	w.raced = true
+	return w.mr.Set(placement.RouteWatermarkKey, w.value)
+}
+
+func (w *watermarkRacingRedis) EvalCtx(ctx context.Context, script string, keys []string, args ...any) (any, error) {
+	if len(keys) == 1 && keys[0] == placement.RouteWatermarkKey {
+		if err := w.race(); err != nil {
+			return nil, err
+		}
+	}
+	return w.readyMarkerRedis.EvalCtx(ctx, script, keys, args...)
+}
+
+func (w *watermarkRacingRedis) SetnxCtx(ctx context.Context, key, value string) (bool, error) {
+	if key == placement.RouteWatermarkKey {
+		if err := w.race(); err != nil {
+			return false, err
+		}
+	}
+	return w.readyMarkerRedis.SetnxCtx(ctx, key, value)
+}
+
+// TestUnfreeze_ResetsWatermarkKeyAfterFlip:水位键在 writable 翻回 1 **之后**才改(规格 §13.1 第 4 条:同一流程、先翻后改);
+// 不在就 SET NX;没有可写的正水位又不在就留给 leader。改输了:复读到本世代的值(leader 已推进它)算完成,
+// 复读到别的世代 → 退出码 1(统计行照出,writable 已是 1),重跑走「已可写」分支、退出码 0(幂等)。
+func TestUnfreeze_ResetsWatermarkKeyAfterFlip(t *testing.T) {
+	t.Run("先翻writable再改水位键", func(t *testing.T) {
+		mr, rd := newMappingRedis(t)
+		require.NoError(t, mr.Set(placement.RouteReadyKey, readyMarkerFor(t, testIdentity, testGeneration, 1000)))
+		old := watermarkKeyFor(t, "ffff", 50)
+		require.NoError(t, mr.Set(placement.RouteWatermarkKey, old))
+		db := &orderUnfreezeDB{fakeUnfreezeDB: frozenUnfreezeDB(), mr: mr}
+
+		rep, run, err := runUnfreezeErr(t, rd, db, false)
+
+		require.NoError(t, err, run.stderr)
+		assert.True(t, db.keyAtFlipSet)
+		assert.Equal(t, old, db.keyAtFlip, "翻 writable 的那一刻水位键还是旧值")
+		got, _ := mr.Get(placement.RouteWatermarkKey)
+		assert.Equal(t, watermarkKeyFor(t, testGeneration, 1000), got)
+		assert.Equal(t, WatermarkKeyCompareAndSet, rep.WatermarkKey)
+		assert.Contains(t, run.stderr, "WATERMARK_KEY compare_and_set before=decoded ")
+	})
+
+	t.Run("不在_SETNX_统计行不变", func(t *testing.T) {
+		mr, rd := newMappingRedis(t)
+		require.NoError(t, mr.Set(placement.RouteReadyKey, readyMarkerFor(t, testIdentity, testGeneration, 1000)))
+		db := &orderUnfreezeDB{fakeUnfreezeDB: frozenUnfreezeDB(), mr: mr}
+
+		rep, run, err := runUnfreezeErr(t, rd, db, false)
+
+		require.NoError(t, err, run.stderr)
+		assert.False(t, db.keyAtFlipSet, "翻 writable 之前不写水位键")
+		got, _ := mr.Get(placement.RouteWatermarkKey)
+		assert.Equal(t, watermarkKeyFor(t, testGeneration, 1000), got)
+		assert.Zero(t, mr.TTL(placement.RouteWatermarkKey), "水位键不带过期")
+		assert.Equal(t, WatermarkKeySetNX, rep.WatermarkKey)
+		assert.Equal(t, "route_unfreeze changed=true already_writable=false marker=verified generation_realigned=false min_watermark_ms=1000\n", run.stdout)
+	})
+
+	t.Run("不在_也没有正水位_留给leader", func(t *testing.T) {
+		mr, rd := newMappingRedis(t)
+		rep, run, err := runUnfreezeErr(t, rd, frozenUnfreezeDB(), true)
+		require.NoError(t, err, run.stderr)
+		assert.Equal(t, WatermarkKeyLeftAbsent, rep.WatermarkKey)
+		assert.False(t, mr.Exists(placement.RouteWatermarkKey))
+	})
+
+	t.Run("改输了_复读到本世代的值_算完成", func(t *testing.T) {
+		mr, rd := newMappingRedis(t)
+		require.NoError(t, mr.Set(placement.RouteReadyKey, readyMarkerFor(t, testIdentity, testGeneration, 1000)))
+		leaderValue := watermarkKeyFor(t, testGeneration, 1500)
+		raced := &watermarkRacingRedis{readyMarkerRedis: rd, mr: mr, value: leaderValue}
+
+		rep, run, err := runUnfreezeErr(t, raced, frozenUnfreezeDB(), false)
+
+		require.NoError(t, err, run.stderr)
+		assert.Equal(t, ExitClean, run.code)
+		assert.Equal(t, WatermarkKeySuperseded, rep.WatermarkKey)
+		got, _ := mr.Get(placement.RouteWatermarkKey)
+		assert.Equal(t, leaderValue, got, "leader 推进过的值不覆盖")
+	})
+
+	t.Run("改输了_复读到别的世代_退出码1_重跑幂等", func(t *testing.T) {
+		mr, rd := newMappingRedis(t)
+		require.NoError(t, mr.Set(placement.RouteReadyKey, readyMarkerFor(t, testIdentity, testGeneration, 1000)))
+		require.NoError(t, mr.Set(placement.RouteWatermarkKey, watermarkKeyFor(t, "ffff", 50)))
+		raced := &watermarkRacingRedis{readyMarkerRedis: rd, mr: mr, value: watermarkKeyFor(t, "eeee", 60)}
+		db := frozenUnfreezeDB()
+
+		rep, run, err := runUnfreezeErr(t, raced, db, false)
+
+		assert.ErrorIs(t, err, ErrWatermarkKeyNotReset)
+		assert.Equal(t, ExitAttention, run.code)
+		assert.Equal(t, WatermarkKeyNotReset, rep.WatermarkKey)
+		assert.Equal(t, []uint64{1000}, db.unfreezeCalls, "writable 已经翻回 1")
+		assert.Contains(t, run.stdout, "route_unfreeze changed=true ", "翻成功了,统计行照出")
+
+		rep, run, err = runUnfreezeErr(t, rd, db, false)
+		require.NoError(t, err, run.stderr)
+		assert.Equal(t, ExitClean, run.code)
+		assert.True(t, rep.AlreadyWritable, "重跑走「已可写」分支")
+		assert.Len(t, db.unfreezeCalls, 1)
+	})
+}
+
+// TestUnfreeze_WatermarkKeyNewerVersionRefused:水位键是更新格式版本写的 → 退出码 2,在任何写之前拒绝:不解冻、不动水位键,
+// 连畸形标记的撤除都不做;显式确认也不放行(那只确认缓存,不认识的水位键下限规则本二进制不知道)。不是 string 类型同样退出码 2。
+func TestUnfreeze_WatermarkKeyNewerVersionRefused(t *testing.T) {
+	const newer = `{"v":2,"watermark_ms":"x"}`
+	for _, ack := range []bool{false, true} {
+		t.Run("ack="+strconv.FormatBool(ack), func(t *testing.T) {
+			mr, rd := newMappingRedis(t)
+			require.NoError(t, mr.Set(placement.RouteReadyKey, "malformed-marker"))
+			require.NoError(t, mr.Set(placement.RouteWatermarkKey, newer))
+			db := frozenUnfreezeDB()
+
+			_, run, err := runUnfreezeErr(t, rd, db, ack)
+
+			assert.ErrorIs(t, err, placement.ErrRouteWatermarkNewerVersion)
+			assert.Equal(t, ExitFailed, run.code)
+			assert.Empty(t, db.unfreezeCalls)
+			assert.Empty(t, run.stdout)
+			got, _ := mr.Get(placement.RouteWatermarkKey)
+			assert.Equal(t, newer, got, "不动它")
+			assert.True(t, mr.Exists(placement.RouteReadyKey), "拒绝在任何写之前:畸形标记也没撤")
+		})
+	}
+
+	t.Run("不是string", func(t *testing.T) {
+		mr, rd := newMappingRedis(t)
+		_, err := mr.SAdd(placement.RouteWatermarkKey, "x")
+		require.NoError(t, err)
+		db := frozenUnfreezeDB()
+
+		_, run, err := runUnfreezeErr(t, rd, db, true)
+
+		assert.ErrorIs(t, err, ErrWatermarkKeyWrongType)
+		assert.Equal(t, ExitFailed, run.code)
+		assert.Empty(t, db.unfreezeCalls)
+	})
+}
+
+// TestParseRedisIdentityAgreesWithPlacement:ParseRedisIdentity 委托 placement.ParseRedisInstanceIdentity(规格 §4.6 第 5 项),
+// 对同一份 INFO 文本两者结论一致:同成同败,成功时 run_id / master_replid 相同。缺 role 现在两边都报错(相对 1b-1 的唯一收紧)。
+func TestParseRedisIdentityAgreesWithPlacement(t *testing.T) {
+	server := "# Server\r\nredis_version:7.2.4\r\nrun_id:" + testIdentity.RunID + "\r\ntcp_port:6379\r\n"
+	replication := "# Replication\r\nrole:master\r\nconnected_slaves:0\r\nmaster_replid:" + testIdentity.MasterReplID +
+		"\r\nmaster_replid2:0000000000000000000000000000000000000000\r\n"
+	for _, tc := range []struct {
+		name, server, replication string
+		wantOK                    bool
+	}{
+		{"CRLF", server, replication, true},
+		{"LF", strings.ReplaceAll(server, "\r\n", "\n"), strings.ReplaceAll(replication, "\r\n", "\n"), true},
+		{"副本", server, strings.Replace(replication, "role:master", "role:slave", 1), true},
+		{"缺run_id", "# Server\r\nredis_version:7.2.4\r\n", replication, false},
+		{"缺master_replid", server, "# Replication\r\nrole:master\r\n", false},
+		{"缺role", server, strings.Replace(replication, "role:master\r\n", "", 1), false},
+		{"run_id大写", strings.Replace(server, testIdentity.RunID, strings.ToUpper(testIdentity.RunID), 1), replication, false},
+		{"replid长度不对", server, strings.Replace(replication, testIdentity.MasterReplID, testIdentity.MasterReplID[:39], 1), false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := ParseRedisIdentity(tc.server, tc.replication)
+			want, perr := placement.ParseRedisInstanceIdentity(tc.server, tc.replication)
+			assert.Equal(t, perr == nil, err == nil, "同成同败:routetool=%v placement=%v", err, perr)
+			assert.Equal(t, tc.wantOK, err == nil, err)
+			if err == nil {
+				assert.Equal(t, RedisIdentity{RunID: want.RunID, MasterReplID: want.MasterReplID}, got)
+				assert.Equal(t, testIdentity, got)
+			}
+		})
+	}
 }

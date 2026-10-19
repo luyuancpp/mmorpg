@@ -204,6 +204,15 @@ type options struct {
 	relocateLockWait  time.Duration
 
 	auditStorage uint32
+
+	// routeSource 是 -route-source(db / redis,读写映射的模式必填、无缺省,见 checkRouteSourceFlags);routeDBDSN 是
+	// -route-db-dsn(全局库,含口令,不进日志)。waitAOF* 是 -route-source=db 时每批发布末尾 WAITAOF 的份数与等待
+	// (newRouteDurability 校验)。
+	routeSource      string
+	routeDBDSN       string
+	waitAOFLocal     int
+	waitAOFReplicas  int
+	waitAOFTimeoutMs int
 }
 
 func main() {
@@ -342,6 +351,20 @@ func main() {
 		"Standalone mode: SET NX player:zone:{id}=<zone> for every row in zone_<zone>_db.player_database. Run this for EVERY existing zone before the first merge")
 	zoneFlag := flag.Uint("zone", 0, "Zone ID for -backfill-home-zone and -mode pin-placement (required in those modes)")
 
+	flag.StringVar(&o.routeSource, "route-source", "",
+		"Where the player route mapping is authoritative. NO DEFAULT: required by every mode that reads or writes player:zone / "+
+			"player:placement (merge, unmerge, audit, pin-placement, relocate, relocate-abort, storage-audit, -backfill-home-zone). "+
+			"'db' when data_service runs RouteStore.Mode=db_first (writes go to the global DB first and are then published to the "+
+			"mapping Redis; needs -route-db-dsn); 'redis' only while every data_service still runs RouteStore.Mode=redis (legacy path)")
+	flag.StringVar(&o.routeDBDSN, "route-db-dsn", "",
+		"-route-source=db: DSN of the global database that holds player_route (dev: testdb, K8s: mmorpg_global). The session is "+
+			"pinned to READ-COMMITTED with innodb_lock_wait_timeout=1; the DSN is never logged")
+	flag.IntVar(&o.waitAOFLocal, "waitaof-local", 1, "-route-source=db: WAITAOF numlocal after each publish batch (0 or 1)")
+	flag.IntVar(&o.waitAOFReplicas, "waitaof-replicas", 0,
+		"-route-source=db: WAITAOF numreplicas after each publish batch (single instance 0, redis-ha 1)")
+	flag.IntVar(&o.waitAOFTimeoutMs, "waitaof-timeout-ms", 1500,
+		"-route-source=db: WAITAOF timeout per attempt in milliseconds (1..2000; 0 would block forever)")
+
 	flag.Parse()
 	o.sourceZone = uint32(*srcZone)
 	o.targetZone = uint32(*dstZone)
@@ -369,6 +392,18 @@ func main() {
 		fail("%v", err)
 	}
 	o.capSpec = capSpec
+
+	// -route-source 没有缺省值:读写映射的模式都必须显式选(规格 §13.3 第 3 条)。db 路径本波还没接进各写入点,先拒绝。
+	if err := checkRouteSourceFlags(o); err != nil {
+		fail("%v", err)
+	}
+	if err := refuseUnwiredDBRouteSource(o); err != nil {
+		fail("%v", err)
+	}
+	if routeSourceRequired(o) && o.routeSource == routeSourceRedis {
+		fmt.Fprintln(os.Stderr, "WARN: -route-source=redis: the mapping Redis is written directly (legacy path); valid only while "+
+			"every data_service runs RouteStore.Mode=redis")
+	}
 
 	// ── Backfill mode:先于 merge 的 source/target 检查分发。
 	if o.backfill {
@@ -622,6 +657,68 @@ func checkMergeCapabilityFlag(o options) error {
 		return nil
 	}
 	return requireCapabilityZones(o.capSpec, capabilityForMerge)
+}
+
+// -route-source 的两个取值(规格 §6.4、§13.3 第 3 条)。
+const (
+	routeSourceDB    = "db"
+	routeSourceRedis = "redis"
+)
+
+// routeSourceRequired 报告本次模式是否读写 player:zone / player:placement,从而必须显式给 -route-source。
+// 只有 -mode capability-check(只读 db:capability:zone:*)不需要;未知模式交给后面的「unknown -mode」报错。
+// 只读的 audit / storage-audit 也要:-route-source=db 时它们要读库(规格 §6.3 R8,storage-audit 决定库能否退役)。
+func routeSourceRequired(o options) bool {
+	if o.backfill {
+		return true
+	}
+	switch o.mode {
+	case "merge", "unmerge", "audit", "pin-placement", "relocate", "relocate-abort", "storage-audit":
+		return true
+	}
+	return false
+}
+
+// checkRouteSourceFlags 是 -route-source / -route-db-dsn / -waitaof-* 的前置校验(纯函数,规格 §13.3 第 3 条):
+//   - 读写映射的模式必须显式给 -route-source=db|redis,没有缺省值:缺省取哪一边,都会在另一种部署里写错库;
+//   - db:-route-db-dsn 必填,-waitaof-* 必须合法(newRouteDurability);
+//   - redis:不接受 -route-db-dsn(给了却不用,会让人以为库被写过)。
+//
+// capability-check 不读写映射,不看这几个参数。库与 Redis 是否成对(水位键)要连上之后才能核对,见 route_store.go 的 openRouteBackend。
+func checkRouteSourceFlags(o options) error {
+	if !routeSourceRequired(o) {
+		return nil
+	}
+	switch o.routeSource {
+	case "":
+		return fmt.Errorf("-route-source is required and has no default: pass -route-source=db (with -route-db-dsn) when " +
+			"data_service runs RouteStore.Mode=db_first, or -route-source=redis only while every data_service still runs " +
+			"RouteStore.Mode=redis")
+	case routeSourceDB:
+		if o.routeDBDSN == "" {
+			return fmt.Errorf("-route-source=db requires -route-db-dsn (the global database that holds player_route)")
+		}
+		_, err := newRouteDurability(o.waitAOFLocal, o.waitAOFReplicas, o.waitAOFTimeoutMs)
+		return err
+	case routeSourceRedis:
+		if o.routeDBDSN != "" {
+			return fmt.Errorf("-route-db-dsn is only used with -route-source=db; with -route-source=redis nothing would be written to it")
+		}
+		return nil
+	default:
+		return fmt.Errorf("-route-source %q: want db or redis", o.routeSource)
+	}
+}
+
+// refuseUnwiredDBRouteSource 在 SQL 写入层接进各写入点之前拒绝 -route-source=db(D1 第 2 批分两波落码,本波只有
+// route_store.go / route_publish.go 的底座)。不拒绝的话 db 模式会照旧直写 Redis —— 在 db_first 部署里写出库不知道的缓存值,
+// 正是 -route-source 要防的错库。下一波把各写入点接到底座上时删除本函数及其调用。
+func refuseUnwiredDBRouteSource(o options) error {
+	if routeSourceRequired(o) && o.routeSource == routeSourceDB {
+		return fmt.Errorf("-route-source=db is not wired into the merge_zone flows in this build yet (D1 batch 2 lands in two " +
+			"waves); do not run this build against a db_first deployment")
+	}
+	return nil
 }
 
 // uint32Flag 把 flag.Uint 的值收窄成 uint32;超出范围直接拒绝 —— 截断会把人指到另一个 zone / 落点库。

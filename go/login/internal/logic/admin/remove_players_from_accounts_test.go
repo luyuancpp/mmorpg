@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -177,8 +178,8 @@ func TestRemovePlayersFromAccount_AccountBusyChangesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := removePlayersFromAccount(context.Background(), svcCtx, orphanAccount, []uint64{1}); err == nil {
-		t.Fatal("want an error while the account lock is held by someone else")
+	if _, err := removePlayersFromAccount(context.Background(), svcCtx, orphanAccount, []uint64{1}); !errors.Is(err, errAccountBusy) {
+		t.Fatalf("err = %v, want errAccountBusy while the account lock is held by someone else", err)
 	}
 	after, err := rdb.Get(context.Background(), constants.GetAccountDataKey(orphanAccount)).Bytes()
 	if err != nil || string(after) != string(before) {
@@ -223,5 +224,84 @@ func TestRemovePlayersFromAccount_MissingAccountStillDropsReverseIndex(t *testin
 	}
 	if reverseOf(t, rdb, 1) != "" {
 		t.Fatal("reverse index of a missing account must be dropped")
+	}
+}
+
+// 账号锁复核(removeOrphansScript 第一行):锁内重读之后账号锁过期被建角拿走,提交点拒写,账号目录、反向索引、别人的锁都不动。
+// 这一行挡住「admin 摘掉孤儿后,持新锁的 CreatePlayer 按自己读到的旧目录写回,孤儿带着已删的反向索引复活」。删掉它这条会红。
+func TestRemovePlayersFromAccount_AccountLockLostAfterReReadCommitsNothing(t *testing.T) {
+	rdb, svcCtx := newAdminRedis(t)
+	before := seedAccount(t, rdb, orphanAccount, 1, 2)
+	seedReverse(t, rdb, orphanAccount, 1)
+	key := constants.GetAccountDataKey(orphanAccount)
+	lockKey := "account_lock:create:" + orphanAccount
+	rdb.AddHook(&afterNthGetHook{key: key, n: 1, fn: func() {
+		if err := rdb.Set(context.Background(), lockKey, "taken-by-create", time.Minute).Err(); err != nil {
+			t.Errorf("simulate lock takeover: %v", err)
+		}
+	}})
+
+	if _, err := removePlayersFromAccount(context.Background(), svcCtx, orphanAccount, []uint64{1}); err == nil {
+		t.Fatal("want an error after the account lock was taken over")
+	}
+	after, err := rdb.Get(context.Background(), key).Bytes()
+	if err != nil || string(after) != string(before) {
+		t.Fatalf("account blob changed (err=%v) after losing the account lock", err)
+	}
+	if reverseOf(t, rdb, 1) != orphanAccount {
+		t.Fatal("reverse index must be kept when nothing was committed")
+	}
+	if got, err := rdb.Get(context.Background(), lockKey).Result(); err != nil || got != "taken-by-create" {
+		t.Fatalf("account lock = (%q, %v), want the new holder's token untouched", got, err)
+	}
+}
+
+// 可重发(go-redis 读超时会原样重发 EVALSHA):第一次已提交、账号目录已是新字节时,重发按已提交处理并照常删反向索引,不报 -2。
+func TestRemoveOrphansScript_RetryAfterCommitIsIdempotent(t *testing.T) {
+	rdb, _ := newAdminRedis(t)
+	ctx := context.Background()
+	previous := seedAccount(t, rdb, orphanAccount, 1, 2)
+	updated := seedAccount(t, rdb, orphanAccount, 2) // 第一次执行已经写成新字节
+	seedReverse(t, rdb, orphanAccount, 1)
+	lockKey := "account_lock:create:" + orphanAccount
+	if err := rdb.Set(ctx, lockKey, "this-run", time.Minute).Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := removeOrphansScript.Run(ctx, rdb,
+		[]string{constants.GetAccountDataKey(orphanAccount), lockKey, constants.PlayerToAccountKey(1)},
+		"this-run", orphanAccount, "1", previous, updated).Int()
+	if err != nil || got != 1 {
+		t.Fatalf("retried commit = (%d, %v), want (1, nil): already-committed bytes count as committed", got, err)
+	}
+	if ids := accountIDs(t, rdb, orphanAccount); len(ids) != 1 || ids[0] != 2 {
+		t.Fatalf("account players = %v, want [2]", ids)
+	}
+	if reverseOf(t, rdb, 1) != "" {
+		t.Fatal("reverse index must be dropped on the retried commit")
+	}
+}
+
+// 外层计数:能处理的账号计入 RemovedCount,账号忙的计入 FailedCount(什么都不改),没有反向索引的计入 NotFoundCount。
+func TestRemovePlayersFromAccounts_CountsPerOutcome(t *testing.T) {
+	rdb, svcCtx := newAdminRedis(t)
+	seedAccount(t, rdb, "acct-free", 1, 2)
+	seedReverse(t, rdb, "acct-free", 1)
+	seedAccount(t, rdb, "acct-busy", 5)
+	seedReverse(t, rdb, "acct-busy", 5)
+	if err := rdb.Set(context.Background(), "account_lock:create:acct-busy", "create-in-progress", time.Minute).Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := RemovePlayersFromAccounts(context.Background(), svcCtx, &RemovePlayersFromAccountsReq{PlayerIDs: []uint64{1, 5, 9}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.RemovedCount != 1 || resp.FailedCount != 1 || resp.NotFoundCount != 1 {
+		t.Fatalf("counts = removed %d failed %d not_found %d, want 1 / 1 / 1",
+			resp.RemovedCount, resp.FailedCount, resp.NotFoundCount)
+	}
+	if ids := accountIDs(t, rdb, "acct-busy"); len(ids) != 1 || ids[0] != 5 || reverseOf(t, rdb, 5) != "acct-busy" {
+		t.Fatal("the busy account must be left untouched")
 	}
 }

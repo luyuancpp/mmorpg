@@ -212,3 +212,51 @@ func TestReconcileFromCache_RealDBEndToEnd(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, store.RouteRegisterInserted, res.Outcome, "解冻之后 W1 恢复")
 }
+
+// TestUnfreeze_RealDBRaisesWatermarkToKey(2026-10-19 第 1b-2 批收尾):真库 + miniredis —— 水位键 {库世代, X} 在、没有可信标记
+// (显式确认)时,解冻把 route_reconcile.watermark_ms 抬到 ≥ X(R21 的 GREATEST),解冻之后水位键仍是 {库世代, X}:
+// 不高于库水位,对账 leader 下一拍不会按「水位键 > 库水位」再冻结(规格 §2 M3、§13.1 第 4 条)。
+func TestUnfreeze_RealDBRaisesWatermarkToKey(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	st, err := store.NewRouteStore(db.Cfg, store.RouteStoreOptions{
+		FenceShards: placement.DefaultRouteFenceShards,
+		Writer:      store.NewRouteWriterID("route_tool_it", "localhost"),
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = st.Close() })
+	ctx := context.Background()
+
+	meta, err := st.ReadRouteMeta(ctx)
+	require.NoError(t, err)
+	const keyWm = uint64(1_900_000_000_000)
+	key, err := placement.EncodeRouteWatermark(placement.RouteWatermark{Generation: meta.Generation, WatermarkMs: keyWm})
+	require.NoError(t, err)
+	mr := miniredis.RunT(t)
+	rd := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"})
+	require.NoError(t, mr.Set(placement.RouteWatermarkKey, key))
+
+	freezeCtx, cancel := context.WithTimeout(ctx, store.RouteFreezeTimeoutMin)
+	defer cancel()
+	_, err = st.FreezeRouteWriters(freezeCtx)
+	require.NoError(t, err)
+
+	var out, errOut bytes.Buffer
+	rep, err := Unfreeze(ctx, rd, st, UnfreezeOptions{
+		CacheUnverifiedAcknowledged: true,
+		Timeout:                     store.RouteFreezeTimeoutMin,
+		Identity:                    func(context.Context) (RedisIdentity, error) { return RedisIdentity{}, nil },
+		Stdout:                      &out,
+		Stderr:                      &errOut,
+	})
+	require.Equal(t, ExitClean, UnfreezeExitCode(rep, err), errOut.String())
+	assert.True(t, rep.Changed)
+	assert.Equal(t, keyWm, rep.MinWatermarkMs)
+	assert.Equal(t, WatermarkKeyKept, rep.WatermarkKey)
+
+	var wm uint64
+	require.NoError(t, db.Raw.QueryRow("SELECT watermark_ms FROM route_reconcile WHERE id = 1").Scan(&wm))
+	assert.GreaterOrEqual(t, wm, keyWm, "解冻先把库水位抬到水位键")
+	got, err := mr.Get(placement.RouteWatermarkKey)
+	require.NoError(t, err)
+	assert.Equal(t, key, got)
+}

@@ -158,3 +158,20 @@ func TestPickTwoChoices_SpreadsOnStaleSnapshot(t *testing.T) {
 		t.Fatalf("picks reached %d of %d gates, want all of them: %v", len(counts), len(cands), counts)
 	}
 }
+
+// PickGate 真的接了随机源:三台里两台非最忙的都会被选到。若误接成常量源(如 func(int) int { return 0 }),
+// 每次都是 i=0、j 顺延到 1,固定选同一台。真随机下 200 次一次都抽不到另一台的概率是 (2/3)^200 ≈ 1e-35,实际上是确定的。
+func TestPickGate_UsesARandomSource(t *testing.T) {
+	cands := []GateCandidate{{NodeID: 1, PlayerCount: 30}, {NodeID: 2, PlayerCount: 10}, {NodeID: 3, PlayerCount: 20}}
+	seen := make(map[uint32]int)
+	for range 200 {
+		got, err := PickGate(cands)
+		if err != nil {
+			t.Fatal(err)
+		}
+		seen[got.NodeID]++
+	}
+	if len(seen) != 2 || seen[2] == 0 || seen[3] == 0 {
+		t.Fatalf("picks = %v, want both non-busiest gates 2 and 3 and never the busiest 1", seen)
+	}
+}

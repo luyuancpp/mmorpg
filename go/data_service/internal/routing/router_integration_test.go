@@ -137,6 +137,7 @@ func TestMappingRedisEffectiveDBIsZero(t *testing.T) {
 	// 故意像旧 yaml 那样"想要"另一个库:RedisConf 根本没有承载它的字段。
 	r := NewRouter(config.Config{
 		MappingRedis:     redis.RedisConf{Host: host, Type: "node"},
+		Regions:          []config.RegionConfig{{Id: 1, Zones: []uint32{1}, Redis: config.RedisClusterConfig{Addrs: []string{host}}}},
 		PlayerLockTTLSec: 3,
 	})
 	defer r.Close()

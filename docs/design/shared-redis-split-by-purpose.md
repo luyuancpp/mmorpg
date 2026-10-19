@@ -64,7 +64,7 @@
 | `queue:zone:{z}` ZSET、`queue:meta:{qid}` HASH、`queue:token:{token}` | login Enqueue | login Lookup(每次轮询 ≥4–5 条命令) | 排队开启时最高频 | `QueueEntryTTL` 1h | Enqueue 用 MULTI 写三键 | `go/login/internal/logic/pkg/loginqueue/queue.go:138-142`、`:170-183`、`:226-284` |
 | `admit:{qid}`、`admitted:zset:zone:{z}` ZSET(成员逐个到期;2026-10-13 G4b-G 起,此前是 `admitted:zone:{z}` SET) | login 放行循环、快速通道 | login | 中 | `admit:{qid}` 为 `AdmitTTL` 60s;占位成员按分数到期,整键 TTL `AdmitTTL + 1min` 只做垃圾回收 | 放行 MULTI(`:465-469`);计数与快速通道是单键 Lua(`:495-498`、`:521-527`);取走后续期是单键 MULTI(`:387-389`) | 同上 |
 | `dispatcher:lock:login_queue` | login 选主 | login | 1/s | 30s | 单键 | `go/login/internal/config/config.go:244-258`;`go/login/etc/login.yaml:436`。键是全局的,L-01 缺陷相关 |
-| `gate:{id}:draining` / `gate:{id}:drained` | `k8s_gate_drain.ps1` 的多键 Lua;login 排空循环 | login AssignGate 一次 MGET(失败时放行) | 低 | 有 | MarkScript 同时碰本台的 draining、drained 和同 zone 其它候选的 draining | `tools/scripts/k8s_gate_drain.ps1:150-158`;`loginqueue/gatedrain.go:30`、`:47-81`;`gatedrain_monitor.go:37`、`:129-181` |
+| `gate:{id}:draining` / `gate:{id}:drained` | `k8s_gate_drain.ps1` 的多键 Lua;login 排空循环 | login AssignGate 一次 MGET(失败时放行);scene_manager 跨 zone 重定向 `drainingGateIDs` 一次 MGET(2026-10-18 起,失败时放行,经 scene_manager 自己的 Redis 连接读,只能读 DB 0) | 低 | 有 | MarkScript 同时碰本台的 draining、drained 和同 zone 其它候选的 draining | `tools/scripts/k8s_gate_drain.ps1:150-158`;`loginqueue/gatedrain.go:30`、`:47-81`;`gatedrain_monitor.go:37`、`:129-181` |
 
 > **(2026-10-18 更正,上表「A. 排队与准入」前两行;原文保留;未编译、未测试)** 登录排队改造后(详见 `login-queue-2026-05.md` §5 决策树后的 2026-10-18 更正):排队中的每次轮询 = GET token 索引 + GETDEL 放行槽 + 一次读状态脚本(EVALSHA,内含 HMGET / ZRANK / ZCARD,剩余 TTL 不足 `QueueEntryTTL` 时才续期),共 3 次往返;放行 = 每拍一次 ZRANGE + 每放行一人一次 EVALSHA(不再 ZPOPMIN);`queue:zone:{z}`、`queue:meta:{qid}`、`queue:token:{token}` 改为空闲 TTL,至多约 1.25×`QueueEntryTTL`。脚本里只访问同一实例的键,redis-queue 仍可单独拆出。
 
@@ -299,10 +299,10 @@ merge_zone 合服与撤销时会按玩家删缓存（`playerCacheKeys`）；清�
   - **排队打开时**:`FreeSlots` 读 SCARD、快速通道占位、入队都在 `redis-queue` 上,任何一步出错都返回 `StatusError`;占位失败按设计不放行快速通道(fail-closed,`assigngatelogic.go:98-135`)。结果是**新登录全部失败**,直到实例恢复;
   - **已在游戏里的玩家、断线重连的会话判定(读核心)和存盘都不受影响。** 拆分换来的是「排队实例挂了只停新登录」,不是「排队实例挂了还能登录」。
 - **约束**:
-  1. 同一个 zone 的 login 与 `k8s_gate_drain.ps1` 必须看同一个实例:MarkScript 会同时检查本台和同 zone 其它台的 draining(`k8s_gate_drain.ps1:150-158`)。
+  1. 同一个 zone 的 login 与 `k8s_gate_drain.ps1` 必须看同一个实例:MarkScript 会同时检查本台和同 zone 其它台的 draining(`k8s_gate_drain.ps1:150-158`)。(2026-10-18 补:scene_manager 跨 zone 重定向也读这组标记,`go/scene_manager/internal/logic/gate_redirect.go` 的 `drainingGateIDs`;它的读要与 login 同批指向排队实例,部署闸校验 queue 地址时也要把 scene_manager 算进去,否则拆分后它静默读不到标记、退回不过滤。)
   2. **切换期间所有 zone 的排队必须关着**。zone-up 是逐 zone 执行的,做不到「同一拍」;放行循环的锁是全局键(`config.go:253`),排队开着时,切换窗口里两个实例上会各有一个 leader、各有一套队列,准入翻倍。所以部署闸要读线上 login ConfigMap 的 `Queue.Enabled`,为 true 就拒绝切换(§4.4)。
      - **(2026-10-15 更正,上句原文保留)**「放行循环的锁是全局键(`config.go:253`)」已过时:G1b(2026-10-12)起每个 zone 一把锁,锁键 `<Queue.DispatcherLockKey>:zone:<Node.ZoneId>`(`loginqueue/dispatcher.go:137-142`;`config.go:265-271`、`:282`),不同 zone 不再抢同一把。结论与部署闸不变,只是理由换了:同一 zone 的 login 滚动重启时新旧副本并存、各连一个实例(§5.3),两边各在自己的实例上抢 `…:zone:{z}`,这个 zone 就有两个 leader、两套队列、两份在途占位,准入最多翻倍。
-  3. 从第一个 zone 的 login 开始滚动,到最后一个 zone 滚完为止,不许执行 `k8s_gate_drain.ps1`,也不许滚动 gate:脚本按新 ConfigMap 往 `redis-queue` 写 draining,还没滚到的旧 login 读核心,看不到标记,会继续往正在排空的 gate 分人。
+  3. 从第一个 zone 的 login 开始滚动,到最后一个 zone 滚完为止,不许执行 `k8s_gate_drain.ps1`,也不许滚动 gate:脚本按新 ConfigMap 往 `redis-queue` 写 draining,还没滚到的旧 login 读核心,看不到标记,会继续往正在排空的 gate 分人。(2026-10-18 补:scene_manager 同理,要与 login 同批切换。)
 - **与 L-01 / L-02 的关系**:
   - L-01(排队 leader 锁)的修复与本拆分无关。
   - **拆分应排在 L-02(打开排队与限流)之前**。今天排队和限流都关着(`login.yaml:429`;`application.yaml:38`),切换时没有在途数据要搬。

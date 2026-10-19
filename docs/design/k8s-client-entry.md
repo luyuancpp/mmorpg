@@ -253,7 +253,7 @@
 | `CLIENT_ENDPOINT_REQUIRED` | `0` \| `1`;缺省 0,其他值致命;none + 1 是矛盾配置,致命 | C++ `client_endpoint.h:35`;external 形态的 gate / battle 模板写 1 |
 | `HOST_IP` | fieldRef `status.hostIP`,只参与 `CLIENT_ENDPOINT_HOST` 的计算 | gate StatefulSet、battle hostPort Deployment 模板 |
 | `POD_NAME` | fieldRef `metadata.name`,gate 由它的后缀算序号 | gate StatefulSet 模板与启动 shell |
-| `gate:<id>:draining` | 值 = 标记时刻的整数 Unix 秒(取 Redis `TIME`),带 EX TTL | 由排空脚本写;login `loginqueue` 的 `GateDrainingKeyFmt` 读 |
+| `gate:<id>:draining` | 值 = 标记时刻的整数 Unix 秒(取 Redis `TIME`),带 EX TTL | 由排空脚本写;login `loginqueue` 的 `GateDrainingKeyFmt` 读;scene_manager `gate_redirect.go` 的 `gateDrainingKeyFmt` 也读(2026-10-18 起,契约测试钉住三处一致) |
 | `gate:<id>:drained` | 值 = `below_threshold` \| `deadline`;TTL 跟随 draining 的剩余 TTL | 由 login `gatedrain_monitor.go` 写;排空脚本读 |
 | `GateDrain.Interval` / `DrainedBelowPlayers` / `Deadline` | login 排空判定参数,默认 5s / 0 / 25m | `go/login/internal/config/config.go:132-145`;排空脚本从 login ConfigMap 读取并校验 TTL |
 | `RequireClientEndpoint` | login / scene_manager 配置的顶层布尔键,默认 false;ConfigMap 里只能是字面量 true / false | `go/login/internal/config/config.go:115`、scene_manager config;`k8s_deploy.ps1 -RequireClientEndpoint`;排空脚本也读它 |
@@ -739,7 +739,7 @@ Agones 段 7000–7009 → 7100–7109;前置条件新增端口预检、「先�
   - admin 口令的 Spring 绑定没有运行期证据;口令指纹注解暴露 48 位截断哈希,读得到 Deployment 的人可以离线校验弱口令(非 dev 档要求 ≥32 位)。
 - **gate**:
   - gate 崩溃前已签发的票据会失效,客户端需要重新登录。
-  - scene_manager 的 RedirectToGate 不过滤正在排空的 gate(既有缺口)。
+  - scene_manager 的 RedirectToGate 不过滤正在排空的 gate(既有缺口)。(2026-10-18 已修:`gate_redirect.go` 的 `drainingGateIDs` / `filterDrainingTargets`,先去重后过滤、全部排空时忽略标记、读失败放行;已落码,未编译、未测试。)
   - 两台活 gate 报了同一地址时,只有较新的那台会被下发,另一台静默不接新玩家,只能从 `deduped` 持续增长看出来。
   - 去重键里的 DNS 名区分大小写。
 - **模式与地址不粘滞**:漏传参数时,集群现状预检能在写操作之前拦下,前提是集群读得到。

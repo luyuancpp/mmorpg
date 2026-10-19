@@ -376,7 +376,7 @@ func Audit(ctx context.Context, rd mappingReader, db routeDB, opts AuditOptions)
 	a.report.FrozenRecovery = opts.FrozenRecovery
 	a.report.RequireMapRev = opts.RequireMapRev
 
-	steps :=[]func(context.Context) error{a.checkFences, a.auditDBRows, a.auditRedisKeys, a.auditMergedInto, a.settle}
+	steps := []func(context.Context) error{a.checkFences, a.auditDBRows, a.auditRedisKeys, a.auditMergedInto, a.settle}
 	for _, step := range steps {
 		if err := step(ctx); err != nil {
 			a.detail.finish()

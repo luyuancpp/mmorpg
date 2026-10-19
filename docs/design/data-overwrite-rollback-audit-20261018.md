@@ -62,6 +62,17 @@
 
 **修复（2026-10-18，代码与测试已落工作区，未编译、未测试，待 Codex 验证）：** 方案与不变量见 [location-release-binding.md](location-release-binding.md)。scene_manager 的 LeaveScene 只在拿到当前代 handoff 标记 / 持有节点已死 / 没有持有者时才删 location，否则保留并经 `ReleasePlayer.session_ended` 请持有节点释放（等满 600s 上限才按旧行为删并计 `forced`）；gate 收到 LeaveGame 时代发 ExitGame 并清空会话路由状态，`ApplyRoute` 加同节点新 epoch 规则；新增 scene `stale_owner_rejected_exiting` 与 `scene_manager_leave_holder_release_total`。
 
+**修复后续（2026-10-18 ~ 10-19，均已落工作区，未编译、未测试、未提交，待 Codex 验证）：**
+- **登录撞上未释放的持有者**（设计 §12，收口 §6 残余 5）：gate 崩溃后玩家立刻从别的 gate 重登、被派到别的节点时，换手门回 18 之前由 scene_manager **同步**请 location 的持有节点按会话结束释放，不再等旧会话的断线租约到期才有人请它。指标 `scene_manager_enter_holder_release_total{verdict}`。
+- **迟到的会话结束释放误退新会话**（设计 §13，收口 §12.5 残余 1）：
+  - 问题：同物理节点重登不铸造 owner_epoch，同一代下实体会被新登录复用。`session_ended` 释放迟到执行时（登录撞门的同步请求超时之后 / LeaveScene 的后台派发晚于新登录），只比 owner_epoch 会把已绑上新会话的实体按断线踢下线。先存盘、不回档，但在线玩家被踢。
+  - 修复：`ReleasePlayerRequest` 追加 `covered_session_id = 6` / `covered_login_generation = 7`（这次释放覆盖到的最新登录身份）。scene 在归属代际判释放之后，再比实体的 `PlayerLoginIdentityComp`：实体代次更大，或同代而会话不同，即不退出（先比代次、后比会话号，与 `decideLeaveIdentity` 同口径）。代次 0 = 旧版调用方，按原行为。
+  - 填法：LeaveScene 填离场请求的身份；登录撞门填**本次登录自己的身份**。只填 location 的旧身份，会让经 gate 补发绑上更新会话的持有者永不释放、等满 600s 才 `forced`，见设计 §13.2。
+  - 指标：scene `[ReleaseFence]` 行新增 `binding_*` 计数，`binding_skip_newer_login` / `binding_skip_conflict` 增长时升 WARN。
+  - 复核：四个视角只读评审 + 逐条对抗核实，未发现生产代码问题；确认两处测试缺口并已补用例。
+  - Java 版：只读核实，每次登录都自增 owner_epoch、让出请求按 epoch 严格相等，迟到请求碰不到新实例。已有等价行为，不改（设计 §13.10）。
+- **仍开着的残余**：释放先于新登录的进场到达持有节点时照常退出（新进场取消退出或重载，不回档）；混版窗口退回旧行为；其余见设计 §6、§12.5、§13.5。
+
 ### 2.2 go/db 存盘协议世代不一致（默认配置）
 
 | 编号 | 问题 | 位置 | 复核 | 已知 |
@@ -79,6 +90,7 @@
 - go/db 缺省改为 `dual`。
 - legacy 由世代标记与补投桶机器判定，有严格世代证据时拒启；运行中发现即停机。
 - 补投改为首见宽限、指数退避、次数上限转告警、终态停止，并在在途重试、主库冷却、legacy 存活时跳过。
+- 负责人 2026-10-18 确认尚未上线：混跑、降级、旧二进制排除和回档 `-Apply` 暂不可用这几条残余在上线前不是阻塞项。首次上线直接以 dual 加严格屏障整批起步，见设计文档该附注末段「上线状态」。
 
 ### 2.3 跨账号登录态继承（默认可达，安全 + 数据）
 

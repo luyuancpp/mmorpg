@@ -248,7 +248,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		name := resolveEnterName(ctx, "", l.svcCtx.PlayerNames, in.PlayerId)
 		flowState.playerName = name
 		// 写回在账号锁内重读后整字节 CAS,不再拿上面锁外读到的 userAccount 整块覆盖(会抹掉并发建出的角色),
-		// 见 healAccountRole。写回没成也照常受理(归属已由反向索引证明);但存档已有外观的角色,
+		// 见 healAccountRole。写回没成也照常受理(归属以上面读反向索引那一刻为准,与「账号记录命中」分支一样不在提交点复核入场);但存档已有外观的角色,
 		// 异步链的外观修复会因账号缺这条记录而失败,本次入场以 kEnterSceneFailed 收口,下次入场再自愈。
 		if existing := l.healAccountRole(ctx, flowState, name); existing != nil {
 			// 别的链已经补回了这条记录:职业、外观与名字以它为准,与上面「账号记录命中」分支同源。

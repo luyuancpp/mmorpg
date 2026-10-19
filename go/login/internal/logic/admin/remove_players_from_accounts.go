@@ -42,6 +42,9 @@ type RemovePlayersFromAccountsResp struct {
 //
 // Intended for post-rollback orphan cleanup.
 //
+// 当前没有生产入口:gRPC LoginAdmin.RemovePlayersFromAccounts 明确返回 Unimplemented
+// (loginadmin/removeplayersfromaccountslogic.go),接线另开任务。
+//
 // 2026-10-18 起每个账号在建角同一把账号锁 account_lock:create:{account} 内处理:锁内重读账号目录、摘掉孤儿,
 // 再用一段 Lua 原子地「复核账号锁 → 整字节 CAS 写回账号目录 → 删这些孤儿仍指向本账号的反向索引」
 // (removeOrphansScript)。此前是无锁 GET 后整块 SET、之后再逐个 DEL 反向索引:会抹掉同账号并发建出的角色;
@@ -89,7 +92,8 @@ func RemovePlayersFromAccounts(ctx context.Context, svcCtx *svc.ServiceContext, 
 
 // removePlayersFromAccount 在账号锁内摘掉一个账号里的孤儿角色,并在同一次提交里删掉它们的反向索引。
 // 返回实际从账号目录里摘掉的角色数。账号目录不存在或里面没有这些角色时只删反向索引(与改动前一致)。
-// 返回 error 时账号目录与反向索引都没动。
+// 拿锁失败、脚本返回 -1 / -2 时账号目录与反向索引都没动;脚本调用本身报错(重发用尽仍超时)时结果未知,
+// 按失败计,重跑是安全的(按 player_id 幂等:已摘掉的角色重跑时反向索引已不在,计入 NotFoundCount)。
 func removePlayersFromAccount(ctx context.Context, svcCtx *svc.ServiceContext, account string, playerIDs []uint64) (int, error) {
 	rdb := svcCtx.RedisClient
 	lockTTL := time.Duration(max(config.AppConfig.Locker.AccountLockTTL, 1)) * time.Second
@@ -193,12 +197,19 @@ func withoutPlayers(data []byte, account string, playerIDs []uint64) (updated []
 // removeOrphansScript 是摘孤儿的提交点,原子地:复核账号锁仍归本次;需要写回时(ARGV[3]="1")按整字节 CAS 写账号目录
 // (不带 TTL,账号目录是永久键);再删 KEYS[3..] 里仍指向本账号的反向索引(指向别的账号的不动)。
 // KEYS = {账号目录键, 账号锁键, 反向索引键...};ARGV = {账号锁令牌, 账号名, 是否写回, 旧字节, 新字节}。
-// 返回删掉的反向索引数(>=0);-1 = 账号锁已不归本次;-2 = 账号目录自重读以来变了。负数时什么也不动。
+// 返回删掉的反向索引数(>=0);-1 = 账号锁已不归本次;-2 = 账号目录自重读以来被别人改了。单次执行返回负数时什么也不动。
+//
+// 可重发:go-redis 读超时会原样重发 EVALSHA(login 主客户端 MaxRetries 缺省 3)。第一次已提交、回包丢了时,
+// 重发看到的账号目录已经是本次的新字节;账号锁仍归本次,别的写者不可能写出同样的字节,所以「等于新字节」按已提交处理、
+// 照常删反向索引,不误报 -2。
 var removeOrphansScript = redis.NewScript(`
 if redis.call("GET", KEYS[2]) ~= ARGV[1] then return -1 end
 if ARGV[3] == "1" then
-  if redis.call("GET", KEYS[1]) ~= ARGV[4] then return -2 end
-  redis.call("SET", KEYS[1], ARGV[5])
+  local cur = redis.call("GET", KEYS[1])
+  if cur ~= ARGV[5] then
+    if cur ~= ARGV[4] then return -2 end
+    redis.call("SET", KEYS[1], ARGV[5])
+  end
 end
 local deleted = 0
 for i = 3, #KEYS do

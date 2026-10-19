@@ -204,24 +204,32 @@ func TestPublishRouteScript_EmptyArgDeletes(t *testing.T) {
 
 // TestPublishRouteScript_RejectsBadRevAndMalformedMapRev:坏 rev 参数与畸形 maprev 都是错误回复,三把键零变更。
 func TestPublishRouteScript_RejectsBadRevAndMalformedMapRev(t *testing.T) {
-	r, mr := newDBFirstRouter(t, nil, nil)
-	ctx := context.Background()
-	before := [3]string{"5", "7:1", "3"}
-	presetRouteKeys(t, mr, 9006, before)
-	keys := placement.PublishRouteKeys(9006, 0)
-
+	// 每个拒绝场景用独立客户端:连续的预期 Lua 错误会触发 go-zero 的概率熔断,
+	// 后续调用可能根本没执行脚本,无法验证对应的错误与零写入契约。
+	// 由父测试持有清理,让各实例同时存活,避免端口复用命中按地址缓存的旧客户端。
 	for _, bad := range []string{"", "0", "01", "-1", "1a", " 1", "123456789012345678901"} {
-		_, err := r.mappingRedis.EvalCtx(ctx, placement.PublishRouteScript, keys, bad, "5", "7:1")
-		require.Error(t, err, "rev=%q", bad)
-		assert.Contains(t, err.Error(), "bad rev argument", "rev=%q", bad)
-		assert.Equal(t, before, routeKeysOf(t, mr, 9006), "rev=%q", bad)
+		r, mr := newDBFirstRouter(t, nil, nil)
+		t.Run(fmt.Sprintf("bad_rev_%q", bad), func(t *testing.T) {
+			before := [3]string{"5", "7:1", "3"}
+			presetRouteKeys(t, mr, 9006, before)
+			_, err := r.mappingRedis.EvalCtx(context.Background(), placement.PublishRouteScript,
+				placement.PublishRouteKeys(9006, 0), bad, "5", "7:1")
+			require.Error(t, err, "rev=%q", bad)
+			assert.Contains(t, err.Error(), "bad rev argument", "rev=%q", bad)
+			assert.Equal(t, before, routeKeysOf(t, mr, 9006), "rev=%q", bad)
+		})
 	}
 
-	require.NoError(t, mr.Set(placement.MapRevKey(9006), "abc"))
-	_, err := r.mappingRedis.EvalCtx(ctx, placement.PublishRouteScript, keys, "4", "5", "7:1")
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "malformed maprev")
-	assert.Equal(t, [3]string{"5", "7:1", "abc"}, routeKeysOf(t, mr, 9006))
+	r, mr := newDBFirstRouter(t, nil, nil)
+	t.Run("malformed_maprev", func(t *testing.T) {
+		before := [3]string{"5", "7:1", "abc"}
+		presetRouteKeys(t, mr, 9006, before)
+		_, err := r.mappingRedis.EvalCtx(context.Background(), placement.PublishRouteScript,
+			placement.PublishRouteKeys(9006, 0), "4", "5", "7:1")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "malformed maprev")
+		assert.Equal(t, before, routeKeysOf(t, mr, 9006))
+	})
 }
 
 // TestPublishRouteScript_LegacyValuesWithoutMapRev 是 B2:缓存没有 maprev 时,遗留的 zone / placement 与本次不同

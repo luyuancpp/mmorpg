@@ -200,6 +200,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer, d deps) i
 
 	// tidb-prepare 与 freeze 只碰全局库:在连 mapping Redis 之前分流(Redis 不可达不该挡住预切与冻结 —— 冻结是止血动作)。
 	// redis 模式的 unfreeze 同样只碰全局库:那时没有就绪标记可读(refuseByMode 已要求显式确认)。
+	// rewarm 先连 mapping Redis,只有 -wait > 0 才开全局库(-wait=0 用于回退 redis 模式,不该被全局库挡住)。
 	switch {
 	case a.sub == subTiDBPrepare:
 		return runTiDBPrepare(ctx, a, c, d, stdout, stderr)
@@ -207,6 +208,8 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer, d deps) i
 		return runFreeze(ctx, a, c, d, stdout, stderr)
 	case a.sub == subUnfreeze && !c.RouteStore.DBFirst():
 		return runUnfreezeRedisMode(ctx, a, c, d, stdout, stderr)
+	case a.sub == subRewarm:
+		return runRewarm(ctx, a, c, d, stdout, stderr)
 	}
 
 	rds, err := d.connectRedis(ctx, c.MappingRedis)
@@ -288,6 +291,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer, d deps) i
 		RecheckDelay:   a.recheckDelay,
 		MaxRecheck:     a.maxRecheck,
 		FrozenRecovery: a.frozenRecovery,
+		RequireMapRev:  a.requireMapRev,
 		Target:         target,
 		Stdout:         stdout,
 		Stderr:         stderr,
@@ -317,6 +321,26 @@ func refuseByMode(a cliArgs, c config.Config, stderr io.Writer) (int, bool) {
 		fmt.Fprintf(stderr, "route_tool %s: %s has RouteStore.Mode=%s — in redis mode the cache is the commit point and the DB is only "+
 			"the P1 snapshot, so there is nothing to repair the DB from and no frozen recovery; use import-from-redis (merge-zone-runbook §9.3)\n",
 			what, a.configPath, c.RouteStore.Mode)
+		return routetool.ExitFailed, true
+	}
+	// audit -require-maprev 是 P3「挂标记之前」的严格口径:redis 模式下没有任何写者写 player:maprev,每一行都会判落后,结论没有意义。
+	if a.sub == subAudit && a.requireMapRev && !c.RouteStore.DBFirst() {
+		fmt.Fprintf(stderr, "route_tool audit -require-maprev: %s has RouteStore.Mode=%s — in redis mode no writer maintains player:maprev, "+
+			"so every row would count as redis_rev_behind; the strict maprev audit is the proposal §7 P3 gate under db_first (merge-zone-runbook §9.3)\n",
+			a.configPath, c.RouteStore.Mode)
+		return routetool.ExitFailed, true
+	}
+	// rewarm -wait 等的是对账 leader 重挂标记,redis 模式没有 leader(routetool.Rewarm 再兜一次)。
+	if a.sub == subRewarm && a.wait > 0 && !c.RouteStore.DBFirst() {
+		fmt.Fprintf(stderr, "route_tool rewarm: %s has RouteStore.Mode=%s — no reconcile leader runs in redis mode, so nothing re-arms "+
+			"mapping:route:ready; rerun with -wait=0 to only drop the control keys (merge-zone-runbook §9.4)\n",
+			a.configPath, c.RouteStore.Mode)
+		return routetool.ExitFailed, true
+	}
+	// 三把控制键一条 DEL(多键命令)、身份按单实例定义:cluster 下 DEL 会 CROSSSLOT,控制键也从来不会写在 cluster 上。
+	if a.sub == subRewarm && c.MappingRedis.Type != "" && c.MappingRedis.Type != redis.NodeType {
+		fmt.Fprintf(stderr, "route_tool rewarm: MappingRedis.Type=%s; the mapping control keys live on a single instance (Type=node)\n",
+			c.MappingRedis.Type)
 		return routetool.ExitFailed, true
 	}
 	// redis 模式的 unfreeze 是撤销冻结的唯一工具路径(见包注释),但核对不了任何东西:yaml 若是旧的、服务其实已在 db_first,
@@ -412,7 +436,43 @@ func runUnfreezeRedisMode(ctx context.Context, a cliArgs, c config.Config, d dep
 	return routetool.UnfreezeExitCode(rep, err)
 }
 
-// parseArgs 解析 `-f <yaml> <子命令> [子命令参数]`。子命令只认六个,参数按子命令登记(别的子命令的参数一律
+// runRewarm 是 rewarm 的装配:连 mapping Redis;只有 -wait > 0 才开全局库(读 route_meta 与库时钟)。
+// 模式与 MappingRedis.Type 的门禁已由 refuseByMode 判过(-wait > 0 只许 db_first)。
+func runRewarm(ctx context.Context, a cliArgs, c config.Config, d deps, stdout, stderr io.Writer) int {
+	rds, err := d.connectRedis(ctx, c.MappingRedis)
+	if err != nil {
+		fmt.Fprintf(stderr, "route_tool: %v\n", err)
+		return routetool.ExitFailed
+	}
+	opts := routetool.RewarmOptions{
+		Wait:      a.wait,
+		Poll:      a.poll,
+		RedisMode: !c.RouteStore.DBFirst(),
+		Target:    fmt.Sprintf("route_tool %s: mapping_redis=%s", a.sub, c.MappingRedis.Host),
+		Stdout:    stdout,
+		Stderr:    stderr,
+	}
+	var rep routetool.RewarmReport
+	if a.wait == 0 {
+		rep, err = routetool.Rewarm(ctx, rds, nil, opts)
+	} else {
+		st, openErr := d.openRouteStore(c)
+		if openErr != nil {
+			fmt.Fprintf(stderr, "route_tool: cannot open the route tables on the global DB (%s): %v\n", store.OpenRouteStoreHint(a.configPath, openErr), openErr)
+			return routetool.ExitFailed
+		}
+		defer func() { _ = st.Close() }()
+		// 只打 host 与库名,不打 DSN / 口令。
+		opts.Target += fmt.Sprintf(" global_db=%s/%s", c.SnapshotMySQL.Host, c.SnapshotMySQL.DBName)
+		rep, err = routetool.Rewarm(ctx, rds, st, opts)
+	}
+	if err != nil {
+		fmt.Fprintf(stderr, "route_tool %s: %v\n", a.sub, err)
+	}
+	return routetool.RewarmExitCode(rep, err)
+}
+
+// parseArgs 解析 `-f <yaml> <子命令> [子命令参数]`。子命令只认七个,参数按子命令登记(别的子命令的参数一律
 // 「flag provided but not defined」);参数越界、多余参数一律报错(退出码 2)。
 func parseArgs(args []string, stderr io.Writer) (cliArgs, error) {
 	a := cliArgs{
@@ -424,6 +484,7 @@ func parseArgs(args []string, stderr io.Writer) (cliArgs, error) {
 		maxRecheck:    10000,
 		freezeGrace:   defaultFreezeGrace,
 		freezeTimeout: store.RouteFreezeTimeoutMin,
+		poll:          defaultRewarmPoll,
 	}
 
 	global := flag.NewFlagSet("route_tool", flag.ContinueOnError)
@@ -436,7 +497,7 @@ func parseArgs(args []string, stderr io.Writer) (cliArgs, error) {
 		return a, errors.New("missing -f <data_service.yaml>")
 	}
 	rest := global.Args()
-	allSubs := strings.Join([]string{subImport, subAudit, subTiDBPrepare, subFreeze, subReconcile, subUnfreeze}, " | ")
+	allSubs := strings.Join([]string{subImport, subAudit, subTiDBPrepare, subFreeze, subReconcile, subUnfreeze, subRewarm}, " | ")
 	if len(rest) == 0 {
 		return a, fmt.Errorf("missing subcommand (%s)", allSubs)
 	}
@@ -467,6 +528,8 @@ func parseArgs(args []string, stderr io.Writer) (cliArgs, error) {
 		sub.IntVar(&a.maxRecheck, "max-recheck", a.maxRecheck, "复核的玩家数上限;超过则不复核、全部计入")
 		sub.BoolVar(&a.frozenRecovery, "frozen-recovery", a.frozenRecovery,
 			"冻结期恢复口径:db_only_unpublished 不计入退出码,其余类别必须为 0(只在 db_first 且已冻结时可用;runbook §9.4)")
+		sub.BoolVar(&a.requireMapRev, "require-maprev", a.requireMapRev,
+			"严格 maprev 口径:缓存 maprev 缺席或小于库 rev 计 redis_rev_behind 并计入退出码(只在 db_first 下可用;提案 §7 P3 挂标记之前;runbook §9.3)")
 	case subTiDBPrepare:
 		sub.StringVar(&zonesRaw, "zones", "", fmt.Sprintf("要预切的 zone,逗号分隔(必填),每个在 [1, %d]", store.RouteHomeZoneMax))
 		sub.StringVar(&storagesRaw, "storages", "", "idx_route_storage 要预切的落点值,逗号分隔(可空;Phase 2 PinOnCreate 指向 1000000 时传 1000000)")
@@ -482,6 +545,10 @@ func parseArgs(args []string, stderr io.Writer) (cliArgs, error) {
 			"确认已在冻结状态下跑过 `audit -frozen-recovery` 且退出码为 0(必填)")
 		sub.BoolVar(&a.cacheUnverifiedAck, "cache-was-not-verified-acknowledged", a.cacheUnverifiedAck,
 			"没有可信的就绪标记时仍解冻:先按 merge-zone-runbook §9.2 重放清单,再显式加它;redis 模式下撤销 freeze 也必须加它(runbook §9.4)")
+	case subRewarm:
+		sub.DurationVar(&a.wait, "wait", a.wait,
+			"撤键之后等 leader 重挂就绪标记的时长;0 = 只撤不等(回退 redis 模式时用);> 0 只许 db_first,且必须小于 -timeout")
+		sub.DurationVar(&a.poll, "poll", a.poll, "-wait 期间轮询就绪标记的间隔(> 0)")
 	default:
 		return a, fmt.Errorf("unknown subcommand %q (want %s)", a.sub, allSubs)
 	}
@@ -532,6 +599,13 @@ func parseArgs(args []string, stderr io.Writer) (cliArgs, error) {
 		return a, fmt.Errorf("-freeze-grace=%s must not be negative", a.freezeGrace)
 	case a.freezeTimeout < store.RouteFreezeTimeoutMin:
 		return a, fmt.Errorf("-freeze-timeout=%s must be at least %s", a.freezeTimeout, store.RouteFreezeTimeoutMin)
+	case a.wait < 0:
+		return a, fmt.Errorf("-wait=%s must not be negative", a.wait)
+	case a.wait > 0 && a.poll <= 0:
+		return a, fmt.Errorf("-poll=%s must be positive when -wait is set", a.poll)
+	case a.wait > 0 && a.wait >= a.timeout:
+		// -timeout 先到就是退出码 2(整次运行超时),看不出是「没等到重挂」:要求 -wait 留出余量。
+		return a, fmt.Errorf("-wait=%s must be shorter than -timeout=%s (raise -timeout for a long prewarm)", a.wait, a.timeout)
 	}
 	return a, nil
 }

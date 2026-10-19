@@ -11,12 +11,12 @@
 # exec 只限 -dry-run 或小库(runbook §9.4)。这里的资源单独设,按行数调大。
 #
 # 调用:只经 tools/scripts/k8s_route_tool.ps1(渲染 → apply → 等完成 → 存 stdout / stderr 到报告目录 → 按容器退出码原样返回)。
-# 本文件里的占位由该脚本替换,漏替换即拒绝 apply;不要手工 kubectl apply 本文件。
-#   PLACEHOLDER_JOB_NAME                 data-service-route-tool-<运行号>(每次一个新名字,不删上一次的 Job,日志可回看)
-#   PLACEHOLDER_RUN_ID                   运行号(yyyyMMdd-HHmmss-<4 位十六进制>),与报告目录同名
-#   PLACEHOLDER_IMAGE / _PULL_POLICY     缺省取在役 deployment/data-service 的镜像与拉取策略(同一二进制、同一份配置)
-#   PLACEHOLDER_ACTIVE_DEADLINE_SECONDS  脚本的 -TimeoutSeconds:到点 K8s 杀掉 Pod、Job 判 Failed(DeadlineExceeded)
-#   PLACEHOLDER_ROUTE_TOOL_ARGS          ["-f", "/app/etc/data_service.yaml", "-route-tool", <子命令>, <参数>…](JSON 数组,逐项转义)
+# 本文件里的占位(PLACEHOLDER_ 前缀,下面列出时省略前缀,免得注释也被替换)由该脚本替换,漏替换即拒绝 apply;不要手工 kubectl apply 本文件。
+#   JOB_NAME                 data-service-route-tool-<运行号>(每次一个新名字,不删上一次的 Job,日志可回看)
+#   RUN_ID                   运行号(yyyyMMdd-HHmmss-<4 位十六进制>),与报告目录同名
+#   IMAGE / PULL_POLICY      缺省取在役 deployment/data-service 的镜像与拉取策略(同一二进制、同一份配置)
+#   ACTIVE_DEADLINE_SECONDS  脚本的 -TimeoutSeconds:到点 K8s 杀掉 Pod、Job 判 Failed(DeadlineExceeded)
+#   ROUTE_TOOL_ARGS          ["-f", "/app/etc/data_service.yaml", "-route-tool", <子命令>, <参数>…](JSON 数组,逐项转义)
 #
 # 不自动重试:backoffLimit 0、restartPolicy Never。子命令大多幂等,但 unfreeze / reconcile-from-cache 这类写操作重跑与否
 # 要由人看过上一次的输出再定;节点排空 / 抢占导致的驱逐同样直接判 Failed,由运维重跑。

@@ -3415,7 +3415,8 @@ function Get-RepoRedisPlanLedger {
     # Get-RedisConnectionLedgerInputs 及其依赖按动态作用域读这个变量(在 k8s_deploy.ps1 里它是脚本级变量)。
     $RepoRoot = Get-RepoRoot
     $plan = Get-RedisConnectionPlan
-    return Get-RedisConnectionLedger -Inputs (Get-RedisConnectionLedgerInputs) -ZoneCount $plan.ZoneCount `
+    # 规划档按 RouteStore.Mode=db_first 记 D1 对账 leader 的独立池(Get-RedisConnectionPlan 的 RouteStoreDbFirst,与 MySQL 规划档同源)。
+    return Get-RedisConnectionLedger -Inputs (Get-RedisConnectionLedgerInputs -RouteStoreDbFirst ([bool]$plan.RouteStoreDbFirst)) -ZoneCount $plan.ZoneCount `
         -CppZoneProcesses ($plan.ZoneCount * ($plan.GatePerZone + $plan.ScenePerZone)) -BattleProcesses $plan.BattleProcesses `
         -RolloutExtraPodsPerDeployment $plan.RolloutExtraPodsPerDeployment -OpsReserve $plan.OpsReserve -WarnRatio $plan.WarnRatio
 }

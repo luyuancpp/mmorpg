@@ -788,7 +788,7 @@ friend 与 trade 同形:全局池服务(`$GoSvcCatalogue.friend`,`Global = $true
   `guild_schema_migration` 表保留,guild 的积分迁移门禁还在用。
 - **Redis**:`FriendRedis`(好友列表缓存 / 申请配额 / 限流)在 K8s 上**不配**,回落共享库。
   缓存键已带 hash tag、Cluster 安全;但 staging/prod 若要给它配独立实例,该实例必须 `maxmemory-policy=noeviction` ——
-  共享库是 `allkeys-lfu`,缓存被淘汰只是多打一次 MySQL,**配额 / 限流 key 被淘汰等于限流静默失效**。
+  共享库是 `allkeys-lfu`(2026-10-18 更正:compose 与 K8s 现均为 `noeviction`,不再淘汰;写满时拒写),缓存被淘汰只是多打一次 MySQL,**配额 / 限流 key 被淘汰等于限流静默失效**。
   跨运行时契约 key `player:session:{id}`(判好友在不在线)永远走共享库,共享库不许集群化(C++ 侧 hiredis 没有集群客户端)。
 - **备份与恢复**:开发 MySQL 上的 `mmorpg_friend` 由既有 `mysql-backup-cronjob.yaml` 的 mysqldump 覆盖；迁到独立 TiDB 后该 Job 不会覆盖新入口，须另按 TiDB BR/PITR 方案纳入备份与演练，不能沿用“备份侧不用改”的旧结论。恢复清单必须包含好友库及全局 `friend_request` 号段水位；跨库号段不会自动从消费表推高，水位绝不能回退到已发 ID。禁止单独回档号段导致旧请求 ID 被复用，并核对玩家引用的孤儿边。生产备份/恢复尚未在本批部署或演练。
 - **连接数**:开发共库时 `MySQL.MaxOpenConn`(20)× 2 个副本仍计既有 MySQL 总账，迁移 Job 算运维余量；独立 TiDB 时另核连接与故障预算，现有 MySQL 总账保守保留该份额，不能据此认定 TiDB 容量已验收。

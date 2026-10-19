@@ -64,6 +64,13 @@ struct SessionInfo
 	// scene_route_helper.h ApplyRoute 第 4 条据此判断"同场景同节点、但归属换了代"的路由要不要再转发一次
 	// (docs/design/location-release-binding.md §3.5,审计 load-handover#0)。只由 ApplyRoute 在转发成功后写,ResetSceneRoute 清零。
 	uint64_t forwardedOwnerEpoch{0};
+	// 客户端 LeaveGame 之后、下一次登录真正把进场交给 scene 之前为 true(location-release-binding.md §3.5 R5)。
+	// 期间到达的、属于 LeaveGame 之前那条登录链的路由(登录代次为 0 或不大于 loginGenerationAtReset)一律丢弃,不进会话:
+	// 不丢的话它会重新填上 lastSceneRoute,下一次 BindSession 就按这条旧路由、带着旧 epoch 补发。
+	// 写入只经 scene_route_helper.h:ResetSceneRoute 置位并记下代次;ApplyRoute 转发成功、ApplyLoginBinding 换角色或收到
+	// 不带代次的旧版 Bind 时清除。
+	bool sceneRouteResetPending{false};
+	uint64_t loginGenerationAtReset{0};
 
 	// 登录代次(docs/design/scene-enter-session-fence.md §4):本会话、本角色见过的最高代次。来源是
 	// BindSessionEvent 与 RoutePlayerEvent,同一角色取 max;同一条连接上换了角色时以新角色的值为准(上一个

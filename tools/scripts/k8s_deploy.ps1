@@ -232,6 +232,36 @@ param(
 	[ValidateSet("keep", "zone", "legacy")]
 	[string]$DbConsumerGroup = "keep",
 
+	# ── D1 玩家归属与落点映射持久化的部署载体(第 1b-3 批:docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §7、§13.4)──
+	# 五个开关缺省都是今天的值(redis / false):不带它们部署,产物里 RouteStore.Mode 仍是 redis,Arm 与三个读方开关仍是 false。写进哪里:
+	#   -RouteStoreMode / -RouteReconcileArm / -RouteReadRequiresReady → zone 的 go-svc-data-service-config
+	#       (RouteStore.Mode / RouteStore.Reconcile.ArmReadyMarker / RouteStore.ReadRequiresReady);
+	#   -DbPlacementRequireRouteReady → zone 的 go-svc-db-config(Placement.RequireRouteReady);
+	#   -GuildRequireRouteReady → infra namespace 的 go-svc-guild-config(MergeMarkerRedis.RequireRouteReady,只在部署全局 Go 服务时生效)。
+	# 只改 ConfigMap 不会滚动进程(同 db 的 RetryRouting):改值后 rollout restart 对应 Deployment,以启动日志核对。
+	# 切换顺序是规格 §8 的 P2(Mode=db_first)→ P3(全部 zone 同时 Arm=true)→ P5(读方逐个打开);回退反过来(§13.5 第 1 条):
+	# 先关全部读方开关 → Arm=false(确认 leader 计了 data_service_route_reconcile_event_total{event="marker_dropped_disarmed"})→
+	# Mode=redis → route-tool rewarm -wait=0(tools/scripts/k8s_route_tool.ps1)。告警见 deploy/k8s/data-service-route-alerts.yaml。
+	# 组合门禁(写路径入口,DryRun 同样判,Assert-RouteSwitchPreflight):Arm 或任一读方开关为 true 而 Mode=redis → 拒绝
+	# (data_service 的 Validate 会拒启,进集群就是 CrashLoop);任一读方开关为 true 而 Arm=false → 拒绝(没有就绪标记,
+	# 读方全部 fail-closed:go/db 停存盘消费、data_service 全部回源、guild 全拒)。
+	# **粘滞(防翻转)**:这几个值不能「每次部署按参数重写、漏传就落回缺省」—— 漏传一次就把 db_first 静默降回 redis,
+	# zone 回档的 Step 6 重建 namespace 时尤其如此。所以非 DryRun 时写路径入口在任何写操作之前读线上现状(Assert-RouteSwitchClusterState):
+	# data-service 读**全部** zone namespace(Mode / Arm / ReadRequiresReady 是全服单值:所有 zone 共用同一个全局库与 mapping Redis),
+	# db 读本次部署的 zone,guild 读 infra namespace;与本次参数不一致就整条拒绝,报错给出照传现状的参数串。
+	# 确要切换时加 -ConfirmRouteSwitchChange。包装入口(dev_tools.ps1 / k8s_image.ps1 / k8s_zone_rollback.ps1)尚未透传这几个参数
+	# (下一批统一加转发):集群已切 db_first 之后经包装入口部署会被粘滞核对拒绝,那时直接调本脚本并照传现状。
+	# ValidateSet 不分大小写,参数绑定后规范成小写(data_service 的 Mode 区分大小写,`DB_FIRST` 会被它拒启)。
+	[ValidateSet("redis", "db_first")]
+	[string]$RouteStoreMode = "redis",
+	[switch]$RouteReconcileArm,
+	[switch]$RouteReadRequiresReady,
+	[switch]$DbPlacementRequireRouteReady,
+	[switch]$GuildRequireRouteReady,
+	# 确认本次部署就是要改动线上的上述开关(见上一段「粘滞」)。不给时线上取值会被本次参数改掉就在任何写操作之前拒绝;给了只打警告放行。
+	# 它是许可不是指令:线上与本次一致时给了也不改任何东西。不粘滞,只在被指定时透传。
+	[switch]$ConfirmRouteSwitchChange,
+
 	# ── 集群外客户端入口(D76–D93;生成器、preflight 与就绪等待在 lib/k8s_client_entry.ps1)────────────
 	# 模式矩阵(D80):
 	#   podip    + deployment:gate / battle 都是现状 Deployment,客户端拿 PodIP,只给集群内 robot 与压测。
@@ -608,6 +638,8 @@ $DbConsumerGroup = ConvertTo-ClientEntryCanonicalName -Value $DbConsumerGroup -A
 if ($DbConsumerGroup -ne "keep" -and $Command -ne "zone-up") {
 	throw "-DbConsumerGroup $DbConsumerGroup 只允许与 -Command zone-up 一起用(逐 zone 切组 / 反向交接);$Command 请用默认的 keep。"
 }
+# D1 映射提交点模式写进 ConfigMap 的是 data_service 区分大小写的字面量(见参数 -RouteStoreMode)。
+$RouteStoreMode = ConvertTo-ClientEntryCanonicalName -Value $RouteStoreMode -Allowed @("redis", "db_first")
 
 <#
 .SYNOPSIS
@@ -1880,6 +1912,9 @@ function Get-RedisConnectionPlan {
 		GatePerZone                   = 2
 		ScenePerZone                  = 4
 		BattleProcesses               = 1
+		# 规划档按 RouteStore.Mode=db_first 计(与 MySQL 规划档同一来源,不写第二个 $true):D1 的对账 leader 只在 db_first 下装配,
+		# 它的独立 go-redis 池(Reconcile.RedisPoolSize)提前计入,切 db_first 时不用回来改账。本次部署那一份按 -RouteStoreMode 计。
+		RouteStoreDbFirst             = $mysqlPlan.RouteStoreDbFirst
 		# 探针(startup / readiness 每 5 秒一条 redis-cli 短连接)、运维 redis-cli(k8s_gate_drain.ps1 / k8s_zone_rollback.ps1)、
 		# merge_zone / route_tool / data_consistency_check 等一次性工具、kubectl exec 会话。估计值,待实测。
 		OpsReserve                    = 50
@@ -2000,11 +2035,20 @@ function Assert-DbOwnerEpochRedisDeployment {
 }
 
 function Get-RedisConnectionLedgerInputs {
+	# -RouteStoreDbFirst:按 RouteStore.Mode=db_first 记账(D1 第 1b-3 批)。缺省 $false = redis 模式,与以前的调用方逐字相同。
+	param([bool]$RouteStoreDbFirst = $false)
 	Assert-DbOwnerEpochRedisDeployment
 	$ledgerName = 'Redis 连接总账'
 	$goSvc = 'deploy/k8s/manifests/go-svc'
 	# 缺省大小的池(DefaultPools)按 GOMAXPROCS = 2 计(见上;待 S6 实测)。
 	$g = 2
+	# D1 对账 leader 的独立 go-redis 池(第 1b-2 批 data_service 对账 leader 的 mapping Redis 客户端,与 Router 的 go-zero 池隔离;
+	# PoolSize = RouteStore.Reconcile.RedisPoolSize,规格 spec_D1_batch1b_scout.md 1b-2 的 cache.go 一项):
+	# 只在 RouteStore.Mode=db_first(且 Reconcile.Enabled≠false)时装配。ConfigMap 不写 RedisPoolSize(Get-RouteStoreDeploySettings),
+	# 集群里生效的就是代码缺省 4,这里记同一个数;改 ConfigMap 写它时同改这里。全服同一时刻只有一个 leader 真正用它,但按每个
+	# data-service 副本记:go-redis 的池没有后台回收,当过 leader 的副本掉主后连接仍可能留到进程退出(偏保守,同其余各行的口径)。
+	$routeReconcileRedisPoolSize = 4
+	$dsRouteLeaderPool = if ($RouteStoreDbFirst) { $routeReconcileRedisPoolSize } else { 0 }
 	$clients = @(
 		# —— 每 zone ——
 		# login:go/login/internal/svc/servicecontext.go NewServiceContext 的 redis.NewClient(登录排队 loginqueue 复用它),
@@ -2015,8 +2059,9 @@ function Get-RedisConnectionLedgerInputs {
 		[ordered]@{ Name = 'db'; Scope = 'zone'; Manifest = "$goSvc/db.yaml"; PoolMirror = 'db'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 2 }  # Fixed 2:go/db/internal/kafka/durable_enqueue.go 的 WAITAOF 专用客户端(durableClientPoolSize = 2,组提交的粘连连接与启动探针都从它取,不占 PoolSize 主池;db.yaml 的 WaitAOFNumLocal / WaitAOFNumReplicas 都写 0 时不建)。按开启计,偏保守,口径同 trade 行。
 		# data-service:go/data_service/internal/routing/router.go 的 DevRedis(go-redis,DevRedis.PoolSize)与 MappingRedis(go-zero,没有池参数,
 		# 缺省池)两个池,K8s 的 ConfigMap 两段都指向共享 Redis;配了 DevRedis 时 Regions 的集群客户端不建;route_publish.go 的 WAITAOF 探针
-		# (只在 RouteStore.Mode=db_first 时建,K8s 固定 redis)也是 go-zero 客户端,go-zero 按地址复用 MappingRedis 的池,不另开池。
-		[ordered]@{ Name = 'data-service'; Scope = 'zone'; Manifest = "$goSvc/data-service.yaml"; PoolMirror = 'data-service'; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = 0 }
+		# (只在 RouteStore.Mode=db_first 时建)也是 go-zero 客户端,go-zero 按地址复用 MappingRedis 的池,不另开池。
+		# Fixed:db_first 时加对账 leader 的独立 go-redis 池(见上面 $dsRouteLeaderPool;redis 模式不装配,0)。
+		[ordered]@{ Name = 'data-service'; Scope = 'zone'; Manifest = "$goSvc/data-service.yaml"; PoolMirror = 'data-service'; DefaultPools = 1; GoMaxProcs = $g; PubSub = 0; Fixed = $dsRouteLeaderPool }
 		# player-locator:go/player_locator/internal/svc/servicecontext.go 的 redis.NewClient(RedisClient.PoolSize)。
 		[ordered]@{ Name = 'player-locator'; Scope = 'zone'; Manifest = "$goSvc/player-locator.yaml"; PoolMirror = 'player-locator'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 0; Fixed = 0 }
 		# scene-manager:go/scene_manager/internal/svc/servicecontext.go 的 redis.MustNewRedis(go-zero,缺省池)。
@@ -2197,7 +2242,9 @@ function Get-RedisZoneCppProcesses {
 #>
 function Write-RedisConnectionLedger {
 	$ledgerPlan = Get-RedisConnectionPlan
-	$ledgerInputs = Get-RedisConnectionLedgerInputs
+	# 本次部署那一份按 -RouteStoreMode 记 D1 对账 leader 的独立池(只有 db_first 才装配),规划档按 Get-RedisConnectionPlan 的 RouteStoreDbFirst 提前计入。
+	$ledgerInputs = Get-RedisConnectionLedgerInputs -RouteStoreDbFirst ($RouteStoreMode -ceq 'db_first')
+	$planLedgerInputs = Get-RedisConnectionLedgerInputs -RouteStoreDbFirst ([bool]$ledgerPlan.RouteStoreDbFirst)
 
 	# 键是 zoneId(int)。不用 [ordered]@{}:OrderedDictionary 拿 int 当下标是按位置取值,不是按键。
 	$cppByZone = [System.Collections.Generic.Dictionary[int, int]]::new()
@@ -2225,7 +2272,7 @@ function Write-RedisConnectionLedger {
 	$deployLedger = Get-RedisConnectionLedger -Inputs $ledgerInputs -ZoneCount $cppByZone.Count -CppZoneProcesses $deployCppProcesses `
 		-BattleProcesses ([Math]::Max(0, $BattleReplicas)) -RolloutExtraPodsPerDeployment $ledgerPlan.RolloutExtraPodsPerDeployment `
 		-OpsReserve $ledgerPlan.OpsReserve -WarnRatio $ledgerPlan.WarnRatio
-	$planLedger = Get-RedisConnectionLedger -Inputs $ledgerInputs -ZoneCount $ledgerPlan.ZoneCount `
+	$planLedger = Get-RedisConnectionLedger -Inputs $planLedgerInputs -ZoneCount $ledgerPlan.ZoneCount `
 		-CppZoneProcesses ($ledgerPlan.ZoneCount * ($ledgerPlan.GatePerZone + $ledgerPlan.ScenePerZone)) `
 		-BattleProcesses $ledgerPlan.BattleProcesses -RolloutExtraPodsPerDeployment $ledgerPlan.RolloutExtraPodsPerDeployment `
 		-OpsReserve $ledgerPlan.OpsReserve -WarnRatio $ledgerPlan.WarnRatio
@@ -5961,6 +6008,379 @@ function Assert-LoginAuthProviderClusterState {
 	}
 }
 
+# ─────────────────────────────────────────────────────────────────
+# D1 玩家归属与落点映射持久化的部署载体(第 1b-3 批:docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §7、§13.4)
+# ─────────────────────────────────────────────────────────────────
+# 参数、切换与回退顺序见参数 -RouteStoreMode 处的注释。本节的函数:
+#   Get-RouteStoreWaitAOFNumReplicas / Get-RouteStoreDeploySettings  data-service ConfigMap 的 RouteStore 段取值(纯函数)
+#   Get-RouteSwitchParamErrors                                       开关组合门禁(纯函数)
+#   ConvertFrom-RouteSwitchLiveYaml / Get-RouteSwitchDrift / Get-RouteSwitchKeepArgs   线上现状的解析与比对(纯函数)
+#   Read-LiveRouteSwitchFacts                                        读线上 ConfigMap(只读;Invoke-ClientEntryKubectl 不看 DryRun,由调用方判)
+#   Assert-RouteSwitchClusterState / Assert-RouteSwitchPreflight     写路径入口的两道闸
+# 纯函数只依赖参数、$RepoRoot 与 Get-AuthoritativeScalar / ConvertFrom-YamlToFlatMap:契约测试按 AST 抽出直接调用;
+# 读集群的那两个在测试里给 Invoke-ClientEntryKubectl 替身。
+
+# mapping Redis 的拓扑,决定 RouteStore.WaitAOFNumReplicas。判据只有一个:Apply-Infra 的 $infraManifests 只 apply redis.yaml
+# (单实例 + --appendonly yes),redis-ha.yaml 没有任何部署路径(该文件头;docs/design/tidb-phase1-and-launch-readiness.md §9.5)。
+# 接入 redis-ha 时把这里改成 'ha'(WaitAOFNumReplicas 随之写 1:哨兵切主时被提升的副本上要有这次写);契约测试钉住
+# 「这里是 single ⇔ $infraManifests 里有 redis.yaml、没有 redis-ha.yaml」,只改一边会变红。go/db 的 ServerConfig.RedisClient.WaitAOFNumReplicas
+# 镜像 go/db/etc/db.yaml,接入 redis-ha 时同样要改成 1(db ConfigMap 那段注释已写明)。
+$script:MappingRedisTopology = 'single'
+
+# WAITAOF 要求的副本确认份数:单实例 0,redis-ha(1 主 2 从)1。纯函数。
+function Get-RouteStoreWaitAOFNumReplicas {
+	param([Parameter(Mandatory = $true)][string]$Topology)
+	switch -CaseSensitive ($Topology) {
+		'single' { return 0 }
+		'ha' { return 1 }
+	}
+	throw "内部错误:mapping Redis 拓扑 '$Topology' 不是 single / ha,拒绝渲染 RouteStore.WaitAOFNumReplicas。"
+}
+
+<#
+.SYNOPSIS
+	data-service ConfigMap 的 RouteStore 段取值。纯函数(读服务 yaml 与传入的开关),ConfigMap 生成器与写路径入口的自检共用这一处。
+
+.DESCRIPTION
+	- Mode / ReadRequiresReady / Reconcile.ArmReadyMarker:取开关(缺省 redis / false / false),不镜像服务 yaml。
+	- FenceShards:按全局库后端分档。K8s 上 data-service 的全局库恒为 infra namespace 的 MySQL(ConfigMap 的 SnapshotMySQL.Host
+	  = mysql.<infra>:3306),即 MySQL 档;MySQL 档取服务 yaml 的值(go/data_service/etc/data_service.yaml 就是 MySQL 档,16)。
+	  **TiDB 档(64)等 TiDB Phase 1 的部署方式定了再补**:那时这里按后端选值,并在契约测试里钉住 TiDB 档。
+	  不在 [1, 64] 即 throw(64 = placement.MaxRouteFenceShards,围栏持有者写满 0..63 全部分片的契约)。
+	- WaitAOFNumLocal 固定 1(redis.yaml 开着 --appendonly yes);WaitAOFNumReplicas 按拓扑(Get-RouteStoreWaitAOFNumReplicas)。
+	- WaitAOFTimeoutMs 取服务 yaml,不在 [1, 1500] 即 throw(data_service 的 Validate 同一上界 MaxRouteStoreWaitAOFTimeoutMs)。
+	- Reconcile 段只写 ArmReadyMarker:其余键不写 = data_service 的代码缺省(Enabled 缺省 true、LeaseMs 10000、RedisPoolSize 4 …);
+	  Redis 连接总账里 leader 的独立池就按这个代码缺省记(Get-RedisConnectionLedgerInputs),所以这里不写 RedisPoolSize。
+	这些键在 redis 模式下没有运行效果,但 data_service 不分 Mode 校验 RouteStore(非法即拒启),所以照样先在部署侧核过。
+#>
+function Get-RouteStoreDeploySettings {
+	param(
+		[Parameter(Mandatory = $true)][string]$Mode,
+		[Parameter(Mandatory = $true)][bool]$ArmReadyMarker,
+		[Parameter(Mandatory = $true)][bool]$ReadRequiresReady,
+		[Parameter(Mandatory = $true)][string]$Topology
+	)
+	if ($Mode -cnotin @('redis', 'db_first')) {
+		throw "内部错误:RouteStore.Mode '$Mode' 不是 redis / db_first(参数绑定后应已规范成小写),拒绝渲染。"
+	}
+	$dsYaml = 'go/data_service/etc/data_service.yaml'
+	$fenceRaw = [string](Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'RouteStore.FenceShards')
+	$fence = 0
+	if (-not [int]::TryParse($fenceRaw, [ref]$fence) -or $fence -lt 1 -or $fence -gt 64) {
+		throw "生成 ConfigMap 失败:$dsYaml 的 RouteStore.FenceShards='$fenceRaw' 必须是 [1, 64] 内的整数(MySQL 档;64 = placement.MaxRouteFenceShards)。fail-closed:data_service 对越界值拒启。"
+	}
+	$timeoutRaw = [string](Get-AuthoritativeScalar -RelativePath $dsYaml -KeyPath 'RouteStore.WaitAOFTimeoutMs')
+	$timeout = 0
+	if (-not [int]::TryParse($timeoutRaw, [ref]$timeout) -or $timeout -lt 1 -or $timeout -gt 1500) {
+		throw "生成 ConfigMap 失败:$dsYaml 的 RouteStore.WaitAOFTimeoutMs='$timeoutRaw' 必须是 [1, 1500] 内的整数(0 = WAITAOF 无限等待;上界给 2000ms 服务端预算留余量)。fail-closed:data_service 对越界值拒启。"
+	}
+	return [ordered]@{
+		Backend            = 'mysql'
+		Mode               = $Mode
+		FenceShards        = $fence
+		WaitAOFNumLocal    = 1
+		WaitAOFNumReplicas = (Get-RouteStoreWaitAOFNumReplicas -Topology $Topology)
+		WaitAOFTimeoutMs   = $timeout
+		ReadRequiresReady  = $(if ($ReadRequiresReady) { 'true' } else { 'false' })
+		ArmReadyMarker     = $(if ($ArmReadyMarker) { 'true' } else { 'false' })
+	}
+}
+
+<#
+.SYNOPSIS
+	D1 开关的组合门禁:返回错误文本数组(空 = 合法)。纯函数。
+
+.DESCRIPTION
+	1. Arm 或任一读方开关为 true 而 Mode 不是 db_first:data_service 的 Validate 对 ArmReadyMarker / ReadRequiresReady 要求 db_first,
+	   进集群就是 CrashLoop;go/db / guild 的读方开关在 redis 模式下没有人挂就绪标记(leader 只在 db_first 下装配),打开即全部 fail-closed。
+	2. 任一读方开关为 true 而 Arm=false:Arm=false 时 leader 每拍撤掉现存标记(规格 M4),读方读不到可信标记,全部 fail-closed
+	   (go/db 暂停存盘消费、data_service 全部回源、guild 全拒)。回退顺序因此是「先关读方、再关 Arm」(§13.5 第 1 条)。
+	只看本次参数,不看本次部署了哪些服务:参数是对全服目标状态的声明(Mode 与 Arm 是全服单值)。
+#>
+function Get-RouteSwitchParamErrors {
+	param(
+		[Parameter(Mandatory = $true)][string]$Mode,
+		[Parameter(Mandatory = $true)][bool]$ArmReadyMarker,
+		[Parameter(Mandatory = $true)][bool]$ReadRequiresReady,
+		[Parameter(Mandatory = $true)][bool]$DbRequireRouteReady,
+		[Parameter(Mandatory = $true)][bool]$GuildRequireRouteReady
+	)
+	$errors = New-Object System.Collections.Generic.List[string]
+	$readers = @()
+	if ($ReadRequiresReady) { $readers += '-RouteReadRequiresReady' }
+	if ($DbRequireRouteReady) { $readers += '-DbPlacementRequireRouteReady' }
+	if ($GuildRequireRouteReady) { $readers += '-GuildRequireRouteReady' }
+	$needDbFirst = @()
+	if ($ArmReadyMarker) { $needDbFirst += '-RouteReconcileArm' }
+	$needDbFirst += $readers
+	if ($Mode -cne 'db_first' -and $needDbFirst.Count -gt 0) {
+		$errors.Add("$($needDbFirst -join ' / ') 要求 -RouteStoreMode db_first(本次是 $Mode):redis 模式下 data_service 对 ArmReadyMarker / ReadRequiresReady 拒启(进集群即 CrashLoop),也没有对账 leader 挂就绪标记,读方开关一打开就全部 fail-closed")
+	}
+	if ($readers.Count -gt 0 -and -not $ArmReadyMarker) {
+		$errors.Add("$($readers -join ' / ') 要求同时给 -RouteReconcileArm:Arm=false 时对账 leader 每拍撤掉就绪标记(规格 M4),读方读不到可信标记,全部 fail-closed(go/db 暂停存盘消费、data_service 全部回源、guild 全拒);回退顺序是先关读方开关、再关 Arm")
+	}
+	return [string[]]$errors.ToArray()
+}
+
+<#
+.SYNOPSIS
+	从线上 ConfigMap 里那份服务 yaml 读出 D1 开关的现状,返回 [ordered]@{ <本脚本参数名(不带 -)> = <规范值> }。纯函数。
+
+.DESCRIPTION
+	-Scope data-service → RouteStoreMode / RouteReconcileArm / RouteReadRequiresReady(RouteStore.Mode / RouteStore.Reconcile.ArmReadyMarker /
+	RouteStore.ReadRequiresReady);db → DbPlacementRequireRouteReady(Placement.RequireRouteReady);guild → GuildRequireRouteReady
+	(MergeMarkerRedis.RequireRouteReady)。缺键按服务的代码缺省:Mode 缺省 redis,三个布尔缺省 false(本批之前的 ConfigMap 都不写它们)。
+	写法认不出(Mode 不是 redis / db_first、布尔不是小写 true / false)时记成 '<原文>?',与任何参数值都不相等 → 粘滞核对拒绝
+	(fail-closed:看不懂不等于没开)。
+#>
+function ConvertFrom-RouteSwitchLiveYaml {
+	param(
+		[Parameter(Mandatory = $true)][ValidateSet('data-service', 'db', 'guild')][string]$Scope,
+		[Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text
+	)
+	$scalars = (ConvertFrom-YamlToFlatMap -Text $Text).Scalars
+	$read = {
+		param([string]$KeyPath, [string[]]$Allowed, [string]$Default)
+		if (-not $scalars.Contains($KeyPath)) { return $Default }
+		$raw = ([string]$scalars[$KeyPath]).Trim()
+		if ($raw -eq '') { return $Default }
+		if ($Allowed -ccontains $raw) { return $raw }
+		return "$raw?"
+	}
+	$bools = @('true', 'false')
+	switch ($Scope) {
+		'data-service' {
+			return [ordered]@{
+				RouteStoreMode         = (& $read 'RouteStore.Mode' @('redis', 'db_first') 'redis')
+				RouteReconcileArm      = (& $read 'RouteStore.Reconcile.ArmReadyMarker' $bools 'false')
+				RouteReadRequiresReady = (& $read 'RouteStore.ReadRequiresReady' $bools 'false')
+			}
+		}
+		'db' { return [ordered]@{ DbPlacementRequireRouteReady = (& $read 'Placement.RequireRouteReady' $bools 'false') } }
+		'guild' { return [ordered]@{ GuildRequireRouteReady = (& $read 'MergeMarkerRedis.RequireRouteReady' $bools 'false') } }
+	}
+}
+
+# 线上现状与本次参数逐键比较(只比 -Desired 里有的键),返回「-<参数> 线上 X,本次 Y」数组。纯函数。
+function Get-RouteSwitchDrift {
+	param(
+		[Parameter(Mandatory = $true)][System.Collections.IDictionary]$Live,
+		[Parameter(Mandatory = $true)][System.Collections.IDictionary]$Desired
+	)
+	$drifts = New-Object System.Collections.Generic.List[string]
+	foreach ($key in @($Live.Keys)) {
+		if (-not $Desired.Contains($key)) { continue }
+		$liveValue = [string]$Live[$key]
+		$desiredValue = [string]$Desired[$key]
+		if ($liveValue -cne $desiredValue) { $drifts.Add("-$key 线上 $liveValue,本次 $desiredValue") }
+	}
+	return [string[]]$drifts.ToArray()
+}
+
+# 照传线上现状要给的参数串:-RouteStoreMode 照写取值,布尔开关只写为 true 的(不给 = false)。线上取值认不出时返回 $null。纯函数。
+function Get-RouteSwitchKeepArgs {
+	param([Parameter(Mandatory = $true)][System.Collections.IDictionary]$Live)
+	$parts = @()
+	foreach ($key in @($Live.Keys)) {
+		$value = [string]$Live[$key]
+		if ($value.EndsWith('?')) { return $null }
+		if ($key -ceq 'RouteStoreMode') { $parts += "-RouteStoreMode $value"; continue }
+		if ($value -ceq 'true') { $parts += "-$key" }
+	}
+	return ($parts -join ' ')
+}
+
+<#
+.SYNOPSIS
+	读线上 D1 开关现状(只读 kubectl)。返回 [object[]],每项 [pscustomobject]@{ Scope; Namespace; Values }(Values 见 ConvertFrom-RouteSwitchLiveYaml)。
+
+.DESCRIPTION
+	- -ReadDataService:一次 kubectl get configmap --all-namespaces --field-selector metadata.name=go-svc-data-service-config,
+	  只认名字以 "<-NamespacePrefix>-" 开头的 namespace(与 Read-PlayerInboxGateLiveFacts 同一口径;用别的前缀部署的 zone 看不到)。
+	  读全部 zone 而不只读本次部署的 zone:Mode / Arm / ReadRequiresReady 是全服单值,本 zone 的 namespace 刚被删掉重建
+	  (zone 回档 Step 1)或是新 zone 时,只读它自己等于不核对。
+	- -DbZoneNames:逐个读这些 zone 的 go-svc-db-config(Placement.RequireRouteReady 逐 zone 打开,只核对本次部署的 zone)。
+	  ConfigMap 不存在(新 zone、namespace 被删)= 没有现状,不比对。
+	- -ReadGuild:读 infra namespace 的 go-svc-guild-config;不存在 = 没有现状。
+	kubectl 失败、输出不是 JSON、ConfigMap 在却没有服务 yaml 那个数据键,一律 throw:读不到不等于没开(fail-closed,同 Read-LiveDbConfigMapYaml)。
+	Invoke-ClientEntryKubectl 不看 $DryRun,DryRun 判断由调用方(Assert-RouteSwitchPreflight)负责。
+#>
+function Read-LiveRouteSwitchFacts {
+	param(
+		[bool]$ReadDataService,
+		[AllowEmptyCollection()][string[]]$DbZoneNames = @(),
+		[bool]$ReadGuild
+	)
+	$facts = New-Object System.Collections.Generic.List[object]
+	$failClosed = '判不出 D1 映射开关的线上现状,拒绝部署;尚未做任何写操作。'
+	# 取 ConfigMap 里服务 yaml 那个数据键的文本;ConfigMap 在而键不在 = 不是本脚本生成的形状,throw。
+	$configFileText = {
+		param($ConfigMap, [string]$ConfigFile, [string]$Source)
+		$property = $null
+		$dataProperty = $ConfigMap.PSObject.Properties['data']
+		if ($null -ne $dataProperty -and $null -ne $dataProperty.Value) { $property = $dataProperty.Value.PSObject.Properties[$ConfigFile] }
+		if ($null -eq $property -or [string]::IsNullOrWhiteSpace([string]$property.Value)) {
+			throw "线上 $Source 存在,但没有 data.${ConfigFile}:不是本脚本生成的形状,$failClosed"
+		}
+		return [string]$property.Value
+	}
+	# 读一个 namespace 里的一份 ConfigMap:不存在返回 $null。
+	$readOne = {
+		param([string]$Namespace, $Info, [string]$Scope)
+		$source = "namespace $Namespace 的 ConfigMap $($Info.ConfigMap)"
+		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', $Info.ConfigMap, '-n', $Namespace, '--ignore-not-found', '-o', 'json') `
+			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+		if ($result.ExitCode -ne 0) {
+			throw "读取线上 $source 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于没开,$failClosed"
+		}
+		$text = ([string]$result.Stdout).Trim()
+		if ($text -eq '') { return $null }
+		try { $configMap = $text | ConvertFrom-Json -ErrorAction Stop }
+		catch { throw "线上 $source 的 kubectl 输出不是合法 JSON,$failClosed$($_.Exception.Message)" }
+		$yaml = & $configFileText $configMap $Info.ConfigFile $source
+		return [pscustomobject]@{ Scope = $Scope; Namespace = $Namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope $Scope -Text $yaml) }
+	}
+
+	if ($ReadDataService) {
+		$info = $GoSvcCatalogue['data-service']
+		$result = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', '--all-namespaces', '--field-selector', "metadata.name=$($info.ConfigMap)", '-o', 'json') `
+			-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput -AllowFailure
+		if ($result.ExitCode -ne 0) {
+			throw "读取各 zone 线上的 ConfigMap $($info.ConfigMap) 失败(kubectl 退出码 $($result.ExitCode)):$($result.Stderr)。fail-closed:读不到不等于还是 redis 模式,$failClosed"
+		}
+		try { $list = ([string]$result.Stdout) | ConvertFrom-Json -ErrorAction Stop }
+		catch { throw "各 zone 线上 ConfigMap $($info.ConfigMap) 的 kubectl 输出不是合法 JSON,$failClosed$($_.Exception.Message)" }
+		$prefix = "$NamespacePrefix-"
+		foreach ($item in @($list.items)) {
+			if ($null -eq $item) { continue }
+			$namespace = [string]$item.metadata.namespace
+			if (-not $namespace.StartsWith($prefix, [System.StringComparison]::Ordinal)) { continue }
+			$yaml = & $configFileText $item $info.ConfigFile "namespace $namespace 的 ConfigMap $($info.ConfigMap)"
+			$facts.Add([pscustomobject]@{ Scope = 'data-service'; Namespace = $namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope 'data-service' -Text $yaml) })
+		}
+	}
+	foreach ($zoneName in @($DbZoneNames)) {
+		$fact = & $readOne (Get-ZoneNamespace -Name $zoneName) $GoSvcCatalogue['db'] 'db'
+		if ($null -ne $fact) { $facts.Add($fact) }
+	}
+	if ($ReadGuild) {
+		$fact = & $readOne $InfraNamespace $GoSvcCatalogue['guild'] 'guild'
+		if ($null -ne $fact) { $facts.Add($fact) }
+	}
+	return [object[]]$facts.ToArray()
+}
+
+<#
+.SYNOPSIS
+	D1 开关的粘滞核对(防翻转;非 DryRun,写路径入口、任何写操作之前):线上现状与本次参数不一致就整条拒绝,所有不一致一次报全。
+
+.DESCRIPTION
+	谁和谁比:
+	  - 本次部署 zone 的 Go 服务(zone-up / all-up,Test-ZoneDbDeployed):全部 zone 的 data-service(Mode / Arm / ReadRequiresReady),
+	    以及本次部署的 zone 的 db(Placement.RequireRouteReady);
+	  - 本次部署全局 Go 服务(Test-GlobalGoSvcDeployed):infra 的 guild(MergeMarkerRedis.RequireRouteReady)。本次要打开 guild 的开关
+	    而不部署 zone(infra-up)时,另读全部 zone 的 data-service,只比 Mode 与 Arm —— guild 读方的前提是全服已 db_first 且 Arm=true,
+	    参数里声明了不算数,要线上真是这样。
+	给了 -ConfirmRouteSwitchChange 只打 [RouteSwitch]Confirmed 警告放行。任何 kubectl 失败都 throw(Read-LiveRouteSwitchFacts)。
+	-ZoneNames 与 Assert-ClientEntryClusterState 同一份(zone-up 一个,all-up 取 zones 配置,infra-up 为空):all-up 逐 zone 部署,
+	必须在第一个写操作之前把全部 zone 判完,不留「前几个 zone 已翻过去、后面的才被拒」的半截部署。
+#>
+function Assert-RouteSwitchClusterState {
+	param(
+		[Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$ZoneNames,
+		[Parameter(Mandatory = $true)][bool]$DeploysZoneGoSvc,
+		[Parameter(Mandatory = $true)][bool]$DeploysGuild
+	)
+	$asText = { param([bool]$On) if ($On) { 'true' } else { 'false' } }
+	$desired = [ordered]@{
+		RouteStoreMode               = $RouteStoreMode
+		RouteReconcileArm            = (& $asText ([bool]$RouteReconcileArm))
+		RouteReadRequiresReady       = (& $asText ([bool]$RouteReadRequiresReady))
+		DbPlacementRequireRouteReady = (& $asText ([bool]$DbPlacementRequireRouteReady))
+		GuildRequireRouteReady       = (& $asText ([bool]$GuildRequireRouteReady))
+	}
+	$guildPrecondition = $DeploysGuild -and (-not $DeploysZoneGoSvc) -and ([bool]$GuildRequireRouteReady)
+	$dbZones = if ($DeploysZoneGoSvc) { @($ZoneNames) } else { @() }
+	$facts = @(Read-LiveRouteSwitchFacts -ReadDataService ($DeploysZoneGoSvc -or $guildPrecondition) -DbZoneNames $dbZones -ReadGuild $DeploysGuild)
+
+	$problems = @()
+	foreach ($fact in $facts) {
+		$compare = $desired
+		if ($fact.Scope -ceq 'data-service' -and -not $DeploysZoneGoSvc) {
+			$compare = [ordered]@{ RouteStoreMode = $desired.RouteStoreMode; RouteReconcileArm = $desired.RouteReconcileArm }
+		}
+		$drifts = @(Get-RouteSwitchDrift -Live $fact.Values -Desired $compare)
+		if ($drifts.Count -eq 0) { continue }
+		$keep = Get-RouteSwitchKeepArgs -Live $fact.Values
+		$keepText = if ($null -eq $keep) { '线上取值认不出(见上面带 ? 的值),先人工核对该 ConfigMap' } elseif ($keep -eq '') { '要保持现状请不带这几个开关' } else { "要保持现状请照传 $keep(布尔开关不给 = false)" }
+		$text = "$($fact.Scope)(namespace=$($fact.Namespace)):" + ($drifts -join ';') + ";$keepText"
+		if ($ConfirmRouteSwitchChange) {
+			Write-Warning "[RouteSwitch]Confirmed:-ConfirmRouteSwitchChange supplied; allowed: $text"
+		}
+		else {
+			$problems += $text
+		}
+	}
+	$dataServiceZones = @($facts | Where-Object { $_.Scope -ceq 'data-service' }).Count
+	$dbZonesLive = @($facts | Where-Object { $_.Scope -ceq 'db' }).Count
+	$guildLive = @($facts | Where-Object { $_.Scope -ceq 'guild' }).Count
+	Write-Host "Route switch live state: data_service_zones=$dataServiceZones db_zones=$dbZonesLive guild=$guildLive drifts_refused=$($problems.Count) confirm_change=$(([bool]$ConfirmRouteSwitchChange))"
+	if ($problems.Count -gt 0) {
+		throw ("D1 映射开关的线上现状与本次参数不一致($($problems.Count) 处),未做任何写操作:`n  - " + ($problems -join "`n  - ") +
+			"`n确要切换请加 -ConfirmRouteSwitchChange(顺序见 -RouteStoreMode 参数注释:P2 Mode=db_first → P3 全部 zone Arm=true → P5 读方逐个打开,回退反过来)。")
+	}
+}
+
+<#
+.SYNOPSIS
+	D1 开关的写路径入口闸:组合门禁 → 生成器自检 → 计划行 → 粘滞核对(非 DryRun)。任何一步失败都 throw,早于任何集群写操作。
+
+.DESCRIPTION
+	组合门禁(Get-RouteSwitchParamErrors)与生成器自检(Get-RouteStoreDeploySettings)DryRun 同样判:它们只看参数与仓库文件。
+	生成器自检提前到这里的理由同 Show-PeakShavingPlan:服务 yaml 的 FenceShards / WaitAOFTimeoutMs 读不到或越界时,
+	不要等到 Apply-Zone 中途(node-config / gate / scene 已 apply)才在生成 data-service ConfigMap 时失败。
+	不受 -SkipPreflight 影响(那个开关只跳过发布预检),理由同 Assert-ClientEntryDeployPreflight。
+#>
+function Assert-RouteSwitchPreflight {
+	$errors = @(Get-RouteSwitchParamErrors -Mode $RouteStoreMode -ArmReadyMarker ([bool]$RouteReconcileArm) `
+			-ReadRequiresReady ([bool]$RouteReadRequiresReady) -DbRequireRouteReady ([bool]$DbPlacementRequireRouteReady) `
+			-GuildRequireRouteReady ([bool]$GuildRequireRouteReady))
+	if ($errors.Count -gt 0) {
+		throw ("D1 映射开关的参数组合不合法,未做任何写操作:`n  - " + ($errors -join "`n  - "))
+	}
+	$deploysZoneGoSvc = [bool](Test-ZoneDbDeployed)
+	$deploysGuild = [bool](Test-GlobalGoSvcDeployed)
+	$settings = Get-RouteStoreDeploySettings -Mode $RouteStoreMode -ArmReadyMarker ([bool]$RouteReconcileArm) `
+		-ReadRequiresReady ([bool]$RouteReadRequiresReady) -Topology $script:MappingRedisTopology
+	$zoneSwitchesSet = ($RouteStoreMode -cne 'redis') -or ([bool]$RouteReconcileArm) -or ([bool]$RouteReadRequiresReady) -or ([bool]$DbPlacementRequireRouteReady)
+	if ($zoneSwitchesSet -and -not $deploysZoneGoSvc) {
+		Write-Warning "[RouteSwitch]NoEffect:-RouteStoreMode / -RouteReconcileArm / -RouteReadRequiresReady / -DbPlacementRequireRouteReady only take effect when zone Go services are deployed (zone-up / all-up with -GoSvcRegistry and without -SkipGoSvc); nothing is rendered for them in this run."
+	}
+	if ($GuildRequireRouteReady -and -not $deploysGuild) {
+		Write-Warning "[RouteSwitch]NoEffect:-GuildRequireRouteReady only takes effect when global Go services are deployed (infra-up, or all-up without -SkipInfra, with -GoSvcRegistry and without -SkipGoSvc); nothing is rendered for it in this run."
+	}
+	if ($ConfirmRouteSwitchChange -and -not $deploysZoneGoSvc -and -not $deploysGuild) {
+		Write-Warning "[RouteSwitch]NoEffect:-ConfirmRouteSwitchChange supplied, but neither zone nor global Go services are deployed in this run; flag has no effect."
+	}
+	Write-Host ("Route switches: mode={0} arm={1} read_requires_ready={2} db_require_route_ready={3} guild_require_route_ready={4} fence_shards={5}({6}) waitaof={7}/{8}/{9}ms redis_topology={10} confirm_change={11}" -f
+		$settings.Mode, $settings.ArmReadyMarker, $settings.ReadRequiresReady, $(if ([bool]$DbPlacementRequireRouteReady) { 'true' } else { 'false' }),
+		$(if ([bool]$GuildRequireRouteReady) { 'true' } else { 'false' }), $settings.FenceShards, $settings.Backend, $settings.WaitAOFNumLocal,
+		$settings.WaitAOFNumReplicas, $settings.WaitAOFTimeoutMs, $script:MappingRedisTopology, ([bool]$ConfirmRouteSwitchChange))
+	if ($DryRun) {
+		Write-Host "[dry-run] Skipping D1 route switch sticky check (live data-service / db / guild ConfigMaps); actual execution checks before any writes."
+		return
+	}
+	if (-not $deploysZoneGoSvc -and -not $deploysGuild) { return }
+	$zoneNames = @()
+	if ($Command -eq 'zone-up') {
+		$zoneNames = @($ZoneName)
+	}
+	elseif ($Command -eq 'all-up') {
+		$zoneNames = @(Get-ZonesFromJson -Path (Resolve-ZonesConfigPath) | ForEach-Object { [string]$_.name })
+	}
+	Assert-RouteSwitchClusterState -ZoneNames $zoneNames -DeploysZoneGoSvc $deploysZoneGoSvc -DeploysGuild $deploysGuild
+}
+
 function Assert-GlobalMatchKafkaTopology {
 	param($Topology)
 	if ($Topology.ReplicationFactor -lt 3 -or $Topology.MinInsyncReplicas -lt 2) {
@@ -6678,6 +7098,17 @@ Prometheus:
 		$block = $block -replace '(?m)^  Host:.*$', "  Host: redis.${InfraNamespace}:6379"
 		$passwordKey = if ($key -eq 'MergeMarkerRedis') { 'Pass' } else { 'Password' }
 		$block = $block -replace "(?m)^  ${passwordKey}:.*$", "  ${passwordKey}: `"$($script:RedisPassword)`""
+		if ($key -eq 'MergeMarkerRedis') {
+			# D1 第 3 批 guild 读方门禁(spec_D1_batch1b2_2_3.md §5.4):取本脚本参数 -GuildRequireRouteReady(缺省 false),不镜像服务 yaml;
+			# 服务 yaml 里有这一行就改写,没有就补一行。打开前提与回退顺序见参数 -RouteStoreMode 处的注释。
+			$guildRequireRouteReady = if ([bool]$GuildRequireRouteReady) { 'true' } else { 'false' }
+			if ($block -match '(?m)^  RequireRouteReady:.*$') {
+				$block = $block -replace '(?m)^  RequireRouteReady:.*$', "  RequireRouteReady: $guildRequireRouteReady"
+			}
+			else {
+				$block = $block + "`n  RequireRouteReady: $guildRequireRouteReady"
+			}
+		}
 		$blocks.Add($block)
 	}
 	foreach ($key in @('DataServiceRpc', 'MatchRpc')) {
@@ -6771,6 +7202,8 @@ function New-GoSvcConfigMapYaml {
 		$dbNonZoneStoreMaxIdleConn      = $dbPoolMirror['Placement.NonZoneStoreMaxIdleConn']
 		$dbExtraStoreConnMaxIdleSeconds = $dbPoolMirror['Placement.ExtraStoreConnMaxIdleSeconds']
 	}
+	# D1 第 3 批 go/db 读方门禁 Placement.RequireRouteReady:取本脚本参数 -DbPlacementRequireRouteReady(缺省 false),不镜像 go/db/etc/db.yaml。
+	$dbPlacementRequireRouteReady = if ([bool]$DbPlacementRequireRouteReady) { 'true' } else { 'false' }
 	# db 的消费组键(四种形状之一,见 Resolve-DbConsumerGroupPlan):计划由写路径入口的 Initialize-DbConsumerGroupPlans 先算好,
 	# 这里只取本 zone 那一份并渲染;缺计划即 throw,不回落任何默认组名。只在生成 db 自己的 ConfigMap 时求值。
 	$dbConsumerGroupYaml = ''
@@ -6831,12 +7264,17 @@ function New-GoSvcConfigMapYaml {
 	$dsPlayerNameMaxIdleConn      = ''
 	$dsRouteStoreMaxOpenConn      = ''
 	$dsRouteStoreMaxIdleConn      = ''
+	# RouteStore 段的其余取值(D1 第 1b-3 批):Mode / ReadRequiresReady / Reconcile.ArmReadyMarker 取本脚本参数,FenceShards 按全局库档位、
+	# WaitAOF 按 mapping Redis 拓扑(Get-RouteStoreDeploySettings;写路径入口的 Assert-RouteSwitchPreflight 已先于任何写操作核过一遍)。
+	$dsRouteSettings              = $null
 	if ($SvcName -eq 'data-service') {
 		$dsPoolMirror = Get-MysqlPoolMirror -Target 'data-service'
 		$dsPlayerNameMaxOpenConn = $dsPoolMirror['PlayerName.MaxOpenConn']
 		$dsPlayerNameMaxIdleConn = $dsPoolMirror['PlayerName.MaxIdleConn']
 		$dsRouteStoreMaxOpenConn = $dsPoolMirror['RouteStore.MaxOpenConn']
 		$dsRouteStoreMaxIdleConn = $dsPoolMirror['RouteStore.MaxIdleConn']
+		$dsRouteSettings = Get-RouteStoreDeploySettings -Mode $RouteStoreMode -ArmReadyMarker ([bool]$RouteReconcileArm) `
+			-ReadRequiresReady ([bool]$RouteReadRequiresReady) -Topology $script:MappingRedisTopology
 	}
 	# C++ 约定注册(DataServiceNodeService.rpc)那把 etcd 租约的 TTL:Go config 顶层键、默认 60
 	# (go/data_service/internal/config/config.go LeaseTTL),与 scene-manager / match 同形,同样从服务自己的 yaml 取。
@@ -7402,6 +7840,11 @@ Placement:
   NonZoneStoreMaxOpenConn: ${dbNonZoneStoreMaxOpenConn}
   NonZoneStoreMaxIdleConn: ${dbNonZoneStoreMaxIdleConn}
   ExtraStoreConnMaxIdleSeconds: ${dbExtraStoreConnMaxIdleSeconds}
+  # D1 第 3 批读方门禁(k8s_deploy.ps1 -DbPlacementRequireRouteReady,缺省 false;docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.3 / §13.2):
+  # true = mapping Redis 的副本被判可信才按 player:placement / player:zone 选库,不可信时进程级就绪闸暂停取 Kafka 消息(存盘积压在 Kafka,不丢)。
+  # 逐 zone 打开(规格 §8 P5),前提是全服 Arm=true、标记已挂、leader 自检稳定为 trusted;回退先关它(先读方、后写方)。
+  # RouteReadyGateIntervalMs 不写 = 代码缺省 1000。只改 ConfigMap 不会滚动 db:改值后 rollout restart deploy/db。
+  RequireRouteReady: ${dbPlacementRequireRouteReady}
 "@
 		}
 		"data-service" {
@@ -7474,19 +7917,31 @@ Schema:
 # 所有档位都写 true;本地 yaml 不写(缺省 false,沿用降级运行)。
 Store:
   Required: true
-# 映射提交点(player-route-mapping-durability-proposal.md §4、§11.2,第 1a 批):所有档位固定 redis,不镜像服务 yaml ——
-# 切 db_first 是 P2 的显式运维动作:先进冻结窗口(第 2 批前禁 merge_zone 一切写模式)、P1 导入 + audit 为 0、建角压测;
-# 切换时还要按 redis 拓扑补 WaitAOF 两项(redis-ha:NumReplicas=1),并确认镜像里有 route_tool(第 1b 批补入口,proposal §11.2)。
-# 连接池大小两项例外(G2b):Mode 仍固定 redis 不镜像,只镜像 MaxOpenConn / MaxIdleConn。route store 的独立池只在 db_first 下
-# 装配,redis 模式下不开连接;但 MySQL 连接总账的规划档已按 db_first 计入它(Get-MysqlConnectionPlan),切 db_first 时池大小
-# 与总账同源,不用再补这两行。D1 第 2 阶段改本段时保留这两行。
+# 映射提交点(player-route-mapping-durability-proposal.md §4、§11.2):Mode 不镜像服务 yaml,取 k8s_deploy.ps1 的 -RouteStoreMode(缺省 redis)——
+# 切 db_first 是 P2 的显式运维动作:先进冻结窗口(第 2 批前禁 merge_zone 一切写模式)、P1 导入 + audit 为 0、建角压测、告警抓取就位
+# (docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §8)。全部 zone 同一取值;部署前脚本读线上现状做粘滞核对,
+# 不一致要显式 -ConfirmRouteSwitchChange。K8s 上跑 route-tool 用 tools/scripts/k8s_route_tool.ps1(一次性 Job,不 exec 进本 Pod)。
+# 连接池大小两项(G2b)镜像服务 yaml:route store 的独立池只在 db_first 下装配,redis 模式下不开连接;MySQL 连接总账的规划档
+# 已按 db_first 计入它(Get-MysqlConnectionPlan)。
 # 副作用:以前这里只写 Mode、池大小取代码默认;镜像之后,服务 yaml 里一个非法的池值(如 MaxIdleConn > MaxOpenConn)会让
 # K8s 上的 data-service 在 redis 模式下也拒启(data_service.go 不分 Mode 校验 RouteStore)—— 所以生成器取值时先核
-# 「正整数且 idle ≤ open」(Get-MysqlPoolMirror),不合格在 apply 之前失败。
+# 「正整数且 idle ≤ open」(Get-MysqlPoolMirror),不合格在 apply 之前失败。下面几项同理先核(Get-RouteStoreDeploySettings)。
+# FenceShards:按全局库档位 —— K8s 的全局库是 infra 的 MySQL,取 MySQL 档(服务 yaml 的值);TiDB 档 64 等 TiDB Phase 1 的部署方式定了再补。
+# WaitAOF:本地落盘 1(redis.yaml 开着 AOF);副本份数按 mapping Redis 拓扑(单实例 redis.yaml 写 0,接入 redis-ha 后写 1);超时取服务 yaml。
+# ReadRequiresReady(第 3 批读方门禁)与 Reconcile.ArmReadyMarker(对账 leader 挂就绪标记):缺省 false,全部副本同一取值,
+# 打开顺序见规格 §8(P3 Arm → P5 读方),回退先关读方、再关 Arm。Reconcile 段其余键不写 = 代码缺省(Enabled true、LeaseMs 10000、
+# RedisPoolSize 4 …;leader 的独立 go-redis 池按这个缺省计入 Redis 连接总账)。
 RouteStore:
-  Mode: redis
+  Mode: $($dsRouteSettings.Mode)
+  FenceShards: $($dsRouteSettings.FenceShards)
   MaxOpenConn: ${dsRouteStoreMaxOpenConn}
   MaxIdleConn: ${dsRouteStoreMaxIdleConn}
+  WaitAOFNumLocal: $($dsRouteSettings.WaitAOFNumLocal)
+  WaitAOFNumReplicas: $($dsRouteSettings.WaitAOFNumReplicas)
+  WaitAOFTimeoutMs: $($dsRouteSettings.WaitAOFTimeoutMs)
+  ReadRequiresReady: $($dsRouteSettings.ReadRequiresReady)
+  Reconcile:
+    ArmReadyMarker: $($dsRouteSettings.ArmReadyMarker)
 # 与 manifest 的 9260 端口、prometheus 注解一致。多副本之后要能按 Pod 看消费者是否在跑。
 MetricsListenAddr: ":9260"
 # id_segment 行播种策略(见生成器注释):dev = 服务 yaml 的值;staging/prod = false,缺行不自动播种,
@@ -8053,7 +8508,7 @@ Redis:
 # FriendRedis(friend 私有 key:好友列表缓存 / 申请配额 / 限流)在 K8s 上**刻意整段不配**,回落到上面的共享库。
 # F2 的缓存键已带 hash tag、全是单 key 操作,Redis Cluster 安全,所以将来换独立实例不需要改代码;
 # ⚠ 但 staging/prod 若要配独立实例,必须 maxmemory-policy=noeviction:好友列表缓存被淘汰只是多打一次 MySQL,
-#   **配额 / 限流 key 被淘汰等于限流静默失效**。共享库现在是 allkeys-lfu,这条风险已经存在,写在这里不是假装没有。
+#   **配额 / 限流 key 被淘汰等于限流静默失效**。共享库现在是 allkeys-lfu(2026-10-18 更正:compose 与 K8s 现均为 noeviction,不再淘汰、写满时拒写),这条风险已经存在,写在这里不是假装没有。
 # 全局池:ZoneId 只影响 etcd 注册路径,路由服对 FriendNodeService 不做 zone 过滤(ZoneScopedNodeTypes 默认仅 Login),
 # 任何 zone 的玩家都被路由到这里的实例;业务代码**禁止**读它做分支 —— 好友关系天然跨 zone,按 zone 过滤会把
 # 跨区好友判成"不存在"。取命令行 -ZoneId(Apply-GlobalGoSvcManifests),与 chat / trade 同口径;Go 侧 Validate 拒 0。
@@ -10363,6 +10818,10 @@ if ($Command -in @("zone-up", "all-up", "infra-up")) {
 	# go/db 存盘消费组计划(S2 ③):逐 zone 读线上 go-svc-db-config,按需 kubectl exec 进 kafka-0 读两组位点,按决策表定形状。
 	# 只读;F2 / F4 与「读不到」的拒绝都发生在这里,早于下面的密钥解析与 switch ($Command) 里的任何写操作(见 Initialize-DbConsumerGroupPlans)。
 	Initialize-DbConsumerGroupPlans
+	# D1 映射持久化开关(第 1b-3 批):组合门禁(Arm / 读方开关要求 db_first,读方开关要求 Arm)与 RouteStore 段生成器自检 DryRun 同样判;
+	# 非 DryRun 再读线上 data-service(全部 zone)/ db / guild 的 ConfigMap 做粘滞核对,与本次参数不一致且没给 -ConfirmRouteSwitchChange 即拒绝。
+	# 只读,早于下面的密钥解析与 switch ($Command) 里的任何写操作(见 Assert-RouteSwitchPreflight)。
+	Assert-RouteSwitchPreflight
 	# 削峰(G4b)的开关与起步值打一行,关着 / 没配可信代理时告警;只打印、不阻断。例外是生成器自检,在这里就 throw:常量表被改坏
 	# (限流阈值、排队容量不在 1..uint32),或 go/login/etc/login.yaml 缺 Queue.* 镜像键。排在密钥解析之前:
 	# 缺 MMORPG_LOGIN_QUEUE_TOKEN_SECRET 被拒时,输出里已经有「login_queue=on」这一行可对照。

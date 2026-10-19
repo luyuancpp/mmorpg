@@ -13,7 +13,7 @@
 
 - **登录只拿逻辑服，不拿物理服**：Login 读一次账号目录 `account:{account}`（核心 Redis），再经 data_service `BatchGetPlayerHomeZone` 在 mapping Redis 上对 `player:zone:{id}` 一次 MGET；`player:placement` 只有 go/db 每条读写任务读（选库 + 复核各一次 MGET）。新路径一次完整登录执行两次 Login。EnterGame 默认不再查归属；scene_manager 每次进场 / 换图查一次（home + 合服围栏）。在线路径不读库（K8s 固定 `RouteStore.Mode=redis`）。
 - **取逻辑服本身不是瓶颈**（1 次 RPC + 1 次 MGET）；卡扩展的是它所在的全服唯一单实例 Redis（账号目录、会话、锁、映射、PlayerAllData、存盘控制面都在上面，没有 HA）。进程层（login / data_service / scene_manager）无状态、能加副本，存储层今天不能扩。mapping 读量大头是存盘与换图，不是登录。
-- **当晚已落码（未编译、未测试，待 Codex 验证）**：login gate 目录 list-watch 缓存；选 gate 随机二选一（login 快路径与 scene_manager 跨 zone 重定向共用 `go/shared/gatepick`，重定向并补排空过滤；Java 版 `GatePicker` 同步）；K8s 与 compose 栈 login 的 DataServiceRpc 熔断打开；EnterGame 账号目录自愈加锁 + CAS + 提交点复核反向索引；运维 `RemovePlayersFromAccounts` 改为账号锁内原子摘孤儿并删反向索引；若干过时文档数字加更正注。
+- **当晚已落码（未编译、未测试，待 Codex 验证）**：login gate 目录 list-watch 缓存；选 gate 随机二选一（login 快路径与 scene_manager 跨 zone 重定向共用 `go/shared/gatepick`，重定向并补排空过滤；Java 版 `GatePicker` 同步）；K8s 与 compose 栈 login 的 DataServiceRpc 熔断打开；EnterGame 账号目录自愈加锁 + CAS + 提交点复核反向索引；运维 `RemovePlayersFromAccounts` 的实现改为账号锁内原子摘孤儿并删反向索引（目前没有生产入口，gRPC 桩已改为明确返回 Unimplemented）；若干过时文档数字加更正注。
 - **仍待负责人决定**：拆 Redis 与 HA、hash tag 改键、读脚本拼键的改法、账号目录落库位置、打开新号免冷读、access_token 那次 Login 是否还要重新生成角色列表（要看客户端仓）、单台 gate 连接上限怎么让 login 知道。见 §12.1 末尾。
 - **证据边界**：当前登录路径没有任何压测覆盖（最近的 R19 早于角色列表查归属与进场查归属），上述倍数都是推算。
 

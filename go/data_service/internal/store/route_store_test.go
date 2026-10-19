@@ -411,7 +411,7 @@ func TestRouteMetaAndReconcileWritesOnlyInStoreFiles(t *testing.T) {
 	}
 	write := regexp.MustCompile("(?i)(INSERT\\s+INTO|UPDATE|DELETE\\s+FROM|REPLACE\\s+INTO|TRUNCATE\\s+TABLE)\\s+`?(" +
 		RouteMetaTableName + "|" + RouteReconcileTableName + ")\\b")
-	allowed := map[string]bool{"internal/store/route_store.go": true}
+	allowed := map[string]bool{"internal/store/route_store.go": true, "internal/store/route_reconcile.go": true}
 
 	var files, allowedHits int
 	var offenders []string
@@ -463,9 +463,10 @@ func TestRouteMetaAndReconcileWritesOnlyInStoreFiles(t *testing.T) {
 	if files == 0 {
 		t.Fatalf("在 %s 下一个 .go 文件都没扫到:守卫失效", root)
 	}
-	// 至少 R15 / R16(种行)、R19(冻结)、R21(抬水位)、R22(解冻)五条。
-	if allowedHits < 5 {
-		t.Fatalf("允许的文件里只匹配到 %d 条 route_meta / route_reconcile 写语句(至少应有 R15 / R16 / R19 / R21 / R22):正则失效", allowedHits)
+	// 至少九条:route_store.go 的 R15 / R16(种行)、R19(冻结)、R21(抬水位)、R22(解冻),
+	// 加上 route_reconcile.go(第 1b-2 批)的 R23(续约 / 抢租约)、R25(释放)、R27(推进水位)、R28(leader 冻结)。
+	if allowedHits < 9 {
+		t.Fatalf("允许的文件里只匹配到 %d 条 route_meta / route_reconcile 写语句(至少应有 R15 / R16 / R19 / R21 / R22 / R23 / R25 / R27 / R28):正则失效", allowedHits)
 	}
 	if len(offenders) > 0 {
 		t.Fatalf("route_meta / route_reconcile 的写入只许出现在 %v,以下位置绕过了它:\n%s", allowed, strings.Join(offenders, "\n"))

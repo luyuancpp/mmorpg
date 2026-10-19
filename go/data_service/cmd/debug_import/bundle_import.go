@@ -23,7 +23,6 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // ── player-bundle 导入 ─────────────────────────────────────────────────
@@ -115,8 +114,12 @@ func buildImportPlan(b *debugutil.Bundle, source string) (*importPlan, error) {
 	case sourceAuto, "":
 		if parent != nil {
 			source = sourceRedisParent
-		} else {
-			source = sourceSQL
+			break
+		}
+		source = sourceSQL
+		if parentErr != nil {
+			// 父快照存在却不可用时线上 login 会拒绝它;改按 SQL 导入复现不出这一点,必须说出来。
+			plan.notes = append(plan.notes, "父快照不可用("+parentErr.Error()+"),已改按 SQL 行导入;线上 login 会拒绝该父快照,本地复现不出这个拒绝")
 		}
 	case sourceRedisParent, sourceSQL:
 	default:
@@ -134,12 +137,15 @@ func buildImportPlan(b *debugutil.Bundle, source string) (*importPlan, error) {
 			return nil, fmt.Errorf("-source=redis-parent 不可用: %w", parentErr)
 		}
 		rows = map[string]proto.Message{
-			"player_database":   rowOrSkeleton(parent.GetPlayerDatabaseData(), &databasepb.PlayerDatabase{}, b.PlayerID),
-			"player_database_1": rowOrSkeleton(parent.GetPlayerDatabase_1Data(), &databasepb.PlayerDatabase_1{}, b.PlayerID),
+			"player_database":   proto.Clone(parent.GetPlayerDatabaseData()),
+			"player_database_1": proto.Clone(parent.GetPlayerDatabase_1Data()),
 		}
 		plan.seq = parent.GetLastSaveSeq()
 	case sourceSQL:
 		if sqlErr != nil {
+			if parentErr != nil {
+				return nil, fmt.Errorf("父快照与 SQL 行都不可用: 父快照 %v; SQL %w", parentErr, sqlErr)
+			}
 			return nil, fmt.Errorf("-source=sql 不可用: %w", sqlErr)
 		}
 		rows = sqlRows
@@ -214,6 +220,13 @@ func bundleParent(b *debugutil.Bundle) (*databasepb.PlayerAllData, error) {
 	if err := proto.Unmarshal(raw, parent); err != nil {
 		return nil, fmt.Errorf("父快照解析失败: %w", err)
 	}
+	// 与 login beginParentLoad 同一身份校验:缺子表或身份不符的父快照线上会被拒,不能补骨架后照常导入。
+	if parent.GetPlayerDatabaseData() == nil || parent.GetPlayerDatabase_1Data() == nil {
+		return nil, errors.New("父快照缺少 player_database_data 或 player_database_1_data(线上 login 会以「父快照玩家身份不符」拒绝)")
+	}
+	if parent.GetPlayerDatabaseData().GetPlayerId() != b.PlayerID || parent.GetPlayerDatabase_1Data().GetPlayerId() != b.PlayerID {
+		return nil, errors.New("父快照里的 player_id 与导出包不符(线上 login 会拒绝)")
+	}
 	return parent, nil
 }
 
@@ -240,6 +253,10 @@ func bundleSQLRows(b *debugutil.Bundle) (map[string]proto.Message, error) {
 		if exported == nil || exported.Error != "" || !exported.Found || exported.Row == nil {
 			return nil, fmt.Errorf("导出包缺少表 %s 的行", name)
 		}
+		if len(exported.LiveExtraColumns) > 0 {
+			return nil, fmt.Errorf("表 %s 导出时线上有本地 proto 没有的列 %v,这些列没导出;切到线上镜像的 commit 重导",
+				name, exported.LiveExtraColumns)
+		}
 		raw, ok, err := exported.Row.RawBytes()
 		if err != nil {
 			return nil, fmt.Errorf("表 %s: %w", name, err)
@@ -256,17 +273,6 @@ func bundleSQLRows(b *debugutil.Bundle) (map[string]proto.Message, error) {
 	return rows, nil
 }
 
-// rowOrSkeleton 克隆父快照里的子消息;父快照缺这张表时用只含 player_id 的骨架(与建角种子同形)。
-func rowOrSkeleton[T proto.Message](sub T, empty T, playerID uint64) proto.Message {
-	if sub.ProtoReflect().IsValid() {
-		return proto.Clone(sub)
-	}
-	skeleton := proto.Clone(empty)
-	fd := skeleton.ProtoReflect().Descriptor().Fields().ByName("player_id")
-	skeleton.ProtoReflect().Set(fd, protoreflect.ValueOfUint64(playerID))
-	return skeleton
-}
-
 func playerIDOf(msg proto.Message) uint64 {
 	fd := msg.ProtoReflect().Descriptor().Fields().ByName("player_id")
 	if fd == nil {
@@ -275,260 +281,3 @@ func playerIDOf(msg proto.Message) uint64 {
 	return msg.ProtoReflect().Get(fd).Uint()
 }
 
-// ── 执行 ───────────────────────────────────────────────────────────────
-
-func runBundleImport(ctx context.Context, raw []byte, opts bundleImportOptions) error {
-	b, err := parseBundle(raw)
-	if err != nil {
-		return err
-	}
-	plan, err := buildImportPlan(b, opts.source)
-	if err != nil {
-		return err
-	}
-	cfg, err := debugutil.LoadDBConfig(opts.dbConfigPath)
-	if err != nil {
-		return err
-	}
-	localZone := opts.localZone
-	if localZone == 0 {
-		localZone = cfg.ZoneId
-	}
-	if localZone == 0 {
-		return errors.New("本地 zone 未知:db config 没有 ZoneId,用 -zone 指定")
-	}
-
-	printBundlePlan(b, plan, localZone, opts)
-	if opts.dryRun {
-		fmt.Fprintf(os.Stderr, "\n[DRY RUN] 未写入。确认目标是本地隔离环境后加 --dry-run=false 执行。\n")
-		return nil
-	}
-
-	// 写前闸门:三个写目标都必须是本机(或显式放行的本地服务名)。
-	core := cfg.CoreRedis()
-	if err := debugutil.CheckLocalWriteTarget("MySQL", cfg.ServerConfig.Database.Hosts, opts.allowHosts); err != nil {
-		return err
-	}
-	if err := debugutil.CheckLocalWriteTarget("核心 Redis", core.Hosts, opts.allowHosts); err != nil {
-		return err
-	}
-	// 先按配置校验映射写目标,再建 Router(db_first 时建 Router 就会连全局库)。
-	dsCfg, err := debugutil.LoadDataServiceConfig(opts.configPath)
-	if err != nil {
-		return err
-	}
-	if err := checkDataServiceTargets(dsCfg, opts.allowHosts); err != nil {
-		return err
-	}
-	svcCtx, cleanup, err := debugutil.NewServiceContext(opts.configPath)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-
-	db, _, dbName, err := debugutil.OpenZoneDB(ctx, opts.dbConfigPath, localZone)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-	rdb, err := debugutil.OpenRedis(ctx, core)
-	if err != nil {
-		return err
-	}
-	defer rdb.Close()
-
-	local, err := inspectLocalPlayer(ctx, db, rdb, svcCtx.Router, plan, localZone)
-	if err != nil {
-		return err
-	}
-	if err := local.admit(opts.replace, localZone); err != nil {
-		return err
-	}
-
-	epoch := max(plan.baseEpoch, local.ownerEpoch) + 1
-	version := savebarrier.Version(epoch, plan.seq)
-	fmt.Fprintf(os.Stderr, "\n本地重铸版本: owner_epoch=%d save_seq=%d (%s)\n", epoch, plan.seq, version)
-
-	if err := writeLocalRows(ctx, db, plan, epoch); err != nil {
-		return fmt.Errorf("写 %s 失败(未写 Redis,可直接重跑): %w", dbName, err)
-	}
-	fmt.Fprintf(os.Stderr, "  [OK] %s: %d 张表已写入\n", dbName, len(plan.rows))
-
-	if err := writeLocalRedis(ctx, rdb, plan.playerID, localZone, epoch, version, opts.localAccount); err != nil {
-		return fmt.Errorf("SQL 已写入但 Redis 写入失败;此时 login 会拒绝该玩家,加 -replace 重跑即可: %w", err)
-	}
-	fmt.Fprintf(os.Stderr, "  [OK] 核心 Redis: 屏障 / owner_epoch 已对齐,本地父快照与子表缓存已清\n")
-
-	if !local.mapped {
-		if err := svcCtx.Router.RegisterPlayerZone(ctx, plan.playerID, localZone, 0); err != nil {
-			return fmt.Errorf("登记 player:zone 失败(数据已写入,修好映射后重跑或手工登记): %w", err)
-		}
-		fmt.Fprintf(os.Stderr, "  [OK] 映射: player %d -> zone %d\n", plan.playerID, localZone)
-	}
-
-	fmt.Fprintf(os.Stderr, "\n[OK] 玩家 %d 已导入本地 zone %d(来源 %s)。\n", plan.playerID, localZone, plan.source)
-	if opts.localAccount != "" {
-		fmt.Fprintf(os.Stderr, "下一步:用账号 %s 先 Login 一次(建出账号目录),再 EnterGame player_id=%d;EnterGame 会按反向索引把角色补进账号目录。\n",
-			opts.localAccount, plan.playerID)
-	} else {
-		fmt.Fprintf(os.Stderr, "未给 -local-account:本地没有账号拥有这个角色,EnterGame 会被拒。需要登录时加 -local-account=<本地 dev_/robot_ 账号> -replace 重跑。\n")
-	}
-	return nil
-}
-
-func printBundlePlan(b *debugutil.Bundle, plan *importPlan, localZone uint32, opts bundleImportOptions) {
-	fmt.Fprintf(os.Stderr, "=== 导入预览 (player-bundle) ===\n")
-	fmt.Fprintf(os.Stderr, "  玩家:        %d\n", b.PlayerID)
-	fmt.Fprintf(os.Stderr, "  导出:        %s by %s,原因 %q\n", b.ExportedAtUTC, b.Operator, b.Reason)
-	fmt.Fprintf(os.Stderr, "  线上落点:    home_zone=%d storage=%s(%s)\n", b.Routing.HomeZone, b.Routing.StorageDB, b.Routing.ResolvedBy)
-	if b.ServerRevision != "" {
-		fmt.Fprintf(os.Stderr, "  线上版本:    %s(本地检出需与之一致,否则 proto 字段可能错位)\n", b.ServerRevision)
-	}
-	fmt.Fprintf(os.Stderr, "  数据来源:    %s\n", plan.source)
-	fmt.Fprintf(os.Stderr, "  本地目标:    zone %d\n", localZone)
-	for _, row := range plan.rows {
-		fmt.Fprintf(os.Stderr, "    %-20s %6d bytes\n", row.table, proto.Size(row.msg))
-	}
-	fmt.Fprintf(os.Stderr, "  线上最大代次 %d,最大存盘序号 %d;本地版本 = max(线上, 本地) + 1\n", plan.baseEpoch, plan.seq)
-	if opts.localAccount != "" {
-		fmt.Fprintf(os.Stderr, "  本地账号:    %s(写 player_to_account 反向索引)\n", opts.localAccount)
-	}
-	for _, note := range plan.notes {
-		fmt.Fprintf(os.Stderr, "  注意: %s\n", note)
-	}
-}
-
-// localPlayerState 是导入前本地已有的同号状态。
-type localPlayerState struct {
-	sqlTables  []string
-	redisKeys  []string
-	onlineKeys []string
-	ownerEpoch uint64
-	mapped     bool
-	mappedZone uint32
-}
-
-func inspectLocalPlayer(ctx context.Context, db *sql.DB, rdb *redis.Client, router *routing.Router, plan *importPlan, localZone uint32) (*localPlayerState, error) {
-	state := &localPlayerState{}
-	for _, row := range plan.rows {
-		newMsg := func() proto.Message { return row.msg.ProtoReflect().Type().New().Interface() }
-		_, found, err := debugutil.ReadPlayerRow(ctx, db, newMsg, plan.playerID)
-		if err != nil {
-			return nil, fmt.Errorf("读本地 %s 失败(本地表结构与当前检出不一致时先跑本地迁移): %w", row.table, err)
-		}
-		if found {
-			state.sqlTables = append(state.sqlTables, row.table)
-		}
-	}
-
-	id := plan.playerID
-	specs := []debugutil.RedisKeySpec{
-		{Key: debugutil.ParentKey(id), Kind: debugutil.RedisKindString},
-		{Key: ownerepoch.OwnerEpochKey(id), Kind: debugutil.RedisKindString},
-		{Key: savebarrier.Key(id), Kind: debugutil.RedisKindHash},
-		{Key: scenenode.LocationKey(id), Kind: debugutil.RedisKindString},
-		{Key: debugutil.LocatorSessionKey(id), Kind: debugutil.RedisKindString},
-	}
-	entries, err := debugutil.ReadRedisKeys(ctx, rdb, specs)
-	if err != nil {
-		return nil, err
-	}
-	for i, entry := range entries {
-		if entry.Type == "none" {
-			continue
-		}
-		if i >= 3 {
-			state.onlineKeys = append(state.onlineKeys, entry.Key)
-			continue
-		}
-		state.redisKeys = append(state.redisKeys, entry.Key)
-	}
-	if owner := debugutil.EntryText(&entries[1]); owner != "" {
-		if state.ownerEpoch, err = ownerepoch.ParseEpoch(owner); err != nil {
-			return nil, fmt.Errorf("本地 owner_epoch 畸形: %w", err)
-		}
-	}
-
-	zone, err := router.GetPlayerHomeZone(ctx, id)
-	switch {
-	case err == nil:
-		state.mapped, state.mappedZone = true, zone
-	case errors.Is(err, routing.ErrHomeZoneNotMapped):
-	default:
-		return nil, fmt.Errorf("读本地 player:zone 失败: %w", err)
-	}
-	return state, nil
-}
-
-// admit 决定能否写入。本地在线的同号玩家一律拒绝(scene 里的内存态会把导入的数据存回去覆盖);
-// 本地已有同号存档时要 -replace;映射指向别的 zone 时拒绝(映射只能经 RegisterPlayerZone / merge_zone 改)。
-func (s *localPlayerState) admit(replace bool, localZone uint32) error {
-	if len(s.onlineKeys) > 0 {
-		return fmt.Errorf("本地同号玩家在线或会话未释放(%s),先让他下线、等会话过期后再导入", strings.Join(s.onlineKeys, ", "))
-	}
-	if s.mapped && s.mappedZone != localZone {
-		return fmt.Errorf("本地 player:zone 已指向 zone %d(不是本地 zone %d);用 -zone=%d 导入,或先在本地清掉这条映射",
-			s.mappedZone, localZone, s.mappedZone)
-	}
-	existing := append(append([]string{}, s.sqlTables...), s.redisKeys...)
-	if len(existing) > 0 && !replace {
-		return fmt.Errorf("本地已有该 player_id 的存档(%s),会被覆盖;确认可以覆盖后加 -replace", strings.Join(existing, ", "))
-	}
-	return nil
-}
-
-// writeLocalRows 在一个 RC 事务里按表名升序替换两张行,行内围栏写成本地版本。
-func writeLocalRows(ctx context.Context, db *sql.DB, plan *importPlan, epoch uint64) error {
-	tx, err := db.BeginTx(ctx, importTableTxOptions())
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-	for _, row := range plan.rows {
-		msg := proto.Clone(row.msg)
-		if err := debugutil.SetRowFence(msg, epoch, plan.seq); err != nil {
-			return err
-		}
-		if err := debugutil.ReplacePlayerRow(ctx, tx, msg); err != nil {
-			return fmt.Errorf("表 %s: %w", row.table, err)
-		}
-	}
-	return tx.Commit()
-}
-
-// writeLocalRedis 在一个 MULTI 里对齐核心 Redis:删父快照 / 子表缓存 / 旧屏障 / 资产证据 / 交接标记,
-// 写屏障三令牌与 owner_epoch,把玩家移出本地待落库索引。父快照留给 login 冷加载从 SQL 组装。
-func writeLocalRedis(ctx context.Context, rdb redis.Cmdable, playerID uint64, localZone uint32, epoch uint64, version, localAccount string) error {
-	barrierKey := savebarrier.Key(playerID)
-	_, err := rdb.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.Del(ctx,
-			debugutil.ParentKey(playerID),
-			debugutil.SubTableCacheKey(&databasepb.PlayerDatabase{}, playerID),
-			debugutil.SubTableCacheKey(&databasepb.PlayerDatabase_1{}, playerID),
-			assetop.SQLCommitKey(playerID),
-			ownerepoch.HandoffKey(playerID),
-			barrierKey,
-		)
-		pipe.HSet(ctx, barrierKey, "pending", version, "player_database", version, "player_database_1", version)
-		pipe.Set(ctx, ownerepoch.OwnerEpochKey(playerID), fmt.Sprint(epoch), 0)
-		pipe.ZRem(ctx, debugutil.SavePendingIndexKey(localZone, playerID), fmt.Sprint(playerID))
-		if localAccount != "" {
-			pipe.Set(ctx, debugutil.PlayerToAccountKey(playerID), localAccount, 0)
-		}
-		return nil
-	})
-	return err
-}
-
-// checkDataServiceTargets 检查 Router.RegisterPlayerZone 会写的目标:映射 Redis,db_first 时还有全局库的 player_route。
-func checkDataServiceTargets(c config.Config, allowHosts string) error {
-	if err := debugutil.CheckLocalWriteTarget("data_service MappingRedis", c.MappingRedis.Host, allowHosts); err != nil {
-		return err
-	}
-	if c.RouteStore.Normalize().DBFirst() {
-		if err := debugutil.CheckLocalWriteTarget("data_service 全局库(RouteStore db_first)", c.SnapshotMySQL.Host, allowHosts); err != nil {
-			return err
-		}
-	}
-	return nil
-}

@@ -67,6 +67,21 @@ void GateEventHandler::RoutePlayerEventHandler(const contracts::kafka::RoutePlay
 
     auto &session = it->second;
 
+    // 客户端 LeaveGame 之后、下一次登录进场之前到达的、属于 LeaveGame 之前那条登录链的路由:在写任何会话字段之前丢弃
+    // (scene_route_helper.h IsRouteFromBeforeLeaveGame,docs/design/location-release-binding.md §3.5 R5)。
+    // 不丢的话它会重新填上 lastSceneRoute / ownerEpoch,下一次 BindSession 按这条旧路由、带旧 epoch 补发。
+    if (gate_scene_route::IsRouteFromBeforeLeaveGame(session, event.player_id(), event.login_generation()))
+    {
+        LOG_INFO << "RoutePlayer: dropped a route issued before the client left the game, session_id=" << sessionId
+                 << " player_id=" << event.player_id()
+                 << " scene_node_id=" << targetNodeId
+                 << " scene_id=" << event.scene_id()
+                 << " owner_epoch=" << event.owner_epoch()
+                 << " route_login_generation=" << event.login_generation()
+                 << " login_generation_at_leave=" << session.loginGenerationAtReset;
+        return;
+    }
+
     // 身份字段在转发之前写进会话(scene_route_helper.h ApplyRouteIdentity):转发、欠账重试与晚到 BindSession
     // 的补发都从会话取,不再读路由事件。玩家只在会话未绑角色时采用(BindSession 可能尚未到达);归属 zone 与
     // epoch 属于"本次路由决策",无条件覆盖,两次改派挨近时旧值不能保留;登录代次只对本角色的路由取 max,

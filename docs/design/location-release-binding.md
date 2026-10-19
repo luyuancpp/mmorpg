@@ -61,7 +61,7 @@ location 不在,scene_manager 按"首次落点"处理 —— 铸造新 epoch、�
   3. location 没有持有者(`node_id` 为空的等待落点)。
 
   例外(沿用旧行为删除并计数):E == 0(存量玩家,存盘本来不带 CAS,epoch 守卫保护不到);dev 旁路
-  `AllowUnsafeCrossNodeHandoff=true`(换手门本身已被旁路);功能关闭(`LeaveSceneHolderReleaseWaitSeconds <= 0`)。
+  `AllowUnsafeCrossNodeHandoff=true`(换手门本身已被旁路);功能关闭(`LeaveSceneHolderReleaseWaitSeconds < 0`;配置为 0 取默认 600s,不算关闭)。
 - **R2(判定与提交无窗口)**:证据 1 在删除 Lua 里原子复核:location 原文未变、owner_epoch 仍为 E(缺键视作未变)、
   标记 epoch == E,三者同时成立才删。Go 侧的预读只决定走哪种模式。
 - **R3(释放请求只发给可证明属于离场会话的持有者)**:只有离场身份判定为 `deleted`(location 的登录身份 ≤ 被删会话,
@@ -149,6 +149,17 @@ scene 侧 `PlayerLifecycleSystem::HandleSessionEndedRelease(playerId, expectedOw
 在收包时做而不是等 login 回包:直连 / 路由两种模式共用一个点;LeaveGame 在 login 侧失败时实体退出、location 保留,
 下一次 EnterGame 走同落点重连或换手门(均不回档),是良性的。"之后同连接的 Bind 按 LeaveGame 之前的旧路由补发"这类
 陈旧补发因此消失:Bind 先到时 `lastSceneRoute.sceneId == 0`,等新路由到达再一起转发。
+
+**重置之后迟到的旧路由**(2026-10-19 静态评审复核成立后补):LeaveGame 之前那条登录链发出的路由可能晚于重置才到 gate
+(已在 Kafka 里的跨节点换图;路由模式下钩子在收包时就跑,lane 里更早的 EnterGame 的路由随后才到)。它不会被转发(会话已没有
+场景、也没有登录类型),但若照常写会话,会重新填上 `lastSceneRoute` / `ownerEpoch`,下一次 BindSession 就按它、带旧 epoch
+补发,让已释放(甚至已发过凭证)的旧节点按旧代重新载入玩家。所以 `ResetSceneRoute` 同时置位 `sceneRouteResetPending` 并记下
+此刻的登录代次 `loginGenerationAtReset`;`RoutePlayerEventHandler` 在写任何会话字段之前用 `IsRouteFromBeforeLeaveGame` 判:
+同一角色、代次为 0 或不大于记下的值 → 丢弃。新登录的代次由 login 铸得更大(fence G1),它的路由照常收下(先于 Bind 到达也行)。
+标记在第一次真正转发进场(`ApplyRoute`)、换角色的 Bind、或不带代次的旧版 Bind 时清除。这是对 fence §4"gate 不据代次丢路由"
+的有意例外:那条规则防的是重登失败后仍在游戏里的换图被吞掉,LeaveGame 之后玩家不在游戏里,旧链路由没有合法用途。
+残余:旧版 login(代次 0)与重排同时出现、新登录的路由先于 Bind 到达时会被丢,这次登录等到客户端超时重连;登录代次键丢失
+且 login 实例时钟偏差使新代次不大于旧值时同理(fence §3.2 已登记的时钟窗口)。
 
 **ApplyRoute 第 4 条**(load-handover#0):`SessionInfo` 新增 `forwardedOwnerEpoch` = 上一次实际转发给 scene 的
 `PlayerEnterGameNodeRequest.owner_epoch`。`sceneId != 0`、`forwardedOwnerEpoch != 0`(scene 此前被告知过一个 epoch)且路由
@@ -242,8 +253,8 @@ epoch **大于** `forwardedOwnerEpoch` 时,以 LOGIN_NONE(0) 转发一次;转发
   - player_locator 先于 scene_manager:旧 player_locator 把 `FailedPrecondition` 当普通失败,功能上可用(照样保留 claim
     重试),但入队载荷不清 gate、会踢掉登出后仍在线的连接。
   - gate 任意时刻都可以滚;第 4 条与 LeaveGame 处理不依赖其它组件。
-- **回滚**:按反序。scene_manager 可单独把 `LeaveSceneHolderReleaseWaitSeconds` 设为 0 立刻退回旧行为(不必回滚二进制)。
-  **要关 scene 的 A1′ 开关(`SCENE_EXIT_RELEASE_MARK=0`)之前,先把 scene_manager 的上限设为 0**,否则关掉之后拿不到标记,
+- **回滚**:按反序。scene_manager 可单独把 `LeaveSceneHolderReleaseWaitSeconds` 设为 -1 立刻退回旧行为(不必回滚二进制;0 取默认 600s,不是关闭)。
+  **要关 scene 的 A1′ 开关(`SCENE_EXIT_RELEASE_MARK=0`)之前,先把 scene_manager 的上限设为 -1**,否则关掉之后拿不到标记,
   每次登出都要等满上限。
 - 不改 Redis 键格式;新增键 `player:{id}:leave_release_wait`(带 TTL,丢了只会让等待重新计时)。
 
@@ -268,6 +279,7 @@ epoch **大于** `forwardedOwnerEpoch` 时,以 LOGIN_NONE(0) 转发一次;转发
 | 回档证据计数 | `OwnerEpochStats.RejectedExitingSaveCountsAsRollbackEvidence`(cross_zone_test) |
 | **LeaveGame 后不断线就重进**:重置后 Bind 先到不补发,新路由带新 epoch 与登录类型一起转发 | `SceneRouteEntry.LeaveGameResetThenRelogForwardsFreshRouteOnly`(routing_identity_test) |
 | **Bind 先到按旧路由补发,随后同节点新 epoch** | `SceneRouteEntry.BindReplayThenSameNodeNewerEpochIsForwarded` |
+| LeaveGame 重置后迟到的旧路由被丢、Bind 不补发;新登录路由先于 Bind 照常;换角色 / 旧版 Bind 退回常规 | `SceneRouteEntry.LateOldRouteAfterLeaveGameResetIsDroppedAndNotReplayedOnBind`、`..._NewLoginRouteBeforeBindAfterLeaveGameStillReplays`、`..._LeaveGameRouteFilterYieldsToCharacterSwitchAndLegacyBind` |
 | 第 4 条边界:同 epoch / 更旧 / 0 不转发 | `SceneRouteEntry.SameNodeSameOrOlderEpochStaysDeduped`、`..._ZeroEpochRouteNeverForwardsByEpoch` |
 
 ## 9. 改动清单
@@ -282,7 +294,7 @@ epoch **大于** `forwardedOwnerEpoch` 时,以 LOGIN_NONE(0) 转发一次;转发
 - scene:`player/system/{release_fence.h, player_lifecycle.h, player_lifecycle.cpp}`、`core/system/redis.cpp`、
   `nodes/scene/handler/grpc/scene_node_service.cpp`(守护段)、`cpp/tests/cross_zone_test/cross_zone_test.cpp`。
 - gate:`libs/services/gate/session/comp/session_info_comp.h`、`nodes/gate/handler/event/{scene_route_helper.h,
-  scene_entry_dispatch.h, scene_entry_dispatch.cpp}`、`nodes/gate/handler/rpc/{client_session_handler.h,
+  scene_entry_dispatch.h, scene_entry_dispatch.cpp, gate_event_handler.cpp(RoutePlayer 守护段)}`、`nodes/gate/handler/rpc/{client_session_handler.h,
   client_session_handler.cpp}`(工作区里由别的会话从 client_message_processor.* 改名而来)、`cpp/tests/routing_identity_test/routing_identity_test.cpp`。
 - 文档:本文、审计 §2.1、`docs/README.md`、`docs/PROGRESS.md`。
 

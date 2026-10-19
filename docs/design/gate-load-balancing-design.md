@@ -5,8 +5,8 @@
 ## 选 Gate 的权威入口
 
 客户端通过 Java gateway 的 HTTP `POST /api/assign-gate` 申请入口，gateway 做限流与 zone
-准入后转给 go-zero login 的 `LoginPreGate.AssignGate`。gateway 不选 Gate、不签票；按负载选
-Gate（规则见下文「gate 目录怎么读、怎么挑」）与 HMAC 签发只在 login 实现。
+准入后转给 go-zero login 的 `LoginPreGate.AssignGate`。gateway 不选 Gate、不签票；login（assign-gate 入口）与
+scene_manager（跨 zone 重定向）各自按负载选 Gate 并签发，挑选规则共用 `go/shared/gatepick`（见下文「gate 目录怎么读、怎么挑」）。
 
 ```text
 客户端 → HTTP /api/assign-gate → Java gateway → gRPC LoginPreGate.AssignGate
@@ -61,9 +61,9 @@ scene_manager 跨 zone 重定向共用；Java 版 `game-discovery` 的 `GatePick
    原来是确定性取全局最少：gate 人数每 10s 才上报一次，快路径各请求互相看不到别人刚分出去的人，一个上报
    周期里本 zone 的新连接会全部落到同一台（容量模型 §2.1「PickGate 集中度」）。随机二选一下，滞后窗口里
    最闲那台最多拿 2/n 的新连接（3 台 67%，10 台 20%）；最忙的那台只有和同样忙的 gate 比时才会被选中。
-   **当前 K8s 默认每 zone 2 台 gate**（`k8s_deploy.ps1` 的 `GateReplicas = 2`、`deploy/k8s/zones.json`），
-   这时随机二选一与旧规则完全等价，羊群不变；收益只在每 zone 至少 3 台时出现。验证这一项必须按至少 3 台部署，
-   并按 gate 统计快路径下发分布。
+   **当前 K8s 默认每 zone 2 台 gate**（`k8s_deploy.ps1` 的 `GateReplicas = 2`、`deploy/k8s/zones.json`）：两台人数不等时
+   与旧规则相同；全体同人数（开新区第一个上报窗口）时从全落 NodeID 最小的一台变为两台各半；之后的窗口里羊群依旧，
+   充分摊开要每 zone 至少 3 台。验证这一项必须按至少 3 台部署，并按 gate 统计快路径下发分布。
 2. 排队 dispatcher 一拍放一批，用确定性的 `gatePicker`：在同一份候选上逐条挑并记账（负载 = 上报人数 +
    本拍已分给它的人数，同负载 NodeID 小的在前），先填最闲的，填平之后轮转。账不跨拍。
 

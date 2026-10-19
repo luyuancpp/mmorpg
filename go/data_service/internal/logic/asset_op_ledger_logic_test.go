@@ -163,10 +163,11 @@ func TestGetPlayerAssetOpLedger_FailureRowsNeverReportAbsent(t *testing.T) {
 	})
 
 	t.Run("home_zone 查不到 → Unavailable", func(t *testing.T) {
-		// 非 dev 模式:ClientForPlayer 必须先查映射。不配任何 Region,映射也不写。
+		// 非 dev 模式:配置其他 zone 的合法 Region,保留无映射与 zone 未配置两条失败路径。
 		mr := miniredis.RunT(t)
 		r := routing.NewRouter(config.Config{
 			MappingRedis:     redis.RedisConf{Host: mr.Addr(), Type: "node"},
+			Regions:          []config.RegionConfig{{Id: 1, Zones: []uint32{1}, Redis: config.RedisClusterConfig{Addrs: []string{mr.Addr()}}}},
 			PlayerLockTTLSec: 3,
 		})
 		t.Cleanup(func() { r.Close() })

@@ -301,7 +301,7 @@ func TestEnterGame_SelfHealSkippedFailsAppearanceRepair(t *testing.T) {
 }
 
 // CAS 的整字节比较分支(评审 C3②):锁内重读之后、写回之前账号目录被别的写者改了(不拿锁的运维工具、锁过期后的迟到写),
-// 自愈不写,账号目录保持那个写者的结果。删掉 accountRecordCASScript 的字节比较,这条会红。
+// 自愈不写,账号目录保持那个写者的结果。删掉 healAccountRoleScript 的字节比较,这条会红(外观修复用的 accountRecordCASScript 另见 TestRepairAccountAppearance_*)。
 func TestHealAccountRole_ConcurrentWriteAfterReReadIsNotOverwritten(t *testing.T) {
 	l, rdb := newSelfHealLogic(t)
 	ctx := context.Background()
@@ -328,7 +328,7 @@ func TestHealAccountRole_ConcurrentWriteAfterReReadIsNotOverwritten(t *testing.T
 }
 
 // 账号锁令牌校验分支(评审 C3③):锁内重读之后账号锁已不归本次(过期后被建角拿走),自愈不写;
-// 按令牌释放也删不掉别人的锁。删掉 accountRecordCASScript 对 KEYS[3] 的校验,这条会红。
+// 按令牌释放也删不掉别人的锁。删掉 healAccountRoleScript 对 KEYS[3] 的校验,这条会红。
 func TestHealAccountRole_LostAccountLockDoesNotWrite(t *testing.T) {
 	l, rdb := newSelfHealLogic(t)
 	ctx := context.Background()
@@ -382,5 +382,71 @@ func TestHealAccountRole_OwnershipRemovedAfterReReadDoesNotWrite(t *testing.T) {
 	after, err := rdb.Get(ctx, key).Bytes()
 	if err != nil || string(after) != string(before) {
 		t.Fatalf("account blob = %v (err=%v), want unchanged after the ownership index was removed", accountPlayerIDs(t, rdb, account), err)
+	}
+}
+
+// repairPlayer 是外观修复要写回账号目录的存档:已有外观与职业,账号里的那条记录缺外观。
+func repairPlayer() *dbpb.PlayerDatabase {
+	return &dbpb.PlayerDatabase{
+		PlayerId:          identityPlayerID,
+		Uint32PbComponent: &comppb.PlayerUint32Comp{Class: 3},
+		ProfileComponent:  &comppb.PlayerProfileComp{AppearanceId: "04_mountain_guardian_boy", Gender: 1},
+	}
+}
+
+// 外观修复的整字节比较(accountRecordCASScript):锁内重读之后账号目录被别的写者改了,修复报错、不写,保留那个写者的结果。
+// 自愈改用 healAccountRoleScript 之后,这条是 accountRecordCASScript 字节比较唯一的回归。
+func TestRepairAccountAppearance_ConcurrentWriteAfterReReadIsNotOverwritten(t *testing.T) {
+	l, rdb := newSelfHealLogic(t)
+	ctx := context.Background()
+	const account = "repair-cas-conflict"
+	key := constants.GetAccountDataKey(account)
+	if err := rdb.Set(ctx, key, marshalAccount(t, &pbbase.AccountSimplePlayer{PlayerId: identityPlayerID}), 0).Err(); err != nil {
+		t.Fatal(err)
+	}
+	seedHealOwnership(t, rdb, account)
+	other := marshalAccount(t, &pbbase.AccountSimplePlayer{PlayerId: identityPlayerID}, &pbbase.AccountSimplePlayer{PlayerId: selfHealConcurrentRoleID})
+	rdb.AddHook(&afterNthGetHook{key: key, n: 1, fn: func() {
+		if err := rdb.Set(context.Background(), key, other, 0).Err(); err != nil {
+			t.Errorf("simulate concurrent writer: %v", err)
+		}
+	}})
+
+	if err := l.repairAccountAppearance(ctx, selfHealState(account, identityLockToken), repairPlayer()); err == nil {
+		t.Fatal("repairAccountAppearance must fail when the account record changed after the re-read")
+	}
+	after, err := rdb.Get(ctx, key).Bytes()
+	if err != nil || string(after) != string(other) {
+		t.Fatalf("account blob = %v (err=%v), want the concurrent writer's content kept", accountPlayerIDs(t, rdb, account), err)
+	}
+}
+
+// 外观修复的账号锁令牌校验(accountRecordCASScript 的 KEYS[3]):锁内重读之后账号锁被建角拿走,修复报错、不写,别人的锁原样保留。
+func TestRepairAccountAppearance_LostAccountLockDoesNotWrite(t *testing.T) {
+	l, rdb := newSelfHealLogic(t)
+	ctx := context.Background()
+	const account = "repair-lost-account-lock"
+	key := constants.GetAccountDataKey(account)
+	before := marshalAccount(t, &pbbase.AccountSimplePlayer{PlayerId: identityPlayerID})
+	if err := rdb.Set(ctx, key, before, 0).Err(); err != nil {
+		t.Fatal(err)
+	}
+	seedHealOwnership(t, rdb, account)
+	lockKey := "account_lock:create:" + account
+	rdb.AddHook(&afterNthGetHook{key: key, n: 1, fn: func() {
+		if err := rdb.Set(context.Background(), lockKey, "taken-by-create", time.Minute).Err(); err != nil {
+			t.Errorf("simulate lock takeover: %v", err)
+		}
+	}})
+
+	if err := l.repairAccountAppearance(ctx, selfHealState(account, identityLockToken), repairPlayer()); err == nil {
+		t.Fatal("repairAccountAppearance must fail after losing the account lock")
+	}
+	after, err := rdb.Get(ctx, key).Bytes()
+	if err != nil || string(after) != string(before) {
+		t.Fatalf("account blob changed (err=%v) after losing the account lock", err)
+	}
+	if got, err := rdb.Get(ctx, lockKey).Result(); err != nil || got != "taken-by-create" {
+		t.Fatalf("account lock = (%q, %v), want the new holder's token untouched", got, err)
 	}
 }

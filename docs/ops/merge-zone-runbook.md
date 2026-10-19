@@ -897,6 +897,15 @@ go run ./cmd/route_tool -f etc/data_service.yaml tidb-prepare -zones=1,2 -storag
 - K8s 上同样要等第 1b 批把 route_tool 并进主程序入口。
   > 2026-10-18 更正:已并进(第 1b-1 批,未编译、未测试),K8s 上是 `/app/service -f /app/etc/data_service.yaml -route-tool tidb-prepare -zones=… [-dry-run=false]`,跑法见 §9.4。
 
+> 2026-10-19 补(映射持久化第 1b-2 批收尾,代码未编译、未测试):**`audit -require-maprev`(严格 maprev 口径,提案 §7 P3 的门禁)**。上面「maprev 缺席不算差异」只对默认口径成立。
+>
+> - 用法:`go run ./cmd/route_tool -f etc/data_service.yaml audit -require-maprev`(K8s:`/app/service -f /app/etc/data_service.yaml -route-tool audit -require-maprev`)。只在 `RouteStore.Mode=db_first` 下可用;redis 模式在连任何东西之前退出码 2(那时没有写者维护 `player:maprev`,每一行都会判落后)。
+> - 多一类差异 `redis_rev_behind`:库行不是墓碑、缓存里至少有它的一把键,而 `player:maprev` 缺席或小于库 rev(值相同也算 —— 缺 maprev 的键会被发布脚本的遗留值守卫挡住,maprev 落后会让下一次发布判错新旧)。三族键全无的行仍只计 `db_only_unpublished`,不重复计;墓碑、库行无效(`db_invalid`)、缓存值畸形(`redis_malformed`)不计。复核与首读同一口径。
+> - 输出:统计行在末尾多一段 ` redis_rev_behind=N`(默认口径的统计行逐字不变,脚本照旧解析);stderr 是 `DIFF kind=redis_rev_behind player=… db=… redis=…` 明细与一行 `NOTE: -require-maprev`。
+> - 退出码:0 = 含 `redis_rev_behind` 在内全部为 0;1 = 任一类非 0;2 = 失败,或 yaml 是 redis 模式。
+> - P3:二次导入(`-dry-run=false -allow-db-first`)之后、全部副本打开 `RouteStore.Reconcile.ArmReadyMarker` 之前,`audit -require-maprev` 必须退出码 0;非 0 时等对账 leader 的增量推送补齐 maprev(看 `data_service_route_reconcile_push_total{phase,result}`)后重跑,**不要**手工 `SET player:maprev:*`(绕过发布脚本的写者,提案 §8.3 第 1 条)。
+> - 与 `-frozen-recovery` 同用:`-frozen-recovery` 只豁免 `db_only_unpublished`,`redis_rev_behind` 照常计入退出码。冻结期反向修库之后「库 rev 领先缓存」的行要等解冻后 leader 推送补 maprev,冻结期内一般到不了 0,所以冻结期的门禁仍是 §9.4 第 3 步的 `audit -frozen-recovery`(不加 `-require-maprev`);两个开关同用只作核对。
+
 ### 9.4 映射冻结、反向修库与 K8s 上的 route-tool(映射持久化第 1b-1 批,2026-10-18)
 
 > **代码未编译、未测试**(AGENTS.md §10.1)。首次执行前先确认 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §11.2「第 1b-1 批」的「交 Codex 的验证」已跑绿。设计、偏离与风险都在那里,这里只写操作。
@@ -948,6 +957,31 @@ K8s 下全局库与 zone 库在同一个 mysql 实例,zone 回档(`docs/design/z
 **Redis 丢失(第 1b-2 批之后)**:db_first 且就绪标记打开时,leader 会自动全量预热并挂标记,§9.2 的手工重放只用于 redis 模式或库与 Redis 同时丢失。**第 1b-1 批还没有这一步**,仍按 §9.3 末尾「db_first 下 Redis 整体丢失」做。
 
 **在线清库与 db_first**:`stress_round19.ps1` / `currency_crash_window.ps1` 在服务运行中先 FLUSHALL 再清路由表、复位 `route_meta` / `route_reconcile`。第 1b-2 批的 leader 落地之后,db_first 下这样清库会与 leader 互相干扰(把将被清掉的行推回刚清空的 Redis,或把水位复位误判成回档)。脚本防护属于第 1b-3 批;在那之前,db_first 下清库前先停 data_service,或保持 redis 模式。
+
+> 2026-10-19 补(映射持久化第 1b-2 批收尾,代码未编译、未测试):**`rewarm` 与 `unfreeze` 的水位键出口**。设计见 [spec_D1_batch1b2_2_3.md](../handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md) §2 M2 / M3 / M5、§13.1 第 4 / 6 条、§13.5 第 1 条(并入提案 §13 之前以它为准)。
+
+**`rewarm [-wait=0] [-poll=5s] [-timeout=30m]`**(撤掉三把映射控制键,让对账 leader 从头全量预热、重挂就绪标记)
+
+- 做什么:**一条** `DEL mapping:route:ready mapping:route:warm mapping:route:watermark`(就绪标记、预热令牌、水位键;单条命令是原子的,不会留下半撤的状态)。只碰这三把键:不碰 `player:*` 映射键与合服围栏,不推送,不挂标记(标记只由 leader 写)。stdout 一行 `route_rewarm deleted=… marker_was=… waited=… rearmed=… baseline_set_at_ms=… new_set_at_ms=…`;stderr 是 NOTE、被撤标记的原值(`MARKER …`,诊断用)与 `DROPPED …`。
+- `-wait=0`(缺省):只撤,不开全局库;两种模式都允许。**回退 redis 模式**时按这个顺序(规格 §13.5 第 1 条,紧急回退也不能跳过前两步):先关全部读方开关(`RouteStore.ReadRequiresReady`、`Placement.RequireRouteReady`、`MergeMarkerRedis.RequireRouteReady`)→ 全部副本 `RouteStore.Reconcile.ArmReadyMarker=false` 滚动,确认现任 leader 计了 `data_service_route_reconcile_event_total{event="marker_dropped_disarmed"}` → `RouteStore.Mode=redis` 滚动 → `rewarm -wait=0`(一并删令牌与水位键)。
+- `-wait=<时长>`:撤完等 leader 重挂,只许 db_first(redis 模式在连任何东西之前退出码 2:没有 leader)、映射写者没冻结(冻结期 leader 不预热,退出码 2,三把键都不动)、`-wait` 必须小于 `-timeout`。判据:出现可解码、且 `set_at_ms` 大于基线的新标记;基线 = 被撤标记的 `set_at_ms`,被撤时没有可解码的标记就取撤之前读的库时钟(挡住从旧 AOF / RDB 恢复回来的旧标记)。被撤标记是更新格式版本时 `-wait` 直接退出码 2、什么都不撤(换新版二进制,或用 `-wait=0`)。
+- **撤掉标记之后,打开了读方开关的服务全部 fail-closed,直到 leader 全量预热完重挂**:go/db 暂停消费(`db_route_ready_gate` 为 0,Kafka lag 增长)、data_service 回源 SQL、guild 当作合服封锁。全服规模下全量预热要几个小时(未压测),**低峰执行,事先确认能承受**。
+- 什么时候用:用拷贝方式(SCAN + DUMP / RESTORE 等)迁移过 mapping 实例之后(规格 M5:迁移时不得拷贝这三把控制键;拷了、或拿不准有没有拷,迁移后必须 rewarm);怀疑缓存不完整而 leader 没察觉时;leader 因淘汰类原因闩住不挂标记、原因已排除时(rewarm 之后 leader 重新取淘汰基线)。
+- 退出码:
+
+| 码 | 含义 |
+|---|---|
+| 0 | 已撤(`-wait` 时:已等到新标记,`rearmed=true`) |
+| 1 | 已撤,但 `-wait` 内没等到新标记(`rearmed=false`,统计行照出)。stderr 的 `TIMEOUT` 行列出要查的项:每个副本 `RouteStore.Mode=db_first`、`RouteStore.Reconcile.Enabled`、`RouteStore.Reconcile.ArmReadyMarker`;`data_service_route_reconcile_leader`(恰好一个副本为 1)与 `data_service_route_reconcile_arm_enabled`;`data_service_route_reconcile_event_total` 的 `arming_refused_eviction` / `arming_refused_unresolved` / `arming_refused_debug_enabled` 与 `task_aborted`;`data_service_route_reconcile_push_total` 的冲突类 result。原因排除后用更长的 `-wait` 重跑(重跑只会再撤一次,leader 从头预热) |
+| 2 | 失败:参数(`-wait` 为负、`-poll` 不为正、`-wait` 不小于 `-timeout`)、redis 模式下 `-wait`、冻结中 `-wait`、`MappingRedis.Type` 不是 node、连接 / 读 / DEL 出错、`-timeout` 先到。DEL 之后才出的错 stderr 写明 `keys ARE dropped`:leader 会自己重挂,看现任 leader 的 `data_service_route_ready_marker` |
+| 3 | 不用 |
+
+**`unfreeze` 的水位键出口**(db_first;redis 模式的 unfreeze 不读不碰水位键)
+
+- 解冻之前先读 `mapping:route:watermark`;交给解冻事务的最低水位取 max(可信标记的 `watermark_ms`, 世代与库相同的水位键的 `watermark_ms`),`-cache-was-not-verified-acknowledged` 放行时同样取水位键那一项。不这样抬,解冻之后 leader 下一拍就会按「水位键 > 库水位」再冻结(`freeze_watermark`)。别的世代的水位键不约束本世代。
+- `writable = 1` 之后(同一次 unfreeze 里),把水位键改成 `{库世代, 上面的最低水位}`:不在就 SET NX,在就按原值 compare-and-set;最低水位为 0 时,不在就留给 leader 下一拍建,是别的世代 / 畸形就按原值删掉(同样留给 leader 重建)。stderr 一行 `WATERMARK_KEY <处置> before=<原状态> generation=… watermark_ms=…`,处置取 `set_nx` / `compare_and_set` / `kept` / `left_absent` / `dropped` / `superseded` / `not_reset`;stdout 统计行格式不变(`min_watermark_ms` 已含水位键给的下限)。
+- 写进水位键的是交给解冻事务的下限,不是解冻后的精确库水位(解冻按 GREATEST 抬水位,解冻后库水位 ≥ 它,所以不会触发再冻结;leader 之后每拍按库水位推进它)。
+- 退出码(在上面 §9.4 表的 `unfreeze` 行之上补):水位键是更新格式版本(`v` 更大)或不是 string 类型 → **2**,在解冻之前、任何写之前拒绝,不动它(版本更新:换新版二进制;不是 string:人工确认后只 `DEL mapping:route:watermark` 再重跑);解冻之后水位键没改成(按原值写输了且复读到别的世代 / 畸形,或 Redis 出错)→ **1**:writable 已经是 1,原样重跑 —— 已可写时重跑什么都不做;若 leader 因 `freeze_generation` / `freeze_watermark` 又冻结了,重跑会再走一遍并重置水位键。写输了但复读到本世代的值(leader 已推进它)或键已不在,算完成(`superseded`,退出码 0)。
 
 ---
 

@@ -39,6 +39,10 @@ type DBConfigFile struct {
 	} `json:"ServerConfig"`
 	Placement struct {
 		Redis *RedisEndpoint `json:"Redis,optional"`
+		// Required / RequireRouteReady 与 go/db config.PlacementConfig 同义,缺省 false。工具不按它们改选库,只用来提示
+		// 「线上 go/db 会以 missing_required 拒绝 / 会校验映射就绪标记」。
+		Required          bool `json:"Required,optional"`
+		RequireRouteReady bool `json:"RequireRouteReady,optional"`
 	} `json:"Placement,optional"`
 }
 

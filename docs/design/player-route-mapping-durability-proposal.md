@@ -1232,7 +1232,7 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
 
 **写:只在建角时发生。**
 - 每次建角在全局库做一个短事务:读 `route_meta`,`FOR UPDATE` 一个围栏分片行,插入一行,提交。
-- 发布到 Redis 和 WAITAOF 都在**提交之后**,不持锁。所以 WAITAOF 只拉长单次建角的延迟,不降吞吐。
+- 发布到 Redis 和 WAITAOF 都在**提交之后**,不持锁。所以 WAITAOF 只拉长单次建角的延迟,不降吞吐。(2026-10-18 更正:db_first 下不成立,见 §12.1 更正第 2 条)
 - 吞吐上限约为「每 zone 分片数 N ÷ 事务时长」。
   - MySQL 上事务几毫秒:N=8 时约每 zone 千级建角/秒(推算)。
   - TiDB 悲观事务更慢。G1a(§11.2「第 1a 批热点修复」)之后:`player_route` 主键与三条二级索引各 64 条写入尾部(`idx_route_home` 每 zone 64 条;2026-10-13 由 16 改为 64),`route_tool tidb-prepare` 预切后落在不同 Region(按 zone / 落点值的两条索引每 8 片一个 Region);围栏每 zone 一个 Region;`route_meta` 只剩极少写的开关行,S2 起必须设成缓存表(S1 可选)。剩下的上限是「每 zone 围栏分片行锁」与 TiDB 悲观事务时长。
@@ -1265,7 +1265,7 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
   5. W1 的围栏复核改为不持锁的版本比对(提交点只比 `fence_epoch` 而不 `FOR UPDATE` 围栏行),去掉每次建角都要的行锁。改变提交点语义,需要单独设计与评审,不在任何已排批次里。
   6. 全球多地域:目录留在单一写入地域、各地域放只读薄层(Phase 1 文档 §8),远端玩家建角多付跨地域往返,是一次性的。
 - **MySQL 档**:目录与 zone 库目前在同一个 MySQL 实例上(§6 引的 `k8s_deploy.ps1:3443`、`:3511-3512`),这时目录的瓶颈其实是实例本身(连接预算、IO),先把全局库拆到独立实例;G1a 在 MySQL 上不改变容量。
-- **读路径始终是 Redis 副本,不读库**(上面「读」一节):目录库成为瓶颈只会发生在建角写入上,不会拖慢登录、进场、存盘。
+- **读路径始终是 Redis 副本,不读库**(上面「读」一节):目录库成为瓶颈只会发生在建角写入上,不会拖慢登录、进场、存盘。(2026-10-18 更正:db_first 下不成立,见 §12.1 更正第 2 条)
 
 **开服前要做的(都已在别处登记):**
 1. 压测建角:P2 切 db_first 的门禁本来就要求,出注册阶段 p99 与 1213 / 1205 计数,据此定 N。
@@ -1275,55 +1275,61 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
 
 ### 12.1 2026-10-18 复核：登录到底读了什么、按吞吐看先撞哪面墙（回应负责人「登录拿逻辑服和物理服是不是瓶颈、能否水平扩展，吞吐要高」）
 
-> 怎么来的：多代理只读核对代码与文档（login、data_service、进场 / 存盘消费者、Redis 部署、文档与压测证据、Java 版各一路，每路一名质疑者复核），没有编译、测试或压测。行号以 2026-10-18 工作区为准。本节同时订正上面 §12 的两处说法（见「对 §12 的更正」）。
+> 怎么来的：多代理只读核对代码与文档（login、data_service、进场 / 存盘消费者、Redis 部署、文档与压测证据、Java 版各一路，每路一名质疑者复核），再经两轮评审订正（2026-10-19）；没有编译、测试或压测。代码位置写函数名，不写易漂移的行号；初稿核对的是第 3 批读方（`8b9592de3`）落码之前的树。本节订正上面 §12 的两条说法（第 2 条一次推翻两句；第 3 条是附加条件，不是更正）。改动与验证命令见 `docs/PROGRESS.md`「2026-10-19 登录吞吐第二轮」与「2026-10-19 scene_manager 跨 zone 重定向选 gate 改随机二选一……」两条。
 
-**一句话**：登录只取逻辑服（home_zone），不取物理落点（storage_id）；这一步本身很轻（1 次 RPC + 1 次 MGET，值约 100 字节），不是瓶颈。卡水平扩展的是它所在的那台 Redis：账号目录、会话、锁、映射、PlayerAllData、存盘控制面全挤在全服唯一的单实例上。进程层（login / data_service / scene_manager）无状态、能加副本，存储层今天不能扩。
+**一句话**：登录只取逻辑服（home_zone），不取物理落点（storage_id）；这一步本身很轻（1 次 RPC + 1 次 MGET，R 个键，每个值只是几字节的 zone 号十进制串），不是瓶颈。卡水平扩展的是它所在的那台 Redis：账号目录、会话、锁、映射、PlayerAllData、存盘控制面全挤在全服唯一的单实例上。数据面进程（login / data_service / scene_manager 的请求处理）无状态、能加副本，存储层今天不能扩。
 
 **登录链路上对归属 / 落点的实际读写**
 
 | 环节 | 读写 | 存在哪 | 次数 | 出处 |
 |---|---|---|---|---|
-| 账号登录 Login | 读账号目录 `account:{account}`（一段 Lua：GET，键不存在就 SET 空壳，带 PERSIST） | 核心 Redis（login 的 `Node.RedisClient`），没有 DB 副本、没有 TTL | 每次 Login 1 次 | `go/login/internal/logic/clientplayerlogin/loginlogic.go:344-374` |
-| 账号登录 Login | 角色列表经 data_service `BatchGetPlayerHomeZone` 改写成当前归属：mapping Redis 上对 `player:zone:{id}` 一次 MGET（R 个键）；500ms 预算，失败保留建角 zone（fail-open） | mapping Redis | 每次 Login 1 次 | `loginlogic.go:141`、`:240`；`go/login/internal/logic/pkg/homezone/homezone.go:155-169`、`:200-236`；`go/data_service/internal/routing/router.go:409-433` |
-| 一次完整登录 | 新路径会执行**两次** Login（HTTP `/api/login`，再在 gate 上用 access_token 登录），上面两行各 2 次 | — | ×2 | `robot/main.go:768-826` |
-| EnterGame | 默认**不**查归属（`HomeZone.RedirectOnEnterEnabled=false`，K8s 不写该段） | — | 0 | `entergamelogic.go:726-744`；`go/login/internal/config/config.go:233`；`go/login/etc/login.yaml:246` |
-| scene_manager EnterScene | 每次带 GateId 的进场（含**每次换图**）经 data_service `GetPlayerHomeZone` 在 mapping Redis 上跑一段 EVAL（读 home + 合服围栏）；跨 zone 传送第一条腿另查 1 次 | mapping Redis | 每次进场 / 换图 1 次 | `go/scene_manager/internal/logic/enterscenelogic.go:593-607`、`:441-442`；`home_zone.go:142`；`router.go:332-357` |
-| 物理落点 `player:placement` | **login 全程不读**；go/db 每条读写任务 2 次 MGET（选库 + 落库后复核，两键 placement + zone） | mapping Redis | 每条 DBTask 2 次；一次存盘（2 条写任务）4 次；一次冷登录（父键缺失时 2 条读任务）4 次 | `go/db/internal/kafka/placement_route.go:91`、`:246`、`:276`；`go/login/internal/logic/pkg/dataloader/ensure_player_all_data_async.go:88-97` |
-| 目录库 `player_route` | 不在在线路径上：K8s 固定 `RouteStore.Mode=redis`，提交点是 mapping Redis 上的 SETNX Lua | — | 0 | `tools/scripts/k8s_deploy.ps1` 的 data-service ConfigMap `RouteStore` 段；`router.go:165-214` |
+| 账号登录 Login | 读账号目录 `account:{account}`（一段 Lua：GET，键不存在就 SET 空壳，带 PERSIST） | 核心 Redis（login 的 `Node.RedisClient`），没有 DB 副本、没有 TTL | 每次 Login 1 次 | `loginlogic.go` 的 `getOrInitUserAccountScript` |
+| 账号登录 Login | 角色列表经 data_service `BatchGetPlayerHomeZone` 改写成当前归属：mapping Redis 上对 `player:zone:{id}` 一次 MGET（R 个键）；500ms 预算，失败保留建角 zone（fail-open） | mapping Redis | 每次 Login 1 次 | `loginlogic.go` 的 `roleListWithCurrentHomeZone`；`homezone.go` 的 `RefreshRoleZones`；`router.go` 的 `Router.BatchGetPlayerHomeZone` |
+| 一次完整登录 | 新路径会执行**两次** Login（HTTP `/api/login`，再在 gate 上用 access_token 登录），上面两行各 2 次 | — | ×2 | `robot/main.go` 的 `loginAndEnterViaHttpGateway` → `loginAndEnterAccessToken` |
+| EnterGame | 默认**不**查归属（`HomeZone.RedirectOnEnterEnabled=false`，K8s 不写该段） | — | 0 | `entergamelogic.go` 的 RedirectOnEnter 分支；`go/login/internal/config/config.go` |
+| scene_manager EnterScene | 每次带 GateId 的进场（含**每次换图**）经 data_service `GetPlayerHomeZone` 在 mapping Redis 上跑一段 EVAL（读 home + 合服围栏）；跨 zone 传送第一条腿另查 1 次 | mapping Redis | 每次进场 / 换图 1 次 | `enterscenelogic.go` 第 3b 步；`home_zone.go`；`router.go` 的 `GetPlayerHomeZoneAndMergeFence` |
+| 物理落点 `player:placement` | **login 全程不读**；go/db 每条读写任务 2 次 MGET（选库 + 落库后复核，两键 placement + zone） | mapping Redis | 每条 DBTask 2 次；一次存盘（2 条写任务）4 次；一次冷登录（父键缺失时 2 条读任务）4 次 | `go/db/internal/kafka/placement_route.go`；`ensure_player_all_data_async.go` |
+| 目录库 `player_route` | 不在在线路径上：K8s 固定 `RouteStore.Mode=redis`，提交点是 mapping Redis 上的 SETNX Lua | — | 0 | `k8s_deploy.ps1` 的 data-service ConfigMap `RouteStore` 段；`router.go` 的 `setPlayerZoneIfAbsentScript` |
 
 稳态下 mapping 读量的大头**不是登录**：是存盘（每次存盘 4 次 MGET）与换图（容量模型 S3 档换图速率约为登录速率的 6 倍）。容量模型 §2.5 `redis-mapping` 行的「2E」与 G4a 稿的「E + 列表数/s」都漏了换图那一项。
 
 **按吞吐看的撞墙顺序与状态**（倍数全是推算，见下「证据边界」）
 
-| 环节 | 现状 | 加机器能扩吗 | 要做的事 / 状态（2026-10-18 晚） |
+| 环节 | 现状 | 加机器能扩吗 | 要做的事 / 状态（2026-10-19） |
 |---|---|---|---|
-| 共享 Redis | K8s 上 login、data_service（MappingRedis）、scene_manager、player_locator 全指向 `redis.${InfraNamespace}:6379`：单实例、replicas 1；`redis-ha.yaml` 未接入任何部署路径 | **不能** | 第一步 mapping 拆独立实例（G4a，设计稿未落码）并上 HA；上 Cluster 的阻塞见下「Cluster 阻塞点」；10-17 已拍板「单元化 + 单元内 Cluster」，修订稿与代码都未做 |
+| 共享 Redis | K8s 上 login、data_service（MappingRedis）、scene_manager、player_locator 全指向 `redis.${InfraNamespace}:6379`：单实例、replicas 1；`redis-ha.yaml` 未接入任何部署路径 | **不能** | 第一步 mapping 拆独立实例（G4a，设计稿未落码）并上 HA；上 Cluster 的阻塞见下「映射链路的 Cluster 阻塞点」；10-17 已拍板「单元化 + 单元内 Cluster」，修订稿与代码都未做 |
 | AssignGate 读 gate 目录 | 原为每请求一次 etcd 线性一致 Range | 部分 | **已落码、未验证**：list-watch 进程内镜像，镜像不新鲜回落直读（`gate-load-balancing-design.md`「gate 目录怎么读、怎么挑」） |
-| PickGate | 原为按 10s 刷新的人数确定性取最少，开新区一个窗口可把 4.5k~5 万连接压到同一台 | 部分 | **已落码、未验证**：快路径随机二选一（`shared/gatepick`）；scene_manager 跨 zone 重定向同规则并补排空过滤。K8s 默认每 zone 2 台时与旧规则等价；单台连接上限感知、死 gate 新鲜度过滤未做 |
+| PickGate | 原为按 10s 刷新的人数确定性取最少，开新区一个窗口可把 4.5k~5 万连接压到同一台 | 部分 | **已落码、未验证**：随机二选一（`go/shared/gatepick`，login 快路径与 scene_manager 跨 zone 重定向共用，重定向并补排空过滤；Java `GatePicker` 同步）。K8s 默认每 zone 2 台时：两台人数不等与旧规则相同；全体同人数（开新区第一个上报窗口）时从全落 NodeID 最小的一台变为两台各半；之后的窗口里羊群依旧，充分摊开要每 zone ≥3 台。单台连接上限感知、死 gate 新鲜度过滤未做 |
 | task:result | 全服一个频道广播 | 部分 | B0-3 按 login 实例定向两批已落码，待 Codex 验证 |
-| 账号目录 `account:{a}` | 只在核心 Redis，没有 DB 副本 | 不能 | 落库位置待拍板；现成的 `user_accounts.simple_players` 列（`go/db/model/mysql_database_table.sql:12-17`）没有任何代码写它 |
+| 账号目录 `account:{a}` | 只在核心 Redis，没有 DB 副本 | 不能 | 落库位置待拍板；现成的 `user_accounts.simple_players` 列（`go/db/model/mysql_database_table.sql`）没有任何代码写它 |
 | 新号首登冷读 | 父键缺失时固定发 2 条读任务 | 部分 | 新号免冷读已落码、默认关，打开要拍板 |
-| db_first 之后的建角 | WAITAOF 与登录角色列表、进场查询共用 data_service 的 mapping 连接池（go-zero 按地址共用一个客户端），建角上限约 40Z/s，尖峰时饿住读 | — | 见下「对 §12 的更正」第 2 条；修法登记给 D1 后续批次 |
-| login / data_service / scene_manager 进程 | 无状态，每 zone 2 副本 | **能** | 直接加副本（目前没有 HPA） |
+| db_first 之后的建角 | WAITAOF 与登录角色列表、进场查询共用 data_service 的 mapping 连接池（go-zero 按地址共用一个客户端），建角上限约 40Z/s，尖峰时饿住读 | — | 见下「对 §12 的更正」第 2 条；修法登记在本节，D1 后续批次处理 |
+| login / data_service / scene_manager 进程 | 请求处理无状态，每 zone 2 副本 | 数据面**能** | 直接加副本（目前没有 HPA）。例外：scene_manager 编排 leader 全服唯一（`scene_manager:leader:lock`，不分 zone）；login 排队 dispatcher 每 zone 一个 leader；data_service 每副本 +35 条全局 MySQL 连接，受 `k8s_deploy.ps1` 连接总账约束 |
 
-**Cluster 阻塞点（2026-10-18 首次完整登记）**
+**映射链路的 Cluster 阻塞点**（2026-10-18 首次写入设计文档；共享库整体的清单见 [cross-zone-matchmaking.md](./cross-zone-matchmaking.md) §10.0）
 
-1. 三把映射键（`player:zone` / `player:placement` / `player:maprev`）没有共同 hash tag；改键与 `db-task-pipeline-bottlenecks.md` §6.5「不为 Cluster 改 hash tag 键名」冲突，待负责人裁决（容量模型 `:680`）。
-2. **读脚本在脚本里拼键**：`GetPlayerHomeZoneAndMergeFence` 读出 home 后拼出 `merge:in_progress:{home}` 再 EXISTS（`router.go:341-357`），这个键不在 KEYS 里，Cluster 下会跨 slot；`:384-389` 把无法解读的回复按合服处理，结果是已映射的玩家进场一律被拒（fail-closed）。之前没有任何文档登记这一条。改法不能简单拆成两次读（读 home 与读围栏之间合服完成会读到过时 home），要和 D1「围栏挪进库」一起设计。
-3. 建角 W1 的 `setPlayerZoneIfAbsentScript` 同时碰 `player:zone` 与 `merge:in_progress`（`router.go:209-216`），跨 slot。
-4. go/db 的两键 MGET（`placement_route.go:91`）跨 slot。
-5. C++ hiredis 每进程一条连接、不处理 MOVED/ASK（容量模型 §2.5 末行）。
+1. 三把映射键（`player:zone` / `player:placement` / `player:maprev`）没有共同 hash tag；改键与 `db-task-pipeline-bottlenecks.md` §6.5「不为 Cluster 改 hash tag 键名」冲突，待负责人裁决（容量模型 §4.2）。
+2. **读脚本在脚本里拼键**：`GetPlayerHomeZoneAndMergeFence` 读出 home 后拼出 `merge:in_progress:{home}` 再 EXISTS，这个键不在 KEYS 里，Cluster 下会跨 slot；`decodeHomeZoneAndMergeFenceReply` 把无法解读的回复按合服处理，结果是已映射的玩家进场一律被拒（fail-closed）。`router.go` 的代码注释早有说明，但此前没有任何文档登记。改法不能简单拆成两次读（读 home 与读围栏之间合服完成会读到过时 home），要和 D1「围栏挪进库」一起设计。
+3. 建角 W1 的 `setPlayerZoneIfAbsentScript` 同时碰 `player:zone` 与 `merge:in_progress`，跨 slot。
+4. go/db 的两键 MGET（`placement_route.go` 选库与复核）跨 slot。
+5. **第 3 批就绪标记**（`8b9592de3` 已落码）：`go/shared/placement/route_ready.go` 的 `RouteReadyReadScript` 把全局单键 `mapping:route:ready` 与逐玩家映射键放进同一段脚本，脚本里还调 INFO 取 `run_id`；data_service 的 `getHomeZoneFenceReadyScript` 在此之上还拼围栏键，go/db 的 `route_ready_gate.go` 同理。标记绑定的是单实例身份，hash tag 修不了，Cluster 下要按分片重新设计（或不用标记）。
+6. 2026-10-18 新增的多键脚本：`healAccountRoleScript`（4 个 KEYS：账号目录、玩家锁、账号锁、反向索引）、`removeOrphansScript`（2+N 个 KEYS）、scene_manager 排空查询对多台 gate 的 MGET（读失败放行）。它们在核心 / 共享实例上，归共享库那份清单。
+7. C++ hiredis 每进程一条连接、不处理 MOVED/ASK（容量模型 §2.5 末行）。
 
 **对 §12 的更正**
 
-1. §12 表里「go/db 每条存盘一次 MGET」不对：每条读写任务 2 次（选库一次、落库后复核一次），一次存盘 4 次。G4a 稿 `:956` 的 2 次是对的。
-2. §12「WAITAOF 只拉长单次建角的延迟、不降吞吐」「目录库成为瓶颈不会拖慢登录、进场、存盘」在 db_first 下不成立：发布与 WAITAOF 走 `r.mappingRedis.PipelinedCtx`（`go/data_service/internal/routing/route_publish.go:299`），与 `GetPlayerHomeZone`（`router.go:333`）、`BatchGetPlayerHomeZone`（`:417`）是同一个句柄；go-zero v1.10.0 按地址只建一个客户端、共用连接池（data_service Pod 500m 时约 10 条）与熔断器。每次 WAITAOF 占住一条连接约 0.5s，建角尖峰会饿住登录角色列表与进场查询。修法方向：发布 + WAITAOF 用独立的 go-redis 客户端（独立连接池），或给读路径单独的池；属于 D1 后续批次，本节只登记，不改 `go/data_service`（D1 会话在途）。
-3. §12「读路径始终是 Redis 副本，不读库」今天仍成立（Mode=redis）；第 3 批「标记不在时回源全局库」落地后，Redis 整体丢失到 leader 挂回标记之前，每次登录、进场都会各打一条 SQL 且不回填缓存，读放大与限流尚无评估（规格 `spec_D1_batch1b2_2_3.md:173`）。
+1. §12 表里「go/db 每条存盘一次 MGET」不对：每条读写任务 2 次（选库一次、落库后复核一次），一次存盘 4 次；另有 scene_manager 每次换图也读。`shared-redis-split-by-purpose.md` 里的 2 次是对的。
+2. §12「WAITAOF 只拉长单次建角的延迟、不降吞吐」「目录库成为瓶颈不会拖慢登录、进场、存盘」在 db_first 下不成立：发布与 WAITAOF 走 `r.mappingRedis.PipelinedCtx`（`route_publish.go`），与 `GetPlayerHomeZone`、`BatchGetPlayerHomeZone` 是同一个句柄；go-zero v1.10.0 按地址只建一个客户端（`redisclientmanager.go` 按 Addr 缓存），共用连接池（data_service Pod 500m 时约 10 条）与熔断器。每次 WAITAOF 占住一条连接约 0.5s，建角尖峰会饿住登录角色列表与进场查询。修法方向：db_first 的发布 + WAITAOF 改用独立的 go-redis 客户端（独立连接池，顺带隔离熔断器，可与 §11.2 第 9 条的熔断隔离备选合并）；不能再用同地址的 `MustNewRedis`，go-zero 会把它合并回同一个池。属于 D1 后续批次；本节只登记，不改 `go/data_service`（D1 会话在途）。
+3. §12「读路径始终是 Redis 副本，不读库」今天仍成立（Mode=redis）。附加条件：第 3 批读方已落码（`8b9592de3`，`RouteStore.ReadRequiresReady` 缺省关、只许 db_first）；打开之后，在就绪标记挂上之前（1b-2 对账 leader 落地前恒不挂），每次登录、进场都会各打一条 SQL 且不回填缓存，读放大与限流尚无评估（规格 `spec_D1_batch1b2_2_3.md`）。
 
 **证据边界**：最近一次压测是 R19（2026-06-18，1 zone 45k，`docs/stress/prev-summary.txt`），EnterGame 约 73/s 是 t15m→t18m 的爬坡斜率，不是饱和点。它早于角色列表查 home_zone（`11ba15a0f`，2026-09-08）与 scene_manager 进场查归属（`b8f56c58d`，2026-09-17），**当前登录路径没有任何压测覆盖**；mapping Redis 的 ops / CPU 也没有实测。上面所有倍数都是推算，以 tidb-phase1 §7 的 L-12 / L-14 压测为准。
 
-**顺带发现并已处理的问题**（2026-10-18，已落码，未编译、未测试）：K8s 与 compose 栈的 login `DataServiceRpc` 熔断与本地对齐为开；EnterGame 账号目录自愈原为无锁 GET + 整块 SET，改为账号锁 + 锁内重读 + 整字节 CAS，并在提交点复核反向索引；运维 `RemovePlayersFromAccounts` 改为同一把账号锁内原子摘孤儿并删反向索引。细节见 `docs/PROGRESS.md` 2026-10-18 两条。
+**顺带发现并已处理的问题**（已落码，未编译、未测试）：
 
-**仍待负责人决定**：拆 Redis 与 HA 的排期；hash tag 改键与 §6.5 的冲突；读脚本拼键的改法（随 D1 围栏挪库）；账号目录落库位置；打开新号免冷读；access_token 那次 Login 是否还要重新生成角色列表（省掉可让每次完整登录的映射读减半，但要先确认客户端是否用第二份列表，客户端仓未授权查看）；单台 gate 连接上限如何让 login 知道。
+- K8s 与 compose 栈的 login `DataServiceRpc` 熔断与本地对齐为开；
+- EnterGame 账号目录自愈原为无锁 GET + 整块 SET，改为账号锁 + 锁内重读 + 整字节 CAS，提交点复核反向索引；
+- 运维 `RemovePlayersFromAccounts` 的实现改为同一把账号锁内原子摘孤儿并删反向索引（脚本可重发）。**它目前没有生产入口**：gRPC `LoginAdmin.RemovePlayersFromAccounts` 原是返回空成功的生成桩，已改为明确返回 Unimplemented，接线另开任务。
 
-**Java 版**：没有映射层，归属区就是 `game.player.zone_id` 列，登录时按主键点查一次单库（`PlayerStore.findPlayer`），另读一次可降级的 Redis `game:location:{player_id}`；进程能多开，存储同样是单点。对应 Java 版本号 0.1.0-SNAPSHOT。
+**仍待负责人决定**：拆 Redis 与 HA 的排期；hash tag 改键与 §6.5 的冲突；读脚本拼键与就绪标记在 Cluster 下的改法（随 D1 围栏挪库）；账号目录落库位置；打开新号免冷读；access_token 那次 Login 是否还要重新生成角色列表（省掉可让每次完整登录的映射读减半，但要先确认客户端是否用第二份列表，客户端仓未授权查看）；单台 gate 连接上限如何让 login 知道；运维摘孤儿要不要接上 gRPC 入口。
+
+**Java 版**：没有映射层，归属区就是 `game.player.zone_id` 列，登录时按主键点查一次单库（`PlayerStore.findPlayer`），另读一次可降级的 Redis `game:location:{player_id}`；进程能多开，存储同样是单点，这是 Java 单库的既定设计（扩展要换分布式库，不在本轮）。选 gate 已同步为随机二选一（Java `PARITY.md` 末行）。对应 Java 版本号 0.1.0-SNAPSHOT。

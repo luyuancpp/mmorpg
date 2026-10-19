@@ -14,9 +14,11 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"data_service/internal/config"
 	"data_service/internal/routetool"
@@ -201,8 +203,9 @@ func TestRunSubcommandFlagsAreScoped(t *testing.T) {
 		{"unfreeze freeze-timeout below the floor", []string{"-f", "x.yaml", "unfreeze", "-confirm-audited", "-freeze-timeout=1s"}, "-freeze-timeout=1s"},
 		{"reason is not a tidb-prepare flag", []string{"-f", "x.yaml", "tidb-prepare", "-zones=1", "-reason=x"}, "reason"},
 		{"extra positional after freeze", []string{"-f", "x.yaml", "freeze", "now"}, "unexpected arguments"},
-		// rewarm 属于第 1b-2 批,本批不认。
-		{"rewarm is not a subcommand yet", []string{"-f", "x.yaml", "rewarm"}, "unknown subcommand"},
+		// 2026-10-19:rewarm 在第 1b-2 批收尾时落地,原先这里钉的「rewarm is not a subcommand yet」改为钉它的参数作用域
+		// (rewarm 自身的参数校验见 TestRunRewarmFlags)。
+		{"wait is rewarm only", []string{"-f", "x.yaml", "audit", "-wait=1m"}, "wait"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			code, stdout, stderr := runCLI(c.args...)
@@ -405,6 +408,246 @@ func TestRunAuditFrozenRecoveryNeedsFrozenWriters(t *testing.T) {
 	assert.Contains(t, stderr, "-frozen-recovery only applies while the route writers are frozen")
 }
 
+// ── 第 1b-2 批收尾(2026-10-19):rewarm 与 audit -require-maprev ──────────────────────────────
+
+// TestRunRewarmFlags:rewarm 的参数作用域与取值校验 —— 一律退出码 2、打印用法、不连任何东西。
+// -wait 缺省 0;-wait > 0 时 -poll 必须为正、-wait 必须小于 -timeout(-timeout 缺省 30m)。
+func TestRunRewarmFlags(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"negative wait", []string{"-f", "x.yaml", "rewarm", "-wait=-1s"}, "-wait=-1s"},
+		{"zero poll while waiting", []string{"-f", "x.yaml", "rewarm", "-wait=1m", "-poll=0s"}, "-poll=0s"},
+		{"wait not shorter than timeout", []string{"-f", "x.yaml", "rewarm", "-wait=30m"}, "-wait=30m0s"},
+		{"batch is not a rewarm flag", []string{"-f", "x.yaml", "rewarm", "-batch=10"}, "batch"},
+		{"confirm-audited is not a rewarm flag", []string{"-f", "x.yaml", "rewarm", "-confirm-audited"}, "confirm-audited"},
+		{"require-maprev is audit only", []string{"-f", "x.yaml", "rewarm", "-require-maprev"}, "require-maprev"},
+		{"poll is rewarm only", []string{"-f", "x.yaml", "unfreeze", "-confirm-audited", "-poll=1s"}, "poll"},
+		{"extra positional after rewarm", []string{"-f", "x.yaml", "rewarm", "now"}, "unexpected arguments"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			code, stdout, stderr := runCLI(c.args...)
+			assert.Equal(t, routetool.ExitFailed, code)
+			assert.Empty(t, stdout)
+			assert.Contains(t, stderr, c.want)
+			assert.Contains(t, stderr, "用法:")
+		})
+	}
+}
+
+// rewarmMarker 编一份 set_at_ms = setAtMs 的合规就绪标记。
+func rewarmMarker(t *testing.T, setAtMs uint64) string {
+	t.Helper()
+	raw, err := placement.EncodeRouteReadyMarker(placement.RouteReadyMarker{
+		Generation:   testGen,
+		RedisRunID:   strings.Repeat("ab", 20),
+		MasterReplID: strings.Repeat("cd", 20),
+		SetAtMs:      setAtMs,
+		WatermarkMs:  setAtMs - 1,
+		Leader:       "route_leader@it:0a1b2c3d",
+	})
+	require.NoError(t, err)
+	return raw
+}
+
+// presetControlKeys 写满三把控制键,外加一把不相干的映射键(rewarm 不许碰它)。
+func presetControlKeys(t *testing.T, mr *miniredis.Miniredis, markerSetAtMs uint64) {
+	t.Helper()
+	wm, err := placement.EncodeRouteWatermark(placement.RouteWatermark{Generation: testGen, WatermarkMs: markerSetAtMs})
+	require.NoError(t, err)
+	require.NoError(t, mr.Set(placement.RouteReadyKey, rewarmMarker(t, markerSetAtMs)))
+	require.NoError(t, mr.Set(placement.RouteWarmKey, strings.Repeat("0a", 16)))
+	require.NoError(t, mr.Set(placement.RouteWatermarkKey, wm))
+	require.NoError(t, mr.Set(placement.HomeZoneKey(1), "1"))
+}
+
+// TestRunRewarmDropsKeysWithoutTouchingTheDB:-wait=0(缺省)只连 mapping Redis、一把全局库都不开(回退 redis 模式时全局库可能已不归它管),
+// 两种模式都允许;三把控制键没了,不相干的映射键还在;stdout 恰好一行统计。
+func TestRunRewarmDropsKeysWithoutTouchingTheDB(t *testing.T) {
+	for _, mode := range []struct{ name, yamlTail string }{{"redis模式", ""}, {"db_first", dbFirstYaml}} {
+		t.Run(mode.name, func(t *testing.T) {
+			mr := miniredis.RunT(t)
+			presetControlKeys(t, mr, 1_760_000_000_000)
+			path := writeYaml(t, fmt.Sprintf(minimalYaml, mr.Addr())+mode.yamlTail)
+			opened := 0
+			d := fakeDeps(&fakeStore{})
+			d.openRouteStore = func(config.Config) (routeStore, error) {
+				opened++
+				return nil, fmt.Errorf("must not open the global DB")
+			}
+
+			code, stdout, stderr := runCLIWith(d, "-f", path, "rewarm")
+
+			assert.Equal(t, routetool.ExitClean, code, stderr)
+			assert.Zero(t, opened, "-wait=0 不开全局库")
+			assert.Equal(t, "route_rewarm deleted=3 marker_was=decoded waited=false rearmed=false baseline_set_at_ms=0 new_set_at_ms=0\n", stdout)
+			for _, k := range []string{placement.RouteReadyKey, placement.RouteWarmKey, placement.RouteWatermarkKey} {
+				assert.False(t, mr.Exists(k), k)
+			}
+			assert.True(t, mr.Exists(placement.HomeZoneKey(1)), "映射键不归 rewarm 管")
+			assert.Contains(t, stderr, "DROPPED ")
+		})
+	}
+}
+
+// TestRunRewarmWaitRefusedInRedisMode:redis 模式下 -wait > 0 在连任何东西之前退出码 2(没有 leader 重挂);
+// MappingRedis 不是 node 时 rewarm 一律退出码 2(三把控制键一条 DEL,cluster 下会 CROSSSLOT)。
+func TestRunRewarmWaitRefusedInRedisMode(t *testing.T) {
+	addr := closedLocalAddr(t)
+	path := writeYaml(t, fmt.Sprintf(minimalYaml, addr)) // 不写 RouteStore 段 = redis 模式
+
+	code, stdout, stderr := runCLI("-f", path, "rewarm", "-wait=1m")
+	assert.Equal(t, routetool.ExitFailed, code)
+	assert.Empty(t, stdout)
+	assert.Contains(t, stderr, "RouteStore.Mode=redis")
+	assert.Contains(t, stderr, "-wait=0")
+	assert.NotContains(t, stderr, "unreachable", "必须在连 Redis 之前就拒绝")
+
+	clusterPath := writeYaml(t, strings.Replace(fmt.Sprintf(minimalYaml, addr), "Type: node", "Type: cluster", 1)+dbFirstYaml)
+	code, stdout, stderr = runCLI("-f", clusterPath, "rewarm")
+	assert.Equal(t, routetool.ExitFailed, code)
+	assert.Empty(t, stdout)
+	assert.Contains(t, stderr, "single instance")
+	assert.NotContains(t, stderr, "unreachable")
+}
+
+// TestRunRewarmWaitRefusedWhileFrozen:db_first 下 -wait > 0 而映射写者冻结着 → 退出码 2,三把键都不动(冻结期 leader 不预热,等下去必然超时)。
+func TestRunRewarmWaitRefusedWhileFrozen(t *testing.T) {
+	mr := miniredis.RunT(t)
+	presetControlKeys(t, mr, 1_760_000_000_000)
+	path := writeYaml(t, fmt.Sprintf(minimalYaml, mr.Addr())+dbFirstYaml)
+	st := &fakeStore{meta: store.RouteMeta{Generation: testGen, Writable: 0}}
+
+	code, stdout, stderr := runCLIWith(fakeDeps(st), "-f", path, "rewarm", "-wait=1m", "-poll=1s")
+
+	assert.Equal(t, routetool.ExitFailed, code)
+	assert.Empty(t, stdout)
+	assert.Contains(t, stderr, "frozen")
+	for _, k := range []string{placement.RouteReadyKey, placement.RouteWarmKey, placement.RouteWatermarkKey} {
+		assert.True(t, mr.Exists(k), k)
+	}
+}
+
+// TestRunRewarmWaitSeesRearmedMarker:db_first 下 -wait > 0 —— 撤键之后「leader」(这里是一个 goroutine:看到令牌没了,
+// 就挂一份 set_at_ms 更大的新标记)重挂,rewarm 退出码 0,stdout 记下基线与新标记的 set_at_ms;基线取被撤标记,不读库时钟。
+func TestRunRewarmWaitSeesRearmedMarker(t *testing.T) {
+	const oldSetAt = uint64(1_760_000_000_000)
+	mr := miniredis.RunT(t)
+	presetControlKeys(t, mr, oldSetAt)
+	path := writeYaml(t, fmt.Sprintf(minimalYaml, mr.Addr())+dbFirstYaml)
+	st := &fakeStore{meta: store.RouteMeta{Generation: testGen, Writable: 1}}
+
+	rearmed := rewarmMarker(t, oldSetAt+1) // 在测试 goroutine 里编好:require 不能在别的 goroutine 里 FailNow
+	leaderDone := make(chan struct{})
+	go func() {
+		defer close(leaderDone)
+		deadline := time.Now().Add(5 * time.Second)
+		for mr.Exists(placement.RouteWarmKey) {
+			if time.Now().After(deadline) {
+				return
+			}
+			time.Sleep(time.Millisecond)
+		}
+		_ = mr.Set(placement.RouteReadyKey, rearmed)
+	}()
+
+	code, stdout, stderr := runCLIWith(fakeDeps(st), "-f", path, "rewarm", "-wait=10s", "-poll=5ms", "-timeout=1m")
+	<-leaderDone
+
+	assert.Equal(t, routetool.ExitClean, code, stderr)
+	assert.Equal(t, fmt.Sprintf("route_rewarm deleted=3 marker_was=decoded waited=true rearmed=true baseline_set_at_ms=%d new_set_at_ms=%d\n",
+		oldSetAt, oldSetAt+1), stdout)
+	assert.Zero(t, st.clockCalls, "被撤标记可解码时基线取它的 set_at_ms,不读库时钟")
+	assert.Contains(t, stderr, "REARMED ")
+}
+
+// TestRunRewarmWaitTimesOutExitsOne:db_first 下没有 leader 重挂 → 到 -wait 退出码 1,stdout 照出统计行(rearmed=false),
+// stderr 指向 ArmReadyMarker 与 leader 指标;被撤时没有标记 → 基线取库时钟(读一次)。
+func TestRunRewarmWaitTimesOutExitsOne(t *testing.T) {
+	mr := miniredis.RunT(t)
+	path := writeYaml(t, fmt.Sprintf(minimalYaml, mr.Addr())+dbFirstYaml)
+	st := &fakeStore{meta: store.RouteMeta{Generation: testGen, Writable: 1}, dbNowMs: 1_760_000_000_000}
+
+	code, stdout, stderr := runCLIWith(fakeDeps(st), "-f", path, "rewarm", "-wait=30ms", "-poll=10ms")
+
+	assert.Equal(t, routetool.ExitAttention, code, stderr)
+	assert.Equal(t, "route_rewarm deleted=0 marker_was=absent waited=true rearmed=false baseline_set_at_ms=1760000000000 new_set_at_ms=0\n", stdout)
+	assert.Equal(t, 1, st.clockCalls)
+	assert.Contains(t, stderr, "TIMEOUT")
+	assert.Contains(t, stderr, "RouteStore.Reconcile.ArmReadyMarker")
+	assert.Contains(t, stderr, "data_service_route_reconcile_leader")
+}
+
+// TestRunAuditRequireMapRevFlag:audit -require-maprev 接到 AuditOptions.RequireMapRev —— 缓存 maprev 落后于库 rev 的行默认口径不算差异
+// (退出码 0、统计行没有 redis_rev_behind),严格口径退出码 1、统计行末尾 redis_rev_behind=1;redis 模式下连任何东西之前退出码 2。
+func TestRunAuditRequireMapRevFlag(t *testing.T) {
+	t.Run("redis模式_拒绝", func(t *testing.T) {
+		path := writeYaml(t, fmt.Sprintf(minimalYaml, closedLocalAddr(t)))
+		code, stdout, stderr := runCLI("-f", path, "audit", "-require-maprev")
+		assert.Equal(t, routetool.ExitFailed, code)
+		assert.Empty(t, stdout)
+		assert.Contains(t, stderr, "RouteStore.Mode=redis")
+		assert.NotContains(t, stderr, "unreachable")
+	})
+
+	mr := miniredis.RunT(t)
+	require.NoError(t, mr.Set(placement.HomeZoneKey(1), "1"))
+	require.NoError(t, mr.Set(placement.MapRevKey(1), "1"))
+	path := writeYaml(t, fmt.Sprintf(minimalYaml, mr.Addr())+dbFirstYaml)
+	ast := &auditFakeStore{
+		fakeStore: &fakeStore{meta: store.RouteMeta{Generation: testGen, Writable: 1}},
+		rows:      map[uint64]store.RouteRow{1: {PlayerID: 1, HomeZone: 1, Rev: 2}},
+	}
+	d := fakeDeps(ast.fakeStore)
+	d.openRouteStore = func(config.Config) (routeStore, error) { return ast, nil }
+
+	code, stdout, stderr := runCLIWith(d, "-f", path, "audit", "-recheck-delay=0s")
+	assert.Equal(t, routetool.ExitClean, code, stderr)
+	assert.NotContains(t, stdout, "redis_rev_behind", "默认口径统计行逐字不变")
+
+	code, stdout, stderr = runCLIWith(d, "-f", path, "audit", "-require-maprev", "-recheck-delay=0s")
+	assert.Equal(t, routetool.ExitAttention, code, stderr)
+	assert.True(t, strings.HasSuffix(stdout, " redis_rev_behind=1\n"), stdout)
+	assert.Contains(t, stderr, "DIFF kind=redis_rev_behind player=1 ")
+}
+
+// auditFakeStore 在 fakeStore 之上补 audit 要的三个只读方法(fakeStore 本身不实现它们:被调到就 panic,
+// TestRunAuditFrozenRecoveryNeedsFrozenWriters 靠这一点证明门禁拦在审计之前)。
+type auditFakeStore struct {
+	*fakeStore
+	rows map[uint64]store.RouteRow
+}
+
+func (f *auditFakeStore) ScanRoutes(_ context.Context, after store.RouteScanCursor, limit int) ([]store.RouteRow, error) {
+	out := make([]store.RouteRow, 0, len(f.rows))
+	for _, row := range f.rows {
+		if after.Less(store.RouteScanCursorAt(row)) {
+			out = append(out, row)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return store.RouteScanCursorAt(out[i]).Less(store.RouteScanCursorAt(out[j])) })
+	if len(out) > limit {
+		out = out[:limit]
+	}
+	return out, nil
+}
+
+func (f *auditFakeStore) GetRoutes(_ context.Context, ids []uint64) (map[uint64]store.RouteRow, error) {
+	out := make(map[uint64]store.RouteRow)
+	for _, id := range ids {
+		if row, ok := f.rows[id]; ok {
+			out[id] = row
+		}
+	}
+	return out, nil
+}
+
+func (f *auditFakeStore) ListMergedInto(context.Context) ([]store.MergedIntoRow, error) {
+	return nil, nil
+}
+
 // ── 替身与夹具 ────────────────────────────────────────────────────────────────
 
 const testGen = "0123456789abcdef0123456789abcdef"
@@ -419,6 +662,9 @@ type fakeStore struct {
 	unfreezeCalls []uint64
 	// logOnFreeze 非空时 FreezeRouteWriters 用 logx 打这一行(模拟 store 自己的日志)。
 	logOnFreeze string
+	// dbNowMs 是 ListActiveMergeFences 回的库时钟(rewarm -wait 的基线);clockCalls 记调用次数。
+	dbNowMs    uint64
+	clockCalls int
 }
 
 func (f *fakeStore) ReadRouteMeta(context.Context) (store.RouteMeta, error) { return f.meta, nil }
@@ -440,6 +686,15 @@ func (f *fakeStore) UnfreezeRouteWriters(_ context.Context, minWatermarkMs uint6
 }
 
 func (f *fakeStore) Close() error { return nil }
+
+// ListActiveMergeFences 只给 rewarm -wait 取库时钟(没有生效围栏)。dbNowMs 为 0 时按库时钟读不到回错(与真 store 同口径)。
+func (f *fakeStore) ListActiveMergeFences(context.Context) (store.ActiveMergeFences, error) {
+	f.clockCalls++
+	if f.dbNowMs == 0 {
+		return store.ActiveMergeFences{}, fmt.Errorf("fake store: database clock read as 0")
+	}
+	return store.ActiveMergeFences{DBNowMs: f.dbNowMs}, nil
+}
 
 // fakeDeps 用真 connectMappingRedis(miniredis 或不可达地址都行)、假库,身份读取默认报错(用例按需替换)。
 func fakeDeps(st *fakeStore) deps {
