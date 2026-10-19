@@ -12455,3 +12455,12 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 后续asset-arrival-chain test-compile原生1，6DE2E15D原件与首错不改写：根给出的命令缺-am，mail/trade为BOOT-INF安装包不能替代reactor classes；新增SQL夹具还跨包访问package-private toSave。准备仅加-am和测试桥接，不放宽生产API，不重跑1673默认套件或其它29模块。另发现local-slice未启动Inbox，启动/停止脚本及Robot/Gate两个精确清单测试四路径私有候选中；canonical尚未应用这些Inbox路径。
 - 当前主仓六域契约874文件已独立封存，真实HEAD53361d055f65915a621bb0afee7a5d202c4e6ed5；这六域Git clean、全仓dirty分别记录。相对Java旧快照仅4个内部proto变化+新增世代台账，Java需正式同步4proto及来源文件，客户端实际可达仅ProtoOption.cs两扩展；未发现普通玩法字段/ID变化。E3500D0A审计、02E5B347源副本及35038F5C执行计划保持，尚未执行同步/生成。旧30模块默认PASS不冒最新主仓契约已同步。
 - 无原生构建在跑；固定自有infra仍停止保卷、没有SourceReceipt，严格真TiDB/真实双区未执行。继续保留用户正在运行的服务与数据，不因内存不足停止其他进程。
+
+## 2026-10-19 Codex：Inbox生产与启动链11路径落正式工作区，当前合同对齐续验（UTC12:20）
+
+- Java 0.1.0-SNAPSHOT 的 Inbox7 与本地启动链4合为11个唯一手写路径，正规Java仓根git apply --check/apply均0，9修改+2新增；完整2532文件与验证JP副本零差异。应用原件 root-canonical-eleven-apply-r2-20261019T113240778Z/proof.json SHA9BFFDEDE。此前一次根包装漏私有路径变量在apply前停、一次build子目录Git按父仓前缀静默略过后0delta停均保原件，不把native0当字节应用成功；私有四路径改用已核SHA普通覆盖，正式仍正规apply。
+- 真实Scene默认1673与定向Gate5+Robot24分轮通过，合1702=1694PASS/0FAIL/0ERROR/8原条件SKIP，六重点类64/64、0skip。Slice29原件5B2F43FF，122原XML独立补充2157F831；不与旧30模块10485重叠累加。两脚本Git Bash -n真实0且不执行脚本正文，语法原件4F577E2E。SQL profile以包内测试桥保生产toSave API，正规-am test-compile真实0，3EF069F6；新增3方法仍仅编译，158严格TiDB未进体。
+- Java正规ContractSync已写精确5受管文件；第一writer完成stdout后因CIM快照包含已退出自有Java而监控误拒，native_exit未采获，原件e6bab8e7保留不补造0。仅修未知候选fresh CIM不存在才记stale忽略，现行未知/PID复用仍阻断，实际控制仍原held精确time/path/SHA。随后正规check-only真实0，canonical-check-only-20261019T121401266Z-4959c864，完整2532与241不变。固定源874来自真实53361、地图8来自fea7；主HEAD后来升da0f182但合同域字节0diff，JP入口先在native前安全停，再仅以实测da0观察HEAD与不变533来源标签分别约束续验，不重复造源或冒最新标签。JP同步及单proto模块构建尚待，旧30成绩不冒新合同全图。
+- 客户端原脚本私有preview真实0，实际四差异触发原一差异门禁而停止canonical前：Common/Message仅删4个当前无引用内部类型，Login追加2035/2036；全部保留消息descriptor/生成行为逐字相同，ProtoOption新增两个持久option。原失败保持；独立690份C#引用/保留body审89A5265F与descriptor审2A2F5126已通过静态判断，root批准后续四精确SHA正规生成和54 Generated C#整体编译，当前尚未执行canonical生成/C#，不冒Unity/NUnit。
+- 新Go真库全集25顶层程序编译已开始，仍不跑测试体、不重跑已绿22/CLI/vet作业。旧64真库只绑历史来源。12:05可用曾14GiB但Docker引擎已关闭，固定inspect失败原件保留；root仅用既有Docker CLI正常start --detach/timeout30原生0，无系统/WSL配置变更。引擎健康后可用降到6288200KiB，不足7340032KiB门禁，本线程固定5容器仍exited、未启动，归属/端口/TiKV3GiB保卷审计owned-infra-start-admission-20261019T1210.json不是运行批准；不停止用户容器/编辑器取内存。
+- 按最新AGENTS与围栏设计的负责人上线状态，项目尚未上线；legacy混跑/降级/线上回档发布不作额外阻塞。本次用户明确要求的历史恢复、真实旧实例SQL CAS拒写与迟ACK双区演练继续保留，尚无SourceReceipt。自动续跑已改为读取最新原件，未宣称完成、生产放流或容量通过。

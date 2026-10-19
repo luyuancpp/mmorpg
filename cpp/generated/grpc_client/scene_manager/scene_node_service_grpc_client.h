@@ -2,7 +2,7 @@
 #include <chrono>
 #include <string_view>
 #include "entt/src/entt/entity/registry.hpp"
-#include "grpc_client/grpc_call_tag.h"
+#include "core/network/grpc_call_types.h"
 
 #include "rpc/service_metadata/scene_node_service_service_metadata.h"
 

@@ -3,6 +3,7 @@
 > 状态(2026-09-28):两批均已落码,第一批 regen 已完成(897ac8241)。**全部未编译、未测试**,编译与单测交 Codex
 > (AGENTS.md §10.1),步骤见 §9.2。
 > 2026-10-17：删除全局处理器 A–C 落地后的现行接口与调用点见 §12；旧选型和落地记录保留作历史，验证结果须另据实际运行记录。
+> 2026-10-19：现行公共类型头为 `cpp/libs/engine/core/network/grpc_call_types.h`，职责与生成边界见 §12.1；此前章节中的旧路径保留为迁移历史。
 > 相关:`docs/design/microservice-zone-contract-20260914.md` §3「超时预算」、`docs/design/cross-zone-scene-travel.md` §12.2、
 > `tools/proto_generator/protogen/internal/template/grpc_async_client.{h,cpp}.tmpl`、`grpc_init_total.{h,cpp}.tmpl`。
 
@@ -364,6 +365,8 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
 本节是删除清单 A–C 全部实际落地后适用的现行契约；此前章节保留迁移历史。本节不代表生成、编译、单测、Linux 或联机验证已通过，结果以 Codex 的实际运行记录为准。
 
 ### 12.1 接口与保留边界
+
+`GrpcCallOutcome`、`GrpcDone`、`GrpcMessageDone`、`GrpcCallOptions` 与 metadata 的权威定义统一放在手写公共头 `cpp/libs/engine/core/network/grpc_call_types.h`，调用方与生成客户端均以 `core/network/grpc_call_types.h` 引用。`GrpcTag` 已删除，旧名 `grpc_call_tag.h` 不再表达内容；将公共类型移出 `cpp/generated/grpc_client/`，使文件职责与生成边界一致。生成器模板必须直接引用新头，公共类型不由生成器产出；变更不改变调用、回调或线上协议语义。
 
 每个 unary 方法必须显式接收 `GrpcDone<Resp>`；gate 通用 sender 使用对应的 `Send<Svc><Method>Erased` 与 `GrpcMessageDone`，两者汇到同一个发送入口。`GrpcCallOptions` 的 deadline 与原值 metadata、`GrpcCallOutcome` 的状态与响应 metadata、逐文件和总入口的 deadline 设置继续保留。
 

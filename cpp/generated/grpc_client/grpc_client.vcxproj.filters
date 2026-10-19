@@ -21,7 +21,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="grpc_init_client.h" />
-    <ClInclude Include="grpc_call_tag.h" />
     <ClInclude Include="etcd\etcd_grpc_client.h" />
     <ClInclude Include="login\login_grpc_client.h" />
     <ClInclude Include="scene_manager\scene_manager_service_grpc_client.h" />

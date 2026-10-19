@@ -6130,7 +6130,7 @@ TEST(EnterFenceEcs, StaleEnterDoesNotSupersedeRelocateEntry)
 //     另一半:CreateScene 的业务失败应答不回显 creator_ids,旧的全局处理器找不到创建者,客户端收不到任何提示。
 //     这里直接驱动 RequestEnterMirrorScene 的闸与 HandleMirrorCreateDone(每次调用回调的落点),不发真实 RPC。
 // ============================================================================
-#include "grpc_client/grpc_call_tag.h"                    // GrpcCallOutcome
+#include "core/network/grpc_call_types.h"                    // GrpcCallOutcome
 #include "player/system/player_tip.h"                     // 校准迟到完成不得推提示的日志观察器
 #include "player/system/db_task_dispatch_system.h"          // 复用账本测试钩子,让真实退出等回执时保留实体
 #include "proto/common/component/battle_comp.pb.h"       // InBattleComp

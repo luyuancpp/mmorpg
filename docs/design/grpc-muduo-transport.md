@@ -73,6 +73,7 @@ nghttp2(HTTP/2 帧、HPACK、流控、SETTINGS、PING ACK)
 - 公共头文件不包含 `nghttp2.h`;使用方(gate)只需 `muduo_grpc` 的包含目录与两个 lib。
 - 工具层:`status`(状态码与 HTTP / RST_STREAM 映射)、`metadata`(键校验、`-bin` 的 base64、`grpc-message`
   百分号编码)、`grpc_timeout`、`message_framing`(5 字节前缀的拼装与增量拆包)。
+- 生成客户端与业务调用方共享的调用结果、回调、选项和 metadata 类型由手写公共头 `cpp/libs/engine/core/network/grpc_call_types.h` 定义，以 `core/network/grpc_call_types.h` 引用。2026-10-19 将其从 `cpp/generated/grpc_client/grpc_call_tag.h` 迁出：`GrpcTag` 已删除，文件名改为表达现有类型职责，公共头归属 core，生成模板只引用、不产出该文件。历史实施记录中的旧路径保留作历史；调用语义与线上协议不变。
 
 ## 4. 线上契约(必须逐字节保持)
 
@@ -123,7 +124,7 @@ SessionDetails 原始字节 raw
 - `grpc-message` 按规范百分号解码,解码永不失败(坏序列原样保留)。
 - 状态码数值与 `grpc::StatusCode` 完全一致(日志里按整数打印,两边要能对照)。
 - 本地截止时间到期:RST_STREAM(CANCEL) + DEADLINE_EXCEEDED。**超时不等于对端没执行**(go-zero 超时拦截器先返回、
-  handler 继续跑),所以上层一律按「结果未知」处理,与 grpc_call_tag.h 的约定相同。
+  handler 继续跑),所以上层一律按「结果未知」处理,与 `core/network/grpc_call_types.h` 的约定相同。
 
 ### 4.4 PING:必须服从 grpc-go 服务端默认的 keepalive 强制策略
 

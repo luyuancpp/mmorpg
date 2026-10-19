@@ -1,7 +1,7 @@
 // grpc_client_local_reject_test — 生成的 gRPC 客户端「本地拒绝」路径(docs/design/grpc-muduo-transport.md §14)。
 //
 // 节点实体上没有可用通道(没挂 MuduoGrpcChannelPtr、挂的是空指针、实体已销毁)时,生成的 Send 不碰网络,
-// 经 QueueGrpcLocalCompletion 把 UNAVAILABLE 排到下一轮投递。这里锁定调用方契约(grpc_call_tag.h 的 GrpcDone 一节):
+// 经 QueueGrpcLocalCompletion 把 UNAVAILABLE 排到下一轮投递。这里锁定调用方契约(grpc_call_types.h 的 GrpcDone 一节):
 //   * 完成回调恰好一次,从不在 Send 栈内同步执行,排在发起 Send 的那一批 pending functor 之后;
 //   * outcome.code == UNAVAILABLE,reply 为空;
 //   * typed / Erased 调用都必须显式传 done;Erased 请求的动态类型不匹配时异步以 INTERNAL 完成;

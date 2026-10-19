@@ -27,7 +27,7 @@
 #include "player/system/enter_fence.h"
 #include "player/system/player_lifecycle.h" // IsSceneChangeBusy / RequestSceneChange:换图发送侧闸与 EnterScene 唯一发送入口
 #include "player/system/player_tip.h"
-#include "grpc_client/grpc_call_tag.h"      // GrpcCallOutcome:镜像 CreateScene 的每次调用回调
+#include "core/network/grpc_call_types.h"      // GrpcCallOutcome:镜像 CreateScene 的每次调用回调
 #include "proto/common/base/node.pb.h"      // NodeInfo:自动进场 EnterScene 的 gate_instance_id
 #include "time/system/time.h"
 #include "table/proto/tip/common_error_tip.pb.h"

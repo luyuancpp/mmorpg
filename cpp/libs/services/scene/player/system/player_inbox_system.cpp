@@ -16,7 +16,7 @@
 #include <node_config_manager.h>
 #include "battle/system/player_battle.h"
 #include "engine/core/type_define/player_guid_comp.h"
-#include "grpc_client/grpc_call_tag.h"          // kGrpcStatusUnimplemented
+#include "core/network/grpc_call_types.h"          // kGrpcStatusUnimplemented
 #include "grpc_client/player_inbox/player_inbox_grpc_client.h"
 #include "network/node_utils.h"                 // GetNodeInfo:Fetch 带上本节点 node_id(只用于对端日志)
 #include "node/system/grpc_call_deadline.h"     // 在途超时从 PlayerInboxNodeService 的 gRPC deadline 派生

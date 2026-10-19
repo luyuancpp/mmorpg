@@ -384,6 +384,7 @@
     <ClInclude Include="network\network_constants.h" />
     <ClInclude Include="network\network_utils.h" />
     <ClInclude Include="network\node_utils.h" />
+    <ClInclude Include="network\grpc_call_types.h" />
     <ClInclude Include="network\grpc_client_runtime.h" />
     <ClInclude Include="network\grpc_unary_call.h" />
     <ClInclude Include="network\player_message_utils.h" />

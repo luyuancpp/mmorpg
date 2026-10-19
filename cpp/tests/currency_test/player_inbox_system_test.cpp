@@ -25,7 +25,7 @@
 #include <vector>
 
 #include "engine/core/type_define/player_guid_comp.h"
-#include "grpc_client/grpc_call_tag.h" // kGrpcStatusUnavailable
+#include "core/network/grpc_call_types.h" // kGrpcStatusUnavailable
 #include "modules/currency/comp/player_currency_comp.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"

@@ -51,7 +51,6 @@
     <ClInclude Include="etcd\etcd_grpc_client.h" />
     <ClInclude Include="friend\friend_grpc_client.h" />
     <ClInclude Include="grpc_init_client.h" />
-    <ClInclude Include="grpc_call_tag.h" />
     <ClInclude Include="guild\guild_grpc_client.h" />
     <ClInclude Include="guild\guild_internal_grpc_client.h" />
     <ClInclude Include="trade\jubaozhai_grpc_client.h" />
