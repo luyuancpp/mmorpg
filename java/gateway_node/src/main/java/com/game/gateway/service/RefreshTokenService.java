@@ -1,5 +1,6 @@
 package com.game.gateway.service;
 
+import com.game.gateway.dto.LoginResponse;
 import com.game.gateway.dto.RefreshTokenRequest;
 import com.game.gateway.dto.RefreshTokenResponse;
 import com.game.gateway.grpc.LoginRpcClient;
@@ -50,10 +51,11 @@ public class RefreshTokenService {
         } catch (StatusRuntimeException e) {
             Status.Code c = e.getStatus().getCode();
             log.warn("refresh_token.rpc failed: {} — {}", c, e.getStatus().getDescription());
-            if (c == Status.Code.UNAVAILABLE || c == Status.Code.DEADLINE_EXCEEDED) {
-                return RefreshTokenResponse.error(RefreshTokenResponse.CODE_INTERNAL, "login_unavailable");
-            }
-            return RefreshTokenResponse.error(RefreshTokenResponse.CODE_AUTH_REJECTED, c.name());
+            // 与 LoginService 同一套映射：只有身份类 status 回 401，login 内部故障回 500。
+            int code = LoginService.httpCodeForRpcStatus(c) == LoginResponse.CODE_AUTH_REJECTED
+                    ? RefreshTokenResponse.CODE_AUTH_REJECTED
+                    : RefreshTokenResponse.CODE_INTERNAL;
+            return RefreshTokenResponse.error(code, LoginService.messageForRpcStatus(c));
         } catch (Exception e) {
             log.error("refresh_token.rpc unexpected error", e);
             return RefreshTokenResponse.error(RefreshTokenResponse.CODE_INTERNAL, "internal_error");

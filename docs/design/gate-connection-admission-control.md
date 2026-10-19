@@ -232,6 +232,12 @@ G9 的前置条件是"gate 的 `peerAddress()` 看到的是玩家真实源 IP"�
 >    理由:硬限在节点运行时层面,各集群尚未实测,工作区又会被整区快照带进镜像,scene 的门槛没有配置可调,不能只剩回滚镜像一种应急手段。
 >    C++ 节点没有指标出口(G13),豁免只进 stdout 与日志。
 > 验收订正见 §9.2 的 2026-10-18 注:gate / scene 的 PID 1 可能是 `sh`,不要读 `/proc/1/limits`。
+>
+> **2026-10-18 评审补充**:① warn 的代价比「超出的连接 EMFILE」大:本节准入闸门在 accept 拿到 fd 之后才判,上限没调时客户端连接先占满 fd 表,
+> 之后节点间 / Redis / Kafka / etcd 重连与 muduo 日志滚动(`FileUtil::AppendFile` fopen 失败只有 assert)都会失败,gate 可能被 etcd 摘除或崩溃。
+> gate / battle 的应急首选是把准入上限调到 ≤ 实际软限 − 4096(检查直接通过),warn 只作短时手段。② 拒启不等于「滚动停住」:C++ Deployment 没写
+> strategy(缺省 25% / 25%),scene 缺省 4 副本滚动时先少一台,battle hostPort 形态(maxUnavailable 1)单副本会整体停服;
+> 所以发布前先读各节点池硬限是硬前置。按形态的影响面与回退步骤见 `docs/ops/gate-kernel-tuning-runbook.md` §3.1 的 2026-10-18 更正。
 
 ### P0-2 · 未认证连接：独立预算 + 死线 + LRU 淘汰（对应 G1，堵 SECURITY.md 自认的洞）
 

@@ -137,6 +137,8 @@ GateTokenSecret: "local-dev-gate-token-secret-0123456789abcdef"
 # 本值 + 4096 就拒绝启动(cpp/libs/engine/core/node/system/node/open_file_limit.h);硬限由节点上的容器
 # 运行时 / systemd 决定,K8s 清单里声明不了。应急豁免:环境变量 NODE_OPEN_FILE_LIMIT_MODE=warn
 # (见 docs/ops/gate-kernel-tuning-runbook.md §三)。
+# (2026-10-18 更正)硬限不够时首选把本值调到 ≤ 实际软限 - 4096(检查直接通过,不需要豁免);只开 warn 不调本值,
+# 客户端连接会先占满 fd 表,之后重连与日志滚动也会 EMFILE,节点可能被摘除或崩溃(runbook §3.1)。
 # 20000 是单 gate 的保守默认;真实容量要靠压测定,别照抄。
 # 上界 131071 为所有 node_id 保留 UINT32_MAX 拒连哨兵,也避免 session-id
 # 空间占满后碰撞重试永久自旋。

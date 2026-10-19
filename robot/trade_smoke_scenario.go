@@ -280,7 +280,7 @@ func RunTradeSmoke(cfg *config.Config) {
 
 	// ---- 步骤 2:TradeAdmin 对客户端不可达 ----
 	// trade_admin.proto 不标 OptionIsClientProtocolService → gate 的 IsClientMessageId 不收该消息号,
-	// 直接丢弃且不回包(cpp/nodes/gate/handler/rpc/client_message_processor.cpp),并计一次非法包
+	// 直接丢弃且不回包(cpp/nodes/gate/handler/rpc/client_session_handler.cpp),并计一次非法包
 	// (默认阈值 50 才踢线),所以只发一次。信封拒绝说明白名单收了这个号、请求进了路由服,同样不合格。
 	envelopeTip, err := a.call(game.TradeAdminSeedListingMessageId,
 		tradeSmokeSeedRequest(a.gc.PlayerId, gateTitle, 0), &tradepb.SeedListingResponse{})

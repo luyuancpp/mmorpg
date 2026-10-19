@@ -52,6 +52,11 @@
       * login/internal/logic/pkg/dataloader
                                    – 读任务带回复目标,以及同包的新号种子、
                                      冷恢复提交屏障用例。
+      * db/internal/metrics        – (2026-10-18 第 2 批起)db_task_result_notify_total
+                                     等预建序列与取值字面量(告警按它们写),以及与
+                                     stress_summarize.ps1 列名的对照;同包既有用例
+                                     钉住 db 的其余预建序列。只读仓库内文件。
+                                     go/db 侧的定向发布用例在 db/internal/kafka 里。
 
     Anything that imports a real broker (sarama integration tests) is left
     out — those go in the chaos_test.ps1 path instead.
@@ -89,6 +94,7 @@ $L1Suites = @(
             './internal/logic/pkg/proto_sql/...'
             './internal/config/...'
             './cmd/migrate/...'
+            './internal/metrics/...'
         )
     }
     @{

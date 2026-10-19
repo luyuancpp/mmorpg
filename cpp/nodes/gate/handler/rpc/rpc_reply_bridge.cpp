@@ -6,9 +6,10 @@
 
 #include "muduo/base/Logging.h"
 
-#include "client_message_processor.h"
+#include "client_session_handler.h"
 #include "client_request_lane.h"
 #include "gate_codec.h"
+#include "login_admission.h"
 #include "proto/common/base/message.pb.h"
 #include "proto/common/base/session.pb.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
@@ -59,6 +60,14 @@ void DeliverReply(const SessionDetails &sessionDetails, const ::google::protobuf
     if (it == tlsSessionManager.sessions().end())
     {
         return;
+    }
+    // 直连模式的 Login 回包:记下本连接已成功 Login(login_admission.h;路由模式在 lane 认领处记)。
+    // 按回显的会话代次核对:session_id 被新连接复用之后,旧连接迟到的成功回包不得给新连接放行。
+    if (reply.GetDescriptor() == loginpb::LoginResponse::descriptor() &&
+        sessionDetails.session_incarnation() == it->second.incarnation &&
+        gate_login_admission::IsLoginReplySuccess(reply))
+    {
+        it->second.loginSucceeded = true;
     }
     const auto clientConn = it->second.conn.lock();
     if (!clientConn)
@@ -122,7 +131,7 @@ void NotifyCallFailure(const char *method, int statusCode, const std::string &st
     {
         return;
     }
-    RpcClientSessionHandler::SendTipToClient(clientConn, kServiceUnavailable);
+    GateClientSessionHandler::SendTipToClient(clientConn, kServiceUnavailable);
 }
 
 } // namespace gate_rpc_reply_bridge

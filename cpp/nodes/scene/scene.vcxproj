@@ -218,8 +218,6 @@
     <ClCompile Include="handler\grpc\scene_node_service.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="id_segment_bootstrap.cpp" />
-    <ClCompile Include="rpc_replies\scene_manager_response_handler.cpp" />
-    <ClCompile Include="rpc_replies\player_inbox_response_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="handler\event\scene_kafka_command_router.h" />
@@ -242,8 +240,6 @@
     <ClInclude Include="handler\rpc\player\player_pet_handler.h" />
     <ClInclude Include="handler\rpc\player\player_state_attribute_sync_handler.h" />
     <ClInclude Include="handler\grpc\scene_node_service.h" />
-    <ClInclude Include="rpc_replies\scene_manager_response_handler.h" />
-    <ClInclude Include="rpc_replies\player_inbox_response_handler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

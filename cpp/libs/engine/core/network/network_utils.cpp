@@ -2,10 +2,10 @@
 
 #include <boost/asio.hpp>
 #include <iostream>
+#include <sstream>
 #include "muduo/base/Logging.h"
 #include "network/node_utils.h"
 #include "node/system/node/node_util.h"
-#include "proto/common/base/session.pb.h"
 #include "thread_context/node_context_manager.h"
 
 NodeId GetGateNodeId(SessionId session_id)
@@ -70,15 +70,4 @@ void ParseIpPort(const std::string &input, std::string &ip, uint16_t &port)
 std::string FormatIpAndPort(const std::string &ip, uint32_t port)
 {
 	return ip + ":" + std::to_string(port);
-}
-
-std::vector<std::string> SerializeSessionDetails(const SessionDetails &sessionDetails)
-{
-	std::vector<std::string> result;
-	std::string serialized;
-	if (sessionDetails.SerializeToString(&serialized))
-	{
-		result.push_back(std::move(serialized));
-	}
-	return result;
 }

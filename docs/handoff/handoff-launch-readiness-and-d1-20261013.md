@@ -49,6 +49,15 @@
 >   每批开工前先 get_usage,按「代理数 × 5%」估算 5 小时额度,不够就分批。每完成一项在 PROGRESS 末尾追加条目并写明 Java 状态。
 >   ```
 >
+> **2026-10-18**(第一波落码,全部未编译、未测试,待 Codex 验证;各项条目见 PROGRESS 同日):
+> - B0-3 task:result 分频道**第 1 批**:proto `reply_instance = 10`、`go/shared/taskresult`、login 双订并填回复目标、login 送达计数、发送失败时撤销登记。权威验证命令在 [spec_B0-3_task_result_channel.md](launch-readiness-20261013/spec_B0-3_task_result_channel.md) 文末「# 第 1 批交付(2026-10-18)」。第 2 批(go/db 按回复目标发布、go/db 指标与独立告警文件)未开工,开工前先向 go/db 接手线和围栏线要 key_ordered_consumer.go 的空档。
+> - (2026-10-18)B0-3 task:result 分频道**第 2 批**已落码,未编译、未测试:go/db 按 reply_instance 定向发布(只发一次,空或不合法回落旧频道)、`db_task_result_notify_total{target,result}`、独立告警 `deploy/k8s/task-result-notify-alerts.yaml`、stress_summarize 2g 段。上一行「第 2 批未开工」同此更正。上线前先逐 zone 判别 login 是否已是第 1 批,已是的 zone 改为按 zone 金丝雀 go/db。权威验证命令和上线顺序第 0 步在 [spec_B0-3_task_result_channel.md](launch-readiness-20261013/spec_B0-3_task_result_channel.md) 文末「# 第 2 批交付(2026-10-18)」。
+> - D1 映射持久化 **1b-1**(§4 第 8 项的第一步):route_tool 并进主程序 `data_service -f <yaml> -route-tool <子命令>`;新增 freeze / reconcile-from-cache / unfreeze 与 audit `-frozen-recovery`;store 加冻结 / 解冻 / 反向修库原语;就绪标记的值格式与 CAS / CAD 脚本;顺带修正发布「pipeline 没执行」的分类。同日修复评审:发布用例的测试钩子只拦发布 EVAL(第一版会让测试进程整个退出,修复前红要重取);redis 模式下可用 `unfreeze -confirm-audited -cache-was-not-verified-acknowledged` 撤销误跑的 freeze;标记先只解 v;修库不再把库里有值的列清成 NULL。db_first 下 K8s 的 zone 回档在 1b-3 的选择性缓存清理落地前不可执行。详见提案 §11.2「第 1b-1 批」(含「修复评审」)与 runbook §9.4。1b-2(对账 leader)、1b-3(K8s 载体、Job 清单、告警、清库脚本防护、回档选择性清理)未开始。
+> - B0-4 nofile:gate / scene / battle 在 `Node::Initialize` 自抬 RLIMIT_NOFILE 软限,不够时缺省拒启,运维豁免为 `NODE_OPEN_FILE_LIMIT_MODE=warn`;warn 代价大,gate / battle 的应急首选是调低准入上限。**发布带它的镜像前**,必须先读各集群各节点池的容器 nofile 硬限并记进 PROGRESS:单副本 battle hostPort 拒启会整体停服。读法、按形态的影响面与回退见 `docs/ops/gate-kernel-tuning-runbook.md` §3.1。
+> - B0-1 会话对账按 gate 建索引:索引在三段会话 Lua 里与会话写入原子维护;对账改为全服单 leader(连续 3 拍失败会主动让位),配就绪标记租约与 Redis 侧代次、持久化的审计时机和每拍预算,不再 SCAN 全键空间;同日按核实意见补了单键错误隔离、扫描页重试与 run_id 核对、Stalled 告警口径。设计见 [player-locator-gate-session-index.md](../design/player-locator-gate-session-index.md)。**告警生效前置**:k8s_deploy.ps1 的 player-locator ConfigMap 要补 Prometheus 段(manifest 已加注解与 9190 端口,两者须同批发布),见 PROGRESS 同日 B0-1 条目。
+>
+> **2026-10-18 收尾**:本线的代码已全部落码(未编译、未测试,交 Codex)。**只剩 G4a 修订稿**:实现代理遇到 403 认证错误失败,没有改任何文件,续做说明与交 Codex 的总顺序见 PROGRESS「2026-10-18 开服线收尾:代码全部落完,剩 G4a 修订稿」。D1 的 1b-2 及之后归「D1 玩家归属与存储持久化」会话。
+>
 > **会话产物位置**:原会话的 scratchpad 在本机临时目录,新会话读不到。需要的规格都已复制到 [launch-readiness-20261013/](launch-readiness-20261013/)。
 
 ## 0. 一句话

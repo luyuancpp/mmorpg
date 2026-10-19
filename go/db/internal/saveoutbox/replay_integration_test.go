@@ -59,21 +59,24 @@ func TestRealRedisPendingSaveOutboxSurvivesWorkerRestart(t *testing.T) {
 		_ = rc.ZRem(clean, index, strconv.FormatUint(playerID, 10)).Err()
 	})
 	in := testIntent(t, playerID, 7, 9, zone)
-	storeIntent(t, rc, playerID, zone, in)
+	// 已过首见宽限的意图(首见只登记不补投的行为由 replay_bounds_test.go 覆盖)。
+	storeObservedIntent(t, rc, playerID, zone, in)
 	pub := &recordingPublisher{failAt: 2}
 	cfg := Config{ZoneID: zone, Batch: 16, Interval: 10 * time.Millisecond, Budget: 100 * time.Millisecond, RetryAfter: time.Second}
-	r, err := New(rc, rc, pub, cfg, prometheus.NewRegistry())
+	r, err := New(rc, rc, pub, nil, cfg, prometheus.NewRegistry())
 	require.NoError(t, err)
 	firstTime := time.Now()
 	r.now = func() time.Time { return firstTime }
+	r.jitter = func() time.Duration { return 0 }
 	n, err := r.Tick(ctx)
 	require.Error(t, err)
 	require.Equal(t, 1, n)
 	// 只有补投worker重建；Redis里的原始两表意图未删除。
 	pub2 := &recordingPublisher{}
-	r2, err := New(rc, rc, pub2, cfg, prometheus.NewRegistry())
+	r2, err := New(rc, rc, pub2, nil, cfg, prometheus.NewRegistry())
 	require.NoError(t, err)
 	r2.now = func() time.Time { return firstTime.Add(2 * time.Second) }
+	r2.jitter = func() time.Duration { return 0 }
 	n, err = r2.Tick(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 2, n)

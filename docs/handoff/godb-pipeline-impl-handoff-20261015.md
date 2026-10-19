@@ -190,9 +190,9 @@ go/db 这条线（R1 → R2 → R3）**必须串行**：三项都改 `key_ordere
 
 ---
 
-## 7. 2026-10-16 ~ 10-17 接手会话进展（Claude，未编译、未测试；进行中，最终版见本节末「收尾」）
+## 7. 2026-10-16 ~ 10-18 接手会话进展（Claude，全部未编译、未测试；2026-10-18 收尾定稿）
 
-> 接手会话按 §3 做 R1 → R7，用工作流分批落码并逐批对抗复核。代码大部分已随用户快照 `e76f6f747` 及之后的提交入库。本节先写进仓库，防止会话中断丢失进度。
+> 接手会话按 §3 做完 R1 → R7，另加 R6b（④ 文档与 R7 同步）和 R8（回档语义落码），用工作流分批落码并逐批对抗复核。代码大部分已随用户快照 `e76f6f747`、`e7bb46070` 等提交入库；之后的改动看工作区。协议生成、编译、测试、冒烟全部交 Codex（负责人 2026-10-18：「你只实现代码，协议生成 编译冒烟交给 codex」）。
 
 ### 7.1 已完成
 
@@ -209,15 +209,94 @@ go/db 这条线（R1 → R2 → R3）**必须串行**：三项都改 `key_ordere
 ### 7.2 负责人裁决（2026-10-17）
 
 - **回档语义 = 丢弃 TargetTime 之后的写**。落法：Step 5 改用 `-ToLatest`；Step 4 / 5 之间盘点并拦下本 topic 的重试收据；不清游标。还要核实共享 DB0 里本 zone 玩家缓存的处理，避免读缓存再存盘把回档抵消。**脚本尚未落码（R8）**。
+  - 2026-10-18 补：R8 脚本侧已落码（未编译、未测试，待 Codex 验证），本 zone 玩家缓存按 PITR 之后的库由回档工具在 Step 4b 删除、5b 复核；同日回档复核 [0]–[11] 已修。读 MySQL / 写 Redis 的回档工具 `go/db/cmd/zone_rollback_discard` 尚未落地，`-Apply` 不可执行。流程与待拍板事项（#1 / #3 / #4 / #6）见 `docs/design/zone_data_rollback.md`「2026-10-18 修订」，上线待做见 `docs/ops/godb-pipeline-launch-todo.md` 6.5。
 
-### 7.3 进行中 / 未做
+### 7.3 后来完成的（2026-10-18）
 
-- R6b：④ 设计文档 `db-retry-owner-routing.md`、④ 周边文档与告警、R7 三块修复的文档同步。
-- R8：按 7.2 落回档脚本，并把文档改为「已裁决」。
-- 登记：`docs/README.md` 三份新设计文档、PROGRESS、Java `PARITY.md`。
-- 待负责人：死信按 (topic, partition, offset) 去重与副本数硬上界（与 L-04 第 2 批死信工具一起定）；`dirty_save::IsEqual` 是否剥离 `stress_test_probe`；分区告警是否给 op="other" 补规则。
+- **R6b**：新建 `docs/design/db-retry-owner-routing.md`；④ 周边文档（D5 修订、release-checklist 回滚前置、shared-redis 键清单、partition-contract、launch-todo §9）；告警新增 `DbRetryStrandedReceipts` 和 `DbConsumerGroupHeartbeatErrors`；R7 三块修复的文档同步。复核出 7 条，均已修。
+- **R8**：`k8s_zone_rollback.ps1` 按「丢弃 T 之后的写」重写：
+  - Step 5 改用 `-ToLatest`；去掉 FLUSHDB；
+  - 新增第 0 步 f（部署事实 + Redis run_id + 工具版本核对）、Step 1b（停服与静默核对、行指纹基线）、4a / 4b / 5b（交给回档工具）；
+  - 新测试 `k8s_zone_rollback_discard.tests.ps1`，以及共用沙箱 `tests/lib/k8s_zone_rollback_sandbox.ps1`；删除 `k8s_zone_rollback_flush_guard.tests.ps1`；
+  - `ConvertFrom-LiveDbConsumerGroup` 从 k8s_deploy.ps1 移进 lib。
 
-### 7.4 与「落地恢复与围栏」会话（已停，交其接手方）
+  复核出 12 条，均已修。文档 `zone_data_rollback{,_en,_zh}.md`、`db-consumer-group-per-zone.md` 都已改为「已裁决」。
+- **登记**：`docs/README.md` 手工插入三份新设计文档。没有整段跑 gen_docs_index.py，因为那会改掉别的会话手写的条目；生成器 `--check` 里另外几处差异不是本线造成的。另外追加了 PROGRESS 条目和 Java `PARITY.md` 7 行。
+
+### 7.4 没做的（负责人 2026-10-18 已授权自行拍板，R9 进行中）
+
+> 负责人 2026-10-18 原话：「你就按最标准的去做就行，数据一致性而且可水平扩展」。下面 7 项与三个小项，由接手会话按业界标准做法拍板并落码（R9）。取舍顺序：正确性 / 数据一致性 / 向后兼容 > 简单 > 可维护 > 性能；要求可水平扩展，不引入全局单点，可分片、可断点续跑。R9 的决定与设计会写进 `docs/design/zone_data_rollback.md`。
+
+1. **回档工具 `go/db/cmd/zone_rollback_discard`（未写）**。在它落地之前，K8s 整 zone 回档只能 dry-run，`-Apply` 停在入口校验。工具契约写在 `k8s_zone_rollback.ps1` 文件头「zone_rollback_discard 契约」一节，依赖以下待拍板项（详见 `docs/design/zone_data_rollback.md`「2026-10-18 修订」）：
+   - #1 回档窗口的 zone 维护围栏是前置条件；他区在线的本 zone 玩家是踢下线还是等他们下线；
+   - #2 回档是否同时做一次纪元抬升（INCR owner_epoch、抬高 applied_epoch），这要 fencing 负责人签字；
+   - #3 严格屏障协议（strict）下怎么处理，以及「有 pending、无 ACK」的玩家；
+   - #4 blocked 玩家是隔离保留还是删除；T 之后建的角色能否以空骨架继续使用；
+   - #5 接受有效回档点比 T 早一个消费延迟；
+   - #6 T 之后合入或迁入本 zone 的玩家，是否一律拒绝回档；
+   - #7 放弃 unchanged 优化，接受回档后全部走冷读带来的 MySQL 负载尖峰。
+2. 死信按 (topic, partition, offset) 去重，副本数设硬上界：与 L-04 第 2 批死信工具一起定。
+3. `dirty_save::IsEqual` 是否剥离 `stress_test_probe`。
+4. 分区契约告警是否给 op="other" 补规则。
+
+### 7.5 已知未同步的旧描述（不在本线范围）
+
+以下几处仍写着旧的 FLUSHDB 防护或 `-ConfirmFlushSharedRedis`，由各自负责人更正：
+- `docs/design/db-write-fencing-mysql.md` 约 :1030；
+- `docs/design/player-route-mapping-durability-proposal.md` 约 :453；
+- `docs/ops/merge-zone-runbook.md` 约 :933；
+- `docs/design/shared-redis-split-by-purpose.md` 的相关段。
+
+另外 `db-task-store-unavailable-deferral.md` §9 的 WAITAOF 与 ④ 两行，同样交负责人更正。
+
+### 7.6 交 Codex 的验证顺序（本线全部改动）
+
+1. **Go**（`GOTOOLCHAIN=local`、`GOFLAGS=-mod=readonly`、`GOPROXY=https://goproxy.cn,direct`）：依次在 `go/shared`、`go/db`、`go/login`、`tools/merge_zone` 下跑 `go vet ./...`、`go build ./...`、`go test ./... -count=1`。go/db 的 kafka 包要跑 -race，正则见 `docs/ops/godb-pipeline-launch-todo.md` §9.2。
+2. **C++**：MSBuild 串行 `/m:1`。`node.h` 改了，所以 core 和 scene / gate / battle 全部节点都要重编，然后编 `cross_zone_test`、`kafka_command_test`，再跑：
+   - `cross_zone_test --gtest_filter=DbTaskDispatch*:ExitDbTaskGate*:ExitPersist*`
+   - `kafka_command_test --gtest_filter=DeliveryErrorClassification*:ClassifyProduceResult*`
+3. **PowerShell**：在仓库根逐个执行 `pwsh -NoProfile -NonInteractive -File tools/scripts/tests/<名>.tests.ps1`，名字依次为：
+   - `k8s_deploy_contract`
+   - `k8s_client_entry_contract`
+   - `k8s_migrate_gate`
+   - `k8s_zone_rollback_discard`
+   - `k8s_zone_rollback_gate_router_mode`
+   - `kafka_offset_reset_output_guard`
+   - `dev_tools_kafka_offset_reset`
+   - `dev_tools_merge_zone_contract`
+   - `go_services_stop`
+
+   另跑 `test_stress_summarize.ps1`。
+4. **回档 dry-run 冒烟**：命令与期望见 `docs/ops/godb-pipeline-launch-todo.md` 6.5。
+5. **上线前实测**：Kafka 4.3.1 CLI 行为，见 `db-consumer-group-per-zone.md` §11 V3。如果证实不能为不存在的组建出位点，回档改动不得发布。
+6. 各项通过标准与失败时要保留的日志，见 launch-todo 各节。只有真库用例才算真库验证通过，显示 SKIP 不算通过。
+
+### 7.7 与其它会话
+
+- **「玩家数据存储位置」会话**：2026-10-18 在 go/db 落完 B0-3「task:result 读回执按 login 实例分频道」第 2 批（含评审修复，未编译、未测试），空档已收回。文件清单（对方回报）：
+  - `go/db/internal/kafka/key_ordered_consumer.go` 只改了三处：
+    - 常量块：删去 `taskResultNotifyChannel`；
+    - `publishDBReadResult`：调用 `publishTaskResult` 的那一行改为传 task；
+    - `publishTaskResult` 本体：先 LPUSH + EXPIRE，再按 `reply_instance` 只 PUBLISH 一次；合法发实例频道，空或不合法回落旧频道；通知失败仍 return nil。
+
+    R7 的 ConsumeClaim、Errors 协程、重新入组退避，以及缓存相关 hunk 都没碰。
+  - `go/db/internal/kafka/placement_route.go`：`failRead` 改一行，传 dbTask。
+  - 新建：
+    - `go/db/internal/kafka/` 下的 `task_result_notify.go`、`task_result_notify_route_test.go`、`task_result_notify_test.go`；
+    - `go/db/internal/metrics/` 下的 `task_result_notify.go`、`task_result_notify_test.go`。新指标 `db_task_result_notify_total{target,result}` 预置 3×3 个 0，带 sync.Once。
+  - `go/db/internal/metrics/metrics.go`：只在 `Start()` 里 `registerPipeline()` 之后加了一行 `registerTaskResultNotify()`，另补头注释；预建序列和 metrics_test.go 都没动。
+  - 部署与脚本：
+    - `deploy/k8s/task-result-notify-alerts.yaml` 是新建的独立 PrometheusRule；
+    - `go/test.ps1` 的 db 套件加了 `./internal/metrics/...`，需要 Codex 先确认稳定为绿；
+    - `tools/scripts/stress_summarize.ps1` 新增 2g 段，`test_stress_summarize.ps1` 同步改了。
+  - 文档：
+    - `docs/ops/godb-pipeline-launch-todo.md` §10；
+    - `new-player-first-enter-no-cold-read.md` 三处更正注；
+    - `docs/handoff/launch-readiness-20261013/spec_B0-3_task_result_channel.md` 文末「第 2 批交付」节，含权威验证命令；
+    - `deploy/k8s/README.md` 的告警安装说明。
+  - 上线顺序：login 已经上了第 1 批的 zone，go/db 要按 zone 金丝雀发布，不要一次升全部 zone。
+
+### 7.8 与「落地恢复与围栏」会话（已停，交其接手方）
 
 - 它加了 `ServerConfig.Fencing.Mode`（legacy | dual，缺省 legacy），k8s_deploy 原样镜像，没有逐 zone 覆盖。
 - 它已把 handleTask 成功分支改成 `advanceApplied`（`player_cache_publish.go`），`metrics.RedisSteps` 扩到 12 个，`stress_summarize` 2e 段已同步。

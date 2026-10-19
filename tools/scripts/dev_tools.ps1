@@ -329,10 +329,12 @@
 
     # ── k8s-zone-rollback ─────────────────────────────────────────
     # See tools/scripts/k8s_zone_rollback.ps1 for full docs.
-    # Wraps docs/design/zone_data_rollback.md §3 5-step disaster recovery.
-    [string]$RollbackTargetTime = "",       # ISO 8601 UTC
+    # Wraps docs/design/zone_data_rollback.md §3 disaster recovery(负责人 2026-10-17 裁决:丢弃 TargetTime 之后的写)。
+    [string]$RollbackTargetTime = "",       # UTC,yyyy-MM-ddTHH:mm:ss[.fff]Z
+    # go/db 的共享 Redis(K8s 即 infra redis 的 DB 0;回档工具在这里丢弃 T 之后的状态,不做 FLUSHDB)。-RollbackApply 时必填。
     [string]$RollbackRedisHost = "",
     [string]$RollbackRedisPort = "6379",
+    # 已废弃(2026-10-18):口令不再经命令行。非空即在调用回滚脚本之前拒绝,改用 -RollbackRedisPasswordEnv <环境变量名>。
     [string]$RollbackRedisPassword = "",
     [int]$RollbackRedisDB = 0,
     # 留空 = 由 k8s_zone_rollback.ps1 按 -ZoneId 与 go/db/etc/db.yaml 的 TopicGeneration 推导 db_task_zone_<id>[_g<gen>];
@@ -347,9 +349,28 @@
     # 转给 k8s_zone_rollback.ps1 -ConfirmNoGatewayIngress:显式声明回滚后该 zone 不要 Ingress gateway(Ingress 核对的显式决定,
     # 与 -GatewayIngressHost 互斥)。switch 不占位置参数,插在这里不影响后面参数的位置绑定。
     [switch]$RollbackConfirmNoGatewayIngress,
-    # 转给 k8s_zone_rollback.ps1 -ConfirmFlushSharedRedis:Step 4 FLUSHDB 的目标 DB 里有全局共享键
-    # (player:zone / player:placement / player:maprev / merge:* / consumer:applied* / kafka:retry*)时仍然放行。默认拒绝。
+    # 已废弃(2026-10-18):回档不再 FLUSHDB(go/db 游标、重试收据、映射、账号目录与各 zone 缓存同在一个 Redis DB)。
+    # 传了即在调用回滚脚本之前拒绝;整套环境重建走 AGENTS.md §6.2。
     [switch]$RollbackConfirmFlushSharedRedis,
+    # 以下转给 k8s_zone_rollback.ps1 的同名参数(去掉 Rollback 前缀),非空 / 大于 0 才转发,语义与校验都在回滚脚本一处:
+    # Redis 口令所在的环境变量名、zone_<id>_db DSN 所在的环境变量名(都只给变量名)、预编译的 zone_rollback_discard、屏障协议世代
+    # (legacy;strict 待负责人裁决 #3)、rollback-id(单步或整脚本重跑用同一个)、Step 1b 的静默窗口秒数(≥ 300)、
+    # -RollbackSkipMySqlPause 时声明的 PITR 恢复时刻、带 blocked 玩家继续的人数(待负责人裁决 #4,回滚脚本会拒绝)。
+    # switch 与这些字符串 / 整数都放在参数块末尾,不影响前面参数的位置绑定。
+    [string]$RollbackRedisPasswordEnv = "",
+    [string]$RollbackMySqlDsnEnv = "",
+    [string]$RollbackDiscardTool = "",
+    [ValidateSet("", "legacy", "strict")]
+    [string]$RollbackBarrierProtocol = "",
+    [string]$RollbackId = "",
+    [int]$RollbackQuiesceSeconds = 0,
+    [string]$RollbackPitrRestoredTo = "",
+    [int]$RollbackAcceptBlockedPlayers = 0,
+    # 转给 k8s_zone_rollback.ps1 的 -AllowEmptyTarget / -AcknowledgeNoPostTWrites(回档复核 [11]):只在被指定时转发,语义见回滚脚本同名参数
+    # (前者只用于从未落过库的新 zone;后者只用于 T 之后确实没有任何存盘的 zone,inventory / purge / verify 一并带上)。
+    # 以前经本入口走不到这两条路径,只能直接调用回滚脚本。
+    [switch]$RollbackAllowEmptyTarget,
+    [switch]$RollbackAcknowledgeNoPostTWrites,
     # 原 -RollbackKafkaDrainTimeoutSec 已删除(2026-10-15):回滚脚本删掉了 zone-down 之后等 LAG 排空的 Step 2。
     [switch]$RollbackApply
 )
@@ -1677,10 +1698,18 @@ switch ($Command) {
     }
     "k8s-zone-rollback" {
         # Wraps k8s_zone_rollback.ps1 — see docs/design/zone_data_rollback.md §3.
-        # Orchestrates: preflight → zone-down → MySQL PITR (manual) → Redis FLUSHDB
-        #             → Kafka offset reset (zone group; retire legacy offsets) → zone-up → verification checklist.
+        # Orchestrates: preflight → zone-down → post-stop checks → MySQL PITR (manual) → inventory
+        #             → Kafka offsets to the log end (zone group; retire legacy offsets) → discard post-TargetTime Redis state
+        #             → verify → zone-up → verification checklist.
         if ($RollbackTargetTime -eq "") {
-            throw "k8s-zone-rollback requires -RollbackTargetTime (ISO 8601 UTC, e.g. '2026-05-15T14:23:00Z')"
+            throw "k8s-zone-rollback requires -RollbackTargetTime (UTC, e.g. '2026-05-15T14:23:00Z')"
+        }
+        # 已废弃的两个参数在调用回滚脚本之前拒绝,不静默吞掉(AGENTS §11.3)。
+        if ($RollbackConfirmFlushSharedRedis) {
+            throw "k8s-zone-rollback 不再支持 -RollbackConfirmFlushSharedRedis:回档已不做 FLUSHDB(go/db 游标、重试收据、映射、账号目录与各 zone 缓存同在一个 Redis DB,FLUSHDB 等于事故),改由 zone_rollback_discard 只丢弃 TargetTime 之后的状态;整套环境重建走 AGENTS.md §6.2。去掉该参数重跑;尚未做任何操作。"
+        }
+        if ($RollbackRedisPassword -ne "") {
+            throw "k8s-zone-rollback 不再支持 -RollbackRedisPassword:口令经命令行会进进程列表与 shell 历史。把口令放进环境变量,改传 -RollbackRedisPasswordEnv <变量名>;尚未做任何操作。"
         }
         # 回滚目标版本必须显式给。默认的 git 短 sha 是**当前工作树**的版本,
         # 拿它回滚等于"把数据回档到过去、把代码留在现在",比不回滚更危险。
@@ -1709,10 +1738,19 @@ switch ($Command) {
         if ($RollbackKafkaLegacyGroup -ne "") { $rbArgs.KafkaLegacyGroup = $RollbackKafkaLegacyGroup }
         if ($RollbackRedisHost -ne "")     { $rbArgs.RedisHost = $RollbackRedisHost }
         if ($RollbackRedisPort -ne "6379") { $rbArgs.RedisPort = $RollbackRedisPort }
-        if ($RollbackRedisPassword -ne "") { $rbArgs.RedisPassword = $RollbackRedisPassword }
         if ($RollbackRedisDB -ne 0)        { $rbArgs.RedisDB = $RollbackRedisDB }
         if ($RollbackSkipMySqlPause)       { $rbArgs.SkipMySqlPause = $true }
-        if ($RollbackConfirmFlushSharedRedis) { $rbArgs.ConfirmFlushSharedRedis = $true }
+        # 回档丢弃语义的新参数(2026-10-18):非空 / 大于 0 才转发,默认值与校验只在回滚脚本一处。
+        if ($RollbackRedisPasswordEnv -ne "")  { $rbArgs.RedisPasswordEnv = $RollbackRedisPasswordEnv }
+        if ($RollbackMySqlDsnEnv -ne "")       { $rbArgs.MySqlDsnEnv = $RollbackMySqlDsnEnv }
+        if ($RollbackDiscardTool -ne "")       { $rbArgs.RollbackDiscardTool = $RollbackDiscardTool }
+        if ($RollbackBarrierProtocol -ne "")   { $rbArgs.BarrierProtocol = $RollbackBarrierProtocol }
+        if ($RollbackId -ne "")                { $rbArgs.RollbackId = $RollbackId }
+        if ($RollbackQuiesceSeconds -gt 0)     { $rbArgs.QuiesceSeconds = $RollbackQuiesceSeconds }
+        if ($RollbackPitrRestoredTo -ne "")    { $rbArgs.PitrRestoredTo = $RollbackPitrRestoredTo }
+        if ($RollbackAcceptBlockedPlayers -gt 0) { $rbArgs.AcceptBlockedPlayers = $RollbackAcceptBlockedPlayers }
+        if ($RollbackAllowEmptyTarget)         { $rbArgs.AllowEmptyTarget = $true }
+        if ($RollbackAcknowledgeNoPostTWrites) { $rbArgs.AcknowledgeNoPostTWrites = $true }
         if ($RollbackApply)                { $rbArgs.Apply = $true }
         # 留空不传,由下游默认值接管(k8s_zone_rollback.ps1 的 Step 6 再原样转给 k8s-zone-up);默认值只在 k8s_deploy.ps1 一处。
         # 这组参数不粘滞:以 external / "0" 回退 / 经 Ingress 对外 / staging、prod 档 / 开发口令登录运行的 zone 回滚时,

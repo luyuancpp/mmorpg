@@ -4,8 +4,7 @@
 // 经 QueueGrpcLocalCompletion 把 UNAVAILABLE 排到下一轮投递。这里锁定调用方契约(grpc_call_tag.h 的 GrpcDone 一节):
 //   * 完成回调恰好一次,从不在 Send 栈内同步执行,排在发起 Send 的那一批 pending functor 之后;
 //   * outcome.code == UNAVAILABLE,reply 为空;
-//   * 带 done 的调用不触发该方法的全局应答 / 失败处理器;不带 done(或 done 为空)的调用交给全局失败处理器,
-//     拿到的是发出时的请求与 metadata 原值副本;
+//   * typed / Erased 调用都必须显式传 done;Erased 请求的动态类型不匹配时异步以 INTERNAL 完成;
 //   * 回调执行期间 GrpcClientLocalCompletionsDrained() 为假(Node 拆除据此让一轮),执行完为真;
 //     回调里再发的那次本地完成同样计入,直到它也执行完。
 //
@@ -17,11 +16,12 @@
 // Send 只在 loop 线程上调用:QueueGrpcLocalCompletion 取的是当前线程的 loop。
 
 #include <gtest/gtest.h>
+#include <google/protobuf/dynamic_message.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "core/network/grpc_client_runtime.h"
@@ -38,23 +38,6 @@ using data_service::LoadPlayerDataResponse;
 class GrpcClientLocalRejectTest : public ::testing::Test
 {
 protected:
-    void SetUp() override
-    {
-        savedReplyHandler_ = std::move(data_service::AsyncDataServiceLoadPlayerDataHandler);
-        savedFailedHandler_ = std::move(data_service::AsyncDataServiceLoadPlayerDataFailedHandler);
-        // 默认装计数处理器:带 done 的调用一次都不能触发它们。个别用例换掉失败处理器做断言。
-        data_service::AsyncDataServiceLoadPlayerDataHandler =
-            [calls = globalReplyCalls_](const GrpcReplyContext &, const LoadPlayerDataResponse &) { ++*calls; };
-        data_service::AsyncDataServiceLoadPlayerDataFailedHandler =
-            [calls = globalFailedCalls_](const GrpcCallFailure &, const LoadPlayerDataRequest &) { ++*calls; };
-    }
-
-    void TearDown() override
-    {
-        data_service::AsyncDataServiceLoadPlayerDataHandler = std::move(savedReplyHandler_);
-        data_service::AsyncDataServiceLoadPlayerDataFailedHandler = std::move(savedFailedHandler_);
-    }
-
     // 转 loop 到收尾:调用前已排队的 functor 是同一批,它们再排的(本地完成)在下一批。0.5s 后 quit,
     // 期间完成回调之后还要空转很多轮,「恰好一次」不是刚好赶上 quit 得出的。
     // 5ms 空转定时器只为让 loop 勤转、不依赖 wakeup:在 loop 线程上、pending functor 之外排队不会唤醒 poll。
@@ -72,13 +55,9 @@ protected:
     muduo::net::EventLoop loop_;
     // 节点注册表的替身:生成的 Send 只按 (registry, entity) 取通道,不需要 tlsNodeContextManager。
     entt::registry registry_;
-    std::shared_ptr<int> globalReplyCalls_ = std::make_shared<int>(0);
-    std::shared_ptr<int> globalFailedCalls_ = std::make_shared<int>(0);
-    data_service::AsyncDataServiceLoadPlayerDataHandlerFunctionType savedReplyHandler_;
-    data_service::AsyncDataServiceLoadPlayerDataFailedHandlerFunctionType savedFailedHandler_;
 };
 
-// 每次调用回调版 Send 打到没挂通道的节点实体:done 以 UNAVAILABLE 异步完成恰好一次,reply 为空,不触发全局处理器;
+// 每次调用回调版 Send 打到没挂通道的节点实体:done 以 UNAVAILABLE 异步完成恰好一次,reply 为空;
 // 完成排在发起 Send 的那一批 pending functor 之后,执行期间排空判据关闭,执行完打开。
 TEST_F(GrpcClientLocalRejectTest, PerCallDoneOnEntityWithoutChannelIsDeferredOnceWithUnavailable)
 {
@@ -132,14 +111,11 @@ TEST_F(GrpcClientLocalRejectTest, PerCallDoneOnEntityWithoutChannelIsDeferredOnc
     EXPECT_TRUE(observed->sameBatchHadRunAtDone) << "完成排在下一轮,不在发起 Send 的这批 pending functor 里";
     EXPECT_FALSE(observed->drainedDuringDone) << "回调退栈前排空判据仍须关闭";
     EXPECT_TRUE(GrpcClientLocalCompletionsDrained()) << "回调执行完计数归零";
-    EXPECT_EQ(*globalReplyCalls_, 0) << "带 done 的调用不得触发全局应答处理器";
-    EXPECT_EQ(*globalFailedCalls_, 0) << "带 done 的调用不得触发全局失败处理器";
 }
 
-// 不带 done 的 Send 打到三种「没有可用通道」的实体:没挂组件、挂了空指针、实体已销毁(失效代际,不能拿同 index
-// 的继任实体顶替)。每次都以 UNAVAILABLE 异步交给全局失败处理器一次,拿到的是发出时的请求与 metadata 原值副本,
-// 调用方随后改自己的请求 / 值不影响;应答处理器不触发。
-TEST_F(GrpcClientLocalRejectTest, WithoutDoneFailedHandlerGetsUnavailableWithSentCopies)
+// 三种「没有可用通道」的实体:没挂组件、挂了空指针、实体已销毁。每个显式 done 都以 UNAVAILABLE
+// 异步完成恰好一次;完成不依赖请求对象在 Send 返回后继续存活。
+TEST_F(GrpcClientLocalRejectTest, PerCallDoneRejectsAllThreeMissingChannelForms)
 {
     const auto withoutComponent = registry_.create();
     const auto withNullChannel = registry_.create();
@@ -148,57 +124,142 @@ TEST_F(GrpcClientLocalRejectTest, WithoutDoneFailedHandlerGetsUnavailableWithSen
     registry_.destroy(destroyed);
     const std::vector<entt::entity> targets{withoutComponent, withNullChannel, destroyed};
 
-    const auto failures = std::make_shared<int>(0);
-    data_service::AsyncDataServiceLoadPlayerDataFailedHandler =
-        [failures](const GrpcCallFailure &failure, const LoadPlayerDataRequest &request)
+    struct Observed
     {
-        ++*failures;
-        EXPECT_EQ(failure.code(), kGrpcStatusUnavailable);
-        EXPECT_EQ(failure.messageId, DataServiceLoadPlayerDataMessageId);
-        EXPECT_STREQ(failure.method, "DataService.LoadPlayerData");
-        EXPECT_TRUE(failure.outcome.initialMetadata.empty()) << "本地拒绝没有响应头";
-        EXPECT_EQ(request.player_id(), 42u) << "失败处理器拿到的是发出时的请求副本";
-        const auto *sent = failure.FindSentMetadata("x-test");
-        ASSERT_NE(sent, nullptr);
-        EXPECT_EQ(*sent, "snapshot") << "发出的 metadata 按原值(应用层 Base64 之前)交还";
+        bool allSendsReturned{false};
+        std::vector<int> calls;
     };
+    const auto observed = std::make_shared<Observed>();
+    observed->calls.resize(targets.size(), 0);
 
-    loop_.queueInLoop([&registry = registry_, &targets, failures]
+    loop_.queueInLoop([&registry = registry_, targets, observed]
     {
-        const std::vector<std::string> keys{"x-test"};
-        for (const auto target : targets)
+        for (std::size_t index = 0; index < targets.size(); ++index)
         {
             LoadPlayerDataRequest request;
             request.set_player_id(42);
-            std::vector<std::string> values{"snapshot"};
-            data_service::SendDataServiceLoadPlayerData(registry, target, request, keys, values);
-            request.set_player_id(99);
-            values.front() = "overwritten";
+            data_service::SendDataServiceLoadPlayerData(registry, targets[index], request,
+                [observed, index](const GrpcCallOutcome &outcome, const LoadPlayerDataResponse *reply)
+                {
+                    ++observed->calls[index];
+                    EXPECT_TRUE(observed->allSendsReturned) << "缺通道也不得同步完成";
+                    EXPECT_EQ(outcome.code, kGrpcStatusUnavailable);
+                    EXPECT_TRUE(outcome.initialMetadata.empty()) << "本地拒绝没有响应头";
+                    EXPECT_EQ(reply, nullptr);
+                    EXPECT_FALSE(GrpcClientLocalCompletionsDrained());
+                });
+            EXPECT_EQ(observed->calls[index], 0) << "缺通道也不能在 Send 栈内同步回调";
         }
-        EXPECT_EQ(*failures, 0) << "缺通道也不能在 Send 栈内同步回调";
+        observed->allSendsReturned = true;
     });
     RunLoopUntilQuiet();
 
-    EXPECT_EQ(*failures, static_cast<int>(targets.size()));
-    EXPECT_EQ(*globalReplyCalls_, 0);
+    for (const int calls : observed->calls)
+    {
+        EXPECT_EQ(calls, 1) << "每个目标的完成回调都恰好一次";
+    }
     EXPECT_TRUE(GrpcClientLocalCompletionsDrained());
 }
 
-// done 为空等同于不带回调的 Send(生成头文件的约定):本地拒绝照样交给全局失败处理器一次。
-TEST_F(GrpcClientLocalRejectTest, EmptyPerCallDoneFallsBackToGlobalFailedHandler)
+// Erased 入口在获取通道前校验请求类型。错误动态类型必须异步回 INTERNAL,不得退化成缺通道的 UNAVAILABLE。
+TEST_F(GrpcClientLocalRejectTest, ErasedWrongRequestTypeIsDeferredOnceWithInternal)
 {
     const auto nodeWithoutChannel = registry_.create();
-
-    loop_.queueInLoop([&registry = registry_, nodeWithoutChannel]
+    struct Observed
     {
-        const LoadPlayerDataRequest request;
-        data_service::SendDataServiceLoadPlayerData(registry, nodeWithoutChannel, request,
-                                                    GrpcDone<LoadPlayerDataResponse>{});
+        bool sendReturned{false};
+        bool laterFunctorInSameBatchRan{false};
+        int calls{0};
+        uint32_t code{kGrpcStatusOk};
+        std::string message;
+        bool hadReply{true};
+        bool sendHadReturnedAtDone{false};
+        bool sameBatchHadRunAtDone{false};
+        bool drainedDuringDone{true};
+    };
+    const auto observed = std::make_shared<Observed>();
+
+    loop_.queueInLoop([&registry = registry_, nodeWithoutChannel, observed]
+    {
+        const LoadPlayerDataResponse wrongRequest;
+        data_service::SendDataServiceLoadPlayerDataErased(registry, nodeWithoutChannel, wrongRequest,
+            [observed](const GrpcCallOutcome &outcome, const google::protobuf::Message *reply)
+            {
+                ++observed->calls;
+                observed->code = outcome.code;
+                observed->message = outcome.message;
+                observed->hadReply = reply != nullptr;
+                observed->sendHadReturnedAtDone = observed->sendReturned;
+                observed->sameBatchHadRunAtDone = observed->laterFunctorInSameBatchRan;
+                observed->drainedDuringDone = GrpcClientLocalCompletionsDrained();
+            }, GrpcCallOptions{});
+        observed->sendReturned = true;
+        EXPECT_EQ(observed->calls, 0) << "类型错误也不能在 Send 栈内同步回调";
+        EXPECT_FALSE(GrpcClientLocalCompletionsDrained());
+    });
+    loop_.queueInLoop([observed]
+    {
+        observed->laterFunctorInSameBatchRan = true;
+        EXPECT_EQ(observed->calls, 0);
     });
     RunLoopUntilQuiet();
 
-    EXPECT_EQ(*globalFailedCalls_, 1);
-    EXPECT_EQ(*globalReplyCalls_, 0);
+    EXPECT_EQ(observed->calls, 1);
+    EXPECT_EQ(observed->code, kGrpcStatusInternal);
+    EXPECT_EQ(observed->message, "request type mismatch");
+    EXPECT_FALSE(observed->hadReply);
+    EXPECT_TRUE(observed->sendHadReturnedAtDone);
+    EXPECT_TRUE(observed->sameBatchHadRunAtDone);
+    EXPECT_FALSE(observed->drainedDuringDone);
+    EXPECT_TRUE(GrpcClientLocalCompletionsDrained());
+}
+
+// 同一个 descriptor 也可能对应 DynamicMessage。Erased 入口不能仅凭 descriptor 相同就 static_cast 成生成类型。
+TEST_F(GrpcClientLocalRejectTest, ErasedDynamicMessageWithMatchingDescriptorIsDeferredOnceWithInternal)
+{
+    const auto nodeWithoutChannel = registry_.create();
+    struct Observed
+    {
+        bool sendReturned{false};
+        int calls{0};
+        uint32_t code{kGrpcStatusOk};
+        bool hadReply{true};
+        bool sendHadReturnedAtDone{false};
+        bool drainedDuringDone{true};
+    };
+    const auto observed = std::make_shared<Observed>();
+
+    loop_.queueInLoop([&registry = registry_, nodeWithoutChannel, observed]
+    {
+        // 默认不委托 generated factory,New() 返回 DynamicMessage,descriptor 仍是生成请求的同一个对象。
+        google::protobuf::DynamicMessageFactory factory;
+        const auto *prototype = factory.GetPrototype(LoadPlayerDataRequest::descriptor());
+        ASSERT_NE(prototype, nullptr);
+        const std::unique_ptr<google::protobuf::Message> dynamicRequest(prototype->New());
+        ASSERT_NE(dynamicRequest, nullptr);
+        ASSERT_EQ(dynamicRequest->GetDescriptor(), LoadPlayerDataRequest::descriptor());
+        ASSERT_EQ(dynamic_cast<const LoadPlayerDataRequest *>(dynamicRequest.get()), nullptr);
+
+        data_service::SendDataServiceLoadPlayerDataErased(registry, nodeWithoutChannel, *dynamicRequest,
+            [observed](const GrpcCallOutcome &outcome, const google::protobuf::Message *reply)
+            {
+                ++observed->calls;
+                observed->code = outcome.code;
+                observed->hadReply = reply != nullptr;
+                observed->sendHadReturnedAtDone = observed->sendReturned;
+                observed->drainedDuringDone = GrpcClientLocalCompletionsDrained();
+            }, GrpcCallOptions{});
+        observed->sendReturned = true;
+        EXPECT_EQ(observed->calls, 0) << "动态类型错误也必须异步完成";
+        EXPECT_FALSE(GrpcClientLocalCompletionsDrained()) << "已排队的错误完成计入排空";
+    });
+    RunLoopUntilQuiet();
+
+    EXPECT_EQ(observed->calls, 1);
+    EXPECT_EQ(observed->code, kGrpcStatusInternal) << "descriptor 相同不能绕过实际动态类型校验";
+    EXPECT_FALSE(observed->hadReply);
+    EXPECT_TRUE(observed->sendHadReturnedAtDone);
+    EXPECT_FALSE(observed->drainedDuringDone);
     EXPECT_TRUE(GrpcClientLocalCompletionsDrained());
 }
 
@@ -260,8 +321,6 @@ TEST_F(GrpcClientLocalRejectTest, SendFromLocalCompletionKeepsDrainGateClosedUnt
     EXPECT_FALSE(observed->drainedAtProbe) << "外层回调退栈后,排队中的重发仍须关住排空判据";
     EXPECT_FALSE(observed->drainedDuringInner);
     EXPECT_TRUE(GrpcClientLocalCompletionsDrained());
-    EXPECT_EQ(*globalReplyCalls_, 0);
-    EXPECT_EQ(*globalFailedCalls_, 0);
 }
 
 } // namespace

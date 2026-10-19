@@ -324,6 +324,8 @@ Secrets:
   # QueueToken:登录排队的不透明 token,login 自签自验。
   # 原来它复用 GateTokenSecret(见 docs/design/login-queue-2026-05.md:194),
   # 信任域没拆 —— 现在拆开,一处泄露不再牵连另一处。
+  # (2026-10-18 补注)轮换的「摘旧密钥」一步须在新主密钥全量生效后至少等 24h(排队令牌的绝对上限
+  # loginqueue.queueTokenMaxAge),否则仍在排队的玩家会被判 bad_signature、打回队尾。
   QueueToken:
     # Env: "LOGIN_QUEUE_TOKEN_SECRET"
     Value: "local-dev-queue-token-secret-0123456789abcdef"
@@ -357,12 +359,12 @@ TokenConfig:
   AccessTokenTTL: 2h
   RefreshTokenTTL: 720h  # 30 days
 
-# Kill switch for the deprecated path "Client → cpp gate (TCP) →
-# ClientPlayerLogin.Login" (see ARCH §12). Default true preserves the
-# current rollout; flip to false in T+2 once legacy_login_count drops
-# below the agreed threshold. When false, the legacy branch returns
-# kLoginUnknownError immediately and the new HTTP path
-# (POST /api/login on Java Gateway) is unaffected.
+# 旧路径「客户端 → cpp gate(TCP)→ ClientPlayerLogin.Login,用口令 / 第三方凭据首认证」
+# 的 kill switch(ARCH §12)。默认 true 保持现状;login_auth_path_total{path="legacy"}
+# 降到约定阈值以下后在 T+2 置 false。置 false 后 gate 上的凭据登录在认证之前就回
+# kLoginUnknownError(不消耗第三方 code、不抢账号锁,凭据真假都回这个码);
+# 新 HTTP 入口(Java Gateway POST /api/login)与 gate 上 auth_type=access_token 的会话绑定
+# (新流程必经一步,login_session 唯一写入点)都不受影响。
 LegacyGateLoginEnabled: true
 
 # Prometheus scrape endpoint, exposed by go-zero core/service. Bind to
@@ -449,17 +451,19 @@ AuthProviders:
       WriteTimeout: 3s
 #   # WeChat Open Platform (mobile/PC SDK). The client SDK returns an OAuth `code`
 #   # (valid ~5 min, one-time-use). LoginRequest{auth_type:"wechat", auth_token:<code>}.
-#   # Account identity = "wx_<unionid>" when unionid is available (preferred, stable
-#   # across apps under the same Open Platform subject), else "wx_<openid>".
+#   # Account identity = "wx_<unionid>". 拿不到 unionid 时缺省拒绝登录(故障码 LoginAuthProviderUnavailable),
+#   # 只有显式 RequireUnionId: false 才回落 "wx_<openid>"(多应用下会分裂账号,见 config.WeChatAuthConf)。
+#   # login 不展开 "${VAR}":密钥只写环境变量名(AppSecretEnv),写成 "${...}" 会拒绝启动;
+#   # 内联 AppSecret 只在 Mode=dev/test 放行,Endpoint 在其余 Mode 只接受 https://。
 #   WeChat:
-#     AppId: "${WECHAT_APP_ID}"
-#     AppSecret: "${WECHAT_APP_SECRET}"
+#     AppId: "wx0123456789abcdef"
+#     AppSecretEnv: "LOGIN_WECHAT_APP_SECRET"
 #   # QQ Connect (https://connect.qq.com/). The SDK passes `access_token`
-#   # (NOT a code) as auth_token. Account identity = "qq_<unionid|openid>".
-#   # AppKey is reserved for future server-side WebOAuth flows.
+#   # (NOT a code) as auth_token. Account identity = "qq_<unionid>",unionid 规则同上。
+#   # 不需要 AppKey(provider 只调 /oauth2.0/me 并校验 client_id == AppId);应用没有 unionid 权限时
+#   # 写 RequestUnionId: false 且必须同时写 RequireUnionId: false。
 #   QQ:
-#     AppId: "${QQ_APP_ID}"
-#     AppKey: "${QQ_APP_KEY}"
+#     AppId: "101234567"
 #   # NetEase URS — provider is currently a stub (see auth-provider-framework.md).
 #   NetEase:
 #     AppKey: "${NETEASE_APP_KEY}"
@@ -482,6 +486,9 @@ AuthProviders:
 #   0. 先在 Enabled=false 下把所有 zone 的 login 升到 2026-10-13(G4b-G,含 G1b)之后的版本,再打开 Enabled。
 #      排队开着混跑时:同一个 zone 可能短暂两个 leader(G1b);新旧两种在途占位键互不可见,旧版副本放行 / 取走的
 #      部分仍按旧版超发(G4b-G)。不丢人、不重复放行(docs/design/login-queue-2026-05.md §7.1 与「在途占位的生命周期」)。
+#      (2026-10-18 补注)升级到 2026-10-18(放行脚本先判在队、空闲 TTL)这一版、以及从它回滚,都必须在 Enabled=false
+#      下滚完:排队开着混跑时,旧版 leader 弹出、尚未写完的条目会被新版判为 queue_gone 并打回队尾,上面「不丢人」在
+#      本版本的升级窗口里不成立。
 #   1. Deploy with Enabled=false → verify no behavior change.
 #   2. Set ZoneCapacityOverride for each live zone (use observed peak * 0.9
 #      as the initial value; tune from there).
@@ -502,6 +509,11 @@ AuthProviders:
 # Enabled=true 时 DispatchInterval、DispatcherLockTTL 必须为正(loginqueue.NewDispatcher 校验),否则起服失败;
 # 代码里的默认值(1s / 30s)只在键缺省时生效,显式写 0s 不会回落到默认值,也不是「关掉」。
 # (2026-10-15 补注)QueueEntryTTL 同样必须为正,AdmitTTL 不小于 1ms(loginqueue.ValidateTTLs),否则起服失败。
+#
+# (2026-10-18 补注)QueueEntryTTL 改为空闲 TTL:meta、token 索引与队列键自最后一次成功的排队中查询(或入队)起算,
+# 至少保留 QueueEntryTTL、至多 1.25 倍,持续轮询的人不会因为等满 1h 被弹回队尾。排队令牌改为固定 24h 签名过期
+# (loginqueue.queueTokenMaxAge),不再等于 QueueEntryTTL。QueueEntryTTL 取值须在 [1s, 24h],否则起服失败。
+# 本版本以及从它回滚,都必须在 Enabled=false 下滚完(见上面上线清单第 0 步的补注)。
 Queue:
   Enabled: false
   DispatchInterval: 1s

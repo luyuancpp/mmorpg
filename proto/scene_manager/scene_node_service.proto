@@ -21,6 +21,8 @@ service SceneNodeGrpc {
   // - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
   // - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
   //   落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
+  // - session_ended = true 是另一种用途(docs/design/location-release-binding.md §3.3):LeaveScene 拿不到"持有者已释放"
+  //   证据时,SceneManager 请 location 的持有节点释放——持有则按客户端断线退出,不持有则按 owner_epoch 条件补写凭证标记。
   rpc ReleasePlayer(ReleasePlayerRequest) returns (Empty) {}
 
   // ---- 回合制战斗 gather 管线(docs/design/turn-based-battle-server.md §3.1/§5.3)----
@@ -52,4 +54,9 @@ message ReleasePlayerRequest {
   // scene 只在本地缓存 PlayerOwnerEpochComp.epoch 与它相等时释放;缓存为 0 时按旧行为释放并计数;其余忽略。
   // 0 = 旧版调用方或尚未铸造,按旧行为释放并计数。不进存盘,不与 login_generation 混用。
   uint64 expected_owner_epoch = 4;
+  // 玩家的登录会话已结束(登出 / 断线租约到期 / gate 消失),没有接手节点(docs/design/location-release-binding.md §3.3)。
+  // true:持有该玩家且缓存 owner_epoch == expected_owner_epoch → 按客户端断线退出(存盘落地后写 A1′ 断线释放标记);
+  // 本节点完全不持有(无实体、无在途载入、无改派待确认)→ 按 owner_epoch == expected_owner_epoch 条件补写凭证标记;其余忽略。
+  // false = 交接释放(上面的原语义)。旧版 scene 忽略本字段、按交接释放处理,所以 scene 必须先于 SceneManager 发布。
+  bool session_ended = 5;
 }

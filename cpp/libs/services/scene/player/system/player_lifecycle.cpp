@@ -269,9 +269,9 @@ namespace
 	// (DispatchEnterSceneReply / DispatchEnterSceneTransportFailure);TTL 只兜"完成通知永远不来"
 	// (例如 SceneManager 节点在调用途中被摘除),不能把玩家永久挡在换图之外。
 	// 必须比 deadline 宽:否则应答 / 失败通知到达之前槽位已过期、被下一次登记覆盖,号就对不上了。
-	// 超过它才到的迟到应答按 correlation_id 对号:号与下一条请求记下的不同,直接丢弃。旧版 scene_manager
-	// 不回显号时退回按 player_id 对应答,这一残余仍在,后果只是一次换图失败或多余的交接,不会双主 ——
-	// 去留始终由 owner_epoch 比对裁决。
+	// 迟到完成按调用闭包捕获的 playerId / correlationId 认领,与下一条请求的号不同就丢弃。
+	// 响应中非 0 回显逐字段校验,回显为 0 也不改变捕获的身份。requestTag 为 0 的旧兼容分支仍保留,
+	// 只供绕过统一发送出口的直接调用使用;去留始终由 owner_epoch 比对裁决。
 	constexpr uint64_t kSceneChangeInFlightMarginMs = 1000;
 
 	uint64_t SceneChangeInFlightTtlMs()
@@ -449,13 +449,13 @@ namespace
 
 	// ── EnterScene 关联号(EnterSceneRequest.correlation_id,契约见 player_lifecycle.h 的 enter_scene_reply)──
 	//
-	// 线程内计数器。应答只在发出它的那个进程、那条线程的 EventLoop 上投递(muduo_grpc 通道经 queueInLoop 回调,生成的 gRPC 客户端在同一线程上发送与回调),
+	// 线程内计数器。完成回调在发出它的 loop 线程上执行,闭包带着本次发送的关联号。
 	// 所以线程内唯一就够了;进程重启后从 1 重来无害 —— 旧进程发出的请求,其应答回不到新进程。
 	// 号只在进程内有意义,排障时要与 player_id 一起看。
 	thread_local uint64_t tlsEnterSceneCorrelationSeq = 0;
 
-	// 本线程是否已经为"scene_manager 没回显 correlation_id"打过 WARN。滚动升级窗口里每条应答都会这样,
-	// 只打一次,趋势看 reply_uncorrelated。
+	// 只为 requestTag == 0 的兼容入口保留。生产关联号由闭包捕获,旧版 SM 不回显也走不到这里;
+	// 仅单测或绕过统一出口的调用可能计 reply_uncorrelated,每线程只告警一次。
 	thread_local bool tlsWarnedUncorrelatedReply = false;
 
 	// 取下一个关联号:前置自增,从 1 开始,恒非 0(uint64 在进程寿命内不会回绕)。
@@ -464,27 +464,68 @@ namespace
 		return ++tlsEnterSceneCorrelationSeq;
 	}
 
-	// scene 进程内 EnterScene 的**唯一**发送出口:全仓(cpp/generated 之外)只有这里直接调生成的
-	// EnterScene 发送函数(cpp/generated/grpc_client/scene_manager)。由它保证每条请求都带非 0 关联号,DispatchEnterSceneReply 才能把
-	// "应答号为 0"读成"scene_manager 是旧版、没回显"。有等待者的发送走 PlayerLifecycleSystem::RequestSceneChange
-	// (或本文件的交接 RequestTravelEnterScene);疏散 / 排空的等待者是待确认表(SendEmergencyRelocateEnterScene 先
-	// Table::MarkSent 把号记到条目上、再调本函数;表满没被跟踪的那一次没有等待者)。绕过它直调生成函数的发送点,
-	// 在新版 scene_manager 下应答号为 0,会退回按 player_id 对应答,并让 reply_uncorrelated 非 0。
-	// 前置条件:correlationId ≠ 0(调用方用 NextEnterSceneCorrelationId 取号、先记到等待者上再调本函数)、
-	// smEntity 非空(调用方已查 GetSceneManagerEntity)。
+	// runbook 依赖这些日志的级别、字段顺序与文案。完成回调先分发、再打日志;身份来自发送时捕获的值。
+	void LogEnterSceneReply(Guid playerId, uint64_t correlationId, const ::scene_manager::EnterSceneResponse &resp)
+	{
+		if (resp.error_code() != 0)
+		{
+			// ErrHandoffPending(18,定义与出处见 PlayerLifecycleSystem::kSmErrHandoffPending):
+			// 生产配置下每次跨节点换图的第一条请求都会拿到它,随后由 DispatchEnterSceneReply
+			// 起交接并重发 —— 这是常规路径,不是错误,打 ERROR 会把真正的失败淹没。
+			if (resp.error_code() == PlayerLifecycleSystem::kSmErrHandoffPending)
+			{
+				LOG_INFO << "SceneManager.EnterScene deferred (handoff pending): player=" << playerId
+						 << " corr=" << correlationId
+						 << " code=" << resp.error_code()
+						 << " msg=" << resp.error_message();
+				return;
+			}
+			LOG_ERROR << "SceneManager.EnterScene error: player=" << playerId
+					  << " corr=" << correlationId
+					  << " code=" << resp.error_code()
+					  << " msg=" << resp.error_message();
+			return;
+		}
+
+		if (resp.has_redirect())
+		{
+			LOG_INFO << "SceneManager.EnterScene returned cross-zone redirect to "
+					 << resp.redirect().target_gate_ip() << ":"
+					 << resp.redirect().target_gate_port()
+					 << " player=" << playerId << " corr=" << correlationId;
+		}
+	}
+
+	// scene 进程内 EnterScene 的唯一发送出口:发送前确保非 0 关联号,由闭包按值带回 DispatchEnterSceneReply;
+	// 回显只作核对,即便旧版 SM 不回显也按发送时的号认领。有等待者的发送走 RequestSceneChange 或
+	// RequestTravelEnterScene;疏散 / 排空的等待者由 SendEmergencyRelocateEnterScene 先 MarkSent、再发出。
+	// 前置条件:调用方先把 correlationId 记到等待者上,且 smEntity 非空(已查 GetSceneManagerEntity)。
 	void SendCorrelatedEnterScene(entt::entity smEntity, ::scene_manager::EnterSceneRequest &req, uint64_t correlationId)
 	{
 		if (correlationId == 0)
 		{
-			// 违反前置条件是调用方的 bug。宁可换一个新号也不发 0:发 0 等于自称"旧版 SM 没回显",
-			// 应答会被按 player_id 配给别的等待者。
+			// 违反前置条件是调用方的 bug。生产回调必须携带非 0 号,不让本次完成误走按 player_id 的兼容入口。
 			correlationId = NextEnterSceneCorrelationId();
 			LOG_ERROR << "[EnterSceneReply] SendCorrelatedEnterScene called with correlation_id 0 for player "
 					  << req.player_id() << "; sending with corr=" << correlationId << " instead";
 		}
 		req.set_correlation_id(correlationId);
 		auto &smRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
-		scene_manager::SendSceneManagerEnterScene(smRegistry, smEntity, req);
+		scene_manager::SendSceneManagerEnterScene(smRegistry, smEntity, req,
+			[playerId = req.player_id(), correlationId = correlationId](const GrpcCallOutcome &outcome,
+				const ::scene_manager::EnterSceneResponse *reply)
+			{
+				if (outcome.ok() && reply != nullptr)
+				{
+					PlayerLifecycleSystem::DispatchEnterSceneReply(playerId, correlationId, *reply);
+					LogEnterSceneReply(playerId, correlationId, *reply);
+					return;
+				}
+				const uint32_t code = outcome.ok() ? kGrpcStatusInternal : outcome.code;
+				PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(
+					playerId, correlationId,
+					"SceneManager.EnterScene code=" + std::to_string(code) + " msg=" + outcome.message);
+			});
 	}
 
 	// [ExitPersist]、[ExitRelease] 与 [RelocateConfirm] 三行汇总(计数含义见 player_lifecycle.h 的 exit_persist_stats /
@@ -965,13 +1006,16 @@ namespace
 		return suffix;
 	}
 
-	// 条件写标记的三个来源:A1′ 退出收尾,A2′ 载入放弃补写,改派踢线前的凭证兜底补写(待确认表核实出"没变"、
-	// 而 Redis 里已没有同代标记时,见 relocate_confirm::DecideCredential)。只决定计到哪组计数、日志里写哪个 site。
+	// 条件写标记的四个来源:A1′ 退出收尾,A2′ 载入放弃补写,改派踢线前的凭证兜底补写(待确认表核实出"没变"、
+	// 而 Redis 里已没有同代标记时,见 relocate_confirm::DecideCredential),会话结束释放时本节点完全不持有的凭证补写
+	// (release_fence::DecideSessionEndedCredential,docs/design/location-release-binding.md §3.3)。
+	// 只决定计到哪组计数、日志里写哪个 site。
 	enum class MarkWriteSite : uint8_t
 	{
 		kExitRelease,
 		kInheritRewrite,
 		kRelocateRefresh,
+		kSessionEndedCredential,
 
 		kCount
 	};
@@ -979,6 +1023,7 @@ namespace
 		"exit_release",
 		"inherit_rewrite",
 		"relocate_refresh",
+		"session_ended_credential",
 	};
 	static_assert(std::size(kMarkWriteSiteNames) == static_cast<std::size_t>(MarkWriteSite::kCount),
 				  "kMarkWriteSiteNames 必须与 MarkWriteSite 一一对应");
@@ -989,7 +1034,7 @@ namespace
 		return index < std::size(kMarkWriteSiteNames) ? kMarkWriteSiteNames[index] : "?";
 	}
 
-	// 按 site 把一次条件写的结果计到各自那一组上。必须按 site 分三路,不能再用"是不是 A2′ 补写"的二分:
+	// 按 site 把一次条件写的结果计到各自那一组上。必须按 site 分路,不能再用"是不是 A2′ 补写"的二分:
 	// 改派的凭证补写会被算进 A1′ 的 written / epoch_moved / failed,[ExitRelease] 行的 attempted 就对不上账了。
 	void CountMarkWrite(MarkWriteSite site, exit_release_mark::MarkWriteResult result)
 	{
@@ -1017,6 +1062,14 @@ namespace
 			epochMoved = &relocateStats.credentialEpochMoved;
 			failed = &relocateStats.credentialFailed;
 			break;
+		case MarkWriteSite::kSessionEndedCredential:
+		{
+			auto &releaseStats = release_fence_stats::Get();
+			written = &releaseStats.credentialWritten;
+			epochMoved = &releaseStats.credentialEpochMoved;
+			failed = &releaseStats.credentialFailed;
+			break;
+		}
 		case MarkWriteSite::kCount:
 			break;
 		}
@@ -2757,6 +2810,8 @@ bool PlayerLifecycleSystem::EnterScene(const entt::entity player, const PlayerEn
 	//     通道,客户端收到 EnterSceneS2C 后立刻发下一次换图时,上一条的应答可能还没到,留着它会把
 	//     这次合法请求误拒成"切换中"。随后到达的成功应答找不到在途组件,是静默 no-op。
 	tlsEcs.actorRegistry.remove<PlayerSceneChangeInFlightComp>(player);
+	// 权威落点已生效,它同时取代先前的建镜像意图;迟到完成只能丢弃。
+	tlsEcs.actorRegistry.remove<PlayerMirrorCreateInFlightComp>(player);
 
 	// 3.2 同 zone 交接"重发后落回本节点"的就地收尾:同样不等 gRPC 应答。
 	//     交接重发的 EnterScene 若被 scene_manager 重新挑频道挑回了本节点(同物理节点不铸造 epoch),
@@ -2887,7 +2942,7 @@ void PlayerLifecycleSystem::DestroyPlayer(Guid playerId)
 
 	const auto playerEntity = tlsEcs.GetPlayer(playerId);
 
-	// 销毁出口兜底走完整离场链,不能只擦一份反向索引而漏掉格子、远端观察者及客户端通知。
+	// 销毁出口兜底走完整离场链,不能只擦一份反向索引而漏掉格子、邻格观察者及客户端通知。
 	// 正常退出已离场,没有场景绑定时自然幂等。强制清理由出口直接调用,不依赖事件订阅。
 	if (tlsEcs.actorRegistry.valid(playerEntity) && tlsEcs.actorRegistry.all_of<SceneEntityComp>(playerEntity))
 	{
@@ -3030,6 +3085,8 @@ void PlayerLifecycleSystem::HandleExitGameNode(entt::entity player, ExitCause ca
 
 	auto& unregisterTag = tlsEcs.actorRegistry.emplace<UnregisterPlayer>(player);
 	unregisterTag.set_logout_initiated_ms(TimeSystem::NowMillisecondsUTC());
+	// 退出/疏散已提交,存盘等待期间实体仍可能活着;旧镜像完成不得再提示或自动进场。
+	tlsEcs.actorRegistry.remove<PlayerMirrorCreateInFlightComp>(player);
 
 	// 与 UnregisterPlayer 成对挂(见 player_exit_intent.h)。sessionAtExit 必须此刻抄:落地回调要凭它
 	// 区分"退出会话本身还在 SessionMap 里"(不算取代,Z1)与"已被一个更新的会话取代"。
@@ -4501,13 +4558,22 @@ void PlayerLifecycleSystem::HandlePlayerSaveRejected(Guid playerId, const std::s
 	}
 
 	owner_epoch_stats::IncStaleOwnerWriteRejected();
+	// 退出中的实体被拒 = 这次退出的存盘从未落地,内存差额随实体一起丢弃:回档的直接证据,单独计数
+	// (docs/design/location-release-binding.md §3.7)。典型成因是 location 在持有者落盘之前就被删、下一次进场铸了新 epoch。
+	const auto rejectedEntity = tlsEcs.GetPlayer(playerId);
+	const bool exiting = tlsEcs.actorRegistry.valid(rejectedEntity) &&
+						 tlsEcs.actorRegistry.any_of<UnregisterPlayer>(rejectedEntity);
+	if (exiting)
+	{
+		owner_epoch_stats::IncStaleOwnerRejectedExiting();
+	}
 	// 这条日志是"曾经出现过双主"的直接证据(cross-zone-scene-travel.md §6.3 要求压测期恒 0):
 	// 本节点还拿着旧 epoch 在写,而 scene_manager 已把玩家改派出去。数据没有被污染
 	// (Lua 原子拒绝),但本节点这份内存态从此作废。
 	LOG_ERROR << "HandlePlayerSaveRejected: owner_epoch CAS rejected save for player " << playerId
-			  << " key=" << redisKey << " epoch=" << rejectedEpoch
+			  << " key=" << redisKey << " epoch=" << rejectedEpoch << " exiting=" << exiting
 			  << " — this node has been deposed; dropping local state, no retry, no relocate"
-			  << " (metric=stale_owner_write_rejected)";
+			  << " (metric=stale_owner_write_rejected" << (exiting ? " stale_owner_rejected_exiting" : "") << ")";
 
 	DestroyDeposedPlayer(playerId, "stale_owner_write_rejected");
 }
@@ -4570,7 +4636,7 @@ void PlayerLifecycleSystem::DestroyDeposedPlayer(Guid playerId, const char *reas
 //   StartTravelHandoff:挂 PlayerTravelHandoffComp + PlayerFrozenComp ──▶ SavePlayerToRedis
 	//   父缓存落地 ──▶ BeginTravelHandoff:双 SQL ACK == pending 后同 Lua SET handoff "{epoch}:{now}" EX 300
 //            ──▶ RequestTravelEnterScene:取号记到交接组件 → scene_manager.EnterScene(ZoneId=目标, SceneId, SceneConfId)
-//            ──▶ DispatchEnterSceneReply(号匹配本代交接;旧版 SM 不回显时按 player_id)
+//            ──▶ DispatchEnterSceneReply(调用捕获的身份匹配本代交接;非 0 回显逐字段核对)
 //            ──▶ HandleTravelEnterSceneReply:Redirect(跨 zone 放行)      → DestroyDeposedPlayer
 //                                             成功无 Redirect(同 zone 放行) → ResolveTravelOutcome
 //                                             错误 / 超时                   → ResolveTravelOutcome
@@ -4745,6 +4811,8 @@ uint32_t PlayerLifecycleSystem::StartTravelHandoff(entt::entity player, uint32_t
 	// ── 从这里开始改状态 ──
 	// 普通换图的在途记录到此为止:它的使命(记住"要去哪")已经转交给交接组件。
 	tlsEcs.actorRegistry.remove<PlayerSceneChangeInFlightComp>(player);
+	// 交接已提交,永久撤销先前建镜像的自动进场资格;UTC 回拨恢复也不能让旧完成复活。
+	tlsEcs.actorRegistry.remove<PlayerMirrorCreateInFlightComp>(player);
 
 	// 逐字段赋值,不用聚合初始化(见 PlayerTravelHandoffComp 的说明)。
 	auto &travel = tlsEcs.actorRegistry.emplace<PlayerTravelHandoffComp>(player);
@@ -4859,6 +4927,13 @@ void PlayerLifecycleSystem::ArmTravelSaveWatchdog(Guid playerId, int64_t frozenA
 	});
 }
 
+bool PlayerLifecycleSystem::IsSceneChangeRequestWithinTtl(uint64_t sentAtMs)
+{
+	// 与发送侧闸共用同一份 TTL;回拨视为失效,避免旧完成干扰已经放行的新换图。
+	const uint64_t nowMs = TimeSystem::NowMillisecondsUTC();
+	return nowMs >= sentAtMs && nowMs - sentAtMs < SceneChangeInFlightTtlMs();
+}
+
 bool PlayerLifecycleSystem::IsSceneChangeBusy(entt::entity player)
 {
 	if (!tlsEcs.actorRegistry.valid(player))
@@ -4882,14 +4957,16 @@ bool PlayerLifecycleSystem::IsSceneChangeBusy(entt::entity player)
 				 << ": withdrawal of a stale handoff mark not yet confirmed";
 		return true;
 	}
-	const auto *pending = tlsEcs.actorRegistry.try_get<PlayerSceneChangeInFlightComp>(player);
-	if (pending == nullptr)
+	// 时钟回拨与 TTL 过期都放行;镜像完成也用同一判据,不得在放行后回头提示或自动进旧镜像。
+	// 镜像 CreateScene 在途(自动进场的 EnterScene 还没发):与普通换图共用这道闸,
+	// 见 PlayerMirrorCreateInFlightComp。两者都调 SceneManager,TTL 取同一个值。
+	if (const auto *mirror = tlsEcs.actorRegistry.try_get<PlayerMirrorCreateInFlightComp>(player);
+		mirror != nullptr && IsSceneChangeRequestWithinTtl(mirror->sentAtMs))
 	{
-		return false;
+		return true;
 	}
-	// 时钟回拨(now < sentAtMs)按已过期处理:宁可多放一条请求,也不能把玩家长期挡在换图之外。
-	const uint64_t nowMs = TimeSystem::NowMillisecondsUTC();
-	return nowMs >= pending->sentAtMs && nowMs - pending->sentAtMs < SceneChangeInFlightTtlMs();
+	const auto *pending = tlsEcs.actorRegistry.try_get<PlayerSceneChangeInFlightComp>(player);
+	return pending != nullptr && IsSceneChangeRequestWithinTtl(pending->sentAtMs);
 }
 
 uint64_t PlayerLifecycleSystem::RequestSceneChange(entt::entity player, entt::entity smEntity,
@@ -4899,6 +4976,8 @@ uint64_t PlayerLifecycleSystem::RequestSceneChange(entt::entity player, entt::en
 	const uint64_t correlationId = NextEnterSceneCorrelationId();
 	if (tlsEcs.actorRegistry.valid(player))
 	{
+		// 新换图已提交,永久取代旧镜像意图。只靠墙钟 TTL 不够:回拨放行后时钟可能又恢复。
+		tlsEcs.actorRegistry.remove<PlayerMirrorCreateInFlightComp>(player);
 		// 一次换图请求一次,不是 per-tick 路径,emplace_or_replace 合规(AGENTS §7.5)。
 		// replace 语义是有意的:TTL 过期后放行的下一条请求要覆盖上一条的目标与号 —— 上一条的迟到应答因此
 		// 对不上号而被丢弃,不会再摘掉这一条的记录。
@@ -4924,24 +5003,33 @@ uint64_t PlayerLifecycleSystem::RequestSceneChange(entt::entity player, entt::en
 	return correlationId;
 }
 
-void PlayerLifecycleSystem::DispatchEnterSceneReply(const ::scene_manager::EnterSceneResponse &resp)
+void PlayerLifecycleSystem::DispatchEnterSceneReply(Guid playerId, uint64_t requestTag,
+	const ::scene_manager::EnterSceneResponse &resp)
 {
 	using enter_scene_reply::Route;
 
-	const Guid playerId = resp.player_id();
-	const uint64_t replyTag = resp.correlation_id();
 	if (playerId == 0)
 	{
-		// 更老的 scene_manager 连 player_id 都不回显:对不回玩家,交接只能靠应答看门狗收敛。
-		LOG_DEBUG << "[EnterSceneReply] reply without player_id (scene_manager too old to echo it); ignoring"
-				  << " corr=" << replyTag << " error_code=" << resp.error_code();
+		// 身份来自发送时捕获的请求。缺少身份是调用方 bug,与旧版 SM 是否回显无关。
+		LOG_ERROR << "[EnterSceneReply] reply without captured player_id; ignoring"
+				  << " corr=" << requestTag << " error_code=" << resp.error_code();
 		return;
 	}
-	if (replyTag == 0)
+	if ((resp.player_id() != 0 && resp.player_id() != playerId) ||
+		(resp.correlation_id() != 0 && resp.correlation_id() != requestTag))
 	{
-		// 本进程的 EnterScene 全经 SendCorrelatedEnterScene 发出、号恒非 0,所以号为 0 = scene_manager 没回显
-		// (旧版)或有发送点绕过了统一出口。退回按 player_id 对应答(Classify 的 legacy 分支),不 fail-closed
-		// (理由见头文件 enter_scene_reply)。计数让运维看得见这个状态;WARN 每线程只打一次,免得滚动窗口里刷屏。
+		// 逐字段核对非 0 回显。身份冲突时不触碰任何等待者,由原有 TTL / 看门狗收敛。
+		LOG_ERROR << "[EnterSceneReply] echo mismatch player=" << playerId << " corr=" << requestTag
+				  << " echoed_player=" << resp.player_id() << " echoed_corr=" << resp.correlation_id()
+				  << " error_code=" << resp.error_code();
+		travel_handoff_stats::Inc(travel_handoff_stats::Get().replyUnmatched);
+		EnsureTravelHandoffStatsTimer();
+		return;
+	}
+	if (requestTag == 0)
+	{
+		// 兼容旧的直接调用:生产的关联号由闭包捕获、恒非 0,旧版 SM 不回显也走不到这里。
+		// 只有单测或绕过统一出口的调用可能传 0,仍保留原来的按 player_id 退路与计数。
 		travel_handoff_stats::Inc(travel_handoff_stats::Get().replyUncorrelated);
 		EnsureTravelHandoffStatsTimer();
 		if (!tlsWarnedUncorrelatedReply)
@@ -4958,13 +5046,13 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(const ::scene_manager::Enter
 		// 疏散 / 排空改派的应答只会落在这里(改派发出时实体随即销毁):先交待确认表按号认领,认领后只触发核实。
 		// 挂在"实体已不在"之后而不是实体查找之前:待确认条目存在期间本节点要么没有该玩家实体,要么条目已在等载入
 		// (那时应答本来就该忽略);实体有效时应答照旧进下面的 Classify,不会被按 player_id 吞掉。
-		if (ClaimRelocateEnterSceneReply(playerId, replyTag, resp))
+		if (ClaimRelocateEnterSceneReply(playerId, requestTag, resp))
 		{
 			return;
 		}
 		// 不认领的:玩家在交接途中退出,或没被跟踪(表满)的改派。
 		LOG_INFO << "[ZoneTravel] EnterScene reply for player " << playerId
-				 << " but entity is gone (exited during travel); ignoring corr=" << replyTag
+				 << " but entity is gone (exited during travel); ignoring corr=" << requestTag
 				 << " error_code=" << resp.error_code();
 		return;
 	}
@@ -4976,7 +5064,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(const ::scene_manager::Enter
 	const bool sceneChangeInFlight = pending != nullptr;
 	const uint64_t sceneChangeTag = sceneChangeInFlight ? pending->correlationId : 0;
 	const Route route =
-		enter_scene_reply::Classify(replyTag, handoffInFlight, handoffTag, sceneChangeInFlight, sceneChangeTag);
+		enter_scene_reply::Classify(requestTag, handoffInFlight, handoffTag, sceneChangeInFlight, sceneChangeTag);
 
 	switch (route)
 	{
@@ -5002,7 +5090,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(const ::scene_manager::Enter
 		travel_handoff_stats::Inc(travel_handoff_stats::Get().replyUnmatched);
 		EnsureTravelHandoffStatsTimer();
 		LOG_ERROR << "[EnterSceneReply] invariant broken: scene-change reply while a handoff is in flight, player="
-				  << playerId << " corr=" << replyTag << " handoff_tag=" << handoffTag
+				  << playerId << " corr=" << requestTag << " handoff_tag=" << handoffTag
 				  << " scene_change_tag=" << sceneChangeTag << " error_code=" << resp.error_code()
 				  << " has_redirect=" << resp.has_redirect() << "; dropping";
 		return;
@@ -5016,7 +5104,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(const ::scene_manager::Enter
 		{
 			travel_handoff_stats::Inc(travel_handoff_stats::Get().replyUnmatched);
 			EnsureTravelHandoffStatsTimer();
-			LOG_INFO << "[EnterSceneReply] dropped unmatched reply player=" << playerId << " corr=" << replyTag
+			LOG_INFO << "[EnterSceneReply] dropped unmatched reply player=" << playerId << " corr=" << requestTag
 					 << " route=" << enter_scene_reply::RouteName(route) << " handoff_tag=" << handoffTag
 					 << " scene_change_tag=" << sceneChangeTag << " error_code=" << resp.error_code()
 					 << " has_redirect=" << resp.has_redirect();
@@ -5025,7 +5113,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(const ::scene_manager::Enter
 		{
 			// 路由先到(EnterScene 3.1 已摘在途组件)之后才到、又撞上新一条换图的纯成功迟到应答:常态,不计数。
 			LOG_DEBUG << "[EnterSceneReply] late success reply for an older request, player=" << playerId
-					  << " corr=" << replyTag << " scene_change_tag=" << sceneChangeTag << "; ignoring";
+					  << " corr=" << requestTag << " scene_change_tag=" << sceneChangeTag << "; ignoring";
 		}
 		return;
 
@@ -5036,18 +5124,16 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(const ::scene_manager::Enter
 	// kNoWaiter:未跟踪(表满)的改派、退出后重建的实体、路由已先落地(EnterScene 3.1 已摘)的成功应答,或看门狗已先
 	// 核实过的迟到应答。没有事可做。(kCount 不会由 Classify 返回,一并落到这里。)
 	LOG_DEBUG << "[ZoneTravel] EnterScene reply for player " << playerId
-			  << " without an in-flight handoff or scene change; ignoring corr=" << replyTag
+			  << " without an in-flight handoff or scene change; ignoring corr=" << requestTag
 			  << " route=" << enter_scene_reply::RouteName(route) << " error_code=" << resp.error_code()
 			  << " has_redirect=" << resp.has_redirect();
 }
 
-void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(const ::scene_manager::EnterSceneRequest &req,
+void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(Guid playerId, uint64_t requestTag,
 															   const std::string &reason)
 {
 	using enter_scene_reply::Route;
 
-	const Guid playerId = req.player_id();
-	const uint64_t requestTag = req.correlation_id();
 	if (requestTag == 0)
 	{
 		// 本进程的 EnterScene 全经 SendCorrelatedEnterScene 发出、号恒非 0。号为 0 只能是有发送点绕过了统一出口:
@@ -5243,6 +5329,69 @@ void PlayerLifecycleSystem::HandleReleaseFromSceneManager(Guid playerId, uint64_
 			 << " on node " << targetNodeId << " (verdict=" << release_fence::VerdictName(verdict)
 			 << " expected_owner_epoch=" << expectedOwnerEpoch << " cached_owner_epoch=" << cachedOwnerEpoch << ")";
 	HandleExitGameNode(player, ExitCause::kReleasedByTransfer);
+}
+
+void PlayerLifecycleSystem::HandleSessionEndedRelease(Guid playerId, uint64_t expectedOwnerEpoch)
+{
+	// 会话结束释放(docs/design/location-release-binding.md §3.3)。scene_manager 的 LeaveScene 拿不到"持有者已释放"证据
+	// (当前代 handoff 标记 / 持有节点已死)时才发:location 还指向本节点,玩家的登录会话却已结束(登出 / 断线租约到期 / gate 消失)。
+	// 不释放的话 location 删不掉;以前是直接删,下一次进场按首次落点铸造新 epoch,本节点之后的存盘被拒、实体被当废黜销毁(回档)。
+	release_fence_stats::Inc(release_fence_stats::Get().sessionEnded);
+
+	const auto playerIt = tlsEcs.playerList.find(playerId);
+	if (playerIt != tlsEcs.playerList.end() && tlsEcs.actorRegistry.valid(playerIt->second))
+	{
+		const entt::entity player = playerIt->second;
+		// 本节点持有:与交接释放同一套判定(交接在途先于一切比较;缓存与期望严格相等才退出)。只读本地缓存,try_get,不懒建。
+		const bool handoffRequested = IsHandoffRequested(player);
+		uint64_t cachedOwnerEpoch = 0;
+		if (const auto *epochComp = tlsEcs.actorRegistry.try_get<PlayerOwnerEpochComp>(player))
+		{
+			cachedOwnerEpoch = epochComp->epoch;
+		}
+		const release_fence::Verdict verdict = release_fence::Decide(expectedOwnerEpoch, cachedOwnerEpoch, handoffRequested);
+		release_fence_stats::IncVerdict(verdict);
+		if (!release_fence::Releases(verdict))
+		{
+			// 交接在途:去留由 EnterScene 应答与看门狗裁决,交接的 EnterScene 会改写 location。
+			// 缓存与期望不等:实体已在更新的一代(location 随后会被那一代改写),或落后于 location(已被废黜的僵尸,写不进任何东西;
+			// 拿不到证据时由 scene_manager 的等待上限兜底,设计 §6 残余 4)。都不动实体。
+			LOG_WARN << "[ReleaseFence] session-ended release ignored: player=" << playerId
+					 << " verdict=" << release_fence::VerdictName(verdict) << " expected_owner_epoch=" << expectedOwnerEpoch
+					 << " cached_owner_epoch=" << cachedOwnerEpoch << "; the entity keeps running on this node";
+			return;
+		}
+		// 会话已死,按客户端断线退出:kClientDisconnect 在 A1′ 的可写集合里(存盘落地后写断线释放标记),并作废疏散票据
+		// (给死会话改派没有意义)。已在退出中时 HandleExitGameNode 只按 MergeExitCause 合并,原因保持第一次的。
+		LOG_INFO << "[ReleaseFence] session-ended release: exiting player " << playerId
+				 << " as client disconnect (verdict=" << release_fence::VerdictName(verdict)
+				 << " expected_owner_epoch=" << expectedOwnerEpoch << " cached_owner_epoch=" << cachedOwnerEpoch << ")";
+		HandleExitGameNode(player, ExitCause::kClientDisconnect);
+		return;
+	}
+
+	// 本节点没有可用实体:看是不是"完全不持有"。playerList 里留着无效句柄也算持有(表不一致,不发证);在途载入与改派待确认条目
+	// 由各自的流程收尾(载入建出实体就是持有者,放弃时 A2′ 自己补写;改派由待确认表兜底补写)。
+	release_fence::SessionEndedFacts facts;
+	facts.expectedOwnerEpoch = expectedOwnerEpoch;
+	facts.localHolderPossible = playerIt != tlsEcs.playerList.end() || tlsPendingEnterMap.count(playerId) != 0 ||
+								tlsRelocateConfirms.FindPlayer(playerId) != nullptr;
+	facts.markFeatureEnabled = IsExitReleaseMarkEnabled();
+	facts.devUnsafeCrossNode = IsDevUnsafeCrossNodeHandoff();
+	facts.identityConfirmed = IsNodeIdentityConfirmed();
+	const auto decision = release_fence::DecideSessionEndedCredential(facts);
+	release_fence_stats::IncCredentialDecision(decision);
+	if (decision != release_fence::SessionEndedCredential::kWrite)
+	{
+		LOG_INFO << "[ReleaseFence] session-ended release: player " << playerId
+				 << " is not held by this node; not writing a credential mark (reason="
+				 << release_fence::SessionEndedCredentialName(decision) << " expected_owner_epoch=" << expectedOwnerEpoch
+				 << ")";
+		return;
+	}
+	LOG_INFO << "[ReleaseFence] session-ended release: player " << playerId
+			 << " is not held by this node; writing credential mark for owner_epoch " << expectedOwnerEpoch;
+	SendConditionalMarkWrite(playerId, expectedOwnerEpoch, MarkWriteSite::kSessionEndedCredential);
 }
 
 bool PlayerLifecycleSystem::DiscardStaleHandoffEntity(entt::entity player, uint64_t incomingOwnerEpoch)
@@ -5591,8 +5740,8 @@ void PlayerLifecycleSystem::RequestTravelEnterScene(Guid playerId)
 	// 刻意不设 request_id:理由同 DispatchEmergencyRelocate(60s SETNX 去重会吞掉玩家
 	// 短时间内的第二次传送)。幂等由 requestedAtMs 代际 + scene_manager 的 handoff 比对保证。
 
-	// 应答按 correlation_id 对号(DispatchEnterSceneReply):先把号记到交接组件上再发,只有回显这个号的应答
-	// 才算本代交接的证据。发送之前号为 0 = 交接的 EnterScene 还没发,这段时间到达的任何应答都不可能是它的。
+	// 应答按调用闭包捕获的 correlationId 对号(DispatchEnterSceneReply):先把号记到交接组件上再发,
+	// 再逐字段核对非 0 回显。发送之前号为 0 = 交接的 EnterScene 还没发,此时到达的应答都不可能是它的。
 	// 每代交接只走到这里一次(BeginTravelHandoff 的 SET 回调按 requestedAtMs 代际守着),看门狗只核实、不重发。
 	const uint64_t correlationId = NextEnterSceneCorrelationId();
 	travel->enterSceneCorrelationId = correlationId;
@@ -6327,8 +6476,8 @@ bool PlayerLifecycleSystem::ConcludeHandoffAfterMarkSent(Guid playerId, travel_f
 
 	// 上限这一支是"两道看门狗与晚发闸都没能收敛"的信号、回执异常这一支应恒不出现(键被淘汰 / 新旧 SM 混跑 / 数据写坏),
 	// 两者打 ERROR;其余三支是已知的窄窗口,打 WARN。
-	// "(ownership UNKNOWN, not confirmed moved)" 是给 runbook 判读的:随后 DestroyDeposedPlayer 那行沿用下来的
-	// "(ownership moved away)" 在这里不成立。字段顺序与原文是 runbook 的 grep 依据,改动要同步 runbook。
+	// "(ownership UNKNOWN, not confirmed moved)" 是给 runbook 判读的:随后 DestroyDeposedPlayer 那行打的是
+	// "(local state abandoned)",只说明本地实体被丢弃,不表示归属已确认转移。字段顺序与原文是 runbook 的 grep 依据,改动要同步 runbook。
 	const std::string detail =
 		std::string("[ZoneTravel][MarkSentDestroy] player=") + std::to_string(playerId) + " site=" + siteName +
 		" target_zone=" + std::to_string(targetZoneId) + (crossZone ? "(cross-zone)" : "(same-zone)") +

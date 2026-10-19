@@ -295,6 +295,28 @@ param(
 	# LOGIN_DEV_PASSWORD_SHARED_SECRET,绝不进 ConfigMap。**只允许 -ReleaseProfile dev**(与 release_preflight.ps1 的
 	# debug.login.devpassword 同一门禁),其它档位传它在任何写操作之前报错。不传 = login 没有任何口令认证配置(fail-closed)。
 	[switch]$LoginDevPasswordAuth,
+	# 集群内 login 的第三方登录(微信 / QQ):login ConfigMap 写顶层 AuthProviders 段(New-LoginAuthProvidersYaml)。两个 AppId 都不给 =
+	# 不写 AuthProviders,产物与接入前逐字相同(login 不开第三方登录)。各档位都可用(不同于 -LoginDevPasswordAuth 只许 dev)。
+	# 微信:-LoginWeChatAppId 非空才渲染 AuthProviders.WeChat(AppId + AppSecretEnv)。AppSecret 从环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET
+	# 读入 zone namespace 的 Secret login-oauth(key wechat-app-secret),经 secretKeyRef 注入 login 容器的 LOGIN_WECHAT_APP_SECRET,
+	# 绝不进 ConfigMap;**任何档位**未设置都在写操作之前拒绝(没有回落值,login 对缺失的 AppSecretEnv 同样拒启)。Pod 模板带密钥指纹
+	# 注解 mmorpg.io/login-oauth-secret-hash,只轮换密钥也会滚动 login。
+	# QQ:-LoginQQAppId 非空才渲染 AuthProviders.QQ(只写 AppId):provider 只拿客户端的 access_token 调 /oauth2.0/me 并校验
+	# client_id == AppId,不需要任何密钥,不建 Secret。
+	# AppId 只允许 [A-Za-z0-9_.-]。-LoginWeChatEndpoint / -LoginQQEndpoint 只给沙箱 mock 用(留空 = 生产地址),须是
+	# https://主机[:端口][/路径](dev 档也接受 http://,与 login 在 Mode=dev 下的放行口径一致),不带用户信息、查询串与片段;
+	# 给了 Endpoint 却没给对应 AppId 在写操作之前拒绝。
+	# -LoginWeChatAllowOpenId / -LoginQQAllowOpenId:写 RequireUnionId: false,拿不到 unionid 时按 openid 建账号。以后接入 unionid
+	# 会把同一玩家分裂成两个账号且无法事后合并,非 dev 档给了要打警告;不给 = login 缺省 true(拿不到 unionid 即拒绝登录)。
+	# 全部不粘滞:每次部署按本次取值重写 ConfigMap;上次配过微信、这次没给,就删掉 login-oauth Secret,微信登录随新 Pod 一起关闭。
+	# 包装入口(dev_tools.ps1 / k8s_image.ps1 / k8s_zone_rollback.ps1 的 Step 6)目前不透传这六个参数:已开第三方登录的 zone
+	# 经包装入口重新部署会关掉第三方登录,要保持就直接调本脚本并照传。
+	[string]$LoginWeChatAppId = "",
+	[string]$LoginWeChatEndpoint = "",
+	[switch]$LoginWeChatAllowOpenId,
+	[string]$LoginQQAppId = "",
+	[string]$LoginQQEndpoint = "",
+	[switch]$LoginQQAllowOpenId,
 	# 削峰(G4b,docs/design/open-server-rate-limit-design.md §十一):gateway Bucket4j 限流 / login 登录排队。
 	# auto(缺省)= 跟随 -ReleaseProfile:dev 关(ConfigMap 与 G4b 之前逐字相同);staging / prod 开,阈值见 $script:PeakShavingLaunchTier。
 	# off 只用于事故止血与基线压测(AGENTS §6 对比的「关削峰」那一轮);on 只用于 dev 档联调。
@@ -381,6 +403,17 @@ $script:LoginDevPasswordSecretName = "login-dev-password"
 $script:LoginDevPasswordSecretKey = "shared-secret"
 # 口令由 Initialize-InjectedSecrets 解析(只在要部署 login 且开了开关时)。
 $script:LoginDevPasswordSecret = ""
+# login 微信登录的 AppSecret(-LoginWeChatAppId)。部署侧从环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET 读入 zone namespace 的 Secret
+# login-oauth(key wechat-app-secret),经 secretKeyRef 注入 login 容器的 LOGIN_WECHAT_APP_SECRET;ConfigMap 只写变量名
+# (AuthProviders.WeChat.AppSecretEnv)。login 不展开 ${VAR},生产模式也不接受内联 AppSecret(go/login/internal/config/auth_providers.go),
+# 所以只能走这条路。Secret 名按用途取 login-oauth 而不是 login-wechat:以后 QQ 若启用服务端换 token 要 AppKey,同一个 Secret 加 key 即可。
+# 轮换:secretKeyRef 只在容器启动时读,Pod 模板带密钥指纹注解($script:LoginOAuthSecretHashAnnotation),密钥一变模板就变,重跑 zone-up 自动滚动。
+$script:LoginOAuthSecretName = "login-oauth"
+$script:LoginOAuthWeChatSecretKey = "wechat-app-secret"
+$script:LoginWeChatAppSecretEnv = "LOGIN_WECHAT_APP_SECRET"
+$script:LoginOAuthSecretHashAnnotation = "mmorpg.io/login-oauth-secret-hash"
+# 由 Initialize-InjectedSecrets 解析(只在本次部署 login 且给了 -LoginWeChatAppId 时)。
+$script:LoginWeChatAppSecret = ""
 # gateway 管理面(/admin/**)的 X-Admin-Key,即 Spring 属性 admin.api-key(AdminApiKeyFilter 的 @Value("${admin.api-key}"))。
 # 部署侧从环境变量 MMORPG_GATEWAY_ADMIN_API_KEY 读入 zone namespace 的 Secret,经 secretKeyRef 注入 gateway 容器的 ADMIN_APIKEY,
 # 不进 ConfigMap。env 名取 Spring Boot 文档的规范写法(点换下划线、去掉短横、大写);OS 环境变量优先于 jar 内与 ConfigMap 挂载的
@@ -510,8 +543,8 @@ if ($GrpcServerMaxPollers -gt 0) {
 # 集群外客户端入口(D76–D93)的生成器、preflight、就绪等待与模式切换清理。库函数不读本脚本的任何变量,
 # 碰集群的函数一律显式传 -KubeContext / -KubeConfig(漏传不会悄悄落到本机默认 context)。
 . (Join-Path (Join-Path $ScriptDir "lib") "k8s_client_entry.ps1")
-# kafka-consumer-groups --describe 的分类(Resolve-KafkaGroupTopicOffsets)与 db_task topic 名(Get-DbTaskTopicName),
-# 与 kafka_offset_reset.ps1、k8s_zone_rollback.ps1 同一份规则;纯函数库,dot-source 无副作用。
+# kafka-consumer-groups --describe 的分类(Resolve-KafkaGroupTopicOffsets)、db_task topic 名(Get-DbTaskTopicName)与线上 db 消费组形状
+# (ConvertFrom-LiveDbConsumerGroup,2026-10-18 从本文件移入),与 kafka_offset_reset.ps1、k8s_zone_rollback.ps1 同一份规则;纯函数库,dot-source 无副作用。
 . (Join-Path $ScriptDir "lib" "kafka_consumer_groups.ps1")
 
 # ─────────────────────────────────────────────────────────────────
@@ -620,6 +653,36 @@ function Invoke-ReleasePreflight {
 
 <#
 .SYNOPSIS
+	解析 login 微信登录的 AppSecret(环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET),返回值;不可用一律 throw。由 Initialize-InjectedSecrets
+	在写路径入口调用(只在本次部署 login 且给了 -LoginWeChatAppId 时)。
+
+.DESCRIPTION
+	- **任何档位都没有回落值**:login 对 AppSecretEnv 指向的变量缺失 / 为空一律拒启(go/login/internal/config/auth_providers.go
+	  resolveAuthCredential),生成器不替运维猜一个,未设置就在任何写操作之前拒绝。staging / prod 的「未设置 / 占位 / 短于 16 位」
+	  由 Resolve-InjectedSecret 按它的原文 throw;dev 档 Resolve-InjectedSecret 回落空串,这里补一次拒绝。
+	- 各档都拒首尾空白与 `${`:login 对这两种值同样拒启(checkCredentialValue;常见于 Secret 带进的行尾换行、照旧文档写的占位符),
+	  部署出来只会 CrashLoopBackOff,不如在写操作之前拦下。
+	- 报错只点环境变量名,不回显值。读环境变量、不读本脚本的变量,契约测试按 AST 抽出来直接调。
+#>
+function Resolve-LoginWeChatAppSecret {
+	param([Parameter(Mandatory = $true)][ValidateSet('dev', 'staging', 'prod')][string]$ReleaseProfile)
+
+	$value = Resolve-InjectedSecret -EnvName "MMORPG_LOGIN_WECHAT_APP_SECRET" -DevFallback "" -ReleaseProfile $ReleaseProfile `
+		-Purpose "login 微信登录 AppSecret(AuthProviders.WeChat.AppSecretEnv)" -MinLength 16
+	if ([string]::IsNullOrWhiteSpace($value)) {
+		throw "-LoginWeChatAppId 需要环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET(微信开放平台应用的 AppSecret,经 Secret 注入 login),当前未设置,拒绝部署(任何档位都没有回落值)。"
+	}
+	if ($value -cne $value.Trim()) {
+		throw "环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET 的值含首尾空白(常见于带进的行尾换行):login 拒绝这种 AppSecret,部署出来只会拒启。"
+	}
+	if ($value.Contains('${')) {
+		throw "环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET 的值含未展开的 `${...}:login 不展开环境变量,对这种 AppSecret 拒绝启动。"
+	}
+	return $value
+}
+
+<#
+.SYNOPSIS
 	解析要写进 ConfigMap 的密钥。只在写操作(*-up)前调用。
 
 .DESCRIPTION
@@ -677,6 +740,14 @@ function Initialize-InjectedSecrets {
 		if ([string]::IsNullOrWhiteSpace($script:LoginDevPasswordSecret)) {
 			throw "-LoginDevPasswordAuth 需要环境变量 MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET(开发账号的共享登录口令,robot yaml 的 password 须与它一致),当前未设置,拒绝部署。"
 		}
+	}
+
+	# login 微信登录的 AppSecret(见 $script:LoginOAuthSecretName 处的说明)。只在本次部署 login 且给了 -LoginWeChatAppId 时解析:
+	# infra-up、-SkipGoSvc 与不开微信的部署都不因它被阻断。各档位都没有回落值、缺失即拒绝,规则见 Resolve-LoginWeChatAppSecret。
+	# QQ 不需要密钥,这里没有对应项。
+	$script:LoginWeChatAppSecret = ""
+	if (-not [string]::IsNullOrEmpty($LoginWeChatAppId) -and (Test-ZoneLoginDeployed)) {
+		$script:LoginWeChatAppSecret = Resolve-LoginWeChatAppSecret -ReleaseProfile $ReleaseProfile
 	}
 
 	# 登录排队令牌的 HMAC 密钥(login Secrets.QueueToken,G4b)。生产模式开了排队就必需,且不得与 GateToken / InternalAuth 复用
@@ -970,7 +1041,7 @@ function Get-ZrpcMethodTimeouts {
 	登记一项之前先确认 C++ 不会调到它。C++ 调 Go 服务有两种形态,契约测试两种都查
 	(tools/scripts/tests/k8s_deploy_contract.tests.ps1):
 	  - 直接调用:cpp/ 下(生成物 cpp/generated 除外)出现生成客户端的符号 `Send<服务><方法>` /
-	    `Async<服务><方法>…`,或它的消息号常量 `<服务><方法>MessageId`。
+	    `Send<服务><方法>Erased`,或它的消息号常量 `<服务><方法>MessageId`。
 	  - gate 按消息号转发:gate 直连模式查 gRpcMethodRegistry 转发客户端消息,手写代码里不出现任何符号。
 	    所以消息号列在生成的 IsClientMessageId(cpp/generated/rpc/service_metadata/rpc_event_registry.cpp)里的方法
 	    一律算「C++ 会调用」,不许登记。
@@ -1929,7 +2000,7 @@ function Get-RedisConnectionLedgerInputs {
 	$clients = @(
 		# —— 每 zone ——
 		# login:go/login/internal/svc/servicecontext.go NewServiceContext 的 redis.NewClient(登录排队 loginqueue 复用它),
-		# 池上限 Node.RedisClient.PoolSize;Pub/Sub:go/login/internal/dispatcher/task_result_dispatcher.go 的 Subscribe(TaskResultNotifyChannel)。
+		# 池上限 Node.RedisClient.PoolSize;Pub/Sub:go/login/internal/dispatcher/task_result_dispatcher.go subscribeLoop 的一条 Subscribe(taskresult.LegacyNotifyChannel, 本实例频道)——同一连接订两条频道,所以仍记 1(B0-3,2026-10-18)。
 		[ordered]@{ Name = 'login'; Scope = 'zone'; Manifest = "$goSvc/login.yaml"; PoolMirror = 'login'; DefaultPools = 0; GoMaxProcs = 0; PubSub = 1; Fixed = 0 }
 		# db:go/db/internal/svc/servicecontext.go 的 RedisClient(ServerConfig.RedisClient.PoolSize);Placement.Redis 不写时落点句柄复用
 		# 同一个 client(K8s 的 db ConfigMap 不写它)。
@@ -3731,6 +3802,9 @@ function Assert-ClientEntryDeployPreflight {
 	if ($LoginDevPasswordAuth -and -not $deploysLogin) {
 		Write-Warning "[client-entry] -LoginDevPasswordAuth supplied, but login is not deployed in this run (only generated with Go services during zone-up / all-up; requires -GoSvcRegistry without -SkipGoSvc); flag has no effect."
 	}
+	# login 第三方登录(微信 / QQ)参数的形状门禁与 -LoginDevPasswordAuth 同在这里、排在密钥解析之前:非法 AppId / Endpoint 报的是参数原因,
+	# 而不是「缺 MMORPG_LOGIN_WECHAT_APP_SECRET」;也排在下面只读集群的现状预检之前(纯参数检查不该先等集群)。
+	Assert-LoginAuthProviderParams -DeploysLogin $deploysLogin
 
 	if ($DryRun) {
 		Write-Host "[dry-run] Skipping current cluster-state preflight (gate / battle modes and address sources, gateway Ingress); actual execution checks before any writes."
@@ -3739,7 +3813,7 @@ function Assert-ClientEntryDeployPreflight {
 		Assert-ClientEntryClusterState -Zones $zones -DeploysBattle $deploysBattle -DeploysGateway $deploysGateway `
 			-AgonesFleetCrdPresent $agonesFleetCrdPresent
 	}
-	Write-Host "Client entry: mode=$ClientEntryMode battle_orchestrator=$BattleOrchestrator gate_service_type=$GateServiceType gate_etp=$GateExternalTrafficPolicy require_client_endpoint=$(Resolve-RequireClientEndpoint)($RequireClientEndpoint) ingress_host=$(if ($GatewayIngressHost) { $GatewayIngressHost } else { '<none>' }) login_dev_password_auth=$($LoginDevPasswordAuth.IsPresent) allow_disruptive_switch=$($AllowDisruptiveSwitch.IsPresent)"
+	Write-Host "Client entry: mode=$ClientEntryMode battle_orchestrator=$BattleOrchestrator gate_service_type=$GateServiceType gate_etp=$GateExternalTrafficPolicy require_client_endpoint=$(Resolve-RequireClientEndpoint)($RequireClientEndpoint) ingress_host=$(if ($GatewayIngressHost) { $GatewayIngressHost } else { '<none>' }) login_dev_password_auth=$($LoginDevPasswordAuth.IsPresent) login_wechat=$(-not [string]::IsNullOrEmpty($LoginWeChatAppId)) login_qq=$(-not [string]::IsNullOrEmpty($LoginQQAppId)) allow_disruptive_switch=$($AllowDisruptiveSwitch.IsPresent)"
 }
 
 # login / scene_manager ConfigMap 的 RequireClientEndpoint 取值(见参数 -RequireClientEndpoint):auto 跟随 -ClientEntryMode
@@ -3781,6 +3855,7 @@ function Assert-ClientEntryClusterState {
 
 	$problems = @()
 	# 会踢人 / 会改写入口的漂移:没给 -AllowDisruptiveSwitch 就并入 $problems,给了只打警告。
+	# Get-*Drift 整体返回数组，先接收再追加，避免把空数组也当成一个问题。
 	$drifts = @()
 
 	if ($DeploysBattle) {
@@ -3793,7 +3868,8 @@ function Assert-ClientEntryClusterState {
 				-KubeContext $KubeContext -KubeConfig $KubeConfig
 			$problems += @($probe.Refusals)
 		}
-		$drifts += @(Get-BattleEntryDrift -AgonesFleetCrdPresent $AgonesFleetCrdPresent)
+		$battleDrifts = Get-BattleEntryDrift -AgonesFleetCrdPresent $AgonesFleetCrdPresent
+		$drifts += $battleDrifts
 	}
 
 	# 不传 -Settings 的 New-GatewayRateLimitYaml 为空 = 本次 gateway ConfigMap 不含 trusted-proxies。只看 trusted-proxies 是否为空;削峰阈值(G4b)另由 -Settings 写,不参与本判定。
@@ -3808,7 +3884,8 @@ function Assert-ClientEntryClusterState {
 			$problems += @($probe.Refusals)
 		}
 		if ($ClientEntryMode -eq "external") {
-			$drifts += @(Get-GateAddressDrift -Zone $zone -Namespace $namespace)
+			$gateDrifts = Get-GateAddressDrift -Zone $zone -Namespace $namespace
+			$drifts += $gateDrifts
 		}
 		if ($gatewayLosesTrustedProxies) {
 			$ingress = Invoke-ClientEntryKubectl -KubectlArgs @("get", "ingress", "gateway", "-n", $namespace, "--ignore-not-found", "-o", "name") `
@@ -5671,6 +5748,162 @@ Queue:
 "@
 }
 
+<#
+.SYNOPSIS
+	第三方登录参数(-LoginWeChatAppId / -LoginWeChatEndpoint / -LoginQQAppId / -LoginQQEndpoint)的形状校验。纯函数:只看入参,
+	返回错误文本数组(空 = 合法),不抛、不打印。
+
+.DESCRIPTION
+	调用方:写路径入口的 Assert-LoginAuthProviderParams(在密钥解析与任何写操作之前一次报全)与生成器 New-LoginAuthProvidersYaml
+	(纵深防御,同一份规则)。规则对齐 login 的启动期门禁(go/login/internal/config/auth_providers.go checkAuthAppId /
+	checkOAuthEndpoint),但部署侧更严,宁可在部署时拒也不留一个拒启的 Pod:
+	  - AppId 空串 = 不配该 provider;非空只允许 [A-Za-z0-9_.-](公开的应用号,原样写进 YAML 双引号标量,不许任何需要转义的字符)。
+	  - Endpoint 空串 = 生产地址;非空须是 https://主机[:端口][/路径],dev 档也接受 http://(login 只在 Mode=dev / test 放行 http,
+	    而 Mode: dev 只在 dev 档写);不带用户信息、查询串与片段;不得含 `${`(login 不展开环境变量,出现即拒启)。scheme 只认小写。
+	  - 给了 Endpoint 却没给对应 AppId:Endpoint 只在渲染该 provider 时才写,静默丢掉等于让人以为指向了沙箱。
+	正则一律以 \z 收尾:.NET 的 $ 会放过结尾的一个换行,换行进 YAML 就是注入。
+	报错不回显 Endpoint 的值(可能带用户信息里的口令),AppId 是公开值但同样不回显,点参数名即可定位。
+#>
+function Get-LoginAuthProviderParamErrors {
+	param(
+		[AllowEmptyString()][string]$WeChatAppId = '',
+		[AllowEmptyString()][string]$WeChatEndpoint = '',
+		[AllowEmptyString()][string]$QQAppId = '',
+		[AllowEmptyString()][string]$QQEndpoint = '',
+		[Parameter(Mandatory = $true)][ValidateSet('dev', 'staging', 'prod')][string]$ReleaseProfile
+	)
+
+	$errors = [System.Collections.Generic.List[string]]::new()
+	$providers = @(
+		[pscustomobject]@{ Name = 'WeChat'; AppIdParam = '-LoginWeChatAppId'; EndpointParam = '-LoginWeChatEndpoint'; AppId = $WeChatAppId; Endpoint = $WeChatEndpoint }
+		[pscustomobject]@{ Name = 'QQ'; AppIdParam = '-LoginQQAppId'; EndpointParam = '-LoginQQEndpoint'; AppId = $QQAppId; Endpoint = $QQEndpoint }
+	)
+	foreach ($p in $providers) {
+		if (-not [string]::IsNullOrEmpty($p.AppId) -and $p.AppId -cnotmatch '^[A-Za-z0-9_.-]+\z') {
+			$errors.Add("$($p.AppIdParam) 只允许 [A-Za-z0-9_.-](AuthProviders.$($p.Name).AppId 是公开的应用号,原样写进 login ConfigMap)。")
+		}
+		if ([string]::IsNullOrEmpty($p.Endpoint)) { continue }
+		if ([string]::IsNullOrEmpty($p.AppId)) {
+			$errors.Add("给了 $($p.EndpointParam) 却没给 $($p.AppIdParam):Endpoint 只在渲染 AuthProviders.$($p.Name) 时才写,不能静默丢掉。")
+		}
+		if ($p.Endpoint.Contains('${')) {
+			$errors.Add("$($p.EndpointParam) 含未展开的 `${...}:login 不展开环境变量,出现即拒绝启动。")
+			continue
+		}
+		$m = [regex]::Match($p.Endpoint, '^(?<scheme>https?)://(?<host>[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?)(?::(?<port>[0-9]{1,5}))?(?<path>/[A-Za-z0-9._~%/-]*)?\z')
+		if (-not $m.Success -or ($m.Groups['port'].Success -and ([int]$m.Groups['port'].Value -lt 1 -or [int]$m.Groups['port'].Value -gt 65535))) {
+			$errors.Add("$($p.EndpointParam) 须是 https://主机[:端口][/路径](dev 档也接受 http://),不带用户信息、查询串与片段,路径只用 [A-Za-z0-9._~%/-]。")
+			continue
+		}
+		if ($m.Groups['scheme'].Value -ceq 'http' -and $ReleaseProfile -ne 'dev') {
+			$errors.Add("$($p.EndpointParam) 在 -ReleaseProfile $ReleaseProfile 只接受 https://:http:// 只在 dev 档放行(login 生产模式拒绝 http,Endpoint 上的请求带着 AppSecret / access_token)。")
+		}
+	}
+	# 逐条写进管道:调用方一律用 @(...) 收集,合法时得到空数组。
+	return $errors.ToArray()
+}
+
+<#
+.SYNOPSIS
+	login.yaml 顶层的 AuthProviders 段(第三方登录,-LoginWeChatAppId / -LoginQQAppId)。两个 AppId 都为空 = 空串(不写 AuthProviders,
+	login 模板的产物与接入前逐字相同)。纯函数:只看入参,参数不合法即 throw。
+
+.DESCRIPTION
+	键名核对自 go/login/internal/config/config.go WeChatAuthConf / QQAuthConf:
+	  - WeChat:AppId + AppSecretEnv(环境变量名,值由 Apply-OneGoSvc 经 Secret login-oauth 注入容器);**从不写 AppSecret**
+	    (生产模式拒绝内联密钥,dev 也不需要)。
+	  - QQ:只写 AppId(provider 只用 access_token 调 /oauth2.0/me 并校验 client_id,不需要 AppKey);RequestUnionId 不写 = login 缺省 true。
+	  - RequireUnionId 只在 -Login*AllowOpenId 时写 false;不写 = login 缺省 true(拿不到 unionid 即拒绝登录,不回落 openid)。
+	  - Endpoint 只在给了时写(沙箱 mock);不写 = 生产地址。
+	AuthProviders 在整份 login.yaml 里只能出现一次(重复的顶层键各 YAML 解析器行为不一),login 模板别处不得再写这个键。
+	值全部写成 YAML 双引号标量;字符集已由 Get-LoginAuthProviderParamErrors 限定,不需要转义。
+	调用方:New-GoSvcConfigMapYaml 生成 login 的 ConfigMap。
+#>
+function New-LoginAuthProvidersYaml {
+	param(
+		[AllowEmptyString()][string]$WeChatAppId = '',
+		[AllowEmptyString()][string]$WeChatEndpoint = '',
+		[bool]$WeChatAllowOpenId = $false,
+		[AllowEmptyString()][string]$QQAppId = '',
+		[AllowEmptyString()][string]$QQEndpoint = '',
+		[bool]$QQAllowOpenId = $false,
+		[Parameter(Mandatory = $true)][ValidateSet('dev', 'staging', 'prod')][string]$ReleaseProfile,
+		# login 容器里存放微信 AppSecret 的环境变量名(调用方传 $script:LoginWeChatAppSecretEnv,与注入 env 的名字同源)。
+		[Parameter(Mandatory = $true)][string]$WeChatAppSecretEnv
+	)
+
+	$errors = @(Get-LoginAuthProviderParamErrors -WeChatAppId $WeChatAppId -WeChatEndpoint $WeChatEndpoint `
+		-QQAppId $QQAppId -QQEndpoint $QQEndpoint -ReleaseProfile $ReleaseProfile)
+	if ($errors.Count -gt 0) {
+		throw ("生成 login ConfigMap 的 AuthProviders 段失败:" + ($errors -join ' '))
+	}
+	if ($WeChatAppSecretEnv -cnotmatch '^[A-Z][A-Z0-9_]*\z') {
+		throw "内部错误:微信 AppSecret 的环境变量名 '$WeChatAppSecretEnv' 不是 [A-Z][A-Z0-9_]* 形状,拒绝渲染。"
+	}
+	$hasWeChat = -not [string]::IsNullOrEmpty($WeChatAppId)
+	$hasQQ = -not [string]::IsNullOrEmpty($QQAppId)
+	if (-not $hasWeChat -and -not $hasQQ) { return '' }
+
+	$lines = [System.Collections.Generic.List[string]]::new()
+	$lines.Add('# 第三方登录(k8s_deploy.ps1 -LoginWeChatAppId / -LoginQQAppId,New-LoginAuthProvidersYaml 生成)。只写公开值:微信 AppSecret 经 Secret')
+	$lines.Add('# 注入 AppSecretEnv 指向的容器环境变量,QQ 不需要密钥。RequireUnionId 不写 = login 缺省 true(拿不到 unionid 即拒绝登录)。')
+	$lines.Add('AuthProviders:')
+	if ($hasWeChat) {
+		$lines.Add('  WeChat:')
+		$lines.Add("    AppId: `"$WeChatAppId`"")
+		$lines.Add("    AppSecretEnv: `"$WeChatAppSecretEnv`"")
+		if ($WeChatAllowOpenId) { $lines.Add('    RequireUnionId: false') }
+		if (-not [string]::IsNullOrEmpty($WeChatEndpoint)) { $lines.Add("    Endpoint: `"$WeChatEndpoint`"") }
+	}
+	if ($hasQQ) {
+		$lines.Add('  QQ:')
+		$lines.Add("    AppId: `"$QQAppId`"")
+		if ($QQAllowOpenId) { $lines.Add('    RequireUnionId: false') }
+		if (-not [string]::IsNullOrEmpty($QQEndpoint)) { $lines.Add("    Endpoint: `"$QQEndpoint`"") }
+	}
+	return ($lines -join "`n")
+}
+
+<#
+.SYNOPSIS
+	写路径入口的第三方登录参数门禁:形状不对就在密钥解析与任何写操作之前 throw(一次报全),并按需打英文警告。
+	由 Assert-ClientEntryDeployPreflight 调用(与 -LoginDevPasswordAuth 的门禁同处)。
+
+.DESCRIPTION
+	规则只有一份(Get-LoginAuthProviderParamErrors);New-LoginAuthProvidersYaml 生成时再查一次作纵深防御。
+	参数非法就拒绝,不论本次是否部署 login:错的参数配在不部署 login 的命令上,下次带同一条命令部署 login 时照样会错。
+	不部署 login 时给了这些参数只告警「不生效」,与 -LoginDevPasswordAuth 同口径。
+#>
+function Assert-LoginAuthProviderParams {
+	param([Parameter(Mandatory = $true)][bool]$DeploysLogin)
+
+	$errors = @(Get-LoginAuthProviderParamErrors -WeChatAppId $LoginWeChatAppId -WeChatEndpoint $LoginWeChatEndpoint `
+		-QQAppId $LoginQQAppId -QQEndpoint $LoginQQEndpoint -ReleaseProfile $ReleaseProfile)
+	if ($errors.Count -gt 0) {
+		throw ("login 第三方登录参数校验失败($($errors.Count) 项),未做任何写操作:`n  - " + ($errors -join "`n  - "))
+	}
+
+	$hasWeChat = -not [string]::IsNullOrEmpty($LoginWeChatAppId)
+	$hasQQ = -not [string]::IsNullOrEmpty($LoginQQAppId)
+	if ($LoginWeChatAllowOpenId -and -not $hasWeChat) {
+		Write-Warning "[login-auth] -LoginWeChatAllowOpenId supplied without -LoginWeChatAppId; flag has no effect (AuthProviders.WeChat is not rendered)."
+	}
+	if ($LoginQQAllowOpenId -and -not $hasQQ) {
+		Write-Warning "[login-auth] -LoginQQAllowOpenId supplied without -LoginQQAppId; flag has no effect (AuthProviders.QQ is not rendered)."
+	}
+	if ($ReleaseProfile -ne 'dev') {
+		if ($LoginWeChatAllowOpenId -and $hasWeChat) {
+			Write-Warning "[login-auth] -LoginWeChatAllowOpenId (ReleaseProfile=$ReleaseProfile): WeChat accounts are created by openid when unionid is missing; connecting unionid later splits each such player into two accounts that cannot be merged."
+		}
+		if ($LoginQQAllowOpenId -and $hasQQ) {
+			Write-Warning "[login-auth] -LoginQQAllowOpenId (ReleaseProfile=$ReleaseProfile): QQ accounts are created by openid when unionid is missing; connecting unionid later splits each such player into two accounts that cannot be merged."
+		}
+	}
+	if (($hasWeChat -or $hasQQ) -and -not $DeploysLogin) {
+		Write-Warning "[login-auth] -LoginWeChatAppId / -LoginQQAppId supplied, but login is not deployed in this run (only generated with Go services during zone-up / all-up; requires -GoSvcRegistry without -SkipGoSvc); flags have no effect."
+	}
+}
+
 function Assert-GlobalMatchKafkaTopology {
 	param($Topology)
 	if ($Topology.ReplicationFactor -lt 3 -or $Topology.MinInsyncReplicas -lt 2) {
@@ -5854,95 +6087,9 @@ function Assert-DbConsumerGroupName {
 	}
 }
 
-<#
-.SYNOPSIS
-	把线上 go-svc-db-config 里 db.yaml 的文本归到四种形状之一。返回 [pscustomobject]@{ Shape = 'final' | 'handoff'; Group; HandoffFrom }
-	(final 的 HandoffFrom 为空串);不属于四种形状一律 throw。
-
-.DESCRIPTION
-	纯函数(契约测试按 AST 抽出来直接喂文本)。GroupID / ConsumerGroup / GroupHandoffFrom 三个键按路径取:只认 ServerConfig.Kafka 的直接子键
-	(go/db 只在 KafkaConfig 上定义这三个键,go/db/internal/config/config.go)。值走 release_common.ps1 的 ConvertFrom-YamlToFlatMap
-	(与 Get-AuthoritativeScalar 同一套缩进、行尾注释、引号规则),所以注释行(# ConsumerGroup: …)与带前缀的同名键
-	(SnapshotConsumerGroup:)都不算;去掉一层引号后必须是组名字符集。
-	别的路径上的同名键(顶层 GroupID、ServerConfig.Database.GroupID、Kafka 下更深一层的 X.GroupID)一律忽略:go/db 不读它们,
-	对消费组没有影响,不因此误拒;组名键若被手改写到别的段,ServerConfig.Kafka 下就一个都没有,照样 throw(fail-closed)。
-	同一路径出现两次、值为空或含非法字符、组名不是 L / Z 之一、以及四种之外的任何组合,都 throw:生成器只写这四种,读到别的
-	说明 ConfigMap 被手改过或来自别的工具,照着它渲染等于把未知状态当成已知(fail-closed)。
-#>
-function ConvertFrom-LiveDbConsumerGroup {
-	param(
-		[Parameter(Mandatory = $true)][AllowEmptyString()][string]$DbYaml,
-		[Parameter(Mandatory = $true)][string]$LegacyGroup,
-		[Parameter(Mandatory = $true)][string]$ZoneGroup
-	)
-
-	$shapes = "合法形状只有四种:最终形状只写 GroupID: `"G`";交接形状只写 ConsumerGroup: `"X`" 与 GroupHandoffFrom: `"Y`"(不写 GroupID);G、X、Y 只能是 $LegacyGroup 或 ${ZoneGroup},且 X ≠ Y,三个键都在 ServerConfig.Kafka 下(docs/design/db-consumer-group-per-zone.md §2)"
-	$scalars = (ConvertFrom-YamlToFlatMap -Text $DbYaml).Scalars
-	# 扁平表遇到同一路径的重复键会静默取最后一处,所以出现次数另数一遍。规则与 ConvertFrom-YamlToFlatMap 逐条相同
-	# (tab 归一成 4 格、去行尾注释、跳过文档分隔行、按缩进维护父路径栈、序列项只出栈不入栈),两边对同一行算出的路径一致。
-	$occurrences = @{}
-	$pathStack = [System.Collections.Generic.List[object]]::new()
-	foreach ($rawLine in ($DbYaml -split "`r?`n")) {
-		$line = Remove-YamlInlineComment -Value ($rawLine -replace "`t", '    ')
-		if ([string]::IsNullOrWhiteSpace($line)) { continue }
-		$indent = $line.Length - $line.TrimStart(' ').Length
-		$content = $line.Trim()
-		if ($content.StartsWith('---') -or $content.StartsWith('...')) { continue }
-		$isListItem = ($content.StartsWith('- ') -or $content -eq '-')
-		$keyMatch = [regex]::Match($content, '^(?<k>[^:]+):')
-		if (-not $isListItem -and -not $keyMatch.Success) { continue }
-		while ($pathStack.Count -gt 0 -and $pathStack[$pathStack.Count - 1].Indent -ge $indent) { $pathStack.RemoveAt($pathStack.Count - 1) }
-		if ($isListItem) { continue }
-		$pathStack.Add(@{ Indent = $indent; Key = (ConvertFrom-YamlScalarLiteral -Value $keyMatch.Groups['k'].Value) })
-		$path = ($pathStack | ForEach-Object { $_.Key }) -join '.'
-		$occurrences[$path] = 1 + [int]$occurrences[$path]
-	}
-
-	$values = @{}
-	foreach ($key in @('GroupID', 'ConsumerGroup', 'GroupHandoffFrom')) {
-		$path = "ServerConfig.Kafka.$key"
-		$count = [int]$occurrences[$path]
-		if ($count -gt 1) {
-			throw "线上 go-svc-db-config 的 db.yaml 里 $path 出现了 $count 次:重复键各 YAML 解析器行为不一,不猜哪一处生效。${shapes}。"
-		}
-		if (-not $scalars.Contains($path)) { continue }
-		$value = [string]$scalars[$path]
-		if ($value -cnotmatch '^[A-Za-z0-9._-]+$') {
-			throw "线上 go-svc-db-config 的 db.yaml 里 $path 的值 '$value' 不是合法的消费组名(空值,或含 [A-Za-z0-9._-] 以外的字符)。${shapes}。"
-		}
-		$values[$key] = $value
-	}
-
-	$groupId = $values['GroupID']
-	$consumerGroup = $values['ConsumerGroup']
-	$handoffFrom = $values['GroupHandoffFrom']
-	$known = @($LegacyGroup, $ZoneGroup)
-	if ($null -ne $groupId) {
-		if ($null -ne $consumerGroup) {
-			throw "线上 go-svc-db-config 的 db.yaml 同时写了 GroupID 与 ConsumerGroup(go/db 拒启这种形状)。${shapes}。"
-		}
-		if ($null -ne $handoffFrom) {
-			throw "线上 go-svc-db-config 的 db.yaml 是 GroupID 配 GroupHandoffFrom:go/db 拒启这种形状(交接只能写 ConsumerGroup,好让交接闸之前的二进制拒启)。${shapes}。"
-		}
-		if ($known -cnotcontains $groupId) {
-			throw "线上 go-svc-db-config 的 db.yaml 的 GroupID=$groupId 既不是 $LegacyGroup 也不是 ${ZoneGroup},不猜它的归属。${shapes}。"
-		}
-		return [pscustomobject]@{ Shape = 'final'; Group = $groupId; HandoffFrom = '' }
-	}
-	if ($null -ne $consumerGroup) {
-		if ($null -eq $handoffFrom) {
-			throw "线上 go-svc-db-config 的 db.yaml 只有 ConsumerGroup、没有 GroupHandoffFrom:生成器从不写这种形状(最终形状只写 GroupID)。${shapes}。"
-		}
-		if ($known -cnotcontains $consumerGroup -or $known -cnotcontains $handoffFrom -or $consumerGroup -ceq $handoffFrom) {
-			throw "线上 go-svc-db-config 的 db.yaml 的交接形状 ConsumerGroup=$consumerGroup GroupHandoffFrom=$handoffFrom 不是 $ZoneGroup ← $LegacyGroup 或 $LegacyGroup ← $ZoneGroup 之一。${shapes}。"
-		}
-		return [pscustomobject]@{ Shape = 'handoff'; Group = $consumerGroup; HandoffFrom = $handoffFrom }
-	}
-	if ($null -ne $handoffFrom) {
-		throw "线上 go-svc-db-config 的 db.yaml 只有 GroupHandoffFrom、没有组名键。${shapes}。"
-	}
-	throw "线上 go-svc-db-config 的 db.yaml 里 ServerConfig.Kafka 下 GroupID / ConsumerGroup / GroupHandoffFrom 一个都没有(别的段里的同名键 go/db 不读),判不出 db 的消费组。${shapes}。"
-}
+# ConvertFrom-LiveDbConsumerGroup(把线上 go-svc-db-config 的 db.yaml 归到上面四种形状之一,不属于即 throw)2026-10-18 原样移到
+# lib/kafka_consumer_groups.ps1(本文件开头已 dot-source),行为不变:回档 k8s_zone_rollback.ps1 第 0 步 f 核对部署事实要用同一份规则
+# (回档复核 [0]),不另写一份。它依赖的 YAML 解析函数来自 release_common.ps1,本文件在 dot-source 那个库之前先 dot-source 了 release_common.ps1。
 
 # 本 zone 的计划要不要读 Kafka 位点(§3.4):非 DryRun,且(显式模式、线上没有 ConfigMap、或线上是交接形状)。
 # keep 遇到最终形状不读 Kafka:最终形状原样保留永远安全,也不让日常发布依赖 kafka-0 的 exec 权限。纯函数。
@@ -7071,6 +7218,19 @@ function New-GoSvcConfigMapYaml {
 		}
 	}
 
+	# login 的第三方登录段(-LoginWeChatAppId / -LoginQQAppId,New-LoginAuthProvidersYaml)。只在生成 login 自己的 ConfigMap 时求值;
+	# 两个 AppId 都没给 = 空串,login 模板的产物与接入前逐字相同。只写公开值:微信 AppSecret 经 Apply-OneGoSvc 建的 Secret login-oauth
+	# 注入 AppSecretEnv 指向的容器环境变量,绝不进 ConfigMap。AuthProviders 在模板别处没有,整份 login.yaml 只此一处顶层键。
+	$loginAuthProvidersBlock = ''
+	if ($SvcName -eq 'login') {
+		$authProvidersYaml = New-LoginAuthProvidersYaml -WeChatAppId $LoginWeChatAppId -WeChatEndpoint $LoginWeChatEndpoint `
+			-WeChatAllowOpenId $LoginWeChatAllowOpenId.IsPresent -QQAppId $LoginQQAppId -QQEndpoint $LoginQQEndpoint `
+			-QQAllowOpenId $LoginQQAllowOpenId.IsPresent -ReleaseProfile $ReleaseProfile -WeChatAppSecretEnv $script:LoginWeChatAppSecretEnv
+		if (-not [string]::IsNullOrEmpty($authProvidersYaml)) {
+			$loginAuthProvidersBlock = "`n" + $authProvidersYaml
+		}
+	}
+
 	$svcConfig = switch ($SvcName) {
 		"guild" { New-GuildServiceConfigYaml -CurrentZoneId $CurrentZoneId -CurrentClusterId $CurrentClusterId }
 		"mail" {
@@ -7378,9 +7538,13 @@ SceneManagerRpc:
   Timeout: 5000
   Middlewares:
     Breaker: false
-# DataService gRPC 客户端:login 只用它领 PlayerId 号段(DataService.AllocateIdSegment)。
+# DataService gRPC 客户端:PlayerId 号段(AllocateIdSegment)、角色名登记、以及**每次登录**角色列表上的
+# 归属查询(BatchGetPlayerHomeZone)共用这一条连接。(2026-10-18 更正:原注释「只用它领号段」已过时。)
 # NonBlock: true —— 号段是弱依赖(node-id-overhaul-plan §6.5):data-service 没起时 login 照常起服,
 # 领段失败按 IdSegment.FallbackToSnowflake 决定回退还是拒绝建角。
+# Breaker: true —— 与 go/login/etc/login.yaml 一致(2026-10-18 起,此前 K8s 写 false):data-service 僵住但
+# etcd 键还在时,熔断器让登录的归属查询快速失败、按「保留建角 zone」放行,而不是每次登录都白等满查询预算。
+# 建角的号段与名字登记本来就 fail-closed,熔断只让它们失败得更快。
 DataServiceRpc:
   Etcd:
     Hosts:
@@ -7389,7 +7553,7 @@ DataServiceRpc:
   Timeout: 3000
   NonBlock: true
   Middlewares:
-    Breaker: false
+    Breaker: true
 # PlayerId 号段发号(node-id-overhaul-plan §6)。
 # Enabled 必须**显式写 true**:go-zero 对缺席的 optional 块不填 default,shared/idsegment 的规则是
 #   「整块不写 = 关 = 纯 snowflake 老路径」;漏写这一行等于静默回到旧发号,不会报错。
@@ -7415,7 +7579,7 @@ Secrets:
     Value: "${internalAuthSecret}"${loginQueueTokenSecretBlock}
 # 下发 gate 地址时是否必须用 gate 自报的客户端可达地址(NodeInfo.client_endpoint,D78):
 # true = 缺地址的 gate 不下发;false = 回落 endpoint(PodIP)。取值见 k8s_deploy.ps1 -RequireClientEndpoint(默认跟随 -ClientEntryMode)。
-RequireClientEndpoint: ${requireClientEndpointValue}${loginDevPasswordAuthBlock}${loginQueueBlock}
+RequireClientEndpoint: ${requireClientEndpointValue}${loginDevPasswordAuthBlock}${loginQueueBlock}${loginAuthProvidersBlock}
 Kafka:
   Brokers:
     - "kafka.${InfraNamespace}:9092"
@@ -7470,6 +7634,15 @@ Lease:
   DefaultTTLSeconds: ${locatorLeaseTTLSeconds}
   PollInterval: 1s
   BatchSize: 100
+  # Lease.ReconcileIntervalSeconds 与 Lease.Reconcile 刻意不写:会话对账是全服单 leader,各项事实源是
+  # go/player_locator/internal/config/config.go 的默认值,必须全服一致(docs/design/player-locator-gate-session-index.md §10)。
+# Prometheus 抓取端点(go-zero 自带 agent;Host 为空时 StartAgent 直接 return,端点根本不存在)。
+# 9190 与 manifests/go-svc/player-locator.yaml 的 prometheus.io/port 注解及 metrics 容器端口一致,两者必须同批发布;
+# 会话对账 leader 卡死 / 无 leader 只能靠这里的 reconcile 指标与 deploy/k8s/player-locator-alerts.yaml 发现。
+Prometheus:
+  Host: 0.0.0.0
+  Port: 9190
+  Path: /metrics
 "@
 		}
 		"scene-manager" {
@@ -8675,6 +8848,17 @@ function Apply-LoginDevPasswordSecret {
 		-Value $script:LoginDevPasswordSecret -AppLabel "login"
 }
 
+# -LoginWeChatAppId 的 AppSecret Secret login-oauth(zone namespace)。必须先于引用它的 login Deployment apply。
+function Apply-LoginOAuthSecret {
+	param([Parameter(Mandatory = $true)][string]$Namespace)
+
+	if ([string]::IsNullOrWhiteSpace($script:LoginWeChatAppSecret)) {
+		throw "内部错误:-LoginWeChatAppId 的 AppSecret 未解析(Initialize-InjectedSecrets 未在写路径入口调用?),拒绝部署 login。"
+	}
+	Apply-InjectedSecret -Namespace $Namespace -Name $script:LoginOAuthSecretName -Key $script:LoginOAuthWeChatSecretKey `
+		-Value $script:LoginWeChatAppSecret -AppLabel "login"
+}
+
 # 单个 Go 服务的 ConfigMap + 主 manifest apply。zone 循环与全局循环共用同一段逻辑。
 function Apply-OneGoSvc {
 	param(
@@ -8738,11 +8922,33 @@ function Apply-OneGoSvc {
 	# 条件里服务名判断必须留在 -and 左边:本函数会被 k8s_migrate_gate.tests.ps1 按 AST 单独抽出来跑非 login 服务,那里
 	# 右边的变量未定义、New-LoginQueueYaml 也没有加载,靠短路才不会求值。不要调换两边顺序。
 	# login 的 manifest 在 Pod 模板里没有 annotations: 段(已有的话 Add-PodTemplateAnnotation 会 throw,要并进这一次调用)。
-	if ($SvcName -eq 'login' -and $script:LoginQueueOn) {
-		$loginPeakShavingInput = (New-LoginQueueYaml -CurrentZoneId $CurrentZoneId) + "`n" + $script:LoginQueueTokenSecret
-		$manifestContent = Add-PodTemplateAnnotation -SvcName $SvcName -ManifestContent $manifestContent `
-			-Key $script:PeakShavingHashAnnotation `
-			-Value (Get-InjectedSecretFingerprint -SecretName 'peak-shaving/login' -Value $loginPeakShavingInput)
+	# login 微信登录(-LoginWeChatAppId,见 $script:LoginOAuthSecretName 处的说明):AppSecret 只经 Secret login-oauth 进容器,env 走
+	# secretKeyRef(不写 optional,Secret 缺失的 Pod 卡在 CreateContainerConfigError,而不是带着空密钥起来 —— login 对空密钥本来也拒启);
+	# Pod 模板带密钥指纹注解 —— 只改 Secret 时模板不变、apply 是 no-op,旧 Pod 一直拿旧 AppSecret 调微信;指纹让轮换自动滚动。
+	# 两条指纹必须一次写入(同一个 Pod 模板只能有一个 annotations: 段):排队开时削峰指纹恒排第一行(契约测试按这个位置取),
+	# 微信指纹作附加项跟在后面;排队关时微信指纹自己排第一行。两项都没有就不写 annotations:,模板与接入前相同。
+	# 服务名判断留在 -and 左边 / 块最外层(理由同上)。
+	$isLoginOAuth = ($SvcName -eq 'login' -and -not [string]::IsNullOrEmpty($LoginWeChatAppId))
+	if ($SvcName -eq 'login') {
+		$loginAnnotations = [ordered]@{}
+		if ($script:LoginQueueOn) {
+			$loginPeakShavingInput = (New-LoginQueueYaml -CurrentZoneId $CurrentZoneId) + "`n" + $script:LoginQueueTokenSecret
+			$loginAnnotations[$script:PeakShavingHashAnnotation] = Get-InjectedSecretFingerprint -SecretName 'peak-shaving/login' -Value $loginPeakShavingInput
+		}
+		if ($isLoginOAuth) {
+			$manifestContent = Add-GoSvcSecretEnv -SvcName $SvcName -ManifestContent $manifestContent `
+				-EnvName $script:LoginWeChatAppSecretEnv -SecretName $script:LoginOAuthSecretName -SecretKey $script:LoginOAuthWeChatSecretKey
+			$loginAnnotations[$script:LoginOAuthSecretHashAnnotation] = Get-InjectedSecretFingerprint -SecretName $script:LoginOAuthSecretName -Value $script:LoginWeChatAppSecret
+		}
+		if ($loginAnnotations.Count -gt 0) {
+			$loginAnnotationKeys = @($loginAnnotations.Keys)
+			$loginExtraAnnotations = [ordered]@{}
+			foreach ($extraKey in ($loginAnnotationKeys | Select-Object -Skip 1)) {
+				$loginExtraAnnotations[$extraKey] = $loginAnnotations[$extraKey]
+			}
+			$manifestContent = Add-PodTemplateAnnotation -SvcName $SvcName -ManifestContent $manifestContent `
+				-Key $loginAnnotationKeys[0] -Value $loginAnnotations[$loginAnnotationKeys[0]] -AdditionalAnnotations $loginExtraAnnotations
+		}
 	}
 
 	# -LoginDevPasswordAuth:先本地渲染(形状不对就在写操作之前 throw),再建 Secret —— secretKeyRef 不是 optional,
@@ -8753,6 +8959,10 @@ function Apply-OneGoSvc {
 			-EnvName (Get-ClientEntryContract).LoginDevPasswordSecretEnv `
 			-SecretName $script:LoginDevPasswordSecretName -SecretKey $script:LoginDevPasswordSecretKey
 		Apply-LoginDevPasswordSecret -Namespace $Namespace
+	}
+	# 微信 AppSecret 的 Secret 同理:env 与指纹已在上面本地渲染完,这里建 Secret,先于 ConfigMap 与 Deployment。
+	if ($isLoginOAuth) {
+		Apply-LoginOAuthSecret -Namespace $Namespace
 	}
 
 	# player-inbox 运维口令(见 $script:PlayerInboxAdminTokenSecretName 处的说明):先本地渲染,再建 Secret,与上面 login 同一顺序。
@@ -8797,6 +9007,11 @@ function Apply-OneGoSvc {
 		# 开关关闭:ConfigMap 已不含 DevPasswordAuth,新 Deployment 也不再引用口令,删掉残留 Secret(放在 Deployment
 		# apply 之后,不让新 Pod 因引用缺失的 Secret 卡在 CreateContainerConfigError)。
 		Invoke-Kubectl -Args @("delete", "secret", $script:LoginDevPasswordSecretName, "-n", $Namespace, "--ignore-not-found")
+	}
+	if ($SvcName -eq 'login' -and -not $isLoginOAuth) {
+		# 本次没给 -LoginWeChatAppId:ConfigMap 已不含 AuthProviders.WeChat,新 Deployment 也不再引用 AppSecret,删掉残留 Secret
+		# (放在 Deployment apply 之后,理由同上)。不粘滞 —— 上次开过微信登录、这次没给,微信登录随新 Pod 一起关闭。
+		Invoke-Kubectl -Args @("delete", "secret", $script:LoginOAuthSecretName, "-n", $Namespace, "--ignore-not-found")
 	}
 	if ($SvcName -eq 'player-inbox' -and -not $isPlayerInboxAdmin) {
 		# 本次未注入运维口令:新 Deployment 不再引用 Secret,删掉残留(放在 Deployment apply 之后,理由同上);

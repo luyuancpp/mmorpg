@@ -205,10 +205,12 @@ while lane.inFlightSeq == 0 && !lane.queued.empty():     // 循环 ≤ 32 次
 
 ### 4.5 认领(Complete)
 
+> **2026-10-17 契约勘误**：下表入口随删除全局处理器 A–C 更新；主程序不再安装全局回包函数。路由 lane 的代次、队头、恰好一次和放行规则不变，见 `grpc-client-deadline-failure-callback.md` §12。
+
 | 来源 | 入口 | 拿 seq 的方式 |
 |---|---|---|
-| 成功回包 | 成功桥 `SetIfEmptyHandler`【码】`main.cpp:290-315` | 解响应 initial metadata 里的 `x-session-detail-bin`(路由服在 Forward 开头按原值回写【码】`forwardlogic.go:103-105,203-212`) |
-| gRPC 失败 | 失败桥 `SetIfEmptyFailedHandler`【码】`main.cpp:325-350`(2026-10-16 订正:路由模式的 Forward 不经全局处理器,由 `router_muduo_forward.cpp` `SendForward` 的完成回调 → `gate_rpc_reply_bridge::NotifyCallFailure` → `gate_lane::OnRouterCallFailed`;全局失败处理器只剩直连模式在用) | `failure.FindSentMetadata(kSessionBinMetaKey)`,即发出时的原值(路由模式:发出时捕获的 SessionDetails 原始字节) |
+| 成功回包 | 2026-10-17：直连 `OnDirectGrpcCallDone`、路由 `router_muduo_forward.cpp` 的 `SendForward` 完成回调 → `gate_rpc_reply_bridge::DeliverReply` → `gate_lane::OnRouterReply` | 直连用发送时捕获的 SessionDetails；路由解响应 initial metadata 里原值回显的 `x-session-detail-bin` |
+| gRPC 失败 | 2026-10-17：直连 `OnDirectGrpcCallDone`、路由 `SendForward` 完成回调 → `gate_rpc_reply_bridge::NotifyCallFailure` → `gate_lane::OnRouterCallFailed` | 两种模式都用发送时捕获的 SessionDetails 原始字节；Disconnect 失败仅采样日志，不进客户端失败桥 |
 | 路由服节点摘除 | 不单独处理(2026-10-16 起) | 走上一行「gRPC 失败」:gRPC 传输第 3 批起 node.cpp 先 `remove<MuduoGrpcChannelPtr>`,`~Channel` 把在途调用以 UNAVAILABLE 排进下一轮,再触发 OnNodeRemoveEvent、DestroyEntity;放行下一条时 `PickRandomNode` 要求实体挂着通道,不会再选中被摘节点。原设计按 `routerEntity` 遍历摘除,前提是官方 CQ 析构后在途调用永远不会再有回调(F29),该前提已不成立,`OnRouterNodeRemoved` 与 `InflightIndex::ExtractIf` 已删(ECS 审查 W1-45);它还会让每个被摘调用在 `late_dropped` 里多计一次 |
 | 本地截止 | GateRuntimeContext 上新增 `TimerTaskComp laneExpiryTimer`,`RunEvery(0.25s)`,回调不捕获对象 | 弹出过期堆。**必须主动扫描**:队头卡住时客户端在等回包,不会再发新请求,纯惰性清理永远触发不到。先例是 `sceneEntryRetryTimer`【码】`main.cpp:141-144,396-398` |
 
@@ -409,12 +411,24 @@ go-zero 超时拦截器用 `context.WithTimeout` 派生 ctx 交给 handler,超�
 
 1. 直连模式下 match 回包全部丢失(match 不回写会话头)【码】`go/match/match_service.go:346-350`、`cpp/nodes/gate/main.cpp:292-293`。
 2. `login_session` 键只用 uint32 session_id,gate 重启后可能与旧进程的会话撞号,存在继承别人登录态的风险【码】`loginsession.go:38-40`。
+   > 2026-10-18 已修(未编译、未运行,待 Codex 验证;审计 [data-overwrite-rollback-audit-20261018.md](./data-overwrite-rollback-audit-20261018.md) §2.3 login-session-route#1):
+   > - **login**:登录态改按 gate 连接建键 `login_session:{gate_instance_id}:{session_incarnation}`(`loginsession.RefOf`,与会话栅栏共用 `sessionfence.Key.String`);CreatePlayer / EnterGame 只读本连接的新键,**不回落**旧键,撞号的新连接读不到任何账号。账号设备集成员同步改为键后缀,`PruneStaleFromDeviceSet` 对两种形状通用。
+   > - **旧版 gate 兼容**:代次为 0 或缺实例号时仍按 session_id 建键,计 `loginsession_legacy_key_total{op=save|get|cleanup}`;这条路径保留旧风险,只能靠升级 gate 消除。
+   > - **滚动升级**:新路径 Login 时在同一段 `CommitLogin` 脚本里双写一份旧键,让并存窗口里仍按 session_id 读的旧 login 与 login 回滚都能工作;新 login 从不读它,Disconnect / LeaveGame 一并删除。反方向(旧 login 受理 Login、新 login 受理 EnterGame)会被判未登录、需要重登,这是有意的 fail-closed。全部 login 升级、上述计数长期为 0 之后,删除双写与兼容路径。
+   > - **gate 纵深防御**:`SessionInfo.loginSucceeded` 记录本连接是否收到过成功的 Login 回包(`handler/rpc/login_admission.h`),CreatePlayer / EnterGame / LeaveGame 在此之前一律回带请求 id 的信封 2028(与 login 同一个「未登录」码)。路由模式在 lane 发出时判(连发的 Login → EnterGame 仍可用,O7 不受影响),直连模式在收包时判。这一层在「新 gate + 旧 login」窗口里挡住撞号请求。直连模式的 `BuildSessionDetails` 同时补上会话代次(此前只有 lane 写,直连的 Login / EnterGame 一直走旧版路径)。
+   > - **Java 版**:不受影响。Java login 用 `SessionDirective.BindAccount` 把账号交给 gate,账号存在 gate 连接自己的 `SessionContext` 里(`EnterGameHandler` 取 `session.getAccount()`),没有按 session_id 建键的登录态;设备键已含 gate_instance_id。无需改代码。
 3. gate 从不在 LeaveGame 之后清 playerId,同一连接换角色时,新角色 BindSession 到达之前的请求仍以旧角色身份执行【码】`gate_event_handler.cpp:78,211`、`leavegamelogic.go:25-39`。Java 靠 login 应答里的 SessionDirective 同步解绑。
 4. DonateToGuild / BuyGuildShopGoods 没有客户端幂等键,超时重发会扣两次【码】`go/guild/internal/logic/economy_logic.go:742-746`。这是重试问题,不是顺序问题。
 5. RefreshToken 一次性消费,回包丢失后重试必然失败【码】`go/login/internal/logic/pkg/token/token.go:145-159`。
 6. CQ 轮询遇到 `!ok` 直接 `return`,跳过本轮剩余的完成事件【码】`grpc_init_client.cpp:365-368`。本文的本地截止能兜住,根治属于生成模板的问题。(2026-10-16:随 gRPC 传输第 3 批删除官方 CQ 而失效。)
 7. 镜像 CreateScene 在途时没有登记 PlayerSceneChangeInFlightComp;SortBag 没有判冻结【码】`player_scene.cpp:288-303`、`player_bag_handler.cpp:56-69`。
+   **2026-10-15 处理结果**(C++ 源码已改,未编译):
+   - **镜像在途:属实,已修。** 用的是独立组件 `PlayerMirrorCreateInFlightComp`,不复用普通换图那个槽:那个槽记的是已发出的 EnterScene,旧版 scene_manager 不回显号时会按 player_id 把它收掉。`RequestEnterMirrorScene` 先登记再发,改用每次调用回调;`IsSceneChangeBusy` 把它与普通换图一起判,TTL 相同。完成回调 `HandleMirrorCreateDone` 按令牌认领,三路结局各回一条 tip;这也补上了「业务失败应答不回显 creator_ids、创建者收不到提示」的缺口。详见 [scene-creation-architecture.md](scene-creation-architecture.md)「C++ caller」。
+   - **SortBag 冻结:误报,未改逻辑。** 冻结闸在 `BagService::MergeAndCompact` 开头,所有整理入口共用,2026-08-30 起就有;回归用例是 `PlayerFeatureSnapshotTest.FrozenSortKeepsSourceLayoutUnchanged`。只核对了 handler 才会误报,`PlayerBagSystem::Sort` 已补注释写明闸的位置。
+   - **Java 版**:两条都已覆盖,未改。镜像取号复用 RESOLVING 在途槽;SortBag 用 `FreezePolicy.GATED`,由 `BagService.writable` 拒绝。
 8. (批次 B 实施时发现)WatchBattle 的 `addObserver` 如果恰好在请求截止那一刻还在途,battle 侧可能已经挂上观众,match 却回了失败、删了观战标记。之后玩家排队开战时,gather 靠观战标记找不到这场观战,也就不会清退,玩家可能同时是 A 场的观众和新一局的参战者。批次 B 把这个窗口从「最长约 9s」缩到「截止那一刻在途的那一次 RPC」,但没有消除它。根治办法:RPC 失败且结果未知时,用独立 ctx 补发一次 `removeObserver`。它会给本玩家推一次 SpectateEnd,所以要先和 battle 侧确认语义再做。
+
+> **2026-10-17 契约勘误**：第 7 项的镜像在途已由独立 `PlayerMirrorCreateInFlightComp` 补齐。普通换图与镜像统一使用当前生效的 SceneManager deadline + 1000ms 作为 TTL，时间回拨按失效处理。镜像完成回调同时核对捕获 token 与槽时效；token 不符不动新槽，匹配 token 但已过期或回拨时仅摘当前 token 并静默丢弃，不推 tip、不自动进场。后来的普通换图登记、交接全部预检通过、退出新挂 `UnregisterPlayer`、权威落点成功这四个提交点还会永久摘掉旧镜像令牌，UTC 回拨后恢复到原 TTL 内也不能使旧完成复活；忙碌检查仍只读，交接预检失败不取消旧镜像。此勘误不代表测试已执行。
 
 ---
 

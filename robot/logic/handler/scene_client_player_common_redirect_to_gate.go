@@ -25,7 +25,7 @@ import (
 //	④ 首包发 ClientTokenVerifyRequest,payload / signature 原样来自 notify。B 的 gate
 //	   重算 HMAC-SHA256(gate_token_secret, payload) 与 signature 做常数时间比较,再解出
 //	   GateTokenPayload 校验 gate_node_id == 本 gate 且 expire_timestamp > now
-//	   (cpp/nodes/gate/handler/rpc/client_message_processor.cpp);
+//	   (cpp/nodes/gate/handler/rpc/client_session_handler.cpp);
 //	⑤ 在新连接上**重新跑一遍 Login + EnterGame**。
 //
 // ── 为什么第 ⑤ 步不能省 ─────────────────────────────────────────────────────

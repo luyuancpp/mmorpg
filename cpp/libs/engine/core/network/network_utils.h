@@ -2,7 +2,6 @@
 
 #include <optional>
 #include <string>
-#include <vector>
 #include "entt/src/entt/entity/registry.hpp"
 #include "type_define/type_define.h"
 #include "core/utils/id/node_id_generator.h"
@@ -14,9 +13,6 @@ using SessionIdGenerator = TransientNodeCompositeIdGenerator<uint32_t, kNodeBits
 void ParseIpPort(const std::string &input, std::string &ip, uint16_t &port);
 
 std::string FormatIpAndPort(const std::string &ip, uint32_t port);
-
-class SessionDetails;
-std::vector<std::string> SerializeSessionDetails(const SessionDetails &sessionDetails);
 
 NodeId GetGateNodeId(SessionId session_id);
 

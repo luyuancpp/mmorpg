@@ -628,8 +628,10 @@ void Node::Initialize()
 	// fd 上限门槛(容量模型 A0-2、gate 准入 G4 / P0-1)。这里是第一个配置已读、又还没开任何网络 fd 的位置:
 	// 此后 InitRpcServer 连 Redis、InitKafka、InitEtcdService 都要 fd,软限必须在它们之前抬好,拒启也要在注册进 etcd、
 	// 开始接流量之前。gate / scene / battle 都经过这里,以后新增的 C++ 节点自动覆盖。
-	// 缺省 fail-closed:fd 不够时 gate 的唯一 IO 线程会 EMFILE 忙循环、scene 的 Redis / Kafka / etcd 重连失败,
-	// 比起不来更糟;节点都是多副本,新 Pod 拒启只会让滚动停住。运维豁免只认 NODE_OPEN_FILE_LIMIT_MODE=warn,
+	// 缺省 fail-closed:fd 不够时 gate 的唯一 IO 线程会 EMFILE 忙循环、Redis / Kafka / etcd 重连失败、日志滚动时崩溃,
+	// 而且是运行到某个时刻才暴露、难以归因;宁可在发布时就暴露。拒启不是无代价的:影响面按工作负载形态不同,
+	// 单副本 battle hostPort 会整体停服、scene 缺省 4 副本滚动时先少一台(docs/ops/gate-kernel-tuning-runbook.md §3.1),
+	// 所以发布前必须先读各节点池硬限,不能指望「拒启只会让滚动停住」。运维豁免只认 NODE_OPEN_FILE_LIMIT_MODE=warn,
 	// 与 *_RUN_MODE 无关(scene 的运行模式同时决定 GM 放行,不能为绕过这条检查去开 GM)。
 	EnsureOpenFileLimitOrDie(GetNodeType(), tlsNodeConfigManager.GetBaseDeployConfig());
 	// 生成的 gRPC 客户端的 deadline 必须在发出第一个请求(InitEtcdService 里的 etcd Range / LeaseGrant)之前就位;

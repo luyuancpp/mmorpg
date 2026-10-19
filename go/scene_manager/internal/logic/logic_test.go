@@ -1605,12 +1605,17 @@ func TestLeaveScene_DecrementsPlayerCount(t *testing.T) {
 		SceneId:  sceneId,
 	})
 
+	// 持有节点已退出存盘并写出当前代的断线释放标记(A1′):LeaveScene 删 location 之前要求这枚证据
+	// (docs/design/location-release-binding.md §3.2)。首次落点铸的是 1。
+	mr.Set(ownerepoch.HandoffKey(1001), "1:1")
+
 	// Leave.
 	leaveLogic := NewLeaveSceneLogic(ctx, sc)
-	leaveLogic.LeaveScene(&scene_manager.LeaveSceneRequest{
+	_, leaveErr := leaveLogic.LeaveScene(&scene_manager.LeaveSceneRequest{
 		PlayerId: 1001,
 		SceneId:  sceneId,
 	})
+	require.NoError(t, leaveErr)
 
 	countKey := fmt.Sprintf(InstancePlayerCountKey, sceneId)
 	val, _ := sc.Redis.Get(countKey)

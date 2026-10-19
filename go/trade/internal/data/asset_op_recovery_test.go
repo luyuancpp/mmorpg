@@ -368,7 +368,7 @@ func TestClaimReadsBackCreatedAndLastSendMs(t *testing.T) {
 func TestRescheduleBindsNotLocal(t *testing.T) {
 	for _, local := range []bool{true, false} {
 		t.Run(fmt.Sprintf("local=%v", local), func(t *testing.T) {
-			s := &recovScript{affected: 1}
+			s := &recovScript{affected: 1, rowsFor: lockRowsFor(true)}
 			repo := s.repo(t)
 			op := assetop.Op{OpID: 5, LeaseToken: 9}
 			if err := repo.Reschedule(context.Background(), op, 60_000, assetop.Result{Local: local}, 1_234); err != nil {
@@ -392,6 +392,113 @@ func TestRescheduleBindsNotLocal(t *testing.T) {
 			}
 			if got := argInt(t, args[6]); got != 1_234 {
 				t.Errorf("推进到的时刻 = %d, want nowMs 1234", got)
+			}
+		})
+	}
+}
+
+// TestRescheduleAndPoisonLockRowFirst:重排与毒行推迟都改 idx_0 的 next_attempt_ms,必须是
+// BEGIN → 主键点锁 → 带复核的点改 → COMMIT(与终结同形,见 asset_op_repo.go"op 行的写者:先主键点锁再 CAS")。
+// 自动提交在 TiDB 上会与终结各持一半互等、检测不到(2026-10-18 真 TiDB 实测,事故文档 §9.7);改回自动提交这里会红。
+// 重排落空(点锁读不到行 / CAS 0 行)回 ErrLeaseLost 并回滚。
+func TestRescheduleAndPoisonLockRowFirst(t *testing.T) {
+	op := assetop.Op{OpID: 5, LeaseToken: 9}
+
+	t.Run("重排提交", func(t *testing.T) {
+		s := &recovScript{affected: 1, rowsFor: lockRowsFor(true)}
+		if err := s.repo(t).Reschedule(context.Background(), op, 60_000, assetop.Result{}, 1_234); err != nil {
+			t.Fatalf("Reschedule: %v", err)
+		}
+		want := []string{"BEGIN", collapseSpaces(sqlLockAssetOp), collapseSpaces(sqlRescheduleAssetOp), "COMMIT"}
+		if got := callSQLs(s.recordedCalls()); !reflect.DeepEqual(got, want) {
+			t.Fatalf("重排应是 BEGIN → 主键点锁 → CAS → COMMIT,录到 %+v", got)
+		}
+	})
+	t.Run("重排行已不存在", func(t *testing.T) {
+		s := &recovScript{affected: 1, rowsFor: lockRowsFor(false)}
+		err := s.repo(t).Reschedule(context.Background(), op, 60_000, assetop.Result{}, 1_234)
+		if !errors.Is(err, assetop.ErrLeaseLost) {
+			t.Fatalf("点锁读不到行应回 ErrLeaseLost,得到 %v", err)
+		}
+		want := []string{"BEGIN", collapseSpaces(sqlLockAssetOp), "ROLLBACK"}
+		if got := callSQLs(s.recordedCalls()); !reflect.DeepEqual(got, want) {
+			t.Fatalf("读不到行应不发 CAS、回滚,录到 %+v", got)
+		}
+	})
+	t.Run("重排 CAS 落空", func(t *testing.T) {
+		s := &recovScript{affected: 0, rowsFor: lockRowsFor(true)}
+		err := s.repo(t).Reschedule(context.Background(), op, 60_000, assetop.Result{}, 1_234)
+		if !errors.Is(err, assetop.ErrLeaseLost) {
+			t.Fatalf("CAS 0 行应回 ErrLeaseLost,得到 %v", err)
+		}
+		want := []string{"BEGIN", collapseSpaces(sqlLockAssetOp), collapseSpaces(sqlRescheduleAssetOp), "ROLLBACK"}
+		if got := callSQLs(s.recordedCalls()); !reflect.DeepEqual(got, want) {
+			t.Fatalf("CAS 落空应回滚且不重跑(ErrLeaseLost 不可重试),录到 %+v", got)
+		}
+	})
+	t.Run("毒行推迟", func(t *testing.T) {
+		s := &recovScript{affected: 1, rowsFor: lockRowsFor(true)}
+		s.repo(t).markPoison(context.Background(), op.OpID, op.LeaseToken, 2_000, 3_602_000)
+		want := []string{"BEGIN", collapseSpaces(sqlLockAssetOp), collapseSpaces(sqlPoisonAssetOp), "COMMIT"}
+		if got := callSQLs(s.recordedCalls()); !reflect.DeepEqual(got, want) {
+			t.Fatalf("毒行推迟应是 BEGIN → 主键点锁 → CAS → COMMIT,录到 %+v", got)
+		}
+	})
+}
+
+// TestCommerceOpWritesLockEachRowByPrimaryKey:合同名下 op 行的锁定写必须是「候选普通读 → 按 op_id 升序逐行
+// 主键点锁 → 主键点改」,不能退回 `UPDATE … WHERE ref_kind=2 AND ref_id=?`(TiDB 上与终结反序成环,事故文档 §9.7)。
+// 点锁读不到的行跳过。
+func TestCommerceOpWritesLockEachRowByPrimaryKey(t *testing.T) {
+	rowsFor := func(query string, args []driver.Value) ([]string, [][]driver.Value) {
+		switch query {
+		case collapseSpaces(sqlListOpIDsByCommerce):
+			return []string{"op_id"}, [][]driver.Value{{int64(3)}, {int64(7)}, {int64(9)}}
+		case collapseSpaces(sqlLockAssetOp):
+			if argInt(t, args[0]) == 7 { // 7 号已被清理
+				return nil, nil
+			}
+			return []string{"op_id"}, [][]driver.Value{{args[0]}}
+		}
+		return nil, nil
+	}
+	for name, tc := range map[string]struct {
+		call func(*AssetOpRepo, *sql.Tx) error
+		stmt string
+	}{
+		"取消提前截止": {func(r *AssetOpRepo, tx *sql.Tx) error {
+			return r.ExpireCommerceEscrowDebitsTx(context.Background(), tx, 42, 5_000)
+		}, sqlExpireEscrowDebitOp},
+		"结案标记消费": {func(r *AssetOpRepo, tx *sql.Tx) error {
+			return r.MarkCommerceOpsConsumedTx(context.Background(), tx, 42)
+		}, sqlConsumeCommerceOp},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := &recovScript{affected: 1, rowsFor: rowsFor}
+			repo := s.repo(t)
+			tx, err := repo.db.BeginTx(context.Background(), nil)
+			if err != nil {
+				t.Fatalf("BeginTx: %v", err)
+			}
+			if err := tc.call(repo, tx); err != nil {
+				t.Fatalf("call: %v", err)
+			}
+			if err := tx.Commit(); err != nil {
+				t.Fatalf("Commit: %v", err)
+			}
+			lock, upd := collapseSpaces(sqlLockAssetOp), collapseSpaces(tc.stmt)
+			want := []string{"BEGIN", collapseSpaces(sqlListOpIDsByCommerce), lock, upd, lock, lock, upd, "COMMIT"}
+			calls := s.recordedCalls()
+			if got := callSQLs(calls); !reflect.DeepEqual(got, want) {
+				t.Fatalf("应是 候选读 → 3 点锁 → 3 点改 → 7 点锁(无行,跳过)→ 9 点锁 → 9 点改,录到 %+v", got)
+			}
+			if got := argInt(t, calls[3].args[len(calls[3].args)-1]); got != 3 {
+				t.Errorf("第一条点改的 op_id = %d, want 3", got)
+			}
+			for _, c := range calls {
+				if strings.Contains(c.sql, "ref_id") && strings.HasPrefix(c.sql, "UPDATE") {
+					t.Fatalf("不许按 ref 批量 UPDATE:%s", c.sql)
+				}
 			}
 		})
 	}

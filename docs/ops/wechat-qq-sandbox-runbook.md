@@ -1,6 +1,6 @@
 # WeChat / QQ Sandbox 接入清单 (todo #223 / U)
 
-**Date:** 2026-05-10
+**Date:** 2026-05-10(2026-10-18 按上线前缺口修复订正 §B / §C / §D.4 / §E / §G,订正说明见文末)
 **目的:** 让接入第三方 OAuth 的人 30 分钟内完成"申请 sandbox AppId → 配置 login.yaml → 跑通端到端"全流程,不需要再翻散落的代码。
 **前置:** [auth-provider-framework.md](../design/auth-provider-framework.md), [third-party-login-end-to-end-design.md](../design/third-party-login-end-to-end-design.md), [release-checklist.md](./release-checklist.md)
 
@@ -17,9 +17,9 @@
 | AppId | 控制台 → 管理中心 → 移动应用 / 网站应用 → 创建后得到 `wx1234567890abcdef` 形态 |
 | AppSecret | 同页面"查看"按钮(只显示一次,丢了得重置) |
 | OAuth 域名白名单 | 必须把 staging gateway 的 host 加进"授权回调域";本地测试用 `127.0.0.1:8081` 不行,**用 ngrok / Cloudflare Tunnel** 套一层 https |
-| UnionId | 在 Open Platform(不是公众平台)绑同一主体下的多个 App 后才会下发,**这是我们 `wx_<unionid>` 账号映射的依据** |
+| UnionId | 在 Open Platform(不是公众平台)绑同一主体下的多个 App 后才会下发,**这是我们 `wx_<unionid>` 账号映射的依据**;login 缺省 `RequireUnionId: true`,拿不到就拒绝登录 |
 
-**我们用到的接口**(`go/login/internal/logic/pkg/auth/providers.go:114`):
+**我们用到的接口**(`go/login/internal/logic/pkg/auth/providers.go` 的 `WeChatProvider.Validate`):
 ```
 GET https://api.weixin.qq.com/sns/oauth2/access_token
     ?appid=<AppId>&secret=<AppSecret>&code=<from-SDK>&grant_type=authorization_code
@@ -35,10 +35,11 @@ GET https://api.weixin.qq.com/sns/oauth2/access_token
 | 字段 | 怎么拿 |
 |---|---|
 | AppId | "开发者中心 → 应用列表"得到 `10xxxxxxxx` 数字 |
-| AppKey | 同页(我们当前**没用**到 AppKey;客户端 SDK 直接拿 access_token) |
+| AppKey | 同页(我们当前**没用**到 AppKey;客户端 SDK 直接拿 access_token,login 配置里也不用写) |
+| UnionId 权限 | 需在 QQ 互联申请 unionid 权限;没有时 `/oauth2.0/me` 不返回 unionid,login 缺省拒绝登录(见 §D.4) |
 | 回调域 | 同 WeChat,把 staging gateway 域名加白 |
 
-**我们用到的接口**(`providers.go:185`):
+**我们用到的接口**(`providers.go` 的 `QQProvider.Validate`;`unionid=1` 由 `RequestUnionId` 控制,缺省带):
 ```
 GET https://graph.qq.com/oauth2.0/me?access_token=<from-SDK>&unionid=1&fmt=json
 返回(JSONP 包裹时也能解):
@@ -51,40 +52,46 @@ GET https://graph.qq.com/oauth2.0/me?access_token=<from-SDK>&unionid=1&fmt=json
 
 ## B. 把凭证灌进 login.yaml
 
-`go/login/etc/login.yaml` 已有占位段(注释),取消注释、替换 env 变量:
+**login 不展开 `${VAR}`**(`conf.MustLoad` 没带 `conf.UseEnv()`,刻意不加:它会对整份 yaml 做 `os.ExpandEnv`,
+Redis 口令等含 `$` 的值会被静默改写)。旧版本文写的 `AppSecret: "${WECHAT_APP_SECRET}"` 会把这串字面量当成密钥;
+现在任何字段里出现未展开的 `${...}`,login 都在启动期拒绝(`go/login/internal/config/auth_providers.go`)。
+
+正确写法:配置里只写**环境变量名**,密钥由 K8s Secret 注入该环境变量。
 
 ```yaml
 AuthProviders:
-  SaToken:
-    TokenName: satoken
-    LoginType: login
-    Redis:
-      Host: 127.0.0.1:6379
-      Password: ""
-      DB: 0
-      DefaultTTL: 24h
-      DialTimeout: 3s
-      ReadTimeout: 3s
-      WriteTimeout: 3s
-
-  # 接入后取消注释。staging 用 sandbox 凭证,prod 用正式凭证。
   WeChat:
-    AppId: "${WECHAT_APP_ID}"           # K8s Secret 注入,不要硬编码
-    AppSecret: "${WECHAT_APP_SECRET}"
-
+    AppId: "wx0123456789abcdef"            # 公开值,直接写
+    AppSecretEnv: "LOGIN_WECHAT_APP_SECRET" # 环境变量名;缺失 / 为空 / 首尾带空白 / 占位串 → 拒绝启动
+    # RequireUnionId: true                 # 缺省 true:没有 unionid 就拒绝登录,不回落 openid
   QQ:
-    AppId: "${QQ_APP_ID}"
-    AppKey: "${QQ_APP_KEY}"             # 当前 provider 没用,留 placeholder
+    AppId: "101234567"                     # 必须等于 /oauth2.0/me 返回的 client_id
+    # RequestUnionId: true                 # 缺省 true:请求时带 unionid=1
+    # RequireUnionId: true                 # 缺省 true;RequestUnionId=false 时必须同时写 false
 ```
 
-> 注入方式:K8s `Secret` → `envFrom` → go-zero `Config` 自动展开 `${VAR}`(go-zero 1.10 默认支持)。本地测试 `export WECHAT_APP_ID=...; export WECHAT_APP_SECRET=...; ./login.exe -f login.yaml`。
+| 模式 | 内联 `AppSecret` | `Endpoint` |
+|---|---|---|
+| `Mode: dev` / `test` | 放行并打 SECURITY WARNING(仅本地沙箱) | `http://` 与 `https://` 都可 |
+| 其它(含不写,缺省 pro) | **拒绝启动**,只认 `AppSecretEnv` | 只接受 `https://`,不带用户信息 / 查询串 / 片段 |
+
+K8s:`tools/scripts/k8s_deploy.ps1` 传 `-LoginWeChatAppId` / `-LoginQQAppId` 渲染上面这段,微信密钥从部署机环境变量
+`MMORPG_LOGIN_WECHAT_APP_SECRET` 读入 zone namespace 的 Secret `login-oauth`,经 `secretKeyRef` 注入 login 容器的
+`LOGIN_WECHAT_APP_SECRET`,不进 ConfigMap(沙箱 Endpoint 与 openid 回落开关见脚本参数注释)。
+
+本地测试(在 `go/login` 下;配置文件参数是 `-loginService`,不是 `-f`):
+
+```powershell
+$env:LOGIN_WECHAT_APP_SECRET = '<从密钥管理取,不要写进文件>'
+go run . -loginService etc/login.yaml
+```
 
 启动后日志应有:
 ```
-Auth provider registered: wechat
-Auth provider registered: qq
+Auth provider registered: wechat (require_unionid=true endpoint_override="")
+Auth provider registered: qq (request_unionid=true require_unionid=true endpoint_override="")
 ```
-没出现就是 `cfg.WeChat == nil`,检查 yaml 缩进或 env 变量。
+没出现就是 `AuthProviders.WeChat` 段没写对(缩进);配置写错时 login 直接拒绝启动,panic 信息会点名字段。
 
 ---
 
@@ -92,11 +99,11 @@ Auth provider registered: qq
 
 ### C.1 单元 / 集成层(本机就能跑)
 
-已经 OK,无需新跑(在 main 上一直绿):
+由 Codex 按交付说明执行(Claude 不跑测试,AGENTS.md §10.1):
 
 ```bash
-# go-zero 这层 mock-server e2e:
-cd go/login && go test -count=1 -run TestWeChatProvider ./internal/logic/pkg/auth/
+# go-zero 这层 mock-server e2e(provider 策略与配置门禁):
+cd go/login && go test -count=1 ./internal/logic/pkg/auth/ ./internal/config/
 
 # Java Gateway 这层 wire-format e2e:
 cd java/gateway_node && mvn -Dtest='LoginEndpointIntegrationTest' test
@@ -133,31 +140,38 @@ curl -v -X POST http://${GATEWAY_HOST}:8081/api/login \
 }
 ```
 
-**典型失败 + 排查**:
+**典型失败 + 排查**:Java 网关对 login 的 in-band 错误一律回 `code:401`,`message` 是 `upstream_err=<tip 码>`(网关不回显
+provider 的错误文本);login 以 gRPC status 失败时,只有 UNAUTHENTICATED / PERMISSION_DENIED 回 401,其余回 500。
+具体原因看 login 日志 `Auth failed: type=... tip=... err=...`。
 
 | 现象 | 原因 | 解 |
 |---|---|---|
-| `code:401 message:"wechat: empty code"` | provider 收到空 token | 客户端没填 `auth_token`,检查 SDK 集成 |
-| `code:401 message:"wechat: errcode=40029"` | code 已用过 / 失效 | 重新走 OAuth,**code 一次性 + 5 min 过期** |
-| `code:401 message:"wechat: errcode=40125"` | AppSecret 不对 | yaml 里值错了 / env 没注入 |
-| `code:500 message:"login_unavailable"` | login.rpc 没起 / 网络不通 | `gh:auth status`、`docker ps`、`netstat -an grep 50000` |
-| `code:0 但 access_token 空` | login 没注册 wechat provider | 看 login 启动日志 `Auth provider registered: wechat` 是否出现 |
+| `401 upstream_err=2000` + 日志 `wechat: empty code` | provider 收到空 token | 客户端没填 `auth_token`,检查 SDK 集成 |
+| `401 upstream_err=2000` + 日志 `wechat: errcode=40029` / `40163` | code 已用过 / 失效(玩家侧,不算故障) | 重新走 OAuth,**code 一次性 + 5 min 过期** |
+| `401 upstream_err=2035` + 日志 `errcode=40125` / `40013` / `40164` | AppSecret / AppId 不对,或出口 IP 不在白名单(故障码,in-band 告警) | 核对 Secret 与开放平台白名单 |
+| `401 upstream_err=2035` + 日志 `unionid missing` | 应用没绑开放平台主体 / 没有 unionid 权限 | 见 §D.4 |
+| `401 upstream_err=2035` + 日志 `http status` / `http error` / `bad json` | 渠道不可达、非 2xx、应答不可解析 | 查出口网络与渠道状态 |
+| `401 upstream_err=2036` | token 签发失败(写 Redis 失败;第三方 code 已被消费) | 查 login 的 Redis;客户端需重新走 OAuth |
+| `401 upstream_err=2021` / `2022` | 账号目录读 Redis 失败 / 记录损坏 | 查 login 的 Redis 与 `account:<account>` 键 |
+| `500 login_unavailable` | login.rpc 没起 / 网络不通 / 超时 | `docker ps`、`netstat -an`(找 50000 端口) |
+| login 起不来,panic 点名 `AuthProviders.*` | 配置门禁拒绝(未展开的 `${...}`、生产模式内联密钥、http Endpoint 等) | 按 §B 改配置 |
+
+> 2035 / 2036 是 `kLoginAuthProviderUnavailable` / `kLoginTokenIssueFailed`(2026-10-18 新增,数值以导表结果为准,
+> 见 `data/tip/Tip.xlsx` 与 `generated/code/proto/tip/login_error_tip.proto`)。旧版本文的「`code:0` 但 access_token 空」
+> 已不会出现:HTTP 路径签发失败现在回 2036。网关 HTTP 业务码对 in-band 故障仍是 401(客户端按 tip 码区分文案),
+> 这一点是已知残留,见 `docs/design/third-party-login-end-to-end-design.md` §三。
 
 ### C.3 验证账号映射
 
-第一次成功后:
+第一次成功后,账号角色目录在 login 的 Redis 里(键前缀 `account:`,`constants.GetAccountDataKey`;**不落库、不设 TTL**,
+旧版本文的 `account_data:` 前缀与 MySQL `UserAccounts` 查询都不对):
 
 ```bash
-# Redis 应有
-docker exec redis redis-cli KEYS 'account_data:wx_*'
-# 应该看到 account_data:wx_<unionid> 或 account_data:wx_<openid>
-
-# UserAccounts 应有(MySQL)
-docker exec mysql mysql -u root -p<pw> mmorpg \
-  -e "SELECT account, account_type FROM UserAccounts WHERE account LIKE 'wx_%' LIMIT 5;"
+docker exec redis redis-cli --scan --pattern 'account:wx_*'
+# 应该看到 account:wx_<unionid>(RequireUnionId=false 时才可能出现 account:wx_<openid>)
 ```
 
-`account` 字段以 `wx_` / `qq_` 前缀开头 = provider 框架按设计工作。
+`account` 以 `wx_` / `qq_` 前缀开头 = provider 框架按设计工作。
 
 ### C.4 第二次同 unionid 登录(账号复用)
 
@@ -166,7 +180,8 @@ docker exec mysql mysql -u root -p<pw> mmorpg \
 - 返回**同一个 player_id**(玩家继承上次进度)
 - access_token 是新的(每次 issue 新 token)
 
-如果返回的 player_id 不一样,说明 unionid 没取到、退而求其次用 openid → openid 跨 App 不一致 → 看 §A.1 的 UnionId 行,绑同一主体下多个 App。
+缺省 `RequireUnionId: true` 时拿不到 unionid 会直接失败(§C.2 的 2035),不会再出现「静默用 openid 建出第二个账号」;
+只有显式写了 `RequireUnionId: false` 才可能因为回落 openid 而返回不同 player_id → 看 §A.1 的 UnionId 行,绑同一主体下多个 App。
 
 ---
 
@@ -198,20 +213,26 @@ git diff --cached | grep -E '(AppSecret|AppKey)\s*[:=]\s*["\x27][^"$\x27]' && {
 
 ### D.4 unionid 没拿到
 
-控制台没把当前 App 加到"主体"分组 → 微信 API 不返回 unionid,只返回 openid。我们 provider 会 fallback 到 `wx_<openid>`,但**openid 跨 App 不一致**——同一玩家在两个 App 里会变成两个账号,无法迁移。
+控制台没把当前 App 加到"主体"分组 → 微信 API 不返回 unionid,只返回 openid。**openid 跨 App 不一致**——回落到 `wx_<openid>`
+会让同一玩家在两个 App 里变成两个账号,无法迁移。所以 2026-10-18 起 login 缺省 `RequireUnionId: true`:拿不到 unionid 就拒绝登录、
+回故障码 2035(in-band 告警),**不再静默回落**。QQ 同理(没有 unionid 权限时 `/oauth2.0/me` 不返回 unionid)。
 
 **解法**:Open Platform 控制台 → 主体管理 → 把所有 App 加进同一主体 → 等 ~10 min 生效后重新走 OAuth → 验证返回里 `unionid` 非空。
+确认永远只有一个 App、永不接开放平台时,才可以显式写 `RequireUnionId: false`(QQ 没有 unionid 权限时写
+`RequestUnionId: false` + `RequireUnionId: false`);login 启动时会为此打 SECURITY WARNING。
 
 ---
 
 ## E. 上 prod 前的 checklist
 
-- [ ] `WECHAT_APP_SECRET` / `QQ_APP_KEY` 在 K8s Secret 里(不在 yaml literal)
+- [ ] 微信 AppSecret 在 K8s Secret 里,login 配置只写 `AppSecretEnv`(生产模式内联值会拒绝启动);QQ 不需要密钥
+- [ ] login 运行在非 dev 模式,`Endpoint` 为空或 `https://`
+- [ ] `RequireUnionId` 保持缺省 true,并已确认 sandbox 返回里 unionid 非空(§D.4)
 - [ ] OAuth 回调域已加 prod gateway 顶级域(staging 域不要复用)
-- [ ] login 启动日志确认 `Auth provider registered: wechat / qq`
+- [ ] login 启动日志确认 `Auth provider registered: wechat / qq`,且 `require_unionid=true`
 - [ ] sandbox 至少跑通过一次 §C.2 / §C.3(否则就是上 prod 才发现集成不通)
-- [ ] 监控有 `wechat: errcode=*` 计数(沿用 [grafana-login-path-deprecation.json](./grafana-login-path-deprecation.json) 的 panel 模式扩展)
-- [ ] 流量按 zone 灰度:先开放给一两个 zone,观察 24h `account_data:wx_*` 增长是否合理(没大量重复账号)
+- [ ] 告警接上 `rpc_inband_fault` 里的 2035(渠道故障)与 2036(签发失败):serverbase 按 Tip.xlsx 的 fault 列定性
+- [ ] 流量按 zone 灰度:先开放给一两个 zone,观察 24h `account:wx_*` 增长是否合理(没大量重复账号)
 
 ---
 
@@ -219,7 +240,7 @@ git diff --cached | grep -E '(AppSecret|AppKey)\s*[:=]\s*["\x27][^"$\x27]' && {
 
 完成度 ⚠️ — 本机 dev 没有真 sandbox 凭证,所以 §C.2 / §C.3 由有凭证的同事跑。我做完的部分:
 
-- ✅ §B 配置示例已注释在 `go/login/etc/login.yaml` 里
+- ✅ §B 配置示例已注释在 `go/login/etc/login.yaml` 里(2026-10-18 改为 `AppSecretEnv` 写法)
 - ✅ §C.1 mock-server / wire-format 单元测试在 main(LoginEndpointIntegrationTest 7/7 含 wechat / qq)
 - ✅ §D 坑位踩过的对照(`providers_test.go` 验证过 errcode 解析)
 - ✅ **`Endpoint` 配置字段** — `WeChatProvider` / `QQProvider` 都支持指向自建 sandbox(详见 §G)
@@ -253,24 +274,27 @@ mock 暴露的 endpoint(响应字节级对齐真 API):
 
 ### G.2 让 login 走 mock 而非真 API
 
-`go/login/etc/login.yaml`:
+`go/login/etc/login.yaml`(必须 `Mode: dev`:内联 AppSecret 与 `http://` Endpoint 只在 dev / test 放行):
 
 ```yaml
 AuthProviders:
   WeChat:
     AppId: "wx_sandbox_test"
-    AppSecret: "any_string_ok_here"      # mock 不校验
+    AppSecret: "any_string_ok_here"      # mock 不校验;仅 Mode=dev 允许内联
     Endpoint: "http://127.0.0.1:18090"   # ← 关键:加这一行就走 mock
   QQ:
-    AppId: "100000001"
-    AppKey: "ignored"
+    AppId: "100000001"                   # 必须等于 mock 固定返回的 client_id(sandbox_mock 的 sandboxQQClientID)
     Endpoint: "http://127.0.0.1:18090"   # 同一个 mock 服务两条 path 都收
 ```
 
+`deploy/login-stack.linux/login.yaml` 是同一套写法(Endpoint 指向 `http://sandbox-mock:18090`);它的 QQ AppId 以前写成
+`qq_sandbox_appid`,与 mock 的 client_id 不一致,QQ 沙箱登录每次都是 client_id mismatch,2026-10-18 已改为 `100000001`
+并由 `go/login/cmd/sandbox_mock/main_test.go` 钉住。
+
 重启 `login`,期望日志:
 ```
-Auth provider registered: wechat (endpoint override: http://127.0.0.1:18090)
-Auth provider registered: qq (endpoint override: http://127.0.0.1:18090)
+Auth provider registered: wechat (require_unionid=true endpoint_override="http://127.0.0.1:18090")
+Auth provider registered: qq (request_unionid=true require_unionid=true endpoint_override="http://127.0.0.1:18090")
 ```
 
 ### G.3 端到端 curl
@@ -285,8 +309,8 @@ curl -s -X POST http://127.0.0.1:8081/api/login \
 
 期望返回 `code:0` + access/refresh token。检查 Redis:
 ```bash
-docker exec redis redis-cli KEYS 'account_data:wx_unionid_*'
-# 应看到 account_data:wx_unionid_124806e0b96c
+docker exec redis redis-cli --scan --pattern 'account:wx_unionid_*'
+# 应看到 account:wx_unionid_<12 位十六进制>
 ```
 
 **第二次同 code(账号复用)** — 期望同一 player_id:
@@ -296,37 +320,38 @@ curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/js
 # 返回里的 player_id 应该和上一次一致
 ```
 
-**WeChat code 不以 U 开头(无 unionid)— 期望账号回落 openid**:
+**WeChat code 不以 U 开头(无 unionid)— 缺省期望拒绝**(`RequireUnionId: true`):
 ```bash
 curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/json' \
   -d '{"zone_id":1,"auth_type":"wechat","auth_token":"plain_code","device_id":"sandbox-1"}'
-docker exec redis redis-cli KEYS 'account_data:wx_openid_*'
+# 期望: {"code":401,"message":"upstream_err=2035"},login 日志 "unionid missing",Redis 里没有新的 account:wx_openid_*
 ```
+要验证回落路径,先在 WeChat 段显式加 `RequireUnionId: false` 再重启 login,同一请求才会建出 `account:wx_openid_*`。
 
 **WeChat code 过期**:
 ```bash
 curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/json' \
   -d '{"zone_id":1,"auth_type":"wechat","auth_token":"EXPIRED","device_id":"sandbox-1"}'
-# 期望: {"code":401,"message":"wechat: errcode=40029 msg=invalid code"}
+# 期望: {"code":401,"message":"upstream_err=2000"},login 日志 "wechat: errcode=40029"
 ```
 
 **QQ 端到端**:
 ```bash
 curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/json' \
   -d '{"zone_id":1,"auth_type":"qq","auth_token":"qq_token_1","device_id":"sandbox-1"}'
-# 期望: code:0,Redis 里有 account_data:qq_unionid_*
+# 期望: code:0,Redis 里有 account:qq_qq_unionid_*(账号 = "qq_" + mock 返回的 "qq_unionid_<hash>")
 
 curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/json' \
   -d '{"zone_id":1,"auth_type":"qq","auth_token":"INVALID","device_id":"sandbox-1"}'
-# 期望: code:401 message:"qq: error=100007 ..."
+# 期望: {"code":401,"message":"upstream_err=2000"},login 日志 "qq: error=100007"
 ```
 
 ### G.4 从 mock 切回真 API
 
 只需:
-1. 拿到真 `AppId` / `AppSecret`,放进 K8s Secret(或 env var)
+1. 拿到真 `AppId` / `AppSecret`:AppId 写进配置,AppSecret 放进 K8s Secret,配置改写 `AppSecretEnv`(删掉内联 `AppSecret`)
 2. **删掉 `Endpoint:` 这行**(或留空字符串)— 代码会自动回 `https://api.weixin.qq.com` / `https://graph.qq.com`
-3. 重启 login
+3. 去掉 `Mode: dev`(生产模式),重启 login
 
 整个 chain 的 wire format 完全没变,所以 mock 验过的同一组 curl 命令直接对着真 API 也能跑通。
 
@@ -344,3 +369,15 @@ curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/js
 - 代码: `go/login/internal/logic/pkg/auth/providers.go`(WeChatProvider / QQProvider)
 - 代码: `go/login/internal/svc/auth_init.go`(provider 注册)
 - 代码: `java/gateway_node/.../grpc/LoginRpcClient.java`(auth_type/auth_token wire 透传)
+
+---
+
+## 2026-10-18 订正说明
+
+本次随「第三方登录上线前缺口」修复订正(代码见 `go/login/internal/config/auth_providers.go`、`go/login/internal/logic/pkg/auth/providers.go`):
+
+- §B 原写「go-zero 1.10 默认展开 `${VAR}`」与「`./login.exe -f login.yaml`」都不对:本仓 go-zero 只有 `conf.UseEnv()` 才展开,
+  login 没带;配置参数是 `-loginService`。改为 `AppSecretEnv` 写法,`${...}` 字面量启动期拒绝。
+- §C.3 账号目录键前缀是 `account:`,不是 `account_data:`;账号目录只在 Redis,没有 MySQL `UserAccounts` 表可查。
+- §C.2 / §G.3 的失败返回按网关实际行为改为 `upstream_err=<tip 码>`;渠道故障与签发失败有了独立故障码 2035 / 2036。
+- §D.4 / §G.3:拿不到 unionid 缺省拒绝,不再回落 openid。

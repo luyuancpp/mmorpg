@@ -191,7 +191,7 @@ TEST(SceneManagerSelector, NoReadyFallsBackToIdleAndConnectingInsteadOfFailing)
 TEST(SceneManagerSelector, AllChannelsFailedStillPicksOneDeterministically)
 {
 	// 全部实例都在 TRANSIENT_FAILURE / SHUTDOWN:不返回 null,落到兜底级照样挑一个(与旧实现"总能挑到"一致)。
-	// 那次调用以 UNAVAILABLE 进失败处理器 / 由看门狗收尾;返回 null 反而会让跨 zone 交接在 SET 之后销毁 + 踢线。
+	// 那次调用以 UNAVAILABLE 完成每次调用回调 / 由看门狗收尾;返回 null 反而会让跨 zone 交接在 SET 之后销毁 + 踢线。
 	const std::vector<Candidate> candidates{
 		{Instance(1), ConnectivityState::kTransientFailure},
 		{Instance(2), ConnectivityState::kShutdown},
@@ -257,7 +257,7 @@ TEST(SceneManagerSelector, ChannellessEntityIsPickedOnlyWhenNothingElseIsRegiste
 
 TEST(SceneManagerSelector, FailedChannelIsPreferredOverChannellessEntity)
 {
-	// 兜底级内再分两级:挂了通道的坏实例(那次调用以 UNAVAILABLE 失败、走失败处理器,通道在后台按退避重连,对端
+	// 兜底级内再分两级:挂了通道的坏实例(那次调用以 UNAVAILABLE 完成每次调用回调,通道在后台按退避重连,对端
 	// 回来就能用)排在没挂通道的实体(发送本地失败、永不恢复)之前。若把"没通道"记成 SHUTDOWN 与坏实例同级取模,
 	// 这里会有约一半玩家挑到 1 / 4。
 	const std::vector<Candidate> candidates{

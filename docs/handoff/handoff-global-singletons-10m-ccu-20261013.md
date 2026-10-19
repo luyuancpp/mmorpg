@@ -5,6 +5,7 @@
 > - **本文的后续工作已全部分给其他工作线,不要再按本文 §0 重新开一条**:
 >   - §3 的 P0 → [handoff-global-singletons-p0-20261015.md](handoff-global-singletons-p0-20261015.md)(P0-D 并入 [grpc-muduo-transport.md](../design/grpc-muduo-transport.md) §10.2 第 2 批);
 >   - 会话对账按 gate 建索引、删 `dirty_keys_set`、task:result 分频道、gate nofile、scene_manager 只读本 zone → [handoff-launch-readiness-and-d1-20261013.md](handoff-launch-readiness-and-d1-20261013.md) 与 [handoff-launch-readiness-decisions-20261015.md](handoff-launch-readiness-decisions-20261015.md);
+>   - (2026-10-18 状态,B0-1)会话对账按 gate 建索引已落码,未编译、未测试。与本文 §4.3 / §5 建议的差异有三点:leader 是会话 Redis 域内全服一个(Redis 锁),不是每 zone 一个;仍是 60s 轮询 etcd、连续两拍缺席去抖,没有改成监听 gate 键的 DELETE 事件(取舍见 docs/design/player-locator-gate-session-index.md §4.1);防「leader 卡死而 is_leader 之和仍为 1」靠 Stalled —— last_success 启动预置 0,Stalled 对全体副本取 max、不按 is_leader 过滤,并带 absent(§9)。本文指出的 no-single-node §1 单点盘点漏登对账,已在该文件 §1 表后追加 2026-10-18 增补注。
 >   - WAITAOF 的 go/db 部分、db 消费组按 zone、L-04、clientFoundRows、快照保留期、Kafka retention.bytes → [godb-pipeline-handoff-20261013.md](godb-pipeline-handoff-20261013.md) 与 `godb-pipeline-impl-20261015/`。注意 DBTask 9 号字段 `reply_instance` 与 `save_seq` 撞号,按 godb 交接 §5 第 13 项定;
 >   - `trade_asset_op` 号段 tag 已补进四份清单。
 > - **截至 10-16 没有找到归属的小项**(本文 §3 / §4):refresh token 每账号最多 32 枚不作废;Java gateway 单 zone 准入容量默认 5000;scene_manager `reassignSceneNode` 无 CAS(`go/scene_manager/internal/logic/world_init.go:528`);match `migrateLegacyQueues` 仍在;每次存盘一条 LOG_INFO。要做时另开任务,先核对当时代码。
@@ -80,7 +81,7 @@
 | P0 | Redis 高可用会丢已确认的存盘 | Kafka ack 之后,重试队列是这笔存盘的唯一副本(`key_ordered_consumer.go:2114-2124,2196-2198`);redis-ha 是异步复制(`redis-ha.yaml:24-25`) | 切主时已 ack 的存盘可能静默丢失(推断) | 重试和死信入队、owner_epoch 铸造、`account:{a}` 在**同一连接**上补 WAITAOF(参考 `go/data_service/internal/routing/route_publish.go` 的写法);确认不足时不 ack | 接 redis-ha 之前必须做 |
 | P0 | go/db 连接类错误消耗重试预算,3 次后进**没有消费者的死信** | `placement_route.go:357-366`;`key_ordered_consumer.go:932-933,1135-1139` | MySQL 切主、TiDB 滚动、连接数超限都会让存盘静默不落库 | 连接类错误不耗预算、延后重试;给死信长度加告警(L-04) | — |
 | P0 | 共享 Redis 没设 `maxclients`(默认 10000) | `redis.yaml:95-97` 只带 `--appendonly` 和 `--requirepass` | 估每 zone 100~250 条连接,约 40~100 个 zone 就撞线,早于命令量上限(推断) | 显式设 maxclients,按各客户端池上限算总账;由 Codex 用 `CLIENT LIST` 实测现有连接数 | 终审新增 |
-| P1 | gate 没设 RLIMIT_NOFILE,全仓也 grep 不到 setrlimit | `gate-connection-admission-control.md:143`;kafka.yaml:157-176 在启动脚本里手动抬高了,gate 没有 | 容器默认软限取决于运行时(较新的 containerd / Docker 是 1024,旧版是 1048576);若是 1024,gate 台数要乘 20 | 先实测 `/proc/<pid>/limits`;再在镜像或 Pod 设 `ulimit -n ≥ 65536` | 有条件 |
+| P1 | gate 没设 RLIMIT_NOFILE,全仓也 grep 不到 setrlimit | `gate-connection-admission-control.md:143`;kafka.yaml:157-176 在启动脚本里手动抬高了,gate 没有 | 容器默认软限取决于运行时(较新的 containerd / Docker 是 1024,旧版是 1048576);若是 1024,gate 台数要乘 20 | 先实测 `/proc/<pid>/limits`;再在镜像或 Pod 设 `ulimit -n ≥ 65536`(**2026-10-18 更正**:不要在镜像或启动壳里加 ulimit,那会成为第二份实现。已改为 gate / scene / battle 在 `Node::Initialize` 启动时自抬软限到 min(硬限, 1048576),抬完仍低于「客户端面准入上限 + 4096」缺省拒启,运维豁免为 `NODE_OPEN_FILE_LIMIT_MODE=warn`;硬限由节点容器运行时决定,读法、上线前置与回退见 `docs/ops/gate-kernel-tuning-runbook.md` §3.1。已落码,未编译、未验证) | 有条件 |
 | P1 | Java gateway 的 zone 准入容量默认 5000 | `java/gateway_node/src/main/resources/schema.sql:8`;`ZoneConfig.java:24` | 与「单 zone 10 万」的口径冲突;AssignGate 是否按它硬拒未逐行核实 | 开服前改配置并核实拒绝路径 | 终审新增 |
 | P1 | 共享 Redis 的 AOF 放在 8Gi PVC 上 | `redis.yaml:136-155` | Redis 7 多段 AOF 重写期间磁盘峰值约为数据集的 3 倍,8Gi 只撑约 2.7GB,约 13 万累计玩家(按 21KB/人) | 按数据集 × 3 预留磁盘,并显式设 maxmemory | 终审新增 |
 | P1 | Kafka `retention.bytes` 每分区 512MiB 先于 `retention.ms` 生效(default 档和 prod-like 档都是) | `k8s_deploy.ps1:1186,1199`;`go/shared/kafkautil/topic_init.go:115-126` 只覆盖 retention.ms | 目标规模下 db_task 每 zone 只能缓冲约 24 分钟,审计快照约 19 秒(声明 30 天) | db_task 和审计 topic 在 topic 层覆盖 retention.bytes,保证缓冲 ≥ 2h(broker 层 segment.bytes 已是 32MiB,不用改);审计以落库为准 | — |
@@ -91,7 +92,7 @@
 | P1 | refresh token 每次 HTTP 登录新签一枚,不作废旧枚,每账号最多 32 枚 | `go/login/internal/logic/pkg/token/token.go:40,104-119` | 目标规模下常驻约 0.26~1.3TB,现有容量文档没计入 | 每设备 1 枚、签发时作废旧枚,或落库只存哈希 | — |
 | P1 | `trade_asset_op` 号段 biz_tag 不在四份 bootstrap 清单里 | `go/trade/internal/svc/assetchannel.go:54`;清单 `config.go:224`、`id_segment_store.go:46`、`data_service.yaml:216`、`k8s_deploy.ps1:3539` | staging/prod(AllowAutoSeed=false)下聚宝斋上架托管 fail-closed | 补进四份清单 | `PROGRESS.md:5504` 已登记未处理 |
 | P2 | scene_manager `reassignSceneNode` 无 CAS,存在第二写者 | `world_init.go:528-543`(无条件 SET + SREM/SADD,不持 zone 锁),被 leader rebalance 与任意副本的 `initWorldScenesForZone` 共同调用(`:276-278,287,317`) | 现成的双写竞态;双 leader 时计数会双减 | 改成 Lua CAS(仅当 `scene:{id}:node == oldNode`) | — |
-| P2 | login AssignGate 每次请求都对 etcd 做 range Get,超时 30s | `go/login/internal/logic/pkg/node/watcher.go:27-37`;`servicecontext.go:292-293` 丢弃 ctx | 洪峰下 goroutine 堆积;etcd 抖动直接放大成登录延迟 | ctx 透传,超时降到 ≤3s;dispatcher 一拍只取一次候选;PickGate 改成「在最低几台里随机」 | 「list-watch 本地缓存」降为有信号再做;注意 gate 排空监视必须保持 fail-closed |
+| P2 | login AssignGate 每次请求都对 etcd 做 range Get,超时 30s | `go/login/internal/logic/pkg/node/watcher.go:27-37`;`servicecontext.go:292-293` 丢弃 ctx | 洪峰下 goroutine 堆积;etcd 抖动直接放大成登录延迟 | ctx 透传,超时降到 ≤3s;dispatcher 一拍只取一次候选;PickGate 改成「在最低几台里随机」 | 「list-watch 本地缓存」降为有信号再做;注意 gate 排空监视必须保持 fail-closed。(2026-10-18 负责人改定:list-watch 镜像加 ctx 透传的回落直读、快路径 PickGate 随机二选一已落码,未编译未测试;排空监视仍直读 etcd。见 `docs/design/gate-load-balancing-design.md`「gate 目录怎么读、怎么挑」) |
 | P2 | match `migrateLegacyQueues` 每副本每 60s 对核心做全库 SCAN | `cross-zone-matchmaking.md` §10 已写「下一版本删除」 | 白白消耗核心 CPU | 删除 | XS |
 | P2 | `dirty_keys_set`:C++ 存盘 Lua 里未声明、只写不读的全服单键 | `cpp/libs/engine/infra/storage/redis_client/redis_client.h:22,50` | 内存随累计玩家增长;集群化时 CROSSSLOT | 单独小改动删掉两行 SADD,改 `currency_test`;全部升级后用 `UNLINK`(**不要 DEL**,会阻塞) | 不要在功能改动里顺手夹带(AGENTS.md §11.2) |
 
@@ -150,7 +151,8 @@
 
 - `task:result:notify` 统一方案:
   - DBTask 加 `string reply_instance = 9;`(9 号空闲,`proto/db/db_task.proto:10-21`);
-    - **2026-10-18 更正**:字段号最终为 **10**(9 号已给 `save_seq`,godb 交接 §5 第 13 项)。第 1 批(proto、`go/shared/taskresult`、login 双订与读任务填回复目标)已落码,未编译、待 Codex 验证;go/db 按回复目标发布与计数是第 2 批。校验规则以 `go/shared/taskresult.ValidReplyInstance` 为准(与上面的正则同义)。
+    - **2026-10-18 更正**:字段号最终为 **10**(9 号已给 `save_seq`,godb 交接 §5 第 13 项)。第 1 批(proto、`go/shared/taskresult`、login 双订与读任务填回复目标)已落码,未编译、待 Codex 验证;go/db 按回复目标发布与计数是第 2 批。校验规则以 `go/shared/taskresult.ValidReplyInstance` 为准(与下一条的正则同义)。
+    - **2026-10-18 第 2 批**:go/db 侧已按下面两条落码(未编译,待 Codex 验证)。校验和频道名取自 `go/shared/taskresult`(规则与 `^[A-Za-z0-9-]{1,64}$` 等价);不合法时回落旧频道,计 `db_task_result_notify_total{target="legacy_invalid"}`;只单发。
   - go/db 按 `^[A-Za-z0-9-]{1,64}$` 校验后发 `task:result:notify:<id>`,不合法就回落旧频道并计数;**只单发,不双发**;
   - 新 login 永久同时订阅新旧两条频道;
   - C++ scene 也生产 DBTask(`player_lifecycle.cpp:3713`),pb 要重新生成并全量编译;

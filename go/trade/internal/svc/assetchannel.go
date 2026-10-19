@@ -280,6 +280,7 @@ func newAssetChannel(c config.Config, db *sql.DB, ds dspb.DataServiceClient) (*A
 //   - 关闭(缺省,HEAD 口径):离线读账本只是优化,它与自动放弃都不运行(fail-closed);长期离线玩家的行照常退避重投,
 //     玩家上线后由在线投递终结(不变量 I7)。
 //   - 打开:在线 / 离线终结都只认 SQL 证据,reconcile.New 经 Loop.CheckWiring 拒绝构造,服务拒启。
+//
 // 交易合同(commerce)的收据 ACK 也用它读 SQL 证据。trade 的 NewServiceContext 无条件拨 data_service(号段也要它),
 // 生产上走不到 nil 分支。
 func persistedLedger(ds dspb.DataServiceClient) assetop.LedgerReader {

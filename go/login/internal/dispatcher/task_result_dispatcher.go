@@ -173,7 +173,8 @@ drained:
 }
 
 // Register associates `cb` with `taskID`. The callback is invoked exactly once
-// when a notification arrives, when the registration TTL elapses, or on Stop.
+// when a notification arrives, when the registration TTL elapses, or on Stop
+// — unless the registration is withdrawn first with Cancel.
 // `ttl<=0` uses the dispatcher default.
 func (d *TaskResultDispatcher) Register(taskID string, ttl time.Duration, cb ResultCallback) {
 	if ttl <= 0 {
@@ -187,6 +188,22 @@ func (d *TaskResultDispatcher) Register(taskID string, ttl time.Duration, cb Res
 	}
 	d.pending[taskID] = pendingEntry{cb: cb, expiresAt: time.Now().Add(ttl)}
 	d.mu.Unlock()
+}
+
+// Cancel 撤销登记:删掉这些 taskID 的回调,不回调、不计数。只给「登记后任务没能发出去、调用方
+// 已自行以错误收尾」的路径用。留着这种登记只会在 TTL 到期时多做一次无用的 LPOP,并把发送失败
+// 计成 timed_out,混进「通知丢了且结果也没取到」的口径,让值班把 Kafka 故障误判成 Pub/Sub 或
+// go/db 的送达问题。
+//
+// 约束:已被 dispatch / sweep 取走的回调不受影响,照常执行一次;不存在的 taskID 忽略;Stop 之后
+// pending 为 nil,delete 是空操作。被撤销的任务若实际已发出,结果只在 Redis 里按 TTL 过期;
+// 它的通知到达时已不在回调表,实例频道上会计 late_notify。
+func (d *TaskResultDispatcher) Cancel(taskIDs ...string) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	for _, id := range taskIDs {
+		delete(d.pending, id)
+	}
 }
 
 // take atomically removes and returns the callback for taskID (or nil if none).
@@ -321,8 +338,9 @@ func (d *TaskResultDispatcher) dispatch(ctx context.Context, channel, taskID str
 	cb := d.take(taskID)
 	if cb == nil {
 		// 旧频道是全服广播:混跑期(旧版 go/db、未填回复目标的生产者)别的 login 的任务也送到
-		// 这里,查不到是常态,不计数。实例频道只投本进程发起的任务,查不到说明任务已经超时
-		// 或已被兜底取走(通知迟到),两种都可安全忽略,但值得计数。
+		// 这里,查不到是常态,不计数。实例频道只投本进程发起的任务,查不到说明通知迟到(任务已被
+		// 兜底计过 salvaged / timed_out)、重复(go/db 重投重执行后再发一次,任务早已送达)或登记
+		// 已被 Cancel,都可安全忽略,但值得计数;口径见 metrics.go。
 		if fromInstance {
 			countDelivery(deliveryLateNotify)
 		}

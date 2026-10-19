@@ -10,6 +10,7 @@
 
 #include "muduo/base/Logging.h"
 #include "gate_codec.h"
+#include "login_admission.h"
 #include "error_reporter/error_reporter.h"
 #include "node/system/grpc_call_deadline.h"
 #include "proto/common/base/message.pb.h"
@@ -17,6 +18,7 @@
 #include "proto/common/base/session.pb.h"
 #include "rpc/service_metadata/login_service_metadata.h"
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/login_error_tip.pb.h"
 #include <session/manager/session_manager.h>
 #include "session/comp/router_lane.h"
 #include "session/comp/router_lane_item.h"
@@ -52,10 +54,11 @@ struct LaneCounters
 	uint64_t incarnationMismatch{0};
 	uint64_t droppedOnClose{0};
 	uint64_t droppedOnRedirect{0};
+	uint64_t rejectedNotLoggedIn{0}; // 本连接没有成功 Login 就轮到发 CreatePlayer / EnterGame / LeaveGame(login_admission.h)
 	std::size_t maxDepthSeen{0};
 };
 
-// 全部只在 gate 唯一的 EventLoop 线程上读写(会话表同为 thread_local,client_message_processor.cpp:542-546)。
+// 全部只在 gate 唯一的 EventLoop 线程上读写(会话表同为 thread_local,client_session_handler.cpp:542-546)。
 thread_local InflightIndex<InflightCall> tlsInflight;
 thread_local CallSeq tlsLastCallSeq = kNoCallSeq;
 thread_local uint64_t tlsLastIncarnation = 0;
@@ -131,6 +134,15 @@ void Pump(SessionId sessionId, SessionInfo &session)
 			SendEnvelope(session, item->clientRequestId, item->messageId, kServiceUnavailable);
 			continue;
 		}
+		// 本连接没有成功 Login 就不发 CreatePlayer / EnterGame / LeaveGame(login_admission.h)。确定未执行,
+		// 回与 login 同一个「未登录」码,客户端照旧回登录。在发出时判、不在准入时判:连发的 Login → EnterGame 里,
+		// EnterGame 轮到发出时 Login 的回包已经由 OnRouterReply 记过结果。
+		if (gate_login_admission::RequiresSuccessfulLogin(item->messageId) && !session.loginSucceeded)
+		{
+			++tlsCounters.rejectedNotLoggedIn;
+			SendEnvelope(session, item->clientRequestId, item->messageId, kLoginSessionNotFound);
+			continue;
+		}
 		const bool sent = gRouterSender != nullptr && gRouterSender(*item->request, item->sessionDetailsBin);
 		if (!sent)
 		{
@@ -204,6 +216,7 @@ void LogSummaryIfDue(SteadyTime now)
 			 << " rejected_full=" << c.rejectedFull << " rejected_redirected=" << c.rejectedRedirected
 			 << " late_dropped=" << c.lateDropped << " incarnation_mismatch=" << c.incarnationMismatch
 			 << " dropped_on_close=" << c.droppedOnClose << " dropped_on_redirect=" << c.droppedOnRedirect
+			 << " rejected_not_logged_in=" << c.rejectedNotLoggedIn
 			 << " in_flight=" << tlsInflight.Size() << " expiry_heap=" << tlsInflight.ExpiryHeapSize()
 			 << " max_depth_seen=" << c.maxDepthSeen;
 }
@@ -290,6 +303,12 @@ bool OnRouterReply(const SessionDetails &echoed, const ::google::protobuf::Messa
 		return true;
 	}
 	++tlsCounters.replied;
+	// 先记 Login 结果,再放行下一条:同一会话里排在 Login 后面的 CreatePlayer / EnterGame 在 Pump 时要看到它。
+	// 会话已按代次核对过(FindLiveSession),旧连接迟到的 Login 回包不会记到撞号的新连接上。
+	if (call->messageId == ClientPlayerLoginLoginMessageId && gate_login_admission::IsLoginReplySuccess(reply))
+	{
+		session->loginSucceeded = true;
+	}
 	if (const auto conn = session->conn.lock())
 	{
 		GetGateCodec().send(conn, reply);

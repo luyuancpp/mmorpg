@@ -23,7 +23,7 @@ import (
 // gate 校验的是 HMAC-SHA256(gate_token_secret, token_payload) 与
 // token_signature 的常数时间相等,再解出 GateTokenPayload 校验
 // gate_node_id == 本 gate、expire_timestamp > now
-// (cpp/nodes/gate/handler/rpc/client_message_processor.cpp)。校验通过只是把这条连接
+// (cpp/nodes/gate/handler/rpc/client_session_handler.cpp)。校验通过只是把这条连接
 // 标成 verified,新 zone 的 login 那边**没有**任何会话——所以跟随重定向必须完整重跑
 // Login + EnterGame,而不是"换个地址继续玩"。
 

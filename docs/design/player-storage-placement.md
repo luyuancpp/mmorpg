@@ -260,6 +260,8 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 - 指标:`scene_manager_enter_scene_rejected_total{reason="home_zone_merging"}`,zone_id 为 gate zone;`home_zone_lookup_total` 对这类请求仍记 `outcome=mapped`。
 - 21 在 C++ scene 和 login 都按通用失败处理:scene 解冻并回 tip;login 推 `kEnterSceneFailed`,保留会话。客户端没有专门文案。
 
+> **2026-10-17 契约勘误**：五个 EnterSceneRequest 构造点中的 `scene_manager_response_handler.cpp` 已迁到 `player_scene.cpp` 的 `HandleMirrorCreateDone`；构造点总数及“生产调用均携带 gate_id”的围栏前提不变。
+
 ### 8.3 login
 
 - CreatePlayer:`Placement.PinOnCreate`(默认 false)为 true 时,把 `Placement.NewPlayerStorageId`(0 = 本 login 所在 zone)作为 `storage_id` 传给 `RegisterPlayerZone`。

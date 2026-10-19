@@ -952,3 +952,197 @@ func TestRollbackRPCs_RequireAdminToken(t *testing.T) {
 		})
 	}
 }
+
+// ── 第 3 批读方门禁的协议形状(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.2、§13.2 第 6 条)──
+//
+// 只测 server 这一层:routing 回什么 → gRPC code + error_code。编排由 routing 的 route_read_test.go 覆盖。
+// mapping Redis 用 miniredis:它不支持 INFO server,读脚本在它上面必然报错 —— 开关打开时正好就是「缓存不可信 → 回源库」,
+// 不需要再造标记。回源读者用假实现挡在外面。
+
+// readGateFakeReader 是 routing.RouteReader 的假实现。err 非 nil 时三个方法都回它;failGetRoutesOn 让第 n 次 GetRoutes
+// (从 1 起)失败。calls 记三个方法一共被调了几次(开关关闭时必须为 0)。
+type readGateFakeReader struct {
+	homeFence       map[uint64]store.RouteHomeFence
+	rows            map[uint64]store.RouteRow
+	err             error
+	failGetRoutesOn int
+	getRoutes       int
+	calls           int
+}
+
+var _ routing.RouteReader = (*readGateFakeReader)(nil)
+
+var errReadGateSQL = errors.New("player_route: connection reset by peer")
+
+func (f *readGateFakeReader) GetHomeAndFence(_ context.Context, playerID uint64) (store.RouteHomeFence, error) {
+	f.calls++
+	if f.err != nil {
+		return store.RouteHomeFence{}, f.err
+	}
+	return f.homeFence[playerID], nil
+}
+
+func (f *readGateFakeReader) GetRoutes(_ context.Context, ids []uint64) (map[uint64]store.RouteRow, error) {
+	f.calls++
+	f.getRoutes++
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.failGetRoutesOn != 0 && f.getRoutes == f.failGetRoutesOn {
+		return nil, errReadGateSQL
+	}
+	out := map[uint64]store.RouteRow{}
+	for _, id := range ids {
+		if row, ok := f.rows[id]; ok {
+			out[id] = row
+		}
+	}
+	return out, nil
+}
+
+func (f *readGateFakeReader) ScanRoutesByHome(context.Context, uint32, store.RouteScanCursor, int) ([]store.RouteRow, error) {
+	f.calls++
+	return nil, f.err
+}
+
+// newReadGateTestServer 同 newDBFirstTestServer,另按 on 设 ReadRequiresReady;reader 非 nil 时注入回源读者
+// (不把 nil 的 *readGateFakeReader 传进去:那是「非 nil 接口包着 nil 指针」)。
+func newReadGateTestServer(t *testing.T, on bool, reader *readGateFakeReader) (*DataServiceServer, *miniredis.Miniredis) {
+	t.Helper()
+	mr := miniredis.RunT(t)
+	c := config.Config{
+		MappingRedis:     redis.RedisConf{Host: mr.Addr(), Type: "node"},
+		DevRedis:         config.DevRedisConfig{Host: mr.Addr()},
+		PlayerLockTTLSec: 3,
+		RouteStore: config.RouteStoreConfig{
+			Mode:               config.RouteStoreModeDBFirst,
+			WaitAOFNumLocal:    intPtr(0),
+			WaitAOFNumReplicas: intPtr(0),
+			ReadRequiresReady:  on,
+		},
+	}
+	var opts []routing.RouterOption
+	if reader != nil {
+		opts = append(opts, routing.WithRouteReader(reader))
+	}
+	r := routing.NewRouter(c, opts...)
+	t.Cleanup(r.Close)
+	return NewDataServiceServer(&svc.ServiceContext{Config: c, Router: r}), mr
+}
+
+// TestReadGate_ProtocolShapeWhenCacheUntrusted:ReadRequiresReady=true 且缓存不可信时
+//   - SQL 故障 → Unavailable + ErrCodeRouteStoreError(绝不 NotFound,消息里也不带「缺失映射」的契约文案);
+//   - SQL 无行 → NotFound(文案契约不变),哪怕缓存里有一个值;
+//   - SQL 有行 → OK,home 与围栏取自库;
+//   - 回源读者没装配 → Unavailable + ErrCodeRouteStoreError;
+//   - 批量任一块 SQL 故障 → 整批 Unavailable + ErrCodeRouteStoreError,不回半份。
+func TestReadGate_ProtocolShapeWhenCacheUntrusted(t *testing.T) {
+	const player = uint64(6101)
+	ctx := context.Background()
+	bigBatch := make([]uint64, store.RouteBatchLimit+5)
+	for i := range bigBatch {
+		bigBatch[i] = uint64(610001 + i)
+	}
+
+	single := []struct {
+		name    string
+		reader  *readGateFakeReader
+		code    codes.Code
+		errCode uint32
+		zone    uint32
+		merging bool
+	}{
+		{name: "SQL failure is Unavailable, never NotFound", reader: &readGateFakeReader{err: errReadGateSQL},
+			code: codes.Unavailable, errCode: constants.ErrCodeRouteStoreError},
+		{name: "SQL has no row is NotFound", reader: &readGateFakeReader{},
+			code: codes.NotFound, errCode: constants.ErrCodeNotFound},
+		{name: "SQL row answers OK with its fence", reader: &readGateFakeReader{homeFence: map[uint64]store.RouteHomeFence{
+			player: {HomeZone: 9, Fenced: true}}}, code: codes.OK, zone: 9, merging: true},
+		{name: "no route reader assembled is Unavailable", reader: nil,
+			code: codes.Unavailable, errCode: constants.ErrCodeRouteStoreError},
+	}
+	for _, tc := range single {
+		t.Run("GetPlayerHomeZone/"+tc.name, func(t *testing.T) {
+			s, mr := newReadGateTestServer(t, true, tc.reader)
+			// 缓存里是另一个值:不可信时它既不能被用,它的存在也不能把「库里没有」变成别的答案。
+			require.NoError(t, mr.Set(placement.HomeZoneKey(player), "5"))
+			resp, err := s.GetPlayerHomeZone(ctx, &data_service.GetPlayerHomeZoneRequest{PlayerId: player})
+			if tc.code == codes.OK {
+				require.NoError(t, err)
+				assert.Equal(t, tc.zone, resp.GetHomeZoneId())
+				assert.Equal(t, tc.merging, resp.GetHomeZoneMerging())
+				return
+			}
+			require.Error(t, err)
+			assert.Nil(t, resp)
+			assertStatusCode(t, err, tc.code, tc.errCode)
+			st, _ := status.FromError(err)
+			if tc.code == codes.NotFound {
+				assert.Contains(t, st.Message(), "no home zone mapping", "the NotFound text is a login contract")
+			} else {
+				assert.NotContains(t, st.Message(), "no home zone mapping", "a fallback failure must not look like a missing mapping")
+			}
+		})
+	}
+
+	t.Run("BatchGetPlayerHomeZone/any chunk SQL failure fails the whole batch", func(t *testing.T) {
+		reader := &readGateFakeReader{failGetRoutesOn: 2, rows: map[uint64]store.RouteRow{
+			bigBatch[0]: {PlayerID: bigBatch[0], HomeZone: 9, Rev: 1}}}
+		s, _ := newReadGateTestServer(t, true, reader)
+		resp, err := s.BatchGetPlayerHomeZone(ctx, &data_service.BatchGetPlayerHomeZoneRequest{PlayerIds: bigBatch})
+		require.Error(t, err)
+		assert.Nil(t, resp, "no partial map")
+		assertStatusCode(t, err, codes.Unavailable, constants.ErrCodeRouteStoreError)
+		assert.Equal(t, 2, reader.getRoutes)
+	})
+
+	t.Run("BatchGetPlayerHomeZone/answers from player_route", func(t *testing.T) {
+		reader := &readGateFakeReader{rows: map[uint64]store.RouteRow{
+			bigBatch[0]:                     {PlayerID: bigBatch[0], HomeZone: 9, Rev: 1},
+			bigBatch[store.RouteBatchLimit]: {PlayerID: bigBatch[store.RouteBatchLimit], HomeZone: 11, Rev: 1},
+		}}
+		s, mr := newReadGateTestServer(t, true, reader)
+		require.NoError(t, mr.Set(placement.HomeZoneKey(bigBatch[1]), "5"))
+		resp, err := s.BatchGetPlayerHomeZone(ctx, &data_service.BatchGetPlayerHomeZoneRequest{PlayerIds: bigBatch})
+		require.NoError(t, err)
+		assert.Equal(t, map[uint64]uint32{bigBatch[0]: 9, bigBatch[store.RouteBatchLimit]: 11}, resp.GetPlayerZoneMap(),
+			"an untrusted cached value is not returned; absent ids stay absent")
+	})
+
+	t.Run("BatchGetPlayerHomeZone/no route reader assembled", func(t *testing.T) {
+		s, _ := newReadGateTestServer(t, true, nil)
+		resp, err := s.BatchGetPlayerHomeZone(ctx, &data_service.BatchGetPlayerHomeZoneRequest{PlayerIds: bigBatch[:2]})
+		require.Error(t, err)
+		assert.Nil(t, resp)
+		assertStatusCode(t, err, codes.Unavailable, constants.ErrCodeRouteStoreError)
+	})
+}
+
+// TestReadGate_OffKeepsTheContract:ReadRequiresReady=false(缺省)时契约与今天逐字相同 —— 哪怕 db_first 且回源读者已装配,
+// 两个 RPC 也只读缓存:缺键 NotFound(不去库里找)、mapping Redis 故障 Unavailable + ErrCodeRedis(码 1,不是码 30)。
+func TestReadGate_OffKeepsTheContract(t *testing.T) {
+	ctx := context.Background()
+	reader := &readGateFakeReader{homeFence: map[uint64]store.RouteHomeFence{6201: {HomeZone: 9}, 6202: {HomeZone: 9}},
+		rows: map[uint64]store.RouteRow{6202: {PlayerID: 6202, HomeZone: 9, Rev: 1}}}
+	s, mr := newReadGateTestServer(t, false, reader)
+	require.NoError(t, mr.Set(placement.HomeZoneKey(6201), "5"))
+
+	resp, err := s.GetPlayerHomeZone(ctx, &data_service.GetPlayerHomeZoneRequest{PlayerId: 6201})
+	require.NoError(t, err)
+	assert.Equal(t, uint32(5), resp.GetHomeZoneId(), "switch off: the cache answers")
+
+	_, err = s.GetPlayerHomeZone(ctx, &data_service.GetPlayerHomeZoneRequest{PlayerId: 6202})
+	assertStatusCode(t, err, codes.NotFound, constants.ErrCodeNotFound)
+
+	batch, err := s.BatchGetPlayerHomeZone(ctx, &data_service.BatchGetPlayerHomeZoneRequest{PlayerIds: []uint64{6201, 6202}})
+	require.NoError(t, err)
+	assert.Equal(t, map[uint64]uint32{6201: 5}, batch.GetPlayerZoneMap())
+	assert.Zero(t, reader.calls, "the route reader must not be consulted while ReadRequiresReady=false")
+
+	mr.Close()
+	_, err = s.GetPlayerHomeZone(ctx, &data_service.GetPlayerHomeZoneRequest{PlayerId: 6201})
+	assertStatusCode(t, err, codes.Unavailable, constants.ErrCodeRedis)
+	_, err = s.BatchGetPlayerHomeZone(ctx, &data_service.BatchGetPlayerHomeZoneRequest{PlayerIds: []uint64{6201}})
+	assertStatusCode(t, err, codes.Unavailable, constants.ErrCodeRedis)
+	assert.Zero(t, reader.calls)
+}

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"data_service/internal/config"
+	"data_service/internal/store"
 
 	"shared/placement"
 
@@ -33,9 +34,32 @@ type Router struct {
 	routeMode  string
 	routeStore RouteStore
 	publish    publishConfig
+
+	// 第 3 批读方门禁(route_read.go,规格 spec_D1_batch1b2_2_3.md §5.2):readRequiresReady 取 RouteStore.ReadRequiresReady,
+	// 打开时 R2 / R3 / R6 先用就绪读脚本判副本可不可信,不可信回源 routeReader;R7 在 db_first 下一律读 routeReader。
+	// routeReader 为 nil 时回源一律 fail-closed(ErrRouteReadUnavailable)。routeReadEval 是读脚本的执行入口
+	// (缺省 mappingRedis.EvalCtx),只为单测能绕开 INFO(miniredis 不支持 INFO server / replication)。
+	readRequiresReady bool
+	routeReader       RouteReader
+	routeReadEval     routeReadEvalFunc
 }
 
-// NewRouter 建路由器。opts 目前只有 WithRouteStore(db_first 的库内提交点)。
+// RouteReader 是第 3 批读方的回源读(规格 §5.2、§13.2 第 5 条):缓存不可信时按库读 home / 围栏 / 批量 home,
+// db_first 下按 zone 枚举玩家。与写入点 RouteStore(route_publish.go)分成两个小接口(ISP):路由器的读路径只依赖它。
+// *store.RouteStore 同时满足两者,svc 装配时同一个实例两边都注入。三个方法都是事务外一致读,契约见 store/route_reads.go
+// 与 store.RouteStore.GetRoutes;单测注入假实现。
+type RouteReader interface {
+	GetHomeAndFence(ctx context.Context, playerID uint64) (store.RouteHomeFence, error)
+	GetRoutes(ctx context.Context, ids []uint64) (map[uint64]store.RouteRow, error)
+	ScanRoutesByHome(ctx context.Context, zone uint32, after store.RouteScanCursor, limit int) ([]store.RouteRow, error)
+}
+
+// WithRouteReader 注入回源读者。调用方只在 store 非 nil 时传(同 WithRouteStore 的「非 nil 接口包着 nil 指针」说明)。
+func WithRouteReader(rr RouteReader) RouterOption {
+	return func(r *Router) { r.routeReader = rr }
+}
+
+// NewRouter 建路由器。opts:WithRouteStore(db_first 的库内提交点)、WithRouteReader(第 3 批的回源读)。
 //
 // c.RouteStore 在这里再 Normalize + Validate 一次(main 启动时已校验过),非法就 panic,与 MustNewRedis 同口径:
 // 单测与 debug 工具也走这里,不能拿一份非法配置静默跑成 redis 模式。校验放在建任何连接之前。
@@ -54,6 +78,8 @@ func NewRouter(c config.Config, opts ...RouterOption) *Router {
 		routeMode:    routeCfg.Mode,
 		publish:      newPublishConfig(routeCfg),
 	}
+	r.readRequiresReady = routeCfg.ReadRequiresReady
+	r.routeReadEval = r.mappingRedis.EvalCtx
 	for _, opt := range opts {
 		opt(r)
 	}
@@ -291,7 +317,13 @@ var ErrHomeZoneNotMapped = errors.New("no home zone mapping")
 // GetPlayerHomeZone looks up a player's home zone.
 // 映射缺席时返回包着 ErrHomeZoneNotMapped 的错误(errors.Is 可判);
 // ClientForPlayer 等内部路由调用把它和 Redis 错误一视同仁(没有映射就无法路由)。
+//
+// RouteStore.ReadRequiresReady=true 时整段换成 getPlayerHomeZoneReady(route_read.go,R6):缓存可信才用缓存,
+// 否则回源 player_route;库故障包 ErrRouteReadUnavailable,绝不包 ErrHomeZoneNotMapped。开关为 false 时下面与今天逐字相同。
 func (r *Router) GetPlayerHomeZone(ctx context.Context, playerID uint64) (uint32, error) {
+	if r.readRequiresReady {
+		return r.getPlayerHomeZoneReady(ctx, playerID)
+	}
 	val, err := r.mappingRedis.GetCtx(ctx, mappingKey(playerID))
 	if err != nil {
 		return 0, fmt.Errorf("mapping lookup failed for player %d: %w", playerID, err)
@@ -329,7 +361,14 @@ func parseHomeZoneValue(playerID uint64, val string) (uint32, error) {
 //
 // 只给「决定能不能进场」的调用方用;内部路由(ClientForPlayer 等)只要 home,继续用
 // GetPlayerHomeZone,不多付一次 EXISTS。
+//
+// RouteStore.ReadRequiresReady=true 时整段换成 getPlayerHomeZoneAndMergeFenceReady(route_read.go,R2):就绪标记、
+// 实例身份、home 与围栏同一段 Lua 读出,可信才用;否则回源 player_route(home 与 63 号片围栏同一条语句)。
+// 库故障包 ErrRouteReadUnavailable(gRPC 回 Unavailable,绝不 NotFound)。开关为 false 时下面与今天逐字相同。
 func (r *Router) GetPlayerHomeZoneAndMergeFence(ctx context.Context, playerID uint64) (zone uint32, merging bool, err error) {
+	if r.readRequiresReady {
+		return r.getPlayerHomeZoneAndMergeFenceReady(ctx, playerID)
+	}
 	res, err := r.mappingRedis.EvalCtx(ctx, getHomeZoneAndMergeFenceScript,
 		[]string{mappingKey(playerID)}, mergeFenceKeyPrefix)
 	if err != nil {
@@ -406,7 +445,14 @@ func (r *Router) DeletePlayerZone(ctx context.Context, playerID uint64) error {
 // player-route-mapping-durability-proposal.md §5.2 / §9 第 0 批)。此前畸形值被静默跳过,
 // 调用方会把一条坏数据当成「没有映射」,login 角色列表据此退回建角 zone、friend 显示 zone 0,
 // 坏数据本身无人发现。映射只由本仓库代码写入,畸形就是故障,fail-closed。
+//
+// RouteStore.ReadRequiresReady=true 时整段换成 batchGetPlayerHomeZoneReady(route_read.go,R3):按 store.RouteBatchLimit
+// 分块,每块一段读脚本(就绪标记 + 身份 + MGET),可信的块用缓存,不可信的块按 GetRoutes 回源;任一块回源失败整批报错
+// (包 ErrRouteReadUnavailable)。开关为 false 时下面与今天逐字相同。
 func (r *Router) BatchGetPlayerHomeZone(ctx context.Context, playerIDs []uint64) (map[uint64]uint32, error) {
+	if r.readRequiresReady {
+		return r.batchGetPlayerHomeZoneReady(ctx, playerIDs)
+	}
 	result := make(map[uint64]uint32, len(playerIDs))
 	// Use pipeline for efficiency
 	keys := make([]string, len(playerIDs))
@@ -484,7 +530,13 @@ func (r *Router) AllZoneIDs() []uint32 {
 // 单键 GET 失败时整体返回错误(2026-10-12,player-route-mapping-durability-proposal.md §9 第 0 批)。
 // 此前错误被吞掉、那名玩家被当成「不属于本区」直接漏掉,调用方(回档的孤儿号报告、debug_fetch)
 // 拿到的是一份静默缺人的名单。枚举结果用于运维决策,宁可失败也不能少人。
+//
+// RouteStore.Mode=db_first 时一律读库(allPlayerIDsInZoneFromDB,route_read.go,R7;与 ReadRequiresReady 无关):
+// 那时真源是 player_route,Redis 副本缺键不能当成「不属于本区」。redis 模式保持下面的 SCAN(那时 Redis 才是真源)。
 func (r *Router) GetAllPlayerIDsInZone(ctx context.Context, zoneID uint32) ([]uint64, error) {
+	if r.routeMode == config.RouteStoreModeDBFirst {
+		return r.allPlayerIDsInZoneFromDB(ctx, zoneID)
+	}
 	target := strconv.FormatUint(uint64(zoneID), 10)
 	var playerIDs []uint64
 	var cursor uint64

@@ -108,7 +108,7 @@ func TestWeChatProvider_FallbackToOpenId(t *testing.T) {
 	cli, srv := newTestClient(mux)
 	defer srv.Close()
 
-	p := &WeChatProvider{AppId: "wxid", AppSecret: "secret", HTTP: cli}
+	p := &WeChatProvider{AppId: "wxid", AppSecret: "secret", HTTP: cli, AllowOpenIdFallback: true}
 	res, err := p.Validate(context.Background(), "abc")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -165,7 +165,7 @@ func TestQQProvider_SuccessJSONP(t *testing.T) {
 	cli, srv := newTestClient(mux)
 	defer srv.Close()
 
-	p := &QQProvider{AppId: "10001", HTTP: cli}
+	p := &QQProvider{AppId: "10001", HTTP: cli, AllowOpenIdFallback: true}
 	res, err := p.Validate(context.Background(), "AT")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

@@ -252,8 +252,11 @@ func (r *FriendRepo) Block(ctx context.Context, playerID, targetPlayerID uint64,
 // database/sql 回滚并丢弃连接,服务端在连接断开时回滚未提交事务;剩余窗口只有"查完 ctx 之后发出的那一条 COMMIT"
 // (§6.1 的已发出命令),而 COMMIT 不等行锁。
 //
-// 事务不改变锁形状,所以不拿守卫仍然进不了等待环:还是一条完整主键 DELETE,至多持有这一行的锁;语句之后只剩 COMMIT,
-// 持锁期间不再等任何别的锁。代价只是持锁时间多一次 COMMIT 往返。隔离级别显式取 friendWriteTxIsolation(RC),
+// 在 InnoDB 上事务不改变锁形状:还是一条完整主键 DELETE,至多持有这一行的锁;语句之后只剩 COMMIT,持锁期间不再等任何别的锁。
+// ⚠ 在 TiDB(friend 生产强制)上**改变**锁形状,而且正是它消掉了一个检测不到的互等:自动提交的 DELETE 走乐观事务,
+// 提交时并行 prewrite 行 key 与索引 key,会与守卫事务的完整主键 Point_Get(先 PRIMARY 再行 key)各持一半,等约 3s 锁 TTL;
+// 悲观事务里这条 DELETE 本身就是带锁的 Point_Get,顺序与守卫一致,只剩单向等待(2026-10-18 真 TiDB v8.5.2 实测,
+// 事故文档 §9.7)。所以**不许**为了省一次往返把它改回自动提交。代价只是持锁时间多一次 COMMIT 往返。隔离级别显式取 friendWriteTxIsolation(RC),
 // 删不到行时不加任何锁。与 Block ④ 在同一条 delete-marked 记录上的交互见那一步。
 //
 // 已知的良性竞态:Unblock 与 AddFriend 并发时,AddFriend 的拉黑探针可能在解除之前那一瞬

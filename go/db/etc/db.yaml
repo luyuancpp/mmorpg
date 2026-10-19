@@ -164,12 +164,17 @@ ServerConfig:
       player_snapshot:
         MaxColumnBytes: 8388608
         MaxRowBytes: 8388608
-  # MySQL 行内围栏(docs/design/db-write-fencing-mysql.md §4.7、§8)。整段可缺省,缺省 = legacy。
-  #   legacy:玩家两张表照旧普通 Save,不判围栏、不发布资产 SQL 提交证据(C++ 回滚到旧版时不丢盘)。
-  #   dual  :按 DBTask 的 (owner_epoch, save_seq) 做行内围栏条件写,并发布资产 SQL 提交证据。逐 zone 切换,门禁见设计 §8.3。
-  # 启动日志 "player row fencing: mode=" 一行是核对依据。K8s 的 db ConfigMap 由 k8s_deploy.ps1 原样镜像本键(没有逐 zone 覆盖)。
+  # MySQL 行内围栏与存盘协议世代(docs/design/db-write-fencing-mysql.md §4.7、§8 与 2026-10-18 存盘协议世代附注)。
+  # 整段可缺省,缺省 = dual。
+  #   dual  :按 DBTask 的 (owner_epoch, save_seq) 做行内围栏条件写,写两表 SQL ACK、跑存盘补投,并发布资产 SQL 提交证据。
+  #           现行 C++ scene(owner_epoch≠0)与 login 只说严格提交屏障(父快照写 pending,冷加载 / 交接要求两表 ACK 都等于 pending),
+  #           只能与 dual 配合。启动时写世代标记 db:save_protocol:zone:<ZoneId>=strict。
+  #   legacy:玩家两张表照旧普通 Save,不写 ACK、不补投、不发布资产证据。只与尚未升级到严格屏障的旧 scene / login 同世代;
+  #           本 zone 有世代标记或补投桶非空即拒启,运行中出现即停机。回退步骤见设计 §8.6,不是「随时安全」的开关。
+  # 启动日志 "player row fencing: mode=" 与 "save protocol generation:" 两行是核对依据。
+  # K8s 的 db ConfigMap 由 k8s_deploy.ps1 原样镜像本键(没有逐 zone 覆盖)。
   Fencing:
-    Mode: legacy
+    Mode: dual
     EpochOverride: false
 
 # ── 玩家存储落点(docs/design/player-storage-placement.md §6)────────────────
@@ -186,6 +191,15 @@ Placement:
   # 打开顺序(§13,反了会出事):全部 login 已 Placement.PinOnCreate=true,且各 zone 已
   # `merge_zone -mode pin-placement` 钉完存量之后才能开。
   Required: false
+  # D1 第 3 批读方门禁(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.3 / §13.2)。
+  # true = 只有 mapping Redis 的副本被判可信(mapping:route:ready 存在,且其中记下的 run_id / master_replid 就是本次读所在的
+  # 主实例)才按 player:placement / player:zone 选库;不可信时写延后(不耗重试预算)、读耗预算,进程级就绪闸暂停取 Kafka
+  # 消息与认领重试。启动时试跑一次读脚本(脚本里调 INFO),执行出错即拒启。false = 行为与引入之前相同。
+  # 打开顺序(§8 P5,反了全 zone 停存盘):data_service 对账 leader 已挂上就绪标记、自检稳定为 trusted 之后逐 zone 打开;
+  # 回退先关它(先读方、后写方)。
+  RequireRouteReady: false
+  # 就绪闸的刷新 / 复查间隔(毫秒),[200, 10000],不写 = 1000。只在 RequireRouteReady=true 时生效。
+  RouteReadyGateIntervalMs: 1000
   # 额外落点库(本 zone 库之外)的连接池,**每个库一个池**,按库所属家族分两个旋钮(本 zone 库仍用上面的 Database.MaxOpenConn):
   #   ZoneStore*    —— zone 家族库 zone_{1..999999}_db:冷缓存访客读、合服 pin 后的源区库。最坏情形每个实例会打开其余全部
   #                    zone 的库,预算随 zone 数平方增长(总账见 tools/scripts/k8s_deploy.ps1 Get-MysqlConnectionLedger)。

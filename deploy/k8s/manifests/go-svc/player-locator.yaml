@@ -26,6 +26,9 @@ spec:
   # 带 token 的提交成功后才发踢人/LeaveScene,持有者死亡则 claim 超时被收回重试);
   # SessionReconciler 的去抖表在进程内各记各的,转换走与 SetDisconnecting 相同的整字节 CAS,
   # 后动手的副本读到的已是 DISCONNECTING,直接跳过。代价只有共享 Redis 每 60s 多一轮 SCAN。
+  # (2026-10-18 更正:SessionReconciler 已改为全服单 leader + 按 gate 实例建的会话索引,不再每副本 SCAN 全键空间;
+  # leader 由共用会话 Redis 上的锁选出,两个 leader 短暂重叠时转换仍走整字节 CAS,无害。见
+  # docs/design/player-locator-gate-session-index.md。)
   # 单副本时它是登录链路的真单点:它不可用期间所有 EnterGame 失败,login 自己也因阻塞式拨号起不来。
   replicas: 2
   selector:
@@ -36,6 +39,14 @@ spec:
       labels:
         app: player-locator
         tier: go-svc
+      # 抓取 /metrics(9190 = player_locator,与 ConfigMap 的 Prometheus 段及下面的 metrics 容器端口一致)。
+      # 会话对账的 leader 卡死 / 无 leader 只能靠这些指标与 deploy/k8s/player-locator-alerts.yaml 发现。
+      # 必须与 tools/scripts/k8s_deploy.ps1 player-locator heredoc 的 Prometheus 段同批发布(或先发后者):
+      # 只有注解、进程没在 9190 监听时,按注解抓取的目标是 down,可能误触通用的 TargetDown 类告警。
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9190"
+        prometheus.io/path: "/metrics"
     spec:
       affinity:
         podAntiAffinity:
@@ -58,6 +69,9 @@ spec:
           ports:
             - containerPort: 50100
               name: grpc
+            # 与 ConfigMap 的 Prometheus.Port 9190 及上面 prometheus.io/port 注解一致(9190 = player_locator)
+            - containerPort: 9190
+              name: metrics
           readinessProbe:
             grpc:
               port: 50100

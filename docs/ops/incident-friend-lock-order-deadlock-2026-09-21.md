@@ -355,3 +355,40 @@ PRIMARY supremum 上的 X 间隙锁,一直持有到整条语句结束 —— 于
    与 `LATEST DETECTED DEADLOCK`,不看「写冲突」类返回值 —— `inTx` 会把 1213 和预算超时都包成同一个错误。
 9. **审计结论有保质期。** #20 / #21 都不是修复被改回,而是部署前提(单副本)在审计之后被别的提交改掉。改副本数、改消费模型的提交,
    要把本文 §9.2 的判据和「多行语句的行序即取锁序」一起过一遍。
+
+## 9.7 TiDB 下的锁问题:真 TiDB 实测与修复(2026-10-18)
+
+§9.6.3 里只登记、没复核的 6 条 TiDB 线索,在自起的真 TiDB v8.5.2 集群(pd + tikv + tidb,全局悲观事务、`pessimistic-auto-commit`
+为默认的 false)上逐条复核;会话设置按各服务真实连接照搬(friend 的 `BuildDSN` / trade 的 `authoritysql.Open`:RC、
+`innodb_lock_wait_timeout=1`、`tidb_txn_mode=pessimistic`)。**friend 生产强制跑 TiDB**,所以 friend 的几条是生产路径。
+
+### 9.7.1 机制:自动提交 × 点锁,各持一半、检测不到
+
+`pessimistic-auto-commit=false` 时,**自动提交语句走乐观事务**:执行期不加锁,提交时按 region **并行** prewrite 行 key 与
+各索引 key。悲观事务里的完整主键 `FOR UPDATE` 是 Point_Get,**先锁 PRIMARY 索引 key、再锁行 key**。两者撞在同一行时
+可能各持一半:乐观方已 prewrite 了点锁方要的 key,点锁方已拿到乐观方要 prewrite 的 key。乐观方的 prewrite 遇锁只做
+backoff / resolve,不进死锁检测器的等待图 —— **不报 1213,只能等约 3s 的乐观锁 TTL 过期**才解开(`data_lock_waits`
+能同时看到两条边,`cluster_deadlocks` 没有记录)。InnoDB 上同样的自动提交单语句「不持有并等待」,不成环 —— 所以这类问题
+只在 TiDB 出现,本文 §3~§9.6 的论证都不覆盖它。
+
+另一个形态是**悲观事务里按二级索引的 UPDATE**:执行计划是 `Update → SelectLock → IndexLookUp`,读阶段先锁行 key、
+语句末尾才锁非聚簇 PRIMARY 与 uk,与点锁的「先 PRIMARY 再行 key」天然反序;这一种 TiDB **能**检测,报 1213。
+
+### 9.7.2 逐条结论与处置
+
+| 位置 | 实测 | 处置 |
+|---|---|---|
+| friend `Unblock`(block_repo.go) | **已不成立**:`e76f6f747` 已改为 RC 悲观事务里的单条完整主键 DELETE(悲观事务里它本身就是带锁 Point_Get,顺序与守卫一致);旧的自动提交形状实测约 3s 互等 7 次 | 改正注释:「事务不改变锁形状」只对 InnoDB 成立,TiDB 上正是事务消掉了互等,**不许**改回自动提交 |
+| friend 终态申请清理 `deleteTerminalRequestsBefore`(sweep_repo.go) | 成立,检测不到:550 轮 62 轮 3.0~3.9s | ✅ 改为逐行 RC 事务{`lockRequestRowSQL` 主键点锁 → 原带复核的主键 DELETE}(`deleteOneRowPointLocked`);修法实测 800 轮 0 次 |
+| friend 容量行回收 `deleteIdleCapacityRow`(sweep_repo.go) | 成立,检测不到:200 轮 12 次、250 轮 13 次 3.0~4.5s | ✅ 同上,点锁用 `lockCapacityRowSQL`;修法实测 0/200、0/250 |
+| trade `Reschedule` / `markPoison`(asset_op_repo.go) | 成立,检测不到:自然竞争 31/40 次约 3s,部分轮次撞 5s ReadTimeout | ✅ 改为 RC 事务{`sqlLockAssetOp` 主键点锁 → 原带令牌复核的点改},与 guild 及 `Finalize` 同形;修法 0/40。`Claim` / `ReleaseLease` 只改无索引列,保持自动提交 |
+| trade commerce `engine.go` 取消 / 结案三处按 `ref` 的 UPDATE | 成立,**TiDB 能检测**:受控 5/5 报 1213,自然竞态 246 次 10 次 | ✅ 改为 `AssetOpRepo.ExpireCommerceEscrowDebitsTx` / `MarkCommerceOpsConsumedTx`:候选普通读 → 按 op_id 升序逐行主键点锁 → 主键点改;修法 0/5、0/246 |
+| player_inbox `ClearNotifyDue` / `DeferNotifyDue` | 成立,检测不到:6 轮 5 轮约 3s,并发的 Fetch 报 1205 | **未改**(文件在收件箱那条线的在途改动里):改为 RC 事务{完整主键 `FOR UPDATE` → 原 CAS UPDATE},修法已实测(E2 提交 10~30ms、无 1205) |
+
+可达性:trade / commerce 只在 `AssetOp.Enabled=true` 时装配,当前所有档位为 false,**开通道前**必须带上上述修复;
+friend 的两处清理只在 `Sweep.Mode=delete` 时执行;player_inbox 的形状在入箱 / 补发 / 放弃路径上都会走到。
+
+### 9.7.3 判据(补 §9.2)
+
+**TiDB 上,凡是会被悲观事务点锁的行,对它的写一律在显式悲观事务里、先完整主键点锁再写;不许用自动提交单语句,
+也不许在悲观事务里按二级索引批量改。** 只改无索引列(变更集合只有行 key)的自动提交单行写不受影响。

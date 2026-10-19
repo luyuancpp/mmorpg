@@ -2168,11 +2168,15 @@ cd robot && .\robot.exe -c etc\team_smoke.yaml          # 形态一:expect_cross
 2. `go/match/internal/team/service.go` —— `preflightMatch` 在 `loc == nil` 之后补一条:`loc.GetNodeId() == ""`(等待落点)按 `ErrMemberNotReady` 拒绝。
    理由:该状态下没有任何 scene 节点持有玩家,`gather.go` 的 `preparePlayer` 必然在 `EndpointOf(zone, "")` 上失败;早拒能省掉一轮"建开战锁 → 建票 → gather 失败 → 补偿删锁"。
 
+> **2026-10-17 契约勘误**：`scene_manager_response_handler.cpp` 已删除；EnterScene 应答经完成闭包捕获的 playerId / requestTag 认领后交 `PlayerLifecycleSystem::DispatchEnterSceneReply`，不再由旧适配器按响应 player_id 寻找等待者。此处的发送侧冻结闸仍保留。
+
 ### 未修、需要决策的
 
 - **EnterScene 应答没有相关性标识**:`scene_manager_response_handler.cpp` 只能靠 `resp.player_id()` 把应答对回玩家,于是同一玩家在传送在途期间收到的**任何**一条 EnterScene 应答(跟随、紧急疏散、镜像副本建好后的自动进场)都会被 `HandleTravelEnterSceneReply` 当成传送应答。方向是安全的(会走 `ResolveTravelOutcome` 核实 epoch,最坏是白撤回一次交接、玩家留在源节点),但会造成"传送莫名失败"。上面的守卫已消除组队这一侧的同期来源,残留窗口是"跟随请求先发、传送后起、应答后到"。彻底修需要在 `EnterSceneRequest/Response` 上加一个回显的 correlation id(proto 改动 + regen),属产品/接口决策,未动。
   *(2026-09-28 补注:**已由关联号解决,未编译、未测试**。`EnterSceneRequest.correlation_id = 10` / `EnterSceneResponse.correlation_id = 6`,scene_manager 只原样回显(不复用 `request_id`);scene 内所有 EnterScene 都经 `SendCorrelatedEnterScene` 带非 0 号发出,应答由 `PlayerLifecycleSystem::DispatchEnterSceneReply` 按号分发,号与等待者对不上的一律丢弃,不再进 `HandleTravelEnterSceneReply`。组队跟随改走 `RequestSceneChange(..., playerRequested = false)`,行为不变(被拒只记日志、不弹 tip、不进传送裁决)。上面"跟随请求先发、传送后起、应答后到"里**应答被当成传送应答**的这一半随之关闭。仍有两条残余:① 应答串号只剩旧版 scene_manager 不回显(号为 0)的滚动升级窗口,此时退回按 player_id 对号的旧行为(计入 `reply_uncorrelated`);② 同一场景还有一条**不带号**的证据路径 —— 进场路由:`player_lifecycle.cpp` `EnterScene` 第 3.2 步只要同 zone 交接在途、交接没指定场景实例(`sceneId == 0`)、路由带来的 owner_epoch 非 0 且与路由到达前相同,就以 `travel_outcome::Evidence::kSucceeded` 调 `ResolveTravelOutcome`,不看 correlation_id。所以同节点跟随或换图的路由(走 Kafka → gate,常晚于 gRPC 应答)若在同 zone 交接发起后才到,仍会撤掉标记、静默解冻,这次传送作废(不回档,玩家留在本节点;跨 zone 传送不走这一步)。根治要让进场路由(`RoutePlayerEvent` / `PlayerEnterGameNodeRequest`)带关联号,需改 Kafka / gate 契约,本轮不做。提交 9da27f9a4 + 4e409c5c3 + 935ec83b1,详见 `cross-zone-scene-travel.md` 的「EnterScene 应答关联号」一节(按标题引用,不写死节号;该节随设计文档更新落地,落地后再核对一次标题)。)*
 - **生成物滞后**:`proto/scene_manager/storage.proto` 的 `PlayerLocation.owner_epoch`、`EnterSceneResponse.player_id` 都还没 regen(`go/proto/scene_manager/storage.pb.go` 无 `OwnerEpoch`,`cpp/generated/proto/scene_manager/storage.pb.h` 无 `owner_epoch`)。这是 `1f2bdd01c` 自己写明的"未 regen"状态,不是合并引入的;但 scene_manager 与 scene 在 regen 之前都编不过,组队的验证清单要排在 regen 之后。
+
+> **2026-10-17 契约勘误**：补注中的残余①已由每次调用捕获关联号消除：旧版 SM 不回显也用捕获值精确认领，不再走生产的 player_id 退路，也不因此计 `reply_uncorrelated`。残余②涉及路由事件证据，不能据此勘误宣称已解决。
 
 ---
 

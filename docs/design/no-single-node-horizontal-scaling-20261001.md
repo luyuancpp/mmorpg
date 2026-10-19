@@ -26,6 +26,13 @@
 
 本机(docker-compose / `start_game.ps1`)不在范围内:开发环境保持单实例,省资源。
 
+> **2026-10-18 增补(B0-1,上表原文保留;已落码,未编译、未测试,待 Codex 验证)**:上表漏了「player_locator 会话对账 leader」(全局单点交接 `docs/handoff/handoff-global-singletons-10m-ccu-20261013.md` 的「相关设计」一节已指出 §1 盘点漏了对账),B0-1 又把它改成了全服单例:
+> - **形态**:player-locator 照常 2 副本、请求由所有副本处理;只有后台的会话对账(处理 gate 整机崩溃留下的 ONLINE 会话)由选出的 leader 做。选主锁是共用会话 Redis 上的 `player_locator:session_reconciler:leader`(`shared/leader`,TTL 30s),今天所有 zone 的 locator 一起竞选,所以**全服一个**;按本文口径属于「有备份、挂一个不停服」,不是「能多开、一起分担」。
+> - **失效处理**:leader 连续 3 拍失败或 3 拍内没有一次成功就主动让位,本进程多等一个 TTL 再竞选,健康副本接手;两个 leader 短暂重叠无害(所有动作走整字节 CAS 或字节守卫 Lua)。
+> - **告警**:`deploy/k8s/player-locator-alerts.yaml`(NoLeader / Stalled 为 critical)。K8s 上要先接 player_locator 的 /metrics 才生效。
+> - **设计**:[player-locator-gate-session-index.md](player-locator-gate-session-index.md) §4.1(选主与让位)、§8(失败模式)。
+> - **为什么可以是单例**:它只做兜底对账,每拍只读死 gate 的索引,每拍的命令数只与 gate 数有关;补建 / 日审计是限速的全键扫描(目标规模平均约 380 条命令/s,推算 [I])。多开分担没有收益,反而要重新解决多副本重复扫描的问题(B0-1 之前正是每副本各扫一遍全键空间)。将来多 cell 时自然变成每 cell 一个。
+
 ## 2. Kafka:1 个 → 可配置 ≥3 个 broker(已落码,未跑测试、未上集群)
 
 ### 2.1 做法

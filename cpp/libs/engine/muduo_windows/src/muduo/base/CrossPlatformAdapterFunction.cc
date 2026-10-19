@@ -352,8 +352,21 @@ int accept4(int sockfd, struct sockaddr *addr,
     socklen_t *addrlen, int flags)
 {
     int connfd = (int)::accept(sockfd, addr, addrlen);
-    u_long  mode = 0;
-    ioctlsocket(connfd, FIONBIO, &mode);
+    if (connfd < 0)
+    {
+        return connfd;
+    }
+    // muduo 的读写都在 EventLoop 线程，已接受的连接必须保持非阻塞。
+    u_long mode = 1;
+    if (ioctlsocket(connfd, FIONBIO, &mode) == SOCKET_ERROR)
+    {
+        const int savedWSA = WSAGetLastError();
+        closesocket(connfd);
+        // 沿用相邻适配函数的 errno 回传方式，并保留关闭前的 Winsock 错误。
+        _set_errno(savedWSA);
+        WSASetLastError(savedWSA);
+        return -1;
+    }
     return connfd;
 }
 

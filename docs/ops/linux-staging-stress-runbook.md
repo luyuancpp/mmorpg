@@ -27,6 +27,7 @@
 - gate 主机必须先按 `gate-kernel-tuning-runbook.md` 跑 sysctl
 - ulimit -n ≥ 1048576(写到 systemd unit 或 `/etc/security/limits.d/`)
   - **2026-10-18 补注**:C++ 节点(gate / scene / battle)启动时会把 RLIMIT_NOFILE **软限**自抬到 min(硬限, 1048576),所以这里真正要保证的是启动它们的 shell 的**硬限**(`ulimit -Hn`)。硬限低于需求就**拒绝启动**:gate = `GateMaxConnections` + 4096(默认 24096),battle = `BattleMaxConnections` + 4096(默认 8192),scene = 4096;stderr 一行 `FATAL open file limit config: ...`。每次启动 stdout 都有一行 `[open_file_limit] role=... verdict=... mode=... required=... soft=... hard=...`。`tools/scripts/deploy-staging.sh start` 在 sleep 之后会检查 gate / scene 是否还活着并 grep 这条拒启行,命中就报错退出。硬限一时改不了又必须先起服时,在启动前 `export NODE_OPEN_FILE_LIMIT_MODE=warn`(运维豁免:只打一行 WARN 写明缺口、继续启动,超出软限的连接会 EMFILE;与 `GATE_RUN_MODE` 等运行模式无关),压测结论按实际软限解读。细节见 [gate-kernel-tuning-runbook.md](./gate-kernel-tuning-runbook.md) §三。
+  - **2026-10-18 更正**:① 上一条把 warn 的后果说轻了。gate 在 accept 拿到 fd 之后才按 `GateMaxConnections` 判准入,上限没调时客户端连接会先占满 fd 表,之后节点间 / Redis / Kafka / etcd 重连与日志滚动也会 EMFILE,节点可能被摘除或崩溃。gate / battle 硬限不够时首选把 `GateMaxConnections` / `BattleMaxConnections` 调到 ≤ 实际软限 − 4096(检查直接通过,不需要豁免);只开 warn 不调上限只适合短时应急,压测结论不可信。详见 gate-kernel-tuning-runbook.md §3.1。② `deploy-staging.sh start` 以前直接以 `${REPO_ROOT}/bin/scene` 起节点、cwd 是调用者目录,节点在 fd 检查之前就因找不到 `etc/base_deploy_config.yaml` 退出,拒启检查只会报 `exited during startup`;现已改为与下文 B 第 4 步相同的 `(cd "$REPO_ROOT/bin" && exec ./scene)`。③ 该脚本因拒启或节点退出而报错时,已起的 Go 服务(以及 gate 拒启时的 scene)仍在后台,先 `./tools/scripts/deploy-staging.sh stop` 再重试 `start`。
 - redis-cli 在压测主机的 PATH 里(`stress-linux-tier.sh` wipe 阶段需要)
 
 ### A.2 镜像 / 二进制

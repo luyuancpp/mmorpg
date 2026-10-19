@@ -1102,9 +1102,12 @@ func TestLockingStatementsArePrimaryKeyPointLookups(t *testing.T) {
 		{"lockFriendEdgeRowSQL", lockFriendEdgeRowSQL, []any{91001, 91002}, []string{"const"}, "16"},
 		{"cancelPendingRequestSQL", cancelPendingRequestSQL,
 			[]any{requestStatusRejected, 1, 91001, 91002, requestStatusPending}, []string{"range", "const"}, "16"},
-		// sweep 清理终态申请:逐行按主键删(sweep_repo.go 的 deleteTerminalRequestsBefore)。
+		// sweep 清理终态申请:逐行先主键点锁、再按主键删(sweep_repo.go 的 deleteTerminalRequestsBefore)。
+		{"lockRequestRowSQL", lockRequestRowSQL, []any{91001, 91002}, []string{"const"}, "16"},
 		{"deleteTerminalRequestSQL", deleteTerminalRequestSQL,
 			[]any{91001, 91002, requestStatusAccepted, requestStatusRejected, 2000000000000}, []string{"range", "const"}, "16"},
+		// 容量行回收:先 lockCapacityRowSQL 点锁,再按主键删(sweep_repo.go 的 deleteIdleCapacityRow)。
+		{"deleteIdleCapacityRowSQL", deleteIdleCapacityRowSQL, []any{91001, 2000000000000}, []string{"range", "const"}, "8"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

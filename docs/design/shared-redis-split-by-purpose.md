@@ -66,6 +66,8 @@
 | `dispatcher:lock:login_queue` | login 选主 | login | 1/s | 30s | 单键 | `go/login/internal/config/config.go:244-258`;`go/login/etc/login.yaml:436`。键是全局的,L-01 缺陷相关 |
 | `gate:{id}:draining` / `gate:{id}:drained` | `k8s_gate_drain.ps1` 的多键 Lua;login 排空循环 | login AssignGate 一次 MGET(失败时放行) | 低 | 有 | MarkScript 同时碰本台的 draining、drained 和同 zone 其它候选的 draining | `tools/scripts/k8s_gate_drain.ps1:150-158`;`loginqueue/gatedrain.go:30`、`:47-81`;`gatedrain_monitor.go:37`、`:129-181` |
 
+> **(2026-10-18 更正,上表「A. 排队与准入」前两行;原文保留;未编译、未测试)** 登录排队改造后(详见 `login-queue-2026-05.md` §5 决策树后的 2026-10-18 更正):排队中的每次轮询 = GET token 索引 + GETDEL 放行槽 + 一次读状态脚本(EVALSHA,内含 HMGET / ZRANK / ZCARD,剩余 TTL 不足 `QueueEntryTTL` 时才续期),共 3 次往返;放行 = 每拍一次 ZRANGE + 每放行一人一次 EVALSHA(不再 ZPOPMIN);`queue:zone:{z}`、`queue:meta:{qid}`、`queue:token:{token}` 改为空闲 TTL,至多约 1.25×`QueueEntryTTL`。脚本里只访问同一实例的键,redis-queue 仍可单独拆出。
+
 排队默认关闭:`login.yaml:428-429`;K8s 的 login ConfigMap 不写 Queue 段,取缺省值 false。
 
 > **(2026-10-15 更正,上表与上一句原文保留)** A 表的原子性说法与行号已过时。以下按当前 `go/login/internal/logic/pkg/loginqueue/queue.go` 核对,行号均指该文件(另注明的除外):
@@ -120,11 +122,30 @@
 | `task:result:{taskID}` LIST + 频道 `task:result:notify` | go/db 写 LIST,再 PUBLISH | login 结果分发器 | 5min | `key_ordered_consumer.go:37`、`:42`、`:393-411`;`go/login/internal/dispatcher/task_result_dispatcher.go:32`、`:324`、`:370`。**单频道,PUBLISH 会扇出到所有 login 实例** |
 | `player:{id}:asset_sql_commit`(2026-10-16 登记;hash:`version` = `%020d:%020d` 的 (owner_epoch, save_seq),`data` = `PlayerAssetSQLCommit`)**不是缓存,见表下说明** | go/db `RedisClient`:玩家行 SQL 提交之后发布,单键 Lua 只升不降(`assetop.PublishSQLCommit`);计划并入写路径令牌发布脚本,与排序锁、子表缓存同一次 EVAL | data_service `GetPlayerAssetOpLedger(require_sql_commit=true)`,经 `Router.ClientForPlayer`(home_zone 集群或 DevRedis);guild / trade / mail 的资产通道据此终结 | **无**,与父键同寿命:设了 TTL,已离线玩家的资产待办会永远等不到证据。回收只靠合服 / 撤销删除与回档清理;每玩家常驻一份账本(含托管收据里的完整实例字节),计入核心容量 | `go/shared/assetop/sql_commit.go`;`go/data_service/internal/logic/asset_sql_commit.go`;设计见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md) §6.6 |
 
+> **2026-10-18 更正(B0-3 第 1 批)**:task:result 的键与频道清单改为:
+> - `task:result:{taskID}` LIST:不变。
+> - 旧频道 `task:result:notify`:全服广播,兼容旧版 go/db、供回滚用,login 永久保留订阅。
+> - 实例频道 `task:result:notify:<login 进程 UUID>`:定向投递,每个 login 进程一条,与旧频道共用同一条 Pub/Sub 连接。
+>
+> 频道名的唯一来源是 `go/shared/taskresult`。login 侧已落码(未编译);go/db 按 DBTask.reply_instance 定向发布是第 2 批,落地之前 go/db 仍只发旧频道。表中引用的 `task_result_dispatcher.go:32` 常量已删,改为引用 taskresult.LegacyNotifyChannel。
+>
+> **2026-10-18 更正(B0-3 第 2 批)**:go/db 按 DBTask.reply_instance 定向发布已落码(未编译、未验证)。`publishTaskResult` 先 LPUSH + EXPIRE,再只 PUBLISH 一次:合法发实例频道,为空或不合法回落旧频道。上一段「落地之前 go/db 仍只发旧频道」只在第 2 批上线前成立。计数用 `db_task_result_notify_total{target,result}`,告警文件是 `deploy/k8s/task-result-notify-alerts.yaml`。表中 `key_ordered_consumer.go:42` 的常量 taskResultNotifyChannel 已删。
+
 `player:{id}:save_barrier`（2026-10-17 登记）与父快照/SQL 证明同处核心 Redis，不设 TTL；hash 的 `pending` 由 C++ 与父快照原子写入，`player_database` / `player_database_1` 由 go/db 在 SQL applied/equal 后与核令牌、子缓存和证明同一脚本 ACK。三字段均为 41 字节定宽版本，不转 Lua double。login 冷加载只在两 ACK 与 pending 同版时重建父键，不能降级为读取旧子缓存。现有 owner/父键与新屏障未同槽，只支持同一 Redis 实例；不可宣称 Cluster 原子协议已就绪。每名玩家新增一个常驻 hash，容量需按实际玩家基数计入核心预算。
 
 merge_zone 合服与撤销时会按玩家删缓存（`playerCacheKeys`）；清单同时含资产 SQL 提交证据和 `save_barrier`。删除屏障后必须维持维护闸，从权威 SQL 核对同版两行并恢复归属/屏障才能放流，历史数据不能当新号补种。PITR 同规，见 `db-write-fencing-mysql.md` 的追加恢复门禁。
 
 `save_barrier` 的 `outbox_*` 字段暂存两条完整 DBTask，`player:save_pending:<home_zone>:<player_id % 64>` 为同实例 ZSET 索引。每 zone 固定64桶；每个未完成玩家会额外占一份任务字节，容量按实际两表快照大小和最大积压计算，不能只按 hash 字段数估算。DB补投器专用连接池启用context截止，父Redis和mappingRedis同指针时最多2条连接，否则各最多2条；每副本均计入连接预算。只在两表 SQL ACK 与 pending 同版时原子回收字段/member；合服 P4 要求全部桶空，PITR 不得直接丢弃未提交意图。当前单实例 Redis/AOF 仍是父提交与补投恢复的前提。
+
+**存盘协议世代与补投状态(2026-10-18 登记,`db-write-fencing-mysql.md` 文末同日附注)**:以下键与字段都和父快照、`save_barrier`、补投桶在同一核心 Redis 实例上,判定与 C++ 写入看到的是同一份事实。
+- `db:save_protocol:zone:<z>`:STRING,值为 `strict`,无 TTL。`Fencing.Mode=dual` 的 go/db 启动时写入,`legacy` 实例启动前与运行中读它。只能由运维按降级流程删除:先回退写者,再排空补投桶。合服 / 回档不动它,拆分实例时必须随父快照一起迁。
+- `db:save_protocol:legacy_alive:zone:<z>`:STRING,PX 30s,由 `legacy` 实例每 5s 续写,`dual` 补投器每拍 `EXISTS`。丢失的代价只是补投早几秒恢复。
+- `save_barrier` 新增五个字段,全部只由 go/db 写,两表 ACK 齐全时与 4 个 `outbox_*` 意图字段一并删除:
+  - `outbox_attempt_version`、`outbox_attempts`;
+  - `outbox_terminal`、`outbox_terminal_reason`;
+  - `outbox_retry_ms`。
+
+  容量上每名有未完成意图的玩家多出不到 200 字节,可忽略。merge_zone 与 PITR 按玩家删 `save_barrier` 时,这些字段随之消失,不需要单独处理。
 
 **资产 SQL 提交证据键的拆分约束(2026-10-16 登记)**:
 - 它是资产通道「SQL 已提交」的证据,不是可丢的缓存:**不能**随第 3 批当缓存拆到 `redis-cache`,也不能被清缓存类操作顺手删掉而不知会(删了方向安全,但资产待办要等玩家下一次存盘才能终结)。
@@ -154,6 +175,10 @@ merge_zone 合服与撤销时会按玩家删缓存（`playerCacheKeys`）；清�
 | 资产唤醒:频道 `assetop:wake`(Pub/Sub,不落键)、去重键 `assetop:wake:{service}:{id}`(2026-10-15 新增) | C++ scene `PUBLISH`;guild / trade 订阅后 `SET NX EX 5` | guild / trade | 去重键 5 秒;**可丢** | `cpp/libs/services/scene/player/system/player_landing.cpp`;`go/shared/assetopwake/`;设计见 [landing-recovery-sync-digest.md](landing-recovery-sync-digest.md) §5 |
 | 组队:`team:rec:{tid}`、`team:{tid}`、`team:player:{pid}`、`team:invite:{pid}` | match 的 team 模块(S_COMMIT 一段 Lua 写四类) | C++(`player_team.cpp:43-45`、`:202`、`:291`、`:355`) | — | `go/match/internal/team/keys.go:9`、`:38-53` |
 | data_service 玩家数据 `player:{%d}:*`(含 `__lock`、`__version`) | data_service | data_service | — | `go/data_service/internal/logic/data_logic.go:20-25`;`router.go:531-533`。Load / Save 这两个 RPC 在仓库里 grep 不到生产调用方 |
+
+> **(2026-10-18 更正 / 增补,B0-1,上表原文保留)**
+> - 会话族新增 `player:gate_index:sessions:<gate 实例 uuid>`(SET)、`player:gate_index:gates`(SET)、`player:gate_index:ready`(PX 3.5 拍)、`player:gate_index:gen`、`player:gate_index:last_audit`、`player:gate_index:audit_cooldown`(EX,审计失败后的冷却)。写者是 player_locator 的三段会话 Lua 与会话对账 leader 的守卫脚本,读者只有对账。它们**必须与 `player:session` 同实例**(同一段 Lua 内原子维护),属于核心闭包。选主锁 `player_locator:session_reconciler:leader`(TTL 30s,shared/leader)同在核心。设计见 [player-locator-gate-session-index.md](player-locator-gate-session-index.md)。
+> - 更正上表会话族行的 TTL 列「断线后 session 带 PX」:会话键在任何路径下都没有 TTL。三段写 Lua 的调用方都传 0,rearm 还会 PERSIST,清理时机只由 `player:leases` 决定(见 `go/player_locator/internal/logic/setdisconnectinglogic.go` 的注释)。
 
 **G. 本稿不处理**:guild 私有键(DB 2,K8s 上未部署:`guild:v2:*`、`guild_rank:*`,见 `tools/merge_zone/guild_step.go:123-128`、`fence.go:239`);friend 私有键(FriendRedis 未配置时回落到共享库);match / chat 的集群键。
 
@@ -187,6 +212,8 @@ merge_zone 合服与撤销时会按玩家删缓存（`playerCacheKeys`）；清�
 | data_service 删除时的双锁 | `router.go:545` 起(`AcquirePlayerLock`) | `lock:player`(映射)+ `player:{id}:__lock`(DevRedis) | **本来就按跨实例设计**,不依赖原子性 |
 
 > **(2026-10-15 更正,上表原文保留)**「login 排队」一行的行号已漂移。当前 `queue.go`:入队 MULTI `:204-216`;放行 MULTI `:465-473`(`SET` 放行槽 + `EVAL admittedHoldScript`);取走后的单段 `EVAL` `:389`;计数与快速通道各一段 Lua,`:531-534`、`:560-568`。这些都只碰排队族的键,「排队族内部」的结论不变。原子性细节见 §2.2 A 表后的更正注。
+
+> **(2026-10-18 增补,B0-1,上表原文保留)**「player_locator 会话生命周期」一行:replace / setDisconnecting / deleteIfUnchanged 三段会话 Lua 现在还会碰 `player:gate_index:sessions:<uuid>` 与 `player:gate_index:gates`;对账新增的守卫脚本(摘成员、补成员、释放空索引)碰 `player:session`、索引与登记集。这些仍在会话族内部,不改变拆分结论。
 
 **结论**:
 - 父键、`owner_epoch`、`handoff`、`location`、`player:session`、`player_locker`、`account`、`account_lock`、场景路由这一组键,通过上表的脚本两两相连,构成一个闭包。它们只能整体留在同一个实例。
@@ -329,6 +356,10 @@ merge_zone 合服与撤销时会按玩家删缓存（`playerCacheKeys`）；清�
   - 子表缓存回写:每个写任务一次大 value 的 SET;
   - `task:result` 的 PUBLISH 扇出:单频道发给全部 login(`task_result_dispatcher.go:32`)。
   它与「`task:result` 按 login 实例分频道」(L-06 后半句)互相独立,**建议先做分频道**。
+  - **2026-10-18 状态**:分频道第 1 批(proto + go/shared/taskresult + login 双订)已落码,未编译、未验证;go/db 侧是第 2 批。
+  - **2026-10-18 第 2 批状态**:go/db 侧已落码,未编译、未验证。实例频道仍跟着 publishTaskResult 的 Redis 句柄(go/db 的 RedisClient)走,下面「同一实例、全服同一拍」的约束不变。发起方 login 不在,或两端频道名不一致时,由 `db_task_result_notify_total{target="instance",result="no_receiver"}` 暴露。注意 PUBLISH 的订阅者数包含模式订阅,这台 Redis 上若有人开着 `PSUBSCRIBE task:result:notify:*`,no_receiver 会被压成 0,所以 `PUBSUB NUMPAT` 应为 0。
+  - 约束不变,同样适用于实例频道:实例频道跟着 publishTaskResult 的 Redis 句柄走,必须和结果 LIST、login 的 SUBSCRIBE 与 LPOP 在同一个实例上。第 3 批挪 `redis-cache` 时,go/db 与 login 仍要全服同一拍切换。
+  - LIST 与频道不在同一实例的配置错误,由 login 的 `login_task_result_delivery_total{outcome="result_missing"}` 暴露。它是附加信号,不进送达率分母。
 - **约束**:go/db 与 login 必须**全服同一拍**切。玩家可以在 home 以外的 zone 进场,任何 zone 的 login 都可能在等任何 home zone 的 go/db 发布结果(CZ-2)。
 - **为什么可以不拷**:目标实例是空的,缺键就回源读库,结果一定是对的。迁移时不拷,切换后父键缺失的玩家首次进场多一次冷读。
 - **反过来,目标上有旧缓存就不安全**:login 父键缺失时直接用子表缓存拼父键(`ensure_player_all_data_async.go:80-93`),拼出来的父键随后被 C++ 载入。子表缓存一旦比库旧,就等于把玩家进度回档。
@@ -585,6 +616,7 @@ DryRun 不调这个函数(同 Kafka 闸)。所以凡是「先 DryRun 预检、�
     - **不加 `PlayerAllData:*`**:Step 4 的用途写明是「清 zone 的数据缓存、从 MySQL 重建」(`:5`、`:32`、`:922`),zone 私有缓存里有 `PlayerAllData:*` 是正常的,把它列进守卫会拦掉本来合法的目标。核心上一定有 `account:*`,所以不加它也拦得住核心。
     - 今天核心上已有映射族,守卫本来就拒绝,补上之后看不到行为变化;所以随第 1a 批一起补。
     - 参数注释(`:211-213`)和拒绝文案(`:695`)里列举的键类要同步补上「账号目录、会话、归属 epoch」。
+    - (2026-10-18 增补,B0-1)`player:gate_index:*` 与 `player:session:*` 同族、必须同实例,守卫模式补核心族时一并加上。代码事实源仍是 `tools/scripts/k8s_zone_rollback.ps1` 的 `Get-SharedRedisGuardPatterns`,B0-1 没有改它。
   - 新增 `-RedisSplit` 参数并转发给 Step 6 的 zone-up;停服之前真跑一次 `Assert-RedisTopologyChangeIsSafe`(§4.2、§4.4)。
 - **`dev_tools.ps1`**:新增 `k8s-redis-split-status` 和 `k8s-redis-wipe`(§5.9);`-RedisSplit`、`-ConfirmRedisSplitSwitch`、各 `-Redis*MaxMemory`、`-ConfirmRedisCoreRestart` 原样转发给 §4.2 列出的部署入口和 `k8s-zone-rollback`。第 2 批再转发 merge_zone 的 `-dbctl-redis-*`。
 - **`stress_snap.ps1`**:加 `-RedisTargets` 参数(§6.4)。
@@ -811,6 +843,8 @@ type Family struct {
 | redis-mapping(第 2 批后) | 再加每个写任务约 7 条控制面命令:锁 SETNX、游标 GET / SET、epoch GET / EVAL、解锁 EVAL | ≈ 9W + E + … |
 | redis-cache | 每个任务 1 次大 value 的 SET;每个读任务 LPUSH / EXPIRE / PUBLISH 各一次;PUBLISH 扇出到 L 个 login | ≈ W + 3R,另有推送 R × L 条 |
 | redis(核心) | C++ 存盘每玩家每 300s 一次 EVALSHA;进场链路(锁、父键、会话、位置 / epoch 的 Lua、场景计数);离场;战斗与组队;会话续租 | 待压测 |
+
+> **(2026-10-18 更正,上表 redis-queue 一行;原文保留)** 排队 Lookup 改为 3 次往返(其中 1 次是脚本),放行改为每人 1 次 EVALSHA,不再 ZPOPMIN;稳态续期写约 100 PEXPIRE/s(4.5 万人在排、2s 轮询、`QueueEntryTTL`=1h 的估算,未实测)。见 `login-queue-2026-05.md` §5 的 2026-10-18 更正。
 
 例:N = 10 万时 W ≈ 667/s。第 1 批 `redis-mapping` 约 1.3k 次 MGET/s;第 2 批后约 6k ops/s。单实例 Redis 处理简单命令的量级是每秒几万到十万,稳态余量很大。**首日真正的风险是尖峰**,也就是 E、C、Q 三项,而不是稳态。
 
@@ -1066,6 +1100,8 @@ kind 上两个 zone 按 §5.5 逐个 zone 迁移。zone 号要选成一个是另
 1. 是否采纳「核心 + 2 个新实例 + 1 个可选实例,分 3 批」,以及「会话与锁 / PlayerAllData 父键不拆」的结论。
 2. 控制面是并入 `redis-mapping`(本稿推荐),还是单独开第四个实例。
 3. 第 3 批(`redis-cache`)做不做、什么时候做;是否先做 `task:result` 按 login 实例分频道。
+   - **2026-10-18 已答复后半句**:负责人 10-17 定为先做分频道,分两批,先用 PUBLISH。第 1 批(proto + go/shared + login)已落码,未编译;go/db 侧是第 2 批。前半句(第 3 批做不做)仍待定。
+   - **2026-10-18 第 2 批**:go/db 侧(定向发布、计数、独立告警)也已落码,未编译。前半句仍待定。
 4. 各实例 maxmemory 与 limits 的初值(等 L-14);核心是否在第 1c 批的维护窗口里显式化(需要一次全服重启)。
 5. 核心内存无上界怎么处理:另写一份冷玩家卸载设计,还是按累计玩家规模配内存。
 6. Redis 监控:先做 INFO 快照(不引入新镜像),还是直接上 redis_exporter sidecar。

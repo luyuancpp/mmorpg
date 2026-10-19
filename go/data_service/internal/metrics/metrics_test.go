@@ -304,3 +304,89 @@ func TestSQLPoolCollectorDeclaresRouteOnlyUnderDBFirst(t *testing.T) {
 		}
 	}
 }
+
+// TestPrimeRouteReadCreatesAllSeries 锁死第 3 批读方门禁告警(RouteReadSQLFallbackErrors 等,规格 §7 第 2 条)的前提:
+// PrimeRouteRead 之后,route_read_total 会出现的 13 个 path × result 组合与 route_ready_verdict_total 的 8 个 verdict
+// **全部存在且为 0**,且没有多出不会出现的组合(batch 没有 not_found_sql,enumerate 只读库)。
+// sql_error 可能一辈子只发生几次,序列不预先存在,`increase(...) > 0` 恰好漏掉第一次(同 TestPrimeRouteCreatesAllSeries)。
+func TestPrimeRouteReadCreatesAllSeries(t *testing.T) {
+	PrimeRouteRead()
+
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		t.Fatalf("gather: %v", err)
+	}
+	wantRead := map[string]bool{}
+	for _, s := range routeReadSeries {
+		wantRead[s[0]+"/"+s[1]] = true
+	}
+	if len(wantRead) != 13 {
+		t.Fatalf("routeReadSeries lists %d distinct combinations, want 13", len(wantRead))
+	}
+	for _, absent := range []string{
+		RouteReadPathBatch + "/" + RouteReadResultNotFoundSQL,
+		RouteReadPathEnumerate + "/" + RouteReadResultCache,
+		RouteReadPathEnumerate + "/" + RouteReadResultNotFoundSQL,
+	} {
+		if wantRead[absent] {
+			t.Fatalf("%s can never happen and must not be primed", absent)
+		}
+	}
+	wantVerdict := map[string]bool{}
+	for _, v := range routeReadyVerdicts() {
+		wantVerdict[v] = true
+	}
+	if len(wantVerdict) != 8 || !wantVerdict["trusted"] || !wantVerdict[RouteReadyVerdictScriptError] {
+		t.Fatalf("route_ready_verdict_total closed set = %v, want the 7 placement verdicts + script_error", wantVerdict)
+	}
+
+	found := map[string]bool{}
+	for _, mf := range families {
+		var want map[string]bool
+		switch mf.GetName() {
+		case "data_service_route_read_total":
+			want = wantRead
+		case "data_service_route_ready_verdict_total":
+			want = wantVerdict
+		default:
+			continue
+		}
+		found[mf.GetName()] = true
+		seen := map[string]float64{}
+		for _, m := range mf.GetMetric() {
+			var path, result, verdict string
+			for _, l := range m.GetLabel() {
+				switch l.GetName() {
+				case "path":
+					path = l.GetValue()
+				case "result":
+					result = l.GetValue()
+				case "verdict":
+					verdict = l.GetValue()
+				}
+			}
+			key := verdict
+			if key == "" {
+				key = path + "/" + result
+			}
+			seen[key] = m.GetCounter().GetValue()
+		}
+		if len(seen) != len(want) {
+			t.Fatalf("%s has %d series after priming, want %d: %v", mf.GetName(), len(seen), len(want), seen)
+		}
+		for key := range want {
+			got, ok := seen[key]
+			if !ok {
+				t.Fatalf("%s{%s} missing after priming", mf.GetName(), key)
+			}
+			if got != 0 {
+				t.Fatalf("%s{%s} = %v after priming, want 0", mf.GetName(), key, got)
+			}
+		}
+	}
+	for _, name := range []string{"data_service_route_read_total", "data_service_route_ready_verdict_total"} {
+		if !found[name] {
+			t.Fatalf("metric family %s is not registered", name)
+		}
+	}
+}

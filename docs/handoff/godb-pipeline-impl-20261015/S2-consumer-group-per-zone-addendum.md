@@ -141,6 +141,9 @@ DryRun（不读集群）：
 - 第 0 步 c：Show-KafkaTopicLagSnapshot，同原规格（只告警，绝不 throw）。
 - 第 0 步 d（新增，只在 -Apply 下、Step 1 之前执行；dry-run 只打印命令）：用本机 kafka-consumer-groups.sh describe zone 组，再用 Resolve-KafkaGroupTopicOffsets 分类。结果为 offsets 时打印 `zone group already holds offsets on <T>; Step 5 rehearsal skipped`。结果为 missing 或 no-offsets 时，以 hashtable splatting 调用 kafka_offset_reset.ps1，参数为 BootstrapServer、Topic、Group=zone 组、ToDatetime=$TargetTime、Partitions=N（不带 Apply 与 RetireGroup）；退出码非 0 就 throw（中文：Step 5 预演失败，Kafka 无法为 zone 组生成完整的重置计划，停服前拒绝；见设计文档 §11 V3(c)）。describe 本身出错也 throw。
 - Step 5：$kArgs 为 BootstrapServer、Topic、Group=zone 组、ToDatetime、RetireGroup=legacy 组、Partitions=N，-Apply 时再加 Apply。
+- （2026-10-18 补，负责人 2026-10-17 裁决「丢弃 TargetTime 之后的写」后已落码，未编译、未测试：第 0 步 d 与 Step 5 的 `ToDatetime` 一律换成 `ToLatest`；不清游标；不再 FLUSHDB，
+  本 topic 的重试收据与受影响玩家的 T 之后状态交给回档工具 zone_rollback_discard（尚未落地）；另加第 0 步 f、Step 1b、4a / 4b / 5b。本节其余条目仍有效，现行流程以
+  `docs/design/zone_data_rollback.md`「2026-10-18 修订」为准。）
 
 ## 9 tools/scripts/dev_tools.ps1
 在原规格 ①–④ 的基础上：kafka-offset-reset 分支改为 hashtable splatting（规则见 R8）。-DbConsumerGroup 的 ValidateSet 为 "", keep, zone, legacy。
@@ -253,6 +256,6 @@ PR-D 内已有文件，内容有变：
 7. **R8 与 §7 的 `-DeleteAndRecreateTopic`（「ReplicationFactor ≠1 才放」）**：`kafka_offset_reset.ps1` 现对 db_task topic（lib 新增 `Test-DbTaskTopicName`，`^db_task_zone_\d+(_g\d+)?$`）一律拒绝同名重建，改走 `TopicGeneration` 换代；`-ReplicationFactor` 改为必填（0 = 没给）且须等于现有副本数，`dev_tools.ps1` 的 `-KafkaReplicationFactor` 缺省 0、大于 0 才透传；删除前先 describe（`ConvertFrom-KafkaTopicDescribe`），读不到或分区数 / 副本数不一致不删；删除后 `Wait-KafkaTopicDeleted` 按单调时钟最多等 30s，`--list` 失败或超时即 throw、不 create。
 8. **§7 重置模式与 §8 Step 5 的退出码**：重置模式的成功路径现以 `exit 0` 结束，`Invoke-KafkaToolCaptured` 在 finally 里把 `LASTEXITCODE` 复位为 0。本稿没有规定这一点；不这样做时，「组不存在」的 describe 以非 0 退出会让回档 Step 5 在 PITR / FLUSHDB 之后把成功判成失败。
 9. **§8「入口处用 Get-YamlScalar 读 … GroupID … 和 PartitionCnt」**：入口现在还读 `ServerConfig.Kafka.TopicGeneration`（非负整数），用 `Get-DbTaskTopicName` 推导 topic；显式 `-KafkaTopic` 与推导值不一致即拒。本稿没有提 topic 世代号。
-10. **回档的 Kafka 语义**：`kafka_offset_reset.ps1` 原注释「Step 4 已 FLUSHDB 清掉游标」的前提在 K8s 上不成立（游标在共享 DB0，Step 4 的防护必拒），已更正注释；`k8s_zone_rollback.ps1` 文件头 Step 5 写明了已知问题。「从 TargetTime 起重放」在 K8s 上并不成立，「丢弃 TargetTime 之后的写」也不完整。两个互斥方案（丢弃：Step 5 改 `-ToLatest` 并拦截本 topic 的重试收据；灾难恢复重放：Step 5 之前只清本 topic 的游标，并在第 0 步校验 TargetTime 不早于各分区日志起点）**待负责人裁决**，行为没有改。见设计文档 §6 末尾与 `docs/design/zone_data_rollback.md`「2026-10-17 修订」。
+10. **回档的 Kafka 语义**：`kafka_offset_reset.ps1` 原注释「Step 4 已 FLUSHDB 清掉游标」的前提在 K8s 上不成立（游标在共享 DB0，Step 4 的防护必拒），已更正注释；`k8s_zone_rollback.ps1` 文件头 Step 5 写明了已知问题。「从 TargetTime 起重放」在 K8s 上并不成立，「丢弃 TargetTime 之后的写」也不完整。两个互斥方案（丢弃：Step 5 改 `-ToLatest` 并拦截本 topic 的重试收据；灾难恢复重放：Step 5 之前只清本 topic 的游标，并在第 0 步校验 TargetTime 不早于各分区日志起点）**待负责人裁决**，行为没有改。见设计文档 §6 末尾与 `docs/design/zone_data_rollback.md`「2026-10-17 修订」。（2026-10-18 补：负责人 2026-10-17 已裁决「丢弃 TargetTime 之后的写」，脚本已按丢弃方案落码，未编译、未测试；见设计文档 §6 末尾「2026-10-18：已裁决并落码」与 `docs/design/zone_data_rollback.md`「2026-10-18 修订」。）
 11. **§3.3 exec 命令**：设计文档 §4.3 已记录改成 `/bin/sh -c` 加小堆；现在命令与结果分类搬进 lib（`Get-DbGroupDescribeExecArgs` / `Resolve-DbGroupDescribeExecResult`），`Read-DbGroupTopicFacts` 与回档第 0 步 e 共用。
 12. **§13 V3 追加**：(k) 执行机上 `kafka-get-offsets(.sh/.bat)` 的位置与输出格式；(l) 部署账号的 `pods/proxy` RBAC 与 API 代理抓 `/metrics` 的原始输出；(m) 「组不存在」文案与表格同时出现的矛盾输出在 4.3.1 上是否真会出现。见设计文档 §11。

@@ -65,7 +65,7 @@ void SendEnvelope(SessionInfo &session, uint64_t clientRequestId, uint32_t messa
 // 不再只是 lane 的。只能在 gate 的 EventLoop 线程上调用。
 SessionInfo *FindLiveSession(SessionId sessionId, uint64_t incarnation);
 
-// 发往路由服的发送函数,由 client_message_processor.cpp 在启动时注入(它持有挑路由服副本与生成 sender 的细节)。
+// 发往路由服的发送函数,由 client_session_handler.cpp 在启动时注入(它持有挑路由服副本与生成 sender 的细节)。
 // sessionDetailsBin 是序列化好的 SessionDetails,原样作为 x-session-detail-bin。
 // 返回是否已发出;本地还没发现任何可用的路由服时返回 false(lane 据此回 1003)。
 using RouterSendFn = bool (*)(const ClientRequest &request, const std::string &sessionDetailsBin);

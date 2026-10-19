@@ -25,6 +25,11 @@
 #include "spatial/system/aoi.h"
 #include "player/comp/player_ownership_comp.h"
 #include "player/system/enter_fence.h"
+#include "player/system/player_lifecycle.h" // IsSceneChangeBusy / RequestSceneChange:换图发送侧闸与 EnterScene 唯一发送入口
+#include "player/system/player_tip.h"
+#include "grpc_client/grpc_call_tag.h"      // GrpcCallOutcome:镜像 CreateScene 的每次调用回调
+#include "proto/common/base/node.pb.h"      // NodeInfo:自动进场 EnterScene 的 gate_instance_id
+#include "time/system/time.h"
 #include "table/proto/tip/common_error_tip.pb.h"
 #include "table/proto/tip/scene_error_tip.pb.h"
 #include <thread_context/ecs_context.h>
@@ -43,6 +48,9 @@ namespace {
 // 分线目录的 Redis 键(STRING,值是 SceneChannelDirectory 的序列化字节);两个 %u 依次是 zone_id、scene_config_id。
 // 与 Go 侧 go/scene_manager/internal/logic/world_channel_directory.go 的 WorldChannelDirectoryKeyFmt 是同一份契约,改一边必须改另一边。
 constexpr char kWorldChannelDirectoryKeyFmt[] = "world_channel_directory:zone:%u:%u";
+
+// 镜像 CreateScene 的令牌序号(PlayerMirrorCreateInFlightComp.token)。与 tlsEcs 同属本线程,先自增再用,恒非 0。
+thread_local uint64_t tlsMirrorCreateTokenSeq = 0;
 
 bool ZoneRedisReady()
 {
@@ -314,6 +322,15 @@ bool PlayerSceneSystem::RequestEnterMirrorScene(entt::entity player, uint32_t mi
 		return false;
 	}
 
+	// 发送侧闸(与 EnterSceneC2S 同一道):归属交接在途,或另一件换图 / 建镜像还在途。下面登记的在途组件只有
+	// 一个槽,再登记一次会顶掉上一次的令牌,上一次的完成回调就认领不到:玩家既进不了镜像也收不到提示。
+	// 调用方 EnterSceneC2S 已经判过,这里在写入口再守一次,不让别的调用方绕过。
+	if (PlayerLifecycleSystem::IsSceneChangeBusy(player))
+	{
+		LOG_INFO << "RequestEnterMirrorScene rejected: scene change already in flight, player_id=" << tlsEcs.GetPlayerId(player);
+		return false;
+	}
+
 	const auto* sceneEntityComp = tlsEcs.actorRegistry.try_get<SceneEntityComp>(player);
 	if (sceneEntityComp == nullptr || sceneEntityComp->sceneEntity == entt::null)
 	{
@@ -356,21 +373,171 @@ bool PlayerSceneSystem::RequestEnterMirrorScene(entt::entity player, uint32_t mi
 
 	auto& smRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
 
+	// 值副本:下面要往 actorRegistry 挂组件,不跨这一步保留组件指针。
+	const Guid playerId = playerSessionPB->player_id();
+	const uint64_t sourceSceneId = sourceInfo->scene_id();
+	const uint64_t sourceSceneConfigId = sourceInfo->scene_config_id();
+
 	::scene_manager::CreateSceneRequest req;
-	req.set_scene_conf_id(sourceInfo->scene_config_id());
+	req.set_scene_conf_id(sourceSceneConfigId);
 	req.set_scene_type(::scene_manager::SCENE_TYPE_INSTANCE);
 	req.set_zone_id(GetZoneId());
-	req.set_source_scene_id(sourceInfo->scene_id());
+	req.set_source_scene_id(sourceSceneId);
 	req.set_mirror_config_id(mirrorConfigId);
-	req.add_creator_ids(playerSessionPB->player_id());
+	req.add_creator_ids(playerId);
 
-	scene_manager::SendSceneManagerCreateScene(smRegistry, smEntity, req);
+	// 先登记、再发(与 PlayerLifecycleSystem::RequestSceneChange 同一纪律):完成回调从不在发送栈内同步调用,
+	// 但"等待者记下的令牌"必须在发出之前就位。
+	// PlayerMirrorCreateInFlightComp 是按需状态,此处延迟创建,也是它唯一的创建入口(ecs-component-access-rules.md);
+	// 一次镜像请求一次,不是 per-tick 路径。replace 只会发生在旧组件已过 TTL 时(上面的闸挡住了 TTL 内的),
+	// 旧请求的完成回调随后按令牌对不上而丢弃。
+	const uint64_t token = ++tlsMirrorCreateTokenSeq;
+	auto& inFlight = tlsEcs.actorRegistry.emplace_or_replace<PlayerMirrorCreateInFlightComp>(player);
+	inFlight.token = token;
+	inFlight.sentAtMs = TimeSystem::NowMillisecondsUTC();
+	inFlight.mirrorConfigId = mirrorConfigId;
+	inFlight.sourceSceneId = sourceSceneId;
 
-	LOG_INFO << "RequestEnterMirrorScene: dispatched create_mirror player=" << playerSessionPB->player_id()
-	         << " source_scene=" << sourceInfo->scene_id()
+	// 每次调用回调:成功 / 业务失败 / 传输失败都恰好回调一次,不再走全局 CreateScene 处理器。
+	// 只按值捕获 player_id 与令牌,不捕获实体句柄或组件指针:回调到达时实体可能已销毁或被复用。
+	scene_manager::SendSceneManagerCreateScene(
+		smRegistry, smEntity, req,
+		[playerId = playerId, token = token](const GrpcCallOutcome& outcome,
+											 const ::scene_manager::CreateSceneResponse* reply)
+		{
+			HandleMirrorCreateDone(playerId, token, outcome, reply);
+		});
+
+	LOG_INFO << "RequestEnterMirrorScene: dispatched create_mirror player=" << playerId
+	         << " source_scene=" << sourceSceneId
 	         << " mirror_config=" << mirrorConfigId
-	         << " scene_conf=" << sourceInfo->scene_config_id();
+	         << " scene_conf=" << sourceSceneConfigId
+	         << " token=" << token;
 	return true;
+}
+
+void PlayerSceneSystem::HandleMirrorCreateDone(Guid playerId, uint64_t token, const GrpcCallOutcome& outcome,
+											   const ::scene_manager::CreateSceneResponse* reply)
+{
+	// ── 认领:实体还在、令牌对得上才摘槽;TTL 仍有效才允许提示或自动进场 ──
+	const auto player = tlsEcs.GetPlayer(playerId);
+	if (!tlsEcs.actorRegistry.valid(player))
+	{
+		// 玩家在建镜像途中离开了本节点(断线 / 换节点):没有客户端可提示,镜像由 scene_manager 按空场景回收。
+		LOG_INFO << "CreateScene done: creator " << playerId << " not present on this node, dropping token=" << token
+				 << " ok=" << outcome.ok();
+		return;
+	}
+	const auto* inFlight = tlsEcs.actorRegistry.try_get<PlayerMirrorCreateInFlightComp>(player);
+	if (inFlight == nullptr || inFlight->token != token)
+	{
+		// 已被顶替(过了 TTL 又发了一次)或实体已重建(重连回本节点):不是当前等待者,不动它、不提示。
+		LOG_INFO << "CreateScene done: stale mirror create for player " << playerId << " token=" << token
+				 << " current_token=" << (inFlight != nullptr ? inFlight->token : uint64_t{0}) << ", dropping";
+		return;
+	}
+	const bool requestWithinTtl = PlayerLifecycleSystem::IsSceneChangeRequestWithinTtl(inFlight->sentAtMs);
+	const uint32_t mirrorConfigId = inFlight->mirrorConfigId;
+	tlsEcs.actorRegistry.remove<PlayerMirrorCreateInFlightComp>(player);
+	if (!requestWithinTtl)
+	{
+		// 闸已允许后来的换图,即使它已经完成也不能再按这次旧结果提示或自动进镜像。
+		// 已建好的空镜像由 scene_manager 回收;UTC 回拨同样按失效处理。
+		LOG_INFO << "CreateScene done: expired mirror create for player " << playerId << " token=" << token
+				 << " mirror_config=" << mirrorConfigId << ", dropping";
+		return;
+	}
+
+	// ── 建镜像没成 ──
+	if (!outcome.ok() || reply == nullptr)
+	{
+		// 结果未知(GrpcDone 契约:非 OK 不代表服务端没执行):回「服务器繁忙,请稍后再试」而不是"建镜像失败"。
+		// 镜像若其实已经建好,由 scene_manager 按空场景回收。
+		LOG_WARN << "SceneManager.CreateScene transport failure for player " << playerId << " code=" << outcome.code
+				 << " msg=" << outcome.message << " mirror_config=" << mirrorConfigId << " token=" << token;
+		PlayerTipSystem::SendToPlayer(player, kEnterSceneServerBusy, {});
+		return;
+	}
+	if (reply->error_code() != 0 || reply->scene_id() == 0)
+	{
+		// scene_manager 拒绝(业务失败应答不回显 creator_ids,改用每次调用回调之前这条路径告诉不了创建者),
+		// 或成功却没给 scene_id。
+		LOG_WARN << "SceneManager.CreateScene rejected mirror for player " << playerId << " code=" << reply->error_code()
+				 << " msg=" << reply->error_message() << " scene_id=" << reply->scene_id()
+				 << " mirror_config=" << mirrorConfigId << " token=" << token;
+		PlayerTipSystem::SendToPlayer(player, kEnterSceneFailed, {});
+		return;
+	}
+
+	// ── 建好了:提交点复核,再自动进场 ──
+	const uint64_t mirrorSceneId = reply->scene_id();
+	// 战斗在途不换场景(设计文档 §5.3 冻结清单):建镜像这一个往返里玩家可能刚进备战。
+	if (PlayerBattleSystem::IsInBattle(player))
+	{
+		LOG_WARN << "[PlayerBattle] mirror auto-enter skipped: player battle in progress, player_id=" << playerId
+				 << " mirror_scene=" << mirrorSceneId;
+		PlayerTipSystem::SendToPlayer(player, kEnterSceneFailed, {});
+		return;
+	}
+	// 自己的槽位已摘,此刻还忙只能是别的换图 / 交接(正常被上面的闸挡住;只在本槽过了 TTL 之后才可能出现)。
+	// 交接在途时不提示:交接自己会给结局,补一条"进入场景失败"会让客户端提前结束等待。
+	if (PlayerLifecycleSystem::IsSceneChangeBusy(player))
+	{
+		const bool handoffInFlight = PlayerLifecycleSystem::IsCrossZoneFrozen(player);
+		LOG_WARN << "CreateScene done: player " << playerId << " has another scene change / handoff in flight,"
+				 << " skipping auto-enter for mirror_scene=" << mirrorSceneId << " handoff_in_flight=" << handoffInFlight;
+		if (!handoffInFlight)
+		{
+			PlayerTipSystem::SendToPlayer(player, kEnterSceneFailed, {});
+		}
+		return;
+	}
+	const auto* playerSessionPB = tlsEcs.actorRegistry.try_get<PlayerSessionSnapshotComp>(player);
+	if (playerSessionPB == nullptr)
+	{
+		// 在线实体缺会话快照是不变量被破坏;没有会话也就送不出提示。
+		LOG_ERROR << "CreateScene done: PlayerSessionSnapshotComp missing for creator " << playerId
+				  << ", skipping auto-enter for mirror_scene=" << mirrorSceneId;
+		return;
+	}
+	const auto smEntity = GetSceneManagerEntity(playerId);
+	if (smEntity == entt::null)
+	{
+		// 与 EnterSceneC2S 找不到 SceneManager 时同一个提示:服务端暂时不可用,不是客户端的错。
+		LOG_WARN << "CreateScene done: no SceneManager node available to follow-up EnterScene for player " << playerId
+				 << " mirror_scene=" << mirrorSceneId;
+		PlayerTipSystem::SendToPlayer(player, kEnterSceneServerBusy, {});
+		return;
+	}
+
+	const SessionId gateSessionId = playerSessionPB->gate_session_id();
+	const NodeId gateNodeId = GetGateNodeId(gateSessionId);
+	std::string gateInstanceId;
+	if (const auto gateEntityOpt = ResolveLocalZoneGateEntity(gateSessionId))
+	{
+		auto& gateRegistry = tlsNodeContextManager.GetRegistry(eNodeType::GateNodeService);
+		if (const auto* gateNodeInfo = gateRegistry.try_get<NodeInfo>(*gateEntityOpt))
+		{
+			gateInstanceId = gateNodeInfo->node_uuid();
+		}
+	}
+
+	::scene_manager::EnterSceneRequest req;
+	req.set_player_id(playerId);
+	req.set_scene_id(mirrorSceneId);
+	req.set_session_id(gateSessionId);
+	req.set_gate_id(std::to_string(gateNodeId));
+	req.set_gate_instance_id(gateInstanceId);
+	req.set_gate_zone_id(GetZoneId());
+	req.set_zone_id(GetZoneId());
+
+	// 镜像"尽量"与源场景同节点,但不保证:落到别的节点时 scene_manager 会先以 18 暂拒。
+	// RequestSceneChange 在发送之前把目标与关联号记进单槽在途记录(PlayerSceneChangeInFlightComp),
+	// 应答按号对回来,才能用同一个 scene_id 起交接并重发(见 EnterSceneC2S)。
+	const uint64_t correlationId = PlayerLifecycleSystem::RequestSceneChange(player, smEntity, req);
+
+	LOG_INFO << "CreateScene done: dispatched EnterScene player=" << playerId << " mirror_scene=" << mirrorSceneId
+			 << " mirror_node=" << reply->node_id() << " token=" << token << " corr=" << correlationId;
 }
 
 void PlayerSceneSystem::SendSceneInfo(entt::entity player, bool withChannelDirectory)

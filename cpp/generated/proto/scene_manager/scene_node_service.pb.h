@@ -230,6 +230,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReleasePlayerRequest final : public
     kPlayerIdFieldNumber = 1,
     kTargetSceneIdFieldNumber = 2,
     kExpectedOwnerEpochFieldNumber = 4,
+    kSessionEndedFieldNumber = 5,
   };
   // string target_node_id = 3;
   void clear_target_node_id() ;
@@ -276,11 +277,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReleasePlayerRequest final : public
   void _internal_set_expected_owner_epoch(::uint64_t value);
 
   public:
+  // bool session_ended = 5;
+  void clear_session_ended() ;
+  [[nodiscard]] bool session_ended() const;
+  void set_session_ended(bool value);
+
+  private:
+  bool _internal_session_ended() const;
+  void _internal_set_session_ended(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_node.ReleasePlayerRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<2, 4,
+      ::google::protobuf::internal::TcParseTable<3, 5,
                           0, 54,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -313,6 +324,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReleasePlayerRequest final : public
     ::uint64_t player_id_;
     ::uint64_t target_scene_id_;
     ::uint64_t expected_owner_epoch_;
+    bool session_ended_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -469,6 +481,30 @@ inline ::uint64_t ReleasePlayerRequest::_internal_expected_owner_epoch() const {
 inline void ReleasePlayerRequest::_internal_set_expected_owner_epoch(::uint64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.expected_owner_epoch_ = value;
+}
+
+// bool session_ended = 5;
+inline void ReleasePlayerRequest::clear_session_ended() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_ended_ = false;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000010U);
+}
+inline bool ReleasePlayerRequest::session_ended() const {
+  // @@protoc_insertion_point(field_get:scene_node.ReleasePlayerRequest.session_ended)
+  return _internal_session_ended();
+}
+inline void ReleasePlayerRequest::set_session_ended(bool value) {
+  _internal_set_session_ended(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:scene_node.ReleasePlayerRequest.session_ended)
+}
+inline bool ReleasePlayerRequest::_internal_session_ended() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.session_ended_;
+}
+inline void ReleasePlayerRequest::_internal_set_session_ended(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.session_ended_ = value;
 }
 
 #ifdef __GNUC__

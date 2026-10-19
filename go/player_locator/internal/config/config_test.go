@@ -36,3 +36,49 @@ func TestEtcYamlEnablesPrometheus(t *testing.T) {
 		t.Errorf("Prometheus.Port = %d,player_locator 约定用 9190", c.Prometheus.Port)
 	}
 }
+
+// Reconcile 各项零值取默认值,负数按注释语义保留:默认值是唯一事实源(dev yaml 与 K8s ConfigMap 都不写值)。
+func TestReconcileConfNormalized(t *testing.T) {
+	got := ReconcileConf{}.Normalized()
+	want := ReconcileConf{
+		AuditIntervalSeconds:    DefaultReconcileAuditIntervalSeconds,
+		ScanCount:               DefaultReconcileScanCount,
+		ScanPagesPerSecond:      DefaultReconcileScanPagesPerSecond,
+		MaxTransitionsPerSecond: DefaultReconcileMaxTransitionsPerSecond,
+		DeadGateMembersPerRound: DefaultReconcileDeadGateMembersPerRound,
+	}
+	if got != want {
+		t.Fatalf("零值 Normalized = %+v, want %+v", got, want)
+	}
+
+	off := ReconcileConf{AuditIntervalSeconds: -1, ScanPagesPerSecond: -1, MaxTransitionsPerSecond: -1}.Normalized()
+	if off.AuditIntervalSeconds != -1 {
+		t.Errorf("AuditIntervalSeconds=-1 必须保留为关闭,得到 %d", off.AuditIntervalSeconds)
+	}
+	if off.ScanPagesPerSecond != -1 || off.MaxTransitionsPerSecond != -1 {
+		t.Errorf("负数限速必须保留为不限速,得到 scan=%d transitions=%d", off.ScanPagesPerSecond, off.MaxTransitionsPerSecond)
+	}
+	if off.ScanCount != DefaultReconcileScanCount || off.DeadGateMembersPerRound != DefaultReconcileDeadGateMembersPerRound {
+		t.Errorf("未设置的项仍取默认值,得到 %+v", off)
+	}
+
+	custom := ReconcileConf{AuditIntervalSeconds: 3600, ScanCount: 50, ScanPagesPerSecond: 7, MaxTransitionsPerSecond: 9, DeadGateMembersPerRound: 11}
+	if custom.Normalized() != custom {
+		t.Errorf("显式正值不得被改写,得到 %+v", custom.Normalized())
+	}
+}
+
+// dev yaml 只用注释说明 Reconcile 各项,不写值:leader 是全服一个,K8s ConfigMap 也不镜像这些项,
+// 两处各写一份迟早漂移,事实源只留在代码默认值。有人往 yaml 里加值时这里红,提醒同时决定 K8s 怎么镜像。
+func TestEtcYamlLeavesReconcileToCodeDefaults(t *testing.T) {
+	var c Config
+	if err := conf.Load("../../etc/player_locator.yaml", &c); err != nil {
+		t.Fatalf("加载 etc/player_locator.yaml 失败: %v", err)
+	}
+	if c.Lease.Reconcile != (ReconcileConf{}) {
+		t.Fatalf("etc/player_locator.yaml 的 Lease.Reconcile 写了值 %+v;事实源是代码默认值,要改默认值请改 config.go", c.Lease.Reconcile)
+	}
+	if c.Lease.ReconcileIntervalSeconds != 0 {
+		t.Fatalf("etc/player_locator.yaml 的 Lease.ReconcileIntervalSeconds = %d;全服必须一致,不在 dev yaml 里单独设", c.Lease.ReconcileIntervalSeconds)
+	}
+}

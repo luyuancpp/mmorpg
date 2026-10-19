@@ -14,6 +14,10 @@
 //   that no longer exists, or that disagree with mapping Redis on a
 //   given player_id's home_zone.
 //
+//   Route source (D1 第 3 批,spec_D1_batch1b2_2_3.md §5.5):给了 -route-db-dsn 就按全局库 player_route
+//   枚举归属(db_first 下的真源,见 route_source.go);不给保持 mapping Redis 口径,并在报告里打印
+//   "route source: redis (not authoritative under db_first)"。guild_rank:zone:* 不是映射,始终读 Redis。
+//
 //   It complements:
 //     - tools/merge_zone/audit_resources.go — pre-merge resource counts
 //     - data_service rollback audit log — single-player corrective work
@@ -42,7 +46,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	mysqldriver "github.com/go-sql-driver/mysql"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -53,9 +57,11 @@ import (
 //   warn  — pre-existing data quality issue (orphans, abandoned tombstones)
 //   block — active inconsistency that will cause player-visible bugs
 //           (e.g. guild row pointing to a non-existent zone after merge)
+//   fail  — 检查没能跑完(依赖读失败),结论未知;与 block 一样让进程退出 1。
+//           「读失败」绝不折算成孤儿或通过(2026-10-18,spec_D1_batch1b2_2_3.md §5.5)。
 type CheckResult struct {
 	Name        string
-	Severity    string // "info" / "warn" / "block"
+	Severity    string // "info" / "warn" / "block" / "fail"
 	BadCount    int64
 	TotalCount  int64
 	SampleNotes string // 1-line, optional concrete examples ("guild_id=123 zone=999")
@@ -80,7 +86,9 @@ type runConfig struct {
 	//
 	// nil = 没连上或没配。checkFriendOrphans 据此报 warn「NOT CHECKED」而不是跳过:
 	// 本文件 2026-05-23 的教训就是「优雅降级」把没跑的检查读成了干净通过。
-	friendDB   *sql.DB
+	friendDB *sql.DB
+	// routes 是玩家归属的读法:-route-db-dsn 给了是 player_route(db 口径),否则是 mapping Redis(redis 口径)。
+	routes     routeSource
 	knownZones map[uint32]struct{} // zones we expect to be live
 	// guildSchema: the guild service's own database (-guild-schema). Guild
 	// tables moved out of the default DSN database into mmorpg_guild, so
@@ -101,6 +109,10 @@ func main() {
 	redisAddr := flag.String("redis-addr", "127.0.0.1:6379", "Mapping redis address (player:zone:* keys)")
 	redisPwd := flag.String("redis-password", "", "Mapping redis password")
 	redisDB := flag.Int("redis-db", 0, "Mapping redis DB number")
+	// db_first 下映射的真源是全局库 player_route(dev 是 testdb,K8s 是 mmorpg_global),Redis 只是缓存。
+	// 给了就按库枚举归属(live zones / 玩家数 / 好友端是否有归属),不给保持 Redis 口径并在报告里注明不权威。
+	routeDSN := flag.String("route-db-dsn", "",
+		"Global route database DSN (the database holding player_route; db_first source of truth). Empty = use mapping Redis player:zone:* (not authoritative under db_first)")
 
 	// Live zones is a CSV the operator passes in (or we infer from mapping).
 	// Inference is the default because operators forget to update flags;
@@ -152,11 +164,38 @@ func main() {
 		log.Fatalf("mapping redis ping: %v", err)
 	}
 
+	// 归属的读法。给了 -route-db-dsn 却连不上就 Fatal:不能静默退回 Redis 口径,那会把不权威的结论当成库的结论。
+	var routes routeSource = redisRouteSource{r: goRedisMapping{rdb: rdb}}
+	if *routeDSN != "" {
+		// ParseDSN 的错误里可能带 DSN 片段(含口令),所以不打印原错误。
+		parsed, err := mysqldriver.ParseDSN(*routeDSN)
+		if err != nil {
+			log.Fatalf("-route-db-dsn cannot be parsed (error not printed: it may contain the password)")
+		}
+		if parsed.DBName == "" {
+			log.Fatalf("-route-db-dsn must name the database that holds player_route")
+		}
+		routeDB, err := sql.Open("mysql", *routeDSN)
+		if err != nil {
+			log.Fatalf("route db open: %v", err)
+		}
+		defer routeDB.Close()
+		if err := routeDB.PingContext(ctx); err != nil {
+			log.Fatalf("route db ping: %v", err)
+		}
+		routes = dbRouteSource{t: sqlRouteTable{db: routeDB}, dbName: parsed.DBName}
+	}
+	log.Println(routes.Describe())
+
 	// ── build "known zones" set ──────────────────────────────────
 	// Why we build it on the operator's terms first, then fall back to
 	// inference: explicit override is needed during a *failed* merge
 	// (where mapping Redis is in a transient state and self-inference
 	// would falsely declare half the rows orphaned).
+	//
+	// 推断时顺带检查归属值的形状(畸形值计数并列进报告,不静默跳过);显式给 -live-zones 时不扫,报告里注明 NOT CHECKED。
+	shape := CheckResult{Name: "route home_zone values", Severity: "warn",
+		SampleNotes: "NOT CHECKED: -live-zones given explicitly, route values not scanned"}
 	knownZones := map[uint32]struct{}{}
 	if *liveZonesCSV != "" {
 		for _, s := range strings.Split(*liveZonesCSV, ",") {
@@ -171,18 +210,22 @@ func main() {
 			knownZones[uint32(z)] = struct{}{}
 		}
 	} else {
-		zones, err := inferLiveZones(ctx, rdb)
+		zones, rep, err := routes.LiveZones(ctx)
 		if err != nil {
 			log.Fatalf("infer live zones: %v", err)
 		}
 		knownZones = zones
+		shape = shapeCheckResult(rep)
+		if rep.Malformed > 0 {
+			log.Printf("WARNING: %d malformed route value(s) excluded from live zones, samples: %v", rep.Malformed, rep.Samples)
+		}
 	}
 	if len(knownZones) == 0 {
 		log.Fatalf("no live zones detected — pass -live-zones explicitly")
 	}
 	log.Printf("Live zones: %v", sortedKeys(knownZones))
 
-	cfg := runConfig{db: db, mappingDB: rdb, friendDB: friendDB, knownZones: knownZones, guildSchema: *guildSchema}
+	cfg := runConfig{db: db, mappingDB: rdb, friendDB: friendDB, routes: routes, knownZones: knownZones, guildSchema: *guildSchema}
 
 	// ── run checks ───────────────────────────────────────────────
 	//
@@ -198,7 +241,8 @@ func main() {
 		checkPlayerHomeZoneVsAccount,
 		checkFriendOrphans,
 	}
-	results := make([]CheckResult, 0, len(checks))
+	results := make([]CheckResult, 0, len(checks)+1)
+	results = append(results, shape)
 	for _, fn := range checks {
 		ctxCheck, cancelCheck := context.WithTimeout(ctx, 60*time.Second)
 		results = append(results, fn(ctxCheck, cfg))
@@ -206,46 +250,29 @@ func main() {
 	}
 
 	// ── report ───────────────────────────────────────────────────
-	blockCount := printReport(results)
-	if blockCount > 0 {
+	failing := printReport(results, routes.Describe())
+	if failing > 0 {
 		os.Exit(1)
 	}
 }
 
-// inferLiveZones scans player:zone:* in mapping Redis and returns the
-// set of distinct zone IDs found. Cheap O(N players) but bounded by
-// mapping size, which is the same scale as the merge_zone scan.
-func inferLiveZones(ctx context.Context, rdb *redis.Client) (map[uint32]struct{}, error) {
-	out := map[uint32]struct{}{}
-	var cur uint64
-	for {
-		keys, next, err := rdb.Scan(ctx, cur, "player:zone:*", 500).Result()
-		if err != nil {
-			return nil, err
-		}
-		if len(keys) > 0 {
-			vals, err := rdb.MGet(ctx, keys...).Result()
-			if err != nil {
-				return nil, err
-			}
-			for _, v := range vals {
-				s, ok := v.(string)
-				if !ok {
-					continue
-				}
-				z, err := strconv.ParseUint(s, 10, 32)
-				if err != nil {
-					continue
-				}
-				out[uint32(z)] = struct{}{}
-			}
-		}
-		cur = next
-		if cur == 0 {
-			break
-		}
+// shapeCheckResult 把 LiveZones 的值形状检查变成报告的一行。
+// 畸形的归属值会让读方(data_service 的 GetPlayerHomeZone 等)对这个玩家 fail-closed,玩家进不了游戏,所以是 block。
+func shapeCheckResult(rep zoneShapeReport) CheckResult {
+	r := CheckResult{Name: "route home_zone values", BadCount: rep.Malformed, TotalCount: rep.Scanned}
+	vanished := ""
+	if rep.Vanished > 0 {
+		vanished = fmt.Sprintf("; %d key(s) vanished between SCAN and MGET (concurrent delete, not counted)", rep.Vanished)
 	}
-	return out, nil
+	if rep.Malformed == 0 {
+		r.Severity = "info"
+		r.SampleNotes = fmt.Sprintf("%d %s scanned, none malformed%s", rep.Scanned, rep.Subject, vanished)
+		return r
+	}
+	r.Severity = "block"
+	r.SampleNotes = fmt.Sprintf("%d/%d %s malformed (excluded from live zones), samples: %s%s",
+		rep.Malformed, rep.Scanned, rep.Subject, strings.Join(rep.Samples, ", "), vanished)
+	return r
 }
 
 func sortedKeys(m map[uint32]struct{}) []uint32 {
@@ -378,20 +405,13 @@ func checkPlayerHomeZoneVsAccount(ctx context.Context, cfg runConfig) CheckResul
 	// should be ≤ |account.simple_players unique IDs|. If mapping is
 	// significantly larger, there are accounts that don't list their
 	// own player_ids — a known scenario after admin tooling crashes.
-	var mappingCount int64
-	cur := uint64(0)
-	for {
-		keys, next, err := cfg.mappingDB.Scan(ctx, cur, "player:zone:*", 500).Result()
-		if err != nil {
-			r.Severity = "warn"
-			r.SampleNotes = fmt.Sprintf("mapping scan failed: %v", err)
-			return r
-		}
-		mappingCount += int64(len(keys))
-		cur = next
-		if cur == 0 {
-			break
-		}
+	//
+	// 玩家数按 cfg.routes 数:db 口径是 player_route 里 home_zone 非 NULL 的行,redis 口径是 player:zone:* 键数。
+	mappingCount, err := cfg.routes.CountPlayers(ctx)
+	if err != nil {
+		r.Severity = "warn"
+		r.SampleNotes = fmt.Sprintf("mapping scan failed: %v", err)
+		return r
 	}
 	r.TotalCount = mappingCount
 
@@ -457,11 +477,19 @@ func checkFriendOrphans(ctx context.Context, cfg runConfig) CheckResult {
 		if err := rows.Scan(&pid, &fid); err != nil {
 			continue
 		}
+		// 查不到归属 ≠ 没有归属:读失败时整条检查判 fail,已数的孤儿作废(2026-10-18 之前 Exists(...).Val() 吞掉错误,
+		// Redis 一抖就把好友整批算成孤儿)。
+		has, err := cfg.routes.HasHome(ctx, fid)
+		if err != nil {
+			return friendCheckFailed(r, fmt.Sprintf("route lookup for friend_player_id=%d after %d sampled: %v", fid, sampled, err))
+		}
 		sampled++
-		// Check both sides exist in mapping.
-		if cfg.mappingDB.Exists(ctx, fmt.Sprintf("player:zone:%d", fid)).Val() == 0 {
+		if !has {
 			orphans++
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return friendCheckFailed(r, fmt.Sprintf("sample iteration after %d rows: %v", sampled, err))
 	}
 	if sampled == 0 {
 		r.Severity = "info"
@@ -484,6 +512,14 @@ func checkFriendOrphans(ctx context.Context, cfg runConfig) CheckResult {
 	return r
 }
 
+// friendCheckFailed 把好友检查判为 fail:孤儿数不报(已数的部分不完整,报出来会被当成结论)。
+func friendCheckFailed(r CheckResult, why string) CheckResult {
+	r.Severity = "fail"
+	r.BadCount = 0
+	r.SampleNotes = "CHECK FAILED (orphans not counted): " + why
+	return r
+}
+
 // checkMailRecipientOrphans was removed 2026-05-23. The `mail` table
 // does not exist in this codebase (verified against deploy/mysql-init/
 // and go/db/model/mysql_database_table.sql); mail-as-a-service has not
@@ -492,21 +528,27 @@ func checkFriendOrphans(ctx context.Context, cfg runConfig) CheckResult {
 // re-add a sibling check; until then the absence keeps reports honest.
 
 // printReport renders a markdown-ish table to stdout.
-// Returns the number of block-severity rows so main can exit non-zero.
-func printReport(results []CheckResult) int {
+// Returns the number of block- and fail-severity rows so main can exit non-zero.
+// routeSourceLine 是 routeSource.Describe() 那一行,印在表头:报告读者要知道归属是按库还是按缓存判的。
+func printReport(results []CheckResult, routeSourceLine string) int {
 	log.Println()
 	log.Println("=== Data consistency check ===")
+	log.Println(routeSourceLine)
 	log.Println()
 	log.Printf("%-3s %-30s %10s %10s  %s",
 		"sev", "check", "bad", "total", "notes")
 	log.Println(strings.Repeat("─", 100))
 	blocks := 0
+	fails := 0
 	for _, r := range results {
 		marker := " "
 		switch r.Severity {
 		case "block":
 			marker = "!"
 			blocks++
+		case "fail":
+			marker = "x"
+			fails++
 		case "warn":
 			marker = "."
 		}
@@ -514,11 +556,11 @@ func printReport(results []CheckResult) int {
 			marker, r.Name, r.BadCount, r.TotalCount, r.SampleNotes)
 	}
 	log.Println()
-	if blocks > 0 {
-		log.Printf("Result: %d BLOCK finding(s). Exit 1.", blocks)
+	if blocks+fails > 0 {
+		log.Printf("Result: %d BLOCK finding(s), %d FAILED check(s). Exit 1.", blocks, fails)
 	} else {
 		log.Println("Result: all checks pass.")
 	}
 	log.Println()
-	return blocks
+	return blocks + fails
 }

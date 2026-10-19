@@ -65,7 +65,9 @@
         "LoginTimeout": 2031,
         "RoleNameInvalid": 2032,
         "RoleNameTaken": 2033,
-        "RoleNameSensitive": 2034
+        "RoleNameSensitive": 2034,
+        "LoginAuthProviderUnavailable": 2035,
+        "LoginTokenIssueFailed": 2036
       }
     },
     "scene_error": {

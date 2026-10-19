@@ -29,8 +29,9 @@
 // 契约:
 //   * **线程**:全部入口只在 scene 的 loop 线程上调用(落地钩子、tick、Kafka 事件、gRPC 完成回调都在这个线程,
 //     设计 §10)。状态在 thread_local 的 ECS 组件里,没有锁。
-//   * **回调只认 player_id**:gRPC 回包与 PING 回调都按 player_id 重新找实体,再核对 domain 与 correlation_id
-//     (节点级单调计数器);对不上就丢弃。不捕获实体句柄。
+//   * **回调携带调用身份**:gRPC 完成回调按值捕获 player_id / domain / correlation_id,不捕获实体句柄;
+//     按 player_id 重新找实体后仍核对 domain、关联号与 phase,迟到调用直接丢弃。响应中的每项回显非 0 且
+//     与捕获值不同即丢弃;回显为 0 时按捕获值处理。PING 回调也只捕获 player_id / domain。
 //   * **不阻断进场**(IB-7):收件箱不进 DependencyGate;不可用时只退避(1s→60s,UNIMPLEMENTED 10 分钟)。
 //   * **前置闸**(设计 §7.5)在拉取前与应用前各判一次:consumer_enabled、未停用、可改(player_mutability.h)、
 //     账本有效、域规格要求时不在战斗中、有 READY 节点。**确认不受前置闸限制**:Ack 只报告已落盘的事实。
@@ -41,8 +42,6 @@
 //     回到 Idle 时 ackQueue 必为空:丢弃本地条目的路径若还有已定前缀,先确认再重拉(评审 L2)。
 //     Ack 回 kInvalidParameter 是确定性协议错误,按协议异常停用,不当故障重发。
 //   * **协议异常即停用**(halt):本实体不再为该域拉取,直到实体下次在本节点新建。不重试、不空转。
-//
-// 回包适配在 cpp/nodes/scene/rpc_replies/player_inbox_response_handler.cpp(InitPlayerInboxReply)。
 
 #include <cstdint>
 #include <string>
@@ -76,17 +75,19 @@ public:
 	// ── 离开入口 ──
 	// 实体即将离开本节点、随后销毁时调一次(调用方保证退出存盘已收敛,owner_epoch 组件还在)。
 	// 契约:只在某个域的 ackQueue 非空、没有 Ack 在途、且每条结局都已出现在最后一次落盘快照里时,发一次 AckItems;
-	// 不等回包、不登记回调、不压存盘、不看 Ack 退避。任何条件不满足都什么都不做 —— 绝不在落盘之前确认(IB-3)。
+	// 不等回包、不额外登记等待状态、不压存盘、不看 Ack 退避。任何条件不满足都什么都不做 —— 绝不在落盘之前确认(IB-3)。
 	// 只是减少"已投递未确认"的残留,正确性仍靠下次落地补确认。无效实体 / 没有运行时组件时直接返回。
 	static void OnPlayerLeaving(entt::entity player);
 
-	// ── gRPC 回包(由 InitPlayerInboxReply 装的处理器转进来)──
-	// grpcCode 是线上 grpc-status 的数值(grpc_call_tag.h 的 kGrpcStatus*);非 OK = 结果未知(GrpcCallFailure 的语义)。
-	static void OnFetchReply(const player_inbox::FetchPlayerInboxResponse &response);
-	static void OnFetchFailed(const player_inbox::FetchPlayerInboxRequest &request, uint32_t grpcCode,
+	// ── gRPC 回包(由默认传输的每次调用回调转进来,单测可直接调用)──
+	// 身份参数来自调用时的捕获值;grpcCode 是线上 grpc-status 的数值(kGrpcStatus*),非 OK 即结果未知。
+	static void OnFetchReply(uint64_t playerId, uint32_t domain, uint64_t correlationId,
+							 const player_inbox::FetchPlayerInboxResponse &response);
+	static void OnFetchFailed(uint64_t playerId, uint32_t domain, uint64_t correlationId, uint32_t grpcCode,
 							  const std::string &detail);
-	static void OnAckReply(const player_inbox::AckPlayerInboxResponse &response);
-	static void OnAckFailed(const player_inbox::AckPlayerInboxRequest &request, uint32_t grpcCode,
+	static void OnAckReply(uint64_t playerId, uint32_t domain, uint64_t correlationId,
+						   const player_inbox::AckPlayerInboxResponse &response);
+	static void OnAckFailed(uint64_t playerId, uint32_t domain, uint64_t correlationId, uint32_t grpcCode,
 							const std::string &detail);
 
 	// ── 测试注入点(AGENTS §11.2 显式依赖:存盘、时钟、传输都要能替换)──
@@ -101,7 +102,7 @@ public:
 	using NowMsFn = uint64_t (*)();
 	static void SetNowFnForTest(NowMsFn fn);
 
-	// 默认:挑一个 READY 的 PlayerInboxNodeService 节点,用生成的 gRPC 客户端发出;返回 false = 没有可用节点。
+	// 默认:挑一个 READY 的 PlayerInboxNodeService 节点,用自带完成回调的生成客户端发出;false = 没有可用节点。
 	using SendFetchFn = bool (*)(const player_inbox::FetchPlayerInboxRequest &);
 	using SendAckFn = bool (*)(const player_inbox::AckPlayerInboxRequest &);
 	static void SetTransportForTest(SendFetchFn sendFetch, SendAckFn sendAck);

@@ -112,10 +112,11 @@ func (l *CreatePlayerLogic) CreatePlayer(in *login_proto.CreatePlayerRequest) (*
 		return resp, nil
 	}
 
-	// 2. Get account
-	account, err := loginsession.GetAccount(l.ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
+	// 2. Get account —— 只认本条 gate 连接的登录态(loginsession.RefOf):没在这条连接上成功 Login 过就拒绝,
+	//    不会因 gate 重启撞号而读到上一个 gate 进程同号连接的账号(审计 data-overwrite-rollback-audit-20261018.md §2.3)。
+	account, err := loginsession.GetAccount(l.ctx, l.svcCtx.RedisClient, loginsession.RefOf(sessionDetails))
 	if err != nil {
-		logx.Errorf("GetAccount failed: %v", err)
+		logGetAccountFailure("CreatePlayer", sessionDetails, err)
 		resp.ErrorMessage = &login_proto_common.TipInfoMessage{Id: uint32(table.LoginError_kLoginSessionNotFound)}
 		return resp, nil
 	}

@@ -310,6 +310,13 @@ type RouteStoreConfig struct {
 	// 默认不是 1000:appendfsync everysec 下本地确认最长要等到下一次 fsync(约 1s)再加事件循环延迟,
 	// 1000ms 正压在边界上,会系统性地抬高"已提交未确认"的比例(规格 d 节 M2)。
 	WaitAOFTimeoutMs int `json:",optional"`
+	// ReadRequiresReady:第 3 批读方门禁(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.2)。
+	// true 时 GetPlayerHomeZone / BatchGetPlayerHomeZone / 内部路由的 home 查询只在就绪标记绑定的就是本次读所在的
+	// mapping Redis 实例(placement.VerifyRouteReady = Trusted)时信任缓存,否则回源全局库 player_route(库故障回 Unavailable,
+	// 绝不 NotFound)。只许 Mode=db_first(redis 模式下库不是真源,没有可回源的东西);启动期试跑一次读脚本,跑不起来按
+	// Store.Required 拒启。缺省 false = 与今天逐字相同。所有副本应取同一值;打开前提是对账 leader 已挂标记(规格 §8 P5),
+	// 回退时先关它、再关 ArmReadyMarker、再切回 redis(规格 §13.5 第 1 条)。
+	ReadRequiresReady bool `json:",optional"`
 }
 
 // Normalize 返回一份把"没配"(零值 / nil)换成默认值的副本。负数不纠正,交给 Validate 拒绝。
@@ -373,6 +380,11 @@ func (r RouteStoreConfig) Validate() error {
 	if r.WaitAOFTimeoutMs < 1 || r.WaitAOFTimeoutMs > MaxRouteStoreWaitAOFTimeoutMs {
 		return fmt.Errorf("RouteStore.WaitAOFTimeoutMs must be in [1, %d] (WAITAOF timeout 0 blocks forever; the cap leaves room inside the 2000ms server budget), got %d",
 			MaxRouteStoreWaitAOFTimeoutMs, r.WaitAOFTimeoutMs)
+	}
+	if r.ReadRequiresReady && r.Mode != RouteStoreModeDBFirst {
+		// 回退顺序写反(先切回 redis、读方开关还开着)时在这里拒启,而不是让读方在没有真源可回源的模式下静默跑(规格 §13.5)。
+		return fmt.Errorf("RouteStore.ReadRequiresReady=true requires Mode=%q (in %q mode the mapping Redis is the source of truth and there is no player_route to fall back to; turn ReadRequiresReady off first), got Mode=%q",
+			RouteStoreModeDBFirst, RouteStoreModeRedis, r.Mode)
 	}
 	return nil
 }

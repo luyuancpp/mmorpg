@@ -162,7 +162,7 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 		// 一个已经不属于它的会话上。GateInstanceId 是唯一能区分两代进程的字段。
 		//
 		// fail-closed 是安全的:全部真实调用方都已填该字段 —— gate C++ 在
-		// client_message_processor.cpp 两处 set_gate_instance_id(node_uuid),
+		// client_session_handler.cpp 两处 set_gate_instance_id(node_uuid),
 		// login 透传 sessionDetails.GetGateInstanceId(),场景侧 4 个
 		// EnterSceneRequest 构造点也都填了(此前审计记录里说"还有两处没填"
 		// 是把 GsEnterSceneRequest(scene↔scene S2S)误认成了本 RPC 的请求)。

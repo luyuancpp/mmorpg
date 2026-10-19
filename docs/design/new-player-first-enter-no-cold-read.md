@@ -67,6 +67,7 @@
 3. 父键不在,逐张子表 `GET` 子表缓存;全部命中就组装父键并写入(:80-109)。
 4. 缺哪张子表,就为它发一条 Kafka 读任务(:157-207;`sync_loader.go:81-110`,`Op=read`,`WhereCase player_id='…'`)。
    - 回执经 `task:result` 的 Pub/Sub 送回。频道全局只有一个(`dispatcher/task_result_dispatcher.go:32`)。
+   - **2026-10-18 更正**:上一句的行号指针已失效(`TaskResultNotifyChannel` 常量已删除),「频道全局只有一个」也不再成立。B0-3 分频道两批落码后(未编译、未验证):读任务带 `DBTask.reply_instance`(发起方 login 进程启动时生成的 UUID,`sync_loader.go` 的 `newDBReadTask`);login 在同一条 Pub/Sub 连接上同时订全服旧频道 `task:result:notify` 与本实例频道 `task:result:notify:<reply_instance>`(`dispatcher/task_result_dispatcher.go` 的 `subscribeLoop`);频道名与校验规则只来自 `go/shared/taskresult`。go/db 侧见 §2.3「结果回写」的更正。规格:`docs/handoff/launch-readiness-20261013/spec_B0-3_task_result_channel.md`。
 5. 回执 `Data` 为空表示没有这一行,子表保持骨架(:180-190)。
 6. 全部回齐后 `SET` 父键,TTL 24h(:128-155;`sync_loader.go:121-125`)。
 
@@ -81,6 +82,7 @@
 - **结果回写**:
   - 写子表缓存 `{MsgType}:{id}`,TTL 取 `DefaultTTLSeconds`,K8s 上是 3600s(`key_ordered_consumer.go:54-64`、:360-373;`k8s_deploy.ps1:3458`)。
   - 再 `LPUSH task:result:{taskID}` + `EXPIRE` + `PUBLISH task:result:notify`(:391-414)。
+  - **2026-10-18 更正**:B0-3 第 2 批起(未编译、未验证),`LPUSH` + `EXPIRE` 之后的通知改为按 `DBTask.reply_instance` **只 PUBLISH 一次**:合法时发到发起方 login 的实例频道 `task:result:notify:<reply_instance>`,为空(旧版 login)或不合法时回落全服旧频道 `task:result:notify`;不双发。通知失败或无人接收仍不影响结果(结果已在列表里,由 login 的 TTL 兜底取回),按 `db_task_result_notify_total{target,result}` 计数。代码:`key_ordered_consumer.go` 的 `publishTaskResult`,目标判定在 `go/db/internal/kafka/task_result_notify.go`;上一句的行号是更早的快照,按函数名定位。
 - **新号冷读的最终产物就是「请求体原样」,也就是骨架**。
 - **资源共享**:
   - 读任务和存盘写任务共用本 zone 10 分区 × 8 子分片的 worker(`go/db/etc/db.yaml:19`、:22),以及每实例 60 条的主池(:68)。
@@ -128,6 +130,7 @@
   - 一次点查;
   - 一次子表缓存回写;
   - 一组 `LPUSH` / `EXPIRE` / `PUBLISH`。`PUBLISH` 走单频道,会扇出到所有 login 实例。
+  - **2026-10-18 更正**:上一条的「单频道、扇出到所有 login 实例」只在 B0-3 分频道上线前成立。两批(go/db 与 login)全量上线后(未编译、未验证),每条读任务仍是先 `LPUSH` + `EXPIRE`,再**只 `PUBLISH` 一次**,发到发起方 login 的实例频道 `task:result:notify:<reply_instance>`,只有发起方收到;`reply_instance` 为空(旧版 login)或不合法时回落全服旧频道 `task:result:notify`,这部分仍扇出到所有 login 实例。按 `db_task_result_notify_total{target,result}` 计数,见 §2.3「结果回写」的更正。两批全量之前按旧口径估。
 - **两点后果**:
   - 这些都发生在玩家的加载屏上,是同步等待。
   - 它们和存盘写共用同一组 worker 和连接池。

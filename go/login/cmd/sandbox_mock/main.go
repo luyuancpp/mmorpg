@@ -27,16 +27,19 @@
 //     "some mocked api.weixin.qq.com" hop. This binary fills it.
 //
 // Pointing the provider at this mock:
-//   In go/login/etc/login.yaml:
+//   In go/login/etc/login.yaml (Mode: dev — inline AppSecret and http://
+//   endpoints are refused in any other Mode):
 //     AuthProviders:
 //       WeChat:
 //         AppId: "wx_sandbox_test"
 //         AppSecret: "any_string_ok_here"
 //         Endpoint: "http://127.0.0.1:18090"
 //       QQ:
-//         AppId: "100000001"
-//         AppKey: "ignored"
+//         AppId: "100000001"            # must equal sandboxQQClientID
 //         Endpoint: "http://127.0.0.1:18090"
+//   RequireUnionId defaults to true: only WeChat codes starting with "U"
+//   get a unionid here, so other codes are refused unless the WeChat block
+//   sets RequireUnionId: false.
 //
 // Crafting deterministic codes:
 //   For WeChat, the `code` query parameter is passed straight through to
@@ -95,6 +98,11 @@ func main() {
 		log.Fatalf("sandbox mock: %v", err)
 	}
 }
+
+// sandboxQQClientID 是 mock 对每个 QQ access_token 固定返回的 client_id。QQProvider 要求它等于配置的
+// AuthProviders.QQ.AppId,所以 runbook §G.2 与 deploy/login-stack.linux/login.yaml 必须写同一个值
+// (main_test.go 钉住 linux 栈那份;两边不一致时每次 QQ 登录都是 client_id mismatch)。
+const sandboxQQClientID = "100000001"
 
 // hashTo12 derives a stable 12-char hex string from input. Used so the
 // same `code` always maps to the same openid — important for the
@@ -156,7 +164,7 @@ func handleQQTokenVerify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := map[string]any{
-		"client_id": "100000001", // mirror the AppId in the sandbox login.yaml example
+		"client_id": sandboxQQClientID,
 		"openid":    "qq_openid_" + hashTo12(accessToken, "openid"),
 		"unionid":   "qq_unionid_" + hashTo12(accessToken, "unionid"),
 	}

@@ -94,210 +94,208 @@
 #include "common_event_player_migration_event_event_id.h"
 #include "common_event_team_event_event_id.h"
 
-void SendBattleClientPlayerSubmitBattleAction(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerGetBattleState(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerNotifyBattleStart(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerNotifyTurnResult(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerNotifyBattleEnd(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerNotifyBattleReconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerStopWatchBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerSetAutoBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerNotifySpectateState(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerNotifySpectateTurnResult(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerNotifySpectateEnd(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleClientPlayerNotifyBattleAssigned(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleNodeQueryBattleCreation(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleNodeCreateBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleNodeDestroyBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleNodeAddObserver(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleNodeRemoveObserver(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-void SendBattleNodeIssueBattleTicket(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );
-namespace chatpb{void SendClientPlayerChatSendChat(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace chatpb{void SendClientPlayerChatPullChatHistory(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace client_rpc_router{void SendClientRpcRouterForward(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceLoadPlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceSavePlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceGetPlayerField(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceSetPlayerField(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceRegisterPlayerZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceGetPlayerHomeZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceBatchGetPlayerHomeZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceRemapHomeZoneForMerge(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceDeletePlayerData(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceCreatePlayerSnapshot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceListPlayerSnapshots(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceGetPlayerSnapshotDiff(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceRollbackPlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceRollbackZone(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceRollbackAll(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceBatchRecallItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceQueryTransactionLog(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceCreateEventSnapshot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceAllocateIdSegment(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceReservePlayerName(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceReleasePlayerName(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceBatchGetPlayerName(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceGetPlayerAssetOpLedger(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace data_service{void SendDataServiceGetPlayerInboxLedger(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendKVRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendKVPut(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendKVDeleteRange(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendKVTxn(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendKVCompact(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendWatchWatch(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendLeaseLeaseGrant(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendLeaseLeaseRevoke(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendLeaseLeaseKeepAlive(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendLeaseLeaseTimeToLive(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace etcdserverpb{void SendLeaseLeaseLeases(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendAddFriend(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendAcceptFriend(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendRejectFriend(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendRemoveFriend(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendGetFriendList(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendGetPendingRequests(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendBlock(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendUnblock(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendListBlocks(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendRecommendFriends(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace friendpb{void SendClientPlayerFriendNotifyFriendEvent(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceCreateGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetPlayerGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceLeaveGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceDisbandGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceSetAnnouncement(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceSetGuildMemberRole(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceKickGuildMember(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceTransferGuildLeader(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceApplyJoinGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceCancelGuildApplication(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceListMyGuildApplications(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceListGuildApplications(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceReviewGuildApplication(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceNotifyGuildChanged(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceUpdateGuildScore(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetGuildRank(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetGuildRankByGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetGuildDonateOptions(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceDonateToGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceUpgradeGuild(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetGuildShop(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceBuyGuildShopGoods(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceGetGuildActivities(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceLightGuildLantern(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceClaimGuildReunion(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceStartGuildTrial(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildServiceRespondGuildTrialInvite(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace guildpb{void SendGuildInternalListAppliedAssetOpsSince(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginLogin(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginCreatePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginEnterGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginLeaveGame(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginDisconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendClientPlayerLoginRefreshToken(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendLoginPreGateAssignGate(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendLoginPreGateQueryQueueStatus(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace loginpb{void SendLoginAdminRemovePlayersFromAccounts(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendClientPlayerMailListMails(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendClientPlayerMailReadMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendClientPlayerMailClaimMailAttachments(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendClientPlayerMailDeleteMails(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendClientPlayerMailClearReadMails(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendClientPlayerMailNotifyMailChanged(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendMailAdminSendPersonalMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendMailAdminSendSystemMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendMailAdminSendGuildMail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendMailAdminImportMailRecipients(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace mailpb{void SendMailAdminSealMailCampaign(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchInternalStartActivityBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceGetNetworkProbePlan(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceCommitNetworkProbe(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceJoinQueue(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceCancelQueue(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceGetQueueStatus(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceChallengePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceRespondChallenge(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceNotifyChallengeInvite(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceNotifyChallengeResult(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceWatchBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceRequestBattleTicket(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace match{void SendMatchServiceListWatchableBattles(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace player_inbox{void SendPlayerInboxFetchItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace player_inbox{void SendPlayerInboxAckItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace player_inbox{void SendPlayerInboxAdminGmSanctionPlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace player_inbox{void SendPlayerInboxAdminGetSummary(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace player_inbox{void SendPlayerInboxAdminListItems(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace player_inbox{void SendPlayerInboxAdminLookupByRequest(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace player_inbox{void SendPlayerInboxAdminVoidItem(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace player_inbox{void SendPlayerInboxAdminReconcilePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace playerlocator{void SendPlayerLocatorSetLocation(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace playerlocator{void SendPlayerLocatorGetLocation(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace playerlocator{void SendPlayerLocatorMarkOffline(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace playerlocator{void SendPlayerLocatorSetSession(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace playerlocator{void SendPlayerLocatorGetSession(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace playerlocator{void SendPlayerLocatorSetDisconnecting(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace playerlocator{void SendPlayerLocatorReconnect(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace rankpb{void SendClientPlayerRankGetRankPage(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace rankpb{void SendClientPlayerRankGetRankAround(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace rankpb{void SendRankAdminOpenRankGeneration(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace rankpb{void SendRankAdminSubmitRankScores(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace rankpb{void SendRankAdminFreezeRankGeneration(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace rankpb{void SendRankAdminRemoveRankEntry(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace rankpb{void SendRankAdminDeleteRankGeneration(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_manager{void SendSceneManagerCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_manager{void SendSceneManagerDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_manager{void SendSceneManagerEnterScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_manager{void SendSceneManagerLeaveScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_node{void SendSceneNodeGrpcCreateScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_node{void SendSceneNodeGrpcDestroyScene(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_node{void SendSceneNodeGrpcReleasePlayer(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_node{void SendSceneNodeGrpcPrepareBattle(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_node{void SendSceneNodeGrpcCancelBattlePrepare(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_node{void SendSceneNodeGrpcAssetDebit(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_node{void SendSceneNodeGrpcAssetAbortDebit(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_node{void SendSceneNodeGrpcAssetCredit(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace scene_node{void SendSceneNodeGrpcAssetAckReceipt(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamCreateTeam(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamGetMyTeam(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamApplyJoinTeam(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamHandleApplication(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamInviteToTeam(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamRespondInvite(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamListMyInvites(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamLeaveTeam(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamKickMember(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamTransferLeader(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamDisbandTeam(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamStartTeamMatch(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamNotifyTeamSnapshot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamNotifyTeamInvite(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace teampb{void SendClientPlayerTeamNotifyTeamEvent(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiBrowseListings(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiGetListingDetail(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiSetFavorite(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiGetMyShelf(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiListOfficialSkus(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiCreateOfficialOrder(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiGetCommerceOrder(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiCancelCommerceOrder(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiListCommerceOrders(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiCreatePlayerTrade(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiConfirmPlayerTrade(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiCreateConsignment(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiBuyConsignment(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiCancelConsignment(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiPlaceMarketOrder(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiCancelMarketOrder(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiListMarketOrders(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiGetMarketDepth(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiCreateAuctionLot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiPlaceAuctionBid(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiGetAuctionLot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiCancelAuctionLot(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiBrowseCommerceOffers(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendClientPlayerJubaozhaiListTradeMarkets(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
-namespace trade{void SendTradeAdminSeedListing(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );}
+void SendBattleClientPlayerSubmitBattleActionErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerGetBattleStateErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerNotifyBattleStartErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerNotifyTurnResultErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerNotifyBattleEndErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerNotifyBattleReconnectErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerStopWatchBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerSetAutoBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerNotifySpectateStateErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerNotifySpectateTurnResultErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerNotifySpectateEndErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleClientPlayerNotifyBattleAssignedErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleNodeQueryBattleCreationErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleNodeCreateBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleNodeDestroyBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleNodeAddObserverErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleNodeRemoveObserverErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+void SendBattleNodeIssueBattleTicketErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );
+namespace chatpb{void SendClientPlayerChatSendChatErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace chatpb{void SendClientPlayerChatPullChatHistoryErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace client_rpc_router{void SendClientRpcRouterForwardErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceLoadPlayerDataErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceSavePlayerDataErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceGetPlayerFieldErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceSetPlayerFieldErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceRegisterPlayerZoneErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceGetPlayerHomeZoneErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceBatchGetPlayerHomeZoneErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceRemapHomeZoneForMergeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceDeletePlayerDataErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceCreatePlayerSnapshotErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceListPlayerSnapshotsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceGetPlayerSnapshotDiffErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceRollbackPlayerErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceRollbackZoneErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceRollbackAllErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceBatchRecallItemsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceQueryTransactionLogErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceCreateEventSnapshotErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceAllocateIdSegmentErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceReservePlayerNameErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceReleasePlayerNameErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceBatchGetPlayerNameErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceGetPlayerAssetOpLedgerErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace data_service{void SendDataServiceGetPlayerInboxLedgerErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace etcdserverpb{void SendKVRangeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace etcdserverpb{void SendKVPutErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace etcdserverpb{void SendKVDeleteRangeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace etcdserverpb{void SendKVTxnErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace etcdserverpb{void SendKVCompactErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace etcdserverpb{void SendLeaseLeaseGrantErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace etcdserverpb{void SendLeaseLeaseRevokeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace etcdserverpb{void SendLeaseLeaseTimeToLiveErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace etcdserverpb{void SendLeaseLeaseLeasesErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendAddFriendErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendAcceptFriendErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendRejectFriendErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendRemoveFriendErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendGetFriendListErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendGetPendingRequestsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendBlockErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendUnblockErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendListBlocksErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendRecommendFriendsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace friendpb{void SendClientPlayerFriendNotifyFriendEventErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceCreateGuildErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceGetGuildErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceGetPlayerGuildErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceLeaveGuildErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceDisbandGuildErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceSetAnnouncementErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceSetGuildMemberRoleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceKickGuildMemberErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceTransferGuildLeaderErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceApplyJoinGuildErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceCancelGuildApplicationErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceListMyGuildApplicationsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceListGuildApplicationsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceReviewGuildApplicationErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceNotifyGuildChangedErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceUpdateGuildScoreErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceGetGuildRankErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceGetGuildRankByGuildErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceGetGuildDonateOptionsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceDonateToGuildErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceUpgradeGuildErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceGetGuildShopErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceBuyGuildShopGoodsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceGetGuildActivitiesErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceLightGuildLanternErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceClaimGuildReunionErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceStartGuildTrialErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildServiceRespondGuildTrialInviteErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace guildpb{void SendGuildInternalListAppliedAssetOpsSinceErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace loginpb{void SendClientPlayerLoginLoginErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace loginpb{void SendClientPlayerLoginCreatePlayerErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace loginpb{void SendClientPlayerLoginEnterGameErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace loginpb{void SendClientPlayerLoginLeaveGameErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace loginpb{void SendClientPlayerLoginDisconnectErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace loginpb{void SendClientPlayerLoginRefreshTokenErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace loginpb{void SendLoginPreGateAssignGateErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace loginpb{void SendLoginPreGateQueryQueueStatusErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace loginpb{void SendLoginAdminRemovePlayersFromAccountsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendClientPlayerMailListMailsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendClientPlayerMailReadMailErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendClientPlayerMailClaimMailAttachmentsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendClientPlayerMailDeleteMailsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendClientPlayerMailClearReadMailsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendClientPlayerMailNotifyMailChangedErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendMailAdminSendPersonalMailErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendMailAdminSendSystemMailErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendMailAdminSendGuildMailErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendMailAdminImportMailRecipientsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace mailpb{void SendMailAdminSealMailCampaignErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchInternalStartActivityBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceGetNetworkProbePlanErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceCommitNetworkProbeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceJoinQueueErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceCancelQueueErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceGetQueueStatusErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceChallengePlayerErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceRespondChallengeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceNotifyChallengeInviteErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceNotifyChallengeResultErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceWatchBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceRequestBattleTicketErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace match{void SendMatchServiceListWatchableBattlesErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace player_inbox{void SendPlayerInboxFetchItemsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace player_inbox{void SendPlayerInboxAckItemsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace player_inbox{void SendPlayerInboxAdminGmSanctionPlayerErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace player_inbox{void SendPlayerInboxAdminGetSummaryErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace player_inbox{void SendPlayerInboxAdminListItemsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace player_inbox{void SendPlayerInboxAdminLookupByRequestErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace player_inbox{void SendPlayerInboxAdminVoidItemErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace player_inbox{void SendPlayerInboxAdminReconcilePlayerErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace playerlocator{void SendPlayerLocatorSetLocationErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace playerlocator{void SendPlayerLocatorGetLocationErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace playerlocator{void SendPlayerLocatorMarkOfflineErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace playerlocator{void SendPlayerLocatorSetSessionErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace playerlocator{void SendPlayerLocatorGetSessionErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace playerlocator{void SendPlayerLocatorSetDisconnectingErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace playerlocator{void SendPlayerLocatorReconnectErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace rankpb{void SendClientPlayerRankGetRankPageErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace rankpb{void SendClientPlayerRankGetRankAroundErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace rankpb{void SendRankAdminOpenRankGenerationErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace rankpb{void SendRankAdminSubmitRankScoresErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace rankpb{void SendRankAdminFreezeRankGenerationErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace rankpb{void SendRankAdminRemoveRankEntryErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace rankpb{void SendRankAdminDeleteRankGenerationErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_manager{void SendSceneManagerCreateSceneErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_manager{void SendSceneManagerDestroySceneErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_manager{void SendSceneManagerEnterSceneErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_manager{void SendSceneManagerLeaveSceneErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_node{void SendSceneNodeGrpcCreateSceneErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_node{void SendSceneNodeGrpcDestroySceneErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_node{void SendSceneNodeGrpcReleasePlayerErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_node{void SendSceneNodeGrpcPrepareBattleErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_node{void SendSceneNodeGrpcCancelBattlePrepareErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_node{void SendSceneNodeGrpcAssetDebitErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_node{void SendSceneNodeGrpcAssetAbortDebitErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_node{void SendSceneNodeGrpcAssetCreditErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace scene_node{void SendSceneNodeGrpcAssetAckReceiptErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamCreateTeamErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamGetMyTeamErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamApplyJoinTeamErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamHandleApplicationErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamInviteToTeamErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamRespondInviteErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamListMyInvitesErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamLeaveTeamErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamKickMemberErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamTransferLeaderErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamDisbandTeamErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamStartTeamMatchErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamNotifyTeamSnapshotErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamNotifyTeamInviteErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace teampb{void SendClientPlayerTeamNotifyTeamEventErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiBrowseListingsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiGetListingDetailErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiSetFavoriteErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiGetMyShelfErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiListOfficialSkusErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCreateOfficialOrderErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiGetCommerceOrderErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCancelCommerceOrderErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiListCommerceOrdersErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCreatePlayerTradeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiConfirmPlayerTradeErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCreateConsignmentErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiBuyConsignmentErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCancelConsignmentErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiPlaceMarketOrderErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCancelMarketOrderErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiListMarketOrdersErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiGetMarketDepthErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCreateAuctionLotErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiPlaceAuctionBidErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiGetAuctionLotErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiCancelAuctionLotErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiBrowseCommerceOffersErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendClientPlayerJubaozhaiListTradeMarketsErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
+namespace trade{void SendTradeAdminSeedListingErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );}
 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
@@ -313,353 +311,353 @@ void InitMessageInfo()
         "BattleClientPlayer", "SubmitBattleAction",
         std::make_unique<::SubmitBattleActionRequest>(),
         std::make_unique<::SubmitBattleActionResponse>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerSubmitBattleAction};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerSubmitBattleActionErased};
     gRpcMethodRegistry[BattleClientPlayerGetBattleStateMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "GetBattleState",
         std::make_unique<::GetBattleStateRequest>(),
         std::make_unique<::BattleStateS2C>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerGetBattleState};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerGetBattleStateErased};
     gRpcMethodRegistry[BattleClientPlayerNotifyBattleStartMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifyBattleStart",
         std::make_unique<::BattleStartS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleStart};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleStartErased};
     gRpcMethodRegistry[BattleClientPlayerNotifyTurnResultMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifyTurnResult",
         std::make_unique<::TurnResultS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyTurnResult};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyTurnResultErased};
     gRpcMethodRegistry[BattleClientPlayerNotifyBattleEndMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifyBattleEnd",
         std::make_unique<::BattleEndS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleEnd};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleEndErased};
     gRpcMethodRegistry[BattleClientPlayerNotifyBattleReconnectMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifyBattleReconnect",
         std::make_unique<::BattleReconnectS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleReconnect};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleReconnectErased};
     gRpcMethodRegistry[BattleClientPlayerStopWatchBattleMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "StopWatchBattle",
         std::make_unique<::StopWatchBattleRequest>(),
         std::make_unique<::StopWatchBattleResponse>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerStopWatchBattle};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerStopWatchBattleErased};
     gRpcMethodRegistry[BattleClientPlayerSetAutoBattleMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "SetAutoBattle",
         std::make_unique<::SetAutoBattleRequest>(),
         std::make_unique<::SetAutoBattleResponse>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerSetAutoBattle};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerSetAutoBattleErased};
     gRpcMethodRegistry[BattleClientPlayerNotifySpectateStateMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifySpectateState",
         std::make_unique<::SpectateStateS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateState};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateStateErased};
     gRpcMethodRegistry[BattleClientPlayerNotifySpectateTurnResultMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifySpectateTurnResult",
         std::make_unique<::TurnResultS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateTurnResult};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateTurnResultErased};
     gRpcMethodRegistry[BattleClientPlayerNotifySpectateEndMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifySpectateEnd",
         std::make_unique<::SpectateEndS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateEnd};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifySpectateEndErased};
     gRpcMethodRegistry[BattleClientPlayerNotifyBattleAssignedMessageId] = RpcMethodMeta{
         "BattleClientPlayer", "NotifyBattleAssigned",
         std::make_unique<::BattleAssignedS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleAssigned};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleClientPlayerNotifyBattleAssignedErased};
 
     // --- BattleNode ---
     gRpcMethodRegistry[BattleNodeQueryBattleCreationMessageId] = RpcMethodMeta{
         "BattleNode", "QueryBattleCreation",
         std::make_unique<::QueryBattleCreationRequest>(),
         std::make_unique<::QueryBattleCreationResponse>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeQueryBattleCreation};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeQueryBattleCreationErased};
     gRpcMethodRegistry[BattleNodeCreateBattleMessageId] = RpcMethodMeta{
         "BattleNode", "CreateBattle",
         std::make_unique<::CreateBattleRequest>(),
         std::make_unique<::CreateBattleResponse>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeCreateBattle};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeCreateBattleErased};
     gRpcMethodRegistry[BattleNodeDestroyBattleMessageId] = RpcMethodMeta{
         "BattleNode", "DestroyBattle",
         std::make_unique<::DestroyBattleRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeDestroyBattle};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeDestroyBattleErased};
     gRpcMethodRegistry[BattleNodeAddObserverMessageId] = RpcMethodMeta{
         "BattleNode", "AddObserver",
         std::make_unique<::AddObserverRequest>(),
         std::make_unique<::AddObserverResponse>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeAddObserver};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeAddObserverErased};
     gRpcMethodRegistry[BattleNodeRemoveObserverMessageId] = RpcMethodMeta{
         "BattleNode", "RemoveObserver",
         std::make_unique<::RemoveObserverRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeRemoveObserver};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeRemoveObserverErased};
     gRpcMethodRegistry[BattleNodeIssueBattleTicketMessageId] = RpcMethodMeta{
         "BattleNode", "IssueBattleTicket",
         std::make_unique<::IssueBattleTicketRequest>(),
         std::make_unique<::IssueBattleTicketResponse>(),
-        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeIssueBattleTicket};
+        1, common::base::eNodeType::BattleNodeService, ::SendBattleNodeIssueBattleTicketErased};
 
     // --- ClientPlayerChat ---
     gRpcMethodRegistry[ClientPlayerChatSendChatMessageId] = RpcMethodMeta{
         "ClientPlayerChat", "SendChat",
         std::make_unique<::chatpb::SendChatRequest>(),
         std::make_unique<::chatpb::SendChatResponse>(),
-        1, common::base::eNodeType::ChatNodeService, chatpb::SendClientPlayerChatSendChat};
+        1, common::base::eNodeType::ChatNodeService, chatpb::SendClientPlayerChatSendChatErased};
     gRpcMethodRegistry[ClientPlayerChatPullChatHistoryMessageId] = RpcMethodMeta{
         "ClientPlayerChat", "PullChatHistory",
         std::make_unique<::chatpb::PullChatHistoryRequest>(),
         std::make_unique<::chatpb::PullChatHistoryResponse>(),
-        1, common::base::eNodeType::ChatNodeService, chatpb::SendClientPlayerChatPullChatHistory};
+        1, common::base::eNodeType::ChatNodeService, chatpb::SendClientPlayerChatPullChatHistoryErased};
 
     // --- ClientRpcRouter ---
     gRpcMethodRegistry[ClientRpcRouterForwardMessageId] = RpcMethodMeta{
         "ClientRpcRouter", "Forward",
         std::make_unique<::client_rpc_router::ForwardRequest>(),
         std::make_unique<::MessageContent>(),
-        1, common::base::eNodeType::ClientRpcRouterNodeService, client_rpc_router::SendClientRpcRouterForward};
+        1, common::base::eNodeType::ClientRpcRouterNodeService, client_rpc_router::SendClientRpcRouterForwardErased};
 
     // --- DataService ---
     gRpcMethodRegistry[DataServiceLoadPlayerDataMessageId] = RpcMethodMeta{
         "DataService", "LoadPlayerData",
         std::make_unique<::data_service::LoadPlayerDataRequest>(),
         std::make_unique<::data_service::LoadPlayerDataResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceLoadPlayerData};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceLoadPlayerDataErased};
     gRpcMethodRegistry[DataServiceSavePlayerDataMessageId] = RpcMethodMeta{
         "DataService", "SavePlayerData",
         std::make_unique<::data_service::SavePlayerDataRequest>(),
         std::make_unique<::data_service::SavePlayerDataResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceSavePlayerData};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceSavePlayerDataErased};
     gRpcMethodRegistry[DataServiceGetPlayerFieldMessageId] = RpcMethodMeta{
         "DataService", "GetPlayerField",
         std::make_unique<::data_service::GetPlayerFieldRequest>(),
         std::make_unique<::data_service::GetPlayerFieldResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerField};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerFieldErased};
     gRpcMethodRegistry[DataServiceSetPlayerFieldMessageId] = RpcMethodMeta{
         "DataService", "SetPlayerField",
         std::make_unique<::data_service::SetPlayerFieldRequest>(),
         std::make_unique<::data_service::SetPlayerFieldResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceSetPlayerField};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceSetPlayerFieldErased};
     gRpcMethodRegistry[DataServiceRegisterPlayerZoneMessageId] = RpcMethodMeta{
         "DataService", "RegisterPlayerZone",
         std::make_unique<::data_service::RegisterPlayerZoneRequest>(),
         std::make_unique<::google::protobuf::Empty>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRegisterPlayerZone};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRegisterPlayerZoneErased};
     gRpcMethodRegistry[DataServiceGetPlayerHomeZoneMessageId] = RpcMethodMeta{
         "DataService", "GetPlayerHomeZone",
         std::make_unique<::data_service::GetPlayerHomeZoneRequest>(),
         std::make_unique<::data_service::GetPlayerHomeZoneResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerHomeZone};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerHomeZoneErased};
     gRpcMethodRegistry[DataServiceBatchGetPlayerHomeZoneMessageId] = RpcMethodMeta{
         "DataService", "BatchGetPlayerHomeZone",
         std::make_unique<::data_service::BatchGetPlayerHomeZoneRequest>(),
         std::make_unique<::data_service::BatchGetPlayerHomeZoneResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerHomeZone};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerHomeZoneErased};
     gRpcMethodRegistry[DataServiceRemapHomeZoneForMergeMessageId] = RpcMethodMeta{
         "DataService", "RemapHomeZoneForMerge",
         std::make_unique<::data_service::RemapHomeZoneForMergeRequest>(),
         std::make_unique<::data_service::RemapHomeZoneForMergeResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRemapHomeZoneForMerge};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRemapHomeZoneForMergeErased};
     gRpcMethodRegistry[DataServiceDeletePlayerDataMessageId] = RpcMethodMeta{
         "DataService", "DeletePlayerData",
         std::make_unique<::data_service::DeletePlayerDataRequest>(),
         std::make_unique<::data_service::DeletePlayerDataResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceDeletePlayerData};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceDeletePlayerDataErased};
     gRpcMethodRegistry[DataServiceCreatePlayerSnapshotMessageId] = RpcMethodMeta{
         "DataService", "CreatePlayerSnapshot",
         std::make_unique<::data_service::CreatePlayerSnapshotRequest>(),
         std::make_unique<::data_service::CreatePlayerSnapshotResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreatePlayerSnapshot};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreatePlayerSnapshotErased};
     gRpcMethodRegistry[DataServiceListPlayerSnapshotsMessageId] = RpcMethodMeta{
         "DataService", "ListPlayerSnapshots",
         std::make_unique<::data_service::ListPlayerSnapshotsRequest>(),
         std::make_unique<::data_service::ListPlayerSnapshotsResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceListPlayerSnapshots};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceListPlayerSnapshotsErased};
     gRpcMethodRegistry[DataServiceGetPlayerSnapshotDiffMessageId] = RpcMethodMeta{
         "DataService", "GetPlayerSnapshotDiff",
         std::make_unique<::data_service::GetPlayerSnapshotDiffRequest>(),
         std::make_unique<::data_service::GetPlayerSnapshotDiffResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerSnapshotDiff};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerSnapshotDiffErased};
     gRpcMethodRegistry[DataServiceRollbackPlayerMessageId] = RpcMethodMeta{
         "DataService", "RollbackPlayer",
         std::make_unique<::data_service::RollbackPlayerRequest>(),
         std::make_unique<::data_service::RollbackPlayerResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackPlayer};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackPlayerErased};
     gRpcMethodRegistry[DataServiceRollbackZoneMessageId] = RpcMethodMeta{
         "DataService", "RollbackZone",
         std::make_unique<::data_service::RollbackZoneRequest>(),
         std::make_unique<::data_service::RollbackZoneResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackZone};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackZoneErased};
     gRpcMethodRegistry[DataServiceRollbackAllMessageId] = RpcMethodMeta{
         "DataService", "RollbackAll",
         std::make_unique<::data_service::RollbackAllRequest>(),
         std::make_unique<::data_service::RollbackAllResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackAll};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceRollbackAllErased};
     gRpcMethodRegistry[DataServiceBatchRecallItemsMessageId] = RpcMethodMeta{
         "DataService", "BatchRecallItems",
         std::make_unique<::data_service::BatchRecallItemsRequest>(),
         std::make_unique<::data_service::BatchRecallItemsResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchRecallItems};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchRecallItemsErased};
     gRpcMethodRegistry[DataServiceQueryTransactionLogMessageId] = RpcMethodMeta{
         "DataService", "QueryTransactionLog",
         std::make_unique<::data_service::QueryTransactionLogRequest>(),
         std::make_unique<::data_service::QueryTransactionLogResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceQueryTransactionLog};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceQueryTransactionLogErased};
     gRpcMethodRegistry[DataServiceCreateEventSnapshotMessageId] = RpcMethodMeta{
         "DataService", "CreateEventSnapshot",
         std::make_unique<::data_service::CreateEventSnapshotRequest>(),
         std::make_unique<::data_service::CreateEventSnapshotResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreateEventSnapshot};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceCreateEventSnapshotErased};
     gRpcMethodRegistry[DataServiceAllocateIdSegmentMessageId] = RpcMethodMeta{
         "DataService", "AllocateIdSegment",
         std::make_unique<::data_service::AllocateIdSegmentRequest>(),
         std::make_unique<::data_service::AllocateIdSegmentResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceAllocateIdSegment};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceAllocateIdSegmentErased};
     gRpcMethodRegistry[DataServiceReservePlayerNameMessageId] = RpcMethodMeta{
         "DataService", "ReservePlayerName",
         std::make_unique<::data_service::ReservePlayerNameRequest>(),
         std::make_unique<::data_service::ReservePlayerNameResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceReservePlayerName};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceReservePlayerNameErased};
     gRpcMethodRegistry[DataServiceReleasePlayerNameMessageId] = RpcMethodMeta{
         "DataService", "ReleasePlayerName",
         std::make_unique<::data_service::ReleasePlayerNameRequest>(),
         std::make_unique<::google::protobuf::Empty>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceReleasePlayerName};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceReleasePlayerNameErased};
     gRpcMethodRegistry[DataServiceBatchGetPlayerNameMessageId] = RpcMethodMeta{
         "DataService", "BatchGetPlayerName",
         std::make_unique<::data_service::BatchGetPlayerNameRequest>(),
         std::make_unique<::data_service::BatchGetPlayerNameResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerName};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceBatchGetPlayerNameErased};
     gRpcMethodRegistry[DataServiceGetPlayerAssetOpLedgerMessageId] = RpcMethodMeta{
         "DataService", "GetPlayerAssetOpLedger",
         std::make_unique<::data_service::GetPlayerAssetOpLedgerRequest>(),
         std::make_unique<::data_service::GetPlayerAssetOpLedgerResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerAssetOpLedger};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerAssetOpLedgerErased};
     gRpcMethodRegistry[DataServiceGetPlayerInboxLedgerMessageId] = RpcMethodMeta{
         "DataService", "GetPlayerInboxLedger",
         std::make_unique<::data_service::GetPlayerInboxLedgerRequest>(),
         std::make_unique<::data_service::GetPlayerInboxLedgerResponse>(),
-        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerInboxLedger};
+        1, common::base::eNodeType::DataServiceNodeService, data_service::SendDataServiceGetPlayerInboxLedgerErased};
 
     // --- KV ---
     gRpcMethodRegistry[KVRangeMessageId] = RpcMethodMeta{
         "KV", "Range",
         std::make_unique<::etcdserverpb::RangeRequest>(),
         std::make_unique<::etcdserverpb::RangeResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVRange};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVRangeErased};
     gRpcMethodRegistry[KVPutMessageId] = RpcMethodMeta{
         "KV", "Put",
         std::make_unique<::etcdserverpb::PutRequest>(),
         std::make_unique<::etcdserverpb::PutResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVPut};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVPutErased};
     gRpcMethodRegistry[KVDeleteRangeMessageId] = RpcMethodMeta{
         "KV", "DeleteRange",
         std::make_unique<::etcdserverpb::DeleteRangeRequest>(),
         std::make_unique<::etcdserverpb::DeleteRangeResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVDeleteRange};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVDeleteRangeErased};
     gRpcMethodRegistry[KVTxnMessageId] = RpcMethodMeta{
         "KV", "Txn",
         std::make_unique<::etcdserverpb::TxnRequest>(),
         std::make_unique<::etcdserverpb::TxnResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVTxn};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVTxnErased};
     gRpcMethodRegistry[KVCompactMessageId] = RpcMethodMeta{
         "KV", "Compact",
         std::make_unique<::etcdserverpb::CompactionRequest>(),
         std::make_unique<::etcdserverpb::CompactionResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVCompact};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendKVCompactErased};
 
     // --- Watch ---
     gRpcMethodRegistry[WatchWatchMessageId] = RpcMethodMeta{
         "Watch", "Watch",
         std::make_unique<::etcdserverpb::WatchRequest>(),
         std::make_unique<::etcdserverpb::WatchResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendWatchWatch};
+        0, common::base::eNodeType::EtcdNodeService};
 
     // --- Lease ---
     gRpcMethodRegistry[LeaseLeaseGrantMessageId] = RpcMethodMeta{
         "Lease", "LeaseGrant",
         std::make_unique<::etcdserverpb::LeaseGrantRequest>(),
         std::make_unique<::etcdserverpb::LeaseGrantResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseGrant};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseGrantErased};
     gRpcMethodRegistry[LeaseLeaseRevokeMessageId] = RpcMethodMeta{
         "Lease", "LeaseRevoke",
         std::make_unique<::etcdserverpb::LeaseRevokeRequest>(),
         std::make_unique<::etcdserverpb::LeaseRevokeResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseRevoke};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseRevokeErased};
     gRpcMethodRegistry[LeaseLeaseKeepAliveMessageId] = RpcMethodMeta{
         "Lease", "LeaseKeepAlive",
         std::make_unique<::etcdserverpb::LeaseKeepAliveRequest>(),
         std::make_unique<::etcdserverpb::LeaseKeepAliveResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseKeepAlive};
+        0, common::base::eNodeType::EtcdNodeService};
     gRpcMethodRegistry[LeaseLeaseTimeToLiveMessageId] = RpcMethodMeta{
         "Lease", "LeaseTimeToLive",
         std::make_unique<::etcdserverpb::LeaseTimeToLiveRequest>(),
         std::make_unique<::etcdserverpb::LeaseTimeToLiveResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseTimeToLive};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseTimeToLiveErased};
     gRpcMethodRegistry[LeaseLeaseLeasesMessageId] = RpcMethodMeta{
         "Lease", "LeaseLeases",
         std::make_unique<::etcdserverpb::LeaseLeasesRequest>(),
         std::make_unique<::etcdserverpb::LeaseLeasesResponse>(),
-        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseLeases};
+        0, common::base::eNodeType::EtcdNodeService, etcdserverpb::SendLeaseLeaseLeasesErased};
 
     // --- ClientPlayerFriend ---
     gRpcMethodRegistry[ClientPlayerFriendAddFriendMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "AddFriend",
         std::make_unique<::friendpb::AddFriendRequest>(),
         std::make_unique<::friendpb::AddFriendResponse>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendAddFriend};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendAddFriendErased};
     gRpcMethodRegistry[ClientPlayerFriendAcceptFriendMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "AcceptFriend",
         std::make_unique<::friendpb::AcceptFriendRequest>(),
         std::make_unique<::friendpb::AcceptFriendResponse>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendAcceptFriend};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendAcceptFriendErased};
     gRpcMethodRegistry[ClientPlayerFriendRejectFriendMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "RejectFriend",
         std::make_unique<::friendpb::RejectFriendRequest>(),
         std::make_unique<::friendpb::RejectFriendResponse>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRejectFriend};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRejectFriendErased};
     gRpcMethodRegistry[ClientPlayerFriendRemoveFriendMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "RemoveFriend",
         std::make_unique<::friendpb::RemoveFriendRequest>(),
         std::make_unique<::friendpb::RemoveFriendResponse>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRemoveFriend};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRemoveFriendErased};
     gRpcMethodRegistry[ClientPlayerFriendGetFriendListMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "GetFriendList",
         std::make_unique<::friendpb::GetFriendListRequest>(),
         std::make_unique<::friendpb::GetFriendListResponse>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendGetFriendList};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendGetFriendListErased};
     gRpcMethodRegistry[ClientPlayerFriendGetPendingRequestsMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "GetPendingRequests",
         std::make_unique<::friendpb::GetPendingRequestsRequest>(),
         std::make_unique<::friendpb::GetPendingRequestsResponse>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendGetPendingRequests};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendGetPendingRequestsErased};
     gRpcMethodRegistry[ClientPlayerFriendBlockMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "Block",
         std::make_unique<::friendpb::BlockRequest>(),
         std::make_unique<::friendpb::BlockResponse>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendBlock};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendBlockErased};
     gRpcMethodRegistry[ClientPlayerFriendUnblockMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "Unblock",
         std::make_unique<::friendpb::UnblockRequest>(),
         std::make_unique<::friendpb::UnblockResponse>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendUnblock};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendUnblockErased};
     gRpcMethodRegistry[ClientPlayerFriendListBlocksMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "ListBlocks",
         std::make_unique<::friendpb::ListBlocksRequest>(),
         std::make_unique<::friendpb::ListBlocksResponse>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendListBlocks};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendListBlocksErased};
     gRpcMethodRegistry[ClientPlayerFriendRecommendFriendsMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "RecommendFriends",
         std::make_unique<::friendpb::RecommendFriendsRequest>(),
         std::make_unique<::friendpb::RecommendFriendsResponse>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRecommendFriends};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendRecommendFriendsErased};
     gRpcMethodRegistry[ClientPlayerFriendNotifyFriendEventMessageId] = RpcMethodMeta{
         "ClientPlayerFriend", "NotifyFriendEvent",
         std::make_unique<::friendpb::FriendEventS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendNotifyFriendEvent};
+        1, common::base::eNodeType::FriendNodeService, friendpb::SendClientPlayerFriendNotifyFriendEventErased};
 
     // --- Gate ---
     gRpcMethodRegistry[GateSendMessageToPlayerMessageId] = RpcMethodMeta{
@@ -698,448 +696,448 @@ void InitMessageInfo()
         "GuildService", "CreateGuild",
         std::make_unique<::guildpb::CreateGuildRequest>(),
         std::make_unique<::guildpb::CreateGuildResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceCreateGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceCreateGuildErased};
     gRpcMethodRegistry[GuildServiceGetGuildMessageId] = RpcMethodMeta{
         "GuildService", "GetGuild",
         std::make_unique<::guildpb::GetGuildRequest>(),
         std::make_unique<::guildpb::GetGuildResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildErased};
     gRpcMethodRegistry[GuildServiceGetPlayerGuildMessageId] = RpcMethodMeta{
         "GuildService", "GetPlayerGuild",
         std::make_unique<::guildpb::GetPlayerGuildRequest>(),
         std::make_unique<::guildpb::GetPlayerGuildResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetPlayerGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetPlayerGuildErased};
     gRpcMethodRegistry[GuildServiceLeaveGuildMessageId] = RpcMethodMeta{
         "GuildService", "LeaveGuild",
         std::make_unique<::guildpb::LeaveGuildRequest>(),
         std::make_unique<::guildpb::LeaveGuildResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceLeaveGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceLeaveGuildErased};
     gRpcMethodRegistry[GuildServiceDisbandGuildMessageId] = RpcMethodMeta{
         "GuildService", "DisbandGuild",
         std::make_unique<::guildpb::DisbandGuildRequest>(),
         std::make_unique<::guildpb::DisbandGuildResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceDisbandGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceDisbandGuildErased};
     gRpcMethodRegistry[GuildServiceSetAnnouncementMessageId] = RpcMethodMeta{
         "GuildService", "SetAnnouncement",
         std::make_unique<::guildpb::SetAnnouncementRequest>(),
         std::make_unique<::guildpb::SetAnnouncementResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceSetAnnouncement};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceSetAnnouncementErased};
     gRpcMethodRegistry[GuildServiceSetGuildMemberRoleMessageId] = RpcMethodMeta{
         "GuildService", "SetGuildMemberRole",
         std::make_unique<::guildpb::SetGuildMemberRoleRequest>(),
         std::make_unique<::guildpb::SetGuildMemberRoleResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceSetGuildMemberRole};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceSetGuildMemberRoleErased};
     gRpcMethodRegistry[GuildServiceKickGuildMemberMessageId] = RpcMethodMeta{
         "GuildService", "KickGuildMember",
         std::make_unique<::guildpb::KickGuildMemberRequest>(),
         std::make_unique<::guildpb::KickGuildMemberResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceKickGuildMember};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceKickGuildMemberErased};
     gRpcMethodRegistry[GuildServiceTransferGuildLeaderMessageId] = RpcMethodMeta{
         "GuildService", "TransferGuildLeader",
         std::make_unique<::guildpb::TransferGuildLeaderRequest>(),
         std::make_unique<::guildpb::TransferGuildLeaderResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceTransferGuildLeader};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceTransferGuildLeaderErased};
     gRpcMethodRegistry[GuildServiceApplyJoinGuildMessageId] = RpcMethodMeta{
         "GuildService", "ApplyJoinGuild",
         std::make_unique<::guildpb::ApplyJoinGuildRequest>(),
         std::make_unique<::guildpb::ApplyJoinGuildResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceApplyJoinGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceApplyJoinGuildErased};
     gRpcMethodRegistry[GuildServiceCancelGuildApplicationMessageId] = RpcMethodMeta{
         "GuildService", "CancelGuildApplication",
         std::make_unique<::guildpb::CancelGuildApplicationRequest>(),
         std::make_unique<::guildpb::CancelGuildApplicationResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceCancelGuildApplication};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceCancelGuildApplicationErased};
     gRpcMethodRegistry[GuildServiceListMyGuildApplicationsMessageId] = RpcMethodMeta{
         "GuildService", "ListMyGuildApplications",
         std::make_unique<::guildpb::ListMyGuildApplicationsRequest>(),
         std::make_unique<::guildpb::ListMyGuildApplicationsResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceListMyGuildApplications};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceListMyGuildApplicationsErased};
     gRpcMethodRegistry[GuildServiceListGuildApplicationsMessageId] = RpcMethodMeta{
         "GuildService", "ListGuildApplications",
         std::make_unique<::guildpb::ListGuildApplicationsRequest>(),
         std::make_unique<::guildpb::ListGuildApplicationsResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceListGuildApplications};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceListGuildApplicationsErased};
     gRpcMethodRegistry[GuildServiceReviewGuildApplicationMessageId] = RpcMethodMeta{
         "GuildService", "ReviewGuildApplication",
         std::make_unique<::guildpb::ReviewGuildApplicationRequest>(),
         std::make_unique<::guildpb::ReviewGuildApplicationResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceReviewGuildApplication};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceReviewGuildApplicationErased};
     gRpcMethodRegistry[GuildServiceNotifyGuildChangedMessageId] = RpcMethodMeta{
         "GuildService", "NotifyGuildChanged",
         std::make_unique<::guildpb::GuildChangedS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceNotifyGuildChanged};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceNotifyGuildChangedErased};
     gRpcMethodRegistry[GuildServiceUpdateGuildScoreMessageId] = RpcMethodMeta{
         "GuildService", "UpdateGuildScore",
         std::make_unique<::guildpb::UpdateGuildScoreRequest>(),
         std::make_unique<::guildpb::UpdateGuildScoreResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceUpdateGuildScore};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceUpdateGuildScoreErased};
     gRpcMethodRegistry[GuildServiceGetGuildRankMessageId] = RpcMethodMeta{
         "GuildService", "GetGuildRank",
         std::make_unique<::guildpb::GetGuildRankRequest>(),
         std::make_unique<::guildpb::GetGuildRankResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildRank};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildRankErased};
     gRpcMethodRegistry[GuildServiceGetGuildRankByGuildMessageId] = RpcMethodMeta{
         "GuildService", "GetGuildRankByGuild",
         std::make_unique<::guildpb::GetGuildRankByGuildRequest>(),
         std::make_unique<::guildpb::GetGuildRankByGuildResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildRankByGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildRankByGuildErased};
     gRpcMethodRegistry[GuildServiceGetGuildDonateOptionsMessageId] = RpcMethodMeta{
         "GuildService", "GetGuildDonateOptions",
         std::make_unique<::guildpb::GetGuildDonateOptionsRequest>(),
         std::make_unique<::guildpb::GetGuildDonateOptionsResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildDonateOptions};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildDonateOptionsErased};
     gRpcMethodRegistry[GuildServiceDonateToGuildMessageId] = RpcMethodMeta{
         "GuildService", "DonateToGuild",
         std::make_unique<::guildpb::DonateToGuildRequest>(),
         std::make_unique<::guildpb::DonateToGuildResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceDonateToGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceDonateToGuildErased};
     gRpcMethodRegistry[GuildServiceUpgradeGuildMessageId] = RpcMethodMeta{
         "GuildService", "UpgradeGuild",
         std::make_unique<::guildpb::UpgradeGuildRequest>(),
         std::make_unique<::guildpb::UpgradeGuildResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceUpgradeGuild};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceUpgradeGuildErased};
     gRpcMethodRegistry[GuildServiceGetGuildShopMessageId] = RpcMethodMeta{
         "GuildService", "GetGuildShop",
         std::make_unique<::guildpb::GetGuildShopRequest>(),
         std::make_unique<::guildpb::GetGuildShopResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildShop};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildShopErased};
     gRpcMethodRegistry[GuildServiceBuyGuildShopGoodsMessageId] = RpcMethodMeta{
         "GuildService", "BuyGuildShopGoods",
         std::make_unique<::guildpb::BuyGuildShopGoodsRequest>(),
         std::make_unique<::guildpb::BuyGuildShopGoodsResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceBuyGuildShopGoods};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceBuyGuildShopGoodsErased};
     gRpcMethodRegistry[GuildServiceGetGuildActivitiesMessageId] = RpcMethodMeta{
         "GuildService", "GetGuildActivities",
         std::make_unique<::guildpb::GetGuildActivitiesRequest>(),
         std::make_unique<::guildpb::GetGuildActivitiesResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildActivities};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceGetGuildActivitiesErased};
     gRpcMethodRegistry[GuildServiceLightGuildLanternMessageId] = RpcMethodMeta{
         "GuildService", "LightGuildLantern",
         std::make_unique<::guildpb::LightGuildLanternRequest>(),
         std::make_unique<::guildpb::LightGuildLanternResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceLightGuildLantern};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceLightGuildLanternErased};
     gRpcMethodRegistry[GuildServiceClaimGuildReunionMessageId] = RpcMethodMeta{
         "GuildService", "ClaimGuildReunion",
         std::make_unique<::guildpb::ClaimGuildReunionRequest>(),
         std::make_unique<::guildpb::ClaimGuildReunionResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceClaimGuildReunion};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceClaimGuildReunionErased};
     gRpcMethodRegistry[GuildServiceStartGuildTrialMessageId] = RpcMethodMeta{
         "GuildService", "StartGuildTrial",
         std::make_unique<::guildpb::StartGuildTrialRequest>(),
         std::make_unique<::guildpb::StartGuildTrialResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceStartGuildTrial};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceStartGuildTrialErased};
     gRpcMethodRegistry[GuildServiceRespondGuildTrialInviteMessageId] = RpcMethodMeta{
         "GuildService", "RespondGuildTrialInvite",
         std::make_unique<::guildpb::RespondGuildTrialInviteRequest>(),
         std::make_unique<::guildpb::RespondGuildTrialInviteResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceRespondGuildTrialInvite};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildServiceRespondGuildTrialInviteErased};
 
     // --- GuildInternal ---
     gRpcMethodRegistry[GuildInternalListAppliedAssetOpsSinceMessageId] = RpcMethodMeta{
         "GuildInternal", "ListAppliedAssetOpsSince",
         std::make_unique<::guildpb::ListAppliedAssetOpsSinceRequest>(),
         std::make_unique<::guildpb::ListAppliedAssetOpsSinceResponse>(),
-        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildInternalListAppliedAssetOpsSince};
+        1, common::base::eNodeType::GuildNodeService, guildpb::SendGuildInternalListAppliedAssetOpsSinceErased};
 
     // --- ClientPlayerLogin ---
     gRpcMethodRegistry[ClientPlayerLoginLoginMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "Login",
         std::make_unique<::loginpb::LoginRequest>(),
         std::make_unique<::loginpb::LoginResponse>(),
-        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLogin};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLoginErased};
     gRpcMethodRegistry[ClientPlayerLoginCreatePlayerMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "CreatePlayer",
         std::make_unique<::loginpb::CreatePlayerRequest>(),
         std::make_unique<::loginpb::CreatePlayerResponse>(),
-        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginCreatePlayer};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginCreatePlayerErased};
     gRpcMethodRegistry[ClientPlayerLoginEnterGameMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "EnterGame",
         std::make_unique<::loginpb::EnterGameRequest>(),
         std::make_unique<::loginpb::EnterGameResponse>(),
-        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGame};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginEnterGameErased};
     gRpcMethodRegistry[ClientPlayerLoginLeaveGameMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "LeaveGame",
         std::make_unique<::loginpb::LeaveGameRequest>(),
         std::make_unique<::loginpb::LoginEmptyResponse>(),
-        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGame};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginLeaveGameErased};
     gRpcMethodRegistry[ClientPlayerLoginDisconnectMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "Disconnect",
         std::make_unique<::loginpb::LoginNodeDisconnectRequest>(),
         std::make_unique<::loginpb::LoginEmptyResponse>(),
-        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnect};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginDisconnectErased};
     gRpcMethodRegistry[ClientPlayerLoginRefreshTokenMessageId] = RpcMethodMeta{
         "ClientPlayerLogin", "RefreshToken",
         std::make_unique<::loginpb::RefreshTokenRequest>(),
         std::make_unique<::loginpb::RefreshTokenResponse>(),
-        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginRefreshToken};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendClientPlayerLoginRefreshTokenErased};
 
     // --- LoginPreGate ---
     gRpcMethodRegistry[LoginPreGateAssignGateMessageId] = RpcMethodMeta{
         "LoginPreGate", "AssignGate",
         std::make_unique<::loginpb::AssignGateRequest>(),
         std::make_unique<::loginpb::AssignGateResponse>(),
-        1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateAssignGate};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateAssignGateErased};
     gRpcMethodRegistry[LoginPreGateQueryQueueStatusMessageId] = RpcMethodMeta{
         "LoginPreGate", "QueryQueueStatus",
         std::make_unique<::loginpb::QueryQueueStatusRequest>(),
         std::make_unique<::loginpb::QueryQueueStatusResponse>(),
-        1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateQueryQueueStatus};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginPreGateQueryQueueStatusErased};
 
     // --- LoginAdmin ---
     gRpcMethodRegistry[LoginAdminRemovePlayersFromAccountsMessageId] = RpcMethodMeta{
         "LoginAdmin", "RemovePlayersFromAccounts",
         std::make_unique<::loginpb::RemovePlayersFromAccountsRequest>(),
         std::make_unique<::loginpb::RemovePlayersFromAccountsResponse>(),
-        1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginAdminRemovePlayersFromAccounts};
+        1, common::base::eNodeType::LoginNodeService, loginpb::SendLoginAdminRemovePlayersFromAccountsErased};
 
     // --- ClientPlayerMail ---
     gRpcMethodRegistry[ClientPlayerMailListMailsMessageId] = RpcMethodMeta{
         "ClientPlayerMail", "ListMails",
         std::make_unique<::mailpb::ListMailsRequest>(),
         std::make_unique<::mailpb::ListMailsResponse>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailListMails};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailListMailsErased};
     gRpcMethodRegistry[ClientPlayerMailReadMailMessageId] = RpcMethodMeta{
         "ClientPlayerMail", "ReadMail",
         std::make_unique<::mailpb::ReadMailRequest>(),
         std::make_unique<::mailpb::ReadMailResponse>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailReadMail};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailReadMailErased};
     gRpcMethodRegistry[ClientPlayerMailClaimMailAttachmentsMessageId] = RpcMethodMeta{
         "ClientPlayerMail", "ClaimMailAttachments",
         std::make_unique<::mailpb::ClaimMailAttachmentsRequest>(),
         std::make_unique<::mailpb::ClaimMailAttachmentsResponse>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailClaimMailAttachments};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailClaimMailAttachmentsErased};
     gRpcMethodRegistry[ClientPlayerMailDeleteMailsMessageId] = RpcMethodMeta{
         "ClientPlayerMail", "DeleteMails",
         std::make_unique<::mailpb::DeleteMailsRequest>(),
         std::make_unique<::mailpb::DeleteMailsResponse>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailDeleteMails};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailDeleteMailsErased};
     gRpcMethodRegistry[ClientPlayerMailClearReadMailsMessageId] = RpcMethodMeta{
         "ClientPlayerMail", "ClearReadMails",
         std::make_unique<::mailpb::ClearReadMailsRequest>(),
         std::make_unique<::mailpb::ClearReadMailsResponse>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailClearReadMails};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailClearReadMailsErased};
     gRpcMethodRegistry[ClientPlayerMailNotifyMailChangedMessageId] = RpcMethodMeta{
         "ClientPlayerMail", "NotifyMailChanged",
         std::make_unique<::mailpb::MailChangedEvent>(),
         std::make_unique<::mailpb::MailChangedEvent>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailNotifyMailChanged};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendClientPlayerMailNotifyMailChangedErased};
 
     // --- MailAdmin ---
     gRpcMethodRegistry[MailAdminSendPersonalMailMessageId] = RpcMethodMeta{
         "MailAdmin", "SendPersonalMail",
         std::make_unique<::mailpb::SendMailRequest>(),
         std::make_unique<::mailpb::SendMailResponse>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendPersonalMail};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendPersonalMailErased};
     gRpcMethodRegistry[MailAdminSendSystemMailMessageId] = RpcMethodMeta{
         "MailAdmin", "SendSystemMail",
         std::make_unique<::mailpb::SendMailRequest>(),
         std::make_unique<::mailpb::SendMailResponse>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendSystemMail};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendSystemMailErased};
     gRpcMethodRegistry[MailAdminSendGuildMailMessageId] = RpcMethodMeta{
         "MailAdmin", "SendGuildMail",
         std::make_unique<::mailpb::SendMailRequest>(),
         std::make_unique<::mailpb::SendMailResponse>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendGuildMail};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSendGuildMailErased};
     gRpcMethodRegistry[MailAdminImportMailRecipientsMessageId] = RpcMethodMeta{
         "MailAdmin", "ImportMailRecipients",
         std::make_unique<::mailpb::ImportMailRecipientsRequest>(),
         std::make_unique<::mailpb::ImportMailRecipientsResponse>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminImportMailRecipients};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminImportMailRecipientsErased};
     gRpcMethodRegistry[MailAdminSealMailCampaignMessageId] = RpcMethodMeta{
         "MailAdmin", "SealMailCampaign",
         std::make_unique<::mailpb::SealMailCampaignRequest>(),
         std::make_unique<::mailpb::SendMailResponse>(),
-        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSealMailCampaign};
+        1, common::base::eNodeType::MailNodeService, mailpb::SendMailAdminSealMailCampaignErased};
 
     // --- MatchInternal ---
     gRpcMethodRegistry[MatchInternalStartActivityBattleMessageId] = RpcMethodMeta{
         "MatchInternal", "StartActivityBattle",
         std::make_unique<::match::StartActivityBattleRequest>(),
         std::make_unique<::match::StartActivityBattleResponse>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchInternalStartActivityBattle};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchInternalStartActivityBattleErased};
 
     // --- MatchService ---
     gRpcMethodRegistry[MatchServiceGetNetworkProbePlanMessageId] = RpcMethodMeta{
         "MatchService", "GetNetworkProbePlan",
         std::make_unique<::match::GetNetworkProbePlanRequest>(),
         std::make_unique<::match::GetNetworkProbePlanResponse>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceGetNetworkProbePlan};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceGetNetworkProbePlanErased};
     gRpcMethodRegistry[MatchServiceCommitNetworkProbeMessageId] = RpcMethodMeta{
         "MatchService", "CommitNetworkProbe",
         std::make_unique<::match::CommitNetworkProbeRequest>(),
         std::make_unique<::match::CommitNetworkProbeResponse>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceCommitNetworkProbe};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceCommitNetworkProbeErased};
     gRpcMethodRegistry[MatchServiceJoinQueueMessageId] = RpcMethodMeta{
         "MatchService", "JoinQueue",
         std::make_unique<::match::JoinQueueRequest>(),
         std::make_unique<::match::JoinQueueResponse>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceJoinQueue};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceJoinQueueErased};
     gRpcMethodRegistry[MatchServiceCancelQueueMessageId] = RpcMethodMeta{
         "MatchService", "CancelQueue",
         std::make_unique<::match::CancelQueueRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceCancelQueue};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceCancelQueueErased};
     gRpcMethodRegistry[MatchServiceGetQueueStatusMessageId] = RpcMethodMeta{
         "MatchService", "GetQueueStatus",
         std::make_unique<::match::GetQueueStatusRequest>(),
         std::make_unique<::match::GetQueueStatusResponse>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceGetQueueStatus};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceGetQueueStatusErased};
     gRpcMethodRegistry[MatchServiceChallengePlayerMessageId] = RpcMethodMeta{
         "MatchService", "ChallengePlayer",
         std::make_unique<::match::ChallengePlayerRequest>(),
         std::make_unique<::match::ChallengePlayerResponse>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceChallengePlayer};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceChallengePlayerErased};
     gRpcMethodRegistry[MatchServiceRespondChallengeMessageId] = RpcMethodMeta{
         "MatchService", "RespondChallenge",
         std::make_unique<::match::RespondChallengeRequest>(),
         std::make_unique<::match::RespondChallengeResponse>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceRespondChallenge};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceRespondChallengeErased};
     gRpcMethodRegistry[MatchServiceNotifyChallengeInviteMessageId] = RpcMethodMeta{
         "MatchService", "NotifyChallengeInvite",
         std::make_unique<::match::ChallengeInviteS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceNotifyChallengeInvite};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceNotifyChallengeInviteErased};
     gRpcMethodRegistry[MatchServiceNotifyChallengeResultMessageId] = RpcMethodMeta{
         "MatchService", "NotifyChallengeResult",
         std::make_unique<::match::ChallengeResultS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceNotifyChallengeResult};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceNotifyChallengeResultErased};
     gRpcMethodRegistry[MatchServiceWatchBattleMessageId] = RpcMethodMeta{
         "MatchService", "WatchBattle",
         std::make_unique<::match::WatchBattleRequest>(),
         std::make_unique<::match::WatchBattleResponse>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceWatchBattle};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceWatchBattleErased};
     gRpcMethodRegistry[MatchServiceRequestBattleTicketMessageId] = RpcMethodMeta{
         "MatchService", "RequestBattleTicket",
         std::make_unique<::RequestBattleTicketRequest>(),
         std::make_unique<::RequestBattleTicketResponse>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceRequestBattleTicket};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceRequestBattleTicketErased};
     gRpcMethodRegistry[MatchServiceListWatchableBattlesMessageId] = RpcMethodMeta{
         "MatchService", "ListWatchableBattles",
         std::make_unique<::match::ListWatchableBattlesRequest>(),
         std::make_unique<::match::ListWatchableBattlesResponse>(),
-        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceListWatchableBattles};
+        1, common::base::eNodeType::MatchNodeService, match::SendMatchServiceListWatchableBattlesErased};
 
     // --- PlayerInbox ---
     gRpcMethodRegistry[PlayerInboxFetchItemsMessageId] = RpcMethodMeta{
         "PlayerInbox", "FetchItems",
         std::make_unique<::player_inbox::FetchPlayerInboxRequest>(),
         std::make_unique<::player_inbox::FetchPlayerInboxResponse>(),
-        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxFetchItems};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxFetchItemsErased};
     gRpcMethodRegistry[PlayerInboxAckItemsMessageId] = RpcMethodMeta{
         "PlayerInbox", "AckItems",
         std::make_unique<::player_inbox::AckPlayerInboxRequest>(),
         std::make_unique<::player_inbox::AckPlayerInboxResponse>(),
-        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAckItems};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAckItemsErased};
 
     // --- PlayerInboxAdmin ---
     gRpcMethodRegistry[PlayerInboxAdminGmSanctionPlayerMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "GmSanctionPlayer",
         std::make_unique<::player_inbox::GmSanctionPlayerRequest>(),
         std::make_unique<::player_inbox::GmSanctionPlayerResponse>(),
-        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGmSanctionPlayer};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGmSanctionPlayerErased};
     gRpcMethodRegistry[PlayerInboxAdminGetSummaryMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "GetSummary",
         std::make_unique<::player_inbox::GetPlayerInboxSummaryRequest>(),
         std::make_unique<::player_inbox::GetPlayerInboxSummaryResponse>(),
-        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGetSummary};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminGetSummaryErased};
     gRpcMethodRegistry[PlayerInboxAdminListItemsMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "ListItems",
         std::make_unique<::player_inbox::ListPlayerInboxItemsRequest>(),
         std::make_unique<::player_inbox::ListPlayerInboxItemsResponse>(),
-        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminListItems};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminListItemsErased};
     gRpcMethodRegistry[PlayerInboxAdminLookupByRequestMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "LookupByRequest",
         std::make_unique<::player_inbox::LookupPlayerInboxRequest>(),
         std::make_unique<::player_inbox::LookupPlayerInboxResponse>(),
-        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminLookupByRequest};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminLookupByRequestErased};
     gRpcMethodRegistry[PlayerInboxAdminVoidItemMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "VoidItem",
         std::make_unique<::player_inbox::VoidPlayerInboxItemRequest>(),
         std::make_unique<::player_inbox::VoidPlayerInboxItemResponse>(),
-        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminVoidItem};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminVoidItemErased};
     gRpcMethodRegistry[PlayerInboxAdminReconcilePlayerMessageId] = RpcMethodMeta{
         "PlayerInboxAdmin", "ReconcilePlayer",
         std::make_unique<::player_inbox::ReconcilePlayerInboxRequest>(),
         std::make_unique<::player_inbox::ReconcilePlayerInboxResponse>(),
-        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminReconcilePlayer};
+        1, common::base::eNodeType::PlayerInboxNodeService, player_inbox::SendPlayerInboxAdminReconcilePlayerErased};
 
     // --- PlayerLocator ---
     gRpcMethodRegistry[PlayerLocatorSetLocationMessageId] = RpcMethodMeta{
         "PlayerLocator", "SetLocation",
         std::make_unique<::playerlocator::PlayerLocation>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetLocation};
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetLocationErased};
     gRpcMethodRegistry[PlayerLocatorGetLocationMessageId] = RpcMethodMeta{
         "PlayerLocator", "GetLocation",
         std::make_unique<::playerlocator::PlayerId>(),
         std::make_unique<::playerlocator::PlayerLocation>(),
-        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorGetLocation};
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorGetLocationErased};
     gRpcMethodRegistry[PlayerLocatorMarkOfflineMessageId] = RpcMethodMeta{
         "PlayerLocator", "MarkOffline",
         std::make_unique<::playerlocator::MarkOfflineRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorMarkOffline};
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorMarkOfflineErased};
     gRpcMethodRegistry[PlayerLocatorSetSessionMessageId] = RpcMethodMeta{
         "PlayerLocator", "SetSession",
         std::make_unique<::playerlocator::SetSessionRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetSession};
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetSessionErased};
     gRpcMethodRegistry[PlayerLocatorGetSessionMessageId] = RpcMethodMeta{
         "PlayerLocator", "GetSession",
         std::make_unique<::playerlocator::GetSessionRequest>(),
         std::make_unique<::playerlocator::GetSessionResponse>(),
-        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorGetSession};
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorGetSessionErased};
     gRpcMethodRegistry[PlayerLocatorSetDisconnectingMessageId] = RpcMethodMeta{
         "PlayerLocator", "SetDisconnecting",
         std::make_unique<::playerlocator::SetDisconnectingRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetDisconnecting};
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorSetDisconnectingErased};
     gRpcMethodRegistry[PlayerLocatorReconnectMessageId] = RpcMethodMeta{
         "PlayerLocator", "Reconnect",
         std::make_unique<::playerlocator::ReconnectRequest>(),
         std::make_unique<::playerlocator::ReconnectResponse>(),
-        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorReconnect};
+        1, common::base::eNodeType::PlayerLocatorNodeService, playerlocator::SendPlayerLocatorReconnectErased};
 
     // --- ClientPlayerRank ---
     gRpcMethodRegistry[ClientPlayerRankGetRankPageMessageId] = RpcMethodMeta{
         "ClientPlayerRank", "GetRankPage",
         std::make_unique<::rankpb::GetRankPageRequest>(),
         std::make_unique<::rankpb::GetRankPageResponse>(),
-        1, common::base::eNodeType::RankNodeService, rankpb::SendClientPlayerRankGetRankPage};
+        1, common::base::eNodeType::RankNodeService, rankpb::SendClientPlayerRankGetRankPageErased};
     gRpcMethodRegistry[ClientPlayerRankGetRankAroundMessageId] = RpcMethodMeta{
         "ClientPlayerRank", "GetRankAround",
         std::make_unique<::rankpb::GetRankAroundRequest>(),
         std::make_unique<::rankpb::GetRankAroundResponse>(),
-        1, common::base::eNodeType::RankNodeService, rankpb::SendClientPlayerRankGetRankAround};
+        1, common::base::eNodeType::RankNodeService, rankpb::SendClientPlayerRankGetRankAroundErased};
 
     // --- RankAdmin ---
     gRpcMethodRegistry[RankAdminOpenRankGenerationMessageId] = RpcMethodMeta{
         "RankAdmin", "OpenRankGeneration",
         std::make_unique<::rankpb::OpenRankGenerationRequest>(),
         std::make_unique<::rankpb::OpenRankGenerationResponse>(),
-        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminOpenRankGeneration};
+        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminOpenRankGenerationErased};
     gRpcMethodRegistry[RankAdminSubmitRankScoresMessageId] = RpcMethodMeta{
         "RankAdmin", "SubmitRankScores",
         std::make_unique<::rankpb::SubmitRankScoresRequest>(),
         std::make_unique<::rankpb::SubmitRankScoresResponse>(),
-        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminSubmitRankScores};
+        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminSubmitRankScoresErased};
     gRpcMethodRegistry[RankAdminFreezeRankGenerationMessageId] = RpcMethodMeta{
         "RankAdmin", "FreezeRankGeneration",
         std::make_unique<::rankpb::FreezeRankGenerationRequest>(),
         std::make_unique<::rankpb::FreezeRankGenerationResponse>(),
-        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminFreezeRankGeneration};
+        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminFreezeRankGenerationErased};
     gRpcMethodRegistry[RankAdminRemoveRankEntryMessageId] = RpcMethodMeta{
         "RankAdmin", "RemoveRankEntry",
         std::make_unique<::rankpb::RemoveRankEntryRequest>(),
         std::make_unique<::rankpb::RankAdminResponse>(),
-        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminRemoveRankEntry};
+        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminRemoveRankEntryErased};
     gRpcMethodRegistry[RankAdminDeleteRankGenerationMessageId] = RpcMethodMeta{
         "RankAdmin", "DeleteRankGeneration",
         std::make_unique<::rankpb::RemoveRankEntryRequest>(),
         std::make_unique<::rankpb::RankAdminResponse>(),
-        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminDeleteRankGeneration};
+        1, common::base::eNodeType::RankNodeService, rankpb::SendRankAdminDeleteRankGenerationErased};
 
     // --- SceneClientPlayerCommon ---
     gRpcMethodRegistry[SceneClientPlayerCommonSendTipToClientMessageId] = RpcMethodMeta{
@@ -1653,275 +1651,275 @@ void InitMessageInfo()
         "SceneManager", "CreateScene",
         std::make_unique<::scene_manager::CreateSceneRequest>(),
         std::make_unique<::scene_manager::CreateSceneResponse>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerCreateScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerCreateSceneErased};
     gRpcMethodRegistry[SceneManagerDestroySceneMessageId] = RpcMethodMeta{
         "SceneManager", "DestroyScene",
         std::make_unique<::scene_manager::DestroySceneRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerDestroyScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerDestroySceneErased};
     gRpcMethodRegistry[SceneManagerEnterSceneMessageId] = RpcMethodMeta{
         "SceneManager", "EnterScene",
         std::make_unique<::scene_manager::EnterSceneRequest>(),
         std::make_unique<::scene_manager::EnterSceneResponse>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerEnterScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerEnterSceneErased};
     gRpcMethodRegistry[SceneManagerLeaveSceneMessageId] = RpcMethodMeta{
         "SceneManager", "LeaveScene",
         std::make_unique<::scene_manager::LeaveSceneRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerLeaveScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_manager::SendSceneManagerLeaveSceneErased};
 
     // --- SceneNodeGrpc ---
     gRpcMethodRegistry[SceneNodeGrpcCreateSceneMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "CreateScene",
         std::make_unique<::CreateSceneRequest>(),
         std::make_unique<::CreateSceneResponse>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcCreateScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcCreateSceneErased};
     gRpcMethodRegistry[SceneNodeGrpcDestroySceneMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "DestroyScene",
         std::make_unique<::DestroySceneRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcDestroyScene};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcDestroySceneErased};
     gRpcMethodRegistry[SceneNodeGrpcReleasePlayerMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "ReleasePlayer",
         std::make_unique<::scene_node::ReleasePlayerRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcReleasePlayer};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcReleasePlayerErased};
     gRpcMethodRegistry[SceneNodeGrpcPrepareBattleMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "PrepareBattle",
         std::make_unique<::PrepareBattleRequest>(),
         std::make_unique<::PrepareBattleResponse>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcPrepareBattle};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcPrepareBattleErased};
     gRpcMethodRegistry[SceneNodeGrpcCancelBattlePrepareMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "CancelBattlePrepare",
         std::make_unique<::CancelBattlePrepareRequest>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcCancelBattlePrepare};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcCancelBattlePrepareErased};
     gRpcMethodRegistry[SceneNodeGrpcAssetDebitMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "AssetDebit",
         std::make_unique<::AssetOpRequest>(),
         std::make_unique<::AssetOpResponse>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetDebit};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetDebitErased};
     gRpcMethodRegistry[SceneNodeGrpcAssetAbortDebitMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "AssetAbortDebit",
         std::make_unique<::AssetOpRequest>(),
         std::make_unique<::AssetOpResponse>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetAbortDebit};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetAbortDebitErased};
     gRpcMethodRegistry[SceneNodeGrpcAssetCreditMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "AssetCredit",
         std::make_unique<::AssetOpRequest>(),
         std::make_unique<::AssetOpResponse>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetCredit};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetCreditErased};
     gRpcMethodRegistry[SceneNodeGrpcAssetAckReceiptMessageId] = RpcMethodMeta{
         "SceneNodeGrpc", "AssetAckReceipt",
         std::make_unique<::AssetOpRequest>(),
         std::make_unique<::AssetOpResponse>(),
-        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetAckReceipt};
+        1, common::base::eNodeType::SceneManagerNodeService, scene_node::SendSceneNodeGrpcAssetAckReceiptErased};
 
     // --- ClientPlayerTeam ---
     gRpcMethodRegistry[ClientPlayerTeamCreateTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "CreateTeam",
         std::make_unique<::teampb::CreateTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamCreateTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamCreateTeamErased};
     gRpcMethodRegistry[ClientPlayerTeamGetMyTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "GetMyTeam",
         std::make_unique<::teampb::GetMyTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamGetMyTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamGetMyTeamErased};
     gRpcMethodRegistry[ClientPlayerTeamApplyJoinTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "ApplyJoinTeam",
         std::make_unique<::teampb::ApplyJoinTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamApplyJoinTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamApplyJoinTeamErased};
     gRpcMethodRegistry[ClientPlayerTeamHandleApplicationMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "HandleApplication",
         std::make_unique<::teampb::HandleApplicationRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamHandleApplication};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamHandleApplicationErased};
     gRpcMethodRegistry[ClientPlayerTeamInviteToTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "InviteToTeam",
         std::make_unique<::teampb::InviteToTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamInviteToTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamInviteToTeamErased};
     gRpcMethodRegistry[ClientPlayerTeamRespondInviteMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "RespondInvite",
         std::make_unique<::teampb::RespondInviteRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamRespondInvite};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamRespondInviteErased};
     gRpcMethodRegistry[ClientPlayerTeamListMyInvitesMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "ListMyInvites",
         std::make_unique<::teampb::ListMyInvitesRequest>(),
         std::make_unique<::teampb::ListMyInvitesResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamListMyInvites};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamListMyInvitesErased};
     gRpcMethodRegistry[ClientPlayerTeamLeaveTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "LeaveTeam",
         std::make_unique<::teampb::LeaveTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamLeaveTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamLeaveTeamErased};
     gRpcMethodRegistry[ClientPlayerTeamKickMemberMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "KickMember",
         std::make_unique<::teampb::KickMemberRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamKickMember};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamKickMemberErased};
     gRpcMethodRegistry[ClientPlayerTeamTransferLeaderMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "TransferLeader",
         std::make_unique<::teampb::TransferLeaderRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamTransferLeader};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamTransferLeaderErased};
     gRpcMethodRegistry[ClientPlayerTeamDisbandTeamMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "DisbandTeam",
         std::make_unique<::teampb::DisbandTeamRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamDisbandTeam};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamDisbandTeamErased};
     gRpcMethodRegistry[ClientPlayerTeamStartTeamMatchMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "StartTeamMatch",
         std::make_unique<::teampb::StartTeamMatchRequest>(),
         std::make_unique<::teampb::TeamResponse>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamStartTeamMatch};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamStartTeamMatchErased};
     gRpcMethodRegistry[ClientPlayerTeamNotifyTeamSnapshotMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "NotifyTeamSnapshot",
         std::make_unique<::teampb::TeamSnapshotS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamSnapshot};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamSnapshotErased};
     gRpcMethodRegistry[ClientPlayerTeamNotifyTeamInviteMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "NotifyTeamInvite",
         std::make_unique<::teampb::TeamInviteS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamInvite};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamInviteErased};
     gRpcMethodRegistry[ClientPlayerTeamNotifyTeamEventMessageId] = RpcMethodMeta{
         "ClientPlayerTeam", "NotifyTeamEvent",
         std::make_unique<::teampb::TeamEventS2C>(),
         std::make_unique<::Empty>(),
-        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamEvent};
+        1, common::base::eNodeType::TeamNodeService, teampb::SendClientPlayerTeamNotifyTeamEventErased};
 
     // --- ClientPlayerJubaozhai ---
     gRpcMethodRegistry[ClientPlayerJubaozhaiBrowseListingsMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "BrowseListings",
         std::make_unique<::trade::BrowseListingsRequest>(),
         std::make_unique<::trade::BrowseListingsResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBrowseListings};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBrowseListingsErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiGetListingDetailMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "GetListingDetail",
         std::make_unique<::trade::GetListingDetailRequest>(),
         std::make_unique<::trade::GetListingDetailResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetListingDetail};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetListingDetailErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiSetFavoriteMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "SetFavorite",
         std::make_unique<::trade::SetFavoriteRequest>(),
         std::make_unique<::trade::SetFavoriteResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiSetFavorite};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiSetFavoriteErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiGetMyShelfMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "GetMyShelf",
         std::make_unique<::trade::GetMyShelfRequest>(),
         std::make_unique<::trade::GetMyShelfResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetMyShelf};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetMyShelfErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiListOfficialSkusMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "ListOfficialSkus",
         std::make_unique<::trade::ListOfficialSkusRequest>(),
         std::make_unique<::trade::ListOfficialSkusResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListOfficialSkus};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListOfficialSkusErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiCreateOfficialOrderMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "CreateOfficialOrder",
         std::make_unique<::trade::CreateOfficialOrderRequest>(),
         std::make_unique<::trade::CommerceOrderResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateOfficialOrder};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateOfficialOrderErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiGetCommerceOrderMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "GetCommerceOrder",
         std::make_unique<::trade::GetCommerceOrderRequest>(),
         std::make_unique<::trade::CommerceOrderResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetCommerceOrder};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetCommerceOrderErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiCancelCommerceOrderMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "CancelCommerceOrder",
         std::make_unique<::trade::CancelCommerceOrderRequest>(),
         std::make_unique<::trade::CommerceOrderResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelCommerceOrder};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelCommerceOrderErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiListCommerceOrdersMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "ListCommerceOrders",
         std::make_unique<::trade::ListCommerceOrdersRequest>(),
         std::make_unique<::trade::ListCommerceOrdersResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListCommerceOrders};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListCommerceOrdersErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiCreatePlayerTradeMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "CreatePlayerTrade",
         std::make_unique<::trade::CreatePlayerTradeRequest>(),
         std::make_unique<::trade::CommerceOrderResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreatePlayerTrade};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreatePlayerTradeErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiConfirmPlayerTradeMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "ConfirmPlayerTrade",
         std::make_unique<::trade::ConfirmPlayerTradeRequest>(),
         std::make_unique<::trade::CommerceOrderResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiConfirmPlayerTrade};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiConfirmPlayerTradeErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiCreateConsignmentMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "CreateConsignment",
         std::make_unique<::trade::CreateConsignmentRequest>(),
         std::make_unique<::trade::CommerceOrderResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateConsignment};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateConsignmentErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiBuyConsignmentMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "BuyConsignment",
         std::make_unique<::trade::BuyConsignmentRequest>(),
         std::make_unique<::trade::CommerceOrderResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBuyConsignment};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBuyConsignmentErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiCancelConsignmentMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "CancelConsignment",
         std::make_unique<::trade::CancelConsignmentRequest>(),
         std::make_unique<::trade::CommerceOrderResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelConsignment};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelConsignmentErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiPlaceMarketOrderMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "PlaceMarketOrder",
         std::make_unique<::trade::PlaceMarketOrderRequest>(),
         std::make_unique<::trade::MarketOrderResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiPlaceMarketOrder};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiPlaceMarketOrderErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiCancelMarketOrderMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "CancelMarketOrder",
         std::make_unique<::trade::CancelMarketOrderRequest>(),
         std::make_unique<::trade::MarketOrderResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelMarketOrder};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelMarketOrderErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiListMarketOrdersMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "ListMarketOrders",
         std::make_unique<::trade::ListMarketOrdersRequest>(),
         std::make_unique<::trade::ListMarketOrdersResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListMarketOrders};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListMarketOrdersErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiGetMarketDepthMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "GetMarketDepth",
         std::make_unique<::trade::GetMarketDepthRequest>(),
         std::make_unique<::trade::GetMarketDepthResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetMarketDepth};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetMarketDepthErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiCreateAuctionLotMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "CreateAuctionLot",
         std::make_unique<::trade::CreateAuctionLotRequest>(),
         std::make_unique<::trade::AuctionLotResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateAuctionLot};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCreateAuctionLotErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiPlaceAuctionBidMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "PlaceAuctionBid",
         std::make_unique<::trade::PlaceAuctionBidRequest>(),
         std::make_unique<::trade::AuctionLotResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiPlaceAuctionBid};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiPlaceAuctionBidErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiGetAuctionLotMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "GetAuctionLot",
         std::make_unique<::trade::GetAuctionLotRequest>(),
         std::make_unique<::trade::AuctionLotResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetAuctionLot};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiGetAuctionLotErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiCancelAuctionLotMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "CancelAuctionLot",
         std::make_unique<::trade::CancelAuctionLotRequest>(),
         std::make_unique<::trade::AuctionLotResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelAuctionLot};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiCancelAuctionLotErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiBrowseCommerceOffersMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "BrowseCommerceOffers",
         std::make_unique<::trade::BrowseCommerceOffersRequest>(),
         std::make_unique<::trade::BrowseCommerceOffersResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBrowseCommerceOffers};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiBrowseCommerceOffersErased};
     gRpcMethodRegistry[ClientPlayerJubaozhaiListTradeMarketsMessageId] = RpcMethodMeta{
         "ClientPlayerJubaozhai", "ListTradeMarkets",
         std::make_unique<::trade::ListTradeMarketsRequest>(),
         std::make_unique<::trade::ListTradeMarketsResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListTradeMarkets};
+        1, common::base::eNodeType::TradeNodeService, trade::SendClientPlayerJubaozhaiListTradeMarketsErased};
 
     // --- TradeAdmin ---
     gRpcMethodRegistry[TradeAdminSeedListingMessageId] = RpcMethodMeta{
         "TradeAdmin", "SeedListing",
         std::make_unique<::trade::SeedListingRequest>(),
         std::make_unique<::trade::SeedListingResponse>(),
-        1, common::base::eNodeType::TradeNodeService, trade::SendTradeAdminSeedListing};
+        1, common::base::eNodeType::TradeNodeService, trade::SendTradeAdminSeedListingErased};
 }
 
 bool IsClientMessageId(uint32_t messageId)

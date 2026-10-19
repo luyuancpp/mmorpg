@@ -1,3 +1,8 @@
+# === GENERATED FILE -- DO NOT EDIT ===
+# Produced by tools/archived/vcxproj2cmake.py from battle.vcxproj.
+# Every Linux build regenerates it; hand edits are lost without warning.
+# Change the generator instead.
+
 cmake_minimum_required(VERSION 3.22)
 project(battle)
 
@@ -17,27 +22,21 @@ add_definitions(-D__linux__)
 add_definitions(-DNOMINMAX)
 add_definitions(-DENTT_ID_TYPE=uint64_t)
 add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)
+add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)
+add_definitions(-DGOOGLE_LOG=ABSL_LOG)
+add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)
 add_definitions(-DMMORPG_AGONES_CURL=1)
 
 include_directories(
     ../../
-    ../../....//third_party/redis/
     ../../../../third_party/
     ../../../../third_party/boost/
     ../../../../third_party/entt/single_include
     ../../../../third_party/fmt/include
     ../../../../third_party/grpc/third_party/
-    ../../../../third_party/hexagons_grids/
     ../../../../third_party/librdkafka/src-cpp/
-    ../../../../third_party/lua/src/
     ../../../../third_party/muduo-linux/
-    ../../../../third_party/recastnavigation/
-    ../../../../third_party/redis/
-    ../../../../third_party/redis/deps/
-    ../../../../third_party/sol2/include/
     ../../../../third_party/spdlog/include
-    ../../../../third_party/ue5navmesh/Public
-    ../../../../third_party/ue5navmesh/Public/
     ../../../../third_party/xxhash/
     ../../../../third_party/zlib/
     ../../../generated/
@@ -45,23 +44,9 @@ include_directories(
     ../../engine/config/
     ../../engine/core/
     ../../engine/infra/
-    ../../engine/infran/
     ../../engine/modules/
-    ../third_party/
-    ../third_party/boost/
-    ../third_party/lua/src/
-    ../third_party/muduo-linux/
-    ../third_party/mysql/include/
-    ../third_party/protobuf/src/
-    ../third_party/protobuf/third_party/abseil-cpp/
-    ../third_party/redis/
-    ../third_party/redis/deps/
-    ../third_party/sol2/include/
-    ../third_party/zlib/
     ./
     /usr/local/include
-    src/pb/pbc/common_proto/
-    src/pb/pbc/logic_proto/
 )
 
 set(SOURCE_FILES

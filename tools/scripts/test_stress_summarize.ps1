@@ -217,8 +217,38 @@ db_retry_route_total{action="executed_nonowner",mode="shared"} 5
 db_retry_route_total{action="forwarded",mode="owner"} 11
 db_retry_route_total{action="misrouted",mode="owner"} 8
 db_retry_route_total{action="requeued_revoked",mode="owner"} 6
+# TYPE db_task_result_notify_total counter
+db_task_result_notify_total{result="error",target="instance"} 1
+db_task_result_notify_total{result="error",target="legacy_invalid"} 8
+db_task_result_notify_total{result="error",target="legacy_unset"} 4
+db_task_result_notify_total{result="no_receiver",target="instance"} 2
+db_task_result_notify_total{result="no_receiver",target="legacy_invalid"} 7
+db_task_result_notify_total{result="no_receiver",target="legacy_unset"} 3
+db_task_result_notify_total{result="ok",target="instance"} 40
+db_task_result_notify_total{result="ok",target="legacy_invalid"} 5
+db_task_result_notify_total{result="ok",target="legacy_unset"} 6
 "@
 Set-Content -Path (Join-Path $snapDirForTest "t20m_db.txt") -Value $fakeDbSnapshotR20 -Encoding utf8
+
+# 1d. 读回执通知分频道(2026-10-18,B0-3 第 2 批)的 db_task_result_notify_total{target,result}。
+#     - t20m_db(上面)的 9 条取值互不相同(列串位即红):instance 40 / 2 / 1,legacy_unset 6 / 3 / 4,
+#       legacy_invalid 5 / 7 / 8;inst_nr% = 2 / 43 = 4.7%,legacy% = (6+3+4+5+7+8) / 76 = 33 / 76 = 43.4%。
+#     - t2m_db 是刚启动、还没有任何读回执的新版 db:9 条预置为 0 → 计数列全 0,两个比例的分母为 0 → "-"(不是 0.0%)。
+#     - t18m_db 是旧版 db:没有这个指标 → 全部 n/a。
+#     取值都小于 1000:Format-CountCell 用 N0,千分位分隔符随区域设置变。
+$fakeDbSnapshotNotifyIdle = @"
+# TYPE db_task_result_notify_total counter
+db_task_result_notify_total{result="error",target="instance"} 0
+db_task_result_notify_total{result="error",target="legacy_invalid"} 0
+db_task_result_notify_total{result="error",target="legacy_unset"} 0
+db_task_result_notify_total{result="no_receiver",target="instance"} 0
+db_task_result_notify_total{result="no_receiver",target="legacy_invalid"} 0
+db_task_result_notify_total{result="no_receiver",target="legacy_unset"} 0
+db_task_result_notify_total{result="ok",target="instance"} 0
+db_task_result_notify_total{result="ok",target="legacy_invalid"} 0
+db_task_result_notify_total{result="ok",target="legacy_unset"} 0
+"@
+Set-Content -Path (Join-Path $snapDirForTest "t2m_db.txt") -Value $fakeDbSnapshotNotifyIdle -Encoding utf8
 
 # 2. The dirty-save scan walks run/logs/cpp_nodes under the *real*
 #    repo root (not RunDir) — that's the production layout. We back up
@@ -464,6 +494,23 @@ Assert-SectionRow -Lines $outputLines -SectionMarker 'DB retry routing' -Snapsho
 Assert-SectionRow -Lines $outputLines -SectionMarker 'DB retry routing' -SnapshotName 't18m_db' `
     -Pattern '^\s*t18m_db\s+n/a\s+\|\s+2\s+n/a\s+0\s+1\s+\|\s+n/a\s+n/a\s+n/a\s+n/a\s+n/a\s+n/a\s*$' `
     -Reason "an older db without retry routing must print n/a for the new series and real values for the old ones"
+
+# 2g DB task:result notify(B0-3 第 2 批):target 按 instance / legacy_unset / legacy_invalid 分三组,组内 ok / no_receiver / error。
+Assert-HeaderMatches -Lines $outputLines `
+    -Pattern 'inst_ok\s+inst_nr\s+inst_err\s+\|\s+unset_ok\s+unset_nr\s+unset_err\s+\|\s+inval_ok\s+inval_nr\s+inval_err\s+\|\s+inst_nr%\s+legacy%\s*$' `
+    -Reason "DB task:result notify table must keep its column order"
+# t20m:9 个计数各在自己的列;inst_nr% = 2/43 = 4.7%(分母只取 instance),legacy% = 33/76 = 43.4%(分母是全部通知)。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB task:result notify' -SnapshotName 't20m_db' `
+    -Pattern '^\s*t20m_db\s+40\s+2\s+1\s+\|\s+6\s+3\s+4\s+\|\s+5\s+7\s+8\s+\|\s+4\.7%\s+43\.4%\s*$' `
+    -Reason "each target x result counter must land in its own column and the two ratios must use their own denominators"
+# t2m(新版 db,还没有读回执):预置的 0 照常打印 0,两个比例分母为 0 → "-"。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB task:result notify' -SnapshotName 't2m_db' `
+    -Pattern '^\s*t2m_db(\s+0){3}\s+\|(\s+0){3}\s+\|(\s+0){3}\s+\|\s+-\s+-\s*$' `
+    -Reason "pre-created zero series must print 0 and ratios with a zero denominator must print -"
+# t18m(旧版 db):没有这个指标 → 全部 n/a,不能折成 0。
+Assert-SectionRow -Lines $outputLines -SectionMarker 'DB task:result notify' -SnapshotName 't18m_db' `
+    -Pattern '^\s*t18m_db(\s+n/a){3}\s+\|(\s+n/a){3}\s+\|(\s+n/a){3}\s+\|\s+n/a\s+n/a\s*$' `
+    -Reason "a db snapshot without db_task_result_notify_total must print n/a, not 0"
 
 # ── Cleanup ─────────────────────────────────────────────────────────────
 

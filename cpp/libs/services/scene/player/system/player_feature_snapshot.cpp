@@ -175,6 +175,8 @@ uint32_t PlayerBagSystem::Sort(entt::entity player, uint32_t bagType, BagInfo& o
         return kInvalidParameter;
     }
 
+    // 跨节点交接冻结闸不在这里:它在 BagService::MergeAndCompact 开头(所有整理入口共用,先于任何改动),
+    // 冻结中同样回 kInvalidParameter;回归用例 PlayerFeatureSnapshotTest.FrozenSortKeepsSourceLayoutUnchanged。
     const uint32_t result = BagService::SortByPlayerRequest(player, bag, &changed);
     if (result != kSuccess) return result;
     return BuildSnapshot(player, bagType, out);

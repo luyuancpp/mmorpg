@@ -96,6 +96,9 @@ func deferReason(cause error) string {
 		return metrics.DeferOrderingLockBusy
 	case errors.Is(cause, errOrderingLeaseLost):
 		return metrics.DeferLeaseLost
+	case errors.Is(cause, errRouteNotReady):
+		// 先于 errPlacementMoved:复核时的不可信两个哨兵都包着(按「路由变了」重试),原因记在副本不可信上。
+		return metrics.DeferRouteNotReady
 	case errors.Is(cause, errPlacementFrozen):
 		return metrics.DeferPlacementFrozen
 	case errors.Is(cause, errPlacementMoved):

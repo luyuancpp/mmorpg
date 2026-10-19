@@ -88,6 +88,9 @@ func (l *ReconnectLogic) Reconnect(in *pb.ReconnectRequest) (*pb.ReconnectRespon
 		}, nil
 	}
 
+	// 原地改写之前留一份旧会话,只用来推导 gate 索引(这里必然是 DISCONNECTING,推导为 "",按通用规则照传)。
+	previous := proto.Clone(session).(*pb.PlayerSession)
+
 	// Update session with new connection info
 	session.SessionId = in.NewSessionId
 	session.GateId = in.GateId
@@ -108,7 +111,7 @@ func (l *ReconnectLogic) Reconnect(in *pb.ReconnectRequest) (*pb.ReconnectRespon
 
 	// ONLINE 写入、ready ZREM、processing claim 撤销在同一 Lua 里完成。
 	// monitor 若已 claim 旧会话，其 token/payload 会在这里一起失效。
-	result, err := replaceSessionAndCancelLease(l.ctx, l.svcCtx, in.PlayerId, data, updated, 0)
+	result, err := replaceSessionAndCancelLease(l.ctx, l.svcCtx, in.PlayerId, data, updated, 0, previous, session)
 	if err != nil {
 		return nil, err
 	}

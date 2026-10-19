@@ -1,3 +1,8 @@
+# === GENERATED FILE -- DO NOT EDIT ===
+# Produced by tools/archived/vcxproj2cmake.py from modules.vcxproj.
+# Every Linux build regenerates it; hand edits are lost without warning.
+# Change the generator instead.
+
 cmake_minimum_required(VERSION 3.22)
 project(modules)
 
@@ -17,6 +22,9 @@ add_definitions(-D__linux__)
 add_definitions(-DNOMINMAX)
 add_definitions(-DENTT_ID_TYPE=uint64_t)
 add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)
+add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)
+add_definitions(-DGOOGLE_LOG=ABSL_LOG)
+add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)
 add_definitions(-DMMORPG_AGONES_CURL=1)
 
 include_directories(
@@ -67,14 +75,13 @@ set(SOURCE_FILES
     condition/condition_util.cpp
     currency/system/currency_system.cpp
     gain_block/gain_block_service.cpp
+    id_segment/guid_segment_client.cpp
+    id_segment/guid_segment_registry.cpp
     mission/comp/mission_comp.cpp
     mission/system/mission.cpp
     snapshot/snapshot_system.cpp
     transaction_log/anomaly_detector.cpp
     transaction_log/transaction_log_system.cpp
-    # 2026-09-18 补登记:号段客户端与注册表,磁盘上已有但从未进清单。
-    id_segment/guid_segment_client.cpp
-    id_segment/guid_segment_registry.cpp
 )
 
 add_library(modules STATIC ${SOURCE_FILES})

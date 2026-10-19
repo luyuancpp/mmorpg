@@ -51,6 +51,8 @@ type SceneNodeGrpcClient interface {
 	// - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
 	// - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
 	//   落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
+	// - session_ended = true 是另一种用途(docs/design/location-release-binding.md §3.3):LeaveScene 拿不到"持有者已释放"
+	//   证据时,SceneManager 请 location 的持有节点释放——持有则按客户端断线退出,不持有则按 owner_epoch 条件补写凭证标记。
 	ReleasePlayer(ctx context.Context, in *ReleasePlayerRequest, opts ...grpc.CallOption) (*base.Empty, error)
 	// ---- 回合制战斗 gather 管线(docs/design/turn-based-battle-server.md §3.1/§5.3)----
 	// 消息定义共用 proto/scene/scene.proto 里的那一份(全局包,与 CreateSceneRequest
@@ -186,6 +188,8 @@ type SceneNodeGrpcServer interface {
 	// - 交接在途的实体不处理;其余按 expected_owner_epoch 与本地缓存比对,相等才退出,缓存为 0 / 期望为 0 按旧行为释放。
 	// - SceneManager 只在本次 EnterScene 提交之后才发(带 GateId 时路由 broker ACK 之后,无 GateId 时落点成功之后);
 	//   落点或路由失败、回滚的请求一律不发。忽略即终态,响应仍是 Empty。
+	// - session_ended = true 是另一种用途(docs/design/location-release-binding.md §3.3):LeaveScene 拿不到"持有者已释放"
+	//   证据时,SceneManager 请 location 的持有节点释放——持有则按客户端断线退出,不持有则按 owner_epoch 条件补写凭证标记。
 	ReleasePlayer(context.Context, *ReleasePlayerRequest) (*base.Empty, error)
 	// ---- 回合制战斗 gather 管线(docs/design/turn-based-battle-server.md §3.1/§5.3)----
 	// 消息定义共用 proto/scene/scene.proto 里的那一份(全局包,与 CreateSceneRequest

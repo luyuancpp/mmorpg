@@ -9,6 +9,7 @@
 > **(2026-10-16 进度补注)** 接手会话已完成 §4 第 1、2 项(评审 → 对抗核实 → 修复 → 复查,改动在工作区未提交),第 3 项进行中,第 4 项待额度重置后跑;详见 `docs/PROGRESS.md` 的 2026-10-16 条目。与下文不一致处以那条为准,主要是:第 2 项把放行写入从「MULTI 里经 `markAdmittedScript`」改成了单段脚本 `admitEntryScript`(`markAdmittedScript` 已删除),所以 §2.2 第 1 行与 §5 末尾 G4b-2 门槛里「冒烟要包含 `markAdmittedScript`(MULTI 里的 EVAL)」都改读「冒烟要覆盖 `admitEntryScript`(直接 `EVALSHA` / `EVAL`)」。
 > 同日第 3、4 项也已完成(改动在工作区未提交)。与下文不一致处:§2.2 第 4 行与 §4 第 4 项的「`probeMintedID`,1s 预算」已改为探测直接用 handler ctx(1s 子预算会截断连接池排队,让 Redis 停顿时单独拒绝建角);§6 的告警建议拆成两条——`result=~"parent_exists|owner_epoch_exists"` 出现即告警,`result="error"` 按速率告警且覆盖不到 Redis 卡顿(看 `stage_seconds{stage="id_probe"}`)。§4 第 1~5 项均已完成,只剩 §4 第 6 项运行验证与 PROGRESS 2026-10-16 两条里列的待定项。
 > 待定四项中「gateway JDBC socketTimeout」「`AssignGateService.awaitAdmission` 限时」已于同日补完(PROGRESS 2026-10-16 第三条);「排队超 1h 弹回队尾」「noeviction 写满弹空整队」两项要改排队核心,建议方案写在那一条末尾,等负责人点头。
+> **(2026-10-18 进度补注)** 负责人要求把代码实现完,这两项已按建议方案落码(PROGRESS 2026-10-18 条目):放行改为 ZRANGE + 逐条原子脚本、Lookup 读状态原子化、`QueueEntryTTL` 改为空闲 TTL、排队令牌 24h 绝对上限。至此四项待定全部落码;剩下的只有交 Codex 的编译 / 单测与 §5 门槛里的真实 Redis 冒烟(冒烟口径见 `spec_G4b-G.md` §8.4 的 2026-10-18 补注)。
 
 ## 0. 一句话
 

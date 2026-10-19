@@ -3,7 +3,8 @@
 > **状态**：设计 v1.0（2026-10-15 定稿），2026-10-17 按落码订正。D1–D14 均已由用户拍板（见 §13）。
 > - **已落码**：第 1–4 批已入库（随 `de4960bee` 起的快照提交，见 [交接](../handoff/player-inbox-handoff-20261015.md) §2）。
 > - **评审修复**：2026-10-16 ~ 17 按实现评审（交接 §6：H1、M1–M7、L1–L14）分三批修：第 A 批 Go 服务、第 B 批 C++ scene、第 C 批部署 / 运维 / 文档。本稿已按修复后的代码订正，改动见附录 F。
-> - **验证**：全部**未编译、未测试**，待 Codex 按交接 §4 验证。Java 版未开始（§12）。
+> - **验证（2026-10-18）**：Go 服务单测与真库集成已有通过证据；data_service / merge_zone 检查、14 个 Go 服务历史构建、C++ 全解 Debug|x64 编译及 promtool 18 条规则通过。九项部署脚本均通过，8 个计数套件合计 539/539，另有 lobby 渲染通过（交接 §3 第 2 条）。
+> - **后续验收**：用户已通知 360 加好信任；`-race`、C++ 运行测试、迁移与七场景冒烟交续验聊天串行执行，本线尚无最终回执。Java 收件箱仍待实现（§12）。Go 构建之后共享模块锁被其他会话调整，旧构建只代表执行时输入，复用由续验线核验。
 > **版本历史**：v0.1 综合稿；v0.2 对抗评审修订（consistency / repo-fit / ops 三份评审的逐条处置见文末「评审记录」）；v1.0 用户拍板定稿（相对 v0.2 的改动见附录 D）；2026-10-17 按落码与评审修复订正（附录 F）。
 >
 > **与 [reliable-player-inbox-20261014.md](reliable-player-inbox-20261014.md) 的关系**
@@ -334,12 +335,15 @@ D3 已于 2026-10-15 拍板：独立进程 `go/player_inbox`，按 D-14 独占�
 - **入箱**：服务配置里的 `PlayerInbox.EnqueueTypes` 白名单，默认空，即全部停用。规格里**不再**有 `enabled` 字段。没在白名单里的类型返回 `kPlayerInboxDisabled`。
   - 各实例的开关短时间不一致时，只会让 GM 偶尔收到 Disabled、重试后成功，不会出错。上线时仍按 §11.7 一次性全开。
   - **v1 只放封锁 / 解封**（§2.2）。`config.ParseEnqueueTypes` 遇到 `GM_ATTACH_CURRENCY_DEBT` 直接报错，`Validate` 与装配层都走它，所以任何启动路径都拒启（`v1DisabledEnqueueTypes`）。解禁只删这张表里的一项。
-  - 权威值在 git 跟踪的 `go/player_inbox/etc/player_inbox.yaml`，`k8s_deploy.ps1` 从这份 yaml 读出、校验后渲染进 ConfigMap（`Get-PlayerInboxEnqueueTypes`）。部署脚本不在渲染期另拒挂欠款，靠服务端 Validate 拒启（migrate Job 先失败，Deployment 不会滚动）。
+  - 权威值在 git 跟踪的 `go/player_inbox/etc/player_inbox.yaml`，`k8s_deploy.ps1` 从这份 yaml 读出、校验后渲染进 ConfigMap（`Get-PlayerInboxEnqueueTypes`）。部署脚本不在渲染期另拒挂欠款，靠服务端 Validate 拒启：migrate Job 先失败；staging / prod，或 dev 带 `-WaitReady` 时 Deployment 不会滚动，dev 不带 `-WaitReady` 时脚本不等 Job，Deployment 照常滚动、新 Pod CrashLoop（`Apply-GoSvcMigrateJob` 的 `$gateOnJob`）。
 - **消费**：scene 配置里的 `GameConfig.player_inbox.consumer_enabled`，默认 false。
   - 关闭时不发 Fetch，但已经应用、等待确认的条目照常 Ack，因为 Ack 只报告事实（§7.7）。
-  - **权威值在 git 跟踪的 `bin/etc/game_config.yaml` 的 `player_inbox` 段**（评审 H1）。K8s 的 node-config 由 `k8s_deploy.ps1` 用 `Get-AuthoritativeYamlBlock` 整段复制，不读集群现状（zone-rollback 会删 namespace）。本机 scene 读的也是这份文件。
+  - **权威值在 git 跟踪的 `bin/etc/game_config.yaml` 的 `player_inbox` 段**（评审 H1）。K8s 的 node-config 由 `k8s_deploy.ps1` 用 `Get-AuthoritativeYamlBlock` 整段复制；渲染值不从集群取（zone-rollback 会删 zone namespace），集群现状只用于写前门禁的交叉核对。本机 scene 读的也是这份文件。脚本读的是工作区文件，staging / prod 的真部署要求它相对 HEAD 没有未提交改动。
   - 以前这个值由部署参数 `-PlayerInboxConsumer` 渲染，默认 off、包装入口不透传，例行发布会把已打开的消费静默写回 false。现在这个参数只用来核对：与 yaml 不一致就拒绝部署，渲染值始终取 yaml。开 / 关消费就是改 yaml 并提交，再逐 zone 执行 zone-up 滚动 scene。
-- **写前门禁**（评审 H1）：`k8s_deploy.ps1` 的 zone-up / all-up / infra-up 在任何集群写操作之前核对两份 yaml。消费端关、而 `EnqueueTypes` 非空时拒绝部署，除非显式传 `-AllowPlayerInboxConsumerOff`（只打告警放行）。放行时打印一行 `player-inbox consumer gate: ... OK`。
+- **写前门禁**（评审 H1）：`k8s_deploy.ps1` 的 zone-up / all-up / infra-up 在任何集群写操作之前拦「消费端关、而 `EnqueueTypes` 非空」，除非显式传 `-AllowPlayerInboxConsumerOff`（只打告警放行；包装入口没有这个开关）。放行时打印一行 `player-inbox consumer gate: ... OK`。分三层：
+  1. 当前检出里的两份 yaml 相互矛盾。只靠这一层不够：zone（consumer_enabled）与 infra（EnqueueTypes）分开部署、可以来自不同 commit，「检出开消费之前的旧 commit 重跑 zone-up」与「同一提交里先跑 infra-up」它都放行（复核 H1）。
+  2. 非 DryRun 时只读另一侧线上的值：本次把 false 渲染进 node-config，就读 infra 线上 `go-svc-player-inbox-config` 的白名单；本次把非空白名单渲染进 ConfigMap，就读全部 zone 线上 node-config 的开关。读不到即拒绝。它读的是 ConfigMap 不是进程，Pod 没滚动时看不出来，上线验收仍以 scene 启动行与 `GmSanctionPlayer` 的回包为准。
+  3. staging / prod 的真部署拒绝两份 yaml 带未提交改动（部署读工作区文件，而 `bin/etc/game_config.yaml` 也是本机 scene 的配置）。
 - **关消费时的信号**：scene 启动时打 WARN `[PlayerInbox] metric=inbox_consumer_disabled`，之后 Tick 每 5 分钟补打同一行（`kNodeStuckRelogIntervalMs`，与 `inbox_registry_broken` 共用节拍）。告警侧还有「入箱在涨、锁路径 Fetch 不涨」的规则（§9.4）。
 - **Fetch / Ack 本身没有开关**：新版本二进制始终提供这两个接口；没有条目时只是返回 NO_STREAM 或空。
   - 旧版本二进制返回 UNIMPLEMENTED，scene 长退避 10 分钟，不计为故障（§7.6）。
@@ -1111,6 +1115,8 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 
 ### 7.11 回包关联
 
+> **2026-10-17 契约勘误**：以下安装方案保留作历史。Fetch / Ack 现在显式传每次调用回调，闭包按值捕获 `playerId + domain + correlationId` 并委托 `PlayerInboxSystem` 的具名完成函数；不再有 `InitPlayerInboxReply` 或独立 rpc_replies 适配文件。响应的非零 player_id / domain / correlation_id 逐字段与捕获值核对，任一不符记 ERROR 并丢弃；零值允许缺回显，仍按捕获值认领。失败用同一捕获上下文释放本次在途并沿用原退避，不保存请求副本。
+
 - 【事实】生成器不会为 gRPC 服务注册回包处理函数（`main.cpp:104-119`）。
 - 【提议】手写 `InitPlayerInboxReply()`，给 Fetch 和 Ack 的 `Async…Handler / …FailedHandler` 赋值，写法照 `InitDataServiceReply`（`id_segment_bootstrap.cpp:264-272`）。在 `main.cpp` 里紧挨 `InitSceneManagerReply()` 调用。
 - 回包本身不带请求上下文，所以靠回显的 `player_id + domain + correlation_id` 找回实体和在途状态。
@@ -1170,7 +1176,7 @@ v1 不接版本摘要（D4 已拍板）。只有当落地拉取的负载超出�
 | 21 | scene 或 go/db 降到不认识新字段的版本 | scene 旧版本按组件重建存档（`player_database_loader.cpp:140-163`），会丢掉新字段；go/db 旧版本按主键只更新已知列，账本列会停在旧值（违反 IB-3）。再升级回来，已应用、未确认的 `ATTACH_DEBT` 会被重复执行。**回滚下限** = 认识新字段的版本（§11.7）。低于下限的降级按 runbook 先关入箱和消费，对已投递、未确认的行挂 `VOID(QUARANTINED)`，升级回来之后逐条按存档核对 | 有回滚下限，破坏性降级有前置步骤 |
 | 22 | player_id 输错或玩家不存在 | 入箱前查归属区映射，返回 `kPlayerInboxPlayerNotFound` | 不留永远 PENDING 的行 |
 | 23 | 内网伪造 Fetch / Ack | 超大 epoch 判 EPOCH_AHEAD，不改状态；request_id 不一致判 MISMATCH；伪造的「已执行」由每小时对账发现（§1.6） | 不会锁死；残余风险可发现 |
-| 24 | 消费端关、入箱开（例行发布把开关写回 false，或有人只开了入箱） | 两个开关都只认 git 跟踪的 yaml；部署脚本写前门禁拒绝「消费关而白名单非空」，除非显式 `-AllowPlayerInboxConsumerOff`（§3.3）。漏网时 scene 每 5 分钟打 WARN `metric=inbox_consumer_disabled`，告警「入箱在涨、锁路径 Fetch 不涨」亮起（§9.4） | 发布前被拦下；漏网可发现 |
+| 24 | 消费端关、入箱开（例行发布把开关写回 false、检出旧 commit 重跑 zone-up、先开了入箱，或有人只开了入箱） | 两个开关都只认 git 跟踪的 yaml；部署脚本写前门禁拒绝「消费关而白名单非空」：比当前检出的两份 yaml，非 DryRun 时再读另一侧线上的 ConfigMap，除非显式 `-AllowPlayerInboxConsumerOff`（§3.3）。漏网（ConfigMap 与进程不一致、绕过脚本、用旧脚本部署）时 scene 每 5 分钟打 WARN `metric=inbox_consumer_disabled`，告警「入箱在涨、锁路径 Fetch 不涨」亮起（§9.4）；后者被别的 zone 的投递盖住时只剩 scene 日志 | 发布前被拦下；漏网可发现，逐 zone 只能靠 scene 日志 |
 | 25 | scene 回放核对判 MISMATCH（环里同 seq 是另一个 request_id） | 该域停用，什么都不确认；每次落地都会再次停用。运维 `ReconcilePlayer` 确认后用 VoidItem 强制模式终结这一行（§7.9） | 经账本证明后可解卡 |
 
 ---
@@ -1215,7 +1221,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 *结果与读数*：
 - 每处不一致写一行带 player_id 的 ERROR（player_id 只进日志），带 `gap=` 与 `ring_len=`。
 - 读不到存档计 `reconcile_ledger_read_total{result="absent"}`，结论未知，不告警；读失败计 `error`。
-- **账本不合法**（与 scene `ValidateLedger` 同口径，含环超过 32 条）计 `result="invalid"` 并打 ERROR，**不判「无差异」**，结论按未知处理。
+- **账本不合法**（与 scene `ValidateLedger` 同口径，含环超过 32 条；另加 request_id 非 0，scene 不查这一项）计 `result="invalid"` 并打 ERROR，**不判「无差异」**，结论按未知处理。只有 request_id 为 0 这一项不合法时，scene 不判账本损坏、不打 `inbox_ledger_invalid`，同 seq 的行再投递时表现为 `inbox_replay_mismatch`。
 - 当前不一致数是 gauge `player_inbox_reconcile_inconsistent_rows`（评审 L11，取代原来会重复累加的 `reconcile_mismatch_total`）：本任期 64 片各自最近一次读数之和。读完的分片用本轮值覆盖，只核对了一部分的分片取较大值，没读到的分片沿用旧值；卸任时归零，易主后从 0 重建，最多 16 轮。
 - 它是读数不是事件数：处置之后要等那一行滑出窗口、所在分片再被读完一次，读数才会下降，critical 告警约持续 24h + 2h。豁免表没做，需要时在 Alertmanager 静默。
 - 每轮结果计 `player_inbox_reconcile_rounds_total{result=ok|error|timeout}`；领导权丢失或关停造成的取消不计。
@@ -1278,7 +1284,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
   - 出现 SETTLED_UNKNOWN；
   - 对账存活：对账跑过、但最近 3 小时没有一轮 ok（3h = 3 × 默认间隔，写死在规则里，改间隔要同步改）；对账轮次 error / timeout；对账截断；对账读到不合法账本；
   - SQL 连接池饱和；
-  - scene 日志：`inbox_unknown_type`、`inbox_halted`、`inbox_ack_anomaly`、`inbox_ledger_invalid`、`inbox_registry_broken`、`inbox_consumer_disabled`（Loki ruler 还没接线，先作为告警文件头的值班固定查询）。`inbox_replay_mismatch` 按 critical。
+  - scene 日志：`inbox_unknown_type`、`inbox_halted`、`inbox_ack_anomaly`、`inbox_ledger_invalid`、`inbox_registry_broken`、`inbox_consumer_disabled`（Loki ruler 还没接线，先作为告警文件头的值班固定查询）。`inbox_replay_mismatch` 按 critical。流选择器写 `{job="cpp_nodes", service="scene"}`：C++ 业务日志由 Alloy sidecar 读文件送 Loki，sidecar 不打 `app` 标签，写 `{app=...}` 的查询恒为空（2026-10-18 复核订正，契约测试核对）。
 - **只进 info，不告警**：未决条目数、最老未决时长、`delivered_unacked_stale`、强制终结（`void_total{path="force"}`）、`inbox_leave_ack` 的残留结果。流失玩家的条目永远不会被消费，按它告警会一直亮着，淹没真正的卡住信号。
 - **守卫**：metrics 包的 `TestAlertRulesReferenceRegisteredMetrics` 读告警文件，核对其中每个 `player_inbox_` 开头的名字都已注册，指标改名而告警漏改就红。它只核对指标名，不核对 label 取值。
 
@@ -1457,6 +1463,9 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 - `system/gm_sanction_inbox_executor.{h,cpp}`
 - `system/player_mutability.h`
 - `cpp/nodes/scene/rpc_replies/player_inbox_response_handler.{h,cpp}`
+
+> **2026-10-17 契约勘误**：此新建项随全局处理器删除而撤销，完成适配收口到 `PlayerInboxSystem` 每次调用回调。
+
 - `cpp/tests/currency_test/{player_inbox_rules_test.cpp, gm_sanction_inbox_executor_test.cpp}`
 - `cpp/tests/currency_test/player_inbox_system_test.cpp`（评审 L3，第 B 批补，第 C 批 C3 再补 3 例，现 34 例）：`PlayerInboxSystem` 状态机的系统级用例，经现有的四个注入点（存盘、时钟、传输、消费配置）驱动，可 `--gtest_shuffle`。覆盖：落盘之前不确认、单飞、迟到回包按关联号丢弃、STALE、M1 的判定顺序（kNew+VOID、未知类型、回放 / UNKNOWN 不需要执行器、MISMATCH 一条不确认）、L1 回包时闸不过与 DEFER 续做、L2 新落地先确认前缀与 Ack 回 InvalidParameter 停用、L10 请求带 `scene_node_id`、M4 离开补发（含经 `FinishExitOrAwaitDbTaskAck` 的端到端一例）、账本损坏的周期 WARN、H1 消费关闭的启动与周期 WARN。`registry_broken` 的周期补打没有单测（`SelfCheck` 没有注入点）。
 
@@ -1465,6 +1474,9 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 - `currency_system.{h,cpp}`：`AttachDebt` 改为返回 `uint32_t`；同步改调用方 `cpp/tests/currency_test/{asset_op_system_test,client_gm_gate_test,currency_test}.cpp`。
 - `asset_op_system.cpp`：改为使用 `player_mutability.h`，行为零变化。
 - `cpp/nodes/scene/main.cpp`：白名单加 `PlayerInboxNodeService`，调用 `InitPlayerInboxReply()`，注册 tick。
+
+> **2026-10-17 契约勘误**：保留节点白名单和 tick；`InitPlayerInboxReply()` 安装调用已删除。
+
 - `cpp/nodes/scene/handler/event/player_inbox_event_handler.cpp`：只改守护段。
 - `player_landing.cpp`、`player_battle.cpp`：各加一行（C1）。`player_lifecycle.cpp`：`FinishExitAfterPersist` 一行 `OnPlayerLeaving` 调用加一行 include（第 B 批，§7.7）。
 - `bin/etc/base_deploy_config.yaml`：前缀和 deadline。`bin/etc/game_config.yaml`：`player_inbox` 段，`consumer_enabled: false`。这两个文件工作区里已有他人改动，只追加，不动别人的内容。
@@ -1527,13 +1539,13 @@ Codex 跑 `pwsh -File tools/scripts/tests/*.tests.ps1` 里受影响的几个文�
 3. 部署收件箱服务，`EnqueueTypes` 为空。
 4. 全部 scene 升级，`consumer_enabled=false`。**这就是回滚下限**：新字段只是往返，不消费。这一步到第 5 步之间，scene 每 5 分钟打 WARN `metric=inbox_consumer_disabled`，是预期的。
 5. 全部 scene 打开 `consumer_enabled`：改 `bin/etc/game_config.yaml` 为 `true` 并提交，逐 zone 执行 zone-up 滚动 scene（§3.3）。
-6. 全部收件箱实例打开 `EnqueueTypes`：改服务 yaml 并提交，执行 infra-up。v1 只放封锁 / 解封（§2.2）。写前门禁这时核对消费端已开，才放行。
+6. 全部收件箱实例打开 `EnqueueTypes`：改服务 yaml 并提交，执行 infra-up。v1 只放封锁 / 解封（§2.2）。非 DryRun 的写前门禁这时读全部 zone 线上的 node-config，有 zone 还不是 `true` 就拒绝（§3.3 第 2 层）。它看的是 ConfigMap 不是进程，所以第 5 步仍以各 zone scene 打出 `consumer_enabled=1` 为验收，不能只靠门禁。
 
-**关消费**的顺序相反：先把 `EnqueueTypes` 改回 `[]` 并 infra-up，再关 `consumer_enabled`。反过来做会被写前门禁拒绝；紧急情况下要先关消费，显式传 `-AllowPlayerInboxConsumerOff`，并知道新入箱的处置在重开之前不会执行。
+**关消费**的顺序相反：先把 `EnqueueTypes` 改回 `[]` 并 infra-up，确认 `GmSanctionPlayer` 回 `kPlayerInboxDisabled`，再关 `consumer_enabled`。反过来做时，非 DryRun 的 zone-up 读到 infra 线上白名单仍非空会被拒；player-inbox 的 Pod 没滚动时它看不出来，所以要以回包为准。紧急情况下要先关消费，直接调 `k8s_deploy.ps1` 显式传 `-AllowPlayerInboxConsumerOff`（包装入口没有这个开关），并知道新入箱的处置在重开之前不会执行。
 
 **将来新增域**：先把收件箱全部升级到认识新域的版本，再让 scene 消费它（§7.7「确定性」的前提）。
 
-**回滚**：回退到下限以上的任意版本都安全。低于下限的降级是破坏性变更，按 §8 #21 和 runbook 的前置步骤执行。
+**回滚**：回退到下限以上的任意**镜像**都安全，只回退镜像、不回退开关：`kubectl rollout undo`，或用当前检出的脚本配旧镜像 tag 重跑。开消费之后不要检出旧 commit 再跑它的部署：开关的权威值就是 git 里的 yaml，检出旧 commit 会把 `consumer_enabled` 一起回退（下限那一版就是 false），而旧 commit 的门禁只比它自己的两份 yaml、早于 H1 修复的脚本根本没有门禁。确实要重跑旧 commit，先核对它的 `consumer_enabled` 与当前一致，不一致就先关入箱。低于下限的降级是破坏性变更，按 §8 #21 和 runbook 的前置步骤执行。
 
 ### 11.8 第 5 批（推迟，满足触发条件才做）
 
@@ -1997,3 +2009,5 @@ P2 的积压缺口（都在 HEAD 上核过）：
 | §11.4、§11.5、§11.6 | 验收表补评审修复项；测试清单加 `player_inbox_system_test.cpp`；`currency_test` 只有 vcxproj；部署脚本补 C1 改动 | L3 等 |
 | §11.7 | 部署前置三条；开 / 关消费的具体操作与顺序；新增域的升级顺序 | H1、L5、L11、L12 |
 | §12 | Java 版评审修复后的对齐项 | AGENTS §12 |
+| §3.3、§8 #24、§11.7（2026-10-18 第 C 批复核） | 写前门禁改为三层：两份 yaml、非 DryRun 时只读另一侧线上 ConfigMap、staging / prod 拒绝未提交的 yaml；回滚只回退镜像，不检出旧 commit 重跑部署；门禁「保证顺序」的说法限定为 ConfigMap 层面 | 复核 H1、DOC-1、DOC-2 |
+| §3.3、§9.3 | migrate Job 失败时「Deployment 不滚动」限定为 staging / prod 或 dev 带 `-WaitReady`；账本不合法的口径写明收件箱多查 request_id 为 0、scene 不查 | 复核 DOC-6、DOC-4 |

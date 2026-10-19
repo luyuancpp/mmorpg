@@ -80,7 +80,7 @@ Gate Token 仍由 login 签发、Gate 本地验签，并绑定选中的 Gate。�
 | `go/login/internal/logic/loginpregate/assigngatelogic.go` | AssignGate 的编排入口 |
 | `go/login/internal/logic/pkg/loginqueue/gatetoken.go` | 选 Gate 与签票 |
 | `go/scene_manager/internal/logic/gate_redirect.go` | 跨 zone 重定向 |
-| `cpp/nodes/gate/handler/rpc/client_message_processor.cpp` | token 校验与客户端转发 |
+| `cpp/nodes/gate/handler/rpc/client_session_handler.cpp` | token 校验与客户端转发 |
 | `cpp/nodes/gate/handler/event/gate_event_handler.cpp` | Kafka 控制事件处理 |
 | [cross-zone-scene-travel.md](cross-zone-scene-travel.md) | 已实施链路、剩余缺口和交接索引 |
 | [跨区故障注入手册](../ops/cross-zone-failure-test-runbook.md) | 真实环境验收步骤与证据边界 |

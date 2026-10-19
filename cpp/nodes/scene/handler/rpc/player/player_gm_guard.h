@@ -2,7 +2,7 @@
 
 // scene 侧 GM 客户端指令的**第二道锁**(P0-a)。
 //
-// 第一道锁在 gate(cpp/nodes/gate/handler/rpc/client_message_processor.cpp,
+// 第一道锁在 gate(cpp/nodes/gate/handler/rpc/client_session_handler.cpp,
 // 清单 gate_gm_client_messages.h)。这里再拦一次,防的是绕开 gate 的三条路:
 //   1) scene 的 RPC 端口在集群网络里对其它 Pod 是通的,任何能连上的进程都能直接
 //      发 SceneCurrencyClientPlayer.GmAddCurrency —— gate 的闸对它不存在;

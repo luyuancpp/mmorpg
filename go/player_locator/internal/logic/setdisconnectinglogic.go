@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -111,6 +110,9 @@ func (l *SetDisconnectingLogic) SetDisconnecting(in *pb.SetDisconnectingRequest)
 		return &common.Empty{}, nil
 	}
 
+	// 原地改写之前留一份旧会话(ONLINE),只用来推导要摘除的 gate 索引成员。
+	previous := proto.Clone(session).(*pb.PlayerSession)
+
 	// 状态变化也是 session 的真实变化，必须推进版本；monitor 的完整 protobuf
 	// CAS 会因此同时约束 session_id 与 session_version。
 	session.State = pb.PlayerSessionState_SESSION_STATE_DISCONNECTING
@@ -127,21 +129,12 @@ func (l *SetDisconnectingLogic) SetDisconnecting(in *pb.SetDisconnectingRequest)
 	// tick 相位与批量积压都保证 monitor 晚于 TTL。静态宽限也无法覆盖大规模断线。
 	// 现在 ready -> processing claim 会保留载荷，外部副作用全部成功后才 ack；
 	// 因此 session 必须活到显式 CAS 清理，不能再有独立的提前过期时钟。
-	playerID := strconv.FormatUint(in.PlayerId, 10)
-	swapped, err := setDisconnectingScript.Run(
-		l.ctx,
-		l.svcCtx.RedisClient,
-		sessionLifecycleKeys(in.PlayerId),
-		data,
-		updated,
-		0,
-		time.Now().Add(ttl).Unix(),
-		playerID,
-	).Int()
+	// 与会话对账共用同一个提交点(transitionToDisconnecting),gate 索引成员在同一段 Lua 里摘除。
+	swapped, err := transitionToDisconnecting(l.ctx, l.svcCtx, in.PlayerId, data, updated, time.Now().Add(ttl).Unix(), previous)
 	if err != nil {
 		return nil, err
 	}
-	if swapped != 1 {
+	if !swapped {
 		l.Infof("SetDisconnecting: session changed during CAS player=%d session=%d, ignoring stale disconnect",
 			in.PlayerId, in.SessionId)
 		return &common.Empty{}, nil

@@ -10,10 +10,13 @@
   - [survey-build.md](survey-build.md) —— 官方 gRPC 在构建里的全部依赖(protobuf / abseil / BoringSSL / gtest / zlib / protoc 都从 grpc 树来);
   - [survey-muduo.md](survey-muduo.md) —— 三份 muduo 树、连接失败回调、Windows wakeup、墙钟定时器。
 - **硬规矩**(AGENTS.md):中文;不手改 `generated/`(`cpp/generated/grpc_client/grpc_call_tag.h` 是文件里自注明的手写例外);
-  Claude 不编译 / 不测试(负责人自己编译,见记忆「编译由用户自己做」),交付写明「未编译」;不 push;同一工作区多会话并行,动手前重核文件归属。
+  Claude 不编译 / 不测试,构建与验证由 Codex 按 AGENTS.md §10.1 执行,交付写明「未编译」;不 push;同一工作区多会话并行,动手前重核文件归属。
 
 ## 0. 2026-10-16 接手更新(先读这节)
 
+- **2026-10-18 纽约，代码收尾与正式生成已完成**。负责人明确“我要你继续做完代码，不等编译”，取代此前等待其它会话停写及先通过当前节点 Build/RPC/A0 再落 A–D 的执行顺序。原第 4、5 批实现和七项收尾均已在当前源码核对；A–D、内部命名迁移和 Java 对应源码已实际写入，正式导表、fresh 生成器工具、no-unity 完整协议生成及 19 项 CMake 导出均退出 0。守护段、原有编号与墓碑保留；登录准入、连接代次和退出清理逻辑保留。实际回执见设计 §15.19。历史通过项仅证明当时版本；本轮最终源码未编译、未跑测试，Linux 和真实冒烟后置，不计为已通过。
+
+- **2026-10-18 Codex 验收:修复后的 gRPC/Agones 普通轮、battle/router 及真实互通通过,仍在续验**:旧完整 Rebuild 退出 0（1814 源/21 库）保留。失败后获授权修复 Windows accepted socket 阻塞和大写头夹具,定向红绿通过;正式 muduo 普通轮 191 PASS/5 条件 SKIP、Agones 69 PASS,muduo 排空 26×20=520 PASS,正式 HUP 8 例通过。Agones 原 480 PASS 最后约 3 秒与额外 Go 编译重叠,已另在独占窗口补 480 PASS、0 SKIP及前后守卫/审计0,旧原件保留。battle 7/7、router lane 11/11;真实 Go→C++ 互通全部子例、C++ 1/1 通过,100 静默探针最终 closed_before_preface=100、协议错误/丢弃/遗留调用均 0。失败原件和原守卫 92 均保留。修复后节点 Build/RPC/A0、后续 A–D/命名迁移的最终生成重建、Linux 与真实冒烟尚未完成。本轮 current Build 已因预算超时停止（native=-1,源码稳定）,RPC/A0未启动;休眠事件和失败原件保留;随后v2已获明确续跑授权,却在启动MSBuild前被其它会话源码写入拦截,该次尝试已停止；后续以本节顶部的代码优先指令为准。不沿用修复前节点冒充当前产物。原件位于 build/verification/grpc-muduo-codex-20261018-005135/ 和 grpc-muduo-approved-20261018-014019/;详见设计 §15.18。
 - **第 3 批代码已补完**(仍未编译):调用方签名、gate 收口、选点状态机、旧 CQ 测试、muduo 连接失败回调、Windows 唤醒、
   测试工程链接项。逐项落地记录见设计 §14.3;下文 §2、§3 是转交时的状态,保留作历史。生成产物已于 10-15 22:27 按新模板
   重生成(不是本交接链上的会话跑的)。
@@ -39,9 +42,9 @@
 |---|---|---|
 | 1 | nghttp2 + `muduo_grpc` 客户端 unary + gate 路由链路 | 完成;Codex 续编时已随 21 个工程构建通过、通道用例 22/22 |
 | 2 | 双向流、周期 keepalive、etcd 迁 muduo_h2(流断重建、按前缀对账) | 完成,三轮评审修复;etcd 评审修复后的那部分**未编译** |
-| 3 | 生成客户端全部走 muduo_grpc、删 CQ 与 5ms 轮询、选点改新状态机、muduo 连接失败回调 / Windows wakeup | 10-16 代码补完,**未编译**(设计 §14.3) |
-| 4 | 服务端:muduo `Acceptor` 自管连接 + nghttp2 server session,scene / battle handler 改 loop 内派发,Agones 许可改异步,关机 GOAWAY 排空 | 10-16 设计定稿(设计 §15)并分六组落码,**未编译、未重生成**(§4) |
-| 5 | ~~删官方 gRPC~~ → 10-16 改为无 gRPC 线程守卫 + 清理(§0) | 未开始 |
+| 3 | 生成客户端全部走 muduo_grpc、删 CQ 与 5ms 轮询、选点改新状态机、muduo 连接失败回调 / Windows wakeup | 代码与最终生成已同步；本轮最终源码未编译、未测试（§15.19） |
+| 4 | 服务端:muduo `Acceptor` 自管连接 + nghttp2 server session,scene / battle handler 改 loop 内派发,Agones 许可改异步,关机 GOAWAY 排空 | 实现、守护段与正式生成已同步；本轮最终源码未编译、未测试（§15.19） |
+| 5 | ~~删官方 gRPC~~ → 10-16 改为无 gRPC 线程守卫 + 清理(§0) | 代码已落地；当前最终源码的运行验收后置（§15.19） |
 
 ## 2. 第 3 批已完成(都未编译、未重生成)
 
@@ -58,7 +61,7 @@
     - 流式方法(含纯服务端流)只保留三个旧 Send 重载,调用即记 ERROR,供 gRpcMethodRegistry 链接。
     - 不再 include `.grpc.pb.h`(服务元数据头已带 `.pb.h`)。
   - `grpc_init_total.{h,cpp}.tmpl`:只剩 `Set[IfEmpty][Failed]Handler` 广播与 `SetGrpcCallDeadline`。`InitGrpcNode` / `HandleCompletedQueueMessage` / `BeginShutdownGrpcNode` / `PollGrpcNodeShutdown` 删除。
-- **生成器**:`grpc_process.go` 删掉 `GrpcIncludeHeadName` / `GrpcCompleteQueueName` 字段。`grpc_process_test.go` 改成断言「无 CQ / 无 grpcpp / 用 GrpcReplyContext」,新增 `TestGrpcAsyncClientTemplatesUseMuduoChannelAndRejectStreaming`。只改模板不需重编 proto-gen;`grpc_process.go` 改了,要先 `proto-gen-build`。
+- **生成器**:`grpc_process.go` 删掉 `GrpcIncludeHeadName` / `GrpcCompleteQueueName` 字段。`grpc_process_test.go` 改成断言「无 CQ / 无 grpcpp / 用 GrpcReplyContext」,新增 `TestGrpcAsyncClientTemplatesUseMuduoChannelAndRejectStreaming`。生成器通过 go:embed 嵌入模板,模板或生成器源码变化后都须先 `proto-gen-build`,再正式生成。
 - **运行期接缝**:
   - `cpp/libs/engine/core/network/grpc_client_runtime.h` 重写,提供 `FindGrpcChannel`、`HasUsableGrpcClient`(挂着通道且非 SHUTDOWN)、`QueueGrpcLocalCompletion`、`GrpcClientLocalCompletionsDrained`(thread_local 计数)。
   - `muduo_grpc_channel_slot.h` 删掉 `MuduoGrpcChannelFactory`,只剩 `MuduoGrpcChannelPtr`。
@@ -128,7 +131,7 @@
 - 连接失败回调:
   - `Connector.{h,cc}` 加 `setConnectFailedCallback`,在 `retry()` 排下一次之前回调;致命错误 / default 分支也回调。
   - `TcpClient.{h,cc}` 把回调转给 Connector,替换 :68 的 FIXME。
-  - Windows `Channel.cc:90-101` 在 POLLHUP 时提前 return,可能吞掉 Connector 的错误回调,需先实测 WSAPoll 对拒连报什么事件。
+  - Windows 拒连已实测为 `0x0013`、`SO_ERROR=10061`,Connector 挂断投递错误的分支已修;纯 FIN 的 HUP 读 EOF 分支也已由 Codex 两次红测后修复,8/8 绿。详见设计 §14.3、§15.17 和 §15.18。
   - Linux 走 `tools/archived/muduo_linux_overlay/muduo/net/{Connector,TcpClient}.{h,cc}`,需新增 overlay 文件(上游拷贝加 LOCAL DELTA),`setup_dependencies.sh` 会自动拾取。
   - 使用方:`cpp/libs/engine/muduo_grpc/http2_transport.cpp` 在 `Connect()` 里用 weak_ptr 绑定回调,失败即 `CloseWithError(UNAVAILABLE)` 并停掉 Connector 的内部重试,Channel 随即进 TRANSIENT_FAILURE。
   - 补用例:connectTimeout 设长、目标端口不监听,断言 1s 内失败。
@@ -175,8 +178,8 @@ draining 日志改由 `Server` 打(Node 只打 drained 行)、帧级协议错误
 仍未做 / 待定:
 - **验证**:按设计 §15.14 交 Codex(生成器单测 → 迁移前拒绝验证 → 定向重生成零 diff → Windows / Linux 构建 → C++ 单测 → Go 互通 →
   冒烟与线程核对 → 关机 → 探针)。前提是第 3 批编译通过。没有运行结果之前不得宣称「线程归零」。
-- AGENTS.md §11.7 参考实现列表补 `muduo_grpc::Server` / `ServerCall`:需负责人同意(§15.4.1),实施组不改。
-- `docs/PROGRESS.md` 条目与设计 §15 偏离补记:主会话负责。`docs/design/thread-count-monitoring*.md`:归第 5 批。
+- AGENTS.md §11.7 参考实现列表已补 `muduo_grpc::Server` / `ServerCall`,见设计 §15.16 第 7 项;无需重复修改。
+- `docs/PROGRESS.md` 实施条目、设计 §15.16 偏离记录及第 5 批线程监控文档已完成;Codex 运行验收结果继续追加,不得将静态评审写成运行通过。
 - 不在 G6 范围的过时 C++ 注释(2026-10-16 复核时仍在;**同日已由第 4、5 批一致性检查组逐处局部改准**,只改注释、不动代码;
   同批顺带改了 `client_endpoint.h:107`、`player_battle.h:24` 的 runInLoop 说法,`asset_op_auth.h:27` / `asset_op_auth.cpp:82` /
   `asset_op_system.h:13` 的资产入口计数(含 AckReceipt 共 4 个),以及 `agones_lifecycle_test.cpp:717` 的 NonBlocking 用途说明):

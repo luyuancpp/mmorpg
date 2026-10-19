@@ -603,3 +603,47 @@ func TestRpcMethodMetaInitLinesHaveNoHandler(t *testing.T) {
 		})
 	}
 }
+
+// 通用发送器必须显式接收完成回调;流式与 RPC0 方法不进入此路径。
+func TestGrpcSenderFor(t *testing.T) {
+	for _, tc := range []struct {
+		name, pkg                                             string
+		generic, clientStreaming, serverStreaming, wantSender bool
+	}{
+		{name: "RPC0", generic: true},
+		{name: "客户端流", clientStreaming: true},
+		{name: "服务端流", serverStreaming: true},
+		{name: "有包名", pkg: "scene.manager", wantSender: true},
+		{name: "无包名", wantSender: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			method := &internal.MethodInfo{
+				ProtoFileInfo: internal.ProtoFileInfo{
+					Fd:                     &descriptorpb.FileDescriptorProto{Package: strPtr(tc.pkg), Options: &descriptorpb.FileOptions{CcGenericServices: &tc.generic}},
+					ServiceDescriptorProto: &descriptorpb.ServiceDescriptorProto{Name: strPtr("Svc")},
+				},
+				MethodDescriptorProto: &descriptorpb.MethodDescriptorProto{Name: strPtr("M"), ClientStreaming: &tc.clientStreaming, ServerStreaming: &tc.serverStreaming},
+			}
+			decl, sender, ok := grpcSenderFor(method)
+			if ok != tc.wantSender {
+				t.Fatalf("sender 存在=%v，期望 %v", ok, tc.wantSender)
+			}
+			if !ok {
+				if decl != "" || sender != "" {
+					t.Fatal("不支持的方法不得生成声明或绑定")
+				}
+				return
+			}
+			wantDecl := "void SendSvcMErased(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );"
+			wantSender := "::SendSvcMErased"
+			if tc.pkg != "" {
+				ns := strings.ReplaceAll(tc.pkg, ".", "::")
+				wantDecl = "namespace " + ns + "{" + wantDecl + "}"
+				wantSender = ns + wantSender
+			}
+			if decl != wantDecl || sender != wantSender {
+				t.Fatalf("声明=%q 绑定=%q；期望 %q / %q", decl, sender, wantDecl, wantSender)
+			}
+		})
+	}
+}

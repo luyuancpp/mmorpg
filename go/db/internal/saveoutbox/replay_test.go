@@ -69,11 +69,21 @@ func storeIntent(t *testing.T, rc redis.Cmdable, id uint64, zone uint32, in inte
 	require.NoError(t, rc.ZAdd(context.Background(), pendingIndexKey(zone, id%BucketCount), redis.Z{Score: 0, Member: strconv.FormatUint(id, 10)}).Err())
 }
 
+// storeObservedIntent 模拟补投器已经首次登记过该版本(过了 FirstReplayAfter 宽限):下一次到期即真正补投。
+func storeObservedIntent(t *testing.T, rc redis.Cmdable, id uint64, zone uint32, in intent) {
+	t.Helper()
+	storeIntent(t, rc, id, zone, in)
+	require.NoError(t, rc.HSet(context.Background(), savebarrier.Key(id), fieldAttemptVersion, in.version, fieldAttempts, "0").Err())
+}
+
+const fixtureNowMs int64 = 1_700_000_000_000
+
 func testReplay(t *testing.T, rc *redis.Client, p Publisher) *Replay {
 	t.Helper()
-	r, err := New(rc, rc, p, Config{ZoneID: 1, Batch: 2, Budget: 100 * time.Millisecond, RetryAfter: time.Second, Interval: 10 * time.Millisecond}, prometheus.NewRegistry())
+	r, err := New(rc, rc, p, nil, Config{ZoneID: 1, Batch: 2, Budget: 100 * time.Millisecond, RetryAfter: time.Second, Interval: 10 * time.Millisecond}, prometheus.NewRegistry())
 	require.NoError(t, err)
-	r.now = func() time.Time { return time.UnixMilli(1_700_000_000_000) }
+	r.now = func() time.Time { return time.UnixMilli(fixtureNowMs) }
+	r.jitter = func() time.Duration { return 0 }
 	return r
 }
 
@@ -88,7 +98,7 @@ func fixtureRedis(t *testing.T) *redis.Client {
 func TestReplaySurvivesPublisherRestartAndRequiresBothSQLAcks(t *testing.T) {
 	rc := fixtureRedis(t)
 	in := testIntent(t, fixtureID, 7, 9, 1)
-	storeIntent(t, rc, fixtureID, 1, in)
+	storeObservedIntent(t, rc, fixtureID, 1, in)
 	p := &recordingPublisher{}
 	r := testReplay(t, rc, p)
 	n, err := r.Tick(context.Background())
@@ -115,12 +125,13 @@ func TestReplaySurvivesPublisherRestartAndRequiresBothSQLAcks(t *testing.T) {
 	require.Zero(t, rc.ZCard(context.Background(), pendingIndexKey(1, 0)).Val())
 	require.Equal(t, in.version, rc.HGet(context.Background(), savebarrier.Key(fixtureID), "pending").Val())
 	require.Equal(t, in.version, rc.HGet(context.Background(), savebarrier.Key(fixtureID), "player_database_1").Val())
+	require.Equal(t, int64(3), rc.HLen(context.Background(), savebarrier.Key(fixtureID)).Val(), "回收后只剩 pending 与两表 ACK,补投状态字段一并清掉")
 }
 
 func TestPartialPublishKeepsOriginalPairForReplay(t *testing.T) {
 	rc := fixtureRedis(t)
 	in := testIntent(t, fixtureID, 7, 9, 1)
-	storeIntent(t, rc, fixtureID, 1, in)
+	storeObservedIntent(t, rc, fixtureID, 1, in)
 	p := &recordingPublisher{failAt: 2}
 	r := testReplay(t, rc, p)
 	n, err := r.Tick(context.Background())
@@ -141,10 +152,10 @@ func TestOldPublishedPairCannotClearNewPending(t *testing.T) {
 	rc := fixtureRedis(t)
 	old := testIntent(t, fixtureID, 7, 9, 1)
 	newer := testIntent(t, fixtureID, 8, 1, 1)
-	storeIntent(t, rc, fixtureID, 1, old)
+	storeObservedIntent(t, rc, fixtureID, 1, old)
 	p := &recordingPublisher{}
 	p.hook = func() {
-		storeIntent(t, rc, fixtureID, 1, newer)
+		storeObservedIntent(t, rc, fixtureID, 1, newer)
 		require.NoError(t, rc.HSet(context.Background(), savebarrier.Key(fixtureID), "player_database", old.version, "player_database_1", old.version).Err())
 	}
 	r := testReplay(t, rc, p)
@@ -162,10 +173,10 @@ func TestPoisonIntentDoesNotStarveLaterPlayers(t *testing.T) {
 	rc := fixtureRedis(t)
 	poison := testIntent(t, fixtureID, 7, 9, 1)
 	poison.first = "损坏的DBTask"
-	storeIntent(t, rc, fixtureID, 1, poison)
+	storeObservedIntent(t, rc, fixtureID, 1, poison)
 	require.NoError(t, rc.ZAdd(context.Background(), pendingIndexKey(1, 0), redis.Z{Score: -1, Member: "64"}).Err())
 	good := testIntent(t, 128, 8, 1, 1)
-	storeIntent(t, rc, 128, 1, good)
+	storeObservedIntent(t, rc, 128, 1, good)
 	p := &recordingPublisher{}
 	r := testReplay(t, rc, p)
 	r.cfg.Batch = 1
@@ -185,7 +196,7 @@ func TestHomeZoneIndexMigrationRequiresAuthoritativeMapping(t *testing.T) {
 		t.Run(fmt.Sprint(matched), func(t *testing.T) {
 			rc := fixtureRedis(t)
 			in := testIntent(t, fixtureID, 7, 9, 2)
-			storeIntent(t, rc, fixtureID, 1, in)
+			storeObservedIntent(t, rc, fixtureID, 1, in)
 			if matched {
 				require.NoError(t, rc.Set(context.Background(), placement.HomeZoneKey(fixtureID), "2", 0).Err())
 			}
@@ -227,7 +238,7 @@ func TestIntentRejectsWrongEpochKeyTypeAndTopicGeneration(t *testing.T) {
 			raw, err := proto.Marshal(task)
 			require.NoError(t, err)
 			in.first = string(raw)
-			storeIntent(t, rc, fixtureID, 1, in)
+			storeObservedIntent(t, rc, fixtureID, 1, in)
 			if kind == "index_type" {
 				require.NoError(t, rc.Del(context.Background(), pendingIndexKey(1, 0)).Err())
 				require.NoError(t, rc.Set(context.Background(), pendingIndexKey(1, 0), "错误类型", 0).Err())
@@ -320,7 +331,7 @@ func TestMalformedIndexMemberIsDeferredWithoutDeletingEvidence(t *testing.T) {
 	ctx := context.Background()
 	index := pendingIndexKey(1, 0)
 	require.NoError(t, rc.ZAdd(ctx, index, redis.Z{Score: -1, Member: "00064"}).Err())
-	storeIntent(t, rc, fixtureID, 1, testIntent(t, fixtureID, 7, 9, 1))
+	storeObservedIntent(t, rc, fixtureID, 1, testIntent(t, fixtureID, 7, 9, 1))
 	p := &recordingPublisher{}
 	r := testReplay(t, rc, p)
 	r.cfg.Batch = 1
@@ -356,7 +367,7 @@ func TestStartRejectsSplitOwnerRedisBeforeStartingWorker(t *testing.T) {
 	app.ServerConfig.Fencing.Mode = dbconfig.FencingModeDual
 	app.ServerConfig.RedisClient.Hosts = "127.0.0.1:1"
 	app.ServerConfig.OwnerEpochRedis = &dbconfig.PlacementRedisConfig{Hosts: "127.0.0.1:2"}
-	s, err := Start(context.Background(), app, nil, nil)
+	s, err := Start(context.Background(), app, nil, nil, nil)
 	require.Error(t, err)
 	require.Nil(t, s)
 }

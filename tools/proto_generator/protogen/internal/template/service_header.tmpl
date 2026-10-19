@@ -6,6 +6,7 @@
 #include <vector>
 #include <entt/src/entt/entity/registry.hpp>
 #include <google/protobuf/message.h>
+#include "grpc_client/grpc_call_tag.h"
 // RpcMethodMeta 已不含 Service 成员;service.h 仍保留:多处靠本头传递拿到 Service / Closure / RpcController。
 #include <google/protobuf/service.h>
 
@@ -21,8 +22,8 @@ struct RpcMethodMeta {
 		entt::registry& registry,
 		entt::entity nodeEntity,
 		const google::protobuf::Message& message,
-		const std::vector<std::string>& metaKeys,
-		const std::vector<std::string>& metaValues
+		GrpcMessageDone done,
+		const GrpcCallOptions& options
 	)> sender;
 };
 

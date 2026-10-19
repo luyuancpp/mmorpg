@@ -138,6 +138,7 @@ go/db 的 ④（重试只交给分区属主）落地后，重试键会变为 kaf
    - 补 Stop 第④步交错用例，以及「epoch 键非规范时脚本不改游标」用例。
    - ④ 落地后门禁覆盖 p* 队列。
 9. §3.1（顺带）：save_seq 已在在途改动中占 9 号，但注释没按 §3.1 写明「10 号预留给 reply_instance」，8 号字段注释也没订正；落码时补上。
+   - **2026-10-18 更正**：10 号已由 `reply_instance` 使用（B0-3 第 1 批，`proto/db/db_task.proto` 已有 `string reply_instance = 10;`）。落码时 save_seq 注释直接写「10 号为 reply_instance」，不要再补「10 号预留」；8 号字段注释照旧订正。下方 verified_ok 第 [1] 条「10 号未被占用」是 10-16 的快照，10-18 起不再成立。
 
 三、给 Codex 的验证（落码后）
 - 工作目录 go/db：go test ./internal/kafka/... ./internal/metrics/... -count=1，重点看新增的脚本部分写、Stop 交错用例与 RedisSteps 固定用例。

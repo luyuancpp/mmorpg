@@ -127,7 +127,8 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
         {
             LOG_WARN << "[OwnerEpoch] stale_owner_write_rejected=" << ownerStats.staleOwnerWriteRejected
                      << " home_zone_unknown=" << ownerStats.homeZoneUnknown
-                     << " owner_epoch_unknown=" << ownerStats.ownerEpochUnknown;
+                     << " owner_epoch_unknown=" << ownerStats.ownerEpochUnknown
+                     << " stale_owner_rejected_exiting=" << ownerStats.staleOwnerRejectedExiting;
         }
         // 存盘序号发号器的异常计数(save_seq.h 的 save_seq_stats;db-write-fencing-mysql.md §7.2)。单独一行、单独前缀,
         // 不动上面几行的解析格式。key=value 平铺、进程启动以来的累计值;三项正常都应恒 0,任一非 0 才打,级别 WARN
@@ -187,6 +188,18 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
                 line += std::to_string(releaseFenceStats.verdicts[i]);
             }
             line += " not_found=" + std::to_string(releaseFenceStats.notFound);
+            // 会话结束释放(docs/design/location-release-binding.md §3.3):总数、凭证判定分布与条件写结果,追加在原有 key 之后。
+            line += " session_ended=" + std::to_string(releaseFenceStats.sessionEnded);
+            for (std::size_t i = 0; i < releaseFenceStats.credentialDecisions.size(); ++i)
+            {
+                line += " credential_";
+                line += release_fence::kSessionEndedCredentialNames[i];
+                line += '=';
+                line += std::to_string(releaseFenceStats.credentialDecisions[i]);
+            }
+            line += " credential_written=" + std::to_string(releaseFenceStats.credentialWritten);
+            line += " credential_epoch_moved=" + std::to_string(releaseFenceStats.credentialEpochMoved);
+            line += " credential_failed=" + std::to_string(releaseFenceStats.credentialFailed);
             if (releaseFenceStats.AlarmingIncreaseSince(lastReleaseFence))
             {
                 LOG_WARN << line;

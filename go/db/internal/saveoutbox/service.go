@@ -22,7 +22,8 @@ type Service struct {
 
 // Start只接主parentRedis，不把只读OwnerEpochRedis误当可写父缓存实例。
 // G4a拆分跨实例原子提交未解决前拒绝该拓扑；legacy不具备SQL双ACK，不能开启补投回收。
-func Start(ctx context.Context, app dbconfig.Config, parent, mapping *redis.Client) (*Service, error) {
+// health 为本 zone 主库的冷却判定(落点库注册表)，nil 表示不判冷却。
+func Start(ctx context.Context, app dbconfig.Config, parent, mapping *redis.Client, health StoreHealth) (*Service, error) {
 	if app.ServerConfig.Fencing.EffectiveMode() != dbconfig.FencingModeDual {
 		logx.Infof("[SaveOutbox] legacy模式无SQL双ACK，持久存盘补投未启用")
 		return nil, nil
@@ -49,7 +50,7 @@ func Start(ctx context.Context, app dbconfig.Config, parent, mapping *redis.Clie
 	} else {
 		mappingReplay = replayRedis(mapping)
 	}
-	replay, err := New(parentReplay, mappingReplay, pub, Config{ZoneID: app.ZoneId, TopicGeneration: app.ServerConfig.Kafka.TopicGeneration}, nil)
+	replay, err := New(parentReplay, mappingReplay, pub, health, Config{ZoneID: app.ZoneId, TopicGeneration: app.ServerConfig.Kafka.TopicGeneration}, nil)
 	if err != nil {
 		_ = parentReplay.Close()
 		if mappingReplay != parentReplay {

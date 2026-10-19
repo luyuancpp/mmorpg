@@ -493,6 +493,9 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
   `GrpcReplyContext` 是 `GrpcCallOutcome` 的别名,带响应头 / trailers 的 metadata(`-bin` 已解掉线上那层,与官方
   `GetServerInitialMetadata` 同义),所以按回显认领的调用方(gate 会话、号段 `x-idseg-seq`)只改一行。
   `GrpcCallFailure` 里的 `grpc::ClientContext& / grpc::Status&` 换成 `const GrpcCallOutcome& outcome`。
+
+  > **2026-10-17 契约勘误**：以上是第 3 批的兼容阶段。删除全局处理器 A–C 落地后，`GrpcReplyContext / GrpcCallFailure` 与所有全局处理器、安装入口删除，done 必填且是唯一完成通道；详见 `grpc-client-deadline-failure-callback.md` §12。
+
 - **`GrpcDone` 不变**,`GrpcCallOutcome` 多带响应 metadata,纯增字段。
 - **调用状态不进 ECS**:请求副本、发出的 metadata 原值、done 放在 `shared_ptr` 里,随完成回调走;不再有对象池、tag、
   `GrpcClientRuntime` 计数。本地拒绝(实体无通道 / 序列化失败)经 `queueInLoop` 延后投递,保持「永不在 Send 栈内回调」。
@@ -502,6 +505,9 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 - **流式方法不生成客户端**:全仓只有 etcd 的 Watch / LeaseKeepAlive,已由 `MuduoEtcdTransport` 手写。为不打断
   `gRpcMethodRegistry` 的通用 sender,流式方法仍生成三个旧 Send 重载,调用即记 ERROR 拒绝;纯服务端流同样处理
   (修掉旧模板把它误生成成 unary 的问题)。
+
+  > **2026-10-17 契约勘误**：流式拒绝桩与对应通用 sender 随后删除；生成客户端只输出 unary 的 typed / Erased done 入口，etcd 双向流继续使用手写传输。
+
 - **CQ 与 5ms 轮询删除**:`InitGrpcNode`、`HandleCompletedQueueMessage`、`BeginShutdownGrpcNode`、`PollGrpcNodeShutdown`、
   `GrpcClientRuntime`、`GrpcChannelCache`、`EtcdService` 的 5ms 定时器、`GrpcEtcdTransport` 一并删除。
   关机阶段 0 清 `MuduoGrpcChannelPtr`(~Channel 把在途调用以 UNAVAILABLE 排队),拆除经 `queueInLoop` 排在它们之后;
@@ -535,15 +541,24 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 - **调用方**:
   - session:`GetSessionDetailsByClientContext` 改名并改签名为 `GetSessionDetailsByReplyContext(const GrpcReplyContext&)`,
     用 `FindInitialMetadata("x-session-detail-bin")` 取值,值语义不变(§4.2)。
+
+    > **2026-10-17 契约勘误**：`GetSessionDetailsByReplyContext` 已退场；`ParseSessionDetailsMetadataValue` 仅供路由 Forward 完成回调解析回显会话，直连按发送时捕获的原始会话字节下发。
+
   - gate main:全局处理器换新签名;`GATE_ROUTER_TRANSPORT` 不设或 `muduo_h2` 时静默,其余值(含 `grpc`)打一条 WARN 后照走
     muduo_h2;`gate_router_transport.h` 与 6 条 `GateRouterTransport.*` 用例删除。关机排空判定(beforeShutdown 关掉的会话
     走完断线处理 + 路由通道 `AllChannelsIdle`,上限 15s)改为**路由模式一律安装**,以前只在 muduo_h2 下;直连模式不变。
+
+    > **2026-10-17 契约勘误**：gate main 不再安装任何全局应答 / 失败处理器；直连通用发送与 Disconnect 都在调用处显式提供 done，Forward 继续走自身完成回调。上述传输退役与关机排空规则不因此改变。
+
   - `router_muduo_forward`:删 `InstallChannelFactory`;`SendForward` 保留(第 1 批路径,本身无单测),线上字节按代码核对
     与生成的 `SendClientRpcRouterForward` 一致(`:path`、应用层一层 Base64、同一份截止配置、解析失败 INTERNAL)。
   - `client_message_processor`:`SendRawViaRouter` 只剩 muduo 通道一条路,缺通道守卫改为 `try_get<MuduoGrpcChannelPtr>`
     (采样 WARN 后返回空,与原守卫失败时一致);`PickRandomNode` 只看 `HasUsableGrpcClient`。
   - 号段 `id_segment_bootstrap`、收件箱、scene_manager 应答适配:只迁签名(没有改成每次调用回调);`x-idseg-seq` 回显比对
     同时认原文与 Base64,语义不变;收件箱用 `kGrpcStatusUnimplemented` 代替 grpc 枚举。
+
+    > **2026-10-17 契约勘误**：号段、收件箱、EnterScene / CreateScene 均已迁到每次调用回调，scene 的 gRPC 回包适配文件及安装函数删除；号段捕获 seq，收件箱捕获三项，EnterScene 捕获 playerId / requestTag，不再以响应 metadata 查归属。
+
 - **选点**:`Candidate.channelState` 改为 `std::optional<muduo_grpc::ConnectivityState>`;`node_utils.h` 只前向声明枚举
   (`enum class ConnectivityState : uint8_t`,该头经 `node.h` 进入大量翻译单元)。号段 / 收件箱选点改为
   `view<NodeInfo, MuduoGrpcChannelPtr>` 且只认 `GetState(true) == kReady`。
@@ -554,8 +569,8 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
     2026-10-17 起 `start()` 与 `resetChannel` 也改绑 `shared_from_this()`,`connecting()` 里绑进自有 `channel_` 的回调按 §11.7「同寿命成员」例外保留并注明理由。
   - `TcpClient` 只加 out-of-line 转发与一个嵌套 typedef,**无数据成员**,布局不变。
   - Windows `Channel.cc`:设了 errorCallback、没设 closeCallback 的 channel(本仓只有 Connector)遇 POLLHUP 不再提前返回,
-    先投 error 再投 write;其余 channel 逐字不变。前提是 WSAPoll 对拒连报 POLLHUP|POLLERR,**未实测**;只报 POLLWRNORM 时
-    走 handleWrite 读 SO_ERROR,同样到失败回调。
+    先投 error 再投 write;其余 channel 逐字不变。2026-10-18 Codex 本机原生 WSAPoll 实测回环非阻塞拒连报
+    `POLLHUP|POLLERR|POLLOUT`(`0x0013`),随后读取 `SO_ERROR=10061`;只报 POLLWRNORM 时走 handleWrite 读 SO_ERROR,同样到失败回调。
   - `Http2Transport`:失败回调只绑 weak,先 `client_.stop()` 停掉 Connector 内部重试,再经 `queueInLoop`(绑 weak)
     `CloseWithError(UNAVAILABLE)`,不在 Connector 回调栈或 `CreateTransport` 栈上关闭;与 connect_timeout、Shutdown、`~Channel`
     由 `closed_` 收口,恰好关闭一次。§5「已知差异」随之消除。
@@ -567,6 +582,9 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
   - 删 `grpc_client_lifecycle_test.cpp`;新增 `grpc_client_local_reject_test.cpp`(无通道 → done 异步恰好一次 UNAVAILABLE、
     不触发全局处理器、`GrpcClientLocalCompletionsDrained` 判据)。PerCallDone 成功 / 停机两条与「快照 / 已关闭实体不能被选中」
     的适配层用例待第 4 批或选点组补。
+
+    > **2026-10-17 契约勘误**：全局处理器删除后的本地拒绝测试只覆盖显式 done 的异步恰好一次与排空；旧的“不触发全局处理器”断言删除，生成器测试另守住无全局接口与同步序列化。实际测试结果另记。
+
   - `cross_zone_test`:假 SceneManager 节点改挂不连的 `MuduoGrpcChannelPtr`,夹具自带 EventLoop。
   - 选点用例换五态;muduo_grpc_test 新增 `RefusedConnectionEntersTransientFailureWithoutWaitingForConnectTimeout`
     (connectTimeout 20s、断言 5s 内失败;Windows 协议栈对回环拒连还会重试 SYN,经验值 1~2s)与 `event_loop_wakeup_test.cpp` 三条。
@@ -655,7 +673,7 @@ EtcdHelper(唯一出口,EtcdManager 的 keepalive 也收进来)
 | 探针日志 | Linux 每次建连和断连各一行 INFO | 自己控制:握手前断开只打 DEBUG |
 | 代价 | 几乎不用写新代码 | 约 60 行,逐行照抄 `TcpServer::newConnection / removeConnectionInLoop / ~TcpServer` 的时序,用 §15.14 的生命周期用例锁住 |
 
-关于 AGENTS §11.7:`muduo_grpc::Server` 就是 muduo 层的连接所有者(TcpServer 的等价物),是 `TcpConnectionPtr` 的唯一强持有者;应用层(ServerCall、生成代码、Node)只经 weak 触达。这一点写进 `server.h` 头注释。建议负责人在 §11.7 的参考实现列表里补上 `muduo_grpc::Server` 和 `ServerCall`。**这需要负责人同意**,实施组不改 AGENTS.md。
+关于 AGENTS §11.7:`muduo_grpc::Server` 是 muduo 层的连接所有者(TcpServer 的等价物),是 `TcpConnectionPtr` 的唯一强持有者;应用层(ServerCall、生成代码、Node)只经 weak 触达。这一点已写入 `server.h` 头注释;经负责人授权,§11.7 的参考实现列表及生命周期测试引用已补齐,详见 §15.16 第 7 项。
 
 #### 15.4.2 分层与文件
 
@@ -1542,7 +1560,13 @@ FinalizeShutdownInLoop(阶段 0)
   `handler_gen` / `player_service_gen` 缺结构预检、`event.go` 的 `extractUserCodeBlocks` 有同类查找键劫持;服务端 `headersReceivedAt_` 超限修剪后,
   慢上传的流排空到期时不能立即 REFUSED(最坏等 closeGrace 硬上限);Windows `Channel.cc` 对只设读写回调的 channel(Hiredis)只有 POLLHUP 时仍提前返回,
   需先实测 WSAPoll 的 revents(交 Codex)。
-  → 2026-10-17 已落码(未编译、未测试),Windows `Channel.cc` 一条仍待 Codex 实测 WSAPoll revents 后再定,本轮未动。详见下面「边角问题落地记录」。
+  → 2026-10-17 已落码时尚未编译、未测试,Windows `Channel.cc` 当时留待实测。其余项见下面「边角问题落地记录」;2026-10-18 Codex 的 HUP 修复与红绿证据见下文及 §15.18。
+  → 2026-10-18 Codex 已完成本机原生测量:纯 FIN 与数据读尽后的 FIN 均持续报告单独 `POLLHUP`(`0x0002`),`recv` 返回 0;
+  数据尚未读尽时报告 `POLLRDNORM|POLLHUP`(`0x0102`)。随后链接真实 `muduo.lib` / Hiredis 的 8 例两次稳定出现同样 3 例失败,
+  证实 Windows 纯 HUP 分支跳过 EOF 读取。最小修复是在没有 close / error 回调时派发一次 read 后立即返回,避免读回调清理后再调用 write;
+  Connector 的 error 路径及已有 close 路径保留。修复后 8/8、0 跳过,真实 Hiredis 在析构前完成挂起命令并断开连接。
+  8 例已接入正式 `muduo_grpc_test`,正式工程全套及重复运行仍按 §15.18 的后续回执判定。
+  原生测量在 `build/verification/grpc-muduo-codex-20261018-005135/wsapoll-result.json`,红、重复红、绿及源码清单在同目录 `hup-prep/closure.json`。
 
 #### 15.17.1 边角问题落地记录(2026-10-17,未编译、未测试)
 
@@ -1608,3 +1632,34 @@ FinalizeShutdownInLoop(阶段 0)
      列出「文件:FirstCode|Handle<M> 体:段名」;用例补进 `grpc_code_section_consistency_test.go`。核对用只读推演跑遍工作区 23 个生成式 handler 文件:零误报,
      FirstCode 与 41 个方法段与 HEAD 逐字节一致;gRPC 预检约 3.4 万、handler 约 4 万个随机变体静默丢段为 0。已知且接受的保守拒绝:段内夹带结束标记文本、
      函数体内守护段外手写的顶格 `};`(均 fail-closed,不丢代码)。
+
+### 15.18 Codex 验收回执(2026-10-18,获授权修复后续跑中)
+
+- **生成器与 Go 已有证据**:生成器 `proto-gen-build`、定向单测与 `go test ./internal/... ./cmd -count=1` 均退出 0;`go/shared` 的 `assetop` 单测退出 0,`grpcinterop` 默认因缺真实端点跳过。Go 该轮日志没有独立输入 SHA 前后清单,不据此声称后续变化也已验证。实际端点互通仍待执行。
+- **保留首轮失败**:`build/ecs-refactor/batch6/full-cpp-20261018T051013798Z/` 的串行 `game.sln /t:Rebuild /m:1 /nr:false Debug|x64 /p:CL_MPCount=1` 原生退出 1。首错为 `player_landing.h:51` 的 C2059,来自 `player_landing_test` Debug|x64 缺 `/utf-8`;另有 `open_file_limit_test.cpp` 的辅助函数 `Run` 被 `testing::Test::Run` 遮蔽。该轮还有 `config.cpp`、`core.vcxproj`、`node.cpp`、`open_file_limit.h`、`client_endpoint_test.vcxproj`、`open_file_limit_test.cpp` 共 6 项输入漂移,不能作为当前源码通过证据。
+- **授权修复与复测**:负责人本轮「做完给我」授权后,已补测试工程 `/utf-8`,将辅助函数及调用改为 `EvaluateForTest`。随后共享增量 `game.sln` Build 原生退出 0,1813 个输入前后零漂移;它不是最终 Rebuild。复用本轮新 EXE 的完整用例为 `player_landing` 13/13、`client_endpoint` 64/64,均 0 失败、0 跳过,源及 21 个共享库无漂移。应用回执为本轮 `build-blockers/applied-receipt.json`;Build 原件为 `build/verification/landing-fencing-resume-20261018T053714Z/cpp/01-game.native-result.json`;复测为 `build/ecs-refactor/batch6/repair-checks-20261018T064437730Z/result.json`。
+- **HUP 已完成红绿**:原生 WSAPoll 测量后,8 例真实 Channel / Hiredis 回归两次稳定出现精确 3 红、5 绿。最小 Windows Channel 读 EOF 修复后,单库构建和隔离回归均退出 0,8/8、0 跳过、输入零漂移;只更新 `muduo.lib`,其他库 SHA 不变。正式接入新增 `windows_channel_hup_test.cpp` 及测试工程/filters,正式工程运行尚待后续专项。两次绿色预检曾被短命链接进程阻挡,没有实际启动构建或测试,单独留有「未执行」回执,不作代码失败或通过证据。原件见本轮 `hup-prep/closure.json`。
+- **最终完整重建已通过**:`build/ecs-refactor/batch6/full-cpp-20261018T065305567Z/` 的串行 Rebuild 原生退出 0,1814 个源码输入前后零变化,21 个库已封存;gate、scene、battle 三节点均重新链接。其 `incoming_contract_profile_pending` 指另一个尚未实现的双版本客户端契约入口,不代表编译失败,也不能据此声称双契约兼容完成。
+- **正式 gRPC 工程构建通过,普通轮失败**:`build/verification/grpc-muduo-approved-20261018-014019/windows-tests-20261018T075842541Z-3331cf8f/` 中两工程以独立 IntDir、禁止构建引用工程的方式串行构建,均退出 0。muduo 普通轮计划 195 例,日志实际启动 173 例:166 例通过、5 例条件跳过、1 例已完成失败、1 例挂起。首个失败是 `ServerSessionTest.MalformedHttpRequestsAreResetByNghttp2` 的 `uppercase name` 子场景,期望 RST_STREAM(PROTOCOL_ERROR),实际收到应答并触发观察者。其后 `ServerLoopbackTest.DrainTimeoutUnderBackpressureForceClosesAfterCloseGrace` 挂起,内层运行器在 600 秒超时后终止测试,外层退出 1;不能用外层 `timed_out=false` 宣称没有超时。没有完整 XML 或整套通过结论。
+- **失败收口与候选**:测试自有进程均已退出,最后只读终检退出 0,源码和 21 库零变化,报告为 `build/ecs-refactor/batch6/grpc-window-20261018T075842541Z-d25fda47/timeout-final-artifact-differences.json`。只读排查发现 Windows `accept4` 用 `FIONBIO=0` 把新连接设成阻塞,可能让 32MiB 应答堵住 EventLoop;这是高可信候选而非已确认根因。最小 `mode=1` 候选保存在本轮 `hup-prep/backpressure-fix-candidate/`,未应用、未重试;请求头子场景另行只读诊断。按 AGENTS.md §10.2 等待负责人决策,原冻结基线保持不变。构建队列已交回 ECS 执行不依赖该专项结论的既定验证。
+- **请求头夹具只读定位**:`TestH2Client::MakeNva` 使用 `NGHTTP2_NV_FLAG_NONE`,其 `nghttp2_submit_headers` 经 `nghttp2_nv_array_copy` 自动把复制的头名转小写,实际发送的是 `x-upper`。因此上述失败没有证明服务端接受了非法大写头;后续应为恶意子场景构造真正的原始 HEADERS/HPACK,保留原有 RST 断言再验证。未修改正式夹具、未重新运行,不据静态定位宣称用例通过。
+- **后续已获修正授权**:负责人在协调会话明确「继续做完,你可以先修复」,已核读原始人类 turn `01a14e1b-941f-7170-8a9c-c1cffb263341`。此前「待决策」「候选未应用」是失败停止时的状态。实际收件箱构建自然退出 0 后,再次核验原 1814 源/21 库均无变化,再 CAS 合入四个测试文件:恶意头名用显式 `NGHTTP2_NV_FLAG_NO_COPY_NAME` 且由夹具深拷贝持有到会话销毁后,保留全部 RST/观察者断言;新增真实 accepted socket 空读回归,既有 8 个 HUP 用例保留。当前生产 `accept4` 仍为旧 `mode=0`,尚未定向编译或红绿运行;先测试旧库取得短红测,再单独应用生产修正。原件为 `build/verification/global-handler-repair-20261018T082546455Z/repair-receipt.json` 与 `applied-FixTests-20261018T083356293Z/applied.json`。旧完整基线不改写,修正期间明确记录授权变化,不会伪称修后零漂移。
+- **上述修正随后完成定向红绿**:四测试文件先链接旧库,大写头用例 1/1 通过;新增 accepted socket 空读单例实际触发外部 5 秒预算,wrapper=124、精确 RUN 后无 PASS,自有进程已退出,这是计划红测。再单独 CAS `accept4`:成功连接设置 `FIONBIO=1`,设置失败关闭新 socket 并恢复错误。单 muduo 工程实际重编该文件、退出 0,只有 `muduo.lib` 更新,其余 20 库不变;测试工程重链退出 0。同一新 EXE 下 socket/header/原背压排空三个单例均 1/1、0 跳过、退出 0,原挂起用例约 1.6 秒完成。前后审计均只出现已授权的五源/一库变化,没有额外变化。原件位于 `build/verification/grpc-muduo-approved-20261018-014019/repair-phase1-20261018T083805906Z-d6aa2996/phase1-result.json` 与 `repair-phase2-20261018T084836490Z-6213656d/phase2-result.json`;正式普通轮/20 轮仍待另行记录,定向通过不替代全套。
+- **修复后的正式专项**:`windows-tests-20261018T090212825Z-b6ff7a42/` 中 muduo 普通轮 196 例为 191 PASS、5 个默认关闭的互通 SKIP;Agones 普通轮 69 PASS、0 SKIP。muduo 排空 26×20=520 PASS、0 SKIP。Agones 原 24×20=480 PASS,但最后约 3 秒与来源未知的主机 Go 编译重叠,不能称全程串行;随后在唯一窗口补跑 `agones-repeat-preparation-20261018T093715466Z/run-20261018T094050312Z-19d4caa8/`:20 轮逐轮各 24 PASS、共 480、0 SKIP,前后严格守卫和两次源/库审计均 0,EXE SHA 不变;旧重叠记录保留。原最后守卫 92 和后续只读终检 0 均保留,不改写旧失败回执。正式 HUP 8 例已随全套通过。
+- **battle/router 与真实互通**:本轮 `cpp-prep/battle-runs/20261018T092020479Z-7197735f/result.json` 为 7/7,`router-lane-runs/20261018T092106696Z-d162aa33/result.json` 为 11/11,均 0 跳过。`interop-prep/artifact-runs/20261018T093213333Z-5045eb2d/` 中 Go `TestMuduoServerInterop` 及全部子例实际通过,C++ ServerInterop 1/1、0 跳过,两端退出 0;100 次零字节连接全部完成,最终 accepted=101、closed_before_preface=100、dispatched=312、protocol_errors/dropped/dropped_off_loop/inflight 均为 0,探针连接及时间窗无 WARN/ERROR/FATAL。三项前后审计均只含已授权五源/一库,额外变化 0。之前日志缓冲导致前置等待超时、两套 Go 路径导致启动参数为数组的执行脚本失败原件完整保留,未冒充服务端失败或通过。
+- **当前节点 Build 超时停止**:`cpp-prep/current-build-runs/20261018T094748304Z-d6bd67f5/` 的 game Build 被运行器预算终止,native=-1、timedOut=true,日志未见编译错误,RPC 和 A0 未启动,没有成功 manifest。1814 源前后 SHA 相同;21 库仅已实际重编修复的 muduo.lib 更新,其他 20 库不变,最终进程守卫 0。Windows 电源事件证明机器在 09:49:19Z 至次日 01:57:18Z 休眠;旧运行器未记录清醒耗时,不把 16 小时挂钟跨度当作实际构建耗时,也不据此断言超时根因。按 AGENTS.md §10.2 保留原件并停止,独立准备排除休眠的清醒时钟版本,仍保留 game 3 小时/RPC 1 小时上限及全部编译检查,获新决策前不重跑。
+- **v2 获批后被启动前源变化拦截**:负责人已直接回答“按 v2 方案继续验收”,候选 E2160B... 实际在新目录 `cpp-prep/current-build-runs/awake-v2-20261019T021620484Z-65828481/` 运行。02 源快照双扫描不一致而退出 1,未超时、未启动 MSBuild 或测试,两进程守卫 0。后续只读与旧基线比较为 1815 源、9 路径变化（3 处注释/日志及 6 处 gate 登录准入相关文件）,不把 old-to-now 列表冒称失败那次双扫描的精确变化集合;失败当时两份 map 未保存。`routing_identity_test.cpp` 又在 02:20:24Z 写入,写者尚待确认。新代码全部保留,原17评审不重跑,A–D/rename源窗未释放;正在请求其它 C++/协议/表代码会话停写状态确认,尚无成功当前节点 manifest。
+- **尚未完成**:修复后节点重新链接及 RPC/A0、A–D 与命名迁移后的最终生成器/完整重建、Linux 构建、节点线程/探针/带流量关机及真实玩家资产/battle 链仍待实际执行。旧完整 Rebuild 是修正前基线,不能充当新节点产物证据。最新 Linux 上下文仍为修正前 `linux-prep-20261018T065409Z/freeze-receipt.json`,须在最终源码冻结后重建;隔离 smoke/phase2 已补停机前后请求分窗、gate 线程守卫与直连源 scene 的退出证据判据,仍未构建或真实运行。
+
+### 15.19 代码优先收口（2026-10-18 纽约；编译、测试后置）
+
+负责人最新明确指令为“我要你继续做完代码，不等编译”。该指令取代 §15.18 末尾等待其它会话停写、当前节点 Build/RPC/A0 通过后才写 A–D 的执行顺序；此前失败、通过和源码变化原件全部保留。各文件以最新内容合并、保存前像并校验后写入，不要求全仓停止开发。
+
+- **原第 4、5 批**：当前源码已只读核对 §15.16 七项和 §15.17 收尾；Server/ServerSession/ServerCall、GrpcUnaryCall、Node 两段 GOAWAY、Agones 异步许可、运行时守卫、生成器旧段拒绝均在。最终 GOAWAY 提交后拒派新流、Windows HUP/非阻塞 accept4、大写头夹具及 agones 测试 Windows 包含路径修正均保留，没有新增待实现项。
+- **全局应答处理器删除 A–D**：26/16/8/21 个阶段条目已实际写入主工作树，删除适配器及注册点，调用方改为显式 typed 或类型擦除完成回调，模板同步删除全局回退。每阶段前像与实际回执位于 `build/verification/global-handler-repair-20261018T082546455Z/applied-{A,B,C,D}-code-*/applied.json`；不能将旧 Temp 候选或未更新的生成物当作完成证据。
+- **并行改动保留**：合并保留 `HandleSessionEndedRelease`、release fence、陈旧 owner 拒绝、新增 `NotifySceneExitGame`/LeaveGame，以及 Login 成功标记、实际发出前准入、`session_incarnation`。静态窄审确认 lane 先更新成功标记再 Pump，直连回包按捕获的代次核会话；这只是源码一致性检查，未冒称运行验证。
+- **内部命名**：27 个手写条目已实际应用；两文件改为 `client_session_handler.{h,cpp}`，类名为 `GateClientSessionHandler`，成员为 `clientSessionHandler`。`NotifySceneExitGame` 新调用、登录准入和 A–D 回调均保留，原件及逐文件回执为 `build/verification/gate-session-rename-applied-20261019T025258341449Z/applied.json`。只读独立核对确认全部差异仅为三组命名替换，CMake 留给正式导出器同步。
+- **Java 对应**：A–D 的四份源码与 architecture/PARITY 已实际同步，回执为全局删除目录的 `applied-Java-code-20261019T0256Z/applied.json`；ECS 第 6 批另外补齐零冷却唯一写入口、两条测试源码和四份契约/PARITY 说明。上述 Java 新改动均未编译、未测试，受管镜像未手改。
+- **正式生成已完成**：导表退出 0，42 张表、10 项服务端部署成功；213 输入与 2220 产物内容前后均无变化。fresh `proto-gen-build`、`proto-gen-run -UseBinary -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml` 和官方 vcxproj2cmake 均退出 0，19 个 CMake 工程无跳过。生成前后 25 文件、173 守护段（131 非空）及两份编号表的全部原有编号/墓碑保留；203 个 typed 与 203 个 Erased 声明已同步，旧全局 API 命中为 0。gate/scene 的源码和工程清单无旧命名或已删适配器引用，未手改生成树、未触碰独立客户端。
+- **同步回执**：`build/verification/grpc-muduo-approved-20261018-014019/generator-final-preparation-20261018T092706747Z/final-code-sync-20261019T025522520Z-6a3dd8fa/` 的 `fresh-build-result.json`、`full-generation-native-result.json`、`cmake-export-result.json` 为三步真实结果；`post-full-api-corrected-observation.json` 为静态结果。首份附加观察漏扫子目录并误把方法名字符串当作函数指针，其误报原件 `post-full-static-check.json` 保留，仅更正观察，未重跑成功生成或修改产品断言。
+- **验证边界**：本节新增代码未编译、未运行测试。§15.18 的旧完整 Rebuild、专项红绿、gRPC/Agones 普通与重复轮、battle/router/互通结果仅证明各自当时输入。最终当前节点、独立 RPC/A0、生成器与各语言测试、Linux、线程/关机/真实业务冒烟仍属后置验证；没有新的成功当前构建 manifest。

@@ -374,7 +374,8 @@ func (e *Engine) Mutate(ctx context.Context, me, id uint64, action string, reque
 				return ErrConflict
 			}
 			// 取消不删原扣款待办；截止后由同一seq的Abort固定结局，已经扣出的仍原样退还。
-			if _, err := tx.ExecContext(ctx, "UPDATE trade_asset_op SET deadline_ms=? WHERE ref_kind=2 AND ref_id=? AND stream=3 AND status=1", now, r.CommerceId); err != nil {
+			// 逐行主键点锁 + 点改(不按 ref 批量 UPDATE),锁序与终结同向,见 ExpireCommerceEscrowDebitsTx。
+			if err := e.Repo.Ops.ExpireCommerceEscrowDebitsTx(ctx, tx, r.CommerceId, now); err != nil {
 				return err
 			}
 		default:
@@ -757,7 +758,7 @@ func (e *Engine) advance(ctx context.Context, old *tradepb.TradeCommerceRecord) 
 			}
 		}
 		if w.Stage == "done" {
-			if _, err := tx.ExecContext(ctx, "UPDATE trade_asset_op SET business_consumed=1 WHERE ref_kind=2 AND ref_id=?", r.CommerceId); err != nil {
+			if err := e.Repo.Ops.MarkCommerceOpsConsumedTx(ctx, tx, r.CommerceId); err != nil {
 				return err
 			}
 		}
@@ -798,7 +799,7 @@ func (e *Engine) Tick(ctx context.Context) error {
 					if cw.Stage == "bid_held" {
 						current.Status = Settled
 						cw.Stage = "done"
-						if _, err := tx.ExecContext(ctx, "UPDATE trade_asset_op SET business_consumed=1 WHERE ref_kind=2 AND ref_id=?", current.CommerceId); err != nil {
+						if err := e.Repo.Ops.MarkCommerceOpsConsumedTx(ctx, tx, current.CommerceId); err != nil {
 							return err
 						}
 						return e.Repo.Save(ctx, tx, current, cw, e.now())

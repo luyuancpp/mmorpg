@@ -59,6 +59,8 @@ entt uses a **sparse-set** storage model. Each component type has its own packed
 | `PlayerAnomalyWindowComp` | `AnomalyDetector::WindowForWrite`,合法玩家首次记收益时 | 实体销毁自然清理;查询不创建,无效句柄不记录 |
 | 生成的各 `*DirtyMaskComp` | `Set*AttrDirtyBit`,先校验位范围与实体再标脏 | 有接收者时消费后摘除;接收者为空保留 |
 
+`PlayerMirrorCreateInFlightComp`(2026-10-15)也是按需状态:只由 `PlayerSceneSystem::RequestEnterMirrorScene` 在发 CreateScene 之前创建,由该次调用的完成回调 `HandleMirrorCreateDone` 按令牌摘除;`IsSceneChangeBusy` 只读它,缺失或过 TTL 表示没有建镜像在途。完成回调按令牌认领后仍须复核相同 TTL;过期或 UTC 回拨只摘该令牌的槽并丢弃,不得推提示或自动进场,也不得摘掉新令牌。普通换图、交接、退出提交或权威落点成功时也主动摘掉旧镜像组件,永久取消旧请求的提示/自动进场资格,避免 UTC 回拨后恢复让它复活。
+
 `CombatStateCollectionComp`、`InBattleComp` 也属于按需状态:分别在实际添加战斗状态、进入战斗或从权威战斗锁恢复时创建；`InBattleComp` 的三处业务入口各自先确认不存在、再 `emplace`；查询缺失表示无对应状态。不要把状态存在与派生投影混为一谈:`CombatStateFlagsComp` 是创建 actor 时就应存在的同步投影。
 
 `DerivedAttributesComp` 只由 `PlayerAttributeSystem::InitializeOnLoad` 创建并重算；`ActorAttributeCalculatorSystem::InitializeOnCreate` 在新建实体时调用一次，只挂空的 `CombatStateFlagsComp`。`InitPlayerFromAllData` 在反序列化之后直接调用该入口，不依赖事件订阅；未来新增 NPC / 怪物创建入口也必须直接调用。

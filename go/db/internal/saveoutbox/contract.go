@@ -27,6 +27,15 @@ const (
 	fieldSecond  = "outbox_player_database_1"
 )
 
+// 补投状态字段只由 go/db 写(scripts.go 头注释)。两表 ACK 齐全时与上面四个字段一起删除，屏障回到 pending 加两表 ACK 三个字段。
+const (
+	fieldAttemptVersion = "outbox_attempt_version"
+	fieldAttempts       = "outbox_attempts"
+	fieldTerminal       = "outbox_terminal"
+	fieldTerminalReason = "outbox_terminal_reason"
+	fieldRetryStamp     = "outbox_retry_ms"
+)
+
 func pendingIndexKey(zone uint32, bucket uint64) string {
 	return fmt.Sprintf("player:save_pending:%d:%d", zone, bucket)
 }

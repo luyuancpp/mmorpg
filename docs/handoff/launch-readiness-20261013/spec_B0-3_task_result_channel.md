@@ -3,6 +3,8 @@
 > **状态**:只读调研产出,**未落码**。由开服线会话 2026-10-16 的调研工作流生成(一名调研者出规格、一名核实者逐条反驳),原样保存,未经人工改写。
 > **怎么用**:前半部分是调研者的规格;「# VERDICT」之后是核实者意见。**落码前必须先吸收核实意见里的 must / should**,被判 refuted 的事实以核实者为准。行号与工作区状态是 2026-10-16 03:48~04:35 的快照,工作区有多个会话在并行修改,落码前按函数名重新定位。
 > **汇总、拍板项与推荐顺序**:见 [docs/PROGRESS.md](../../PROGRESS.md)「2026-10-16 开服线剩余工作调研」条目,以及交接 [handoff-launch-readiness-and-d1-20261013.md](../handoff-launch-readiness-and-d1-20261013.md) 文首 10-16 段。
+> **2026-10-18 状态**:第 1 批(proto + go/shared + login)已落码,**未编译、未测试**,待 Codex 验证;go/db 侧是第 2 批,未开工。交付说明、本批单独上线的行为、第 2 批清单与交 Codex 的验证命令见文末「# 第 1 批交付(2026-10-18)」;上文 verify_commands 写于落码前,已有漂移,以文末为准。上文「状态:未落码」一句同此更正。
+> **2026-10-18 第 2 批状态**:go/db 侧(按 reply_instance 定向发布、`db_task_result_notify_total`、独立告警文件、stress_summarize 2g 段)已落码,**未编译、未测试**,待 Codex 验证;改动清单、上线顺序与权威验证命令见文末「# 第 2 批交付(2026-10-18)」。上一行「go/db 侧是第 2 批,未开工」与文末第 1 批交付节里的「## 第 2 批(go/db,未开工)」同此更正。
 
 ## item
 task:result:notify 分频道（容量模型 A0 第 5 条 / §4.2「第 0 批」、G4a 第 0 批、全局单点交接 §4.5 与 §5.1 第 2 条、开服清单 L-06 后半句）
@@ -435,3 +437,271 @@ F15. Java 版功能上不适用，但 proto 副本需要机械同步。
 - dispatch 的饱和回退路径（task_result_dispatcher.go:292-300）仍不可观测；:81 注释引用的 pubsub_dispatch_overflow_total 在仓库里不存在。可考虑在 outcome 集合中加 pool_overflow（可选）
 - 容量场景漏了「合服回流」冷读高峰（全局单点交接 §4.5 提到 tools/merge_zone/player_rows.go 会 DEL 父键）
 - tools/scripts/k8s_deploy.ps1:1769 注释引用的符号 TaskResultNotifyChannel 将被删除，注释会失效（规格列为可选，行号已从 :1764 漂到 :1769）
+
+# 第 1 批交付（2026-10-18）
+
+> 由 B0-3 第 1 批的实现与修复会话追加。**未编译、未测试，待 Codex 验证。** 交 Codex 的命令以本节为准，上文 verify_commands 写于落码前，已有漂移。
+
+## 范围与状态
+- 负责人 10-17 拍板：授权超过 30 个文件；先用 PUBLISH，SPUBLISH 推迟到上 Redis Cluster 那批；分两批。本批只做 proto + go/shared + login，**没有改 go/db 的任何文件**。
+- 本批的代码、测试、文档和 proto 生成物，已被整区快照提交 `e7bb46070` 收进去（不是本线提交的）。10-18 修复轮的改动（`Cancel`、计数口径注释、文档更正）还在工作区，未提交。
+- 生成物在工作区里已经重生成过，来源未知，应是某个会话跑过生成器。go/proto、cpp/generated、generated/proto/{_unified,db,login}、generated/robot 里的 db_task 产物都已包含 `reply_instance`。robot/vendor/proto/db/db_task.pb.go 也已同步，save_seq 和 reply_instance 都在。上文 VERDICT 写的「vendor 不同步」与工作区事实不符，以本节为准。robot 不直接用 DBTask，但 vendor 下的 proto/login/login.pb.go 有 `_ "proto/db"`，robot 构建会编译这份文件。
+
+## 改动清单
+- `proto/db/db_task.proto`：DBTask 加 `string reply_instance = 10;`，注释写明语义、合法值和回落规则。
+- `go/shared/taskresult/`（新包）：旧频道字面值、实例频道 `task:result:notify:<id>`、回复目标校验（1~64 字节，只含 A-Z a-z 0-9 '-'），附单测。
+- `go/login/internal/dispatcher/`：
+  - 每个进程启动时生成一个 UUID 作为回复目标。
+  - 一条 SUBSCRIBE 同时订旧频道和本实例频道，PubSub 连接数仍为 1。
+  - 按到达频道分别计数。
+  - 新增 `Cancel`（10-18 修复轮）。
+  - `metrics.go` 新增 `login_task_result_delivery_total{outcome}`：sync.Once 自注册，6 个 outcome 预置为 0。
+  - 两个测试文件。
+- `go/login/internal/logic/pkg/dataloader/`：
+  - `sync_loader.go`：newDBReadTask 和 sendDBReadRequests 给读任务填回复目标。
+  - `ensure_player_all_data_async.go`：readResultRegistrar 接口加 `ReplyInstance()` 和 `Cancel(...)`；发送失败的分支先撤掉本批登记，再以错误收尾。
+  - 他人的 `parent_commit_barrier_test.go`：替身 coldSQLReads 只补了这两个方法。
+  - `sync_loader_test.go`：本项的用例。
+- `go/test.ps1`：L1 加 shared `./taskresult/...`，以及 login `./internal/dispatcher/...`、`./internal/logic/pkg/dataloader/...`。
+- 文档更正注（都带 2026-10-18 日期，不删原文）：
+  - `docs/design/db-write-fencing-mysql.md` 三处；
+  - `docs/handoff/handoff-global-singletons-10m-ccu-20261013.md` §4.5；
+  - `docs/handoff/godb-pipeline-handoff-20261013.md` §5 第 13 项；
+  - `docs/design/tidb-phase1-and-launch-readiness.md` L-06；
+  - 围栏接手报告 `docs/handoff/landing-fencing-takeover-20261016/fence-inflight.md`（proto 一步）和 `fence-v03-review.md`（第 9 条）：10 号已由 reply_instance 使用，save_seq 注释不要再写「10 号预留」。
+
+## 计数口径（告警和压测汇总取分母时按这里）
+- **终态**：instance_notify、legacy_notify、salvaged、timed_out。一条登记最多落在其中一个上，送达率、兜底率的分母只取这四项之和。
+- **附加信号**，不进分母：
+  - result_missing：notify 之后 LPOP 到的结果为空。
+  - late_notify：实例频道上来的任务已经不在回调表。包括真正迟到的通知、go/db 因 Kafka 重投重执行而再发的重复通知，以及已被 Cancel 的登记。所以它不是纯迟到率。
+- **不计数**：Stop 时排空的登记、Stop 之后的 Register、被 Cancel 撤销的登记。Stop 取消 ctx 后，已派出的兜底 LPOP 失败会计入 timed_out，所以停机窗口里的 timed_out 不代表通知丢失。
+- Kafka 发送失败的读任务由 dataloader 当场 Cancel，不会等到 TTL 到期再计 timed_out。发送失败只看 `dataloader_preload_kafka_send_seconds{result="failed"}`。
+
+## 本批单独上线的行为（第 2 批 go/db 之前）
+- login 双订，读任务带 reply_instance。go/db 不认识也不使用 10 号字段：重试载荷整份重新序列化，未知字段原样带着走。go/db 仍只发旧频道。
+- 送达、时延和广播量都与改造前一样。新 login 对自己的任务计 legacy_notify，instance_notify 和 late_notify 应恒为 0。
+- 滚动顺序不限，login 可以单独回滚。没有数据迁移，键名不变。
+
+## 第 2 批（go/db，未开工）
+- `go/db/internal/kafka/key_ordered_consumer.go` 只动三处，按函数名定位：
+  1. 常量块：删 taskResultNotifyChannel，改用 taskresult。
+  2. publishDBReadResult：调 publishTaskResult 的那一行改为传 task。
+  3. publishTaskResult 本体：LPUSH、EXPIRE 仍在 PUBLISH 之前；目标合法只发实例频道，为空或不合法回落旧频道；不双发；通知失败仍 return nil；按 (target, result) 计数。
+- `placement_route.go` 的 failRead 改一行，传 dbTask。
+- 新建 `go/db/internal/kafka/task_result_notify.go`：放路由判定，以及日志限速器。限速器的 key 只能是常量 target/result 组合，否则 map 会无界增长。
+- 新建 `go/db/internal/metrics/task_result_notify.go`：`db_task_result_notify_total{target,result}`，3×3 预置为 0。在计数函数里经 sync.Once 自注册，不能只在 Start() 里注册。
+- 测试复用 instrumentation_test.go 的 metricSample（经 DefaultGatherer，不用 testutil）；另测 encodeRetryPayload 保留 ReplyInstance。
+- 告警放独立的 `deploy/k8s/task-result-notify-alerts.yaml`：
+  - NoReceiver 比例要带最低量门槛；
+  - LegacyFallback 只在已有 instance 流量时才判；
+  - 等 login 全量升级后再 apply，并登记到 `docs/ops/godb-pipeline-launch-todo.md`。
+- stress_summarize 补两张小表，按上面的口径取分母。
+- **协调点**：key_ordered_consumer.go 同时被两条线持有：
+  - go/db 接手线：R1→R2→R3 串行，R2 的 A4 会大改重试与停机代码；
+  - 围栏线：publishDBReadResult 里缓存 SET 处的 NX 与计数，和第 2 批改的那一行是同一函数里的相邻 hunk。
+
+  开工前先向两条线要空档，用精确的 old_string 编辑。metrics.go 只追加，不碰 R2 要改的 register()。
+
+## 交 Codex 的验证命令（权威版，按顺序）
+1. **proto 生成物核对（幂等重跑）**
+   - 工作目录：仓库根。
+   - 先记下重跑前的状态：`git status --short -- proto/db/db_task.proto go/proto/db/db_task.pb.go cpp/generated/proto/db/db_task.pb.h cpp/generated/proto/db/db_task.pb.cc generated/proto/_unified/proto/db/db_task.proto generated/proto/db/proto/db/db_task.proto generated/proto/login/proto/db/db_task.proto generated/robot/proto/db/db_task.proto robot/vendor/proto/db/db_task.pb.go`。
+   - 命令：`pwsh -NoProfile -File tools/scripts/dev_tools.ps1 -Command proto-gen-run -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml`。生成器源码有变，或者还没有 exe 时，先跑 `-Command proto-gen-build`。
+   - 通过标准：
+     - 退出码 0。
+     - 重跑后，上述路径的 `git status --short` 与重跑前相同。重跑是幂等的，不应出现新差异。
+     - `Select-String -Path go/proto/db/db_task.pb.go,robot/vendor/proto/db/db_task.pb.go -Pattern 'func \(x \*DBTask\) GetReplyInstance'` 在每个文件里恰好命中 1 次。
+     - `cpp/generated/proto/db/db_task.pb.h` 含 `reply_instance`。
+     - 四份 generated 下的 db_task.proto 都含 `string reply_instance = 10;`，且 DBTask 段注释与 `proto/db/db_task.proto` 逐字一致。
+   - 判定只限 db_task 产物。生成器会顺带重生成其他会话在途 proto 源的产物，那些差异不算本项红，也不要回退。
+   - 失败时保留完整的控制台输出。
+2. **修复前红证据，在基线 360d56ae5 上取，不用 HEAD**（PowerShell）
+   - 命令：
+     ```
+     $wt = Join-Path $env:TEMP 'b03-red-360d56ae5'
+     git -C D:\luyuan\xuanming-server-mmo-cpp worktree add --detach $wt 360d56ae5
+     Copy-Item D:\luyuan\xuanming-server-mmo-cpp\go\login\internal\dispatcher\task_result_dispatcher_subscribe_test.go "$wt\go\login\internal\dispatcher\"
+     Push-Location "$wt\go\login"; $env:GOTOOLCHAIN='local'; $env:GOPROXY='off'
+     go test -count=1 -run 'TestStart_SubscribesLegacyAndInstanceChannels' ./internal/dispatcher/
+     Pop-Location
+     git -C D:\luyuan\xuanming-server-mmo-cpp worktree remove --force $wt
+     ```
+   - 期望：FAIL，信息为「timed out after 5s waiting for legacy and per-instance subscriptions」（基线只订旧频道）。保存这段输出作为红证据。
+   - 如果基线上这个包因与本项无关的原因编不过，记为「红证据未取得」，不能当作本项的红。
+   - 其余新用例都引用了新符号，在基线上是编译红，直接记为红，不必逐个跑。这些新符号是：taskresult、newTaskResultDispatcher、ReplyInstance、Cancel、newDBReadTask、三参数的 dispatch。
+   - 跑完务必删掉 worktree。
+3. **go/shared**
+   - 工作目录：`go/shared`。
+   - 命令：`$env:GOTOOLCHAIN='local'; $env:GOPROXY='off'; gofmt -l taskresult; go vet ./taskresult/; go test -count=1 ./taskresult/`。
+   - 通过标准：gofmt 无输出，vet 退出码 0，测试 ok。
+4. **go/login**
+   - 工作目录：`go/login`。
+   - 命令：
+     ```
+     $env:GOTOOLCHAIN='local'; $env:GOPROXY='off'
+     gofmt -l internal/dispatcher internal/logic/pkg/dataloader
+     go vet ./internal/dispatcher/ ./internal/logic/pkg/dataloader/ ./internal/logic/clientplayerlogin/
+     go test -count=1 -v -run 'DeliverySeries|NewTaskResultDispatcher_|TestDispatch_|RunDispatchJob|SweepExpired|TestCancel_|TestStart_|NewDBReadTask|SendDBReadRequests|StampsRegistrar|SendFailureCancels' ./internal/dispatcher/ ./internal/logic/pkg/dataloader/
+     go test -count=1 ./internal/dispatcher/ ./internal/logic/pkg/dataloader/
+     go build ./...
+     ```
+   - 通过标准：gofmt 无输出，vet 退出码 0，定向用例全部 PASS，两个包整包 ok，build 退出码 0。
+   - dataloader 包里还有他人的用例（parent_commit_barrier_test.go、new_player_seed_test.go）。整包失败时逐条注明失败用例属于本项还是他人，不要混在一起下结论。
+   - 可选：本机有 gcc 时再跑 `go test -race -count=1 ./internal/dispatcher/`。
+   - 失败时保留 -v 输出。
+5. **L1 绿集**
+   - 工作目录：仓库根。命令：`pwsh -File go/test.ps1`。通过标准：末行 L1_TESTS_OK。
+   - 脚本按 db → shared → login 的顺序跑，遇到第一个失败的套件就退出。
+   - 失败时按套件和包名逐条注明归属。不在 shared/taskresult、login/internal/dispatcher、login/internal/logic/pkg/dataloader 里的失败，记为他人在途问题，不算本项红，也不改 test.ps1。
+   - 如果 db 套件先红，后面的 shared 和 login 套件不会运行。这时本项的通过证据以第 3、4 步的定向运行为准，不能把 L1 的结果当作本项的绿或红。
+   - 若 login 的 dataloader 包因他人在途用例不稳定，报告用例名，由主会话决定是否暂缓加入 L1。
+6. **go/db 只验证编译**（本批不改 go/db）
+   - 工作目录：`go/db`。
+   - 命令：`$env:GOTOOLCHAIN='local'; $env:GOPROXY='off'; go build ./...; go vet ./internal/kafka/`。
+   - 通过标准：退出码 0。这一步证明重生成的 db_task.pb.go 没有破坏 go/db。
+   - 失败且与 db_task 无关的，注明是他人在途改动所致。
+7. **robot 编译**（vendor 已同步 db_task.pb.go）
+   - 工作目录：`robot`。
+   - 命令：`$env:GOTOOLCHAIN='local'; $env:GOPROXY='off'; go build ./...`。
+   - 通过标准：退出码 0。
+   - e7bb46070 同时带进了大量其他 proto 的 vendor 更新（mail、rank、trade 等）。失败且与 db_task 无关的，注明归属。
+8. **C++**（与其他在途 proto 的重生成合成一批，不单独跑）
+   - 工作目录：仓库根。
+   - 串行执行：
+     ```
+     msbuild cpp/generated/proto/proto.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64
+     msbuild cpp/libs/services/scene/scene.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64
+     msbuild cpp/nodes/scene/scene.vcxproj /m:1 /p:Configuration=Debug /p:Platform=x64
+     ```
+   - 通过标准：0 error。必须 /m:1 串行，并发会报假的 C1041 / LNK1104。
+   - C++ 不设置 reply_instance，这一步只是重建依赖 db_task.pb.h 的工程。
+   - 失败时保留首个错误及上下文。
+9. **Java 契约同步**（由 Java 线在 cpp 侧提交后执行）
+   - 工作目录：`D:\luyuan\xuanming-server-mmo`。
+   - 命令：
+     ```
+     java tools/ContractSync.java --mmorpg D:\luyuan\xuanming-server-mmo-cpp
+     java tools/ContractSync.java --mmorpg D:\luyuan\xuanming-server-mmo-cpp --check
+     ./mvnw -pl game-proto -am clean install
+     ```
+   - 通过标准：--check 退出码 0，mvn BUILD SUCCESS。
+   - 同步前 --check 退出 1 属预期：Java 侧 SOURCE.properties 记的是 360d56ae5。
+
+## 后续项
+- 通知围栏接手线：10 号已由 reply_instance 使用。改 save_seq 注释时按上述两份接手报告里的更正注执行。
+- stress_summarize.ps1 目前有他人未提交的改动，本批没有改。等空档时补 login_task_result_delivery_total 按 outcome 的小表（读 :9101 快照，分母按上面的口径），test_stress_summarize 同步补用例。
+- 两处注释待更新：
+  - `tools/scripts/k8s_deploy.ps1` 连接总账的注释仍引用已删除的 `TaskResultNotifyChannel`（禁改文件，文本建议交主会话）；
+  - `docs/design/new-player-first-enter-no-cold-read.md:69` 引用的 `task_result_dispatcher.go:32` 行号已失效。
+- `new-player-first-enter-no-cold-read.md` :69「频道全局只有一个」和 :82 的流程描述，在第 2 批之前对发布方仍然成立，随第 2 批一起更正为「PUBLISH 到发起方实例频道」。
+- dispatch 线程池饱和时的回退路径仍不可观测，可考虑加一个独立的 overflow 计数，不并进 delivery 的 outcome。
+- `TriggerPlayerDataPreload` 全仓没有调用方，建议另开小任务删掉。
+
+# 第 2 批交付（2026-10-18）
+
+> 由 B0-3 第 2 批（go/db 侧）的实现会话追加。**未编译、未测试，待 Codex 验证。** 交 Codex 的命令以本节为准。
+
+## 范围与状态
+- go/db 存盘管线会话 10-18 同意给空档：`key_ordered_consumer.go`、`placement_route.go` 它之后不再动。开工时 `go/db/internal/kafka` 与 `go/db/internal/metrics` 的工作区是干净的（此前在途的 publishPlayerCache、SetNX、advanceApplied 等缓存 hunk 已被整区快照提交收进 HEAD），本批原样保留。R7 新加的 ConsumeClaim 命名返回值、claimHandlerError、Start 里的 `consumer.Errors()` 协程、消费循环的重新入组退避都没有碰。
+- `key_ordered_consumer.go` 只改了三处：常量块、publishDBReadResult 里调 publishTaskResult 的那一行、publishTaskResult 本体。`placement_route.go` 只改 failRead 一行。`metrics.go` 只在 Start() 里加一行注册和改头注释，`register()` 与 `pipeline.go` 已有的预建序列都没动。
+- 本批没有改 proto、go/shared、login。Java 不适用（没有 Kafka 读任务与 task:result）。
+
+## 改动清单（发给 go/db 会话记进它交接文档 §7）
+- `go/db/internal/kafka/key_ordered_consumer.go`：
+  1. 常量块删 `taskResultNotifyChannel`，频道名改由 `shared/taskresult` 提供（在 task_result_notify.go 里引用，本文件不新增 import）；
+  2. publishDBReadResult 调 publishTaskResult 改为传 `task`；
+  3. publishTaskResult 新签名 `(ctx, redisClient, task *db_proto.DBTask, result *db_proto.TaskResult) error`，发布规则见下节。
+- `go/db/internal/kafka/placement_route.go`：failRead 调 publishTaskResult 改为传 `dbTask`。
+- 新建 `go/db/internal/kafka/task_result_notify.go`：目标判定纯函数 `taskResultNotifyTarget`、结果归类纯函数 `taskResultNotifyResult`、日志限速器 `taskResultNotifyLogLimiter`（复用 store_failure.go 的 logLimiter 类型与 10 秒间隔，key 只取 target × result 常量组合，至多 9 个）、日志截断 `replyInstanceForLog`。
+- 新建 `go/db/internal/metrics/task_result_notify.go`：`db_task_result_notify_total{target,result}`，target = instance | legacy_unset | legacy_invalid，result = ok | no_receiver | error；3×3 预置为 0；计数入口 `CountTaskResultNotify` 经 sync.Once 自注册，Start() 里也注册一次。
+- `go/db/internal/metrics/metrics.go`：Start() 在 registerPipeline() 之后加 `registerTaskResultNotify()`；头注释 result_publish 一段补「只发一次」。
+- 新建测试：
+  - `go/db/internal/kafka/task_result_notify_route_test.go`：只用签名不变的入口和频道字面值（改造前的提交配上重生成的 db_task.pb.go 也能编译，用来取断言红）。`TestPublishDBReadResult_NotifiesReplyInstanceChannel`、`TestFailReadTask_NotifiesReplyInstanceChannel`、`TestEncodeRetryPayload_PreservesReplyInstance`（v2 / v1 / legacy 三种载荷）。记录器 `publishRecorder` 是 go-redis ProcessHook，可按命令名注入错误。
+  - `go/db/internal/kafka/task_result_notify_test.go`：目标判定与结果归类的表驱动用例；miniredis 进程内订阅者模拟新版 login 双订：实例频道送达且只发一次（instance|ok）、无订阅者计 instance|no_receiver、空 / 不合法目标回落旧频道且只发一次（legacy_unset|ok、legacy_invalid|ok）、PUBLISH 失败仍返回 nil 且结果在列表里（instance|error）、LPUSH 失败时不通知不计数、限速器 key 保持封闭。计数经 instrumentation_test.go 的 metricCount（DefaultGatherer，不用 testutil）比较前后差值，每例断言恰好一条序列加 1、其余 8 条不变。
+  - `go/db/internal/metrics/task_result_notify_test.go`：9 条序列预建且为 0、取值字面量钉死；与 stress_summarize.ps1 的 `$notifyTargets` / `$notifyResults` 逐项对照。没有改 metrics_test.go。
+- 新建 `deploy/k8s/task-result-notify-alerts.yaml`（独立 PrometheusRule `task-result-notify-alerts`，组 `db-task.result-notify`，没动 db-task-retry-alerts.yaml）：
+  - `DbTaskResultNotifyNoReceiver`（warning）：instance 的 no_receiver 占比 > 5%，且 10 分钟内 instance 通知 > 50 条，持续 10 分钟；
+  - `DbTaskResultNotifyLegacyFallback`（info）：`target!="instance"` 的速率 > 0，且同一 namespace 已有 instance 流量（`and on(namespace) sum by(namespace)(rate(...{target="instance"}[30m])) > 0`），持续 2 小时；按 target 分别告警。
+  - 文件头写明 go/db 与 login 全量升级后再 apply；阈值标「待压测基线」。
+- `go/test.ps1`：L1 的 db 套件加 `./internal/metrics/...`，文件头清单同步。**需 Codex 先确认它稳定为绿**（见验证命令第 5 步）。
+- `tools/scripts/stress_summarize.ps1`：新增 2g 段「DB task:result notify」：9 个计数列、`inst_nr%`（分母只取 instance 三项）与 `legacy%`（分母是全部通知）；缺序列 n/a，分母为 0 打印「-」；新增 Format-RatioCell；文件头的表清单同步。`tools/scripts/test_stress_summarize.ps1`：t20m_db 补 9 条互不相同的取值，新增全 0 的 t2m_db，断言列顺序、两种比例、0 分母与旧版 db 的 n/a。
+- `docs/ops/godb-pipeline-launch-todo.md`：新增 §10（编译单测、上线顺序与金丝雀观察、告警 apply 时机）。
+- `docs/design/new-player-first-enter-no-cold-read.md`：§2.2 第 4 步（原 :69 的行号指针与「频道全局只有一个」）和 §2.3「结果回写」（原 :82 的流程描述）各追加一条 2026-10-18 更正注，原文不删。
+  - （2026-10-18 修复轮补充）§2.7「每个新号首次进场的代价」go/db 子项里「`PUBLISH` 走单频道,会扇出到所有 login 实例」同样追加了一条更正注，原文不删。
+- （2026-10-18 修复轮补充）`go/db/internal/metrics/task_result_notify.go` 的 no_receiver 常量注释与计数器 Help、`deploy/k8s/task-result-notify-alerts.yaml` 的 NoReceiver 规则注释补了模式订阅盲区的说明（PUBLISH 的订阅者数含 PSUBSCRIBE 客户端，排查只用 PUBSUB CHANNELS / NUMSUB，PUBSUB NUMPAT 应为 0）；只改注释与 Help 文本，序列名和取值不变。`docs/ops/godb-pipeline-launch-todo.md` 的 10.2 追加了上线顺序前提的更正注。
+- 本文件：文首状态行与本节。
+
+## 发布规则（本批实现）
+- 先 LPUSH `task:result:{task_id}` 与 EXPIRE 5 分钟，任一失败返回错误、**不通知不计数**，调用方延后重试（既有语义）。
+- 再按 `task.reply_instance` 只 PUBLISH 一次，不双发：
+  - 合法（`taskresult.InstanceNotifyChannel` 返回 ok）：发 `task:result:notify:<id>`，target=instance；
+  - 为空：发旧频道 `task:result:notify`，target=legacy_unset；
+  - 非空但不合法：发旧频道，target=legacy_invalid，并按 (legacy_invalid, result) 限速打一行 ERROR，带 taskID、长度、截断到 64 字节的 `%q` 和发布结果。
+- 发布结果：报错计 error 并限速打 ERROR；订阅者数为 0 计 no_receiver，不打日志；其余计 ok。无论通知成败都返回 nil：结果已在列表里，由 login 的 TTL 兜底取回。
+- 兼容：旧 login 不填 10 号字段 → legacy_unset，旧 login 照收；新 login 两条频道都订 → 任何 target 都能送达。四种新旧组合都送达且只发一次，两端可以各自回滚。
+
+## 上线顺序
+0. **（2026-10-18 复核补充）先判别切换点在哪一侧。** 下面第 1 步「行为与改造前相同、全部计 legacy_unset」只在该 zone 的 login 还停在第 1 批之前的版本时成立。第 1 批 login 代码已在 `e7bb46070` 里，按上文「本批单独上线的行为」它可以先上、滚动顺序不限，也可能已经部署，或与本批 go/db 在同一次发版里一起上。某个 zone 的 login 已是第 1 批时，一次把全部 zone 的 go/db 升上去，就等于让这些 zone 同时从旧频道切到实例频道，第 2 步的 login 金丝雀被整个绕开；而告警要等两侧全量才 apply，这段时间没有告警兜底。所以动手前先逐 zone 只读核对：
+   - 判据（任一成立就按「已是第 1 批」处理）：
+     - 该 zone login 的 `:9101/metrics` 上已有 `login_task_result_delivery_total` 序列（第 1 批在构造 dispatcher 时就以 0 建出 6 个 outcome，启动即有）；
+     - task:result 所用 Redis 上 `redis-cli PUBSUB CHANNELS 'task:result:notify:*'` 非空。这台 Redis 若多个 zone 共用，它只能说明「至少有一处已是第 1 批」，按保守做法当作相关 zone 都已是第 1 批。
+     - 两条都只读、不建订阅。**不要用 PSUBSCRIBE 核对**，原因见本步最后一条。
+   - **login 仍是旧版的 zone**：按下面第 1~3 步走，切换点是 login，金丝雀放在第 2 步。
+   - **login 已是第 1 批的 zone**：切换点就是 go/db 本身。第 1 步对这些 zone 改为**按 zone 金丝雀 go/db**：先上一个 zone，观察第 2 步列的三项（instance 中 no_receiver 占比约为 0；login 的 salvaged / timed_out / result_missing 不上升；preload 失败率不变），三项都正常再逐 zone 推开，不要一次升全部 zone。第 2 步对这些 zone 不再适用。
+   - 同一个 zone 不要让 go/db 与 login 在同一次发版里同时升上去：两侧同时变，金丝雀分不清是哪一侧的问题，也就没法只回滚一侧。
+   - 金丝雀观察期间，该 Redis 上 `redis-cli PUBSUB NUMPAT` 应为 0。PUBLISH 返回的订阅者数包含模式订阅（PSUBSCRIBE）命中的客户端：只要有人开着 `PSUBSCRIBE task:result:notify:*`（或更宽的模式）没退出，实例频道的每条通知都至少有 1 个接收者，发起方不在时也计 instance|ok，no_receiver 会被压成 0，第一项观察失效。排查只用 `PUBSUB CHANNELS` / `PUBSUB NUMSUB`；不得不 PSUBSCRIBE 时尽快退出，并把这段时间的 no_receiver 视为偏低。
+1. **先上 go/db，全部 zone**。行为与改造前相同：旧版 login 发起的读全部计 `target="legacy_unset"`。先确认每个 go/db Pod 的 `:9160` 上 9 条 `db_task_result_notify_total` 序列都已出现（启动即为 0）。（2026-10-18 补充：「全部 zone」只适用于第 0 步判为 login 仍是旧版的 zone；login 已是第 1 批的 zone 按第 0 步逐 zone 金丝雀 go/db。）
+2. **再按 zone 金丝雀 login**（login 第 1 批）。观察三项：
+   - `db_task_result_notify_total{target="instance"}` 里 `no_receiver` 的占比约为 0（stress_summarize 2g 段的 `inst_nr%`）；
+   - login 的 `login_task_result_delivery_total{outcome=~"salvaged|timed_out|result_missing"}` 不上升（分母按第 1 批交付节的终态口径）；
+   - entergame 的 preload 失败率不变。
+   三项都正常再全量。
+3. **两侧全量之后**再 `kubectl apply -n observability -f deploy/k8s/task-result-notify-alerts.yaml`（`docs/ops/godb-pipeline-launch-todo.md` §10.3）。
+- 回滚：任一侧单独回滚，无数据迁移、键名不变。go/db 回滚后全部发旧频道（新 login 仍订着）；login 回滚后读任务不再带回复目标，新 go/db 走旧频道。
+- 收口口径不变：全部 zone 升级后 7 天内 `sum(rate(db_task_result_notify_total{target!="instance"}[1h]))` 约为 0，login 的 legacy_notify 也约为 0。
+- 按 AGENTS.md §6，没有压测对比表之前不宣称投递量或时延有改善。
+
+## 交 Codex 的验证命令（权威版，按顺序；Go 一律 `GOTOOLCHAIN=local`、`GOPROXY=off`，不改 go.mod / go.sum）
+1. **修复前红证据，在基线 360d56ae5 上取，不用 HEAD**（PowerShell）。基线没有 10 号字段，只把已重生成的 DBTask 绑定拷进临时 worktree，模拟「proto 已上、go/db 未改」：
+   ```
+   $wt = Join-Path $env:TEMP 'b03-batch2-red-360d56ae5'
+   git -C D:\luyuan\xuanming-server-mmo-cpp worktree add --detach $wt 360d56ae5
+   Copy-Item D:\luyuan\xuanming-server-mmo-cpp\go\proto\db\db_task.pb.go "$wt\go\proto\db\" -Force
+   Copy-Item D:\luyuan\xuanming-server-mmo-cpp\go\db\internal\kafka\task_result_notify_route_test.go "$wt\go\db\internal\kafka\"
+   Push-Location "$wt\go\db"; $env:GOTOOLCHAIN='local'; $env:GOPROXY='off'
+   go test -count=1 -v -run 'TestPublishDBReadResult_NotifiesReplyInstanceChannel|TestFailReadTask_NotifiesReplyInstanceChannel|TestEncodeRetryPayload_PreservesReplyInstance' ./internal/kafka/
+   Pop-Location
+   git -C D:\luyuan\xuanming-server-mmo-cpp worktree remove --force $wt
+   ```
+   - 期望：前两例 FAIL，断言信息是 `notify channel`，期望 `task:result:notify:3f1c2a9e-7b4d-4e21-9c55-0a8b6d2e1f37`、实际 `task:result:notify`（基线只发旧频道）。`TestEncodeRetryPayload_PreservesReplyInstance` 在基线上就是 PASS，它是兼容守卫，不是红用例。保存这段输出作为红证据。
+   - 基线上 `internal/kafka` 包若因与本项无关的原因编不过，记为「红证据未取得」，不能当作本项的红。
+   - `task_result_notify_test.go` 与 `metrics/task_result_notify_test.go` 引用新符号（metrics.TaskResultNotify*、taskResultNotifyTarget、registerTaskResultNotify 等），在基线上是编译红，直接记为红，不必逐个跑。
+   - 跑完务必删掉 worktree。
+2. **go/db 绿**（工作目录 `go/db`）：
+   ```
+   $env:GOTOOLCHAIN='local'; $env:GOPROXY='off'
+   gofmt -l internal/kafka/task_result_notify.go internal/kafka/task_result_notify_route_test.go internal/kafka/task_result_notify_test.go internal/kafka/placement_route.go internal/metrics/task_result_notify.go internal/metrics/task_result_notify_test.go internal/metrics/metrics.go
+   gofmt -l internal/kafka/key_ordered_consumer.go
+   go vet ./internal/kafka/ ./internal/metrics/
+   go test -count=1 -v -run 'TaskResultNotify|PublishTaskResult|NotifiesReplyInstance|PreservesReplyInstance' ./internal/kafka/ ./internal/metrics/
+   go test -count=1 ./internal/kafka/ ./internal/metrics/
+   go build ./...
+   ```
+   - 通过标准：第一条 gofmt 无输出；vet 退出码 0；定向用例全部 PASS；两个包整包 ok；build 退出码 0。
+   - `key_ordered_consumer.go` 单独 gofmt：有输出时看差异是否落在本批三处（常量块、publishDBReadResult 那一行、publishTaskResult），不在的只报告，不顺手格式化。
+   - 整包失败时逐条注明失败用例属于本项（上面的定向用例）还是他人在途改动，不要混在一起下结论。失败时保留 -v 输出。
+3. **可选 race**（本机有 cgo / gcc 时）：`go test -race -count=1 -run 'TaskResultNotify|PublishTaskResult|NotifiesReplyInstance' ./internal/kafka/`。没有就写明「race 未跑」及平台。
+4. **压测汇总脚本**（工作目录：仓库根）：`pwsh -NoProfile -File tools/scripts/test_stress_summarize.ps1`。通过标准：末行 PASS，其中有 `ok: DB task:result notify / t20m_db`、`/ t2m_db`、`/ t18m_db` 三行。该脚本会临时挪开 `run\logs\cpp_nodes\scene*.log`、结束时还原（既有行为）。失败时保留完整输出。
+5. **L1 绿集**（工作目录：仓库根）：
+   - 先在 `go/db` 下连续跑 3 次 `go test -count=1 ./internal/metrics/...`，确认它稳定为绿；有红就报告用例名，由主会话决定是否把 `./internal/metrics/...` 暂时从 go/test.ps1 撤下，不要自行改脚本。
+   - 再跑 `pwsh -File go/test.ps1`，通过标准：末行 L1_TESTS_OK。db 套件先跑，红了后面的 shared / login 不会运行；失败按套件与包名逐条注明归属，不在 `db/internal/kafka` 本批用例与 `db/internal/metrics` 里的记为他人在途问题。
+6. **告警语法（可选）**：本机有 promtool 与 yq 时，把 `deploy/k8s/task-result-notify-alerts.yaml` 的 `spec` 抽成规则文件跑 `promtool check rules`；没有就报告「告警语法未验证」。
+7. **本机 dev 冒烟（可选，只验证功能，不出性能结论，不碰生产数据）**：起 login 与 go/db 后，`redis-cli PUBSUB NUMSUB task:result:notify` 等于 login 进程数，`redis-cli PUBSUB CHANNELS 'task:result:notify:*'` 每个 login 一条且与 login 启动日志里的 reply_instance 一致；删一个测试玩家的父键后进场，go/db `/metrics` 上 `db_task_result_notify_total{result="ok",target="instance"}` 增加 2（两张子表），进场成功，legacy 两个 target 不增加。
+
+## 后续项
+- stress_summarize 还缺 login 侧小表：`login_task_result_delivery_total` 按 outcome 汇总（读 `:9101` 快照，分母按第 1 批交付节的终态口径），test_stress_summarize 同步补用例。本批只做了 go/db 侧 2g 段。
+- `tools/scripts/k8s_deploy.ps1` 连接总账 login 行的注释仍引用已删除的 `Subscribe(TaskResultNotifyChannel)`；`deploy/k8s/README.md`「go/db 存盘管线告警」一节还没登记新告警文件。两者都是禁改的共享文件，文本建议已交主会话。
+- 告警阈值（5% / 50 条 / 10 分钟 / 2 小时）待压测基线，有数据后按实测改并在告警文件里写依据。
+- 第 1 批遗留的两项不变：dispatch 线程池饱和时的回退路径仍不可观测；`TriggerPlayerDataPreload` 死代码待删。
+- 若主会话要求限速器在结构上（而非靠 key 约定）有界，可把 logLimiter 换成按 (target, result) 下标的定长数组；当前做法与 `consumer_group_errors.go` 一致，并由 `TestTaskResultNotifyLogKeysStayClosed` 守住 key 封闭。

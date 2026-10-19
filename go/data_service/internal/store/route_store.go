@@ -2156,6 +2156,9 @@ type repairDecision struct {
 //     两边都有值且不同 → conflict)。无 maprev 说明这一版从没经过发布脚本,缓存不比库更可信,不覆盖;
 //  2. 库行本身过不了校验 → conflict(不在修库里顺手改坏行,交给人);
 //  3. maprev > 库 rev → restore:库被回档丢了这几版,用缓存整行覆盖,rev 置为 maprev;
+//     但库里某列有值而缓存同列缺席(home 或落点)→ conflict(2026-10-18 修复评审):db_first 下库的这两列只会从 NULL 变成有值
+//     (W1 / 导入只补 NULL 列,W3 删号停用),发布脚本按 rev 原子写整行,所以「rev 更高却少一列」只可能是脚本之外的 DEL;
+//     照覆盖会把库里正确的值清成 NULL,之后两边都没有这一列,audit 判 match、静默放过。将来启用删号墓碑时要同步调整这条判据;
 //  4. maprev < 库 rev → db_ahead:库更新(回档之后到冻结之前又提交过),不动;
 //  5. maprev == 库 rev:值相同 → match;值不同 → tie(默认只报告),resolveTies 时 tie_resolved(用缓存覆盖,rev 不变)。
 //
@@ -2188,6 +2191,8 @@ func decideRepair(db *RouteRow, r RouteImportRow, resolveTies bool) repairDecisi
 		return repairDecision{action: repairConflict}
 	}
 	switch {
+	case r.MapRev > db.Rev && ((db.HomeValue() != "" && cache.HomeValue() == "") || (dbPlc != "" && cachePlc == "")):
+		return repairDecision{action: repairConflict}
 	case r.MapRev > db.Rev:
 		return repairDecision{action: repairRestore, row: cache}
 	case r.MapRev < db.Rev:

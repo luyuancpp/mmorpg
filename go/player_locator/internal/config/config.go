@@ -59,7 +59,68 @@ type LeaseConf struct {
 	// 对账扫描兜住"gate 整机崩溃 → 断线回调不执行 → 会话永久 ONLINE"的缺口:
 	// State==ONLINE 且 gate_instance_id 连续两轮不在 etcd 存活集内的会话,
 	// 补投 DISCONNECTING + 租约,恢复「所有会话终点必经租约链」的闭环。
+	//
+	// 2026-10-18 起对账是「全局单 leader + 按 gate 实例建的会话索引」(docs/design/player-locator-gate-session-index.md):
+	// leader 每拍只读死 gate 的索引集合,不再扫全键空间;这个周期同时是 leader 的拍长、就绪标记租约与
+	// 自我让位门槛的基准。-1 关闭整个对账(索引照常随会话写入维护,但没有人处理死 gate、也没有人续就绪标记)。
+	// leader 是全服一个,这一项与下面的 Reconcile 各项**必须全服一致**,否则行为取决于哪个 Pod 当选。
 	ReconcileIntervalSeconds int64 `json:"ReconcileIntervalSeconds,optional"`
+	// Reconcile 是索引对账与补建 / 审计扫描的限速与预算。事实源是代码默认值(Normalized):dev yaml 与 K8s
+	// ConfigMap 都不写值,避免两处各写一份后漂移。
+	Reconcile ReconcileConf `json:"Reconcile,optional"`
+}
+
+// ReconcileConf 各字段零值取默认值。默认值都是推断值([I]),需要 V0 实测后校准。
+type ReconcileConf struct {
+	// AuditIntervalSeconds 是索引就绪后定期审计(全键扫描补漏成员 + 清各 gate 索引里的脏成员)的周期。
+	// 0 = 86400;-1 = 就绪后不再定期审计(未就绪时的补建不受影响)。审计时机持久化在 Redis,换主不重置。
+	AuditIntervalSeconds int64 `json:"AuditIntervalSeconds,optional"`
+	// ScanCount 是补建 / 审计扫描 SCAN 与 SSCAN 每页的 COUNT 提示。0 = 1000。
+	ScanCount int64 `json:"ScanCount,optional"`
+	// ScanPagesPerSecond 是补建 / 审计扫描每秒最多发出的页数(每页一次 SCAN 或 SSCAN 加一次 MGET)。
+	// 0 = 200;负数 = 不限速(只用于本机与单测,生产不要用:会拉高核心 Redis 延迟)。
+	ScanPagesPerSecond int `json:"ScanPagesPerSecond,optional"`
+	// MaxTransitionsPerSecond 是对账把死 gate 上的 ONLINE 会话转成 DISCONNECTING 的速率上限。
+	// 0 = 1000;负数 = 不限速。限速之后,LeaseMonitor 的 LeaveScene 与 Kafka 踢人命令随之平滑。
+	// 注意:每拍只用半个拍长去转换(见 DeadGateMembersPerRound),大面积 gate 故障时的**持续**速率约为
+	// 本值 / 2,估恢复时间按这个算(默认 1000 → 约 500/s,丢 6.7e6 会话约 3.7 小时,设计文档 §7)。
+	MaxTransitionsPerSecond int `json:"MaxTransitionsPerSecond,optional"`
+	// DeadGateMembersPerRound 是一拍里最多检查的死 gate 索引成员数,超出的留到下一拍继续,
+	// 保证大面积 gate 故障时每拍仍能按时完成、新死的 gate 照常被识别。0 = 30000。
+	// 实际预算还会被 MaxTransitionsPerSecond × 半个拍长截住,限速调低时一拍不会超时。
+	DeadGateMembersPerRound int `json:"DeadGateMembersPerRound,optional"`
+}
+
+// Reconcile 的默认值。
+const (
+	DefaultReconcileAuditIntervalSeconds    int64 = 86400
+	DefaultReconcileScanCount               int64 = 1000
+	DefaultReconcileScanPagesPerSecond            = 200
+	DefaultReconcileMaxTransitionsPerSecond       = 1000
+	DefaultReconcileDeadGateMembersPerRound       = 30000
+)
+
+// Normalized 把零值换成默认值;负数按各字段注释的语义原样保留(AuditIntervalSeconds 只认 -1 为关闭,
+// 其余负数也按关闭处理;ScanCount 不接受负数,按默认值处理)。
+func (c ReconcileConf) Normalized() ReconcileConf {
+	if c.AuditIntervalSeconds == 0 {
+		c.AuditIntervalSeconds = DefaultReconcileAuditIntervalSeconds
+	} else if c.AuditIntervalSeconds < 0 {
+		c.AuditIntervalSeconds = -1
+	}
+	if c.ScanCount <= 0 {
+		c.ScanCount = DefaultReconcileScanCount
+	}
+	if c.ScanPagesPerSecond == 0 {
+		c.ScanPagesPerSecond = DefaultReconcileScanPagesPerSecond
+	}
+	if c.MaxTransitionsPerSecond == 0 {
+		c.MaxTransitionsPerSecond = DefaultReconcileMaxTransitionsPerSecond
+	}
+	if c.DeadGateMembersPerRound <= 0 {
+		c.DeadGateMembersPerRound = DefaultReconcileDeadGateMembersPerRound
+	}
+	return c
 }
 
 var AppConfig Config

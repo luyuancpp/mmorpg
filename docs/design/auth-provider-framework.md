@@ -59,8 +59,8 @@ auth.GetPassword() PasswordAuthenticator // nil means fail-closed
 | `password`  | Production password authenticator | `account` + `password` | Implemented, default disabled; MySQL Argon2id only |
 | `password` (dev only) | `DevelopmentPasswordProvider` | allowed account prefix + env-injected shared secret | Implemented, default disabled |
 | `satoken`   | `SaTokenProvider`  | SA-Token Redis key lookup   | Implemented   |
-| `wechat`    | `WeChatProvider`   | WeChat OAuth `code`         | Implemented (`/sns/oauth2/access_token`, account = `wx_<unionid|openid>`) |
-| `qq`        | `QQProvider`       | QQ Connect `access_token`   | Implemented (`graph.qq.com/oauth2.0/me`, account = `qq_<unionid|openid>`) |
+| `wechat`    | `WeChatProvider`   | WeChat OAuth `code`         | Implemented (`/sns/oauth2/access_token`, account = `wx_<unionid>`; openid fallback only with `RequireUnionId: false`) |
+| `qq`        | `QQProvider`       | QQ Connect `access_token` (not a code) | Implemented (`graph.qq.com/oauth2.0/me`, `client_id` must equal `AppId`, account = `qq_<unionid>`; openid fallback only with `RequireUnionId: false`) |
 | `netease`   | `NeteaseProvider`  | NetEase auth token          | Stub (TODO)   |
 
 ## Login Flow
@@ -140,15 +140,17 @@ AuthProviders:
       Password: ""
       DB: 0
 
-  # WeChat: OAuth code -> openid
+  # WeChat: OAuth code -> openid / unionid (server-side code exchange)
   WeChat:
     AppId: "wx1234567890"
-    AppSecret: "your-app-secret"
+    AppSecretEnv: "LOGIN_WECHAT_APP_SECRET"   # env var NAME; the secret itself comes from a K8s Secret
+    # RequireUnionId: true                    # default; refuse login when WeChat returns no unionid
 
-  # QQ: OAuth code -> openid
+  # QQ: client SDK access_token -> openid / unionid via /oauth2.0/me (no AppKey needed)
   QQ:
-    AppId: "qq1234567890"
-    AppKey: "your-app-key"
+    AppId: "101234567"                        # must equal client_id in the /oauth2.0/me response
+    # RequestUnionId: true                    # default; send unionid=1
+    # RequireUnionId: true                    # default; must be false when RequestUnionId is false
 
   # NetEase: token verification
   NetEase:
@@ -210,9 +212,9 @@ go/login/internal/
    }
    ```
 
-4. **Add config to `login.yaml`**:
+4. **Add config to `login.yaml`** (real credentials only via a `*Env` field, see below):
    ```yaml
-   Auth:
+   AuthProviders:
      MyPlatform:
        ApiKey: "your-api-key"
    ```
@@ -221,12 +223,43 @@ go/login/internal/
 
 No changes needed to login flow, proto, or other providers.
 
+## Third-party Credentials, unionid and Error Semantics (2026-10-18)
+
+Startup gate (`go/login/internal/config/auth_providers.go`, called by `config.ResolveSecrets` before any external connection):
+
+- `conf.MustLoad` does **not** expand `${VAR}` (no `conf.UseEnv()`, on purpose: it would `os.ExpandEnv` the whole file and
+  silently rewrite any value containing `$`). Any `AuthProviders` field containing `${` makes login refuse to start.
+- Real credentials are read from the environment variable named by `AppSecretEnv` / `AppKeyEnv`. Inline `AppSecret` /
+  `AppKey` is accepted only in go-zero `Mode` dev/test (with a SECURITY WARNING); every other mode refuses to start.
+  Values with surrounding whitespace, or (outside dev/test) placeholder-looking values, are rejected.
+- `Endpoint` (sandbox override) must be `https://host[:port][/path]` outside dev/test; `http://` only in dev/test; no
+  userinfo / query / fragment.
+- K8s: `k8s_deploy.ps1 -LoginWeChatAppId ...` renders the block and injects the secret from Secret `login-oauth`.
+
+unionid policy: `RequireUnionId` defaults to `true` for both providers. openid is per-app, so silently falling back to it
+splits one player into several accounts that cannot be merged later; without unionid the login is refused. QQ's
+`unionid=1` request parameter is controlled by `RequestUnionId` (default true); `RequestUnionId: false` requires
+`RequireUnionId: false`, otherwise startup fails.
+
+Error semantics (in-band `TipInfoMessage`; the fault column comes from `data/tip/Tip.xlsx`, consumed by `serverbase`):
+
+| Situation | Tip | Fault |
+|---|---|---|
+| Invalid / expired player credential (WeChat 40029 / 40163 …, any QQ `error`, QQ `client_id` mismatch), unknown `auth_type`, password auth failure | `kLoginAccountNotFound` (2000) | no |
+| Channel or our channel config failed (`auth.ErrProviderUnavailable`): network / timeout, non-2xx, body > 64 KiB, unparsable body, WeChat -1 / 40001 / 40013 / 40125 / 40164 / 41002 / 41004 / 45009 / 45011, missing required unionid | `kLoginAuthProviderUnavailable` | yes |
+| Account directory read failed / record corrupt | `kLoginRedisError` / `kLoginDataParseFailed` | yes |
+| Token issue failed on the HTTP path (the third-party code is already consumed) | `kLoginTokenIssueFailed` | yes |
+
+Password auth never wraps `ErrProviderUnavailable`: its uniform 2000 is deliberate (anti-enumeration, see below). Success
+logs mask openid (`maskOAuthId`). Java Gateway still maps every in-band error to HTTP-level code 401 with
+`upstream_err=<tip>`; gRPC status failures other than UNAUTHENTICATED / PERMISSION_DENIED now map to 500.
+
 ## Production Password Authority and Cache Boundary
 
 - Authority is MySQL `user_accounts(account, password)`. `password` is an
   Argon2id PHC string (`m=65536,t=3,p=2`, random 16-byte salt, 32-byte result).
 - Every password login queries MySQL and verifies with constant-time digest
-  comparison. The Redis `account_data:{account}` value is only the player-list
+  comparison. The Redis `account:{account}` value is only the player-list
   cache and is read **after** authentication; its existence, absence or expiry
   cannot bypass MySQL verification.
 - Unknown accounts execute a dummy Argon2id calculation to reduce account

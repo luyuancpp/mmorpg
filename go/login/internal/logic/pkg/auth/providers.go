@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,6 +21,10 @@ import (
 
 // defaultHTTPTimeout is used by third-party OAuth Providers when no client is injected.
 const defaultHTTPTimeout = 5 * time.Second
+
+// maxOAuthResponseBytes 是渠道应答体的上限。微信 / QQ 的应答是几百字节的 JSON;不设上限时,
+// 一个异常或被劫持的上游可以让每个登录请求都读进任意大的应答(与 Java 版 OAuthHttp.MAX_BODY_BYTES 同值)。
+const maxOAuthResponseBytes = 64 << 10
 
 func httpClientOrDefault(c *http.Client) *http.Client {
 	if c != nil {
@@ -101,7 +106,7 @@ func (p *SaTokenProvider) Validate(ctx context.Context, tokenValue string) (*Aut
 	key := fmt.Sprintf("%s:%s:token:%s", p.TokenName, p.LoginType, tokenValue)
 	loginId, err := p.RedisClient.Get(ctx, key).Result()
 	if err == redis.Nil {
-		return nil, fmt.Errorf("sa-token not found or expired: %s", tokenValue)
+		return nil, fmt.Errorf("sa-token not found or expired")
 	}
 	if err != nil {
 		return nil, fmt.Errorf("sa-token Redis lookup failed: %w", err)
@@ -109,7 +114,7 @@ func (p *SaTokenProvider) Validate(ctx context.Context, tokenValue string) (*Aut
 	if loginId == "" {
 		return nil, fmt.Errorf("sa-token maps to empty loginId")
 	}
-	logx.Infof("SA-Token validated: token=%s -> account=%s", tokenValue, loginId)
+	logx.Infof("SA-Token validated: account=%s", loginId)
 	return &AuthResult{Account: loginId}, nil
 }
 
@@ -124,13 +129,19 @@ func (p *SaTokenProvider) Validate(ctx context.Context, tokenValue string) (*Aut
 //
 //	GET https://api.weixin.qq.com/sns/oauth2/access_token
 //
-// Account key uses unionid when available (so the same player keeps the
-// same account across multiple apps under the same WeChat Open Platform
-// subject), otherwise falls back to openid.
+// Account key uses unionid (so the same player keeps the same account across
+// multiple apps under the same WeChat Open Platform subject). Without
+// unionid the login is refused with ErrProviderUnavailable unless
+// AllowOpenIdFallback is set: openid differs per app, so falling back
+// silently splits one player into several accounts that cannot be merged.
 type WeChatProvider struct {
 	AppId     string
 	AppSecret string
 	HTTP      *http.Client // optional, injected for tests; nil -> default 5s client
+
+	// AllowOpenIdFallback 为 true 时拿不到 unionid 就用 openid 建账号(配置 RequireUnionId=false)。
+	// 零值 = 不回落,缺 unionid 即失败(fail-closed)。
+	AllowOpenIdFallback bool
 
 	// Endpoint overrides the api.weixin.qq.com base URL. Empty means
 	// production. Set this to a local sandbox-mock server (see
@@ -157,7 +168,7 @@ func (p *WeChatProvider) Validate(ctx context.Context, code string) (*AuthResult
 		return nil, fmt.Errorf("wechat: empty code")
 	}
 	if p.AppId == "" || p.AppSecret == "" {
-		return nil, fmt.Errorf("wechat: provider not configured (missing AppId/AppSecret)")
+		return nil, fmt.Errorf("wechat: provider not configured (missing AppId/AppSecret): %w", ErrProviderUnavailable)
 	}
 
 	endpoint := wechatBaseURL(p.Endpoint) + "/sns/oauth2/access_token?" + url.Values{
@@ -167,38 +178,50 @@ func (p *WeChatProvider) Validate(ctx context.Context, code string) (*AuthResult
 		"grant_type": {"authorization_code"},
 	}.Encode()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	body, err := oauthGet(ctx, p.HTTP, "wechat", endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("wechat: build request: %w", err)
-	}
-	resp, err := httpClientOrDefault(p.HTTP).Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("wechat: http error: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("wechat: read body: %w", err)
+		return nil, err
 	}
 	var r wechatTokenResp
 	if err := json.Unmarshal(body, &r); err != nil {
-		return nil, fmt.Errorf("wechat: bad json: %w (body=%s)", err, body)
+		return nil, fmt.Errorf("wechat: bad json: %w", ErrProviderUnavailable)
 	}
 	if r.ErrCode != 0 {
-		return nil, fmt.Errorf("wechat: errcode=%d msg=%s", r.ErrCode, r.ErrMsg)
+		if wechatErrCodeIsProviderSide(r.ErrCode) {
+			return nil, fmt.Errorf("wechat: errcode=%d: %w", r.ErrCode, ErrProviderUnavailable)
+		}
+		return nil, fmt.Errorf("wechat: errcode=%d", r.ErrCode)
 	}
 	if r.OpenId == "" {
-		return nil, fmt.Errorf("wechat: empty openid")
+		// errcode=0 却没有 openid:应答不合约,不是玩家凭证的问题。
+		return nil, fmt.Errorf("wechat: empty openid: %w", ErrProviderUnavailable)
 	}
 
 	id := r.UnionId
 	if id == "" {
+		if !p.AllowOpenIdFallback {
+			return nil, fmt.Errorf("wechat: unionid missing (RequireUnionId; bind the app to an Open Platform subject): %w",
+				ErrProviderUnavailable)
+		}
 		id = r.OpenId
 	}
 	account := "wx_" + id
-	logx.Infof("WeChat auth ok: account=%s openid=%s union=%v", account, r.OpenId, r.UnionId != "")
+	logx.Infof("WeChat auth ok: account=%s openid=%s union=%v", account, maskOAuthId(r.OpenId), r.UnionId != "")
 	return &AuthResult{Account: account}, nil
+}
+
+// wechatErrCodeIsProviderSide 判断 errcode 指向的是本服务的渠道配置或微信自身状态,而不是玩家凭证:
+// -1 系统繁忙;40001 / 40125 AppSecret 无效;40013 AppId 无效;41002 / 41004 缺 AppId / AppSecret;
+// 40164 出口 IP 不在白名单;45009 / 45011 接口调用量超限。
+//
+// 其余 errcode(40029 code 无效、40163 code 已被使用、42003 code 超时等)按凭证无效处理。拿不准的一律
+// 不算故障,与 docs/design/tip-code-axis.md §2.9 的判定原则一致:把玩家侧拒绝误标成故障会刷满屏假告警。
+func wechatErrCodeIsProviderSide(code int) bool {
+	switch code {
+	case -1, 40001, 40013, 40125, 40164, 41002, 41004, 45009, 45011:
+		return true
+	}
+	return false
 }
 
 // QQProvider validates a QQ Connect access_token (NOT a code).
@@ -213,11 +236,18 @@ func (p *WeChatProvider) Validate(ctx context.Context, code string) (*AuthResult
 //	GET https://graph.qq.com/oauth2.0/me?access_token=...&unionid=1&fmt=json
 //
 // We never trust openid sent by the client — we always re-derive it from
-// the token. ClientId in the response must equal our AppId.
+// the token. ClientId in the response must equal our AppId. unionid policy
+// is the same as WeChatProvider (AllowOpenIdFallback).
 type QQProvider struct {
 	AppId  string
 	AppKey string       // Reserved for future server-side WebOAuth code->token exchange; unused here.
 	HTTP   *http.Client // optional, injected for tests
+
+	// AllowOpenIdFallback 语义同 WeChatProvider.AllowOpenIdFallback;零值 = 缺 unionid 即失败。
+	AllowOpenIdFallback bool
+	// DisableUnionIdRequest 为 true 时不带 unionid=1(配置 RequestUnionId=false,应用没有 unionid 权限时用);
+	// 零值 = 照旧请求 unionid。
+	DisableUnionIdRequest bool
 
 	// Endpoint overrides the graph.qq.com base URL. Same purpose as
 	// WeChatProvider.Endpoint — point at a sandbox-mock server for
@@ -242,28 +272,21 @@ func (p *QQProvider) Validate(ctx context.Context, accessToken string) (*AuthRes
 		return nil, fmt.Errorf("qq: empty access_token")
 	}
 	if p.AppId == "" {
-		return nil, fmt.Errorf("qq: provider not configured (missing AppId)")
+		return nil, fmt.Errorf("qq: provider not configured (missing AppId): %w", ErrProviderUnavailable)
 	}
 
-	endpoint := qqBaseURL(p.Endpoint) + "/oauth2.0/me?" + url.Values{
+	query := url.Values{
 		"access_token": {accessToken},
-		"unionid":      {"1"},
 		"fmt":          {"json"},
-	}.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("qq: build request: %w", err)
 	}
-	resp, err := httpClientOrDefault(p.HTTP).Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("qq: http error: %w", err)
+	if !p.DisableUnionIdRequest {
+		query.Set("unionid", "1")
 	}
-	defer resp.Body.Close()
+	endpoint := qqBaseURL(p.Endpoint) + "/oauth2.0/me?" + query.Encode()
 
-	raw, err := io.ReadAll(resp.Body)
+	raw, err := oauthGet(ctx, p.HTTP, "qq", endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("qq: read body: %w", err)
+		return nil, err
 	}
 	body := strings.TrimSpace(string(raw))
 	if m := qqJsonpRe.FindStringSubmatch(body); len(m) == 2 {
@@ -272,24 +295,30 @@ func (p *QQProvider) Validate(ctx context.Context, accessToken string) (*AuthRes
 
 	var r qqMeResp
 	if err := json.Unmarshal([]byte(body), &r); err != nil {
-		return nil, fmt.Errorf("qq: bad json: %w (body=%s)", err, body)
+		return nil, fmt.Errorf("qq: bad json: %w", ErrProviderUnavailable)
 	}
 	if r.Error != 0 {
-		return nil, fmt.Errorf("qq: error=%d desc=%s", r.Error, r.ErrorDesc)
+		// QQ 的 error 码没有可靠的「哪些是应用侧故障」清单,拿不准一律按凭证无效(tip-code-axis.md §2.9)。
+		return nil, fmt.Errorf("qq: error=%d", r.Error)
 	}
 	if r.OpenId == "" {
-		return nil, fmt.Errorf("qq: empty openid")
+		return nil, fmt.Errorf("qq: empty openid: %w", ErrProviderUnavailable)
 	}
 	if r.ClientId != p.AppId {
-		return nil, fmt.Errorf("qq: client_id mismatch: got=%s want=%s", r.ClientId, p.AppId)
+		// token 是发给别的应用的:对本服务而言就是无效凭证,不是渠道故障。
+		return nil, fmt.Errorf("qq: client_id mismatch")
 	}
 
 	id := r.UnionId
 	if id == "" {
+		if !p.AllowOpenIdFallback {
+			return nil, fmt.Errorf("qq: unionid missing (RequireUnionId; apply for unionid permission or set RequestUnionId): %w",
+				ErrProviderUnavailable)
+		}
 		id = r.OpenId
 	}
 	account := "qq_" + id
-	logx.Infof("QQ auth ok: account=%s openid=%s union=%v", account, r.OpenId, r.UnionId != "")
+	logx.Infof("QQ auth ok: account=%s openid=%s union=%v", account, maskOAuthId(r.OpenId), r.UnionId != "")
 	return &AuthResult{Account: account}, nil
 }
 
@@ -305,15 +334,67 @@ func (p *NeteaseProvider) Validate(_ context.Context, token string) (*AuthResult
 	return nil, fmt.Errorf("netease auth not implemented")
 }
 
+// OAuth 的 URL 含凭证，net/http 的错误会携带完整 URL；第三方响应也可能回显凭证。
+// 仅保留固定阶段和可识别的取消/超时，不把原错误链带到登录调用者的日志中。
+func oauthRequestError(provider, stage string, err error) error {
+	if errors.Is(err, context.Canceled) {
+		return fmt.Errorf("%s: %s: %w", provider, stage, context.Canceled)
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return fmt.Errorf("%s: %s: %w", provider, stage, context.DeadlineExceeded)
+	}
+	return fmt.Errorf("%s: %s", provider, stage)
+}
+
+// oauthGet 发一次渠道 GET 并读回应答体。这里的失败全部标 ErrProviderUnavailable:还没轮到解析玩家凭证。
+// 错误文案只带固定阶段(oauthRequestError)与状态码,不带 URL —— 查询串里有 code / access_token / secret。
+func oauthGet(ctx context.Context, client *http.Client, provider, rawURL string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return nil, providerFault(oauthRequestError(provider, "build request", err))
+	}
+	resp, err := httpClientOrDefault(client).Do(req)
+	if err != nil {
+		return nil, providerFault(oauthRequestError(provider, "http error", err))
+	}
+	defer resp.Body.Close()
+
+	// 渠道的业务拒绝(code 无效等)以 200 + JSON 错误码返回;非 2xx 只可能是网关 / 限流 / 渠道自身故障,
+	// 应答体也不是认识的 JSON,不读不解析。
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return nil, fmt.Errorf("%s: http status %d: %w", provider, resp.StatusCode, ErrProviderUnavailable)
+	}
+	// 多读 1 字节,用来区分「恰好 64 KiB」和「超过上限被截断」。
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxOAuthResponseBytes+1))
+	if err != nil {
+		return nil, providerFault(oauthRequestError(provider, "read body", err))
+	}
+	if len(body) > maxOAuthResponseBytes {
+		return nil, fmt.Errorf("%s: response exceeds %d bytes: %w", provider, maxOAuthResponseBytes, ErrProviderUnavailable)
+	}
+	return body, nil
+}
+
+// providerFault 给已经脱敏的阶段错误再挂上 ErrProviderUnavailable,保留原有的取消 / 超时语义。
+func providerFault(err error) error {
+	return fmt.Errorf("%w: %w", err, ErrProviderUnavailable)
+}
+
+// maskOAuthId 只留首 4 尾 2 个字符:排障时够对上号,又不在每条成功日志里整段落 openid。
+func maskOAuthId(id string) string {
+	if len(id) <= 8 {
+		return "***"
+	}
+	return id[:4] + "***" + id[len(id)-2:]
+}
+
 // wechatBaseURL returns the production WeChat OAuth base URL when
-// override is empty, otherwise the override (which the caller is
-// responsible for trimming and validating). Sandbox-mock pointing
+// override is empty, otherwise the override. Sandbox-mock pointing
 // goes through this exact lever — see go/login/cmd/sandbox_mock/main.go.
 //
-// We deliberately do NOT validate the URL: the override is sourced from
-// trusted ops yaml, not user input, and even a malformed value will
-// fail loudly at the first http.NewRequestWithContext rather than
-// silently corrupting wire shape.
+// The override is validated at startup by config.ResolveSecrets
+// (config/auth_providers.go checkOAuthEndpoint): https only outside
+// Mode=dev/test, no userinfo / query / fragment.
 func wechatBaseURL(override string) string {
 	if override == "" {
 		return "https://api.weixin.qq.com"

@@ -76,6 +76,48 @@ func TestEtcYamlWiresMergeMarkerRedis(t *testing.T) {
 		t.Errorf("MergeMarkerRedis.DB = %d;data_service 的 mapping Redis 恒在 DB 0,填别的库闸门必然失效",
 			c.MergeMarkerRedis.DB)
 	}
+	// D1 第 3 批读方门禁缺省关(spec_D1_batch1b2_2_3.md §5.1):仓库 dev 配置不得默认打开,
+	// 否则没有对账 leader 挂标记的本地环境一律建不了帮。
+	if c.MergeMarkerRedis.RequireRouteReady {
+		t.Error("etc/guild.yaml 的 MergeMarkerRedis.RequireRouteReady 必须保持 false(上线顺序 P5 由负责人逐阶段打开)")
+	}
+}
+
+// TestMergeMarkerRedisRequireRouteReadyDefaultsFalse:不写这个键 = false = 今天的 EXISTS 判据。
+func TestMergeMarkerRedisRequireRouteReadyDefaultsFalse(t *testing.T) {
+	input := minimalGuildYaml + "MergeMarkerRedis:\n  Host: 127.0.0.1:6379\n"
+	var c Config
+	if err := conf.LoadFromYamlBytes([]byte(input), &c); err != nil {
+		t.Fatalf("加载配置失败: %v", err)
+	}
+	if !c.MergeMarkerRedis.Enabled() || c.MergeMarkerRedis.RequireRouteReady {
+		t.Fatalf("只配 Host 时闸门应开、RequireRouteReady 应为 false,got %+v", c.MergeMarkerRedis)
+	}
+}
+
+// TestMergeMarkerRedisRequireRouteReadyParsesAndNeedsHost:键名能被解析;开关开着却没接闸门必须拒启
+// (否则闸门整体不生效,运维却以为它在 fail-closed)。
+func TestMergeMarkerRedisRequireRouteReadyParsesAndNeedsHost(t *testing.T) {
+	var c Config
+	input := minimalGuildYaml + "MergeMarkerRedis:\n  Host: 127.0.0.1:6379\n  RequireRouteReady: true\n"
+	if err := conf.LoadFromYamlBytes([]byte(input), &c); err != nil {
+		t.Fatalf("配了 Host 时打开 RequireRouteReady 应能通过校验: %v", err)
+	}
+	if !c.MergeMarkerRedis.RequireRouteReady {
+		t.Fatal("RequireRouteReady: true 没有被解析进配置(键名或 tag 写错会静默保持 false)")
+	}
+
+	c.MergeMarkerRedis.Host = ""
+	err := c.Validate()
+	if err == nil || !strings.Contains(err.Error(), "RequireRouteReady") {
+		t.Fatalf("RequireRouteReady=true 而 Host 为空必须拒启,得到 %v", err)
+	}
+
+	var fromYaml Config
+	noHost := minimalGuildYaml + "MergeMarkerRedis:\n  RequireRouteReady: true\n"
+	if err := conf.LoadFromYamlBytes([]byte(noHost), &fromYaml); err == nil || !strings.Contains(err.Error(), "RequireRouteReady") {
+		t.Fatalf("yaml 里只写 RequireRouteReady 不写 Host 必须加载失败,得到 %v", err)
+	}
 }
 
 // minimalGuildYaml 是一份能过 go-zero 必填校验的最小配置(不含 MergeMarkerRedis)。

@@ -127,6 +127,10 @@ func TestInitLoginQueue_ZeroZonePanicsWhenQueueEnabled(t *testing.T) {
 // (2026-10-15)开了排队时 QueueEntryTTL 非正、AdmitTTL 不足 1ms 即起服失败(loginqueue.ValidateTTLs),
 // 显式写 0s 不回落默认值。修复前红:initLoginQueue 原样把 0 / 负值交给 loginqueue.New,不 panic,
 // 带着「每次入队删整条队列」或「每拍拒绝出队」的配置上线。
+// (2026-10-18 补注)QueueEntryTTL 收紧为 ∈ [1s, loginqueue.queueTokenMaxAge=24h],越界同样起服失败,报错串仍含
+// "ttl must be positive"。1s 下界与 Enqueue 的秒级 EXPIRE、续期毫秒值为正对齐;上界是令牌 24h 先到期,更大的空闲
+// TTL 没有意义。装配层这两组守的是「起服即失败」:loginqueue 包内的 TestValidateTTLs_RejectsNonPositive 只钉住
+// 函数本身,initLoginQueue 换成只判正数的本地校验时只有这里会红。修复前红:500ms 与 25h 两组不 panic。
 func TestInitLoginQueue_NonPositiveTTLPanicsWhenQueueEnabled(t *testing.T) {
 	cases := []struct {
 		name               string
@@ -137,6 +141,8 @@ func TestInitLoginQueue_NonPositiveTTLPanicsWhenQueueEnabled(t *testing.T) {
 		{"AdmitTTL=500us", 500 * time.Microsecond, time.Hour}, // 放行脚本 SET PX 取整到毫秒,亚毫秒成 PX 0
 		{"QueueEntryTTL=0", 60 * time.Second, 0},
 		{"QueueEntryTTL=-1s", 60 * time.Second, -time.Second},
+		{"QueueEntryTTL=500ms", 60 * time.Second, 500 * time.Millisecond}, // 2026-10-18:低于 1s 下界
+		{"QueueEntryTTL=25h", 60 * time.Second, 25 * time.Hour},           // 2026-10-18:高于令牌 24h 上界
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

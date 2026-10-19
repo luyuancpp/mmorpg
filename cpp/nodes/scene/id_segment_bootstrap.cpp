@@ -21,22 +21,14 @@
 #include "proto/common/base/node.pb.h"
 #include "proto/data_service/data_service.pb.h"
 #include "thread_context/node_context_manager.h"
-#include "utils/encode/base64.h"
 #include "utils/random/random.h"
 
 namespace
 {
-    // 每个请求带一个客户端编号(gRPC metadata)。AllocateIdSegmentResponse 本身不回显 biz_tag /
-    // 请求编号,所以今天**响应**的归属靠下面的"共享路径单飞 + FIFO";Go 侧若把这个 key 回显到
-    // initial metadata(或响应里加回显字段),这里会自动改走精确归属,不用再改 C++。
-    // **失败**的归属是精确的:生成的客户端把本次发出的 metadata 原样交给失败处理器(OnFailure)。
-    constexpr char kSeqMetadataKey[] = "x-idseg-seq";
-
     // 兜底路径(正常情况下失败通知先于 fetchTimeout 到达,走不到这里):
-    // 一次请求被它的持有者按 fetchTimeout 判失败之后,响应可能还在路上。这段窗口里共享路径
-    // 不发新请求,于是窗口内到达的任何响应都能无歧义地还给那一次(号没浪费,归属也不会串)。
-    // 窗口过了还没回来就放弃归属:一个 CAS 更新超过 fetchTimeout + 10s 没回来,数据库已经病得够重,
-    // 此时被 FIFO 误归属的概率已经很小;而且各种类的范围校验(lo ≥ 上一段 hi)还挡一层。
+    // 一次请求被持有者按 fetchTimeout 判失败之后,响应可能还在路上。这段窗口里共享路径不发新请求,
+    // 让同一 biz_tag 的迟到应答先于新请求到达,避免旧段晚于新段交付而触发范围水位校验。
+    // 窗口结束后恢复发送时放弃旧请求的交付;完成回调仍按捕获的 seq 精确认领,绝不会把它交给后来的请求。
     constexpr double kLateResponseWindowSec = 10.0;
 
     // "没有 READY 的 DataService 节点"日志节流:退避封顶 5s 时每次都记就是 12 行/分钟。
@@ -57,20 +49,18 @@ namespace
 
     // 所有种类共用的 DataService 传输层。
     //
-    // 为什么单飞:生成的全局 handler 只拿到 (GrpcReplyContext, Response),响应里没有 biz_tag,
-    // 应答上下文也只带状态与响应 metadata、不带本次调用的身份,所以同一时刻若有两种在途就分不清谁是谁。
-    // 共享路径上同一时刻只放一个在途请求,响应必然属于它 —— 代价是三种同时冷启动时串行领三次
-    // (毫秒级),运行期预取本来就稀疏,互不打扰。
+    // 完成回调按闭包捕获的 seq 精确认领请求,不依赖响应字段或 metadata 回显。
+    // 单飞与迟到窗口继续保证同一 biz_tag 的迟到应答先于新请求到达;代价是各类冷启动串行领段,
+    // 运行期预取本来就稀疏,互不打扰。
     class IdSegmentTransport
     {
     public:
         bool Send(GuidKind kind, uint32_t step);
-        void OnResponse(const GrpcReplyContext &ctx, const ::data_service::AllocateIdSegmentResponse &resp);
-        void OnFailure(const GrpcCallFailure &failure);
+        void OnCompleted(uint64_t seq, const GrpcCallOutcome &outcome,
+                         const ::data_service::AllocateIdSegmentResponse *reply);
 
     private:
         static entt::entity PickReadyDataServiceNode();
-        static bool SeqMatches(const std::optional<OutstandingRequest> &request, const std::string &echoed);
 
         std::optional<OutstandingRequest> inflight_;  // 共享路径上唯一的在途
         std::optional<OutstandingRequest> abandoned_; // 超时后仍可能回来的那一次
@@ -159,99 +149,56 @@ namespace
         request.set_biz_tag(tlsGuidSegmentRegistry.Get(kind).options().bizTag);
         request.set_step(step);
         const uint64_t seq = ++nextSeq_;
-        data_service::SendDataServiceAllocateIdSegment(tlsNodeContextManager.GetRegistry(DataServiceNodeService), target,
-                                                       request, std::vector<std::string>{kSeqMetadataKey},
-                                                       std::vector<std::string>{std::to_string(seq)});
         inflight_ = OutstandingRequest{seq, kind, step, now};
+        data_service::SendDataServiceAllocateIdSegment(tlsNodeContextManager.GetRegistry(DataServiceNodeService), target,
+                                                       request,
+                                                       [seq](const GrpcCallOutcome &outcome,
+                                                             const ::data_service::AllocateIdSegmentResponse *reply)
+                                                       { tlsIdSegmentTransport.OnCompleted(seq, outcome, reply); });
         return true;
     }
 
-    // 生成的客户端把 metadata 值 Base64 后再发,服务端回显的可能是原文也可能是编码后的形态,两种都认。
-    bool IdSegmentTransport::SeqMatches(const std::optional<OutstandingRequest> &request, const std::string &echoed)
+    void IdSegmentTransport::OnCompleted(uint64_t seq, const GrpcCallOutcome &outcome,
+                                         const ::data_service::AllocateIdSegmentResponse *reply)
     {
-        if (!request)
+        GuidKind kind{};
+        bool abandoned = false;
+        if (inflight_ && inflight_->seq == seq)
         {
-            return false;
-        }
-        const std::string raw = std::to_string(request->seq);
-        return echoed == raw || echoed == Base64Encode(raw);
-    }
-
-    void IdSegmentTransport::OnResponse(const GrpcReplyContext &ctx,
-                                        const ::data_service::AllocateIdSegmentResponse &resp)
-    {
-        std::optional<GuidKind> owner;
-
-        // ① 精确归属:服务端若回显了请求编号,按它路由(今天的 Go 侧还没有,这是留给它的接口)。
-        // 回显看响应头(初始 metadata),值是收到的原样文本,与改前官方客户端读到的响应头同义。
-        if (const std::string *echoedValue = ctx.FindInitialMetadata(kSeqMetadataKey); echoedValue != nullptr)
-        {
-            const std::string &echoed = *echoedValue;
-            if (SeqMatches(inflight_, echoed))
-            {
-                owner = inflight_->kind;
-                inflight_.reset();
-            }
-            else if (SeqMatches(abandoned_, echoed))
-            {
-                owner = abandoned_->kind;
-                abandoned_.reset();
-            }
-            else
-            {
-                ++orphanResponses_;
-                LOG_WARN << "[idsegment] response with unknown seq echo '" << echoed << "' dropped (range [" << resp.lo()
-                         << ", " << resp.hi() << ") wasted, harmless) orphans=" << orphanResponses_;
-                return;
-            }
-        }
-        // ② FIFO:共享路径单飞,响应属于唯一的在途;没有在途就属于超时后仍在等的那一次。
-        else if (inflight_)
-        {
-            owner = inflight_->kind;
+            kind = inflight_->kind;
             inflight_.reset();
         }
-        else if (abandoned_)
+        else if (abandoned_ && abandoned_->seq == seq)
         {
-            owner = abandoned_->kind;
+            kind = abandoned_->kind;
+            abandoned = true;
             abandoned_.reset();
         }
         else
         {
             ++orphanResponses_;
-            LOG_WARN << "[idsegment] response with no outstanding request dropped (range [" << resp.lo() << ", "
-                     << resp.hi() << ") wasted, harmless) orphans=" << orphanResponses_;
+            LOG_WARN << "[idsegment] completion for unknown request seq=" << seq
+                     << " dropped; orphans=" << orphanResponses_;
             return;
         }
 
-        tlsGuidSegmentRegistry.Get(*owner).OnResponse(resp.error_code(), resp.lo(), resp.hi());
-    }
-
-    // 失败按发出的请求编号精确归属:同一次调用只会有一次完成(成功或失败),编号对上就是它。
-    void IdSegmentTransport::OnFailure(const GrpcCallFailure &failure)
-    {
-        std::ostringstream why;
-        why << "gRPC " << failure.method << " code=" << failure.code() << " msg=" << failure.message();
-
-        const std::string *sentSeq = failure.FindSentMetadata(kSeqMetadataKey);
-        if (sentSeq != nullptr && SeqMatches(inflight_, *sentSeq))
+        if (outcome.ok() && reply != nullptr)
         {
-            const GuidKind kind = inflight_->kind;
-            inflight_.reset();
-            // 客户端自己按连续失败次数节流记 ERROR,这里不再另记。
-            tlsGuidSegmentRegistry.Get(kind).OnTransportFailure(why.str());
+            tlsGuidSegmentRegistry.Get(kind).OnResponse(reply->error_code(), reply->lo(), reply->hi());
             return;
         }
-        if (sentSeq != nullptr && SeqMatches(abandoned_, *sentSeq))
+
+        std::ostringstream why;
+        why << "gRPC DataService.AllocateIdSegment code=" << outcome.code << " msg=" << outcome.message;
+        if (abandoned)
         {
             // 持有者早已按 fetchTimeout 判过失败;这次调用到此确定不会再有响应,共享路径不必再为它守迟到窗口。
-            LOG_WARN << "[idsegment] abandoned request seq=" << *sentSeq << " kind=" << GuidKindName(abandoned_->kind)
+            LOG_WARN << "[idsegment] abandoned request seq=" << seq << " kind=" << GuidKindName(kind)
                      << " finally failed (" << why.str() << "); releasing the shared DataService path";
-            abandoned_.reset();
             return;
         }
-        LOG_WARN << "[idsegment] failure for an unknown request seq '" << (sentSeq != nullptr ? *sentSeq : std::string{})
-                 << "' ignored (" << why.str() << ")";
+        // 客户端自己按连续失败次数节流记 ERROR,这里不再另记。
+        tlsGuidSegmentRegistry.Get(kind).OnTransportFailure(why.str());
     }
 
     // DataService 节点连上(NodeInfo 是 ConnectToGrpcNode 最后 emplace 的组件)就催一次首段。
@@ -262,23 +209,8 @@ namespace
     }
 } // namespace
 
-void InitDataServiceReply()
-{
-    data_service::AsyncDataServiceAllocateIdSegmentHandler =
-        [](const GrpcReplyContext &ctx, const ::data_service::AllocateIdSegmentResponse &resp)
-    { tlsIdSegmentTransport.OnResponse(ctx, resp); };
-    data_service::AsyncDataServiceAllocateIdSegmentFailedHandler =
-        [](const GrpcCallFailure &failure, const ::data_service::AllocateIdSegmentRequest & /*request*/)
-    { tlsIdSegmentTransport.OnFailure(failure); };
-}
-
 std::size_t ConfigureGuidSegmentClients(Node & /*node*/)
 {
-    // 响应 handler 在这里装:它是 gRPC 应答 handler,不属于生成器产出的注册文件(节点间 RPC0 的
-    // InitReply / rpc_replies/register_response_handler.cpp 已退场,见 docs/design/muduo-rpc-channel.md §9.2)。
-    // 幂等:重复赋同一个 lambda 无副作用。
-    InitDataServiceReply();
-
     const IdSegmentConfig &config = gNodeConfigManager.GetBaseDeployConfig().id_segment();
     // 单次领段的兜底期限从 DataService 的 gRPC deadline 派生、比它宽 1s(上游比下游宽,
     // docs/design/grpc-client-deadline-failure-callback.md §4.2):失败通知必须先于它到,

@@ -1,3 +1,8 @@
+# === GENERATED FILE -- DO NOT EDIT ===
+# Produced by tools/archived/vcxproj2cmake.py from scene.vcxproj.
+# Every Linux build regenerates it; hand edits are lost without warning.
+# Change the generator instead.
+
 cmake_minimum_required(VERSION 3.22)
 project(scene)
 
@@ -17,47 +22,23 @@ add_definitions(-D__linux__)
 add_definitions(-DNOMINMAX)
 add_definitions(-DENTT_ID_TYPE=uint64_t)
 add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)
+add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)
+add_definitions(-DGOOGLE_LOG=ABSL_LOG)
+add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)
+add_definitions(-DMMORPG_AGONES_CURL=1)
 
 include_directories(
     ../../../third_party/
     ../../../third_party/boost/
-    # ── OpenSSL 头路径(本节点这批首次需要)────────────────────────────────────
-    # 本节点吃到 <openssl/crypto.h> / <evp.h> / <hmac.h> 的只有**一条**路:
-    #   handler/rpc/player/player_gm_guard.h → ../../../../gate/gate_security.h,
-    #   被 player_{attribute,currency,pet,rollback}_handler.cpp 与 scene_handler.cpp
-    #   包含(scene_admin_handler.cpp 早就直接包 gate_security.h)。
-    #
-    # 注意**不是**经由资产通道进来的:scene_node_service.cpp 确实包到 asset_op_system.h
-    # → asset_op_auth.h,但 asset_op_auth.h 只包 proto 与标准库;OpenSSL 依赖止于
-    # asset_op_auth.**cpp**,那个 TU 编在 scene 静态库里(见 libs/services/scene/CMakeLists.txt),
-    # 不在本节点。写清楚是因为:将来若去掉 player_gm_guard 那条链,这两条路径就该一起删,
-    # 别被"资产通道还撑着"误导而留下。
-    # 本节点此前从不显式给 OpenSSL 头路径,靠的是 libssl-dev 装在 /usr/include 的系统头
-    # (deploy/k8s/Dockerfile.cpp:44)。而下面 link_directories 把 /usr/local/lib 排在
-    # /usr/lib/x86_64-linux-gnu 前面,`-lssl -lcrypto` 取到的是 gRPC 装过去的 BoringSSL
-    # 静态库(Dockerfile.cpp:122-130 以默认 gRPC_SSL_PROVIDER=module 编译并 install)。
-    # 头取系统 OpenSSL 3.x、库取 BoringSSL = 同一进程里两份 EVP_MD/HMAC_CTX 布局。补上这
-    # 两条,让头也走 BoringSSL,与 gate 一致。
-    #
-    # ⚠️ 这只在直接跑 tools/scripts/build_linux.sh 的宿主机构建上生效:Dockerfile 镜像里
-    # .dockerignore 排掉了 third_party/grpc 与 third_party/openssl,builder 阶段也不 COPY
-    # 它们,所以镜像内这两条路径不存在(不存在的 -I 被编译器静默忽略),镜像构建仍是系统头
-    # + BoringSSL 库。那是 gate / battle 今天就有的同一个问题,不在本次改动范围内,已在交付
-    # 说明里单列。
-    #
-    # **顺序敏感:boringssl 必须排在 openssl 之前。**third_party/openssl/include/openssl/
-    # 里 crypto.h 只有未 configure 的 crypto.h.in(evp.h / hmac.h 倒是真文件),三个头能凑齐
-    # 的只有 boringssl。顺序反过来,crypto.h 会先在那棵**未 configure 的源码树**里找不到可用
-    # 版本 —— 通常直接 fatal error 停在编译期,而不是静默混搭。真正危险的是"头和库各走一边"
-    # (见上一段:库侧 -lssl/-lcrypto 取的是 BoringSSL),那才是运行期未定义行为。同序写法见
-    # cpp/nodes/gate/CMakeLists.txt 与 cpp/libs/services/scene/CMakeLists.txt。
+    ../../../third_party/entt/single_include
+    ../../../third_party/fmt/include
     ../../../third_party/grpc/third_party/boringssl-with-bazel/include/
     ../../../third_party/librdkafka/src-cpp/
     ../../../third_party/muduo-linux/
-    # 与上面 boringssl 配对,见那里的顺序说明(必须排在 boringssl 之后)。
     ../../../third_party/openssl/include/
     ../../../third_party/redis/
     ../../../third_party/redis/deps/
+    ../../../third_party/spdlog/include
     ../../../third_party/spdlog/include/
     ../../../third_party/ue5navmesh/Public/
     ../../../third_party/xxhash/
@@ -71,25 +52,30 @@ include_directories(
     ../../libs/engine/modules/
     ../../libs/services/player/
     ../../libs/services/scene/
+    ../common/
+    ../common/src/pb/pbc/
+    ../common/src/pb/pbc/common_proto/
+    ../third_party/
+    ../third_party/boost/
+    ../third_party/muduo-linux/
+    ../third_party/protobuf/src/
+    ../third_party/protobuf/third_party/abseil-cpp/
+    ../third_party/redis/
+    ../third_party/redis/deps/
+    ../third_party/ue5navmesh/Public/
+    ../third_party/zlib/
     ./
     /usr/local/include
 )
 
-# Agones 生命周期适配器只在 Linux 构建里接 libcurl。
-# MMORPG_AGONES_CURL 没定义时,MakeDefaultHttpTransport() 返回 nullptr,
-# 整套逻辑退化成 Disabled(Windows / 本地开发构建走的就是这条路)。
-# 2026-09-29 起 Agones 源码下沉到 libs/engine/infra/agones/(随 -linfra 链入),
-# 本节点只保留这个宏和下面的 CURL::libcurl 链接。
-add_definitions(-DMMORPG_AGONES_CURL=1)
-
 set(SOURCE_FILES
     handler/event/scene_kafka_command_router.cpp
+    handler/event/battle_event_handler.cpp
     handler/event/team_event_handler.cpp
     handler/event/player_inbox_event_handler.cpp
+    handler/rpc/player/player_movement_handler.cpp
     handler/rpc/scene_admin_handler.cpp
     handler/rpc/player/player_currency_handler.cpp
-    handler/rpc/player/player_attribute_handler.cpp
-    handler/rpc/player/player_pet_handler.cpp
     handler/rpc/player/player_rollback_handler.cpp
     handler/rpc/scene_handler.cpp
     handler/rpc/player/client_player_common_handler.cpp
@@ -98,28 +84,21 @@ set(SOURCE_FILES
     handler/rpc/player/player_scene_handler.cpp
     handler/rpc/player/player_service_interface.cpp
     handler/rpc/player/player_skill_handler.cpp
+    handler/rpc/player/player_attribute_handler.cpp
+    handler/rpc/player/player_pet_handler.cpp
     handler/rpc/player/player_state_attribute_sync_handler.cpp
     handler/rpc/register_handler.cpp
-    main.cpp
-    rpc_replies/scene_manager_response_handler.cpp
-    rpc_replies/player_inbox_response_handler.cpp
-    # 2026-09-18 补登记:这 7 个在 scene.vcxproj 里都有,只有 Linux CMake 清单漏了。
-    handler/event/battle_event_handler.cpp
     handler/grpc/scene_node_service.cpp
-    handler/rpc/player/player_activity_handler.cpp
+    main.cpp
+    id_segment_bootstrap.cpp
     handler/rpc/player/player_bag_handler.cpp
     handler/rpc/player/player_mission_handler.cpp
-    handler/rpc/player/player_movement_handler.cpp
-    id_segment_bootstrap.cpp
+    handler/rpc/player/player_activity_handler.cpp
 )
 
 find_package(absl CONFIG REQUIRED)
 find_package(protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
-# 用系统 libcurl(deps 阶段 apt 装的 libcurl4-openssl-dev)。
-# 刻意不 vendor curl 源码:third_party/curl 子模块当前未初始化,而且
-# Agones REST 只需要几个回环 GET/POST,再引一份第三方源码得不偿失。
-find_package(CURL REQUIRED)
 
 link_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/../../../lib"
@@ -133,7 +112,9 @@ target_link_libraries(scene
     -Wl,--start-group
     -lgate
     -lscene
+    -lbattle
     -lmodules
+    -lmuduo_grpc
     -lthread_context
     -linfra
     -lsession
@@ -145,26 +126,25 @@ target_link_libraries(scene
     -lrpc
     -lproto
     -lthird_party
-    # muduo_h2 etcd 传输(core 的 muduo_etcd_transport,NODE_ETCD_TRANSPORT 选择;docs/design/grpc-muduo-transport.md §13.4)
-    -lmuduo_grpc
     -Wl,--end-group
     gRPC::grpc++
     gRPC::grpc++_reflection
     gRPC::grpc
     gRPC::gpr
-    CURL::libcurl
     protobuf::libprotobuf
-    # 静态链入的 nghttp2(1.70)不得导出到动态符号表:系统 libcurl.so 依赖旧版 libnghttp2.so,
-    # 导出后 libcurl 的 nghttp2_* 调用会绑到我们的副本、两个版本混用(docs/design/grpc-muduo-transport.md §9)。
     -Wl,--exclude-libs,libnghttp2.a
     nghttp2
+    muduo_protobuf_codec
+    muduo_hiredis
     muduo_net
     muduo_base
     rdkafka++
     rdkafka
     yaml-cpp
     hiredis
+    curl
     z
+    zstd
     ssl
     crypto
     pthread

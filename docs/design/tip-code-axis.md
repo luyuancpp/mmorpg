@@ -181,6 +181,8 @@ ServiceUnavailable        服务不可用      1
 | mission / bag / entity（各 1） | PlayerMissionComponentNotFound, BagAddItemHasNotBaseComponent, EntityTransformNotFound |
 | guild（1） | GuildIdGenUnavailable（原 guild 本地 map 迁入） |
 
+（2026-10-18 追加）login 组新增两个故障码：`LoginAuthProviderUnavailable`（微信 / QQ 渠道或本服务渠道配置故障，含拿不到必需的 unionid）、`LoginTokenIssueFailed`（HTTP 登录路径 token 签发失败）。判定依据：都指向服务端依赖或配置，不是玩家凭证问题；玩家凭证无效仍回 `LoginAccountNotFound`（不标）。见 [third-party-login-end-to-end-design.md](./third-party-login-end-to-end-design.md) §三。上表数量是 2026-09-05 的快照，没有随之改动。
+
 **刻意不算故障**的，记在这里免得下个人反复纠结：
 
 - common：`InvalidTableId / InvalidParameter`（请求参数不合法）、`FeatureUnavailable`（功能未开放，产品行为）、`RateLimitExceeded`（限流是保护生效）、`MessageSizeExceeded / MessageIdNotFound / RequestMessageParseError / ArraySizeTooLargeInMessage / NegativeValueInMessage`（全是客户端上行侧的问题）

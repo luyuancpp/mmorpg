@@ -52,7 +52,9 @@ for n in "${TIERS[@]}"; do
   # Wipe redis state between tiers so EnterGame stays decision=FirstLogin.
   # Failing this leaves residual sessions and skews avg_login (#B-1).
   echo "[wipe] redis test residue..."
-  for p in 'player:session:*' 'player:*:location' 'player_to_account:*' \
+  # player:gate_index:* = player_locator 按 gate 建的会话索引与就绪标记 / 代次,与会话一起清,
+  # 否则留下脏成员与幽灵 gate(对账能自愈,但会拖慢下一阶梯的首轮)。
+  for p in 'player:session:*' 'player:gate_index:*' 'player:*:location' 'player_to_account:*' \
            'access_token:*' 'refresh_token:*' 'login_session:*' \
            'login_step:*' 'account_data:*' 'account_lock:*' \
            'player_locker:*'; do

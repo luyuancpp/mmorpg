@@ -3,10 +3,11 @@
 // gate → 路由服的 ClientRpcRouter.Forward(路由模式唯一的 gRPC 出站,docs/design/grpc-muduo-transport.md §8、§14)。
 //
 // 第 3 批起生成客户端也走 muduo_grpc;这条手写 Forward 是第 1 批落地的路径,第 3 批原样保留,没有改用生成的
-// SendClientRpcRouterForward(…, GrpcDone, GrpcCallOptions)。它不经全局处理器,在自己的完成回调里直接进桥。
+// SendClientRpcRouterForward(…, GrpcDone, GrpcCallOptions)。它在自己的完成回调里直接进桥。
 // 线上字节(:path、metadata 两层 base64、截止取值)与生成客户端一致,改其中任一项须两处同改。对客户端的可见行为
 // 与直连模式的生成客户端路径逐条相同:两条路径都只调 gate_rpc_reply_bridge(含路由 lane 的认领)。
 //   成功 → 按响应初始 metadata 里回显的 x-session-detail-bin 解出会话,交成功桥;
+//          直连模式按发出时的会话,DeliverReply 只用 session_id 与 gate_call_seq,两者效果相同。
 //   失败 → 按发出的 SessionDetails 原始字节交失败桥;不重试。
 // 通道由 NodeConnector::ConnectToGrpcNode 统一建在路由服节点实体上(MuduoGrpcChannelPtr),这里不建通道。
 

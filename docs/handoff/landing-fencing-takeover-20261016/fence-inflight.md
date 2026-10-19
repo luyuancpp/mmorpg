@@ -133,6 +133,7 @@
 
 1. proto（保留号，补注释）
 - 保留 DBTask.save_seq=9、PlayerAllData.last_save_seq=7，两者与 v0.3 同号同义。在 db_task.proto 注明 10 号预留给 reply_instance，同时订正 8 号字段的注释。
+  - **2026-10-18 更正**：10 号已由 `reply_instance` 使用。B0-3 第 1 批已在 `proto/db/db_task.proto` 的 DBTask 里写下 `string reply_instance = 10;` 及其注释（规格 `docs/handoff/launch-readiness-20261013/spec_B0-3_task_result_channel.md`）。订正 save_seq 注释时直接写「10 号为 reply_instance」，**不要再写「10 号预留」**，否则会和同一 message 里紧挨着的 `reply_instance = 10` 自相矛盾。8 号字段注释的订正不受影响。本文 F12 的 detail 与「【一】与 v0.3 的逐节差异」§3 中「没写 / 没注明 10 号预留」的说法同此更正。
 - PlayerAssetSQLCommit、require_sql_commit=2、sql_committed=3 可以保留号，但读路径要等第 4 步的开关就绪后才启用。
 
 2. go/db：放弃 player_row_fence.go，改按 v0.3 §4–§6 实现

@@ -45,7 +45,9 @@ func TestFencingYAMLPolicyRejectsAmbiguousAndUnknownModes(t *testing.T) {
 		raw     string
 		wantErr bool
 		mode    string
-	}{{"off", true, ""}, {"\"off\"", true, ""}, {"sql", true, ""}, {"legacy", false, "legacy"}, {"dual", false, "dual"}, {"", false, "legacy"}} {
+	}{{"off", true, ""}, {"\"off\"", true, ""}, {"sql", true, ""}, {"legacy", false, "legacy"}, {"dual", false, "dual"},
+		// 2026-10-18 起缺省与现行严格提交屏障写者同世代(存盘协议世代门禁)。
+		{"", false, "dual"}} {
 		t.Run(test.raw, func(t *testing.T) {
 			var holder struct {
 				Fencing db_config.FencingConfig `json:"Fencing,optional"`

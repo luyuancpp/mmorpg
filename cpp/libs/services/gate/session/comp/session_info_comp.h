@@ -60,6 +60,10 @@ struct SessionInfo
 	// 会话销毁即随之消失,不需要额外清理路径。
 	uint32_t homeZoneId{0}; // 玩家归属 zone;0 = 未知(旧版 scene_manager 未填),scene 侧 fail-closed 落进程 zone 并计数
 	uint64_t ownerEpoch{0}; // 本次路由的归属 epoch;0 = 旧版未铸造(兼容窗口),scene 侧存盘跳过 CAS 并计数
+	// 上一次**实际转发给 scene** 的 PlayerEnterGameNodeRequest.owner_epoch(ownerEpoch 是"最近一次路由决策",转发前就被覆盖)。
+	// scene_route_helper.h ApplyRoute 第 4 条据此判断"同场景同节点、但归属换了代"的路由要不要再转发一次
+	// (docs/design/location-release-binding.md §3.5,审计 load-handover#0)。只由 ApplyRoute 在转发成功后写,ResetSceneRoute 清零。
+	uint64_t forwardedOwnerEpoch{0};
 
 	// 登录代次(docs/design/scene-enter-session-fence.md §4):本会话、本角色见过的最高代次。来源是
 	// BindSessionEvent 与 RoutePlayerEvent,同一角色取 max;同一条连接上换了角色时以新角色的值为准(上一个
@@ -102,6 +106,12 @@ struct SessionInfo
 	// Disconnect uses this to clean Login's session-id state without turning
 	// every verified-but-idle TCP close into a cross-service RPC.
 	bool loginStarted{false};
+	// 本连接至少收到过一次成功的 Login 回包(handler/rpc/login_admission.h)。CreatePlayer / EnterGame / LeaveGame
+	// 发出前要求它为真:login 的登录态已按 (gate_instance_id, 会话代次) 建键,这里是纵深防御,并在新旧 login
+	// 并存的滚动窗口里挡住「跳过 Login、撞上旧 gate 进程同号 session_id」的请求
+	// (docs/design/data-overwrite-rollback-audit-20261018.md §2.3)。只置真不复位:同一连接的后续登录失败
+	// 不撤销已成功的那次,本连接登录态是否仍有效由 login 判定。
+	bool loginSucceeded{false};
 
 	// Illegal-packet counter (todo.md #236). Increment whenever a packet is
 	// rejected by the gate's incoming validation chain (rate-limit exceeded,
@@ -115,7 +125,7 @@ struct SessionInfo
 
 	// Per-session HMAC key for message signing (todo.md #76 slice A).
 	//
-	// Populated by client_message_processor.cpp::HandleClientTokenVerify
+	// Populated by client_session_handler.cpp::HandleClientTokenVerify
 	// AFTER the gate token signature is verified, by unmarshalling the
 	// inner GateTokenPayload and copying its `hmac_session_key` field
 	// here. Empty bytes mean "client/server pair hasn't rolled out the

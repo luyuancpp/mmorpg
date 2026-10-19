@@ -20,9 +20,12 @@
 //
 // RouteStore.Mode 的门禁(在连任何东西之前判):
 //   - import-from-redis:yaml 是 db_first 时真导入默认拒绝,要显式 -allow-db-first(只给提案 §7 P3 那一次);
-//   - reconcile-from-cache / unfreeze / audit -frozen-recovery:只在 db_first 下有意义,redis 模式退出码 2 —— 那时 Redis 才是
+//   - reconcile-from-cache / audit -frozen-recovery:只在 db_first 下有意义,redis 模式退出码 2 —— 那时 Redis 才是
 //     提交点、库只是 P1 时刻的快照,「从缓存修库」就是 import-from-redis 的事;
-//   - freeze:redis 模式也允许,但 W1 在 redis 模式下不读 writable,只打 WARN。
+//   - freeze:redis 模式也允许,但 W1 在 redis 模式下不读 writable,只打 WARN;
+//   - unfreeze:redis 模式下也允许(撤销误跑 / 演练的 freeze,或从 db_first 回退时带过来的冻结 —— 否则 import-from-redis 的
+//     requireRouteWritable 与模式无关,会一直拒写,工具里没有别的解冻路径),但必须显式 -cache-was-not-verified-acknowledged
+//     (redis 模式没有就绪标记可核对,也跑不了 audit -frozen-recovery),不连 mapping Redis、最低水位取 0,打 WARN。
 package routetoolcli
 
 import (
@@ -75,11 +78,12 @@ const usage = `用法:
   (K8s 上同一套子命令走主程序:data_service -f <yaml> -route-tool <子命令> [参数])
 
 退出码:0 干净;1 完成但需要人工处理(unfreeze:就绪标记在途中被改过,重跑);2 失败(参数 / 配置 / 连接 / 查询 / 写入 / 超时,
-db_first 下真导入没加 -allow-db-first,redis 模式下跑 reconcile-from-cache / unfreeze / audit -frozen-recovery,
-没冻结就修库,unfreeze 没加 -confirm-audited 或确认不了缓存);
+db_first 下真导入没加 -allow-db-first,redis 模式下跑 reconcile-from-cache / audit -frozen-recovery、或 unfreeze 没加
+-cache-was-not-verified-acknowledged,没冻结就修库,unfreeze 没加 -confirm-audited 或确认不了缓存);
 3 有生效的合服围栏、或导入期间 merge:merged_into 变过(import-from-redis / reconcile-from-cache)。
 tidb-prepare:0 完成或 MySQL 上跳过(MySQL 没有 Region);2 失败。
-恢复流程(全局库回档之后,runbook §9.4):freeze → reconcile-from-cache(先 dry-run)→ audit -frozen-recovery(退出码 0)→ unfreeze -confirm-audited。`
+恢复流程(全局库回档之后,runbook §9.4):freeze → reconcile-from-cache(先 dry-run)→ audit -frozen-recovery(退出码 0)→ unfreeze -confirm-audited。
+redis 模式下撤销 freeze:unfreeze -confirm-audited -cache-was-not-verified-acknowledged(不连 mapping Redis,最低水位 0)。`
 
 // cliArgs 是解析后的命令行。
 type cliArgs struct {
@@ -176,11 +180,14 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer, d deps) i
 	defer cancel()
 
 	// tidb-prepare 与 freeze 只碰全局库:在连 mapping Redis 之前分流(Redis 不可达不该挡住预切与冻结 —— 冻结是止血动作)。
-	switch a.sub {
-	case subTiDBPrepare:
+	// redis 模式的 unfreeze 同样只碰全局库:那时没有就绪标记可读(refuseByMode 已要求显式确认)。
+	switch {
+	case a.sub == subTiDBPrepare:
 		return runTiDBPrepare(ctx, a, c, d, stdout, stderr)
-	case subFreeze:
+	case a.sub == subFreeze:
 		return runFreeze(ctx, a, c, d, stdout, stderr)
+	case a.sub == subUnfreeze && !c.RouteStore.DBFirst():
+		return runUnfreezeRedisMode(ctx, a, c, d, stdout, stderr)
 	}
 
 	rds, err := d.connectRedis(ctx, c.MappingRedis)
@@ -282,7 +289,7 @@ func refuseByMode(a cliArgs, c config.Config, stderr io.Writer) (int, bool) {
 			a.sub, a.configPath, c.RouteStore.Mode)
 		return routetool.ExitFailed, true
 	}
-	needsDBFirst := a.sub == subReconcile || a.sub == subUnfreeze || (a.sub == subAudit && a.frozenRecovery)
+	needsDBFirst := a.sub == subReconcile || (a.sub == subAudit && a.frozenRecovery)
 	if needsDBFirst && !c.RouteStore.DBFirst() {
 		what := a.sub
 		if a.sub == subAudit {
@@ -293,8 +300,20 @@ func refuseByMode(a cliArgs, c config.Config, stderr io.Writer) (int, bool) {
 			what, a.configPath, c.RouteStore.Mode)
 		return routetool.ExitFailed, true
 	}
+	// redis 模式的 unfreeze 是撤销冻结的唯一工具路径(见包注释),但核对不了任何东西:yaml 若是旧的、服务其实已在 db_first,
+	// 这里放行就绕过了就绪标记与恢复口径审计。所以要运维显式确认,而且在连任何东西之前判。
+	if a.sub == subUnfreeze && !c.RouteStore.DBFirst() && !a.cacheUnverifiedAck {
+		fmt.Fprintf(stderr, "route_tool %s: %s has RouteStore.Mode=%s — in redis mode there is no ready marker to verify and no "+
+			"audit -frozen-recovery; unfreezing only re-enables import-from-redis (and the db_first writers after a later switch). "+
+			"If every data_service replica really runs RouteStore.Mode=redis (undoing a freeze run by mistake or in a drill, or one carried "+
+			"over from db_first after falling back), rerun with -cache-was-not-verified-acknowledged; if any replica runs db_first, "+
+			"use that yaml instead (merge-zone-runbook §9.4)\n",
+			a.sub, a.configPath, c.RouteStore.Mode)
+		return routetool.ExitFailed, true
+	}
 	// 就绪标记与 INFO 身份都按单实例定义(多键脚本、run_id);cluster 下 INFO 落到哪个节点不确定,确认不了身份。
-	if a.sub == subUnfreeze && c.MappingRedis.Type != "" && c.MappingRedis.Type != redis.NodeType {
+	// redis 模式的 unfreeze 不读标记、不连 mapping Redis,不受这条限制。
+	if a.sub == subUnfreeze && c.RouteStore.DBFirst() && c.MappingRedis.Type != "" && c.MappingRedis.Type != redis.NodeType {
 		fmt.Fprintf(stderr, "route_tool %s: MappingRedis.Type=%s; the ready marker and the Redis identity check need a single instance (Type=node)\n",
 			a.sub, c.MappingRedis.Type)
 		return routetool.ExitFailed, true
@@ -347,6 +366,31 @@ func runFreeze(ctx context.Context, a cliArgs, c config.Config, d deps, stdout, 
 		fmt.Fprintf(stderr, "route_tool %s: %v\n", a.sub, err)
 	}
 	return routetool.FreezeExitCode(rep, err)
+}
+
+// runUnfreezeRedisMode 是 redis 模式下 unfreeze 的装配:只开全局库,不连 mapping Redis(那时没有就绪标记语义,
+// 规格「redis 模式不碰标记」)。显式确认已由 refuseByMode 要求过。
+func runUnfreezeRedisMode(ctx context.Context, a cliArgs, c config.Config, d deps, stdout, stderr io.Writer) int {
+	st, err := d.openRouteStore(c)
+	if err != nil {
+		fmt.Fprintf(stderr, "route_tool: cannot open the route tables on the global DB (%s): %v\n", store.OpenRouteStoreHint(a.configPath, err), err)
+		return routetool.ExitFailed
+	}
+	defer func() { _ = st.Close() }()
+
+	target := fmt.Sprintf("route_tool %s: global_db=%s/%s", a.sub, c.SnapshotMySQL.Host, c.SnapshotMySQL.DBName)
+	rep, err := routetool.Unfreeze(ctx, nil, st, routetool.UnfreezeOptions{
+		CacheUnverifiedAcknowledged: a.cacheUnverifiedAck,
+		RedisMode:                   true,
+		Timeout:                     a.freezeTimeout,
+		Target:                      target,
+		Stdout:                      stdout,
+		Stderr:                      stderr,
+	})
+	if err != nil {
+		fmt.Fprintf(stderr, "route_tool %s: %v\n", a.sub, err)
+	}
+	return routetool.UnfreezeExitCode(rep, err)
 }
 
 // parseArgs 解析 `-f <yaml> <子命令> [子命令参数]`。子命令只认六个,参数按子命令登记(别的子命令的参数一律
@@ -418,7 +462,7 @@ func parseArgs(args []string, stderr io.Writer) (cliArgs, error) {
 		sub.BoolVar(&a.confirmAudited, "confirm-audited", a.confirmAudited,
 			"确认已在冻结状态下跑过 `audit -frozen-recovery` 且退出码为 0(必填)")
 		sub.BoolVar(&a.cacheUnverifiedAck, "cache-was-not-verified-acknowledged", a.cacheUnverifiedAck,
-			"没有可信的就绪标记时仍解冻:先按 merge-zone-runbook §9.2 重放清单,再显式加它(runbook §9.4)")
+			"没有可信的就绪标记时仍解冻:先按 merge-zone-runbook §9.2 重放清单,再显式加它;redis 模式下撤销 freeze 也必须加它(runbook §9.4)")
 	default:
 		return a, fmt.Errorf("unknown subcommand %q (want %s)", a.sub, allSubs)
 	}

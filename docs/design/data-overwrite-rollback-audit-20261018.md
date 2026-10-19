@@ -1,0 +1,177 @@
+# 全仓数据问题与覆盖回档审计（2026-10-18）
+
+> 只读静态审计，**未编译、未运行**。对象是 2026-10-18 的工作区（包括其他会话尚未提交的改动）。
+> 本文只登记问题和修复方向，不包含任何代码修改。修复要按 AGENTS.md §10.1 交给 Codex 验证，并按 §12 同步 Java 版。
+
+## 0. 结论
+
+- **有问题。** 10 个子系统一共报了 49 条：24 条 medium、25 条 low，没有 high。
+- 对抗复核了 26 条：全部 24 条 medium，加上 2 条与之同根因的 low。**全部成立，没有被推翻的**。24 条 medium 里，复核后有 10 条降为 low；另有 2 对是重复，所以 medium 去重后剩 **12 个根因**。
+- 其余 23 条 low **没有复核**。
+- 默认配置下没有发现"必然发生的资产复制"。真正的"覆盖回档"只在两处出现：一是 go/db 的 legacy 模式没有行内围栏，二是运维工具被误用。默认配置下最主要的风险是**丢进度**，形态是：location 被删除，但旧持有节点还没把数据落盘。这时 epoch 守卫会拒掉旧节点的存盘，保证旧数据不会盖到新数据上；代价是被拒的那段进度直接没了。
+- 用户没有开启的功能（全球匹配、交易资产通道、收件箱消费）里另有 5 个 medium，开通前必须修掉。
+
+## 1. 方法与范围
+
+| 区域 | 覆盖内容 |
+|---|---|
+| cpp-save-producer | C++ 存盘生产端：置脏、快照、save_seq、父快照提交屏障、DBTask 投递 |
+| load-handover | 加载、进场、重连、切场景交接（C++ 场景侧 + go/scene_manager） |
+| go-db-pipeline | go/db 消费、围栏、重试、游标、补投、子表缓存 |
+| data-service | go/data_service：路由、号段、快照、回档、调试工具 |
+| login-session-route | go/login、go/player_locator、go/client_rpc_router、gate 会话 |
+| cpp-economy | C++ 背包、货币、战斗结算、资产操作、收件箱执行 |
+| go-asset-services | go/trade、go/mail、go/player_inbox、shared/assetop |
+| social-match-battle | guild、friend、rank、chat、match、battle 节点 |
+| ops-tools-java | tools/merge_zone、回档脚本、schemamigrate、Java gateway_node 与 mall_game |
+| go-shared-primitives | snowflake、号段、ownerepoch、savebarrier、leader、kafka 封装 |
+
+- **复核方式：** 全部 medium 加 2 条同根因的 low，按根因分 5 组，每组一名复核员，任务是逐条尝试推翻。
+- **不在范围内：**
+  - Java 版服务器仓库（`D:\luyuan\xuanming-server-mmo`）。
+  - Unity 客户端。
+- **各区域未逐行读完的部分：**
+  - `player_lifecycle.cpp` 的若干段：交接取证、改派待确认表、EnterScene 应答分派。
+  - 各业务系统的持久组件写入口：是否绕过冻结闸或退出闸，没有逐个核对。
+  - go/db：`retry_stranded.go`、`durable_enqueue.go` 主体。
+  - loginqueue。
+  - 帮会逻辑层正文。
+  - `k8s_zone_rollback.ps1` 正文。
+
+## 2. 复核后的 medium（12 个根因）
+
+### 2.1 删 location 与持有者落盘未绑定（默认可达，回档到上次成功存盘）
+
+| 编号 | 问题 | 位置 | 复核 | 已知 |
+|---|---|---|---|---|
+| load-handover#1（⊇ login-session-route#0） | LeaveGame 和 gate 崩溃都会删除 location，但不让持有节点退出或存盘。下次进场时 location 已不存在，于是铸新 epoch、跳过换手门；新节点读到旧快照，旧节点后续存盘被 CAS 拒绝后，实体直接销毁 | `go/scene_manager/internal/logic/enterscenelogic.go:550`、`:680`；`go/player_locator/internal/logic/markofflinelogic.go:107` | 成立，medium | 新 |
+| load-handover#0 | 同一连接 LeaveGame 后重进同一频道：gate 的 `ApplyRoute` 不看 epoch，持有节点永远停在旧 epoch，下次真正写盘时被当作"已废黜"销毁 | `cpp/nodes/gate/handler/event/scene_route_helper.h:99-113`、`:165-179` | 成立，medium | 新 |
+| cpp-save-producer#0（= load-handover#2） | 退出存盘超过 30s 断线租约仍未落地（Redis 对该节点写失败），租约到期后 LeaveScene 无条件删除 location，后续时序同上 | `cpp/libs/services/scene/player/system/player_lifecycle.cpp:4512`、`:3123-3144` | 成立，medium | 已登记（layer 3 注释、player-async-save-loss-windows.md §4.1） |
+
+**补充说明：**
+- gate 不处理 LeaveGame。ExitGame 只在 TCP 断开时代发。
+- `markofflinelogic.go` 的同步 LeaveScene 原本是为了修复"location 永久残留"而加的，结果引入了本问题。
+- 客户端上线"回选角"后，load-handover#0 会**必然**触发。
+- 改包客户端今天就能触发。
+
+**修复方向：** 把"删 location"绑定到"持有者已释放"上。
+- LeaveGame 成功后，由 gate 代发 ExitGame，或由 scene_manager 发带 `expected_owner_epoch` 的 ReleasePlayer。
+- MarkOffline 与租约到期两条路径：只有当前代 A1′ 标记已写出、或持有节点确认已死时，才删除 location；否则保留 location，让下次进场走换手门。
+- 纵深防御：gate 的 `ApplyRoute` 在 epoch 变化时也转发一次。
+- 补指标：`stale_owner_write_rejected` 与"退出中且从未落地"同时出现，就是回档的直接证据，应单独计数。
+
+**修复（2026-10-18，代码与测试已落工作区，未编译、未测试，待 Codex 验证）：** 方案与不变量见 [location-release-binding.md](location-release-binding.md)。scene_manager 的 LeaveScene 只在拿到当前代 handoff 标记 / 持有节点已死 / 没有持有者时才删 location，否则保留并经 `ReleasePlayer.session_ended` 请持有节点释放（等满 600s 上限才按旧行为删并计 `forced`）；gate 收到 LeaveGame 时代发 ExitGame 并清空会话路由状态，`ApplyRoute` 加同节点新 epoch 规则；新增 scene `stale_owner_rejected_exiting` 与 `scene_manager_leave_holder_release_total`。
+
+### 2.2 go/db 存盘协议世代不一致（默认配置）
+
+| 编号 | 问题 | 位置 | 复核 | 已知 |
+|---|---|---|---|---|
+| go-db-pipeline#0 | `go/db/etc/db.yaml` 缺省 `Fencing.Mode: legacy`，K8s 原样沿用。C++ 只要 `owner_epoch≠0` 就无条件走严格提交屏障，login 要求两表 ACK 都等于 pending，而 go/db 只在 dual 下写 ACK。结果是玩家第二次登录起全部失败，跨场景交接只能等冻结上限 | `go/db/internal/kafka/player_cache_publish.go:83`；`go/login/internal/logic/pkg/dataloader/parent_commit_barrier.go:36-43`；`go/db/internal/saveoutbox/service.go:26` | 成立，medium（fail-closed，不直接丢资产） | 新（db-write-fencing-mysql.md:1527 写了"必须升级为 dual"，但缺省值和 §8.4/§8.6 的"混跑安全/随时回退"说法没有跟着改） |
+| go-db-pipeline#1 | 存盘补投器没有重投上限、退避或终态标记。存储冷却时每约 6.4s 整行重投一次；遇到确定性拒写（大字段闸）的玩家，每天新增约 1.3 万条接近 1MB 的死信，足以写满 noeviction 的共享 Redis | `go/db/internal/saveoutbox/replay.go:146`、`scripts.go:22-42` | 成立，medium（仅 dual，但 dual 实际上是唯一能工作的模式） | 新 |
+
+**修复方向：**
+- 加协议世代的机器门禁：go/db 发现自己是 legacy 而 zone 已是 strict 世代时，拒绝启动。
+- 修正 db.yaml 的缺省值、注释，以及 §8.4/§8.6 的说法。
+- 补投意图记录尝试次数，做指数退避，设上限后转告警。
+- go/db 对确定性拒写在 barrier 上标记终态，补投器看到终态就停止重投。
+
+**修复（2026-10-18，Claude，未编译，待 Codex 验证）**：本节两条与 go-db-pipeline#2 已落码。做法见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md) 文末「2026-10-18 存盘协议世代门禁与补投有界」，以及 §4.7、§8.4、§8.6 的同日更正；进度见 `docs/PROGRESS.md` 同日条目。
+- go/db 缺省改为 `dual`。
+- legacy 由世代标记与补投桶机器判定，有严格世代证据时拒启；运行中发现即停机。
+- 补投改为首见宽限、指数退避、次数上限转告警、终态停止，并在在途重试、主库冷却、legacy 存活时跳过。
+
+### 2.3 跨账号登录态继承（默认可达，安全 + 数据）
+
+| 编号 | 问题 | 位置 | 复核 | 已知 |
+|---|---|---|---|---|
+| login-session-route#1 | `login_session` 只用 uint32 session_id 建键。gate 崩溃后以同一 node_id 重启、序号从 0 开始，30min TTL 内跳过 Login 的客户端可以继承别人的账号，用它建角、进别人的角色 | `go/login/internal/logic/pkg/loginsession/loginsession.go:38` | 成立，medium | 已登记（client-request-ordering.md §7.2 第 2 条，未修） |
+
+**修复方向：**
+- 键改为与会话栅栏一致的 `{gate_instance_id}:{incarnation}`。
+- gate 对 CreatePlayer / EnterGame 要求本连接先完成 Login。
+
+> 2026-10-18 已修，未编译、未运行，待 Codex 验证。改动与滚动升级说明见 [client-request-ordering.md](./client-request-ordering.md) §7.2 第 2 条，Java 版不受影响。
+
+### 2.4 战斗结算丢数据
+
+| 编号 | 问题 | 位置 | 复核 | 已知 |
+|---|---|---|---|---|
+| cpp-economy#0 | 物品号段暂时发不出号时，掉落被吞掉，账本却照样 `RecordApplied`。资产通道遇到同样情况是先预检、不够就回 RETRY，战斗结算没有这么做 | `cpp/libs/services/scene/battle/system/player_battle.cpp:803-817`、`:1800` | 成立，medium（默认可达，需要 data_service 持续故障十几分钟以上） | 新 |
+| cpp-economy#1 | 玩家被 GM 封锁金币获取后，`AddCurrency` 返回终局的 `kAssetBlocked`，结算却按暂时失败处理，永远应用不上。药品不扣，掉落和任务进度丢失；下一局开打时 pending 被覆盖 | `player_battle.cpp:1693-1710` | 成立，medium（收件箱消费默认关闭，开启后可达） | 新 |
+| social-match-battle#2 | 全球模式下，battle 节点在处理 Kafka 回执前停机或崩溃：评分与帮会历练照常入账，个人结算永不派发。`match_battle_settlement_source` 没有任何读者 | `cpp/nodes/battle/logic/battle_room_manager.cpp:1615-1643` | 成立，medium（`GlobalMatch.Enabled` 门控） | 文档 cross-zone-matchmaking.md:548 的结论与代码不符 |
+
+**修复方向：**
+- 结算进入不可重复的副作用（金币）之前，先预检号段余量，不够就整笔延后。
+- 区分 `kAssetBlocked`（跳过金币、继续结算）与 `kAssetFrozen`（延后）。
+- 停机时先 flush 并处理完回执，再清房；或者把 pending 的落库提前到发结果之前。
+
+### 2.5 未开通功能里的卡死与滞留（开通前必须修）
+
+| 编号 | 问题 | 位置 | 复核 | 门控 |
+|---|---|---|---|---|
+| social-match-battle#0 | 全球匹配的票据与 battle 实例 uuid 强绑定。节点重启或被替换后，state 2/3 的票据永久卡住，玩家再也进不了任何匹配入口 | `battle_room_manager.cpp:807-814`；`go/match/internal/logic/global_match.go:173-192` | 成立，medium | `GlobalMatch.Enabled` |
+| go-asset-services#0 | `Commerce.Tick` 只要单条合同出错就整轮返回。失败行的 `updated_ms` 不变，永远排在队头，全服交易被卡住。最容易触发的是离线买家累计 16 条未决 credit 后返回的 `ErrTooManyPending` | `go/trade/internal/commerce/engine.go:768-822` | 成立，medium | `AssetOp.Enabled` |
+| go-asset-services#1 | 被自动放弃（180 天）或人工终结的托管扣款腿不写 `durable`，合同永远停在 pay/escrow，卖家托管的资产被扣留。买家点击购买后下线，就能把卖家资产扣作人质 | `engine.go:676-686`；`go/trade/internal/data/asset_op_repo.go:1013-1021` | 成立，medium | `AssetOp.Enabled` |
+
+## 3. 复核后降为 low 的（10 条）
+
+| 编号 | 问题 | 降级理由 |
+|---|---|---|
+| go-db-pipeline#3 | legacy 下 MySQL 写没有行内围栏，实例卡顿超过租约时会用旧快照覆盖新版本（G1） | 需要单进程停顿 90s~2min；dual 下已封死；legacy 本身因 2.2 已不可用 |
+| go-db-pipeline#4 | Redis AOF 丢尾导致游标与收据回退，legacy 下旧重试覆盖 MySQL | 设计已登记接受的残余（db-retry-owner-routing.md §7.7）；dual 下已封死 |
+| data-service#0 | `DeletePlayerData` / `SetPlayerField` 没有鉴权，且与在役的 `save_barrier`、`asset_sql_commit` 同前缀，会删除或覆盖它们 | 仓库里没有调用方，需要运维显式调用 |
+| data-service#1 | `debug_import` 用 float64 解析 uint64 的 player_id；`-player` 覆盖时不改行内的 id | 调试工具，默认 `--dry-run=true` |
+| data-service#2 | 全局库重建或回档后号段从 1 重新种，item/txlog/snapshot 会重发已用号 | 已登记的运维事件；player 号有 login 探测兜底 |
+| data-service#3 | 落点映射只存在 mapping Redis，丢失后会写错库 | 已登记、修复在途；受害面窄 |
+| login-session-route#2 | 账号角色目录只在核心 Redis，丢键后角色从账号消失 | 已登记；需要 Redis 丢数据；角色数据仍在库里 |
+| cpp-economy#2 | 主背包满时掉落进临时格，临时格没有取出接口，满 200 个后按 FIFO 淘汰 | 实例仍随存档持久化，补一个搬运 RPC 即可找回；"没有取出接口"是新发现 |
+| ops-tools-java#0 | copy 模式在开服后撤销合服，会静默回档到合服时刻 | 非默认的 copy 模式，且需要违反 runbook §10.2；dst 上的行不删除 |
+| ops-tools-java#1 | 灾难级 PITR 只回退 zone 库，全局库不回退，会造成复制或白亏 | 负责人已接受的代价（zone_data_rollback.md 2026-10-18 修订）；当前 `-Apply` 不可执行。建议在 inventory 阶段输出跨库资产操作清单 |
+
+## 4. low 项
+
+> 另有 2 条 low 已复核成立、仍维持 low：load-handover#3（A2′ 换 epoch 后沿用旧暂存）、go-db-pipeline#2（legacy/dual 混跑时补投覆盖）。下面 23 条**没有复核**。
+
+- **C++ 存盘与加载**
+  - `SanitizeSkillList` 在加载时按当前技能表永久删除玩家技能（`player_skill.cpp:104`，两个区域独立报告）。
+  - 父快照提交前不检查行大小，DBTask 被永久拒绝后玩家被登录预检锁死（`player_lifecycle.cpp:3292`）。
+  - 严格提交屏障取消了 owner 缺键补种，Redis 丢数据后在线玩家会被判废黜，scene-owner-reentry-barrier.md §6.2 描述已过时（`redis_client.h:153`）。
+  - 存盘不保留未知字段，scene 回退到旧镜像时会抹掉新字段（`player_data_loader.h:16`）。
+- **C++ 资产**
+  - `AddCurrency` 没有 uint64 溢出检查（`currency_system.cpp:203`）。
+  - `AttachDebt` 合并欠款时会让已过期的旧欠款复活（`:357`）。
+  - 交易流水在内存改动时就发出，早于落盘（`transaction_log_system.cpp:84`）。
+- **login**
+  - 账号 blob 有两个写者不走建角锁（`entergamelogic.go:256`）。
+  - 会话栅栏的 player 绑定随 TTL 过期，之后同一连接可以绑第二个角色（`sessionfence/fence.go:158`）。
+- **资产服务**
+  - 收件箱 Ack 以 Redis 落盘为依据，Redis 丢尾后 GM 处置静默丢失（`store_consume.go:308`）。
+- **匹配**
+  - 已打完的战斗被全球匹配恢复误判为"未建成"，票据回队（`battle_room_manager.cpp:813`）。
+  - 评级来源停写后结果消费卡死（`rating.go:71`）。
+- **运维工具与 Java**
+  - 合服 P3 只取一次积压快照（`preflight.go:851`）。
+  - `-skip-player-rows` 不校验落点（`merge_run.go:429`）。
+  - 撤销时榜单 ZADD 导致分数回退（`guild_step.go:443`）。
+  - merge_zone 不识别 db_first（`main.go:540`）。
+  - `kafka_offset_reset` 不检查回档切点（`kafka_offset_reset.ps1:589`）。
+  - 区服 PUT 整行覆盖，漏传字段会把区服改成 OPEN（`AdminZoneController.java:131`）。
+  - 商城第二笔支付回执被拒，且不生成退款（`CommerceStore.java:126`）。
+- **身份原语**
+  - FenceClock 在生产上退化为单调钟（`fenceclock.go:102`，文档称已修但仍有问题）。
+  - reclaim 在 slots 键过期时绕过隔离期（`allocator.go:1113`）。
+  - login 的毫秒水位前推量 2000ms 不满足契约（`login.go:51`，只在关闭号段时可达）。
+
+## 5. 修复优先级建议
+
+1. **2.1 删 location 与持有者释放绑定。** 默认可达的回档，"回选角"上线前必须修。涉及 gate、login、player_locator、scene_manager、C++ 场景，需要先写设计。
+2. **2.2 协议世代门禁与补投上限。** 当前缺省配置下登录不可用；dual 是唯一可用的模式，而 dual 下补投会放大。
+3. **2.3 `login_session` 键绑定 incarnation。** 跨账号接管，改动小。
+4. **2.4 战斗结算三处。** cpp-economy#0 默认可达；另外两处在开通收件箱、全球匹配前修。
+5. **2.5 三处。** 开通全球匹配、交易资产通道前修。
+6. **low 项。** 按需处理，优先 `SanitizeSkillList` 与 `AddCurrency` 溢出。
+
+## 6. 证据
+
+- 工作流运行：`wf_f7c7b2f0-c42`。会话转录目录里的 `journal.jsonl` 保存每个代理的完整返回，包括查找员的触发时序和复核员给出的 文件:行 证据。
+- 本审计只读，未修改任何代码。

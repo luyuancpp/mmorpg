@@ -61,6 +61,12 @@ KafkaWriteTimeoutSeconds: 5
 # 压测正确性验证 / 双 zone 传送验收 / cross-zone-failure-test-runbook 必须改回 false。
 AllowUnsafeCrossNodeHandoff: true
 
+# LeaveScene 删 location 之前等「持有者已释放」证据的上限(秒,docs/design/location-release-binding.md §3.6)。
+# 拿不到证据时保留 location、回可重试错误并请持有节点释放;等满上限才按旧行为删除(计 forced)。
+# 0 = 默认 600;-1 = 关闭整项检查(运维回滚开关:关 scene 的 SCENE_EXIT_RELEASE_MARK 之前先设 -1)。
+# 上面的 AllowUnsafeCrossNodeHandoff=true 时这项检查同样不生效(换手门本身已被旁路)。
+LeaveSceneHolderReleaseWaitSeconds: 600
+
 # data_service gRPC 客户端(etcd 发现)。EnterScene 用它查玩家归属 zone
 # (GetPlayerHomeZone),结果随 RoutePlayerEvent.home_zone_id 下发,scene 节点据此选
 # 存盘 topic(cross-zone-scene-travel.md CZ-3)。

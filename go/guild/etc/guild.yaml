@@ -42,11 +42,18 @@ PlayerLocatorRedis:
 # 填错库 = 闸门永远看不到标记 = 合服窗口内照样能在源 zone 建帮。
 #
 # 整段删掉 = 闸门不生效,启动时会打一条 "MergeMarkerRedis 未配置" 的 Info。
+#
+# RequireRouteReady(D1 第 3 批读方门禁,缺省 false = 上面的 EXISTS 判据,行为不变):
+# true 时只有 mapping Redis 的就绪标记 mapping:route:ready 可信(记下的身份就是本实例)才按闸门键判,
+# 不可信时经闸门的公会写(建帮、入帮、经济、活动等)一律按封锁拒绝;启动期试跑一次读脚本,执行不了就拒启。只在 data_service 已是 db_first、
+# 对账 leader 已挂上标记之后打开(上线顺序 P5:go/db → data_service → guild),回退时先关它。
+# 见 docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.4 / §8。
 MergeMarkerRedis:
   Host: 127.0.0.1:6379
   Pass: ""
   DB: 0
   PoolSize: 20
+  RequireRouteReady: false
 
 # ---- 独占库 mmorpg_guild(D-14 §1/§5,§8 已修订)----
 # 库由 deploy/mysql-init/00_init_zone_dbs.sql 预建(存量卷需 root 手工执行那两行);表由 go/schemamigrate

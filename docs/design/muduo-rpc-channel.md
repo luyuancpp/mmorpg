@@ -393,6 +393,8 @@ lambda 捕获 `{sessionId, incarnation, clientRequestId, innerMessageId}`:
 生成的 gRPC 客户端只有按方法的全局 handler。B 要挂起 `RpcDoneCallback`,只能自建 `关联号 → RpcDoneCallback` 表:成功按响应回显的关联号认领,
 失败按 `GrpcCallFailure` 的请求副本认领;下游不回显关联号就不能挂起。后续批次给 `grpc_async_client` 模板加每次调用的 done 与 deadline(§14)。
 
+> **2026-10-17 契约勘误**：§8.4 过渡写法已过时：生成客户端只保留必填 done 的每次调用入口，B 可直接把 `RpcDoneCallback` 按值捕获进 `GrpcDone`，不再靠响应回显或全局失败处理器认领；见 `grpc-client-deadline-failure-callback.md` §12。
+
 ## 9. 三个指定对象的去向
 
 ### 9.1 `handler/rpc`:保留
@@ -415,6 +417,9 @@ handler 头文件模板(整文件生成)加一行类级注释说明"延后应答
   `register_gen.go`、`replied_handler_gen.go`(整删)、`handler.go` / `model.go` 的回包字段、两个 node util 谓词、`generator_filters_test.go`。否则下次生成会补默认守护段并重新注册(`code_parser.go:32-36`)。
 - 保留:`scene_manager_response_handler.*` 等 gRPC 应答适配(手写、不走 RPC0);gate 的 `rpc_replies/register_handler.cpp`(生成的空 `InitServiceHandler`)。
   rpc_replies 目录此后只放 gRPC 应答适配。
+
+  > **2026-10-17 契约勘误**：这条保留项随后退场：scene 的 gRPC 应答适配也已删除，回包由调用处闭包委托具名 System 函数；gate 仍保留生成的空 `InitServiceHandler`，battle 为手写空壳。
+
 - 玩家回包死链(`gPlayerServiceReplied` 全仓无读者、`scene/rpc_replies/player/` 5 个类 28 个方法、`InitPlayerServiceReplied` 义务、与 `rpc_event_registry.cpp` 同名不同义的 `XxxImpl` ODR 隐患)单独成批删除。
 - 规范:AGENTS §8 与 copilot-instructions.md:213 的 `On<Domain><Method>Reply` 规则改为"节点间 RPC0 的回包在调用点 per-call lambda;rpc_replies 只放 gRPC 应答适配"(改 AGENTS 需用户同意)。
 
@@ -514,7 +519,7 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 
 - 玩家级 handler 延后完成(`player_service_gen.go` / `PlayerService::CallMethod` 加调用上下文)。2026-10-15 设计已定、建议暂不实施(无合理首个调用方),
   见 [`player-handler-deferred-reply.md`](player-handler-deferred-reply.md)。2026-10-16 用户决定暂不实施;出现第一个需要延后回包的玩家 handler 时再按该文档 §3、§6 做。
-- `grpc_async_client` 模板加每次调用的 done 与 deadline,让 B 的 gRPC 下游也能直接挂 `RpcDoneCallback`。
+- ~~`grpc_async_client` 模板加每次调用的 done 与 deadline,让 B 的 gRPC 下游也能直接挂 `RpcDoneCallback`。~~ 2026-10-17：已由必填每次调用回调取代，全局处理器删除；现行契约见 `grpc-client-deadline-failure-callback.md` §12。
 - `muduo_grpc::Channel` 的在途表迁到同一份 `InflightIndex`;其 `clear<MuduoGrpcChannelPtr>` 挪进关机阶段 0。
 - PlayerEnterGameNode 改 `CallMethod` 拿送达确认(I1 残余),由进场欠账 owner 决定。
 - `client-request-ordering.md` 登记不变式 I5。
@@ -665,6 +670,8 @@ C++ 节点没有 Prometheus 出口(`dirty_save_stats.h:25-30`),沿用"relaxed �
 (2026-10-16:该文件随 gRPC 传输第 3 批删除,本地拒绝改由 `grpc_client_local_reject_test.cpp` 覆盖,成功 / 停机两条待第 4 批回环重写,
 见 grpc-client-deadline-failure-callback.md §11.4)。
 §8.4「关联号 → RpcDoneCallback」过渡写法从此不再必要:B 的 gRPC 下游直接把 `RpcDoneCallback` 捕获进 `GrpcDone`。
+
+> **2026-10-17 契约勘误**：done 已成为唯一完成通道且不得为空；“既有 API 全部保留”仅描述增量阶段，旧三参 / metadata 数组 / Message 重载和全局处理器已删除，通用 sender 改走 Erased 入口。
 
 ### 19.3 GM 停机鉴权被拒返回失败
 

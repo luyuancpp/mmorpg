@@ -88,8 +88,20 @@ namespace
 		{
 			return false;
 		}
-		player_inbox::SendPlayerInboxFetchItems(tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService),
-												node, request);
+		player_inbox::SendPlayerInboxFetchItems(
+			tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService), node, request,
+			[playerId = request.player_id(), domain = static_cast<uint32_t>(request.domain()),
+			 correlationId = request.correlation_id()](const GrpcCallOutcome &outcome,
+													 const player_inbox::FetchPlayerInboxResponse *reply)
+			{
+				if (outcome.ok() && reply != nullptr)
+				{
+					PlayerInboxSystem::OnFetchReply(playerId, domain, correlationId, *reply);
+					return;
+				}
+				PlayerInboxSystem::OnFetchFailed(playerId, domain, correlationId,
+												 outcome.ok() ? kGrpcStatusInternal : outcome.code, outcome.message);
+			});
 		return true;
 	}
 
@@ -100,8 +112,20 @@ namespace
 		{
 			return false;
 		}
-		player_inbox::SendPlayerInboxAckItems(tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService),
-											  node, request);
+		player_inbox::SendPlayerInboxAckItems(
+			tlsNodeContextManager.GetRegistry(common::base::PlayerInboxNodeService), node, request,
+			[playerId = request.player_id(), domain = static_cast<uint32_t>(request.domain()),
+			 correlationId = request.correlation_id()](const GrpcCallOutcome &outcome,
+														 const player_inbox::AckPlayerInboxResponse *reply)
+			{
+				if (outcome.ok() && reply != nullptr)
+				{
+					PlayerInboxSystem::OnAckReply(playerId, domain, correlationId, *reply);
+					return;
+				}
+				PlayerInboxSystem::OnAckFailed(playerId, domain, correlationId,
+											   outcome.ok() ? kGrpcStatusInternal : outcome.code, outcome.message);
+			});
 		return true;
 	}
 
@@ -1153,8 +1177,8 @@ void PlayerInboxSystem::OnPlayerLeaving(entt::entity player)
 		}
 		// 离开是最后一次机会,不看 Ack 退避(nextAckMs)。owner_epoch 此刻仍是本节点的当前值,服务端应判 MATCH;
 		// 新 owner 若已推进围栏会判 STALE,无害:它加载的存档里已有这些结局,会自己补确认。
-		// SendAck 不登记任何回调:回包由全局处理器按 player_id + correlation_id 找实体,实体已销毁时 OnAckReply /
-		// OnAckFailed 丢弃,同一玩家重新落地后的新实体关联号也对不上(节点级单调计数器)。
+		// SendAck 的完成回调只捕获调用身份:实体已销毁时 OnAckReply / OnAckFailed 丢弃;
+		// 同一玩家重新落地后的新实体关联号也对不上(节点级单调计数器),这里不登记额外等待状态。
 		SendAck(player, playerId, state, nowMs);
 		const bool sent = state.phase == PlayerInboxPhase::kAcking;
 		LOG_INFO << "[PlayerInbox] metric=inbox_leave_ack result=" << (sent ? "sent" : "not_sent")
@@ -1331,18 +1355,29 @@ void PlayerInboxSystem::Tick()
 
 // ── gRPC 回包 ───────────────────────────────────────────────────────────────
 
-void PlayerInboxSystem::OnFetchReply(const player_inbox::FetchPlayerInboxResponse &response)
+void PlayerInboxSystem::OnFetchReply(uint64_t playerId, uint32_t domain, uint64_t correlationId,
+								   const player_inbox::FetchPlayerInboxResponse &response)
 {
-	const uint64_t playerId = response.player_id();
-	const uint32_t domain = static_cast<uint32_t>(response.domain());
+	// 回显逐字段检查,不能因某一项为 0 而绕过其它项的不一致;丢弃后由在途超时收敛。
+	if ((response.player_id() != 0 && response.player_id() != playerId) ||
+		(response.domain() != 0 && static_cast<uint32_t>(response.domain()) != domain) ||
+		(response.correlation_id() != 0 && response.correlation_id() != correlationId))
+	{
+		LOG_ERROR << "[PlayerInbox] Fetch reply echo mismatch captured_player_id=" << playerId
+				  << " captured_domain=" << domain << " captured_corr=" << correlationId
+				  << " echoed_player_id=" << response.player_id()
+				  << " echoed_domain=" << static_cast<uint32_t>(response.domain())
+				  << " echoed_corr=" << response.correlation_id();
+		return;
+	}
 	entt::entity player = entt::null;
 	auto *state = FindLiveState(playerId, domain, player);
-	// 关联校验(设计 §7.6 第 1 步、§7.11):按回显的 player_id 找实体,domain 与 correlation_id 必须对上在途请求。
-	if (state == nullptr || state->phase != PlayerInboxPhase::kFetching || response.correlation_id() == 0 ||
-		state->correlationId != response.correlation_id())
+	// 按调用身份找实体,仍校验当前阶段和关联号,拒绝已超时、被顶替或实体重建前的调用。
+	if (state == nullptr || state->phase != PlayerInboxPhase::kFetching || correlationId == 0 ||
+		state->correlationId != correlationId)
 	{
 		LOG_DEBUG << "[PlayerInbox] Fetch reply discarded (entity gone, recreated or request superseded) player_id="
-				  << playerId << " domain=" << domain << " corr=" << response.correlation_id();
+				  << playerId << " domain=" << domain << " corr=" << correlationId;
 		return;
 	}
 	const uint64_t nowMs = gNowMsFn();
@@ -1411,15 +1446,13 @@ void PlayerInboxSystem::OnFetchReply(const player_inbox::FetchPlayerInboxRespons
 	ApplyPending(player, playerId, *state, nowMs);
 }
 
-void PlayerInboxSystem::OnFetchFailed(const player_inbox::FetchPlayerInboxRequest &request, uint32_t grpcCode,
+void PlayerInboxSystem::OnFetchFailed(uint64_t playerId, uint32_t domain, uint64_t correlationId, uint32_t grpcCode,
 									  const std::string &detail)
 {
-	const uint64_t playerId = request.player_id();
-	const uint32_t domain = static_cast<uint32_t>(request.domain());
 	entt::entity player = entt::null;
 	auto *state = FindLiveState(playerId, domain, player);
-	if (state == nullptr || state->phase != PlayerInboxPhase::kFetching || request.correlation_id() == 0 ||
-		state->correlationId != request.correlation_id())
+	if (state == nullptr || state->phase != PlayerInboxPhase::kFetching || correlationId == 0 ||
+		state->correlationId != correlationId)
 	{
 		LOG_DEBUG << "[PlayerInbox] Fetch failure discarded (entity gone or request superseded) player_id=" << playerId
 				  << " code=" << grpcCode;
@@ -1449,17 +1482,27 @@ void PlayerInboxSystem::OnFetchFailed(const player_inbox::FetchPlayerInboxReques
 	Defer(*state, playerId, PlayerInboxDeferReason::kTransport, nowMs);
 }
 
-void PlayerInboxSystem::OnAckReply(const player_inbox::AckPlayerInboxResponse &response)
+void PlayerInboxSystem::OnAckReply(uint64_t playerId, uint32_t domain, uint64_t correlationId,
+								 const player_inbox::AckPlayerInboxResponse &response)
 {
-	const uint64_t playerId = response.player_id();
-	const uint32_t domain = static_cast<uint32_t>(response.domain());
+	if ((response.player_id() != 0 && response.player_id() != playerId) ||
+		(response.domain() != 0 && static_cast<uint32_t>(response.domain()) != domain) ||
+		(response.correlation_id() != 0 && response.correlation_id() != correlationId))
+	{
+		LOG_ERROR << "[PlayerInbox] Ack reply echo mismatch captured_player_id=" << playerId
+				  << " captured_domain=" << domain << " captured_corr=" << correlationId
+				  << " echoed_player_id=" << response.player_id()
+				  << " echoed_domain=" << static_cast<uint32_t>(response.domain())
+				  << " echoed_corr=" << response.correlation_id();
+		return;
+	}
 	entt::entity player = entt::null;
 	auto *state = FindLiveState(playerId, domain, player);
-	if (state == nullptr || state->phase != PlayerInboxPhase::kAcking || response.correlation_id() == 0 ||
-		state->correlationId != response.correlation_id())
+	if (state == nullptr || state->phase != PlayerInboxPhase::kAcking || correlationId == 0 ||
+		state->correlationId != correlationId)
 	{
 		LOG_DEBUG << "[PlayerInbox] Ack reply discarded (entity gone, recreated or request superseded) player_id="
-				  << playerId << " domain=" << domain << " corr=" << response.correlation_id();
+				  << playerId << " domain=" << domain << " corr=" << correlationId;
 		return;
 	}
 	const uint64_t nowMs = gNowMsFn();
@@ -1560,15 +1603,13 @@ void PlayerInboxSystem::OnAckReply(const player_inbox::AckPlayerInboxResponse &r
 	FinishRound(*state, nowMs);
 }
 
-void PlayerInboxSystem::OnAckFailed(const player_inbox::AckPlayerInboxRequest &request, uint32_t grpcCode,
+void PlayerInboxSystem::OnAckFailed(uint64_t playerId, uint32_t domain, uint64_t correlationId, uint32_t grpcCode,
 									const std::string &detail)
 {
-	const uint64_t playerId = request.player_id();
-	const uint32_t domain = static_cast<uint32_t>(request.domain());
 	entt::entity player = entt::null;
 	auto *state = FindLiveState(playerId, domain, player);
-	if (state == nullptr || state->phase != PlayerInboxPhase::kAcking || request.correlation_id() == 0 ||
-		state->correlationId != request.correlation_id())
+	if (state == nullptr || state->phase != PlayerInboxPhase::kAcking || correlationId == 0 ||
+		state->correlationId != correlationId)
 	{
 		LOG_DEBUG << "[PlayerInbox] Ack failure discarded (entity gone or request superseded) player_id=" << playerId
 				  << " code=" << grpcCode;

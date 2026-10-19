@@ -43,34 +43,44 @@
 # 只出 info 级的 PlayerInboxDeliveredUnackedStale。
 #
 # scene 侧没有 Prometheus 端点,收件箱信号只在结构化日志里(`[PlayerInbox] metric=...`,设计 §9.4)。
-# Loki ruler 目前没有挂载规则目录,下列 LogQL 先作为值班固定查询,ruler 接线之后转为规则:
-#   warning : count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_unknown_type" [10m]) > 0
+# Loki ruler 目前没有挂载规则目录,下列 LogQL 先作为值班固定查询,ruler 接线之后转为规则。
+# 流选择器:C++ 业务日志只落 logs/cpp_nodes/*.log、不经 stdout,由每个 C++ Pod 的 Alloy sidecar 读文件送 Loki
+# (k8s_deploy.ps1 Get-CppLogSidecarConfigAlloy)。它打的流标签只有 env / namespace / pod / zone / service / job / lang / level,
+# **没有 app**:写成 {app=~"scene.*"} 的选择器匹配不到任何流,查询恒为空。scene 一律写 {job="cpp_nodes", service="scene"}
+# (scene-world / scene-instance 两个池同一个二进制,文件名前缀都是 scene);逐 zone 看再加 zone="<zone 名>",或像下面
+# consumer_disabled 那条一样 sum by (zone)。本机观测台(deploy/observability/alloy/config.alloy)同样有 job / service,同一写法可用;
+# 它的 zone 只在多 zone 启动(实例名带 zN_ 前缀)时才有,单 zone 本机加 zone 过滤会把日志全部滤掉。
+# 契约测试 k8s_deploy_contract.tests.ps1「LogQL 契约」逐条核对这里用到的标签都在 sidecar 配置里。
+#   warning : count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_unknown_type" [10m]) > 0
 #             (新类型先于 scene 支持被加进 EnqueueTypes:scene 停在队头不记 REJECTED,§8 #13;回滚 EnqueueTypes 或先升 scene)
-#   warning : count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_halted" [10m]) > 0
+#   warning : count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_halted" [10m]) > 0
 #             (MISMATCH / NOT_DELIVERED / SKIP_NOT_REQUESTED 后该玩家该域停用,§7.7;与下面的 PlayerInboxAckAnomaly 对照)
-#   critical: count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_replay_mismatch" [10m]) > 0(IB-9 回放核对失败)
-#   warning : count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_ack_anomaly" [10m]) > 0
+#   critical: count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_replay_mismatch" [10m]) > 0(IB-9 回放核对失败)
+#   warning : count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_ack_anomaly" [10m]) > 0
 #             (scene 收到异常的 Ack 回包,停用该玩家该域:结果不是 FINALIZED / ALREADY_SAME、seq 对不上,或服务端回
 #              InvalidParameter(scene 发出的确认列表不合法,只会来自 scene 缺陷)。结果类异常同时会触发收件箱侧的
 #              PlayerInboxAckAnomaly;InvalidParameter 只有这一条看得到。同一事件还会打一条 metric=inbox_halted reason=ack_anomaly)
 # 下面三条是不会自愈的停用(评审 L13、H1)。问题还在时 scene 按节拍补打同一行,两行间隔钉在 [10m] 窗口之内
 # (scene 收件箱规则头文件里 kSceneLogAlertWindowMs 的 static_assert),所以告警会一直亮着,不会亮 10 分钟就自己灭。
 # 改这里的 [10m] 要同步改 scene 的那组常量。
-#   warning : count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_ledger_invalid" [10m]) > 0
+#   warning : count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_ledger_invalid" [10m]) > 0
 #             (某玩家已落盘账本结构校验不过,这名玩家的收件箱停用,处置一直不执行,表面上与离线无异。
 #              source=loader 每次加载打一条 ERROR;玩家在线期间前置闸首次延后打一条 WARN(source=apply_gate),之后每 8 次退避补打一条。
-#              player_id 在日志里;收件箱侧的 PlayerInboxReconcileLedgerInvalid 是同一类问题。
+#              player_id 在日志里。收件箱侧的 PlayerInboxReconcileLedgerInvalid 是同一类问题,但收件箱比 scene 多查一条 request_id 为 0:
+#              只有这一项不合法时,scene 不判损坏、这一条不出现,问题表现为同 seq 再投递时的 inbox_replay_mismatch。
 #              按 runbook「账本损坏」处理,**不要清空账本重建**:那会让已执行过的处置再执行一次)
-#   warning : count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_registry_broken" [10m]) > 0
+#   warning : count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_registry_broken" [10m]) > 0
 #             (scene 处置注册表自检失败,本节点整体停用消费,节点上所有在线玩家的处置都不执行。
 #              启动时打一条 ERROR,之后每 5 分钟补打一条,detail= 写明哪一项不过。这是构建 / 发版缺陷:回滚或修好 scene 再发)
-#   warning : count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_consumer_disabled" [10m]) > 0
+#   warning : sum by (zone) (count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_consumer_disabled" [10m])) > 0
 #             (本节点 player_inbox.consumer_enabled 关着(评审 H1):收件箱照常收单、回 created=true,本节点一条都不执行。
 #              启动时打一条 WARN,之后每 5 分钟补打一条。上线顺序第 4 步(回滚下限)到第 5 步之间出现是预期的;
-#              EnqueueTypes 已打开的环境里出现,就是开关被例行发布写回了 off,按 runbook「上线顺序与回滚下限」第 5 步重开并滚动 scene。
-#              要逐 zone 看就看这一条:收件箱侧的 PlayerInboxConsumerMaybeDisabled 不分 zone)
-#   info    : sum by (reason) (count_over_time({app=~"scene.*"} |= "metric=inbox_deferred" | regexp "reason=(?P<reason>\\w+)" [10m]))
-#   info    : sum by (result) (count_over_time({app=~"scene.*"} |= "[PlayerInbox]" |= "metric=inbox_leave_ack"
+#              EnqueueTypes 已打开的环境里出现,常见原因是 bin/etc/game_config.yaml 被改回 false、检出开消费之前的旧 commit 重跑了
+#              zone-up,或部署时用了 -AllowPlayerInboxConsumerOff(例行发布不会再把它写回 false,开关只取 git 里的 yaml)。
+#              按 runbook「消费开关与写前门禁」核对,再按「上线顺序与回滚下限」第 5 步重开并滚动 scene。
+#              要逐 zone 看就看这一条(结果按 zone 分组):收件箱侧的 PlayerInboxConsumerMaybeDisabled 不分 zone)
+#   info    : sum by (reason) (count_over_time({job="cpp_nodes", service="scene"} |= "metric=inbox_deferred" | regexp "reason=(?P<reason>\\w+)" [10m]))
+#   info    : sum by (result) (count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_leave_ack"
 #               | regexp "result=(?P<result>\\w+)" | result=~"delivered_undecided|not_durable|fetch_inflight|not_sent" [1h]))
 #             (玩家离开本节点时没能补发 Ack 的行(评审 M4 的残余):已投递还没定结局(delivered_undecided)、
 #              结局还没落盘(not_durable)、离开时 Fetch 在途(fetch_inflight)、补发没发出去(not_sent)。
@@ -95,7 +105,8 @@ spec:
     - name: player-inbox.correctness
       interval: 30s
       rules:
-        # STALE 且 R == req:核心 Redis 里的 owner_epoch 倒退了(备份恢复 / AOF 或主从丢尾 / 键被删,§8 #14)。
+        # STALE 且 R ≤ req(R = 返回前再读一次的核心 Redis 当前值,go/player_inbox 的 ClassifyStale):核心 Redis 里的 owner_epoch 倒退了
+        # (备份恢复 / AOF 或主从丢尾 / 键被删,§8 #14)。设计 §7.8 原写 R == req;R < req 倒退得更多,同样归这一类。
         # 新 owner 的 epoch 小于收件箱围栏,该玩家的收件箱拉不动,而存盘围栏同样可能失效 —— 不是收件箱自己的问题。
         - alert: PlayerInboxFenceRegressed
           expr: |
@@ -106,7 +117,8 @@ spec:
           annotations:
             summary: "收件箱发现 owner_epoch 计数器倒退(fence_regressed)"
             description: >-
-              过去 10 分钟约 {{ $value | printf "%.0f" }} 次 Fetch / Ack 判 STALE 且请求 epoch 等于 Redis 当前值:
+              过去 10 分钟约 {{ $value | printf "%.0f" }} 次 Fetch / Ack 判 STALE 且 Redis 当前值 ≤ 请求 epoch
+              (ERROR 日志 `STALE classified fence_regressed` 带 req_epoch;核心 Redis 里读到的 owner_epoch 等于或小于它都算):
               核心 Redis 的 owner_epoch 已低于收件箱记录的高水位。收件箱**不提供归零**;按
               docs/ops/player-inbox-runbook.md「计数器倒退」执行 db-write-fencing-mysql.md §9.1 的 epoch-raise,
               取最大值的来源要包含收件箱 GetSummary 的 max_fence_epoch(已定由独立工具 go/db/cmd/epoch_raise 经
@@ -371,9 +383,9 @@ spec:
               量级持续超出(例如批量处置之后)时缩短 PlayerInbox.ReconcileWindowHours(不要少于 16 个对账间隔,
               否则截断期间可能有分片整个窗口都轮不到),或调大代码里的上限。
 
-        # 对账读到结构不合法的已落盘账本(评审 M6、A 批修复 R2):domain 为 0 或重复、环不升序或越过水位、结局不可记、
-        # request_id 为 0、单域环超过 32 条,与 C++ ValidateLedger 同口径。结论按 unknown 算,不计入不一致读数。
-        # 每轮都会重读同一名玩家,所以数的是读次数,不是玩家数。
+        # 对账读到结构不合法的已落盘账本(评审 M6、A 批修复 R2):domain 为 0 或重复、单域环超过 32 条、环里 seq 为 0 / 不严格升序 /
+        # 越过水位、结局不可记,这几条与 C++ ValidateLedger 同口径;收件箱另查 request_id 为 0,C++ 不查这一项。
+        # 结论按 unknown 算,不计入不一致读数。每轮都会重读同一名玩家,所以数的是读次数,不是玩家数。
         - alert: PlayerInboxReconcileLedgerInvalid
           expr: |
             sum(increase(player_inbox_reconcile_ledger_read_total{result="invalid"}[2h])) > 0
@@ -384,9 +396,10 @@ spec:
             summary: "收件箱对账读到结构不合法的已落盘账本"
             description: >-
               过去 2 小时约 {{ $value | printf "%.0f" }} 次读到不合法的账本。player_id 在收件箱 ERROR 日志
-              `persisted inbox ledger is structurally invalid` 里。这名玩家在 scene 上也会判账本损坏、收件箱停用
-              (scene 日志 metric=inbox_ledger_invalid),处置一直不执行。按 docs/ops/player-inbox-runbook.md「账本损坏」处理,
-              **不要清空账本重建**:那会让已执行过的处置再执行一次。
+              `persisted inbox ledger is structurally invalid` 里。多数情况下这名玩家在 scene 上也会判账本损坏、收件箱停用
+              (scene 日志 metric=inbox_ledger_invalid),处置一直不执行。收件箱比 scene 多查一条 request_id 为 0:
+              只有这一项不合法时 scene 不判损坏、找不到 inbox_ledger_invalid,同 seq 的行再投递时表现为 metric=inbox_replay_mismatch。
+              按 docs/ops/player-inbox-runbook.md「账本损坏」处理,**不要清空账本重建**:那会让已执行过的处置再执行一次。
 
     - name: player-inbox.info
       interval: 5m

@@ -327,6 +327,12 @@ Test-Case '契约字面量与 login / proto / 部署生成器的源头一致' {
     Assert-Match -Text $deployText -Pattern ('(?m)^\s*login\s*=\s*@\{{\s*ConfigMap\s*=\s*"{0}".*ConfigFile\s*=\s*"{1}"' -f $c.LoginConfigMap, [regex]::Escape($c.LoginConfigKey)) -Because 'login ConfigMap 名与数据键来自部署目录'
     $ttl = Get-YamlScalar -Path (Join-Path $script:RepoRoot 'bin/etc/base_deploy_config.yaml') -KeyPath 'Etcd.NodeTTLSeconds'
     Assert-True -Condition ($ttl.Found -and $c.StaleRecordWaitSeconds -gt [int]$ttl.Value) -Because '等旧记录消失的上限必须覆盖 C++ 节点租约 TTL(强杀后租约自然过期)'
+    $cacheGo = Read-RepoText 'go/login/internal/logic/pkg/node/node_cache.go'
+    $period = [regex]::Match($cacheGo, '(?m)^const gateReportPeriod = (?<s>\d+) \* time\.Second')
+    $stale = [regex]::Match($cacheGo, '(?m)^const cacheStaleAfter = gateReportPeriod \+ (?<s>\d+)\*time\.Second')
+    Assert-True -Condition ($period.Success -and $stale.Success) -Because 'login gate 目录镜像的过期时限定义形状变了要同步这里'
+    $staleSeconds = [int]$period.Groups['s'].Value + [int]$stale.Groups['s'].Value
+    Assert-True -Condition ($c.LoginMirrorSettleSeconds -gt $staleSeconds) -Because "清标记前的等待必须大于 login 镜像的 cacheStaleAfter(${staleSeconds}s)"
 }
 
 Test-Case '同 zone 候选口径与 login 源头一致(Select-GateDrainPeers 镜像的每一条)' {
@@ -797,6 +803,23 @@ Test-Case '删 Pod:复核通过 → 删除 → 旧记录消失后清两个标记
     Assert-True -Condition ($deleteCall.TimeoutSeconds -gt 90) -Because '进程截止要长于 kubectl 自己的等待'
     Assert-True -Condition (-not $script:Redis.ContainsKey('gate:3:draining') -and -not $script:Redis.ContainsKey('gate:3:drained')) -Because '两个标记都清掉'
     Assert-True -Condition $result.MarksCleared -Because '报告已清'
+}
+
+Test-Case '删 Pod:旧记录消失后先等 login 镜像跟上,再清标记' {
+    Reset-DrainFixture
+    $context = Get-FixtureContext
+    $c = Get-GateDrainContract
+    Set-ReplacementScenario -AssertPod (New-MockGatePod) -AssertEtcd (& $script:BeforeEtcd) `
+        -AfterPods @((New-MockGatePod -Uid 'uid-new' -PodIp '10.0.0.21')) -AfterEtcd @((& $script:AfterEtcd))
+    Set-Item Function:script:Start-Sleep {
+        param([int]$Milliseconds, [double]$Seconds)
+        if ($Seconds -gt 0) { $script:Events.Add("sleep:$Seconds") }
+    }
+    $result = Invoke-GatePodReplacement -Login $context.Login -Pod $context.Pod -Record $context.Record -ReadyTimeoutSeconds 30 6>$null
+    Assert-True -Condition $result.MarksCleared -Because '旧记录已消失,照常清'
+    $events = @($script:Events)
+    $settle = [Array]::IndexOf($events, "sleep:$($c.LoginMirrorSettleSeconds)")
+    Assert-True -Condition ($settle -ge 0 -and $settle -lt [Array]::IndexOf($events, 'redis:DEL')) -Because "清标记前必须先等 LoginMirrorSettleSeconds:$($events -join ', ')"
 }
 
 Test-Case '删 Pod:排空期间 Pod 被替换或 gate 进程重启过,拒绝删除' {

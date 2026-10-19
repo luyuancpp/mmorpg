@@ -1,3 +1,8 @@
+# === GENERATED FILE -- DO NOT EDIT ===
+# Produced by tools/archived/vcxproj2cmake.py from gate.vcxproj.
+# Every Linux build regenerates it; hand edits are lost without warning.
+# Change the generator instead.
+
 cmake_minimum_required(VERSION 3.22)
 project(gate)
 
@@ -17,6 +22,9 @@ add_definitions(-D__linux__)
 add_definitions(-DNOMINMAX)
 add_definitions(-DENTT_ID_TYPE=uint64_t)
 add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)
+add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)
+add_definitions(-DGOOGLE_LOG=ABSL_LOG)
+add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)
 add_definitions(-DMMORPG_AGONES_CURL=1)
 
 include_directories(
@@ -62,7 +70,7 @@ set(SOURCE_FILES
     handler/event/scene_entry_dispatch.cpp
     handler/event/gate_event_handler.cpp
     handler/event/gate_kafka_command_router.cpp
-    handler/rpc/client_message_processor.cpp
+    handler/rpc/client_session_handler.cpp
     handler/rpc/client_request_lane.cpp
     handler/rpc/router_muduo_forward.cpp
     handler/rpc/rpc_reply_bridge.cpp
@@ -70,7 +78,6 @@ set(SOURCE_FILES
     handler/rpc/player/player_service_interface.cpp
     main.cpp
     rpc_replies/register_handler.cpp
-    # 2026-09-18 补登记:gate.vcxproj 有、Linux CMake 清单漏了。
 )
 
 find_package(absl CONFIG REQUIRED)
@@ -89,7 +96,9 @@ target_link_libraries(gate
     -Wl,--start-group
     -lgate
     -lscene
+    -lbattle
     -lmodules
+    -lmuduo_grpc
     -lthread_context
     -linfra
     -lsession
@@ -101,15 +110,12 @@ target_link_libraries(gate
     -lrpc
     -lproto
     -lthird_party
-    -lmuduo_grpc
     -Wl,--end-group
     gRPC::grpc++
     gRPC::grpc++_reflection
     gRPC::grpc
     gRPC::gpr
     protobuf::libprotobuf
-    # 静态链入的 nghttp2(1.70)不得导出到动态符号表:系统 libcurl.so 依赖旧版 libnghttp2.so,
-    # 导出后 libcurl 的 nghttp2_* 调用会绑到我们的副本、两个版本混用(docs/design/grpc-muduo-transport.md §9)。
     -Wl,--exclude-libs,libnghttp2.a
     nghttp2
     muduo_protobuf_codec

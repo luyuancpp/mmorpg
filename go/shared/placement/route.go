@@ -94,13 +94,23 @@ func EncodeRouteReadyMarker(m RouteReadyMarker) (string, error) {
 //   - v 大于 RouteReadyFormatVersion → ErrRouteReadyMarkerNewerVersion(不再校验其余字段:新格式的规则本二进制不知道);
 //   - 其余任何不合规(不是 JSON 对象、v 不是 1、generation 不是 1..32 个 [0-9a-f]、run_id / replid 不是 40 个 [0-9a-f]、
 //     set_at_ms / watermark_ms 为 0、leader 不是 1..96 字节的 [A-Za-z0-9._@:-])→ 用 %w 包 ErrMalformed。
+//
+// 分两步解(2026-10-18 修复评审):先只解 v,再按 v=1 的结构整体解。一步整体解时,新版本若改了某个已知字段的类型
+// (例如 set_at_ms 改成字符串),json.Unmarshal 先报类型错,还没看 v 就判成 ErrMalformed,调用方随即按原值 compare-and-delete,
+// 删掉新版本写者的标记 —— 正是 ErrRouteReadyMarkerNewerVersion 要防的来回打架。v 本身解不出来(不是对象、v 不是整数)才算畸形。
 func DecodeRouteReadyMarker(raw string) (RouteReadyMarker, error) {
+	var head struct {
+		V int `json:"v"`
+	}
+	if err := json.Unmarshal([]byte(raw), &head); err != nil {
+		return RouteReadyMarker{}, fmt.Errorf("%w: route ready marker is not a JSON object with an integer v: %v", ErrMalformed, err)
+	}
+	if head.V > RouteReadyFormatVersion {
+		return RouteReadyMarker{}, fmt.Errorf("%w: v=%d, this binary knows v<=%d", ErrRouteReadyMarkerNewerVersion, head.V, RouteReadyFormatVersion)
+	}
 	var m RouteReadyMarker
 	if err := json.Unmarshal([]byte(raw), &m); err != nil {
 		return RouteReadyMarker{}, fmt.Errorf("%w: route ready marker is not a JSON object of the expected shape: %v", ErrMalformed, err)
-	}
-	if m.V > RouteReadyFormatVersion {
-		return RouteReadyMarker{}, fmt.Errorf("%w: v=%d, this binary knows v<=%d", ErrRouteReadyMarkerNewerVersion, m.V, RouteReadyFormatVersion)
 	}
 	if m.V != RouteReadyFormatVersion {
 		return RouteReadyMarker{}, fmt.Errorf("%w: route ready marker v=%d, want %d", ErrMalformed, m.V, RouteReadyFormatVersion)

@@ -3,8 +3,8 @@ package com.example.auth.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.example.auth.config.JustAuthProperties;
 import com.example.auth.config.JustAuthProperties.ProviderConfig;
-import com.example.auth.dto.LoginDTO;
 import com.example.auth.service.OauthService;
+import com.example.auth.service.SaTokenResponses;
 import me.zhyd.oauth.config.AuthConfig;
 import me.zhyd.oauth.enums.AuthResponseStatus;
 import me.zhyd.oauth.model.AuthCallback;
@@ -15,26 +15,27 @@ import me.zhyd.oauth.request.AuthQqRequest;
 import me.zhyd.oauth.request.AuthRequest;
 import me.zhyd.oauth.request.AuthWeChatOpenRequest;
 import me.zhyd.oauth.utils.AuthStateUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Duration;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
+/**
+ * JustAuth OAuth 回调换 SA-Token 的入口（本 starter 是示例应用，没有任何部署清单）。
+ *
+ * <p>本地联调用的 {@code /auth/dev-login}、{@code /auth/logout} 在 {@link DevLoginController}，只在 dev profile 注册：
+ * dev-login 会把任意 account 写进 Go login {@code SaTokenProvider} 信任的 Redis 键，等于「报上账号名即登录」。
+ */
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
-    private final RedisTemplate<String, Object> redisTemplate;
     private final JustAuthProperties authProps;
     private final OauthService oauthService;
+    private final SaTokenResponses tokenResponses;
 
-    public AuthController(RedisTemplate<String, Object> redisTemplate,
-                          JustAuthProperties authProps,
-                          OauthService oauthService) {
-        this.redisTemplate = redisTemplate;
+    public AuthController(JustAuthProperties authProps,
+                          OauthService oauthService,
+                          SaTokenResponses tokenResponses) {
         this.authProps = authProps;
         this.oauthService = oauthService;
+        this.tokenResponses = tokenResponses;
     }
 
     // Redirect to OAuth authorization page
@@ -74,83 +75,7 @@ public class AuthController {
 
         // Login via Sa-Token using the stable internal userId, not the third-party id.
         StpUtil.login(userId);
-        return buildTokenResponse(String.valueOf(userId));
-    }
-
-    // Local dev helper: issue a SA-Token directly from an account name.
-    // This avoids the OAuth round-trip during local integration testing.
-    @GetMapping("/dev-login")
-    public Object devLoginByQuery(@RequestParam String account) {
-        return issueDevToken(account);
-    }
-
-    @PostMapping("/dev-login")
-    public Object devLoginByBody(@RequestBody(required = false) LoginDTO body) {
-        String account = body == null ? null : body.getAccount();
-        return issueDevToken(account);
-    }
-
-    private Object issueDevToken(String account) {
-        if (account == null || account.isBlank()) {
-            return Map.of("ok", false, "message", "account is required");
-        }
-
-        String normalized = account.trim();
-        StpUtil.login(normalized);
-        return buildTokenResponse(normalized);
-    }
-
-    // Logout endpoint: removes the manually-written Redis key so a long-running
-    // stress test doesn't accumulate stale satoken:login:token:* entries.
-    // Accepts either a token value or an account; passing token is preferred
-    // because it removes exactly that one key rather than scanning.
-    @GetMapping("/logout")
-    public Object logout(@RequestParam(required = false) String token,
-                         @RequestParam(required = false) String account) {
-        String tokenName = StpUtil.getTokenName();
-
-        if (token != null && !token.isBlank()) {
-            String redisKey = tokenName + ":login:token:" + token.trim();
-            Boolean removed = redisTemplate.delete(redisKey);
-            return Map.of(
-                    "ok", true,
-                    "removed", Boolean.TRUE.equals(removed),
-                    "redis_key", redisKey
-            );
-        }
-
-        if (account != null && !account.isBlank()) {
-            // SA-Token can map account -> tokens it knows about, but our manually
-            // written keys may include tokens SA-Token already evicted. Delegate
-            // to SA-Token's logoutByLoginId for whatever it tracks; the manual
-            // key is left to expire via TTL if its token value is unknown.
-            try {
-                StpUtil.logout(account.trim());
-            } catch (Exception e) {
-                return Map.of("ok", false, "message", "logout failed: " + e.getMessage());
-            }
-            return Map.of("ok", true, "account", account.trim());
-        }
-
-        return Map.of("ok", false, "message", "token or account required");
-    }
-
-    private Map<String, Object> buildTokenResponse(String loginId) {
-        String tokenName = StpUtil.getTokenName();
-        String tokenValue = StpUtil.getTokenValue();
-        String redisKey = tokenName + ":login:token:" + tokenValue;
-        redisTemplate.opsForValue().set(redisKey, loginId, Duration.ofDays(7));
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("ok", true);
-        result.put("account", loginId);
-        result.put("auth_type", "satoken");
-        result.put("token_name", tokenName);
-        result.put("token_value", tokenValue);
-        result.put("login_type", "login");
-        result.put("redis_key", redisKey);
-        result.put("expires_in_seconds", 604800);
-        return result;
+        return tokenResponses.issue(String.valueOf(userId));
     }
 
     // Create AuthRequest for the given provider (JustAuth)

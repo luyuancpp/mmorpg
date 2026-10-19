@@ -2,6 +2,7 @@ package clientplayerloginlogic
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"login/internal/logic/pkg/ctxkeys"
@@ -10,6 +11,7 @@ import (
 	"login/internal/svc"
 	login_proto_common "proto/common/base"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -23,8 +25,20 @@ func getSessionDetailsForAction(ctx context.Context, action string) (*login_prot
 	return sessionDetails, true
 }
 
-func cleanupLoginSessionState(ctx context.Context, svcCtx *svc.ServiceContext, sessionID uint32, logicTag string) {
-	loginsession.Cleanup(ctx, svcCtx.RedisClient, sessionID, logicTag)
+// cleanupLoginSessionState 删本条 gate 连接的登录态(按 loginsession.RefOf 的连接身份,不按裸 session_id)。
+func cleanupLoginSessionState(ctx context.Context, svcCtx *svc.ServiceContext, details *login_proto_common.SessionDetails, logicTag string) {
+	loginsession.Cleanup(ctx, svcCtx.RedisClient, loginsession.RefOf(details), logicTag)
+}
+
+// logGetAccountFailure 记 CreatePlayer / EnterGame 读不到本连接登录态的原因。redis.Nil = 本连接没有成功 Login 过
+// (或登录态已过期、已被 LeaveGame / Disconnect 清理);gate 重启撞号后跳过 Login 的请求也落在这里,不是服务端故障。
+func logGetAccountFailure(action string, details *login_proto_common.SessionDetails, err error) {
+	if errors.Is(err, redis.Nil) {
+		logx.Infof("%s rejected: no login session on this gate connection session_id=%d gate_instance=%q incarnation=%d",
+			action, details.GetSessionId(), details.GetGateInstanceId(), details.GetSessionIncarnation())
+		return
+	}
+	logx.Errorf("%s GetAccount failed: session_id=%d err=%v", action, details.GetSessionId(), err)
 }
 
 // sessionPlayersToSettle 返回 Disconnect / LeaveGame 要收尾的玩家:gate 会话头带来的玩家,

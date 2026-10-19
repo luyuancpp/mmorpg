@@ -259,6 +259,8 @@ Claude 未运行任何构建 / 测试 / regen(AGENTS §10.1)。按顺序执行,�
 | F. **scene 从不装 SceneManager 的 gRPC 应答处理器**(端到端闭环核查发现的 P0,详见 §12.5.1) | `InitSceneManagerReply()` 无任何调用点,`AsyncSceneManagerEnterScene/CreateSceneHandler` 恒为空,生成客户端静默跳过每一条应答。后果:同 zone 跨节点换图彻底失效(18 到不了 handler,玩家卡住零提示)、副本 / 镜像场景进入完全失效、跨 zone 传送源实体要冻满 30s、失败 tip 迟到 30s。**与本轮新代码无关,2026-04-16 的一次 regen 丢的** | 在 `cpp/nodes/scene/main.cpp` 装(生成物不能改,且生成器永远不会写它——谓词只收 `cc_generic_services`,scene_manager 是 grpc)。形状照 `id_segment_bootstrap.cpp` 的 `InitDataServiceReply()` |
 | E. 文档 | `docs/ops/cross-zone-failure-test-runbook.md` 写着"每个版本上线前必跑",四个场景却全在测已删除的 reaper 链;`enter-scene-zone-routing.md` 教运维合服时手工清 location | runbook 重写为 v2(面向现行链路的 A–F 场景,观测点逐个 grep 核对,文件头声明"静态编写、未实跑");路由文档逐句核对改写,新增"合服后残留 location"小节;约 20 份旧设计文档与 12 个代码文件里把已删行为当现状的文字加了状态标注 / 改成实情(只动注释) |
 
+> **2026-10-17 契约勘误**：F 行描述旧版全局注册缺失事故。现由调用处必填 done 消除安装步骤：EnterScene 经 `SendCorrelatedEnterScene`，CreateScene 经 `PlayerSceneSystem::HandleMirrorCreateDone`；scene 的全局应答适配与安装函数删除，见 `grpc-client-deadline-failure-callback.md` §12。
+
 ### 12.2 新增的上线前置
 
 - **对存量号开放跨 zone 传送之前,必须先跑完 `tools/merge_zone -backfill-home-zone`。** 12.1-B 之后,没有 `player:zone` 映射的玩家发起传送会被 20 拒绝(tip 后解冻,不受损)。新建角色由 `createplayerlogic.go` fail-closed 登记,不受影响;受影响的只有 2026-09-08 建角登记修复之前的号,以及映射 Redis 丢失的情形。
@@ -317,6 +319,8 @@ C++ MSBuild 必须串行 `/m:1 /nr:false`;这批代码从未编译,失败时先�
   - **第一条腿被拒时**(目标图没开 / 归属未映射回 20 / 无可用 gate / epoch 冲突),tip 不再随应答立刻回,玩家要冻满 30s 才由看门狗解冻并弹"目标区繁忙"。
 - **修法**:在 `cpp/nodes/scene/main.cpp` 装,**不碰生成物**(AGENTS §3)。形状照 `ConfigureGuidSegmentClients` 里的 `InitDataServiceReply()`(`id_segment_bootstrap.cpp:244`)——手写引导代码自己装自己的 gRPC 应答处理器。只是给两个全局 `std::function` 赋值,无前置依赖,放在发出任何请求之前即可。注释里写清"为什么不能放进生成的 `InitReply()`",避免下一个人又搬回去。
 - **风险**:这一修同时**激活了约 150 行从未执行过的代码**(两个应答处理器的全部分支),首次编译与联调会第一次真正走到它们。
+
+> **2026-10-17 契约勘误**：上述手工注册修法已由每次调用回调取代，`InitSceneManagerReply / InitDataServiceReply` 与 scene 的 gRPC 回包适配均删除；不把注册调用移回生成物。
 
 #### 12.5.2 传送后半程失败时服务端对客户端零通知(4 条;S5-B1 / S8-1 已于 §12.5.5 修复,S7-1 与 S3L1-1 已于 §12.5.6 落码,均未编译)
 
@@ -968,6 +972,8 @@ Go 两包:scene_manager 的用例 `ZeroZoneOverLocationInGateZoneBehavesLikeExpl
    - `player_team.cpp` 已由组队会话过目:跟随改走 `RequestSceneChange(..., playerRequested=false)`,成功和失败都释放单槽;失败时仍只记日志,不弹 tip,不进传送裁决。
    - `5f714aa46`:`c6d386bb4` 生成 C++ 时把 proto_path 设成了 `generated/proto/_unified`,导致 `scene_manager_service.pb.cc` 内嵌描述符的 go_package 漂成了 `proto/scene_manager`。C++ 窄面 regen 必须用仓库根作 proto_path,与规范生成器一致;Go 那一步用 `_unified` 是对的。
 
+> **2026-10-17 契约勘误**：本节“应答号为 0 就按 player_id 退回”的生产路径已取代：每次调用按捕获的非零 requestTag / playerId 认领，旧版 SM 缺回显也可精确对应。响应中非零 player_id 或 correlation_id 不符则计 unmatched、记 ERROR 并丢弃；零回显不再使生产 `reply_uncorrelated` 增长。legacy 分支仅保留给单测或绕过统一出口的调用，传输失败仍是结果未知。
+
 **落在哪**
 - `proto/scene_manager/scene_manager_service.proto`。
 - `go/scene_manager/internal/logic/enterscenelogic.go`:defer 回显、`enterSceneRequestFingerprint`。
@@ -1098,7 +1104,7 @@ C-5(客户端收到 34 是否一定断线)已由 §12.5.4 解除。
      - `[ZoneTravel][FreezeCap] player=… action=unfreeze … handoff mark was never sent`;
      - `[ZoneTravel][DispatchWindow] player=… stage=set_mark|enter_scene frozen_ms=…`;
      - `[ZoneTravel][MarkSentDestroy] player=… site=… target_zone=…(cross-zone|same-zone) mark=… enter_scene_sent=… corr=… evidence=… frozen_ms=… exiting=… kick=…: … (ownership UNKNOWN, not confirmed moved)`。site 为 `travel_freeze_cap` 时打 ERROR,其余打 WARN。*2026-10-01 批注:GO-2(§13.7)起新增的 `travel_receipt_anomaly` 也打 ERROR。*
-   - 随后 `DestroyDeposedPlayer` 会打出 `[<site>] local entity for player <P> destroyed without persisting (ownership moved away)`。这是沿用下来的原文,在这里的实际含义是"归属未知",判读以前一行 MarkSentDestroy 为准。
+   - 随后 `DestroyDeposedPlayer` 会打出 `[<site>] local entity for player <P> destroyed without persisting (local state abandoned)`。它只说明本地实体被丢弃,归属判读以前一行 MarkSentDestroy 为准。*2026-10-18 批注:原文 `(ownership moved away)` 已随 ECS 第 6 批 T2.1 改为 `(local state abandoned)`。*
 9. **与相邻机制的交互**
    - I0 的三处机制都没动:`IsSceneChangeBusy`、`ResolveTravelOutcome` 在同一连接上先 DEL 后 MGET、落点 Lua 复核标记原文。本项也不往待撤回表加任何条目。*2026-09-29 批注:这句对本项落码时(`ccd4ba7f8`)成立。GO-2 落码后(`a812187e8`,未编译),第二处已改为一条原子 EVAL `travel_outcome::kLuaJudgeTravelOutcome`,由脚本本身保证"拿到有效应答 ⇒ 本族标记已删",不再依赖同一连接上的执行顺序,见 §13.7。*
    - 原有两处"SET 已 OK 却解冻"的违例改走销毁,I2 / I3 的违例面只减不增,`IsCrossZoneFrozen` 没改。
@@ -1131,7 +1137,7 @@ C-5(客户端收到 34 是否一定断线)已由 §12.5.4 解除。
 5. **H1:上限销毁**。robot 的预算只有 60s,看不到这一支,要用 Unity 客户端(DevAutoPilot `-travelZone 2` 或地图窗)。
    - 注入:先 `dev_tools.ps1 -Command go-svc-stop -GoServices scene_manager`(K-SM),在 SM 的 etcd 租约内发起跨区传送;scene 日志出现 `requested EnterScene` 约 25s 后,执行 `docker exec redis redis-cli CLIENT PAUSE 60000 ALL`。
    - 期望:
-     - 在 `handoff started` 之后 70–71s,出现 ERROR `[ZoneTravel][MarkSentDestroy] player=<P> site=travel_freeze_cap … enter_scene_sent=1 … kick=1`,紧接着出现 `[travel_freeze_cap] … destroyed without persisting (ownership moved away)`;
+     - 在 `handoff started` 之后 70–71s,出现 ERROR `[ZoneTravel][MarkSentDestroy] player=<P> site=travel_freeze_cap … enter_scene_sent=1 … kick=1`,紧接着出现 `[travel_freeze_cap] … destroyed without persisting (local state abandoned)`;
      - 客户端出现 `[gate] kicked by server reason=<kZoneTravelTargetBusy>` 并回到选服;
      - `[TravelHandoff]` 行 `freeze_cap_reached=1 mark_sent_destroyed=1 mark_sent_client_reset=1`。
    - 恢复后:重登成功、金币等于出发时的值、`owner_epoch` 没被推进、没有 `stale_owner_write_rejected`。

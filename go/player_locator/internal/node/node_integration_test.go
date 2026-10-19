@@ -297,3 +297,56 @@ func TestAllocCASRetryOnConflict(t *testing.T) {
 		t.Fatalf("expected id=2 (next free), got %d", id)
 	}
 }
+
+// 能力键与 NodeInfo 同一个注册事务、同一个租约(WithLeaseBoundMarkers):占位成功时三键同时出现,
+// 撤销租约后同时消失 —— 对账 leader 不会看到「有 NodeInfo 没能力键」而误判旧写者。
+// 占位失败(CAS 不成立)时标记也不写。
+func TestAllocWritesLeaseBoundMarkersAtomically(t *testing.T) {
+	cli := newTestClient(t)
+	defer cli.Close()
+	nt := uniqueNodeType()
+	defer cleanupNodeType(t, cli, nt)
+
+	markerPrefix := fmt.Sprintf("/mmorpg/test_capability/%d/v1/", nt)
+	defer cli.Delete(context.Background(), markerPrefix, clientv3.WithPrefix())
+
+	prefix := rpcPrefix(nt)
+	lease := grantLease(t, cli, 30)
+	info := makeInfo(nt, 1)
+	markers := leaseBoundMarkerOps([]string{markerPrefix}, info.NodeUuid, lease)
+
+	id, err := allocateNodeID(context.Background(), cli, prefix, info, lease, markers...)
+	if err != nil {
+		t.Fatalf("allocateNodeID: %v", err)
+	}
+	markerKey := markerPrefix + info.NodeUuid
+	resp, err := cli.Get(context.Background(), markerKey)
+	if err != nil || len(resp.Kvs) != 1 {
+		t.Fatalf("marker %s should exist after claim: kvs=%v err=%v", markerKey, resp, err)
+	}
+	if resp.Kvs[0].Lease != int64(lease) {
+		t.Fatalf("marker lease = %d, want %d", resp.Kvs[0].Lease, lease)
+	}
+
+	// 同一 node_id 再占一次必然 CAS 失败,标记不得被别的 uuid 写进来。
+	other := makeInfo(nt, 1)
+	otherLease := grantLease(t, cli, 30)
+	defer cli.Revoke(context.Background(), otherLease)
+	ok, err := tryClaimNodeID(context.Background(), cli, prefix, id, other, otherLease,
+		leaseBoundMarkerOps([]string{markerPrefix}, other.NodeUuid, otherLease)...)
+	if err != nil || ok {
+		t.Fatalf("second claim of node_id=%d should fail without error: ok=%v err=%v", id, ok, err)
+	}
+	if resp, err := cli.Get(context.Background(), markerPrefix+other.NodeUuid); err != nil || len(resp.Kvs) != 0 {
+		t.Fatalf("failed claim must not write its marker: err=%v", err)
+	}
+
+	if _, err := cli.Revoke(context.Background(), lease); err != nil {
+		t.Fatalf("revoke: %v", err)
+	}
+	for _, key := range []string{markerKey, allocationKey(prefix, nt, id), rpcPath(prefix, 1, nt, id)} {
+		if resp, err := cli.Get(context.Background(), key); err != nil || len(resp.Kvs) != 0 {
+			t.Fatalf("%s should vanish with the lease: err=%v", key, err)
+		}
+	}
+}

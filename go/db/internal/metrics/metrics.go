@@ -18,7 +18,9 @@
 //	                 cache contention separately)
 //	result_publish — LPush task:result:{taskId} + Expire + Publish notify
 //	                 (read ops only). The Publish is the trigger that wakes
-//	                 the login dispatcher.
+//	                 the login dispatcher. 2026-10-18 起只发一次:发起方 login
+//	                 的实例频道,缺回复目标时发全服旧频道(计数见
+//	                 task_result_notify.go)。
 //
 // Round 20 起补的四个 stage(stress_summarize.ps1 2d 段按这些名字读):
 //
@@ -116,7 +118,7 @@ var (
 	placementGuardTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "placement_guard_total",
-		Help:      "Player storage placement routing verdicts (player-storage-placement.md 6.2/6.3). op: read | write. outcome: placed | home | legacy | stale_topic | frozen_deferred | missing_required | lookup_error | recheck_moved.",
+		Help:      "Player storage placement routing verdicts (player-storage-placement.md 6.2/6.3). op: read | write. outcome: placed | home | legacy | stale_topic | frozen_deferred | missing_required | lookup_error | recheck_moved | route_not_ready (Placement.RequireRouteReady=true and the mapping Redis replica is not trusted: deferred, never routed).",
 	}, []string{"op", "outcome"})
 
 	// placementStoreOpenTotal 记每一次**真正发生**的按需打开落点库(§6.1);打开失败后的冷却期内
@@ -141,7 +143,7 @@ var (
 	taskDeferredTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "task_deferred_total",
-		Help:      "Tasks pushed back to the retry queue instead of completing. op: read | write | unknown. reason: conn_refused | conn_lost | store_readonly | store_busy | store_cooldown | store_open_failed | ordering_lock_busy | fence_race | fence_evidence_conflict | lease_lost | placement_frozen | placement_moved | expand_lock_busy | redis_unavailable | other.",
+		Help:      "Tasks pushed back to the retry queue instead of completing. op: read | write | unknown. reason: conn_refused | conn_lost | store_readonly | store_busy | store_cooldown | store_open_failed | ordering_lock_busy | fence_race | fence_evidence_conflict | lease_lost | placement_frozen | placement_moved | route_not_ready | expand_lock_busy | redis_unavailable | other.",
 	}, []string{"op", "reason"})
 
 	// taskDeadLetterTotal 在每个死信写入点成功写入后计数。
@@ -275,6 +277,7 @@ const (
 	DeferLeaseLost             = "lease_lost"              // 排序锁失租(SQL 前 / SQL 中被取消 / 写完核锁时发现)
 	DeferPlacementFrozen       = "placement_frozen"        // 搬库冻结中
 	DeferPlacementMoved        = "placement_moved"         // 落库后复核发现落点变了
+	DeferRouteNotReady         = "route_not_ready"         // mapping Redis 的副本不可信(就绪标记,D1 第 3 批):写不耗预算、读耗
 	DeferExpandLockBusy        = "expand_lock_busy"        // 扩容锁被占
 	DeferRedisUnavailable      = "redis_unavailable"       // Redis 侧的网络错误或超时(守卫、选库、复核、缓存)
 	DeferOther                 = "other"                   // 其它:SQL 的非存储侧错误、编程错误等,照旧耗预算
@@ -283,7 +286,7 @@ const (
 var deferReasons = []string{
 	DeferConnRefused, DeferConnLost, DeferStoreReadOnly, DeferStoreBusy, DeferStoreCooldown, DeferStoreOpenFailed,
 	DeferFenceEvidenceConflict, DeferFenceRace, DeferOrderingLockBusy, DeferLeaseLost, DeferPlacementFrozen, DeferPlacementMoved, DeferExpandLockBusy,
-	DeferRedisUnavailable, DeferOther,
+	DeferRedisUnavailable, DeferOther, DeferRouteNotReady,
 }
 
 // 进死信的原因(db_task_dead_letter_total 的 reason)。
@@ -755,8 +758,8 @@ func RegisterStoreCooldown(source func() map[string]int) {
 	}
 }
 
-// 落点选库的 outcome label 取值(player-storage-placement.md §6.2 表的 outcome 列 + §14 的 recheck_moved)。
-// 集合有界(8 个),op 只有 read / write,不含 player_id 等高基数维度(AGENTS.md §9)。
+// 落点选库的 outcome label 取值(player-storage-placement.md §6.2 表的 outcome 列 + §14 的 recheck_moved
+// + D1 第 3 批的 route_not_ready)。集合有界(9 个),op 只有 read / write,不含 player_id 等高基数维度(AGENTS.md §9)。
 const (
 	PlacementPlaced          = "placed"           // 有落点记录:落记录指向的库(读任务的冻结记录也算这一格)
 	PlacementHome            = "home"             // 无记录、有 home_zone:落 home 库(写任务此时 home 必然 == 本进程 zone)
@@ -766,7 +769,62 @@ const (
 	PlacementMissingRequired = "missing_required" // Placement.Required=true 且无记录:写进死信,读回失败
 	PlacementLookupError     = "lookup_error"     // MGET 失败或值畸形:按可重试错误处理(耗重试次数),fail-closed
 	PlacementRecheckMoved    = "recheck_moved"    // 落库后复核发现路由变化(或写任务遇到冻结):不标记游标、不写共享缓存,重试
+	// PlacementRouteNotReady:Placement.RequireRouteReady=true 且 mapping Redis 的副本不可信(就绪标记不在 / 身份不符等,
+	// spec_D1_batch1b2_2_3.md §5.1):值与缺键都不用来选库。选库时写延后不耗预算、读耗预算;复核时按「路由变了」重试。
+	PlacementRouteNotReady = "route_not_ready"
 )
+
+// ── 读方就绪闸(D1 第 3 批,spec_D1_batch1b2_2_3.md §5.3 / §13.2)────────────────────────
+//
+// 只在 Placement.RequireRouteReady=true 时注册(PrimeRouteReady):开关缺省 false 时 /metrics 的输出与引入之前相同。
+// verdict 的取值由调用方传入(shared/placement.RouteReadyVerdictNames),本包不依赖 placement;集合有界(7 个)。
+var (
+	routeReadyGate = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "route_ready_gate",
+		Help:      "Process-level route ready gate (Placement.RequireRouteReady=true only): 1 = the last refresh found the mapping Redis replica trusted and Kafka / retry consumption proceeds; 0 = consumption paused (marker absent or untrusted, or the read script failed). Not exported while the switch is off.",
+	})
+
+	routeReadyVerdictTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "route_ready_verdict_total",
+		Help:      "Route ready read verdicts (spec D1 M1) from the gate refresh, the placement lookup and the post-write recheck. verdict: trusted | absent | malformed | newer_version | identity_unavailable | not_master | identity_mismatch. Script errors are not verdicts (see db_placement_guard_total{outcome=\"lookup_error\"}). Not exported while Placement.RequireRouteReady=false.",
+	}, []string{"verdict"})
+
+	routeReadyOnce sync.Once
+)
+
+func registerRouteReady() {
+	routeReadyOnce.Do(func() {
+		prometheus.MustRegister(routeReadyGate, routeReadyVerdictTotal)
+	})
+}
+
+// PrimeRouteReady 注册就绪闸的两个指标并以 0 建出全部 verdict 序列与闸仪表(告警用 increase(),序列从无到 1 时会漏掉第一次)。
+// 只在 Placement.RequireRouteReady=true 装配就绪闸时调用;可重复调用。
+func PrimeRouteReady(verdicts []string) {
+	registerRouteReady()
+	for _, verdict := range verdicts {
+		routeReadyVerdictTotal.WithLabelValues(verdict).Add(0)
+	}
+	routeReadyGate.Set(0)
+}
+
+// SetRouteReadyGate 记录就绪闸当前是否放行。
+func SetRouteReadyGate(open bool) {
+	registerRouteReady()
+	if open {
+		routeReadyGate.Set(1)
+		return
+	}
+	routeReadyGate.Set(0)
+}
+
+// CountRouteReadyVerdict 记一次读脚本的结论,verdict 取 placement.RouteReadyVerdict.String()。
+func CountRouteReadyVerdict(verdict string) {
+	registerRouteReady()
+	routeReadyVerdictTotal.WithLabelValues(verdict).Inc()
+}
 
 // 按需打开落点库的 result label 取值。
 const (
@@ -909,6 +967,8 @@ func Start(addr string) {
 	register()
 	// pipeline.go 的指标走独立的 sync.Once;在暴露端点之前注册,告警要用的取值才会以 0 出现在第一次抓取里。
 	registerPipeline()
+	// task_result_notify.go 同理(读回执通知分频道,B0-3 第 2 批)。
+	registerTaskResultNotify()
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 	srv := &http.Server{

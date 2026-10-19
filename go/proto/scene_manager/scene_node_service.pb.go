@@ -35,8 +35,13 @@ type ReleasePlayerRequest struct {
 	// scene 只在本地缓存 PlayerOwnerEpochComp.epoch 与它相等时释放;缓存为 0 时按旧行为释放并计数;其余忽略。
 	// 0 = 旧版调用方或尚未铸造,按旧行为释放并计数。不进存盘,不与 login_generation 混用。
 	ExpectedOwnerEpoch uint64 `protobuf:"varint,4,opt,name=expected_owner_epoch,json=expectedOwnerEpoch,proto3" json:"expected_owner_epoch,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// 玩家的登录会话已结束(登出 / 断线租约到期 / gate 消失),没有接手节点(docs/design/location-release-binding.md §3.3)。
+	// true:持有该玩家且缓存 owner_epoch == expected_owner_epoch → 按客户端断线退出(存盘落地后写 A1′ 断线释放标记);
+	// 本节点完全不持有(无实体、无在途载入、无改派待确认)→ 按 owner_epoch == expected_owner_epoch 条件补写凭证标记;其余忽略。
+	// false = 交接释放(上面的原语义)。旧版 scene 忽略本字段、按交接释放处理,所以 scene 必须先于 SceneManager 发布。
+	SessionEnded  bool `protobuf:"varint,5,opt,name=session_ended,json=sessionEnded,proto3" json:"session_ended,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReleasePlayerRequest) Reset() {
@@ -97,17 +102,25 @@ func (x *ReleasePlayerRequest) GetExpectedOwnerEpoch() uint64 {
 	return 0
 }
 
+func (x *ReleasePlayerRequest) GetSessionEnded() bool {
+	if x != nil {
+		return x.SessionEnded
+	}
+	return false
+}
+
 var File_proto_scene_manager_scene_node_service_proto protoreflect.FileDescriptor
 
 const file_proto_scene_manager_scene_node_service_proto_rawDesc = "" +
 	"\n" +
 	",proto/scene_manager/scene_node_service.proto\x12\n" +
-	"scene_node\x1a!proto/common/asset/asset_op.proto\x1a\x1dproto/common/base/empty.proto\x1a\x17proto/scene/scene.proto\"\xb3\x01\n" +
+	"scene_node\x1a!proto/common/asset/asset_op.proto\x1a\x1dproto/common/base/empty.proto\x1a\x17proto/scene/scene.proto\"\xd8\x01\n" +
 	"\x14ReleasePlayerRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
 	"\x0ftarget_scene_id\x18\x02 \x01(\x04R\rtargetSceneId\x12$\n" +
 	"\x0etarget_node_id\x18\x03 \x01(\tR\ftargetNodeId\x120\n" +
-	"\x14expected_owner_epoch\x18\x04 \x01(\x04R\x12expectedOwnerEpoch2\x8f\x04\n" +
+	"\x14expected_owner_epoch\x18\x04 \x01(\x04R\x12expectedOwnerEpoch\x12#\n" +
+	"\rsession_ended\x18\x05 \x01(\bR\fsessionEnded2\x8f\x04\n" +
 	"\rSceneNodeGrpc\x12:\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\"\x00\x12.\n" +
 	"\fDestroyScene\x12\x14.DestroySceneRequest\x1a\x06.Empty\"\x00\x12;\n" +

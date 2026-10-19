@@ -2,6 +2,8 @@
 
 > **状态**:v1.1 — 2026-10-17 按评审修复的实际代码订正:第 A 批(Go 服务)、第 B 批(C++ scene)、第 C 批的部署(C1)、告警(C2)与 scene 周期 WARN(C3),
 > 条目编号见交接 `docs/handoff/player-inbox-handoff-20261015.md` §6。v1 首版 2026-10-15 随设计第 4 批「运维、部署与对账」落码。
+> 2026-10-18 第 C 批复核修复:写前门禁加线上交叉核对与来源核对(§2.1),回滚只回退镜像、不检出旧 commit 重跑(§2、§11),
+> scene 日志的 LogQL 选择器改为 sidecar 真有的标签(§2.1、§5),账本校验口径写明收件箱多查 request_id 为 0(§5.2、§10.4)。
 > **全部未编译、未测试、未在任何环境演练**,待 Codex 验证(§15)。本手册以代码为准:代码行为变了,要回来同步这里。
 > **依据**:`docs/design/player-inbox-service.md`(下称「设计」)v1.0,尤其 §1.4、§1.6、§7.8、§8、§9、§11.7;
 > 计数器倒退的通用处置见 `docs/design/db-write-fencing-mysql.md`(下称「围栏设计」)v0.4 §9.1。
@@ -62,14 +64,23 @@ NotifyResendIntervalSeconds, GaugeIntervalSeconds, ReconcileIntervalMinutes, Rec
 | 3 | 部署收件箱服务,`EnqueueTypes` **为空** | `player-inbox` 两副本 Ready;etcd 有 `PlayerInboxNodeService.rpc/...` 键;`GmSanctionPlayer` 返回 `kPlayerInboxDisabled`;写路径打印 `player-inbox consumer gate: consumer_enabled=false ... enqueue_types=0 ... OK` |
 | 4 | 全部 scene 升级,`consumer_enabled=false`(`bin/etc/game_config.yaml` 里默认就是 `false`;K8s:逐 zone `zone-up`) | **这就是回滚下限**。存档能原样往返 `inbox_ledger`,scene 不发 Fetch(收件箱 `player_inbox_fetch_total` 不涨)。每个 scene 启动时打一行 WARN `[PlayerInbox] metric=inbox_consumer_disabled`,之后每 5 分钟补打一行:这一步出现它是预期的 |
 | 5 | 打开消费:把 `bin/etc/game_config.yaml` 的 `player_inbox.consumer_enabled` 改成 `true` 并提交,再逐 zone `zone-up` 并滚动 scene(ConfigMap 变了不会自己重启 C++ 进程)。可以加 `-PlayerInboxConsumer on`,把预期写进命令(§2.1) | 门禁行变为 `consumer_enabled=true`;scene 启动行变为 INFO `[PlayerInbox] consumer_enabled=1 ...`,`metric=inbox_consumer_disabled` 不再出现;`player_inbox_fetch_total{path="fast"}` 随登录上涨,`fence` 以 `NO_STREAM` 为主 |
-| 6 | 打开入箱:改服务 yaml 的 `PlayerInbox.EnqueueTypes` 并提交,重跑 `infra-up`。**v1 只能填** `PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN` 与 `PLAYER_INBOX_MSG_GM_UNBLOCK_CURRENCY_GAIN` | 门禁行为 `enqueue_types=2 ... OK`;生成期打印的 ConfigMap 里 `EnqueueTypes` 有值;一次测试处置能入箱并在测试账号上生效 |
+| 6 | 打开入箱:改服务 yaml 的 `PlayerInbox.EnqueueTypes` 并提交,重跑 `infra-up`。**v1 只能填** `PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN` 与 `PLAYER_INBOX_MSG_GM_UNBLOCK_CURRENCY_GAIN`。第 5 步没做完(有 zone 线上 node-config 还是 `false`),门禁会拒绝(§2.1) | 门禁行为 `enqueue_types=2 ... live=zones_consumer_enabled=N/N OK`(N = 线上 zone 数,两个数相等);生成期打印的 ConfigMap 里 `EnqueueTypes` 有值;一次测试处置能入箱并在测试账号上生效 |
 
 **v1 不开 `GM_ATTACH_CURRENCY_DEBT`**(原因见 §1):
 - 白名单里出现它,`config.Validate` 与装配层都拒启(`config.ParseEnqueueTypes`)。
-- K8s 上先失败的是 `player-inbox-migrate` Job(同一份 ConfigMap,同样跑 Validate),发布停在 Deployment 之前。
+- K8s 上先失败的是 `player-inbox-migrate` Job(同一份 ConfigMap,同样跑 Validate)。staging / prod,或 dev 带 `-WaitReady` 时,
+  发布停在 Deployment 之前;dev 不带 `-WaitReady` 时脚本不等 Job,Deployment 照常滚动,新 Pod 表现为 CrashLoopBackOff。
 - 部署脚本渲染期不拦它:脚本里不复制第二份禁用清单。
 
-**回滚**:回退到下限(第 4 步的版本)以上的任意版本都安全。**低于下限**(scene 或 go/db 回到不认识 `inbox_ledger` 的版本)是破坏性变更,按 §11 的前置步骤执行。
+**回滚**:回退到下限(第 4 步的版本)以上的**镜像**都安全。只回退镜像,不回退开关:
+- 用 `kubectl rollout undo`,或用**当前检出**的 `k8s_deploy.ps1` 配旧 `-NodeImage` / `-GoSvcTag` 重跑。开关值仍取当前检出的 yaml。
+- **不要检出旧 commit 再跑它的部署**。消费开关的权威值就是 git 里的 `bin/etc/game_config.yaml`,检出旧 commit 会把 `consumer_enabled` 一起回退:
+  - 下限那一版(第 4 步)本身就是 `false`;
+  - 旧 commit 的门禁只比那个 commit 里的两份 yaml(第 6 步之前白名单是 `[]`),所以照样放行;早于 H1 修复的脚本按 `-PlayerInboxConsumer` 缺省 `off` 渲染,根本没有门禁。
+  - 结果是 scene 全部停止消费,而线上白名单仍开着:GM 处置回 `created=true`,一条都不执行。
+- 确实要重跑旧 commit:先核对它的 `consumer_enabled` 与当前一致;不一致就先按 §2.1「正常关消费的顺序」关掉入箱。
+  旧 commit 本身已带线上核对(§2.1 第 2 层,本次修复之后的提交)时,它的门禁读到 infra 线上白名单非空会拒绝;更早的提交没有这一层,不会拒。
+- **低于下限**(scene 或 go/db 回到不认识 `inbox_ledger` 的版本)是破坏性变更,按 §11 的前置步骤执行。
 
 **为什么第 4、5 步要分开**:scene 旧版本按组件重建存档会丢掉新字段;go/db 旧版本按主键只更新已知列,账本列会停在旧值(违反 IB-3)。先让全部 scene / go/db 都「认识并原样回写」,再开消费,任何时刻回退都不会丢账本。
 
@@ -79,24 +90,56 @@ NotifyResendIntervalSeconds, GaugeIntervalSeconds, ReconcileIntervalMinutes, Rec
 都会把它写回 `false`;GM 处置照样回 `created=true`,却一条都不执行,也进不了任何告警。现在的规则:
 
 - **权威值只有一份**:git 跟踪的 `bin/etc/game_config.yaml` 的 `player_inbox.consumer_enabled`,与 `EnqueueTypes` 取服务 yaml 同口径。
-  `k8s_deploy.ps1` 把 `player_inbox` 段整段复制进 node-config(`periodic_fetch_minutes` 一起带过去),不读集群现状。
+  `k8s_deploy.ps1` 把 `player_inbox` 段整段复制进 node-config(`periodic_fetch_minutes` 一起带过去)。渲染值不从集群取;
+  集群现状只用于下面写前门禁的交叉核对。
+- 脚本读的是**工作区文件**,不是 HEAD。staging / prod 的真部署要求这两份 yaml 相对 HEAD 没有未提交改动,否则拒绝;dev 与 DryRun 只告警。
 - 值只认小写 `true` / `false`。缺键,或写成 `yes` / `True` 等,生成期直接 throw。
 - 这份 yaml 本机 scene 也读,改了它本机同时生效。本机副本 scene 读 `bin/etc/game_config_instance.yaml`,那里没有这一段,所以永远不消费。
   K8s 的副本池与主 scene 共用同一份 node-config,不受影响。
 - **开 / 关消费 = 改 yaml 并提交**,再逐 zone `zone-up` 并滚动 scene。
 - `-PlayerInboxConsumer on|off` **只核对、不改值**:留空就不核对;给了值而与 yaml 不一致,在任何写操作之前拒绝,并提示去改 yaml。
   所以旧命令 `zone-up -PlayerInboxConsumer on` 不再能打开消费。
-- **写前门禁**(`Assert-PlayerInboxConsumerGate`):`zone-up` / `all-up` / `infra-up` 都判,先于任何集群写操作。
-  - 拒绝条件:yaml 里 `consumer_enabled=false`,而服务 yaml 的 `EnqueueTypes` 非空。
+- **写前门禁**(`Assert-PlayerInboxConsumerGate`):`zone-up` / `all-up` / `infra-up` 都判,先于任何集群写操作,拦「消费端关、入箱开」。分三层:
+  1. **当前检出里的两份 yaml**:`consumer_enabled=false` 而服务 yaml 的 `EnqueueTypes` 非空。
+     这一层只拦同一个检出里的矛盾。zone 与 infra 分开部署、可以来自不同 commit,它拦不住「检出旧 commit 重跑 zone-up」,也拦不住「先跑 infra-up」。
+  2. **另一侧线上的值**(非 DryRun,只读,`Read-PlayerInboxGateLiveFacts`):
+     - 本次把 `false` 渲染进 node-config(`zone-up`、`all-up -SkipInfra`):读 infra 线上 `go-svc-player-inbox-config` 的白名单,非空即拒。
+       不带 `-SkipInfra` 的 `all-up` 不读:它先把 yaml 的白名单写进 infra,zone 才滚动,第 1 层核过的就是这一份。
+     - 本次把非空白名单渲染进 ConfigMap(`infra-up`、`all-up`):读线上全部 `<-NamespacePrefix>-*` namespace 的 node-config,有 zone 不是 `true` 即拒。
+       `all-up` 先部署白名单、后部署 zone,所以「同一提交里开消费又填白名单」不能用一次 `all-up` 完成:先 `all-up -SkipInfra` 或逐 zone `zone-up`。
+     - 读不到(kubectl 失败、没有跨 namespace 的读权限、ConfigMap 形状不对)就拒绝。DryRun 不读集群,门禁行写 `live=skipped(dry-run)`。
+     - **局限**:读的是 ConfigMap,不是进程。C++ 与 go-zero 只在启动时读配置,ConfigMap 改了而 Pod 没滚动,门禁看到的就不是生效值。
+       所以每一步仍要按验收确认生效(scene 启动行、`GmSanctionPlayer` 的回包),再进下一步。
+  3. **来源**:staging / prod 的真部署要求两份 yaml 已提交(见上)。
   - 明知如此仍要部署(例如紧急关消费,来不及先清白名单):直接调 `tools/scripts/k8s_deploy.ps1`,显式传 `-AllowPlayerInboxConsumerOff`。
-    脚本只打一条警告放行,不改渲染值。包装入口(`dev_tools.ps1`、`k8s_image.ps1`)不透传这个开关。
-  - 放行时打一行 `player-inbox consumer gate: consumer_enabled=<值> (...) enqueue_types=<N> (...) OK`,发布记录里会留着它。
-- **正常关消费的顺序**:先把 `EnqueueTypes` 改回 `[]` 并重跑 `infra-up`,确认 `GmSanctionPlayer` 回 `kPlayerInboxDisabled`;
-  再把 `consumer_enabled` 改回 `false` 并提交,逐 zone `zone-up` 并滚动 scene。顺序反过来会被门禁拒绝。
+    它只豁免第 1、2 层,打一条警告放行,不改渲染值。staging / prod 仍要先提交改过的 yaml(第 3 层不豁免)。
+  - **包装入口没有这个开关**:`dev_tools.ps1`、`k8s_image.ps1`、`k8s_zone_rollback.ps1` 都不认它(加上只会报「找不到参数」)。
+    紧急关消费之后 git 停在「`false` + 白名单非空」,此后包装入口的部署与 zone 回档(第 0 步的 DryRun 预检)都会被拒。
+    出路是先把 `EnqueueTypes` 改回 `[]` 并提交、重跑 `infra-up`,也就是下面的正常顺序,门禁随之放行。
+  - **zone 回档**(`k8s_zone_rollback.ps1`)的第 0 步预检带 `-DryRun`:只判第 1 层;第 2 层不读集群,第 3 层只告警。
+    这两层要到第 6 步真 `zone-up` 才判,那时 zone 已经停服。所以回档之前先核对两件事,否则第 6 步被拒、zone 停在停服状态:
+    - 当前检出 yaml 里 `consumer_enabled=false` 时,infra 线上的 `EnqueueTypes` 必须已经是空的
+      (`kubectl -n mmorpg-infra get cm go-svc-player-inbox-config -o yaml` 里找 `EnqueueTypes`);
+    - staging / prod:两份 yaml 没有未提交改动(第 0 步的输出里不能有 `player-inbox consumer gate: ... 有未提交改动` 这条警告)。
+  - 放行时打一行 `player-inbox consumer gate: consumer_enabled=<值> (...) enqueue_types=<N> (...) head=<sha> worktree=<clean|dirty> live=<线上核对> OK`,
+    发布记录里会留着它。
+- **正常关消费的顺序**:
+  1. 先把 `EnqueueTypes` 改回 `[]` 并提交,重跑 `infra-up`;确认 `GmSanctionPlayer` 回 `kPlayerInboxDisabled`,这一步才算生效。
+  2. 再把 `consumer_enabled` 改回 `false` 并提交,逐 zone `zone-up` 并滚动 scene。
+  - 顺序反了:第 2 层读到 infra 线上白名单仍非空,`zone-up` 被拒。前提是非 DryRun,且 infra 的 ConfigMap 确实还是旧值;
+    改了 ConfigMap 而 player-inbox 的 Pod 没滚动这种情况它看不出来,所以第 1 步要以 `GmSanctionPlayer` 的回包为准。
+- **开消费的顺序**(上线第 5、6 步):全部 zone `zone-up` 并滚动 scene、scene 打出 `consumer_enabled=1` 之后,才提交 `EnqueueTypes` 并跑 `infra-up`。
+  顺序反了:`infra-up` 读到有 zone 线上还是 `false`,被拒。
 
 **怀疑开关被关了**:信号是 `PlayerInboxConsumerMaybeDisabled`(warning),或白名单已打开的环境里出现 scene 日志 `metric=inbox_consumer_disabled`。
-1. 逐 zone 查 scene 日志 `metric=inbox_consumer_disabled`。收件箱全服一份、指标不分 zone,只有这条日志能定位到 zone。
+1. 逐 zone 查 scene 日志。收件箱全服一份、指标不分 zone,只有这条日志能定位到 zone。流选择器必须是 sidecar 真会打的标签
+   (C++ 日志没有 `app` 标签,写 `{app=...}` 的查询恒为空,会被误判成「开关开着」):
+   ```logql
+   sum by (zone) (count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_consumer_disabled" [10m]))
+   ```
+   单看一个 zone 就在选择器里加 `zone="<zone 名>"`。
 2. 核对 git 里的 `bin/etc/game_config.yaml`,以及该 zone node-config 里 `game_config.yaml` 的 `player_inbox` 段。
+   常见原因:yaml 被改回 `false`、检出开消费之前的旧 commit 重跑了 `zone-up`(§2「回滚」),或部署时用了 `-AllowPlayerInboxConsumerOff`。
 3. 按第 5 步重开并滚动 scene。
 - 误报:6 小时内新入箱的目标玩家全部离线时也会亮。这时 `player_inbox_fetch_total{path="fast"}` 仍随登录上涨,说明 scene 在拉。
 - 局限:别的 zone 有条目被投递,就会盖住关了开关的那个 zone。逐 zone 只能看第 1 步的日志,写前门禁才是主防线。
@@ -219,6 +262,8 @@ grpcurl -plaintext -import-path . -proto proto/player_inbox/player_inbox_admin.p
 | `PlayerInboxOpenItemsTrend` | info | 最老未决条目超过 30 天(多为流失玩家) | 只看趋势 |
 
 **scene 日志信号**(scene 没有 Prometheus 端点。LogQL 写在告警文件头,Loki ruler 还没接线,目前是值班固定查询):
+- 流选择器一律写 `{job="cpp_nodes", service="scene"}`,逐 zone 再加 `zone="<zone 名>"`。C++ 业务日志只落文件、由 Alloy sidecar 送 Loki,
+  sidecar 不打 `app` 标签:写成 `{app=~"scene.*"}` 的查询恒为空,会被误判成「没有问题」。契约测试核对告警文件里的选择器只用 sidecar 真有的标签。
 
 | 日志 | 级别 | 含义 | 处置 |
 |---|---|---|---|
@@ -300,7 +345,7 @@ scene 对一条投递的判定顺序是:先按账本分类,只有新条目才看
 | `NOT_DECIDED` | 账本里该域水位没到这个 seq:消费方还没裁决它 | 停用原因不是 MISMATCH。按 scene 日志 `inbox_halted` 的 `reason` 处理(未知类型见 A) |
 | `SEQ_NOT_IN_RING` | 水位已过,环里却没有这个 seq:原结局已挤出环,可能已执行 | 不要强制。scene 对它报 UNKNOWN,收件箱以 SETTLED_UNKNOWN 收尾,按 `PlayerInboxSettledUnknown` 人工核实 |
 | `REQUEST_IN_LEDGER` | 环里出现过本行的 request_id:可能已执行 | 不要强制。同 seq、同 request_id 是正常回放(确认丢了),玩家下次登录会补确认。同 seq、同 request_id、只有 msg_type 不同,只可能来自数据损坏,v1 没有工具,停下上报负责人;出现在别的 seq 上也上报 |
-| `LEDGER_INVALID` | 账本结构不合法(与 scene 判账本损坏同口径) | §10.4 |
+| `LEDGER_INVALID` | 账本结构不合法。条件与 scene 判账本损坏相同,另多查一条 request_id 为 0;只有这一项不合法时 scene 不判损坏,表现为 `inbox_replay_mismatch` | §10.4 |
 | `UNSPECIFIED` | 行不存在(`kPlayerInboxItemNotFound`)或已是终态 | `LookupByRequest` 看当前状态 |
 
 ### 5.3 在线提醒积压(`PlayerInboxNotifyBacklog`)
@@ -530,7 +575,11 @@ v1 **不做自动隔离**。
   - 收件箱侧 `PlayerInboxReconcileLedgerInvalid`,以及 ERROR `persisted inbox ledger is structurally invalid`;
   - `ReconcilePlayer` 回 `kPlayerInboxStoreUnavailable`;强制作废回 `LEDGER_INVALID`。
 - 不合法的条件(scene 的 `ValidateLedger` 与收件箱同口径):domain 为 0 或重复;单域环超过 32 条;环里 seq 为 0、不严格升序或越过水位;
-  结局不是 APPLIED / REJECTED / SKIPPED。收件箱另查 request_id 为 0。
+  结局不是 APPLIED / REJECTED / SKIPPED。
+- 收件箱另查 request_id 为 0,scene 不查。只有这一项不合法时,两侧表现不同:
+  - 收件箱侧照样计 invalid、亮 `PlayerInboxReconcileLedgerInvalid`,`ReconcilePlayer` 回 `kPlayerInboxStoreUnavailable`,强制作废回 `LEDGER_INVALID`;
+  - scene 侧不打 `metric=inbox_ledger_invalid`,照常拉取。同 seq 的行再投递时,环里记的 request_id(0)对不上,打 `metric=inbox_replay_mismatch` 并停用该域。
+  - 所以收件箱侧亮了而 scene 侧找不到 `inbox_ledger_invalid` 时,去找该玩家的 `inbox_replay_mismatch`。
 - 影响:这名玩家的收件箱**全部域**停用,不拉取、不执行,表面上与离线无异;登录不受影响。scene 不改写这份账本,存盘时原样写回。
 - **不要清空账本重建**,也不要把水位改小。账本是「哪些处置已经在这名玩家身上执行过」的唯一记录;
   清空之后,已执行、还没确认的 PENDING 行会被当成新条目,再执行一次。
@@ -543,20 +592,25 @@ v1 **不做自动隔离**。
 3. 收件箱一侧导出这名玩家:`GetSummary`(各域 `next_seq` / `open_count` / `fence_epoch`)与 `ListItems`(各域、全部状态)。
    `ReconcilePlayer` 在账本修好之前一律回 `kPlayerInboxStoreUnavailable`,不要重试它。
 4. 对照 scene 的 `[PlayerInbox] applied` 日志,逐个 seq 判断哪些已在玩家身上生效。
-5. v1 没有修复工具,修复与写回的方式由负责人定。修正后的账本至少要过上面的结构校验,各域水位不低于原值。
+5. v1 没有修复工具,修复与写回的方式由负责人定。修正后的账本至少要过上面的结构校验(含收件箱多查的 request_id 非 0),各域水位不低于原值。
    水位两个方向的代价不对称:偏高,个别没执行过的条目会以 SETTLED_UNKNOWN 收尾(有告警,可以人工重下);偏低,已执行过的会再执行一次。
-6. 写回之后让玩家重新登录。确认 `metric=inbox_ledger_invalid` 不再出现,再用 `ReconcilePlayer` 复核无差异。
+6. 写回之后让玩家重新登录。确认 `metric=inbox_ledger_invalid` 不再出现(只是 request_id 为 0 的那种,看该玩家的 `metric=inbox_replay_mismatch`
+   不再出现),再用 `ReconcilePlayer` 复核:不再回 `kPlayerInboxStoreUnavailable`,且无差异。
 
 ---
 
 ## 11. 回滚下限与破坏性降级(设计 §8 #21、§11.7)
 
-- **回滚下限** = 认识 `inbox_ledger` 的 scene 与 go/db 版本(上线第 4 步那一版)。回退到下限以上任意版本都安全,照常 `rollout undo` / 重跑旧 commit 的部署。
+- **回滚下限** = 认识 `inbox_ledger` 的 scene 与 go/db 版本(上线第 4 步那一版)。回退到下限以上任意**镜像**都安全:`kubectl rollout undo`,
+  或用当前检出的脚本配旧 `-NodeImage` / `-GoSvcTag` 重跑。**开消费之后不要检出旧 commit 重跑它的部署**:开关会跟着回退成那个 commit 的值
+  (下限那一版就是 `false`),消费被关掉而线上白名单仍开着(§2「回滚」)。确实要跨过「开消费」那个提交、或回到 H1 修复之前的 commit,先按下面第 1 步关入箱。
 - **低于下限的降级**(scene 或 go/db 回到不认识新字段的版本)会丢账本或让账本停在旧值,再升回来时已应用、未确认的处置会被**重复执行**
   (`ATTACH_DEBT` 解禁之后尤其危险:同一笔欠款会挂两次)。必须先做:
   1. **关入箱**:把服务 yaml 的 `EnqueueTypes` 改回 `[]` 并提交,重跑 `infra-up`(确认 `GmSanctionPlayer` 返回 `kPlayerInboxDisabled`)。
   2. **关消费**:把 `bin/etc/game_config.yaml` 的 `player_inbox.consumer_enabled` 改回 `false` 并提交,全部 zone `zone-up` 并滚动 scene;
-     确认 `player_inbox_fetch_total` 不再增长、scene 打出 `metric=inbox_consumer_disabled`。顺序不能反,反了会被写前门禁拒绝(§2.1)。
+     确认 `player_inbox_fetch_total` 不再增长、scene 打出 `metric=inbox_consumer_disabled`。顺序不能反:第 1 步要以 `GmSanctionPlayer` 回
+     `kPlayerInboxDisabled` 为准再做第 2 步。反了时,非 DryRun 的写前门禁读到 infra 线上白名单仍非空会拒绝 `zone-up`(§2.1 第 2 层);
+     但它看的是 ConfigMap,player-inbox 的 Pod 没滚动时看不出来,所以不能只靠它。
   3. **隔离已投递未确认的行**:对每个域 `ListItems(state=PENDING)`,把 `delivery_count > 0` 的行逐条 `VoidItem(reason=QUARANTINED, note=<降级工单号>)`,
      按 §4.2 的限速执行,结果清单附进工单。消费关着,这些行这时只挂上指令、仍是 PENDING。重开消费后,账本已丢失的玩家,scene 把这些行当新条目记 SKIPPED,
      不会再执行;账本还在的,照报原结局。
@@ -641,6 +695,13 @@ SHOW TABLE mmorpg_player_inbox.player_inbox_item INDEX `uk_player_inbox_item` RE
   `enqueue_total` / `fetch_total` / `void_total` 的取值改名不会红,改的时候对照告警文件头的「label 取值契约」。
 - 批量处置脚本的限速值(§4.2)待压测确认。
 - K8s 上的抓取前提(指向 9270 的 ServiceMonitor / PodMonitor)仓库里没有,与其它 go-svc 同一缺口。
+- **写前门禁的线上核对**(§2.1 第 2 层)看的是 ConfigMap 不是进程;`k8s_zone_rollback.ps1` 第 0 步不读集群,这一层到第 6 步才判。
+  在第 0 步预读(照 db 消费组第 0 步 e 的做法)未做,属于回档脚本那条线。
+- **还没同步的文档与配置**(本手册之外,不在收件箱这批的改动范围):
+  - `docs/ops/release-checklist.md` 回滚一节的 gateway 例外仍写「改用旧 commit 重跑 `k8s_deploy.ps1 zone-up`」,开消费之后照做会连消费一起关掉(§2「回滚」);
+    同一节「部署上一版本」用当前脚本换旧镜像参数,不受影响;
+  - `deploy/k8s/asset-channel-alerts.yaml`、`deploy/k8s/data-service-audit-alerts.yaml` 的 LogQL 也写 `{app="scene"}` / `{app="battle"}`,同样恒为空;
+  - `cpp/libs/engine/config/config.cpp` `readGameConfig` 的注释仍说 K8s node-config 不带 `player_inbox` 段,与现在的整段复制相反。
 
 ---
 
@@ -668,4 +729,6 @@ cd go/player_inbox; gofmt -l . ; go vet ./... ; go test ./... -count=1
 C++ 侧(MSBuild 串行 `/m:1`):`currency_test.exe --gtest_filter=PlayerInboxRules.*:PlayerInboxSystemTest.*`,覆盖 M1 / L1 / L2 / M4 / H1 的状态机回归。
 
 通过标准:三个 `.tests.ps1` 的汇总 fail=0;Go 测试全绿;C++ 用例全绿。部署脚本的用例按 git 里的 `go/player_inbox/etc/player_inbox.yaml`
-与 `bin/etc/game_config.yaml` 核对 §1 列出的键、`Middlewares` 段与消费开关。各批的完整验证步骤见交接 §4 与 §6.4。
+与 `bin/etc/game_config.yaml` 核对 §1 列出的键、`Middlewares` 段与消费开关。`k8s_deploy_contract.tests.ps1` 里与本手册直接相关的几条:
+写前门禁的三层(两份 yaml、线上交叉核对用假 kubectl、来源用注入的 git 状态)、DryRun 不读集群、告警文件 LogQL 选择器只用 sidecar 的流标签。
+线上交叉核对在真集群上的行为(跨 namespace 列 ConfigMap 的权限、kubectl 输出形状)没有自动化验证,首次在 staging 跑 `infra-up` / `zone-up` 时看门禁行的 `live=`。各批的完整验证步骤见交接 §4 与 §6.4。

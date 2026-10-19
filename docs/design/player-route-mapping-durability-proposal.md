@@ -291,6 +291,8 @@ leader 由 `route_meta` 租约选出（10s 租期，3s 续一次）。每拍 1s�
    - **回档检测**：库里的 watermark 小于标记里记下的 watermark 减容差，就把 `writable` 置 0、告警，停止库到缓存的推送（缓存才是较新的一边）。
 5. **每 30s** 推送最近 N 分钟变化的行，自动补齐发布失败的那部分。
 
+> 2026-10-18 注(第 1b-1 批):租约与水位已拆到 `route_reconcile`(G1a);就绪标记的值格式、CAS / CAD 脚本与冻结 / 反向修库 / 解冻的库原语见 §11.2「第 1b-1 批」,以那里为准。leader 本身属于第 1b-2 批,未开始。本节原文不回改。
+
 ---
 
 ## 6. 故障行为与恢复
@@ -302,6 +304,8 @@ leader 由 `route_meta` 租约选出（10s 租期，3s 续一次）。每拍 1s�
 | **数据库不可用** | 稳态读全在 Redis，热路径（存盘、进场、登录列表）不受影响。写入 fail-closed：建角失败，但 6c 名字登记本来就依赖同一个库；合服、搬库、钉落点工具拒绝启动，或带着围栏中止。标记保持（没有写能绕过库，副本仍然正确）；对账暂停 | 库恢复后自动续上；数据库不可用期间禁止开始合服或搬库（写进 runbook） |
 | **数据库回档**（PITR；K8s 下全局库与 zone 库同一个 mysql 实例，`k8s_deploy.ps1:3443`、`:3511-3512`，zone 回档会连带回档全局库） | leader 发现 watermark 回退：`writable=0`，全体写者拒写；**不往缓存推旧值**；缓存与标记保持不动，读照常 | 1) `data_service -route-reconcile-from-cache`：缓存 maprev 大于库 rev 或库里无行时，把缓存值连同 rev 写回库；围栏和 merged_into 从镜像补回。2) `-route-audit` 两个方向都为 0。3) 换新 `generation`，`writable=1`。`k8s_zone_rollback.ps1` 的流程里要加入这一步 |
 | **Redis 与数据库同时丢失** | 全服 fail-closed（不会写错库） | 先恢复数据库备份；按 runbook §9.2 的清单重放，补齐备份之后的合服和搬库（重放目标改为写库）；跑 backfill；最后预热。清单"永久归档"的纪律保留（`merge-zone-runbook.md:720`） |
+
+> 2026-10-18 注(第 1b-1 批):「数据库回档」一行的恢复步骤以 §11.2「第 1b-1 批」与 runbook §9.4 为准:命令是 `data_service -f <yaml> -route-tool freeze` → `reconcile-from-cache` → `audit -frozen-recovery` → `unfreeze -confirm-audited`;**不换 generation**(偏离 B1);第 1b-2 批之前没有就绪标记,解冻要显式 `-cache-was-not-verified-acknowledged` 并先按 §9.2 清单核对。leader 自动发现回档(写 `writable=0`)属于第 1b-2 批,在那之前回档要由运维发现并手工 freeze。本表原文不回改。
 
 ---
 
@@ -378,6 +382,8 @@ leader 由 `route_meta` 租约选出（10s 租期，3s 续一次）。每拍 1s�
 9. **Redis 整体丢失时，会话、锁、游标、`PlayerAllData` 的恢复不在本方案范围。**
 10. **改动超过 30 个文件，需要按 §10.2 授权；HEAD 上的落点代码也还没复验。**
 
+> 2026-10-18 注(第 1b-1 批):第 6 条「凡对全局库所在实例做过 PITR,都要跑反向修库」的工具与步骤已落码(未编译、未测试):`data_service -f <yaml> -route-tool freeze` → `reconcile-from-cache` → `audit -frozen-recovery` → `unfreeze -confirm-audited`,以 §11.2「第 1b-1 批」与 runbook §9.4 为准。第 1b-2 批(leader 的 watermark 检测)落地之前连容差检测都没有,这条 runbook 纪律是唯一防线。本节原文不回改。
+
 ---
 
 ## 9. 改动面清单与分批
@@ -434,7 +440,7 @@ leader 由 `route_meta` 租约选出（10s 租期，3s 续一次）。每拍 1s�
 | 第 0 批 | 已落码(2026-10-12),**未编译、未测试** | 见下 |
 | 第 1a 批 | 已落码(2026-10-12),**未编译、未测试** | 存储底座(四张表 + route store)、W1 的 db_first 开关(所有档位默认 redis)、`route_tool` 导入 / 审计、W2 / W3 停用。见下「第 1a 批」 |
 | 第 1a 批热点修复(G1a) | 已落码(2026-10-12),**未编译、未测试** | TiDB 写热点:`player_route` 聚簇 `(route_shard, player_id)` + 片前缀索引、`route_meta` 拆出 `route_reconcile`、建池探针 P4、`route_tool tidb-prepare`。见下「第 1a 批热点修复」 |
-| 第 1b 批 | 未开始 | §9 第 1 批的剩余项:对账 leader、全量预热与 `mapping:route:ready`、回档检测与反向修库(`-route-rewarm` / `-route-reconcile-from-cache`)、`route_tool` 并进 data_service 主程序入口(K8s 上可跑)。范围以 1b 开工时的规格为准 |
+| 第 1b 批 | 1b-1 已落码(2026-10-18),**未编译、未测试**;1b-2、1b-3 未开始 | §9 第 1 批的剩余项:对账 leader、全量预热与 `mapping:route:ready`、回档检测与反向修库(`-route-rewarm` / `-route-reconcile-from-cache`)、`route_tool` 并进 data_service 主程序入口(K8s 上可跑)。范围以 1b 开工时的规格为准。2026-10-18 起按调研规格(`docs/handoff/launch-readiness-20261013/spec_D1_batch1b_scout.md`)拆成三步:1b-1 工具、入口、库原语(见下「第 1b-1 批」);1b-2 对账 leader、就绪标记写者、rewarm、audit `-require-maprev`;1b-3 K8s 配置载体(FenceShards / Reconcile / WaitAOF)、route-tool Job 清单、告警、清库脚本防护 |
 | 第 2、3 批 | 未开始 | 第 2 批另含:四张表补 proto 守卫(替换 `routeTableShapes`,见第 1a 批偏离第 1 条) |
 
 **第 0 批(2026-10-12)改动**:
@@ -836,6 +842,7 @@ gRPC code 的集合与今天相同:OK、AlreadyExists、FailedPrecondition、Una
 4. BR / PITR 恢复之后、TRUNCATE 之后重跑(换表 ID,预切与 table attributes 不跟过去;BR / TiCDC 也跳过 `ATTRIBUTES` DDL)。
 5. Phase 2 打开 `PinOnCreate` 指向 1000000 时加 `-storages=1000000`。
 6. `ALTER TABLE route_meta CACHE`(撤销 `NOCACHE`):**S2 档起必选**,S1 可选(2026-10-13 按容量模型 §4.1「连带修正」,由「可选、默认不开」改定。依据是容量模型 §2.6 的「route_meta 的 R1 单行读」一行:每次 W1 一次点读,压在单个 Region leader 上,S2 上沿约 2.5 万/s,设成缓存表后为 0;数字是推算,没有压测)。目前只是运维步骤,`tidb-prepare` 不发这条语句,要不要并进去留给第 1b 批。缓存表上不能直接做 DDL、BR / TiCDC 是否保留 CACHE 属性都【未核实】,按「不保留、恢复后重放」处理。
+   > 2026-10-18 更正(第 1b-1 批):「要不要并进去」已定为**不并进**,见下「第 1b-1 批」运行时要点第 8 条:这条语句由 TiDB Phase 1 的部署步骤执行(建表之后、开服之前;恢复之后重放),`tidb-prepare` 不发;设成缓存表之后 `route_tool freeze` / `unfreeze` 的 `-freeze-timeout` 要 ≥ `tidb_table_cache_lease` + 2s。Phase 1 一侧的归属写在 [tidb-phase1-and-launch-readiness.md](./tidb-phase1-and-launch-readiness.md) §9.3 第 21 项与 §6.2「恢复后必做」的同日更正。原文不删。
 7. MySQL 档:`tidb-prepare` 打印 `SKIP` 并退出 0;G1a 在 MySQL 上不改变容量(InnoDB 主键本来就聚簇,插入点从 1 个变 64 个,推断无可见影响)。
 
 **相对本提案与第 1a 批的偏离(H)**
@@ -1050,6 +1057,166 @@ Region 总数 ≈ 63 + 63 + 8·Z + 8·S + Z。行数据与 `idx_route_updated` �
 tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加同口径的更正注。
 
 **Java 版(AGENTS.md §12)**:服务端内部存储的启动探针,不涉及客户端契约,不需要同批改;Java 版的 D1 仍是「待做」。做等价的「库为真源」目录时若同样用片前缀 + CHECK,建议在启动时同样实测模数。
+
+---
+
+**第 1b-1 批(2026-10-18):route_tool 并进主程序入口 + freeze / reconcile-from-cache / unfreeze + 就绪标记的值格式与 CAS / CAD 脚本**
+
+> 状态:**已落码,未编译、未测试**(AGENTS.md §10.1,待 Codex 按下面「交 Codex 的验证」执行)。**不改服务的运行行为**:新的库原语只被工具调用,发布路径只改了「pipeline 没执行」的分类(见运行时要点第 6 条)。唯一可见的入口变化:没有 `-route-tool` 却带位置参数时 data_service 以退出码 2 拒启(K8s 的 args 只有 `-f`,本地 `go_services.ps1` 也只传 `-f`,都不受影响)。
+> 依据:调研规格 [spec_D1_batch1b_scout.md](../handoff/launch-readiness-20261013/spec_D1_batch1b_scout.md) 中标为 1b-1 的部分,吸收了其「# VERDICT」的 must / should,以及主会话 2026-10-18 定下的 10 条修法(与规格冲突处以后者为准)。没有另起 `spec_D1_batch1b.md`(核实意见 nit (d):两个事实源),结论以本段为准。
+
+**改动清单**
+
+| 文件 | 要点 |
+|---|---|
+| `go/shared/placement/route.go`、`route_test.go` | `RouteReadyKey` 注释改为 1b 的读写规则;新增 `RouteReadyFormatVersion = 1`、`RouteReadyMarker`(string JSON `{v, generation, redis_run_id, master_replid, set_at_ms, watermark_ms, leader}`)、`EncodeRouteReadyMarker` / `DecodeRouteReadyMarker`(未知字段忽略;v 大于已知值回 `ErrRouteReadyMarkerNewerVersion`,与 `ErrMalformed` 分开;手写字符校验、不引 regexp)、`RouteReadyCompareAndSetScript` / `RouteReadyCompareAndDeleteScript`。新增用例 3 个:`TestRouteReadyMarkerRoundTrip`、`TestRouteReadyMarkerRejects`、`TestRouteReadyScriptsShape`,placement 顶层用例 16 → **19** |
+| `go/data_service/internal/store/route_store.go` | SQL R17(修库整行覆盖,rev 置为 maprev)、R18 / R18x(读 / 加锁读 route_meta)、R19(冻结)、R20 / R21(锁对账行、GREATEST 抬水位)、R22(解冻);哨兵 `ErrRouteNotFrozen`、`ErrRouteReconcileMissing`;常量 `RouteFreezeTimeoutMin = 5s`;`RouteMeta` / `ReadRouteMeta`、`FreezeRouteWriters`、`UnfreezeRouteWriters`、`RouteRepairOptions` / `RouteRepairStats` / `RepairRoutesFromCache` / 纯函数 `decideRepair`、`RepairMergedIntoFromCache`。R7 / R9 的执行从 `importRoutesTx` 抽成 `insertRouteRows` / `fillRouteRows`,merged_into 的循环抽成 `addMergedInto`(带开关参数),导入的语句、顺序与报错文案逐字不变 |
+| `store/route_store_test.go`、`route_store_contract_test.go`、`route_store_integration_test.go`、`export_test.go` | 单测 `TestDecideRepair`、`TestRouteRepairOverwriteSQLBindsMapRevNotIncrement`、`TestRouteMetaAndReconcileWritesOnlyInStoreFiles`(AST 守卫,允许集合本批只有 `route_store.go`,命中至少 5 条);假驱动契约 `TestRepairRoutesFromCacheRefusedWhenWritable`、`TestRepairRoutesFromCacheStatementSequence`、`TestRepairRoutesFromCacheDryRunOpensNoTx`、`TestRepairMergedIntoRequiresFrozen`、`TestFreezeRouteWritersIdempotent`、`TestUnfreezeRaisesWatermarkBeforeFlippingWritable`、`TestUnfreezeAlreadyWritableIsNoop`、`TestReadRouteMetaMissingRow`;真库 `TestRouteStore_RepairFromCacheRestoresRolledBackRows`、`TestRouteStore_RepairTieReportedUnlessResolved`、`TestRouteStore_FreezeUnfreezeRoundTrip`、`TestRouteStore_UnfreezeWaitsForRepairMetaLock`;`RouteLockMetaSQLForTest` 出口 |
+| `go/data_service/internal/routetool/repair.go`(新)、`freeze.go`(新)、`auditor.go` | `ReconcileFromCache` / `RepairExitCode`(三遍 SCAN 无状态去重、页内先去重、开头 / 结尾查围栏、`-freeze-grace` 等待可注入);`Freeze` / `Unfreeze`(就绪标记判定、身份比对、generation 对齐)、`ParseRedisIdentity`;audit 新增 `AuditOptions.FrozenRecovery` 与 `AuditReport.BlockingDifferences`,统计行格式不变 |
+| `routetool/repair_test.go`(新)、`freeze_test.go`(新)、`routetool_integration_test.go` | `TestReconcileFromCache_*` 9 个、`TestRouteAudit_FrozenRecoveryIgnoresDBOnlyUnpublished`;`TestUnfreeze_*` 5 个、`TestFreeze_OutputAndRedisModeWarning`、`TestParseRedisIdentity`、`TestReadyMarkerScriptsOnMiniredis`(CAS / CAD 在 miniredis 上的执行语义);真库 + miniredis 的 `TestReconcileFromCache_RealDBEndToEnd` |
+| `go/data_service/internal/routetoolcli/cli.go`(新)、`cli_test.go`(新) | `cmd/route_tool/main.go` 的 run / parseArgs / parseIDList / connectMappingRedis / openRouteStore / runTiDBPrepare 原样迁来,导出 `Run`;新子命令 `freeze`、`reconcile-from-cache`、`unfreeze` 与 audit `-frozen-recovery`;模式门禁 `refuseByMode`;装配依赖显式注入(`deps`);INFO 身份读取 `readRedisIdentity`。用例:迁入的 5 个 `TestRouteTool*`(**名字不变**,见下「更正」)与新增 7 个 `TestRun*` |
+| `go/data_service/cmd/route_tool/main.go`、`main_test.go`(删) | 只剩薄包装 `os.Exit(routetoolcli.Run(...))`,命令行逐字兼容;`main_test.go` 的用例整体迁到 routetoolcli |
+| `go/data_service/data_service.go`、`data_service_entry_test.go`(新) | flag `-route-tool`;纯函数 `selectEntry`(`-migrate` 与 `-route-tool` 互斥、`-route-tool` 必须带子命令、没有 `-route-tool` 却带位置参数拒绝,退出码 2);route-tool 模式下版本行改打 stderr、在 `conf.MustLoad` 之前交给 `routetoolcli.Run`。`selectEntry` 写在 `data_service.go` 里而不是另起文件:`tools/scripts/go_services.ps1` 用 `go run data_service.go` 只编这一个文件。`TestSelectEntry` 7 种组合 |
+| `go/data_service/internal/routing/route_publish.go`、`route_publish_test.go` | 发布「pipeline 没执行」改按可重试的不可用处理(主会话第 9 条,见运行时要点第 6 条);`publishPipelineNotExecuted`;`ProbeWaitAOF` 同一判据并更正注释。新增 `TestPublishPipelineNotExecuted`、`TestDBFirstRegister_PublishRetriesWhenPipelineNotExecuted`,routing 顶层用例 54 → **56**(带 integration tag 63 → **65**) |
+| 文档 | 本段;§5.4 / §6 加「以本段为准」的注;[merge-zone-runbook.md](../ops/merge-zone-runbook.md) §9.3 加注、新增 §9.4、修订历史一行;[zone_data_rollback.md](./zone_data_rollback.md) 步骤 3 加注。PROGRESS、PARITY 的条目由主会话合并 |
+
+**运行时要点**
+
+1. **入口**:`data_service -f <yaml> -route-tool <子命令> [参数]`(K8s 是 `/app/service -f /app/etc/data_service.yaml -route-tool …`);`go run ./cmd/route_tool -f <yaml> <子命令>` 照旧。stdout 只有一行统计,版本行、logx 日志与明细都在 stderr。K8s 上默认用一次性 Job / Pod(同镜像、同 ConfigMap,资源单独设),exec 进在役 Pod 只限 dry-run 或小库(data-service Pod 内存 limit 512Mi,import / audit 的已见集合是 O(N)),见 runbook §9.4。Job 清单本身属于 1b-3。
+2. **freeze**:`UPDATE route_meta SET writable = 0 WHERE id = 1 AND writable <> 0`(R19);只碰全局库,不连 Redis(冻结是止血动作,Redis 坏了也要能冻);redis 模式下允许但打 WARN(那时 W1 不读 writable)。`-reason` 只进 stderr。
+3. **reconcile-from-cache**(只许 db_first):ReadRouteMeta 可写 → 退出码 2;开头有围栏 → 3;等 `-freeze-grace`(缺省 10s,覆盖冻结之前已过开关检查的在途 W1);三遍 SCAN `player:zone:*` → `player:placement:*`(zone 非空跳过)→ `player:maprev:*`(zone 或落点非空跳过,只剩 maprev 的记 MALFORMED),内存只占一页,不保留 O(N) 的已见集合;每页先去重;merged_into 只增;结尾再查围栏。逐行判定(`decideRepair`):库无行 → 插入(rev = maprev);maprev > 库 rev → 用缓存整行覆盖、rev 置为 maprev(R17);maprev < 库 rev → 不动;同 rev 同值 → match;同 rev 异值 → 默认只报告(TIE),`-resolve-ties=cache` 才覆盖(rev 不变);无 maprev → 退回导入语义(只补 NULL 列,冲突报告);库行本身无效 → 冲突。重跑幂等。
+4. **提交点复核冻结态**(主会话第 1 条):每批修库事务的第一句是 `SELECT generation, writable FROM route_meta WHERE id = 1 FOR UPDATE`(R18x),持锁到提交;解冻的 R22 要同一行的 X 锁,只能排在修库提交之后(真库用例 `TestRouteStore_UnfreezeWaitsForRepairMetaLock` 取证)。锁序:修库 route_meta → player_route;解冻 route_reconcile → route_meta;W1 与导入对 route_meta 只普通读;建池探针守卫 route_meta → player_route,与修库同向 —— 没有任何一方持 route_meta 再等 route_reconcile,不成环。
+5. **unfreeze**(只许 db_first,必须 `-confirm-audited`):已可写 → 退出码 0、什么都不做;否则读就绪标记,只有「可解码、且 run_id / master_replid 等于当前 Redis(INFO server / replication)」才算可信,最低水位取标记的 `watermark_ms`;generation 与库不等时先 CAS 成库值(CAS 输了退出码 1,重跑)。**确认不了一律退出码 2**(主会话第 4 条),只有 `-cache-was-not-verified-acknowledged` 放行(最低水位 0):此前要按 runbook §9.2 清单核对 / 重放,补上两边都可能缺的合服与搬库。畸形标记按原值撤掉;版本号更新的只记日志、不删也不信任(主会话第 7 条);不是 string 类型的不动(读方 MGET 视同缺席);身份不符的在放行时按原值撤掉(读方只看「存在」)。**第 1b-2 批之前没有任何写者挂标记,所以本批的 unfreeze 一律要走显式确认。** 解冻事务 R20 → R18 → R21(要求的水位大于当前值时)→ R22,generation 不换(偏离 B1)。MappingRedis.Type 不是 node 时拒绝(身份按单实例定义)。连 mapping Redis 用 go-zero `redis.NewRedis`,RedisConf 的 User(ACL 用户名)/ Pass / Tls 原样透传。
+6. **发布「pipeline 没执行」的分类**(主会话第 9 条,核实结论:疑点成立)。按模块缓存核对 go-zero v1.10.0 `core/stores/redis/breakerhook.go`(熔断打开时 `ProcessPipelineHook` 直接返回 `breaker.ErrServiceUnavailable`,不调下一层;`core/breaker/breaker.go` 的 `DoWithAcceptableCtx` 在 ctx 已结束时先回 `ctx.Err()`)、`redis.go` 的 `PipelinedCtx`(回调照样被调用,`conn.Pipelined` 的错误原样返回)、go-redis v9.18.0 `pipeline.go` 的 `Exec`(钩子不往下走时不回填任何命令的错误;`setCmdsErr` 只在 `generalProcessPipeline` 里):熔断打开时 `evalCmd` 不为 nil、`Err()` 为 nil、`Val()` 为 nil,旧代码会落到 `ClassifyPublishReply(nil)` → `ErrUnexpectedPublishReply`,当成确定性错误、不再重试。现在 `evalCmd == nil` 或 `publishPipelineNotExecuted`(判据同 scene_manager `load_refresh.go` 的 `pipelineBatchRejected`)都按可重试的不可用处理,计 `route_publish_total{result="error"}` 不变。顺带核实出 `ProbeWaitAOF` 注释里「熔断器与 Router 的互不相干」不成立:go-zero 按地址缓存底层客户端(`redisclientmanager.go` `getClient`),熔断钩子在第一次建客户端时挂上,同地址的 *redis.Redis 共用一个熔断器;注释已加更正注,行为不改,风险见下。
+7. **audit -frozen-recovery**(主会话第 6 条):冻结期反向修库只有「缓存 → 库」一个方向,库独有的行一定计成 `db_only_unpublished`;这个口径下它照常计数、打明细,但不计入退出码,其余类别必须为 0。只许 db_first 且已冻结时用(入口先查 ReadRouteMeta,可写就退出码 2)。stdout 统计行格式不变,口径写在 stderr 的 NOTE 行。1b-1 里这些行解冻之后**仍留在库独有状态**,要等 1b-2 leader 的增量推送;在那之前默认口径的 audit 会一直报它们。
+8. **超时**(主会话第 5 条):含冻结写的调用(R19 / R22)时限至少 `max(5s, tidb_table_cache_lease + 2s)`;CLI 参数 `-freeze-timeout`(缺省 5s,低于 5s 直接拒绝)。`tidb_table_cache_lease` 缺省 3s【未核实】。`ALTER TABLE route_meta CACHE` **不并进 tidb-prepare**(回应本段之上「TiDB 运维步骤」第 6 条留给 1b 的问题),留给 TiDB Phase 1 的部署步骤;届时缓存表的租约若调大,`-freeze-timeout` 同步放大。
+
+> 2026-10-18 更正(同日修复评审,原文不删):第 3 条「maprev > 库 rev → 用缓存整行覆盖」多了一个例外(库里某列有值而缓存同列缺席 → 冲突);第 5 条「只许 db_first」「MappingRedis.Type 不是 node 时拒绝」改为:redis 模式下也允许 unfreeze(要显式 `-cache-was-not-verified-acknowledged`,不读标记、不连 mapping Redis),node 的要求只对 db_first 成立;就绪标记「版本号更新」的判定改为先只解 v。见下「修复评审」。
+
+**相对规格(spec_D1_batch1b_scout.md 的 1b-1)的偏离**
+
+| # | 偏离 | 理由 | 代价 |
+|---|---|---|---|
+| 1b1-1 | 修库事务用 R18x(`SELECT generation, writable … FOR UPDATE`)在提交点复核,不是规格的普通读 `requireRouteFrozen` | 主会话第 1 条 / 核实意见 should:普通读挡不住「修库进行中有人解冻」 | 每批多持一把 route_meta 行锁;见风险 1 |
+| 1b1-2 | R18x 多取一列 generation,文本与建池守卫(`SELECT writable … FOR UPDATE`)不同 | 契约用例按 SQL 文本区分语句,同文本会让两类语句的应答混在一起;generation 进错误信息 | 无 |
+| 1b1-3 | R19 加 `AND writable <> 0`,受影响 0 行再用 R18 区分已冻结 / 缺行 | 不依赖引擎对「值没变」的受影响行数口径 | 无 |
+| 1b1-4 | 解冻在事务内先锁 route_reconcile(R20)再普通读 meta,已可写时整笔回滚(连水位也不抬) | 「已可写」的判定与写同一事务,并发的两次解冻在 R20 上串行 | 无 |
+| 1b1-5 | unfreeze 读不到可信标记一律退出码 2,要显式 `-cache-was-not-verified-acknowledged`(规格原为「畸形就撤掉、当作不存在、照常解冻」) | 主会话第 4 条 / 核实意见 should:冻结期 Redis 身份变化后缓存可能不是超集,audit 看不见两边都缺的行 | 1b-2 之前每次解冻都要显式确认 |
+| 1b1-6 | 标记 v 大于已知值:只记日志,不删也不信任(规格原为当畸形撤掉) | 主会话第 7 条 / 核实意见 nit (c):滚动升级到 v2 时新旧写者来回打架 | 无 |
+| 1b1-7 | audit `-frozen-recovery`(规格无) | 主会话第 6 条 / 核实意见 should:冻结期 audit 到不了 0,门禁形同虚设 | 多一个口径;只在 db_first 且冻结时可用 |
+| 1b1-8 | `RouteRepairStats.TiesResolved` 是清单不是计数 | 被覆盖的平局要逐个留痕(stderr `TIE_RESOLVED` 明细) | 无 |
+| 1b1-9 | AST 守卫允许集合本批只有 `route_store.go`(规格写的是加上 `route_reconcile.go`),命中数要求 ≥ 5 而不是 > 0 | 不登记一个还不存在的文件;5 条是 R15 / R16 / R19 / R21 / R22,正则失效时更早红 | 1b-2 新增文件时要改允许集合 |
+| 1b1-10 | 迁移的用例保留 `TestRouteTool*` 原名(规格写改成 `TestRun*`) | 主会话第 2 条 / 核实意见 should:前几批验证命令按 `-run "Route|…"` 选用例,改名会静默丢覆盖 | 见下「更正」 |
+| 1b1-11 | 修库按页先去重再提交 | 主会话第 3 条 / 核实意见 nit (e):同一页 SCAN 回重复键会撞 `validateRouteImportRows` 的重复检查、整批失败 | 跨页重复仍会修两次(第二次 Matched),计数略多 |
+| 1b1-12 | reconcile-from-cache 的 dry-run 同样要求冻结并等宽限 | 可写时的 dry-run 结论没有意义(W1 在写);与真跑同一前提 | dry-run 之前必须先 freeze |
+| 1b1-13 | `freeze` 不连 mapping Redis;unfreeze 要求 MappingRedis.Type=node | 冻结是止血动作;身份按单实例定义 | 无 |
+| 1b1-14 | 不另起 `spec_D1_batch1b.md` | 核实意见 nit (d):避免两个事实源 | 无 |
+| 1b1-15 | 顺带修了发布的「pipeline 没执行」分类,并更正 `ProbeWaitAOF` 注释 | 主会话第 9 条,核实成立(见运行时要点第 6 条) | routing 顶层用例数 54 → 56 |
+
+**风险与未核实项**
+
+1. 修库每批持 route_meta(id=1) 的 X 锁到提交:这期间新起的 data_service 副本(db_first)建 route store 时探针守卫最多等 1s,等满即 1205、这次建池失败(`Store.Required=true` 时拒启)。修库期间不要滚动重启 data_service;每批事务通常毫秒级到百毫秒级(≤ 1000 行),撞上的概率低,但没有压测。
+2. TiDB 缓存表上的写要等读租约、`FOR UPDATE` 加锁读在缓存表上的行为都【未核实】;本批 tidb-prepare 不设缓存表,所以眼下不触发。
+3. 熔断器共用(运行时要点第 6 条):`ProbeWaitAOF` 与 Router、route_tool 的 mapping Redis 客户端同地址时共用第一次建客户端那个 *redis.Redis 的熔断器;探针失败会计进 Router 的熔断。行为本批不改,彻底隔离仍按第 1a 批「仍未解决的风险」第 9 条的备选(独立 go-redis 客户端),留给 1b-2 的 leader 一并处理。
+4. 无状态去重的前提是冻结期间没有人写 mapping Redis(W1 在发布前就被 writable=0 拦下,合服被冻结窗口禁止);有人违反时 B 遍可能漏修一名玩家,只有随后的 audit 能发现。
+5. 1b-1 的解冻之后,库独有的行(孤儿行)仍不在缓存里,要等 1b-2 的增量推送;默认口径的 audit 会继续报 `db_only_unpublished`。
+6. 真库用例 `TestRouteStore_UnfreezeWaitsForRepairMetaLock` 依赖会话锁等待 1s(buildRouteDSN 钉死);耗时约 1s。
+
+**更正(2026-10-18,主会话第 2 条):前几批验证命令里 `./cmd/route_tool/...` 的用例已迁到 `./internal/routetoolcli/...`**。原文的命令不改;照原文跑时 `./cmd/route_tool/...` 现在只有 `main.go`、没有测试文件(`no test files`,仍能编译),五个用例要在新位置跑。名字一个都没改:
+
+| 原位置(`go/data_service/cmd/route_tool/main_test.go`) | 新位置(`go/data_service/internal/routetoolcli/cli_test.go`) |
+|---|---|
+| `TestRouteToolBadArgsExitTwo` | `TestRouteToolBadArgsExitTwo`(用例表不变) |
+| `TestRouteToolMissingConfigExitsTwo` | `TestRouteToolMissingConfigExitsTwo` |
+| `TestRouteToolUnreachableRedisExitsTwoWithoutPanic` | `TestRouteToolUnreachableRedisExitsTwoWithoutPanic` |
+| `TestRouteToolRealImportUnderDBFirstNeedsExplicitFlag` | `TestRouteToolRealImportUnderDBFirstNeedsExplicitFlag` |
+| `TestRouteToolTiDBPrepareDoesNotTouchRedis` | `TestRouteToolTiDBPrepareDoesNotTouchRedis` |
+
+涉及的旧命令(第 1a 批第 2 步、G1a「验证增量」第 2 步、「行片 16 → 64」第 3 步、「正向探针 P5」第 1 步):凡是出现 `./cmd/route_tool/...` 的地方改跑 `./internal/routetoolcli/... ./cmd/route_tool/...`,`-run` 正则不变(`Route` 仍能选中这五个)。第 1a 批第 2 步「routing 顶层用例 54 个」与第 4 步「带 integration tag 共 63 个」从本批起分别是 56 与 65(新增两个发布用例)。G1a 的 route_tool 冒烟 `go build ./cmd/route_tool` 照旧可用。
+
+**交 Codex 的验证**(工作目录以仓库根为起点,PowerShell 串行;前一步红了就停下归因,不连续重试、不 `gofmt -w`、不改用例迁就;Go 设 `GOTOOLCHAIN=local`、`GOPROXY=off`,不改 go.mod / go.sum)
+
+前置:先按复验清单、第 0 / 1a / G1a / P5 各段把已落码部分跑完(其中 `./cmd/route_tool/...` 按上面「更正」换位置),再跑本段。
+
+0. **修复前红(基线 `360d56ae5`,临时 worktree,跑完删除)**:
+   ```powershell
+   git worktree add "$env:TEMP\ds-1b1-base" 360d56ae5
+   # 入口:基线把位置参数静默忽略,-version 照常退出 0;新代码退出 2
+   cd "$env:TEMP\ds-1b1-base\go\data_service"; go build -o "$env:TEMP\ds_base.exe" .
+   & "$env:TEMP\ds_base.exe" -version audit; "exit=$LASTEXITCODE"          # 期望 exit=0(红:位置参数被吞)
+   # 发布分类:把本仓 internal/routing/route_publish_test.go 拷进基线 worktree,删掉其中 TestPublishPipelineNotExecuted 整个函数(基线没有被测函数)
+   go test -count=1 -v -run "TestDBFirstRegister_PublishRetriesWhenPipelineNotExecuted" ./internal/routing/   # 期望 FAIL,错误含 unexpected route publish reply
+   cd <仓库根>; git worktree remove --force "$env:TEMP\ds-1b1-base"; Remove-Item "$env:TEMP\ds_base.exe"
+   ```
+   其余新用例在基线上是「符号不存在、编译失败」,不单独取证。
+   > 2026-10-18 更正(同日修复评审):第一版测试钩子不分命令拦下所有 pipeline,连新连接初始化时的 CLIENT SETINFO 也挡,`MustNewRedis` 的 PING 随之失败、`logx.Must` 直接 `os.Exit(1)`,整个 routing 测试进程退出 —— 那不是有效的红。钩子已改成只拦发布脚本那条 EVAL 的批(见下「修复评审」第 1 条),本步要**重做**:有效的红必须是 `--- FAIL: TestDBFirstRegister_PublishRetriesWhenPipelineNotExecuted`,且子用例「第一次被挡_重试成功」的错误含 `unexpected route publish reply`;只看到 `exit status 1` / `FAIL data_service/internal/routing` 而没有 `--- FAIL` 行的,判为无效、停下归因,不要当成红。
+1. `cd go/shared`:`gofmt -l ./placement`(无输出);`go vet ./placement/...`;`go test -count=1 -v ./placement/... -run "RouteReady|Route|Rev|Publish"`(全部 PASS);`go test ./placement/... -list . | Measure-Object -Line`(期望 19 行用例 + 1 行 ok)。
+2. `cd go/data_service`:
+   ```powershell
+   gofmt -l ./internal/store ./internal/routetool ./internal/routetoolcli ./internal/routing ./cmd/route_tool ./data_service.go ./data_service_entry_test.go   # 无输出
+   go build ./...
+   go vet ./internal/store/... ./internal/routetool/... ./internal/routetoolcli/... ./internal/routing/... ./cmd/route_tool/... .
+   go test -count=1 -v ./internal/store/... -run "DecideRepair|Repair|Freeze|Unfreeze|RouteMeta|NoPlayerRouteWrites|WritesOnlyInStoreFiles|RouteSQL|RouteODKU|ImportRoutes|ImportMergedInto"
+   go test -count=1 -v ./internal/routetool/... -run "ReconcileFromCache|Unfreeze|Freeze|ParseRedisIdentity|ReadyMarkerScripts|FrozenRecovery|RouteAudit|RouteImport"
+   go test -count=1 -v ./internal/routetoolcli/... .
+   go test -count=1 -v ./internal/routing/... -run "PipelineNotExecuted|DBFirstRegister|CheckWaitAOF|WaitAOFBudget"
+   go test ./internal/routing/... -list . | Measure-Object -Line      # 期望 56 行用例 + 1 行 ok
+   go test -count=1 ./internal/store/... ./internal/routetool/... ./internal/routetoolcli/... ./internal/routing/... ./internal/svc/... ./cmd/route_tool/... .
+   go test -count=1 ./...
+   ```
+   通过标准:全绿;模块级 build / vet / test 带进的他人在途改动按文件归因、单独列出。`TestRouteToolUnreachableRedisExitsTwoWithoutPanic` 等连刚关掉端口的用例要几秒,属正常。
+3. **MySQL 真库**(`$env:DATA_SERVICE_IT_MYSQL_HOST='127.0.0.1:3306'`、USER=root、PASSWORD 取 compose,不进日志;MySQL ≥ 8.0.16,先记 `SELECT VERSION()`):
+   ```powershell
+   go test -tags=integration -count=1 -v ./internal/store/... -run "RouteStore_Repair|RouteStore_FreezeUnfreeze|RouteStore_UnfreezeWaits|RouteStore_ImportClassifies|RouteStore_MetaMissing"
+   go test -tags=integration -count=1 -v ./internal/routetool/... -run "RealDB|RouteToolImportThenAudit"
+   ```
+   通过标准:没有 FAIL;出现 SKIP 如实报「未验证」。`TestRouteStore_UnfreezeWaitsForRepairMetaLock` 应在约 1s 后以 1205 证明解冻排在修库锁之后,原样回报它的耗时。已知红项 `TestMigrateSchema_UpgradesLegacyHandWrittenTables` 不在这个正则里。
+4. **Redis 回归**(发布路径改了分类):一次性 `redis:7.2 --appendonly yes`(本地没有镜像要拉取时先征得用户同意),`$env:DATA_SERVICE_IT_REDIS_HOST='127.0.0.1:6390'`,`go test -tags=integration ./internal/routing/... -count=1 -v`;`TestPublishRoute_RealRedisSameConnection`、`TestPublishRoute_RealRedisWaitAOF` 必须 PASS、不能 Skip;顶层用例 65 个。跑完 `docker rm -f ds-it-redis`。
+5. **入口冒烟**(本机;不要用 `go run` 断言退出码):
+   ```powershell
+   cd go/data_service; go build -o "$env:TEMP\ds1b1.exe" .
+   & "$env:TEMP\ds1b1.exe" -f etc/data_service.yaml audit; "exit=$LASTEXITCODE"                          # 期望 exit=2,stderr 含 unexpected positional arguments,没有起服务
+   & "$env:TEMP\ds1b1.exe" -version audit; "exit=$LASTEXITCODE"                                           # 期望 exit=2(与第 0 步的基线对照)
+   & "$env:TEMP\ds1b1.exe" -f etc/data_service.yaml -migrate -route-tool audit; "exit=$LASTEXITCODE"      # 期望 exit=2
+   & "$env:TEMP\ds1b1.exe" -f etc/data_service.yaml -route-tool; "exit=$LASTEXITCODE"                     # 期望 exit=2
+   & "$env:TEMP\ds1b1.exe" -f etc/data_service.yaml -route-tool reconcile-from-cache; "exit=$LASTEXITCODE" # 本地 yaml 是 redis 模式:期望 exit=2,stderr 含 RouteStore.Mode=redis
+   & "$env:TEMP\ds1b1.exe" -f etc/data_service.yaml -route-tool unfreeze; "exit=$LASTEXITCODE"            # 期望 exit=2,stderr 含 -confirm-audited
+   & "$env:TEMP\ds1b1.exe" -f etc/data_service.yaml -route-tool audit 1>"$env:TEMP\ds1b1_out.txt"; "exit=$LASTEXITCODE"
+   Get-Content "$env:TEMP\ds1b1_out.txt"   # 本机 MySQL / Redis 在且跑过迁移时:恰好一行 route_audit …(exit 0 或 1 取决于数据),版本行在 stderr;依赖不在时 exit=2、文件为空,如实报「未验证」
+   Remove-Item "$env:TEMP\ds1b1.exe", "$env:TEMP\ds1b1_out.txt"
+   ```
+6. 不需要重编 C++(没有 proto 变更),不跑压测。
+
+失败时保留:同上面「2026-10-15 补登」那张表(gofmt -d 输出、第一条编译错误原文并注明是否在本段改动范围内、失败用例完整 -v 输出、MySQL 错误号、`SELECT VERSION()`、`SHOW CREATE TABLE player_route`);口令不进回报。
+
+**修复评审(2026-10-18,同日;同样未编译、未测试,待 Codex 验证)**
+
+1. **发布用例的测试钩子(must)**。`route_publish_test.go` 第一版的 `rejectPipelinesHook` 不分命令拦下前 n+1 个 pipeline。已在模块缓存逐行核实:go-zero v1.10.0 `getClient` 把 `r.hooks` 挂在 breakerHook 之后;go-redis v9.18.0 每条新连接在 `initConn` 里经同一条钩子链用 pipeline 发两条 CLIENT SETINFO(`DisableIdentity` 缺省 false);结构体字面量的 `RedisConf` 是 `NonBlock=false`,`NewRedis` 先 PING;被挡下的 SETINFO 让 PING 失败,`MustNewRedis` → `logx.Must` → `os.Exit(1)`。整个 routing 测试进程退出,两个子用例都跑不到,第 0 步拿到的「红」无效。改为 `publishBreakerHook`:只拦含 `PublishRouteScript` 那条 EVAL 的批(`Name()=="eval"` 且 `Args()[1]` 等于脚本,同 login `createplayer_seed_test.go` 的 `probePipelineHook` 按批内命令认人),其余一律放行;自检改为发一条 `ECHO <哨兵>` 的 pipeline、只置「已挂上」标记,不消耗名额;断言改为「被挡下的发布批 / 放行的发布批」两个计数(子用例 1 恰好 1 / 1,子用例 2 恰好 3 / 0),不再断言总计数。go-zero 熔断器在 3 次失败下不会自己打开(`protection = 5`),计数不受真熔断干扰。被测代码不变。
+2. **redis 模式下撤销 freeze(should,两条评审意见合并修一次)**。原先 redis 模式下 freeze 放行、unfreeze 退出码 2,而 `requireRouteWritable` 与模式无关:误跑 / 演练一次 freeze(或从 db_first 回退时带着冻结),P1 / P3 的 `import-from-redis` 就一直报 `ErrRouteNotWritable`,工具里没有解冻路径,运维只能手写 `UPDATE route_meta`(绕过「先抬水位再解冻」与 store 的写入守卫)。取方案 A(保留 freeze 的止血语义):redis 模式下允许 `unfreeze -confirm-audited -cache-was-not-verified-acknowledged`,不连 mapping Redis、不读就绪标记(规格「redis 模式不碰标记」)、最低水位 0,照样走 `store.UnfreezeRouteWriters`,stderr 打 WARN,统计行 `marker=not_read_redis_mode`;没加确认开关在连任何东西之前退出码 2(`refuseByMode`),`routetool.Unfreeze` 的 `RedisMode` 再兜一次;MappingRedis 必须是 node 的要求只对 db_first 成立。新增 `TestRunFreezeThenUnfreezeInRedisMode`(routetoolcli)、`TestUnfreeze_RedisModeNeedsAckAndSkipsMarker`(routetool);`TestRunReconcileAndUnfreezeRefusedInRedisMode` 用例表不变(没加确认的 unfreeze 仍在拒绝之列),只改注释。usage、包注释、runbook §9.4 表后加更正注。
+3. **就绪标记的版本判定(nit)**。`DecodeRouteReadyMarker` 原先一步整体解,v2 若改了已知字段的类型(如 `set_at_ms` 改成字符串),json 类型错先于 v 的判断,判成 `ErrMalformed`,unfreeze 随即按原值 compare-and-delete,删掉新版本写者的标记(与主会话第 7 条相反)。改为先只解 v,v 大于已知值直接 `ErrRouteReadyMarkerNewerVersion`,v=1 再整体解与校验。`TestRouteReadyMarkerRejects` 加子用例 `{"v":2,"set_at_ms":"x"}` → 新版本、`{"v":1,"set_at_ms":"x"}` → 畸形;`TestUnfreeze_RefusesWithoutVerifiedMarker` 加一行「版本更新且字段改了类型_不动」。placement 顶层用例数仍是 19。
+4. **反向修库不清掉库里有值的列(nit)**。`decideRepair` 在 maprev > 库 rev 时原先直接用缓存整行覆盖:缓存缺 `player:zone` 或 `player:placement` 而库里有值时,R17 会把这一列写成 NULL,之后两边都没有这一列,audit 判 match、静默放过。db_first 下这两列只会从 NULL 变成有值,「rev 更高却少一列」只可能是脚本之外的 DEL,所以改判 conflict(不覆盖、`CONFLICT` 明细交人看)。`TestDecideRepair` 原用例「缓存没有落点_库的落点也清掉」改判 conflict(带日期注),另加「缓存没有 home 而库有」与「库缺的列由缓存补上_照常覆盖」两格。契约 / 真库用例的输入不触及这一分支,不变。将来启用删号墓碑(W3)时要同步调整这条判据。
+5. **审计口径的已知缺口(nit,只改文档)**。`-frozen-recovery` 只豁免 `db_only_unpublished`;库里原本只有落点的行,W1 补上 home、rev+1 之后发布失败,缓存仍只有 `player:placement`,audit 计成 `missing_in_redis`(阻断类),冻结期内修不掉。按评审建议 (b) 不放宽门禁,在 runbook §9.4 第 3 步写明这类行的来历、核对形状与处置。
+6. **db_first 下 zone 回档的缓存清理(should,只改文档)**。`zone_data_rollback.md` 步骤 3 与 runbook §9.4 第 0 步只说「不要整库 FLUSHDB」,没说步骤 3 本来的目的(清本 zone 回档点之后的玩家缓存)怎么完成,照做就是只回了一半。两处追加更正注:db_first 下仍必须选择性清本 zone 的玩家缓存、保留全部全局键;能安全执行它的载体登记为第 1b-3 批的前置,**在它落地并验证之前,db_first 下 K8s 的 zone 回档不可执行**。注:工作区里 `tools/scripts/k8s_zone_rollback.ps1` 正由另一项改动重写(不再 FLUSHDB,改由尚未落地的 `zone_rollback_discard` 按 PITR 之后的库处置受影响玩家的缓存),1b-3 动手前先以它的最终形态为准对齐。
+7. **文档归属(should / nit)**:「TiDB 运维步骤」第 6 条加回指注;[tidb-phase1-and-launch-readiness.md](./tidb-phase1-and-launch-readiness.md) §9.3 第 21 项与 §6.2「恢复后必做」⑤ 各加同日更正(CACHE 由 Phase 1 部署步骤执行、`-freeze-timeout` ≥ 租约 + 2s、1b-2 之前没有自动回档检测);§8.3 加注;调研规格文首加「以本段为准、本文件只作交接快照」;`repair.go` 注释里编译期断言的文件名改正(在 `repair_test.go`)。
+
+**相对规格的偏离(修复评审补登,接上表编号)**
+
+| # | 偏离 | 理由 | 代价 |
+|---|---|---|---|
+| 1b1-16 | 规格要求 stderr 明细有 `TIE` / `CONFLICT` / `MALFORMED` / `DB_INVALID` 四类;实现里库行本身无效时打成 `CONFLICT`(`db_placement` 字段带原因),没有单独的 `DB_INVALID` | `decideRepair` 对库行无效与同列异值给同一结论(都不写、交人看),明细里库一侧的值足以区分 | 按明细类别 grep 时要看 `db_placement` 的内容 |
+| 1b1-17 | redis 模式下允许 unfreeze(要显式确认,不读标记),规格原为退出码 2 | 见上「修复评审」第 2 条:否则 redis 模式下的冻结没有工具撤销路径 | 确认开关在 redis 模式下的含义是「确认所有副本都在 redis 模式」,靠运维判断 |
+| 1b1-18 | 反向修库在 maprev > 库 rev 但缓存少一列时判冲突,规格原为整行覆盖 | 见上「修复评审」第 4 条 | 带外 DEL 造成的这类行要人工处理 |
+
+**修复评审的验证增量**(插进上面「交 Codex 的验证」,命令不变的步骤照旧):
+
+- 第 0 步:按该步的同日更正**重做**;期望是用例级 FAIL(含 `unexpected route publish reply`),进程退出不算红。修复评审第 2–4 条修的是本批新增的代码(`RouteReadyMarker`、`decideRepair`、`refuseByMode` / `Unfreeze` 在基线 `360d56ae5` 里都不存在),基线上只会是编译失败,不单独取证;它们的回归由新增 / 改判的用例在修复后的代码上钉住。
+- 第 2 步 `-run` 正则不变即可选中新用例:store 的 `DecideRepair`、routetool 的 `Unfreeze`(含 `TestUnfreeze_RedisModeNeedsAckAndSkipsMarker`)、routetoolcli 全量(含 `TestRunFreezeThenUnfreezeInRedisMode`)。routing 顶层用例数仍是 56(带 integration 65);routetool 新增 1 个顶层用例,routetoolcli 新增 1 个(`TestRun*` 7 → 8)。
+- 第 2 步额外跑一遍 routing 发布用例并核对没有进程级退出:`go test -count=1 -v -run "TestDBFirstRegister_PublishRetriesWhenPipelineNotExecuted" ./internal/routing/`,期望两个子用例都 PASS;输出里出现 `exit status 1` 而没有 `--- FAIL` 行即为钩子问题复发,保留完整输出。
+- 第 5 步加一条:`& "$env:TEMP\ds1b1.exe" -f etc/data_service.yaml -route-tool unfreeze -confirm-audited; "exit=$LASTEXITCODE"` —— 本地 yaml 是 redis 模式,期望 exit=2,stderr 含 `RouteStore.Mode=redis` 与 `-cache-was-not-verified-acknowledged`,且不出现 `unreachable`(不连 mapping Redis)。**不要**在本机加 `-cache-was-not-verified-acknowledged` 冒烟:那会真的改本机全局库的 `route_meta`。
+
+**已知未改(属于 1b-2 / 1b-3)**:对账 leader、就绪标记的写者、rewarm、audit `-require-maprev`、config 的 Reconcile 段、metrics;`k8s_deploy.ps1` 的 ConfigMap(FenceShards / Reconcile / WaitAOF)与契约测试、route-tool 的 K8s Job 清单、告警;两份清库脚本在有在任 leader 时拒绝执行的防护;`k8s_zone_rollback.ps1` 加入 freeze / reconcile-from-cache / audit / unfreeze 四步。import / audit 仍在内存里保留 O(N) 的已见集合(规格风险条目,未改)。(2026-10-18 修复评审补:1b-3 再加一项 —— db_first 下 zone 回档步骤 3 的选择性缓存清理载体,只清本 zone 玩家缓存、保留全局键,在它落地并验证之前 db_first 下 K8s 的 zone 回档不可执行,见上「修复评审」第 6 条。)
+
+**Java 版(AGENTS.md §12)**:**不适用**。映射存储是服务端内部实现,不涉及客户端契约(帧、客户端可见 proto、tip 码、配表都不变);Java 版的归属区本来就是库内列 `game.player.zone_id`(`PlayerHomeZones` 按主键读库),没有 Redis 完整副本,冻结、反向修库、就绪标记都没有作用对象。按 Q14 在 Java 仓 `PARITY.md` 登记一行,由主会话合并。
 
 ---
 

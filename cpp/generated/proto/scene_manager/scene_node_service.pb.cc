@@ -47,11 +47,11 @@ constexpr ReleasePlayerRequest::ParseTableT_ ReleasePlayerRequest::InternalGener
     {
       PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      5, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294967264,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
+      5,  // num_field_entries
       0,  // num_aux_entries
       offsetof(ParseTableT_, field_names),  // no aux_entries
       class_data,
@@ -61,10 +61,7 @@ constexpr ReleasePlayerRequest::ParseTableT_ ReleasePlayerRequest::InternalGener
       ::_pbi::TcParser::GetTable<::scene_node::ReleasePlayerRequest>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint64 expected_owner_epoch = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReleasePlayerRequest, _impl_.expected_owner_epoch_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.expected_owner_epoch_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // uint64 player_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReleasePlayerRequest, _impl_.player_id_), 1>(),
        {8, 1, 0,
@@ -77,6 +74,16 @@ constexpr ReleasePlayerRequest::ParseTableT_ ReleasePlayerRequest::InternalGener
       {::_pbi::TcParser::FastUS1,
        {26, 0, 0,
         PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.target_node_id_)}},
+      // uint64 expected_owner_epoch = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ReleasePlayerRequest, _impl_.expected_owner_epoch_), 3>(),
+       {32, 3, 0,
+        PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.expected_owner_epoch_)}},
+      // bool session_ended = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ReleasePlayerRequest, _impl_.session_ended_), 4>(),
+       {40, 4, 0,
+        PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.session_ended_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
@@ -88,6 +95,8 @@ constexpr ReleasePlayerRequest::ParseTableT_ ReleasePlayerRequest::InternalGener
       {PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.target_node_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
       // uint64 expected_owner_epoch = 4;
       {PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.expected_owner_epoch_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // bool session_ended = 5;
+      {PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.session_ended_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     }},
     // no aux_entries
     {{
@@ -108,7 +117,8 @@ inline constexpr ReleasePlayerRequest::Impl_::Impl_(
             ::_pbi::ConstantInitialized()),
         player_id_{::uint64_t{0u}},
         target_scene_id_{::uint64_t{0u}},
-        expected_owner_epoch_{::uint64_t{0u}} {}
+        expected_owner_epoch_{::uint64_t{0u}},
+        session_ended_{false} {}
 
 template <typename>
 constexpr ReleasePlayerRequest::ReleasePlayerRequest(::_pbi::ConstantInitialized,
@@ -212,15 +222,17 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::scene_node::ReleasePlayerRequest, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::scene_node::ReleasePlayerRequest, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::scene_node::ReleasePlayerRequest, _impl_.target_scene_id_),
         PROTOBUF_FIELD_OFFSET(::scene_node::ReleasePlayerRequest, _impl_.target_node_id_),
         PROTOBUF_FIELD_OFFSET(::scene_node::ReleasePlayerRequest, _impl_.expected_owner_epoch_),
+        PROTOBUF_FIELD_OFFSET(::scene_node::ReleasePlayerRequest, _impl_.session_ended_),
         1,
         2,
         0,
         3,
+        4,
 };
 
 static const ::_pbi::MigrationSchema
@@ -236,24 +248,25 @@ const char descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fnode_5fse
     "\n,proto/scene_manager/scene_node_service"
     ".proto\022\nscene_node\032!proto/common/asset/a"
     "sset_op.proto\032\035proto/common/base/empty.p"
-    "roto\032\027proto/scene/scene.proto\"x\n\024Release"
-    "PlayerRequest\022\021\n\tplayer_id\030\001 \001(\004\022\027\n\017targ"
-    "et_scene_id\030\002 \001(\004\022\026\n\016target_node_id\030\003 \001("
-    "\t\022\034\n\024expected_owner_epoch\030\004 \001(\0042\217\004\n\rScen"
-    "eNodeGrpc\022:\n\013CreateScene\022\023.CreateSceneRe"
-    "quest\032\024.CreateSceneResponse\"\000\022.\n\014Destroy"
-    "Scene\022\024.DestroySceneRequest\032\006.Empty\"\000\022;\n"
-    "\rReleasePlayer\022 .scene_node.ReleasePlaye"
-    "rRequest\032\006.Empty\"\000\022@\n\rPrepareBattle\022\025.Pr"
-    "epareBattleRequest\032\026.PrepareBattleRespon"
-    "se\"\000\022<\n\023CancelBattlePrepare\022\033.CancelBatt"
-    "lePrepareRequest\032\006.Empty\"\000\0221\n\nAssetDebit"
-    "\022\017.AssetOpRequest\032\020.AssetOpResponse\"\000\0226\n"
-    "\017AssetAbortDebit\022\017.AssetOpRequest\032\020.Asse"
-    "tOpResponse\"\000\0222\n\013AssetCredit\022\017.AssetOpRe"
-    "quest\032\020.AssetOpResponse\"\000\0226\n\017AssetAckRec"
-    "eipt\022\017.AssetOpRequest\032\020.AssetOpResponse\""
-    "\000B\035Z\033scene_manager/scene_managerb\006proto3"
+    "roto\032\027proto/scene/scene.proto\"\217\001\n\024Releas"
+    "ePlayerRequest\022\021\n\tplayer_id\030\001 \001(\004\022\027\n\017tar"
+    "get_scene_id\030\002 \001(\004\022\026\n\016target_node_id\030\003 \001"
+    "(\t\022\034\n\024expected_owner_epoch\030\004 \001(\004\022\025\n\rsess"
+    "ion_ended\030\005 \001(\0102\217\004\n\rSceneNodeGrpc\022:\n\013Cre"
+    "ateScene\022\023.CreateSceneRequest\032\024.CreateSc"
+    "eneResponse\"\000\022.\n\014DestroyScene\022\024.DestroyS"
+    "ceneRequest\032\006.Empty\"\000\022;\n\rReleasePlayer\022 "
+    ".scene_node.ReleasePlayerRequest\032\006.Empty"
+    "\"\000\022@\n\rPrepareBattle\022\025.PrepareBattleReque"
+    "st\032\026.PrepareBattleResponse\"\000\022<\n\023CancelBa"
+    "ttlePrepare\022\033.CancelBattlePrepareRequest"
+    "\032\006.Empty\"\000\0221\n\nAssetDebit\022\017.AssetOpReques"
+    "t\032\020.AssetOpResponse\"\000\0226\n\017AssetAbortDebit"
+    "\022\017.AssetOpRequest\032\020.AssetOpResponse\"\000\0222\n"
+    "\013AssetCredit\022\017.AssetOpRequest\032\020.AssetOpR"
+    "esponse\"\000\0226\n\017AssetAckReceipt\022\017.AssetOpRe"
+    "quest\032\020.AssetOpResponse\"\000B\035Z\033scene_manag"
+    "er/scene_managerb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto_deps[3] = {
@@ -265,7 +278,7 @@ static ::absl::once_flag descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto = {
     false,
     false,
-    840,
+    864,
     descriptor_table_protodef_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto,
     "proto/scene_manager/scene_node_service.proto",
     &descriptor_table_proto_2fscene_5fmanager_2fscene_5fnode_5fservice_2eproto_once,
@@ -316,9 +329,9 @@ ReleasePlayerRequest::ReleasePlayerRequest(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, expected_owner_epoch_) -
+           offsetof(Impl_, session_ended_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::expected_owner_epoch_));
+               sizeof(Impl_::session_ended_));
 
   // @@protoc_insertion_point(copy_constructor:scene_node.ReleasePlayerRequest)
 }
@@ -333,9 +346,9 @@ inline void ReleasePlayerRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE are
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, player_id_),
            0,
-           offsetof(Impl_, expected_owner_epoch_) -
+           offsetof(Impl_, session_ended_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::expected_owner_epoch_));
+               sizeof(Impl_::session_ended_));
 }
 ReleasePlayerRequest::~ReleasePlayerRequest() {
   // @@protoc_insertion_point(destructor:scene_node.ReleasePlayerRequest)
@@ -389,10 +402,10 @@ PROTOBUF_NOINLINE void ReleasePlayerRequest::Clear() {
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     _impl_.target_node_id_.ClearNonDefaultToEmpty();
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000eU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001eU)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.expected_owner_epoch_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.expected_owner_epoch_));
+        reinterpret_cast<char*>(&_impl_.session_ended_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.session_ended_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -454,6 +467,15 @@ PROTOBUF_NOINLINE void ReleasePlayerRequest::Clear() {
     }
   }
 
+  // bool session_ended = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_session_ended() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          5, this_._internal_session_ended(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -479,7 +501,7 @@ PROTOBUF_NOINLINE void ReleasePlayerRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     // string target_node_id = 3;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_target_node_id().empty()) {
@@ -508,6 +530,12 @@ PROTOBUF_NOINLINE void ReleasePlayerRequest::Clear() {
             this_._internal_expected_owner_epoch());
       }
     }
+    // bool session_ended = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_session_ended() != 0) {
+        total_size += 2;
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -526,7 +554,7 @@ void ReleasePlayerRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_target_node_id().empty()) {
         _this->_internal_set_target_node_id(from._internal_target_node_id());
@@ -551,6 +579,11 @@ void ReleasePlayerRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.expected_owner_epoch_ = from._impl_.expected_owner_epoch_;
       }
     }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_session_ended() != 0) {
+        _this->_impl_.session_ended_ = from._impl_.session_ended_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
@@ -573,8 +606,8 @@ void ReleasePlayerRequest::InternalSwap(ReleasePlayerRequest* PROTOBUF_RESTRICT 
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_node_id_, &other->_impl_.target_node_id_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.expected_owner_epoch_)
-      + sizeof(ReleasePlayerRequest::_impl_.expected_owner_epoch_)
+      PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.session_ended_)
+      + sizeof(ReleasePlayerRequest::_impl_.session_ended_)
       - PROTOBUF_FIELD_OFFSET(ReleasePlayerRequest, _impl_.player_id_)>(
           reinterpret_cast<char*>(&_impl_.player_id_),
           reinterpret_cast<char*>(&other->_impl_.player_id_));

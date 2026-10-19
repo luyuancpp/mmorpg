@@ -6,7 +6,7 @@
 // Illegal-packet counter (todo.md #236).
 //
 // MessageLimiter (rate-limit per messageId) and the incoming validation
-// chain in gate's client_message_processor — kRateLimitExceeded, unknown
+// chain in gate's client_session_handler — kRateLimitExceeded, unknown
 // messageId, parse failures, send-without-auth, future HMAC mismatch
 // from #76 — all reject individual packets. Each rejection alone is
 // fine; what matters is the *cumulative* count for a session. A

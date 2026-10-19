@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!--
     muduo_grpc 单测(docs/design/grpc-muduo-transport.md §9):不链接 grpc / grpc++ / gpr / core / session / proto / grpc_client,
-    只链 muduo_grpc.lib、muduo.lib、nghttp2.lib、ws2_32.lib。被测库是纯 muduo + nghttp2,测试里的假服务端直接用 nghttp2 server session。
+    只链 muduo_grpc.lib、muduo.lib、nghttp2.lib、hiredisd.lib、ws2_32.lib。hiredisd 仅供 Windows Channel/Hiredis EOF 回归;被测 muduo_grpc 库仍为纯 muduo + nghttp2,测试里的假服务端直接用 nghttp2 server session。
     googletest 照 agones_lifecycle_test 从 yaml-cpp 自带的 1.16.0 源码编进来;外部源文件用 $(IntDir)%(Filename).obj 隔离。
     只有 Debug|x64 可用(依赖库只编了这一套);其余配置保留骨架,与其他测试工程一致。
   -->
@@ -129,7 +129,7 @@
            NGHTTP2_NO_SSIZE_T:MSVC 没有 ssize_t,只隐藏 nghttp2.h 里已废弃的 ssize_t 接口,不影响 ABI。 -->
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NOMINMAX;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;_WIN32_WINNT=0x0A00;NGHTTP2_STATICLIB;NGHTTP2_NO_SSIZE_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./;../../libs/engine/;../../../third_party/muduo/;../../../third_party/muduo/contrib/windows/include/;../../../third_party/boost/;../../../third_party/nghttp2/install_vs2026_dbg/include/;../../../third_party/yaml-cpp/test/googletest-1.16.0/googletest/include/;../../../third_party/yaml-cpp/test/googletest-1.16.0/googletest/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;../../libs/engine/;../../../third_party/muduo/;../../../third_party/muduo/contrib/windows/include/;../../../third_party/boost/;../../../third_party/redis/deps/;../../../third_party/nghttp2/install_vs2026_dbg/include/;../../../third_party/yaml-cpp/test/googletest-1.16.0/googletest/include/;../../../third_party/yaml-cpp/test/googletest-1.16.0/googletest/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <ObjectFileName>$(IntDir)%(Filename).obj</ObjectFileName>
@@ -145,7 +145,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <!-- 刻意不链 grpc / grpc++ / gpr / core / session / proto / grpc_client:被测模块与测试都不依赖官方 gRPC 运行时。
            googletest 从源码编进来,这里不链接 gtest.lib,避免重复定义。 -->
-      <AdditionalDependencies>muduo_grpc.lib;muduo.lib;nghttp2.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>muduo_grpc.lib;muduo.lib;nghttp2.lib;hiredisd.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../../lib/;../../../third_party/nghttp2/install_vs2026_dbg/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -158,7 +158,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NOMINMAX;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;_WIN32_WINNT=0x0A00;NGHTTP2_STATICLIB;NGHTTP2_NO_SSIZE_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./;../../libs/engine/;../../../third_party/muduo/;../../../third_party/muduo/contrib/windows/include/;../../../third_party/boost/;../../../third_party/nghttp2/install_vs2026_dbg/include/;../../../third_party/yaml-cpp/test/googletest-1.16.0/googletest/include/;../../../third_party/yaml-cpp/test/googletest-1.16.0/googletest/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;../../libs/engine/;../../../third_party/muduo/;../../../third_party/muduo/contrib/windows/include/;../../../third_party/boost/;../../../third_party/redis/deps/;../../../third_party/nghttp2/install_vs2026_dbg/include/;../../../third_party/yaml-cpp/test/googletest-1.16.0/googletest/include/;../../../third_party/yaml-cpp/test/googletest-1.16.0/googletest/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
@@ -182,6 +182,7 @@
     <ClCompile Include="server_test.cpp" />
     <ClCompile Include="test_h2_client.cpp" />
     <ClCompile Include="test_h2_peer.cpp" />
+    <ClCompile Include="windows_channel_hup_test.cpp" />
     <ClCompile Include="..\..\..\third_party\yaml-cpp\test\googletest-1.16.0\googletest\src\gtest-all.cc" />
     <ClCompile Include="..\..\..\third_party\yaml-cpp\test\googletest-1.16.0\googletest\src\gtest_main.cc" />
   </ItemGroup>

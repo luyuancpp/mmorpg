@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -734,6 +735,54 @@ func TestShippedYamlRouteStoreIsRedisAndValid(t *testing.T) {
 	assertRouteStoreDefaults(t, rest)
 	if err := c.RouteStore.Validate(); err != nil {
 		t.Fatalf("shipped RouteStore block must validate: %v", err)
+	}
+}
+
+// TestRouteStoreReadRequiresReady(第 3 批读方门禁,规格 §5.2):缺省 false(整段缺失、段在键不在都一样,
+// Normalize 不改它);true 只许 db_first —— redis 模式下没有可回源的真源,回退顺序写反时必须拒启而不是静默跑;
+// 仓库里那份 yaml 显式写 false。
+func TestRouteStoreReadRequiresReady(t *testing.T) {
+	for _, y := range []string{minimalYaml, minimalYaml + `
+RouteStore: {}
+`, minimalYaml + `
+RouteStore:
+  Mode: db_first
+`} {
+		if c := loadYaml(t, y); c.RouteStore.ReadRequiresReady || c.RouteStore.Normalize().ReadRequiresReady {
+			t.Fatalf("ReadRequiresReady must default to false, got true for yaml:\n%s", y)
+		}
+	}
+
+	c := loadYaml(t, minimalYaml+`
+RouteStore:
+  Mode: db_first
+  ReadRequiresReady: true
+`)
+	rs := c.RouteStore.Normalize()
+	if !rs.ReadRequiresReady {
+		t.Fatal("ReadRequiresReady: true must be loaded and kept by Normalize")
+	}
+	if err := rs.Validate(); err != nil {
+		t.Fatalf("ReadRequiresReady=true under db_first must validate: %v", err)
+	}
+
+	for _, mode := range []string{RouteStoreModeRedis, ""} {
+		bad := RouteStoreConfig{Mode: mode, ReadRequiresReady: true}.Normalize()
+		err := bad.Validate()
+		if err == nil {
+			t.Fatalf("ReadRequiresReady=true with Mode=%q (normalized %q) must be rejected", mode, bad.Mode)
+		}
+		if !strings.Contains(err.Error(), "ReadRequiresReady") {
+			t.Fatalf("the rejection must name the key, got %v", err)
+		}
+	}
+
+	var shipped Config
+	if err := conf.Load("../../etc/data_service.yaml", &shipped); err != nil {
+		t.Fatalf("load etc/data_service.yaml: %v", err)
+	}
+	if shipped.RouteStore.ReadRequiresReady {
+		t.Fatal("etc/data_service.yaml must keep RouteStore.ReadRequiresReady false (turning it on is a P5 step, spec §8)")
 	}
 }
 

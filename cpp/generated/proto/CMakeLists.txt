@@ -1,3 +1,8 @@
+# === GENERATED FILE -- DO NOT EDIT ===
+# Produced by tools/archived/vcxproj2cmake.py from proto.vcxproj.
+# Every Linux build regenerates it; hand edits are lost without warning.
+# Change the generator instead.
+
 cmake_minimum_required(VERSION 3.22)
 project(proto)
 
@@ -17,6 +22,9 @@ add_definitions(-D__linux__)
 add_definitions(-DNOMINMAX)
 add_definitions(-DENTT_ID_TYPE=uint64_t)
 add_definitions(-DABSL_PROPAGATE_CXX_STD=TRUE)
+add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)
+add_definitions(-DGOOGLE_LOG=ABSL_LOG)
+add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)
 add_definitions(-DMMORPG_AGONES_CURL=1)
 
 include_directories(
@@ -32,11 +40,28 @@ include_directories(
 )
 
 set(SOURCE_FILES
-    chat/chat.pb.cc
-    chat/chat.grpc.pb.cc
+    battle/battle_data.pb.cc
+    battle/battle_data.grpc.pb.cc
+    battle/battle_node.pb.cc
+    battle/battle_node.grpc.pb.cc
+    battle/player_battle.pb.cc
+    battle/player_battle.grpc.pb.cc
+    match/match_service.pb.cc
+    match/match_service.grpc.pb.cc
+    match/match_internal.pb.cc
+    match/match_internal.grpc.pb.cc
     client_rpc_router/client_rpc_router.pb.cc
     client_rpc_router/client_rpc_router.grpc.pb.cc
     common/asset/asset_op.pb.cc
+    common/component/asset_op_ledger_comp.pb.cc
+    common/component/battle_settlement_ledger_comp.pb.cc
+    common/component/battle_comp.pb.cc
+    common/event/battle_event.pb.cc
+    common/event/team_event.pb.cc
+    chat/chat.pb.cc
+    chat/chat.grpc.pb.cc
+    team/team.pb.cc
+    team/team.grpc.pb.cc
     common/base/common.pb.cc
     common/base/config.pb.cc
     common/base/empty.pb.cc
@@ -51,8 +76,6 @@ set(SOURCE_FILES
     common/component/actor_attribute_state_comp.pb.cc
     common/component/actor_combat_state_comp.pb.cc
     common/component/actor_comp.pb.cc
-    common/component/asset_op_ledger_comp.pb.cc
-    common/component/battle_settlement_ledger_comp.pb.cc
     common/component/buff_comp.pb.cc
     common/component/base_comp.pb.cc
     common/component/currency_comp.pb.cc
@@ -62,6 +85,8 @@ set(SOURCE_FILES
     common/component/mission_comp.pb.cc
     common/component/npc_comp.pb.cc
     common/component/player_async_comp.pb.cc
+    common/component/player_attribute_comp.pb.cc
+    common/component/player_pet_comp.pb.cc
     common/component/player_comp.pb.cc
     common/component/player_inbox_ledger_comp.pb.cc
     common/component/player_login_comp.pb.cc
@@ -82,12 +107,12 @@ set(SOURCE_FILES
     common/database/bag_quest_mail_data.pb.cc
     common/event/player_inbox_event.pb.cc
     common/event/player_migration_event.pb.cc
-    common/event/team_event.pb.cc
     common/options/attribute_sync_option.pb.cc
     common/options/event_ingress_option.pb.cc
     common/rollback/player_snapshot.pb.cc
     common/rollback/transaction_log.pb.cc
     contracts/kafka/gate_command.pb.cc
+    contracts/kafka/match_event.pb.cc
     contracts/kafka/gate_event.pb.cc
     contracts/kafka/player_event.pb.cc
     contracts/kafka/scene_command.pb.cc
@@ -132,6 +157,8 @@ set(SOURCE_FILES
     scene/player_movement.pb.cc
     scene/s2s_player_scene.pb.cc
     scene/scene_admin.pb.cc
+    scene/player_attribute.pb.cc
+    scene/player_pet.pb.cc
     scene/player_currency.pb.cc
     scene/player_rollback.pb.cc
     scene/player_scene.pb.cc
@@ -145,29 +172,9 @@ set(SOURCE_FILES
     scene_manager/scene_node_service.pb.cc
     scene_manager/storage.grpc.pb.cc
     scene_manager/storage.pb.cc
-    team/team.pb.cc
-    team/team.grpc.pb.cc
-    # 2026-09-18 补登记:以下产物已在磁盘上但从未进过本清单,Linux 构建会缺符号。
-    battle/battle_data.pb.cc
-    battle/battle_data.grpc.pb.cc
-    battle/battle_node.pb.cc
-    battle/battle_node.grpc.pb.cc
-    battle/player_battle.pb.cc
-    battle/player_battle.grpc.pb.cc
-    common/component/battle_comp.pb.cc
-    common/component/player_attribute_comp.pb.cc
-    common/component/player_pet_comp.pb.cc
-    common/event/battle_event.pb.cc
-    contracts/kafka/match_event.pb.cc
-    match/match_service.pb.cc
-    match/match_service.grpc.pb.cc
-    match/match_internal.pb.cc
-    match/match_internal.grpc.pb.cc
-    scene/player_activity.pb.cc
-    scene/player_attribute.pb.cc
     scene/player_bag.pb.cc
     scene/player_mission.pb.cc
-    scene/player_pet.pb.cc
+    scene/player_activity.pb.cc
     common/base/service_call_auth.pb.cc
     friend/friend_table.grpc.pb.cc
     friend/friend_table.pb.cc
@@ -195,3 +202,4 @@ set(SOURCE_FILES
 )
 
 add_library(proto STATIC ${SOURCE_FILES})
+

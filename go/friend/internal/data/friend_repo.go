@@ -148,8 +148,11 @@ type AddFriendLimits struct {
 //
 // (5) **回收与写路径的关系**。sweep 的 SweepIdleCapacityRows(sweep_repo.go)会删掉
 //     "friend_count = 0 且 created_ms 早于保留期"的容量行,它是本表唯一的删除方。
-//     - 为什么不会成环:回收**逐行、自动提交、按主键**删,任一时刻至多持有一把守卫锁,
-//       且持锁时不再等任何别的锁 —— 一个不"持有并等待"的参与者不可能处在等待环里。
+//     - 为什么不会成环:回收**逐行**删,每行一个 RC 写事务{lockCapacityRowSQL 主键点锁 → 带复核的主键 DELETE},
+//       任一时刻至多持有一把守卫锁,且取锁顺序与守卫相同(TiDB 上同为 PRIMARY → 行 key)。
+//       ⚠ 不能退回「单条自动提交 DELETE」:那在 InnoDB 上不持有并等待,但 TiDB(friend 生产强制)的自动提交走乐观事务、
+//       提交时按 region 并行 prewrite 行 key 与索引 key,会与守卫 Point_Get 各持一半互等、检测不到,等约 3s 锁 TTL
+//       (2026-10-18 真 TiDB 实测,事故文档 §9.7)。
 //       写成一条批量 `DELETE ... LIMIT ?` 就不行:那条语句在一个语句事务里按**二级索引序**
 //       锁多行守卫行,与这里"按 player_id 升序"的取锁顺序不同,可以成环(1213)。
 //     - 为什么缺行要重试、且至多 3 遍(capacityGuardMaxAttempts)严格充分:ensure 在事务外自动提交,
@@ -217,8 +220,8 @@ type AddFriendLimits struct {
 //   - 代价:RC 下同一事务内两次普通 SELECT 可能读到不同结果(每条语句各取一份新快照)。
 //     所以"判定读必须在守卫之后"不是可选优化;守卫之后的探针用锁定读还是普通读,
 //     取决于该次读的对象是否已被守卫覆盖 —— 逐处理由写在 AddFriendRequest 的 ⑤⑥ 旁边。
-//   - 事务**之外**的自动提交语句(ensure 的补行、sweep 的 DELETE;Unblock 2026-10-16 起改为单语句 RC 事务,
-//     理由见该函数)不经过 BeginTx,
+//   - 事务**之外**的自动提交语句(ensure 的补行;sweep 的 DELETE 2026-10-18 起、Unblock 2026-10-16 起改为 RC 写事务,
+//     理由见 deleteOneRowPointLocked 与 Unblock)不经过 BeginTx,
 //     它们的隔离级别来自连接会话:svc.BuildDSN 用 transaction_isolation 把整个连接池设成 RC,
 //     否则它们会落回服务器全局默认的 REPEATABLE-READ、重新拿间隙锁 / next-key 锁。
 //   - 前提是 binlog_format=ROW(RC + STATEMENT 格式的 binlog 不安全)。
@@ -917,6 +920,10 @@ const (
 	lockCapacityRowSQL   = "SELECT friend_count FROM friend_capacity WHERE player_id = ? FOR UPDATE"
 	lockBlockRowSQL      = "SELECT 1 FROM friend_block WHERE player_id = ? AND blocked_player_id = ? FOR UPDATE"
 	lockFriendEdgeRowSQL = "SELECT 1 FROM friend WHERE player_id = ? AND friend_player_id = ? FOR UPDATE"
+	// lockRequestRowSQL:sweep 逐行删终态申请前的主键点锁(sweep_repo.go 的 deleteTerminalRequestsBefore)。
+	// 只写完整主键等值、不带 status / updated_ms 复核(复核留在随后的 DELETE 里):TiDB 上只有这种形状走 Point_Get,
+	// 加锁顺序固定为 PRIMARY → 行 key,与守卫事务里的申请行 FOR UPDATE 同序。
+	lockRequestRowSQL = "SELECT 1 FROM friend_request WHERE from_player_id = ? AND to_player_id = ? FOR UPDATE"
 )
 
 // ensureCapacityRowSQL:事务外补容量行。ODKU 的 no-op 更新保证"行已存在时什么都不改",

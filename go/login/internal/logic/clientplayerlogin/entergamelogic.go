@@ -101,10 +101,11 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		return resp, nil
 	}
 
-	// 2. Get account
-	account, err := loginsession.GetAccount(ctx, l.svcCtx.RedisClient, sessionDetails.SessionId)
+	// 2. Get account —— 只认本条 gate 连接的登录态(loginsession.RefOf),理由同 CreatePlayer 第 2 步:
+	//    跳过 Login 的连接即使撞上旧 gate 进程的同号 session_id,也进不了别人的角色。
+	account, err := loginsession.GetAccount(ctx, l.svcCtx.RedisClient, loginsession.RefOf(sessionDetails))
 	if err != nil {
-		logx.Errorf("GetAccount failed: %v", err)
+		logGetAccountFailure("EnterGame", sessionDetails, err)
 		resp.ErrorMessage.Id = uint32(table.LoginError_kLoginSessionNotFound)
 		return resp, nil
 	}
@@ -243,20 +244,19 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		// 恢复出的记录原本只有 id,名字副本会就此永久丢失:角色列表显示空白,
 		// 首次入场也补不进 PlayerProfileComp。所以这里回源注册表一次,把名字一并写回;
 		// 查不到 / 查询失败就照旧只恢复 id(展示数据 fail-open,不阻断入场)。
+		// 名字在拿账号锁之前查好,锁只罩住读-改-写。
 		name := resolveEnterName(ctx, "", l.svcCtx.PlayerNames, in.PlayerId)
 		flowState.playerName = name
-		if userAccount.SimplePlayers == nil {
-			userAccount.SimplePlayers = &login_proto_common.AccountSimplePlayerList{
-				Players: make([]*login_proto_common.AccountSimplePlayer, 0, 1),
-			}
-		}
-		userAccount.SimplePlayers.Players = append(userAccount.SimplePlayers.Players,
-			&login_proto_common.AccountSimplePlayer{PlayerId: in.PlayerId, Name: name})
-		if patched, mErr := proto.Marshal(userAccount); mErr == nil {
-			if sErr := l.svcCtx.RedisClient.Set(ctx, accountKey, patched, 0).Err(); sErr != nil {
-				// Non-fatal: self-heal is best-effort; ownership is proven by
-				// the reverse index, so we still proceed to EnterGame.
-				logx.Errorf("EnterGame self-heal write-back failed: account=%s err=%v", account, sErr)
+		// 写回在账号锁内重读后整字节 CAS,不再拿上面锁外读到的 userAccount 整块覆盖(会抹掉并发建出的角色),
+		// 见 healAccountRole。写回没成也照常受理(归属已由反向索引证明);但存档已有外观的角色,
+		// 异步链的外观修复会因账号缺这条记录而失败,本次入场以 kEnterSceneFailed 收口,下次入场再自愈。
+		if existing := l.healAccountRole(ctx, flowState, name); existing != nil {
+			// 别的链已经补回了这条记录:职业、外观与名字以它为准,与上面「账号记录命中」分支同源。
+			flowState.classID = existing.GetClassId()
+			flowState.appearanceID = existing.GetAppearanceId()
+			flowState.gender = existing.GetGender()
+			if existing.GetName() != "" {
+				flowState.playerName = existing.GetName()
 			}
 		}
 	}
@@ -287,7 +287,8 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 	// (回归用例:TestEnterGame_PlayerNameReachesIdentityBackfill)。
 	enterCtx := flowState // value-copied state for the closure
 	playerID := in.PlayerId
-	sessionID := sessionDetails.SessionId
+	// 异步清理也保留本条连接的完整身份，不能只带可能撞号的 session_id。
+	loginSessionDetails := proto.Clone(sessionDetails).(*login_proto_common.SessionDetails)
 
 	// Background context for the whole chain — independent of gRPC ctx (which
 	// is cancelled the instant we return below). chainCancel both stops the
@@ -392,7 +393,7 @@ func (l *EnterGameLogic) EnterGame(in *login_proto.EnterGameRequest) (*login_pro
 		}
 		logx.Infof("EnterGame complete (decision=%d) playerId=%d", decision, playerID)
 
-		cleanupLoginSessionState(chainCtx, l.svcCtx, sessionID, "enterGame")
+		cleanupLoginSessionState(chainCtx, l.svcCtx, loginSessionDetails, "enterGame")
 		observeTotal(chainStart, ResultSuccess)
 	}
 

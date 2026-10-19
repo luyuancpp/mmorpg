@@ -44,7 +44,7 @@ namespace
 	// 分级只做"有更好的选择时避开坏通道",不新增 null 窗口 —— 调用方拿到 null 走的是立即失败分支,它们比
 	// "挑一个坏实例、让那次调用失败"更伤:跨 zone 交接在 handoff 标记 SET 已发出后
 	// 拿不到 SceneManager 只能 ConcludeHandoffAfterMarkSent(销毁 + 踢线重登);而挑一个坏实例,那次调用以
-	// UNAVAILABLE 进失败处理器(grpc-client-deadline-failure-callback.md §5)或由 30s 看门狗收尾,
+	// UNAVAILABLE 完成每次调用回调(grpc-client-deadline-failure-callback.md §12),或由 30s 看门狗收尾,
 	// 这正是改造前的行为。
 	//
 	// 状态取自 muduo_grpc::Channel(docs/design/grpc-muduo-transport.md §5):IDLE = 没有连接;CONNECTING = 正在建 TCP、
@@ -77,12 +77,12 @@ namespace
 	// - 实例刚崩、还没被踢过时它显示 IDLE,被踢起后到拒连报上来之前显示 CONNECTING,都在 ②。有 READY 实例就轮不到它;
 	//   一个 READY 都没有时(例如空闲 GOAWAY 后刚被踢起来)它可能被挑中,那次调用排队等连接。拒连经 muduo 的连接失败
 	//   回调(LOCAL DELTA,设计 §14.3)报给 Http2Transport,下一轮关闭,通道随即进 TRANSIENT_FAILURE、排队调用以
-	//   UNAVAILABLE 走失败处理器,与官方 pick_first 相同。该回调在 Windows 上对拒连报哪些 poll 事件尚未实测(§14.3);
+	//   UNAVAILABLE 完成每次调用回调,与官方 pick_first 相同。该回调在 Windows 上对拒连报哪些 poll 事件尚未实测(§14.3);
 	//   万一没报上来,拒连会一直显示 CONNECTING 直到 connect_timeout(20s),表现同下一条。
 	// - 对端主机整个消失(没有 RST)时,要等 connect_timeout(20s;系统 SYN 超时更早就以它为准),这段时间它停在
 	//   CONNECTING,同样排在 READY 之后。一个 READY 都没有时被挑中的调用排队等连接,自己的截止时间先到就以
 	//   DEADLINE_EXCEEDED 结束(SceneManager 的 deadline 10s,短于 20s,通常是这种),连接超时先到才以 UNAVAILABLE
-	//   结束,都走失败处理器、同属"结果未知"(scene_manager_response_handler.cpp 的失败处理器只记录 code,不按它分支)。
+	//   结束,都以非 OK 完成每次调用回调、同属"结果未知"(PlayerLifecycleSystem::DispatchEnterSceneTransportFailure 只记录 code,不按它分支)。
 	//   官方通道的单次连接上限同为 20s,这一条与改造前相同。
 	// - 对端主机在连接 READY 时静默消失:业务通道没有周期 ping,要等某个调用截止、且这条连接自该调用发出后一帧未收,
 	//   才发 PING 探测(§4.4),keepalive_timeout(20s)内无 ACK 才断开回 IDLE;此前它一直是 READY、照常分到玩家。

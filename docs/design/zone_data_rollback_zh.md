@@ -167,12 +167,24 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
 > - **`kafka_offset_reset.ps1` 的参数约束**:`-DeleteAndRecreateTopic` 对 db_task topic 一律拒绝(改走 `TopicGeneration` 换代);对其它 topic,`-ReplicationFactor` 必填且须与现有一致,
 >   删除前先 describe 核对(读不到或不一致不删),删除后等待超过 30s 即抛出、不重建。重置模式以 `exit 0` 结束,`Invoke-KafkaToolCaptured` 复位 `LASTEXITCODE`,
 >   「组不存在」的 describe 以非 0 退出时不会再把成功的 Step 5 判成失败。
-> - **回档语义待负责人裁决**(只改了注释,行为未变):K8s 上 go/db 的游标(`consumer:applied:<topic>:<key>:<msgType>`、`consumer:applied_epoch:<topic>:<key>:<msgType>`)
+> - **回档语义(当时待负责人裁决;负责人已于 2026-10-17 裁决为 (A) 丢弃,落码见下方「2026-10-18 更正」,本条留作历史)**(只改了注释,行为未变):K8s 上 go/db 的游标(`consumer:applied:<topic>:<key>:<msgType>`、`consumer:applied_epoch:<topic>:<key>:<msgType>`)
 >   在共享 Redis DB0,Step 4 的 FLUSHDB 防护必拒,Step 4 被跳过,游标不清。Step 5 拨回 zone 组之后,TargetTime 之后已落库的写被游标判 stale 吸收,
 >   而 zone-down 时尚未消费的积压与 DB0 里本 topic 的重试收据照常落进 PITR 之后的 MySQL。所以「从 TargetTime 起重放」在 K8s 上不成立,「丢弃 TargetTime 之后的写」也不完整。
 >   两个互斥方案:(A) 丢弃:Step 5 改 `-ToLatest`,在 Step 4 / 5 之间盘点并拦截本 topic 的重试收据;(B) 灾难恢复重放:Step 5 之前只清本 topic 的游标
 >   (SCAN `consumer:applied:<topic>:*` 与 `consumer:applied_epoch:<topic>:*` 逐页 UNLINK),并在第 0 步校验 TargetTime 不早于各分区日志起点(现在没有这条校验)。
 >   各自的代价见 zone_data_rollback.md。
+
+> **2026-10-18 更正(回档语义已裁决;已落码,未编译、未测试,待 Codex 验证)**:负责人 2026-10-17 裁决「丢弃 TargetTime 之后的写」:回档就是回到 T 那一刻
+> MySQL 里已经落库的状态。完整流程、各状态族的处理、代价、残余风险与待拍板事项以 [zone_data_rollback.md](zone_data_rollback.md) 的「2026-10-18 修订」为准,要点:
+> - **代价(已接受)**:T 之后的合法存盘一并丢弃,包括 T 之前产生、T 那一刻还在 Kafka 里没落库的存盘;跨服务状态照旧不回退。
+> - **Kafka**:Step 5 把 zone 组拨到日志末端(`kafka_offset_reset.ps1 -ToLatest`,不再 `--to-datetime`),逐分区复核后退役 legacy 组在本 topic 上的位点,记下切点 `kafka-cut.json`;
+>   go/db 的游标与 owner_epoch 保留(拨到末端之后新写的 seq 恒大于旧游标)。以后对 db_task topic 的 `-ToDatetime` / `-ToEarliest` 不得越过切点。
+> - **Redis**:不再 FLUSHDB(共享 DB0)。读 MySQL、写 Redis 全部交给回档工具 `go/db/cmd/zone_rollback_discard`(**尚未落地**,`-Apply` 在它落地之前停在入口校验):
+>   Step 4b 把本 topic 的重试收据与死信改名进隔离区(带轮次),按 PITR 之后的库删除受影响玩家的父快照、子表缓存、sync_digest、资产证据与屏障;映射、游标、账号目录不碰。
+> - **流程**:入口校验 → 第 0 步 a–f(入口现状与 `entry-state.json`、静态预检、LAG 快照、Step 5 预演、Step 6 的 Kafka 读法、部署事实 + Redis run_id + 工具构建提交 + 工具 preflight)
+>   → Step 1 停服 → 1b(Kafka 消费者、两次日志末端、工具 stopped 写停服行指纹基线)→ Step 3 人工 PITR → 4a 盘点(与停服基线比较)+ Step 5 之前复核停服状态
+>   → Step 5 → 4b 丢弃 → 5b 复核(切点 + 工具 verify)→ Step 6 `-DbConsumerGroup zone` → Step 7 核对。Step 5 之前的中止 / 放弃路径是**不带** `-DbConsumerGroup` 的 zone-up。
+> - **待负责人另行拍板**:#1 zone 维护围栏(落地前工具 preflight 一律拒绝)、#3 严格屏障协议、#4 blocked 玩家、#6 T 之后合入本 zone 的玩家;脚本对这些路径一律 fail-closed。
 
 ### 关键安全点
 
@@ -184,6 +196,8 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
 | 串行保证 | Kafka partition key = `player_id`，同玩家写入串行执行 |
 
 > **2026-10-17 更正**：「Kafka 必须处理」一行的说法在现行管线上不完整。拨回位点之后哪些写会重放，取决于 go/db 按 topic 的已落库游标还在不在（K8s 上它在共享 Redis DB0、回档不清），见上方「2026-10-17 更正」。
+>
+> **2026-10-18 更正**：语义已裁决为「丢弃 TargetTime 之后的写」，上表前两行都不再成立：Redis 不能整库清空（改由回档工具只丢弃本 zone 在 T 之后的状态），Kafka 不清 topic、不拨回 TargetTime，而是拨到日志末端并保留游标，见上方「2026-10-18 更正」。
 
 ---
 
@@ -194,7 +208,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
 | MySQL 定时备份 + binlog 归档 | K8s MySQL pod 未配置自动备份，需加 CronJob 或用云 RDS | **高** |
 | Redis RDB/AOF 定期快照归档 | 当前 `--appendonly yes` 保证持久化，但无历史时间点恢复能力 | 低（可 FLUSHDB） |
 | Kafka offset 回档工具 | 需脚本将 consumer group offset 重置到指定时间戳（已落地：2026-05-15 起为 `tools/scripts/kafka_offset_reset.ps1`，`dev_tools.ps1 -Command kafka-offset-reset`，以 [zone_data_rollback.md](zone_data_rollback.md) 的同名表为准） | ~~中~~ |
-| 一键 zone 回档脚本 | 将上述步骤封装为 `dev_tools.ps1 -Command k8s-zone-rollback`（已落地：2026-05-15 起为 `tools/scripts/k8s_zone_rollback.ps1`，以 [zone_data_rollback.md](zone_data_rollback.md) 的同名表为准；2026-10-15 的 Kafka 步骤修订见上方更正，未编译、未测试，待 Codex 验证） | ~~中~~ |
+| 一键 zone 回档脚本 | 将上述步骤封装为 `dev_tools.ps1 -Command k8s-zone-rollback`（已落地：2026-05-15 起为 `tools/scripts/k8s_zone_rollback.ps1`，以 [zone_data_rollback.md](zone_data_rollback.md) 的同名表为准；2026-10-15 的 Kafka 步骤修订见上方更正，未编译、未测试，待 Codex 验证；2026-10-18 回档语义已裁决，流程与回档工具见上方「2026-10-18 更正」，工具落地前 `-Apply` 不可执行） | ~~中~~ |
 
 ---
 
@@ -203,5 +217,7 @@ pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up \
 - **云 MySQL（RDS）**：自带自动备份和 PITR，回档操作在控制台点几下即可，**强烈推荐**
 - **自建 MySQL**：必须配置 `log-bin`、定期 `mysqldump` CronJob、binlog 归档到对象存储
 - **Redis**：zone 回档时直接 FLUSHDB，无需额外备份
+  - 2026-10-18 更正：不成立。Redis 是共享库，回档不做 FLUSHDB，见上方「2026-10-18 更正」。
 - **Kafka**：回档后最安全的做法是清空 `db_task_topic`，避免旧消息重放
   - 2026-10-17 更正：现行管线不能清空或同名重建 db_task topic（go/db 的已落库游标按 topic 名区分、永不过期，同名重建后的新存盘会被判陈旧丢弃；`kafka_offset_reset.ps1 -DeleteAndRecreateTopic` 已拒绝），回档只拨位点；拨位点之后哪些写会重放，见上方「2026-10-17 更正」。
+  - 2026-10-18 更正：回档把 zone 组拨到日志末端（`-ToLatest`）、保留游标，见上方「2026-10-18 更正」。

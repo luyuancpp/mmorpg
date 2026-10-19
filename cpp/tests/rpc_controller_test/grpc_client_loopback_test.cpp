@@ -5,7 +5,7 @@
 // core 的 GrpcUnaryCall 胶水(与生成的 scene / battle 骨架同一条路径:Create → ParseRequest → Proceed)。
 // 客户端:节点实体上挂真实的 MuduoGrpcChannelPtr,经生成的 SendDataServiceLoadPlayerData(带每次调用 done)发出。
 // 锁定的契约:
-//   * 成功:done 恰好一次、不在 Send 栈内同步执行,应答字段正确;带 done 的调用不触发全局应答 / 失败处理器;
+//   * 成功:done 恰好一次、不在 Send 栈内同步执行,应答字段正确;
 //   * 服务端把调用留着不进业务(守护段式延后)而客户端 deadline 到期:DEADLINE_EXCEEDED 恰好一次;服务端随后
 //     把这次调用收口(截止定时器或对端 RST),迟到的 Proceed 不再进业务;
 //   * 业务已开始、延后完成的调用遇到服务端关机:排空到期回 UNAVAILABLE "server shutting down",onDrained 恰好一次,
@@ -174,14 +174,6 @@ class GrpcClientLoopbackTest : public ::testing::Test
 protected:
     void SetUp() override
     {
-        savedReplyHandler_ = std::move(data_service::AsyncDataServiceLoadPlayerDataHandler);
-        savedFailedHandler_ = std::move(data_service::AsyncDataServiceLoadPlayerDataFailedHandler);
-        // 带 done 的调用一次都不能触发全局处理器。
-        data_service::AsyncDataServiceLoadPlayerDataHandler =
-            [calls = globalReplyCalls_](const GrpcReplyContext &, const LoadPlayerDataResponse &) { ++*calls; };
-        data_service::AsyncDataServiceLoadPlayerDataFailedHandler =
-            [calls = globalFailedCalls_](const GrpcCallFailure &, const LoadPlayerDataRequest &) { ++*calls; };
-
         port_ = FindFreeLoopbackPort();
         ASSERT_NE(port_, 0) << "no free loopback port";
 
@@ -211,9 +203,6 @@ protected:
         // loop 外析构 Server(server.h 的前置条件),再转 loop 让它排进的 forceClose / connectDestroyed 跑完。
         server_.reset();
         RunLoopFor(200ms);
-
-        data_service::AsyncDataServiceLoadPlayerDataHandler = std::move(savedReplyHandler_);
-        data_service::AsyncDataServiceLoadPlayerDataFailedHandler = std::move(savedFailedHandler_);
     }
 
     // 在 loop 上转到 done() 为真或超时;返回 done() 的最终结果。不能在 loop 自己的回调里调用。
@@ -274,14 +263,10 @@ protected:
     MuduoGrpcChannelPtr channel_;
     entt::entity nodeEntity_{entt::null};
     uint16_t port_{0};
-    std::shared_ptr<int> globalReplyCalls_ = std::make_shared<int>(0);
-    std::shared_ptr<int> globalFailedCalls_ = std::make_shared<int>(0);
-    data_service::AsyncDataServiceLoadPlayerDataHandlerFunctionType savedReplyHandler_;
-    data_service::AsyncDataServiceLoadPlayerDataFailedHandlerFunctionType savedFailedHandler_;
 };
 
-// 同步方法体:done 以 OK 恰好一次,应答字段来自业务,不触发全局处理器;服务端在途计数归零。
-TEST_F(GrpcClientLoopbackTest, PerCallDoneSucceedsExactlyOnceWithoutGlobalHandlers)
+// 同步方法体:done 以 OK 恰好一次,应答字段来自业务;服务端在途计数归零。
+TEST_F(GrpcClientLoopbackTest, PerCallDoneSucceedsExactlyOnce)
 {
     const auto observed = std::make_shared<Observed>();
     SendInLoop(observed, 42, kLiveness);
@@ -297,8 +282,6 @@ TEST_F(GrpcClientLoopbackTest, PerCallDoneSucceedsExactlyOnceWithoutGlobalHandle
     EXPECT_EQ(service_.dispatched, 1);
     EXPECT_EQ(service_.businessRuns, 1);
     EXPECT_EQ(server_->inFlightCalls(), 0u);
-    EXPECT_EQ(*globalReplyCalls_, 0) << "带 done 的调用不得触发全局应答处理器";
-    EXPECT_EQ(*globalFailedCalls_, 0) << "带 done 的调用不得触发全局失败处理器";
 }
 
 // 服务端留着调用不进业务,客户端 deadline 到期:DEADLINE_EXCEEDED 恰好一次;服务端随后把调用收口,
@@ -322,8 +305,6 @@ TEST_F(GrpcClientLoopbackTest, ServerDeferringTheCallYieldsDeadlineExceededExact
     EXPECT_FALSE(observed->hadReply);
     EXPECT_EQ(service_.businessRuns, 0) << "调用失效后 Proceed 不得进业务";
     EXPECT_EQ(server_->inFlightCalls(), 0u);
-    EXPECT_EQ(*globalReplyCalls_, 0);
-    EXPECT_EQ(*globalFailedCalls_, 0);
 }
 
 // 业务已开始、延后完成的调用遇到服务端关机:排空到期回 UNAVAILABLE "server shutting down"(§15.7「业务已开始」一行),
@@ -358,37 +339,57 @@ TEST_F(GrpcClientLoopbackTest, ServerShutdownCompletesStartedCallWithUnavailable
     EXPECT_EQ(*drainedCalls, 1) << "onDrained 恰好一次";
     EXPECT_EQ(server_->inFlightCalls(), 0u);
     EXPECT_EQ(server_->connectionCount(), 0u);
-    EXPECT_EQ(*globalReplyCalls_, 0);
-    EXPECT_EQ(*globalFailedCalls_, 0);
 }
 
 
 // 合并保留:节点摘通道时,生成客户端的在途调用与随后本地拒绝都异步失败一次;
 // 夹具原本另存一份通道,先放掉它,让实体组件成为唯一所有者,才能验证真实析构路径。
-TEST_F(GrpcClientLoopbackTest, ChannelRemovalFailsOutstandingCallAndRejectsLaterCallThroughFailureHandler)
+TEST_F(GrpcClientLoopbackTest, ChannelRemovalFailsOutstandingCallAndRejectsLaterCallThroughPerCallDone)
 {
     const std::weak_ptr<muduo_grpc::Channel> weakChannel = channel_;
     channel_.reset();
     const auto failedPlayers = std::make_shared<std::vector<uint64_t>>();
-    data_service::AsyncDataServiceLoadPlayerDataFailedHandler =
-        [failedPlayers, weakChannel, calls = globalFailedCalls_](const GrpcCallFailure &failure,
-                                                               const LoadPlayerDataRequest &failedRequest)
+    const auto successfulCalls = std::make_shared<int>(0);
+    const auto failedCalls = std::make_shared<int>(0);
+    const auto onDone = [failedPlayers, weakChannel, successfulCalls, failedCalls](
+                            uint64_t playerId, const GrpcCallOutcome &outcome,
+                            const LoadPlayerDataResponse *reply)
+    {
+        if (outcome.ok())
         {
-            ++*calls;
-            EXPECT_EQ(failure.code(), kGrpcStatusUnavailable);
-            EXPECT_TRUE(weakChannel.expired()) << "失败回调在通道析构之后才执行,不得借用通道";
-            failedPlayers->push_back(failedRequest.player_id());
-        };
+            ++*successfulCalls;
+        }
+        else
+        {
+            ++*failedCalls;
+            failedPlayers->push_back(playerId);
+        }
+        EXPECT_EQ(outcome.code, kGrpcStatusUnavailable);
+        EXPECT_EQ(reply, nullptr);
+        EXPECT_TRUE(weakChannel.expired()) << "失败回调在通道析构之后才执行,不得借用通道";
+    };
     LoadPlayerDataRequest request;
     request.set_player_id(43);
-    data_service::SendDataServiceLoadPlayerData(registry_, nodeEntity_, request);
+    data_service::SendDataServiceLoadPlayerData(
+        registry_, nodeEntity_, request,
+        [onDone, playerId = request.player_id()](const GrpcCallOutcome &outcome,
+                                               const LoadPlayerDataResponse *reply)
+        {
+            onDone(playerId, outcome, reply);
+        });
     ASSERT_FALSE(weakChannel.expired());
     EXPECT_EQ(weakChannel.lock()->outstandingCalls(), 1u);
     registry_.remove<MuduoGrpcChannelPtr>(nodeEntity_);
     EXPECT_TRUE(weakChannel.expired()) << "生成层与调用状态都不得持有通道的强引用";
     EXPECT_FALSE(HasUsableGrpcClient(registry_, nodeEntity_));
     request.set_player_id(44);
-    data_service::SendDataServiceLoadPlayerData(registry_, nodeEntity_, request);
+    data_service::SendDataServiceLoadPlayerData(
+        registry_, nodeEntity_, request,
+        [onDone, playerId = request.player_id()](const GrpcCallOutcome &outcome,
+                                               const LoadPlayerDataResponse *reply)
+        {
+            onDone(playerId, outcome, reply);
+        });
     EXPECT_TRUE(failedPlayers->empty()) << "摘通道与之后的本地拒绝都不得在当前栈内回调";
     EXPECT_FALSE(GrpcClientLocalCompletionsDrained()) << "摘通道后的调用走本地拒绝,不再发往网络";
     ASSERT_TRUE(RunLoopUntil([&] {
@@ -398,24 +399,35 @@ TEST_F(GrpcClientLoopbackTest, ChannelRemovalFailsOutstandingCallAndRejectsLater
     ASSERT_EQ(failedPlayers->size(), 2u) << "每个调用恰好一次";
     EXPECT_EQ((*failedPlayers)[0], 43u) << "~Channel 先排队,在途调用先完成";
     EXPECT_EQ((*failedPlayers)[1], 44u);
-    EXPECT_EQ(*globalFailedCalls_, 2);
-    EXPECT_EQ(*globalReplyCalls_, 0);
+    EXPECT_EQ(*failedCalls, 2);
+    EXPECT_EQ(*successfulCalls, 0);
 }
 
 // 合并保留:带 done 的在途调用在通道析构后以 UNAVAILABLE 完成一次;
-// 摘通道后的新调用同样异步拒绝一次,两者都不回退到全局处理器。
+// 摘通道后的新调用同样异步拒绝一次,各自计数并区分本次调用的成功与失败。
 TEST_F(GrpcClientLoopbackTest, PerCallDoneCompletesUnavailableAfterChannelIsRemoved)
 {
     const std::weak_ptr<muduo_grpc::Channel> weakChannel = channel_;
     channel_.reset();
     const auto outstanding = std::make_shared<Observed>();
     const auto rejected = std::make_shared<Observed>();
+    const auto successfulCalls = std::make_shared<int>(0);
+    const auto failedCalls = std::make_shared<int>(0);
     LoadPlayerDataRequest request;
     request.set_player_id(45);
     data_service::SendDataServiceLoadPlayerData(
         registry_, nodeEntity_, request,
-        [outstanding, weakChannel](const GrpcCallOutcome &outcome, const LoadPlayerDataResponse *reply)
+        [outstanding, weakChannel, successfulCalls, failedCalls](const GrpcCallOutcome &outcome,
+                                                              const LoadPlayerDataResponse *reply)
         {
+            if (outcome.ok())
+            {
+                ++*successfulCalls;
+            }
+            else
+            {
+                ++*failedCalls;
+            }
             ++outstanding->calls;
             outstanding->code = outcome.code;
             outstanding->hadReply = reply != nullptr;
@@ -427,8 +439,17 @@ TEST_F(GrpcClientLoopbackTest, PerCallDoneCompletesUnavailableAfterChannelIsRemo
     EXPECT_TRUE(weakChannel.expired());
     data_service::SendDataServiceLoadPlayerData(
         registry_, nodeEntity_, request,
-        [rejected](const GrpcCallOutcome &outcome, const LoadPlayerDataResponse *reply)
+        [rejected, successfulCalls, failedCalls](const GrpcCallOutcome &outcome,
+                                                const LoadPlayerDataResponse *reply)
         {
+            if (outcome.ok())
+            {
+                ++*successfulCalls;
+            }
+            else
+            {
+                ++*failedCalls;
+            }
             ++rejected->calls;
             rejected->code = outcome.code;
             rejected->hadReply = reply != nullptr;
@@ -446,8 +467,8 @@ TEST_F(GrpcClientLoopbackTest, PerCallDoneCompletesUnavailableAfterChannelIsRemo
     EXPECT_EQ(rejected->calls, 1);
     EXPECT_EQ(rejected->code, kGrpcStatusUnavailable);
     EXPECT_FALSE(rejected->hadReply);
-    EXPECT_EQ(*globalReplyCalls_, 0);
-    EXPECT_EQ(*globalFailedCalls_, 0);
+    EXPECT_EQ(*successfulCalls, 0);
+    EXPECT_EQ(*failedCalls, 2);
 }
 
 // 合并保留:直接调用生产适配层,而非只给纯 Pick 喂候选。

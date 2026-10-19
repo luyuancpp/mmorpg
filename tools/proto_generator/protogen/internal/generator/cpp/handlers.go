@@ -31,7 +31,7 @@ func ProcessAllHandlers(wg *sync.WaitGroup, methodList internal.RPCMethods) {
 		},
 		// 不再生成 rpc_replies 回包:节点间 RPC0(Gate / Scene / SceneScene)的回包在调用点的每次调用 lambda 里完成
 		// (docs/design/muduo-rpc-channel.md §9.2);玩家回包链(PlayerServiceReplied / gPlayerServiceReplied)从无读者,
-		// 已随第 6 批删除(§13)。rpc_replies 下只剩手写的 gRPC 应答适配与 gate 的空 InitServiceHandler。
+		// 已随第 6 批删除(§13)。rpc_replies 下只剩 gate 生成的空 InitServiceHandler(battle 的是手写空壳)。
 		{
 			IsValidFunc:              IsGateNodeHostedServiceHandler,
 			GenerateDataFunc:         internal.GetServiceHandlerHeadStr,

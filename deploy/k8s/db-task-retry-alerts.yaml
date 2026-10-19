@@ -477,3 +477,54 @@ spec:
               过去 5 分钟约 {{ $value | printf "%.0f" }} 个分区的播种因位点查询失败而中止(aborted)。
               播种失败会让 session Setup 报错、成员约 1s 后重新入组,本 zone 组随之反复再平衡,存盘消费一停一启。
               查 Kafka coordinator 与 broker 是否正常、对方组(正向交接时就是 legacy 组)的位点是否可读;go/db 日志搜「group handoff seeding failed」。
+
+    # 存盘补投(go/db/internal/saveoutbox,data-overwrite-rollback-audit-20261018.md §2.2 go-db-pipeline#1):
+    # db_save_outbox_total{result} 由每个 dual 实例的补投器计数,启动时以 0 建出全部 result。terminal / exhausted 在每次复查
+    # (缺省 10 分钟一次)时重复计数,所以「15 分钟窗口内有增量」= 此刻仍有停在该状态的意图。
+    - name: db-task.save-outbox
+      interval: 30s
+      rules:
+        # 意图补投达到次数上限仍未取得两表 SQL ACK:补投器已停止重投,这名玩家下次登录会被提交屏障拒绝。
+        - alert: DbSaveOutboxExhausted
+          expr: |
+            sum by (namespace) (increase(db_save_outbox_total{result="exhausted"}[15m])) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.namespace }} 有存盘意图补投已达上限仍未落库"
+            description: >-
+              过去 15 分钟复查到约 {{ $value | printf "%.0f" }} 次停在 exhausted 的意图:同一版本已补投 MaxAttempts 次(缺省 8 次,退避封顶 10 分钟),
+              两张玩家表的 SQL ACK 仍不齐。补投器不再重投;原意图字节、pending 与补投桶成员都保留,MySQL 落后于父快照,
+              这些玩家冷登录与跨场景交接会被提交屏障拒绝。go/db 日志搜「补投已达上限」拿到玩家号,按同期的延后 / 死信原因归因
+              (db_task_deferred_total、db_task_dead_letter_total)。原因消除后对该玩家 HDEL player:{<id>}:save_barrier outbox_attempts
+              重新开始计数;不要删除 outbox_* 其余字段或补投桶成员,那是这笔存盘唯一的待投副本。
+
+        # 意图已被 go/db 判为确定性拒写(进死信的围栏 / 归属 / 路由结局、Redis 归属守卫判陈旧、大字段闸、资产证据冲突)。
+        - alert: DbSaveOutboxTerminal
+          expr: |
+            sum by (namespace) (increase(db_save_outbox_total{result="terminal"}[15m])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.namespace }} 有存盘意图因确定性拒写停止补投"
+            description: >-
+              过去 15 分钟复查到约 {{ $value | printf "%.0f" }} 次停在终态的意图。终态原因写在 player:{<id>}:save_barrier 的 outbox_terminal_reason,
+              载荷在死信(kafka:dead:queue:{topic})或原意图里保全。同一版本不会再被重投,也就不会再每轮多一条死信。
+              该玩家下一次存盘(新版本)会自动离开终态;离线玩家要按死信原因处置(大字段:裁剪数据或调高 BlobGuard 后用死信工具重新入队)。
+
+        # legacy go/db 与 dual 补投并存:补投整拍暂停,等 legacy 实例按世代门禁退出。
+        - alert: DbSaveOutboxPausedByLegacyWriter
+          expr: |
+            sum by (namespace) (increase(db_save_outbox_total{result="legacy_alive"}[10m])) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.namespace }} 仍有 legacy go/db 在消费,存盘补投已暂停"
+            description: >-
+              本 zone 的 db:save_protocol:legacy_alive:zone:<ZoneId> 持续存在:有 Fencing.Mode=legacy 的 go/db 在续写存活标记。
+              现行 scene / login 只说严格提交屏障,legacy 实例不写两表 SQL ACK,本 zone 冷登录会持续失败。
+              legacy 实例发现世代标记后应在 5 秒内自行停机并以非零码退出(日志 SAVE-PROTOCOL-CONFLICT);持续告警说明它没退出,
+              或部署仍在拉起 legacy 配置。把该 zone 的 go-svc-db-config 改回 Fencing.Mode=dual 并滚动重启。

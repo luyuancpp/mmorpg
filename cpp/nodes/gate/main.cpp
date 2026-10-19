@@ -12,17 +12,14 @@
 #include "node/system/node/node_entry.h"
 #include "node/system/etcd/etcd_transport.h"
 #include "handler/rpc/gate_service_handler.h"
-#include "handler/rpc/client_message_processor.h"
+#include "handler/rpc/client_session_handler.h"
 #include "handler/rpc/client_request_lane.h"
 #include "handler/rpc/router_muduo_forward.h"
-#include "handler/rpc/rpc_reply_bridge.h"
 #include "gate_codec.h"
 #include "gate_router_mode.h"
 #include "gate_security.h"
 #include "gate_version.h"
 #include "node_config_manager.h"
-#include "grpc_client/grpc_init_client.h"
-#include "session/system/session.h"
 #include "session/manager/session_manager.h"
 #include "network/network_utils.h"
 #include "proto/common/base/session.pb.h"
@@ -141,7 +138,7 @@ namespace
     {
         ProtobufDispatcher protobufDispatcher;
         ProtobufCodec codec;
-        RpcClientSessionHandler rpcClientHandler;
+        GateClientSessionHandler clientSessionHandler;
         DependencyGate dependencyGate;
         TimerTaskComp playerCountReportTimer;
         // CPP-2 进场转发欠账的到期补发(handler/event/scene_entry_dispatch.cpp)。回调不捕获任何对象;
@@ -166,7 +163,7 @@ namespace
             conn->forceClose(); }),
               codec([this](const TcpConnectionPtr &conn, const MessagePtr &msg, Timestamp ts)
                     { protobufDispatcher.onProtobufMessage(conn, msg, ts); }),
-              rpcClientHandler(codec, protobufDispatcher)
+              clientSessionHandler(codec, protobufDispatcher)
         {
         }
     };
@@ -194,7 +191,7 @@ int main(int argc, char *argv[])
     // Gate's outbound connections, by transport:
     //   * SceneNodeService — muduo TCP RPC (in-zone Gate↔Scene messaging).
     //   * LoginNodeService / SceneManagerNodeService — gRPC, dispatched via
-    //     PickRandomNode in client_message_processor (msg_id=48 login,
+    //     PickRandomNode in client_session_handler (msg_id=48 login,
     //     scene-manager redirects, etc.). They MUST appear in the whitelist
     //     so ConnectAllNodes / AddServiceNode wire them into the local
     //     entt::registry; otherwise PickRandomNode finds an empty registry
@@ -339,33 +336,6 @@ int main(int argc, char *argv[])
 
             InitGateCodec(context.codec);
 
-            // gRPC response -> client TCP bridge(生成客户端的全局应答处理器)。
-            //
-            // 回包怎样落到客户端(路由 lane 认领、MessageContent 原样下发、其余类型包一层)只有一份实现:
-            // handler/rpc/rpc_reply_bridge.cpp。直连模式的生成客户端调用(Login.Disconnect、通用转发)经这里进桥;
-            // 路由模式的 Forward 由 router_muduo_forward.cpp 的每次调用回调直接调同一个函数,两条出站路径对客户端的
-            // 可见行为因此逐条相同(docs/design/grpc-muduo-transport.md §8、§14)。会话按响应头回显的
-            // x-session-detail-bin 找:传输层已解掉 -bin 那层,应用层值仍是 Base64 文本(§4.2),由 session 工具再解一层。
-            SetIfEmptyHandler([](const GrpcReplyContext &ctx, const ::google::protobuf::Message &reply)
-                              {
-                auto sd = GetSessionDetailsByReplyContext(ctx);
-                if (!sd) return;
-                gate_rpc_reply_bridge::DeliverReply(*sd, reply); });
-
-            // gRPC 调用失败 -> 客户端(docs/design/grpc-client-deadline-failure-callback.md §5 #8/#9)。
-            //
-            // 失败时通常没有响应头(超时 / 断线 / 本地拒绝 / trailers-only 错误都不带 initial metadata),
-            // 按 GetSessionDetailsByReplyContext 找会话的路走不通;会话从本次**发出**的 x-session-detail-bin 找回
-            // (生成的客户端保存了 Send 传入的原值,未经 Base64)。
-            // 回 kServiceUnavailable 而不是具体业务码:传输失败 = 结果未知,下游可能已经执行(有副作用的 C2S
-            // 靠 Go 侧幂等键兜重试)。采样日志、路由 lane 认领、找会话回 tip 的细节同样只在 rpc_reply_bridge 里。
-            SetIfEmptyFailedHandler([](const GrpcCallFailure &failure, const ::google::protobuf::Message & /*request*/)
-                                    {
-                gate_rpc_reply_bridge::NotifyCallFailure(failure.method,
-                                                         static_cast<int>(failure.code()),
-                                                         failure.message(),
-                                                         failure.FindSentMetadata(kSessionBinMetaKey)); });
-
             // Post-startup: attach client TCP callbacks + initialize session ID generator.
             // Override connection/message callbacks BEFORE WaitAndRun so that any
             // client connecting while dependencies are still pending gets the correct
@@ -400,7 +370,7 @@ int main(int argc, char *argv[])
 
                         n.GetTcpServer().setConnectionCallback(
                             [&context](const TcpConnectionPtr& conn) {
-                                context.rpcClientHandler.OnConnection(conn);
+                                context.clientSessionHandler.OnConnection(conn);
                             });
                         n.GetTcpServer().setMessageCallback(
                             [&context](const TcpConnectionPtr& conn, muduo::net::Buffer* buf, Timestamp ts) {

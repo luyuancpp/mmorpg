@@ -528,12 +528,27 @@ func TestDecideRepair(t *testing.T) {
 			want:    repairRestore,
 			wantRow: RouteRow{PlayerID: player, HomeZone: 7, StorageID: 7, PlacementVersion: 2, FrozenRunID: "run-b", Rev: 5},
 		},
+		// 2026-10-18 修复评审:原用例「缓存没有落点_库的落点也清掉」(判 restore、把库的落点清成 NULL)改判 conflict ——
+		// db_first 下库的 home / 落点只会从 NULL 变成有值,rev 更高却少一列只可能是脚本之外的 DEL,覆盖会把正确的值清掉、
+		// 之后两边都没有这一列,audit 看不见。
 		{
-			name:    "maprev大于库rev_缓存没有落点_库的落点也清掉",
-			db:      dbRow(7, 7, 1, "", 3),
-			cache:   RouteImportRow{PlayerID: player, HomeZone: 8, MapRev: 4},
+			name:  "maprev大于库rev_缓存没有落点而库有_冲突不覆盖",
+			db:    dbRow(7, 7, 1, "", 3),
+			cache: RouteImportRow{PlayerID: player, HomeZone: 8, MapRev: 4},
+			want:  repairConflict,
+		},
+		{
+			name:  "maprev大于库rev_缓存没有home而库有_冲突不覆盖",
+			db:    dbRow(7, 0, 0, "", 3),
+			cache: RouteImportRow{PlayerID: player, Placement: stable(7, 1), MapRev: 5},
+			want:  repairConflict,
+		},
+		{
+			name:    "maprev大于库rev_库缺的列由缓存补上_照常覆盖",
+			db:      dbRow(0, 7, 1, "", 3),
+			cache:   RouteImportRow{PlayerID: player, HomeZone: 7, Placement: stable(7, 2), MapRev: 4},
 			want:    repairRestore,
-			wantRow: RouteRow{PlayerID: player, HomeZone: 8, Rev: 4},
+			wantRow: RouteRow{PlayerID: player, HomeZone: 7, StorageID: 7, PlacementVersion: 2, Rev: 4},
 		},
 		{
 			name:    "maprev大于库rev_库里是墓碑",

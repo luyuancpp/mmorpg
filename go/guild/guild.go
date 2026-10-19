@@ -41,6 +41,7 @@ import (
 	"shared/idsegment"
 	"shared/kafkautil"
 	"shared/killswitch"
+	"shared/placement"
 	"shared/safego"
 	"shared/serverbase"
 	"shared/snowflakealloc"
@@ -70,6 +71,9 @@ const nodeType = uint32(base.ENodeType_GuildNodeService)
 // 不足 300ms 就不同步投递、交给重投循环。与 AssetOp.OpBudgetMs 默认值同为 2500ms 只是巧合:
 // ProcessOne 内部自己按 OpBudget 切投递 / 落库,这里只限"本请求最多陪它等多久"。
 const economySyncBudget = 2500 * time.Millisecond
+
+// routeReadyProbeTimeout 是 MergeMarkerRedis.RequireRouteReady=true 时启动探针(一次读脚本)的预算。
+const routeReadyProbeTimeout = 3 * time.Second
 
 func main() {
 	flag.Parse()
@@ -377,7 +381,24 @@ func main() {
 	// GuildLogic 里的 `l.mergeFence == nil` 会是 false,于是每次建帮都去调一个
 	// 空实现,反而把"未配置"变成一条隐蔽的运行期分支。
 	var mergeFence logic.MergeFence
-	if f := logic.NewRedisMergeFence(svcCtx.MergeMarkerRedisClient); f != nil {
+	if config.AppConfig.MergeMarkerRedis.RequireRouteReady {
+		// D1 第 3 批读方门禁(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.4、§13.2 第 2 条):
+		// 闸门只在就绪标记可信时按 merge:in_progress:{zone} 判。启动期试跑一次读脚本,执行不了(连不上、INFO 在脚本里不可用、
+		// 回复形状不对)就拒启;标记暂不可信不拒启,运行期经闸门的公会写一律按封锁拒绝。Validate 已保证此时配了 Host。
+		f := logic.NewRouteReadyMergeFence(svcCtx.MergeMarkerRedisClient)
+		probeCtx, cancelProbe := context.WithTimeout(context.Background(), routeReadyProbeTimeout)
+		verdict, err := f.Probe(probeCtx)
+		cancelProbe()
+		if err != nil {
+			logx.Must(fmt.Errorf("guild merge fence route ready startup probe (MergeMarkerRedis.RequireRouteReady=true): %w", err))
+		}
+		if verdict == placement.RouteReadyTrusted {
+			logx.Infof("[guild] Merge gate requires route ready marker: startup probe verdict=%s", verdict)
+		} else {
+			logx.Errorf("[guild] Merge gate requires route ready marker: startup probe verdict=%s; guild writes gated by the merge fence are refused (fail closed) until the marker is trusted", verdict)
+		}
+		mergeFence = f
+	} else if f := logic.NewRedisMergeFence(svcCtx.MergeMarkerRedisClient); f != nil {
 		mergeFence = f
 	}
 	// 帮会按 zone 隔离:客户端请求的 zone 取 data_service 的玩家归属映射(logic/home_zone.go)。
@@ -451,6 +472,9 @@ func main() {
 	// 必须在 MustNewServer 之后:go-zero 指标的全局开关由它内部的 SetUp → StartAgent 打开,之前写的样本会被丢弃
 	// (理由与告警口径见 server.PrimeGuildInternalMetrics)。
 	server.PrimeGuildInternalMetrics()
+	if config.AppConfig.MergeMarkerRedis.RequireRouteReady {
+		logic.PrimeRouteReadyMetrics()
+	}
 	s.AddUnaryInterceptors(buildUnaryInterceptors(ks, config.AppConfig.RequestBudget())...)
 	defer s.Stop()
 

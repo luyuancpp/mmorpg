@@ -44,7 +44,7 @@ inline constexpr uint32_t kSceneEntryMaxAttempts{16};
 // 比的是 gate 上的节点实体号而不是 node_id:同 node_id 的进程重启后是新实体,那边同样没有该玩家。
 //
 // 旧指向无效一律算 kChanged,不区分"从未绑定"与"绑定过、但节点已被摘除":scene 节点下线时
-// OnNodeRemoveEventHandler / ResolveSessionTargetNode(client_message_processor.cpp)会把指向置为
+// OnNodeRemoveEventHandler / ResolveSessionTargetNode(client_session_handler.cpp)会把指向置为
 // entt::null,随后 node_gone 迁频道(沿用原 scene_id)或同 node_id 重启后的改派必须重新进场,
 // 若把无效指向当"未变化",这条路由会被当成重复事件吞掉。首登(从未收到过路由)不会因此误转发:
 // ApplyRoute 要求 session.sceneId != 0。节点以新实体重新注册、而旧进程仍持有玩家实体时会多转发一次
@@ -75,11 +75,22 @@ inline SceneNodeChange RebindSceneNode(SessionInfo& session, const entt::entity 
 // 第 3 支靠调用方传入的 nodeChange:调用方必须在转发成功之后才提交节点指向,否则重试时拿到的是
 // kUnchanged,恢复不了。生产调用方 AttemptPendingSceneEntry 正是"比较、转发、成功后提交"。
 //
-// 要不要向 scene 转发进场,三个条件任一成立即转发:
+// 要不要向 scene 转发进场,四个条件任一成立即转发:
 //   1. pendingEnterGsType 非 0:登录入场,以该登录类型转发;
 //   2. scene_id 变了:换图 / 换线,以 LOGIN_NONE(0) 转发;
-//   3. scene_id 没变但**节点变了**:同样以 LOGIN_NONE(0) 转发。
-// 三者都不成立才是重复事件,不转发(幂等)。
+//   3. scene_id 没变但**节点变了**:同样以 LOGIN_NONE(0) 转发;
+//   4. scene_id 与节点都没变,但 scene 此前被告知过一个非 0 的 epoch(session.forwardedOwnerEpoch),而路由的 owner_epoch
+//      (调用方已写进 session.ownerEpoch)**大于**它:同样以 LOGIN_NONE(0) 转发。
+// 四者都不成立才是重复事件,不转发(幂等)。
+//
+// 第 4 条(docs/design/location-release-binding.md §3.5,审计 load-handover#0):scene_manager 在 location 缺失后按首次落点
+// 铸了新 epoch、又恰好派回同一节点同一频道时,只按场景与节点判会把这条路由当重复事件吞掉 —— 持有节点的实体永远停在旧 epoch,
+// 下一次真正写盘被 owner CAS 拒绝、实体按"已废黜"销毁(回档)。最常见的触发是同连接上 BindSession 先到、按旧路由补发了旧 epoch,
+// 随后新 epoch 的路由才到。scene 侧对这条转发的处置已有:恰好 +1 → 复用实体并把缓存抬到新值;≥ +2 → 中间有别的持有者,
+// 销毁重载(player_exit::IsDeposedOnReentry)。只认"更大":epoch 只增不减,迟到的旧路由不值得再转发;0(旧版 scene_manager)
+// 永不触发。scene 从没被告知过 epoch(还没转发过,或上次转发带的是 0)时不触发:那时 scene 会在下一次转发里拿到会话当前的值,
+// 不存在"停在旧代"的实体,不为此多发一次 0 型进场。转发成功后记下这次带出的 epoch(ForwardPlayerToScene 盖的就是
+// session.ownerEpoch)。
 //
 // 第 3 条不能省:同一个 scene_id 会出现在不同节点上。scene_manager 的 world rebalance
 // (go/scene_manager/internal/logic/world_rebalance.go 的 migrateWorldChannel)迁频道时沿用原 scene_id,
@@ -104,12 +115,35 @@ bool ApplyRoute(SessionInfo& session, const uint64_t targetSceneId, const SceneN
     if (session.pendingEnterGsType != 0)
         enterType = session.pendingEnterGsType;
     else if (session.sceneId != 0 &&
-             (session.sceneId != targetSceneId || nodeChange == SceneNodeChange::kChanged))
+             (session.sceneId != targetSceneId || nodeChange == SceneNodeChange::kChanged ||
+              (session.forwardedOwnerEpoch != 0 && session.ownerEpoch > session.forwardedOwnerEpoch)))
         enterType = 0;
     if (enterType.has_value() && !forward(*enterType)) return false;
     session.sceneId = targetSceneId;
-    if (enterType.has_value()) session.pendingEnterGsType = 0;
+    if (enterType.has_value())
+    {
+        session.pendingEnterGsType = 0;
+        session.forwardedOwnerEpoch = session.ownerEpoch;
+    }
     return true;
+}
+
+// 客户端 LeaveGame(回到选角界面,TCP 不断)之后清空会话的 scene 路由状态(docs/design/location-release-binding.md §3.5 R5)。
+// 调用方必须先向原节点代发 ExitGame(gate_scene_entry::OnClientLeaveGame):清掉指向之后 gate 再也不会替这条会话通知那个节点。
+// 清掉之后,同一连接上的下一次进场只能由新的路由事件驱动:BindSession 先到时 lastSceneRoute.sceneId == 0,不按 LeaveGame
+// 之前的旧路由补发(旧路由的 epoch 已过时,补发出去会让旧节点按旧代复用 / 载入实体);等新路由到达再一起转发。
+// 保留 playerId / loginGeneration / sessionVersion:下一次 BindSession 按既有规则处理(换角取新值、同角色取 max)。
+// 欠账的索引(scene_entry_dispatch.cpp 的 tlsSessionsWithPendingEntry)由调用方摘;漏摘也无害,扫描找不到欠账会自己删索引。
+inline void ResetSceneRoute(SessionInfo& session)
+{
+    session.SetNodeEntity(common::base::SceneNodeService, entt::null);
+    session.sceneId = 0;
+    session.pendingEnterGsType = 0;
+    session.pendingSceneEntry.reset();
+    session.lastSceneRoute = SceneRouteTarget{};
+    session.homeZoneId = 0;
+    session.ownerEpoch = 0;
+    session.forwardedOwnerEpoch = 0;
 }
 
 // ---------------------------------------------------------------------------

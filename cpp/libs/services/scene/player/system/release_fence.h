@@ -17,8 +17,9 @@
 // 本节点只在本地缓存恰好等于它时才执行退出这种破坏性动作。
 //
 // 本头只放纯判定、名表与计数,不含 entt / redis / muduo / protobuf,不读任何时钟(先例:enter_fence.h)。
-// 粘合代码在 player_lifecycle.cpp(PlayerLifecycleSystem::HandleReleaseFromSceneManager),gRPC 入口
-// scene_node_service.cpp 的 HandleReleasePlayer 只委托到那里。汇总行在 redis.cpp([ReleaseFence])。
+// 粘合代码在 player_lifecycle.cpp(PlayerLifecycleSystem::HandleReleaseFromSceneManager;会话结束释放走
+// HandleSessionEndedRelease,docs/design/location-release-binding.md §3.3),gRPC 入口 scene_node_service.cpp 的
+// HandleReleasePlayer 按 session_ended 委托到其中之一。汇总行在 redis.cpp([ReleaseFence])。
 // 单测:cpp/tests/cross_zone_test 的 ReleaseFence* / ReleaseFenceEcs*。
 //
 // 不变量(改任何一条先重过设计 §4.2 与 §4.6):
@@ -124,20 +125,107 @@ namespace release_fence
 		}
 		return cachedOwnerEpoch > expectedOwnerEpoch ? Verdict::kSkipStaleRelease : Verdict::kSkipAheadOfHolder;
 	}
+
+	// ── 会话结束释放(ReleasePlayerRequest.session_ended,docs/design/location-release-binding.md §3.3)──────────────
+	//
+	// scene_manager 的 LeaveScene 拿不到"持有者已释放"证据时请 location 的持有节点释放。本节点有该玩家实体时,判定与交接释放
+	// 共用上面的 Decide(释放 = 按客户端断线退出,存盘落地后由 A1′ 写标记);本节点**完全不持有**时,按下面的判定决定要不要按
+	// owner_epoch == expected 条件补写一枚凭证标记,让 scene_manager 的下一次重试拿到证据删 location。
+	// 安全性与"改派踢线前的凭证补写"(relocate_confirm::DecideCredential)同理:本节点没有该玩家的任何内存态,盘上就是最终态;
+	// 条件写保证不会给更新的一代发证。
+
+	// 凭证判定结论。除 kWrite 外每一项都是一个"不写"的原因。名字同时是 [ReleaseFence] 汇总行里 credential_ 后缀的 key。
+	// 底层类型 uint8_t 数的是结论种类数(现 6 种)。kCount 固定为最后一项,同时是名表长度。
+	enum class SessionEndedCredential : uint8_t
+	{
+		kWrite,
+		kSkipUnversioned,  // 期望 0:scene_manager 不为 epoch 0 发会话结束释放;防御写法,写了也是"0:t",换手门不认
+		kSkipLocalHolder,  // 本节点有实体句柄 / 在途载入 / 改派待确认条目:不是"完全不持有",由那些流程自己收尾
+		kSkipMarkDisabled, // A1′ 开关关闭(SCENE_EXIT_RELEASE_MARK=0):回滚期间不发任何新标记(exit_release_mark.h)
+		kSkipDevBypass,    // dev 旁路开着(SCENE_DEV_UNSAFE_CROSS_NODE_HANDOFF,与 scene_manager 的旁路同步)
+		kSkipIdentity,     // 本节点身份不确认(疏散中 / etcd 租约推定过期,M3):写标记可能给接手的新进程开放行口
+
+		kCount
+	};
+
+	constexpr std::size_t kSessionEndedCredentialCount = static_cast<std::size_t>(SessionEndedCredential::kCount);
+
+	inline constexpr const char *kSessionEndedCredentialNames[] = {
+		"write",
+		"skip_unversioned",
+		"skip_local_holder",
+		"skip_mark_disabled",
+		"skip_dev_bypass",
+		"skip_identity",
+	};
+	static_assert(std::size(kSessionEndedCredentialNames) == kSessionEndedCredentialCount,
+				  "kSessionEndedCredentialNames 必须与 SessionEndedCredential 一一对应");
+
+	constexpr const char *SessionEndedCredentialName(SessionEndedCredential decision)
+	{
+		const auto index = static_cast<std::size_t>(decision);
+		return index < kSessionEndedCredentialCount ? kSessionEndedCredentialNames[index] : "?";
+	}
+
+	// 凭证判定的输入。默认值全部取"不写"的一侧(fail-closed):漏填任何一项都只会少写。
+	struct SessionEndedFacts
+	{
+		uint64_t expectedOwnerEpoch{0};  // ReleasePlayerRequest.expected_owner_epoch
+		bool localHolderPossible{true};  // playerList 有该玩家(含无效句柄)/ 有待入场条目 / 有改派待确认条目
+		bool markFeatureEnabled{false};  // A1′ 开关(SCENE_EXIT_RELEASE_MARK)
+		bool devUnsafeCrossNode{true};   // dev 旁路开关(SCENE_DEV_UNSAFE_CROSS_NODE_HANDOFF)
+		bool identityConfirmed{false};   // 本节点身份当前确认有效
+	};
+
+	// 全部满足才写;第一个不满足的条件就是计数的原因。顺序只影响"计到哪个原因",不影响写不写。
+	constexpr SessionEndedCredential DecideSessionEndedCredential(const SessionEndedFacts &facts)
+	{
+		if (facts.expectedOwnerEpoch == 0)
+		{
+			return SessionEndedCredential::kSkipUnversioned;
+		}
+		if (facts.localHolderPossible)
+		{
+			return SessionEndedCredential::kSkipLocalHolder;
+		}
+		if (!facts.markFeatureEnabled)
+		{
+			return SessionEndedCredential::kSkipMarkDisabled;
+		}
+		if (facts.devUnsafeCrossNode)
+		{
+			return SessionEndedCredential::kSkipDevBypass;
+		}
+		if (!facts.identityConfirmed)
+		{
+			return SessionEndedCredential::kSkipIdentity;
+		}
+		return SessionEndedCredential::kWrite;
+	}
 } // namespace release_fence
 
 // 栅栏计数。写法同 enter_fence.h 的 enter_fence_stats(relaxed atomic、不接 Prometheus、player_id 不做 label、
 // 只在 scene 逻辑线程上写),由 RedisSystem 的 30s 快照定时器在计数有变化时打成一行 [ReleaseFence](进程启动以来的累计值;
 // release_fence::Alarming 的几项有增长时 WARN,否则 INFO)。
 //
-//   verdicts[]   HandleReleaseFromSceneManager 每一次判定按结论计数,key 见 release_fence::kVerdictNames
-//   not_found    玩家不在本节点(幂等返回)。成功交接后源实体已销毁时就是这一项,数值大不代表异常
+//   verdicts[]   HandleReleaseFromSceneManager / HandleSessionEndedRelease 对本地实体的每一次判定按结论计数,
+//                key 见 release_fence::kVerdictNames
+//   not_found    交接释放时玩家不在本节点(幂等返回)。成功交接后源实体已销毁时就是这一项,数值大不代表异常
+//   session_ended            收到的会话结束释放总数(docs/design/location-release-binding.md §3.3)。登出 / 断线后
+//                            LeaveScene 拿不到释放证据时才会发,平时低速率;持续升高看 scene_manager 的 pending 计数
+//   credential_<结论>        本节点完全不持有时的凭证判定分布,key 见 release_fence::kSessionEndedCredentialNames
+//   credential_written / credential_epoch_moved / credential_failed  凭证条件写的结果(与 A1′ 同一段 Lua)
 namespace release_fence_stats
 {
 	struct Counters
 	{
 		std::array<std::atomic<uint64_t>, release_fence::kVerdictCount> verdicts{};
 		std::atomic<uint64_t> notFound{0};
+		std::atomic<uint64_t> sessionEnded{0};
+		std::array<std::atomic<uint64_t>, release_fence::kSessionEndedCredentialCount> credentialDecisions{};
+		std::atomic<uint64_t> credentialWritten{0};
+		std::atomic<uint64_t> credentialEpochMoved{0};
+		std::atomic<uint64_t> credentialFailed{0};
 	};
 
 	inline Counters &Get()
@@ -158,10 +246,25 @@ namespace release_fence_stats
 		}
 	}
 
+	// 越界值不计(DecideSessionEndedCredential 产不出越界值;防御写法)。
+	inline void IncCredentialDecision(release_fence::SessionEndedCredential decision)
+	{
+		const auto index = static_cast<std::size_t>(decision);
+		if (index < release_fence::kSessionEndedCredentialCount)
+		{
+			Inc(Get().credentialDecisions[index]);
+		}
+	}
+
 	struct Snapshot
 	{
 		std::array<uint64_t, release_fence::kVerdictCount> verdicts{};
 		uint64_t notFound{0};
+		uint64_t sessionEnded{0};
+		std::array<uint64_t, release_fence::kSessionEndedCredentialCount> credentialDecisions{};
+		uint64_t credentialWritten{0};
+		uint64_t credentialEpochMoved{0};
+		uint64_t credentialFailed{0};
 
 		bool operator==(const Snapshot &) const = default;
 
@@ -188,6 +291,14 @@ namespace release_fence_stats
 			snapshot.verdicts[i] = counters.verdicts[i].load(std::memory_order_relaxed);
 		}
 		snapshot.notFound = counters.notFound.load(std::memory_order_relaxed);
+		snapshot.sessionEnded = counters.sessionEnded.load(std::memory_order_relaxed);
+		for (std::size_t i = 0; i < snapshot.credentialDecisions.size(); ++i)
+		{
+			snapshot.credentialDecisions[i] = counters.credentialDecisions[i].load(std::memory_order_relaxed);
+		}
+		snapshot.credentialWritten = counters.credentialWritten.load(std::memory_order_relaxed);
+		snapshot.credentialEpochMoved = counters.credentialEpochMoved.load(std::memory_order_relaxed);
+		snapshot.credentialFailed = counters.credentialFailed.load(std::memory_order_relaxed);
 		return snapshot;
 	}
 } // namespace release_fence_stats

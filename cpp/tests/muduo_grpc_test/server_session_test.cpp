@@ -807,7 +807,10 @@ TEST_F(ServerSessionTest, MalformedHttpRequestsAreResetByNghttp2)
     for (const auto &[name, headers] : cases)
     {
         SCOPED_TRACE(name);
-        const int32_t id = h_.client.OpenStream(headers, true);
+        // 普通提交会把 X-Upper 变成合法的小写头;只有此场景显式保留非法原名,拒绝断言不变。
+        const int32_t id = name == "uppercase name"
+                               ? h_.client.OpenStreamWithUnnormalizedNames(headers, true)
+                               : h_.client.OpenStream(headers, true);
         ASSERT_GT(id, 0) << h_.client.lastError();
         ASSERT_TRUE(h_.Pump());
         const ClientStream &stream = StreamOf(h_.client, id);

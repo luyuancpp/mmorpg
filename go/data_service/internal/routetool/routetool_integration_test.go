@@ -118,3 +118,97 @@ func TestRouteToolImportThenAuditOnRealStore(t *testing.T) {
 	assert.Equal(t, 1, audit.DBOnlyUnpublished)
 	assert.Equal(t, 1, audit.Differences())
 }
+
+// TestReconcileFromCache_RealDBEndToEnd(第 1b-1 批):真库 + miniredis 走一遍全局库回档后的恢复流程。
+//
+//  1. 导入两名玩家,库里另有一行只在库里(孤儿行);
+//  2. 在缓存里把 9101 的 maprev 加到 rev+2 并改值 —— 等价于「库被回档丢了两版」;默认口径的 audit 报 redis_rev_ahead;
+//  3. freeze → reconcile-from-cache(dry-run 零写入;真跑把缓存那一版连同 rev 写回库)→ audit -frozen-recovery 退出码 0
+//     (孤儿行照常计 db_only_unpublished,但不计入退出码;默认口径仍是 1)→ unfreeze(没有就绪标记,显式确认放行)
+//     → W1 恢复可写。
+func TestReconcileFromCache_RealDBEndToEnd(t *testing.T) {
+	db := storetest.NewMigratedDB(t)
+	st, err := store.NewRouteStore(db.Cfg, store.RouteStoreOptions{
+		FenceShards: placement.DefaultRouteFenceShards,
+		Writer:      store.NewRouteWriterID("route_tool_it", "localhost"),
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = st.Close() })
+
+	mr := miniredis.RunT(t)
+	rd := redis.MustNewRedis(redis.RedisConf{Host: mr.Addr(), Type: "node"})
+	setKeys(t, mr, map[string]string{
+		"player:zone:9101":   "1",
+		"player:maprev:9101": "2",
+		"player:zone:9102":   "2",
+	})
+	ctx := context.Background()
+
+	var out, errOut bytes.Buffer
+	imp, err := Import(ctx, rd, st, ImportOptions{Batch: 2, MaxReport: 100, Stdout: &out, Stderr: &errOut})
+	require.Equal(t, ExitClean, ImportExitCode(imp, err), errOut.String())
+	_, err = db.Raw.Exec("INSERT INTO player_route (route_shard, player_id, home_zone, storage_id, placement_version, frozen_run_id,"+
+		" rev, updated_by, created_at_ms, updated_at_ms) VALUES (?, 9105, 1, NULL, NULL, NULL, 1, 'it-orphan', 1, 1)",
+		uint64(placement.RouteRowShard(9105)))
+	require.NoError(t, err)
+
+	require.NoError(t, mr.Set("player:zone:9101", "5"))
+	require.NoError(t, mr.Set("player:maprev:9101", "4"))
+	auditOnce := func(frozenRecovery bool) (AuditReport, int) {
+		t.Helper()
+		var out, errOut bytes.Buffer
+		rep, err := Audit(ctx, rd, st, AuditOptions{Batch: 2, MaxReport: 100, MaxRecheck: 100, Stdout: &out, Stderr: &errOut,
+			Sleep: noSleep, FrozenRecovery: frozenRecovery})
+		code := AuditExitCode(rep, err)
+		t.Logf("audit frozen_recovery=%t exit=%d stdout=%s stderr=%s", frozenRecovery, code, out.String(), errOut.String())
+		return rep, code
+	}
+	before, code := auditOnce(false)
+	require.Equal(t, ExitAttention, code)
+	require.Equal(t, 1, before.RedisRevAhead, "缓存 maprev 大于库 rev:库被回档的信号")
+
+	freezeCtx, cancel := context.WithTimeout(ctx, store.RouteFreezeTimeoutMin)
+	defer cancel()
+	_, err = st.FreezeRouteWriters(freezeCtx)
+	require.NoError(t, err)
+
+	repair := func(dryRun bool) RepairReport {
+		t.Helper()
+		var out, errOut bytes.Buffer
+		rep, err := ReconcileFromCache(ctx, rd, st, RepairOptions{DryRun: dryRun, Batch: 2, MaxReport: 100, Stdout: &out, Stderr: &errOut})
+		require.Equal(t, ExitClean, RepairExitCode(rep, err), "stdout=%s stderr=%s", out.String(), errOut.String())
+		return rep
+	}
+	dry := repair(true)
+	assert.Equal(t, 1, dry.Restored)
+	row, _ := st.GetRoutes(ctx, []uint64{9101})
+	assert.Equal(t, uint64(2), row[9101].Rev, "dry-run 零写入")
+
+	applied := repair(false)
+	assert.Equal(t, 1, applied.Restored)
+	assert.Equal(t, 1, applied.Matched, "9102 两边一致")
+	row, _ = st.GetRoutes(ctx, []uint64{9101})
+	assert.Equal(t, uint64(4), row[9101].Rev, "rev 置为 maprev")
+	assert.Equal(t, uint32(5), row[9101].HomeZone, "值取缓存那一版")
+
+	recovered, code := auditOnce(true)
+	assert.Equal(t, ExitClean, code, "冻结期恢复口径:孤儿行不计入退出码,其余为 0")
+	assert.Equal(t, 1, recovered.DBOnlyUnpublished)
+	assert.Zero(t, recovered.RedisRevAhead)
+	_, code = auditOnce(false)
+	assert.Equal(t, ExitAttention, code, "默认口径下孤儿行仍算差异")
+
+	var uout, uerr bytes.Buffer
+	urep, err := Unfreeze(ctx, rd, st, UnfreezeOptions{
+		CacheUnverifiedAcknowledged: true,
+		Timeout:                     store.RouteFreezeTimeoutMin,
+		Identity:                    func(context.Context) (RedisIdentity, error) { return RedisIdentity{}, nil },
+		Stdout:                      &uout,
+		Stderr:                      &uerr,
+	})
+	require.Equal(t, ExitClean, UnfreezeExitCode(urep, err), uerr.String())
+	assert.True(t, urep.Changed)
+	res, err := st.RegisterHome(ctx, store.RouteRegisterRequest{PlayerID: 9199, HomeZone: 1})
+	require.NoError(t, err)
+	assert.Equal(t, store.RouteRegisterInserted, res.Outcome, "解冻之后 W1 恢复")
+}

@@ -643,6 +643,8 @@ B 收到观战结束推送;B 观战中点排队 → 观战被清退(NotifySpecta
 - 票据吊销(踢人 / 封号中途):目前靠房间销毁;需要时加 `RevokeTicket` 走 match→battle gRPC;
 - 观众直连上限单独配置(现在与参战者共享 `battle_max_connections`)。
 
+> **2026-10-17 契约勘误**：需要保留的是通用回包行为，现由 `gate_rpc_reply_bridge::DeliverReply` 收口；`SetIfEmptyHandler` 全局安装已删除，直连和路由的每次调用回调分别调用同一桥接。battle 收缩结论不变。
+
 ### 18.8 Codex 验证清单(按序;任一步红即停)
 
 1. **重生成 proto**(仓库根):`pwsh -File tools/scripts/dev_tools.ps1 -Command proto-gen-run`。期望:`proto/message_id.txt` 末尾新增 `BattleClientPlayerNotifyBattleAssigned` / `BattleNodeIssueBattleTicket` / `MatchServiceRequestBattleTicket`(`BattleClientPlayerRequestBattleTicket` 已删,不再出现);`cpp/generated/rpc/service_metadata/{player_battle,battle_node,match_service}_service_metadata.h` 出现同名 `*MessageId` 常量;`robot/generated/pb/game/message_id.go` 同;`robot/logic/handler/message_body_handler.go` 的 map 只多一行 `BattleClientPlayerNotifyBattleAssigned`(生成器 `robot_case.go` 只收服务名含 `ClientPlayer` / `GamePlayer` 的服务,`MatchService*` 应答由 `match_service_responses.go` 的 `init()` 自行登记,handler 函数已手写);`client/unity/Assets/Scripts/Net/Generated/` 多两个 handler 桩(客户端仓的事,不在本仓验)。**第 1 步之前 C++ / robot 编译不过是预期的。**
@@ -1259,6 +1261,8 @@ battle-transport-decision.md §6 和 D37 要删的东西全部还在,也都参�
 | 13 | §21.5 第 4 条 | 两个冒烟场景的战斗步骤可能被拒 | 两者后果不同:features-smoke 的 `SetAutoBattle` 要等同号回包,gate 回的是 tip、robot 不处理,路由模式下**必定** 15s 超时失败;team-smoke 的 `send` 不检查拒绝,战斗靠 6s 超时默认行动推进、下行经 gate 回落照样收到,**大概率仍输出 `TEAM_SMOKE_OK`**,把拒绝掩盖了,不能当战斗上行的证据;其文件头「全程经 gate 中继(D23 回落)」在路由模式下不成立。收缩后两者都改走直连(D73) | `features_smoke_scenario.go:24, 417-447`、`team_smoke_scenario.go:33-36, 659-667, 874-892`(核验时) |
 | 14 | §21.5 第 5 条 | 战斗中换 gate 之后,Kafka 回落推送会投到旧会话,恢复只能靠客户端补签后重连 | 换 gate 本身**不会**断开通往 battle 的直连;投到旧会话的只是「当时没有活直连」的那部分下行。补签加重连只能恢复直连,**不会刷新路由**(`HandleIssueBattleTicket` / `AttachDirectConnection` 都不改 routing),旧路由一直保持到战斗结束。收缩后 `RefreshRoutingFromSession` 已删(D71),战斗帧不再回落,残留影响只剩大厅公告(§22.5 第 3 条) | `battle_room_manager.cpp:1267-1289, 1362-1412, 1728-1775`(核验时) |
 | 15 | §21.5 第 6 条 | 本地端口冲突,给 battle 设 `RPC_PORT=20010` 绕过 | 补出处与现状:见 `PROGRESS.md:4201`;根因是 `etcd_service.cpp:275`(端口 CAS 失败后重试时不清零端口)加 `node_allocator.cpp:227`(把残留端口当预设端口),代码**未修**;绕法只在 `start_game.ps1:585-586`(当前工作树;核验时为 :583-584),`cpp_nodes.ps1` / `dev_tools.ps1 cpp-node-start` 不设 `RPC_PORT`,仍会踩到 | 09-29 核验遗漏项(风险类) |
+
+> **2026-10-17 契约勘误**：本表第 5 / 6 行是当时核验记录。当前通用出口为 `gate_rpc_reply_bridge::DeliverReply`（含响应类型到消息号的反查），不再是 gate main 的全局处理器；直连按发送时会话，路由按响应头回显会话交桥。
 
 ## 24. 全球对局终态先于通知的耐久结果提交（2026-10-16，实施中）
 

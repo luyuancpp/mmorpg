@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,13 +23,15 @@ import (
 const testReplyInstance = "0b6c2f5e-6a3d-4c1b-9f2e-8d7a6b5c4d3e"
 
 // replyStampRecorder 同时充当回调登记方与读任务生产者:只记下登记的 taskID 与发出的任务,
-// 不回调,收尾由用例显式驱动。
+// 不回调,收尾由用例显式驱动。sendErr 非空时发送记下任务后返回该错误,模拟 Kafka 发送失败。
 type replyStampRecorder struct {
 	instance   string
 	registered map[string]dispatcher.ResultCallback
+	cancelled  []string
 	single     int
 	batch      int
 	sent       []*login_proto.DBTask
+	sendErr    error
 }
 
 func (r *replyStampRecorder) Register(id string, _ time.Duration, cb dispatcher.ResultCallback) {
@@ -40,16 +43,23 @@ func (r *replyStampRecorder) Register(id string, _ time.Duration, cb dispatcher.
 
 func (r *replyStampRecorder) ReplyInstance() string { return r.instance }
 
+func (r *replyStampRecorder) Cancel(ids ...string) {
+	r.cancelled = append(r.cancelled, ids...)
+	for _, id := range ids {
+		delete(r.registered, id)
+	}
+}
+
 func (r *replyStampRecorder) SendTask(_ context.Context, task *login_proto.DBTask, _ string) error {
 	r.single++
 	r.sent = append(r.sent, task)
-	return nil
+	return r.sendErr
 }
 
 func (r *replyStampRecorder) SendTasks(_ context.Context, tasks []*login_proto.DBTask, _ string) error {
 	r.batch++
 	r.sent = append(r.sent, tasks...)
-	return nil
+	return r.sendErr
 }
 
 func TestNewDBReadTask_StampsReplyInstance(t *testing.T) {
@@ -142,5 +152,41 @@ func TestEnsurePlayerAllDataInRedisAsync_StampsRegistrarReplyInstance(t *testing
 	}
 	if calls != 1 || gotErr == nil {
 		t.Fatalf("onComplete calls = %d err = %v, want 1 / non-nil", calls, gotErr)
+	}
+}
+
+// Kafka 发送失败时必须撤掉本批全部登记:留着它们,每条都会在 TTL 到期时被兜底扫描计成
+// timed_out,把发送故障伪装成 Pub/Sub 或 go/db 的送达问题。
+func TestEnsurePlayerAllDataInRedisAsync_SendFailureCancelsRegistrations(t *testing.T) {
+	mr := miniredis.RunT(t)
+	rc := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	t.Cleanup(func() { _ = rc.Close() })
+
+	sendErr := errors.New("injected kafka send failure")
+	rec := &replyStampRecorder{instance: testReplyInstance, sendErr: sendErr}
+	calls := 0
+	var gotErr error
+	EnsurePlayerAllDataInRedisAsync(context.Background(), rc, rec, rec, 42, 0, func(err error) {
+		calls++
+		gotErr = err
+	})
+
+	if calls != 1 || gotErr == nil || !strings.Contains(gotErr.Error(), sendErr.Error()) {
+		t.Fatalf("onComplete calls = %d err = %v, want exactly 1 carrying %q", calls, gotErr, sendErr)
+	}
+	if len(rec.sent) == 0 {
+		t.Fatal("cold read did not try to send any task")
+	}
+	if len(rec.registered) != 0 {
+		t.Fatalf("%d registrations left behind after send failure, want 0", len(rec.registered))
+	}
+	cancelled := make(map[string]bool, len(rec.cancelled))
+	for _, id := range rec.cancelled {
+		cancelled[id] = true
+	}
+	for _, task := range rec.sent {
+		if !cancelled[task.GetTaskId()] {
+			t.Fatalf("task %s was registered but not cancelled after send failure", task.GetTaskId())
+		}
 	}
 }

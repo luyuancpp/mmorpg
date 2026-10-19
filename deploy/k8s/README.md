@@ -846,7 +846,8 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
     未注入时写 `disabled`),换了口令重跑 `infra-up` 即滚动,旧口令随旧 Pod 退场。**不要绕过脚本直接 `kubectl apply` 本 manifest**。
 - **建库**:`mmorpg_player_inbox` 只登记在 `deploy/mysql-init/00_init_zone_dbs.sql`。**存量 PVC 要手工执行**
   (`kubectl exec -n mmorpg-infra deploy/mysql -- sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS mmorpg_player_inbox DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON mmorpg_player_inbox.* TO '"'"'appuser'"'"'@'"'"'%'"'"'; FLUSH PRIVILEGES;"'`),
-  否则 `player-inbox-migrate` 以退出码 1 失败,发布在 Deployment 之前中断。
+  否则 `player-inbox-migrate` 以退出码 1 失败。staging / prod(或 dev 带 `-WaitReady`)的发布在 Deployment 之前中断;
+  dev 不带 `-WaitReady` 时脚本不等 Job,Deployment 照常滚动,新 Pod 表现为 CrashLoopBackOff(`Apply-GoSvcMigrateJob` 的 `$gateOnJob`)。
 - **建表**:`manifests/go-svc/player-inbox-migrate.yaml`,`args: ["-f", "/app/etc/player_inbox.yaml", "-migrate"]`,按 `proto/player_inbox/player_inbox_table.proto`
   建 `player_inbox_stream` / `player_inbox_item` / `player_inbox_audit`(入口 `go/player_inbox/player_inbox.go` 的 `-migrate`,照 go/trade)。
   TiDB 上的索引预切不在 Job 里做,见 runbook「TiDB 索引预切」。
@@ -856,28 +857,49 @@ player-inbox 与 trade / friend 同形:全局池服务(`$GoSvcCatalogue['player-
   第一次部署时必须为空(`[]`);**全部 scene 打开 `consumer_enabled` 之后**才在服务 yaml 里填上并重跑 `infra-up`(上线顺序第 6 步)。
 - **消费开关**(2026-10-17 起,交接 `docs/handoff/player-inbox-handoff-20261015.md` §6 H1):权威值只有 git 跟踪的 `bin/etc/game_config.yaml`
   的 `player_inbox.consumer_enabled`,与入箱白名单同口径。`node-config` 的 `game_config.yaml` 把 `player_inbox` 段从那里整段复制
-  (`Get-AuthoritativeYamlBlock`,`periodic_fetch_minutes` 跟着走),不读集群现状(zone-rollback 会删 namespace)。值只认小写 `true` / `false`,
-  缺键或写成 `yes` 等都在生成期 throw。
+  (`Get-AuthoritativeYamlBlock`,`periodic_fetch_minutes` 跟着走);渲染值不从集群取(zone-rollback 会删 zone namespace),
+  集群现状只用于下面写前门禁的交叉核对。值只认小写 `true` / `false`,缺键或写成 `yes` 等都在生成期 throw。
   - **开消费 = 改 yaml 并提交**:把 `consumer_enabled` 改成 `true` 并提交,再逐 zone `zone-up` 并滚动 scene(上线第 5 步;ConfigMap 变了
     不会自己重启 C++ 进程)。`false` 就是回滚下限(第 4 步)。这份 yaml 本机 scene 也读,改了本机同时生效。
   - 以前的 `-PlayerInboxConsumer off|on` 默认 off、不粘滞、包装入口不透传,打开消费之后任何一次 `k8s-release-zone` / `zone-up` / `zone-rollback`
     都会把它写回 false。现在这个参数**只核对、不改值**:留空 = 不核对;给 `on` / `off` 时必须与 yaml 一致,不一致在任何写操作之前拒绝并提示去改 yaml。
     包装入口不透传它,也不需要透传。
-  - **写前门禁**(`Assert-PlayerInboxConsumerGate`,`zone-up` / `all-up` / `infra-up` 都判):yaml 里消费端是 `false`、而服务 yaml 的
-    `PlayerInbox.EnqueueTypes` 非空时,在任何写操作之前拒绝部署。这种状态下 GM 处置照样回 `created=true`,却没有 scene 执行,条目
-    `delivery_count=0`,进不了任何告警。明知如此仍要部署(例如紧急关消费),直接调本脚本并显式传 `-AllowPlayerInboxConsumerOff`
-    (只放行、打一条警告,不改渲染值;包装入口不透传)。正常关消费的顺序是先把 `EnqueueTypes` 改回 `[]` 并重跑 `infra-up`,再关 `consumer_enabled`。
-    放行时写路径打一行 `player-inbox consumer gate: consumer_enabled=... enqueue_types=N ... OK`。
+  - **写前门禁**(`Assert-PlayerInboxConsumerGate`,`zone-up` / `all-up` / `infra-up` 都判,先于任何写操作):拦「消费端关、入箱白名单非空」。
+    这种状态下 GM 处置照样回 `created=true`,却没有 scene 执行,条目 `delivery_count=0`,进不了任何告警。分三层:
+    1. **两份 yaml**:当前检出里 `consumer_enabled=false` 而 `EnqueueTypes` 非空。这一层只拦同一个检出里的矛盾。
+    2. **另一侧线上的值**(非 DryRun,`Read-PlayerInboxGateLiveFacts`,只读):zone 与 infra 分开部署、可以来自不同 commit。
+       本次把 `false` 渲染进 node-config(zone-up / `all-up -SkipInfra`)时,读 infra 线上 `go-svc-player-inbox-config` 的白名单,非空即拒;
+       本次把非空白名单渲染进 ConfigMap(infra-up / all-up)时,读线上全部 `<-NamespacePrefix>-*` 的 node-config,有 zone 不是 `true` 即拒
+       (all-up 先部署白名单、后部署 zone,所以「同一提交里开消费又填白名单」不能用一次 all-up 完成)。读不到就拒绝(fail-closed);
+       跨 namespace 列 ConfigMap 要集群级读权限。DryRun 不读集群,门禁行写 `live=skipped(dry-run)`。
+       局限:读的是 ConfigMap 不是进程,ConfigMap 改了而 Pod 没滚动时两者可以不一致,验收仍看 scene 启动行与 `GmSanctionPlayer` 的回包。
+    3. **来源**:两份 yaml 相对 HEAD 有未提交改动时,staging / prod 的真部署拒绝;dev 与 DryRun 只告警。部署读的是工作区文件,
+       而 `bin/etc/game_config.yaml` 也是本机 scene 的配置,本机联调改了它不能随部署进集群。
+    明知如此仍要部署(例如紧急关消费),直接调本脚本并显式传 `-AllowPlayerInboxConsumerOff`(只豁免 1、2 两层,打一条警告放行,不改渲染值)。
+    包装入口(`dev_tools.ps1` / `k8s_image.ps1` / `k8s_zone_rollback.ps1`)没有这个开关;从包装入口被拒时,先把 `EnqueueTypes` 改回 `[]` 并提交、
+    重跑 `infra-up`,门禁随之放行。正常关消费的顺序是先把 `EnqueueTypes` 改回 `[]` 并重跑 `infra-up`,再关 `consumer_enabled`。
+    放行时写路径打一行 `player-inbox consumer gate: consumer_enabled=... enqueue_types=N ... head=<sha> worktree=clean|dirty live=... OK`。
+  - **开消费之后回滚 zone**:用当前 HEAD 的脚本配旧 `-NodeImage`,或 `kubectl rollout undo`。不要检出开消费之前的旧 commit 重跑 `zone-up`:
+    那个 commit 的 yaml 里 `consumer_enabled=false`,会把消费关掉(带线上核对的脚本会拒绝;更早的脚本没有这一层,直接关掉)。
+    确实要重跑旧 commit,先按 runbook §11 第 1 步关入箱。
 - **连接数**:`MySQL.MaxOpenConn`(以服务 yaml 为准,规划按 20)× 2 副本已登记进 MySQL 连接总账(`PlayerInboxReplicas` / `PlayerInboxMaxOpen`);
   按公式手算规划档峰值 1620 → 1700(未运行)。
 - **告警**:`deploy/k8s/player-inbox-alerts.yaml`(PrometheusRule,与 `owner-epoch-alerts.yaml` 同法安装):
   ```bash
   kubectl apply -n observability -f deploy/k8s/player-inbox-alerts.yaml
   ```
-  三组:`player-inbox.correctness`(critical:围栏倒退、epoch 超前、CursorAhead、Ack 异常结果、对账不一致)、`player-inbox.stuck`(warning:
-  已投递未确认最老 > 1h、`max_delivery_count ≥ 5`、提醒积压 > 5 分钟、独占库连接池用满、SETTLED_UNKNOWN)、`player-inbox.info`(未决条目趋势,不打扰人)。
-  连接池指标是 client_golang 的 `go_sql_*{db_name="player_inbox"}`,不在 `mysql-connection-alerts.yaml` 的 `mmorpg_sql_pool_*` 覆盖范围内。
-  扫描型 gauge 只由领导者产出,规则一律 `max()`;scene 侧信号只在 `[PlayerInbox] metric=...` 日志里,LogQL 值班查询写在告警文件头。
+  四组 18 条(在 Alertmanager 按组名配路由 / 静默时四组都要配):
+  - `player-inbox.correctness`(critical):`FenceRegressed` 围栏倒退、`EpochAhead` epoch 超前、`CursorAhead`、`AckAnomaly` Ack 异常结果、
+    `ReconcileMismatch` 对账不一致;
+  - `player-inbox.stuck`(warning):`ConsumerMaybeDisabled` 入箱在涨而锁路径 Fetch 不涨、`DeliveredUnackedTooOld` 已投递未确认最老 > 1h、
+    `PoisonSuspect` 投递 ≥ 5 次、`NotifyBacklog` 提醒积压 > 5 分钟、`SqlPoolSaturated` 独占库连接池用满、`SettledUnknown`;
+  - `player-inbox.reconcile`(warning):`ReconcileStalled` 3 小时没有一轮成功、`ReconcileRoundsFailing`、`ReconcileTruncated`、`ReconcileLedgerInvalid`;
+  - `player-inbox.info`(不打扰人):`OpenItemsTrend` 未决条目趋势、`DeliveredUnackedStale` 投递超过 24 小时仍未确认、`ForceVoided` 强制终结。
+
+  告警名都带 `PlayerInbox` 前缀,处置逐条见 runbook §5。连接池指标是 client_golang 的 `go_sql_*{db_name="player_inbox"}`,
+  不在 `mysql-connection-alerts.yaml` 的 `mmorpg_sql_pool_*` 覆盖范围内。扫描型 gauge 只由领导者产出,规则一律 `max()`。
+  scene 侧信号只在 `[PlayerInbox] metric=...` 日志里,LogQL 值班查询写在告警文件头,流选择器是 `{job="cpp_nodes", service="scene"}`
+  (C++ 日志 sidecar 不打 `app` 标签);契约测试核对选择器用到的标签都在 sidecar 配置里。
   抓取前提:集群里要有指向 9270 的 ServiceMonitor / PodMonitor(或按注解抓取的 job),否则规则全部是哑的。
 - **合服**:收件箱表按全局唯一的 player_id 存,没有 zone 列,合服不搬不改;`tools/merge_zone` 的合服前审计多了 `player_inbox` 一行(见 `docs/ops/merge-zone-runbook.md`)。
 
@@ -1548,6 +1570,35 @@ C++ 节点(gate / scene / battle)连共享 Redis(`redis.<InfraNamespace>:6379`)�
 - 契约测试:`tools/scripts/tests/k8s_deploy_contract.tests.ps1` 的 3a 节(`zone Redis 口令…`)与 battle 段(`battle:带口令的 infra-up…`),
   `tools/scripts/tests/k8s_client_entry_contract.tests.ps1` 的「库:-PodAnnotations 与 sidecar 配置指纹…」。
 
+## C++ 节点的文件描述符上限(2026-10-18,A0-2 / gate 准入 G4 P0-1)
+
+- **做法**:gate / scene / battle 在 `Node::Initialize` 自抬 RLIMIT_NOFILE 软限到 min(硬限, 1048576),只抬不降、不动硬限。实现在 `cpp/libs/engine/core/node/system/node/open_file_limit.h`。
+  - 需求 = 客户端面准入上限 + 4096:gate 为 `GateMaxConnections` + 4096(默认 24096),battle 为 `BattleMaxConnections` + 4096(默认 8192),scene 为 4096。
+  - 抬完仍不够时缺省拒启:stderr 打 `FATAL open file limit config: …`,Pod 进 CrashLoop。
+  - 每次启动 stdout 都有一行 `[open_file_limit] …`(`kubectl logs` 可见)。
+- **拒启的影响面按形态不同,不等于「滚动停住」**:C++ Deployment 没写 strategy,按缺省 25% / 25%。
+  - scene 缺省 4 副本,滚动时先少一台;
+  - battle hostPort 形态(maxUnavailable 1)单副本时整体停服;
+  - external gate(OnDelete)一次坏一台;
+  - 全新 zone-up 整区起不来。
+  - 所以发布前先读各节点池硬限是硬前置。
+- **运维豁免 `NODE_OPEN_FILE_LIMIT_MODE=warn`**:只打 WARN、继续启动。
+  - 代价:客户端连接可能先占满 fd 表,之后重连与日志滚动也会 EMFILE,节点可能被 etcd 摘除或崩溃。
+  - gate / battle 的应急首选是把准入上限调到 ≤ 软限 − 4096,这样检查直接通过。
+  - 生成器目前**没有接线**这个变量(没有 ConfigMap / env / 参数)。临时手设用 `kubectl set env`;撤销必须显式写 `NODE_OPEN_FILE_LIMIT_MODE-`,因为 set env 加的变量不在 last-applied 里。
+- **清单不做这件事**:
+  - K8s 没有按容器的 ulimit 字段;
+  - initContainer 改不了别的进程的限值;
+  - 特权 prlimit 已否决;
+  - 启动壳里的 `ulimit -n` 与进程自抬是同一件事,不要再加一份。
+  - 硬限由节点容器运行时决定:containerd / dockerd 的 systemd `LimitNOFILE`,或 CRI base_runtime_spec 的 rlimits(外部常识,待实测)。
+- **上线前置、验收与紧急回退**统一见 [docs/ops/gate-kernel-tuning-runbook.md](../../docs/ops/gate-kernel-tuning-runbook.md) §3.1,这里不重复。要点:
+  - 验收要按进程名找 pid 读 limits,不要读 `/proc/1/limits`(gate / scene 的 PID 1 可能是 sh);scene 的容器名是池名。
+  - 回退是换回旧镜像 tag,并且在发布提交的检出上执行:dev / kind 用 `k8s-zone-up -NodeImage …:<旧 sha>`;staging / prod 按 release-checklist §4(先核 digest)。
+  - external gate 换回模板后,要逐个删除未就绪的 gate Pod,否则 `-WaitReady` 会超时。
+  - battle 优先用 `kubectl set image deployment/battle battle=<旧镜像>` 或改 Fleet 模板,不要为它跑整套 `k8s-infra-up`。
+- 未编译,未在集群上验证。
+
 ## Kafka:StatefulSet + PVC(2026-09-08,routing-identity-audit-20260908.md R06)
 
 `manifests/infra/kafka.yaml` 现在是:ClusterIP Service `kafka`(仍是 `kafka.<InfraNamespace>:9092`,所有 ConfigMap /
@@ -1883,7 +1934,7 @@ kubectl -n <infra> exec kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m
 
 ## go/db 存盘管线告警(PrometheusRule,手工 apply;2026-10-16 登记,未在集群上 apply 过)
 
-仓库不部署 Prometheus,下面两份与 `owner-epoch-alerts.yaml` 同法手工安装;上线清单是 `docs/ops/godb-pipeline-launch-todo.md` §2.5
+仓库不部署 Prometheus,下面两份(2026-10-18 起三份)与 `owner-epoch-alerts.yaml` 同法手工安装;上线清单是 `docs/ops/godb-pipeline-launch-todo.md` §2.5
 (2.5.2 / 2.5.8)。抓取前提:go/db 的 `:9160`(db ConfigMap 的 `MetricsListenAddr`)有 ServiceMonitor / PodMonitor,否则规则全部是哑的。
 
 - `deploy/k8s/db-task-retry-alerts.yaml`:存储不可用时的延后与冷却、死信、重试队列(`db-task.retry-and-dead-letter`)、排序锁租约
@@ -1900,3 +1951,20 @@ kubectl -n <infra> exec kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m
   # 回滚
   kubectl delete -n observability -f deploy/k8s/db-task-partition-alerts.yaml
   ```
+- `deploy/k8s/task-result-notify-alerts.yaml`(2026-10-18,B0-3 第 2 批):task:result 读回执通知分频道(`db-task.result-notify`,指标 `db_task_result_notify_total{target,result}`)。
+  **安装时机**:go/db 与 login 两侧都全量升级到带 B0-3 的版本之后再 apply,否则 `DbTaskResultNotifyLegacyFallback` 会在金丝雀 zone 响。阈值待压测基线。`DbTaskResultNotifyNoReceiver` 在有人开着 `PSUBSCRIBE task:result:notify:*` 时会失明(PUBLISH 的订阅者数含模式订阅),排查只用 `PUBSUB CHANNELS` / `PUBSUB NUMSUB`。上线清单见 `docs/ops/godb-pipeline-launch-todo.md` §10。
+  ```bash
+  kubectl apply -n observability -f deploy/k8s/task-result-notify-alerts.yaml
+  # 回滚
+  kubectl delete -n observability -f deploy/k8s/task-result-notify-alerts.yaml
+  ```
+
+## player_locator 会话对账告警(PrometheusRule,手工 apply;2026-10-18 登记,未在集群上 apply 过)
+
+- `deploy/k8s/player-locator-alerts.yaml`:会话对账 leader 与 gate 会话索引(组 `player-locator.session-reconciler`),7 条:`PlayerLocatorReconcilerNoLeader` / `PlayerLocatorReconcilerStalled`(critical,都带 absent 分支)、`PlayerLocatorReconcileRoundsFailing`、`PlayerLocatorLegacySessionWriters`、`PlayerLocatorGateIndexNotReady`、`PlayerLocatorGateIndexAuditRepaired`、`PlayerLocatorDeadGatesPending`(warning)。
+  ```bash
+  kubectl apply -n observability -f deploy/k8s/player-locator-alerts.yaml
+  ```
+- 抓取前提:player-locator 的 ConfigMap 有 Prometheus 段(Host 0.0.0.0、Port 9190、Path /metrics,k8s_deploy.ps1 的 player-locator heredoc),manifest 带 prometheus.io 注解与名为 metrics 的 9190 端口,集群里有指向它的 ServiceMonitor / PodMonitor(或按注解抓取的 job)。**ConfigMap 的 Prometheus 段与 manifest 的注解 / 端口必须同批发布,或先发前者**:只有注解、进程没在 9190 监听时,按注解抓取的目标是 down,可能误触通用的 TargetDown 类告警。按 is_leader 过滤的规则用 `namespace`、`pod` 标签匹配,改用按注解抓取时 relabel 必须写出这两个标签。
+- 聚合口径:leader 是全服一个(选主锁在共用的会话 Redis 上),规则不按 namespace 分组。Stalled 不按 is_leader 过滤(last_success 启动预置 0,对全体副本取 max,「每一任都失败」时持续为真);GateIndexNotReady / LegacySessionWriters 用短子查询抹平换主空档、for 照旧。理由见告警文件头与设计文档 §9。
+- 设计、失败模式与处置见 `docs/design/player-locator-gate-session-index.md` §8、§9;单个玩家卡在 ONLINE 的定向补救见 `docs/ops/release-checklist.md` 附录 F.B-1。

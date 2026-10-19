@@ -45,6 +45,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [ecs.md](design/ecs.md) — ECS 设计规则 · [EN](design/ecs_en.md) · [中文](design/ecs_zh.md)
 - [ecs-component-access-rules.md](design/ecs-component-access-rules.md) — ECS Component Access Rules
 - [ecs-entt-misuse-audit-20261015.md](design/ecs-entt-misuse-audit-20261015.md) — entt 误用审计（2026-10-15）
+- [data-overwrite-rollback-audit-20261018.md](design/data-overwrite-rollback-audit-20261018.md) — 全仓数据问题与覆盖回档审计（2026-10-18）
 - [onboarding.md](design/onboarding.md) — 开发者上手指南 — MMO Server
 - [root_level_cleanup_findings.md](design/root_level_cleanup_findings.md) — Root Level & Tools Directory Audit (2026-03-24) · [EN](design/root_level_cleanup_findings_en.md) · [中文](design/root_level_cleanup_findings_zh.md)
 - [script_directory_rules.md](design/script_directory_rules.md) — Script Directory Rules · [EN](design/script_directory_rules_en.md) · [中文](design/script_directory_rules_zh.md)
@@ -74,6 +75,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [login-simplification-2026-04.md](design/login-simplification-2026-04.md) — Login Service Simplification (2026-04)
 - [login_gate_assignment_migration.md](design/login_gate_assignment_migration.md) — 登录网关分配改造计划：当前架构 → 大厂标准架构
 - [open-server-rate-limit-design.md](design/open-server-rate-limit-design.md) — 开服登录削峰设计 (Gateway 限流 + 排队)
+- [player-locator-gate-session-index.md](design/player-locator-gate-session-index.md) — player_locator 会话对账:按 gate 实例建会话索引(2026-10-18)
 - [player_login_flow.md](design/player_login_flow.md) — 玩家登录/断线/重连/替换登录/超时清理 — 最终态事件流 · [EN](design/player_login_flow_en.md) · [中文](design/player_login_flow_zh.md)
 - [serverlist-static-publish-2026-05.md](design/serverlist-static-publish-2026-05.md) — Server-List 静态发布架构 (Static Publish via OSS + CDN) — 2026-05
 - [third-party-login-end-to-end-design.md](design/third-party-login-end-to-end-design.md) — QQ / 微信第三方登录端到端联调设计
@@ -94,6 +96,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [scene-navmesh-pipeline.md](design/scene-navmesh-pipeline.md) — 场景导航网格管线(Recast 烘焙 + 服务器寻路阻挡校验)
 - [scene-node-threading-model.md](design/scene-node-threading-model.md) — Scene Node 线程模型决策
 - [scene-owner-reentry-barrier.md](design/scene-owner-reentry-barrier.md) — 场景所有权：再入屏障与 owner_epoch
+- [location-release-binding.md](design/location-release-binding.md) — 删 location 绑定"持有者已释放"(审计 §2.1 修复:LeaveScene 释放证据、ReleasePlayer.session_ended、gate LeaveGame 与同节点新 epoch,2026-10-18)
 - [scene-switch-release-design.md](design/scene-switch-release-design.md) — SceneManager跨节点切场景释放玩家方案选型
 - [world-channel-autoscale.md](design/world-channel-autoscale.md) — 按人数自动扩缩容:大世界频道 / gate / Scene Node 进程
 - [world-channel-switch.md](design/world-channel-switch.md) — 玩家主动切线(分线列表 + 选线切换)
@@ -353,9 +356,11 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [event-priority.md](notes/event-priority.md) — Events · [EN](notes/event-priority_en.md) · [中文](notes/event-priority_zh.md)
 - [gameplay-introduction-and-resources-research-2026-09-01.md](notes/gameplay-introduction-and-resources-research-2026-09-01.md) — Gameplay 是什么：入门文章与开源项目
 - [github-survivors-like-games-research-2026-08-27.md](notes/github-survivors-like-games-research-2026-08-27.md) — GitHub 幸存者割草类游戏源码调研
+- [mmorpg-stress-interview-qa.md](notes/mmorpg-stress-interview-qa.md) — MMORPG 项目压测容量与瓶颈优化面试回答
 - [NOTES_zh.md](notes/NOTES_zh.md) — 项目笔记 / Project Notes(中文) · [EN](notes/NOTES_en.md)
 - [player-data-loading-and-sharding-pain.md](notes/player-data-loading-and-sharding-pain.md) — 玩家数据加载与分库分表的痛点分析
 - [redis-oom-data-safety-qa-record.md](notes/redis-oom-data-safety-qa-record.md) — Redis OOM / 数据安全 / 千万在线 — Q&A 决策记录
+- [server-crash-memory-debugging-qa.md](notes/server-crash-memory-debugging-qa.md) — 游戏服务器线上崩溃和内存问题排查问答
 - [todo_zh.md](notes/todo_zh.md) — 工程待办 / 设计备忘 · [EN](notes/todo_en.md)
 
 ### 笔记(`notes/slg-moba/`)

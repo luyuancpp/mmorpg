@@ -6,11 +6,24 @@
     "go/login/internal/logic/clientplayerlogin/deprecation.go and exposed at",
     "the host configured under login.yaml `Prometheus:` (default 127.0.0.1:9101/metrics).",
     "",
+    "path label values:",
+    "  new       = Java Gateway POST /api/login (no gate session).",
+    "  gate_bind = gate-forwarded Login with auth_type=access_token: the new flow's mandatory",
+    "              session-bind step (only writer of login_session). Not deprecated and NOT",
+    "              affected by LegacyGateLoginEnabled; every new-flow login emits one new + one gate_bind.",
+    "  legacy    = gate-forwarded Login with password / third-party credentials (the path the kill switch closes).",
+    "",
     "Two panels:",
-    "  1. Stacked-area: legacy vs new request rate over time.",
+    "  1. Stacked-area: legacy / new / gate_bind request rate over time.",
     "     ARCH §12 T+1 exit criterion = legacy line trends to (and stays near) zero.",
-    "  2. Single-stat: legacy / total ratio for the last 5 minutes.",
+    "  2. Single-stat: legacy / (legacy + new) ratio for the last 5 minutes;",
+    "     gate_bind is excluded from the denominator so one new-flow login counts once.",
     "     Alert at >5% (rollback signal) or <1% (T+2 ready).",
+    "",
+    "Counted per request at Login() entry, before authentication (since 2026-10-18): auth failures,",
+    "lock contention and kill-switch rejections are all included, so path=legacy keeps showing the",
+    "remaining tail after LegacyGateLoginEnabled=false. auth_type label values are bounded:",
+    "password / access_token / registered provider names (satoken, wechat, qq, netease), anything else = unknown.",
     "",
     "Per-auth_type breakdowns are available by adding `auth_type` to the legend",
     "(e.g. legend: '{{path}} / {{auth_type}}'); useful when WeChat/QQ stay on",
@@ -18,10 +31,10 @@
   ],
   "panels": [
     {
-      "title": "Login Path Request Rate (legacy vs new)",
+      "title": "Login Path Request Rate (legacy / new / gate_bind)",
       "type": "timeseries",
       "datasource": "Prometheus",
-      "description": "rate of ClientPlayerLogin.Login calls, split by transport. ARCH §12 T+1 exit criterion: legacy must trend to zero before flipping LegacyGateLoginEnabled=false.",
+      "description": "rate of ClientPlayerLogin.Login calls, split by entry path. ARCH §12 T+1 exit criterion: legacy must trend to zero before flipping LegacyGateLoginEnabled=false. gate_bind is the new flow's gate session bind and stays non-zero by design.",
       "targets": [
         {
           "expr": "sum by (path) (rate(login_auth_path_total[5m]))",
@@ -44,10 +57,10 @@
       "title": "Legacy Path Share (last 5m)",
       "type": "stat",
       "datasource": "Prometheus",
-      "description": "Fraction of recent logins still on the legacy gate-TCP path. >5% = block T+2; <1% = T+2 ready.",
+      "description": "Fraction of recent logins still authenticating with credentials on the gate-TCP path (gate_bind excluded from the denominator). >5% = block T+2; <1% = T+2 ready.",
       "targets": [
         {
-          "expr": "sum(rate(login_auth_path_total{path=\"legacy\"}[5m])) / clamp_min(sum(rate(login_auth_path_total[5m])), 1e-9)",
+          "expr": "sum(rate(login_auth_path_total{path=\"legacy\"}[5m])) / clamp_min(sum(rate(login_auth_path_total{path!=\"gate_bind\"}[5m])), 1e-9)",
           "instant": false
         }
       ],
@@ -103,7 +116,7 @@
         "alert when legacy drops to zero for 24h to ping ops about T+2 readiness."
       ],
       "alert": "LegacyLoginPathTooHigh",
-      "expr": "sum(rate(login_auth_path_total{path=\"legacy\"}[5m])) / clamp_min(sum(rate(login_auth_path_total[5m])), 1e-9) > 0.05",
+      "expr": "sum(rate(login_auth_path_total{path=\"legacy\"}[5m])) / clamp_min(sum(rate(login_auth_path_total{path!=\"gate_bind\"}[5m])), 1e-9) > 0.05",
       "for": "10m",
       "labels": { "severity": "warning" },
       "annotations": {

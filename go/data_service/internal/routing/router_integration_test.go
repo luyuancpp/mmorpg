@@ -603,3 +603,235 @@ func findDataServiceYaml(t *testing.T) string {
 	t.Fatalf("在 %s 之上找不到 etc/data_service.yaml;设 %s", dir, envYaml)
 	return ""
 }
+
+// ── 第 3 批读方门禁:读脚本与可信 / 回源在真 Redis 上(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.2)──
+//
+// miniredis 不支持 INFO 的 server / replication 段,读脚本的执行语义(INFO 能否在脚本里调、string.match 取到的字段、
+// Lua false 回成 nil)只有真 Redis 能证。这几条用例会写 mapping:route:ready(带本实例身份的「可信」标记),所以**只在显式给了
+// DATA_SERVICE_IT_REDIS_HOST(一次性的 Redis)时跑**,不碰 yaml 里那个开发用的 mapping Redis;跑前要求 mapping:route:* 为空,
+// 跑后删掉。回源 SQL 的用例另要 DATA_SERVICE_IT_MYSQL_HOST(能建库的账号,storetest 一次性库)。
+//
+// 加 DATA_SERVICE_IT_REQUIRE=1:依赖缺失 / 不可达从 SKIP 变成 FAIL(PASS / FAIL / SKIP 必须可区分,规格 §6.5 同口径)。
+// 本批新增的用例都以 requireRouteReadIT 开头;既有用例的 Skip 口径不变。
+
+// envRouteReadITRequire 设为 1 时,本批新增的集成用例被跳过即判失败。
+const envRouteReadITRequire = "DATA_SERVICE_IT_REQUIRE"
+
+// requireRouteReadIT 必须是用例的第一句:它登记的清理最后一个执行,发现用例被跳过(依赖缺失)且设了
+// DATA_SERVICE_IT_REQUIRE=1 就判失败。用清理而不是再探测一遍依赖:跳过的判定只在各自的 setup 一处。
+func requireRouteReadIT(t *testing.T) {
+	t.Helper()
+	if os.Getenv(envRouteReadITRequire) != "1" {
+		return
+	}
+	t.Cleanup(func() {
+		if t.Skipped() {
+			t.Errorf("%s=1: this integration test was skipped (a dependency is missing or unusable, see the SKIP reason above); treated as FAIL",
+				envRouteReadITRequire)
+		}
+	})
+}
+
+// routeReadITControlPattern 是读方门禁用例会碰的控制键(就绪标记;令牌 / 水位键同前缀,一并要求为空)。
+const routeReadITControlPattern = "mapping:route:*"
+
+// newReadGateIntegrationRouter 接一个 ReadRequiresReady=true 的 db_first Router(真 Redis,WAITAOF 0/0:本组用例不发布)。
+// reader 非 nil 时注入回源读者。要求显式的一次性 Redis 与空的 mapping:route:*,结束时删掉本用例写的控制键。
+func newReadGateIntegrationRouter(t *testing.T, reader RouteReader) (*Router, *goredis.Client) {
+	t.Helper()
+	if os.Getenv(envRedisHost) == "" {
+		t.Skipf("needs %s (a throwaway Redis >= 7.2): these cases write a trusted mapping:route:ready marker", envRedisHost)
+	}
+	rc := config.RouteStoreConfig{
+		Mode:               config.RouteStoreModeDBFirst,
+		WaitAOFNumLocal:    intPtr(0),
+		WaitAOFNumReplicas: intPtr(0),
+		ReadRequiresReady:  true,
+	}
+	var opts []RouterOption
+	if reader != nil {
+		opts = append(opts, WithRouteReader(reader))
+	}
+	r, raw := newIntegrationRouterWith(t, rc, opts...)
+	ctx, cancel := context.WithTimeout(context.Background(), itRedisTimeout)
+	defer cancel()
+	keys, _, err := raw.Scan(ctx, 0, routeReadITControlPattern, 50).Result()
+	require.NoError(t, err)
+	if len(keys) > 0 {
+		t.Skipf("Redis DB0 already holds %v: these cases need %s to be empty (use a throwaway instance)", keys, routeReadITControlPattern)
+	}
+	// 晚于 newIntegrationRouterWith 登记 → 先于它执行(raw 还没关)。
+	t.Cleanup(func() {
+		cleanCtx, cleanCancel := context.WithTimeout(context.Background(), itRedisTimeout)
+		defer cleanCancel()
+		if err := raw.Del(cleanCtx, placement.RouteReadyKey, placement.RouteWarmKey, placement.RouteWatermarkKey).Err(); err != nil {
+			t.Errorf("清理 mapping:route:* 失败(请手工删): %v", err)
+		}
+	})
+	return r, raw
+}
+
+// realRedisIdentity 用普通命令(不经脚本)读本实例身份,与读脚本里 string.match 取到的对照。
+func realRedisIdentity(t *testing.T, raw *goredis.Client) placement.RedisInstanceIdentity {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), itRedisTimeout)
+	defer cancel()
+	srv, err := raw.Info(ctx, "server").Result()
+	require.NoError(t, err)
+	repl, err := raw.Info(ctx, "replication").Result()
+	require.NoError(t, err)
+	id, err := placement.ParseRedisInstanceIdentity(srv, repl)
+	require.NoError(t, err)
+	require.Equal(t, "master", id.Role, "these cases need a master (a replica would never be trusted)")
+	return id
+}
+
+// TestRouteReadyRead_RealRedisScriptsCallInfo:两段读脚本在真 Redis 上能调 INFO(规格 §2 M1 的「未核实」项),
+// 取到的 run_id / role / master_replid 与普通 INFO 命令一致;标记缺席回 nil、映射键缺席回 nil(Lua false → nil),
+// R2 脚本的 home 与围栏按约定回 string。FAIL 时按规格 §2 M1 的退路处理(pipeline 先读数据后读身份),不改用例。
+func TestRouteReadyRead_RealRedisScriptsCallInfo(t *testing.T) {
+	requireRouteReadIT(t)
+	r, raw := newReadGateIntegrationRouter(t, nil)
+	ctx := context.Background()
+	want := realRedisIdentity(t, raw)
+
+	res, err := r.mappingRedis.EvalCtx(ctx, placement.RouteReadyReadScript, placement.RouteReadyReadKeys(mappingKey(90801)))
+	require.NoError(t, err, "INFO must be callable inside a script on this Redis")
+	read, err := placement.ParseRouteReadyRead(res, 1)
+	require.NoError(t, err, "raw reply %#v", res)
+	assert.False(t, read.MarkerPresent)
+	assert.Equal(t, want, read.Identity)
+	assert.Equal(t, []any{nil}, read.Values)
+
+	// 映射键不是 string 类型时 MGET 回 nil(与今天各读方的 MGET 一致),标记不是 string 时按缺席。
+	require.NoError(t, raw.LPush(ctx, mappingKey(90802), "wrong-type").Err())
+	require.NoError(t, raw.LPush(ctx, placement.RouteReadyKey, "wrong-type").Err())
+	res, err = r.mappingRedis.EvalCtx(ctx, placement.RouteReadyReadScript, placement.RouteReadyReadKeys(mappingKey(90802)))
+	require.NoError(t, err)
+	read, err = placement.ParseRouteReadyRead(res, 1)
+	require.NoError(t, err, "raw reply %#v", res)
+	assert.False(t, read.MarkerPresent, "a non-string marker reads as absent")
+	assert.Equal(t, []any{nil}, read.Values)
+	require.NoError(t, raw.Del(ctx, placement.RouteReadyKey).Err())
+
+	require.NoError(t, raw.Set(ctx, mappingKey(90803), "73", 0).Err())
+	require.NoError(t, raw.Set(ctx, MergeFenceKey(73), `{"started_at":1757000000}`, time.Minute).Err())
+	for _, tc := range []struct {
+		player uint64
+		values []any
+	}{
+		{90803, []any{"73", "1"}},
+		{90804, []any{nil, nil}},
+	} {
+		res, err := r.mappingRedis.EvalCtx(ctx, getHomeZoneFenceReadyScript, placement.RouteReadyReadKeys(mappingKey(tc.player)), mergeFenceKeyPrefix)
+		require.NoError(t, err)
+		read, err := placement.ParseRouteReadyRead(res, 2)
+		require.NoError(t, err, "raw reply %#v", res)
+		assert.Equal(t, want, read.Identity)
+		assert.Equal(t, tc.values, read.Values, "player %d", tc.player)
+	}
+
+	verdict, err := ProbeRouteReadyRead(ctx, redis.RedisConf{Host: resolveRedisHost(t), Type: "node"})
+	require.NoError(t, err, "the startup probe must pass on a real Redis")
+	assert.Equal(t, placement.RouteReadyAbsent, verdict)
+}
+
+// TestReadGate_RealRedisTrustedMarkerUsesCache:标记记下的就是本实例身份 → R2 / R6 / R3 用缓存(含缓存里的合服围栏、
+// 缺键 = 权威缺席),一次都不回源;标记换成别的 run_id(模拟重启 / 旧备份)→ 立刻不可信、回源。
+func TestReadGate_RealRedisTrustedMarkerUsesCache(t *testing.T) {
+	requireRouteReadIT(t)
+	reader := &readFakeReader{err: errReadBoom}
+	r, raw := newReadGateIntegrationRouter(t, reader)
+	ctx := context.Background()
+	id := realRedisIdentity(t, raw)
+	require.NoError(t, raw.Set(ctx, placement.RouteReadyKey, readyMarkerFor(t, id.RunID, id.MasterReplID), 0).Err())
+	require.NoError(t, raw.Set(ctx, mappingKey(90901), "71", 0).Err())
+
+	zone, merging, err := r.GetPlayerHomeZoneAndMergeFence(ctx, 90901)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(71), zone)
+	assert.False(t, merging)
+	require.NoError(t, raw.Set(ctx, MergeFenceKey(71), `{"started_at":1757000000}`, time.Minute).Err())
+	_, merging, err = r.GetPlayerHomeZoneAndMergeFence(ctx, 90901)
+	require.NoError(t, err)
+	assert.True(t, merging)
+	_, _, err = r.GetPlayerHomeZoneAndMergeFence(ctx, 90999)
+	require.ErrorIs(t, err, ErrHomeZoneNotMapped, "a trusted replica's missing key is authoritative absence")
+
+	zone, err = r.GetPlayerHomeZone(ctx, 90901)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(71), zone)
+	batch, err := r.BatchGetPlayerHomeZone(ctx, []uint64{90901, 90999})
+	require.NoError(t, err)
+	assert.Equal(t, map[uint64]uint32{90901: 71}, batch)
+	assert.Empty(t, reader.homeFenceCalls, "trusted reads must not fall back")
+	assert.Empty(t, reader.getRoutesCalls, "trusted reads must not fall back")
+
+	require.NoError(t, raw.Set(ctx, placement.RouteReadyKey, readyMarkerFor(t, strings.Repeat("a", 40), id.MasterReplID), 0).Err())
+	_, _, err = r.GetPlayerHomeZoneAndMergeFence(ctx, 90901)
+	require.ErrorIs(t, err, ErrRouteReadUnavailable, "a marker bound to another instance is not trusted; the (failing) fallback is used")
+	assert.NotErrorIs(t, err, ErrHomeZoneNotMapped)
+	assert.Equal(t, []uint64{90901}, reader.homeFenceCalls)
+}
+
+// TestReadGate_RealRedisMarkerAbsentFallsBackToSQL:真 Redis + 真库(storetest 一次性库)。标记缺席 → R2 / R6 / R3 回源
+// player_route(缓存里的旧值不用、也不回填),围栏取 63 号片(持有者写满 64 片);R7 在 db_first 下读库。
+func TestReadGate_RealRedisMarkerAbsentFallsBackToSQL(t *testing.T) {
+	requireRouteReadIT(t)
+	if os.Getenv(envRedisHost) == "" || os.Getenv(storetest.EnvHost) == "" {
+		t.Skipf("needs both %s (a throwaway Redis) and %s (MySQL with CREATE DATABASE)", envRedisHost, storetest.EnvHost)
+	}
+	ctx := context.Background()
+	db := storetest.NewMigratedDB(t)
+	rs, err := store.NewRouteStore(db.Cfg, store.RouteStoreOptions{
+		FenceShards: placement.DefaultRouteFenceShards,
+		Writer:      store.NewRouteWriterID("routing_it", "test"),
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = rs.Close() })
+	_, err = rs.ImportRoutes(ctx, []store.RouteImportRow{{PlayerID: 91001, HomeZone: 72}, {PlayerID: 91002, HomeZone: 72}}, false)
+	require.NoError(t, err)
+
+	r, raw := newReadGateIntegrationRouter(t, rs)
+	require.NoError(t, raw.Set(ctx, mappingKey(91001), "5", 0).Err(), "a stale cached value that must not be used")
+
+	zone, merging, err := r.GetPlayerHomeZoneAndMergeFence(ctx, 91001)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(72), zone)
+	assert.False(t, merging)
+	zone, err = r.GetPlayerHomeZone(ctx, 91002)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(72), zone)
+	_, _, err = r.GetPlayerHomeZoneAndMergeFence(ctx, 91003)
+	require.ErrorIs(t, err, ErrHomeZoneNotMapped, "no row in player_route is authoritative absence")
+	batch, err := r.BatchGetPlayerHomeZone(ctx, []uint64{91001, 91002, 91003})
+	require.NoError(t, err)
+	assert.Equal(t, map[uint64]uint32{91001: 72, 91002: 72}, batch)
+
+	cached, err := raw.Get(ctx, mappingKey(91001)).Result()
+	require.NoError(t, err)
+	assert.Equal(t, "5", cached, "readers never backfill the cache")
+	n, err := raw.Exists(ctx, mappingKey(91002)).Result()
+	require.NoError(t, err)
+	assert.EqualValues(t, 0, n, "readers never backfill the cache")
+
+	// 库里的围栏:持有者在一个事务里写满全部 64 片(placement.MaxRouteFenceShards 的契约),过期取库时钟 + 10 分钟。
+	tx, err := db.Raw.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	for shard := uint32(0); shard < placement.MaxRouteFenceShards; shard++ {
+		_, err := tx.ExecContext(ctx,
+			"INSERT INTO zone_merge_fence (zone_id, shard, run_id, purpose, src_zone, dst_zone, expires_at_ms, fence_epoch)"+
+				" VALUES (?, ?, '72-73-20261018T000000Z-0a1b2c3d', 'merge', 72, 73, CAST(UNIX_TIMESTAMP(NOW(3)) * 1000 AS UNSIGNED) + 600000, 1)",
+			72, shard)
+		require.NoError(t, err)
+	}
+	require.NoError(t, tx.Commit())
+	zone, merging, err = r.GetPlayerHomeZoneAndMergeFence(ctx, 91001)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(72), zone)
+	assert.True(t, merging, "the fence comes from player_route's snapshot, not from the (untrusted) cache")
+
+	ids, err := r.GetAllPlayerIDsInZone(ctx, 72)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []uint64{91001, 91002}, ids)
+}

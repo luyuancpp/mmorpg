@@ -47,23 +47,34 @@ func TestKeyIsPerGateInstanceAndIncarnation(t *testing.T) {
 	_, err := Close(ctx, rdb, Key{GateInstanceID: "gate-old", Incarnation: 1}, testTTL)
 	require.NoError(t, err)
 	err = CommitLogin(ctx, rdb, Key{GateInstanceID: "gate-new", Incarnation: 1},
-		"login_session:42", "acc", time.Minute, "devices:acc", 42, time.Minute)
+		[]string{"login_session:gate-new:1"}, "acc", time.Minute, "devices:acc", "gate-new:1", time.Minute)
 	require.NoError(t, err, "另一个 gate 进程的关闭标记不影响本连接")
 }
+
+func TestKeyStringIsSharedConnectionIdentity(t *testing.T) {
+	// login_session 新键(loginsession.RefOf)与栅栏键共用这一种拼法。
+	require.Equal(t, "gate-uuid-1:7", testKey.String())
+	require.Equal(t, "login:sessfence:gate-uuid-1:7", testKey.redisKey())
+}
+
+// 本测试里的 login_session 键与设备集成员按 loginsession.Ref 的形状给:新键 + 双写的旧键。
+var testSessionKeys = []string{"login_session:gate-uuid-1:7", "login_session:42"}
 
 func TestCommitLoginWritesSessionAndDeviceSetWhenOpen(t *testing.T) {
 	ctx := context.Background()
 	rdb, mr := newTestRedis(t)
-	err := CommitLogin(ctx, rdb, testKey, "login_session:42", "robot_0001", 30*time.Minute, "devices:robot_0001", 42, 30*time.Minute)
+	err := CommitLogin(ctx, rdb, testKey, testSessionKeys, "robot_0001", 30*time.Minute, "devices:robot_0001", "gate-uuid-1:7", 30*time.Minute)
 	require.NoError(t, err)
 
-	got, err := mr.Get("login_session:42")
-	require.NoError(t, err)
-	require.Equal(t, "robot_0001", got)
-	require.Equal(t, 30*time.Minute, mr.TTL("login_session:42"))
+	for _, key := range testSessionKeys {
+		got, err := mr.Get(key)
+		require.NoError(t, err, "key=%s", key)
+		require.Equal(t, "robot_0001", got, "key=%s", key)
+		require.Equal(t, 30*time.Minute, mr.TTL(key), "key=%s", key)
+	}
 	members, err := mr.Members("devices:robot_0001")
 	require.NoError(t, err)
-	require.Equal(t, []string{"42"}, members)
+	require.Equal(t, []string{"gate-uuid-1:7"}, members)
 	require.Equal(t, 30*time.Minute, mr.TTL("devices:robot_0001"))
 }
 
@@ -74,10 +85,21 @@ func TestCommitLoginAfterCloseWritesNothing(t *testing.T) {
 	_, err := Close(ctx, rdb, testKey, testTTL)
 	require.NoError(t, err)
 
-	err = CommitLogin(ctx, rdb, testKey, "login_session:42", "robot_0001", 30*time.Minute, "devices:robot_0001", 42, 30*time.Minute)
+	err = CommitLogin(ctx, rdb, testKey, testSessionKeys, "robot_0001", 30*time.Minute, "devices:robot_0001", "gate-uuid-1:7", 30*time.Minute)
 	require.True(t, errors.Is(err, ErrClosed), "err=%v", err)
-	require.False(t, mr.Exists("login_session:42"), "关闭之后不得写 login_session")
+	for _, key := range testSessionKeys {
+		require.False(t, mr.Exists(key), "关闭之后不得写 login_session: %s", key)
+	}
 	require.False(t, mr.Exists("devices:robot_0001"), "关闭之后不得登记设备集")
+}
+
+func TestCommitLoginRequiresSessionKey(t *testing.T) {
+	ctx := context.Background()
+	rdb, mr := newTestRedis(t)
+	err := CommitLogin(ctx, rdb, testKey, nil, "robot_0001", 30*time.Minute, "devices:robot_0001", "gate-uuid-1:7", 30*time.Minute)
+	require.Error(t, err)
+	require.False(t, errors.Is(err, ErrClosed))
+	require.False(t, mr.Exists("devices:robot_0001"))
 }
 
 func TestHandshakeCloseBeforeBind(t *testing.T) {
@@ -240,11 +262,13 @@ func TestCommitLoginRejectsNonPositiveTTL(t *testing.T) {
 	// SessionExpireMin 漏配为 0 时脚本的 SET ... PX 0 会被 Redis 拒绝;这里在进脚本之前显式报错,且什么都不写。
 	ctx := context.Background()
 	rdb, mr := newTestRedis(t)
-	err := CommitLogin(ctx, rdb, testKey, "login_session:42", "robot_0001", 0, "devices:robot_0001", 42, 30*time.Minute)
+	err := CommitLogin(ctx, rdb, testKey, testSessionKeys, "robot_0001", 0, "devices:robot_0001", "gate-uuid-1:7", 30*time.Minute)
 	require.Error(t, err)
 	require.False(t, errors.Is(err, ErrClosed))
-	err = CommitLogin(ctx, rdb, testKey, "login_session:42", "robot_0001", 30*time.Minute, "devices:robot_0001", 42, 0)
+	err = CommitLogin(ctx, rdb, testKey, testSessionKeys, "robot_0001", 30*time.Minute, "devices:robot_0001", "gate-uuid-1:7", 0)
 	require.Error(t, err)
-	require.False(t, mr.Exists("login_session:42"))
+	for _, key := range testSessionKeys {
+		require.False(t, mr.Exists(key))
+	}
 	require.False(t, mr.Exists("devices:robot_0001"))
 }

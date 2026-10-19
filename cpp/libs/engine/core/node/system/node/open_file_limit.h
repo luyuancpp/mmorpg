@@ -24,8 +24,11 @@ namespace open_file_limit {
 
 // 运维豁免开关。取值见 ParseMode:缺省 enforce(抬完仍不够就拒启);warn = 只打 WARN、继续启动。
 // 与 GATE_RUN_MODE / SCENE_RUN_MODE / BATTLE_RUN_MODE 和 GM 开关无关:scene 的运行模式同时决定 GM 放行,
-// 不能让运维为了绕过 fd 检查去打开 GM。warn 只用于「硬限暂时改不了、又必须先起服」的应急,
-// 起服后该节点能承载的连接数以实际软限为准,超出部分会在 accept 时 EMFILE。
+// 不能让运维为了绕过 fd 检查去打开 GM。warn 只用于「硬限暂时改不了、又必须先起服」的短时应急。
+// 风险:gate 的准入闸门在 accept 拿到 fd 之后才判,准入上限没调时客户端连接会先占满 fd 表;此后节点间、Redis / Kafka /
+// etcd 重连都会 EMFILE(etcd 租约续不上 → 被摘除),muduo 日志滚动时 FileUtil::AppendFile 的 fopen 失败只有 assert,
+// Release 下随即对空指针 setbuffer 崩溃。所以 warn 换来的是「运行到某个时刻被摘除或崩溃」,不只是新连接被拒。
+// gate / battle 的应急首选是把准入上限调到 ≤ 软限 − kNonClientReserve,那样本检查直接通过,不需要豁免。
 inline constexpr const char kModeEnv[] = "NODE_OPEN_FILE_LIMIT_MODE";
 
 // 「无界」:getrlimit 返回 RLIM_INFINITY 时由调用方映射成它。
@@ -43,6 +46,8 @@ inline constexpr uint64_t kNonClientReserve = 4096;
 
 // 软限抬升的上限。硬限是 infinity 或 1073741816 这类巨大值时只抬到这里,
 // 避免有代码按 RLIMIT_NOFILE 分配数组或遍历所有 fd。
+// 封顶只约束本进程主动抬升的目标:继承来的软限本来就更大(例如运行时 LimitNOFILE=infinity 给出 soft = hard = 1073741816)
+// 时按「只抬不降」保持原值,不压回来:本检查只保证下限,不改写运行时给的更大值(启动行 raise=none,soft= 即原值)。
 inline constexpr uint64_t kSoftLimitCeiling = 1048576;
 
 struct Limits {
@@ -199,7 +204,8 @@ inline std::string FormatStartupLine(std::string_view role, const ClientCap &cap
     return line;
 }
 
-// 豁免生效时的 WARN 行(stdout 与日志各一行)。
+// 豁免生效时的 WARN 行(stdout 与日志各一行)。后果要写全(见 kModeEnv 的注释):fd 表满后坏的不只是新连接,
+// 运维照这一行判断风险,说轻了会把 warn 当常态配置。格式由单测逐字锁定。
 inline std::string FormatExemptionWarning(std::string_view role, const Outcome &outcome) {
     std::string line = "[open_file_limit] WARN exemption active (";
     line += kModeEnv;
@@ -211,7 +217,9 @@ inline std::string FormatExemptionWarning(std::string_view role, const Outcome &
     line += FormatLimitValue(outcome.required);
     line += " shortfall=";
     line += std::to_string(Shortfall(outcome));
-    line += "; starting anyway, connections beyond the fd limit will fail with EMFILE";
+    line += "; starting anyway. Once the fd table is full, not only new client connections but also reconnects"
+            " (peer nodes, Redis, Kafka, etcd) and log file rotation fail with EMFILE, so the node may be"
+            " deregistered or crash; for gate / battle lower the client cap to soft - reserve instead";
     return line;
 }
 

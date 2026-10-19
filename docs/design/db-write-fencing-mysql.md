@@ -12,7 +12,31 @@
 
 ---
 
+### 2026-10-18 历史屏障维护恢复契约（首版已实现，限定形态验收）
+
+`go/db/cmd/save_barrier_restore` 只供停写维护使用，默认生成计划，执行必须指定计划原始文件 SHA-256 并再次声明旧 scene/login/DB 写者已停止、Kafka/retry/dead 已审定排空。工具不能替代部署停写或证明旧进程不会复活。运维先备份并裁决父缓存与未提交意图，再清本次玩家父/子缓存和资产 SQL 证据；工具自己不删除缓存、不丢弃意图、不铸造 owner。
+
+每批至多 1000 名玩家，显式指定实际 SQL schema 和 home zone，禁止扫描全服自动修复。首版仅支持权威路由为 Redis、映射与父缓存同实例 DB0、显式稳定 placement 与 home zone 都等于 `zone_<home_zone>_db` 的玩家；必须显式传 `-routing-mode redis-same-instance`。缺映射、冻结/异区/全局落点、db_first、独立映射实例或非零 Redis DB 均不支持，不能用旧库残留行给已搬走玩家背书。独立映射、db_first 与 player_store 的恢复还需相应权威路由证明，当前不宣称这一部分完成。
+
+每人按固定表序以 PRIMARY 点锁读取两张完整 SQL 行，计划记录 SQL schema、Redis 地址/DB、强读模式、身份、home/placement 原值、非围栏列摘要及旧/目标围栏，不包含资产明文。SQL 始终使用计划中已验证的 schema 限定表名；执行参数、实际 Redis 连接与计划必须相符。默认要求 TiDB 强会话，本地 MySQL 豁免也绑定计划，不能在执行时切换。两行缺失、身份不符或不同版均拒绝；现有 owner 必须是正数且不小于 SQL epoch。非零围栏原样恢复；历史 `(0,0)` 只有显式允许迁移时才将两行元数据改为 `(现有 owner,1)`，不修改任何资产列，不凭空猜测丢失的 owner。
+
+发布前同一 Redis Lua 复核永久维护标记、owner、home/placement 原值、无合服围栏、父/子缓存与资产证据均不存在、该 zone 全 64 桶为空、屏障不存在或仅含精确相同的三项已提交版本；全部通过才写 pending/两表 ACK。映射和 owner 不得带 TTL。SQL 锁持续持有至 Redis 发布之后；旧版数据先提交双表围栏元数据，再新开 RC 事务重新点锁两行，复核资产摘要与目标版本，才能发布；SQL 提交失败绝不发布。中断后可按同一计划幂等续跑，资产摘要、路由或 owner 改变则拒绝。每人独立提交，失败可能已有前缀完成；执行回执逐人记录结果，维护标记与停写闸始终保留。SQL 与 Redis 不是一个事务，发布后的新存盘仍须走正常围栏；未完成整批、冷加载和故障验收不可放流。当前前提仍是同一 Redis 实例，不能在 Cluster 上跨槽执行。
+
+2026-10-18 在自有 TiDB v8.5.2、Redis DB0 上完成四项真实集成：非零围栏恢复重入、历史双表升级且完整资产字节不变、计划后 SQL 资产漂移拒绝、末桶待补投拒绝。同包单元与集成合计 38 项 PASS、0 FAIL、0 SKIP，86 项输入无漂移，随机库和自建键已清理。证据：`build/barrierrestore-linux-20261018-030237-63a67b/final-proof.json`。执行平台为 Linux；Windows Application Control 拒绝启动的记录与早期高位自增 ID 夹具错误均保留，没有修改系统策略或正式表结构。该验证不覆盖高位自增分配器边界、真实旧写者复活、跨洲故障或生产放流。
+
 ## 0. 结论速览
+
+### 2026-10-18 历史恢复第二批契约（两版真库接缝已验，真实双区宿主演练待验）
+
+本批扩展现有恢复接缝，不改正常存盘协议：支持 `db_first` 的 SQL 真源路由、独立 mapping Redis、非零父缓存 DB，以及归属区与物理 zone/player_store 库不同的稳定落点。SQL 与 Redis 仍非同一事务。跨实例恢复必须先停止业务与路由写者、审定排空，并用工具 `guard` 在 mapping DB0 建立永久的维护标记与既有 `merge:in_progress:<home>` 广播围栏；该围栏由现有建角、pin/relocate/合服入口在提交点尊重，不以新造的无人读取键代替停写。失败保留所有维护闸和已完成前缀，不自动删闸或放流。
+
+`db_first` 必须显式指定同一 TiDB 实例内的路由 schema。恢复事务按 `route_reconcile → route_meta → player_route(完整聚簇主键) → 两张资产表` 加锁，要求 `writable=0`，锁内绑定库世代、水位、玩家 rev/home/稳定落点；旧零围栏提交后重新按同序取锁再复核。这样路由解冻/反向修库不能穿过提交点。mapping 副本的就绪标记必须已撤下；水位必须与 SQL 同世代且不领先，副本三项要么全无，要么与被锁 SQL 路由一致，不凭缓存缺键推断无玩家。永久广播围栏拦截新建角/pin/搬迁入口；在途搬迁的收尾/撤销及 SETNX 回填仍依赖外部停写，不能称 guard 已自动挡住所有写者。恢复拒绝 frozen，并在独立 mapping 发布前后复核路由及围栏，任何失联/漂移保持维护。人为移除永久围栏、直接改键或绕过维护写 SQL 不在自动恢复承诺内。
+
+新计划使用 v2 格式绑定连接、schema、强读模式与路由证明；v1 同实例本区计划仍按原范围验证。Redis Cluster 尚不是本仓现行父快照/补投协议支持的部署形态，本批仍明确拒绝 MOVED/跨槽，不能仅改恢复工具宣称全链 Cluster 可用。两版与客户端按各自既有权威接缝补相同故障语义，不复制不适用的内部协议。
+
+带独立旧 owner 上界约束的当前库包已在真 TiDB、父缓存 DB2 与独立 mapping DB0 完成 64 项 PASS、0 FAIL、0 SKIP，90 项输入前后无漂移；包含正式路由 DDL、全局 `player_store` 落点、历史双表围栏迁移、同计划重入、阻止路由解冻及 rev 漂移拒绝，以及独立 Redis 权威路由恢复/漂移拒绝、SQL 本区 NULL 落点两项补充部署分支。当前原始收据为 `build/verification/barrier-restore-v2-20261018/final-real-20261018T094145944Z/proof.json`，此前 `real-proof.json` 的62项为追加前历史结果。CLI 五例、两包 vet、Windows 构建与 Java 49 项 H2 已通过。Java 真 TiDB 已覆盖72个唯一用例，包含独立审核上界、旧实例拒写与迟到 ACK：首轮71通过，唯一失败项受宿主16小时休眠后的 schema lease失效影响，经SQL健康核验后只复验该方法并通过；首轮exit1及电源事件保留，不称单轮72全绿。Java汇总见同级Java仓 `build/ownership-recovery-20261018/final-proof.json`。真实旧 scene 复活/延迟 ACK 双区宿主演练仍待验收，不能据此放流或宣称全球容量已通过。
+
+2026-10-19 UTC 03:05 的同口径只读复查发现，Java 历史验证的 2328 项输入已变为 2331 项：23 项修改、3 项新增、无删除，涉及 scene、登录认证、网关与 ContractSync。两次观察区间无漂移，不代表写方冻结；9 个自有文件中7个代码/测试未变、两份文档已变，也不能推断其余改动无影响。原49 H2及72唯一真库覆盖收据保留为原输入下的通过证据，不能当当前整体版本验收。当前生成、构建和受影响验证须另据新输入完成；有效复查收据为 `build/verification/java-current-drift-corrected-20261019T030502074Z/receipt.json`。
 
 1. **围栏是行内两列，按字典序比较。** go/db 把 DBTask 的 `(owner_epoch, save_seq)` 盖到要落库的消息上做条件写：库内围栏更旧才写。目标原语是 `SaveConditional`（判断与写入是同一条 UPDATE）；proto2mysql `v0.3.0` 发版之前用过渡实现（同一事务里 `SELECT … FOR UPDATE` 判定后再写，§4.8），两者结局枚举相同。旧的执行实例恢复后发出的写会被 MySQL 自己拒掉，不再依赖 Redis 排序锁的租约。
 2. **首批只实现 `legacy` 与 `dual` 两种模式。** `dual` = 条件写 + 现有全套 Redis 守卫；`legacy`（v0.2 叫 `off`，改名原因见 §4.7）是紧急开关，写入语义等同今天。删 Redis 守卫的 `sql` 模式（附录的 Stage 2）属于性能轨，本文只定契约和门禁（§8.5），不在首批实现。条件写只作用于「围栏表」（§4.1），其余表照旧 `Save`。
@@ -39,6 +63,8 @@
 | 6 | B1：`redis-cli FLUSHALL` 会让全部存盘被判 stale_owner | 触发面比预想小；处置改为「定真源、抬计数器、不归零、不回灌」 | FLUSHALL 同时清掉账号目录，旧 player_id 不会再被用到；归零加回灌会用旧数据覆盖新数据（§9.1） |
 | 7 | 能力心跳 `db:capability:zone` 可复用为机器门禁 | 不能复用，`sql` 模式要另建按实例的登记 | 该键每 zone 一把、值是常量，merge_zone 按精确相等判定（§8.5） |
 | 8 | 缺省模式 `dual` | 缺省 `legacy`，逐 zone 改配置切 `dual` | 二进制发布与行为切换分开，可以单 zone 金丝雀（§8.3） |
+
+> **2026-10-18 更正**：第 8 行的「缺省 `legacy`」与 §14 第 4 条，都是严格提交屏障出现之前的口径。10-17 起 scene / login 只说严格屏障，「升级所有 DB 为 dual」已是该协议的整批切换前提（文末 10-17「登录冷恢复」附注）。缺省因此改为 `dual`，`legacy` 由机器门禁约束，见 §4.7 更正与文末 2026-10-18 附注。金丝雀仍可以逐 zone 做，但单位换成「整 zone 切世代」：按 10-17 附注停写、迁表，go/db 全部 `dual`、scene / login 全部升级后一起放流。不再有同一 zone 内 `legacy` → `dual` 的运行时切换。
 
 ### 0.2 在途实现的合并（v0.4 新增）
 
@@ -376,6 +402,8 @@ Fencing:
   - 注入：`db.go` 在构造消费者之前调一次 `kafka.SetFencingMode`（包级 `atomic.Bool`，启动期一次、运行中不可改）；`legacy` 时 `savePlayerRow` 返回 handled=false、走普通 Save，`publishDBWriteResult` 不发布资产证据。
   - **过渡实现下 `legacy` 的语义与上文不同**：普通 `Save` 会把行内围栏列写回 body 里的值（C++ 新版恒为 0），不是 `SaveConditional` 的 `PreserveFields` 保留。所以 `dual → legacy` 仍随时安全，但 `legacy → dual` 再切回来之前要先过 §8.3 的排空门禁，否则 legacy 期间写过的行围栏为 `(0,0)`，排在重试里的旧版本写可能被接受。换成 `SaveConditional` 后恢复上文语义。
   - 未落：`EpochOverride`（随 §5.2 一起做）；K8s ConfigMap 渲染（go/db 会话的 `k8s_deploy.ps1`，其 R5b 之后补；在此之前 K8s 上恒为缺省 `legacy`）。
+
+> **2026-10-18 更正（存盘协议世代门禁，审计 [data-overwrite-rollback-audit-20261018.md](data-overwrite-rollback-audit-20261018.md) §2.2）**：本节的「缺省 `legacy`」与上面「`dual → legacy` 仍随时安全」都已作废。10-17 起 C++ 只要 `owner_epoch≠0` 就走严格提交屏障，login 要求两表 ACK 都等于 pending，而只有 `dual` 写 ACK、跑补投，所以缺省 `legacy` 下玩家第二次登录起全部失败。现行缺省改为 `dual`：`db.yaml` 显式写 `Mode: dual`，`EffectiveMode()` 把空串解释为 `dual`，K8s 原样镜像。`legacy` 改为机器门禁下的显式选项，见文末「2026-10-18 存盘协议世代门禁与补投有界」。
 
 ### 4.8 原语与过渡实现（v0.4 新增）
 
@@ -949,6 +977,13 @@ dbTask.set_save_seq(ownerEpoch == 0 ? 0 : saveSeq)   // 两张子表共用同一
 
 F-5（§1.2）的成立条件就是上表第 2、5 行：没有旧二进制，或者旧二进制在场时 `EpochOverride` 关着。
 
+> **2026-10-18 更正**：上表「同一 zone 内新二进制的 `legacy` 与 `dual` 实例并存：安全」只在严格提交屏障之前成立，现在作废。现行 scene / login 写 pending、要求两表 ACK，混跑时会出两种问题：落到 `legacy` 实例的写不写 ACK，玩家因此卡在登录与交接上；`dual` 补投器重投的旧意图被 `legacy` 实例无条件写进 MySQL（审计 go-db-pipeline#2）。两版混跑现在由机器门禁拦下，不再靠发布纪律：
+> - `dual` 启动时写世代标记。
+> - `legacy` 在两种情况下拒启：本 zone 有世代标记，或任一补投桶非空。运行中每 5 秒复查一次，发现即停机，并以非零码退出。
+> - `legacy` 在线时会续写存活标记，`dual` 的补投见到这个标记就整拍暂停。
+>
+> 这只拦得住新二进制。不认识门禁的旧 go/db 二进制，仍按第 2 行的口径由发布纪律排除。详见文末 2026-10-18 附注。
+
 ### 8.5 `sql` 模式的契约（预留，本批不实现）
 
 将来要做时必须满足：
@@ -971,6 +1006,14 @@ F-5（§1.2）的成立条件就是上表第 2、5 行：没有旧二进制，�
 | 新 C++ → 旧 C++ | `dual` / `legacy` 下安全（之后的写是 class-2，§4.3 两步写，不退围栏）。资产证据开关打开的 zone 先按 §8.7 关开关：旧 C++ 的写不发布证据 |
 | DDL | 不回滚，不 DROP 列 |
 | 资产证据相关 | 按 §8.7 的逆序 |
+
+> **2026-10-18 更正**：上表第 1 行「`dual` → `legacy` 改配置滚动重启，随时安全」作废。现行 scene / login 只说严格提交屏障，单把 go/db 切回 `legacy`，玩家第二次登录起全部失败。门禁也会挡住这种切换：本 zone 已有世代标记，`legacy` 实例拒启。只有同时回退写者时才能降级到 `legacy`，按以下顺序做：
+> 1. 把该 zone 的 scene / login 回退到不写严格屏障的版本，确认旧写者全部退出。
+> 2. 让 `dual` 的补投器把本 zone 64 个补投桶全部回收清零（`ZCARD` 全为 0），停掉全部 `dual` 实例。
+> 3. 运维显式删除 `db:save_protocol:zone:<ZoneId>`。
+> 4. 起 `legacy`。
+>
+> 任一步不满足，`legacy` 实例都会在启动门禁处拒启。上表第 4 行「新 C++ → 旧 C++」仍然成立：go/db 保持 `dual`，旧 C++ 的写走 class-2。
 
 `legacy` 运行一段时间后再切回 `dual`：`legacy` 期间的写不推进围栏，围栏落后于真实数据。围栏落后期间，这些行的保护退回到今天的水平，直到下一笔 `dual` 写把围栏推上来；§5.2 的放行不受影响（它依赖 §5.5 的 epoch 记录，不依赖围栏，§5.5 在 `legacy` 下也照做）。另外，`legacy` 期间行内围栏和缓存围栏都落后于已发出的序号，切回 `dual` 后冷加载的播种只剩墙钟（§7.4 条件 3）。`legacy` 期间不发布资产证据，该 zone 的证据开关必须先关（§8.7）。
 
@@ -1534,6 +1577,80 @@ go/db 有界补投工作器读取本 zone 的 64 桶 due 索引，严格校验�
 
 DBTask TopicGeneration 换代的排空集合同时包含旧代 Kafka、retry 与本节 pending outbox。离线玩家也可能只留下旧 topic 的完整意图,不能在它未获双 ACK 时先把全体 worker 切到只认新代的白名单;须在旧代完成提交并清理意图 / 索引,或执行明确设计的维护迁移后再切换。当前实现不把任意旧 topic 自动放行,未提供自动跨世代搬运。
 
-合服/撤销的 `merge_zone` P4 同时核对待变更 zone 的全部64桶 ZCARD=0；索引不分世代，因此旧代残留也会拒绝。Redis故障、错型、异常响应均不能当空。检查发生在 SQL 行复制/删除、映射变更和缓存清理之前；停止 scene 后须让原 DB 补投器完成双 ACK 回收，再停止 DB 并执行维护，不能只看 Kafka lag=0 就删 barrier。PITR 则必须先保存并逐笔裁决尚未提交的原意图，再清受影响玩家自己的索引 member；禁止 DEL 整桶误删其他玩家。当前没有已演练的自动历史屏障补种工具，删除屏障后继续保持维护闸。
+合服/撤销的 `merge_zone` P4 同时核对待变更 zone 的全部64桶 ZCARD=0；索引不分世代，因此旧代残留也会拒绝。Redis故障、错型、异常响应均不能当空。检查发生在 SQL 行复制/删除、映射变更和缓存清理之前；停止 scene 后须让原 DB 补投器完成双 ACK 回收，再停止 DB 并执行维护，不能只看 Kafka lag=0 就删 barrier。PITR 则必须先保存并逐笔裁决尚未提交的原意图，再清受影响玩家自己的索引 member；禁止 DEL 整桶误删其他玩家。历史屏障的计划/维护恢复工具已按文首 2026-10-18 契约完成限定形态真库验收；不支持的路由形态继续拒绝，删除屏障后仍保持维护闸，不会自动放流。
 
 账本窗口保留五流各1024个摘要后，不能继续套用普通组件256KiB的列闸。`BlobGuardConfig.WithDefaults`统一补齐`player_database.asset_op_ledger`专列1MiB，普通列仍256KiB，整行仍1MiB；配置显式给出的正值覆盖默认，包括更小的限制。当前实际依赖`github.com/luyuan-cpp/proto2mysql v0.2.0`的SQL二进制参数是裸protobuf；既有BlobGuard仍按base64长度保守计费，本轮保留该算法和指标口径以避免隐式扩大所有玩家行，不能把预算计费值称为真实物理存储量。托管snapshot本身的256KiB上限仍在资产模块执行，不随列预算放宽。满窗口账本与其他组件合计超过整行额度仍明确拒写，不能只看账本单列通过。保留原整行保守上限也维持现有Kafka大小约束：本仓librdkafka默认`message.max.bytes=1000000`，当前producer未覆盖；此轮没有同步提高消息、broker或消费者限制，不能把整行改成2MiB后仍声称发送链支持。对照回归直接调用当前依赖的`pbconv.SerializeFieldValue`核对真实SQL参数字节，另外记录保守预算，禁止用测试里的人工base64推测当前数据库格式。
+
+
+### 2026-10-18 存盘协议世代门禁与补投有界（审计 §2.2，Claude，未编译、未测试）
+
+来源：[data-overwrite-rollback-audit-20261018.md](data-overwrite-rollback-audit-20261018.md) §2.2 的 go-db-pipeline#0、#1，以及同根因的 low #2。三条都已复核成立。
+
+**问题**
+- 10-17 起，C++ 只要 `owner_epoch≠0` 就走 `SaveWithCommitBarrier`，写 pending 和完整投递意图。login 冷加载与 `BeginTravelHandoff` 要求两表 ACK 都等于 pending。
+- 但只有 `dual` 写 ACK、跑补投，而 `db.yaml` 与 `EffectiveMode()` 的缺省仍是 `legacy`。结果是按缺省配置部署，玩家第二次登录起全部失败，交接只能等冻结上限。
+- 补投器每桶 100ms、64 桶一轮，约 6.4s。每次到期都整行重投，没有计数、退避、终态，也不看存储健康。对确定性拒写，每轮都多出一条接近 1MB 的死信。
+
+**协议世代**
+- 现行 scene / login 的世代由二进制决定，只有严格屏障这一种。能配置的只有 go/db，所以「三方一致」由 go/db 一侧的机器门禁保证。C++ 与 login 本批不改。
+- **缺省 `dual`**：`go/db/etc/db.yaml` 写 `Mode: dual`，`FencingConfig.EffectiveMode()` 把空串解释为 `dual`，`k8s_deploy.ps1` 原样镜像。
+  - `k8s_zone_rollback.ps1` 读线上 ConfigMap 时，Fencing 整段缺省也按 `dual` 记。
+- **世代证据**：都在父缓存所在的同一 Redis 实例上，任一成立即为严格世代。
+  - `db:save_protocol:zone:<ZoneId>` 存在。`dual` 启动时写 `strict`，不设 TTL。已有未知值或类型不对时拒启，不覆盖。
+  - 本 zone 64 个补投桶 `player:save_pending:<zone>:<b>` 任一非空。
+- **legacy 门禁**（`saveoutbox.CheckLegacyAllowed` / `WatchLegacy`）：
+  - 启动前检查一次：有证据，或 Redis 出错、类型不对，一律拒启（fail-closed）。
+  - 运行中每 5s 复查一次。第一次发现证据时，经 `db.go` 的 `protocolConflict` 通道走与信号相同的停机路径，最后以非零码退出，日志前缀 `SAVE-PROTOCOL-CONFLICT`。编排重启后停在启动门禁。
+  - 复查期间续写 `db:save_protocol:legacy_alive:zone:<ZoneId>`（PX 30s）。冲突后仍续写，直到消费者停完：停机排空期间实例还可能在落库。
+- **混跑（#2）**：`dual` 补投每拍先查 legacy 存活标记，存在即整拍跳过，计 `db_save_outbox_total{result="legacy_alive"}`。等 legacy 实例退出、标记过期后再投。
+- **残余**：
+  - 不认识门禁的旧 go/db 二进制无法被拦，仍靠 §8.4 第 2 行的发布纪律排除。
+  - 旧二进制卡顿超过存活 TTL 的场景，归 go-db-pipeline#3（G1）。
+  - Redis 被清空后标记会丢，但届时补投桶也一并清空，legacy 能起来。不过只要严格写者一写，运行中复查就会把它停掉。
+- **降级**：见 §8.6 的 2026-10-18 更正。
+
+**补投有界**（`saveoutbox/scripts.go`、`replay.go`）
+
+状态都记在 barrier hash 上，按意图版本计。
+
+| 字段 | 写者 | 含义 |
+|---|---|---|
+| `outbox_attempt_version` / `outbox_attempts` | 补投器 | 该版本已补投的次数 |
+| `outbox_terminal` / `outbox_terminal_reason` | go/db 消费侧 | 该版本已被确定性拒写 |
+| `outbox_retry_ms` | go/db 消费侧 | 最近一次把该玩家的严格写延后进重试的毫秒时刻（取较大值） |
+
+- 两表 ACK 齐全时，补投器把这些字段与 4 个 `outbox_*` 意图字段一并删除，屏障回到 pending 加两表 ACK 三个字段。`barrierrestore` 的 `HLEN==3` 判定不受影响。
+- C++ 父快照 Lua 与 login 冷加载只读各自的固定字段，不受新字段影响。
+
+认领节奏（缺省值）：
+1. **首见只登记**：`FirstReplayAfter=30s` 之后才第一次补投，正常 Kafka 路径优先，消费积压时不把每笔存盘都再投一遍。
+2. **指数退避**：第 n 次补投后等待 `min(RetryAfter·2^(n-1), MaxRetryAfter)`，`RetryAfter=10s`、`MaxRetryAfter=10min`，再加 `[0, RetryAfter/2]` 的抖动。
+3. **次数上限**：`MaxAttempts=8`。达到后到期也不再投，按 `RecheckAfter=10min` 复查，计 `exhausted`，告警 `DbSaveOutboxExhausted`。
+   - 意图原字节、pending 与桶成员都保留。
+   - 新版本存盘或两表 ACK 齐全时自动离开该状态。
+   - 人工重新计数：`HDEL player:{<id>}:save_barrier outbox_attempts`。
+4. **终态**：同版本的 `outbox_terminal` 存在时不补投，计 `terminal`，告警 `DbSaveOutboxTerminal`。新版本到来时清掉过期终态。
+5. **在途重试**：`outbox_retry_ms` 在 `InflightWindow=2min` 内时只推迟，不计次数（`inflight_deferred`）。
+6. **主库冷却**：本 zone 主库冷却期内整拍跳过，不认领、不计次数（`store_cooldown`），与 L-04 §3.5 的重试循环同口径。
+
+**go/db 消费侧的提示**（`kafka/save_outbox_note.go`）
+- 只在 `dual` 下写，只针对带 `(owner_epoch, save_seq)` 的两张玩家表写，且只在该版本仍是当前意图时写，绝不凭空创建 barrier。
+- **终态**：
+  - `quarantineOrderingConflict` 的全部入口：围栏 stale_owner、owner_epoch_regressed、legacy_after_seq、ordering_incomparable、stale_topic、missing_required。
+  - Redis 归属守卫判陈旧：`stale_owner_redis`。
+  - `deferFailedTask` 收到的两类确定性错误：大字段闸 `*dbguard.ErrBlobTooLarge` 与 `errFenceEvidenceConflict`。
+- **在途**：其余 `deferFailedTask` 只记 `outbox_retry_ms`。
+- **不打终态的**：预算耗尽（可能来自 Redis 抖动、失租等可自愈原因），只受退避与上限约束，避免把可自愈的意图钉死。
+- 提示写失败只记日志，代价是补投器按退避多投几次。
+
+**指标与告警**
+- `db_save_outbox_total{result}` 新增 `observed`、`inflight_deferred`、`terminal`、`exhausted`、`store_cooldown`、`legacy_alive`，启动即以 0 建出。terminal / exhausted 按复查间隔重复计数。
+- `deploy/k8s/db-task-retry-alerts.yaml` 新增 `db-task.save-outbox` 组三条：`DbSaveOutboxExhausted`（critical）、`DbSaveOutboxTerminal`（warning）、`DbSaveOutboxPausedByLegacyWriter`（critical）。上线时手工 apply；阈值未经 promtool 校验。
+
+**验证与 Java**
+- **验证**：未编译、未测试，交 Codex。用例在：
+  - `saveoutbox/generation_test.go`、`replay_bounds_test.go`，以及改造过的 `replay_test.go` / `replay_integration_test.go`；
+  - `kafka/save_outbox_note_test.go`；
+  - `kafka/player_row_fence_mode_test.go`（空串改为 `dual`）；
+  - `tools/scripts/tests/k8s_zone_rollback_discard.tests.ps1`（Fencing 缺省改为 `dual`）。
+- **Java 版**：不适用。Java 不经 Kafka / go/db 落库，没有父快照提交屏障与补投器（AGENTS §12）。

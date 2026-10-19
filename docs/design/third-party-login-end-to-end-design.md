@@ -1,6 +1,6 @@
 # QQ / 微信第三方登录端到端联调设计
 
-更新：2026-10-15。HTTP 登录入口已经实现；渠道真实凭据联调、客户端 SDK 和账号绑定按各自验收记录判断，不能再把“缺少 /api/login”作为当前阻塞。
+更新：2026-10-18。HTTP 登录入口已经实现；2026-10-18 补齐上线前的服务端缺口（密钥注入、unionid 策略、错误语义、HTTP 加固、K8s 渲染，见 §四.1 与 §九）。渠道真实凭据联调、客户端 SDK 和账号绑定仍按各自验收记录判断，**从未与真实微信 / QQ 联调过**。
 
 前置：[认证提供者框架](./auth-provider-framework.md)、[双 Token 设计](./dual-token-authentication.md)、[渠道沙盒手册](../ops/wechat-qq-sandbox-runbook.md)。
 
@@ -27,12 +27,16 @@
   ← 玩家列表、access_token / refresh_token 及过期时间
   → POST /api/assign-gate
   ← gate 地址与握手票据
-  → TCP 连 gate、验票，再执行建角/EnterGame 等玩家 RPC
+  → TCP 连 gate、验票
+  → gate 上 Login{auth_type:"access_token", auth_token:<上一步的 access_token>}：绑定会话，写 login_session 与设备集
+  → 建角 / EnterGame 等玩家 RPC（按会话取账号）
 ```
 
 Gateway 在 `application.yaml` 中配置 Jackson `SNAKE_CASE`，HTTP JSON 使用 `auth_type`、`zone_id`、`access_token`、`refresh_token` 等名称；Java DTO 内部仍使用驼峰属性。`/api/login` 不返回 gate 地址或 gate_token，也不代表已经完成场景入场。字段以 [LoginRequest](../../java/gateway_node/src/main/java/com/game/gateway/dto/LoginRequest.java)、LoginResponse 及全局序列化配置为准。
 
-旧 gate TCP Login 路径是否开放受 login 的 `LegacyGateLoginEnabled` 控制。它与 HTTP 入口共享后端鉴权能力；后续会话恢复与入场见 [登录流程](./player_login_flow.md)。
+旧 gate TCP Login 路径是否开放受 login 的 `LegacyGateLoginEnabled` 控制。这个开关只管 gate 上用口令 / 第三方凭据做的**首认证**；gate 上 `auth_type=access_token` 的会话绑定是新流程的必经一步，不受它控制（`classifyLoginPath`，见 [gate-login-rpc-boundary.md](./gate-login-rpc-boundary.md)）。它与 HTTP 入口共享后端鉴权能力；后续会话恢复与入场见 [登录流程](./player_login_flow.md)。
+
+生产的第三方登录只有一条路径：客户端把渠道凭据交给 `/api/login`，由 Go login 直连微信 / 腾讯校验（auth_type=`wechat` / `qq`）。`java/springboot_satoken_auth_starter` 是示例应用，没有部署清单；它的 `/auth/dev-login` 免 OAuth 按任意账号名签 SA-Token，只在 Spring profile `dev` 下注册，不得部署到玩家可达的环境。
 
 ## 三、返回码与 Gateway 配置
 
@@ -43,18 +47,37 @@ LoginController 返回 LoginResponse 对象。JSON 的 `code` 是业务码，不
 | 成功 | `CODE_OK`，附玩家列表与双 token |
 | 前置限流排队 | `CODE_QUEUEING`，JSON 附 retry_after_ms、queue_pos |
 | 前置拒绝 | `CODE_RATE_LIMITED` |
-| 上游鉴权/业务拒绝 | LoginService 当前统一映射为 `CODE_AUTH_REJECTED` |
-| gRPC 不可用、deadline 或内部异常 | `CODE_INTERNAL` |
+| login 回 in-band 错误码（凭证无效、渠道故障等） | `CODE_AUTH_REJECTED`，message 为 `upstream_err=<tip 码>` |
+| login 以 gRPC status 失败：UNAUTHENTICATED / PERMISSION_DENIED | `CODE_AUTH_REJECTED`，message 为 status 名 |
+| login 以 gRPC status 失败：UNAVAILABLE / DEADLINE_EXCEEDED / RESOURCE_EXHAUSTED | `CODE_INTERNAL`，message `login_unavailable` |
+| login 以其它 gRPC status 失败（UNKNOWN、INTERNAL 等）或网关内部异常 | `CODE_INTERNAL`（2026-10-18 前 UNKNOWN 等被错误地映射成 401） |
 
-这张表只说明现有适配器，不代表已细分账号封禁、维护等错误。连接目标、zone 路由与超时以 Gateway 的 LoginRpcClient 和 `application.yaml` 为准；旧提案中的 `gate.login.grpc-endpoint` / `retry` 配置不能直接复制使用。
+login 侧的 in-band 码（2026-10-18 起，fault 列来自 `data/tip/Tip.xlsx`，serverbase 据此告警）：
+
+| 情形 | tip | 故障 |
+|---|---|---|
+| 玩家凭证无效 / 过期、未知 auth_type、口令认证失败 | `kLoginAccountNotFound`（2000） | 否 |
+| 渠道或本服务渠道配置故障：网络 / 超时、非 2xx、应答超 64 KiB 或不可解析、微信系统繁忙 / AppSecret / AppId / 出口 IP / 配额类 errcode、拿不到必需的 unionid | `kLoginAuthProviderUnavailable`（预计 2035，以导表为准） | 是 |
+| 账号目录读 Redis 失败 / 记录损坏（以前直接返回 gRPC 错误，网关映射成 401） | `kLoginRedisError` / `kLoginDataParseFailed` | 是 |
+| HTTP 路径 token 签发失败（以前回成功但不带 token，渠道 code 已被消费） | `kLoginTokenIssueFailed`（预计 2036） | 是 |
+
+已知残留：网关不认识 tip 码表，in-band 故障在 HTTP 层仍是 `CODE_AUTH_REJECTED`；客户端须按 message 里的 tip 码选文案（渠道凭证都已被消费，重新走 OAuth 本身是正确的恢复动作）。让网关按故障列回 500 需要给 Java 生成故障表或改 HTTP 契约（两版同批），另行立项。连接目标、zone 路由与超时以 Gateway 的 LoginRpcClient 和 `application.yaml` 为准；旧提案中的 `gate.login.grpc-endpoint` / `retry` 配置不能直接复制使用。
 
 ## 四、渠道联调与后续改造
 
-渠道凭据按 `go/login/etc/login.yaml`、对应配置类型与 provider 的现有字段注入；真实 AppSecret / AppKey 只从部署环境提供，禁止写入仓库与日志。沙盒验证按 [微信/QQ 手册](../ops/wechat-qq-sandbox-runbook.md) 执行。
+渠道凭据按 `go/login/etc/login.yaml`、对应配置类型与 provider 的现有字段注入；真实 AppSecret 只从部署环境提供，禁止写入仓库与日志。沙盒验证按 [微信/QQ 手册](../ops/wechat-qq-sandbox-runbook.md) 执行。
 
-新增账号的持久化与索引规则应从当前 login 逻辑核对，不能执行旧草案中的 `INSERT IGNORE UserAccounts` 或照抄假设存在的 UserAccountsModel。账号绑定和按 zone 白名单仍需独立实现、迁移与测试；旧草案的 `Auth.EnabledTypes` / `PerZoneOverrides` 不是已经支持的配置。
+新增账号的持久化与索引规则应从当前 login 逻辑核对（账号角色目录是 login Redis 的 `account:<account>`，不落库），不能执行旧草案中的 `INSERT IGNORE UserAccounts` 或照抄假设存在的 UserAccountsModel。账号绑定和按 zone 白名单仍需独立实现、迁移与测试；旧草案的 `Auth.EnabledTypes` / `PerZoneOverrides` 不是已经支持的配置。
 
 以下保留渠道接入、绑定、安全与监控的后续设计清单；其中 API、表、指标及渠道时效均须在对应任务中核实，不作为本次已经实现或验收的声明。
+
+### 四.1 上线前约束（2026-10-18 落码）
+
+- **密钥**：login 不展开 `${VAR}`。配置写 `AuthProviders.WeChat.AppSecretEnv`（环境变量名），由 `config.ResolveSecrets` 在任何外部连接之前解析；未展开的 `${...}` 任何模式都拒绝启动，生产模式拒绝内联 `AppSecret`、只接受 `https://` 的 Endpoint（`go/login/internal/config/auth_providers.go`）。QQ 不需要 AppKey。
+- **K8s**：`tools/scripts/k8s_deploy.ps1 -LoginWeChatAppId / -LoginQQAppId` 渲染 `AuthProviders`，微信密钥经 Secret `login-oauth` 注入 `LOGIN_WECHAT_APP_SECRET`，不进 ConfigMap。
+- **unionid**：`RequireUnionId` 缺省 true，拿不到 unionid 即拒绝登录（故障码），不再静默回落 openid；QQ 的 `unionid=1` 由 `RequestUnionId` 控制。
+- **HTTP**：先看状态码（非 2xx 即渠道故障）、应答限 64 KiB；错误不带 URL（查询串里有 code / secret）；成功日志的 openid 脱敏。
+- **错误语义**：见 §三。
 
 ---
 
@@ -120,9 +143,9 @@ POST /api/bind   { bind_type: "wechat", auth_token: <code> }
 
 | 项 | 措施 |
 |---|---|
-| AppSecret 泄露 | 只放服务端 K8s Secret,代码不打日志 |
+| AppSecret 泄露 | 只放服务端 K8s Secret，配置只写 `AppSecretEnv`（生产模式内联即拒启），代码不打日志 |
 | OAuth code 重放 | 微信 code 只能用一次,服务端验过即作废;额外加 device_id 绑定 |
-| OpenId 跨应用泄露 | 优先用 `unionid` 而非 `openid`,需在微信开放平台开通 |
+| OpenId 跨应用不一致 | 账号只用 `unionid`（`RequireUnionId` 缺省 true，拿不到即拒绝），需在微信开放平台绑定主体 / QQ 互联申请 unionid 权限 |
 | 账号被盗(他人拿走 access_token) | 双 token 一次性 rotation + 异常 IP/设备触发踢号 |
 | 未成年防沉迷 | 后续按渠道接入实名认证(从 `auth_type` 派生策略) |
 | 苹果审核 | iOS 端必须同时支持 Sign in with Apple → 后续加 `AppleProvider` |
@@ -145,20 +168,20 @@ POST /api/bind   { bind_type: "wechat", auth_token: <code> }
 
 ---
 
-## 九、实施步骤
+## 九、实施状态（2026-10-18 订正，原清单已过时）
 
-1. ✅ 写本文档
-2. ⬜ Java Gateway 加 `/api/login` controller + DTO
-3. ⬜ 接入 grpc-java 客户端到 go-zero login(若已有则复用)
-4. ⬜ go-zero `login.yaml` 配置 WeChat / QQ AppId/Secret(K8s Secret)
-5. ⬜ go-zero `loginlogic.go` 校验"自动注册"分支对 wechat/qq account 也走通
-6. ⬜ 灰度配置 `Auth.EnabledTypes` 默认仅 `password`
-7. ⬜ 单元测试: mock WeChat/QQ HTTP 接口,验证 provider 错误传播
-8. ⬜ 联调: 真实微信/QQ 沙箱账号 → /api/login → /api/assign-gate → gate
-9. ⬜ 单 zone 灰度 wechat,观察 24 小时
-10. ⬜ 全量开 wechat + qq
-11. ⬜ (后续) UserBindings 账号合并表
-12. ⬜ (后续) AppleProvider / GoogleProvider 海外版
+| 步骤 | 状态 |
+|---|---|
+| Java Gateway `/api/login` controller + DTO、grpc-java 客户端 | 已完成（LoginController / LoginService / LoginRpcClient） |
+| login.yaml 配置 WeChat / QQ（K8s Secret） | 已完成：`AppSecretEnv` + 启动期门禁；`k8s_deploy.ps1` 渲染 + Secret `login-oauth`（2026-10-18） |
+| loginlogic 自动注册分支对 wechat / qq 走通 | 已完成（账号目录 `account:<account>`，首次登录自动初始化） |
+| 单元测试：mock 渠道 HTTP、错误传播 | 已完成：`providers_test.go`、`providers_oauth_policy_test.go`、`provider_logging_test.go`、`login_error_semantics_test.go`、`auth_providers_test.go`（待 Codex 运行） |
+| 本地沙箱端到端（sandbox_mock） | 工具已有；linux 登录栈 QQ AppId 与 mock 不一致的问题已修（2026-10-18） |
+| 真实微信 / QQ 沙箱联调 → /api/login → /api/assign-gate → gate | **未做**，需要有真凭证的人按 runbook §C.2 执行 |
+| 单 zone 灰度 24 小时、全量开放 | 未做 |
+| `Auth.EnabledTypes` 灰度配置 | 不存在这个配置；按 zone 开关第三方登录仍是后续设计 |
+| 网关按 tip 故障列回 500（§三 已知残留） | 未做，需两版同批 |
+| UserBindings 账号合并表、Apple / Google Provider | 后续 |
 
 ---
 
@@ -170,17 +193,20 @@ POST /api/bind   { bind_type: "wechat", auth_token: <code> }
 - [docs/design/architecture-current-state-vs-gaps-2026-05.md](./architecture-current-state-vs-gaps-2026-05.md) 缺口 #11
 - 代码: `go/login/internal/logic/pkg/auth/providers.go` (WeChatProvider / QQProvider)
 - 代码: `go/login/internal/logic/clientplayerlogin/loginlogic.go` (resolveAccount)
-- 代码: `java/gateway_node/src/main/java/com/game/gateway/controller/` (待加 LoginController)
+- 代码: `java/gateway_node/src/main/java/com/game/gateway/controller/LoginController.java`、`service/LoginService.java`
+- 代码: `go/login/internal/config/auth_providers.go`（第三方配置门禁）
 
 ---
 
-## 七、2026-08-15 落地增量:选服闭环 + login.rpc 多节点发现 + Unity 客户端接通
+## 十、2026-08-15 落地增量:选服闭环 + login.rpc 多节点发现 + Unity 客户端接通
+
+> 本节原编号「七」，与上文「七、安全与合规」重号，2026-10-18 改为「十」；`docs/PROGRESS.md` 2026-08-15 条目里的「§7」指本节。
 
 本节记录已落码的三件事。2026-08-15 已由 Codex 完成
 Java 全量单测和 Unity 程序集编译验证；真实多节点服务联调仍需依赖
 etcd/Redis/MySQL/login/gate/scene 的完整环境。
 
-### 7.1 区服准入闭环(Java Gateway)
+### 10.1 区服准入闭环(Java Gateway)
 
 此前 `zone_config` 的 MAINTENANCE/CLOSED/PREVIEW 只影响 `/api/server-list`
 展示,直接打 `/api/assign-gate` 仍可进维护区。现在
@@ -201,7 +227,7 @@ etcd/Redis/MySQL/login/gate/scene 的完整环境。
 成功查询(含 NOT_FOUND)，DB 异常不缓存并继续 fail-closed。
 单测:`AssignGateServiceZoneAdmissionTest`(10 用例)。
 
-### 7.2 login.rpc 多节点自动发现(Java Gateway)
+### 10.2 login.rpc 多节点自动发现(Java Gateway)
 
 `login.grpc.endpoints` 的静态 `<zoneId>=host:port` 映射降级为兜底;
 `LoginNodeDiscovery` 每 `login.grpc.discovery-interval-ms`(默认 5s)拉 etcd
@@ -215,7 +241,7 @@ etcd/Redis/MySQL/login/gate/scene 的完整环境。
 - 跨 zone 兜底仍然禁止(压测 3zone §I 事故约束不变);
 - 开关 `login.grpc.discovery-enabled`(默认 true;测试 profile 关闭)。
 
-### 7.3 Unity 客户端全链路(mmorpg-client)
+### 10.3 Unity 客户端全链路(mmorpg-client)
 
 选服 UI(UGUI,`QdaoServerSelectView`)为登录+选服合一屏,数据全动态:
 
@@ -237,7 +263,7 @@ message_id FIFO 兜底」(与 robot 口径一致),否则 Login/CreatePlayer/Ente
 `NotifyEnterScene` 等待预算与生产 robot 对齐为 60s，避免迟到推送造成
 `InGame` 与 UI 状态分裂。协议、proto、C++、Go 均未改动。
 
-### 7.4 原生 uGUI 资源与运行态验收
+### 10.4 原生 uGUI 资源与运行态验收
 
 `Assets/Resources/UI/Ugui/Native` 已提供原生场景、窗框、搜索框、页签、
 分类、区服卡片、底栏和状态灯 sprite。`QdaoUguiBuilder.BuildAll` 会先校验并

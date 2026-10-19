@@ -64,7 +64,7 @@ DESIGN_RULES = [
         "gate-*", "gate_*", "client-access-band-routing.md", "client-rpc-router.md",
         "client-request-ordering.md",
         "k8s-client-entry.md", "k8s_gate_exposure_guidance*", "login-*", "login_*",
-        "player_login_flow*", "auth-provider-framework.md", "dual-token-authentication.md",
+        "player_login_flow*", "player-locator-*", "auth-provider-framework.md", "dual-token-authentication.md",
         "third-party-login-*", "hmac-message-signing.md", "open-server-rate-limit-design.md",
         "serverlist-static-publish-*", "java-gateway-portal-decision.md",
     ]),

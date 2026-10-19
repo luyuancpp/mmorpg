@@ -30,6 +30,9 @@ import (
 // 不是 string 类型 → 读方 MGET 看到的是 nil(等同缺席),不动它;身份不符 → 不信任,显式确认放行时按原值撤掉;
 // 可信但 generation 与库不等 → 先 compare-and-set 成库的 generation 再解冻(第 1b-2 批的 leader 据 generation 判库被重置,
 // 不对齐的话解冻之后它会立刻再冻结),CAS 输了退出码 1、重跑即可。
+//
+// redis 模式(UnfreezeOptions.RedisMode)下 unfreeze 不读、不碰标记(那时没有标记语义),最低水位取 0,要求显式确认:它只用来
+// 撤销误跑 / 演练的 freeze 或从 db_first 回退时带过来的冻结 —— import-from-redis 的 requireRouteWritable 与模式无关,不解冻就一直拒写。
 
 // readyMarkerRedis 是 unfreeze 对 mapping Redis 的依赖(就绪标记的读与按原值改 / 删)。go-zero 的 *redis.Redis 天然满足。
 // GetCtx 的约定(go-zero):键不在回 ("", nil)。
@@ -165,6 +168,8 @@ const (
 	MarkerNewerVersion     = "newer_version"
 	MarkerWrongType        = "wrong_type"
 	MarkerIdentityMismatch = "identity_mismatch"
+	// MarkerNotReadRedisMode:redis 模式下的 unfreeze 不读标记。
+	MarkerNotReadRedisMode = "not_read_redis_mode"
 )
 
 // ErrCacheNotVerified 表示 unfreeze 确认不了 mapping Redis 是可信的超集(没有可信的就绪标记),拒绝解冻(退出码 2)。
@@ -177,6 +182,9 @@ var ErrReadyMarkerChanged = errors.New("route_tool unfreeze: mapping:route:ready
 type UnfreezeOptions struct {
 	// CacheUnverifiedAcknowledged:没有可信标记时仍解冻(-cache-was-not-verified-acknowledged)。见文件头。
 	CacheUnverifiedAcknowledged bool
+	// RedisMode:yaml 是 RouteStore.Mode=redis。不读标记(rd 可为 nil、Identity 可不给),最低水位 0;
+	// 必须同时给 CacheUnverifiedAcknowledged(调用方的门禁先判,这里再兜一次)。见文件头。
+	RedisMode bool
 	// Timeout 是解冻事务本身的时限,至少 store.RouteFreezeTimeoutMin。
 	Timeout time.Duration
 	// Identity 读当前 mapping Redis 的身份(装配层用 INFO 实现;单测注入)。只在标记可解码时才调。
@@ -219,11 +227,17 @@ func UnfreezeExitCode(_ UnfreezeReport, err error) int {
 	}
 }
 
-// Unfreeze 解冻映射写者(流程见文件头)。调用方(routetoolcli)负责 -confirm-audited 与 db_first 的门禁。
-// 只有翻成功或本来就可写才往 Stdout 写统计行。
+// Unfreeze 解冻映射写者(流程见文件头)。调用方(routetoolcli)负责 -confirm-audited 与 RouteStore.Mode 的门禁
+// (redis 模式另要求显式确认,这里只兜底)。只有翻成功或本来就可写才往 Stdout 写统计行。
 func Unfreeze(ctx context.Context, rd readyMarkerRedis, db unfreezeDB, opts UnfreezeOptions) (UnfreezeReport, error) {
-	if opts.Stdout == nil || opts.Stderr == nil || opts.Identity == nil {
-		return UnfreezeReport{}, errors.New("stdout / stderr writers and the identity reader are required")
+	if opts.Stdout == nil || opts.Stderr == nil {
+		return UnfreezeReport{}, errors.New("stdout / stderr writers are required")
+	}
+	if !opts.RedisMode && (rd == nil || opts.Identity == nil) {
+		return UnfreezeReport{}, errors.New("the mapping Redis and the identity reader are required outside redis mode")
+	}
+	if opts.RedisMode && !opts.CacheUnverifiedAcknowledged {
+		return UnfreezeReport{}, fmt.Errorf("%w: RouteStore.Mode=redis needs -cache-was-not-verified-acknowledged", ErrCacheNotVerified)
 	}
 	if opts.Timeout < store.RouteFreezeTimeoutMin {
 		return UnfreezeReport{}, fmt.Errorf("unfreeze timeout %s is below %s", opts.Timeout, store.RouteFreezeTimeoutMin)
@@ -242,6 +256,14 @@ func Unfreeze(ctx context.Context, rd readyMarkerRedis, db unfreezeDB, opts Unfr
 		fmt.Fprintln(opts.Stderr, "route writers are already writable; nothing to do")
 		fmt.Fprintln(opts.Stdout, rep.SummaryLine())
 		return rep, nil
+	}
+
+	if opts.RedisMode {
+		rep.Marker = MarkerNotReadRedisMode
+		fmt.Fprintf(opts.Stderr, "WARN: RouteStore.Mode=redis: %s is not read in redis mode and the cache is not verified; "+
+			"unfreezing because -cache-was-not-verified-acknowledged was given (W1 does not read route_meta.writable in redis mode; "+
+			"this re-enables route_tool import and the db_first writers after a later switch)\n", placement.RouteReadyKey)
+		return unfreezeWriters(ctx, db, opts, rep)
 	}
 
 	raw, marker, state, err := readReadyMarker(ctx, rd, opts.Identity)
@@ -286,7 +308,11 @@ func Unfreeze(ctx context.Context, rd readyMarkerRedis, db unfreezeDB, opts Unfr
 			fmt.Fprintf(opts.Stderr, "%s generation %s -> %s (compare-and-set)\n", placement.RouteReadyKey, marker.Generation, meta.Generation)
 		}
 	}
+	return unfreezeWriters(ctx, db, opts, rep)
+}
 
+// unfreezeWriters 是解冻的最后一步:在 opts.Timeout 内翻回 writable = 1(最低水位取 rep.MinWatermarkMs),成功才写统计行。
+func unfreezeWriters(ctx context.Context, db unfreezeDB, opts UnfreezeOptions, rep UnfreezeReport) (UnfreezeReport, error) {
 	wctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 	defer cancel()
 	changed, err := db.UnfreezeRouteWriters(wctx, rep.MinWatermarkMs)

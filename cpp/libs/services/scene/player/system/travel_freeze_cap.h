@@ -53,7 +53,7 @@ namespace travel_freeze_cap
 
 	// EnterScene 应答看门狗(PlayerLifecycleSystem::ArmTravelReplyWatchdog)。scene_manager 不可达 / 连接被重置 /
 	// zrpc 服务端超时(scene_manager_service.yaml 的 Timeout: 8000)/ C++ 侧 gRPC deadline 到期(base_deploy_config.yaml
-	// GrpcClient.CallDeadlineMs,SceneManager 10000)时,生成的客户端会调失败处理器,但传输失败 = 结果未知:
+	// GrpcClient.CallDeadlineMs,SceneManager 10000)时,EnterScene 的每次调用回调以非 OK 完成,但传输失败 = 结果未知:
 	// 对交接只记日志、不当证据(PlayerLifecycleSystem::DispatchEnterSceneTransportFailure),源端仍只能等本看门狗
 	// 按 owner_epoch 裁决 —— 没有这道看门狗,玩家会以冻结态挂到冻结上限。取值远大于 EnterScene 的正常耗时
 	// (压测 P99 亚秒)与 gRPC deadline,只兜真正的丢应答。

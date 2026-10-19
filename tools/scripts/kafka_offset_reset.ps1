@@ -11,7 +11,7 @@
       • -ToEarliest / -ToLatest: reset to topic boundaries
       • -DeleteAndRecreateTopic: nuke the topic and recreate it (most aggressive).
         db_task topic(db_task_zone_<id>[_g<gen>])一律拒绝(2026-10-17,R7 复核 [1]):go/db 的已落库游标
-        consumer:applied:<topic>:<key>:<type> 只按 topic 名区分、永不过期,且在共享 DB0 里(回档 Step 4 的防护恰好不清它)。
+        consumer:applied:<topic>:<key>:<type> 只按 topic 名区分、永不过期,且在共享 DB0 里(回档有意保留它,不清)。
         同名重建后各分区 offset 从 0 重新开始,新存盘的 seq 都不大于旧游标,被判为 orderingStale:跳过落库、照常提交位点,
         存盘静默丢失,直到新 offset 追上旧值。要换一个空 topic,走 ServerConfig.Kafka.TopicGeneration 换代(新 topic 名就是新的游标命名空间;
         go/db、login、merge_zone、k8s_deploy 都按它推导 topic 名)。
@@ -28,7 +28,8 @@
         dry-run 与 -Apply 都检查。
       • -Apply 时 --execute 之后再 describe 一次,逐分区断言 CURRENT-OFFSET 等于计划的 NEW-OFFSET;不符即失败。
       • 给了 -RetireGroup 时,只有复核通过才删除 RetireGroup 在本 topic 上的位点(回档是有意回退,不做「新组 ≥ 旧组」检查)。
-        回档 Step 5 用它把 zone 落到 zone 组:重置 zone 组到 TargetTime,再退役 legacy 组在本 topic 上的位点。
+        回档 Step 5 用它把 zone 落到 zone 组:zone 组拨到日志末端(-ToLatest,负责人 2026-10-17 裁决「丢弃 TargetTime 之后的写」),
+        再退役 legacy 组在本 topic 上的位点。
 
     Always defaults to dry-run (uses `--dry-run` flag of the kafka tool, which prints
     the plan without writing). Pass -Apply to actually execute.
@@ -45,13 +46,13 @@
         -Partitions 10
 
 .EXAMPLE
-    # Apply (write) the reset, verify it, then retire the legacy group's offsets on this topic (rollback Step 5)
+    # Apply (write) the reset to the log end, verify it, then retire the legacy group's offsets on this topic (rollback Step 5)
     pwsh -File tools/scripts/kafka_offset_reset.ps1 `
         -BootstrapServer kafka:9092 `
         -Group db_rpc_consumer_group_z101 `
         -RetireGroup db_rpc_consumer_group `
         -Topic db_task_zone_101 `
-        -ToDatetime "2026-05-15T03:17:00Z" `
+        -ToLatest `
         -Partitions 10 `
         -Apply
 
@@ -430,7 +431,7 @@ if ($RetireGroup -ne "") {
 # -DeleteAndRecreateTopic 的两条拒绝放在参数组合校验之后(参数组合本身错了先报组合错误),都早于解析任何 Kafka 工具。
 if ($DeleteAndRecreateTopic -and (Test-DbTaskTopicName -Topic $Topic)) {
     throw ("-DeleteAndRecreateTopic 拒绝 db_task topic $Topic(尚未做任何改动):go/db 的已落库游标 consumer:applied:${Topic}:* 只按 topic 名区分、永不过期," +
-        "且在共享 DB0 里(回档 Step 4 不清它)。同名重建后 offset 从 0 重新开始,新存盘的 seq 都不大于旧游标,被判为 orderingStale 静默跳过,存盘丢失。" +
+        "且在共享 DB0 里(回档有意保留它,不清)。同名重建后 offset 从 0 重新开始,新存盘的 seq 都不大于旧游标,被判为 orderingStale 静默跳过,存盘丢失。" +
         "要换一个空 topic,把 go/db / go/login 的 Kafka.TopicGeneration 加一(新 topic 名即新的游标命名空间,go/db、login、merge_zone、k8s_deploy 都按它推导)," +
         "按 docs/design/db-task-kafka-partition-contract.md「离线扩容流程」换代;只想回到某个时间点,用 -ToDatetime / -ToEarliest / -ToLatest。")
 }
@@ -582,12 +583,11 @@ if ($planProblems.Count -gt 0) {
 
 if ($Apply) {
     # 复核必须先于删除 -RetireGroup 的位点:重置静默无效时再删掉旧组位点,两组都没有位点,go/db 会从 Oldest 重放整个保留期。
-    # 重放的写是否被游标吸收取决于 Redis 里的 consumer:applied 游标还在不在,不能假定回档清过它(R7 复核 [4]):
-    #   - K8s 上游标在共享 DB0,回档 Step 4 的 FLUSHDB 防护(k8s_zone_rollback.ps1 Get-SharedRedisGuardPatterns 含 consumer:applied*)
-    #     恰好拒绝清它:已落过库的消息 seq 不大于游标,判 stale 吸收;从未推进过游标的(zone-down 时的积压、本 topic 的重试收据)照常落库;
-    #   - 游标被清(本机单库,或带 -ConfirmFlushSharedRedis)时没有游标,按 apply_no_cursor 全部重新落库。
-    # 回档要「丢弃 TargetTime 之后的写」还是「从 TargetTime 起灾难恢复重放」尚待负责人裁决(docs/design/zone_data_rollback.md、
-    # db-consumer-group-per-zone.md §3(d) 与回档脚本 Step 5 现有说法不一致),本脚本只负责把位点改到计划值并复核。
+    # 回档语义已定(负责人 2026-10-17 裁决:丢弃 TargetTime 之后的写):k8s_zone_rollback.ps1 Step 5 用 -ToLatest 把 zone 组拨到日志末端,
+    # 不再按 -ToDatetime 拨回 T。go/db 的已落库游标 consumer:applied* 有意保留(回档不再 FLUSHDB):seq 是 go/db 消费时算的 offset + 1,
+    # 拨到末端之后的新消息 offset 不小于切点、旧游标不大于切点,新写恒大于旧游标;本 topic 的重试收据与死信由回档工具在 Step 4b 隔离。
+    # 对 db_task topic 再做 -ToDatetime / -ToEarliest 时不得越过回档记下的切点(run/logs/zone-rollback/<rid>/kafka-cut.json):
+    # 越过即把停服时那批从未落库的积压重新落库 —— 本脚本目前不读切点,只能靠文档与操作者核对。本脚本只负责把位点改到计划值并复核。
     Write-Host "Step: verify committed offsets of $Group on $Topic equal the plan" -ForegroundColor Yellow
     $afterReset = Invoke-KafkaConsumerGroupDescribe -CgTool $cgTool -BootstrapServer $BootstrapServer -Group $Group -Topic $Topic
     $verifyProblems = Get-ResetVerificationProblems -Plan $plan -Described $afterReset -Partitions $Partitions
@@ -611,5 +611,5 @@ if ($Apply) {
 # 成功路径显式以 0 退出,与 -FinalizeHandoff / -DeleteAndRecreateTopic 两个分支一致;失败一律 throw(R7 复核 [5])。
 # 调用方(k8s_zone_rollback.ps1 Step 5 与第 0 步 d、dev_tools.ps1 kafka-offset-reset)按 $LASTEXITCODE 判定成败:不显式 exit 时,
 # 它停在最后一次原生调用的退出码上 —— 「组不存在」的 describe 在有的 Kafka 版本以非 0 退出、被判为 missing 后正常返回,
-# 回档就会在 PITR / FLUSHDB 之后把成功判成失败。
+# 回档就会在 PITR 之后(Step 5 时 MySQL 已回档、Redis 尚未处置)把成功判成失败。
 exit 0

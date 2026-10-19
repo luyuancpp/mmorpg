@@ -43,6 +43,19 @@ type PlacementConfig struct {
 	// 打开前提(§13):全部 login 已 PinOnCreate=true,且各 zone 已 -mode pin-placement 钉完存量。
 	Required bool `json:"Required,optional"`
 
+	// RequireRouteReady=true:选库与落库后复核改用就绪读脚本(shared/placement.RouteReadyReadScript),只有 mapping Redis
+	// 的副本被判可信(就绪标记里记下的 run_id / master_replid 就是本次读所在的主实例)时才按读到的值选库;否则写延后
+	// (不耗重试预算)、读耗预算,并由进程级就绪闸暂停取 Kafka 消息与认领重试(D1 第 3 批,
+	// docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.3、§13.2)。启动时试跑一次读脚本,执行出错即拒启。
+	// 缺省 false:行为与引入之前相同。打开顺序(§8 P5):data_service 对账 leader 已挂上就绪标记之后逐 zone 打开;
+	// 回退先关本开关(先读方、后写方)。
+	RequireRouteReady bool `json:"RequireRouteReady,optional"`
+
+	// RouteReadyGateIntervalMs 是就绪闸刷新(一次不带映射键的读脚本)的间隔,也是闸关着时复查的间隔(毫秒)。
+	// 0 / 不写 = DefaultPlacementRouteReadyGateIntervalMs;写出来就必须在 [Min, Max] 之内,越界拒启(Validate)。
+	// 只在 RequireRouteReady=true 时生效。
+	RouteReadyGateIntervalMs int `json:"RouteReadyGateIntervalMs,optional"`
+
 	// 额外落点库按家族分两个池旋钮(G2b 批 C;本 zone 库仍用 ServerConfig.Database.MaxOpenConn / MaxIdleConn):
 	//   ZoneStore*    —— **每个**额外 zone 家族库 zone_{1..999999}_db(本 zone 库除外):冷缓存访客读、合服 pin 后的源区库;
 	//   NonZoneStore* —— **每个**非 zone 落点库 player_store_{>=1000000}_db(Phase 2)。
@@ -95,26 +108,30 @@ type ServerConfig struct {
 	OwnerEpochRedis *PlacementRedisConfig `json:"OwnerEpochRedis,optional"`
 }
 
-// 玩家两张表的 MySQL 行内围栏模式(docs/design/db-write-fencing-mysql.md §4.7、§8)。
+// 玩家两张表的 MySQL 行内围栏模式(docs/design/db-write-fencing-mysql.md §4.7、§8 与 2026-10-18 存盘协议世代附注)。
 const (
-	// FencingModeLegacy 不拒绝旧写，但更新保留已有行内围栏，也不发布资产 SQL 提交证据。缺省值。
+	// FencingModeLegacy 不拒绝旧写，但更新保留已有行内围栏，不写两表 SQL ACK、不补投、不发布资产 SQL 提交证据。
+	// 只与尚未升级到严格提交屏障的旧 scene / login 同世代；本 zone 已有严格世代证据时拒绝启动(saveoutbox.CheckLegacyAllowed)。
 	FencingModeLegacy = "legacy"
-	// FencingModeDual 玩家两张表按 DBTask 的 (owner_epoch, save_seq) 做行内围栏条件写,并发布资产 SQL 提交证据。
+	// FencingModeDual 玩家两张表按 DBTask 的 (owner_epoch, save_seq) 做行内围栏条件写,写两表 SQL ACK、跑补投,
+	// 并发布资产 SQL 提交证据。现行 C++ / login 的严格提交屏障只能与它配合。缺省值。
 	FencingModeDual = "dual"
 )
 
 // FencingConfig 是行内围栏的开关。整段可缺省:go-zero 对整段 optional 且未出现的嵌套结构不回填 default,
-// 所以零值(空串)必须直接就是安全语义 legacy。逐 zone 切 dual,门禁见设计 §8.3;dual 切回 legacy 随时可做,
-// legacy 期间更新保留已有围栏，新行盖零；切换仍须满足 §8.3 的滚动门禁。
+// 所以零值(空串)直接解释为与现行写者同世代的 dual(2026-10-18 起;此前缺省 legacy,与严格提交屏障自相矛盾,
+// 按缺省配置玩家第二次登录起全部失败,见 data-overwrite-rollback-audit-20261018.md §2.2)。
+// 回退 legacy 不再「随时安全」:必须先把本 zone 的 scene / login 回退到不写严格屏障的版本并按设计 §8.6 排空、
+// 删除世代标记,否则 legacy 实例在启动门禁处拒启、运行中发现严格世代证据即停机。
 type FencingConfig struct {
 	Mode          string `json:"Mode,optional"`
 	EpochOverride bool   `json:"EpochOverride,optional"`
 }
 
-// EffectiveMode 返回生效的模式:空串按 legacy。
+// EffectiveMode 返回生效的模式:空串按 dual。
 func (f FencingConfig) EffectiveMode() string {
 	if f.Mode == "" {
-		return FencingModeLegacy
+		return FencingModeDual
 	}
 	return f.Mode
 }
@@ -490,6 +507,15 @@ const (
 	DefaultPlacementExtraStoreConnMaxIdleSeconds = 60
 )
 
+// 就绪闸刷新间隔(Placement.RouteReadyGateIntervalMs)的缺省值与上下限(spec_D1_batch1b2_2_3.md §13.2 第 1 条)。
+// 下限 200ms:每次刷新是两段 INFO,刷得再密只是给 mapping Redis 加负担,逐条任务的读本来就各自判 verdict;
+// 上限 10s:闸关着时复查一次的间隔,太长会让 Redis 恢复之后存盘白白多停一段。
+const (
+	DefaultPlacementRouteReadyGateIntervalMs = 1000
+	MinPlacementRouteReadyGateIntervalMs     = 200
+	MaxPlacementRouteReadyGateIntervalMs     = 10000
+)
+
 // 消费组超时默认值(毫秒),等于 sarama v1.43.1 的 NewConfig 默认值(Session 10s / Heartbeat 3s / Rebalance 60s),
 // 所以不写这三个键的部署与引入它们之前行为相同。
 //
@@ -604,6 +630,10 @@ func (c *Config) Normalize() {
 	if p.ExtraStoreConnMaxIdleSeconds <= 0 {
 		p.ExtraStoreConnMaxIdleSeconds = DefaultPlacementExtraStoreConnMaxIdleSeconds
 	}
+	// 就绪闸间隔只把 0(没写)换成默认值;负数与越界留给 Validate 拒绝,不在这里悄悄改写显式值。
+	if p.RouteReadyGateIntervalMs == 0 {
+		p.RouteReadyGateIntervalMs = DefaultPlacementRouteReadyGateIntervalMs
+	}
 
 	// 消费组超时:≤0 视为没写,取默认值(约束由 ValidateConsumerGroup 检查,这里不改写显式值)。
 	k := &c.ServerConfig.Kafka
@@ -654,7 +684,7 @@ func (c *Config) Validate() error {
 	}
 	if mode := c.ServerConfig.Fencing.Mode; mode != "" && mode != FencingModeLegacy && mode != FencingModeDual {
 		return fmt.Errorf("ServerConfig.Fencing.Mode=%q must be exactly %q or %q (case-sensitive; empty means %q)",
-			mode, FencingModeLegacy, FencingModeDual, FencingModeLegacy)
+			mode, FencingModeLegacy, FencingModeDual, FencingModeDual)
 	}
 	if routing := c.ServerConfig.Kafka.RetryRouting; routing != "" && !validRetryRouting(routing) {
 		return fmt.Errorf("ServerConfig.Kafka.RetryRouting=%q must be exactly %q or %q (case-sensitive; empty means %q)",
@@ -672,6 +702,12 @@ func (c *Config) Validate() error {
 	if t := r.WaitAOFTimeoutMs; t != 0 && (t < 1 || t > MaxRedisWaitAOFTimeoutMs) {
 		return fmt.Errorf("ServerConfig.RedisClient.WaitAOFTimeoutMs must be in [1, %d] (0 or unset = %d), got %d",
 			MaxRedisWaitAOFTimeoutMs, DefaultRedisWaitAOFTimeoutMs, t)
+	}
+	// 不论 RequireRouteReady 取值都校验:写错的间隔在打开开关那一刻才暴露,不如加载时就拒。
+	if v := c.Placement.RouteReadyGateIntervalMs; v != 0 &&
+		(v < MinPlacementRouteReadyGateIntervalMs || v > MaxPlacementRouteReadyGateIntervalMs) {
+		return fmt.Errorf("Placement.RouteReadyGateIntervalMs must be in [%d, %d] (0 or unset = %d), got %d",
+			MinPlacementRouteReadyGateIntervalMs, MaxPlacementRouteReadyGateIntervalMs, DefaultPlacementRouteReadyGateIntervalMs, v)
 	}
 	return nil
 }

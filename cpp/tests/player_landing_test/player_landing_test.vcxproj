@@ -127,7 +127,7 @@
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
       <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>

@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"shared/placement"
 	"shared/sqlpoolstats"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -296,6 +297,31 @@ var (
 			"conflict|legacy_conflict|fenced|not_durable|error (failure; the player_route row stays committed but unpublished).",
 	}, []string{"result"})
 
+	// ── 第 3 批读方门禁(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.2)──
+	//
+	// RouteStore.ReadRequiresReady=true 时 R2(home_fence)/ R6(home,含 ClientForPlayer)/ R3(batch,按块计)每次读计一次,
+	// 结果是 cache(副本可信,用了缓存,含权威缺席)| sql(回源库读到了)| not_found_sql(回源库,权威缺席)| sql_error(回源失败,
+	// RPC 回 Unavailable)。enumerate(R7)在 db_first 下一律读库,与开关无关,只有 sql / sql_error。两个 label 都是封闭集合,
+	// 开关打开时 PrimeRouteRead 全部预置为 0;sql_error 持续非零 = 缓存不可信期间全局库也不可用,读方整体 fail-closed。
+	// **不要**把 player_id 加成 label(AGENTS.md §9),逐条明细在 `[RouteRead]` 日志里。
+	routeReadTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "route_read_total",
+		Help: "Route read gate results (RouteStore.ReadRequiresReady): path home|home_fence|batch (per chunk)|enumerate, " +
+			"result cache (trusted replica used, including authoritative absence) | sql (fell back to player_route and found the row) | " +
+			"not_found_sql (fell back, authoritative absence) | sql_error (fell back and failed; the RPC answers Unavailable).",
+	}, []string{"path", "result"})
+
+	// 读方每执行一次就绪读脚本记一次 verdict(placement.RouteReadyVerdict 的低基数名字),外加 script_error:
+	// 脚本没执行成功或回复形状不对(按不可信处理、回源库)。trusted 以外的取值持续出现 = 读方正在回源。
+	// P5 的门禁看对账 leader 的自检 gauge,不看这个计数(开关打开前读方不执行脚本,规格 §13.1 第 8 条)。
+	routeReadyVerdictTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "route_ready_verdict_total",
+		Help: "Route ready read script verdicts seen by data_service readers: trusted|absent|malformed|newer_version|" +
+			"identity_unavailable|not_master|identity_mismatch, or script_error (the script failed or replied in an unexpected shape).",
+	}, []string{"verdict"})
+
 	registerOnce sync.Once
 )
 
@@ -406,6 +432,7 @@ func register() {
 			playerInboxLedgerReadTotal,
 			rollbackGuildCheckTotal, rollbackGuildDivergenceRows, rollbackGuildCheckSeconds,
 			routeRegisterTotal, routePublishTotal,
+			routeReadTotal, routeReadyVerdictTotal,
 		)
 	})
 }
@@ -434,6 +461,73 @@ func ObserveRouteRegister(outcome string) {
 func ObserveRoutePublish(result string) {
 	register()
 	routePublishTotal.WithLabelValues(result).Inc()
+}
+
+// route_read_total{path,result} 与 route_ready_verdict_total{verdict} 的取值(封闭集合,PrimeRouteRead 逐个预置;
+// 新增取值必须同时加进 routeReadSeries / routeReadyVerdicts)。
+const (
+	RouteReadPathHome      = "home"
+	RouteReadPathHomeFence = "home_fence"
+	RouteReadPathBatch     = "batch"
+	RouteReadPathEnumerate = "enumerate"
+
+	RouteReadResultCache       = "cache"
+	RouteReadResultSQL         = "sql"
+	RouteReadResultNotFoundSQL = "not_found_sql"
+	RouteReadResultSQLError    = "sql_error"
+
+	// RouteReadyVerdictScriptError 是 verdict 之外的一个取值:读脚本没执行成功或回复形状不对。
+	RouteReadyVerdictScriptError = "script_error"
+)
+
+// routeReadSeries 是 route_read_total 里**会出现**的 path × result 组合(13 条):batch 没有逐 id 的缺席结论,
+// enumerate 只读库。不出现的组合不预置,免得面板上多出恒为 0、看着像「在跑」的序列。
+var routeReadSeries = [][2]string{
+	{RouteReadPathHome, RouteReadResultCache},
+	{RouteReadPathHome, RouteReadResultSQL},
+	{RouteReadPathHome, RouteReadResultNotFoundSQL},
+	{RouteReadPathHome, RouteReadResultSQLError},
+	{RouteReadPathHomeFence, RouteReadResultCache},
+	{RouteReadPathHomeFence, RouteReadResultSQL},
+	{RouteReadPathHomeFence, RouteReadResultNotFoundSQL},
+	{RouteReadPathHomeFence, RouteReadResultSQLError},
+	{RouteReadPathBatch, RouteReadResultCache},
+	{RouteReadPathBatch, RouteReadResultSQL},
+	{RouteReadPathBatch, RouteReadResultSQLError},
+	{RouteReadPathEnumerate, RouteReadResultSQL},
+	{RouteReadPathEnumerate, RouteReadResultSQLError},
+}
+
+// routeReadyVerdicts 是 route_ready_verdict_total 的封闭集合:placement 的 7 个 verdict 名字(唯一出处,不在这里抄一份)
+// 加 script_error,共 8 条。
+func routeReadyVerdicts() []string {
+	return append(placement.RouteReadyVerdictNames(), RouteReadyVerdictScriptError)
+}
+
+// PrimeRouteRead 把 route_read_total(13 条)与 route_ready_verdict_total(8 条)逐个预置为 0。
+// 只在 RouteStore.ReadRequiresReady=true(必然 db_first)时调(svc.NewServiceContext):理由同 PrimeRoute ——
+// sql_error 这类一辈子可能只发生几次的结局,序列不预先存在的话 `increase(...) > 0` 恰好漏掉第一次;
+// 开关关着时不调,免得面板上多出一组恒为 0 的序列。
+func PrimeRouteRead() {
+	register()
+	for _, s := range routeReadSeries {
+		routeReadTotal.WithLabelValues(s[0], s[1]).Add(0)
+	}
+	for _, v := range routeReadyVerdicts() {
+		routeReadyVerdictTotal.WithLabelValues(v).Add(0)
+	}
+}
+
+// ObserveRouteRead 记一次读方门禁的读。path / result 取 RouteRead* 常量(封闭集合),本函数不校验。
+func ObserveRouteRead(path, result string) {
+	register()
+	routeReadTotal.WithLabelValues(path, result).Inc()
+}
+
+// ObserveRouteReadyVerdict 记读方一次就绪读脚本的结论:placement.RouteReadyVerdict.String() 或 RouteReadyVerdictScriptError。
+func ObserveRouteReadyVerdict(verdict string) {
+	register()
+	routeReadyVerdictTotal.WithLabelValues(verdict).Inc()
 }
 
 // PrimeRollbackGuildCheck 把 rollback_guild_check_total 的 scope × result 封闭集合(3 × 9 = 27 条)

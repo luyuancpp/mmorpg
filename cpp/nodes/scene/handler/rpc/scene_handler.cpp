@@ -291,7 +291,7 @@ void SceneHandler::ProcessClientPlayerMessage(::google::protobuf::RpcController*
 		// 客户端 GM 指令统一闸门(guild-phase2.md §S4 4.34)。
 		//
 		// 这里是客户端消息进 scene 的**唯一**入口:gate 发
-		// SceneProcessClientPlayerMessageMessageId(client_message_processor.cpp:699-711)
+		// SceneProcessClientPlayerMessageMessageId(client_session_handler.cpp:699-711)
 		// 只走到这个函数。逐 handler 加闸必漏 —— P0-a 就漏掉了
 		// SceneRollbackClientPlayer 的十二条(GmExecuteRollback / GmClawbackItem 等):
 		// 它们的 service 没标 OptionIsClientProtocolService,gate 的清单挡得住,

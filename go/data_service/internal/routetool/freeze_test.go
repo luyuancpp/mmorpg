@@ -67,8 +67,12 @@ func frozenUnfreezeDB() *fakeUnfreezeDB {
 func readyMarkerFor(t *testing.T, id RedisIdentity, gen string, watermarkMs uint64) string {
 	t.Helper()
 	raw, err := placement.EncodeRouteReadyMarker(placement.RouteReadyMarker{
-		Generation: gen, RedisRunID: id.RunID, MasterReplID: id.MasterReplID,
-		SetAtMs: watermarkMs + 1, WatermarkMs: watermarkMs, Leader: "route_leader@it:0a1b2c3d",
+		Generation:   gen,
+		RedisRunID:   id.RunID,
+		MasterReplID: id.MasterReplID,
+		SetAtMs:      watermarkMs + 1,
+		WatermarkMs:  watermarkMs,
+		Leader:       "route_leader@it:0a1b2c3d",
 	})
 	require.NoError(t, err)
 	return raw
@@ -171,6 +175,10 @@ func TestUnfreeze_RefusesWithoutVerifiedMarker(t *testing.T) {
 		{"版本更新_不动", func(t *testing.T, mr *miniredis.Miniredis) {
 			require.NoError(t, mr.Set(placement.RouteReadyKey, `{"v":2,"whatever":true}`))
 		}, MarkerNewerVersion, true},
+		// 2026-10-18 修复评审:新版本改了已知字段的类型也只认「版本更新」,不能当畸形删掉。
+		{"版本更新且字段改了类型_不动", func(t *testing.T, mr *miniredis.Miniredis) {
+			require.NoError(t, mr.Set(placement.RouteReadyKey, `{"v":2,"set_at_ms":"x"}`))
+		}, MarkerNewerVersion, true},
 		{"不是string_不动", func(t *testing.T, mr *miniredis.Miniredis) {
 			_, err := mr.SAdd(placement.RouteReadyKey, "x")
 			require.NoError(t, err)
@@ -241,6 +249,44 @@ func TestUnfreeze_AlreadyWritableIsNoop(t *testing.T) {
 	assert.True(t, rep.AlreadyWritable)
 	assert.Empty(t, db.unfreezeCalls)
 	assert.Contains(t, run.stdout, "already_writable=true")
+}
+
+// TestUnfreeze_RedisModeNeedsAckAndSkipsMarker(2026-10-18 修复评审):redis 模式下 unfreeze 是撤销冻结的唯一工具路径,
+// 不读标记(不给 mapping Redis 与身份读取也能跑)、最低水位 0;没有显式确认就拒绝(退出码 2),连库都不读。
+func TestUnfreeze_RedisModeNeedsAckAndSkipsMarker(t *testing.T) {
+	run := func(db unfreezeDB, ack bool) (UnfreezeReport, cliRun, error) {
+		var out, errOut bytes.Buffer
+		rep, err := Unfreeze(context.Background(), nil, db, UnfreezeOptions{
+			CacheUnverifiedAcknowledged: ack,
+			RedisMode:                   true,
+			Timeout:                     store.RouteFreezeTimeoutMin,
+			Stdout:                      &out,
+			Stderr:                      &errOut,
+		})
+		return rep, cliRun{code: UnfreezeExitCode(rep, err), stdout: out.String(), stderr: errOut.String()}, err
+	}
+
+	db := frozenUnfreezeDB()
+	_, r, err := run(db, false)
+	assert.Equal(t, ExitFailed, r.code)
+	assert.ErrorIs(t, err, ErrCacheNotVerified)
+	assert.Empty(t, db.unfreezeCalls)
+	assert.Empty(t, r.stdout)
+
+	db = frozenUnfreezeDB()
+	rep, r, err := run(db, true)
+	require.NoError(t, err)
+	assert.Equal(t, ExitClean, r.code, r.stderr)
+	assert.Equal(t, []uint64{0}, db.unfreezeCalls, "redis 模式没有可信的「缓存截至」时刻")
+	assert.Equal(t, MarkerNotReadRedisMode, rep.Marker)
+	assert.True(t, db.deadline, "解冻写带时限")
+	assert.Contains(t, r.stderr, "WARN: RouteStore.Mode=redis")
+	assert.Equal(t, "route_unfreeze changed=true already_writable=false marker=not_read_redis_mode generation_realigned=false min_watermark_ms=0\n", r.stdout)
+
+	_, err = Unfreeze(context.Background(), nil, frozenUnfreezeDB(), UnfreezeOptions{
+		Timeout: store.RouteFreezeTimeoutMin, Stdout: &bytes.Buffer{}, Stderr: &bytes.Buffer{},
+	})
+	require.Error(t, err, "db_first 下没有 mapping Redis 与身份读取不许跑")
 }
 
 // TestFreeze_OutputAndRedisModeWarning:freeze 只碰库,带时限调用;stdout 一行统计;redis 模式打 WARN;

@@ -889,6 +889,8 @@ Go `go/scene_manager/internal/logic/release_dispatch_test.go`(新):
   :3592 的 `const` 票据副本改为可写,在 :3616 读身份组件时按票据会话算出代次填进票据;票据按值捕获进 Redis 回调。
   `SendEmergencyRelocateEnterScene`(:3826)执行 `req.set_login_generation(ticket.loginGeneration)`。
 
+> **2026-10-17 契约勘误**：这里只订正镜像调用点：自动进场已迁到 `player_scene.cpp` 的 `PlayerSceneSystem::HandleMirrorCreateDone`，仍经 `RequestSceneChange` 盖实体代次；旧的 `scene_manager_response_handler.cpp` 已删。本勘误不改变本计划其余步骤、状态或验证结论。
+
 SM 继续把 12 号字段原样放进 `RoutePlayerEvent.login_generation`(7)。gate 的 `ApplyRouteIdentity` 对同一角色取 max;
 实体代次 ≤ 会话值,所以会话值不变。
 

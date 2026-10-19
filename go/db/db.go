@@ -45,6 +45,9 @@ const killSwitchEtcdDialTimeout = 5 * time.Second
 // 之后的续写由 kafka.KeepPlacementCapability 负责,预算见那里。
 const placementCapabilityTimeout = 5 * time.Second
 
+// saveProtocolGateTimeout 是启动期存盘协议世代门禁的预算:一条 SET 或一次 GET 加 64 个 ZCARD 的管道。
+const saveProtocolGateTimeout = 5 * time.Second
+
 func main() {
 	flag.Parse()
 	// 版本行直写 stdout,先于读配置与 logx 初始化:进程在配置 / 依赖阶段就崩溃时也已留下"跑的是哪一版"
@@ -150,6 +153,44 @@ func main() {
 
 	logx.Infof("player row fencing: mode=%s epoch_override=%v", fencingMode, config.AppConfig.ServerConfig.Fencing.EpochOverride && fencingMode == config.FencingModeDual)
 
+	// ── 存盘协议世代门禁(data-overwrite-rollback-audit-20261018.md §2.2)──────────────────────────
+	// 现行 scene / login 只说严格提交屏障,只有 dual 写两表 SQL ACK、跑补投。dual 在消费者与补投启动之前写 zone 级世代标记;
+	// legacy 先确认本 zone 没有严格世代证据(标记或非空补投桶)才启动,运行中周期复查,发现即走正常停机并以非零码退出,
+	// 由编排重启后停在本门禁。失败一律拒启(fail-closed):判不清世代时放 legacy 进来,就是「第二次登录起全部失败」。
+	// exitCode 的 defer 必须先于下面所有 defer 注册,才能在消费者等全部停完之后最后执行。
+	exitCode := 0
+	defer func() {
+		if exitCode != 0 {
+			os.Exit(exitCode)
+		}
+	}()
+	protocolConflict := make(chan error, 1)
+	gateCtx, gateCancel := context.WithTimeout(context.Background(), saveProtocolGateTimeout)
+	if fencingMode == config.FencingModeDual {
+		err = saveoutbox.AnnounceStrictGeneration(gateCtx, ctx.RedisClient, config.AppConfig.ZoneId)
+	} else {
+		err = saveoutbox.CheckLegacyAllowed(gateCtx, ctx.RedisClient, config.AppConfig.ZoneId)
+	}
+	gateCancel()
+	if err != nil {
+		panic(fmt.Sprintf("save protocol generation gate rejected startup (mode=%s): %v", fencingMode, err))
+	}
+	if fencingMode == config.FencingModeLegacy {
+		// 复查协程在消费者停完之后才取消(defer 后进先出):停机排空期间仍续写 legacy 存活标记,dual 的补投继续等。
+		watchCtx, stopWatch := context.WithCancel(context.Background())
+		defer stopWatch()
+		go saveoutbox.WatchLegacy(watchCtx, ctx.RedisClient, config.AppConfig.ZoneId, saveoutbox.LegacyWatchInterval, func(err error) {
+			select {
+			case protocolConflict <- err:
+			default:
+			}
+		})
+		logx.Infof("save protocol generation: mode=legacy zone=%d no strict evidence; rechecking every %s",
+			config.AppConfig.ZoneId, saveoutbox.LegacyWatchInterval)
+	} else {
+		logx.Infof("save protocol generation: mode=dual %s=%s", saveoutbox.GenerationKey(config.AppConfig.ZoneId), saveoutbox.GenerationStrict)
+	}
+
 	// Initialize Kafka consumer
 	kafkaConsumer, err := kafka.NewKeyOrderedKafkaConsumer(
 		config.AppConfig,
@@ -169,7 +210,7 @@ func main() {
 
 	// 父快照Lua中保存的原始任务意图跨scene崩溃恢复；Kafka确认后仍等两表SQL双ACK才清理。
 	// 装配使用可写主父缓存Redis，与只读OwnerEpochRedis区分；跨实例拓扑未支持时拒启。
-	saveReplay, err := saveoutbox.Start(context.Background(), config.AppConfig, ctx.RedisClient, ctx.PlacementRedis)
+	saveReplay, err := saveoutbox.Start(context.Background(), config.AppConfig, ctx.RedisClient, ctx.PlacementRedis, stores)
 	if err != nil {
 		panic(fmt.Sprintf("save outbox recovery rejected: %v", err))
 	}
@@ -291,8 +332,15 @@ func main() {
 	// Windows 上 go-zero 的 proc 是空实现,本机 go_services.ps1 发的 Ctrl+C 以 os.Interrupt(SIGINT)到达这里。
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	fmt.Println("Shutting down gracefully...")
+	select {
+	case <-quit:
+		fmt.Println("Shutting down gracefully...")
+	case err := <-protocolConflict:
+		// 走与信号相同的停机路径(全部 defer),最后以非零码退出;重启后停在启动门禁,直到配置改为 dual。
+		logx.Errorf("SAVE-PROTOCOL-CONFLICT legacy go/db is running in a strict save-barrier zone, shutting down: %v", err)
+		fmt.Println("Shutting down: save protocol generation conflict (set ServerConfig.Fencing.Mode=dual)...")
+		exitCode = 1
+	}
 }
 
 // newKillSwitchEtcdClient 按 RpcServerConf.Etcd 建一个只给热关停 watch 用的

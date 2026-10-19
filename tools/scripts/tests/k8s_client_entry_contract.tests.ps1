@@ -52,6 +52,8 @@ $InfraUpArgs = @('-Command', 'infra-up', '-SkipGoSvc', '-SkipJavaSvc', '-InfraNa
 $GoJavaArgs = @('-GoSvcRegistry', 'registry.invalid/test', '-JavaSvcRegistry', 'registry.invalid/test')
 # D92:整词匹配。GATE_NODE_PORT_BASE 是合法的生成器内部 env,子串匹配会误伤。
 $D92Pattern = '(?<![A-Za-z0-9_])NODE_(?:IP|PORT)(?![A-Za-z0-9_])'
+# 资源名必须完整匹配；gateway 是独立 Deployment，不能被 gate 的禁令误伤。
+$GateDeploymentRolloutPattern = 'rollout status deployment/gate(?=\s|$)'
 
 # ─────────────────────────────────────────────────────────────────
 # 0. 采集与断言小工具
@@ -252,7 +254,31 @@ function Invoke-EntryDryRun {
     if ($reachesPodipGate -and -not $RefusedAtEntry -and $LibCallDefects.Count -gt 0) {
         return @{ ExitCode = -1; Output = "未启动子进程(会挂在缺必填参数的交互提示上):$($LibCallDefects -join '; ')" }
     }
-    return Invoke-DeployDryRun -Arguments $allArgs -Env $Env
+    # 原生 pwsh 的 ConciseView 会在中文异常正文里插入折行和“|”，破坏必须逐字核对的拒绝原因。
+    # 复用原参数声明绑定具名参数，只在捕获边界输出完整 Message；默认值仍由原脚本决定。
+    $deployScript = Join-Path (Get-ToolsScriptsDir) 'k8s_deploy.ps1'
+    $parseErrors = $null
+    $deployAst = [Management.Automation.Language.Parser]::ParseFile($deployScript, [ref]$null, [ref]$parseErrors)
+    if ($parseErrors.Count) { throw "部署脚本解析失败:$($parseErrors[0].Message)" }
+    $driver = Join-Path ([IO.Path]::GetTempPath()) ('mmorpg-client-entry-dryrun-' + [guid]::NewGuid().ToString('N') + '.ps1')
+    $driverBody = @'
+$ErrorActionPreference = 'Stop'
+try {
+    & __DEPLOY_SCRIPT__ @PSBoundParameters
+    if (-not $? -and $LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+catch {
+    Write-Host "DEPLOY-FAILED: $($_.Exception.Message)"
+    exit 1
+}
+exit 0
+'@
+    $driverBody = $driverBody.Replace('__DEPLOY_SCRIPT__', "'" + $deployScript.Replace("'", "''") + "'")
+    try {
+        Set-Content -LiteralPath $driver -Encoding utf8 -Value ($deployAst.ParamBlock.Extent.Text + "`n" + $driverBody)
+        return Invoke-CapturedPwsh -ScriptPath $driver -Arguments $allArgs -Env $Env
+    }
+    finally { Remove-Item -LiteralPath $driver -Force -ErrorAction SilentlyContinue }
 }
 
 # 库生成器的公共容器参数(关 sidecar:生成器单测只看本库渲染的部分)。
@@ -1038,7 +1064,9 @@ Test-Case '端到端 external:先删 Deployment 形态(带确认提示)与 gate-
     Assert-True -Condition (($order -notcontains -1) -and (($order | Sort-Object) -join ',') -eq ($order -join ',')) -Because "Service 先于 StatefulSet:Service 被集群拒绝时 gate 还没按冲突端口发布进 etcd(实际顺序 $($order -join ','))"
     Assert-Match -Text $out -Pattern "\[dry-run\] kubectl delete service -l mmorpg\.io/gate-ordinal -n $TestZoneNs .*ordinal >= 2" -Because '缩容后多出来的每序号 Service 要回收(否则继续占着 nodePort)'
     Assert-Match -Text $out -Pattern "\[dry-run\] wait statefulset/gate -n ${TestZoneNs}: poll \.status\.readyReplicas >= 2" -Because 'OnDelete 的 StatefulSet 不能用 rollout status 等'
-    Assert-NotMatch -Text $out -Pattern 'rollout status deployment/gate' -Because 'external 下没有 gate Deployment'
+    Assert-Match -Text 'rollout status deployment/gate -n contract-zone' -Pattern $GateDeploymentRolloutPattern -Because '禁止 gate Deployment 的检查仍须命中完整 gate 资源名'
+    Assert-NotMatch -Text 'rollout status deployment/gateway -n contract-zone' -Pattern $GateDeploymentRolloutPattern -Because 'gateway 的正常就绪等待不属于 gate Deployment'
+    Assert-NotMatch -Text $out -Pattern $GateDeploymentRolloutPattern -Because 'external 下没有 gate Deployment'
     Assert-Match -Text $out -Pattern 'Gate \(external\): StatefulSet replicas=2 service_type=NodePort etp=Local host=127\.0\.0\.1 nodePort=30000\+ordinal' -Because '写路径要打出 gate 地址来源摘要'
 }
 
@@ -1448,6 +1476,59 @@ $ExternalZoneFake = New-FakeDeployArgs -Base $ZoneUpFake -Extra @{ ClientEntryMo
 $IngressZoneFake = New-FakeDeployArgs -Base $ExternalZoneFake -Extra @{ SkipJavaSvc = $false; JavaSvcRegistry = 'registry.invalid/test' }
 $IngressRules = @(@{ Pattern = '^get ingress gateway '; ExitCode = 0; Stdout = 'ingress.networking.k8s.io/gateway' })
 $IngressPatterns = @('集群现状预检失败\(1 项\)', '已有 Ingress gateway,本次部署 gateway 却没给 -GatewayTrustedProxies', "kubectl -n $TestZoneNs delete ingress gateway")
+
+# 直接调用生产预检接缝，锁住空数组、单项和多项漂移的聚合语义；只替换 kubectl I/O，不替换漂移判断。
+$ClusterStateDriftCases = @(
+    @{ Label = 'gate 首次部署无现状'; GateJson = ''; Mode = 'external'; Host = '127.0.0.1'; Port = 30000; Patterns = @() },
+    @{ Label = 'gate 现状与计划一致'; GateJson = $LiveGateStsJson; Mode = 'external'; Host = '127.0.0.1'; Port = 30000; Patterns = @() },
+    @{ Label = 'gate 仅端口漂移'; GateJson = $LiveGateStsJson; Mode = 'external'; Host = '127.0.0.1'; Port = 30010; Patterns = @('gate 自报端口将从') },
+    @{ Label = 'gate 端口与主机两项漂移'; GateJson = $LiveGateStsJson; Mode = 'external'; Host = '10.1.2.3'; Port = 30010; Patterns = @('gate 自报端口将从', 'gate 自报主机将从') },
+    @{ Label = 'battle 首次部署无现状'; BattleJson = ''; Mode = 'podip'; Host = ''; Patterns = @() },
+    @{ Label = 'battle 现状与计划一致'; BattleJson = $LiveBattleStaticJson; Mode = 'external'; Host = ''; Patterns = @() },
+    @{ Label = 'battle 仅入口模式漂移'; BattleJson = $LiveBattleStaticJson; Mode = 'podip'; Host = ''; Patterns = @('当前 deployment battle 以 -ClientEntryMode external 运行') }
+)
+foreach ($driftCase in $ClusterStateDriftCases) {
+    Test-Case "集群现状接缝:$($driftCase.Label)，逐项聚合且只有只读查询" {
+        $deployAst = [Management.Automation.Language.Parser]::ParseFile((Join-Path (Get-ToolsScriptsDir) 'k8s_deploy.ps1'), [ref]$null, [ref]$null)
+        $productionNames = @('Assert-ClientEntryClusterState', 'Get-PodSpecEnvValue', 'Get-BattleEntryDrift', 'Get-GateAddressSource', 'Get-GateAddressDrift', 'Resolve-ZoneGatePlan', 'Get-ZoneNamespace')
+        foreach ($definition in $deployAst.EndBlock.Statements | Where-Object { $_ -is [Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -in $productionNames }) {
+            . ([scriptblock]::Create($definition.Extent.Text))
+        }
+        $NamespacePrefix = 'mmorpg-zone'; $InfraNamespace = $TestInfraNs
+        $ClientEntryMode = $driftCase.Mode; $BattleOrchestrator = 'deployment'; $AllowDisruptiveSwitch = $false
+        $ClientPublicHost = $driftCase.Host; $GateClientHostTemplate = ''; $GateServiceType = 'NodePort'; $GateServicePort = 18000
+        $GatewayTrustedProxies = ''; $KubeContext = $FakeKubeContext; $KubeConfig = $FakeKubeConfig
+        $calls = [System.Collections.Generic.List[string]]::new()
+        function Invoke-ClientEntryKubectl {
+            param([string[]]$KubectlArgs, [string]$KubeContext, [string]$KubeConfig, [switch]$CaptureOutput, [switch]$AllowFailure)
+            $line = $KubectlArgs -join ' '
+            $calls.Add($line)
+            Assert-Equal -Expected 'get' -Actual $KubectlArgs[0] -Because '生产预检只能查询；任何写意图在测试替身内即失败，不会访问真实集群'
+            Assert-Equal -Expected $FakeKubeContext -Actual $KubeContext -Because '查询必须携带测试 context'
+            Assert-Equal -Expected $FakeKubeConfig -Actual $KubeConfig -Because '查询必须携带测试 kubeconfig'
+            $reply = ''
+            if ($line -match '^get statefulset gate .*-o json$') { $reply = $driftCase.GateJson }
+            elseif ($line -match '^get deployment battle .*-o json$') { $reply = $driftCase.BattleJson }
+            return [pscustomobject]@{ ExitCode = 0; Stdout = [string]$reply; Stderr = '' }
+        }
+        $zones = @()
+        if ($driftCase.ContainsKey('GateJson')) { $zones = @([pscustomobject]@{ Name = $TestZone; GateReplicas = 2; GateNodePortBase = $driftCase.Port; FromZonesConfig = $false }) }
+        $errorText = ''
+        try { Assert-ClientEntryClusterState -Zones $zones -DeploysBattle ($driftCase.ContainsKey('BattleJson')) -DeploysGateway $false -AgonesFleetCrdPresent $false }
+        catch { $errorText = $_.Exception.Message }
+        Assert-True -Condition ($calls.Count -gt 0) -Because '必须实际经过生产预检与查询接缝，不能空转通过'
+        Assert-Equal -Expected 0 -Actual @($calls | Where-Object { $_ -notmatch '^get ' }).Count -Because '放行与拒绝两条路径均为零写操作'
+        if ($driftCase.Patterns.Count -eq 0) {
+            Assert-Equal -Expected '' -Actual $errorText -Because '空漂移应放行，空数组不能变成一项问题'
+        }
+        else {
+            Assert-Match -Text $errorText -Pattern "集群现状预检失败\($($driftCase.Patterns.Count) 项\),未做任何写操作" -Because '问题数必须按漂移项逐条计算'
+            Assert-Equal -Expected $driftCase.Patterns.Count -Actual @([regex]::Matches($errorText, '(?m)^  - ')).Count -Because '每项漂移都必须输出独立错误行'
+            foreach ($pattern in $driftCase.Patterns) { Assert-Match -Text $errorText -Pattern $pattern -Because '保留具体漂移原因，不能把数组类型名当正文' }
+            Assert-NotMatch -Text $errorText -Pattern 'System\.Object\[\]' -Because '拒绝原因必须可诊断'
+        }
+    }
+}
 
 $ClusterStateCases = @(
     @{ Label = 'battle 换 kind:集群里是 Deployment,本次 -BattleOrchestrator agones 却没确认'

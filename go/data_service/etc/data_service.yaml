@@ -188,6 +188,10 @@ RouteStore:
   WaitAOFNumLocal: 1        # 本机 compose redis 开着 --appendonly yes(deploy/docker-compose.yml)
   WaitAOFNumReplicas: 0
   WaitAOFTimeoutMs: 1500
+  # 第 3 批读方门禁(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.2):true 时归属查询只在就绪标记
+  # 绑定本实例身份时信任缓存,否则回源全局库 player_route(库故障回 Unavailable,绝不 NotFound)。只许 db_first(否则拒启)。
+  # 打开是 P5 的显式运维动作(对账 leader 已挂标记之后,规格 §8);回退时先把它改回 false,再关 ArmReadyMarker、再切回 redis。
+  ReadRequiresReady: false
 
 # 全局库的建表策略:proto 驱动的五张(transaction_log / player_snapshot / rollback_audit_log / id_segment / player_name)
 # + 还没有 proto 的路由表(player_route / zone_merge_fence / zone_merged_into / route_meta / route_reconcile,映射持久化第 1a 批)。

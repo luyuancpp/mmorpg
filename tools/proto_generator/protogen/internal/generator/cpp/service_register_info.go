@@ -456,6 +456,19 @@ func rpcMethodMetaInitLines(meta rpcMethodMetaInit) []string {
 	return append(lines, fmt.Sprintf("    %d, %s, %s};", meta.Protocol, meta.NodeType, meta.SenderName))
 }
 
+// grpcSenderFor 只给 unary gRPC 方法生成带显式完成回调的通用发送器。
+func grpcSenderFor(method *internal.MethodInfo) (declaration, sender string, ok bool) {
+	if method.CcGenericServices() || method.ClientStreaming() || method.ServerStreaming() {
+		return "", "", false
+	}
+	function := "Send" + method.Service() + method.Method() + "Erased"
+	declaration = "void " + function + "(entt::registry& , entt::entity , const google::protobuf::Message& , GrpcMessageDone , const GrpcCallOptions& );"
+	if method.CppPackage() != "" {
+		declaration = "namespace " + method.CppPackage() + "{" + declaration + "}"
+	}
+	return declaration, method.CppPackage() + "::" + function, true
+}
+
 // writeServiceInfoCppFile generates C++ code that initializes gRPC service metadata.
 func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 	defer wg.Done()
@@ -533,18 +546,9 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 				Protocol:       GetProtocol(method.Path()),
 				NodeType:       nodeType,
 			}
-			if !method.CcGenericServices() {
-				// 空 package 时不能包 namespace:"namespace {...}" 是匿名命名空间,
-				// 声明会与其他编译单元中的全局定义失配(LNK2019,先例:battle 域 proto 无 package)。
-				// 空则直接全局声明,引用名退化为 ::SendXxx。
-				sendSignature := "void Send" + service.Service() + method.Method() +
-					"(entt::registry& , entt::entity , const google::protobuf::Message& , const std::vector<std::string>& , const std::vector<std::string>& );"
-				declareFunction := sendSignature
-				if method.CppPackage() != "" {
-					declareFunction = "namespace " + method.CppPackage() + "{" + sendSignature + "}"
-				}
-				senderFunction = appendUniqueString(senderFunction, senderFunctionSet, declareFunction)
-				meta.SenderName = method.CppPackage() + "::" + "Send" + service.Service() + method.Method()
+			if declaration, sender, ok := grpcSenderFor(method); ok {
+				senderFunction = appendUniqueString(senderFunction, senderFunctionSet, declaration)
+				meta.SenderName = sender
 			}
 			initLines = append(initLines, rpcMethodMetaInitLines(meta)...)
 

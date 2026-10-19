@@ -14,10 +14,10 @@ using ClientTokenVerifyRequestPtr = std::shared_ptr<ClientTokenVerifyRequest>;
 struct SessionInfo;
 struct OnNodeRemoveEvent;
 
-class RpcClientSessionHandler : muduo::noncopyable
+class GateClientSessionHandler : muduo::noncopyable
 {
 public:
-    RpcClientSessionHandler(ProtobufCodec &codec, ProtobufDispatcher &dispatcher);
+    GateClientSessionHandler(ProtobufCodec &codec, ProtobufDispatcher &dispatcher);
 
     ProtobufCodec &codec() const { return protobufCodec; }
 
@@ -32,6 +32,11 @@ public:
     static SessionId GetSessionId(const muduo::net::TcpConnectionPtr &conn);
 
     static void SendTipToClient(const muduo::net::TcpConnectionPtr &conn, uint32_t tip_id);
+
+    // 向会话当前绑定的 scene 节点代发 ExitGame(单向,带 player_id 反向身份栅栏)。断线与客户端 LeaveGame
+    // (gate_scene_entry::OnClientLeaveGame,docs/design/location-release-binding.md §3.5)共用这一份。
+    // 返回是否交给了连接;没绑定节点 / 节点已摘除 / 没有 RpcClient 时返回 false。sceneNodeId 回填节点号(只供日志,拿不到为 0)。
+    static bool NotifySceneExitGame(SessionId sessionId, const SessionInfo &session, uint32_t &sceneNodeId);
 
     bool CheckMessageSize(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const;
 

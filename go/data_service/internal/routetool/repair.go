@@ -40,7 +40,7 @@ import (
 const RepairNote = "NOTE: reconcile-from-cache writes the cache back into the DB where the cache is newer (maprev > db rev); " +
 	"run it only while frozen after a global-DB rollback, and keep merge_zone stopped (proposal §11.2 batch 1b, runbook §9.4)"
 
-// repairDB 是 reconcile-from-cache 对全局库的全部依赖,*store.RouteStore 天然满足(编译期断言在 routetool_test.go)。
+// repairDB 是 reconcile-from-cache 对全局库的全部依赖,*store.RouteStore 天然满足(编译期断言在 repair_test.go)。
 type repairDB interface {
 	ReadRouteMeta(ctx context.Context) (store.RouteMeta, error)
 	RepairRoutesFromCache(ctx context.Context, rows []store.RouteImportRow, opts store.RouteRepairOptions) (store.RouteRepairStats, error)

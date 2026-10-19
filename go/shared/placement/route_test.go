@@ -349,6 +349,8 @@ func TestRouteReadyMarkerRejects(t *testing.T) {
 		{"leader非ASCII", encode(func(m *RouteReadyMarker) { m.Leader = "route_leader@主机:0a1b2c3d" })},
 		{"leader带空格", encode(func(m *RouteReadyMarker) { m.Leader = "route leader" })},
 		{"leader超过96字节", encode(func(m *RouteReadyMarker) { m.Leader = strings.Repeat("a", 97) })},
+		// 2026-10-18:v=1 时已知字段类型不对照旧是畸形(只有 v 更大才不校验其余字段)。
+		{"v为1而set_at不是整数", `{"v":1,"set_at_ms":"x"}`},
 	}
 	for _, tc := range malformed {
 		t.Run("畸形_"+tc.name, func(t *testing.T) {
@@ -362,6 +364,15 @@ func TestRouteReadyMarkerRejects(t *testing.T) {
 	t.Run("v大于当前版本_只认新版本不当畸形", func(t *testing.T) {
 		// 新版本的值连其余字段都可能不合本版本的规则(这里故意把 generation 写空):不校验,只报「看不懂」。
 		raw := marshalUnchecked(t, RouteReadyMarker{V: RouteReadyFormatVersion + 1})
+		_, err := DecodeRouteReadyMarker(raw)
+		if !errors.Is(err, ErrRouteReadyMarkerNewerVersion) || errors.Is(err, ErrMalformed) {
+			t.Fatalf("DecodeRouteReadyMarker(%s) error = %v, want ErrRouteReadyMarkerNewerVersion(且不是 ErrMalformed)", raw, err)
+		}
+	})
+
+	t.Run("v大于当前版本且已知字段改了类型_仍是新版本", func(t *testing.T) {
+		// 2026-10-18 修复评审:一步整体解时 json 类型错先于 v 的判断,这种值会被判成畸形、随后被 compare-and-delete 删掉。
+		raw := `{"v":2,"set_at_ms":"x"}`
 		_, err := DecodeRouteReadyMarker(raw)
 		if !errors.Is(err, ErrRouteReadyMarkerNewerVersion) || errors.Is(err, ErrMalformed) {
 			t.Fatalf("DecodeRouteReadyMarker(%s) error = %v, want ErrRouteReadyMarkerNewerVersion(且不是 ErrMalformed)", raw, err)

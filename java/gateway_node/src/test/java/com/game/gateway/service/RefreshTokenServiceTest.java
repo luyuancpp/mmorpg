@@ -26,7 +26,8 @@ import static org.mockito.Mockito.when;
  *   <li>successful rpc → CODE_OK and all four token fields populated</li>
  *   <li>upstream error message → CODE_AUTH_REJECTED carrying the message</li>
  *   <li>UNAVAILABLE / DEADLINE_EXCEEDED → CODE_INTERNAL</li>
- *   <li>other gRPC status → CODE_AUTH_REJECTED with the status name</li>
+ *   <li>identity gRPC status (UNAUTHENTICATED / PERMISSION_DENIED) → CODE_AUTH_REJECTED with the status name</li>
+ *   <li>other gRPC status (UNKNOWN / INTERNAL …) → CODE_INTERNAL with the status name</li>
  * </ul>
  */
 @ExtendWith(MockitoExtension.class)
@@ -136,6 +137,19 @@ class RefreshTokenServiceTest {
 
         assertEquals(RefreshTokenResponse.CODE_AUTH_REJECTED, rsp.getCode());
         assertEquals("PERMISSION_DENIED", rsp.getMessage());
+    }
+
+    @Test
+    void unknownGrpcStatus_mapsToInternalNotAuthRejected() {
+        when(rpc.refreshToken(any(LoginRpcClient.RefreshTokenRequestProto.class)))
+                .thenThrow(new StatusRuntimeException(Status.UNKNOWN));
+
+        RefreshTokenRequest req = new RefreshTokenRequest();
+        req.setRefreshToken("some-refresh");
+        RefreshTokenResponse rsp = service.refresh(req);
+
+        assertEquals(RefreshTokenResponse.CODE_INTERNAL, rsp.getCode());
+        assertEquals("UNKNOWN", rsp.getMessage());
     }
 
     @Test

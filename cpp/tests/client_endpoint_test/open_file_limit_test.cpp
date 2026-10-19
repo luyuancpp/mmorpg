@@ -50,7 +50,7 @@ namespace
         return deploy;
     }
 
-    Outcome Run(Limits before, uint64_t required, FakeSetSoftLimit &fake)
+    Outcome EvaluateForTest(Limits before, uint64_t required, FakeSetSoftLimit &fake)
     {
         return open_file_limit::Evaluate(before, required, [&fake](uint64_t target)
                                          { return fake(target); });
@@ -125,7 +125,7 @@ TEST(OpenFileLimit, RaiseTargetNeverLowersSoft)
 TEST(OpenFileLimit, EvaluateRaisesSoftToHardAndPasses)
 {
     FakeSetSoftLimit fake;
-    const Outcome outcome = Run({1024, 524288}, 24096, fake);
+    const Outcome outcome = EvaluateForTest({1024, 524288}, 24096, fake);
     ASSERT_EQ(fake.calls.size(), 1u);
     EXPECT_EQ(fake.calls[0], 524288u);
     EXPECT_EQ(outcome.softAfter, 524288u);
@@ -137,7 +137,7 @@ TEST(OpenFileLimit, EvaluateRaisesSoftToHardAndPasses)
 TEST(OpenFileLimit, EvaluateSkipsSyscallWhenAlreadyAtTarget)
 {
     FakeSetSoftLimit fake;
-    const Outcome outcome = Run({65536, 65536}, 24096, fake);
+    const Outcome outcome = EvaluateForTest({65536, 65536}, 24096, fake);
     EXPECT_TRUE(fake.calls.empty());
     EXPECT_FALSE(outcome.raiseAttempted);
     EXPECT_EQ(outcome.softAfter, 65536u);
@@ -148,13 +148,13 @@ TEST(OpenFileLimit, EvaluateRefusesWhenHardBelowRequired)
 {
     {
         FakeSetSoftLimit fake;
-        const Outcome outcome = Run({1024, 1024}, 24096, fake);
+        const Outcome outcome = EvaluateForTest({1024, 1024}, 24096, fake);
         EXPECT_TRUE(fake.calls.empty());
         EXPECT_EQ(outcome.verdict, Verdict::kInsufficient);
     }
     {
         FakeSetSoftLimit fake;
-        const Outcome outcome = Run({1024, 8192}, 24096, fake);
+        const Outcome outcome = EvaluateForTest({1024, 8192}, 24096, fake);
         ASSERT_EQ(fake.calls.size(), 1u);
         EXPECT_EQ(fake.calls[0], 8192u);
         EXPECT_EQ(outcome.softAfter, 8192u);
@@ -166,7 +166,7 @@ TEST(OpenFileLimit, EvaluateRefusesWhenRaiseFails)
 {
     FakeSetSoftLimit fake;
     fake.result = 1; // EPERM
-    const Outcome outcome = Run({1024, 524288}, 24096, fake);
+    const Outcome outcome = EvaluateForTest({1024, 524288}, 24096, fake);
     ASSERT_EQ(fake.calls.size(), 1u);
     EXPECT_EQ(outcome.softAfter, 1024u);
     EXPECT_EQ(outcome.raiseErrno, 1);
@@ -178,7 +178,7 @@ TEST(OpenFileLimit, EvaluatePassesWhenRaiseFailsButSoftSufficient)
     // 抬升失败但原软限已够:放行,errno 留给调用方打 WARN 行。
     FakeSetSoftLimit fake;
     fake.result = 1;
-    const Outcome outcome = Run({30000, 524288}, 24096, fake);
+    const Outcome outcome = EvaluateForTest({30000, 524288}, 24096, fake);
     EXPECT_EQ(outcome.softAfter, 30000u);
     EXPECT_EQ(outcome.raiseErrno, 1);
     EXPECT_EQ(outcome.verdict, Verdict::kOk);
@@ -187,8 +187,8 @@ TEST(OpenFileLimit, EvaluatePassesWhenRaiseFailsButSoftSufficient)
 TEST(OpenFileLimit, BoundaryExactlyRequiredPasses)
 {
     FakeSetSoftLimit fake;
-    EXPECT_EQ(Run({24096, 24096}, 24096, fake).verdict, Verdict::kOk);
-    EXPECT_EQ(Run({24095, 24095}, 24096, fake).verdict, Verdict::kInsufficient);
+    EXPECT_EQ(EvaluateForTest({24096, 24096}, 24096, fake).verdict, Verdict::kOk);
+    EXPECT_EQ(EvaluateForTest({24095, 24095}, 24096, fake).verdict, Verdict::kInsufficient);
     EXPECT_TRUE(fake.calls.empty());
 }
 
@@ -240,7 +240,7 @@ TEST(OpenFileLimit, StartupLineFormatIsStable)
     {
         FakeSetSoftLimit fake;
         const ClientCap cap = open_file_limit::ClientConnectionCapFor(common::base::GateNodeService, deploy);
-        const Outcome outcome = Run({1024, 524288}, open_file_limit::RequiredOpenFiles(cap.connections), fake);
+        const Outcome outcome = EvaluateForTest({1024, 524288}, open_file_limit::RequiredOpenFiles(cap.connections), fake);
         EXPECT_EQ(open_file_limit::FormatStartupLine("gate", cap, Mode::kEnforce, outcome),
                   "[open_file_limit] role=gate verdict=ok mode=enforce required=24096 client_cap=20000"
                   " cap_key=GateMaxConnections reserve=4096 soft_before=1024 soft=524288 hard=524288 raise=ok");
@@ -248,7 +248,7 @@ TEST(OpenFileLimit, StartupLineFormatIsStable)
     {
         FakeSetSoftLimit fake;
         const ClientCap cap = open_file_limit::ClientConnectionCapFor(common::base::SceneNodeService, deploy);
-        const Outcome outcome = Run({4096, 4096}, open_file_limit::RequiredOpenFiles(cap.connections), fake);
+        const Outcome outcome = EvaluateForTest({4096, 4096}, open_file_limit::RequiredOpenFiles(cap.connections), fake);
         EXPECT_EQ(open_file_limit::FormatStartupLine("scene", cap, Mode::kEnforce, outcome),
                   "[open_file_limit] role=scene verdict=ok mode=enforce required=4096 client_cap=0"
                   " cap_key=none reserve=4096 soft_before=4096 soft=4096 hard=4096 raise=none");
@@ -257,7 +257,7 @@ TEST(OpenFileLimit, StartupLineFormatIsStable)
         FakeSetSoftLimit fake;
         fake.result = 1;
         const ClientCap cap = open_file_limit::ClientConnectionCapFor(common::base::BattleNodeService, deploy);
-        const Outcome outcome = Run({1024, kUnlimited}, open_file_limit::RequiredOpenFiles(cap.connections), fake);
+        const Outcome outcome = EvaluateForTest({1024, kUnlimited}, open_file_limit::RequiredOpenFiles(cap.connections), fake);
         EXPECT_EQ(open_file_limit::FormatStartupLine("battle", cap, Mode::kWarn, outcome),
                   "[open_file_limit] role=battle verdict=insufficient mode=warn required=8192 client_cap=4096"
                   " cap_key=BattleMaxConnections reserve=4096 soft_before=1024 soft=1024 hard=unlimited"
@@ -268,10 +268,13 @@ TEST(OpenFileLimit, StartupLineFormatIsStable)
 TEST(OpenFileLimit, ExemptionWarningStatesShortfall)
 {
     FakeSetSoftLimit fake;
-    const Outcome outcome = Run({1024, 1024}, 24096, fake);
+    const Outcome outcome = EvaluateForTest({1024, 1024}, 24096, fake);
     EXPECT_EQ(open_file_limit::FormatExemptionWarning("gate", outcome),
               "[open_file_limit] WARN exemption active (NODE_OPEN_FILE_LIMIT_MODE=warn): role=gate soft=1024"
-              " required=24096 shortfall=23072; starting anyway, connections beyond the fd limit will fail with EMFILE");
+              " required=24096 shortfall=23072; starting anyway. Once the fd table is full, not only new client"
+              " connections but also reconnects (peer nodes, Redis, Kafka, etcd) and log file rotation fail with"
+              " EMFILE, so the node may be deregistered or crash; for gate / battle lower the client cap to"
+              " soft - reserve instead");
 }
 
 TEST(OpenFileLimit, InvalidModeLineNamesEnvAndFallback)
@@ -287,7 +290,7 @@ TEST(OpenFileLimit, RefusalReasonNamesKnobs)
     {
         FakeSetSoftLimit fake;
         const ClientCap cap = open_file_limit::ClientConnectionCapFor(common::base::GateNodeService, deploy);
-        const Outcome outcome = Run({1024, 1024}, open_file_limit::RequiredOpenFiles(cap.connections), fake);
+        const Outcome outcome = EvaluateForTest({1024, 1024}, open_file_limit::RequiredOpenFiles(cap.connections), fake);
         const std::string reason = open_file_limit::FormatRefusalReason("gate", cap, outcome);
         for (const char *needle : {"role=gate", "required=24096", "GateMaxConnections=20000", "shortfall=23072",
                                    "hard limit", "container runtime", "lower GateMaxConnections",
@@ -300,7 +303,7 @@ TEST(OpenFileLimit, RefusalReasonNamesKnobs)
         // scene 没有客户端面准入上限:不得建议去调一个不存在的配置键。
         FakeSetSoftLimit fake;
         const ClientCap cap = open_file_limit::ClientConnectionCapFor(common::base::SceneNodeService, deploy);
-        const Outcome outcome = Run({1024, 1024}, open_file_limit::RequiredOpenFiles(cap.connections), fake);
+        const Outcome outcome = EvaluateForTest({1024, 1024}, open_file_limit::RequiredOpenFiles(cap.connections), fake);
         const std::string reason = open_file_limit::FormatRefusalReason("scene", cap, outcome);
         EXPECT_NE(reason.find("no client-facing cap"), std::string::npos) << reason;
         EXPECT_EQ(reason.find("lower "), std::string::npos) << reason;

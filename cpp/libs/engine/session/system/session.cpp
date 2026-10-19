@@ -5,19 +5,7 @@
 #include <limits>
 #include "core/utils/encode/base64.h"
 
-constexpr char kSessionBinMetaKey[] = "x-session-detail-bin";
-
 using SessionDetailsPtr = std::unique_ptr<SessionDetails>;
-
-SessionDetailsPtr GetSessionDetailsByReplyContext(const GrpcReplyContext& context)
-{
-    // 回显在响应头(初始 metadata)里,不在 trailers:路由服用 grpc.SetHeader 回写(设计 §4.2)。
-    const std::string* applicationValue = context.FindInitialMetadata(kSessionBinMetaKey);
-    if (applicationValue == nullptr) {
-        return nullptr;
-    }
-    return ParseSessionDetailsMetadataValue(*applicationValue);
-}
 
 SessionDetailsPtr ParseSessionDetailsMetadataValue(std::string_view applicationValue)
 {

@@ -1,5 +1,7 @@
-#include "client_message_processor.h"
+#include "client_session_handler.h"
 #include "client_request_lane.h"
+#include "login_admission.h"
+#include "rpc_reply_bridge.h"
 
 #include <algorithm>
 #include <cassert>
@@ -20,9 +22,11 @@
 #include "node/system/node/node.h"
 #include "grpc_client/login/login_grpc_client.h"
 #include "handler/rpc/router_muduo_forward.h"
+#include "handler/event/scene_entry_dispatch.h"
 #include "node/system/node/muduo_grpc_channel_slot.h"
 #include "proto/client_rpc_router/client_rpc_router.pb.h"
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/login_error_tip.pb.h"
 #include "rpc/service_metadata/rpc_event_registry.h"
 #include "rpc/service_metadata/scene_service_metadata.h"
 #include "proto/common/base/empty.pb.h"
@@ -98,6 +102,29 @@ static void OnSceneClientMessageCallDone(SessionId sessionId, uint64_t incarnati
 	}
 }
 
+// 直连调用按发出时的会话交桥,不依赖服务端是否回显会话 metadata。
+static void OnDirectGrpcCallDone(SessionId sessionId, uint64_t incarnation, uint32_t messageId,
+                                 const std::string &sentSessionBin, const GrpcCallOutcome &outcome,
+                                 const google::protobuf::Message *reply)
+{
+	// session_id 复用后旧完成不得进入新连接;成功和失败都按发出时的代次认领。
+	if (gate_lane::FindLiveSession(sessionId, incarnation) == nullptr)
+	{
+		return;
+	}
+	if (!outcome.ok() || reply == nullptr)
+	{
+		const auto &methodMeta = gRpcMethodRegistry[messageId];
+		const std::string method = std::string(methodMeta.serviceName) + "." + methodMeta.methodName;
+		gate_rpc_reply_bridge::NotifyCallFailure(method.c_str(), static_cast<int>(outcome.code), outcome.message,
+		                                        sentSessionBin.empty() ? nullptr : &sentSessionBin);
+		return;
+	}
+	SessionDetails sent;
+	sent.ParseFromString(sentSessionBin);
+	gate_rpc_reply_bridge::DeliverReply(sent, *reply);
+}
+
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)
 {
 	std::vector<entt::entity> candidates;
@@ -136,9 +163,9 @@ static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)
 // Go 侧 SessionInterceptor 据此识别玩家,并在响应头回写供 gate 找回会话)。
 // 直连模式、路由模式的请求转发与断线通知都用这一份;playerId 传 0 表示"尚未绑定玩家"
 // (proto3 隐式存在:0 与不设置在线上是同一形状)。
-// session 非空时带上重定向票据的绑定信息(CZ-8)。两种转发模式**必须**走同一个构造点:
+// session 非空时带上重定向票据的绑定信息(CZ-8)与会话代次。两种转发模式**必须**走同一个构造点:
 // 曾经直连模式是内联手写的一份,只改其中一个 = 一种模式下 login 永远读到 0、访客被弹回家,
-// 而生产恰恰是路由模式。断线通知不需要票据字段,传 nullptr。
+// 而生产恰恰是路由模式。断线通知不需要票据字段,传 nullptr,会话代次由调用方显式写入。
 static SessionDetails BuildSessionDetails(const SessionId sessionId, const Guid playerId,
 										  const SessionInfo *session = nullptr)
 {
@@ -151,6 +178,10 @@ static SessionDetails BuildSessionDetails(const SessionId sessionId, const Guid 
 	{
 		sessionDetails.set_ticket_player_id(session->ticketPlayerId);
 		sessionDetails.set_ticket_target_zone_id(session->ticketTargetZoneId);
+		// 会话代次(client-request-ordering.md §4.8):login 按 (gate_instance_id, 会话代次) 认登录态与会话栅栏。
+		// 原先只有路由 lane 在 Admit 里写(同一个值),直连模式发出的 Login / CreatePlayer / EnterGame 带 0,
+		// 落进 login 的旧版兼容路径、仍按 session_id 认登录态,gate 重启撞号即可继承别人的登录态(审计 §2.3)。
+		sessionDetails.set_session_incarnation(session->incarnation);
 	}
 	return sessionDetails;
 }
@@ -215,21 +246,21 @@ static bool SendViaRouter(const ClientRequest &request, const SessionDetails &se
 	return SendRawViaRouter(request, sessionDetails.SerializeAsString());
 }
 
-RpcClientSessionHandler::RpcClientSessionHandler(ProtobufCodec &codec,
+GateClientSessionHandler::GateClientSessionHandler(ProtobufCodec &codec,
 												 ProtobufDispatcher &dispatcherParam)
 	: protobufCodec(codec),
 	  messageDispatcher(dispatcherParam)
 {
 	messageDispatcher.registerMessageCallback<ClientRequest>(
-		std::bind(&RpcClientSessionHandler::DispatchClientRpcMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+		std::bind(&GateClientSessionHandler::DispatchClientRpcMessage, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
 	// 路由 lane 的发送出口(client_request_lane.h)。函数指针,不捕获任何对象(AGENTS.md §11.7)。
 	gate_lane::SetRouterSender(&SendRawViaRouter);
 
 	messageDispatcher.registerMessageCallback<ClientTokenVerifyRequest>(
-		std::bind(&RpcClientSessionHandler::DispatchTokenVerify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+		std::bind(&GateClientSessionHandler::DispatchTokenVerify, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-	nodeRemovedSubscription_ = tlsEcs.dispatcher.sink<OnNodeRemoveEvent>().connect<&RpcClientSessionHandler::OnNodeRemoveEventHandler>(*this);
+	nodeRemovedSubscription_ = tlsEcs.dispatcher.sink<OnNodeRemoveEvent>().connect<&GateClientSessionHandler::OnNodeRemoveEventHandler>(*this);
 }
 
 // Scene node binding must be set explicitly by scene manager (e.g. EnterScene).
@@ -264,7 +295,7 @@ std::optional<entt::entity> ResolveSessionTargetNode(SessionId sessionId, uint32
 	return node;
 }
 
-void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr &conn)
+void GateClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr &conn)
 {
 	// Token verification is handled by DispatchTokenVerify (ClientTokenVerifyRequest).
 	// Until verified, DispatchClientRpcMessage rejects all ClientRequest messages.
@@ -278,12 +309,12 @@ void RpcClientSessionHandler::OnConnection(const muduo::net::TcpConnectionPtr &c
 	}
 }
 
-void RpcClientSessionHandler::SendMessageToClient(const muduo::net::TcpConnectionPtr &conn, const ::google::protobuf::Message &message) const
+void GateClientSessionHandler::SendMessageToClient(const muduo::net::TcpConnectionPtr &conn, const ::google::protobuf::Message &message) const
 {
 	protobufCodec.send(conn, message);
 }
 
-SessionId RpcClientSessionHandler::GetSessionId(const muduo::net::TcpConnectionPtr &conn)
+SessionId GateClientSessionHandler::GetSessionId(const muduo::net::TcpConnectionPtr &conn)
 {
 	try
 	{
@@ -296,7 +327,7 @@ SessionId RpcClientSessionHandler::GetSessionId(const muduo::net::TcpConnectionP
 	}
 }
 
-void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr &conn, uint32_t tipId)
+void GateClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr &conn, uint32_t tipId)
 {
 	TipInfoMessage tipMessage;
 	tipMessage.set_id(tipId);
@@ -308,7 +339,7 @@ void RpcClientSessionHandler::SendTipToClient(const muduo::net::TcpConnectionPtr
 	LOG_TRACE << "Sent tip message to session id: " << GetSessionId(conn) << ", tip id: " << tipId;
 }
 
-bool RpcClientSessionHandler::CheckMessageSize(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const
+bool GateClientSessionHandler::CheckMessageSize(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const
 {
 	constexpr size_t kMaxClientMessageSize = 1024;
 	if (request->ByteSizeLong() > kMaxClientMessageSize)
@@ -340,7 +371,7 @@ bool RpcClientSessionHandler::CheckMessageSize(SessionInfo &session, const RpcCl
 	return true;
 }
 
-bool RpcClientSessionHandler::CheckMessageLimit(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const
+bool GateClientSessionHandler::CheckMessageLimit(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const
 {
 	if (const auto err = session.messageLimiter.CanSend(request->message_id()); err != kSuccess)
 	{
@@ -412,7 +443,42 @@ bool ParseMessageFromRequestBody(Message &message, const Request &request, const
 	return true;
 }
 
-void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr &conn)
+bool GateClientSessionHandler::NotifySceneExitGame(const SessionId sessionId, const SessionInfo &session,
+												  uint32_t &sceneNodeId)
+{
+	sceneNodeId = 0;
+	if (!session.HasNodeEntity(SceneNodeService))
+	{
+		return false;
+	}
+	const auto sceneNode = session.GetNodeEntity(SceneNodeService);
+	auto &sceneNodeRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
+	if (!sceneNodeRegistry.valid(sceneNode))
+	{
+		return false;
+	}
+	if (const auto *info = sceneNodeRegistry.try_get<NodeInfo>(sceneNode)) sceneNodeId = info->node_id();
+	const auto *rpcClient = sceneNodeRegistry.try_get<RpcClientPtr>(sceneNode);
+	if (!rpcClient || !*rpcClient)
+	{
+		return false;
+	}
+	ProcessClientPlayerMessageRequest exitMsg;
+	exitMsg.set_session_id(sessionId);
+	// 反向身份栅栏(routing-identity-audit-20260908.md R13 的反向面):
+	// scene 的 SessionMap 里可能还留着"旧 gate 的同号 session -> 别的玩家"
+	// 的映射,不带玩家身份的话这条 ExitGame 会把**别人**踢下线。
+	// 未绑定玩家(kInvalidGuid)时留 0 走兼容位。
+	if (session.playerId != 0 && session.playerId != kInvalidGuid)
+	{
+		exitMsg.set_player_id(session.playerId);
+	}
+	exitMsg.mutable_message_content()->set_message_id(ScenePlayerExitGameMessageId);
+	// 单向:断线时会话随后就 erase,LeaveGame 时会话随后清掉 scene 指向,回包都无处可去。返回值只用于日志(未连接时为 false)。
+	return (*rpcClient)->SendRequest<SceneProcessClientPlayerMessageRpc>(exitMsg);
+}
+
+void GateClientSessionHandler::HandleConnectionDisconnection(const muduo::net::TcpConnectionPtr &conn)
 {
 	const auto sessionId = GetSessionId(conn);
 
@@ -450,33 +516,7 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 	if (sessionFound)
 	{
 		// Notify Scene to exit the player immediately (saves state and stops broadcasting).
-		if (sessionIt->second.HasNodeEntity(SceneNodeService))
-		{
-			const auto sceneNode = sessionIt->second.GetNodeEntity(SceneNodeService);
-
-			auto &sceneNodeRegistry = tlsNodeContextManager.GetRegistry(SceneNodeService);
-			if (sceneNodeRegistry.valid(sceneNode))
-			{
-				if (const auto* info = sceneNodeRegistry.try_get<NodeInfo>(sceneNode)) sceneNodeId = info->node_id();
-				const auto *rpcClient = sceneNodeRegistry.try_get<RpcClientPtr>(sceneNode);
-				if (rpcClient && *rpcClient)
-				{
-					ProcessClientPlayerMessageRequest exitMsg;
-					exitMsg.set_session_id(sessionId);
-					// 反向身份栅栏(routing-identity-audit-20260908.md R13 的反向面):
-					// scene 的 SessionMap 里可能还留着"旧 gate 的同号 session -> 别的玩家"
-					// 的映射,不带玩家身份的话这条 ExitGame 会把**别人**踢下线。
-					// 未绑定玩家(kInvalidGuid)时留 0 走兼容位。
-					if (hasBoundPlayer)
-					{
-						exitMsg.set_player_id(playerId);
-					}
-					exitMsg.mutable_message_content()->set_message_id(ScenePlayerExitGameMessageId);
-					// 单向:会话随后就 erase,回包无处可去。返回值只用于日志(未连接时为 false)。
-					sceneNotified = (*rpcClient)->SendRequest<SceneProcessClientPlayerMessageRpc>(exitMsg);
-				}
-			}
-		}
+		sceneNotified = NotifySceneExitGame(sessionId, sessionIt->second, sceneNodeId);
 	}
 
 	// Disconnect notification goes to Login; its session manager owns the disconnect lease.
@@ -524,7 +564,29 @@ void RpcClientSessionHandler::HandleConnectionDisconnection(const muduo::net::Tc
 			const auto loginNode = PickRandomNode(eNodeType::LoginNodeService);
 			if (loginNode)
 			{
-				loginpb::SendClientPlayerLoginDisconnect(tlsNodeContextManager.GetRegistry(eNodeType::LoginNodeService), *loginNode, request, {kSessionBinMetaKey}, SerializeSessionDetails(sessionDetails));
+				GrpcCallOptions options;
+				std::string bin;
+				if (sessionDetails.SerializeToString(&bin))
+				{
+					options.metadata.emplace_back(kSessionBinMetaKey, std::move(bin));
+				}
+				loginpb::SendClientPlayerLoginDisconnect(
+					tlsNodeContextManager.GetRegistry(eNodeType::LoginNodeService), *loginNode, request,
+					[sessionId](const GrpcCallOutcome &outcome, const loginpb::LoginEmptyResponse *)
+					{
+						if (outcome.ok())
+						{
+							return; // 会话随后就 erase,没有客户端可回。
+						}
+						static uint64_t failedCount = 0;
+						if ((failedCount++ & 0x3FF) == 0)
+						{
+							LOG_WARN << "Login disconnect call failed (sampled), session_id=" << sessionId
+							         << ", code=" << outcome.code << ", message=" << outcome.message
+							         << ", failed_total=" << failedCount;
+						}
+					},
+					options);
 			}
 		}
 	}
@@ -568,7 +630,7 @@ static constexpr size_t kClientHighWaterMark = 2 * 1024 * 1024; // 2MB
 
 static void OnClientHighWaterMark(const muduo::net::TcpConnectionPtr &conn, size_t oldLen)
 {
-	const auto sessionId = RpcClientSessionHandler::GetSessionId(conn);
+	const auto sessionId = GateClientSessionHandler::GetSessionId(conn);
 	LOG_WARN << "Client high water mark triggered, session_id=" << sessionId
 			 << ", buffered=" << oldLen
 			 << " bytes, threshold=" << kClientHighWaterMark
@@ -576,7 +638,7 @@ static void OnClientHighWaterMark(const muduo::net::TcpConnectionPtr &conn, size
 	conn->forceClose();
 }
 
-void RpcClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr &conn)
+void GateClientSessionHandler::HandleConnectionEstablished(const muduo::net::TcpConnectionPtr &conn)
 {
 	// 并发连接上限。必须是第一道闸:在发 session_id、建 SessionInfo 之前拒掉,
 	// 否则限流本身就先付出了它想省下的那份内存。
@@ -831,6 +893,22 @@ void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &reque
 		LOG_ERROR << "Session not found for session id: " << sessionId;
 		return;
 	}
+
+	// 本连接没有成功 Login 就不发 CreatePlayer / EnterGame / LeaveGame(login_admission.h)。直连没有 lane,
+	// 收包即发出,所以在这里判;成功标记由 rpc_reply_bridge 的直连回包分支写。确定未执行,回与 login 同一个「未登录」码。
+	if (gate_login_admission::RequiresSuccessfulLogin(request->message_id()) && !sessionIt->second.loginSucceeded)
+	{
+		static uint64_t rejectedCount = 0;
+		if ((rejectedCount++ & 0x3FF) == 0)
+		{
+			LOG_WARN << "Login-required request before a successful Login on this connection; rejected (sampled)"
+					 << " latest_session_id=" << sessionId << " latest_message_id=" << request->message_id()
+					 << " rejected_total=" << rejectedCount;
+		}
+		SendRequestErrorEnvelope(conn, *request, kLoginSessionNotFound);
+		return;
+	}
+
 	const SessionDetails sessionDetails =
 		BuildSessionDetails(sessionId, sessionIt->second.playerId, &sessionIt->second);
 
@@ -881,11 +959,18 @@ void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &reque
 			sessionIt->second.loginStarted = true;
 		}
 
-		rpcHandlerMeta.sender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType),
-							  *node,
-							  *rpcHandlerMeta.requestProto,
-							  {kSessionBinMetaKey},
-							  SerializeSessionDetails(sessionDetails));
+		std::string sentSessionBin;
+		GrpcCallOptions options;
+		if (sessionDetails.SerializeToString(&sentSessionBin))
+		{
+			options.metadata.emplace_back(kSessionBinMetaKey, sentSessionBin);
+		}
+		rpcHandlerMeta.sender(
+			tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType), *node, *rpcHandlerMeta.requestProto,
+			[sessionId, incarnation = sessionIt->second.incarnation, messageId = request->message_id(), sentSessionBin](
+				const GrpcCallOutcome &outcome, const google::protobuf::Message *reply)
+			{ OnDirectGrpcCallDone(sessionId, incarnation, messageId, sentSessionBin, outcome, reply); },
+			options);
 	}
 }
 
@@ -915,7 +1000,7 @@ static void HandleRouterForward(SessionId sessionId, const RpcClientMessagePtr &
 					 BuildSessionDetails(sessionId, sessionIt->second.playerId, &sessionIt->second));
 }
 
-bool RpcClientSessionHandler::ValidateClientMessage(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const
+bool GateClientSessionHandler::ValidateClientMessage(SessionInfo &session, const RpcClientMessagePtr &request, const muduo::net::TcpConnectionPtr &conn) const
 {
 	if (!CheckMessageSize(session, request, conn))
 		return false;
@@ -925,7 +1010,7 @@ bool RpcClientSessionHandler::ValidateClientMessage(SessionInfo &session, const 
 }
 
 // Main request handler, forwards the request to the appropriate service
-void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConnectionPtr &conn,
+void GateClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConnectionPtr &conn,
 													   const RpcClientMessagePtr &request,
 													   muduo::Timestamp)
 {
@@ -1042,6 +1127,16 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 		return;
 	}
 
+	// 客户端 LeaveGame(世界 → 选角,TCP 不断):先替这条会话通知绑定的 scene 退出,再清掉会话的 scene 路由状态,然后照常转发给
+	// login(docs/design/location-release-binding.md §3.5)。以前 gate 不处理 LeaveGame,ExitGame 只在 TCP 断开时代发:
+	// 持有节点的实体不退出也不存盘,login 侧却随即删会话、删 location,下一次进场按首次落点铸新 epoch,持有节点之后的存盘被拒、
+	// 实体被当废黜销毁(回档,审计 §2.1)。在收包时做:直连 / 路由两种模式共用这一个点;login 侧失败时实体退出、location 保留,
+	// 下一次 EnterGame 走同落点重连或换手门,都不回档。
+	if (request->message_id() == ClientPlayerLoginLeaveGameMessageId)
+	{
+		gate_scene_entry::OnClientLeaveGame(sessionId, session);
+	}
+
 	if (messageInfo.protocol == PROTOCOL_TCP)
 	{
 		HandleTcpNodeMessage(session, request, sessionId, conn);
@@ -1061,7 +1156,7 @@ void RpcClientSessionHandler::DispatchClientRpcMessage(const muduo::net::TcpConn
 	}
 }
 
-void RpcClientSessionHandler::DispatchTokenVerify(const muduo::net::TcpConnectionPtr &conn,
+void GateClientSessionHandler::DispatchTokenVerify(const muduo::net::TcpConnectionPtr &conn,
 												  const ClientTokenVerifyRequestPtr &message,
 												  muduo::Timestamp)
 {
@@ -1194,7 +1289,7 @@ void RpcClientSessionHandler::DispatchTokenVerify(const muduo::net::TcpConnectio
 			  << " hmac_key_len=" << session.hmacSessionKey.size();
 }
 
-void RpcClientSessionHandler::OnNodeRemoveEventHandler(const OnNodeRemoveEvent &pb)
+void GateClientSessionHandler::OnNodeRemoveEventHandler(const OnNodeRemoveEvent &pb)
 {
 	// 路由服节点摘除不需要在这里处理路由 lane:Node 先摘掉实体上的 MuduoGrpcChannelPtr,~Channel 把其上的在途调用
 	// 以 UNAVAILABLE 经 queueInLoop 排进下一轮,再触发本事件、DestroyEntity。那些失败回调经 rpc_reply_bridge 交给

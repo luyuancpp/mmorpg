@@ -62,7 +62,8 @@ type Config struct {
 	PreloadPool     PreloadPoolConf     `json:"PreloadPool,optional"` // Background goroutine pool for player data preload
 
 	// LegacyGateLoginEnabled controls whether the deprecated path
-	// "Client → cpp gate (TCP) → ClientPlayerLogin.Login" is still served.
+	// "Client → cpp gate (TCP) → ClientPlayerLogin.Login with password /
+	// third-party credentials" is still served.
 	//
 	// Background: ARCH §12 T+2 step. The new path (Java Gateway POST
 	// /api/login → gRPC login) has been the recommended route since
@@ -74,13 +75,16 @@ type Config struct {
 	// clients to fall through to /api/login (or their own retry path,
 	// which typically re-resolves via /api/assign-gate).
 	//
-	// Detection is the same SessionDetails-based heuristic
-	// loginlogic.go uses for telemetry: a non-zero SessionId in the
-	// gRPC context means the call arrived through cpp gate's
-	// HandleGrpcNodeMessage forwarder (legacy). When false here, that
-	// branch short-circuits BEFORE acquiring locks or writing
-	// player_locator state, so flipping the flag back is purely a
-	// config change with no cleanup required.
+	// 判定与弃用遥测同源(clientplayerlogin.classifyLoginPath):会话头带非零 SessionId
+	// = 经 cpp gate HandleGrpcNodeMessage 转发。其中 auth_type="access_token" 是新流程
+	// (/api/login → assign-gate → gate 上 Login{access_token})绑定会话的必经一步,
+	// 是 login_session 与设备集的唯一写入点,**不受本开关管**——拦了它,CreatePlayer /
+	// EnterGame 全部回 kLoginSessionNotFound,所有客户端都进不了游戏。只有在 gate 上用
+	// 口令 / 第三方凭据首认证(含空 auth_type)才是被关掉的旧路径。
+	//
+	// 置 false 后旧路径在认证之前拒绝(2026-10-18 起;此前在认证与账号锁之后):不调用认证器
+	// (第三方 code 不被消费)、不抢账号锁、不建账号目录、不写 login_session / 设备集,
+	// 翻回 true 只是改配置,无需清理。凭据真假都回 kLoginUnknownError,不再先回 kLoginAccountNotFound。
 	//
 	// Default true preserves current behavior. Operators flip via
 	// login.yaml; no restart-blocking dependency on other services.
@@ -273,6 +277,11 @@ type HomeZoneConf struct {
 //     校验),否则起服失败。default=1s / 30s 只在键缺省时生效,显式写 0s 不会回落到默认值。
 //     (2026-10-15 补注)QueueEntryTTL 同样必须为正,AdmitTTL 不小于 1ms(放行脚本的 SET PX 取整到毫秒;
 //     loginqueue.ValidateTTLs,initLoginQueue 校验),否则起服失败;default=60s / 1h 同样只在键缺省时生效。
+//   - (2026-10-18 补注)QueueEntryTTL 改为空闲 TTL:meta、token 索引与队列键自最后一次成功的排队中查询(或入队)
+//     起算,至少保留 QueueEntryTTL、至多 1.25 倍,持续轮询的人不会因为等满 1h 被弹回队尾。排队令牌改为固定 24h
+//     签名过期(loginqueue.queueTokenMaxAge),不再等于 QueueEntryTTL。QueueEntryTTL 取值须在 [1s, 24h],否则起服
+//     失败。本版本以及从它回滚,都必须在 Enabled=false 下滚完:排队开着混跑时,旧版 leader 弹出、尚未写完的条目会被
+//     新版判为 queue_gone、打回队尾。
 type QueueConf struct {
 	Enabled             bool          `json:"Enabled,default=false"`
 	DispatchInterval    time.Duration `json:"DispatchInterval,default=1s"`
@@ -412,20 +421,43 @@ type SaTokenAuthConf struct {
 }
 
 // WeChatAuthConf holds WeChat OAuth settings.
+//
+// AppSecret 是调用微信开放平台的真实凭据，与 PasswordAuth.DSNEnv、DevPasswordAuth.SharedSecretEnv
+// 同一套纪律：生产只写 AppSecretEnv（环境变量名），密钥本身由 K8s Secret 注入。go-zero 的
+// conf.MustLoad 不展开 ${VAR}，所以旧写法 `AppSecret: "${WECHAT_APP_SECRET}"` 会把字面量
+// 当成密钥 —— 任何字段里出现未展开的 ${...} 都由 ResolveSecrets 在启动期拒绝（auth_providers.go）。
 type WeChatAuthConf struct {
-	AppId     string `json:"AppId"`
-	AppSecret string `json:"AppSecret"`
+	AppId string `json:"AppId"`
+	// AppSecretEnv 是环境变量名（不是密钥本身）。非空时优先于 AppSecret。
+	AppSecretEnv string `json:"AppSecretEnv,optional"`
+	// AppSecret 是内联明文，只允许 Mode=dev/test（本地沙箱）；其余模式拒绝启动。
+	AppSecret string `json:"AppSecret,optional"`
+	// RequireUnionId 缺省 true：微信没返回 unionid（应用未绑定开放平台主体）时拒绝登录并回故障码，
+	// 不回落 openid。openid 按应用区分，回落后同一玩家在第二个应用里会变成另一个账号，且无法事后合并。
+	// 只有确认永远只有一个应用、永不接开放平台时才显式写 false。
+	RequireUnionId bool `json:"RequireUnionId,default=true"`
 	// Endpoint optionally overrides the api.weixin.qq.com base URL.
 	// Set to a local sandbox mock (e.g. http://127.0.0.1:18090) when
 	// real Open Platform credentials / network egress aren't available.
 	// Production leaves this empty so the provider hits the real host.
+	// 生产模式只接受 https://；http:// 只在 Mode=dev/test 下放行。
 	Endpoint string `json:"Endpoint,optional"`
 }
 
 // QQAuthConf holds QQ OAuth settings.
+//
+// QQ 走客户端 SDK 拿到的 access_token，服务端只调 /oauth2.0/me 并校验 client_id == AppId，
+// 不需要 AppKey；AppKeyEnv / AppKey 保留给将来服务端 code 换 token 的流程，写了就按与
+// WeChatAuthConf.AppSecret 相同的规则解析。
 type QQAuthConf struct {
-	AppId  string `json:"AppId"`
-	AppKey string `json:"AppKey"`
+	AppId     string `json:"AppId"`
+	AppKeyEnv string `json:"AppKeyEnv,optional"`
+	AppKey    string `json:"AppKey,optional"`
+	// RequestUnionId 缺省 true：请求 /oauth2.0/me 时带 unionid=1（应用须已申请 unionid 权限）。
+	RequestUnionId bool `json:"RequestUnionId,default=true"`
+	// RequireUnionId 缺省 true，语义同 WeChatAuthConf.RequireUnionId。RequestUnionId=false 时
+	// 永远拿不到 unionid，必须同时显式写 false，否则启动期拒绝。
+	RequireUnionId bool `json:"RequireUnionId,default=true"`
 	// Endpoint optionally overrides the graph.qq.com base URL.
 	// Same semantics as WeChatAuthConf.Endpoint.
 	Endpoint string `json:"Endpoint,optional"`

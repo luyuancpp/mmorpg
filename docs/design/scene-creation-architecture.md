@@ -319,26 +319,33 @@ in `cpp/libs/services/scene/player/system/player_scene.cpp` drives the full
 mirror lifecycle from the gameplay side:
 
 1. **Validate prerequisites** — refuse `mirrorConfigId == 0`, validate the
-   player entity, require the player to currently be in a non-mirror source
-   scene (refuse to mirror a mirror), require `PlayerSessionSnapshotComp`
-   for gate routing, and require an available SceneManager node entity.
+   player entity, refuse while in battle or while another scene change is in
+   flight (`PlayerLifecycleSystem::IsSceneChangeBusy`), require the player to
+   currently be in a non-mirror source scene (refuse to mirror a mirror),
+   require `PlayerSessionSnapshotComp` for gate routing, and require an
+   available SceneManager node entity.
 2. **Build CreateSceneRequest** with `scene_conf_id = source.scene_config_id`,
    `scene_type = SCENE_TYPE_INSTANCE`, `zone_id = GetZoneId()`,
    `source_scene_id = source.scene_id` (drives co-location),
    `mirror_config_id = mirrorConfigId`, and `creator_ids = [player_id]`.
-3. **Fire-and-forget** via `scene_manager::SendSceneManagerCreateScene` — no
-   per-call state retained on the SceneNode.
-4. **Async response** lands in `AsyncSceneManagerCreateSceneHandler` in
-   `cpp/nodes/scene/rpc_replies/scene_manager_response_handler.cpp`. On
-   success, the handler iterates `resp.creator_ids()` and dispatches a
-   `SceneManagerEnterScene` for each creator that is still resident on this
-   node. Players that disconnected between fire and reply are skipped — when
-   they reconnect, normal `EnterScene` flows handle re-entry.
+3. **Register, then send**(2026-10-15 起):先挂 `PlayerMirrorCreateInFlightComp`(令牌 + 发送时刻),
+   再用生成客户端的每次调用回调重载 `SendSceneManagerCreateScene(..., GrpcDone, ...)` 发出,回调只按值捕获
+   `player_id` 与令牌。登记期间 `IsSceneChangeBusy` 为真,客户端换图、跨 zone 传送、队伍跟随一律被挡
+   ([client-request-ordering.md](client-request-ordering.md) §7.2 第 7 条)。
+4. **Completion** lands in `PlayerSceneSystem::HandleMirrorCreateDone`(成功 / 业务失败 / 传输失败恰好一次,
+   不再经过全局 `AsyncSceneManagerCreateSceneHandler`,scene 节点也不再安装它)。按令牌认领在途组件:
+   实体已不在或令牌对不上就丢弃,镜像由 scene_manager 按空场景回收。认领后:传输失败回 `kEnterSceneServerBusy`;
+   scene_manager 拒绝或 scene_id 为 0 回 `kEnterSceneFailed`;成功时复核(战斗在途、别的换图 / 交接在途、
+   scene_manager 可达)后经 `PlayerLifecycleSystem::RequestSceneChange` 发自动进场的 `EnterScene`,之后的
+   18 / 失败照普通换图处理。
 
-This pattern keeps the SceneNode stateless across the round trip; the echoed
-`creator_ids` is the entire correlation key. It also means a SceneManager
-that legitimately reuses an existing mirror via `MirrorDedupBySource` still
-auto-routes the requesting player(s) into that mirror.
+The correlation key is now the per-call callback, not the echoed
+`creator_ids` (business-failure replies never echoed them, so the creator
+used to get no tip at all). A SceneManager that legitimately reuses an
+existing mirror via `MirrorDedupBySource` still auto-routes the requesting
+player into that mirror.
+
+> **2026-10-17 契约勘误**：以上第 3 / 4 步和“creator_ids 是唯一关联键”保留为旧流程。镜像建场现在先登记 `PlayerMirrorCreateInFlightComp`，完成闭包按值捕获 playerId / token 并委托 `PlayerSceneSystem::HandleMirrorCreateDone`；全局 CreateScene 处理器与 `scene_manager_response_handler.cpp` 已删除，不依赖响应回显创建者。普通换图与镜像共用当前生效的 SceneManager deadline + 1000ms 时效政策，时间回拨按失效处理。完成入口先核对 token，再要求槽未过 TTL；token 不符不动新槽，匹配 token 但已过期或回拨时，仅摘对应当前 token 后静默丢弃，不推 tip、不自动进场。有效完成才释放本次槽，成功时复核玩家仍在、未进入战斗及可用 SceneManager，再经 `RequestSceneChange` 自动进场。有效槽内业务拒绝、零 scene_id 或建好时已在战斗回 `kEnterSceneFailed`，无可用 SceneManager 或传输失败回 `kEnterSceneServerBusy`（3028）。建场在途也占换图互斥闸，客户端换图、队伍跟随与跨 zone 传送不能绕过它。后来的普通换图登记、交接全部预检通过、退出新挂 `UnregisterPlayer`、权威落点成功这四个提交点永久摘掉旧镜像令牌；UTC 回拨后恢复到原 TTL 内也不能使旧提示或自动进场复活。忙碌检查仍只读，未通过的交接预检不取消旧镜像。验证状态另据实际结果；Java 对照见 `grpc-client-deadline-failure-callback.md` §12.4。
 
 ### C++ Side (Scene.CreateScene handler)
 

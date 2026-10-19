@@ -102,6 +102,8 @@ struct EmergencyRelocateTicket;
 //                               的次数。非 0 = 路由链上有一环没填 home_zone_id。
 //   owner_epoch_unknown         存盘时 epoch 为 0、跳过 CAS 的次数。滚动升级窗口内允许非 0,
 //                               全链升级完成后应恒 0,否则等于假防护。
+//   stale_owner_rejected_exiting stale_owner_write_rejected 中实体正在退出的那一部分:退出存盘从未落地就被拒、差额
+//                               随实体丢弃 = 回档的直接证据(docs/design/location-release-binding.md §3.7)。应恒 0。
 namespace owner_epoch_stats
 {
 	inline std::atomic<uint64_t>& StaleOwnerWriteRejected()
@@ -122,17 +124,30 @@ namespace owner_epoch_stats
 		return g_counter;
 	}
 
+	// stale_owner_write_rejected 里实体正带着 UnregisterPlayer 的那一部分:退出中的实体存盘被 owner CAS 拒绝,说明这次退出的
+	// 存盘从未落地、内存差额随实体一起被丢弃 —— 回档的直接证据(docs/design/location-release-binding.md §3.7,审计 §2.1)。
+	inline std::atomic<uint64_t>& StaleOwnerRejectedExiting()
+	{
+		static std::atomic<uint64_t> g_counter{0};
+		return g_counter;
+	}
+
 	inline void IncStaleOwnerWriteRejected() { StaleOwnerWriteRejected().fetch_add(1, std::memory_order_relaxed); }
 	inline void IncHomeZoneUnknown() { HomeZoneUnknown().fetch_add(1, std::memory_order_relaxed); }
 	inline void IncOwnerEpochUnknown() { OwnerEpochUnknown().fetch_add(1, std::memory_order_relaxed); }
+	inline void IncStaleOwnerRejectedExiting() { StaleOwnerRejectedExiting().fetch_add(1, std::memory_order_relaxed); }
 
 	struct Snapshot
 	{
 		uint64_t staleOwnerWriteRejected;
 		uint64_t homeZoneUnknown;
 		uint64_t ownerEpochUnknown;
+		uint64_t staleOwnerRejectedExiting;
 
-		bool Any() const { return staleOwnerWriteRejected + homeZoneUnknown + ownerEpochUnknown > 0; }
+		bool Any() const
+		{
+			return staleOwnerWriteRejected + homeZoneUnknown + ownerEpochUnknown + staleOwnerRejectedExiting > 0;
+		}
 	};
 
 	inline Snapshot Read()
@@ -140,7 +155,8 @@ namespace owner_epoch_stats
 		return Snapshot{
 			StaleOwnerWriteRejected().load(std::memory_order_relaxed),
 			HomeZoneUnknown().load(std::memory_order_relaxed),
-			OwnerEpochUnknown().load(std::memory_order_relaxed)};
+			OwnerEpochUnknown().load(std::memory_order_relaxed),
+			StaleOwnerRejectedExiting().load(std::memory_order_relaxed)};
 	}
 } // namespace owner_epoch_stats
 
@@ -179,13 +195,12 @@ namespace owner_epoch_stats
 //                          "退出优先"销毁,走不到这里,所以它基本等于真正被踢回选服的人数。
 //                          例外:gate-cmd 消费滞后超过 30s 时,一次"迟到但成功"的传送也会被踢回选服
 //                          (踢线走 scene→gate TCP 直达,先于 Kafka 上的 124 到达)。应接近 0
-//   reply_uncorrelated     EnterScene 应答没带 correlation_id(号为 0)、退回按 player_id 对应答的次数
-//                          (见 enter_scene_reply)。scene_manager 全部升级后应恒为 0;非 0 = 有 scene_manager
-//                          没升级,或有发送点绕过了统一出口(SendCorrelatedEnterScene)
+//   reply_uncorrelated     兼容入口以 requestTag == 0 退回按 player_id 对应答的次数(见 enter_scene_reply)。
+//                          生产关联号来自闭包捕获,旧版 SM 不回显也按捕获号认领;仅单测或绕过统一出口的调用可计数
 //   reply_unmatched        被丢弃的可疑外来应答:有等待者、号对不上,且是拒绝 / 重定向 / 发生在交接期间
 //                          (enter_scene_reply::IsSuspiciousUnmatched)——正是过去会被错吃成交接证据的那一类。
 //                          基线接近 0,与"换图后立刻再换图 / 交接作废后立刻换图"的频率相关,只看突增。
-//                          路由先到之后才到的纯成功迟到应答是常态,不计
+//                          路由先到之后才到的纯成功迟到应答是常态,不计;非 0 回显与捕获身份不符同样计数
 //   ── 冻结硬上限 / 晚发闸 /「标记已发出」统一收口(travel_freeze_cap.h)──
 //   freeze_cap_reached     冻结满 travel_freeze_cap::kFreezeCap(70s,单调时钟)仍无结论而被处置的次数:标记没发出
 //                          的那一支同时计入 aborted,已发出的那一支同时计入 mark_sent_destroyed。两道 30s 看门狗与
@@ -826,7 +841,7 @@ namespace travel_outcome
 
 // EnterScene 应答的分发(PlayerLifecycleSystem::DispatchEnterSceneReply)。
 //
-// 为什么需要:应答回调里没有请求上下文。只按 player_id 对应答时,传送在途期间到达的**任何**一条 EnterScene
+// 为什么需要:旧的全局应答回调里没有请求上下文。只按 player_id 对应答时,传送在途期间到达的**任何**一条 EnterScene
 // 应答(组队跟随 / 疏散 / 镜像自动进场 / 普通换图的迟到应答)都会被当成交接证据:证据被污染、标记被 DEL 撤回、
 // 跨 zone 时还可能被误判成"已放行却没收到应答"而踢线。
 //
@@ -839,6 +854,9 @@ namespace travel_outcome
 //                消息串到新场景的客户端(gate 栅栏只比 player_id)、看门狗无条件 DEL 误删新节点的标记、
 //                exit_wins 失真 —— 换来的只是窗口期内没有今天的串号 bug(cross-zone-scene-travel.md
 //                「EnterScene 应答关联号」)。
+// 2026-10-17:关联号改由每次调用闭包捕获,上述回显为 0 的退路说明保留为旧模型背景。
+// 生产 requestTag 恒非 0,即使旧版 SM 不回显也按捕获号精确认领。回显只作逐字段核对,非 0 且不一致即丢弃;
+// 号比对仍防止迟到或已被顶替的完成认领当前等待者。requestTag 为 0 的兼容分支只剩单测与绕过统一出口的调用。
 // 等待者只有两种:交接(PlayerTravelHandoffComp.enterSceneCorrelationId,0 = 交接的 EnterScene 还没发)与
 // 普通换图(PlayerSceneChangeInFlightComp.correlationId)。二者按构造不共存:StartTravelHandoff 摘在途换图组件,
 // 发送侧闸 IsSceneChangeBusy 挡住交接期间的普通换图。
@@ -1190,7 +1208,14 @@ public:
 	// 以及旧版 scene_manager 不回显时仍按 player_id 对应答。详见 PlayerSceneChangeInFlightComp。
 	// 该玩家有一份作废交接留下的 handoff 标记还没确认撤回时同样为真(按 player_id 判,见
 	// handoff_mark_withdraw.h):标记可能还带着当前 owner_epoch,这时发跨节点 EnterScene 会免存盘过门。
+	// 镜像 CreateScene 在途(PlayerMirrorCreateInFlightComp,同一 TTL 内)同样为真:镜像随后会自动进场,
+	// 与它同时在途的换图 / 传送 / 跟随会让玩家被搬两次。闸只读;新普通换图、交接、退出提交或权威落点成功
+	// 会摘掉旧镜像令牌,永久撤销其自动进场资格,不受随后 UTC 恢复影响。
 	static bool IsSceneChangeBusy(entt::entity player);
+
+	// 普通换图与镜像建场共用的在途有效期:发送时刻到现在小于 SceneManager deadline + 1s。
+	// UTC 回拨同样视为失效;发送侧闸一旦因此放行,旧镜像完成只能摘自己的槽,不得提示或自动进场。
+	static bool IsSceneChangeRequestWithinTtl(uint64_t sentAtMs);
 
 	// 重试还没确认的 handoff 标记撤回,并丢弃过了截止时刻的条目。由 RedisSystem 驱动:
 	//   reconnected = true  → Redis 重连回调里调,忽略重试间隔、全部立刻重发;
@@ -1209,7 +1234,7 @@ public:
 	// 替在线玩家发普通 EnterScene(客户端换图 / 镜像自动进场 / 队伍跟随)的**唯一入口**:取一个关联号 →
 	// 登记在途换图(PlayerSceneChangeInFlightComp:目标、发送时刻、playerRequested、号)→ 经统一出口带号发出 →
 	// 返回号(只供调用方打日志)。应答回来时 DispatchEnterSceneReply 只把号相等的那条交给普通换图收尾
-	// (18 起同 zone 交接 / 失败回 tip);旧版 scene_manager 不回显时退回按 player_id。
+	// (18 起同 zone 交接 / 失败回 tip);旧版 scene_manager 不回显也按发送时捕获的号认领。
 	// 在途目标直接取自 req(scene_id、scene_conf_id 窄化成 uint32):"记下的目标"与"发出的目标"只有一个来源。
 	// 前置条件(入口内不重复判):调用方已过 IsSceneChangeBusy,且 smEntity 非空(已查 GetSceneManagerEntity)。
 	// 实体无效时不登记、照样发出(与旧的"登记函数 + 直调生成发送函数"两步写法行为一致)。req 会被写入 correlation_id。
@@ -1219,10 +1244,12 @@ public:
 	static uint64_t RequestSceneChange(entt::entity player, entt::entity smEntity, ::scene_manager::EnterSceneRequest& req,
 									   bool playerRequested = true);
 
-	// 每一条 EnterScene 应答的入口,由 rpc_replies/scene_manager_response_handler.cpp 无条件调用(那里只做适配)。
+	// 每一条 EnterScene 应答的入口,由 SendCorrelatedEnterScene 的每次调用回调调用(单测也可直接调)。
+	// playerId / requestTag 是发送时按值捕获的身份;生产 requestTag 恒非 0,回显为 0 也按捕获值认领。
 	// 分发规则见 enter_scene_reply::Classify:
-	//   * player_id == 0(更老的 scene_manager 连 player_id 都不回显)→ LOG_DEBUG no-op;
-	//   * correlation_id == 0 → reply_uncorrelated +1,本线程首次 LOG_WARN,随后按 player_id 退回旧行为;
+	//   * playerId == 0 是调用方 bug → LOG_ERROR no-op;
+	//   * 非 0 回显的 player_id 或 correlation_id 与捕获值不一致 → LOG_ERROR 丢弃,reply_unmatched +1;
+	//   * requestTag == 0(仅兼容旧直接调用 / 单测)→ reply_uncorrelated +1,本线程首次 LOG_WARN,按 player_id 退回旧行为;
 	//   * 实体已不在(玩家在途中断线,退出优先;疏散 / 排空改派的应答)→ 先交改派待确认表按号认领
 	//     (relocate_confirm::DecideReplyClaim:认领后只触发核实,不直接定案);不认领才 LOG_INFO no-op;
 	//   * kTravelHandoff / kLegacyTravelHandoff        → HandleTravelEnterSceneReply(交接裁决);
@@ -1232,14 +1259,15 @@ public:
 	//                                                    其余 LOG_DEBUG。外来的 redirect 也只记录、不销毁:SM 若真放行了,
 	//                                                    本代请求会被拒,由 ResolveTravelOutcome 按 epoch 收敛;
 	//   * kNoWaiter                                    → LOG_DEBUG no-op。
-	static void DispatchEnterSceneReply(const ::scene_manager::EnterSceneResponse& resp);
+	static void DispatchEnterSceneReply(Guid playerId, uint64_t requestTag,
+		const ::scene_manager::EnterSceneResponse& resp);
 
 	// 每一条 EnterScene 传输失败(gRPC status 非 OK:deadline 到期 / scene_manager 不可达 / 服务端超时)的入口,
-	// 由 rpc_replies/scene_manager_response_handler.cpp 的失败处理器调用;req 是生成的客户端保存的发出请求,
+	// 由 SendCorrelatedEnterScene 的每次调用回调调用;playerId / requestTag 是发送时按值捕获的身份,
 	// reason 是调用方拼好的方法名 + 状态码 + 消息(只用于日志,本系统不依赖 gRPC 头文件)。
 	// 传输失败 = **结果未知**(scene_manager 可能已执行),只做不依赖对端结果的事
 	// (docs/design/grpc-client-deadline-failure-callback.md §5 #1 / #2):
-	//   * 按 req.correlation_id 走同一个 enter_scene_reply::Classify,**不按 player_id**;号为 0 → LOG_ERROR 丢弃;
+	//   * 按捕获的 requestTag 走同一个 enter_scene_reply::Classify,**不按 player_id**;号为 0 → LOG_ERROR 丢弃;
 	//   * 实体已不在(疏散 / 排空的发送、途中退出)→ 先交改派待确认表按号认领(relocate_confirm::
 	//     DecideTransportFailureClaim,只按号、没有 player_id 退路;认领后当作结果未知,等到 settle 才核实);
 	//     不认领才 LOG_INFO no-op;
@@ -1248,7 +1276,7 @@ public:
 	//                                         (不断言换图失败:路由事件可能随后到达),队伍跟随只记日志;
 	//   * kSceneChangeDuringHandoff         → 不变量被破坏,LOG_ERROR 丢弃;
 	//   * kUnmatched / kNoWaiter            → 记日志,不动任何等待者。
-	static void DispatchEnterSceneTransportFailure(const ::scene_manager::EnterSceneRequest& req, const std::string& reason);
+	static void DispatchEnterSceneTransportFailure(Guid playerId, uint64_t requestTag, const std::string& reason);
 
 	// 交接是否已经发起(handoff 标记已写、EnterScene 已发)。此后本实体的去留只由 EnterScene 应答与
 	// 看门狗裁决:ReleasePlayer 不得把它推进退出流程(见 HandleReleaseFromSceneManager)。
@@ -1265,6 +1293,16 @@ public:
 	// 只读本地缓存,不读 Redis、不采纳 epoch(CZ-3)。scene 逻辑线程调用。targetSceneId / targetNodeId 只进日志。
 	static void HandleReleaseFromSceneManager(Guid playerId, uint64_t expectedOwnerEpoch, uint64_t targetSceneId,
 											  const std::string &targetNodeId);
+
+	// scene_manager.ReleasePlayer(session_ended = true)的系统层入口:玩家的登录会话已结束、没有接手节点,scene_manager 的
+	// LeaveScene 拿不到"持有者已释放"证据,请本节点释放(docs/design/location-release-binding.md §3.3)。按顺序:
+	//   1. 本节点有该玩家实体:与交接释放同一个 release_fence::Decide(交接在途 / 缓存与期望不等 → 忽略);判释放 →
+	//      HandleExitGameNode(kClientDisconnect),存盘落地后由 A1′ 按既有判定写断线释放标记;已在退出中只合并原因;
+	//   2. 本节点完全不持有(playerList 没有、没有待入场条目、没有改派待确认条目):release_fence::DecideSessionEndedCredential
+	//      判定后按 owner_epoch == expectedOwnerEpoch 条件补写凭证标记(与 A1′ 同一段 Lua);
+	//   3. playerList 里留着无效句柄:不写凭证(表不一致,fail-closed)。
+	// 只读本地缓存,不读 Redis、不采纳 epoch(CZ-3)。scene 逻辑线程调用。
+	static void HandleSessionEndedRelease(Guid playerId, uint64_t expectedOwnerEpoch);
 
 	// 进场路由(PlayerEnterGameNode)撞上一个交接已发起的旧实体,且路由带来的 owner_epoch 比实体
 	// 缓存的新:说明那次交接其实已被放行(应答丢了,看门狗还没到期),玩家在别处玩过一圈又被
@@ -1403,7 +1441,7 @@ public:
 	//   只有在途 DBTask              → 置 awaitingDbTaskAck,返回 false,等 OnDbTaskDispatchSettled 恢复;
 	//   有投递失败、未到上限          → 按当前内存重存一次(SavePlayerToRedisImpl 不走快路径),返回 false;
 	//                                  无法再重存时(交接已发起)带着 MySQL 落后收尾(exit_unsynced),返回 true;
-	//                                  拒存(持久组件缺失)时 fail-closed 保留实体,返回 false;
+	//                                  拒存(持久组件缺失)时 DestroyDeposedPlayer 不存盘丢弃(不写 A1′、交接标记,不发改派),返回 true;
 	//   有投递失败、已到上限          → 保留实体,返回 false。
 	//   欠账的失败是永久性的          → 不论轮次、不等剩下的回执,带着 MySQL 落后收尾(exit_unsynced,ERROR 带错误码),
 	//   (DbTaskDispatchSystem::PermanentFailure,消息过大 / 无写权限等)  返回 true。

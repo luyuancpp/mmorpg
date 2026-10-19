@@ -1,7 +1,8 @@
 # go/db 存盘消费组按 zone 拆分与不停服交接
 
 > **状态**：已落码，未编译、未测试，待 Codex 验证（截至 2026-10-16 工作区）。Kafka CLI 在钉版 4.3.1 上的行为（§11）同样没有实测。
-> **2026-10-17 增补**：R7 语义复核 scripts 区域的修复（显式交接前的交接闸能力校验、`kafka_offset_reset.ps1` 的参数约束与退出码、回档第 0 步 e 与按世代号推导 topic、合服 P3 全覆盖检查、「组不存在」白名单只在没有表头时认定）已写入 §1.3、§2.2、§2.3、§3(d)、§4、§5、§6、§7、§8、§10、§11、§13。状态同上：已落码，未编译、未测试，待 Codex 验证。**回档的 Kafka 语义待负责人裁决**，见 §6 末尾。
+> **2026-10-17 增补**：R7 语义复核 scripts 区域的修复（显式交接前的交接闸能力校验、`kafka_offset_reset.ps1` 的参数约束与退出码、回档第 0 步 e 与按世代号推导 topic、合服 P3 全覆盖检查、「组不存在」白名单只在没有表头时认定）已写入 §1.3、§2.2、§2.3、§3(d)、§4、§5、§6、§7、§8、§10、§11、§13。状态同上：已落码，未编译、未测试，待 Codex 验证。回档的 Kafka 语义当时待负责人裁决（已于 2026-10-17 裁决，见下一条）。
+> **2026-10-18 增补**：负责人 2026-10-17 裁决回档语义为「丢弃 TargetTime 之后的写」，已落码（`k8s_zone_rollback.ps1` 的 Step 5 改 `-ToLatest`、不清游标、不再 FLUSHDB，读 MySQL / 写 Redis 交给尚未落地的回档工具 `go/db/cmd/zone_rollback_discard`）；同日回档复核 [0]–[11] 的修复一并落码，其中 [0] 把 `ConvertFrom-LiveDbConsumerGroup` 从 `k8s_deploy.ps1` 原样移到 `lib/kafka_consumer_groups.ps1`，回档第 0 步 f 与部署脚本共用同一份四种形状规则。改动写在 §1.3、§3(d)、§6、§11、§13；完整流程以 [回档方案](zone_data_rollback.md)「2026-10-18 修订」为准。状态：已落码，未编译、未测试，待 Codex 验证。
 > **范围**：交接（handoff）里的 ③「消费组按 zone 拆」，外加它的前置「Kafka 镜像钉版本」和回档 Step 2 的修正。
 > **依据**：`docs/handoff/godb-pipeline-impl-20261015/` 下的 S2 规格（`S2-consumer-group-per-zone-spec.md`）、复核（`…-review.md`）、修订稿（`…-addendum.md`，优先级最高），以及 `batch-reports.md` 的 A2 / B1 / B2 / B3 各节。接手方在落码时定下的事实以代码为准。**代码与规格冲突时以代码为准**，冲突处在正文里标「与规格的差异」，汇总见 §10.6。
 > **证据口径**：全部来自静态阅读代码，没有编译、没有运行，也没有连过集群。
@@ -59,11 +60,11 @@
 | 位点读取（与 lag 探针共用） | `go/shared/kafkautil/group_lag.go` | `CommittedOffsetsReader`、`CommittedOffsets` |
 | 指标 | `go/db/internal/metrics/metrics.go` | `consumerGroup*` 六个指标、`HandoffSeed*` / `HandoffGate*` 常量、`ObserveRebalanceGap` 等导出函数 |
 | 告警 | `deploy/k8s/db-task-retry-alerts.yaml` | 组 `db-task.consumer-group-handoff` |
-| 部署 | `tools/scripts/k8s_deploy.ps1` | `-DbConsumerGroup`、`ConvertFrom-LiveDbConsumerGroup`、`Test-DbConsumerGroupNeedsKafkaFacts`、`Resolve-DbConsumerGroupPlan`、`New-DbConsumerGroupYaml`、`Get-DbConsumerGroupPlan`、`Read-LiveDbConfigMapYaml`、`Read-DbGroupTopicFacts`、`Assert-LiveDbPodsHaveHandoffGate`（2026-10-17，交接闸能力校验）、`Initialize-DbConsumerGroupPlans`、`Test-ZoneDbDeployed`、`Assert-DbConsumerGroupName`、`Apply-OneGoSvc` 的 `if ($SvcName -eq 'db')` 块 |
+| 部署 | `tools/scripts/k8s_deploy.ps1` | `-DbConsumerGroup`、`ConvertFrom-LiveDbConsumerGroup`（2026-10-18 移到 `lib/kafka_consumer_groups.ps1`，见下面「CLI 输出解析」一行）、`Test-DbConsumerGroupNeedsKafkaFacts`、`Resolve-DbConsumerGroupPlan`、`New-DbConsumerGroupYaml`、`Get-DbConsumerGroupPlan`、`Read-LiveDbConfigMapYaml`、`Read-DbGroupTopicFacts`、`Assert-LiveDbPodsHaveHandoffGate`（2026-10-17，交接闸能力校验）、`Initialize-DbConsumerGroupPlans`、`Test-ZoneDbDeployed`、`Assert-DbConsumerGroupName`、`Apply-OneGoSvc` 的 `if ($SvcName -eq 'db')` 块 |
 | Pod 注解占位 | `deploy/k8s/manifests/go-svc/db.yaml` | `mmorpg.io/db-consumer-group: "PLACEHOLDER_DB_CONSUMER_GROUP"`、`mmorpg.io/db-group-handoff-from: "PLACEHOLDER_DB_GROUP_HANDOFF_FROM"` |
-| CLI 输出解析（纯函数库） | `tools/scripts/lib/kafka_consumer_groups.ps1` | `Get-KafkaGroupMissingPatterns`、`Test-KafkaGroupMissingText`、`Test-KafkaGroupNoActiveMembersText`、`ConvertFrom-KafkaConsumerGroupDescribe`、`Get-KafkaCommittedOffsetMap`、`Resolve-KafkaGroupTopicOffsets`、`ConvertFrom-KafkaResetPlan`、`ConvertFrom-KafkaGetOffsets`、`Test-HandoffFinalizeReady`、`Get-DbTaskTopicName`；2026-10-17 新增 `Test-DbTaskTopicName`、`Get-DbGroupDescribeExecArgs`、`Resolve-DbGroupDescribeExecResult`（kafka-0 exec 读位点的命令与分类，k8s_deploy 与回档第 0 步 e 共用） |
+| CLI 输出解析（纯函数库） | `tools/scripts/lib/kafka_consumer_groups.ps1` | `Get-KafkaGroupMissingPatterns`、`Test-KafkaGroupMissingText`、`Test-KafkaGroupNoActiveMembersText`、`ConvertFrom-KafkaConsumerGroupDescribe`、`Get-KafkaCommittedOffsetMap`、`Resolve-KafkaGroupTopicOffsets`、`ConvertFrom-KafkaResetPlan`、`ConvertFrom-KafkaGetOffsets`、`Test-HandoffFinalizeReady`、`Get-DbTaskTopicName`；2026-10-17 新增 `Test-DbTaskTopicName`、`Get-DbGroupDescribeExecArgs`、`Resolve-DbGroupDescribeExecResult`（kafka-0 exec 读位点的命令与分类，k8s_deploy 与回档第 0 步 e 共用）；2026-10-18 从 k8s_deploy 移入 `ConvertFrom-LiveDbConsumerGroup`（行为不变，回档第 0 步 f 共用；依赖 `release_common.ps1` 的 YAML 解析），另有回档用的 `ConvertFrom-KafkaGroupStateDescribe`、`Test-KafkaGroupStateInactive`、`Get-KafkaTopicActiveConsumers`、`Test-KafkaTopicQuiescent`、`Get-KafkaGroupCutProblems`、`ConvertTo-KafkaCutText` |
 | 收尾与退役 | `tools/scripts/kafka_offset_reset.ps1` | `-FinalizeHandoff`、`-RetireGroup`、`Remove-RetiredGroupTopicOffsets`、`Get-ResetPlanProblems`、`Get-ResetVerificationProblems`；2026-10-17 新增 `ConvertFrom-KafkaTopicDescribe`、`Wait-KafkaTopicDeleted`，改动 `Invoke-KafkaToolCaptured`（复位 LASTEXITCODE） |
-| 回档 | `tools/scripts/k8s_zone_rollback.ps1` | `-KafkaGroup` / `-KafkaLegacyGroup`、`Show-KafkaTopicLagSnapshot`（第 0 步 c）、`Invoke-Step5Rehearsal`（第 0 步 d）、`Assert-Step6KafkaFactsReadable`（第 0 步 e，2026-10-17）、入口按 `TopicGeneration` 推导 `-KafkaTopic`（2026-10-17）、Step 5 的 `$kArgs`、`$upArgs.DbConsumerGroup` |
+| 回档 | `tools/scripts/k8s_zone_rollback.ps1` | `-KafkaGroup` / `-KafkaLegacyGroup`、`Show-KafkaTopicLagSnapshot`（第 0 步 c）、`Invoke-Step5Rehearsal`（第 0 步 d）、`Assert-Step6KafkaFactsReadable`（第 0 步 e，2026-10-17）、入口按 `TopicGeneration` 推导 `-KafkaTopic`（2026-10-17）、Step 5 的 `$kArgs`、`$upArgs.DbConsumerGroup`；2026-10-18（回档语义裁决与复核修正）：`ConvertFrom-ZoneDeploySnapshot` / `Get-DeployFactsProblems`（第 0 步 f，消费组按四种形状判定）、`Read-GoDbRedisRunId`、`Test-DiscardToolMatchesDbImage`、`Get-KafkaTopicConsumerProblems` / `Read-KafkaTopicLogEnd`（Step 1b 与 Step 5 之前复核）、`Read-ZoneGroupCut`（切点）、`Show-KafkaDiscardEstimate`、`$abortUpArgs`（中止路径不带 `-DbConsumerGroup`） |
 | 本地入口 | `tools/scripts/dev_tools.ps1` | `-DbConsumerGroup`、`-KafkaRetireGroup`、`-KafkaFinalizeHandoff`、`-RollbackKafkaGroup`、`-RollbackKafkaLegacyGroup`、`-MergeKafkaGroup` |
 | 合服 | `tools/merge_zone/main.go`、`preflight.go`、`merge_run.go`、`unmerge.go` | `defaultKafkaGroup`、`-kafka-group`、`-kafka-legacy-group`、`resolveAuthoritativeLag`、`committedOffsetPresent`、`consumerGroupMissingPatterns`、`kafkaGroupCandidates`、`dbConsumerGroupForZone`；2026-10-17 新增 `groupMissingInDescribe`、`verifyAuthoritativeCoverage`、`describeRowsForTopic`、`parseGetOffsets`、`kafkaGetOffsetsCmdFor`，`kafkaCLILagSource.TotalLag` 增加日志边界读取 |
 | 压测汇总 | `tools/scripts/stress_summarize.ps1` | `-Zone`（缺省 0） |
@@ -337,7 +338,8 @@
 - **(b) 读和写可能落在不同分区，「没有重叠就没有并发写者」不成立。** login 发的读任务和 C++ scene 发的写任务，在 ①（读写分区对齐，[分区契约](db-task-kafka-partition-contract.md)）全量上线之前按不同的分区函数选分区。读任务回写缓存，与其它分区上的写本来就会并发。交接只是不放大这个既有竞态。① 已落码，但 login 全部滚到按契约分区的版本之前，这一条一直成立。
 - **(c) 重试与消费组无关。** 重试的 ready / processing / 死信键都按 topic 拼。④ 之后又加了按分区的 ready 键 `kafka:retry:queue:{topic}:p{N}`（`retry_routing.go` 的 `retryPartitionReadyKey`）。交接闸覆盖不到重试，重试的正确性仍然靠排序锁租约。④ 的 owner 模式以 claim 租约判定属主，租约用 `sessionScope` 派生的 claimCtx 登记，让出时一起撤销。但在重叠窗口里，两组的成员可能各自持有同一分区的 claim。
 - **(d) 游标缺键时默认放行。** FLUSHDB 或丢键之后，「写重放会被游标吸收」这个前提就不成立了。K8s 上游标在共享 Redis DB 0；`k8s_zone_rollback.ps1` 的 FLUSHDB 防护（`Get-SharedRedisGuardPatterns` 里的 `consumer:applied*` 等模式）会拒绝清共享库。回档自己的 FLUSHDB 发生在 Step 4，所以 Step 5 必须先复核重置结果，再删 legacy 位点（§6）。
-  - **2026-10-17 更正（R7 复核 scripts [4]）**：上一句容易读成「回档默认会清掉游标」，K8s 上并不成立。共享 DB0 里有 `consumer:applied*`，防护在第 0 步就拒绝（`Assert-RedisFlushTargetIsZoneLocal`），能走通的只有两种：不给 `-RedisHost`，Step 4 被跳过，游标原样保留；或者带 `-ConfirmFlushSharedRedis`，连所有 zone 的游标、映射与重试收据一起清掉。所以 Step 5 拨回位点之后的重放，绝大部分会被保留下来的游标判为 stale 吸收。回档到底要什么语义，见 §6 末尾「回档的 Kafka 语义（待负责人裁决）」。「复核通过才删 legacy 位点」这条约束本身不受影响：两组都没有位点时 go/db 会从 Oldest 重放整个保留期，结果取决于游标在不在。
+  - **2026-10-17 更正（R7 复核 scripts [4]）**：上一句容易读成「回档默认会清掉游标」，K8s 上并不成立。共享 DB0 里有 `consumer:applied*`，防护在第 0 步就拒绝（`Assert-RedisFlushTargetIsZoneLocal`），能走通的只有两种：不给 `-RedisHost`，Step 4 被跳过，游标原样保留；或者带 `-ConfirmFlushSharedRedis`，连所有 zone 的游标、映射与重试收据一起清掉。所以 Step 5 拨回位点之后的重放，绝大部分会被保留下来的游标判为 stale 吸收。回档到底要什么语义，见 §6 末尾「回档的 Kafka 语义」。「复核通过才删 legacy 位点」这条约束本身不受影响：两组都没有位点时 go/db 会从 Oldest 重放整个保留期，结果取决于游标在不在。
+  - **2026-10-18 更正（回档语义已裁决）**：回档不再 FLUSHDB，FLUSHDB 防护随旧 Step 4 一起删除，`-ConfirmFlushSharedRedis` 改为入口拒绝；游标与 owner_epoch 有意保留，Step 5 把 zone 组拨到日志末端（`-ToLatest`），拨完之后新写的 seq 恒大于旧游标。所以回档不再让「游标缺键」出现；本条余下的风险只在手工 FLUSHDB / 丢键时成立。
 - **R7（进程内纵深防御）**：两组在同一分区上都有位点、且对方更大时，闸不放行，也就不会从陈旧位点大段重放（附录 B2 / B4）。它兜住手工部署、旧脚本和漏收尾，与部署期的 F2 / F4 检查（§4）是两道独立的闸。回归用例 `TestReplayAfterSeed_WritesAreOrderingStale`：从 S−k 重放时写全部判为 orderingStale，游标不变，不写缓存。
 
 ## 4. 部署脚本 `tools/scripts/k8s_deploy.ps1`
@@ -494,6 +496,7 @@ pwsh -File tools/scripts/kafka_offset_reset.ps1 -BootstrapServer <b> -Topic <T> 
 
 **规则**：回档之后，这个 zone 一律以 zone 组为权威。还在 legacy 组上的 zone，借这次回档迁到 zone 组。第 0 步不需要判组，也没有新增 kubectl 读，原来「预检只读一次集群」的断言不受影响。
 （2026-10-17 更正：第 0 步 e 新增了两次只读的 `kubectl exec`，见下。测试沙箱把 exec 调用单独记在 `KafkaExecCalls` 里，原来「预检只读一次集群」的断言只数第 0 步 a 的入口现状读，仍然成立。）
+（2026-10-18 更正：第 0 步 f 另有只读 kubectl：一次读部署事实（go-svc ConfigMap 与 db / login Deployment），一次 exec 进 infra 的 redis-0 读 run_id。它核对线上消费组形状属于四种合法形状，但不据此改变 Step 5 / 6 的做法，所以「不判组」仍然成立。沙箱分别记在 `SnapshotCalls` / `RedisExecCalls`。）
 
 **参数**：
 
@@ -517,6 +520,7 @@ pwsh -File tools/scripts/kafka_offset_reset.ps1 -BootstrapServer <b> -Topic <T> 
 - 只在 -Apply 下、Step 1 之前执行。
 - `Invoke-Step5Rehearsal` 先 describe zone 组。zone 组在本 topic 上已有数值位点时，打印 `zone group already holds offsets on <T>; Step 5 rehearsal skipped`。
 - 结果是 missing 或 no-offsets 时，以 hashtable splatting 调 `kafka_offset_reset.ps1` 做 dry-run：`-Group <zone 组> -ToDatetime <TargetTime> -Partitions N`，不带 `-Apply` 和 `-RetireGroup`。退出码非 0 或 throw，就在**停服之前** throw，文案指向本文 §11 V3(c)。describe 本身失败也 throw。
+  （2026-10-18 更正：预演与 Step 5 一致改为 `-ToLatest`，不再带 TargetTime。）
 - 这一步把「Kafka 建不出 zone 组的完整计划」提前到破坏性步骤之前暴露。
 
 **第 0 步 e（Step 6 的 Kafka 读法预检，2026-10-17，R7 复核 scripts [2]）**：
@@ -528,11 +532,11 @@ pwsh -File tools/scripts/kafka_offset_reset.ps1 -BootstrapServer <b> -Topic <T> 
 - 再逐组用本机 CLI（`-KafkaBootstrap`）describe 一次，比对两边对「本 topic 上有没有已提交位点」的结论。结论不同（多半是 `-KafkaBootstrap` 与 `-KubeContext` 指向了不同的 Kafka）同样拒绝：第 0 步 d 与 Step 5 改的是前者，Step 6 读的是后者。只比有无、不比位点值：停服之前 db 还在消费，位点随时前进。本机 describe 失败也拒绝。
 - 契约测试：`k8s_zone_rollback_gate_router_mode.tests.ps1` 的三条 `[2] 第 0 步 e:…` 用例（命令形状与先于停服；exec 被拒、两边不一致、默认 namespace 读不出；dry-run 只预告）。
 
-**Step 2**：已删除（2026-10-15）。zone-down 之后本 zone 的 db 已经停了，LAG 不可能排空；Step 5 本来就会把位点拨回 TargetTime，等排空没有意义。编号 3–7 保持不变。
+**Step 2**：已删除（2026-10-15）。zone-down 之后本 zone 的 db 已经停了，LAG 不可能排空；Step 5 本来就会把位点拨回 TargetTime，等排空没有意义。编号 3–7 保持不变。（2026-10-18 更正：Step 5 现在拨到日志末端，这些积压正是要丢弃的；停服后由 Step 1b 核对，见本节末尾。）
 
 **Step 5**：
 
-- 用 hashtable splatting 调 `kafka_offset_reset.ps1`，参数为 `BootstrapServer / Topic / Group=<zone 组> / RetireGroup=<legacy 组> / ToDatetime / Partitions=N`，-Apply 时再加 `Apply`。调用前先把 LASTEXITCODE 清零。
+- 用 hashtable splatting 调 `kafka_offset_reset.ps1`，参数为 `BootstrapServer / Topic / Group=<zone 组> / RetireGroup=<legacy 组> / ToDatetime / Partitions=N`，-Apply 时再加 `Apply`。调用前先把 LASTEXITCODE 清零。（2026-10-18 更正：`ToDatetime` 换成 `ToLatest`；拨完之后读 zone 组位点记为切点，存 `kafka-cut.json`。）
 - 流程：重置 zone 组 → 逐分区复核 → 复核通过后删掉 legacy 组在本 topic 上的位点。
 - legacy 组即使还有别的 zone 的成员，只要没有成员订阅本 topic，broker 就允许删除。这一点待 V3(d) 实测。
 - 仍有订阅者时，比如 namespace 没删干净，这一步会失败。此时 zone 已经停服、数据已经回档；清掉残留实例后，单独重跑同一条 kafka_offset_reset 命令。
@@ -546,7 +550,7 @@ pwsh -File tools/scripts/kafka_offset_reset.ps1 -BootstrapServer <b> -Topic <T> 
 
 **已知局限**：zone 组在本 topic 上没有位点，却仍有活跃成员时（例如 final(Z) 下从未写入过的 zone），第 0 步 d 的 dry-run 重置会被 Kafka 以「组不是 Empty」拒绝，回档在停服前被拒。这是零写入 zone 的边角情形，没有处理；行为取决于 V3(a)。
 
-**回档的 Kafka 语义（待负责人裁决；2026-10-17，R7 复核 scripts [4]）**
+**回档的 Kafka 语义（2026-10-17，R7 复核 scripts [4]；当时待负责人裁决，负责人 2026-10-17 已选 (A)，落码见本节末尾「2026-10-18：已裁决并落码」，下面留作历史）**
 
 状态：只改了注释，没有改行为。改的是 `kafka_offset_reset.ps1` 重置分支里 -Apply 复核之前那段注释（原来写「Step 4 已 FLUSHDB 清掉游标」，前提不成立），以及 `k8s_zone_rollback.ps1` 文件头 `.DESCRIPTION` 的 Step 5 一项（写明已知问题和二选一）。两种语义的修法互斥，本文只写现状与代价，不替负责人选。
 
@@ -573,6 +577,19 @@ pwsh -File tools/scripts/kafka_offset_reset.ps1 -BootstrapServer <b> -Topic <T> 
 两个方案都要另外核实的一点（推断，没有核对过）：`--to-datetime` 按消息时间戳取位点，时间戳早于 TargetTime、但 TargetTime 那一刻还没被消费的积压，既不在 PITR 之后的 MySQL 里，也不在 Step 5 拨回之后的重放范围内。
 
 裁决之前，回档按现有代码执行时，结果是上面「现状」描述的混合语义；运维要清楚这一点。
+
+**2026-10-18：已裁决并落码（丢弃 TargetTime 之后的写）**
+
+状态：已落码，未编译、未测试，待 Codex 验证；读 MySQL、写 Redis 的回档工具 `go/db/cmd/zone_rollback_discard` 尚未落地，落地之前 `-Apply` 停在入口校验。完整流程、各状态族的处理、代价、残余风险与待拍板事项以 [回档方案](zone_data_rollback.md)「2026-10-18 修订」为准，这里只记与消费组相关的部分。
+
+- **裁决**：负责人 2026-10-17 选方案 (A)：回档 = 回到 TargetTime 时刻 MySQL 里已经落库的状态。代价已接受：T 之后的合法存盘一并丢弃（含 T 时尚在 Kafka 里没落库的存盘）。
+- **Step 5**：`kafka_offset_reset.ps1 -Group <zone 组> -RetireGroup <legacy 组> -ToLatest -Partitions N -Apply`。拨到日志末端、逐分区复核、退役 legacy 组在本 topic 上的位点，再读 zone 组位点作为切点 O 存进 `run/logs/zone-rollback/<rid>/kafka-cut.json`。第 0 步 d 的预演同样 `-ToLatest`。
+- **游标与 owner_epoch 保留**：seq = offset + 1，拨到末端之后新消息 offset ≥ O、旧游标 ≤ O，新写恒大于旧游标。5b 由回档工具 verify 复核各分区最大 seq 不大于切点（否则 offset 回退过，须换世代）。以后对 db_task topic 的 `-ToDatetime` / `-ToEarliest` 不得越过切点，`kafka_offset_reset.ps1` 目前不读切点，只靠文档约束（§13 第 7 条）。
+- **重试收据**：本 topic 的共享 ready、按分区 ready、processing、实例登记与死信由回档工具在 Step 4b 改名进隔离区（键名带 rid 与轮次，永不回注），放在 Step 5 记下切点之后。FLUSHDB 与它的防护一起删除。
+- **停服核对**（Step 1b，先于 PITR）：zone 组 `--state` 为 Empty / Dead 或不存在，legacy 组在本 topic 的行里 CONSUMER-ID 全是 `-`；隔 `-QuiesceSeconds`（≥ 300s）两次读日志末端必须相同；之后才由工具 stopped 写停服行指纹基线。盘点（4a）之后、Step 5 之前再复核一次 namespace 与两组消费者（回档复核 [8]）。
+- **第 0 步 f 的消费组判定**（回档复核 [0]）：线上 go-svc-db-config 按 lib `ConvertFrom-LiveDbConsumerGroup`（与 §2.2、§4.3 同一份规则，2026-10-18 从 k8s_deploy 移入 lib）归形状，只放行 final(L)、final(Z)、handoff(Z←L)、handoff(L←Z)。以前拿 `GroupID` 原值比基名，回档过一次（Step 6 渲染 final(Z)）或正在交接的 zone 一律在停服前被拒。
+- **中止路径**（回档复核 [9]）：Step 5 之前的放弃 / 中止用不带 `-DbConsumerGroup` 的 zone-up（keep）。全新 namespace 下 keep 按位点落回 final(L) 或 final(Z)，与回档前一致；显式 zone 会把回档前仍在 legacy 组上的 zone 渲染成 handoff(Z←L)，db 镜像没有交接闸时在 `conf.MustLoad` 拒启（`Assert-LiveDbPodsHaveHandoffGate` 在没有 db Pod 时只告警），还会改掉消费组归属。两组都有位点（交接未收尾）时 keep 会被 F4 拒绝并给出收尾命令。
+- **Step 6** 不变：显式 `-DbConsumerGroup zone`，Step 5 之后只有 zone 组有位点，落到 `explicit-already-authoritative` → final(Z)。
 
 回档 SOP 本身的 2026-10-15 修订见 [zone_data_rollback.md](zone_data_rollback.md)。
 
@@ -749,7 +766,7 @@ GROUP_ID_NOT_FOUND
 
 ### 10.5 F6：回档不再判组
 
-- 附录 F6 要求把组判定和「仍是 legacy」检查挪到 Step 0。现在的做法是：回档一律以 zone 组为权威，Step 5 重置 zone 组并退役 legacy 位点，Step 6 显式传 zone。第 0 步不需要判组，只加了只读快照（c）和 Step 5 预演（d）。
+- 附录 F6 要求把组判定和「仍是 legacy」检查挪到 Step 0。现在的做法是：回档一律以 zone 组为权威，Step 5 重置 zone 组并退役 legacy 位点，Step 6 显式传 zone。第 0 步不需要判组，只加了只读快照（c）和 Step 5 预演（d）。（2026-10-18 补：第 0 步 f 核对线上形状属于四种合法形状，只拒绝未知形状，不改变做法；中止路径改用 keep，见 §6 末尾。）
 - **代价**：行为有变化，legacy zone 回档之后会自动迁到 zone 组。
 
 ### 10.6 实现与规格的差异（以代码为准）
@@ -794,7 +811,7 @@ GROUP_ID_NOT_FOUND
 |---|---|---|---|
 | V3(a) | 对 Stable 组执行 `--reset-offsets … --execute` | 打印 `Error: Assignments can only be reset if the group 'g' is inactive, but the current state is Stable.`，退出码可能是 0。`Assert-KafkaToolOutputClean` 两种都按失败处理。§6「已知局限」也取决于这一项：对非 Empty 组做 dry-run 是否同样被拒 | 待回填 |
 | V3(b) | `--describe` 一个不存在的组 | 命中三条白名单之一，退出码不论；文案在 stdout 还是 stderr 都可以（调用方会合并两路）。依赖点：`Resolve-KafkaGroupTopicOffsets`、`committedOffsetPresent`、`Read-DbGroupTopicFacts` | 待回填 |
-| V3(c) | 对不存在的组执行 `--reset-offsets --to-datetime … --execute`，之后 describe | 能建出位点，describe 有数值 CURRENT-OFFSET，并打印完整的 NEW-OFFSET 计划。依赖点：回档第 0 步 d 与 Step 5 | 待回填 |
+| V3(c) | 对不存在的组执行 `--reset-offsets --to-datetime … --execute`，之后 describe | 能建出位点，describe 有数值 CURRENT-OFFSET，并打印完整的 NEW-OFFSET 计划。依赖点：回档第 0 步 d 与 Step 5。（2026-10-18 更正：回档改为 `--to-latest`，实测时改对不存在的组执行 `--reset-offsets --to-latest --execute`；`--to-datetime` 只剩 `kafka_offset_reset.ps1 -ToDatetime` 的手工用法） | 待回填 |
 | V3(d) | 组 Stable、但没有成员订阅该 topic 时执行 `--delete-offsets --group G --topic T` | 成功，之后 describe 不再有本 topic 的数值行。依赖点：回档 Step 5 退役 legacy 组（legacy 组上还有别的 zone 的成员） | 待回填 |
 | V3(e) | 有成员订阅该 topic 时执行 `--delete-offsets` | 输出含 `GROUP_SUBSCRIBED_TO_TOPIC`（脚本也认 `actively subscribed`），被拒。依赖点：`Remove-RetiredGroupTopicOffsets` | 待回填 |
 | V3(f) | `--reset-offsets --execute`（以及 `--dry-run`）是否打印 GROUP/TOPIC/PARTITION/NEW-OFFSET 表 | 两种都打印。依赖点：`ConvertFrom-KafkaResetPlan`、`Get-ResetVerificationProblems`。如果 --execute 不打印，所有 -Apply 都会 fail-closed，需要改成先 dry-run 取计划 | 待回填 |
@@ -814,6 +831,7 @@ GROUP_ID_NOT_FOUND
 - **go-zero v1.10.0**：缺必填键时报错、且文本含 GroupID；未知键被忽略。由 `TestPreHandoffBinaryRefusesZoneShapedConfig`、`TestPreHandoffBinaryIgnoresUnknownKeys`、`TestPreHandoffBinaryLoadsFinalZoneShape` 钉住，失败时保留 go-zero 的原始错误文本。S5 的 F9（旧二进制遇到未知键 `RetentionBytes` 是否忽略）在 go/db（go-zero v1.10.0）上是同一行为，可用上述用例旁证；go/login 依赖 go-zero v1.9.2（`go/login/go.mod`），需单独核实，没有对应用例（见 [db-task-delivery-and-retention.md](db-task-delivery-and-retention.md) §B.8 与上线待做 §8 的 F9 行）。
 - **其余验证**：V0、V1（go/db、go/shared/kafkautil、go/data_service 的 vet / build / test，`-run` 包含 `GroupHandoff|HeldPartitions|PeerView|RebalanceGap|ConsumerClientID|ConsumerSetup|ConsumeClaim|NewKeyOrderedKafkaConsumer|Inspector|Settled|StateUnknown|ReplayAfterSeed`）、V2（go/login、tools/merge_zone）、V4（PowerShell 契约测试：`k8s_deploy_contract`、`k8s_migrate_gate`、`k8s_gate_drain`、`k8s_client_entry_contract`、`dev_tools_merge_zone_contract`、`dev_tools_kafka_offset_reset`、`k8s_zone_rollback_gate_router_mode`、`k8s_zone_rollback_flush_guard`、`kafka_offset_reset_output_guard`，以及 `test_stress_summarize.ps1`）、V5（本地正向 → 收尾 → 反向 → 收尾 → 正向的交接集成，加 final(Z) 实例续消费、旧二进制拒启和守望用例）、V6（kind 演练）。完整命令和通过标准见修订稿 §13，以及 `batch-reports.md` A2 / B1 / B2 / B3 各节的「验证命令」。
 - **R7 复核 scripts 修复的验证（2026-10-17，Claude 未执行，交 Codex）**：在仓库根逐个执行 `pwsh -NoProfile -File tools/scripts/tests/<名>.tests.ps1`，名字为 `kafka_offset_reset_output_guard`、`dev_tools_kafka_offset_reset`、`k8s_zone_rollback_gate_router_mode`（需要 PATH 上有 git）、`k8s_zone_rollback_flush_guard`、`k8s_deploy_contract`、`k8s_migrate_gate`、`k8s_client_entry_contract`；再在 `tools/merge_zone` 下执行 `go vet ./...` 与 `go test ./...`。通过标准：每个 PowerShell 测试 `fail=0`，go test 全绿；失败时保留全部 `[FAIL]` 行和 go test 输出。
+- **回档语义落码与回档复核修正的验证（2026-10-18，Claude 未执行，交 Codex）**：`k8s_zone_rollback_flush_guard.tests.ps1` 已删除，由 `k8s_zone_rollback_discard.tests.ps1` 取代。命令与通过标准见 [回档方案](zone_data_rollback.md)「2026-10-18 修订」的「Codex 验证」；`k8s_deploy_contract` 必须一并跑（`ConvertFrom-LiveDbConsumerGroup` 移进了 lib，§③ 的用例改由 lib 提供该函数）。
 
 ## 12. Java 版
 
@@ -834,6 +852,7 @@ GROUP_ID_NOT_FOUND
    - V3(c) 不通过时回档改动不得发布。
    - legacy zone 回档之后会自动迁到 zone 组，属于行为变化。
    - 2026-10-17 补：**回档的 Kafka 语义待负责人裁决**（§6 末尾）。按现有代码，K8s 上 Step 5 的拨回大部分被游标吸收，而 zone-down 时的积压与本 topic 的重试收据照常落进 PITR 之后的 MySQL。
+     - 2026-10-18 更正：已裁决为「丢弃 TargetTime 之后的写」并落码（§6 末尾）。剩下的是：回档工具 `go/db/cmd/zone_rollback_discard` 未落地，`-Apply` 不可执行；T 之后的合法存盘一并丢弃（已接受）；以后对 db_task topic 的 `-ToDatetime` / `-ToEarliest` 不得越过回档切点，只靠文档约束；待负责人另行拍板的 #1 / #3 / #4 / #6 见回档方案「2026-10-18 修订」。
    - 2026-10-17 补：Step 6 读不到 kafka-0 的情形已由第 0 步 e 在停服前兜住，但第 0 步 e 与 Step 6 之间隔着 PITR，窗口没有完全消失。
 8. **合服**：两组都有位点时一律拒绝，合服前必须先收尾。
    - 2026-10-17 补：P3 的全覆盖检查要求执行机上 `kafka-get-offsets` 与 `kafka-consumer-groups` 在同一 bin 目录、同一扩展名（V3(k)），否则 P3 拒绝。

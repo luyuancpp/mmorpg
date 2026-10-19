@@ -24,7 +24,10 @@
 # To switch from sandbox-mock to real WeChat/QQ:
 #   - delete AuthProviders.WeChat.Endpoint
 #   - delete AuthProviders.QQ.Endpoint
-#   - drop real AppId / AppSecret into the same block
+#   - put the real AppId in the block; replace AppSecret with
+#     AppSecretEnv: "LOGIN_WECHAT_APP_SECRET" and pass that variable to
+#     the container (inline AppSecret is accepted only because Mode=dev;
+#     any other Mode refuses to start, and "${VAR}" is never expanded)
 #   - restart only the `login` container
 # ────────────────────────────────────────────────────────────────
 
@@ -164,6 +167,9 @@ TableDir: "/app/data"
 # Default to true preserves backward compatibility; flip to false
 # once T+1 telemetry shows the legacy_login_count is below threshold.
 # See ARCH §12 + docs/notes/todo.md #224.
+# 只关 gate 上的口令 / 第三方凭据登录;gate 上 auth_type=access_token 的
+# 会话绑定(新流程必经一步)不受影响;被关的请求在认证之前就回 kLoginUnknownError,
+# 见 go/login/etc/login.yaml 同名项。
 LegacyGateLoginEnabled: true
 
 TokenConfig:
@@ -186,16 +192,17 @@ Prometheus:
 
 AuthProviders:
   # WeChat — points at sandbox-mock for offline e2e. Replace with
-  # real AppId/AppSecret + delete the Endpoint line for production.
+  # real AppId + AppSecretEnv and delete the Endpoint line for production.
+  # RequireUnionId 缺省 true:mock 只对以 U 开头的 code 返回 unionid,其余 code 会被拒绝(故障码 LoginAuthProviderUnavailable)。
   WeChat:
     AppId: "wx_sandbox_appid"
     AppSecret: "sandbox_secret_keep_it_local"
     Endpoint: "http://sandbox-mock:18090"
 
-  # QQ — same pattern as WeChat.
+  # QQ — same pattern as WeChat. AppId 必须等于 sandbox-mock 固定返回的 client_id(100000001,
+  # go/login/cmd/sandbox_mock),否则每次都按 client_id mismatch 拒绝。QQ 不需要 AppKey。
   QQ:
-    AppId: "qq_sandbox_appid"
-    AppKey: "sandbox_qq_key"
+    AppId: "100000001"
     Endpoint: "http://sandbox-mock:18090"
 
 Kafka:

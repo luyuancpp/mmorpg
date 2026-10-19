@@ -275,6 +275,7 @@ golden 表由 Go `crc32`、sarama、librdkafka 三方都通过才算成立；任
 
 PowerShell（仓库根，PowerShell 7）：逐个执行 `pwsh -NoProfile -NonInteractive -File tools/scripts/tests/<名>.tests.ps1`，名为 `k8s_deploy_contract`、`k8s_client_entry_contract`、`k8s_migrate_gate`、`k8s_gate_drain`、`dev_tools_merge_zone_contract`、`dev_tools_kafka_offset_reset`、`k8s_zone_rollback_gate_router_mode`、`k8s_zone_rollback_flush_guard`、`kafka_offset_reset_output_guard`，再跑 `pwsh -NoProfile -File tools/scripts/test_stress_summarize.ps1`；每个都以 0 退出、没有 FAIL 行。`k8s_client_entry_contract` 的 Forwarded 清单已含 `DbConsumerGroup`。
 手工 dry-run 冒烟（不连集群）：`pwsh -NoProfile -File tools/scripts/k8s_zone_rollback.ps1 -ZoneName t1 -ZoneId 101 -TargetTime 2026-05-15T14:23:00Z -NodeImage ghcr.io/luyuancpp/mmorpg-node:0123456789ab -SkipMySqlPause`：退出码 0；摘要含 `group=db_rpc_consumer_group_z101 retire=db_rpc_consumer_group partitions=10`；Step 6 行含 `-DbConsumerGroup zone`；没有 `Step 2: drain`。
+（2026-10-18 更正，回档语义裁决：`k8s_zone_rollback_flush_guard` 已删除，由 `k8s_zone_rollback_discard` 取代；回档相关的测试清单与冒烟期望以 6.5 为准。）
 
 ### 6.2 Kafka 钉版与 CLI 行为核对（V0 / V3）
 
@@ -283,7 +284,7 @@ PowerShell（仓库根，PowerShell 7）：逐个执行 `pwsh -NoProfile -NonInt
 | V0 | 上线前（负责人或 Codex，只读）：`kubectl get pod -n mmorpg-infra -l app=kafka -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.containerStatuses[0].imageID}{"\n"}{end}'`（`-n` 换成实际的 `-InfraNamespace`）；本机 `docker image inspect apache/kafka:latest --format '{{json .RepoDigests}}'` | 每个 broker 的 imageID、本机 RepoDigests 都含 `sha256:77e3df9054047a88b520d0cc46e16696d3b22022e1d580aeccd2632df6532837`；任一不一致按一次 broker 版本升级评估（metadata.version、日志目录兼容、能否回退），由负责人决定是否另开窗口 |
 | V3 只读 | `docker buildx imagetools inspect apache/kafka:4.3.1` 与 `… apache/kafka:latest` | 两条的 Digest 行都等于上面的 digest |
 | V3 拉镜像（**下载，执行前请负责人确认**） | `docker pull` 钉版引用；`docker image inspect <钉版引用> --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}'`；`docker compose -f deploy/docker-compose.yml up -d kafka kafka-topic-init`；`docker exec kafka /opt/kafka/bin/kafka-topics.sh --version` | 入口为 `["/__cacert_entrypoint.sh"]` 与 `["/etc/kafka/docker/run"]`；kafka-topic-init 以 0 退出；版本 4.3.1。本机命名卷可能是更旧版本写的，按 AGENTS.md §6.2 先清再起 |
-| V3 (a)–(j) | 在 4.3.1 上逐条记录原始输出与退出码：(a) Stable 组 `--reset-offsets --execute`；(b) describe 不存在的组；(c) 对不存在的组 `--reset-offsets --to-datetime --execute` 能否建出位点；(d) 组 Stable 但没有成员订阅该 topic 时 `--delete-offsets`；(e) 有成员订阅时的输出（预期含 `GROUP_SUBSCRIBED_TO_TOPIC`）；(f) `--execute` 是否打印 NEW-OFFSET 表；(g) `kafka-get-offsets.sh --time -2 / -1` 的格式；(h) Empty 组无位点时 describe 的输出；(i) 不存在组 describe 的原文；(j) kind 里 `kubectl exec -n mmorpg-infra kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group <g>"` 能否成功（`k8s_deploy.ps1` 的 `Read-DbGroupTopicFacts` 就用这个形状：经 `/bin/sh -c` 覆盖小堆，防 CLI 继承 broker 大堆把 kafka-0 撑到 OOMKilled） | 回填 `docs/design/db-consumer-group-per-zone.md` §11；与代码假设不符时两边同步补白名单正则（`tools/scripts/lib/kafka_consumer_groups.ps1` 的 `Get-KafkaGroupMissingPatterns` 与 `tools/merge_zone/preflight.go` 的 `consumerGroupMissingPatterns`），原文追加为 `tools/merge_zone/merge_unit_test.go` 与 `tools/scripts/tests/kafka_offset_reset_output_guard.tests.ps1` 的 fixture（lib 是纯函数库，只放正则，不放 fixture）。**若 (c) 证实建不出位点，`k8s_zone_rollback.ps1` 的改动不得发布，交负责人决策** |
+| V3 (a)–(j) | 在 4.3.1 上逐条记录原始输出与退出码：(a) Stable 组 `--reset-offsets --execute`；(b) describe 不存在的组；(c) 对不存在的组 `--reset-offsets --to-datetime --execute` 能否建出位点；(d) 组 Stable 但没有成员订阅该 topic 时 `--delete-offsets`；(e) 有成员订阅时的输出（预期含 `GROUP_SUBSCRIBED_TO_TOPIC`）；(f) `--execute` 是否打印 NEW-OFFSET 表；(g) `kafka-get-offsets.sh --time -2 / -1` 的格式；(h) Empty 组无位点时 describe 的输出；(i) 不存在组 describe 的原文；(j) kind 里 `kubectl exec -n mmorpg-infra kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group <g>"` 能否成功（`k8s_deploy.ps1` 的 `Read-DbGroupTopicFacts` 就用这个形状：经 `/bin/sh -c` 覆盖小堆，防 CLI 继承 broker 大堆把 kafka-0 撑到 OOMKilled） | 回填 `docs/design/db-consumer-group-per-zone.md` §11；与代码假设不符时两边同步补白名单正则（`tools/scripts/lib/kafka_consumer_groups.ps1` 的 `Get-KafkaGroupMissingPatterns` 与 `tools/merge_zone/preflight.go` 的 `consumerGroupMissingPatterns`），原文追加为 `tools/merge_zone/merge_unit_test.go` 与 `tools/scripts/tests/kafka_offset_reset_output_guard.tests.ps1` 的 fixture（lib 是纯函数库，只放正则，不放 fixture）。**若 (c) 证实建不出位点，`k8s_zone_rollback.ps1` 的改动不得发布，交负责人决策**。（2026-10-18 更正：回档 Step 5 与第 0 步 d 改为 `-ToLatest`，(c) 改核对象为对不存在的组 `--reset-offsets --to-latest --execute`） |
 
 ### 6.3 本地交接集成（V5，功能验证，不出性能结论）与 kind 演练（V6，可选）
 
@@ -303,9 +304,25 @@ PowerShell（仓库根，PowerShell 7）：逐个执行 `pwsh -NoProfile -NonInt
 | 7 | （下一轮）全部 login Pod 跑上 optional 版本 ≥ 7 天后，删除 `go/login/etc/login.yaml`、`k8s_deploy.ps1` 的 login 模板、`deploy/login-stack.linux/login.yaml` 三处 login 的 `GroupID`；`tools/merge_zone` 的 `-kafka-legacy-group` 缺省改为空 | 待定 |
 
 - 回滚（单 zone 反向）：先确认正向已收尾（脚本也会拦：两组都有位点时显式模式 throw 并打印收尾命令）→ `zone-up -DbConsumerGroup legacy` → `FinalizeHandoff`（`-Group db_rpc_consumer_group -RetireGroup db_rpc_consumer_group_z<id>`）→ keep 再跑一次 zone-up 落到 final(L)。最终形状下可以直接用旧镜像部署；交接形状下必须先收尾。
-- 其它入口：`dev_tools.ps1` 的 `k8s-image-*` / `k8s-release-*` 拒绝 `-DbConsumerGroup`（`k8s_image.ps1` 不部署 db）；`k8s-zone-rollback` 也拒绝它（回档 Step 6 固定传 zone）。`k8s_deploy.ps1` 的 `ConvertFrom-LiveDbConsumerGroup` 只认 `ServerConfig.Kafka.{GroupID,ConsumerGroup,GroupHandoffFrom}` 路径上的键，别的段的同名键忽略；`Apply-OneGoSvc` 遇到 db manifest 缺注解占位直接 throw。
+- 其它入口：`dev_tools.ps1` 的 `k8s-image-*` / `k8s-release-*` 拒绝 `-DbConsumerGroup`（`k8s_image.ps1` 不部署 db）；`k8s-zone-rollback` 也拒绝它（回档 Step 6 固定传 zone）。`ConvertFrom-LiveDbConsumerGroup`（2026-10-18 起在 `lib/kafka_consumer_groups.ps1`，k8s_deploy 与回档第 0 步 f 共用）只认 `ServerConfig.Kafka.{GroupID,ConsumerGroup,GroupHandoffFrom}` 路径上的键，别的段的同名键忽略；`Apply-OneGoSvc` 遇到 db manifest 缺注解占位直接 throw。
 - 告警：`db-task.consumer-group-handoff` 组 5 条随 4.3.1 一起 apply——`DbConsumerGroupHandoffWaiting`（> 45s，warning）、`DbConsumerGroupHandoffStuck`（`min by (namespace)` > 300，critical：只有本 zone 没有任何 Pod 越过闸才呼人）、`DbConsumerGroupHandoffOwnBehindPeer`（critical，处置分本组陈旧 / 对方陈旧两种）、`DbConsumerGroupHandoffConflict`（critical）、`DbConsumerGroupHandoffSeedAborted`（warning，按分区计数）。
 - 状态：代码已落，未编译、未测试；6.1–6.4 全部待做。
+
+### 6.5 回档：丢弃 TargetTime 之后的写（负责人 2026-10-17 裁决，2026-10-18 落码）
+
+裁决：回档 = 回到 TargetTime 时刻 MySQL 里已经落库的状态；Step 5 改 `-ToLatest`，Step 4 / 5 之间盘点并拦下本 topic 的重试收据，不清游标。代价（已接受）：T 之后的合法存盘一并丢弃。
+流程、各状态族的处理、残余风险与本轮回档复核 [0]–[11] 的处置见 `docs/design/zone_data_rollback.md`「2026-10-18 修订」。改动：`tools/scripts/k8s_zone_rollback.ps1`（含文件头的回档工具契约）、`lib/kafka_consumer_groups.ps1`
+（新收 `ConvertFrom-LiveDbConsumerGroup`）、`k8s_deploy.ps1`（只移走该函数）、`kafka_offset_reset.ps1`（注释）、`dev_tools.ps1`（新增 `-RollbackAllowEmptyTarget` / `-RollbackAcknowledgeNoPostTWrites` 透传）、
+`tests/k8s_zone_rollback_discard.tests.ps1`、`tests/k8s_zone_rollback_gate_router_mode.tests.ps1`、`tests/lib/k8s_zone_rollback_sandbox.ps1`、`tests/k8s_deploy_contract.tests.ps1`（注释）。**未编译、未测试，待 Codex 验证。**
+
+| # | 事项 | 状态 |
+|---|---|---|
+| 6.5.1 | Codex（仓库根，PowerShell 7）：逐个 `pwsh -NoProfile -NonInteractive -File tools/scripts/tests/<名>.tests.ps1`，名为 `k8s_zone_rollback_discard`、`k8s_zone_rollback_gate_router_mode`（PATH 上要有 git）、`kafka_offset_reset_output_guard`、`dev_tools_kafka_offset_reset`、`k8s_deploy_contract`、`k8s_client_entry_contract`、`k8s_migrate_gate`、`dev_tools_merge_zone_contract`；通过标准：每个以 0 退出、`fail=0`，失败时保留全部 `[FAIL]` 行。dry-run 冒烟同 6.1 那条命令，期望再加：Step 5 行含 `-ToLatest True`、不含 `ToDatetime`；有 `Redis identity (read-only): kubectl exec -n mmorpg-infra pod/redis-0` 与 `Discard tool build:` 两行；五个模式的工具命令都带 `-expect-run-id`；没有 `FLUSHDB` | 待做 |
+| 6.5.2 | 落地回档工具 `go/db/cmd/zone_rollback_discard`，以脚本文件头「zone_rollback_discard 契约」为准（`-version` 与 ldflags 嵌入提交、`-expect-run-id`、判定参数、续跑规则与带轮次的隔离键、SCAN 边界、分族计数、verify 复核已处理玩家）；工具自己的测试覆盖契约末尾点名的用例。落地之前 `-Apply` 停在入口校验 | 待排期（负责人定批次） |
+| 6.5.3 | V3(c) 改为实测 `--reset-offsets --to-latest --execute` 对不存在的组能否建出位点（6.2） | 待做 |
+| 6.5.4 | 负责人另行拍板：#1 zone 维护围栏（落地之前工具 preflight 一律以 3 拒绝）、#3 严格屏障协议下的处置、#4 blocked 玩家与 `-AcceptBlockedPlayers`、#6 T 之后合入本 zone 的玩家 | 待负责人 |
+| 6.5.5 | 运维禁令（写进 runbook 之前先记在这里）：回档之后对该 zone 的 db_task topic 做 `-ToDatetime` / `-ToEarliest` 不得越过 `run/logs/zone-rollback/<rid>/kafka-cut.json` 的切点；隔离区 `rollback:quarantine:<zone>:<rid>:*` 永不回注线上队列 | 生效中（只靠文档） |
+| 6.5.6 | Java 版：不适用（Java 版没有 Kafka 存盘链，同设计文档 §12） | — |
 
 ---
 
@@ -400,7 +417,7 @@ pwsh tools/scripts/run_cpp_tests.ps1 -Filter currency
 ### 8.3 状态
 
 - 代码已落，未编译、未测试；8.1–8.2 全部待做。§3 表里「db_task 的 retention.bytes 与 PVC」即本节。
-- 剩余风险：zone-down 删 namespace 之后，那个 zone 的旧 db_task topic 仍按旧的 retention.bytes 留着数据，直到 retention.ms 到期才释放盘，盘预算数不到它；lag 秒级告警本轮没做（go/db 没有导出消费 lag 指标），积压逼近缓冲时没有主动告警，删除是静默的；prod / prod-like 的 retention.bytes 按 2h 算，先于 24h / 6h 的 retention.ms 生效，账本行打 `[KafkaDiskLedger]BufferBelowRetention:`（属预期）；设计速率是推算值，`implied_db_task_buffer_min` 只是估算，回档的 TargetTime 不能早于这个窗口。
+- 剩余风险：zone-down 删 namespace 之后，那个 zone 的旧 db_task topic 仍按旧的 retention.bytes 留着数据，直到 retention.ms 到期才释放盘，盘预算数不到它；lag 秒级告警本轮没做（go/db 没有导出消费 lag 指标），积压逼近缓冲时没有主动告警，删除是静默的；prod / prod-like 的 retention.bytes 按 2h 算，先于 24h / 6h 的 retention.ms 生效，账本行打 `[KafkaDiskLedger]BufferBelowRetention:`（属预期）；设计速率是推算值，`implied_db_task_buffer_min` 只是估算，回档的 TargetTime 不能早于这个窗口。（2026-10-18 更正：这一句是「从 TargetTime 起重放」语义下的约束；负责人 2026-10-17 裁决回档为「丢弃 TargetTime 之后的写」，Step 5 拨到日志末端、不再从 Kafka 重放，TargetTime 只受 MySQL binlog 保留期约束，见 6.5。）
 
 ---
 
@@ -510,3 +527,13 @@ go run ./cmd/verifier -config etc/db.yaml -mode strict -wait 180s
   - 待重搬收据表只在进程内存里：进程崩溃时随之丢失，靠租约过期后别的实例回收；Redis 一直拒绝搬移时只能重启该 Pod（DbRetryStrandedReceipts）。
   - owner 模式下没有 claim（Kafka 故障、S2 交接闸卡住）时重试停滞，由 DbZoneNoPartitionClaims 兜底。
   - `stress_summarize.ps1` 的 2f 段没有 `db_owned_partitions` 与 `db_durable_enqueue_*` 列（修订稿登记为下次改脚本时补）。
+
+## 10. task:result 读回执通知按 login 实例分频道（B0-3 第 2 批，2026-10-18 登记）
+
+go/db 按 `DBTask.reply_instance` 只 PUBLISH 一次：合法发发起方 login 的实例频道 `task:result:notify:<id>`，为空或不合法回落全服旧频道；新指标 `db_task_result_notify_total{target,result}`。改动清单、上线顺序与交 Codex 的权威验证命令见[规格](../handoff/launch-readiness-20261013/spec_B0-3_task_result_channel.md)文末「# 第 2 批交付（2026-10-18）」。代码在工作区，**未编译、未测试，待 Codex 验证**。
+
+| # | 事项 | 状态 |
+|---|---|---|
+| 10.1 | 编译、单测与修复前红证据：按规格「第 2 批交付」的验证命令执行（Codex）；L1 的 db 套件本批新加了 `./internal/metrics/...`，先确认它稳定为绿 | 待做 |
+| 10.2 | 上线顺序：先全部 zone 的 go/db（行为不变，读回执全部计 `target="legacy_unset"`，先确认新序列 9 条都已采集到），再按 zone 金丝雀 login。金丝雀观察：`db_task_result_notify_total{target="instance"}` 里 `no_receiver` 占比约为 0；login 的 `login_task_result_delivery_total{outcome=~"salvaged\|timed_out\|result_missing"}` 不上升；entergame 的 preload 失败率不变。三项都正常再全量。回滚：任一侧单独回滚即可，无数据迁移（2026-10-18 更正：「先全部 zone 的 go/db、行为不变」只在该 zone 的 login 还是第 1 批之前的版本时成立。第 1 批 login 已在 `e7bb46070`，可能已部署或与 go/db 同批发版；那样一次升全部 zone 的 go/db 会让这些 zone 同时切到实例频道，绕开 login 金丝雀，且告警尚未 apply。动手前逐 zone 只读核对：login `:9101` 上已有 `login_task_result_delivery_total` 序列，或 task:result 所用 Redis 上 `PUBSUB CHANNELS 'task:result:notify:*'` 非空，即按「已是第 1 批」处理，改为按 zone 金丝雀 go/db：先上一个 zone，看同样三项，正常再逐 zone 推开。同一 zone 的 go/db 与 login 不要在同一次发版里同时升。观察期间 `PUBSUB NUMPAT` 应为 0：PUBLISH 的订阅者数含模式订阅，开着 `PSUBSCRIBE task:result:notify:*` 会把 no_receiver 压成 0。详见规格「第 2 批交付 / 上线顺序」第 0 步。） | 待做 |
+| 10.3 | 告警：go/db 与 login **全量升级之后**再 `kubectl apply -n observability -f deploy/k8s/task-result-notify-alerts.yaml`（独立文件，不与 2.5.2 / 4.3.1 / 9.5.1 的 `db-task-retry-alerts.yaml` 同批；全量之前 `DbTaskResultNotifyLegacyFallback` 会在金丝雀 zone 响）。阈值待压测基线。回滚 `kubectl delete -n observability -f` 同一文件；负责人执行 | 待做 |

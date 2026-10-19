@@ -53,6 +53,9 @@
     <ClCompile Include="test_h2_peer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="windows_channel_hup_test.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\third_party\yaml-cpp\test\googletest-1.16.0\googletest\src\gtest-all.cc">
       <Filter>googletest</Filter>
     </ClCompile>

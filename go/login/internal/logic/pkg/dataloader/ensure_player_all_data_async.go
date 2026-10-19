@@ -22,6 +22,8 @@ type readResultRegistrar interface {
 	// ReplyInstance 是登记方的读回执回复目标;与 Register 放在同一接口,保证写进读任务的
 	// 回复目标与接住回调的是同一个对象(见 dispatcher.TaskResultDispatcher.ReplyInstance)。
 	ReplyInstance() string
+	// Cancel 撤销已登记、但任务没能发出去的回调,不回调、不计数(见 dispatcher.TaskResultDispatcher.Cancel)。
+	Cancel(taskIDs ...string)
 }
 
 // EnsurePlayerAllDataInRedisAsync guarantees that the
@@ -209,9 +211,15 @@ func EnsurePlayerAllDataInRedisAsync(
 		kafkaSendSeconds.ObserveFloat(time.Since(kafkaSendStart).Seconds(), resultFailed)
 		errStr := fmt.Sprintf("send db read tasks: %v", err)
 		firstErr.CompareAndSwap(nil, &errStr)
-		// Fire finalize for each pending task so the dispatcher entries we
-		// already registered get cleaned up by their TTL sweep (we can't
-		// easily un-register; the TTL is bounded so this is acceptable).
+		// 先撤掉本批登记再以错误收尾。留给 TTL sweep 清理的话,每条都要在到期时多做一次无用的
+		// LPOP,并把这次 Kafka 发送失败计成 login_task_result_delivery_total{outcome="timed_out"},
+		// 让「通知丢了且结果没取到」的口径混进发送故障。若有部分任务其实已发出,它们的结果只在
+		// Redis 里按 TTL 过期;撤销前已被取走的回调照常执行,onComplete 仍由 fireOnce 保证恰好一次。
+		cancelled := make([]string, 0, len(pending))
+		for _, p := range pending {
+			cancelled = append(cancelled, p.taskID)
+		}
+		disp.Cancel(cancelled...)
 		fireOnce.Do(func() { onComplete(fmt.Errorf("%s", errStr)) })
 		return
 	}

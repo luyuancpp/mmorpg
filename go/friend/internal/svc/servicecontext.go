@@ -217,8 +217,9 @@ func NewRedisHandles(c config.Config) (friendRds, sharedRds *redis.Redis, target
 //
 // transaction_isolation=%27READ-COMMITTED%27 把**整个连接池**的会话隔离级别设成 RC(驱动在建连时
 // 发 SET)。显式写事务本来就用 BeginTx(RC)(data.friendWriteTxIsolation);这一项管的是
-// **事务之外**的自动提交语句 —— sweep / 回收的逐行 DELETE、ensure 的 INSERT(Unblock 的 DELETE 2026-10-16 起
-// 改在单语句 RC 事务里,见 data.FriendRepo.Unblock)——
+// **事务之外**的自动提交语句 —— ensure 的 INSERT(sweep / 回收的逐行 DELETE 2026-10-18 起、Unblock 的 DELETE
+// 2026-10-16 起都改在 RC 写事务里,见 data.FriendRepo.deleteOneRowPointLocked / Unblock;TiDB 上自动提交走乐观事务,
+// 会与守卫的点锁各持一半互等、检测不到)——
 // 它们原先落在服务器全局默认的 REPEATABLE-READ 上,会拿间隙锁 / next-key 锁:
 //   - 排队中的间隙锁请求会挡住别人的插入意向锁,是 RR 下经典的插入死锁源;
 //   - ensure 的"主键重复 → ODKU 取 X"在 RR 下拿的是 next-key,两个并发 ensure 撞上刚被回收的行时

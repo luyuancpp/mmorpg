@@ -2868,3 +2868,169 @@ D:\luyuan\xuanming-server-mmo-cpp\cpp\libs\engine\core\node\system\node\node.h(3
 - **停止后的验证边界**：按 AGENTS.md §10.2 保留首错并等待负责人决定，未自动重试、未跳过门禁。第二轮生成、18 个 Go 模块构建、13 个 C++ 测试工程的正式串行验收、余下 7 组隔离变异及 T2 九红、签名 GM/尸体/跨节点/场景计数冒烟和最终机械门禁均未执行。既有 T1/T3/T4/T6 等历史红绿证据沿 §9–§11，不冒充本批最终全绿。§9 原 71 行任务清单保留，当前仅追加真实状态。
 - **兼容入口**：负责人已批准两个契约入口各绑定原发布版本并逐步迁移，按最新 Claude 事实接续；当前仍未实施或验证第二套入口，不猜邮件已发布编号，不以一份新协议覆盖两套契约。
 - **Java 版**：当前版本 0.1.0-SNAPSHOT、HEAD 0477cc0603efe68791bfd7ee8ae62f6a864e34ac。本批仍未到 §6 第 5 步，未执行本批 ContractSync、Maven、两条真实零冷却红绿、PARITY 完成登记。准备补丁与门禁会保留其现有共享修改；第一轮 C++ 失败使后续步骤硬阻断。未 commit、push、tag，未读改独立客户端。
+
+## 13. 本轮生成、全解失败与授权续测记录（2026-10-18）
+
+- 本轮正式生成证据为 build/ecs-refactor/batch6/generation-refresh-20261018T050843676Z-9202f0d7/：15 份阶段原生退出码全部为 0，包含最新 proto-gen-build、两轮完整 no-unity proto-gen-run、robot vendor 与生成器 go test ./internal/... ./cmd -count=1。25 个含守护段文件、131 个非空段逐字保留；68 个 handler 两轮字节一致，消息号和事件号未改变。14 个精确孤儿文件及 18 条构建引用仍已清理，不删事件源、不手改生成代码。
+- 本会话给 configuration_table_test 的 Debug|x64 仅补 /utf-8，与既有 Release 一致。本轮实际生成该工程可执行文件，未再出现生成头的解析错误；这不是完整构建成功结论。
+- 全解实际命令为 game.sln /t:Rebuild /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1，05:10:15–06:18:54 UTC，原生退出 1。首错为 player_landing.h:51 的 C2059，随后中文字符串及声明解析级联；尾部另有 open_file_limit_test.cpp 的 Run 被 testing::Test::Run 遮蔽，clang 静态门禁失败。完整原始日志、退出码和前后输入在 build/ecs-refactor/batch6/full-cpp-20261018T051013798Z/，不复写真实失败。
+- 全解前后 6 项输入变化完整保留：config.cpp、core.vcxproj、node.cpp、open_file_limit.h、client_endpoint_test.vcxproj、open_file_limit_test.cpp。输入不稳定，未封存为最终 21 库成功清单；本轮不能放行后续正式队列。
+- 按 AGENTS.md §10.2 停止后，负责人在 gRPC 协调会话 01a147bf-8779-7602-a243-264975731839 的直接人类 turn 01a14dac-8935-76c0-bb14-da7b3914e274 回复两处具体修复请求“做完给我”。拥有者据此只给 player_landing_test Debug|x64 补 /utf-8，并把同文件测试 helper Run 及调用共 15 处改为 EvaluateForTest，保留原有警告文案增量，不改生产行为。候选和实际应用回执在 build/verification/grpc-muduo-codex-20261018-005135/build-blockers/；尚待本会话定向运行确认。
+- 定向检查首次被并发保护拦截：repair-checks-20261018T062616553Z 原生编译/测试均未启动，runner 1 仅表示发现他会话 MSBuild PID 51544（玩家围栏验证）；没有停止对方进程。已由获授权的协调会话安排交还独占 Windows 窗口，不能把该护栏退出计作新代码失败或成功。
+- 后续保持原顺序：先验证两处修复，协调 gRPC 的独立诊断窗口并等相关输入定版，再两次间隔快照、唯一最终稳定完整 Rebuild；封存后按约定共享短测试窗口，随后启用 Go 模块、13 个 C++ 工程、剩余隔离红测、Java、实际冒烟和机械门禁。前次 T1/T3/T4/T6 等真实证据继续沿 §9–§12，71 行源码清单不冒充最终验收。
+- 核心拍板仍按原表：T4.1 撤销末端 creators 准入；T2.1 保持登录边界清理；T7.10 保持当前会话 UUID/号源契约；T1.10 删除旧 PlayerItemBlockComp 源协议及生成遗留。T10 仍是 13 个 protobuf 值表、3 个普通 C++ 仅类型名。上述最终运行及 Java 登记尚未完成，没有改走退路。
+- Java 版仍为 0.1.0-SNAPSHOT，本批未执行 ContractSync、Maven 或两条真实零冷却红绿，尚未应用 Java 业务补丁及 PARITY 完成登记；准备材料不能算通过。两个已发布契约入口的兼容风险也未由本轮 C++ 生成消除。
+- 本会话未 commit、push、tag，未回退覆盖其他会话改动，未修改审计 HEAD，未访问独立客户端。
+
+## 14. 最终稳定全解通过与 Go 独立构建阻断（2026-10-18，整批未完成）
+
+- 最终完整构建为 build/ecs-refactor/batch6/full-cpp-20261018T065305567Z/：game.sln /t:Rebuild /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64 /p:CL_MPCount=1，06:53:07–07:52:27 UTC，原生退出 0；前后 1814 个输入完全一致。repository-artifacts.json 封存 21 个库，其中 17 个本仓库库本轮重编、4 个既有第三方库保持原件。两处前置修复另有 player_landing 13/13、client_endpoint 64/64 实测绿，不以此代替本单最终 13 工程。
+- TimerDestroy 最终 full 测试程序已封存：build/ecs-refactor/batch6/timer-destroy-capture-20261018T0758-path-fixed/，前后源码和 21 库守恒。0753 目录保留 Python 多路径被错误拼接的启动前失败；该次未启动 helper 或测试。ignored 执行脚本已最小固定选择首个现有 Application 路径，未改生产源码或工具安装。
+- 共享 gRPC 短窗两个专项工程构建原生 0，但普通轮先发生 MalformedHttpRequestsAreResetByNghttp2 断言失败，后在 DrainTimeoutUnderBackpressureForceClosesAfterCloseGrace 挂起并由内部 runner 于 600 秒终止。外层原生退出 1；Agones 普通轮、20 轮重复及其余专项未执行。证据 build/verification/grpc-muduo-approved-20261018-014019/windows-tests-20261018T075842541Z-3331cf8f/。该分支已停止等待负责人决定，未应用候选修正。归还队列前原进程已退出，batch6/grpc-window-20261018T075842541Z-d25fda47/timeout-final-artifact-differences.json 确认源码及 21 库仍无变化，不把额外专项当作本单指定 13 工程的成功证据。
+- 全部启用 Go 模块按既定顺序开始独立 GOWORK=off、GOTOOLCHAIN=local、GOPROXY=off、GOFLAGS=-mod=readonly 构建。本轮前 15 个模块原生退出 0；第 16 个 go/shared 原生退出 1，首报既有 go-zero v1.9.2 的 go.uber.org/mock、grafana/pyroscope-go、k8s.io/api/apimachinery/client-go 缺 go.sum 校验记录。16 项各自编译前后本地源码依赖闭包无漂移；队列未完成，不能声称全部 Go 编译通过。原始日志和退出码保留在 build/ecs-refactor/batch6/go-builds-20261018T081234272Z-42ca4908/，首错为 16-go-shared.build.log。
+- 按 AGENTS.md §10.2 在本单实际失败处停止，未自动 go get/tidy、未下载安装依赖、未修改 go/shared 锁文件、未连续重跑。第 17 个 trade、第 18 个 robot、正式 13 个 C++ 工程、剩余 7 组变异与 T2 九红、Java 步骤 5、实际冒烟及最终机械门禁尚未执行。正在只读准备保持既有依赖版本的最小锁记录候选，待负责人决定后继续原顺序。
+- Java 当前 0.1.0-SNAPSHOT，本轮只读预检针对当前 HEAD 80be4625d05de208eac48167fc3d2b9a0560e226，三份目标源码与准备稿一致，两份补丁检查原生 0，现有 JDK/Maven 路径有效；这不构成 ContractSync、Maven 或红绿通过证据。保留其他会话提交及未提交修改。
+- 双已发布契约的第二入口和真实发布映射仍未提供或实现，incoming_contract_profile_pending=true 仅记录此独立边界。未猜邮件消息号，未将本轮单契约构建解释为双契约兼容完成。71 行源码清单及历史真实失败继续保留；未 commit、push、tag，未覆盖或回退他人改动，未改审计 HEAD。
+
+
+## 15. Go 依赖记录补齐与共享前置构建超时（2026-10-18，整批未完成）
+
+- 负责人已明确批准“补齐记录并继续”。本会话仅给 go/shared/go.mod 增补 29 条既有依赖图需要的 indirect 记录、给 go.sum 增补 63 条本机缓存已有校验记录；原有版本、顺序、注释、校验及相对 replace 均保留，没有升级或下载安装依赖。实际 CAS 应用、备份及差异检查证据为 build/ecs-refactor/batch6/shared-lock-apply-20261018T083640337Z/receipt.json，候选依据为 shared-lock-list-20261018T082857305Z/production-locks.audit.json。恢复后两文件哈希仍分别为 6eea339feebe0b51a8bdc2c206c2960e9bdc43368bf2e2983f18d5ce324c1c7b、e6d7ee2b9061b7fbb271b57154188591533a1cb8a8969b5716744af7dfe8a480。
+- 18 个启用 Go 模块已按原顺序完成离线只读 go list 依赖查询，全部原生退出 0、源与锁闭包无漂移；证据 build/ecs-refactor/batch6/go-deps-preflight-20261018T084519987Z/result.json。它不是编译、测试或 vet。§14 的第 16 模块真实失败和后两项未执行继续保留；最终正式构建仍须在最新完整 C++ 构建后从第 1 个 Go 模块重跑。
+- 共享传输会话在独立授权下应用五文件修复并完成专项验收，旧 065305 full 的源/库封存不再代表当前树。真实 Go→C++ 互通及 100 次空连接已通过；Agones 串行补证为 24 例×20 轮、480 通过、0 跳过。这些独立专项不能替代本单指定的 13 工程或最终完整 Rebuild。全局回包处理器 A–D 删除和 27 文件命名迁移仍在已授权队列，尚未落地，不提前记完成。
+- 删除前 current game 构建在宿主暂停恢复后由原驱动超时终止，04-game-build/receipt.json 记录 nativeExit=-1、timedOut=true，stderr 为空，stdout 未出现真正编译错误；独立 RPC 构建及四套 A0 基线未启动。原件位于 build/verification/grpc-muduo-codex-20261018-005135/cpp-prep/current-build-runs/20261018T094748304Z-d6bd67f5/。三份 1814 文件源码快照摘要相同，漂移 0；未封存 current-build-artifacts 清单，不能把该轮记为构建通过。
+- 独立只读核查见 build/ecs-refactor/batch6/current-build-timeout-readonly-20261019T020852891000Z.json：驱动默认 game 10800 秒、RPC 3600 秒，以一次 Process.WaitForExit 执行超时控制；旧落盘没有记录实际绑定预算或排除休眠的耗时。不能用约 16 小时的墙钟跨度断言活跃编译超过 3 小时，也不把暂停与本次超时的因果关系当作已证事实。按 AGENTS.md §10.2 保留失败并等待续做决定，原源码冻结及串行队列保持，不直接重跑、不跳检查。
+- 待前置恢复及 A–D/命名迁移定型后，本批仍按 §6 重新生成、生成器测试、完整串行 Rebuild、18 模块正式编译、13 个 C++ 工程、剩余 7 组隔离变异和 T2 九红、Java、实际冒烟、最终机械门禁；新的证据目录将绑定最新源、库和 EXE，旧证据不覆盖后续共享变动。
+- Java 版为 0.1.0-SNAPSHOT；本批 ContractSync、Maven、零冷却红绿及 PARITY 完成登记仍未执行。其他会话的 Java 或真库验证不替代本批第 5 步。双已发布契约第二入口的真实发布清单和入口映射仍缺，独立于 ECS 验收，不猜编号、不伪称兼容完成。未 commit、push、tag，未覆盖或回退他人修改，未手改生成产物或审计 HEAD。
+
+
+## 15. Claude 源码逐项核对与补缺（2026-10-18）
+
+- 7 个只读代理按 §4 逐项核对当前源码：71 项中 65 项完成，6 项只缺注释、文档或进度记录，没有缺少的功能代码。§9 的「源码已做」核对属实。
+- 已补：
+  - T2.1 的头文件声明注释、MarkSentDestroy 注释，以及 runbook / 设计文档里的旧 WARN 原文（`(ownership moved away)` → `(local state abandoned)`，修订记录不改）；
+  - T8.10 的 DEBUG 日志改打 nodeId；
+  - DestroyPlayer 注释里的「远端观察者」；
+  - T8.1、T8.2、T8.4、T9.4 要求的 PROGRESS 记录（见 PROGRESS 2026-10-18 条目）。
+- 上述 3 个 C++ 文件属于已封存最终 Rebuild 的输入，需要先增量重编 scene / gate 及相关测试工程并刷新封存清单，再继续 §6 的原顺序。未编译、未测试。
+
+
+## 16. 代码优先源码收尾回执（2026-10-18，最终运行验收未完成）
+
+负责人最新直接要求“我要你继续做完代码，不等编译”。本次先完成源码、模板、回归用例源码和必要文档，结束源码实施阶段；不等待编译，不把源码完成记成整批运行验收通过。下表更新当前代码状态，§8–§15 的历史回执、真实失败及未执行项全部保留。
+
+### 逐项代码状态
+
+“已做”只表示按任务单确认方案完成代码、模板或指定文档；所有任务的**当前最终验收均未完成**，此前运行证据只按原回执对应的源码快照有效。本表不重新运行或重审缓存的 71 项。
+
+| 任务 | 代码实施 | 本项已落内容 |
+|---|---|---|
+| T1.1 | 已做 | 五条背包选择顺序用例按扣空释放、跳过零堆调整。 |
+| T1.2 | 已做 | 号源用例改按最终规划铸号；两项历史变异的实际出口仍见 §9。 |
+| T1.3 | 已做 | 测试夹具恢复正确 item 号段。 |
+| T1.4 | 已做 | 布局克隆契约和对应护栏收口。 |
+| T1.5 | 已做 | 旧档零章补盖的不变量收入背包恢复入口。 |
+| T1.6 | 已做 | 保留 kInvalidTableData，补内部不变量日志和 Debug 断言。 |
+| T1.7 | 已做 | 删除死发号检查，修正空堆与占位注释。 |
+| T1.8 | 已做 | 删除原子提交之后的补差、部分发放和扣空再整理等死防护。 |
+| T1.9 | 已做 | 背包规则表、客户端可见差异和分层文档同步。 |
+| T1.10 | 已做 | 删除旧物品封禁源协议和文档；Java 当前受管镜像已无旧 item_comp.proto。 |
+| T2.1 | 已做 | 永久拒存的退出直接本地销毁，不另写交接标记；在线交接/结算保护保留。 |
+| T2.2 | 已做 | 删除 BeginTravelHandoff 整份 marshal 预检，保留提交点拒绝复核。 |
+| T2.3 | 已做 | 结算持久化失败注释和日志按实际可达原因修正。 |
+| T2.4 | 已做 | 持久化调用方清单收口，保留后续调用点增量。 |
+| T3.1 | 已做 | 删除六类无效事件、通知后重入复核和相应人造用例。 |
+| T3.2 | 已做 | 一次性初始化改为一次创建契约，删除不可达重入形状。 |
+| T3.3 | 已做 | 玩家离场清理序列收口为唯一出口。 |
+| T3.4 | 已做 | 删除 Pin/Unpin 和远端观察者全节点扫描。 |
+| T3.5 | 已做 | 任务必需后续步骤改为直接驱动，不依赖组合根订阅。 |
+| T3.6 | 已做 | 沉默及 GM 调级后重算直接调用，删除多余回调重入防护。 |
+| T3.7 | 已做 | 删除死事件、死字段和空消费者。 |
+| T3.8 | 已做 | 清理旧事件机制别名、注释和不可达回滚。 |
+| T3.9 | 已做 | 上下文写入口、异常清理和相关说明对齐；指定两个 remove 保留。 |
+| T4.1 | 已做 | 撤销 creators 末端准入；两版指定契约和 PARITY 文案已补。 |
+| T4.2 | 已做 | 场景入口直接计数，删除计数事件、死壳和回滚。 |
+| T4.3 | 已做 | scene_id 查询收口，保留零号拒绝及现有 config_id 分叉。 |
+| T4.4 | 已做 | 场景创建、销毁收入 scene 库，工程清单和契约用例已落。 |
+| T5.1 | 已做 | Kafka 节点本地直接调用生成 handler，删除订阅登记链。 |
+| T5.2 | 已做 | 白名单用例覆盖 49 号和 kMaxEventCount 上界。 |
+| T5.3 | 已做 | 删除 local_event_cleanup 源码、测试和流水线调用。 |
+| T5.4 | 已做 | 删除已移除事件分发机制的现行规范引用。 |
+| T5.5 | 已做 | 节点模板和模板说明跟齐直接分发 hook。 |
+| T5.6 | 已做 | 控制面白名单、生成状态及指定事故文档口径更新。 |
+| T6.1 | 已做 | 尸体施法保持零伤害、效果与后摇照常的既定语义。 |
+| T6.2 | 已做 | 施法复核收至定时器入口，删除重复校验。 |
+| T6.3 | 已做 | 无相位技能只启动冷却，不遗留技能上下文。 |
+| T6.4 | 已做 | C++ 与 Java 均不登记零号冷却组；Java 新增两条真实施法入口用例源码。 |
+| T6.5 | 已做 | 一次 ReleaseSkill 只解析一次网络目标。 |
+| T6.6 | 已做 | 删除 BuffPendingRemoveBuffs 组件和整套 API。 |
+| T6.7 | 已做 | Buff 仅存 uint64 caster，不共享施法上下文所有权。 |
+| T6.8 | 已做 | 删除无调用的容器基类转换构造。 |
+| T7.1 | 已做 | 删除无读者 MoveSpeedComp 及生命周期 hook。 |
+| T7.2 | 已做 | 必需持久组件读路径不再 get_or_emplace，不重复清理技能存档。 |
+| T7.3 | 已做 | 删除冻结首写透传 helper，恢复显式 emplace。 |
+| T7.4 | 已做 | 前置校验后的快照死判空和默认值分支清理。 |
+| T7.5 | 已做 | 宠物快照注释对齐唯一调用方 fail-closed 行为。 |
+| T7.6 | 已做 | 缺任务持久输入故障拒绝；成功列表 state_persistent=true，Java 现状与差异已核对记录。 |
+| T7.7 | 已做 | 模板先合并旧顶层背包再反序列化和计算派生值，保留兼容。 |
+| T7.8 | 已做 | 66 号增量模板跟齐玩家身份，Java 契约说明同步当前两版现状。 |
+| T7.9 | 已做 | 网络号组件私有化，ActorCreate 身份契约收口。 |
+| T7.10 | 已做 | 两版号源与唯一性范围、F080 确认状态已记文档，不改号源。 |
+| T8.1 | 已做 | 删除无调用的全局实体三件套和死亡测试，指定进度记录已补。 |
+| T8.2 | 已做 | 删除空 TRANSFER_ERROR_MESSAGE 宏，指定进度记录已补。 |
+| T8.3 | 已做 | 删除跨线程单例用例和只为用例存在的 atomic。 |
+| T8.4 | 已做 | 删除四条无区分度用例，撤回旧 getter 对照误记并补进度说明。 |
+| T8.5 | 已做 | 玩家接口与 RpcDoneCallback 的职责和延期完成契约文档对齐。 |
+| T8.6 | 已做 | 玩家功能文档和旧 TLS/global tip/GlobalEntity 注释更新。 |
+| T8.7 | 已做 | 测试名称和注释去旧机制，删除对旧实现也必过的无效断言。 |
+| T8.8 | 已做 | 删除 NodeInfoListComp 源契约，Java 当前受管镜像已无该消息。 |
+| T8.9 | 已做 | 指定迁移提交前置已核实；连接观察者直接注入，连接事件订阅移除。 |
+| T8.10 | 已做 | gate 节点句柄访问简化，最新改名路径保留类型校验，日志输出 nodeId。 |
+| T8.11 | 已做 | gate 节点 registry/句柄命名去除与场景 registry 的歧义。 |
+| T8.12 | 已做 | 保留类型契约固定用例，纠正“修前红回归”的误标。 |
+| T8.13 | 已做（按表仅记录） | 存量节点表架构债保留记录，本批不实现 NodeDirectory。 |
+| T9.1 | 已做 | 玩家身份读取收口 GetPlayerId，调用点与守护段对齐。 |
+| T9.2 | 已做 | try_get 的句柄语义和冗余校验注释修正。 |
+| T9.3 | 已做 | 属性同步模板删除消费前多余逐字段 reset。 |
+| T9.4 | 已做 | robot 的 TLS tip/TRANSFER 旧说明修正，指定进度记录已补。 |
+| T9.5 | 已做 | 三份设计文档移除旧 ScenePlayers 现行描述。 |
+| T10 | 已做 | 按负责人补充口径登记 13 个 protobuf 值表，3 个普通 C++ 只列类型名；Java 仅记录适用边界。 |
+| T11 | 已做 | 组件访问现行规则与指定文档收口，保留历史回执和审计 HEAD。 |
+
+### 核心拍板与范围
+
+1. T4.1：creators 仅为信息，不在末端做准入；Java PARITY 两处过时“可加准入”文案已修正。
+2. T2.1：永久拒存的退出清理直接销毁本地实体，不用 FinishExitAfterPersist 写出新交接标记；在线交接、结算拒绝时的实体保留保护不变。
+3. T7.10：维持 C++ node_id/seq 和 Java 现有号源。负责人确认换场景、重连、换节点清空 actor 表；另两项客户端问题未单独确认，如实记录，不添加启动代次。
+4. T1.10：旧物品封禁协议与其现行说明已删除。Java 当前受管镜像已无旧协议，未把静态现状冒充本会话 ContractSync 检查通过。
+
+24 项默认决定未改走退路。T8.9 前置的提交依据仍见 §9/§10。W1-45、W1-43 留在传输迁移会话，不纳入本单；A–D 清理及 gate 两文件改名由各 owner 实施，保留其最新合法调用点。
+
+### 本次新增改动文件与实际应用证据
+
+此前 C++/Go/proto/模板及测试源码文件按 §9–§15 原回执接续；共享 git diff 包含其他会话在途改动，不将全部差异归为本会话。本次代码优先窗口新增的 Java 改动为以下七份普通文件：
+
+- game-scene/src/main/java/com/game/scene/player/PlayerSkillState.java
+- game-scene/src/main/java/com/game/scene/skill/SkillService.java
+- game-scene/src/test/java/com/game/scene/skill/SkillFeatureTest.java
+- docs/reference/mmorpg-client-contract-aoi.md
+- docs/reference/mmorpg-client-contract-scene.md
+- docs/reference/mmorpg-client-contract-features.md
+- PARITY.md
+
+三份 Java 源码实际回执：build/ecs-refactor/batch6/java-codefirst-apply-20261019T024800644Z/apply-receipt.json（SHA e491c6c8b36337f949e6f8da9b8835dd4bed18fd32b35a77d63cfc5ac1f60f4d），3/3 实际写入、目标差异检查退出 0。修复前原件及唯一 startCooldown 方法块保存在 java-codefirst-preparation-20261019T024624948583Z/。
+
+四份 Java 文档实际回执：build/ecs-refactor/batch6/java-source-doc-apply-20261019T025527679Z/apply-receipt.json（SHA 4c3da9c1a37fccd62e295bb87decc4842f5d630e0a60e261204eaa55ef959bdc），4/4 实际写入、目标差异检查退出 0；基于独占锁内最新前缀追加，PARITY 仅两处目标短文本修正，其余原字节及其他会话 Battle/镜像文案完整保留。未改 architecture 或 ContractSync 受管产物。
+
+本次还追加本节；docs/PROGRESS.md 的 Java 状态条目由获授权协调会话统一实际追加，回执 build/verification/grpc-muduo-codex-20261018-005135/progress-java-append-receipt.json，旧前缀保留。gate 改名的实际回执为 build/verification/gate-session-rename-applied-20261019T025258341449Z/applied.json（27 份手写文件、两 rename 已落）；CMake 产物交官方 exporter，不手改。
+
+### 编译、测试、新用例与未执行项
+
+- 本次代码优先窗口：本会话未启动新生成、业务编译、测试、ContractSync 或冒烟；协调会话的后续统一生成另按其真实回执记录。Java 版本仍为 0.1.0-SNAPSHOT，没有新增发布版本。
+- Java 新用例：SkillFeatureTest.零冷却技能成功后不登记零号冷却组、零冷却技能不污染已有正常冷却组，均已写入真实施法入口；本轮未运行，不能宣称修前红或修后绿。按用户代码优先要求先落修复，保存了真实修前原件；将来只在私有影子源恢复唯一旧写入方法块复现红，不回退共享树，也不把后补旧行为复现冒称按时间完成修前红。
+- 现有历史生成、局部红绿、旧完整 Rebuild、Go 缺记录失败及其授权补齐、共享前置构建超时等，全部沿 §9–§15 的原证据；后续 A–D、改名和源码变化使旧快照不能替代当前最终验收。
+- 当前未执行的本单最终验证：绑定最新源的 no-unity 生成及生成器测试、完整 MSBuild /m:1 串行 Rebuild、18 个 Go 模块正式构建、指定 13 个 C++ 工程、剩余 7 组隔离变异和 T2 九红、Java ContractSync/MessageIdRegistryTest/Maven 与两用例红绿、实际冒烟、最终机械门禁。原因是负责人本轮明确要求先完成代码、不等编译；本次不自行连续重试此前失败，不把静态差异检查当运行证据。
+- Java 本批所需源码和必要文档已补齐；Java 既有实时伤害/Buff、沉默、相位等有意差异按当前 PARITY 继续保留，本批未另扩玩法框架。T10 的 EnTT 调试格式化在 Java 不适用，已记边界。
+- 双已发布契约第二入口的真实发布清单和入口映射仍是独立未关闭事项，不猜邮件消息号，不将 ECS 代码完成解释为双契约兼容完成。
+
+本会话未 commit、push、tag；每个真实文件写入前检查 status/log，保存原件并在独占锁内校验，未回退、覆盖或丢弃其他会话工作，未手改生成产物、未更新审计文档 HEAD，未访问独立客户端仓库。

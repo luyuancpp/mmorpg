@@ -652,3 +652,21 @@ spec:
               同一登录代次出现在两个不同会话上(scene-enter-chain-residuals.md §3.2 keep_conflict /
               §5.2 conflict)。enter 侧已拒绝请求(码 25),leave 侧保留了 location 未删。按同期
               scene_manager 的 Error 日志定位玩家与两个会话号,核对 login 的代次铸造(G2)。
+
+    # --- 删 location 绑定持有者释放(docs/design/location-release-binding.md §3.6)-------
+    - name: scene-manager.leave-holder-release
+      rules:
+        - alert: SceneManagerLeaveReleaseForced
+          # 等满 LeaveSceneHolderReleaseWaitSeconds 仍拿不到「持有者已释放」证据,按旧行为删了 location。正常恒为 0。
+          expr: |
+            sum(increase(scene_manager_leave_holder_release_total{verdict="forced"}[10m])) > 0
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "LeaveScene 等不到持有者释放,已强制删除 location"
+            description: |
+              持有节点在上限内既没写出当前代的 handoff 标记,也没被判定死亡(location-release-binding.md §3.6)。
+              常见原因:持有节点对 Redis 的存盘长时间失败、A1′ 开关被关、实体缓存的 owner_epoch 落后于 location。
+              强制删除之后持有节点若仍在写,它的存盘会被 owner CAS 拒绝(看 scene 的 [OwnerEpoch]
+              stale_owner_rejected_exiting)。按 scene_manager 的 [LeaveRelease] ERROR 日志定位玩家与节点。

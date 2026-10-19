@@ -642,3 +642,47 @@ func TestStrandedAndConsumerGroupErrorSeriesPrecreated(t *testing.T) {
 		}
 	}
 }
+
+// TestRouteReadySeriesPrimed 钉住 D1 第 3 批读方门禁的指标(spec_D1_batch1b2_2_3.md §13.2 第 1 条):PrimeRouteReady 之后
+// db_route_ready_verdict_total 的 7 个 verdict 都以 0 存在、db_route_ready_gate 为 0;计数与仪表按调用变化;
+// route_not_ready 进 db_task_deferred_total 的预建集合。verdict 用字面量写死:告警按这些字符串写,改名先红。
+func TestRouteReadySeriesPrimed(t *testing.T) {
+	verdicts := []string{"trusted", "absent", "malformed", "newer_version", "identity_unavailable", "not_master", "identity_mismatch"}
+	PrimeRouteReady(verdicts)
+	PrimeRouteReady(verdicts) // 可重复调用
+	// 只断言存在(-count=N 时同一进程里前一轮已经计过数);仪表由 PrimeRouteReady 置 0。
+	assertExactSeries(t, "db_route_ready_verdict_total", []string{"verdict"}, verdicts, false)
+	assertExactSeries(t, "db_route_ready_gate", nil, []string{""}, true)
+
+	before, _ := seriesValues(t, "db_route_ready_verdict_total", "verdict")
+	CountRouteReadyVerdict("absent")
+	CountRouteReadyVerdict("absent")
+	SetRouteReadyGate(true)
+	got, _ := seriesValues(t, "db_route_ready_verdict_total", "verdict")
+	if got["absent"] != before["absent"]+2 || got["trusted"] != before["trusted"] {
+		t.Fatalf("verdict counts = %v (before %v), want absent +2 and trusted unchanged", got, before)
+	}
+	gate, _ := seriesValues(t, "db_route_ready_gate")
+	if gate[""] != 1 {
+		t.Fatalf("db_route_ready_gate = %v after SetRouteReadyGate(true), want 1", gate)
+	}
+	SetRouteReadyGate(false)
+	gate, _ = seriesValues(t, "db_route_ready_gate")
+	if gate[""] != 0 {
+		t.Fatalf("db_route_ready_gate = %v after SetRouteReadyGate(false), want 0", gate)
+	}
+
+	register()
+	deferred, found := seriesValues(t, "db_task_deferred_total", "op", "reason")
+	if !found {
+		t.Fatal("db_task_deferred_total was not registered")
+	}
+	for _, op := range []string{"read", "write"} {
+		if _, ok := deferred[op+"|route_not_ready"]; !ok {
+			t.Fatalf("db_task_deferred_total{op=%q,reason=\"route_not_ready\"} was not pre-created", op)
+		}
+	}
+	if DeferRouteNotReady != "route_not_ready" || PlacementRouteNotReady != "route_not_ready" {
+		t.Fatalf("route_not_ready label values changed: defer=%q placement=%q", DeferRouteNotReady, PlacementRouteNotReady)
+	}
+}

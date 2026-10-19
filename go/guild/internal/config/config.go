@@ -608,6 +608,9 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("%s.PoolSize(%d)不能为负:0 = go-redis 缺省 10 × GOMAXPROCS", pool.name, pool.size)
 		}
 	}
+	if err := c.MergeMarkerRedis.validate(); err != nil {
+		return err
+	}
 	if c.ApplicationQuotaPerMinute < 1 || c.ApplicationQuotaPerMinute > MaxApplicationQuotaPerMinute {
 		return fmt.Errorf("ApplicationQuotaPerMinute(%d)必须在 [1, %d] 内", c.ApplicationQuotaPerMinute, MaxApplicationQuotaPerMinute)
 	}
@@ -697,12 +700,27 @@ type MergeMarkerRedisConf struct {
 	DB   int    `json:"DB,optional"`
 	// PoolSize 同 RedisConf.PoolSize(0 / 不写 = go-redis 缺省 10 × GOMAXPROCS,负数拒启)。
 	PoolSize int `json:"PoolSize,optional"`
+	// RequireRouteReady 是 D1 第 3 批的读方门禁开关(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §5.4):
+	// true 时闸门改用 placement.RouteReadyReadScript,只有 mapping Redis 的就绪标记可信(身份绑定到本实例)时才按
+	// merge:in_progress:{zone} 判,不可信时经闸门的公会写(建帮、入帮、经济、活动等)一律按封锁拒绝;启动期试跑一次读脚本,执行不了就拒启。
+	// 缺省 false = 今天的 EXISTS 判据,行为不变。只在 data_service 的 RouteStore.Mode=db_first 且对账 leader 已挂上标记后打开
+	// (上线顺序 P5:go/db → data_service → guild);回退时先关它。要求配了 Host(Validate 拒绝「开关开着、闸门没接」)。
+	RequireRouteReady bool `json:"RequireRouteReady,optional"`
 }
 
 // Enabled 报告合服闸门是否配置了。Host 是唯一判据:没有地址就连不上,
 // 其余两项都有合法的零值(无密码、DB 0)。
 func (c MergeMarkerRedisConf) Enabled() bool {
 	return c.Host != ""
+}
+
+// validate 拒绝「要求就绪标记却没接闸门」:那样开关形同虚设,闸门整体不生效,运维却以为它在 fail-closed。
+func (c MergeMarkerRedisConf) validate() error {
+	if c.RequireRouteReady && !c.Enabled() {
+		return errors.New("MergeMarkerRedis.RequireRouteReady=true 要求配置 MergeMarkerRedis.Host(data_service 的 mapping Redis):" +
+			"没接闸门时开关不生效,公会写完全不检查合服")
+	}
+	return nil
 }
 
 type MySQLConf struct {

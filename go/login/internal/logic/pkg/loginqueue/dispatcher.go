@@ -10,6 +10,10 @@
 //	cheap because the work itself is trivial (a few ZPOPMINs + SETs per
 //	tick).
 //
+// (2026-10-18 补注)出队已不是 ZPOPMIN,而是「ZRANGE + 每条一段先判在队的放行脚本」(Queue.PopAdmit),多副本同时
+// 出队也不会重复放行,上文「member popped by replica A but signed-and-stored by replica B」的问题已不存在。仍要选主,
+// 是为了省掉重复的 Redis 往返,并让批内的 gate 分配在一份候选上进行。
+//
 // 选主范围是「一个 zone」,不是全服(G1b,2026-10-12):
 //
 //	login 按 zone 部署,GateWatcher 的 etcd 前缀带本进程的 Node.ZoneId,
@@ -324,6 +328,10 @@ func (d *Dispatcher) dispatchOnce(ctx context.Context) {
 	// 加一次排空标记 MGET;以前每放一个人重取一次,一拍放 N 人就是 N 次串行读,而这批条目已被 ZPOPMIN
 	// 弹出、既不在队列也不在占位里,拍越长,进程中途退出时丢的越多。gate 人数一拍之内不变,重取拿到的
 	// 也是同一份数据。
+	// (2026-10-18 更正)「这批条目已被 ZPOPMIN 弹出、既不在队列也不在占位里……丢的越多」已不成立:PopAdmit 先 ZRANGE
+	// 读候选,条目在放行脚本写成之前一直在队列里,进程中途退出不丢人。一拍只取一次候选的理由剩下往返数与批内均衡。
+	// (2026-10-18 再更正)「生产实现每次都是一次 etcd 前缀读」也已不成立:改读 login 进程内的 gate 目录 list-watch 镜像,
+	// 镜像不新鲜时才回落一次 etcd 前缀读;排空标记 MGET 仍是每次一次。
 	candidates, err := d.provider.CandidatesForZone(ctx, zoneID)
 	if err != nil {
 		// 与 FreeSlots 的错误同形(candidates: ...),日志检索口径不变。
@@ -343,14 +351,16 @@ func (d *Dispatcher) dispatchOnce(ctx context.Context) {
 	batch := min(free, queueLen)
 
 	admitted, err := d.queue.PopAdmit(ctx, zoneID, int(batch), newBatchPickFn(candidates))
-	if err != nil {
-		logx.Errorf("[loginqueue] PopAdmit zone=%d err=%v", zoneID, err)
-		return
-	}
+	// PopAdmit 出错时已放行数仍然有效(2026-10-18 起):先记账,再判错误。此前出错直接返回,本拍已放行的人不计入。
 	recordAdmit(zoneID, admitted)
 	if admitted > 0 {
 		logx.Infof("[loginqueue] zone=%d admitted=%d freeBefore=%d queueLen=%d",
 			zoneID, admitted, free, queueLen)
+	}
+	// 每拍至多一行 ERROR,上下文(queueId、已放行、跳过、未尝试,或 zrange)在 err 里;写满时 err 含 OOM,条目原样
+	// 留在队列,下一拍再试。与上面 queueLen 分支同口径:ctx 已取消(停服 / 丢租约)时不报。
+	if err != nil && ctx.Err() == nil {
+		logx.Errorf("[loginqueue] PopAdmit zone=%d err=%v", zoneID, err)
 	}
 }
 
@@ -366,6 +376,8 @@ func (d *Dispatcher) dispatchOnce(ctx context.Context) {
 //
 // 没有候选时回错误,PopAdmit 把条目以分数 0 放回队首、不写放行槽和占位,与逐条重取候选时取到空集的
 // 处理相同。dispatchOnce 传进来的候选已由 freeSlotsFromCandidates 判过非空,正常走不到这条。
+// (2026-10-18 更正)「以分数 0 放回队首」改读:PopAdmit 跳过该条,条目从未离开队列、分数不变,不写放行槽和占位,
+// 首个错误随 PopAdmit 的返回值交给 dispatchOnce。
 func newBatchPickFn(candidates []GateCandidate) PickAdmitSlotFn {
 	picker := newGatePicker(candidates)
 	return func(uint32, string) (*AdmitSlot, error) {

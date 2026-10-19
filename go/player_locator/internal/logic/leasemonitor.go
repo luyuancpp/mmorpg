@@ -9,6 +9,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/zeromicro/go-zero/core/logx"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"player_locator/internal/svc"
@@ -202,6 +204,13 @@ func handleLeaseExpiry(ctx context.Context, svcCtx *svc.ServiceContext, claim le
 		sideEffectErr = errors.Join(sideEffectErr, err)
 	}
 	if sideEffectErr != nil {
+		if isOnlyHolderReleasePending(sideEffectErr) {
+			// 不是故障:location 的持有节点还没释放(docs/design/location-release-binding.md §3.4),scene_manager 已请它
+			// 释放。claim 照旧保留,按 claim 超时节拍重试;等不到时由 scene_manager 的上限兜底。
+			logx.Infof("LeaseMonitor: waiting for location holder to release player=%d; claim retained for retry: %v",
+				claim.playerID, sideEffectErr)
+			return
+		}
 		logx.Errorf("LeaseMonitor: cleanup side effects player=%d failed; claim retained for retry: %v",
 			claim.playerID, sideEffectErr)
 		return
@@ -313,12 +322,42 @@ func notifySceneManagerLeave(ctx context.Context, svcCtx *svc.ServiceContext, se
 		LoginGeneration: session.LoginGeneration,
 	})
 	if err != nil {
+		if status.Code(err) == codes.FailedPrecondition {
+			// scene_manager 拿不到「持有者已释放」证据,保留了 location(docs/design/location-release-binding.md §3.2)。
+			// 照样回错误让调用方保留清理任务,但包成 errHolderReleasePending,调用方据此不按故障记录。
+			return fmt.Errorf("%w: SceneManager.LeaveScene player=%d scene=%d session=%d login_generation=%d: %v",
+				errHolderReleasePending, session.PlayerId, sceneID, session.SessionId, session.LoginGeneration, err)
+		}
 		return fmt.Errorf("SceneManager.LeaveScene player=%d scene=%d session=%d login_generation=%d: %w",
 			session.PlayerId, sceneID, session.SessionId, session.LoginGeneration, err)
 	}
 	logx.Infof("LeaseMonitor: notified SceneManager.LeaveScene player=%d scene=%d session=%d login_generation=%d",
 		session.PlayerId, sceneID, session.SessionId, session.LoginGeneration)
 	return nil
+}
+
+// errHolderReleasePending:scene_manager 的 LeaveScene 回 FailedPrecondition —— location 的持有节点还没把当前代状态
+// 落盘释放,location 被保留(docs/design/location-release-binding.md §3.2 / §3.4)。它和 RPC 失败一样要求保留清理任务
+// 重试,区别只在日志级别与 MarkOffline 入队的首拍延后。
+var errHolderReleasePending = errors.New("location holder release pending")
+
+// holderReleaseFirstRetryDelay:MarkOffline 因等持有者释放而入队时,首拍延后的时长。gate 收到 LeaveGame 时已代发 ExitGame,
+// 退出存盘与 A1′ 标记通常在几十毫秒内落地;延后 2s 让第一次重试大概率就拿到标记,不必等满 claim 超时。
+const holderReleaseFirstRetryDelay = 2 * time.Second
+
+// isOnlyHolderReleasePending:清理副作用里唯一的失败是「等持有者释放」(LeaseExpired 投递等其它失败一律按故障记录)。
+func isOnlyHolderReleasePending(err error) bool {
+	if !errors.Is(err, errHolderReleasePending) {
+		return false
+	}
+	if joined, ok := err.(interface{ Unwrap() []error }); ok {
+		for _, e := range joined.Unwrap() {
+			if !errors.Is(e, errHolderReleasePending) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // resolveSceneManagerSceneID 从 SceneManager 已有的 Redis 权威位置键回退读取。

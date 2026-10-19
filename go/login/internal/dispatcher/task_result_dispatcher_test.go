@@ -284,6 +284,37 @@ func TestSweepExpired_SalvagesResult(t *testing.T) {
 	}
 }
 
+// 发送失败的调用方撤销登记后,兜底扫描既不回调也不计 timed_out;未撤销的登记照常兜底。
+// 对照组 t-control 与被撤销的两条在同一次 sweep 里,用来确认这次 sweep 确实生效。
+func TestCancel_WithdrawnRegistrationsSkipSweep(t *testing.T) {
+	d, _ := newUnitDispatcher(t)
+	cancelledGot := make(chan deliveredResult, 2)
+	controlGot := make(chan deliveredResult, 1)
+	expireNow(d, "t-cancel-a", recordInto(cancelledGot))
+	expireNow(d, "t-cancel-b", recordInto(cancelledGot))
+	expireNow(d, "t-control", recordInto(controlGot))
+
+	d.Cancel("t-cancel-a", "t-cancel-b", "never-registered")
+	if isPending(d, "t-cancel-a") || isPending(d, "t-cancel-b") {
+		t.Fatal("cancelled registration still pending")
+	}
+	if !isPending(d, "t-control") {
+		t.Fatal("Cancel removed a registration it was not asked to remove")
+	}
+
+	before := deliverySnapshot(t)
+	d.sweepExpired(context.Background())
+	if r := waitDelivered(t, controlGot); r.err == nil {
+		t.Fatalf("control callback got res=%v err=nil, want a timed-out error", r.res)
+	}
+	assertDeliveryDelta(t, before, map[string]float64{deliveryTimedOut: 1})
+	select {
+	case r := <-cancelledGot:
+		t.Fatalf("cancelled registration invoked with res=%v err=%v", r.res, r.err)
+	default:
+	}
+}
+
 func TestSweepExpired_TimesOutWithoutResult(t *testing.T) {
 	d, _ := newUnitDispatcher(t)
 	got := make(chan deliveredResult, 1)

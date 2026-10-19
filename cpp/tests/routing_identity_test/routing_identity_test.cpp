@@ -25,6 +25,9 @@
 #include "proto/common/base/common.pb.h" // NodeInfo(无 package,全局命名空间)
 #include "proto/common/base/message.pb.h"
 #include "proto/gate/gate_service.pb.h"
+#include "../../nodes/gate/handler/rpc/login_admission.h"
+#include "table/proto/tip/common_error_tip.pb.h"
+#include "table/proto/tip/login_error_tip.pb.h"
 
 // ---------------------------------------------------------------------------
 // routing_identity_test —— 路由身份对抗审计(docs/design/routing-identity-audit-20260908.md)
@@ -1367,6 +1370,195 @@ TEST(SceneEntryLateLogin, LoginBoundWhileDebtPendingDoesNotBuildASecondEntry)
 }
 
 // ===========================================================================
+// 同节点新 epoch 的路由与 LeaveGame 重置(docs/design/location-release-binding.md §3.5;审计
+// data-overwrite-rollback-audit-20261018.md §2.1 load-handover#0)。
+//
+// scene_manager 在 location 缺失后按首次落点铸了新 epoch、又派回同一节点同一频道时,只按场景与节点判的 ApplyRoute 会把这条
+// 路由当重复事件吞掉,持有节点的实体永远停在旧 epoch,下一次写盘被 owner CAS 拒绝、按废黜销毁(回档)。第 4 条:scene 此前被
+// 告知过非 0 的 epoch、而路由的 epoch 更大时,以 0 再转发一次。客户端 LeaveGame 时 gate 先代发 ExitGame、再 ResetSceneRoute,
+// 之后的进场只由新路由驱动,不按旧路由补发。转发器在转发那一刻读会话上的 ownerEpoch,与生产 ForwardPlayerToScene 同形。
+// ===========================================================================
+
+namespace
+{
+    constexpr uint64_t kEpochBeforeRelogin = 7;
+    constexpr uint64_t kEpochAfterRelogin = 8; // location 被删后首次落点铸出的下一代
+    constexpr uint64_t kReloginGeneration = 1790000009000ull;
+    constexpr uint32_t kReloginEnterType = 2; // LOGIN_REPLACE
+
+    // (enterType, 转发那一刻会话上的 ownerEpoch)
+    using EpochStampedForward = std::pair<uint32_t, uint64_t>;
+
+    // 已在节点实体 12(node_id 3)的 scene 1001 里、scene 已被告知 kEpochBeforeRelogin 的会话。
+    SessionInfo SessionInGameAtEpoch()
+    {
+        SessionInfo session;
+        session.playerId = 42;
+        session.SetNodeEntity(eNodeType::SceneNodeService, entt::entity{12});
+        session.sceneId = 1001;
+        session.lastSceneRoute = SceneRouteTarget{42, 3, 1001};
+        session.homeZoneId = 1;
+        session.ownerEpoch = kEpochBeforeRelogin;
+        session.forwardedOwnerEpoch = kEpochBeforeRelogin;
+        session.loginGeneration = kReloginGeneration - 1;
+        return session;
+    }
+} // namespace
+
+TEST(SceneRouteEntry, SameNodeNewerEpochForwardsOnce)
+{
+    SessionInfo session = SessionInGameAtEpoch();
+    std::vector<EpochStampedForward> forwarded;
+    auto send = [&](uint32_t type) { forwarded.emplace_back(type, session.ownerEpoch); return true; };
+
+    session.ownerEpoch = kEpochAfterRelogin; // ApplyRouteIdentity 已把新路由的 epoch 写进会话
+    ASSERT_TRUE(gate_scene_route::ApplyRoute(session, 1001, SceneNodeChange::kUnchanged, send));
+    EXPECT_EQ((std::vector<EpochStampedForward>{{0u, kEpochAfterRelogin}}), forwarded)
+        << "同场景同节点,但归属换了代:必须让持有节点知道新 epoch";
+    EXPECT_EQ(kEpochAfterRelogin, session.forwardedOwnerEpoch);
+
+    // 同一条路由重投:scene 已拿到这一代,回到重复事件语义。
+    ASSERT_TRUE(gate_scene_route::ApplyRoute(session, 1001, SceneNodeChange::kUnchanged, send));
+    EXPECT_EQ(1u, forwarded.size());
+}
+
+TEST(SceneRouteEntry, SameNodeSameOrOlderEpochStaysDeduped)
+{
+    SessionInfo session = SessionInGameAtEpoch();
+    int sends = 0;
+    auto send = [&](uint32_t) { ++sends; return true; };
+
+    ASSERT_TRUE(gate_scene_route::ApplyRoute(session, 1001, SceneNodeChange::kUnchanged, send));
+    EXPECT_EQ(0, sends) << "同一代:重复事件";
+
+    session.ownerEpoch = kEpochBeforeRelogin - 1; // 乱序到达的旧路由
+    ASSERT_TRUE(gate_scene_route::ApplyRoute(session, 1001, SceneNodeChange::kUnchanged, send));
+    EXPECT_EQ(0, sends) << "epoch 只增不减,迟到的旧路由不再转发";
+    EXPECT_EQ(kEpochBeforeRelogin, session.forwardedOwnerEpoch);
+}
+
+TEST(SceneRouteEntry, ZeroEpochRouteNeverForwardsByEpoch)
+{
+    // 旧版 scene_manager 不铸造(0):不触发第 4 条。
+    SessionInfo session = SessionInGameAtEpoch();
+    int sends = 0;
+    auto send = [&](uint32_t) { ++sends; return true; };
+    session.ownerEpoch = 0;
+    ASSERT_TRUE(gate_scene_route::ApplyRoute(session, 1001, SceneNodeChange::kUnchanged, send));
+    EXPECT_EQ(0, sends);
+
+    // scene 从没被告知过 epoch(路由先于登录类型到达、还没转发过):下一次转发会带上会话当前值,不为此多发一次 0 型进场。
+    SessionInfo fresh;
+    fresh.sceneId = 1001;
+    fresh.ownerEpoch = kEpochAfterRelogin;
+    ASSERT_TRUE(gate_scene_route::ApplyRoute(fresh, 1001, SceneNodeChange::kUnchanged, send));
+    EXPECT_EQ(0, sends);
+    EXPECT_EQ(0u, fresh.forwardedOwnerEpoch);
+}
+
+// 审计用例「gate 在 Bind 先到、按旧路由补发之后又收到同节点新 epoch 路由」:不经 LeaveGame 重置的残留路径(例如 LeaveGame
+// 之外的同连接重登)。补发带旧 epoch;随后新 epoch 的路由同场景同节点,第 4 条判更大 → 以 0 再转发,持有节点抬到新一代。
+TEST(SceneRouteEntry, BindReplayThenSameNodeNewerEpochIsForwarded)
+{
+    SessionInfo session = SessionInGameAtEpoch();
+    std::vector<EpochStampedForward> calls;
+    auto resolve = [](const uint32_t nodeId)
+    {
+        EXPECT_EQ(3u, nodeId);
+        return std::optional<entt::entity>{entt::entity{12}};
+    };
+    auto forward = [&](const uint32_t enterType, const entt::entity, const uint64_t)
+    {
+        calls.emplace_back(enterType, session.ownerEpoch);
+        return SceneForwardResult::kSent;
+    };
+
+    // BindSession 先到(OnLoginTypeBound 的调用序):按 lastSceneRoute 补发,带的是会话里旧路由的 epoch。
+    ASSERT_TRUE(gate_scene_route::ApplyLoginBinding(session, 42, 2, kReloginGeneration, kReloginEnterType));
+    auto entry = gate_scene_route::EntryForLateLoginBinding(session, kT0);
+    ASSERT_TRUE(entry.has_value());
+    session.pendingSceneEntry = *entry;
+    EXPECT_EQ(SceneEntryAttempt::kApplied, gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
+    ASSERT_EQ((std::vector<EpochStampedForward>{{kReloginEnterType, kEpochBeforeRelogin}}), calls);
+
+    // 随后新路由到达:同场景同节点、epoch 更大(OnRouteDecision 的调用序)。
+    gate_scene_route::ApplyRouteIdentity(session, 42, 1, kEpochAfterRelogin, kReloginGeneration);
+    session.lastSceneRoute = SceneRouteTarget{42, 3, 1001};
+    session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{42, 3, 1001}, kT0);
+    EXPECT_EQ(SceneEntryAttempt::kApplied, gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
+    EXPECT_EQ((std::vector<EpochStampedForward>{{kReloginEnterType, kEpochBeforeRelogin}, {0u, kEpochAfterRelogin}}), calls)
+        << "旧代码在这里判重复事件吞掉,持有节点停在旧 epoch";
+    EXPECT_EQ(kEpochAfterRelogin, session.forwardedOwnerEpoch);
+    EXPECT_FALSE(session.pendingSceneEntry.has_value());
+}
+
+// 审计用例「LeaveGame 后不断线就重进」:gate 收到 LeaveGame 时清空路由状态(先代发 ExitGame,由 OnClientLeaveGame 负责);
+// 之后同连接的 Bind 先到也不按旧路由补发,等新路由到达再带着登录类型与新 epoch 一起转发。
+TEST(SceneRouteEntry, LeaveGameResetThenRelogForwardsFreshRouteOnly)
+{
+    SessionInfo session = SessionInGameAtEpoch();
+    session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{42, 3, 1001}, kT0);
+
+    gate_scene_route::ResetSceneRoute(session);
+    EXPECT_FALSE(session.HasNodeEntity(eNodeType::SceneNodeService));
+    EXPECT_EQ(0u, session.sceneId);
+    EXPECT_EQ(0u, session.pendingEnterGsType);
+    EXPECT_FALSE(session.pendingSceneEntry.has_value());
+    EXPECT_EQ(0u, session.lastSceneRoute.sceneId);
+    EXPECT_EQ(0u, session.ownerEpoch);
+    EXPECT_EQ(0u, session.homeZoneId);
+    EXPECT_EQ(0u, session.forwardedOwnerEpoch);
+    EXPECT_EQ(42u, session.playerId) << "角色绑定照旧保留,下一次 BindSession 按既有规则处理";
+    EXPECT_EQ(kReloginGeneration - 1, session.loginGeneration) << "代次只抬高,不随 LeaveGame 清零";
+
+    std::vector<EpochStampedForward> calls;
+    auto resolve = [](const uint32_t) { return std::optional<entt::entity>{entt::entity{12}}; };
+    auto forward = [&](const uint32_t enterType, const entt::entity, const uint64_t)
+    {
+        calls.emplace_back(enterType, session.ownerEpoch);
+        return SceneForwardResult::kSent;
+    };
+
+    // 重登的 BindSession 先到:没有旧路由可补发。
+    ASSERT_TRUE(gate_scene_route::ApplyLoginBinding(session, 42, 3, kReloginGeneration, kReloginEnterType));
+    EXPECT_FALSE(gate_scene_route::EntryForLateLoginBinding(session, kT0).has_value())
+        << "不得按 LeaveGame 之前的旧路由(旧 epoch)补发";
+    EXPECT_TRUE(calls.empty());
+
+    // 新路由到达(location 删掉后首次落点铸了下一代,恰好又派回同一节点同一频道)。
+    gate_scene_route::ApplyRouteIdentity(session, 42, 1, kEpochAfterRelogin, kReloginGeneration);
+    session.lastSceneRoute = SceneRouteTarget{42, 3, 1001};
+    session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{42, 3, 1001}, kT0);
+    EXPECT_EQ(SceneEntryAttempt::kApplied, gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
+    EXPECT_EQ((std::vector<EpochStampedForward>{{kReloginEnterType, kEpochAfterRelogin}}), calls);
+    EXPECT_EQ(1001u, session.sceneId);
+    EXPECT_EQ(entt::entity{12}, session.GetNodeEntity(eNodeType::SceneNodeService));
+    EXPECT_EQ(kEpochAfterRelogin, session.forwardedOwnerEpoch);
+    EXPECT_EQ(0u, session.pendingEnterGsType);
+}
+
+// LeaveGame 重置之后、重登之前迟到的旧路由(登录链已被 login 会话栅栏中止,路由却已发出):没有登录类型、会话也没有已入场的
+// 场景,不转发,只提交指向。
+TEST(SceneRouteEntry, LateOldRouteAfterLeaveGameResetIsNotForwarded)
+{
+    SessionInfo session = SessionInGameAtEpoch();
+    gate_scene_route::ResetSceneRoute(session);
+    int sends = 0;
+    auto resolve = [](const uint32_t) { return std::optional<entt::entity>{entt::entity{12}}; };
+    auto forward = [&](const uint32_t, const entt::entity, const uint64_t)
+    {
+        ++sends;
+        return SceneForwardResult::kSent;
+    };
+
+    gate_scene_route::ApplyRouteIdentity(session, 42, 1, kEpochBeforeRelogin, kReloginGeneration - 1);
+    session.pendingSceneEntry = gate_scene_route::BeginPendingSceneEntry(SceneRouteTarget{42, 3, 1001}, kT0);
+    EXPECT_EQ(SceneEntryAttempt::kApplied, gate_scene_route::AttemptPendingSceneEntry(session, kT0, resolve, forward));
+    EXPECT_EQ(0, sends);
+    EXPECT_EQ(0u, session.forwardedOwnerEpoch);
+}
+
+// ===========================================================================
 // 登录代次盖章(docs/design/scene-enter-session-fence.md §4):gate 只抬高、不丢弃。
 //
 // 会话上记的是"本会话、本角色见过的最高代次",ForwardPlayerToScene 转发时从会话取值盖章。
@@ -1678,6 +1870,104 @@ TEST(KickFence, VerdictNamesAreDistinct)
     };
     EXPECT_EQ(4u, names.size());
     EXPECT_EQ(0u, names.count("unknown"));
+}
+
+// ===========================================================================
+// 未登录闸(docs/design/data-overwrite-rollback-audit-20261018.md §2.3、client-request-ordering.md §7.2 第 2 条)。
+//
+// gate 被 kill -9 后以同一 node_id 重启、session 序号从 0 开始,新连接撞上旧进程同号连接在 login 留下的登录态;
+// 跳过 Login 直接发 CreatePlayer / EnterGame 就能用别人的账号。login 已改按 (gate_instance_id, 会话代次) 认登录态,
+// gate 这一层要求三种方法发出前本连接收到过成功的 Login 回包。被测的是 handler/rpc/login_admission.h 的纯判定;
+// 发出时机(路由 lane 在 Pump、直连在收包)与置位点(lane 认领 / 直连回包分支)由 robot 冒烟覆盖。
+// ===========================================================================
+
+namespace
+{
+	MessageContent RoutedLoginReply(const loginpb::LoginResponse &body)
+	{
+		MessageContent content;
+		content.set_id(7);
+		content.set_message_id(ClientPlayerLoginLoginMessageId);
+		content.set_serialized_message(body.SerializeAsString());
+		return content;
+	}
+
+	loginpb::LoginResponse LoginFailedWith(uint32_t tipId)
+	{
+		loginpb::LoginResponse response;
+		response.mutable_error_message()->set_id(tipId);
+		return response;
+	}
+
+	loginpb::LoginResponse LoginSucceededWithOneRole()
+	{
+		loginpb::LoginResponse response;
+		response.add_players()->mutable_player()->set_player_id(kPlayerA);
+		return response;
+	}
+} // namespace
+
+// 撞号的新连接与任何新连接一样从「未登录」开始:Login 回包之前,建角 / 进游戏 / 离开游戏都不放行。
+TEST(LoginAdmission, FreshSessionAfterGateRestartIsNotLoggedIn)
+{
+	SessionInfo session;
+	EXPECT_FALSE(session.loginSucceeded);
+	for (const uint32_t messageId : {ClientPlayerLoginCreatePlayerMessageId,
+									 ClientPlayerLoginEnterGameMessageId,
+									 ClientPlayerLoginLeaveGameMessageId})
+	{
+		EXPECT_TRUE(gate_login_admission::RequiresSuccessfulLogin(messageId)) << "message_id=" << messageId;
+	}
+}
+
+// Login 本身、凭 refresh token 自证的 RefreshToken、gate 合成的 Disconnect、HTTP 侧的 AssignGate 都不要求先登录。
+TEST(LoginAdmission, LoginItselfAndSelfAuthenticatedMethodsAreNotGated)
+{
+	EXPECT_FALSE(gate_login_admission::RequiresSuccessfulLogin(ClientPlayerLoginLoginMessageId));
+	EXPECT_FALSE(gate_login_admission::RequiresSuccessfulLogin(ClientPlayerLoginRefreshTokenMessageId));
+	EXPECT_FALSE(gate_login_admission::RequiresSuccessfulLogin(ClientPlayerLoginDisconnectMessageId));
+	EXPECT_FALSE(gate_login_admission::RequiresSuccessfulLogin(LoginPreGateAssignGateMessageId));
+}
+
+// 路由模式正常登录:信封无错、body 无错即成功;body 为空(新账号没有角色、access_token 重登不发新 token)同样成功。
+TEST(LoginAdmission, RoutedSuccessfulLoginUnlocksSession)
+{
+	EXPECT_TRUE(gate_login_admission::IsLoginReplySuccess(RoutedLoginReply(LoginSucceededWithOneRole())));
+	EXPECT_TRUE(gate_login_admission::IsLoginReplySuccess(RoutedLoginReply(loginpb::LoginResponse{})));
+	EXPECT_TRUE(gate_login_admission::IsLoginReplySuccess(RoutedLoginReply(LoginFailedWith(0))))
+		<< "error_message 填了 0 也按成功";
+}
+
+// 路由模式失败的 Login 不放行:body 里的业务拒绝(含 login 写了登录态之后才判出的设备数超限)、路由服信封错误。
+TEST(LoginAdmission, RoutedFailedLoginKeepsSessionLocked)
+{
+	EXPECT_FALSE(gate_login_admission::IsLoginReplySuccess(RoutedLoginReply(LoginFailedWith(kLoginAccountNotFound))));
+	EXPECT_FALSE(gate_login_admission::IsLoginReplySuccess(RoutedLoginReply(LoginFailedWith(kTooManyDevices))));
+
+	// 信封错误时 body 再像成功也不算:那是路由服 / 下游的拒绝,login 没有写本连接的登录态。
+	MessageContent envelope = RoutedLoginReply(LoginSucceededWithOneRole());
+	envelope.mutable_error_message()->set_id(kServiceUnavailable);
+	EXPECT_FALSE(gate_login_admission::IsLoginReplySuccess(envelope));
+}
+
+// 看不懂的 body 按失败(fail-closed):宁可让客户端重登,也不凭坏包放行。
+TEST(LoginAdmission, UnparsableRoutedLoginBodyKeepsSessionLocked)
+{
+	MessageContent content;
+	content.set_message_id(ClientPlayerLoginLoginMessageId);
+	content.set_serialized_message(std::string("\x0a\x05\x01", 3)); // 字段 1 声明 5 字节、只给 1 字节
+	EXPECT_FALSE(gate_login_admission::IsLoginReplySuccess(content));
+}
+
+// 直连模式回的是 LoginResponse 本身;别的回包类型(哪怕本身「成功」)都不能把会话判成已登录。
+TEST(LoginAdmission, DirectLoginResponseAndForeignReplyTypes)
+{
+	EXPECT_TRUE(gate_login_admission::IsLoginReplySuccess(LoginSucceededWithOneRole()));
+	EXPECT_FALSE(gate_login_admission::IsLoginReplySuccess(LoginFailedWith(kLoginSessionNotFound)));
+
+	loginpb::EnterGameResponse enterOk;
+	enterOk.mutable_error_message()->set_id(0);
+	EXPECT_FALSE(gate_login_admission::IsLoginReplySuccess(enterOk));
 }
 
 int main(int argc, char **argv)

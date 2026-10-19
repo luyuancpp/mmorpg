@@ -1,10 +1,8 @@
 #include "muduo/base/Logging.h"
 
 #include "match_service_grpc_client.h"
-#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <memory>
 #include <string>
 #include <utility>
 #include "core/network/grpc_client_runtime.h"
@@ -12,8 +10,7 @@
 #include "muduo_grpc/channel.h"
 
 namespace {
-// 本文件所有 unary 调用的 deadline(毫秒)。启动时 SetMatchServiceCallDeadline 按目标节点类型写入
-// (Node::Initialize → grpc_call_deadline::Apply);原子量:与应答处理器一样是进程级全局。
+// 每个 proto 文件独立的进程级 deadline;启动时按目标节点类型写入。
 std::atomic<uint32_t> callDeadlineMs{kDefaultGrpcCallDeadlineMs};
 
 std::chrono::milliseconds DefaultCallDeadline() {
@@ -30,98 +27,57 @@ GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
 
 namespace match {
 #pragma region MatchServiceGetNetworkProbePlan
-AsyncMatchServiceGetNetworkProbePlanHandlerFunctionType AsyncMatchServiceGetNetworkProbePlanHandler;
-AsyncMatchServiceGetNetworkProbePlanFailedHandlerFunctionType AsyncMatchServiceGetNetworkProbePlanFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceGetNetworkProbePlanCall {
-    ::match::GetNetworkProbePlanRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceGetNetworkProbePlanHandler / FailedHandler。
-    GrpcDone<::match::GetNetworkProbePlanResponse> done;
-};
-
-void CompleteMatchServiceGetNetworkProbePlan(const MatchServiceGetNetworkProbePlanCall& call, const GrpcCallOutcome& outcome,
-                                                const ::match::GetNetworkProbePlanResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceGetNetworkProbePlanHandler) {
-            AsyncMatchServiceGetNetworkProbePlanHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.GetNetworkProbePlan reply dropped: AsyncMatchServiceGetNetworkProbePlanHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceGetNetworkProbePlanFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceGetNetworkProbePlanMessageId, "MatchService.GetNetworkProbePlan", outcome, call.sentMetadata};
-        AsyncMatchServiceGetNetworkProbePlanFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.GetNetworkProbePlan failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceGetNetworkProbePlanFailure(std::shared_ptr<MatchServiceGetNetworkProbePlanCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceGetNetworkProbePlan(*call, outcome, nullptr);
+void QueueLocalMatchServiceGetNetworkProbePlanFailure(GrpcDone<::match::GetNetworkProbePlanResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceGetNetworkProbePlanCall(entt::registry& registry, entt::entity nodeEntity, const ::match::GetNetworkProbePlanRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::match::GetNetworkProbePlanResponse> done) {
-    auto call = std::make_shared<MatchServiceGetNetworkProbePlanCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceGetNetworkProbePlanFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.GetNetworkProbePlan requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceGetNetworkProbePlanGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceGetNetworkProbePlanFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceGetNetworkProbePlanFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceGetNetworkProbePlanFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceGetNetworkProbePlan(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::match::GetNetworkProbePlanResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.GetNetworkProbePlan response";
-            CompleteMatchServiceGetNetworkProbePlan(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceGetNetworkProbePlan(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -130,119 +86,84 @@ void SendMatchServiceGetNetworkProbePlan(entt::registry& registry, entt::entity 
     StartMatchServiceGetNetworkProbePlanCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceGetNetworkProbePlan(entt::registry& registry, entt::entity nodeEntity, const ::match::GetNetworkProbePlanRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceGetNetworkProbePlan(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceGetNetworkProbePlan(entt::registry& registry, entt::entity nodeEntity, const ::match::GetNetworkProbePlanRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceGetNetworkProbePlanErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.GetNetworkProbePlan requires a done callback";
     }
-    StartMatchServiceGetNetworkProbePlanCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceGetNetworkProbePlan(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::GetNetworkProbePlanRequest& derived = static_cast<const ::match::GetNetworkProbePlanRequest&>(message);
-    SendMatchServiceGetNetworkProbePlan(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::GetNetworkProbePlanRequest::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.GetNetworkProbePlan: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::GetNetworkProbePlanRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.GetNetworkProbePlan: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceGetNetworkProbePlanCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::match::GetNetworkProbePlanResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceCommitNetworkProbe
-AsyncMatchServiceCommitNetworkProbeHandlerFunctionType AsyncMatchServiceCommitNetworkProbeHandler;
-AsyncMatchServiceCommitNetworkProbeFailedHandlerFunctionType AsyncMatchServiceCommitNetworkProbeFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceCommitNetworkProbeCall {
-    ::match::CommitNetworkProbeRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceCommitNetworkProbeHandler / FailedHandler。
-    GrpcDone<::match::CommitNetworkProbeResponse> done;
-};
-
-void CompleteMatchServiceCommitNetworkProbe(const MatchServiceCommitNetworkProbeCall& call, const GrpcCallOutcome& outcome,
-                                                const ::match::CommitNetworkProbeResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceCommitNetworkProbeHandler) {
-            AsyncMatchServiceCommitNetworkProbeHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.CommitNetworkProbe reply dropped: AsyncMatchServiceCommitNetworkProbeHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceCommitNetworkProbeFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceCommitNetworkProbeMessageId, "MatchService.CommitNetworkProbe", outcome, call.sentMetadata};
-        AsyncMatchServiceCommitNetworkProbeFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.CommitNetworkProbe failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceCommitNetworkProbeFailure(std::shared_ptr<MatchServiceCommitNetworkProbeCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceCommitNetworkProbe(*call, outcome, nullptr);
+void QueueLocalMatchServiceCommitNetworkProbeFailure(GrpcDone<::match::CommitNetworkProbeResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceCommitNetworkProbeCall(entt::registry& registry, entt::entity nodeEntity, const ::match::CommitNetworkProbeRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::match::CommitNetworkProbeResponse> done) {
-    auto call = std::make_shared<MatchServiceCommitNetworkProbeCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceCommitNetworkProbeFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.CommitNetworkProbe requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceCommitNetworkProbeGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceCommitNetworkProbeFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceCommitNetworkProbeFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceCommitNetworkProbeFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceCommitNetworkProbe(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::match::CommitNetworkProbeResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.CommitNetworkProbe response";
-            CompleteMatchServiceCommitNetworkProbe(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceCommitNetworkProbe(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -251,119 +172,84 @@ void SendMatchServiceCommitNetworkProbe(entt::registry& registry, entt::entity n
     StartMatchServiceCommitNetworkProbeCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceCommitNetworkProbe(entt::registry& registry, entt::entity nodeEntity, const ::match::CommitNetworkProbeRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceCommitNetworkProbe(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceCommitNetworkProbe(entt::registry& registry, entt::entity nodeEntity, const ::match::CommitNetworkProbeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceCommitNetworkProbeErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.CommitNetworkProbe requires a done callback";
     }
-    StartMatchServiceCommitNetworkProbeCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceCommitNetworkProbe(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::CommitNetworkProbeRequest& derived = static_cast<const ::match::CommitNetworkProbeRequest&>(message);
-    SendMatchServiceCommitNetworkProbe(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::CommitNetworkProbeRequest::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.CommitNetworkProbe: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::CommitNetworkProbeRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.CommitNetworkProbe: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceCommitNetworkProbeCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::match::CommitNetworkProbeResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceJoinQueue
-AsyncMatchServiceJoinQueueHandlerFunctionType AsyncMatchServiceJoinQueueHandler;
-AsyncMatchServiceJoinQueueFailedHandlerFunctionType AsyncMatchServiceJoinQueueFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceJoinQueueCall {
-    ::match::JoinQueueRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceJoinQueueHandler / FailedHandler。
-    GrpcDone<::match::JoinQueueResponse> done;
-};
-
-void CompleteMatchServiceJoinQueue(const MatchServiceJoinQueueCall& call, const GrpcCallOutcome& outcome,
-                                                const ::match::JoinQueueResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceJoinQueueHandler) {
-            AsyncMatchServiceJoinQueueHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.JoinQueue reply dropped: AsyncMatchServiceJoinQueueHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceJoinQueueFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceJoinQueueMessageId, "MatchService.JoinQueue", outcome, call.sentMetadata};
-        AsyncMatchServiceJoinQueueFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.JoinQueue failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceJoinQueueFailure(std::shared_ptr<MatchServiceJoinQueueCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceJoinQueue(*call, outcome, nullptr);
+void QueueLocalMatchServiceJoinQueueFailure(GrpcDone<::match::JoinQueueResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceJoinQueueCall(entt::registry& registry, entt::entity nodeEntity, const ::match::JoinQueueRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::match::JoinQueueResponse> done) {
-    auto call = std::make_shared<MatchServiceJoinQueueCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceJoinQueueFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.JoinQueue requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceJoinQueueGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceJoinQueueFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceJoinQueueFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceJoinQueueFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceJoinQueue(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::match::JoinQueueResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.JoinQueue response";
-            CompleteMatchServiceJoinQueue(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceJoinQueue(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -372,119 +258,84 @@ void SendMatchServiceJoinQueue(entt::registry& registry, entt::entity nodeEntity
     StartMatchServiceJoinQueueCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceJoinQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::JoinQueueRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceJoinQueue(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceJoinQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::JoinQueueRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceJoinQueueErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.JoinQueue requires a done callback";
     }
-    StartMatchServiceJoinQueueCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceJoinQueue(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::JoinQueueRequest& derived = static_cast<const ::match::JoinQueueRequest&>(message);
-    SendMatchServiceJoinQueue(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::JoinQueueRequest::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.JoinQueue: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::JoinQueueRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.JoinQueue: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceJoinQueueCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::match::JoinQueueResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceCancelQueue
-AsyncMatchServiceCancelQueueHandlerFunctionType AsyncMatchServiceCancelQueueHandler;
-AsyncMatchServiceCancelQueueFailedHandlerFunctionType AsyncMatchServiceCancelQueueFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceCancelQueueCall {
-    ::match::CancelQueueRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceCancelQueueHandler / FailedHandler。
-    GrpcDone<::Empty> done;
-};
-
-void CompleteMatchServiceCancelQueue(const MatchServiceCancelQueueCall& call, const GrpcCallOutcome& outcome,
-                                                const ::Empty* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceCancelQueueHandler) {
-            AsyncMatchServiceCancelQueueHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.CancelQueue reply dropped: AsyncMatchServiceCancelQueueHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceCancelQueueFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceCancelQueueMessageId, "MatchService.CancelQueue", outcome, call.sentMetadata};
-        AsyncMatchServiceCancelQueueFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.CancelQueue failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceCancelQueueFailure(std::shared_ptr<MatchServiceCancelQueueCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceCancelQueue(*call, outcome, nullptr);
+void QueueLocalMatchServiceCancelQueueFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceCancelQueueCall(entt::registry& registry, entt::entity nodeEntity, const ::match::CancelQueueRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call = std::make_shared<MatchServiceCancelQueueCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceCancelQueueFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.CancelQueue requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceCancelQueueGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceCancelQueueFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceCancelQueueFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceCancelQueueFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceCancelQueue(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::Empty reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.CancelQueue response";
-            CompleteMatchServiceCancelQueue(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceCancelQueue(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -493,119 +344,84 @@ void SendMatchServiceCancelQueue(entt::registry& registry, entt::entity nodeEnti
     StartMatchServiceCancelQueueCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceCancelQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::CancelQueueRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceCancelQueue(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceCancelQueue(entt::registry& registry, entt::entity nodeEntity, const ::match::CancelQueueRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceCancelQueueErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.CancelQueue requires a done callback";
     }
-    StartMatchServiceCancelQueueCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceCancelQueue(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::CancelQueueRequest& derived = static_cast<const ::match::CancelQueueRequest&>(message);
-    SendMatchServiceCancelQueue(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::CancelQueueRequest::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.CancelQueue: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::CancelQueueRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.CancelQueue: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceCancelQueueCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::Empty* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceGetQueueStatus
-AsyncMatchServiceGetQueueStatusHandlerFunctionType AsyncMatchServiceGetQueueStatusHandler;
-AsyncMatchServiceGetQueueStatusFailedHandlerFunctionType AsyncMatchServiceGetQueueStatusFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceGetQueueStatusCall {
-    ::match::GetQueueStatusRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceGetQueueStatusHandler / FailedHandler。
-    GrpcDone<::match::GetQueueStatusResponse> done;
-};
-
-void CompleteMatchServiceGetQueueStatus(const MatchServiceGetQueueStatusCall& call, const GrpcCallOutcome& outcome,
-                                                const ::match::GetQueueStatusResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceGetQueueStatusHandler) {
-            AsyncMatchServiceGetQueueStatusHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.GetQueueStatus reply dropped: AsyncMatchServiceGetQueueStatusHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceGetQueueStatusFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceGetQueueStatusMessageId, "MatchService.GetQueueStatus", outcome, call.sentMetadata};
-        AsyncMatchServiceGetQueueStatusFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.GetQueueStatus failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceGetQueueStatusFailure(std::shared_ptr<MatchServiceGetQueueStatusCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceGetQueueStatus(*call, outcome, nullptr);
+void QueueLocalMatchServiceGetQueueStatusFailure(GrpcDone<::match::GetQueueStatusResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceGetQueueStatusCall(entt::registry& registry, entt::entity nodeEntity, const ::match::GetQueueStatusRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::match::GetQueueStatusResponse> done) {
-    auto call = std::make_shared<MatchServiceGetQueueStatusCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceGetQueueStatusFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.GetQueueStatus requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceGetQueueStatusGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceGetQueueStatusFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceGetQueueStatusFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceGetQueueStatusFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceGetQueueStatus(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::match::GetQueueStatusResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.GetQueueStatus response";
-            CompleteMatchServiceGetQueueStatus(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceGetQueueStatus(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -614,119 +430,84 @@ void SendMatchServiceGetQueueStatus(entt::registry& registry, entt::entity nodeE
     StartMatchServiceGetQueueStatusCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceGetQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::match::GetQueueStatusRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceGetQueueStatus(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceGetQueueStatus(entt::registry& registry, entt::entity nodeEntity, const ::match::GetQueueStatusRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceGetQueueStatusErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.GetQueueStatus requires a done callback";
     }
-    StartMatchServiceGetQueueStatusCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceGetQueueStatus(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::GetQueueStatusRequest& derived = static_cast<const ::match::GetQueueStatusRequest&>(message);
-    SendMatchServiceGetQueueStatus(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::GetQueueStatusRequest::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.GetQueueStatus: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::GetQueueStatusRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.GetQueueStatus: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceGetQueueStatusCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::match::GetQueueStatusResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceChallengePlayer
-AsyncMatchServiceChallengePlayerHandlerFunctionType AsyncMatchServiceChallengePlayerHandler;
-AsyncMatchServiceChallengePlayerFailedHandlerFunctionType AsyncMatchServiceChallengePlayerFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceChallengePlayerCall {
-    ::match::ChallengePlayerRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceChallengePlayerHandler / FailedHandler。
-    GrpcDone<::match::ChallengePlayerResponse> done;
-};
-
-void CompleteMatchServiceChallengePlayer(const MatchServiceChallengePlayerCall& call, const GrpcCallOutcome& outcome,
-                                                const ::match::ChallengePlayerResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceChallengePlayerHandler) {
-            AsyncMatchServiceChallengePlayerHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.ChallengePlayer reply dropped: AsyncMatchServiceChallengePlayerHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceChallengePlayerFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceChallengePlayerMessageId, "MatchService.ChallengePlayer", outcome, call.sentMetadata};
-        AsyncMatchServiceChallengePlayerFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.ChallengePlayer failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceChallengePlayerFailure(std::shared_ptr<MatchServiceChallengePlayerCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceChallengePlayer(*call, outcome, nullptr);
+void QueueLocalMatchServiceChallengePlayerFailure(GrpcDone<::match::ChallengePlayerResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceChallengePlayerCall(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengePlayerRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::match::ChallengePlayerResponse> done) {
-    auto call = std::make_shared<MatchServiceChallengePlayerCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceChallengePlayerFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.ChallengePlayer requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceChallengePlayerGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceChallengePlayerFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceChallengePlayerFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceChallengePlayerFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceChallengePlayer(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::match::ChallengePlayerResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.ChallengePlayer response";
-            CompleteMatchServiceChallengePlayer(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceChallengePlayer(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -735,119 +516,84 @@ void SendMatchServiceChallengePlayer(entt::registry& registry, entt::entity node
     StartMatchServiceChallengePlayerCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceChallengePlayer(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengePlayerRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceChallengePlayer(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceChallengePlayer(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengePlayerRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceChallengePlayerErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.ChallengePlayer requires a done callback";
     }
-    StartMatchServiceChallengePlayerCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceChallengePlayer(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::ChallengePlayerRequest& derived = static_cast<const ::match::ChallengePlayerRequest&>(message);
-    SendMatchServiceChallengePlayer(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::ChallengePlayerRequest::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.ChallengePlayer: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::ChallengePlayerRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.ChallengePlayer: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceChallengePlayerCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::match::ChallengePlayerResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceRespondChallenge
-AsyncMatchServiceRespondChallengeHandlerFunctionType AsyncMatchServiceRespondChallengeHandler;
-AsyncMatchServiceRespondChallengeFailedHandlerFunctionType AsyncMatchServiceRespondChallengeFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceRespondChallengeCall {
-    ::match::RespondChallengeRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceRespondChallengeHandler / FailedHandler。
-    GrpcDone<::match::RespondChallengeResponse> done;
-};
-
-void CompleteMatchServiceRespondChallenge(const MatchServiceRespondChallengeCall& call, const GrpcCallOutcome& outcome,
-                                                const ::match::RespondChallengeResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceRespondChallengeHandler) {
-            AsyncMatchServiceRespondChallengeHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.RespondChallenge reply dropped: AsyncMatchServiceRespondChallengeHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceRespondChallengeFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceRespondChallengeMessageId, "MatchService.RespondChallenge", outcome, call.sentMetadata};
-        AsyncMatchServiceRespondChallengeFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.RespondChallenge failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceRespondChallengeFailure(std::shared_ptr<MatchServiceRespondChallengeCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceRespondChallenge(*call, outcome, nullptr);
+void QueueLocalMatchServiceRespondChallengeFailure(GrpcDone<::match::RespondChallengeResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceRespondChallengeCall(entt::registry& registry, entt::entity nodeEntity, const ::match::RespondChallengeRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::match::RespondChallengeResponse> done) {
-    auto call = std::make_shared<MatchServiceRespondChallengeCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceRespondChallengeFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.RespondChallenge requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceRespondChallengeGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceRespondChallengeFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceRespondChallengeFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceRespondChallengeFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceRespondChallenge(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::match::RespondChallengeResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.RespondChallenge response";
-            CompleteMatchServiceRespondChallenge(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceRespondChallenge(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -856,119 +602,84 @@ void SendMatchServiceRespondChallenge(entt::registry& registry, entt::entity nod
     StartMatchServiceRespondChallengeCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceRespondChallenge(entt::registry& registry, entt::entity nodeEntity, const ::match::RespondChallengeRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceRespondChallenge(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceRespondChallenge(entt::registry& registry, entt::entity nodeEntity, const ::match::RespondChallengeRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceRespondChallengeErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.RespondChallenge requires a done callback";
     }
-    StartMatchServiceRespondChallengeCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceRespondChallenge(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::RespondChallengeRequest& derived = static_cast<const ::match::RespondChallengeRequest&>(message);
-    SendMatchServiceRespondChallenge(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::RespondChallengeRequest::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.RespondChallenge: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::RespondChallengeRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.RespondChallenge: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceRespondChallengeCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::match::RespondChallengeResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceNotifyChallengeInvite
-AsyncMatchServiceNotifyChallengeInviteHandlerFunctionType AsyncMatchServiceNotifyChallengeInviteHandler;
-AsyncMatchServiceNotifyChallengeInviteFailedHandlerFunctionType AsyncMatchServiceNotifyChallengeInviteFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceNotifyChallengeInviteCall {
-    ::match::ChallengeInviteS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceNotifyChallengeInviteHandler / FailedHandler。
-    GrpcDone<::Empty> done;
-};
-
-void CompleteMatchServiceNotifyChallengeInvite(const MatchServiceNotifyChallengeInviteCall& call, const GrpcCallOutcome& outcome,
-                                                const ::Empty* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceNotifyChallengeInviteHandler) {
-            AsyncMatchServiceNotifyChallengeInviteHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.NotifyChallengeInvite reply dropped: AsyncMatchServiceNotifyChallengeInviteHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceNotifyChallengeInviteFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceNotifyChallengeInviteMessageId, "MatchService.NotifyChallengeInvite", outcome, call.sentMetadata};
-        AsyncMatchServiceNotifyChallengeInviteFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.NotifyChallengeInvite failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceNotifyChallengeInviteFailure(std::shared_ptr<MatchServiceNotifyChallengeInviteCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceNotifyChallengeInvite(*call, outcome, nullptr);
+void QueueLocalMatchServiceNotifyChallengeInviteFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceNotifyChallengeInviteCall(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeInviteS2C& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call = std::make_shared<MatchServiceNotifyChallengeInviteCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceNotifyChallengeInviteFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.NotifyChallengeInvite requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceNotifyChallengeInviteGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceNotifyChallengeInviteFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceNotifyChallengeInviteFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceNotifyChallengeInviteFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceNotifyChallengeInvite(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::Empty reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.NotifyChallengeInvite response";
-            CompleteMatchServiceNotifyChallengeInvite(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceNotifyChallengeInvite(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -977,119 +688,84 @@ void SendMatchServiceNotifyChallengeInvite(entt::registry& registry, entt::entit
     StartMatchServiceNotifyChallengeInviteCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceNotifyChallengeInvite(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeInviteS2C& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceNotifyChallengeInvite(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceNotifyChallengeInvite(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeInviteS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceNotifyChallengeInviteErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.NotifyChallengeInvite requires a done callback";
     }
-    StartMatchServiceNotifyChallengeInviteCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceNotifyChallengeInvite(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::ChallengeInviteS2C& derived = static_cast<const ::match::ChallengeInviteS2C&>(message);
-    SendMatchServiceNotifyChallengeInvite(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::ChallengeInviteS2C::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.NotifyChallengeInvite: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::ChallengeInviteS2C*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.NotifyChallengeInvite: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceNotifyChallengeInviteCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::Empty* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceNotifyChallengeResult
-AsyncMatchServiceNotifyChallengeResultHandlerFunctionType AsyncMatchServiceNotifyChallengeResultHandler;
-AsyncMatchServiceNotifyChallengeResultFailedHandlerFunctionType AsyncMatchServiceNotifyChallengeResultFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceNotifyChallengeResultCall {
-    ::match::ChallengeResultS2C request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceNotifyChallengeResultHandler / FailedHandler。
-    GrpcDone<::Empty> done;
-};
-
-void CompleteMatchServiceNotifyChallengeResult(const MatchServiceNotifyChallengeResultCall& call, const GrpcCallOutcome& outcome,
-                                                const ::Empty* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceNotifyChallengeResultHandler) {
-            AsyncMatchServiceNotifyChallengeResultHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.NotifyChallengeResult reply dropped: AsyncMatchServiceNotifyChallengeResultHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceNotifyChallengeResultFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceNotifyChallengeResultMessageId, "MatchService.NotifyChallengeResult", outcome, call.sentMetadata};
-        AsyncMatchServiceNotifyChallengeResultFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.NotifyChallengeResult failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceNotifyChallengeResultFailure(std::shared_ptr<MatchServiceNotifyChallengeResultCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceNotifyChallengeResult(*call, outcome, nullptr);
+void QueueLocalMatchServiceNotifyChallengeResultFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceNotifyChallengeResultCall(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeResultS2C& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::Empty> done) {
-    auto call = std::make_shared<MatchServiceNotifyChallengeResultCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceNotifyChallengeResultFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.NotifyChallengeResult requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceNotifyChallengeResultGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceNotifyChallengeResultFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceNotifyChallengeResultFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceNotifyChallengeResultFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceNotifyChallengeResult(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::Empty reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.NotifyChallengeResult response";
-            CompleteMatchServiceNotifyChallengeResult(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceNotifyChallengeResult(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -1098,119 +774,84 @@ void SendMatchServiceNotifyChallengeResult(entt::registry& registry, entt::entit
     StartMatchServiceNotifyChallengeResultCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceNotifyChallengeResult(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeResultS2C& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceNotifyChallengeResult(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceNotifyChallengeResult(entt::registry& registry, entt::entity nodeEntity, const ::match::ChallengeResultS2C& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceNotifyChallengeResultErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.NotifyChallengeResult requires a done callback";
     }
-    StartMatchServiceNotifyChallengeResultCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceNotifyChallengeResult(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::ChallengeResultS2C& derived = static_cast<const ::match::ChallengeResultS2C&>(message);
-    SendMatchServiceNotifyChallengeResult(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::ChallengeResultS2C::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.NotifyChallengeResult: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::ChallengeResultS2C*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.NotifyChallengeResult: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceNotifyChallengeResultCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::Empty* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceWatchBattle
-AsyncMatchServiceWatchBattleHandlerFunctionType AsyncMatchServiceWatchBattleHandler;
-AsyncMatchServiceWatchBattleFailedHandlerFunctionType AsyncMatchServiceWatchBattleFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceWatchBattleCall {
-    ::match::WatchBattleRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceWatchBattleHandler / FailedHandler。
-    GrpcDone<::match::WatchBattleResponse> done;
-};
-
-void CompleteMatchServiceWatchBattle(const MatchServiceWatchBattleCall& call, const GrpcCallOutcome& outcome,
-                                                const ::match::WatchBattleResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceWatchBattleHandler) {
-            AsyncMatchServiceWatchBattleHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.WatchBattle reply dropped: AsyncMatchServiceWatchBattleHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceWatchBattleFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceWatchBattleMessageId, "MatchService.WatchBattle", outcome, call.sentMetadata};
-        AsyncMatchServiceWatchBattleFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.WatchBattle failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceWatchBattleFailure(std::shared_ptr<MatchServiceWatchBattleCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceWatchBattle(*call, outcome, nullptr);
+void QueueLocalMatchServiceWatchBattleFailure(GrpcDone<::match::WatchBattleResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceWatchBattleCall(entt::registry& registry, entt::entity nodeEntity, const ::match::WatchBattleRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::match::WatchBattleResponse> done) {
-    auto call = std::make_shared<MatchServiceWatchBattleCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceWatchBattleFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.WatchBattle requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceWatchBattleGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceWatchBattleFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceWatchBattleFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceWatchBattleFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceWatchBattle(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::match::WatchBattleResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.WatchBattle response";
-            CompleteMatchServiceWatchBattle(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceWatchBattle(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -1219,119 +860,84 @@ void SendMatchServiceWatchBattle(entt::registry& registry, entt::entity nodeEnti
     StartMatchServiceWatchBattleCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceWatchBattle(entt::registry& registry, entt::entity nodeEntity, const ::match::WatchBattleRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceWatchBattle(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceWatchBattle(entt::registry& registry, entt::entity nodeEntity, const ::match::WatchBattleRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceWatchBattleErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.WatchBattle requires a done callback";
     }
-    StartMatchServiceWatchBattleCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceWatchBattle(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::WatchBattleRequest& derived = static_cast<const ::match::WatchBattleRequest&>(message);
-    SendMatchServiceWatchBattle(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::WatchBattleRequest::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.WatchBattle: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::WatchBattleRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.WatchBattle: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceWatchBattleCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::match::WatchBattleResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceRequestBattleTicket
-AsyncMatchServiceRequestBattleTicketHandlerFunctionType AsyncMatchServiceRequestBattleTicketHandler;
-AsyncMatchServiceRequestBattleTicketFailedHandlerFunctionType AsyncMatchServiceRequestBattleTicketFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceRequestBattleTicketCall {
-    ::RequestBattleTicketRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceRequestBattleTicketHandler / FailedHandler。
-    GrpcDone<::RequestBattleTicketResponse> done;
-};
-
-void CompleteMatchServiceRequestBattleTicket(const MatchServiceRequestBattleTicketCall& call, const GrpcCallOutcome& outcome,
-                                                const ::RequestBattleTicketResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceRequestBattleTicketHandler) {
-            AsyncMatchServiceRequestBattleTicketHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.RequestBattleTicket reply dropped: AsyncMatchServiceRequestBattleTicketHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceRequestBattleTicketFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceRequestBattleTicketMessageId, "MatchService.RequestBattleTicket", outcome, call.sentMetadata};
-        AsyncMatchServiceRequestBattleTicketFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.RequestBattleTicket failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceRequestBattleTicketFailure(std::shared_ptr<MatchServiceRequestBattleTicketCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceRequestBattleTicket(*call, outcome, nullptr);
+void QueueLocalMatchServiceRequestBattleTicketFailure(GrpcDone<::RequestBattleTicketResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceRequestBattleTicketCall(entt::registry& registry, entt::entity nodeEntity, const ::RequestBattleTicketRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::RequestBattleTicketResponse> done) {
-    auto call = std::make_shared<MatchServiceRequestBattleTicketCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceRequestBattleTicketFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.RequestBattleTicket requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceRequestBattleTicketGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceRequestBattleTicketFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceRequestBattleTicketFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceRequestBattleTicketFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceRequestBattleTicket(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::RequestBattleTicketResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.RequestBattleTicket response";
-            CompleteMatchServiceRequestBattleTicket(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceRequestBattleTicket(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -1340,119 +946,84 @@ void SendMatchServiceRequestBattleTicket(entt::registry& registry, entt::entity 
     StartMatchServiceRequestBattleTicketCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceRequestBattleTicket(entt::registry& registry, entt::entity nodeEntity, const ::RequestBattleTicketRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceRequestBattleTicket(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceRequestBattleTicket(entt::registry& registry, entt::entity nodeEntity, const ::RequestBattleTicketRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceRequestBattleTicketErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.RequestBattleTicket requires a done callback";
     }
-    StartMatchServiceRequestBattleTicketCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceRequestBattleTicket(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::RequestBattleTicketRequest& derived = static_cast<const ::RequestBattleTicketRequest&>(message);
-    SendMatchServiceRequestBattleTicket(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::RequestBattleTicketRequest::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.RequestBattleTicket: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::RequestBattleTicketRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.RequestBattleTicket: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceRequestBattleTicketCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::RequestBattleTicketResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
 #pragma region MatchServiceListWatchableBattles
-AsyncMatchServiceListWatchableBattlesHandlerFunctionType AsyncMatchServiceListWatchableBattlesHandler;
-AsyncMatchServiceListWatchableBattlesFailedHandlerFunctionType AsyncMatchServiceListWatchableBattlesFailedHandler;
-
 namespace {
-// 一次调用的状态:随完成回调走(shared_ptr),不进 ECS、不放对象池。
-// request 必须是副本:gate 通用路径发出的是 gRpcMethodRegistry 里的共享原型,下一条客户端消息就会覆盖它。
-struct MatchServiceListWatchableBattlesCall {
-    ::match::ListWatchableBattlesRequest request;
-    GrpcSentMetadata sentMetadata;
-    // 每次调用回调;为空时走全局 AsyncMatchServiceListWatchableBattlesHandler / FailedHandler。
-    GrpcDone<::match::ListWatchableBattlesResponse> done;
-};
-
-void CompleteMatchServiceListWatchableBattles(const MatchServiceListWatchableBattlesCall& call, const GrpcCallOutcome& outcome,
-                                                const ::match::ListWatchableBattlesResponse* reply) {
-    if (call.done) {
-        // 带每次调用回调的调用只交给它,不再走全局应答 / 失败处理器。reply 只在回调期间有效。
-        call.done(outcome, outcome.ok() ? reply : nullptr);
-        return;
-    }
-    if (outcome.ok()) {
-        if (AsyncMatchServiceListWatchableBattlesHandler) {
-            AsyncMatchServiceListWatchableBattlesHandler(outcome, *reply);
-        } else {
-            // 应答到了却没人收:2026-04 起换图应答就是这样静默丢了约 5 个月。每个方法每线程报一次;
-            // 确实不需要应答的调用方显式装一个空处理器。
-            thread_local bool reportedMissingHandler = false;
-            if (!reportedMissingHandler) {
-                reportedMissingHandler = true;
-                LOG_ERROR << "gRPC MatchService.ListWatchableBattles reply dropped: AsyncMatchServiceListWatchableBattlesHandler is not installed"
-                          << " (install one, or an empty one if the reply is intentionally ignored)";
-            }
-        }
-    } else if (AsyncMatchServiceListWatchableBattlesFailedHandler) {
-        const GrpcCallFailure failure{ MatchServiceListWatchableBattlesMessageId, "MatchService.ListWatchableBattles", outcome, call.sentMetadata};
-        AsyncMatchServiceListWatchableBattlesFailedHandler(failure, call.request);
-    } else {
-        LOG_ERROR << "gRPC MatchService.ListWatchableBattles failed: code=" << outcome.code << " msg=" << outcome.message;
-    }
-}
-
-void QueueLocalMatchServiceListWatchableBattlesFailure(std::shared_ptr<MatchServiceListWatchableBattlesCall> call, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([call = std::move(call), outcome = LocalFailure(code, std::move(message))] {
-        CompleteMatchServiceListWatchableBattles(*call, outcome, nullptr);
+void QueueLocalMatchServiceListWatchableBattlesFailure(GrpcDone<::match::ListWatchableBattlesResponse> done, uint32_t code, std::string message) {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+        done(outcome, nullptr);
     });
 }
 }
 
-// 所有 unary Send 重载的唯一发送入口。deadline <= 0 用本文件默认 deadline;done 为空走全局处理器。
+// 请求必须在这里同步序列化:gate 的共享原型在下次调用会被覆盖。
+// 若将来改成异步序列化,必须先恢复请求的独立副本。
 void StartMatchServiceListWatchableBattlesCall(entt::registry& registry, entt::entity nodeEntity, const ::match::ListWatchableBattlesRequest& request,
                                              GrpcSentMetadata metadata, std::chrono::milliseconds deadline,
                                              GrpcDone<::match::ListWatchableBattlesResponse> done) {
-    auto call = std::make_shared<MatchServiceListWatchableBattlesCall>();
-    call->request = request;
-    call->sentMetadata = std::move(metadata);
-    call->done = std::move(done);
-
-    const auto channel = FindGrpcChannel(registry, nodeEntity);
-    if (!channel) {
-        QueueLocalMatchServiceListWatchableBattlesFailure(std::move(call), kGrpcStatusUnavailable, "node transport missing or closing");
-        return;
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.ListWatchableBattles requires a done callback";
     }
     muduo_grpc::UnaryCallRequest rpc;
     rpc.method = std::string(kMatchServiceListWatchableBattlesGrpcPath);
-    if (!call->request.SerializeToString(&rpc.message)) {
-        QueueLocalMatchServiceListWatchableBattlesFailure(std::move(call), kGrpcStatusInternal, "failed to serialize the request");
+    if (!request.SerializeToString(&rpc.message)) {
+        QueueLocalMatchServiceListWatchableBattlesFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
-    rpc.metadata.reserve(call->sentMetadata.size());
-    for (const auto& [key, value] : call->sentMetadata) {
-        // 应用层这一层 Base64 不能省:线上字节与改前一致,Go 侧按它解码、按原样回显(§4.2)。
+    const auto channel = FindGrpcChannel(registry, nodeEntity);
+    if (!channel) {
+        QueueLocalMatchServiceListWatchableBattlesFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
+        return;
+    }
+    rpc.metadata.reserve(metadata.size());
+    for (const auto& [key, value] : metadata) {
+        // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
         rpc.metadata.emplace_back(key, Base64Encode(value));
     }
     rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [call](muduo_grpc::UnaryCallResult&& result) {
+    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
         outcome.initialMetadata = std::move(result.initialMetadata);
         outcome.trailingMetadata = std::move(result.trailingMetadata);
         if (!outcome.ok()) {
-            CompleteMatchServiceListWatchableBattles(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
         ::match::ListWatchableBattlesResponse reply;
         if (!reply.ParseFromString(result.response)) {
             outcome.code = kGrpcStatusInternal;
             outcome.message = "failed to parse the MatchService.ListWatchableBattles response";
-            CompleteMatchServiceListWatchableBattles(*call, outcome, nullptr);
+            done(outcome, nullptr);
             return;
         }
-        CompleteMatchServiceListWatchableBattles(*call, outcome, &reply);
+        done(outcome, &reply);
     });
 }
 
@@ -1461,138 +1032,32 @@ void SendMatchServiceListWatchableBattles(entt::registry& registry, entt::entity
     StartMatchServiceListWatchableBattlesCall(registry, nodeEntity, request, options.metadata, options.deadline, std::move(done));
 }
 
-void SendMatchServiceListWatchableBattles(entt::registry& registry, entt::entity nodeEntity, const ::match::ListWatchableBattlesRequest& request) {
-    // 显式写出空 vector:另有 (request, GrpcDone, GrpcCallOptions) 重载,两个 {} 会有二义性。
-    SendMatchServiceListWatchableBattles(registry, nodeEntity, request, std::vector<std::string>{}, std::vector<std::string>{});
-}
-
-void SendMatchServiceListWatchableBattles(entt::registry& registry, entt::entity nodeEntity, const ::match::ListWatchableBattlesRequest& request, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const size_t count = std::min(metaKeys.size(), metaValues.size());
-    GrpcSentMetadata metadata;
-    metadata.reserve(count);
-    for (size_t i = 0; i < count; ++i) {
-        metadata.emplace_back(metaKeys[i], metaValues[i]);
+void SendMatchServiceListWatchableBattlesErased(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message,
+                                                  GrpcMessageDone done, const GrpcCallOptions& options) {
+    if (!done) {
+        LOG_FATAL << "gRPC MatchService.ListWatchableBattles requires a done callback";
     }
-    StartMatchServiceListWatchableBattlesCall(registry, nodeEntity, request, std::move(metadata), std::chrono::milliseconds{0}, nullptr);
-}
-
-void SendMatchServiceListWatchableBattles(entt::registry& registry, entt::entity nodeEntity, const google::protobuf::Message& message, const std::vector<std::string>& metaKeys, const std::vector<std::string>& metaValues) {
-    const ::match::ListWatchableBattlesRequest& derived = static_cast<const ::match::ListWatchableBattlesRequest&>(message);
-    SendMatchServiceListWatchableBattles(registry, nodeEntity, derived, metaKeys, metaValues);
+    if (message.GetDescriptor() != ::match::ListWatchableBattlesRequest::descriptor()) {
+        LOG_ERROR << "gRPC MatchService.ListWatchableBattles: request type " << message.GetDescriptor()->full_name()
+                  << " does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    // descriptor 相同仍可能是 DynamicMessage;进入 typed 路径前必须核对真实 C++ 类型。
+    const auto* typedRequest = dynamic_cast<const ::match::ListWatchableBattlesRequest*>(&message);
+    if (typedRequest == nullptr) {
+        LOG_ERROR << "gRPC MatchService.ListWatchableBattles: request C++ type does not match; not sent";
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+            done(outcome, nullptr);
+        });
+        return;
+    }
+    StartMatchServiceListWatchableBattlesCall(registry, nodeEntity, *typedRequest, options.metadata, options.deadline,
+        [done = std::move(done)](const GrpcCallOutcome& outcome, const ::match::ListWatchableBattlesResponse* reply) { done(outcome, reply); });
 }
 #pragma endregion
-
-void SetMatchServiceHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
-    AsyncMatchServiceGetNetworkProbePlanHandler = handler;
-    AsyncMatchServiceCommitNetworkProbeHandler = handler;
-    AsyncMatchServiceJoinQueueHandler = handler;
-    AsyncMatchServiceCancelQueueHandler = handler;
-    AsyncMatchServiceGetQueueStatusHandler = handler;
-    AsyncMatchServiceChallengePlayerHandler = handler;
-    AsyncMatchServiceRespondChallengeHandler = handler;
-    AsyncMatchServiceNotifyChallengeInviteHandler = handler;
-    AsyncMatchServiceNotifyChallengeResultHandler = handler;
-    AsyncMatchServiceWatchBattleHandler = handler;
-    AsyncMatchServiceRequestBattleTicketHandler = handler;
-    AsyncMatchServiceListWatchableBattlesHandler = handler;
-    (void)handler;
-}
-
-void SetMatchServiceIfEmptyHandler(const std::function<void(const GrpcReplyContext&, const ::google::protobuf::Message& reply)>& handler) {
-    if (!AsyncMatchServiceGetNetworkProbePlanHandler) {
-        AsyncMatchServiceGetNetworkProbePlanHandler = handler;
-    }
-    if (!AsyncMatchServiceCommitNetworkProbeHandler) {
-        AsyncMatchServiceCommitNetworkProbeHandler = handler;
-    }
-    if (!AsyncMatchServiceJoinQueueHandler) {
-        AsyncMatchServiceJoinQueueHandler = handler;
-    }
-    if (!AsyncMatchServiceCancelQueueHandler) {
-        AsyncMatchServiceCancelQueueHandler = handler;
-    }
-    if (!AsyncMatchServiceGetQueueStatusHandler) {
-        AsyncMatchServiceGetQueueStatusHandler = handler;
-    }
-    if (!AsyncMatchServiceChallengePlayerHandler) {
-        AsyncMatchServiceChallengePlayerHandler = handler;
-    }
-    if (!AsyncMatchServiceRespondChallengeHandler) {
-        AsyncMatchServiceRespondChallengeHandler = handler;
-    }
-    if (!AsyncMatchServiceNotifyChallengeInviteHandler) {
-        AsyncMatchServiceNotifyChallengeInviteHandler = handler;
-    }
-    if (!AsyncMatchServiceNotifyChallengeResultHandler) {
-        AsyncMatchServiceNotifyChallengeResultHandler = handler;
-    }
-    if (!AsyncMatchServiceWatchBattleHandler) {
-        AsyncMatchServiceWatchBattleHandler = handler;
-    }
-    if (!AsyncMatchServiceRequestBattleTicketHandler) {
-        AsyncMatchServiceRequestBattleTicketHandler = handler;
-    }
-    if (!AsyncMatchServiceListWatchableBattlesHandler) {
-        AsyncMatchServiceListWatchableBattlesHandler = handler;
-    }
-    (void)handler;
-}
-
-void SetMatchServiceFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
-    AsyncMatchServiceGetNetworkProbePlanFailedHandler = handler;
-    AsyncMatchServiceCommitNetworkProbeFailedHandler = handler;
-    AsyncMatchServiceJoinQueueFailedHandler = handler;
-    AsyncMatchServiceCancelQueueFailedHandler = handler;
-    AsyncMatchServiceGetQueueStatusFailedHandler = handler;
-    AsyncMatchServiceChallengePlayerFailedHandler = handler;
-    AsyncMatchServiceRespondChallengeFailedHandler = handler;
-    AsyncMatchServiceNotifyChallengeInviteFailedHandler = handler;
-    AsyncMatchServiceNotifyChallengeResultFailedHandler = handler;
-    AsyncMatchServiceWatchBattleFailedHandler = handler;
-    AsyncMatchServiceRequestBattleTicketFailedHandler = handler;
-    AsyncMatchServiceListWatchableBattlesFailedHandler = handler;
-    (void)handler;
-}
-
-void SetMatchServiceIfEmptyFailedHandler(const std::function<void(const GrpcCallFailure&, const ::google::protobuf::Message& request)>& handler) {
-    if (!AsyncMatchServiceGetNetworkProbePlanFailedHandler) {
-        AsyncMatchServiceGetNetworkProbePlanFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceCommitNetworkProbeFailedHandler) {
-        AsyncMatchServiceCommitNetworkProbeFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceJoinQueueFailedHandler) {
-        AsyncMatchServiceJoinQueueFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceCancelQueueFailedHandler) {
-        AsyncMatchServiceCancelQueueFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceGetQueueStatusFailedHandler) {
-        AsyncMatchServiceGetQueueStatusFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceChallengePlayerFailedHandler) {
-        AsyncMatchServiceChallengePlayerFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceRespondChallengeFailedHandler) {
-        AsyncMatchServiceRespondChallengeFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceNotifyChallengeInviteFailedHandler) {
-        AsyncMatchServiceNotifyChallengeInviteFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceNotifyChallengeResultFailedHandler) {
-        AsyncMatchServiceNotifyChallengeResultFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceWatchBattleFailedHandler) {
-        AsyncMatchServiceWatchBattleFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceRequestBattleTicketFailedHandler) {
-        AsyncMatchServiceRequestBattleTicketFailedHandler = handler;
-    }
-    if (!AsyncMatchServiceListWatchableBattlesFailedHandler) {
-        AsyncMatchServiceListWatchableBattlesFailedHandler = handler;
-    }
-    (void)handler;
-}
 
 void SetMatchServiceCallDeadline(std::chrono::milliseconds deadline) {
     callDeadlineMs.store(static_cast<uint32_t>(deadline.count()), std::memory_order_relaxed);

@@ -26,6 +26,11 @@ type PasswordAuthenticator interface {
 var (
 	ErrPasswordAuthDisabled = errors.New("password authentication is disabled")
 	ErrInvalidCredentials   = errors.New("invalid credentials")
+	// ErrProviderUnavailable 标记「不是玩家凭证的问题」的第三方认证失败:网络 / 超时、渠道非 2xx、应答过大或
+	// 不可解析、渠道系统繁忙或配额超限、本服务的 AppId / AppSecret / 出口 IP 被渠道拒绝、拿不到必需的 unionid。
+	// 调用方据此回故障码(LoginAuthProviderUnavailable),不让渠道故障混进「凭证无效」的业务拒绝里漏掉告警,
+	// 也不让玩家以为自己的凭证错了。没有包它的认证失败一律按凭证无效处理。
+	ErrProviderUnavailable = errors.New("auth provider unavailable")
 )
 
 var (

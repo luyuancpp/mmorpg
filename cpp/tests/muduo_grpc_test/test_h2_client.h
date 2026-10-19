@@ -8,8 +8,9 @@
 // (例如让服务端的 GOAWAY 与客户端的新流在「线上」交错)。
 //
 // 每个 OpenStream / Send* 都**立即**把帧序列化进输出缓冲:线上帧序严格等于脚本调用顺序。
-// nghttp2 不校验**发出去**的请求头,所以缺伪头、大写头名、连接级头、te: gzip 都能原样发出去,
-// 由被测的服务端会话去拒绝。头部值一律是**线上值**(-bin 头由调用方自己给 base64)。
+// nghttp2 不校验**发出去**的请求头,所以缺伪头、连接级头、te: gzip 可以交给服务端拒绝;
+// 普通 OpenStream 仍会由 nghttp2 把头名转成小写。要测试线上大写头名,必须显式走保留原名的非法输入入口。
+// 头部值一律是**线上值**(-bin 头由调用方自己给 base64)。
 //
 // 记录:每个流的响应头块(含 :status)、trailers 块、DATA 负载、本流上收到的帧序列(含 RST_STREAM 错误码)、
 // 流关闭;连接级的 SETTINGS / PING / GOAWAY。
@@ -121,6 +122,9 @@ public:
     // ---- 脚本:每个调用立即序列化成帧 ----
     // 开一个新流发请求头;返回流 id(> 0),失败返回 -1(lastError() 说明原因)。
     int32_t OpenStream(const HeaderList &headers, bool endStream);
+    // 仅供非法头名用例:绕过提交时的头名小写化,仍由同一个 nghttp2 会话编码、分配流和接收响应。
+    // 头名由本对象深拷贝并持有到会话析构后,不借用调用方或临时字符串;头值照常由 nghttp2 拷贝。
+    int32_t OpenStreamWithUnnormalizedNames(const HeaderList &headers, bool endStream);
     // 一次调用 = 一个 DATA 帧(超过 16KiB 时由 nghttp2 拆成多帧)。必须能在当前流控窗口内发完。
     bool SendData(int32_t streamId, std::string_view bytes, bool endStream);
     bool SendRstStream(int32_t streamId, uint32_t errorCode);
@@ -133,6 +137,7 @@ private:
     bool Flush();
     bool Fail(std::string message);
     ClientStream &StreamFor(int32_t streamId);
+    int32_t OpenStreamWithNameFlags(const HeaderList &headers, bool endStream, uint8_t nameFlags);
 
     struct PendingData
     {
@@ -145,6 +150,9 @@ private:
         void operator()(nghttp2_session *session) const;
     };
 
+    // NO_COPY_NAME 借用的名称必须活过会话;放在 session_ 前,按逆序析构在会话释放后才销毁。
+    // unique_ptr 所有的 HeaderList 不会随外层 vector 扩容移动,提交之后也不再修改。
+    std::vector<std::unique_ptr<HeaderList>> retainedHeaderNames_;
     std::unique_ptr<nghttp2_session, SessionDeleter> session_;
     std::map<int32_t, ClientStream> streams_;
     std::map<int32_t, PendingData> pendingData_;

@@ -3,6 +3,7 @@
 > **状态**:只读调研产出,**未落码**。由开服线会话 2026-10-16 的调研工作流生成(一名调研者出规格、一名核实者逐条反驳),原样保存,未经人工改写。
 > **怎么用**:前半部分是调研者的规格;「# VERDICT」之后是核实者意见。**落码前必须先吸收核实意见里的 must / should**,被判 refuted 的事实以核实者为准。行号与工作区状态是 2026-10-16 03:48~04:35 的快照,工作区有多个会话在并行修改,落码前按函数名重新定位。
 > **汇总、拍板项与推荐顺序**:见 [docs/PROGRESS.md](../../PROGRESS.md)「2026-10-16 开服线剩余工作调研」条目,以及交接 [handoff-launch-readiness-and-d1-20261013.md](../handoff-launch-readiness-and-d1-20261013.md) 文首 10-16 段。
+> **2026-10-18 注(原文不删)**:上面「未落码」对 1b-1 已过时 —— 1b-1 已按本规格的 1b-1 部分加核实意见与主会话 10 条修法落码(未编译、未测试),结论、偏离与验证命令以提案 [player-route-mapping-durability-proposal.md](../../design/player-route-mapping-durability-proposal.md) §11.2「第 1b-1 批」(含同日「修复评审」)为准。本文件只作交接快照,不再随实现更新;1b-2、1b-3 开工时同样先读提案,再回来看这里的调研细节。
 
 ## item
 D1 映射持久化第 1b 批规格。内容包括：对账 leader（route_reconcile 租约）、全量预热与 mapping:route:ready 就绪标记、Redis 身份变化检测与回看修补、merged_into 镜像同步、水位与回档检测（writable=0）、每 30s 增量推送、rewarm、reconcile-from-cache 反向修库，以及 route_tool 并进 data_service 主程序入口。按审阅规模拆成 1b-1（工具、入口、库原语）和 1b-2（leader）；K8s 配置载体与告警另列为 1b-3。

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 
 	"github.com/zeromicro/go-zero/core/conf"
@@ -53,7 +54,10 @@ func main() {
 		logx.Must(fmt.Errorf("parse listen address: %w", err))
 	}
 
-	n, err := node.NewNode(nodeType, host, port)
+	// 能力键与 NodeInfo 同一个注册事务、同一个租约:对账 leader 据此判断有没有不维护 gate 会话索引的旧版写者
+	// (docs/design/player-locator-gate-session-index.md §6)。注册在 s.Start() 之前完成,本进程处理任何
+	// 写 RPC 之前能力键已经存在。
+	n, err := node.NewNode(nodeType, host, port, node.WithLeaseBoundMarkers(logic.GateSessionIndexCapabilityPrefix))
 	if err != nil {
 		logx.Must(fmt.Errorf("create node: %w", err))
 	}
@@ -82,7 +86,7 @@ func main() {
 	ks := killswitch.New(killswitch.Config{Prefix: config.AppConfig.KillSwitchPrefix})
 	ks.Start(leaseCtx, n.EtcdClient())
 
-	// 这两条后台链路都用 safego.Go 而不是裸 `go`:它们各自的循环体已经在内部
+	// 这两条后台链路(租约清理在这里,会话对账在 zrpc.MustNewServer 之后)都用 safego.Go 而不是裸 `go`:它们各自的循环体已经在内部
 	// 逐轮 recover,这里的外层只是最后一道兜底 —— 万一循环体外的部分(初始化、
 	// ticker、通道收尾)panic,裸 goroutine 会把整个进程当场打死,而租约清理与
 	// 会话对账正是"进程活着但后台已停摆"最难被发现的两处。兜住之后至少留下
@@ -96,18 +100,6 @@ func main() {
 		)
 	})
 
-	// 会话对账扫描:兜住 gate 整机崩溃(断线回调不执行)导致的永久 ONLINE 会话,
-	// 恢复「所有会话终点必经租约链」的闭环。见 session_reconciler.go 顶部注释。
-	safego.Go("player_locator.session_reconciler", func() {
-		logic.StartSessionReconciler(
-			leaseCtx,
-			svcCtx,
-			config.AppConfig.Registry.Etcd.Hosts,
-			config.AppConfig.Registry.Etcd.DialTimeout,
-			config.AppConfig.Lease.ReconcileIntervalSeconds,
-		)
-	})
-
 	// Start gRPC server
 	s := zrpc.MustNewServer(config.AppConfig.RpcServerConf, func(grpcServer *grpc.Server) {
 		pb.RegisterPlayerLocatorServer(grpcServer, server.NewPlayerLocatorServer(svcCtx))
@@ -117,6 +109,22 @@ func main() {
 	})
 	s.AddUnaryInterceptors(buildUnaryInterceptors(ks)...)
 	defer s.Stop()
+
+	// 会话对账:兜住 gate 整机崩溃(断线回调不执行)导致的永久 ONLINE 会话,
+	// 恢复「所有会话终点必经租约链」的闭环。全服单 leader + 按 gate 实例建的会话索引,
+	// 见 session_reconciler.go 顶部注释。
+	//
+	// 必须排在 zrpc.MustNewServer 之后:go-zero 在那里启动 Prometheus agent,之前的指标写入一律丢弃,
+	// 对账启动时的预置 0 与 is_leader 就会落空(reconcile_metrics.go 文件头)。
+	// 复用 node 的 etcd 客户端(生命周期归 Node),不另开连接。
+	safego.Go("player_locator.session_reconciler", func() {
+		logic.StartSessionReconciler(leaseCtx, svcCtx, logic.ReconcilerParams{
+			EtcdClient:      n.EtcdClient(),
+			IntervalSeconds: config.AppConfig.Lease.ReconcileIntervalSeconds,
+			Reconcile:       config.AppConfig.Lease.Reconcile.Normalized(),
+			LeaderID:        reconcilerLeaderID(n.Info.NodeUuid),
+		})
+	})
 
 	fmt.Println("\n=============================================================")
 	fmt.Println("  PLAYER_LOCATOR SERVICE STARTED SUCCESSFULLY")
@@ -167,6 +175,16 @@ func buildUnaryInterceptors(ks *killswitch.Switch) []grpc.UnaryServerInterceptor
 		//    零值 Options 即可 —— 没有码表就不该配任何 Classifier,免得凭空判故障。
 		serverbase.UnaryInterceptor(serverbase.Options{}),
 	}
+}
+
+// reconcilerLeaderID 是会话对账选主锁值的前缀:主机名(K8s 上即 Pod 名)+ 节点 uuid,只用于排障
+// (redis-cli GET player_locator:session_reconciler:leader 一眼看出 leader 是谁)。
+func reconcilerLeaderID(nodeUUID string) string {
+	host, err := os.Hostname()
+	if err != nil || host == "" {
+		return nodeUUID
+	}
+	return host + "/" + nodeUUID
 }
 
 func splitHostPort(address string) (string, uint32, error) {

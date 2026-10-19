@@ -6,8 +6,6 @@
 #include "node/system/etcd/etcd_transport.h"
 #include "infra/agones/agones_gameserver_lifecycle.h"
 #include "handler/rpc/scene_handler.h"
-#include "rpc_replies/scene_manager_response_handler.h"
-#include "rpc_replies/player_inbox_response_handler.h"
 #include "handler/grpc/scene_node_service.h"
 #include "core/config/config.h"
 #include "world/world.h"
@@ -120,25 +118,7 @@ int main(int argc, char *argv[])
 
         node::entry::detail::InstallSignalHandlers(loop);
 
-        // SceneManager 的 gRPC 应答处理器必须由这里装。
-        //
-        // 节点间 muduo RPC0 的「按 message_id 的全局回包表」(InitReply / gRpcResponseDispatcher /
-        // 生成的 rpc_replies/register_response_handler.cpp)已整体退场:RPC0 的回包改在调用点按次的 lambda 里处理
-        // (docs/design/muduo-rpc-channel.md §9.2),Node::RegisterHandlers() 也不再调用 InitReply。
-        // gRPC 应答适配从来不在那条链上,本段照旧:那份生成文件的筛选谓词
-        // (IsSceneNodeReceivedProtocolResponseHandler)只收 cc_generic_services(muduo TCP RPC)的服务,
-        // scene_manager 在 tools/proto_generator/protogen/etc/proto_gen.yaml 里是 rpc.type: grpc,
-        // **生成器从来不会替它装 InitSceneManagerReply**。历史上手写加进那个生成文件,
-        // 下一次 regen 必然抹掉(2026-04-16 的 f1b110bcc 就是这么把它弄丢的,
-        // 自那以后 AsyncSceneManagerEnterScene/CreateSceneHandler 一直为空,
-        // 生成客户端的 if(handler) 静默跳过每一条应答)。
-        // 形状与 ConfigureGuidSegmentClients 里的 InitDataServiceReply() 一致:
-        // 手写引导代码自己装自己的 gRPC 应答处理器。
-        // 只是给两个全局 std::function 赋值,没有前置依赖,放在发出任何请求之前即可。
-        InitSceneManagerReply();
-        // 玩家持久收件箱:同理手写装 FetchItems / AckItems 的应答与失败处理器(设计 §7.11),
-        // 再做一次注册表自检并打印生效配置(GameConfig 已在 Node 构造时加载)。
-        InitPlayerInboxReply();
+        // 玩家持久收件箱:注册表自检并打印生效配置(GameConfig 已在 Node 构造时加载)。
         PlayerInboxSystem::Initialize();
 
         tlsRedisSystem.Initialize(&loop);

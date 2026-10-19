@@ -12,7 +12,7 @@
 #include "muduo/base/Logging.h"
 #include "session/manager/session_manager.h"
 #include "scene_route_helper.h"
-#include "handler/rpc/client_message_processor.h"
+#include "handler/rpc/client_session_handler.h"
 #include "gate_codec.h"
 #include "proto/scene/scene.pb.h"
 #include "proto/scene/client_player_common.pb.h"
@@ -151,7 +151,7 @@ SceneForwardResult ForwardPlayerToScene(const SessionId sessionId, const uint32_
         return SceneForwardResult::kNotConnected;
     }
 
-    LOG_DEBUG << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node_id=" << entt::to_integral(sceneNode)
+    LOG_DEBUG << "ForwardPlayerToScene: sent PlayerEnterGameNode to scene_node_id=" << nodeId
               << " player=" << playerId << " session=" << sessionId
               << " scene_id=" << sceneId << " enter_gs_type=" << enterGsType
               << " home_zone_id=" << session.homeZoneId << " owner_epoch=" << session.ownerEpoch
@@ -200,7 +200,7 @@ void GiveUpSceneEntry(const SessionId sessionId, SessionInfo &session, const Clo
     // 与"进场没成 = 3023"契约一致(login 显式拒绝、scene 转发后拒绝都用同一个码),客户端走同一条收口路径:
     // 等进场期间 IsEnterFailureTip 命中提前收口,34 的 reason 由 DescribeKickReason 判为传送失败码。
     // 三条消息走同一条 TCP、同一线程,天然有序:tip → 34 → 关写端。
-    RpcClientSessionHandler::SendTipToClient(conn, kEnterSceneFailed);
+    GateClientSessionHandler::SendTipToClient(conn, kEnterSceneFailed);
 
     GameKickPlayerRequest kickMsg;
     kickMsg.mutable_reason()->set_id(kEnterSceneFailed);
@@ -373,6 +373,32 @@ void OnLoginTypeBound(const SessionId sessionId, SessionInfo &session, const Clo
         session.pendingSceneEntry = std::move(*entry);
     }
     AttemptAndSettle(sessionId, session, now);
+}
+
+void OnClientLeaveGame(const SessionId sessionId, SessionInfo &session)
+{
+    // 先通知、后遗忘(R5):清掉指向之后,这条会话再断线也不会替它给原节点发 ExitGame 了。
+    uint32_t sceneNodeId = 0;
+    const bool hadSceneBinding = session.HasNodeEntity(SceneNodeService);
+    const bool exitSent = GateClientSessionHandler::NotifySceneExitGame(sessionId, session, sceneNodeId);
+    const uint64_t previousSceneId = session.sceneId;
+    const uint64_t previousOwnerEpoch = session.ownerEpoch;
+    const bool hadPendingEntry = session.pendingSceneEntry.has_value();
+
+    gate_scene_route::ResetSceneRoute(session);
+    tlsSessionsWithPendingEntry.erase(sessionId);
+
+    if (hadSceneBinding || previousSceneId != 0 || hadPendingEntry)
+    {
+        // 每次 LeaveGame 一条:量级等于"回选角"次数,不是逐帧路径。没绑过 scene 的(选角界面重复点)不打。
+        LOG_INFO << "[SceneEntry] client LeaveGame: scene route reset session_id=" << sessionId
+                 << " player_id=" << session.playerId
+                 << " scene_node_id=" << sceneNodeId
+                 << " scene_id=" << previousSceneId
+                 << " owner_epoch=" << previousOwnerEpoch
+                 << " exit_game_sent=" << exitSent
+                 << " pending_entry_cancelled=" << hadPendingEntry;
+    }
 }
 
 void OnSceneLinkHandshaken(const muduo::net::TcpConnectionPtr &conn, const std::string &nodeUuid,

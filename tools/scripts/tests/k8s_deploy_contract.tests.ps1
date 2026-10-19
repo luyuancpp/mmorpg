@@ -187,6 +187,32 @@ Test-Case "player-locator ConfigMap 的 LeaseTTL == go/player_locator/etc/player
     }
 }
 
+Test-Case 'player-locator 指标端口:ConfigMap Prometheus 段 0.0.0.0:9190 与 manifest 9190 metrics 端口 + prometheus 注解一致' {
+    # 背景(B0-1,2026-10-18):会话对账改为全服单 leader 后,leader 卡死 / 无 leader 只能靠 player_locator 的
+    # reconcile 指标与 deploy/k8s/player-locator-alerts.yaml 发现。以前 ConfigMap 没有 Prometheus 段(go-zero 的
+    # StartAgent 在 Host 为空时直接 return)、manifest 也没有 metrics 端口,集群里一条序列都抓不到。
+    # 三处要一起对上:ConfigMap 让进程监听,容器端口声明它,注解让 Prometheus 来抓;只有注解没有监听时抓取目标是 down。
+    $block = @(Get-ManifestBlocks -Output $devOut | Where-Object {
+        $_ -cmatch '(?m)^kind: Deployment\s*$' -and $_ -cmatch '(?m)^  name: player-locator\s*$'
+    }) | Select-Object -First 1
+    Assert-True -Condition ($null -ne $block) -Because 'DryRun 输出里应当有 player-locator 的 Deployment'
+    # 按行首锚定:manifest 的注释里也提到 9190 与 prometheus.io/port,不能让注释把断言喂饱。
+    Assert-Match -Text $block -Pattern '(?m)^[ ]+- containerPort: 9190\s+name: metrics\s*$' -Because '容器必须声明名为 metrics 的 9190 端口'
+    Assert-Match -Text $block -Pattern '(?m)^[ ]+prometheus\.io/scrape: "true"\s*$' -Because 'Pod 模板必须带抓取注解,否则指标端口开了也没人抓'
+    Assert-Match -Text $block -Pattern '(?m)^[ ]+prometheus\.io/port: "9190"\s*$' -Because '抓取端口注解必须与容器的 metrics 端口一致'
+    Assert-Match -Text $block -Pattern '(?m)^[ ]+prometheus\.io/path: "/metrics"\s*$' -Because '抓取路径注解必须是 /metrics'
+
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-player-locator-config')
+    Assert-Equal -Expected '0.0.0.0' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.player_locator.yaml.Prometheus.Host') -Because 'Host 为空 go-zero 不起 /metrics;绑 127.0.0.1(dev yaml 的值)时 Pod 外抓不到'
+    Assert-Equal -Expected '9190' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.player_locator.yaml.Prometheus.Port') -Because 'ConfigMap 的端口必须与 manifest 的 9190 一致'
+    Assert-Equal -Expected (Get-EtcValue -RelativePath 'go/player_locator/etc/player_locator.yaml' -KeyPath 'Prometheus.Port') -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.player_locator.yaml.Prometheus.Port') -Because '端口分工与 dev yaml 一致(9190 = player_locator)'
+    Assert-Equal -Expected '/metrics' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.player_locator.yaml.Prometheus.Path') -Because '路径必须与注解一致'
+    # Reconcile 各项是全服单 leader 的参数,事实源是代码默认值;ConfigMap 不得单独写值(dev yaml 一侧由 go/player_locator/internal/config/config_test.go 守住)。
+    foreach ($key in @('Lease.ReconcileIntervalSeconds', 'Lease.Reconcile.AuditIntervalSeconds', 'Lease.Reconcile.ScanCount', 'Lease.Reconcile.ScanPagesPerSecond', 'Lease.Reconcile.MaxTransitionsPerSecond', 'Lease.Reconcile.DeadGateMembersPerRound')) {
+        Assert-True -Condition (-not $flat.Scalars.Contains("data.player_locator.yaml.$key")) -Because "$key 不得写进 ConfigMap:全服必须一致,事实源是代码默认值"
+    }
+}
+
 Test-Case "zone 内 go-svc Deployment 统一注入控制面命令 topic 契约,值 == bin/etc/base_deploy_config.yaml" {
     # 背景:go/shared/kafkacmd 不配 KAFKA_COMMAND_TOPIC_* 就回落到 256 / 1,而 C++ gate / scene 与 kafka-topic-init
     # 用的是 base_deploy_config.yaml 的代号(当前 2)。两边不一致时 login 的会话绑定、顶号踢人、scene-manager 的换场景
@@ -819,7 +845,7 @@ Test-Case "「C++ 不调用」表名副其实:表里的方法 C++ 既不直接�
     Assert-True -Condition ($handWritten.Count -gt 100) -Because "手写 C++ 源文件应当有几百个,实际只找到 $($handWritten.Count) 个(搜索范围写错了?)"
 
     # gate 直连模式不写任何符号:它拿客户端消息号查 gRpcMethodRegistry 再调 .sender 转发
-    # (cpp/nodes/gate/handler/rpc/client_message_processor.cpp)。哪些消息号算客户端消息,由生成的 IsClientMessageId 决定。
+    # (cpp/nodes/gate/handler/rpc/client_session_handler.cpp)。哪些消息号算客户端消息,由生成的 IsClientMessageId 决定。
     $registryText = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'cpp/generated/rpc/service_metadata/rpc_event_registry.cpp') -Raw
     $clientIdsFunction = [regex]::Match($registryText, '(?s)bool\s+IsClientMessageId\s*\([^)]*\)\s*\{(?<body>.*?)\r?\n\}')
     Assert-True -Condition $clientIdsFunction.Success -Because 'rpc_event_registry.cpp 里应当有 IsClientMessageId(生成器改了形状的话,本用例的「gate 会转发」判据要跟着改)'
@@ -832,11 +858,11 @@ Test-Case "「C++ 不调用」表名副其实:表里的方法 C++ 既不直接�
         if (-not $parts.Success) { throw "全方法名不是 /包.服务/方法 的形状: $FullMethod" }
         return $parts.Groups['service'].Value + $parts.Groups['method'].Value
     }
-    # 直接调用:生成客户端的符号 Send<服务><方法> / Async<服务><方法>[Handler|FailedHandler|GrpcClient],或它的消息号常量。
+    # 直接调用:生成客户端的符号 Send<服务><方法> / Send<服务><方法>Erased,或它的消息号常量。
     $findDirectUses = {
         param([string]$FullMethod)
         $name = & $namesOf $FullMethod
-        $symbol = '\b(?:(?:Send|Async)' + $name + '(?:Handler|FailedHandler|GrpcClient)?|' + $name + 'MessageId)\b'
+        $symbol = '\b(?:Send' + $name + '(?:Erased)?|' + $name + 'MessageId)\b'
         return @($handWritten | Select-String -Pattern $symbol -CaseSensitive | ForEach-Object { "{0}:{1}" -f ($_.Path -replace '\\', '/'), $_.LineNumber })
     }
     $isForwardedByGate = { param([string]$FullMethod) return ($clientMessageIds -ccontains ((& $namesOf $FullMethod) + 'MessageId')) }
@@ -2310,6 +2336,273 @@ Test-Case '负向:收件箱消费开关只认显式写出的小写 true / false;
     }
     finally {
         Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# 门禁的线上交叉核对与来源核对(交接 §6 H1 复核):zone 与 infra 分开部署、可以来自不同 commit,只比当前检出的两份 yaml 拦不住
+# 「检出旧 commit 重跑 zone-up」与「同一提交里先跑 infra-up」。下面两条把 -LiveFacts / -SourceState 直接交给门禁,不依赖真集群与 git。
+$inboxGateNonEmptyLine = 'EnqueueTypes: [PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN, PLAYER_INBOX_MSG_GM_UNBLOCK_CURRENCY_GAIN]'
+
+Test-Case '玩家收件箱写前门禁:线上交叉核对 —— 本次渲染 false 而 infra 线上白名单非空、或本次渲染非空白名单而有 zone 线上没开消费,都在写操作之前拒绝(两份 yaml 本身不矛盾)' {
+    # 场景一:开消费之后检出旧 commit 重跑 zone-up。那个 commit 里 consumer_enabled=false、EnqueueTypes=[],静态层放行;infra 线上白名单仍非空。
+    $root = New-PlayerInboxGateFixture -ConsumerLine 'consumer_enabled: false' -EnqueueLine 'EnqueueTypes: []'
+    try {
+        $RepoRoot = $root
+        $live = [pscustomobject]@{
+            Note = 'infra_enqueue_types=1'; InfraSource = 'namespace contract-infra 的 ConfigMap go-svc-player-inbox-config'
+            InfraEnqueueTypes = [string[]]@('PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN'); ZoneConsumers = $null
+        }
+        $message = ''
+        try { Assert-PlayerInboxConsumerGate -LiveFacts $live 6>&1 3>&1 | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '^拒绝部署:本次把 consumer_enabled=false 渲染进 node-config,而线上 namespace contract-infra 的 ConfigMap go-svc-player-inbox-config 的 PlayerInbox\.EnqueueTypes 非空\(PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN\)' -Because '两份 yaml 不矛盾也要拒绝:另一侧线上已经开了入箱'
+        Assert-Match -Text $message -Pattern '用当前 HEAD 的脚本配旧 -NodeImage,或 kubectl rollout undo' -Because '拒绝时写明开消费之后该怎么回滚 zone'
+        Assert-Match -Text $message -Pattern 'k8s_zone_rollback\.ps1\)没有这个开关' -Because '包装入口没有豁免开关,拒绝文案必须写明'
+        Assert-Match -Text $message -Pattern 'EnqueueTypes 改回 \[\] 并提交、重跑 infra-up\(正常关消费的顺序\),门禁随之放行' -Because '给出包装入口可执行的恢复路径'
+
+        $printed = [string](Assert-PlayerInboxConsumerGate -LiveFacts $live -AllowConsumerOff $true 6>&1 3>&1 | Out-String -Width 4096)
+        Assert-Match -Text $printed -Pattern 'AllowPlayerInboxConsumerOff 放行了「消费端关、入箱开」' -Because '豁免同样覆盖线上这一层,放行时留下警告'
+
+        $live.InfraEnqueueTypes = [string[]]@()
+        $live.Note = 'infra_enqueue_types=0'
+        $printed = [string](Assert-PlayerInboxConsumerGate -LiveFacts $live 6>&1 3>&1 | Out-String -Width 4096)
+        Assert-Match -Text $printed -Pattern 'live=infra_enqueue_types=0 OK' -Because 'infra 线上白名单已清空(正常关消费的顺序)时放行,门禁行写明线上核对结果'
+    }
+    finally {
+        Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    # 场景二:开消费与填白名单在同一次提交里,先跑了 infra-up(或 all-up)。静态层放行;有 zone 线上还没开。
+    $root = New-PlayerInboxGateFixture -ConsumerLine 'consumer_enabled: true' -EnqueueLine $inboxGateNonEmptyLine
+    try {
+        $RepoRoot = $root
+        $live = [pscustomobject]@{
+            Note = 'zones_consumer_enabled=1/3'; InfraSource = ''; InfraEnqueueTypes = $null
+            ZoneConsumers = @(
+                [pscustomobject]@{ Namespace = 'mmorpg-zone-a'; Value = 'true' }
+                [pscustomobject]@{ Namespace = 'mmorpg-zone-b'; Value = 'false' }
+                [pscustomobject]@{ Namespace = 'mmorpg-zone-c'; Value = '' }
+            )
+        }
+        $message = ''
+        try { Assert-PlayerInboxConsumerGate -LiveFacts $live 6>&1 3>&1 | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '^拒绝部署:本次把非空的 PlayerInbox\.EnqueueTypes\(PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN, PLAYER_INBOX_MSG_GM_UNBLOCK_CURRENCY_GAIN\)渲染进 player-inbox 的 ConfigMap' -Because '有 zone 线上没开消费时,不能先部署白名单'
+        Assert-Match -Text $message -Pattern ':mmorpg-zone-b=false, mmorpg-zone-c=absent。' -Because '点名每个没开消费的 zone,缺键记 absent(C++ 缺键取 false)'
+        Assert-NotMatch -Text $message -Pattern 'mmorpg-zone-a=' -Because '已开消费的 zone 不点名'
+        Assert-Match -Text $message -Pattern 'all-up -SkipInfra' -Because 'all-up 先部署白名单、后部署 zone,拒绝文案写明不能一步完成'
+
+        $live.ZoneConsumers = @([pscustomobject]@{ Namespace = 'mmorpg-zone-a'; Value = 'true' })
+        $live.Note = 'zones_consumer_enabled=1/1'
+        $printed = [string](Assert-PlayerInboxConsumerGate -LiveFacts $live 6>&1 3>&1 | Out-String -Width 4096)
+        Assert-Match -Text $printed -Pattern 'live=zones_consumer_enabled=1/1 OK' -Because '全部 zone 线上都开了消费时放行'
+
+        $live.ZoneConsumers = @()
+        $live.Note = 'zones_consumer_enabled=0/0'
+        $printed = [string](Assert-PlayerInboxConsumerGate -LiveFacts $live 6>&1 3>&1 | Out-String -Width 4096)
+        Assert-Match -Text $printed -Pattern 'live=zones_consumer_enabled=0/0 OK' -Because '还没有任何 zone(新集群)时放行:之后的 zone-up 渲染 yaml 里的 true'
+    }
+    finally {
+        Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    # 场景三:关消费的第一步(白名单改回 [])。本次不渲染非空白名单,zone 线上关着也不拒绝。
+    $root = New-PlayerInboxGateFixture -ConsumerLine 'consumer_enabled: true' -EnqueueLine 'EnqueueTypes: []'
+    try {
+        $RepoRoot = $root
+        $live = [pscustomobject]@{
+            Note = 'not-needed'; InfraSource = ''; InfraEnqueueTypes = $null
+            ZoneConsumers = @([pscustomobject]@{ Namespace = 'mmorpg-zone-b'; Value = 'false' })
+        }
+        $printed = [string](Assert-PlayerInboxConsumerGate -LiveFacts $live 6>&1 3>&1 | Out-String -Width 4096)
+        Assert-Match -Text $printed -Pattern 'enqueue_types=0 [^\r\n]* OK' -Because '白名单为空时,zone 线上开没开都不影响放行'
+    }
+    finally {
+        Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Case '玩家收件箱写前门禁:两份 yaml 带未提交改动时,staging / prod 真部署拒绝、其余只告警;门禁行写明 HEAD 与工作区状态;-AllowPlayerInboxConsumerOff 不豁免这一条' {
+    $root = New-PlayerInboxGateFixture -ConsumerLine 'consumer_enabled: true' -EnqueueLine 'EnqueueTypes: []'
+    try {
+        $RepoRoot = $root
+        $dirty = [pscustomobject]@{ Ok = $true; Head = '0123456789ab'; DirtyFiles = [string[]]@('bin/etc/game_config.yaml'); Reason = '' }
+        $message = ''
+        try { Assert-PlayerInboxConsumerGate -SourceState $dirty -RequireCommittedSources $true -AllowConsumerOff $true 6>&1 3>&1 | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '^拒绝部署:bin/etc/game_config\.yaml 相对 HEAD 0123456789ab 有未提交改动' -Because '本机联调改了 consumer_enabled 却没提交,staging / prod 的真部署必须拒绝,豁免开关也不放行'
+        Assert-Match -Text $message -Pattern '先提交或还原这两份文件再部署' -Because '拒绝文案给出出路'
+
+        $printed = [string](Assert-PlayerInboxConsumerGate -SourceState $dirty 6>&1 3>&1 | Out-String -Width 4096)
+        Assert-Match -Text $printed -Pattern '本次按工作区的值渲染' -Because 'dev 档与 DryRun 只告警'
+        Assert-Match -Text $printed -Pattern 'head=0123456789ab worktree=dirty live=not-read OK' -Because '门禁行写明 HEAD 与工作区状态'
+
+        $unknown = [pscustomobject]@{ Ok = $false; Head = ''; DirtyFiles = [string[]]@(); Reason = 'git 不在 PATH 里' }
+        $message = ''
+        try { Assert-PlayerInboxConsumerGate -SourceState $unknown -RequireCommittedSources $true 6>&1 3>&1 | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '^拒绝部署:判不出 bin/etc/game_config\.yaml / go/player_inbox/etc/player_inbox\.yaml 是否已提交\(git 不在 PATH 里\)' -Because '判不出来源时 staging / prod fail-closed'
+
+        $clean = [pscustomobject]@{ Ok = $true; Head = '0123456789ab'; DirtyFiles = [string[]]@(); Reason = '' }
+        $printed = [string](Assert-PlayerInboxConsumerGate -SourceState $clean -RequireCommittedSources $true 6>&1 3>&1 | Out-String -Width 4096)
+        Assert-Match -Text $printed -Pattern 'head=0123456789ab worktree=clean live=not-read OK' -Because '两份 yaml 都已提交时放行'
+
+        $message = ''
+        try { Assert-PlayerInboxConsumerGate -RequireCommittedSources $true 6>&1 3>&1 | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '^内部错误' -Because '要求核对来源却没给 -SourceState,不能静默放行'
+    }
+    finally {
+        Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    # Get-PlayerInboxGateSourceState 对仓库本身(只读 git):两份文件都被跟踪,HEAD 是 12 位短 sha;脏文件只可能是这两份之一。
+    $RepoRoot = Get-RepoRoot
+    $state = Get-PlayerInboxGateSourceState
+    Assert-True -Condition ([bool]$state.Ok) -Because "仓库里两份 yaml 必须被 git 跟踪(Reason: $($state.Reason))"
+    Assert-Match -Text $state.Head -Pattern '^[0-9a-f]{12,40}$' -Because 'Head 是至少 12 位的小写短 sha(--short=12 遇到前缀冲突会变长)'
+    foreach ($file in @($state.DirtyFiles)) {
+        Assert-True -Condition ($file -in @('bin/etc/game_config.yaml', 'go/player_inbox/etc/player_inbox.yaml')) -Because "DirtyFiles 只列这两份文件(实际 '$file')"
+    }
+}
+
+# Read-PlayerInboxGateLiveFacts:在临时夹具上按给定命令 / 开关调用,读集群出口换成本函数作用域里的假 kubectl(按规则表第一条命中回应,
+# 没命中即 throw —— DryRun 或「不需要读」时任何一次集群读都会让用例变红)。返回 { Facts; Calls; Error }。
+function Invoke-PlayerInboxLiveFactsCase {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][string]$Command,
+        [bool]$DryRun = $false,
+        [bool]$SkipInfra = $false,
+        [AllowEmptyString()][string]$GoSvcRegistry = 'registry.invalid/contract',
+        [object[]]$Rules = @()
+    )
+    # 被测函数按动态作用域读这些脚本级参数(同名参数在 k8s_deploy.ps1 里的含义)。
+    $RepoRoot = $Root
+    $SkipGoSvc = $false
+    $InfraNamespace = 'contract-infra'
+    $NamespacePrefix = 'mmorpg-zone'
+    $KubeContext = 'contract-inbox-ctx'
+    $KubeConfig = ''
+    $GoSvcCatalogue = @{ 'player-inbox' = @{ ConfigMap = 'go-svc-player-inbox-config'; ConfigFile = 'player_inbox.yaml' } }
+    $calls = [System.Collections.Generic.List[string]]::new()
+    function Invoke-ClientEntryKubectl {
+        param(
+            [Parameter(Mandatory = $true)][string[]]$KubectlArgs,
+            [Parameter(Mandatory = $true)][AllowEmptyString()][string]$KubeContext,
+            [Parameter(Mandatory = $true)][AllowEmptyString()][string]$KubeConfig,
+            [switch]$AllowFailure,
+            [switch]$CaptureOutput
+        )
+        $line = $KubectlArgs -join ' '
+        $calls.Add($line)
+        foreach ($rule in $Rules) {
+            if ($line -match $rule.Pattern) {
+                return [pscustomobject]@{ ExitCode = [int]$rule.ExitCode; Stdout = [string]$rule.Stdout; Stderr = [string]$rule.Stderr }
+            }
+        }
+        throw "假 kubectl:没有规则命中这次调用(本不该读集群?):kubectl $line"
+    }
+    $facts = $null
+    $message = ''
+    try { $facts = Read-PlayerInboxGateLiveFacts } catch { $message = $_.Exception.Message }
+    return [pscustomobject]@{ Facts = $facts; Calls = @($calls); Error = $message }
+}
+
+Test-Case '玩家收件箱写前门禁:Read-PlayerInboxGateLiveFacts 按本次渲染哪一侧只读另一侧(DryRun 与不需要时不读集群;读不到 fail-closed;只认 -NamespacePrefix 下的 zone)' {
+    $infraPattern = '^get configmap go-svc-player-inbox-config -n contract-infra --ignore-not-found -o json$'
+    $zonesPattern = '^get configmap --all-namespaces --field-selector metadata\.name=node-config -o json$'
+    $infraJson = @{
+        apiVersion = 'v1'; kind = 'ConfigMap'; metadata = @{ name = 'go-svc-player-inbox-config'; namespace = 'contract-infra' }
+        data = @{ 'player_inbox.yaml' = "Name: player_inbox`nPlayerInbox:`n  AdminTokenEnv: PLAYER_INBOX_ADMIN_TOKEN`n  EnqueueTypes:`n    - PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN`n" }
+    } | ConvertTo-Json -Depth 6
+    $zonesJson = @{
+        items = @(
+            @{ metadata = @{ name = 'node-config'; namespace = 'mmorpg-zone-a' }; data = @{ 'game_config.yaml' = "ZoneId: 1`nplayer_inbox:`n  consumer_enabled: true`n  periodic_fetch_minutes: 30`n" } }
+            @{ metadata = @{ name = 'node-config'; namespace = 'mmorpg-zone-b' }; data = @{ 'game_config.yaml' = "ZoneId: 2`n" } }
+            @{ metadata = @{ name = 'node-config'; namespace = 'other-app' }; data = @{ 'settings.yaml' = 'x: 1' } }
+        )
+    } | ConvertTo-Json -Depth 8
+    $brokenZonesJson = @{
+        items = @(@{ metadata = @{ name = 'node-config'; namespace = 'mmorpg-zone-a' }; data = @{ 'base_deploy_config.yaml' = 'x: 1' } })
+    } | ConvertTo-Json -Depth 8
+
+    $offRoot = New-PlayerInboxGateFixture -ConsumerLine 'consumer_enabled: false' -EnqueueLine 'EnqueueTypes: []'
+    $onRoot = New-PlayerInboxGateFixture -ConsumerLine 'consumer_enabled: true' -EnqueueLine $inboxGateNonEmptyLine
+    try {
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $offRoot -Command 'zone-up' -DryRun $true
+        Assert-Equal -Expected '' -Actual $r.Error -Because 'DryRun 不应失败'
+        Assert-Equal -Expected 0 -Actual $r.Calls.Count -Because 'DryRun 不读集群'
+        Assert-Equal -Expected 'skipped(dry-run)' -Actual $r.Facts.Note -Because 'DryRun 写明跳过了线上核对'
+        Assert-True -Condition ($null -eq $r.Facts.InfraEnqueueTypes -and $null -eq $r.Facts.ZoneConsumers) -Because 'DryRun 两侧都没读'
+
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $offRoot -Command 'zone-up' -Rules @(@{ Pattern = $infraPattern; ExitCode = 0; Stdout = $infraJson })
+        Assert-Equal -Expected '' -Actual $r.Error -Because 'zone-up 渲染 false 时读 infra 线上的白名单'
+        Assert-Equal -Expected 1 -Actual $r.Calls.Count -Because '只读 infra 那一份 ConfigMap'
+        Assert-Equal -Expected 'PLAYER_INBOX_MSG_GM_BLOCK_CURRENCY_GAIN' -Actual (@($r.Facts.InfraEnqueueTypes) -join ',') -Because '线上白名单按块式列表解析'
+        Assert-Equal -Expected 'infra_enqueue_types=1' -Actual $r.Facts.Note -Because 'Note 写明线上白名单项数'
+
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $offRoot -Command 'zone-up' -Rules @(@{ Pattern = $infraPattern; ExitCode = 0; Stdout = '' })
+        Assert-True -Condition ($null -ne $r.Facts.InfraEnqueueTypes -and @($r.Facts.InfraEnqueueTypes).Count -eq 0) -Because 'ConfigMap 不存在(收件箱没部署)按空白名单算,但要记成「读过」'
+
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $offRoot -Command 'zone-up' -Rules @(@{ Pattern = $infraPattern; ExitCode = 1; Stdout = ''; Stderr = 'connection refused' })
+        Assert-Match -Text $r.Error -Pattern '读取线上 namespace contract-infra 的 ConfigMap go-svc-player-inbox-config 失败\(kubectl 退出码 1\)' -Because '读不到不等于入箱关着:fail-closed'
+
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $offRoot -Command 'all-up'
+        Assert-Equal -Expected 0 -Actual $r.Calls.Count -Because 'all-up 先部署全局 Go 服务时不读 infra:Apply-Infra 先写 yaml 的白名单,zone 才滚动'
+        Assert-Equal -Expected 'not-needed' -Actual $r.Facts.Note -Because 'all-up 带全局 Go 服务、白名单为空时两侧都不用读'
+
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $offRoot -Command 'all-up' -SkipInfra $true -Rules @(@{ Pattern = $infraPattern; ExitCode = 0; Stdout = $infraJson })
+        Assert-Equal -Expected 1 -Actual $r.Calls.Count -Because 'all-up -SkipInfra 不重写白名单,要读 infra 线上的值'
+
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $onRoot -Command 'zone-up'
+        Assert-Equal -Expected 0 -Actual $r.Calls.Count -Because 'zone-up 渲染 true 时不用读集群'
+
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $onRoot -Command 'infra-up' -Rules @(@{ Pattern = $zonesPattern; ExitCode = 0; Stdout = $zonesJson })
+        Assert-Equal -Expected '' -Actual $r.Error -Because 'infra-up 渲染非空白名单时读各 zone 线上的 node-config'
+        Assert-Equal -Expected 'mmorpg-zone-a=true,mmorpg-zone-b=' -Actual ((@($r.Facts.ZoneConsumers) | ForEach-Object { "$($_.Namespace)=$($_.Value)" }) -join ',') -Because '只认 -NamespacePrefix 下的 namespace;缺键记空串'
+        Assert-Equal -Expected 'zones_consumer_enabled=1/2' -Actual $r.Facts.Note -Because 'Note 写明开着的 zone 数'
+        $RepoRoot = $onRoot
+        $message = ''
+        try { Assert-PlayerInboxConsumerGate -LiveFacts $r.Facts 6>&1 3>&1 | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern 'mmorpg-zone-b=absent' -Because '读到的事实交给门禁后,缺键的 zone 被拒绝并点名'
+
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $onRoot -Command 'infra-up' -GoSvcRegistry ''
+        Assert-Equal -Expected 0 -Actual $r.Calls.Count -Because '没给 -GoSvcRegistry 就不部署白名单,不用读 zone'
+
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $onRoot -Command 'infra-up' -Rules @(@{ Pattern = $zonesPattern; ExitCode = 0; Stdout = $brokenZonesJson })
+        Assert-Match -Text $r.Error -Pattern 'mmorpg-zone-a 的 ConfigMap node-config 没有 data\.game_config\.yaml' -Because 'zone 的 node-config 形状不对时 fail-closed'
+
+        $r = Invoke-PlayerInboxLiveFactsCase -Root $onRoot -Command 'infra-up' -Rules @(@{ Pattern = $zonesPattern; ExitCode = 1; Stdout = ''; Stderr = 'forbidden' })
+        Assert-Match -Text $r.Error -Pattern '读取各 zone 线上的 ConfigMap node-config 失败\(kubectl 退出码 1\)' -Because '列不出各 zone(例如没有跨 namespace 的读权限)时 fail-closed'
+    }
+    finally {
+        Remove-Item -LiteralPath $offRoot -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $onRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Case 'LogQL 契约:player-inbox-alerts.yaml 的 scene 侧固定查询只用 C++ 日志 sidecar 真会打的流标签,统一写 {job="cpp_nodes", service="scene"}' {
+    # C++ 业务日志只落文件,由 sidecar(Get-CppLogSidecarConfigAlloy)读文件送 Loki;流标签只有 external_labels、stage.labels、
+    # stage.static_labels 三处给出的那些。用了别的标签(以前是 app=~"scene.*")的选择器匹配不到任何流,查询恒为空,值班会误判「没有问题」。
+    # 只核对收件箱的告警文件;asset-channel-alerts.yaml / data-service-audit-alerts.yaml 有同样的 {app=...} 写法,改好之后加进来。
+    $sidecar = Select-ManifestByName -Output $devOut -Name 'cpp-log-sidecar'
+    Assert-True -Condition (-not [string]::IsNullOrWhiteSpace($sidecar)) -Because '前提:zone-up DryRun 输出里有 sidecar 的 Alloy 配置'
+    $labels = New-Object System.Collections.Generic.HashSet[string]
+    $blocks = @([regex]::Matches($sidecar, '(?s)external_labels\s*=\s*\{(?<b>[^}]*)\}')) +
+        @([regex]::Matches($sidecar, '(?s)stage\.(?:static_)?labels\s*\{\s*values\s*=\s*\{(?<b>[^}]*)\}'))
+    foreach ($block in $blocks) {
+        foreach ($m in [regex]::Matches($block.Groups['b'].Value, '(?<k>[A-Za-z_][A-Za-z0-9_]*)\s*=')) { [void]$labels.Add($m.Groups['k'].Value) }
+    }
+    foreach ($expected in @('job', 'service', 'zone', 'level')) {
+        Assert-True -Condition ($labels.Contains($expected)) -Because "前提:sidecar 的流标签里有 ${expected}(实际:$(@($labels) -join ', '))"
+    }
+    Assert-True -Condition (-not $labels.Contains('app')) -Because 'sidecar 不打 app 标签;以后真加了它,本用例的前提就要重看'
+
+    $alerts = Get-Content -LiteralPath (Join-Path (Get-RepoRoot) 'deploy/k8s/player-inbox-alerts.yaml') -Raw
+    $selectors = @([regex]::Matches($alerts, 'count_over_time\(\s*\{(?<sel>[^{}]*)\}'))
+    Assert-True -Condition ($selectors.Count -ge 9) -Because "告警文件头的 scene 侧固定查询至少 9 条(实际 $($selectors.Count));少了说明写法变了、本用例抽不到"
+    foreach ($selector in $selectors) {
+        $text = $selector.Groups['sel'].Value
+        foreach ($m in [regex]::Matches($text, '(?<k>[A-Za-z_][A-Za-z0-9_]*)\s*(?:=~|!~|!=|=)')) {
+            Assert-True -Condition ($labels.Contains($m.Groups['k'].Value)) -Because "LogQL 选择器 {$text} 用了 sidecar 不打的标签 $($m.Groups['k'].Value)(sidecar 只有:$(@($labels) -join ', '))"
+        }
+        Assert-Match -Text $text -Pattern '^job="cpp_nodes", service="scene"' -Because "scene 侧选择器统一以 job=`"cpp_nodes`", service=`"scene`" 开头(实际 {$text})"
     }
 }
 
@@ -3961,6 +4254,270 @@ Test-Case 'Java 服务缺 manifest(目录里的 auth)时连 ConfigMap 也不 app
         Assert-NotMatch -Text $case.Output -Pattern 'java-svc-auth-config' -Because "$($case.Label):没有 Deployment 消费的孤儿 ConfigMap 不该 apply(与 Apply-OneGoSvc 同口径)"
     }
 }
+
+# ─────────────────────────────────────────────────────────────────
+# login 第三方登录(微信 / QQ):AuthProviders 渲染与微信 AppSecret 注入
+# ─────────────────────────────────────────────────────────────────
+# 链路:-LoginWeChatAppId → login ConfigMap 的 AuthProviders.WeChat(AppId + AppSecretEnv: LOGIN_WECHAT_APP_SECRET);环境变量
+# MMORPG_LOGIN_WECHAT_APP_SECRET → zone namespace 的 Secret login-oauth(key wechat-app-secret)→ login 容器 env LOGIN_WECHAT_APP_SECRET
+# (secretKeyRef)+ Pod 模板指纹注解 mmorpg.io/login-oauth-secret-hash。-LoginQQAppId 只写 AuthProviders.QQ.AppId,不建 Secret。
+# Go 侧契约见 go/login/internal/config/config.go WeChatAuthConf / QQAuthConf 与 auth_providers.go(不展开 ${VAR}、生产只认 AppSecretEnv、
+# Endpoint 生产只认 https)。实现在 k8s_deploy.ps1 的 Get-LoginAuthProviderParamErrors / New-LoginAuthProvidersYaml / Assert-LoginAuthProviderParams /
+# Resolve-LoginWeChatAppSecret / Apply-OneGoSvc。纯函数按 AST 抽出来直接调(与上文 New-LoginQueueYaml 同一做法);
+# Get-InjectedSecretFingerprint 一并抽出,用来核对注解值就是 login-oauth 这把密钥的指纹。
+# 端到端另起 4 个 DryRun 子进程,都带 -SkipJavaSvc(本节只看 login);基线不配第三方登录的断言复用 $devOut。
+$LoginAuthFunctionNames = @('Get-LoginAuthProviderParamErrors', 'New-LoginAuthProvidersYaml', 'Resolve-LoginWeChatAppSecret', 'Get-InjectedSecretFingerprint')
+foreach ($loginAuthFnAst in $deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
+    if ($LoginAuthFunctionNames -contains $loginAuthFnAst.Name) {
+        Set-Item -Path "Function:script:$($loginAuthFnAst.Name)" -Value $loginAuthFnAst.Body.GetScriptBlock()
+    }
+}
+foreach ($loginAuthFnName in $LoginAuthFunctionNames) {
+    if (-not (Test-Path "Function:$loginAuthFnName")) { throw "k8s_deploy.ps1 缺少函数 $loginAuthFnName(第三方登录的渲染 / 校验 / 密钥解析被删了?后续断言无意义)" }
+}
+
+$LoginWeChatTestAppId = 'wx0123456789abcdef'
+$LoginQQTestAppId = '101234567'
+# ≥16 位、非占位、不含首尾空白与 ${,与 $ProdEnv 里的各密钥都不同;用来断言它不出现在任何输出里。
+$LoginWeChatTestSecret = 'contract-wechat-app-secret-0123456789ab'
+$LoginWeChatSandbox = 'http://login-oauth-mock.contract:18090'
+$LoginAuthStagingImage = 'ghcr.io/luyuancpp/mmorpg-node:0123456789ab'
+$LoginAuthDevArgs = $BaseArgs + @('-SkipJavaSvc')
+# dev:微信(含 AllowOpenId 与沙箱 http Endpoint)+ QQ。
+$loginAuthDevRun = Invoke-DeployDryRun -Arguments ($LoginAuthDevArgs + @(
+        '-LoginWeChatAppId', $LoginWeChatTestAppId, '-LoginWeChatEndpoint', $LoginWeChatSandbox, '-LoginWeChatAllowOpenId',
+        '-LoginQQAppId', $LoginQQTestAppId)) -Env @{ MMORPG_LOGIN_WECHAT_APP_SECRET = $LoginWeChatTestSecret }
+# dev:只配 QQ。微信密钥变量照样给值,证明不配微信时它既不被读进 Secret、也不出现在输出里。
+$loginAuthQQOnlyRun = Invoke-DeployDryRun -Arguments ($LoginAuthDevArgs + @('-LoginQQAppId', $LoginQQTestAppId)) -Env @{ MMORPG_LOGIN_WECHAT_APP_SECRET = $LoginWeChatTestSecret }
+# 负向:dev 档给了微信 AppId 却没设密钥(dev 也没有回落值)。
+$loginAuthNoSecretRun = Invoke-DeployDryRun -Arguments ($LoginAuthDevArgs + @('-LoginWeChatAppId', $LoginWeChatTestAppId)) -Env @{ MMORPG_LOGIN_WECHAT_APP_SECRET = '' }
+# 负向:staging 档给了 http Endpoint。密钥都给齐,拒绝只能来自参数门禁。
+$loginAuthStagingEnv = @{} + $ProdEnv
+$loginAuthStagingEnv['MMORPG_LOGIN_WECHAT_APP_SECRET'] = $LoginWeChatTestSecret
+$loginAuthStagingHttpRun = Invoke-DeployDryRun -Arguments ($LoginAuthDevArgs + @(
+        '-ReleaseProfile', 'staging', '-SkipPreflight', '-NodeImage', $LoginAuthStagingImage,
+        '-LoginWeChatAppId', $LoginWeChatTestAppId, '-LoginWeChatEndpoint', $LoginWeChatSandbox)) -Env $loginAuthStagingEnv
+
+# 按 kind + metadata.name 取 login 的 manifest 块(login.yaml 是 Service + Deployment 的多文档,整份是一个块)。找不到 / 多于一份即 throw。
+function Select-LoginDeploymentBlock {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Output,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+    $found = @(Get-ManifestBlocks -Output $Output | Where-Object { $_ -cmatch '(?m)^kind: Deployment[ ]*$' -and $_ -cmatch '(?m)^  name: login[ ]*$' })
+    if ($found.Count -ne 1) { throw "${Label}:DryRun 输出里 login Deployment 的 manifest 应恰好 1 份,实际 $($found.Count) 份" }
+    return $found[0]
+}
+
+Test-Case 'login 第三方登录不配(基线):ConfigMap 没有 AuthProviders 段,Deployment 不引用 login-oauth、没有指纹注解,残留的 login-oauth Secret 照删' {
+    $loginFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name 'go-svc-login-config')
+    $authKeys = @(Get-FlatSubtreeKeys -Flat $loginFlat -Path 'data.login.yaml.AuthProviders')
+    Assert-True -Condition ($authKeys.Count -eq 0) -Because "两个 AppId 都不给 = 不写 AuthProviders,产物与接入前逐字相同(实际出现:$($authKeys -join ', '))"
+    Assert-NotMatch -Text $devOut -Pattern 'LOGIN_WECHAT_APP_SECRET|login-oauth-secret-hash|# Secret login-oauth ' -Because '不配微信:不注入 env、不带指纹注解、不建 Secret'
+    Assert-Match -Text $devOut -Pattern '(?m)^\[dry-run\] kubectl delete secret login-oauth -n \S+ --ignore-not-found\s*$' -Because '不粘滞:上次开过微信登录、这次没给,要删掉残留 Secret'
+    Assert-Match -Text $devOut -Pattern 'login_wechat=False login_qq=False' -Because '写路径入口的摘要行要写明两个 provider 都没开(只展示是否启用)'
+}
+
+Test-Case '纯函数 New-LoginAuthProvidersYaml:都不配返回空串;只配微信只写 AppId + AppSecretEnv(不写 AppSecret / RequireUnionId / Endpoint);AllowOpenId 写 RequireUnionId: false;QQ 只写 AppId,没有任何密钥键' {
+    foreach ($profileName in @('dev', 'staging', 'prod')) {
+        Assert-Equal -Expected '' -Actual (New-LoginAuthProvidersYaml -ReleaseProfile $profileName -WeChatAppSecretEnv 'LOGIN_WECHAT_APP_SECRET') -Because "$profileName 档两个 AppId 都为空必须返回空串(login 模板不写 AuthProviders)"
+    }
+
+    $wechatOnly = ConvertFrom-YamlToFlatMap -Text (New-LoginAuthProvidersYaml -WeChatAppId $LoginWeChatTestAppId -ReleaseProfile 'prod' -WeChatAppSecretEnv 'LOGIN_WECHAT_APP_SECRET')
+    Assert-Equal -Expected 'AuthProviders,AuthProviders.WeChat,AuthProviders.WeChat.AppId,AuthProviders.WeChat.AppSecretEnv' `
+        -Actual ((Get-FlatSubtreeKeys -Flat $wechatOnly -Path 'AuthProviders') -join ',') -Because '只配微信:只写 AppId 与 AppSecretEnv;从不写内联 AppSecret(生产拒启),RequireUnionId / Endpoint 不写 = login 缺省值'
+    Assert-True -Condition ($wechatOnly.Scalars['AuthProviders.WeChat.AppId'] -ceq $LoginWeChatTestAppId) -Because 'AppId 原样写出'
+    Assert-True -Condition ($wechatOnly.Scalars['AuthProviders.WeChat.AppSecretEnv'] -ceq 'LOGIN_WECHAT_APP_SECRET') -Because 'AppSecretEnv 写的是容器环境变量名,不是密钥'
+
+    $openId = ConvertFrom-YamlToFlatMap -Text (New-LoginAuthProvidersYaml -WeChatAppId $LoginWeChatTestAppId -WeChatAllowOpenId $true `
+            -QQAppId $LoginQQTestAppId -QQAllowOpenId $true -ReleaseProfile 'staging' -WeChatAppSecretEnv 'LOGIN_WECHAT_APP_SECRET')
+    Assert-Equal -Expected 'false' -Actual $openId.Scalars['AuthProviders.WeChat.RequireUnionId'] -Because '-LoginWeChatAllowOpenId 写 RequireUnionId: false'
+    Assert-Equal -Expected 'false' -Actual $openId.Scalars['AuthProviders.QQ.RequireUnionId'] -Because '-LoginQQAllowOpenId 写 RequireUnionId: false'
+
+    $qqOnlyText = New-LoginAuthProvidersYaml -QQAppId $LoginQQTestAppId -ReleaseProfile 'prod' -WeChatAppSecretEnv 'LOGIN_WECHAT_APP_SECRET'
+    $qqOnly = ConvertFrom-YamlToFlatMap -Text $qqOnlyText
+    Assert-Equal -Expected 'AuthProviders,AuthProviders.QQ,AuthProviders.QQ.AppId' -Actual ((Get-FlatSubtreeKeys -Flat $qqOnly -Path 'AuthProviders') -join ',') `
+        -Because 'QQ 只写 AppId:provider 只用 access_token 调 /oauth2.0/me,不需要 AppKey,也不写 RequestUnionId(缺省 true)'
+    # 只看非注释行:片段开头的说明注释会提到微信 AppSecret,那不是键。
+    $qqOnlyKeyLines = (@($qqOnlyText -split "`n" | Where-Object { $_ -notmatch '^\s*#' }) -join "`n")
+    Assert-NotMatch -Text $qqOnlyKeyLines -Pattern 'AppSecret|AppKey|WeChat' -Because '只配 QQ 时不出现任何密钥键,也不出现微信段'
+    Assert-Equal -Expected 1 -Actual ([regex]::Matches($qqOnlyText, '(?m)^AuthProviders:[ ]*$').Count) -Because '片段里顶层 AuthProviders: 恰好一个'
+}
+
+Test-Case '纯函数 Get-LoginAuthProviderParamErrors:非法 AppId、staging / prod 的 http Endpoint、带查询串 / 用户信息 / 片段 / ${ / 换行的 Endpoint、有 Endpoint 无 AppId 都报错并点名参数;合法组合放行;New-LoginAuthProvidersYaml 对同样输入 throw' {
+    $rejects = @(
+        @{ Why = 'AppId 含空格'; Args = @{ WeChatAppId = 'wx 0123'; ReleaseProfile = 'dev' }; Pattern = '-LoginWeChatAppId 只允许 \[A-Za-z0-9_\.-\]' }
+        @{ Why = 'AppId 含双引号'; Args = @{ WeChatAppId = 'wx"0123'; ReleaseProfile = 'dev' }; Pattern = '-LoginWeChatAppId 只允许' }
+        @{ Why = 'AppId 结尾带换行($ 会放过,必须 \z)'; Args = @{ WeChatAppId = "wx0123`n"; ReleaseProfile = 'dev' }; Pattern = '-LoginWeChatAppId 只允许' }
+        @{ Why = 'QQ AppId 含 ${'; Args = @{ QQAppId = '1012${QQ_APP_ID}'; ReleaseProfile = 'dev' }; Pattern = '-LoginQQAppId 只允许' }
+        @{ Why = 'staging 档微信 http Endpoint'; Args = @{ WeChatAppId = 'wx0123'; WeChatEndpoint = 'http://mock.contract:18090'; ReleaseProfile = 'staging' }; Pattern = '-LoginWeChatEndpoint 在 -ReleaseProfile staging 只接受 https://' }
+        @{ Why = 'prod 档 QQ http Endpoint'; Args = @{ QQAppId = '101234567'; QQEndpoint = 'http://mock.contract:18091'; ReleaseProfile = 'prod' }; Pattern = '-LoginQQEndpoint 在 -ReleaseProfile prod 只接受 https://' }
+        @{ Why = 'Endpoint 带查询串'; Args = @{ WeChatAppId = 'wx0123'; WeChatEndpoint = 'https://mock.contract/sns?appid=1'; ReleaseProfile = 'dev' }; Pattern = '-LoginWeChatEndpoint 须是 https://主机' }
+        @{ Why = 'Endpoint 带用户信息'; Args = @{ WeChatAppId = 'wx0123'; WeChatEndpoint = 'https://ops:hunter2pw@mock.contract'; ReleaseProfile = 'dev' }; Pattern = '-LoginWeChatEndpoint 须是 https://主机'; NoEcho = 'hunter2pw' }
+        @{ Why = 'Endpoint 带片段'; Args = @{ WeChatAppId = 'wx0123'; WeChatEndpoint = 'https://mock.contract/path#frag'; ReleaseProfile = 'dev' }; Pattern = '-LoginWeChatEndpoint 须是 https://主机' }
+        @{ Why = 'Endpoint 端口越界'; Args = @{ WeChatAppId = 'wx0123'; WeChatEndpoint = 'https://mock.contract:70000'; ReleaseProfile = 'dev' }; Pattern = '-LoginWeChatEndpoint 须是 https://主机' }
+        @{ Why = 'Endpoint scheme 大写'; Args = @{ WeChatAppId = 'wx0123'; WeChatEndpoint = 'HTTPS://mock.contract'; ReleaseProfile = 'dev' }; Pattern = '-LoginWeChatEndpoint 须是 https://主机' }
+        @{ Why = 'Endpoint 结尾带换行'; Args = @{ WeChatAppId = 'wx0123'; WeChatEndpoint = "https://mock.contract`n"; ReleaseProfile = 'dev' }; Pattern = '-LoginWeChatEndpoint 须是 https://主机' }
+        @{ Why = 'Endpoint 含 ${'; Args = @{ WeChatAppId = 'wx0123'; WeChatEndpoint = 'https://${WECHAT_MOCK_HOST}'; ReleaseProfile = 'dev' }; Pattern = '-LoginWeChatEndpoint 含未展开的 \$\{\.\.\.\}' }
+        @{ Why = '有微信 Endpoint 无 AppId'; Args = @{ WeChatEndpoint = 'https://mock.contract'; ReleaseProfile = 'dev' }; Pattern = '给了 -LoginWeChatEndpoint 却没给 -LoginWeChatAppId' }
+        @{ Why = '有 QQ Endpoint 无 AppId'; Args = @{ QQEndpoint = 'https://mock.contract'; ReleaseProfile = 'prod' }; Pattern = '给了 -LoginQQEndpoint 却没给 -LoginQQAppId' }
+    )
+    foreach ($case in $rejects) {
+        $fnArgs = $case.Args
+        $errors = @(Get-LoginAuthProviderParamErrors @fnArgs)
+        Assert-True -Condition ($errors.Count -ge 1) -Because "$($case.Why):必须报错(fail-closed),不能放行"
+        Assert-Match -Text ($errors -join "`n") -Pattern $case.Pattern -Because "$($case.Why):错误文本必须点名参数与原因"
+        $message = ''
+        try { New-LoginAuthProvidersYaml @fnArgs -WeChatAppSecretEnv 'LOGIN_WECHAT_APP_SECRET' | Out-Null } catch { $message = $_.Exception.Message }
+        Assert-Match -Text $message -Pattern '^生成 login ConfigMap 的 AuthProviders 段失败:' -Because "$($case.Why):生成器用同一份规则纵深防御,必须 throw"
+        if ($case.NoEcho) {
+            Assert-NotMatch -Text (($errors -join "`n") + "`n" + $message) -Pattern ([regex]::Escape($case.NoEcho)) -Because "$($case.Why):报错不回显 Endpoint 的值(用户信息里可能有口令)"
+        }
+    }
+
+    $passes = @(
+        @{ Why = '全空(不配第三方登录)'; Args = @{ ReleaseProfile = 'prod' } }
+        @{ Why = 'dev 档 http 沙箱'; Args = @{ WeChatAppId = 'wx0123'; WeChatEndpoint = 'http://127.0.0.1:18090'; QQAppId = '101234567'; QQEndpoint = 'http://login-oauth-mock.contract:18091'; ReleaseProfile = 'dev' } }
+        @{ Why = 'staging 档 https 带端口与路径'; Args = @{ WeChatAppId = 'wx_App.01-a'; WeChatEndpoint = 'https://oauth-mock.example.com:8443/sandbox/v1'; ReleaseProfile = 'staging' } }
+        @{ Why = 'prod 档只配 AppId'; Args = @{ WeChatAppId = 'wx0123'; QQAppId = '101234567'; ReleaseProfile = 'prod' } }
+    )
+    foreach ($case in $passes) {
+        $fnArgs = $case.Args
+        $errors = @(Get-LoginAuthProviderParamErrors @fnArgs)
+        Assert-Equal -Expected 0 -Actual $errors.Count -Because "$($case.Why):合法组合必须放行(实际报错:$($errors -join ' | '))"
+    }
+}
+
+Test-Case '纯函数 Resolve-LoginWeChatAppSecret:任何档位缺失即 throw(dev 也没有回落值);staging 短于 16 位、prod 占位串、首尾空白、${ 都拒绝且不回显值;合法值原样返回' {
+    $envName = 'MMORPG_LOGIN_WECHAT_APP_SECRET'
+    $saved = [System.Environment]::GetEnvironmentVariable($envName)
+    try {
+        $cases = @(
+            @{ Why = 'dev 未设置'; Profile = 'dev'; Value = ''; Pattern = '-LoginWeChatAppId 需要环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET' }
+            @{ Why = 'staging 未设置'; Profile = 'staging'; Value = ''; Pattern = 'ReleaseProfile=staging 要求从环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET' }
+            @{ Why = 'staging 短于 16 位'; Profile = 'staging'; Value = 'wechat-short-01'; Pattern = 'MMORPG_LOGIN_WECHAT_APP_SECRET.*长度 15 < 要求的 16'; NoEcho = $true }
+            @{ Why = 'prod 占位串'; Profile = 'prod'; Value = 'change-me-in-production'; Pattern = 'MMORPG_LOGIN_WECHAT_APP_SECRET.*仍是占位串' }
+            @{ Why = 'dev 首尾空白'; Profile = 'dev'; Value = "$LoginWeChatTestSecret "; Pattern = 'MMORPG_LOGIN_WECHAT_APP_SECRET 的值含首尾空白'; NoEcho = $true }
+            @{ Why = 'prod 首尾空白'; Profile = 'prod'; Value = " $LoginWeChatTestSecret"; Pattern = 'MMORPG_LOGIN_WECHAT_APP_SECRET 的值含首尾空白'; NoEcho = $true }
+            @{ Why = 'dev 含 ${'; Profile = 'dev'; Value = 'contract-${WECHAT_APP_SECRET}-0123'; Pattern = 'MMORPG_LOGIN_WECHAT_APP_SECRET 的值含未展开的' }
+        )
+        foreach ($case in $cases) {
+            [System.Environment]::SetEnvironmentVariable($envName, $case.Value)
+            $message = ''
+            try { Resolve-LoginWeChatAppSecret -ReleaseProfile $case.Profile | Out-Null } catch { $message = $_.Exception.Message }
+            Assert-Match -Text $message -Pattern $case.Pattern -Because "$($case.Why):必须在写操作之前 throw 并点名环境变量"
+            if ($case.NoEcho) {
+                Assert-NotMatch -Text $message -Pattern ([regex]::Escape($case.Value.Trim())) -Because "$($case.Why):报错不回显密钥"
+            }
+        }
+        foreach ($profileName in @('dev', 'staging', 'prod')) {
+            [System.Environment]::SetEnvironmentVariable($envName, $LoginWeChatTestSecret)
+            $got = Resolve-LoginWeChatAppSecret -ReleaseProfile $profileName
+            Assert-True -Condition ($got -ceq $LoginWeChatTestSecret) -Because "$profileName 档合法密钥必须原样返回(不 trim、不改写)"
+        }
+    }
+    finally {
+        [System.Environment]::SetEnvironmentVariable($envName, $saved)
+    }
+}
+
+Test-Case '端到端 dev 档配微信 + QQ:ConfigMap 写 AuthProviders(微信 AppId / AppSecretEnv / RequireUnionId false / 沙箱 Endpoint,QQ 只写 AppId),AppSecret 原文不进输出,经 Secret login-oauth 的 secretKeyRef 注入,Pod 模板带它的指纹' {
+    $run = $loginAuthDevRun
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "dev 档配微信 + QQ 并给了密钥必须成功。输出: $($run.Output)"
+    $out = $run.Output
+
+    $cmBlock = Select-ManifestByName -Output $out -Name 'go-svc-login-config'
+    $flat = ConvertTo-FlatManifest -Block $cmBlock
+    $expected = [ordered]@{
+        'data.login.yaml.AuthProviders.WeChat.AppId'          = $LoginWeChatTestAppId
+        'data.login.yaml.AuthProviders.WeChat.AppSecretEnv'   = 'LOGIN_WECHAT_APP_SECRET'
+        'data.login.yaml.AuthProviders.WeChat.RequireUnionId' = 'false'
+        'data.login.yaml.AuthProviders.WeChat.Endpoint'       = $LoginWeChatSandbox
+        'data.login.yaml.AuthProviders.QQ.AppId'              = $LoginQQTestAppId
+    }
+    foreach ($key in $expected.Keys) {
+        $actual = Get-FlatValue -Flat $flat -KeyPath $key
+        Assert-True -Condition ($actual -ceq $expected[$key]) -Because "$key 期望 '$($expected[$key])',实际 '$actual'"
+    }
+    $leafKeys = @(Get-FlatSubtreeKeys -Flat $flat -Path 'data.login.yaml.AuthProviders' | Where-Object { $flat.Scalars[$_] -ne '' })
+    Assert-Equal -Expected ($expected.Keys -join ',') -Actual ($leafKeys -join ',') -Because 'AuthProviders 下只有这五个值:不写 AppSecret / AppKey(密钥不进 ConfigMap),QQ 不写 RequireUnionId(没给 -LoginQQAllowOpenId)'
+    Assert-Equal -Expected 1 -Actual ([regex]::Matches($cmBlock, '(?m)^ {4}AuthProviders:[ ]*\r?$').Count) -Because 'login.yaml 里顶层 AuthProviders: 只能有一个(重复的顶层键各解析器行为不一)'
+    # http Endpoint 只在 login 的 Mode=dev / test 放行:同一份 ConfigMap 必须写着 Mode: dev。
+    Assert-Equal -Expected 'dev' -Actual (Get-FlatValue -Flat $flat -KeyPath 'data.login.yaml.Mode') -Because 'dev 档 http 沙箱 Endpoint 依赖 login 的 Mode=dev'
+    Assert-NotMatch -Text $out -Pattern ([regex]::Escape($LoginWeChatTestSecret)) -Because 'AppSecret 只经 Secret 进容器:ConfigMap、Secret 意图行、指纹注解、日志里都不得有原文'
+
+    Assert-Match -Text $out -Pattern '(?m)^\[dry-run\] kubectl apply -n \S+ -f -\s+# Secret login-oauth \(key wechat-app-secret; value hidden\)\s*$' -Because 'Secret 的 dry-run 行要点名 Secret 名与 key,且声明值已隐去'
+    Assert-NotMatch -Text $out -Pattern 'kubectl delete secret login-oauth' -Because '开着微信登录时不删自己要用的 Secret'
+
+    $deployment = Select-LoginDeploymentBlock -Output $out -Label 'dev 微信 + QQ'
+    Assert-Match -Text $deployment -Pattern '- name: LOGIN_WECHAT_APP_SECRET\s+valueFrom:\s+secretKeyRef:\s+name: login-oauth\s+key: wechat-app-secret[ ]*\n(?![ ]+optional:)' -Because 'LOGIN_WECHAT_APP_SECRET 必须经 secretKeyRef 取 Secret login-oauth 的 wechat-app-secret,且不得 optional'
+    Assert-Equal -Expected 1 -Actual ([regex]::Matches($deployment, 'name: LOGIN_WECHAT_APP_SECRET').Count) -Because 'LOGIN_WECHAT_APP_SECRET 只能注入一份'
+    Assert-NotMatch -Text $deployment -Pattern 'name: LOGIN_WECHAT_APP_SECRET\s+value:' -Because 'AppSecret 不得以明文 value 写进 Deployment'
+    # dev 档排队关:微信指纹自己排在 annotations: 的下一行。值必须是 login-oauth 这把密钥的指纹,只轮换密钥时模板才会变、login 才会滚动。
+    $hash = [regex]::Match($deployment, '(?m)^[ ]+template:[ ]*\n[ ]+metadata:[ ]*\n(?:[ ]*#[^\n]*\n)*[ ]+annotations:[ ]*\n[ ]+mmorpg\.io/login-oauth-secret-hash: "(?<hash>[0-9a-f]{12})"[ ]*$')
+    Assert-True -Condition $hash.Success -Because '密钥指纹注解必须在 Pod 模板 metadata.annotations 下,值为加双引号的 12 位小写十六进制'
+    Assert-Equal -Expected 1 -Actual ([regex]::Matches($deployment, 'mmorpg\.io/login-oauth-secret-hash').Count) -Because '密钥指纹注解只能有一处'
+    Assert-Equal -Expected (Get-InjectedSecretFingerprint -SecretName 'login-oauth' -Value $LoginWeChatTestSecret) -Actual $hash.Groups['hash'].Value -Because '指纹输入只有 login-oauth 这把密钥(带 Secret 名做域分隔):换密钥指纹必变,同一密钥重跑不变'
+
+    # 写序:Secret 先于引用它的 Deployment,且同 namespace(secretKeyRef 只能引用同 namespace 的 Secret)。
+    $secretLine = [regex]::Match($out, '(?m)^\[dry-run\] kubectl apply -n (?<ns>\S+) -f -\s+# Secret login-oauth \(')
+    $envLine = [regex]::Match($out, '(?m)^[ ]+- name: LOGIN_WECHAT_APP_SECRET\s*$')
+    Assert-True -Condition ($secretLine.Success -and $envLine.Success -and $secretLine.Index -lt $envLine.Index) -Because 'Secret login-oauth 必须先于引用它的 login Deployment 落地,反过来新 Pod 会卡在 CreateContainerConfigError'
+    $deployApply = @([regex]::Matches($out, '(?m)^\[dry-run\] kubectl [^\r\n]*apply -n (?<ns>\S+) -f -\s*$') | Where-Object { $_.Index -lt $envLine.Index }) | Select-Object -Last 1
+    Assert-True -Condition ($null -ne $deployApply) -Because 'login Deployment 之前应当有它自己的 dry-run apply 行'
+    Assert-Equal -Expected $deployApply.Groups['ns'].Value -Actual $secretLine.Groups['ns'].Value -Because 'Secret 与 login Deployment 必须同 namespace'
+
+    Assert-Match -Text $out -Pattern 'login_wechat=True login_qq=True' -Because '写路径入口的摘要行要写明两个 provider 都开了(只展示是否启用,不展示密钥)'
+    Assert-NotMatch -Text $out -Pattern 'LoginWeChatAllowOpenId \(ReleaseProfile=' -Because 'dev 档给 -LoginWeChatAllowOpenId 不打 openid 分裂警告(只对非 dev 档)'
+}
+
+Test-Case '端到端 dev 档只配 QQ:只写 AuthProviders.QQ.AppId,不建 Secret、不注入 env、不带指纹注解;微信密钥变量即使有值也不被读取,残留的 login-oauth 照删' {
+    $run = $loginAuthQQOnlyRun
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "只配 QQ 必须成功(QQ 不需要任何密钥)。输出: $($run.Output)"
+    $out = $run.Output
+    $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $out -Name 'go-svc-login-config')
+    Assert-Equal -Expected 'data.login.yaml.AuthProviders,data.login.yaml.AuthProviders.QQ,data.login.yaml.AuthProviders.QQ.AppId' `
+        -Actual ((Get-FlatSubtreeKeys -Flat $flat -Path 'data.login.yaml.AuthProviders') -join ',') -Because '只配 QQ:AuthProviders 下只有 QQ.AppId,没有微信段、没有任何密钥键'
+    Assert-True -Condition ((Get-FlatValue -Flat $flat -KeyPath 'data.login.yaml.AuthProviders.QQ.AppId') -ceq $LoginQQTestAppId) -Because 'QQ AppId 原样写出'
+    Assert-NotMatch -Text $out -Pattern '# Secret login-oauth |LOGIN_WECHAT_APP_SECRET|login-oauth-secret-hash' -Because 'QQ 不建 Secret、不注入 env、不带指纹注解'
+    Assert-NotMatch -Text $out -Pattern ([regex]::Escape($LoginWeChatTestSecret)) -Because '不配微信时不读微信密钥变量,原文更不能出现'
+    Assert-Match -Text $out -Pattern '(?m)^\[dry-run\] kubectl delete secret login-oauth -n \S+ --ignore-not-found\s*$' -Because '没给 -LoginWeChatAppId:删掉上次留下的 login-oauth Secret'
+    Assert-Match -Text $out -Pattern 'login_wechat=False login_qq=True' -Because '摘要行只展示 QQ 开了'
+}
+
+Test-Case '端到端负向:dev 档给了 -LoginWeChatAppId 却没设 MMORPG_LOGIN_WECHAT_APP_SECRET,在任何 kubectl 写操作之前拒绝(没有回落值)' {
+    $run = $loginAuthNoSecretRun
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because "缺微信 AppSecret 必须阻断:login 对缺失的 AppSecretEnv 拒启。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern '-LoginWeChatAppId 需要环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET' -Because '错误必须点名缺哪个环境变量'
+    Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl [^\r\n]*\b(apply|create|delete|patch|replace)\b' -Because '密钥解析(Initialize-InjectedSecrets)先于任何写操作,不留半截部署'
+}
+
+Test-Case '端到端负向:staging 档 -LoginWeChatEndpoint 给 http://,在密钥解析与任何 kubectl 写操作之前拒绝,报的是参数原因' {
+    $run = $loginAuthStagingHttpRun
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because "staging 档 http Endpoint 必须拒绝:login 生产模式只认 https,部署出来只会拒启。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern 'login 第三方登录参数校验失败' -Because '拒绝来自写路径入口的参数门禁(Assert-LoginAuthProviderParams)'
+    Assert-Match -Text $run.Output -Pattern '-LoginWeChatEndpoint 在 -ReleaseProfile staging 只接受 https://' -Because '错误必须点名参数、档位与原因'
+    Assert-NotMatch -Text $run.Output -Pattern '\[dry-run\] kubectl [^\r\n]*\b(apply|create|delete|patch|replace)\b' -Because '参数门禁先于任何写操作'
+    Assert-NotMatch -Text $run.Output -Pattern 'Client entry: mode=' -Because '参数门禁排在入口摘要行之前,拒绝后不再往下走'
+}
+
+Test-Case '第三方登录源码形状:写路径入口经 Assert-ClientEntryDeployPreflight 调一次参数门禁,密钥解析只在 Initialize-InjectedSecrets、只在部署 login 且给了 -LoginWeChatAppId 时' {
+    $preflightFn = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Assert-ClientEntryDeployPreflight' }, $false)
+    Assert-True -Condition ($null -ne $preflightFn) -Because '要有 Assert-ClientEntryDeployPreflight'
+    $gateCalls = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $a.GetCommandName() -eq 'Assert-LoginAuthProviderParams' }, $true))
+    Assert-Equal -Expected 1 -Actual $gateCalls.Count -Because '整个脚本只调一次 Assert-LoginAuthProviderParams'
+    Assert-True -Condition ($gateCalls[0].Extent.StartOffset -gt $preflightFn.Extent.StartOffset -and $gateCalls[0].Extent.EndOffset -lt $preflightFn.Extent.EndOffset) -Because '参数门禁在 Assert-ClientEntryDeployPreflight 里(写路径入口、密钥解析之前,与 -LoginDevPasswordAuth 同处)'
+
+    $resolveCalls = @($deadlineDeployAst.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $a.GetCommandName() -eq 'Resolve-LoginWeChatAppSecret' }, $true))
+    Assert-Equal -Expected 1 -Actual $resolveCalls.Count -Because '微信 AppSecret 只在一处解析'
+    $initFn = $deadlineDeployAst.Find({ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $a.Name -eq 'Initialize-InjectedSecrets' }, $false)
+    Assert-True -Condition ($resolveCalls[0].Extent.StartOffset -gt $initFn.Extent.StartOffset -and $resolveCalls[0].Extent.EndOffset -lt $initFn.Extent.EndOffset) -Because '解析在 Initialize-InjectedSecrets 里(写路径入口懒解析,*-down / *-status 不被它挡住)'
+    $guard = $resolveCalls[0].Parent
+    while ($null -ne $guard -and $guard -isnot [System.Management.Automation.Language.IfStatementAst]) { $guard = $guard.Parent }
+    Assert-True -Condition ($null -ne $guard) -Because '解析必须包在 if 里'
+    $condition = $guard.Clauses[0].Item1.Extent.Text
+    Assert-True -Condition ($condition.Contains('$LoginWeChatAppId') -and $condition.Contains('Test-ZoneLoginDeployed')) -Because "只在部署 login 且给了 -LoginWeChatAppId 时解析(实际条件:$condition)"
+}
 # ─────────────────────────────────────────────────────────────────
 # 路由服预算链(docs/design/client-request-ordering.md §5.2 不变式 I1)
 # ─────────────────────────────────────────────────────────────────
@@ -4088,6 +4645,8 @@ $DbGroupComment = '    # 消费组由 k8s_deploy.ps1 按 -DbConsumerGroup 与 Ka
 $DbGroupDescribeHeader = 'GROUP TOPIC PARTITION CURRENT-OFFSET LOG-END-OFFSET LAG CONSUMER-ID HOST CLIENT-ID'
 $DbGroupExecShell = "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group"
 
+# ConvertFrom-LiveDbConsumerGroup 2026-10-18 起在 lib/kafka_consumer_groups.ps1(上面已 dot-source,回档第 0 步 f 共用):AST 里找不到它,
+# 下面的存在性检查由 lib 的定义满足;留在名单里,是为了它被删掉或改名时这里照样变红。
 $dbGroupFunctionNames = @(
     'Assert-DbConsumerGroupName', 'ConvertFrom-LiveDbConsumerGroup', 'Test-DbConsumerGroupNeedsKafkaFacts', 'Resolve-DbConsumerGroupPlan',
     'New-DbConsumerGroupYaml', 'Get-DbConsumerGroupPlan', 'Read-LiveDbConfigMapYaml', 'Read-DbGroupTopicFacts',
@@ -4428,7 +4987,7 @@ Test-Case '③ Apply-OneGoSvc:db 注解块(服务名判断在最外层)先于本
     foreach ($needle in @('PLACEHOLDER_DB_CONSUMER_GROUP', 'PLACEHOLDER_DB_GROUP_HANDOFF_FROM', "'none'", 'PLACEHOLDER_DB_')) {
         Assert-True -Condition $blockText.Contains($needle) -Because "db 注解块要处理 $needle"
     }
-    $writeNames = @('Invoke-KubectlWithInputFile', 'Invoke-Kubectl', 'Apply-InjectedSecret', 'Apply-LoginDevPasswordSecret', 'Apply-GoSvcMigrateJob')
+    $writeNames = @('Invoke-KubectlWithInputFile', 'Invoke-Kubectl', 'Apply-InjectedSecret', 'Apply-LoginDevPasswordSecret', 'Apply-LoginOAuthSecret', 'Apply-GoSvcMigrateJob')
     $writes = @($applyAst.Body.FindAll({ param($a) $a -is [System.Management.Automation.Language.CommandAst] -and $writeNames -contains $a.GetCommandName() }, $true))
     Assert-True -Condition ($writes.Count -gt 0) -Because 'Apply-OneGoSvc 里应当有集群写操作(取写操作的逻辑空转了?)'
     $firstWrite = ($writes | ForEach-Object { $_.Extent.StartOffset } | Measure-Object -Minimum).Minimum

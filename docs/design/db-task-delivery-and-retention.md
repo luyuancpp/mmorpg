@@ -260,7 +260,7 @@ R7（2026-10-17；已落码，未编译、未测试，待 Codex 验证）新增�
 | # | 规格 / C2 报告 | 截至 2026-10-16 工作区代码 |
 |---|---|---|
 | 1 | `SavePlayerToRedisImpl` 返回 bool，「返回 false 就收尾并计 exit_unsynced」 | 返回 `SaveResult` 枚举，按值逐个处理（§A.7 表）。只有交接已发起、且没有未落地存盘时才计 `exit_unsynced` 后收尾 |
-| 2 | C2：闸门重存拿到 `kRejected` 时 fail-closed 保留实体，`OnDbTaskDispatchSettled` 的 marshal 失败也保留 | 改为 `DestroyDeposedPlayer(playerId, "exit_save_refused")` 不存盘丢弃（ECS 评审批 6 T2.1，负责人 2026-10-16 拍板）。`player_lifecycle.h` 里 `FinishExitOrAwaitDbTaskAck` 的声明注释仍写「拒存时 fail-closed 保留实体，返回 false」，与 .cpp 不一致，待改该文件的会话同步 |
+| 2 | C2：闸门重存拿到 `kRejected` 时 fail-closed 保留实体，`OnDbTaskDispatchSettled` 的 marshal 失败也保留 | 改为 `DestroyDeposedPlayer(playerId, "exit_save_refused")` 不存盘丢弃（ECS 评审批 6 T2.1，负责人 2026-10-16 拍板）。`player_lifecycle.h` 里 `FinishExitOrAwaitDbTaskAck` 的声明注释已于 2026-10-18 同步为「拒存时 DestroyDeposedPlayer 不存盘丢弃，返回 true」 |
 | 3 | `OnDbTaskDispatchSettled` 不收敛时无条件重存 | 复用 `DecideAfterPersist` 与 `resaveRounds` / `kMaxExitResaveRounds` 做上限，到上限保留实体并计 `[ExitPersist]` 的 `exit_resave_capped`；没有快照按不收敛处理 |
 | 4 | `kRetainExhausted` 只在首次计 `exit_resave_capped` | 每次判定都计。kResave 已经把 `awaitingDbTaskAck` 置位，照规格写法这个计数在生产上永远不会增长 |
 | 5 | `DestroyPlayer` 开头、紧挨 `AnomalyDetector::ClearPlayer` 调 `OnPlayerGone` | `DestroyPlayer` 里已没有 `ClearPlayer`。`OnPlayerGone` 放在末尾、`playerList.erase` 之后。C2 落码时另有「playerList 里已没有该玩家号才调」的同号替身检查；截至本日工作区，ECS 评审相关的未提交改动已把它改成无条件调用。影响：离场通知里若重建了同号实体，无在途票据时条目会被回收，可能多计一次 `orphan_unsynced`；新实体没有落盘快照，首存必然整份写，MySQL 结论不变 |

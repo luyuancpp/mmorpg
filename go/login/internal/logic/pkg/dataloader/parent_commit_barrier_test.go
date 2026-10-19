@@ -35,6 +35,13 @@ func (reads *coldSQLReads) Register(id string, _ time.Duration, callback dispatc
 // ReplyInstance 满足 readResultRegistrar;替身不经 Pub/Sub 投递,给一个合法的固定值即可。
 func (reads *coldSQLReads) ReplyInstance() string { return "cold-sql-reads" }
 
+// Cancel 满足 readResultRegistrar;替身的 SendTasks 不返回错误,正常不会走到这里。
+func (reads *coldSQLReads) Cancel(ids ...string) {
+	for _, id := range ids {
+		delete(reads.callbacks, id)
+	}
+}
+
 func (reads *coldSQLReads) SendTask(ctx context.Context, task *dbpb.DBTask, key string) error {
 	return reads.SendTasks(ctx, []*dbpb.DBTask{task}, key)
 }

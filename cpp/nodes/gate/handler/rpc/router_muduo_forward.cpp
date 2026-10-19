@@ -30,14 +30,13 @@ namespace
 
 // 与生成客户端的 client_rpc_router::kClientRpcRouterForwardGrpcPath 逐字一致(proto package client_rpc_router,线上契约)。
 constexpr char kForwardPath[] = "/client_rpc_router.ClientRpcRouter/Forward";
-// 与生成客户端 GrpcCallFailure.method 同形,两条出站路径的失败日志可以对照。
+// 与生成客户端日志里的 <Service>.<Method> 同形,两条出站路径的失败日志可以对照。
 constexpr char kForwardMethodName[] = "ClientRpcRouter.Forward";
 
 void LogMissingSessionEchoSampled()
 {
     // 路由服对成功与信封错误都会在响应头回显 x-session-detail-bin(client-rpc-router.md D30);
-    // 缺了说明对端不是预期的路由服版本。全局应答处理器(GetSessionDetailsByReplyContext 返回空)在这里静默丢包,
-    // 这里多留一行采样证据。
+    // 缺了说明对端不是预期的路由服版本,这里留一行采样证据。
     static uint64_t missingCount = 0;
     if ((missingCount++ & 0x3FF) == 0)
     {
@@ -81,7 +80,7 @@ void SendForward(muduo_grpc::Channel &channel, const client_rpc_router::ForwardR
                     "failed to parse MessageContent from Forward response", &sentSessionDetails);
                 return;
             }
-            // 与全局应答处理器路径一致:按**响应头回显**的会话交成功桥(不是本地保存的那份)。
+            // 按**响应头回显**的会话交成功桥(不是本地保存的那份)。
             const std::string *echoed = muduo_grpc::FindMetadata(result.initialMetadata, kSessionBinMetaKey);
             if (echoed == nullptr)
             {

@@ -45,7 +45,7 @@ func (l *DisconnectLogic) Disconnect(in *login_proto.LoginNodeDisconnectRequest)
 		}
 	}
 
-	cleanupLoginSessionState(l.ctx, l.svcCtx, sessionDetails.SessionId, "disconnect")
+	cleanupLoginSessionState(l.ctx, l.svcCtx, sessionDetails, "disconnect")
 
 	// Mark session as disconnecting with 30s lease in Redis (replaces Centre's DelayedCleanupTimer).
 	// When the Redis key TTL expires, the session is effectively cleaned up.

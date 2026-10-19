@@ -118,6 +118,9 @@ cpp/libs/base/modules/
 # explicit (and survives anyone re-adding similar rules later).
 !java/gateway_node/src/test/
 !java/gateway_node/src/test/**
+# satoken starter 的测试树同理(2026-10-18 起有 DevLoginProfileGateTest)。
+!java/springboot_satoken_auth_starter/src/test/
+!java/springboot_satoken_auth_starter/src/test/**
 
 # Same story for tools/scripts/ — the bare `scripts/` rule was meant for a
 # deleted scratch directory, but tools/scripts/ has 10+ tracked .ps1/.sh

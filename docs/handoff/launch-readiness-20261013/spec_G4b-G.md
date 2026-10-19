@@ -586,6 +586,12 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 > **2026-10-15 补注（「`PopAdmit` 的 MULTI 出错」一行，原表保留；已落码，未编译、未测试，待 Codex 验证）**：放行的写入已不是 MULTI，改为一段 `admitEntryScript`（见 §5.8 末尾的补注）。这一行现在是：脚本出错（含 `pickFn` 出错后回填队列失败）仍 `continue`、不计入放行数、不回填，但不再零日志——每批汇总一行 `ERROR`：`[loginqueue] PopAdmit dropped entries after zpopmin zone=<z> reason=write_failed popped=… admitted=… dropped=… firstQueueId=… firstErr=…`。调用方 ctx 被取消（停服、丢租约）已不会走到这一行，见 §5.8 末尾补注第 1 条。
 >
 > （2026-10-16 更正，上句原文保留）「调用方 ctx 被取消已不会走到这一行」过强：取消之后 3s 预算内没写完的尾部仍记进这一行（`firstErr` 通常是 `context deadline exceeded`），见 §5.8 末尾「补注（续）」第 1 条；滚动重启时看到 `write_failed` 要先想到这一支。
+>
+> （2026-10-18 更正，「`PopAdmit` 的 MULTI 出错」一行与上面两段，原文保留；已落码，未编译、未测试，待 Codex 验证）出队改为 `ZRANGE` + 每条一段先判在队的 `admitEntryScript`，条目在放行写成之前不离开队列。
+> - **脚本出错时停批，不丢条目。** 含 noeviction 写满。本批在第一个出错处停下，剩余条目原样留在队列。
+> - **`pickFn` 出错只跳过。** 只跳过该条，不再回填。
+> - **日志。** dispatcher 先计入已放行数，再在 ctx 未取消时每拍至多打一行 `ERROR [loginqueue] PopAdmit zone=<z> err=admit script queueId=… admitted=… skipped=… untried=…: …`。`PopAdmit dropped entries after zpopmin …` 一行与 3s 写入预算都已删除。
+> - **方向改变。** 这一行由「条目丢失」变为 fail-closed（停批、条目留在队列）。见 §5.8 末尾的 2026-10-18 更正。
 
 ### 5.4 并发与原子性边界
 
@@ -667,6 +673,39 @@ go-redis 把 `int64` / `uint32` 参数编码成十进制字符串，`float64` �
 >    - 第 5 条「剩余丢条目路径：写入超出 3s 预算」相应读作「取消之后写入超出 3s 预算」。
 > 2. **起服接线已接上**（更正第 4 条「起服接线还没做」）：`servicecontext.initLoginQueue` 已在 `loginqueue.New` 之前调 `ValidateTTLs`，失败即 panic（`Queue.Enabled=false` 时不校验），配 wiring 用例 `TestInitLoginQueue_NonPositiveTTLPanicsWhenQueueEnabled` 与 `config.go` / `login.yaml` 补注（主会话所改，不在本批文件内）。第 4 条末句「接线之前显式写 `QueueEntryTTL: 0s` 仍不报错」只描述接线前的状态；`PopAdmit` 的弹出前拦截保留为纵深防御。
 > 3. **`AdmitTTL` 的 1ms 下界**：`admitEntryScript` 以 `AdmitTTL.Milliseconds()` 作 `SET PX`，不足 1ms（例如显式写 `500us`）取整为 0，Redis 拒绝 `SET PX 0`，弹出的整批全部丢失；原 go-redis `Set` 会把它截成 1ms，所以这是本批改脚本引入的缺口。`ValidateTTLs` 对 admitTTL 的判定改为不足 1ms 即拒（报错串 `admit ttl must be positive and at least 1ms`，仍含 wiring 用例匹配的 `ttl must be positive`），起服校验与弹出前拦截随之覆盖。用例：`TestValidateTTLs_RejectsNonPositive` 加 500µs（拒）与 1ms（收）两组；`TestPopAdmit_NonPositiveAdmitTTL_PopsNothing` 改为 0 与 500µs 两个子用例。entryTTL 不加这条下界：`Enqueue` 经 go-redis 的 `Expire` / `Set`，不足 1s / 1ms 会被截成 1s / 1ms。
+
+> **2026-10-18 更正（第 1、2、4 条，上两条补注，以及 §5.4 第 2 条、§5.5「不丢人、不重复放行」；原文保留；`loginqueue` 包已落码，未编译、未测试，待 Codex 验证）**：完整说明见设计稿 `docs/design/login-queue-2026-05.md` §5 决策树后的 2026-10-18 更正，这里只列与本规格相关的结论。
+> 1. **第 2 条与上一条补注第 5 条「仍未修」：已修。** `PopAdmit` 不再 `ZPOPMIN`：先 `ZRANGE` 读候选，再逐条跑 `admitEntryScript`。脚本第一步 `ZSCORE` 判成员仍在队列，写成时在同一段里 `ZREM`。
+>    - **不再丢条目。** `pickFn` 回 `(nil, nil)`、Marshal 失败、脚本出错、取消、写满、强杀都不再丢条目。
+>    - **随之删除的机制。** `popAdmitWriteBudget`（上一条补注第 1 条与「补注（续）」第 1 条）；`pickFn` 出错时以分数 0 回填的 `ZADD`，连同它「建出没有 TTL 的队列键」的边角。
+>    - **用例。**
+>      - 删除：`TestPopAdmit_NoCancel_LongBatchNotCutByWriteBudget`、`TestPopAdmit_CtxCanceledMidBatch_WriteBudgetExhausted_DropsRest`。
+>      - 改写：`TestPopAdmit_CtxCanceledMidBatch_StillWritesPoppedEntries` → `TestPopAdmit_CtxCanceledMidBatch_RestStayQueued`（取消后剩余条目留在队列）；`TestPopAdmitReQueuesOnSignFailure` → `TestPopAdmit_PickFailure_EntryNeverLeavesQueue`（分数不变）。
+>      - 改名：`TestPopAdmit_CtxCanceledBeforePop_PopsNothing` → `TestPopAdmit_CtxCanceledBeforeRead_AdmitsNothing`。
+> 2. **写满的根治不需要 `#!lua`**（更正上一条补注第 5 条第 1 点）：
+>    - **兼容模式下的行为。** 脚本无 shebang 时，写满下脚本照常开跑。只有写段第一条是 DENYOOM 命令、且之前没执行过任何写时，脚本才在那条写上被拒。
+>    - **放行脚本的写法。** 写段第一条是 `HSET`，它之前只有只读命令。写满时整段被拒、什么都没写、条目留在队列，本身就是 fail-closed。
+>    - **为什么不用 shebang。** 带 shebang 不带 flags 反而会在写满时整段拒绝，连 META_GONE / ALREADY 的清理也做不了；miniredis 也不解析 shebang。
+>    - **用例与证据。** 用例 `TestPopAdmit_OOMOnAdmitScript_EntriesStayQueued`（用 go-redis 钩子模拟 OOM 回包）。真实 Redis 证据待 §8.4 的 2026-10-18 补注第 1 项。
+>    - **写满期间。** 查询与续期照常，新入队失败（`StatusError`），仍需内存水位告警。
+> 3. **放行脚本返回值改为 1~5，全部非零整数**：GONE / META_GONE / ALREADY / WRITTEN / REPLAYED。
+>    - **meta 不在。** 上一条补注第 2 条的「meta 不在 → 回 0，整条丢弃」，改为 META_GONE（2）并 `ZREM` 成员；判据扩为「不是 hash」，类型损坏的 meta 不再卡死整个 zone。
+>    - **`admitted_at` 已在。** 「`admitted_at` 已在 → 回 2，计入放行数」拆成两支：
+>      - 成员已不在队列、`admitted_at` 等于本次放行时刻 → REPLAYED（5），计入；
+>      - 成员仍在队列、已有 `admitted_at` → ALREADY（3），`ZREM`、不计数。这一支只来自上一次非写满原因的部分写入，实际只有占位键 `WRONGTYPE`，至多多放 1 人、持续一个 `AdmitTTL`，不双签。
+>    - **用例。** `TestPopAdmit_AdmitScriptReplayedAfterConsume_DoesNotReissue` 的断言维持（REPLAYED 计一次、不重写放行槽），另加 `ZCARD == 0`。
+> 4. **§5.4 第 2 条：快速通道插队窗口消失。** 快速通道看到的队列，在本批每条都原子地「移出 + 写占位」之前不会变空。任一时刻在途 ≤ 2 ×（`C − O`）的上界，只剩双 leader / 多副本重叠出队一个来源。
+> 5. **§5.5「不丢人、不重复放行：`ZPOPMIN` 与 `GETDEL` 的原子性与占位键无关」。**
+>    - **不重复放行。** 新版靠放行脚本第一步判在队。
+>    - **不丢人不成立。** 排队开着混跑 2026-10-18 前后两版时，旧版 leader 已弹出、未写完的条目会被新版判为 `queue_gone`、打回队尾。
+>    - **发布约束。** 本版本以及从它回滚，都必须在 `Queue.Enabled=false` 下滚完（`login.yaml` 上线清单第 0 步的 10-18 补注）。
+> 6. **第 1、4 条与 10-15 更正第 2 条（「与在途窗口无法区分」）：在途窗口已不存在。**
+>    - **读状态合成一段脚本。** `Lookup` 没取到放行槽之后，跑一段 `lookupStateScript`（与放行脚本互斥原子）。meta 在、没有 `admitted_at`、又不在队列时，回 EXPIRED（新原因 `queue_gone`）。
+>    - **zone 来自令牌。** `Lookup` 的 zone 改取自已验签的令牌。
+>    - **第 4 条剩余部分不变。** go-redis 重发 `GETDEL` 时，那张票仍找不回来。
+> 7. **起服校验。** 「补注（续）」第 3 条末句「entryTTL 不加这条下界」作废。`QueueEntryTTL` 收紧为 [1s, 24h]（`ValidateTTLs`，起服装配沿用），`TestValidateTTLs_RejectsNonPositive` 加 500ms / 1s / 24h / 24h+1s 四组。
+>    - **含义变化。** `QueueEntryTTL` 同时改为空闲 TTL：排队中的查询会把 meta、token 索引、队列键续到 1.25 倍。排队令牌改为固定 24h。
+> 8. **Java 版**：待做，由主会话在 Java 仓库 `PARITY.md` 登记。
 
 ---
 
@@ -1632,6 +1671,37 @@ Remove-Item Env:GOTOOLCHAIN, Env:GOPROXY -ErrorAction SilentlyContinue
   6. 结果（命令原文与输出摘要）写进 `docs/PROGRESS.md` 的新条目；任一项不符就停下报告，不打开排队。
 
 > **2026-10-15 补注（第 3 步，原文保留）**：放行已不是「MULTI 里的 `EVAL`」，而是直接 `EVALSHA`（`NOSCRIPT` 时回退 `EVAL`）一段 `admitEntryScript`（§5.8 末尾补注第 2 条）。第 3 步「放行确有发生」现在说明的是这段脚本能在真实 Redis 上执行；另加三项核对：放行之后、取走之前 `HGET queue:meta:<queueId> admitted_at` 是 13 位毫秒、`PTTL admit:<queueId>` 在 (0, 60000] 内（不能是 −1）、`PTTL queue:meta:<queueId>` 与放行前相比只随时间递减（没被续期、没变 −1）。login 日志里不应出现 `PopAdmit dropped entries after zpopmin … reason=write_failed`。
+
+> **2026-10-18 补注（最小冒烟扩项；原文与上一条补注保留；仍是打开排队前的硬门槛）**：本次改了三处，见设计稿 `docs/design/login-queue-2026-05.md` §5 决策树后的 2026-10-18 更正。
+> - 放行改为「`ZRANGE` + 每条一段先判在队的 `admitEntryScript`」；
+> - 查询改为一段带续期的 `lookupStateScript`；
+> - `QueueEntryTTL` 改为空闲 TTL。
+>
+> 下列各项也必须在真实 Redis 7.x 上跑通，并把命令原文与输出摘要记进 `docs/PROGRESS.md`。任一项不符就停下报告，不打开排队。起栈方式同上：scratchpad 里的配置副本、`Queue.Enabled=true`、容量取小值，不改 `go/login/etc/login.yaml`；命令由 Codex 或负责人执行，需要拉镜像时先问用户。
+> 1. **写满。**
+>    - **做法。** 排队进行中执行 `CONFIG SET maxmemory <INFO memory 的 used_memory>`（`maxmemory-policy` 为 `noeviction`），等至少一拍。
+>    - **期望：**
+>      - login 日志出现 `[loginqueue] PopAdmit zone=1 err=… OOM …`；
+>      - `ZCARD queue:zone:1` 不变；
+>      - 没有新的 `admit:*` 键；
+>      - robot 仍收到 QUEUEING；
+>      - 轮询之后 `PTTL queue:meta:<id>` 大于 `QueueEntryTTL`（续期在写满时仍生效）；
+>      - 新的 AssignGate 入队回 `StatusError`。
+>    - **恢复。** 恢复原 `maxmemory` 之后，放行恢复，`ZCARD` 下降。
+>    - **（2026-10-18 补注，上面「轮询之后 PTTL 大于 QueueEntryTTL」一条；原文保留）** 这条判据没有证明力：写满前每个条目都已续过，剩余 TTL 本来就在 (E, 1.25E]，写满时脚本里的 PEXPIRE 全部失败它也照样通过。改为：执行 `CONFIG SET maxmemory` 之后，手工 `PEXPIRE queue:meta:<id> 60000`、`PEXPIRE queue:token:<token> 60000`（PEXPIRE 不是 DENYOOM 命令，写满时照样接受），等该客户端再轮询一次，期望两者的 PTTL 回到约 1.25×`QueueEntryTTL`。也可以把冒烟用 login 配置的 `QueueEntryTTL` 取小值（如 40s），写满后观察跨过 E/4 的那一次续期。
+> 2. **续期。**
+>    - 轮询中的条目，`PTTL queue:meta:<id>` 与 `PTTL queue:token:<token>` 落在 (QueueEntryTTL, 1.25×QueueEntryTTL]。
+>    - 判读：刚轮询完时不低于 `QueueEntryTTL`；两次轮询之间可能比它低至多一个轮询间隔，下一次轮询即续回 1.25 倍。
+>    - `PTTL queue:zone:1` 不是 −1，且不被后续入队压短。
+> 3. **入队的 NX/GT。** 先 `PEXPIRE queue:zone:1 <大于 QueueEntryTTL 的毫秒值>`，再入队一人。`PTTL` 不被压回 `QueueEntryTTL`。
+> 4. **毒丸 meta。** 手工 `SET queue:meta:<某排队者 id> x`。期望：
+>    - 该客户端收到 410（`queue_gone` 或 `meta_gone`，期望 `meta_gone`）；
+>    - 其他人照常放行；
+>    - login 日志出现 `metaGone=1` 的 `[loginqueue] PopAdmit entries not admitted …` INFO 行。
+> 5. **RESP3。** go-redis v9 默认 RESP3，两段脚本都只回整数。上面所有 `Lookup` 分支都不报 unexpected reply 一类错误：QUEUEING、ADMITTED、`admit_window_passed`，以及 `queue_gone`（`ZREM queue:zone:1 <某排队者 id>` 造出来）。
+> 6. **上一条补注的核对项改读：**
+>    - `PTTL queue:meta:<queueId>` 自放行起只随时间递减、不变 −1。放行之前的排队中轮询会把它续到 1.25 倍，属预期。
+>    - 「不应出现 `PopAdmit dropped entries after zpopmin … reason=write_failed`」改为：除第 1 项写满期间外，不应出现 `[loginqueue] PopAdmit zone=1 err=`。
 
 ---
 

@@ -158,6 +158,19 @@ var (
 		Help:      "Placement session-identity verdicts by site (enter|leave) and verdict (enter: fresh|same_session|legacy|newer|stale|conflict; leave: legacy|keep_newer|keep_conflict|deleted).",
 	}, []string{"site", "verdict"})
 
+	// leaveHolderReleaseTotal 统计 LeaveScene 在离场身份判为可删之后、删 location 之前的「持有者已释放」判定
+	// (docs/design/location-release-binding.md §3.2)。verdict 取 internal/logic/leave_release.go 的名表:
+	//   released / owner_dead / no_holder        拿到释放证据,删 location
+	//   legacy_epoch0 / disabled                 例外,按旧行为删(epoch 未铸造 / 功能关闭或 dev 旁路)
+	//   pending / pending_unproven               没拿到证据,保留 location、回可重试错误;登出 / 断线后的正常短暂态
+	//   forced                                   等满上限仍没拿到证据,按旧行为删除(接受回档风险)。应恒 0,出现即查
+	// 只按 verdict 分,player_id / 节点号 / epoch 一律只进日志。
+	leaveHolderReleaseTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "leave_holder_release_total",
+		Help:      "LeaveScene holder-release verdicts before deleting a player location (released|owner_dead|no_holder|legacy_epoch0|disabled|pending|pending_unproven|forced).",
+	}, []string{"verdict"})
+
 	// homeZoneLookupTotal 统计 EnterScene 里每一次归属 zone 查询的结果:
 	//   mapped        data_service 给出了归属 zone
 	//   unmapped      映射里没有这名玩家(首次落点 / 同 zone 换图按 gate zone 处理;跨 zone 传送的
@@ -455,6 +468,7 @@ func register() {
 			nodeDetachDeferredTotal,
 			worldChannelDirectoryPublishTotal,
 			placementIdentityTotal,
+			leaveHolderReleaseTotal,
 			loadRefreshTotal, loadRefreshSeconds, loadRefreshNodeErrorsTotal,
 		)
 		for _, outcome := range loadRefreshOutcomes {
@@ -640,6 +654,13 @@ const (
 func ObservePlacementIdentity(site, verdict string) {
 	register()
 	placementIdentityTotal.WithLabelValues(site, verdict).Inc()
+}
+
+// ObserveLeaveHolderRelease 记一次 LeaveScene 的持有者释放判定,见 leaveHolderReleaseTotal。verdict 取
+// internal/logic/leave_release.go 的名表(固定字符串,低基数)。
+func ObserveLeaveHolderRelease(verdict string) {
+	register()
+	leaveHolderReleaseTotal.WithLabelValues(verdict).Inc()
 }
 
 // ObserveWorldAutoscale 记一次大世界频道扩缩容动作。

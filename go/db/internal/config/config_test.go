@@ -280,6 +280,112 @@ func TestPlacementSplitPoolsNewKeysWin(t *testing.T) {
 	}
 }
 
+// ── 读方就绪闸(D1 第 3 批,spec_D1_batch1b2_2_3.md §5.3 / §13.2)──────────────────────────
+
+// 整段缺省 / 只写了别的键:RequireRouteReady=false(行为与引入之前相同),间隔经 Normalize 取 1000;显式值原样保留;
+// Normalize 可重复调用。
+func TestPlacementRouteReadyDefaults(t *testing.T) {
+	for _, yaml := range []string{"Name: db.rpc\n", "Placement:\n  Required: true\n"} {
+		var h placementHolder
+		if err := conf.LoadFromYamlBytes([]byte(yaml), &h); err != nil {
+			t.Fatalf("load %q: %v", yaml, err)
+		}
+		if h.Placement.RequireRouteReady {
+			t.Fatalf("%q: an omitted RequireRouteReady must stay false", yaml)
+		}
+		c := Config{Placement: h.Placement}
+		c.Normalize()
+		if c.Placement.RouteReadyGateIntervalMs != DefaultPlacementRouteReadyGateIntervalMs {
+			t.Fatalf("%q: interval = %d, want the default %d", yaml, c.Placement.RouteReadyGateIntervalMs,
+				DefaultPlacementRouteReadyGateIntervalMs)
+		}
+		before := c.Placement
+		c.Normalize()
+		if c.Placement != before {
+			t.Fatalf("%q: Normalize must be idempotent, Placement changed from %+v to %+v", yaml, before, c.Placement)
+		}
+	}
+
+	var h placementHolder
+	yaml := "Placement:\n" +
+		"  RequireRouteReady: true\n" +
+		"  RouteReadyGateIntervalMs: 500\n"
+	if err := conf.LoadFromYamlBytes([]byte(yaml), &h); err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	c := Config{Placement: h.Placement}
+	c.Normalize()
+	if !c.Placement.RequireRouteReady || c.Placement.RouteReadyGateIntervalMs != 500 {
+		t.Fatalf("explicit values must survive Normalize, got require=%v interval=%d",
+			c.Placement.RequireRouteReady, c.Placement.RouteReadyGateIntervalMs)
+	}
+	if DefaultPlacementRouteReadyGateIntervalMs != 1000 || MinPlacementRouteReadyGateIntervalMs != 200 ||
+		MaxPlacementRouteReadyGateIntervalMs != 10000 {
+		t.Fatal("route ready gate interval bounds changed: the spec states default 1000 within [200, 10000]")
+	}
+}
+
+// 间隔越界一律拒启(不论开关取值),错误文本点名键;边界值与「没写」(Normalize 之前的 0)放行。
+func TestPlacementRouteReadyIntervalValidate(t *testing.T) {
+	for _, tc := range []struct {
+		interval  int
+		normalize bool
+		wantErr   bool
+	}{
+		{interval: 0, normalize: false},
+		{interval: 0, normalize: true},
+		{interval: 200, normalize: true},
+		{interval: 10000, normalize: true},
+		{interval: 199, normalize: true, wantErr: true},
+		{interval: 10001, normalize: true, wantErr: true},
+		{interval: -1, normalize: true, wantErr: true},
+		{interval: -1, normalize: false, wantErr: true},
+	} {
+		for _, require := range []bool{false, true} {
+			c := Config{}
+			c.Placement.RequireRouteReady = require
+			c.Placement.RouteReadyGateIntervalMs = tc.interval
+			if tc.normalize {
+				c.Normalize()
+			}
+			err := c.Validate()
+			if !tc.wantErr {
+				if err != nil {
+					t.Fatalf("interval=%d normalize=%v require=%v must pass, got %v", tc.interval, tc.normalize, require, err)
+				}
+				continue
+			}
+			if err == nil || !strings.Contains(err.Error(), "Placement.RouteReadyGateIntervalMs") {
+				t.Fatalf("interval=%d normalize=%v require=%v: err = %v, want it to name Placement.RouteReadyGateIntervalMs",
+					tc.interval, tc.normalize, require, err)
+			}
+		}
+	}
+}
+
+// etc/db.yaml 必须把两个新键写出来(键名写错会静默保持零值),而且写的就是缺省语义:开关关、间隔 1000。
+func TestEtcYamlPlacementRouteReadyKeys(t *testing.T) {
+	raw, err := os.ReadFile("../../etc/db.yaml")
+	if err != nil {
+		t.Fatalf("read etc/db.yaml: %v", err)
+	}
+	text := strings.ReplaceAll(string(raw), "\r\n", "\n")
+	if !strings.Contains(text, "\n  RequireRouteReady: false\n") {
+		t.Fatal("etc/db.yaml must spell out Placement.RequireRouteReady: false")
+	}
+	var c Config
+	if err := conf.LoadFromYamlBytes([]byte(text), &c); err != nil {
+		t.Fatalf("load etc/db.yaml: %v", err)
+	}
+	if c.Placement.RequireRouteReady {
+		t.Fatal("etc/db.yaml must ship Placement.RequireRouteReady=false")
+	}
+	if c.Placement.RouteReadyGateIntervalMs != DefaultPlacementRouteReadyGateIntervalMs {
+		t.Fatalf("etc/db.yaml must spell out Placement.RouteReadyGateIntervalMs=%d before Normalize, got %d",
+			DefaultPlacementRouteReadyGateIntervalMs, c.Placement.RouteReadyGateIntervalMs)
+	}
+}
+
 // ── 消费组按 zone 拆(docs/design/db-consumer-group-per-zone.md §2)──────────────────────────
 
 // kafkaServerConfigHolder / kafkaHolder 只含 ServerConfig.Kafka 一段,标签与 Config 上的相同,

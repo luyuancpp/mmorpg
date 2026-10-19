@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
 	"sync/atomic"
 	"testing"
 
@@ -17,6 +18,7 @@ import (
 	gproto "google.golang.org/protobuf/proto"
 
 	"proto/scene_manager"
+	"shared/ownerepoch"
 )
 
 // leaveCasLocationRaw 用与生产相同的编码(proto.Marshal)构造 location 原文。
@@ -39,12 +41,22 @@ func leaveCasValue(t *testing.T, mr *miniredis.Miniredis, key string) string {
 }
 
 // seedLeaveCasFixture:location 写 raw,场景人数与节点 10 的人数都设为 count,scene:{id}:node 指向 "10"。
+//
+// raw 能解析且记着非 0 的 owner_epoch 时,另外摆上当前代的释放证据(owner_epoch 键 + handoff 标记 "E:100"):
+// LeaveScene 删 location 之前要求持有者已释放(docs/design/location-release-binding.md §3.2),而用这个夹具的用例
+// 测的是删除机制与离场身份本身,不是释放判定。要测释放判定的用例(leave_release_test.go)自己撤掉这两把键。
 func seedLeaveCasFixture(t *testing.T, mr *miniredis.Miniredis, playerID, sceneID uint64, raw, count string) {
 	t.Helper()
 	require.NoError(t, mr.Set(getPlayerLocationKey(playerID), raw))
 	require.NoError(t, mr.Set(fmt.Sprintf(InstancePlayerCountKey, sceneID), count))
 	require.NoError(t, mr.Set(nodePlayerCountKey(testZoneId, "10"), count))
 	require.NoError(t, mr.Set(sceneNodeKey(sceneID), "10"))
+	loc := &scene_manager.PlayerLocation{}
+	if err := gproto.Unmarshal([]byte(raw), loc); err == nil && loc.GetOwnerEpoch() != 0 {
+		epoch := strconv.FormatUint(loc.GetOwnerEpoch(), 10)
+		require.NoError(t, mr.Set(ownerepoch.OwnerEpochKey(playerID), epoch))
+		require.NoError(t, mr.Set(ownerepoch.HandoffKey(playerID), epoch+":100"))
+	}
 }
 
 func TestDeletePlayerLocationIfUnchanged_Outcomes(t *testing.T) {

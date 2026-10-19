@@ -299,3 +299,66 @@ kubectl --context "$KUBE_CONTEXT" --kubeconfig "$KUBE_CONFIG" -n "$INFRA_NS" \
 上述 7c 必须同时删除受影响玩家的 `player:{id}:save_barrier`，并清理父/子缓存；旧的两表 ACK 不能证明回档后的 SQL。保持停写维护闸，停止旧 scene 并排空旧 Kafka/retry；核对归属计数器不倒退、同一权威 TiDB 的两张玩家行版本一致之后，按 `db-write-fencing-mysql.md` 的登录冷恢复门禁恢复屏障，再放流。未迁移历史数据会被新登录明确拒绝；不能依赖“下一次存盘自动修好”而先放流。此处仅为手册修订，尚未演练自动恢复。
 
 父快照现在还可能持有尚未投递 Kafka 的完整存盘意图。删除屏障前须保存并裁决其 `outbox_*` 原始内容，核对 `player:save_pending:<home_zone>:<player_id % 64>`；不得因 Kafka lag=0 而假定已排空。正常合服/撤销由 `merge_zone` P4 拒绝任何非空桶，须先让原 DB 补投器凭双 SQL ACK 回收。回档中确需清除时，只处理本次受影响玩家的 member，禁止删整桶或静默丢弃未提交意图。屏障人工恢复与灾备流程仍未演练，恢复完成前不可放流。
+
+### 2026-10-18 历史屏障计划与维护恢复工具
+
+`go/db/cmd/save_barrier_restore` 补充上述「从真实 SQL 建立屏障」步骤。首版只支持 Redis 权威路由、映射/父缓存同实例 DB0、显式稳定 placement 指向 home zone 自己的 `zone_<id>_db`。`db_first`、独立 MappingRedis、非零 Redis DB、异区/全局落点和 Redis Cluster 仍须专门的路由冻结证明，工具会拒绝不支持的形态，不得伪造本区映射绕过。
+
+1. 保持登录维护入口；停止所有受影响旧 scene/login/DB 写者并禁自动重启。先让新版 DB 排空所有世代 Kafka/retry/processing/dead 与存盘 outbox，再停止 DB。恢复 SQL 与 owner 计数器，确认 owner 不倒退；本工具不能恢复丢失的 owner。
+2. 保存并裁决未提交原意图，备份后清本次玩家的父/子缓存、旧资产 SQL 证据及需要重建的旧屏障。任何尚存缓存、交接标记、冲突屏障或非空 pending 桶都会被工具拒绝；工具自己不删除这些证据。冷加载尚未完成前，维持停写。
+3. 在同一 Redis DB0 建立**无 TTL**的 `player:save_barrier:maintenance:<home_zone>`，值为维护工单号。该标记只供工具校验，不会让游戏进程自动停写，不替代第1步。
+4. 连接凭据由受控环境变量注入，运行以下命令（工作目录 `go/db`，示例17区/玩家7仅为占位）。计划文件使用 `O_EXCL` 创建，已有文件不覆盖；将命令输出的 SHA-256 与计划一起归档并审查。零围栏迁移另加 `-allow-legacy`，它只修改两表围栏元数据，不改玩家资产列。
+
+```powershell
+# SAVE_BARRIER_RESTORE_DSN、SAVE_BARRIER_RESTORE_REDIS_PASSWORD 已由环境注入；不打印它们。
+go run ./cmd/save_barrier_restore -mode plan -schema zone_17_db -zone 17 `
+  -players 7 -redis 127.0.0.1:26379 -redis-db 0 -routing-mode redis-same-instance `
+  -maintenance-id '<维护工单号>' -plan '<受控目录>/barrier-plan.json' `
+  -writers-stopped -queues-drained
+
+go run ./cmd/save_barrier_restore -mode apply -schema zone_17_db -zone 17 `
+  -redis 127.0.0.1:26379 -redis-db 0 -routing-mode redis-same-instance `
+  -maintenance-id '<同一维护工单号>' -plan '<同一计划文件>' `
+  -plan-sha256 '<已审查原始文件SHA-256>' -writers-stopped -queues-drained
+```
+
+默认必须连接 TiDB 当前强读会话；`-local-mysql` 仅供本地兼容验证，不能作全球数据层证据，该模式绑定计划，执行时不得切换。执行逐人输出 JSON 回执；任一失败立刻退出，已完成前缀不回退，维护标记始终保留。SQL 围栏提交后 Redis 不可用时，可修复连接后按**同一计划**续跑；资产/归属/映射改变则停止重新审查，不能修改计划摘要强行放行。
+
+整批成功后，先以受控测试号验证缺父键登录确实强读到同版两行、资产收据与 SQL 一致，再按发布单恢复写者、维护入口及删除本次维护标记。工具不会自动开放流量；本地隔离工具验证不代表完整 PITR、跨洲灾备或目标容量验收。2026-10-18 的 Linux 真 TiDB/Redis 四项集成与同包单元共 38 项通过、零跳过，原始收据见 `build/barrierrestore-linux-20261018-030237-63a67b/final-proof.json`；高位自增分配器边界与真实旧写者复活仍未覆盖。
+
+### 2026-10-18 第二批：db_first、独立映射和全局落点（实现后须核本批验证收据）
+
+第二批计划为 v2，v1 计划仍按上一节同实例本区边界执行。支持 `db_first`、`redis-split`、非零父缓存 DB、稳定异区 zone 库和 `player_store_*_db`；映射始终 DB0，SQL 路由库与玩家库必须同一 TiDB 实例。Redis Cluster 仍不是现行全链协议支持的部署方式。连接地址、DB、schema、强读模式及路由证明全部绑定计划，不得用改参数替换重审。
+
+1. 停止业务、全部归属发号者（包括 scene_manager）、路由服务及全部合服/pin/relocate/回填/修复写者，禁止自动复活，保留维护入口。排空/裁决各代 Kafka、retry、dead、父 outbox；本工具不自动停止这些写者。独立保存并审定所有曾发出的 owner epoch 上界，包含已过期/释放实例、handoff 已预发的新 epoch 与在途发号，取证截点后不再允许旧发号者前进。
+2. `db_first` 先按合服手册 §9.4 做 SQL 路由 freeze、必要的反向修库与审计，暂不 unfreeze；撤下 mapping 的就绪标记。**必要反向修库必须先于本工具 guard**，现有 route_tool 会拒绝 merge 围栏。保留同世代、且不领先 SQL 的永久 `mapping:route:watermark`。SQL 冻结和正确水位缺一则拒绝，不能删水位冒充已恢复。
+3. 恢复/核对 owner 后运行 guard，再生成和审查计划。v2 必填 `-audited-owner-upper-bound`，每名玩家当前永久 owner 必须严格高于该独立审定上界；不能用回退 SQL 或当前 Redis 计数器推算。缺少可信上界保持维护，工具不铸造 owner。guard 只建立永久父缓存维护标记、mapping 维护标记与 `merge:in_progress:<home>`（值为 `save_barrier_restore:<维护号>`）；部分失败会保留已建闸，不自动清除。它不能替代 SQL freeze 或业务停写。
+
+```powershell
+# 工作目录 go/db；DSN 和两个 Redis 密码均由受控环境注入，不写在参数或计划内。
+$restoreTarget = @('-schema','player_store_1000000_db','-zone','17',
+  '-redis','127.0.0.1:26379','-redis-db','2',
+  '-mapping-redis','127.0.0.1:26380','-mapping-redis-db','0',
+  '-routing-mode','db_first','-route-schema','mmorpg_global',
+  '-audited-owner-upper-bound','<独立证据审定的旧代最大epoch>',
+  '-maintenance-id','<同一维护工单号>','-writers-stopped','-queues-drained')
+go run ./cmd/save_barrier_restore @restoreTarget -mode guard
+go run ./cmd/save_barrier_restore @restoreTarget -mode plan -players 7 `
+  -allow-legacy -plan '<受控目录>/barrier-plan-v2.json'
+go run ./cmd/save_barrier_restore @restoreTarget -mode apply `
+  -plan '<同一原始计划文件>' -plan-sha256 '<已审查原始文件SHA-256>'
+```
+
+Redis 为权威且实例分离时使用 `-routing-mode redis-split`，去掉 `-route-schema`；必须存在正确的永久 home/稳定 placement，不能用 SQL 路由副本替 Redis 真源背书。`db_first` 的 mapping 三项则允许全部缺席，否则必须与被锁 SQL 路由及 rev 一致；不会把局部缺失视作权威无玩家。SQL 中已合走 home、有效合服围栏、未冻结/变更的世代/水位/rev、错误物理落点都会拒绝。
+
+执行失败继续保留所有维护闸和计划；已完成前缀可按同计划重入。修复中若路由或资产改变，重新审查，不能篡改计划摘要。整批成功后仍须按发布单验证强读冷加载、SQL 收据与故障恢复，再由维护负责人按原值移除本次标记和广播围栏、恢复 SQL 路由/副本并放流。工具不做这些放流动作；人为删围栏、绕过维护直接写 SQL/Redis 不属于安全恢复前提。
+
+本批当前部署矩阵真库收据为 `build/verification/barrier-restore-v2-20261018/final-real-20261018T094145944Z/proof.json`：带独立旧代上界的库包 64 项通过、零失败、零跳过，包含独立 Redis 权威全局落点恢复/漂移拒绝与 SQL 本区 NULL 落点。90 项输入前后无漂移，随机库与自建键清理断言通过。此前 `real-proof.json` 的62项是补充分支前的历史结果。该收据只证明恢复接缝，不替代旧实例复活和延迟 SQL ACK 宿主演练。
+
+本机双区功能演练入口为 `tools/scripts/tests/run_ownership_fault_fullstack.ps1`。它要求独立 `RunDir`、本轮 `RunId`/`RunStartedUtc`、已编译的两个测试程序，以及实际新建 source scene 的 `SourceReceipt`；不得用配置准备文件代替进程回执。scene 的 PID、启动时刻、镜像路径/SHA、所属区和正式 30 秒存盘周期均须匹配，并先启动独立恢复看门狗。演练只暂停并恢复本轮自有 source，不停止其他实例；失败保留日志和 SQL 证据，先恢复 source，再结束自己的控制器。
+
+`SourceReceipt.process_creation_filetime_utc` 必须是创建器持有的原始进程句柄对应 `GetProcessTimes` 创建 FILETIME 的十进制字符串；`started_utc` 由同一值转换，两者精确相等，不能由 CIM 的近似显示时间反推或预填。暂停与恢复在同一个已打开句柄存活期间核对真实镜像路径、精确 FILETIME 和文件 SHA，再操作该句柄，避免查询 PID 后重新解析 PID 的重用竞态。看门狗绑定主编排单次读取的收据字节 SHA，就绪回执还须匹配全部进程身份；身份不符或恢复失败不得解除看门狗。机器人与控制器的失败清理只操作创建时保留并重新核验的进程句柄，不用 `Stop-Process -Id`。这是演练控制器的准入约束，静态复核不能代替 C# 编译、身份查询验证及真实故障运行证据。
+
+2026-10-19 UTC 已从实际生产脚本提取 C# 编译并完成四例仅查询验证：自身完整身份匹配成功，创建时间错一 tick、镜像路径不符、SHA 不符分别拒绝；脚本首终 SHA 一致。收据为 `build/verification/ownership-private-nodes-20261018T093112231Z-11de2033/identity-query-20261019T025338287Z/proof.json`。这四例没有调用暂停、恢复或终止，真实双区故障演练及失败清理运行仍待验，不能据此宣称宿主场景已通过。
+
+验收必须分别取得：第二表 SQL 锁定期间首 ACK 已到但交接仍未放行，释放后真实跨区往返且资产恰变一次；旧 source 暂停后真实租约死亡、新实例以更高 epoch 落库，恢复旧 source 后出现精确旧 epoch 的 CAS 拒写，且 SQL 不回退。单纯正常退出、客户端迟到回调单测或命令枚举都不能代替这两项。当前两个测试程序仅编译、隔离配置仅准备；C++ 底层后续改动的节点链接证据与完整实跑仍待补齐，不据此开放维护入口。

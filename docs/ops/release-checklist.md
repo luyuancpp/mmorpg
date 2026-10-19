@@ -116,6 +116,7 @@ GitHub Actions 的 `release.yml` 覆盖其中 ③⑤(外加版本号、CHANGELOG
   ```
   部署沿用 `k8s_deploy.ps1` / `k8s_image.ps1` 的既有命令,`-ReleaseProfile prod`,镜像参数统一用本版本 tag:`-NodeImage <registry>/mmorpg-node:vX.Y.Z-<12位commit>`、`-GoSvcRegistry <registry> -GoSvcTag vX.Y.Z-<12位commit>`、`-JavaSvcRegistry <registry> -JavaSvcTag vX.Y.Z-<12位commit>`。部署前后按 §3.2 核对 digest。
   部署核对完成后,查看 §6 有没有本版本对应的一次性项(2026-10-16 增补)。
+  首次发布含 B0-4(C++ 节点 fd 上限不够就拒启)的版本之前,先按 [gate-kernel-tuning-runbook.md](gate-kernel-tuning-runbook.md) §3.1「上线前置」第 1 步,读各集群各节点池的容器 nofile 硬限并记进 PROGRESS;硬限不够时先处理再发布。拒启的影响面按工作负载形态不同(单副本 battle hostPort 会整体停服),回滚另有 external gate 删 Pod 等额外步骤,见同节「紧急回退」(2026-10-18 增补)。
 
 ### 2.2 在 GitHub Actions 上出包(`.github/workflows/release.yml`)
 
@@ -335,6 +336,14 @@ net.ipv4.tcp_keepalive_probes = 3
 | Kafka `gate-{gateId}` lag | kafka-ui / cmak | > 1000 → 告警 |
 | player_locator session ONLINE 数 | redis ZCARD player_locator:lease_zset + SCAN player:session: | 偏差 > 20% → 怀疑 #B-1 类 leak |
 
+> **2026-10-18 更正(B0-1 会话对账按 gate 建索引)**:上表最后一行的数据源写错了,而且不能照做:
+> `player_locator:lease_zset` 这个键不存在(断线租约 ZSET 是 `player:leases`);生产核心 Redis 上也**不要**跑 `SCAN player:session:*` 全键扫描 —— 目标规模下一遍要数小时,和业务抢同一个单主。改为:
+> - 在线数上界:指标 `player_locator_gate_index_members`(只由会话对账 leader 产出,按 `player_locator_reconcile_is_leader == 1` 过滤后取 max)。它是**上界**,不是精确在线数:存活 gate 索引里的脏成员要等日审计清掉;
+> - 断线中(DISCONNECTING、等租约到期)的人数:`ZCARD player:leases`;
+> - 抽查单个 gate:`SMEMBERS player:gate_index:gates` 列出登记过的 gate 实例 uuid,再 `SCARD player:gate_index:sessions:<uuid>`;
+> - 「偏差 > 20%」的对照基线改为 gateway / login 侧的在线计数;对账本身有没有在跑,看 `deploy/k8s/player-locator-alerts.yaml` 的 NoLeader / Stalled。
+> - 单个玩家卡在 ONLINE 的定向补救见本附录 F.B-1 末尾「定向补救」。机制见 [player-locator-gate-session-index.md](../design/player-locator-gate-session-index.md)。
+
 #### B.2 日志关键词
 
 错误关键字(grep + 告警):
@@ -476,6 +485,27 @@ kubectl rollout undo deploy/login -n mmorpg
 - **治标:** robot main `defer sendDisconnectBestEffort(gc)` 主动通知 login.Disconnect (commit `0f4712996` 之后)
 - **治本:** cpp gate `HandleConnectionDisconnection` 把 `SessionInfo.playerId` 填进 `SessionDetails`,login `markPlayerSessionDisconnecting` 真的能跑(本轮 commit)
 - **生产影响:** 玩家正常 TCP 断会触发 OS-level RST → gate 同样路径,本来就走治本逻辑,所以**生产无症状**;dev 重跑机器人时遇到
+
+**定向补救(2026-10-18 增补):单个玩家的会话卡在 ONLINE**
+
+login 的 `markPlayerSessionDisconnecting` 退避重试 4 次仍失败时打 CRITICAL 日志 `CRITICAL: session stuck ONLINE — SetSessionDisconnecting exhausted retries player=<player_id> session=<session_id> gate_instance="<uuid>" ...`(日志里写的「#B-1 sweep」就指这里)。这类会话所在的 gate 还活着,会话对账**看不到**它(对账只处理 etcd 里已消失的 gate,机制见 [player-locator-gate-session-index.md](../design/player-locator-gate-session-index.md));gate 已死的那一类不用人工处理,对账会在 2~3 拍(约 2~3 分钟)内补投 DISCONNECTING。处置按玩家逐个来,**不要**在生产核心 Redis 上全键 SCAN:
+
+1. 从 CRITICAL 日志取 `player`、`session`、`gate_instance`。
+2. 转发到该 zone 的 player-locator(不要把服务暴露到集群外),在仓库根目录执行(proto 的 import 路径以仓库根为准;staging / prod 不开 gRPC 反射,必须带 `-proto`):
+   ```bash
+   kubectl -n <zone namespace> port-forward svc/player-locator 50100:50100
+   grpcurl -plaintext -import-path . -proto proto/player_locator/player_locator.proto \
+     -d '{"player_id": <player_id>}' 127.0.0.1:50100 playerlocator.PlayerLocator/GetSession
+   ```
+3. 只有 `found=true`、`state=SESSION_STATE_ONLINE`、`session_id` 等于日志里的 session(日志的 gate_instance 非空时还要与 `gate_instance_id` 相同)才继续。已经是 DISCONNECTING、已不存在、或 session_id 变了,说明玩家已重连 / 重登或已被清理,什么都不做。
+4. 补投断线(与 login 原本要发的那一次完全相同;会话在这之间被改写时 CAS 自动失败,不会踢掉活人):
+   ```bash
+   grpcurl -plaintext -import-path . -proto proto/player_locator/player_locator.proto \
+     -d '{"player_id": <player_id>, "session_id": <session_id>, "gate_instance_id": "<GetSession 回的 gate_instance_id>"}' \
+     127.0.0.1:50100 playerlocator.PlayerLocator/SetDisconnecting
+   ```
+5. 再 GetSession 一次应为 `SESSION_STATE_DISCONNECTING`;断线租约(缺省 30s)到期后 LeaseMonitor 发踢人与 LeaveScene,随后 `found=false`。
+- 文档债(登记,不在本次改):`go/login/internal/logic/clientplayerlogin/session_lifecycle.go` 的注释与 CRITICAL 日志文案仍写「#B-1 SCAN 巡检 / sweep」,与 `disconnectlogic.go` 注释里过时的「Redis key TTL expires」并列,随 login 下一次改动更正。
 
 #### F.B-2: docker kafka 单 broker 偶发 Exited (255)
 

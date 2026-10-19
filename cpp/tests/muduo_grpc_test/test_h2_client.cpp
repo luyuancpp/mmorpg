@@ -21,7 +21,7 @@ std::string BytesToString(const uint8_t *data, size_t len)
     return len == 0 ? std::string() : std::string(reinterpret_cast<const char *>(data), len);
 }
 
-std::vector<nghttp2_nv> MakeNva(const HeaderList &headers)
+std::vector<nghttp2_nv> MakeNva(const HeaderList &headers, uint8_t nameFlags)
 {
     std::vector<nghttp2_nv> nva;
     nva.reserve(headers.size());
@@ -32,7 +32,7 @@ std::vector<nghttp2_nv> MakeNva(const HeaderList &headers)
         nv.value = reinterpret_cast<uint8_t *>(const_cast<char *>(value.data()));
         nv.namelen = name.size();
         nv.valuelen = value.size();
-        nv.flags = NGHTTP2_NV_FLAG_NONE; // nghttp2 自己拷贝名与值
+        nv.flags = nameFlags; // 普通入口拷贝名和值;非法名称入口只借用已经稳定持有的名称
         nva.push_back(nv);
     }
     return nva;
@@ -341,12 +341,26 @@ int32_t TestH2Client::RemoteConnectionWindow() const
 
 int32_t TestH2Client::OpenStream(const HeaderList &headers, bool endStream)
 {
+    return OpenStreamWithNameFlags(headers, endStream, NGHTTP2_NV_FLAG_NONE);
+}
+
+int32_t TestH2Client::OpenStreamWithUnnormalizedNames(const HeaderList &headers, bool endStream)
+{
+    // 只改变名称的提交方式;同一会话的 HPACK 动态表、流编号与响应观察完全沿用普通入口。
+    auto retained = std::make_unique<HeaderList>(headers);
+    const HeaderList &stableHeaders = *retained;
+    retainedHeaderNames_.push_back(std::move(retained));
+    return OpenStreamWithNameFlags(stableHeaders, endStream, NGHTTP2_NV_FLAG_NO_COPY_NAME);
+}
+
+int32_t TestH2Client::OpenStreamWithNameFlags(const HeaderList &headers, bool endStream, uint8_t nameFlags)
+{
     if (!session_)
     {
         Fail("client session not created");
         return -1;
     }
-    const std::vector<nghttp2_nv> nva = MakeNva(headers);
+    const std::vector<nghttp2_nv> nva = MakeNva(headers, nameFlags);
     const int32_t streamId = nghttp2_submit_headers(session_.get(),
                                                     endStream ? NGHTTP2_FLAG_END_STREAM : NGHTTP2_FLAG_NONE, -1,
                                                     nullptr, nva.data(), nva.size(), nullptr);

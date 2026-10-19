@@ -26,6 +26,8 @@ Cross-zone check: `GateZoneId != 0 && targetZoneId != 0 && GateZoneId != targetZ
 | Login `entergamelogic.go` | Passes `ZoneId = config.Node.ZoneId` (or `home_zone`, see "Login-side zone resolution") |
 | C++ scene `EnterScene` callers | `player_scene_handler.cpp` / `player_lifecycle.cpp` (relocate) / `scene_manager_response_handler.cpp` pass `zone_id = GetZoneId()`; follow-leader (`player_team.cpp`) passes the leader's `zone_id`; zone travel (`player_lifecycle.cpp`) passes the target zone |
 
+> **2026-10-17 契约勘误**：调用方表中的 `scene_manager_response_handler.cpp` 已由 `player_scene.cpp` 的 `PlayerSceneSystem::HandleMirrorCreateDone` 取代；自动进场仍经 `RequestSceneChange` / `SendCorrelatedEnterScene`，zone_id 取值契约不变。
+
 ## Redis Keys
 - `scene:{id}:zone` — uint32 zone_id for each scene instance
 - `player:{id}:location` — protobuf `PlayerLocation` (scene_id, node_id, update_time, zone_id, owner_epoch, pending_scene_conf_id). `node_id == ""` with `owner_epoch != 0` means "cross-zone handoff granted, awaiting placement in `zone_id`": no node holds the player

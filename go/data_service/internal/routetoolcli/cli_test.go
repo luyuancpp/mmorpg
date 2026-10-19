@@ -214,8 +214,10 @@ func TestRunSubcommandFlagsAreScoped(t *testing.T) {
 	}
 }
 
-// TestRunReconcileAndUnfreezeRefusedInRedisMode:yaml 是 redis 模式时 reconcile-from-cache / unfreeze / audit -frozen-recovery
+// TestRunReconcileAndUnfreezeRefusedInRedisMode:yaml 是 redis 模式时 reconcile-from-cache / audit -frozen-recovery
 // 在连任何东西之前就退出码 2(库不是真源,没有可修的);freeze 允许,但打 WARN(redis 模式的 W1 不读 writable)。
+// 2026-10-18 修复评审起 unfreeze 在 redis 模式下改为「没有 -cache-was-not-verified-acknowledged 才拒绝」(同样在连任何东西之前),
+// 放行的那一半见 TestRunFreezeThenUnfreezeInRedisMode。
 func TestRunReconcileAndUnfreezeRefusedInRedisMode(t *testing.T) {
 	addr := closedLocalAddr(t)
 	path := writeYaml(t, fmt.Sprintf(minimalYaml, addr)) // 不写 RouteStore 段 = redis 模式
@@ -242,6 +244,43 @@ func TestRunReconcileAndUnfreezeRefusedInRedisMode(t *testing.T) {
 		assert.Contains(t, stderr, "WARN: RouteStore.Mode=redis")
 		assert.Equal(t, 1, st.freezeCalls)
 	})
+}
+
+// TestRunFreezeThenUnfreezeInRedisMode(2026-10-18 修复评审):redis 模式下误跑 / 演练过 freeze 之后,工具自己能撤销 ——
+// import-from-redis 的 requireRouteWritable 与模式无关,没有这条路径就只能手写 UPDATE route_meta。
+// 没有 -cache-was-not-verified-acknowledged 退出码 2、不解冻;加上之后解冻,最低水位 0;两次都不连 mapping Redis
+// (地址不可达,连了就是 unreachable)、不读身份(fakeDeps 的身份读取会报错)。MappingRedis.Type 不是 node 也不挡(不读标记)。
+func TestRunFreezeThenUnfreezeInRedisMode(t *testing.T) {
+	addr := closedLocalAddr(t)
+	path := writeYaml(t, fmt.Sprintf(minimalYaml, addr)) // 不写 RouteStore 段 = redis 模式
+	st := &fakeStore{meta: store.RouteMeta{Generation: testGen, Writable: 1}}
+
+	code, _, stderr := runCLIWith(fakeDeps(st), "-f", path, "freeze", "-reason=drill")
+	require.Equal(t, routetool.ExitClean, code, stderr)
+	require.Equal(t, uint64(0), st.meta.Writable)
+
+	code, stdout, stderr := runCLIWith(fakeDeps(st), "-f", path, "unfreeze", "-confirm-audited")
+	assert.Equal(t, routetool.ExitFailed, code)
+	assert.Empty(t, stdout)
+	assert.Empty(t, st.unfreezeCalls, "没有显式确认不许解冻")
+	assert.Contains(t, stderr, "RouteStore.Mode=redis")
+	assert.Contains(t, stderr, "-cache-was-not-verified-acknowledged")
+	assert.NotContains(t, stderr, "unreachable")
+
+	code, stdout, stderr = runCLIWith(fakeDeps(st), "-f", path, "unfreeze", "-confirm-audited", "-cache-was-not-verified-acknowledged")
+	assert.Equal(t, routetool.ExitClean, code, stderr)
+	assert.Equal(t, []uint64{0}, st.unfreezeCalls)
+	assert.Equal(t, uint64(1), st.meta.Writable)
+	assert.Equal(t, "route_unfreeze changed=true already_writable=false marker=not_read_redis_mode generation_realigned=false min_watermark_ms=0\n", stdout)
+	assert.Contains(t, stderr, "WARN: RouteStore.Mode=redis")
+	assert.NotContains(t, stderr, "unreachable", "redis 模式的 unfreeze 不连 mapping Redis")
+	assert.NotContains(t, stderr, "identity not scripted")
+
+	clusterPath := writeYaml(t, strings.Replace(fmt.Sprintf(minimalYaml, addr), "Type: node", "Type: cluster", 1))
+	st.meta.Writable = 0
+	code, _, stderr = runCLIWith(fakeDeps(st), "-f", clusterPath, "unfreeze", "-confirm-audited", "-cache-was-not-verified-acknowledged")
+	assert.Equal(t, routetool.ExitClean, code, stderr)
+	assert.NotContains(t, stderr, "need a single instance")
 }
 
 // TestRunUnfreezeNeedsConfirmAudited:unfreeze 没有 -confirm-audited 就退出码 2(参数阶段,连 Redis 之前);
@@ -297,8 +336,12 @@ func TestRunUnfreezeRefusesWithoutVerifiedMarker(t *testing.T) {
 	marker := func(t *testing.T, id routetool.RedisIdentity, wm uint64) string {
 		t.Helper()
 		raw, err := placement.EncodeRouteReadyMarker(placement.RouteReadyMarker{
-			Generation: testGen, RedisRunID: id.RunID, MasterReplID: id.MasterReplID,
-			SetAtMs: wm + 1, WatermarkMs: wm, Leader: "route_leader@it:0a1b2c3d",
+			Generation:   testGen,
+			RedisRunID:   id.RunID,
+			MasterReplID: id.MasterReplID,
+			SetAtMs:      wm + 1,
+			WatermarkMs:  wm,
+			Leader:       "route_leader@it:0a1b2c3d",
 		})
 		require.NoError(t, err)
 		return raw

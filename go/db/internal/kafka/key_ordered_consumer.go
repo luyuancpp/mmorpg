@@ -36,11 +36,6 @@ import (
 const (
 	expandStatusExpireDuration = 30 * time.Minute
 	taskResultExpireDuration   = 5 * time.Minute
-	// taskResultNotifyChannel is the Redis Pub/Sub channel that downstream
-	// services (e.g. login) subscribe to for event-driven task-result delivery.
-	// Payload: the task_id string. Subscriber LPOPs the per-task list to fetch
-	// the actual TaskResult bytes.
-	taskResultNotifyChannel = "task:result:notify"
 
 	// retryDrainBudgetPerTick 限定一次 tick 最多认领多少条重试任务。
 	// 有预算是为了不让重试排空长期霸占单个 goroutine、把新写饿死;
@@ -148,6 +143,10 @@ type KeyOrderedKafkaConsumer struct {
 	// durableBackoff 记「claim 因入队未确认落盘而退出」的连续次数,消费循环据此在重新入组之前退避(rejoin_backoff.go)。
 	// nil(直接拼结构体的单测)时不退避。
 	durableBackoff *durableFailureBackoff
+
+	// routeGate 是读方就绪闸(route_ready_gate.go,D1 第 3 批):只在 Placement.RequireRouteReady=true 时非 nil。
+	// 闸关着时 ConsumeClaim 不取新消息、重试循环不分拣也不认领;nil 时恒放行,行为与引入之前相同。
+	routeGate *routeReadyGate
 }
 
 const (
@@ -554,7 +553,7 @@ func publishDBReadResult(ctx context.Context, redisClient redis.Cmdable, task *d
 			Data:    resultData,
 			Error:   "",
 		}
-		if err := publishTaskResult(ctx, redisClient, task.TaskId, result); err != nil {
+		if err := publishTaskResult(ctx, redisClient, task, result); err != nil {
 			return err
 		}
 		metrics.ObserveStage(metrics.StageResultPublish, "read", time.Since(publishStart))
@@ -563,9 +562,15 @@ func publishDBReadResult(ctx context.Context, redisClient redis.Cmdable, task *d
 	return nil
 }
 
-// publishTaskResult 把读任务的回执交给等待方:LPUSH task:result:{taskID} + EXPIRE + PUBLISH 通知。
+// publishTaskResult 把读任务的回执交给等待方:LPUSH task:result:{taskID} + EXPIRE,再 PUBLISH 一条只带 task_id 的通知。
 // 成功回执与落点失败回执(failReadTask)共用这一条路径。
-func publishTaskResult(ctx context.Context, redisClient redis.Cmdable, taskID string, result *db_proto.TaskResult) error {
+//
+// LPUSH / EXPIRE 必须在 PUBLISH 之前:login 一收到通知就 LPOP,TTL 到期时的兜底 LPOP 也依赖列表已经存在。
+// 通知按 task.reply_instance 只发一次(taskResultNotifyTarget):合法只发发起方 login 的实例频道,为空或不合法回落
+// 全服旧频道;不双发,因为新版 login 两条频道都订着。通知失败或没人收只拉长时延 —— 结果已在列表里,由 login 的
+// TTL 兜底取回 —— 所以仍返回 nil;只有结果本身没写进去才返回错误,调用方据此延后重试。
+func publishTaskResult(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTask, result *db_proto.TaskResult) error {
+	taskID := task.GetTaskId()
 	resBytes, err := proto.Marshal(result)
 	if err != nil {
 		return fmt.Errorf("marshal result failed: %w", err)
@@ -577,12 +582,20 @@ func publishTaskResult(ctx context.Context, redisClient redis.Cmdable, taskID st
 	if err := redisClient.Expire(ctx, resultKey, taskResultExpireDuration).Err(); err != nil {
 		return fmt.Errorf("set expire for result key failed: %w", err)
 	}
-	// Notify event-driven subscribers (e.g. login dispatcher) so they don't
-	// have to BLPOP-wait. Existing LPush + BLPOP consumers still work; this
-	// is purely additive. Failure to publish only degrades latency for
-	// notification-based consumers (their stale-cleanup will catch it).
-	if err := redisClient.Publish(ctx, taskResultNotifyChannel, taskID).Err(); err != nil {
-		logx.Errorf("publish task result notify failed: taskID=%s, err=%v", taskID, err)
+	replyInstance := task.GetReplyInstance()
+	channel, target := taskResultNotifyTarget(replyInstance)
+	receivers, err := redisClient.Publish(ctx, channel, taskID).Result()
+	outcome := taskResultNotifyResult(receivers, err)
+	metrics.CountTaskResultNotify(target, outcome)
+	switch {
+	case target == metrics.TaskResultNotifyLegacyInvalid:
+		// 正常的 login 不会填出不合法的回复目标,出现即说明有生产者写错了字段;发布本身的结果一并带上。
+		logTaskResultNotify(taskResultNotifyLogKey(target, outcome),
+			"task result notify fell back to the legacy channel, invalid reply_instance: taskID=%s len=%d reply_instance=%q result=%s err=%v",
+			taskID, len(replyInstance), replyInstanceForLog(replyInstance), outcome, err)
+	case err != nil:
+		logTaskResultNotify(taskResultNotifyLogKey(target, outcome),
+			"publish task result notify failed: taskID=%s channel=%s target=%s err=%v", taskID, channel, target, err)
 	}
 	return nil
 }
@@ -927,6 +940,8 @@ func (w *worker) guardOwnerEpoch(task *workerTask, dbTask *db_proto.DBTask) bool
 		// 不推进的理由:cursor 只挡「更小的 seq」,同 key 后续更高 seq 的任务不会被卡住;
 		// 这条任务的重复投递再来时会再撞一次只升不降的 applied epoch,结论不变。推进反而把
 		// 「已落库」写假 —— cursor 的定义是最后一次**成功应用**的位置。
+		// 同一版本重投结论不变,补投器据终态停止(save_outbox_note.go)。
+		w.markSaveOutboxTerminal(dbTask, "stale_owner_redis")
 		if task.fromRetry {
 			if ackErr := ackRetryReceipt(w.ctx, w.redisClient, w.retryProcessingKey, task.retryReceipt); ackErr != nil {
 				logx.Errorf("ack stale-owner retry receipt failed; it remains recoverable: taskID=%s err=%v", dbTask.TaskId, ackErr)
@@ -1149,6 +1164,13 @@ func NewKeyOrderedKafkaConsumer(
 		logx.Errorf("ordering lease safety margin check failed (startup allowed): %v", err)
 	}
 
+	// 读方门禁(route_ready_gate.go,D1 第 3 批):Placement.RequireRouteReady=false(缺省)时两者都是 nil。
+	// 放在建消费组之前:装配被拒时还没有要收拾的连接。
+	routeReader, routeGate, err := newRouteReadyGating(cfg.Placement, placementRedis)
+	if err != nil {
+		return nil, fmt.Errorf("route ready gating: %w", err)
+	}
+
 	config := sarama.NewConfig()
 	config.Version = consumerKafkaVersion
 	config.ClientID = consumerClientID(cfg.ZoneId, hostname)
@@ -1248,6 +1270,9 @@ func NewKeyOrderedKafkaConsumer(
 		durable:        confirmingEnqueue{durableEnqueue: newDurableEnqueue(cfg.ServerConfig.RedisClient, redisClient), backoff: durableBackoff},
 		durableBackoff: durableBackoff,
 	}
+	// 读方门禁的两半:逐条选库 / 复核用的读(所有 worker 共用同一个 placementRouter),与进程级就绪闸。
+	c.placement.ready = routeReader
+	c.routeGate = routeGate
 	for i := int32(0); i < cfg.ServerConfig.Kafka.PartitionCnt; i++ {
 		c.workers[i] = c.buildWorker(i)
 	}
@@ -1320,6 +1345,12 @@ func (c *KeyOrderedKafkaConsumer) ensureWorker(partition int32) (*worker, error)
 }
 
 func (c *KeyOrderedKafkaConsumer) Start() error {
+	// 读方就绪闸(route_ready_gate.go):Placement.RequireRouteReady=true 时先试跑一次读脚本,执行出错即拒启;通过后按间隔
+	// 刷新。开关关着时什么都不做。放在最前:拒启时还没有起任何 goroutine、没有占任何收据。
+	if err := c.startRouteReadyGate(); err != nil {
+		return fmt.Errorf("route ready gate: %w", err)
+	}
+
 	// 入队层先于一切消费:开启 WAITAOF 时这里发一次启动探针(appendonly no、Redis < 7.2、副本份数配错都是确定性的),
 	// 失败即拒启,而不是留到运行期让每一次入队都 fail-closed、对应分区反复停滞;探针通过后才起组提交的写协程。
 	// 写协程的生命周期不跟 c.ctx 走,只由 Stop 的最后一步关闭(durable_enqueue.go)。
@@ -1589,6 +1620,12 @@ func (c *KeyOrderedKafkaConsumer) consumeRetryQueue() {
 		return
 	}
 	s := c.sampleRetryQueues()
+	// 读方就绪闸关着(route_ready_gate.go,D1 第 3 批):本拍不分拣、不认领 —— 认领出来的任务逐条判也只会不可信、再搬回去,
+	// 读还要白耗预算。收据留在原列表,下一拍(retryConsumeInterval)再看。上面两步只是收尾已认领的收据,照做;
+	// 长度采样照做,队列指标不断档。闸为 nil(开关关着)时恒放行。
+	if c.retryClaimsPaused() {
+		return
+	}
 	if c.ownerRouting() {
 		c.consumeRetryQueueOwner(s)
 		return
@@ -2499,7 +2536,13 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 		if h.consumer.pullStopped() {
 			return h.drainClaimForShutdown(claim, acker, lease)
 		}
+		// 读方就绪闸(route_ready_gate.go,D1 第 3 批):闸关着时 messages 为 nil(这一路永不就绪 = 不取新消息、不 track、
+		// 不派发,位点停在已完成的前缀,消息留在 Kafka),等 recheck(下一次刷新完成)醒来再判;其余各路照常,停机、再平衡、
+		// 交接让出与失败收尾都不受影响。闸为 nil(开关关着)时 messages 恒为 claim.Messages()、recheck 恒为 nil。
+		messages, recheck := h.consumer.gatedMessages(claim)
 		select {
+		case <-recheck:
+			continue
 		case err := <-acker.failureCh:
 			drainAfterStop("offset durability failure")
 			return err
@@ -2524,7 +2567,7 @@ func (h *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession,
 				drainAfterStop("handoff peer reclaimed partition")
 			}
 			return nil
-		case msg, ok := <-claim.Messages():
+		case msg, ok := <-messages:
 			if !ok {
 				// 不会再有新消息:先关租约(不再接新的 owner 重试认领),再等在途工作。
 				lease.close()
@@ -2939,6 +2982,8 @@ func encodeRetryPayload(task *db_proto.DBTask, seq uint64, partition int32, hasP
 func (w *worker) deferFailedTask(task *workerTask, dbTask *db_proto.DBTask, cause error) {
 	// 每一次延后都按原因计数(L-04 §3.7):一眼能看出任务为什么没落库,也是「存储延后持续不退」告警的数据源。
 	metrics.CountTaskDeferred(taskOpLabel(dbTask), deferReason(cause))
+	// 给存盘补投器的提示(save_outbox_note.go):确定性拒写打终态,其余记「本 key 已有在途重试」。
+	w.noteSaveOutboxDeferral(dbTask, cause)
 	if errors.Is(cause, errOrderingLockBusy) {
 		// 排序锁忙按来源分开计:owner 模式下重试与该分区新消息同一个 worker 串行,retry 来源应接近 0;
 		// 明显不为 0 说明还有非属主实例在执行重试(或重叠窗口里的旧 claim)。
@@ -2993,6 +3038,13 @@ func (w *worker) deferFailedTask(task *workerTask, dbTask *db_proto.DBTask, caus
 			// frozen_deferred 计数告警。落点库不可用(errPlacementStoreUnavailable)是真实基础设施故障,
 			// 仍打 ERROR。
 			logx.Debugf("retry task rescheduled (placement frozen): taskID=%s retryCount=%d cause=%v",
+				dbTask.TaskId, dbTask.RetryCount, cause)
+			return
+		}
+		if errors.Is(cause, errRouteNotReady) {
+			// mapping Redis 的副本不可信(D1 第 3 批):与冻结同口径只打 DEBUG,每分钟一条 INFO 汇总由 noteRouteNotReady 打;
+			// 持续多久看 db_route_ready_gate 与 db_placement_guard_total{outcome="route_not_ready"}。
+			logx.Debugf("retry task rescheduled (route not ready): taskID=%s retryCount=%d cause=%v",
 				dbTask.TaskId, dbTask.RetryCount, cause)
 			return
 		}
@@ -3105,6 +3157,8 @@ func (w *worker) deadLetterRetry(task *workerTask, dbTask *db_proto.DBTask, labe
 // quarantineOrderingConflict 把一条不能落库的写持久化进死信后 ack。label 是 db_task_dead_letter_total 的 reason
 // (metrics.DeadLetter*),reason 是写进日志的详细原因。
 func (w *worker) quarantineOrderingConflict(task *workerTask, dbTask *db_proto.DBTask, label, reason string) {
+	// 进死信的写都是这一版本的确定性结局:补投器停止重投同一版本,免得每轮再多一条死信(save_outbox_note.go)。
+	w.markSaveOutboxTerminal(dbTask, label)
 	if task.fromRetry {
 		if err := w.deadLetterRetry(task, dbTask, label, reason); err != nil {
 			logx.Errorf("DATA-LOSS/ORDERING: retry quarantine failed; receipt remains recoverable: taskID=%s err=%v",

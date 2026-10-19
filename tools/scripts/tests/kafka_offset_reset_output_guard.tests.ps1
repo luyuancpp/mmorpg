@@ -489,4 +489,105 @@ Test-Case '[2] Get-DbGroupDescribeExecArgs / Resolve-DbGroupDescribeExecResult:k
     Assert-True -Condition ($null -ne $forbidden) -Because 'exec 本身失败必须按读不到 throw,不当成「没有位点」'
 }
 
+# ─────────────────────────────────────────────────────────────────
+# 回档丢弃语义(负责人 2026-10-17 裁决,2026-10-18 落码):Step 5 -ToLatest;lib 新增 --state / CONSUMER-ID / 静默 / 切点判定
+# ─────────────────────────────────────────────────────────────────
+
+Test-Case '-ToLatest + -RetireGroup + -Partitions + -Apply 通过参数校验;重置分支把 -ToLatest 映射成 --to-latest、-Apply 映射成 --execute' {
+    # -KafkaBin 指向空目录:参数校验通过后在解析 Kafka 工具那一步停下,保证不连任何 Kafka(本机装了 CLI 也不会被调到)。
+    $emptyBin = Join-Path ([IO.Path]::GetTempPath()) ('mmorpg-empty-kafka-bin-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $emptyBin | Out-Null
+    try {
+        $run = Invoke-ResetScript -Arguments @('-Group', 'db_rpc_consumer_group_z101', '-RetireGroup', 'db_rpc_consumer_group', '-ToLatest', '-Partitions', '10', '-KafkaBin', $emptyBin, '-Apply')
+    }
+    finally {
+        Remove-Item -LiteralPath $emptyBin -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    Assert-True -Condition ($run.ExitCode -ne 0) -Because "空的 -KafkaBin 必须在解析工具时失败。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern 'Kafka tool not found at' -Because "回档 Step 5 的参数组合必须通过参数校验,停在解析工具那一步。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern 'mode\s+: ToLatest' -Because '模式是 ToLatest'
+    Assert-Match -Text $run.Output -Pattern 'retire\s+: db_rpc_consumer_group ' -Because '-RetireGroup 与 -ToLatest 可以同用'
+
+    $text = Get-Content $scriptPath -Raw
+    Assert-Match -Text $text -Pattern '"ToLatest"\s*\{\s*\$cmdArgs \+= "--to-latest"\s*\}' -Because '-ToLatest 映射成 --to-latest'
+    Assert-Match -Text $text -Pattern 'if \(\$Apply\) \{\s*\$cmdArgs \+= "--execute"' -Because '-Apply 映射成 --execute'
+    Assert-NotMatch -Text $text -Pattern '尚待负责人裁决' -Because '回档语义已定,不再留「待裁决」注释'
+}
+
+Test-Case 'ConvertFrom-KafkaGroupStateDescribe:从右往左取 STATE / #MEMBERS(COORDINATOR (ID) 带空格、Empty 组策略为空);组不存在判 missing' {
+    $header = 'GROUP                       COORDINATOR (ID)          ASSIGNMENT-STRATEGY  STATE           #MEMBERS'
+    $empty = ConvertFrom-KafkaGroupStateDescribe -Lines @('', $header, 'db_rpc_consumer_group_z101  kafka-0.kafka:9092 (0)                       Empty           0') -ExitCode 0 -Group 'db_rpc_consumer_group_z101'
+    Assert-Equal -Expected 'Empty|0' -Actual "$($empty.State)|$($empty.Members)" -Because 'Empty 组的 ASSIGNMENT-STRATEGY 为空,按下标取会错位'
+    Assert-True -Condition (Test-KafkaGroupStateInactive -State $empty.State) -Because 'Empty 视为没有成员在消费'
+    $stable = ConvertFrom-KafkaGroupStateDescribe -Lines @($header, 'g  kafka-1.kafka:9092 (1)  range  Stable  3') -ExitCode 0 -Group 'g'
+    Assert-Equal -Expected 'Stable|3' -Actual "$($stable.State)|$($stable.Members)" -Because 'Stable 组'
+    Assert-True -Condition (-not (Test-KafkaGroupStateInactive -State $stable.State)) -Because 'Stable 有成员在消费'
+    foreach ($state in @('Dead', 'missing')) { Assert-True -Condition (Test-KafkaGroupStateInactive -State $state) -Because "$state 视为没有成员" }
+    Assert-True -Condition (-not (Test-KafkaGroupStateInactive -State 'empty')) -Because '大小写敏感,不猜'
+    $missing = ConvertFrom-KafkaGroupStateDescribe -Lines @("Error: Consumer group 'g' does not exist.") -ExitCode 0 -Group 'g'
+    Assert-Equal -Expected 'missing' -Actual $missing.State -Because '没有表头 + 白名单文案 = 组不存在'
+}
+
+Test-Case 'ConvertFrom-KafkaGroupStateDescribe:Error 行、退出码非 0、没有表头、表头末两列不对、组的行不是恰好一行、值非法,一律 throw' {
+    $header = 'GROUP  COORDINATOR (ID)  ASSIGNMENT-STRATEGY  STATE  #MEMBERS'
+    $cases = @(
+        @{ Label = 'Error 行'; Lines = @($header, 'g  k:9092 (0)  Empty  0', 'Error: Executing consumer group command failed due to TimeoutException'); Exit = 0 },
+        @{ Label = '退出码非 0'; Lines = @($header, 'g  k:9092 (0)  Empty  0'); Exit = 1 },
+        @{ Label = '没有表头'; Lines = @('g  k:9092 (0)  Empty  0'); Exit = 0 },
+        @{ Label = '表头末两列不是 STATE #MEMBERS'; Lines = @('GROUP  COORDINATOR (ID)  STATE  #MEMBERS  EXTRA', 'g  k:9092 (0)  Empty  0  x'); Exit = 0 },
+        @{ Label = '组的行有两行'; Lines = @($header, 'g  k:9092 (0)  Empty  0', 'g  k:9092 (0)  Stable  1'); Exit = 0 },
+        @{ Label = '组的行一行都没有'; Lines = @($header, 'other  k:9092 (0)  Empty  0'); Exit = 0 },
+        @{ Label = '#MEMBERS 不是整数'; Lines = @($header, 'g  k:9092 (0)  Empty  x'); Exit = 0 },
+        @{ Label = 'STATE 含非字母'; Lines = @($header, 'g  k:9092 (0)  Em-pty  0'); Exit = 0 }
+    )
+    foreach ($c in $cases) {
+        $message = Get-ThrownMessage { ConvertFrom-KafkaGroupStateDescribe -Lines $c.Lines -ExitCode $c.Exit -Group 'g' }
+        Assert-True -Condition ($null -ne $message) -Because "$($c.Label):判不出就不能当成 Empty(回档 Step 1b 据此确认没有 db 实例还在消费)"
+    }
+}
+
+Test-Case 'Get-KafkaTopicActiveConsumers:CONSUMER-ID 不是 "-" 的分区列出来;没有行返回空;表头缺 CONSUMER-ID 列即 throw' {
+    $assigned = Resolve-KafkaGroupTopicOffsets -Lines @($DescribeHeader, "g  $Topic  0  10  12  2  consumer-1-abc  /10.0.0.7  consumer-1", (New-DescribeRow -Partition 1 -Current '5' -End '5' -Lag '0')) -ExitCode 0 -Topic $Topic
+    # 以 `, $数组` 返回:直接赋值拿到数组本身(不套 @(...),否则空表也成了 Count 1)。
+    $active = Get-KafkaTopicActiveConsumers -Resolved $assigned
+    Assert-Equal -Expected 1 -Actual $active.Count -Because "只有分区 0 分配给了成员(实际: $($active -join '; '))"
+    Assert-Match -Text $active[0] -Pattern '分区 0:consumer-1-abc' -Because '要列出分区与成员'
+    $idle = Resolve-KafkaGroupTopicOffsets -Lines @($DescribeHeader, (New-DescribeRow -Partition 0 -Current '5' -End '5' -Lag '0')) -ExitCode 0 -Topic $Topic
+    Assert-Equal -Expected 0 -Actual (Get-KafkaTopicActiveConsumers -Resolved $idle).Count -Because '"-" 表示没有成员'
+    $missing = Resolve-KafkaGroupTopicOffsets -Lines @("Error: Consumer group 'g' does not exist.") -ExitCode 0 -Topic $Topic
+    Assert-Equal -Expected 0 -Actual (Get-KafkaTopicActiveConsumers -Resolved $missing).Count -Because '组不存在 = 没有成员'
+    $noColumn = Resolve-KafkaGroupTopicOffsets -Lines @('GROUP  TOPIC  PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG', "g  $Topic  0  5  5  0") -ExitCode 0 -Topic $Topic
+    Assert-True -Condition ($null -ne (Get-ThrownMessage { Get-KafkaTopicActiveConsumers -Resolved $noColumn })) -Because '表头没有 CONSUMER-ID 列就判不出,不能当成没有成员'
+    Assert-True -Condition (-not $noColumn.HasConsumerIdColumn -and $idle.HasConsumerIdColumn) -Because 'HasConsumerIdColumn 随表头而定'
+}
+
+Test-Case 'Test-KafkaTopicQuiescent:两次日志末端完全相同且覆盖 0..N-1 才静默;变化、缺分区、超出分区数都报问题' {
+    Assert-Equal -Expected 0 -Actual (Test-KafkaTopicQuiescent -First @{ 0 = 10; 1 = 20 } -Second @{ 0 = 10; 1 = 20 } -Partitions 2).Count -Because '相同即静默'
+    $moved = Test-KafkaTopicQuiescent -First @{ 0 = 10; 1 = 20 } -Second @{ 0 = 11; 1 = 20 } -Partitions 2
+    Assert-True -Condition (@($moved | Where-Object { $_ -match '分区 0:日志末端从 10 变为 11' }).Count -eq 1) -Because "变化要报出(实际: $($moved -join '; '))"
+    $short = Test-KafkaTopicQuiescent -First @{ 0 = 10 } -Second @{ 0 = 10 } -Partitions 2
+    Assert-True -Condition (@($short | Where-Object { $_ -match '分区 1' }).Count -eq 1) -Because '缺分区判不出,要报问题'
+    $extra = Test-KafkaTopicQuiescent -First @{ 0 = 1; 1 = 1; 2 = 1 } -Second @{ 0 = 1; 1 = 1; 2 = 1 } -Partitions 2
+    Assert-True -Condition (@($extra | Where-Object { $_ -match '分区 2:超出' }).Count -eq 1) -Because '超出分区数说明与 db.yaml 不一致'
+    Assert-True -Condition ((Test-KafkaTopicQuiescent -First @{} -Second @{} -Partitions 0).Count -eq 1) -Because '分区数必须 > 0'
+}
+
+Test-Case 'Get-KafkaGroupCutProblems / ConvertTo-KafkaCutText:每个分区 CURRENT == LOG-END(给了切点还要等于切点);切点文本按分区升序' {
+    $rows = @(
+        [pscustomobject]@{ Partition = 1; CurrentOffset = [long]20; LogEndOffset = [long]20; Lag = [long]0 },
+        [pscustomobject]@{ Partition = 0; CurrentOffset = [long]10; LogEndOffset = [long]10; Lag = [long]0 }
+    )
+    Assert-Equal -Expected 0 -Actual (Get-KafkaGroupCutProblems -Rows $rows -Partitions 2).Count -Because '都在末端'
+    Assert-Equal -Expected 0 -Actual (Get-KafkaGroupCutProblems -Rows $rows -Partitions 2 -ExpectedCut @{ 0 = 10; 1 = 20 }).Count -Because '仍等于切点'
+    $moved = Get-KafkaGroupCutProblems -Rows $rows -Partitions 2 -ExpectedCut @{ 0 = 10; 1 = 19 }
+    Assert-True -Condition (@($moved | Where-Object { $_ -match '分区 1:位点 / 日志末端 20 偏离 Step 5 的切点 19' }).Count -eq 1) -Because "偏离切点要报出(实际: $($moved -join '; '))"
+    $lagging = Get-KafkaGroupCutProblems -Rows @([pscustomobject]@{ Partition = 0; CurrentOffset = [long]10; LogEndOffset = [long]12; Lag = [long]2 }) -Partitions 1
+    Assert-True -Condition (@($lagging | Where-Object { $_ -match 'CURRENT-OFFSET 10 不等于 LOG-END-OFFSET 12' }).Count -eq 1) -Because 'LAG > 0 说明切点之后又有写入'
+    $absent = Get-KafkaGroupCutProblems -Rows @($rows[1]) -Partitions 2
+    Assert-True -Condition (@($absent | Where-Object { $_ -match '分区 1:zone 组在本 topic 上没有这一行' }).Count -eq 1) -Because '缺分区要报出'
+    $dash = Get-KafkaGroupCutProblems -Rows @([pscustomobject]@{ Partition = 0; CurrentOffset = $null; LogEndOffset = [long]5; Lag = $null }) -Partitions 1
+    Assert-True -Condition (@($dash | Where-Object { $_ -match '不是数值' }).Count -eq 1) -Because '"-" 不算位点'
+    Assert-Equal -Expected '0=10,1=20,10=7' -Actual (ConvertTo-KafkaCutText -Cut @{ 10 = 7; 1 = 20; 0 = 10 }) -Because '按分区号数值升序,不按字符串'
+}
+
 exit (Complete-TestRun -SuiteName 'kafka_offset_reset 位点重置结果判定')

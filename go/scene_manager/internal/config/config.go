@@ -3,6 +3,7 @@ package config
 import (
 	"math"
 	"strconv"
+	"time"
 
 	"github.com/zeromicro/go-zero/zrpc"
 )
@@ -24,6 +25,15 @@ type Config struct {
 	// 默认 false:生产依赖标记 + epoch 两道门(cross-zone-scene-travel.md CZ-4),
 	// 打开等于允许新节点读到源节点尚未落盘的状态(回档)。
 	AllowUnsafeCrossNodeHandoff bool `json:",default=false"`
+
+	// LeaveSceneHolderReleaseWaitSeconds:LeaveScene 删 location 之前等「持有者已释放」证据的上限(秒)
+	// (docs/design/location-release-binding.md §3.2 / §3.6)。拿不到证据(当前代 handoff 标记 / 持有节点已死 /
+	// 没有持有者)时保留 location、回可重试错误并请持有节点释放;等满上限仍拿不到才按旧行为删除并计 forced。
+	// 0(含代码里直接构造的零值配置)取默认 600s;<0 关闭整项检查,退回「会话结束即删 location」的旧行为 ——
+	// 运维回滚开关:关 scene 的 A1′(SCENE_EXIT_RELEASE_MARK=0)之前必须先把它设为 -1,否则每次登出都要等满上限。
+	// 零值不当「关闭」:这是防回档的门,漏配时应当开着。读取走 EffectiveLeaveSceneHolderReleaseWait()。
+	// AllowUnsafeCrossNodeHandoff=true(dev 旁路)时同样不检查:换手门本身已被旁路。
+	LeaveSceneHolderReleaseWaitSeconds int64 `json:",default=600"`
 
 	// DataServiceRpc 是 data_service 的 gRPC 客户端(etcd 发现,Key=dataservice.rpc)。
 	// scene_manager 只用它查玩家归属 zone(GetPlayerHomeZone),结果随 RoutePlayerEvent
@@ -454,6 +464,23 @@ func (c *Config) EffectiveLeaderLockTTLSeconds() int64 {
 		return defaultLeaderLockTTLSeconds
 	}
 	return c.LeaderLockTTLSeconds
+}
+
+// defaultLeaveSceneHolderReleaseWaitSeconds 是 LeaveSceneHolderReleaseWaitSeconds 为 0 时的取值,与该字段的 default= 标签一致。
+const defaultLeaveSceneHolderReleaseWaitSeconds int64 = 600
+
+// EffectiveLeaveSceneHolderReleaseWait 返回 LeaveScene 等「持有者已释放」证据的上限(docs/design/location-release-binding.md §3.6)。
+// enabled=false 表示整项检查关闭(配置 <0,或 dev 旁路 AllowUnsafeCrossNodeHandoff 打开),LeaveScene 按旧行为直接删。
+// 配置为 0 取默认 600s:这是防回档的门,零值配置不得把它关掉。
+func (c *Config) EffectiveLeaveSceneHolderReleaseWait() (wait time.Duration, enabled bool) {
+	if c.LeaveSceneHolderReleaseWaitSeconds < 0 || c.AllowUnsafeCrossNodeHandoff {
+		return 0, false
+	}
+	seconds := c.LeaveSceneHolderReleaseWaitSeconds
+	if seconds == 0 {
+		seconds = defaultLeaveSceneHolderReleaseWaitSeconds
+	}
+	return time.Duration(seconds) * time.Second, true
 }
 
 // ChannelCountFor returns the effective world-channel count for a confId,

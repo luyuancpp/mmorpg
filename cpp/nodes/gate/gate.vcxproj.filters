@@ -27,7 +27,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="handler\rpc\client_message_processor.cpp">
+    <ClCompile Include="handler\rpc\client_session_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="handler\rpc\client_request_lane.cpp">
@@ -62,7 +62,7 @@
     <ClInclude Include="handler\event\gate_kafka_command_router.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="handler\rpc\client_message_processor.h">
+    <ClInclude Include="handler\rpc\client_session_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="handler\rpc\client_request_lane.h">

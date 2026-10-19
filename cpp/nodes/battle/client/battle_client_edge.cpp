@@ -570,7 +570,7 @@ void BattleClientEdge::OnUnknownMessage(const muduo::net::TcpConnectionPtr &conn
     // 直连面只认两种类型:握手包与 ClientRequest。别的类型名合法但不在此面的消息
     // (比如客户端把大厅那条连接的 ClientTokenVerifyRequest 发错了连接)一律关。
     // 只走采样日志:这一步在握手之前就可到达,逐条 WARN 就是按建连速率放大的日志 I/O
-    //(gate client_message_processor.cpp 刚修过同类问题);类型名不进日志,采样行有 peer 够排障。
+    //(gate client_session_handler.cpp 刚修过同类问题);类型名不进日志,采样行有 peer 够排障。
     (void)message;
     LogRejectionSampled("unknown_message_type", conn);
     conn->shutdown();

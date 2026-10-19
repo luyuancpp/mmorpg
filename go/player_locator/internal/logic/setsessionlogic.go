@@ -43,6 +43,8 @@ func (l *SetSessionLogic) SetSession(in *pb.SetSessionRequest) (*common.Empty, e
 	if err != nil && err != redis.Nil {
 		return nil, err
 	}
+	// previous 是 expected 字节解出的旧会话,只用来推导要摘除的 gate 索引成员;首次写入时为 nil。
+	var previous *pb.PlayerSession
 	if err == redis.Nil {
 		expected = nil
 	} else {
@@ -50,6 +52,7 @@ func (l *SetSessionLogic) SetSession(in *pb.SetSessionRequest) (*common.Empty, e
 		if err := proto.Unmarshal(expected, current); err != nil {
 			return nil, fmt.Errorf("decode current session: %w", err)
 		}
+		previous = current
 
 		// ReplaceLogin 的调用方当前不会把旧 SceneID/SceneNodeID 拷进新会话。
 		// 在现有 RPC 契约下保留旧值，至少避免顶号登录把已知场景位置清成 0。
@@ -86,7 +89,8 @@ func (l *SetSessionLogic) SetSession(in *pb.SetSessionRequest) (*common.Empty, e
 
 	// session 写入与旧 ready/processing lease 的撤销在同一 Lua 中完成。
 	// 完整 protobuf CAS 防止两个基于同一旧版本构造的替换登录互相覆盖。
-	result, err := replaceSessionAndCancelLease(l.ctx, l.svcCtx, s.PlayerId, expected, data, 0)
+	// gate 索引(旧 gate 摘除、新 gate 加入)也在这一段 Lua 里,与会话写入原子。
+	result, err := replaceSessionAndCancelLease(l.ctx, l.svcCtx, s.PlayerId, expected, data, 0, previous, s)
 	if err != nil {
 		return nil, err
 	}
