@@ -274,3 +274,4 @@
 273=ClientPlayerMailListMails
 274=ClientPlayerMailDeleteMails
 275=ClientPlayerRankGetRankPage
+276=SceneSkillClientPlayerUpgradeSkill

@@ -230,6 +230,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerSkillComp final : public ::go
   enum : int {
     kIdFieldNumber = 1,
     kSkillTableIdFieldNumber = 2,
+    kRankFieldNumber = 3,
   };
   // uint64 id = 1;
   void clear_id() ;
@@ -251,11 +252,21 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerSkillComp final : public ::go
   void _internal_set_skill_table_id(::uint32_t value);
 
   public:
+  // uint32 rank = 3;
+  void clear_rank() ;
+  [[nodiscard]] ::uint32_t rank() const;
+  void set_rank(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_rank() const;
+  void _internal_set_rank(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:PlayerSkillComp)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<1, 2,
+      ::google::protobuf::internal::TcParseTable<2, 3,
                           0, 0,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -286,6 +297,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerSkillComp final : public ::go
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint64_t id_;
     ::uint32_t skill_table_id_;
+    ::uint32_t rank_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -566,6 +578,30 @@ inline ::uint32_t PlayerSkillComp::_internal_skill_table_id() const {
 inline void PlayerSkillComp::_internal_set_skill_table_id(::uint32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.skill_table_id_ = value;
+}
+
+// uint32 rank = 3;
+inline void PlayerSkillComp::clear_rank() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rank_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+}
+inline ::uint32_t PlayerSkillComp::rank() const {
+  // @@protoc_insertion_point(field_get:PlayerSkillComp.rank)
+  return _internal_rank();
+}
+inline void PlayerSkillComp::set_rank(::uint32_t value) {
+  _internal_set_rank(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:PlayerSkillComp.rank)
+}
+inline ::uint32_t PlayerSkillComp::_internal_rank() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.rank_;
+}
+inline void PlayerSkillComp::_internal_set_rank(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.rank_ = value;
 }
 
 // -------------------------------------------------------------------

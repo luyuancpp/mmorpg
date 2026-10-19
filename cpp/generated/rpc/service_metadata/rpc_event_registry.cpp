@@ -285,7 +285,7 @@ namespace trade{void SendTradeAdminSeedListing(entt::registry& , entt::entity , 
 // 容量以 rpc_event_registry.h 的 kMaxRpcMethodCount 为准;static_assert 把
 // "半途 regen 导致头文件容量落后于本轮 message id 数"的事故(2026-09-01,
 // InitMessageInfo 越界写导致节点启动断言)变成编译错误而不是运行期崩溃。
-static_assert(kMaxRpcMethodCount == 276,
+static_assert(kMaxRpcMethodCount == 277,
     "kMaxRpcMethodCount out of sync with this generation run - rerun the full proto generator");
 std::array<RpcMethodMeta, kMaxRpcMethodCount> gRpcMethodRegistry;
 
@@ -1460,6 +1460,11 @@ void InitMessageInfo()
         std::make_unique<::ListSkillsRequest>(),
         std::make_unique<::ListSkillsResponse>(),
         std::make_unique<SceneSkillClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
+    gRpcMethodRegistry[SceneSkillClientPlayerUpgradeSkillMessageId] = RpcMethodMeta{
+        "SceneSkillClientPlayer", "UpgradeSkill",
+        std::make_unique<::UpgradeSkillRequest>(),
+        std::make_unique<::UpgradeSkillResponse>(),
+        std::make_unique<SceneSkillClientPlayerImpl>(), 0, common::base::eNodeType::SceneNodeService};
 
     // --- ScenePlayerSync ---
     gRpcMethodRegistry[ScenePlayerSyncSyncBaseAttributeMessageId] = RpcMethodMeta{
@@ -1898,6 +1903,7 @@ bool IsClientMessageId(uint32_t messageId)
 	case SceneSkillClientPlayerNotifySkillUsedMessageId:
 	case SceneSkillClientPlayerNotifySkillInterruptedMessageId:
 	case SceneSkillClientPlayerListSkillsMessageId:
+	case SceneSkillClientPlayerUpgradeSkillMessageId:
 	case ClientPlayerTeamCreateTeamMessageId:
 	case ClientPlayerTeamGetMyTeamMessageId:
 	case ClientPlayerTeamApplyJoinTeamMessageId:
