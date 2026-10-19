@@ -139,6 +139,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [mail-system.md](design/mail-system.md) — mail(邮件)M1:全局服务 + 系统邮件 / 定向邮件 + 领取短路
 - [mystery-merchant.md](design/mystery-merchant.md) — 神秘商人(定时随机落线的折扣 NPC)
 - [player-attribute-allocation.md](design/player-attribute-allocation.md) — 角色属性加点系统
+- [class-skills.md](design/class-skills.md) — 四职业技能(class skills)服务端设计
 - [player-features-ui.md](design/player-features-ui.md) — 背包、任务、活动客户端读取接口
 - [player-pet.md](design/player-pet.md) — 宝宝(宠物)系统 —— 核心线
 - [team-system.md](design/team-system.md) — 组队系统设计(team-in-match)
@@ -343,6 +344,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [handoff-launch-readiness-and-d1-20261013.md](handoff/handoff-launch-readiness-and-d1-20261013.md) — 交接:开服首日瓶颈修复、D1 映射持久化与 S3 容量目标(2026-10-13)
 - [handoff-launch-readiness-decisions-20261015.md](handoff/handoff-launch-readiness-decisions-20261015.md) — 交接:开服瓶颈负责人四项决定的收尾与验证(2026-10-15)
 - [handoff-orcontinue-closure-20260914.md](handoff/handoff-orcontinue-closure-20260914.md) — 交接：`Lookup*OrContinue` 修复收尾 + exporter-tests CI 复活
+- [class-skills-handoff-20261019.md](handoff/class-skills-handoff-20261019.md) — 四职业技能接入:交 Codex 的生成 / 编译 / 测试清单(2026-10-19)
 - [handoff-tip-axis-and-port-20260903.md](handoff/handoff-tip-axis-and-port-20260903.md) — 交接清单：tip 码轴收尾 + 玄冥移植未开工项
 - [handoff-tip-fault-gateway-500-20261018.md](handoff/handoff-tip-fault-gateway-500-20261018.md) — 交接：两版 Java 网关按 fault 列回 500，补丁对账、验证证据与剩余验收
 - [placement-reverify-checklist-20261012.md](handoff/placement-reverify-checklist-20261012.md) — 玩家存储落点:当前 HEAD 复验清单(交 Codex)

@@ -13060,3 +13060,16 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - Tip 源表保留双方码名与已发编号；新增邮件说明由导表器分配 17009/17010，神秘商人保留 30000 段。导表器支持没有 worksheet dimension 的合法表格，持久世代常量由协议生成器维护，不作为导表陈旧文件删除。
 - 使用正规导表与协议生成、同步机器人 vendor 和客户端 C# 协议/消息号；协议、消息/事件号及世代台账的四份生成快照保持同源。生成器复用现有安全文件替换，避免截断 Windows 映射文件，写入失败向上报告。
 - 本合并批次按负责人明确指令跳过测试和服务构建；生成工具构建及正式生成的成功不代表服务编译、C# 编译、真 TiDB 或双区故障验收通过。相关验证由已授权协调聊天基于最终合并来源继续执行。
+
+## 2026-10-19 Claude:四职业 32 技能接进服务端(查询 / 学习修习 / 战斗施放),未 proto-gen、未编译
+
+- 分支 `feat/class-skills`(工作树 `E:/work/xuanming-server-mmo-wt-skills`,基于 origin/main `c63b22dca2`),设计 [class-skills.md](design/class-skills.md),
+  交 Codex 的命令与 §7 清单对照 [class-skills-handoff-20261019.md](handoff/class-skills-handoff-20261019.md)。
+- 配表:Skill 追加 21 列 + 32 行(1101..1408)、Buff 6 行、Class 1~4 初始技能改为本职业首主动 + 首被动、Tip `skill_error` 7007..7013;沙盒导表拷回(manifest v30)。
+- 协议:`PlayerSkillComp.rank=3`;`ListSkillsResponse` 3..6 + `SkillCatalogEntry`;`UpgradeSkill`(消息号 317,已在 message_id.txt 登记);
+  战斗 `BattleBuffEntry` 6/7、`BattlePlayerSnapshot.skill_ranks=21`、`BattleActorState.skill_ranks=28`、`BattleEventItem.mana_delta=15`。
+- 逻辑:修掉 RegisterPlayer 遍历所有职业种子;加载期整理 + 补初始技能;技能书 / 修习(1 / 10 次、乐观等级防重放、战斗 / 冻结 / 交接拒写);
+  被动只进 scene 属性重算(`kSkillChanged`),治疗加成只进引擎;快照带等级;引擎实现职业技能的目标 / 冷却 / 比例耗蓝 / 等级系数 / 治疗 / 回蓝 / 驱散 / 增减益 / 先手 / mana_delta。
+- 测试已写未跑:engine 5 + 17 + 真表契约 1,skill_test 13;skill_test 补链 battle.lib / rdkafka.lib。
+- 未做:宠物技能、截图新机制、联机冒烟;**proto-gen 必须由 Codex 先编生成器再跑**(仓内 exe 旧于 10-19 生成器源码)。
+- Java 版(AGENTS §12):本机没有 `D:/luyuan/xuanming-server-mmo`,未登记 `PARITY.md`,待做(proto 字段号、消息号 317、tip 7007..7013、Skill/Buff/Class 数据须同批对齐)。对应 Java 版本号:无。
