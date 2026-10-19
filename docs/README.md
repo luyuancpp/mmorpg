@@ -132,9 +132,11 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [leaderboard-system.md](design/leaderboard-system.md) — 排行榜(leaderboard / rank)v1 设计
 - [mail-system.md](design/mail-system.md) — mail(邮件)M1:全局服务 + 系统邮件 / 定向邮件 + 领取短路
 - [mystery-merchant.md](design/mystery-merchant.md) — 神秘商人(定时随机落线的折扣 NPC)
+- [payment-recharge.md](design/payment-recharge.md) — 真钱充值设计(苹果 IAP / Google Play / 国内安卓 / 小游戏)
 - [player-attribute-allocation.md](design/player-attribute-allocation.md) — 角色属性加点系统
 - [player-features-ui.md](design/player-features-ui.md) — 背包、任务、活动客户端读取接口
 - [player-pet.md](design/player-pet.md) — 宝宝(宠物)系统 —— 核心线
+- [stall-system.md](design/stall-system.md) — 摆摊系统设计(草案)
 - [team-system.md](design/team-system.md) — 组队系统设计(team-in-match)
 
 #### 玩家数据与存储

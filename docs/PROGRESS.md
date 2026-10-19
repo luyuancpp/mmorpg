@@ -9534,3 +9534,13 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - **两份实现的取舍(用户 10-19 拍板)**:P3-1 用本分支 `fix/zone-redis-null-reply` 的修法;`fix/freeze-expiry-recheck-source`(`c352e94b26`)不合 main,分支与 worktree
   `E:\work\xuanming-server-mmo-wt-recheck` 先留着别删。
 - **Java 版(AGENTS §12)**:同上一条,服务端内部实现,本机无 Java 仓,未核对;对应 Java 版本号:无。
+
+## 2026-10-19 摆摊系统设计草案(Claude,只有设计,未写代码)
+
+- **结论**:仓库(两仓主干、全部分支、全部提交历史)里此前没有任何摆摊代码或文档。新增设计稿 `docs/design/stall-system.md`(已登记 `tools/scripts/gen_docs_index.py` 与 `docs/README.md`)。
+- **方向**:摆摊 = 寄售 + 主城摊棚门面。成交走快照分支 `origin/snapshot/all-changes-20261018` 的寄售引擎(go/trade `internal/commerce`,Java `game-trade/commerce`),不在 scene 内两人直接互换(两人存档各自落盘,崩溃会复制)。摊棚由客户端按 `ListCityStalls` 画,服务端不建摊位实体;C++ 手写逻辑不改,但方法加进已有的 `jubaozhai.proto`、消息和枚举加进 `commerce.proto`,改完要重新生成并重编 gate。
+- **待负责人拍板**:设计稿 §1 共 19 道选择题(前 4 道是点名的:离线摆摊、交易货币、摊位费/税、能摆的地点),没回答的按推荐项做。
+- **前置**(都不是摆摊本身的活):P-1 快照寄售引擎合入 main;P-1b 引擎推进循环单条出错不得中断整轮(否则一个玩家未决满 16 笔就堵死全服交易推进);P-2 消息号与 Tip 发号状态两套契约统一;P-3 `RequireSQLCommit` + go/db `dual`(本机联调也要);P-5 玩家归属围栏边界关闭;P-6 回档闸门接入交易流。
+- **评审**:初稿经 4 路只读对抗评审(62 条,P0 4 条),修订后又经 2 路只读复核(补了离线时截止时间无效、待打钱单空转等 5 条 P1),处理记录见设计稿 §13、§13.1;最后一轮修改没有再复核;评审不是编译或运行。
+- **验证**:无代码,无编译、无测试。
+- **Java 版(AGENTS §12)**:待做;本机没有 Java 仓,未核对 `PARITY.md`,对应 Java 版本号:无。
