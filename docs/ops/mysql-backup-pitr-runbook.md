@@ -373,3 +373,13 @@ Redis 为权威且实例分离时使用 `-routing-mode redis-split`，去掉 `-r
 2026-10-19 UTC 已从实际生产脚本提取 C# 编译并完成四例仅查询验证：自身完整身份匹配成功，创建时间错一 tick、镜像路径不符、SHA 不符分别拒绝；脚本首终 SHA 一致。收据为 `build/verification/ownership-private-nodes-20261018T093112231Z-11de2033/identity-query-20261019T025338287Z/proof.json`。这四例没有调用暂停、恢复或终止，真实双区故障演练及失败清理运行仍待验，不能据此宣称宿主场景已通过。
 
 验收必须分别取得：第二表 SQL 锁定期间首 ACK 已到但交接仍未放行，释放后真实跨区往返且资产恰变一次；旧 source 暂停后真实租约死亡、新实例以更高 epoch 落库，恢复旧 source 后出现精确旧 epoch 的 CAS 拒写，且 SQL 不回退。单纯正常退出、客户端迟到回调单测或命令枚举都不能代替这两项。当前两个测试程序仅编译、隔离配置仅准备；C++ 底层后续改动的节点链接证据与完整实跑仍待补齐，不据此开放维护入口。
+
+### 2026-10-19 新持久世代字段的历史恢复补充（真实环境仍待验）
+
+恢复工具已兼容永久父屏障的合法第四字段 `schema_gen`：仅允许 pending、player_database、player_database_1 以及可选 schema_gen，未知字段、任何未裁决outbox、缺少任一精确ACK、TTL或不规范世代均在首次HSET前拒绝。工具不删除任何字段，也不放宽停写、双表提交、旧代上界和路由冻结要求。
+
+正常迁移必须先为两张玩家表建立 `persist_schema_gen` 的 int unsigned / NOT NULL / DEFAULT 0 列。缺列、NULL及非规范uint32会拒绝，不得靠临时补测试列冒充迁移已完成。工具从同一事务已经点锁的两行取最大世代，历史0的有效floor为1；缺hash时建立floor，已有合法floor只升不降，SQL原戳和全部资产列不改。SQL原始戳仍进入全列摘要；增列或0→1等原字节变化后，须重新生成并审查计划，不能手改计划或以有效世代相同为由忽略漂移。该floor不加入可编辑计划字段。
+
+当前证据仅为私有接缝RED→GREEN：旧实现真实7子例失败；其中4条缺floor断言、3条合法第四字段预检拒绝。最初收据器错误地要求7条require ErrorTrace并停止，该首错/原生exit1原件保留，逐例补充解释后不重跑RED。修复后22顶层单元（含子项103条）与CLI5均通过、0skip，两包vet和CLI build退出0，751输入与22046实际依赖首终无漂移；正规应用7手写路径后canonical与私有GREEN全751相同。原件 `build/verification/barrierrestore-schema-gen-candidate-20261019T093721030724Z/root-unit-preparation/green-after-red-20261019T104347472Z-416cfbdf/proof.json`，SHA `60585D50533B5E5E7E0D0BBFD4C2E25886D90270E26ECA6964343B8F16EDF6AB`。
+
+新增真实TiDB/独立Redis组合尚未执行，原64项真库成绩只绑定旧来源，不作为本批通过。C++ C3写抬floor和login C4读比较仍未实施；本工具格式兼容不能证明混版本世代防倒退已完成。真实双区旧实例复活、延迟SQL ACK、全链放流及灾备验收继续维持未完成。

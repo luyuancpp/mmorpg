@@ -210,7 +210,7 @@ func (r Restorer) prepareOne(ctx context.Context, p Plan, id string) (Player, er
 		}
 		row.Target = savebarrier.Version(n, 1)
 	}
-	if err := r.inspect(ctx, p, row, false, row.Original == row.Target); err != nil {
+	if err := r.inspect(ctx, p, row, false, row.Original == row.Target, schemaFloor(rows)); err != nil {
 		return Player{}, err
 	}
 	return row, nil
@@ -256,7 +256,7 @@ func (r Restorer) ApplyOne(ctx context.Context, p Plan, index int) error {
 	if err := match(row, current); err != nil {
 		return err
 	}
-	if err := r.inspect(ctx, p, row, false, savebarrier.Version(current[0].epoch, current[0].seq) == row.Target); err != nil {
+	if err := r.inspect(ctx, p, row, false, savebarrier.Version(current[0].epoch, current[0].seq) == row.Target, schemaFloor(current)); err != nil {
 		return err
 	}
 	if savebarrier.Version(current[0].epoch, current[0].seq) != row.Target {
@@ -292,7 +292,7 @@ func (r Restorer) ApplyOne(ctx context.Context, p Plan, index int) error {
 			return errors.New("已提交围栏在重锁期间改变")
 		}
 	}
-	if err := r.inspect(ctx, p, row, true, true); err != nil {
+	if err := r.inspect(ctx, p, row, true, true, schemaFloor(current)); err != nil {
 		return err
 	}
 	// 本事务只有锁定读。Redis 已确认真实提交的 SQL，结束读事务不改变资产结局。
@@ -301,7 +301,20 @@ func (r Restorer) ApplyOne(ctx context.Context, p Plan, index int) error {
 
 type sqlRow struct {
 	epoch, seq uint64
+	schemaGen  uint32
 	digest     string
+}
+
+// 恢复的是保守上界而非玩家加载世代：取同一事务已点锁两行的最大戳，未盖戳0按1。
+// 世代仍来自SQL原件且纳入原全列摘要；它不进入可编辑计划，也不修改SQL列。
+func schemaFloor(rows [2]sqlRow) uint32 {
+	floor := uint32(1)
+	for _, row := range rows {
+		if row.schemaGen > floor {
+			floor = row.schemaGen
+		}
+	}
+	return floor
 }
 
 func readPair(ctx context.Context, tx *sql.Tx, schema, id string) ([2]sqlRow, error) {
@@ -344,7 +357,7 @@ func readRow(ctx context.Context, tx *sql.Tx, schema, table, id string) (sqlRow,
 		return sqlRow{}, err
 	}
 	var row sqlRow
-	found := [3]bool{}
+	found := [4]bool{}
 	h := sha256.New()
 	for i, col := range columns {
 		v := values[i]
@@ -365,6 +378,14 @@ func readRow(ctx context.Context, tx *sql.Tx, schema, table, id string) (sqlRow,
 				return row, errors.New("SQL 行玩家身份不符")
 			}
 			found[0] = true
+		case "persist_schema_gen":
+			// 正常迁移先补NOT NULL DEFAULT 0列；缺列、NULL与坏值不能静默当历史0。
+			n, err := strconv.ParseUint(string(v), 10, 32)
+			if err != nil || strconv.FormatUint(n, 10) != string(v) {
+				return row, errors.New("SQL 持久化世代不是规范 uint32")
+			}
+			row.schemaGen, found[3] = uint32(n), true
+			// 不continue：原始戳字节与所有其它非围栏列一起进入原计划摘要。
 		}
 		// 长度前缀与 NULL 标记避免字段边界或 NULL/空串出现相同摘要。
 		var size [8]byte
@@ -380,8 +401,8 @@ func readRow(ctx context.Context, tx *sql.Tx, schema, table, id string) (sqlRow,
 			h.Write(v)
 		}
 	}
-	if found != [3]bool{true, true, true} {
-		return row, errors.New("SQL 玩家身份或围栏列缺失")
+	if found != [4]bool{true, true, true, true} {
+		return row, errors.New("SQL 玩家身份、围栏或持久化世代列缺失，须先完成正常迁移")
 	}
 	if rows.Next() {
 		return row, errors.New("SQL 玩家主键不唯一")
@@ -434,7 +455,7 @@ func recoveryKeys(zone uint32, id uint64) []string {
 	return keys
 }
 
-func (r Restorer) inspect(ctx context.Context, p Plan, row Player, publish, committed bool) error {
+func (r Restorer) inspect(ctx context.Context, p Plan, row Player, publish, committed bool, floor uint32) error {
 	id, _ := positive(row.ID)
 	write := "0"
 	if publish {
@@ -451,7 +472,7 @@ func (r Restorer) inspect(ctx context.Context, p Plan, row Player, publish, comm
 		}
 		keys = keys[:72]
 	}
-	n, err := restoreScript.Run(ctx, r.Redis, keys, p.MaintenanceID, row.Owner, row.Target, write, allowExisting, row.HomeZone, row.Placement).Int()
+	n, err := restoreScript.Run(ctx, r.Redis, keys, p.MaintenanceID, row.Owner, row.Target, write, allowExisting, row.HomeZone, row.Placement, strconv.FormatUint(uint64(floor), 10)).Int()
 	if err != nil {
 		return fmt.Errorf("维护屏障检查拒绝: %w", err)
 	}

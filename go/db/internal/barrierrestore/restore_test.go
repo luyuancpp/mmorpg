@@ -25,6 +25,7 @@ type testStore struct {
 	commitFail bool
 	onCommit   func()
 	commits    int
+	columns    []string
 }
 type storeDriver struct{ s *testStore }
 type storeConn struct {
@@ -37,8 +38,9 @@ type storeTx struct {
 	writes  bool
 }
 type storeRows struct {
-	values []driver.Value
-	done   bool
+	values  []driver.Value
+	columns []string
+	done    bool
 }
 
 var driverID atomic.Uint64
@@ -72,7 +74,7 @@ func (c *storeConn) QueryContext(_ context.Context, q string, _ []driver.NamedVa
 	if strings.Contains(q, "player_database_1 ") {
 		i = 1
 	}
-	return &storeRows{values: append([]driver.Value(nil), c.tx.pending[i]...)}, nil
+	return &storeRows{values: append([]driver.Value(nil), c.tx.pending[i]...), columns: c.s.columns}, nil
 }
 func (c *storeConn) ExecContext(_ context.Context, q string, args []driver.NamedValue) (driver.Result, error) {
 	if c.tx == nil || !strings.Contains(q, "WHERE player_id=? AND fence_owner_epoch=0 AND fence_save_seq=0") {
@@ -105,7 +107,10 @@ func (tx *storeTx) Commit() error {
 }
 func (tx *storeTx) Rollback() error { tx.c.tx = nil; return nil }
 func (r *storeRows) Columns() []string {
-	return []string{"player_id", "fence_owner_epoch", "fence_save_seq", "payload"}
+	if r.columns != nil {
+		return r.columns
+	}
+	return []string{"player_id", "fence_owner_epoch", "fence_save_seq", "payload", "persist_schema_gen"}
 }
 func (r *storeRows) Close() error { return nil }
 func (r *storeRows) Next(v []driver.Value) error {
@@ -119,7 +124,8 @@ func (r *storeRows) Next(v []driver.Value) error {
 
 func fixture(t *testing.T, epoch, seq string) (Restorer, *testStore, *miniredis.Miniredis) {
 	t.Helper()
-	s := &testStore{rows: [2][]driver.Value{{[]byte("7"), []byte(epoch), []byte(seq), []byte("真实资产甲")}, {[]byte("7"), []byte(epoch), []byte(seq), []byte("真实资产乙")}}}
+	// 只描述正常迁移后列默认0的录制结果，不冒称真实SQL迁移已执行。
+	s := &testStore{rows: [2][]driver.Value{{[]byte("7"), []byte(epoch), []byte(seq), []byte("真实资产甲"), []byte("0")}, {[]byte("7"), []byte(epoch), []byte(seq), []byte("真实资产乙"), []byte("0")}}}
 	name := fmt.Sprintf("barrier-restore-%d", driverID.Add(1))
 	sql.Register(name, storeDriver{s})
 	db, err := sql.Open(name, "")

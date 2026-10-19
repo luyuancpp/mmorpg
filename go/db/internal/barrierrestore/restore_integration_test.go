@@ -293,7 +293,7 @@ func (f *restoreIntegrationFixture) barrier(t *testing.T, id uint64, version str
 	t.Helper()
 	fields, err := f.r.Redis.HGetAll(f.ctx, savebarrier.Key(id)).Result()
 	require.NoError(t, err)
-	require.Equal(t, map[string]string{"pending": version, "player_database": version, "player_database_1": version}, fields)
+	require.Equal(t, map[string]string{"pending": version, "player_database": version, "player_database_1": version, "schema_gen": "1"}, fields)
 	ttl, err := f.r.Redis.PTTL(f.ctx, savebarrier.Key(id)).Result()
 	require.NoError(t, err)
 	require.Equal(t, -time.Nanosecond, ttl, "提交屏障必须永久保留")

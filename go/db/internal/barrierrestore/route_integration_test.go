@@ -223,7 +223,7 @@ func TestIntegrationDBFirstSplitRedisAndGlobalStorage(t *testing.T) {
 			require.NoError(t, split.ApplyOne(f.ctx, plan, 0))
 			fields, err := cache.HGetAll(f.ctx, savebarrier.Key(id)).Result()
 			require.NoError(t, err)
-			require.Equal(t, map[string]string{"pending": savebarrier.Version(19, 1), "player_database": savebarrier.Version(19, 1), "player_database_1": savebarrier.Version(19, 1)}, fields)
+			require.Equal(t, map[string]string{"pending": savebarrier.Version(19, 1), "player_database": savebarrier.Version(19, 1), "player_database_1": savebarrier.Version(19, 1), "schema_gen": "1"}, fields)
 			ttl, err := cache.PTTL(f.ctx, savebarrier.Key(id)).Result()
 			require.NoError(t, err)
 			require.Equal(t, -time.Nanosecond, ttl)
@@ -288,7 +288,7 @@ func TestIntegrationDBFirstSplitRedisAndGlobalStorage(t *testing.T) {
 		}
 		fields, err := cache.HGetAll(local.ctx, savebarrier.Key(localID)).Result()
 		require.NoError(t, err)
-		require.Equal(t, map[string]string{"pending": savebarrier.Version(8, 90), "player_database": savebarrier.Version(8, 90), "player_database_1": savebarrier.Version(8, 90)}, fields)
+		require.Equal(t, map[string]string{"pending": savebarrier.Version(8, 90), "player_database": savebarrier.Version(8, 90), "player_database_1": savebarrier.Version(8, 90), "schema_gen": "1"}, fields)
 		ttl, err := cache.PTTL(local.ctx, savebarrier.Key(localID)).Result()
 		require.NoError(t, err)
 		require.Equal(t, -time.Nanosecond, ttl)

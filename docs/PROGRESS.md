@@ -12400,3 +12400,58 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 按负责人逐项授权，删除 `node_constants.h`、`rewardable_config_comp.h`、`session_comp.h`、`dispatcher_lite.h`、`sensitive_word_filter_singleton.h`、`sensitive_word_filter.h`；同步从 core/session 的 `.vcxproj` 和 `.vcxproj.filters` 移除共六条 `ClInclude` 登记。其余候选头文件与依赖瘦身建议没有实施。
 - 验证：六个文件均不存在；代码、模板、脚本及工程文件没有目标文件的残留引用；四份工程 XML 可解析，逐字节核对仅删除指定登记，`ClCompile`、项目依赖、编译选项均未改变；定向 `git diff --check` 通过。补丁工具附带的两处末尾换行已恢复原格式。未执行 C++ 编译、测试或耗时测量，不声明编译提速。
 - 已有并行改动全部保留，没有提交、推送或修改生成产物。Java 版：本次只删除 C++ 未使用文件，不涉及功能或共享客户端契约，不适用同步修改。
+
+## 2026-10-19 Codex：Java 最终 SAVE 正式落工作树与三个 Go 构建（本轮未完成交付）
+
+- Java **0.1.0-SNAPSHOT** 已把最终 SAVE 的 SQL 意图/补偿、运维 CLI 的 PENDING 拒绝及 InboxHooks 保留合并正式写入独立 Java 仓。正规 git apply check/apply 均0、37路径SHA全部吻合、独立InboxHooks接口未改；保留所有并行源。原件 `build/verification/java-canonical-37-apply-20261019T090438788234Z/root-canonical-application.json` SHA `F03743014BE227D961CAD7F37DCA29470A2BDA42B5A238614ECFB7CEAB1930D7`。34源码/测试后核未变，三文档只追加实际状态；不提交、不部署、不执行真实M14迁移。
+- 下一次 Java 验证直接封 fresh 当前完整来源与隔离Maven仓，先正常生成含新Mapper公开规则的 Store Jar，再受影响六模块、CLI16、Hook5、155严格真TiDB。旧JG2464/C682的26通过及13旧模块成功只绑定旧源，不先重复旧6再重测当前。新私有仓尝试 `scene-six-isolated-20261019T085611030Z-80cb3437` 在1809448KiB内存门禁停止，0native，未Java/Maven/clean；误读旧失败XML的收据器原件保持，新v2只改证据边界未执行。真实InboxService仍未生产装配，窄World/Hook合并不冒该端到端完成。
+- Go 冻结1205源的 **db/login/scene_manager 三个native0**，完整38559实际依赖和源首终0差异，原件 `build/verification/owned-go-runtime-20261019T0755Z/six-go-build-window-20261019T084900234Z-7e65f04e/proof.json` SHA `AC0FEF3DE65D3F5CB66B732F18EE9293DE6E7744799186D6CF108E31490978E6`。locator启动前累计60秒资源预算耗尽，余3从未启动；仅续缺3的入口已准备，不重复已绿3。这是明确旧协议checkpoint，不称之后持久世代1生成后的当前全集。
+- Docker 引擎已恢复29.8.2；固定7个本线程容器ID/标签复核均exited、最后OOMfalse，保卷，未启动/借用/停止他人容器。恢复后可用内存回落约1–2GiB，最后1948216KiB，不能启动至少7GiB的TiDB冷栈。另一个用户已授权的启动聊天正在主工作区串行编译；本线程所有native命令已结束，不争抢协议/CppGo/迁移/服务启动，独立Java工作继续。
+- 当前C++通过仍是原v6 Build与cross313/routing113等实际原件；新持久proto可达头已变，Gate checkpoint恢复/正规私有Build只准备未执行，assembler未批准。两当前故障测试EXE与真实双区宿主演练仍待，**没有实际SourceReceipt**。GM链不冒MAIL/TRADE全链，未宣称全球灾备、生产放流或两千万CCU通过。下一轮以续跑JSON的LatestContinuation与原始收据为准。
+
+## 2026-10-19 Codex：新持久世代与历史屏障恢复的只读边界（未改代码、未实跑）
+
+- 接续本线程恢复验收，窄核17份相关源与设计，两观察0漂移。`barrierrestore` 核心Lua仍要求HLEN==3，合法第四字段 `schema_gen` 会在首次HSET前被拒绝；恢复链无DEL/HDEL，因此是fail-closed不兼容，不会误清该字段。db_first/redis-split等最终走同一核心，不存在绕过。
+- hash缺席仍只重建pending+双表ACK，SQL戳虽计入全列摘要，却未取双锁SQL最大世代建立Redis floor；当前C++ strict仍7个ARGV且不写schema_gen、login仍三元组，C3/C4尚未实现，不能把历史64项通过说成新世代恢复已支持。后续只在可写窗口补严格白名单、双锁SQL戳max/不降floor及新例，不降低旧CAS/双ACK断言。
+- 原件 `build/verification/barrierrestore-schema-gen-readonly-20261019/receipt.json` SHA `F53E79951A1456629F4E431F603C4EE7B1DCBD28785C484D898F471E1E100B02`。本批无编译、测试、SQL/Redis/服务操作；未改运行中主仓源，未重复64用例，未向其他聊天发送消息。Java 0.1.0-SNAPSHOT不采用此Redis父屏障字段，独立Java最终SAVE实现与fresh当前30模块待验状态保持。
+
+## 2026-10-19 Codex：保留数据的本地构建、起服与单账号进场冒烟
+
+- 用户授权接手协议生成、Docker 修复、编译和本地起服，保留既有数据；未提交、推送、打标签，未访问独立客户端。
+- 正式 proto-gen-build 与 no-unity proto-gen-run 均退出 0，持久 schema 台账初始化为世代 1；生成器持久 schema 单测通过，25 份守护文件的手写块未变。第二轮正式产物与源台账内容稳定；最初辅助幂等检查把三份暂存台账的初始化跟进报为变化，原检查退出 1 保留，逐份确认均与源台账相同，没有改判或盲重跑。
+- Docker 的旧 secrets engine.sock 通信目录经白名单校验后重命名备份，引擎恢复。旧 codex-visual-demo-20261016 容器按应用、存储顺序有序停止，15 个命名卷完整保留；未动其他项目、未清 Redis/MySQL/etcd、未重置 Kafka offset。本次启动标准 deploy_* 独立本地卷，未把历史演示账号迁入当前库。
+- C++ game.sln Debug/x64 增量 Build，/m:1、/nr:false、CL_MPCount=1，原生退出 0，1701 项输入集合及 SHA 首终一致；不是 Rebuild，未运行 C++ 单测。Go 14 服务、db-migrate、17 模块全包、robot 正规 vendor/构建共 34 作业退出 0，1832 项非 vendor 源输入未变。Java 网关 JDK23 package 退出 0，204 测试通过、5 条既有条件跳过；启动器原有契约测试 20/20 通过。
+- 正规迁移本次空 zone_1_db、data_service 全局 testdb 及 trade 库；玩家两表 persist_schema_gen 为 int unsigned、默认 0，主键 player_id，迁移台账干净，后续 plan 退出 0。未关闭 bootstrap。DB 和 trade 默认 TiDB 要求与本地 MySQL 不符，分别用 run/etc/go_services/db.yaml、trade.yaml 明确 dev 兼容形态，原始 YAML 未改；DB 额外注入仅 zone_1_db 白名单。
+- 首次 battle 因启动器漏设 BATTLE_RUN_MODE 而按 prod 拒启，首个 FATAL 与失败原件保留；仅清理本轮失败实例。启动器补充 dev 默认值与 finally 环境还原，保留显式 prod/test。第二轮 trade 遇 tidb_snapshot 变量错误的原件也保留；用其已有 dev 兼容选项修正独立运行配置后迁移及启动通过。部分起服失败后，只对已核实由本轮 g2/256 环境拉起的 Go 生产者调用原生契约保存函数，补齐原启动流程尚未执行的记录；证据 partial-start-recovery.json。
+- 最终启动器退出 0；3 个 C++ 节点、12 个 Go 服务和 Java 网关后台运行，8081 健康 UP，zone 1 OPEN。mail/rank 因缺本机领域配置按既有启动规则跳过。
+- 单账号 robot_entersmoke_20261019_044832_0001 冒烟原生 0：HTTP /api/login code=0、令牌非空；随后 legacy gate 登录/建角/进场等待 NotifyEnterScene，通过金币只读快照（player_id=1，前后 0，add_amount=0，error 空、完成标记存在），临时口令配置已删除。HTTP access_token 绑定 gate 与 Unity 界面未实测；未跑压测或 TiDB 实测，不把本次当成混版本持久化整套机制验收。
+- 证据：build/verification/enter-game-smoke-20261019-044832/result.json 及同目录构建、迁移、失败/成功启动与 login-smoke-20261019T094349727Z-fe17000c 原件。Java 独立服务器未改功能，本仓 Java 网关已构建并运行；不涉及新增双版功能对账。
+## 2026-10-19 Codex：fresh 当前 Java 30 模块正式验证开始（UTC 09:49，尚未完成）
+
+- 正规源码已封 fresh 私有树 build/jf-20261019T093052074Z：完整2530文件，canonical三观察及私有复制全路径/字节0漂移，241受管契约、253工具；6506个第三方文件/514727599字节独立普通复制到只读tail，head为空、tail无com/game，不借旧JG/47内部GAV或改共享Maven仓。准备原件SHA F97C1F5DD8ABFE8A6F88DEBDB36B42720569144CEEA7D7C9A405474C0792E2DC。
+- 第一次入口因新常驻网关Java身份未知在原生启动前安全停止，0Java/Maven/C#/clean，不算测试RED。其后只读核实一个精确PID/创建tick/命令与image/Jar SHA，并经5项只读正负分类及独立窄审；仅把该常驻网关与编译区别，未知Java/MSBuild仍拒、2GiB门禁不变，不控制该进程，不把其Jar直接批准为故障运行包。
+- 新20B2C26B执行器以5910168KiB可用/无其它重型启动正常完整clean install，JDK21/Maven3.9.9离线、-T1、父768MiB/子512MiB与2CPU，无跳测、无强制namespace。当前native PID4376、exec9811，原件目录 build/verification/java-fresh30-preparation-20261019T093052074Z/normal-reactor-20261019T094928820Z-35eb0e00；尚未收尾，不宣称测试绿。新Inbox暴露的两个Namespace旧夹具缺口已静态确认、单文件补丁封存未应用；须先保实际首红，再按具体结果续未完成模块。
+- 启动聊天已明确释放构建窗口，主仓C++/34Go作业/网关与单账号冒烟实际原件已只读接收；其3个C++、12个Go及Java服务须保留给用户，本线程不停止、覆盖运行bin或借其数据。结果边界是本地MySQL/legacy单账号冒烟，不能充当本线程TiDB、双区故障或全球容量验收。Go新世代恢复7路径候选仅私有封存并独立语义审，未应用、格式化或运行；C3/C4仍待，不冒全链已完成。自有infra仍停止保卷，155真TiDB与真实双区故障均未运行。
+
+## 2026-10-19 Codex：当前 Java 30 模块分轮构建与默认测试收口（UTC 10:31）
+
+- fresh2530来源的首轮root+24模块成功，scene测试编译因漏TeamFollow导入停止；仅补该测试import后续scene/battle/gate/gateway四模块成功，data测试遇AssertJ泛型重载歧义；仅为原isFalse断言增加boolean类型上下文，data正常clean install成功。两个编译失败及所有日志/Jar/XML原件保留，生产逻辑与断言不降级，不连续盲重试。
+- 最后robot真实运行627项，Namespace旧夹具R2/R5两项失败：新Inbox两条精确Dubbo代码身份和第13个JDBC金样未登记。保留实际RED原件后正规git apply单文件补丁，原12个JDBC金样、9个方法与全部断言保留；仅续Robot单模块，native0，624PASS/0FAIL/0ERROR/3既有条件SKIP，Namespace9/9且0skip。最终原件 build/verification/java-fresh30-preparation-20261019T093052074Z/robot-only-reactor-20261019T102715168Z-9c2742c5/proof.json SHA 39DB475C0CFD12E48D8E40E6BDBBE493E5E295918CDCE3D6A98BEB3915BFA419。
+- 正常30模块均已各自成功，分轮承接当前上游Jar，不把三个native1改写成单轮全绿；CLI16与Inbox最终存盘Hook5均由各自真实clean产生的原始XML承接，全部通过且0skip。完整2530源首终与canonical/private逐字相等；本轮累计仅三个测试文件修正，默认套件既有条件skip按原件记录，最终去重汇总另封。155严格真TiDB和真实双区故障仍未运行；Hook5不代表真实InboxService生产装配已完成。
+- 主仓当前schema1的9个运行产物已普通复制到独立私有目录，来源为用户启动聊天的本地增量Build/Go构建/网关原件；root接纳边界是本地故障执行checkpoint，历史SDK/外依赖未采哈希处不倒推补造。2291个当前fault源码快照、vendor实际122proto/170shared逐字一致；两fault测试EXE本轮现已开始纯编译（exec10080），未进测试体、未起服务、无SourceReceipt。
+- 本线程固定7容器仍exited/OOMfalse、保卷；10:31可用5714312KiB低于真库7GiB冷启门禁，不借用用户正在测试的deploy_*数据库或服务，不停止其进程。新schema_gen恢复仅私有候选与独立语义审/格式副本，未应用canonical、未验证真库；C3/C4仍未实施，不冒全链世代防倒退完成。
+
+## 2026-10-19 Codex：schema_gen历史恢复接缝已落工作区，真库与宿主故障仍待（UTC10:47）
+
+- 新7路径仅2生产核心：恢复工具允许严格的3/4具名字段、双锁SQL世代max/历史0有效1、已有Redis floor不降；缺列/NULL/不规范uint32、未知字段、outbox、任一双ACK缺失均拒绝。SQL原戳纳入全列摘要，计划不可编辑floor，不改SQL资产、归属、维护或路由前提。只被恢复CLI引用，不重编无影响的6运行服务或改变正在测试的bin。
+- 旧实现实际7子例全失败（另父终态fail）；4个缺floor的require Equal、3个合法第四字段经既有prepare t.Fatal拒绝。原收据器误要求7条ErrorTrace而stopped，原件6FCD1CE2及AD21/077C保持；逐例解释DFD8EBD1另封，不覆盖首错、不重跑RED。GREEN-only随后实际native0，22顶层/103含子项与CLI5全PASS/0skip，vet及CLI构建0；751输入与22046外依赖首终0差异。GREEN收据60585D50，CLI SHA2E73F2CD。
+- 正规git apply --check和apply均0，保留已有dirty，7路径字节精确匹配已验证私有GREEN，canonical全751集合/内容0差异；应用收据 build/verification/barrierrestore-schema-gen-candidate-20261019T093721030724Z/root-unit-preparation/root-canonical-apply-20261019T104611917Z/proof.json SHA13F3F06EAB10927D3195DB365EB9DAB16390D721088F31D8E874FE0DF64BF06D。运维手册和混版本设计仅追加同日边界。新真库矩阵25顶层未运行，实际含子项总数不猜；原64真TiDB为历史来源，不冒本批PASS。C3/C4全链仍未实施。
+- 当前schema1两故障测试EXE已实际纯编译native0，完整2291源及依赖首终0漂移，A8808AC7原件；未list/进测试体。9当前运行产物和真实PE依赖2DLL已独立复制，10次dumpbin /DEPENDENTS为只读native0、无未解析导入，未冒动态插件证明。新owner三接缝已只在私有副本实现并静态准备，11type/19cfg不等运行批准；无SourceReceipt、未启动任何自有服务、未控制用户节点。
+- Java当前30模块按模块去重777XML，10485=9585PASS/0FAIL/0ERROR/900原条件SKIP；30Jar与154安装文件各自来源保持，原三次native1保留。汇总BCAE6279，CLI16/Hook5/Namespace9各0skip。当前canonical真实InboxService尚未生产接线，6路径最小私有候选准备中；155真TiDB仍未运行（如应用拟新增3SQL例须按新集合，不冒旧155全集）。最新内存仍未满足7GiB冷启，本线程固定infra保卷停机，不借用户正在测试的deploy_*数据。
+
+## 2026-10-19 Codex：Inbox生产装配默认回归已绿，严格SQL夹具编译首错与契约增量明确（UTC11:15）
+
+- 真实InboxService六路径v2候选仍只在隔离副本：配置缺省的精确RED原生1且1FAIL/0error/0skip；仅覆盖SceneNode与正式配置后正常scene clean install原生0，1673=1665PASS/0FAIL/0ERROR/8原条件SKIP，Service8/Properties13/RPC9/最终存盘Hook5合35重点全PASS且0skip。原件93307962/E91AE211保存，不冒真实Node启动或SQL验收。
+- 后续asset-arrival-chain test-compile原生1，6DE2E15D原件与首错不改写：根给出的命令缺-am，mail/trade为BOOT-INF安装包不能替代reactor classes；新增SQL夹具还跨包访问package-private toSave。准备仅加-am和测试桥接，不放宽生产API，不重跑1673默认套件或其它29模块。另发现local-slice未启动Inbox，启动/停止脚本及Robot/Gate两个精确清单测试四路径私有候选中；canonical尚未应用这些Inbox路径。
+- 当前主仓六域契约874文件已独立封存，真实HEAD53361d055f65915a621bb0afee7a5d202c4e6ed5；这六域Git clean、全仓dirty分别记录。相对Java旧快照仅4个内部proto变化+新增世代台账，Java需正式同步4proto及来源文件，客户端实际可达仅ProtoOption.cs两扩展；未发现普通玩法字段/ID变化。E3500D0A审计、02E5B347源副本及35038F5C执行计划保持，尚未执行同步/生成。旧30模块默认PASS不冒最新主仓契约已同步。
+- 无原生构建在跑；固定自有infra仍停止保卷、没有SourceReceipt，严格真TiDB/真实双区未执行。继续保留用户正在运行的服务与数据，不因内存不足停止其他进程。

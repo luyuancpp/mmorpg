@@ -73,6 +73,7 @@ $oldCommandGeneration = $env:KAFKA_COMMAND_TOPIC_GENERATION
 $oldGateClientRpcRouter = $env:GATE_CLIENT_RPC_ROUTER
 $oldGateRunMode = $env:GATE_RUN_MODE
 $oldSceneRunMode = $env:SCENE_RUN_MODE
+$oldBattleRunMode = $env:BATTLE_RUN_MODE
 # 资产通道（docs/design/guild-phase2/04-asset-channel.md §4.32）的本机开发密钥来源。
 # scene 验签、guild / trade 签名用的是同名环境变量，值必须一致，否则每次资产 RPC 都回 27008。
 # 值不写进仓库：由该库在 run/secrets/assetop-dev.env（已被 .gitignore 覆盖）生成一次并复用。
@@ -614,6 +615,8 @@ try {
         # `$env:GATE_RUN_MODE='prod'` 再起一次，确认 GM 指令确实被拒。
         if ([string]::IsNullOrWhiteSpace($env:GATE_RUN_MODE))  { $env:GATE_RUN_MODE = 'dev' }
         if ([string]::IsNullOrWhiteSpace($env:SCENE_RUN_MODE)) { $env:SCENE_RUN_MODE = 'dev' }
+        # battle 的全球事务门禁也依赖显式运行模式；本机默认 dev，保留调用者指定的 prod/test。
+        if ([string]::IsNullOrWhiteSpace($env:BATTLE_RUN_MODE)) { $env:BATTLE_RUN_MODE = 'dev' }
         # 资产通道签名密钥（规格 §4.32 / §4.41 第 30 项）：scene 在第 4 步启动、guild 在第 5 步启动，
         # 两边都从这里继承同一把值，否则帮会 / 聚宝斋的每一次资产 RPC 都被判 27008(AssetAuthFailed)。
         # 必须设在 cpp-node-start 之前，由 dev_tools / go_services 子进程继承。
@@ -688,6 +691,7 @@ try {
     $env:GATE_CLIENT_RPC_ROUTER = $oldGateClientRpcRouter
     $env:GATE_RUN_MODE = $oldGateRunMode
     $env:SCENE_RUN_MODE = $oldSceneRunMode
+    $env:BATTLE_RUN_MODE = $oldBattleRunMode
     Restore-AssetOpDevSecrets $oldAssetOpSecrets
     if ($transcribing) { Stop-Transcript | Out-Null }
     if ($ownsMutex) { $mutex.ReleaseMutex() }

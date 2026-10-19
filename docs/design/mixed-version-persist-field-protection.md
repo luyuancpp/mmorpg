@@ -616,3 +616,9 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 | L-E | C4 不新增 tip |
 | L-F | 冻结 Vector3 / Rotation |
 | L-G | 单表死信的处置 |
+
+### 2026-10-19 历史屏障恢复工具的格式接缝实证
+
+`save_barrier_restore` 已在手写核心落地严格3/4字段白名单与双行点锁SQL世代max恢复：历史0有效为1、已有Redis floor不降、SQL原始戳仍参与计划摘要，缺列/NULL/异常戳拒绝，保持原ACK/outbox/维护/归属上界与路由门禁。旧实现的7个失败子例已实际复现；候选22顶层/103含子项单元与CLI5零失败零跳过，vet/CLI build均0。应用7路径后751完整来源等于已验证私有GREEN，应用原件SHA `13F3F06EAB10927D3195DB365EB9DAB16390D721088F31D8E874FE0DF64BF06D`；运行原件SHA `60585D50533B5E5E7E0D0BBFD4C2E25886D90270E26ECA6964343B8F16EDF6AB`。初次RED收据解释器错误和真实native1未覆盖，另有逐子例补充解释。
+
+这只是恢复工具兼容，不代替C3/C4实现或真实升世代/双区故障。新真TiDB部署矩阵仍待执行，既往64通过不绑定本批；Java直接SQL/BLOB路径不使用这个Redis父屏障协议，本项不代表Java整体持久补偿天然等价。运维前提与当前证据边界见 `docs/ops/mysql-backup-pitr-runbook.md` 的同日补充。
