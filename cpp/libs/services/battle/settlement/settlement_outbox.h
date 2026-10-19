@@ -348,7 +348,7 @@ namespace battle_settlement
 	// 顺序不能换:已应用 > 已作废 > 重建。
 	// 已应用必须排在已作废前面:作废之后删锁若没落地,迟到的结算会按锁匹配应用(ApplySettlement 的在线无组件分支),
 	// 而锁要留到这一局落盘销账才删(锁是「这一局还没完」的唯一跨进程证据)—— 这时补删锁会提前放开排队。
-	// expiredBattleId 为 0 = 本实体没有被判作废的局。
+	// expiredBattleId 为 0 = 本实体没有被判作废的局:这时不论锁值是什么(锁值也是 0 时同样)都不判作废。
 	inline LockRebuildDecision ClassifyLockRebuild(const uint64_t lockBattleId, const uint64_t expiredBattleId,
 												   const bool appliedInLedger)
 	{

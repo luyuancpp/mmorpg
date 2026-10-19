@@ -9211,3 +9211,34 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   它自己的残余里列着「同一实体上登录钩子仍会按旧锁重建一次」,本条的守卫盖住了这条。该分支已停手、未推送、未合并,留待用户决定是否删除。
 - **没做**:复查窗口内 `IsInBattle` 不看复查标记(上一条已列的后续项);评审提到的「`HandlePlayerAsyncSaved` 两处摘 `UnregisterPlayer` 保留实体后不重跑登录钩子」只记一笔(一处正常流程走不到,一处是不变量被破坏),未改。
 - **Java 版(AGENTS §12)**:同上一条,服务端内部实现,本机无 Java 仓,未核对;对应 Java 版本号:无。
+
+## 2026-10-19 按锁重建守卫的合并前复核收尾:补删锁后补组队跟随、裁决接线进单测(Claude,未编译,待 Codex 验证)
+
+- **来由**:上一条(`0c0c419c10`)已由合并提交 `ed75b64c88` 进本机 main(未推送)。合并前「给 C++ zone Redis 连接加存活探测」会话的独立只读复核(3 个角度 + 逐条反驳,7 个 agent)
+  没有 P0~P2,确认 3 条 P3,本条逐条修掉。改动在 `fix/zone-redis-null-reply` 上追加新提交,没有 amend / rebase 已合并的提交。
+- **P3-1 补删锁落地后不补组队跟随**:reaper 那一拍删锁没落地时,`RemoveInBattleComp` 触发的跟随链读到锁 X(或读失败)按 fail-closed 跳过;
+  守卫 `kSkipExpired` 的补删之后落地了,却没有任何东西再触发跟随,队员一直留在原场景(改动前的路径是误冻约 30 秒、下一拍 reaper 到期再走 `ClearBattleFreeze` → 跟随)。
+  修法照 `ClearPendingSettlementIfMatch` 既有约定:`DeleteBattleLockIfMatch` 加可选参数 `refollowOnDelete`(默认 `entt::null`,既有调用方不变),
+  锁**确实被这条命令删掉**、且回调时实体仍有效、Guid 仍是这个玩家、身上没有 `InBattleComp` 时,补调一次 `PlayerTeamSystem::OnBattleFreezeCleared`。
+  只有两处守卫补删传了实体;先删锁再摘组件的调用方(`ClearBattleFreeze` 等)不传(摘组件那一刻已触发跟随,且排在删锁之后)。
+- **P3-2 守卫接线没有单测走到**:「作废槽位 + 活账本 → `ClassifyLockRebuild`」抽成匿名命名空间的 `DecideLockRebuild`,两个重建入口的回调都改调它,
+  单测经新的只读静态 `PlayerBattleSystem::DecideLockRebuildFor` 走同一个函数(缺账本返回 false,不打 ERROR)。
+  **仍不覆盖**:回调里 switch 各分支(不重建 + 补删 + 补跟随)本身 —— 单测没有 Redis,走不进回调。真实接线检查**需人工场景,本批不做**:
+  要让 reaper 那一拍 `RedisReady()` 为假(连接断开)而锁键又在 Redis 恢复后仍在(不能重启丢数据的 Redis 实例,要断代理 / 网络),再在锁 TTL(deadline+60 秒)内恢复,
+  然后 grep scene 日志 `metric=battle_freeze_rebuild_skipped_expired`、确认没有紧随其后的 `metric=battle_freeze_rebuilt`,`redis-cli EXISTS battle:lock:<player_id>` 为 0,队员被跟随拉走。
+- **P3-3 `expiredBattleId != 0` 守卫测不到**:`routing_identity_test` 的 `LockRebuildSkipsTheBattleThisEntityAlreadyExpired` 补 `ClassifyLockRebuild(0, 0, false) == kRebuild`,
+  注释改成与断言相符(去掉守卫这一条就红)。
+- **测试**(未编译):`bag_test` 新增 `PlayerBattleSettlementTest.LockRebuildWiringReadsThisEntitysExpiredSlot`、`LockRebuildWiringWithoutExpiryRebuilds`、
+  `LockRebuildWiringPrefersTheLedgerOverTheExpiredSlot`、`LockRebuildWiringWithoutLedgerDecidesNothing`;`routing_identity_test` 在既有用例里加 1 条断言(用例数不变)。
+  补跟随这一条没有单测(同样在回调里)。
+- **Codex 验证**(未编译,待 Codex 验证):先在主工作区把 `fix/zone-redis-null-reply` 再合一次(不要 rebase / amend 已合并的提交),命令同上一条 1~4 步。
+  **通过标准**:本次改动的文件没有 `error C` / `LNK`(scene.lib 是 `/W3 /WX`);期望用例数 `routing_identity_test` 101(本条只加断言)/ `bag_test` 637(上一条 633 + 本条 4)/
+  `cross_zone_test` 240,全部 0 失败。失败时保留 gtest 输出与第一条编译错误原文。
+- **对抗复核(本条改动)**:工作流 2 个角度(正确性 / 编译与测试)+ 逐条反驳,只读、未编译:**0 条发现**。
+  核对过的要点:`kDeleteLockIfMatchScript` 返回 1 才是「这条命令删掉了锁」;既有两处调用方走默认值、行为不变;`OnBattleFreezeCleared` 每一跳都复核身份并读锁 fail-closed,
+  重复触发无害、只补一次;`DecideLockRebuild` 抽取前后参数与顺序逐字一致。期望用例数与 diff 一致(粗 grep `bag_test` 的 TEST 宏数比实测基线少 1,与 10-17 基线同样差 1,以实跑为准)。
+- **没做**:同上一条;复核里被反驳的「槽位随实体销毁,重登 / 换场景时可能再冻一次」按设计不覆盖。
+  改动前就有的残余:reaper 那一拍删锁其实已在服务端执行、只是应答丢了,或锁在复查前先到 TTL 过期了,这两种走不到守卫,跟随链在解冻那一刻若已 fail-closed 跳过,之后也不会再补跟随。
+- **两份实现的取舍(用户 10-19 拍板)**:P3-1 用本分支 `fix/zone-redis-null-reply` 的修法;`fix/freeze-expiry-recheck-source`(`c352e94b26`)不合 main,分支与 worktree
+  `E:\work\xuanming-server-mmo-wt-recheck` 先留着别删。
+- **Java 版(AGENTS §12)**:同上一条,服务端内部实现,本机无 Java 仓,未核对;对应 Java 版本号:无。

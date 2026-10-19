@@ -206,6 +206,15 @@ namespace
 		return expired != nullptr ? expired->battleId : 0;
 	}
 
+	// 按锁重建两个入口(RestoreBattleFreezeOnLogin、RebuildBattleFreezeFromLock)共用的裁决接线:
+	// 本实体的作废槽位 + 活账本 → ClassifyLockRebuild。单测经 PlayerBattleSystem::DecideLockRebuildFor 走同一个函数。
+	battle_settlement::LockRebuildDecision DecideLockRebuild(entt::entity player, const uint64_t lockBattleId,
+															 const BattleSettlementLedgerComp& ledger)
+	{
+		return battle_settlement::ClassifyLockRebuild(lockBattleId, ExpiredFightingBattleIdOf(player),
+													  battle_settlement::HasApplied(ledger, lockBattleId));
+	}
+
 	void MarkLoginRecheck(entt::entity player, const uint64_t playerId, const char* reason)
 	{
 		if (!tlsEcs.actorRegistry.valid(player))
@@ -307,7 +316,14 @@ namespace
 
 	// 条件删锁(连带 ctx):锁值 == battleId 才 DEL(所有删锁路径统一走这里,防迟到的取消/结算/作废
 	// 误删玩家下一场战斗的锁)。fire-and-forget:锁是咨询性的,失败最迟随 TTL 过期。
-	void DeleteBattleLockIfMatch(const uint64_t playerId, const uint64_t battleId)
+	//
+	// refollowOnDelete(默认不填):锁**确实被这条命令删掉**、且那时实体仍是这个玩家、身上没有 InBattleComp 时,
+	// 补一次组队跟随检查。给「解冻早已发生、锁现在才真正放掉」的调用方用(按锁重建守卫 kSkipExpired 的补删):
+	// 解冻时 RemoveInBattleComp 触发的跟随链读到锁还在(或读失败)会 fail-closed 跳过,之后没有别的东西再触发跟随,
+	// 队员会一直留在原场景。与 ClearPendingSettlementIfMatch「锁此刻才真正放掉,补一次跟随检查」同一约定。
+	// 先删锁再摘组件的调用方(ClearBattleFreeze 等)不要填:摘组件那一刻已经触发了跟随,而且排在删锁之后(同连接 FIFO)。
+	void DeleteBattleLockIfMatch(const uint64_t playerId, const uint64_t battleId,
+								 const entt::entity refollowOnDelete = entt::null)
 	{
 		if (!RedisReady())
 		{
@@ -316,8 +332,9 @@ namespace
 					 << " battle_id=" << battleId << ", lock will expire with its TTL";
 			return;
 		}
+		// entt::entity 用 init-capture(MSVC C3495,见 copilot-instructions)。
 		tlsRedis.GetZoneRedis()->command(
-			[playerId, battleId](hiredis::Hiredis*, redisReply* reply) {
+			[playerId, battleId, refollow = refollowOnDelete](hiredis::Hiredis*, redisReply* reply) {
 				if (reply == nullptr || reply->type == REDIS_REPLY_ERROR)
 				{
 					LOG_ERROR << "[PlayerBattle] Conditional lock deletion EVAL failed, player_id=" << playerId
@@ -329,7 +346,19 @@ namespace
 					// 锁不存在(已过期/已删)或已易主(玩家进了下一场):都不是错误
 					LOG_INFO << "[PlayerBattle] Conditional lock deletion did not match(lock missing or value mismatch), player_id="
 							 << playerId << " battle_id=" << battleId;
+					return;
 				}
+				if (refollow == entt::null || reply->type != REDIS_REPLY_INTEGER)
+				{
+					return;
+				}
+				// 锁确实删掉了。回调期间实体可能已销毁 / 句柄被复用,或已备战下一局(那一局解冻时自会触发跟随)。
+				if (!tlsEcs.actorRegistry.valid(refollow) || GuidForLog(refollow) != playerId ||
+					tlsEcs.actorRegistry.any_of<InBattleComp>(refollow))
+				{
+					return;
+				}
+				PlayerTeamSystem::OnBattleFreezeCleared(refollow);
 			},
 			(std::string("EVAL %s 2 ") + kBattleLockKeyFmt + " " + kBattleCtxKeyFmt + " %llu").c_str(),
 			kDeleteLockIfMatchScript, playerId, playerId, battleId);
@@ -1592,8 +1621,7 @@ void PlayerBattleSystem::RebuildBattleFreezeFromLock(entt::entity player, const 
 				return;
 			}
 			// 已应用 > 已作废 > 重建(ClassifyLockRebuild 的说明)。
-			switch (battle_settlement::ClassifyLockRebuild(battleId, ExpiredFightingBattleIdOf(player),
-														   battle_settlement::HasApplied(*ledger, battleId)))
+			switch (DecideLockRebuild(player, battleId, *ledger))
 			{
 			case battle_settlement::LockRebuildDecision::kAdvanceAck:
 				LOG_INFO << "[PlayerBattle] Freeze reconstruction skipped: locked battle settled and awaiting persistence, player_id=" << playerId
@@ -1605,7 +1633,8 @@ void PlayerBattleSystem::RebuildBattleFreezeFromLock(entt::entity player, const 
 				LOG_WARN << "[PlayerBattle] metric=battle_freeze_rebuild_skipped_expired player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=" << reasonCopy
 						 << ",lock still points to a battle this node already expired;not rebuilding,retrying conditional lock deletion";
-				DeleteBattleLockIfMatch(playerId, battleId);
+				// 解冻早已发生(reaper 作废时),锁现在才真正放掉:删掉了就补一次组队跟随(DeleteBattleLockIfMatch 的说明)。
+				DeleteBattleLockIfMatch(playerId, battleId, player);
 				return;
 			case battle_settlement::LockRebuildDecision::kRebuild:
 				break;
@@ -1709,8 +1738,7 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 				return;
 			}
 			// 已应用 > 已作废 > 重建(ClassifyLockRebuild 的说明)。
-			switch (battle_settlement::ClassifyLockRebuild(battleId, ExpiredFightingBattleIdOf(player),
-														   battle_settlement::HasApplied(*ledger, battleId)))
+			switch (DecideLockRebuild(player, battleId, *ledger))
 			{
 			case battle_settlement::LockRebuildDecision::kAdvanceAck:
 				LOG_INFO << "[PlayerBattle] Freeze reconstruction skipped: locked battle settled and awaiting persistence, player_id=" << playerId
@@ -1723,7 +1751,8 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 				LOG_WARN << "[PlayerBattle] metric=battle_freeze_rebuild_skipped_expired player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=login"
 						 << ",lock still points to a battle this node already expired;not rebuilding,retrying conditional lock deletion";
-				DeleteBattleLockIfMatch(playerId, battleId);
+				// 解冻早已发生(reaper 作废时),锁现在才真正放掉:删掉了就补一次组队跟随(DeleteBattleLockIfMatch 的说明)。
+				DeleteBattleLockIfMatch(playerId, battleId, player);
 				return;
 			case battle_settlement::LockRebuildDecision::kRebuild:
 				break;
@@ -2379,6 +2408,23 @@ bool PlayerBattleSystem::IsLoginRecheckPending(entt::entity player)
 uint64_t PlayerBattleSystem::ExpiredFightingBattleId(entt::entity player)
 {
 	return ExpiredFightingBattleIdOf(player);
+}
+
+bool PlayerBattleSystem::DecideLockRebuildFor(entt::entity player, const uint64_t lockBattleId,
+											  battle_settlement::LockRebuildDecision& out)
+{
+	if (!tlsEcs.actorRegistry.valid(player))
+	{
+		return false;
+	}
+	// 只读:与两个重建入口不同,这里不经 FindSettlementLedger(它会对缺账本打 ERROR),缺账本直接返回 false。
+	const auto* ledger = tlsEcs.actorRegistry.try_get<BattleSettlementLedgerComp>(player);
+	if (ledger == nullptr)
+	{
+		return false;
+	}
+	out = DecideLockRebuild(player, lockBattleId, *ledger);
+	return true;
 }
 
 void PlayerBattleSystem::ReleaseExpiredFightingFreeze(entt::entity player, const uint64_t playerId,
