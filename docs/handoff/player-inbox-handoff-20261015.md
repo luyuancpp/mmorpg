@@ -151,6 +151,23 @@
    - **2026-10-18 补充续验**：data_service vet / logic 测试、merge_zone 定向测试、14 个 Go 服务构建通过（按原始 `[ok]` 行核对，之前写成 13 为计数错误）；`game.sln /m:1 /nr:false` Debug|x64 编译通过，0 警告、0 错误，本线未运行 C++ 测试。promtool 18 条规则通过，临时容器删除已核验。原 `-race` 容器由原执行器在模块下载期间中止并清理（exit 143），没有测试结果，本线未重起。
    - **部署脚本修复与完成（最新）**：用户授权继续最小修复新发现及后续同类脚本失败。已修漂移数组聚合、回档四处命令预告的数组/空白参数引用，及测试资源名边界、完整异常采集、时间线事件表达式；真实回档执行与安全门禁不变。九项均 exit 0：deploy 219/219、migrate 34/34、start 20/20、client-entry 109/109、lobby 渲染通过、gate-drain 54/54、discard 27/27、gate-router 57/57、merge-zone 19/19。8 个计数套件合计 539/539；最终 13 个相关 PowerShell 输入前后及交付时哈希均一致，原红/旧摘要保留。最新证据：`build/verification/player-inbox-supplement-20261018T082700Z/verification-summary-after-script-fixes.json`，逐项日志与哈希见同目录 `nine-script-final-summary.json`。
    - **接续分工与输入边界**：已亲核「续验玩家收件箱」聊天中用户通知 360 信任完成并允许协调；该聊天独占 `-race`、C++ 运行测试及独立栈准备，本聊天只收尾上述脚本，不重复起容器或构建。历史 Go 构建后 `go/shared/go.mod` / `go.sum` 被其他会话调整，复用范围由续验线按哈希核验，不能将旧通过记录视为最新输入已验收。
+   - **2026-10-18 ~ 19 收尾轮**（证据 `build/verification/player-inbox-completion-20261018T085133Z/completion-status.json`，Claude 2026-10-19 核对）：
+     - **`-race` 通过**：临时 Linux 容器（golang:1.27.2-alpine3.24，只读挂载）里 6 个顶层测试各跑 20 次，0 FAIL / 0 SKIP / 0 data race；564 个输入前后无漂移，容器删除已核验（`player-inbox-race-complete-20261018T0852213665213Z/race-result.json`）。
+     - **C++ 重编超时，不算通过**：机器 2026-10-18 09:49Z 睡眠，直到 2026-10-19 01:57Z 才唤醒，MSBuild 因此按墙钟超时（exit -1）。这是环境问题，与收件箱代码无关；此前那次 `game.sln` 编译是 0 错误通过的。Codex 已把构建计时器改为只计清醒时长（`QueryUnbiasedInterruptTime`，上限仍为 3h），这次只做了静态检查。
+     - **重编在等源码冻结确认**：这次重编由 C++ 共享构建的唯一执行者统一跑，它在等人类确认其他写源码的会话已经停笔（上一次尝试因源码在扫描前后漂移而停下）。
+     - 用户已在 360 里加好信任，可以运行 C++ 测试。
+     - **仍未跑**：C++ 测试（`currency_test` 中 `PlayerInboxSystemTest` 34 例等）、§4 第 5.5 步的开发库清理、第 6 步迁移、第 7 步七场景冒烟（冒烟驱动只验证过能编译）。到目前为止，收件箱代码本身没有暴露任何失败。
+   - **2026-10-19 编译前复核**（Claude；用户改为自己编译）：
+     - **做法**：对 C++ 终态做了语义 / 运行期复核，分时序、生命周期、测试三路，不评编译可行性。没找到第一次运行就会失败的测试，也没有 high / medium 问题。
+     - **4 条 low 已修**（两个复核代理因 403 失败，这 4 条由 Claude 亲自对代码核实）：
+       - **SM-1**：停用的域收到 Ack STALE 时不再排 60 秒重试，也不再打误导性的 `inbox_deferred`。
+       - **LC-1**：退出期丢批改为按退出标记判断，冻结 / 交接与退出同时存在时也留 `delivered_undecided`。
+       - **LC-2**：退出期闸不过时，账本里已有结局的批首（回放 / UNKNOWN）先入确认队列，只丢需要执行的剩余部分，日志 `result=decided_prefix_queued`。
+       - **LC-3**：离开时 Ack 在途，留 `result=ack_inflight corr=` 线索。
+     - **改动位置**：`player_inbox_system.cpp`，新增 `UnknownDecisionFor`、`QueueDecidedPrefixOnExit`，修改 `ApplyPending`（闸不过分支与 UNKNOWN 构造）、`OnPlayerLeaving`（kAcking 分支）、`OnAckReply`（STALE 分支）。
+     - **新增用例**：`StaleAckOnAHaltedDomainSchedulesNoRetry`、`ExitGateAcknowledgesTheReplayablePrefixAndDropsOnlyNewEntries`、`FrozenExitingPlayerStillLeavesADeliveredUndecidedTrace`；扩充了 `LeavingDoesNotResendWhileAnAckIsInFlight`。`PlayerInboxSystemTest` 现为 37 例。
+     - **文档同步**：runbook §6、告警固定查询、设计 §7.7 / §9.4 已同步新的 result 取值。
+     - 未编译、未测试，待用户编译。
 3. **C4**：**2026-10-16 已定**（§2.4 遗留第 1 条）。围栏接手方已把收件箱列为 epoch-raise 的取 max 来源，写进围栏设计 v0.4 的 §9.1 与 §14 第 5、20 条。收件箱侧剩的事：设计 §11.1 C4 与 runbook §7 按 v0.4 的口径订正（第 C 批做）；GetSummary 的 `max_fence_epoch` 语义保持不变。
 4. **对抗式评审**：一致性 / 并发、仓库契合、运维 / 安全三个视角，重点看 Fetch / Ack 事务、seq 分配、围栏、账本落盘与 Ack 的时序。按用户约定，评审只看语义与运行期，不做编译可行性的静态评审。**2026-10-16 已做完**，结论见 §6：1 条 high、7 条 medium、14 条 low，其中 5 项待拍板，其余待修。**2026-10-17 ~ 18 已按拍板分 A / B / C 三批修完**，状态见 §6.4；全部未编译、未测试。
 5. **Java 版**（AGENTS §12）：Java 仓 `D:\luyuan\xuanming-server-mmo`，按设计 §12 新建 `game-inbox` 模块与 scene 的 `InboxHooks`。PARITY 已登记「Java 待做」一行。Java 仓允许 Claude 自己编译和测试。
@@ -166,6 +183,8 @@
 本次协调方 v2 在 `02-snapshot-before` 即退出 1（`timedOut=false`）：**“快照前后源码漂移，拒绝成功快照”**，尚未启动 MSBuild 或测试。本线按“后续仍失败即停”封存，不自动重试或绕过门禁。后续只读扫描当前有 1815 项源，旧超时至当前 9 项差异、后续双扫描无变化；这不是失败 8 秒内的精确变动清单，失败原件未保存当时两份 map，不能据此归责具体文件。新证据位于 `build/verification/player-inbox-completion-20261018T085133Z/timeout-resume-20261019T0223129196883Z/`（原始失败、首错/末尾、清醒时钟 receipt、git status），旧原件不覆盖。
 
 冒烟准备当前复核：driver 的 1900 输入完全一致且无新增/删除，可复用编译 EXE；11 个 Go 角色的 8 个绑定 EXE 哈希仍一致，但最新 login 和 db/saveoutbox 生产源码已超出旧产物覆盖范围，不能拿旧 EXE 代表当前源码。另线补构建当时 db 通过、login 失败后源码又有修订，亦不是当前输入的成功证明。下次需先协调源码稳定、补齐当前 login/db 所需私有产物；不需重编 driver 或重跑已过测试。收件箱 tidy 两文件原 SHA 保留，独占栈与迁移/七场景仍未启动，本线未提交、未部署。
+
+**2026-10-18 纽约时间 23:21 静态修正交付**：用户最新指示“不用等编译，修复完毕给我”，本线据此只交付超时运行器修正，不再等待或启动构建、测试、迁移和临时栈。现有 `build/verification/grpc-muduo-codex-20261018-005135/cpp-prep/run-current-build-window-v2.ps1` 已静态复核：SHA `E2160B8890334475684AE662A9EE6F0D108DE88FE3E32AB24DDD4F47C4C49097`，PowerShell AST 0 错误；保留 game 10800 秒 / RPC 3600 秒原上限，以清醒时长裁决超时，记录 UTC 与清醒耗时，失败即停、源码漂移和共享库检查仍在，旧证据不覆盖。本轮没有调用 P/Invoke 或进行编译运行验证，不能称完整验收通过。交付回执 `build/verification/player-inbox-completion-20261018T085133Z/static-timeout-fix-delivery.json`，原超时、新快照失败及旧通过记录继续保留；收件箱 tidy 两文件原 SHA 未变，未改系统电源或防护，未提交、未部署。后续运行验证保留为未执行项。
 
 ## 4. 给 Codex 的验证顺序（仓库根目录）
 
@@ -213,7 +232,7 @@
 - 上一轮 Codex 构建了 `currency_test`，但 Windows 拒绝启动、exe 消失。2026-10-18 已查明原因：本机的 360 安全软件按启发式规则 `HEUR/QVM202.0.BF1D.Malware.Gen` 把旧的 `currency_test.exe`（约 87MB）隔离了。这个标签既不证明它是恶意软件，也不证明是误报。证据在 `build/verification/player-inbox-resume-20261018-diagnostic/`。新编出的 exe 大概率会再被隔离。**是否在 360 里给构建输出目录或测试 exe 加信任，只能由用户本人操作；Codex 和 Claude 都不改防护、不恢复隔离。**用户没处理之前，这一步记为「编出来了、跑不起来」。
 - 串行编译：`msbuild game.sln /m:1 /nr:false /p:Configuration=Debug /p:Platform=x64`。
 - 测试：
-  - `currency_test.exe --gtest_filter=PlayerInbox*:GmSanctionInbox*:AssetOp*:Currency*`，再不带过滤器加 `--gtest_shuffle` 跑一遍。`PlayerInbox*` 同时命中 rules 与 system 两组；`PlayerInboxSystemTest` 应为 34 例。另跑 `--gtest_filter=PlayerInboxSystemTest.* --gtest_shuffle --gtest_repeat=3`，确认没有 thread_local 或日志残留。
+  - `currency_test.exe --gtest_filter=PlayerInbox*:GmSanctionInbox*:AssetOp*:Currency*`，再不带过滤器加 `--gtest_shuffle` 跑一遍。`PlayerInbox*` 同时命中 rules 与 system 两组；`PlayerInboxSystemTest` 应为 37 例（2026-10-19 编译前复核新增 3 例）。另跑 `--gtest_filter=PlayerInboxSystemTest.* --gtest_shuffle --gtest_repeat=3`，确认没有 thread_local 或日志残留。
   - 本批 C++ 改动涉及：`player_inbox_system.{h,cpp}`、`player_inbox_rules.{h,cpp}`、`player_database_loader.cpp`、`player_lifecycle.cpp`（一行 include 与一行调用）、`config.cpp`（只改注释）、`player_inbox_runtime_comp.h`（只改注释），新增测试文件 `player_inbox_system_test.cpp`（已登记 `currency_test.vcxproj`）。
   - `configuration_table_test.exe --gtest_filter=GameConfig*`。
   - `bag_test.exe`（不加 shuffle）、`cross_zone_test.exe`。

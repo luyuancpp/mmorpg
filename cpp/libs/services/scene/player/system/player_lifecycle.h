@@ -195,7 +195,7 @@ namespace owner_epoch_stats
 //                          "退出优先"销毁,走不到这里,所以它基本等于真正被踢回选服的人数。
 //                          例外:gate-cmd 消费滞后超过 30s 时,一次"迟到但成功"的传送也会被踢回选服
 //                          (踢线走 scene→gate TCP 直达,先于 Kafka 上的 124 到达)。应接近 0
-//   reply_uncorrelated     兼容入口以 requestTag == 0 退回按 player_id 对应答的次数(见 enter_scene_reply)。
+//   reply_uncorrelated     兼容入口以 requestCorrelationId == 0 退回按 player_id 对应答的次数(见 enter_scene_reply)。
 //                          生产关联号来自闭包捕获,旧版 SM 不回显也按捕获号认领;仅单测或绕过统一出口的调用可计数
 //   reply_unmatched        被丢弃的可疑外来应答:有等待者、号对不上,且是拒绝 / 重定向 / 发生在交接期间
 //                          (enter_scene_reply::IsSuspiciousUnmatched)——正是过去会被错吃成交接证据的那一类。
@@ -855,8 +855,8 @@ namespace travel_outcome
 //                exit_wins 失真 —— 换来的只是窗口期内没有今天的串号 bug(cross-zone-scene-travel.md
 //                「EnterScene 应答关联号」)。
 // 2026-10-17:关联号改由每次调用闭包捕获,上述回显为 0 的退路说明保留为旧模型背景。
-// 生产 requestTag 恒非 0,即使旧版 SM 不回显也按捕获号精确认领。回显只作逐字段核对,非 0 且不一致即丢弃;
-// 号比对仍防止迟到或已被顶替的完成认领当前等待者。requestTag 为 0 的兼容分支只剩单测与绕过统一出口的调用。
+// 生产 requestCorrelationId 恒非 0,即使旧版 SM 不回显也按捕获号精确认领。回显只作逐字段核对,非 0 且不一致即丢弃;
+// 号比对仍防止迟到或已被顶替的完成认领当前等待者。requestCorrelationId 为 0 的兼容分支只剩单测与绕过统一出口的调用。
 // 等待者只有两种:交接(PlayerTravelHandoffComp.enterSceneCorrelationId,0 = 交接的 EnterScene 还没发)与
 // 普通换图(PlayerSceneChangeInFlightComp.correlationId)。二者按构造不共存:StartTravelHandoff 摘在途换图组件,
 // 发送侧闸 IsSceneChangeBusy 挡住交接期间的普通换图。
@@ -1245,11 +1245,11 @@ public:
 									   bool playerRequested = true);
 
 	// 每一条 EnterScene 应答的入口,由 SendCorrelatedEnterScene 的每次调用回调调用(单测也可直接调)。
-	// playerId / requestTag 是发送时按值捕获的身份;生产 requestTag 恒非 0,回显为 0 也按捕获值认领。
+	// playerId / requestCorrelationId 是发送时按值捕获的身份;生产 requestCorrelationId 恒非 0,回显为 0 也按捕获值认领。
 	// 分发规则见 enter_scene_reply::Classify:
 	//   * playerId == 0 是调用方 bug → LOG_ERROR no-op;
 	//   * 非 0 回显的 player_id 或 correlation_id 与捕获值不一致 → LOG_ERROR 丢弃,reply_unmatched +1;
-	//   * requestTag == 0(仅兼容旧直接调用 / 单测)→ reply_uncorrelated +1,本线程首次 LOG_WARN,按 player_id 退回旧行为;
+	//   * requestCorrelationId == 0(仅兼容旧直接调用 / 单测)→ reply_uncorrelated +1,本线程首次 LOG_WARN,按 player_id 退回旧行为;
 	//   * 实体已不在(玩家在途中断线,退出优先;疏散 / 排空改派的应答)→ 先交改派待确认表按号认领
 	//     (relocate_confirm::DecideReplyClaim:认领后只触发核实,不直接定案);不认领才 LOG_INFO no-op;
 	//   * kTravelHandoff / kLegacyTravelHandoff        → HandleTravelEnterSceneReply(交接裁决);
@@ -1259,15 +1259,15 @@ public:
 	//                                                    其余 LOG_DEBUG。外来的 redirect 也只记录、不销毁:SM 若真放行了,
 	//                                                    本代请求会被拒,由 ResolveTravelOutcome 按 epoch 收敛;
 	//   * kNoWaiter                                    → LOG_DEBUG no-op。
-	static void DispatchEnterSceneReply(Guid playerId, uint64_t requestTag,
+	static void DispatchEnterSceneReply(Guid playerId, uint64_t requestCorrelationId,
 		const ::scene_manager::EnterSceneResponse& resp);
 
 	// 每一条 EnterScene 传输失败(gRPC status 非 OK:deadline 到期 / scene_manager 不可达 / 服务端超时)的入口,
-	// 由 SendCorrelatedEnterScene 的每次调用回调调用;playerId / requestTag 是发送时按值捕获的身份,
+	// 由 SendCorrelatedEnterScene 的每次调用回调调用;playerId / requestCorrelationId 是发送时按值捕获的身份,
 	// reason 是调用方拼好的方法名 + 状态码 + 消息(只用于日志,本系统不依赖 gRPC 头文件)。
 	// 传输失败 = **结果未知**(scene_manager 可能已执行),只做不依赖对端结果的事
 	// (docs/design/grpc-client-deadline-failure-callback.md §5 #1 / #2):
-	//   * 按捕获的 requestTag 走同一个 enter_scene_reply::Classify,**不按 player_id**;号为 0 → LOG_ERROR 丢弃;
+	//   * 按捕获的 requestCorrelationId 走同一个 enter_scene_reply::Classify,**不按 player_id**;号为 0 → LOG_ERROR 丢弃;
 	//   * 实体已不在(疏散 / 排空的发送、途中退出)→ 先交改派待确认表按号认领(relocate_confirm::
 	//     DecideTransportFailureClaim,只按号、没有 player_id 退路;认领后当作结果未知,等到 settle 才核实);
 	//     不认领才 LOG_INFO no-op;
@@ -1276,7 +1276,7 @@ public:
 	//                                         (不断言换图失败:路由事件可能随后到达),队伍跟随只记日志;
 	//   * kSceneChangeDuringHandoff         → 不变量被破坏,LOG_ERROR 丢弃;
 	//   * kUnmatched / kNoWaiter            → 记日志,不动任何等待者。
-	static void DispatchEnterSceneTransportFailure(Guid playerId, uint64_t requestTag, const std::string& reason);
+	static void DispatchEnterSceneTransportFailure(Guid playerId, uint64_t requestCorrelationId, const std::string& reason);
 
 	// 交接是否已经发起(handoff 标记已写、EnterScene 已发)。此后本实体的去留只由 EnterScene 应答与
 	// 看门狗裁决:ReleasePlayer 不得把它推进退出流程(见 HandleReleaseFromSceneManager)。
@@ -1296,13 +1296,18 @@ public:
 
 	// scene_manager.ReleasePlayer(session_ended = true)的系统层入口:玩家的登录会话已结束、没有接手节点,scene_manager 的
 	// LeaveScene 拿不到"持有者已释放"证据,请本节点释放(docs/design/location-release-binding.md §3.3)。按顺序:
-	//   1. 本节点有该玩家实体:与交接释放同一个 release_fence::Decide(交接在途 / 缓存与期望不等 → 忽略);判释放 →
-	//      HandleExitGameNode(kClientDisconnect),存盘落地后由 A1′ 按既有判定写断线释放标记;已在退出中只合并原因;
+	//   1. 本节点有该玩家实体:与交接释放同一个 release_fence::Decide(交接在途 / 缓存与期望不等 → 忽略);判释放之后再按
+	//      release_fence::DecideSessionEndedBinding 比实体的 PlayerLoginIdentityComp 与覆盖身份(§13;实体已绑上更新的登录 /
+	//      同代异会话 → 忽略并 WARN);都放行 → HandleExitGameNode(kClientDisconnect),存盘落地后由 A1′ 按既有判定写断线
+	//      释放标记;已在退出中只合并原因;
 	//   2. 本节点完全不持有(playerList 没有、没有待入场条目、没有改派待确认条目):release_fence::DecideSessionEndedCredential
-	//      判定后按 owner_epoch == expectedOwnerEpoch 条件补写凭证标记(与 A1′ 同一段 Lua);
+	//      判定后按 owner_epoch == expectedOwnerEpoch 条件补写凭证标记(与 A1′ 同一段 Lua);覆盖身份不参与;
 	//   3. playerList 里留着无效句柄:不写凭证(表不一致,fail-closed)。
+	// coveredSessionId / coveredLoginGeneration = ReleasePlayerRequest.covered_session_id / covered_login_generation
+	// (代次 0 = 旧版 scene_manager,只比 owner_epoch)。
 	// 只读本地缓存,不读 Redis、不采纳 epoch(CZ-3)。scene 逻辑线程调用。
-	static void HandleSessionEndedRelease(Guid playerId, uint64_t expectedOwnerEpoch);
+	static void HandleSessionEndedRelease(Guid playerId, uint64_t expectedOwnerEpoch, SessionId coveredSessionId,
+										  uint64_t coveredLoginGeneration);
 
 	// 进场路由(PlayerEnterGameNode)撞上一个交接已发起的旧实体,且路由带来的 owner_epoch 比实体
 	// 缓存的新:说明那次交接其实已被放行(应答丢了,看门狗还没到期),玩家在别处玩过一圈又被

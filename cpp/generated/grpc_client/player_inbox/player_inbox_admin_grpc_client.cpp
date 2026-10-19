@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace player_inbox {
 #pragma region PlayerInboxAdminGmSanctionPlayer
 namespace {
 void QueueLocalPlayerInboxAdminGmSanctionPlayerFailure(GrpcDone<::player_inbox::GmSanctionPlayerResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartPlayerInboxAdminGmSanctionPlayerCall(entt::registry& registry, entt::e
     if (!done) {
         LOG_FATAL << "gRPC PlayerInboxAdmin.GmSanctionPlayer requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerInboxAdminGmSanctionPlayerGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerInboxAdminGmSanctionPlayerGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerInboxAdminGmSanctionPlayerFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartPlayerInboxAdminGmSanctionPlayerCall(entt::registry& registry, entt::e
         QueueLocalPlayerInboxAdminGmSanctionPlayerFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendPlayerInboxAdminGmSanctionPlayerErased(entt::registry& registry, entt::
         LOG_FATAL << "gRPC PlayerInboxAdmin.GmSanctionPlayer requires a done callback";
     }
     if (message.GetDescriptor() != ::player_inbox::GmSanctionPlayerRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerInboxAdmin.GmSanctionPlayer: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerInboxAdmin.GmSanctionPlayer: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendPlayerInboxAdminGmSanctionPlayerErased(entt::registry& registry, entt::
     const auto* typedRequest = dynamic_cast<const ::player_inbox::GmSanctionPlayerRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerInboxAdmin.GmSanctionPlayer: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -115,7 +116,7 @@ void SendPlayerInboxAdminGmSanctionPlayerErased(entt::registry& registry, entt::
 #pragma region PlayerInboxAdminGetSummary
 namespace {
 void QueueLocalPlayerInboxAdminGetSummaryFailure(GrpcDone<::player_inbox::GetPlayerInboxSummaryResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -129,9 +130,9 @@ void StartPlayerInboxAdminGetSummaryCall(entt::registry& registry, entt::entity 
     if (!done) {
         LOG_FATAL << "gRPC PlayerInboxAdmin.GetSummary requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerInboxAdminGetSummaryGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerInboxAdminGetSummaryGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerInboxAdminGetSummaryFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -140,13 +141,13 @@ void StartPlayerInboxAdminGetSummaryCall(entt::registry& registry, entt::entity 
         QueueLocalPlayerInboxAdminGetSummaryFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -178,9 +179,10 @@ void SendPlayerInboxAdminGetSummaryErased(entt::registry& registry, entt::entity
         LOG_FATAL << "gRPC PlayerInboxAdmin.GetSummary requires a done callback";
     }
     if (message.GetDescriptor() != ::player_inbox::GetPlayerInboxSummaryRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerInboxAdmin.GetSummary: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerInboxAdmin.GetSummary: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -189,7 +191,7 @@ void SendPlayerInboxAdminGetSummaryErased(entt::registry& registry, entt::entity
     const auto* typedRequest = dynamic_cast<const ::player_inbox::GetPlayerInboxSummaryRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerInboxAdmin.GetSummary: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -201,7 +203,7 @@ void SendPlayerInboxAdminGetSummaryErased(entt::registry& registry, entt::entity
 #pragma region PlayerInboxAdminListItems
 namespace {
 void QueueLocalPlayerInboxAdminListItemsFailure(GrpcDone<::player_inbox::ListPlayerInboxItemsResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -215,9 +217,9 @@ void StartPlayerInboxAdminListItemsCall(entt::registry& registry, entt::entity n
     if (!done) {
         LOG_FATAL << "gRPC PlayerInboxAdmin.ListItems requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerInboxAdminListItemsGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerInboxAdminListItemsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerInboxAdminListItemsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -226,13 +228,13 @@ void StartPlayerInboxAdminListItemsCall(entt::registry& registry, entt::entity n
         QueueLocalPlayerInboxAdminListItemsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -264,9 +266,10 @@ void SendPlayerInboxAdminListItemsErased(entt::registry& registry, entt::entity 
         LOG_FATAL << "gRPC PlayerInboxAdmin.ListItems requires a done callback";
     }
     if (message.GetDescriptor() != ::player_inbox::ListPlayerInboxItemsRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerInboxAdmin.ListItems: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerInboxAdmin.ListItems: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -275,7 +278,7 @@ void SendPlayerInboxAdminListItemsErased(entt::registry& registry, entt::entity 
     const auto* typedRequest = dynamic_cast<const ::player_inbox::ListPlayerInboxItemsRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerInboxAdmin.ListItems: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -287,7 +290,7 @@ void SendPlayerInboxAdminListItemsErased(entt::registry& registry, entt::entity 
 #pragma region PlayerInboxAdminLookupByRequest
 namespace {
 void QueueLocalPlayerInboxAdminLookupByRequestFailure(GrpcDone<::player_inbox::LookupPlayerInboxResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -301,9 +304,9 @@ void StartPlayerInboxAdminLookupByRequestCall(entt::registry& registry, entt::en
     if (!done) {
         LOG_FATAL << "gRPC PlayerInboxAdmin.LookupByRequest requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerInboxAdminLookupByRequestGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerInboxAdminLookupByRequestGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerInboxAdminLookupByRequestFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -312,13 +315,13 @@ void StartPlayerInboxAdminLookupByRequestCall(entt::registry& registry, entt::en
         QueueLocalPlayerInboxAdminLookupByRequestFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -350,9 +353,10 @@ void SendPlayerInboxAdminLookupByRequestErased(entt::registry& registry, entt::e
         LOG_FATAL << "gRPC PlayerInboxAdmin.LookupByRequest requires a done callback";
     }
     if (message.GetDescriptor() != ::player_inbox::LookupPlayerInboxRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerInboxAdmin.LookupByRequest: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerInboxAdmin.LookupByRequest: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -361,7 +365,7 @@ void SendPlayerInboxAdminLookupByRequestErased(entt::registry& registry, entt::e
     const auto* typedRequest = dynamic_cast<const ::player_inbox::LookupPlayerInboxRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerInboxAdmin.LookupByRequest: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -373,7 +377,7 @@ void SendPlayerInboxAdminLookupByRequestErased(entt::registry& registry, entt::e
 #pragma region PlayerInboxAdminVoidItem
 namespace {
 void QueueLocalPlayerInboxAdminVoidItemFailure(GrpcDone<::player_inbox::VoidPlayerInboxItemResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -387,9 +391,9 @@ void StartPlayerInboxAdminVoidItemCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC PlayerInboxAdmin.VoidItem requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerInboxAdminVoidItemGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerInboxAdminVoidItemGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerInboxAdminVoidItemFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -398,13 +402,13 @@ void StartPlayerInboxAdminVoidItemCall(entt::registry& registry, entt::entity no
         QueueLocalPlayerInboxAdminVoidItemFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -436,9 +440,10 @@ void SendPlayerInboxAdminVoidItemErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC PlayerInboxAdmin.VoidItem requires a done callback";
     }
     if (message.GetDescriptor() != ::player_inbox::VoidPlayerInboxItemRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerInboxAdmin.VoidItem: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerInboxAdmin.VoidItem: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -447,7 +452,7 @@ void SendPlayerInboxAdminVoidItemErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::player_inbox::VoidPlayerInboxItemRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerInboxAdmin.VoidItem: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -459,7 +464,7 @@ void SendPlayerInboxAdminVoidItemErased(entt::registry& registry, entt::entity n
 #pragma region PlayerInboxAdminReconcilePlayer
 namespace {
 void QueueLocalPlayerInboxAdminReconcilePlayerFailure(GrpcDone<::player_inbox::ReconcilePlayerInboxResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -473,9 +478,9 @@ void StartPlayerInboxAdminReconcilePlayerCall(entt::registry& registry, entt::en
     if (!done) {
         LOG_FATAL << "gRPC PlayerInboxAdmin.ReconcilePlayer requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerInboxAdminReconcilePlayerGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerInboxAdminReconcilePlayerGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerInboxAdminReconcilePlayerFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -484,13 +489,13 @@ void StartPlayerInboxAdminReconcilePlayerCall(entt::registry& registry, entt::en
         QueueLocalPlayerInboxAdminReconcilePlayerFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -522,9 +527,10 @@ void SendPlayerInboxAdminReconcilePlayerErased(entt::registry& registry, entt::e
         LOG_FATAL << "gRPC PlayerInboxAdmin.ReconcilePlayer requires a done callback";
     }
     if (message.GetDescriptor() != ::player_inbox::ReconcilePlayerInboxRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerInboxAdmin.ReconcilePlayer: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerInboxAdmin.ReconcilePlayer: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -533,7 +539,7 @@ void SendPlayerInboxAdminReconcilePlayerErased(entt::registry& registry, entt::e
     const auto* typedRequest = dynamic_cast<const ::player_inbox::ReconcilePlayerInboxRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerInboxAdmin.ReconcilePlayer: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

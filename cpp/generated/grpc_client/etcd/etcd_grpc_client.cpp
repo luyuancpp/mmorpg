@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace etcdserverpb {
 #pragma region KVRange
 namespace {
 void QueueLocalKVRangeFailure(GrpcDone<::etcdserverpb::RangeResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartKVRangeCall(entt::registry& registry, entt::entity nodeEntity, const :
     if (!done) {
         LOG_FATAL << "gRPC KV.Range requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kKVRangeGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kKVRangeGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalKVRangeFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartKVRangeCall(entt::registry& registry, entt::entity nodeEntity, const :
         QueueLocalKVRangeFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendKVRangeErased(entt::registry& registry, entt::entity nodeEntity, const 
         LOG_FATAL << "gRPC KV.Range requires a done callback";
     }
     if (message.GetDescriptor() != ::etcdserverpb::RangeRequest::descriptor()) {
-        LOG_ERROR << "gRPC KV.Range: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC KV.Range: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendKVRangeErased(entt::registry& registry, entt::entity nodeEntity, const 
     const auto* typedRequest = dynamic_cast<const ::etcdserverpb::RangeRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC KV.Range: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -115,7 +116,7 @@ void SendKVRangeErased(entt::registry& registry, entt::entity nodeEntity, const 
 #pragma region KVPut
 namespace {
 void QueueLocalKVPutFailure(GrpcDone<::etcdserverpb::PutResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -129,9 +130,9 @@ void StartKVPutCall(entt::registry& registry, entt::entity nodeEntity, const ::e
     if (!done) {
         LOG_FATAL << "gRPC KV.Put requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kKVPutGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kKVPutGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalKVPutFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -140,13 +141,13 @@ void StartKVPutCall(entt::registry& registry, entt::entity nodeEntity, const ::e
         QueueLocalKVPutFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -178,9 +179,10 @@ void SendKVPutErased(entt::registry& registry, entt::entity nodeEntity, const go
         LOG_FATAL << "gRPC KV.Put requires a done callback";
     }
     if (message.GetDescriptor() != ::etcdserverpb::PutRequest::descriptor()) {
-        LOG_ERROR << "gRPC KV.Put: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC KV.Put: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -189,7 +191,7 @@ void SendKVPutErased(entt::registry& registry, entt::entity nodeEntity, const go
     const auto* typedRequest = dynamic_cast<const ::etcdserverpb::PutRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC KV.Put: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -201,7 +203,7 @@ void SendKVPutErased(entt::registry& registry, entt::entity nodeEntity, const go
 #pragma region KVDeleteRange
 namespace {
 void QueueLocalKVDeleteRangeFailure(GrpcDone<::etcdserverpb::DeleteRangeResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -215,9 +217,9 @@ void StartKVDeleteRangeCall(entt::registry& registry, entt::entity nodeEntity, c
     if (!done) {
         LOG_FATAL << "gRPC KV.DeleteRange requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kKVDeleteRangeGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kKVDeleteRangeGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalKVDeleteRangeFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -226,13 +228,13 @@ void StartKVDeleteRangeCall(entt::registry& registry, entt::entity nodeEntity, c
         QueueLocalKVDeleteRangeFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -264,9 +266,10 @@ void SendKVDeleteRangeErased(entt::registry& registry, entt::entity nodeEntity, 
         LOG_FATAL << "gRPC KV.DeleteRange requires a done callback";
     }
     if (message.GetDescriptor() != ::etcdserverpb::DeleteRangeRequest::descriptor()) {
-        LOG_ERROR << "gRPC KV.DeleteRange: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC KV.DeleteRange: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -275,7 +278,7 @@ void SendKVDeleteRangeErased(entt::registry& registry, entt::entity nodeEntity, 
     const auto* typedRequest = dynamic_cast<const ::etcdserverpb::DeleteRangeRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC KV.DeleteRange: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -287,7 +290,7 @@ void SendKVDeleteRangeErased(entt::registry& registry, entt::entity nodeEntity, 
 #pragma region KVTxn
 namespace {
 void QueueLocalKVTxnFailure(GrpcDone<::etcdserverpb::TxnResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -301,9 +304,9 @@ void StartKVTxnCall(entt::registry& registry, entt::entity nodeEntity, const ::e
     if (!done) {
         LOG_FATAL << "gRPC KV.Txn requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kKVTxnGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kKVTxnGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalKVTxnFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -312,13 +315,13 @@ void StartKVTxnCall(entt::registry& registry, entt::entity nodeEntity, const ::e
         QueueLocalKVTxnFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -350,9 +353,10 @@ void SendKVTxnErased(entt::registry& registry, entt::entity nodeEntity, const go
         LOG_FATAL << "gRPC KV.Txn requires a done callback";
     }
     if (message.GetDescriptor() != ::etcdserverpb::TxnRequest::descriptor()) {
-        LOG_ERROR << "gRPC KV.Txn: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC KV.Txn: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -361,7 +365,7 @@ void SendKVTxnErased(entt::registry& registry, entt::entity nodeEntity, const go
     const auto* typedRequest = dynamic_cast<const ::etcdserverpb::TxnRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC KV.Txn: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -373,7 +377,7 @@ void SendKVTxnErased(entt::registry& registry, entt::entity nodeEntity, const go
 #pragma region KVCompact
 namespace {
 void QueueLocalKVCompactFailure(GrpcDone<::etcdserverpb::CompactionResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -387,9 +391,9 @@ void StartKVCompactCall(entt::registry& registry, entt::entity nodeEntity, const
     if (!done) {
         LOG_FATAL << "gRPC KV.Compact requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kKVCompactGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kKVCompactGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalKVCompactFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -398,13 +402,13 @@ void StartKVCompactCall(entt::registry& registry, entt::entity nodeEntity, const
         QueueLocalKVCompactFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -436,9 +440,10 @@ void SendKVCompactErased(entt::registry& registry, entt::entity nodeEntity, cons
         LOG_FATAL << "gRPC KV.Compact requires a done callback";
     }
     if (message.GetDescriptor() != ::etcdserverpb::CompactionRequest::descriptor()) {
-        LOG_ERROR << "gRPC KV.Compact: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC KV.Compact: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -447,7 +452,7 @@ void SendKVCompactErased(entt::registry& registry, entt::entity nodeEntity, cons
     const auto* typedRequest = dynamic_cast<const ::etcdserverpb::CompactionRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC KV.Compact: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -459,7 +464,7 @@ void SendKVCompactErased(entt::registry& registry, entt::entity nodeEntity, cons
 #pragma region LeaseLeaseGrant
 namespace {
 void QueueLocalLeaseLeaseGrantFailure(GrpcDone<::etcdserverpb::LeaseGrantResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -473,9 +478,9 @@ void StartLeaseLeaseGrantCall(entt::registry& registry, entt::entity nodeEntity,
     if (!done) {
         LOG_FATAL << "gRPC Lease.LeaseGrant requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kLeaseLeaseGrantGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kLeaseLeaseGrantGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalLeaseLeaseGrantFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -484,13 +489,13 @@ void StartLeaseLeaseGrantCall(entt::registry& registry, entt::entity nodeEntity,
         QueueLocalLeaseLeaseGrantFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -522,9 +527,10 @@ void SendLeaseLeaseGrantErased(entt::registry& registry, entt::entity nodeEntity
         LOG_FATAL << "gRPC Lease.LeaseGrant requires a done callback";
     }
     if (message.GetDescriptor() != ::etcdserverpb::LeaseGrantRequest::descriptor()) {
-        LOG_ERROR << "gRPC Lease.LeaseGrant: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC Lease.LeaseGrant: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -533,7 +539,7 @@ void SendLeaseLeaseGrantErased(entt::registry& registry, entt::entity nodeEntity
     const auto* typedRequest = dynamic_cast<const ::etcdserverpb::LeaseGrantRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC Lease.LeaseGrant: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -545,7 +551,7 @@ void SendLeaseLeaseGrantErased(entt::registry& registry, entt::entity nodeEntity
 #pragma region LeaseLeaseRevoke
 namespace {
 void QueueLocalLeaseLeaseRevokeFailure(GrpcDone<::etcdserverpb::LeaseRevokeResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -559,9 +565,9 @@ void StartLeaseLeaseRevokeCall(entt::registry& registry, entt::entity nodeEntity
     if (!done) {
         LOG_FATAL << "gRPC Lease.LeaseRevoke requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kLeaseLeaseRevokeGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kLeaseLeaseRevokeGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalLeaseLeaseRevokeFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -570,13 +576,13 @@ void StartLeaseLeaseRevokeCall(entt::registry& registry, entt::entity nodeEntity
         QueueLocalLeaseLeaseRevokeFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -608,9 +614,10 @@ void SendLeaseLeaseRevokeErased(entt::registry& registry, entt::entity nodeEntit
         LOG_FATAL << "gRPC Lease.LeaseRevoke requires a done callback";
     }
     if (message.GetDescriptor() != ::etcdserverpb::LeaseRevokeRequest::descriptor()) {
-        LOG_ERROR << "gRPC Lease.LeaseRevoke: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC Lease.LeaseRevoke: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -619,7 +626,7 @@ void SendLeaseLeaseRevokeErased(entt::registry& registry, entt::entity nodeEntit
     const auto* typedRequest = dynamic_cast<const ::etcdserverpb::LeaseRevokeRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC Lease.LeaseRevoke: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -631,7 +638,7 @@ void SendLeaseLeaseRevokeErased(entt::registry& registry, entt::entity nodeEntit
 #pragma region LeaseLeaseTimeToLive
 namespace {
 void QueueLocalLeaseLeaseTimeToLiveFailure(GrpcDone<::etcdserverpb::LeaseTimeToLiveResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -645,9 +652,9 @@ void StartLeaseLeaseTimeToLiveCall(entt::registry& registry, entt::entity nodeEn
     if (!done) {
         LOG_FATAL << "gRPC Lease.LeaseTimeToLive requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kLeaseLeaseTimeToLiveGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kLeaseLeaseTimeToLiveGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalLeaseLeaseTimeToLiveFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -656,13 +663,13 @@ void StartLeaseLeaseTimeToLiveCall(entt::registry& registry, entt::entity nodeEn
         QueueLocalLeaseLeaseTimeToLiveFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -694,9 +701,10 @@ void SendLeaseLeaseTimeToLiveErased(entt::registry& registry, entt::entity nodeE
         LOG_FATAL << "gRPC Lease.LeaseTimeToLive requires a done callback";
     }
     if (message.GetDescriptor() != ::etcdserverpb::LeaseTimeToLiveRequest::descriptor()) {
-        LOG_ERROR << "gRPC Lease.LeaseTimeToLive: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC Lease.LeaseTimeToLive: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -705,7 +713,7 @@ void SendLeaseLeaseTimeToLiveErased(entt::registry& registry, entt::entity nodeE
     const auto* typedRequest = dynamic_cast<const ::etcdserverpb::LeaseTimeToLiveRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC Lease.LeaseTimeToLive: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -717,7 +725,7 @@ void SendLeaseLeaseTimeToLiveErased(entt::registry& registry, entt::entity nodeE
 #pragma region LeaseLeaseLeases
 namespace {
 void QueueLocalLeaseLeaseLeasesFailure(GrpcDone<::etcdserverpb::LeaseLeasesResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -731,9 +739,9 @@ void StartLeaseLeaseLeasesCall(entt::registry& registry, entt::entity nodeEntity
     if (!done) {
         LOG_FATAL << "gRPC Lease.LeaseLeases requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kLeaseLeaseLeasesGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kLeaseLeaseLeasesGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalLeaseLeaseLeasesFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -742,13 +750,13 @@ void StartLeaseLeaseLeasesCall(entt::registry& registry, entt::entity nodeEntity
         QueueLocalLeaseLeaseLeasesFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -780,9 +788,10 @@ void SendLeaseLeaseLeasesErased(entt::registry& registry, entt::entity nodeEntit
         LOG_FATAL << "gRPC Lease.LeaseLeases requires a done callback";
     }
     if (message.GetDescriptor() != ::etcdserverpb::LeaseLeasesRequest::descriptor()) {
-        LOG_ERROR << "gRPC Lease.LeaseLeases: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC Lease.LeaseLeases: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -791,7 +800,7 @@ void SendLeaseLeaseLeasesErased(entt::registry& registry, entt::entity nodeEntit
     const auto* typedRequest = dynamic_cast<const ::etcdserverpb::LeaseLeasesRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC Lease.LeaseLeases: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

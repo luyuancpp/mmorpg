@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace guildpb {
 #pragma region GuildInternalListAppliedAssetOpsSince
 namespace {
 void QueueLocalGuildInternalListAppliedAssetOpsSinceFailure(GrpcDone<::guildpb::ListAppliedAssetOpsSinceResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartGuildInternalListAppliedAssetOpsSinceCall(entt::registry& registry, en
     if (!done) {
         LOG_FATAL << "gRPC GuildInternal.ListAppliedAssetOpsSince requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildInternalListAppliedAssetOpsSinceGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildInternalListAppliedAssetOpsSinceGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildInternalListAppliedAssetOpsSinceFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartGuildInternalListAppliedAssetOpsSinceCall(entt::registry& registry, en
         QueueLocalGuildInternalListAppliedAssetOpsSinceFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendGuildInternalListAppliedAssetOpsSinceErased(entt::registry& registry, e
         LOG_FATAL << "gRPC GuildInternal.ListAppliedAssetOpsSince requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::ListAppliedAssetOpsSinceRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildInternal.ListAppliedAssetOpsSince: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildInternal.ListAppliedAssetOpsSince: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendGuildInternalListAppliedAssetOpsSinceErased(entt::registry& registry, e
     const auto* typedRequest = dynamic_cast<const ::guildpb::ListAppliedAssetOpsSinceRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildInternal.ListAppliedAssetOpsSince: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

@@ -81,9 +81,10 @@
 #              要逐 zone 看就看这一条(结果按 zone 分组):收件箱侧的 PlayerInboxConsumerMaybeDisabled 不分 zone)
 #   info    : sum by (reason) (count_over_time({job="cpp_nodes", service="scene"} |= "metric=inbox_deferred" | regexp "reason=(?P<reason>\\w+)" [10m]))
 #   info    : sum by (result) (count_over_time({job="cpp_nodes", service="scene"} |= "[PlayerInbox]" |= "metric=inbox_leave_ack"
-#               | regexp "result=(?P<result>\\w+)" | result=~"delivered_undecided|not_durable|fetch_inflight|not_sent" [1h]))
+#               | regexp "result=(?P<result>\\w+)" | result=~"delivered_undecided|not_durable|fetch_inflight|ack_inflight|not_sent" [1h]))
 #             (玩家离开本节点时没能补发 Ack 的行(评审 M4 的残余):已投递还没定结局(delivered_undecided)、
-#              结局还没落盘(not_durable)、离开时 Fetch 在途(fetch_inflight)、补发没发出去(not_sent)。
+#              结局还没落盘(not_durable)、离开时 Fetch 在途(fetch_inflight)、离开时 Ack 在途(ack_inflight,
+#              只有它随后失败才真成残留)、补发没发出去(not_sent)。decided_prefix_queued 不是残留,不计入)
 #              它们只表示这些行停在「已投递未确认」,等玩家下次落地重拉或补确认;不是故障,不用处置。
 #              玩家一直不上线的,24 小时后计入 player_inbox_delivered_unacked_stale)
 #

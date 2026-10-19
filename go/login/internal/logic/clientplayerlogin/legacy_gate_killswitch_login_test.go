@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -123,12 +122,21 @@ func killSwitchGateCtx(fenced bool) context.Context {
 	return ctxkeys.WithSessionDetails(context.Background(), details)
 }
 
-// requireNoSessionWritten 断言 Login 没有留下任何会话状态:没有 login_session,账号设备集里也没有这条会话。
-func requireNoSessionWritten(t *testing.T, env *killSwitchEnv, account string) {
+func killSwitchSessionRef(t *testing.T, ctx context.Context) loginsession.Ref {
 	t.Helper()
-	require.False(t, env.mr.Exists(loginsession.Key(killSwitchSessionID)), "被拒的请求不得写 login_session")
-	member, err := env.rdb.SIsMember(context.Background(), constants.GenerateSessionKey(account),
-		strconv.FormatUint(uint64(killSwitchSessionID), 10)).Result()
+	details, found := ctxkeys.GetSessionDetails(ctx)
+	require.True(t, found, "测试上下文必须包含本连接身份")
+	return loginsession.RefOf(details)
+}
+
+// requireNoSessionWritten 断言 Login 没有留下任何会话状态:新键与兼容键均未写入,设备集也没有这条连接。
+func requireNoSessionWritten(t *testing.T, env *killSwitchEnv, ctx context.Context, account string) {
+	t.Helper()
+	ref := killSwitchSessionRef(t, ctx)
+	for _, key := range ref.WriteKeys() {
+		require.False(t, env.mr.Exists(key), "被拒的请求不得写 login_session")
+	}
+	member, err := env.rdb.SIsMember(ctx, constants.GenerateSessionKey(account), ref.DeviceMember()).Result()
 	require.NoError(t, err)
 	require.False(t, member, "被拒的请求不得登记设备集")
 }
@@ -171,11 +179,11 @@ func TestLegacyGateLoginDisabled_GateAccessTokenLoginStillBindsSession(t *testin
 			require.Equal(t, int32(1), env.thirdParty.calls.Load(), "gate 上的绑定只验自家 token,不再回源第三方")
 
 			// CreatePlayer / EnterGame 的第一步就是按会话取账号:取得到才进得了游戏。
-			bound, err := loginsession.GetAccount(gateCtx, env.rdb, killSwitchSessionID)
+			ref := killSwitchSessionRef(t, gateCtx)
+			bound, err := loginsession.GetAccount(gateCtx, env.rdb, ref)
 			require.NoError(t, err, "login_session 必须由 gate 上的 access_token Login 写入")
 			require.Equal(t, account, bound)
-			member, err := env.rdb.SIsMember(gateCtx, constants.GenerateSessionKey(account),
-				strconv.FormatUint(uint64(killSwitchSessionID), 10)).Result()
+			member, err := env.rdb.SIsMember(gateCtx, constants.GenerateSessionKey(account), ref.DeviceMember()).Result()
 			require.NoError(t, err)
 			require.True(t, member, "设备集必须登记这条会话(设备数上限靠它)")
 		})
@@ -199,7 +207,8 @@ func TestLegacyGateLoginDisabled_GateThirdPartyFirstAuthRejected(t *testing.T) {
 			env := newKillSwitchEnv(t, tc.enabled, account)
 
 			legacyBefore := legacyLoginCount.Load()
-			resp, err := NewLoginLogic(killSwitchGateCtx(true), env.svcCtx).Login(&loginpb.LoginRequest{
+			gateCtx := killSwitchGateCtx(true)
+			resp, err := NewLoginLogic(gateCtx, env.svcCtx).Login(&loginpb.LoginRequest{
 				AuthType: env.thirdPartyType, AuthToken: "oauth-code",
 			})
 			require.NoError(t, err)
@@ -209,7 +218,7 @@ func TestLegacyGateLoginDisabled_GateThirdPartyFirstAuthRejected(t *testing.T) {
 				require.Zero(t, resp.GetErrorMessage().GetId())
 				require.NotEmpty(t, resp.GetAccessToken())
 				require.Equal(t, int32(1), env.thirdParty.calls.Load(), "对照组:放行的旧路径照常调用认证器")
-				bound, err := loginsession.GetAccount(context.Background(), env.rdb, killSwitchSessionID)
+				bound, err := loginsession.GetAccount(gateCtx, env.rdb, killSwitchSessionRef(t, gateCtx))
 				require.NoError(t, err)
 				require.Equal(t, account, bound)
 				return
@@ -219,7 +228,7 @@ func TestLegacyGateLoginDisabled_GateThirdPartyFirstAuthRejected(t *testing.T) {
 			require.Empty(t, resp.GetRefreshToken())
 			require.Empty(t, resp.GetPlayers())
 			requireRejectedBeforeAuth(t, env, account)
-			requireNoSessionWritten(t, env, account)
+			requireNoSessionWritten(t, env, gateCtx, account)
 		})
 	}
 }
@@ -259,7 +268,8 @@ func TestLegacyGateLoginDisabled_GatePasswordLoginRejected(t *testing.T) {
 			const account = "killswitch-legacy-password"
 			env := newKillSwitchEnv(t, false, account)
 
-			resp, err := NewLoginLogic(killSwitchGateCtx(true), env.svcCtx).Login(&loginpb.LoginRequest{
+			gateCtx := killSwitchGateCtx(true)
+			resp, err := NewLoginLogic(gateCtx, env.svcCtx).Login(&loginpb.LoginRequest{
 				AuthType: authType, Account: account, Password: "anything",
 			})
 			require.NoError(t, err)
@@ -269,7 +279,7 @@ func TestLegacyGateLoginDisabled_GatePasswordLoginRejected(t *testing.T) {
 			require.Empty(t, resp.GetPlayers())
 			require.False(t, env.mr.Exists(accountLoginLockKey(account)), "被拒的请求不得留下账号锁")
 			require.False(t, env.mr.Exists(constants.GetAccountDataKey(account)), "被拒的请求不得建账号目录")
-			requireNoSessionWritten(t, env, account)
+			requireNoSessionWritten(t, env, gateCtx, account)
 		})
 	}
 }

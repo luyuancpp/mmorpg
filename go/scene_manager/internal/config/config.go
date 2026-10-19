@@ -33,6 +33,7 @@ type Config struct {
 	// 运维回滚开关:关 scene 的 A1′(SCENE_EXIT_RELEASE_MARK=0)之前必须先把它设为 -1,否则每次登出都要等满上限。
 	// 零值不当「关闭」:这是防回档的门,漏配时应当开着。读取走 EffectiveLeaveSceneHolderReleaseWait()。
 	// AllowUnsafeCrossNodeHandoff=true(dev 旁路)时同样不检查:换手门本身已被旁路。
+	// 它也是 EnterScene「登录撞上未释放的持有者时请持有节点释放」的开关(同一份释放协议,§12):<0 时两者一起关。
 	LeaveSceneHolderReleaseWaitSeconds int64 `json:",default=600"`
 
 	// DataServiceRpc 是 data_service 的 gRPC 客户端(etcd 发现,Key=dataservice.rpc)。

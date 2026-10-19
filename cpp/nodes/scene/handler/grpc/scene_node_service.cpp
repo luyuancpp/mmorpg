@@ -82,10 +82,13 @@ void SceneNodeGrpcImpl::HandleReleasePlayer(const ::scene_node::ReleasePlayerReq
     // 已在 loop 线程(gRPC 服务端在节点 EventLoop 上派发)。查找、交接守卫、按期望 owner_epoch 的归属栅栏与退出都在库里:
     // PlayerLifecycleSystem::HandleReleaseFromSceneManager(docs/design/scene-enter-chain-residuals.md §4,
     // 纯判定见 player/system/release_fence.h)。session_ended 是会话结束释放(没有接手节点,
-    // docs/design/location-release-binding.md §3.3),走 HandleSessionEndedRelease。
+    // docs/design/location-release-binding.md §3.3),走 HandleSessionEndedRelease;covered_* 是这次释放覆盖到的最新登录身份
+    // (§13,代次 0 = 旧版 scene_manager),实体已绑上更新的登录时不退出。交接释放不看 covered_*。
     if (request->session_ended())
     {
-        PlayerLifecycleSystem::HandleSessionEndedRelease(request->player_id(), request->expected_owner_epoch());
+        PlayerLifecycleSystem::HandleSessionEndedRelease(request->player_id(), request->expected_owner_epoch(),
+                                                         request->covered_session_id(),
+                                                         request->covered_login_generation());
         return;
     }
     PlayerLifecycleSystem::HandleReleaseFromSceneManager(request->player_id(), request->expected_owner_epoch(),

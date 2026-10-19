@@ -334,7 +334,9 @@ func (l *LeaveSceneLogic) keepLocationUntilReleased(in *scene_manager.LeaveScene
 	j holderReleaseJudgement) (*base.Empty, error) {
 	metrics.ObserveLeaveHolderRelease(j.verdict.String())
 	if j.verdict == leaveReleasePending {
-		sessionEndedReleaseDispatcher(l.svcCtx, j.zoneID, loc.GetNodeId(), in.PlayerId, j.epoch)
+		// 覆盖到被清理的会话(§13):pending 只在离场身份判 deleted(location 的会话不比它新)时出现,
+		// 后台请求晚于同一玩家的新登录到达时,实体已绑上更新的登录,持有节点不退它。
+		sessionEndedReleaseDispatcher(l.svcCtx, j.zoneID, loc.GetNodeId(), in.PlayerId, j.epoch, identityOfLeaveRequest(in))
 	}
 	l.Logger.Infof("[LeaveRelease] keeping location until the holder releases: player=%d scene=%d node=%s owner_epoch=%d verdict=%s waited=%s budget=%s release_requested=%v",
 		in.PlayerId, in.SceneId, loc.GetNodeId(), j.epoch, j.verdict, j.waited.Truncate(time.Second), j.budget,

@@ -11,6 +11,7 @@ import (
 	"data_service/internal/svc"
 
 	"github.com/alicebob/miniredis/v2"
+	goredis "github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -109,6 +110,160 @@ func TestLoadPlayerData_AllFields(t *testing.T) {
 	assert.Equal(t, []byte("b"), resp.Data["bag"])
 	assert.Equal(t, []byte("a"), resp.Data["attr"])
 	assert.True(t, resp.Version > 0)
+}
+
+// mgetHook 在下一次 MGET 之前 / 之后各跑一次钩子,把一次存盘精确插进 LoadPlayerData 读路径的缝里。
+// 挂在 dev 模式共享的 *goredis.Client 上(go-redis 原生 Hook),被测代码照常走 LoadPlayerData 公开入口。
+// 钩子只触发一次,且存盘本身不发 MGET,不会递归。
+type mgetHook struct {
+	beforeMGet func()
+	afterMGet  func()
+}
+
+func (h *mgetHook) DialHook(next goredis.DialHook) goredis.DialHook { return next }
+
+func (h *mgetHook) ProcessPipelineHook(next goredis.ProcessPipelineHook) goredis.ProcessPipelineHook {
+	return next
+}
+
+func (h *mgetHook) ProcessHook(next goredis.ProcessHook) goredis.ProcessHook {
+	return func(ctx context.Context, cmd goredis.Cmder) error {
+		if cmd.Name() != "mget" {
+			return next(ctx, cmd)
+		}
+		if hook := h.beforeMGet; hook != nil {
+			h.beforeMGet = nil
+			hook()
+		}
+		err := next(ctx, cmd)
+		if hook := h.afterMGet; hook != nil {
+			h.afterMGet = nil
+			hook()
+		}
+		return err
+	}
+}
+
+func installMGetHook(t *testing.T, svcCtx *svc.ServiceContext, playerID uint64, h *mgetHook) {
+	t.Helper()
+	client, err := svcCtx.Router.ClientForPlayer(context.Background(), playerID)
+	require.NoError(t, err)
+	base, ok := client.(*goredis.Client)
+	require.Truef(t, ok, "dev 模式下 ClientForPlayer 应返回 *goredis.Client,实际 %T", client)
+	base.AddHook(h)
+}
+
+func mustSave(t *testing.T, svcCtx *svc.ServiceContext, playerID uint64, data map[string][]byte) uint64 {
+	t.Helper()
+	resp, err := SavePlayerData(context.Background(), svcCtx, &SavePlayerDataReq{PlayerID: playerID, Data: data})
+	require.NoError(t, err)
+	require.Equal(t, constants.ErrCodeOK, resp.ErrorCode)
+	return resp.NewVersion
+}
+
+// requireLoadedVersionFencesLaterWrite:读之后已有别的写落地,带 Load 回的版本做 CAS 必须被拒。
+// 能通过就说明返回的版本比数据新,调用方会据此覆盖掉中间那次写。
+func requireLoadedVersionFencesLaterWrite(t *testing.T, svcCtx *svc.ServiceContext, playerID, loadedVersion uint64) {
+	t.Helper()
+	require.NotZero(t, loadedVersion, "expected_version=0 会跳过版本校验,用例必须从非 0 版本起步")
+	resp, err := SavePlayerData(context.Background(), svcCtx, &SavePlayerDataReq{
+		PlayerID:        playerID,
+		Data:            map[string][]byte{"bag": []byte("stale-writer")},
+		ExpectedVersion: loadedVersion,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, constants.ErrCodeVersionMismatch, resp.ErrorCode,
+		"CAS with the loaded version must be rejected: a save landed after the data was read")
+}
+
+// TestLoadPlayerData_SaveRacingTheRead 把一次存盘插进读路径的各个缝里,断言 Version 永远不比 Data 新。
+// 旧实现先读字段、再单独 GET 版本:存盘落在两步之间时返回「旧数据 + 新版本」,带它 CAS 能通过。
+func TestLoadPlayerData_SaveRacingTheRead(t *testing.T) {
+	cases := []struct {
+		name   string
+		fields []string
+		// beforeMGet=true:存盘落在 MGET 之前(全量分支即 SCAN 与 MGET 之间),并新建一个 SCAN 没扫到的字段。
+		beforeMGet bool
+		// wantData 是 Load 应读到的 bag 值。
+		wantData string
+	}{
+		{name: "selected fields, save after data read", fields: []string{"bag"}, wantData: "v1"},
+		{name: "all fields, save after data read", wantData: "v1"},
+		{name: "all fields, save between scan and mget creates new field", beforeMGet: true, wantData: "v2"},
+	}
+	for i, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			svcCtx, _ := newTestSvcCtx(t)
+			ctx := context.Background()
+			playerID := uint64(90 + i)
+			setupPlayer(t, svcCtx, playerID, 1)
+			firstVersion := mustSave(t, svcCtx, playerID, map[string][]byte{"bag": []byte("v1")})
+
+			racingSave := func() {
+				mustSave(t, svcCtx, playerID, map[string][]byte{"bag": []byte("v2"), "mail": []byte("new")})
+			}
+			h := &mgetHook{}
+			if tc.beforeMGet {
+				h.beforeMGet = racingSave
+			} else {
+				h.afterMGet = racingSave
+			}
+			installMGetHook(t, svcCtx, playerID, h)
+
+			resp, err := LoadPlayerData(ctx, svcCtx, &LoadPlayerDataReq{PlayerID: playerID, Fields: tc.fields})
+			require.NoError(t, err)
+			require.Equal(t, constants.ErrCodeOK, resp.ErrorCode)
+			require.Nil(t, h.beforeMGet, "racing save must have run")
+			require.Nil(t, h.afterMGet, "racing save must have run")
+			assert.Equal(t, []byte(tc.wantData), resp.Data["bag"])
+			// 三种缝里,返回的版本都应是首次存盘的版本:前两种它与数据同一瞬间,
+			// 第三种数据更新,但 SCAN 可能漏掉新字段,只能回 SCAN 之前的版本。
+			assert.Equal(t, firstVersion, resp.Version)
+			requireLoadedVersionFencesLaterWrite(t, svcCtx, playerID, resp.Version)
+		})
+	}
+}
+
+// TestLoadPlayerData_UncontendedVersionAcceptedByCAS:没有并发写时,Load 回的版本必须能直接 CAS 成功,
+// 防止「先读版本」的兜底把正常路径也变成伪冲突。
+func TestLoadPlayerData_UncontendedVersionAcceptedByCAS(t *testing.T) {
+	for i, fields := range [][]string{nil, {"bag"}} {
+		svcCtx, _ := newTestSvcCtx(t)
+		ctx := context.Background()
+		playerID := uint64(95 + i)
+		setupPlayer(t, svcCtx, playerID, 1)
+		mustSave(t, svcCtx, playerID, map[string][]byte{"bag": []byte("v1")})
+		latest := mustSave(t, svcCtx, playerID, map[string][]byte{"bag": []byte("v2")})
+
+		loaded, err := LoadPlayerData(ctx, svcCtx, &LoadPlayerDataReq{PlayerID: playerID, Fields: fields})
+		require.NoError(t, err)
+		require.Equal(t, constants.ErrCodeOK, loaded.ErrorCode)
+		assert.Equal(t, latest, loaded.Version, "fields=%v", fields)
+		assert.Equal(t, []byte("v2"), loaded.Data["bag"], "fields=%v", fields)
+
+		saved, err := SavePlayerData(ctx, svcCtx, &SavePlayerDataReq{
+			PlayerID:        playerID,
+			Data:            map[string][]byte{"bag": []byte("v3")},
+			ExpectedVersion: loaded.Version,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, constants.ErrCodeOK, saved.ErrorCode, "fields=%v", fields)
+	}
+}
+
+// TestLoadPlayerData_CorruptVersionFailsClosed:版本值损坏时两个分支都回 ErrCodeRedis,不能当成 0(= 跳过 CAS)。
+func TestLoadPlayerData_CorruptVersionFailsClosed(t *testing.T) {
+	for i, fields := range [][]string{nil, {"bag"}} {
+		svcCtx, mr := newTestSvcCtx(t)
+		playerID := uint64(97 + i)
+		setupPlayer(t, svcCtx, playerID, 1)
+		mustSave(t, svcCtx, playerID, map[string][]byte{"bag": []byte("v1")})
+		require.NoError(t, mr.Set(versionKey(playerID), "not-a-number"))
+
+		resp, err := LoadPlayerData(context.Background(), svcCtx, &LoadPlayerDataReq{PlayerID: playerID, Fields: fields})
+		assert.Error(t, err, "fields=%v", fields)
+		assert.Equal(t, constants.ErrCodeRedis, resp.ErrorCode, "fields=%v", fields)
+	}
 }
 
 // ── SavePlayerData ─────────────────────────────────────────────

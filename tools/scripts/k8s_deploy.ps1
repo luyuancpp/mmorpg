@@ -309,14 +309,22 @@ param(
 	# -LoginWeChatAllowOpenId / -LoginQQAllowOpenId:写 RequireUnionId: false,拿不到 unionid 时按 openid 建账号。以后接入 unionid
 	# 会把同一玩家分裂成两个账号且无法事后合并,非 dev 档给了要打警告;不给 = login 缺省 true(拿不到 unionid 即拒绝登录)。
 	# 全部不粘滞:每次部署按本次取值重写 ConfigMap;上次配过微信、这次没给,就删掉 login-oauth Secret,微信登录随新 Pod 一起关闭。
-	# 包装入口(dev_tools.ps1 / k8s_image.ps1 / k8s_zone_rollback.ps1 的 Step 6)目前不透传这六个参数:已开第三方登录的 zone
-	# 经包装入口重新部署会关掉第三方登录,要保持就直接调本脚本并照传。
+	# 防误关(fail-closed,Assert-LoginAuthProviderClusterState,非 DryRun、任何写操作之前):本次部署 login 的每个 zone,线上
+	# login ConfigMap 的 AuthProviders(或 Secret login-oauth)与本次参数不一致 —— 漏传而关掉某个 provider、漏传 Endpoint 把沙箱
+	# 改连生产、漏传 AllowOpenId 把 RequireUnionId 翻回 true、换了 AppId、线上段认不出 —— 就整条拒绝,报错给出照传现状的参数串。
+	# 确要关闭或改动时加 -ConfirmLoginAuthProviderChange。线上没有、本次新开不需要确认。
+	# 包装入口照传:dev_tools.ps1(k8s-zone-up / k8s-all-up)与 k8s_zone_rollback.ps1 的 Step 6 非空才透传这六个参数与确认开关;
+	# k8s_zone_rollback.ps1 在 Step 1 删 namespace 之前按同一份判据(lib Get-LoginAuthProviderDrift)自行核对。k8s_image.ps1 不部署
+	# login,不声明它们,dev_tools.ps1 的 k8s-image-* / k8s-release-* 显式给了即拒绝。
 	[string]$LoginWeChatAppId = "",
 	[string]$LoginWeChatEndpoint = "",
 	[switch]$LoginWeChatAllowOpenId,
 	[string]$LoginQQAppId = "",
 	[string]$LoginQQEndpoint = "",
 	[switch]$LoginQQAllowOpenId,
+	# 确认本次部署就是要关掉或改动线上 login 的第三方登录配置(见上一段「防误关」)。不给时,线上配置会被本次参数关掉或改掉
+	# 就在任何写操作之前拒绝;给了只打警告放行。它是许可不是指令:线上与本次一致时给了也不改任何东西。不粘滞,只在被指定时透传。
+	[switch]$ConfirmLoginAuthProviderChange,
 	# 削峰(G4b,docs/design/open-server-rate-limit-design.md §十一):gateway Bucket4j 限流 / login 登录排队。
 	# auto(缺省)= 跟随 -ReleaseProfile:dev 关(ConfigMap 与 G4b 之前逐字相同);staging / prod 开,阈值见 $script:PeakShavingLaunchTier。
 	# off 只用于事故止血与基线压测(AGENTS §6 对比的「关削峰」那一轮);on 只用于 dev 档联调。
@@ -3808,10 +3816,17 @@ function Assert-ClientEntryDeployPreflight {
 
 	if ($DryRun) {
 		Write-Host "[dry-run] Skipping current cluster-state preflight (gate / battle modes and address sources, gateway Ingress); actual execution checks before any writes."
+		if ($deploysLogin) {
+			Write-Host "[dry-run] Skipping login third-party auth (AuthProviders / Secret $($script:LoginOAuthSecretName)) cluster-state preflight; actual execution checks before any writes."
+		}
 	}
 	else {
 		Assert-ClientEntryClusterState -Zones $zones -DeploysBattle $deploysBattle -DeploysGateway $deploysGateway `
 			-AgonesFleetCrdPresent $agonesFleetCrdPresent
+		# 第三方登录防误关闸:只在本次部署 login 时查(infra-up、-SkipGoSvc、k8s_image.ps1 路径都不碰 login 的 ConfigMap 与 Secret)。
+		if ($deploysLogin) {
+			Assert-LoginAuthProviderClusterState -Zones $zones
+		}
 	}
 	Write-Host "Client entry: mode=$ClientEntryMode battle_orchestrator=$BattleOrchestrator gate_service_type=$GateServiceType gate_etp=$GateExternalTrafficPolicy require_client_endpoint=$(Resolve-RequireClientEndpoint)($RequireClientEndpoint) ingress_host=$(if ($GatewayIngressHost) { $GatewayIngressHost } else { '<none>' }) login_dev_password_auth=$($LoginDevPasswordAuth.IsPresent) login_wechat=$(-not [string]::IsNullOrEmpty($LoginWeChatAppId)) login_qq=$(-not [string]::IsNullOrEmpty($LoginQQAppId)) allow_disruptive_switch=$($AllowDisruptiveSwitch.IsPresent)"
 }
@@ -5901,6 +5916,48 @@ function Assert-LoginAuthProviderParams {
 	}
 	if (($hasWeChat -or $hasQQ) -and -not $DeploysLogin) {
 		Write-Warning "[login-auth] -LoginWeChatAppId / -LoginQQAppId supplied, but login is not deployed in this run (only generated with Go services during zone-up / all-up; requires -GoSvcRegistry without -SkipGoSvc); flags have no effect."
+	}
+	if ($ConfirmLoginAuthProviderChange -and -not $DeploysLogin) {
+		Write-Warning "[login-auth] -ConfirmLoginAuthProviderChange supplied, but login is not deployed in this run; flag has no effect."
+	}
+}
+
+<#
+.SYNOPSIS
+	login 第三方登录的防误关闸(集群现状预检,非 DryRun):本次要部署 login 的每个 zone,线上配置会被本次参数关掉或改掉,
+	就在任何写操作之前拒绝,所有 zone 一次报全。由 Assert-ClientEntryDeployPreflight 在 Assert-ClientEntryClusterState 之后调用。
+
+.DESCRIPTION
+	六个 -Login* 参数不粘滞(见参数注释),漏传一个 apply 照样成功,玩家却登不上:比 gate 换形态更隐蔽,因为 login 不报错,
+	只是 provider 没注册或 unionid 校验翻转。判据只有一份,在库里(lib Get-LoginAuthProviderDrift,k8s_zone_rollback.ps1
+	第 0 步用同一份);线上现状由 Get-LoginAuthProviderLiveState 读(login ConfigMap 的 AuthProviders 段 + Secret login-oauth
+	是否存在,名字取自库契约,与本脚本 $script:GoSvcInfo.login / $script:LoginOAuthSecretName 的相等由契约测试钉住)。
+	给了 -ConfirmLoginAuthProviderChange 只打警告放行。任何 kubectl 失败都 throw(查不到不等于没开,fail-closed)。
+	-Zones 与 Assert-ClientEntryClusterState 同一份(zone-up 一个,all-up 取 zones 配置);all-up 逐个 zone 部署,所以必须在
+	第一个写操作之前把全部 zone 判完,不留「前几个 zone 已关掉第三方登录、后面的才被拒」的半截部署。
+#>
+function Assert-LoginAuthProviderClusterState {
+	param([Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Zones)
+
+	$problems = @()
+	foreach ($zone in $Zones) {
+		$namespace = Get-ZoneNamespace -Name $zone.Name
+		$state = Get-LoginAuthProviderLiveState -Namespace $namespace -KubeContext $KubeContext -KubeConfig $KubeConfig
+		$drift = Get-LoginAuthProviderDrift -Live $state.Live -OAuthSecretPresent $state.OAuthSecretPresent `
+			-WeChatAppId $LoginWeChatAppId -WeChatEndpoint $LoginWeChatEndpoint -WeChatAllowOpenId $LoginWeChatAllowOpenId.IsPresent `
+			-QQAppId $LoginQQAppId -QQEndpoint $LoginQQEndpoint -QQAllowOpenId $LoginQQAllowOpenId.IsPresent
+		if ($drift.Drifts.Count -eq 0) { continue }
+		$keep = if ($drift.KeepArgs) { "要保持现状请照传 $($drift.KeepArgs)" } else { '线上没有可照传的 provider' }
+		$text = "zone $($zone.Name)(namespace=$namespace):" + ($drift.Drifts -join ';') + "。$keep;确认要关闭或改动请加 -ConfirmLoginAuthProviderChange。"
+		if ($ConfirmLoginAuthProviderChange) {
+			Write-Warning "[login-auth] -ConfirmLoginAuthProviderChange supplied; allowed: $text"
+		}
+		else {
+			$problems += $text
+		}
+	}
+	if ($problems.Count -gt 0) {
+		throw ("login 第三方登录现状预检失败($($problems.Count) 个 zone),未做任何写操作:`n  - " + ($problems -join "`n  - "))
 	}
 }
 
@@ -9010,7 +9067,9 @@ function Apply-OneGoSvc {
 	}
 	if ($SvcName -eq 'login' -and -not $isLoginOAuth) {
 		# 本次没给 -LoginWeChatAppId:ConfigMap 已不含 AuthProviders.WeChat,新 Deployment 也不再引用 AppSecret,删掉残留 Secret
-		# (放在 Deployment apply 之后,理由同上)。不粘滞 —— 上次开过微信登录、这次没给,微信登录随新 Pod 一起关闭。
+		# (放在 Deployment apply 之后,理由同上)。不粘滞 —— 上次开过微信登录、这次没给,微信登录随新 Pod 一起关闭;
+		# 线上开着而本次没给的情形已在写路径入口被 Assert-LoginAuthProviderClusterState 拦下:走到这里,要么线上本来就没开微信,
+		# 要么已用 -ConfirmLoginAuthProviderChange 确认关闭。
 		Invoke-Kubectl -Args @("delete", "secret", $script:LoginOAuthSecretName, "-n", $Namespace, "--ignore-not-found")
 	}
 	if ($SvcName -eq 'player-inbox' -and -not $isPlayerInboxAdmin) {

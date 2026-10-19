@@ -99,6 +99,9 @@ func NewRouter(c config.Config, opts ...RouterOption) *Router {
 	}
 
 	// Production: build zone → cluster mapping
+	if err := config.ValidateRegions(c.Regions); err != nil {
+		panic(fmt.Sprintf("data_service router: invalid Regions config: %v", err))
+	}
 	for _, region := range c.Regions {
 		client := goredis.NewClusterClient(&goredis.ClusterOptions{
 			Addrs:    region.Redis.Addrs,
@@ -616,8 +619,8 @@ func (r *Router) AcquirePlayerLock(ctx context.Context, dataClient goredis.Cmdab
 	ok, err = dataClient.SetNX(ctx, PlayerDataLockKey(playerID), token, ttl).Result()
 	if err != nil || !ok {
 		// 第二把锁失败时必须释放第一把；token 校验保证不会误删后来者。
-		_, releaseErr := r.mappingRedis.EvalCtx(ctx, releasePlayerLockScript,
-			[]string{mappingPlayerLockKey(playerID)}, token)
+		// 第二把锁失败的常见原因正是请求 ctx 已超时 / 取消,释放走 lockReleaseContext。
+		releaseErr := r.releaseMappingLock(ctx, playerID, token)
 		if err == nil && releaseErr != nil {
 			err = releaseErr
 		}
@@ -633,19 +636,43 @@ if redis.call('GET', KEYS[1]) == ARGV[1] then
 end
 return 0`
 
+// playerLockReleaseTimeout 是释放**一份**锁副本的时间预算;两份各自计时,一份挂住不拖累另一份。
+const playerLockReleaseTimeout = time.Second
+
+// lockReleaseContext 给锁释放一个不随请求取消的 ctx。
+//
+// 释放发生在 defer 和获取失败的回滚里,这时请求 ctx 往往已经超时或被取消;go-redis 取连接前先看
+// ctx.Done(),沿用它释放命令根本发不出去,两把锁只能等 PlayerLockTTLSec 过期,期间同一玩家的写
+// 全部回 LockConflict。WithoutCancel 保留 ctx 里的值(trace 等),另套短超时,免得挂住的 Redis 卡住 defer。
+func lockReleaseContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(ctx), playerLockReleaseTimeout)
+}
+
 // ReleasePlayerLock releases both lock copies if they are still owned by token.
+// ctx 已取消 / 超时也照常释放(见 lockReleaseContext),调用方直接传请求 ctx 即可。
 func (r *Router) ReleasePlayerLock(ctx context.Context, dataClient goredis.Cmdable, playerID uint64, token string) error {
 	if token == "" {
 		return nil
 	}
-	_, dataErr := dataClient.Eval(ctx, releasePlayerLockScript,
-		[]string{PlayerDataLockKey(playerID)}, token).Result()
-	_, mappingErr := r.mappingRedis.EvalCtx(ctx, releasePlayerLockScript,
-		[]string{mappingPlayerLockKey(playerID)}, token)
+	dataErr := releaseDataLock(ctx, dataClient, playerID, token)
+	mappingErr := r.releaseMappingLock(ctx, playerID, token)
 	if dataErr != nil {
 		return dataErr
 	}
 	return mappingErr
+}
+
+func releaseDataLock(ctx context.Context, dataClient goredis.Cmdable, playerID uint64, token string) error {
+	ctx, cancel := lockReleaseContext(ctx)
+	defer cancel()
+	return dataClient.Eval(ctx, releasePlayerLockScript, []string{PlayerDataLockKey(playerID)}, token).Err()
+}
+
+func (r *Router) releaseMappingLock(ctx context.Context, playerID uint64, token string) error {
+	ctx, cancel := lockReleaseContext(ctx)
+	defer cancel()
+	_, err := r.mappingRedis.EvalCtx(ctx, releasePlayerLockScript, []string{mappingPlayerLockKey(playerID)}, token)
+	return err
 }
 
 // deletePlayerZoneIfLockedScript 在 mapping Redis 内原子校验锁所有权并删除映射。

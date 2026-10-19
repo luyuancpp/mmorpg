@@ -69,7 +69,7 @@ constexpr std::chrono::milliseconds kGateToSceneClientCallTimeout{12000};
 
 // scene 对一条客户端消息的回包 / 失败落到客户端(docs/design/muduo-rpc-channel.md §8.1)。
 // 会话按 (session_id, 会话代次) 复核:session_id 被新连接复用之后,旧会话迟到的回包不得写进新会话的 socket。
-static void OnSceneClientMessageCallDone(SessionId sessionId, uint64_t incarnation, uint64_t clientRequestId,
+static void ForwardSceneClientCallResult(SessionId sessionId, uint64_t incarnation, uint64_t clientRequestId,
 										 uint32_t innerMessageId, const RpcStatus &status,
 										 const std::shared_ptr<ProcessClientPlayerMessageResponse> &response)
 {
@@ -103,8 +103,8 @@ static void OnSceneClientMessageCallDone(SessionId sessionId, uint64_t incarnati
 }
 
 // 直连调用按发出时的会话交桥,不依赖服务端是否回显会话 metadata。
-static void OnDirectGrpcCallDone(SessionId sessionId, uint64_t incarnation, uint32_t messageId,
-                                 const std::string &sentSessionBin, const GrpcCallOutcome &outcome,
+static void ForwardDirectGrpcCallResult(SessionId sessionId, uint64_t incarnation, uint32_t messageId,
+                                 const std::string &serializedSessionDetails, const GrpcCallOutcome &outcome,
                                  const google::protobuf::Message *reply)
 {
 	// session_id 复用后旧完成不得进入新连接;成功和失败都按发出时的代次认领。
@@ -114,15 +114,20 @@ static void OnDirectGrpcCallDone(SessionId sessionId, uint64_t incarnation, uint
 	}
 	if (!outcome.ok() || reply == nullptr)
 	{
-		const auto &methodMeta = gRpcMethodRegistry[messageId];
-		const std::string method = std::string(methodMeta.serviceName) + "." + methodMeta.methodName;
-		gate_rpc_reply_bridge::NotifyCallFailure(method.c_str(), static_cast<int>(outcome.code), outcome.message,
-		                                        sentSessionBin.empty() ? nullptr : &sentSessionBin);
+		const auto &rpcMethodMetadata = gRpcMethodRegistry[messageId];
+		const std::string rpcMethodName = std::string(rpcMethodMetadata.serviceName) + "." + rpcMethodMetadata.methodName;
+		gate_rpc_reply_bridge::NotifyCallFailure(rpcMethodName.c_str(), static_cast<int>(outcome.code), outcome.message,
+		                                        serializedSessionDetails.empty() ? nullptr : &serializedSessionDetails);
 		return;
 	}
-	SessionDetails sent;
-	sent.ParseFromString(sentSessionBin);
-	gate_rpc_reply_bridge::DeliverReply(sent, *reply);
+	SessionDetails requestSessionDetails;
+	if (!requestSessionDetails.ParseFromString(serializedSessionDetails))
+	{
+		// 解析失败不能把默认的会话身份交给回包桥。
+		LOG_ERROR << "Invalid direct gRPC reply session metadata: message_id=" << messageId;
+		return;
+	}
+	gate_rpc_reply_bridge::DeliverReply(requestSessionDetails, *reply);
 }
 
 static std::optional<entt::entity> PickRandomNode(uint32_t nodeType)
@@ -868,7 +873,7 @@ void HandleTcpNodeMessage(const SessionInfo &session, const RpcClientMessagePtr 
 		[sessionId, incarnation = session.incarnation, clientRequestId = request->id(), innerMessageId = request->message_id()](
 			const RpcStatus &status, const std::shared_ptr<ProcessClientPlayerMessageResponse> &response)
 		{
-			OnSceneClientMessageCallDone(sessionId, incarnation, clientRequestId, innerMessageId, status, response);
+			ForwardSceneClientCallResult(sessionId, incarnation, clientRequestId, innerMessageId, status, response);
 		},
 		RpcCallOptions{kGateToSceneClientCallTimeout});
 
@@ -959,17 +964,17 @@ void HandleGrpcNodeMessage(SessionId sessionId, const RpcClientMessagePtr &reque
 			sessionIt->second.loginStarted = true;
 		}
 
-		std::string sentSessionBin;
+		std::string serializedSessionDetails;
 		GrpcCallOptions options;
-		if (sessionDetails.SerializeToString(&sentSessionBin))
+		if (sessionDetails.SerializeToString(&serializedSessionDetails))
 		{
-			options.metadata.emplace_back(kSessionBinMetaKey, sentSessionBin);
+			options.metadata.emplace_back(kSessionBinMetaKey, serializedSessionDetails);
 		}
 		rpcHandlerMeta.sender(
 			tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType), *node, *rpcHandlerMeta.requestProto,
-			[sessionId, incarnation = sessionIt->second.incarnation, messageId = request->message_id(), sentSessionBin](
+			[sessionId, incarnation = sessionIt->second.incarnation, messageId = request->message_id(), serializedSessionDetails](
 				const GrpcCallOutcome &outcome, const google::protobuf::Message *reply)
-			{ OnDirectGrpcCallDone(sessionId, incarnation, messageId, sentSessionBin, outcome, reply); },
+			{ ForwardDirectGrpcCallResult(sessionId, incarnation, messageId, serializedSessionDetails, outcome, reply); },
 			options);
 	}
 }

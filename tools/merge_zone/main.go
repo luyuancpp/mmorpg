@@ -557,6 +557,9 @@ func main() {
 		if err := checkPinModeFlags(o); err != nil {
 			fail("%v", err)
 		}
+		if err := checkDataRedisBlobFlags(o); err != nil {
+			fail("%v", err)
+		}
 		if err := checkMergeCapabilityFlag(o); err != nil {
 			fail("%v", err)
 		}
@@ -588,6 +591,28 @@ func checkPinModeFlags(o options) error {
 			"Redis clusters, run this merge with -player-rows-mode copy")
 	}
 	return nil
+}
+
+// checkDataRedisBlobFlags 拒绝「声明了两套不同的 data Redis,却没让 blob 跟着走」的合服(纯函数)。
+//
+// 第 2 步拷 blob 只看 -migrate-player-blobs,与 pin / copy 模式无关(merge_run.go 的 stepPlayerBlobs 分支)。
+// data_service 按 home_zone 选 data Redis 集群:src / dst 不在同一个后端时,第 5 步改完映射,data_service 去 dst
+// 读 player:{id}:*,拿到的是「成功、空数据、Version=0」,源集群里的数据没人再读 —— 全程没有报错。
+// 运维用 -source-data-redis / -target-data-redis 声明了两个不同的后端,就说明这是多集群合服,此时必须显式选择:
+// -migrate-player-blobs(只能配 copy 模式,见 checkPinModeFlags),或 -skip-player-blob-migration(已自行搬好)。
+// 两个地址没给全时工具无从判断拓扑,保持原行为;多集群部署合服必须给全,见 player-storage-placement.md。
+func checkDataRedisBlobFlags(o options) error {
+	if o.migrateBlobs || o.skipBlobs || o.sourceData == "" || o.targetData == "" {
+		return nil
+	}
+	if sameDataBackend(addrsFromCSV(o.sourceData), addrsFromCSV(o.targetData), o.sourceDataDB, o.targetDataDB) {
+		return nil
+	}
+	return fmt.Errorf("-source-data-redis (%s db=%d) and -target-data-redis (%s db=%d) are different backends, "+
+		"but -migrate-player-blobs is not set: after the mapping remap data_service reads player:{id}:* from the "+
+		"target and finds nothing. Pass -migrate-player-blobs with -player-rows-mode copy, or "+
+		"-skip-player-blob-migration if the blobs have been moved by other means",
+		o.sourceData, o.sourceDataDB, o.targetData, o.targetDataDB)
 }
 
 // checkMergeCapabilityFlag 是合服入口对 -db-capability-zones 的前置要求(纯函数):pin 模式必填(接受 none);

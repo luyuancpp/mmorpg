@@ -35,12 +35,8 @@ func templateCacheKey(name, tmplStr string) string {
 	return name + ":" + strconv.FormatUint(hasher.Sum64(), 16)
 }
 
-// Execute renders a template and returns the result string.
-// name: template name (used for caching and error logging)
-// tmplStr: template string
-// data: template data
-// funcs: optional template function maps
-func (e *TemplateEngine) Execute(name, tmplStr string, data interface{}, funcs ...template.FuncMap) string {
+// RenderOrExit 缓存并渲染模板；解析或渲染失败时记录 Fatal 日志并退出进程。
+func (e *TemplateEngine) RenderOrExit(name, tmplStr string, data interface{}, funcs ...template.FuncMap) string {
 	cacheKey := templateCacheKey(name, tmplStr)
 	e.mu.RLock()
 	tmpl, ok := e.cache[cacheKey]
@@ -74,13 +70,13 @@ func (e *TemplateEngine) Execute(name, tmplStr string, data interface{}, funcs .
 	return NormalizeGeneratedLayout(buf.String())
 }
 
-// ExecuteTemplate is a convenience function using the global engine.
-func ExecuteTemplate(name, tmplStr string, data interface{}, funcs ...template.FuncMap) string {
-	return GlobalEngine.Execute(name, tmplStr, data, funcs...)
+// RenderTemplateOrExit 使用全局引擎渲染模板，失败时退出进程。
+func RenderTemplateOrExit(name, tmplStr string, data interface{}, funcs ...template.FuncMap) string {
+	return GlobalEngine.RenderOrExit(name, tmplStr, data, funcs...)
 }
 
-// MustExecute renders a template and returns an error instead of panicking.
-func (e *TemplateEngine) MustExecute(name, tmplStr string, data interface{}, funcs ...template.FuncMap) (string, error) {
+// Render 渲染模板，将解析或渲染错误交给调用方处理。
+func (e *TemplateEngine) Render(name, tmplStr string, data interface{}, funcs ...template.FuncMap) (string, error) {
 	t := template.New(name)
 	for _, f := range funcs {
 		t = t.Funcs(f)

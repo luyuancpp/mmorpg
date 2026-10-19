@@ -13,7 +13,9 @@
 // 子命令与退出码(0 干净 / 1 需要人工处理 / 2 失败 / 3 有生效的合服围栏):
 //   - import-from-redis、audit、tidb-prepare:第 1a 批,语义不变;audit 新增 -frozen-recovery(冻结期恢复口径);
 //   - freeze / reconcile-from-cache / unfreeze:第 1b-1 批,全局库回档后的恢复流程(freeze → reconcile-from-cache →
-//     audit -frozen-recovery → unfreeze),只碰映射写者的冻结开关与反向修库,不改服务的运行行为。
+//     audit -frozen-recovery → unfreeze),只碰映射写者的冻结开关与反向修库,不改服务的运行行为;
+//   - rewarm 与 audit -require-maprev、unfreeze 的水位键出口:第 1b-2 批收尾(2026-10-19,规格 spec_D1_batch1b2_2_3.md §4.6
+//     第 2 / 4 / 5 项、§13.1 第 4 / 6 条)。rewarm 一条 DEL 撤掉就绪标记、预热令牌与水位键,-wait > 0 时等 db_first 的 leader 重挂。
 //
 // 与 data_service 读同一份 yaml:mapping Redis 永远是 DB 0(go-zero RedisConf 没有 DB 字段;连接带 RedisConf 的 User / Pass / Tls,
 // 由 go-zero redis.NewRedis 透传),全局库取 SnapshotMySQL 段,连接池大小取 RouteStore 段;整段仍按服务的口径校验(非法即退出码 2)。
@@ -25,7 +27,10 @@
 //   - freeze:redis 模式也允许,但 W1 在 redis 模式下不读 writable,只打 WARN;
 //   - unfreeze:redis 模式下也允许(撤销误跑 / 演练的 freeze,或从 db_first 回退时带过来的冻结 —— 否则 import-from-redis 的
 //     requireRouteWritable 与模式无关,会一直拒写,工具里没有别的解冻路径),但必须显式 -cache-was-not-verified-acknowledged
-//     (redis 模式没有就绪标记可核对,也跑不了 audit -frozen-recovery),不连 mapping Redis、最低水位取 0,打 WARN。
+//     (redis 模式没有就绪标记可核对,也跑不了 audit -frozen-recovery),不连 mapping Redis、最低水位取 0,打 WARN;
+//   - audit -require-maprev:只在 db_first 下有意义(redis 模式没有写者写 maprev,每一行都会判落后),redis 模式退出码 2;
+//   - rewarm:-wait=0(只撤)两种模式都允许(回退 redis 模式时就用它清控制键);-wait > 0 只许 db_first(redis 模式没有 leader 重挂)。
+//     rewarm 与 db_first 的 unfreeze 一样要求 MappingRedis 是单实例(三把控制键一条 DEL、身份按单实例定义)。
 package routetoolcli
 
 import (
@@ -58,6 +63,10 @@ const (
 	subFreeze      = "freeze"
 	subReconcile   = "reconcile-from-cache"
 	subUnfreeze    = "unfreeze"
+	subRewarm      = "rewarm"
+
+	// defaultRewarmPoll 是 rewarm -wait 期间轮询就绪标记的间隔。
+	defaultRewarmPoll = 5 * time.Second
 
 	// redisPingTimeout 是装配时 PING mapping Redis 的上限:地址不可达要快速失败成退出码 2,
 	// 不能等到第一条 SCAN 才发现(那时已经连上了全局库)。
@@ -70,20 +79,24 @@ const (
 
 const usage = `用法:
   route_tool -f <data_service.yaml> import-from-redis [-dry-run=true] [-allow-db-first] [-batch=500] [-timeout=30m] [-max-report=200]
-  route_tool -f <data_service.yaml> audit [-frozen-recovery] [-batch=500] [-timeout=30m] [-max-report=200] [-recheck-delay=2s] [-max-recheck=10000]
+  route_tool -f <data_service.yaml> audit [-frozen-recovery] [-require-maprev] [-batch=500] [-timeout=30m] [-max-report=200] [-recheck-delay=2s] [-max-recheck=10000]
   route_tool -f <data_service.yaml> tidb-prepare -zones=1,2[,…] [-storages=1000000[,…]] [-dry-run=true] [-timeout=30m]
   route_tool -f <data_service.yaml> freeze [-reason=<文本>] [-freeze-timeout=5s] [-timeout=30m]
   route_tool -f <data_service.yaml> reconcile-from-cache [-dry-run=true] [-resolve-ties=report|cache] [-freeze-grace=10s] [-batch=500] [-timeout=30m] [-max-report=200]
   route_tool -f <data_service.yaml> unfreeze -confirm-audited [-cache-was-not-verified-acknowledged] [-freeze-timeout=5s] [-timeout=30m]
+  route_tool -f <data_service.yaml> rewarm [-wait=0] [-poll=5s] [-timeout=30m]
   (K8s 上同一套子命令走主程序:data_service -f <yaml> -route-tool <子命令> [参数])
 
-退出码:0 干净;1 完成但需要人工处理(unfreeze:就绪标记在途中被改过,重跑);2 失败(参数 / 配置 / 连接 / 查询 / 写入 / 超时,
-db_first 下真导入没加 -allow-db-first,redis 模式下跑 reconcile-from-cache / audit -frozen-recovery、或 unfreeze 没加
--cache-was-not-verified-acknowledged,没冻结就修库,unfreeze 没加 -confirm-audited 或确认不了缓存);
+退出码:0 干净;1 完成但需要人工处理(unfreeze:就绪标记在途中被改过、或解冻之后水位键没改成,重跑;audit -require-maprev:
+redis_rev_behind 非 0;rewarm:-wait 内没等到 leader 重挂);2 失败(参数 / 配置 / 连接 / 查询 / 写入 / 超时,
+db_first 下真导入没加 -allow-db-first,redis 模式下跑 reconcile-from-cache / audit -frozen-recovery / audit -require-maprev / rewarm -wait、
+或 unfreeze 没加 -cache-was-not-verified-acknowledged,没冻结就修库,unfreeze 没加 -confirm-audited 或确认不了缓存、
+水位键版本更新或不是 string,rewarm -wait 时映射写者是冻结的);
 3 有生效的合服围栏、或导入期间 merge:merged_into 变过(import-from-redis / reconcile-from-cache)。
 tidb-prepare:0 完成或 MySQL 上跳过(MySQL 没有 Region);2 失败。
 恢复流程(全局库回档之后,runbook §9.4):freeze → reconcile-from-cache(先 dry-run)→ audit -frozen-recovery(退出码 0)→ unfreeze -confirm-audited。
-redis 模式下撤销 freeze:unfreeze -confirm-audited -cache-was-not-verified-acknowledged(不连 mapping Redis,最低水位 0)。`
+redis 模式下撤销 freeze:unfreeze -confirm-audited -cache-was-not-verified-acknowledged(不连 mapping Redis,最低水位 0)。
+rewarm:一条 DEL 撤掉 mapping:route:ready / warm / watermark;-wait > 0(只许 db_first)时等 leader 全量预热后重挂(要求 -wait < -timeout)。`
 
 // cliArgs 是解析后的命令行。
 type cliArgs struct {
@@ -107,6 +120,10 @@ type cliArgs struct {
 	reason             string
 	confirmAudited     bool
 	cacheUnverifiedAck bool
+	// 第 1b-2 批收尾:audit 的严格 maprev 口径;rewarm 的等待与轮询。
+	requireMapRev bool
+	wait          time.Duration
+	poll          time.Duration
 }
 
 // routeStore 是本入口对全局库 RouteStore 的全部依赖(*store.RouteStore 天然满足;单测注入假实现)。
@@ -122,6 +139,8 @@ type routeStore interface {
 	RepairMergedIntoFromCache(ctx context.Context, rows []store.MergedIntoRow, dryRun bool) (store.MergedIntoImportStats, error)
 	FreezeRouteWriters(ctx context.Context) (bool, error)
 	UnfreezeRouteWriters(ctx context.Context, minWatermarkMs uint64) (bool, error)
+	// ListActiveMergeFences 只给 rewarm -wait 取库时钟(见 routetool.Rewarm)。
+	ListActiveMergeFences(ctx context.Context) (store.ActiveMergeFences, error)
 	Close() error
 }
 

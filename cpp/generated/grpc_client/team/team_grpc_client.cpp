@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace teampb {
 #pragma region ClientPlayerTeamCreateTeam
 namespace {
 void QueueLocalClientPlayerTeamCreateTeamFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartClientPlayerTeamCreateTeamCall(entt::registry& registry, entt::entity 
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.CreateTeam requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamCreateTeamGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamCreateTeamGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamCreateTeamFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartClientPlayerTeamCreateTeamCall(entt::registry& registry, entt::entity 
         QueueLocalClientPlayerTeamCreateTeamFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendClientPlayerTeamCreateTeamErased(entt::registry& registry, entt::entity
         LOG_FATAL << "gRPC ClientPlayerTeam.CreateTeam requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::CreateTeamRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.CreateTeam: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.CreateTeam: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendClientPlayerTeamCreateTeamErased(entt::registry& registry, entt::entity
     const auto* typedRequest = dynamic_cast<const ::teampb::CreateTeamRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.CreateTeam: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -115,7 +116,7 @@ void SendClientPlayerTeamCreateTeamErased(entt::registry& registry, entt::entity
 #pragma region ClientPlayerTeamGetMyTeam
 namespace {
 void QueueLocalClientPlayerTeamGetMyTeamFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -129,9 +130,9 @@ void StartClientPlayerTeamGetMyTeamCall(entt::registry& registry, entt::entity n
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.GetMyTeam requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamGetMyTeamGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamGetMyTeamGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamGetMyTeamFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -140,13 +141,13 @@ void StartClientPlayerTeamGetMyTeamCall(entt::registry& registry, entt::entity n
         QueueLocalClientPlayerTeamGetMyTeamFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -178,9 +179,10 @@ void SendClientPlayerTeamGetMyTeamErased(entt::registry& registry, entt::entity 
         LOG_FATAL << "gRPC ClientPlayerTeam.GetMyTeam requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::GetMyTeamRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.GetMyTeam: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.GetMyTeam: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -189,7 +191,7 @@ void SendClientPlayerTeamGetMyTeamErased(entt::registry& registry, entt::entity 
     const auto* typedRequest = dynamic_cast<const ::teampb::GetMyTeamRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.GetMyTeam: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -201,7 +203,7 @@ void SendClientPlayerTeamGetMyTeamErased(entt::registry& registry, entt::entity 
 #pragma region ClientPlayerTeamApplyJoinTeam
 namespace {
 void QueueLocalClientPlayerTeamApplyJoinTeamFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -215,9 +217,9 @@ void StartClientPlayerTeamApplyJoinTeamCall(entt::registry& registry, entt::enti
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.ApplyJoinTeam requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamApplyJoinTeamGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamApplyJoinTeamGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamApplyJoinTeamFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -226,13 +228,13 @@ void StartClientPlayerTeamApplyJoinTeamCall(entt::registry& registry, entt::enti
         QueueLocalClientPlayerTeamApplyJoinTeamFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -264,9 +266,10 @@ void SendClientPlayerTeamApplyJoinTeamErased(entt::registry& registry, entt::ent
         LOG_FATAL << "gRPC ClientPlayerTeam.ApplyJoinTeam requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::ApplyJoinTeamRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.ApplyJoinTeam: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.ApplyJoinTeam: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -275,7 +278,7 @@ void SendClientPlayerTeamApplyJoinTeamErased(entt::registry& registry, entt::ent
     const auto* typedRequest = dynamic_cast<const ::teampb::ApplyJoinTeamRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.ApplyJoinTeam: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -287,7 +290,7 @@ void SendClientPlayerTeamApplyJoinTeamErased(entt::registry& registry, entt::ent
 #pragma region ClientPlayerTeamHandleApplication
 namespace {
 void QueueLocalClientPlayerTeamHandleApplicationFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -301,9 +304,9 @@ void StartClientPlayerTeamHandleApplicationCall(entt::registry& registry, entt::
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.HandleApplication requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamHandleApplicationGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamHandleApplicationGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamHandleApplicationFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -312,13 +315,13 @@ void StartClientPlayerTeamHandleApplicationCall(entt::registry& registry, entt::
         QueueLocalClientPlayerTeamHandleApplicationFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -350,9 +353,10 @@ void SendClientPlayerTeamHandleApplicationErased(entt::registry& registry, entt:
         LOG_FATAL << "gRPC ClientPlayerTeam.HandleApplication requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::HandleApplicationRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.HandleApplication: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.HandleApplication: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -361,7 +365,7 @@ void SendClientPlayerTeamHandleApplicationErased(entt::registry& registry, entt:
     const auto* typedRequest = dynamic_cast<const ::teampb::HandleApplicationRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.HandleApplication: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -373,7 +377,7 @@ void SendClientPlayerTeamHandleApplicationErased(entt::registry& registry, entt:
 #pragma region ClientPlayerTeamInviteToTeam
 namespace {
 void QueueLocalClientPlayerTeamInviteToTeamFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -387,9 +391,9 @@ void StartClientPlayerTeamInviteToTeamCall(entt::registry& registry, entt::entit
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.InviteToTeam requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamInviteToTeamGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamInviteToTeamGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamInviteToTeamFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -398,13 +402,13 @@ void StartClientPlayerTeamInviteToTeamCall(entt::registry& registry, entt::entit
         QueueLocalClientPlayerTeamInviteToTeamFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -436,9 +440,10 @@ void SendClientPlayerTeamInviteToTeamErased(entt::registry& registry, entt::enti
         LOG_FATAL << "gRPC ClientPlayerTeam.InviteToTeam requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::InviteToTeamRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.InviteToTeam: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.InviteToTeam: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -447,7 +452,7 @@ void SendClientPlayerTeamInviteToTeamErased(entt::registry& registry, entt::enti
     const auto* typedRequest = dynamic_cast<const ::teampb::InviteToTeamRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.InviteToTeam: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -459,7 +464,7 @@ void SendClientPlayerTeamInviteToTeamErased(entt::registry& registry, entt::enti
 #pragma region ClientPlayerTeamRespondInvite
 namespace {
 void QueueLocalClientPlayerTeamRespondInviteFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -473,9 +478,9 @@ void StartClientPlayerTeamRespondInviteCall(entt::registry& registry, entt::enti
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.RespondInvite requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamRespondInviteGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamRespondInviteGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamRespondInviteFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -484,13 +489,13 @@ void StartClientPlayerTeamRespondInviteCall(entt::registry& registry, entt::enti
         QueueLocalClientPlayerTeamRespondInviteFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -522,9 +527,10 @@ void SendClientPlayerTeamRespondInviteErased(entt::registry& registry, entt::ent
         LOG_FATAL << "gRPC ClientPlayerTeam.RespondInvite requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::RespondInviteRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.RespondInvite: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.RespondInvite: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -533,7 +539,7 @@ void SendClientPlayerTeamRespondInviteErased(entt::registry& registry, entt::ent
     const auto* typedRequest = dynamic_cast<const ::teampb::RespondInviteRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.RespondInvite: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -545,7 +551,7 @@ void SendClientPlayerTeamRespondInviteErased(entt::registry& registry, entt::ent
 #pragma region ClientPlayerTeamListMyInvites
 namespace {
 void QueueLocalClientPlayerTeamListMyInvitesFailure(GrpcDone<::teampb::ListMyInvitesResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -559,9 +565,9 @@ void StartClientPlayerTeamListMyInvitesCall(entt::registry& registry, entt::enti
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.ListMyInvites requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamListMyInvitesGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamListMyInvitesGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamListMyInvitesFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -570,13 +576,13 @@ void StartClientPlayerTeamListMyInvitesCall(entt::registry& registry, entt::enti
         QueueLocalClientPlayerTeamListMyInvitesFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -608,9 +614,10 @@ void SendClientPlayerTeamListMyInvitesErased(entt::registry& registry, entt::ent
         LOG_FATAL << "gRPC ClientPlayerTeam.ListMyInvites requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::ListMyInvitesRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.ListMyInvites: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.ListMyInvites: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -619,7 +626,7 @@ void SendClientPlayerTeamListMyInvitesErased(entt::registry& registry, entt::ent
     const auto* typedRequest = dynamic_cast<const ::teampb::ListMyInvitesRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.ListMyInvites: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -631,7 +638,7 @@ void SendClientPlayerTeamListMyInvitesErased(entt::registry& registry, entt::ent
 #pragma region ClientPlayerTeamLeaveTeam
 namespace {
 void QueueLocalClientPlayerTeamLeaveTeamFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -645,9 +652,9 @@ void StartClientPlayerTeamLeaveTeamCall(entt::registry& registry, entt::entity n
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.LeaveTeam requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamLeaveTeamGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamLeaveTeamGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamLeaveTeamFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -656,13 +663,13 @@ void StartClientPlayerTeamLeaveTeamCall(entt::registry& registry, entt::entity n
         QueueLocalClientPlayerTeamLeaveTeamFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -694,9 +701,10 @@ void SendClientPlayerTeamLeaveTeamErased(entt::registry& registry, entt::entity 
         LOG_FATAL << "gRPC ClientPlayerTeam.LeaveTeam requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::LeaveTeamRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.LeaveTeam: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.LeaveTeam: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -705,7 +713,7 @@ void SendClientPlayerTeamLeaveTeamErased(entt::registry& registry, entt::entity 
     const auto* typedRequest = dynamic_cast<const ::teampb::LeaveTeamRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.LeaveTeam: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -717,7 +725,7 @@ void SendClientPlayerTeamLeaveTeamErased(entt::registry& registry, entt::entity 
 #pragma region ClientPlayerTeamKickMember
 namespace {
 void QueueLocalClientPlayerTeamKickMemberFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -731,9 +739,9 @@ void StartClientPlayerTeamKickMemberCall(entt::registry& registry, entt::entity 
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.KickMember requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamKickMemberGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamKickMemberGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamKickMemberFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -742,13 +750,13 @@ void StartClientPlayerTeamKickMemberCall(entt::registry& registry, entt::entity 
         QueueLocalClientPlayerTeamKickMemberFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -780,9 +788,10 @@ void SendClientPlayerTeamKickMemberErased(entt::registry& registry, entt::entity
         LOG_FATAL << "gRPC ClientPlayerTeam.KickMember requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::KickMemberRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.KickMember: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.KickMember: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -791,7 +800,7 @@ void SendClientPlayerTeamKickMemberErased(entt::registry& registry, entt::entity
     const auto* typedRequest = dynamic_cast<const ::teampb::KickMemberRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.KickMember: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -803,7 +812,7 @@ void SendClientPlayerTeamKickMemberErased(entt::registry& registry, entt::entity
 #pragma region ClientPlayerTeamTransferLeader
 namespace {
 void QueueLocalClientPlayerTeamTransferLeaderFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -817,9 +826,9 @@ void StartClientPlayerTeamTransferLeaderCall(entt::registry& registry, entt::ent
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.TransferLeader requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamTransferLeaderGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamTransferLeaderGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamTransferLeaderFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -828,13 +837,13 @@ void StartClientPlayerTeamTransferLeaderCall(entt::registry& registry, entt::ent
         QueueLocalClientPlayerTeamTransferLeaderFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -866,9 +875,10 @@ void SendClientPlayerTeamTransferLeaderErased(entt::registry& registry, entt::en
         LOG_FATAL << "gRPC ClientPlayerTeam.TransferLeader requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::TransferLeaderRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.TransferLeader: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.TransferLeader: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -877,7 +887,7 @@ void SendClientPlayerTeamTransferLeaderErased(entt::registry& registry, entt::en
     const auto* typedRequest = dynamic_cast<const ::teampb::TransferLeaderRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.TransferLeader: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -889,7 +899,7 @@ void SendClientPlayerTeamTransferLeaderErased(entt::registry& registry, entt::en
 #pragma region ClientPlayerTeamDisbandTeam
 namespace {
 void QueueLocalClientPlayerTeamDisbandTeamFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -903,9 +913,9 @@ void StartClientPlayerTeamDisbandTeamCall(entt::registry& registry, entt::entity
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.DisbandTeam requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamDisbandTeamGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamDisbandTeamGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamDisbandTeamFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -914,13 +924,13 @@ void StartClientPlayerTeamDisbandTeamCall(entt::registry& registry, entt::entity
         QueueLocalClientPlayerTeamDisbandTeamFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -952,9 +962,10 @@ void SendClientPlayerTeamDisbandTeamErased(entt::registry& registry, entt::entit
         LOG_FATAL << "gRPC ClientPlayerTeam.DisbandTeam requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::DisbandTeamRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.DisbandTeam: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.DisbandTeam: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -963,7 +974,7 @@ void SendClientPlayerTeamDisbandTeamErased(entt::registry& registry, entt::entit
     const auto* typedRequest = dynamic_cast<const ::teampb::DisbandTeamRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.DisbandTeam: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -975,7 +986,7 @@ void SendClientPlayerTeamDisbandTeamErased(entt::registry& registry, entt::entit
 #pragma region ClientPlayerTeamStartTeamMatch
 namespace {
 void QueueLocalClientPlayerTeamStartTeamMatchFailure(GrpcDone<::teampb::TeamResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -989,9 +1000,9 @@ void StartClientPlayerTeamStartTeamMatchCall(entt::registry& registry, entt::ent
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.StartTeamMatch requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamStartTeamMatchGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamStartTeamMatchGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamStartTeamMatchFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1000,13 +1011,13 @@ void StartClientPlayerTeamStartTeamMatchCall(entt::registry& registry, entt::ent
         QueueLocalClientPlayerTeamStartTeamMatchFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1038,9 +1049,10 @@ void SendClientPlayerTeamStartTeamMatchErased(entt::registry& registry, entt::en
         LOG_FATAL << "gRPC ClientPlayerTeam.StartTeamMatch requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::StartTeamMatchRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.StartTeamMatch: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.StartTeamMatch: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1049,7 +1061,7 @@ void SendClientPlayerTeamStartTeamMatchErased(entt::registry& registry, entt::en
     const auto* typedRequest = dynamic_cast<const ::teampb::StartTeamMatchRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.StartTeamMatch: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1061,7 +1073,7 @@ void SendClientPlayerTeamStartTeamMatchErased(entt::registry& registry, entt::en
 #pragma region ClientPlayerTeamNotifyTeamSnapshot
 namespace {
 void QueueLocalClientPlayerTeamNotifyTeamSnapshotFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1075,9 +1087,9 @@ void StartClientPlayerTeamNotifyTeamSnapshotCall(entt::registry& registry, entt:
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.NotifyTeamSnapshot requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamNotifyTeamSnapshotGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamNotifyTeamSnapshotGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamNotifyTeamSnapshotFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1086,13 +1098,13 @@ void StartClientPlayerTeamNotifyTeamSnapshotCall(entt::registry& registry, entt:
         QueueLocalClientPlayerTeamNotifyTeamSnapshotFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1124,9 +1136,10 @@ void SendClientPlayerTeamNotifyTeamSnapshotErased(entt::registry& registry, entt
         LOG_FATAL << "gRPC ClientPlayerTeam.NotifyTeamSnapshot requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::TeamSnapshotS2C::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamSnapshot: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamSnapshot: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1135,7 +1148,7 @@ void SendClientPlayerTeamNotifyTeamSnapshotErased(entt::registry& registry, entt
     const auto* typedRequest = dynamic_cast<const ::teampb::TeamSnapshotS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamSnapshot: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1147,7 +1160,7 @@ void SendClientPlayerTeamNotifyTeamSnapshotErased(entt::registry& registry, entt
 #pragma region ClientPlayerTeamNotifyTeamInvite
 namespace {
 void QueueLocalClientPlayerTeamNotifyTeamInviteFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1161,9 +1174,9 @@ void StartClientPlayerTeamNotifyTeamInviteCall(entt::registry& registry, entt::e
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.NotifyTeamInvite requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamNotifyTeamInviteGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamNotifyTeamInviteGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamNotifyTeamInviteFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1172,13 +1185,13 @@ void StartClientPlayerTeamNotifyTeamInviteCall(entt::registry& registry, entt::e
         QueueLocalClientPlayerTeamNotifyTeamInviteFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1210,9 +1223,10 @@ void SendClientPlayerTeamNotifyTeamInviteErased(entt::registry& registry, entt::
         LOG_FATAL << "gRPC ClientPlayerTeam.NotifyTeamInvite requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::TeamInviteS2C::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamInvite: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamInvite: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1221,7 +1235,7 @@ void SendClientPlayerTeamNotifyTeamInviteErased(entt::registry& registry, entt::
     const auto* typedRequest = dynamic_cast<const ::teampb::TeamInviteS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamInvite: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1233,7 +1247,7 @@ void SendClientPlayerTeamNotifyTeamInviteErased(entt::registry& registry, entt::
 #pragma region ClientPlayerTeamNotifyTeamEvent
 namespace {
 void QueueLocalClientPlayerTeamNotifyTeamEventFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1247,9 +1261,9 @@ void StartClientPlayerTeamNotifyTeamEventCall(entt::registry& registry, entt::en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerTeam.NotifyTeamEvent requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerTeamNotifyTeamEventGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerTeamNotifyTeamEventGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerTeamNotifyTeamEventFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1258,13 +1272,13 @@ void StartClientPlayerTeamNotifyTeamEventCall(entt::registry& registry, entt::en
         QueueLocalClientPlayerTeamNotifyTeamEventFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1296,9 +1310,10 @@ void SendClientPlayerTeamNotifyTeamEventErased(entt::registry& registry, entt::e
         LOG_FATAL << "gRPC ClientPlayerTeam.NotifyTeamEvent requires a done callback";
     }
     if (message.GetDescriptor() != ::teampb::TeamEventS2C::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamEvent: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamEvent: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1307,7 +1322,7 @@ void SendClientPlayerTeamNotifyTeamEventErased(entt::registry& registry, entt::e
     const auto* typedRequest = dynamic_cast<const ::teampb::TeamEventS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerTeam.NotifyTeamEvent: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

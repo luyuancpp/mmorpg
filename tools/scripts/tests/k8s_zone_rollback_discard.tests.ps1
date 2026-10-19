@@ -79,7 +79,7 @@ function Assert-RefusedAtEntry {
     )
     Assert-True -Condition ($null -ne $Run.Error) -Because "${Label}:必须在入口拒绝。输出: $($Run.Output)"
     Assert-Match -Text $Run.Error -Pattern $Pattern -Because "${Label}:错误文本要点名原因"
-    $calls = $Run.DevToolsCalls.Count + $Run.KubectlCalls.Count + $Run.SnapshotCalls.Count + $Run.DiscardCalls.Count + $Run.KafkaCliCalls.Count + $Run.KafkaExecCalls.Count + $Run.KafkaResetBound.Count
+    $calls = $Run.DevToolsCalls.Count + $Run.KubectlCalls.Count + $Run.SnapshotCalls.Count + $Run.DiscardCalls.Count + $Run.KafkaCliCalls.Count + $Run.KafkaExecCalls.Count + $Run.KafkaResetBound.Count + $Run.LoginAuthCalls.Count
     Assert-Equal -Expected 0 -Actual $calls -Because "${Label}:入口校验早于任何下游调用(时间线: $($Run.Timeline -join ' > '))"
 }
 

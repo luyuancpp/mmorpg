@@ -231,6 +231,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReleasePlayerRequest final : public
     kTargetSceneIdFieldNumber = 2,
     kExpectedOwnerEpochFieldNumber = 4,
     kSessionEndedFieldNumber = 5,
+    kCoveredSessionIdFieldNumber = 6,
+    kCoveredLoginGenerationFieldNumber = 7,
   };
   // string target_node_id = 3;
   void clear_target_node_id() ;
@@ -287,11 +289,31 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReleasePlayerRequest final : public
   void _internal_set_session_ended(bool value);
 
   public:
+  // uint32 covered_session_id = 6;
+  void clear_covered_session_id() ;
+  [[nodiscard]] ::uint32_t covered_session_id() const;
+  void set_covered_session_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_covered_session_id() const;
+  void _internal_set_covered_session_id(::uint32_t value);
+
+  public:
+  // uint64 covered_login_generation = 7;
+  void clear_covered_login_generation() ;
+  [[nodiscard]] ::uint64_t covered_login_generation() const;
+  void set_covered_login_generation(::uint64_t value);
+
+  private:
+  ::uint64_t _internal_covered_login_generation() const;
+  void _internal_set_covered_login_generation(::uint64_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:scene_node.ReleasePlayerRequest)
  private:
   class _Internal;
   using ParseTableT_ =
-      ::google::protobuf::internal::TcParseTable<3, 5,
+      ::google::protobuf::internal::TcParseTable<3, 7,
                           0, 54,
                           2>;
   static constexpr ParseTableT_ InternalGenerateParseTable_(
@@ -325,6 +347,8 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ReleasePlayerRequest final : public
     ::uint64_t target_scene_id_;
     ::uint64_t expected_owner_epoch_;
     bool session_ended_;
+    ::uint32_t covered_session_id_;
+    ::uint64_t covered_login_generation_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -505,6 +529,54 @@ inline bool ReleasePlayerRequest::_internal_session_ended() const {
 inline void ReleasePlayerRequest::_internal_set_session_ended(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_ended_ = value;
+}
+
+// uint32 covered_session_id = 6;
+inline void ReleasePlayerRequest::clear_covered_session_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.covered_session_id_ = 0u;
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+}
+inline ::uint32_t ReleasePlayerRequest::covered_session_id() const {
+  // @@protoc_insertion_point(field_get:scene_node.ReleasePlayerRequest.covered_session_id)
+  return _internal_covered_session_id();
+}
+inline void ReleasePlayerRequest::set_covered_session_id(::uint32_t value) {
+  _internal_set_covered_session_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:scene_node.ReleasePlayerRequest.covered_session_id)
+}
+inline ::uint32_t ReleasePlayerRequest::_internal_covered_session_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.covered_session_id_;
+}
+inline void ReleasePlayerRequest::_internal_set_covered_session_id(::uint32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.covered_session_id_ = value;
+}
+
+// uint64 covered_login_generation = 7;
+inline void ReleasePlayerRequest::clear_covered_login_generation() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.covered_login_generation_ = ::uint64_t{0u};
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+}
+inline ::uint64_t ReleasePlayerRequest::covered_login_generation() const {
+  // @@protoc_insertion_point(field_get:scene_node.ReleasePlayerRequest.covered_login_generation)
+  return _internal_covered_login_generation();
+}
+inline void ReleasePlayerRequest::set_covered_login_generation(::uint64_t value) {
+  _internal_set_covered_login_generation(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:scene_node.ReleasePlayerRequest.covered_login_generation)
+}
+inline ::uint64_t ReleasePlayerRequest::_internal_covered_login_generation() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.covered_login_generation_;
+}
+inline void ReleasePlayerRequest::_internal_set_covered_login_generation(::uint64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.covered_login_generation_ = value;
 }
 
 #ifdef __GNUC__

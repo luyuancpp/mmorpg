@@ -2,6 +2,11 @@
 
 > 日期：2026-04-16
 > 主题：将单个玩家的线上实时数据安全地导出到内网隔离环境，用于排查、对比、回档准备或问题复现。
+>
+> **2026-10-19 补充**：本文的原则仍然有效；具体工具与步骤以 [online-debug-data-fetch.md](../ops/online-debug-data-fetch.md) 为准
+> （`debug_fetch -mode player-bundle` 只读导出、`debug_import` 导入本地并对齐存盘屏障）。本文写于存盘围栏、
+> 提交屏障与落点改造之前：“确认已落盘”现在的判据是 `player:{id}:save_barrier` 的 pending 与两张表的 ACK 相等，
+> 导出包的 `analysis.barrier` 直接给出结论。
 
 ## 核心原则
 

@@ -155,7 +155,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 			zap.String("message_full_name", msgFullNameStr),
 		)
 
-		verifyMessageValidity(msgFullNameStr, msgInstance)
+		logMessageFields(msgFullNameStr, msgInstance)
 
 		sqlGenerator.RegisterTable(msgInstance)
 		tableSQL := sqlGenerator.GetCreateTableSQL(msgInstance)
@@ -206,7 +206,7 @@ func GenerateMergedTableSQL(messageNames []string) error {
 	return nil
 }
 
-func verifyMessageValidity(msgName string, msg proto.Message) {
+func logMessageFields(msgName string, msg proto.Message) {
 	msgReflect := msg.ProtoReflect()
 	fieldCount := 0
 
@@ -214,7 +214,7 @@ func verifyMessageValidity(msgName string, msg proto.Message) {
 	for i := 0; i < fields.Len(); i++ {
 		fd := fields.Get(i)
 		fieldCount++
-		logger.Global.Debug("Message instance field info",
+		logger.Global.Debug("消息描述符字段信息",
 			zap.String("message_name", msgName),
 			zap.String("field_name", string(fd.Name())),
 			zap.String("field_kind", fd.Kind().String()),
@@ -223,12 +223,12 @@ func verifyMessageValidity(msgName string, msg proto.Message) {
 	}
 
 	if fieldCount == 0 {
-		logger.Global.Warn("Message has no fields",
+		logger.Global.Warn("消息描述符未声明字段",
 			zap.String("message_name", msgName),
-			zap.String("reason", "activation failed"),
+			zap.String("reason", "字段列表为空"),
 		)
 	} else {
-		logger.Global.Info("Message validation passed",
+		logger.Global.Info("消息描述符字段记录完成",
 			zap.String("message_name", msgName),
 			zap.Int("field_count", fieldCount),
 		)

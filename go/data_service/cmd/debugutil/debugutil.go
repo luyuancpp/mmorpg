@@ -20,6 +20,9 @@ import (
 )
 
 // DBConfigFile mirrors the DB yaml structure shared by debug_fetch and debug_import.
+//
+// RedisClient / Placement.Redis 与 go/db 同义:前者是核心实例(父快照、存盘屏障、owner_epoch 所在),
+// 后者是落点记录与 player:zone 所在的映射实例,不写时复用核心实例(go/db config.PlacementConfig.Redis)。
 type DBConfigFile struct {
 	ZoneId       uint32 `json:"ZoneId"`
 	ServerConfig struct {
@@ -32,7 +35,43 @@ type DBConfigFile struct {
 			MaxIdleConn int    `json:"MaxIdleConn"`
 			Net         string `json:"Net"`
 		} `json:"Database"`
+		RedisClient RedisEndpoint `json:"RedisClient,optional"`
 	} `json:"ServerConfig"`
+	Placement struct {
+		Redis *RedisEndpoint `json:"Redis,optional"`
+	} `json:"Placement,optional"`
+}
+
+// ZoneMySQL 返回 db.yaml 的 MySQL 连接目标,库名由调用方给出。
+func (c *DBConfigFile) ZoneMySQL(dbName string) MySQLEndpoint {
+	db := c.ServerConfig.Database
+	return MySQLEndpoint{Hosts: db.Hosts, User: db.User, Password: db.Passwd, Net: db.Net, DBName: dbName}
+}
+
+// CoreRedis 返回核心实例。
+func (c *DBConfigFile) CoreRedis() RedisEndpoint { return c.ServerConfig.RedisClient }
+
+// MappingRedis 返回映射实例;Placement.Redis 缺省时与 go/db 一样复用核心实例。
+func (c *DBConfigFile) MappingRedis() RedisEndpoint {
+	if c.Placement.Redis != nil && strings.TrimSpace(c.Placement.Redis.Hosts) != "" {
+		return *c.Placement.Redis
+	}
+	return c.ServerConfig.RedisClient
+}
+
+// LoadDataServiceConfig 读 data_service.yaml(取 SnapshotMySQL 即全局库等字段)。
+func LoadDataServiceConfig(path string) (config.Config, error) {
+	var c config.Config
+	if err := MustLoadConfig(path, &c); err != nil {
+		return c, fmt.Errorf("load data_service config: %w", err)
+	}
+	return c, nil
+}
+
+// GlobalMySQL 返回 data_service 的全局库(SnapshotMySQL)连接目标。
+func GlobalMySQL(c config.Config) MySQLEndpoint {
+	return MySQLEndpoint{Hosts: c.SnapshotMySQL.Host, User: c.SnapshotMySQL.User,
+		Password: c.SnapshotMySQL.Password, Net: "tcp", DBName: c.SnapshotMySQL.DBName}
 }
 
 // MustLoadConfig loads a YAML config file via go-zero, recovering panics.
@@ -57,6 +96,12 @@ func LoadDBConfig(path string) (*DBConfigFile, error) {
 
 // OpenZoneDB opens a MySQL connection for a specific zone.
 func OpenZoneDB(ctx context.Context, dbConfigPath string, zoneID uint32) (*sql.DB, uint32, string, error) {
+	return OpenZoneDBNamed(ctx, dbConfigPath, zoneID, "")
+}
+
+// OpenZoneDBNamed 同 OpenZoneDB;dbOverride 非空时直接连这个库(同一实例上的全局库、其他服务的独占库)。
+// 库名优先级:dbOverride > db.yaml 的 DBName > zone_{zone}_db。
+func OpenZoneDBNamed(ctx context.Context, dbConfigPath string, zoneID uint32, dbOverride string) (*sql.DB, uint32, string, error) {
 	cfg, err := LoadDBConfig(dbConfigPath)
 	if err != nil {
 		return nil, 0, "", err
@@ -65,11 +110,13 @@ func OpenZoneDB(ctx context.Context, dbConfigPath string, zoneID uint32) (*sql.D
 	if zoneID == 0 {
 		zoneID = cfg.ZoneId
 	}
-	if zoneID == 0 {
+	dbName := strings.TrimSpace(dbOverride)
+	if dbName == "" {
+		dbName = strings.TrimSpace(cfg.ServerConfig.Database.DBName)
+	}
+	if dbName == "" && zoneID == 0 {
 		return nil, 0, "", errors.New("-zone is required when db config does not include ZoneId")
 	}
-
-	dbName := strings.TrimSpace(cfg.ServerConfig.Database.DBName)
 	if dbName == "" {
 		dbName = fmt.Sprintf("zone_%d_db", zoneID)
 	}

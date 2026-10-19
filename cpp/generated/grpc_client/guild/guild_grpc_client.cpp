@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace guildpb {
 #pragma region GuildServiceCreateGuild
 namespace {
 void QueueLocalGuildServiceCreateGuildFailure(GrpcDone<::guildpb::CreateGuildResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartGuildServiceCreateGuildCall(entt::registry& registry, entt::entity nod
     if (!done) {
         LOG_FATAL << "gRPC GuildService.CreateGuild requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceCreateGuildGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceCreateGuildGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceCreateGuildFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartGuildServiceCreateGuildCall(entt::registry& registry, entt::entity nod
         QueueLocalGuildServiceCreateGuildFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendGuildServiceCreateGuildErased(entt::registry& registry, entt::entity no
         LOG_FATAL << "gRPC GuildService.CreateGuild requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::CreateGuildRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.CreateGuild: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.CreateGuild: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendGuildServiceCreateGuildErased(entt::registry& registry, entt::entity no
     const auto* typedRequest = dynamic_cast<const ::guildpb::CreateGuildRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.CreateGuild: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -115,7 +116,7 @@ void SendGuildServiceCreateGuildErased(entt::registry& registry, entt::entity no
 #pragma region GuildServiceGetGuild
 namespace {
 void QueueLocalGuildServiceGetGuildFailure(GrpcDone<::guildpb::GetGuildResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -129,9 +130,9 @@ void StartGuildServiceGetGuildCall(entt::registry& registry, entt::entity nodeEn
     if (!done) {
         LOG_FATAL << "gRPC GuildService.GetGuild requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceGetGuildGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceGetGuildGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceGetGuildFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -140,13 +141,13 @@ void StartGuildServiceGetGuildCall(entt::registry& registry, entt::entity nodeEn
         QueueLocalGuildServiceGetGuildFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -178,9 +179,10 @@ void SendGuildServiceGetGuildErased(entt::registry& registry, entt::entity nodeE
         LOG_FATAL << "gRPC GuildService.GetGuild requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::GetGuildRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.GetGuild: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.GetGuild: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -189,7 +191,7 @@ void SendGuildServiceGetGuildErased(entt::registry& registry, entt::entity nodeE
     const auto* typedRequest = dynamic_cast<const ::guildpb::GetGuildRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.GetGuild: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -201,7 +203,7 @@ void SendGuildServiceGetGuildErased(entt::registry& registry, entt::entity nodeE
 #pragma region GuildServiceGetPlayerGuild
 namespace {
 void QueueLocalGuildServiceGetPlayerGuildFailure(GrpcDone<::guildpb::GetPlayerGuildResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -215,9 +217,9 @@ void StartGuildServiceGetPlayerGuildCall(entt::registry& registry, entt::entity 
     if (!done) {
         LOG_FATAL << "gRPC GuildService.GetPlayerGuild requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceGetPlayerGuildGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceGetPlayerGuildGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceGetPlayerGuildFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -226,13 +228,13 @@ void StartGuildServiceGetPlayerGuildCall(entt::registry& registry, entt::entity 
         QueueLocalGuildServiceGetPlayerGuildFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -264,9 +266,10 @@ void SendGuildServiceGetPlayerGuildErased(entt::registry& registry, entt::entity
         LOG_FATAL << "gRPC GuildService.GetPlayerGuild requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::GetPlayerGuildRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.GetPlayerGuild: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.GetPlayerGuild: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -275,7 +278,7 @@ void SendGuildServiceGetPlayerGuildErased(entt::registry& registry, entt::entity
     const auto* typedRequest = dynamic_cast<const ::guildpb::GetPlayerGuildRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.GetPlayerGuild: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -287,7 +290,7 @@ void SendGuildServiceGetPlayerGuildErased(entt::registry& registry, entt::entity
 #pragma region GuildServiceLeaveGuild
 namespace {
 void QueueLocalGuildServiceLeaveGuildFailure(GrpcDone<::guildpb::LeaveGuildResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -301,9 +304,9 @@ void StartGuildServiceLeaveGuildCall(entt::registry& registry, entt::entity node
     if (!done) {
         LOG_FATAL << "gRPC GuildService.LeaveGuild requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceLeaveGuildGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceLeaveGuildGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceLeaveGuildFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -312,13 +315,13 @@ void StartGuildServiceLeaveGuildCall(entt::registry& registry, entt::entity node
         QueueLocalGuildServiceLeaveGuildFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -350,9 +353,10 @@ void SendGuildServiceLeaveGuildErased(entt::registry& registry, entt::entity nod
         LOG_FATAL << "gRPC GuildService.LeaveGuild requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::LeaveGuildRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.LeaveGuild: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.LeaveGuild: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -361,7 +365,7 @@ void SendGuildServiceLeaveGuildErased(entt::registry& registry, entt::entity nod
     const auto* typedRequest = dynamic_cast<const ::guildpb::LeaveGuildRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.LeaveGuild: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -373,7 +377,7 @@ void SendGuildServiceLeaveGuildErased(entt::registry& registry, entt::entity nod
 #pragma region GuildServiceDisbandGuild
 namespace {
 void QueueLocalGuildServiceDisbandGuildFailure(GrpcDone<::guildpb::DisbandGuildResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -387,9 +391,9 @@ void StartGuildServiceDisbandGuildCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC GuildService.DisbandGuild requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceDisbandGuildGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceDisbandGuildGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceDisbandGuildFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -398,13 +402,13 @@ void StartGuildServiceDisbandGuildCall(entt::registry& registry, entt::entity no
         QueueLocalGuildServiceDisbandGuildFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -436,9 +440,10 @@ void SendGuildServiceDisbandGuildErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC GuildService.DisbandGuild requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::DisbandGuildRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.DisbandGuild: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.DisbandGuild: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -447,7 +452,7 @@ void SendGuildServiceDisbandGuildErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::guildpb::DisbandGuildRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.DisbandGuild: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -459,7 +464,7 @@ void SendGuildServiceDisbandGuildErased(entt::registry& registry, entt::entity n
 #pragma region GuildServiceSetAnnouncement
 namespace {
 void QueueLocalGuildServiceSetAnnouncementFailure(GrpcDone<::guildpb::SetAnnouncementResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -473,9 +478,9 @@ void StartGuildServiceSetAnnouncementCall(entt::registry& registry, entt::entity
     if (!done) {
         LOG_FATAL << "gRPC GuildService.SetAnnouncement requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceSetAnnouncementGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceSetAnnouncementGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceSetAnnouncementFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -484,13 +489,13 @@ void StartGuildServiceSetAnnouncementCall(entt::registry& registry, entt::entity
         QueueLocalGuildServiceSetAnnouncementFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -522,9 +527,10 @@ void SendGuildServiceSetAnnouncementErased(entt::registry& registry, entt::entit
         LOG_FATAL << "gRPC GuildService.SetAnnouncement requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::SetAnnouncementRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.SetAnnouncement: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.SetAnnouncement: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -533,7 +539,7 @@ void SendGuildServiceSetAnnouncementErased(entt::registry& registry, entt::entit
     const auto* typedRequest = dynamic_cast<const ::guildpb::SetAnnouncementRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.SetAnnouncement: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -545,7 +551,7 @@ void SendGuildServiceSetAnnouncementErased(entt::registry& registry, entt::entit
 #pragma region GuildServiceSetGuildMemberRole
 namespace {
 void QueueLocalGuildServiceSetGuildMemberRoleFailure(GrpcDone<::guildpb::SetGuildMemberRoleResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -559,9 +565,9 @@ void StartGuildServiceSetGuildMemberRoleCall(entt::registry& registry, entt::ent
     if (!done) {
         LOG_FATAL << "gRPC GuildService.SetGuildMemberRole requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceSetGuildMemberRoleGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceSetGuildMemberRoleGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceSetGuildMemberRoleFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -570,13 +576,13 @@ void StartGuildServiceSetGuildMemberRoleCall(entt::registry& registry, entt::ent
         QueueLocalGuildServiceSetGuildMemberRoleFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -608,9 +614,10 @@ void SendGuildServiceSetGuildMemberRoleErased(entt::registry& registry, entt::en
         LOG_FATAL << "gRPC GuildService.SetGuildMemberRole requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::SetGuildMemberRoleRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.SetGuildMemberRole: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.SetGuildMemberRole: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -619,7 +626,7 @@ void SendGuildServiceSetGuildMemberRoleErased(entt::registry& registry, entt::en
     const auto* typedRequest = dynamic_cast<const ::guildpb::SetGuildMemberRoleRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.SetGuildMemberRole: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -631,7 +638,7 @@ void SendGuildServiceSetGuildMemberRoleErased(entt::registry& registry, entt::en
 #pragma region GuildServiceKickGuildMember
 namespace {
 void QueueLocalGuildServiceKickGuildMemberFailure(GrpcDone<::guildpb::KickGuildMemberResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -645,9 +652,9 @@ void StartGuildServiceKickGuildMemberCall(entt::registry& registry, entt::entity
     if (!done) {
         LOG_FATAL << "gRPC GuildService.KickGuildMember requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceKickGuildMemberGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceKickGuildMemberGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceKickGuildMemberFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -656,13 +663,13 @@ void StartGuildServiceKickGuildMemberCall(entt::registry& registry, entt::entity
         QueueLocalGuildServiceKickGuildMemberFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -694,9 +701,10 @@ void SendGuildServiceKickGuildMemberErased(entt::registry& registry, entt::entit
         LOG_FATAL << "gRPC GuildService.KickGuildMember requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::KickGuildMemberRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.KickGuildMember: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.KickGuildMember: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -705,7 +713,7 @@ void SendGuildServiceKickGuildMemberErased(entt::registry& registry, entt::entit
     const auto* typedRequest = dynamic_cast<const ::guildpb::KickGuildMemberRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.KickGuildMember: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -717,7 +725,7 @@ void SendGuildServiceKickGuildMemberErased(entt::registry& registry, entt::entit
 #pragma region GuildServiceTransferGuildLeader
 namespace {
 void QueueLocalGuildServiceTransferGuildLeaderFailure(GrpcDone<::guildpb::TransferGuildLeaderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -731,9 +739,9 @@ void StartGuildServiceTransferGuildLeaderCall(entt::registry& registry, entt::en
     if (!done) {
         LOG_FATAL << "gRPC GuildService.TransferGuildLeader requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceTransferGuildLeaderGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceTransferGuildLeaderGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceTransferGuildLeaderFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -742,13 +750,13 @@ void StartGuildServiceTransferGuildLeaderCall(entt::registry& registry, entt::en
         QueueLocalGuildServiceTransferGuildLeaderFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -780,9 +788,10 @@ void SendGuildServiceTransferGuildLeaderErased(entt::registry& registry, entt::e
         LOG_FATAL << "gRPC GuildService.TransferGuildLeader requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::TransferGuildLeaderRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.TransferGuildLeader: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.TransferGuildLeader: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -791,7 +800,7 @@ void SendGuildServiceTransferGuildLeaderErased(entt::registry& registry, entt::e
     const auto* typedRequest = dynamic_cast<const ::guildpb::TransferGuildLeaderRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.TransferGuildLeader: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -803,7 +812,7 @@ void SendGuildServiceTransferGuildLeaderErased(entt::registry& registry, entt::e
 #pragma region GuildServiceApplyJoinGuild
 namespace {
 void QueueLocalGuildServiceApplyJoinGuildFailure(GrpcDone<::guildpb::ApplyJoinGuildResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -817,9 +826,9 @@ void StartGuildServiceApplyJoinGuildCall(entt::registry& registry, entt::entity 
     if (!done) {
         LOG_FATAL << "gRPC GuildService.ApplyJoinGuild requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceApplyJoinGuildGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceApplyJoinGuildGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceApplyJoinGuildFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -828,13 +837,13 @@ void StartGuildServiceApplyJoinGuildCall(entt::registry& registry, entt::entity 
         QueueLocalGuildServiceApplyJoinGuildFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -866,9 +875,10 @@ void SendGuildServiceApplyJoinGuildErased(entt::registry& registry, entt::entity
         LOG_FATAL << "gRPC GuildService.ApplyJoinGuild requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::ApplyJoinGuildRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.ApplyJoinGuild: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.ApplyJoinGuild: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -877,7 +887,7 @@ void SendGuildServiceApplyJoinGuildErased(entt::registry& registry, entt::entity
     const auto* typedRequest = dynamic_cast<const ::guildpb::ApplyJoinGuildRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.ApplyJoinGuild: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -889,7 +899,7 @@ void SendGuildServiceApplyJoinGuildErased(entt::registry& registry, entt::entity
 #pragma region GuildServiceCancelGuildApplication
 namespace {
 void QueueLocalGuildServiceCancelGuildApplicationFailure(GrpcDone<::guildpb::CancelGuildApplicationResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -903,9 +913,9 @@ void StartGuildServiceCancelGuildApplicationCall(entt::registry& registry, entt:
     if (!done) {
         LOG_FATAL << "gRPC GuildService.CancelGuildApplication requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceCancelGuildApplicationGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceCancelGuildApplicationGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceCancelGuildApplicationFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -914,13 +924,13 @@ void StartGuildServiceCancelGuildApplicationCall(entt::registry& registry, entt:
         QueueLocalGuildServiceCancelGuildApplicationFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -952,9 +962,10 @@ void SendGuildServiceCancelGuildApplicationErased(entt::registry& registry, entt
         LOG_FATAL << "gRPC GuildService.CancelGuildApplication requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::CancelGuildApplicationRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.CancelGuildApplication: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.CancelGuildApplication: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -963,7 +974,7 @@ void SendGuildServiceCancelGuildApplicationErased(entt::registry& registry, entt
     const auto* typedRequest = dynamic_cast<const ::guildpb::CancelGuildApplicationRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.CancelGuildApplication: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -975,7 +986,7 @@ void SendGuildServiceCancelGuildApplicationErased(entt::registry& registry, entt
 #pragma region GuildServiceListMyGuildApplications
 namespace {
 void QueueLocalGuildServiceListMyGuildApplicationsFailure(GrpcDone<::guildpb::ListMyGuildApplicationsResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -989,9 +1000,9 @@ void StartGuildServiceListMyGuildApplicationsCall(entt::registry& registry, entt
     if (!done) {
         LOG_FATAL << "gRPC GuildService.ListMyGuildApplications requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceListMyGuildApplicationsGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceListMyGuildApplicationsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceListMyGuildApplicationsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1000,13 +1011,13 @@ void StartGuildServiceListMyGuildApplicationsCall(entt::registry& registry, entt
         QueueLocalGuildServiceListMyGuildApplicationsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1038,9 +1049,10 @@ void SendGuildServiceListMyGuildApplicationsErased(entt::registry& registry, ent
         LOG_FATAL << "gRPC GuildService.ListMyGuildApplications requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::ListMyGuildApplicationsRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.ListMyGuildApplications: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.ListMyGuildApplications: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1049,7 +1061,7 @@ void SendGuildServiceListMyGuildApplicationsErased(entt::registry& registry, ent
     const auto* typedRequest = dynamic_cast<const ::guildpb::ListMyGuildApplicationsRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.ListMyGuildApplications: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1061,7 +1073,7 @@ void SendGuildServiceListMyGuildApplicationsErased(entt::registry& registry, ent
 #pragma region GuildServiceListGuildApplications
 namespace {
 void QueueLocalGuildServiceListGuildApplicationsFailure(GrpcDone<::guildpb::ListGuildApplicationsResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1075,9 +1087,9 @@ void StartGuildServiceListGuildApplicationsCall(entt::registry& registry, entt::
     if (!done) {
         LOG_FATAL << "gRPC GuildService.ListGuildApplications requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceListGuildApplicationsGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceListGuildApplicationsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceListGuildApplicationsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1086,13 +1098,13 @@ void StartGuildServiceListGuildApplicationsCall(entt::registry& registry, entt::
         QueueLocalGuildServiceListGuildApplicationsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1124,9 +1136,10 @@ void SendGuildServiceListGuildApplicationsErased(entt::registry& registry, entt:
         LOG_FATAL << "gRPC GuildService.ListGuildApplications requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::ListGuildApplicationsRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.ListGuildApplications: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.ListGuildApplications: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1135,7 +1148,7 @@ void SendGuildServiceListGuildApplicationsErased(entt::registry& registry, entt:
     const auto* typedRequest = dynamic_cast<const ::guildpb::ListGuildApplicationsRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.ListGuildApplications: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1147,7 +1160,7 @@ void SendGuildServiceListGuildApplicationsErased(entt::registry& registry, entt:
 #pragma region GuildServiceReviewGuildApplication
 namespace {
 void QueueLocalGuildServiceReviewGuildApplicationFailure(GrpcDone<::guildpb::ReviewGuildApplicationResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1161,9 +1174,9 @@ void StartGuildServiceReviewGuildApplicationCall(entt::registry& registry, entt:
     if (!done) {
         LOG_FATAL << "gRPC GuildService.ReviewGuildApplication requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceReviewGuildApplicationGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceReviewGuildApplicationGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceReviewGuildApplicationFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1172,13 +1185,13 @@ void StartGuildServiceReviewGuildApplicationCall(entt::registry& registry, entt:
         QueueLocalGuildServiceReviewGuildApplicationFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1210,9 +1223,10 @@ void SendGuildServiceReviewGuildApplicationErased(entt::registry& registry, entt
         LOG_FATAL << "gRPC GuildService.ReviewGuildApplication requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::ReviewGuildApplicationRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.ReviewGuildApplication: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.ReviewGuildApplication: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1221,7 +1235,7 @@ void SendGuildServiceReviewGuildApplicationErased(entt::registry& registry, entt
     const auto* typedRequest = dynamic_cast<const ::guildpb::ReviewGuildApplicationRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.ReviewGuildApplication: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1233,7 +1247,7 @@ void SendGuildServiceReviewGuildApplicationErased(entt::registry& registry, entt
 #pragma region GuildServiceNotifyGuildChanged
 namespace {
 void QueueLocalGuildServiceNotifyGuildChangedFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1247,9 +1261,9 @@ void StartGuildServiceNotifyGuildChangedCall(entt::registry& registry, entt::ent
     if (!done) {
         LOG_FATAL << "gRPC GuildService.NotifyGuildChanged requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceNotifyGuildChangedGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceNotifyGuildChangedGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceNotifyGuildChangedFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1258,13 +1272,13 @@ void StartGuildServiceNotifyGuildChangedCall(entt::registry& registry, entt::ent
         QueueLocalGuildServiceNotifyGuildChangedFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1296,9 +1310,10 @@ void SendGuildServiceNotifyGuildChangedErased(entt::registry& registry, entt::en
         LOG_FATAL << "gRPC GuildService.NotifyGuildChanged requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::GuildChangedS2C::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.NotifyGuildChanged: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.NotifyGuildChanged: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1307,7 +1322,7 @@ void SendGuildServiceNotifyGuildChangedErased(entt::registry& registry, entt::en
     const auto* typedRequest = dynamic_cast<const ::guildpb::GuildChangedS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.NotifyGuildChanged: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1319,7 +1334,7 @@ void SendGuildServiceNotifyGuildChangedErased(entt::registry& registry, entt::en
 #pragma region GuildServiceUpdateGuildScore
 namespace {
 void QueueLocalGuildServiceUpdateGuildScoreFailure(GrpcDone<::guildpb::UpdateGuildScoreResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1333,9 +1348,9 @@ void StartGuildServiceUpdateGuildScoreCall(entt::registry& registry, entt::entit
     if (!done) {
         LOG_FATAL << "gRPC GuildService.UpdateGuildScore requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceUpdateGuildScoreGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceUpdateGuildScoreGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceUpdateGuildScoreFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1344,13 +1359,13 @@ void StartGuildServiceUpdateGuildScoreCall(entt::registry& registry, entt::entit
         QueueLocalGuildServiceUpdateGuildScoreFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1382,9 +1397,10 @@ void SendGuildServiceUpdateGuildScoreErased(entt::registry& registry, entt::enti
         LOG_FATAL << "gRPC GuildService.UpdateGuildScore requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::UpdateGuildScoreRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.UpdateGuildScore: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.UpdateGuildScore: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1393,7 +1409,7 @@ void SendGuildServiceUpdateGuildScoreErased(entt::registry& registry, entt::enti
     const auto* typedRequest = dynamic_cast<const ::guildpb::UpdateGuildScoreRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.UpdateGuildScore: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1405,7 +1421,7 @@ void SendGuildServiceUpdateGuildScoreErased(entt::registry& registry, entt::enti
 #pragma region GuildServiceGetGuildRank
 namespace {
 void QueueLocalGuildServiceGetGuildRankFailure(GrpcDone<::guildpb::GetGuildRankResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1419,9 +1435,9 @@ void StartGuildServiceGetGuildRankCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC GuildService.GetGuildRank requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceGetGuildRankGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceGetGuildRankGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceGetGuildRankFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1430,13 +1446,13 @@ void StartGuildServiceGetGuildRankCall(entt::registry& registry, entt::entity no
         QueueLocalGuildServiceGetGuildRankFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1468,9 +1484,10 @@ void SendGuildServiceGetGuildRankErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC GuildService.GetGuildRank requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::GetGuildRankRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.GetGuildRank: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.GetGuildRank: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1479,7 +1496,7 @@ void SendGuildServiceGetGuildRankErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::guildpb::GetGuildRankRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.GetGuildRank: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1491,7 +1508,7 @@ void SendGuildServiceGetGuildRankErased(entt::registry& registry, entt::entity n
 #pragma region GuildServiceGetGuildRankByGuild
 namespace {
 void QueueLocalGuildServiceGetGuildRankByGuildFailure(GrpcDone<::guildpb::GetGuildRankByGuildResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1505,9 +1522,9 @@ void StartGuildServiceGetGuildRankByGuildCall(entt::registry& registry, entt::en
     if (!done) {
         LOG_FATAL << "gRPC GuildService.GetGuildRankByGuild requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceGetGuildRankByGuildGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceGetGuildRankByGuildGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceGetGuildRankByGuildFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1516,13 +1533,13 @@ void StartGuildServiceGetGuildRankByGuildCall(entt::registry& registry, entt::en
         QueueLocalGuildServiceGetGuildRankByGuildFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1554,9 +1571,10 @@ void SendGuildServiceGetGuildRankByGuildErased(entt::registry& registry, entt::e
         LOG_FATAL << "gRPC GuildService.GetGuildRankByGuild requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::GetGuildRankByGuildRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.GetGuildRankByGuild: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.GetGuildRankByGuild: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1565,7 +1583,7 @@ void SendGuildServiceGetGuildRankByGuildErased(entt::registry& registry, entt::e
     const auto* typedRequest = dynamic_cast<const ::guildpb::GetGuildRankByGuildRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.GetGuildRankByGuild: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1577,7 +1595,7 @@ void SendGuildServiceGetGuildRankByGuildErased(entt::registry& registry, entt::e
 #pragma region GuildServiceGetGuildDonateOptions
 namespace {
 void QueueLocalGuildServiceGetGuildDonateOptionsFailure(GrpcDone<::guildpb::GetGuildDonateOptionsResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1591,9 +1609,9 @@ void StartGuildServiceGetGuildDonateOptionsCall(entt::registry& registry, entt::
     if (!done) {
         LOG_FATAL << "gRPC GuildService.GetGuildDonateOptions requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceGetGuildDonateOptionsGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceGetGuildDonateOptionsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceGetGuildDonateOptionsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1602,13 +1620,13 @@ void StartGuildServiceGetGuildDonateOptionsCall(entt::registry& registry, entt::
         QueueLocalGuildServiceGetGuildDonateOptionsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1640,9 +1658,10 @@ void SendGuildServiceGetGuildDonateOptionsErased(entt::registry& registry, entt:
         LOG_FATAL << "gRPC GuildService.GetGuildDonateOptions requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::GetGuildDonateOptionsRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.GetGuildDonateOptions: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.GetGuildDonateOptions: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1651,7 +1670,7 @@ void SendGuildServiceGetGuildDonateOptionsErased(entt::registry& registry, entt:
     const auto* typedRequest = dynamic_cast<const ::guildpb::GetGuildDonateOptionsRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.GetGuildDonateOptions: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1663,7 +1682,7 @@ void SendGuildServiceGetGuildDonateOptionsErased(entt::registry& registry, entt:
 #pragma region GuildServiceDonateToGuild
 namespace {
 void QueueLocalGuildServiceDonateToGuildFailure(GrpcDone<::guildpb::DonateToGuildResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1677,9 +1696,9 @@ void StartGuildServiceDonateToGuildCall(entt::registry& registry, entt::entity n
     if (!done) {
         LOG_FATAL << "gRPC GuildService.DonateToGuild requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceDonateToGuildGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceDonateToGuildGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceDonateToGuildFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1688,13 +1707,13 @@ void StartGuildServiceDonateToGuildCall(entt::registry& registry, entt::entity n
         QueueLocalGuildServiceDonateToGuildFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1726,9 +1745,10 @@ void SendGuildServiceDonateToGuildErased(entt::registry& registry, entt::entity 
         LOG_FATAL << "gRPC GuildService.DonateToGuild requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::DonateToGuildRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.DonateToGuild: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.DonateToGuild: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1737,7 +1757,7 @@ void SendGuildServiceDonateToGuildErased(entt::registry& registry, entt::entity 
     const auto* typedRequest = dynamic_cast<const ::guildpb::DonateToGuildRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.DonateToGuild: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1749,7 +1769,7 @@ void SendGuildServiceDonateToGuildErased(entt::registry& registry, entt::entity 
 #pragma region GuildServiceUpgradeGuild
 namespace {
 void QueueLocalGuildServiceUpgradeGuildFailure(GrpcDone<::guildpb::UpgradeGuildResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1763,9 +1783,9 @@ void StartGuildServiceUpgradeGuildCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC GuildService.UpgradeGuild requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceUpgradeGuildGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceUpgradeGuildGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceUpgradeGuildFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1774,13 +1794,13 @@ void StartGuildServiceUpgradeGuildCall(entt::registry& registry, entt::entity no
         QueueLocalGuildServiceUpgradeGuildFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1812,9 +1832,10 @@ void SendGuildServiceUpgradeGuildErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC GuildService.UpgradeGuild requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::UpgradeGuildRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.UpgradeGuild: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.UpgradeGuild: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1823,7 +1844,7 @@ void SendGuildServiceUpgradeGuildErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::guildpb::UpgradeGuildRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.UpgradeGuild: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1835,7 +1856,7 @@ void SendGuildServiceUpgradeGuildErased(entt::registry& registry, entt::entity n
 #pragma region GuildServiceGetGuildShop
 namespace {
 void QueueLocalGuildServiceGetGuildShopFailure(GrpcDone<::guildpb::GetGuildShopResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1849,9 +1870,9 @@ void StartGuildServiceGetGuildShopCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC GuildService.GetGuildShop requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceGetGuildShopGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceGetGuildShopGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceGetGuildShopFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1860,13 +1881,13 @@ void StartGuildServiceGetGuildShopCall(entt::registry& registry, entt::entity no
         QueueLocalGuildServiceGetGuildShopFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1898,9 +1919,10 @@ void SendGuildServiceGetGuildShopErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC GuildService.GetGuildShop requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::GetGuildShopRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.GetGuildShop: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.GetGuildShop: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1909,7 +1931,7 @@ void SendGuildServiceGetGuildShopErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::guildpb::GetGuildShopRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.GetGuildShop: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1921,7 +1943,7 @@ void SendGuildServiceGetGuildShopErased(entt::registry& registry, entt::entity n
 #pragma region GuildServiceBuyGuildShopGoods
 namespace {
 void QueueLocalGuildServiceBuyGuildShopGoodsFailure(GrpcDone<::guildpb::BuyGuildShopGoodsResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1935,9 +1957,9 @@ void StartGuildServiceBuyGuildShopGoodsCall(entt::registry& registry, entt::enti
     if (!done) {
         LOG_FATAL << "gRPC GuildService.BuyGuildShopGoods requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceBuyGuildShopGoodsGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceBuyGuildShopGoodsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceBuyGuildShopGoodsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1946,13 +1968,13 @@ void StartGuildServiceBuyGuildShopGoodsCall(entt::registry& registry, entt::enti
         QueueLocalGuildServiceBuyGuildShopGoodsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1984,9 +2006,10 @@ void SendGuildServiceBuyGuildShopGoodsErased(entt::registry& registry, entt::ent
         LOG_FATAL << "gRPC GuildService.BuyGuildShopGoods requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::BuyGuildShopGoodsRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.BuyGuildShopGoods: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.BuyGuildShopGoods: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1995,7 +2018,7 @@ void SendGuildServiceBuyGuildShopGoodsErased(entt::registry& registry, entt::ent
     const auto* typedRequest = dynamic_cast<const ::guildpb::BuyGuildShopGoodsRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.BuyGuildShopGoods: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2007,7 +2030,7 @@ void SendGuildServiceBuyGuildShopGoodsErased(entt::registry& registry, entt::ent
 #pragma region GuildServiceGetGuildActivities
 namespace {
 void QueueLocalGuildServiceGetGuildActivitiesFailure(GrpcDone<::guildpb::GetGuildActivitiesResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -2021,9 +2044,9 @@ void StartGuildServiceGetGuildActivitiesCall(entt::registry& registry, entt::ent
     if (!done) {
         LOG_FATAL << "gRPC GuildService.GetGuildActivities requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceGetGuildActivitiesGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceGetGuildActivitiesGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceGetGuildActivitiesFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -2032,13 +2055,13 @@ void StartGuildServiceGetGuildActivitiesCall(entt::registry& registry, entt::ent
         QueueLocalGuildServiceGetGuildActivitiesFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -2070,9 +2093,10 @@ void SendGuildServiceGetGuildActivitiesErased(entt::registry& registry, entt::en
         LOG_FATAL << "gRPC GuildService.GetGuildActivities requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::GetGuildActivitiesRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.GetGuildActivities: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.GetGuildActivities: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2081,7 +2105,7 @@ void SendGuildServiceGetGuildActivitiesErased(entt::registry& registry, entt::en
     const auto* typedRequest = dynamic_cast<const ::guildpb::GetGuildActivitiesRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.GetGuildActivities: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2093,7 +2117,7 @@ void SendGuildServiceGetGuildActivitiesErased(entt::registry& registry, entt::en
 #pragma region GuildServiceLightGuildLantern
 namespace {
 void QueueLocalGuildServiceLightGuildLanternFailure(GrpcDone<::guildpb::LightGuildLanternResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -2107,9 +2131,9 @@ void StartGuildServiceLightGuildLanternCall(entt::registry& registry, entt::enti
     if (!done) {
         LOG_FATAL << "gRPC GuildService.LightGuildLantern requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceLightGuildLanternGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceLightGuildLanternGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceLightGuildLanternFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -2118,13 +2142,13 @@ void StartGuildServiceLightGuildLanternCall(entt::registry& registry, entt::enti
         QueueLocalGuildServiceLightGuildLanternFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -2156,9 +2180,10 @@ void SendGuildServiceLightGuildLanternErased(entt::registry& registry, entt::ent
         LOG_FATAL << "gRPC GuildService.LightGuildLantern requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::LightGuildLanternRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.LightGuildLantern: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.LightGuildLantern: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2167,7 +2192,7 @@ void SendGuildServiceLightGuildLanternErased(entt::registry& registry, entt::ent
     const auto* typedRequest = dynamic_cast<const ::guildpb::LightGuildLanternRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.LightGuildLantern: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2179,7 +2204,7 @@ void SendGuildServiceLightGuildLanternErased(entt::registry& registry, entt::ent
 #pragma region GuildServiceClaimGuildReunion
 namespace {
 void QueueLocalGuildServiceClaimGuildReunionFailure(GrpcDone<::guildpb::ClaimGuildReunionResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -2193,9 +2218,9 @@ void StartGuildServiceClaimGuildReunionCall(entt::registry& registry, entt::enti
     if (!done) {
         LOG_FATAL << "gRPC GuildService.ClaimGuildReunion requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceClaimGuildReunionGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceClaimGuildReunionGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceClaimGuildReunionFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -2204,13 +2229,13 @@ void StartGuildServiceClaimGuildReunionCall(entt::registry& registry, entt::enti
         QueueLocalGuildServiceClaimGuildReunionFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -2242,9 +2267,10 @@ void SendGuildServiceClaimGuildReunionErased(entt::registry& registry, entt::ent
         LOG_FATAL << "gRPC GuildService.ClaimGuildReunion requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::ClaimGuildReunionRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.ClaimGuildReunion: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.ClaimGuildReunion: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2253,7 +2279,7 @@ void SendGuildServiceClaimGuildReunionErased(entt::registry& registry, entt::ent
     const auto* typedRequest = dynamic_cast<const ::guildpb::ClaimGuildReunionRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.ClaimGuildReunion: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2265,7 +2291,7 @@ void SendGuildServiceClaimGuildReunionErased(entt::registry& registry, entt::ent
 #pragma region GuildServiceStartGuildTrial
 namespace {
 void QueueLocalGuildServiceStartGuildTrialFailure(GrpcDone<::guildpb::StartGuildTrialResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -2279,9 +2305,9 @@ void StartGuildServiceStartGuildTrialCall(entt::registry& registry, entt::entity
     if (!done) {
         LOG_FATAL << "gRPC GuildService.StartGuildTrial requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceStartGuildTrialGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceStartGuildTrialGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceStartGuildTrialFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -2290,13 +2316,13 @@ void StartGuildServiceStartGuildTrialCall(entt::registry& registry, entt::entity
         QueueLocalGuildServiceStartGuildTrialFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -2328,9 +2354,10 @@ void SendGuildServiceStartGuildTrialErased(entt::registry& registry, entt::entit
         LOG_FATAL << "gRPC GuildService.StartGuildTrial requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::StartGuildTrialRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.StartGuildTrial: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.StartGuildTrial: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2339,7 +2366,7 @@ void SendGuildServiceStartGuildTrialErased(entt::registry& registry, entt::entit
     const auto* typedRequest = dynamic_cast<const ::guildpb::StartGuildTrialRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.StartGuildTrial: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2351,7 +2378,7 @@ void SendGuildServiceStartGuildTrialErased(entt::registry& registry, entt::entit
 #pragma region GuildServiceRespondGuildTrialInvite
 namespace {
 void QueueLocalGuildServiceRespondGuildTrialInviteFailure(GrpcDone<::guildpb::RespondGuildTrialInviteResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -2365,9 +2392,9 @@ void StartGuildServiceRespondGuildTrialInviteCall(entt::registry& registry, entt
     if (!done) {
         LOG_FATAL << "gRPC GuildService.RespondGuildTrialInvite requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kGuildServiceRespondGuildTrialInviteGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kGuildServiceRespondGuildTrialInviteGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalGuildServiceRespondGuildTrialInviteFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -2376,13 +2403,13 @@ void StartGuildServiceRespondGuildTrialInviteCall(entt::registry& registry, entt
         QueueLocalGuildServiceRespondGuildTrialInviteFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -2414,9 +2441,10 @@ void SendGuildServiceRespondGuildTrialInviteErased(entt::registry& registry, ent
         LOG_FATAL << "gRPC GuildService.RespondGuildTrialInvite requires a done callback";
     }
     if (message.GetDescriptor() != ::guildpb::RespondGuildTrialInviteRequest::descriptor()) {
-        LOG_ERROR << "gRPC GuildService.RespondGuildTrialInvite: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC GuildService.RespondGuildTrialInvite: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2425,7 +2453,7 @@ void SendGuildServiceRespondGuildTrialInviteErased(entt::registry& registry, ent
     const auto* typedRequest = dynamic_cast<const ::guildpb::RespondGuildTrialInviteRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC GuildService.RespondGuildTrialInvite: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

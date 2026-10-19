@@ -64,7 +64,7 @@ void InitServiceHandler()
 		InitLines: initLines,
 	}
 
-	content := utils.ExecuteTemplate("registerFile", tmplStr, data)
+	content := utils.RenderTemplateOrExit("registerFile", tmplStr, data)
 	utils.WriteFileIfChanged(dst, []byte(content))
 
 	logger.Global.Info("Service register file generated",

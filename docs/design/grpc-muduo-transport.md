@@ -1663,3 +1663,37 @@ FinalizeShutdownInLoop(阶段 0)
 - **正式生成已完成**：导表退出 0，42 张表、10 项服务端部署成功；213 输入与 2220 产物内容前后均无变化。fresh `proto-gen-build`、`proto-gen-run -UseBinary -ConfigPath tools/proto_generator/protogen/etc/proto_gen.no-unity.yaml` 和官方 vcxproj2cmake 均退出 0，19 个 CMake 工程无跳过。生成前后 25 文件、173 守护段（131 非空）及两份编号表的全部原有编号/墓碑保留；203 个 typed 与 203 个 Erased 声明已同步，旧全局 API 命中为 0。gate/scene 的源码和工程清单无旧命名或已删适配器引用，未手改生成树、未触碰独立客户端。
 - **同步回执**：`build/verification/grpc-muduo-approved-20261018-014019/generator-final-preparation-20261018T092706747Z/final-code-sync-20261019T025522520Z-6a3dd8fa/` 的 `fresh-build-result.json`、`full-generation-native-result.json`、`cmake-export-result.json` 为三步真实结果；`post-full-api-corrected-observation.json` 为静态结果。首份附加观察漏扫子目录并误把方法名字符串当作函数指针，其误报原件 `post-full-static-check.json` 保留，仅更正观察，未重跑成功生成或修改产品断言。
 - **验证边界**：本节新增代码未编译、未运行测试。§15.18 的旧完整 Rebuild、专项红绿、gRPC/Agones 普通与重复轮、battle/router/互通结果仅证明各自当时输入。最终当前节点、独立 RPC/A0、生成器与各语言测试、Linux、线程/关机/真实业务冒烟仍属后置验证；没有新的成功当前构建 manifest。
+
+### 15.20 函数与变量命名收尾（2026-10-18 纽约；业务编译、测试后置）
+
+负责人追加要求“把剩下的函数、变量命名优化也做完，生成器和生成产物同步好，不用等编译，做完给我”。本次沿既有 gRPC 回调迁移收尾，只调整内部名称与对应引用、断言及说明，不扩展功能或修改公开 Send / GrpcDone / Erased 契约。
+
+- **12 个手写文件已实际写入**：gate 会话处理器及桥接头、scene lifecycle 头/实现与 id_segment_bootstrap、生成器 Go 源码及两个模板和相应断言、两份当前设计入口说明与全局处理器删除交接清单。以当前 HEAD `8b9592de3` 的工作树为前像逐文件核对后写入，保留其它会话的新逻辑；实际回执为 `build/verification/global-handler-repair-20261018T082546455Z/applied-callback-naming-20261019T0322Z/applied.json`。
+- **构造与声明用途明确**：`LocalFailure` 改为 `MakeLocalFailureOutcome`；`SenderFunctions`、局部收集列表及去重表改用 `SenderDeclarations` / `senderDeclarations` / `senderDeclarationSet`，模板字段同步；模板内 `rpc` 改为 `unaryRequest`，对应生成器断言同步。
+- **请求及完成结果明确**：gate 私有完成函数改为 `ForwardSceneClientCallResult` / `ForwardDirectGrpcCallResult`；序列化会话值改为 `serializedSessionDetails`；scene 的请求标记改为 `requestCorrelationId`、gRPC 状态值改为 `grpcStatusCode`；号段申请局部序号改为 `requestSequence`。声明、定义、调用、捕获和注释一起更新。
+- **行为边界**：控制流和日志字面量保留，Login 准入、session incarnation、session-ended 退出凭据与 release fence 均保留。仅静态核对名称和引用一致性，本轮业务工程未编译、未运行测试；Java 功能、客户端契约和编号规则不变。
+- **最后一处关联号参数已补齐**：私有 `ClaimRelocateTransportFailure` 的参数及三处使用统一为 `requestCorrelationId`，旧 `requestTag` 在 lifecycle 头/实现中无残留。该项仅调整普通 C++ 参数名，不影响生成输入，未重跑已成功的生成。实际追加回执为同证据目录的 `applied-callback-naming-claim-final-20261019T0330Z/applied.json`，最终源码 SHA 为 `08935447e5cb3b30bbd822f868188bcca24e7e3d292391151d251160b788daa7`。
+- **生成同步已完成**：按新源码执行 `proto-gen-build`，再用新工具执行 `proto-gen-run -UseBinary` 与绝对路径 no-unity 配置，两步均退出 0；工具 SHA 为 `28f7499b20231c293dd2cdda586c6716d06bc18e80d9109ca0c1a05cecaed315`。25 份客户端生成 cpp 仅出现预期标识符替换，注册表输出逐字节相同；25 文件中 131 个非空守护段、314 消息编号、50 事件编号及全部墓碑保留，工具输入无意外变化、指定旧名称无残留。未手改生成目录，未重新导表或业务编译；文件/工程清单未变，本轮不重复 CMake 导出。真实回执为 `build/verification/global-handler-repair-20261018T082546455Z/callback-naming-sync-20261019T0325Z/` 的 `generator-build-result.json`、`full-generation-result.json` 与 `final-static-result.json`。
+
+### 15.21 当前协议与下游副本同步收口（2026-10-19 纽约；代码范围已完成）
+
+- **晚到字段已正式同步**：命名收尾之后补入的 `ReleasePlayerRequest.covered_session_id = 6`、`covered_login_generation = 7` 已进入 C++ 和 Go 绑定。按顺序执行 fresh `proto-gen-build`、绝对 no-unity 配置的 `proto-gen-run -UseBinary`，原生均退出 0；生成期间 234 项输入不变，25 个 handler 文件中的 131 个非空守护段、原有编号与墓碑保留。未手改生成树、未触碰独立客户端。
+- **命名补漏无新增缺口**：25 份生成客户端使用 `MakeLocalFailureOutcome`，203 处 `unaryRequest` 序列化与发送逐文件对应；`SenderDeclarations`、模板断言、gate 完成转发函数及 `ClaimRelocateTransportFailure` 的 `requestCorrelationId` 一致，指定旧名称无活动引用。此项是静态核对，不替代运行验证。
+- **机器人副本已正规同步**：按 `robot/README.md` 先执行 `go mod vendor -o <本轮证据目录>/robot-vendor-preview`，再执行正式 `go mod vendor`，两步原生均退出 0。1299 个正式 vendor 文件与预览完全一致；仅 `shared/generated/pb/table/login_error_tip.pb.go` 一份过时副本更新，与 `go/shared` 源一致，`robot/go.mod`、`go.sum` 未变。
+- **后续并行变更如实保留**：最终严格全文件比较发现 `tools/scripts/dev_tools.ps1` 在生成之后被其它会话追加 K8s 登录参数透传；其余 233 项协议/生成器输入不变，三个生成入口函数与生成前逐字相同。严格比较失败原件保留在 `final-code-generation-result.json`，分类核对见 `code-generation-closure-observation.json`，未重跑成功生成。vendor 与另一会话已经启动的 Windows C++ 构建有时间重叠，仅修改 robot/vendor，不涉及 C++ 输入，不宣称全部 native 串行。
+- **实际原件与交付边界**：本轮目录为 `build/verification/grpc-muduo-codex-20261018-005135/release-fields-sync-20261019043741/`，含四步 `*-result.json`、`static-result.json`、vendor 差异和最终分类记录。根会话的代码、命名及生成同步任务已完成；本轮未执行业务编译或测试，不等待独立验证会话的构建，不将其运行中状态记为通过。此前失败和验证历史均保留，未提交。
+
+### 15.22 独立构建发现的日志类型兼容问题（2026-10-19 纽约；新增待修）
+
+§15.21 的代码生成收口之后，独立验证会话在 `grpc_client.vcxproj` 实际编译到 `battle_node_grpc_client.cpp:94` 时发现 C2679：protobuf 的 `Descriptor::full_name()` 返回 `absl::string_view`，不能直接写入 `muduo::LogStream`。权威来源为 `grpc_async_client.cpp.tmpl:99`。验证执行者保留首错及日志，核对进程身份后停止自有失败构建，native=-1、非超时；RPC、后续测试和 Linux 未启动。1812 项 C++ 输入前后相同，没有成功构建 manifest。原件为 `build/verification/grpc-muduo-codex-20261018-005135/cpp-prep/current-build-runs/v3-20261019T044004493Z/` 的 `result.json`、`game-first-error-50.txt`。
+
+同目录已准备 `grpc-client-log-view-fix.patch`（SHA `a3d1e743c39cab349a926850ae79f260cbe8ee0cfe22c55f17c1bf834ddb74e1`）：只在模板中取 `requestTypeName`，用 `std::string(data, size)` 写日志，保留日志文字、错误回调和调用控制流；正规生成覆盖 25 cpp / 203 站点，不手改产物。根会话只读复核该候选，未应用、未重试。按 AGENTS.md §10.2，唯一修复 owner 的“执行 C++ 与生成器验证”会话已向负责人请求本次具体修复/续验决定，尚待回答，不重复提问。此前生成和 vendor 成功仍是真实记录，但当前代码交付新增这一项兼容修正，不能再将“代码范围已完成”解释为没有待修代码。
+
+### 15.23 C2679 最小修正与正式生成完成（2026-10-19 纽约；业务编译后置）
+
+负责人已在本聊天明确授权“应用最小补丁修掉 C2679，重新构建生成器并同步生成产物，不用等业务编译，做完给我”。统一主协调在唯一执行窗口实际应用 §15.22 的原候选，模板 SHA 从 `0e73226f...` 变为 `90ee601c293fb1753ba4e3f03015279d3636a8b34c1d58be3a690cd73920aa97`：只取 `requestTypeName`，再以 `std::string(data, size)` 写入日志流。日志文案、类型拒绝、错误码、回调与控制流不变，原命名及并行新代码保留。
+
+- **生成器已重建**：`proto-gen-build` 实际退出 0，新鲜工具 SHA 为 `28f7499b20231c293dd2cdda586c6716d06bc18e80d9109ca0c1a05cecaed315`。模板由工具运行时读取，因此本次模板修改不要求工具二进制 SHA 改变。
+- **正式生成已完成**：首次包装调用将程序路径误作额外参数，进入生成前退出 1，原件 `full-generation-result.json` 保留；执行者改用同一个 fresh 正规 CLI 的零额外参数启动方式，并显式使用绝对 no-unity 配置，`direct-full-generation-result.json` 实际退出 0。没有修改生成器参数校验或手写生成产物。生成期间 234 项输入、25 handler 文件内 131 个非空守护段及编号/墓碑保留，ReleasePlayer 字段 6/7 的 C++/Go 绑定保持原 SHA。
+- **最终产物逐字核对**：根会话用独立保存的前像计算预期两行日志转换，与实际 25 份客户端 cpp 逐字节比对，203 个站点全部一致、额外差异 0；旧直接输出视图的站点已清零。文件/工程清单没有变化，不重复导表、CMake 导出或 vendor。
+- **证据与边界**：实际执行原件在 `build/verification/c2679-root-takeover-20261019T061821334Z/`；根独立核对在 `build/verification/grpc-muduo-codex-20261018-005135/c2679-code-delivery-20261019T061726797Z/root-generated-diff-audit.json`。本次要求的最小代码修正与生成同步已完成，原 C2679 失败不改写为通过；本聊天未执行业务编译或测试，也不等待独立验收的后续构建。Java 不适用：仅 C++ 内部生成客户端的日志重载适配，未改变功能或共享客户端契约。未提交、未推送。

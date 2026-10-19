@@ -54,7 +54,7 @@
 |---|---|---|---|---|
 | 共享 Redis | 全局 1 个实例 | 键大多按玩家,少数按 zone | 否:replicas 1;redis-ha 未接入 | `deploy/k8s/manifests/infra/redis.yaml:70`;`tools/scripts/k8s_deploy.ps1:5746`(已亲核) |
 | redis-match-cluster | 全局 1 套,3 主 3 从 | match / chat 私有 | 是;512mb volatile-lru 有淘汰风险 | `redis-match-cluster.yaml:27-28,59` |
-| MySQL | 全局 1 个实例,1 CPU / 1Gi,max_connections 500 | `zone_N_db` + 全局库 + 服务库 | 否;go/db 只有一个 Hosts,不能靠配置拆 | `mysql.yaml:74,82`;`go/db/internal/config/config.go:79`;`proto_sql/store_registry.go:299-316` |
+| MySQL | 全局 1 个实例,1 CPU / 1Gi,max_connections 500(2026-10-18 更正:现为 1800,`mysql.yaml:90`) | `zone_N_db` + 全局库 + 服务库 | 否;go/db 只有一个 Hosts,不能靠配置拆 | `mysql.yaml:74,82`;`go/db/internal/config/config.go:79`;`proto_sql/store_registry.go:299-316` |
 | `task:result:notify` | 全局 1 条 Pub/Sub 频道 | 逻辑上按 zone | 订阅端能多开,但扇出 = 通知数 × login 副本数 | `go/db/internal/kafka/key_ordered_consumer.go:42`;`go/login/internal/dispatcher/task_result_dispatcher.go:32,281-286`(已亲核) |
 | 登录排队 leader 锁 | HEAD 全局 1 把(L-01 bug);工作区已改成每 zone 1 把(未提交) | 按 zone | 改完后每 zone 一主多备 | 工作区 `go/login/internal/logic/pkg/loginqueue/dispatcher.go:120-130`(已亲核) |
 | scene_manager 选主 | 全局 1 个 leader,管所有 zone | 无 | 单写者 | `go/scene_manager/scene_manager_service.go:94-102` |
@@ -80,7 +80,7 @@
 | **P0** | **C++ etcd 双向流 ok=false 后不重建** | `cpp/generated/grpc_client/grpc_init_client.cpp:358-368`;`etcd/etcd_grpc_client.cpp:397-405` | 任一 etcd 成员重启后,连在它上面的 C++ 节点 watch 失效、续租失效,每 180s 判失租并重注册 | 修生成器模板或在非生成的 EtcdService 里重建流(§3 不许手改 generated);**这是任何 etcd 滚动操作的前置条件** | 静态推断,待实测;与上一项同一张任务卡片 |
 | P0 | Redis 高可用会丢已确认的存盘 | Kafka ack 之后,重试队列是这笔存盘的唯一副本(`key_ordered_consumer.go:2114-2124,2196-2198`);redis-ha 是异步复制(`redis-ha.yaml:24-25`) | 切主时已 ack 的存盘可能静默丢失(推断) | 重试和死信入队、owner_epoch 铸造、`account:{a}` 在**同一连接**上补 WAITAOF(参考 `go/data_service/internal/routing/route_publish.go` 的写法);确认不足时不 ack | 接 redis-ha 之前必须做 |
 | P0 | go/db 连接类错误消耗重试预算,3 次后进**没有消费者的死信** | `placement_route.go:357-366`;`key_ordered_consumer.go:932-933,1135-1139` | MySQL 切主、TiDB 滚动、连接数超限都会让存盘静默不落库 | 连接类错误不耗预算、延后重试;给死信长度加告警(L-04) | — |
-| P0 | 共享 Redis 没设 `maxclients`(默认 10000) | `redis.yaml:95-97` 只带 `--appendonly` 和 `--requirepass` | 估每 zone 100~250 条连接,约 40~100 个 zone 就撞线,早于命令量上限(推断) | 显式设 maxclients,按各客户端池上限算总账;由 Codex 用 `CLIENT LIST` 实测现有连接数 | 终审新增 |
+| P0 | 共享 Redis 没设 `maxclients`(默认 10000)(2026-10-18 更正:已显式设 40000,`redis.yaml:121`,2026-10-15 落码,生效值待实测) | `redis.yaml:95-97` 只带 `--appendonly` 和 `--requirepass` | 估每 zone 100~250 条连接,约 40~100 个 zone 就撞线,早于命令量上限(推断) | 显式设 maxclients,按各客户端池上限算总账;由 Codex 用 `CLIENT LIST` 实测现有连接数 | 终审新增 |
 | P1 | gate 没设 RLIMIT_NOFILE,全仓也 grep 不到 setrlimit | `gate-connection-admission-control.md:143`;kafka.yaml:157-176 在启动脚本里手动抬高了,gate 没有 | 容器默认软限取决于运行时(较新的 containerd / Docker 是 1024,旧版是 1048576);若是 1024,gate 台数要乘 20 | 先实测 `/proc/<pid>/limits`;再在镜像或 Pod 设 `ulimit -n ≥ 65536`(**2026-10-18 更正**:不要在镜像或启动壳里加 ulimit,那会成为第二份实现。已改为 gate / scene / battle 在 `Node::Initialize` 启动时自抬软限到 min(硬限, 1048576),抬完仍低于「客户端面准入上限 + 4096」缺省拒启,运维豁免为 `NODE_OPEN_FILE_LIMIT_MODE=warn`;硬限由节点容器运行时决定,读法、上线前置与回退见 `docs/ops/gate-kernel-tuning-runbook.md` §3.1。已落码,未编译、未验证) | 有条件 |
 | P1 | Java gateway 的 zone 准入容量默认 5000 | `java/gateway_node/src/main/resources/schema.sql:8`;`ZoneConfig.java:24` | 与「单 zone 10 万」的口径冲突;AssignGate 是否按它硬拒未逐行核实 | 开服前改配置并核实拒绝路径 | 终审新增 |
 | P1 | 共享 Redis 的 AOF 放在 8Gi PVC 上 | `redis.yaml:136-155` | Redis 7 多段 AOF 重写期间磁盘峰值约为数据集的 3 倍,8Gi 只撑约 2.7GB,约 13 万累计玩家(按 21KB/人) | 按数据集 × 3 预留磁盘,并显式设 maxmemory | 终审新增 |

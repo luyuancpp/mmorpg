@@ -163,12 +163,16 @@ func RequestNodeReleasePlayer(ctx context.Context, svcCtx *svc.ServiceContext, z
 // RequestNodeReleaseEndedSession 请 location 的持有节点释放一名会话已结束的玩家(ReleasePlayerRequest.session_ended,
 // docs/design/location-release-binding.md §3.3):持有且缓存 owner_epoch == expectedOwnerEpoch → 按客户端断线退出、存盘后
 // 写 A1′ 标记;完全不持有 → 按 owner_epoch 条件补写凭证标记;其余忽略。没有接手节点,target 两项留空。
+// covered 是这次释放覆盖到的最新登录身份(§13):持有节点上的实体已绑上比它新的登录时不退出,迟到的释放因此退不掉新会话。
+// 零值 = 不带身份,scene 按只比 owner_epoch 的旧行为处理。
 func RequestNodeReleaseEndedSession(ctx context.Context, svcCtx *svc.ServiceContext, zoneId uint32, nodeId string,
-	playerId uint64, expectedOwnerEpoch uint64) error {
+	playerId uint64, expectedOwnerEpoch uint64, covered placementIdentity) error {
 	return callReleasePlayer(ctx, svcCtx, zoneId, nodeId, &scenenodepb.ReleasePlayerRequest{
-		PlayerId:           playerId,
-		ExpectedOwnerEpoch: expectedOwnerEpoch,
-		SessionEnded:       true,
+		PlayerId:               playerId,
+		ExpectedOwnerEpoch:     expectedOwnerEpoch,
+		SessionEnded:           true,
+		CoveredSessionId:       covered.sessionID,
+		CoveredLoginGeneration: covered.loginGeneration,
 	})
 }
 
@@ -181,8 +185,9 @@ func callReleasePlayer(ctx context.Context, svcCtx *svc.ServiceContext, zoneId u
 
 	client := scenenodepb.NewSceneNodeGrpcClient(conn)
 	if _, err := client.ReleasePlayer(ctx, req); err != nil {
-		return fmt.Errorf("ReleasePlayer RPC to node %s (expected_owner_epoch=%d session_ended=%v): %w",
-			nodeId, req.GetExpectedOwnerEpoch(), req.GetSessionEnded(), err)
+		return fmt.Errorf("ReleasePlayer RPC to node %s (expected_owner_epoch=%d session_ended=%v covered=%d/%d): %w",
+			nodeId, req.GetExpectedOwnerEpoch(), req.GetSessionEnded(), req.GetCoveredSessionId(),
+			req.GetCoveredLoginGeneration(), err)
 	}
 
 	return nil
@@ -416,19 +421,20 @@ var releaseDispatcher = dispatchReleasePlayer
 // dispatchSessionEndedRelease 在后台协程里发一次 session_ended 释放(docs/design/location-release-binding.md §3.2)。
 // 单发、1s 截止、不在内部重试:调用方 LeaveScene 此时已回可重试错误,player_locator 的下一次重试会再走到这里再派发一次,
 // 节拍由那条 at-least-once 通道决定,这里不另起退避。结果只进日志:释放是否生效由下一次 LeaveScene 看标记判定,
-// 不看这次 RPC 的成败。
+// 不看这次 RPC 的成败。covered = 被清理的会话身份(§13):这条后台请求可能晚于同一玩家的新登录到达持有节点,
+// 实体已绑上更新的登录时由持有节点忽略。
 func dispatchSessionEndedRelease(svcCtx *svc.ServiceContext, zoneID uint32, nodeID string, playerID uint64,
-	expectedOwnerEpoch uint64) {
+	expectedOwnerEpoch uint64, covered placementIdentity) {
 	safego.Go(SafePointReleasePlayer, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
-		if err := RequestNodeReleaseEndedSession(ctx, svcCtx, zoneID, nodeID, playerID, expectedOwnerEpoch); err != nil {
-			logx.Errorf("[LeaveRelease] session-ended ReleasePlayer failed (next LeaveScene retry will resend): player=%d zone=%d node=%s expected_owner_epoch=%d err=%v",
-				playerID, zoneID, nodeID, expectedOwnerEpoch, err)
+		if err := RequestNodeReleaseEndedSession(ctx, svcCtx, zoneID, nodeID, playerID, expectedOwnerEpoch, covered); err != nil {
+			logx.Errorf("[LeaveRelease] session-ended ReleasePlayer failed (next LeaveScene retry will resend): player=%d zone=%d node=%s expected_owner_epoch=%d covered_session=%d covered_generation=%d err=%v",
+				playerID, zoneID, nodeID, expectedOwnerEpoch, covered.sessionID, covered.loginGeneration, err)
 			return
 		}
-		logx.Infof("[LeaveRelease] session-ended ReleasePlayer delivered: player=%d zone=%d node=%s expected_owner_epoch=%d",
-			playerID, zoneID, nodeID, expectedOwnerEpoch)
+		logx.Infof("[LeaveRelease] session-ended ReleasePlayer delivered: player=%d zone=%d node=%s expected_owner_epoch=%d covered_session=%d covered_generation=%d",
+			playerID, zoneID, nodeID, expectedOwnerEpoch, covered.sessionID, covered.loginGeneration)
 	})
 }
 

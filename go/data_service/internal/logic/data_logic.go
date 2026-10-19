@@ -46,79 +46,125 @@ type LoadPlayerDataResp struct {
 	Version   uint64
 }
 
+// LoadPlayerData 读玩家字段与乐观锁版本。
+//
+// 契约:返回的 Version 永远不比 Data 新。调用方拿它(非 0)做 CAS 存盘时,只要读之后有别的写落地,
+// 存盘必然被拒;最坏只是多一次伪冲突,不会覆盖别人的写。版本键不存在回 0 —— 按 saveFieldsScript
+// 的既有约定 expected_version=0 跳过校验,首次存盘前的并发不受本契约保护。任何读失败
+// (含版本读失败、版本值损坏)一律 fail-closed 回 ErrCodeRedis —— 回一个 Version=0 的"成功"
+// 会让调用方以为可以跳过版本校验(见 readVersion 注释),等于关掉乐观锁。
 func LoadPlayerData(ctx context.Context, svcCtx *svc.ServiceContext, req *LoadPlayerDataReq) (*LoadPlayerDataResp, error) {
+	for _, field := range req.Fields {
+		if isInternalPlayerField(field) {
+			return &LoadPlayerDataResp{ErrorCode: constants.ErrCodeInvalidRequest}, nil
+		}
+	}
 	client, err := svcCtx.Router.ClientForPlayer(ctx, req.PlayerID)
 	if err != nil {
 		return &LoadPlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
 	}
 
-	result := make(map[string][]byte)
-
+	var data map[string][]byte
+	var ver uint64
 	if len(req.Fields) == 0 {
-		// Load all fields via SCAN with player prefix
-		pattern := fmt.Sprintf("player:{%d}:*", req.PlayerID)
-		var keys []string
-		var cursor uint64
-		for {
-			var batch []string
-			var err error
-			batch, cursor, err = scan(ctx, client, cursor, pattern, 100)
-			if err != nil {
-				return &LoadPlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
-			}
-			keys = append(keys, batch...)
-			if cursor == 0 {
-				break
-			}
-		}
-
-		if len(keys) > 0 {
-			vals, err := mget(ctx, client, keys...)
-			if err != nil {
-				return &LoadPlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
-			}
-			prefix := fmt.Sprintf("player:{%d}:", req.PlayerID)
-			for i, key := range keys {
-				if vals[i] == nil {
-					continue
-				}
-				fieldName := key[len(prefix):]
-				if isInternalPlayerField(fieldName) {
-					continue
-				}
-				result[fieldName] = []byte(vals[i].(string))
-			}
-		}
+		data, ver, err = loadAllPlayerFields(ctx, client, req.PlayerID)
 	} else {
-		for _, field := range req.Fields {
-			if isInternalPlayerField(field) {
-				return &LoadPlayerDataResp{ErrorCode: constants.ErrCodeInvalidRequest}, nil
-			}
-		}
-		keys := make([]string, len(req.Fields))
-		for i, f := range req.Fields {
-			keys[i] = playerField(req.PlayerID, f)
-		}
-		vals, err := mget(ctx, client, keys...)
-		if err != nil {
-			return &LoadPlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
-		}
-		for i, f := range req.Fields {
-			if vals[i] == nil {
-				continue
-			}
-			result[f] = []byte(vals[i].(string))
-		}
+		data, ver, err = loadSelectedPlayerFields(ctx, client, req.PlayerID, req.Fields)
 	}
-
-	// Read version. 读不到版本必须 fail-closed:回一个 Version=0 的"成功"会让
-	// 调用方以为可以跳过版本校验(见 readVersion 注释),等于关掉乐观锁。
-	ver, err := readVersion(ctx, client, req.PlayerID)
 	if err != nil {
 		return &LoadPlayerDataResp{ErrorCode: constants.ErrCodeRedis}, err
 	}
+	return &LoadPlayerDataResp{Data: data, Version: ver}, nil
+}
 
-	return &LoadPlayerDataResp{Data: result, Version: ver}, nil
+// loadSelectedPlayerFields 把版本键与字段键放进同一条 MGET:所有 player:{id}:* 共享 {id} hash-tag,
+// 同一 slot,单条命令原子,读到的版本与字段属于同一瞬间。
+//
+// 旧写法先 MGET 字段、再单独 GET 版本,两步之间落地的 saveFieldsScript 会让返回值变成
+// 「旧数据 + 新版本」,调用方据此 CAS 存盘能通过,覆盖掉中间那次写。
+func loadSelectedPlayerFields(ctx context.Context, client goredis.Cmdable, playerID uint64, fields []string) (map[string][]byte, uint64, error) {
+	keys := make([]string, 0, len(fields)+1)
+	for _, f := range fields {
+		keys = append(keys, playerField(playerID, f))
+	}
+	keys = append(keys, versionKey(playerID))
+	vals, err := mget(ctx, client, keys...)
+	if err != nil {
+		return nil, 0, err
+	}
+	ver, err := parseVersionReply(playerID, vals[len(fields)])
+	if err != nil {
+		return nil, 0, err
+	}
+	data := make(map[string][]byte, len(fields))
+	for i, f := range fields {
+		if vals[i] == nil {
+			continue
+		}
+		data[f] = []byte(vals[i].(string))
+	}
+	return data, ver, nil
+}
+
+// loadAllPlayerFields 用 SCAN 枚举字段键,再一条 MGET 连同版本键一起读。
+//
+// MGET 本身原子,但 SCAN 与 MGET 是两步:窗口内落地的存盘可能新建了 SCAN 没扫到的字段键,
+// 这时 MGET 里的版本对应的数据并不完整。拿它做 CAS 会通过,调用方若据此「新建」那个它没看到的字段,
+// 就覆盖了窗口里的那次写。所以 SCAN 之前先读一次版本(先读版本、再读数据):
+//   - MGET 里的版本与之相同 → 窗口内没有存盘(saveFieldsScript 成功必 INCR),SCAN 的键集完整,
+//     数据与版本属于同一瞬间;
+//   - 不同 → 返回 SCAN 之前的版本。它比数据旧,调用方据此 CAS 必然被拒,只多一次伪冲突。
+func loadAllPlayerFields(ctx context.Context, client goredis.Cmdable, playerID uint64) (map[string][]byte, uint64, error) {
+	verBeforeScan, err := readVersion(ctx, client, playerID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	pattern := fmt.Sprintf("player:{%d}:*", playerID)
+	var keys []string
+	var cursor uint64
+	for {
+		var batch []string
+		batch, cursor, err = scan(ctx, client, cursor, pattern, 100)
+		if err != nil {
+			return nil, 0, err
+		}
+		keys = append(keys, batch...)
+		if cursor == 0 {
+			break
+		}
+	}
+
+	// 版本键固定放在末尾:SCAN 扫没扫到它都一样(重复的键 MGET 照常返回,扫到的那份下面按内部字段跳过)。
+	keys = append(keys, versionKey(playerID))
+	vals, err := mget(ctx, client, keys...)
+	if err != nil {
+		return nil, 0, err
+	}
+	verAtRead, err := parseVersionReply(playerID, vals[len(vals)-1])
+	if err != nil {
+		return nil, 0, err
+	}
+
+	prefix := fmt.Sprintf(playerDataPrefix, playerID)
+	data := make(map[string][]byte)
+	for i, key := range keys[:len(keys)-1] {
+		if vals[i] == nil {
+			continue
+		}
+		fieldName := key[len(prefix):]
+		if isInternalPlayerField(fieldName) {
+			continue
+		}
+		data[fieldName] = []byte(vals[i].(string))
+	}
+
+	if verAtRead != verBeforeScan {
+		logx.Infof("[LoadPlayerData] player %d: save landed during full load (version %d -> %d), returning the pre-scan version",
+			playerID, verBeforeScan, verAtRead)
+		return data, verBeforeScan, nil
+	}
+	return data, verAtRead, nil
 }
 
 // ── SavePlayerData ─────────────────────────────────────────────
@@ -136,7 +182,8 @@ type SavePlayerDataResp struct {
 
 // acquirePlayerLock acquires a per-player lock, returning the Redis client for
 // that player plus the lock ownership token. On failure it returns a non-nil
-// error code. Caller must defer svcCtx.Router.ReleasePlayerLock(ctx, client, id, token).
+// error code. Caller must defer svcCtx.Router.ReleasePlayerLock(ctx, client, id, token);
+// 直接传请求 ctx 即可:释放自带不随请求取消的短超时(见 routing.ReleasePlayerLock)。
 func acquirePlayerLock(ctx context.Context, svcCtx *svc.ServiceContext, playerID uint64) (goredis.Cmdable, string, uint32, error) {
 	client, err := svcCtx.Router.ClientForPlayer(ctx, playerID)
 	if err != nil {
@@ -342,6 +389,22 @@ func readVersion(ctx context.Context, client goredis.Cmdable, playerID uint64) (
 		}
 		return 0, err
 	}
+	return parseVersionValue(playerID, val)
+}
+
+// parseVersionReply 解读 MGET 里版本键那一格:nil = 键不存在 = 0,与 readVersion 的口径一致。
+func parseVersionReply(playerID uint64, raw interface{}) (uint64, error) {
+	if raw == nil {
+		return 0, nil
+	}
+	val, ok := raw.(string)
+	if !ok {
+		return 0, fmt.Errorf("unexpected version reply for player %d: %T %v", playerID, raw, raw)
+	}
+	return parseVersionValue(playerID, val)
+}
+
+func parseVersionValue(playerID uint64, val string) (uint64, error) {
 	if val == "" {
 		return 0, nil
 	}

@@ -239,7 +239,7 @@ func TestGrpcAsyncClientTemplatesUseMuduoChannelAndRejectStreaming(t *testing.T)
 		t.Fatal("缺少统一调用入口的结束边界")
 	}
 	body := source[start : start+end]
-	serialized := strings.Index(body, "request.SerializeToString(&rpc.message)")
+	serialized := strings.Index(body, "request.SerializeToString(&unaryRequest.message)")
 	queued := strings.Index(body, "QueueLocalSceneManagerEnterSceneFailure(")
 	sent := strings.Index(body, "channel->StartUnaryCall(")
 	if serialized < 0 || queued < 0 || sent < 0 || serialized > queued || serialized > sent {

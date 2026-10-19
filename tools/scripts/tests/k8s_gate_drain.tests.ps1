@@ -309,6 +309,8 @@ Test-Case '契约字面量与 login / proto / 部署生成器的源头一致' {
     Assert-Match -Text $nodeProto -Pattern ("(?m)^\s*{0}\s*=\s*{1}\s*;" -f $c.GateServiceName, $c.GateNodeType) -Because 'gate 的 node_type 必须与 proto 一致,否则 etcd 前缀对不上'
     $drainGo = Read-RepoText 'go/login/internal/logic/pkg/loginqueue/gatedrain.go'
     Assert-Match -Text $drainGo -Pattern ('GateDrainingKeyFmt\s*=\s*"{0}"' -f [regex]::Escape(($c.DrainingKeyFormat -replace '\{0\}', '%d'))) -Because 'draining 键名必须与 login 一致'
+    $redirectGo = Read-RepoText 'go/scene_manager/internal/logic/gate_redirect.go'
+    Assert-Match -Text $redirectGo -Pattern ('gateDrainingKeyFmt\s*=\s*"{0}"' -f [regex]::Escape(($c.DrainingKeyFormat -replace '\{0\}', '%d'))) -Because 'scene_manager 跨 zone 重定向读同一个 draining 键(2026-10-18 起),键名必须一致'
     $monitorGo = Read-RepoText 'go/login/internal/logic/pkg/loginqueue/gatedrain_monitor.go'
     Assert-Match -Text $monitorGo -Pattern ('GateDrainedKeyFmt\s*=\s*"{0}"' -f [regex]::Escape(($c.DrainedKeyFormat -replace '\{0\}', '%d'))) -Because 'drained 键名必须与 login 一致'
     Assert-Match -Text $monitorGo -Pattern ('DrainReasonBelowThreshold\s*=\s*"{0}"' -f $c.DrainedReasonBelowThreshold) -Because '判定理由 below_threshold'

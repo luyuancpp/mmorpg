@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -28,7 +28,7 @@ GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
 #pragma region BattleClientPlayerSubmitBattleAction
 namespace {
 void QueueLocalBattleClientPlayerSubmitBattleActionFailure(GrpcDone<::SubmitBattleActionResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -42,9 +42,9 @@ void StartBattleClientPlayerSubmitBattleActionCall(entt::registry& registry, ent
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.SubmitBattleAction requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerSubmitBattleActionGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerSubmitBattleActionGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerSubmitBattleActionFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -53,13 +53,13 @@ void StartBattleClientPlayerSubmitBattleActionCall(entt::registry& registry, ent
         QueueLocalBattleClientPlayerSubmitBattleActionFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -91,9 +91,10 @@ void SendBattleClientPlayerSubmitBattleActionErased(entt::registry& registry, en
         LOG_FATAL << "gRPC BattleClientPlayer.SubmitBattleAction requires a done callback";
     }
     if (message.GetDescriptor() != ::SubmitBattleActionRequest::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.SubmitBattleAction: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.SubmitBattleAction: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -102,7 +103,7 @@ void SendBattleClientPlayerSubmitBattleActionErased(entt::registry& registry, en
     const auto* typedRequest = dynamic_cast<const ::SubmitBattleActionRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.SubmitBattleAction: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -114,7 +115,7 @@ void SendBattleClientPlayerSubmitBattleActionErased(entt::registry& registry, en
 #pragma region BattleClientPlayerGetBattleState
 namespace {
 void QueueLocalBattleClientPlayerGetBattleStateFailure(GrpcDone<::BattleStateS2C> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -128,9 +129,9 @@ void StartBattleClientPlayerGetBattleStateCall(entt::registry& registry, entt::e
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.GetBattleState requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerGetBattleStateGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerGetBattleStateGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerGetBattleStateFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -139,13 +140,13 @@ void StartBattleClientPlayerGetBattleStateCall(entt::registry& registry, entt::e
         QueueLocalBattleClientPlayerGetBattleStateFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -177,9 +178,10 @@ void SendBattleClientPlayerGetBattleStateErased(entt::registry& registry, entt::
         LOG_FATAL << "gRPC BattleClientPlayer.GetBattleState requires a done callback";
     }
     if (message.GetDescriptor() != ::GetBattleStateRequest::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.GetBattleState: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.GetBattleState: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -188,7 +190,7 @@ void SendBattleClientPlayerGetBattleStateErased(entt::registry& registry, entt::
     const auto* typedRequest = dynamic_cast<const ::GetBattleStateRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.GetBattleState: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -200,7 +202,7 @@ void SendBattleClientPlayerGetBattleStateErased(entt::registry& registry, entt::
 #pragma region BattleClientPlayerNotifyBattleStart
 namespace {
 void QueueLocalBattleClientPlayerNotifyBattleStartFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -214,9 +216,9 @@ void StartBattleClientPlayerNotifyBattleStartCall(entt::registry& registry, entt
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.NotifyBattleStart requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerNotifyBattleStartGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerNotifyBattleStartGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerNotifyBattleStartFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -225,13 +227,13 @@ void StartBattleClientPlayerNotifyBattleStartCall(entt::registry& registry, entt
         QueueLocalBattleClientPlayerNotifyBattleStartFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -263,9 +265,10 @@ void SendBattleClientPlayerNotifyBattleStartErased(entt::registry& registry, ent
         LOG_FATAL << "gRPC BattleClientPlayer.NotifyBattleStart requires a done callback";
     }
     if (message.GetDescriptor() != ::BattleStartS2C::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleStart: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleStart: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -274,7 +277,7 @@ void SendBattleClientPlayerNotifyBattleStartErased(entt::registry& registry, ent
     const auto* typedRequest = dynamic_cast<const ::BattleStartS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleStart: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -286,7 +289,7 @@ void SendBattleClientPlayerNotifyBattleStartErased(entt::registry& registry, ent
 #pragma region BattleClientPlayerNotifyTurnResult
 namespace {
 void QueueLocalBattleClientPlayerNotifyTurnResultFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -300,9 +303,9 @@ void StartBattleClientPlayerNotifyTurnResultCall(entt::registry& registry, entt:
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.NotifyTurnResult requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerNotifyTurnResultGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerNotifyTurnResultGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerNotifyTurnResultFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -311,13 +314,13 @@ void StartBattleClientPlayerNotifyTurnResultCall(entt::registry& registry, entt:
         QueueLocalBattleClientPlayerNotifyTurnResultFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -349,9 +352,10 @@ void SendBattleClientPlayerNotifyTurnResultErased(entt::registry& registry, entt
         LOG_FATAL << "gRPC BattleClientPlayer.NotifyTurnResult requires a done callback";
     }
     if (message.GetDescriptor() != ::TurnResultS2C::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.NotifyTurnResult: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.NotifyTurnResult: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -360,7 +364,7 @@ void SendBattleClientPlayerNotifyTurnResultErased(entt::registry& registry, entt
     const auto* typedRequest = dynamic_cast<const ::TurnResultS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.NotifyTurnResult: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -372,7 +376,7 @@ void SendBattleClientPlayerNotifyTurnResultErased(entt::registry& registry, entt
 #pragma region BattleClientPlayerNotifyBattleEnd
 namespace {
 void QueueLocalBattleClientPlayerNotifyBattleEndFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -386,9 +390,9 @@ void StartBattleClientPlayerNotifyBattleEndCall(entt::registry& registry, entt::
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.NotifyBattleEnd requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerNotifyBattleEndGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerNotifyBattleEndGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerNotifyBattleEndFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -397,13 +401,13 @@ void StartBattleClientPlayerNotifyBattleEndCall(entt::registry& registry, entt::
         QueueLocalBattleClientPlayerNotifyBattleEndFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -435,9 +439,10 @@ void SendBattleClientPlayerNotifyBattleEndErased(entt::registry& registry, entt:
         LOG_FATAL << "gRPC BattleClientPlayer.NotifyBattleEnd requires a done callback";
     }
     if (message.GetDescriptor() != ::BattleEndS2C::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleEnd: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleEnd: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -446,7 +451,7 @@ void SendBattleClientPlayerNotifyBattleEndErased(entt::registry& registry, entt:
     const auto* typedRequest = dynamic_cast<const ::BattleEndS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleEnd: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -458,7 +463,7 @@ void SendBattleClientPlayerNotifyBattleEndErased(entt::registry& registry, entt:
 #pragma region BattleClientPlayerNotifyBattleReconnect
 namespace {
 void QueueLocalBattleClientPlayerNotifyBattleReconnectFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -472,9 +477,9 @@ void StartBattleClientPlayerNotifyBattleReconnectCall(entt::registry& registry, 
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.NotifyBattleReconnect requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerNotifyBattleReconnectGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerNotifyBattleReconnectGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerNotifyBattleReconnectFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -483,13 +488,13 @@ void StartBattleClientPlayerNotifyBattleReconnectCall(entt::registry& registry, 
         QueueLocalBattleClientPlayerNotifyBattleReconnectFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -521,9 +526,10 @@ void SendBattleClientPlayerNotifyBattleReconnectErased(entt::registry& registry,
         LOG_FATAL << "gRPC BattleClientPlayer.NotifyBattleReconnect requires a done callback";
     }
     if (message.GetDescriptor() != ::BattleReconnectS2C::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleReconnect: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleReconnect: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -532,7 +538,7 @@ void SendBattleClientPlayerNotifyBattleReconnectErased(entt::registry& registry,
     const auto* typedRequest = dynamic_cast<const ::BattleReconnectS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleReconnect: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -544,7 +550,7 @@ void SendBattleClientPlayerNotifyBattleReconnectErased(entt::registry& registry,
 #pragma region BattleClientPlayerStopWatchBattle
 namespace {
 void QueueLocalBattleClientPlayerStopWatchBattleFailure(GrpcDone<::StopWatchBattleResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -558,9 +564,9 @@ void StartBattleClientPlayerStopWatchBattleCall(entt::registry& registry, entt::
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.StopWatchBattle requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerStopWatchBattleGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerStopWatchBattleGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerStopWatchBattleFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -569,13 +575,13 @@ void StartBattleClientPlayerStopWatchBattleCall(entt::registry& registry, entt::
         QueueLocalBattleClientPlayerStopWatchBattleFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -607,9 +613,10 @@ void SendBattleClientPlayerStopWatchBattleErased(entt::registry& registry, entt:
         LOG_FATAL << "gRPC BattleClientPlayer.StopWatchBattle requires a done callback";
     }
     if (message.GetDescriptor() != ::StopWatchBattleRequest::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.StopWatchBattle: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.StopWatchBattle: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -618,7 +625,7 @@ void SendBattleClientPlayerStopWatchBattleErased(entt::registry& registry, entt:
     const auto* typedRequest = dynamic_cast<const ::StopWatchBattleRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.StopWatchBattle: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -630,7 +637,7 @@ void SendBattleClientPlayerStopWatchBattleErased(entt::registry& registry, entt:
 #pragma region BattleClientPlayerSetAutoBattle
 namespace {
 void QueueLocalBattleClientPlayerSetAutoBattleFailure(GrpcDone<::SetAutoBattleResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -644,9 +651,9 @@ void StartBattleClientPlayerSetAutoBattleCall(entt::registry& registry, entt::en
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.SetAutoBattle requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerSetAutoBattleGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerSetAutoBattleGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerSetAutoBattleFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -655,13 +662,13 @@ void StartBattleClientPlayerSetAutoBattleCall(entt::registry& registry, entt::en
         QueueLocalBattleClientPlayerSetAutoBattleFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -693,9 +700,10 @@ void SendBattleClientPlayerSetAutoBattleErased(entt::registry& registry, entt::e
         LOG_FATAL << "gRPC BattleClientPlayer.SetAutoBattle requires a done callback";
     }
     if (message.GetDescriptor() != ::SetAutoBattleRequest::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.SetAutoBattle: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.SetAutoBattle: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -704,7 +712,7 @@ void SendBattleClientPlayerSetAutoBattleErased(entt::registry& registry, entt::e
     const auto* typedRequest = dynamic_cast<const ::SetAutoBattleRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.SetAutoBattle: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -716,7 +724,7 @@ void SendBattleClientPlayerSetAutoBattleErased(entt::registry& registry, entt::e
 #pragma region BattleClientPlayerNotifySpectateState
 namespace {
 void QueueLocalBattleClientPlayerNotifySpectateStateFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -730,9 +738,9 @@ void StartBattleClientPlayerNotifySpectateStateCall(entt::registry& registry, en
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.NotifySpectateState requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerNotifySpectateStateGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerNotifySpectateStateGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerNotifySpectateStateFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -741,13 +749,13 @@ void StartBattleClientPlayerNotifySpectateStateCall(entt::registry& registry, en
         QueueLocalBattleClientPlayerNotifySpectateStateFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -779,9 +787,10 @@ void SendBattleClientPlayerNotifySpectateStateErased(entt::registry& registry, e
         LOG_FATAL << "gRPC BattleClientPlayer.NotifySpectateState requires a done callback";
     }
     if (message.GetDescriptor() != ::SpectateStateS2C::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.NotifySpectateState: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.NotifySpectateState: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -790,7 +799,7 @@ void SendBattleClientPlayerNotifySpectateStateErased(entt::registry& registry, e
     const auto* typedRequest = dynamic_cast<const ::SpectateStateS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.NotifySpectateState: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -802,7 +811,7 @@ void SendBattleClientPlayerNotifySpectateStateErased(entt::registry& registry, e
 #pragma region BattleClientPlayerNotifySpectateTurnResult
 namespace {
 void QueueLocalBattleClientPlayerNotifySpectateTurnResultFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -816,9 +825,9 @@ void StartBattleClientPlayerNotifySpectateTurnResultCall(entt::registry& registr
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.NotifySpectateTurnResult requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerNotifySpectateTurnResultGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerNotifySpectateTurnResultGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerNotifySpectateTurnResultFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -827,13 +836,13 @@ void StartBattleClientPlayerNotifySpectateTurnResultCall(entt::registry& registr
         QueueLocalBattleClientPlayerNotifySpectateTurnResultFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -865,9 +874,10 @@ void SendBattleClientPlayerNotifySpectateTurnResultErased(entt::registry& regist
         LOG_FATAL << "gRPC BattleClientPlayer.NotifySpectateTurnResult requires a done callback";
     }
     if (message.GetDescriptor() != ::TurnResultS2C::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.NotifySpectateTurnResult: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.NotifySpectateTurnResult: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -876,7 +886,7 @@ void SendBattleClientPlayerNotifySpectateTurnResultErased(entt::registry& regist
     const auto* typedRequest = dynamic_cast<const ::TurnResultS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.NotifySpectateTurnResult: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -888,7 +898,7 @@ void SendBattleClientPlayerNotifySpectateTurnResultErased(entt::registry& regist
 #pragma region BattleClientPlayerNotifySpectateEnd
 namespace {
 void QueueLocalBattleClientPlayerNotifySpectateEndFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -902,9 +912,9 @@ void StartBattleClientPlayerNotifySpectateEndCall(entt::registry& registry, entt
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.NotifySpectateEnd requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerNotifySpectateEndGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerNotifySpectateEndGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerNotifySpectateEndFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -913,13 +923,13 @@ void StartBattleClientPlayerNotifySpectateEndCall(entt::registry& registry, entt
         QueueLocalBattleClientPlayerNotifySpectateEndFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -951,9 +961,10 @@ void SendBattleClientPlayerNotifySpectateEndErased(entt::registry& registry, ent
         LOG_FATAL << "gRPC BattleClientPlayer.NotifySpectateEnd requires a done callback";
     }
     if (message.GetDescriptor() != ::SpectateEndS2C::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.NotifySpectateEnd: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.NotifySpectateEnd: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -962,7 +973,7 @@ void SendBattleClientPlayerNotifySpectateEndErased(entt::registry& registry, ent
     const auto* typedRequest = dynamic_cast<const ::SpectateEndS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.NotifySpectateEnd: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -974,7 +985,7 @@ void SendBattleClientPlayerNotifySpectateEndErased(entt::registry& registry, ent
 #pragma region BattleClientPlayerNotifyBattleAssigned
 namespace {
 void QueueLocalBattleClientPlayerNotifyBattleAssignedFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -988,9 +999,9 @@ void StartBattleClientPlayerNotifyBattleAssignedCall(entt::registry& registry, e
     if (!done) {
         LOG_FATAL << "gRPC BattleClientPlayer.NotifyBattleAssigned requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kBattleClientPlayerNotifyBattleAssignedGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kBattleClientPlayerNotifyBattleAssignedGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalBattleClientPlayerNotifyBattleAssignedFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -999,13 +1010,13 @@ void StartBattleClientPlayerNotifyBattleAssignedCall(entt::registry& registry, e
         QueueLocalBattleClientPlayerNotifyBattleAssignedFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1037,9 +1048,10 @@ void SendBattleClientPlayerNotifyBattleAssignedErased(entt::registry& registry, 
         LOG_FATAL << "gRPC BattleClientPlayer.NotifyBattleAssigned requires a done callback";
     }
     if (message.GetDescriptor() != ::BattleAssignedS2C::descriptor()) {
-        LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleAssigned: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleAssigned: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1048,7 +1060,7 @@ void SendBattleClientPlayerNotifyBattleAssignedErased(entt::registry& registry, 
     const auto* typedRequest = dynamic_cast<const ::BattleAssignedS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC BattleClientPlayer.NotifyBattleAssigned: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

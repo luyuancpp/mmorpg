@@ -2,6 +2,7 @@
 
 **状态**：已完成。Codex 完成 35.1 全量导表 + 三语言编译；本机完成二次复核并修掉 4 项遗留，导表器 73 passed、Go 全绿。证据见 §6 与 §6.2。
 2026-09-05 追加：故障分类收口到 `Tip.xlsx` 的 `fault` 列（§2.9），导表器 129 passed、Go 全绿，证据见 §6.3
+2026-10-18 追加：fault 列多生成一份 Java `TipFaults`，两版 Java 网关据此把 login 的 in-band 故障码回 500（§2.10），未编译、未测试
 **日期**：2026-09-03（§2.9 / §6.3 为 2026-09-05）
 **影响面**：`data/tip/Tip.xlsx`、4 张内嵌 tip ID 的业务表、导表器、三语言生成产物、`go/shared/serverbase`、guild / friend / match 的错误码常量
 
@@ -162,7 +163,7 @@ ServiceUnavailable        服务不可用      1
 
 产物是 Go 侧的 `shared/generated/tip/faults.go`（`tip.Faults` 切片 + `tip.IsFault`），与段表同一目录同一部署链。`serverbase.TipVerdict` 的顺序是：`0/kSuccess` → OK；`!InAllocatedRange` → Unknown；`IsFault` → Fault；否则 BizReject。手写的 `tipFaultCodes` 与 guild 的 `faultCodes` 已删除；guild / friend 的 `TipClassifier()` 都直接返回 `serverbase.TipVerdict`，只是本服务固定下来的注入接缝，**不要再在服务里包一层本地 map**——那就是把分家重新制造出来。要改分类，改表。
 
-只生成 Go 产物：只有 Go 的 `serverbase` 按故障 / 拒绝定性；C++ 的 `PlayerTipSystem` 只把 tipId 发给客户端，`tip_text.json` 是客户端契约，都不需要这个属性。所以本次**没有**动三语言 proto 产物。
+只生成 Go 产物：只有 Go 的 `serverbase` 按故障 / 拒绝定性；C++ 的 `PlayerTipSystem` 只把 tipId 发给客户端，`tip_text.json` 是客户端契约，都不需要这个属性。所以本次**没有**动三语言 proto 产物。（2026-10-18 起多了第二个消费者：Java 网关，产物多一份同源的 Java `TipFaults`，见 §2.10；三语言 proto 产物仍不动。）
 
 **判定原则**（改 `fault` 列时照着这条线，别凭感觉）：
 
@@ -190,6 +191,55 @@ ServiceUnavailable        服务不可用      1
 - scene：`EnterSceneSceneFull / EnterSceneMainFull / EnterSceneGsFull / ChangeScenePlayerQueueFull`（容量拒绝）、`EnterSceneYouInCurrentScene / EnterSceneChangingScene`（状态拒绝）、`InvalidEnterSceneParameters / EnterSceneParamError`（参数问题）
 - attribute（25000 段，2026-09-05 由他人新增的 15 个码）：全部按名字是规则拒绝（池未解锁、点数不足、冷却、金币不足……）；`AttributePoolNotFound / DimensionNotFound / SchemeNotFound` 既可能是配置缺失也可能是客户端传错 id，拿不准，不标
 - match：`MatchInternal` **拿不准，不标**。它的注释说是 Redis / snowflake 内部错误，但 match 同时把它当「缺少玩家身份」的参数校验出口（`joinqueuelogic.go` 的 `playerId == 0` 分支，`challengelogic.go` / `watchbattlelogic.go` 同形），一码两用；标了会把参数拒绝刷成故障告警。要标，先拆成两个码。另外两件事接手人必须知道：**match 至今没挂 `serverbase.UnaryInterceptor`**（`match_service.go` 只挂了 session 与 grpcstats 两层），所以 match 的任何 tip 码目前都没有运行时的故障定性消费者，标不标都不会产生一条 `rpc_inband_fault`；而且 `JoinQueueResponse` 同时带 `error_code` 与 `TipInfoMessage`，拦截器对非 0 `error_code` 走 `ErrorCodeClassifier`（见 `bizcode.go`），接拦截器时要把 `ErrorCodeClassifier` 也指到 tip 轴上，否则 fault 列对 JoinQueue 仍不生效
+
+### 2.10 Java 网关也按 fault 列定性（2026-10-18）
+
+**状态**：已落码；导表产物已在工作区生成（`generated/code/java/tip/TipFaults.java` 与 `java/gateway_node` 部署副本逐字节一致，含 2021 / 2035 / 2036）；未编译、未测试，待 Codex 按交接步骤验证。
+
+**问题**：2026-10-18 的第三方登录缺口修复（[third-party-login-end-to-end-design.md](./third-party-login-end-to-end-design.md) §三）让 login 对渠道故障、令牌签发失败、账号目录读 Redis 失败都回 in-band 故障码（`LoginAuthProviderUnavailable` / `LoginTokenIssueFailed` / `LoginRedisError` 等，fault=1）。login 侧的 `serverbase` 已经按 fault 列告警，但 Java 网关不认识码表，把所有 in-band 错误都回 `CODE_AUTH_REJECTED`(401) + `upstream_err=<tip>`：客户端拿到的是「凭证被拒、请重新认证」，而真实情况是「服务端出错、稍后重试」——微信挂了时让玩家反复重走 OAuth 毫无意义。
+
+**约束**：故障分类只能来自 fault 列（AGENTS.md §4.4、§7.5），网关里不许手写一份 `{2035, 2036, …}`。`/api/login`、`/api/refresh-token` 的应答形状是两版共享的客户端契约（AGENTS.md §12），两版同批改。
+
+**方案比较**：
+
+| 方案 | 做法 | 结论 |
+|---|---|---|
+| (a) 导表器加 Java 模板 | 与 `faults.go` 同一份 rows 生成只依赖 JDK 的 `TipFaults.java`，网关按它定性 | **选**。Java 版的 login 也是 Java：无论分类放网关还是放 login，Java 版都需要一份 fault 列的 Java 产物，(a) 一份产物两版共用；不改任何 proto |
+| (b) LoginResponse 加故障标志 | login 用 `tip.IsFault` 填一个 bool，网关只读标志 | 不选。`LoginResponse` 也经 gate TCP 回客户端，是客户端可见 proto，要两版加客户端同批改；Java 版 login 照样需要 Java 故障表，省不掉 (a)；还把服务端内部分类漏进了客户端协议 |
+| (c) gRPC trailer 带定性结果 | `serverbase` 拦截器写 trailer，网关读 | 不选。隐式契约，网关的手编 gRPC 客户端要另抓 trailer，Java 版走 Dubbo 要另做 attachment，两版机制各异；为一个消费者给所有服务的拦截器加副作用 |
+
+(a) 的代价是**版本偏斜**：网关编译进去的是它构建时的表，而 login 回的码来自 login 构建时的表。方向与后果见下文「边界」。
+
+**做法**：
+
+- **产物**：`generated/code/java/tip/TipFaults.java`（`com.game.table.tip.TipFaults`：`FAULTS` 列表 + `isFault(int)`），由 `enum_gen._generate_tip_faults` 与 `faults.go` 从同一份 rows 生成，两边的码集合不可能分叉。整棵 Java 代码树照旧部署进 `java/config_node`；`tip/` 另部署到 `java/gateway_node/src/main/java/com/game/table/tip/`（`exporter_config.yaml`）。CI `exporter-tests.yml` 把 `generated/code/java/tip` 纳入漂移检查，并 `cmp` 两份部署副本。
+- **本仓网关**：`LoginService.httpCodeForUpstreamTip` —— `TipFaults.isFault(tip)` 回 `CODE_INTERNAL`(500)，否则 `CODE_AUTH_REJECTED`(401)；`RefreshTokenService` 用同一映射。in-band 故障打一条 warn（不带凭证）。
+- **Java 版**：`tools/ContractSync.java` 把同一个文件原样复制到 `game-table/src/main/java/com/game/table/tip/TipFaults.java`（受管路径，`--check` 覆盖），复制前核对每个故障码的码名 / 码值与同批 tip proto 一致；`game-gateway` 依赖 `game-table`（只用 `TipFaults`），`LoginHttpService.codeForUpstreamTip` 登录与刷新共用。
+
+**客户端契约变化**（两版同批，HTTP 状态都仍是 200，变的只是 JSON `code`）：
+
+| login 回 | 以前 | 现在 |
+|---|---|---|
+| in-band 业务拒绝（如 `LoginAccountNotFound` 2000） | `401`，`upstream_err=2000` | 不变 |
+| in-band 故障码（fault=1） | `401`，`upstream_err=<tip>` | **`500`**，`upstream_err=<tip>` |
+| 没有码、只有 message；本二进制不认识的码 | `401` | 不变 |
+
+客户端此前见到的 500 只有 `login_unavailable` / `internal_error` / `unknown_zone` 几种 message，现在 500 的 message 也可能是 `upstream_err=<tip>`。客户端应把 500 当「服务端出错、稍后重试」，可以按 tip 码选文案。robot 把非 0、非排队一律当失败，不区分 401 / 500，不受影响。
+
+**客户端核对结果**（2026-10-18，只读，客户端仓 HEAD `5e2d4561`，未改客户端）：
+
+- 只按 JSON `code` 分支（`GatewayHttpClient.cs`、`GameClient.DescribeLoginCode`），全仓没有按 message 精确匹配 `login_unavailable` / `upstream_err` 的地方，500 的 message 变成 `upstream_err=<tip>` 不会落进错误分支。
+- HTTP 登录失败不清 token、不自动重试。当前客户端只走口令登录，没有接微信 / QQ；也不调用 `/api/refresh-token`（刷新走 gate TCP 消息）。所以这次改动对现有客户端只有一个效果：fault 码不再显示成「账号或密码错误」。
+- 剩余：500 的文案是「登录失败(upstream_err=2035)」这类技术串，没有「稍后重试」。补这一句文案的可选补丁已备好，打它需要客户端任务授权（AGENTS.md §9）。
+
+**第三方登录的「稍后重试」= 重新拉起渠道授权**：微信 code 一次性，2036 时 code 已被消费，2035 时也不能确定没被消费。所以客户端接微信后，收到 500 必须重新拉起微信授权拿新 code，不能原样重发旧的 `auth_token`。QQ 的 access_token 在有效期内可以重发。
+
+**边界**：
+
+- **版本偏斜**：login 新增一个故障码而网关没重新构建 → 这个码回 401，即改造前的行为，不会更糟；把一个码从 fault 改成非 fault 而网关没重新构建 → 旧网关仍回 500。所以**改 login 会回的码的 fault 列，要与两版网关同批发布**。
+- **fault 列多了一层客户端可见语义**：对 `/api/login`、`/api/refresh-token` 会回的码，翻转 fault 就是把客户端行为从「重新认证」改成「稍后重试」（或反过来）。判定原则不变（上面的表），但改 login 组时要知会客户端。
+- **本二进制不认识的码按 401**，刻意不按 500：新加的码更可能是业务拒绝（例如将来的封禁），回 500 会让客户端对一个永远不会好的结果无限重试。
+- **不涉及**：gate TCP 上的 Login（客户端直接拿 `TipInfoMessage`，自己按码处理）；`/api/assign-gate` 等不回 tip 的接口；login 以 gRPC status 失败的映射（第三方登录缺口修复已改为只有 UNAUTHENTICATED / PERMISSION_DENIED 回 401）。
 
 ---
 

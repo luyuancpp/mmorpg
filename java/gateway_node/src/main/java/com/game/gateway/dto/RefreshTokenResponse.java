@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * <ul>
  *   <li>0    — success, new access/refresh token pair issued</li>
  *   <li>401  — refresh token invalid/expired (client must redo OAuth)</li>
- *   <li>500  — backend unavailable</li>
+ *   <li>500  — backend unavailable, or a login in-band tip that Tip.xlsx marks as fault (retry later)</li>
  * </ul>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

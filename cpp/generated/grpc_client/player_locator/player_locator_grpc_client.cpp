@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace playerlocator {
 #pragma region PlayerLocatorSetLocation
 namespace {
 void QueueLocalPlayerLocatorSetLocationFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartPlayerLocatorSetLocationCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC PlayerLocator.SetLocation requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerLocatorSetLocationGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerLocatorSetLocationGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerLocatorSetLocationFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartPlayerLocatorSetLocationCall(entt::registry& registry, entt::entity no
         QueueLocalPlayerLocatorSetLocationFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendPlayerLocatorSetLocationErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC PlayerLocator.SetLocation requires a done callback";
     }
     if (message.GetDescriptor() != ::playerlocator::PlayerLocation::descriptor()) {
-        LOG_ERROR << "gRPC PlayerLocator.SetLocation: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerLocator.SetLocation: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendPlayerLocatorSetLocationErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::playerlocator::PlayerLocation*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerLocator.SetLocation: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -115,7 +116,7 @@ void SendPlayerLocatorSetLocationErased(entt::registry& registry, entt::entity n
 #pragma region PlayerLocatorGetLocation
 namespace {
 void QueueLocalPlayerLocatorGetLocationFailure(GrpcDone<::playerlocator::PlayerLocation> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -129,9 +130,9 @@ void StartPlayerLocatorGetLocationCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC PlayerLocator.GetLocation requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerLocatorGetLocationGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerLocatorGetLocationGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerLocatorGetLocationFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -140,13 +141,13 @@ void StartPlayerLocatorGetLocationCall(entt::registry& registry, entt::entity no
         QueueLocalPlayerLocatorGetLocationFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -178,9 +179,10 @@ void SendPlayerLocatorGetLocationErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC PlayerLocator.GetLocation requires a done callback";
     }
     if (message.GetDescriptor() != ::playerlocator::PlayerId::descriptor()) {
-        LOG_ERROR << "gRPC PlayerLocator.GetLocation: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerLocator.GetLocation: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -189,7 +191,7 @@ void SendPlayerLocatorGetLocationErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::playerlocator::PlayerId*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerLocator.GetLocation: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -201,7 +203,7 @@ void SendPlayerLocatorGetLocationErased(entt::registry& registry, entt::entity n
 #pragma region PlayerLocatorMarkOffline
 namespace {
 void QueueLocalPlayerLocatorMarkOfflineFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -215,9 +217,9 @@ void StartPlayerLocatorMarkOfflineCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC PlayerLocator.MarkOffline requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerLocatorMarkOfflineGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerLocatorMarkOfflineGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerLocatorMarkOfflineFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -226,13 +228,13 @@ void StartPlayerLocatorMarkOfflineCall(entt::registry& registry, entt::entity no
         QueueLocalPlayerLocatorMarkOfflineFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -264,9 +266,10 @@ void SendPlayerLocatorMarkOfflineErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC PlayerLocator.MarkOffline requires a done callback";
     }
     if (message.GetDescriptor() != ::playerlocator::MarkOfflineRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerLocator.MarkOffline: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerLocator.MarkOffline: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -275,7 +278,7 @@ void SendPlayerLocatorMarkOfflineErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::playerlocator::MarkOfflineRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerLocator.MarkOffline: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -287,7 +290,7 @@ void SendPlayerLocatorMarkOfflineErased(entt::registry& registry, entt::entity n
 #pragma region PlayerLocatorSetSession
 namespace {
 void QueueLocalPlayerLocatorSetSessionFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -301,9 +304,9 @@ void StartPlayerLocatorSetSessionCall(entt::registry& registry, entt::entity nod
     if (!done) {
         LOG_FATAL << "gRPC PlayerLocator.SetSession requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerLocatorSetSessionGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerLocatorSetSessionGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerLocatorSetSessionFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -312,13 +315,13 @@ void StartPlayerLocatorSetSessionCall(entt::registry& registry, entt::entity nod
         QueueLocalPlayerLocatorSetSessionFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -350,9 +353,10 @@ void SendPlayerLocatorSetSessionErased(entt::registry& registry, entt::entity no
         LOG_FATAL << "gRPC PlayerLocator.SetSession requires a done callback";
     }
     if (message.GetDescriptor() != ::playerlocator::SetSessionRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerLocator.SetSession: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerLocator.SetSession: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -361,7 +365,7 @@ void SendPlayerLocatorSetSessionErased(entt::registry& registry, entt::entity no
     const auto* typedRequest = dynamic_cast<const ::playerlocator::SetSessionRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerLocator.SetSession: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -373,7 +377,7 @@ void SendPlayerLocatorSetSessionErased(entt::registry& registry, entt::entity no
 #pragma region PlayerLocatorGetSession
 namespace {
 void QueueLocalPlayerLocatorGetSessionFailure(GrpcDone<::playerlocator::GetSessionResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -387,9 +391,9 @@ void StartPlayerLocatorGetSessionCall(entt::registry& registry, entt::entity nod
     if (!done) {
         LOG_FATAL << "gRPC PlayerLocator.GetSession requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerLocatorGetSessionGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerLocatorGetSessionGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerLocatorGetSessionFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -398,13 +402,13 @@ void StartPlayerLocatorGetSessionCall(entt::registry& registry, entt::entity nod
         QueueLocalPlayerLocatorGetSessionFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -436,9 +440,10 @@ void SendPlayerLocatorGetSessionErased(entt::registry& registry, entt::entity no
         LOG_FATAL << "gRPC PlayerLocator.GetSession requires a done callback";
     }
     if (message.GetDescriptor() != ::playerlocator::GetSessionRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerLocator.GetSession: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerLocator.GetSession: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -447,7 +452,7 @@ void SendPlayerLocatorGetSessionErased(entt::registry& registry, entt::entity no
     const auto* typedRequest = dynamic_cast<const ::playerlocator::GetSessionRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerLocator.GetSession: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -459,7 +464,7 @@ void SendPlayerLocatorGetSessionErased(entt::registry& registry, entt::entity no
 #pragma region PlayerLocatorSetDisconnecting
 namespace {
 void QueueLocalPlayerLocatorSetDisconnectingFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -473,9 +478,9 @@ void StartPlayerLocatorSetDisconnectingCall(entt::registry& registry, entt::enti
     if (!done) {
         LOG_FATAL << "gRPC PlayerLocator.SetDisconnecting requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerLocatorSetDisconnectingGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerLocatorSetDisconnectingGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerLocatorSetDisconnectingFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -484,13 +489,13 @@ void StartPlayerLocatorSetDisconnectingCall(entt::registry& registry, entt::enti
         QueueLocalPlayerLocatorSetDisconnectingFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -522,9 +527,10 @@ void SendPlayerLocatorSetDisconnectingErased(entt::registry& registry, entt::ent
         LOG_FATAL << "gRPC PlayerLocator.SetDisconnecting requires a done callback";
     }
     if (message.GetDescriptor() != ::playerlocator::SetDisconnectingRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerLocator.SetDisconnecting: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerLocator.SetDisconnecting: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -533,7 +539,7 @@ void SendPlayerLocatorSetDisconnectingErased(entt::registry& registry, entt::ent
     const auto* typedRequest = dynamic_cast<const ::playerlocator::SetDisconnectingRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerLocator.SetDisconnecting: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -545,7 +551,7 @@ void SendPlayerLocatorSetDisconnectingErased(entt::registry& registry, entt::ent
 #pragma region PlayerLocatorReconnect
 namespace {
 void QueueLocalPlayerLocatorReconnectFailure(GrpcDone<::playerlocator::ReconnectResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -559,9 +565,9 @@ void StartPlayerLocatorReconnectCall(entt::registry& registry, entt::entity node
     if (!done) {
         LOG_FATAL << "gRPC PlayerLocator.Reconnect requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kPlayerLocatorReconnectGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kPlayerLocatorReconnectGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalPlayerLocatorReconnectFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -570,13 +576,13 @@ void StartPlayerLocatorReconnectCall(entt::registry& registry, entt::entity node
         QueueLocalPlayerLocatorReconnectFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -608,9 +614,10 @@ void SendPlayerLocatorReconnectErased(entt::registry& registry, entt::entity nod
         LOG_FATAL << "gRPC PlayerLocator.Reconnect requires a done callback";
     }
     if (message.GetDescriptor() != ::playerlocator::ReconnectRequest::descriptor()) {
-        LOG_ERROR << "gRPC PlayerLocator.Reconnect: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC PlayerLocator.Reconnect: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -619,7 +626,7 @@ void SendPlayerLocatorReconnectErased(entt::registry& registry, entt::entity nod
     const auto* typedRequest = dynamic_cast<const ::playerlocator::ReconnectRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC PlayerLocator.Reconnect: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

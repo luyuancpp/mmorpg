@@ -143,6 +143,18 @@ func newSelfHealLogic(t *testing.T) (*EnterGameLogic, *redis.Client) {
 	return NewEnterGameLogic(context.Background(), &svc.ServiceContext{RedisClient: rdb}), rdb
 }
 
+// seedHealOwnership 种下自愈提交点要复核的两样东西:本链持有的玩家登录锁,与指向 account 的反向索引。
+func seedHealOwnership(t *testing.T, rdb *redis.Client, account string) {
+	t.Helper()
+	ctx := context.Background()
+	if err := rdb.Set(ctx, identityLockKey, identityLockToken, time.Minute).Err(); err != nil {
+		t.Fatal(err)
+	}
+	if err := rdb.Set(ctx, constants.PlayerToAccountKey(identityPlayerID), account, 0).Err(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func selfHealState(account, lockToken string) enterGameSessionState {
 	return enterGameSessionState{
 		playerID:        identityPlayerID,
@@ -187,9 +199,7 @@ func TestHealAccountRole_AlreadyRestoredReturnsRecord(t *testing.T) {
 	if err := rdb.Set(ctx, constants.GetAccountDataKey(account), before, 0).Err(); err != nil {
 		t.Fatal(err)
 	}
-	if err := rdb.Set(ctx, identityLockKey, identityLockToken, time.Minute).Err(); err != nil {
-		t.Fatal(err)
-	}
+	seedHealOwnership(t, rdb, account)
 
 	got := l.healAccountRole(ctx, selfHealState(account, identityLockToken), "注册表名")
 	if got.GetPlayerId() != identityPlayerID || got.GetClassId() != 3 || got.GetName() != "云中君" {
@@ -210,9 +220,7 @@ func TestHealAccountRole_RestoresAndKeepsOtherRoles(t *testing.T) {
 		marshalAccount(t, &pbbase.AccountSimplePlayer{PlayerId: selfHealConcurrentRoleID}), time.Hour).Err(); err != nil {
 		t.Fatal(err)
 	}
-	if err := rdb.Set(ctx, identityLockKey, identityLockToken, time.Minute).Err(); err != nil {
-		t.Fatal(err)
-	}
+	seedHealOwnership(t, rdb, account)
 
 	if got := l.healAccountRole(ctx, selfHealState(account, identityLockToken), "云中君"); got != nil {
 		t.Fatalf("healAccountRole = %v, want nil after a fresh restore", got)
@@ -302,9 +310,7 @@ func TestHealAccountRole_ConcurrentWriteAfterReReadIsNotOverwritten(t *testing.T
 	if err := rdb.Set(ctx, key, marshalAccount(t), 0).Err(); err != nil {
 		t.Fatal(err)
 	}
-	if err := rdb.Set(ctx, identityLockKey, identityLockToken, time.Minute).Err(); err != nil {
-		t.Fatal(err)
-	}
+	seedHealOwnership(t, rdb, account)
 	other := marshalAccount(t, &pbbase.AccountSimplePlayer{PlayerId: selfHealConcurrentRoleID})
 	rdb.AddHook(&afterNthGetHook{key: key, n: 1, fn: func() {
 		if err := rdb.Set(context.Background(), key, other, 0).Err(); err != nil {
@@ -332,9 +338,7 @@ func TestHealAccountRole_LostAccountLockDoesNotWrite(t *testing.T) {
 	if err := rdb.Set(ctx, key, before, 0).Err(); err != nil {
 		t.Fatal(err)
 	}
-	if err := rdb.Set(ctx, identityLockKey, identityLockToken, time.Minute).Err(); err != nil {
-		t.Fatal(err)
-	}
+	seedHealOwnership(t, rdb, account)
 	lockKey := "account_lock:create:" + account
 	rdb.AddHook(&afterNthGetHook{key: key, n: 1, fn: func() {
 		if err := rdb.Set(context.Background(), lockKey, "taken-by-create", time.Minute).Err(); err != nil {
@@ -351,5 +355,32 @@ func TestHealAccountRole_LostAccountLockDoesNotWrite(t *testing.T) {
 	}
 	if got, err := rdb.Get(ctx, lockKey).Result(); err != nil || got != "taken-by-create" {
 		t.Fatalf("account lock = (%q, %v), want the new holder's token untouched", got, err)
+	}
+}
+
+// 反向索引复核(2026-10-18):自愈锁内重读之后,运维 RemovePlayersFromAccounts 把这个角色当孤儿摘掉(同一段脚本里删反向索引),
+// 自愈的提交点看到反向索引不再指向本账号就不写,不把刚摘掉的角色写回去。删掉 healAccountRoleScript 的反向索引复核,这条会红。
+func TestHealAccountRole_OwnershipRemovedAfterReReadDoesNotWrite(t *testing.T) {
+	l, rdb := newSelfHealLogic(t)
+	ctx := context.Background()
+	const account = "heal-orphan-removed"
+	key := constants.GetAccountDataKey(account)
+	before := marshalAccount(t, &pbbase.AccountSimplePlayer{PlayerId: selfHealConcurrentRoleID})
+	if err := rdb.Set(ctx, key, before, 0).Err(); err != nil {
+		t.Fatal(err)
+	}
+	seedHealOwnership(t, rdb, account)
+	rdb.AddHook(&afterNthGetHook{key: key, n: 1, fn: func() {
+		if err := rdb.Del(context.Background(), constants.PlayerToAccountKey(identityPlayerID)).Err(); err != nil {
+			t.Errorf("simulate orphan removal: %v", err)
+		}
+	}})
+
+	if got := l.healAccountRole(ctx, selfHealState(account, identityLockToken), "云中君"); got != nil {
+		t.Fatalf("healAccountRole = %v, want nil", got)
+	}
+	after, err := rdb.Get(ctx, key).Bytes()
+	if err != nil || string(after) != string(before) {
+		t.Fatalf("account blob = %v (err=%v), want unchanged after the ownership index was removed", accountPlayerIDs(t, rdb, account), err)
 	}
 }

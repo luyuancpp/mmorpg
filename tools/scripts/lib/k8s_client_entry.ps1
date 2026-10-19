@@ -54,6 +54,10 @@
 	    Resolve-BattleFleetHealth       -InitialDelaySeconds -PeriodSeconds -FailureThreshold
 	                                    → { InitialDelaySeconds; PeriodSeconds; FailureThreshold; Raised;
 	                                        RequestedInitialDelaySeconds; StartupWorstSeconds }
+	    ConvertFrom-LoginAuthProvidersYaml -LoginYaml                                     → { Present; Providers; Errors }
+	    Get-LoginAuthProviderDrift      -Live -OAuthSecretPresent [-WeChatAppId ''] [-WeChatEndpoint '']
+	                                    [-WeChatAllowOpenId $false] [-QQAppId ''] [-QQEndpoint ''] [-QQAllowOpenId $false]
+	                                    → { Drifts = string[]; KeepArgs }(login 第三方登录防误关闸,见第 9 节)
 
 	  生成器(纯函数,返回 YAML 字符串)
 	    New-ClientEntryPodCommon        -Image -ImagePullPolicy -SnowflakeCacheDir -LogVolumeSizeLimit
@@ -103,8 +107,10 @@
 	    Remove-ClientEntryObsoleteResources -Namespace -Resources -KubeContext -KubeConfig [-AllowDisruptiveSwitch]
 	                                    → 会踢人的条目存在且未确认时 throw(一个都不删)
 	    Remove-StaleGateOrdinalServices -Namespace -Replicas -KubeContext -KubeConfig
+	    Get-LoginAuthProviderLiveState  -Namespace -KubeContext -KubeConfig               → { ConfigMapPresent; Live; OAuthSecretPresent }
+	                                    (只读,不支持 -DryRun:调用方在 DryRun 下不调用;kubectl 失败 throw)
 
-	  内部辅助(接入方不要直接依赖,签名可能调整):ConvertTo-ClientEntryLf、ConvertTo-ClientEntryYamlString、Add-ClientEntryIndent、
+	  内部辅助(接入方不要直接依赖,签名可能调整):ConvertFrom-ClientEntryYamlScalar、ConvertTo-ClientEntryLf、ConvertTo-ClientEntryYamlString、Add-ClientEntryIndent、
 	    Get-ClientEntryMember、Test-ClientEntryHostName、ConvertTo-ClientEntryCidrList、Get-ClientEntryInvalidCidrs、
 	    Get-ClientEntryEnvYaml、Get-ClientEntryNodeBaseEnv、Get-ClientEntryStartScript、Get-ClientEntryVolumeMountYaml、
 	    Get-ClientEntryPodVolumeYaml、Get-ClientEntrySidecarBlocks、Get-ClientEntryPodAnnotationBlock、Measure-FleetRolloutReadiness(纯函数,契约测试可直测)、
@@ -166,6 +172,13 @@ function Get-ClientEntryContract {
 		# go/login/etc/login.yaml DevPasswordAuth 段(2b §7)。
 		LoginDevPasswordSecretEnv  = 'LOGIN_DEV_PASSWORD_SHARED_SECRET'
 		LoginDevPasswordPrefixes   = @('robot_', 'dev_')
+		# login 第三方登录防误关闸(Get-LoginAuthProviderLiveState)读线上现状用的三个名字:login 的 ConfigMap 与其中的配置键
+		# (k8s_deploy.ps1 $script:GoSvcInfo.login 的 ConfigMap / ConfigFile)、微信 AppSecret 的 Secret(k8s_deploy.ps1
+		# $script:LoginOAuthSecretName)。k8s_zone_rollback.ps1 第 0 步只能经这里取值;与 k8s_deploy.ps1 那两处的逐字相等由
+		# k8s_login_auth_provider_guard.tests.ps1 钉住。
+		LoginConfigMapName         = 'go-svc-login-config'
+		LoginConfigMapKey          = 'login.yaml'
+		LoginOAuthSecretName       = 'login-oauth'
 		# C++ client_endpoint.h kEnvSource / kEnvHost / kEnvPort / kEnvRequired(D79)。
 		ClientEndpointSourceEnv    = 'CLIENT_ENDPOINT_SOURCE'
 		ClientEndpointHostEnv      = 'CLIENT_ENDPOINT_HOST'
@@ -2200,4 +2213,283 @@ function Remove-StaleGateOrdinalServices {
 	Write-Warning "[client-entry] gate replicas=$Replicas; deleting excess per-ordinal Services: $($stale -join ', ') (namespace=$Namespace)"
 	Invoke-ClientEntryKubectl -KubectlArgs (@('delete') + $stale + @('-n', $Namespace, '--ignore-not-found')) `
 		-KubeContext $KubeContext -KubeConfig $KubeConfig
+}
+
+# ─────────────────────────────────────────────────────────────────
+# 9. login 第三方登录(微信 / QQ)的防误关闸:线上现状 vs 本次参数
+# ─────────────────────────────────────────────────────────────────
+#
+# k8s_deploy.ps1 的 -LoginWeChatAppId / -LoginWeChatEndpoint / -LoginWeChatAllowOpenId / -LoginQQAppId / -LoginQQEndpoint /
+# -LoginQQAllowOpenId 不粘滞:漏传就按「没开」渲染 login ConfigMap,上次开着的 provider 随新 Pod 关闭,微信的 Secret login-oauth
+# 被删掉;漏传 Endpoint 把沙箱改连生产地址,漏传 AllowOpenId 把 RequireUnionId 翻回 true。apply 不报错,玩家却登不上。
+# 本节给两个调用方共用同一份判据:k8s_deploy.ps1 Assert-LoginAuthProviderClusterState(写操作之前)与
+# k8s_zone_rollback.ps1 第 0 步(Step 1 删 namespace 之前;删完以后 k8s_deploy.ps1 在 Step 6 面对的是空 namespace,一条都触发不了)。
+
+# 内部辅助:login.yaml 里一个块映射值的标量 → 字符串;认不出返回 $null。只认生成器会写的形状:双引号(内部不含 \ 与 ")、
+# 单引号(内部不含 ')、裸标量(不以引号 / # 开头),都可带「空白 + #」的行尾注释;冒号后什么都没有 = 空串(YAML null)。
+# 带转义的引号串宁可判不出,也不猜它的值(调用方按 fail-closed 处理)。
+function ConvertFrom-ClientEntryYamlScalar {
+	param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Raw)
+
+	$text = $Raw.Trim()
+	if ($text -eq '' -or $text -cmatch '^#') { return '' }
+	if ($text -cmatch '^"(?<v>[^"\\]*)"(?:[ \t]+#.*)?\z') { return $Matches['v'] }
+	if ($text -cmatch "^'(?<v>[^']*)'(?:[ \t]+#.*)?\z") { return $Matches['v'] }
+	if ($text -cmatch '^(?<v>[^"''#][^\t]*?)(?:[ \t]+#.*)?\z') { return $Matches['v'].Trim() }
+	return $null
+}
+
+<#
+.SYNOPSIS
+	从 login.yaml 文本里读出顶层 AuthProviders 段(形状同 k8s_deploy.ps1 New-LoginAuthProvidersYaml),供防误关闸比对。纯函数。
+
+.DESCRIPTION
+	只认生成器写出的块映射:顶格 `AuthProviders:`,两格缩进的 provider 名,四格缩进的 `键: 值`;空行与整行注释跳过,
+	遇到下一个顶格键结束。login 读配置时键名不区分大小写(go-zero conf 先把键转小写),所以顶格键按不区分大小写、可带引号找:
+	`authProviders:`、`"AuthProviders":` 之类在 login 里照样生效,写法又不是生成器的,一律记进 Errors(判不出),不当成没开。
+	返回 { Present; Providers; Errors }:
+	  - Present:有没有顶格 AuthProviders 键(任何大小写 / 引号写法)。
+	  - Providers:ordered,provider 名按原样保存、按不区分大小写比较(与 go-zero 一致;只差大小写的两个名字算重复)
+	    → { AppId; Endpoint; RequireUnionId; OtherKeys }。
+	    RequireUnionId 缺省 $true(与 login 的缺省一致);AppSecretEnv 是生成器常量,读到也不参与比对;
+	    其余键名进 OtherKeys(手工改过 ConfigMap 才会有,本次部署会丢掉它们)。
+	  - Errors:认不出的形状(同一行带值 / flow 写法、制表符缩进、重复的 AuthProviders / provider / 键、不在 provider 下的键、
+	    值认不出、RequireUnionId 不是裸 true / false)。非空时调用方必须当作「判不出」(fail-closed),不能当作没开第三方登录。
+	Errors 只写行号与键名,不回显值。
+#>
+function ConvertFrom-LoginAuthProvidersYaml {
+	param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$LoginYaml)
+
+	$providers = [ordered]@{}
+	$errors = [System.Collections.Generic.List[string]]::new()
+	$lines = @((ConvertTo-ClientEntryLf -Text $LoginYaml) -split "`n")
+	$headerIndexes = @(for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match '^["'']?AuthProviders["'']?[ \t]*:') { $i } })
+	if ($headerIndexes.Count -eq 0) {
+		return [pscustomobject]@{ Present = $false; Providers = $providers; Errors = [string[]]@() }
+	}
+	if ($headerIndexes.Count -gt 1) {
+		$errors.Add("顶格 AuthProviders 出现 $($headerIndexes.Count) 次")
+	}
+	foreach ($headerIndex in $headerIndexes) {
+		if ($lines[$headerIndex] -cnotmatch '^AuthProviders[ \t]*:') {
+			$errors.Add("第 $($headerIndex + 1) 行:顶格键 AuthProviders 的大小写或引号不是生成器的写法(login 读配置不区分大小写,照样生效)")
+		}
+	}
+	if ($lines[$headerIndexes[0]] -notmatch '^["'']?AuthProviders["'']?[ \t]*:[ \t]*(#.*)?\z') {
+		$errors.Add("第 $($headerIndexes[0] + 1) 行:AuthProviders 不是块映射(同一行带了值或 flow 写法)")
+	}
+
+	$current = $null
+	$currentName = ''
+	$seenKeys = $null
+	for ($i = $headerIndexes[0] + 1; $i -lt $lines.Count; $i++) {
+		$line = $lines[$i].TrimEnd("`r")
+		$lineNo = $i + 1
+		if ($line -cmatch '^[ \t]*(#.*)?\z') { continue }
+		if ($line -cmatch '^[^ \t]') { break }
+		if ($line -cmatch '^ *\t') {
+			$errors.Add("第 $lineNo 行:制表符缩进")
+			continue
+		}
+		if ($line -cmatch '^  (?<name>[A-Za-z0-9_]+)[ \t]*:[ \t]*(#.*)?\z') {
+			$currentName = $Matches['name']
+			if ($providers.Contains($currentName)) {
+				$errors.Add("第 $lineNo 行:AuthProviders.$currentName 出现多次")
+				$current = $null
+				continue
+			}
+			$current = [pscustomobject]@{ AppId = ''; Endpoint = ''; RequireUnionId = $true; OtherKeys = [System.Collections.Generic.List[string]]::new() }
+			$providers[$currentName] = $current
+			$seenKeys = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+			continue
+		}
+		if ($line -cmatch '^    (?<key>[A-Za-z0-9_]+)[ \t]*:(?<raw>.*)\z') {
+			$key = $Matches['key']
+			$raw = $Matches['raw']
+			if ($null -eq $current) {
+				$errors.Add("第 $lineNo 行:键 $key 不在任何可识别的 provider 下")
+				continue
+			}
+			if (-not $seenKeys.Add($key)) {
+				$errors.Add("第 $lineNo 行:AuthProviders.$currentName.$key 出现多次")
+				continue
+			}
+			$value = ConvertFrom-ClientEntryYamlScalar -Raw $raw
+			if ($null -eq $value) {
+				$errors.Add("第 $lineNo 行:AuthProviders.$currentName.$key 的值认不出(带转义的引号串、跨行或 flow 写法)")
+				continue
+			}
+			switch -CaseSensitive ($key) {
+				'AppId' { $current.AppId = $value }
+				'Endpoint' { $current.Endpoint = $value }
+				'AppSecretEnv' { }
+				'RequireUnionId' {
+					# 只认裸 true / false(YAML 1.2 core 的三种大小写写法);带引号就是字符串,login 解析 bool 时拒启,这里判不出。
+					if ($raw.Trim() -cmatch '^(?<b>true|True|TRUE|false|False|FALSE)(?:[ \t]+#.*)?\z') {
+						$current.RequireUnionId = ($Matches['b'] -ieq 'true')
+					}
+					else {
+						$errors.Add("第 $lineNo 行:AuthProviders.$currentName.RequireUnionId 不是裸 true / false")
+					}
+				}
+				default { $current.OtherKeys.Add($key) }
+			}
+			continue
+		}
+		$errors.Add("第 $lineNo 行:AuthProviders 段里的形状认不出(只认两格缩进的 provider 名与四格缩进的键)")
+	}
+	return [pscustomobject]@{ Present = $true; Providers = $providers; Errors = [string[]]$errors.ToArray() }
+}
+
+<#
+.SYNOPSIS
+	login 第三方登录配置「线上现状 vs 本次将渲染的」差异。纯函数,返回 { Drifts = string[]; KeepArgs = string }。
+
+.DESCRIPTION
+	-Live 是 ConvertFrom-LoginAuthProvidersYaml 的结果,-OAuthSecretPresent 是 Secret login-oauth 在不在;其余参数是本次的
+	六个 -Login* 取值(形状已由 k8s_deploy.ps1 Get-LoginAuthProviderParamErrors 校验过,这里不再校验)。判据:
+	  - 线上没有、本次新开的 provider:不算差异(开启是显式的)。
+	  - 线上有、本次没给 AppId:关闭(WeChat 还会删掉 Secret login-oauth)。
+	  - 两边都有:AppId / Endpoint / RequireUnionId 任一不同;线上有生成器不写的键(OtherKeys,本次会丢)。
+	  - 线上有 WeChat / QQ 之外的 provider:生成器不生成,本次会丢。
+	  - Secret 在、ConfigMap 里却没有 AuthProviders.WeChat、本次也不开微信:会删掉 Secret。像是上次部署中途失败的残留,
+	    也算一项差异,让人核对后再决定。
+	  - Live.Errors 非空:判不出,整体算一项差异(fail-closed),其余比对照常做。
+	KeepArgs:按线上现状「要保持就照传」的参数串(只含 WeChat / QQ;线上两者都没有时为空串)。值只在落进安全字符集时回显
+	(AppId 为 [A-Za-z0-9_.-];Endpoint 为 http(s)://主机[:端口][/路径],与 k8s_deploy.ps1 参数门禁同一形状),否则写 <见 ConfigMap>,
+	不把手改进去的任意文本打进日志,也不让人照抄形状不对的值。只比字符集与形状:端口范围(1–65535)与「非 dev 档不收 http://」
+	这两项不在这里复查,照抄后由下一次部署的参数门禁(Get-LoginAuthProviderParamErrors)在写操作之前报出。
+	文本里不会有密钥:本函数拿不到 Secret 的值。「确认要改」的开关名由调用方拼在结尾。
+#>
+function Get-LoginAuthProviderDrift {
+	param(
+		[Parameter(Mandatory = $true)]$Live,
+		[Parameter(Mandatory = $true)][bool]$OAuthSecretPresent,
+		[AllowEmptyString()][string]$WeChatAppId = '',
+		[AllowEmptyString()][string]$WeChatEndpoint = '',
+		[bool]$WeChatAllowOpenId = $false,
+		[AllowEmptyString()][string]$QQAppId = '',
+		[AllowEmptyString()][string]$QQEndpoint = '',
+		[bool]$QQAllowOpenId = $false
+	)
+
+	$contract = Get-ClientEntryContract
+	$secretName = $contract.LoginOAuthSecretName
+	$drifts = [System.Collections.Generic.List[string]]::new()
+	$keepArgs = [System.Collections.Generic.List[string]]::new()
+	# Providers 是解析结果里的 [ordered] 表,也可能是存档(k8s_zone_rollback.ps1 的 entry-state.json)经 JSON 往返后的 pscustomobject:
+	# 取值一律经 Get-ClientEntryMember(两者都不区分大小写),名字表按两种形状分别列。
+	$liveProviders = Get-ClientEntryMember -Object $Live -Path 'Providers'
+	$liveProviderNames = @()
+	if ($liveProviders -is [System.Collections.IDictionary]) { $liveProviderNames = @($liveProviders.Keys) }
+	elseif ($null -ne $liveProviders) { $liveProviderNames = @($liveProviders.PSObject.Properties | ForEach-Object { $_.Name }) }
+	$liveErrors = @(@(Get-ClientEntryMember -Object $Live -Path 'Errors') | Where-Object { -not [string]::IsNullOrEmpty($_) })
+	if (@($liveErrors).Count -gt 0) {
+		$drifts.Add("线上 login ConfigMap 的 AuthProviders 段认不出($(@($liveErrors) -join ';')),判不出本次会不会关掉或改掉第三方登录")
+	}
+
+	$wanted = @(
+		[pscustomobject]@{ Name = 'WeChat'; Param = '-LoginWeChatAppId'; EndpointParam = '-LoginWeChatEndpoint'; AllowParam = '-LoginWeChatAllowOpenId'; AppId = $WeChatAppId; Endpoint = $WeChatEndpoint; AllowOpenId = $WeChatAllowOpenId }
+		[pscustomobject]@{ Name = 'QQ'; Param = '-LoginQQAppId'; EndpointParam = '-LoginQQEndpoint'; AllowParam = '-LoginQQAllowOpenId'; AppId = $QQAppId; Endpoint = $QQEndpoint; AllowOpenId = $QQAllowOpenId }
+	)
+	foreach ($w in $wanted) {
+		$live = Get-ClientEntryMember -Object $liveProviders -Path $w.Name
+		if ($null -eq $live) { continue }
+
+		$liveAppId = [string](Get-ClientEntryMember -Object $live -Path 'AppId')
+		$liveEndpoint = [string](Get-ClientEntryMember -Object $live -Path 'Endpoint')
+		# 缺这个成员按 login 的缺省 true 算([bool]$null 是 $false,不能直接转)。
+		$liveRequireUnionIdRaw = Get-ClientEntryMember -Object $live -Path 'RequireUnionId'
+		$liveRequireUnionId = if ($null -eq $liveRequireUnionIdRaw) { $true } else { [bool]$liveRequireUnionIdRaw }
+		$liveOtherKeys = @(@(Get-ClientEntryMember -Object $live -Path 'OtherKeys') | Where-Object { -not [string]::IsNullOrEmpty($_) })
+
+		$shownAppId = if ($liveAppId -cmatch '^[A-Za-z0-9_.-]+\z') { $liveAppId } else { '<见 ConfigMap>' }
+		$keepArgs.Add("$($w.Param) $shownAppId")
+		if ($liveEndpoint -ne '') {
+			# 白名单与 k8s_deploy.ps1 Get-LoginAuthProviderParamErrors 的 Endpoint 形状同一口径(只用于决定回显与否):照传串要能原样
+			# 粘贴;形状之外的(含 shell 元字符、用户信息、查询串)一律不回显。端口范围与档位对 http:// 的限制不在这里复查(见函数说明)。
+			$shownEndpoint = if ($liveEndpoint -cmatch '^https?://[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?(?::[0-9]{1,5})?(?:/[A-Za-z0-9._~%/-]*)?\z') { $liveEndpoint } else { '<见 ConfigMap>' }
+			$keepArgs.Add("$($w.EndpointParam) $shownEndpoint")
+		}
+		if (-not $liveRequireUnionId) { $keepArgs.Add($w.AllowParam) }
+
+		if ([string]::IsNullOrEmpty($w.AppId)) {
+			$tail = if ($w.Name -ceq 'WeChat') { ",并删除 Secret $secretName" } else { '' }
+			$drifts.Add("线上已开 AuthProviders.$($w.Name),本次没给 $($w.Param):部署后 $($w.Name) 登录随新 Pod 关闭$tail")
+			continue
+		}
+		if ($liveAppId -cne $w.AppId) {
+			$drifts.Add("AuthProviders.$($w.Name).AppId 与线上不同(本次 $($w.Param) 换了应用号)")
+		}
+		if ($liveEndpoint -cne $w.Endpoint) {
+			$change = if ($w.Endpoint -eq '') { '线上指向自定义 Endpoint(沙箱),本次没给 ' + $w.EndpointParam + ' 会改连生产地址' }
+			elseif ($liveEndpoint -eq '') { '线上走生产地址,本次 ' + $w.EndpointParam + ' 会改连自定义 Endpoint' }
+			else { '本次 ' + $w.EndpointParam + ' 与线上的自定义 Endpoint 不同' }
+			$drifts.Add("AuthProviders.$($w.Name).Endpoint:$change")
+		}
+		$wantRequireUnionId = -not $w.AllowOpenId
+		if ($liveRequireUnionId -ne $wantRequireUnionId) {
+			$change = if ($wantRequireUnionId) { "线上 RequireUnionId: false(按 openid 建账号),本次没给 $($w.AllowParam) 会翻回 true,拿不到 unionid 的玩家登录失败" }
+			else { "线上 RequireUnionId 为 true,本次 $($w.AllowParam) 会改成 false(以后接入 unionid 会把同一玩家分裂成两个账号)" }
+			$drifts.Add("AuthProviders.$($w.Name).RequireUnionId:$change")
+		}
+		if (@($liveOtherKeys).Count -gt 0) {
+			$drifts.Add("线上 AuthProviders.$($w.Name) 有生成器不写的键($(@($liveOtherKeys) -join ', ')),本次部署会丢掉")
+		}
+	}
+
+	# 名字比较不区分大小写,与上面经 Get-ClientEntryMember 按名字取值的口径一致。
+	foreach ($name in $liveProviderNames) {
+		if ($name -in @('WeChat', 'QQ')) { continue }
+		$drifts.Add("线上有生成器不生成的 AuthProviders.$name,本次部署会丢掉")
+	}
+
+	if ($OAuthSecretPresent -and [string]::IsNullOrEmpty($WeChatAppId) -and $null -eq (Get-ClientEntryMember -Object $liveProviders -Path 'WeChat')) {
+		$drifts.Add("namespace 里有 Secret $secretName(微信 AppSecret),login ConfigMap 却没有 AuthProviders.WeChat(像是上次部署中途失败的残留),本次没给 -LoginWeChatAppId 会删掉它")
+	}
+
+	return [pscustomobject]@{ Drifts = [string[]]$drifts.ToArray(); KeepArgs = ($keepArgs -join ' ') }
+}
+
+<#
+.SYNOPSIS
+	读一个 zone namespace 里 login 第三方登录配置的线上现状。只读,返回 { ConfigMapPresent; Live; OAuthSecretPresent }。
+
+.DESCRIPTION
+	名字一律取自 Get-ClientEntryContract(LoginConfigMapName / LoginConfigMapKey / LoginOAuthSecretName)。
+	ConfigMap 不存在 = 线上没有 login 配置(首次部署,或 namespace 已删):Live.Present 为 $false。ConfigMap 在却没有配置键、
+	或返回不是 JSON:记进 Live.Errors(判不出,调用方 fail-closed)。Secret 只用 `-o name` 探测存在性,本进程不读它的值。
+	任何 kubectl 失败都 throw(集群不可达、Forbidden):查不到不等于没开。不支持 DryRun,调用方在 DryRun 下不调用。
+#>
+function Get-LoginAuthProviderLiveState {
+	param(
+		[Parameter(Mandatory = $true)][string]$Namespace,
+		[Parameter(Mandatory = $true)][AllowEmptyString()][string]$KubeContext,
+		[Parameter(Mandatory = $true)][AllowEmptyString()][string]$KubeConfig
+	)
+
+	$contract = Get-ClientEntryContract
+	$configMap = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'configmap', $contract.LoginConfigMapName, '-n', $Namespace, '--ignore-not-found', '-o', 'json') `
+		-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput
+	$secret = Invoke-ClientEntryKubectl -KubectlArgs @('get', 'secret', $contract.LoginOAuthSecretName, '-n', $Namespace, '--ignore-not-found', '-o', 'name') `
+		-KubeContext $KubeContext -KubeConfig $KubeConfig -CaptureOutput
+	$secretPresent = -not [string]::IsNullOrWhiteSpace($secret.Stdout)
+
+	if ([string]::IsNullOrWhiteSpace($configMap.Stdout)) {
+		return [pscustomobject]@{ ConfigMapPresent = $false; Live = (ConvertFrom-LoginAuthProvidersYaml -LoginYaml ''); OAuthSecretPresent = $secretPresent }
+	}
+	$unreadable = {
+		param([string]$Reason)
+		[pscustomobject]@{ Present = $true; Providers = [ordered]@{}; Errors = [string[]]@($Reason) }
+	}
+	$document = $null
+	try { $document = $configMap.Stdout | ConvertFrom-Json -ErrorAction Stop }
+	catch {
+		return [pscustomobject]@{ ConfigMapPresent = $true; Live = (& $unreadable "configmap/$($contract.LoginConfigMapName) 的返回不是 JSON"); OAuthSecretPresent = $secretPresent }
+	}
+	$loginYaml = Get-ClientEntryMember -Object $document -Path 'data', $contract.LoginConfigMapKey
+	if ($null -eq $loginYaml) {
+		return [pscustomobject]@{ ConfigMapPresent = $true; Live = (& $unreadable "configmap/$($contract.LoginConfigMapName) 没有 data.$($contract.LoginConfigMapKey)"); OAuthSecretPresent = $secretPresent }
+	}
+	return [pscustomobject]@{ ConfigMapPresent = $true; Live = (ConvertFrom-LoginAuthProvidersYaml -LoginYaml ([string]$loginYaml)); OAuthSecretPresent = $secretPresent }
 }

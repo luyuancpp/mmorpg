@@ -13,4 +13,4 @@ const std::unordered_map<uint64_t, uint32_t> RewardBitMap{
     { 7, 6 },
 };
 
-constexpr uint32_t kRewardMaxBitIndex = 7;
+constexpr uint32_t kRewardBitmapCapacity = 7;

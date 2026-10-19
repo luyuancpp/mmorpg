@@ -146,7 +146,7 @@ func TestSignRedirectToGate_TargetAddressIsSelectResult(t *testing.T) {
 	const playerID = uint64(9_000_001)
 	const targetZone = testRedirectZoneID
 
-	info, err := signRedirectToGate([]*commonpb.NodeInfo{busy, idle}, true, testRedirectSecret, targetZone, playerID, now)
+	info, err := signRedirectToGate([]*commonpb.NodeInfo{busy, idle}, nil, true, testRedirectSecret, targetZone, playerID, now, firstDraws)
 
 	require.NoError(t, err)
 	wantHost, wantPort, ok := clientendpoint.Select(
@@ -172,7 +172,7 @@ func TestSignRedirectToGate_FallbackAddressWhenNotRequired(t *testing.T) {
 	now := time.Unix(1_800_000_000, 0)
 	n := testGateNode(1, 100, 0, testEndpoint("10.0.0.1", 18000), nil)
 
-	info, err := signRedirectToGate([]*commonpb.NodeInfo{n}, false, testRedirectSecret, testRedirectZoneID, 1, now)
+	info, err := signRedirectToGate([]*commonpb.NodeInfo{n}, nil, false, testRedirectSecret, testRedirectZoneID, 1, now, firstDraws)
 
 	require.NoError(t, err)
 	assert.Equal(t, "10.0.0.1", info.GetTargetGateIp(), "podip 模式行为与改动前一致:下发 endpoint")
@@ -186,7 +186,7 @@ func TestSignRedirectToGate_NeverPicksStaleRecordOfCrashedGate(t *testing.T) {
 	stale := testGateNode(1, 100, 0, testEndpoint("10.0.0.1", 18000), testEndpoint("127.0.0.1", 30000))
 	fresh := testGateNode(3, 200, 40, testEndpoint("10.0.0.9", 18000), testEndpoint("127.0.0.1", 30000))
 
-	info, err := signRedirectToGate([]*commonpb.NodeInfo{stale, fresh}, true, testRedirectSecret, testRedirectZoneID, 1, now)
+	info, err := signRedirectToGate([]*commonpb.NodeInfo{stale, fresh}, nil, true, testRedirectSecret, testRedirectZoneID, 1, now, firstDraws)
 
 	require.NoError(t, err)
 	payload := &commonpb.GateTokenPayload{}
@@ -203,14 +203,14 @@ func TestSignRedirectToGate_FailsWhenNoGateHasRequiredClientEndpoint(t *testing.
 		testGateNode(2, 100, 0, testEndpoint("10.0.0.2", 18000), testEndpoint("127.0.0.1", 0)),
 	}
 
-	info, err := signRedirectToGate(nodes, true, testRedirectSecret, testRedirectZoneID, 1, now)
+	info, err := signRedirectToGate(nodes, nil, true, testRedirectSecret, testRedirectZoneID, 1, now, firstDraws)
 
 	require.Error(t, err, "require=true 且没有任何可下发地址时必须失败,不得回落 PodIP")
 	assert.Nil(t, info)
 }
 
 func TestSignRedirectToGate_FailsWithoutGates(t *testing.T) {
-	info, err := signRedirectToGate(nil, false, testRedirectSecret, testRedirectZoneID, 1, time.Unix(1_800_000_000, 0))
+	info, err := signRedirectToGate(nil, nil, false, testRedirectSecret, testRedirectZoneID, 1, time.Unix(1_800_000_000, 0), firstDraws)
 
 	require.Error(t, err)
 	assert.Nil(t, info)
@@ -261,4 +261,74 @@ func TestDecodeGateNodes_SkipsMalformedAndEndpointlessValues(t *testing.T) {
 
 	require.Len(t, nodes, 1, "格式错误与缺 endpoint 的值逐条跳过,不连累同批的合法值")
 	assert.Equal(t, uint32(7), nodes[0].GetNodeId())
+}
+
+// firstDraws 是固定的随机源:每次都抽第一个可选下标。两台候选时随机二选一恰好比较这两台,结果与取最小相同。
+func firstDraws(int) int { return 0 }
+
+// seqDraws 按给定序列依次返回随机数,把随机二选一的两次抽样钉死。
+func seqDraws(t *testing.T, seq ...int) func(int) int {
+	t.Helper()
+	next := 0
+	return func(n int) int {
+		t.Helper()
+		require.Less(t, next, len(seq), "intn called more times than the sequence provides")
+		v := seq[next]
+		next++
+		require.True(t, v >= 0 && v < n, "sequence value %d out of range [0,%d)", v, n)
+		return v
+	}
+}
+
+func redirectGateID(t *testing.T, nodes []*commonpb.NodeInfo, draining map[uint32]bool, intn func(int) int) uint32 {
+	t.Helper()
+	info, err := signRedirectToGate(nodes, draining, true, testRedirectSecret, testRedirectZoneID, 1,
+		time.Unix(1_800_000_000, 0), intn)
+	require.NoError(t, err)
+	payload := &commonpb.GateTokenPayload{}
+	require.NoError(t, proto.Unmarshal(info.GetTokenPayload(), payload))
+	return payload.GetGateNodeId()
+}
+
+// 回归(2026-10-18):跨 zone 重定向不再分到正在排空的 gate,即使它人最少。修复前这里签给 2 号。
+func TestSignRedirectToGate_SkipsDrainingGate(t *testing.T) {
+	busy := testGateNode(1, 100, 80, testEndpoint("10.0.0.1", 18000), testEndpoint("127.0.0.1", 30000))
+	idle := testGateNode(2, 100, 5, testEndpoint("10.0.0.2", 18000), testEndpoint("127.0.0.1", 30001))
+
+	got := redirectGateID(t, []*commonpb.NodeInfo{busy, idle}, map[uint32]bool{2: true}, firstDraws)
+
+	assert.Equal(t, uint32(1), got, "排空中的 gate 不接新玩家")
+}
+
+// 整个 zone 都被标了排空:忽略标记照常重定向(与 login 的 FilterDrainingGates 同语义),不让玩家无处可去。
+func TestSignRedirectToGate_AllDrainingIgnoresMarks(t *testing.T) {
+	busy := testGateNode(1, 100, 80, testEndpoint("10.0.0.1", 18000), testEndpoint("127.0.0.1", 30000))
+	idle := testGateNode(2, 100, 5, testEndpoint("10.0.0.2", 18000), testEndpoint("127.0.0.1", 30001))
+
+	got := redirectGateID(t, []*commonpb.NodeInfo{busy, idle}, map[uint32]bool{1: true, 2: true}, firstDraws)
+
+	assert.Equal(t, uint32(2), got)
+}
+
+// 排空过滤在按地址去重之后:排空标记打在活着的新 gate 上,先过滤会让同地址的陈旧影子顶上来;
+// 去重后只剩新 gate,它被标排空、又是唯一候选,于是按「全部排空」原样保留,票据仍绑新 gate。
+func TestSignRedirectToGate_DrainFilterRunsAfterDedupe(t *testing.T) {
+	stale := testGateNode(1, 100, 0, testEndpoint("10.0.0.1", 18000), testEndpoint("127.0.0.1", 30000))
+	fresh := testGateNode(3, 200, 40, testEndpoint("10.0.0.9", 18000), testEndpoint("127.0.0.1", 30000))
+
+	got := redirectGateID(t, []*commonpb.NodeInfo{stale, fresh}, map[uint32]bool{3: true}, firstDraws)
+
+	assert.Equal(t, uint32(3), got, "不得因为排空过滤让已被去重的陈旧记录复活")
+}
+
+// 三台同人数时由随机源决定落点(随机二选一,同人数取第一次抽中的),不再确定性地全落一台。
+func TestSignRedirectToGate_TwoRandomChoicesAcrossGates(t *testing.T) {
+	nodes := []*commonpb.NodeInfo{
+		testGateNode(1, 100, 0, testEndpoint("10.0.0.1", 18000), testEndpoint("127.0.0.1", 30000)),
+		testGateNode(2, 100, 0, testEndpoint("10.0.0.2", 18000), testEndpoint("127.0.0.1", 30001)),
+		testGateNode(3, 100, 0, testEndpoint("10.0.0.3", 18000), testEndpoint("127.0.0.1", 30002)),
+	}
+
+	assert.Equal(t, uint32(3), redirectGateID(t, nodes, nil, seqDraws(t, 2, 0)), "i=2、j=0 同人数:取第一次抽中的 3 号")
+	assert.Equal(t, uint32(1), redirectGateID(t, nodes, nil, seqDraws(t, 0, 1)), "i=0、j=1 顺延到 2 同人数:取 1 号")
 }

@@ -154,6 +154,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [db_write_behind_dirty_flag_race.md](design/db_write_behind_dirty_flag_race.md) — DB Write-Behind 脏标记方案竞态分析 · [EN](design/db_write_behind_dirty_flag_race_en.md) · [中文](design/db_write_behind_dirty_flag_race_zh.md)
 - [db_zone_isolation.md](design/db_zone_isolation.md) — DB Zone Isolation (2026-04-11)
 - [global-data-layer-tidb-decision.md](design/global-data-layer-tidb-decision.md) — 全区全服数据层 + TiDB 架构决策
+- [mixed-version-persist-field-protection.md](design/mixed-version-persist-field-protection.md) — 新旧版本混跑时的玩家持久字段保护：存盘嫁接未知字段、覆盖世代校验、go/db 按写方已知列写（设计稿，未落码）
 - [new-player-first-enter-no-cold-read.md](design/new-player-first-enter-no-cold-read.md) — 新号首次进场免冷读:建角时写入 PlayerAllData 种子
 - [player-async-save-loss-windows.md](design/player-async-save-loss-windows.md) — 玩家异步存盘的丢失窗口（置脏 / 快照跳过 / 重试耗尽）
 - [player-inbox-service.md](design/player-inbox-service.md) — 玩家持久收件箱服务（player_inbox）设计
@@ -181,6 +182,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [server_merge_design.md](design/server_merge_design.md) — 合服(Server Merge)设计文档
 - [single_player_rollback.md](design/single_player_rollback.md) — Single-Player Rollback (单人回档) — MMO/MOBA Microservice Architecture · [EN](design/single_player_rollback_en.md) · [中文](design/single_player_rollback_zh.md)
 - [zone_data_rollback.md](design/zone_data_rollback.md) — Zone 数据回档方案 · [EN](design/zone_data_rollback_en.md) · [中文](design/zone_data_rollback_zh.md)
+- [zone_data_rollback_discard_tool.md](design/zone_data_rollback_discard_tool.md) — 整 zone 回档清理工具 zone_rollback_discard 设计（R9）
 
 #### ID、节点身份与寻址
 
@@ -281,7 +283,7 @@ ECS 改造交接见 [总索引](handoff/ecs-refactor/README.md);当前修正与�
 - [login-queue-stress-runbook.md](ops/login-queue-stress-runbook.md) — 登录排队压测 — 判读清单
 - [merge-zone-runbook.md](ops/merge-zone-runbook.md) — Merge-Zone Runbook(合服操作手册)
 - [mysql-backup-pitr-runbook.md](ops/mysql-backup-pitr-runbook.md) — MySQL Backup & PITR Runbook
-- [online-debug-data-fetch.md](ops/online-debug-data-fetch.md) — 在线调试数据读取
+- [online-debug-data-fetch.md](ops/online-debug-data-fetch.md) — 线上玩家数据拉取(player-bundle)与本地复现导入
 - [player-inbox-runbook.md](ops/player-inbox-runbook.md) — 玩家持久收件箱(player_inbox)运维手册
 - [release-checklist.md](ops/release-checklist.md) — 服务端发布清单
 - [run-directory.md](ops/run-directory.md) — `run/` — Runtime Artifacts

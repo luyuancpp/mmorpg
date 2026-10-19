@@ -2,7 +2,7 @@
 
 // 出站 gRPC 调用的结果怎样落到客户端 —— gate 唯一的一份事实源。
 //
-// 直连模式的每次调用回调(client_session_handler.cpp 的 OnDirectGrpcCallDone)与
+// 直连模式的每次调用回调(client_session_handler.cpp 的 ForwardDirectGrpcCallResult)与
 // 路由模式手写的 Forward 回调(router_muduo_forward.cpp)都只调这里,所以两条出站路径对客户端的可见行为逐条相同,
 // 路由 lane 的保序认领(client_request_lane.h,docs/design/client-request-ordering.md §4.5)也对两者同样生效。
 // 第 3 批起两条路径底下都是 muduo_grpc 通道(docs/design/grpc-muduo-transport.md §8、§14)。
@@ -23,7 +23,7 @@ namespace gate_rpc_reply_bridge
 {
 
 // 成功桥。sessionDetails:路由模式是路由服在响应头里原值回显的会话;直连模式是发出时捕获的那份
-// (OnDirectGrpcCallDone)。本函数只用 session_id 与 gate_call_seq。
+// (ForwardDirectGrpcCallResult)。本函数只用 session_id 与 gate_call_seq。
 //   1. 路由 lane 的调用(gate_call_seq != 0)交给 lane 认领:核对代次与队头、恰好一次下发、放行下一条;
 //   2. 否则按 session_id 找会话:MessageContent 原样下发,其它响应类型按 gRpcMethodRegistry 反查 message_id 包一层;
 //      会话已不在、连接已释放就静默丢弃(断线通知的回包本来就没有会话可回)。

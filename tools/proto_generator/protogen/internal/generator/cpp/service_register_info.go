@@ -481,19 +481,19 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 		ClientMessageIdCases []string
 		MessageIdArraySize   int
 		EventIdArraySize     int
-		SenderFunctions      []string
+		SenderDeclarations   []string
 	}
 
 	var (
-		includes            []string
-		serviceInfoIncludes []string
-		initLines           []string
-		clientIdLines       []string
-		senderFunction      []string
-		includeSet          = make(map[string]struct{})
-		serviceIncludeSet   = make(map[string]struct{})
-		senderFunctionSet   = make(map[string]struct{})
-		clientIDSet         = make(map[string]struct{})
+		includes             []string
+		serviceInfoIncludes  []string
+		initLines            []string
+		clientIdLines        []string
+		senderDeclarations   []string
+		includeSet           = make(map[string]struct{})
+		serviceIncludeSet    = make(map[string]struct{})
+		senderDeclarationSet = make(map[string]struct{})
+		clientIDSet          = make(map[string]struct{})
 	)
 
 	// Step 1: Collect headers
@@ -547,7 +547,7 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 				NodeType:       nodeType,
 			}
 			if declaration, sender, ok := grpcSenderFor(method); ok {
-				senderFunction = appendUniqueString(senderFunction, senderFunctionSet, declaration)
+				senderDeclarations = appendUniqueString(senderDeclarations, senderDeclarationSet, declaration)
 				meta.SenderName = sender
 			}
 			initLines = append(initLines, rpcMethodMetaInitLines(meta)...)
@@ -567,7 +567,7 @@ func writeServiceInfoCppFile(wg *sync.WaitGroup) {
 		ClientMessageIdCases: clientIdLines,
 		MessageIdArraySize:   int(internal.MessageIdLen()),
 		EventIdArraySize:     int(EventIdLen()),
-		SenderFunctions:      senderFunction,
+		SenderDeclarations:   senderDeclarations,
 	}
 
 	if err := utils2.RenderTemplateToFile("internal/template/rpc_event_registry.cpp.tmpl", _config.Global.Paths.ServiceCppFile, tmplData); err != nil {

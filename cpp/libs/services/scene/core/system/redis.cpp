@@ -200,6 +200,15 @@ void RedisSystem::Initialize(muduo::net::EventLoop* loop)
             line += " credential_written=" + std::to_string(releaseFenceStats.credentialWritten);
             line += " credential_epoch_moved=" + std::to_string(releaseFenceStats.credentialEpochMoved);
             line += " credential_failed=" + std::to_string(releaseFenceStats.credentialFailed);
+            // 会话结束释放的登录身份判定(location-release-binding.md §13),追加在最后。binding_skip_newer_login /
+            // binding_skip_conflict 有增长时升 WARN(release_fence::BindingAlarming)。
+            for (std::size_t i = 0; i < releaseFenceStats.bindingDecisions.size(); ++i)
+            {
+                line += " binding_";
+                line += release_fence::kSessionEndedBindingNames[i];
+                line += '=';
+                line += std::to_string(releaseFenceStats.bindingDecisions[i]);
+            }
             if (releaseFenceStats.AlarmingIncreaseSince(lastReleaseFence))
             {
                 LOG_WARN << line;

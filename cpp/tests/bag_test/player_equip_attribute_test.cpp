@@ -1769,7 +1769,7 @@ TEST_F(PlayerEquipAttributeTest, ReloadFromTheDatabaseRecordRecomputesTheEquipme
 	const auto restored = tlsEcs.actorRegistry.create();
 	players.push_back(restored);
 	tlsEcs.actorRegistry.emplace<PlayerGuidComp>(restored, kPlayerIdBase + players.size());
-	PlayerAllDataMessageFieldsUnMarshal(restored, coldSnapshot);
+	PlayerAllDataMessageFieldsUnmarshal(restored, coldSnapshot);
 
 	const auto *bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
 	ASSERT_NE(nullptr, bags);
@@ -1813,7 +1813,7 @@ TEST_F(PlayerEquipAttributeTest, LegacyTopLevelBagReloadRecomputesTheEquipmentBo
 	const auto restored = tlsEcs.actorRegistry.create();
 	players.push_back(restored);
 	tlsEcs.actorRegistry.emplace<PlayerGuidComp>(restored, kPlayerIdBase + players.size());
-	PlayerAllDataMessageFieldsUnMarshal(restored, parsed);
+	PlayerAllDataMessageFieldsUnmarshal(restored, parsed);
 
 	const auto *bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
 	ASSERT_NE(nullptr, bags);
@@ -2549,7 +2549,7 @@ TEST_F(PlayerEquipAttributeTest, ReloadFromTheDatabaseRecordRecomputesEnhanceAnd
 	const auto restored = tlsEcs.actorRegistry.create();
 	players.push_back(restored);
 	tlsEcs.actorRegistry.emplace<PlayerGuidComp>(restored, kPlayerIdBase + players.size());
-	PlayerAllDataMessageFieldsUnMarshal(restored, coldSnapshot);
+	PlayerAllDataMessageFieldsUnmarshal(restored, coldSnapshot);
 
 	const auto *bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
 	ASSERT_NE(nullptr, bags);

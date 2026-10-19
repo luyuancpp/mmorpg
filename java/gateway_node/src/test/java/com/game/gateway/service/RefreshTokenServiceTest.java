@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
  *   <li>empty refresh_token short-circuits to 401 without hitting gRPC</li>
  *   <li>successful rpc → CODE_OK and all four token fields populated</li>
  *   <li>upstream error message → CODE_AUTH_REJECTED carrying the message</li>
+ *   <li>upstream tip that Tip.xlsx marks as fault → CODE_INTERNAL, message still {@code upstream_err=<tip>}</li>
  *   <li>UNAVAILABLE / DEADLINE_EXCEEDED → CODE_INTERNAL</li>
  *   <li>identity gRPC status (UNAUTHENTICATED / PERMISSION_DENIED) → CODE_AUTH_REJECTED with the status name</li>
  *   <li>other gRPC status (UNKNOWN / INTERNAL …) → CODE_INTERNAL with the status name</li>
@@ -99,6 +100,23 @@ class RefreshTokenServiceTest {
 
         assertEquals(RefreshTokenResponse.CODE_AUTH_REJECTED, rsp.getCode());
         assertEquals("refresh_token_not_found", rsp.getMessage());
+    }
+
+    /** login 回 Tip.xlsx 标了 fault 的码（例如读 Redis 失败）：refresh 令牌未必失效，回 500 而不是让客户端重走 OAuth。 */
+    @Test
+    void upstreamFaultTip_mapsToInternalAndKeepsTip() {
+        int tip = LoginServiceTest.faultCode("LoginRedisError");
+        LoginRpcClient.RefreshTokenResponseProto upstream = new LoginRpcClient.RefreshTokenResponseProto();
+        upstream.errorCode = tip;
+
+        when(rpc.refreshToken(any(LoginRpcClient.RefreshTokenRequestProto.class))).thenReturn(upstream);
+
+        RefreshTokenRequest req = new RefreshTokenRequest();
+        req.setRefreshToken("some-refresh");
+        RefreshTokenResponse rsp = service.refresh(req);
+
+        assertEquals(RefreshTokenResponse.CODE_INTERNAL, rsp.getCode());
+        assertEquals("upstream_err=" + tip, rsp.getMessage());
     }
 
     @Test

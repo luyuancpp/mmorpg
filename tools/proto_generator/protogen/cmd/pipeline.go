@@ -73,5 +73,4 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		}},
 	})
 	runner.RunTaskWithWG("prototools.SyncCppBuildProjects", prototools.SyncCppBuildProjects)
-	runner.RunTaskWithWG("prototools.RetireLegacyEventRegistries", prototools.RetireLegacyEventRegistries)
 }

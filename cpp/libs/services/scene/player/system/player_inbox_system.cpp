@@ -679,6 +679,70 @@ namespace
 		return true;
 	}
 
+	// 水位已过这一条、原结局已不在环里时报的 UNKNOWN 结局(设计 §7.7)。ApplyPending 与退出期入队共用,一条口径。
+	PlayerInboxDecision UnknownDecisionFor(const player_inbox::PlayerInboxItem &item)
+	{
+		PlayerInboxDecision unknown;
+		unknown.set_seq(item.seq());
+		unknown.set_outcome(static_cast<uint32_t>(player_inbox::PLAYER_INBOX_OUTCOME_UNKNOWN));
+		unknown.set_reason(0);
+		unknown.set_request_id(item.request_id());
+		unknown.set_msg_type(static_cast<uint32_t>(item.msg_type()));
+		return unknown;
+	}
+
+	// 退出期前置闸不过时,先把批首「账本里已有结局」的条目(回放 / UNKNOWN)放进确认队列,只丢掉从第一条需要执行的
+	// 条目起的剩余部分(评审 LC-2)。这类条目只报告账本里的事实、不执行任何效果,确认也不受前置闸限制(头文件契约);
+	// 跟着新条目一起丢掉的话,离开时的补发确认管不到它们,每次短会话都会再留一行已投递未确认。
+	// 只在退出期做:其他闸(战斗、冻结、交接)下丢掉的条目之后还会被重拉、照常回放。
+	// 账本缺失或已判坏时不分类(分类依据不可信),整批照旧丢弃。批内 seq 升序,遇到第一条需要执行的条目就停,
+	// 所以 ackQueue 仍严格升序;DEFER 续做的批首必是新条目,这里什么都不会入队。
+	void QueueDecidedPrefixOnExit(entt::entity player, uint64_t playerId, PlayerInboxDomainState &state)
+	{
+		const auto &registry = tlsEcs.actorRegistry;
+		if (registry.any_of<PlayerInboxLedgerInvalidComp>(player))
+		{
+			return;
+		}
+		const auto *ledger = registry.try_get<PlayerInboxLedgerComp>(player);
+		if (ledger == nullptr)
+		{
+			return;
+		}
+		std::size_t queued = 0;
+		for (; queued < state.pendingItems.size(); ++queued)
+		{
+			const auto &item = state.pendingItems[queued];
+			PlayerInboxDecision replayed;
+			const auto deliveryClass = player_inbox_rules::ClassifyDelivery(
+				player_inbox_rules::FindCursor(*ledger, state.domain), item.seq(), item.request_id(),
+				static_cast<uint32_t>(item.msg_type()), &replayed);
+			const auto action = player_inbox_rules::PlanItem(deliveryClass, static_cast<uint32_t>(item.directive()));
+			if (action == ItemAction::kReplay)
+			{
+				state.ackQueue.push_back(replayed);
+				continue;
+			}
+			if (action == ItemAction::kAckUnknown)
+			{
+				state.ackQueue.push_back(UnknownDecisionFor(item));
+				continue;
+			}
+			break;
+		}
+		if (queued == 0)
+		{
+			return;
+		}
+		LOG_INFO << "[PlayerInbox] metric=inbox_leave_ack result=decided_prefix_queued source=apply_gate_exiting"
+				 << " player_id=" << playerId << " domain=" << state.domain << " items=" << queued
+				 << " first_seq=" << state.pendingItems.front().seq()
+				 << " last_seq=" << state.pendingItems[queued - 1].seq()
+				 << "; entries already decided in the ledger are acknowledged instead of being dropped";
+		state.pendingItems.erase(state.pendingItems.begin(),
+								 state.pendingItems.begin() + static_cast<std::ptrdiff_t>(queued));
+	}
+
 	// ── 应用(设计 §7.6 第 3 步)────────────────────────────────────────────
 
 	// 按 seq 升序逐条处理 pendingItems。在同一个 loop 帧里写效果、推进账本、压入最近结局环;
@@ -696,9 +760,12 @@ namespace
 			// 闸不过就丢掉本地副本、下次重新拉(评审 L1),不在本地等闸再续做:等闸的这段时间里(冻结、交接、战斗都
 			// 可能很久)服务端可能给条目挂上 VOID,按旧副本续做会把已作废的处置照样执行并报 APPLIED。
 			// 代价只是服务端 delivery_count 多 +1。只有执行器 DEFER(闸已过、条目已开始处理)才保留本地续做。
-			// 退出期(kExiting)丢掉的这批多半再也拉不回来(玩家正在下线),留一行对账线索(评审 M4 的缺口)。
-			if (reason == PlayerInboxDeferReason::kExiting)
+			// 退出期丢掉的这批多半再也拉不回来(玩家正在下线):账本里已有结局的前缀先入确认队列(评审 LC-2),
+			// 其余留一行对账线索(评审 M4 的缺口)。按「是否挂着退出标记」判断,不按闸最终返回的原因:
+			// 冻结 / 交接与退出同时存在时闸先报 kFrozen / kHandoff,但玩家同样正在下线(评审 LC-1)。
+			if (tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player))
 			{
+				QueueDecidedPrefixOnExit(player, playerId, state);
 				LogDeliveredUndecided(playerId, state, "apply_gate_exiting");
 			}
 			if (DropPendingForRefetch(state))
@@ -739,13 +806,7 @@ namespace
 			if (action == ItemAction::kAckUnknown)
 			{
 				// 水位已过这一条、原结局已不在环里:只可能来自之前会话已落盘的水位,报 UNKNOWN(设计 §7.7)。
-				PlayerInboxDecision unknown;
-				unknown.set_seq(seq);
-				unknown.set_outcome(static_cast<uint32_t>(player_inbox::PLAYER_INBOX_OUTCOME_UNKNOWN));
-				unknown.set_reason(0);
-				unknown.set_request_id(requestId);
-				unknown.set_msg_type(msgType);
-				state.ackQueue.push_back(unknown);
+				state.ackQueue.push_back(UnknownDecisionFor(item));
 				LOG_WARN << "[PlayerInbox] Redelivered entry is below the ledger watermark but no longer in the recent ring;"
 						 << " acknowledging as UNKNOWN player_id=" << playerId << " domain=" << state.domain
 						 << " seq=" << seq << " request_id=" << requestId;
@@ -1152,6 +1213,13 @@ void PlayerInboxSystem::OnPlayerLeaving(entt::entity player)
 		if (state.phase == PlayerInboxPhase::kAcking)
 		{
 			// 这批的 Ack 已在途:服务端照样会处理它,不依赖实体还在;回包到达时按 player_id 找不到实体就丢弃。
+			// 万一它随后失败,失败回调找不到实体只打 DEBUG,服务端这批会停在"已投递未确认";留一行带 corr 的对账线索
+			// (评审 LC-3),值班可按 corr 对上 scene 日志,与真正卡住的行区分开。
+			LOG_INFO << "[PlayerInbox] metric=inbox_leave_ack result=ack_inflight player_id=" << playerId
+					 << " domain=" << state.domain << " corr=" << state.correlationId
+					 << " decisions=" << state.ackQueue.size()
+					 << "; if this Ack fails after the entity is gone, these entries stay delivered-but-unacknowledged"
+					 << " until the player next lands";
 			continue;
 		}
 		if (state.phase == PlayerInboxPhase::kApplying)
@@ -1518,8 +1586,13 @@ void PlayerInboxSystem::OnAckReply(uint64_t playerId, uint32_t domain, uint64_t 
 				 << " player_id=" << playerId << " domain=" << domain << " decisions=" << state->ackQueue.size();
 		state->ackQueue.clear();
 		FinishRound(*state, nowMs);
-		ScheduleRetry(*state, playerId, PlayerInboxDeferReason::kStaleOwner, player_inbox_rules::kStaleOwnerBackoffMs,
-					  nowMs);
+		// 已停用的域(停用前确认的是已定前缀)不再安排重试:FinishRound 已把 nextCheckMs 置 0,再排一次只会打出
+		// 「60 秒后重试」的 inbox_deferred,把永久停用伪装成暂时延后(评审 SM-1)。
+		if (!state->halted)
+		{
+			ScheduleRetry(*state, playerId, PlayerInboxDeferReason::kStaleOwner, player_inbox_rules::kStaleOwnerBackoffMs,
+						  nowMs);
+		}
 		return;
 	}
 	if (fence == player_inbox::PLAYER_INBOX_FENCE_EPOCH_REQUIRED || fence == player_inbox::PLAYER_INBOX_FENCE_EPOCH_AHEAD)

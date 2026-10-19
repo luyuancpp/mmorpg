@@ -221,14 +221,25 @@ kubectl --context "$KUBE_CONTEXT" --kubeconfig "$KUBE_CONFIG" -n "$SHADOW_NS" \
 
 合服失败 / 客服补单这种场景,只想从 PITR 影子库抽某玩家的几行,**不要替换整库**。
 
+> **2026-10-19 更正**:原示例没有 `--no-create-info`。mysqldump 默认带 `--opt`(含 `--add-drop-table`),
+> 导出的文件以 `DROP TABLE IF EXISTS` + `CREATE TABLE` 开头,照下面「在生产库 review 后再灌」执行会**清空生产 zone 库整张
+> `player_database`**。抽单玩家必须加 `--no-create-info --skip-add-drop-table`;`--single-transaction` 保证两张表同一快照,
+> `--hex-blob` 让 blob 列以十六进制出现、文件可审阅;两张玩家表要一起抽。
+>
+> 另外,灌回生产的旧行带着旧的行内围栏(`fence_owner_epoch` / `fence_save_seq`),与玩家当前的存盘屏障对不上,
+> login 冷加载会拒绝该玩家(「SQL 子表围栏尚未对齐父快照提交屏障」)。回灌生产不是本节能单独完成的操作,
+> 必须按 [db-write-fencing-mysql.md](../design/db-write-fencing-mysql.md) 的恢复流程处理屏障与归属计数器。
+> 只想在本地看或复现,用 [online-debug-data-fetch.md](online-debug-data-fetch.md) 的 player-bundle 导出 / 导入。
+
 ```bash
-# 在影子库上 dump 单玩家
+# 在影子库上 dump 单玩家(两张玩家表,同一快照,不带建表 / 删表语句)
 kubectl --context "$KUBE_CONTEXT" --kubeconfig "$KUBE_CONFIG" -n "$SHADOW_NS" \
   exec mysql-shadow -- sh -ec \
   'export MYSQL_PWD="${MYSQL_ROOT_PASSWORD:?影子容器未注入 root 凭据}"; exec mysqldump -uroot "$@"' \
   mysqldump-client \
+  --no-create-info --skip-add-drop-table --single-transaction --hex-blob \
   --where="player_id=12345678" \
-  zone_101_db player_database \
+  zone_101_db player_database player_database_1 \
   > player-12345678-recovered.sql
 
 # 在生产库 review 后再灌

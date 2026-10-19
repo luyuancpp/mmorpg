@@ -5003,7 +5003,7 @@ TEST(DbTaskTopicGeneration, GenerationDoesNotChangeZoneRouting)
 // 随存盘的 PlayerAllData 过一跳不丢。目标节点是从共享 Redis 里的 PlayerAllData 载入玩家的,所以这里
 // 走的是「marshal 成 PlayerAllData → 整条序列化 / 解析 → 从记录里的 bag_component 还原」。
 //
-// 还原这一步用 bag_marshal::Unmarshal 而不是 PlayerAllDataMessageFieldsUnMarshal:本测试宿主不加载
+// 还原这一步用 bag_marshal::Unmarshal 而不是 PlayerAllDataMessageFieldsUnmarshal:本测试宿主不加载
 // 任何配置表,整条 unmarshal 会连带跑属性 / 宝宝的载入初始化,那不是这条用例要钉的东西
 // (整条入口的往返在 bag_test 的 PlayerFeaturePersistenceTest 里,那边加载了表)。
 // 配置号沿用本文件上方的 3001 —— 表里查不到,装备栏按「还原宽容」退回快照里的槽位。
@@ -6413,7 +6413,7 @@ TEST(MirrorCreateInFlightEcs, CreatedWhileInBattleDoesNotAutoEnter)
 TEST(MirrorCreateInFlightEcs, CreatedWithoutSceneManagerReleasesTheSlot)
 {
     const auto player = MakeOnlinePlayer(kSessionAtExit);
-    ASSERT_EQ(GetSceneManagerEntity(kExitPlayerId), entt::null) << "前置:宿主没有 scene_manager 节点,不会发真实 RPC";
+    ASSERT_EQ(GetSceneManagerEntity(kExitPlayerId), entt::entity{entt::null}) << "前置:宿主没有 scene_manager 节点,不会发真实 RPC";
     AttachMirrorCreate(player, /*token=*/31);
     const auto created = MakeCreateReply(/*errorCode=*/0, /*sceneId=*/9001);
 
@@ -7031,6 +7031,50 @@ void ClearLocalHolderOfExitPlayer()
     SessionMap().clear();
     DrainRelocateConfirms();
 }
+
+// 覆盖身份(ReleasePlayerRequest.covered_*,location-release-binding.md §13)用例里的被覆盖那次登录:会话 kSessionAtExit、
+// 代次 kCoveredGeneration。实体的 PlayerLoginIdentityComp 由各用例按需摆;不摆 = 实体没有登录代次。
+constexpr uint64_t kCoveredGeneration = 20;
+
+constexpr rf::SessionEndedBinding kAllSessionEndedBindings[] = {
+    rf::SessionEndedBinding::kCovered,
+    rf::SessionEndedBinding::kUnversionedRequest,
+    rf::SessionEndedBinding::kUnversionedEntity,
+    rf::SessionEndedBinding::kSkipNewerLogin,
+    rf::SessionEndedBinding::kSkipConflict,
+};
+static_assert(std::size(kAllSessionEndedBindings) == rf::kSessionEndedBindingCount,
+              "新增登录身份结论时补进这张表,并补判定用例");
+
+uint64_t BindingCount(const release_fence_stats::Snapshot &snapshot, rf::SessionEndedBinding binding)
+{
+    return snapshot.bindingDecisions[static_cast<std::size_t>(binding)];
+}
+
+// 会话结束释放,覆盖身份默认是新版 scene_manager 对"离场的就是实体当前那次登录"的正常载荷。
+void ReleaseEndedSession(uint64_t expectedOwnerEpoch, SessionId coveredSession = kSessionAtExit,
+                         uint64_t coveredGeneration = kCoveredGeneration)
+{
+    PlayerLifecycleSystem::HandleSessionEndedRelease(kExitPlayerId, expectedOwnerEpoch, coveredSession, coveredGeneration);
+}
+
+// 给实体摆上"已放行的最高登录身份"(EnterScene 第 1 步 RecordLoginIdentity 写的那个组件)。
+void BindLoginIdentity(entt::entity player, SessionId session, uint64_t generation)
+{
+    auto &identity = tlsEcs.actorRegistry.emplace_or_replace<PlayerLoginIdentityComp>(player);
+    identity.sessionId = session;
+    identity.loginGeneration = generation;
+}
+
+// 会话结束释放的退出走了 kClientDisconnect:宿主里快路径同步收尾、实体销毁;A1′ 判定为"写"(原因在可写集合里)。
+void ExpectExitedAsClientDisconnect(entt::entity player, SessionId session, const exit_release_stats::Snapshot &before)
+{
+    EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
+    EXPECT_EQ(tlsEcs.playerList.count(kExitPlayerId), 0u);
+    EXPECT_EQ(SessionMap().count(session), 0u);
+    const auto write = static_cast<std::size_t>(erm::ExitReleaseDecision::kWrite);
+    EXPECT_EQ(exit_release_stats::Read().decisions[write], before.decisions[write] + 1) << "按客户端断线退出:A1′ 判定写标记";
+}
 } // namespace
 
 TEST(ReleaseFence, SessionEndedCredentialDecideTable)
@@ -7092,7 +7136,7 @@ TEST(ReleaseFenceEcs, SessionEndedReleaseExitsHolderAsClientDisconnect)
     const auto exitBefore = exit_release_stats::Read();
     const auto before = release_fence_stats::Read();
 
-    PlayerLifecycleSystem::HandleSessionEndedRelease(kExitPlayerId, kReleaseExpectedEpoch);
+    ReleaseEndedSession(kReleaseExpectedEpoch);
 
     EXPECT_FALSE(tlsEcs.actorRegistry.valid(player));
     EXPECT_EQ(tlsEcs.playerList.count(kExitPlayerId), 0u);
@@ -7106,6 +7150,9 @@ TEST(ReleaseFenceEcs, SessionEndedReleaseExitsHolderAsClientDisconnect)
     EXPECT_EQ(after.sessionEnded, before.sessionEnded + 1);
     EXPECT_EQ(ReleaseVerdictCount(after, rf::Verdict::kRelease), ReleaseVerdictCount(before, rf::Verdict::kRelease) + 1);
     EXPECT_EQ(after.credentialDecisions, before.credentialDecisions) << "持有时不走凭证";
+    EXPECT_EQ(BindingCount(after, rf::SessionEndedBinding::kUnversionedEntity),
+              BindingCount(before, rf::SessionEndedBinding::kUnversionedEntity) + 1)
+        << "夹具实体没有登录身份组件:证明不了它更新,按现行为退出";
     DrainRelocateConfirms();
 }
 
@@ -7117,7 +7164,7 @@ TEST(ReleaseFenceEcs, SessionEndedReleaseOnStaleEntityIgnored)
     ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch + 2, player));
     const auto before = release_fence_stats::Read();
 
-    PlayerLifecycleSystem::HandleSessionEndedRelease(kExitPlayerId, kReleaseExpectedEpoch);
+    ReleaseEndedSession(kReleaseExpectedEpoch);
 
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
     ExpectEntityUntouched(player, kSessionAtExit);
@@ -7136,7 +7183,7 @@ TEST(ReleaseFenceEcs, SessionEndedReleaseDuringHandoffIgnored)
     AttachHandoff(player, /*correlationId=*/0);
     const auto before = release_fence_stats::Read();
 
-    PlayerLifecycleSystem::HandleSessionEndedRelease(kExitPlayerId, kReleaseExpectedEpoch);
+    ReleaseEndedSession(kReleaseExpectedEpoch);
 
     ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
     ExpectEntityUntouched(player, kSessionAtExit);
@@ -7152,7 +7199,7 @@ TEST(ReleaseFenceEcs, SessionEndedReleaseWithoutHolderWritesCredential)
     ClearLocalHolderOfExitPlayer();
     const auto before = release_fence_stats::Read();
 
-    PlayerLifecycleSystem::HandleSessionEndedRelease(kExitPlayerId, kReleaseExpectedEpoch);
+    ReleaseEndedSession(kReleaseExpectedEpoch);
 
     const auto after = release_fence_stats::Read();
     EXPECT_EQ(after.sessionEnded, before.sessionEnded + 1);
@@ -7174,7 +7221,7 @@ TEST(ReleaseFenceEcs, SessionEndedReleaseWithPendingLoadSkipsCredential)
     PlayerLifecycleSystem::GetPendingEnterMap()[kExitPlayerId] = ctx;
     const auto before = release_fence_stats::Read();
 
-    PlayerLifecycleSystem::HandleSessionEndedRelease(kExitPlayerId, kReleaseExpectedEpoch);
+    ReleaseEndedSession(kReleaseExpectedEpoch);
 
     const auto after = release_fence_stats::Read();
     EXPECT_EQ(CredentialCount(after, rf::SessionEndedCredential::kSkipLocalHolder),
@@ -7192,12 +7239,244 @@ TEST(ReleaseFenceEcs, SessionEndedReleaseWithoutConfirmedIdentitySkipsCredential
     ClearLocalHolderOfExitPlayer();
     const auto before = release_fence_stats::Read();
 
-    PlayerLifecycleSystem::HandleSessionEndedRelease(kExitPlayerId, kReleaseExpectedEpoch);
+    ReleaseEndedSession(kReleaseExpectedEpoch);
 
     const auto after = release_fence_stats::Read();
     EXPECT_EQ(CredentialCount(after, rf::SessionEndedCredential::kSkipIdentity),
               CredentialCount(before, rf::SessionEndedCredential::kSkipIdentity) + 1);
     EXPECT_EQ(CredentialWriteOutcomes(after), CredentialWriteOutcomes(before));
+}
+
+// ── 覆盖身份:会话结束释放在归属代际放行之后再比登录身份(ReleasePlayerRequest.covered_*,location-release-binding.md §13)──
+
+TEST(ReleaseFence, SessionEndedBindingDecideTable)
+{
+    constexpr uint64_t g = kCoveredGeneration;
+    // 覆盖代次 0(旧版 scene_manager):按现行为,哪怕实体明显更新。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g + 5, 0, 0), rf::SessionEndedBinding::kUnversionedRequest);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g + 5, kSessionAtExit, 0),
+              rf::SessionEndedBinding::kUnversionedRequest);
+    // 两边都没有代次时第 1 行先于第 2 行:旧版 scene_manager 必须记到 unversioned_request(运维靠它恒 0 判断升级完成),
+    // 不能因为目标实体也是旧登录就被记成 unversioned_entity 藏起来。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kSessionAtExit, 0, 0, 0), rf::SessionEndedBinding::kUnversionedRequest);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kInvalidSessionId, 0, kSessionAtExit, 0),
+              rf::SessionEndedBinding::kUnversionedRequest);
+    // 实体没有登录代次:证明不了它更新。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, 0, kSessionAtExit, g), rf::SessionEndedBinding::kUnversionedEntity);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kInvalidSessionId, 0, kSessionAtExit, g),
+              rf::SessionEndedBinding::kUnversionedEntity);
+    // 实体代次更大:不论会话号同不同。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g + 1, kSessionAtExit, g), rf::SessionEndedBinding::kSkipNewerLogin);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kSessionAtExit, g + 1, kSessionAtExit, g), rf::SessionEndedBinding::kSkipNewerLogin)
+        << "同会话号、更大代次 = 同一连接 LeaveGame 后的另一次登录;不沿用入场栅栏「同会话一律放行」的口径";
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kInvalidSessionId, g + 1, 0, g), rf::SessionEndedBinding::kSkipNewerLogin);
+    // 同代:两边会话都有效且不同 → 冲突;相同,或任一侧没有会话(没得比,不当作不同)→ 覆盖。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g, kSessionAtExit, g), rf::SessionEndedBinding::kSkipConflict);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kSessionAtExit, g, kSessionAtExit, g), rf::SessionEndedBinding::kCovered);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kInvalidSessionId, g, kSessionAtExit, g), rf::SessionEndedBinding::kCovered);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(0, g, kSessionAtExit, g), rf::SessionEndedBinding::kCovered);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g, 0, g), rf::SessionEndedBinding::kCovered);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kNewerSession, g, kInvalidSessionId, g), rf::SessionEndedBinding::kCovered);
+    // 实体代次更小:实体服务的登录比被覆盖的还早(登录撞门时覆盖到这次登录,实体还绑着 location 上的旧会话),退出。
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kSessionAtExit, g - 1, kNewerSession, g), rf::SessionEndedBinding::kCovered);
+    EXPECT_EQ(rf::DecideSessionEndedBinding(kSessionAtExit, g - 1, kSessionAtExit, g), rf::SessionEndedBinding::kCovered);
+    static_assert(rf::DecideSessionEndedBinding(kSessionAtExit, kCoveredGeneration + 1, kSessionAtExit, kCoveredGeneration) ==
+                      rf::SessionEndedBinding::kSkipNewerLogin,
+                  "纯函数,可在编译期求值");
+}
+
+TEST(ReleaseFence, SessionEndedBindingNamesCoverEveryValue)
+{
+    for (std::size_t i = 0; i < rf::kSessionEndedBindingCount; ++i)
+    {
+        const auto binding = kAllSessionEndedBindings[i];
+        EXPECT_EQ(static_cast<std::size_t>(binding), i) << "表按枚举序排列";
+        EXPECT_STRNE(rf::SessionEndedBindingName(binding), "?");
+        for (std::size_t j = 0; j < i; ++j)
+        {
+            EXPECT_STRNE(rf::SessionEndedBindingName(kAllSessionEndedBindings[j]), rf::SessionEndedBindingName(binding))
+                << "汇总行 key 不得重名";
+        }
+        // 只有两项 skip 不退出,也只有它们升 WARN。
+        EXPECT_EQ(rf::BindingAlarming(binding), !rf::BindingReleases(binding)) << rf::SessionEndedBindingName(binding);
+    }
+    EXPECT_STREQ(rf::SessionEndedBindingName(rf::SessionEndedBinding::kCount), "?") << "越界不能读出数组外";
+    EXPECT_FALSE(rf::BindingReleases(rf::SessionEndedBinding::kCount)) << "越界值按不退出(fail-closed)";
+    EXPECT_TRUE(rf::BindingReleases(rf::SessionEndedBinding::kCovered));
+    EXPECT_TRUE(rf::BindingReleases(rf::SessionEndedBinding::kUnversionedRequest));
+    EXPECT_TRUE(rf::BindingReleases(rf::SessionEndedBinding::kUnversionedEntity));
+    EXPECT_FALSE(rf::BindingReleases(rf::SessionEndedBinding::kSkipNewerLogin));
+    EXPECT_FALSE(rf::BindingReleases(rf::SessionEndedBinding::kSkipConflict));
+    // 名字是 [ReleaseFence] 汇总行 binding_ 后缀的 key(运维检索),钉住两个告警项的原文。
+    EXPECT_STREQ(rf::SessionEndedBindingName(rf::SessionEndedBinding::kSkipNewerLogin), "skip_newer_login");
+    EXPECT_STREQ(rf::SessionEndedBindingName(rf::SessionEndedBinding::kSkipConflict), "skip_conflict");
+}
+
+TEST(ReleaseFence, SummaryEscalatesOnBindingSkip)
+{
+    release_fence_stats::Snapshot previous;
+    release_fence_stats::Snapshot next = previous;
+    next.bindingDecisions[static_cast<std::size_t>(rf::SessionEndedBinding::kCovered)] += 3;
+    next.bindingDecisions[static_cast<std::size_t>(rf::SessionEndedBinding::kUnversionedRequest)] += 1;
+    next.bindingDecisions[static_cast<std::size_t>(rf::SessionEndedBinding::kUnversionedEntity)] += 1;
+    EXPECT_FALSE(next == previous) << "binding 计数有变化就要打行";
+    EXPECT_FALSE(next.AlarmingIncreaseSince(previous)) << "常态计数增长打 INFO";
+    next.bindingDecisions[static_cast<std::size_t>(rf::SessionEndedBinding::kSkipNewerLogin)] += 1;
+    EXPECT_TRUE(next.AlarmingIncreaseSince(previous)) << "挡下迟到的会话结束释放:升 WARN";
+    release_fence_stats::Snapshot conflict = previous;
+    conflict.bindingDecisions[static_cast<std::size_t>(rf::SessionEndedBinding::kSkipConflict)] += 1;
+    EXPECT_TRUE(conflict.AlarmingIncreaseSince(previous));
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseAfterSameNodeReloginKeepsNewerLogin)
+{
+    // §12.5 残余 1 的主时序:登录撞门的同步释放请求超时(failed)。客户端随即重登(会话 kNewerSession、更大代次),落回本节点
+    // (同物理节点不铸造,仍是 E),复用实体并在 EnterScene 第 1 步记下新身份;覆盖到 (kSessionAtExit, g) 的那条释放这时才
+    // 在本节点执行。代际相等照旧放行,登录身份判定挡下:实体与新会话原样保留。
+    ScopedPersistedPlayerCleanup cleanup;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player, kNewerSession));
+    BindLoginIdentity(player, kNewerSession, kCoveredGeneration + 1);
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player)) << "迟到的会话结束释放不得退掉已绑上更新登录的实体";
+    ExpectEntityUntouched(player, kNewerSession);
+    const auto &identity = tlsEcs.actorRegistry.get<PlayerLoginIdentityComp>(player);
+    EXPECT_EQ(identity.sessionId, kNewerSession);
+    EXPECT_EQ(identity.loginGeneration, kCoveredGeneration + 1) << "只读,不改写身份";
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(after.sessionEnded, before.sessionEnded + 1);
+    EXPECT_EQ(ReleaseVerdictCount(after, rf::Verdict::kRelease), ReleaseVerdictCount(before, rf::Verdict::kRelease) + 1)
+        << "归属代际照旧判 release:挡下它的是第二道判定";
+    EXPECT_EQ(BindingCount(after, rf::SessionEndedBinding::kSkipNewerLogin),
+              BindingCount(before, rf::SessionEndedBinding::kSkipNewerLogin) + 1);
+    EXPECT_TRUE(after.AlarmingIncreaseSince(before)) << "30s 汇总行升 WARN";
+    EXPECT_EQ(CredentialWriteOutcomes(after), CredentialWriteOutcomes(before)) << "有实体时绝不写凭证";
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseKeepsSameConnectionRelogin)
+{
+    // LeaveScene 的后台派发晚到:LeaveGame 之后同一连接再登录,会话号不变、代次变大,落回本节点复用实体;覆盖到离场那次
+    // 登录 (kSessionAtExit, g) 的释放这时才到。只比会话号会把这次新登录当成离场会话退掉。
+    ScopedPersistedPlayerCleanup cleanup;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    BindLoginIdentity(player, kSessionAtExit, kCoveredGeneration + 1);
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    ExpectEntityUntouched(player, kSessionAtExit);
+    EXPECT_EQ(BindingCount(release_fence_stats::Read(), rf::SessionEndedBinding::kSkipNewerLogin),
+              BindingCount(before, rf::SessionEndedBinding::kSkipNewerLogin) + 1);
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseExitsCoveredLogin)
+{
+    // 实体绑着的就是被覆盖的那次登录(登出 / 断线后 LeaveScene 的正常时序):照常按客户端断线退出。
+    ScopedPersistedPlayerCleanup cleanup;
+    ScopedConfirmedNodeIdentity identity;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    BindLoginIdentity(player, kSessionAtExit, kCoveredGeneration);
+    const auto exitBefore = exit_release_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ExpectExitedAsClientDisconnect(player, kSessionAtExit, exitBefore);
+    EXPECT_EQ(BindingCount(release_fence_stats::Read(), rf::SessionEndedBinding::kCovered),
+              BindingCount(before, rf::SessionEndedBinding::kCovered) + 1);
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseExitsOlderLoginOnLoginCollision)
+{
+    // 登录撞上未释放的持有者(§12):请求覆盖到发起这次登录的会话 (kNewerSession, g),实体还绑着 location 上更早的那次
+    // 登录 (kSessionAtExit, g-1)。它已被这次登录取代,照常按客户端断线退出。
+    ScopedPersistedPlayerCleanup cleanup;
+    ScopedConfirmedNodeIdentity identity;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player));
+    BindLoginIdentity(player, kSessionAtExit, kCoveredGeneration - 1);
+    const auto exitBefore = exit_release_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch, kNewerSession, kCoveredGeneration);
+
+    ExpectExitedAsClientDisconnect(player, kSessionAtExit, exitBefore);
+    EXPECT_EQ(BindingCount(release_fence_stats::Read(), rf::SessionEndedBinding::kCovered),
+              BindingCount(before, rf::SessionEndedBinding::kCovered) + 1);
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseSameGenerationOtherSessionIgnored)
+{
+    // 同代异会话违反 G2(一个代次只属于一条会话):分不清哪一份该退,退出是破坏性动作,不动。
+    ScopedPersistedPlayerCleanup cleanup;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player, kNewerSession));
+    BindLoginIdentity(player, kNewerSession, kCoveredGeneration);
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    ExpectEntityUntouched(player, kNewerSession);
+    EXPECT_EQ(BindingCount(release_fence_stats::Read(), rf::SessionEndedBinding::kSkipConflict),
+              BindingCount(before, rf::SessionEndedBinding::kSkipConflict) + 1);
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedReleaseWithoutCoveredIdentityKeepsLegacyBehavior)
+{
+    // 旧版 scene_manager 不带覆盖身份(0 / 0):只比 owner_epoch,与本节之前一致 —— 实体绑着更新的登录也照常退出。
+    // 这是滚动窗口里的已知行为(scene 先于 scene_manager 发布,§13.6),全量升级后 binding_unversioned_request 应恒为 0。
+    ScopedPersistedPlayerCleanup cleanup;
+    ScopedConfirmedNodeIdentity identity;
+    DrainRelocateConfirms();
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch, player, kNewerSession));
+    BindLoginIdentity(player, kNewerSession, kCoveredGeneration + 1);
+    const auto exitBefore = exit_release_stats::Read();
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch, /*coveredSession=*/0, /*coveredGeneration=*/0);
+
+    ExpectExitedAsClientDisconnect(player, kNewerSession, exitBefore);
+    EXPECT_EQ(BindingCount(release_fence_stats::Read(), rf::SessionEndedBinding::kUnversionedRequest),
+              BindingCount(before, rf::SessionEndedBinding::kUnversionedRequest) + 1);
+    DrainRelocateConfirms();
+}
+
+TEST(ReleaseFenceEcs, SessionEndedBindingJudgedOnlyAfterEpochReleases)
+{
+    // 两道判定的顺序:代际不等(或交接在途)先挡下的释放不再比登录身份,binding_* 不计 —— 汇总行里的 binding_*
+    // 因此读作「归属代际已放行之后」的分布。
+    ScopedPersistedPlayerCleanup cleanup;
+    entt::entity player{entt::null};
+    ASSERT_TRUE(MakeReleaseTarget(kReleaseExpectedEpoch + 2, player));
+    BindLoginIdentity(player, kSessionAtExit, kCoveredGeneration + 1);
+    const auto before = release_fence_stats::Read();
+
+    ReleaseEndedSession(kReleaseExpectedEpoch);
+
+    ASSERT_TRUE(tlsEcs.actorRegistry.valid(player));
+    ExpectEntityUntouched(player, kSessionAtExit);
+    const auto after = release_fence_stats::Read();
+    EXPECT_EQ(ReleaseVerdictCount(after, rf::Verdict::kSkipStaleRelease),
+              ReleaseVerdictCount(before, rf::Verdict::kSkipStaleRelease) + 1);
+    EXPECT_EQ(after.bindingDecisions, before.bindingDecisions) << "代际先挡下:不做登录身份判定";
 }
 
 TEST(OwnerEpochStats, RejectedExitingSaveCountsAsRollbackEvidence)

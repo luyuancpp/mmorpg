@@ -955,6 +955,38 @@ TEST_F(PlayerInboxSystemTest, UnknownTypeWithoutVoidHaltsAfterConfirmingTheDecid
 	EXPECT_EQ(1u, g_sentAcks.size());
 }
 
+// 评审 SM-1:已停用的域确认已定前缀时 Ack 回 STALE,只清队列、回 Idle;不再安排「60 秒后重试」,
+// 也不打 reason=stale_owner 的 inbox_deferred,免得把永久停用伪装成暂时延后。
+TEST_F(PlayerInboxSystemTest, StaleAckOnAHaltedDomainSchedulesNoRetry)
+{
+	player_inbox::FetchPlayerInboxRequest fetch;
+	ASSERT_NO_FATAL_FAILURE(LandAndFetch(player_, fetch));
+	PlayerInboxSystem::OnFetchReply(
+		fetch.player_id(), static_cast<uint32_t>(fetch.domain()), fetch.correlation_id(),
+		FetchReplyFor(fetch, {BlockGold(10, 1001), MakeItem(11, kUnknownType, 1101, "opaque")}));
+	ASSERT_NE(nullptr, GmState(player_));
+	ASSERT_TRUE(GmState(player_)->halted);
+	const auto deferBefore = GmState(player_)->deferReason;
+	player_inbox::AckPlayerInboxRequest ack;
+	ASSERT_NO_FATAL_FAILURE(SaveAndAck(player_, ack));
+
+	ScopedLogCapture capture;
+	PlayerInboxSystem::OnAckReply(
+		ack.player_id(), static_cast<uint32_t>(ack.domain()), ack.correlation_id(),
+		StaleAckReplyFor(ack));
+	ASSERT_NE(nullptr, GmState(player_));
+	EXPECT_TRUE(GmState(player_)->ackQueue.empty());
+	EXPECT_EQ(PlayerInboxPhase::kIdle, GmState(player_)->phase);
+	EXPECT_EQ(0u, GmState(player_)->nextCheckMs) << "停用的域没有下一次检查";
+	EXPECT_EQ(deferBefore, GmState(player_)->deferReason) << "延后原因不改写成 stale_owner";
+	EXPECT_EQ(0u, CapturedLinesWith({"metric=inbox_deferred", "reason=stale_owner"}));
+
+	Advance(kBeyondAnyBackoffMs);
+	PlayerInboxSystem::Tick();
+	EXPECT_EQ(1u, g_sentFetches.size()) << "停用后不再拉取";
+	EXPECT_EQ(1u, g_sentAcks.size());
+}
+
 // 回放 / UNKNOWN 只报告账本里已有的事实:不需要执行器,与指令、与本二进制认不认识这个类型都无关(IB-4、IB-9)。
 TEST_F(PlayerInboxSystemTest, ReplayAndUnknownNeedNoExecutorEvenForUnknownTypesOrVoid)
 {
@@ -1468,9 +1500,13 @@ TEST_F(PlayerInboxSystemTest, LeavingDoesNotResendWhileAnAckIsInFlight)
 	player_inbox::AckPlayerInboxRequest ack;
 	ASSERT_NO_FATAL_FAILURE(SaveAndAck(player_, ack));
 
+	ScopedLogCapture capture;
 	PlayerInboxSystem::OnPlayerLeaving(player_);
 	EXPECT_EQ(1u, g_sentAcks.size()) << "在途的 Ack 服务端照样处理,不依赖实体还在";
 	EXPECT_EQ(1, g_ackAttempts);
+	// 评审 LC-3:它若在实体销毁后失败,失败回调只打 DEBUG;这里留一行带 corr 的对账线索。
+	EXPECT_EQ(1u, CapturedLinesWith({"metric=inbox_leave_ack", "result=ack_inflight",
+									 "corr=" + std::to_string(ack.correlation_id()) + " ", "decisions=1"}));
 }
 
 TEST_F(PlayerInboxSystemTest, LeavingWithNoReachableInboxNodeIsHarmless)
@@ -1573,6 +1609,55 @@ TEST_F(PlayerInboxSystemTest, ReplyDroppedByTheExitGateLeavesADeliveredUndecided
 	CompleteFakeSave(player_);
 	PlayerInboxSystem::OnPlayerLeaving(player_);
 	EXPECT_EQ(0, g_ackAttempts);
+}
+
+// 评审 LC-2:退出期闸不过时,批首账本里已有结局的条目(这里是上一会话已 APPLIED、Ack 丢了的 seq 10)先入确认队列,
+// 只丢掉需要执行的剩余部分。旧实现整批丢掉,10 每次短会话都再留一行已投递未确认。
+TEST_F(PlayerInboxSystemTest, ExitGateAcknowledgesTheReplayablePrefixAndDropsOnlyNewEntries)
+{
+	ASSERT_NO_FATAL_FAILURE(SeedLedger(10, {MakeDecision(10, player_inbox::PLAYER_INBOX_OUTCOME_APPLIED, 1001, kBlockType)}));
+	CompleteFakeSave(player_); // 这份账本就是从存档加载的:已落盘
+	player_inbox::FetchPlayerInboxRequest fetch;
+	ASSERT_NO_FATAL_FAILURE(LandAndFetch(player_, fetch));
+	MarkExiting(player_);
+
+	ScopedLogCapture capture;
+	PlayerInboxSystem::OnFetchReply(
+		fetch.player_id(), static_cast<uint32_t>(fetch.domain()), fetch.correlation_id(),
+		FetchReplyFor(fetch, {BlockGold(10, 1001), MakeItem(11, kUnblockType, 1101, GainPayload(kGold))}));
+	ASSERT_NE(nullptr, GmState(player_));
+	EXPECT_TRUE(GmState(player_)->pendingItems.empty()) << "需要执行的 11 照旧丢掉,下次落地重拉";
+	EXPECT_EQ(10u, DecidedThrough(player_)) << "退出期不执行、不记账";
+	EXPECT_EQ(0, g_persistCalls) << "没有新记账就不请求存盘";
+	EXPECT_EQ(1u, CapturedLinesWith({"metric=inbox_leave_ack", "result=decided_prefix_queued", "source=apply_gate_exiting",
+									 "items=1", "first_seq=10", "last_seq=10"}));
+	EXPECT_EQ(1u, CapturedLinesWith({"metric=inbox_leave_ack", "result=delivered_undecided", "source=apply_gate_exiting",
+									 "items=1", "first_seq=11", "last_seq=11"}));
+
+	// 回放的结局本来就在已落盘的账本里:当场确认,确认不受前置闸限制。
+	ASSERT_EQ(1u, g_sentAcks.size());
+	ASSERT_EQ(1, g_sentAcks.back().decisions_size());
+	ExpectDecision(g_sentAcks.back().decisions(0), 10, player_inbox::PLAYER_INBOX_OUTCOME_APPLIED, 0, 1001);
+}
+
+// 评审 LC-1:冻结 / 交接与退出同时存在时,前置闸先报 kFrozen / kHandoff,但玩家同样正在下线,
+// 丢掉的已投递条目照样要留对账线索(按退出标记判断,不按闸返回的原因)。
+TEST_F(PlayerInboxSystemTest, FrozenExitingPlayerStillLeavesADeliveredUndecidedTrace)
+{
+	player_inbox::FetchPlayerInboxRequest fetch;
+	ASSERT_NO_FATAL_FAILURE(LandAndFetch(player_, fetch));
+	tlsEcs.actorRegistry.emplace<PlayerFrozenComp>(player_);
+	MarkExiting(player_);
+
+	ScopedLogCapture capture;
+	PlayerInboxSystem::OnFetchReply(
+		fetch.player_id(), static_cast<uint32_t>(fetch.domain()), fetch.correlation_id(),
+		FetchReplyFor(fetch, {BlockGold(10, 1001)}));
+	ASSERT_NE(nullptr, GmState(player_));
+	EXPECT_EQ(PlayerInboxDeferReason::kFrozen, GmState(player_)->deferReason) << "闸按判定顺序先报冻结";
+	EXPECT_FALSE(GoldBlocked(player_));
+	EXPECT_EQ(1u, CapturedLinesWith({"metric=inbox_leave_ack", "result=delivered_undecided", "source=apply_gate_exiting",
+									 "items=1", "first_seq=10", "last_seq=10"}));
 }
 
 // 评审 M4 的缺口之二:退出收敛得比 Fetch RTT 还快。离开时 Fetch 仍在途,留一行对账线索;实体销毁之后回包才到,丢弃。

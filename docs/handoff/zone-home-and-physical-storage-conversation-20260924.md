@@ -1,11 +1,21 @@
 # 逻辑归属、物理存储与合服：完整对话记录（mmorpg）
 
-> 首次记录：2026-09-24；续录：2026-09-28  
+> 首次记录：2026-09-24；续录：2026-09-28、2026-10-12、2026-10-18  
 > 类型：解释性会话记录，不是新的架构决策、合服 SOP 或运行验收。  
 > 本仓权威：[合服设计](../design/server_merge_design.md)、[全区全服数据层与 TiDB 决策](../design/global-data-layer-tidb-decision.md)、[跨 zone 与数据归属说明](../design/microservice-zone-contract-20260914.md)、[可执行合服 SOP](../ops/merge-zone-runbook.md)。本记录与这些文档有出入时，以其中对应当前阶段且未作废的内容及代码为准。  
 > 目的：用户先在 `F:\Pandora-Moba` 讨论 `player_id % 4096`、逻辑合服、物理搬库，再要求在 `xuanming-server` 和本仓留存“所有对话细节”。保留原始讨论及后续复核、提交状态和服务数据库问答，截止 2026-09-28 用户要求记录到三个服务器文档，共 45 条对外可见消息；本页先校准本仓现状，避免把别仓或未来阶段的例子当成现行能力。
 >
 > **⚠️ 2026-10-12：本页 2026-09-24 / 09-28 写下的「本仓现状」已被 `4493b3c9f`(2026-09-29)改变，先读下一节。** 对话原文与当时的校准段保持原样，供追溯，不再代表现状。
+
+## 2026-10-18 续录：登录拿逻辑服 / 物理服是不是瓶颈、能不能水平扩展
+
+本节回应用户 2026-10-18 的提问「账号登录的时候不是去拿玩家的逻辑服和物理服吗？这个还是瓶颈吗，能水平扩展吗」，追加要求「吞吐要高」。完整结论、出处与撞墙顺序表记在 [player-route-mapping-durability-proposal.md](../design/player-route-mapping-durability-proposal.md) §12.1，这里只留问答要点，不另存一份。
+
+- **登录只拿逻辑服，不拿物理服**：Login 读一次账号目录 `account:{account}`（核心 Redis），再经 data_service `BatchGetPlayerHomeZone` 在 mapping Redis 上对 `player:zone:{id}` 一次 MGET；`player:placement` 只有 go/db 每条读写任务读（选库 + 复核各一次 MGET）。新路径一次完整登录执行两次 Login。EnterGame 默认不再查归属；scene_manager 每次进场 / 换图查一次（home + 合服围栏）。在线路径不读库（K8s 固定 `RouteStore.Mode=redis`）。
+- **取逻辑服本身不是瓶颈**（1 次 RPC + 1 次 MGET）；卡扩展的是它所在的全服唯一单实例 Redis（账号目录、会话、锁、映射、PlayerAllData、存盘控制面都在上面，没有 HA）。进程层（login / data_service / scene_manager）无状态、能加副本，存储层今天不能扩。mapping 读量大头是存盘与换图，不是登录。
+- **当晚已落码（未编译、未测试，待 Codex 验证）**：login gate 目录 list-watch 缓存；选 gate 随机二选一（login 快路径与 scene_manager 跨 zone 重定向共用 `go/shared/gatepick`，重定向并补排空过滤；Java 版 `GatePicker` 同步）；K8s 与 compose 栈 login 的 DataServiceRpc 熔断打开；EnterGame 账号目录自愈加锁 + CAS + 提交点复核反向索引；运维 `RemovePlayersFromAccounts` 改为账号锁内原子摘孤儿并删反向索引；若干过时文档数字加更正注。
+- **仍待负责人决定**：拆 Redis 与 HA、hash tag 改键、读脚本拼键的改法、账号目录落库位置、打开新号免冷读、access_token 那次 Login 是否还要重新生成角色列表（要看客户端仓）、单台 gate 连接上限怎么让 login 知道。见 §12.1 末尾。
+- **证据边界**：当前登录路径没有任何压测覆盖（最近的 R19 早于角色列表查归属与进场查归属），上述倍数都是推算。
 
 ## 2026-10-12 现状校准：逻辑归属与物理落点已经拆开(代码在、开关全关)
 

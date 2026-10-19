@@ -65,6 +65,7 @@ AllowUnsafeCrossNodeHandoff: true
 # 拿不到证据时保留 location、回可重试错误并请持有节点释放;等满上限才按旧行为删除(计 forced)。
 # 0 = 默认 600;-1 = 关闭整项检查(运维回滚开关:关 scene 的 SCENE_EXIT_RELEASE_MARK 之前先设 -1)。
 # 上面的 AllowUnsafeCrossNodeHandoff=true 时这项检查同样不生效(换手门本身已被旁路)。
+# -1 同时关掉 EnterScene「登录撞上未释放的持有者时请持有节点释放」(同一份释放协议,设计 §12)。
 LeaveSceneHolderReleaseWaitSeconds: 600
 
 # data_service gRPC 客户端(etcd 发现)。EnterScene 用它查玩家归属 zone

@@ -612,10 +612,44 @@ type DevRedisConfig struct {
 	PoolSize int `json:",optional"`
 }
 
+// RegionConfig 是 Regions 生效时(DevRedis.Host 为空)的一段 zone → data Redis 集群表。
+//
+// 这张表只在 routing.NewRouter 启动时建一次,不热更新、不带版本:把已有 zone 改到另一个 Region 等于搬数据,
+// 必须停写、搬完该 zone 玩家的 player:{id}:*、所有副本同时换配置后再起。滚动发布期间新旧副本会把同一玩家
+// 路由到不同集群,所以不要滚动改它。
 type RegionConfig struct {
 	Id    uint32
 	Zones []uint32
 	Redis RedisClusterConfig
+}
+
+// ValidateRegions 校验 Regions 生效时的 zone → 集群表,routing.NewRouter 在建任何集群客户端之前调用;
+// 配了 DevRedis 时 Regions 整段被忽略,不校验。
+//   - 至少一个 Region:否则每个玩家都路由失败,服务起来也只能回 ErrCodeRedis;
+//   - 每个 Region 至少一个地址、至少一个 zone;
+//   - 同一个 zone 不能出现在两个 Region 里:旧实现后写的静默覆盖先写的,而 cmd/debug_fetch 取第一个命中,
+//     排障工具会报出与运行时不同的集群。
+func ValidateRegions(regions []RegionConfig) error {
+	if len(regions) == 0 {
+		return fmt.Errorf("Regions is empty and DevRedis.Host is not set: no zone can be routed to a data Redis")
+	}
+	owner := make(map[uint32]uint32)
+	for _, region := range regions {
+		if len(region.Redis.Addrs) == 0 {
+			return fmt.Errorf("Regions[id=%d]: Redis.Addrs is empty", region.Id)
+		}
+		if len(region.Zones) == 0 {
+			return fmt.Errorf("Regions[id=%d]: Zones is empty", region.Id)
+		}
+		for _, zone := range region.Zones {
+			if prev, dup := owner[zone]; dup {
+				return fmt.Errorf("zone %d is listed in both Regions[id=%d] and Regions[id=%d]: a zone must map to exactly one data Redis cluster",
+					zone, prev, region.Id)
+			}
+			owner[zone] = region.Id
+		}
+	}
+	return nil
 }
 
 type RedisClusterConfig struct {

@@ -27,6 +27,7 @@ import (
 	"time"
 
 	commonpb "proto/common/base"
+	"shared/gatepick"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -96,23 +97,11 @@ func PickGate(candidates []GateCandidate) (*GateCandidate, error) {
 
 // pickTwoChoices 是 PickGate 的实现,随机源显式传入:intn(n) 返回 [0, n) 上均匀分布的整数
 // (生产用 math/rand/v2 的全局源,并发安全)。单测传固定序列钉住结果。
+// 挑选规则本身在 shared/gatepick(scene_manager 跨 zone 重定向共用同一份),这里只做 GateCandidate 的适配。
 func pickTwoChoices(candidates []GateCandidate, intn func(int) int) (*GateCandidate, error) {
-	n := len(candidates)
-	if n == 0 {
+	i, ok := gatepick.TwoChoices(candidates, func(c GateCandidate) uint32 { return c.PlayerCount }, intn)
+	if !ok {
 		return nil, fmt.Errorf("no gate candidates")
-	}
-	if n == 1 {
-		gate := candidates[0]
-		return &gate, nil
-	}
-	i := intn(n)
-	// 第二台从去掉 i 之后的 n-1 台里均匀抽,保证两台不同。
-	j := intn(n - 1)
-	if j >= i {
-		j++
-	}
-	if candidates[j].PlayerCount < candidates[i].PlayerCount {
-		i = j
 	}
 	gate := candidates[i]
 	return &gate, nil

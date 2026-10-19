@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace friendpb {
 #pragma region ClientPlayerFriendAddFriend
 namespace {
 void QueueLocalClientPlayerFriendAddFriendFailure(GrpcDone<::friendpb::AddFriendResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartClientPlayerFriendAddFriendCall(entt::registry& registry, entt::entity
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.AddFriend requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendAddFriendGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendAddFriendGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendAddFriendFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartClientPlayerFriendAddFriendCall(entt::registry& registry, entt::entity
         QueueLocalClientPlayerFriendAddFriendFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendClientPlayerFriendAddFriendErased(entt::registry& registry, entt::entit
         LOG_FATAL << "gRPC ClientPlayerFriend.AddFriend requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::AddFriendRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.AddFriend: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.AddFriend: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendClientPlayerFriendAddFriendErased(entt::registry& registry, entt::entit
     const auto* typedRequest = dynamic_cast<const ::friendpb::AddFriendRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.AddFriend: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -115,7 +116,7 @@ void SendClientPlayerFriendAddFriendErased(entt::registry& registry, entt::entit
 #pragma region ClientPlayerFriendAcceptFriend
 namespace {
 void QueueLocalClientPlayerFriendAcceptFriendFailure(GrpcDone<::friendpb::AcceptFriendResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -129,9 +130,9 @@ void StartClientPlayerFriendAcceptFriendCall(entt::registry& registry, entt::ent
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.AcceptFriend requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendAcceptFriendGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendAcceptFriendGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendAcceptFriendFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -140,13 +141,13 @@ void StartClientPlayerFriendAcceptFriendCall(entt::registry& registry, entt::ent
         QueueLocalClientPlayerFriendAcceptFriendFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -178,9 +179,10 @@ void SendClientPlayerFriendAcceptFriendErased(entt::registry& registry, entt::en
         LOG_FATAL << "gRPC ClientPlayerFriend.AcceptFriend requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::AcceptFriendRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.AcceptFriend: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.AcceptFriend: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -189,7 +191,7 @@ void SendClientPlayerFriendAcceptFriendErased(entt::registry& registry, entt::en
     const auto* typedRequest = dynamic_cast<const ::friendpb::AcceptFriendRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.AcceptFriend: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -201,7 +203,7 @@ void SendClientPlayerFriendAcceptFriendErased(entt::registry& registry, entt::en
 #pragma region ClientPlayerFriendRejectFriend
 namespace {
 void QueueLocalClientPlayerFriendRejectFriendFailure(GrpcDone<::friendpb::RejectFriendResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -215,9 +217,9 @@ void StartClientPlayerFriendRejectFriendCall(entt::registry& registry, entt::ent
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.RejectFriend requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendRejectFriendGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendRejectFriendGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendRejectFriendFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -226,13 +228,13 @@ void StartClientPlayerFriendRejectFriendCall(entt::registry& registry, entt::ent
         QueueLocalClientPlayerFriendRejectFriendFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -264,9 +266,10 @@ void SendClientPlayerFriendRejectFriendErased(entt::registry& registry, entt::en
         LOG_FATAL << "gRPC ClientPlayerFriend.RejectFriend requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::RejectFriendRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.RejectFriend: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.RejectFriend: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -275,7 +278,7 @@ void SendClientPlayerFriendRejectFriendErased(entt::registry& registry, entt::en
     const auto* typedRequest = dynamic_cast<const ::friendpb::RejectFriendRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.RejectFriend: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -287,7 +290,7 @@ void SendClientPlayerFriendRejectFriendErased(entt::registry& registry, entt::en
 #pragma region ClientPlayerFriendRemoveFriend
 namespace {
 void QueueLocalClientPlayerFriendRemoveFriendFailure(GrpcDone<::friendpb::RemoveFriendResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -301,9 +304,9 @@ void StartClientPlayerFriendRemoveFriendCall(entt::registry& registry, entt::ent
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.RemoveFriend requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendRemoveFriendGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendRemoveFriendGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendRemoveFriendFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -312,13 +315,13 @@ void StartClientPlayerFriendRemoveFriendCall(entt::registry& registry, entt::ent
         QueueLocalClientPlayerFriendRemoveFriendFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -350,9 +353,10 @@ void SendClientPlayerFriendRemoveFriendErased(entt::registry& registry, entt::en
         LOG_FATAL << "gRPC ClientPlayerFriend.RemoveFriend requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::RemoveFriendRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.RemoveFriend: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.RemoveFriend: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -361,7 +365,7 @@ void SendClientPlayerFriendRemoveFriendErased(entt::registry& registry, entt::en
     const auto* typedRequest = dynamic_cast<const ::friendpb::RemoveFriendRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.RemoveFriend: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -373,7 +377,7 @@ void SendClientPlayerFriendRemoveFriendErased(entt::registry& registry, entt::en
 #pragma region ClientPlayerFriendGetFriendList
 namespace {
 void QueueLocalClientPlayerFriendGetFriendListFailure(GrpcDone<::friendpb::GetFriendListResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -387,9 +391,9 @@ void StartClientPlayerFriendGetFriendListCall(entt::registry& registry, entt::en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.GetFriendList requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendGetFriendListGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendGetFriendListGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendGetFriendListFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -398,13 +402,13 @@ void StartClientPlayerFriendGetFriendListCall(entt::registry& registry, entt::en
         QueueLocalClientPlayerFriendGetFriendListFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -436,9 +440,10 @@ void SendClientPlayerFriendGetFriendListErased(entt::registry& registry, entt::e
         LOG_FATAL << "gRPC ClientPlayerFriend.GetFriendList requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::GetFriendListRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.GetFriendList: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.GetFriendList: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -447,7 +452,7 @@ void SendClientPlayerFriendGetFriendListErased(entt::registry& registry, entt::e
     const auto* typedRequest = dynamic_cast<const ::friendpb::GetFriendListRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.GetFriendList: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -459,7 +464,7 @@ void SendClientPlayerFriendGetFriendListErased(entt::registry& registry, entt::e
 #pragma region ClientPlayerFriendGetPendingRequests
 namespace {
 void QueueLocalClientPlayerFriendGetPendingRequestsFailure(GrpcDone<::friendpb::GetPendingRequestsResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -473,9 +478,9 @@ void StartClientPlayerFriendGetPendingRequestsCall(entt::registry& registry, ent
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.GetPendingRequests requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendGetPendingRequestsGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendGetPendingRequestsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendGetPendingRequestsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -484,13 +489,13 @@ void StartClientPlayerFriendGetPendingRequestsCall(entt::registry& registry, ent
         QueueLocalClientPlayerFriendGetPendingRequestsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -522,9 +527,10 @@ void SendClientPlayerFriendGetPendingRequestsErased(entt::registry& registry, en
         LOG_FATAL << "gRPC ClientPlayerFriend.GetPendingRequests requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::GetPendingRequestsRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.GetPendingRequests: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.GetPendingRequests: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -533,7 +539,7 @@ void SendClientPlayerFriendGetPendingRequestsErased(entt::registry& registry, en
     const auto* typedRequest = dynamic_cast<const ::friendpb::GetPendingRequestsRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.GetPendingRequests: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -545,7 +551,7 @@ void SendClientPlayerFriendGetPendingRequestsErased(entt::registry& registry, en
 #pragma region ClientPlayerFriendBlock
 namespace {
 void QueueLocalClientPlayerFriendBlockFailure(GrpcDone<::friendpb::BlockResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -559,9 +565,9 @@ void StartClientPlayerFriendBlockCall(entt::registry& registry, entt::entity nod
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.Block requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendBlockGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendBlockGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendBlockFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -570,13 +576,13 @@ void StartClientPlayerFriendBlockCall(entt::registry& registry, entt::entity nod
         QueueLocalClientPlayerFriendBlockFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -608,9 +614,10 @@ void SendClientPlayerFriendBlockErased(entt::registry& registry, entt::entity no
         LOG_FATAL << "gRPC ClientPlayerFriend.Block requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::BlockRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.Block: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.Block: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -619,7 +626,7 @@ void SendClientPlayerFriendBlockErased(entt::registry& registry, entt::entity no
     const auto* typedRequest = dynamic_cast<const ::friendpb::BlockRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.Block: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -631,7 +638,7 @@ void SendClientPlayerFriendBlockErased(entt::registry& registry, entt::entity no
 #pragma region ClientPlayerFriendUnblock
 namespace {
 void QueueLocalClientPlayerFriendUnblockFailure(GrpcDone<::friendpb::UnblockResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -645,9 +652,9 @@ void StartClientPlayerFriendUnblockCall(entt::registry& registry, entt::entity n
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.Unblock requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendUnblockGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendUnblockGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendUnblockFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -656,13 +663,13 @@ void StartClientPlayerFriendUnblockCall(entt::registry& registry, entt::entity n
         QueueLocalClientPlayerFriendUnblockFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -694,9 +701,10 @@ void SendClientPlayerFriendUnblockErased(entt::registry& registry, entt::entity 
         LOG_FATAL << "gRPC ClientPlayerFriend.Unblock requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::UnblockRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.Unblock: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.Unblock: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -705,7 +713,7 @@ void SendClientPlayerFriendUnblockErased(entt::registry& registry, entt::entity 
     const auto* typedRequest = dynamic_cast<const ::friendpb::UnblockRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.Unblock: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -717,7 +725,7 @@ void SendClientPlayerFriendUnblockErased(entt::registry& registry, entt::entity 
 #pragma region ClientPlayerFriendListBlocks
 namespace {
 void QueueLocalClientPlayerFriendListBlocksFailure(GrpcDone<::friendpb::ListBlocksResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -731,9 +739,9 @@ void StartClientPlayerFriendListBlocksCall(entt::registry& registry, entt::entit
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.ListBlocks requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendListBlocksGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendListBlocksGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendListBlocksFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -742,13 +750,13 @@ void StartClientPlayerFriendListBlocksCall(entt::registry& registry, entt::entit
         QueueLocalClientPlayerFriendListBlocksFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -780,9 +788,10 @@ void SendClientPlayerFriendListBlocksErased(entt::registry& registry, entt::enti
         LOG_FATAL << "gRPC ClientPlayerFriend.ListBlocks requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::ListBlocksRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.ListBlocks: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.ListBlocks: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -791,7 +800,7 @@ void SendClientPlayerFriendListBlocksErased(entt::registry& registry, entt::enti
     const auto* typedRequest = dynamic_cast<const ::friendpb::ListBlocksRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.ListBlocks: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -803,7 +812,7 @@ void SendClientPlayerFriendListBlocksErased(entt::registry& registry, entt::enti
 #pragma region ClientPlayerFriendRecommendFriends
 namespace {
 void QueueLocalClientPlayerFriendRecommendFriendsFailure(GrpcDone<::friendpb::RecommendFriendsResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -817,9 +826,9 @@ void StartClientPlayerFriendRecommendFriendsCall(entt::registry& registry, entt:
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.RecommendFriends requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendRecommendFriendsGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendRecommendFriendsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendRecommendFriendsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -828,13 +837,13 @@ void StartClientPlayerFriendRecommendFriendsCall(entt::registry& registry, entt:
         QueueLocalClientPlayerFriendRecommendFriendsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -866,9 +875,10 @@ void SendClientPlayerFriendRecommendFriendsErased(entt::registry& registry, entt
         LOG_FATAL << "gRPC ClientPlayerFriend.RecommendFriends requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::RecommendFriendsRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.RecommendFriends: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.RecommendFriends: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -877,7 +887,7 @@ void SendClientPlayerFriendRecommendFriendsErased(entt::registry& registry, entt
     const auto* typedRequest = dynamic_cast<const ::friendpb::RecommendFriendsRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.RecommendFriends: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -889,7 +899,7 @@ void SendClientPlayerFriendRecommendFriendsErased(entt::registry& registry, entt
 #pragma region ClientPlayerFriendNotifyFriendEvent
 namespace {
 void QueueLocalClientPlayerFriendNotifyFriendEventFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -903,9 +913,9 @@ void StartClientPlayerFriendNotifyFriendEventCall(entt::registry& registry, entt
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerFriend.NotifyFriendEvent requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerFriendNotifyFriendEventGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerFriendNotifyFriendEventGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerFriendNotifyFriendEventFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -914,13 +924,13 @@ void StartClientPlayerFriendNotifyFriendEventCall(entt::registry& registry, entt
         QueueLocalClientPlayerFriendNotifyFriendEventFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -952,9 +962,10 @@ void SendClientPlayerFriendNotifyFriendEventErased(entt::registry& registry, ent
         LOG_FATAL << "gRPC ClientPlayerFriend.NotifyFriendEvent requires a done callback";
     }
     if (message.GetDescriptor() != ::friendpb::FriendEventS2C::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerFriend.NotifyFriendEvent: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerFriend.NotifyFriendEvent: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -963,7 +974,7 @@ void SendClientPlayerFriendNotifyFriendEventErased(entt::registry& registry, ent
     const auto* typedRequest = dynamic_cast<const ::friendpb::FriendEventS2C*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerFriend.NotifyFriendEvent: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

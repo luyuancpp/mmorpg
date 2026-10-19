@@ -34,6 +34,7 @@ type leaveReleaseCall struct {
 	nodeID             string
 	playerID           uint64
 	expectedOwnerEpoch uint64
+	covered            placementIdentity // ReleasePlayerRequest.covered_*(§13)
 }
 
 // installLeaveReleaseRecorder 把 sessionEndedReleaseDispatcher 换成同步记录器,用例结束还原。
@@ -42,10 +43,12 @@ func installLeaveReleaseRecorder(t *testing.T) func() []leaveReleaseCall {
 	var mu sync.Mutex
 	var calls []leaveReleaseCall
 	prev := sessionEndedReleaseDispatcher
-	sessionEndedReleaseDispatcher = func(_ *svc.ServiceContext, zoneID uint32, nodeID string, playerID uint64, expected uint64) {
+	sessionEndedReleaseDispatcher = func(_ *svc.ServiceContext, zoneID uint32, nodeID string, playerID uint64, expected uint64,
+		covered placementIdentity) {
 		mu.Lock()
 		defer mu.Unlock()
-		calls = append(calls, leaveReleaseCall{zoneID: zoneID, nodeID: nodeID, playerID: playerID, expectedOwnerEpoch: expected})
+		calls = append(calls, leaveReleaseCall{zoneID: zoneID, nodeID: nodeID, playerID: playerID, expectedOwnerEpoch: expected,
+			covered: covered})
 	}
 	t.Cleanup(func() { sessionEndedReleaseDispatcher = prev })
 	return func() []leaveReleaseCall {
@@ -188,7 +191,8 @@ func TestLeaveScene_HolderNotReleasedKeepsLocationAndRequestsRelease(t *testing.
 	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)), "location 必须原样保留")
 	assert.Equal(t, "2", leaveCasValue(t, mr, fmt.Sprintf(InstancePlayerCountKey, sceneID)), "不删就不扣人数")
 	assert.Equal(t, "2", leaveCasValue(t, mr, nodePlayerCountKey(testZoneId, "10")))
-	assert.Equal(t, []leaveReleaseCall{{zoneID: testZoneId, nodeID: "10", playerID: playerID, expectedOwnerEpoch: 3}}, calls())
+	assert.Equal(t, []leaveReleaseCall{{zoneID: testZoneId, nodeID: "10", playerID: playerID, expectedOwnerEpoch: 3,
+		covered: placementIdentity{11, identGenA}}}, calls(), "覆盖到被清理的会话(离场请求的身份,§13)")
 	assert.Equal(t, pendingBefore+1, leaveReleaseCount(t, "pending"))
 	assert.True(t, mr.Exists(leaveReleaseWaitKey(playerID)), "第一次拒绝登记等待计时")
 
@@ -197,6 +201,30 @@ func TestLeaveScene_HolderNotReleasedKeepsLocationAndRequestsRelease(t *testing.
 	requireHolderReleasePending(t, err)
 	assert.Len(t, calls(), 2)
 	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)))
+}
+
+// §13.2:location 比离场会话旧(gen_L < gen_R,离场身份判 deleted)时 pending 照样派发,覆盖身份取离场请求的
+// (被清理的那条会话),不是 location 记的旧身份;否则经 gate Bind 补发绑上更新会话的实体会被判 skip_newer_login,
+// 持有者一直不释放、等到上限才 forced。上一条用例两边身份相同,分不出填的是哪一个。
+func TestLeaveScene_PendingCoversLeaveRequestIdentityNotLocation(t *testing.T) {
+	sc, mr := newTestSvcCtx(t, "")
+	calls := installLeaveReleaseRecorder(t)
+	const (
+		playerID = uint64(8314)
+		sceneID  = uint64(9415)
+	)
+	raw := leaveReleaseSeed(t, mr, playerID, sceneID, "10", 3) // location 身份 (11, identGenA)
+
+	_, err := NewLeaveSceneLogic(context.Background(), sc).LeaveScene(&scene_manager.LeaveSceneRequest{
+		PlayerId: playerID, SceneId: sceneID, SessionId: 22, LoginGeneration: identGenB,
+	})
+	requireHolderReleasePending(t, err)
+	assert.Equal(t, raw, leaveCasValue(t, mr, getPlayerLocationKey(playerID)), "location 必须原样保留")
+	got := calls()
+	require.Len(t, got, 1, "gen_L < gen_R 判 deleted → pending,请持有节点释放")
+	assert.Equal(t, uint64(3), got[0].expectedOwnerEpoch)
+	assert.Equal(t, placementIdentity{22, identGenB}, got[0].covered, "覆盖到离场请求的身份(§13.2)")
+	assert.NotEqual(t, placementIdentity{11, identGenA}, got[0].covered, "不得退回 location 记的旧身份")
 }
 
 // 持有节点写出当前代标记(A1′ / 凭证)之后,下一次重试删 location、扣一次人数、删等待计时。
@@ -454,6 +482,7 @@ func TestLeaveGameQuickReloginGoesThroughHandoffGate(t *testing.T) {
 	sc, mr := newTestSvcCtxWithWorldScenes(t)
 	installLeaveReleaseRecorder(t)
 	transfer := installReleaseDispatchRecorder(t, sc, nil)
+	holderRequested := installEnterHolderReleaseRecorder(t, nil)
 	const (
 		playerID = uint64(8313)
 		s1       = uint64(9413) // 持有节点 10
@@ -485,6 +514,12 @@ func TestLeaveGameQuickReloginGoesThroughHandoffGate(t *testing.T) {
 	loc := identLocation(t, sc, playerID)
 	require.NotNil(t, loc)
 	assert.Equal(t, "10", loc.NodeId)
+	// 这次登录的身份严格更新、来自 login:回 18 之前同步请持有节点按会话结束释放一次(§12;gate 已代发 ExitGame 时合并)。
+	holderCalls := holderRequested()
+	require.Len(t, holderCalls, 1)
+	assert.Equal(t, "10", holderCalls[0].nodeID)
+	assert.Equal(t, uint64(3), holderCalls[0].expectedOwnerEpoch)
+	assert.Equal(t, placementIdentity{22, identGenB}, holderCalls[0].covered, "覆盖到这次登录自己的身份(§13)")
 
 	// 3. 持有节点退出存盘落地,A1′ 写出当前代标记 → 重试放行并铸造 4,location 指向节点 20 与新登录。
 	require.NoError(t, mr.Set(ownerepoch.HandoffKey(playerID), "3:1700000000000"))
@@ -499,6 +534,7 @@ func TestLeaveGameQuickReloginGoesThroughHandoffGate(t *testing.T) {
 	calls, _ := transfer.snapshot()
 	require.Len(t, calls, 1, "跨节点放行后照常通知旧节点(交接释放)")
 	assert.Equal(t, uint64(3), calls[0].expectedOwnerEpoch)
+	assert.Len(t, holderRequested(), 1, "放行路径不请会话结束释放")
 
 	// 4. 旧会话迟到的清理(player_locator 现读 location 拿到 s2):新登录的身份更新 → keep_newer,不删。
 	_, err = NewLeaveSceneLogic(context.Background(), sc).LeaveScene(leaveReleaseRequest(playerID, s2))

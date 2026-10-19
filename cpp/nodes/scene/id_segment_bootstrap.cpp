@@ -28,7 +28,7 @@ namespace
     // 兜底路径(正常情况下失败通知先于 fetchTimeout 到达,走不到这里):
     // 一次请求被持有者按 fetchTimeout 判失败之后,响应可能还在路上。这段窗口里共享路径不发新请求,
     // 让同一 biz_tag 的迟到应答先于新请求到达,避免旧段晚于新段交付而触发范围水位校验。
-    // 窗口结束后恢复发送时放弃旧请求的交付;完成回调仍按捕获的 seq 精确认领,绝不会把它交给后来的请求。
+    // 窗口结束后恢复发送时放弃旧请求的交付;完成回调仍按捕获的 requestSequence 精确认领,绝不会把它交给后来的请求。
     constexpr double kLateResponseWindowSec = 10.0;
 
     // "没有 READY 的 DataService 节点"日志节流:退避封顶 5s 时每次都记就是 12 行/分钟。
@@ -49,14 +49,14 @@ namespace
 
     // 所有种类共用的 DataService 传输层。
     //
-    // 完成回调按闭包捕获的 seq 精确认领请求,不依赖响应字段或 metadata 回显。
+    // 完成回调按闭包捕获的 requestSequence 精确认领请求,不依赖响应字段或 metadata 回显。
     // 单飞与迟到窗口继续保证同一 biz_tag 的迟到应答先于新请求到达;代价是各类冷启动串行领段,
     // 运行期预取本来就稀疏,互不打扰。
     class IdSegmentTransport
     {
     public:
         bool Send(GuidKind kind, uint32_t step);
-        void OnCompleted(uint64_t seq, const GrpcCallOutcome &outcome,
+        void OnCompleted(uint64_t requestSequence, const GrpcCallOutcome &outcome,
                          const ::data_service::AllocateIdSegmentResponse *reply);
 
     private:
@@ -148,27 +148,27 @@ namespace
         ::data_service::AllocateIdSegmentRequest request;
         request.set_biz_tag(tlsGuidSegmentRegistry.Get(kind).options().bizTag);
         request.set_step(step);
-        const uint64_t seq = ++nextSeq_;
-        inflight_ = OutstandingRequest{seq, kind, step, now};
+        const uint64_t requestSequence = ++nextSeq_;
+        inflight_ = OutstandingRequest{requestSequence, kind, step, now};
         data_service::SendDataServiceAllocateIdSegment(tlsNodeContextManager.GetRegistry(DataServiceNodeService), target,
                                                        request,
-                                                       [seq](const GrpcCallOutcome &outcome,
+                                                       [requestSequence](const GrpcCallOutcome &outcome,
                                                              const ::data_service::AllocateIdSegmentResponse *reply)
-                                                       { tlsIdSegmentTransport.OnCompleted(seq, outcome, reply); });
+                                                       { tlsIdSegmentTransport.OnCompleted(requestSequence, outcome, reply); });
         return true;
     }
 
-    void IdSegmentTransport::OnCompleted(uint64_t seq, const GrpcCallOutcome &outcome,
+    void IdSegmentTransport::OnCompleted(uint64_t requestSequence, const GrpcCallOutcome &outcome,
                                          const ::data_service::AllocateIdSegmentResponse *reply)
     {
         GuidKind kind{};
         bool abandoned = false;
-        if (inflight_ && inflight_->seq == seq)
+        if (inflight_ && inflight_->seq == requestSequence)
         {
             kind = inflight_->kind;
             inflight_.reset();
         }
-        else if (abandoned_ && abandoned_->seq == seq)
+        else if (abandoned_ && abandoned_->seq == requestSequence)
         {
             kind = abandoned_->kind;
             abandoned = true;
@@ -177,7 +177,7 @@ namespace
         else
         {
             ++orphanResponses_;
-            LOG_WARN << "[idsegment] completion for unknown request seq=" << seq
+            LOG_WARN << "[idsegment] completion for unknown request seq=" << requestSequence
                      << " dropped; orphans=" << orphanResponses_;
             return;
         }
@@ -193,7 +193,7 @@ namespace
         if (abandoned)
         {
             // 持有者早已按 fetchTimeout 判过失败;这次调用到此确定不会再有响应,共享路径不必再为它守迟到窗口。
-            LOG_WARN << "[idsegment] abandoned request seq=" << seq << " kind=" << GuidKindName(kind)
+            LOG_WARN << "[idsegment] abandoned request seq=" << requestSequence << " kind=" << GuidKindName(kind)
                      << " finally failed (" << why.str() << "); releasing the shared DataService path";
             return;
         }

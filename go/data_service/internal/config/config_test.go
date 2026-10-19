@@ -926,3 +926,32 @@ func TestShippedYamlKafkaConsumerKnobsAreRowByRowAndValid(t *testing.T) {
 		t.Fatalf("shipped Kafka consumer knobs must validate: %v", err)
 	}
 }
+
+// TestValidateRegions:Regions 生效时(没配 DevRedis)zone → 集群表必须一对一、地址与 zone 都不能为空。
+// 同一 zone 出现在两个 Region 时,旧实现后写覆盖先写、debug_fetch 取先写,两边报的集群不一样。
+func TestValidateRegions(t *testing.T) {
+	region := func(id uint32, zones ...uint32) RegionConfig {
+		return RegionConfig{Id: id, Zones: zones, Redis: RedisClusterConfig{Addrs: []string{"10.0.0.1:6379"}}}
+	}
+	if err := ValidateRegions([]RegionConfig{region(1, 1, 2), region(2, 3)}); err != nil {
+		t.Fatalf("disjoint regions must validate: %v", err)
+	}
+
+	noAddrs := region(1, 1)
+	noAddrs.Redis.Addrs = nil
+	for name, tc := range map[string]struct {
+		regions []RegionConfig
+		want    string
+	}{
+		"empty":          {nil, "Regions is empty"},
+		"no addrs":       {[]RegionConfig{noAddrs}, "Redis.Addrs is empty"},
+		"no zones":       {[]RegionConfig{region(1)}, "Zones is empty"},
+		"duplicate zone": {[]RegionConfig{region(1, 1, 2), region(2, 2)}, "zone 2 is listed in both"},
+		"dup in one":     {[]RegionConfig{region(1, 5, 5)}, "zone 5 is listed in both"},
+	} {
+		err := ValidateRegions(tc.regions)
+		if err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Errorf("%s: want error containing %q, got %v", name, tc.want, err)
+		}
+	}
+}

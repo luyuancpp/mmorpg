@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace trade {
 #pragma region ClientPlayerJubaozhaiBrowseListings
 namespace {
 void QueueLocalClientPlayerJubaozhaiBrowseListingsFailure(GrpcDone<::trade::BrowseListingsResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartClientPlayerJubaozhaiBrowseListingsCall(entt::registry& registry, entt
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.BrowseListings requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiBrowseListingsGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiBrowseListingsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiBrowseListingsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartClientPlayerJubaozhaiBrowseListingsCall(entt::registry& registry, entt
         QueueLocalClientPlayerJubaozhaiBrowseListingsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendClientPlayerJubaozhaiBrowseListingsErased(entt::registry& registry, ent
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.BrowseListings requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::BrowseListingsRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.BrowseListings: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.BrowseListings: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendClientPlayerJubaozhaiBrowseListingsErased(entt::registry& registry, ent
     const auto* typedRequest = dynamic_cast<const ::trade::BrowseListingsRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.BrowseListings: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -115,7 +116,7 @@ void SendClientPlayerJubaozhaiBrowseListingsErased(entt::registry& registry, ent
 #pragma region ClientPlayerJubaozhaiGetListingDetail
 namespace {
 void QueueLocalClientPlayerJubaozhaiGetListingDetailFailure(GrpcDone<::trade::GetListingDetailResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -129,9 +130,9 @@ void StartClientPlayerJubaozhaiGetListingDetailCall(entt::registry& registry, en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.GetListingDetail requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiGetListingDetailGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiGetListingDetailGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiGetListingDetailFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -140,13 +141,13 @@ void StartClientPlayerJubaozhaiGetListingDetailCall(entt::registry& registry, en
         QueueLocalClientPlayerJubaozhaiGetListingDetailFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -178,9 +179,10 @@ void SendClientPlayerJubaozhaiGetListingDetailErased(entt::registry& registry, e
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.GetListingDetail requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::GetListingDetailRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetListingDetail: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetListingDetail: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -189,7 +191,7 @@ void SendClientPlayerJubaozhaiGetListingDetailErased(entt::registry& registry, e
     const auto* typedRequest = dynamic_cast<const ::trade::GetListingDetailRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetListingDetail: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -201,7 +203,7 @@ void SendClientPlayerJubaozhaiGetListingDetailErased(entt::registry& registry, e
 #pragma region ClientPlayerJubaozhaiSetFavorite
 namespace {
 void QueueLocalClientPlayerJubaozhaiSetFavoriteFailure(GrpcDone<::trade::SetFavoriteResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -215,9 +217,9 @@ void StartClientPlayerJubaozhaiSetFavoriteCall(entt::registry& registry, entt::e
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.SetFavorite requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiSetFavoriteGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiSetFavoriteGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiSetFavoriteFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -226,13 +228,13 @@ void StartClientPlayerJubaozhaiSetFavoriteCall(entt::registry& registry, entt::e
         QueueLocalClientPlayerJubaozhaiSetFavoriteFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -264,9 +266,10 @@ void SendClientPlayerJubaozhaiSetFavoriteErased(entt::registry& registry, entt::
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.SetFavorite requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::SetFavoriteRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.SetFavorite: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.SetFavorite: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -275,7 +278,7 @@ void SendClientPlayerJubaozhaiSetFavoriteErased(entt::registry& registry, entt::
     const auto* typedRequest = dynamic_cast<const ::trade::SetFavoriteRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.SetFavorite: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -287,7 +290,7 @@ void SendClientPlayerJubaozhaiSetFavoriteErased(entt::registry& registry, entt::
 #pragma region ClientPlayerJubaozhaiGetMyShelf
 namespace {
 void QueueLocalClientPlayerJubaozhaiGetMyShelfFailure(GrpcDone<::trade::GetMyShelfResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -301,9 +304,9 @@ void StartClientPlayerJubaozhaiGetMyShelfCall(entt::registry& registry, entt::en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.GetMyShelf requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiGetMyShelfGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiGetMyShelfGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiGetMyShelfFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -312,13 +315,13 @@ void StartClientPlayerJubaozhaiGetMyShelfCall(entt::registry& registry, entt::en
         QueueLocalClientPlayerJubaozhaiGetMyShelfFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -350,9 +353,10 @@ void SendClientPlayerJubaozhaiGetMyShelfErased(entt::registry& registry, entt::e
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.GetMyShelf requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::GetMyShelfRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetMyShelf: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetMyShelf: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -361,7 +365,7 @@ void SendClientPlayerJubaozhaiGetMyShelfErased(entt::registry& registry, entt::e
     const auto* typedRequest = dynamic_cast<const ::trade::GetMyShelfRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetMyShelf: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -373,7 +377,7 @@ void SendClientPlayerJubaozhaiGetMyShelfErased(entt::registry& registry, entt::e
 #pragma region ClientPlayerJubaozhaiListOfficialSkus
 namespace {
 void QueueLocalClientPlayerJubaozhaiListOfficialSkusFailure(GrpcDone<::trade::ListOfficialSkusResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -387,9 +391,9 @@ void StartClientPlayerJubaozhaiListOfficialSkusCall(entt::registry& registry, en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.ListOfficialSkus requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiListOfficialSkusGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiListOfficialSkusGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiListOfficialSkusFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -398,13 +402,13 @@ void StartClientPlayerJubaozhaiListOfficialSkusCall(entt::registry& registry, en
         QueueLocalClientPlayerJubaozhaiListOfficialSkusFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -436,9 +440,10 @@ void SendClientPlayerJubaozhaiListOfficialSkusErased(entt::registry& registry, e
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.ListOfficialSkus requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::ListOfficialSkusRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListOfficialSkus: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListOfficialSkus: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -447,7 +452,7 @@ void SendClientPlayerJubaozhaiListOfficialSkusErased(entt::registry& registry, e
     const auto* typedRequest = dynamic_cast<const ::trade::ListOfficialSkusRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListOfficialSkus: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -459,7 +464,7 @@ void SendClientPlayerJubaozhaiListOfficialSkusErased(entt::registry& registry, e
 #pragma region ClientPlayerJubaozhaiCreateOfficialOrder
 namespace {
 void QueueLocalClientPlayerJubaozhaiCreateOfficialOrderFailure(GrpcDone<::trade::CommerceOrderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -473,9 +478,9 @@ void StartClientPlayerJubaozhaiCreateOfficialOrderCall(entt::registry& registry,
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CreateOfficialOrder requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiCreateOfficialOrderGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiCreateOfficialOrderGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiCreateOfficialOrderFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -484,13 +489,13 @@ void StartClientPlayerJubaozhaiCreateOfficialOrderCall(entt::registry& registry,
         QueueLocalClientPlayerJubaozhaiCreateOfficialOrderFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -522,9 +527,10 @@ void SendClientPlayerJubaozhaiCreateOfficialOrderErased(entt::registry& registry
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CreateOfficialOrder requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::CreateOfficialOrderRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreateOfficialOrder: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreateOfficialOrder: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -533,7 +539,7 @@ void SendClientPlayerJubaozhaiCreateOfficialOrderErased(entt::registry& registry
     const auto* typedRequest = dynamic_cast<const ::trade::CreateOfficialOrderRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreateOfficialOrder: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -545,7 +551,7 @@ void SendClientPlayerJubaozhaiCreateOfficialOrderErased(entt::registry& registry
 #pragma region ClientPlayerJubaozhaiGetCommerceOrder
 namespace {
 void QueueLocalClientPlayerJubaozhaiGetCommerceOrderFailure(GrpcDone<::trade::CommerceOrderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -559,9 +565,9 @@ void StartClientPlayerJubaozhaiGetCommerceOrderCall(entt::registry& registry, en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.GetCommerceOrder requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiGetCommerceOrderGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiGetCommerceOrderGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiGetCommerceOrderFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -570,13 +576,13 @@ void StartClientPlayerJubaozhaiGetCommerceOrderCall(entt::registry& registry, en
         QueueLocalClientPlayerJubaozhaiGetCommerceOrderFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -608,9 +614,10 @@ void SendClientPlayerJubaozhaiGetCommerceOrderErased(entt::registry& registry, e
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.GetCommerceOrder requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::GetCommerceOrderRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetCommerceOrder: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetCommerceOrder: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -619,7 +626,7 @@ void SendClientPlayerJubaozhaiGetCommerceOrderErased(entt::registry& registry, e
     const auto* typedRequest = dynamic_cast<const ::trade::GetCommerceOrderRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetCommerceOrder: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -631,7 +638,7 @@ void SendClientPlayerJubaozhaiGetCommerceOrderErased(entt::registry& registry, e
 #pragma region ClientPlayerJubaozhaiCancelCommerceOrder
 namespace {
 void QueueLocalClientPlayerJubaozhaiCancelCommerceOrderFailure(GrpcDone<::trade::CommerceOrderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -645,9 +652,9 @@ void StartClientPlayerJubaozhaiCancelCommerceOrderCall(entt::registry& registry,
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CancelCommerceOrder requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiCancelCommerceOrderGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiCancelCommerceOrderGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiCancelCommerceOrderFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -656,13 +663,13 @@ void StartClientPlayerJubaozhaiCancelCommerceOrderCall(entt::registry& registry,
         QueueLocalClientPlayerJubaozhaiCancelCommerceOrderFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -694,9 +701,10 @@ void SendClientPlayerJubaozhaiCancelCommerceOrderErased(entt::registry& registry
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CancelCommerceOrder requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::CancelCommerceOrderRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelCommerceOrder: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelCommerceOrder: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -705,7 +713,7 @@ void SendClientPlayerJubaozhaiCancelCommerceOrderErased(entt::registry& registry
     const auto* typedRequest = dynamic_cast<const ::trade::CancelCommerceOrderRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelCommerceOrder: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -717,7 +725,7 @@ void SendClientPlayerJubaozhaiCancelCommerceOrderErased(entt::registry& registry
 #pragma region ClientPlayerJubaozhaiListCommerceOrders
 namespace {
 void QueueLocalClientPlayerJubaozhaiListCommerceOrdersFailure(GrpcDone<::trade::ListCommerceOrdersResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -731,9 +739,9 @@ void StartClientPlayerJubaozhaiListCommerceOrdersCall(entt::registry& registry, 
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.ListCommerceOrders requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiListCommerceOrdersGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiListCommerceOrdersGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiListCommerceOrdersFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -742,13 +750,13 @@ void StartClientPlayerJubaozhaiListCommerceOrdersCall(entt::registry& registry, 
         QueueLocalClientPlayerJubaozhaiListCommerceOrdersFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -780,9 +788,10 @@ void SendClientPlayerJubaozhaiListCommerceOrdersErased(entt::registry& registry,
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.ListCommerceOrders requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::ListCommerceOrdersRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListCommerceOrders: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListCommerceOrders: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -791,7 +800,7 @@ void SendClientPlayerJubaozhaiListCommerceOrdersErased(entt::registry& registry,
     const auto* typedRequest = dynamic_cast<const ::trade::ListCommerceOrdersRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListCommerceOrders: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -803,7 +812,7 @@ void SendClientPlayerJubaozhaiListCommerceOrdersErased(entt::registry& registry,
 #pragma region ClientPlayerJubaozhaiCreatePlayerTrade
 namespace {
 void QueueLocalClientPlayerJubaozhaiCreatePlayerTradeFailure(GrpcDone<::trade::CommerceOrderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -817,9 +826,9 @@ void StartClientPlayerJubaozhaiCreatePlayerTradeCall(entt::registry& registry, e
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CreatePlayerTrade requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiCreatePlayerTradeGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiCreatePlayerTradeGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiCreatePlayerTradeFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -828,13 +837,13 @@ void StartClientPlayerJubaozhaiCreatePlayerTradeCall(entt::registry& registry, e
         QueueLocalClientPlayerJubaozhaiCreatePlayerTradeFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -866,9 +875,10 @@ void SendClientPlayerJubaozhaiCreatePlayerTradeErased(entt::registry& registry, 
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CreatePlayerTrade requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::CreatePlayerTradeRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreatePlayerTrade: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreatePlayerTrade: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -877,7 +887,7 @@ void SendClientPlayerJubaozhaiCreatePlayerTradeErased(entt::registry& registry, 
     const auto* typedRequest = dynamic_cast<const ::trade::CreatePlayerTradeRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreatePlayerTrade: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -889,7 +899,7 @@ void SendClientPlayerJubaozhaiCreatePlayerTradeErased(entt::registry& registry, 
 #pragma region ClientPlayerJubaozhaiConfirmPlayerTrade
 namespace {
 void QueueLocalClientPlayerJubaozhaiConfirmPlayerTradeFailure(GrpcDone<::trade::CommerceOrderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -903,9 +913,9 @@ void StartClientPlayerJubaozhaiConfirmPlayerTradeCall(entt::registry& registry, 
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.ConfirmPlayerTrade requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiConfirmPlayerTradeGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiConfirmPlayerTradeGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiConfirmPlayerTradeFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -914,13 +924,13 @@ void StartClientPlayerJubaozhaiConfirmPlayerTradeCall(entt::registry& registry, 
         QueueLocalClientPlayerJubaozhaiConfirmPlayerTradeFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -952,9 +962,10 @@ void SendClientPlayerJubaozhaiConfirmPlayerTradeErased(entt::registry& registry,
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.ConfirmPlayerTrade requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::ConfirmPlayerTradeRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.ConfirmPlayerTrade: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.ConfirmPlayerTrade: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -963,7 +974,7 @@ void SendClientPlayerJubaozhaiConfirmPlayerTradeErased(entt::registry& registry,
     const auto* typedRequest = dynamic_cast<const ::trade::ConfirmPlayerTradeRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.ConfirmPlayerTrade: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -975,7 +986,7 @@ void SendClientPlayerJubaozhaiConfirmPlayerTradeErased(entt::registry& registry,
 #pragma region ClientPlayerJubaozhaiCreateConsignment
 namespace {
 void QueueLocalClientPlayerJubaozhaiCreateConsignmentFailure(GrpcDone<::trade::CommerceOrderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -989,9 +1000,9 @@ void StartClientPlayerJubaozhaiCreateConsignmentCall(entt::registry& registry, e
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CreateConsignment requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiCreateConsignmentGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiCreateConsignmentGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiCreateConsignmentFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1000,13 +1011,13 @@ void StartClientPlayerJubaozhaiCreateConsignmentCall(entt::registry& registry, e
         QueueLocalClientPlayerJubaozhaiCreateConsignmentFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1038,9 +1049,10 @@ void SendClientPlayerJubaozhaiCreateConsignmentErased(entt::registry& registry, 
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CreateConsignment requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::CreateConsignmentRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreateConsignment: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreateConsignment: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1049,7 +1061,7 @@ void SendClientPlayerJubaozhaiCreateConsignmentErased(entt::registry& registry, 
     const auto* typedRequest = dynamic_cast<const ::trade::CreateConsignmentRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreateConsignment: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1061,7 +1073,7 @@ void SendClientPlayerJubaozhaiCreateConsignmentErased(entt::registry& registry, 
 #pragma region ClientPlayerJubaozhaiBuyConsignment
 namespace {
 void QueueLocalClientPlayerJubaozhaiBuyConsignmentFailure(GrpcDone<::trade::CommerceOrderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1075,9 +1087,9 @@ void StartClientPlayerJubaozhaiBuyConsignmentCall(entt::registry& registry, entt
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.BuyConsignment requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiBuyConsignmentGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiBuyConsignmentGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiBuyConsignmentFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1086,13 +1098,13 @@ void StartClientPlayerJubaozhaiBuyConsignmentCall(entt::registry& registry, entt
         QueueLocalClientPlayerJubaozhaiBuyConsignmentFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1124,9 +1136,10 @@ void SendClientPlayerJubaozhaiBuyConsignmentErased(entt::registry& registry, ent
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.BuyConsignment requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::BuyConsignmentRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.BuyConsignment: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.BuyConsignment: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1135,7 +1148,7 @@ void SendClientPlayerJubaozhaiBuyConsignmentErased(entt::registry& registry, ent
     const auto* typedRequest = dynamic_cast<const ::trade::BuyConsignmentRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.BuyConsignment: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1147,7 +1160,7 @@ void SendClientPlayerJubaozhaiBuyConsignmentErased(entt::registry& registry, ent
 #pragma region ClientPlayerJubaozhaiCancelConsignment
 namespace {
 void QueueLocalClientPlayerJubaozhaiCancelConsignmentFailure(GrpcDone<::trade::CommerceOrderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1161,9 +1174,9 @@ void StartClientPlayerJubaozhaiCancelConsignmentCall(entt::registry& registry, e
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CancelConsignment requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiCancelConsignmentGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiCancelConsignmentGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiCancelConsignmentFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1172,13 +1185,13 @@ void StartClientPlayerJubaozhaiCancelConsignmentCall(entt::registry& registry, e
         QueueLocalClientPlayerJubaozhaiCancelConsignmentFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1210,9 +1223,10 @@ void SendClientPlayerJubaozhaiCancelConsignmentErased(entt::registry& registry, 
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CancelConsignment requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::CancelConsignmentRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelConsignment: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelConsignment: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1221,7 +1235,7 @@ void SendClientPlayerJubaozhaiCancelConsignmentErased(entt::registry& registry, 
     const auto* typedRequest = dynamic_cast<const ::trade::CancelConsignmentRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelConsignment: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1233,7 +1247,7 @@ void SendClientPlayerJubaozhaiCancelConsignmentErased(entt::registry& registry, 
 #pragma region ClientPlayerJubaozhaiPlaceMarketOrder
 namespace {
 void QueueLocalClientPlayerJubaozhaiPlaceMarketOrderFailure(GrpcDone<::trade::MarketOrderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1247,9 +1261,9 @@ void StartClientPlayerJubaozhaiPlaceMarketOrderCall(entt::registry& registry, en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.PlaceMarketOrder requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiPlaceMarketOrderGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiPlaceMarketOrderGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiPlaceMarketOrderFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1258,13 +1272,13 @@ void StartClientPlayerJubaozhaiPlaceMarketOrderCall(entt::registry& registry, en
         QueueLocalClientPlayerJubaozhaiPlaceMarketOrderFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1296,9 +1310,10 @@ void SendClientPlayerJubaozhaiPlaceMarketOrderErased(entt::registry& registry, e
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.PlaceMarketOrder requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::PlaceMarketOrderRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.PlaceMarketOrder: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.PlaceMarketOrder: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1307,7 +1322,7 @@ void SendClientPlayerJubaozhaiPlaceMarketOrderErased(entt::registry& registry, e
     const auto* typedRequest = dynamic_cast<const ::trade::PlaceMarketOrderRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.PlaceMarketOrder: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1319,7 +1334,7 @@ void SendClientPlayerJubaozhaiPlaceMarketOrderErased(entt::registry& registry, e
 #pragma region ClientPlayerJubaozhaiCancelMarketOrder
 namespace {
 void QueueLocalClientPlayerJubaozhaiCancelMarketOrderFailure(GrpcDone<::trade::MarketOrderResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1333,9 +1348,9 @@ void StartClientPlayerJubaozhaiCancelMarketOrderCall(entt::registry& registry, e
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CancelMarketOrder requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiCancelMarketOrderGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiCancelMarketOrderGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiCancelMarketOrderFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1344,13 +1359,13 @@ void StartClientPlayerJubaozhaiCancelMarketOrderCall(entt::registry& registry, e
         QueueLocalClientPlayerJubaozhaiCancelMarketOrderFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1382,9 +1397,10 @@ void SendClientPlayerJubaozhaiCancelMarketOrderErased(entt::registry& registry, 
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CancelMarketOrder requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::CancelMarketOrderRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelMarketOrder: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelMarketOrder: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1393,7 +1409,7 @@ void SendClientPlayerJubaozhaiCancelMarketOrderErased(entt::registry& registry, 
     const auto* typedRequest = dynamic_cast<const ::trade::CancelMarketOrderRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelMarketOrder: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1405,7 +1421,7 @@ void SendClientPlayerJubaozhaiCancelMarketOrderErased(entt::registry& registry, 
 #pragma region ClientPlayerJubaozhaiListMarketOrders
 namespace {
 void QueueLocalClientPlayerJubaozhaiListMarketOrdersFailure(GrpcDone<::trade::ListMarketOrdersResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1419,9 +1435,9 @@ void StartClientPlayerJubaozhaiListMarketOrdersCall(entt::registry& registry, en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.ListMarketOrders requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiListMarketOrdersGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiListMarketOrdersGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiListMarketOrdersFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1430,13 +1446,13 @@ void StartClientPlayerJubaozhaiListMarketOrdersCall(entt::registry& registry, en
         QueueLocalClientPlayerJubaozhaiListMarketOrdersFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1468,9 +1484,10 @@ void SendClientPlayerJubaozhaiListMarketOrdersErased(entt::registry& registry, e
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.ListMarketOrders requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::ListMarketOrdersRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListMarketOrders: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListMarketOrders: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1479,7 +1496,7 @@ void SendClientPlayerJubaozhaiListMarketOrdersErased(entt::registry& registry, e
     const auto* typedRequest = dynamic_cast<const ::trade::ListMarketOrdersRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListMarketOrders: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1491,7 +1508,7 @@ void SendClientPlayerJubaozhaiListMarketOrdersErased(entt::registry& registry, e
 #pragma region ClientPlayerJubaozhaiGetMarketDepth
 namespace {
 void QueueLocalClientPlayerJubaozhaiGetMarketDepthFailure(GrpcDone<::trade::GetMarketDepthResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1505,9 +1522,9 @@ void StartClientPlayerJubaozhaiGetMarketDepthCall(entt::registry& registry, entt
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.GetMarketDepth requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiGetMarketDepthGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiGetMarketDepthGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiGetMarketDepthFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1516,13 +1533,13 @@ void StartClientPlayerJubaozhaiGetMarketDepthCall(entt::registry& registry, entt
         QueueLocalClientPlayerJubaozhaiGetMarketDepthFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1554,9 +1571,10 @@ void SendClientPlayerJubaozhaiGetMarketDepthErased(entt::registry& registry, ent
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.GetMarketDepth requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::GetMarketDepthRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetMarketDepth: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetMarketDepth: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1565,7 +1583,7 @@ void SendClientPlayerJubaozhaiGetMarketDepthErased(entt::registry& registry, ent
     const auto* typedRequest = dynamic_cast<const ::trade::GetMarketDepthRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetMarketDepth: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1577,7 +1595,7 @@ void SendClientPlayerJubaozhaiGetMarketDepthErased(entt::registry& registry, ent
 #pragma region ClientPlayerJubaozhaiCreateAuctionLot
 namespace {
 void QueueLocalClientPlayerJubaozhaiCreateAuctionLotFailure(GrpcDone<::trade::AuctionLotResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1591,9 +1609,9 @@ void StartClientPlayerJubaozhaiCreateAuctionLotCall(entt::registry& registry, en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CreateAuctionLot requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiCreateAuctionLotGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiCreateAuctionLotGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiCreateAuctionLotFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1602,13 +1620,13 @@ void StartClientPlayerJubaozhaiCreateAuctionLotCall(entt::registry& registry, en
         QueueLocalClientPlayerJubaozhaiCreateAuctionLotFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1640,9 +1658,10 @@ void SendClientPlayerJubaozhaiCreateAuctionLotErased(entt::registry& registry, e
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CreateAuctionLot requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::CreateAuctionLotRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreateAuctionLot: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreateAuctionLot: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1651,7 +1670,7 @@ void SendClientPlayerJubaozhaiCreateAuctionLotErased(entt::registry& registry, e
     const auto* typedRequest = dynamic_cast<const ::trade::CreateAuctionLotRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.CreateAuctionLot: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1663,7 +1682,7 @@ void SendClientPlayerJubaozhaiCreateAuctionLotErased(entt::registry& registry, e
 #pragma region ClientPlayerJubaozhaiPlaceAuctionBid
 namespace {
 void QueueLocalClientPlayerJubaozhaiPlaceAuctionBidFailure(GrpcDone<::trade::AuctionLotResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1677,9 +1696,9 @@ void StartClientPlayerJubaozhaiPlaceAuctionBidCall(entt::registry& registry, ent
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.PlaceAuctionBid requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiPlaceAuctionBidGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiPlaceAuctionBidGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiPlaceAuctionBidFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1688,13 +1707,13 @@ void StartClientPlayerJubaozhaiPlaceAuctionBidCall(entt::registry& registry, ent
         QueueLocalClientPlayerJubaozhaiPlaceAuctionBidFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1726,9 +1745,10 @@ void SendClientPlayerJubaozhaiPlaceAuctionBidErased(entt::registry& registry, en
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.PlaceAuctionBid requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::PlaceAuctionBidRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.PlaceAuctionBid: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.PlaceAuctionBid: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1737,7 +1757,7 @@ void SendClientPlayerJubaozhaiPlaceAuctionBidErased(entt::registry& registry, en
     const auto* typedRequest = dynamic_cast<const ::trade::PlaceAuctionBidRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.PlaceAuctionBid: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1749,7 +1769,7 @@ void SendClientPlayerJubaozhaiPlaceAuctionBidErased(entt::registry& registry, en
 #pragma region ClientPlayerJubaozhaiGetAuctionLot
 namespace {
 void QueueLocalClientPlayerJubaozhaiGetAuctionLotFailure(GrpcDone<::trade::AuctionLotResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1763,9 +1783,9 @@ void StartClientPlayerJubaozhaiGetAuctionLotCall(entt::registry& registry, entt:
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.GetAuctionLot requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiGetAuctionLotGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiGetAuctionLotGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiGetAuctionLotFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1774,13 +1794,13 @@ void StartClientPlayerJubaozhaiGetAuctionLotCall(entt::registry& registry, entt:
         QueueLocalClientPlayerJubaozhaiGetAuctionLotFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1812,9 +1832,10 @@ void SendClientPlayerJubaozhaiGetAuctionLotErased(entt::registry& registry, entt
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.GetAuctionLot requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::GetAuctionLotRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetAuctionLot: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetAuctionLot: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1823,7 +1844,7 @@ void SendClientPlayerJubaozhaiGetAuctionLotErased(entt::registry& registry, entt
     const auto* typedRequest = dynamic_cast<const ::trade::GetAuctionLotRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.GetAuctionLot: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1835,7 +1856,7 @@ void SendClientPlayerJubaozhaiGetAuctionLotErased(entt::registry& registry, entt
 #pragma region ClientPlayerJubaozhaiCancelAuctionLot
 namespace {
 void QueueLocalClientPlayerJubaozhaiCancelAuctionLotFailure(GrpcDone<::trade::AuctionLotResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1849,9 +1870,9 @@ void StartClientPlayerJubaozhaiCancelAuctionLotCall(entt::registry& registry, en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CancelAuctionLot requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiCancelAuctionLotGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiCancelAuctionLotGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiCancelAuctionLotFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1860,13 +1881,13 @@ void StartClientPlayerJubaozhaiCancelAuctionLotCall(entt::registry& registry, en
         QueueLocalClientPlayerJubaozhaiCancelAuctionLotFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1898,9 +1919,10 @@ void SendClientPlayerJubaozhaiCancelAuctionLotErased(entt::registry& registry, e
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.CancelAuctionLot requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::CancelAuctionLotRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelAuctionLot: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelAuctionLot: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1909,7 +1931,7 @@ void SendClientPlayerJubaozhaiCancelAuctionLotErased(entt::registry& registry, e
     const auto* typedRequest = dynamic_cast<const ::trade::CancelAuctionLotRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.CancelAuctionLot: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1921,7 +1943,7 @@ void SendClientPlayerJubaozhaiCancelAuctionLotErased(entt::registry& registry, e
 #pragma region ClientPlayerJubaozhaiBrowseCommerceOffers
 namespace {
 void QueueLocalClientPlayerJubaozhaiBrowseCommerceOffersFailure(GrpcDone<::trade::BrowseCommerceOffersResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -1935,9 +1957,9 @@ void StartClientPlayerJubaozhaiBrowseCommerceOffersCall(entt::registry& registry
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.BrowseCommerceOffers requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiBrowseCommerceOffersGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiBrowseCommerceOffersGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiBrowseCommerceOffersFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -1946,13 +1968,13 @@ void StartClientPlayerJubaozhaiBrowseCommerceOffersCall(entt::registry& registry
         QueueLocalClientPlayerJubaozhaiBrowseCommerceOffersFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -1984,9 +2006,10 @@ void SendClientPlayerJubaozhaiBrowseCommerceOffersErased(entt::registry& registr
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.BrowseCommerceOffers requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::BrowseCommerceOffersRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.BrowseCommerceOffers: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.BrowseCommerceOffers: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -1995,7 +2018,7 @@ void SendClientPlayerJubaozhaiBrowseCommerceOffersErased(entt::registry& registr
     const auto* typedRequest = dynamic_cast<const ::trade::BrowseCommerceOffersRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.BrowseCommerceOffers: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2007,7 +2030,7 @@ void SendClientPlayerJubaozhaiBrowseCommerceOffersErased(entt::registry& registr
 #pragma region ClientPlayerJubaozhaiListTradeMarkets
 namespace {
 void QueueLocalClientPlayerJubaozhaiListTradeMarketsFailure(GrpcDone<::trade::ListTradeMarketsResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -2021,9 +2044,9 @@ void StartClientPlayerJubaozhaiListTradeMarketsCall(entt::registry& registry, en
     if (!done) {
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.ListTradeMarkets requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kClientPlayerJubaozhaiListTradeMarketsGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kClientPlayerJubaozhaiListTradeMarketsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalClientPlayerJubaozhaiListTradeMarketsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -2032,13 +2055,13 @@ void StartClientPlayerJubaozhaiListTradeMarketsCall(entt::registry& registry, en
         QueueLocalClientPlayerJubaozhaiListTradeMarketsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -2070,9 +2093,10 @@ void SendClientPlayerJubaozhaiListTradeMarketsErased(entt::registry& registry, e
         LOG_FATAL << "gRPC ClientPlayerJubaozhai.ListTradeMarkets requires a done callback";
     }
     if (message.GetDescriptor() != ::trade::ListTradeMarketsRequest::descriptor()) {
-        LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListTradeMarkets: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListTradeMarkets: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -2081,7 +2105,7 @@ void SendClientPlayerJubaozhaiListTradeMarketsErased(entt::registry& registry, e
     const auto* typedRequest = dynamic_cast<const ::trade::ListTradeMarketsRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC ClientPlayerJubaozhai.ListTradeMarkets: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

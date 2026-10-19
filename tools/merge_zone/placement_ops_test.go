@@ -538,6 +538,43 @@ func TestCheckPinModeFlags(t *testing.T) {
 	}
 }
 
+// TestCheckDataRedisBlobFlags:声明了两个不同的 data Redis 后端却没让 blob 跟着走,改映射后 data_service 去目标
+// 后端读到的是「成功、空数据、Version=0」。第 2 步只看 -migrate-player-blobs、与模式无关,所以两种模式都要拒。
+func TestCheckDataRedisBlobFlags(t *testing.T) {
+	crossCluster := options{
+		playerRowsMode: playerRowsModeCopy,
+		sourceData:     "10.0.0.1:6379",
+		targetData:     "10.0.0.2:6379",
+	}
+	for _, mode := range []string{playerRowsModeCopy, playerRowsModePin} {
+		o := crossCluster
+		o.playerRowsMode = mode
+		if err := checkDataRedisBlobFlags(o); err == nil || !strings.Contains(err.Error(), "-migrate-player-blobs") {
+			t.Errorf("mode %s: different data backends without -migrate-player-blobs must be refused: %v", mode, err)
+		}
+	}
+
+	sameDBDiffers := crossCluster
+	sameDBDiffers.targetData = sameDBDiffers.sourceData
+	sameDBDiffers.targetDataDB = 1
+	if err := checkDataRedisBlobFlags(sameDBDiffers); err == nil {
+		t.Error("same address but a different DB index is a different backend and must be refused")
+	}
+
+	for name, o := range map[string]options{
+		"same backend":       {sourceData: "10.0.0.1:6379", targetData: " 10.0.0.1:6379 "},
+		"source not given":   {targetData: "10.0.0.2:6379"},
+		"target not given":   {sourceData: "10.0.0.1:6379"},
+		"nothing given":      {},
+		"migrate requested":  func() options { c := crossCluster; c.migrateBlobs = true; return c }(),
+		"explicit emergency": func() options { c := crossCluster; c.skipBlobs = true; return c }(),
+	} {
+		if err := checkDataRedisBlobFlags(o); err != nil {
+			t.Errorf("%s: nothing to refuse: %v", name, err)
+		}
+	}
+}
+
 // ── 合服后验证:主数据行在哪 ───────────────────────────────────────
 
 func TestExpectedMainRowStore(t *testing.T) {

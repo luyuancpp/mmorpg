@@ -39,9 +39,17 @@ type ReleasePlayerRequest struct {
 	// true:持有该玩家且缓存 owner_epoch == expected_owner_epoch → 按客户端断线退出(存盘落地后写 A1′ 断线释放标记);
 	// 本节点完全不持有(无实体、无在途载入、无改派待确认)→ 按 owner_epoch == expected_owner_epoch 条件补写凭证标记;其余忽略。
 	// false = 交接释放(上面的原语义)。旧版 scene 忽略本字段、按交接释放处理,所以 scene 必须先于 SceneManager 发布。
-	SessionEnded  bool `protobuf:"varint,5,opt,name=session_ended,json=sessionEnded,proto3" json:"session_ended,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	SessionEnded bool `protobuf:"varint,5,opt,name=session_ended,json=sessionEnded,proto3" json:"session_ended,omitempty"`
+	// 本次会话结束释放覆盖到的最新登录身份(docs/design/location-release-binding.md §13)。只在 session_ended = true 时有意义。
+	// 持有节点在归属代际判定放行之后再比实体当前绑定的登录身份(PlayerLoginIdentityComp):实体代次更大,或代次相等而
+	// 会话号不同(两边都是有效会话)→ 实体已绑上一次更新的登录,这是一条迟到的释放,不退出、计数并 WARN;其余照常退出。
+	// 填法:LeaveScene 填被清理的会话(离场请求的 session_id / login_generation);登录撞上未释放的持有者时填发起这次登录的会话
+	// (它已取代 location 上的会话、自己要落到别的节点,本节点上不比它新的那一份都该退出)。
+	// covered_login_generation = 0 = 旧版调用方,按现行为(只比 owner_epoch)。会话号 0 只按代次比。不进存盘,不替代 owner_epoch。
+	CoveredSessionId       uint32 `protobuf:"varint,6,opt,name=covered_session_id,json=coveredSessionId,proto3" json:"covered_session_id,omitempty"`
+	CoveredLoginGeneration uint64 `protobuf:"varint,7,opt,name=covered_login_generation,json=coveredLoginGeneration,proto3" json:"covered_login_generation,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ReleasePlayerRequest) Reset() {
@@ -109,18 +117,34 @@ func (x *ReleasePlayerRequest) GetSessionEnded() bool {
 	return false
 }
 
+func (x *ReleasePlayerRequest) GetCoveredSessionId() uint32 {
+	if x != nil {
+		return x.CoveredSessionId
+	}
+	return 0
+}
+
+func (x *ReleasePlayerRequest) GetCoveredLoginGeneration() uint64 {
+	if x != nil {
+		return x.CoveredLoginGeneration
+	}
+	return 0
+}
+
 var File_proto_scene_manager_scene_node_service_proto protoreflect.FileDescriptor
 
 const file_proto_scene_manager_scene_node_service_proto_rawDesc = "" +
 	"\n" +
 	",proto/scene_manager/scene_node_service.proto\x12\n" +
-	"scene_node\x1a!proto/common/asset/asset_op.proto\x1a\x1dproto/common/base/empty.proto\x1a\x17proto/scene/scene.proto\"\xd8\x01\n" +
+	"scene_node\x1a!proto/common/asset/asset_op.proto\x1a\x1dproto/common/base/empty.proto\x1a\x17proto/scene/scene.proto\"\xc0\x02\n" +
 	"\x14ReleasePlayerRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12&\n" +
 	"\x0ftarget_scene_id\x18\x02 \x01(\x04R\rtargetSceneId\x12$\n" +
 	"\x0etarget_node_id\x18\x03 \x01(\tR\ftargetNodeId\x120\n" +
 	"\x14expected_owner_epoch\x18\x04 \x01(\x04R\x12expectedOwnerEpoch\x12#\n" +
-	"\rsession_ended\x18\x05 \x01(\bR\fsessionEnded2\x8f\x04\n" +
+	"\rsession_ended\x18\x05 \x01(\bR\fsessionEnded\x12,\n" +
+	"\x12covered_session_id\x18\x06 \x01(\rR\x10coveredSessionId\x128\n" +
+	"\x18covered_login_generation\x18\a \x01(\x04R\x16coveredLoginGeneration2\x8f\x04\n" +
 	"\rSceneNodeGrpc\x12:\n" +
 	"\vCreateScene\x12\x13.CreateSceneRequest\x1a\x14.CreateSceneResponse\"\x00\x12.\n" +
 	"\fDestroyScene\x12\x14.DestroySceneRequest\x1a\x06.Empty\"\x00\x12;\n" +

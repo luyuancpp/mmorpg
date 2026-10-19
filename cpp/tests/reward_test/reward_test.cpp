@@ -26,7 +26,7 @@ TEST(RewardClaimSystemTest, InitializationTest)
     auto &claimedRewards = tlsEcs.actorRegistry.get_or_emplace<RewardComp>(playerEntity).claimedRewards;
 
     // verify all rewards are unclaimed
-    for (int i = 0; i < kRewardMaxBitIndex; ++i)
+    for (int i = 0; i < kRewardBitmapCapacity; ++i)
     {
         EXPECT_FALSE(RewardClaimSystem::IsClaimedByIndex(i, claimedRewards));
     }
@@ -45,7 +45,7 @@ TEST(RewardClaimSystemTest, ClaimRewardTest)
     EXPECT_TRUE(RewardClaimSystem::IsClaimedByIndex(5, claimedRewards));
 
     // verify other rewards remain unclaimed
-    for (int i = 0; i < kRewardMaxBitIndex; ++i)
+    for (int i = 0; i < kRewardBitmapCapacity; ++i)
     {
         if (i != 5)
         {
@@ -77,7 +77,7 @@ TEST(RewardClaimSystemTest, InvalidRewardIndexTest)
 
     // pass invalid reward index
     EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem::ClaimByIndex(static_cast<uint32_t>(-1), claimedRewards));       // invalid index
-    EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem::ClaimByIndex(kRewardMaxBitIndex, claimedRewards)); // exceeds max index
+    EXPECT_EQ(kIndexOutOfRange, RewardClaimSystem::ClaimByIndex(kRewardBitmapCapacity, claimedRewards)); // 容量是下标上界，不是有效下标
 }
 
 // Test: display reward status

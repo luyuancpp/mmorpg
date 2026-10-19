@@ -381,7 +381,7 @@ void Send<Svc><Method>(entt::registry&, entt::entity nodeEntity, const Request&,
 | 镜像 CreateScene | `PlayerSceneSystem::HandleMirrorCreateDone`，按捕获的 `playerId + token` 认领 `PlayerMirrorCreateInFlightComp`，还须槽未过 TTL 且未发生时间回拨 | 令牌不符不改新槽；匹配令牌但槽已过期或时间回拨，仅摘当前令牌后静默丢弃，不推 tip、不自动进场；有效槽内业务拒绝、零 scene_id、建好时已在战斗回 `kEnterSceneFailed`，无可用 SceneManager 或传输失败回 3028 |
 | AllocateIdSegment | `IdSegmentTransport` 的每次调用回调按捕获 seq 认领 inflight / abandoned | 删除 `x-idseg-seq` metadata 归属；保留单飞与原迟到窗口；正常失败交 `OnTransportFailure`，已放弃调用不重复判失败 |
 | 收件箱 Fetch / Ack | `PlayerInboxSystem` 的具名完成函数，闭包捕获 `playerId + domain + correlationId` | 先核对非零回显，再按捕获值认领；旧调用不清掉新调用的在途状态；原退避、UNIMPLEMENTED 与幂等语义保持 |
-| gate 直连通用转发 | `OnDirectGrpcCallDone` 捕获 session_id / incarnation / message_id 与发送时的 SessionDetails 原始字节，交 `gate_rpc_reply_bridge` | 成功和失败先按发送时的会话代次认领，拒绝 session_id 复用后的旧完成；成功不依赖服务端回显，失败仍走既有失败桥及 lane 认领 |
+| gate 直连通用转发 | `ForwardDirectGrpcCallResult` 捕获 session_id / incarnation / message_id 与发送时的 SessionDetails 原始字节，交 `gate_rpc_reply_bridge` | 成功和失败先按发送时的会话代次认领，拒绝 session_id 复用后的旧完成；成功不依赖服务端回显，失败仍走既有失败桥及 lane 认领 |
 | gate 直连 Login.Disconnect | 显式 typed done，只捕获 sessionId | 成功无后续；失败每 1024 次采样 WARN，不向已断开或复用该 session_id 的新会话推 tip |
 | gate 路由 Forward | `router_muduo_forward.cpp` 的 `SendForward`，本来就有每次调用回调 | 成功仍按响应头原值回显的会话交桥；失败按发送时捕获的会话交失败桥；不重试 |
 

@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace mailpb {
 #pragma region MailAdminSendPersonalMail
 namespace {
 void QueueLocalMailAdminSendPersonalMailFailure(GrpcDone<::mailpb::SendMailResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartMailAdminSendPersonalMailCall(entt::registry& registry, entt::entity n
     if (!done) {
         LOG_FATAL << "gRPC MailAdmin.SendPersonalMail requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kMailAdminSendPersonalMailGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kMailAdminSendPersonalMailGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalMailAdminSendPersonalMailFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartMailAdminSendPersonalMailCall(entt::registry& registry, entt::entity n
         QueueLocalMailAdminSendPersonalMailFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendMailAdminSendPersonalMailErased(entt::registry& registry, entt::entity 
         LOG_FATAL << "gRPC MailAdmin.SendPersonalMail requires a done callback";
     }
     if (message.GetDescriptor() != ::mailpb::SendMailRequest::descriptor()) {
-        LOG_ERROR << "gRPC MailAdmin.SendPersonalMail: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC MailAdmin.SendPersonalMail: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendMailAdminSendPersonalMailErased(entt::registry& registry, entt::entity 
     const auto* typedRequest = dynamic_cast<const ::mailpb::SendMailRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC MailAdmin.SendPersonalMail: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -115,7 +116,7 @@ void SendMailAdminSendPersonalMailErased(entt::registry& registry, entt::entity 
 #pragma region MailAdminSendSystemMail
 namespace {
 void QueueLocalMailAdminSendSystemMailFailure(GrpcDone<::mailpb::SendMailResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -129,9 +130,9 @@ void StartMailAdminSendSystemMailCall(entt::registry& registry, entt::entity nod
     if (!done) {
         LOG_FATAL << "gRPC MailAdmin.SendSystemMail requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kMailAdminSendSystemMailGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kMailAdminSendSystemMailGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalMailAdminSendSystemMailFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -140,13 +141,13 @@ void StartMailAdminSendSystemMailCall(entt::registry& registry, entt::entity nod
         QueueLocalMailAdminSendSystemMailFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -178,9 +179,10 @@ void SendMailAdminSendSystemMailErased(entt::registry& registry, entt::entity no
         LOG_FATAL << "gRPC MailAdmin.SendSystemMail requires a done callback";
     }
     if (message.GetDescriptor() != ::mailpb::SendMailRequest::descriptor()) {
-        LOG_ERROR << "gRPC MailAdmin.SendSystemMail: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC MailAdmin.SendSystemMail: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -189,7 +191,7 @@ void SendMailAdminSendSystemMailErased(entt::registry& registry, entt::entity no
     const auto* typedRequest = dynamic_cast<const ::mailpb::SendMailRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC MailAdmin.SendSystemMail: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -201,7 +203,7 @@ void SendMailAdminSendSystemMailErased(entt::registry& registry, entt::entity no
 #pragma region MailAdminSendGuildMail
 namespace {
 void QueueLocalMailAdminSendGuildMailFailure(GrpcDone<::mailpb::SendMailResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -215,9 +217,9 @@ void StartMailAdminSendGuildMailCall(entt::registry& registry, entt::entity node
     if (!done) {
         LOG_FATAL << "gRPC MailAdmin.SendGuildMail requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kMailAdminSendGuildMailGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kMailAdminSendGuildMailGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalMailAdminSendGuildMailFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -226,13 +228,13 @@ void StartMailAdminSendGuildMailCall(entt::registry& registry, entt::entity node
         QueueLocalMailAdminSendGuildMailFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -264,9 +266,10 @@ void SendMailAdminSendGuildMailErased(entt::registry& registry, entt::entity nod
         LOG_FATAL << "gRPC MailAdmin.SendGuildMail requires a done callback";
     }
     if (message.GetDescriptor() != ::mailpb::SendMailRequest::descriptor()) {
-        LOG_ERROR << "gRPC MailAdmin.SendGuildMail: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC MailAdmin.SendGuildMail: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -275,7 +278,7 @@ void SendMailAdminSendGuildMailErased(entt::registry& registry, entt::entity nod
     const auto* typedRequest = dynamic_cast<const ::mailpb::SendMailRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC MailAdmin.SendGuildMail: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -287,7 +290,7 @@ void SendMailAdminSendGuildMailErased(entt::registry& registry, entt::entity nod
 #pragma region MailAdminImportMailRecipients
 namespace {
 void QueueLocalMailAdminImportMailRecipientsFailure(GrpcDone<::mailpb::ImportMailRecipientsResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -301,9 +304,9 @@ void StartMailAdminImportMailRecipientsCall(entt::registry& registry, entt::enti
     if (!done) {
         LOG_FATAL << "gRPC MailAdmin.ImportMailRecipients requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kMailAdminImportMailRecipientsGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kMailAdminImportMailRecipientsGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalMailAdminImportMailRecipientsFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -312,13 +315,13 @@ void StartMailAdminImportMailRecipientsCall(entt::registry& registry, entt::enti
         QueueLocalMailAdminImportMailRecipientsFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -350,9 +353,10 @@ void SendMailAdminImportMailRecipientsErased(entt::registry& registry, entt::ent
         LOG_FATAL << "gRPC MailAdmin.ImportMailRecipients requires a done callback";
     }
     if (message.GetDescriptor() != ::mailpb::ImportMailRecipientsRequest::descriptor()) {
-        LOG_ERROR << "gRPC MailAdmin.ImportMailRecipients: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC MailAdmin.ImportMailRecipients: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -361,7 +365,7 @@ void SendMailAdminImportMailRecipientsErased(entt::registry& registry, entt::ent
     const auto* typedRequest = dynamic_cast<const ::mailpb::ImportMailRecipientsRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC MailAdmin.ImportMailRecipients: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -373,7 +377,7 @@ void SendMailAdminImportMailRecipientsErased(entt::registry& registry, entt::ent
 #pragma region MailAdminSealMailCampaign
 namespace {
 void QueueLocalMailAdminSealMailCampaignFailure(GrpcDone<::mailpb::SendMailResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -387,9 +391,9 @@ void StartMailAdminSealMailCampaignCall(entt::registry& registry, entt::entity n
     if (!done) {
         LOG_FATAL << "gRPC MailAdmin.SealMailCampaign requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kMailAdminSealMailCampaignGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kMailAdminSealMailCampaignGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalMailAdminSealMailCampaignFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -398,13 +402,13 @@ void StartMailAdminSealMailCampaignCall(entt::registry& registry, entt::entity n
         QueueLocalMailAdminSealMailCampaignFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -436,9 +440,10 @@ void SendMailAdminSealMailCampaignErased(entt::registry& registry, entt::entity 
         LOG_FATAL << "gRPC MailAdmin.SealMailCampaign requires a done callback";
     }
     if (message.GetDescriptor() != ::mailpb::SealMailCampaignRequest::descriptor()) {
-        LOG_ERROR << "gRPC MailAdmin.SealMailCampaign: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC MailAdmin.SealMailCampaign: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -447,7 +452,7 @@ void SendMailAdminSealMailCampaignErased(entt::registry& registry, entt::entity 
     const auto* typedRequest = dynamic_cast<const ::mailpb::SealMailCampaignRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC MailAdmin.SealMailCampaign: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

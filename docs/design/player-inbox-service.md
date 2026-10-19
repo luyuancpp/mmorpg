@@ -998,7 +998,7 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 - **回包带 tip `kInvalidParameter`**（评审 L2，第 B 批起）：服务端判这份请求不合法（player_id 为 0、域未知、报告为空或超过 32 条、seq 为 0 或不严格升序、结局未知），同一份 `ackQueue` 重发只会得到同一个答复。按协议异常处理：记 ERROR `metric=inbox_ack_anomaly`，清空 `ackQueue`，halt，不重试。这些结局都已落盘，实体下次在本节点新建时会按账本回放、重新确认。
   - 「确定性」的前提是收件箱各副本认识同一组域。将来新增域时，要先把收件箱全部升级，再让 scene 消费新域；否则 Ack 落到旧副本会判「域未知」，误停用到实体下次重建（v1 只有一个域，不会发生）。
 - 回包带其他 tip（服务端故障）：保留 `ackQueue`，退避重发。
-- 回包判 STALE：清空 `ackQueue`，退避 60 秒。
+- 回包判 STALE：清空 `ackQueue`，退避 60 秒；已停用的域（停用前确认的是已定前缀）不再安排重试，也不打 `inbox_deferred`，免得把停用伪装成暂时延后（编译前复核 SM-1）。
 
 **Ack 请求失败**：保留 `ackQueue`，退避重发。如果实体在这期间被销毁，下次落地时 Fetch 会再次返回这些 PENDING 条目，届时从账本补确认。
 
@@ -1009,7 +1009,8 @@ func (s *Store) Enqueue(ctx context.Context, p EnqueueParams, inTx func(*sql.Tx,
 - **不 durable 就什么都不做**，绝不在落盘前确认。owner_epoch 此刻仍是本节点的值，服务端应判 MATCH；新 owner 已推进围栏时判 STALE，只记 INFO 级 zombie，新 owner 会从存档补确认。
 - **回包**：不登记回调，回包按 player_id + correlation_id 找实体；实体已销毁就丢弃，同一玩家重新落地后的新实体关联号也对不上（节点级单调计数器）。gRPC→muduo 线以后改成每次调用带回调时，这一点要保持。
 - **管不到的行**：已投递、还没定结局的行（退出时 Fetch 在途；Fetch 回包在退出期被前置闸丢掉；执行器 DEFER 剩下的本地条目）没有结局可确认。只能等下次落地重拉，或由 Go 侧的 24 小时窗口把它们移出「已投递未确认」告警（§9.4）。
-- **日志**：INFO `metric=inbox_leave_ack result=sent|not_sent|not_durable|delivered_undecided|fetch_inflight`，供对账区分「真正卡住」与「等下次落地」。
+- **日志**：INFO `metric=inbox_leave_ack result=sent|not_sent|not_durable|delivered_undecided|fetch_inflight|ack_inflight|decided_prefix_queued`，供对账区分「真正卡住」与「等下次落地」。`ack_inflight` 是离开时这批 Ack 已在途（带 `corr=`，它若在实体销毁后失败才成残留；评审 LC-3）；`decided_prefix_queued` 不是残留（见下一条）。
+- **退出期前置闸的处理**（编译前复核 LC-1、LC-2）：按实体是否挂着退出标记判断，不按闸返回的原因（冻结 / 交接与退出同时存在时闸先报冻结 / 交接）。退出期丢批之前，先把批首账本里已有结局的条目（回放 / UNKNOWN，不执行效果，确认不受前置闸限制）放进确认队列，只丢从第一条需要执行的条目起的剩余部分；账本缺失或已判坏时不分类，整批丢弃。其他闸下仍整批丢弃、之后重拉回放。
 - **已知缺口**：`HandlePlayerAsyncSaved` 的 kFinish 分支在替换快照之前就收尾时，看到的是上一次的快照，可能判 not_durable 少发一次（安全，只是少减一次残留；交接 §6.4 小取舍第 10 条）。
 
 ### 7.8 owner_epoch 围栏
@@ -1267,7 +1268,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
   - `metric=inbox_ledger_invalid source=loader|apply_gate`（评审 L13）：加载时 ERROR；前置闸首次 WARN，之后每 8 次退避补打（§7.5）
   - `metric=inbox_registry_broken`（ERROR）：注册表自检失败、整个节点停用消费；启动时一条，之后 Tick 每 5 分钟补打
   - `metric=inbox_consumer_disabled`（WARN，评审 H1）：消费开关关着；启动时一条，之后每 5 分钟补打（§3.3）
-  - `metric=inbox_leave_ack result=sent|not_sent|not_durable|delivered_undecided|fetch_inflight`（INFO，评审 M4）：离开时补发 Ack 的结果（§7.7）
+  - `metric=inbox_leave_ack result=sent|not_sent|not_durable|delivered_undecided|fetch_inflight|ack_inflight|decided_prefix_queued`（INFO，评审 M4、LC-2、LC-3）：离开时补发 Ack 的结果（§7.7）
   - 不会自愈的那几条，补打节拍由 `player_inbox_rules.h` 的 `static_assert` 钉在 10 分钟告警窗口（`kSceneLogAlertWindowMs`）之内。
 
 **告警**：`deploy/k8s/player-inbox-alerts.yaml`，安装步骤登记在 `deploy/k8s/README.md`。规则按四组写（correctness / stuck / reconcile / info），表达式与阈值以该文件为准。
@@ -1467,7 +1468,7 @@ v1 的类型都不允许过期，也没有过期列，这里不做任何处理�
 > **2026-10-17 契约勘误**：此新建项随全局处理器删除而撤销，完成适配收口到 `PlayerInboxSystem` 每次调用回调。
 
 - `cpp/tests/currency_test/{player_inbox_rules_test.cpp, gm_sanction_inbox_executor_test.cpp}`
-- `cpp/tests/currency_test/player_inbox_system_test.cpp`（评审 L3，第 B 批补，第 C 批 C3 再补 3 例，现 34 例）：`PlayerInboxSystem` 状态机的系统级用例，经现有的四个注入点（存盘、时钟、传输、消费配置）驱动，可 `--gtest_shuffle`。覆盖：落盘之前不确认、单飞、迟到回包按关联号丢弃、STALE、M1 的判定顺序（kNew+VOID、未知类型、回放 / UNKNOWN 不需要执行器、MISMATCH 一条不确认）、L1 回包时闸不过与 DEFER 续做、L2 新落地先确认前缀与 Ack 回 InvalidParameter 停用、L10 请求带 `scene_node_id`、M4 离开补发（含经 `FinishExitOrAwaitDbTaskAck` 的端到端一例）、账本损坏的周期 WARN、H1 消费关闭的启动与周期 WARN。`registry_broken` 的周期补打没有单测（`SelfCheck` 没有注入点）。
+- `cpp/tests/currency_test/player_inbox_system_test.cpp`（评审 L3，第 B 批补，第 C 批 C3 再补 3 例，2026-10-19 编译前复核又补 3 例，现 37 例）：`PlayerInboxSystem` 状态机的系统级用例，经现有的四个注入点（存盘、时钟、传输、消费配置）驱动，可 `--gtest_shuffle`。覆盖：落盘之前不确认、单飞、迟到回包按关联号丢弃、STALE、M1 的判定顺序（kNew+VOID、未知类型、回放 / UNKNOWN 不需要执行器、MISMATCH 一条不确认）、L1 回包时闸不过与 DEFER 续做、L2 新落地先确认前缀与 Ack 回 InvalidParameter 停用、L10 请求带 `scene_node_id`、M4 离开补发（含经 `FinishExitOrAwaitDbTaskAck` 的端到端一例）、账本损坏的周期 WARN、H1 消费关闭的启动与周期 WARN。`registry_broken` 的周期补打没有单测（`SelfCheck` 没有注入点）。
 
 **修改**：
 - `player_database_loader.cpp`：新字段的读、校验、写。写出位置必须在 currency 那对 `CopyFrom` / `SaveToProto` 之外，注释里写明了原因（`:154-163`）。

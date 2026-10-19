@@ -10,6 +10,8 @@ entt uses a **sparse-set** storage model. Each component type has its own packed
 - 不进入：进程单例、请求级数据、连接与网络资源、跨实体共享对象、私有索引。
 - registry 内的单例只允许是该 registry 的派生索引，放 `ctx()`（现例 `ActorNetIdIndex`）。
 - 多个 registry 用自定义实体类型区分（现例 `SceneEntity`）。
+- 派生索引只有一个维护入口（`ActorNetIdIndex` 只由 `actor_net_id` 的 Assign 与 on_destroy 维护）。
+- dispatcher 判据见下文：没有消费者不发事件，dispatcher 只做可有可无的一对多通知，必需步骤直接调用。
 - 现存例外：节点 registry 上的 `RpcClientPtr`、`MuduoGrpcChannelPtr` 属存量，迁出见 [审查报告](../handoff/ecs-refactor/review-report-20261015.md) §4.2。
 
 ## Three Access Patterns

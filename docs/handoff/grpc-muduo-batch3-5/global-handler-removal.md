@@ -86,14 +86,14 @@
 
 | # | 问题 | 选项 | 默认 |
 |---|---|---|---|
-| D1 | gate 直连模式怎么办（通用转发 `rpcHandlerMeta.sender` 和直连 `Login.Disconnect`） | **A**：先按 D61 删掉直连模式，同批删 `sender` 成员、`Message&` 重载、`SenderFunctions`（见附录 A）。D61 的硬前置是“K8s 路由模式下跑通 battle-smoke”，还没满足（PROGRESS 记为待定），需要负责人豁免或先补跑。<br>**B**：现在把 `sender` 换成带类型擦除回调的签名，gate 两处都传 done，等 D61 时整体删掉。<br>A、B 都超过 30 个文件，都要批次授权。 | **B**。A 需要负责人豁免硬前置，Codex 无权替负责人决定。如果负责人豁免，推荐 A：直连模式现在已经基本不能用（match 回包全丢，回执不带请求 id，chat / guild / friend 等不可达），B 是一次性投入。 |
+| D1 | gate 直连模式怎么办（通用转发 `rpcHandlerMeta.sender` 和直连 `Login.Disconnect`） | **A**：先按 D61 删掉直连模式，同批删 `sender` 成员、`Message&` 重载、`SenderDeclarations`（见附录 A）。D61 的硬前置是“K8s 路由模式下跑通 battle-smoke”，还没满足（PROGRESS 记为待定），需要负责人豁免或先补跑。<br>**B**：现在把 `sender` 换成带类型擦除回调的签名，gate 两处都传 done，等 D61 时整体删掉。<br>A、B 都超过 30 个文件，都要批次授权。 | **B**。A 需要负责人豁免硬前置，Codex 无权替负责人决定。如果负责人豁免，推荐 A：直连模式现在已经基本不能用（match 回包全丢，回执不带请求 id，chat / guild / friend 等不可达），B 是一次性投入。 |
 | D2 | done 为空怎么处理 | a：在 `Start<Svc><Method>Call` 开头 `LOG_FATAL`（与 RPC0 相同）<br>b：打 `LOG_ERROR` 后丢弃<br>c：再生成一个 `std::nullptr_t` 的 `= delete` 重载 | **a，不加 c**。删掉无回调重载后，编译器已经拦住绝大多数误用；运行期出现空 `std::function` 是调用方 bug。代价是 scene 进程会直接退出，所以每一步都要跑到冒烟。 |
 | D3 | 要不要加 fire-and-forget 辅助（`GrpcLogFailureOnly` 之类） | 加 / 不加 | **不加**（YAGNI）。迁完之后没有“不要应答”的调用方，直连 Disconnect 的 done 写成内联 lambda 即可。也不给 `grpc_call_tag.h` 引入 muduo Logging。 |
 | D4 | `GrpcReplyContext` / `GrpcCallFailure` 删不删 | 删 / 留 | **删**，在步骤 6 做。“失败 = 结果未知”那段注释挪到 `GrpcCallOutcome` 上。保留：`GrpcCallOutcome`（含 `initialMetadata`、`FindInitialMetadata`）、`GrpcMetadata` / `GrpcSentMetadata`、`FindGrpcMetadata`、`kGrpcStatus*`、`GrpcDone`、`GrpcCallOptions`。 |
 | D5 | 生成的调用状态要不要瘦身 | 去掉请求副本和 `sentMetadata` / 保留 | **去掉**。它们只为交还给 FailedHandler；请求在 `Start` 里同步序列化。前提是“同步序列化”，由步骤 6.6 新增的模板断言守住。将来改成异步序列化，要先把副本加回来，这句写进模板注释。 |
-| D6 | EnterScene 旧版兼容分支（回显号为 0 的 `kLegacy*`、`reply_uncorrelated`、`DecideReplyClaim` 按 player_id 兜底） | a：本批原样保留<br>b：本批一起删 | **a**。改成闭包捕获后，生产中 requestTag 恒不为 0，这些分支只剩单测会走（连旧版 SM 不回显时也走不到，见 2.2）。删除牵涉跨 zone 契约文档，另开 PR。 |
+| D6 | EnterScene 旧版兼容分支（回显号为 0 的 `kLegacy*`、`reply_uncorrelated`、`DecideReplyClaim` 按 player_id 兜底） | a：本批原样保留<br>b：本批一起删 | **a**。改成闭包捕获后，生产中 requestCorrelationId 恒不为 0，这些分支只剩单测会走（连旧版 SM 不回显时也走不到，见 2.2）。删除牵涉跨 zone 契约文档，另开 PR。 |
 | D7 | 收件箱 / EnterScene 的回显校验 | a：只认捕获值<br>b：以捕获值为准；**逐字段**判断，回显非 0 且与捕获值不同就 `LOG_ERROR` 并丢弃<br>c：不一致就 Halt 该域 | **b，两个域都丢弃（fail-closed）**。Go 侧每条返回路径都会回填回显：EnterScene 在 `enterscenelogic.go` 的 defer 里回填，包括去重重放；收件箱在 `store_consume.go:105/302`、`player_inbox_server.go:62/78` 回填。所以不一致只可能是缺陷。旧写法按回显比号，这类应答必然落进 kUnmatched / 找不到在途记录而被丢，丢弃与旧语义一致。回显为 0 不算不一致，按捕获值处理。 |
-| D8 | 号段的跨种类单飞和 10s 迟到窗口 | 保留 / 改成按种类并行 | **保留**。只把归属方式从 metadata 回显 / FIFO 换成闭包捕获的 seq。 |
+| D8 | 号段的跨种类单飞和 10s 迟到窗口 | 保留 / 改成按种类并行 | **保留**。只把归属方式从 metadata 回显 / FIFO 换成闭包捕获的 requestSequence。 |
 | D9 | `sender` 的生成范围 | 只跳过流式方法 / 再收窄到客户端协议方法 | **只跳过流式方法**（这一步必须做）。 |
 | D10 | 类型擦除重载的命名和回调类型 | 与 typed 重载同名 / 另起名 | **另起名**：`Send<Svc><Method>Erased` 加 `GrpcMessageDone`。`rpc_event_registry.cpp` 用函数名初始化 `std::function`，名字一旦对应重载集就编不过；用独立名字一次解决。 |
 | D11 | 日志里的方法名从哪来 | 生成 `k<Svc><Method>MethodName` / 调用方写字面量 | **调用方写字面量**。EnterScene 必须保持 runbook 依赖的日志格式（§1 第 11 条）。 |
@@ -249,25 +249,25 @@ scene_manager::SendSceneManagerEnterScene(smRegistry, smEntity, req,
 
 **2.2 同一文件，`PlayerLifecycleSystem::DispatchEnterSceneReply`（读取时 L4854）**
 
-- 签名改为 `(Guid playerId, uint64_t requestTag, const ::scene_manager::EnterSceneResponse& resp)`。原来读 `resp.player_id()` / `resp.correlation_id()` 的地方改成读参数。
+- 签名改为 `(Guid playerId, uint64_t requestCorrelationId, const ::scene_manager::EnterSceneResponse& resp)`。原来读 `resp.player_id()` / `resp.correlation_id()` 的地方改成读参数。
 - `playerId == 0` 时打 `LOG_ERROR`（调用方 bug），然后返回。替换原来那条“更老的 SM 不回显 player_id”的 `LOG_DEBUG`。
 - **新增回显核对（D7 b，fail-closed）**：在查实体之前判断。
-  - 条件：`resp.player_id()` 非 0 且不等于 `playerId`，或 `resp.correlation_id()` 非 0 且不等于 `requestTag`。
+  - 条件：`resp.player_id()` 非 0 且不等于 `playerId`，或 `resp.correlation_id()` 非 0 且不等于 `requestCorrelationId`。
   - 满足时：打 `LOG_ERROR "[EnterSceneReply] echo mismatch player=<捕获> corr=<捕获> echoed_player=<> echoed_corr=<> error_code=<>"`，执行 `travel_handoff_stats::Inc(travel_handoff_stats::Get().replyUnmatched)` 和 `EnsureTravelHandoffStatsTimer()`，然后**返回**。
   - 普通换图靠在途 TTL 收敛，交接靠应答看门狗和冻结上限收敛，结果与旧写法丢弃时相同。
 - 回显为 0 不算不一致。这样连旧版 SM（不回显）的应答也按捕获号精确路由，不再落 legacy 分支。生产中 `reply_uncorrelated` 计数和那条每线程一次的 WARN 不会再出现。这是改进，不是回归，要写进 PROGRESS。
-- 以下全部原样保留：`requestTag == 0` 分支（D6，只剩单测会走）、`Classify`、等待者号比对、先抄后摘、`ClaimRelocateEnterSceneReply(playerId, requestTag, resp)`、`IsSuspiciousUnmatched` 和全部日志。
+- 以下全部原样保留：`requestCorrelationId == 0` 分支（D6，只剩单测会走）、`Classify`、等待者号比对、先抄后摘、`ClaimRelocateEnterSceneReply(playerId, requestCorrelationId, resp)`、`IsSuspiciousUnmatched` 和全部日志。
 - **号比对不能删**：TTL 过期后被顶替的旧请求、上一代交接的请求，它们的 done 照样会到，必须靠 kUnmatched 丢掉。
 
 **2.3 同一文件，`DispatchEnterSceneTransportFailure`（读取时 L4971）**
 
-- 签名改为 `(Guid playerId, uint64_t requestTag, const std::string& reason)`。
+- 签名改为 `(Guid playerId, uint64_t requestCorrelationId, const std::string& reason)`。
 - 只把读 `req` 的地方换成读参数，其余不动。
 
 **2.4 `player_lifecycle.h`**
 
 - 两个声明（读取时 L1212-1241）改成新签名。
-- 注释改为：“由 `SendCorrelatedEnterScene` 的每次调用回调调用（单测直接调）；requestTag 是发送时捕获的关联号，生产中恒不为 0；回显非 0 且与捕获值不同即丢弃”。删掉“req 是生成的客户端保存的发出请求”。L1221 的“更老的 scene_manager 连 player_id 都不回显 → LOG_DEBUG”改为“player_id == 0 是调用方 bug → LOG_ERROR”。
+- 注释改为：“由 `SendCorrelatedEnterScene` 的每次调用回调调用（单测直接调）；requestCorrelationId 是发送时捕获的关联号，生产中恒不为 0；回显非 0 且与捕获值不同即丢弃”。删掉“req 是生成的客户端保存的发出请求”。L1221 的“更老的 scene_manager 连 player_id 都不回显 → LOG_DEBUG”改为“player_id == 0 是调用方 bug → LOG_ERROR”。
 - L182-186 的 `reply_uncorrelated` 说明改为：“生产走不到（关联号来自闭包捕获），只剩单测和绕过统一出口的调用”。
 - L824-843 的 `enter_scene_reply` 头注释补一句：“关联号的来源已从回显改为闭包捕获；号比对保留，用来防迟到或被顶替的完成；回显只作核对，不一致即丢弃”。
 
@@ -289,7 +289,7 @@ void DeliverEnterSceneTransportFailure(Guid playerId, uint64_t tag, const std::s
 - **新增 3 条用例（必做）**，放进现有 EnterScene 应答相关的 `*Ecs` 套件，夹具照抄同套件里“正常换图应答”的用例：
   1. 发起一次换图（号 T），调 `PlayerLifecycleSystem::DispatchEnterSceneReply(playerId, T, resp)`，其中 `resp.correlation_id = T + 1`。断言在途换图记录仍在，且 `travel_handoff_stats::Read().replyUnmatched` 加 1。
   2. 同上，但 `resp.player_id` 是另一个非 0 值。断言同上。
-  3. 同上，但 `resp.player_id = 0`、`resp.correlation_id = 0`（模拟旧版 SM 不回显），调用时 requestTag 传 T。断言按 T 正常收尾（在途记录被摘），`replyUncorrelated` 不变。
+  3. 同上，但 `resp.player_id = 0`、`resp.correlation_id = 0`（模拟旧版 SM 不回显），调用时 requestCorrelationId 传 T。断言按 T 正常收尾（在途记录被摘），`replyUncorrelated` 不变。
 
 **2.6 删除处理器文件并改工程登记**
 
@@ -401,19 +401,19 @@ if ((response.player_id() != 0 && response.player_id() != playerId) ||
 `IdSegmentTransport::Send`（读取时 L112-167）选完节点、组好请求后，先登记再发送：
 
 ```cpp
-const uint64_t seq = ++nextSeq_;
-inflight_ = OutstandingRequest{seq, kind, step, now};
+const uint64_t requestSequence = ++nextSeq_;
+inflight_ = OutstandingRequest{requestSequence, kind, step, now};
 data_service::SendDataServiceAllocateIdSegment(tlsNodeContextManager.GetRegistry(DataServiceNodeService), target, request,
-    [seq](const GrpcCallOutcome &outcome, const ::data_service::AllocateIdSegmentResponse *reply)
-    { tlsIdSegmentTransport.OnCompleted(seq, outcome, reply); });
+    [requestSequence](const GrpcCallOutcome &outcome, const ::data_service::AllocateIdSegmentResponse *reply)
+    { tlsIdSegmentTransport.OnCompleted(requestSequence, outcome, reply); });
 ```
 
 - 不捕获 `this`：`tlsIdSegmentTransport` 是 thread_local，done 在同一个 loop 线程上执行。
 - 必须保留字面量 `data_service::SendDataServiceAllocateIdSegment(`，k8s 契约测试 L845 的正向对照要用它。
 
-新增 `void OnCompleted(uint64_t seq, const GrpcCallOutcome&, const ::data_service::AllocateIdSegmentResponse*)`：
+新增 `void OnCompleted(uint64_t requestSequence, const GrpcCallOutcome&, const ::data_service::AllocateIdSegmentResponse*)`：
 1. 先认领：
-   - `seq` 等于 `inflight_->seq`：记下 kind，`reset` 在途记录；
+   - `requestSequence` 等于 `inflight_->seq`：记下 kind，`reset` 在途记录；
    - 等于 `abandoned_->seq`：记下 kind，标为“已放弃”，`reset`；
    - 都对不上：`++orphanResponses_`，打 WARN 后返回。
 2. 成功（ok 且 reply 非空）：调 `tlsGuidSegmentRegistry.Get(kind).OnResponse(reply->error_code(), reply->lo(), reply->hi())`。已放弃的那次也交付，与现状一致。
@@ -431,7 +431,7 @@ data_service::SendDataServiceAllocateIdSegment(tlsNodeContextManager.GetRegistry
 - `inflight_` / `abandoned_` / seq，用来防串号。fetchTimeout 先到时客户端会重试，旧调用的完成随后才到。没有 seq 比对的话，旧调用的失败会把新请求判成失败，旧调用迟到的应答还会撞上 `lo ≥ highWater` 校验，误计 rangeViolations。
 - `kLateResponseWindowSec`、单飞。
 
-注释改写（L28-40、L58-63）：单飞不再是为了归属，只是保证同一 biz_tag 的迟到应答先于新请求到达；归属现在按闭包捕获的 seq 精确认领。
+注释改写（L28-40、L58-63）：单飞不再是为了归属，只是保证同一 biz_tag 的迟到应答先于新请求到达；归属现在按闭包捕获的 requestSequence 精确认领。
 
 **4.2 `cpp/nodes/scene/id_segment_bootstrap.h`**
 
@@ -472,7 +472,7 @@ void Send{{S}}{{M}}Erased(entt::registry& registry, entt::entity nodeEntity, con
     }
     if (message.GetDescriptor() != {{Req}}::descriptor()) {
         LOG_ERROR << "gRPC {{S}}.{{M}}: request type " << message.GetDescriptor()->full_name() << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -482,7 +482,7 @@ void Send{{S}}{{M}}Erased(entt::registry& registry, entt::entity nodeEntity, con
 }
 ```
 
-- `{{S}} {{M}} {{Req}} {{Resp}}` 分别对应模板里的 `$svc.Service`、`$method.Method`、`$method.CppRequest`、`$method.CppResponse`。`LocalFailure`、`QueueGrpcLocalCompletion` 在文件开头 L19-28 的匿名命名空间里，定义点之后可见。
+- `{{S}} {{M}} {{Req}} {{Resp}}` 分别对应模板里的 `$svc.Service`、`$method.Method`、`$method.CppRequest`、`$method.CppResponse`。`MakeLocalFailureOutcome`、`QueueGrpcLocalCompletion` 在文件开头 L19-28 的匿名命名空间里，定义点之后可见。
 - 旧的 `Message&` 重载（L170-173，不做类型校验的 `static_cast`）本步暂时保留。
 
 **5.4 `service_header.tmpl` L20-26**，改为：
@@ -534,21 +534,21 @@ std::function<void (
 a) `HandleGrpcNodeMessage` 中的 sender 调用（读取时 L883-887）改为：
 
 ```cpp
-std::string sentSessionBin;
+std::string serializedSessionDetails;
 GrpcCallOptions options;
-if (sessionDetails.SerializeToString(&sentSessionBin))
+if (sessionDetails.SerializeToString(&serializedSessionDetails))
 {
-    options.metadata.emplace_back(kSessionBinMetaKey, sentSessionBin);   // 与现状一致:序列化失败就不带
+    options.metadata.emplace_back(kSessionBinMetaKey, serializedSessionDetails);   // 与现状一致:序列化失败就不带
 }
 rpcHandlerMeta.sender(tlsNodeContextManager.GetRegistry(rpcHandlerMeta.targetNodeType), *node, *rpcHandlerMeta.requestProto,
-    [messageId = request->message_id(), sentSessionBin](const GrpcCallOutcome &outcome, const google::protobuf::Message *reply)
-    { OnDirectGrpcCallDone(messageId, sentSessionBin, outcome, reply); },
+    [messageId = request->message_id(), serializedSessionDetails](const GrpcCallOutcome &outcome, const google::protobuf::Message *reply)
+    { ForwardDirectGrpcCallResult(messageId, serializedSessionDetails, outcome, reply); },
     options);
 ```
 
-在匿名命名空间里、`OnSceneClientMessageCallDone` 旁边新增静态函数 `OnDirectGrpcCallDone`：
-- 失败（非 OK，或 reply 为空）：方法名用 `gRpcMethodRegistry[messageId]` 的 `serviceName + "." + methodName` 拼出，调 `gate_rpc_reply_bridge::NotifyCallFailure(method.c_str(), code, outcome.message, sentSessionBin.empty() ? nullptr : &sentSessionBin)`。
-- 成功：`SessionDetails sent; sent.ParseFromString(sentSessionBin)`，然后 `DeliverReply(sent, *reply)`。`sentSessionBin` 为空（序列化失败）时 `session_id` 为 0，由 `DeliverReply` 现有的“会话已不在就静默丢弃”处理。
+在匿名命名空间里、`ForwardSceneClientCallResult` 旁边新增静态函数 `ForwardDirectGrpcCallResult`：
+- 失败（非 OK，或 reply 为空）：方法名用 `gRpcMethodRegistry[messageId]` 的 `serviceName + "." + methodName` 拼出，调 `gate_rpc_reply_bridge::NotifyCallFailure(rpcMethodName.c_str(), code, outcome.message, serializedSessionDetails.empty() ? nullptr : &serializedSessionDetails)`。
+- 成功：`SessionDetails requestSessionDetails; requestSessionDetails.ParseFromString(serializedSessionDetails)`，然后 `DeliverReply(requestSessionDetails, *reply)`。`serializedSessionDetails` 为空（序列化失败）时 `session_id` 为 0，由 `DeliverReply` 现有的“会话已不在就静默丢弃”处理。
 - 不捕获 `TcpConnectionPtr`（AGENTS §11.7）。
 - 共享原型 `*rpcHandlerMeta.requestProto` 在 Start 里同步序列化，下一条消息覆盖它不影响本次发送（D5，由 6.6 的断言守住）。
 
@@ -594,8 +594,8 @@ loginpb::SendClientPlayerLoginDisconnect(tlsNodeContextManager.GetRegistry(eNode
 **5.13 gate 注释同步**（从步骤 7 提前到这里，否则步骤 6 的预检 grep 会命中）
 
 - `cpp/nodes/gate/handler/rpc/rpc_reply_bridge.h`：
-  - L4-9 的文件头改为：“直连模式的每次调用回调（`client_message_processor.cpp` 的 `OnDirectGrpcCallDone`）和路由模式的 Forward 回调都只调这里”。
-  - L25-28 的 `DeliverReply` 契约改为：“sessionDetails：路由模式是路由服在响应头里原值回显的会话；直连模式是发出时捕获的那份（`OnDirectGrpcCallDone`）。本函数只用 session_id 与 gate_call_seq。”
+  - L4-9 的文件头改为：“直连模式的每次调用回调（`client_message_processor.cpp` 的 `ForwardDirectGrpcCallResult`）和路由模式的 Forward 回调都只调这里”。
+  - L25-28 的 `DeliverReply` 契约改为：“sessionDetails：路由模式是路由服在响应头里原值回显的会话；直连模式是发出时捕获的那份（`ForwardDirectGrpcCallResult`）。本函数只用 session_id 与 gate_call_seq。”
 - `cpp/nodes/gate/handler/rpc/router_muduo_forward.cpp`：
   - L33 改为“与生成客户端日志里的 `<Service>.<Method>` 同形”；
   - L39-40 删掉“全局应答处理器（GetSessionDetailsByReplyContext 返回空）在这里静默丢包”这一句，只留“缺了说明对端不是预期的路由服版本，这里留一行采样证据”；
@@ -653,7 +653,7 @@ void Send…Erased(entt::registry& registry, entt::entity nodeEntity, const goog
 ```
 namespace {
 void QueueLocal{{S}}{{M}}Failure(GrpcDone<{{Resp}}> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -663,10 +663,10 @@ void QueueLocal{{S}}{{M}}Failure(GrpcDone<{{Resp}}> done, uint32_t code, std::st
 - L103-148 的 `Start{{S}}{{M}}Call`：
   - 签名改为 `(entt::registry& registry, entt::entity nodeEntity, const {{Req}}& request, const GrpcCallOptions& options, GrpcDone<{{Resp}}> done)`；
   - 第一句写 `if (!done) { LOG_FATAL << "gRPC {{S}}.{{M}} requires a done callback (grpc_call_tag.h GrpcDone)"; }`，放在 `FindGrpcChannel` 之前；
-  - 直接 `request.SerializeToString(&rpc.message)`，放在任何 `QueueLocal…Failure` / `StartUnaryCall` 闭包之前，并加注释：“请求在这里同步序列化，调用方随后改写（gate 的共享原型）不影响本次；将来改成异步序列化，须先拷贝请求”；
+  - 直接 `request.SerializeToString(&unaryRequest.message)`，放在任何 `QueueLocal…Failure` / `StartUnaryCall` 闭包之前，并加注释：“请求在这里同步序列化，调用方随后改写（gate 的共享原型）不影响本次；将来改成异步序列化，须先拷贝请求”；
   - metadata 取自 `options.metadata`，逐项 Base64；
   - deadline 用 `options.deadline`，`<= 0` 时用 `DefaultCallDeadline()`；
-  - 完成 lambda 改为 `channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {…})`，不捕获 request。非 OK 或解析失败时 `done(outcome, nullptr)`，否则 `done(outcome, &reply)`。
+  - 完成 lambda 改为 `channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {…})`，不捕获 request。非 OK 或解析失败时 `done(outcome, nullptr)`，否则 `done(outcome, &reply)`。
 - L150-153 的每次调用 `Send` 改为 `Start…(registry, nodeEntity, request, options, std::move(done));`。
 - 步骤 5 加的 `Erased` 改调新的 `Start…(registry, nodeEntity, static_cast<const Req&>(message), options, [done = std::move(done)](…){ done(outcome, reply); });`。
 - 删 L155-173 的三个无回调重载，连同 L156 的二义性注释。
@@ -708,7 +708,7 @@ void QueueLocal{{S}}{{M}}Failure(GrpcDone<{{Resp}}> done, uint32_t code, std::st
   - header 包含 `void SendSceneManagerEnterScene(entt::registry& registry, entt::entity nodeEntity, const ::scene_manager::EnterSceneRequest& request, GrpcDone<::scene_manager::EnterSceneResponse> done, const GrpcCallOptions& options = {});`；
   - header 不包含三参签名的结尾 `const ::scene_manager::EnterSceneRequest& request);`；
   - source 包含 `requires a done callback`。
-- **D5 守卫（新增）**：在生成出的 `StartSceneManagerEnterSceneCall` 函数体里，`request.SerializeToString(&rpc.message)` 必须出现，且位置早于 `StartUnaryCall(` 和第一个 `QueueGrpcLocalCompletion(`（用 `strings.Index` 比较）。source 必须包含 `StartUnaryCall(std::move(rpc), [done = std::move(done)]`，不得包含 `call->request`。
+- **D5 守卫（新增）**：在生成出的 `StartSceneManagerEnterSceneCall` 函数体里，`request.SerializeToString(&unaryRequest.message)` 必须出现，且位置早于 `StartUnaryCall(` 和第一个 `QueueGrpcLocalCompletion(`（用 `strings.Index` 比较）。source 必须包含 `StartUnaryCall(std::move(unaryRequest), [done = std::move(done)]`，不得包含 `call->request`。
 
 **6.7 `cpp/tests/rpc_controller_test/grpc_client_local_reject_test.cpp`**（未跟踪文件，必须和本步一起交付）
 
@@ -736,10 +736,10 @@ void QueueLocal{{S}}{{M}}Failure(GrpcDone<{{Resp}}> done, uint32_t code, std::st
 - `cpp/libs/services/scene/player/system/travel_freeze_cap.h` L54-58：改为“EnterScene 的每次调用回调以非 OK 完成”。
 - `cpp/tests/bag_test/bag_test.cpp` L3505、`cpp/tests/routing_identity_test/scene_manager_selector_test.cpp` L194、L260：同样的改法。
 - `tools/proto_generator/protogen/internal/generator/cpp/handlers.go` L31：“rpc_replies 下只剩手写的 gRPC 应答适配与 gate 的空 InitServiceHandler”改为“rpc_replies 下只剩 gate 生成的空 InitServiceHandler（battle 的是手写空壳）”。这是 Go 注释，不影响生成物。
-- 提到“回显号为 0 就退回按 player_id”的注释，各补一句：“关联号已改为闭包捕获，生产中 requestTag 恒不为 0（旧版 SM 不回显时也按捕获号路由）；本分支只剩单测和绕过统一出口的调用”。位置：
+- 提到“回显号为 0 就退回按 player_id”的注释，各补一句：“关联号已改为闭包捕获，生产中 requestCorrelationId 恒不为 0（旧版 SM 不回显时也按捕获号路由）；本分支只剩单测和绕过统一出口的调用”。位置：
   - `relocate_confirm.h` L40-41、L580-582；
   - `player_lifecycle.h` L831-834、L1187、L1209；
-  - `player_lifecycle.cpp` L267、L322、L451-452（`tlsWarnedUncorrelatedReply`）、L1856、L1873、L4500、L4869（requestTag == 0 分支）；
+  - `player_lifecycle.cpp` L267、L322、L451-452（`tlsWarnedUncorrelatedReply`）、L1856、L1873、L4500、L4869（requestCorrelationId == 0 分支）；
   - `player_ownership_comp.h` L185-196。
 
 **脚本**（可选）
@@ -754,7 +754,7 @@ void QueueLocal{{S}}{{M}}Failure(GrpcDone<{{Resp}}> done, uint32_t code, std::st
 | `docs/design/grpc-client-deadline-failure-callback.md` | 状态行追加一句。§1 D3 行尾注“已由 §12 在结构上消除”。§3 开头加横幅：3.1 / 3.2 是历史选型，3.3“结果未知”仍然适用。§5 表格后加一行，指向 §12.2。§6 写结论“已关闭”。§9.2 的冒烟项把 `reply dropped…` 换成“不得出现 `requires a done callback`”。§10 第 2、6 条标为作废。§11.2 / §11.3 / §11.4 加勘误。新增 §12，内容见本表之后。 |
 | `docs/design/grpc-muduo-transport.md` §14.1 / §14.3 | 以下几段之后各加一条日期注：“全局处理器保留”“流式方法仍生成三个旧 Send 重载”“session 改为 GetSessionDetailsByReplyContext”“gate main 全局处理器换新签名”“号段、收件箱、scene_manager 只迁签名”“测试不触发全局处理器”。 |
 | `docs/design/muduo-rpc-channel.md` | §8.4 段末注“已过时”。§9.2 注“gRPC 应答适配也已退场”。§14 第 2 条划掉。§19.2 注“done 是唯一完成通道”。 |
-| `docs/design/client-request-ordering.md` §4.5 | 认领表中“成功回包 / gRPC 失败”两行改为：直连指向 `OnDirectGrpcCallDone`，路由指向 `router_muduo_forward.cpp` 的 `SendForward` 完成回调。可选：顺手改 L204 的“CQ 轮询”和 L212 的过时说法。 |
+| `docs/design/client-request-ordering.md` §4.5 | 认领表中“成功回包 / gRPC 失败”两行改为：直连指向 `ForwardDirectGrpcCallResult`，路由指向 `router_muduo_forward.cpp` 的 `SendForward` 完成回调。可选：顺手改 L204 的“CQ 轮询”和 L212 的过时说法。 |
 | `docs/design/player-inbox-service.md` §7.11、L1262、L1269 | 改成每次调用回调的写法：闭包捕获三项，回显逐字段核对，不一致 ERROR 并丢弃；回显为 0 按捕获值处理。 |
 | `docs/design/cross-zone-scene-travel.md` L268、§12.5.1、L893 | 各加一行日期注。 |
 | `docs/design/team-system.md` L2163、L2172 | 加日期勘误：`scene_manager_response_handler.cpp` 已删；应答按闭包捕获的 player_id + correlation_id 认领，“只能靠 resp.player_id()”的残余窗口已消除。 |
@@ -882,7 +882,7 @@ grep -c 'GrpcMessageDone , const GrpcCallOptions& );' cpp/generated/rpc/service_
     - 读一次 `GATE_CLIENT_RPC_ROUTER`：未设置或值为 1 / true / on 时静默，其他值打一次 WARN“已忽略”，做法照 `GATE_ROUTER_TRANSPORT` 的先例。
   - 删除 `gate_router_mode.h`，并从 `gate.vcxproj` / `.filters` 中摘掉。
   - `gate/tests/gate_security_test.cpp`：删 6 个 `GateRouterMode` 用例和 `SetEnvForTest`。
-- **生成器**：删 `RpcMethodMeta.sender`、`SenderFunctions`、`rpcMethodMetaInit.SenderName`、`rpc_event_registry.cpp.tmpl` L13-15，以及 `Message&` 重载；`service_register_info_test.go` 的 `"grpc method with sender"` 改为不带 sender。
+- **生成器**：删 `RpcMethodMeta.sender`、`SenderDeclarations`、`rpcMethodMetaInit.SenderName`、`rpc_event_registry.cpp.tmpl` L13-15，以及 `Message&` 重载；`service_register_info_test.go` 的 `"grpc method with sender"` 改为不带 sender。
 - 5.10 到 5.13（gate main、session、network_utils、gate 注释）照做。5.13 里与直连相关的措辞改为“直连模式已删除”。
 - **文档**：`client-access-band-routing.md` D61 阶段 1 标为已实施，并订正其中过时的清单；`client-rpc-router.md` D34 和 `xuanming-port-decisions-20260910.md` D-12 按 D61 修订。
 - **脚本、部署文档、robot 文案**（`-GateRouterMode` 等）另起一批，超过 30 个文件，先报告并取得授权。

@@ -40,6 +40,11 @@ public class RefreshTokenService {
             if (rsp.hasError()) {
                 int upstream = rsp.errorCode == null ? -1 : rsp.errorCode;
                 String msg = rsp.errorMessage != null ? rsp.errorMessage : ("upstream_err=" + upstream);
+                // 与 LoginService 同一套映射：Tip.xlsx 标了 fault 的码回 500（refresh 令牌未必失效，客户端稍后重试），其余回 401。
+                if (LoginService.httpCodeForUpstreamTip(rsp.errorCode) == LoginResponse.CODE_INTERNAL) {
+                    log.warn("refresh_token.rpc in-band fault tip={}", upstream);
+                    return RefreshTokenResponse.error(RefreshTokenResponse.CODE_INTERNAL, msg);
+                }
                 return RefreshTokenResponse.error(RefreshTokenResponse.CODE_AUTH_REJECTED, msg);
             }
             return RefreshTokenResponse.ok(

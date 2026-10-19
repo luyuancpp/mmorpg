@@ -274,7 +274,7 @@ grpcurl -plaintext -import-path . -proto proto/player_inbox/player_inbox_admin.p
 | `metric=inbox_ledger_invalid` | warning | 该玩家已落盘账本结构校验不过,收件箱全部域停用 | §10.4 |
 | `metric=inbox_registry_broken` | warning | scene 处置注册表自检失败,本节点整体停用消费。启动时一条 ERROR,之后每 5 分钟补打 | §10.4 |
 | `metric=inbox_consumer_disabled` | warning | 本节点 `consumer_enabled` 关着。启动时一条 WARN,之后每 5 分钟补打;上线第 4–5 步之间出现是预期的 | §2.1 |
-| `metric=inbox_leave_ack` | info | 玩家离开本节点时没能补发 Ack 的行(`result=delivered_undecided` / `not_durable` / `fetch_inflight` / `not_sent`) | §6;不是故障 |
+| `metric=inbox_leave_ack` | info | 玩家离开本节点时没能补发 Ack 的行(`result=delivered_undecided` / `not_durable` / `fetch_inflight` / `ack_inflight` / `not_sent`) | §6;不是故障 |
 | `metric=inbox_deferred` | info | 延后原因分布(`reason=`) | §6 第 2 步 |
 
 不会自愈的三条(`inbox_ledger_invalid` / `inbox_registry_broken` / `inbox_consumer_disabled`),问题还在时 scene 会按节拍补打同一行。
@@ -389,7 +389,9 @@ v1 **不做自动隔离**。
 | `not_sent` | 补发没发出去(例如没有可用的收件箱节点) |
 | `not_durable` | 结局还没落盘,不能确认(IB-3) |
 | `fetch_inflight` | 离开时 Fetch 在途,回包到达时实体已销毁,被丢弃 |
-| `delivered_undecided` | 已投递、还没定结局就丢掉了:退出期回包被前置闸丢掉(`source=apply_gate_exiting`),或执行器延后剩下的条目(`source=leaving`) |
+| `ack_inflight` | 离开时这批的 Ack 已在途:服务端照样处理;它若在实体销毁后失败(失败回调只打 DEBUG),这批停在已投递未确认,按 `corr=` 对上 scene 日志 |
+| `decided_prefix_queued` | 不是残留:退出期回包被前置闸丢掉时,批首账本里已有结局的条目(回放 / UNKNOWN)先入确认队列、照常确认,只丢需要执行的剩余部分 |
+| `delivered_undecided` | 已投递、还没定结局就丢掉了:退出期回包被前置闸丢掉(`source=apply_gate_exiting`;冻结 / 交接与退出同时存在时也算退出期),或执行器延后剩下的条目(`source=leaving`) |
 
 这些都不是故障,不用处置。玩家一直不上线的,24 小时后转入 stale 口径。
 

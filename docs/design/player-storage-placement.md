@@ -346,7 +346,7 @@ TiDB 决策 D1 的「映射持久化兜底表」仍是遗留项(§11.4)。
 - 每人一次 CAS:期望无记录、home==src,写入 `"{src}:1"`。记录已是 `"{src}:1"` 或等于清单记下的原值,视为正常;其余情况中止并保留围栏。
 - 与 pin 矛盾的 `-skip-player-rows` 直接拒绝。
 
-**blob 与 data Redis(已定,负责人 2026-09-28)**:data_service 按 home_zone 选 data Redis 集群。src 与 dst 不在同一集群时,pin 合服后 `player:{id}:*` 会读不到。所以工具在 pin 模式下拒绝 `-migrate-player-blobs`(除非同时给 `-skip-player-blob-migration`),提示改用 copy 模式。copy 模式仍为全部清单玩家拷 blob(blob 跟 home 走),拷行与删缓存只针对无记录者。§10.1 第 3 条「pin 不拷 blob」**保留**,这道拒绝也保留:现有 dev / K8s 部署都配了 DevRedis,Regions 分片从未生效,`player:{id}:*` 不在生产读写链上(决定原文见 PROGRESS.md「2026-09-28 玩家存储落点」条目的「剩余风险」;本段原写「待拍板」,2026-10-12 同步)。多集群部署的限制本身仍在,这类部署合服只能用 copy 模式。
+**blob 与 data Redis(已定,负责人 2026-09-28)**:data_service 按 home_zone 选 data Redis 集群。src 与 dst 不在同一集群时,pin 合服后 `player:{id}:*` 会读不到。所以工具在 pin 模式下拒绝 `-migrate-player-blobs`(除非同时给 `-skip-player-blob-migration`),提示改用 copy 模式。copy 模式给了 `-migrate-player-blobs` 时为全部清单玩家拷 blob(blob 跟 home 走),拷行与删缓存只针对无记录者;**没给这个开关就不拷 blob,与模式无关**(第 2 步只看该开关,2026-10-19 按代码更正:此前本段写成 copy 模式无条件拷)。同日起,`-source-data-redis` 与 `-target-data-redis` 都给了且不是同一后端(地址或 DB 不同)、却既没给 `-migrate-player-blobs` 也没给 `-skip-player-blob-migration` 时,工具在任何写之前拒绝(`checkDataRedisBlobFlags`);两个地址没给全时工具无从判断拓扑,多集群部署合服必须给全。§10.1 第 3 条「pin 不拷 blob」**保留**,这道拒绝也保留:现有 dev / K8s 部署都配了 DevRedis,Regions 分片从未生效,`player:{id}:*` 不在生产读写链上(决定原文见 PROGRESS.md「2026-09-28 玩家存储落点」条目的「剩余风险」;本段原写「待拍板」,2026-10-12 同步)。多集群部署的限制本身仍在,这类部署合服只能用 copy 模式。
 
 **设计没写、按正确性补上的五条**:
 1. copy 模式下,清单玩家里只要有人已有记录,同样要求能力标记:他们的行不动,dst 的 go/db 必须按记录选库。

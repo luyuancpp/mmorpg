@@ -209,8 +209,8 @@ while lane.inFlightSeq == 0 && !lane.queued.empty():     // 循环 ≤ 32 次
 
 | 来源 | 入口 | 拿 seq 的方式 |
 |---|---|---|
-| 成功回包 | 2026-10-17：直连 `OnDirectGrpcCallDone`、路由 `router_muduo_forward.cpp` 的 `SendForward` 完成回调 → `gate_rpc_reply_bridge::DeliverReply` → `gate_lane::OnRouterReply` | 直连用发送时捕获的 SessionDetails；路由解响应 initial metadata 里原值回显的 `x-session-detail-bin` |
-| gRPC 失败 | 2026-10-17：直连 `OnDirectGrpcCallDone`、路由 `SendForward` 完成回调 → `gate_rpc_reply_bridge::NotifyCallFailure` → `gate_lane::OnRouterCallFailed` | 两种模式都用发送时捕获的 SessionDetails 原始字节；Disconnect 失败仅采样日志，不进客户端失败桥 |
+| 成功回包 | 2026-10-17：直连 `ForwardDirectGrpcCallResult`、路由 `router_muduo_forward.cpp` 的 `SendForward` 完成回调 → `gate_rpc_reply_bridge::DeliverReply` → `gate_lane::OnRouterReply` | 直连用发送时捕获的 SessionDetails；路由解响应 initial metadata 里原值回显的 `x-session-detail-bin` |
+| gRPC 失败 | 2026-10-17：直连 `ForwardDirectGrpcCallResult`、路由 `SendForward` 完成回调 → `gate_rpc_reply_bridge::NotifyCallFailure` → `gate_lane::OnRouterCallFailed` | 两种模式都用发送时捕获的 SessionDetails 原始字节；Disconnect 失败仅采样日志，不进客户端失败桥 |
 | 路由服节点摘除 | 不单独处理(2026-10-16 起) | 走上一行「gRPC 失败」:gRPC 传输第 3 批起 node.cpp 先 `remove<MuduoGrpcChannelPtr>`,`~Channel` 把在途调用以 UNAVAILABLE 排进下一轮,再触发 OnNodeRemoveEvent、DestroyEntity;放行下一条时 `PickRandomNode` 要求实体挂着通道,不会再选中被摘节点。原设计按 `routerEntity` 遍历摘除,前提是官方 CQ 析构后在途调用永远不会再有回调(F29),该前提已不成立,`OnRouterNodeRemoved` 与 `InflightIndex::ExtractIf` 已删(ECS 审查 W1-45);它还会让每个被摘调用在 `late_dropped` 里多计一次 |
 | 本地截止 | GateRuntimeContext 上新增 `TimerTaskComp laneExpiryTimer`,`RunEvery(0.25s)`,回调不捕获对象 | 弹出过期堆。**必须主动扫描**:队头卡住时客户端在等回包,不会再发新请求,纯惰性清理永远触发不到。先例是 `sceneEntryRetryTimer`【码】`main.cpp:141-144,396-398` |
 

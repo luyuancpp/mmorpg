@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace scene_node {
 #pragma region SceneNodeGrpcCreateScene
 namespace {
 void QueueLocalSceneNodeGrpcCreateSceneFailure(GrpcDone<::CreateSceneResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartSceneNodeGrpcCreateSceneCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC SceneNodeGrpc.CreateScene requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kSceneNodeGrpcCreateSceneGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kSceneNodeGrpcCreateSceneGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalSceneNodeGrpcCreateSceneFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartSceneNodeGrpcCreateSceneCall(entt::registry& registry, entt::entity no
         QueueLocalSceneNodeGrpcCreateSceneFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendSceneNodeGrpcCreateSceneErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC SceneNodeGrpc.CreateScene requires a done callback";
     }
     if (message.GetDescriptor() != ::CreateSceneRequest::descriptor()) {
-        LOG_ERROR << "gRPC SceneNodeGrpc.CreateScene: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC SceneNodeGrpc.CreateScene: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendSceneNodeGrpcCreateSceneErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::CreateSceneRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC SceneNodeGrpc.CreateScene: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -115,7 +116,7 @@ void SendSceneNodeGrpcCreateSceneErased(entt::registry& registry, entt::entity n
 #pragma region SceneNodeGrpcDestroyScene
 namespace {
 void QueueLocalSceneNodeGrpcDestroySceneFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -129,9 +130,9 @@ void StartSceneNodeGrpcDestroySceneCall(entt::registry& registry, entt::entity n
     if (!done) {
         LOG_FATAL << "gRPC SceneNodeGrpc.DestroyScene requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kSceneNodeGrpcDestroySceneGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kSceneNodeGrpcDestroySceneGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalSceneNodeGrpcDestroySceneFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -140,13 +141,13 @@ void StartSceneNodeGrpcDestroySceneCall(entt::registry& registry, entt::entity n
         QueueLocalSceneNodeGrpcDestroySceneFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -178,9 +179,10 @@ void SendSceneNodeGrpcDestroySceneErased(entt::registry& registry, entt::entity 
         LOG_FATAL << "gRPC SceneNodeGrpc.DestroyScene requires a done callback";
     }
     if (message.GetDescriptor() != ::DestroySceneRequest::descriptor()) {
-        LOG_ERROR << "gRPC SceneNodeGrpc.DestroyScene: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC SceneNodeGrpc.DestroyScene: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -189,7 +191,7 @@ void SendSceneNodeGrpcDestroySceneErased(entt::registry& registry, entt::entity 
     const auto* typedRequest = dynamic_cast<const ::DestroySceneRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC SceneNodeGrpc.DestroyScene: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -201,7 +203,7 @@ void SendSceneNodeGrpcDestroySceneErased(entt::registry& registry, entt::entity 
 #pragma region SceneNodeGrpcReleasePlayer
 namespace {
 void QueueLocalSceneNodeGrpcReleasePlayerFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -215,9 +217,9 @@ void StartSceneNodeGrpcReleasePlayerCall(entt::registry& registry, entt::entity 
     if (!done) {
         LOG_FATAL << "gRPC SceneNodeGrpc.ReleasePlayer requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kSceneNodeGrpcReleasePlayerGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kSceneNodeGrpcReleasePlayerGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalSceneNodeGrpcReleasePlayerFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -226,13 +228,13 @@ void StartSceneNodeGrpcReleasePlayerCall(entt::registry& registry, entt::entity 
         QueueLocalSceneNodeGrpcReleasePlayerFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -264,9 +266,10 @@ void SendSceneNodeGrpcReleasePlayerErased(entt::registry& registry, entt::entity
         LOG_FATAL << "gRPC SceneNodeGrpc.ReleasePlayer requires a done callback";
     }
     if (message.GetDescriptor() != ::scene_node::ReleasePlayerRequest::descriptor()) {
-        LOG_ERROR << "gRPC SceneNodeGrpc.ReleasePlayer: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC SceneNodeGrpc.ReleasePlayer: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -275,7 +278,7 @@ void SendSceneNodeGrpcReleasePlayerErased(entt::registry& registry, entt::entity
     const auto* typedRequest = dynamic_cast<const ::scene_node::ReleasePlayerRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC SceneNodeGrpc.ReleasePlayer: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -287,7 +290,7 @@ void SendSceneNodeGrpcReleasePlayerErased(entt::registry& registry, entt::entity
 #pragma region SceneNodeGrpcPrepareBattle
 namespace {
 void QueueLocalSceneNodeGrpcPrepareBattleFailure(GrpcDone<::PrepareBattleResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -301,9 +304,9 @@ void StartSceneNodeGrpcPrepareBattleCall(entt::registry& registry, entt::entity 
     if (!done) {
         LOG_FATAL << "gRPC SceneNodeGrpc.PrepareBattle requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kSceneNodeGrpcPrepareBattleGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kSceneNodeGrpcPrepareBattleGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalSceneNodeGrpcPrepareBattleFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -312,13 +315,13 @@ void StartSceneNodeGrpcPrepareBattleCall(entt::registry& registry, entt::entity 
         QueueLocalSceneNodeGrpcPrepareBattleFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -350,9 +353,10 @@ void SendSceneNodeGrpcPrepareBattleErased(entt::registry& registry, entt::entity
         LOG_FATAL << "gRPC SceneNodeGrpc.PrepareBattle requires a done callback";
     }
     if (message.GetDescriptor() != ::PrepareBattleRequest::descriptor()) {
-        LOG_ERROR << "gRPC SceneNodeGrpc.PrepareBattle: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC SceneNodeGrpc.PrepareBattle: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -361,7 +365,7 @@ void SendSceneNodeGrpcPrepareBattleErased(entt::registry& registry, entt::entity
     const auto* typedRequest = dynamic_cast<const ::PrepareBattleRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC SceneNodeGrpc.PrepareBattle: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -373,7 +377,7 @@ void SendSceneNodeGrpcPrepareBattleErased(entt::registry& registry, entt::entity
 #pragma region SceneNodeGrpcCancelBattlePrepare
 namespace {
 void QueueLocalSceneNodeGrpcCancelBattlePrepareFailure(GrpcDone<::Empty> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -387,9 +391,9 @@ void StartSceneNodeGrpcCancelBattlePrepareCall(entt::registry& registry, entt::e
     if (!done) {
         LOG_FATAL << "gRPC SceneNodeGrpc.CancelBattlePrepare requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kSceneNodeGrpcCancelBattlePrepareGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kSceneNodeGrpcCancelBattlePrepareGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalSceneNodeGrpcCancelBattlePrepareFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -398,13 +402,13 @@ void StartSceneNodeGrpcCancelBattlePrepareCall(entt::registry& registry, entt::e
         QueueLocalSceneNodeGrpcCancelBattlePrepareFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -436,9 +440,10 @@ void SendSceneNodeGrpcCancelBattlePrepareErased(entt::registry& registry, entt::
         LOG_FATAL << "gRPC SceneNodeGrpc.CancelBattlePrepare requires a done callback";
     }
     if (message.GetDescriptor() != ::CancelBattlePrepareRequest::descriptor()) {
-        LOG_ERROR << "gRPC SceneNodeGrpc.CancelBattlePrepare: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC SceneNodeGrpc.CancelBattlePrepare: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -447,7 +452,7 @@ void SendSceneNodeGrpcCancelBattlePrepareErased(entt::registry& registry, entt::
     const auto* typedRequest = dynamic_cast<const ::CancelBattlePrepareRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC SceneNodeGrpc.CancelBattlePrepare: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -459,7 +464,7 @@ void SendSceneNodeGrpcCancelBattlePrepareErased(entt::registry& registry, entt::
 #pragma region SceneNodeGrpcAssetDebit
 namespace {
 void QueueLocalSceneNodeGrpcAssetDebitFailure(GrpcDone<::AssetOpResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -473,9 +478,9 @@ void StartSceneNodeGrpcAssetDebitCall(entt::registry& registry, entt::entity nod
     if (!done) {
         LOG_FATAL << "gRPC SceneNodeGrpc.AssetDebit requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kSceneNodeGrpcAssetDebitGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kSceneNodeGrpcAssetDebitGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalSceneNodeGrpcAssetDebitFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -484,13 +489,13 @@ void StartSceneNodeGrpcAssetDebitCall(entt::registry& registry, entt::entity nod
         QueueLocalSceneNodeGrpcAssetDebitFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -522,9 +527,10 @@ void SendSceneNodeGrpcAssetDebitErased(entt::registry& registry, entt::entity no
         LOG_FATAL << "gRPC SceneNodeGrpc.AssetDebit requires a done callback";
     }
     if (message.GetDescriptor() != ::AssetOpRequest::descriptor()) {
-        LOG_ERROR << "gRPC SceneNodeGrpc.AssetDebit: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC SceneNodeGrpc.AssetDebit: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -533,7 +539,7 @@ void SendSceneNodeGrpcAssetDebitErased(entt::registry& registry, entt::entity no
     const auto* typedRequest = dynamic_cast<const ::AssetOpRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC SceneNodeGrpc.AssetDebit: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -545,7 +551,7 @@ void SendSceneNodeGrpcAssetDebitErased(entt::registry& registry, entt::entity no
 #pragma region SceneNodeGrpcAssetAbortDebit
 namespace {
 void QueueLocalSceneNodeGrpcAssetAbortDebitFailure(GrpcDone<::AssetOpResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -559,9 +565,9 @@ void StartSceneNodeGrpcAssetAbortDebitCall(entt::registry& registry, entt::entit
     if (!done) {
         LOG_FATAL << "gRPC SceneNodeGrpc.AssetAbortDebit requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kSceneNodeGrpcAssetAbortDebitGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kSceneNodeGrpcAssetAbortDebitGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalSceneNodeGrpcAssetAbortDebitFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -570,13 +576,13 @@ void StartSceneNodeGrpcAssetAbortDebitCall(entt::registry& registry, entt::entit
         QueueLocalSceneNodeGrpcAssetAbortDebitFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -608,9 +614,10 @@ void SendSceneNodeGrpcAssetAbortDebitErased(entt::registry& registry, entt::enti
         LOG_FATAL << "gRPC SceneNodeGrpc.AssetAbortDebit requires a done callback";
     }
     if (message.GetDescriptor() != ::AssetOpRequest::descriptor()) {
-        LOG_ERROR << "gRPC SceneNodeGrpc.AssetAbortDebit: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC SceneNodeGrpc.AssetAbortDebit: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -619,7 +626,7 @@ void SendSceneNodeGrpcAssetAbortDebitErased(entt::registry& registry, entt::enti
     const auto* typedRequest = dynamic_cast<const ::AssetOpRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC SceneNodeGrpc.AssetAbortDebit: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -631,7 +638,7 @@ void SendSceneNodeGrpcAssetAbortDebitErased(entt::registry& registry, entt::enti
 #pragma region SceneNodeGrpcAssetCredit
 namespace {
 void QueueLocalSceneNodeGrpcAssetCreditFailure(GrpcDone<::AssetOpResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -645,9 +652,9 @@ void StartSceneNodeGrpcAssetCreditCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC SceneNodeGrpc.AssetCredit requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kSceneNodeGrpcAssetCreditGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kSceneNodeGrpcAssetCreditGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalSceneNodeGrpcAssetCreditFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -656,13 +663,13 @@ void StartSceneNodeGrpcAssetCreditCall(entt::registry& registry, entt::entity no
         QueueLocalSceneNodeGrpcAssetCreditFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -694,9 +701,10 @@ void SendSceneNodeGrpcAssetCreditErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC SceneNodeGrpc.AssetCredit requires a done callback";
     }
     if (message.GetDescriptor() != ::AssetOpRequest::descriptor()) {
-        LOG_ERROR << "gRPC SceneNodeGrpc.AssetCredit: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC SceneNodeGrpc.AssetCredit: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -705,7 +713,7 @@ void SendSceneNodeGrpcAssetCreditErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::AssetOpRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC SceneNodeGrpc.AssetCredit: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -717,7 +725,7 @@ void SendSceneNodeGrpcAssetCreditErased(entt::registry& registry, entt::entity n
 #pragma region SceneNodeGrpcAssetAckReceipt
 namespace {
 void QueueLocalSceneNodeGrpcAssetAckReceiptFailure(GrpcDone<::AssetOpResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -731,9 +739,9 @@ void StartSceneNodeGrpcAssetAckReceiptCall(entt::registry& registry, entt::entit
     if (!done) {
         LOG_FATAL << "gRPC SceneNodeGrpc.AssetAckReceipt requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kSceneNodeGrpcAssetAckReceiptGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kSceneNodeGrpcAssetAckReceiptGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalSceneNodeGrpcAssetAckReceiptFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -742,13 +750,13 @@ void StartSceneNodeGrpcAssetAckReceiptCall(entt::registry& registry, entt::entit
         QueueLocalSceneNodeGrpcAssetAckReceiptFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -780,9 +788,10 @@ void SendSceneNodeGrpcAssetAckReceiptErased(entt::registry& registry, entt::enti
         LOG_FATAL << "gRPC SceneNodeGrpc.AssetAckReceipt requires a done callback";
     }
     if (message.GetDescriptor() != ::AssetOpRequest::descriptor()) {
-        LOG_ERROR << "gRPC SceneNodeGrpc.AssetAckReceipt: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC SceneNodeGrpc.AssetAckReceipt: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -791,7 +800,7 @@ void SendSceneNodeGrpcAssetAckReceiptErased(entt::registry& registry, entt::enti
     const auto* typedRequest = dynamic_cast<const ::AssetOpRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC SceneNodeGrpc.AssetAckReceipt: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

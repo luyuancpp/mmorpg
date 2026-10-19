@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/base64"
@@ -10,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,20 +41,25 @@ type fieldEntry struct {
 }
 
 type tableMatch struct {
-	Table       string                      `json:"table"`
-	MatchColumn string                      `json:"match_column"`
+	Table       string                       `json:"table"`
+	MatchColumn string                       `json:"match_column"`
+	Truncated   bool                         `json:"truncated"`
 	Rows        []map[string]json.RawMessage `json:"rows"`
 }
 
 func main() {
 	var (
-		configPath   = flag.String("config", "etc/data_service.yaml", "path to data_service config (for Redis import)")
-		dbConfigPath = flag.String("db-config", "../db/etc/db.yaml", "path to db config (for MySQL import)")
+		configPath   = flag.String("config", "etc/data_service.yaml", "path to data_service config (Redis import / player:zone mapping)")
+		dbConfigPath = flag.String("db-config", "../db/etc/db.yaml", "path to db config (MySQL import; player-bundle: also core Redis)")
 		inputFile    = flag.String("file", "", "path to debug_fetch JSON export file (required)")
 		dryRun       = flag.Bool("dry-run", true, "preview changes without writing; use --dry-run=false to apply")
-		zoneID       = flag.Uint("zone", 0, "override zone ID for import (default: use value from export)")
-		playerID     = flag.Uint64("player", 0, "override player ID for import (default: use value from export)")
+		zoneID       = flag.Uint("zone", 0, "override zone ID for import (player-bundle: local zone, default db config ZoneId)")
+		playerID     = flag.Uint64("player", 0, "override player ID for import (default: use value from export; not allowed for player-bundle)")
 		timeoutSec   = flag.Int("timeout-seconds", 30, "request timeout in seconds")
+		source       = flag.String("source", sourceAuto, "player-bundle: auto | redis-parent | sql")
+		localAccount = flag.String("local-account", "", "player-bundle: local dev_/robot_ account that will own the imported role")
+		replace      = flag.Bool("replace", false, "player-bundle: overwrite an existing local save of the same player_id")
+		allowHosts   = flag.String("allow-target-host", "", "comma-separated non-loopback hosts allowed as write targets (local docker service names)")
 	)
 	flag.Parse()
 
@@ -64,7 +71,29 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(*timeoutSec)*time.Second)
 	defer cancel()
 
-	data, err := loadExportFile(*inputFile)
+	raw, err := os.ReadFile(*inputFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: read export: %v\n", err)
+		os.Exit(1)
+	}
+	if isBundleFile(raw) {
+		if *playerID > 0 {
+			fmt.Fprintln(os.Stderr, "error: player-bundle 不支持 -player 换号导入(blob 内的身份不会跟着改);本地撞号时用 -replace 覆盖")
+			os.Exit(1)
+		}
+		err = runBundleImport(ctx, raw, bundleImportOptions{
+			dbConfigPath: *dbConfigPath, configPath: *configPath, localZone: uint32(*zoneID),
+			source: *source, localAccount: strings.TrimSpace(*localAccount), replace: *replace,
+			dryRun: *dryRun, allowHosts: *allowHosts,
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "import failed: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	data, err := parseExportFile(raw)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: load export: %v\n", err)
 		os.Exit(1)
@@ -74,15 +103,16 @@ func main() {
 		data.HomeZoneID = uint32(*zoneID)
 		data.ZoneID = uint32(*zoneID)
 	}
-	if *playerID > 0 {
-		data.PlayerID = *playerID
+	if *playerID > 0 && *playerID != data.PlayerID {
+		overridePlayerID(data, *playerID)
 	}
 
 	switch data.Mode {
 	case "player":
+		fmt.Fprintln(os.Stderr, "注意:player 导出写回的是 data_service 的 player:{id}:<field> 键族,不在登录加载链路上;本地复现玩家请用 player-bundle")
 		err = importPlayerRedis(ctx, *configPath, data, *dryRun)
 	case "playerdb":
-		err = importPlayerDB(ctx, *dbConfigPath, data, *dryRun)
+		err = importPlayerDB(ctx, *dbConfigPath, data, *dryRun, *allowHosts)
 	default:
 		err = fmt.Errorf("unsupported import mode %q (only player and playerdb exports are supported)", data.Mode)
 	}
@@ -182,7 +212,7 @@ func importPlayerRedis(ctx context.Context, configPath string, data *exportFile,
 
 // ── Player DB (MySQL) import ────────────────────────────────────
 
-func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, dryRun bool) error {
+func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, dryRun bool, allowHosts string) error {
 	if data.PlayerID == 0 {
 		return errors.New("export file has no player_id (use -player to override)")
 	}
@@ -202,6 +232,10 @@ func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, 
 	for _, match := range data.Matches {
 		if len(match.Rows) == 0 {
 			continue
+		}
+		// 导入先删掉该玩家在这张表的全部行再插回导出的行:导出被 -limit 截断时会静默丢行。
+		if match.Truncated {
+			return fmt.Errorf("table %s 的导出被 -limit 截断,导入会丢行;调大 debug_fetch -limit 重新导出", match.Table)
 		}
 
 		// Discover columns from first row
@@ -259,6 +293,13 @@ func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, 
 		return nil
 	}
 
+	cfg, err := debugutil.LoadDBConfig(dbConfigPath)
+	if err != nil {
+		return err
+	}
+	if err := debugutil.CheckLocalWriteTarget("MySQL", cfg.ServerConfig.Database.Hosts, allowHosts); err != nil {
+		return err
+	}
 	db, _, _, err := debugutil.OpenZoneDB(ctx, dbConfigPath, zoneID)
 	if err != nil {
 		return err
@@ -376,6 +417,10 @@ func loadExportFile(path string) (*exportFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
 	}
+	return parseExportFile(raw)
+}
+
+func parseExportFile(raw []byte) (*exportFile, error) {
 	var data exportFile
 	if err := json.Unmarshal(raw, &data); err != nil {
 		return nil, fmt.Errorf("parse json: %w", err)
@@ -384,6 +429,21 @@ func loadExportFile(path string) (*exportFile, error) {
 		return nil, errors.New("export file missing 'mode' field")
 	}
 	return &data, nil
+}
+
+// overridePlayerID 让 -player 换号导入前后一致:DELETE 用新号,行里的匹配列也改成新号。
+// 原来只改了 DELETE 条件,行内仍是旧号,结果删的是 B、插进去的是 A。blob 内嵌的身份不改,换号只适合查看。
+func overridePlayerID(data *exportFile, playerID uint64) {
+	data.PlayerID = playerID
+	encoded := json.RawMessage(strconv.FormatUint(playerID, 10))
+	for i := range data.Matches {
+		column := data.Matches[i].MatchColumn
+		for _, row := range data.Matches[i].Rows {
+			if _, ok := row[column]; ok {
+				row[column] = encoded
+			}
+		}
+	}
 }
 
 // resolveColumnValue turns a JSON-decoded cell back into a Go value
@@ -414,14 +474,18 @@ func resolveColumnValue(raw json.RawMessage) (any, error) {
 		return s, nil
 	}
 
-	// Try number
-	var f float64
-	if err := json.Unmarshal(raw, &f); err == nil {
-		// Preserve integer values
-		if f == float64(int64(f)) {
-			return int64(f), nil
+	// Try number。按十进制字面量解析,不经 float64:存量雪花 player_id 约 2.8e17,超过 2^53 后
+	// float64 会把它舍入成另一名玩家的号(审计 data-service#1)。
+	if number, ok := jsonNumber(raw); ok {
+		if v, err := strconv.ParseInt(string(number), 10, 64); err == nil {
+			return v, nil
 		}
-		return f, nil
+		if v, err := strconv.ParseUint(string(number), 10, 64); err == nil {
+			return v, nil
+		}
+		if v, err := number.Float64(); err == nil {
+			return v, nil
+		}
 	}
 
 	// Try bool
@@ -432,4 +496,16 @@ func resolveColumnValue(raw json.RawMessage) (any, error) {
 
 	// Fallback: store as string
 	return string(raw), nil
+}
+
+// jsonNumber 判断 raw 是否是一个 JSON 数字字面量,是则原样返回(不做任何数值转换)。
+func jsonNumber(raw json.RawMessage) (json.Number, bool) {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.UseNumber()
+	var value any
+	if err := decoder.Decode(&value); err != nil {
+		return "", false
+	}
+	number, ok := value.(json.Number)
+	return number, ok
 }

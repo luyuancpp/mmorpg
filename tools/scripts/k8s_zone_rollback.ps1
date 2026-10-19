@@ -46,9 +46,15 @@
                 (Step 1 会连它一起删,Step 6 留空不重建),且必须读得到 —— 一个 gate 都没有时(如上一次回滚中途放弃、
                 namespace 已被 Step 1 删掉)判为读不到,不当成"确定没有"。
             不一致或判不出即在停服之前拒绝,要求显式传参;显式传了的项不核对。
+            login 第三方登录(微信 / QQ,2026-10-18):没给 -ConfirmLoginAuthProviderChange 时,再读 zone namespace 里的 login ConfigMap
+            (AuthProviders 段)与 Secret login-oauth 是否存在,按 k8s_deploy.ps1 防误关闸的同一份判据(lib Get-LoginAuthProviderDrift)
+            核对本次的六个 -Login* 参数:线上开着的会被关掉或改掉(漏传 AppId / Endpoint / AllowOpenId、换了 AppId)、读不到、认不出,
+            或 namespace 里已没有 login ConfigMap 而存档里也没有现状,都在停服之前拒绝,报错给出照传现状的参数串。
             入口决定存档(2026-10-18,回档复核 [10]):第 0 步全部通过、Step 1 之前,把本次 Step 6 的入口决定(留空项取核对过的集群现状,
-            显式项取参数值:路由模式、入口形态、Ingress host / class / tls / trusted proxies、地址参数、-RequireClientEndpoint)连同读到的集群现状
-            写进 <报告目录>/entry-state.json。同一 rid 重跑时:namespace 里一个 gate 都没有(已被 Step 1 删掉)就改用存档的集群现状做上面的核对,
+            显式项取参数值:路由模式、入口形态、Ingress host / class / tls / trusted proxies、地址参数、-RequireClientEndpoint、
+            第三方登录的 -Login* 与 -ConfirmLoginAuthProviderChange)连同读到的集群现状与 login 第三方登录现状
+            写进 <报告目录>/entry-state.json(Schema 2;第三方登录接入之前写的 Schema 1 存档照常读,只是第三方登录不按存档比较,
+            namespace 已删时由上面的核对要求照传并加 -ConfirmLoginAuthProviderChange)。同一 rid 重跑时:namespace 里一个 gate 都没有(已被 Step 1 删掉)就改用存档的集群现状做上面的核对,
             不再要操作者凭记忆重传;本次的入口决定与存档逐项不同即在停服之前拒绝,重跑不能静默换掉入口。
          b. 静态预检:把 Step 6 将要传给 dev_tools.ps1 k8s-zone-up 的同一份参数加 -DryRun 执行一遍
             (k8s_deploy.ps1 -DryRun 只在本地渲染清单、不调 kubectl),非 0 即拒绝。参数组合、档位与密钥、发布门禁的
@@ -140,6 +146,9 @@
          ⚠️ 发布档位与开发口令认证同样不粘滞:staging / prod zone 必须传 -ReleaseProfile(留空按 dev_tools.ps1 默认 dev 档部署,
          login 以 dev 模式、密钥回落占位值拉起);dev zone 依赖开发口令登录时照传 -LoginDevPasswordAuth
          (共享口令仍走环境变量 MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET),漏传则 login 没有任何认证配置、Step 7 冒烟登录失败。
+         ⚠️ 第三方登录(微信 / QQ)同样不粘滞:开着的 zone 回滚时照传 -LoginWeChatAppId / -LoginQQAppId(及 -Login*Endpoint、
+         -Login*AllowOpenId),微信 AppSecret 仍走环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET;漏传由第 0 步在停服之前拒绝。
+         确要关闭或改动加 -ConfirmLoginAuthProviderChange(同时透传到本步)。
       7. Print verification checklist
 
     Why MySQL is manual:
@@ -356,6 +365,21 @@ param(
     # switch 只在被指定时透传,共享口令仍走环境变量 MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET、不经参数。
     # 不粘滞:dev zone 依赖开发口令登录时照传,漏传则 Step 6 生成的 login 没有任何认证配置(fail-closed),登录全部失败。
     [switch]$LoginDevPasswordAuth,
+    # 集群内 login 的第三方登录(微信 / QQ,k8s_deploy.ps1 同名参数,语义、形状校验与微信密钥 MMORPG_LOGIN_WECHAT_APP_SECRET 都在那边),
+    # 经 Step 6 透传;字符串非空才透传,switch 只在被指定时透传。不粘滞,而 Step 1 会连 login ConfigMap 与 Secret login-oauth 一起删掉,
+    # k8s_deploy.ps1 自己的防误关闸在 Step 6 面对的是空 namespace —— 所以 -Apply 下第 0 步在停服之前读线上现状,按同一份判据
+    # (lib Get-LoginAuthProviderDrift)核对:线上开着的第三方登录会被本次参数关掉或改掉(漏传 AppId / Endpoint / AllowOpenId、
+    # 换了 AppId)、线上读不到或认不出,都拒绝,报错给出照传现状的参数串。给了 -LoginWeChatAppId 时第 0 步的静态预检同样要求
+    # 部署机已设置 MMORPG_LOGIN_WECHAT_APP_SECRET,缺了在停服之前拒绝。
+    [string]$LoginWeChatAppId = "",
+    [string]$LoginWeChatEndpoint = "",
+    [switch]$LoginWeChatAllowOpenId,
+    [string]$LoginQQAppId = "",
+    [string]$LoginQQEndpoint = "",
+    [switch]$LoginQQAllowOpenId,
+    # 显式确认本次回滚后 login 的第三方登录只按本次的 -Login* 参数重建(关掉或改动线上配置也接受):给了就不读、不核对线上
+    # login ConfigMap 与 Secret,并透传给 Step 6(namespace 没删净时 k8s_deploy.ps1 的防误关闸同样放行)。地位同 -ConfirmNoGatewayIngress。
+    [switch]$ConfirmLoginAuthProviderChange,
     # gateway Ingress(D91,由 zone-up 随 gateway 生成)。给了 -GatewayIngressHost 就必须同时给 -GatewayTrustedProxies:
     # 与 k8s_deploy.ps1 preflight(lib Test-ClientEntryPreflight)同一规则,在本脚本入口先拒(dry-run 也报),不拖到 Step 6。
     [string]$GatewayIngressHost = "",
@@ -792,7 +816,8 @@ function Assert-ZoneEntryKeptOnRollback {
     或读到确实没有 Ingress,记 '(none)'。Ingress 的 class / tls / trusted proxies、地址参数与 -RequireClientEndpoint 只记显式值
     (不粘滞,留空即 k8s_deploy.ps1 默认值,集群现状核对不了它们)。
 .PARAMETER Explicit
-    本次的显式参数:键为参数名,未给为空串(GateNodePortBase 未给传空串而不是 -1),ConfirmNoGatewayIngress 为布尔。
+    本次的显式参数:键为参数名,未给为空串(GateNodePortBase 未给传空串而不是 -1),ConfirmNoGatewayIngress、
+    LoginWeChatAllowOpenId、LoginQQAllowOpenId、ConfirmLoginAuthProviderChange 为布尔。
 #>
 function Get-ZoneEntryDecision {
     param(
@@ -814,6 +839,16 @@ function Get-ZoneEntryDecision {
     foreach ($name in @('GatewayIngressClassName', 'GatewayIngressTlsSecret', 'GatewayTrustedProxies', 'ClientPublicHost', 'GateClientHostTemplate',
             'GateNodePortBase', 'GateExternalTrafficPolicy', 'GateServiceType', 'RequireClientEndpoint')) {
         $decision[$name] = & $asText $Explicit[$name]
+    }
+    # login 第三方登录(微信 / QQ):只记显式值,追加在末尾。留空即「不开」,第 0 步 a 的防误关核对已证明线上与之一致(或已确认关闭),
+    # 所以显式值就是 Step 6 实际生效的值。switch 记 'true' / 空串。接入之前写的存档(Schema 1,没有 LoginAuthState)没有这些键,
+    # 读出来是空串:它们没记过第三方登录的决定,主流程比较时把这七个键剔掉,不拿空串去比(否则照传或确认都会被判为与存档不同)。
+    foreach ($name in @('LoginWeChatAppId', 'LoginWeChatEndpoint', 'LoginWeChatAllowOpenId', 'LoginQQAppId', 'LoginQQEndpoint', 'LoginQQAllowOpenId',
+            'ConfirmLoginAuthProviderChange')) {
+        if ($name -in @('LoginWeChatAllowOpenId', 'LoginQQAllowOpenId', 'ConfirmLoginAuthProviderChange')) {
+            $decision[$name] = if ([bool]$Explicit[$name]) { 'true' } else { '' }
+        }
+        else { $decision[$name] = & $asText $Explicit[$name] }
     }
     return $decision
 }
@@ -871,6 +906,16 @@ function Format-ZoneEntryDecisionArgs {
         $value = Get-ZoneEntryDecisionValue -Decision $Decision -Name $name
         if ($value -ne '') { $parts.Add("-$name $value") }
     }
+    # 第三方登录按 provider 分组(与 lib Get-LoginAuthProviderDrift 的 KeepArgs 同一顺序),switch 记的是 'true' / 空串。
+    foreach ($name in @('LoginWeChatAppId', 'LoginWeChatEndpoint', 'LoginWeChatAllowOpenId', 'LoginQQAppId', 'LoginQQEndpoint', 'LoginQQAllowOpenId',
+            'ConfirmLoginAuthProviderChange')) {
+        $value = Get-ZoneEntryDecisionValue -Decision $Decision -Name $name
+        if ($value -eq '') { continue }
+        if ($name -in @('LoginWeChatAllowOpenId', 'LoginQQAllowOpenId', 'ConfirmLoginAuthProviderChange')) {
+            if ($value -ceq 'true') { $parts.Add("-$name") }
+        }
+        else { $parts.Add("-$name $value") }
+    }
     return ($parts -join ' ')
 }
 
@@ -881,7 +926,8 @@ function Format-ZoneEntryDecisionArgs {
 
 .DESCRIPTION
     参数组合的规则(入口形态与服务类型、模板与副本数、nodePort 段、ClientPublicHost / Ingress host / CIDR 的格式、
-    -RequireClientEndpoint 与入口形态的矛盾、-LoginDevPasswordAuth 只许 dev 档、档位对应的密钥与发布门禁 …)只在
+    -RequireClientEndpoint 与入口形态的矛盾、-LoginDevPasswordAuth 只许 dev 档、第三方登录 -Login* 的形状与
+    -LoginWeChatAppId 要的 MMORPG_LOGIN_WECHAT_APP_SECRET、档位对应的密钥与发布门禁 …)只在
     k8s_deploy.ps1 一处(lib Test-ClientEntryPreflight 与各 Assert-*)。本脚本不复制规则,而是让那边对 Step 6 的真实参数
     完整渲染一遍 zone-up:拖到 Step 6 才被拒时 zone 已停服、数据已回档,回滚卡在半路。
     k8s_deploy.ps1 -DryRun 不调 kubectl(集群现状预检、服务端预演都跳过),只在本地渲染清单并打印,停服前执行没有副作用;
@@ -2022,6 +2068,11 @@ Write-Host "  client entry: $(if ($ClientEntryMode) { "-ClientEntryMode $ClientE
 Write-Host "  ingress     : $(if ($GatewayIngressHost) { "-GatewayIngressHost $GatewayIngressHost" } elseif ($ConfirmNoGatewayIngress) { '-ConfirmNoGatewayIngress (Step 6 does not create Ingress; existing Ingress gateway in the namespace is removed in Step 1 without checking)' } else { '(unset; Step 6 does not create Ingress; existing Ingress gateway in the namespace is removed in Step 1; -Apply checks first)' })"
 Write-Host "  release     : $(if ($ReleaseProfile) { "-ReleaseProfile $ReleaseProfile" } else { '(unset; Step 6 uses the dev_tools.ps1 default dev profile; staging / prod zones must explicitly pass -ReleaseProfile)' })"
 Write-Host "  login auth  : $(if ($LoginDevPasswordAuth) { '-LoginDevPasswordAuth (shared password comes from environment variable MMORPG_LOGIN_DEV_PASSWORD_SHARED_SECRET)' } else { '(no -LoginDevPasswordAuth; pass it when a dev zone requires development-password login, otherwise login generated in Step 6 has no authentication configuration)' })"
+$loginThirdPartyBanner = @()
+if ($LoginWeChatAppId) { $loginThirdPartyBanner += "WeChat -LoginWeChatAppId $LoginWeChatAppId$(if ($LoginWeChatEndpoint) { ' -LoginWeChatEndpoint <set>' })$(if ($LoginWeChatAllowOpenId) { ' -LoginWeChatAllowOpenId' }) (AppSecret from environment variable MMORPG_LOGIN_WECHAT_APP_SECRET)" }
+if ($LoginQQAppId) { $loginThirdPartyBanner += "QQ -LoginQQAppId $LoginQQAppId$(if ($LoginQQEndpoint) { ' -LoginQQEndpoint <set>' })$(if ($LoginQQAllowOpenId) { ' -LoginQQAllowOpenId' })" }
+$loginThirdPartyConfirm = if ($ConfirmLoginAuthProviderChange) { '; -ConfirmLoginAuthProviderChange (live login ConfigMap / Secret is not checked)' } else { '; -Apply checks the live login ConfigMap / Secret login-oauth before shutdown' }
+Write-Host "  login 3rd   : $(if ($loginThirdPartyBanner.Count -gt 0) { $loginThirdPartyBanner -join '; ' } else { '(no -LoginWeChatAppId / -LoginQQAppId; Step 6 renders login without WeChat / QQ login)' })$loginThirdPartyConfirm"
 Write-Host "  switch gate : $(if ($AllowDisruptiveSwitch) { '-AllowDisruptiveSwitch (forwarded only to Step 6; permits mode / address changes if the namespace was not fully removed; does not bypass Step 0 checks)' } else { '(unset; Step 6 normally starts with an empty namespace; k8s_deploy.ps1 checks existing cluster state if cleanup was incomplete)' })"
 Write-Host "  kube target : $(if ($KubeContext -or $KubeConfig) { "context='$KubeContext' kubeconfig='$KubeConfig'" } else { '(unset; using the current kubectl context; preflight, Step 1 and Step 6 target the same cluster)' })"
 Write-Host ""
@@ -2060,6 +2111,13 @@ if (-not [string]::IsNullOrWhiteSpace($GateExternalTrafficPolicy)) { $upArgs.Gat
 if (-not [string]::IsNullOrWhiteSpace($GateServiceType)) { $upArgs.GateServiceType = $GateServiceType }
 if (-not [string]::IsNullOrWhiteSpace($RequireClientEndpoint)) { $upArgs.RequireClientEndpoint = $RequireClientEndpoint }
 if ($LoginDevPasswordAuth) { $upArgs.LoginDevPasswordAuth = $true }
+if (-not [string]::IsNullOrWhiteSpace($LoginWeChatAppId)) { $upArgs.LoginWeChatAppId = $LoginWeChatAppId }
+if (-not [string]::IsNullOrWhiteSpace($LoginWeChatEndpoint)) { $upArgs.LoginWeChatEndpoint = $LoginWeChatEndpoint }
+if ($LoginWeChatAllowOpenId) { $upArgs.LoginWeChatAllowOpenId = $true }
+if (-not [string]::IsNullOrWhiteSpace($LoginQQAppId)) { $upArgs.LoginQQAppId = $LoginQQAppId }
+if (-not [string]::IsNullOrWhiteSpace($LoginQQEndpoint)) { $upArgs.LoginQQEndpoint = $LoginQQEndpoint }
+if ($LoginQQAllowOpenId) { $upArgs.LoginQQAllowOpenId = $true }
+if ($ConfirmLoginAuthProviderChange) { $upArgs.ConfirmLoginAuthProviderChange = $true }
 if ($AllowDisruptiveSwitch) { $upArgs.AllowDisruptiveSwitch = $true }
 if (-not [string]::IsNullOrWhiteSpace($GatewayIngressHost)) { $upArgs.GatewayIngressHost = $GatewayIngressHost }
 if (-not [string]::IsNullOrWhiteSpace($GatewayIngressClassName)) { $upArgs.GatewayIngressClassName = $GatewayIngressClassName }
@@ -2071,9 +2129,10 @@ if (-not [string]::IsNullOrWhiteSpace($KubeConfig)) { $upArgs.KubeConfig = $Kube
 # ── 预检: gate 路由模式 / 客户端入口形态 / gateway Ingress + Step 6 静态预检(只读,先于 Step 1 停服) ──
 # 放在停服之前:拖到 Step 6 才发现,zone 已停服、数据已回档,回滚卡在半路;而 Step 1 删掉 namespace 之后,
 # k8s_deploy.ps1 自己的集群现状预检在 Step 6 已无从判断。集群现状只核对留空的项,一次 kubectl 读完(Assert-ZoneEntryKeptOnRollback);
+# login 第三方登录另读 login ConfigMap 与 Secret login-oauth 是否存在(两次只读 kubectl,见下面「防误关」一段);
 # 静态预检让 k8s_deploy.ps1 对 Step 6 的同一份参数 -DryRun 一遍(Invoke-ZoneUpStaticPreflight)。
 # dry-run 两者都不执行(整个 dry-run 只打印命令、不调任何外部工具),只预告 -Apply 时会做什么。
-Write-Host "-- Preflight: gate routing mode / client entry mode / gateway Ingress / Step 6 static preflight (read-only, before Step 1 shutdown) --" -ForegroundColor Cyan
+Write-Host "-- Preflight: gate routing mode / client entry mode / gateway Ingress / login WeChat-QQ login / Step 6 static preflight (read-only, before Step 1 shutdown) --" -ForegroundColor Cyan
 $checkRouterMode = [string]::IsNullOrWhiteSpace($GateRouterMode)
 $checkEntryMode = [string]::IsNullOrWhiteSpace($ClientEntryMode)
 $checkIngress = [string]::IsNullOrWhiteSpace($GatewayIngressHost) -and -not $ConfirmNoGatewayIngress
@@ -2128,7 +2187,7 @@ if ($checkRouterMode -or $checkEntryMode -or $checkIngress) {
         Write-Host "  (dry-run does not read the cluster; -Apply rejects mismatches or unavailable state before shutdown; explicitly pass the corresponding arguments)" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  All three values were supplied explicitly; skipping cluster reads"
+    Write-Host "  All three values were supplied explicitly; skipping cluster reads for gate / Ingress (the login WeChat / QQ check below still reads unless -ConfirmLoginAuthProviderChange)"
 }
 if ($Apply) {
     $entryExplicit = [ordered]@{
@@ -2145,16 +2204,90 @@ if ($Apply) {
         GateExternalTrafficPolicy = $GateExternalTrafficPolicy
         GateServiceType           = $GateServiceType
         RequireClientEndpoint     = $RequireClientEndpoint
+        LoginWeChatAppId          = $LoginWeChatAppId
+        LoginWeChatEndpoint       = $LoginWeChatEndpoint
+        LoginWeChatAllowOpenId    = [bool]$LoginWeChatAllowOpenId
+        LoginQQAppId              = $LoginQQAppId
+        LoginQQEndpoint           = $LoginQQEndpoint
+        LoginQQAllowOpenId        = [bool]$LoginQQAllowOpenId
+        ConfirmLoginAuthProviderChange = [bool]$ConfirmLoginAuthProviderChange
     }
     $entryDecision = Get-ZoneEntryDecision -State $zoneEntryState -Explicit $entryExplicit
     if ($null -ne $savedEntryState) {
-        $entryDiffs = Compare-ZoneEntryDecision -Saved $savedEntryState.Decision -Current $entryDecision
+        # 第三方登录接入之前写的存档(没有 LoginAuthState 字段)没记过 -Login* 的决定:比较时剔掉这七个键,由下面的防误关核对
+        # (namespace 已删时它判不出,要求照传并加 -ConfirmLoginAuthProviderChange)决定,不拿存档里不存在的空串去比。
+        $entryDecisionToCompare = $entryDecision
+        if ($null -eq $savedEntryState.PSObject.Properties['LoginAuthState']) {
+            $entryDecisionToCompare = [ordered]@{}
+            foreach ($key in $entryDecision.Keys) {
+                if ($key -cnotin @('LoginWeChatAppId', 'LoginWeChatEndpoint', 'LoginWeChatAllowOpenId', 'LoginQQAppId', 'LoginQQEndpoint', 'LoginQQAllowOpenId',
+                        'ConfirmLoginAuthProviderChange')) { $entryDecisionToCompare[$key] = $entryDecision[$key] }
+            }
+            Write-Host "  $entryStatePath predates the login WeChat / QQ check (no LoginAuthState); comparing gate / Ingress / address entries only" -ForegroundColor Yellow
+        }
+        $entryDiffs = Compare-ZoneEntryDecision -Saved $savedEntryState.Decision -Current $entryDecisionToCompare
         if ($entryDiffs.Count -gt 0) {
             throw ("k8s-zone-rollback 在停服之前拒绝执行,尚未产生任何改动:本次 Step 6 的入口决定与同一 rollback-id 的存档 $entryStatePath 不同," +
                 "$($entryDiffs.Count) 项:`n  - " + ($entryDiffs -join "`n  - ") + "`n" + $savedEntryHint +
                 "。同一 rid 重跑不许换掉入口(namespace 删掉之后,存档是唯一的核对依据);确认存档本身记错了,先人工核对该 zone 的部署记录,再删除该文件重跑。")
         }
         Write-Host "  Step 6 entry decision matches the one saved by the same -RollbackId ($entryStatePath)" -ForegroundColor Green
+    }
+}
+# login 第三方登录(微信 / QQ)的防误关(-Apply,停服之前)。六个 -Login* 参数不粘滞,而 Step 1 会连 login ConfigMap 与 Secret
+# login-oauth 一起删掉,k8s_deploy.ps1 自己的防误关闸(Assert-LoginAuthProviderClusterState)在 Step 6 面对的是空 namespace。
+# 判据与 k8s_deploy.ps1 同一份(lib Get-LoginAuthProviderDrift),本脚本只换了「线上现状」的来源:namespace 里已没有 login ConfigMap
+# (多半已被同一 rid 上一次的 Step 1 删掉)时,改用存档里首次运行读到的现状;存档里也没有就判不出,拒绝。
+# 读到的现状(只有公开的 AppId / Endpoint、键名与 Secret 在不在,没有任何密钥值)随入口决定一起存进 entry-state.json。
+$loginAuthState = $null
+if ($ConfirmLoginAuthProviderChange) {
+    Write-Host "  Explicit -ConfirmLoginAuthProviderChange: Step 6 renders login WeChat / QQ login only from this run's -Login* arguments; the live login ConfigMap / Secret is not checked"
+}
+else {
+    $loginAuthContract = Get-ClientEntryContract
+    $loginAuthBaseArgs = Get-ClientEntryKubectlBaseArgs -KubeContext $KubeContext -KubeConfig $KubeConfig
+    # 只用于显示(参数与 lib Get-LoginAuthProviderLiveState 实际执行的一致);Secret 只用 -o name 探测存在性,不读值。
+    $loginAuthPreview = @(
+        @('get', 'configmap', $loginAuthContract.LoginConfigMapName, '-n', $zoneNamespace, '--ignore-not-found', '-o', 'json'),
+        @('get', 'secret', $loginAuthContract.LoginOAuthSecretName, '-n', $zoneNamespace, '--ignore-not-found', '-o', 'name')
+    ) | ForEach-Object { Format-CommandLine -Program 'kubectl' -Arguments (@($loginAuthBaseArgs) + $_) }
+    Write-Host "  $($loginAuthPreview -join '; ') → live login WeChat / QQ login must not be turned off or changed by this run's -Login* arguments"
+    if ($Apply) {
+        try {
+            $loginAuthState = Get-LoginAuthProviderLiveState -Namespace $zoneNamespace -KubeContext $KubeContext -KubeConfig $KubeConfig
+        }
+        catch {
+            throw ("k8s-zone-rollback 在停服之前拒绝执行,尚未产生任何改动:读不到 namespace $zoneNamespace 里 login 第三方登录的线上现状" +
+                "($($_.Exception.Message)),判不出 Step 6 会不会关掉微信 / QQ 登录。修好集群访问后重跑;确认可以只按本次的 -Login* 参数重建," +
+                "加 -ConfirmLoginAuthProviderChange。")
+        }
+        if (-not $loginAuthState.ConfigMapPresent) {
+            $savedLoginAuthState = if ($null -ne $savedEntryState) { $savedEntryState.PSObject.Properties['LoginAuthState'] } else { $null }
+            if ($null -ne $savedLoginAuthState -and $null -ne $savedLoginAuthState.Value) {
+                Write-Host "  namespace $zoneNamespace has no configmap/$($loginAuthContract.LoginConfigMapName) (deleted by an earlier run); checking against the login state saved by the same -RollbackId ($entryStatePath)" -ForegroundColor Yellow
+                $loginAuthState = $savedLoginAuthState.Value
+            }
+            else {
+                throw ("k8s-zone-rollback 在停服之前拒绝执行,尚未产生任何改动:namespace $zoneNamespace 里没有 configmap/$($loginAuthContract.LoginConfigMapName)" +
+                    "(多半已被同一 rid 上一次的 Step 1 删掉,或该 zone 从未部署 login),同一 rid 的存档里也没有 login 的线上现状,判不出回滚前有没有开微信 / QQ 登录;" +
+                    "Step 6 只按本次的 -Login* 参数重建 login。照传回滚前的 -LoginWeChatAppId / -LoginQQAppId(及 Endpoint / AllowOpenId)并加 " +
+                    "-ConfirmLoginAuthProviderChange。" + $(if ($savedEntryHint) { "`n$savedEntryHint" } else { '' }))
+            }
+        }
+        $loginAuthDrift = Get-LoginAuthProviderDrift -Live $loginAuthState.Live -OAuthSecretPresent ([bool]$loginAuthState.OAuthSecretPresent) `
+            -WeChatAppId $LoginWeChatAppId -WeChatEndpoint $LoginWeChatEndpoint -WeChatAllowOpenId ([bool]$LoginWeChatAllowOpenId) `
+            -QQAppId $LoginQQAppId -QQEndpoint $LoginQQEndpoint -QQAllowOpenId ([bool]$LoginQQAllowOpenId)
+        if ($loginAuthDrift.Drifts.Count -gt 0) {
+            $loginAuthKeep = if ($loginAuthDrift.KeepArgs) { "要保持现状请照传 $($loginAuthDrift.KeepArgs)" } else { '线上没有可照传的 provider' }
+            throw ("k8s-zone-rollback 在停服之前拒绝执行,尚未产生任何改动:Step 1 会删掉 namespace $zoneNamespace(login ConfigMap 与 Secret " +
+                "$($loginAuthContract.LoginOAuthSecretName) 一并删除),Step 6 只按本次的 -Login* 参数重建 login。以下 $($loginAuthDrift.Drifts.Count) 项" +
+                "与线上 login 第三方登录不一致或判不出:`n  - " + ($loginAuthDrift.Drifts -join "`n  - ") +
+                "`n$loginAuthKeep;确认要关闭或改动,加 -ConfirmLoginAuthProviderChange。经包装入口调用时用 dev_tools.ps1 的同名参数。")
+        }
+        Write-Host "  login WeChat / QQ login: live state matches this run's -Login* arguments$(if ($loginAuthDrift.KeepArgs) { " ($($loginAuthDrift.KeepArgs))" } else { ' (not enabled)' })" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  (dry-run does not read the cluster; -Apply rejects live WeChat / QQ login that this run would turn off or change, or unreadable state, before shutdown)" -ForegroundColor Yellow
     }
 }
 # 集群现状过了再做静态预检:前者只读一次 kubectl,后者要完整渲染一遍 zone-up,便宜的先拒。
@@ -2309,7 +2442,8 @@ $rerunWholeHint = if ($entryArgsText) {
 }
 else {
     ("排除原因后用同一个 rid 整脚本重跑:加 -RollbackId $rollbackId;namespace 已删,须显式传 -GateRouterMode、-ClientEntryMode," +
-        "并对 Ingress 表态(-GatewayIngressHost … 或 -ConfirmNoGatewayIngress),第 0 步 f 复用报告目录里的 deploy-facts.json。")
+        "并对 Ingress 表态(-GatewayIngressHost … 或 -ConfirmNoGatewayIngress)、对第三方登录表态(照传 -Login* 并加 -ConfirmLoginAuthProviderChange)," +
+        "第 0 步 f 复用报告目录里的 deploy-facts.json。")
 }
 $abortBeforeStep5 = ("中止路径(Step 5 之前都可用):换回 PITR 之前保留的原库 zone_${ZoneId}_db → 不跑 Step 5 与 4b → k8s-zone-up 不带 -DbConsumerGroup" +
     "(keep:全新 namespace 按 Kafka 位点落回回档前的 final(L) 或 final(Z),两组都有位点时 k8s_deploy.ps1 拒绝并给出收尾命令;" +
@@ -2356,13 +2490,18 @@ if ($Apply) {
     Write-Host "  Discard tool preflight passed" -ForegroundColor Green
     # 入口决定存档(回档复核 [10]):第 0 步全部通过才写;同一 rid 已有存档时上面已逐项比较过,不覆盖。
     if ($null -eq $savedEntryState) {
+        # Schema 2(2026-10-18):加 LoginAuthState 与 Decision 的七个第三方登录键。Schema 1 的存档照常读,只是第三方登录不按存档比较
+        # (见第 0 步 a 的入口决定比较)。
         $entryRecord = [ordered]@{
-            Schema        = 1
+            Schema        = 2
             RollbackId    = $rollbackId
             Namespace     = $zoneNamespace
             CapturedAtUtc = [datetime]::UtcNow.ToString('o')
             ClusterState  = $zoneEntryState
             Decision      = $entryDecision
+            # 第 0 步 a 核对过的 login 第三方登录线上现状(-ConfirmLoginAuthProviderChange 时没读,为 $null)。只有公开的 AppId / Endpoint、
+            # 键名与 Secret 在不在,没有密钥值。同一 rid 重跑、namespace 里已没有 login ConfigMap 时以它为准;旧存档没有这个字段 = 判不出。
+            LoginAuthState = $loginAuthState
         }
         Set-Content -LiteralPath $entryStatePath -Encoding utf8 -Value ($entryRecord | ConvertTo-Json -Depth 6)
         Write-Host "  entry decision saved to $entryStatePath ($entryArgsText)"

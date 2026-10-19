@@ -959,6 +959,34 @@ Test-Case "data-service 的 MappingRedis 不写 DB 键;go/db 读落点记录的 
     Assert-Equal -Expected '0' -Actual $placementDb -Because "落点记录与 player:zone 恒在 DB 0"
 }
 
+Test-Case "data-service 的 DevRedis 必须与 C++ zoneredis、go/db RedisClient 同址且为 DB 0(账本读的就是写方那台)" {
+    # 配了 DevRedis 时 Router.ClientForPlayer 不查映射,所有玩家一律返回这一个客户端(go/data_service/internal/routing/router.go 的 devClient 短路)。
+    # data_service 在它上面读的账本都不是自己写的:PlayerAllData:<id> 由 C++ scene 经 zoneredis 存盘写入,
+    # player:{id}:asset_sql_commit 由 go/db 经 RedisClient 在 SQL 提交后发布(读侧见 persisted_player_database.go / asset_sql_commit.go)。
+    # 读写同库只靠这三段配置对齐,代码里没有交叉校验,DevRedis.DB 可配且不校验(internal/config/config.go DevRedisConfig)。
+    # 改址或改库不报任何错:GET / HGET 全部 Nil → found=false,guild / trade / mail 把资产待办记 absent 一直退避,
+    # player_inbox 对账一直 unknown 且对 absent 不告警 —— fail-closed,只丢活性,很难发现。
+    # 删掉 DevRedis 段(改走 Regions 按 home_zone 路由)时这里先变红:那是另一条路由,要另写它的同址契约,不能静默放过。
+    $dsFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name "go-svc-data-service-config")
+    $devRedisHost = Get-FlatValue -Flat $dsFlat -KeyPath 'data.data_service.yaml.DevRedis.Host'
+    # DevRedisConfig.DB 是 `json:",default=0"`:不写即 DB 0 —— 与 data_service 的取值规则一致。
+    $devRedisDb = if ($dsFlat.Scalars.Contains('data.data_service.yaml.DevRedis.DB')) { Get-FlatValue -Flat $dsFlat -KeyPath 'data.data_service.yaml.DevRedis.DB' } else { '0' }
+
+    $nodeFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name "node-config")
+    $zoneRedisAddr = '{0}:{1}' -f (Get-FlatValue -Flat $nodeFlat -KeyPath 'data.game_config.yaml.zoneredis.host'), (Get-FlatValue -Flat $nodeFlat -KeyPath 'data.game_config.yaml.zoneredis.port')
+    $zoneRedisDb = Get-FlatValue -Flat $nodeFlat -KeyPath 'data.game_config.yaml.zoneredis.db'
+
+    $dbFlat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name "go-svc-db-config")
+    $dbRedisHost = Get-FlatValue -Flat $dbFlat -KeyPath 'data.db.yaml.ServerConfig.RedisClient.Hosts'
+    $dbRedisDb = Get-FlatValue -Flat $dbFlat -KeyPath 'data.db.yaml.ServerConfig.RedisClient.DB'
+
+    Assert-Equal -Expected $zoneRedisAddr -Actual $devRedisHost -Because "data_service 读 PlayerAllData 父键的 DevRedis 必须是 C++ scene 存盘写入的 zoneredis 实例(host:port)"
+    Assert-Equal -Expected $dbRedisHost -Actual $devRedisHost -Because "data_service 读 asset_sql_commit 的 DevRedis 必须是 go/db 发布它的 RedisClient 实例"
+    Assert-Equal -Expected '0' -Actual $zoneRedisDb -Because "C++ 不发 SELECT,PlayerAllData 恒写在 DB 0"
+    Assert-Equal -Expected '0' -Actual $dbRedisDb -Because "go/db 在 RedisClient 的 DB 0 发布 asset_sql_commit"
+    Assert-Equal -Expected '0' -Actual $devRedisDb -Because "DevRedis.DB 必须与两个写方同为 DB 0;换成别的库号读到的全是 Nil,账本读静默变成 absent"
+}
+
 Test-Case "login ConfigMap 必须带 Secrets.InternalAuth(否则生产 login 拒绝启动)" {
     $flat = ConvertTo-FlatManifest -Block (Select-ManifestByName -Output $devOut -Name "go-svc-login-config")
     $v = Get-FlatValue -Flat $flat -KeyPath 'data.login.yaml.Secrets.InternalAuth.Value'

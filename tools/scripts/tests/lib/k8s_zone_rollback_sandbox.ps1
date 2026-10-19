@@ -77,6 +77,27 @@ function New-RollbackDeploySnapshotReply {
 
 <#
 .SYNOPSIS
+    第 0 步 a 读 login ConfigMap(go-svc-login-config)那次 kubectl 的假回应:一份最小的 login.yaml,AuthProviders 段由调用方给
+    (空串 = 没开第三方登录,即缺省回应)。-Absent 回「不存在」(--ignore-not-found 下无输出、退出码 0)。
+    login.yaml 里另带一个假口令,用来断言回档脚本不把 ConfigMap 里的其它值打进输出或存档。
+#>
+function New-RollbackLoginConfigMapReply {
+    param(
+        [AllowEmptyString()][string]$AuthProvidersYaml = '',
+        [switch]$Absent
+    )
+
+    if ($Absent) { return @{ ExitCode = 0; Output = '' } }
+    $loginYaml = @('Name: login.rpc', 'ListenOn: 0.0.0.0:50000', 'Secrets:', '  InternalAuth:', '    Value: "contract-login-secret-never-read"',
+        'RequireClientEndpoint: false')
+    if (-not [string]::IsNullOrEmpty($AuthProvidersYaml)) { $loginYaml += @($AuthProvidersYaml -split "`r?`n") }
+    $loginYaml += @('Kafka:', '  Brokers:', '    - "kafka.contract-infra:9092"')
+    $configMap = [ordered]@{ apiVersion = 'v1'; kind = 'ConfigMap'; metadata = [ordered]@{ name = 'go-svc-login-config' }; data = [ordered]@{ 'login.yaml' = ($loginYaml -join "`n") } }
+    return @{ ExitCode = 0; Output = ($configMap | ConvertTo-Json -Depth 10) }
+}
+
+<#
+.SYNOPSIS
     在进程内的沙箱里跑一遍 k8s_zone_rollback.ps1,返回执行结果与每个假下游的记账。
 
 .DESCRIPTION
@@ -94,7 +115,7 @@ function New-RollbackDeploySnapshotReply {
     DevToolsCalls 按调用顺序;DevToolsBound 每次调用一行 "<命令> 参数=值;…"(按参数名排序,不含 Command 与 DryRun);
     KafkaResetBound 每次调用一行 "参数=值;…"(按参数名排序);DiscardCalls 每次调用一行 "<模式> <argv 以空格拼接>";
     Timeline 是全部下游按调用先后的统一记录("dev_tools:<命令>"、"reset:apply|dry-run"、"tool:<模式>|version"、"kafka-cg:<组>[:state]"、
-    "get-offsets"、"kubectl:entry|exec|snapshot|namespace|redis"、"sleep")。
+    "get-offsets"、"kubectl:entry|exec|snapshot|namespace|redis|login-auth"、"sleep")。
 
 .PARAMETER ExtraArgs
     额外传给被测脚本的具名参数;值为 $null 的键表示从缺省参数里去掉它(如 @{ RedisHost = $null } 测 E3)。
@@ -137,6 +158,11 @@ function New-RollbackDeploySnapshotReply {
     假工具 -version 的输出行与退出码;缺省 = commit=$script:RollbackSandboxToolCommit、dirty=false、退出 0。-version 调用单独记账
     (VersionCalls,时间线 "tool:version"),不进 DiscardCalls / DiscardEnv。
 
+.PARAMETER LoginConfigMapReply / LoginOAuthSecretReply
+    第 0 步 a 的 login 第三方登录防误关读的两次 kubectl:login ConfigMap(-o json)与 Secret login-oauth(-o name)的回应 @{ ExitCode; Output }
+    (或 @{ Throw = '…' } 模拟 kubectl 不可用)。缺省 = ConfigMap 在、没有 AuthProviders,Secret 不在:没开第三方登录,核对放行,
+    已有用例不受这道检查影响。两次调用单独记账(LoginAuthCalls,时间线 "kubectl:login-auth"),不进 KubectlCalls。
+
 .PARAMETER NamespaceReplyAfterInventory / KafkaStateOutputAfterInventory
     Step 4a 盘点之后(假工具记下 inventory 之后)的 namespace 检查回应与 --state 回应(@{ <组名> = @{ Lines; ExitCode } }),
     用来模拟 PITR 期间 namespace 被重建、zone 组又活跃(回档复核 [8]);缺省同 NamespaceReply / KafkaStateOutput。
@@ -171,6 +197,8 @@ function Invoke-RollbackInSandbox {
         [int]$ToolVersionExit = 0,
         [hashtable]$NamespaceReplyAfterInventory = $null,
         [hashtable]$KafkaStateOutputAfterInventory = @{},
+        [hashtable]$LoginConfigMapReply = $null,
+        [hashtable]$LoginOAuthSecretReply = @{ ExitCode = 0; Output = '' },
         [switch]$Apply
     )
 
@@ -237,7 +265,9 @@ function Invoke-RollbackInSandbox {
 param($Command, $ZoneName, $ZoneId, $NodeImage, $NamespacePrefix, [switch]$WaitReady, $GateRouterMode = "<unset>", $ReleaseProfile,
     $ClientEntryMode, $ClientPublicHost, $GateClientHostTemplate, $GateNodePortBase, $GateExternalTrafficPolicy, $GateServiceType,
     $RequireClientEndpoint, [switch]$LoginDevPasswordAuth, [switch]$AllowDisruptiveSwitch, $GatewayIngressHost, $GatewayIngressClassName,
-    $GatewayIngressTlsSecret, $GatewayTrustedProxies, $KubeContext, $KubeConfig, $DbConsumerGroup, __INFRA_PARAM__[switch]$DryRun)
+    $GatewayIngressTlsSecret, $GatewayTrustedProxies, $KubeContext, $KubeConfig, $DbConsumerGroup,
+    $LoginWeChatAppId, $LoginWeChatEndpoint, [switch]$LoginWeChatAllowOpenId, $LoginQQAppId, $LoginQQEndpoint, [switch]$LoginQQAllowOpenId,
+    [switch]$ConfirmLoginAuthProviderChange, __INFRA_PARAM__[switch]$DryRun)
 $label = if ($DryRun) { "$Command/dry-run" } else { $Command }
 Add-Content -LiteralPath '__CALLS__' -Encoding utf8 -Value "$label GateRouterMode=$GateRouterMode"
 Add-Content -LiteralPath '__TIMELINE__' -Encoding utf8 -Value "dev_tools:$label"
@@ -324,6 +354,8 @@ exit $code
         $fakeSnapshotCalls = [System.Collections.Generic.List[string]]::new()
         $fakeNamespaceCalls = [System.Collections.Generic.List[string]]::new()
         $fakeRedisExecCalls = [System.Collections.Generic.List[string]]::new()
+        $fakeLoginAuthCalls = [System.Collections.Generic.List[string]]::new()
+        if ($null -eq $LoginConfigMapReply) { $LoginConfigMapReply = New-RollbackLoginConfigMapReply }
         if ($null -eq $RedisInfoReply) {
             $RedisInfoReply = @{ ExitCode = 0; Output = @('# Server', 'redis_version:7.2.4', "run_id:$($script:RollbackSandboxRedisRunId)", 'tcp_port:6379') }
         }
@@ -359,6 +391,18 @@ exit $code
                 Add-Content -LiteralPath $timeline -Encoding utf8 -Value 'kubectl:snapshot'
                 $global:LASTEXITCODE = $SnapshotReply.ExitCode
                 return $SnapshotReply.Output
+            }
+            # 第 0 步 a:login 第三方登录防误关读 login ConfigMap 与 Secret login-oauth 是否存在(lib Get-LoginAuthProviderLiveState)。
+            # 单独记账,不进 KubectlCalls(入口预检那一次 kubectl 的计数断言不受影响)。
+            if ($kubectlArgList -ccontains 'go-svc-login-config' -or $kubectlArgList -ccontains 'login-oauth') {
+                $fakeLoginAuthCalls.Add(($kubectlArgList -join ' '))
+                Add-Content -LiteralPath $timeline -Encoding utf8 -Value 'kubectl:login-auth'
+                $loginAuthReply = if ($kubectlArgList -ccontains 'go-svc-login-config') { $LoginConfigMapReply } else { $LoginOAuthSecretReply }
+                if ($loginAuthReply.ContainsKey('Throw')) {
+                    throw [System.Management.Automation.CommandNotFoundException]::new($loginAuthReply.Throw)
+                }
+                $global:LASTEXITCODE = $loginAuthReply.ExitCode
+                return $loginAuthReply.Output
             }
             # Step 1 之后与 Step 5 之前:namespace 是否已不存在。
             if ($kubectlArgList -ccontains 'namespace') {
@@ -504,6 +548,7 @@ exit $code
             SnapshotCalls      = @($fakeSnapshotCalls)
             NamespaceCalls     = @($fakeNamespaceCalls)
             RedisExecCalls     = @($fakeRedisExecCalls)
+            LoginAuthCalls     = @($fakeLoginAuthCalls)
             VersionCalls       = @(if (Test-Path -LiteralPath $discardVersions) { Get-Content -LiteralPath $discardVersions -Encoding utf8 })
             LeoCalls           = @($fakeLeoCalls)
             SleepCalls         = @($fakeSleepCalls)

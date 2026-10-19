@@ -29,43 +29,58 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
-type renderedValue struct {
-	Kind        string `json:"kind"`
-	Size        int    `json:"size"`
-	RawBase64   string `json:"raw_base64,omitempty"`
-	Text        string `json:"text,omitempty"`
-	JSONValue   any    `json:"json,omitempty"`
-	ProtoType   string `json:"proto_type,omitempty"`
-	ProtoJSON   any    `json:"proto_json,omitempty"`
-	DecodeError string `json:"decode_error,omitempty"`
-}
+// renderedValue 与导出包共用 debugutil.Value 的形状(JSON 键名是 debug_import 的输入契约)。
+type renderedValue = debugutil.Value
 
 var (
 	outputPath    string
 	protoTypeHint string
 )
 
+// player-bundle 要连三到四个实例、读几十把键,端口转发下 10 秒常常不够。
+const (
+	defaultTimeoutSeconds       = 10
+	defaultBundleTimeoutSeconds = 60
+)
+
 func main() {
 	var (
-		configPath     = flag.String("config", "etc/data_service.yaml", "path to data_service config")
-		dbConfigPath   = flag.String("db-config", "../db/etc/db.yaml", "path to db config for SQL mode")
-		mode           = flag.String("mode", "player", "debug mode: player | zone | server | snapshot | sql | player-db")
+		configPath     = flag.String("config", "etc/data_service.yaml", "path to data_service config (player-bundle: global DB = SnapshotMySQL)")
+		dbConfigPath   = flag.String("db-config", "../db/etc/db.yaml", "path to db config (SQL modes; player-bundle: zone MySQL + core/mapping Redis)")
+		mode           = flag.String("mode", "player", "debug mode: player-bundle | player | zone | server | snapshot | sql | player-db")
 		playerID       = flag.Uint64("player", 0, "player id")
-		zoneID         = flag.Uint("zone", 0, "zone/server id")
+		zoneID         = flag.Uint("zone", 0, "zone/server id (player-bundle: fallback zone when player:zone is missing)")
+		database       = flag.String("database", "", "explicit database name (sql / player-db / player-bundle); overrides zone_{zone}_db and placement")
 		fieldsCSV      = flag.String("fields", "", "comma-separated player fields; empty means all")
 		limit          = flag.Int("limit", 20, "max rows or player ids to print")
 		sqlQuery       = flag.String("sql", "", "read-only SQL query for sql mode")
 		protoType      = flag.String("proto-type", "", "optional protobuf message type for decoding binary payloads")
 		outPath        = flag.String("out", "", "optional output file path; default stdout")
-		timeoutSeconds = flag.Int("timeout-seconds", 10, "request timeout in seconds")
+		timeoutSeconds = flag.Int("timeout-seconds", 0, "request timeout in seconds (0 = 10, player-bundle 60)")
+
+		reason           = flag.String("reason", "", "player-bundle: ticket / feedback id, recorded in the bundle (required)")
+		operator         = flag.String("operator", "", "player-bundle: who exported it (default: OS user)")
+		serverRevision   = flag.String("server-revision", "", "player-bundle: git commit of the live server image, recorded for decoding")
+		redisAddr        = flag.String("redis-addr", "", "player-bundle: override core Redis host:port (e.g. a port-forward)")
+		mappingRedisAddr = flag.String("mapping-redis-addr", "", "player-bundle: override mapping Redis host:port (default follows core when Placement.Redis is unset)")
+		mysqlAddr        = flag.String("mysql-addr", "", "player-bundle: override zone MySQL host:port")
+		globalMySQLAddr  = flag.String("global-mysql-addr", "", "player-bundle: override global MySQL (SnapshotMySQL) host:port")
+		redisPassEnv     = flag.String("redis-password-env", "", "player-bundle: read Redis password from this env var instead of the yaml")
+		mysqlPassEnv     = flag.String("mysql-password-env", "", "player-bundle: read MySQL password (zone + global) from this env var instead of the yaml")
+		skipGlobal       = flag.Bool("skip-global", false, "player-bundle: do not read the global DB")
+		skipAccount      = flag.Bool("skip-account", false, "player-bundle: do not read the account role directory")
 	)
 	flag.Parse()
 
 	if *limit <= 0 {
 		*limit = 20
 	}
+	resolvedMode := resolveModeName(*mode)
 	if *timeoutSeconds <= 0 {
-		*timeoutSeconds = 10
+		*timeoutSeconds = defaultTimeoutSeconds
+		if resolvedMode == "playerbundle" {
+			*timeoutSeconds = defaultBundleTimeoutSeconds
+		}
 	}
 
 	outputPath = strings.TrimSpace(*outPath)
@@ -75,17 +90,32 @@ func main() {
 	defer cancel()
 
 	var err error
-	switch resolveModeName(*mode) {
+	switch resolvedMode {
+	case "playerbundle":
+		op := strings.TrimSpace(*operator)
+		if op == "" {
+			op = defaultOperator()
+		}
+		err = runPlayerBundleMode(ctx, bundleOptions{
+			dbConfigPath: *dbConfigPath, configPath: *configPath,
+			playerID: *playerID, fallbackZone: uint32(*zoneID), databaseOverride: *database, limit: *limit,
+			reason: *reason, operator: op, serverRevision: *serverRevision,
+			redisAddr: strings.TrimSpace(*redisAddr), mappingRedisAddr: strings.TrimSpace(*mappingRedisAddr),
+			mysqlAddr: strings.TrimSpace(*mysqlAddr), globalMySQLAddr: strings.TrimSpace(*globalMySQLAddr),
+			redisPasswordEnv: *redisPassEnv, mysqlPasswordEnv: *mysqlPassEnv,
+			skipGlobal: *skipGlobal, skipAccount: *skipAccount, now: time.Now,
+		})
 	case "player":
+		fmt.Fprintln(os.Stderr, "注意:player 模式只读 data_service 的 player:{id}:<field> 键族,不是玩家实时数据;排查玩家请用 -mode player-bundle")
 		err = runPlayerMode(ctx, *configPath, *playerID, parseFields(*fieldsCSV))
 	case "zone":
 		err = runZoneMode(ctx, *configPath, uint32(*zoneID), *limit)
 	case "snapshot":
 		err = runSnapshotMode(ctx, *configPath, *playerID, *limit)
 	case "sql":
-		err = runSQLMode(ctx, *dbConfigPath, uint32(*zoneID), *sqlQuery, *limit)
+		err = runSQLMode(ctx, *dbConfigPath, uint32(*zoneID), *database, *sqlQuery, *limit)
 	case "playerdb":
-		err = runPlayerDBMode(ctx, *dbConfigPath, uint32(*zoneID), *playerID, *limit)
+		err = runPlayerDBMode(ctx, *dbConfigPath, uint32(*zoneID), *database, *playerID, *limit)
 	default:
 		err = fmt.Errorf("unsupported mode %q", *mode)
 	}
@@ -227,12 +257,12 @@ func buildZoneDebugInfo(c config.Config, zoneID uint32) map[string]any {
 	return info
 }
 
-func runSQLMode(ctx context.Context, dbConfigPath string, zoneID uint32, query string, limit int) error {
+func runSQLMode(ctx context.Context, dbConfigPath string, zoneID uint32, dbOverride, query string, limit int) error {
 	if err := ensureReadOnlyQuery(query); err != nil {
 		return err
 	}
 
-	db, resolvedZoneID, dbName, err := debugutil.OpenZoneDB(ctx, dbConfigPath, zoneID)
+	db, resolvedZoneID, dbName, err := debugutil.OpenZoneDBNamed(ctx, dbConfigPath, zoneID, dbOverride)
 	if err != nil {
 		return err
 	}
@@ -253,17 +283,82 @@ func runSQLMode(ctx context.Context, dbConfigPath string, zoneID uint32, query s
 	})
 }
 
-func runPlayerDBMode(ctx context.Context, dbConfigPath string, zoneID uint32, playerID uint64, limit int) error {
+func runPlayerDBMode(ctx context.Context, dbConfigPath string, zoneID uint32, dbOverride string, playerID uint64, limit int) error {
 	if playerID == 0 {
 		return errors.New("-player is required for player-db mode")
 	}
 
-	db, resolvedZoneID, dbName, err := debugutil.OpenZoneDB(ctx, dbConfigPath, zoneID)
+	db, resolvedZoneID, dbName, err := debugutil.OpenZoneDBNamed(ctx, dbConfigPath, zoneID, dbOverride)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
+	// 先把发现结果全部读完并关闭游标,再逐表查询。连接池只有一条连接(OpenZoneDB),
+	// 游标开着时再发查询会一直等那条连接,直到整次读取超时。
+	pairs, err := discoverPlayerTables(ctx, db, dbName)
+	if err != nil {
+		return err
+	}
+
+	matches := make([]map[string]any, 0)
+	tableErrors := make([]map[string]string, 0)
+	scannedTables := map[string]struct{}{}
+	for _, pair := range pairs {
+		scannedTables[pair.table] = struct{}{}
+		safeTable, err := debugutil.QuoteIdentifier(pair.table)
+		if err != nil {
+			tableErrors = append(tableErrors, map[string]string{"table": pair.table, "error": err.Error()})
+			continue
+		}
+		safeColumn, err := debugutil.QuoteIdentifier(pair.column)
+		if err != nil {
+			tableErrors = append(tableErrors, map[string]string{"table": pair.table, "error": err.Error()})
+			continue
+		}
+
+		query := fmt.Sprintf("SELECT * FROM %s WHERE %s = ? LIMIT %d", safeTable, safeColumn, limit+1)
+		_, tableRows, err := queryRows(ctx, db, query, limit+1, playerID)
+		if err != nil {
+			// 不能静默跳过:权限不足 / 超时会被误读成「这张表里没有该玩家」。
+			tableErrors = append(tableErrors, map[string]string{"table": pair.table, "error": err.Error()})
+			continue
+		}
+		if len(tableRows) == 0 {
+			continue
+		}
+		truncated := len(tableRows) > limit
+		if truncated {
+			tableRows = tableRows[:limit]
+		}
+
+		matches = append(matches, map[string]any{
+			"table":         pair.table,
+			"match_column":  pair.column,
+			"rows_returned": len(tableRows),
+			"truncated":     truncated,
+			"rows":          tableRows,
+		})
+	}
+
+	return writeJSON(map[string]any{
+		"mode":           "playerdb",
+		"player_id":      playerID,
+		"zone_id":        resolvedZoneID,
+		"database":       dbName,
+		"tables_scanned": len(scannedTables),
+		"matched_tables": len(matches),
+		"matches":        matches,
+		"errors":         tableErrors,
+	})
+}
+
+type tableColumn struct {
+	table  string
+	column string
+}
+
+func discoverPlayerTables(ctx context.Context, db *sql.DB, dbName string) ([]tableColumn, error) {
 	const discoverySQL = `
 SELECT table_name, column_name
 FROM information_schema.columns
@@ -273,58 +368,22 @@ ORDER BY table_name, column_name`
 
 	rows, err := db.QueryContext(ctx, discoverySQL, dbName)
 	if err != nil {
-		return fmt.Errorf("discover player tables: %w", err)
+		return nil, fmt.Errorf("discover player tables: %w", err)
 	}
 	defer rows.Close()
 
-	matches := make([]map[string]any, 0)
-	tablesScanned := 0
+	var pairs []tableColumn
 	for rows.Next() {
-		var tableName string
-		var columnName string
-		if err := rows.Scan(&tableName, &columnName); err != nil {
-			return fmt.Errorf("scan discovered table metadata: %w", err)
+		var pair tableColumn
+		if err := rows.Scan(&pair.table, &pair.column); err != nil {
+			return nil, fmt.Errorf("scan discovered table metadata: %w", err)
 		}
-		tablesScanned++
-
-		safeTable, err := debugutil.QuoteIdentifier(tableName)
-		if err != nil {
-			continue
-		}
-		safeColumn, err := debugutil.QuoteIdentifier(columnName)
-		if err != nil {
-			continue
-		}
-
-		query := fmt.Sprintf("SELECT * FROM %s WHERE %s = ? LIMIT %d", safeTable, safeColumn, limit)
-		_, tableRows, err := queryRows(ctx, db, query, limit, playerID)
-		if err != nil {
-			continue
-		}
-		if len(tableRows) == 0 {
-			continue
-		}
-
-		matches = append(matches, map[string]any{
-			"table":         tableName,
-			"match_column":  columnName,
-			"rows_returned": len(tableRows),
-			"rows":          tableRows,
-		})
+		pairs = append(pairs, pair)
 	}
 	if err := rows.Err(); err != nil {
-		return fmt.Errorf("iterate discovered tables: %w", err)
+		return nil, fmt.Errorf("iterate discovered tables: %w", err)
 	}
-
-	return writeJSON(map[string]any{
-		"mode":           "playerdb",
-		"player_id":      playerID,
-		"zone_id":        resolvedZoneID,
-		"database":       dbName,
-		"tables_scanned": tablesScanned,
-		"matched_tables": len(matches),
-		"matches":        matches,
-	})
+	return pairs, nil
 }
 
 func queryRows(ctx context.Context, db *sql.DB, query string, limit int, args ...any) ([]string, []map[string]any, error) {
@@ -372,6 +431,8 @@ func resolveModeName(mode string) string {
 		return "zone"
 	case "player-db", "player_db":
 		return "playerdb"
+	case "player-bundle", "player_bundle", "bundle":
+		return "playerbundle"
 	default:
 		return strings.ToLower(strings.TrimSpace(mode))
 	}
@@ -549,13 +610,28 @@ func ensureReadOnlyQuery(query string) error {
 	q = strings.TrimSuffix(q, ";")
 	q = strings.TrimSpace(q)
 
-	firstWord := strings.ToLower(strings.Fields(q)[0])
+	words := strings.Fields(strings.ToLower(q))
+	firstWord := words[0]
 	switch firstWord {
 	case "select", "show", "describe", "desc", "explain":
-		return nil
 	default:
 		return fmt.Errorf("only read-only SELECT/SHOW/DESCRIBE/EXPLAIN queries are allowed, got %q", firstWord)
 	}
+	// 首词检查拦不住带副作用的读语句:EXPLAIN ANALYZE 会真正执行被解释的 DML,INTO OUTFILE 写服务器文件,
+	// 锁定读与用户锁会在线上主库上持锁。连接用的是业务写账号,这里按词组再拦一道;根治仍是只读账号。
+	normalized := " " + strings.Join(words, " ") + " "
+	for _, banned := range readOnlyBannedPhrases {
+		if strings.Contains(normalized, banned) {
+			return fmt.Errorf("query contains %q, which is not allowed in read-only mode", strings.TrimSpace(banned))
+		}
+	}
+	return nil
+}
+
+var readOnlyBannedPhrases = []string{
+	" explain analyze ", " analyze ", " into outfile ", " into dumpfile ", " into @",
+	" for update", " for share", " lock in share mode",
+	"get_lock(", "release_lock(", "sleep(", "benchmark(",
 }
 
 func normalizeSQLValue(columnName string, value any) any {
@@ -592,7 +668,8 @@ func writeJSON(v any) error {
 		return fmt.Errorf("create output directory: %w", err)
 	}
 
-	file, err := os.Create(resolvedPath)
+	// 导出的是线上玩家数据:文件只给本人读写(Windows 上权限位不生效,靠存放目录的 ACL)。
+	file, err := os.OpenFile(resolvedPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("create output file: %w", err)
 	}

@@ -57,7 +57,7 @@ public:
 		MethodHandlerFunctions:   getPlayerMethodHandlerFunctions(methods),
 	}
 
-	return utils.GlobalEngine.MustExecute("playerServiceHead", tmplStr, data)
+	return utils.GlobalEngine.Render("playerServiceHead", tmplStr, data)
 }
 
 // GetPlayerServiceHeadFromFileStr:先对同名 .cpp 做与 GetPlayerServiceHandlerCppStr 相同的取段预检(类名前缀与 handler.go
@@ -127,7 +127,7 @@ func getPlayerMethodHandlerFunctions(methods RPCMethods) string {
 		Methods:                methodList,
 	}
 
-	return utils.ExecuteTemplate("playerMethodFunctions", tmplStr, data)
+	return utils.RenderTemplateOrExit("playerMethodFunctions", tmplStr, data)
 }
 
 // PlayerHandlerMethod represents a player handler method.
@@ -201,5 +201,5 @@ void {{ $method.HandlerName }}{{ $.PlayerMethodController }}const {{ $method.Cpp
 		Methods:                methodList,
 	}
 
-	return utils.ExecuteTemplate("playerHandlerCpp", tmplStr, data)
+	return utils.RenderTemplateOrExit("playerHandlerCpp", tmplStr, data)
 }

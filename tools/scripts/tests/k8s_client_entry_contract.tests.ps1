@@ -1718,7 +1718,9 @@ $ClientEntryWrapperKeys = @('ClientEntryMode', 'ClientPublicHost', 'GateClientHo
     'RequireClientEndpoint', 'AllowDisruptiveSwitch')
 $WrapperPairs = @(
     @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sDeploy'; Downstream = 'k8s_deploy.ps1'
-        Forwarded = $ClientEntryWrapperKeys + @('GatewayIngressHost', 'GatewayIngressClassName', 'GatewayIngressTlsSecret', 'GatewayTrustedProxies', 'LoginDevPasswordAuth', 'GateRouterMode', 'DbConsumerGroup') },
+        Forwarded = $ClientEntryWrapperKeys + @('GatewayIngressHost', 'GatewayIngressClassName', 'GatewayIngressTlsSecret', 'GatewayTrustedProxies', 'LoginDevPasswordAuth', 'GateRouterMode', 'DbConsumerGroup',
+            # login 第三方登录(微信 / QQ)与它的防误关确认开关:不粘滞,包装入口漏传 = 重新部署时关掉或改掉线上第三方登录。
+            'LoginWeChatAppId', 'LoginWeChatEndpoint', 'LoginWeChatAllowOpenId', 'LoginQQAppId', 'LoginQQEndpoint', 'LoginQQAllowOpenId', 'ConfirmLoginAuthProviderChange') },
     @{ Source = 'dev_tools.ps1'; Function = 'Invoke-K8sImage'; Downstream = 'k8s_image.ps1'; Forwarded = $ClientEntryWrapperKeys + @('GateRouterMode') },
     @{ Source = 'k8s_image.ps1'; Function = 'Invoke-K8sDeploy'; Downstream = 'k8s_deploy.ps1'; Forwarded = $ClientEntryWrapperKeys + @('GateRouterMode') }
 )
@@ -1746,6 +1748,8 @@ Test-Case 'k8s_deploy.ps1 的集群外入口参数名与类型(包装层与文�
         ClientEntryMode = 'String'; RequireClientEndpoint = 'String'; ClientPublicHost = 'String'; GateClientHostTemplate = 'String'; GateNodePortBase = 'Int32'
         GateExternalTrafficPolicy = 'String'; BattleOrchestrator = 'String'; GatewayIngressHost = 'String'; GatewayIngressClassName = 'String'
         GatewayIngressTlsSecret = 'String'; GatewayTrustedProxies = 'String'; LoginDevPasswordAuth = 'SwitchParameter'; AllowDisruptiveSwitch = 'SwitchParameter'
+        LoginWeChatAppId = 'String'; LoginWeChatEndpoint = 'String'; LoginWeChatAllowOpenId = 'SwitchParameter'; LoginQQAppId = 'String'; LoginQQEndpoint = 'String'
+        LoginQQAllowOpenId = 'SwitchParameter'; ConfirmLoginAuthProviderChange = 'SwitchParameter'
     }
     foreach ($name in $expected.Keys) {
         Assert-Equal -Expected $expected[$name] -Actual $types[$name] -Because "k8s_deploy.ps1 -$name 的类型(GatewayTrustedProxies 为逗号分隔字符串,开关类为 switch)"

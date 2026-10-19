@@ -45,7 +45,7 @@
 4. **tip 错误码不在 proto 里手写**：`generated/code/proto/tip/*.proto` 全部由导表器从 `data/tip/Tip.xlsx` 生成。
    加一个码 = 表里加一行（A 列码名，**全局唯一**，建议带域前缀；B 列中文文案；服务端内部故障在
    `fault` 列填 `1`，业务拒绝留空）→ 跑导表器 → 在服务的 `constants.go` 里写 `ErrX = uint32(table.XxxError_kXxxX)`。
-   「哪个码算故障」也由表生成（`go/shared/generated/tip/faults.go`），**不要在服务里再包一层 fault map**。
+   「哪个码算故障」也由表生成（`go/shared/generated/tip/faults.go`；Java 网关用同源的 `com.game.table.tip.TipFaults`），**不要在服务里再包一层 fault map**。
    新开一个域 = 表里加一行组头 `//xxx_error base=<起始号> width=1000`，并把新生成的
    `.pb.cc/.pb.h` 加进 `cpp/generated/table/CMakeLists.txt` 与 `table.vcxproj`。
    详见 [docs/design/tip-code-axis.md](docs/design/tip-code-axis.md)。

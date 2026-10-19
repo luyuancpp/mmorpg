@@ -103,7 +103,8 @@
     # infra / zone,之后每次经本入口重新部署都必须再传同一组参数;漏传时 k8s_deploy.ps1 按集群现状在任何写操作之前拒绝
     # (确要切换形态或改地址,加 -AllowDisruptiveSwitch)。
     # k8s-zone-rollback 转发 -GateRouterMode、本组的 gate / Ingress 参数、-GateServiceType、-RequireClientEndpoint、
-    # -LoginDevPasswordAuth、-AllowDisruptiveSwitch、显式给了的 -ReleaseProfile 与 -KubeContext / -KubeConfig
+    # -LoginDevPasswordAuth、第三方登录的 -Login* 与 -ConfirmLoginAuthProviderChange(见参数块末尾)、
+    # -AllowDisruptiveSwitch、显式给了的 -ReleaseProfile 与 -KubeContext / -KubeConfig
     # (不转发 -BattleOrchestrator:zone 回滚不碰 battle 全局池)。它的 Step 1 删掉整个 zone namespace,k8s_deploy.ps1 的
     # 集群现状预检在 Step 6 通常无从触发,改由 k8s_zone_rollback.ps1 在停服之前自行核对,并把 Step 6 的参数先 -DryRun 一遍(见该脚本第 0 步);
     # 以 external 运行的 zone 回滚时照传上一次部署的同一组值。
@@ -372,7 +373,20 @@
     [switch]$RollbackAllowEmptyTarget,
     [switch]$RollbackAcknowledgeNoPostTWrites,
     # 原 -RollbackKafkaDrainTimeoutSec 已删除(2026-10-15):回滚脚本删掉了 zone-down 之后等 LAG 排空的 Step 2。
-    [switch]$RollbackApply
+    [switch]$RollbackApply,
+    # 集群内 login 的第三方登录(微信 / QQ),透传给 k8s_deploy.ps1 同名参数(k8s-zone-up / k8s-all-up)与 k8s-zone-rollback 的 Step 6,
+    # 语义、形状校验与微信密钥(环境变量 MMORPG_LOGIN_WECHAT_APP_SECRET,不经参数)都只在 k8s_deploy.ps1 一处。字符串非空才透传,
+    # switch 只在被指定时透传:默认值只留在下游。不粘滞,而且漏传有闸:线上已开的第三方登录会被本次参数关掉或改掉时,
+    # k8s_deploy.ps1 在任何写操作之前拒绝(k8s-zone-rollback 由回滚脚本第 0 步在停服之前拒绝),报错给出照传现状的参数串;
+    # 确要关闭或改动加 -ConfirmLoginAuthProviderChange。k8s_image.ps1 不部署 login,k8s-image-* / k8s-release-* 显式给了即拒绝。
+    # 追加在参数块末尾:字符串参数按声明顺序占位置,插在中间会挪动后面参数的位置绑定。
+    [string]$LoginWeChatAppId = "",
+    [string]$LoginWeChatEndpoint = "",
+    [switch]$LoginWeChatAllowOpenId,
+    [string]$LoginQQAppId = "",
+    [string]$LoginQQEndpoint = "",
+    [switch]$LoginQQAllowOpenId,
+    [switch]$ConfirmLoginAuthProviderChange
 )
 
 $ErrorActionPreference = "Stop"
@@ -782,6 +796,15 @@ function Invoke-K8sDeploy {
     if (-not [string]::IsNullOrWhiteSpace($GatewayIngressTlsSecret)) { $args.GatewayIngressTlsSecret = $GatewayIngressTlsSecret }
     if (-not [string]::IsNullOrWhiteSpace($GatewayTrustedProxies)) { $args.GatewayTrustedProxies = $GatewayTrustedProxies }
     if ($LoginDevPasswordAuth) { $args.LoginDevPasswordAuth = $true }
+    # login 第三方登录(微信 / QQ)同一口径:字符串非空才传,switch 只在被指定时传。漏传的防误关闸在 k8s_deploy.ps1
+    # (Assert-LoginAuthProviderClusterState,非 DryRun、任何写操作之前),本函数只透传,不复制规则。
+    if (-not [string]::IsNullOrWhiteSpace($LoginWeChatAppId)) { $args.LoginWeChatAppId = $LoginWeChatAppId }
+    if (-not [string]::IsNullOrWhiteSpace($LoginWeChatEndpoint)) { $args.LoginWeChatEndpoint = $LoginWeChatEndpoint }
+    if ($LoginWeChatAllowOpenId) { $args.LoginWeChatAllowOpenId = $true }
+    if (-not [string]::IsNullOrWhiteSpace($LoginQQAppId)) { $args.LoginQQAppId = $LoginQQAppId }
+    if (-not [string]::IsNullOrWhiteSpace($LoginQQEndpoint)) { $args.LoginQQEndpoint = $LoginQQEndpoint }
+    if ($LoginQQAllowOpenId) { $args.LoginQQAllowOpenId = $true }
+    if ($ConfirmLoginAuthProviderChange) { $args.ConfirmLoginAuthProviderChange = $true }
     if (-not [string]::IsNullOrWhiteSpace($RequireClientEndpoint)) { $args.RequireClientEndpoint = $RequireClientEndpoint }
     if ($AllowDisruptiveSwitch) { $args.AllowDisruptiveSwitch = $true }
     # 共享 Redis 重启闸的确认(P0-E),同一口径:switch 只在被指定时传。
@@ -917,6 +940,15 @@ function Invoke-K8sImage {
     if (-not [string]::IsNullOrWhiteSpace($GatewayTrustedProxies)) { $notForwarded += '-GatewayTrustedProxies' }
     # -DbConsumerGroup:k8s_image.ps1 不部署 db(不传 -GoSvcRegistry),给什么值都不生效;切组只走 k8s-zone-up(docs/design/db-consumer-group-per-zone.md)。
     if (-not [string]::IsNullOrWhiteSpace($DbConsumerGroup)) { $notForwarded += '-DbConsumerGroup' }
+    # login 第三方登录(微信 / QQ)与它的确认开关同 -LoginDevPasswordAuth:只落在 login 上,k8s_image.ps1 不部署 login、也不声明它们。
+    # 经这条路发布反过来也关不掉线上的第三方登录(不重写 login ConfigMap、不碰 Secret login-oauth),不需要防误关。
+    if (-not [string]::IsNullOrWhiteSpace($LoginWeChatAppId)) { $notForwarded += '-LoginWeChatAppId' }
+    if (-not [string]::IsNullOrWhiteSpace($LoginWeChatEndpoint)) { $notForwarded += '-LoginWeChatEndpoint' }
+    if ($LoginWeChatAllowOpenId) { $notForwarded += '-LoginWeChatAllowOpenId' }
+    if (-not [string]::IsNullOrWhiteSpace($LoginQQAppId)) { $notForwarded += '-LoginQQAppId' }
+    if (-not [string]::IsNullOrWhiteSpace($LoginQQEndpoint)) { $notForwarded += '-LoginQQEndpoint' }
+    if ($LoginQQAllowOpenId) { $notForwarded += '-LoginQQAllowOpenId' }
+    if ($ConfirmLoginAuthProviderChange) { $notForwarded += '-ConfirmLoginAuthProviderChange' }
     if ($notForwarded.Count -gt 0) {
         throw "k8s-image-* / k8s-release-* 不支持 $($notForwarded -join ', '):k8s_image.ps1 不部署 Go / Java 服务,也不支持 Agones 高密度 / FleetAutoscaler。请改用 k8s-infra-up / k8s-zone-up / k8s-all-up(直接调 k8s_deploy.ps1)。"
     }
@@ -977,7 +1009,8 @@ function Invoke-K8sImage {
         $args.GateRouterMode = $GateRouterMode
     }
     # 集群外入口参数,口径同 Invoke-K8sDeploy(k8s_image.ps1 原样转给 k8s_deploy.ps1)。
-    # -Gateway* / -LoginDevPasswordAuth 不在此列,已在函数开头拒绝(k8s_image.ps1 也不声明它们)。
+    # -Gateway* / -LoginDevPasswordAuth / 第三方登录的 -Login* 与 -ConfirmLoginAuthProviderChange 不在此列,已在函数开头拒绝
+    # (k8s_image.ps1 也不声明它们)。
     if (-not [string]::IsNullOrWhiteSpace($ClientEntryMode)) { $args.ClientEntryMode = $ClientEntryMode }
     if (-not [string]::IsNullOrWhiteSpace($ClientPublicHost)) { $args.ClientPublicHost = $ClientPublicHost }
     if (-not [string]::IsNullOrWhiteSpace($GateClientHostTemplate)) { $args.GateClientHostTemplate = $GateClientHostTemplate }
@@ -1775,6 +1808,15 @@ switch ($Command) {
         if (-not [string]::IsNullOrWhiteSpace($GatewayIngressClassName))   { $rbArgs.GatewayIngressClassName = $GatewayIngressClassName }
         if (-not [string]::IsNullOrWhiteSpace($GatewayIngressTlsSecret))   { $rbArgs.GatewayIngressTlsSecret = $GatewayIngressTlsSecret }
         if (-not [string]::IsNullOrWhiteSpace($GatewayTrustedProxies))     { $rbArgs.GatewayTrustedProxies = $GatewayTrustedProxies }
+        # login 第三方登录(微信 / QQ)同一口径:非空 / 被指定才转发。回滚脚本在 Step 1 删 namespace 之前核对线上 login ConfigMap 与
+        # Secret login-oauth,线上开着的会被本次参数关掉或改掉就拒绝;它再把这组参数转给 Step 6。
+        if (-not [string]::IsNullOrWhiteSpace($LoginWeChatAppId))          { $rbArgs.LoginWeChatAppId = $LoginWeChatAppId }
+        if (-not [string]::IsNullOrWhiteSpace($LoginWeChatEndpoint))       { $rbArgs.LoginWeChatEndpoint = $LoginWeChatEndpoint }
+        if ($LoginWeChatAllowOpenId)                                       { $rbArgs.LoginWeChatAllowOpenId = $true }
+        if (-not [string]::IsNullOrWhiteSpace($LoginQQAppId))              { $rbArgs.LoginQQAppId = $LoginQQAppId }
+        if (-not [string]::IsNullOrWhiteSpace($LoginQQEndpoint))           { $rbArgs.LoginQQEndpoint = $LoginQQEndpoint }
+        if ($LoginQQAllowOpenId)                                           { $rbArgs.LoginQQAllowOpenId = $true }
+        if ($ConfirmLoginAuthProviderChange)                               { $rbArgs.ConfirmLoginAuthProviderChange = $true }
         # 预检、Step 1、Step 6 用同一集群;以前这里不转发,-KubeContext 被静默忽略、回滚落到 kubectl 当前 context。
         if (-not [string]::IsNullOrWhiteSpace($KubeContext))               { $rbArgs.KubeContext = $KubeContext }
         if (-not [string]::IsNullOrWhiteSpace($KubeConfig))                { $rbArgs.KubeConfig = $KubeConfig }

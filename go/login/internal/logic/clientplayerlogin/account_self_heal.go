@@ -24,10 +24,10 @@ const accountHealLockReleaseTimeout = time.Second
 // 调用方必须已持有该玩家的登录锁(state.playerLockKey / playerLockToken)。
 //
 // 写法与外观修复 repairAccountAppearance 相同:先拿建角同一把账号锁 account_lock:create:{account},
-// 锁内重读账号目录,再按整字节 CAS 写回(accountRecordCASScript 同时校验两把锁的令牌)。
-//   - 账号锁挡住同账号并发的 CreatePlayer:它在锁内读-改-写整个 blob。2026-10-18 之前这里是无锁 GET 之后整块 SET,
-//     拿锁外读到的旧 blob 写回,会把刚建出的角色抹掉。
-//   - CAS 挡住锁过期后的迟到写,以及不拿锁的写者(运维工具 RemovePlayersFromAccounts 等)。
+// 锁内重读账号目录,再按整字节 CAS 写回(healAccountRoleScript 同时校验两把锁的令牌与反向索引)。
+//   - 账号锁挡住同账号并发的 CreatePlayer 与运维 RemovePlayersFromAccounts:它们都在锁内读-改-写整个 blob。
+//     2026-10-18 之前这里是无锁 GET 之后整块 SET,拿锁外读到的旧 blob 写回,会把刚建出的角色抹掉。
+//   - CAS 挡住锁过期后的迟到写;提交点复核反向索引,挡住「运维刚把它当孤儿摘掉、自愈又写回去」。
 //
 // 尽力而为:拿不到锁、CAS 冲突、Redis 出错都只打日志、不写,本函数不让 EnterGame 同步返回失败(归属已由反向索引证明),
 // 下次入场会再试。但这不等于本次入场一定成功:存档里已有外观的角色,异步链上的外观修复 repairAccountAppearance
@@ -91,9 +91,9 @@ func (l *EnterGameLogic) healAccountRole(ctx context.Context, state enterGameSes
 		return nil
 	}
 
-	result, err := accountRecordCASScript.Run(ctx, rdb,
-		[]string{key, state.playerLockKey, accountLock.Key},
-		state.playerLockToken, previous, updated, accountLock.Value).Int()
+	result, err := healAccountRoleScript.Run(ctx, rdb,
+		[]string{key, state.playerLockKey, accountLock.Key, constants.PlayerToAccountKey(playerID)},
+		state.playerLockToken, previous, updated, accountLock.Value, account).Int()
 	switch {
 	case err != nil:
 		logx.Errorf("EnterGame self-heal write-back failed: account=%s playerId=%d err=%v", account, playerID, err)
@@ -101,8 +101,25 @@ func (l *EnterGameLogic) healAccountRole(ctx context.Context, state enterGameSes
 		logx.Infof("EnterGame self-heal: restored playerId=%d into account=%s", playerID, account)
 	case result == -1:
 		logx.Errorf("EnterGame self-heal not written: player or account lock lost account=%s playerId=%d", account, playerID)
+	case result == -2:
+		// 运维 RemovePlayersFromAccounts 刚把它当孤儿摘掉(同一段脚本里删了反向索引),不能再写回去。
+		logx.Infof("EnterGame self-heal not written: ownership index no longer points to account=%s playerId=%d", account, playerID)
 	default:
 		logx.Infof("EnterGame self-heal not written: account record changed concurrently account=%s playerId=%d", account, playerID)
 	}
 	return nil
 }
+
+// healAccountRoleScript 是自愈写回的提交点:两把锁仍归本链、反向索引仍指向本账号、账号目录自重读以来没变,才写。
+// 比外观修复的 accountRecordCASScript 多复核一次反向索引:运维 RemovePlayersFromAccounts 在账号锁内、同一段脚本里
+// 改写账号目录并删反向索引;自愈在 EnterGame 早先读到的反向索引可能已过时,不在提交点复核,会把刚摘掉的孤儿角色写回去。
+// KEYS = {账号目录键, 玩家登录锁键, 账号锁键, 反向索引键};ARGV = {玩家锁令牌, 旧字节, 新字节, 账号锁令牌, 账号名}。
+// 返回 1 = 已写;0 = 账号目录变了;-1 = 任一把锁已不归本链;-2 = 反向索引不再指向本账号。都不写时什么也不动。
+var healAccountRoleScript = redis.NewScript(`
+if redis.call("GET", KEYS[2]) ~= ARGV[1] then return -1 end
+if redis.call("GET", KEYS[3]) ~= ARGV[4] then return -1 end
+if redis.call("GET", KEYS[4]) ~= ARGV[5] then return -2 end
+if redis.call("GET", KEYS[1]) ~= ARGV[2] then return 0 end
+redis.call("SET", KEYS[1], ARGV[3])
+return 1
+`)

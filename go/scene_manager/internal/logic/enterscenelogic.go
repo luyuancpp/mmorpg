@@ -563,6 +563,13 @@ func (l *EnterSceneLogic) EnterScene(in *scene_manager.EnterSceneRequest) (respo
 			if reserved {
 				DecrInstancePlayerCount(l.svcCtx, targetZoneId, sceneId)
 			}
+			// 登录撞上未释放的持有者(gate 崩溃后立刻从别的 gate 重登,location 指向挂着僵尸的旧节点):18 照回,
+			// 回之前请持有节点按会话结束释放,否则要等旧会话清理到期才有人请它(location-release-binding.md §12)。
+			// 只看「标记未就绪」的 18(无标记 / 非当前代);读标记失败(ErrRedis)不请。是否派发由
+			// requestHolderReleaseForLogin 判定:只替最新的登录请求,scene 自发的请求一律不请。
+			if resp.ErrorCode == constants.ErrHandoffPending {
+				l.requestHolderReleaseForLogin(in, currentLoc, currentZoneID, observedEpoch, identityVerdict)
+			}
 			return resp, nil
 		}
 		handoffGrant = grant

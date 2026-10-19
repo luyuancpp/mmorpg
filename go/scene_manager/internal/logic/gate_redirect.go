@@ -6,8 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	mathrand "math/rand/v2"
 	"net"
-	"sort"
 	"strconv"
 	"time"
 
@@ -15,9 +15,11 @@ import (
 	"proto/scene_manager"
 	"scene_manager/internal/svc"
 	"shared/clientendpoint"
+	"shared/gatepick"
 	"shared/nodeinfo"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/redis"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"google.golang.org/protobuf/proto"
@@ -28,8 +30,9 @@ const (
 	gateEtcdPrefix          = "GateNodeService.rpc"
 )
 
-// AssignGateForZone picks the least-loaded Gate in the target zone and signs
-// a redirect token. Returns nil if no gate is available.
+// AssignGateForZone picks a Gate in the target zone (two random choices by
+// load, skipping gates marked draining) and signs a redirect token. Returns
+// nil if no gate is available.
 //
 // 票据绑定持票者(player_id)与目标 zone(target_zone_id):目标 zone 的 gate / login
 // 只接受本人持票,并且看到 target_zone_id == 本 zone 时不再按 home_zone 弹回
@@ -38,7 +41,7 @@ const (
 //
 // 下发给客户端的 TargetGateIp/Port 是 gate 自报的客户端可达地址(NodeInfo.client_endpoint,
 // 缺省回落 endpoint),选址规则与 login CandidatesForZone 同一份权威实现
-// shared/clientendpoint(k8s-client-entry D76/D78)。本函数只做 I/O(读 etcd、取墙钟),
+// shared/clientendpoint(k8s-client-entry D76/D78)。本函数只做 I/O(读 etcd、读排空标记、取墙钟与随机源),
 // 挑哪台、下发哪个地址、怎么签全在纯函数 signRedirectToGate 里。
 func AssignGateForZone(ctx context.Context, svcCtx *svc.ServiceContext, targetZoneId uint32, playerID uint64) (*scene_manager.RedirectToGateInfo, error) {
 	if svcCtx.Config.GateTokenSecret == "" {
@@ -49,18 +52,22 @@ func AssignGateForZone(ctx context.Context, svcCtx *svc.ServiceContext, targetZo
 	if err != nil {
 		return nil, fmt.Errorf("fetch gate nodes for zone %d: %w", targetZoneId, err)
 	}
-	return signRedirectToGate(gates, svcCtx.Config.RequireClientEndpoint,
-		svcCtx.Config.GateTokenSecret, targetZoneId, playerID, time.Now())
+	draining := drainingGateIDs(ctx, svcCtx.Redis, gates)
+	return signRedirectToGate(gates, draining, svcCtx.Config.RequireClientEndpoint,
+		svcCtx.Config.GateTokenSecret, targetZoneId, playerID, time.Now(), mathrand.IntN)
 }
 
-// signRedirectToGate 从目标 zone 的 gate 节点里挑负载最低的一台并签重定向票据。
-// 不碰 etcd、不读墙钟(now 由调用方传入),副作用只有日志与低基数计数,便于直接对出口做面向契约的测试。
+// signRedirectToGate 从目标 zone 的 gate 节点里挑一台并签重定向票据。
+// 不碰 etcd 与 Redis、不读墙钟(now 由调用方传入)、随机源 intn 由调用方传入,副作用只有日志与低基数计数,
+// 便于直接对出口做面向契约的测试。
 //
 // 前置条件:secret 非空(AssignGateForZone 在读 etcd 之前已校验)。
-// 候选先经 selectGateTargets 选客户端地址并按地址去重,再按 player_count 取最小;
+// 顺序与 login 的 CandidatesForZone 一致:先经 selectGateTargets 选客户端地址并按地址去重,再剔除 draining 里的
+// gate(先去重后过滤:排空标记打在活着的那台上,先过滤会让同地址的陈旧影子顶上来),最后按 player_count
+// 随机二选一(shared/gatepick,2026-10-18 起;此前确定性取最小,一个上报周期里重定向的人全落同一台)。
 // 没有任何可下发地址的 gate 时返回错误(调用方映射成 ErrNoAvailableNode,不改任何状态)。
-func signRedirectToGate(nodes []*commonpb.NodeInfo, requireClientEndpoint bool, secret string,
-	targetZoneId uint32, playerID uint64, now time.Time) (*scene_manager.RedirectToGateInfo, error) {
+func signRedirectToGate(nodes []*commonpb.NodeInfo, draining map[uint32]bool, requireClientEndpoint bool, secret string,
+	targetZoneId uint32, playerID uint64, now time.Time, intn func(int) int) (*scene_manager.RedirectToGateInfo, error) {
 	if len(nodes) == 0 {
 		return nil, fmt.Errorf("no gate nodes available for zone %d", targetZoneId)
 	}
@@ -69,12 +76,10 @@ func signRedirectToGate(nodes []*commonpb.NodeInfo, requireClientEndpoint bool, 
 		return nil, fmt.Errorf("no gate with client-reachable address for zone %d (gates=%d require_client_endpoint=%v)",
 			targetZoneId, len(nodes), requireClientEndpoint)
 	}
+	targets = filterDrainingTargets(targets, draining, targetZoneId)
 
-	// Pick least-loaded gate.
-	sort.Slice(targets, func(i, j int) bool {
-		return targets[i].node.GetPlayerCount() < targets[j].node.GetPlayerCount()
-	})
-	best := targets[0]
+	idx, _ := gatepick.TwoChoices(targets, func(t gateTarget) uint32 { return t.node.GetPlayerCount() }, intn)
+	best := targets[idx]
 
 	// Build and sign the token (same format as Login service).
 	expireTS := now.Unix() + redirectTokenTTLSeconds
@@ -153,6 +158,62 @@ func selectGateTargets(nodes []*commonpb.NodeInfo, requireClientEndpoint bool) [
 			len(skipped), requireClientEndpoint, skipped)
 	}
 	return clientendpoint.DedupeNewest(targets, gateTargetAddr, gateTargetLaunchTime)
+}
+
+// gateDrainingKeyFmt 是 gate 排空标记的键(值是标记时间)。权威定义在 login
+// (go/login/internal/logic/pkg/loginqueue/gatedrain.go 的 GateDrainingKeyFmt),写者是 tools/scripts/k8s_gate_drain.ps1;
+// scene_manager 拿不到 login 的包,这里抄一份,由 tools/scripts/tests/k8s_gate_drain.tests.ps1 钉住三处一致。
+//
+// 标记写在 login 的 Node.RedisClient 所在实例;scene_manager 经自己的 Redis 连接读它,今天 K8s 与本地两者是同一实例、同为 DB 0。
+// 两个隐含前提,任一被打破都会让这里静默读不到标记、退回不过滤(放行):
+//   - 拆 Redis(G4a)把排空标记挪到 redis-queue 时,scene_manager 这条读要一起指过去;
+//   - go-zero 的 RedisConf 没有 DB 字段,scene_manager 只能读 DB 0;login 的 Node.RedisClient.DB 改成非 0 时要同步处理。
+const gateDrainingKeyFmt = "gate:%d:draining"
+
+// drainingGateIDs 一次 MGET 查出哪些 gate 正在排空。失败方向是放行(返回 nil、打 ERROR),与 login 的
+// loginqueue.DrainingGates 同语义:跨 zone 重定向因为读不到标记就拒绝,比分到一台稍后排空的 gate 更糟。
+// 只查有 endpoint 的节点(fetchGateNodes 已过滤),键序与 nodes 对应。
+func drainingGateIDs(ctx context.Context, rdb *redis.Redis, nodes []*commonpb.NodeInfo) map[uint32]bool {
+	if rdb == nil || len(nodes) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(nodes))
+	for _, n := range nodes {
+		keys = append(keys, fmt.Sprintf(gateDrainingKeyFmt, n.GetNodeId()))
+	}
+	values, err := rdb.MgetCtx(ctx, keys...)
+	if err != nil {
+		logx.Errorf("drainingGateIDs: query draining gates failed, treating all as available: %v", err)
+		return nil
+	}
+	draining := make(map[uint32]bool, len(nodes))
+	for i, v := range values {
+		// go-zero 的 MGET 把不存在的键返回成空串;标记值是 Unix 秒,不会是空串。
+		if i < len(nodes) && v != "" {
+			draining[nodes[i].GetNodeId()] = true
+		}
+	}
+	return draining
+}
+
+// filterDrainingTargets 剔除正在排空的 gate。**全部都在排空时原样返回**并打 ERROR,与 login 的
+// loginqueue.FilterDrainingGates 同语义:整个 zone 都被标了排空多半是误操作,此时拒绝重定向比分到待缩容的 gate 更糟。
+func filterDrainingTargets(targets []gateTarget, draining map[uint32]bool, targetZoneId uint32) []gateTarget {
+	if len(draining) == 0 || len(targets) == 0 {
+		return targets
+	}
+	kept := make([]gateTarget, 0, len(targets))
+	for _, t := range targets {
+		if !draining[t.node.GetNodeId()] {
+			kept = append(kept, t)
+		}
+	}
+	if len(kept) == 0 {
+		logx.Errorf("filterDrainingTargets: every gate candidate (%d) in zone %d is marked draining; ignoring the marks "+
+			"so the redirect can still land — check whether a scale-in marked the whole zone by mistake", len(targets), targetZoneId)
+		return targets
+	}
+	return kept
 }
 
 // gateTargetAddr 是去重键:客户端实际要连的 host:port。

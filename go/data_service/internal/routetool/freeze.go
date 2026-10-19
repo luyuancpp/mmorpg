@@ -33,12 +33,26 @@ import (
 //
 // redis 模式(UnfreezeOptions.RedisMode)下 unfreeze 不读、不碰标记(那时没有标记语义),最低水位取 0,要求显式确认:它只用来
 // 撤销误跑 / 演练的 freeze 或从 db_first 回退时带过来的冻结 —— import-from-redis 的 requireRouteWritable 与模式无关,不解冻就一直拒写。
+//
+// 水位键 mapping:route:watermark 的出口(2026-10-19,规格 spec_D1_batch1b2_2_3.md §2 M3、§4.6 第 4 项、§13.1 第 4 条;只在 db_first):
+// 对账 leader 每拍拿水位键与库比,世代不等、或水位键的水位 > 库水位就冻结映射写者。库被回档之后水位键留着回档前的水位,
+// 不处理的话解冻之后 leader 下一拍就会再冻结。所以:
+//   - 解冻之前先读水位键(早于读标记,版本更新 / 不是 string 时在任何写之前拒绝,退出码 2、不动它);
+//   - 最低水位取 max(可信标记的 watermark_ms, 水位键.FloorFor(库世代))——世代相同的水位键才约束本世代;
+//     -cache-was-not-verified-acknowledged 放行时可信标记那一项是 0,水位键那一项照取;
+//   - writable 翻回 1 之后(同一流程),把水位键改成 {库世代, 上面那个最低水位}:不在就 SET NX,在就按原值 compare-and-set
+//     (RouteReadyCompareAndSetScript,脚本与键无关);最低水位是 0(没有可写的正水位)而水位键是别的世代或畸形时按原值删掉,
+//     留给 leader 下一拍按库值重建。写输了(读到之后被改过)复读一次:已不在、或已是本世代的值(leader 解冻后已推进它)都算完成;
+//     否则退出码 1,重跑 —— writable 已经是 1,重跑走「已可写」分支什么都不做;若 leader 因世代 / 水位又冻结了,重跑会再走一遍并重置它。
+//   - 写进去的是交给解冻事务的**下限**,不是解冻后的精确库水位(store 没有读 route_reconcile.watermark_ms 的接口):解冻事务按 GREATEST
+//     抬水位,解冻后的库水位 ≥ 它,所以水位键不会让 leader 判「水位键 > 库水位」;leader 之后每拍按库水位单调推进它。
 
-// readyMarkerRedis 是 unfreeze 对 mapping Redis 的依赖(就绪标记的读与按原值改 / 删)。go-zero 的 *redis.Redis 天然满足。
-// GetCtx 的约定(go-zero):键不在回 ("", nil)。
+// readyMarkerRedis 是 unfreeze 对 mapping Redis 的依赖(就绪标记与水位键的读、按原值改 / 删,水位键不在时 SET NX)。
+// go-zero 的 *redis.Redis 天然满足。GetCtx 的约定(go-zero):键不在回 ("", nil)。
 type readyMarkerRedis interface {
 	GetCtx(ctx context.Context, key string) (string, error)
 	EvalCtx(ctx context.Context, script string, keys []string, args ...any) (any, error)
+	SetnxCtx(ctx context.Context, key, value string) (bool, error)
 }
 
 // freezeDB / unfreezeDB 是两个子命令对全局库的依赖,*store.RouteStore 天然满足。
@@ -60,43 +74,16 @@ type RedisIdentity struct {
 
 // ParseRedisIdentity 从 INFO server 与 INFO replication 的原文里取身份(行尾 CRLF 或 LF 都认)。
 // 任一字段缺席或不是 40 个小写十六进制字符都报错:身份读不准时宁可确认不了(fail-closed)。
+//
+// 2026-10-19(规格 spec_D1_batch1b2_2_3.md §4.6 第 5 项):解析委托 placement.ParseRedisInstanceIdentity,删掉本包的私有副本,
+// 读方脚本、对账 leader 与本工具只剩一处口径。导出名与返回类型不变(调用方不改)。唯一的收紧:replication 段缺 role 也报错
+// (真 Redis 的 INFO replication 恒有 role;读不到说明回复不对,fail-closed)。TestParseRedisIdentityAgreesWithPlacement 钉住两者同结论。
 func ParseRedisIdentity(infoServer, infoReplication string) (RedisIdentity, error) {
-	runID, err := infoField(infoServer, "run_id")
+	id, err := placement.ParseRedisInstanceIdentity(infoServer, infoReplication)
 	if err != nil {
-		return RedisIdentity{}, err
+		return RedisIdentity{}, fmt.Errorf("parse INFO server / replication: %w", err)
 	}
-	replID, err := infoField(infoReplication, "master_replid")
-	if err != nil {
-		return RedisIdentity{}, err
-	}
-	return RedisIdentity{RunID: runID, MasterReplID: replID}, nil
-}
-
-// infoField 取 INFO 文本里 name:value 那一行的值。
-func infoField(info, name string) (string, error) {
-	for _, line := range strings.Split(info, "\n") {
-		v, ok := strings.CutPrefix(strings.TrimRight(line, "\r"), name+":")
-		if !ok {
-			continue
-		}
-		if !redisIDOK(v) {
-			return "", fmt.Errorf("INFO %s=%q is not 40 lowercase hex characters", name, v)
-		}
-		return v, nil
-	}
-	return "", fmt.Errorf("INFO has no %s field", name)
-}
-
-func redisIDOK(s string) bool {
-	if len(s) != 40 {
-		return false
-	}
-	for i := 0; i < len(s); i++ {
-		if c := s[i]; (c < '0' || c > '9') && (c < 'a' || c > 'f') {
-			return false
-		}
-	}
-	return true
+	return RedisIdentity{RunID: id.RunID, MasterReplID: id.MasterReplID}, nil
 }
 
 // ── freeze ──────────────────────────────────────────────────────────────────
@@ -178,6 +165,14 @@ var ErrCacheNotVerified = errors.New("route_tool unfreeze: the mapping cache is 
 // ErrReadyMarkerChanged 表示 unfreeze 按原值改 / 删就绪标记时 CAS 输了:读到之后有人改过它。重跑即可(退出码 1)。
 var ErrReadyMarkerChanged = errors.New("route_tool unfreeze: mapping:route:ready changed while unfreezing (compare-and-swap lost); rerun")
 
+// ErrWatermarkKeyWrongType 表示 mapping:route:watermark 不是 string 类型:解冻前就拒绝(退出码 2),不动它 ——
+// 按原值改 / 删的脚本对它只会报 WRONGTYPE,leader 也维护不了它。人工确认后只 DEL 这一把键(或跑 rewarm)再重跑。
+var ErrWatermarkKeyWrongType = errors.New("route_tool unfreeze: mapping:route:watermark is not a string key; DEL that key alone (or run `rewarm`) and rerun")
+
+// ErrWatermarkKeyNotReset 表示 writable 已经翻回 1,但水位键没能改成本世代的值(按原值改输了且复读到别的世代 / 畸形,或 Redis 出错)。
+// 退出码 1、重跑(见文件头「水位键的出口」)。
+var ErrWatermarkKeyNotReset = errors.New("route_tool unfreeze: route writers are unfrozen but mapping:route:watermark was not reset to this generation; rerun")
+
 // UnfreezeOptions 是 unfreeze 的参数。
 type UnfreezeOptions struct {
 	// CacheUnverifiedAcknowledged:没有可信标记时仍解冻(-cache-was-not-verified-acknowledged)。见文件头。
@@ -205,9 +200,34 @@ type UnfreezeReport struct {
 	Marker string
 	// GenerationRealigned:可信标记的 generation 与库不等,已 CAS 成库的值。
 	GenerationRealigned bool
-	// MinWatermarkMs 是交给 UnfreezeRouteWriters 的最低水位(可信标记的 watermark_ms;否则 0)。
+	// MinWatermarkMs 是交给 UnfreezeRouteWriters 的最低水位:max(可信标记的 watermark_ms, WatermarkKeyFloorMs);都没有时 0。
 	MinWatermarkMs uint64
+	// WatermarkKeyFloorMs 是水位键对库世代给出的下限(世代相同且可解码时是它的 watermark_ms,否则 0)。不进统计行。
+	WatermarkKeyFloorMs uint64
+	// WatermarkKey 是解冻之后水位键的处置(WatermarkKey* 常量之一;AlreadyWritable 时为空)。不进统计行(统计行格式不变),
+	// 打在 stderr 的 WATERMARK_KEY 行。
+	WatermarkKey string
 }
+
+// 解冻之后水位键的处置(UnfreezeReport.WatermarkKey 的取值)。
+const (
+	// WatermarkKeySetNX:原来不在,SET NX 成 {库世代, MinWatermarkMs}。
+	WatermarkKeySetNX = "set_nx"
+	// WatermarkKeyCompareAndSet:按原值换成 {库世代, MinWatermarkMs}。
+	WatermarkKeyCompareAndSet = "compare_and_set"
+	// WatermarkKeyKept:原值已经就是 {库世代, MinWatermarkMs}。
+	WatermarkKeyKept = "kept"
+	// WatermarkKeyLeftAbsent:原来不在、MinWatermarkMs 又是 0(没有可写的正水位):留给 leader 下一拍 SET NX。
+	WatermarkKeyLeftAbsent = "left_absent"
+	// WatermarkKeyDropped:原值是别的世代或畸形、MinWatermarkMs 又是 0:按原值删掉,留给 leader 下一拍重建。
+	WatermarkKeyDropped = "dropped"
+	// WatermarkKeySuperseded:按原值写输了,复读到的是本世代的可解码值(leader 已推进它)或键已不在(rewarm 删了):不必再写。
+	WatermarkKeySuperseded = "superseded"
+	// WatermarkKeyNotReset:没能改成本世代的值,退出码 1(ErrWatermarkKeyNotReset)。
+	WatermarkKeyNotReset = "not_reset"
+	// WatermarkKeySkipped:没有由本次翻 writable(并发被别人解冻),或 redis 模式。
+	WatermarkKeySkipped = "skipped"
+)
 
 // SummaryLine 是 stdout 唯一的一行。
 func (r UnfreezeReport) SummaryLine() string {
@@ -215,10 +235,10 @@ func (r UnfreezeReport) SummaryLine() string {
 		r.Changed, r.AlreadyWritable, r.Marker, r.GenerationRealigned, r.MinWatermarkMs)
 }
 
-// UnfreezeExitCode:CAS 输了 1(重跑);其它错误 2(含确认不了缓存);否则 0。
+// UnfreezeExitCode:CAS 输了 1(重跑;含解冻之后水位键没改成);其它错误 2(含确认不了缓存、水位键版本更新或不是 string);否则 0。
 func UnfreezeExitCode(_ UnfreezeReport, err error) int {
 	switch {
-	case errors.Is(err, ErrReadyMarkerChanged):
+	case errors.Is(err, ErrReadyMarkerChanged), errors.Is(err, ErrWatermarkKeyNotReset):
 		return ExitAttention
 	case err != nil:
 		return ExitFailed
@@ -260,11 +280,19 @@ func Unfreeze(ctx context.Context, rd readyMarkerRedis, db unfreezeDB, opts Unfr
 
 	if opts.RedisMode {
 		rep.Marker = MarkerNotReadRedisMode
+		rep.WatermarkKey = WatermarkKeySkipped
 		fmt.Fprintf(opts.Stderr, "WARN: RouteStore.Mode=redis: %s is not read in redis mode and the cache is not verified; "+
 			"unfreezing because -cache-was-not-verified-acknowledged was given (W1 does not read route_meta.writable in redis mode; "+
 			"this re-enables route_tool import and the db_first writers after a later switch)\n", placement.RouteReadyKey)
-		return unfreezeWriters(ctx, db, opts, rep)
+		return unfreezeWriters(ctx, db, opts, rep, nil)
 	}
+
+	// 水位键先于标记读:版本更新 / 不是 string 时在任何写之前拒绝(连畸形标记的撤除都不做)。见文件头「水位键的出口」。
+	wk, err := readWatermarkKey(ctx, rd)
+	if err != nil {
+		return rep, err
+	}
+	rep.WatermarkKey = WatermarkKeySkipped
 
 	raw, marker, state, err := readReadyMarker(ctx, rd, opts.Identity)
 	if err != nil {
@@ -308,11 +336,35 @@ func Unfreeze(ctx context.Context, rd readyMarkerRedis, db unfreezeDB, opts Unfr
 			fmt.Fprintf(opts.Stderr, "%s generation %s -> %s (compare-and-set)\n", placement.RouteReadyKey, marker.Generation, meta.Generation)
 		}
 	}
-	return unfreezeWriters(ctx, db, opts, rep)
+
+	rep.WatermarkKeyFloorMs = wk.floorFor(meta.Generation)
+	if rep.WatermarkKeyFloorMs > rep.MinWatermarkMs {
+		fmt.Fprintf(opts.Stderr, "%s (generation %s) raises the DB watermark floor %d -> %d; otherwise the reconcile leader "+
+			"re-freezes on its next tick (watermark key above the DB watermark)\n",
+			placement.RouteWatermarkKey, meta.Generation, rep.MinWatermarkMs, rep.WatermarkKeyFloorMs)
+		rep.MinWatermarkMs = rep.WatermarkKeyFloorMs
+	} else if wk.state == watermarkKeyDecoded && wk.value.Generation != meta.Generation {
+		fmt.Fprintf(opts.Stderr, "%s belongs to generation %s, not the DB generation %s: it does not bound this generation "+
+			"and is reset after unfreezing\n", placement.RouteWatermarkKey, wk.value.Generation, meta.Generation)
+	}
+	generation := meta.Generation
+	return unfreezeWriters(ctx, db, opts, rep, func(r *UnfreezeReport) error {
+		outcome, err := resetWatermarkKey(ctx, rd, wk, generation, r.MinWatermarkMs)
+		r.WatermarkKey = outcome
+		fmt.Fprintf(opts.Stderr, "WATERMARK_KEY %s before=%s generation=%s watermark_ms=%d\n", outcome, wk.state, generation, r.MinWatermarkMs)
+		if err != nil {
+			fmt.Fprintf(opts.Stderr, "WARN: %v. Rerun unfreeze: an already-writable rerun changes nothing; "+
+				"if the reconcile leader re-froze the writers (data_service_route_reconcile_event_total{event=\"freeze_generation\"} or "+
+				"{event=\"freeze_watermark\"}), the rerun resets the key\n", err)
+		}
+		return err
+	})
 }
 
-// unfreezeWriters 是解冻的最后一步:在 opts.Timeout 内翻回 writable = 1(最低水位取 rep.MinWatermarkMs),成功才写统计行。
-func unfreezeWriters(ctx context.Context, db unfreezeDB, opts UnfreezeOptions, rep UnfreezeReport) (UnfreezeReport, error) {
+// unfreezeWriters 是解冻的最后一步:在 opts.Timeout 内翻回 writable = 1(最低水位取 rep.MinWatermarkMs);确实由本次翻成功时
+// 再调 afterFlip(可为 nil;水位键的出口)。翻成功或被并发解冻就写统计行(afterFlip 出错也写:writable 已经是 1),
+// 返回 afterFlip 的错误;翻的那一步出错不写统计行。
+func unfreezeWriters(ctx context.Context, db unfreezeDB, opts UnfreezeOptions, rep UnfreezeReport, afterFlip func(*UnfreezeReport) error) (UnfreezeReport, error) {
 	wctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 	defer cancel()
 	changed, err := db.UnfreezeRouteWriters(wctx, rep.MinWatermarkMs)
@@ -320,12 +372,141 @@ func unfreezeWriters(ctx context.Context, db unfreezeDB, opts UnfreezeOptions, r
 		return rep, err
 	}
 	rep.Changed = changed
-	if !changed {
-		// 读开关与解冻之间被别人解冻了:结果一样,照实报。
+	var afterErr error
+	switch {
+	case !changed:
+		// 读开关与解冻之间被别人解冻了:结果一样,照实报。水位键由那次解冻处置,这里不碰。
 		fmt.Fprintln(opts.Stderr, "route writers were unfrozen concurrently; nothing changed")
+	case afterFlip != nil:
+		afterErr = afterFlip(&rep)
 	}
 	fmt.Fprintln(opts.Stdout, rep.SummaryLine())
-	return rep, nil
+	return rep, afterErr
+}
+
+// ── 水位键(mapping:route:watermark)的读与出口 ───────────────────────────────────
+
+// 解冻前读到的水位键状态(只进 stderr 的 WATERMARK_KEY 行)。
+const (
+	watermarkKeyAbsent    = "absent"
+	watermarkKeyDecoded   = "decoded"
+	watermarkKeyMalformed = "malformed"
+)
+
+// watermarkKeyRead 是解冻前读到的水位键。raw 是原值(按原值改 / 删用);value 只在 decoded 时有效。
+type watermarkKeyRead struct {
+	state string
+	raw   string
+	value placement.RouteWatermark
+}
+
+// floorFor 是这把水位键对库世代 generation 给出的库水位下限:可解码且世代相同时是它的 watermark_ms,否则 0。
+func (w watermarkKeyRead) floorFor(generation string) uint64 {
+	if w.state != watermarkKeyDecoded {
+		return 0
+	}
+	return w.value.FloorFor(generation)
+}
+
+// readWatermarkKey 解冻前读水位键。版本比本二进制新 → 拒绝(包 placement.ErrRouteWatermarkNewerVersion,退出码 2,不动它:
+// 新版本的下限规则本二进制不知道,删了又会与新版本的 leader 来回打架);不是 string 类型 → ErrWatermarkKeyWrongType;
+// 畸形 → 不给下限,解冻之后按原值改掉 / 删掉。
+func readWatermarkKey(ctx context.Context, rd readyMarkerRedis) (watermarkKeyRead, error) {
+	raw, err := rd.GetCtx(ctx, placement.RouteWatermarkKey)
+	if err != nil {
+		if isWrongType(err) {
+			return watermarkKeyRead{}, ErrWatermarkKeyWrongType
+		}
+		return watermarkKeyRead{}, fmt.Errorf("GET %s: %w", placement.RouteWatermarkKey, err)
+	}
+	if raw == "" {
+		return watermarkKeyRead{state: watermarkKeyAbsent}, nil
+	}
+	w, err := placement.DecodeRouteWatermark(raw)
+	switch {
+	case errors.Is(err, placement.ErrRouteWatermarkNewerVersion):
+		return watermarkKeyRead{}, fmt.Errorf("route_tool unfreeze: %s=%q: %w; refused before unfreezing and left untouched (use the newer binary)",
+			placement.RouteWatermarkKey, raw, err)
+	case err != nil:
+		return watermarkKeyRead{state: watermarkKeyMalformed, raw: raw}, nil
+	}
+	return watermarkKeyRead{state: watermarkKeyDecoded, raw: raw, value: w}, nil
+}
+
+// resetWatermarkKey 在本次把 writable 翻回 1 之后,把水位键改成 {generation, minWatermarkMs}(见文件头「水位键的出口」)。
+// 返回处置(WatermarkKey* 之一);没改成时返回包 ErrWatermarkKeyNotReset 的错误(退出码 1)。
+func resetWatermarkKey(ctx context.Context, rd readyMarkerRedis, before watermarkKeyRead, generation string, minWatermarkMs uint64) (string, error) {
+	if minWatermarkMs == 0 {
+		// 没有可写的正水位(EncodeRouteWatermark 要求 watermark_ms > 0)。本世代的水位键必然给出正的下限,走不到这里。
+		switch {
+		case before.state == watermarkKeyAbsent:
+			return WatermarkKeyLeftAbsent, nil
+		case before.state == watermarkKeyDecoded && before.value.Generation == generation:
+			return WatermarkKeyKept, nil
+		}
+		// 别的世代或畸形:留着它 leader 下一拍就按世代 / 水位再冻结。按原值删掉,leader 下一拍按库值 SET NX 重建。
+		won, err := evalWatermarkKeyScript(ctx, rd, placement.RouteReadyCompareAndDeleteScript, "compare-and-delete", before.raw)
+		return settleWatermarkKey(ctx, rd, generation, WatermarkKeyDropped, won, err)
+	}
+	next, err := placement.EncodeRouteWatermark(placement.RouteWatermark{Generation: generation, WatermarkMs: minWatermarkMs})
+	if err != nil {
+		return WatermarkKeyNotReset, fmt.Errorf("%w: encode {generation=%s, watermark_ms=%d}: %v", ErrWatermarkKeyNotReset, generation, minWatermarkMs, err)
+	}
+	if before.state == watermarkKeyAbsent {
+		won, err := rd.SetnxCtx(ctx, placement.RouteWatermarkKey, next)
+		if err != nil {
+			err = fmt.Errorf("SET NX %s: %w", placement.RouteWatermarkKey, err)
+		}
+		return settleWatermarkKey(ctx, rd, generation, WatermarkKeySetNX, won, err)
+	}
+	if before.raw == next {
+		return WatermarkKeyKept, nil
+	}
+	won, err := evalWatermarkKeyScript(ctx, rd, placement.RouteReadyCompareAndSetScript, "compare-and-set", before.raw, next)
+	return settleWatermarkKey(ctx, rd, generation, WatermarkKeyCompareAndSet, won, err)
+}
+
+// settleWatermarkKey 收尾一次水位键写:写成了 → outcome;Redis 出错 → not_reset;写输了(读到之后被改过)→ 复读一次:
+// 键已不在(rewarm 删了,leader 下一拍重建)、或是本世代的可解码值(只有 leader 与解冻会写本世代的值,两者写的都不高于库水位)
+// 都算完成(superseded);别的世代 / 畸形 / 版本更新 → not_reset。
+func settleWatermarkKey(ctx context.Context, rd readyMarkerRedis, generation, outcome string, won bool, err error) (string, error) {
+	if err != nil {
+		return WatermarkKeyNotReset, fmt.Errorf("%w (%s: %v)", ErrWatermarkKeyNotReset, outcome, err)
+	}
+	if won {
+		return outcome, nil
+	}
+	raw, err := rd.GetCtx(ctx, placement.RouteWatermarkKey)
+	if err != nil {
+		return WatermarkKeyNotReset, fmt.Errorf("%w (%s lost the race and the re-read failed: %v)", ErrWatermarkKeyNotReset, outcome, err)
+	}
+	if raw == "" {
+		return WatermarkKeySuperseded, nil
+	}
+	if w, derr := placement.DecodeRouteWatermark(raw); derr == nil && w.Generation == generation {
+		return WatermarkKeySuperseded, nil
+	}
+	return WatermarkKeyNotReset, fmt.Errorf("%w (%s lost the race; %s is now %q)", ErrWatermarkKeyNotReset, outcome, placement.RouteWatermarkKey, raw)
+}
+
+// evalWatermarkKeyScript 对水位键跑一段按原值改 / 删的脚本(RouteReadyCompareAndSetScript / RouteReadyCompareAndDeleteScript
+// 与键无关,KEYS[1] 换成水位键即可):回 1 → true;回 0(原值已变)→ false;其余 → error。
+func evalWatermarkKeyScript(ctx context.Context, rd readyMarkerRedis, script, what string, args ...any) (bool, error) {
+	res, err := rd.EvalCtx(ctx, script, []string{placement.RouteWatermarkKey}, args...)
+	if err != nil {
+		return false, fmt.Errorf("%s %s: %w", what, placement.RouteWatermarkKey, err)
+	}
+	n, ok := res.(int64)
+	switch {
+	case !ok:
+		return false, fmt.Errorf("%s %s: unexpected reply %T %v", what, placement.RouteWatermarkKey, res, res)
+	case n == 1:
+		return true, nil
+	case n == 0:
+		return false, nil
+	default:
+		return false, fmt.Errorf("%s %s: unexpected reply %d", what, placement.RouteWatermarkKey, n)
+	}
 }
 
 // readReadyMarker 读并判定就绪标记。返回原值(CAS / CAD 用)、解码后的标记(只在 verified 时有效)与状态。

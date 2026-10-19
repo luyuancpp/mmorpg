@@ -35,6 +35,7 @@ on:
       - "go/shared/generated/tip/**"
       - "go/shared/generated/pb/table/*_tip.pb.go"
       - "java/config_node/src/main/java/com/game/table/**"
+      - "java/gateway_node/src/main/java/com/game/table/tip/**"
       - "java/config_node/pom.xml"
       - "cpp/generated/table/proto/tip/**"
       - "cpp/generated/table/CMakeLists.txt"
@@ -56,6 +57,7 @@ on:
       - "go/shared/generated/tip/**"
       - "go/shared/generated/pb/table/*_tip.pb.go"
       - "java/config_node/src/main/java/com/game/table/**"
+      - "java/gateway_node/src/main/java/com/game/table/tip/**"
       - "java/config_node/pom.xml"
       - "cpp/generated/table/proto/tip/**"
       - "cpp/generated/table/CMakeLists.txt"
@@ -182,6 +184,7 @@ jobs:
           dirty="$(git status --porcelain --untracked-files=all -- \
             state/mapping/tip_enum_ids/tip_enum_ids.json \
             ../../generated/code/proto/tip \
+            ../../generated/code/java/tip \
             ../../generated/tables/tip_text.json)"
           if [ -n "$dirty" ]; then
             echo "Tip.xlsx/state differs from the committed controlled outputs:"
@@ -195,6 +198,13 @@ jobs:
             ../../go/shared/generated/tip/segments.go
           cmp ../../generated/code/go/generated/tip/faults.go \
             ../../go/shared/generated/tip/faults.go
+
+          # Java 故障表(与 faults.go 同一份 rows)部署到网关与 config_node 两处;
+          # 网关的副本旧了,login 的新故障码在 HTTP 层就仍是 401。
+          cmp ../../generated/code/java/tip/TipFaults.java \
+            ../../java/gateway_node/src/main/java/com/game/table/tip/TipFaults.java
+          cmp ../../generated/code/java/tip/TipFaults.java \
+            ../../java/config_node/src/main/java/com/game/table/tip/TipFaults.java
 
       # 这里不需要 protoc：提交的 *_table_pb2.py 足以从真实 xlsx 重建 JSON/PB。
       # 只校验 manifest 自己的 hash 不够，因为“源表和旧产物一起自洽”仍可能

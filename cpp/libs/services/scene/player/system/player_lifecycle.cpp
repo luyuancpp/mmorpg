@@ -270,7 +270,7 @@ namespace
 	// (例如 SceneManager 节点在调用途中被摘除),不能把玩家永久挡在换图之外。
 	// 必须比 deadline 宽:否则应答 / 失败通知到达之前槽位已过期、被下一次登记覆盖,号就对不上了。
 	// 迟到完成按调用闭包捕获的 playerId / correlationId 认领,与下一条请求的号不同就丢弃。
-	// 响应中非 0 回显逐字段校验,回显为 0 也不改变捕获的身份。requestTag 为 0 的旧兼容分支仍保留,
+	// 响应中非 0 回显逐字段校验,回显为 0 也不改变捕获的身份。requestCorrelationId 为 0 的旧兼容分支仍保留,
 	// 只供绕过统一发送出口的直接调用使用;去留始终由 owner_epoch 比对裁决。
 	constexpr uint64_t kSceneChangeInFlightMarginMs = 1000;
 
@@ -454,7 +454,7 @@ namespace
 	// 号只在进程内有意义,排障时要与 player_id 一起看。
 	thread_local uint64_t tlsEnterSceneCorrelationSeq = 0;
 
-	// 只为 requestTag == 0 的兼容入口保留。生产关联号由闭包捕获,旧版 SM 不回显也走不到这里;
+	// 只为 requestCorrelationId == 0 的兼容入口保留。生产关联号由闭包捕获,旧版 SM 不回显也走不到这里;
 	// 仅单测或绕过统一出口的调用可能计 reply_uncorrelated,每线程只告警一次。
 	thread_local bool tlsWarnedUncorrelatedReply = false;
 
@@ -499,20 +499,20 @@ namespace
 	// scene 进程内 EnterScene 的唯一发送出口:发送前确保非 0 关联号,由闭包按值带回 DispatchEnterSceneReply;
 	// 回显只作核对,即便旧版 SM 不回显也按发送时的号认领。有等待者的发送走 RequestSceneChange 或
 	// RequestTravelEnterScene;疏散 / 排空的等待者由 SendEmergencyRelocateEnterScene 先 MarkSent、再发出。
-	// 前置条件:调用方先把 correlationId 记到等待者上,且 smEntity 非空(已查 GetSceneManagerEntity)。
-	void SendCorrelatedEnterScene(entt::entity smEntity, ::scene_manager::EnterSceneRequest &req, uint64_t correlationId)
+	// 前置条件:调用方先把 correlationId 记到等待者上,且 sceneManagerEntity 非空(已查 GetSceneManagerEntity)。
+	void SendCorrelatedEnterScene(entt::entity sceneManagerEntity, ::scene_manager::EnterSceneRequest &request, uint64_t correlationId)
 	{
 		if (correlationId == 0)
 		{
 			// 违反前置条件是调用方的 bug。生产回调必须携带非 0 号,不让本次完成误走按 player_id 的兼容入口。
 			correlationId = NextEnterSceneCorrelationId();
 			LOG_ERROR << "[EnterSceneReply] SendCorrelatedEnterScene called with correlation_id 0 for player "
-					  << req.player_id() << "; sending with corr=" << correlationId << " instead";
+					  << request.player_id() << "; sending with corr=" << correlationId << " instead";
 		}
-		req.set_correlation_id(correlationId);
-		auto &smRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
-		scene_manager::SendSceneManagerEnterScene(smRegistry, smEntity, req,
-			[playerId = req.player_id(), correlationId = correlationId](const GrpcCallOutcome &outcome,
+		request.set_correlation_id(correlationId);
+		auto &sceneManagerRegistry = tlsNodeContextManager.GetRegistry(eNodeType::SceneManagerNodeService);
+		scene_manager::SendSceneManagerEnterScene(sceneManagerRegistry, sceneManagerEntity, request,
+			[playerId = request.player_id(), correlationId = correlationId](const GrpcCallOutcome &outcome,
 				const ::scene_manager::EnterSceneResponse *reply)
 			{
 				if (outcome.ok() && reply != nullptr)
@@ -521,10 +521,10 @@ namespace
 					LogEnterSceneReply(playerId, correlationId, *reply);
 					return;
 				}
-				const uint32_t code = outcome.ok() ? kGrpcStatusInternal : outcome.code;
+				const uint32_t grpcStatusCode = outcome.ok() ? kGrpcStatusInternal : outcome.code;
 				PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(
 					playerId, correlationId,
-					"SceneManager.EnterScene code=" + std::to_string(code) + " msg=" + outcome.message);
+					"SceneManager.EnterScene code=" + std::to_string(grpcStatusCode) + " msg=" + outcome.message);
 			});
 	}
 
@@ -1995,13 +1995,13 @@ namespace
 	// 传输失败 = **结果未知**:deadline 到期之后 scene_manager 的 handler 仍在跑,可能照样铸造、推路由、回滚。
 	// 所以认领后只是换一种证据(kTransportFailed)转核实,而且要等到 settle 才读 —— 此刻读到窗口中间的"已在别处"
 	// 会被结清为不踢,随后的回滚把 location 写回源场景,会话就永远挂着。
-	bool ClaimRelocateTransportFailure(Guid playerId, uint64_t requestTag, const std::string &reason)
+	bool ClaimRelocateTransportFailure(Guid playerId, uint64_t requestCorrelationId, const std::string &reason)
 	{
 		using relocate_confirm::ClaimAction;
 		relocate_confirm::Entry *entry = tlsRelocateConfirms.FindPlayer(playerId);
 		const ClaimAction claim = relocate_confirm::DecideTransportFailureClaim(
 			entry != nullptr, entry != nullptr ? entry->correlationId : 0,
-			entry != nullptr ? entry->phase : relocate_confirm::Phase::kMarkWriting, requestTag);
+			entry != nullptr ? entry->phase : relocate_confirm::Phase::kMarkWriting, requestCorrelationId);
 		if (entry == nullptr || claim == ClaimAction::kNotMine || claim == ClaimAction::kCount)
 		{
 			return false;
@@ -2016,11 +2016,11 @@ namespace
 		{
 			// 条目已不在等完成通知(例如进场路由已先把他带回本节点):只记一笔,结论由已排好的路径给。
 			LOG_INFO << "[RelocateConfirm] transport failure ignored player=" << playerId << " seq=" << seq
-					 << " corr=" << requestTag << " phase=" << relocate_confirm::PhaseName(entry->phase) << " ("
+					 << " corr=" << requestCorrelationId << " phase=" << relocate_confirm::PhaseName(entry->phase) << " ("
 					 << reason << ")";
 			return true;
 		}
-		LOG_WARN << "[RelocateConfirm] transport failure player=" << playerId << " seq=" << seq << " corr=" << requestTag
+		LOG_WARN << "[RelocateConfirm] transport failure player=" << playerId << " seq=" << seq << " corr=" << requestCorrelationId
 				 << " (" << reason << "); outcome unknown, verifying after settle";
 		StartRelocateVerify(playerId, seq, relocate_confirm::Evidence::kTransportFailed,
 							relocate_confirm::Expectation::kAtSource, RelocateClock::now());
@@ -4177,7 +4177,7 @@ entt::entity PlayerLifecycleSystem::InitPlayerFromAllData(const PlayerAllData &p
 				  << "); kept as this player's personal floor, process allocator not raised (metric=observe_beyond_bound)";
 	}
 
-	PlayerAllDataMessageFieldsUnMarshal(player, playerAllData);
+	PlayerAllDataMessageFieldsUnmarshal(player, playerAllData);
 	// 必需派生投影由加载链直接创建,不依赖事件订阅。
 	ActorAttributeCalculatorSystem::InitializeOnCreate(player);
 
@@ -5003,7 +5003,7 @@ uint64_t PlayerLifecycleSystem::RequestSceneChange(entt::entity player, entt::en
 	return correlationId;
 }
 
-void PlayerLifecycleSystem::DispatchEnterSceneReply(Guid playerId, uint64_t requestTag,
+void PlayerLifecycleSystem::DispatchEnterSceneReply(Guid playerId, uint64_t requestCorrelationId,
 	const ::scene_manager::EnterSceneResponse &resp)
 {
 	using enter_scene_reply::Route;
@@ -5012,21 +5012,21 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(Guid playerId, uint64_t requ
 	{
 		// 身份来自发送时捕获的请求。缺少身份是调用方 bug,与旧版 SM 是否回显无关。
 		LOG_ERROR << "[EnterSceneReply] reply without captured player_id; ignoring"
-				  << " corr=" << requestTag << " error_code=" << resp.error_code();
+				  << " corr=" << requestCorrelationId << " error_code=" << resp.error_code();
 		return;
 	}
 	if ((resp.player_id() != 0 && resp.player_id() != playerId) ||
-		(resp.correlation_id() != 0 && resp.correlation_id() != requestTag))
+		(resp.correlation_id() != 0 && resp.correlation_id() != requestCorrelationId))
 	{
 		// 逐字段核对非 0 回显。身份冲突时不触碰任何等待者,由原有 TTL / 看门狗收敛。
-		LOG_ERROR << "[EnterSceneReply] echo mismatch player=" << playerId << " corr=" << requestTag
+		LOG_ERROR << "[EnterSceneReply] echo mismatch player=" << playerId << " corr=" << requestCorrelationId
 				  << " echoed_player=" << resp.player_id() << " echoed_corr=" << resp.correlation_id()
 				  << " error_code=" << resp.error_code();
 		travel_handoff_stats::Inc(travel_handoff_stats::Get().replyUnmatched);
 		EnsureTravelHandoffStatsTimer();
 		return;
 	}
-	if (requestTag == 0)
+	if (requestCorrelationId == 0)
 	{
 		// 兼容旧的直接调用:生产的关联号由闭包捕获、恒非 0,旧版 SM 不回显也走不到这里。
 		// 只有单测或绕过统一出口的调用可能传 0,仍保留原来的按 player_id 退路与计数。
@@ -5046,13 +5046,13 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(Guid playerId, uint64_t requ
 		// 疏散 / 排空改派的应答只会落在这里(改派发出时实体随即销毁):先交待确认表按号认领,认领后只触发核实。
 		// 挂在"实体已不在"之后而不是实体查找之前:待确认条目存在期间本节点要么没有该玩家实体,要么条目已在等载入
 		// (那时应答本来就该忽略);实体有效时应答照旧进下面的 Classify,不会被按 player_id 吞掉。
-		if (ClaimRelocateEnterSceneReply(playerId, requestTag, resp))
+		if (ClaimRelocateEnterSceneReply(playerId, requestCorrelationId, resp))
 		{
 			return;
 		}
 		// 不认领的:玩家在交接途中退出,或没被跟踪(表满)的改派。
 		LOG_INFO << "[ZoneTravel] EnterScene reply for player " << playerId
-				 << " but entity is gone (exited during travel); ignoring corr=" << requestTag
+				 << " but entity is gone (exited during travel); ignoring corr=" << requestCorrelationId
 				 << " error_code=" << resp.error_code();
 		return;
 	}
@@ -5064,7 +5064,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(Guid playerId, uint64_t requ
 	const bool sceneChangeInFlight = pending != nullptr;
 	const uint64_t sceneChangeTag = sceneChangeInFlight ? pending->correlationId : 0;
 	const Route route =
-		enter_scene_reply::Classify(requestTag, handoffInFlight, handoffTag, sceneChangeInFlight, sceneChangeTag);
+		enter_scene_reply::Classify(requestCorrelationId, handoffInFlight, handoffTag, sceneChangeInFlight, sceneChangeTag);
 
 	switch (route)
 	{
@@ -5090,7 +5090,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(Guid playerId, uint64_t requ
 		travel_handoff_stats::Inc(travel_handoff_stats::Get().replyUnmatched);
 		EnsureTravelHandoffStatsTimer();
 		LOG_ERROR << "[EnterSceneReply] invariant broken: scene-change reply while a handoff is in flight, player="
-				  << playerId << " corr=" << requestTag << " handoff_tag=" << handoffTag
+				  << playerId << " corr=" << requestCorrelationId << " handoff_tag=" << handoffTag
 				  << " scene_change_tag=" << sceneChangeTag << " error_code=" << resp.error_code()
 				  << " has_redirect=" << resp.has_redirect() << "; dropping";
 		return;
@@ -5104,7 +5104,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(Guid playerId, uint64_t requ
 		{
 			travel_handoff_stats::Inc(travel_handoff_stats::Get().replyUnmatched);
 			EnsureTravelHandoffStatsTimer();
-			LOG_INFO << "[EnterSceneReply] dropped unmatched reply player=" << playerId << " corr=" << requestTag
+			LOG_INFO << "[EnterSceneReply] dropped unmatched reply player=" << playerId << " corr=" << requestCorrelationId
 					 << " route=" << enter_scene_reply::RouteName(route) << " handoff_tag=" << handoffTag
 					 << " scene_change_tag=" << sceneChangeTag << " error_code=" << resp.error_code()
 					 << " has_redirect=" << resp.has_redirect();
@@ -5113,7 +5113,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(Guid playerId, uint64_t requ
 		{
 			// 路由先到(EnterScene 3.1 已摘在途组件)之后才到、又撞上新一条换图的纯成功迟到应答:常态,不计数。
 			LOG_DEBUG << "[EnterSceneReply] late success reply for an older request, player=" << playerId
-					  << " corr=" << requestTag << " scene_change_tag=" << sceneChangeTag << "; ignoring";
+					  << " corr=" << requestCorrelationId << " scene_change_tag=" << sceneChangeTag << "; ignoring";
 		}
 		return;
 
@@ -5124,17 +5124,17 @@ void PlayerLifecycleSystem::DispatchEnterSceneReply(Guid playerId, uint64_t requ
 	// kNoWaiter:未跟踪(表满)的改派、退出后重建的实体、路由已先落地(EnterScene 3.1 已摘)的成功应答,或看门狗已先
 	// 核实过的迟到应答。没有事可做。(kCount 不会由 Classify 返回,一并落到这里。)
 	LOG_DEBUG << "[ZoneTravel] EnterScene reply for player " << playerId
-			  << " without an in-flight handoff or scene change; ignoring corr=" << requestTag
+			  << " without an in-flight handoff or scene change; ignoring corr=" << requestCorrelationId
 			  << " route=" << enter_scene_reply::RouteName(route) << " error_code=" << resp.error_code()
 			  << " has_redirect=" << resp.has_redirect();
 }
 
-void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(Guid playerId, uint64_t requestTag,
+void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(Guid playerId, uint64_t requestCorrelationId,
 															   const std::string &reason)
 {
 	using enter_scene_reply::Route;
 
-	if (requestTag == 0)
+	if (requestCorrelationId == 0)
 	{
 		// 本进程的 EnterScene 全经 SendCorrelatedEnterScene 发出、号恒非 0。号为 0 只能是有发送点绕过了统一出口:
 		// 不退回按 player_id 对 —— 那会把"吃掉别的请求"的串号带回来。交给各等待者自己的兜底(TTL / 看门狗)。
@@ -5148,12 +5148,12 @@ void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(Guid playerId, ui
 	{
 		// 先交待确认表按号认领(疏散 / 排空发的 EnterScene,发完实体就销毁了):认领后当作结果未知,等到 settle 才核实。
 		// 不认领的是途中退出的玩家,或没被跟踪(表满)的改派。
-		if (ClaimRelocateTransportFailure(playerId, requestTag, reason))
+		if (ClaimRelocateTransportFailure(playerId, requestCorrelationId, reason))
 		{
 			return;
 		}
 		LOG_INFO << "[EnterSceneReply] EnterScene transport failure for player " << playerId
-				 << " but entity is gone; ignoring corr=" << requestTag << " (" << reason << ")";
+				 << " but entity is gone; ignoring corr=" << requestCorrelationId << " (" << reason << ")";
 		return;
 	}
 
@@ -5164,7 +5164,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(Guid playerId, ui
 	const bool sceneChangeInFlight = pending != nullptr;
 	const uint64_t sceneChangeTag = sceneChangeInFlight ? pending->correlationId : 0;
 	const Route route =
-		enter_scene_reply::Classify(requestTag, handoffInFlight, handoffTag, sceneChangeInFlight, sceneChangeTag);
+		enter_scene_reply::Classify(requestCorrelationId, handoffInFlight, handoffTag, sceneChangeInFlight, sceneChangeTag);
 
 	switch (route)
 	{
@@ -5174,7 +5174,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(Guid playerId, ui
 		// (已被放行时解冻并带新 epoch 存盘 = 回档),也不提前核实(读到窗口中间的 epoch,见 travel_freeze_cap.h
 		// kReplyBudget 的下限约束)。去留照旧由应答看门狗 / 冻结上限按 owner_epoch 裁决。
 		LOG_WARN << "[ZoneTravel] handoff EnterScene transport failure for player " << playerId
-				 << " corr=" << requestTag << " (" << reason
+				 << " corr=" << requestCorrelationId << " (" << reason
 				 << "); outcome unknown, leaving the verdict to the reply watchdog / freeze cap";
 		return;
 
@@ -5188,7 +5188,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(Guid playerId, ui
 		{
 			// 队伍跟随:玩家没在等,只记日志(team-system.md DV-6;组队线约定)。
 			LOG_INFO << "[ZoneTravel] team-follow EnterScene transport failure for player " << playerId
-					 << " scene_id=" << target.sceneId << " corr=" << requestTag << " (" << reason
+					 << " scene_id=" << target.sceneId << " corr=" << requestCorrelationId << " (" << reason
 					 << "); player stays in the current scene";
 			return;
 		}
@@ -5199,7 +5199,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(Guid playerId, ui
 		// 客户端 IsTravelFailureTip 认的"确定没成",所以不会被当成传送失败证据。取舍见设计文档 §5 #2。
 		LOG_WARN << "[ZoneTravel] EnterScene transport failure for player " << playerId
 				 << " scene_id=" << target.sceneId << " scene_conf_id=" << target.sceneConfigId
-				 << " corr=" << requestTag << " (" << reason << "); notifying the client";
+				 << " corr=" << requestCorrelationId << " (" << reason << "); notifying the client";
 		PlayerTipSystem::SendToPlayer(playerEntity, kEnterSceneServerBusy, {});
 		return;
 	}
@@ -5207,14 +5207,14 @@ void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(Guid playerId, ui
 	case Route::kSceneChangeDuringHandoff:
 		// 按构造不可达(见 DispatchEnterSceneReply 同一分支)。丢弃:走普通换图分支会在交接中给客户端补一条 tip。
 		LOG_ERROR << "[EnterSceneReply] invariant broken: scene-change transport failure while a handoff is in flight,"
-				  << " player=" << playerId << " corr=" << requestTag << " handoff_tag=" << handoffTag
+				  << " player=" << playerId << " corr=" << requestCorrelationId << " handoff_tag=" << handoffTag
 				  << " scene_change_tag=" << sceneChangeTag << " (" << reason << "); dropping";
 		return;
 
 	case Route::kUnmatched:
 		// 被顶替的请求(过了 TTL 又发了一条)或上一代交接的请求:不是当前等待者的,不动它。
 		LOG_INFO << "[EnterSceneReply] transport failure of a superseded EnterScene for player " << playerId
-				 << " corr=" << requestTag << " handoff_tag=" << handoffTag << " scene_change_tag=" << sceneChangeTag
+				 << " corr=" << requestCorrelationId << " handoff_tag=" << handoffTag << " scene_change_tag=" << sceneChangeTag
 				 << " (" << reason << "); ignoring";
 		return;
 
@@ -5224,7 +5224,7 @@ void PlayerLifecycleSystem::DispatchEnterSceneTransportFailure(Guid playerId, ui
 	}
 	// kNoWaiter:路由已先落地(EnterScene 3.1 已摘在途组件)之后才到的失败,或没有等待者的发送。
 	LOG_INFO << "[EnterSceneReply] EnterScene transport failure for player " << playerId
-			 << " without an in-flight handoff or scene change; ignoring corr=" << requestTag << " route="
+			 << " without an in-flight handoff or scene change; ignoring corr=" << requestCorrelationId << " route="
 			 << enter_scene_reply::RouteName(route) << " (" << reason << ")";
 }
 
@@ -5331,7 +5331,8 @@ void PlayerLifecycleSystem::HandleReleaseFromSceneManager(Guid playerId, uint64_
 	HandleExitGameNode(player, ExitCause::kReleasedByTransfer);
 }
 
-void PlayerLifecycleSystem::HandleSessionEndedRelease(Guid playerId, uint64_t expectedOwnerEpoch)
+void PlayerLifecycleSystem::HandleSessionEndedRelease(Guid playerId, uint64_t expectedOwnerEpoch, SessionId coveredSessionId,
+													  uint64_t coveredLoginGeneration)
 {
 	// 会话结束释放(docs/design/location-release-binding.md §3.3)。scene_manager 的 LeaveScene 拿不到"持有者已释放"证据
 	// (当前代 handoff 标记 / 持有节点已死)时才发:location 还指向本节点,玩家的登录会话却已结束(登出 / 断线租约到期 / gate 消失)。
@@ -5361,11 +5362,41 @@ void PlayerLifecycleSystem::HandleSessionEndedRelease(Guid playerId, uint64_t ex
 					 << " cached_owner_epoch=" << cachedOwnerEpoch << "; the entity keeps running on this node";
 			return;
 		}
+		// 归属代际放行之后再比登录身份(docs/design/location-release-binding.md §13):同物理节点重登不铸造 owner_epoch,
+		// 同一个 E 下实体可能已被一次更新的登录复用。比的是实体已放行的最高登录身份(PlayerLoginIdentityComp,EnterScene
+		// 第 1 步 / UpdateSessionDetail 写入,代次只升不降);组件缺失按代次 0(证明不了它更新,按现行为退出)。只读,try_get。
+		SessionId entitySessionId = kInvalidSessionId;
+		uint64_t entityLoginGeneration = 0;
+		if (const auto *loginIdentity = tlsEcs.actorRegistry.try_get<PlayerLoginIdentityComp>(player))
+		{
+			entitySessionId = loginIdentity->sessionId;
+			entityLoginGeneration = loginIdentity->loginGeneration;
+		}
+		const release_fence::SessionEndedBinding binding = release_fence::DecideSessionEndedBinding(
+			entitySessionId, entityLoginGeneration, coveredSessionId, coveredLoginGeneration);
+		release_fence_stats::IncBindingDecision(binding);
+		if (!release_fence::BindingReleases(binding))
+		{
+			// 实体已绑上更新的登录:这是一条迟到的释放(登录撞门的同步请求超时后才执行 / LeaveScene 的后台派发晚于新登录),
+			// 退出它就是把在线的新会话按断线踢下线。同代异会话违反 G2,分不清哪一份该退,同样不动。零副作用:不碰会话、
+			// 退出意图与标记。那次更新的登录结束时,它自己的清理会再发一条覆盖它的释放(§13.4 (d));同代冲突拿不到证据时
+			// 由 scene_manager 的等待上限兜底(§3.6)。
+			LOG_WARN << "[ReleaseFence] session-ended release ignored: player=" << playerId
+					 << " binding=" << release_fence::SessionEndedBindingName(binding)
+					 << " entity_login=" << entitySessionId << "/" << entityLoginGeneration
+					 << " covered_login=" << coveredSessionId << "/" << coveredLoginGeneration
+					 << " expected_owner_epoch=" << expectedOwnerEpoch << " cached_owner_epoch=" << cachedOwnerEpoch
+					 << "; the entity is bound to a newer (or conflicting) login and keeps running on this node";
+			return;
+		}
 		// 会话已死,按客户端断线退出:kClientDisconnect 在 A1′ 的可写集合里(存盘落地后写断线释放标记),并作废疏散票据
 		// (给死会话改派没有意义)。已在退出中时 HandleExitGameNode 只按 MergeExitCause 合并,原因保持第一次的。
 		LOG_INFO << "[ReleaseFence] session-ended release: exiting player " << playerId
 				 << " as client disconnect (verdict=" << release_fence::VerdictName(verdict)
-				 << " expected_owner_epoch=" << expectedOwnerEpoch << " cached_owner_epoch=" << cachedOwnerEpoch << ")";
+				 << " binding=" << release_fence::SessionEndedBindingName(binding)
+				 << " expected_owner_epoch=" << expectedOwnerEpoch << " cached_owner_epoch=" << cachedOwnerEpoch
+				 << " entity_login=" << entitySessionId << "/" << entityLoginGeneration
+				 << " covered_login=" << coveredSessionId << "/" << coveredLoginGeneration << ")";
 		HandleExitGameNode(player, ExitCause::kClientDisconnect);
 		return;
 	}

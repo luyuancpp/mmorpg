@@ -333,7 +333,7 @@ TEST_F(PlayerFeaturePersistenceTest, DatabaseRecordAloneRestoresBagAssetsAndMiss
     ASSERT_FALSE(coldSnapshot.has_bag_data());
     ASSERT_FALSE(coldSnapshot.has_quest_data());
     const auto restored = NewPlayer();
-    PlayerAllDataMessageFieldsUnMarshal(restored, coldSnapshot);
+    PlayerAllDataMessageFieldsUnmarshal(restored, coldSnapshot);
     ExpectStocked(restored);
 }
 
@@ -353,7 +353,7 @@ TEST_F(PlayerFeaturePersistenceTest, AuthoritativeEmptyDatabaseSnapshotWinsOverS
     PlayerAllData parsed;
     ASSERT_TRUE(parsed.ParseFromString(saved.SerializeAsString()));
     const auto restored = NewPlayer();
-    PlayerAllDataMessageFieldsUnMarshal(restored, parsed);
+    PlayerAllDataMessageFieldsUnmarshal(restored, parsed);
     const auto* bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
     ASSERT_NE(nullptr, bags);
     for (const auto& bag : bags->bags) EXPECT_EQ(0u, bag.OccupiedGridCount());
@@ -378,7 +378,7 @@ TEST_F(PlayerFeaturePersistenceTest, LegacyTopLevelRemainsReadableWhenNewDatabas
     ASSERT_FALSE(parsed.player_database_data().has_bag_component());
     ASSERT_FALSE(parsed.player_database_data().has_mission_component());
     const auto restored = NewPlayer();
-    PlayerAllDataMessageFieldsUnMarshal(restored, parsed);
+    PlayerAllDataMessageFieldsUnmarshal(restored, parsed);
     ExpectStocked(restored);
 
     // 旧快照读出后再保存必须写入新的数据库字段，不能永远依赖兼容分支。
@@ -398,7 +398,7 @@ TEST_F(PlayerFeaturePersistenceTest, NewDatabaseAndLegacyTopLevelSourcesAreChose
     mixed.mutable_player_database_data()->mutable_bag_component()->Clear();
     mixed.mutable_player_database_data()->clear_mission_component();
     const auto restored = NewPlayer();
-    PlayerAllDataMessageFieldsUnMarshal(restored, mixed);
+    PlayerAllDataMessageFieldsUnmarshal(restored, mixed);
     const auto* bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
     ASSERT_NE(nullptr, bags);
     EXPECT_EQ(0u, bags->bags[kInventory].OccupiedGridCount());
@@ -422,7 +422,7 @@ TEST_F(PlayerFeaturePersistenceTest, ProfileNameRoundTripsThroughDatabaseRecord)
     cold.mutable_player_database_data()->mutable_profile_component()->set_name(kName);
 
     const auto restored = NewPlayer();
-    PlayerAllDataMessageFieldsUnMarshal(restored, cold);
+    PlayerAllDataMessageFieldsUnmarshal(restored, cold);
     const auto* profile = tlsEcs.actorRegistry.try_get<PlayerProfileComp>(restored);
     ASSERT_NE(nullptr, profile);
     EXPECT_EQ(kName, profile->name());
@@ -453,7 +453,7 @@ TEST_F(PlayerFeaturePersistenceTest, MissingProfileComponentLoadsEmptyName)
     ASSERT_FALSE(parsed.player_database_data().has_profile_component());
 
     const auto restored = NewPlayer();
-    PlayerAllDataMessageFieldsUnMarshal(restored, parsed);
+    PlayerAllDataMessageFieldsUnmarshal(restored, parsed);
     // 组件必须存在(战斗快照与存盘都按"有组件、名字为空"处理),而不是缺组件。
     const auto* profile = tlsEcs.actorRegistry.try_get<PlayerProfileComp>(restored);
     ASSERT_NE(nullptr, profile);
@@ -538,7 +538,7 @@ TEST_F(PlayerFeaturePersistenceTest, EquipInstanceDataRoundTripsThroughDatabaseR
     ASSERT_TRUE(coldSnapshot.mutable_player_database_data()->ParseFromString(bytes));
     ASSERT_FALSE(coldSnapshot.has_bag_data());
     const auto restored = NewPlayer();
-    PlayerAllDataMessageFieldsUnMarshal(restored, coldSnapshot);
+    PlayerAllDataMessageFieldsUnmarshal(restored, coldSnapshot);
 
     auto* bags = tlsEcs.actorRegistry.try_get<PlayerBagsComp>(restored);
     ASSERT_NE(nullptr, bags);

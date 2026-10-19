@@ -51,8 +51,23 @@ type semanticsEnv struct {
 	authType string
 }
 
+// 只在令牌存储管线处注入故障,避免破坏 Redis 握手与事务协议而让用例卡在断言之前。
+type semanticsTokenStoreFailure struct{}
+
+func (semanticsTokenStoreFailure) DialHook(next redis.DialHook) redis.DialHook { return next }
+
+func (semanticsTokenStoreFailure) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
+	return next
+}
+
+func (semanticsTokenStoreFailure) ProcessPipelineHook(redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+	return func(context.Context, []redis.Cmder) error {
+		return errors.New("injected token store failure")
+	}
+}
+
 // newSemanticsEnv 起一个只有 HTTP 新路径会用到的 ServiceContext。tokenRedisFails=true 时 token 管理器
-// 用另一个注入了错误的 miniredis,模拟「账号目录可读、token 写不进去」。
+// 用独立 Redis 客户端在存储管线入口注入错误,模拟「账号目录可读、token 写不进去」。
 func newSemanticsEnv(t *testing.T, provider semanticsProvider, tokenRedisFails bool) *semanticsEnv {
 	t.Helper()
 	mr := miniredis.RunT(t)
@@ -66,9 +81,8 @@ func newSemanticsEnv(t *testing.T, provider semanticsProvider, tokenRedisFails b
 
 	tokenRdb := rdb
 	if tokenRedisFails {
-		broken := miniredis.RunT(t)
-		broken.SetError("injected token store failure")
-		tokenRdb = redis.NewClient(&redis.Options{Addr: broken.Addr(), MaxRetries: -1})
+		tokenRdb = redis.NewClient(&redis.Options{Addr: mr.Addr(), MaxRetries: -1})
+		tokenRdb.AddHook(semanticsTokenStoreFailure{})
 		t.Cleanup(func() { _ = tokenRdb.Close() })
 	}
 	tokens := token.NewManager(tokenRdb, token.Config{AccessTokenTTL: time.Hour, RefreshTokenTTL: 24 * time.Hour})
@@ -91,7 +105,7 @@ func (e *semanticsEnv) login(t *testing.T) *loginpb.LoginResponse {
 	return resp
 }
 
-func requireTip(t *testing.T, resp *loginpb.LoginResponse, want table.LoginError) {
+func requireLoginFailureTip(t *testing.T, resp *loginpb.LoginResponse, want table.LoginError) {
 	t.Helper()
 	require.NotNil(t, resp.ErrorMessage, "应带错误码")
 	require.Equal(t, uint32(want), resp.ErrorMessage.Id)
@@ -102,13 +116,13 @@ func requireTip(t *testing.T, resp *loginpb.LoginResponse, want table.LoginError
 func TestLoginProviderUnavailableReturnsFaultTip(t *testing.T) {
 	env := newSemanticsEnv(t, semanticsProvider{err: fmt.Errorf("wechat: http status 502: %w", auth.ErrProviderUnavailable)}, false)
 	resp := env.login(t)
-	requireTip(t, resp, table.LoginError_kLoginAuthProviderUnavailable)
+	requireLoginFailureTip(t, resp, table.LoginError_kLoginAuthProviderUnavailable)
 	require.False(t, env.mr.Exists(constants.GetAccountDataKey("wx_any")), "认证失败不得初始化账号目录")
 }
 
 func TestLoginInvalidThirdPartyCredentialStillReturnsAccountNotFound(t *testing.T) {
 	env := newSemanticsEnv(t, semanticsProvider{err: errors.New("wechat: errcode=40029")}, false)
-	requireTip(t, env.login(t), table.LoginError_kLoginAccountNotFound)
+	requireLoginFailureTip(t, env.login(t), table.LoginError_kLoginAccountNotFound)
 }
 
 func TestLoginAccountDirectoryRedisFailureIsInBandFault(t *testing.T) {
@@ -116,21 +130,21 @@ func TestLoginAccountDirectoryRedisFailureIsInBandFault(t *testing.T) {
 	env := newSemanticsEnv(t, semanticsProvider{account: account}, false)
 	// 键类型不对:脚本里的 GET 报 WRONGTYPE,等价于账号目录读不出来的 Redis 故障,而锁键不受影响。
 	env.mr.HSet(constants.GetAccountDataKey(account), "field", "value")
-	requireTip(t, env.login(t), table.LoginError_kLoginRedisError)
+	requireLoginFailureTip(t, env.login(t), table.LoginError_kLoginRedisError)
 }
 
 func TestLoginCorruptAccountDirectoryIsInBandFault(t *testing.T) {
 	const account = "wx_corrupt_directory"
 	env := newSemanticsEnv(t, semanticsProvider{account: account}, false)
 	require.NoError(t, env.mr.Set(constants.GetAccountDataKey(account), "\xff\xff\xff"))
-	requireTip(t, env.login(t), table.LoginError_kLoginDataParseFailed)
+	requireLoginFailureTip(t, env.login(t), table.LoginError_kLoginDataParseFailed)
 }
 
 func TestLoginHTTPTokenIssueFailureReturnsFaultTip(t *testing.T) {
 	const account = "wx_token_failure"
 	env := newSemanticsEnv(t, semanticsProvider{account: account}, true)
 	resp := env.login(t)
-	requireTip(t, resp, table.LoginError_kLoginTokenIssueFailed)
+	requireLoginFailureTip(t, resp, table.LoginError_kLoginTokenIssueFailed)
 	require.Empty(t, resp.Players, "签发失败不得返回角色列表冒充成功")
 }
 

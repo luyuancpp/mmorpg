@@ -3034,3 +3034,12 @@ D:\luyuan\xuanming-server-mmo-cpp\cpp\libs\engine\core\node\system\node\node.h(3
 - 双已发布契约第二入口的真实发布清单和入口映射仍是独立未关闭事项，不猜邮件消息号，不将 ECS 代码完成解释为双契约兼容完成。
 
 本会话未 commit、push、tag；每个真实文件写入前检查 status/log，保存原件并在独占锁内校验，未回退、覆盖或丢弃其他会话工作，未手改生成产物、未更新审计文档 HEAD，未访问独立客户端仓库。
+
+
+## 17. Claude 按当前代码复核与补缺（2026-10-19）
+
+- 复核了 71 项和 2026-10-18 的补缺：70 项完成，4 项已在本次补齐（见 PROGRESS 2026-10-19 条目）。
+  - T5.3：删除每轮必跑的一次性迁移步骤 `RetireLegacyEventRegistries`。
+  - T3.1 / T11：规则文档补两条。
+  - T7.8 / T7.10：改正 Java 的 PARITY 与 AOI 契约文档里前后矛盾的口径。
+- 代码层面，本单至此全部完成。剩下的都是 §6 的运行验收，由 Codex 执行，从 proto-gen-build 重建生成器开始。未编译、未测试。

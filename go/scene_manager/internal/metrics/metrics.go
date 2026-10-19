@@ -171,6 +171,21 @@ var (
 		Help:      "LeaveScene holder-release verdicts before deleting a player location (released|owner_dead|no_holder|legacy_epoch0|disabled|pending|pending_unproven|forced).",
 	}, []string{"verdict"})
 
+	// enterHolderReleaseTotal 统计 EnterScene 同 zone 跨节点换手门以 18 拒绝之后,要不要替这次登录请持有节点释放
+	// (docs/design/location-release-binding.md §12)。verdict 取 internal/logic/enter_holder_release.go 的名表:
+	//   delivered / failed                        登录撞上未释放的持有者,已同步请它释放(持有节点应答 / RPC 失败或超时)
+	//   not_login                                 scene 自发的请求(换图第一跳等),18 的常规来源,不请
+	//   identity_not_newer                        登录请求但落点身份不是严格更新(同会话 / 任一侧无代次),只等不请
+	//   legacy_epoch0 / holder_unaddressable      epoch 未铸造 / location 寻址不到唯一持有节点,不请
+	//   chain_gone                                发起的登录链已结束(超时 / 丢锁),不请
+	//   disabled                                  持有者释放协议关着(与 LeaveScene 同一开关)
+	// failed 持续非 0 = 持有节点不可达或过慢;只按 verdict 分,player_id / 节点号 / epoch 一律只进日志。
+	enterHolderReleaseTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "enter_holder_release_total",
+		Help:      "EnterScene holder-release requests after a cross-node handoff-gate rejection (delivered|failed|not_login|identity_not_newer|legacy_epoch0|holder_unaddressable|chain_gone|disabled).",
+	}, []string{"verdict"})
+
 	// homeZoneLookupTotal 统计 EnterScene 里每一次归属 zone 查询的结果:
 	//   mapped        data_service 给出了归属 zone
 	//   unmapped      映射里没有这名玩家(首次落点 / 同 zone 换图按 gate zone 处理;跨 zone 传送的
@@ -469,6 +484,7 @@ func register() {
 			worldChannelDirectoryPublishTotal,
 			placementIdentityTotal,
 			leaveHolderReleaseTotal,
+			enterHolderReleaseTotal,
 			loadRefreshTotal, loadRefreshSeconds, loadRefreshNodeErrorsTotal,
 		)
 		for _, outcome := range loadRefreshOutcomes {
@@ -661,6 +677,13 @@ func ObservePlacementIdentity(site, verdict string) {
 func ObserveLeaveHolderRelease(verdict string) {
 	register()
 	leaveHolderReleaseTotal.WithLabelValues(verdict).Inc()
+}
+
+// ObserveEnterHolderRelease 记一次 EnterScene 换手门拒绝之后的持有者释放判定或结果,见 enterHolderReleaseTotal。
+// verdict 取 internal/logic/enter_holder_release.go 的名表与 delivered / failed(固定字符串,低基数)。
+func ObserveEnterHolderRelease(verdict string) {
+	register()
+	enterHolderReleaseTotal.WithLabelValues(verdict).Inc()
 }
 
 // ObserveWorldAutoscale 记一次大世界频道扩缩容动作。

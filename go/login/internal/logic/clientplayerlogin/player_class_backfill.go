@@ -167,7 +167,7 @@ func (l *EnterGameLogic) repairAccountAppearance(ctx context.Context, state ente
 }
 
 // accountRecordCASScript 在玩家登录锁与账号锁都仍归本链时,按整字节 CAS 改写账号目录 account:{account}。
-// 外观修复(repairAccountAppearance)与入场自愈(healAccountRole)共用。
+// 外观修复(repairAccountAppearance)用它;入场自愈另用多复核一次反向索引的 healAccountRoleScript。
 // KEYS = {账号目录键, 玩家登录锁键, 账号锁键};ARGV = {玩家锁令牌, 旧字节, 新字节, 账号锁令牌}。
 // 返回 1 = 已写;0 = 账号目录自读取以来变了,未写;-1 = 任一把锁已不归本链,未写。
 // 不带 KEEPTTL:账号目录本就不设 TTL(登录时会 PERSIST),写回同样是永久键。

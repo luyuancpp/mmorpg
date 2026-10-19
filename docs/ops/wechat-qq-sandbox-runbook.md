@@ -79,6 +79,39 @@ K8s:`tools/scripts/k8s_deploy.ps1` 传 `-LoginWeChatAppId` / `-LoginQQAppId` 渲
 `MMORPG_LOGIN_WECHAT_APP_SECRET` 读入 zone namespace 的 Secret `login-oauth`,经 `secretKeyRef` 注入 login 容器的
 `LOGIN_WECHAT_APP_SECRET`,不进 ConfigMap(沙箱 Endpoint 与 openid 回落开关见脚本参数注释)。
 
+六个参数(`-LoginWeChatAppId` / `-LoginWeChatEndpoint` / `-LoginWeChatAllowOpenId` / `-LoginQQAppId` / `-LoginQQEndpoint` /
+`-LoginQQAllowOpenId`)**不粘滞**:每次部署按本次取值重写 login ConfigMap,没给微信就删掉 Secret `login-oauth`。所以已开第三方登录的
+zone,之后每次重新部署都要照传同一组参数,部署机上也要再设一次 `MMORPG_LOGIN_WECHAT_APP_SECRET`。
+
+| 入口 | 第三方登录参数 | 漏传时 |
+|---|---|---|
+| 直接调 `k8s_deploy.ps1 -Command zone-up / all-up` | 原样生效 | 写操作之前拒绝(见下) |
+| `dev_tools.ps1 -Command k8s-zone-up / k8s-all-up` | 同名参数,非空 / 被指定才透传 | 同上(由 `k8s_deploy.ps1` 拒绝) |
+| `dev_tools.ps1 -Command k8s-zone-rollback`、`k8s_zone_rollback.ps1` | 同名参数,转给 Step 6 | 第 0 步在停服之前拒绝 |
+| `k8s_image.ps1`、`dev_tools.ps1 -Command k8s-image-* / k8s-release-*` | 不支持(这条路不部署 login,也碰不到 login 的 ConfigMap 与 Secret) | `dev_tools.ps1` 显式给了即拒绝 |
+
+**防误关(fail-closed)**:本次要部署 login 时,脚本先读每个 zone 线上的 login ConfigMap(`AuthProviders` 段)和 Secret
+`login-oauth` 是否存在(只用 `-o name`,不读密钥值),再和本次参数比对。下面任一情况都会在任何写操作之前拒绝,所有 zone 一次报全:
+
+- 关掉线上开着的 provider;
+- 漏传 Endpoint,沙箱会改连生产;
+- 漏传 AllowOpenId,`RequireUnionId` 翻回 true;
+- 换了 AppId;
+- 线上段认不出,或读不到集群。
+
+报错里给出照传现状的参数串,例如 `要保持现状请照传 -LoginWeChatAppId wx0123456789abcdef -LoginQQAppId 101234567`。线上没开、本次新开,不需要确认。
+
+确要关闭或改动时加 `-ConfirmLoginAuthProviderChange`。它是许可,不是指令:线上和本次一致时给了也不改任何东西。`-DryRun` 不读集群,
+所以不做这道核对。zone 回滚的 Step 1 会连 namespace 一起删掉 ConfigMap 和 Secret,所以核对提前到第 0 步。同一 rollback-id 重跑、
+namespace 已删时,以 `run/logs/zone-rollback/<rid>/entry-state.json` 里首次读到的现状为准。
+
+```powershell
+# 例:已开微信(沙箱 mock)+ QQ 的 staging zone,经包装入口重新部署
+$env:MMORPG_LOGIN_WECHAT_APP_SECRET = '<从密钥管理取,不要写进文件>'
+pwsh -File tools/scripts/dev_tools.ps1 -Command k8s-zone-up -ZoneName test1 -ZoneId 101 -ReleaseProfile staging `
+    -LoginWeChatAppId wx0123456789abcdef -LoginWeChatEndpoint https://wechat-mock.example.com -LoginQQAppId 101234567
+```
+
 本地测试(在 `go/login` 下;配置文件参数是 `-loginService`,不是 `-f`):
 
 ```powershell
@@ -140,26 +173,28 @@ curl -v -X POST http://${GATEWAY_HOST}:8081/api/login \
 }
 ```
 
-**典型失败 + 排查**:Java 网关对 login 的 in-band 错误一律回 `code:401`,`message` 是 `upstream_err=<tip 码>`(网关不回显
-provider 的错误文本);login 以 gRPC status 失败时,只有 UNAUTHENTICATED / PERMISSION_DENIED 回 401,其余回 500。
-具体原因看 login 日志 `Auth failed: type=... tip=... err=...`。
+**典型失败 + 排查**:Java 网关对 login 的 in-band 码按 `data/tip/Tip.xlsx` 的 `fault` 列定性:业务拒绝回 `code:401`,
+故障码回 `code:500`(2026-10-18 起,两版同批,见 `docs/design/tip-code-axis.md` §2.10);`message` 都是 `upstream_err=<tip 码>`
+(网关不回显 provider 的错误文本),HTTP 状态恒为 200。login 以 gRPC status 失败时,只有 UNAUTHENTICATED / PERMISSION_DENIED
+回 401,其余回 500。具体原因看 login 日志 `Auth failed: type=... tip=... err=...`。
 
 | 现象 | 原因 | 解 |
 |---|---|---|
 | `401 upstream_err=2000` + 日志 `wechat: empty code` | provider 收到空 token | 客户端没填 `auth_token`,检查 SDK 集成 |
-| `401 upstream_err=2000` + 日志 `wechat: errcode=40029` / `40163` | code 已用过 / 失效(玩家侧,不算故障) | 重新走 OAuth,**code 一次性 + 5 min 过期** |
-| `401 upstream_err=2035` + 日志 `errcode=40125` / `40013` / `40164` | AppSecret / AppId 不对,或出口 IP 不在白名单(故障码,in-band 告警) | 核对 Secret 与开放平台白名单 |
-| `401 upstream_err=2035` + 日志 `unionid missing` | 应用没绑开放平台主体 / 没有 unionid 权限 | 见 §D.4 |
-| `401 upstream_err=2035` + 日志 `http status` / `http error` / `bad json` | 渠道不可达、非 2xx、应答不可解析 | 查出口网络与渠道状态 |
-| `401 upstream_err=2036` | token 签发失败(写 Redis 失败;第三方 code 已被消费) | 查 login 的 Redis;客户端需重新走 OAuth |
-| `401 upstream_err=2021` / `2022` | 账号目录读 Redis 失败 / 记录损坏 | 查 login 的 Redis 与 `account:<account>` 键 |
+| `401 upstream_err=2000` + 日志 `wechat: errcode=40029` / `40163` | code 已用过 / 失效(玩家侧,不算故障) | 重新走 OAuth,**code 一次性 + 10 min 过期**(微信开放平台移动应用文档) |
+| `500 upstream_err=2035` + 日志 `errcode=40125` / `40013` / `40164` | AppSecret / AppId 不对,或出口 IP 不在白名单(故障码,in-band 告警) | 核对 Secret 与开放平台白名单 |
+| `500 upstream_err=2035` + 日志 `unionid missing` | 应用没绑开放平台主体 / 没有 unionid 权限 | 见 §D.4 |
+| `500 upstream_err=2035` + 日志 `http status` / `http error` / `bad json` | 渠道不可达、非 2xx、应答不可解析 | 查出口网络与渠道状态 |
+| `500 upstream_err=2036` | token 签发失败(写 Redis 失败;第三方 code 已被消费) | 查 login 的 Redis;客户端需重新走 OAuth |
+| `500 upstream_err=2021` / `2022` | 账号目录读 Redis 失败 / 记录损坏 | 查 login 的 Redis 与 `account:<account>` 键 |
 | `500 login_unavailable` | login.rpc 没起 / 网络不通 / 超时 | `docker ps`、`netstat -an`(找 50000 端口) |
 | login 起不来,panic 点名 `AuthProviders.*` | 配置门禁拒绝(未展开的 `${...}`、生产模式内联密钥、http Endpoint 等) | 按 §B 改配置 |
 
-> 2035 / 2036 是 `kLoginAuthProviderUnavailable` / `kLoginTokenIssueFailed`(2026-10-18 新增,数值以导表结果为准,
+> 2035 / 2036 是 `kLoginAuthProviderUnavailable` / `kLoginTokenIssueFailed`(2026-10-18 新增,导表结果即 2035 / 2036,
 > 见 `data/tip/Tip.xlsx` 与 `generated/code/proto/tip/login_error_tip.proto`)。旧版本文的「`code:0` 但 access_token 空」
-> 已不会出现:HTTP 路径签发失败现在回 2036。网关 HTTP 业务码对 in-band 故障仍是 401(客户端按 tip 码区分文案),
-> 这一点是已知残留,见 `docs/design/third-party-login-end-to-end-design.md` §三。
+> 已不会出现:HTTP 路径签发失败现在回 2036。原「网关对 in-band 故障仍回 401」的已知残留已于同日收口:故障码回 500,
+> 见 `docs/design/third-party-login-end-to-end-design.md` §三。客户端收到 500 + 2035 / 2036 时,微信要重新拉起授权拿新 code,
+> 不能原样重发旧 code。
 
 ### C.3 验证账号映射
 
@@ -324,7 +359,7 @@ curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/js
 ```bash
 curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/json' \
   -d '{"zone_id":1,"auth_type":"wechat","auth_token":"plain_code","device_id":"sandbox-1"}'
-# 期望: {"code":401,"message":"upstream_err=2035"},login 日志 "unionid missing",Redis 里没有新的 account:wx_openid_*
+# 期望: {"code":500,"message":"upstream_err=2035"},login 日志 "unionid missing",Redis 里没有新的 account:wx_openid_*
 ```
 要验证回落路径,先在 WeChat 段显式加 `RequireUnionId: false` 再重启 login,同一请求才会建出 `account:wx_openid_*`。
 
@@ -369,6 +404,7 @@ curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/js
 - 代码: `go/login/internal/logic/pkg/auth/providers.go`(WeChatProvider / QQProvider)
 - 代码: `go/login/internal/svc/auth_init.go`(provider 注册)
 - 代码: `java/gateway_node/.../grpc/LoginRpcClient.java`(auth_type/auth_token wire 透传)
+- 部署: `tools/scripts/k8s_deploy.ps1`(`-LoginWeChatAppId` 等六个参数、`Assert-LoginAuthProviderClusterState` 防误关)、`tools/scripts/k8s_zone_rollback.ps1` 第 0 步
 
 ---
 
@@ -381,3 +417,8 @@ curl -s -X POST http://127.0.0.1:8081/api/login -H 'Content-Type: application/js
 - §C.3 账号目录键前缀是 `account:`,不是 `account_data:`;账号目录只在 Redis,没有 MySQL `UserAccounts` 表可查。
 - §C.2 / §G.3 的失败返回按网关实际行为改为 `upstream_err=<tip 码>`;渠道故障与签发失败有了独立故障码 2035 / 2036。
 - §D.4 / §G.3:拿不到 unionid 缺省拒绝,不再回落 openid。
+- §B K8s(同日补):包装入口(`dev_tools.ps1` 的 k8s-zone-up / k8s-all-up / k8s-zone-rollback、`k8s_zone_rollback.ps1`)照传六个第三方登录参数;
+  线上已开的第三方登录会被本次参数关掉或改掉时 fail-closed,确要改加 `-ConfirmLoginAuthProviderChange`(判据在
+  `tools/scripts/lib/k8s_client_entry.ps1` `Get-LoginAuthProviderDrift`)。以前经包装入口重部署会静默关掉微信 / QQ 登录并删掉 Secret `login-oauth`。
+- §C.2 / §G.3(2026-10-19 补):网关按 `Tip.xlsx` 的 `fault` 列定性后,2035 / 2036 / 2021 / 2022 回 `code:500`,不再是 401;
+  删去「对 in-band 故障仍回 401 是已知残留」。微信 code 时效按开放平台移动应用文档改为 10 分钟(原写 5 分钟)。

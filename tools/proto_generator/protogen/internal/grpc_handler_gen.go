@@ -158,7 +158,7 @@ func renderGrpcServiceHandlerHead(methods RPCMethods, sections map[string]string
 		"grpcServerMethodPath": grpcServerMethodPath,
 	}
 
-	return utils.GlobalEngine.MustExecute("grpcServiceHandlerHead", grpcServiceHandlerHeadTemplate, data, funcs)
+	return utils.GlobalEngine.Render("grpcServiceHandlerHead", grpcServiceHandlerHeadTemplate, data, funcs)
 }
 
 // GetGrpcServiceHandlerCppStr generates the gRPC service handler CPP file content.
@@ -209,7 +209,7 @@ func GetGrpcServiceHandlerCppStr(dst string, methods RPCMethods, className strin
 		Methods:      methodList,
 	}
 
-	return utils.ExecuteTemplate("grpcServiceHandlerCpp", grpcServiceHandlerCppTemplate, data)
+	return utils.RenderTemplateOrExit("grpcServiceHandlerCpp", grpcServiceHandlerCppTemplate, data)
 }
 
 // GenerateGrpcHandlerNameWrapper generates the method lookup key for code parsing.

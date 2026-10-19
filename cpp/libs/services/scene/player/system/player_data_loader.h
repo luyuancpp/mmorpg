@@ -25,7 +25,7 @@ void PlayerDatabase1MessageFieldsUnmarshal(entt::entity player, const player_dat
     return true;
 }
 
-inline void PlayerAllDataMessageFieldsUnMarshal(entt::entity player, const PlayerAllData& message)
+inline void PlayerAllDataMessageFieldsUnmarshal(entt::entity player, const PlayerAllData& message)
 {
     // 先把旧顶层数据并入数据库记录，再统一解码，保证派生属性初始化能看到装备与任务。
     const bool legacyBag = !message.player_database_data().has_bag_component() && message.has_bag_data();

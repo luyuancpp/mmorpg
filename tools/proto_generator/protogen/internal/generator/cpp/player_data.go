@@ -18,29 +18,29 @@ import (
 	"protogen/logger"
 )
 
-type PlayerDBProtoFieldData struct {
+type playerDatabaseField struct {
 	Name     string
 	TypeName string
 }
 
-type DescData struct {
-	Fields      []PlayerDBProtoFieldData
+type playerDataLoaderTemplateData struct {
+	Fields      []playerDatabaseField
 	HandlerName string
 	MessageType string
-	Entries     []HeaderEntry
+	Entries     []playerDataLoaderEntry
 }
 
-type HeaderEntry struct {
+type playerDataLoaderEntry struct {
 	HandlerName string // e.g. "PlayerDatabase1"
 	MessageType string // e.g. "player_database1"
 }
 
-type HeaderTemplateInput struct {
-	Entries []HeaderEntry
+type playerDataLoaderHeaderData struct {
+	Entries []playerDataLoaderEntry
 }
 
-func GenerateCppPlayerHeaderFile(outputPath string, entries []HeaderEntry) error {
-	data := HeaderTemplateInput{Entries: entries}
+func GenerateCppPlayerHeaderFile(outputPath string, entries []playerDataLoaderEntry) error {
+	data := playerDataLoaderHeaderData{Entries: entries}
 	return utils.RenderTemplateToFile("internal/template/player_data_loader.h.tmpl", outputPath, data)
 }
 
@@ -73,7 +73,7 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 			return
 		}
 
-		var headerEntries []HeaderEntry
+		var headerEntries []playerDataLoaderEntry
 
 		for _, fileDesc := range internal.FdSet.GetFile() {
 			for _, messageDesc := range fileDesc.GetMessageType() {
@@ -81,10 +81,10 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 					continue
 				}
 
-				handleName := strcase.ToCamel(*messageDesc.Name)
+				handlerName := strcase.ToCamel(*messageDesc.Name)
 				messageType := *messageDesc.Name
-				headerEntries = append(headerEntries, HeaderEntry{
-					HandlerName: handleName,
+				headerEntries = append(headerEntries, playerDataLoaderEntry{
+					HandlerName: handlerName,
 					MessageType: messageType,
 				})
 			}
@@ -97,15 +97,15 @@ func CppPlayerDataLoadGenerator(wg *sync.WaitGroup) {
 				}
 
 				messageDescName := strings.ToLower(*messageDesc.Name)
-				handleName := strcase.ToCamel(*messageDesc.Name)
+				handlerName := strcase.ToCamel(*messageDesc.Name)
 				filePath := _config.Global.Paths.PlayerStorageTempDir + messageDescName + _config.Global.FileExtensions.LoaderCpp
-				filedList := generateDatabaseFiles(messageDesc)
+				fields := collectPlayerDatabaseFields(messageDesc)
 				messageType := *messageDesc.Name
 
-				err := generateCppDeserializeFromDatabase(
+				err := renderPlayerDataCodec(
 					filePath,
-					handleName,
-					filedList,
+					handlerName,
+					fields,
 					messageType,
 					headerEntries)
 
@@ -142,8 +142,8 @@ func printMessageFields(descriptor *descriptorpb.DescriptorProto) {
 	}
 }
 
-func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBProtoFieldData {
-	result := make([]PlayerDBProtoFieldData, len(descriptor.GetField()))
+func collectPlayerDatabaseFields(descriptor *descriptorpb.DescriptorProto) []playerDatabaseField {
+	result := make([]playerDatabaseField, len(descriptor.GetField()))
 
 	for i, field := range descriptor.GetField() {
 		result[i].Name = field.GetName()
@@ -153,8 +153,8 @@ func generateDatabaseFiles(descriptor *descriptorpb.DescriptorProto) []PlayerDBP
 	return result
 }
 
-func generateCppDeserializeFromDatabase(fileName string, handlerName string, fields []PlayerDBProtoFieldData, messageType string, entries []HeaderEntry) error {
-	data := DescData{
+func renderPlayerDataCodec(fileName string, handlerName string, fields []playerDatabaseField, messageType string, entries []playerDataLoaderEntry) error {
+	data := playerDataLoaderTemplateData{
 		Fields:      fields,
 		HandlerName: handlerName,
 		MessageType: messageType,
@@ -163,4 +163,3 @@ func generateCppDeserializeFromDatabase(fileName string, handlerName string, fie
 
 	return utils.RenderTemplateToFile("internal/template/player_data_loader.cpp.tmpl", fileName, data)
 }
-

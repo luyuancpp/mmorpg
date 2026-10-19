@@ -59,4 +59,12 @@ message ReleasePlayerRequest {
   // 本节点完全不持有(无实体、无在途载入、无改派待确认)→ 按 owner_epoch == expected_owner_epoch 条件补写凭证标记;其余忽略。
   // false = 交接释放(上面的原语义)。旧版 scene 忽略本字段、按交接释放处理,所以 scene 必须先于 SceneManager 发布。
   bool session_ended = 5;
+  // 本次会话结束释放覆盖到的最新登录身份(docs/design/location-release-binding.md §13)。只在 session_ended = true 时有意义。
+  // 持有节点在归属代际判定放行之后再比实体当前绑定的登录身份(PlayerLoginIdentityComp):实体代次更大,或代次相等而
+  // 会话号不同(两边都是有效会话)→ 实体已绑上一次更新的登录,这是一条迟到的释放,不退出、计数并 WARN;其余照常退出。
+  // 填法:LeaveScene 填被清理的会话(离场请求的 session_id / login_generation);登录撞上未释放的持有者时填发起这次登录的会话
+  // (它已取代 location 上的会话、自己要落到别的节点,本节点上不比它新的那一份都该退出)。
+  // covered_login_generation = 0 = 旧版调用方,按现行为(只比 owner_epoch)。会话号 0 只按代次比。不进存盘,不替代 owner_epoch。
+  uint32 covered_session_id = 6;
+  uint64 covered_login_generation = 7;
 }

@@ -13,7 +13,7 @@
 struct AcceptMissionEvent;
 struct ConditionEvent;
 
-using MissionsBits = std::bitset<kMissionMaxBitIndex>;
+using MissionsBits = std::bitset<kMissionBitmapCapacity>;
 
 /// Per-scope container for active and completed missions.
 class MissionsComp

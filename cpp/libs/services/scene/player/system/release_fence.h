@@ -6,6 +6,9 @@
 #include <cstdint>
 #include <iterator>
 
+// SessionId / IsBoundSession:会话结束释放的登录身份判定(DecideSessionEndedBinding)用。写全路径,与 enter_fence.h 同理。
+#include "services/scene/player/system/player_exit_intent.h"
+
 // scene_manager → scene 的 ReleasePlayer 归属栅栏。设计:docs/design/scene-enter-chain-residuals.md §4(余项 c)。
 //
 // 为什么需要:ReleasePlayer 原先只带 player_id。scene_manager 的释放有重试(首发失败按 1s / 3s 退避,最坏约 7s 才送达),
@@ -23,7 +26,9 @@
 // 单测:cpp/tests/cross_zone_test 的 ReleaseFence* / ReleaseFenceEcs*。
 //
 // 不变量(改任何一条先重过设计 §4.2 与 §4.6):
-//   * 只比 owner_epoch(归属代际),不看会话、不看登录代次;登录代次也不进这里的判定(设计 §1.3)。
+//   * Decide 只比 owner_epoch(归属代际),不看会话、不看登录代次;登录代次也不进这里的判定(设计 §1.3)。
+//     例外只有会话结束释放:Decide 放行之后再过一道登录身份判定 DecideSessionEndedBinding
+//     (docs/design/location-release-binding.md §13)。交接释放不过这一道,两道判定互不改对方的结论。
 //   * 只读本地缓存 PlayerOwnerEpochComp.epoch,不读 Redis、不采纳 epoch(CZ-3)。
 //   * 判定零副作用,且在任何副作用之前做完:被忽略的请求不碰会话、待入场上下文、改派票据、待确认条目与退出意图,
 //     不做 MergeExitCause,也不触发超限重踢。
@@ -202,6 +207,103 @@ namespace release_fence
 		}
 		return SessionEndedCredential::kWrite;
 	}
+
+	// ── 会话结束释放的登录身份判定(ReleasePlayerRequest.covered_*,docs/design/location-release-binding.md §13)────────
+	//
+	// Decide 只回答"实体是不是 expected 那一代的持有者"。同物理节点重登不铸造 owner_epoch,同一个 E 下实体可以先服务旧会话、
+	// 再被新登录复用;一条迟到的会话结束释放(登录撞门的同步请求超时后才在本节点执行 / LeaveScene 的后台派发晚于新登录到达)
+	// 只比 E 就会把刚绑上新会话的实体按断线退出。所以本节点持有、Decide 判释放之后再比一次登录身份:请求带"这次释放覆盖到的
+	// 最新登录身份",实体当前绑定的登录身份(PlayerLoginIdentityComp)比它新就不退出。
+	//
+	// 先比代次、后比会话号,与入场栅栏"同一会话一律放行"的口径**有意不同**:入场请求与 ExitGame 走同一条 gate→scene 连接,
+	// FIFO 让同会话号的到达序就是 gate 的决策序;释放走 scene_manager 的 gRPC,没有这层顺序。同一连接 LeaveGame 后再登录
+	// 会话号不变、代次变大(scene-enter-chain-residuals.md §3.2),只比会话号会把这次新登录当成被覆盖的旧会话退掉。
+	// 口径与 scene_manager 的离场身份裁决 decideLeaveIdentity 一致(代次大者新,同代异会话算冲突)。
+	//
+	// 底层类型 uint8_t 数的是结论种类数(现 5 种)。名字同时是 [ReleaseFence] 汇总行里 binding_ 后缀的 key。
+	// kCount 固定为最后一项,同时是名表长度。前三项照常退出,后两项不退出。
+	enum class SessionEndedBinding : uint8_t
+	{
+		kCovered,            // 实体代次 < 覆盖代次,或相等且会话相同 / 任一侧没有有效会话:实体服务的就是被覆盖的会话,退出
+		kUnversionedRequest, // 覆盖代次 0(旧版 scene_manager):按现行为退出,计数;scene_manager 全量升级后应恒为 0
+		kUnversionedEntity,  // 实体没有登录代次(没有 PlayerLoginIdentityComp,或旧版 login 放行的代次 0):证明不了它更新,
+		                     // 按现行为退出,计数
+		kSkipNewerLogin,     // 实体代次 > 覆盖代次:实体已绑上一次更新的登录,这是一条迟到的释放,不退出
+		kSkipConflict,       // 代次相等、两边会话都有效且不同(违反 G2 一登一号):分不清哪一份该退,退出是破坏性动作,不退出
+
+		kCount
+	};
+
+	constexpr std::size_t kSessionEndedBindingCount = static_cast<std::size_t>(SessionEndedBinding::kCount);
+
+	inline constexpr const char *kSessionEndedBindingNames[] = {
+		"covered",
+		"unversioned_request",
+		"unversioned_entity",
+		"skip_newer_login",
+		"skip_conflict",
+	};
+	static_assert(std::size(kSessionEndedBindingNames) == kSessionEndedBindingCount,
+				  "kSessionEndedBindingNames 必须与 SessionEndedBinding 一一对应");
+
+	constexpr const char *SessionEndedBindingName(SessionEndedBinding binding)
+	{
+		const auto index = static_cast<std::size_t>(binding);
+		return index < kSessionEndedBindingCount ? kSessionEndedBindingNames[index] : "?";
+	}
+
+	// 是否照常退出。越界值按不退出处理(fail-closed:退出是破坏性动作)。
+	constexpr bool BindingReleases(SessionEndedBinding binding)
+	{
+		switch (binding)
+		{
+		case SessionEndedBinding::kCovered:
+		case SessionEndedBinding::kUnversionedRequest:
+		case SessionEndedBinding::kUnversionedEntity:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	// 出现即值得人看一眼的结论:30s 汇总行在这几项有增长时升 WARN。skip_newer_login 就是这道判定挡下的那条迟到释放
+	// (与 skip_stale_release 同性质);两项 unversioned 是滚动窗口常态,不升级。
+	constexpr bool BindingAlarming(SessionEndedBinding binding)
+	{
+		return binding == SessionEndedBinding::kSkipNewerLogin || binding == SessionEndedBinding::kSkipConflict;
+	}
+
+	// 实体当前绑定的登录身份对一条会话结束释放的结论,按顺序判:
+	//   coveredGeneration == 0                                    → kUnversionedRequest
+	//   entityGeneration == 0                                     → kUnversionedEntity
+	//   entityGeneration >  coveredGeneration                     → kSkipNewerLogin
+	//   代次相等、两边会话都有效(IsBoundSession)且不同            → kSkipConflict
+	//   其余(实体代次更小;代次相等且会话相同或任一侧没有会话)    → kCovered
+	// entitySession / entityGeneration 取实体的 PlayerLoginIdentityComp(缺失按 kInvalidSessionId / 0 传入);
+	// coveredSession / coveredGeneration 取 ReleasePlayerRequest.covered_session_id / covered_login_generation。
+	// 会话号无效只是"没得比",不当作不同;代次相等而有一侧没有会话时按同一登录处理(G2:一个非 0 代次只属于一条会话)。
+	constexpr SessionEndedBinding DecideSessionEndedBinding(SessionId entitySession, uint64_t entityGeneration,
+															SessionId coveredSession, uint64_t coveredGeneration)
+	{
+		if (coveredGeneration == 0)
+		{
+			return SessionEndedBinding::kUnversionedRequest;
+		}
+		if (entityGeneration == 0)
+		{
+			return SessionEndedBinding::kUnversionedEntity;
+		}
+		if (entityGeneration > coveredGeneration)
+		{
+			return SessionEndedBinding::kSkipNewerLogin;
+		}
+		if (entityGeneration == coveredGeneration && player_exit::IsBoundSession(entitySession) &&
+			player_exit::IsBoundSession(coveredSession) && entitySession != coveredSession)
+		{
+			return SessionEndedBinding::kSkipConflict;
+		}
+		return SessionEndedBinding::kCovered;
+	}
 } // namespace release_fence
 
 // 栅栏计数。写法同 enter_fence.h 的 enter_fence_stats(relaxed atomic、不接 Prometheus、player_id 不做 label、
@@ -215,6 +317,9 @@ namespace release_fence
 //                            LeaveScene 拿不到释放证据时才会发,平时低速率;持续升高看 scene_manager 的 pending 计数
 //   credential_<结论>        本节点完全不持有时的凭证判定分布,key 见 release_fence::kSessionEndedCredentialNames
 //   credential_written / credential_epoch_moved / credential_failed  凭证条件写的结果(与 A1′ 同一段 Lua)
+//   binding_<结论>           本节点持有、归属代际已判释放的会话结束释放再过登录身份判定的分布(§13),key 见
+//                            release_fence::kSessionEndedBindingNames。会话结束释放在 verdicts[] 里记的只是代际判定:
+//                            代际放行而 binding_skip_* 挡下的那几次同样记在 verdicts 的 release 系列里,实际退出次数要相减
 namespace release_fence_stats
 {
 	struct Counters
@@ -226,6 +331,7 @@ namespace release_fence_stats
 		std::atomic<uint64_t> credentialWritten{0};
 		std::atomic<uint64_t> credentialEpochMoved{0};
 		std::atomic<uint64_t> credentialFailed{0};
+		std::array<std::atomic<uint64_t>, release_fence::kSessionEndedBindingCount> bindingDecisions{};
 	};
 
 	inline Counters &Get()
@@ -256,6 +362,16 @@ namespace release_fence_stats
 		}
 	}
 
+	// 越界值不计(DecideSessionEndedBinding 产不出越界值;防御写法)。
+	inline void IncBindingDecision(release_fence::SessionEndedBinding binding)
+	{
+		const auto index = static_cast<std::size_t>(binding);
+		if (index < release_fence::kSessionEndedBindingCount)
+		{
+			Inc(Get().bindingDecisions[index]);
+		}
+	}
+
 	struct Snapshot
 	{
 		std::array<uint64_t, release_fence::kVerdictCount> verdicts{};
@@ -265,15 +381,24 @@ namespace release_fence_stats
 		uint64_t credentialWritten{0};
 		uint64_t credentialEpochMoved{0};
 		uint64_t credentialFailed{0};
+		std::array<uint64_t, release_fence::kSessionEndedBindingCount> bindingDecisions{};
 
 		bool operator==(const Snapshot &) const = default;
 
-		// 与上一次汇总相比,release_fence::Alarming 的几项是否有增长:30s 汇总行据此判断要不要升 WARN。
+		// 与上一次汇总相比,release_fence::Alarming / BindingAlarming 的几项是否有增长:30s 汇总行据此判断要不要升 WARN。
 		bool AlarmingIncreaseSince(const Snapshot &previous) const
 		{
 			for (std::size_t i = 0; i < verdicts.size(); ++i)
 			{
 				if (release_fence::Alarming(static_cast<release_fence::Verdict>(i)) && verdicts[i] > previous.verdicts[i])
+				{
+					return true;
+				}
+			}
+			for (std::size_t i = 0; i < bindingDecisions.size(); ++i)
+			{
+				if (release_fence::BindingAlarming(static_cast<release_fence::SessionEndedBinding>(i)) &&
+					bindingDecisions[i] > previous.bindingDecisions[i])
 				{
 					return true;
 				}
@@ -299,6 +424,10 @@ namespace release_fence_stats
 		snapshot.credentialWritten = counters.credentialWritten.load(std::memory_order_relaxed);
 		snapshot.credentialEpochMoved = counters.credentialEpochMoved.load(std::memory_order_relaxed);
 		snapshot.credentialFailed = counters.credentialFailed.load(std::memory_order_relaxed);
+		for (std::size_t i = 0; i < snapshot.bindingDecisions.size(); ++i)
+		{
+			snapshot.bindingDecisions[i] = counters.bindingDecisions[i].load(std::memory_order_relaxed);
+		}
 		return snapshot;
 	}
 } // namespace release_fence_stats

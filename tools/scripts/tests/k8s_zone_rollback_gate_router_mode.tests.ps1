@@ -1077,6 +1077,160 @@ Test-Case '[10] 入口决定存档:首次 -Apply 在 Step 1 之前写 entry-stat
 }
 
 # ─────────────────────────────────────────────────────────────────
+# 第 0 步 a:login 第三方登录(微信 / QQ)的防误关(-Apply,沙箱)
+# Step 1 连 login ConfigMap 与 Secret login-oauth 一起删,k8s_deploy.ps1 自己的防误关闸在 Step 6 面对空 namespace,
+# 所以回滚脚本在停服之前按同一份判据(lib Get-LoginAuthProviderDrift)核对。入口三项一律显式,不读 gate / Ingress,
+# 只看第三方登录这一道。线上的 AuthProviders 段按 k8s_deploy.ps1 New-LoginAuthProvidersYaml 的形状手写
+# (生成器与解析器口径一致由 k8s_login_auth_provider_guard.tests.ps1 的往返用例钉住)。
+# ─────────────────────────────────────────────────────────────────
+
+$LoginAuthQuietEntry = @{ ClientEntryMode = 'podip'; ConfirmNoGatewayIngress = $true }
+$LoginAuthLiveYaml = @(
+    'AuthProviders:',
+    '  WeChat:',
+    '    AppId: "wx0123456789abcdef"',
+    '    AppSecretEnv: "LOGIN_WECHAT_APP_SECRET"',
+    '    RequireUnionId: false',
+    '    Endpoint: "https://wechat-mock.contract.test:18090"',
+    '  QQ:',
+    '    AppId: "100000001"'
+) -join "`n"
+$LoginAuthLiveConfigMap = New-RollbackLoginConfigMapReply -AuthProvidersYaml $LoginAuthLiveYaml
+$LoginAuthLiveSecret = @{ ExitCode = 0; Output = 'secret/login-oauth' }
+# 照传线上现状的那组参数(与 $LoginAuthLiveYaml 一一对应)。
+$LoginAuthKeepArgs = @{ LoginWeChatAppId = 'wx0123456789abcdef'; LoginWeChatEndpoint = 'https://wechat-mock.contract.test:18090'; LoginWeChatAllowOpenId = $true; LoginQQAppId = '100000001' }
+$LoginAuthKeepText = '-LoginWeChatAppId wx0123456789abcdef -LoginWeChatEndpoint https://wechat-mock.contract.test:18090 -LoginWeChatAllowOpenId -LoginQQAppId 100000001'
+
+Test-Case '-Apply 第三方登录防误关:线上开着微信 + QQ,本次漏传 → 停服之前、静态预检之前拒绝并给出照传参数串;照传后放行,静态预检与 Step 6 收到同一组 -Login*' {
+    $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $LoginAuthQuietEntry `
+        -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-RefusedBeforeStop -Run $run -Label '漏传第三方登录' -HintPattern ('要保持现状请照传 ' + [regex]::Escape($LoginAuthKeepText))
+    Assert-Match -Text $run.Error -Pattern '线上已开 AuthProviders\.WeChat,本次没给 -LoginWeChatAppId[^\r\n]*并删除 Secret login-oauth' -Because '要写明漏传会关掉微信并删掉 Secret'
+    Assert-Match -Text $run.Error -Pattern '线上已开 AuthProviders\.QQ,本次没给 -LoginQQAppId' -Because 'QQ 同样逐项列出'
+    Assert-Match -Text $run.Error -Pattern '确认要关闭或改动,加 -ConfirmLoginAuthProviderChange' -Because '要告诉操作者确要关闭时怎么继续'
+    Assert-Equal -Expected 0 -Actual $run.DevToolsCalls.Count -Because '防误关只读两次 kubectl,排在要完整渲染 zone-up 的静态预检之前(便宜的先拒)'
+    Assert-Equal -Expected 0 -Actual $run.KubectlCalls.Count -Because '入口三项都显式,gate / Ingress 那次 kubectl 不该发生'
+    Assert-Equal -Expected 2 -Actual $run.LoginAuthCalls.Count -Because '只读 login ConfigMap 与 Secret 是否存在各一次'
+    $configMapCall = @($run.LoginAuthCalls | Where-Object { $_ -match '(^| )go-svc-login-config( |$)' })
+    $secretCall = @($run.LoginAuthCalls | Where-Object { $_ -match '(^| )login-oauth( |$)' })
+    Assert-Equal -Expected 1 -Actual $configMapCall.Count -Because '读一次 login ConfigMap'
+    Assert-Match -Text $configMapCall[0] -Pattern ('^get configmap go-svc-login-config -n ' + [regex]::Escape($SandboxNamespace) + ' --ignore-not-found -o json$') -Because 'ConfigMap 只读、读本 zone namespace'
+    Assert-Equal -Expected 1 -Actual $secretCall.Count -Because '读一次 Secret 是否存在'
+    Assert-Match -Text $secretCall[0] -Pattern ('^get secret login-oauth -n ' + [regex]::Escape($SandboxNamespace) + ' --ignore-not-found -o name$') -Because 'Secret 只用 -o name 探测存在性,绝不 -o json / yaml 读出密钥值'
+    Assert-NotMatch -Text ($run.Output + $run.Error) -Pattern 'contract-login-secret-never-read' -Because 'login ConfigMap 里别的值不进输出'
+
+    $extra = $LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-keep' }
+    $passed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $extra -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-True -Condition ($null -eq $passed.Error) -Because "照传线上现状必须放行。错误: $($passed.Error)"
+    Assert-Match -Text $passed.Output -Pattern ('login WeChat / QQ login: live state matches this run''s -Login\* arguments \(' + [regex]::Escape($LoginAuthKeepText) + '\)') -Because '放行时要写明核对通过'
+    $up = Get-BoundLine -Run $passed -Command 'k8s-zone-up'
+    $dry = Get-BoundLine -Run $passed -Command 'k8s-zone-up/dry-run'
+    foreach ($pair in @('LoginWeChatAppId=wx0123456789abcdef', 'LoginWeChatEndpoint=https://wechat-mock.contract.test:18090', 'LoginWeChatAllowOpenId=True', 'LoginQQAppId=100000001')) {
+        Assert-Match -Text $up -Pattern ('(^| |;)' + [regex]::Escape($pair) + '(;|$)') -Because "Step 6 必须收到 $pair(不粘滞,漏一个就关掉或改掉第三方登录)"
+    }
+    Assert-NotMatch -Text $up -Pattern 'LoginQQEndpoint|LoginQQAllowOpenId|ConfirmLoginAuthProviderChange' -Because '没给的不转发:默认值只在 k8s_deploy.ps1 一处'
+    Assert-Equal -Expected ($up -replace '^\S+ ', '') -Actual ($dry -replace '^\S+ ', '') -Because '静态预检的就是 Step 6 将要执行的那一份(给了 -LoginWeChatAppId 时它会要求 MMORPG_LOGIN_WECHAT_APP_SECRET)'
+    $down = Get-BoundLine -Run $passed -Command 'k8s-zone-down'
+    Assert-NotMatch -Text $down -Pattern 'Login(WeChat|QQ)|ConfirmLogin' -Because 'Step 1 只删 namespace,不传第三方登录参数'
+    $saved = $passed.ReportFiles['entry-state.json']
+    foreach ($pair in @('"LoginWeChatAppId": "wx0123456789abcdef"', '"LoginWeChatAllowOpenId": "true"', '"LoginQQAppId": "100000001"', '"ConfirmLoginAuthProviderChange": ""', '"OAuthSecretPresent": true')) {
+        Assert-Match -Text $saved -Pattern ([regex]::Escape($pair)) -Because "入口决定存档要记下 $pair(同一 rid 重跑以它为准)"
+    }
+    Assert-Match -Text $saved -Pattern '"LoginAuthState"' -Because '核对过的 login 第三方登录现状随存档落盘'
+    Assert-NotMatch -Text $saved -Pattern 'contract-login-secret-never-read' -Because '存档只记 AuthProviders 的公开值与 Secret 在不在,不记 ConfigMap 里别的值'
+}
+
+Test-Case '-Apply 第三方登录防误关:AppId 照传而漏传 Endpoint / AllowOpenId 同样拒绝;-ConfirmLoginAuthProviderChange 不读线上、放行并只透传到 Step 6' {
+    $partial = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' `
+        -ExtraArgs ($LoginAuthQuietEntry + @{ LoginWeChatAppId = 'wx0123456789abcdef'; LoginQQAppId = '100000001' }) `
+        -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-RefusedBeforeStop -Run $partial -Label '漏传 Endpoint / AllowOpenId' -HintPattern '-ConfirmLoginAuthProviderChange'
+    Assert-Match -Text $partial.Error -Pattern 'AuthProviders\.WeChat\.Endpoint:线上指向自定义 Endpoint\(沙箱\),本次没给 -LoginWeChatEndpoint 会改连生产地址' -Because '漏传 Endpoint 会把沙箱改连生产'
+    Assert-Match -Text $partial.Error -Pattern 'AuthProviders\.WeChat\.RequireUnionId:线上 RequireUnionId: false[^\r\n]*没给 -LoginWeChatAllowOpenId 会翻回 true' -Because '漏传 AllowOpenId 会让拿不到 unionid 的玩家登录失败'
+    Assert-NotMatch -Text $partial.Error -Pattern 'AuthProviders\.QQ' -Because 'QQ 与线上一致,不该列为问题'
+
+    $confirmed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + @{ ConfirmLoginAuthProviderChange = $true }) `
+        -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-True -Condition ($null -eq $confirmed.Error) -Because "显式确认按本次参数重建,必须放行。错误: $($confirmed.Error)"
+    Assert-Equal -Expected 0 -Actual $confirmed.LoginAuthCalls.Count -Because '显式确认后不读线上 login ConfigMap / Secret(地位同 -ConfirmNoGatewayIngress)'
+    Assert-Match -Text $confirmed.Output -Pattern 'Explicit -ConfirmLoginAuthProviderChange' -Because '输出要写明本次没有核对线上第三方登录'
+    $up = Get-BoundLine -Run $confirmed -Command 'k8s-zone-up'
+    Assert-Match -Text $up -Pattern '(^| |;)ConfirmLoginAuthProviderChange=True(;|$)' -Because 'namespace 没删净时 k8s_deploy.ps1 的防误关闸同样要放行,确认开关透传到 Step 6'
+    Assert-NotMatch -Text $up -Pattern 'LoginWeChat|LoginQQ' -Because '没给的不转发'
+    Assert-NotMatch -Text (Get-BoundLine -Run $confirmed -Command 'k8s-zone-down') -Pattern 'ConfirmLogin' -Because 'Step 1 不传确认开关'
+}
+
+Test-Case '-Apply 第三方登录防误关:读不到(kubectl 失败 / 不可用)、namespace 里没有 login ConfigMap 且无存档、AuthProviders 认不出,都判不出 → 停服之前拒绝' {
+    $cases = @(
+        @{ Label = 'kubectl 以非 0 退出'; Reply = @{ ExitCode = 1; Output = 'Error from server (Forbidden): configmaps "go-svc-login-config" is forbidden' }; Hint = '读不到 namespace [^\r\n]* 里 login 第三方登录的线上现状' },
+        @{ Label = 'kubectl 不可用'; Reply = @{ Throw = "The term 'kubectl' is not recognized" }; Hint = '读不到 namespace [^\r\n]* 里 login 第三方登录的线上现状' },
+        @{ Label = 'login ConfigMap 不在、没有存档'; Reply = (New-RollbackLoginConfigMapReply -Absent); Hint = '同一 rid 的存档里也没有 login 的线上现状,判不出回滚前有没有开微信 / QQ 登录' },
+        @{ Label = 'AuthProviders 是 flow 写法'; Reply = (New-RollbackLoginConfigMapReply -AuthProvidersYaml 'AuthProviders: { WeChat: { AppId: "wx1" } }'); Hint = 'AuthProviders 段认不出' }
+    )
+    foreach ($c in $cases) {
+        $run = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs $LoginAuthQuietEntry -LoginConfigMapReply $c.Reply
+        Assert-RefusedBeforeStop -Run $run -Label $c.Label -HintPattern $c.Hint
+        Assert-Match -Text $run.Error -Pattern '-ConfirmLoginAuthProviderChange' -Because "$($c.Label):判不出时要告诉操作者确认后怎么继续"
+        Assert-Equal -Expected 0 -Actual $run.DevToolsCalls.Count -Because "$($c.Label):拒绝早于静态预检"
+    }
+}
+
+Test-Case '[10] 第三方登录现状随入口决定存档:同一 rid 重跑、namespace 里已没有 login ConfigMap 时按存档核对;照传放行,漏传按存档差异拒绝' {
+    $first = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-rerun' }) `
+        -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-True -Condition ($null -eq $first.Error) -Because "首次运行不该失败。错误: $($first.Error)"
+    $seed = @{ 'entry-state.json' = $first.ReportFiles['entry-state.json']; 'deploy-facts.json' = $first.ReportFiles['deploy-facts.json'] }
+    $goneConfigMap = New-RollbackLoginConfigMapReply -Absent
+
+    $rerun = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-rerun' }) `
+        -SeedReportFiles $seed -SnapshotReply @{ ExitCode = 0; Output = '' } -LoginConfigMapReply $goneConfigMap
+    Assert-True -Condition ($null -eq $rerun.Error) -Because "namespace 已删时按存档的现状核对,照传即放行。错误: $($rerun.Error)"
+    Assert-Match -Text $rerun.Output -Pattern 'checking against the login state saved by the same -RollbackId' -Because '要写明这次核对用的是存档'
+
+    $missing = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + @{ RollbackId = 'z101-login-rerun' }) `
+        -SeedReportFiles $seed -SnapshotReply @{ ExitCode = 0; Output = '' } -LoginConfigMapReply $goneConfigMap
+    Assert-RefusedBeforeStop -Run $missing -Label '重跑漏传第三方登录' -HintPattern '与同一 rollback-id 的存档 [^\r\n]*entry-state\.json 不同'
+    Assert-Match -Text $missing.Error -Pattern "LoginWeChatAppId:存档 'wx0123456789abcdef',本次 ''" -Because '要逐项列出差异'
+    Assert-Match -Text $missing.Error -Pattern ([regex]::Escape($LoginAuthKeepText)) -Because '要打印存档里的第三方登录参数,照传即可'
+    Assert-Match -Text $first.ReportFiles['entry-state.json'] -Pattern '"Schema": 2' -Because '带第三方登录现状的存档是 Schema 2'
+}
+
+Test-Case '[10] 第三方登录接入之前写的存档(Schema 1,没有 LoginAuthState 与 -Login* 键):入口决定不按存档比第三方登录,由防误关核对决定,不会互相卡死' {
+    # 手写一份接入之前的存档:入口三项与本用例的显式值一致,没有任何第三方登录字段。
+    $oldArchive = @(
+        '{',
+        '  "Schema": 1,',
+        '  "RollbackId": "z101-login-old",',
+        '  "Namespace": "mmorpg-zone-contract-test",',
+        '  "CapturedAtUtc": "2026-10-18T00:00:00.0000000Z",',
+        '  "ClusterState": null,',
+        '  "Decision": { "GateRouterMode": "1", "ClientEntryMode": "podip", "GatewayIngress": "(none)" }',
+        '}'
+    ) -join "`n"
+    $seed = @{ 'entry-state.json' = $oldArchive }
+    $goneConfigMap = New-RollbackLoginConfigMapReply -Absent
+
+    $refused = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-old' }) `
+        -SeedReportFiles $seed -LoginConfigMapReply $goneConfigMap
+    Assert-RefusedBeforeStop -Run $refused -Label '旧存档、login ConfigMap 已删、没确认' -HintPattern '同一 rid 的存档里也没有 login 的线上现状'
+    Assert-NotMatch -Text $refused.Error -Pattern '与同一 rollback-id 的存档 [^\r\n]*不同' -Because '旧存档没记过第三方登录,照传的 -Login* 不能被判为与存档不同'
+    Assert-Match -Text $refused.Output -Pattern 'predates the login WeChat / QQ check' -Because '要写明这份存档不比第三方登录'
+
+    $confirmed = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' `
+        -ExtraArgs ($LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-old'; ConfirmLoginAuthProviderChange = $true }) `
+        -SeedReportFiles $seed -LoginConfigMapReply $goneConfigMap
+    Assert-True -Condition ($null -eq $confirmed.Error) -Because "照传并确认后必须放行(报错里给的出路要走得通)。错误: $($confirmed.Error)"
+    $up = Get-BoundLine -Run $confirmed -Command 'k8s-zone-up'
+    Assert-Match -Text $up -Pattern '(^| |;)LoginWeChatAppId=wx0123456789abcdef(;|$)' -Because 'Step 6 照传第三方登录参数'
+    Assert-Match -Text $up -Pattern '(^| |;)ConfirmLoginAuthProviderChange=True(;|$)' -Because '确认开关透传到 Step 6'
+    Assert-Equal -Expected $oldArchive.Trim() -Actual ([string]$confirmed.ReportFiles['entry-state.json']).Trim() -Because '同一 rid 已有存档时不覆盖'
+
+    $liveKept = Invoke-RollbackInSandbox -Apply -DeployDefault '1' -GateRouterMode '1' -ExtraArgs ($LoginAuthQuietEntry + $LoginAuthKeepArgs + @{ RollbackId = 'z101-login-old' }) `
+        -SeedReportFiles $seed -LoginConfigMapReply $LoginAuthLiveConfigMap -LoginOAuthSecretReply $LoginAuthLiveSecret
+    Assert-True -Condition ($null -eq $liveKept.Error) -Because "namespace 还在、照传线上现状时,旧存档不能让照传被判为不同。错误: $($liveKept.Error)"
+}
+
+# ─────────────────────────────────────────────────────────────────
 # 回滚脚本入口:-ReleaseProfile / -LoginDevPasswordAuth / -ConfirmNoGatewayIngress(子进程 dry-run)
 # ─────────────────────────────────────────────────────────────────
 
@@ -1106,6 +1260,33 @@ Test-Case '负向:-ConfirmNoGatewayIngress 与 -GatewayIngressHost 互斥,在入
     Assert-True -Condition ($run.ExitCode -ne 0) -Because "两种相反的显式决定必须在入口被拒。输出: $($run.Output)"
     Assert-Match -Text $run.Output -Pattern '互斥' -Because '错误文本要写明二者互斥,不能把其他执行错误误判为入口校验'
     Assert-NotMatch -Text $run.Output -Pattern 'Step 1:' -Because '入口校验必须先于任何步骤'
+}
+
+Test-Case '第三方登录 -Login* / -ConfirmLoginAuthProviderChange:给了只透传到 Step 6(不进 zone-down),不给不透传;dry-run 预告 -Apply 会读 login ConfigMap 与 Secret 是否存在' {
+    $run = Invoke-RollbackDryRun -ExtraArguments @('-LoginWeChatAppId', 'wx0123456789abcdef', '-LoginWeChatEndpoint', 'https://wechat-mock.contract.test:18090',
+        '-LoginWeChatAllowOpenId', '-LoginQQAppId', '100000001', '-LoginQQEndpoint', 'https://qq-mock.contract.test', '-LoginQQAllowOpenId')
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "显式第三方登录参数的 dry-run 不该失败。输出: $($run.Output)"
+    $line = Get-ZoneUpArgsLine -Output $run.Output
+    foreach ($pattern in @('-LoginWeChatAppId wx0123456789abcdef', '-LoginWeChatEndpoint https://wechat-mock\.contract\.test:18090', '-LoginWeChatAllowOpenId True',
+            '-LoginQQAppId 100000001', '-LoginQQEndpoint https://qq-mock\.contract\.test', '-LoginQQAllowOpenId True')) {
+        Assert-Match -Text $line -Pattern "(^|\s)$pattern(\s|$)" -Because '第三方登录不粘滞,回滚漏掉任何一个 Step 6 就关掉或改掉它'
+    }
+    Assert-NotMatch -Text $line -Pattern 'ConfirmLoginAuthProviderChange' -Because '没给的确认开关不能出现在 Step 6'
+    $downLine = @([regex]::Matches($run.Output, '(?m)^[ \t]*dev_tools\.ps1 [^\r\n]*k8s-zone-down[^\r\n]*') | ForEach-Object { $_.Value })
+    Assert-Equal -Expected 1 -Actual $downLine.Count -Because "dry-run 输出里应当恰有一行 Step 1 参数。输出: $($run.Output)"
+    Assert-NotMatch -Text $downLine[0] -Pattern 'Login(WeChat|QQ)|ConfirmLogin' -Because 'zone-down 只删 namespace,不传第三方登录参数'
+    Assert-Match -Text $run.Output -Pattern 'kubectl get configmap go-svc-login-config -n mmorpg-zone-contract-test --ignore-not-found -o json; kubectl get secret login-oauth -n mmorpg-zone-contract-test --ignore-not-found -o name' -Because 'dry-run 要预告 -Apply 时读的 login ConfigMap 与 Secret(只用 -o name 探测存在性)'
+    Assert-Match -Text $run.Output -Pattern 'login 3rd\s*:\s*WeChat -LoginWeChatAppId wx0123456789abcdef' -Because '摘要区要写明 Step 6 以哪组第三方登录参数重建 login'
+
+    $unset = Invoke-RollbackDryRun
+    Assert-NotMatch -Text (Get-ZoneUpArgsLine -Output $unset.Output) -Pattern 'LoginWeChat|LoginQQ|ConfirmLogin' -Because '留空不透传:默认值只在 k8s_deploy.ps1 一处'
+    Assert-Match -Text $unset.Output -Pattern 'login 3rd\s*:[^\r\n]*-Apply checks the live login ConfigMap' -Because '留空时摘要区要提醒 -Apply 会先核对线上第三方登录'
+
+    $confirm = Invoke-RollbackDryRun -ExtraArguments @('-ConfirmLoginAuthProviderChange')
+    Assert-Equal -Expected 0 -Actual $confirm.ExitCode -Because "显式确认的 dry-run 不该失败。输出: $($confirm.Output)"
+    Assert-Match -Text (Get-ZoneUpArgsLine -Output $confirm.Output) -Pattern '(^|\s)-ConfirmLoginAuthProviderChange True(\s|$)' -Because '确认开关透传到 Step 6'
+    Assert-Match -Text $confirm.Output -Pattern 'Explicit -ConfirmLoginAuthProviderChange' -Because '显式确认时要写明不核对线上'
+    Assert-NotMatch -Text $confirm.Output -Pattern 'kubectl get configmap go-svc-login-config' -Because '显式确认后不预告、也不读 login ConfigMap'
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -1158,6 +1339,21 @@ Test-Case 'dev_tools k8s-zone-rollback:-LoginDevPasswordAuth、-RollbackConfirmN
     $staging = Invoke-DevToolsRollbackDryRun -ExtraArguments @('-ReleaseProfile', 'staging', '-AllowDirty')
     Assert-Equal -Expected 0 -Actual $staging.ExitCode -Because "显式档位的 dry-run 不该失败。输出: $($staging.Output)"
     Assert-Match -Text (Get-ZoneUpArgsLine -Output $staging.Output) -Pattern '(^|\s)-ReleaseProfile staging(\s|$)' -Because '以前这里静默吞掉 -ReleaseProfile,Step 6 恒为 dev 档(安全方向的 fail-open)'
+}
+
+Test-Case 'dev_tools k8s-zone-rollback:第三方登录 -Login* 与 -ConfirmLoginAuthProviderChange 非空 / 被指定才转给回滚脚本,由它透传到 Step 6' {
+    $run = Invoke-DevToolsRollbackDryRun -ExtraArguments @('-LoginWeChatAppId', 'wx0123456789abcdef', '-LoginWeChatEndpoint', 'https://wechat-mock.contract.test:18090',
+        '-LoginWeChatAllowOpenId', '-LoginQQAppId', '100000001', '-LoginQQEndpoint', 'https://qq-mock.contract.test', '-LoginQQAllowOpenId', '-ConfirmLoginAuthProviderChange')
+    Assert-Equal -Expected 0 -Actual $run.ExitCode -Because "经 dev_tools.ps1 的回滚 dry-run 不该失败。输出: $($run.Output)"
+    Assert-Match -Text $run.Output -Pattern 'k8s-zone-rollback \(DRY-RUN\)' -Because '不带 -RollbackApply 必须是 dry-run'
+    $line = Get-ZoneUpArgsLine -Output $run.Output
+    foreach ($pattern in @('-LoginWeChatAppId wx0123456789abcdef', '-LoginWeChatEndpoint https://wechat-mock\.contract\.test:18090', '-LoginWeChatAllowOpenId True',
+            '-LoginQQAppId 100000001', '-LoginQQEndpoint https://qq-mock\.contract\.test', '-LoginQQAllowOpenId True', '-ConfirmLoginAuthProviderChange True')) {
+        Assert-Match -Text $line -Pattern "(^|\s)$pattern(\s|$)" -Because 'dev_tools.ps1 必须把第三方登录参数原样转给回滚脚本,不能静默吞掉(漏一个,回滚后的 login 就关掉或改掉它)'
+    }
+    $unset = Invoke-DevToolsRollbackDryRun
+    Assert-Equal -Expected 0 -Actual $unset.ExitCode -Because "不给第三方登录参数的回滚 dry-run 不该失败。输出: $($unset.Output)"
+    Assert-NotMatch -Text (Get-ZoneUpArgsLine -Output $unset.Output) -Pattern 'LoginWeChat|LoginQQ|ConfirmLogin' -Because '留空不转发:dev_tools.ps1 的空串 / 未指定开关不能冒充显式值'
 }
 
 Test-Case 'dev_tools k8s-zone-rollback:-AllowDisruptiveSwitch 转给回滚脚本,只透传到 Step 6、不下传 Step 1' {
@@ -1280,6 +1476,24 @@ Test-Case 'dev_tools Invoke-K8sImage:-LoginDevPasswordAuth 在调 k8s_image.ps1 
     $forward = Invoke-DevToolsK8sImageWith -Variables @{ RequireClientEndpoint = 'true' }
     Assert-True -Condition ($null -eq $forward.Error -and $forward.DownstreamCalled) -Because "-RequireClientEndpoint 不再拒绝,必须调到 k8s_image.ps1。错误: $($forward.Error)"
     Assert-Match -Text $forward.DownstreamArgs -Pattern '(^|\s)-RequireClientEndpoint:?\s*true(\s|$)' -Because 'dev_tools.ps1 必须把 -RequireClientEndpoint 原样透传给 k8s_image.ps1,不能静默吞掉'
+}
+
+Test-Case 'dev_tools Invoke-K8sImage:第三方登录 -Login* 与 -ConfirmLoginAuthProviderChange 在调 k8s_image.ps1 之前逐个拒绝(k8s_image.ps1 不部署 login)' {
+    $control = Invoke-DevToolsK8sImageWith -Variables @{}
+    Assert-True -Condition ($null -eq $control.Error -and $control.DownstreamCalled) -Because "对照组必须调到假 k8s_image.ps1。错误: $($control.Error)"
+    Assert-NotMatch -Text $control.DownstreamArgs -Pattern 'LoginWeChat|LoginQQ|ConfirmLogin' -Because '没给就不出现在下游参数里'
+    $cases = @(
+        @{ LoginWeChatAppId = 'wx0123456789abcdef' }, @{ LoginWeChatEndpoint = 'https://wechat-mock.contract.test' }, @{ LoginWeChatAllowOpenId = $true },
+        @{ LoginQQAppId = '100000001' }, @{ LoginQQEndpoint = 'https://qq-mock.contract.test' }, @{ LoginQQAllowOpenId = $true },
+        @{ ConfirmLoginAuthProviderChange = $true }
+    )
+    foreach ($variables in $cases) {
+        $name = @($variables.Keys)[0]
+        $reject = Invoke-DevToolsK8sImageWith -Variables $variables
+        Assert-True -Condition ($null -ne $reject.Error) -Because "-$name 经 k8s-release-* 不生效(k8s_image.ps1 不部署 login),显式给了必须拒绝而不是静默吞掉"
+        Assert-Match -Text $reject.Error -Pattern "k8s-image-\* / k8s-release-\* 不支持 [^:]*-$name(,|:)" -Because "错误文本必须点名 -$name"
+        Assert-True -Condition (-not $reject.DownstreamCalled) -Because "-${name}:拒绝必须早于调用 k8s_image.ps1(镜像构建与推送都在那边)"
+    }
 }
 
 exit (Complete-TestRun -SuiteName 'k8s_zone_rollback 透传与停服前预检')

@@ -118,7 +118,7 @@
 
 | 键 | 写 | 读 | TTL | 证据 |
 |---|---|---|---|---|
-| `PlayerDatabase:{id}`、`PlayerDatabase_1:{id}`(键名 = proto 全名) | go/db:写任务落库后回写;读任务回写 | login 进场(父键缺失时)、data_service `debug_fetch` | `DefaultTTLSeconds`:K8s 3600s(`k8s_deploy.ps1:3458`),缺省 24h | `key_ordered_consumer.go:54-64`、`:369`、`:846-857`;`go/login/internal/logic/pkg/dataloader/ensure_player_all_data_async.go:83-84` |
+| `player_database:{id}`、`player_database_1:{id}`(键名 = proto 全名;proto 无 package、message 名小写。2026-10-19 更正:原写 `PlayerDatabase:{id}` 是错的) | go/db:写任务落库后回写;读任务回写 | 只读排障:data_service `debug_fetch -mode player-bundle`。2026-10-17 起 login 冷加载父键缺失时强制读 SQL、不采信本缓存(`ensure_player_all_data_async.go`) | `DefaultTTLSeconds`:K8s 3600s(`k8s_deploy.ps1:3458`),缺省 24h | `key_ordered_consumer.go:54-64`、`:369`、`:846-857`;`go/login/internal/logic/pkg/dataloader/ensure_player_all_data_async.go:83-84` |
 | `task:result:{taskID}` LIST + 频道 `task:result:notify` | go/db 写 LIST,再 PUBLISH | login 结果分发器 | 5min | `key_ordered_consumer.go:37`、`:42`、`:393-411`;`go/login/internal/dispatcher/task_result_dispatcher.go:32`、`:324`、`:370`。**单频道,PUBLISH 会扇出到所有 login 实例** |
 | `player:{id}:asset_sql_commit`(2026-10-16 登记;hash:`version` = `%020d:%020d` 的 (owner_epoch, save_seq),`data` = `PlayerAssetSQLCommit`)**不是缓存,见表下说明** | go/db `RedisClient`:玩家行 SQL 提交之后发布,单键 Lua 只升不降(`assetop.PublishSQLCommit`);计划并入写路径令牌发布脚本,与排序锁、子表缓存同一次 EVAL | data_service `GetPlayerAssetOpLedger(require_sql_commit=true)`,经 `Router.ClientForPlayer`(home_zone 集群或 DevRedis);guild / trade / mail 的资产通道据此终结 | **无**,与父键同寿命:设了 TTL,已离线玩家的资产待办会永远等不到证据。回收只靠合服 / 撤销删除与回档清理;每玩家常驻一份账本(含托管收据里的完整实例字节),计入核心容量 | `go/shared/assetop/sql_commit.go`;`go/data_service/internal/logic/asset_sql_commit.go`;设计见 [db-write-fencing-mysql.md](db-write-fencing-mysql.md) §6.6 |
 
@@ -422,7 +422,8 @@ merge_zone 合服与撤销时会按玩家删缓存（`playerCacheKeys`）；清�
 | data_consistency_check、route_tool、merge_zone | 映射句柄 | | 连到带墓碑的实例即拒绝(第 1b 批) | | | 代码 |
 | data_consistency_check | `-redis-addr` | redis | redis-mapping | | | 运维参数 |
 | route_tool | 读 data_service yaml | | 跟随 MappingRedis | | | — |
-| go/db `cmd/verifier`、`cmd/data_stress`;robot `data_stress`;data_service `cmd/debug_fetch` | 读缓存 | redis | | | redis-cache | 运维参数 |
+| go/db `cmd/verifier`、`cmd/data_stress`;robot `data_stress` | 读缓存 | redis | | | redis-cache | 运维参数 |
+| data_service `cmd/debug_fetch -mode player-bundle`、`cmd/debug_import`(2026-10-19 更正) | 读写核心族(父快照、屏障、owner_epoch、会话)+ 读缓存;映射族走 db.yaml `Placement.Redis` | db.yaml `ServerConfig.RedisClient` | | | 拆分后键清单 `debugutil.PlayerRedisKeySpecs` 的实例归属要随之改 | 运维参数 |
 
 ### 4.2 新配置键、关键类型与函数
 

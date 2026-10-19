@@ -46,7 +46,7 @@ public:
 		"getServiceHandlerMethodStr": getServiceHandlerMethodStr,
 	}
 
-	return utils.GlobalEngine.MustExecute("serviceHandlerHead", tmplStr, data, funcs)
+	return utils.GlobalEngine.Render("serviceHandlerHead", tmplStr, data, funcs)
 }
 
 // getServiceHandlerMethodStr generates a single method signature.
@@ -67,7 +67,7 @@ func getServiceHandlerMethodStr(method *MethodInfo) (string, error) {
 		CppResponse:            method.CppResponse(),
 	}
 
-	return utils.GlobalEngine.MustExecute("serviceHandlerMethod", tmplStr, data)
+	return utils.GlobalEngine.Render("serviceHandlerMethod", tmplStr, data)
 }
 
 // HandlerMethod holds data for a handler method.
@@ -146,7 +146,7 @@ void {{ .HandlerName }}{{ $.GoogleMethodController }}const {{ .CppRequest }}* re
 		Methods:                methodList,
 	}
 
-	return utils.ExecuteTemplate("serviceHandlerCpp", tmplStr, data)
+	return utils.RenderTemplateOrExit("serviceHandlerCpp", tmplStr, data)
 }
 
 // GetServiceHandlerHeadFromFileStr:头文件本身不含守护段,但 .h 与 .cpp 由通用管线分别生成、互不等待(handlers.go / handler.go)——

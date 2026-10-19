@@ -47,7 +47,8 @@ LoginController 返回 LoginResponse 对象。JSON 的 `code` 是业务码，不
 | 成功 | `CODE_OK`，附玩家列表与双 token |
 | 前置限流排队 | `CODE_QUEUEING`，JSON 附 retry_after_ms、queue_pos |
 | 前置拒绝 | `CODE_RATE_LIMITED` |
-| login 回 in-band 错误码（凭证无效、渠道故障等） | `CODE_AUTH_REJECTED`，message 为 `upstream_err=<tip 码>` |
+| login 回 in-band 业务拒绝码（凭证无效等，Tip.xlsx `fault` 列未标） | `CODE_AUTH_REJECTED`，message 为 `upstream_err=<tip 码>` |
+| login 回 in-band 故障码（渠道故障、签发失败、读 Redis 失败等，`fault` 列标 1） | `CODE_INTERNAL`，message 仍为 `upstream_err=<tip 码>`（2026-10-18 起，两版同批，见 [tip-code-axis.md](./tip-code-axis.md) §2.10） |
 | login 以 gRPC status 失败：UNAUTHENTICATED / PERMISSION_DENIED | `CODE_AUTH_REJECTED`，message 为 status 名 |
 | login 以 gRPC status 失败：UNAVAILABLE / DEADLINE_EXCEEDED / RESOURCE_EXHAUSTED | `CODE_INTERNAL`，message `login_unavailable` |
 | login 以其它 gRPC status 失败（UNKNOWN、INTERNAL 等）或网关内部异常 | `CODE_INTERNAL`（2026-10-18 前 UNKNOWN 等被错误地映射成 401） |
@@ -57,11 +58,13 @@ login 侧的 in-band 码（2026-10-18 起，fault 列来自 `data/tip/Tip.xlsx`�
 | 情形 | tip | 故障 |
 |---|---|---|
 | 玩家凭证无效 / 过期、未知 auth_type、口令认证失败 | `kLoginAccountNotFound`（2000） | 否 |
-| 渠道或本服务渠道配置故障：网络 / 超时、非 2xx、应答超 64 KiB 或不可解析、微信系统繁忙 / AppSecret / AppId / 出口 IP / 配额类 errcode、拿不到必需的 unionid | `kLoginAuthProviderUnavailable`（预计 2035，以导表为准） | 是 |
+| 渠道或本服务渠道配置故障：网络 / 超时、非 2xx、应答超 64 KiB 或不可解析、微信系统繁忙 / AppSecret / AppId / 出口 IP / 配额类 errcode、拿不到必需的 unionid | `kLoginAuthProviderUnavailable`（2035） | 是 |
 | 账号目录读 Redis 失败 / 记录损坏（以前直接返回 gRPC 错误，网关映射成 401） | `kLoginRedisError` / `kLoginDataParseFailed` | 是 |
-| HTTP 路径 token 签发失败（以前回成功但不带 token，渠道 code 已被消费） | `kLoginTokenIssueFailed`（预计 2036） | 是 |
+| HTTP 路径 token 签发失败（以前回成功但不带 token，渠道 code 已被消费） | `kLoginTokenIssueFailed`（2036） | 是 |
 
-已知残留：网关不认识 tip 码表，in-band 故障在 HTTP 层仍是 `CODE_AUTH_REJECTED`；客户端须按 message 里的 tip 码选文案（渠道凭证都已被消费，重新走 OAuth 本身是正确的恢复动作）。让网关按故障列回 500 需要给 Java 生成故障表或改 HTTP 契约（两版同批），另行立项。连接目标、zone 路由与超时以 Gateway 的 LoginRpcClient 和 `application.yaml` 为准；旧提案中的 `gate.login.grpc-endpoint` / `retry` 配置不能直接复制使用。
+网关按 fault 列定性（2026-10-18 收口原「已知残留」）：导表器多生成一份与 `faults.go` 同源的 Java `TipFaults`，本仓 `LoginService` / `RefreshTokenService` 与 Java 版 `LoginHttpService` 据此把上表的故障码回 `CODE_INTERNAL`，其余 in-band 码仍回 `CODE_AUTH_REJECTED`；HTTP 状态仍是 200，message 不变，客户端按 tip 码选文案。方案比较、版本偏斜与客户端核对项见 [tip-code-axis.md](./tip-code-axis.md) §2.10。连接目标、zone 路由与超时以 Gateway 的 LoginRpcClient 和 `application.yaml` 为准；旧提案中的 `gate.login.grpc-endpoint` / `retry` 配置不能直接复制使用。
+
+客户端收到 500 + `upstream_err=2035` / `2036` 时，微信要重新拉起授权拿新 code，不能原样重发旧 code（2036 时 code 已被消费，2035 时也不能确定没被消费）；QQ 的 access_token 在有效期内可以重发。
 
 ## 四、渠道联调与后续改造
 
@@ -122,7 +125,7 @@ POST /api/bind   { bind_type: "wechat", auth_token: <code> }
 
 ### 微信
 - iOS / Android: 微信 SDK `WXApi.sendReq(SendAuth.Req)`,scope `snsapi_userinfo`
-- 拿到 `code`(5 分钟有效) → POST `/api/login {auth_type:"wechat", auth_token:code}`
+- 拿到 `code`(10 分钟有效、只能换一次) → POST `/api/login {auth_type:"wechat", auth_token:code}`
 - ⚠️ AppId 在客户端是公开的,AppSecret 只在 go-zero 服务端
 
 ### QQ
@@ -180,7 +183,7 @@ POST /api/bind   { bind_type: "wechat", auth_token: <code> }
 | 真实微信 / QQ 沙箱联调 → /api/login → /api/assign-gate → gate | **未做**，需要有真凭证的人按 runbook §C.2 执行 |
 | 单 zone 灰度 24 小时、全量开放 | 未做 |
 | `Auth.EnabledTypes` 灰度配置 | 不存在这个配置；按 zone 开关第三方登录仍是后续设计 |
-| 网关按 tip 故障列回 500（§三 已知残留） | 未做，需两版同批 |
+| 网关按 tip 故障列回 500（§三） | 已落码（两版同批，2026-10-18），导表产物已生成，未编译、未测试；客户端已只读核对，只按 `code` 分支，不受影响；500 的「稍后重试」文案补丁待客户端任务授权（见 [tip-code-axis.md](./tip-code-axis.md) §2.10） |
 | UserBindings 账号合并表、Apple / Google Provider | 后续 |
 
 ---

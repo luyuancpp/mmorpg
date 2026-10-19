@@ -17,7 +17,7 @@ std::chrono::milliseconds DefaultCallDeadline() {
     return std::chrono::milliseconds(callDeadlineMs.load(std::memory_order_relaxed));
 }
 
-GrpcCallOutcome LocalFailure(uint32_t code, std::string message) {
+GrpcCallOutcome MakeLocalFailureOutcome(uint32_t code, std::string message) {
     GrpcCallOutcome outcome;
     outcome.code = code;
     outcome.message = std::move(message);
@@ -29,7 +29,7 @@ namespace rankpb {
 #pragma region RankAdminOpenRankGeneration
 namespace {
 void QueueLocalRankAdminOpenRankGenerationFailure(GrpcDone<::rankpb::OpenRankGenerationResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -43,9 +43,9 @@ void StartRankAdminOpenRankGenerationCall(entt::registry& registry, entt::entity
     if (!done) {
         LOG_FATAL << "gRPC RankAdmin.OpenRankGeneration requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kRankAdminOpenRankGenerationGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kRankAdminOpenRankGenerationGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalRankAdminOpenRankGenerationFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -54,13 +54,13 @@ void StartRankAdminOpenRankGenerationCall(entt::registry& registry, entt::entity
         QueueLocalRankAdminOpenRankGenerationFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -92,9 +92,10 @@ void SendRankAdminOpenRankGenerationErased(entt::registry& registry, entt::entit
         LOG_FATAL << "gRPC RankAdmin.OpenRankGeneration requires a done callback";
     }
     if (message.GetDescriptor() != ::rankpb::OpenRankGenerationRequest::descriptor()) {
-        LOG_ERROR << "gRPC RankAdmin.OpenRankGeneration: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC RankAdmin.OpenRankGeneration: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -103,7 +104,7 @@ void SendRankAdminOpenRankGenerationErased(entt::registry& registry, entt::entit
     const auto* typedRequest = dynamic_cast<const ::rankpb::OpenRankGenerationRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC RankAdmin.OpenRankGeneration: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -115,7 +116,7 @@ void SendRankAdminOpenRankGenerationErased(entt::registry& registry, entt::entit
 #pragma region RankAdminSubmitRankScores
 namespace {
 void QueueLocalRankAdminSubmitRankScoresFailure(GrpcDone<::rankpb::SubmitRankScoresResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -129,9 +130,9 @@ void StartRankAdminSubmitRankScoresCall(entt::registry& registry, entt::entity n
     if (!done) {
         LOG_FATAL << "gRPC RankAdmin.SubmitRankScores requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kRankAdminSubmitRankScoresGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kRankAdminSubmitRankScoresGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalRankAdminSubmitRankScoresFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -140,13 +141,13 @@ void StartRankAdminSubmitRankScoresCall(entt::registry& registry, entt::entity n
         QueueLocalRankAdminSubmitRankScoresFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -178,9 +179,10 @@ void SendRankAdminSubmitRankScoresErased(entt::registry& registry, entt::entity 
         LOG_FATAL << "gRPC RankAdmin.SubmitRankScores requires a done callback";
     }
     if (message.GetDescriptor() != ::rankpb::SubmitRankScoresRequest::descriptor()) {
-        LOG_ERROR << "gRPC RankAdmin.SubmitRankScores: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC RankAdmin.SubmitRankScores: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -189,7 +191,7 @@ void SendRankAdminSubmitRankScoresErased(entt::registry& registry, entt::entity 
     const auto* typedRequest = dynamic_cast<const ::rankpb::SubmitRankScoresRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC RankAdmin.SubmitRankScores: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -201,7 +203,7 @@ void SendRankAdminSubmitRankScoresErased(entt::registry& registry, entt::entity 
 #pragma region RankAdminFreezeRankGeneration
 namespace {
 void QueueLocalRankAdminFreezeRankGenerationFailure(GrpcDone<::rankpb::FreezeRankGenerationResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -215,9 +217,9 @@ void StartRankAdminFreezeRankGenerationCall(entt::registry& registry, entt::enti
     if (!done) {
         LOG_FATAL << "gRPC RankAdmin.FreezeRankGeneration requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kRankAdminFreezeRankGenerationGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kRankAdminFreezeRankGenerationGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalRankAdminFreezeRankGenerationFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -226,13 +228,13 @@ void StartRankAdminFreezeRankGenerationCall(entt::registry& registry, entt::enti
         QueueLocalRankAdminFreezeRankGenerationFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -264,9 +266,10 @@ void SendRankAdminFreezeRankGenerationErased(entt::registry& registry, entt::ent
         LOG_FATAL << "gRPC RankAdmin.FreezeRankGeneration requires a done callback";
     }
     if (message.GetDescriptor() != ::rankpb::FreezeRankGenerationRequest::descriptor()) {
-        LOG_ERROR << "gRPC RankAdmin.FreezeRankGeneration: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC RankAdmin.FreezeRankGeneration: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -275,7 +278,7 @@ void SendRankAdminFreezeRankGenerationErased(entt::registry& registry, entt::ent
     const auto* typedRequest = dynamic_cast<const ::rankpb::FreezeRankGenerationRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC RankAdmin.FreezeRankGeneration: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -287,7 +290,7 @@ void SendRankAdminFreezeRankGenerationErased(entt::registry& registry, entt::ent
 #pragma region RankAdminRemoveRankEntry
 namespace {
 void QueueLocalRankAdminRemoveRankEntryFailure(GrpcDone<::rankpb::RankAdminResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -301,9 +304,9 @@ void StartRankAdminRemoveRankEntryCall(entt::registry& registry, entt::entity no
     if (!done) {
         LOG_FATAL << "gRPC RankAdmin.RemoveRankEntry requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kRankAdminRemoveRankEntryGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kRankAdminRemoveRankEntryGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalRankAdminRemoveRankEntryFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -312,13 +315,13 @@ void StartRankAdminRemoveRankEntryCall(entt::registry& registry, entt::entity no
         QueueLocalRankAdminRemoveRankEntryFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -350,9 +353,10 @@ void SendRankAdminRemoveRankEntryErased(entt::registry& registry, entt::entity n
         LOG_FATAL << "gRPC RankAdmin.RemoveRankEntry requires a done callback";
     }
     if (message.GetDescriptor() != ::rankpb::RemoveRankEntryRequest::descriptor()) {
-        LOG_ERROR << "gRPC RankAdmin.RemoveRankEntry: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC RankAdmin.RemoveRankEntry: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -361,7 +365,7 @@ void SendRankAdminRemoveRankEntryErased(entt::registry& registry, entt::entity n
     const auto* typedRequest = dynamic_cast<const ::rankpb::RemoveRankEntryRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC RankAdmin.RemoveRankEntry: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -373,7 +377,7 @@ void SendRankAdminRemoveRankEntryErased(entt::registry& registry, entt::entity n
 #pragma region RankAdminDeleteRankGeneration
 namespace {
 void QueueLocalRankAdminDeleteRankGenerationFailure(GrpcDone<::rankpb::RankAdminResponse> done, uint32_t code, std::string message) {
-    QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(code, std::move(message))] {
+    QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(code, std::move(message))] {
         done(outcome, nullptr);
     });
 }
@@ -387,9 +391,9 @@ void StartRankAdminDeleteRankGenerationCall(entt::registry& registry, entt::enti
     if (!done) {
         LOG_FATAL << "gRPC RankAdmin.DeleteRankGeneration requires a done callback";
     }
-    muduo_grpc::UnaryCallRequest rpc;
-    rpc.method = std::string(kRankAdminDeleteRankGenerationGrpcPath);
-    if (!request.SerializeToString(&rpc.message)) {
+    muduo_grpc::UnaryCallRequest unaryRequest;
+    unaryRequest.method = std::string(kRankAdminDeleteRankGenerationGrpcPath);
+    if (!request.SerializeToString(&unaryRequest.message)) {
         QueueLocalRankAdminDeleteRankGenerationFailure(std::move(done), kGrpcStatusInternal, "failed to serialize the request");
         return;
     }
@@ -398,13 +402,13 @@ void StartRankAdminDeleteRankGenerationCall(entt::registry& registry, entt::enti
         QueueLocalRankAdminDeleteRankGenerationFailure(std::move(done), kGrpcStatusUnavailable, "node transport missing or closing");
         return;
     }
-    rpc.metadata.reserve(metadata.size());
+    unaryRequest.metadata.reserve(metadata.size());
     for (const auto& [key, value] : metadata) {
         // Go 侧依赖这层应用编码;-bin 的线上编码另由传输层负责。
-        rpc.metadata.emplace_back(key, Base64Encode(value));
+        unaryRequest.metadata.emplace_back(key, Base64Encode(value));
     }
-    rpc.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
-    channel->StartUnaryCall(std::move(rpc), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
+    unaryRequest.deadline = std::chrono::steady_clock::now() + (deadline.count() > 0 ? deadline : DefaultCallDeadline());
+    channel->StartUnaryCall(std::move(unaryRequest), [done = std::move(done)](muduo_grpc::UnaryCallResult&& result) {
         GrpcCallOutcome outcome;
         outcome.code = result.status.code_value();
         outcome.message = result.status.message();
@@ -436,9 +440,10 @@ void SendRankAdminDeleteRankGenerationErased(entt::registry& registry, entt::ent
         LOG_FATAL << "gRPC RankAdmin.DeleteRankGeneration requires a done callback";
     }
     if (message.GetDescriptor() != ::rankpb::RemoveRankEntryRequest::descriptor()) {
-        LOG_ERROR << "gRPC RankAdmin.DeleteRankGeneration: request type " << message.GetDescriptor()->full_name()
+        const auto requestTypeName = message.GetDescriptor()->full_name();
+        LOG_ERROR << "gRPC RankAdmin.DeleteRankGeneration: request type " << std::string(requestTypeName.data(), requestTypeName.size())
                   << " does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;
@@ -447,7 +452,7 @@ void SendRankAdminDeleteRankGenerationErased(entt::registry& registry, entt::ent
     const auto* typedRequest = dynamic_cast<const ::rankpb::RemoveRankEntryRequest*>(&message);
     if (typedRequest == nullptr) {
         LOG_ERROR << "gRPC RankAdmin.DeleteRankGeneration: request C++ type does not match; not sent";
-        QueueGrpcLocalCompletion([done = std::move(done), outcome = LocalFailure(kGrpcStatusInternal, "request type mismatch")] {
+        QueueGrpcLocalCompletion([done = std::move(done), outcome = MakeLocalFailureOutcome(kGrpcStatusInternal, "request type mismatch")] {
             done(outcome, nullptr);
         });
         return;

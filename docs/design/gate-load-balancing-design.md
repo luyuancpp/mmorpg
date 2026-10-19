@@ -52,7 +52,8 @@ Gate → 本地校验签名、目标 Gate 与到期时间 → 允许后续游戏
 - 指标 `login_gate_directory_reads_total{source}`，source 取 `cache` / `etcd_unsynced` / `etcd_stale`。
   稳态应几乎全是 cache；`etcd_stale` 持续不为 0 说明 etcd 不可达或 watch 反复卡住，登录又回到逐请求打 etcd。
 
-**挑 gate**（两条规则）：
+**挑 gate**（两条规则；随机二选一的实现只有一份，在 `go/shared/gatepick` 的 `TwoChoices`，login 快路径与
+scene_manager 跨 zone 重定向共用；Java 版 `game-discovery` 的 `GatePicker.pick` 同规则）：
 
 1. 快路径 `PickGate`：在候选里随机抽两台不同的 gate，取人数少的那台，同人数取第一次抽中的；只有一台就是它，
    恰好两台时等于取最少。同人数不按 NodeID 定胜负：开新区第一个上报窗口里所有 gate 都报 0，按 NodeID 定会让
@@ -66,6 +67,17 @@ Gate → 本地校验签名、目标 Gate 与到期时间 → 允许后续游戏
 2. 排队 dispatcher 一拍放一批，用确定性的 `gatePicker`：在同一份候选上逐条挑并记账（负载 = 上报人数 +
    本拍已分给它的人数，同负载 NodeID 小的在前），先填最闲的，填平之后轮转。账不跨拍。
 
+**scene_manager 跨 zone 重定向**（`go/scene_manager/internal/logic/gate_redirect.go`，2026-10-18 起；已落码，未编译、未测试）：
+顺序与 login 的 `CandidatesForZone` 一致——选客户端地址并按地址去重 → 剔除排空中的 gate（全部排空时忽略标记并打 ERROR）
+→ 随机二选一。此前是 `sort.Slice` 确定性取最少（同数不稳定）且不过滤排空。排空标记由 `drainingGateIDs` 一次 MGET 读，
+读失败放行；键名 `gate:%d:draining` 在 scene_manager 里抄了一份，由 `tools/scripts/tests/k8s_gate_drain.tests.ps1`
+钉住与 login、排空脚本三处一致。scene_manager 经**自己的** Redis 连接读标记，今天与 login 的 `Node.RedisClient` 是同一实例；
+**拆 Redis（G4a）把排空标记挪到 redis-queue 时，scene_manager 这条读也要一起指过去**（G4a 修订稿需把 scene_manager 列为
+`gate:{id}:draining` 的读者），否则读不到标记、退回不过滤。另一个隐含前提：go-zero 的 `RedisConf` 没有 DB 字段，scene_manager
+只能读 DB 0；login 的 `Node.RedisClient.DB` 改成非 0 时要同步处理。排空过滤的纯逻辑在 login（`loginqueue.FilterDrainingGates`）
+与 scene_manager（`filterDrainingTargets`）各一份：两边的读客户端不同（go-redis / go-zero）、候选类型不同，login 那份又被
+`k8s_gate_drain.tests.ps1` 按文本钉住，本次没有合并进 go/shared。
+
 **还没做**（容量模型 A0-7 的其余部分与评审登记）：
 
 - 新鲜度过滤：死掉的 gate 在 etcd 键 TTL（180s）到期前仍在候选里，镜像与直读都一样；
@@ -75,9 +87,8 @@ Gate → 本地校验签名、目标 Gate 与到期时间 → 允许后续游戏
   顶到上限、区级还有名额时，约 m(m-1)/(n(n-1)) 的快路径请求会被派到满载 gate（旧规则在数据新鲜时不会）。
   默认配置（每 zone 2 台、区容量 5000）下不可达。要修需让 login 知道单台上限，按水位剔除候选、全部超水位时回落全集；
   不要用「只在较低一半里二选一」，它在 n≤4 时等于回到旧规则；
-- scene_manager 跨 zone 重定向的选 gate（`go/scene_manager/internal/logic/gate_redirect.go` 的 `signRedirectToGate`）
-  仍是确定性取最少（`sort.Slice`，同数不稳定）且不过滤排空 gate，羊群与黑洞在这条入口照旧；复用随机二选一要把实现挪进
-  go/shared；
+- 新鲜度过滤要用「数据本身多久没变」而不是镜像刷新时刻：全量重同步会把所有 gate 的刷新时刻重置，死 gate 永远显得新鲜；
+  但直接按「最久没变的那台」判镜像过期，又会让一台死 gate 把全部读路径推回直读 etcd。两者要分开设计；
 - `proto/login/login.proto` 服务注释仍写 “picks the least-loaded Gate”，生成物同样过时；等下次本来要重生 proto 时一并改。
 
 ## 有状态连接与跨 Gate 重连

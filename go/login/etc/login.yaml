@@ -450,7 +450,7 @@ AuthProviders:
       ReadTimeout: 3s
       WriteTimeout: 3s
 #   # WeChat Open Platform (mobile/PC SDK). The client SDK returns an OAuth `code`
-#   # (valid ~5 min, one-time-use). LoginRequest{auth_type:"wechat", auth_token:<code>}.
+#   # (valid 10 min, one-time-use). LoginRequest{auth_type:"wechat", auth_token:<code>}.
 #   # Account identity = "wx_<unionid>". 拿不到 unionid 时缺省拒绝登录(故障码 LoginAuthProviderUnavailable),
 #   # 只有显式 RequireUnionId: false 才回落 "wx_<openid>"(多应用下会分裂账号,见 config.WeChatAuthConf)。
 #   # login 不展开 "${VAR}":密钥只写环境变量名(AppSecretEnv),写成 "${...}" 会拒绝启动;
