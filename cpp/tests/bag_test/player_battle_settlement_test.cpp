@@ -71,6 +71,10 @@ public:
     static uint64_t ExpiredFightingBattleId(entt::entity player) {
         return PlayerBattleSystem::ExpiredFightingBattleId(player);
     }
+    static bool DecideLockRebuild(entt::entity player, uint64_t lockBattleId,
+                                  battle_settlement::LockRebuildDecision& out) {
+        return PlayerBattleSystem::DecideLockRebuildFor(player, lockBattleId, out);
+    }
 };
 
 namespace {
@@ -961,6 +965,50 @@ TEST_F(PlayerBattleSettlementTest, ExitingPlayerFightingExpiryRemembersButDoesNo
     EXPECT_EQ(PlayerBattleSettlementTestAccess::ExpiredFightingBattleId(player), settlement.battle_id());
     EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
     EXPECT_FALSE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+}
+
+// ---- 2026-10-19(合并前独立复核 P3-2):重建入口的裁决接线 ----
+//
+// 两个重建入口在 Redis 回调里调同一个 DecideLockRebuild(作废槽位 + 活账本 → ClassifyLockRebuild);
+// 单测经 DecideLockRebuildFor 走同一个函数,盯住「槽位确实被读进裁决」。回调里 switch 各分支本身仍只靠评审与人工场景
+// (单测没有 Redis,走不进回调)。
+
+// FIGHTING 到期记下 701 之后:锁指向 701 不重建,锁指向别的局照常重建。
+TEST_F(PlayerBattleSettlementTest, LockRebuildWiringReadsThisEntitysExpiredSlot) {
+    using battle_settlement::LockRebuildDecision;
+    PlayerBattleSettlementTestAccess::ReleaseExpiredFightingFreeze(player, playerId, 701);
+    auto decision = LockRebuildDecision::kRebuild;
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::DecideLockRebuild(player, 701, decision));
+    EXPECT_EQ(decision, LockRebuildDecision::kSkipExpired);
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::DecideLockRebuild(player, 702, decision));
+    EXPECT_EQ(decision, LockRebuildDecision::kRebuild);
+}
+
+// 没有作废局的实体:照常重建(作废槽位为 0 不与任何锁值相等)。
+TEST_F(PlayerBattleSettlementTest, LockRebuildWiringWithoutExpiryRebuilds) {
+    using battle_settlement::LockRebuildDecision;
+    auto decision = LockRebuildDecision::kSkipExpired;
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::DecideLockRebuild(player, 701, decision));
+    EXPECT_EQ(decision, LockRebuildDecision::kRebuild);
+}
+
+// 活账本里已有这一局(作废之后迟到结算按锁应用过):推进销账优先于「已作废」,不补删锁。
+TEST_F(PlayerBattleSettlementTest, LockRebuildWiringPrefersTheLedgerOverTheExpiredSlot) {
+    using battle_settlement::LockRebuildDecision;
+    PlayerBattleSettlementTestAccess::ReleaseExpiredFightingFreeze(player, playerId, 701);
+    battle_settlement::RecordApplied(tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), 701, 1);
+    auto decision = LockRebuildDecision::kRebuild;
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::DecideLockRebuild(player, 701, decision));
+    EXPECT_EQ(decision, LockRebuildDecision::kAdvanceAck);
+}
+
+// 缺账本时判不了:返回 false,重建入口照旧跳过重建(fail-closed),出参不动。
+TEST_F(PlayerBattleSettlementTest, LockRebuildWiringWithoutLedgerDecidesNothing) {
+    using battle_settlement::LockRebuildDecision;
+    tlsEcs.actorRegistry.remove<BattleSettlementLedgerComp>(player);
+    auto decision = LockRebuildDecision::kAdvanceAck;
+    EXPECT_FALSE(PlayerBattleSettlementTestAccess::DecideLockRebuild(player, 701, decision));
+    EXPECT_EQ(decision, LockRebuildDecision::kAdvanceAck);
 }
 
 // 槽位只挂在实体上:实体销毁(重登会新建实体)即随之消失,读口对无效实体返回 0。

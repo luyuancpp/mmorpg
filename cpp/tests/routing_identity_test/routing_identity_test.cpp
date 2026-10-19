@@ -670,8 +670,11 @@ TEST(SettlementLoginHook, LockRebuildSkipsTheBattleThisEntityAlreadyExpired)
 	EXPECT_EQ(battle_settlement::ClassifyLockRebuild(701, 701, false), LockRebuildDecision::kSkipExpired);
 	// 锁指向另一局(真在打的下一局 / 别处的战斗):照常重建。
 	EXPECT_EQ(battle_settlement::ClassifyLockRebuild(702, 701, false), LockRebuildDecision::kRebuild);
-	// 本实体没有作废局(0):照常重建,0 不能与任何锁值相等。
+	// 本实体没有作废局(expiredBattleId 为 0):照常重建。
 	EXPECT_EQ(battle_settlement::ClassifyLockRebuild(701, 0, false), LockRebuildDecision::kRebuild);
+	// 槽位为 0 是「没有作废局」,不是一个能匹配的 battle_id:锁值碰巧也读成 0 时(解析异常的上游已拦,这里纵深防御)
+	// 仍按重建处理,不能因为 0 == 0 判成「已作废」去补删锁。去掉 expiredBattleId != 0 这道守卫,这一条就会红。
+	EXPECT_EQ(battle_settlement::ClassifyLockRebuild(0, 0, false), LockRebuildDecision::kRebuild);
 }
 
 // 顺序:已应用 > 已作废。作废之后删锁没落地,迟到的结算会按锁匹配应用;锁要留到它落盘销账才删,

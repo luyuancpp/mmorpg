@@ -36,6 +36,12 @@ namespace muduo
 	}
 }
 
+// 定义在 services/battle/settlement/settlement_outbox.h(按锁重建的裁决);底层类型必须与定义一致。
+namespace battle_settlement
+{
+	enum class LockRebuildDecision : uint8_t;
+}
+
 // 消息定义在 proto/scene/scene.proto(无 package → 全局命名空间),
 // muduo Scene 服务与 SceneNodeGrpc 控制面共享同一份类型。
 class PrepareBattleRequest;
@@ -185,4 +191,8 @@ private:
 	static bool IsLoginRecheckPending(entt::entity player);
 	// 本实体上 reaper 最近判作废的 FIGHTING 局;没有返回 0(只读;单测与排障用)。
 	static uint64_t ExpiredFightingBattleId(entt::entity player);
+	// 两个按锁重建入口共用的裁决接线(本实体的作废槽位 + 活账本 → ClassifyLockRebuild),给单测走同一个函数。
+	// 实体无效或缺账本时返回 false(重建入口在这种情况下跳过重建)。只读。
+	static bool DecideLockRebuildFor(entt::entity player, uint64_t lockBattleId,
+									 battle_settlement::LockRebuildDecision& out);
 };
