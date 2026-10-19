@@ -21,6 +21,7 @@
 
 #include "constants/turn_battle_constants.h"
 #include "data/battle_data_provider.h"
+#include "system/class_skill_rules.h"
 
 namespace turnbattle {
 
@@ -110,7 +111,7 @@ private:
     uint32_t CheckPlayerLevel(const BattleActorState& actor, const SkillTable& skillRow) const;
     uint32_t CheckBuff(const BattleActorState& actor, const SkillTable& skillRow) const;
     uint32_t CheckState(const BattleActorState& actor) const;
-    // 耗蓝校验:SkillTable.cost_resource 中 kSkillCostResourceMana 项之和须 <= 当前法力
+    // 耗蓝校验:耗蓝量(SkillManaCost)须 <= 当前法力
     uint32_t CheckSkillCost(const BattleActorState& actor, const SkillTable& skillRow) const;
     // ITEM 校验:表行存在且 battle_usable、快照副本里还有余量、目标合法(自己或同队存活单位)、
     // PVP 场次未超每人上限。这是提交期与出手期共用的唯一判据。
@@ -118,9 +119,45 @@ private:
     // 回合制可施放的技能类型**黑名单**:拒绝 Passive(被动) / Toggle(开关) /
     // Channel(持续施法,引擎已删相位概念);skill_type 为空或只含其它位号一律放行
     // (存量表未必每行都填了 skill_type,白名单会把没填的全判死)。
-    // 表里 skill_type 存的是位号(0..5),不是掩码。
-    // 与 scene 侧 player_battle.cpp 的快照过滤逐条同源:改一处必须同改另一处。
+    // 表里 skill_type 存的是位号(0..5),不是掩码。职业被动另按 passive_stat 非空判定
+    // (被动位号是 0,导表器把重复槽位里的 0 当空格丢掉,skill_type 写不出它)。
+    // 与 scene 侧 PlayerSkillSystem::IsTurnBattleCastable 逐条同源:改一处必须同改另一处。
     bool IsTurnBattleCastableSkill(const SkillTable& skillRow) const;
+
+    // ---- 四职业技能(docs/design/class-skills.md §6;Skill.class_id != 0 的行) ----
+
+    static bool IsClassSkill(const SkillTable& skillRow) { return skillRow.class_id() != 0; }
+    // 本局生效等级:快照 skill_ranks 经 InitPlayers 复核后的值;不是本单位职业的技能 / 没学为 0
+    uint32_t ClassSkillRank(const BattleActorState& actor, const SkillTable& skillRow) const;
+    // 目标校验(提交期与出手期共用):自身技能只收 0 或自己;敌方 / 友方技能收 0(由引擎按规则选)
+    // 或对应阵营的单位 id。选中的单位此刻已阵亡 / 逃离不算错 —— 出手时按规则另选,不降级成别的行动
+    uint32_t ValidateClassSkillTarget(const BattleActorState& actor, const SkillTable& skillRow,
+                                      uint64_t targetId) const;
+    // 目标集(不消耗随机数):自身技能只有自己;否则在存活的对应阵营单位里,选中的合法主目标排第一,
+    // 其余治疗技能按气血比例升序、其它按阵位,再按 actor_id;取前 max(1, max_targets) 个
+    std::vector<uint64_t> SelectClassSkillTargets(const BattleActorState& actor, const SkillTable& skillRow,
+                                                  uint64_t primaryTargetId) const;
+    // 出手:选目标(选不到就整手作废、不扣蓝不进冷却)→ 冷却 → SKILL → 耗蓝 → 逐目标落地
+    void ExecuteClassSkill(BattleActorState& actor, const BattleAction& action, const SkillTable& skillRow,
+                           TurnResultS2C& result);
+    // 单目标落地:敌方技能 命中 → 伤害(× 等级系数)→ 死亡;之后(目标仍活着)治疗 → 回蓝 → 驱散 → 增减益
+    void ApplyClassSkillToTarget(BattleActorState& actor, const SkillTable& skillRow, uint32_t rank,
+                                 double baseDamage, BattleActorState& target, TurnResultS2C& result);
+    // 本回合行动的先手优先级:只有通过校验的职业技能行动才带 Skill.initiative,其余为 0
+    int32_t ActionInitiative(const BattleActorState& actor) const;
+    // 战斗专用被动"治疗加成"之和(按 skill_table_id 升序累加,浮点求和顺序固定)
+    double OutgoingHealBonus(const BattleActorState& actor) const;
+    // 职业技能增减益对某项属性的倍率:1 + 同向最强增益 + 同向最强减益,下限 kMinClassBuffStatMultiplier。
+    // 身上没有这类 buff 时恰好返回 1.0
+    double ClassBuffStatMultiplier(const BattleActorState& actor, ClassBuffStat stat) const;
+    // 吃增减益之后的物伤 / 防御 / 速度。没有这类 buff 时原样返回快照值(不经浮点),老对局逐位不变
+    uint64_t EffectivePhysicalAttack(const BattleActorState& actor) const;
+    uint64_t EffectiveDefense(const BattleActorState& actor) const;
+    uint64_t EffectiveSpeed(const BattleActorState& actor) const;
+    // 减益:局内幅度为负的职业技能 buff、Buff 表带 Debuff 标签的、毒 / 灼烧 / 眩晕 / 沉默 / 冰冻
+    bool IsDebuffEntry(const BattleBuffEntry& entry) const;
+    // 按身上顺序移除至多 count 个减益,返回实际移除个数
+    uint32_t DispelDebuffs(BattleActorState& target, uint32_t count, TurnResultS2C& result);
 
     // ---- 回合结算 ----
 
@@ -190,10 +227,11 @@ private:
     // 命中率 >= 100 直接返回 true 且不消耗随机数,保证既有回放基线不变;
     // 二期接表后在此处减去目标闪避并用 Rand01 掷骰
     bool RollHit(const BattleActorState& caster, const BattleActorState& target);
-    // 技能耗蓝量:cost_resource[] 中 cost_resource_id == kSkillCostResourceMana 的 cost 之和
-    uint64_t SkillManaCost(const SkillTable& skillRow) const;
-    // 扣蓝并产出 BATTLE_EVENT_MANA(source=target=施法者,value=实际消耗,target_mana_after=扣后法力);
-    // 耗蓝为 0 不产出事件
+    // 技能耗蓝量:职业技能 = ceil(最大法力 × mana_percent)(比例 > 0 时至少 1);
+    // 老技能 = cost_resource[] 中 cost_resource_id == kSkillCostResourceMana 的 cost 之和
+    uint64_t SkillManaCost(const BattleActorState& actor, const SkillTable& skillRow) const;
+    // 扣蓝并产出 BATTLE_EVENT_MANA(source=target=施法者,value=实际消耗,mana_delta=-实际消耗,
+    // target_mana_after=扣后法力);耗蓝为 0 不产出事件
     void ConsumeSkillMana(BattleActorState& actor, const SkillTable& skillRow, uint32_t skillTableId,
                           TurnResultS2C& result);
     // targeting_mode 含 AOE 位:对全部存活敌方生效
@@ -205,9 +243,11 @@ private:
 
     // effect[] → buff:镜像 BuffSystem::AddOrUpdateBuff 的
     // 免疫检查 → (回合制新增)抗异常 → 驱散 → 叠层/刷新 → 新建 → 子 buff 语义,时间维度换算为回合。
-    // 被抵抗时只发 BATTLE_EVENT_RESIST(source=施加者,target=抵抗者),不加 buff、不走驱散
+    // 被抵抗时只发 BATTLE_EVENT_RESIST(source=施加者,target=抵抗者),不加 buff、不走驱散。
+    // statPercent != 0 是职业技能的增减益:幅度写进条目 stat_percent、施加回合写进 applied_round
+    // (本回合末不扣持续);子 buff 不继承幅度
     void AddBuffToActor(BattleActorState& target, uint32_t buffTableId, uint64_t casterId,
-                        uint32_t depth, TurnResultS2C& result);
+                        uint32_t depth, TurnResultS2C& result, double statPercent = 0.0);
     bool IsImmuneToBuff(const BattleActorState& target, const BuffTable& buffRow) const;
     // 抗异常判定(非 const:可能消耗一个随机数)。只在三个条件同时成立时才可能抵抗:
     // 施加者是本局单位、与目标不同队(自己或队友挂的不判)、buff 类型在 kAilmentBuffMappings 里。
@@ -216,8 +256,9 @@ private:
     bool RollAilmentResist(const BattleActorState& target, const BuffTable& buffRow,
                            uint64_t casterId);
     void DispelBuffsByTag(BattleActorState& target, const BuffTable& buffRow, TurnResultS2C& result);
+    // 职业技能增减益(statPercent != 0)重挂:持续刷新为满、施加回合记为本回合,幅度取两者中更强的那个
     bool StackOrRefreshExistingBuff(BattleActorState& target, const BuffTable& buffRow,
-                                    uint64_t casterId, TurnResultS2C& result);
+                                    uint64_t casterId, TurnResultS2C& result, double statPercent);
     void RemoveBuffAt(BattleActorState& target, int buffIndex, TurnResultS2C& result);
 
     // ---- 查询辅助 ----

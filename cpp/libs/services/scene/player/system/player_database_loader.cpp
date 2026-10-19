@@ -115,8 +115,8 @@ void ReviveBaseAttributesIfDead(BaseAttributesComp& attrs, uint64_t maxHealth, u
 void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_database& message){
 	tlsEcs.actorRegistry.emplace<Transform>(player, message.transform());
 	tlsEcs.actorRegistry.emplace<PlayerUint64Comp>(player, message.uint64_pb_component());
+	// 技能列表的清理与补初始技能要看职业与等级,放在下面两者挂上之后(PlayerSkillSystem::InitializeOnLoad)
 	tlsEcs.actorRegistry.emplace<PlayerSkillListComp>(player, message.skill_list());
-	PlayerSkillSystem::SanitizeSkillList(player);
 	tlsEcs.actorRegistry.emplace<PlayerUint32Comp>(player, message.uint32_pb_component());
 	auto& baseAttrs = tlsEcs.actorRegistry.emplace<BaseAttributesComp>(player, message.derived_attributes_component());
 	// 上限此刻还没算(DerivedAttributesComp 由下面的 InitializeOnLoad 产出),
@@ -173,6 +173,9 @@ void PlayerDatabaseMessageFieldsUnmarshal(entt::entity player, const player_data
 	// 这里就是 PlayerCurrencyComp 的唯一创建点(实体由 InitPlayerFromAllData 新建,此前没有路径会挂它),
 	// 用 emplace 表达「创建」而不是「有就复用」:若将来有人在加载前提前挂了它,断言会立刻指出重复创建。
 	tlsEcs.actorRegistry.emplace<PlayerCurrencyComp>(player).LoadFromProto(message.currency());
+	// 技能:清理存档 + 按当前职业补初始技能。必须在属性重算之前 —— 被动技能的加成是重算的输入之一
+	// (docs/design/class-skills.md §3.2 / §7)
+	PlayerSkillSystem::InitializeOnLoad(player);
 	// 属性加点:补默认方案 + 按等级/方案重算二级属性(max_health 等此前无写者,战斗快照靠它)
 	PlayerAttributeSystem::InitializeOnLoad(player);
 	// 宝宝:同步等级(跟随主人)+ 按上限夹当前 HP/MP;必须在主人等级已 emplace 之后

@@ -24,6 +24,7 @@
 #include "player/system/equip_attribute_rules.h"
 #include "player/system/player_equip.h"
 #include "player/system/player_level_rules.h"
+#include "player/system/player_skill.h"
 
 #include "rpc/service_metadata/player_attribute_service_metadata.h"
 #include "table/code/attributeallocratio_table.h"
@@ -295,8 +296,8 @@ static_assert(CombatStatIsField(equiprules::CombatStat::kMagicResist, CombatAttr
 static_assert(CombatStatIsField(equiprules::CombatStat::kPhysicalResist, CombatAttributes::kPhysicalResistFieldNumber),
 			  "CombatStat must equal the CombatAttributes field number");
 
-// 把装备的战斗类加成整块写进 out:先清空再逐字段写。战斗类属性只有装备一个来源,每次重算整块覆盖、
-// 不做增量维护 —— 卸下最后一件装备后这里写出的就是全 0。
+// 把装备的战斗类加成整块写进 out:先清空再逐字段写。每次重算整块覆盖、不做增量维护 —— 卸下最后一件装备后
+// 这里写出的就是全 0。另一个来源是职业技能的暴击被动,由 Recalculate 在本函数之后加到两项必杀率上。
 void WriteCombatAttributes(const equiprules::EquipBonus& bonus, CombatAttributes& out) {
 	using equiprules::CombatOf;
 	using equiprules::CombatStat;
@@ -749,6 +750,17 @@ void PlayerAttributeSystem::Recalculate(entt::entity player, RecalcReason reason
 	// 装备的二级属性平加:在维度循环之后、向下取整之前进累加器。
 	acc.AddEquipFlat(equipBonus);
 
+	// 职业技能被动(docs/design/class-skills.md §7):在全部加法项(职业初值 / 成长 / 加点 / 装备)之后按比例放大,
+	// 向下取整之前进累加器。每次从技能列表现算、不读上一次的结果,所以重复重算 / 重登都不会叠加。
+	// scene 是这六项与暴击被动唯一的消费者:战斗快照带的是放大后的值,引擎不再乘一次。
+	const auto passive = PlayerSkillSystem::CollectPassiveBonus(player);
+	acc.maxHealth *= 1.0 + passive.maxHealth;
+	acc.maxMana *= 1.0 + passive.maxMana;
+	acc.physicalAttack *= 1.0 + passive.physicalAttack;
+	acc.magicAttack *= 1.0 + passive.magicAttack;
+	acc.speed *= 1.0 + passive.speed;
+	acc.defense *= 1.0 + passive.defense;
+
 	const uint64_t oldMaxHealth = derived.max_health();
 	const uint64_t oldMaxMana = derived.max_mana();
 	derived.set_max_health(std::max<uint64_t>(FloorToU64(acc.maxHealth), 1));
@@ -759,6 +771,14 @@ void PlayerAttributeSystem::Recalculate(entt::entity player, RecalcReason reason
 	derived.set_defense(FloorToU64(acc.defense));
 	// 战斗类属性(必杀 / 连击 / 抗性 …):装备加成整块覆盖,开战时由 BuildBattleSnapshot 原样拷进快照。
 	WriteCombatAttributes(equipBonus, *derived.mutable_combat());
+	// 暴击被动的百分点加在物理 / 法术两项必杀率上(引擎的暴击率 = 基础暴击率 + 对应伤害类型的必杀率),
+	// combat 是整数百分点,向下取整;加 1e-9 是为了 0.05 × 1.2 × 100 这类本应是整数的乘积不被浮点误差压低一点。
+	if (passive.critPercentPoints > 0.0) {
+		const uint64_t critPoints = FloorToU64(passive.critPercentPoints + 1e-9);
+		auto* combat = derived.mutable_combat();
+		combat->set_physical_crit_rate(SaturatingAdd(combat->physical_crit_rate(), critPoints));
+		combat->set_magic_crit_rate(SaturatingAdd(combat->magic_crit_rate(), critPoints));
+	}
 
 	// 速度直写基础属性:回合引擎出手序 / 逃跑判定只读 BaseAttributesComp.speed。
 	// 这里面含装备的速度 —— 它是重算结果的镜像,每次加载都在这里被覆盖、从不作为输入,落库的那份只是缓存。
