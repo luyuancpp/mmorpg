@@ -6,6 +6,17 @@ package main
 //
 //	go test -tags merge_integration ./...
 //
+// 依赖地址取环境变量(D1 规格 §6.5 / §13.3 第 7 条),缺省保持原来的硬编码值,既有命令不变:
+//
+//	MERGE_ZONE_IT_MYSQL_DSN     MySQL 实例基址 "user:pass@tcp(host:port)/"(不带库名与参数;一次性库由 TestMain 建)
+//	MERGE_ZONE_IT_REDIS_ADDR    Redis 地址(用它的 DB 9/10/11,必须是空的)
+//	MERGE_ZONE_IT_ROUTE_DB_DSN  路由表真库用例的完整 DSN:指向一个已由 `data_service -f <yaml> -migrate` 建好路由表的一次性库;
+//	                            未设时这些用例 SKIP(见 route_store_integration_test.go)
+//	MERGE_ZONE_IT_REQUIRE=1     依赖不可达 / 未设时 FAIL 而不是 SKIP(真库验证用,杜绝把 SKIP 报成通过)
+//
+// TestMain 只探测依赖并记下原因;每个用例的第一句 requireIT(t) 据此 SKIP(MERGE_ZONE_IT_REQUIRE=1 时 FAIL),
+// `go test -v` 里逐条可见。it_guard_test.go 用 AST 钉住「每个集成用例的第一句都是 requireIT(t)」。
+//
 // 凭据来自 deploy/docker-compose.yml(root / Mmorpg#2026db)。Kafka 不需要:
 // 积压检查是可注入的(kafkaLagSource),这里注入假的。
 //
@@ -44,10 +55,26 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// 依赖地址的环境变量与缺省值(缺省 = 原来的硬编码值,既有命令不变)。
 const (
-	itMySQLBase = "root:Mmorpg#2026db@tcp(127.0.0.1:3306)/"
-	itRedisAddr = "127.0.0.1:6379"
+	itMySQLEnv   = "MERGE_ZONE_IT_MYSQL_DSN"
+	itRedisEnv   = "MERGE_ZONE_IT_REDIS_ADDR"
+	itRouteDBEnv = "MERGE_ZONE_IT_ROUTE_DB_DSN"
+	itRequireEnv = "MERGE_ZONE_IT_REQUIRE"
 
+	itDefaultMySQLBase = "root:Mmorpg#2026db@tcp(127.0.0.1:3306)/"
+	itDefaultRedisAddr = "127.0.0.1:6379"
+)
+
+var (
+	// itMySQLBase / itRedisAddr 由 TestMain 按环境变量改写(itProbeDependencies)。
+	itMySQLBase = itDefaultMySQLBase
+	itRedisAddr = itDefaultRedisAddr
+	// itUnavailable 是 TestMain 探测到的依赖不可达原因;空串 = 依赖就绪、一次性库已建好(requireIT 据此 SKIP / FAIL)。
+	itUnavailable string
+)
+
+const (
 	itSrcZone = uint32(901)
 	itDstZone = uint32(902)
 
@@ -81,29 +108,20 @@ func itDSN() string {
 	return itMySQLBase + itDefaultDB + "?charset=utf8mb4&parseTime=true&loc=Local&multiStatements=true"
 }
 
+// TestMain 只探测依赖、记下原因(规格 §13.3 第 7 条)。以前不可达时直接 os.Exit(0):SKIP 与 PASS 的退出码相同,
+// `go test` 也只打一行 ok,看不出一个用例都没跑。现在不可达时照样 m.Run(),每个用例由 requireIT 逐条 SKIP
+// (MERGE_ZONE_IT_REQUIRE=1 时 FAIL)。依赖就绪之后的建库 / 编译失败仍是真失败,退出码 1。
 func TestMain(m *testing.M) {
-	ctx := context.Background()
-	root, err := sql.Open("mysql", itMySQLBase+"?multiStatements=true")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "SKIP: mysql open: %v\n", err)
-		os.Exit(0)
-	}
-	if err := root.PingContext(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "SKIP: mysql unreachable: %v\n", err)
-		os.Exit(0)
-	}
-	for _, addr := range []int{itMappingRD, itGuildRD, itSharedRD} {
-		c := redis.NewClient(&redis.Options{Addr: itRedisAddr, DB: addr})
-		n, err := c.DBSize(ctx).Result()
-		_ = c.Close()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "SKIP: redis db %d unreachable: %v\n", addr, err)
-			os.Exit(0)
+	root, reason := itProbeDependencies()
+	if reason != "" {
+		itUnavailable = reason
+		verdict := "SKIP"
+		if itRequired() {
+			verdict = "FAIL"
 		}
-		if n != 0 {
-			fmt.Fprintf(os.Stderr, "SKIP: redis db %d is not empty (%d keys); refusing to touch someone else's data\n", addr, n)
-			os.Exit(0)
-		}
+		fmt.Fprintf(os.Stderr, "merge_zone integration dependencies unavailable (%s): every integration test will %s "+
+			"(%s=1 turns SKIP into FAIL)\n", reason, verdict, itRequireEnv)
+		os.Exit(m.Run())
 	}
 
 	itDropAll(root)
@@ -129,6 +147,79 @@ func TestMain(m *testing.M) {
 	_ = root.Close()
 	_ = os.Remove(bin)
 	os.Exit(code)
+}
+
+// itProbeDependencies 按环境变量取地址并只做探测(不建任何东西):MySQL 能连上、Redis DB 9/10/11 能连上且是空的。
+// 返回可用的 root 连接,或不可达的原因(原因里不带口令)。
+func itProbeDependencies() (*sql.DB, string) {
+	if v := os.Getenv(itMySQLEnv); v != "" {
+		base, err := itNormalizeMySQLBase(v)
+		if err != nil {
+			return nil, fmt.Sprintf("%s: %v", itMySQLEnv, err)
+		}
+		itMySQLBase = base
+	}
+	if v := os.Getenv(itRedisEnv); v != "" {
+		itRedisAddr = v
+	}
+	ctx := context.Background()
+	root, err := sql.Open("mysql", itMySQLBase+"?multiStatements=true")
+	if err != nil {
+		return nil, fmt.Sprintf("mysql open: %v", err)
+	}
+	if err := root.PingContext(ctx); err != nil {
+		_ = root.Close()
+		return nil, fmt.Sprintf("mysql unreachable: %v", err)
+	}
+	for _, dbi := range []int{itMappingRD, itGuildRD, itSharedRD} {
+		c := redis.NewClient(&redis.Options{Addr: itRedisAddr, DB: dbi})
+		n, err := c.DBSize(ctx).Result()
+		_ = c.Close()
+		if err != nil {
+			_ = root.Close()
+			return nil, fmt.Sprintf("redis %s db %d unreachable: %v", itRedisAddr, dbi, err)
+		}
+		if n != 0 {
+			_ = root.Close()
+			return nil, fmt.Sprintf("redis %s db %d is not empty (%d keys); refusing to touch someone else's data", itRedisAddr, dbi, n)
+		}
+	}
+	return root, ""
+}
+
+// itNormalizeMySQLBase 校验 MERGE_ZONE_IT_MYSQL_DSN 是「实例基址」(不带库名、不带参数:一次性库与参数由用例拼,
+// 沿用原来「基址 + 库名」的拼法),返回规范形式 "user:pass@tcp(host:port)/"。错误信息不回显 DSN(含口令)。
+func itNormalizeMySQLBase(v string) (string, error) {
+	cfg, err := mysql.ParseDSN(v)
+	if err != nil {
+		return "", fmt.Errorf("not a MySQL DSN: %w", err)
+	}
+	if cfg.DBName != "" || len(cfg.Params) > 0 {
+		return "", errors.New(`want an instance base like "user:pass@tcp(host:port)/", without a database name or parameters`)
+	}
+	return cfg.FormatDSN(), nil
+}
+
+// itRequired 报告是否设了 MERGE_ZONE_IT_REQUIRE=1(依赖缺失时 FAIL 而不是 SKIP)。
+func itRequired() bool {
+	return os.Getenv(itRequireEnv) == "1"
+}
+
+// itMissing 报告一项集成依赖缺失:默认 SKIP 并写明原因;MERGE_ZONE_IT_REQUIRE=1 时 FAIL(杜绝把 SKIP 报成通过)。
+func itMissing(t *testing.T, reason string) {
+	t.Helper()
+	if itRequired() {
+		t.Fatalf("integration dependency missing and %s=1: %s", itRequireEnv, reason)
+	}
+	t.Skipf("integration dependency missing: %s (set %s=1 to fail instead of skipping)", reason, itRequireEnv)
+}
+
+// requireIT 是每个集成用例的第一句(it_guard_test.go 钉住):TestMain 探测到依赖不可达时 SKIP / FAIL。
+func requireIT(t *testing.T) {
+	t.Helper()
+	if itUnavailable != "" {
+		itMissing(t, itUnavailable)
+	}
 }
 
 func itDropAll(db *sql.DB) {
@@ -338,6 +429,7 @@ func itListingZones(t *testing.T, db *sql.DB, listingID uint64) (marketZone, sel
 // ── 表发现 ───────────────────────────────────────────────────
 
 func TestIT_DiscoverPlayerTables_SkipsTablesWithoutPlayerIdColumn(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	db := itOpen(t)
 	candidates, err := loadTableListJSON(itTableListFile(t))
@@ -355,6 +447,7 @@ func TestIT_DiscoverPlayerTables_SkipsTablesWithoutPlayerIdColumn(t *testing.T) 
 }
 
 func TestIT_AssertSchemaExists(t *testing.T) {
+	requireIT(t)
 	db := itOpen(t)
 	ctx := context.Background()
 	if err := assertSchemaExists(ctx, db, zoneDBName(itDstZone)); err != nil {
@@ -368,6 +461,7 @@ func TestIT_AssertSchemaExists(t *testing.T) {
 // ── 玩家行拷贝(item 2 的核心)──────────────────────────────
 
 func TestIT_CopyPlayerRows_CopiesEveryTableAndVerifiesCounts(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -407,6 +501,7 @@ func TestIT_CopyPlayerRows_CopiesEveryTableAndVerifiesCounts(t *testing.T) {
 }
 
 func TestIT_CopyPlayerRows_RefusesWhenTargetAlreadyHoldsTheId(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -437,6 +532,7 @@ func TestIT_CopyPlayerRows_RefusesWhenTargetAlreadyHoldsTheId(t *testing.T) {
 }
 
 func TestIT_CopyPlayerRows_DryRunWritesNothing(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -456,6 +552,7 @@ func TestIT_CopyPlayerRows_DryRunWritesNothing(t *testing.T) {
 }
 
 func TestIT_DeletePlayerRows_OnlyRemovesByteIdenticalCopies(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -493,6 +590,7 @@ func TestIT_DeletePlayerRows_OnlyRemovesByteIdenticalCopies(t *testing.T) {
 // ── 共享缓存失效 ─────────────────────────────────────────────
 
 func TestIT_InvalidatePlayerCaches_DeletesLoginAndDbCacheKeys(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	shared := itRedis(t, itSharedRD)
@@ -548,6 +646,7 @@ func TestIT_InvalidatePlayerCaches_DeletesLoginAndDbCacheKeys(t *testing.T) {
 // ── mapping ──────────────────────────────────────────────────
 
 func TestIT_CollectAndRemapMapping(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	m := itRedis(t, itMappingRD)
@@ -605,6 +704,7 @@ func TestIT_CollectAndRemapMapping(t *testing.T) {
 // 人一个不动(旧写法全量扫描、见 src 就改,把行从没拷过的人也翻到 dst);清单里的人键丢了或指向第三个 zone
 // 时人数对不上,步骤不能标记完成。
 func TestIT_Gap_RemapPlayerMapping_CASTouchesOnlyManifestKeys(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	m := itRedis(t, itMappingRD)
@@ -641,6 +741,7 @@ func TestIT_Gap_RemapPlayerMapping_CASTouchesOnlyManifestKeys(t *testing.T) {
 }
 
 func TestIT_BackfillHomeZone_NeverOverwritesAnExistingMapping(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	m := itRedis(t, itMappingRD)
@@ -668,6 +769,7 @@ func TestIT_BackfillHomeZone_NeverOverwritesAnExistingMapping(t *testing.T) {
 // TestIT_Gap_Backfill_RefusesAZoneThatWasMergedAway(A10):源区被合走之后(merge:merged_into:{src} 在),
 // 映射丢了也不能靠回填恢复 —— 回填会把人钉回死区。dry-run 同样拒绝;撤销删掉标记后回填恢复正常。
 func TestIT_Gap_Backfill_RefusesAZoneThatWasMergedAway(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	m := itRedis(t, itMappingRD)
@@ -706,6 +808,7 @@ func TestIT_Gap_Backfill_RefusesAZoneThatWasMergedAway(t *testing.T) {
 // ── guild ────────────────────────────────────────────────────
 
 func TestIT_MergeRankZSET_IsAtomicAndRoundTripsThroughUnmerge(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	g := itRedis(t, itGuildRD)
@@ -751,6 +854,7 @@ func TestIT_MergeRankZSET_IsAtomicAndRoundTripsThroughUnmerge(t *testing.T) {
 // TestIT_Gap_MergeGuildRank_UsesTheSourceReadUnderTheLock(A8):步骤 4 以维护锁内重读的源榜为准,清单阶段的
 // 快照(分数旧、少了之后进榜的成员)从不写进目标榜;写之前先把撤销依据交给清单。
 func TestIT_Gap_MergeGuildRank_UsesTheSourceReadUnderTheLock(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	g := itRedis(t, itGuildRD)
@@ -820,6 +924,7 @@ func TestIT_Gap_MergeGuildRank_UsesTheSourceReadUnderTheLock(t *testing.T) {
 // (公会全部解散,或 RebuildRanks 按 MySQL 重建、目标榜里已是新分数)。清单快照从没写过,步骤 4 不得把它写进目标榜,
 // 撤销依据记为空(撤销不再把可能已解散的公会 ZADD 回源区)。
 func TestIT_Gap_MergeGuildRank_EmptiedSourceNeverResurrects(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	g := itRedis(t, itGuildRD)
@@ -853,6 +958,7 @@ func TestIT_Gap_MergeGuildRank_EmptiedSourceNeverResurrects(t *testing.T) {
 // TestIT_Gap_MergeGuildRank_ResumeDoesNotRewriteADisbandedMember:续跑前某个已并进目标榜的成员被 ZREM(解散),
 // 续跑不得把它写回目标榜。
 func TestIT_Gap_MergeGuildRank_ResumeDoesNotRewriteADisbandedMember(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	g := itRedis(t, itGuildRD)
@@ -872,6 +978,7 @@ func TestIT_Gap_MergeGuildRank_ResumeDoesNotRewriteADisbandedMember(t *testing.T
 // TestIT_Gap_MergeRankZSET_KeepsNewerTargetScores:步骤 3 之后 guild 服已往目标榜写了某个源区公会的新分数,
 // 源榜里还是旧的 —— ZADD NX 不覆盖目标榜里的新分数。
 func TestIT_Gap_MergeRankZSET_KeepsNewerTargetScores(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	g := itRedis(t, itGuildRD)
@@ -897,6 +1004,7 @@ func TestIT_Gap_MergeRankZSET_KeepsNewerTargetScores(t *testing.T) {
 }
 
 func TestIT_InvalidateGuildCaches_IncrementsGenerationAndDropsTheEntry(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	g := itRedis(t, itGuildRD)
@@ -923,6 +1031,7 @@ func TestIT_InvalidateGuildCaches_IncrementsGenerationAndDropsTheEntry(t *testin
 }
 
 func TestIT_AssertNoGuildNameCollision(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -945,6 +1054,7 @@ func TestIT_AssertNoGuildNameCollision(t *testing.T) {
 // TestIT_AssertGuildTablesReady:库在 + 两张表在才放行。库不在、库在表不在都必须拒绝 ——
 // 这两种情况和「这个区一个公会都没有」在查询结果上长得一样,放过去就是静默漏搬。
 func TestIT_AssertGuildTablesReady(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -963,6 +1073,7 @@ func TestIT_AssertGuildTablesReady(t *testing.T) {
 }
 
 func TestIT_MigrateGuildZone(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpenReadCommitted(t)
@@ -1068,6 +1179,7 @@ func itOpenReadCommitted(t *testing.T) *sql.DB {
 // TestIT_MySQLSessionIsReadCommitted:readCommittedDSN 改出来的 DSN 真的让驱动在建连时把会话设成 RC ——
 // 单测只能证明 DSN 字符串长对了,这里证明服务器端确实生效(包括 DSN 里原有的 multiStatements 等参数照常工作)。
 func TestIT_MySQLSessionIsReadCommitted(t *testing.T) {
+	requireIT(t)
 	db := itOpenReadCommitted(t)
 	var level string
 	if err := db.QueryRow("SELECT @@SESSION.transaction_isolation").Scan(&level); err != nil {
@@ -1126,6 +1238,7 @@ func itExplain(t *testing.T, db *sql.DB, stmt string) map[string]string {
 // 与在线写者「主键 → 二级」反序成环 —— 这类问题只取决于执行计划,EXPLAIN 每次都答得出来。
 // 先各插一行:点更新命中已存在的行时计划才稳定。UPDATE 按主键点更新时 MySQL 显示 range(rows=1)或 const。
 func TestIT_ZonePointUpdatesArePrimaryKeyPointLookups(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	db := itOpenReadCommitted(t)
 	if _, err := db.Exec("INSERT INTO " + itGuildDB + ".guild (guild_id, name, zone_id) VALUES (11,'a',901),(12,'b',901),(21,'c',902)"); err != nil {
@@ -1214,6 +1327,7 @@ func isITDeadlock(err error) bool {
 // 这里 T2 直接执行与 guild_manage_repo.go(sqlLockGuild / DisbandGuild)同形的两条语句:merge_zone 是独立
 // module,不能 import go/guild;环只取决于这两条语句的锁模式,与事务里其余的删申请 / 删成员无关。
 func TestIT_MigrateGuildZone_ConcurrentDisbandDoesNotDeadlock(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
@@ -1294,6 +1408,7 @@ func TestIT_MigrateGuildZone_ConcurrentDisbandDoesNotDeadlock(t *testing.T) {
 // ── 聚宝斋 trade_listing ─────────────────────────────────────
 
 func TestIT_TradeMarketZone_RewriteVerifyRestore(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -1413,6 +1528,7 @@ func TestIT_TradeMarketZone_RewriteVerifyRestore(t *testing.T) {
 // ── 围栏与锁 ─────────────────────────────────────────────────
 
 func TestIT_MergeFence_RefusesASecondRunAndReleasesOnlyItsOwn(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	m := itRedis(t, itMappingRD)
@@ -1461,6 +1577,7 @@ func TestIT_MergeFence_RefusesASecondRunAndReleasesOnlyItsOwn(t *testing.T) {
 }
 
 func TestIT_AcquireGuildRankLock_BlocksWhileTheGuildServiceHoldsIt(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	g := itRedis(t, itGuildRD)
@@ -1507,6 +1624,7 @@ func itPreflightParams(ids []uint64) preflightParams {
 }
 
 func TestIT_Preflight_PassesOnACleanZone(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	if err := runPreflight(context.Background(), itPreflightDeps(t, fakeLagSource{}), itPreflightParams([]uint64{9701})); err != nil {
 		t.Fatalf("clean zone rejected: %v", err)
@@ -1514,6 +1632,7 @@ func TestIT_Preflight_PassesOnACleanZone(t *testing.T) {
 }
 
 func TestIT_Preflight_BlocksOnEachHazard(t *testing.T) {
+	requireIT(t)
 	ids := []uint64{9711}
 	topic := dbTaskTopic(itSrcZone, 1)
 	cases := []struct {
@@ -1567,6 +1686,7 @@ func TestIT_Preflight_BlocksOnEachHazard(t *testing.T) {
 
 // P4 的 p* SCAN 只认本 topic:别的 zone(topic 名是本 topic 加数字)与别的世代(_g2)的按分区 ready 列表不该挡本次合服。
 func TestIT_Preflight_IgnoresOtherTopicsPartitionedRetryLists(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	topic := dbTaskTopic(itSrcZone, 1)
@@ -1580,6 +1700,7 @@ func TestIT_Preflight_IgnoresOtherTopicsPartitionedRetryLists(t *testing.T) {
 
 // P7 只拦"指向活队伍"的索引:离队后保留的 tid=0 索引、队伍已过期的孤儿索引都不是在队,不该挡合服。
 func TestIT_Preflight_IgnoresStaleTeamIndexes(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	shared := itRedis(t, itSharedRD)
@@ -1596,6 +1717,7 @@ func TestIT_Preflight_IgnoresStaleTeamIndexes(t *testing.T) {
 // ── 守卫(item 1)────────────────────────────────────────────
 
 func TestIT_GuardPlayerSet_RefusesEmptyMappingAndIncompleteBackfill(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -1658,6 +1780,8 @@ func TestIT_GuardPlayerSet_RefusesEmptyMappingAndIncompleteBackfill(t *testing.T
 func itRun(t *testing.T, args ...string) (string, int) {
 	t.Helper()
 	base := []string{
+		// 这套用例的 mapping Redis 不归任何 db_first 的 data_service 管,显式走 redis 路径(-route-source 没有缺省值)。
+		"-route-source", routeSourceRedis,
 		"-mysql-dsn", itDSN(),
 		"-redis-addr", itRedisAddr,
 		"-redis-db", strconv.Itoa(itGuildRD),
@@ -1682,6 +1806,7 @@ func itRun(t *testing.T, args ...string) (string, int) {
 }
 
 func TestIT_EndToEnd_MergeVerifyUnmerge(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -1905,6 +2030,7 @@ func TestIT_EndToEnd_MergeVerifyUnmerge(t *testing.T) {
 }
 
 func TestIT_EndToEnd_RefusesEmptySourceAndSkipPlayerRowsWithoutAttestation(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	// 空 mapping:合服会是静默 no-op,必须拒绝。下面停在空源区守卫上的几次都给 -player-rows-mode copy:
 	// 默认的 pin 模式会先在能力标记(C)上拒绝(这里没有 go/db 写标记),到不了守卫。
@@ -1997,6 +2123,7 @@ func TestIT_EndToEnd_RefusesEmptySourceAndSkipPlayerRowsWithoutAttestation(t *te
 }
 
 func TestIT_Unmerge_RefusesMissingTradeSchemaBeforeAnyWrite(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	mapRdb := itRedis(t, itMappingRD)
@@ -2031,6 +2158,7 @@ func TestIT_Unmerge_RefusesMissingTradeSchemaBeforeAnyWrite(t *testing.T) {
 }
 
 func TestIT_Unmerge_RefusesMissingGuildSchemaBeforeAnyWrite(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	mapRdb := itRedis(t, itMappingRD)
@@ -2072,6 +2200,7 @@ func TestIT_Unmerge_RefusesMissingGuildSchemaBeforeAnyWrite(t *testing.T) {
 // 源区插一条商品 —— 它必然发生在清单落盘之后、步骤 3b 之前,不靠时序赛跑。
 // (「dry-run 写好清单后再插商品」造不出中止:-apply 的清单阶段会把它重新并进清单。)
 func TestIT_TradeMarketZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -2191,6 +2320,7 @@ func TestIT_TradeMarketZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testin
 // 围栏留在本次 run_id 上并给出 GET/DEL 指引;照做之后重跑,清单阶段把新公会并进清单再搬。
 // 「清单落盘之后才进源区」与 3b 的用例同法用触发器确定性制造:步骤 1 往目标库插玩家行时顺手在源区建一个公会。
 func TestIT_GuildZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -2302,9 +2432,10 @@ func TestIT_GuildZone_ResidualAbortKeepsFenceThenResumesAfterDEL(t *testing.T) {
 }
 
 func TestIT_Audit_ExitsTwoWhenAHandleIsMissing(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	// 指向一个没人监听的 Redis:审计跑不成,必须 exit 2(不是 0,也不是 1)。
-	cmd := exec.Command(itBinary, "-mode", "audit", "-source-zone", "901", "-target-zone", "902",
+	cmd := exec.Command(itBinary, "-mode", "audit", "-source-zone", "901", "-target-zone", "902", "-route-source", routeSourceRedis,
 		"-mysql-dsn", itDSN(), "-redis-addr", "127.0.0.1:6399", "-table-list-json", itTableListFile(t),
 		"-guild-schema", itGuildDB, "-trade-schema", itTradeDB, "-friend-schema", itFriendDB)
 	out, err := cmd.CombinedOutput()
@@ -2321,6 +2452,7 @@ func TestIT_Audit_ExitsTwoWhenAHandleIsMissing(t *testing.T) {
 }
 
 func TestIT_Audit_OnlineGateActuallyBlocks(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	itSeedPlayers(t, []uint64{9971}, true)
@@ -2385,6 +2517,7 @@ func itAssertFenceKept(t *testing.T, out, why string) string {
 // 围栏必须正常释放(旧写法 log.Fatalf 不跑 defer,围栏挂到 TTL,两个 zone 白白封几个小时),清单不落盘,
 // 修好之后原命令直接能重跑。
 func TestIT_Gap_RefusalsUnderTheFenceReleaseIt(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -2436,6 +2569,7 @@ func TestIT_Gap_RefusalsUnderTheFenceReleaseIt(t *testing.T) {
 // TestIT_Gap_DryRunPreviewIsNeverConsumed(A3):dry-run 的预览(<path>.dryrun.json,dry_run=true)只给人看,
 // -apply 续跑、-mode unmerge、-verify-merged 一律拒读 —— 按后缀拒一次,被改名后按内容再拒一次。
 func TestIT_Gap_DryRunPreviewIsNeverConsumed(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	itSeedPlayers(t, []uint64{9771}, true)
 	dir := t.TempDir()
@@ -2487,6 +2621,7 @@ func TestIT_Gap_DryRunPreviewIsNeverConsumed(t *testing.T) {
 // TestIT_Gap_CopyPlayerRows_PrechecksEveryTableBeforeAnyWrite(A4):撞号预检对全部表在任何写之前做完。
 // 旧写法逐表查,排在后面的表撞号时,排在前面的表(player_centre_database 按字母序最先)已经提交进目标库。
 func TestIT_Gap_CopyPlayerRows_PrechecksEveryTableBeforeAnyWrite(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -2512,6 +2647,7 @@ func TestIT_Gap_CopyPlayerRows_PrechecksEveryTableBeforeAnyWrite(t *testing.T) {
 // TestIT_Gap_CopyPlayerRows_ResumeAcceptsOnlyIdenticalCopies(A4):续跑时目标库里「与源行逐列相同、且没有目标
 // 独有行」的表是上次拷完的,跳过;被改过的行、目标独有行照旧按 ID 安全事件拒绝。
 func TestIT_Gap_CopyPlayerRows_ResumeAcceptsOnlyIdenticalCopies(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -2575,6 +2711,7 @@ func TestIT_Gap_CopyPlayerRows_ResumeAcceptsOnlyIdenticalCopies(t *testing.T) {
 // TestIT_Gap_ResumeRefusesAChangedPlayerTableSet(A5):清单落盘之后两库又加了玩家表,续跑拒绝(清单的表是
 // 拷贝与撤销删行的唯一依据);清单一个字节不改。续跑的清单校验在围栏之下做、拒绝时围栏保留(上一次运行已写过)。
 func TestIT_Gap_ResumeRefusesAChangedPlayerTableSet(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	itSeedPlayers(t, []uint64{9781}, true)
 	manifest := filepath.Join(t.TempDir(), "merge.json")
@@ -2603,6 +2740,7 @@ func TestIT_Gap_ResumeRefusesAChangedPlayerTableSet(t *testing.T) {
 // 状态:9782 的映射被改到了第三个 zone(源区计数照样是 0),目标库也没有它的行,而目标区原住民 9790
 // 把「dst 人数 / 目标库行数 >= -expected-src-players」两条下界都撑了过去。
 func TestIT_Gap_VerifyMerged_ChecksEveryManifestPlayer(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -2654,6 +2792,7 @@ func TestIT_Gap_VerifyMerged_ChecksEveryManifestPlayer(t *testing.T) {
 // TestIT_Gap_Unmerge_RefusesALiveTargetZoneBeforeAnyWrite(A7):撤销复用预检、按目标区口径 —— 目标区还有节点、
 // 清单玩家还在线时,在第一次写之前拒绝:映射、公告标记原封不动,围栏正常释放。
 func TestIT_Gap_Unmerge_RefusesALiveTargetZoneBeforeAnyWrite(t *testing.T) {
+	requireIT(t)
 	ctx := context.Background()
 	for _, c := range []struct {
 		name   string
@@ -2706,6 +2845,7 @@ func TestIT_Gap_Unmerge_RefusesALiveTargetZoneBeforeAnyWrite(t *testing.T) {
 // 拒绝不得释放围栏 —— 否则两个 zone 在半合服状态下重新放开建号 / 建帮 / 进场。只有清单已标记步骤 7 完成
 // (上一次已跑完全程,dst 可能已开服)时才照常释放。
 func TestIT_Gap_ResumeRefusalKeepsTheFence(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	mapRdb := itRedis(t, itMappingRD)
@@ -2753,6 +2893,7 @@ func TestIT_Gap_ResumeRefusalKeepsTheFence(t *testing.T) {
 // TestIT_Gap_MergedIntoIsCheckedBeforeAnyWrite(A10):源区已被合进别的 zone、或目标区自己已被合走时,合服在清单
 // 落盘之前(第一次写之前)拒绝 —— 旧写法到步骤 5 才查,那时公会 / 商品 / 榜单 / 玩家行都已改到 dst。
 func TestIT_Gap_MergedIntoIsCheckedBeforeAnyWrite(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -2813,6 +2954,7 @@ func TestIT_Gap_MergedIntoIsCheckedBeforeAnyWrite(t *testing.T) {
 // 被改回源区(半撤销状态)。此时门禁拒绝不得释放围栏(否则半撤销状态下放开两个 zone 的建号 / 建帮)。
 // 未进入半撤销状态的拒绝照常释放,见 TestIT_Gap_Unmerge_RefusesALiveTargetZoneBeforeAnyWrite。
 func TestIT_Gap_Unmerge_HalfUndoneRefusalKeepsTheFence(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	mapRdb := itRedis(t, itMappingRD)
@@ -2840,6 +2982,7 @@ func TestIT_Gap_Unmerge_HalfUndoneRefusalKeepsTheFence(t *testing.T) {
 // TestIT_Gap_AuditGuildMembers_UncheckableIsInfra(A9):没声明跳过帮会时,guild_member 查不成 = INFRA(exit 2),
 // 不再降级成 info「table not present」;声明跳过时报 SKIPPED。
 func TestIT_Gap_AuditGuildMembers_UncheckableIsInfra(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	db := itOpen(t)
@@ -2859,6 +3002,7 @@ func TestIT_Gap_AuditGuildMembers_UncheckableIsInfra(t *testing.T) {
 // TestIT_Gap_ClearHotState_SweepsZoneZeroLocationsBeforeDeletingScenes(A11):清单外玩家的 zone_id=0 旧 location
 // 只能靠 scene:{id}:zone 反查,而第 2 步正要删这些键 —— 删之前补扫一遍,归属源区的删掉;zone_id 非 0 的不碰。
 func TestIT_Gap_ClearHotState_SweepsZoneZeroLocationsBeforeDeletingScenes(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	scene := itRedis(t, itSceneRD)
@@ -2914,6 +3058,7 @@ func TestIT_Gap_ClearHotState_SweepsZoneZeroLocationsBeforeDeletingScenes(t *tes
 // TestIT_ClearHotState_RemovesZoneFromSceneManagerRegistry(2026-10-16):清热状态的最后一步把源 zone 从
 // scene_manager 的 zone 登记集合 scene_manager:zones 里摘掉;dry-run 只计数不动,别的 zone 一个不碰。
 func TestIT_ClearHotState_RemovesZoneFromSceneManagerRegistry(t *testing.T) {
+	requireIT(t)
 	itReset(t)
 	ctx := context.Background()
 	scene := itRedis(t, itSceneRD)

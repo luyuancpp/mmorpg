@@ -448,9 +448,9 @@ function Invoke-RouteTool {
     $subcommand = $RouteToolArgs[0]
 
     if ($DryRun) {
-        $image = if ([string]::IsNullOrWhiteSpace($Image)) { "(resolved at run time from deployment/$($contract.DeploymentName) in $namespace)" } else { $Image }
-        $policy = if ([string]::IsNullOrWhiteSpace($Image)) { 'IfNotPresent' } else { Resolve-ImagePullPolicy -ImageRef $Image }
-        $manifest = New-RouteToolJobManifest -TemplateText $templateText -RunId $runId -Image $image -PullPolicy $policy `
+        $jobImage = if ([string]::IsNullOrWhiteSpace($Image)) { "(resolved at run time from deployment/$($contract.DeploymentName) in $namespace)" } else { $Image }
+        $jobPullPolicy = if ([string]::IsNullOrWhiteSpace($Image)) { 'IfNotPresent' } else { Resolve-ImagePullPolicy -ImageRef $Image }
+        $manifest = New-RouteToolJobManifest -TemplateText $templateText -RunId $runId -Image $jobImage -PullPolicy $jobPullPolicy `
             -Arguments $RouteToolArgs -TimeoutSeconds $TimeoutSeconds
         Write-Host "[dry-run] route-tool job=$jobName namespace=$namespace subcommand=$subcommand timeout=${TimeoutSeconds}s (kubectl is not called, no report directory is created)"
         if ([string]::IsNullOrWhiteSpace($Image)) {
@@ -477,14 +477,14 @@ function Invoke-RouteTool {
         }
         if ([string]::IsNullOrWhiteSpace($Image)) {
             $live = Get-LiveDataServiceImage -Namespace $namespace
-            $image = $live.Image
-            $policy = $live.PullPolicy
+            $jobImage = $live.Image
+            $jobPullPolicy = $live.PullPolicy
         }
         else {
-            $image = $Image
-            $policy = Resolve-ImagePullPolicy -ImageRef $Image
+            $jobImage = $Image
+            $jobPullPolicy = Resolve-ImagePullPolicy -ImageRef $Image
         }
-        $manifest = New-RouteToolJobManifest -TemplateText $templateText -RunId $runId -Image $image -PullPolicy $policy `
+        $manifest = New-RouteToolJobManifest -TemplateText $templateText -RunId $runId -Image $jobImage -PullPolicy $jobPullPolicy `
             -Arguments $RouteToolArgs -TimeoutSeconds $TimeoutSeconds
     }
     catch {
@@ -497,13 +497,13 @@ function Invoke-RouteTool {
     $manifestPath = Join-Path $report 'manifest.yaml'
     [IO.File]::WriteAllText($manifestPath, $manifest, [Text.UTF8Encoding]::new($false))
     $summary = [ordered]@{
-        run_id = $runId; zone = $ZoneName; namespace = $namespace; job = $jobName; image = $image
+        run_id = $runId; zone = $ZoneName; namespace = $namespace; job = $jobName; image = $jobImage
         subcommand = $subcommand; args = ($RouteToolArgs -join ' '); timeout_seconds = $TimeoutSeconds
         started_at = (Get-Date).ToString('o'); job_phase = ''; job_reason = ''; pod = ''; container_exit_code = ''
         verdict = ''; exit_code = ''; note = ''
     }
     $summaryPath = Join-Path $report 'summary.txt'
-    Write-Host "[route-tool] run=$runId job=$jobName namespace=$namespace subcommand=$subcommand image=$image report=$report"
+    Write-Host "[route-tool] run=$runId job=$jobName namespace=$namespace subcommand=$subcommand image=$jobImage report=$report"
 
     try {
         $null = Invoke-RouteToolKubectlChecked -Arguments @('apply', '-n', $namespace, '-f', $manifestPath) -What "apply Job $jobName"

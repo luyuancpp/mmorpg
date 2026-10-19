@@ -224,7 +224,7 @@ ServiceUnavailable        服务不可用      1
 | in-band 故障码（fault=1） | `401`，`upstream_err=<tip>` | **`500`**，`upstream_err=<tip>` |
 | 没有码、只有 message；本二进制不认识的码 | `401` | 不变 |
 
-客户端此前见到的 500 只有 `login_unavailable` / `internal_error` / `unknown_zone` 几种 message，现在 500 的 message 也可能是 `upstream_err=<tip>`。客户端应把 500 当「服务端出错、稍后重试」，可以按 tip 码选文案。robot 把非 0、非排队一律当失败，不区分 401 / 500，不受影响。
+客户端此前见到的 500 只有 `login_unavailable` / `internal_error` / `unknown_zone` 几种 message，现在 500 的 message 也可能是 `upstream_err=<tip>`。客户端应把 500 当「服务端出错、稍后重试」；保留 tip 码用于排障，当前客户端没有通用 tip 文案表，登录路径不解析该字符串。robot 把非 0、非排队一律当失败，不区分 401 / 500，不受影响。
 
 **客户端核对结果**（2026-10-18，只读，客户端仓 HEAD `5e2d4561`，未改客户端）：
 

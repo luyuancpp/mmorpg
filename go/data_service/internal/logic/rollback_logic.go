@@ -783,8 +783,12 @@ func rollbackSinglePlayer(ctx context.Context, svcCtx *svc.ServiceContext, req *
 			PreRollbackSnapshotID: preRollbackID, writeAttempted: true}, err
 	}
 	if saveResp.ErrorCode != constants.ErrCodeOK {
+		// 22(合服围栏 / 拿锁后 home 已被改写)由写门禁在拿锁或复核阶段拒绝,saveFieldsScript 没有执行,零写入:
+		// 不算「走到写那一步」—— 不触发写后帮会复查(否则复查报警会把一次没写的回档报成 29)。
+		// 同为零写入的 LockConflict(2)是存量口径,本次不动。
+		zeroWrite := saveResp.ErrorCode == constants.ErrCodeZoneMergeInProgress
 		return &RollbackPlayerResp{ErrorCode: saveResp.ErrorCode, SnapshotIDUsed: snap.ID,
-			PreRollbackSnapshotID: preRollbackID, writeAttempted: true}, nil
+			PreRollbackSnapshotID: preRollbackID, writeAttempted: !zeroWrite}, nil
 	}
 
 	// 6. Collect field names

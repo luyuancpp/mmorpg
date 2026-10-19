@@ -1968,3 +1968,46 @@ kubectl -n <infra> exec kafka-0 -c kafka -- /bin/sh -c "KAFKA_HEAP_OPTS='-Xms16m
 - 抓取前提:player-locator 的 ConfigMap 有 Prometheus 段(Host 0.0.0.0、Port 9190、Path /metrics,k8s_deploy.ps1 的 player-locator heredoc),manifest 带 prometheus.io 注解与名为 metrics 的 9190 端口,集群里有指向它的 ServiceMonitor / PodMonitor(或按注解抓取的 job)。**ConfigMap 的 Prometheus 段与 manifest 的注解 / 端口必须同批发布,或先发前者**:只有注解、进程没在 9190 监听时,按注解抓取的目标是 down,可能误触通用的 TargetDown 类告警。按 is_leader 过滤的规则用 `namespace`、`pod` 标签匹配,改用按注解抓取时 relabel 必须写出这两个标签。
 - 聚合口径:leader 是全服一个(选主锁在共用的会话 Redis 上),规则不按 namespace 分组。Stalled 不按 is_leader 过滤(last_success 启动预置 0,对全体副本取 max,「每一任都失败」时持续为真);GateIndexNotReady / LegacySessionWriters 用短子查询抹平换主空档、for 照旧。理由见告警文件头与设计文档 §9。
 - 设计、失败模式与处置见 `docs/design/player-locator-gate-session-index.md` §8、§9;单个玩家卡在 ONLINE 的定向补救见 `docs/ops/release-checklist.md` 附录 F.B-1。
+
+## D1 映射持久化:route-tool 一次性 Job 入口与 Redis 连接总账(2026-10-19,第 1b-3 批;未编译、未测试,待 Codex 验证)
+
+依据:`docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md` §7 第 3 / 6 条、§13.4 第 3 / 6 条。部署开关(`-RouteStoreMode` /
+`-RouteReconcileArm` / 三个读方开关 / `-ConfirmRouteSwitchChange`)的含义、粘滞核对与切换 / 回退顺序见 `tools/scripts/k8s_deploy.ps1`
+参数 `-RouteStoreMode` 处的注释;缺省全部是今天的值(redis / false),不带它们部署的产物里 `RouteStore.Mode` 仍是 `redis`。
+
+### route-tool 入口(`tools/scripts/k8s_route_tool.ps1`)
+
+- **不要 `kubectl exec` 进在役的 data-service Pod 跑 route-tool**(只限 `-dry-run` 或小库):容器 limit 512Mi,`import-from-redis` /
+  `audit` 的已见集合是 O(N),千万行要几百 MB,可能把在役进程一起 OOM 掉。改用一次性 Job:
+  ```powershell
+  # 预览清单(不调 kubectl、不建报告目录)
+  pwsh -NoProfile -Command "& ./tools/scripts/k8s_route_tool.ps1 -ZoneName <zone> -RouteToolArgs @('audit') -Image <data-service 镜像> -DryRun"
+  # 真跑(镜像缺省取在役 deployment/data-service 的;kind 上务必带 -KubeContext kind-mmorpg)
+  pwsh -NoProfile -Command "& ./tools/scripts/k8s_route_tool.ps1 -ZoneName <zone> -RouteToolArgs @('audit', '-frozen-recovery', '-timeout=60m') -TimeoutSeconds 4200 -KubeContext <ctx>"
+  ```
+  子命令参数里有 `-` 开头的项时用 `-Command` 形式传数组:`pwsh -File` 下 `audit,-frozen-recovery` 是一个字符串,脚本会拒绝(退出码 2),不替你切分。
+- 渲染 `deploy/k8s/manifests/go-svc/data-service-route-tool.yaml`:同镜像、同 ConfigMap(`go-svc-data-service-config`),
+  args = `-f /app/etc/data_service.yaml -route-tool <子命令与参数>`,资源单独设(requests 200m / 256Mi,limits 1 核 / 2Gi,行数更大时先调大),
+  `backoffLimit: 0`、`restartPolicy: Never`(不自动重试,重跑由人看过输出再定),`activeDeadlineSeconds` = `-TimeoutSeconds`(缺省 2400,
+  要大于子命令自己的 `-timeout` 加启动开销),`ttlSecondsAfterFinished` 一天。Job 名 `data-service-route-tool-<运行号>`,每次新名字,不删上一次的。
+- 只读前置:zone namespace 存在;**全部 namespace** 里没有在途的 route-tool Job(同一个全局库只许一个在跑,有就拒绝)。
+- 结果:报告目录(缺省 `run/route-tool/<zone>-<运行号>/`,不入库)里有 `manifest.yaml`、`stdout.txt`(route-tool 的一行统计)、`stderr.txt`
+  (明细与日志;容器里 sh 包了一层,stdout 先落 emptyDir、进程退出后夹在带运行号的标记行之间打印,脚本按标记切回两份)、`summary.txt`。
+  kubelet 日志轮转(`containerLogMaxSize` 缺省 10Mi)可能截掉很早的 stderr 明细,大库用 `-max-report` 限制明细行数。
+- 退出码:route-tool 容器的退出码原样返回 —— 0 干净 / 1 完成但需要人工处理 / 2 失败 / 3 有生效的合服围栏;脚本自己失败(参数、kubectl、
+  已有在途 Job、等不到终态、OOMKilled 137 等不在 0..3 的退出码)一律 2,`summary.txt` 写明是哪一种。等不到终态时 Job 可能还在跑,不要立刻再起一次。
+- 口令不进输出:脚本不读 ConfigMap 内容,清单里只有 ConfigMap 的名字。
+- 包装入口:`dev_tools.ps1` 的 `k8s-route-tool` 转发在下一批统一加,在那之前直接调本脚本。
+
+### Redis 连接总账:对账 leader 的独立池
+
+- D1 的对账 leader(第 1b-2 批)用一个与 Router 的 go-zero 池隔离的 go-redis 客户端连 mapping Redis(K8s 上即共享 Redis),
+  池上限 `RouteStore.Reconcile.RedisPoolSize`,代码缺省 4;ConfigMap 的 `Reconcile:` 段只写 `ArmReadyMarker`,集群里生效的就是缺省 4。
+- **只在 `RouteStore.Mode=db_first` 时装配**,所以 `Get-RedisConnectionLedgerInputs -RouteStoreDbFirst` 才给 data-service 行加 `Fixed = 4`;
+  按每个 data-service 副本记(go-redis 的池没有后台回收,当过 leader 的副本掉主后连接可能留到进程退出,偏保守),
+  公式那一行变成 `data-service 每副本 = P + 10G (+ 4,db_first)`。
+- 部署时打印的 `Redis connection ledger` 一行:本次部署那一份按 `-RouteStoreMode` 计,规划档(`plan zones=4`)恒按 db_first 计
+  (`Get-RedisConnectionPlan.RouteStoreDbFirst` 取自 MySQL 规划档同一个值),所以规划峰值比上一节手算的数多 Z × 副本 × 4 + R × 4
+  (Z=4、副本 2、R=2 时 +40,未运行,以部署时打印的为准)。契约测试钉住 db_first 时包含 leader 池、redis 时不含、规划行与本次参数无关。
+- mapping Redis 的启动参数 2026-10-19 起显式 `--enable-debug-command no`(`manifests/infra/redis.yaml` 两条 exec、`redis-ha.yaml`、
+  `deploy/docker-compose.yml`):改了 redis.yaml 的 Pod 模板,**下一次 `infra-up` 要 `-ConfirmRedisCoreRestart`**(重启 redis-0,放维护窗口)。

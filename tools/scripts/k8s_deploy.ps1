@@ -6259,8 +6259,8 @@ function Read-LiveRouteSwitchFacts {
 			$facts.Add([pscustomobject]@{ Scope = 'data-service'; Namespace = $namespace; Values = (ConvertFrom-RouteSwitchLiveYaml -Scope 'data-service' -Text $yaml) })
 		}
 	}
-	foreach ($zoneName in @($DbZoneNames)) {
-		$fact = & $readOne (Get-ZoneNamespace -Name $zoneName) $GoSvcCatalogue['db'] 'db'
+	foreach ($dbZoneName in @($DbZoneNames | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })) {
+		$fact = & $readOne (Get-ZoneNamespace -Name $dbZoneName) $GoSvcCatalogue['db'] 'db'
 		if ($null -ne $fact) { $facts.Add($fact) }
 	}
 	if ($ReadGuild) {
@@ -6300,7 +6300,9 @@ function Assert-RouteSwitchClusterState {
 		GuildRequireRouteReady       = (& $asText ([bool]$GuildRequireRouteReady))
 	}
 	$guildPrecondition = $DeploysGuild -and (-not $DeploysZoneGoSvc) -and ([bool]$GuildRequireRouteReady)
-	$dbZones = if ($DeploysZoneGoSvc) { @($ZoneNames) } else { @() }
+	# 不用 `$x = if (...) { @() }`:if 语句把空数组展开成 $null,传下去就成了一个 $null 的 zone 名。
+	$dbZones = @()
+	if ($DeploysZoneGoSvc) { $dbZones = @($ZoneNames) }
 	$facts = @(Read-LiveRouteSwitchFacts -ReadDataService ($DeploysZoneGoSvc -or $guildPrecondition) -DbZoneNames $dbZones -ReadGuild $DeploysGuild)
 
 	$problems = @()
@@ -7101,12 +7103,12 @@ Prometheus:
 		if ($key -eq 'MergeMarkerRedis') {
 			# D1 第 3 批 guild 读方门禁(spec_D1_batch1b2_2_3.md §5.4):取本脚本参数 -GuildRequireRouteReady(缺省 false),不镜像服务 yaml;
 			# 服务 yaml 里有这一行就改写,没有就补一行。打开前提与回退顺序见参数 -RouteStoreMode 处的注释。
-			$guildRequireRouteReady = if ([bool]$GuildRequireRouteReady) { 'true' } else { 'false' }
+			$guildRouteReadyText = if ([bool]$GuildRequireRouteReady) { 'true' } else { 'false' }
 			if ($block -match '(?m)^  RequireRouteReady:.*$') {
-				$block = $block -replace '(?m)^  RequireRouteReady:.*$', "  RequireRouteReady: $guildRequireRouteReady"
+				$block = $block -replace '(?m)^  RequireRouteReady:.*$', "  RequireRouteReady: $guildRouteReadyText"
 			}
 			else {
-				$block = $block + "`n  RequireRouteReady: $guildRequireRouteReady"
+				$block = $block + "`n  RequireRouteReady: $guildRouteReadyText"
 			}
 		}
 		$blocks.Add($block)
@@ -7203,7 +7205,7 @@ function New-GoSvcConfigMapYaml {
 		$dbExtraStoreConnMaxIdleSeconds = $dbPoolMirror['Placement.ExtraStoreConnMaxIdleSeconds']
 	}
 	# D1 第 3 批 go/db 读方门禁 Placement.RequireRouteReady:取本脚本参数 -DbPlacementRequireRouteReady(缺省 false),不镜像 go/db/etc/db.yaml。
-	$dbPlacementRequireRouteReady = if ([bool]$DbPlacementRequireRouteReady) { 'true' } else { 'false' }
+	$dbRouteReadyText = if ([bool]$DbPlacementRequireRouteReady) { 'true' } else { 'false' }
 	# db 的消费组键(四种形状之一,见 Resolve-DbConsumerGroupPlan):计划由写路径入口的 Initialize-DbConsumerGroupPlans 先算好,
 	# 这里只取本 zone 那一份并渲染;缺计划即 throw,不回落任何默认组名。只在生成 db 自己的 ConfigMap 时求值。
 	$dbConsumerGroupYaml = ''
@@ -7844,7 +7846,7 @@ Placement:
   # true = mapping Redis 的副本被判可信才按 player:placement / player:zone 选库,不可信时进程级就绪闸暂停取 Kafka 消息(存盘积压在 Kafka,不丢)。
   # 逐 zone 打开(规格 §8 P5),前提是全服 Arm=true、标记已挂、leader 自检稳定为 trusted;回退先关它(先读方、后写方)。
   # RouteReadyGateIntervalMs 不写 = 代码缺省 1000。只改 ConfigMap 不会滚动 db:改值后 rollout restart deploy/db。
-  RequireRouteReady: ${dbPlacementRequireRouteReady}
+  RequireRouteReady: ${dbRouteReadyText}
 "@
 		}
 		"data-service" {

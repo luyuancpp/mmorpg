@@ -1,12 +1,16 @@
 # 事故报告:删 location 不等持有者落盘,玩家回档到上一次成功存盘
 
+> 2026-10-19 修订:按一轮只读事实核对(4 名核对员 + 每条独立复核,18 条成立、1 条被推翻)改正了提交状态、时间线、§3.5 / §4 的成因描述、
+> §5 的例外与填法、§6 的 C++ 构建结果和 §8 第 6 条。
+
 - **日期**:2026-10-18 发现并落码修复,2026-10-19 复核与补修(时间为本地 -04:00)。
 - **级别**:P1(产品缺陷,默认配置可达的玩家进度丢失)。**线上影响:没有已知事故** —— 由只读审计发现,没有玩家报告,也没有在运行环境复现。
 - **发现方式**:全仓数据问题与覆盖回档审计 [data-overwrite-rollback-audit-20261018.md](../design/data-overwrite-rollback-audit-20261018.md) §2.1,三条 medium:
   load-handover#1(⊇ login-session-route#0)、load-handover#0、cpp-save-producer#0(= load-handover#2)。对抗复核全部成立。
-- **状态**:修复已落码。第一版在 `8b9592de3`;子会话的两项扩展(登录撞门请释放 §12、释放带覆盖身份 §13)在 `e611b5d8d`;
-  2026-10-19 静态复核后的 gate 补修与文档改正**截至本文写入时未提交**(以 `git log -- cpp/nodes/gate/handler/event/scene_route_helper.h` 为准)。
-  运行验证只完成了一部分,见 §6。
+- **状态**:修复已落码并已提交。第一版在 `8b9592de3`(2026-10-18 23:12);子会话的两项扩展(登录撞门请释放 §12、释放带覆盖身份 §13)
+  在 `e611b5d8d`(2026-10-19 03:14);2026-10-19 静态复核后的 gate 补修(`IsRouteFromBeforeLeaveGame` 迟到过滤)与设计文档改正
+  (回滚开关 `-1`)连同本文在 `1fc103dce`(2026-10-19 03:38)。均由用户提交。运行验证只完成了一部分:C++ 增量构建通过,
+  C++ 测试、player_locator 测试与真实故障演练都还没跑,见 §6。
 - **设计**:[location-release-binding.md](../design/location-release-binding.md)(方案、不变量 R1–R6、时序走查、残余)。
 - **一句话**:玩家会话一结束(登出、断线租约到期、gate 崩溃),scene_manager 就删掉 `player:{id}:location`,不管持有这名玩家的 scene 节点
   有没有把内存落盘。location 一没,下一次进场按"首次落点"铸新 owner_epoch、不过换手门,新节点读到旧快照;旧节点之后的存盘被
@@ -37,12 +41,12 @@
 
 | 时刻 | 事件 |
 |---|---|
-| 2026-08-09 | 修"正常登出 location 永久残留"(幽灵人数、多节点区服下次登录被换手门永久拒绝):`markofflinelogic.go` 删会话后**同步**调 `LeaveScene`。本缺陷的形态 A 从这里开始存在 |
+| 2026-08-09 | 修"正常登出 location 永久残留"(幽灵人数;多节点区服下次登录选到别的节点,被 unsafe-handoff 闸门永久拒绝 —— 那道闸是 2026-08-03 起 `AllowUnsafeCrossNodeHandoff=false` 的无条件跨节点拒绝,码 14,2026-09-18 才被换手门取代):`markofflinelogic.go` 删会话后**同步**调 `LeaveScene`。本缺陷的形态 A 从这里开始存在;断线租约到期路径(`LeaseMonitor`)在此之前就已无条件删 location |
 | 2026-09-18 | per-player 交接 epoch 与换手门落码(`scene-owner-reentry-barrier.md`、`cross-zone-scene-travel.md` CZ-4)。从此旧节点迟到的存盘会被 owner CAS 拒绝 —— 形态 A/B/C 的后果从"旧盖新"变成"丢新" |
 | 2026-10-14 | 入场会话栅栏落码,`scene-enter-session-fence.md` §7 把"LeaveGame / 租约到期的 LeaveScene"登记为待办(当时关注的是迟到的 LeaveScene 误删新登录的 location) |
 | 2026-10-16 | 进场链余项 b/c/d 落码:LeaveScene 带被删会话的身份,location 已属于更新的登录时不删。修好了"迟到的离场删掉新登录",没碰"删的时候持有者还没落盘" |
-| 2026-10-18 | 全仓只读审计发现本缺陷(§2.1),对抗复核成立。同日写设计、落码修复与回归测试;子会话补两项扩展(§12、§13) |
-| 2026-10-19 | 用户提交前两轮改动(`8b9592de3`、`e611b5d8d`)。多代理静态评审发现两处问题,补修(§5.6)。Codex 完成协议生成、六个 Go 服务编译与 scene_manager 受影响用例;C++ 尚未编过 |
+| 2026-10-18 | 全仓只读审计发现本缺陷(§2.1),对抗复核成立。同日写设计、落码修复与回归测试;子会话补两项扩展(§12、§13)。当晚用户提交第一版 `8b9592de3`(23:12) |
+| 2026-10-19 | 用户提交 §12/§13 扩展 `e611b5d8d`(03:14)。多代理静态评审(范围:`8b9592de3` 加当时还没提交的 §12/§13 扩展)发现两处问题,补修(§5.6),gate 补修连同本文在 `1fc103dce`(03:38)提交。Codex 完成协议生成、六个 Go 服务编译与 scene_manager 受影响用例;C++ `game.sln` 增量 Build 03:22–03:38 原生 0(不是全量 Rebuild),C++ 测试未运行 |
 
 ## 3. 根因(逐环)
 
@@ -70,9 +74,12 @@ scene_id 变没变、节点变没变。同场景同节点、但归属换了代�
 
 ### 3.5 为什么会写成这样
 
-- 同步 `LeaveScene` 是为修"location 永久残留"加的:当时 location 永不删除,修复方向是"会话一结束就删"。删了之后谁兜底,没有人问。
+- 同步 `LeaveScene` 是为修"正常登出后 location 永久残留"加的:当时只有断线租约到期这条路径由 `LeaseMonitor` 调 `LeaveScene` 删 location,
+  正常登出(`MarkOffline`)从来不删。修复方向是让登出也"会话一结束就删",直接复用了租约到期路径的无条件删除。删了之后谁兜底,没有人问;
+  租约到期那条路径本来就是无条件删除,同样没人问过。
 - 9-18 的 epoch 守卫让"新旧双写"不再脏数据,各层于是都默认"有 epoch 兜着"。epoch 兜住的是一致性,不是持久性。
-- gate 被定位成协议路由器,不解析 LeaveGame;"回选角"客户端还没做,LeaveGame 这条路径没人真正跑过。
+- gate 被定位成协议路由器,不解析 LeaveGame;"回选角"客户端还没做,robot 发完 LeaveGame 都紧接着断开连接(gate 断线时照常代发 ExitGame),
+  所以"只发 LeaveGame、不断连接"的形态(A/D)没人真正跑过。
 - 每一层的前提单独看都成立,组合起来才出问题:会话服务认为删 location 是清理,scene_manager 认为 location 不在就是没人持有,
   scene 认为被拒就是被废黜。
 
@@ -82,7 +89,10 @@ scene_id 变没变、节点变没变。同场景同节点、但归属换了代�
   写失败时,损失随故障时长增长。
 - **不丢什么**:没有资产复制,没有旧数据覆盖新数据(owner CAS 与 go/db 的 applied-epoch 守卫都拦住了)。
 - **默认配置可达**:A 只要客户端发 LeaveGame;B 需要退出存盘超过 30s 没落地;C 需要 gate 崩溃;D 需要 A 加上落回同节点同频道。
-- **dev 环境看不到**:本地 `AllowUnsafeCrossNodeHandoff: true` 时换手门本来就放行,robot 冒烟覆盖不到这条路径。
+- **dev 环境难以看到,但不是免疫**:缺陷不经过换手门,也不依赖 `AllowUnsafeCrossNodeHandoff`。location 被删后 `currentLoc == nil`,
+  `crossNodeHandoff` 与 `samePhysicalNode` 都为假,进场按首次落点铸 E+1,不管旁路开没开,旧节点之后的存盘都被 owner CAS 拒绝。dev 平时看不到,
+  原因在 robot:重登都是 LeaveGame 加断线(gate 照常代发 ExitGame),再固定等待(属性冒烟等 2s,登录循环 300ms+300ms)才重登,而且不校验重登后的数据;
+  没有用例在 LeaveGame 之后不断线、同一连接重进(形态 A/D)。旁路藏起来的是**修复**(见 §8 第 6 条)。
 
 ## 5. 修复
 
@@ -90,15 +100,18 @@ scene_id 变没变、节点变没变。同场景同节点、但归属换了代�
 
 ### 5.1 删 location 必须拿到"持有者已释放"的证据(设计 §3.1 R1、§3.2)
 
-scene_manager `LeaveScene` 在离场身份判定之后,只有拿到三种证据之一才删:当前代的 handoff 标记(A1′ 退出标记、交接标记、改派标记、凭证标记);
-持有节点确认已死且再入屏障已过;location 没有持有者(等待落点)。删除 Lua 原子复核 owner_epoch 与标记。拿不到就**保留** location、
+scene_manager `LeaveScene` 在离场身份判定之后,除三种例外照旧直接删(E == 0 的存量玩家 `legacy_epoch0`,存盘本来不带 CAS;dev 旁路
+`AllowUnsafeCrossNodeHandoff=true` 与 `LeaveSceneHolderReleaseWaitSeconds < 0`,两者都计 `disabled`),其余只有拿到三种证据之一才删:
+当前代的 handoff 标记(A1′ 退出标记、交接标记、改派标记、凭证标记);持有节点确认已死且再入屏障已过;location 没有持有者(等待落点)。删除 Lua 原子复核 owner_epoch 与标记。拿不到就**保留** location、
 回 gRPC `FailedPrecondition`,让下一次进场走换手门。等满 `LeaveSceneHolderReleaseWaitSeconds`(默认 600s,`-1` 关闭整项检查)
 仍拿不到才按旧行为删,并计 `forced`(有记录的 fail-open,告警 `SceneManagerLeaveReleaseForced`)。
 
 ### 5.2 让持有者释放(设计 §3.3、§3.5)
 
-- scene_manager 拿不到证据时向持有节点发 `ReleasePlayer{expected_owner_epoch, session_ended=true}`:持有 → 按客户端断线退出,存盘落地后写 A1′;
-  完全不持有 → 按 owner_epoch 条件补写凭证标记;交接在途 / 代际不等 → 不动。
+- scene_manager 拿不到证据、且离场身份判为 deleted(可证明 location 属于离场会话)时,向持有节点发
+  `ReleasePlayer{expected_owner_epoch, session_ended=true, covered_session_id, covered_login_generation}`;离场身份为 legacy(混版窗口)时判
+  `pending_unproven`,只等证据、不发释放(设计 R3)。持有节点收到后:持有 → 按客户端断线退出,存盘落地后写 A1′;完全不持有 → 按 owner_epoch
+  条件补写凭证标记;交接在途 / 代际不等 / 实体已绑上比覆盖身份更新的登录(§13)→ 不动。
 - gate 收到 LeaveGame 时先向会话绑定的 scene 代发 ExitGame,再清空会话的 scene 路由状态(先通知、后遗忘)。
 
 ### 5.3 player_locator 配合(设计 §3.4)
@@ -110,10 +123,10 @@ scene_manager `LeaveScene` 在离场身份判定之后,只有拿到三种证据�
 
 scene 此前被告知过一个非 0 的 epoch、而路由的 epoch 更大时,同场景同节点也以 LOGIN_NONE(0) 再转发一次(`SessionInfo.forwardedOwnerEpoch`)。
 
-### 5.5 回档证据指标(设计 §3.7)
+### 5.5 回档证据指标(设计 §3.7、§13.7)
 
 - scene `[OwnerEpoch]` 行 `stale_owner_rejected_exiting`:owner CAS 拒绝时实体正在退出 = 这次退出的存盘从未落地。**应恒 0**,出现即说明又发生了回档。
-- scene_manager `scene_manager_leave_holder_release_total{verdict}`;scene `[ReleaseFence]` 行的 `session_ended` / `credential_*` / `binding_*`。
+- scene_manager `scene_manager_leave_holder_release_total{verdict}`;scene `[ReleaseFence]` 行的 `session_ended` / `credential_*`(§3.7)与 `binding_*`(§13.7)。
 - 都不以 player_id 作 label。
 
 ### 5.6 扩展与复核补修
@@ -122,7 +135,7 @@ scene 此前被告知过一个非 0 的 epoch、而路由的 epoch 更大时,同
 - **§13 释放带覆盖身份**:同物理节点重登不铸 epoch,迟到的会话结束释放可能退掉刚复用实体的新登录;`ReleasePlayerRequest` 追加
   `covered_session_id = 6` / `covered_login_generation = 7`,scene 在代际放行后再比实体的登录身份,新登录不退。
 - **2026-10-19 静态复核的两处**(6 个区域各一名评审,每条发现两名复核员独立反驳;3 条发现,2 条成立,1 条被推翻):
-  1. 设计文档把回滚开关写成"设为 0 关闭",代码里 0 是默认 600s、只有 `-1` 关闭。照旧文档去关 A1′ 会让每次登出都卡满 600s。已改文档。
+  1. 设计文档把回滚开关写成"设为 0 关闭",但代码里 0 取默认 600s,只有负值(`< 0`,运维约定写 `-1`)才关闭。照旧文档去关 A1′ 会让每次登出都卡满 600s。已改文档。
   2. gate 的"先通知后遗忘"有漏洞:LeaveGame 重置之后才到的旧链路由会重新填上 `lastSceneRoute`,下一次 Bind 按它带旧 epoch 补发。
      已加迟到过滤(`IsRouteFromBeforeLeaveGame`:同一角色、代次为 0 或不大于重置时的代次 → 丢弃)。
 
@@ -138,10 +151,11 @@ scene 此前被告知过一个非 0 的 epoch、而路由的 epoch 更大时,同
 | 协议生成(含 `session_ended=5`、`covered_*=6/7`) | 通过 | `build/verification/ownership-generation-current-20261019T043632035Z/` |
 | 六个 Go 服务编译(db、login、scene_manager、player_locator、client_rpc_router、data_service) | 通过 | `build/verification/owned-go-source-20261019T045438353Z/` |
 | scene_manager internal vet | 通过 | 同上条目 |
-| scene_manager 受影响用例 | 54 个唯一用例分两轮取得成功记录,**不是单轮全绿**;首轮提前退出原因未定 | `ownership-sm-argumentlist-20261019T051125572Z/`、`...051445747Z/` |
+| scene_manager 受影响用例 | 54 个唯一用例条目(39 个顶层用例 + 15 个子用例条目)分两轮取得成功记录,**不是单轮全绿**;首轮提前退出原因未定 | `ownership-sm-argumentlist-20261019T051125572Z/`、`...051445747Z/` |
 | player_locator 测试 | 无结果 | — |
-| C++ 编译、`cross_zone_test` / `routing_identity_test` | 无结果(当前整解曾在与本修复无关的 gRPC 生成模板 C2679 处停下) | — |
-| 2026-10-19 gate 补修 | 未编译、未测试、未提交 | — |
+| C++ 编译 | 通过:`game.sln /t:Build` **增量**构建(不是全量 Rebuild),2026-10-19 03:22–03:38 原生退出 0;此前整解在与本修复无关的 gRPC 生成模板 C2679 处停过,已在模板修复并正规重新生成后越过。PROGRESS 截至本文修订时尚未登记这次结果 | `build/verification/grpc-muduo-codex-20261018-005135/cpp-prep/current-build-runs/root-r5-current-v6-20261019T072214799110Z/result.json` |
+| `cross_zone_test` / `routing_identity_test` 运行 | 无结果(EXE 已链接,GTest 未运行) | — |
+| 2026-10-19 gate 补修 | 已提交(`1fc103dce`);据上一行构建记录已编译链接;`routing_identity_test` 未运行 | 同上 |
 | 真实环境故障演练(登出 / 租约到期 / gate 崩溃 / Redis 写失败) | 未开始 | — |
 
 命令与通过标准见 `docs/PROGRESS.md` 的三条条目:「删 location 绑定持有者释放」「登录撞上未释放的持有者」「会话结束释放带覆盖身份」,
@@ -149,8 +163,14 @@ scene 此前被告知过一个非 0 的 epoch、而路由的 epoch 更大时,同
 
 ## 7. 遗留与后续
 
-1. **【待提交】** 2026-10-19 的 gate 补修与设计文档改正。
-2. **【待验证】** §6 表里所有"无结果"的项;验收必须在 `AllowUnsafeCrossNodeHandoff: false` 下跑,dev 默认配置测不到。
+1. **【已提交,待测试】** 2026-10-19 的 gate 补修(`session_info_comp.h`、`scene_route_helper.h`、`gate_event_handler.cpp` RoutePlayer 守护段、
+   `routing_identity_test.cpp`)与设计文档改正已随 `1fc103dce` 提交,已随增量构建编译。剩下要跑 `routing_identity_test`:改名的
+   `LateOldRouteAfterLeaveGameResetIsDroppedAndNotReplayedOnBind`、新增的 `NewLoginRouteBeforeBindAfterLeaveGameStillReplays` 与
+   `LeaveGameRouteFilterYieldsToCharacterSwitchAndLegacyBind`、补了断言的 `LeaveGameResetThenRelogForwardsFreshRouteOnly`,以及既有 `SceneRoute*` /
+   `SceneEntry*` / `LoginGeneration*` 不回归。
+2. **【待验证】** §6 表里所有未通过的项:player_locator 测试、`cross_zone_test` / `routing_identity_test` 运行、真实环境故障演练(登出 / 租约到期 /
+   gate 崩溃 / Redis 写失败)。单测在代码里自行构造配置,不受 dev yaml 影响;真实环境演练必须在 scene_manager `AllowUnsafeCrossNodeHandoff: false`
+   下跑 —— dev 默认配置(`go/scene_manager/etc/scene_manager_service.yaml` 为 true)会关掉 LeaveScene 的持有者释放检查,测不到修复。
 3. **【代价,有意】** 登出后约 2s 内的首次登录可能被既有清理屏障挡住(3023 重试);持有节点存盘卡住期间该玩家登不上,最长到 600s 上限。
 4. **【残余】** legacy 身份(混版窗口)只等证据不发释放;`skip_ahead_of_holder` 的僵尸等上限兜底;旧版 login 与重排同时出现时新登录路由可能被
    gate 的迟到过滤丢掉,等客户端超时重连。全部登记在设计 §6、§12.5、§13.5、§3.5。
@@ -158,7 +178,8 @@ scene 此前被告知过一个非 0 的 epoch、而路由的 epoch 更大时,同
 6. **【发布顺序】** proto 生成 → scene → player_locator → scene_manager → gate。关 scene 的 `SCENE_EXIT_RELEASE_MARK` 之前先把
    `LeaveSceneHolderReleaseWaitSeconds` 设为 `-1`。
 7. **【Java 版】** 不适用(结构不同):Java 的位置记录由持有 scene 唯一写入,归属靠库行 owner_epoch 夺权与让出,LeaveGame 时 gate 已向 scene 发
-   `PlayerLeave`(按 Java 仓 `PARITY.md` 核对)。`PARITY.md` 待本仓提交后登记一行。
+   `PlayerLeave`(按 Java 仓 `PARITY.md` 核对)。本仓已提交(`8b9592de3` / `e611b5d8d` / `1fc103dce`);Java 仓 `PARITY.md` 目前只登记了 §13
+   (会话结束释放带覆盖身份)这一行,第一版修复、§12 登录撞门请释放与 `1fc103dce` 的 gate 补修还要补登记。
 
 ## 8. 教训
 
@@ -171,4 +192,6 @@ scene 此前被告知过一个非 0 的 epoch、而路由的 epoch 更大时,同
 4. **去重键必须包含所有决定语义的字段。** gate 按"场景 + 节点"去重,漏了 owner_epoch,同场景同节点的换代被吞掉。
 5. **重置状态之后,在途消息仍会到达。** LeaveGame 清空了会话路由,但之前发出的路由还在 Kafka 里;重置必须配一道"迟到过滤",
    否则旧状态会被迟到的消息重新写回。这一条是落码后的静态复核才抓到的。
-6. **dev 旁路会把整条路径藏起来。** 本地 `AllowUnsafeCrossNodeHandoff: true` 时换手门放行,robot 全绿不能说明这条路径可用。
+6. **dev 旁路藏的是修复,不是缺陷。** 缺陷在 dev 默认配置下照样可达(location 不在时不管旁路都铸新 epoch);本地 `AllowUnsafeCrossNodeHandoff: true`
+   关掉的是 scene_manager 侧的持有者释放检查与登录撞门请释放,robot 全绿既不能说明缺陷不存在,也不能说明修复可用。robot 用例的固定等待也掩盖了竞态:
+   重登前等足退出存盘落地、不校验重登后的数据,这类测试对时序缺陷天然失明。

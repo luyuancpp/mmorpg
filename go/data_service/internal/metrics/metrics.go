@@ -29,7 +29,7 @@ var (
 	savePlayerDataTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "save_player_data_total",
-		Help:      "SavePlayerData outcomes (ok|version_mismatch|lock_conflict|redis_error).",
+		Help:      "SavePlayerData outcomes (ok|version_mismatch|lock_conflict|redis_error|invalid_request|type_conflict|merge_fenced).",
 	}, []string{"outcome"})
 
 	saveLatencySeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -43,8 +43,17 @@ var (
 	playerLockTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "player_lock_total",
-		Help:      "Per-player lock outcomes (acquired|conflict|error).",
+		Help:      "Per-player write lock outcomes (acquired|conflict|error|merge_fenced).",
 	}, []string{"outcome"})
+
+	// ── 全量读 / 删除怎样枚举 data_service 自有字段键 ──────────────
+	// legacy_scan = 字段索引缺席或戳已失效,退回 SCAN player:{id}:*(单机上扫全库)。它不是故障(故障经 ErrCodeRedis 计入),
+	// 只用来判断存量玩家是否已收敛:长期为 0 后才能另起一批把回退改成 fail-closed。label 不带 player_id。
+	playerFieldsEnumTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "player_fields_enum_total",
+		Help:      "How LoadPlayerData(all fields) / DeletePlayerData enumerated data_service field keys: op=load_all|delete, path=indexed|empty|legacy_scan (empty only for load_all).",
+	}, []string{"op", "path"})
 
 	// ── Version mismatch — optimistic lock conflicts ──────────────
 	versionMismatchTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -419,6 +428,7 @@ func register() {
 		prometheus.MustRegister(
 			savePlayerDataTotal, saveLatencySeconds,
 			playerLockTotal,
+			playerFieldsEnumTotal,
 			versionMismatchTotal,
 			crossSceneTransitionLatency, crossSceneTransitionTotal,
 			rollbackTotal, rollbackPlayersAffectedTotal, rollbackOrphansCleanedTotal,
@@ -749,7 +759,7 @@ func ObservePlayerInboxLedgerRead(result string) {
 // ObserveSavePlayerData records one SavePlayerData / SetPlayerField outcome
 // along with end-to-end latency. outcome must be one of
 //
-//	"ok" | "version_mismatch" | "lock_conflict" | "redis_error"
+//	"ok" | "version_mismatch" | "lock_conflict" | "redis_error" | "invalid_request" | "type_conflict" | "merge_fenced"
 //
 // Pass startTime = time.Now() captured at the very top of the RPC handler
 // so the histogram captures every code path including failure exits.
@@ -759,11 +769,26 @@ func ObserveSavePlayerData(outcome string, startTime time.Time) {
 	saveLatencySeconds.WithLabelValues(outcome).Observe(time.Since(startTime).Seconds())
 }
 
-// ObservePlayerLock records one player-lock attempt. outcome is
-// "acquired" | "conflict" | "error".
+// ObservePlayerLock records one player write-lock attempt. outcome is
+// "acquired" | "conflict" | "error" | "merge_fenced".
 func ObservePlayerLock(outcome string) {
 	register()
 	playerLockTotal.WithLabelValues(outcome).Inc()
+}
+
+// player_fields_enum_total 的 op / path 取值。
+const (
+	PlayerFieldsOpLoadAll      = "load_all"
+	PlayerFieldsOpDelete       = "delete"
+	PlayerFieldsPathIndexed    = "indexed"
+	PlayerFieldsPathEmpty      = "empty"
+	PlayerFieldsPathLegacyScan = "legacy_scan"
+)
+
+// ObservePlayerFieldsEnum 记一次全量读或删除走了哪条枚举路径(见 playerFieldsEnumTotal)。
+func ObservePlayerFieldsEnum(op, path string) {
+	register()
+	playerFieldsEnumTotal.WithLabelValues(op, path).Inc()
 }
 
 // ObserveVersionMismatch records one optimistic-lock collision. op is

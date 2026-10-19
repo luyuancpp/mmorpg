@@ -465,8 +465,9 @@ func (p *routePublisher) durableWrite(ctx context.Context, what string, write fu
 		}
 		waitMs, ok := routeWaitAOFBudgetMs(p.now(), deadline, hasDeadline, p.dur.Timeout)
 		if !ok {
-			return fmt.Errorf("%s: %w: deadline too close to send WAITAOF (attempt %d/%d): %w",
-				what, errRoutePublishNotDurable, attempt, routePublishAttempts, errors.Join(lastErr, ctx.Err()))
+			// errors.Join 跳过 nil:第一次尝试之前就没预算时 lastErr 与 ctx.Err() 可能都是 nil。
+			return errors.Join(fmt.Errorf("%s: %w: deadline too close to send WAITAOF (attempt %d/%d)",
+				what, errRoutePublishNotDurable, attempt, routePublishAttempts), lastErr, ctx.Err())
 		}
 		var check func() (bool, error)
 		var wait *redis.Cmd

@@ -114,6 +114,12 @@ spec:
           # 要求显式 -ConfirmRedisCoreRestart,只在维护窗口做。要先调大已在运行的实例,在到线之前 redis-cli CONFIG SET maxclients <N>
           # (不持久,重启后回到清单值),步骤见 deploy/k8s/README.md「Redis 连接上限与总账」。
           # redis-ha.yaml 接入时要同样显式 --maxclients,节点上限 ≥(代理副本数 + maxSurge)× haproxy maxconn + 余量,并重算总账。
+          #
+          # --enable-debug-command no(D1 第 1b-3 批,docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §13.1 第 5 条):
+          # 这个实例同时是 mapping Redis(player:zone / player:placement / mapping:route:ready …)。DEBUG RELOAD NOSAVE / DEBUG LOADAOF
+          # 会在同一进程里整库替换数据而 run_id / master_replid 不变,读方「就绪标记绑定实例身份」的判据(M1)认不出,会把替换后的旧值当权威。
+          # Redis 7 缺省就是 no,这里显式写出来防止被改;对账 leader 每拍 CONFIG GET enable-debug-command,不是 no 就拒绝挂标记并撤掉现有标记。
+          # 改它同样改了 Pod 模板:下一次 infra-up 要 -ConfirmRedisCoreRestart(重启 redis-0),放进维护窗口。
           command:
             - sh
             - -c
@@ -128,9 +134,9 @@ spec:
                 *) if [ "$hard" -lt "$need" ]; then echo "ERROR: nofile hard limit $hard < $need, redis-server will lower maxclients below $MAXCLIENTS" >&2; fi ;;
               esac
               if [ -n "$REDIS_PASSWORD" ]; then
-                exec redis-server --appendonly yes --maxclients "$MAXCLIENTS" --requirepass "$REDIS_PASSWORD"
+                exec redis-server --appendonly yes --maxclients "$MAXCLIENTS" --enable-debug-command no --requirepass "$REDIS_PASSWORD"
               fi
-              exec redis-server --appendonly yes --maxclients "$MAXCLIENTS"
+              exec redis-server --appendonly yes --maxclients "$MAXCLIENTS" --enable-debug-command no
           env:
             - name: REDIS_PASSWORD
               valueFrom:

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"data_service/cmd/debugutil"
+	componentpb "proto/common/component"
 	databasepb "proto/common/database"
 
 	"shared/savebarrier"
@@ -15,45 +16,89 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+func strEntry(key, text string) *debugutil.RedisEntry {
+	value := debugutil.RenderText([]byte(text))
+	return &debugutil.RedisEntry{Key: key, Type: "string", Value: &value}
+}
+
+func noneEntry(key string) *debugutil.RedisEntry {
+	return &debugutil.RedisEntry{Key: key, Type: "none", PTTLMs: -2}
+}
+
+func routingCase(home, rec *debugutil.RedisEntry, fallback, configZone uint32, override string) routingInput {
+	return routingInput{home: home, placement: rec, fallbackFlag: fallback, configZone: configZone, override: override}
+}
+
 func TestResolveBundleRouting(t *testing.T) {
+	homeKey, recKey := "player:zone:1", "player:placement:1"
 	t.Run("placement wins", func(t *testing.T) {
-		r, warnings, err := resolveBundleRouting("5", "1000000:3", 0, 1, "")
+		r, warnings, err := resolveBundleRouting(routingCase(strEntry(homeKey, "5"), strEntry(recKey, "1000000:3"), 0, 1, ""))
 		if err != nil || r.StorageDB != "player_store_1000000_db" || r.ResolvedBy != "placement" || r.HomeZone != 5 || len(warnings) != 0 {
 			t.Fatalf("got %+v %v %v", r, warnings, err)
 		}
 	})
 	t.Run("home zone", func(t *testing.T) {
-		r, _, err := resolveBundleRouting("5", "", 9, 1, "")
+		r, _, err := resolveBundleRouting(routingCase(strEntry(homeKey, "5"), noneEntry(recKey), 9, 1, ""))
 		if err != nil || r.StorageDB != "zone_5_db" || r.ResolvedBy != "home_zone" {
 			t.Fatalf("got %+v %v", r, err)
 		}
 	})
 	t.Run("fallback warns", func(t *testing.T) {
-		r, warnings, err := resolveBundleRouting("", "", 0, 3, "")
+		r, warnings, err := resolveBundleRouting(routingCase(noneEntry(homeKey), noneEntry(recKey), 0, 3, ""))
 		if err != nil || r.StorageDB != "zone_3_db" || r.ResolvedBy != "fallback_zone" || len(warnings) != 1 {
 			t.Fatalf("got %+v %v %v", r, warnings, err)
 		}
 	})
 	t.Run("frozen placement warns", func(t *testing.T) {
-		r, warnings, err := resolveBundleRouting("5", "6:2:frozen:run1", 0, 1, "")
+		r, warnings, err := resolveBundleRouting(routingCase(strEntry(homeKey, "5"), strEntry(recKey, "6:2:frozen:run1"), 0, 1, ""))
 		if err != nil || !r.PlacementFrozen || r.StorageDB != "zone_6_db" || len(warnings) != 1 {
 			t.Fatalf("got %+v %v %v", r, warnings, err)
 		}
 	})
 	t.Run("override is recorded", func(t *testing.T) {
-		r, warnings, err := resolveBundleRouting("5", "", 0, 1, "zone_8_db")
+		r, warnings, err := resolveBundleRouting(routingCase(strEntry(homeKey, "5"), noneEntry(recKey), 0, 1, "zone_8_db"))
 		if err != nil || r.StorageDB != "zone_8_db" || r.ResolvedBy != "override" || len(warnings) != 1 {
 			t.Fatalf("got %+v %v %v", r, warnings, err)
 		}
 	})
-	t.Run("malformed and unknown fail closed", func(t *testing.T) {
-		if _, _, err := resolveBundleRouting("abc", "", 0, 1, ""); err == nil {
-			t.Fatal("malformed home zone accepted")
+	t.Run("wrong type counts as absent like MGET", func(t *testing.T) {
+		r, warnings, err := resolveBundleRouting(routingCase(strEntry(homeKey, "5"), &debugutil.RedisEntry{Key: recKey, Type: "hash"}, 0, 1, ""))
+		if err != nil || r.ResolvedBy != "home_zone" || r.Malformed != "" || len(warnings) != 1 {
+			t.Fatalf("got %+v %v %v", r, warnings, err)
 		}
-		if _, _, err := resolveBundleRouting("5", "x", 0, 1, ""); err == nil {
-			t.Fatal("malformed placement accepted")
+	})
+	// go/db parsePlacementSnapshot 对这些值 fail-closed;工具不能静默选出一个看似正常的库。
+	for name, in := range map[string]routingInput{
+		"home not numeric":           routingCase(strEntry(homeKey, "abc"), noneEntry(recKey), 0, 1, ""),
+		"home outside zone range":    routingCase(strEntry(homeKey, "1000000"), noneEntry(recKey), 0, 1, ""),
+		"malformed home with record": routingCase(strEntry(homeKey, "1000001"), strEntry(recKey, "5:1"), 0, 1, ""),
+		"empty placement":            routingCase(strEntry(homeKey, "5"), strEntry(recKey, ""), 0, 1, ""),
+		"binary placement":           routingCase(strEntry(homeKey, "5"), strEntry(recKey, "\xff\xfe"), 0, 1, ""),
+		"garbage placement":          routingCase(strEntry(homeKey, "5"), strEntry(recKey, "x"), 0, 1, ""),
+	} {
+		t.Run(name, func(t *testing.T) {
+			r, warnings, err := resolveBundleRouting(in)
+			if err != nil || r.Malformed == "" || r.StorageDB != "" || len(warnings) == 0 {
+				t.Fatalf("malformed routing not flagged: %+v %v %v", r, warnings, err)
+			}
+		})
+	}
+	t.Run("malformed with explicit database still reads", func(t *testing.T) {
+		r, _, err := resolveBundleRouting(routingCase(strEntry(homeKey, "1000001"), noneEntry(recKey), 0, 1, "zone_5_db"))
+		if err != nil || r.Malformed == "" || r.StorageDB != "zone_5_db" {
+			t.Fatalf("got %+v %v", r, err)
 		}
-		if _, _, err := resolveBundleRouting("", "", 0, 0, ""); err == nil {
+	})
+	t.Run("required without record warns, keeps home db", func(t *testing.T) {
+		in := routingCase(strEntry(homeKey, "5"), noneEntry(recKey), 0, 1, "")
+		in.required = true
+		r, warnings, err := resolveBundleRouting(in)
+		if err != nil || r.StorageDB != "zone_5_db" || len(warnings) != 1 || !strings.Contains(warnings[0], "missing_required") {
+			t.Fatalf("got %+v %v %v", r, warnings, err)
+		}
+	})
+	t.Run("nothing determinable fails", func(t *testing.T) {
+		if _, _, err := resolveBundleRouting(routingCase(noneEntry(homeKey), noneEntry(recKey), 0, 0, "")); err == nil {
 			t.Fatal("no zone at all must fail")
 		}
 	})
@@ -158,5 +203,76 @@ func TestReadBundleRedisIncludesRedactedAccount(t *testing.T) {
 	}
 	if debugutil.FindRedisEntry(without, debugutil.AccountKey("wx_abc")) != nil {
 		t.Fatal("-skip-account still read the account")
+	}
+}
+
+// 父快照里 C++ 留下的「存在但为空」的组件,经 go/db 落库读回后是「未设置」;两者不应报差异。
+func TestDifferentFieldsTreatsEmptySubMessageAsUnset(t *testing.T) {
+	parentSide := &databasepb.PlayerDatabase{PlayerId: 1, Currency: &componentpb.CurrencyComp{}}
+	sqlSide := &databasepb.PlayerDatabase{PlayerId: 1}
+	if diff := differentFields(parentSide, sqlSide, fenceFields); len(diff) != 0 {
+		t.Fatalf("empty vs unset reported as different: %v", diff)
+	}
+	parentSide.Currency = &componentpb.CurrencyComp{Values: []uint64{5}}
+	if diff := differentFields(parentSide, sqlSide, fenceFields); len(diff) != 1 || diff[0] != "currency" {
+		t.Fatalf("real difference not reported: %v", diff)
+	}
+}
+
+func TestBarrierAnomalies(t *testing.T) {
+	v := savebarrier.Version(5, 9)
+	aligned := debugutil.BarrierState{OwnerEpoch: "5", Pending: v, PlayerDatabaseAck: v, PlayerDatabase1Ack: v,
+		PlayerDatabaseFence: v, PlayerDatabase1Fence: v, ParentPresent: true, ParentLastSaveSeq: 9}
+	if got := barrierAnomalies(aligned, true); len(got) != 0 {
+		t.Fatalf("aligned state flagged: %v", got)
+	}
+
+	rolledBack := aligned
+	rolledBack.PlayerDatabaseFence = savebarrier.Version(5, 8)
+	if got := barrierAnomalies(rolledBack, true); len(got) != 1 || !strings.Contains(got[0], "player_database 行围栏") {
+		t.Fatalf("rolled-back SQL fence not flagged: %v", got)
+	}
+	if got := barrierAnomalies(rolledBack, false); len(got) != 0 {
+		t.Fatalf("SQL comparison must be skipped when the DB was not read: %v", got)
+	}
+
+	ownerBehind := aligned
+	ownerBehind.OwnerEpoch = "4"
+	if got := barrierAnomalies(ownerBehind, true); len(got) != 1 || !strings.Contains(got[0], "owner_epoch") {
+		t.Fatalf("owner behind pending not flagged: %v", got)
+	}
+
+	watermark := aligned
+	watermark.ParentLastSaveSeq = 7
+	if got := barrierAnomalies(watermark, true); len(got) != 1 || !strings.Contains(got[0], "last_save_seq") {
+		t.Fatalf("parent watermark mismatch not flagged: %v", got)
+	}
+
+	terminal := debugutil.BarrierState{Pending: v, PlayerDatabaseAck: savebarrier.Version(5, 8), OutboxTerminal: v, OutboxTerminalReason: "permanent"}
+	if got := barrierConclusion(terminal); !strings.Contains(got, "补投已终止") {
+		t.Fatalf("terminal outbox not reported: %q", got)
+	}
+}
+
+func TestEnsureReadOnlyQueryRejectsCommentBypass(t *testing.T) {
+	for _, query := range []string{
+		"EXPLAIN ANALYZE/**/DELETE FROM player_database",
+		"EXPLAIN /**/ANALYZE DELETE FROM t",
+		"select * from t for/**/update",
+		"SELECT * FROM t -- for update",
+		"SELECT * FROM t # x",
+		"SELECT SLEEP (1)",
+		"SELECT * FROM t\nFOR\nUPDATE",
+		"SELECT * FROM t INTO OUTFILE'/tmp/x'",
+	} {
+		if err := ensureReadOnlyQuery(query); err == nil {
+			t.Fatalf("expected rejection: %q", query)
+		}
+	}
+}
+
+func TestSameRevision(t *testing.T) {
+	if !sameRevision("bf3c606", "bf3c60632aa+dirty") || sameRevision("bf3c606", "e7bb460") || sameRevision("", "x") {
+		t.Fatal("sameRevision wrong")
 	}
 }

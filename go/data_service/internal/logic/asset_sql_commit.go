@@ -31,7 +31,9 @@ func GetSQLCommittedAssetLedger(ctx context.Context, svcCtx *svc.ServiceContext,
 		if ctx.Err() != nil {
 			return nil, false, status.FromContextError(ctx.Err()).Err()
 		}
-		return nil, false, status.Error(codes.Unavailable, "asset SQL commit route unavailable")
+		// 带上原因,口径同 persisted_player_database.go 的 "resolve home zone: %v"。code 必须是 Unavailable、绝不 NotFound:
+		// login homezone.IsUnmapped / player_inbox isHomeZoneUnmapped 把 NotFound 当「无映射→回退」。不打日志:调用方(assetop 重投循环)会打。
+		return nil, false, status.Errorf(codes.Unavailable, "asset SQL commit route unavailable: %v", err)
 	}
 	raw, err := client.HGet(ctx, assetop.SQLCommitKey(playerID), "data").Bytes()
 	if errors.Is(err, goredis.Nil) {

@@ -250,9 +250,11 @@ Error semantics (in-band `TipInfoMessage`; the fault column comes from `data/tip
 | Account directory read failed / record corrupt | `kLoginRedisError` / `kLoginDataParseFailed` | yes |
 | Token issue failed on the HTTP path (the third-party code is already consumed) | `kLoginTokenIssueFailed` | yes |
 
-Password auth never wraps `ErrProviderUnavailable`: its uniform 2000 is deliberate (anti-enumeration, see below). Success
-logs mask openid (`maskOAuthId`). Java Gateway still maps every in-band error to HTTP-level code 401 with
-`upstream_err=<tip>`; gRPC status failures other than UNAUTHENTICATED / PERMISSION_DENIED now map to 500.
+口令认证不会包装 `ErrProviderUnavailable`：统一回 2000 是防枚举策略（见下文）。成功日志会脱敏 openid（`maskOAuthId`）。
+两版 Java 网关的 `/api/login` 与 `/api/refresh-token` 都消费同源生成的 `TipFaults`：in-band 故障码回 JSON `code:500`，
+业务拒绝、没有码只有 message、本版本不认识的码仍回 `code:401`。`upstream_err=<tip>` 的消息格式不变，HTTP 状态仍为 200。
+gRPC status 失败只有 UNAUTHENTICATED / PERMISSION_DENIED 回 401，其余回 500。
+方案、边界与客户端重试语义见 [tip-code-axis.md](./tip-code-axis.md) §2.10。
 
 ## Production Password Authority and Cache Boundary
 

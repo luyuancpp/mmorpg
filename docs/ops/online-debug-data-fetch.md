@@ -51,13 +51,16 @@ go run ./cmd/debug_fetch -mode player-bundle -player <player_id> -reason "<工�
 
 - `-db-config`:落点库所在 MySQL(`ServerConfig.Database`)+ 核心 Redis(`ServerConfig.RedisClient`)+ 映射 Redis(`Placement.Redis`,不写时同核心,与 go/db 一致)。
 - `-config`:全局库(`SnapshotMySQL`)。读不到只在包里记 `global.errors`,不影响其余部分;`-skip-global` 跳过。
-- 落点库按 go/db 同一规则解析:`player:placement:<id>` → `player:zone:<id>` → `-zone`(缺省 db.yaml 的 ZoneId)。结果和依据写在 `routing`;`-database` 可显式指定,会留警告。
-- `-limit` 控制快照 / 流水 / 回档审计的条数(默认 20);`-timeout-seconds` 默认 60。
+- 落点库按 go/db 同一规则解析:`player:placement:<id>` → `player:zone:<id>` → `-zone`(缺省 db.yaml 的 ZoneId)。结果和依据写在 `routing`;`-database` 可显式指定,会留警告。映射或落点值畸形(空串、二进制、home ≥ 1000000 等)时,线上 go/db 对这名玩家读写全部 fail-closed——这本身就是根因:包里 `routing.malformed` 写明原因,Redis 照常导出,落点库不读,需要时用 `-database` 指定要看的库。db.yaml 开了 `Placement.Required` / `RequireRouteReady` 时也会给出对应警告。
+- `-limit` 控制快照 / 流水 / 回档审计的条数(默认 20);`-timeout-seconds` 默认 60。`rollback_audit_log` 没有 player_id 索引,按玩家查是全表扫描;全局库压力敏感时用 `-skip-global`。
 - `-skip-account` 不读账号角色目录。
+- 包里记录每台源实例的身份(Redis `run_id`、MySQL `@@server_uuid`),导入端据此拒绝写回导出来源。
+- 导出时还会比对线上表的列与本地 proto:线上多出的列写在 `mysql.tables[].live_extra_columns`,说明本地检出比线上旧、这些列没导出,换到线上镜像的 commit 重导。
 
 读包的顺序:`analysis`(online / barrier.conclusion / parent_vs_sql / warnings)→ `routing` → `redis`(每把键带用途说明、类型、TTL、解码结果)→ `mysql.tables` → `global`。
 
-- `parent_vs_sql` 列出父快照与 SQL 行取值不同的顶层字段(忽略围栏两列):屏障已对齐还有差异,说明父快照在最后一次落库之后又存过盘。
+- `parent_vs_sql` 列出父快照与 SQL 行取值不同的顶层字段(忽略围栏两列;空组件与未设置视为相同):屏障已对齐还有差异,说明父快照在最后一次落库之后又存过盘。
+- `barrier.anomalies` 列出 login 冷加载会拒绝、但正常写路径产生不了的状态:ACK 齐了而 SQL 行围栏落后(库被回档 / 恢复)、owner_epoch 低于 pending、父快照水位与 pending 不符。补投已被 go/db 终止时 `barrier.conclusion` 会写明原因。
 - 玩家在线时导出的不是最终态(`warnings` 会写明):要确切数据,等玩家下线、`barrier.conclusion` 显示两表都已落库后重导。
 
 ## 4. 导入本地复现
@@ -74,10 +77,17 @@ go run ./cmd/debug_import -file D:\secure\player-<player_id>.json -local-account
 
 导入做的事:
 
-1. 选数据来源 `-source`:`auto`(默认,父快照存在就用父快照——它包含线上还没落库的最后状态)/ `redis-parent` / `sql`(只复现 SQL 里最后一次两表都确认的版本)。
-2. 在本地**重铸一个存盘版本** V=(E, S):E 取线上与本地观察到的最大归属代次 + 1,S 取观察到的最大存盘序号。两张 SQL 行的围栏、`save_barrier` 的 pending 与两个 ACK、`owner_epoch` 都写成 V——这是 login 冷加载接受有历史数据玩家的条件。不照搬线上的屏障与代次;本地残留的旧 DBTask 代次更低,会被行内围栏拒掉。
-3. 一个事务里替换两张表;一次 MULTI 里删本地父快照 / 子表缓存 / 资产提交证据 / 交接标记、写屏障与 `owner_epoch`、把玩家移出本地待落库索引、写 `player_to_account:<id>` = `-local-account`;最后登记 `player:zone:<id>` = 本地 zone。
-4. 写前闸门:MySQL、核心 Redis、data_service 映射 Redis(db_first 时还有全局库)必须是 `localhost` / 回环地址;本地 docker 服务名用 `-allow-target-host=<名>` 显式放行。本地同号玩家在线一律拒绝;已有同号存档要 `-replace`;本地映射指向别的 zone 时拒绝。
+1. 选数据来源 `-source`:`auto`(默认,父快照可用就用父快照——它包含线上还没落库的最后状态;不可用时改用 SQL 并在预览里说明原因)/ `redis-parent` / `sql`(只复现 SQL 里最后一次两表都确认的版本)。父快照缺子表或身份不符时不补骨架,`redis-parent` 直接报错——线上 login 也会拒绝这样的父快照。
+2. 在本地**重铸一个存盘版本** V=(E, S):E 取线上与本地观察到的最大归属代次 + 1,S 取观察到的最大存盘序号。两张 SQL 行的围栏、`save_barrier` 的 pending 与两个 ACK、`owner_epoch` 都写成 V——这是 login 冷加载接受有历史数据玩家的条件。不照搬线上的屏障与代次;本地残留的旧 DBTask 代次更低,会被挡掉。
+3. 分三段写,任一段之后中断 login 都会拒绝该玩家(屏障 pending≠ACK),带 `-replace` 重跑即可:
+   ① 一个 Lua 原子复核「同号玩家此刻不在线、owner_epoch 与预检一致」,然后删本地父快照 / 子表缓存 / 资产提交证据 / 交接标记 / 旧屏障,屏障只写 pending、`owner_epoch` 前进到 E、移出本地待落库索引;
+   ② 一个事务替换两张 SQL 行;
+   ③ 复核 pending 未变后补齐两表 ACK,写 `player_to_account:<id>` = `-local-account`;最后登记 `player:zone:<id>` = 本地 zone。
+4. 写前闸门:
+   - MySQL、核心 Redis、data_service 映射 Redis(db_first 时还有全局库)必须是 `localhost` / 回环地址;本地 docker 服务名用 `-allow-target-host=<名>` 显式放行。
+   - 目标实例的身份(Redis `run_id`、MySQL `@@server_uuid`)与导出包记录的来源相同则拒绝——防止把线上 port-forward 当成本地。预览会列出全部写目标,执行前核对。
+   - 写入库固定为 `zone_<本地 zone>_db`(go/db 的派生规则);db.yaml 写了别的 `DBName` 时拒绝。
+   - 本地同号玩家在线一律拒绝;已有同号存档要 `-replace`;本地映射指向别的 zone、本地落点记录把该号钉到别的库或处于冻结态时拒绝。
 
 登录:用 `-local-account` 指定的 dev_ / robot_ 账号**先 Login 一次**(建出账号目录),再 EnterGame 这个 player_id;EnterGame 在账号目录里找不到角色时会按 `player_to_account` 自愈补进去。客户端角色列表可能显示不出来,用能直接指定 player_id 的 robot 发 EnterGame。
 
@@ -97,9 +107,10 @@ go run ./cmd/debug_fetch -db-config D:\secure\db.yaml -mode sql -database mmorpg
 go run ./cmd/debug_fetch -db-config D:\secure\db.yaml -mode player-db -zone <home_zone> -player <id>
 ```
 
-- SQL 模式只接受单条 SELECT / SHOW / DESCRIBE / EXPLAIN,并拒绝 `EXPLAIN ANALYZE`、`INTO OUTFILE/DUMPFILE/@变量`、锁定读、`GET_LOCK` / `SLEEP` 等有副作用的写法。
+- SQL 模式只接受单条 SELECT / SHOW / DESCRIBE / EXPLAIN,并拒绝:任何注释(`/*`、`--`、`#`,注释能拆开关键字绕过检查;字符串里恰好含这些字符也会被拒)、`ANALYZE`(含 `EXPLAIN ANALYZE`,也会误杀 `SHOW ANALYZE STATUS`)、任何 `INTO`、锁定读、`GET_LOCK` / `SLEEP` / `BENCHMARK` / `LOAD_FILE` 等。这是黑名单,根治是给排障建只读账号。
 - 其他服务按玩家查时注意列名不是 `player_id`:`mail_message.owner_player_id`、`trade_listing.seller_player_id`、`trade_commerce.seller_player_id/buyer_player_id`、`friend_request.from_player_id/to_player_id`、`transaction_log.from_player/to_player`。资产指令终态行(guild / trade)与收件箱终态条目约 30 天后清理,接到「东西丢了」的反馈要尽快导出。
-- `player-db` 模式:2026-10-19 修复了单连接池下游标未关就发下一条查询、必然卡到超时的问题;单表查询失败记在 `errors` 里,不再静默跳过;超过 `-limit` 的表标 `truncated`,旧 `debug_import` 拒绝导入被截断的表。它导出的行围栏照搬线上值,灌回本地后 login 冷加载会拒绝该玩家——本地复现用 player-bundle。
+- `player-db` 模式:2026-10-19 修复了单连接池下游标未关就发下一条查询、必然卡到超时的问题;单表查询失败记在 `errors` 里,不再静默跳过;超过 `-limit` 的表标 `truncated`。
+- 旧 playerdb 导出的导入:有 `errors`、被截断、或缺 `truncated` 标记(旧版导出)时一律拒绝;`player_database` / `player_database_1` 带行内围栏,只写行不对齐屏障,本地 login 必拒,所以默认拒绝(`-allow-fenced-tables` 才放行)——本地复现用 player-bundle。数值列按十进制字面量还原,不再经 float64 改号;`-player` 换号时连行内匹配列一起改。旧 player(Redis)导入也加了同样的本机写目标闸门。
 
 ## 6. 要「问题发生那一刻」的状态
 

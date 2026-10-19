@@ -150,9 +150,34 @@ func TestLocalPlayerAdmit(t *testing.T) {
 	if err := (&localPlayerState{mapped: true, mappedZone: 2}).admit(true, 1); err == nil {
 		t.Fatal("mapping to another zone must be rejected")
 	}
+	for raw, wantOK := range map[string]bool{"1:3": true, "1000000:1": false, "1:2:frozen:run1": false, "": false, "x": false} {
+		err := (&localPlayerState{placementPresent: true, placementRaw: raw}).admit(true, 1)
+		if (err == nil) != wantOK {
+			t.Fatalf("placement %q: err=%v, want ok=%v", raw, err, wantOK)
+		}
+	}
 }
 
-func TestWriteLocalRedisAlignsBarrier(t *testing.T) {
+func TestBuildImportPlanRejectsBrokenParentAndStaleCheckout(t *testing.T) {
+	b := testBundle(t, false)
+	broken := &databasepb.PlayerAllData{PlayerDatabaseData: &databasepb.PlayerDatabase{PlayerId: bundlePlayer}, LastSaveSeq: 60}
+	b.Redis = append(b.Redis, debugutil.RedisEntry{Key: debugutil.ParentKey(bundlePlayer), Type: "string", Value: rawValue(t, broken)})
+	if _, err := buildImportPlan(b, sourceRedisParent); err == nil {
+		t.Fatal("parent missing player_database_1_data accepted for redis-parent")
+	}
+	plan, err := buildImportPlan(b, sourceAuto)
+	if err != nil || plan.source != sourceSQL || len(plan.notes) == 0 {
+		t.Fatalf("auto must fall back to SQL with a note: %+v %v", plan, err)
+	}
+
+	stale := testBundle(t, false)
+	stale.MySQL.Tables[0].LiveExtraColumns = []string{"inbox_ledger"}
+	if _, err := buildImportPlan(stale, sourceSQL); err == nil {
+		t.Fatal("rows exported by an older checkout accepted")
+	}
+}
+
+func TestStageThenCommitLocalRedis(t *testing.T) {
 	mr := miniredis.RunT(t)
 	client := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	defer client.Close()
@@ -160,20 +185,21 @@ func TestWriteLocalRedisAlignsBarrier(t *testing.T) {
 	const id = 11
 	mr.Set(debugutil.ParentKey(id), "stale-parent")
 	mr.Set(debugutil.SubTableCacheKey(&databasepb.PlayerDatabase{}, id), "stale-cache")
-	mr.HSet(savebarrier.Key(id), "pending", savebarrier.Version(1, 1), "outbox_version", savebarrier.Version(1, 1))
+	mr.Set(ownerepoch.OwnerEpochKey(id), "3")
+	old := savebarrier.Version(3, 1)
+	mr.HSet(savebarrier.Key(id), "pending", old, "player_database", old, "player_database_1", old, "outbox_version", old)
 	mr.ZAdd(debugutil.SavePendingIndexKey(1, id), 0, "11")
 
 	version := savebarrier.Version(8, 60)
-	if err := writeLocalRedis(context.Background(), client, id, 1, 8, version, "dev_tester"); err != nil {
+	if err := stageLocalRedis(context.Background(), client, id, 1, "3", 8, version); err != nil {
 		t.Fatal(err)
 	}
+	// 第 1 段之后:旧父快照没了、pending 已前进而 ACK 为空 —— login 冷加载与快路径都会拒绝,不会加载旧本地数据。
 	if mr.Exists(debugutil.ParentKey(id)) || mr.Exists(debugutil.SubTableCacheKey(&databasepb.PlayerDatabase{}, id)) {
 		t.Fatal("stale parent / cache not deleted")
 	}
-	for _, field := range []string{"pending", "player_database", "player_database_1"} {
-		if got := mr.HGet(savebarrier.Key(id), field); got != version {
-			t.Fatalf("barrier %s = %q", field, got)
-		}
+	if mr.HGet(savebarrier.Key(id), "pending") != version || mr.HGet(savebarrier.Key(id), "player_database") != "" {
+		t.Fatal("stage must advance pending without ACKs")
 	}
 	if mr.HGet(savebarrier.Key(id), "outbox_version") != "" {
 		t.Fatal("stale outbox survived; C++ save Lua would reject the barrier")
@@ -181,13 +207,54 @@ func TestWriteLocalRedisAlignsBarrier(t *testing.T) {
 	if got, _ := mr.Get(ownerepoch.OwnerEpochKey(id)); got != "8" {
 		t.Fatalf("owner_epoch = %q", got)
 	}
-	if got, _ := mr.Get(debugutil.PlayerToAccountKey(id)); got != "dev_tester" {
-		t.Fatalf("player_to_account = %q", got)
-	}
 	if members, _ := mr.ZMembers(debugutil.SavePendingIndexKey(1, id)); len(members) != 0 {
 		t.Fatalf("save_pending index still has %v", members)
 	}
+
+	if err := commitLocalRedis(context.Background(), client, id, version, "dev_tester"); err != nil {
+		t.Fatal(err)
+	}
+	for _, field := range []string{"pending", "player_database", "player_database_1"} {
+		if got := mr.HGet(savebarrier.Key(id), field); got != version {
+			t.Fatalf("barrier %s = %q", field, got)
+		}
+	}
+	if got, _ := mr.Get(debugutil.PlayerToAccountKey(id)); got != "dev_tester" {
+		t.Fatalf("player_to_account = %q", got)
+	}
 	if mr.Exists(scenenode.LocationKey(id)) {
 		t.Fatal("import must not create a location")
+	}
+}
+
+func TestStageLocalRedisRechecksPreflight(t *testing.T) {
+	mr := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer client.Close()
+	const id = 12
+	version := savebarrier.Version(2, 1)
+
+	mr.Set(ownerepoch.OwnerEpochKey(id), "4")
+	if err := stageLocalRedis(context.Background(), client, id, 1, "", 2, version); err == nil {
+		t.Fatal("owner_epoch appeared after preflight but stage did not refuse")
+	}
+	if mr.Exists(savebarrier.Key(id)) {
+		t.Fatal("refused stage must not write")
+	}
+
+	mr.Set(scenenode.LocationKey(id), "x")
+	if err := stageLocalRedis(context.Background(), client, id, 1, "4", 5, version); err == nil {
+		t.Fatal("player came online after preflight but stage did not refuse")
+	}
+
+	mr.Del(scenenode.LocationKey(id))
+	if err := stageLocalRedis(context.Background(), client, id, 1, "4", 5, version); err != nil {
+		t.Fatalf("matching preflight refused: %v", err)
+	}
+	if err := commitLocalRedis(context.Background(), client, id, savebarrier.Version(9, 9), ""); err == nil {
+		t.Fatal("commit must refuse when pending is not the staged version")
+	}
+	if mr.Exists(debugutil.PlayerToAccountKey(id)) {
+		t.Fatal("empty local account must not write the reverse index")
 	}
 }

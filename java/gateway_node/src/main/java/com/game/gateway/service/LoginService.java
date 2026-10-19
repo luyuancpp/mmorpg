@@ -90,7 +90,7 @@ public class LoginService {
      *   <li>故障码（渠道 / 存储故障、令牌签发失败……）→ 500：服务端出错，客户端稍后重试，凭证不一定有问题；</li>
      *   <li>其余码（凭证无效等业务拒绝）、没有码只有 message、本二进制不认识的新码 → 401：客户端重新认证（原行为）。</li>
      * </ul>
-     * message 不受影响，两种情况都带上游 tip，客户端按 tip 码选文案。{@link RefreshTokenService} 用同一套映射。
+     * message 不受影响，上游 tip 保留用于排障；当前客户端只按 JSON code 分支。{@link RefreshTokenService} 用同一套映射。
      */
     static int httpCodeForUpstreamTip(Integer tipId) {
         return tipId != null && TipFaults.isFault(tipId)

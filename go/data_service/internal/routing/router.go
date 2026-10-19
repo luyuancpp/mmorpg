@@ -164,6 +164,7 @@ func (r *Router) IsMergeInProgress(ctx context.Context, zoneID uint32) (bool, er
 
 // ErrZoneMergeInProgress 表示目标 zone 有 merge:in_progress:{zone} 标记,
 // 本次写入被合服闸门拒绝。用 errors.Is 判定。
+// RegisterPlayerZone 与玩家数据写门禁 AcquirePlayerWriteLock 共用;写门禁里拿锁后发现 home 已被改写同样包它。
 var ErrZoneMergeInProgress = errors.New("zone merge in progress")
 
 // HomeZoneConflictError 表示 player:zone:{id} 已经存在且与请求的 zone 不同。
@@ -319,7 +320,8 @@ var ErrHomeZoneNotMapped = errors.New("no home zone mapping")
 
 // GetPlayerHomeZone looks up a player's home zone.
 // 映射缺席时返回包着 ErrHomeZoneNotMapped 的错误(errors.Is 可判);
-// ClientForPlayer 等内部路由调用把它和 Redis 错误一视同仁(没有映射就无法路由)。
+// ClientForPlayer 等内部路由调用把它和 Redis 错误一视同仁(没有映射就无法路由):in-band 数据入口一律回
+// ErrCodeRedis(故障),原因记进 logic 包的 [DataRoute] 日志。
 //
 // RouteStore.ReadRequiresReady=true 时整段换成 getPlayerHomeZoneReady(route_read.go,R6):缓存可信才用缓存,
 // 否则回源 player_route;库故障包 ErrRouteReadUnavailable,绝不包 ErrHomeZoneNotMapped。开关为 false 时下面与今天逐字相同。
@@ -362,8 +364,8 @@ func parseHomeZoneValue(playerID uint64, val string) (uint32, error) {
 //   - home 读到了、围栏读失败   → merging=true、err=nil:与 IsMergeInProgress「查询失败当封锁」
 //     同一口径(fail-closed)。home 本身是可信的,调用方照常拿到它,只是被告知不能进场。
 //
-// 只给「决定能不能进场」的调用方用;内部路由(ClientForPlayer 等)只要 home,继续用
-// GetPlayerHomeZone,不多付一次 EXISTS。
+// 只给决定能不能进场的调用方(GetPlayerHomeZone RPC)与玩家数据写门禁(AcquirePlayerWriteLock)用;
+// 读路由(ClientForPlayer 等)只要 home,继续用 GetPlayerHomeZone,不多付一次 EXISTS。
 //
 // RouteStore.ReadRequiresReady=true 时整段换成 getPlayerHomeZoneAndMergeFenceReady(route_read.go,R2):就绪标记、
 // 实例身份、home 与围栏同一段 Lua 读出,可信才用;否则回源 player_route(home 与 63 号片围栏同一条语句)。
@@ -484,7 +486,12 @@ func (r *Router) BatchGetPlayerHomeZone(ctx context.Context, playerIDs []uint64)
 // ── Redis client resolution ────────────────────────────────────
 
 // ClientForPlayer resolves player_id → the correct Redis Cmdable.
-// This is the key routing function — all data access goes through here.
+// 读路径用;Save / SetField / Delete 走 AcquirePlayerWriteLock(带合服围栏预检与拿锁后复核)。
+//
+// 错误链原样保留,调用方用 errors.Is 区分:映射缺席 → ErrHomeZoneNotMapped;回源失败 → ErrRouteReadUnavailable;
+// mapping Redis 故障 / 熔断 / 值畸形 / zone 未配集群 → 普通错误。in-band 入口(logic.clientForPlayer)一律折成
+// ErrCodeRedis 并记 [DataRoute] 日志;账本读(persisted_player_database.go、asset_sql_commit.go)一律回 Unavailable,
+// **绝不** NotFound。DevRedis 下第一行短路:不查映射、不会失败。
 func (r *Router) ClientForPlayer(ctx context.Context, playerID uint64) (goredis.Cmdable, error) {
 	if r.devClient != nil {
 		return r.devClient, nil
@@ -603,6 +610,8 @@ func PlayerDataLockKey(playerID uint64) string {
 //
 // 只做 token 校验释放还不够:旧持锁者在 TTL 后恢复执行时仍可能覆盖新持锁者。
 // 数据侧 Lua 必须同时验证 PlayerDataLockKey 的 token,才能真正 fence 掉旧写者。
+//
+// 业务写路径不要直接调,走 AcquirePlayerWriteLock(合服围栏预检 + 拿锁后复核);本函数保留导出给锁语义单测。
 func (r *Router) AcquirePlayerLock(ctx context.Context, dataClient goredis.Cmdable, playerID uint64) (token string, ok bool, err error) {
 	buf := make([]byte, 16)
 	if _, err = rand.Read(buf); err != nil {
@@ -627,6 +636,103 @@ func (r *Router) AcquirePlayerLock(ctx context.Context, dataClient goredis.Cmdab
 		return "", ok, err
 	}
 	return token, true, nil
+}
+
+// writeRoute 是写门禁读到的路由快照,home 与合服围栏同一瞬间读出(GetPlayerHomeZoneAndMergeFence)。
+//
+// mapped=false 只在 dev 模式出现:那时数据位置不依赖映射,未登记的玩家照常可写,与引入写门禁之前一致。
+// 它也不可能在任何合服清单里 —— 合服按 player:zone 收集清单,RegisterPlayerZone 受同一道围栏约束。
+// Regions 模式下映射缺席照旧是错误(没有 home 就选不出集群)。
+type writeRoute struct {
+	home   uint32
+	mapped bool
+}
+
+func (w writeRoute) String() string {
+	if !w.mapped {
+		return "unmapped"
+	}
+	return strconv.FormatUint(uint64(w.home), 10)
+}
+
+// readWriteRoute 读一次 writeRoute。home 处在合服围栏内时返回包 ErrZoneMergeInProgress 的错误;
+// 其余错误原样包回(映射缺席包 ErrHomeZoneNotMapped,就绪读回源失败包 ErrRouteReadUnavailable)。
+func (r *Router) readWriteRoute(ctx context.Context, playerID uint64) (writeRoute, error) {
+	home, merging, err := r.GetPlayerHomeZoneAndMergeFence(ctx, playerID)
+	if err != nil {
+		if r.devClient != nil && errors.Is(err, ErrHomeZoneNotMapped) {
+			return writeRoute{}, nil
+		}
+		return writeRoute{}, err
+	}
+	route := writeRoute{home: home, mapped: true}
+	if merging {
+		return route, fmt.Errorf("%w: player %d home zone %d is fenced", ErrZoneMergeInProgress, playerID, home)
+	}
+	return route, nil
+}
+
+// AcquirePlayerWriteLock 是 SavePlayerData / SetPlayerField / DeletePlayerData 唯一的拿锁入口(合服写门禁)。顺序固定:
+//
+//  1. 预检:readWriteRoute(home 与 merge:in_progress:{home} 同一段 Lua / 同一条 SQL 读出,A16);围栏在 → 不碰任何锁;
+//  2. 按预检读到的 home 取数据客户端(dev 模式恒为 devClient);
+//  3. AcquirePlayerLock 拿两把锁;
+//  4. 复核:**数据锁 SETNX 成功之后**再读一次 writeRoute。围栏已立 / home 已变 / 读失败 → 释放两把锁再返回错误。
+//
+// 为什么复核必须晚于数据锁:提交脚本(saveFieldsScript / 删除脚本)校验的是数据锁 token,merge_zone 拷 blob 前检查的
+// 也是数据锁(tools/merge_zone/player_blob_migrate.go copyPlayerStringKeys)。复核晚于数据锁,则任何在立围栏之后才
+// 拿到数据锁的写者,复核必然看见围栏;立围栏之前拿到锁的写者,要么在锁有效期内提交(此时锁在,合服拷贝中止),要么锁
+// 过期后提交被 token 校验拒绝。复核若早于数据锁,写者可以在 merge_zone 查锁之后才拿到数据锁、在拷贝之后提交,数据留在
+// 已拷走的源集群里。mapping Redis 与 data Redis 是两个实例,做不到一段 Lua 原子,窗口靠「数据锁 + 复核 + 拷贝前查锁」合起来关。
+//
+// 返回:err != nil → 不持有任何锁(围栏 / home 变化包 ErrZoneMergeInProgress;Regions 下映射缺席包 ErrHomeZoneNotMapped;
+// 就绪读回源失败包 ErrRouteReadUnavailable;其余是 Redis / 配置错误);err == nil && !locked → 锁被别人持有;
+// locked → 两把锁都在,调用方必须 defer ReleasePlayerLock(ctx, client, playerID, token)。
+// 合服窗口内 src / dst 两个 zone 的玩家写入一律拒绝,dev 与 Regions 同口径。读路径不走这里,继续用 ClientForPlayer。
+// 代价:每次写多两次 mapping Redis 往返(ReadRequiresReady=true 时是两次就绪读,缓存不可信时两次库点查),
+// 复核耗时计入 PlayerLockTTLSec;慢到锁过期时提交被 token 校验拒成 LockConflict,只损活性。
+func (r *Router) AcquirePlayerWriteLock(ctx context.Context, playerID uint64) (client goredis.Cmdable, token string, locked bool, err error) {
+	route, err := r.readWriteRoute(ctx, playerID)
+	if err != nil {
+		return nil, "", false, fmt.Errorf("write refused before lock: %w", err)
+	}
+	client, err = r.ClientForZone(route.home)
+	if err != nil {
+		return nil, "", false, fmt.Errorf("write lock for player %d: %w", playerID, err)
+	}
+	token, locked, err = r.lockAndRecheckRoute(ctx, client, playerID, route)
+	if err != nil || !locked {
+		return nil, "", false, err
+	}
+	return client, token, true, nil
+}
+
+// lockAndRecheckRoute 拿两把玩家锁,数据锁到手之后复核 writeRoute;复核不过就释放两把锁并返回错误。
+// before 是拿锁所用客户端对应的路由(预检读到的值)。单独成函数只为让单测能传入在数据侧 SETNX 处注入动作的客户端,
+// 钉住「复核晚于数据锁」这条顺序(同 registerPlayerZoneFenced 的接缝理由);业务一律走 AcquirePlayerWriteLock。
+func (r *Router) lockAndRecheckRoute(ctx context.Context, client goredis.Cmdable, playerID uint64, before writeRoute) (string, bool, error) {
+	token, locked, err := r.AcquirePlayerLock(ctx, client, playerID)
+	if err != nil || !locked {
+		return "", locked, err
+	}
+	after, err := r.readWriteRoute(ctx, playerID)
+	var refused error
+	switch {
+	case err != nil:
+		refused = fmt.Errorf("write refused after lock: %w", err)
+	case after != before:
+		// home 只会被合服 / 撤销合服改写(dev 下还有「刚登记」),一律按合服处理:零写入,调用方稍后重试。
+		refused = fmt.Errorf("%w: write refused after lock: player %d home zone changed %s -> %s",
+			ErrZoneMergeInProgress, playerID, before, after)
+	default:
+		return token, true, nil
+	}
+	// 释放走 lockReleaseContext,请求 ctx 已取消也照常发出;失败只记日志,两把锁按 TTL 过期。
+	if releaseErr := r.ReleasePlayerLock(ctx, client, playerID, token); releaseErr != nil {
+		logx.Errorf("[PlayerWriteLock] releasing locks after a refused recheck failed, they expire in %ds: player=%d: %v",
+			r.lockTTLSec, playerID, releaseErr)
+	}
+	return "", false, refused
 }
 
 // releasePlayerLockScript 仅当锁仍属于该 token 时才删除(原子)。

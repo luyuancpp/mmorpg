@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"data_service/cmd/debugutil"
+	"data_service/internal/config"
 )
 
 // ── Export file structures ──────────────────────────────────────
@@ -31,6 +32,8 @@ type exportFile struct {
 	ZoneID   uint32       `json:"zone_id"`
 	Database string       `json:"database"`
 	Matches  []tableMatch `json:"matches"`
+	// Errors 是导出时查询失败的表(2026-10-19 起导出)。出错的表没有导出行,导入会把它当成「该玩家没有行」。
+	Errors []map[string]string `json:"errors"`
 }
 
 type fieldEntry struct {
@@ -41,11 +44,16 @@ type fieldEntry struct {
 }
 
 type tableMatch struct {
-	Table       string                       `json:"table"`
-	MatchColumn string                       `json:"match_column"`
-	Truncated   bool                         `json:"truncated"`
-	Rows        []map[string]json.RawMessage `json:"rows"`
+	Table       string `json:"table"`
+	MatchColumn string `json:"match_column"`
+	// Truncated 为 nil 表示旧版导出(没有这个标记,无法判断是否被 -limit 截断),一律拒绝导入。
+	Truncated *bool                        `json:"truncated"`
+	Rows      []map[string]json.RawMessage `json:"rows"`
 }
+
+// fencedPlayerTables 是带行内围栏、由 login 按存盘屏障冷加载的两张表。旧 playerdb 导入只写行、不对齐屏障与 owner_epoch,
+// 写进去的玩家本地加载不了,后续存盘还会被围栏判成 stale_owner;这两张表只能经 player-bundle 导入。
+var fencedPlayerTables = map[string]bool{"player_database": true, "player_database_1": true}
 
 func main() {
 	var (
@@ -60,6 +68,7 @@ func main() {
 		localAccount = flag.String("local-account", "", "player-bundle: local dev_/robot_ account that will own the imported role")
 		replace      = flag.Bool("replace", false, "player-bundle: overwrite an existing local save of the same player_id")
 		allowHosts   = flag.String("allow-target-host", "", "comma-separated non-loopback hosts allowed as write targets (local docker service names)")
+		allowFenced  = flag.Bool("allow-fenced-tables", false, "legacy playerdb: write player_database / player_database_1 rows without aligning the save barrier (the player will NOT load)")
 	)
 	flag.Parse()
 
@@ -110,9 +119,9 @@ func main() {
 	switch data.Mode {
 	case "player":
 		fmt.Fprintln(os.Stderr, "注意:player 导出写回的是 data_service 的 player:{id}:<field> 键族,不在登录加载链路上;本地复现玩家请用 player-bundle")
-		err = importPlayerRedis(ctx, *configPath, data, *dryRun)
+		err = importPlayerRedis(ctx, *configPath, data, *dryRun, *allowHosts)
 	case "playerdb":
-		err = importPlayerDB(ctx, *dbConfigPath, data, *dryRun, *allowHosts)
+		err = importPlayerDB(ctx, *dbConfigPath, data, *dryRun, *allowHosts, *allowFenced)
 	default:
 		err = fmt.Errorf("unsupported import mode %q (only player and playerdb exports are supported)", data.Mode)
 	}
@@ -125,7 +134,7 @@ func main() {
 
 // ── Player Redis import ─────────────────────────────────────────
 
-func importPlayerRedis(ctx context.Context, configPath string, data *exportFile, dryRun bool) error {
+func importPlayerRedis(ctx context.Context, configPath string, data *exportFile, dryRun bool, allowHosts string) error {
 	if data.PlayerID == 0 {
 		return errors.New("export file has no player_id (use -player to override)")
 	}
@@ -164,6 +173,15 @@ func importPlayerRedis(ctx context.Context, configPath string, data *exportFile,
 	if dryRun {
 		fmt.Fprintf(os.Stderr, "\n[DRY RUN] No changes written. Use --dry-run=false to apply.\n")
 		return nil
+	}
+
+	// 写前闸门:玩家字段写进 Router 选出的数据实例(DevRedis,或按 zone 的 Regions 集群),映射写进 MappingRedis。
+	dsCfg, err := debugutil.LoadDataServiceConfig(configPath)
+	if err != nil {
+		return err
+	}
+	if err := checkLegacyRedisTargets(dsCfg, data.HomeZoneID, allowHosts); err != nil {
+		return err
 	}
 
 	svcCtx, cleanup, err := debugutil.NewServiceContext(configPath)
@@ -210,9 +228,33 @@ func importPlayerRedis(ctx context.Context, configPath string, data *exportFile,
 	return nil
 }
 
+// checkLegacyRedisTargets 检查旧 player 模式会写的全部实例:Router 的数据实例(配了 DevRedis 恒用它,
+// 否则是覆盖 homeZone 的 Regions 集群的每个节点)与映射登记目标(checkDataServiceTargets)。
+func checkLegacyRedisTargets(c config.Config, homeZone uint32, allowHosts string) error {
+	if strings.TrimSpace(c.DevRedis.Host) != "" {
+		if err := debugutil.CheckLocalWriteTarget("data_service DevRedis", c.DevRedis.Host, allowHosts); err != nil {
+			return err
+		}
+	} else {
+		for _, region := range c.Regions {
+			for _, zone := range region.Zones {
+				if zone != homeZone {
+					continue
+				}
+				for _, addr := range region.Redis.Addrs {
+					if err := debugutil.CheckLocalWriteTarget("data_service Regions 集群", addr, allowHosts); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return checkDataServiceTargets(c, allowHosts)
+}
+
 // ── Player DB (MySQL) import ────────────────────────────────────
 
-func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, dryRun bool, allowHosts string) error {
+func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, dryRun bool, allowHosts string, allowFencedTables bool) error {
 	if data.PlayerID == 0 {
 		return errors.New("export file has no player_id (use -player to override)")
 	}
@@ -229,12 +271,21 @@ func importPlayerDB(ctx context.Context, dbConfigPath string, data *exportFile, 
 	var tables []tableImport
 	totalRows := 0
 
+	if len(data.Errors) > 0 {
+		return fmt.Errorf("导出时有 %d 张表查询失败(%v),这些表没有导出行;修好权限 / 超时后重新导出", len(data.Errors), data.Errors)
+	}
 	for _, match := range data.Matches {
 		if len(match.Rows) == 0 {
 			continue
 		}
+		if fencedPlayerTables[match.Table] && !allowFencedTables {
+			return fmt.Errorf("table %s 带行内围栏,旧 playerdb 导入不对齐存盘屏障,导入后本地 login 会拒绝该玩家;请改用 debug_fetch -mode player-bundle 导出再导入(确需只写行时加 -allow-fenced-tables)", match.Table)
+		}
 		// 导入先删掉该玩家在这张表的全部行再插回导出的行:导出被 -limit 截断时会静默丢行。
-		if match.Truncated {
+		if match.Truncated == nil {
+			return fmt.Errorf("table %s 的导出没有 truncated 标记(旧版 debug_fetch),无法判断是否被 -limit 截断;用新版 debug_fetch 重新导出", match.Table)
+		}
+		if *match.Truncated {
 			return fmt.Errorf("table %s 的导出被 -limit 截断,导入会丢行;调大 debug_fetch -limit 重新导出", match.Table)
 		}
 

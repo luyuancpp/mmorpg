@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -96,14 +97,27 @@ func playerDataLockKey(playerID uint64) string {
 	return fmt.Sprintf("player:{%d}:__lock", playerID)
 }
 
+// playerFieldIndexKey 是 data_service 的字段索引(go/data_service/internal/logic/data_logic.go::fieldIndexKey),HASH。
+// MGET 对 HASH 回 nil,所以它本来不会被下面的 string 拷贝带走;但目标端若残留同名索引且戳恰好等于拷过去的 __version,
+// data_service 会把它当成完整索引,拷过去的字段从全量读 / 删除里消失。拷贝时先删目标端索引,该玩家在目标端走
+// data_service 的 SCAN 回退(Cluster 上按 slot 扫单节点,结果正确)。不重建索引:Regions 从未部署(CZ-2)。
+func playerFieldIndexKey(playerID uint64) string {
+	return fmt.Sprintf("player:{%d}:__fields", playerID)
+}
+
 // scanPlayerKeys 列出一名玩家在 src 上的全部 player:{id}:* 键。
 //
-// Cluster 修正:go-redis 的 ClusterClient.Scan(不带 key)只会打到**一个**
+// Cluster 修正:本工具依赖的 go-redis(见 go.mod)里 ClusterClient.Scan 不带 key 时只会打到**一个**
 // 随机节点,漏掉其它分片上的键。player:{id}:* 用了 hash tag,同一名玩家的
 // 键确实都在同一个 slot / 节点上 —— 但那是**哪个**节点,客户端在无 key 的
-// SCAN 里并不知道。必须 ForEachMaster 扫全部主节点再合并。
+// SCAN 里并不知道。必须 ForEachMaster 扫全部主节点再合并。(go-redis v9.18.0 起 Scan 对带 hash tag 的
+// pattern 会按 slot 路由,data_service 用的是那一版;本工具升级前仍以 ForEachMaster 为准。)
+//
+// ForEachMaster 为每个主节点各起一个 goroutine 并发调用 collect,seen / all 由 mu 保护;迁槽时同一名玩家的键
+// 可能同时出现在源、目标两个节点上,两个回调会并发写这两份共享状态。
 func scanPlayerKeys(ctx context.Context, src redis.UniversalClient, playerID uint64) ([]string, error) {
 	pat := playerDataKeyPattern(playerID)
+	var mu sync.Mutex
 	seen := map[string]struct{}{}
 	var all []string
 	collect := func(ctx context.Context, c *redis.Client) error {
@@ -113,6 +127,7 @@ func scanPlayerKeys(ctx context.Context, src redis.UniversalClient, playerID uin
 			if err != nil {
 				return err
 			}
+			mu.Lock()
 			for _, k := range keys {
 				if _, dup := seen[k]; dup {
 					continue
@@ -120,6 +135,7 @@ func scanPlayerKeys(ctx context.Context, src redis.UniversalClient, playerID uin
 				seen[k] = struct{}{}
 				all = append(all, k)
 			}
+			mu.Unlock()
 			cur = next
 			if cur == 0 {
 				return nil
@@ -143,13 +159,33 @@ func scanPlayerKeys(ctx context.Context, src redis.UniversalClient, playerID uin
 }
 
 // copyPlayerStringKeys copies all string keys matching player:{id}:* from src to dst (SET with TTL 0).
-// 锁键被显式排除,见 playerDataLockKey。
+// 锁键被显式排除,见 playerDataLockKey;目标端的字段索引先删,见 playerFieldIndexKey。
+//
+// apply 模式下拷贝之前先查 data_service 的数据锁,锁在就报错、一个键都不拷(调用方走 abortKeepingFence,围栏保留)。
+// 前提是 data_service 写门禁(routing.AcquirePlayerWriteLock):写者在数据锁到手之后复核合服围栏,提交脚本校验数据锁 token。
+// 于是围栏立起之后某一刻 t 查到锁不在,就说明 t 之前拿到锁的写者要么已提交(下面的 SCAN / MGET 看得到),要么锁已过期、
+// 之后的提交会被 token 校验拒绝;t 之后拿到锁的写者复核必然看见围栏而放弃 —— t 之后源端不会再有 player:{id}:* 的提交。
+// 检查必须在 SCAN 之前:放在 SCAN 与 MGET 之间,SCAN 之后新建的字段键会漏拷。dry-run 只告警。
+// 同一后端时 copyPlayerBlobs 整步跳过,不会走到这里。
 func copyPlayerStringKeys(ctx context.Context, src, dst redis.UniversalClient, playerID uint64, dryRun bool) (int, error) {
+	lockKey := playerDataLockKey(playerID)
+	held, err := src.Exists(ctx, lockKey).Result()
+	if err != nil {
+		return 0, fmt.Errorf("player %d: check data_service write lock %s: %w", playerID, lockKey, err)
+	}
+	if held > 0 {
+		if !dryRun {
+			return 0, fmt.Errorf("player %d: data_service write lock %s is held on the source data Redis: a write that "+
+				"passed its merge-fence recheck before the fence went up may still commit after this copy and be lost; "+
+				"wait at least PlayerLockTTLSec (3s in etc/data_service.yaml and the K8s ConfigMap) and rerun",
+				playerID, lockKey)
+		}
+		log.Printf("[DRY-RUN] WARN player %d: %s is held on the source data Redis; -apply would stop here", playerID, lockKey)
+	}
 	scanned, err := scanPlayerKeys(ctx, src, playerID)
 	if err != nil {
 		return 0, err
 	}
-	lockKey := playerDataLockKey(playerID)
 	all := make([]string, 0, len(scanned))
 	for _, k := range scanned {
 		if k == lockKey {
@@ -171,6 +207,7 @@ func copyPlayerStringKeys(ctx context.Context, src, dst redis.UniversalClient, p
 		return 0, fmt.Errorf("mget player %d: %w", playerID, err)
 	}
 	pipe := dst.Pipeline()
+	pipe.Del(ctx, playerFieldIndexKey(playerID))
 	written := 0
 	for i, k := range all {
 		v := vals[i]

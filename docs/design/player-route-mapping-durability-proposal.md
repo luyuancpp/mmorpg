@@ -1291,6 +1291,8 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
 | 物理落点 `player:placement` | **login 全程不读**；go/db 每条读写任务 2 次 MGET（选库 + 落库后复核，两键 placement + zone） | mapping Redis | 每条 DBTask 2 次；一次存盘（2 条写任务）4 次；一次冷登录（父键缺失时 2 条读任务）4 次 | `go/db/internal/kafka/placement_route.go`；`ensure_player_all_data_async.go` |
 | 目录库 `player_route` | 不在在线路径上：K8s 固定 `RouteStore.Mode=redis`，提交点是 mapping Redis 上的 SETNX Lua | — | 0 | `k8s_deploy.ps1` 的 data-service ConfigMap `RouteStore` 段；`router.go` 的 `setPlayerZoneIfAbsentScript` |
 
+**gate 上 access_token 那次 Login 的角色列表不能省**（2026-10-19 经负责人授权只读核对 `../mmorpg-client` HEAD `09c6ccea`）：Unity 客户端的选角、建角、本地名牌与外观缓存只用这份列表（`Assets/Scripts/Game/GameClient.cs` 的 `ConnectAndEnter` → `CacheRoleMetadata` / `PlayerChooser`；列表为空时选角页直接跳建角页，不挂界面的自动路径会给已有角色的账号静默再建一个号）；跨 gate 重定向不走 HTTP，这份列表是唯一来源。robot（`robot/login.go` 的 `loginAndEnterAccessToken`）同样只读它。Java 版这次回包同样带列表，契约文档（Java `docs/reference/mmorpg-client-contract-login.md`）写明登录成功时带 `players`。反过来，HTTP `/api/login` 那份列表 Unity 客户端只打日志、字段也不全（只有 id / 名字 / 等级），robot 不解析它；要省一份只能省 HTTP 那份，但它是 Java gateway 的 HTTP 契约，要两版同批改，未做。（2026-10-19 负责人定：两份都保持现状，按业界常规流程——HTTP 认证取 token、连 gate 后由 gate 登录回包给角色列表——不再改。）若要降低 gate 那次的开销，方向是削减 `roleListWithCurrentHomeZone` 的补齐成本（缺外观时整份读 PlayerAllData），而不是去掉列表。
+
 稳态下 mapping 读量的大头**不是登录**：是存盘（每次存盘 4 次 MGET）与换图（容量模型 S3 档换图速率约为登录速率的 6 倍）。容量模型 §2.5 `redis-mapping` 行的「2E」与 G4a 稿的「E + 列表数/s」都漏了换图那一项。
 
 **按吞吐看的撞墙顺序与状态**（倍数全是推算，见下「证据边界」）
@@ -1330,6 +1332,6 @@ tidb-phase1-and-launch-readiness.md §5.1 单行热点一行与 §7 L-12 已加�
 - EnterGame 账号目录自愈原为无锁 GET + 整块 SET，改为账号锁 + 锁内重读 + 整字节 CAS，提交点复核反向索引；
 - 运维 `RemovePlayersFromAccounts` 的实现改为同一把账号锁内原子摘孤儿并删反向索引（脚本可重发）。**它目前没有生产入口**：gRPC `LoginAdmin.RemovePlayersFromAccounts` 原是返回空成功的生成桩，已改为明确返回 Unimplemented，接线另开任务。
 
-**仍待负责人决定**：拆 Redis 与 HA 的排期；hash tag 改键与 §6.5 的冲突；读脚本拼键与就绪标记在 Cluster 下的改法（随 D1 围栏挪库）；账号目录落库位置；打开新号免冷读；access_token 那次 Login 是否还要重新生成角色列表（省掉可让每次完整登录的映射读减半，但要先确认客户端是否用第二份列表，客户端仓未授权查看）；单台 gate 连接上限如何让 login 知道；运维摘孤儿要不要接上 gRPC 入口。
+**仍待负责人决定**：拆 Redis 与 HA 的排期；hash tag 改键与 §6.5 的冲突；读脚本拼键与就绪标记在 Cluster 下的改法（随 D1 围栏挪库）；账号目录落库位置；打开新号免冷读；单台 gate 连接上限如何让 login 知道；运维摘孤儿要不要接上 gRPC 入口。
 
 **Java 版**：没有映射层，归属区就是 `game.player.zone_id` 列，登录时按主键点查一次单库（`PlayerStore.findPlayer`），另读一次可降级的 Redis `game:location:{player_id}`；进程能多开，存储同样是单点，这是 Java 单库的既定设计（扩展要换分布式库，不在本轮）。选 gate 已同步为随机二选一（Java `PARITY.md` 末行）。对应 Java 版本号 0.1.0-SNAPSHOT。

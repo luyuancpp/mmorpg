@@ -11998,3 +11998,76 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   - 本条。
 - **验证**：只改文档，无代码改动，不需要交 Codex。上一条的 7 步验证命令仍然有效，尚未执行。
 - **Java 版（AGENTS §12）**：不适用，同上一条；对应 Java 版本号无。
+
+## 2026-10-19 Codex：上线状态加入跨会话启动入口（仅文档）
+
+- 已核对围栏设计文末「上线状态」、审计 §2.2 与上条进度记录，口径一致。
+- `AGENTS.md` 会话启动区新增上线状态与条件引用：兼容、混跑、降级、迁移、灰度或回档判断先查设计文档的上线前限定范围；上线后以实际线上状态为准。`CLAUDE.md` 继续单行导入。
+- 仅补充文档入口；此前 7 步构建与测试验证仍待执行，本条不构成运行验证证据。Java 版不涉及代码或共享客户端契约变化。
+
+## 2026-10-19 核对：gate 上 access_token 那次 Login 的角色列表客户端在用，不去掉（Claude，只读核对，无代码改动）
+
+- **问题**：一次完整登录会执行两次 Login（HTTP `/api/login` 与 gate 上 `auth_type=access_token`），两次都生成角色列表；负责人授权只读 `../mmorpg-client`，要求「客户端用不到就去掉服务端 gate 那次的重新生成」。
+- **结论：用，不去掉**（多代理只读核对，客户端结论另经一名质疑者复核）：
+  - Unity 客户端（HEAD `09c6ccea`）：选角、建角、本地名牌与外观缓存只用 gate 回包的 `LoginResponse.Players`（`Assets/Scripts/Game/GameClient.cs` 的 `ConnectAndEnter`：`CacheRoleMetadata`、按 zone 过滤后交 `PlayerChooser`、建角时作为「已有角色」集合）；列表为空时选角页直接跳建角页，不挂界面的自动路径会给已有角色的账号静默再建一个号；跨 gate 重定向（msg 124）不走 HTTP，这份列表是唯一来源。HTTP 那份只打日志，`GatewayPlayerInfo` 只有 id / 名字 / 等级。
+  - robot：`loginAndEnterAccessToken` 只读 gate 回包，列表为空就建角、否则进第一个；HTTP 回包结构里没有 players。
+  - Java 版：gate 登录（TCP 48）同样带列表，契约文档写明登录成功时带 `players`。
+- **没做**：服务端代码不改，无需 Codex 验证。若要省一份，只能省 HTTP 那份（Java gateway 的 HTTP 契约，两版同批改，另议）；若要降 gate 那次的开销，方向是削减 `roleListWithCurrentHomeZone` 的补齐成本（缺外观时整份读 PlayerAllData），不是去掉列表。
+- **文档**：`player-route-mapping-durability-proposal.md` §12.1、`zone-home-and-physical-storage-conversation-20260924.md` 续录同步更正。Java 版：不适用（无改动）。对应 Java 版本号 0.1.0-SNAPSHOT。
+
+## 2026-10-19 线上单玩家数据拉取(player-bundle)与本地复现导入
+
+- **背景**:负责人要能把某服某玩家的 Redis 与数据库数据拉下来排查反馈。调研发现既有 `debug_fetch` 拉不到真实数据:`-mode player` 读的是 data_service 自己的 `player:{id}:<field>` 键族(正常玩法不写),真实父快照 `PlayerAllData:<id>`、存盘屏障、owner_epoch 等一个都读不到;`player-db` 在单连接池里游标未关就发下一条查询,必然卡到超时;`debug_import` 经 float64 还原整数会把存量雪花 player_id 改号,导回本地后 login 冷加载因屏障 / 围栏不齐必拒。
+- **做了什么**(全部在 `go/data_service/cmd`,不改 proto、不改服务代码):
+  - `debug_fetch -mode player-bundle`:一次只读导出一名玩家——核心 Redis 相关键(同一 MULTI,一致视图;账号目录密码脱敏不导原字节)、按 go/db 同一规则(`placement_route.go`)解析出的落点库两张玩家表(proto2mysql 同一套行 ↔ 消息映射,可重复读快照)、全局库快照(source=1 逐层解码)/ 流水 / 回档审计 / 名字,以及判读(在线、屏障与 login 冷加载同口径的结论与异常、父快照与 SQL 逐字段差异、映射畸形、线上表多列、版本不一致)。源实例身份(Redis run_id、MySQL server_uuid)写进包。
+  - `debug_import` 导入 bundle:在本地重铸存盘版本 V=(max 代次+1, 最大序号),三段写入(Lua 原子复核后预置屏障 pending 与 owner → 事务写两表 → 复核后补齐 ACK 与账号反向索引),任一段中断 login 均 fail-closed、`-replace` 重跑收敛;写前闸门:回环地址 + 目标实例身份 ≠ 导出来源 + 库名 = `zone_<本地zone>_db` + 本地落点记录 / 映射 / 在线检查。
+  - 修旧路径:`player-db` 游标卡死、单表错误不再静默;SQL 只读校验拒注释 / ANALYZE / INTO / 锁定读 / 用户锁等;`-database` 可读同实例其他库;旧导入整数按十进制字面量还原、`-player` 换号连匹配列一起改、拒绝截断 / 有错误 / 旧版导出与围栏表、旧 Redis 导入加写目标闸门;连接字符集改走 `mysql.Charset`(塞进 Params 会让每条连接 `SET charset=` 失败)。
+  - 文档:重写 `docs/ops/online-debug-data-fetch.md`;`mysql-backup-pitr-runbook.md` §4.2 的 mysqldump 示例缺 `--no-create-info`,照做会 DROP 生产整表,已更正并提示回灌须对齐屏障;`shared-redis-split-by-purpose.md` 子表缓存键名(`player_database:{id}`)与 debug_fetch 读者两处更正;`player_live_data_export_runbook.md` 指向新流程。
+- **评审**:四视角对抗评审 33 条成立 / 部分成立,已全部处理或记录(rollback_audit_log 无 player_id 索引按玩家查是全表扫描,只在文档提示 `-skip-global`;`player-db` 游标卡死缺回归单测)。
+- **验证**:未编译、未运行任何测试,待 Codex 按交付说明执行(go vet / go test 三个 cmd 包 + 本地真库冒烟)。
+- **Java 版**(AGENTS §12):待做——Java 版存储与归属契约不同,对应的单玩家导出 / 导入工具需在 Java 仓按其存储单独设计;本批未改 Java 仓、未登记 `PARITY.md`。对应 Java 版本号 0.1.0-SNAPSHOT。
+- **遗留**:线上仍无 SELECT-only 排障账号(SQL 黑名单只是第二道防线);G4a 拆 Redis 实例落地后 `debugutil.PlayerRedisKeySpecs` 的实例归属要随之改;导入不含好友 / 公会 / 邮件 / 交易 / 收件箱等其他服务数据与名字注册表。
+
+## 2026-10-19 负责人决定：登录两份角色列表保持现状
+
+- gate 上 access_token 那次 Login 的角色列表保留（客户端选角 / 建角的唯一来源）；HTTP `/api/login` 那份虽然 Unity 客户端只打日志，也不去掉（它是 Java gateway 的 HTTP 契约，改要三端同批）。现状即常规流程：HTTP 认证取 token → 连 gate 用 token 登录 → gate 回包给角色列表 → 选角进场。无代码改动；`player-route-mapping-durability-proposal.md` §12.1 已记。Java 版：不适用。
+
+## 2026-10-19 Codex：会话结束释放覆盖身份的生成、构建回执复核与 Java 对账（运行测试待续）
+
+- **范围**：接续 location-release-binding.md §13 及评审后两处补测；只读核对既有生成/构建回执，实际执行 gofmt -l，补 Java PARITY 一行，未重跑生成或构建、未改业务源码、未提交。交接中的“未提交”已过时：任务源已由其它聊天纳入 e611b5d8d；本聊天没有执行提交。
+- **可复用证据**：ownership-generation-current-20261019T043632035Z/proof.json 通过，当前三份 covered 身份 Go/C++ 绑定 SHA 与正规生成原件相同。root-r5-current-v6-20261019T072214799110Z/result.json 的 game.sln 与独立 rpc_controller_test 均原生 0；本任务六份 C++ 源与封存 SHA 相同，评审后 cross_zone_test.cpp 已真实 CL 编译并链接。该轮属于增量 Build，不是全量 Rebuild，也没有运行 GTest。
+- **格式**：gofmt -l go/scene_manager/internal 原生 0；本批五文件无输出。另列出非本批 internal/noderegistry/registry_integration_test.go、internal/server/scenemanager/scenemanagerserver.go、internal/server/scenemanagerserver.go，按交接只记录不修改。
+- **待续运行**：旧 Go 53+1 分轮记录没有包含新增 TestLeaveScene_PendingCoversLeaveRequestIdentityNotLocation，不能替代当前 vet、定向及全量；C++ 指定范围和 shuffle 全量仍待统一执行。主协调聊天 01a13ee4-2f2f-7293-bfa2-dda0aab53674 持有唯一 native 执行窗口，本聊天没有重复开启编译、测试、服务或容器。本条不宣称测试通过。
+- **Java 版**：0.1.0-SNAPSHOT；PARITY.md 271 行已追加源提交 e611b5d8d 的结构不同等价行为（每次夺权换 epoch、takeover 只处理相等 epoch），仅静态核实，本轮未构建/测试。字段 6/7 正规 ContractSync 与完整 --check 已有原生 0 历史证据，Java cea4d88 已含同步副本，本轮不重复同步；该证据绑定当时双来源快照，不声称当前 HEAD 的 clean 重建。
+- **复核原件**：build/verification/session-ended-covered-review-20261019T074433188Z/{summary.json,format-result.json,gofmt-internal.log}；C++ 原件位于 build/verification/grpc-muduo-codex-20261018-005135/cpp-prep/current-build-runs/root-r5-current-v6-20261019T072214799110Z/。
+
+## 2026-10-19 Codex：会话结束释放覆盖身份的运行结果补记（C++ 首错停测，待决策）
+
+- 复用“核验会话释放覆盖用例”聊天本次真实执行原件 build/verification/session-release-cover-acceptance-20261019T074117806Z/，没有重复运行。go vet ./internal/... 原生 0；交接定向原生 0，新增 TestLeaveScene_PendingCoversLeaveRequestIdentityNotLocation 明确 PASS；go test ./... -count=1 -json 原生 0，共 444 顶层 + 226 子测试通过、0 测试失败/跳过（无测试文件包的 skip 事件不计用例跳过）。
+- C++ 指定 filter 实际运行 55 项，54 通过、1 失败，原生退出 1；本批 10 个 covered 身份回归均通过，包括 SessionEndedBindingDecideTable 的两边无代次分支。失败为 EnterFenceEcs.LoadCallbackBindsNewestAdmitted，cross_zone_test.cpp:5764 断言 playerList.count 为 1，实际 0。日志显示“父快照双表身份与当前玩家不符,拒绝载入”；该用例向回调传 PlayerAllData{}，未填生产门禁要求的两张子表 player_id。保留生产校验与原断言；未修改测试夹具或重跑，后续 shuffle 全量未执行。
+- 本批 15 项已列源输入首终无漂移，测试 EXE SHA B36D3D5F…A9DE 与 v6 构建封存匹配；这仅覆盖已列输入，不宣称全仓来源冻结。本轮总体未通过，按 AGENTS.md §10.2 失败门禁报告并等待是否修正测试夹具、重编和续验的决策。
+- 本聊天新补 Java PARITY.md 第 271 行保持未提交，仅文档对账；协议镜像正规同步沿用既有历史证据。具体回执见 build/verification/session-ended-covered-review-20261019T074433188Z/test-results.json；原 native1、stdout 和 XML 均不改判。
+
+## 2026-10-19 Codex：会话结束释放覆盖身份本轮验收，Go 通过、C++ 定向一条夹具失败后停止
+
+- 范围：核验 `location-release-binding.md` §13 与评审补入的两处测试。主线已为 `e611b5d8d`；本聊天没有修改业务代码、测试源码、生成产物，没有提交、推送或打标签。不同会话的既有 dirty 均保留。
+- 已复用并核实当前 SHA 的原始成功证据：字段 6/7 的正式 no-unity 生成（`build/verification/grpc-muduo-codex-20261018-005135/release-fields-sync-20261019043741/`）及当前串行 `game.sln /t:Build` 与独立 RPC 构建（`cpp-prep/current-build-runs/root-r5-current-v6-20261019T072214799110Z/result.json`，两个 native 均 0）。未重跑生成或构建，不把增量 Build 称为完整 Rebuild。当前 cross_zone 源与 EXE SHA 均对应该构建封存。
+- 本聊天实跑（Go 1.27.2，进程级 `GOTOOLCHAIN=local`、`GOFLAGS=-p=1 -mod=readonly`、`GOMAXPROCS=2`、`GOMEMLIMIT=384MiB`）：`go vet ./internal/...` native 0；交接的定向正则 40 顶层＋15 子例全部通过；`go test ./... -count=1 -json` native 0，444 顶层＋226 子例全部通过、0 测试失败、0 测试跳过，3 有测试包通过，13 包无测试文件。新增 `TestLeaveScene_PendingCoversLeaveRequestIdentityNotLocation` 在定向与全量各实际通过一次，无提前退出。gofmt 本批文件无输出，另有 `internal/noderegistry/registry_integration_test.go` 与两个 server 包文件为既有非本批输出，仅记录未改。
+- C++ 按 handoff 过滤器实际运行 55 项，54 通过、1 失败、0 跳过，native 1。§13 所列 10 个新增用例全部通过，`ReleaseFence.SessionEndedBindingDecideTable` 的新增两条零代次断言已在当前实测 EXE 中；但整组不得判绿。唯一失败 `EnterFenceEcs.LoadCallbackBindsNewestAdmitted`：`cross_zone_test.cpp:5764` 的 `playerList.count` 期望 1、实际 0；用例前面传入空 `PlayerAllData{}`，日志明确在父快照双表玩家身份校验处拒绝载入。未放宽该生产校验或原断言。
+- 按 AGENTS.md §10.2，失败后停止，未启动 shuffle 全量、未自动重试。已备仅给该用例两张子表填本玩家 ID 的候选 `proposed-test-fixture.patch`，`git apply --check` 为 0，尚未应用、尚未重编或复验，等待负责人决定。未跑实栈或压测。
+- 来源：本批 15 项输入首终 SHA 零变化；另聊天准备的 761 个 Go/相关输入逐项当前 SHA 零变化，独立复核重新枚举闭包无新增。原始步骤退出码、完整 stdout/stderr、55 项 GTest XML、输入清单与候选都保存在 `build/verification/session-release-cover-acceptance-20261019T074117806Z/`，`summary.json` 明确 `passed=false`，不覆盖此前任何失败原件。
+- Java 对应 0.1.0-SNAPSHOT：已静态核实每次夺权换 epoch、让出只匹配同 epoch，已有等价行为；字段 6/7 已在正规 ContractSync 副本中（仅附加 Java options，不重复同步）。另一同任务聊天已在 Java `PARITY.md:271` 登记 `e611b5d8d`，本聊天只读复核，未修改或构建 Java。旧 SOURCE 的 dirty 基线不手改，也不冒称 e611 的 clean 重建。
+
+## 2026-10-19 事故报告:删 location 不等持有者落盘导致回档(审计 §2.1;Claude,文档)
+
+- 新增 [incident-location-delete-rollback-2026-10-18.md](ops/incident-location-delete-rollback-2026-10-18.md),登记在 `docs/README.md` 事故复盘一节:现象(四种触发形态)、时间线(2026-08-09 同步 LeaveScene → 09-18 epoch 守卫把"旧盖新"变成"丢新" → 10-18 审计发现)、逐环根因、影响面、修复(设计 location-release-binding.md 全部章节)、验证状态与教训。
+- 文档写完后做了一轮只读事实核对(4 名核对员按区域核对代码 / git / PROGRESS / Java PARITY,每条差异再独立复核):18 条成立已改正,1 条被推翻。主要改正:§6 补上 C++ `game.sln` 增量 Build 2026-10-19 03:22–03:38 原生 0 的结果(不是全量 Rebuild,C++ 测试未运行;原件 `build/verification/grpc-muduo-codex-20261018-005135/cpp-prep/current-build-runs/root-r5-current-v6-20261019T072214799110Z/result.json`,此前 PROGRESS 没有登记);提交状态改为三次提交 `8b9592de3` / `e611b5d8d` / `1fc103dce` 均已入库;dev 旁路藏的是修复而不是缺陷。
+- 仍未验证:player_locator 测试、`cross_zone_test` / `routing_identity_test` 运行、真实环境故障演练。Java 仓 `PARITY.md` 还需补登记第一版、§12 与 gate 补修。
+
+## 2026-10-19 Codex：当前 C++ v6 构建成功，真实回归首错与 Java 补偿续验
+
+- 当前 game.sln Build 与独立 rpc_controller_test 均真实 native0，v6 result B9FA9623…50723；完整1812源、21库与产物经 root 独立 verify0（2805CD1C…24B5）。这是当前源码增量 Build，不是全量 Rebuild。原 C2679、v4 编译失败及 v5 输入门禁原件保留，不改判。
+- 已复用别线本次 SM vet/定向/全量原件（session-release-cover-acceptance-20261019T074117806Z），444顶层与226子测试实际通过、0失败/用例跳过，不重复运行。cross指定55项54通过/1失败；LoadCallbackBindsNewestAdmitted 给空 PlayerAllData，触发双子表身份拒载。继续授权内修正合法测试夹具并检查同类入口，生产门禁、最高代次及旧回调拒绝断言保持；未将失败改为通过，尚未运行全量 shuffle。
+- Java0.1.0-SNAPSHOT 最终 SAVE 持久补偿 v4 私有候选已真实编译；首轮121项110通过、3失败、8条件跳过，首错和XML保留。3失败均为旧测试夹具未建正式新表/未显式模拟无待办；v5仅修两测试夹具并增加缺表拒启回归，生产代码相对v4零变化，27有效文件完整补丁仍待正式应用。将只补跑受影响两类，再从未执行的下游19模块续建；原SQL74通过/7条件跳过不当真TiDB验收。
+- 主仓 Java gateway/JDK23 已真实 clean package0，204通过/5条件跳过；root独立补充校验实际根META-INF/build-info，DCCD4044…89103，原包装postcheck错误收据保留，无需重跑209项。客户端没有本轮可见契约变更，历史44项按原输入保留。
+- 真实双区旧实例复活、延迟第二表ACK和跨区资产恰一次仍未运行，无实际 SourceReceipt；未开本轮基础设施，未暂停/终止他人进程，未提交/推送/打标签。人类已授权统一协调与最小修复并要求继续做完，root直接接修复与串行续验，无需再次等原写方交接。

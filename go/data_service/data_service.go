@@ -259,7 +259,9 @@ func main() {
 	// 对私有码只敢记成 VerdictBizReject,所以这份集合必须由本服务显式给出。
 	//
 	// 归进"服务端内部故障"的三个码,逐个都有产码点为证:
-	//   ErrCodeRedis(1)          —— 玩家数据 Redis 读写失败(data_logic.go 多处)
+	//   ErrCodeRedis(1)          —— 玩家数据 Redis 读写失败(data_logic.go 多处),也含玩家数据路由失败(映射缺席 / 映射库
+	//                               故障或熔断 / 回源失败 / zone 未配集群;logic.clientForPlayer、写门禁与 snapshot_logic.go 第 3 步)。
+	//                               刻意不另分码:4 不在本集合里,改 4 会让路由故障哑掉。原因只在 `[DataRoute]` 日志里,本拦截器只带 method/code
 	//   ErrCodeSnapshotDBError(11) —— 快照/流水 MySQL 出错,或 store 干脆没配起来
 	//   ErrCodeRollbackFailed(12)  —— 回滚 fence 拿不到/释放函数为 nil,服务端自身走死
 	// 其余非 0 码刻意**不算**故障,免得刷出满屏假告警:
@@ -283,6 +285,9 @@ func main() {
 	// 都没有 in-band 的 error_code 字段可读。它们的可见性由 handler 里的 logx.Errorf 提供
 	// (每一条都带调用方身份),外加 grpcstats 那层按 gRPC code 统计的失败率。
 	// (24 ErrCodeMergeFenceMissing 自 2026-10-12 RemapHomeZoneForMerge 停用起不再产生,号不复用。)
+	// 22 自 2026-10-19 写门禁起也以 in-band error_code 出现在 SavePlayerData / SetPlayerField / DeletePlayerData 与 Rollback*
+	// 的响应里,这层拦截器能看到。仍刻意不进集合:那是围栏在正常工作(规则拒绝,口径同 RegisterPlayerZone 的拒绝)。
+	// 可见性来自 data_service_player_lock_total{outcome="merge_fenced"} 与 `[PlayerWriteLock]` 的 ERROR 日志。
 	// 映射持久化的 ErrCodeRouteStoreError(30)同理:只出现在 db_first 下 RegisterPlayerZone 的 gRPC status
 	// message 里(Unavailable),这层看不到;它的可见性来自 data_service_route_register_total{outcome="store_error"}
 	// 与 `[RegisterPlayerZone][db_first]` 的 ERROR 日志。

@@ -112,45 +112,68 @@ func TestLoadPlayerData_AllFields(t *testing.T) {
 	assert.True(t, resp.Version > 0)
 }
 
-// mgetHook 在下一次 MGET 之前 / 之后各跑一次钩子,把一次存盘精确插进 LoadPlayerData 读路径的缝里。
+// oneShotHook 在下一条匹配 match 的命令之前 / 之后各跑一次钩子,把一次存盘精确插进 LoadPlayerData 读路径的缝里。
 // 挂在 dev 模式共享的 *goredis.Client 上(go-redis 原生 Hook),被测代码照常走 LoadPlayerData 公开入口。
-// 钩子只触发一次,且存盘本身不发 MGET,不会递归。
-type mgetHook struct {
-	beforeMGet func()
-	afterMGet  func()
+// 钩子只触发一次;存盘本身发的命令(saveFieldsScript 的 eval)不匹配 match,不会递归。
+type oneShotHook struct {
+	match  func(goredis.Cmder) bool
+	before func()
+	after  func()
 }
 
-func (h *mgetHook) DialHook(next goredis.DialHook) goredis.DialHook { return next }
+func (h *oneShotHook) DialHook(next goredis.DialHook) goredis.DialHook { return next }
 
-func (h *mgetHook) ProcessPipelineHook(next goredis.ProcessPipelineHook) goredis.ProcessPipelineHook {
+func (h *oneShotHook) ProcessPipelineHook(next goredis.ProcessPipelineHook) goredis.ProcessPipelineHook {
 	return next
 }
 
-func (h *mgetHook) ProcessHook(next goredis.ProcessHook) goredis.ProcessHook {
+func (h *oneShotHook) ProcessHook(next goredis.ProcessHook) goredis.ProcessHook {
 	return func(ctx context.Context, cmd goredis.Cmder) error {
-		if cmd.Name() != "mget" {
+		if !h.match(cmd) {
 			return next(ctx, cmd)
 		}
-		if hook := h.beforeMGet; hook != nil {
-			h.beforeMGet = nil
+		if hook := h.before; hook != nil {
+			h.before = nil
 			hook()
 		}
 		err := next(ctx, cmd)
-		if hook := h.afterMGet; hook != nil {
-			h.afterMGet = nil
+		if hook := h.after; hook != nil {
+			h.after = nil
 			hook()
 		}
 		return err
 	}
 }
 
-func installMGetHook(t *testing.T, svcCtx *svc.ServiceContext, playerID uint64, h *mgetHook) {
+func isMGet(cmd goredis.Cmder) bool { return cmd.Name() == "mget" }
+
+// isLoadAllEval 只认全量读脚本:锁释放与存盘脚本也走 eval,不能被误匹配。
+func isLoadAllEval(cmd goredis.Cmder) bool {
+	args := cmd.Args()
+	return cmd.Name() == "eval" && len(args) > 1 && args[1] == loadAllFieldsScript
+}
+
+func devRedisClient(t *testing.T, svcCtx *svc.ServiceContext, playerID uint64) *goredis.Client {
 	t.Helper()
 	client, err := svcCtx.Router.ClientForPlayer(context.Background(), playerID)
 	require.NoError(t, err)
 	base, ok := client.(*goredis.Client)
 	require.Truef(t, ok, "dev 模式下 ClientForPlayer 应返回 *goredis.Client,实际 %T", client)
-	base.AddHook(h)
+	return base
+}
+
+func installHook(t *testing.T, svcCtx *svc.ServiceContext, playerID uint64, h goredis.Hook) {
+	t.Helper()
+	devRedisClient(t, svcCtx, playerID).AddHook(h)
+}
+
+// makeLegacyPlayer 造一名存量老玩家:裸写字段键与 __version,没有字段索引(引入索引之前写下的数据)。
+func makeLegacyPlayer(t *testing.T, mr *miniredis.Miniredis, playerID uint64, fields map[string]string, version string) {
+	t.Helper()
+	for name, val := range fields {
+		require.NoError(t, mr.Set(playerField(playerID, name), val))
+	}
+	require.NoError(t, mr.Set(versionKey(playerID), version))
 }
 
 func mustSave(t *testing.T, svcCtx *svc.ServiceContext, playerID uint64, data map[string][]byte) uint64 {
@@ -178,46 +201,68 @@ func requireLoadedVersionFencesLaterWrite(t *testing.T, svcCtx *svc.ServiceConte
 
 // TestLoadPlayerData_SaveRacingTheRead 把一次存盘插进读路径的各个缝里,断言 Version 永远不比 Data 新。
 // 旧实现先读字段、再单独 GET 版本:存盘落在两步之间时返回「旧数据 + 新版本」,带它 CAS 能通过。
+// 已索引的全量读是一段 Lua(没有 MGET 缝),缝在脚本前后;存量老玩家走 SCAN 回退,缝在 MGET 前后。
 func TestLoadPlayerData_SaveRacingTheRead(t *testing.T) {
 	cases := []struct {
 		name   string
 		fields []string
-		// beforeMGet=true:存盘落在 MGET 之前(全量分支即 SCAN 与 MGET 之间),并新建一个 SCAN 没扫到的字段。
-		beforeMGet bool
+		legacy bool // 存量老玩家(版本 "5"、没有字段索引),全量读走 SCAN 回退
+		match  func(goredis.Cmder) bool
+		before bool // 存盘落在匹配命令之前;否则之后
 		// wantData 是 Load 应读到的 bag 值。
 		wantData string
+		// racingVersion=true:期望返回存盘之后的版本(存盘整段落在一次原子读之前),且它能直接 CAS 成功。
+		racingVersion bool
 	}{
-		{name: "selected fields, save after data read", fields: []string{"bag"}, wantData: "v1"},
-		{name: "all fields, save after data read", wantData: "v1"},
-		{name: "all fields, save between scan and mget creates new field", beforeMGet: true, wantData: "v2"},
+		{name: "selected fields, save after mget", fields: []string{"bag"}, match: isMGet, wantData: "v1"},
+		{name: "indexed all fields, save after script", match: isLoadAllEval, wantData: "v1"},
+		{name: "indexed all fields, save before script", match: isLoadAllEval, before: true, wantData: "v2", racingVersion: true},
+		{name: "legacy all fields, save after mget", legacy: true, match: isMGet, wantData: "v1"},
+		{name: "legacy all fields, save between scan and mget creates new field", legacy: true, match: isMGet, before: true, wantData: "v2"},
 	}
 	for i, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			svcCtx, _ := newTestSvcCtx(t)
+			svcCtx, mr := newTestSvcCtx(t)
 			ctx := context.Background()
 			playerID := uint64(90 + i)
 			setupPlayer(t, svcCtx, playerID, 1)
-			firstVersion := mustSave(t, svcCtx, playerID, map[string][]byte{"bag": []byte("v1")})
-
-			racingSave := func() {
-				mustSave(t, svcCtx, playerID, map[string][]byte{"bag": []byte("v2"), "mail": []byte("new")})
-			}
-			h := &mgetHook{}
-			if tc.beforeMGet {
-				h.beforeMGet = racingSave
+			firstVersion := uint64(5)
+			if tc.legacy {
+				makeLegacyPlayer(t, mr, playerID, map[string]string{"bag": "v1"}, "5")
 			} else {
-				h.afterMGet = racingSave
+				firstVersion = mustSave(t, svcCtx, playerID, map[string][]byte{"bag": []byte("v1")})
 			}
-			installMGetHook(t, svcCtx, playerID, h)
+
+			var racingVersion uint64
+			racingSave := func() {
+				racingVersion = mustSave(t, svcCtx, playerID, map[string][]byte{"bag": []byte("v2"), "mail": []byte("new")})
+			}
+			h := &oneShotHook{match: tc.match}
+			if tc.before {
+				h.before = racingSave
+			} else {
+				h.after = racingSave
+			}
+			installHook(t, svcCtx, playerID, h)
 
 			resp, err := LoadPlayerData(ctx, svcCtx, &LoadPlayerDataReq{PlayerID: playerID, Fields: tc.fields})
 			require.NoError(t, err)
 			require.Equal(t, constants.ErrCodeOK, resp.ErrorCode)
-			require.Nil(t, h.beforeMGet, "racing save must have run")
-			require.Nil(t, h.afterMGet, "racing save must have run")
+			require.Nil(t, h.before, "racing save must have run")
+			require.Nil(t, h.after, "racing save must have run")
 			assert.Equal(t, []byte(tc.wantData), resp.Data["bag"])
-			// 三种缝里,返回的版本都应是首次存盘的版本:前两种它与数据同一瞬间,
-			// 第三种数据更新,但 SCAN 可能漏掉新字段,只能回 SCAN 之前的版本。
+			if tc.racingVersion {
+				assert.Equal(t, []byte("new"), resp.Data["mail"])
+				assert.Equal(t, racingVersion, resp.Version, "已索引的全量读:版本与数据同一瞬间")
+				saved, err := SavePlayerData(ctx, svcCtx, &SavePlayerDataReq{
+					PlayerID: playerID, Data: map[string][]byte{"bag": []byte("v3")}, ExpectedVersion: resp.Version,
+				})
+				require.NoError(t, err)
+				assert.Equal(t, constants.ErrCodeOK, saved.ErrorCode)
+				return
+			}
+			// 其余缝里返回的都是存盘之前的版本:要么它与数据同一瞬间,要么数据更新而 SCAN 可能漏掉新字段,
+			// 只能回 SCAN 之前的版本。
 			assert.Equal(t, firstVersion, resp.Version)
 			requireLoadedVersionFencesLaterWrite(t, svcCtx, playerID, resp.Version)
 		})
@@ -519,12 +564,15 @@ func TestDeletePlayerData_ExpiredOwnerCannotDeleteDataOrMapping(t *testing.T) {
 	require.True(t, locked)
 	t.Cleanup(func() { _ = svcCtx.Router.ReleasePlayerLock(ctx, client, 71, currentToken) })
 
-	owned, err := deletePlayerKeysAtomic(ctx, client, routing.PlayerDataLockKey(71), staleToken,
-		[]string{playerField(71, "inventory")})
+	result, err := deletePlayerFieldsAtomic(ctx, client, 71, staleToken, nil, false)
 	require.NoError(t, err)
-	assert.False(t, owned)
+	assert.Equal(t, deleteFieldsLockLost, result)
+	result, err = deletePlayerFieldsAtomic(ctx, client, 71, staleToken, []string{playerField(71, "inventory")}, true)
+	require.NoError(t, err)
+	assert.Equal(t, deleteFieldsLockLost, result, "回退模式同样先校验 token")
+	assert.True(t, mr.Exists(fieldIndexKey(71)), "旧持锁者不得删掉字段索引")
 
-	owned, _, err = svcCtx.Router.DeletePlayerZoneIfLocked(ctx, 71, staleToken)
+	owned, _, err := svcCtx.Router.DeletePlayerZoneIfLocked(ctx, 71, staleToken)
 	require.NoError(t, err)
 	assert.False(t, owned)
 

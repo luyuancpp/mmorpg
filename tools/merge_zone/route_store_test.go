@@ -831,10 +831,12 @@ func TestAcquireFence_EpochHolderAndStatements(t *testing.T) {
 	}
 	assertRouteLabels(t, f, "ENSURE_FENCE", "BEGIN", "WRITABLE", "LOCK_FENCE_ALL", "LOCK_FENCE_ALL", "NOW", "ACQUIRE", "ACQUIRE", "COMMIT")
 	ensure := f.callsOf("ENSURE_FENCE")[0]
-	if ensure.query != routeEnsureFenceSQL(128) || len(ensure.args) != 256 ||
-		ensure.args[0] != uint64(101) || ensure.args[1] != uint64(0) || ensure.args[254] != uint64(102) || ensure.args[255] != uint64(63) {
-		t.Fatalf("ensure must cover (101,0)..(102,63) in ascending order: %d args, first %v %v last %v %v",
-			len(ensure.args), ensure.args[0], ensure.args[1], ensure.args[254], ensure.args[255])
+	if ensure.query != routeEnsureFenceSQL(128) || len(ensure.args) != 256 {
+		t.Fatalf("ensure must be one ODKU over 2 x 64 shard rows: %d args, query %q", len(ensure.args), ensure.query)
+	}
+	if ensure.args[0] != uint64(101) || ensure.args[1] != uint64(0) || ensure.args[254] != uint64(102) || ensure.args[255] != uint64(63) {
+		t.Fatalf("ensure must cover (101,0)..(102,63) in ascending order: first %v %v last %v %v",
+			ensure.args[0], ensure.args[1], ensure.args[254], ensure.args[255])
 	}
 	locks := f.callsOf("LOCK_FENCE_ALL")
 	assertRouteArgs(t, locks[0], uint64(101), uint64(64))

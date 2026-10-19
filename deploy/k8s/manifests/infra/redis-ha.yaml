@@ -253,8 +253,11 @@ data:
     # --min-replicas-*:见文件头「数据安全的边界」。
     # --repl-diskless-sync-delay:从要做全量同步时,主默认先等 5 秒「攒一批」再开始。这里只有两个从,
     #   攒批没有意义,而切主时哨兵要等从同步完才算切换结束,白等 5 秒。
+    # --enable-debug-command no:这组节点接入后同时是 mapping Redis。DEBUG RELOAD NOSAVE / LOADAOF 在同一进程里整库替换数据而
+    #   run_id / master_replid 不变,读方「就绪标记绑定实例身份」的判据认不出(spec_D1_batch1b2_2_3.md §13.1 第 5 条);Redis 7 缺省即 no,显式写出防改。
     set -- redis-server \
       --appendonly yes \
+      --enable-debug-command no \
       --replica-announce-ip "$SELF" \
       --min-replicas-to-write 1 \
       --min-replicas-max-lag 10 \

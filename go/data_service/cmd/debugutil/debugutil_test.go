@@ -2,6 +2,7 @@ package debugutil
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	databasepb "proto/common/database"
@@ -33,7 +34,8 @@ func TestCheckLocalWriteTarget(t *testing.T) {
 	}
 }
 
-// 键名是跨语言契约:C++ 存盘 Lua、go/db、login 各写一份。这里钉住字面量,任何一边改格式都会让本测试失败。
+// 钉住工具这份键名副本的字面量。只有 shared/* 的键(savebarrier、ownerepoch)与按 proto 全名派生的键是直接调写者
+// 同源函数得到的;login / player_locator / C++ 的键是照抄,写者改格式时本测试不会变红(见 bundle.go 键函数上方的注释)。
 func TestPlayerKeyFormats(t *testing.T) {
 	const id = 42
 	cases := []struct{ got, want string }{
@@ -164,5 +166,19 @@ func TestPhysicalTableNames(t *testing.T) {
 		if err != nil || name != want[i] {
 			t.Fatalf("table %d = %q, %v; want %q (PlayerTables 须按物理表名升序)", i, name, err, want[i])
 		}
+	}
+}
+
+// 字符集塞进 Params 会被驱动原样拼成 `SET charset = utf8mb4`,每条连接都建连失败;必须走 mysql.Charset 选项。
+func TestMySQLConfigCharsetNotInParams(t *testing.T) {
+	cfg, err := mysqlConfig(MySQLEndpoint{Hosts: "127.0.0.1:3306", User: "u", Password: "p", DBName: "zone_1_db"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, bad := cfg.Params["charset"]; bad {
+		t.Fatal("charset must not be a session SET param")
+	}
+	if dsn := cfg.FormatDSN(); !strings.Contains(dsn, "charset=utf8mb4") || !strings.Contains(dsn, "/zone_1_db") {
+		t.Fatalf("dsn = %s", dsn)
 	}
 }
