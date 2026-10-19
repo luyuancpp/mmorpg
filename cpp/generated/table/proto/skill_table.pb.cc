@@ -498,11 +498,11 @@ constexpr SkillTable::ParseTableT_ SkillTable::InternalGenerateParseTable_(const
     {
       PROTOBUF_FIELD_OFFSET(SkillTable, _impl_._has_bits_),
       0, // no _extensions_
-      25, 248,  // max_field_number, fast_idx_mask
+      46, 248,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4261412864,  // skipmap
+      0,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      25,  // num_field_entries
+      46,  // num_field_entries
       3,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -514,8 +514,8 @@ constexpr SkillTable::ParseTableT_ SkillTable::InternalGenerateParseTable_(const
     }, {{
       {::_pbi::TcParser::MiniParse, {}},
       // uint32 id = 1;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.id_), 7>(),
-       {8, 7, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.id_), 11>(),
+       {8, 11, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.id_)}},
       // repeated uint32 skill_type = 2;
       {::_pbi::TcParser::FastV32P1,
@@ -526,68 +526,68 @@ constexpr SkillTable::ParseTableT_ SkillTable::InternalGenerateParseTable_(const
        {26, 1, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.targeting_mode_)}},
       // uint32 require_target = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.require_target_), 8>(),
-       {32, 8, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.require_target_), 12>(),
+       {32, 12, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.require_target_)}},
       // uint32 target_status = 5;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.target_status_), 10>(),
-       {40, 10, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.target_status_), 14>(),
+       {40, 14, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.target_status_)}},
       // double cast_point = 6;
       {::_pbi::TcParser::FastF64S1,
-       {49, 9, 0,
+       {49, 13, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cast_point_)}},
       // double recovery_time = 7;
       {::_pbi::TcParser::FastF64S1,
-       {57, 12, 0,
+       {57, 16, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.recovery_time_)}},
       // uint32 immediate = 8;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.immediate_), 11>(),
-       {64, 11, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.immediate_), 15>(),
+       {64, 15, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.immediate_)}},
       // repeated uint32 effect = 9;
       {::_pbi::TcParser::FastV32P1,
        {74, 2, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_)}},
       // uint32 channel_think = 10;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channel_think_), 13>(),
-       {80, 13, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channel_think_), 17>(),
+       {80, 17, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channel_think_)}},
       // uint32 channel_finish = 11;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channel_finish_), 14>(),
-       {88, 14, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channel_finish_), 18>(),
+       {88, 18, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channel_finish_)}},
       // uint32 think_interval = 12;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.think_interval_), 15>(),
-       {96, 15, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.think_interval_), 19>(),
+       {96, 19, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.think_interval_)}},
       // uint32 channel_time = 13;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channel_time_), 16>(),
-       {104, 16, 0,
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SkillTable, _impl_.channel_time_), 20>(),
+       {104, 20, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channel_time_)}},
       // double range = 14;
       {::_pbi::TcParser::FastF64S1,
-       {113, 17, 0,
+       {113, 21, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_)}},
       // double max_range = 15;
       {::_pbi::TcParser::FastF64S1,
-       {121, 18, 0,
+       {121, 22, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_)}},
       // double min_range = 16;
       {::_pbi::TcParser::FastF64S2,
-       {385, 19, 0,
+       {385, 23, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.min_range_)}},
       // uint32 self_status = 17;
       {::_pbi::TcParser::FastV32S2,
-       {392, 20, 0,
+       {392, 24, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_)}},
       // uint32 required_status = 18;
       {::_pbi::TcParser::FastV32S2,
-       {400, 21, 0,
+       {400, 25, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_)}},
       // uint32 cooldown_id = 19;
       {::_pbi::TcParser::FastV32S2,
-       {408, 22, 0,
+       {408, 26, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_)}},
       // string damage = 20;
       {::_pbi::TcParser::FastUS2,
@@ -607,59 +607,79 @@ constexpr SkillTable::ParseTableT_ SkillTable::InternalGenerateParseTable_(const
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cost_resource_)}},
       // uint32 damage_type = 24;
       {::_pbi::TcParser::FastV32S2,
-       {448, 23, 0,
+       {448, 27, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.damage_type_)}},
       // double attack_multiplier = 25;
       {::_pbi::TcParser::FastF64S2,
-       {457, 24, 0,
+       {457, 28, 0,
         PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.attack_multiplier_)}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint32 class_id = 26;
+      {::_pbi::TcParser::FastV32S2,
+       {464, 29, 0,
+        PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.class_id_)}},
+      // string name = 27;
+      {::_pbi::TcParser::FastUS2,
+       {474, 7, 0,
+        PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.name_)}},
+      // string description = 28;
+      {::_pbi::TcParser::FastUS2,
+       {482, 8, 0,
+        PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.description_)}},
+      // string icon_key = 29;
+      {::_pbi::TcParser::FastUS2,
+       {490, 9, 0,
+        PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.icon_key_)}},
+      // string category = 30;
+      {::_pbi::TcParser::FastUS2,
+       {498, 10, 0,
+        PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.category_)}},
+      // uint32 unlock_level = 31;
+      {::_pbi::TcParser::FastV32S2,
+       {504, 30, 0,
+        PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.unlock_level_)}},
     }}, {{
+      33, 0, 1,
+      49152, 32,
       65535, 65535
     }}, {{
       // uint32 id = 1;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.id_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.id_), _Internal::kHasBitsOffset + 11, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // repeated uint32 skill_type = 2;
       {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.skill_type_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
       // repeated uint32 targeting_mode = 3;
       {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.targeting_mode_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
       // uint32 require_target = 4;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.require_target_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.require_target_), _Internal::kHasBitsOffset + 12, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 target_status = 5;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.target_status_), _Internal::kHasBitsOffset + 10, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.target_status_), _Internal::kHasBitsOffset + 14, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // double cast_point = 6;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cast_point_), _Internal::kHasBitsOffset + 9, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cast_point_), _Internal::kHasBitsOffset + 13, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
       // double recovery_time = 7;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.recovery_time_), _Internal::kHasBitsOffset + 12, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.recovery_time_), _Internal::kHasBitsOffset + 16, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
       // uint32 immediate = 8;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.immediate_), _Internal::kHasBitsOffset + 11, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.immediate_), _Internal::kHasBitsOffset + 15, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // repeated uint32 effect = 9;
       {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.effect_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
       // uint32 channel_think = 10;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channel_think_), _Internal::kHasBitsOffset + 13, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channel_think_), _Internal::kHasBitsOffset + 17, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 channel_finish = 11;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channel_finish_), _Internal::kHasBitsOffset + 14, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channel_finish_), _Internal::kHasBitsOffset + 18, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 think_interval = 12;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.think_interval_), _Internal::kHasBitsOffset + 15, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.think_interval_), _Internal::kHasBitsOffset + 19, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 channel_time = 13;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channel_time_), _Internal::kHasBitsOffset + 16, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.channel_time_), _Internal::kHasBitsOffset + 20, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // double range = 14;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_), _Internal::kHasBitsOffset + 17, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.range_), _Internal::kHasBitsOffset + 21, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
       // double max_range = 15;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_), _Internal::kHasBitsOffset + 18, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_range_), _Internal::kHasBitsOffset + 22, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
       // double min_range = 16;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.min_range_), _Internal::kHasBitsOffset + 19, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.min_range_), _Internal::kHasBitsOffset + 23, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
       // uint32 self_status = 17;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_), _Internal::kHasBitsOffset + 20, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.self_status_), _Internal::kHasBitsOffset + 24, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 required_status = 18;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_), _Internal::kHasBitsOffset + 21, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.required_status_), _Internal::kHasBitsOffset + 25, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint32 cooldown_id = 19;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_), _Internal::kHasBitsOffset + 22, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_id_), _Internal::kHasBitsOffset + 26, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // string damage = 20;
       {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.damage_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
       // repeated .Skillrequired_item required_item = 21;
@@ -669,9 +689,51 @@ constexpr SkillTable::ParseTableT_ SkillTable::InternalGenerateParseTable_(const
       // repeated .Skillcost_resource cost_resource = 23;
       {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cost_resource_), _Internal::kHasBitsOffset + 5, 2, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
       // uint32 damage_type = 24;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.damage_type_), _Internal::kHasBitsOffset + 23, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.damage_type_), _Internal::kHasBitsOffset + 27, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // double attack_multiplier = 25;
-      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.attack_multiplier_), _Internal::kHasBitsOffset + 24, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.attack_multiplier_), _Internal::kHasBitsOffset + 28, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      // uint32 class_id = 26;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.class_id_), _Internal::kHasBitsOffset + 29, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // string name = 27;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.name_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string description = 28;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.description_), _Internal::kHasBitsOffset + 8, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string icon_key = 29;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.icon_key_), _Internal::kHasBitsOffset + 9, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // string category = 30;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.category_), _Internal::kHasBitsOffset + 10, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // uint32 unlock_level = 31;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.unlock_level_), _Internal::kHasBitsOffset + 30, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 max_rank = 32;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_rank_), _Internal::kHasBitsOffset + 32, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 target_team = 33;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.target_team_), _Internal::kHasBitsOffset + 33, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // uint32 max_targets = 34;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_targets_), _Internal::kHasBitsOffset + 35, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // double mana_percent = 35;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.mana_percent_), _Internal::kHasBitsOffset + 34, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      // uint32 cooldown_rounds = 36;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.cooldown_rounds_), _Internal::kHasBitsOffset + 36, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // double heal_multiplier = 37;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.heal_multiplier_), _Internal::kHasBitsOffset + 37, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      // double heal_per_level = 38;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.heal_per_level_), _Internal::kHasBitsOffset + 38, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      // double execute_heal_threshold = 39;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.execute_heal_threshold_), _Internal::kHasBitsOffset + 39, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      // double execute_heal_bonus = 40;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.execute_heal_bonus_), _Internal::kHasBitsOffset + 40, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      // double restore_mana_percent = 41;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.restore_mana_percent_), _Internal::kHasBitsOffset + 41, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      // uint32 dispel_count = 42;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.dispel_count_), _Internal::kHasBitsOffset + 42, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
+      // int32 initiative = 43;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.initiative_), _Internal::kHasBitsOffset + 43, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+      // string passive_stat = 44;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.passive_stat_), _Internal::kHasBitsOffset + 31, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+      // double passive_percent = 45;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.passive_percent_), _Internal::kHasBitsOffset + 44, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
+      // double buff_percent = 46;
+      {PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.buff_percent_), _Internal::kHasBitsOffset + 45, 0, (0 | ::_fl::kFcOptional | ::_fl::kDouble)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -691,9 +753,14 @@ constexpr SkillTable::ParseTableT_ SkillTable::InternalGenerateParseTable_(const
         #endif
     }},
     {{
-      "\12\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0\0\0\0\0\0\0\0\0\0"
+      "\12\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0\0\0\0\0\4\13\10\10\0\0\0\0\0\0\0\0\0\0\0\0\0\14\0\0\0"
       "SkillTable"
       "damage"
+      "name"
+      "description"
+      "icon_key"
+      "category"
+      "passive_stat"
     }},
   };
 }
@@ -739,6 +806,18 @@ inline constexpr SkillTable::Impl_::Impl_(
         damage_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        description_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        icon_key_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        category_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         id_{0u},
         require_target_{0u},
         cast_point_{0},
@@ -756,7 +835,26 @@ inline constexpr SkillTable::Impl_::Impl_(
         required_status_{0u},
         cooldown_id_{0u},
         damage_type_{0u},
-        attack_multiplier_{0} {}
+        attack_multiplier_{0},
+        class_id_{0u},
+        unlock_level_{0u},
+        passive_stat_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        max_rank_{0u},
+        target_team_{0u},
+        mana_percent_{0},
+        max_targets_{0u},
+        cooldown_rounds_{0u},
+        heal_multiplier_{0},
+        heal_per_level_{0},
+        execute_heal_threshold_{0},
+        execute_heal_bonus_{0},
+        restore_mana_percent_{0},
+        dispel_count_{0u},
+        initiative_{0},
+        passive_percent_{0},
+        buff_percent_{0} {}
 
 template <typename>
 constexpr SkillTable::SkillTable(::_pbi::ConstantInitialized,
@@ -1031,7 +1129,7 @@ const ::uint32_t
         1,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_._has_bits_),
-        28, // hasbit index offset
+        49, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.id_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.skill_type_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.targeting_mode_),
@@ -1054,31 +1152,73 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.damage_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.damage_type_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.attack_multiplier_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.class_id_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.name_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.description_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.icon_key_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.category_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.unlock_level_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.max_rank_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.target_team_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.max_targets_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.mana_percent_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.cooldown_rounds_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.heal_multiplier_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.heal_per_level_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.execute_heal_threshold_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.execute_heal_bonus_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.restore_mana_percent_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.dispel_count_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.initiative_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.passive_stat_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.passive_percent_),
+        PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.buff_percent_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.required_item_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.required_resource_),
         PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.cost_resource_),
-        7,
+        11,
         0,
         1,
-        8,
-        10,
-        9,
         12,
-        11,
-        2,
-        13,
         14,
-        15,
+        13,
         16,
+        15,
+        2,
         17,
         18,
         19,
         20,
         21,
         22,
-        6,
         23,
         24,
+        25,
+        26,
+        6,
+        27,
+        28,
+        29,
+        7,
+        8,
+        9,
+        10,
+        30,
+        32,
+        33,
+        35,
+        34,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        31,
+        44,
+        45,
         3,
         4,
         5,
@@ -1095,7 +1235,7 @@ static const ::_pbi::MigrationSchema
         {7, sizeof(::Skillrequired_resource)},
         {14, sizeof(::Skillcost_resource)},
         {21, sizeof(::SkillTable)},
-        {74, sizeof(::SkillTableData)},
+        {116, sizeof(::SkillTableData)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -1113,7 +1253,7 @@ const char descriptor_table_protodef_skill_5ftable_2eproto[] ABSL_ATTRIBUTE_SECT
     "urce\022\036\n\026required_resource_type\030\001 \001(\r\022\037\n\027"
     "required_resource_value\030\002 \001(\r\"J\n\022Skillco"
     "st_resource\022\030\n\020cost_resource_id\030\001 \001(\r\022\032\n"
-    "\022cost_resource_cost\030\002 \001(\r\"\342\004\n\nSkillTable"
+    "\022cost_resource_cost\030\002 \001(\r\"\266\010\n\nSkillTable"
     "\022\n\n\002id\030\001 \001(\r\022\022\n\nskill_type\030\002 \003(\r\022\026\n\016targ"
     "eting_mode\030\003 \003(\r\022\026\n\016require_target\030\004 \001(\r"
     "\022\025\n\rtarget_status\030\005 \001(\r\022\022\n\ncast_point\030\006 "
@@ -1125,19 +1265,31 @@ const char descriptor_table_protodef_skill_5ftable_2eproto[] ABSL_ATTRIBUTE_SECT
     "e\030\020 \001(\001\022\023\n\013self_status\030\021 \001(\r\022\027\n\017required"
     "_status\030\022 \001(\r\022\023\n\013cooldown_id\030\023 \001(\r\022\016\n\006da"
     "mage\030\024 \001(\t\022\023\n\013damage_type\030\030 \001(\r\022\031\n\021attac"
-    "k_multiplier\030\031 \001(\001\022*\n\rrequired_item\030\025 \003("
-    "\0132\023.Skillrequired_item\0222\n\021required_resou"
-    "rce\030\026 \003(\0132\027.Skillrequired_resource\022*\n\rco"
-    "st_resource\030\027 \003(\0132\023.Skillcost_resource\"+"
-    "\n\016SkillTableData\022\031\n\004data\030\001 \003(\0132\013.SkillTa"
-    "bleB<\n\016com.game.tableB\024SkillTableOuterCl"
-    "assP\001Z\022generated/pb/tableb\006proto3"
+    "k_multiplier\030\031 \001(\001\022\020\n\010class_id\030\032 \001(\r\022\014\n\004"
+    "name\030\033 \001(\t\022\023\n\013description\030\034 \001(\t\022\020\n\010icon_"
+    "key\030\035 \001(\t\022\020\n\010category\030\036 \001(\t\022\024\n\014unlock_le"
+    "vel\030\037 \001(\r\022\020\n\010max_rank\030  \001(\r\022\023\n\013target_te"
+    "am\030! \001(\r\022\023\n\013max_targets\030\" \001(\r\022\024\n\014mana_pe"
+    "rcent\030# \001(\001\022\027\n\017cooldown_rounds\030$ \001(\r\022\027\n\017"
+    "heal_multiplier\030% \001(\001\022\026\n\016heal_per_level\030"
+    "& \001(\001\022\036\n\026execute_heal_threshold\030\' \001(\001\022\032\n"
+    "\022execute_heal_bonus\030( \001(\001\022\034\n\024restore_man"
+    "a_percent\030) \001(\001\022\024\n\014dispel_count\030* \001(\r\022\022\n"
+    "\ninitiative\030+ \001(\005\022\024\n\014passive_stat\030, \001(\t\022"
+    "\027\n\017passive_percent\030- \001(\001\022\024\n\014buff_percent"
+    "\030. \001(\001\022*\n\rrequired_item\030\025 \003(\0132\023.Skillreq"
+    "uired_item\0222\n\021required_resource\030\026 \003(\0132\027."
+    "Skillrequired_resource\022*\n\rcost_resource\030"
+    "\027 \003(\0132\023.Skillcost_resource\"+\n\016SkillTable"
+    "Data\022\031\n\004data\030\001 \003(\0132\013.SkillTableB<\n\016com.g"
+    "ame.tableB\024SkillTableOuterClassP\001Z\022gener"
+    "ated/pb/tableb\006proto3"
 };
 static ::absl::once_flag descriptor_table_skill_5ftable_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_skill_5ftable_2eproto = {
     false,
     false,
-    993,
+    1461,
     descriptor_table_protodef_skill_5ftable_2eproto,
     "skill_table.proto",
     &descriptor_table_skill_5ftable_2eproto_once,
@@ -1896,7 +2048,12 @@ PROTOBUF_NDEBUG_INLINE SkillTable::Impl_::Impl_(
           , from.cost_resource_
         }
         ,
-        damage_(arena, from.damage_) {}
+        damage_(arena, from.damage_),
+        name_(arena, from.name_),
+        description_(arena, from.description_),
+        icon_key_(arena, from.icon_key_),
+        category_(arena, from.category_),
+        passive_stat_(arena, from.passive_stat_) {}
 
 SkillTable::SkillTable(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -1916,9 +2073,16 @@ SkillTable::SkillTable(
                offsetof(Impl_, id_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, id_),
-           offsetof(Impl_, attack_multiplier_) -
+           offsetof(Impl_, unlock_level_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::attack_multiplier_));
+               sizeof(Impl_::unlock_level_));
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, max_rank_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, max_rank_),
+           offsetof(Impl_, buff_percent_) -
+               offsetof(Impl_, max_rank_) +
+               sizeof(Impl_::buff_percent_));
 
   // @@protoc_insertion_point(copy_constructor:SkillTable)
 }
@@ -1959,16 +2123,27 @@ PROTOBUF_NDEBUG_INLINE SkillTable::Impl_::Impl_(
             PROTOBUF_FIELD_OFFSET(::SkillTable, _impl_.cost_resource_)>()
          }
         ,
-        damage_(arena) {}
+        damage_(arena),
+        name_(arena),
+        description_(arena),
+        icon_key_(arena),
+        category_(arena),
+        passive_stat_(arena) {}
 
 inline void SkillTable::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, id_),
            0,
-           offsetof(Impl_, attack_multiplier_) -
+           offsetof(Impl_, unlock_level_) -
                offsetof(Impl_, id_) +
-               sizeof(Impl_::attack_multiplier_));
+               sizeof(Impl_::unlock_level_));
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, max_rank_),
+           0,
+           offsetof(Impl_, buff_percent_) -
+               offsetof(Impl_, max_rank_) +
+               sizeof(Impl_::buff_percent_));
 }
 SkillTable::~SkillTable() {
   // @@protoc_insertion_point(destructor:SkillTable)
@@ -1982,6 +2157,11 @@ inline void SkillTable::SharedDtor(MessageLite& self) {
   this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   ABSL_DCHECK(this_.GetArena() == nullptr);
   this_._impl_.damage_.Destroy();
+  this_._impl_.name_.Destroy();
+  this_._impl_.description_.Destroy();
+  this_._impl_.icon_key_.Destroy();
+  this_._impl_.category_.Destroy();
+  this_._impl_.passive_stat_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -2019,7 +2199,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _impl_.skill_type_.Clear();
     }
@@ -2041,19 +2221,50 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
     if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       _impl_.damage_.ClearNonDefaultToEmpty();
     }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      _impl_.name_.ClearNonDefaultToEmpty();
+    }
   }
-  _impl_.id_ = 0u;
-  if (BatchCheckHasBit(cached_has_bits, 0x0000ff00U)) {
-    ::memset(&_impl_.require_target_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.think_interval_) -
-        reinterpret_cast<char*>(&_impl_.require_target_)) + sizeof(_impl_.think_interval_));
+  if (BatchCheckHasBit(cached_has_bits, 0x00000700U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      _impl_.description_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      _impl_.icon_key_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+      _impl_.category_.ClearNonDefaultToEmpty();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000f800U)) {
+    ::memset(&_impl_.id_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.immediate_) -
+        reinterpret_cast<char*>(&_impl_.id_)) + sizeof(_impl_.immediate_));
   }
   if (BatchCheckHasBit(cached_has_bits, 0x00ff0000U)) {
-    ::memset(&_impl_.channel_time_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.damage_type_) -
-        reinterpret_cast<char*>(&_impl_.channel_time_)) + sizeof(_impl_.damage_type_));
+    ::memset(&_impl_.recovery_time_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.min_range_) -
+        reinterpret_cast<char*>(&_impl_.recovery_time_)) + sizeof(_impl_.min_range_));
   }
-  _impl_.attack_multiplier_ = 0;
+  if (BatchCheckHasBit(cached_has_bits, 0xff000000U)) {
+    ::memset(&_impl_.self_status_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.unlock_level_) -
+        reinterpret_cast<char*>(&_impl_.self_status_)) + sizeof(_impl_.unlock_level_));
+    if (CheckHasBit(cached_has_bits, 0x80000000U)) {
+      _impl_.passive_stat_.ClearNonDefaultToEmpty();
+    }
+  }
+  cached_has_bits = _impl_._has_bits_[1];
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    ::memset(&_impl_.max_rank_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.execute_heal_threshold_) -
+        reinterpret_cast<char*>(&_impl_.max_rank_)) + sizeof(_impl_.execute_heal_threshold_));
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00003f00U)) {
+    ::memset(&_impl_.execute_heal_bonus_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.buff_percent_) -
+        reinterpret_cast<char*>(&_impl_.execute_heal_bonus_)) + sizeof(_impl_.buff_percent_));
+  }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -2078,7 +2289,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // uint32 id = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000800U)) {
     if (this_._internal_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2109,7 +2320,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 require_target = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+  if (CheckHasBit(cached_has_bits, 0x00001000U)) {
     if (this_._internal_require_target() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2118,7 +2329,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 target_status = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+  if (CheckHasBit(cached_has_bits, 0x00004000U)) {
     if (this_._internal_target_status() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2127,7 +2338,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // double cast_point = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+  if (CheckHasBit(cached_has_bits, 0x00002000U)) {
     if (::absl::bit_cast<::uint64_t>(this_._internal_cast_point()) != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteDoubleToArray(
@@ -2136,7 +2347,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // double recovery_time = 7;
-  if (CheckHasBit(cached_has_bits, 0x00001000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00010000U)) {
     if (::absl::bit_cast<::uint64_t>(this_._internal_recovery_time()) != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteDoubleToArray(
@@ -2145,7 +2356,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 immediate = 8;
-  if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+  if (CheckHasBit(cached_has_bits, 0x00008000U)) {
     if (this_._internal_immediate() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2165,7 +2376,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 channel_think = 10;
-  if (CheckHasBit(cached_has_bits, 0x00002000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00020000U)) {
     if (this_._internal_channel_think() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2174,7 +2385,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 channel_finish = 11;
-  if (CheckHasBit(cached_has_bits, 0x00004000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00040000U)) {
     if (this_._internal_channel_finish() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2183,7 +2394,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 think_interval = 12;
-  if (CheckHasBit(cached_has_bits, 0x00008000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00080000U)) {
     if (this_._internal_think_interval() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2192,7 +2403,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 channel_time = 13;
-  if (CheckHasBit(cached_has_bits, 0x00010000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00100000U)) {
     if (this_._internal_channel_time() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2201,7 +2412,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // double range = 14;
-  if (CheckHasBit(cached_has_bits, 0x00020000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00200000U)) {
     if (::absl::bit_cast<::uint64_t>(this_._internal_range()) != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteDoubleToArray(
@@ -2210,7 +2421,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // double max_range = 15;
-  if (CheckHasBit(cached_has_bits, 0x00040000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00400000U)) {
     if (::absl::bit_cast<::uint64_t>(this_._internal_max_range()) != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteDoubleToArray(
@@ -2219,7 +2430,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // double min_range = 16;
-  if (CheckHasBit(cached_has_bits, 0x00080000U)) {
+  if (CheckHasBit(cached_has_bits, 0x00800000U)) {
     if (::absl::bit_cast<::uint64_t>(this_._internal_min_range()) != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteDoubleToArray(
@@ -2228,7 +2439,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 self_status = 17;
-  if (CheckHasBit(cached_has_bits, 0x00100000U)) {
+  if (CheckHasBit(cached_has_bits, 0x01000000U)) {
     if (this_._internal_self_status() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2237,7 +2448,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 required_status = 18;
-  if (CheckHasBit(cached_has_bits, 0x00200000U)) {
+  if (CheckHasBit(cached_has_bits, 0x02000000U)) {
     if (this_._internal_required_status() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2246,7 +2457,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 cooldown_id = 19;
-  if (CheckHasBit(cached_has_bits, 0x00400000U)) {
+  if (CheckHasBit(cached_has_bits, 0x04000000U)) {
     if (this_._internal_cooldown_id() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2304,7 +2515,7 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // uint32 damage_type = 24;
-  if (CheckHasBit(cached_has_bits, 0x00800000U)) {
+  if (CheckHasBit(cached_has_bits, 0x08000000U)) {
     if (this_._internal_damage_type() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
@@ -2313,11 +2524,208 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
   }
 
   // double attack_multiplier = 25;
-  if (CheckHasBit(cached_has_bits, 0x01000000U)) {
+  if (CheckHasBit(cached_has_bits, 0x10000000U)) {
     if (::absl::bit_cast<::uint64_t>(this_._internal_attack_multiplier()) != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteDoubleToArray(
           25, this_._internal_attack_multiplier(), target);
+    }
+  }
+
+  // uint32 class_id = 26;
+  if (CheckHasBit(cached_has_bits, 0x20000000U)) {
+    if (this_._internal_class_id() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          26, this_._internal_class_id(), target);
+    }
+  }
+
+  // string name = 27;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (!this_._internal_name().empty()) {
+      const ::std::string& _s = this_._internal_name();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillTable.name");
+      target = stream->WriteStringMaybeAliased(27, _s, target);
+    }
+  }
+
+  // string description = 28;
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (!this_._internal_description().empty()) {
+      const ::std::string& _s = this_._internal_description();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillTable.description");
+      target = stream->WriteStringMaybeAliased(28, _s, target);
+    }
+  }
+
+  // string icon_key = 29;
+  if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+    if (!this_._internal_icon_key().empty()) {
+      const ::std::string& _s = this_._internal_icon_key();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillTable.icon_key");
+      target = stream->WriteStringMaybeAliased(29, _s, target);
+    }
+  }
+
+  // string category = 30;
+  if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+    if (!this_._internal_category().empty()) {
+      const ::std::string& _s = this_._internal_category();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillTable.category");
+      target = stream->WriteStringMaybeAliased(30, _s, target);
+    }
+  }
+
+  // uint32 unlock_level = 31;
+  if (CheckHasBit(cached_has_bits, 0x40000000U)) {
+    if (this_._internal_unlock_level() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          31, this_._internal_unlock_level(), target);
+    }
+  }
+
+  cached_has_bits = this_._impl_._has_bits_[1];
+  // uint32 max_rank = 32;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_max_rank() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          32, this_._internal_max_rank(), target);
+    }
+  }
+
+  // uint32 target_team = 33;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_target_team() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          33, this_._internal_target_team(), target);
+    }
+  }
+
+  // uint32 max_targets = 34;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_max_targets() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          34, this_._internal_max_targets(), target);
+    }
+  }
+
+  // double mana_percent = 35;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_mana_percent()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          35, this_._internal_mana_percent(), target);
+    }
+  }
+
+  // uint32 cooldown_rounds = 36;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_cooldown_rounds() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          36, this_._internal_cooldown_rounds(), target);
+    }
+  }
+
+  // double heal_multiplier = 37;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_heal_multiplier()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          37, this_._internal_heal_multiplier(), target);
+    }
+  }
+
+  // double heal_per_level = 38;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_heal_per_level()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          38, this_._internal_heal_per_level(), target);
+    }
+  }
+
+  // double execute_heal_threshold = 39;
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_execute_heal_threshold()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          39, this_._internal_execute_heal_threshold(), target);
+    }
+  }
+
+  // double execute_heal_bonus = 40;
+  if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_execute_heal_bonus()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          40, this_._internal_execute_heal_bonus(), target);
+    }
+  }
+
+  // double restore_mana_percent = 41;
+  if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_restore_mana_percent()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          41, this_._internal_restore_mana_percent(), target);
+    }
+  }
+
+  // uint32 dispel_count = 42;
+  if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+    if (this_._internal_dispel_count() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          42, this_._internal_dispel_count(), target);
+    }
+  }
+
+  // int32 initiative = 43;
+  if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+    if (this_._internal_initiative() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteInt32ToArray(
+          43, this_._internal_initiative(), target);
+    }
+  }
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string passive_stat = 44;
+  if (CheckHasBit(cached_has_bits, 0x80000000U)) {
+    if (!this_._internal_passive_stat().empty()) {
+      const ::std::string& _s = this_._internal_passive_stat();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "SkillTable.passive_stat");
+      target = stream->WriteStringMaybeAliased(44, _s, target);
+    }
+  }
+
+  cached_has_bits = this_._impl_._has_bits_[1];
+  // double passive_percent = 45;
+  if (CheckHasBit(cached_has_bits, 0x00001000U)) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_passive_percent()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          45, this_._internal_passive_percent(), target);
+    }
+  }
+
+  // double buff_percent = 46;
+  if (CheckHasBit(cached_has_bits, 0x00002000U)) {
+    if (::absl::bit_cast<::uint64_t>(this_._internal_buff_percent()) != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+          46, this_._internal_buff_percent(), target);
     }
   }
 
@@ -2396,129 +2804,273 @@ PROTOBUF_NOINLINE void SkillTable::Clear() {
                                         this_._internal_damage());
       }
     }
-    // uint32 id = 1;
+    // string name = 27;
     if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (!this_._internal_name().empty()) {
+        total_size += 2 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_name());
+      }
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000ff00U)) {
+    // string description = 28;
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (!this_._internal_description().empty()) {
+        total_size += 2 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_description());
+      }
+    }
+    // string icon_key = 29;
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (!this_._internal_icon_key().empty()) {
+        total_size += 2 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_icon_key());
+      }
+    }
+    // string category = 30;
+    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+      if (!this_._internal_category().empty()) {
+        total_size += 2 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_category());
+      }
+    }
+    // uint32 id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000800U)) {
       if (this_._internal_id() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_id());
       }
     }
-  }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000ff00U)) {
     // uint32 require_target = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+    if (CheckHasBit(cached_has_bits, 0x00001000U)) {
       if (this_._internal_require_target() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_require_target());
       }
     }
     // double cast_point = 6;
-    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+    if (CheckHasBit(cached_has_bits, 0x00002000U)) {
       if (::absl::bit_cast<::uint64_t>(this_._internal_cast_point()) != 0) {
         total_size += 9;
       }
     }
     // uint32 target_status = 5;
-    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+    if (CheckHasBit(cached_has_bits, 0x00004000U)) {
       if (this_._internal_target_status() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_target_status());
       }
     }
     // uint32 immediate = 8;
-    if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+    if (CheckHasBit(cached_has_bits, 0x00008000U)) {
       if (this_._internal_immediate() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_immediate());
       }
     }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00ff0000U)) {
     // double recovery_time = 7;
-    if (CheckHasBit(cached_has_bits, 0x00001000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00010000U)) {
       if (::absl::bit_cast<::uint64_t>(this_._internal_recovery_time()) != 0) {
         total_size += 9;
       }
     }
     // uint32 channel_think = 10;
-    if (CheckHasBit(cached_has_bits, 0x00002000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00020000U)) {
       if (this_._internal_channel_think() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_channel_think());
       }
     }
     // uint32 channel_finish = 11;
-    if (CheckHasBit(cached_has_bits, 0x00004000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00040000U)) {
       if (this_._internal_channel_finish() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_channel_finish());
       }
     }
     // uint32 think_interval = 12;
-    if (CheckHasBit(cached_has_bits, 0x00008000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00080000U)) {
       if (this_._internal_think_interval() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_think_interval());
       }
     }
-  }
-  if (BatchCheckHasBit(cached_has_bits, 0x00ff0000U)) {
     // uint32 channel_time = 13;
-    if (CheckHasBit(cached_has_bits, 0x00010000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00100000U)) {
       if (this_._internal_channel_time() != 0) {
         total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
             this_._internal_channel_time());
       }
     }
     // double range = 14;
-    if (CheckHasBit(cached_has_bits, 0x00020000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00200000U)) {
       if (::absl::bit_cast<::uint64_t>(this_._internal_range()) != 0) {
         total_size += 9;
       }
     }
     // double max_range = 15;
-    if (CheckHasBit(cached_has_bits, 0x00040000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00400000U)) {
       if (::absl::bit_cast<::uint64_t>(this_._internal_max_range()) != 0) {
         total_size += 9;
       }
     }
     // double min_range = 16;
-    if (CheckHasBit(cached_has_bits, 0x00080000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00800000U)) {
       if (::absl::bit_cast<::uint64_t>(this_._internal_min_range()) != 0) {
         total_size += 10;
       }
     }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0xff000000U)) {
     // uint32 self_status = 17;
-    if (CheckHasBit(cached_has_bits, 0x00100000U)) {
+    if (CheckHasBit(cached_has_bits, 0x01000000U)) {
       if (this_._internal_self_status() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                         this_._internal_self_status());
       }
     }
     // uint32 required_status = 18;
-    if (CheckHasBit(cached_has_bits, 0x00200000U)) {
+    if (CheckHasBit(cached_has_bits, 0x02000000U)) {
       if (this_._internal_required_status() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                         this_._internal_required_status());
       }
     }
     // uint32 cooldown_id = 19;
-    if (CheckHasBit(cached_has_bits, 0x00400000U)) {
+    if (CheckHasBit(cached_has_bits, 0x04000000U)) {
       if (this_._internal_cooldown_id() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                         this_._internal_cooldown_id());
       }
     }
     // uint32 damage_type = 24;
-    if (CheckHasBit(cached_has_bits, 0x00800000U)) {
+    if (CheckHasBit(cached_has_bits, 0x08000000U)) {
       if (this_._internal_damage_type() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
                                         this_._internal_damage_type());
       }
     }
-  }
-   {
     // double attack_multiplier = 25;
-    if (CheckHasBit(cached_has_bits, 0x01000000U)) {
+    if (CheckHasBit(cached_has_bits, 0x10000000U)) {
       if (::absl::bit_cast<::uint64_t>(this_._internal_attack_multiplier()) != 0) {
+        total_size += 10;
+      }
+    }
+    // uint32 class_id = 26;
+    if (CheckHasBit(cached_has_bits, 0x20000000U)) {
+      if (this_._internal_class_id() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
+                                        this_._internal_class_id());
+      }
+    }
+    // uint32 unlock_level = 31;
+    if (CheckHasBit(cached_has_bits, 0x40000000U)) {
+      if (this_._internal_unlock_level() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
+                                        this_._internal_unlock_level());
+      }
+    }
+    // string passive_stat = 44;
+    if (CheckHasBit(cached_has_bits, 0x80000000U)) {
+      if (!this_._internal_passive_stat().empty()) {
+        total_size += 2 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_passive_stat());
+      }
+    }
+  }
+  cached_has_bits = this_._impl_._has_bits_[1];
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    // uint32 max_rank = 32;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_max_rank() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
+                                        this_._internal_max_rank());
+      }
+    }
+    // uint32 target_team = 33;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_target_team() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
+                                        this_._internal_target_team());
+      }
+    }
+    // double mana_percent = 35;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (::absl::bit_cast<::uint64_t>(this_._internal_mana_percent()) != 0) {
+        total_size += 10;
+      }
+    }
+    // uint32 max_targets = 34;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_max_targets() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
+                                        this_._internal_max_targets());
+      }
+    }
+    // uint32 cooldown_rounds = 36;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_cooldown_rounds() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
+                                        this_._internal_cooldown_rounds());
+      }
+    }
+    // double heal_multiplier = 37;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (::absl::bit_cast<::uint64_t>(this_._internal_heal_multiplier()) != 0) {
+        total_size += 10;
+      }
+    }
+    // double heal_per_level = 38;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (::absl::bit_cast<::uint64_t>(this_._internal_heal_per_level()) != 0) {
+        total_size += 10;
+      }
+    }
+    // double execute_heal_threshold = 39;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (::absl::bit_cast<::uint64_t>(this_._internal_execute_heal_threshold()) != 0) {
+        total_size += 10;
+      }
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00003f00U)) {
+    // double execute_heal_bonus = 40;
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (::absl::bit_cast<::uint64_t>(this_._internal_execute_heal_bonus()) != 0) {
+        total_size += 10;
+      }
+    }
+    // double restore_mana_percent = 41;
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (::absl::bit_cast<::uint64_t>(this_._internal_restore_mana_percent()) != 0) {
+        total_size += 10;
+      }
+    }
+    // uint32 dispel_count = 42;
+    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+      if (this_._internal_dispel_count() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
+                                        this_._internal_dispel_count());
+      }
+    }
+    // int32 initiative = 43;
+    if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+      if (this_._internal_initiative() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::Int32Size(
+                                        this_._internal_initiative());
+      }
+    }
+    // double passive_percent = 45;
+    if (CheckHasBit(cached_has_bits, 0x00001000U)) {
+      if (::absl::bit_cast<::uint64_t>(this_._internal_passive_percent()) != 0) {
+        total_size += 10;
+      }
+    }
+    // double buff_percent = 46;
+    if (CheckHasBit(cached_has_bits, 0x00002000U)) {
+      if (::absl::bit_cast<::uint64_t>(this_._internal_buff_percent()) != 0) {
         total_size += 10;
       }
     }
@@ -2576,101 +3128,233 @@ void SkillTable::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000080U)) {
-      if (from._internal_id() != 0) {
-        _this->_impl_.id_ = from._impl_.id_;
+      if (!from._internal_name().empty()) {
+        _this->_internal_set_name(from._internal_name());
+      } else {
+        if (_this->_impl_.name_.IsDefault()) {
+          _this->_internal_set_name("");
+        }
       }
     }
   }
   if (BatchCheckHasBit(cached_has_bits, 0x0000ff00U)) {
     if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (!from._internal_description().empty()) {
+        _this->_internal_set_description(from._internal_description());
+      } else {
+        if (_this->_impl_.description_.IsDefault()) {
+          _this->_internal_set_description("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (!from._internal_icon_key().empty()) {
+        _this->_internal_set_icon_key(from._internal_icon_key());
+      } else {
+        if (_this->_impl_.icon_key_.IsDefault()) {
+          _this->_internal_set_icon_key("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+      if (!from._internal_category().empty()) {
+        _this->_internal_set_category(from._internal_category());
+      } else {
+        if (_this->_impl_.category_.IsDefault()) {
+          _this->_internal_set_category("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+      if (from._internal_id() != 0) {
+        _this->_impl_.id_ = from._impl_.id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00001000U)) {
       if (from._internal_require_target() != 0) {
         _this->_impl_.require_target_ = from._impl_.require_target_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+    if (CheckHasBit(cached_has_bits, 0x00002000U)) {
       if (::absl::bit_cast<::uint64_t>(from._internal_cast_point()) != 0) {
         _this->_impl_.cast_point_ = from._impl_.cast_point_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+    if (CheckHasBit(cached_has_bits, 0x00004000U)) {
       if (from._internal_target_status() != 0) {
         _this->_impl_.target_status_ = from._impl_.target_status_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+    if (CheckHasBit(cached_has_bits, 0x00008000U)) {
       if (from._internal_immediate() != 0) {
         _this->_impl_.immediate_ = from._impl_.immediate_;
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00001000U)) {
-      if (::absl::bit_cast<::uint64_t>(from._internal_recovery_time()) != 0) {
-        _this->_impl_.recovery_time_ = from._impl_.recovery_time_;
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00002000U)) {
-      if (from._internal_channel_think() != 0) {
-        _this->_impl_.channel_think_ = from._impl_.channel_think_;
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00004000U)) {
-      if (from._internal_channel_finish() != 0) {
-        _this->_impl_.channel_finish_ = from._impl_.channel_finish_;
-      }
-    }
-    if (CheckHasBit(cached_has_bits, 0x00008000U)) {
-      if (from._internal_think_interval() != 0) {
-        _this->_impl_.think_interval_ = from._impl_.think_interval_;
       }
     }
   }
   if (BatchCheckHasBit(cached_has_bits, 0x00ff0000U)) {
     if (CheckHasBit(cached_has_bits, 0x00010000U)) {
+      if (::absl::bit_cast<::uint64_t>(from._internal_recovery_time()) != 0) {
+        _this->_impl_.recovery_time_ = from._impl_.recovery_time_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00020000U)) {
+      if (from._internal_channel_think() != 0) {
+        _this->_impl_.channel_think_ = from._impl_.channel_think_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00040000U)) {
+      if (from._internal_channel_finish() != 0) {
+        _this->_impl_.channel_finish_ = from._impl_.channel_finish_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00080000U)) {
+      if (from._internal_think_interval() != 0) {
+        _this->_impl_.think_interval_ = from._impl_.think_interval_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00100000U)) {
       if (from._internal_channel_time() != 0) {
         _this->_impl_.channel_time_ = from._impl_.channel_time_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00020000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00200000U)) {
       if (::absl::bit_cast<::uint64_t>(from._internal_range()) != 0) {
         _this->_impl_.range_ = from._impl_.range_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00040000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00400000U)) {
       if (::absl::bit_cast<::uint64_t>(from._internal_max_range()) != 0) {
         _this->_impl_.max_range_ = from._impl_.max_range_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00080000U)) {
+    if (CheckHasBit(cached_has_bits, 0x00800000U)) {
       if (::absl::bit_cast<::uint64_t>(from._internal_min_range()) != 0) {
         _this->_impl_.min_range_ = from._impl_.min_range_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00100000U)) {
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0xff000000U)) {
+    if (CheckHasBit(cached_has_bits, 0x01000000U)) {
       if (from._internal_self_status() != 0) {
         _this->_impl_.self_status_ = from._impl_.self_status_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00200000U)) {
+    if (CheckHasBit(cached_has_bits, 0x02000000U)) {
       if (from._internal_required_status() != 0) {
         _this->_impl_.required_status_ = from._impl_.required_status_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00400000U)) {
+    if (CheckHasBit(cached_has_bits, 0x04000000U)) {
       if (from._internal_cooldown_id() != 0) {
         _this->_impl_.cooldown_id_ = from._impl_.cooldown_id_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00800000U)) {
+    if (CheckHasBit(cached_has_bits, 0x08000000U)) {
       if (from._internal_damage_type() != 0) {
         _this->_impl_.damage_type_ = from._impl_.damage_type_;
       }
     }
-  }
-  if (CheckHasBit(cached_has_bits, 0x01000000U)) {
-    if (::absl::bit_cast<::uint64_t>(from._internal_attack_multiplier()) != 0) {
-      _this->_impl_.attack_multiplier_ = from._impl_.attack_multiplier_;
+    if (CheckHasBit(cached_has_bits, 0x10000000U)) {
+      if (::absl::bit_cast<::uint64_t>(from._internal_attack_multiplier()) != 0) {
+        _this->_impl_.attack_multiplier_ = from._impl_.attack_multiplier_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x20000000U)) {
+      if (from._internal_class_id() != 0) {
+        _this->_impl_.class_id_ = from._impl_.class_id_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x40000000U)) {
+      if (from._internal_unlock_level() != 0) {
+        _this->_impl_.unlock_level_ = from._impl_.unlock_level_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x80000000U)) {
+      if (!from._internal_passive_stat().empty()) {
+        _this->_internal_set_passive_stat(from._internal_passive_stat());
+      } else {
+        if (_this->_impl_.passive_stat_.IsDefault()) {
+          _this->_internal_set_passive_stat("");
+        }
+      }
     }
   }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  cached_has_bits = from._impl_._has_bits_[1];
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_max_rank() != 0) {
+        _this->_impl_.max_rank_ = from._impl_.max_rank_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_target_team() != 0) {
+        _this->_impl_.target_team_ = from._impl_.target_team_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (::absl::bit_cast<::uint64_t>(from._internal_mana_percent()) != 0) {
+        _this->_impl_.mana_percent_ = from._impl_.mana_percent_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_max_targets() != 0) {
+        _this->_impl_.max_targets_ = from._impl_.max_targets_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_cooldown_rounds() != 0) {
+        _this->_impl_.cooldown_rounds_ = from._impl_.cooldown_rounds_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (::absl::bit_cast<::uint64_t>(from._internal_heal_multiplier()) != 0) {
+        _this->_impl_.heal_multiplier_ = from._impl_.heal_multiplier_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (::absl::bit_cast<::uint64_t>(from._internal_heal_per_level()) != 0) {
+        _this->_impl_.heal_per_level_ = from._impl_.heal_per_level_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
+      if (::absl::bit_cast<::uint64_t>(from._internal_execute_heal_threshold()) != 0) {
+        _this->_impl_.execute_heal_threshold_ = from._impl_.execute_heal_threshold_;
+      }
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00003f00U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000100U)) {
+      if (::absl::bit_cast<::uint64_t>(from._internal_execute_heal_bonus()) != 0) {
+        _this->_impl_.execute_heal_bonus_ = from._impl_.execute_heal_bonus_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000200U)) {
+      if (::absl::bit_cast<::uint64_t>(from._internal_restore_mana_percent()) != 0) {
+        _this->_impl_.restore_mana_percent_ = from._impl_.restore_mana_percent_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000400U)) {
+      if (from._internal_dispel_count() != 0) {
+        _this->_impl_.dispel_count_ = from._impl_.dispel_count_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000800U)) {
+      if (from._internal_initiative() != 0) {
+        _this->_impl_.initiative_ = from._impl_.initiative_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00001000U)) {
+      if (::absl::bit_cast<::uint64_t>(from._internal_passive_percent()) != 0) {
+        _this->_impl_.passive_percent_ = from._impl_.passive_percent_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00002000U)) {
+      if (::absl::bit_cast<::uint64_t>(from._internal_buff_percent()) != 0) {
+        _this->_impl_.buff_percent_ = from._impl_.buff_percent_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_.Or(from._impl_._has_bits_);
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
 }
@@ -2689,6 +3373,7 @@ void SkillTable::InternalSwap(SkillTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_._has_bits_[1], other->_impl_._has_bits_[1]);
   _impl_.skill_type_.InternalSwap(&other->_impl_.skill_type_);
   _impl_.targeting_mode_.InternalSwap(&other->_impl_.targeting_mode_);
   _impl_.effect_.InternalSwap(&other->_impl_.effect_);
@@ -2696,12 +3381,23 @@ void SkillTable::InternalSwap(SkillTable* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
   _impl_.required_resource_.InternalSwap(&other->_impl_.required_resource_);
   _impl_.cost_resource_.InternalSwap(&other->_impl_.cost_resource_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.damage_, &other->_impl_.damage_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.name_, &other->_impl_.name_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.description_, &other->_impl_.description_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.icon_key_, &other->_impl_.icon_key_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.category_, &other->_impl_.category_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.attack_multiplier_)
-      + sizeof(SkillTable::_impl_.attack_multiplier_)
+      PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.unlock_level_)
+      + sizeof(SkillTable::_impl_.unlock_level_)
       - PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.id_)>(
           reinterpret_cast<char*>(&_impl_.id_),
           reinterpret_cast<char*>(&other->_impl_.id_));
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.passive_stat_, &other->_impl_.passive_stat_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.buff_percent_)
+      + sizeof(SkillTable::_impl_.buff_percent_)
+      - PROTOBUF_FIELD_OFFSET(SkillTable, _impl_.max_rank_)>(
+          reinterpret_cast<char*>(&_impl_.max_rank_),
+          reinterpret_cast<char*>(&other->_impl_.max_rank_));
 }
 
 ::google::protobuf::Metadata SkillTable::GetMetadata() const {

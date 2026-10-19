@@ -543,6 +543,135 @@
     "Silence": true
    },
    "time": 0
+  },
+  {
+   "bonus_damage": "0",
+   "buff_type": 11,
+   "combat_idle_seconds": 0.0,
+   "duration": 12.0,
+   "force_interrupt": 0,
+   "health_regeneration": "0",
+   "id": 11103,
+   "infinite_duration": 0,
+   "interval": 0.0,
+   "interval_count": 0,
+   "level": 1,
+   "max_layer": 1,
+   "movement_speed_boost": 0.0,
+   "movement_speed_reduction": 0.0,
+   "no_caster": 1,
+   "tag": {
+    "ClassSkillBuff": true
+   },
+   "time": 0
+  },
+  {
+   "bonus_damage": "0",
+   "buff_type": 10,
+   "combat_idle_seconds": 0.0,
+   "duration": 12.0,
+   "force_interrupt": 0,
+   "health_regeneration": "0",
+   "id": 11104,
+   "infinite_duration": 0,
+   "interval": 0.0,
+   "interval_count": 0,
+   "level": 1,
+   "max_layer": 1,
+   "movement_speed_boost": 0.0,
+   "movement_speed_reduction": 0.0,
+   "no_caster": 1,
+   "tag": {
+    "ClassSkillBuff": true,
+    "Debuff": true
+   },
+   "time": 0
+  },
+  {
+   "bonus_damage": "0",
+   "buff_type": 13,
+   "combat_idle_seconds": 0.0,
+   "duration": 12.0,
+   "force_interrupt": 0,
+   "health_regeneration": "0",
+   "id": 11203,
+   "infinite_duration": 0,
+   "interval": 0.0,
+   "interval_count": 0,
+   "level": 1,
+   "max_layer": 1,
+   "movement_speed_boost": 0.0,
+   "movement_speed_reduction": 0.0,
+   "no_caster": 1,
+   "tag": {
+    "ClassSkillBuff": true,
+    "Debuff": true
+   },
+   "time": 0
+  },
+  {
+   "bonus_damage": "0",
+   "buff_type": 11,
+   "combat_idle_seconds": 0.0,
+   "duration": 12.0,
+   "force_interrupt": 0,
+   "health_regeneration": "0",
+   "id": 11304,
+   "infinite_duration": 0,
+   "interval": 0.0,
+   "interval_count": 0,
+   "level": 1,
+   "max_layer": 1,
+   "movement_speed_boost": 0.0,
+   "movement_speed_reduction": 0.0,
+   "no_caster": 1,
+   "tag": {
+    "ClassSkillBuff": true
+   },
+   "time": 0
+  },
+  {
+   "bonus_damage": "0",
+   "buff_type": 13,
+   "combat_idle_seconds": 0.0,
+   "duration": 12.0,
+   "force_interrupt": 0,
+   "health_regeneration": "0",
+   "id": 11403,
+   "infinite_duration": 0,
+   "interval": 0.0,
+   "interval_count": 0,
+   "level": 1,
+   "max_layer": 1,
+   "movement_speed_boost": 0.0,
+   "movement_speed_reduction": 0.0,
+   "no_caster": 1,
+   "tag": {
+    "ClassSkillBuff": true
+   },
+   "time": 0
+  },
+  {
+   "bonus_damage": "0",
+   "buff_type": 13,
+   "combat_idle_seconds": 0.0,
+   "duration": 12.0,
+   "force_interrupt": 0,
+   "health_regeneration": "0",
+   "id": 11404,
+   "infinite_duration": 0,
+   "interval": 0.0,
+   "interval_count": 0,
+   "level": 1,
+   "max_layer": 1,
+   "movement_speed_boost": 0.0,
+   "movement_speed_reduction": 0.0,
+   "no_caster": 1,
+   "tag": {
+    "ClassSkillBuff": true,
+    "Debuff": true
+   },
+   "time": 0
   }
  ]
 }

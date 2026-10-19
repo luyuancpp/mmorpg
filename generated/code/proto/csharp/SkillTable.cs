@@ -27,7 +27,7 @@ public static partial class SkillTableReflection {
           "dWUYAiABKAQiWQoWU2tpbGxyZXF1aXJlZF9yZXNvdXJjZRIeChZyZXF1aXJl",
           "ZF9yZXNvdXJjZV90eXBlGAEgASgNEh8KF3JlcXVpcmVkX3Jlc291cmNlX3Zh",
           "bHVlGAIgASgNIkoKElNraWxsY29zdF9yZXNvdXJjZRIYChBjb3N0X3Jlc291",
-          "cmNlX2lkGAEgASgNEhoKEmNvc3RfcmVzb3VyY2VfY29zdBgCIAEoDSLiBAoK",
+          "cmNlX2lkGAEgASgNEhoKEmNvc3RfcmVzb3VyY2VfY29zdBgCIAEoDSK2CAoK",
           "U2tpbGxUYWJsZRIKCgJpZBgBIAEoDRISCgpza2lsbF90eXBlGAIgAygNEhYK",
           "DnRhcmdldGluZ19tb2RlGAMgAygNEhYKDnJlcXVpcmVfdGFyZ2V0GAQgASgN",
           "EhUKDXRhcmdldF9zdGF0dXMYBSABKA0SEgoKY2FzdF9wb2ludBgGIAEoARIV",
@@ -38,20 +38,30 @@ public static partial class SkillTableReflection {
           "ASgBEhEKCW1pbl9yYW5nZRgQIAEoARITCgtzZWxmX3N0YXR1cxgRIAEoDRIX",
           "Cg9yZXF1aXJlZF9zdGF0dXMYEiABKA0SEwoLY29vbGRvd25faWQYEyABKA0S",
           "DgoGZGFtYWdlGBQgASgJEhMKC2RhbWFnZV90eXBlGBggASgNEhkKEWF0dGFj",
-          "a19tdWx0aXBsaWVyGBkgASgBEioKDXJlcXVpcmVkX2l0ZW0YFSADKAsyEy5T",
-          "a2lsbHJlcXVpcmVkX2l0ZW0SMgoRcmVxdWlyZWRfcmVzb3VyY2UYFiADKAsy",
-          "Fy5Ta2lsbHJlcXVpcmVkX3Jlc291cmNlEioKDWNvc3RfcmVzb3VyY2UYFyAD",
-          "KAsyEy5Ta2lsbGNvc3RfcmVzb3VyY2UiKwoOU2tpbGxUYWJsZURhdGESGQoE",
-          "ZGF0YRgBIAMoCzILLlNraWxsVGFibGVCPAoOY29tLmdhbWUudGFibGVCFFNr",
-          "aWxsVGFibGVPdXRlckNsYXNzUAFaEmdlbmVyYXRlZC9wYi90YWJsZWIGcHJv",
-          "dG8z"));
+          "a19tdWx0aXBsaWVyGBkgASgBEhAKCGNsYXNzX2lkGBogASgNEgwKBG5hbWUY",
+          "GyABKAkSEwoLZGVzY3JpcHRpb24YHCABKAkSEAoIaWNvbl9rZXkYHSABKAkS",
+          "EAoIY2F0ZWdvcnkYHiABKAkSFAoMdW5sb2NrX2xldmVsGB8gASgNEhAKCG1h",
+          "eF9yYW5rGCAgASgNEhMKC3RhcmdldF90ZWFtGCEgASgNEhMKC21heF90YXJn",
+          "ZXRzGCIgASgNEhQKDG1hbmFfcGVyY2VudBgjIAEoARIXCg9jb29sZG93bl9y",
+          "b3VuZHMYJCABKA0SFwoPaGVhbF9tdWx0aXBsaWVyGCUgASgBEhYKDmhlYWxf",
+          "cGVyX2xldmVsGCYgASgBEh4KFmV4ZWN1dGVfaGVhbF90aHJlc2hvbGQYJyAB",
+          "KAESGgoSZXhlY3V0ZV9oZWFsX2JvbnVzGCggASgBEhwKFHJlc3RvcmVfbWFu",
+          "YV9wZXJjZW50GCkgASgBEhQKDGRpc3BlbF9jb3VudBgqIAEoDRISCgppbml0",
+          "aWF0aXZlGCsgASgFEhQKDHBhc3NpdmVfc3RhdBgsIAEoCRIXCg9wYXNzaXZl",
+          "X3BlcmNlbnQYLSABKAESFAoMYnVmZl9wZXJjZW50GC4gASgBEioKDXJlcXVp",
+          "cmVkX2l0ZW0YFSADKAsyEy5Ta2lsbHJlcXVpcmVkX2l0ZW0SMgoRcmVxdWly",
+          "ZWRfcmVzb3VyY2UYFiADKAsyFy5Ta2lsbHJlcXVpcmVkX3Jlc291cmNlEioK",
+          "DWNvc3RfcmVzb3VyY2UYFyADKAsyEy5Ta2lsbGNvc3RfcmVzb3VyY2UiKwoO",
+          "U2tpbGxUYWJsZURhdGESGQoEZGF0YRgBIAMoCzILLlNraWxsVGFibGVCPAoO",
+          "Y29tLmdhbWUudGFibGVCFFNraWxsVGFibGVPdXRlckNsYXNzUAFaEmdlbmVy",
+          "YXRlZC9wYi90YWJsZWIGcHJvdG8z"));
     descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
         new pbr::FileDescriptor[] { },
         new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
           new pbr::GeneratedClrTypeInfo(typeof(global::Skillrequired_item), global::Skillrequired_item.Parser, new[]{ "RequiredItemType", "RequiredItemValue" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::Skillrequired_resource), global::Skillrequired_resource.Parser, new[]{ "RequiredResourceType", "RequiredResourceValue" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::Skillcost_resource), global::Skillcost_resource.Parser, new[]{ "CostResourceId", "CostResourceCost" }, null, null, null, null),
-          new pbr::GeneratedClrTypeInfo(typeof(global::SkillTable), global::SkillTable.Parser, new[]{ "Id", "SkillType", "TargetingMode", "RequireTarget", "TargetStatus", "CastPoint", "RecoveryTime", "Immediate", "Effect", "ChannelThink", "ChannelFinish", "ThinkInterval", "ChannelTime", "Range", "MaxRange", "MinRange", "SelfStatus", "RequiredStatus", "CooldownId", "Damage", "DamageType", "AttackMultiplier", "RequiredItem", "RequiredResource", "CostResource" }, null, null, null, null),
+          new pbr::GeneratedClrTypeInfo(typeof(global::SkillTable), global::SkillTable.Parser, new[]{ "Id", "SkillType", "TargetingMode", "RequireTarget", "TargetStatus", "CastPoint", "RecoveryTime", "Immediate", "Effect", "ChannelThink", "ChannelFinish", "ThinkInterval", "ChannelTime", "Range", "MaxRange", "MinRange", "SelfStatus", "RequiredStatus", "CooldownId", "Damage", "DamageType", "AttackMultiplier", "ClassId", "Name", "Description", "IconKey", "Category", "UnlockLevel", "MaxRank", "TargetTeam", "MaxTargets", "ManaPercent", "CooldownRounds", "HealMultiplier", "HealPerLevel", "ExecuteHealThreshold", "ExecuteHealBonus", "RestoreManaPercent", "DispelCount", "Initiative", "PassiveStat", "PassivePercent", "BuffPercent", "RequiredItem", "RequiredResource", "CostResource" }, null, null, null, null),
           new pbr::GeneratedClrTypeInfo(typeof(global::SkillTableData), global::SkillTableData.Parser, new[]{ "Data" }, null, null, null, null)
         }));
   }
@@ -821,6 +831,27 @@ public sealed partial class SkillTable : pb::IMessage<SkillTable>
     damage_ = other.damage_;
     damageType_ = other.damageType_;
     attackMultiplier_ = other.attackMultiplier_;
+    classId_ = other.classId_;
+    name_ = other.name_;
+    description_ = other.description_;
+    iconKey_ = other.iconKey_;
+    category_ = other.category_;
+    unlockLevel_ = other.unlockLevel_;
+    maxRank_ = other.maxRank_;
+    targetTeam_ = other.targetTeam_;
+    maxTargets_ = other.maxTargets_;
+    manaPercent_ = other.manaPercent_;
+    cooldownRounds_ = other.cooldownRounds_;
+    healMultiplier_ = other.healMultiplier_;
+    healPerLevel_ = other.healPerLevel_;
+    executeHealThreshold_ = other.executeHealThreshold_;
+    executeHealBonus_ = other.executeHealBonus_;
+    restoreManaPercent_ = other.restoreManaPercent_;
+    dispelCount_ = other.dispelCount_;
+    initiative_ = other.initiative_;
+    passiveStat_ = other.passiveStat_;
+    passivePercent_ = other.passivePercent_;
+    buffPercent_ = other.buffPercent_;
     requiredItem_ = other.requiredItem_.Clone();
     requiredResource_ = other.requiredResource_.Clone();
     costResource_ = other.costResource_.Clone();
@@ -1094,6 +1125,258 @@ public sealed partial class SkillTable : pb::IMessage<SkillTable>
     }
   }
 
+  /// <summary>Field number for the "class_id" field.</summary>
+  public const int ClassIdFieldNumber = 26;
+  private uint classId_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint ClassId {
+    get { return classId_; }
+    set {
+      classId_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "name" field.</summary>
+  public const int NameFieldNumber = 27;
+  private string name_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string Name {
+    get { return name_; }
+    set {
+      name_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "description" field.</summary>
+  public const int DescriptionFieldNumber = 28;
+  private string description_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string Description {
+    get { return description_; }
+    set {
+      description_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "icon_key" field.</summary>
+  public const int IconKeyFieldNumber = 29;
+  private string iconKey_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string IconKey {
+    get { return iconKey_; }
+    set {
+      iconKey_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "category" field.</summary>
+  public const int CategoryFieldNumber = 30;
+  private string category_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string Category {
+    get { return category_; }
+    set {
+      category_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "unlock_level" field.</summary>
+  public const int UnlockLevelFieldNumber = 31;
+  private uint unlockLevel_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint UnlockLevel {
+    get { return unlockLevel_; }
+    set {
+      unlockLevel_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "max_rank" field.</summary>
+  public const int MaxRankFieldNumber = 32;
+  private uint maxRank_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint MaxRank {
+    get { return maxRank_; }
+    set {
+      maxRank_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "target_team" field.</summary>
+  public const int TargetTeamFieldNumber = 33;
+  private uint targetTeam_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint TargetTeam {
+    get { return targetTeam_; }
+    set {
+      targetTeam_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "max_targets" field.</summary>
+  public const int MaxTargetsFieldNumber = 34;
+  private uint maxTargets_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint MaxTargets {
+    get { return maxTargets_; }
+    set {
+      maxTargets_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "mana_percent" field.</summary>
+  public const int ManaPercentFieldNumber = 35;
+  private double manaPercent_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public double ManaPercent {
+    get { return manaPercent_; }
+    set {
+      manaPercent_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "cooldown_rounds" field.</summary>
+  public const int CooldownRoundsFieldNumber = 36;
+  private uint cooldownRounds_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint CooldownRounds {
+    get { return cooldownRounds_; }
+    set {
+      cooldownRounds_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heal_multiplier" field.</summary>
+  public const int HealMultiplierFieldNumber = 37;
+  private double healMultiplier_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public double HealMultiplier {
+    get { return healMultiplier_; }
+    set {
+      healMultiplier_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "heal_per_level" field.</summary>
+  public const int HealPerLevelFieldNumber = 38;
+  private double healPerLevel_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public double HealPerLevel {
+    get { return healPerLevel_; }
+    set {
+      healPerLevel_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "execute_heal_threshold" field.</summary>
+  public const int ExecuteHealThresholdFieldNumber = 39;
+  private double executeHealThreshold_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public double ExecuteHealThreshold {
+    get { return executeHealThreshold_; }
+    set {
+      executeHealThreshold_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "execute_heal_bonus" field.</summary>
+  public const int ExecuteHealBonusFieldNumber = 40;
+  private double executeHealBonus_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public double ExecuteHealBonus {
+    get { return executeHealBonus_; }
+    set {
+      executeHealBonus_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "restore_mana_percent" field.</summary>
+  public const int RestoreManaPercentFieldNumber = 41;
+  private double restoreManaPercent_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public double RestoreManaPercent {
+    get { return restoreManaPercent_; }
+    set {
+      restoreManaPercent_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "dispel_count" field.</summary>
+  public const int DispelCountFieldNumber = 42;
+  private uint dispelCount_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public uint DispelCount {
+    get { return dispelCount_; }
+    set {
+      dispelCount_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "initiative" field.</summary>
+  public const int InitiativeFieldNumber = 43;
+  private int initiative_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public int Initiative {
+    get { return initiative_; }
+    set {
+      initiative_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "passive_stat" field.</summary>
+  public const int PassiveStatFieldNumber = 44;
+  private string passiveStat_ = "";
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public string PassiveStat {
+    get { return passiveStat_; }
+    set {
+      passiveStat_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+    }
+  }
+
+  /// <summary>Field number for the "passive_percent" field.</summary>
+  public const int PassivePercentFieldNumber = 45;
+  private double passivePercent_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public double PassivePercent {
+    get { return passivePercent_; }
+    set {
+      passivePercent_ = value;
+    }
+  }
+
+  /// <summary>Field number for the "buff_percent" field.</summary>
+  public const int BuffPercentFieldNumber = 46;
+  private double buffPercent_;
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+  [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+  public double BuffPercent {
+    get { return buffPercent_; }
+    set {
+      buffPercent_ = value;
+    }
+  }
+
   /// <summary>Field number for the "required_item" field.</summary>
   public const int RequiredItemFieldNumber = 21;
   private static readonly pb::FieldCodec<global::Skillrequired_item> _repeated_requiredItem_codec
@@ -1164,6 +1447,27 @@ public sealed partial class SkillTable : pb::IMessage<SkillTable>
     if (Damage != other.Damage) return false;
     if (DamageType != other.DamageType) return false;
     if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(AttackMultiplier, other.AttackMultiplier)) return false;
+    if (ClassId != other.ClassId) return false;
+    if (Name != other.Name) return false;
+    if (Description != other.Description) return false;
+    if (IconKey != other.IconKey) return false;
+    if (Category != other.Category) return false;
+    if (UnlockLevel != other.UnlockLevel) return false;
+    if (MaxRank != other.MaxRank) return false;
+    if (TargetTeam != other.TargetTeam) return false;
+    if (MaxTargets != other.MaxTargets) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(ManaPercent, other.ManaPercent)) return false;
+    if (CooldownRounds != other.CooldownRounds) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(HealMultiplier, other.HealMultiplier)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(HealPerLevel, other.HealPerLevel)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(ExecuteHealThreshold, other.ExecuteHealThreshold)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(ExecuteHealBonus, other.ExecuteHealBonus)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(RestoreManaPercent, other.RestoreManaPercent)) return false;
+    if (DispelCount != other.DispelCount) return false;
+    if (Initiative != other.Initiative) return false;
+    if (PassiveStat != other.PassiveStat) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(PassivePercent, other.PassivePercent)) return false;
+    if (!pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.Equals(BuffPercent, other.BuffPercent)) return false;
     if(!requiredItem_.Equals(other.requiredItem_)) return false;
     if(!requiredResource_.Equals(other.requiredResource_)) return false;
     if(!costResource_.Equals(other.costResource_)) return false;
@@ -1196,6 +1500,27 @@ public sealed partial class SkillTable : pb::IMessage<SkillTable>
     if (Damage.Length != 0) hash ^= Damage.GetHashCode();
     if (DamageType != 0) hash ^= DamageType.GetHashCode();
     if (AttackMultiplier != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(AttackMultiplier);
+    if (ClassId != 0) hash ^= ClassId.GetHashCode();
+    if (Name.Length != 0) hash ^= Name.GetHashCode();
+    if (Description.Length != 0) hash ^= Description.GetHashCode();
+    if (IconKey.Length != 0) hash ^= IconKey.GetHashCode();
+    if (Category.Length != 0) hash ^= Category.GetHashCode();
+    if (UnlockLevel != 0) hash ^= UnlockLevel.GetHashCode();
+    if (MaxRank != 0) hash ^= MaxRank.GetHashCode();
+    if (TargetTeam != 0) hash ^= TargetTeam.GetHashCode();
+    if (MaxTargets != 0) hash ^= MaxTargets.GetHashCode();
+    if (ManaPercent != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(ManaPercent);
+    if (CooldownRounds != 0) hash ^= CooldownRounds.GetHashCode();
+    if (HealMultiplier != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(HealMultiplier);
+    if (HealPerLevel != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(HealPerLevel);
+    if (ExecuteHealThreshold != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(ExecuteHealThreshold);
+    if (ExecuteHealBonus != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(ExecuteHealBonus);
+    if (RestoreManaPercent != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(RestoreManaPercent);
+    if (DispelCount != 0) hash ^= DispelCount.GetHashCode();
+    if (Initiative != 0) hash ^= Initiative.GetHashCode();
+    if (PassiveStat.Length != 0) hash ^= PassiveStat.GetHashCode();
+    if (PassivePercent != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(PassivePercent);
+    if (BuffPercent != 0D) hash ^= pbc::ProtobufEqualityComparers.BitwiseDoubleEqualityComparer.GetHashCode(BuffPercent);
     hash ^= requiredItem_.GetHashCode();
     hash ^= requiredResource_.GetHashCode();
     hash ^= costResource_.GetHashCode();
@@ -1299,6 +1624,90 @@ public sealed partial class SkillTable : pb::IMessage<SkillTable>
       output.WriteRawTag(201, 1);
       output.WriteDouble(AttackMultiplier);
     }
+    if (ClassId != 0) {
+      output.WriteRawTag(208, 1);
+      output.WriteUInt32(ClassId);
+    }
+    if (Name.Length != 0) {
+      output.WriteRawTag(218, 1);
+      output.WriteString(Name);
+    }
+    if (Description.Length != 0) {
+      output.WriteRawTag(226, 1);
+      output.WriteString(Description);
+    }
+    if (IconKey.Length != 0) {
+      output.WriteRawTag(234, 1);
+      output.WriteString(IconKey);
+    }
+    if (Category.Length != 0) {
+      output.WriteRawTag(242, 1);
+      output.WriteString(Category);
+    }
+    if (UnlockLevel != 0) {
+      output.WriteRawTag(248, 1);
+      output.WriteUInt32(UnlockLevel);
+    }
+    if (MaxRank != 0) {
+      output.WriteRawTag(128, 2);
+      output.WriteUInt32(MaxRank);
+    }
+    if (TargetTeam != 0) {
+      output.WriteRawTag(136, 2);
+      output.WriteUInt32(TargetTeam);
+    }
+    if (MaxTargets != 0) {
+      output.WriteRawTag(144, 2);
+      output.WriteUInt32(MaxTargets);
+    }
+    if (ManaPercent != 0D) {
+      output.WriteRawTag(153, 2);
+      output.WriteDouble(ManaPercent);
+    }
+    if (CooldownRounds != 0) {
+      output.WriteRawTag(160, 2);
+      output.WriteUInt32(CooldownRounds);
+    }
+    if (HealMultiplier != 0D) {
+      output.WriteRawTag(169, 2);
+      output.WriteDouble(HealMultiplier);
+    }
+    if (HealPerLevel != 0D) {
+      output.WriteRawTag(177, 2);
+      output.WriteDouble(HealPerLevel);
+    }
+    if (ExecuteHealThreshold != 0D) {
+      output.WriteRawTag(185, 2);
+      output.WriteDouble(ExecuteHealThreshold);
+    }
+    if (ExecuteHealBonus != 0D) {
+      output.WriteRawTag(193, 2);
+      output.WriteDouble(ExecuteHealBonus);
+    }
+    if (RestoreManaPercent != 0D) {
+      output.WriteRawTag(201, 2);
+      output.WriteDouble(RestoreManaPercent);
+    }
+    if (DispelCount != 0) {
+      output.WriteRawTag(208, 2);
+      output.WriteUInt32(DispelCount);
+    }
+    if (Initiative != 0) {
+      output.WriteRawTag(216, 2);
+      output.WriteInt32(Initiative);
+    }
+    if (PassiveStat.Length != 0) {
+      output.WriteRawTag(226, 2);
+      output.WriteString(PassiveStat);
+    }
+    if (PassivePercent != 0D) {
+      output.WriteRawTag(233, 2);
+      output.WriteDouble(PassivePercent);
+    }
+    if (BuffPercent != 0D) {
+      output.WriteRawTag(241, 2);
+      output.WriteDouble(BuffPercent);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(output);
     }
@@ -1391,6 +1800,90 @@ public sealed partial class SkillTable : pb::IMessage<SkillTable>
       output.WriteRawTag(201, 1);
       output.WriteDouble(AttackMultiplier);
     }
+    if (ClassId != 0) {
+      output.WriteRawTag(208, 1);
+      output.WriteUInt32(ClassId);
+    }
+    if (Name.Length != 0) {
+      output.WriteRawTag(218, 1);
+      output.WriteString(Name);
+    }
+    if (Description.Length != 0) {
+      output.WriteRawTag(226, 1);
+      output.WriteString(Description);
+    }
+    if (IconKey.Length != 0) {
+      output.WriteRawTag(234, 1);
+      output.WriteString(IconKey);
+    }
+    if (Category.Length != 0) {
+      output.WriteRawTag(242, 1);
+      output.WriteString(Category);
+    }
+    if (UnlockLevel != 0) {
+      output.WriteRawTag(248, 1);
+      output.WriteUInt32(UnlockLevel);
+    }
+    if (MaxRank != 0) {
+      output.WriteRawTag(128, 2);
+      output.WriteUInt32(MaxRank);
+    }
+    if (TargetTeam != 0) {
+      output.WriteRawTag(136, 2);
+      output.WriteUInt32(TargetTeam);
+    }
+    if (MaxTargets != 0) {
+      output.WriteRawTag(144, 2);
+      output.WriteUInt32(MaxTargets);
+    }
+    if (ManaPercent != 0D) {
+      output.WriteRawTag(153, 2);
+      output.WriteDouble(ManaPercent);
+    }
+    if (CooldownRounds != 0) {
+      output.WriteRawTag(160, 2);
+      output.WriteUInt32(CooldownRounds);
+    }
+    if (HealMultiplier != 0D) {
+      output.WriteRawTag(169, 2);
+      output.WriteDouble(HealMultiplier);
+    }
+    if (HealPerLevel != 0D) {
+      output.WriteRawTag(177, 2);
+      output.WriteDouble(HealPerLevel);
+    }
+    if (ExecuteHealThreshold != 0D) {
+      output.WriteRawTag(185, 2);
+      output.WriteDouble(ExecuteHealThreshold);
+    }
+    if (ExecuteHealBonus != 0D) {
+      output.WriteRawTag(193, 2);
+      output.WriteDouble(ExecuteHealBonus);
+    }
+    if (RestoreManaPercent != 0D) {
+      output.WriteRawTag(201, 2);
+      output.WriteDouble(RestoreManaPercent);
+    }
+    if (DispelCount != 0) {
+      output.WriteRawTag(208, 2);
+      output.WriteUInt32(DispelCount);
+    }
+    if (Initiative != 0) {
+      output.WriteRawTag(216, 2);
+      output.WriteInt32(Initiative);
+    }
+    if (PassiveStat.Length != 0) {
+      output.WriteRawTag(226, 2);
+      output.WriteString(PassiveStat);
+    }
+    if (PassivePercent != 0D) {
+      output.WriteRawTag(233, 2);
+      output.WriteDouble(PassivePercent);
+    }
+    if (BuffPercent != 0D) {
+      output.WriteRawTag(241, 2);
+      output.WriteDouble(BuffPercent);
+    }
     if (_unknownFields != null) {
       _unknownFields.WriteTo(ref output);
     }
@@ -1459,6 +1952,69 @@ public sealed partial class SkillTable : pb::IMessage<SkillTable>
       size += 2 + pb::CodedOutputStream.ComputeUInt32Size(DamageType);
     }
     if (AttackMultiplier != 0D) {
+      size += 2 + 8;
+    }
+    if (ClassId != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeUInt32Size(ClassId);
+    }
+    if (Name.Length != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeStringSize(Name);
+    }
+    if (Description.Length != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeStringSize(Description);
+    }
+    if (IconKey.Length != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeStringSize(IconKey);
+    }
+    if (Category.Length != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeStringSize(Category);
+    }
+    if (UnlockLevel != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeUInt32Size(UnlockLevel);
+    }
+    if (MaxRank != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeUInt32Size(MaxRank);
+    }
+    if (TargetTeam != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeUInt32Size(TargetTeam);
+    }
+    if (MaxTargets != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeUInt32Size(MaxTargets);
+    }
+    if (ManaPercent != 0D) {
+      size += 2 + 8;
+    }
+    if (CooldownRounds != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeUInt32Size(CooldownRounds);
+    }
+    if (HealMultiplier != 0D) {
+      size += 2 + 8;
+    }
+    if (HealPerLevel != 0D) {
+      size += 2 + 8;
+    }
+    if (ExecuteHealThreshold != 0D) {
+      size += 2 + 8;
+    }
+    if (ExecuteHealBonus != 0D) {
+      size += 2 + 8;
+    }
+    if (RestoreManaPercent != 0D) {
+      size += 2 + 8;
+    }
+    if (DispelCount != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeUInt32Size(DispelCount);
+    }
+    if (Initiative != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeInt32Size(Initiative);
+    }
+    if (PassiveStat.Length != 0) {
+      size += 2 + pb::CodedOutputStream.ComputeStringSize(PassiveStat);
+    }
+    if (PassivePercent != 0D) {
+      size += 2 + 8;
+    }
+    if (BuffPercent != 0D) {
       size += 2 + 8;
     }
     size += requiredItem_.CalculateSize(_repeated_requiredItem_codec);
@@ -1535,6 +2091,69 @@ public sealed partial class SkillTable : pb::IMessage<SkillTable>
     }
     if (other.AttackMultiplier != 0D) {
       AttackMultiplier = other.AttackMultiplier;
+    }
+    if (other.ClassId != 0) {
+      ClassId = other.ClassId;
+    }
+    if (other.Name.Length != 0) {
+      Name = other.Name;
+    }
+    if (other.Description.Length != 0) {
+      Description = other.Description;
+    }
+    if (other.IconKey.Length != 0) {
+      IconKey = other.IconKey;
+    }
+    if (other.Category.Length != 0) {
+      Category = other.Category;
+    }
+    if (other.UnlockLevel != 0) {
+      UnlockLevel = other.UnlockLevel;
+    }
+    if (other.MaxRank != 0) {
+      MaxRank = other.MaxRank;
+    }
+    if (other.TargetTeam != 0) {
+      TargetTeam = other.TargetTeam;
+    }
+    if (other.MaxTargets != 0) {
+      MaxTargets = other.MaxTargets;
+    }
+    if (other.ManaPercent != 0D) {
+      ManaPercent = other.ManaPercent;
+    }
+    if (other.CooldownRounds != 0) {
+      CooldownRounds = other.CooldownRounds;
+    }
+    if (other.HealMultiplier != 0D) {
+      HealMultiplier = other.HealMultiplier;
+    }
+    if (other.HealPerLevel != 0D) {
+      HealPerLevel = other.HealPerLevel;
+    }
+    if (other.ExecuteHealThreshold != 0D) {
+      ExecuteHealThreshold = other.ExecuteHealThreshold;
+    }
+    if (other.ExecuteHealBonus != 0D) {
+      ExecuteHealBonus = other.ExecuteHealBonus;
+    }
+    if (other.RestoreManaPercent != 0D) {
+      RestoreManaPercent = other.RestoreManaPercent;
+    }
+    if (other.DispelCount != 0) {
+      DispelCount = other.DispelCount;
+    }
+    if (other.Initiative != 0) {
+      Initiative = other.Initiative;
+    }
+    if (other.PassiveStat.Length != 0) {
+      PassiveStat = other.PassiveStat;
+    }
+    if (other.PassivePercent != 0D) {
+      PassivePercent = other.PassivePercent;
+    }
+    if (other.BuffPercent != 0D) {
+      BuffPercent = other.BuffPercent;
     }
     requiredItem_.Add(other.requiredItem_);
     requiredResource_.Add(other.requiredResource_);
@@ -1661,6 +2280,90 @@ public sealed partial class SkillTable : pb::IMessage<SkillTable>
           AttackMultiplier = input.ReadDouble();
           break;
         }
+        case 208: {
+          ClassId = input.ReadUInt32();
+          break;
+        }
+        case 218: {
+          Name = input.ReadString();
+          break;
+        }
+        case 226: {
+          Description = input.ReadString();
+          break;
+        }
+        case 234: {
+          IconKey = input.ReadString();
+          break;
+        }
+        case 242: {
+          Category = input.ReadString();
+          break;
+        }
+        case 248: {
+          UnlockLevel = input.ReadUInt32();
+          break;
+        }
+        case 256: {
+          MaxRank = input.ReadUInt32();
+          break;
+        }
+        case 264: {
+          TargetTeam = input.ReadUInt32();
+          break;
+        }
+        case 272: {
+          MaxTargets = input.ReadUInt32();
+          break;
+        }
+        case 281: {
+          ManaPercent = input.ReadDouble();
+          break;
+        }
+        case 288: {
+          CooldownRounds = input.ReadUInt32();
+          break;
+        }
+        case 297: {
+          HealMultiplier = input.ReadDouble();
+          break;
+        }
+        case 305: {
+          HealPerLevel = input.ReadDouble();
+          break;
+        }
+        case 313: {
+          ExecuteHealThreshold = input.ReadDouble();
+          break;
+        }
+        case 321: {
+          ExecuteHealBonus = input.ReadDouble();
+          break;
+        }
+        case 329: {
+          RestoreManaPercent = input.ReadDouble();
+          break;
+        }
+        case 336: {
+          DispelCount = input.ReadUInt32();
+          break;
+        }
+        case 344: {
+          Initiative = input.ReadInt32();
+          break;
+        }
+        case 354: {
+          PassiveStat = input.ReadString();
+          break;
+        }
+        case 361: {
+          PassivePercent = input.ReadDouble();
+          break;
+        }
+        case 369: {
+          BuffPercent = input.ReadDouble();
+          break;
+        }
       }
     }
   #endif
@@ -1781,6 +2484,90 @@ public sealed partial class SkillTable : pb::IMessage<SkillTable>
         }
         case 201: {
           AttackMultiplier = input.ReadDouble();
+          break;
+        }
+        case 208: {
+          ClassId = input.ReadUInt32();
+          break;
+        }
+        case 218: {
+          Name = input.ReadString();
+          break;
+        }
+        case 226: {
+          Description = input.ReadString();
+          break;
+        }
+        case 234: {
+          IconKey = input.ReadString();
+          break;
+        }
+        case 242: {
+          Category = input.ReadString();
+          break;
+        }
+        case 248: {
+          UnlockLevel = input.ReadUInt32();
+          break;
+        }
+        case 256: {
+          MaxRank = input.ReadUInt32();
+          break;
+        }
+        case 264: {
+          TargetTeam = input.ReadUInt32();
+          break;
+        }
+        case 272: {
+          MaxTargets = input.ReadUInt32();
+          break;
+        }
+        case 281: {
+          ManaPercent = input.ReadDouble();
+          break;
+        }
+        case 288: {
+          CooldownRounds = input.ReadUInt32();
+          break;
+        }
+        case 297: {
+          HealMultiplier = input.ReadDouble();
+          break;
+        }
+        case 305: {
+          HealPerLevel = input.ReadDouble();
+          break;
+        }
+        case 313: {
+          ExecuteHealThreshold = input.ReadDouble();
+          break;
+        }
+        case 321: {
+          ExecuteHealBonus = input.ReadDouble();
+          break;
+        }
+        case 329: {
+          RestoreManaPercent = input.ReadDouble();
+          break;
+        }
+        case 336: {
+          DispelCount = input.ReadUInt32();
+          break;
+        }
+        case 344: {
+          Initiative = input.ReadInt32();
+          break;
+        }
+        case 354: {
+          PassiveStat = input.ReadString();
+          break;
+        }
+        case 361: {
+          PassivePercent = input.ReadDouble();
+          break;
+        }
+        case 369: {
+          BuffPercent = input.ReadDouble();
           break;
         }
       }
