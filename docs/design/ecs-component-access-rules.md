@@ -51,6 +51,7 @@ entt uses a **sparse-set** storage model. Each component type has its own packed
 | `AttributeDirtyFlagsComp` | `ActorAttributeCalculatorSystem::MarkAttributeForUpdate`,首次标脏时 | 重算消费后摘除;冻结时保留待处理 |
 | `PlayerAnomalyWindowComp` | `AnomalyDetector::WindowForWrite`,合法玩家首次记收益时 | 实体销毁自然清理;查询不创建,无效句柄不记录 |
 | 生成的各 `*DirtyMaskComp` | `Set*AttrDirtyBit`,先校验位范围与实体再标脏 | 有接收者时消费后摘除;接收者为空保留 |
+| `BattleFreezeExpiredComp`(`player_battle.cpp` 内部,单槽 battle_id) | `RememberExpiredFightingBattle`,reaper 判定 FIGHTING 到期的收尾 `ReleaseExpiredFightingFreeze` 里、条件删锁之前(2026-10-19) | 不摘:下一次 FIGHTING 到期覆盖;实体销毁自然清理。按锁重建的两个入口只读它 |
 | `BattleLoginRecheckComp`(`player_battle.cpp` 内部空标记) | `MarkLoginRecheck`,登录钩子读挂起结算 / 读战斗锁没问到时(空应答、读记录 ERROR、命令没发出去、Redis 不可用;2026-10-16) | reaper 的 `RunLoginRechecks` 在 Redis 可用时摘除并重跑登录检查,又没问到就重新挂上;实体销毁自然清理 |
 
 `CombatStateCollectionComp`、`InBattleComp` 也属于按需状态:分别在实际添加战斗状态、进入战斗或从权威战斗锁恢复时创建;查询缺失表示无对应状态。不要把状态存在与派生投影混为一谈:`CombatStateFlagsComp` 是创建 actor 时就应存在的同步投影。

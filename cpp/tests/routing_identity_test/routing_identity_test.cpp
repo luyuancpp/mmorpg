@@ -660,6 +660,61 @@ TEST(SettlementLoginHook, LockReadNoReplyIsRecheckWhileErrorKeepsLegacyNoLock)
 	EXPECT_EQ(battle_settlement::ClassifyLoginLockRead(ReplyShape::kOther), LoginLockRead::kNoLock);
 }
 
+// 2026-10-19(第二、三轮评审 P3):reaper 判作废的局,删锁没落地时锁还指向它;按锁重建的入口必须认出它、不重建。
+// 读到它的路径有三条(冻结到期补读没读到挂的复查、补应用另一局挂起结算之后的重建、登录挂的复查赶上冻结到期),
+// 裁决放在重建入口,一处盖住。
+TEST(SettlementLoginHook, LockRebuildSkipsTheBattleThisEntityAlreadyExpired)
+{
+	using battle_settlement::LockRebuildDecision;
+	// 锁指向刚作废的 X,账本里没有 X:不重建(调用方补一次条件删锁)。
+	EXPECT_EQ(battle_settlement::ClassifyLockRebuild(701, 701, false), LockRebuildDecision::kSkipExpired);
+	// 锁指向另一局(真在打的下一局 / 别处的战斗):照常重建。
+	EXPECT_EQ(battle_settlement::ClassifyLockRebuild(702, 701, false), LockRebuildDecision::kRebuild);
+	// 本实体没有作废局(0):照常重建,0 不能与任何锁值相等。
+	EXPECT_EQ(battle_settlement::ClassifyLockRebuild(701, 0, false), LockRebuildDecision::kRebuild);
+}
+
+// 顺序:已应用 > 已作废。作废之后删锁没落地,迟到的结算会按锁匹配应用;锁要留到它落盘销账才删,
+// 这时只能推进销账,补删锁会提前放开排队。
+TEST(SettlementLoginHook, LockRebuildAppliedBeatsExpired)
+{
+	using battle_settlement::LockRebuildDecision;
+	EXPECT_EQ(battle_settlement::ClassifyLockRebuild(701, 701, true), LockRebuildDecision::kAdvanceAck);
+	EXPECT_EQ(battle_settlement::ClassifyLockRebuild(701, 0, true), LockRebuildDecision::kAdvanceAck);
+	EXPECT_EQ(battle_settlement::ClassifyLockRebuild(702, 701, true), LockRebuildDecision::kAdvanceAck);
+}
+
+// reaper 节拍对一个复查标记的处理,全部 8 种状态:退出中 > 交接中 > Redis 不可用 > 重跑。
+// bag_test 里 Redis 恒不可用,分不清「交接中保留」与「Redis 不可用保留」,这里逐格盯住。
+TEST(SettlementLoginHook, RecheckEntryDecisionCoversEveryState)
+{
+	using battle_settlement::LoginRecheckStep;
+	const auto classify = [](const bool exiting, const bool handoff, const bool redisReady)
+	{
+		battle_settlement::LoginRecheckEntryState state;
+		state.exitingOrNoIdentity = exiting;
+		state.travelHandoffOrFrozen = handoff;
+		state.redisReady = redisReady;
+		return battle_settlement::ClassifyLoginRecheckEntry(state);
+	};
+	// 退出中:不论其它条件一律摘标记、不重跑。
+	for (const bool handoff : {false, true})
+	{
+		for (const bool redisReady : {false, true})
+		{
+			EXPECT_EQ(classify(true, handoff, redisReady), LoginRecheckStep::kDrop)
+				<< "handoff=" << handoff << " redisReady=" << redisReady;
+		}
+	}
+	// 交接中:Redis 可用也保留,不能在即将销毁的源实体上重跑。
+	EXPECT_EQ(classify(false, true, true), LoginRecheckStep::kKeep);
+	EXPECT_EQ(classify(false, true, false), LoginRecheckStep::kKeep);
+	// Redis 不可用:保留,恢复后再跑。
+	EXPECT_EQ(classify(false, false, false), LoginRecheckStep::kKeep);
+	// 只有这一格真正重跑。
+	EXPECT_EQ(classify(false, false, true), LoginRecheckStep::kRun);
+}
+
 // 覆盖真实入场所需的会话状态和转发副作用,不依赖网络或全局节点注册。
 using gate_scene_route::SceneNodeChange;
 

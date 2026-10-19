@@ -173,6 +173,39 @@ namespace
 	{
 	};
 
+	// reaper 按期限判作废(FIGHTING 到期)的最近一局(2026-10-19,第二、三轮评审 P3)。
+	// 到期时 reaper 条件删锁;删锁没落地(Redis 抖)时锁还在,之后任何一条按锁重建的路径(冻结到期补读挂的复查、
+	// 补应用另一局挂起结算之后的重建、登录挂的复查赶上冻结到期)都会把玩家冻回这场已结束的战斗。
+	// 按锁重建之前先比这里(settlement_outbox.h 的 ClassifyLockRebuild):锁值等于它就不重建,补一次条件删锁。
+	// 单槽够用:锁还在时 match 对锁 fail-closed,玩家排不进下一局;锁没了才可能有下一局,那时旧值已无锁可比。
+	// 只记 FIGHTING 到期:PREPARING 到期刻意保留锁,等迟到的确认按锁重建 FIGHTING(reaper 的说明)。
+	// 纯运行时:不入库,随实体销毁。实体重建(重登、跨节点换场景 / 跨 zone 交接后在目的地新建)后槽位为空,登录重建对同一把锁的行为与改动前相同。
+	// 唯一写入口 RememberExpiredFightingBattle;读口 ExpiredFightingBattleIdOf。
+	struct BattleFreezeExpiredComp
+	{
+		uint64_t battleId = 0;
+	};
+
+	void RememberExpiredFightingBattle(entt::entity player, const uint64_t battleId)
+	{
+		if (!tlsEcs.actorRegistry.valid(player) || battleId == 0)
+		{
+			return;
+		}
+		// 此处延迟创建(按需状态的唯一写入口,docs/design/ecs-component-access-rules.md)。
+		tlsEcs.actorRegistry.get_or_emplace<BattleFreezeExpiredComp>(player).battleId = battleId;
+	}
+
+	uint64_t ExpiredFightingBattleIdOf(entt::entity player)
+	{
+		if (!tlsEcs.actorRegistry.valid(player))
+		{
+			return 0;
+		}
+		const auto* expired = tlsEcs.actorRegistry.try_get<BattleFreezeExpiredComp>(player);
+		return expired != nullptr ? expired->battleId : 0;
+	}
+
 	void MarkLoginRecheck(entt::entity player, const uint64_t playerId, const char* reason)
 	{
 		if (!tlsEcs.actorRegistry.valid(player))
@@ -1558,12 +1591,24 @@ void PlayerBattleSystem::RebuildBattleFreezeFromLock(entt::entity player, const 
 			{
 				return;
 			}
-			if (battle_settlement::HasApplied(*ledger, battleId))
+			// 已应用 > 已作废 > 重建(ClassifyLockRebuild 的说明)。
+			switch (battle_settlement::ClassifyLockRebuild(battleId, ExpiredFightingBattleIdOf(player),
+														   battle_settlement::HasApplied(*ledger, battleId)))
 			{
+			case battle_settlement::LockRebuildDecision::kAdvanceAck:
 				LOG_INFO << "[PlayerBattle] Freeze reconstruction skipped: locked battle settled and awaiting persistence, player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=" << reasonCopy;
 				AckSettlementPending(playerId, battleId);
 				return;
+			case battle_settlement::LockRebuildDecision::kSkipExpired:
+				// reaper 已按期限判这一局作废,删锁没落地才会再读到这把锁:不重建,补一次条件删锁。
+				LOG_WARN << "[PlayerBattle] metric=battle_freeze_rebuild_skipped_expired player_id=" << playerId
+						 << " battle_id=" << battleId << " reason=" << reasonCopy
+						 << ",lock still points to a battle this node already expired;not rebuilding,retrying conditional lock deletion";
+				DeleteBattleLockIfMatch(playerId, battleId);
+				return;
+			case battle_settlement::LockRebuildDecision::kRebuild:
+				break;
 			}
 			std::string ctxPayload;
 			ReplyElementToString(reply, 0, ctxPayload);
@@ -1663,12 +1708,25 @@ void PlayerBattleSystem::RestoreBattleFreezeOnLogin(entt::entity player, const u
 			{
 				return;
 			}
-			if (battle_settlement::HasApplied(*ledger, battleId))
+			// 已应用 > 已作废 > 重建(ClassifyLockRebuild 的说明)。
+			switch (battle_settlement::ClassifyLockRebuild(battleId, ExpiredFightingBattleIdOf(player),
+														   battle_settlement::HasApplied(*ledger, battleId)))
 			{
+			case battle_settlement::LockRebuildDecision::kAdvanceAck:
 				LOG_INFO << "[PlayerBattle] Freeze reconstruction skipped: locked battle settled and awaiting persistence, player_id=" << playerId
 						 << " battle_id=" << battleId << " reason=login";
 				AckSettlementPending(playerId, battleId);
 				return;
+			case battle_settlement::LockRebuildDecision::kSkipExpired:
+				// reaper 已按期限判这一局作废,删锁没落地才会再读到这把锁:不重建,补一次条件删锁。
+				// 走到这里的路径:冻结到期补读没读到挂的复查、补应用另一局挂起结算之后的重建、登录挂的复查赶上冻结到期。
+				LOG_WARN << "[PlayerBattle] metric=battle_freeze_rebuild_skipped_expired player_id=" << playerId
+						 << " battle_id=" << battleId << " reason=login"
+						 << ",lock still points to a battle this node already expired;not rebuilding,retrying conditional lock deletion";
+				DeleteBattleLockIfMatch(playerId, battleId);
+				return;
+			case battle_settlement::LockRebuildDecision::kRebuild:
+				break;
 			}
 			std::string ctxPayload;
 			ReplyElementToString(reply, 1, ctxPayload);
@@ -2111,8 +2169,9 @@ void PlayerBattleSystem::RecoverPendingSettlementAfterFreezeExpiry(entt::entity 
 {
 	// 「没读到」(Redis 不可用 / 空应答 / ERROR / 意外类型 / 命令没发出去)都记入登录复查(BattleLoginRecheckComp 的说明):
 	// 这是到期后唯一一次主动补读(battle 发件箱已停止重投),以前只留痕、等下次进场,在线玩家就一直拿不到奖励。
-	// 复查重跑的是登录钩子第一步:有记录照样走 ApplyPendingSettlement,没有记录再按锁重建
-	// (锁已由 reaper 在这次补读之前条件删掉;删锁也没落地时会按锁重建一次,随后的节拍再按期限作废,与这段时间内重登一致)。
+	// 复查重跑的是登录钩子第一步:有记录照样走 ApplyPendingSettlement,没有记录再按锁重建。
+	// 锁已由 reaper 在这次补读之前条件删掉;删锁没落地时锁还指向刚作废的这一局,按锁重建的入口认得它
+	// (ReleaseExpiredFightingFreeze 先记下了 BattleFreezeExpiredComp):不重建,补一次条件删锁(2026-10-19)。
 	if (!RedisReady())
 	{
 		LOG_WARN << "[PlayerBattle] Pending settlement recovery after freeze expiry skipped(Redis disconnected), player_id="
@@ -2279,25 +2338,25 @@ void PlayerBattleSystem::RunLoginRechecks()
 	for (const auto entity : due)
 	{
 		const uint64_t playerId = GuidForLog(entity);
-		if (playerId == 0 || tlsEcs.actorRegistry.any_of<UnregisterPlayer>(entity))
+		battle_settlement::LoginRecheckEntryState state;
+		state.exitingOrNoIdentity = playerId == 0 || tlsEcs.actorRegistry.any_of<UnregisterPlayer>(entity);
+		state.travelHandoffOrFrozen = !IsSettlementApplicable(entity);
+		state.redisReady = redisReady;
+		// 各分支的理由见 settlement_outbox.h 的 ClassifyLoginRecheckEntry(退出中 > 交接中 > Redis 不可用 > 重跑)。
+		switch (battle_settlement::ClassifyLoginRecheckEntry(state))
 		{
-			// 退出中的实体视同离线(与 RecoverPendingSettlementAfterFreezeExpiry 同一口径):摘标记不补读,
-			// 挂起结算留在 Redis,下次进场登录钩子重跑。
+		case battle_settlement::LoginRecheckStep::kDrop:
 			tlsEcs.actorRegistry.remove<BattleLoginRecheckComp>(entity);
 			LOG_INFO << "[PlayerBattle] Login battle recheck dropped: player is exiting, player_id=" << playerId;
 			continue;
-		}
-		if (!IsSettlementApplicable(entity))
-		{
-			// 跨 zone 冻结 / 交接中:标记保留,本轮不跑。这时重跑会在即将销毁的源实体上按锁重建冻结、给客户端推重连提示
-			// (有挂起结算时应用也会被拒)。交接完成实体随之销毁,目的地进场时登录钩子重跑;交接撤销则下一个节拍再跑。
+		case battle_settlement::LoginRecheckStep::kKeep:
+			if (!state.travelHandoffOrFrozen)
+			{
+				++deferred; // 只为汇总日志计数 Redis 不可用的那部分
+			}
 			continue;
-		}
-		if (!redisReady)
-		{
-			// Redis 仍不可用:标记保留,恢复后的第一个节拍再跑。
-			++deferred;
-			continue;
+		case battle_settlement::LoginRecheckStep::kRun:
+			break;
 		}
 		// 先摘标记再重跑:这一轮又没问到会重新挂上,同一玩家同一时刻最多一条复查在途。
 		tlsEcs.actorRegistry.remove<BattleLoginRecheckComp>(entity);
@@ -2315,6 +2374,29 @@ void PlayerBattleSystem::RunLoginRechecks()
 bool PlayerBattleSystem::IsLoginRecheckPending(entt::entity player)
 {
 	return tlsEcs.actorRegistry.valid(player) && tlsEcs.actorRegistry.any_of<BattleLoginRecheckComp>(player);
+}
+
+uint64_t PlayerBattleSystem::ExpiredFightingBattleId(entt::entity player)
+{
+	return ExpiredFightingBattleIdOf(player);
+}
+
+void PlayerBattleSystem::ReleaseExpiredFightingFreeze(entt::entity player, const uint64_t playerId,
+													  const uint64_t battleId)
+{
+	// 先记下作废的局,再删锁:删锁没落地时,之后任何一条按锁重建的路径都靠它认出这把锁(BattleFreezeExpiredComp 的说明)。
+	RememberExpiredFightingBattle(player, battleId);
+	// 按 battle_id 条件删锁:作废判定与锁值同源,不会误删别的战斗
+	ClearBattleFreeze(player, playerId, battleId);
+	// 补读一次待结算记录(设计 §7):到期常常是因为结算投递没送到,而 battle 只重投 120 秒,
+	// 在线玩家又等不到登录钩子。退出中的实体(UnregisterPlayer)视同离线,不补读 ——
+	// ApplySettlementToEntity 本来也会拒绝,读了只是白跑一次;它的结算留给下次进场。
+	// 读命令排在上面的条件删锁之后(同连接 FIFO):补应用之后的按锁重建看到的是删锁之后的状态。
+	if (playerId != 0 && tlsEcs.actorRegistry.valid(player) &&
+		!tlsEcs.actorRegistry.any_of<UnregisterPlayer>(player))
+	{
+		RecoverPendingSettlementAfterFreezeExpiry(player, playerId);
+	}
 }
 
 void PlayerBattleSystem::OnPlayerEnterScene(entt::entity player, uint32_t enterGsType)
@@ -2427,17 +2509,7 @@ void PlayerBattleSystem::StartReaper(muduo::net::EventLoop* loop)
 					 << " battle_id=" << entry.battleId
 					 << " deadline_ms=" << entry.deadlineMs
 					 << " now_ms=" << nowMs << ",battle invalidated and freeze released(battle node crashed or settlement event lost)";
-			// 按 battle_id 条件删锁:作废判定与锁值同源,不会误删别的战斗
-			ClearBattleFreeze(entry.entity, playerId, entry.battleId);
-			// 补读一次待结算记录(设计 §7):到期常常是因为结算投递没送到,而 battle 只重投 120 秒,
-			// 在线玩家又等不到登录钩子。退出中的实体(UnregisterPlayer)视同离线,不补读 ——
-			// ApplySettlementToEntity 本来也会拒绝,读了只是白跑一次;它的结算留给下次进场。
-			// 读命令排在上面的条件删锁之后(同连接 FIFO):补应用之后的按锁重建看到的是删锁之后的状态。
-			if (playerId != 0 && tlsEcs.actorRegistry.valid(entry.entity) &&
-				!tlsEcs.actorRegistry.any_of<UnregisterPlayer>(entry.entity))
-			{
-				RecoverPendingSettlementAfterFreezeExpiry(entry.entity, playerId);
-			}
+			ReleaseExpiredFightingFreeze(entry.entity, playerId, entry.battleId);
 		}
 
 		// 第二遍:排空「已应用但销账尚未确认」的账本条目。

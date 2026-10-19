@@ -65,6 +65,12 @@ public:
     static void RunLoginRechecks() {
         PlayerBattleSystem::RunLoginRechecks();
     }
+    static void ReleaseExpiredFightingFreeze(entt::entity player, uint64_t playerId, uint64_t battleId) {
+        PlayerBattleSystem::ReleaseExpiredFightingFreeze(player, playerId, battleId);
+    }
+    static uint64_t ExpiredFightingBattleId(entt::entity player) {
+        return PlayerBattleSystem::ExpiredFightingBattleId(player);
+    }
 };
 
 namespace {
@@ -897,6 +903,8 @@ TEST_F(PlayerBattleSettlementTest, ExitingPlayerLoginRecheckIsDroppedWithoutReru
 
 // 跨 zone 交接中:标记保留、本轮不跑 —— 重跑会在即将销毁的源实体上按锁重建冻结并推重连提示。
 // 交接完成随实体销毁;交接撤销后下一个节拍再跑。
+// 注意:单测里 Redis 恒不可用,这条用例分不清「交接中保留」与「Redis 不可用保留」(第二轮评审指出);
+// 两条分支的区分由 routing_identity_test 的 SettlementLoginHook.RecheckEntryDecisionCoversEveryState 盯住。
 TEST_F(PlayerBattleSettlementTest, TravelHandoffKeepsLoginRecheckForLater) {
     PlayerBattleSystem::OnPlayerEnterScene(player, LOGIN_FIRST);
     ASSERT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
@@ -913,6 +921,54 @@ TEST_F(PlayerBattleSettlementTest, LoginRecheckDiesWithTheEntity) {
     tlsEcs.actorRegistry.destroy(player);
     EXPECT_FALSE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
     PlayerBattleSettlementTestAccess::RunLoginRechecks();  // 无标记可跑,也不碰已销毁实体
+    player = entt::null;  // TearDown 不再 destroy
+}
+
+// ---- 2026-10-19:reaper 判作废的局不再按锁重建(第二、三轮评审 P3)----
+//
+// 删锁没落地时锁还指向刚作废的那一局;按锁重建的两个入口(登录重建、迟到确认重建)都先比本实体记下的作废局,
+// 相等就不重建、补一次条件删锁。比较本身由 routing_identity_test 的 SettlementLoginHook.LockRebuild* 盯住
+// (回调里才走得到,单测没有 Redis);这里盯「到期收尾时确实记下了作废局」这一步。
+
+// FIGHTING 到期收尾:先记下作废局,再条件删锁、摘冻结;Redis 不可用时补读记入登录复查。不应用、不发奖。
+TEST_F(PlayerBattleSettlementTest, FightingExpiryRemembersTheExpiredBattle) {
+    auto& inBattle = tlsEcs.actorRegistry.emplace<InBattleComp>(player);
+    inBattle.set_battle_id(settlement.battle_id());
+    inBattle.set_state(IN_BATTLE_STATE_FIGHTING);
+    ASSERT_EQ(PlayerBattleSettlementTestAccess::ExpiredFightingBattleId(player), 0u);
+
+    PlayerBattleSettlementTestAccess::ReleaseExpiredFightingFreeze(player, playerId, settlement.battle_id());
+
+    EXPECT_EQ(PlayerBattleSettlementTestAccess::ExpiredFightingBattleId(player), settlement.battle_id());
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+    EXPECT_TRUE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
+    EXPECT_EQ(gPersistCalls, 0);
+}
+
+// 单槽:只留最近一局。锁还在时 match 拦着排队,只有锁没了才可能有下一局,那时旧值已无锁可比。
+TEST_F(PlayerBattleSettlementTest, ExpiredBattleSlotKeepsOnlyTheLatest) {
+    PlayerBattleSettlementTestAccess::ReleaseExpiredFightingFreeze(player, playerId, 801);
+    PlayerBattleSettlementTestAccess::ReleaseExpiredFightingFreeze(player, playerId, 802);
+    EXPECT_EQ(PlayerBattleSettlementTestAccess::ExpiredFightingBattleId(player), 802u);
+}
+
+// 退出中的实体:照样记下作废局、摘冻结,但不补读(视同离线,挂起结算留给下次进场),也就不挂复查。
+TEST_F(PlayerBattleSettlementTest, ExitingPlayerFightingExpiryRemembersButDoesNotRecover) {
+    tlsEcs.actorRegistry.emplace<InBattleComp>(player).set_battle_id(settlement.battle_id());
+    tlsEcs.actorRegistry.emplace<UnregisterPlayer>(player);
+    PlayerBattleSettlementTestAccess::ReleaseExpiredFightingFreeze(player, playerId, settlement.battle_id());
+    EXPECT_EQ(PlayerBattleSettlementTestAccess::ExpiredFightingBattleId(player), settlement.battle_id());
+    EXPECT_FALSE(tlsEcs.actorRegistry.any_of<InBattleComp>(player));
+    EXPECT_FALSE(PlayerBattleSettlementTestAccess::LoginRecheckPending(player));
+}
+
+// 槽位只挂在实体上:实体销毁(重登会新建实体)即随之消失,读口对无效实体返回 0。
+TEST_F(PlayerBattleSettlementTest, ExpiredBattleSlotDiesWithTheEntity) {
+    PlayerBattleSettlementTestAccess::ReleaseExpiredFightingFreeze(player, playerId, settlement.battle_id());
+    ASSERT_EQ(PlayerBattleSettlementTestAccess::ExpiredFightingBattleId(player), settlement.battle_id());
+    tlsEcs.actorRegistry.destroy(player);
+    EXPECT_EQ(PlayerBattleSettlementTestAccess::ExpiredFightingBattleId(player), 0u);
     player = entt::null;  // TearDown 不再 destroy
 }
 
