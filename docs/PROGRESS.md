@@ -9431,3 +9431,20 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
   评审两视角 + 四轮修补核验,P2 与 P3 均已修(告警根因修在 go/rank,见上一条)。
   **robot 未编译、rank-smoke 未跑,Unity 里未跑 EditMode、未截图;剩余步骤见设计 §12.6「还要构建方做的」**。
 - **Java 版(AGENTS §12)**:对应 Java 版本号:无;状态:待做(本机没有 Java 仓 `D:\luyuan\xuanming-server-mmo`)。
+
+## 2026-10-19 zone Redis 存活探测与空应答修复:验证状态补记(Claude,只读核对 Codex 10-17 的证据)
+
+- **结论**:上面 10-16 两条(「C++ zone Redis 连接加存活探测」与「zone Redis 空应答 / ERROR 不再被当成业务结论」)标题里写的「未编译,待 Codex 验证」已过时。
+  Codex 10-17「Go 1.27.2 与主干合并编译回归收尾」那一轮在合并后的 main 上编译并跑完了测试。
+- **逐项证据**(本机 `run/merge-validation-20261017/cpp-final-test-*.xml`,不入库):
+  - `rpc_controller_test` 共 80 项,0 失败(另有 2 项原本就禁用)。其中 `RedisManagerAuth` 10 例、`RedisManagerLiveness` 5 例全部通过,单例耗时 0.77–1.97 秒。
+  - `routing_identity_test` 98 项、`bag_test` 629 项、`currency_test` 186 项,均 0 失败。
+- **同轮另有两处修改**(`5778ccae92`),与存活探测相互独立:
+  - Codex 修了 Hiredis 适配层在 Windows 上收到纯 HUP 时的空转,两份 `Hiredis.cc` 逐字节一致。
+  - 测试夹具改为先等服务端看到全部断开,再析构 server。
+- **仍未做**:`--gtest_repeat=20` 稳定性复跑;Linux 构建与运行;在真实多节点集群上演练代理整机消失(见 `deploy/k8s/README.md`「代理整机消失」条)。
+- **在途**:空应答修复第二轮复审提了两项,修复会话会在 `fix/zone-redis-null-reply` 上另起提交,合入 main 前要再编译测试:
+  - P3:冻结到期的复查不该按锁重建;
+  - `settlement_outbox.h` 有一处注释把累计次数写成了「连续」。
+- **文档**:no-single-node 设计文档 §5.3 与 `deploy/k8s/README.md`「代理整机消失」条已同步为已验证状态。
+- **Java 版(AGENTS §12)**:不涉及客户端契约,无对应改动;本机没有 Java 仓,未核对 `PARITY.md`,对应 Java 版本号:无。
