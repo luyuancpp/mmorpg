@@ -152,6 +152,8 @@ lane 准入放在 `PROTOCOL_GRPC` 分支里、路由模式下,取代现在直接
 - 限流、体积、白名单、GM、battle 这些拒绝仍然排在 lane 之前,立即回执,不占 lane 名额。它们的回执可能先于更早排队请求的回包到达客户端。这是允许的:本文保证的是**执行顺序**,不保证拒绝回执的到达顺序;拒绝回执带 id,客户端能对上号。
 
 > 2026-10-15 订正(用户拍板两版同批):体积、限流原本就是带 id 的信封;GM 闸(1006)与 battle 拒绝(1003)由 23 号 tip 改为带 id 与原 message_id 的信封,Java 版同批修订 scene-battle-spec D12。**白名单拒绝有意不回执**:它计非法包,回执会把「无凭证刷不存在的消息号」变成回包放大面,所以不在「拒绝回执带 id」之列。仍是 23 号 tip、不带 id 的同类 gate 级失败本轮未改,完整清单(复核核实):两种模式都走的 `HandleTcpNodeMessage` 两处(scene 未就绪、RpcClient 未挂);只在直连模式发生的三处(`HandleGrpcNodeMessage` 请求体解析失败 `kRequestMessageParseError`、找不到业务节点,以及 `rpc_reply_bridge.cpp` 里 lane 不认领时的 gRPC 失败桥),后三处随 O7 / D61 删除直连路径时一并处理。`scene_entry_dispatch.cpp` 的 `kEnterSceneFailed` 是推送、不是请求回执,不在此列。**2026-10-15 稍后**:上列两种模式的 2 处与直连模式的前 2 处(请求体解析失败、找不到业务节点)已改为带请求 id 与原 message_id 的信封(`client_message_processor.cpp` 的 `SendRequestErrorEnvelope`,只用本次收包的 conn 与请求);仍是 23 号 tip 的只剩 `rpc_reply_bridge.cpp` 里 lane 不认领时的 gRPC 失败桥——失败回调拿不到客户端请求 id(SessionDetails 无此字段,发出的 metadata 只有会话头,生成客户端保存的是业务请求体),这一支只在直连模式与 seq = 0 的断线通知出现,随 O7 / D61 删直连路径处理。Java 版同批:「玩家不在场景」「未接入的域」改信封,并对齐「scene 链路不受理这一帧」(原为不回任何回执)也回信封 1003。
+>
+> 2026-10-19 补注:上段末尾「仍是 23 号 tip 的只剩 `rpc_reply_bridge.cpp` 里 lane 不认领时的 gRPC 失败桥——失败回调拿不到客户端请求 id」的前提已随 2026-10-17 直连改为每次调用回调而不成立。直连模式的每次调用 lambda 现在捕获 `ClientRequest.id` 与 message_id,成功回包回显请求号(此前包一层时不带 id,且按响应类型反查 message_id),失败回带请求 id 的 1003 信封;路由模式不变。客户端据此删掉按 message_id 先进先出的兜底,只按 id 认领。见 [client-rpc-callback.md](client-rpc-callback.md) §3。
 - `loginStarted` 改在**发出时**置位(现在路由模式下就是发出之后置位【码】`client_message_processor.cpp:821-826`)。排队中、断线时作废的 Login 从没到达 login,不需要通知,这样也不会被「发 Login 后立刻断开」用来放大断线 RPC(`:439-451` 的注释)。
 
 ### 4.2 数据结构

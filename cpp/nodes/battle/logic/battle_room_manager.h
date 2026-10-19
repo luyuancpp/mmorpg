@@ -185,6 +185,8 @@ public:
                              ::SetAutoBattleResponse &response);
 
     // 停机收尾:全部房间作废(不结算;观众收 ABORTED,关闭房间直连),供 SetBeforeShutdown 调用。
+    // 例外是等结果回执的确认模式房间:它的个人结算在结果发出之前已写进 pending,清房不删 pending,
+    // 结果无论是否最终到达 broker,都由 scene 登录钩子 / 冻结到期补读应用(审计 social-match-battle#2)。
     // 调用方必须在同一个 loop 任务里先关建房准入闸(BattleNodeImpl::CloseAdmission):gRPC 排空
     // 期间已收完的 CreateBattle 仍会派发(等许可的回调也可能排在关闸之后),不关闸它们会在作废之后照常建房。关闸之后房间表
     // 保持为空,AddObserver / IssueBattleTicket 因房间不存在自然被拒(kEntityIsNull / kInvalidParameter)。
@@ -225,6 +227,9 @@ private:
         bool requiresResultConfirmation = false;
         std::optional<turnbattle::ResultCommit> resultCommit;
         ::contracts::kafka::BattleResultEvent pendingResult;
+        // 确认模式下每名成员的 R07 个人结算字节(BuildPersonalSettlementPayloads),BeginResultCommit 时
+        // 从冻结原件算一次:结果发送前落 pending、回执后派发都用这一份,两处字节必然相同。
+        std::map<uint64_t, std::string> personalSettlementPayloads;
         std::optional<::TurnResultS2C> pendingFinalTurn;
         std::optional<::BattleStateS2C> pendingVisibleState;
         ::eSpectateEndReason pendingSpectateReason = ::SPECTATE_END_BATTLE_FINISHED;
@@ -284,8 +289,8 @@ private:
     // 整场 deadline 到期:引擎仍未分出胜负按平局强制收尾(battle_node.proto 契约)。
     void OnBattleDeadline(uint64_t battleId);
 
-    // 战斗收尾:确认模式先固定含全部个人结算的结果并取得Kafka all ACK，随后
-    // 每参与者 BattleEndS2C(战斗帧,只走直连)→ 旧R07 BattleSettlementEvent。
+    // 战斗收尾:确认模式先固定含全部个人结算的结果、把个人结算写进 pending,再取得Kafka all ACK，随后
+    // 每参与者 BattleEndS2C(战斗帧,只走直连)→ 旧R07 BattleSettlementEvent(确认模式只投命令,不再改写 pending)。
     // 观众按 spectateReason 推 SpectateEndS2C(§10.5);终局包排队后关闭房间全部直连;
     // 旧模式最后发送评分事件；确认模式复用ACK前原件，不重新计算个人奖励。
     // 只组装与发送,不动 rooms_；返回true才能由调用方EraseRoom，校验失败保留房间。
@@ -297,6 +302,14 @@ private:
                            std::optional<::TurnResultS2C>, ::BattleStateS2C);
     void PumpResultCommits();
     void StopResultCommits();
+    // 结果第一次发往 broker 之前,把全部成员的个人结算写进 R07 pending(审计 social-match-battle#2)。
+    // 由 PumpResultCommits 驱动,每轮对每名成员各 EVAL 一次 kSetPendingSettlementScript,回复到齐后
+    // 经 OnPersonalSettlementsStaged 交给 ResultCommit::FinishStaging;没落完不发结果。
+    // Redis 未连上时不开新一轮(不消耗退避),等下一次 pump。与本地模式不同,这里不降级为「不落库直接发」:
+    // 不落库就发,恰好重现停机 / 崩溃丢个人结算的缺陷。
+    void StagePersonalSettlements(BattleRoom &room, turnbattle::ResultCommit::Clock::time_point now);
+    // 一轮落库的回复全部到齐。房间已不在(停机清房)或轮次过期时丢弃;已写下的 pending 留给 scene 裁决。
+    void OnPersonalSettlementsStaged(uint64_t battleId, uint64_t attempt, bool allStored);
 
     void BroadcastTurnResult(const BattleRoom &room, const ::TurnResultS2C &result);
 
@@ -386,14 +399,23 @@ private:
         uint32_t attempts = 0;
     };
 
-    // 结算的**唯一**出口(R07)。顺序是硬要求:
+    // 本地(非确认)模式结算的**唯一**出口(R07;确认模式见下方 DispatchStagedSettlement,顺序同样成立)。
+    // 顺序是硬要求:
     //   Redis 落库 → (落库回调里)投 SceneCommand → 登记进 outbox 等销账。
     // 不能反过来先投再落库:投递可能比 Redis 的 SET 先到,scene 应用结算后销账
     // (此刻记录还不存在,销账是空操作),随后迟到的 SET 落地就留下一条孤儿记录,
     // 玩家下次登录会被**重复发一次奖励**。
     // Redis 不可用时降级为"直接投递"并报 ERROR —— 那是既有行为,不是本次引入的退化。
+    // 只用于本地(非确认)模式;确认模式的 pending 在发结果之前已由 StagePersonalSettlements 写好,
+    // 回执后走 DispatchStagedSettlement。
     void DispatchSettlementDurably(const ::BattleRouting &routing, uint64_t playerId,
                                    const ::BattleSettlementData &settlement);
+
+    // 确认模式回执之后的派发:pending 已在发结果之前落库,这里只投 SceneCommand 并登记 outbox 等销账。
+    // **绝不**再写 pending:回执之前 scene 可能已经按登录钩子 / 冻结到期补读应用并销账,
+    // 再写一次会让已销账的 pending 复活,玩家下次登录重复发奖(BuildPersonalSettlementPayloads 的说明)。
+    void DispatchStagedSettlement(const ::BattleRouting &routing, uint64_t playerId, uint64_t battleId,
+                                  const std::string &payload);
 
     // 落库成功后登记一条待销账记录并保证重投定时器已装填。
     void EnqueuePendingSettlement(uint64_t battleId, uint64_t playerId, std::string payload,

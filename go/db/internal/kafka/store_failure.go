@@ -105,6 +105,8 @@ func deferReason(cause error) string {
 		return metrics.DeferPlacementMoved
 	case errors.Is(cause, errTaskDeferred):
 		return metrics.DeferExpandLockBusy
+	case errors.Is(cause, errSchemaTooNew):
+		return metrics.DeferSchemaTooNew
 	}
 	// SQL 调用点的网络错误都已打过标记,剩下的网络错误 / 超时只可能来自 Redis(守卫、选库、复核、缓存)。
 	var ne net.Error

@@ -463,12 +463,16 @@ type PlayerDatabase struct {
 	Currency                   *component.CurrencyComp        `protobuf:"bytes,8,opt,name=currency,proto3" json:"currency,omitempty"`
 	// Stress-test instrumentation. Empty during normal play. See
 	// PlayerStressTestProbe for the verification contract.
+	// scene 每次真正写盘时重新打探针、不读回加载值,所以标 OptionPersistUncarried
+	// (docs/design/mixed-version-persist-field-protection.md §3.2)。
 	StressTestProbe *component.PlayerStressTestProbe `protobuf:"bytes,9,opt,name=stress_test_probe,json=stressTestProbe,proto3" json:"stress_test_probe,omitempty"`
 	// Server-merge transient state (force_rename_required +
 	// post_merge_notice_seen_ms). Default-zero during normal play; stamped
 	// by tools/merge_zone/ during a maintenance-window merge and cleared
 	// on the first qualifying post-merge action. See player_comp.proto's
 	// PlayerMergeStateComp comment for the full contract.
+	// scene 的 PlayerDatabaseMessageFieldsMarshal 不处理本字段,整行写会把它清空,所以标 OptionPersistUncarried;
+	// 是否属于有意的「首次存盘清除合服标记」见 mixed-version-persist-field-protection.md §12。
 	MergeState *component.PlayerMergeStateComp `protobuf:"bytes,10,opt,name=merge_state,json=mergeState,proto3" json:"merge_state,omitempty"`
 	// 属性加点(方案/已分配点/额外点/外部加成),设计文档 player-attribute-allocation.md
 	AttributeComponent *component.PlayerAttributeComp `protobuf:"bytes,11,opt,name=attribute_component,json=attributeComponent,proto3" json:"attribute_component,omitempty"`
@@ -510,10 +514,16 @@ type PlayerDatabase struct {
 	// 与 asset_op_ledger 同一条不变量 I3(收件箱侧记作 IB-3):必须与 currency / bag_component 同记录同一次落盘 ——
 	// GM 处置的效果(封锁 / 欠款随 CurrencyComp 落盘)和它的账本要么一起在盘上,要么一起没有;
 	// 否则「效果落了账本没落」会让不幂等的 AttachDebt 被重复执行,「账本落了效果没落」会把没生效的处置确认成已执行。
-	// 按加列纪律取 18/19 之后的下一个空闲号 20,声明在末尾、不留空洞;下一个新字段从 21 起。
-	InboxLedger   *component.PlayerInboxLedgerComp `protobuf:"bytes,20,opt,name=inbox_ledger,json=inboxLedger,proto3" json:"inbox_ledger,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// 按加列纪律取 18/19 之后的下一个空闲号 20,声明在末尾、不留空洞。
+	InboxLedger *component.PlayerInboxLedgerComp `protobuf:"bytes,20,opt,name=inbox_ledger,json=inboxLedger,proto3" json:"inbox_ledger,omitempty"`
+	// 覆盖世代(docs/design/mixed-version-persist-field-protection.md §3.3):这份记录里该世代及以前定义的字段,值都是真实的。
+	// 由 scene 存盘时盖章 max(本二进制世代, 加载世代);go/db 据此判定超前延后 / 倒退拒写(§6.2)。
+	// 0 = 未盖戳(机制上线前写入或 login 新号种子),所有比较先按 1 处理。世代号由 proto 生成器按
+	// proto/persist_schema_gen.txt 发放,不要手写数字。与 player_database_1 的同名字段同值。
+	// 按加列纪律取 20 之后的下一个空闲号 21,声明在末尾、不留空洞;下一个新字段从 22 起。
+	PersistSchemaGen uint32 `protobuf:"varint,21,opt,name=persist_schema_gen,json=persistSchemaGen,proto3" json:"persist_schema_gen,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *PlayerDatabase) Reset() {
@@ -686,17 +696,27 @@ func (x *PlayerDatabase) GetInboxLedger() *component.PlayerInboxLedgerComp {
 	return nil
 }
 
+func (x *PlayerDatabase) GetPersistSchemaGen() uint32 {
+	if x != nil {
+		return x.PersistSchemaGen
+	}
+	return 0
+}
+
 type PlayerDatabase_1 struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	PlayerId uint64                 `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	// Same instrumentation surface as player_database; the data_stress driver
 	// and robot data-stress mode write to whichever table the test addresses.
+	// 同 player_database.stress_test_probe:每次写盘重新打探针,标 OptionPersistUncarried。
 	StressTestProbe *component.PlayerStressTestProbe `protobuf:"bytes,2,opt,name=stress_test_probe,json=stressTestProbe,proto3" json:"stress_test_probe,omitempty"`
 	// MySQL 行内围栏,语义同 player_database 的 18 / 19 号(db-write-fencing-mysql.md §3.2)。
 	FenceOwnerEpoch uint64 `protobuf:"varint,3,opt,name=fence_owner_epoch,json=fenceOwnerEpoch,proto3" json:"fence_owner_epoch,omitempty"`
 	FenceSaveSeq    uint64 `protobuf:"varint,4,opt,name=fence_save_seq,json=fenceSaveSeq,proto3" json:"fence_save_seq,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// 覆盖世代,语义同 player_database 的 21 号;两张表盖同一个值。下一个新字段从 6 起。
+	PersistSchemaGen uint32 `protobuf:"varint,5,opt,name=persist_schema_gen,json=persistSchemaGen,proto3" json:"persist_schema_gen,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *PlayerDatabase_1) Reset() {
@@ -757,6 +777,13 @@ func (x *PlayerDatabase_1) GetFenceSaveSeq() uint64 {
 	return 0
 }
 
+func (x *PlayerDatabase_1) GetPersistSchemaGen() uint32 {
+	if x != nil {
+		return x.PersistSchemaGen
+	}
+	return 0
+}
+
 var File_proto_common_database_mysql_database_table_proto protoreflect.FileDescriptor
 
 const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
@@ -801,7 +828,8 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x16player_centre_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x126\n" +
 	"\n" +
-	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:F\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xd0\t\n" +
+	"scene_info\x18\x02 \x01(\v2\x17.PlayerSceneContextCompR\tsceneInfo:F\x8a\x92\xf4\x01\x16player_centre_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x8c\n" +
+	"\n" +
 	"\x0fplayer_database\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12(\n" +
 	"\ttransform\x18\x02 \x01(\v2\n" +
@@ -813,10 +841,10 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x1cderived_attributes_component\x18\x06 \x01(\v2\x13.BaseAttributesCompR\x1aderivedAttributesComponent\x123\n" +
 	"\x0flevel_component\x18\a \x01(\v2\n" +
 	".LevelCompR\x0elevelComponent\x12)\n" +
-	"\bcurrency\x18\b \x01(\v2\r.CurrencyCompR\bcurrency\x12B\n" +
-	"\x11stress_test_probe\x18\t \x01(\v2\x16.PlayerStressTestProbeR\x0fstressTestProbe\x126\n" +
+	"\bcurrency\x18\b \x01(\v2\r.CurrencyCompR\bcurrency\x12I\n" +
+	"\x11stress_test_probe\x18\t \x01(\v2\x16.PlayerStressTestProbeB\x05\xc0\xfe\xa4\x02\x01R\x0fstressTestProbe\x12=\n" +
 	"\vmerge_state\x18\n" +
-	" \x01(\v2\x15.PlayerMergeStateCompR\n" +
+	" \x01(\v2\x15.PlayerMergeStateCompB\x05\xc0\xfe\xa4\x02\x01R\n" +
 	"mergeState\x12E\n" +
 	"\x13attribute_component\x18\v \x01(\v2\x14.PlayerAttributeCompR\x12attributeComponent\x123\n" +
 	"\rpet_component\x18\f \x01(\v2\x0e.PlayerPetCompR\fpetComponent\x120\n" +
@@ -827,12 +855,14 @@ const file_proto_common_database_mysql_database_table_proto_rawDesc = "" +
 	"\x11settlement_ledger\x18\x11 \x01(\v2\x1b.BattleSettlementLedgerCompR\x10settlementLedger\x12*\n" +
 	"\x11fence_owner_epoch\x18\x12 \x01(\x04R\x0ffenceOwnerEpoch\x12$\n" +
 	"\x0efence_save_seq\x18\x13 \x01(\x04R\ffenceSaveSeq\x129\n" +
-	"\finbox_ledger\x18\x14 \x01(\v2\x16.PlayerInboxLedgerCompR\vinboxLedger:D\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\x8e\x02\n" +
+	"\finbox_ledger\x18\x14 \x01(\v2\x16.PlayerInboxLedgerCompR\vinboxLedger\x12,\n" +
+	"\x12persist_schema_gen\x18\x15 \x01(\rR\x10persistSchemaGen:D\x8a\x92\xf4\x01\x0fplayer_database\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04\"\xc3\x02\n" +
 	"\x11player_database_1\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12B\n" +
-	"\x11stress_test_probe\x18\x02 \x01(\v2\x16.PlayerStressTestProbeR\x0fstressTestProbe\x12*\n" +
+	"\tplayer_id\x18\x01 \x01(\x04R\bplayerId\x12I\n" +
+	"\x11stress_test_probe\x18\x02 \x01(\v2\x16.PlayerStressTestProbeB\x05\xc0\xfe\xa4\x02\x01R\x0fstressTestProbe\x12*\n" +
 	"\x11fence_owner_epoch\x18\x03 \x01(\x04R\x0ffenceOwnerEpoch\x12$\n" +
-	"\x0efence_save_seq\x18\x04 \x01(\x04R\ffenceSaveSeq:F\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04B\x17Z\x15proto/common/databaseb\x06proto3"
+	"\x0efence_save_seq\x18\x04 \x01(\x04R\ffenceSaveSeq\x12,\n" +
+	"\x12persist_schema_gen\x18\x05 \x01(\rR\x10persistSchemaGen:F\x8a\x92\xf4\x01\x11player_database_1\x92\x92\xf4\x01\tplayer_id\xb2\x92\xf4\x01\tplayer_id\xe8\x92\xf4\x01\x01\xa8\x93\xf4\x01\x01\xb0\x93\xf4\x01\x04\xb8\x93\xf4\x01\x04B\x17Z\x15proto/common/databaseb\x06proto3"
 
 var (
 	file_proto_common_database_mysql_database_table_proto_rawDescOnce sync.Once

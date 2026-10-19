@@ -175,6 +175,8 @@ func loadSelectedPlayerFields(ctx context.Context, client goredis.Cmdable, playe
 //   - 其余(存量老玩家、戳失效、有索引无版本)→ 未索引,退回 SCAN(今天的行为)。
 // 不变量:可信时,该版本下所有 data_service 字段键都在索引里(可以多,不能少)。只有 saveFieldsScript 维护它;
 // 任何只 INCR 不维护戳的写者(滚动升级中的旧副本)都会让索引自动失效,读方退回 SCAN,不会漏读。
+// 把版本**重置**成更小值的带外写者(cmd/debug_import 的 player 模式写 "1")必须在同一个 MULTI 里 DEL 索引:
+// 否则旧戳可能恰好等于重置后的版本,带外写进来的字段被当成「不在索引里」藏掉,下一次存盘还会把它固化。
 // 读路径不「收养」存量玩家(不在读路径写元数据):这族键没有生产写者,存量集合不再增长;收敛靠
 // player_fields_enum_total{path="legacy_scan"} 观察。
 
@@ -443,7 +445,8 @@ func acquirePlayerLock(ctx context.Context, svcCtx *svc.ServiceContext, op strin
 // 合法拿走。所有 player:{id}:* key 共享 {id} hash-tag(见 playerDataPrefix),
 // 同一 slot,Cluster 下单脚本可覆盖。
 //
-// Lua 出错不会回滚已执行的写,所以所有可失败的检查都在第一条 SET 之前:版本键类型与格式(≤18 位,INCR 不会溢出)、
+// Lua 出错不会回滚已执行的写,所以所有可失败的检查都在第一条 SET 之前:版本键类型与格式(规范十进制:无前导零、≤18 位。
+// 真 Redis 的 INCR 拒绝 "007" 这类前导零串,miniredis 却接受,所以守卫不能只查「全是数字」;≤18 位保证 INCR 不溢出)、
 // 锁 token、期望版本、索引类型、每个字段键的类型(不是 none / string 就零副作用拒写,防止把别家的 HASH 覆盖成 string)。
 // 「写成功必 INCR」是全量读回退兜底的前提。
 //
@@ -464,7 +467,7 @@ if vtype ~= 'none' and vtype ~= 'string' then
 	return redis.error_reply('PLAYER_FIELDS version key wrong type: ' .. vtype)
 end
 local ver = redis.call('GET', KEYS[2])
-if ver and (not string.match(ver, '^%d+$') or #ver > 18) then
+if ver and (not (ver == '0' or string.match(ver, '^[1-9]%d*$')) or #ver > 18) then
 	return redis.error_reply('PLAYER_FIELDS version value malformed')
 end
 local cur = tonumber(ver or '0')
@@ -692,6 +695,11 @@ func parseVersionValue(playerID uint64, val string) (uint64, error) {
 	v, err := strconv.ParseUint(val, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("corrupt version value %q for player %d: %w", val, playerID, err)
+	}
+	// 非规范十进制(前导零等)按损坏处理,与 saveFieldsScript 的守卫同一口径:真 Redis 的 INCR 不接受它,
+	// 读路径若照常回 Version,调用方据此存盘只会撞上写侧的 fail-closed。
+	if strconv.FormatUint(v, 10) != val {
+		return 0, fmt.Errorf("corrupt version value %q for player %d: not canonical decimal", val, playerID)
 	}
 	return v, nil
 }

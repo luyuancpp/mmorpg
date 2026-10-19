@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <limits>
+#include <map>
+#include <string>
 #include <vector>
 
 #include "services/battle/system/battle_result_activity.h"
@@ -136,9 +138,23 @@ TEST(BattleResultActivity, ActivityResultKeyMatchesGuildContract)
     EXPECT_EQ(turnbattle::kActivityResultRetryMaxAttempts, 30u);
 }
 
+namespace
+{
+    // 结果发送的前置条件是成员的个人结算已全部写进 pending(审计 social-match-battle#2)。
+    // 只测发送 / 回执状态机的用例先把这一步走完。
+    void MarkPersonalSettlementsDurable(turnbattle::ResultCommit& commit)
+    {
+        const auto instant = turnbattle::ResultCommit::Clock::time_point{};
+        const auto attempt = commit.BeginStaging(instant);
+        ASSERT_NE(attempt, 0u);
+        ASSERT_TRUE(commit.FinishStaging(attempt, true, instant));
+    }
+}
+
 TEST(BattleResultCommit, UnknownCannotReleaseTerminalOrChangeOriginalBytes)
 {
     turnbattle::ResultCommit commit("original-result-with-first-finished-at");
+    MarkPersonalSettlementsDurable(commit);
     const auto start = turnbattle::ResultCommit::Clock::time_point{};
     ASSERT_TRUE(commit.Begin(7, start));
     EXPECT_FALSE(commit.Confirmed());
@@ -159,6 +175,7 @@ TEST(BattleResultCommit, UnknownCannotReleaseTerminalOrChangeOriginalBytes)
 TEST(BattleResultCommit, FailedAdmissionUsesMonotonicBoundedBackoff)
 {
     turnbattle::ResultCommit commit("same-bytes");
+    MarkPersonalSettlementsDurable(commit);
     auto current = turnbattle::ResultCommit::Clock::time_point{};
     const uint32_t delays[]{1,2,4,8,16,30,30};
     uint64_t correlation = 0;
@@ -243,6 +260,7 @@ TEST(BattleResultCommit, FullSourcePreservesAllAssetsAndFixedBytesAfterUnknownAc
     EXPECT_EQ(event.settlements(1).battle_id(), 851u);
     EXPECT_EQ(event.settlements(1).outcome(), ::BATTLE_OUTCOME_DRAW);
     turnbattle::ResultCommit commit(event.SerializeAsString());
+    MarkPersonalSettlementsDurable(commit);
     source.at(1).set_gold_gain(99999);
     event.mutable_settlements(0)->clear_items_gained();
     const auto instant = turnbattle::ResultCommit::Clock::time_point{};
@@ -302,4 +320,107 @@ TEST(BattleResultCommit, OversizedCompleteSourceNeverPublishesATruncatedRecord)
     EXPECT_FALSE(turnbattle::FreezeBattleSettlementSource(event, MakeSettlementSources()));
     EXPECT_EQ(event.SerializeAsString(), before);
     EXPECT_EQ(event.settlement_format_version(), 0u);
+}
+
+// 审计 social-match-battle#2(data-overwrite-rollback-audit-20261018.md §2.4)。修复前,个人结算的 pending
+// 只在 Kafka all ACK 之后才由 FinishBattle 写入。battle 进程在回执处理前停机(AbortAllRooms 先停提交再清房,
+// 框架随后 flush producer)或崩溃时,结果已经到了 broker,评分与帮会历练照常入账,个人结算却永不派发。
+// 修复后,结果第一次发往 broker 的前置条件是全部成员的个人结算已写进 pending:落库没完成之前不能发;
+// 失败的一轮按有界退避重来;过期轮次的迟到回复不能放行。
+TEST(BattleResultCommit, ResultIsNeverSentBeforePersonalSettlementsAreDurable)
+{
+    turnbattle::ResultCommit commit("result-with-personal-settlements");
+    const auto start = turnbattle::ResultCommit::Clock::time_point{};
+    EXPECT_FALSE(commit.PersonalSettlementsDurable());
+    EXPECT_FALSE(commit.CanSend(start));
+    EXPECT_FALSE(commit.Begin(1, start));  // 修复前这里就能发出
+
+    const auto first = commit.BeginStaging(start);
+    ASSERT_NE(first, 0u);
+    EXPECT_EQ(commit.BeginStaging(start), 0u);  // 同一时刻最多一轮在途
+    EXPECT_FALSE(commit.FinishStaging(first, false, start));  // 有成员没写进去
+    EXPECT_FALSE(commit.CanSend(start + std::chrono::hours(1)));
+    EXPECT_EQ(commit.BeginStaging(start + std::chrono::seconds(1) - std::chrono::milliseconds(1)), 0u);
+
+    const auto second = commit.BeginStaging(start + std::chrono::seconds(1));
+    ASSERT_NE(second, 0u);
+    EXPECT_NE(second, first);
+    EXPECT_FALSE(commit.FinishStaging(first, true, start + std::chrono::seconds(1)));  // 过期轮次
+    EXPECT_FALSE(commit.PersonalSettlementsDurable());
+    EXPECT_FALSE(commit.Begin(1, start + std::chrono::seconds(1)));
+
+    EXPECT_TRUE(commit.FinishStaging(second, true, start + std::chrono::seconds(1)));
+    EXPECT_TRUE(commit.PersonalSettlementsDurable());
+    EXPECT_EQ(commit.BeginStaging(start + std::chrono::seconds(2)), 0u);  // 已落库不再重写
+    EXPECT_FALSE(commit.FinishStaging(second, true, start + std::chrono::seconds(2)));
+    EXPECT_TRUE(commit.Begin(1, start + std::chrono::seconds(1)));
+    EXPECT_EQ(commit.Payload(), "result-with-personal-settlements");
+}
+
+// 落库失败的退避与投递同一口径:1、2、4…30 秒封顶,单调不减。
+TEST(BattleResultCommit, FailedStagingUsesMonotonicBoundedBackoff)
+{
+    turnbattle::ResultCommit commit("same-bytes");
+    auto current = turnbattle::ResultCommit::Clock::time_point{};
+    const uint32_t delays[]{1, 2, 4, 8, 16, 30, 30};
+    for (const auto seconds : delays)
+    {
+        const auto attempt = commit.BeginStaging(current);
+        ASSERT_NE(attempt, 0u);
+        EXPECT_FALSE(commit.FinishStaging(attempt, false, current));
+        EXPECT_EQ(commit.BeginStaging(current + std::chrono::seconds(seconds) - std::chrono::milliseconds(1)), 0u);
+        current += std::chrono::seconds(seconds);
+        EXPECT_FALSE(commit.CanSend(current));
+    }
+}
+
+// 落库的字节与回执后派发的字节是同一份:都取自冻结后的结果原件,逐人一条 BattleSettlementEvent。
+TEST(BattleResultCommit, PersonalSettlementPayloadsAreTheFrozenSourceBytes)
+{
+    auto event = MakeSettlementSourceResult();
+    ASSERT_TRUE(turnbattle::FreezeBattleSettlementSource(event, MakeSettlementSources()));
+
+    std::map<uint64_t, std::string> payloads;
+    ASSERT_TRUE(turnbattle::BuildPersonalSettlementPayloads(event, payloads));
+    ASSERT_EQ(payloads.size(), 2u);
+    for (const auto& settlement : event.settlements())
+    {
+        const auto it = payloads.find(settlement.player_id());
+        ASSERT_NE(it, payloads.end());
+        ::BattleSettlementEvent parsed;
+        ASSERT_TRUE(parsed.ParseFromString(it->second));
+        EXPECT_EQ(parsed.settlement().SerializeAsString(), settlement.SerializeAsString());
+        EXPECT_EQ(parsed.settlement().battle_id(), 851u);
+        EXPECT_EQ(parsed.settlement().outcome(), ::BATTLE_OUTCOME_DRAW);
+    }
+    // 同一份原件反复计算,字节不变(重试落库与回执后派发不会出现两个版本)。
+    std::map<uint64_t, std::string> again;
+    ASSERT_TRUE(turnbattle::BuildPersonalSettlementPayloads(event, again));
+    EXPECT_EQ(again, payloads);
+}
+
+// 原件不是 v1 完整来源、成员重复、battle_id 或 outcome 与原件不符时拒绝,且不改出参。
+TEST(BattleResultCommit, PersonalSettlementPayloadsRejectIncompleteSource)
+{
+    const std::map<uint64_t, std::string> sentinel{{1, "keep"}};
+    auto out = sentinel;
+    EXPECT_FALSE(turnbattle::BuildPersonalSettlementPayloads(MakeSettlementSourceResult(), out));
+    EXPECT_EQ(out, sentinel);
+
+    auto frozen = MakeSettlementSourceResult();
+    ASSERT_TRUE(turnbattle::FreezeBattleSettlementSource(frozen, MakeSettlementSources()));
+
+    auto duplicate = frozen;
+    *duplicate.add_settlements() = frozen.settlements(0);
+    EXPECT_FALSE(turnbattle::BuildPersonalSettlementPayloads(duplicate, out));
+    auto wrongBattle = frozen;
+    wrongBattle.mutable_settlements(1)->set_battle_id(852);
+    EXPECT_FALSE(turnbattle::BuildPersonalSettlementPayloads(wrongBattle, out));
+    auto wrongOutcome = frozen;
+    wrongOutcome.mutable_settlements(0)->set_outcome(::BATTLE_OUTCOME_SIDE_A_WIN);
+    EXPECT_FALSE(turnbattle::BuildPersonalSettlementPayloads(wrongOutcome, out));
+    auto missingPlayer = frozen;
+    missingPlayer.mutable_settlements(1)->set_player_id(0);
+    EXPECT_FALSE(turnbattle::BuildPersonalSettlementPayloads(missingPlayer, out));
+    EXPECT_EQ(out, sentinel);
 }

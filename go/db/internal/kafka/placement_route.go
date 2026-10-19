@@ -425,7 +425,10 @@ func retryBudgetExempt(dbTask *db_proto.DBTask, cause error) bool {
 		return true
 	case errors.Is(cause, errPlacementStoreUnavailable),
 		errors.Is(cause, errRouteNotReady),
+		errors.Is(cause, errSchemaTooNew),
 		storeerr.KindOf(cause) != storeerr.KindNone:
+		// errSchemaTooNew(C1,persist_schema.go):写方世代高于本实例,等新版实例来处理;耗预算会把完好的存盘推进死信。
+		// 读的世代超前(C2)在 handleTask 里直接回失败回执,不会走到这里。
 		return dbTask.Op == "write"
 	}
 	return false

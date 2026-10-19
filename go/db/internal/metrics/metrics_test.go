@@ -384,7 +384,7 @@ func TestFenceSeriesPrecreated(t *testing.T) {
 
 	var writes []string
 	for _, class := range []string{"seq", "legacy_epoch", "legacy_zero"} {
-		for _, outcome := range []string{"updated", "inserted", "unchanged", "equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "race", "error"} {
+		for _, outcome := range []string{"updated", "inserted", "unchanged", "equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "race", "error", "schema_regression"} {
 			writes = append(writes, class+"|"+outcome)
 		}
 	}
@@ -397,7 +397,7 @@ func TestFenceSeriesPrecreated(t *testing.T) {
 	}, true)
 	assertExactSeries(t, "db_fence_body_mismatch_total", nil, []string{""}, true)
 	assertExactSeries(t, "db_fence_rejected_bytes_total", []string{"outcome"}, []string{
-		"equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "epoch_override",
+		"equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "epoch_override", "schema_regression",
 	}, true)
 	assertExactSeries(t, "db_owner_epoch_guard_total", []string{"outcome"}, []string{
 		"match", "legacy_zero", "first", "advance", "stale", "read_error", "regressed",
@@ -411,7 +411,9 @@ func TestFenceSeriesPrecreated(t *testing.T) {
 		entries []string
 	}{
 		{"db_task_deferred_total", []string{"op", "reason"}, []string{"read|fence_race", "write|fence_race", "read|fence_evidence_conflict", "write|fence_evidence_conflict"}},
-		{"db_task_dead_letter_total", []string{"reason"}, []string{"fence_stale_owner", "fence_legacy_after_seq", "owner_epoch_regressed"}},
+		{"db_task_dead_letter_total", []string{"reason"}, []string{"fence_stale_owner", "fence_legacy_after_seq", "owner_epoch_regressed", "persist_unstamped", "schema_regression"}},
+		{"db_task_deferred_total", []string{"op", "reason"}, []string{"read|schema_too_new", "write|schema_too_new"}},
+		{"db_task_read_abandoned_total", []string{"reason"}, []string{"schema_too_new"}},
 	} {
 		got, found := seriesValues(t, family.name, family.labels...)
 		if !found {

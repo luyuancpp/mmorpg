@@ -52,7 +52,6 @@
     <ClInclude Include="log\constants\log_color_constants.h" />
     <ClInclude Include="log\macros\game_log.h" />
     <ClInclude Include="log\system\console_log.h" />
-    <ClInclude Include="node\constants\node_constants.h" />
     <ClInclude Include="node\system\etcd\etcd_helper.h" />
     <ClInclude Include="node\system\etcd\etcd_manager.h" />
     <ClInclude Include="node\system\etcd\etcd_service.h" />
@@ -76,7 +75,6 @@
     <ClInclude Include="time\system\time_meter.h" />
     <ClInclude Include="network\codec\codec.h" />
     <ClInclude Include="network\codec\dispatcher.h" />
-    <ClInclude Include="network\codec\dispatcher_lite.h" />
     <ClInclude Include="network\rpc_channel.h" />
     <ClInclude Include="network\rpc_channel_stats.h" />
     <ClInclude Include="network\rpc_controller.h" />

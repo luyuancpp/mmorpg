@@ -508,6 +508,14 @@ var file_proto_db_proto_option_proto_extTypes = []protoimpl.ExtensionInfo{
 		Filename:      "proto/db/proto_option.proto",
 	},
 	{
+		ExtendedType:  (*descriptorpb.MessageOptions)(nil),
+		ExtensionType: (*bool)(nil),
+		Field:         500040,
+		Name:          "OptionPersistFrozen",
+		Tag:           "varint,500040,opt,name=OptionPersistFrozen",
+		Filename:      "proto/db/proto_option.proto",
+	},
+	{
 		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
 		ExtensionType: (*uint32)(nil),
 		Field:         600000,
@@ -587,6 +595,14 @@ var file_proto_db_proto_option_proto_extTypes = []protoimpl.ExtensionInfo{
 		Tag:           "bytes,600009,opt,name=OptionBackUpTabel",
 		Filename:      "proto/db/proto_option.proto",
 	},
+	{
+		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
+		ExtensionType: (*bool)(nil),
+		Field:         600040,
+		Name:          "OptionPersistUncarried",
+		Tag:           "varint,600040,opt,name=OptionPersistUncarried",
+		Filename:      "proto/db/proto_option.proto",
+	},
 }
 
 // Extension fields to descriptorpb.FileOptions.
@@ -658,30 +674,44 @@ var (
 	E_OptionTiDBPreSplitRegions = &file_proto_db_proto_option_proto_extTypes[20] // /*T! PRE_SPLIT_REGIONS=N */ 建表预切 region,须 ≤ SHARD_ROW_ID_BITS
 	// optional bool OptionTiDBAutoIDCacheOne = 500024;
 	E_OptionTiDBAutoIDCacheOne = &file_proto_db_proto_option_proto_extTypes[21] // /*T![auto_id_cache] AUTO_ID_CACHE=1 */ 自增集中分配(近似连续)
+	// —— 玩家持久字段的混版本保护(docs/design/mixed-version-persist-field-protection.md §3.2)——
+	// 冻结类型:由手写代码重建、不携带未知字段的持久消息。proto 生成器拒绝给它新增字段(R1);
+	// C++ 往返一致性测试不在它的节点上注入未知字段,但继续向下遍历(其中会被整份携带的子消息照常检查)。
+	// 生成器从描述符原始字节按字段号读取本选项,不依赖外部 protooption 模块的编译绑定。
+	// 编号避开 proto2mysql pbopt 已用的 500000-500024 与 600100-600101。
+	//
+	// optional bool OptionPersistFrozen = 500040;
+	E_OptionPersistFrozen = &file_proto_db_proto_option_proto_extTypes[22]
 )
 
 // Extension fields to descriptorpb.FieldOptions.
 var (
 	// optional uint32 OptionRepeatLimit = 600000;
-	E_OptionRepeatLimit = &file_proto_db_proto_option_proto_extTypes[22] // Repeated field max count
+	E_OptionRepeatLimit = &file_proto_db_proto_option_proto_extTypes[23] // Repeated field max count
 	// optional string OptionDBFieldExtra = 600001;
-	E_OptionDBFieldExtra = &file_proto_db_proto_option_proto_extTypes[23] // Extra DB field info; absence means non-DB field
+	E_OptionDBFieldExtra = &file_proto_db_proto_option_proto_extTypes[24] // Extra DB field info; absence means non-DB field
 	// optional bool OptionDBReadOnly = 600002;
-	E_OptionDBReadOnly = &file_proto_db_proto_option_proto_extTypes[24] // Whether field is read-only in DB
+	E_OptionDBReadOnly = &file_proto_db_proto_option_proto_extTypes[25] // Whether field is read-only in DB
 	// optional string OptionDBNamePrefix = 600003;
-	E_OptionDBNamePrefix = &file_proto_db_proto_option_proto_extTypes[25] // DB name prefix
+	E_OptionDBNamePrefix = &file_proto_db_proto_option_proto_extTypes[26] // DB name prefix
 	// optional string OptionDBLoadSql = 600004;
-	E_OptionDBLoadSql = &file_proto_db_proto_option_proto_extTypes[26] // Data load SQL statement
+	E_OptionDBLoadSql = &file_proto_db_proto_option_proto_extTypes[27] // Data load SQL statement
 	// optional bool OptionDBNeedEscape = 600005;
-	E_OptionDBNeedEscape = &file_proto_db_proto_option_proto_extTypes[27] // Whether field needs escape for storage
+	E_OptionDBNeedEscape = &file_proto_db_proto_option_proto_extTypes[28] // Whether field needs escape for storage
 	// optional bool OptionDBProcParam = 600006;
-	E_OptionDBProcParam = &file_proto_db_proto_option_proto_extTypes[28] // Whether this is a stored procedure parameter
+	E_OptionDBProcParam = &file_proto_db_proto_option_proto_extTypes[29] // Whether this is a stored procedure parameter
 	// optional string OptionOldName = 600007;
-	E_OptionOldName = &file_proto_db_proto_option_proto_extTypes[29] // Used for auto-renaming fields
+	E_OptionOldName = &file_proto_db_proto_option_proto_extTypes[30] // Used for auto-renaming fields
 	// optional string OptionTable = 600008;
-	E_OptionTable = &file_proto_db_proto_option_proto_extTypes[30] // Table name for DDL
+	E_OptionTable = &file_proto_db_proto_option_proto_extTypes[31] // Table name for DDL
 	// optional string OptionBackUpTabel = 600009;
-	E_OptionBackUpTabel = &file_proto_db_proto_option_proto_extTypes[31] // Backup table
+	E_OptionBackUpTabel = &file_proto_db_proto_option_proto_extTypes[32] // Backup table
+	// 存盘时不原样携带的持久字段:由别的载体重算的投影,或 scene 每次存盘重新生成 / 清空的字段
+	// (docs/design/mixed-version-persist-field-protection.md §3.2)。C++ 往返一致性测试不经由它注入;
+	// 只经这类字段可达的消息类型不进入往返测试,也不受冻结规则约束。编号说明同 OptionPersistFrozen。
+	//
+	// optional bool OptionPersistUncarried = 600040;
+	E_OptionPersistUncarried = &file_proto_db_proto_option_proto_extTypes[33]
 )
 
 var File_proto_db_proto_option_proto protoreflect.FileDescriptor
@@ -767,7 +797,8 @@ const file_proto_db_proto_option_proto_rawDesc = "" +
 	"\x18OptionTiDBNonclusteredPK\x12\x1f.google.protobuf.MessageOptions\x18\xb5\xc2\x1e \x01(\bR\x18OptionTiDBNonclusteredPK\x88\x01\x01:`\n" +
 	"\x18OptionTiDBShardRowIDBits\x12\x1f.google.protobuf.MessageOptions\x18\xb6\xc2\x1e \x01(\rR\x18OptionTiDBShardRowIDBits\x88\x01\x01:b\n" +
 	"\x19OptionTiDBPreSplitRegions\x12\x1f.google.protobuf.MessageOptions\x18\xb7\xc2\x1e \x01(\rR\x19OptionTiDBPreSplitRegions\x88\x01\x01:`\n" +
-	"\x18OptionTiDBAutoIDCacheOne\x12\x1f.google.protobuf.MessageOptions\x18\xb8\xc2\x1e \x01(\bR\x18OptionTiDBAutoIDCacheOne\x88\x01\x01:P\n" +
+	"\x18OptionTiDBAutoIDCacheOne\x12\x1f.google.protobuf.MessageOptions\x18\xb8\xc2\x1e \x01(\bR\x18OptionTiDBAutoIDCacheOne\x88\x01\x01:V\n" +
+	"\x13OptionPersistFrozen\x12\x1f.google.protobuf.MessageOptions\x18\xc8\xc2\x1e \x01(\bR\x13OptionPersistFrozen\x88\x01\x01:P\n" +
 	"\x11OptionRepeatLimit\x12\x1d.google.protobuf.FieldOptions\x18\xc0\xcf$ \x01(\rR\x11OptionRepeatLimit\x88\x01\x01:R\n" +
 	"\x12OptionDBFieldExtra\x12\x1d.google.protobuf.FieldOptions\x18\xc1\xcf$ \x01(\tR\x12OptionDBFieldExtra\x88\x01\x01:N\n" +
 	"\x10OptionDBReadOnly\x12\x1d.google.protobuf.FieldOptions\x18\xc2\xcf$ \x01(\bR\x10OptionDBReadOnly\x88\x01\x01:R\n" +
@@ -777,7 +808,8 @@ const file_proto_db_proto_option_proto_rawDesc = "" +
 	"\x11OptionDBProcParam\x12\x1d.google.protobuf.FieldOptions\x18\xc6\xcf$ \x01(\bR\x11OptionDBProcParam\x88\x01\x01:H\n" +
 	"\rOptionOldName\x12\x1d.google.protobuf.FieldOptions\x18\xc7\xcf$ \x01(\tR\rOptionOldName\x88\x01\x01:D\n" +
 	"\vOptionTable\x12\x1d.google.protobuf.FieldOptions\x18\xc8\xcf$ \x01(\tR\vOptionTable\x88\x01\x01:P\n" +
-	"\x11OptionBackUpTabel\x12\x1d.google.protobuf.FieldOptions\x18\xc9\xcf$ \x01(\tR\x11OptionBackUpTabel\x88\x01\x01B\fH\x01Z\bproto/dbb\x06proto3"
+	"\x11OptionBackUpTabel\x12\x1d.google.protobuf.FieldOptions\x18\xc9\xcf$ \x01(\tR\x11OptionBackUpTabel\x88\x01\x01:Z\n" +
+	"\x16OptionPersistUncarried\x12\x1d.google.protobuf.FieldOptions\x18\xe8\xcf$ \x01(\bR\x16OptionPersistUncarried\x88\x01\x01B\fH\x01Z\bproto/dbb\x06proto3"
 
 var (
 	file_proto_db_proto_option_proto_rawDescOnce sync.Once
@@ -826,23 +858,25 @@ var file_proto_db_proto_option_proto_depIdxs = []int32{
 	7,  // 19: OptionTiDBShardRowIDBits:extendee -> google.protobuf.MessageOptions
 	7,  // 20: OptionTiDBPreSplitRegions:extendee -> google.protobuf.MessageOptions
 	7,  // 21: OptionTiDBAutoIDCacheOne:extendee -> google.protobuf.MessageOptions
-	8,  // 22: OptionRepeatLimit:extendee -> google.protobuf.FieldOptions
-	8,  // 23: OptionDBFieldExtra:extendee -> google.protobuf.FieldOptions
-	8,  // 24: OptionDBReadOnly:extendee -> google.protobuf.FieldOptions
-	8,  // 25: OptionDBNamePrefix:extendee -> google.protobuf.FieldOptions
-	8,  // 26: OptionDBLoadSql:extendee -> google.protobuf.FieldOptions
-	8,  // 27: OptionDBNeedEscape:extendee -> google.protobuf.FieldOptions
-	8,  // 28: OptionDBProcParam:extendee -> google.protobuf.FieldOptions
-	8,  // 29: OptionOldName:extendee -> google.protobuf.FieldOptions
-	8,  // 30: OptionTable:extendee -> google.protobuf.FieldOptions
-	8,  // 31: OptionBackUpTabel:extendee -> google.protobuf.FieldOptions
-	0,  // 32: OptionFileDefaultNode:type_name -> NodeType
-	3,  // 33: OptionMessagePriority:type_name -> MessagePriority
-	1,  // 34: OptionOperateType:type_name -> OPERATE_TYPE
-	35, // [35:35] is the sub-list for method output_type
-	35, // [35:35] is the sub-list for method input_type
-	32, // [32:35] is the sub-list for extension type_name
-	0,  // [0:32] is the sub-list for extension extendee
+	7,  // 22: OptionPersistFrozen:extendee -> google.protobuf.MessageOptions
+	8,  // 23: OptionRepeatLimit:extendee -> google.protobuf.FieldOptions
+	8,  // 24: OptionDBFieldExtra:extendee -> google.protobuf.FieldOptions
+	8,  // 25: OptionDBReadOnly:extendee -> google.protobuf.FieldOptions
+	8,  // 26: OptionDBNamePrefix:extendee -> google.protobuf.FieldOptions
+	8,  // 27: OptionDBLoadSql:extendee -> google.protobuf.FieldOptions
+	8,  // 28: OptionDBNeedEscape:extendee -> google.protobuf.FieldOptions
+	8,  // 29: OptionDBProcParam:extendee -> google.protobuf.FieldOptions
+	8,  // 30: OptionOldName:extendee -> google.protobuf.FieldOptions
+	8,  // 31: OptionTable:extendee -> google.protobuf.FieldOptions
+	8,  // 32: OptionBackUpTabel:extendee -> google.protobuf.FieldOptions
+	8,  // 33: OptionPersistUncarried:extendee -> google.protobuf.FieldOptions
+	0,  // 34: OptionFileDefaultNode:type_name -> NodeType
+	3,  // 35: OptionMessagePriority:type_name -> MessagePriority
+	1,  // 36: OptionOperateType:type_name -> OPERATE_TYPE
+	37, // [37:37] is the sub-list for method output_type
+	37, // [37:37] is the sub-list for method input_type
+	34, // [34:37] is the sub-list for extension type_name
+	0,  // [0:34] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
 }
 
@@ -858,7 +892,7 @@ func file_proto_db_proto_option_proto_init() {
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_db_proto_option_proto_rawDesc), len(file_proto_db_proto_option_proto_rawDesc)),
 			NumEnums:      4,
 			NumMessages:   0,
-			NumExtensions: 32,
+			NumExtensions: 34,
 			NumServices:   0,
 		},
 		GoTypes:           file_proto_db_proto_option_proto_goTypes,

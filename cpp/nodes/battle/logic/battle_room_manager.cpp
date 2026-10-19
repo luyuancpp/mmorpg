@@ -1350,6 +1350,20 @@ void BattleRoomManager::BeginResultCommit(BattleRoom& room, const ::eBattleOutco
         room.resultCommit.emplace(std::string{});
         return;
     }
+    // 个人结算字节在发结果之前就要落 pending(StagePersonalSettlements),成员必须与房间一一对应;
+    // 对不上与序列化失败同等处置:结果不发、房间保留,终局保持未知。
+    bool membersMatch = turnbattle::BuildPersonalSettlementPayloads(room.pendingResult, room.personalSettlementPayloads) &&
+                        room.personalSettlementPayloads.size() == room.routingByPlayer.size();
+    for (const auto& [playerId, routing] : room.routingByPlayer)
+        membersMatch = membersMatch && room.personalSettlementPayloads.contains(playerId);
+    if (!membersMatch)
+    {
+        LOG_ERROR << "metric=battle_personal_settlement_source_mismatch battle_id=" << room.battleId
+                  << ";terminal remains unknown";
+        room.personalSettlementPayloads.clear();
+        room.resultCommit.emplace(std::string{});
+        return;
+    }
     room.resultCommit.emplace(std::move(payload));
     resultRooms_.insert(room.battleId);
     if (!resultListenerInstalled_)
@@ -1401,6 +1415,12 @@ void BattleRoomManager::PumpResultCommits()
         auto* room = FindRoom(battleId);
         if (!room || !room->resultCommit) { resultRooms_.erase(battleId); continue; }
         const auto instant = turnbattle::ResultCommit::Clock::now();
+        // 个人结算没落完 pending 之前不发结果(ResultCommit 的发送前置条件,CanSend 同样把关)。
+        if (!room->resultCommit->PersonalSettlementsDurable())
+        {
+            StagePersonalSettlements(*room, instant);
+            continue;
+        }
         if (!room->resultCommit->CanSend(instant)) continue;
         if (nextResultCorrelation_ == std::numeric_limits<uint64_t>::max())
         { LOG_ERROR << "metric=battle_result_commit_correlation_exhausted"; continue; }
@@ -1427,6 +1447,73 @@ void BattleRoomManager::StopResultCommits()
     resultAttempts_.clear(); resultReports_.clear(); resultRooms_.clear();
 }
 
+void BattleRoomManager::StagePersonalSettlements(BattleRoom &room, const turnbattle::ResultCommit::Clock::time_point now)
+{
+    if (!RedisReady()) return;
+    const uint64_t attempt = room.resultCommit->BeginStaging(now);
+    if (attempt == 0) return;
+    // 本节点开始往积压索引里写了,报数定时器随之常驻(与 DispatchSettlementDurably 同口径)。
+    EnsureSettlementBacklogReporter();
+
+    // 本轮回复计数。回调只捕获值与 weak_ptr<自己>(AGENTS.md §11.7);房间按 battle_id 重查。
+    struct StagingRound
+    {
+        std::size_t remaining = 0;
+        bool allStored = true;
+    };
+    const auto round = std::make_shared<StagingRound>();
+    round->remaining = room.personalSettlementPayloads.size();
+    const uint64_t battleId = room.battleId;
+    const uint64_t enqueuedAtMs = TimeSystem::NowMillisecondsUTC();
+    const auto onReply = [weakSelf = WeakSelf(), round, battleId, attempt](const bool stored)
+    {
+        round->allStored = round->allStored && stored;
+        if (--round->remaining != 0) return;
+        if (const auto self = weakSelf.lock()) self->OnPersonalSettlementsStaged(battleId, attempt, round->allStored);
+    };
+    for (const auto &[member, payload] : room.personalSettlementPayloads)
+    {
+        const uint64_t playerId = member;  // 结构化绑定不进 lambda 捕获,先拷一份
+        // 与本地模式同一条脚本:两键 SET(不过期)+ 进积压索引(kSetPendingSettlementScript 的说明)。
+        const int rc = tlsRedis.GetZoneRedis()->command(
+            [onReply, battleId, playerId](hiredis::Hiredis *, redisReply *reply)
+            {
+                const bool stored = reply != nullptr && reply->type != REDIS_REPLY_ERROR;
+                if (!stored)
+                {
+                    LOG_ERROR << "metric=battle_personal_settlement_stage_failed battle_id=" << battleId
+                              << " player_id=" << playerId << ",pending write failed;result publish waits for retry";
+                }
+                onReply(stored);
+            },
+            (std::string("EVAL %s 3 ") + battle_settlement::kPendingSettlementKeyFmt + " " +
+             battle_settlement::kPendingSettlementIdKeyFmt + " " + battle_settlement::kPendingSettlementIndexKey +
+             " %b %llu %llu %llu")
+                .c_str(),
+            battle_settlement::kSetPendingSettlementScript, playerId, playerId,
+            payload.data(), payload.size(), battleId, enqueuedAtMs, playerId);
+        if (rc != REDIS_OK)
+        {
+            // 命令没发出去时回调永远不会被调:就地计一次失败,本轮仍按到齐收口。
+            LOG_ERROR << "metric=battle_personal_settlement_stage_failed battle_id=" << battleId
+                      << " player_id=" << playerId << " rc=" << rc << ",pending write not sent;result publish waits for retry";
+            onReply(false);
+        }
+    }
+}
+
+void BattleRoomManager::OnPersonalSettlementsStaged(const uint64_t battleId, const uint64_t attempt, const bool allStored)
+{
+    auto *room = FindRoom(battleId);
+    if (room == nullptr || !room->resultCommit) return;
+    if (room->resultCommit->FinishStaging(attempt, allStored, turnbattle::ResultCommit::Clock::now()))
+    {
+        // 发送交给下一次 pump(50ms 定时器仍在转:房间还在 resultRooms_ 里)。
+        LOG_INFO << "battle personal settlements durable before result publish: battle_id=" << battleId
+                 << " players=" << room->personalSettlementPayloads.size();
+    }
+}
+
 bool BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome outcome,
                                      const ::eSpectateEndReason spectateReason,
                                      const contracts::kafka::BattleResultEvent* committedResult)
@@ -1447,7 +1534,7 @@ bool BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome ou
             return false;
         }
         for (const auto& [playerId, routing] : room.routingByPlayer)
-            if (!settlements.contains(playerId))
+            if (!settlements.contains(playerId) || !room.personalSettlementPayloads.contains(playerId))
             {
                 LOG_ERROR << "metric=battle_settlement_source_member_mismatch;no terminal dispatched";
                 return false;
@@ -1473,8 +1560,12 @@ bool BattleRoomManager::FinishBattle(BattleRoom &room, const ::eBattleOutcome ou
         PushBattleFrame(room, playerId, BattleClientPlayerNotifyBattleEndMessageId, end);
 
         // R07:先落库、后投递、未销账则重投(重投时重新解析目标)。
-        // 投递被推迟到 Redis 落库回调里;真正要保的是"结算在被投递之前已经持久化"。
-        DispatchSettlementDurably(routing, playerId, settlement);
+        // 确认模式的 pending 在结果发出之前已落库(StagePersonalSettlements),这里只投命令、不再改写;
+        // 本地模式投递被推迟到 Redis 落库回调里。真正要保的是"结算在被投递之前已经持久化"。
+        if (committedResult)
+            DispatchStagedSettlement(routing, playerId, room.battleId, room.personalSettlementPayloads.at(playerId));
+        else
+            DispatchSettlementDurably(routing, playerId, settlement);
     }
 
     NotifySpectateEndAndClose(room, spectateReason, outcome);
@@ -1634,6 +1725,8 @@ void BattleRoomManager::AbortAllRooms(const std::string &reason)
         room->battleTimer.Cancel();
         room->confirmResendTimer.Cancel();
         // 不结算:战斗作废,scene reaper 按 InBattleComp.deadline_ms 解冻(§3.2)。
+        // 等结果回执的房间例外:个人结算在结果发出之前已写进 pending,这里不动它。框架随后 flush producer,
+        // 结果可能到达 broker;无论到没到,scene 都会在登录钩子 / 冻结到期补读时应用(审计 social-match-battle#2)。
         // 停机作废无胜负:观众收 ABORTED + ONGOING
         if (!room->resultCommit)
             NotifySpectateEndAndClose(*room, ::SPECTATE_END_BATTLE_ABORTED, ::BATTLE_OUTCOME_ONGOING);
@@ -2002,6 +2095,14 @@ void BattleRoomManager::DispatchSettlementDurably(const ::BattleRouting &routing
             .c_str(),
         battle_settlement::kSetPendingSettlementScript, playerId, playerId,
         payload.data(), payload.size(), battleId, enqueuedAtMs, playerId);
+}
+
+void BattleRoomManager::DispatchStagedSettlement(const ::BattleRouting &routing, const uint64_t playerId,
+                                                 const uint64_t battleId, const std::string &payload)
+{
+    // 记录先于命令存在已由发结果之前的落库保证;outbox 照常按伴生 id 键探测销账、重解析目标重投。
+    SendSettlementCommand(routing.scene_node_id(), routing.scene_instance_id(), playerId, battleId, payload);
+    EnqueuePendingSettlement(battleId, playerId, payload, routing.scene_node_id());
 }
 
 void BattleRoomManager::EnsureSettlementBacklogReporter()

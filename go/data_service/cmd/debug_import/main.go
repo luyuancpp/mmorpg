@@ -17,6 +17,8 @@ import (
 
 	"data_service/cmd/debugutil"
 	"data_service/internal/config"
+
+	goredis "github.com/redis/go-redis/v9"
 )
 
 // ── Export file structures ──────────────────────────────────────
@@ -197,18 +199,8 @@ func importPlayerRedis(ctx context.Context, configPath string, data *exportFile,
 		return fmt.Errorf("get Redis client for zone %d: %w", data.HomeZoneID, err)
 	}
 
-	// Write fields
-	for _, name := range fieldNames {
-		key := fmt.Sprintf("player:{%d}:%s", data.PlayerID, name)
-		if err := client.Set(ctx, key, fields[name], 0).Err(); err != nil {
-			return fmt.Errorf("set field %q: %w", name, err)
-		}
-	}
-
-	// Reset version to 1
-	versionKey := fmt.Sprintf("player:{%d}:__version", data.PlayerID)
-	if err := client.Set(ctx, versionKey, "1", 0).Err(); err != nil {
-		return fmt.Errorf("set version: %w", err)
+	if err := writeLegacyPlayerFields(ctx, client, data.PlayerID, fieldNames, fields); err != nil {
+		return err
 	}
 
 	// Register player -> zone mapping.
@@ -250,6 +242,28 @@ func checkLegacyRedisTargets(c config.Config, homeZone uint32, allowHosts string
 		}
 	}
 	return checkDataServiceTargets(c, allowHosts)
+}
+
+// writeLegacyPlayerFields 把导出字段写回 data_service 的 player:{id}:<field> 键族,并把版本重置为 "1"。
+//
+// 同一个 MULTI 里先删字段索引 player:{id}:__fields(go/data_service/internal/logic/data_logic.go 的 fieldIndexKey):
+// 本工具不走 saveFieldsScript、不维护索引,还把版本重置成 "1";索引若留着且戳恰好是 "1",data_service 会把它当成
+// 完整索引,导入的字段从全量读与删除里消失,之后的存盘还会把这个不完整的索引固化。删掉之后该玩家在 data_service 里是
+// 「有版本、无索引」,全量读 / 删除退回 SCAN,saveFieldsScript 在这种状态下也不会再建索引。
+// 所有键共享 {id} hash-tag,同一 slot,Cluster 下同样可以一个 MULTI 完成。
+func writeLegacyPlayerFields(ctx context.Context, client goredis.Cmdable, playerID uint64, fieldNames []string, fields map[string][]byte) error {
+	_, err := client.TxPipelined(ctx, func(pipe goredis.Pipeliner) error {
+		pipe.Del(ctx, fmt.Sprintf("player:{%d}:__fields", playerID))
+		for _, name := range fieldNames {
+			pipe.Set(ctx, fmt.Sprintf("player:{%d}:%s", playerID, name), fields[name], 0)
+		}
+		pipe.Set(ctx, fmt.Sprintf("player:{%d}:__version", playerID), "1", 0)
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("write player fields: %w", err)
+	}
+	return nil
 }
 
 // ── Player DB (MySQL) import ────────────────────────────────────

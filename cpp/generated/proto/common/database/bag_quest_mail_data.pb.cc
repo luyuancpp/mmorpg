@@ -446,7 +446,7 @@ constexpr ItemEntry::ParseTableT_ ItemEntry::InternalGenerateParseTable_(const :
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ItemEntry, _impl_.acquire_seq_), 7>(),
        {104, 7, 0,
         PROTOBUF_FIELD_OFFSET(ItemEntry, _impl_.acquire_seq_)}},
-      // .EquipInstanceData equip = 14;
+      // .EquipInstanceData equip = 14 [(.OptionPersistUncarried) = true];
       {::_pbi::TcParser::FastMtS1,
        {114, 0, 0,
         PROTOBUF_FIELD_OFFSET(ItemEntry, _impl_.equip_)}},
@@ -469,7 +469,7 @@ constexpr ItemEntry::ParseTableT_ ItemEntry::InternalGenerateParseTable_(const :
       {PROTOBUF_FIELD_OFFSET(ItemEntry, _impl_.bag_type_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
       // uint64 acquire_seq = 13;
       {PROTOBUF_FIELD_OFFSET(ItemEntry, _impl_.acquire_seq_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // .EquipInstanceData equip = 14;
+      // .EquipInstanceData equip = 14 [(.OptionPersistUncarried) = true];
       {PROTOBUF_FIELD_OFFSET(ItemEntry, _impl_.equip_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // .ItemComp instance = 15;
       {PROTOBUF_FIELD_OFFSET(ItemEntry, _impl_.instance_), _Internal::kHasBitsOffset + 1, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
@@ -627,7 +627,7 @@ constexpr QuestAllData::ParseTableT_ QuestAllData::InternalGenerateParseTable_(c
       {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(QuestAllData, _impl_.scoped_state_present_), 3>(),
        {32, 3, 0,
         PROTOBUF_FIELD_OFFSET(QuestAllData, _impl_.scoped_state_present_)}},
-      // repeated .QuestEntry active = 1;
+      // repeated .QuestEntry active = 1 [(.OptionPersistUncarried) = true];
       {::_pbi::TcParser::FastMtR1,
        {10, 0, 0,
         PROTOBUF_FIELD_OFFSET(QuestAllData, _impl_.active_)}},
@@ -642,7 +642,7 @@ constexpr QuestAllData::ParseTableT_ QuestAllData::InternalGenerateParseTable_(c
     }}, {{
       65535, 65535
     }}, {{
-      // repeated .QuestEntry active = 1;
+      // repeated .QuestEntry active = 1 [(.OptionPersistUncarried) = true];
       {PROTOBUF_FIELD_OFFSET(QuestAllData, _impl_.active_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
       // repeated uint32 completed = 2;
       {PROTOBUF_FIELD_OFFSET(QuestAllData, _impl_.completed_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedUInt32)},
@@ -1650,51 +1650,54 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
 const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n/proto/common/database/bag_quest_mail_d"
-    "ata.proto\032+proto/common/component/item_b"
-    "ase_comp.proto\032)proto/common/component/m"
-    "ission_comp.proto\"\271\001\n\tItemEntry\022\021\n\titem_"
-    "uuid\030\001 \001(\004\022\021\n\tconfig_id\030\002 \001(\r\022\022\n\nstack_s"
-    "ize\030\003 \001(\r\022\013\n\003pos\030\004 \001(\r\022\020\n\010bag_type\030\005 \001(\r"
-    "\022\023\n\013acquire_seq\030\r \001(\004\022!\n\005equip\030\016 \001(\0132\022.E"
-    "quipInstanceData\022\033\n\010instance\030\017 \001(\0132\t.Ite"
-    "mComp\"\320\001\n\nBagAllData\022\031\n\005items\030\001 \003(\0132\n.It"
-    "emEntry\022\022\n\ncapacities\030\002 \003(\r\0220\n\014dynamic_b"
-    "ags\030\003 \003(\0132\032.BagAllData.DynamicBagData\032a\n"
-    "\016DynamicBagData\022\016\n\006bag_id\030\001 \001(\004\022\020\n\010capac"
-    "ity\030\002 \001(\r\022\031\n\005items\030\003 \003(\0132\n.ItemEntry\022\022\n\n"
-    "profile_id\030\004 \001(\r\"X\n\nQuestEntry\022\021\n\tconfig"
-    "_id\030\001 \001(\r\022\020\n\010progress\030\002 \001(\r\022\r\n\005state\030\003 \001"
-    "(\r\022\026\n\016accepted_at_ms\030\004 \001(\004\"\205\001\n\016QuestScop"
-    "eData\022\r\n\005scope\030\001 \001(\r\022&\n\014mission_list\030\002 \001"
-    "(\0132\020.MissionListComp\022\035\n\025completed_missio"
-    "n_ids\030\003 \003(\r\022\035\n\025claimable_mission_ids\030\004 \003"
-    "(\r\"}\n\014QuestAllData\022\033\n\006active\030\001 \003(\0132\013.Que"
-    "stEntry\022\021\n\tcompleted\030\002 \003(\r\022\037\n\006scopes\030\003 \003"
-    "(\0132\017.QuestScopeData\022\034\n\024scoped_state_pres"
-    "ent\030\004 \001(\010\"\336\001\n\tMailEntry\022\017\n\007mail_id\030\001 \001(\004"
-    "\022\021\n\tsender_id\030\002 \001(\004\022\017\n\007subject\030\003 \001(\t\022\014\n\004"
-    "body\030\004 \001(\t\022\022\n\nsent_at_ms\030\005 \001(\004\022\"\n\016attach"
-    "ed_items\030\006 \003(\0132\n.ItemEntry\022\037\n\027attached_c"
-    "urrency_types\030\007 \003(\r\022!\n\031attached_currency"
-    "_amounts\030\010 \003(\004\022\022\n\nread_state\030\t \001(\r\"(\n\013Ma"
-    "ilAllData\022\031\n\005mails\030\001 \003(\0132\n.MailEntryB\021Z\017"
-    "common/databaseb\006proto3"
+    "ata.proto\032\033proto/db/proto_option.proto\032+"
+    "proto/common/component/item_base_comp.pr"
+    "oto\032)proto/common/component/mission_comp"
+    ".proto\"\307\001\n\tItemEntry\022\021\n\titem_uuid\030\001 \001(\004\022"
+    "\021\n\tconfig_id\030\002 \001(\r\022\022\n\nstack_size\030\003 \001(\r\022\013"
+    "\n\003pos\030\004 \001(\r\022\020\n\010bag_type\030\005 \001(\r\022\023\n\013acquire"
+    "_seq\030\r \001(\004\022(\n\005equip\030\016 \001(\0132\022.EquipInstanc"
+    "eDataB\005\300\376\244\002\001\022\033\n\010instance\030\017 \001(\0132\t.ItemCom"
+    "p:\005\300\224\364\001\001\"\336\001\n\nBagAllData\022\031\n\005items\030\001 \003(\0132\n"
+    ".ItemEntry\022\022\n\ncapacities\030\002 \003(\r\0220\n\014dynami"
+    "c_bags\030\003 \003(\0132\032.BagAllData.DynamicBagData"
+    "\032h\n\016DynamicBagData\022\016\n\006bag_id\030\001 \001(\004\022\020\n\010ca"
+    "pacity\030\002 \001(\r\022\031\n\005items\030\003 \003(\0132\n.ItemEntry\022"
+    "\022\n\nprofile_id\030\004 \001(\r:\005\300\224\364\001\001:\005\300\224\364\001\001\"X\n\nQue"
+    "stEntry\022\021\n\tconfig_id\030\001 \001(\r\022\020\n\010progress\030\002"
+    " \001(\r\022\r\n\005state\030\003 \001(\r\022\026\n\016accepted_at_ms\030\004 "
+    "\001(\004\"\214\001\n\016QuestScopeData\022\r\n\005scope\030\001 \001(\r\022&\n"
+    "\014mission_list\030\002 \001(\0132\020.MissionListComp\022\035\n"
+    "\025completed_mission_ids\030\003 \003(\r\022\035\n\025claimabl"
+    "e_mission_ids\030\004 \003(\r:\005\300\224\364\001\001\"\213\001\n\014QuestAllD"
+    "ata\022\"\n\006active\030\001 \003(\0132\013.QuestEntryB\005\300\376\244\002\001\022"
+    "\021\n\tcompleted\030\002 \003(\r\022\037\n\006scopes\030\003 \003(\0132\017.Que"
+    "stScopeData\022\034\n\024scoped_state_present\030\004 \001("
+    "\010:\005\300\224\364\001\001\"\336\001\n\tMailEntry\022\017\n\007mail_id\030\001 \001(\004\022"
+    "\021\n\tsender_id\030\002 \001(\004\022\017\n\007subject\030\003 \001(\t\022\014\n\004b"
+    "ody\030\004 \001(\t\022\022\n\nsent_at_ms\030\005 \001(\004\022\"\n\016attache"
+    "d_items\030\006 \003(\0132\n.ItemEntry\022\037\n\027attached_cu"
+    "rrency_types\030\007 \003(\r\022!\n\031attached_currency_"
+    "amounts\030\010 \003(\004\022\022\n\nread_state\030\t \001(\r\"(\n\013Mai"
+    "lAllData\022\031\n\005mails\030\001 \003(\0132\n.MailEntryB\021Z\017c"
+    "ommon/databaseb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto_deps[2] = {
+    descriptor_table_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto_deps[3] = {
         &::descriptor_table_proto_2fcommon_2fcomponent_2fitem_5fbase_5fcomp_2eproto,
         &::descriptor_table_proto_2fcommon_2fcomponent_2fmission_5fcomp_2eproto,
+        &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto = {
     false,
     false,
-    1183,
+    1262,
     descriptor_table_protodef_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto,
     "proto/common/database/bag_quest_mail_data.proto",
     &descriptor_table_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto_once,
     descriptor_table_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto_deps,
-    2,
+    3,
     8,
     schemas,
     file_message_globals,
@@ -1917,7 +1920,7 @@ PROTOBUF_NOINLINE void ItemEntry::Clear() {
     }
   }
 
-  // .EquipInstanceData equip = 14;
+  // .EquipInstanceData equip = 14 [(.OptionPersistUncarried) = true];
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         14, *this_._impl_.equip_, this_._impl_.equip_->GetCachedSize(), target,
@@ -1957,7 +1960,7 @@ PROTOBUF_NOINLINE void ItemEntry::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
-    // .EquipInstanceData equip = 14;
+    // .EquipInstanceData equip = 14 [(.OptionPersistUncarried) = true];
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.equip_);
@@ -3489,7 +3492,7 @@ PROTOBUF_NOINLINE void QuestAllData::Clear() {
   (void)cached_has_bits;
 
   cached_has_bits = this_._impl_._has_bits_[0];
-  // repeated .QuestEntry active = 1;
+  // repeated .QuestEntry active = 1 [(.OptionPersistUncarried) = true];
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     for (unsigned i = 0, n = static_cast<unsigned>(
                              this_._internal_active_size());
@@ -3561,7 +3564,7 @@ PROTOBUF_NOINLINE void QuestAllData::Clear() {
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
   if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
-    // repeated .QuestEntry active = 1;
+    // repeated .QuestEntry active = 1 [(.OptionPersistUncarried) = true];
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1UL * this_._internal_active_size();
       for (const auto& msg : this_._internal_active()) {

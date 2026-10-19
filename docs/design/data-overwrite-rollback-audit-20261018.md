@@ -3,6 +3,7 @@
 > 只读静态审计，**未编译、未运行**。对象是 2026-10-18 的工作区（包括其他会话尚未提交的改动）。
 > 本文只登记问题和修复方向，不包含任何代码修改。修复要按 AGENTS.md §10.1 交给 Codex 验证，并按 §12 同步 Java 版。
 > **2026-10-19 状态：** §2.1–§2.3 已修复，验证还没跑完；§2.4、§2.5 尚未动手。汇总见 §7，上线前的复查计划见 §8。
+> **2026-10-19 更新：** §2.4 三条已落码并带回归测试，未编译、未测试，待 Codex 验证；§2.5 仍未动手。
 
 ## 0. 结论
 
@@ -118,6 +119,36 @@
 - 区分 `kAssetBlocked`（跳过金币、继续结算）与 `kAssetFrozen`（延后）。
 - 停机时先 flush 并处理完回执，再清房；或者把 pending 的落库提前到发结果之前。
 
+**修复（2026-10-19，Claude，代码与回归测试已落工作区，未编译、未测试、未提交，待 Codex 验证）：**
+- **cpp-economy#0**：`ApplySettlementToEntity` 在应用缓存与金币之前，调用 `HasItemGuidsForDrops` 预检。
+  - 需求量取 `BagService::MaxNewInstancesFor(掉落)`：每个 config 按 `StacksNeededFor(count, max_stack)` 计，是上界。主背包放不下时一个号都不铸，所以一份余量也够「转投临时格」那一次。
+  - 余量不够就整笔返回 false，零副作用，保留 pending 等重投；打 `metric=battle_settlement_item_guid_shortage`。
+  - 背包满、物品被全服禁发这类终局失败，维持原来的「记 ERROR、继续」。
+  - 残余：延后之后，谁来重试取决于路径。
+    - 在线且还挂着 `InBattleComp`：发件箱 10s × 12 轮重投，冻结到期时 reaper 再补读一次。
+    - 登录钩子或 reaper 补读时恰逢号段仍缺：之后没有周期重试，只能等下次登录。
+    - 若号段缺口长过锁的 TTL，玩家又开了下一局，单槽 pending 会被覆盖，这一局整笔丢失。这是 turn-battle-gap-closure.md §9.3「pending 每玩家单槽」的既有残余，本次没改。修复前同一场景只丢掉落，修复后金币与进度会一起丢，但前提是 data_service 故障长过锁的 TTL 且期间玩家又开战。
+  - 掉落汇总抽成 `CollectGainedItems`，预检与入包共用一份；同一 config 多行累加改为在 uint32 上限饱和，原先会回绕。
+- **cpp-economy#1**：按 `AddCurrency` 的返回码契约分类。
+  - `kAssetBlocked`（GM 单人封禁或全服 GainBlock）只跳过金币，其余照常应用并登记账本；打 `metric=battle_settlement_gold_blocked`，结算日志加 `gold_blocked=`。解封后同一局的重投被账本挡住，金币不补发。
+  - 其余失败（`kAssetFrozen`、缺组件）仍整笔延后。
+  - 「记流水」目前只有 metric 日志：`TransactionType` 没有「封禁拒发」类型，加类型要改 proto，本次没做。
+- **social-match-battle#2**：采用第二个方向，把个人 pending 的落库提前到结果第一次发往 broker 之前。
+  - `ResultCommit` 新增发送前置条件：`BeginStaging` / `FinishStaging` 一轮落完全部成员的 pending 之后，`CanSend` 才可能为真。落库失败按与投递相同的 1→30s 有界退避重来，过期轮次的迟到回复不改状态。
+  - `BattleRoomManager::StagePersonalSettlements` 由 pump 驱动，按成员 EVAL 原 `kSetPendingSettlementScript`；Redis 未连上时不开新一轮。确认模式不再「不落库直接发」。
+  - 字节来源统一为 `BuildPersonalSettlementPayloads(冻结原件)`，房间上存一份 `personalSettlementPayloads`。回执之后的 `FinishBattle` 改走 `DispatchStagedSettlement`，只投命令、登记 outbox，**不再改写 pending**；改写会让已销账的 pending 复活，玩家重复领奖。
+  - `AbortAllRooms` 不删已落的 pending，停机与崩溃都由 scene 登录钩子或冻结到期补读应用。
+  - 语义变化与残余见 [cross-zone-matchmaking.md](cross-zone-matchmaking.md) §13.6「2026-10-19 更正」。
+- **回归测试**：
+  - `bag_test`：`ItemGuidShortageDefersWholeSettlementBeforeGold`、`ExactItemGuidCapacityCoversTemporaryFallback`、`BagServiceNewInstanceBound.*`、`GmCurrencyBlockSkipsGoldButAppliesRestOfSettlement`、`GlobalCurrencyGainBlockSkipsGoldButAppliesRestOfSettlement`。
+  - `turn_battle_engine_test`：`ResultIsNeverSentBeforePersonalSettlementsAreDurable`、`FailedStagingUsesMonotonicBoundedBackoff`、`PersonalSettlementPayloadsAreTheFrozenSourceBytes`、`PersonalSettlementPayloadsRejectIncompleteSource`。既有 3 个 `BattleResultCommit` 用例补了落库前置步骤，断言没有改。
+  - battle 节点的 Redis / Kafka 编排没有单测接缝，`BattleRoomManager` 绑在两个单例上，停机丢结算无法在单测里稳定复现。替代验证见 `docs/PROGRESS.md` 同日条目的可选冒烟。
+- **Java 版**（`D:\luyuan\xuanming-server-mmo`，0.1.0-SNAPSHOT）：只读核实，三条都有同样问题，**待做**。
+  - 第 1 条：`BattleSettlementService.applyGained` 不区分发号失败与包满，照常 `ledger.record`。
+  - 第 2 条：金币 `!change.ok()` 一律整笔 DEFERRED。PARITY 第 134 行把它登记为照搬的基线怪癖 B7。
+  - 第 3 条：`BattleRoomServiceImpl` 回执后才落 pending，`abortAll` 不派发。
+  - 已在 Java 仓 `PARITY.md` 末尾登记一行，状态为「Java 待做」（2026-10-19）。
+
 ### 2.5 未开通功能里的卡死与滞留（开通前必须修）
 
 | 编号 | 问题 | 位置 | 复核 | 门控 |
@@ -200,7 +231,7 @@
 | └ 迟到的会话结束释放带覆盖身份（设计 §13） | `ReleasePlayerRequest` 追加 `covered_session_id=6` / `covered_login_generation=7`；scene 按登录身份比对后再决定是否退出 | PROGRESS「会话结束释放带覆盖身份」 | scene_manager：vet、定向用例、全量 444 + 226 个用例通过。C++ 55 项中 54 项通过；`EnterFenceEcs.LoadCallbackBindsNewestAdmitted` 因测试夹具给的是空快照而失败，Codex 已备夹具补丁，待负责人决定 |
 | §2.2 go/db 协议世代门禁与补投上限 | 缺省改为 dual；legacy 由机器判定，有证据时拒绝启动；补投加首见宽限、指数退避、次数上限和终态 | [db-write-fencing-mysql.md](db-write-fencing-mysql.md) 文末附注；PROGRESS「存盘协议世代门禁与补投有界」 | **7 步验证都没跑。** 负责人确认尚未上线：首次上线直接用 dual 加严格屏障整批起步，混跑和降级相关的残余不构成阻塞 |
 | §2.3 `login_session` 键绑定 gate 实例与代次 | 键改为 `{gate_instance_id}:{incarnation}`，旧版 gate 走兼容键；gate 要求先 Login | [client-request-ordering.md](client-request-ordering.md) §7.2 第 2 条；PROGRESS「修跨账号登录态继承」 | Codex 已跑 login 两个相关包：249 通过，vet 与 build 通过。没有跑真实多 gate 环境 |
-| §2.4 战斗结算三处 | **未动手** | — | — |
+| §2.4 战斗结算三处 | 号段预检后整笔延后；金币封禁只跳过金币；全球模式个人 pending 在发结果前落库，回执后只派发、不改写 | 本文 §2.4「修复」；[cross-zone-matchmaking.md](cross-zone-matchmaking.md) §13.6「2026-10-19 更正」；PROGRESS「审计 §2.4 战斗结算三处」 | **未编译、未测试**，待 Codex 跑 `bag_test`、`turn_battle_engine_test` 与 battle 节点构建。Java 版三条同样存在，待做 |
 | §2.5 全球匹配、交易三处 | **未动手**（对应功能未开通） | — | — |
 | §3、§4 low 项 | 只有"存盘不保留未知字段"一项另出了设计稿：[mixed-version-persist-field-protection.md](mixed-version-persist-field-protection.md)，v0.2，未落码，待负责人拍板 | PROGRESS「新旧版本混跑的玩家持久字段保护设计稿 v0.2」 | — |
 

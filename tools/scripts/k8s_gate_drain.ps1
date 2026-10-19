@@ -534,11 +534,15 @@ function ConvertFrom-GateEtcdRecords {
     return ,$records.ToArray()
 }
 
-# exec 进 Service 背后的 Pod 再按 Service 地址连回(hairpin)失败时附在错误后面的提示。
-# 刻意不自动回落 127.0.0.1:回落后连的是 exec 恰好落到的那个 Pod,多副本时不一定是 login 用的那一个。
+# exec 进 Service 背后的 Pod(Redis:同名 StatefulSet 的 Pod)再按 Service 地址连回(hairpin)失败时附在错误后面的提示。
+# 刻意不自动回落 127.0.0.1:回落后连的是 exec 恰好落到的那个 Pod,多副本时不一定是 login 用的那一个(高可用形态下可能是从)。
 function Get-GateDrainHairpinHint {
-    param([Parameter(Mandatory = $true)]$Target)
-    return "(若是连接失败 / 超时:本脚本 exec 进 svc/$($Target.Service) 后按 login 配置里的 $($Target.Endpoint) 连回同一 Service,集群的 CNI / kube-proxy 须支持 hairpin)"
+    param(
+        [Parameter(Mandatory = $true)]$Target,
+        [string]$ExecTarget = ''
+    )
+    if ([string]::IsNullOrEmpty($ExecTarget)) { $ExecTarget = "svc/$($Target.Service)" }
+    return "(若是连接失败 / 超时:本脚本 exec 进 $ExecTarget 后按 login 配置里的 $($Target.Endpoint) 连回同一 Service,集群的 CNI / kube-proxy 须支持 hairpin)"
 }
 
 # exec 进 login 所连 etcd 的 Service 背后的 Pod,用它自带的 etcdctl 按 login 配置里的同一地址读 gate 前缀。
@@ -632,10 +636,19 @@ function Select-GateDrainPeers {
 
 # ─── Redis(login 所用的那个)───
 
-# exec 进 login 所连 Redis 的 Service 背后的 Pod,用它自带的 redis-cli 连 login 配置里的同一 host:port/DB。
+# 用哪个 Pod 里的 redis-cli:login 所连 Redis Service 同名的 StatefulSet(共享 Redis 的两种形态都叫 redis)里任一 Pod 的 redis 容器。
+# 不 exec svc/<Service>:高可用形态(redis-ha.yaml)下 Service redis 指向 haproxy 入口代理,代理镜像里没有 redis-cli。
+# 连哪台仍由 -h 决定(login 配置里的 Service 地址):高可用形态下经代理落到当前的主,单实例就是它自己 —— 与 login 写的是同一处,
+# 不随 exec 落到哪个 Pod(可能是从)而变。
+function Get-GateDrainRedisExecTarget {
+    param([Parameter(Mandatory = $true)]$Login)
+    return "statefulset/$($Login.Redis.Service)"
+}
+
+# exec 进 login 所连共享 Redis 的节点 Pod(Get-GateDrainRedisExecTarget),用它自带的 redis-cli 连 login 配置里的同一 host:port/DB。
 # 密码取该 Pod 自己的 REDIS_PASSWORD(Secret redis-auth,与 requirepass 同源),经 REDISCLI_AUTH 传给 redis-cli:
 # 不经本机命令行、不进日志;为空时不设(设成空串 redis-cli 会发 AUTH "" 并报错)。
-# 参数经 sh 的位置参数传入,不拼进脚本文本。--no-raw 让 nil 与空串可区分。
+# 参数经 sh 的位置参数传入,不拼进脚本文本。--no-raw 让 nil 与空串可区分。-c redis:高可用形态的节点 Pod 另有哨兵容器。
 function Invoke-GateDrainRedis {
     param(
         [Parameter(Mandatory = $true)]$Login,
@@ -643,7 +656,7 @@ function Invoke-GateDrainRedis {
         [ValidateRange(0.001, 2147483)][double]$TimeoutSeconds = 10
     )
     $shell = 'h=$1; p=$2; d=$3; shift 3; if [ -n "$REDIS_PASSWORD" ]; then REDISCLI_AUTH=$REDIS_PASSWORD; export REDISCLI_AUTH; fi; exec redis-cli --no-raw -h "$h" -p "$p" -n "$d" "$@"'
-    $arguments = @('exec', '-n', $Login.Redis.Namespace, "svc/$($Login.Redis.Service)", '--',
+    $arguments = @('exec', '-n', $Login.Redis.Namespace, (Get-GateDrainRedisExecTarget -Login $Login), '-c', 'redis', '--',
         'sh', '-c', $shell, 'sh', $Login.Redis.Host, [string]$Login.Redis.Port, [string]$Login.RedisDb) + $Command
     return Invoke-GateDrainKubectl -Arguments $arguments -TimeoutSeconds $TimeoutSeconds
 }
@@ -658,7 +671,7 @@ function Invoke-GateDrainRedisChecked {
     $contract = Get-GateDrainContract
     $result = Invoke-GateDrainRedis -Login $Login -Command $Command -TimeoutSeconds $contract.CallTimeoutSeconds
     if ($result.TimedOut -or $result.ExitCode -ne 0) {
-        throw "$What 失败(exit=$($result.ExitCode),timedOut=$($result.TimedOut)):$(Get-GateDrainErrorTail $result.ErrorOutput) $(Get-GateDrainHairpinHint -Target $Login.Redis)"
+        throw "$What 失败(exit=$($result.ExitCode),timedOut=$($result.TimedOut)):$(Get-GateDrainErrorTail $result.ErrorOutput) $(Get-GateDrainHairpinHint -Target $Login.Redis -ExecTarget (Get-GateDrainRedisExecTarget -Login $Login))"
     }
     $text = [string]$result.Output
     if ($text -match '(?m)^\s*(\d+\)\s*)?\(error\)') { throw "$What 失败:$(Get-GateDrainErrorTail $text)" }
@@ -1129,7 +1142,7 @@ function Write-GateDrainDryRunPlan {
     $contract = Get-GateDrainContract
     $keys = Get-GateDrainKeys -NodeId $Record.NodeId
     $peerKeys = @($PeerNodeIds | ForEach-Object { (Get-GateDrainKeys -NodeId $_).Draining }) -join ' '
-    Write-Host "[dry-run] The following Redis operations will not execute (Redis $($Login.Redis.Endpoint) DB $($Login.RedisDb), via svc/$($Login.Redis.Service) exec):"
+    Write-Host "[dry-run] The following Redis operations will not execute (Redis $($Login.Redis.Endpoint) DB $($Login.RedisDb), via $(Get-GateDrainRedisExecTarget -Login $Login) -c redis exec):"
     Write-Host "[dry-run]   TIME; EVAL (atomic): DEL $($keys.Drained) only if at least one key in $peerKeys is absent,"
     Write-Host "[dry-run]     SET $($keys.Draining) <Redis TIME seconds> NX EX $DrainTtlSeconds; otherwise write nothing and reject"
     Write-Host "[dry-run]   Recheck Pod uid=$($Pod.Uid) and etcd process node_id/uuid=$($Record.NodeId)/$($Record.Uuid); revert this run's mark if either changed"

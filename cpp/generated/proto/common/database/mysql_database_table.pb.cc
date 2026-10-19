@@ -877,11 +877,11 @@ constexpr player_database_1::ParseTableT_ player_database_1::InternalGeneratePar
     {
       PROTOBUF_FIELD_OFFSET(player_database_1, _impl_._has_bits_),
       0, // no _extensions_
-      4, 24,  // max_field_number, fast_idx_mask
+      5, 56,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4294967280,  // skipmap
+      4294967264,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      4,  // num_field_entries
+      5,  // num_field_entries
       1,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -891,15 +891,12 @@ constexpr player_database_1::ParseTableT_ player_database_1::InternalGeneratePar
       ::_pbi::TcParser::GetTable<::player_database_1>(),  // to_prefetch
       #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
     }, {{
-      // uint64 fence_save_seq = 4;
-      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database_1, _impl_.fence_save_seq_), 3>(),
-       {32, 3, 0,
-        PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.fence_save_seq_)}},
+      {::_pbi::TcParser::MiniParse, {}},
       // uint64 player_id = 1;
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database_1, _impl_.player_id_), 1>(),
        {8, 1, 0,
         PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.player_id_)}},
-      // .PlayerStressTestProbe stress_test_probe = 2;
+      // .PlayerStressTestProbe stress_test_probe = 2 [(.OptionPersistUncarried) = true];
       {::_pbi::TcParser::FastMtS1,
        {18, 0, 0,
         PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.stress_test_probe_)}},
@@ -907,17 +904,29 @@ constexpr player_database_1::ParseTableT_ player_database_1::InternalGeneratePar
       {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database_1, _impl_.fence_owner_epoch_), 2>(),
        {24, 2, 0,
         PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.fence_owner_epoch_)}},
+      // uint64 fence_save_seq = 4;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(player_database_1, _impl_.fence_save_seq_), 3>(),
+       {32, 3, 0,
+        PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.fence_save_seq_)}},
+      // uint32 persist_schema_gen = 5;
+      {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(player_database_1, _impl_.persist_schema_gen_), 4>(),
+       {40, 4, 0,
+        PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.persist_schema_gen_)}},
+      {::_pbi::TcParser::MiniParse, {}},
+      {::_pbi::TcParser::MiniParse, {}},
     }}, {{
       65535, 65535
     }}, {{
       // uint64 player_id = 1;
       {PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
-      // .PlayerStressTestProbe stress_test_probe = 2;
+      // .PlayerStressTestProbe stress_test_probe = 2 [(.OptionPersistUncarried) = true];
       {PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.stress_test_probe_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // uint64 fence_owner_epoch = 3;
       {PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.fence_owner_epoch_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // uint64 fence_save_seq = 4;
       {PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.fence_save_seq_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
+      // uint32 persist_schema_gen = 5;
+      {PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.persist_schema_gen_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -939,7 +948,8 @@ inline constexpr player_database_1::Impl_::Impl_(
         stress_test_probe_{nullptr},
         player_id_{::uint64_t{0u}},
         fence_owner_epoch_{::uint64_t{0u}},
-        fence_save_seq_{::uint64_t{0u}} {}
+        fence_save_seq_{::uint64_t{0u}},
+        persist_schema_gen_{0u} {}
 
 template <typename>
 constexpr player_database_1::player_database_1(::_pbi::ConstantInitialized,
@@ -1369,11 +1379,11 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
     {
       PROTOBUF_FIELD_OFFSET(player_database, _impl_._has_bits_),
       0, // no _extensions_
-      20, 248,  // max_field_number, fast_idx_mask
+      21, 248,  // max_field_number, fast_idx_mask
       offsetof(ParseTableT_, field_lookup_table),
-      4293918720,  // skipmap
+      4292870144,  // skipmap
       offsetof(ParseTableT_, field_entries),
-      20,  // num_field_entries
+      21,  // num_field_entries
       17,  // num_aux_entries
       offsetof(ParseTableT_, aux_entries),
       class_data,
@@ -1416,11 +1426,11 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
       {::_pbi::TcParser::FastMtS1,
        {66, 6, 6,
         PROTOBUF_FIELD_OFFSET(player_database, _impl_.currency_)}},
-      // .PlayerStressTestProbe stress_test_probe = 9;
+      // .PlayerStressTestProbe stress_test_probe = 9 [(.OptionPersistUncarried) = true];
       {::_pbi::TcParser::FastMtS1,
        {74, 7, 7,
         PROTOBUF_FIELD_OFFSET(player_database, _impl_.stress_test_probe_)}},
-      // .PlayerMergeStateComp merge_state = 10;
+      // .PlayerMergeStateComp merge_state = 10 [(.OptionPersistUncarried) = true];
       {::_pbi::TcParser::FastMtS1,
        {82, 8, 8,
         PROTOBUF_FIELD_OFFSET(player_database, _impl_.merge_state_)}},
@@ -1464,7 +1474,10 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
       {::_pbi::TcParser::FastMtS2,
        {418, 16, 16,
         PROTOBUF_FIELD_OFFSET(player_database, _impl_.inbox_ledger_)}},
-      {::_pbi::TcParser::MiniParse, {}},
+      // uint32 persist_schema_gen = 21;
+      {::_pbi::TcParser::FastV32S2,
+       {424, 20, 0,
+        PROTOBUF_FIELD_OFFSET(player_database, _impl_.persist_schema_gen_)}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
       {::_pbi::TcParser::MiniParse, {}},
@@ -1494,9 +1507,9 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
       {PROTOBUF_FIELD_OFFSET(player_database, _impl_.level_component_), _Internal::kHasBitsOffset + 5, 5, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // .CurrencyComp currency = 8;
       {PROTOBUF_FIELD_OFFSET(player_database, _impl_.currency_), _Internal::kHasBitsOffset + 6, 6, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // .PlayerStressTestProbe stress_test_probe = 9;
+      // .PlayerStressTestProbe stress_test_probe = 9 [(.OptionPersistUncarried) = true];
       {PROTOBUF_FIELD_OFFSET(player_database, _impl_.stress_test_probe_), _Internal::kHasBitsOffset + 7, 7, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // .PlayerMergeStateComp merge_state = 10;
+      // .PlayerMergeStateComp merge_state = 10 [(.OptionPersistUncarried) = true];
       {PROTOBUF_FIELD_OFFSET(player_database, _impl_.merge_state_), _Internal::kHasBitsOffset + 8, 8, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // .PlayerAttributeComp attribute_component = 11;
       {PROTOBUF_FIELD_OFFSET(player_database, _impl_.attribute_component_), _Internal::kHasBitsOffset + 9, 9, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
@@ -1518,6 +1531,8 @@ constexpr player_database::ParseTableT_ player_database::InternalGenerateParseTa
       {PROTOBUF_FIELD_OFFSET(player_database, _impl_.fence_save_seq_), _Internal::kHasBitsOffset + 19, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
       // .PlayerInboxLedgerComp inbox_ledger = 20;
       {PROTOBUF_FIELD_OFFSET(player_database, _impl_.inbox_ledger_), _Internal::kHasBitsOffset + 16, 16, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+      // uint32 persist_schema_gen = 21;
+      {PROTOBUF_FIELD_OFFSET(player_database, _impl_.persist_schema_gen_), _Internal::kHasBitsOffset + 20, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt32)},
     }},
     {{
         #ifndef PROTOBUF_MESSAGE_GLOBALS
@@ -1635,7 +1650,8 @@ inline constexpr player_database::Impl_::Impl_(
         inbox_ledger_{nullptr},
         player_id_{::uint64_t{0u}},
         fence_owner_epoch_{::uint64_t{0u}},
-        fence_save_seq_{::uint64_t{0u}} {}
+        fence_save_seq_{::uint64_t{0u}},
+        persist_schema_gen_{0u} {}
 
 template <typename>
 constexpr player_database::player_database(::_pbi::ConstantInitialized,
@@ -1801,7 +1817,7 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_._has_bits_),
-        23, // hasbit index offset
+        24, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.transform_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.uint64_pb_component_),
@@ -1822,6 +1838,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.fence_owner_epoch_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.fence_save_seq_),
         PROTOBUF_FIELD_OFFSET(::player_database, _impl_.inbox_ledger_),
+        PROTOBUF_FIELD_OFFSET(::player_database, _impl_.persist_schema_gen_),
         17,
         0,
         1,
@@ -1842,17 +1859,20 @@ const ::uint32_t
         18,
         19,
         16,
+        20,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::player_database_1, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::player_database_1, _impl_.player_id_),
         PROTOBUF_FIELD_OFFSET(::player_database_1, _impl_.stress_test_probe_),
         PROTOBUF_FIELD_OFFSET(::player_database_1, _impl_.fence_owner_epoch_),
         PROTOBUF_FIELD_OFFSET(::player_database_1, _impl_.fence_save_seq_),
+        PROTOBUF_FIELD_OFFSET(::player_database_1, _impl_.persist_schema_gen_),
         1,
         0,
         2,
         3,
+        4,
 };
 
 static const ::_pbi::MigrationSchema
@@ -1865,7 +1885,7 @@ static const ::_pbi::MigrationSchema
         {51, sizeof(::account_share_database)},
         {56, sizeof(::player_centre_database)},
         {63, sizeof(::player_database)},
-        {106, sizeof(::player_database_1)},
+        {108, sizeof(::player_database_1)},
 };
 static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
     file_message_globals[] = {
@@ -1919,7 +1939,7 @@ const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabas
     "\tplayer_id\030\001 \001(\004\022+\n\nscene_info\030\002 \001(\0132\027.P"
     "layerSceneContextComp:F\212\222\364\001\026player_centr"
     "e_database\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\250\223"
-    "\364\001\001\260\223\364\001\004\270\223\364\001\004\"\226\007\n\017player_database\022\021\n\tpla"
+    "\364\001\001\260\223\364\001\004\270\223\364\001\004\"\300\007\n\017player_database\022\021\n\tpla"
     "yer_id\030\001 \001(\004\022\035\n\ttransform\030\002 \001(\0132\n.Transf"
     "orm\022.\n\023uint64_pb_component\030\003 \001(\0132\021.Playe"
     "rUint64Comp\022(\n\nskill_list\030\004 \001(\0132\024.Player"
@@ -1927,28 +1947,30 @@ const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabas
     "(\0132\021.PlayerUint32Comp\0229\n\034derived_attribu"
     "tes_component\030\006 \001(\0132\023.BaseAttributesComp"
     "\022#\n\017level_component\030\007 \001(\0132\n.LevelComp\022\037\n"
-    "\010currency\030\010 \001(\0132\r.CurrencyComp\0221\n\021stress"
+    "\010currency\030\010 \001(\0132\r.CurrencyComp\0228\n\021stress"
     "_test_probe\030\t \001(\0132\026.PlayerStressTestProb"
-    "e\022*\n\013merge_state\030\n \001(\0132\025.PlayerMergeStat"
-    "eComp\0221\n\023attribute_component\030\013 \001(\0132\024.Pla"
-    "yerAttributeComp\022%\n\rpet_component\030\014 \001(\0132"
-    "\016.PlayerPetComp\022\"\n\rbag_component\030\r \001(\0132\013"
-    ".BagAllData\022(\n\021mission_component\030\016 \001(\0132\r"
-    ".QuestAllData\022-\n\021profile_component\030\017 \001(\013"
-    "2\022.PlayerProfileComp\0221\n\017asset_op_ledger\030"
-    "\020 \001(\0132\030.PlayerAssetOpLedgerComp\0226\n\021settl"
-    "ement_ledger\030\021 \001(\0132\033.BattleSettlementLed"
-    "gerComp\022\031\n\021fence_owner_epoch\030\022 \001(\004\022\026\n\016fe"
-    "nce_save_seq\030\023 \001(\004\022,\n\014inbox_ledger\030\024 \001(\013"
-    "2\026.PlayerInboxLedgerComp:D\212\222\364\001\017player_da"
-    "tabase\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001\001\250"
-    "\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\324\001\n\021player_database_1\022\021\n\t"
-    "player_id\030\001 \001(\004\0221\n\021stress_test_probe\030\002 \001"
-    "(\0132\026.PlayerStressTestProbe\022\031\n\021fence_owne"
-    "r_epoch\030\003 \001(\004\022\026\n\016fence_save_seq\030\004 \001(\004:F\212"
-    "\222\364\001\021player_database_1\222\222\364\001\tplayer_id\262\222\364\001\t"
-    "player_id\350\222\364\001\001\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004B\021Z\017common/"
-    "databaseb\006proto3"
+    "eB\005\300\376\244\002\001\0221\n\013merge_state\030\n \001(\0132\025.PlayerMe"
+    "rgeStateCompB\005\300\376\244\002\001\0221\n\023attribute_compone"
+    "nt\030\013 \001(\0132\024.PlayerAttributeComp\022%\n\rpet_co"
+    "mponent\030\014 \001(\0132\016.PlayerPetComp\022\"\n\rbag_com"
+    "ponent\030\r \001(\0132\013.BagAllData\022(\n\021mission_com"
+    "ponent\030\016 \001(\0132\r.QuestAllData\022-\n\021profile_c"
+    "omponent\030\017 \001(\0132\022.PlayerProfileComp\0221\n\017as"
+    "set_op_ledger\030\020 \001(\0132\030.PlayerAssetOpLedge"
+    "rComp\0226\n\021settlement_ledger\030\021 \001(\0132\033.Battl"
+    "eSettlementLedgerComp\022\031\n\021fence_owner_epo"
+    "ch\030\022 \001(\004\022\026\n\016fence_save_seq\030\023 \001(\004\022,\n\014inbo"
+    "x_ledger\030\024 \001(\0132\026.PlayerInboxLedgerComp\022\032"
+    "\n\022persist_schema_gen\030\025 \001(\r:D\212\222\364\001\017player_"
+    "database\222\222\364\001\tplayer_id\262\222\364\001\tplayer_id\350\222\364\001"
+    "\001\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004\"\367\001\n\021player_database_1\022\021"
+    "\n\tplayer_id\030\001 \001(\004\0228\n\021stress_test_probe\030\002"
+    " \001(\0132\026.PlayerStressTestProbeB\005\300\376\244\002\001\022\031\n\021f"
+    "ence_owner_epoch\030\003 \001(\004\022\026\n\016fence_save_seq"
+    "\030\004 \001(\004\022\032\n\022persist_schema_gen\030\005 \001(\r:F\212\222\364\001"
+    "\021player_database_1\222\222\364\001\tplayer_id\262\222\364\001\tpla"
+    "yer_id\350\222\364\001\001\250\223\364\001\001\260\223\364\001\004\270\223\364\001\004B\021Z\017common/dat"
+    "abaseb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_deps[13] = {
@@ -1970,7 +1992,7 @@ static ::absl::once_flag descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fda
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto = {
     false,
     false,
-    2696,
+    2773,
     descriptor_table_protodef_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto,
     "proto/common/database/mysql_database_table.proto",
     &descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto_once,
@@ -4119,9 +4141,9 @@ player_database::player_database(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, fence_save_seq_) -
+           offsetof(Impl_, persist_schema_gen_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::fence_save_seq_));
+               sizeof(Impl_::persist_schema_gen_));
 
   // @@protoc_insertion_point(copy_constructor:player_database)
 }
@@ -4135,9 +4157,9 @@ inline void player_database::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, transform_),
            0,
-           offsetof(Impl_, fence_save_seq_) -
+           offsetof(Impl_, persist_schema_gen_) -
                offsetof(Impl_, transform_) +
-               sizeof(Impl_::fence_save_seq_));
+               sizeof(Impl_::persist_schema_gen_));
 }
 player_database::~player_database() {
   // @@protoc_insertion_point(destructor:player_database)
@@ -4276,10 +4298,10 @@ PROTOBUF_NOINLINE void player_database::Clear() {
     ABSL_DCHECK(_impl_.inbox_ledger_ != nullptr);
     _impl_.inbox_ledger_->Clear();
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x000e0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x001e0000U)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.fence_save_seq_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.fence_save_seq_));
+        reinterpret_cast<char*>(&_impl_.persist_schema_gen_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.persist_schema_gen_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -4362,14 +4384,14 @@ PROTOBUF_NOINLINE void player_database::Clear() {
         stream);
   }
 
-  // .PlayerStressTestProbe stress_test_probe = 9;
+  // .PlayerStressTestProbe stress_test_probe = 9 [(.OptionPersistUncarried) = true];
   if (CheckHasBit(cached_has_bits, 0x00000080U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         9, *this_._impl_.stress_test_probe_, this_._impl_.stress_test_probe_->GetCachedSize(), target,
         stream);
   }
 
-  // .PlayerMergeStateComp merge_state = 10;
+  // .PlayerMergeStateComp merge_state = 10 [(.OptionPersistUncarried) = true];
   if (CheckHasBit(cached_has_bits, 0x00000100U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         10, *this_._impl_.merge_state_, this_._impl_.merge_state_->GetCachedSize(), target,
@@ -4450,6 +4472,15 @@ PROTOBUF_NOINLINE void player_database::Clear() {
         stream);
   }
 
+  // uint32 persist_schema_gen = 21;
+  if (CheckHasBit(cached_has_bits, 0x00100000U)) {
+    if (this_._internal_persist_schema_gen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          21, this_._internal_persist_schema_gen(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -4511,14 +4542,14 @@ PROTOBUF_NOINLINE void player_database::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.currency_);
     }
-    // .PlayerStressTestProbe stress_test_probe = 9;
+    // .PlayerStressTestProbe stress_test_probe = 9 [(.OptionPersistUncarried) = true];
     if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.stress_test_probe_);
     }
   }
   if (BatchCheckHasBit(cached_has_bits, 0x0000ff00U)) {
-    // .PlayerMergeStateComp merge_state = 10;
+    // .PlayerMergeStateComp merge_state = 10 [(.OptionPersistUncarried) = true];
     if (CheckHasBit(cached_has_bits, 0x00000100U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.merge_state_);
@@ -4559,7 +4590,7 @@ PROTOBUF_NOINLINE void player_database::Clear() {
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.settlement_ledger_);
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x000f0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x001f0000U)) {
     // .PlayerInboxLedgerComp inbox_ledger = 20;
     if (CheckHasBit(cached_has_bits, 0x00010000U)) {
       total_size += 2 +
@@ -4584,6 +4615,13 @@ PROTOBUF_NOINLINE void player_database::Clear() {
       if (this_._internal_fence_save_seq() != 0) {
         total_size += 2 + ::_pbi::WireFormatLite::UInt64Size(
                                         this_._internal_fence_save_seq());
+      }
+    }
+    // uint32 persist_schema_gen = 21;
+    if (CheckHasBit(cached_has_bits, 0x00100000U)) {
+      if (this_._internal_persist_schema_gen() != 0) {
+        total_size += 2 + ::_pbi::WireFormatLite::UInt32Size(
+                                        this_._internal_persist_schema_gen());
       }
     }
   }
@@ -4737,7 +4775,7 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x000f0000U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x001f0000U)) {
     if (CheckHasBit(cached_has_bits, 0x00010000U)) {
       ABSL_DCHECK(from._impl_.inbox_ledger_ != nullptr);
       if (_this->_impl_.inbox_ledger_ == nullptr) {
@@ -4761,6 +4799,11 @@ void player_database::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.fence_save_seq_ = from._impl_.fence_save_seq_;
       }
     }
+    if (CheckHasBit(cached_has_bits, 0x00100000U)) {
+      if (from._internal_persist_schema_gen() != 0) {
+        _this->_impl_.persist_schema_gen_ = from._impl_.persist_schema_gen_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
@@ -4780,8 +4823,8 @@ void player_database::InternalSwap(player_database* PROTOBUF_RESTRICT PROTOBUF_N
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(player_database, _impl_.fence_save_seq_)
-      + sizeof(player_database::_impl_.fence_save_seq_)
+      PROTOBUF_FIELD_OFFSET(player_database, _impl_.persist_schema_gen_)
+      + sizeof(player_database::_impl_.persist_schema_gen_)
       - PROTOBUF_FIELD_OFFSET(player_database, _impl_.transform_)>(
           reinterpret_cast<char*>(&_impl_.transform_),
           reinterpret_cast<char*>(&other->_impl_.transform_));
@@ -4835,9 +4878,9 @@ player_database_1::player_database_1(
                offsetof(Impl_, player_id_),
            reinterpret_cast<const char*>(&from._impl_) +
                offsetof(Impl_, player_id_),
-           offsetof(Impl_, fence_save_seq_) -
+           offsetof(Impl_, persist_schema_gen_) -
                offsetof(Impl_, player_id_) +
-               sizeof(Impl_::fence_save_seq_));
+               sizeof(Impl_::persist_schema_gen_));
 
   // @@protoc_insertion_point(copy_constructor:player_database_1)
 }
@@ -4851,9 +4894,9 @@ inline void player_database_1::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena)
   ::memset(reinterpret_cast<char*>(&_impl_) +
                offsetof(Impl_, stress_test_probe_),
            0,
-           offsetof(Impl_, fence_save_seq_) -
+           offsetof(Impl_, persist_schema_gen_) -
                offsetof(Impl_, stress_test_probe_) +
-               sizeof(Impl_::fence_save_seq_));
+               sizeof(Impl_::persist_schema_gen_));
 }
 player_database_1::~player_database_1() {
   // @@protoc_insertion_point(destructor:player_database_1)
@@ -4908,10 +4951,10 @@ PROTOBUF_NOINLINE void player_database_1::Clear() {
     ABSL_DCHECK(_impl_.stress_test_probe_ != nullptr);
     _impl_.stress_test_probe_->Clear();
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000eU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001eU)) {
     ::memset(&_impl_.player_id_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.fence_save_seq_) -
-        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.fence_save_seq_));
+        reinterpret_cast<char*>(&_impl_.persist_schema_gen_) -
+        reinterpret_cast<char*>(&_impl_.player_id_)) + sizeof(_impl_.persist_schema_gen_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -4945,7 +4988,7 @@ PROTOBUF_NOINLINE void player_database_1::Clear() {
     }
   }
 
-  // .PlayerStressTestProbe stress_test_probe = 2;
+  // .PlayerStressTestProbe stress_test_probe = 2 [(.OptionPersistUncarried) = true];
   if (CheckHasBit(cached_has_bits, 0x00000001U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         2, *this_._impl_.stress_test_probe_, this_._impl_.stress_test_probe_->GetCachedSize(), target,
@@ -4967,6 +5010,15 @@ PROTOBUF_NOINLINE void player_database_1::Clear() {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
           4, this_._internal_fence_save_seq(), target);
+    }
+  }
+
+  // uint32 persist_schema_gen = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_persist_schema_gen() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteUInt32ToArray(
+          5, this_._internal_persist_schema_gen(), target);
     }
   }
 
@@ -4995,8 +5047,8 @@ PROTOBUF_NOINLINE void player_database_1::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
-    // .PlayerStressTestProbe stress_test_probe = 2;
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    // .PlayerStressTestProbe stress_test_probe = 2 [(.OptionPersistUncarried) = true];
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.stress_test_probe_);
@@ -5022,6 +5074,13 @@ PROTOBUF_NOINLINE void player_database_1::Clear() {
             this_._internal_fence_save_seq());
       }
     }
+    // uint32 persist_schema_gen = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_persist_schema_gen() != 0) {
+        total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(
+            this_._internal_persist_schema_gen());
+      }
+    }
   }
   return this_.MaybeComputeUnknownFieldsSize(total_size,
                                              &this_._impl_._cached_size_);
@@ -5041,7 +5100,7 @@ void player_database_1::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       ABSL_DCHECK(from._impl_.stress_test_probe_ != nullptr);
       if (_this->_impl_.stress_test_probe_ == nullptr) {
@@ -5065,6 +5124,11 @@ void player_database_1::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.fence_save_seq_ = from._impl_.fence_save_seq_;
       }
     }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_persist_schema_gen() != 0) {
+        _this->_impl_.persist_schema_gen_ = from._impl_.persist_schema_gen_;
+      }
+    }
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
@@ -5084,8 +5148,8 @@ void player_database_1::InternalSwap(player_database_1* PROTOBUF_RESTRICT PROTOB
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.fence_save_seq_)
-      + sizeof(player_database_1::_impl_.fence_save_seq_)
+      PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.persist_schema_gen_)
+      + sizeof(player_database_1::_impl_.persist_schema_gen_)
       - PROTOBUF_FIELD_OFFSET(player_database_1, _impl_.stress_test_probe_)>(
           reinterpret_cast<char*>(&_impl_.stress_test_probe_),
           reinterpret_cast<char*>(&other->_impl_.stress_test_probe_));

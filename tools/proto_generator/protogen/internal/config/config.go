@@ -107,6 +107,11 @@ type Paths struct {
 	PlayerStorageSystemDir        string `yaml:"player_storage_system_dir"`
 	PlayerDataLoaderFile          string `yaml:"player_data_loader_file"`
 
+	// 玩家持久 schema 世代台账与产物(docs/design/mixed-version-persist-field-protection.md §3)。
+	PersistSchemaLedgerFile    string `yaml:"persist_schema_ledger_file"`
+	PersistSchemaCppHeaderFile string `yaml:"persist_schema_cpp_header_file"`
+	PersistSchemaGoFile        string `yaml:"persist_schema_go_file"`
+
 	// Unity client output paths.
 	UnityClientDir           string `yaml:"unity_client_dir"`
 	UnityHandlerDir          string `yaml:"unity_handler_dir"`

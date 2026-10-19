@@ -157,8 +157,9 @@ func TestLoadAllFields_StaleStampFromOldWriter(t *testing.T) {
 	assert.Equal(t, []byte("b2"), resp.Data["bag"])
 }
 
-// 带外写者把版本重置成更小值(旧 debug_import 写 "1")之后,旧戳可能与之后某个版本巧合相等。
-// saveFieldsScript「不维护就删索引」保证下一次存盘之后带外写进来的字段不会被藏掉。
+// 带外写者把版本重置成更小值、又没删索引之后,旧戳可能与之后某个版本巧合相等。这里旧戳 "2" ≠ 重置后的 "1",
+// saveFieldsScript「不维护就删索引」保证下一次存盘之后带外写进来的字段不会被藏掉。重置的当下戳就等于新版本的情形
+// 它兜不住,所以带外写者必须自己删索引(cmd/debug_import 的 writeLegacyPlayerFields,有自己的回归测试)。
 func TestSave_StaleIndexDeletedSoStampCannotCoincide(t *testing.T) {
 	tc := newTestCtx(t, 9305)
 	mustSave(t, tc.svc, tc.pid, map[string][]byte{"a": []byte("1")})
@@ -191,7 +192,8 @@ func TestPlayerFields_CorruptKeysFailClosed(t *testing.T) {
 	ver, _ := tc.mr.Get(versionKey(tc.pid))
 	assert.Equal(t, "1", ver)
 
-	for i, badVersion := range []string{"abc", "1234567890123456789"} {
+	// "007" / "00":真 Redis 的 INCR 拒绝前导零串(miniredis 接受),守卫必须在第一条 SET 之前就拦下。
+	for i, badVersion := range []string{"abc", "1234567890123456789", "007", "00"} {
 		tc := newTestCtx(t, uint64(9307+i))
 		require.NoError(t, tc.mr.Set(versionKey(tc.pid), badVersion))
 		saved, err := SavePlayerData(ctx, tc.svc, &SavePlayerDataReq{PlayerID: tc.pid, Data: map[string][]byte{"bag": []byte("v")}})
@@ -332,6 +334,27 @@ func TestDelete_LegacyFallbackSkipsForeignAndReserved(t *testing.T) {
 	assert.True(t, tc.mr.Exists(savebarrier.Key(tc.pid)))
 	assert.True(t, tc.mr.Exists(assetop.SQLCommitKey(tc.pid)))
 	assert.True(t, tc.mr.Exists(playerField(tc.pid, "__old")))
+}
+
+// 字段索引键名是跨模块契约:tools/merge_zone 是独立 module,引不到本包,只能在 player_blob_migrate.go::playerFieldIndexKey
+// 镜像一份字面量,由那边的 TestPlayerFieldIndexKeyMatchesDataService 钉住。两边钉同一个字面量,改这里必须同批改那边,
+// 否则合服拷贝 DEL 的是旧键,目标端残留索引可能把拷过去的字段从全量读里藏掉。
+func TestFieldIndexKeyLiteralPinnedForMergeZone(t *testing.T) {
+	assert.Equal(t, "player:{42}:__fields", fieldIndexKey(42))
+	assert.Equal(t, "player:{42}:", playerKeyPrefix(42))
+}
+
+// 非规范十进制的版本(前导零)读路径同样 fail-closed,与写侧守卫同一口径。
+func TestParseVersionValueRejectsNonCanonical(t *testing.T) {
+	for _, val := range []string{"007", "00", "+1", " 1"} {
+		_, err := parseVersionValue(1, val)
+		assert.Error(t, err, "val=%q", val)
+	}
+	for val, want := range map[string]uint64{"": 0, "0": 0, "7": 7, "18446744073709551615": 18446744073709551615} {
+		got, err := parseVersionValue(1, val)
+		require.NoError(t, err, "val=%q", val)
+		assert.Equal(t, want, got, "val=%q", val)
+	}
 }
 
 func TestDecodeLoadAllReply(t *testing.T) {

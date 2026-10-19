@@ -882,3 +882,327 @@ func WithSaveLatency(outcome string) func() {
 func FormatZone(zoneID uint32) string {
 	return strconv.FormatUint(uint64(zoneID), 10)
 }
+
+// ── 对账 leader(D1 第 1b-2 批,docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §4.2、§13.1 第 8、9 条)──
+//
+// 三类序列,口径不同(告警按 leader 过滤,1b-3):
+//   - 装配型 gauge(route_reconcile_leader / assembled / arm_enabled):每个装配了 reconciler 的副本**恒导出**,值 0/1;
+//     NoLeader 告警 = sum(leader) == 0 and sum(assembled) > 0,ArmEnabled 出现两种取值即告警(全服单值)。
+//   - leader 观测型 gauge(route_ready_marker / route_writable / route_cache_verified_age_seconds / route_ready_selfcheck):
+//     **只有现任 leader 导出**,掉主时删掉(ClearRouteLeaderObservations),免得非 leader 的 0 或前任的旧值把告警带偏。
+//   - 计数 / 直方图:全部封闭集合,PrimeRouteReconcile 在装配时逐个预置 0(理由同 PrimeRoute)。
+//
+// 单独一把 sync.Once 注册,不动上面那张 MustRegister 清单(只追加)。label 不带 player_id / zone(AGENTS.md §9)。
+
+// route_reconcile_tick_total{result} 的取值。
+const (
+	RouteReconcileTickOK         = "ok"
+	RouteReconcileTickNotLeader  = "not_leader"
+	RouteReconcileTickLeaseLost  = "lease_lost"
+	RouteReconcileTickDBError    = "db_error"
+	RouteReconcileTickRedisError = "redis_error"
+	RouteReconcileTickFrozen     = "frozen"
+)
+
+// route_reconcile_event_total{event} 的取值。
+const (
+	RouteReconcileEventMarkerArmed                = "marker_armed"
+	RouteReconcileEventMarkerDroppedIdentity      = "marker_dropped_identity"
+	RouteReconcileEventMarkerDroppedEviction      = "marker_dropped_eviction"
+	RouteReconcileEventMarkerDroppedMalformed     = "marker_dropped_malformed"
+	RouteReconcileEventMarkerDroppedDisarmed      = "marker_dropped_disarmed"
+	RouteReconcileEventArmingRefusedEviction      = "arming_refused_eviction"
+	RouteReconcileEventArmingRefusedUnresolved    = "arming_refused_unresolved"
+	RouteReconcileEventArmingRefusedDebugEnabled  = "arming_refused_debug_enabled"
+	RouteReconcileEventFreezeWatermark            = "freeze_watermark"
+	RouteReconcileEventFreezeGeneration           = "freeze_generation"
+	RouteReconcileEventFreezeCacheAhead           = "freeze_cache_ahead"
+	RouteReconcileEventForeignFence               = "foreign_fence"
+	RouteReconcileEventLeaseReleasedRedisUnreachable = "lease_released_redis_unreachable"
+	RouteReconcileEventTaskStarted                = "task_started"
+	RouteReconcileEventTaskCompleted              = "task_completed"
+	RouteReconcileEventTaskAborted                = "task_aborted"
+)
+
+// route_reconcile_push_total{phase,result} 与 task_seconds / task_rows{phase} 的 phase 取值。
+const (
+	RouteReconcilePhasePrewarm     = "prewarm"
+	RouteReconcilePhaseRepair      = "repair"
+	RouteReconcilePhaseCatchUp     = "catch_up"
+	RouteReconcilePhaseIncremental = "incremental"
+)
+
+// route_reconcile_push_total{phase,result} 的 result 取值(一行一个结局)。cache_ahead 不是发布脚本的回复,
+// 是 superseded 之后复读库确认「缓存比库新」的那一行(随即冻结映射写者)。
+const (
+	RouteReconcilePushSkippedCurrent   = "skipped_current"
+	RouteReconcilePushApplied          = "applied"
+	RouteReconcilePushConfirmed        = "confirmed"
+	RouteReconcilePushSuperseded       = "superseded"
+	RouteReconcilePushCacheAhead       = "cache_ahead"
+	RouteReconcilePushConflict         = "conflict"
+	RouteReconcilePushLegacyConflict   = "legacy_conflict"
+	RouteReconcilePushFenced           = "fenced"
+	RouteReconcilePushTombstoneSkipped = "tombstone_skipped"
+	RouteReconcilePushDBInvalid        = "db_invalid"
+	RouteReconcilePushError            = "error"
+)
+
+// route_reconcile_mirror_total{result} 的取值:merge:merged_into:{src}(只增)与 merge:in_progress:{zone}(围栏镜像,双向)。
+const (
+	RouteReconcileMirrorMergedIntoAdded    = "merged_into_added"
+	RouteReconcileMirrorMergedIntoPresent  = "merged_into_present"
+	RouteReconcileMirrorMergedIntoConflict = "merged_into_conflict"
+	RouteReconcileMirrorFenceWritten       = "fence_written"
+	RouteReconcileMirrorFenceStale         = "fence_stale"
+	RouteReconcileMirrorFenceForeign       = "fence_foreign"
+	RouteReconcileMirrorFenceDeleted       = "fence_deleted"
+	RouteReconcileMirrorFenceDeleteLost    = "fence_delete_lost"
+	RouteReconcileMirrorError              = "error"
+)
+
+// RouteReadySelfCheckScriptError 是 route_ready_selfcheck{verdict} 在 placement 的 7 个 verdict 之外的一个取值:
+// 自检脚本没执行成功或回复形状不对。
+const RouteReadySelfCheckScriptError = "script_error"
+
+var (
+	routeReconcileTickResults = []string{
+		RouteReconcileTickOK, RouteReconcileTickNotLeader, RouteReconcileTickLeaseLost,
+		RouteReconcileTickDBError, RouteReconcileTickRedisError, RouteReconcileTickFrozen,
+	}
+	routeReconcileEvents = []string{
+		RouteReconcileEventMarkerArmed,
+		RouteReconcileEventMarkerDroppedIdentity,
+		RouteReconcileEventMarkerDroppedEviction,
+		RouteReconcileEventMarkerDroppedMalformed,
+		RouteReconcileEventMarkerDroppedDisarmed,
+		RouteReconcileEventArmingRefusedEviction,
+		RouteReconcileEventArmingRefusedUnresolved,
+		RouteReconcileEventArmingRefusedDebugEnabled,
+		RouteReconcileEventFreezeWatermark,
+		RouteReconcileEventFreezeGeneration,
+		RouteReconcileEventFreezeCacheAhead,
+		RouteReconcileEventForeignFence,
+		RouteReconcileEventLeaseReleasedRedisUnreachable,
+		RouteReconcileEventTaskStarted,
+		RouteReconcileEventTaskCompleted,
+		RouteReconcileEventTaskAborted,
+	}
+	routeReconcilePhases = []string{
+		RouteReconcilePhasePrewarm, RouteReconcilePhaseRepair, RouteReconcilePhaseCatchUp, RouteReconcilePhaseIncremental,
+	}
+	routeReconcilePushResults = []string{
+		RouteReconcilePushSkippedCurrent,
+		RouteReconcilePushApplied,
+		RouteReconcilePushConfirmed,
+		RouteReconcilePushSuperseded,
+		RouteReconcilePushCacheAhead,
+		RouteReconcilePushConflict,
+		RouteReconcilePushLegacyConflict,
+		RouteReconcilePushFenced,
+		RouteReconcilePushTombstoneSkipped,
+		RouteReconcilePushDBInvalid,
+		RouteReconcilePushError,
+	}
+	routeReconcileMirrorResults = []string{
+		RouteReconcileMirrorMergedIntoAdded,
+		RouteReconcileMirrorMergedIntoPresent,
+		RouteReconcileMirrorMergedIntoConflict,
+		RouteReconcileMirrorFenceWritten,
+		RouteReconcileMirrorFenceStale,
+		RouteReconcileMirrorFenceForeign,
+		RouteReconcileMirrorFenceDeleted,
+		RouteReconcileMirrorFenceDeleteLost,
+		RouteReconcileMirrorError,
+	}
+)
+
+// routeReadySelfCheckVerdicts 是 route_ready_selfcheck{verdict} 的封闭集合:placement 的 7 个 verdict 名字(唯一出处)加 script_error。
+func routeReadySelfCheckVerdicts() []string {
+	return append(placement.RouteReadyVerdictNames(), RouteReadySelfCheckScriptError)
+}
+
+var (
+	routeReconcileLeader = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "route_reconcile_leader",
+		Help:      "1 while this data_service replica holds the route reconcile lease, else 0. Exported by every replica that assembled the reconciler.",
+	})
+	routeReconcileAssembled = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "route_reconcile_assembled",
+		Help:      "1 on every replica that assembled the route reconcile leader (RouteStore.Mode=db_first and Reconcile.Enabled).",
+	})
+	routeReconcileArmEnabled = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "route_reconcile_arm_enabled",
+		Help:      "RouteStore.Reconcile.ArmReadyMarker of this replica (0/1); it must be the same on every replica sharing the global DB.",
+	})
+	routeReadyMarker = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "route_ready_marker",
+		Help:      "Current reconcile leader only: 1 if mapping:route:ready is present after this tick, else 0.",
+	}, nil)
+	routeWritable = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "route_writable",
+		Help:      "Current reconcile leader only: route_meta.writable as seen by its last tick (0 = route writers frozen).",
+	}, nil)
+	routeCacheVerifiedAgeSeconds = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "route_cache_verified_age_seconds",
+		Help:      "Current reconcile leader only: database clock minus route_reconcile.cache_verified_ms, in seconds (+Inf when never verified).",
+	}, nil)
+	routeReadySelfCheck = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "route_ready_selfcheck",
+		Help:      "Current reconcile leader only: 1 on the verdict its route ready read script (no mapping keys) returned this tick, 0 on the others.",
+	}, []string{"verdict"})
+	routeReconcileTickTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "route_reconcile_tick_total",
+		Help:      "Route reconcile ticks by result: ok|not_leader|lease_lost|db_error|redis_error|frozen.",
+	}, []string{"result"})
+	routeReconcileEventTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "route_reconcile_event_total",
+		Help:      "Route reconcile leader events (marker armed / dropped, arming refused, freezes, foreign fence mirrors, lease released, tasks).",
+	}, []string{"event"})
+	routeReconcilePushTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "route_reconcile_push_total",
+		Help:      "Rows pushed by the reconcile leader, by phase (prewarm|repair|catch_up|incremental) and per-row result.",
+	}, []string{"phase", "result"})
+	routeReconcileMirrorTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "route_reconcile_mirror_total",
+		Help:      "merge:merged_into (add-only) and merge:in_progress (fence mirror, both directions) reconciliation results.",
+	}, []string{"result"})
+	routeReconcileTaskSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Subsystem: subsystem,
+		Name:      "route_reconcile_task_seconds",
+		Help:      "Wall time of finished reconcile tasks (completed or aborted), by phase.",
+		Buckets:   []float64{1, 5, 15, 60, 300, 900, 1800, 3600, 7200, 14400, 28800, 57600},
+	}, []string{"phase"})
+	routeReconcileTaskRows = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "route_reconcile_task_rows",
+		Help:      "Rows processed so far by the running (or last) reconcile task, by phase (progress).",
+	}, []string{"phase"})
+
+	reconcileRegisterOnce sync.Once
+)
+
+func registerRouteReconcile() {
+	reconcileRegisterOnce.Do(func() {
+		prometheus.MustRegister(
+			routeReconcileLeader, routeReconcileAssembled, routeReconcileArmEnabled,
+			routeReadyMarker, routeWritable, routeCacheVerifiedAgeSeconds, routeReadySelfCheck,
+			routeReconcileTickTotal, routeReconcileEventTotal, routeReconcilePushTotal, routeReconcileMirrorTotal,
+			routeReconcileTaskSeconds, routeReconcileTaskRows,
+		)
+	})
+}
+
+// PrimeRouteReconcile 在装配了 reconciler 的副本上调一次(data_service.go 启动路径):assembled=1、leader=0、arm_enabled=arm,
+// 计数器的全部封闭集合预置 0(tick 6、event 16、push 4×11、mirror 9),task_seconds / task_rows 每个 phase 一条。
+// leader 观测型 gauge 不预置(只有现任 leader 导出)。redis 模式与 Enabled=false 不调。
+func PrimeRouteReconcile(arm bool) {
+	registerRouteReconcile()
+	routeReconcileAssembled.Set(1)
+	routeReconcileLeader.Set(0)
+	routeReconcileArmEnabled.Set(boolGauge(arm))
+	for _, r := range routeReconcileTickResults {
+		routeReconcileTickTotal.WithLabelValues(r).Add(0)
+	}
+	for _, e := range routeReconcileEvents {
+		routeReconcileEventTotal.WithLabelValues(e).Add(0)
+	}
+	for _, p := range routeReconcilePhases {
+		for _, r := range routeReconcilePushResults {
+			routeReconcilePushTotal.WithLabelValues(p, r).Add(0)
+		}
+		routeReconcileTaskSeconds.WithLabelValues(p)
+		routeReconcileTaskRows.WithLabelValues(p).Set(0)
+	}
+	for _, r := range routeReconcileMirrorResults {
+		routeReconcileMirrorTotal.WithLabelValues(r).Add(0)
+	}
+}
+
+// SetRouteReconcileLeader 写 route_reconcile_leader(恒导出,不删)。
+func SetRouteReconcileLeader(held bool) {
+	registerRouteReconcile()
+	routeReconcileLeader.Set(boolGauge(held))
+}
+
+// ObserveRouteReconcileTick 记一拍的结果(RouteReconcileTick* 常量)。
+func ObserveRouteReconcileTick(result string) {
+	registerRouteReconcile()
+	routeReconcileTickTotal.WithLabelValues(result).Inc()
+}
+
+// ObserveRouteReconcileEvent 记一个事件(RouteReconcileEvent* 常量)。
+func ObserveRouteReconcileEvent(event string) {
+	registerRouteReconcile()
+	routeReconcileEventTotal.WithLabelValues(event).Inc()
+}
+
+// ObserveRouteReconcilePush 累加 n 行某个推送结局。n <= 0 直接返回。
+func ObserveRouteReconcilePush(phase, result string, n int) {
+	if n <= 0 {
+		return
+	}
+	registerRouteReconcile()
+	routeReconcilePushTotal.WithLabelValues(phase, result).Add(float64(n))
+}
+
+// ObserveRouteReconcileMirror 累加 n 个镜像对账结局。n <= 0 直接返回。
+func ObserveRouteReconcileMirror(result string, n int) {
+	if n <= 0 {
+		return
+	}
+	registerRouteReconcile()
+	routeReconcileMirrorTotal.WithLabelValues(result).Add(float64(n))
+}
+
+// ObserveRouteReconcileTaskSeconds 记一个已结束任务(完成或中止)的耗时。
+func ObserveRouteReconcileTaskSeconds(phase string, d time.Duration) {
+	registerRouteReconcile()
+	routeReconcileTaskSeconds.WithLabelValues(phase).Observe(d.Seconds())
+}
+
+// SetRouteReconcileTaskRows 写任务进度(已处理行数)。
+func SetRouteReconcileTaskRows(phase string, n int) {
+	registerRouteReconcile()
+	routeReconcileTaskRows.WithLabelValues(phase).Set(float64(n))
+}
+
+// SetRouteLeaderObservations 由现任 leader 每拍写一次四个观测型 gauge。selfCheck 取 placement.RouteReadyVerdict.String()
+// 或 RouteReadySelfCheckScriptError:该 verdict 置 1,其余 7 个置 0。cacheVerifiedAgeSeconds 可以是 +Inf(从未验证)。
+func SetRouteLeaderObservations(markerPresent, writable bool, cacheVerifiedAgeSeconds float64, selfCheck string) {
+	registerRouteReconcile()
+	routeReadyMarker.WithLabelValues().Set(boolGauge(markerPresent))
+	routeWritable.WithLabelValues().Set(boolGauge(writable))
+	routeCacheVerifiedAgeSeconds.WithLabelValues().Set(cacheVerifiedAgeSeconds)
+	for _, v := range routeReadySelfCheckVerdicts() {
+		routeReadySelfCheck.WithLabelValues(v).Set(boolGauge(v == selfCheck))
+	}
+}
+
+// ClearRouteLeaderObservations 删掉四个 leader 观测型 gauge 的全部序列(掉主、关停时调):只有现任 leader 导出它们。
+func ClearRouteLeaderObservations() {
+	registerRouteReconcile()
+	routeReadyMarker.Reset()
+	routeWritable.Reset()
+	routeCacheVerifiedAgeSeconds.Reset()
+	routeReadySelfCheck.Reset()
+}
+
+// boolGauge 把 bool 换成 gauge 的 0/1。
+func boolGauge(b bool) float64 {
+	if b {
+		return 1
+	}
+	return 0
+}

@@ -6,6 +6,7 @@
 #include "engine/core/macros/return_define.h"
 #include "table/proto/tip/asset_error_tip.pb.h" // kAssetFrozen / kAssetInvalidBundle — 按 guid 扣出的错误码
 #include "table/proto/tip/common_error_tip.pb.h"
+#include "table/code/item_table.h"
 
 #include "modules/gain_block/gain_block_service.h"
 #include "modules/transaction_log/anomaly_detector.h"
@@ -177,6 +178,21 @@ uint32_t BagService::AddItems(
     }
 
 	return kSuccess;
+}
+
+uint64_t BagService::MaxNewInstancesFor(const ItemCountMap &itemsToAdd)
+{
+	uint64_t total = 0;
+	for (const auto &[configId, count] : itemsToAdd)
+	{
+		const auto *row = ItemTableManager::Instance().FindByIdSilent(configId).first;
+		if (row == nullptr || row->max_stack_size() == 0 || count == 0)
+		{
+			continue; // Bag::AddItems 会在铸号之前整批拒绝这类批次,见头文件
+		}
+		total += ItemStore::StacksNeededFor(count, row->max_stack_size());
+	}
+	return total;
 }
 
 uint32_t BagService::AddItems(

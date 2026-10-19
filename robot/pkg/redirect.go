@@ -40,6 +40,8 @@ type RedirectTarget struct {
 // ReloginFunc 在**新 gate 的连接上**重跑一遍 Login + EnterGame。
 // 由 robot 主程序注册(它才知道认证方式 / 配置 / 指标),pkg 层只负责调用——
 // 否则 pkg 要反向依赖 main 包,编译不过。
+// 它跑在 RecvLoop goroutine 上,只能用 SendRequest + RecvOne 的同步握手;禁止 CallSync
+// (回包要靠 RecvLoop 派发,在这里阻塞等回包就是自锁,见 GameClient.CallSync)。
 type ReloginFunc func(gc *GameClient) error
 
 var (

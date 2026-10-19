@@ -33,6 +33,8 @@
 #include "modules/bag/comp/player_bags_comp.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"
+// tlsGuidSegmentRegistry:掉落入包前预检 item 号段余量(审计 cpp-economy#0)。
+#include "modules/id_segment/guid_segment_registry.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "player/comp/player_frozen_comp.h"
 // PlayerTravelHandoffComp:交接一挂上 SavePlayerToRedis 就硬性跳过写盘,此刻应用等于落不了盘。
@@ -64,6 +66,7 @@
 #include "table/code/buff_table.h"
 #include "table/code/item_table.h"
 #include "table/code/skill_table.h"
+#include "table/proto/tip/asset_error_tip.pb.h"  // kAssetBlocked:金币入账的终局拒绝(审计 cpp-economy#1)
 #include "table/proto/tip/common_error_tip.pb.h"
 
 #include "proto/common/base/common.pb.h"
@@ -708,8 +711,57 @@ namespace
 		return itemRow != nullptr && itemRow->battle_usable() != 0;
 	}
 
+	// 结算掉落按 config 汇总:跳过空项,数量夹到 uint32。号段预检与入包共用这一份 ——
+	// 两处各写一遍,改了一边就会出现「预检的不是实际要发的」。
+	ItemCountMap CollectGainedItems(const ::BattleSettlementData& settlement)
+	{
+		ItemCountMap gained;
+		for (const auto& item : settlement.items_gained())
+		{
+			if (item.item_table_id() == 0 || item.count() == 0)
+			{
+				continue;
+			}
+			// BattleItemEntry.count 是 uint64,ItemCountMap 的值是 uint32:先夹到上限,
+			// 否则高位截断会把一个天文数字变成小数量。同一 config 多行累加时也按上限饱和。
+			const uint64_t clamped =
+				std::min<uint64_t>(item.count(), std::numeric_limits<uint32_t>::max());
+			auto& total = gained[item.item_table_id()];
+			total = static_cast<uint32_t>(
+				std::min<uint64_t>(uint64_t{total} + clamped, std::numeric_limits<uint32_t>::max()));
+		}
+		return gained;
+	}
+
+	// item 号段此刻能不能为掉落铸齐新实例的身份(审计 cpp-economy#0)。
+	// 号段发不出号时,BagService 会整批拒绝入包;主背包与临时格两次都被拒,掉落就丢了。
+	// 所以必须在任何不可重复的副作用(金币)之前判:不够就整笔延后,保留 pending 等重投。
+	// 这与资产通道 ApplyCredit 的号段预检同一纪律。上界见 BagService::MaxNewInstancesFor:
+	// 主背包放不下时一个号都不铸,转投临时格最多也只铸这么多,一份余量就覆盖两段式发放。
+	// 号段双 buffer 加后台预取,续段通常是秒级的事,发件箱 10s 一轮的重投足以接上。
+	// 只读号段余量,不发号。
+	bool HasItemGuidsForDrops(const ItemCountMap& gained, const uint64_t playerId, const uint64_t battleId)
+	{
+		if (gained.empty())
+		{
+			return true;
+		}
+		const uint64_t needed = BagService::MaxNewInstancesFor(gained);
+		const uint64_t available = tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available();
+		if (available >= needed)
+		{
+			return true;
+		}
+		LOG_WARN << "[PlayerBattle] metric=battle_settlement_item_guid_shortage player_id=" << playerId
+				 << " battle_id=" << battleId << " needed=" << needed << " available=" << available
+				 << ",item guid segment cannot cover drops;whole settlement deferred for redelivery";
+		return false;
+	}
+
 	// 结算道具落地:先按实际持有夹紧扣消耗,再把掉落塞进背包。
 	// 全程不返回失败 —— 见调用处注释(金币已入账,失败会导致重投时重复加钱)。
+	// 号段不足导致的掉落失败已由 HasItemGuidsForDrops 在金币之前挡掉。走到这里仍会失败的,
+	// 只剩两处都放不下、物品被全服禁发、配置错误这类终局原因,维持「记 ERROR、继续」。
 	void ApplySettlementItems(entt::entity player, uint64_t playerId,
 							  const ::BattleSettlementData& settlement)
 	{
@@ -787,17 +839,7 @@ namespace
 		//    FIFO 淘汰最旧的)。两处都失败才算丢,记 ERROR 等人查。
 		if (settlement.items_gained_size() > 0)
 		{
-			ItemCountMap gained;
-			for (const auto& item : settlement.items_gained())
-			{
-				if (item.item_table_id() == 0 || item.count() == 0)
-				{
-					continue;
-				}
-				const uint64_t clamped =
-					std::min<uint64_t>(item.count(), std::numeric_limits<uint32_t>::max());
-				gained[item.item_table_id()] += static_cast<uint32_t>(clamped);
-			}
+			const ItemCountMap gained = CollectGainedItems(settlement);
 			if (!gained.empty())
 			{
 				// bag_service.h 保证任何拒绝都不修改原包，失败时整批转投临时格。
@@ -1668,6 +1710,14 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
         return false;
     }
 
+    // 掉落要铸的新实例身份必须先有着落(审计 cpp-economy#0)。号段暂缺是会自己消失的条件,
+    // 与跨区冻结同类:整笔延后、零副作用,保留 pending 等重投。不能等到入包失败才发现 ——
+    // 那时金币已入账,只能记 ERROR 吞掉掉落。
+    if (!HasItemGuidsForDrops(CollectGainedItems(settlement), playerId, battleId))
+    {
+        return false;
+    }
+
     // 走到这里,权威账本已证明本实体没有这一局。进程内缓存若还留着一条「已完成」,只可能是上一条
     // 实体生命周期留下的(那次应用没落盘,实体被重建 —— 重登、DiscardDeposedEntityOnReentry、存盘被
     // 归属围栏拒绝后废黜),资产也随之没了。以账本为准先清掉它再应用:原先是「本轮不应用、等下一次投递」,
@@ -1691,7 +1741,14 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 		}
 
 	    // 唯一会正常返回失败的入账入口必须在 HP/宝宝/任务副作用之前执行。
-	    // 拒绝时不标记完成、不销账，保留 pending 等服务恢复后重投。
+	    // 按 AddCurrency 的返回码契约分两类(currency_system.h):
+	    //  - kAssetBlocked(全服 GainBlock / GM 单人封禁)是终局拒绝,重投永远同样被拒。整笔返回 false
+	    //    会让这一局永远应用不上:药品不扣,掉落与任务进度丢失,下一局还会覆盖单槽 pending
+	    //    (审计 cpp-economy#1)。所以只跳过金币,其余照常应用并登记账本,与资产通道把封禁记成
+	    //    REJECTED 同一口径。拒绝发生在任何改动之前(AddCurrency 先判封禁再动账),跳过即零副作用。
+	    //  - 其余失败(冻结 kAssetFrozen、缺组件 kInvalidParameter 等)不标记完成、不销账,保留 pending
+	    //    等条件消失后重投。冻结其实已被前面的 IsSettlementApplicable 整笔挡掉。
+	    bool goldBlocked = false;
 	    if (settlement.gold_gain() > 0)
 	    {
 	        if (settlement.gold_gain() > static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))
@@ -1702,7 +1759,14 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 	        }
 	        const auto err = CurrencySystem::AddCurrency(
 	            player, kCurrencyGold, static_cast<int64_t>(settlement.gold_gain()));
-	        if (err != kSuccess)
+	        if (err == kAssetBlocked)
+	        {
+	            goldBlocked = true;
+	            LOG_WARN << "[PlayerBattle] metric=battle_settlement_gold_blocked player_id=" << playerId
+	                     << " battle_id=" << battleId << " gold=" << settlement.gold_gain()
+	                     << ",gold gain blocked(GM or global gain block);gold skipped, rest of settlement applied";
+	        }
+	        else if (err != kSuccess)
 	        {
 	            LOG_WARN << "[PlayerBattle] Currency credit failed;settlement retained for redelivery: player_id=" << playerId
 	                     << " battle_id=" << battleId << " err=" << err;
@@ -1810,6 +1874,7 @@ bool PlayerBattleSystem::ApplySettlementToEntity(entt::entity player, const ::Ba
 				 << " outcome=" << settlement.outcome()
 				 << " health=" << health << " mana=" << settlement.mana()
 				 << " gold=" << settlement.gold_gain()
+				 << " gold_blocked=" << goldBlocked
 				 << " is_dead=" << settlement.is_dead()
 				 << " rounds=" << settlement.total_rounds();
         return true;

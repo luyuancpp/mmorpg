@@ -9,6 +9,7 @@ package database
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	_ "proto/db"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -44,6 +45,10 @@ const (
 // — even if cpp Marshal/Unmarshal doesn't populate quest_data/mail_data
 // today, leaving them numbered prevents future schema drift between
 // the proto and any side-channel storage.
+//
+// 冻结(docs/design/mixed-version-persist-field-protection.md §3.2 R1):顶层不经 SQL,冷加载由骨架组装,
+// 存盘每次新拼,顶层新字段无处持久化。新数据一律加进两张表消息。bag_data / quest_data 是由数据库记录
+// 重算的兼容副本,mail_data 没有写入方,三者标 OptionPersistUncarried。
 type PlayerAllData struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	PlayerDatabaseData   *PlayerDatabase        `protobuf:"bytes,2,opt,name=player_database_data,json=playerDatabaseData,proto3" json:"player_database_data,omitempty"`
@@ -132,15 +137,15 @@ var File_proto_common_database_player_cache_proto protoreflect.FileDescriptor
 
 const file_proto_common_database_player_cache_proto_rawDesc = "" +
 	"\n" +
-	"(proto/common/database/player_cache.proto\x1a0proto/common/database/mysql_database_table.proto\x1a/proto/common/database/bag_quest_mail_data.proto\"\xc1\x02\n" +
+	"(proto/common/database/player_cache.proto\x1a\x1bproto/db/proto_option.proto\x1a0proto/common/database/mysql_database_table.proto\x1a/proto/common/database/bag_quest_mail_data.proto\"\xdd\x02\n" +
 	"\rPlayerAllData\x12B\n" +
 	"\x14player_database_data\x18\x02 \x01(\v2\x10.player_databaseR\x12playerDatabaseData\x12G\n" +
-	"\x16player_database_1_data\x18\x03 \x01(\v2\x12.player_database_1R\x13playerDatabase1Data\x12&\n" +
-	"\bbag_data\x18\x04 \x01(\v2\v.BagAllDataR\abagData\x12,\n" +
+	"\x16player_database_1_data\x18\x03 \x01(\v2\x12.player_database_1R\x13playerDatabase1Data\x12-\n" +
+	"\bbag_data\x18\x04 \x01(\v2\v.BagAllDataB\x05\xc0\xfe\xa4\x02\x01R\abagData\x123\n" +
 	"\n" +
-	"quest_data\x18\x05 \x01(\v2\r.QuestAllDataR\tquestData\x12)\n" +
-	"\tmail_data\x18\x06 \x01(\v2\f.MailAllDataR\bmailData\x12\"\n" +
-	"\rlast_save_seq\x18\a \x01(\x04R\vlastSaveSeqB\x17Z\x15proto/common/databaseb\x06proto3"
+	"quest_data\x18\x05 \x01(\v2\r.QuestAllDataB\x05\xc0\xfe\xa4\x02\x01R\tquestData\x120\n" +
+	"\tmail_data\x18\x06 \x01(\v2\f.MailAllDataB\x05\xc0\xfe\xa4\x02\x01R\bmailData\x12\"\n" +
+	"\rlast_save_seq\x18\a \x01(\x04R\vlastSaveSeq:\x05\xc0\x94\xf4\x01\x01B\x17Z\x15proto/common/databaseb\x06proto3"
 
 var (
 	file_proto_common_database_player_cache_proto_rawDescOnce sync.Once

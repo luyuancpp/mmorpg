@@ -191,6 +191,18 @@ func main() {
 		logx.Infof("save protocol generation: mode=dual %s=%s", saveoutbox.GenerationKey(config.AppConfig.ZoneId), saveoutbox.GenerationStrict)
 	}
 
+	// 玩家持久 schema 引导关闭标记(docs/design/mixed-version-persist-field-protection.md §6.2 C0):消费者启动前读一次,
+	// 读不清就拒启;运行中周期复查,只会从开放变成关闭。复查协程随进程停机退出(defer 后进先出,晚于消费者停完)。
+	schemaCtx, schemaCancel := context.WithTimeout(context.Background(), saveProtocolGateTimeout)
+	err = kafka.LoadPersistBootstrapState(schemaCtx, ctx.RedisClient, config.AppConfig.ZoneId)
+	schemaCancel()
+	if err != nil {
+		panic(fmt.Sprintf("persist schema bootstrap state rejected startup: %v", err))
+	}
+	schemaWatchCtx, stopSchemaWatch := context.WithCancel(context.Background())
+	defer stopSchemaWatch()
+	go kafka.WatchPersistBootstrap(schemaWatchCtx, ctx.RedisClient, config.AppConfig.ZoneId)
+
 	// Initialize Kafka consumer
 	kafkaConsumer, err := kafka.NewKeyOrderedKafkaConsumer(
 		config.AppConfig,

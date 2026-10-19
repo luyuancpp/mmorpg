@@ -338,18 +338,19 @@ func RegisterRedisPools(main, placement RedisPoolClient) {
 var fenceClasses = []string{"seq", "legacy_epoch", "legacy_zero"}
 var fenceWriteOutcomes = []string{
 	"updated", "inserted", "unchanged", "equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "race", "error",
+	"schema_regression", // 写方的持久 schema 世代低于行世代(docs/design/mixed-version-persist-field-protection.md §6.2 C1b)
 }
 var fenceUnfencedOutcomes = []string{"updated", "inserted", "unchanged", "error"}
 var fenceCacheWriteResults = []string{"written", "not_owner", "evidence_ahead", "evidence_conflict"}
 var fenceCacheReadResults = []string{"written", "exists"}
-var fenceRejectedOutcomes = []string{"equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "epoch_override"}
+var fenceRejectedOutcomes = []string{"equal", "older_seq", "stale_owner", "owner_epoch_regressed", "legacy_after_seq", "epoch_override", "schema_regression"}
 
 var (
 	fenceWriteTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "fence_write_total",
 		Help: "SQL write outcomes. class: seq | legacy_epoch | legacy_zero | unfenced. outcome: updated | inserted | unchanged | " +
-			"equal | older_seq | stale_owner | owner_epoch_regressed | legacy_after_seq | race | error. Unfenced writes only use " +
+			"equal | older_seq | stale_owner | owner_epoch_regressed | legacy_after_seq | race | error | schema_regression. Unfenced writes only use " +
 			"updated, inserted, unchanged or error. The transitional SQL implementation reports updated for both changed and unchanged rows.",
 	}, []string{"class", "outcome"})
 	fenceCacheTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -368,7 +369,7 @@ var (
 		Subsystem: subsystem,
 		Name:      "fence_rejected_bytes_total",
 		Help: "Row-body bytes submitted by SQL writes rejected by fences. outcome: equal | older_seq | stale_owner | " +
-			"owner_epoch_regressed | legacy_after_seq | epoch_override. Epoch override counts rejected writes admitted by the ordering override.",
+			"owner_epoch_regressed | legacy_after_seq | epoch_override | schema_regression. Epoch override counts rejected writes admitted by the ordering override.",
 	}, []string{"outcome"})
 	fenceOnce sync.Once
 )

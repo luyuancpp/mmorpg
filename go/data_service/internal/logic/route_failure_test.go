@@ -83,6 +83,7 @@ func TestRouteFailure_ZoneWithoutClusterIsFault(t *testing.T) {
 	assert.NotErrorIs(t, err, routing.ErrHomeZoneNotMapped)
 	assert.Equal(t, constants.ErrCodeRedis, resp.ErrorCode)
 	assert.False(t, mr.Exists(routing.PlayerDataLockKey(pid)))
+	assert.False(t, mr.Exists("lock:player:9102"), "mapping 锁不得残留(routing 包未导出的 mappingPlayerLockKey)")
 	assert.Contains(t, logs.String(), routeFailureLogTag+" SavePlayerData player=9102:")
 	assert.Contains(t, logs.String(), "no Redis cluster configured for zone 99")
 }

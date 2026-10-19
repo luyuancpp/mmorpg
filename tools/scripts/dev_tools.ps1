@@ -142,6 +142,11 @@
     # 语义见 k8s_deploy.ps1 参数注释(P0-E 重启闸);switch 只在被指定时透传,只在维护窗口里显式加。
     # 只对会 apply infra 的入口有意义:k8s-infra-up、k8s-all-up、k8s-release-all(均不带 -SkipInfra);k8s-zone-rollback 不 infra-up,不转发。
     [switch]$ConfirmRedisCoreRestart,
+    # 共享 Redis 的形态(1 = 单实例 redis.yaml,3 = 高可用 redis-ha.yaml;0 = 不透传,由 k8s_deploy.ps1 按档位取),透传给
+    # k8s_deploy.ps1 / k8s_image.ps1 同名参数,语义见 k8s_deploy.ps1 参数注释。非 0 才透传。zone 入口(k8s-zone-up 等)通常不用传:
+    # 它决定 db / data-service 的 WAITAOF 副本份数,k8s_deploy.ps1 的 zone-up 没收到时跟随线上 sts/redis,收到而与线上不同即拒绝。
+    [ValidateRange(0, 3)]
+    [int]$RedisReplicas = 0,
     [switch]$SkipInfra,
     [switch]$SkipGoSvc,
     [string]$GoSvcRegistry = "ghcr.io/luyuancpp",
@@ -809,6 +814,8 @@ function Invoke-K8sDeploy {
     if ($AllowDisruptiveSwitch) { $args.AllowDisruptiveSwitch = $true }
     # 共享 Redis 重启闸的确认(P0-E),同一口径:switch 只在被指定时传。
     if ($ConfirmRedisCoreRestart) { $args.ConfirmRedisCoreRestart = $true }
+    # 共享 Redis 的形态:非 0 才传(0 = k8s_deploy.ps1 按档位取)。
+    if ($RedisReplicas -gt 0) { $args.RedisReplicas = $RedisReplicas }
 
     if ($DryRun) {
         $args.DryRun = $true
@@ -1021,6 +1028,8 @@ function Invoke-K8sImage {
     if ($AllowDisruptiveSwitch) { $args.AllowDisruptiveSwitch = $true }
     # release-all(不带 -SkipInfra)会 infra-up,共享 Redis 重启闸的确认同一口径透传。
     if ($ConfirmRedisCoreRestart) { $args.ConfirmRedisCoreRestart = $true }
+    # 共享 Redis 的形态同一口径:非 0 才传。
+    if ($RedisReplicas -gt 0) { $args.RedisReplicas = $RedisReplicas }
     # 留空不透传;k8s_image.ps1 不部署 login / scene_manager,给了由它告警"只参与预检、不改写 ConfigMap"。
     if (-not [string]::IsNullOrWhiteSpace($RequireClientEndpoint)) { $args.RequireClientEndpoint = $RequireClientEndpoint }
     if ($WaitReady) {

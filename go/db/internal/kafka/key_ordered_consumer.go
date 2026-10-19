@@ -515,6 +515,10 @@ func handleDBReadOp(
 	if err := store.WithContext(ctx).FindOneByWhereClause(msg, task.WhereCase); err != nil && !errors.Is(err, proto2mysql.ErrNoRowsFound) {
 		return writeOutcome{}, fmt.Errorf("db read failed: %w", storeerr.Tag(err))
 	}
+	// C2(persist_schema.go):本实例的 SELECT 只列自己认识的列,行世代更高时读出的是截断副本,不能回填缓存、不能交给 login。
+	if err := checkReadSchema(task, msg); err != nil {
+		return writeOutcome{}, err
+	}
 	return writeOutcome{kind: writeApplied}, nil
 }
 
@@ -2277,6 +2281,11 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 	if epochOverride && (!outcome.publishes() || outcome.kind == writeEqual) && err == nil {
 		metrics.CountFenceRejectedBytes("epoch_override", len(dbTask.Body))
 	}
+	// C2(persist_schema.go):行世代高于本实例的读立即回失败回执,不进重试 —— 读按 L-04 会耗预算,排队只会让登录等满超时。
+	if err != nil && dbTask.Op == "read" && errors.Is(err, errSchemaTooNew) {
+		w.failReadSchemaTooNew(task, dbTask, err)
+		return
+	}
 
 	if err == nil && !outcome.publishes() {
 		switch outcome.kind {
@@ -2312,6 +2321,16 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 		case writeLegacyAfterSeq:
 			logx.Errorf("FENCE-LEGACY-AFTER-SEQ taskID=%s committedEpoch=%d", dbTask.TaskId, outcome.storedEpoch)
 			w.quarantineOrderingConflict(task, dbTask, metrics.DeadLetterFenceLegacyAfterSeq, "unversioned write cannot overwrite fenced player row")
+		case writePersistUnstamped:
+			// C0:引导期关闭后仍有机制前的写方。它可能已经截断了新字段,不能落库;死信保留原件,确认写方下线后可人工重放。
+			logx.Errorf("PERSIST-UNSTAMPED taskID=%s msgType=%s: unstamped player write after the persist schema bootstrap period was closed",
+				dbTask.TaskId, dbTask.MsgType)
+			w.quarantineOrderingConflict(task, dbTask, metrics.DeadLetterPersistUnstamped, "unstamped player write after persist schema bootstrap closed")
+		case writeSchemaRegression:
+			// C1b:body 世代低于行世代,说明链路上有人截断过数据。整行写会盖掉新世代的字段,只能拒写并告警排查。
+			logx.Errorf("PERSIST-SCHEMA-REGRESSION taskID=%s msgType=%s: write persist schema generation is below the stored row",
+				dbTask.TaskId, dbTask.MsgType)
+			w.quarantineOrderingConflict(task, dbTask, metrics.DeadLetterSchemaRegression, "write persist schema generation is below the stored row")
 		}
 		return
 	}
@@ -2322,7 +2341,8 @@ func (w *worker) handleTask(task *workerTask, isOfflineExpand bool) {
 			err = fmt.Errorf("%w: %w", errOrderingLeaseLost, err)
 		}
 		// 存储不可用(L-04)时每条任务都会失败一次,逐条 ERROR 会刷屏;由 deferFailedTask 按原因限速记录。
-		if !logsAsStoreOutage(err) {
+		// 世代超前(C1)同理:go/db 回滚或违反发布顺序时同一 key 的每次存盘都会走到这里。
+		if !logsAsStoreOutage(err) && !errors.Is(err, errSchemaTooNew) {
 			logx.Errorf("worker process task failed: partition=%d, cost=%v, err=%v",
 				w.partition, time.Since(startTime), err)
 		}
@@ -2859,6 +2879,15 @@ func processTaskWithoutLock(ctx context.Context, redisClient redis.Cmdable, task
 		return writeOutcome{}, fmt.Errorf("unmarshal task body failed: taskID=%s, err=%w", task.TaskId, err)
 	}
 
+	// 持久 schema 世代 C0 / C1(persist_schema.go):进 SQL 之前判定,不经过 runDBOp,也就不会把一次没发 SQL 的结局报给落点库注册表。
+	if kind, schemaErr := checkWriteSchema(task, msg); schemaErr != nil {
+		metrics.ObserveResult(opLabel, "error")
+		return writeOutcome{}, schemaErr
+	} else if kind != "" {
+		metrics.ObserveResult(opLabel, "ok")
+		return writeOutcome{kind: kind}, nil
+	}
+
 	var opErr error
 	var outcome writeOutcome
 	if handler, ok := dbOpHandlers[task.Op]; !ok {
@@ -2937,12 +2966,12 @@ func runDBOp(ctx context.Context, redisClient redis.Cmdable, task *db_proto.DBTa
 	}
 	if isWrite {
 		switch outcome.kind {
-		case writeApplied, writeEqual, writeOlder, writeStaleOwner, writeLegacyAfterSeq:
+		case writeApplied, writeEqual, writeOlder, writeStaleOwner, writeLegacyAfterSeq, writeSchemaRegression:
 		default:
 			return outcome, fmt.Errorf("SQL handler returned unknown write outcome %q", outcome.kind)
 		}
 	}
-	if isWrite && (outcome.kind == writeStaleOwner || outcome.kind == writeLegacyAfterSeq) {
+	if isWrite && (outcome.kind == writeStaleOwner || outcome.kind == writeLegacyAfterSeq || outcome.kind == writeSchemaRegression) {
 		return outcome, nil
 	}
 	postCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), orderingLockReleaseTimeout)
@@ -3053,12 +3082,18 @@ func (w *worker) deferFailedTask(task *workerTask, dbTask *db_proto.DBTask, caus
 			logStoreDeferral(dbTask, deferReason(cause), cause)
 			return
 		}
+		if errors.Is(cause, errSchemaTooNew) {
+			logSchemaTooNew(dbTask, cause)
+			return
+		}
 		logx.Errorf("retry task rescheduled: taskID=%s retryCount=%d cause=%v",
 			dbTask.TaskId, dbTask.RetryCount, cause)
 		return
 	}
 	if logsAsStoreOutage(cause) {
 		logStoreDeferral(dbTask, deferReason(cause), cause)
+	} else if errors.Is(cause, errSchemaTooNew) {
+		logSchemaTooNew(dbTask, cause)
 	}
 
 	partition := w.partition

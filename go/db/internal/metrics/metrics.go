@@ -143,22 +143,40 @@ var (
 	taskDeferredTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "task_deferred_total",
-		Help:      "Tasks pushed back to the retry queue instead of completing. op: read | write | unknown. reason: conn_refused | conn_lost | store_readonly | store_busy | store_cooldown | store_open_failed | ordering_lock_busy | fence_race | fence_evidence_conflict | lease_lost | placement_frozen | placement_moved | route_not_ready | expand_lock_busy | redis_unavailable | other.",
+		Help:      "Tasks pushed back to the retry queue instead of completing. op: read | write | unknown. reason: conn_refused | conn_lost | store_readonly | store_busy | store_cooldown | store_open_failed | ordering_lock_busy | fence_race | fence_evidence_conflict | lease_lost | placement_frozen | placement_moved | route_not_ready | expand_lock_busy | redis_unavailable | schema_too_new | other.",
 	}, []string{"op", "reason"})
 
 	// taskDeadLetterTotal 在每个死信写入点成功写入后计数。
 	taskDeadLetterTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "task_dead_letter_total",
-		Help:      "Tasks moved into kafka:dead:queue:{topic}. reason: budget_exhausted | malformed_payload | legacy_payload | invalid_partition | ordering_incomparable | stale_topic | missing_required | poison | fence_stale_owner | fence_legacy_after_seq | owner_epoch_regressed.",
+		Help:      "Tasks moved into kafka:dead:queue:{topic}. reason: budget_exhausted | malformed_payload | legacy_payload | invalid_partition | ordering_incomparable | stale_topic | missing_required | poison | fence_stale_owner | fence_legacy_after_seq | owner_epoch_regressed | persist_unstamped | schema_regression.",
 	}, []string{"reason"})
 
 	// taskReadAbandonedTotal 记读任务被放弃的次数:读不改数据,不进死信。
 	taskReadAbandonedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Subsystem: subsystem,
 		Name:      "task_read_abandoned_total",
-		Help:      "Read tasks answered with a failure or dropped instead of retried / dead-lettered. reason: store_unavailable (failure receipt sent at once) | budget_exhausted (dropped after the retry budget).",
+		Help:      "Read tasks answered with a failure or dropped instead of retried / dead-lettered. reason: store_unavailable (failure receipt sent at once) | budget_exhausted (dropped after the retry budget) | schema_too_new (row written by a newer persist schema generation than this binary; failure receipt sent at once).",
 	}, []string{"reason"})
+
+	// 玩家持久 schema 世代(docs/design/mixed-version-persist-field-protection.md §6)的观测面:本二进制的世代、本 zone
+	// 引导期是否已关闭、仍在出现的未盖戳写。部署预检与「引导期能否关闭」(§8.1 第 4 步)都看这三个。
+	persistSchemaGenGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "persist_schema_gen",
+		Help:      "Player persist schema generation compiled into this go/db binary (docs/design/mixed-version-persist-field-protection.md §3).",
+	})
+	persistSchemaBootstrapClosed = prometheus.NewGauge(prometheus.GaugeOpts{
+		Subsystem: subsystem,
+		Name:      "persist_schema_bootstrap_closed",
+		Help:      "1 once this zone's persist schema bootstrap period is closed (unstamped player writes are then dead-lettered as persist_unstamped); 0 while it is open.",
+	})
+	persistSchemaUnstampedWriteTotal = prometheus.NewCounter(prometheus.CounterOpts{
+		Subsystem: subsystem,
+		Name:      "persist_schema_unstamped_write_total",
+		Help:      "Player table write bodies whose persist_schema_gen is 0, i.e. produced by a writer from before the mechanism. Must stay at 0 for a full save period before the bootstrap period may be closed.",
+	})
 
 	// retryQueueLength 是重试链路各列表的长度,重试循环每拍采样一次。ready、partitioned 与 dead 是同一 topic 所有实例
 	// 共用的列表,每个副本报的是同一个数,告警里取 max;processing 是本实例自己的列表。
@@ -212,9 +230,11 @@ func register() {
 		for _, reason := range deadLetterReasons {
 			taskDeadLetterTotal.WithLabelValues(reason).Add(0)
 		}
-		for _, reason := range []string{ReadAbandonedStoreUnavailable, ReadAbandonedBudgetExhausted} {
+		for _, reason := range []string{ReadAbandonedStoreUnavailable, ReadAbandonedBudgetExhausted, ReadAbandonedSchemaTooNew} {
 			taskReadAbandonedTotal.WithLabelValues(reason).Add(0)
 		}
+		// 世代仪表在 SetPersistSchemaGen / SetPersistSchemaBootstrapClosed 里赋值;计数器注册即以 0 存在。
+		prometheus.MustRegister(persistSchemaGenGauge, persistSchemaBootstrapClosed, persistSchemaUnstampedWriteTotal)
 		// db_task 分区契约观测:12 条序列全部以 0 建出,写不符的 critical 告警才能抓到第一次。
 		prometheus.MustRegister(producerPartitionTotal)
 		for _, op := range producerPartitionOps {
@@ -280,13 +300,14 @@ const (
 	DeferRouteNotReady         = "route_not_ready"         // mapping Redis 的副本不可信(就绪标记,D1 第 3 批):写不耗预算、读耗
 	DeferExpandLockBusy        = "expand_lock_busy"        // 扩容锁被占
 	DeferRedisUnavailable      = "redis_unavailable"       // Redis 侧的网络错误或超时(守卫、选库、复核、缓存)
+	DeferSchemaTooNew          = "schema_too_new"          // 写方的持久 schema 世代高于本实例(C1):写不耗预算,等新版实例处理
 	DeferOther                 = "other"                   // 其它:SQL 的非存储侧错误、编程错误等,照旧耗预算
 )
 
 var deferReasons = []string{
 	DeferConnRefused, DeferConnLost, DeferStoreReadOnly, DeferStoreBusy, DeferStoreCooldown, DeferStoreOpenFailed,
 	DeferFenceEvidenceConflict, DeferFenceRace, DeferOrderingLockBusy, DeferLeaseLost, DeferPlacementFrozen, DeferPlacementMoved, DeferExpandLockBusy,
-	DeferRedisUnavailable, DeferOther, DeferRouteNotReady,
+	DeferRedisUnavailable, DeferOther, DeferRouteNotReady, DeferSchemaTooNew,
 }
 
 // 进死信的原因(db_task_dead_letter_total 的 reason)。
@@ -302,18 +323,45 @@ const (
 	DeadLetterStaleTopic           = "stale_topic"            // 写所在 topic 的 zone 不是玩家的 home_zone
 	DeadLetterMissingRequired      = "missing_required"       // Placement.Required=true 且无落点记录的写
 	DeadLetterPoison               = "poison"                 // Kafka 消息解不出 DBTask
+	// 玩家持久 schema 世代(docs/design/mixed-version-persist-field-protection.md §6.2):两者都是确定性拒写,重试修复不了。
+	DeadLetterPersistUnstamped = "persist_unstamped" // 引导期关闭后仍收到未盖戳的写(机制前的写方,C0)
+	DeadLetterSchemaRegression = "schema_regression" // 写方世代低于 SQL 行世代:链路上有人截断过数据(C1b)
 )
 
 var deadLetterReasons = []string{
 	DeadLetterBudgetExhausted, DeadLetterMalformedPayload, DeadLetterLegacyPayload, DeadLetterInvalidPartition,
 	DeadLetterOrderingIncomparable, DeadLetterStaleTopic, DeadLetterMissingRequired, DeadLetterPoison, DeadLetterFenceStaleOwner, DeadLetterFenceLegacyAfterSeq, DeadLetterOwnerEpochRegressed,
+	DeadLetterPersistUnstamped, DeadLetterSchemaRegression,
 }
 
 // 读任务被放弃的原因(db_task_read_abandoned_total 的 reason)。
 const (
 	ReadAbandonedStoreUnavailable = "store_unavailable" // 库打不开或在冷却期内:立即回失败回执
 	ReadAbandonedBudgetExhausted  = "budget_exhausted"  // 重试次数用完:丢弃,不进死信
+	ReadAbandonedSchemaTooNew     = "schema_too_new"    // 行的持久 schema 世代高于本实例(C2):立即回失败回执,不回填缓存
 )
+
+// SetPersistSchemaGen 记下本二进制的持久 schema 世代,启动时调用一次。
+func SetPersistSchemaGen(gen uint32) {
+	register()
+	persistSchemaGenGauge.Set(float64(gen))
+}
+
+// SetPersistSchemaBootstrapClosed 记下本 zone 引导期是否已关闭。
+func SetPersistSchemaBootstrapClosed(closed bool) {
+	register()
+	if closed {
+		persistSchemaBootstrapClosed.Set(1)
+		return
+	}
+	persistSchemaBootstrapClosed.Set(0)
+}
+
+// CountPersistSchemaUnstampedWrite 记一条未盖戳的玩家表写(重试会重复计,看的是「还在不在出现」)。
+func CountPersistSchemaUnstampedWrite() {
+	register()
+	persistSchemaUnstampedWriteTotal.Inc()
+}
 
 // 重试链路的列表(db_retry_queue_length 的 queue)。
 // 取值被 tools/scripts/stress_summarize.ps1 的 2f 段按精确字符串读取(ready / partitioned / processing / dead),

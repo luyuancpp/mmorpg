@@ -33,6 +33,10 @@ func SetFencingMode(mode string) error {
 		if !isFenceTable(msg.ProtoReflect().Descriptor()) {
 			return fmt.Errorf("已知玩家表缺少正确围栏字段: %T", msg)
 		}
+		// 持久 schema 世代校验(persist_schema.go)按字段名反射读戳,字段缺失时没法判定,启动即拒。
+		if err := requirePersistSchemaField(msg); err != nil {
+			return err
+		}
 	}
 	switch mode {
 	case "", db_config.FencingModeLegacy:
@@ -150,6 +154,11 @@ func savePlayerRow(ctx context.Context, store *proto2mysql.DB, task *dbpb.DBTask
 		oldEpoch, oldSeq := current.ProtoReflect().Get(fo).Uint(), current.ProtoReflect().Get(fs).Uint()
 		outcome.storedEpoch = oldEpoch
 		if !fencingDual.Load() {
+			// C1b(persist_schema.go):与写入同一把行锁。legacy 没有版本判定,倒退写同样不能盖掉更新世代写下的数据。
+			if schemaRegressed(target, current) {
+				outcome.kind = writeSchemaRegression
+				return nil
+			}
 			target.ProtoReflect().Set(fo, protoreflect.ValueOfUint64(oldEpoch))
 			target.ProtoReflect().Set(fs, protoreflect.ValueOfUint64(oldSeq))
 			return tx.Save(target)
@@ -167,6 +176,12 @@ func savePlayerRow(ctx context.Context, store *proto2mysql.DB, task *dbpb.DBTask
 			proto.Reset(msg)
 			proto.Merge(msg, current)
 		default:
+			// C1b:围栏判定之后、写入之前。围栏的 older / equal / stale 结局优先;到这里说明版本上允许写,
+			// 但 body 的世代低于行世代 —— 链路上有人截断过数据,整行写会把新世代的字段盖掉(设计 §6.2)。
+			if schemaRegressed(target, current) {
+				outcome.kind = writeSchemaRegression
+				return nil
+			}
 			if seq == 0 && epoch != 0 && oldEpoch == epoch {
 				target.ProtoReflect().Set(fs, protoreflect.ValueOfUint64(oldSeq))
 			}

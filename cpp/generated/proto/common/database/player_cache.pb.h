@@ -30,6 +30,7 @@
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
+#include "proto/db/proto_option.pb.h"
 #include "proto/common/database/mysql_database_table.pb.h"
 #include "proto/common/database/bag_quest_mail_data.pb.h"
 // @@protoc_insertion_point(includes)
@@ -261,7 +262,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerAllData final : public ::goog
   ::player_database_1* PROTOBUF_NONNULL _internal_mutable_player_database_1_data();
 
   public:
-  // .BagAllData bag_data = 4;
+  // .BagAllData bag_data = 4 [(.OptionPersistUncarried) = true];
   [[nodiscard]] bool has_bag_data()
       const;
   void clear_bag_data() ;
@@ -277,7 +278,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerAllData final : public ::goog
   ::BagAllData* PROTOBUF_NONNULL _internal_mutable_bag_data();
 
   public:
-  // .QuestAllData quest_data = 5;
+  // .QuestAllData quest_data = 5 [(.OptionPersistUncarried) = true];
   [[nodiscard]] bool has_quest_data()
       const;
   void clear_quest_data() ;
@@ -293,7 +294,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED PlayerAllData final : public ::goog
   ::QuestAllData* PROTOBUF_NONNULL _internal_mutable_quest_data();
 
   public:
-  // .MailAllData mail_data = 6;
+  // .MailAllData mail_data = 6 [(.OptionPersistUncarried) = true];
   [[nodiscard]] bool has_mail_data()
       const;
   void clear_mail_data() ;
@@ -566,7 +567,7 @@ inline void PlayerAllData::set_allocated_player_database_1_data(::player_databas
   // @@protoc_insertion_point(field_set_allocated:PlayerAllData.player_database_1_data)
 }
 
-// .BagAllData bag_data = 4;
+// .BagAllData bag_data = 4 [(.OptionPersistUncarried) = true];
 inline bool PlayerAllData::has_bag_data() const {
   bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
   PROTOBUF_ASSUME(!value || _impl_.bag_data_ != nullptr);
@@ -659,7 +660,7 @@ inline void PlayerAllData::set_allocated_bag_data(::BagAllData* PROTOBUF_NULLABL
   // @@protoc_insertion_point(field_set_allocated:PlayerAllData.bag_data)
 }
 
-// .QuestAllData quest_data = 5;
+// .QuestAllData quest_data = 5 [(.OptionPersistUncarried) = true];
 inline bool PlayerAllData::has_quest_data() const {
   bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000008U);
   PROTOBUF_ASSUME(!value || _impl_.quest_data_ != nullptr);
@@ -752,7 +753,7 @@ inline void PlayerAllData::set_allocated_quest_data(::QuestAllData* PROTOBUF_NUL
   // @@protoc_insertion_point(field_set_allocated:PlayerAllData.quest_data)
 }
 
-// .MailAllData mail_data = 6;
+// .MailAllData mail_data = 6 [(.OptionPersistUncarried) = true];
 inline bool PlayerAllData::has_mail_data() const {
   bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000010U);
   PROTOBUF_ASSUME(!value || _impl_.mail_data_ != nullptr);

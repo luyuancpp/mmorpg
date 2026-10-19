@@ -543,12 +543,34 @@ Java 隔离快照 `D:/luyuan/xuanming-server-mmo/build/match-global-20261015/tes
 
 全球对局的结果日志提交点是 Kafka `acks=all` 的逐消息成功回执，不是客户端收到了胜负、producer 本地入队成功或 Redis SET 返回。结果 topic 部署必须三副本、`min.insync.replicas=2`，producer 幂等及 all ACK 不得静默降级；Kafka 提交只确认耐久结果日志，评级与帮会账本仍分别由 TiDB 事务和原 battle_id 摘要收据负责。
 
-最终回合一次计算并固定原事件（包括 finished_at_ms）及原终局帧。成功回执之前保留原房间、拒绝新行动、按有限退避重试同一份字节；139/150、观战终态、个人结算、房间删除均延后。GetState/新观众首帧只能读取上一个非终态快照。回合终局和 deadline DRAW 共用此提交接缝，不能只修活动分支。未确认的旧发送可能实际已落 broker，重投允许重复但不能改结果；丢失响应不是输赢失败证明。
+最终回合一次计算并固定原事件（包括 finished_at_ms）及原终局帧。成功回执之前保留原房间、拒绝新行动、按有限退避重试同一份字节；139/150、观战终态、个人结算的派发命令、房间删除均延后。个人结算的 pending 在结果第一次发送之前已落库，见本节末「2026-10-19 更正」。GetState/新观众首帧只能读取上一个非终态快照。回合终局和 deadline DRAW 共用此提交接缝，不能只修活动分支。未确认的旧发送可能实际已落 broker，重投允许重复但不能改结果；丢失响应不是输赢失败证明。
 
-明确销毁不能在结果未知时先推 ABORTED 后再让原结果生效；停机断开待提交房间的连接，保留客户端 UNKNOWN 语义。进程在结果提交前崩溃仍可按未完成战斗处置；broker 已确认的原事件由 SQL 消费者幂等恢复。Redis 活动副本作为补拉投影保留，但单次无耐久投递不能构成生产成功。跨洲完整进程链和超过 Kafka 保留窗口的运营恢复仍须另验。
+明确销毁不能在结果未知时先推 ABORTED 后再让原结果生效；停机断开待提交房间的连接，保留客户端 UNKNOWN 语义。进程在结果提交前崩溃仍可按未完成战斗处置；broker 已确认的原事件，其评分与帮会账本由 SQL 消费者幂等恢复，个人结算不由 SQL 恢复，靠发送前已落的 pending（2026-10-19 更正，原句「broker 已确认的原事件由 SQL 消费者幂等恢复」对个人结算不成立）。Redis 活动副本作为补拉投影保留，但单次无耐久投递不能构成生产成功。跨洲完整进程链和超过 Kafka 保留窗口的运营恢复仍须另验。
 
 Go 全球启动在 matcher 和 RPC 准入之前同步核对结果 topic，独立于 RatingEnabled，失败拒启。Java match 在装配阶段做相同强核验，关闭评分消费也不绕过；battle 生产者只有核验后才发送。既有 RF1 topic 拒绝启用并要求人工迁副本，不自动降低要求；owner 显式固定 topic 级 minISR 至少 2（保留更高值）和 unclean election=false。Guild 消费者只验证既有 topic，不抢先建 RF1。
 
 本机结果源回归：`tests-global-result-red-16.log` 在真实 Java RoomService+引擎上稳定复现“未确认已删房”（1条失败），`tests-global-result-focused-17.log` 46/46通过；扩展 `tests-global-result-policy-18.log` 85/85、0跳过，包括真实房间4条、Kafka传输29条、活动投影19条、topic策略15条、消费运行时18条。Go `go-match-topic-final-12.log` 全包及对应 build/vet 通过，覆盖生产入口预检；完整 Java 模块和 C++ 构建另附最终证据。个人 BattleSettlementData 的完整资产载荷不在 BattleResultEvent 中，这个结果确认屏障不等于普通掉落与玩家存盘整链的原子提交证明。
 
 2026-10-16 Java最终模块补验：隔离副本 `tests-global-result-all-final-26.log` 的12模块test reactor成功，5313总项中4862实际通过、0失败/错误，451项既有门控集成未运行；match为1468通过/303未运行，battle为525通过/19未运行。结果屏障4、活房创建收据5、topic策略15、消费运行时19、Kafka发送29、活动投影19共91项实际通过，952源文件与当前Java主仓SHA对账一致。`java-match-result-final-proof-20261016.json`记录逐模块数字与源码摘要。前序完整回归保留RF1旧fixture、API fork异常和EVALSHA旧mock的红日志；API最小5/5、四个mock夹具37/37绿后才恢复完整回归，没有放宽生产RF3/ISR或请求截止断言。本轮没有执行真实3broker战斗结果完整进程链，默认门控未运行不算通过；普通R07个人结算与多区域故障、容量边界维持本节上述限制。
+
+**2026-10-19 更正：个人结算的耐久提交点前移到结果发送之前**（审计 social-match-battle#2，见 [data-overwrite-rollback-audit-20261018.md](data-overwrite-rollback-audit-20261018.md) §2.4）
+
+- **原结论与代码不符。** 上文说「broker 已确认的原事件由 SQL 消费者幂等恢复」，这只对评分与帮会账本成立。`match_battle_settlement_source` 只归档个人结算来源，没有任何读者，不会补发个人结算。
+- **旧代码的走向：**
+  - 个人 pending 只在 all ACK 之后由 `FinishBattle` → `DispatchSettlementDurably` 写入。
+  - 停机时 `AbortAllRooms` 先 `StopResultCommits` 再清房，框架随后 flush producer。结果到了 broker，评分与帮会历练照常入账，个人结算却永不派发。
+  - 回执处理前崩溃，同理。
+- **修复（C++，2026-10-19，未编译、未测试，待 Codex 验证）：**
+  - 结果第一次发往 broker 的前置条件，改为全部成员的个人结算已写进 R07 pending。由 `ResultCommit::BeginStaging` / `FinishStaging` 把关，`BattleRoomManager::StagePersonalSettlements` 按成员 EVAL 原 `kSetPendingSettlementScript`。
+  - 字节统一取 `BuildPersonalSettlementPayloads(冻结原件)`。
+  - 回执之后，`FinishBattle` 走 `DispatchStagedSettlement`：只投 SceneCommand、登记发件箱，不再改写 pending。原因是回执前 scene 可能已应用并销账，改写会让 pending 复活，玩家重复领奖。
+  - 停机与崩溃都不删已落的 pending，由 scene 登录钩子或冻结到期补读应用，账本与锁照常判重。
+- **语义变化（有意接受的代价）：**
+  - 结果最终没有进入 broker 时，个人奖励照常应用，评分与帮会历练不计，即「奖励有、评分无」。这包括发送前崩溃，以及一直未确认之后的停机或崩溃。
+  - 反方向的「评分有、奖励无」，原先每次带在途结果的停机都会发生，现在不再出现。
+  - scene 可能先于回执应用个人结算（玩家重登、冻结到期补读）。回执后的派发命令按账本与 `battle:lock` 判重，不会重复发奖。
+- **可用性变化：** 确认模式在 zone Redis 不可用时，不再降级为「不落库直接发」，结果发送等 Redis 恢复后再进行。这期间房间保留、拒绝新行动，与等 broker 回执同一形态。
+- **未变的残余：**
+  - pending 每玩家单槽，下一局覆盖上一局（turn-battle-gap-closure.md §9.3 残余）。
+  - battle 节点的 Redis / Kafka 编排没有单测接缝。停机与崩溃场景只有纯状态机单测，以及 PROGRESS 同日条目里的可选冒烟步骤。
+- **Java 版**（0.1.0-SNAPSHOT）：只读核实，`BattleRoomServiceImpl` 同样在回执后才落 pending，`abortAll` 不派发，**待做**。

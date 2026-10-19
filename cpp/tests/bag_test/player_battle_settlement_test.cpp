@@ -17,6 +17,7 @@
 #include "modules/condition/condition_type.h"
 #include "modules/mission/comp/mission_comp.h"
 #include "modules/mission/system/mission.h"
+#include "modules/bag/bag_service.h"
 #include "modules/bag/bag_system.h"
 #include "modules/bag/comp/player_bags_comp.h"
 #include "modules/bag/item_system.h"
@@ -24,6 +25,7 @@
 #include "modules/currency/comp/player_currency_comp.h"
 #include "modules/currency/constants/currency.h"
 #include "modules/currency/system/currency_system.h"
+#include "modules/gain_block/gain_block_service.h"
 #include "proto/battle/battle_data.pb.h"
 #include "table/code/item_table.h"
 #include "table/code/condition_table.h"
@@ -527,6 +529,51 @@ TEST_F(PlayerBattleSettlementTest, TravelHandoffDefersWholeSettlement) {
         tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
 }
 
+// 审计 cpp-economy#1(data-overwrite-rollback-audit-20261018.md §2.4):GM 封锁金币获取后,AddCurrency
+// 回的是终局拒绝 kAssetBlocked。修复前结算把它当暂时失败整笔返回 false,每次重投都同样被拒,这一局
+// 永远应用不上:药品不扣,掉落与任务进度丢失,下一局开打时单槽 pending 还会被覆盖。
+// 修复后只跳过金币,其余照常应用并登记账本(与资产通道的封禁口径一致)。解封后同一局的重投
+// 被账本挡住:金币不补发,进度也不重推。
+TEST_F(PlayerBattleSettlementTest, GmCurrencyBlockSkipsGoldButAppliesRestOfSettlement) {
+    ASSERT_EQ(kSuccess, CurrencySystem::BlockCurrency(player, kCurrencyGold));
+
+    bool alreadyApplied = true;
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement, alreadyApplied));  // 修复前 false
+    EXPECT_FALSE(alreadyApplied);
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
+    EXPECT_EQ(KillProgress(), 2u);
+    EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 80u);
+    EXPECT_TRUE(battle_settlement::HasApplied(
+        tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
+    EXPECT_EQ(gPersistCalls, 1);
+
+    ASSERT_EQ(kSuccess, CurrencySystem::UnblockCurrency(player, kCurrencyGold));
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement, alreadyApplied));
+    EXPECT_TRUE(alreadyApplied);
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
+    EXPECT_EQ(KillProgress(), 2u);
+}
+
+// 全服 GainBlock 与单人 GM 封禁同属终局拒绝(AddCurrency 都回 kAssetBlocked),处理口径相同。
+TEST_F(PlayerBattleSettlementTest, GlobalCurrencyGainBlockSkipsGoldButAppliesRestOfSettlement) {
+    struct ScopedGlobalGoldBlock {
+        const uint32_t gold = static_cast<uint32_t>(kCurrencyGold);
+        const bool wasBlocked =
+            GainBlockService::IsGloballyBlocked(GainBlockService::GainType::kCurrency, gold);
+        ScopedGlobalGoldBlock() { GainBlockService::BlockGlobal(GainBlockService::GainType::kCurrency, gold); }
+        ~ScopedGlobalGoldBlock() {
+            if (!wasBlocked) GainBlockService::UnblockGlobal(GainBlockService::GainType::kCurrency, gold);
+        }
+    } block;
+
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));  // 修复前 false
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);
+    EXPECT_EQ(KillProgress(), 2u);
+    EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 80u);
+    EXPECT_TRUE(battle_settlement::HasApplied(
+        tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
+}
+
 // 「已应用但未落盘」时销账必须延后:这一刻销账,崩溃即永久丢奖励(§9.3)。
 // 可观察的证据是销账入口又压了一次存盘(应用时一次 + 销账延后一次),账本条目也不能被摘。
 TEST_F(PlayerBattleSettlementTest, AckDefersClearWhileAppliedButNotDurable) {
@@ -650,6 +697,12 @@ namespace {
 
 constexpr uint32_t kSettlementStackItem = 10;   // 可叠加
 constexpr uint32_t kSettlementDropItem = 11;    // 可叠加
+constexpr uint32_t kSettlementNonStackItem = 1; // 不可叠加(max_stack_size = 1):每件一个新实例
+
+// 把 item 号段临时换成小区间的用例在析构时还原 bag_test 的号段基线(与 PlayerMissionWithoutSinkTest 同一基线)。
+struct ScopedItemSegmentBaseline {
+    ~ScopedItemSegmentBaseline() { EXPECT_TRUE(ArmSettlementMissionItemSegment(1, uint64_t{1} << 54)); }
+};
 
 class PlayerBattleSettlementItemTest : public PlayerBattleSettlementTest {
 protected:
@@ -662,6 +715,9 @@ protected:
     }
     Bag& Inventory() {
         return tlsEcs.actorRegistry.get<PlayerBagsComp>(player).bags[kInventory];
+    }
+    Bag& Temporary() {
+        return tlsEcs.actorRegistry.get<PlayerBagsComp>(player).bags[kTemporary];
     }
     void GiveItem(uint32_t configId, uint32_t count) {
         InitItemParam param;
@@ -819,6 +875,73 @@ TEST_F(PlayerBattleSettlementItemTest, RepeatedApplyDoesNotDoubleConsumeOrDouble
     EXPECT_EQ(Inventory().GetTotalItemCount(kSettlementStackItem), 3u);
     EXPECT_EQ(Inventory().GetTotalItemCount(kSettlementDropItem), 3u);
     EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
+}
+
+// 审计 cpp-economy#0(data-overwrite-rollback-audit-20261018.md §2.4):物品号段暂时发不出号。
+// 修复前的走向:金币照常入账、药品照扣,主背包与临时格都因发不出号整批拒绝,只打一行 ERROR,账本照样登记
+// 「已应用」;在线路径随即销账,掉落永久丢失。修复后在金币之前按掉落的新实例数上界预检号段余量:
+// 不够就整笔延后、零副作用,预检本身也不耗号。号段续上后重投照常应用一次 —— 延后不是丢弃。
+TEST_F(PlayerBattleSettlementItemTest, ItemGuidShortageDefersWholeSettlementBeforeGold) {
+    ScopedItemSegmentBaseline restoreBaseline;
+    GiveItem(kSettlementStackItem, 5);  // 铺底在换号段之前,用的是基线号段
+    SetConsumed(kSettlementStackItem, 2);
+    SetGained(kSettlementNonStackItem, 3);  // 3 件不可叠加 = 3 个新实例
+    ASSERT_TRUE(ArmSettlementMissionItemSegment(99300000, 99300002));  // 只剩 2 个号
+
+    EXPECT_FALSE(PlayerBattleSettlementTestAccess::Apply(player, settlement));  // 修复前 true
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 0u);           // 修复前 12
+    EXPECT_EQ(Inventory().GetTotalItemCount(kSettlementStackItem), 5u);         // 修复前 3
+    EXPECT_EQ(Inventory().GetTotalItemCount(kSettlementNonStackItem), 0u);
+    EXPECT_EQ(Temporary().GetTotalItemCount(kSettlementNonStackItem), 0u);
+    EXPECT_EQ(0u, KillProgress());
+    EXPECT_EQ(tlsEcs.actorRegistry.get<BaseAttributesComp>(player).health(), 100u);
+    EXPECT_FALSE(battle_settlement::HasApplied(
+        tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
+    EXPECT_EQ(gPersistCalls, 0);
+    EXPECT_EQ(tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available(), 2u);
+
+    ASSERT_TRUE(ArmSettlementMissionItemSegment(99400000, 99500000));  // 续段到达
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
+    EXPECT_EQ(Inventory().GetTotalItemCount(kSettlementStackItem), 3u);
+    EXPECT_EQ(Inventory().GetTotalItemCount(kSettlementNonStackItem), 3u);
+    EXPECT_EQ(KillProgress(), 2u);
+    EXPECT_TRUE(battle_settlement::HasApplied(
+        tlsEcs.actorRegistry.get<BattleSettlementLedgerComp>(player), settlement.battle_id()));
+}
+
+// 预检的上界也覆盖「主背包放不下 → 整批转投临时格」:主背包在空间规划阶段就拒绝,一个号都不铸,
+// 转投临时格那一次最多铸 BagService::MaxNewInstancesFor 个。号段恰好只剩这么多时必须照常落地,
+// 否则预检会把本可发放的掉落误判为号段不足,让结算无限延后。
+TEST_F(PlayerBattleSettlementItemTest, ExactItemGuidCapacityCoversTemporaryFallback) {
+    ScopedItemSegmentBaseline restoreBaseline;
+    Inventory().SetCapacityForRestore(1);
+    constexpr Guid oldItem = (uint64_t{1} << 60) + 9912;
+    Inventory().InsertItemForRestore(oldItem, 3, 1, 0, 1);
+    settlement.clear_defeated_monsters();
+    SetGained(kSettlementStackItem, 3);  // 可叠加,各占 1 个新实例
+    SetGained(kSettlementDropItem, 2);
+    ASSERT_TRUE(ArmSettlementMissionItemSegment(99600000, 99600002));  // 恰好 2 个号
+
+    ASSERT_TRUE(PlayerBattleSettlementTestAccess::Apply(player, settlement));
+    EXPECT_EQ(1u, Inventory().OccupiedGridCount());
+    EXPECT_EQ(3u, Temporary().GetTotalItemCount(kSettlementStackItem));
+    EXPECT_EQ(2u, Temporary().GetTotalItemCount(kSettlementDropItem));
+    EXPECT_EQ(CurrencySystem::GetBalance(player, kCurrencyGold), 12u);
+    EXPECT_EQ(tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available(), 0u);
+}
+
+// 上界口径:不可叠加按件计,可叠加按满堆向上取整;查不到配置行的项按 0 计
+// (整批会因配置错误被拒、一个号都不铸,与号段余量无关,不能因此把结算挡成永久延后)。
+TEST(BagServiceNewInstanceBound, CountsStacksPerConfigAndIgnoresUnknownRows) {
+    ItemTableManager::Instance().Load();
+    EXPECT_EQ(0u, BagService::MaxNewInstancesFor(ItemCountMap{}));
+    EXPECT_EQ(3u, BagService::MaxNewInstancesFor(ItemCountMap{{kSettlementNonStackItem, 3}}));
+    EXPECT_EQ(1u, BagService::MaxNewInstancesFor(ItemCountMap{{kSettlementStackItem, 999}}));
+    EXPECT_EQ(2u, BagService::MaxNewInstancesFor(ItemCountMap{{kSettlementStackItem, 1000}}));
+    EXPECT_EQ(4u, BagService::MaxNewInstancesFor(
+        ItemCountMap{{kSettlementNonStackItem, 3}, {kSettlementDropItem, 5}}));
+    EXPECT_EQ(0u, BagService::MaxNewInstancesFor(ItemCountMap{{999999999u, 7}}));
 }
 
 }  // namespace

@@ -604,11 +604,14 @@ Test-Case 'Redis 走 login 配置的地址,密码只经目标 Pod 的环境变�
     $context = Get-FixtureContext
     $null = Set-GateDrainingMark -Login $context.Login -NodeId 3 -PeerNodeIds @(4) -TtlSeconds 1800 6>$null
     $exec = @($script:RedisExec)
-    Assert-Equal -Expected 'exec -n audit-infra svc/redis -- sh -c' -Actual ($exec[0..6] -join ' ') -Because 'exec 进 login 所连 Redis 的 Service'
-    Assert-Equal -Expected 'sh redis.audit-infra 6379 0' -Actual ($exec[8..11] -join ' ') -Because '地址与 DB 经位置参数传入,不拼进脚本文本'
-    Assert-Match -Text $exec[7] -Pattern 'REDISCLI_AUTH=\$REDIS_PASSWORD' -Because '密码取自 Pod 自己的 Secret 环境变量'
-    Assert-Match -Text $exec[7] -Pattern 'if \[ -n "\$REDIS_PASSWORD" \]' -Because '空密码时不能设 REDISCLI_AUTH(会发 AUTH "")'
-    Assert-Match -Text $exec[7] -Pattern '--no-raw' -Because 'nil 与空串必须可区分'
+    # exec 进与 Service 同名的 StatefulSet 的 redis 容器,不 exec svc/redis:高可用形态(redis-ha.yaml)下 Service redis 指向 haproxy 代理,
+    # 代理镜像里没有 redis-cli;连哪台仍由 -h(login 配置里的 Service 地址)决定,经代理落到主。
+    Assert-Equal -Expected 'exec -n audit-infra statefulset/redis -c redis -- sh -c' -Actual ($exec[0..8] -join ' ') -Because 'exec 进 login 所连共享 Redis 的节点 Pod(redis 容器)'
+    Assert-True -Condition (($exec -join ' ') -notmatch 'svc/redis') -Because '高可用形态下 svc/redis 背后是代理,没有 redis-cli'
+    Assert-Equal -Expected 'sh redis.audit-infra 6379 0' -Actual ($exec[10..13] -join ' ') -Because '地址与 DB 经位置参数传入,不拼进脚本文本'
+    Assert-Match -Text $exec[9] -Pattern 'REDISCLI_AUTH=\$REDIS_PASSWORD' -Because '密码取自 Pod 自己的 Secret 环境变量'
+    Assert-Match -Text $exec[9] -Pattern 'if \[ -n "\$REDIS_PASSWORD" \]' -Because '空密码时不能设 REDISCLI_AUTH(会发 AUTH "")'
+    Assert-Match -Text $exec[9] -Pattern '--no-raw' -Because 'nil 与空串必须可区分'
     Assert-True -Condition (($exec -join ' ') -notmatch 'p#ss' -and ($exec -notcontains '-a')) -Because 'login 配置里的密码不能出现在本机命令行'
 }
 

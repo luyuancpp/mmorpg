@@ -376,7 +376,7 @@ pwsh -File tools/scripts/k8s_gate_drain.ps1 -ZoneName <zone> -Ordinal <i> -Delet
 - `reason=deadline` 时打醒目警告:这台 gate 上还有玩家,删 Pod 会让他们断线重连。
 - 取消排空:在 login 所连的 Redis 上执行 `DEL gate:<id>:draining gate:<id>:drained`。
 - **脚本不做缩容**。直接 scale StatefulSet 之后,要等旧 node_id 的 etcd 记录消失,再手工 `DEL gate:<id>:draining gate:<id>:drained`。不清的话,因为 node_id 全局唯一、按最小空闲号复用,而 login 的 Redis 跨 zone 共用,之后拿到这个 node_id 的 gate(可能在任意 zone)在 TTL 内分不到玩家。
-- 依赖:脚本 `kubectl exec` 进 `svc/etcd`、`svc/redis` 背后的 Pod,再按 login 配置里的 Service 地址连回同一个 Service,需要 pods/exec 权限,也依赖集群支持 hairpin 流量。Redis 若用 ACL 禁了 EVAL,脚本会 fail-closed 拒绝。这三项都要在 kind 上顺带验证。
+- 依赖:脚本 `kubectl exec` 进 `svc/etcd` 背后的 Pod、`statefulset/redis` 的 redis 容器(2026-10-19 起;共享 Redis 高可用形态下 `svc/redis` 指向 haproxy 代理,代理镜像没有 redis-cli),再按 login 配置里的 Service 地址连回同一个 Service(高可用形态下经代理落到主),需要 pods/exec 权限,也依赖集群支持 hairpin 流量。Redis 若用 ACL 禁了 EVAL,脚本会 fail-closed 拒绝。这三项都要在 kind 上顺带验证。
 
 ### GateDrain 配置与 Deadline 约束
 

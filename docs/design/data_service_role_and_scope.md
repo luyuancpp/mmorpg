@@ -170,8 +170,8 @@ Kafka:
 - `player:{id}:<field>` 键族只有 data_service 自己写(Save / SetField / 回档 / debug_import),不在游戏存档主链上(主链是 `PlayerAllData:{id}`)。`LoadPlayerData` 的生产调用方只有 GM 快照、快照 diff 和 debug_fetch,都不用返回的 Version。
 - `ClientForPlayer` 真正的生产用途是账本读:`persisted_player_database.go` 读 `PlayerAllData:<id>`,`asset_sql_commit.go` 读 `player:{id}:asset_sql_commit`,供 guild / trade / mail / player_inbox 使用。它们读的是 scene 和 go/db 写的键,正确性完全依赖配置同址。
 
-### 已整改(2026-10-19,两批)
-第一批 Codex 已跑过定向与全量单测(见 PROGRESS 同日 Codex 条目);第二批(下表标「二」)未编译、未测试,待 Codex 验证。
+### 已整改(2026-10-19,三批)
+第一批 Codex 已跑过定向与全量单测(见 PROGRESS 同日 Codex 条目);第二、三批(下表标「二」「三」,第三批是对第二批的对抗评审修正)未编译、未测试,待 Codex 验证。
 
 | 批 | 问题 | 改法 | 位置 |
 |----|------|------|------|
@@ -184,6 +184,9 @@ Kafka:
 | 二 | 写路径不看合服围栏、拿锁后不复核映射(Regions 跨集群合服时会丢写) | 写门禁 `Router.AcquirePlayerWriteLock` + merge_zone 拷 blob 前查数据锁,见下文「写门禁契约」 | `internal/routing/router.go`、`internal/logic/data_logic.go`、`internal/logic/rollback_logic.go`、`tools/merge_zone/player_blob_migrate.go` |
 | 二 | 路由错误全部折叠成 `ErrCodeRedis`,server 层丢掉错误文本 | **码不改**(裁决见「已澄清」),只加原因日志:in-band 入口经 `clientForPlayer` / 写门禁记 `[DataRoute] <op> player=<id>:`,快照第 3 步同样记;账本 SQL 证据读的 Unavailable message 带原因 | `internal/logic/data_logic.go`、`snapshot_logic.go`、`asset_sql_commit.go` |
 | 二 | merge_zone `scanPlayerKeys` 在 `ForEachMaster` 的并发回调里无锁读写同一个 map / slice | 加 `sync.Mutex` | `tools/merge_zone/player_blob_migrate.go` |
+| 三 | `cmd/debug_import` 的 player 模式把版本重置为 `"1"` 却不删字段索引:玩家恰好只存过一次(戳 `"1"`)时,导入的字段被可信索引藏掉,下一次存盘还会固化 | `writeLegacyPlayerFields`:一个 MULTI 里先 DEL 索引、再写字段、最后重置版本 | `go/data_service/cmd/debug_import/main.go` |
+| 三 | 写脚本的版本守卫放过 `"007"` 这类前导零串,真 Redis 的 INCR 会拒绝它,此时字段已 SET,留下半截写(miniredis 接受,单测测不出) | 守卫改成规范十进制;读路径 `parseVersionValue` 同一口径 fail-closed | `internal/logic/data_logic.go` |
+| 三 | merge_zone 拷 blob 前查数据锁、且必须早于 SCAN,没有任何测试 | 真 Redis 集成测试 `TestIT_CopyPlayerStringKeys_RefusesWhileDataLockHeld`(tag `merge_integration`);字段索引键名在 data_service 与 merge_zone 两边各钉一次字面量 | `tools/merge_zone/blob_lock_integration_test.go`、`internal/logic/player_fields_test.go` |
 
 ### 字段索引与保留名(2026-10-19;未编译、未测试,待验证)
 - **结构**:`player:{id}:__fields`(HASH,与 `__version` / `__lock` / 字段键同 `{id}` slot),成员 `<字段名>` = 空串,保留成员 `__version` = 戳(索引在哪个版本上完整)。
@@ -195,7 +198,8 @@ Kafka:
 - **存量玩家**:永远走 SCAN 回退(成本等于以前),读路径不「收养」—— 这族键没有生产写者,存量集合不再增长;收养要在读路径写元数据,还有「删除后重存版本回到同一值」的 ABA 缺陷。收敛靠指标 `data_service_player_fields_enum_total{op,path}`:`path="legacy_scan"` 长期为 0 后,再另起一批把回退改成 fail-closed。
 - **保留名**:`__` 前缀、`save_barrier`、`asset_sql_commit`(键名取自 `shared/savebarrier`、`shared/assetop` 的规范键函数)。Load(指定字段)/ Save / SetField 回 InvalidRequest,GetField 回错误(server 折成 1,既有口径)。今后新增 `player:{%d}:` 花括号键必须同时登记(见 `shared-redis-split-by-purpose.md` 2026-10-19 增补)。
 - **删除边界**:`KeysDeleted` = 实际删掉的字段 string 键数 + 版本键(索引不计);别的模块的 HASH 与保留名不删;只由带外半截写造成的「有字段、无版本」残留在全量读里不可见、删除时也不删;`__` 前缀的老字段不读、不删。
-- **带外写者**:任何绕过 `saveFieldsScript` 直接改 `__version` 的工具(当前只有 `cmd/debug_import` 的 player 模式,见下文「仍未处理」),必须同时 `DEL player:{id}:__fields` 或改走 `SavePlayerData`,否则旧戳可能与被重置的版本巧合相等、把带外写的字段藏掉;`saveFieldsScript` 的「不维护就删索引」只能在下一次正常存盘时修复。
+- **带外写者**:任何绕过 `saveFieldsScript` 直接改 `__version` 的工具,必须在同一个 MULTI 里 `DEL player:{id}:__fields`,或改走 `SavePlayerData`。否则旧戳可能恰好等于被重置的版本:索引被当成可信,带外写的字段从全量读与删除里消失,下一次存盘还会把这个不完整的索引固化(`saveFieldsScript` 的「不维护就删索引」只兜得住戳与版本不等的情形)。`cmd/debug_import` 的 player 模式(唯一的这类工具,写 `"1"`)已改成 `writeLegacyPlayerFields`:一个 MULTI 里先删索引、再写字段、最后重置版本(2026-10-19 第三批)。
+- **版本格式**:`__version` 必须是规范十进制(无前导零、≤18 位)。真 Redis 的 INCR 拒绝 `"007"` 这类前导零串,miniredis 却接受,所以写脚本的守卫按规范十进制检查;读路径(`parseVersionValue`)同一口径,非规范值按损坏 fail-closed。
 - **滚动升级**:旧副本只 INCR、不维护戳,索引自动失效、读方退回 SCAN,不会漏读;旧副本的 `DeletePlayerData` 仍会连带删掉别家 HASH(旧缺陷),升级完成后消失。
 
 ### 写门禁契约(2026-10-19;未编译、未测试,待验证)
@@ -207,8 +211,8 @@ Kafka:
 - **部署**:merge_zone 的拷贝前查锁只有在所有 data_service 副本都含写门禁时才成立;Regions 下合服(含 unmerge)之前必须确认副本已全部升级。
 
 ### 仍未处理
-- `cmd/debug_import` 的 player 模式仍裸写字段、把 `__version` 重置为 `"1"`、先写数据后登记映射,不维护字段索引(见上文「带外写者」)。该文件当前有其他会话的未提交改动,本批没有碰;修法是改走 `logic.SavePlayerData`(先登记映射再写,版本 INCR)或至少写前 `DEL player:{id}:__fields`。在修好之前不要对已有 data_service 数据的玩家重复导入。
-- 真 Redis 7.2 上的 Lua 行为(TYPE 的 `.ok`、`false` 占位、局部函数)只在 miniredis 上测过;Cluster 上「同 slot 的未声明键」也没实测。
+- `cmd/debug_import` 的 player 模式仍然不持玩家锁、先写数据后登记映射、把版本重置为 `"1"`(调试工具,只写本地目标;字段索引问题已由 `writeLegacyPlayerFields` 解决)。与正在运行的 data_service 写入并发时可能互相覆盖,不要对线上进程正在写的玩家导入。
+- 真 Redis 7.2 上的 Lua 行为(TYPE 的 `.ok`、`false` 占位、局部函数)只在 miniredis 上测过 —— **已补集成测试,待运行**(2026-10-19):`internal/logic/data_logic_integration_test.go`(tag `integration`,`TestRealRedis*`,只读 `DATA_SERVICE_IT_REDIS_HOST`,一次性 `redis:7.2` 容器),钉住 TYPE 的 `.ok`、`false` 占位(RESP2 / RESP3 客户端都看)、删除脚本局部函数的计数、`"007"` 守卫先于 SET、戳与 `GET(__version)` 逐字节相等;Codex 跑绿之前仍按未覆盖对待。Cluster 上「同 slot 的未声明键」仍没实测(该测试只打单实例)。
 
 ### 启用 Regions(去掉 DevRedis)之前必须先处理
 - zone → 集群表只在启动时建一次、不热更新:改 zone 归属必须停写、搬完 `player:{id}:*`、所有副本同时换配置后再起,不能滚动改(见 `RegionConfig` 注释)。

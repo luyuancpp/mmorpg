@@ -70,15 +70,15 @@ constexpr PlayerAllData::ParseTableT_ PlayerAllData::InternalGenerateParseTable_
       {::_pbi::TcParser::FastMtS1,
        {26, 1, 1,
         PROTOBUF_FIELD_OFFSET(PlayerAllData, _impl_.player_database_1_data_)}},
-      // .BagAllData bag_data = 4;
+      // .BagAllData bag_data = 4 [(.OptionPersistUncarried) = true];
       {::_pbi::TcParser::FastMtS1,
        {34, 2, 2,
         PROTOBUF_FIELD_OFFSET(PlayerAllData, _impl_.bag_data_)}},
-      // .QuestAllData quest_data = 5;
+      // .QuestAllData quest_data = 5 [(.OptionPersistUncarried) = true];
       {::_pbi::TcParser::FastMtS1,
        {42, 3, 3,
         PROTOBUF_FIELD_OFFSET(PlayerAllData, _impl_.quest_data_)}},
-      // .MailAllData mail_data = 6;
+      // .MailAllData mail_data = 6 [(.OptionPersistUncarried) = true];
       {::_pbi::TcParser::FastMtS1,
        {50, 4, 4,
         PROTOBUF_FIELD_OFFSET(PlayerAllData, _impl_.mail_data_)}},
@@ -93,11 +93,11 @@ constexpr PlayerAllData::ParseTableT_ PlayerAllData::InternalGenerateParseTable_
       {PROTOBUF_FIELD_OFFSET(PlayerAllData, _impl_.player_database_data_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // .player_database_1 player_database_1_data = 3;
       {PROTOBUF_FIELD_OFFSET(PlayerAllData, _impl_.player_database_1_data_), _Internal::kHasBitsOffset + 1, 1, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // .BagAllData bag_data = 4;
+      // .BagAllData bag_data = 4 [(.OptionPersistUncarried) = true];
       {PROTOBUF_FIELD_OFFSET(PlayerAllData, _impl_.bag_data_), _Internal::kHasBitsOffset + 2, 2, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // .QuestAllData quest_data = 5;
+      // .QuestAllData quest_data = 5 [(.OptionPersistUncarried) = true];
       {PROTOBUF_FIELD_OFFSET(PlayerAllData, _impl_.quest_data_), _Internal::kHasBitsOffset + 3, 3, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-      // .MailAllData mail_data = 6;
+      // .MailAllData mail_data = 6 [(.OptionPersistUncarried) = true];
       {PROTOBUF_FIELD_OFFSET(PlayerAllData, _impl_.mail_data_), _Internal::kHasBitsOffset + 4, 4, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
       // uint64 last_save_seq = 7;
       {PROTOBUF_FIELD_OFFSET(PlayerAllData, _impl_.last_save_seq_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUInt64)},
@@ -273,32 +273,34 @@ static const ::_pbi::MessageGlobalsBase* PROTOBUF_NONNULL const
 const char descriptor_table_protodef_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n(proto/common/database/player_cache.pro"
-    "to\0320proto/common/database/mysql_database"
-    "_table.proto\032/proto/common/database/bag_"
-    "quest_mail_data.proto\"\355\001\n\rPlayerAllData\022"
-    ".\n\024player_database_data\030\002 \001(\0132\020.player_d"
-    "atabase\0222\n\026player_database_1_data\030\003 \001(\0132"
-    "\022.player_database_1\022\035\n\010bag_data\030\004 \001(\0132\013."
-    "BagAllData\022!\n\nquest_data\030\005 \001(\0132\r.QuestAl"
-    "lData\022\037\n\tmail_data\030\006 \001(\0132\014.MailAllData\022\025"
-    "\n\rlast_save_seq\030\007 \001(\004B\021Z\017common/database"
-    "b\006proto3"
+    "to\032\033proto/db/proto_option.proto\0320proto/c"
+    "ommon/database/mysql_database_table.prot"
+    "o\032/proto/common/database/bag_quest_mail_"
+    "data.proto\"\211\002\n\rPlayerAllData\022.\n\024player_d"
+    "atabase_data\030\002 \001(\0132\020.player_database\0222\n\026"
+    "player_database_1_data\030\003 \001(\0132\022.player_da"
+    "tabase_1\022$\n\010bag_data\030\004 \001(\0132\013.BagAllDataB"
+    "\005\300\376\244\002\001\022(\n\nquest_data\030\005 \001(\0132\r.QuestAllDat"
+    "aB\005\300\376\244\002\001\022&\n\tmail_data\030\006 \001(\0132\014.MailAllDat"
+    "aB\005\300\376\244\002\001\022\025\n\rlast_save_seq\030\007 \001(\004:\005\300\224\364\001\001B\021"
+    "Z\017common/databaseb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto_deps[2] = {
+    descriptor_table_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto_deps[3] = {
         &::descriptor_table_proto_2fcommon_2fdatabase_2fbag_5fquest_5fmail_5fdata_2eproto,
         &::descriptor_table_proto_2fcommon_2fdatabase_2fmysql_5fdatabase_5ftable_2eproto,
+        &::descriptor_table_proto_2fdb_2fproto_5foption_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto = {
     false,
     false,
-    408,
+    465,
     descriptor_table_protodef_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto,
     "proto/common/database/player_cache.proto",
     &descriptor_table_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto_once,
     descriptor_table_proto_2fcommon_2fdatabase_2fplayer_5fcache_2eproto_deps,
-    2,
+    3,
     1,
     schemas,
     file_message_globals,
@@ -510,21 +512,21 @@ PROTOBUF_NOINLINE void PlayerAllData::Clear() {
         stream);
   }
 
-  // .BagAllData bag_data = 4;
+  // .BagAllData bag_data = 4 [(.OptionPersistUncarried) = true];
   if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         4, *this_._impl_.bag_data_, this_._impl_.bag_data_->GetCachedSize(), target,
         stream);
   }
 
-  // .QuestAllData quest_data = 5;
+  // .QuestAllData quest_data = 5 [(.OptionPersistUncarried) = true];
   if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         5, *this_._impl_.quest_data_, this_._impl_.quest_data_->GetCachedSize(), target,
         stream);
   }
 
-  // .MailAllData mail_data = 6;
+  // .MailAllData mail_data = 6 [(.OptionPersistUncarried) = true];
   if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         6, *this_._impl_.mail_data_, this_._impl_.mail_data_->GetCachedSize(), target,
@@ -576,17 +578,17 @@ PROTOBUF_NOINLINE void PlayerAllData::Clear() {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.player_database_1_data_);
     }
-    // .BagAllData bag_data = 4;
+    // .BagAllData bag_data = 4 [(.OptionPersistUncarried) = true];
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.bag_data_);
     }
-    // .QuestAllData quest_data = 5;
+    // .QuestAllData quest_data = 5 [(.OptionPersistUncarried) = true];
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.quest_data_);
     }
-    // .MailAllData mail_data = 6;
+    // .MailAllData mail_data = 6 [(.OptionPersistUncarried) = true];
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.mail_data_);

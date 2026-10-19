@@ -60,6 +60,18 @@ public:
 		uint64_t correlationId = 0,
 		const std::string &extra = {});
 
+	// 上面这个按数量入包的重载,一次调用最多新铸多少个实例身份(item guid)。
+	// 调用方在不可重复的副作用之前,拿它与 tlsGuidSegmentRegistry.Get(GuidKind::kItem).Available()
+	// 比较,预检号段余量。号段发不出号时 AddItems 会整批拒绝,而失败已经晚了。
+	//   * 口径:每个 config 按 ItemStore::StacksNeededFor(count, max_stack_size) 计。能并进已有的
+	//     未满堆只会更少,所以这是上界,只会偏严。
+	//   * Bag::AddItems 先做空间规划,放不下时一个号都不铸。所以「主背包放不下 → 整批转投临时格」
+	//     这种两段式发放,合计最多也只铸这么多,一份余量就够。
+	//   * 查不到配置行、max_stack_size 为 0、数量为 0 的项按 0 计:这类批次会因参数或配置错误整批被拒,
+	//     一个号都不铸,与号段余量无关。
+	//   * 只读配置表,不读写任何玩家或号段状态。
+	[[nodiscard]] static uint64_t MaxNewInstancesFor(const ItemCountMap &itemsToAdd);
+
 	// Orchestrated batch AddItems carrying full ItemComp per piece
 	//   (mail attachments mixing equipment + stackable items): preserves
 	//   each piece's preassigned guid / attributes.

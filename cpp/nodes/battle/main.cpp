@@ -347,7 +347,8 @@ int main(int argc, char *argv[])
             //      (UNAVAILABLE battle_not_allocatable,match 换节点),与 lifecycle 当时的状态无关;
             //      房间表从此保持为空,AddObserver / IssueBattleTicket 因房间不存在自然被拒;
             //   1) 所有在打战斗作废(不发结算;观众收 ABORTED;scene 侧 reaper 按 InBattleComp.deadline_ms
-            //      解冻,设计文档 §3.2)。每个房间经 EraseRoom 通知 lifecycle 单元销毁;
+            //      解冻,设计文档 §3.2)。等结果回执的全球房间,个人结算在结果发出前已落 pending,
+            //      作废不删它,由 scene 补读应用(cross-zone-matchmaking.md §13.6)。每个房间经 EraseRoom 通知 lifecycle 单元销毁;
             //   2) 断开全部客户端直连;
             //   3) 停 Agones lifecycle worker 并 join(Stop 幂等)。放在最后,让单元计数先归零;
             //      归零可能让 worker 发一次 POST /ready;Stop 经取消令牌中止它(以及在途的 allocate / health 等),

@@ -30,6 +30,7 @@
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
+#include "proto/db/proto_option.pb.h"
 #include "proto/common/component/item_base_comp.pb.h"
 #include "proto/common/component/mission_comp.pb.h"
 // @@protoc_insertion_point(includes)
@@ -789,7 +790,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ItemEntry final : public ::google::
     kBagTypeFieldNumber = 5,
     kAcquireSeqFieldNumber = 13,
   };
-  // .EquipInstanceData equip = 14;
+  // .EquipInstanceData equip = 14 [(.OptionPersistUncarried) = true];
   [[nodiscard]] bool has_equip()
       const;
   void clear_equip() ;
@@ -1082,7 +1083,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED QuestAllData final : public ::googl
     kScopesFieldNumber = 3,
     kScopedStatePresentFieldNumber = 4,
   };
-  // repeated .QuestEntry active = 1;
+  // repeated .QuestEntry active = 1 [(.OptionPersistUncarried) = true];
   [[nodiscard]] int active_size()
       const;
   private:
@@ -2417,7 +2418,7 @@ inline void ItemEntry::_internal_set_acquire_seq(::uint64_t value) {
   _impl_.acquire_seq_ = value;
 }
 
-// .EquipInstanceData equip = 14;
+// .EquipInstanceData equip = 14 [(.OptionPersistUncarried) = true];
 inline bool ItemEntry::has_equip() const {
   bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
   PROTOBUF_ASSUME(!value || _impl_.equip_ != nullptr);
@@ -3226,7 +3227,7 @@ QuestScopeData::_internal_mutable_claimable_mission_ids() {
 
 // QuestAllData
 
-// repeated .QuestEntry active = 1;
+// repeated .QuestEntry active = 1 [(.OptionPersistUncarried) = true];
 inline int QuestAllData::_internal_active_size() const {
   return _internal_active().size();
 }

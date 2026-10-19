@@ -9,6 +9,7 @@ import (
 	goGen "protogen/internal/generator/go"
 	goGenOption "protogen/internal/generator/go/options"
 	unityGen "protogen/internal/generator/unity"
+	"protogen/internal/persistschema"
 	"protogen/internal/prototools"
 	protoToolsOption "protogen/internal/prototools/option"
 )
@@ -67,6 +68,8 @@ func runGenerationPipeline(runner *ExecutionRunner) {
 		{Name: "goGen.GoRobotTotalHandlerGenerator", Run: goGen.GoRobotTotalHandlerGenerator},
 		{Name: "unityGen.UnityClientHandlerGenerator", Run: unityGen.UnityClientHandlerGenerator},
 		{Name: "cppGen.CppPlayerDataLoadGenerator", Run: cppGen.CppPlayerDataLoadGenerator},
+		// 玩家持久 schema 世代台账:违反可携带性规则时整次生成失败(docs/design/mixed-version-persist-field-protection.md §3)。
+		{Name: "persistschema.Generate", Run: persistschema.Generate},
 		{Name: "cppGen.CppGrpcCallClient", Run: cppGen.CppGrpcCallClient},
 		{Name: "protoToolsOption.ProcessAllOptions", Run: func(wg *sync.WaitGroup) {
 			protoToolsOption.ProcessAllOptions(wg, internal.FdSet)

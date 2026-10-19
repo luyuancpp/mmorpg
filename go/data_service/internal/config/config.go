@@ -317,11 +317,15 @@ type RouteStoreConfig struct {
 	// Store.Required 拒启。缺省 false = 与今天逐字相同。所有副本应取同一值;打开前提是对账 leader 已挂标记(规格 §8 P5),
 	// 回退时先关它、再关 ArmReadyMarker、再切回 redis(规格 §13.5 第 1 条)。
 	ReadRequiresReady bool `json:",optional"`
+	// Reconcile 是 db_first 下对账 leader 的运行参数(第 1b-2 批,见 RouteReconcileConfig)。整段可缺失,缺失 = 全部默认值;
+	// redis 模式下不构造 leader,但非法值照样拒启(与本段其它键同口径)。
+	Reconcile RouteReconcileConfig `json:",optional"`
 }
 
 // Normalize 返回一份把"没配"(零值 / nil)换成默认值的副本。负数不纠正,交给 Validate 拒绝。
 // 刻意返回值而不是原地改(同 PlayerNameConfig.Normalize);指针字段只在 nil 时换成新指针,不改调用方指向的值。
 func (r RouteStoreConfig) Normalize() RouteStoreConfig {
+	r.Reconcile = r.Reconcile.Normalize()
 	if r.Mode == "" {
 		r.Mode = RouteStoreModeRedis
 	}
@@ -386,7 +390,16 @@ func (r RouteStoreConfig) Validate() error {
 		return fmt.Errorf("RouteStore.ReadRequiresReady=true requires Mode=%q (in %q mode the mapping Redis is the source of truth and there is no player_route to fall back to; turn ReadRequiresReady off first), got Mode=%q",
 			RouteStoreModeDBFirst, RouteStoreModeRedis, r.Mode)
 	}
+	if err := r.Reconcile.validate(r.Mode); err != nil {
+		return err
+	}
 	return nil
+}
+
+// ReconcileEnabled 报告是否要构造对账 leader:Mode=db_first 且 Reconcile.Enabled 不是 false(nil = true)。
+// redis 模式下 Redis 才是提交点、库只是 P1 时刻的快照,往缓存推库值会回填缓存缺的键,所以一律不构造(规格 scout D1)。
+func (r RouteStoreConfig) ReconcileEnabled() bool {
+	return r.DBFirst() && r.Reconcile.On()
 }
 
 // DBFirst 报告提交点是否在全局库(db_first)。
@@ -413,6 +426,213 @@ func (r RouteStoreConfig) NumReplicas() int {
 		return DefaultRouteStoreWaitAOFNumReplicas
 	}
 	return *r.WaitAOFNumReplicas
+}
+
+// ── 对账 leader(docs/handoff/launch-readiness-20261013/spec_D1_batch1b2_2_3.md §4、§13.1,第 1b-2 批)──
+
+// RouteStore.Reconcile 段各键的默认值(Normalize 照抄这一份;etc/data_service.yaml 写的就是它们)。
+const (
+	DefaultRouteReconcileLeaseMs                  = 10000
+	DefaultRouteReconcileRenewIntervalMs          = 3000
+	DefaultRouteReconcileTickIntervalMs           = 1000
+	DefaultRouteReconcileIncrementalIntervalMs    = 30000
+	DefaultRouteReconcileIncrementalOverlapMs     = 15000
+	DefaultRouteReconcileRepairLookbackMs         = 60000
+	DefaultRouteReconcileRollbackToleranceMs      = 0
+	DefaultRouteReconcilePushBatch                = 500
+	DefaultRouteReconcilePushMaxRowsPerSec        = 20000
+	DefaultRouteReconcileRedisPoolSize            = 4
+	DefaultRouteReconcileFreezeTimeoutMs          = 5000
+	DefaultRouteReconcileArmingBlockedReportLimit = 1000
+)
+
+// RouteStore.Reconcile 段的取值范围(Validate 用,闭区间)。
+const (
+	MinRouteReconcileLeaseMs, MaxRouteReconcileLeaseMs                             = 3000, 60000
+	MinRouteReconcileTickIntervalMs, MaxRouteReconcileTickIntervalMs               = 200, 10000
+	MinRouteReconcileIncrementalIntervalMs, MaxRouteReconcileIncrementalIntervalMs = 1000, 600000
+	MinRouteReconcileIncrementalOverlapMs, MaxRouteReconcileIncrementalOverlapMs   = 5000, 600000
+	MinRouteReconcileRepairLookbackMs, MaxRouteReconcileRepairLookbackMs           = 15000, 86400000
+	MaxRouteReconcileRollbackToleranceMs                                           = 60000
+	// MaxRouteReconcilePushBatch = store.RouteBatchLimit(1000;config 不 import store,两处各写一份,store 端超限直接拒绝)。
+	MaxRouteReconcilePushBatch                                                   = 1000
+	MinRouteReconcilePushMaxRowsPerSec, MaxRouteReconcilePushMaxRowsPerSec       = 100, 1000000
+	MaxRouteReconcileRedisPoolSize                                               = 32
+	// MinRouteReconcileFreezeTimeoutMs = store.RouteFreezeTimeoutMin(5s):TiDB 把 route_meta 设成缓存表后,冻结写要等读租约。
+	MinRouteReconcileFreezeTimeoutMs, MaxRouteReconcileFreezeTimeoutMs           = 5000, 60000
+	MaxRouteReconcileRedisFailureReleaseMs                                       = 600000
+	MaxRouteReconcileArmingBlockedReportLimit                                    = 100000
+)
+
+// RouteReconcileConfig 是对账 leader 的运行参数(RouteStore.Reconcile)。零值 / nil = 没配,由 Normalize 填默认值
+// (理由同 RouteStoreConfig:go-zero 不下钻未出现的 optional 结构)。
+//
+// 运行前提与上线纪律(规格 §8、§13.1 第 6 条):
+//   - 只在 Mode=db_first 时构造(ReconcileEnabled);redis 模式下不建客户端、不抢租约、不碰任何控制键;
+//   - ArmReadyMarker 是**全服单值**:所有共享同一全局库的 data_service 副本取同一个值;P3 门禁(二次导入、audit -require-maprev = 0)
+//     满足之后才改 true;回退时先关全部读方开关,再改 false(false = leader 每拍撤掉现存标记,撤销信任);
+//   - 共享同一全局库的副本必须指向同一个 MappingRedis(不变量 I4;指错时另一实例上的标记身份不符,读方不信任,安全由 M1 兜住)。
+type RouteReconcileConfig struct {
+	// Enabled:nil = true。写 false 是急停:不再补发孤儿行、不再做回档检测(第 3 批读方开启前可以接受)。
+	Enabled *bool `json:",optional"`
+	// ArmReadyMarker:true 才挂就绪标记(mapping:route:ready)。只许 Mode=db_first 且 Enabled 不是 false。
+	ArmReadyMarker bool `json:",optional"`
+	// LeaseMs:租约时长,[3000, 60000]。本地在「续约发出时刻 + LeaseMs − LeaseMs/5」之后自行降级。
+	LeaseMs int `json:",optional"`
+	// RenewIntervalMs:leader 续约间隔,≤ (LeaseMs − LeaseMs/5)/2,且 ≥ TickIntervalMs(续约在拍里做)。
+	RenewIntervalMs int `json:",optional"`
+	// TickIntervalMs:一拍的间隔,[200, 10000]。
+	TickIntervalMs int `json:",optional"`
+	// IncrementalIntervalMs:两次增量推送之间至少隔多久,[1000, 600000]。
+	IncrementalIntervalMs int `json:",optional"`
+	// IncrementalOverlapMs:增量起点 = cache_verified_ms − 本值(饱和到 0),[5000, 600000]。
+	// 不变量 I1:任何映射写事务从写 updated_at_ms 到提交小于本值。
+	IncrementalOverlapMs int `json:",optional"`
+	// RepairLookbackMs:身份变化后的回看修补起点 = min(标记水位, cache_verified_ms) − 本值(饱和到 0),[15000, 86400000],且 ≥ IncrementalOverlapMs。
+	RepairLookbackMs int `json:",optional"`
+	// RollbackToleranceMs:水位键的水位比库水位大多少才判回档,nil = 0(负责人 10-17 拍板),[0, 60000]。
+	RollbackToleranceMs *int `json:",optional"`
+	// PushBatch:每批扫 / 推的行数,[1, 1000](= store.RouteBatchLimit)。
+	PushBatch int `json:",optional"`
+	// PushMaxRowsPerSec:推送限速(行 / 秒),[100, 1000000]。
+	PushMaxRowsPerSec int `json:",optional"`
+	// RedisPoolSize:leader 独立 go-redis 连接池上限,[1, 32](不经 go-zero 熔断器;只有当选 leader 才真正建连接)。
+	// 共享 Redis 连接总账要把它算进去(第 1b-3 批 k8s_deploy)。
+	RedisPoolSize int `json:",optional"`
+	// AssumeNoEviction:mapping Redis 禁用了 CONFIG(托管 Redis)时按 noeviction 处理。只影响淘汰策略这一项,
+	// enable-debug-command 读不到时仍拒绝挂标记(规格 §13.1 第 5 条:不是 no 就拒绝)。
+	AssumeNoEviction bool `json:",optional"`
+	// FreezeTimeoutMs:含冻结写(leader 冻结映射写者)的每拍事务时限,[5000, 60000],且 ≤ LeaseMs − 2·(LeaseMs/5)
+	// (冻结前本地剩余租约不够 FreezeTimeout + Safety 就先续约,租约要撑得住一次冻结)。
+	FreezeTimeoutMs int `json:",optional"`
+	// RedisFailureReleaseMs:连续读不到 mapping Redis(身份 / 控制键)超过它就主动让出租约,让连得上的副本接手;
+	// 0 = 默认等于 LeaseMs。[TickIntervalMs, 600000]。
+	RedisFailureReleaseMs int `json:",optional"`
+	// ArmingBlockedReportLimit:挂标记被拒(armingBlocked)时记下的未决 player_id 上限,[1, 100000];超出只计数,
+	// 解除之后要重新全量预热(记不全就不能只复读记下的那些)。
+	ArmingBlockedReportLimit int `json:",optional"`
+}
+
+// Normalize 返回一份把没配的键换成默认值的副本(负数不纠正,交给 Validate)。
+func (rc RouteReconcileConfig) Normalize() RouteReconcileConfig {
+	if rc.Enabled == nil {
+		v := true
+		rc.Enabled = &v
+	}
+	if rc.LeaseMs == 0 {
+		rc.LeaseMs = DefaultRouteReconcileLeaseMs
+	}
+	if rc.RenewIntervalMs == 0 {
+		rc.RenewIntervalMs = DefaultRouteReconcileRenewIntervalMs
+	}
+	if rc.TickIntervalMs == 0 {
+		rc.TickIntervalMs = DefaultRouteReconcileTickIntervalMs
+	}
+	if rc.IncrementalIntervalMs == 0 {
+		rc.IncrementalIntervalMs = DefaultRouteReconcileIncrementalIntervalMs
+	}
+	if rc.IncrementalOverlapMs == 0 {
+		rc.IncrementalOverlapMs = DefaultRouteReconcileIncrementalOverlapMs
+	}
+	if rc.RepairLookbackMs == 0 {
+		rc.RepairLookbackMs = DefaultRouteReconcileRepairLookbackMs
+	}
+	if rc.RollbackToleranceMs == nil {
+		v := DefaultRouteReconcileRollbackToleranceMs
+		rc.RollbackToleranceMs = &v
+	}
+	if rc.PushBatch == 0 {
+		rc.PushBatch = DefaultRouteReconcilePushBatch
+	}
+	if rc.PushMaxRowsPerSec == 0 {
+		rc.PushMaxRowsPerSec = DefaultRouteReconcilePushMaxRowsPerSec
+	}
+	if rc.RedisPoolSize == 0 {
+		rc.RedisPoolSize = DefaultRouteReconcileRedisPoolSize
+	}
+	if rc.FreezeTimeoutMs == 0 {
+		rc.FreezeTimeoutMs = DefaultRouteReconcileFreezeTimeoutMs
+	}
+	if rc.RedisFailureReleaseMs == 0 {
+		rc.RedisFailureReleaseMs = rc.LeaseMs
+	}
+	if rc.ArmingBlockedReportLimit == 0 {
+		rc.ArmingBlockedReportLimit = DefaultRouteReconcileArmingBlockedReportLimit
+	}
+	return rc
+}
+
+// On 报告 Enabled 是不是开着(nil = true)。只看本段;是否真的构造 leader 要看 RouteStoreConfig.ReconcileEnabled(还要 db_first)。
+func (rc RouteReconcileConfig) On() bool {
+	return rc.Enabled == nil || *rc.Enabled
+}
+
+// ToleranceMs 是回档检测容差(RollbackToleranceMs,nil = 0)。
+func (rc RouteReconcileConfig) ToleranceMs() uint64 {
+	if rc.RollbackToleranceMs == nil || *rc.RollbackToleranceMs < 0 {
+		return 0
+	}
+	return uint64(*rc.RollbackToleranceMs)
+}
+
+// LeaseSafetyMs 是本地自行降级的提前量 = LeaseMs/5(scout D6)。
+func (rc RouteReconcileConfig) LeaseSafetyMs() int {
+	return rc.LeaseMs / 5
+}
+
+// validate 检查(通常是 Normalize 之后的)取值;mode 是 RouteStore.Mode。与 Mode 无关一律校验范围,
+// 只有 ArmReadyMarker=true 额外要求 db_first 且 Enabled 不是 false(否则回退顺序写反时会以为开着挂标记)。
+func (rc RouteReconcileConfig) validate(mode string) error {
+	type bound struct {
+		name     string
+		got      int
+		min, max int
+	}
+	for _, b := range []bound{
+		{"LeaseMs", rc.LeaseMs, MinRouteReconcileLeaseMs, MaxRouteReconcileLeaseMs},
+		{"TickIntervalMs", rc.TickIntervalMs, MinRouteReconcileTickIntervalMs, MaxRouteReconcileTickIntervalMs},
+		{"IncrementalIntervalMs", rc.IncrementalIntervalMs, MinRouteReconcileIncrementalIntervalMs, MaxRouteReconcileIncrementalIntervalMs},
+		{"IncrementalOverlapMs", rc.IncrementalOverlapMs, MinRouteReconcileIncrementalOverlapMs, MaxRouteReconcileIncrementalOverlapMs},
+		{"RepairLookbackMs", rc.RepairLookbackMs, MinRouteReconcileRepairLookbackMs, MaxRouteReconcileRepairLookbackMs},
+		{"PushBatch", rc.PushBatch, 1, MaxRouteReconcilePushBatch},
+		{"PushMaxRowsPerSec", rc.PushMaxRowsPerSec, MinRouteReconcilePushMaxRowsPerSec, MaxRouteReconcilePushMaxRowsPerSec},
+		{"RedisPoolSize", rc.RedisPoolSize, 1, MaxRouteReconcileRedisPoolSize},
+		{"FreezeTimeoutMs", rc.FreezeTimeoutMs, MinRouteReconcileFreezeTimeoutMs, MaxRouteReconcileFreezeTimeoutMs},
+		{"ArmingBlockedReportLimit", rc.ArmingBlockedReportLimit, 1, MaxRouteReconcileArmingBlockedReportLimit},
+	} {
+		if b.got < b.min || b.got > b.max {
+			return fmt.Errorf("RouteStore.Reconcile.%s must be in [%d, %d], got %d", b.name, b.min, b.max, b.got)
+		}
+	}
+	if rc.RollbackToleranceMs == nil {
+		return fmt.Errorf("RouteStore.Reconcile.RollbackToleranceMs is unset (call Normalize first)")
+	}
+	if tol := *rc.RollbackToleranceMs; tol < 0 || tol > MaxRouteReconcileRollbackToleranceMs {
+		return fmt.Errorf("RouteStore.Reconcile.RollbackToleranceMs must be in [0, %d], got %d", MaxRouteReconcileRollbackToleranceMs, tol)
+	}
+	safety := rc.LeaseSafetyMs()
+	if maxRenew := (rc.LeaseMs - safety) / 2; rc.RenewIntervalMs < rc.TickIntervalMs || rc.RenewIntervalMs > maxRenew {
+		return fmt.Errorf("RouteStore.Reconcile.RenewIntervalMs must be in [TickIntervalMs=%d, (LeaseMs - LeaseMs/5)/2=%d] "+
+			"(two renewals fit in the locally trusted part of the lease; renewals happen inside ticks), got %d",
+			rc.TickIntervalMs, maxRenew, rc.RenewIntervalMs)
+	}
+	if maxFreeze := rc.LeaseMs - 2*safety; rc.FreezeTimeoutMs > maxFreeze {
+		return fmt.Errorf("RouteStore.Reconcile.FreezeTimeoutMs=%d must be <= LeaseMs - 2*(LeaseMs/5) = %d "+
+			"(the lease must outlive one freeze transaction after a renewal); raise LeaseMs", rc.FreezeTimeoutMs, maxFreeze)
+	}
+	if rc.RepairLookbackMs < rc.IncrementalOverlapMs {
+		return fmt.Errorf("RouteStore.Reconcile.RepairLookbackMs=%d must be >= IncrementalOverlapMs=%d (the repair lookback covers at least the incremental overlap)",
+			rc.RepairLookbackMs, rc.IncrementalOverlapMs)
+	}
+	if rc.RedisFailureReleaseMs < rc.TickIntervalMs || rc.RedisFailureReleaseMs > MaxRouteReconcileRedisFailureReleaseMs {
+		return fmt.Errorf("RouteStore.Reconcile.RedisFailureReleaseMs must be in [TickIntervalMs=%d, %d], got %d",
+			rc.TickIntervalMs, MaxRouteReconcileRedisFailureReleaseMs, rc.RedisFailureReleaseMs)
+	}
+	if rc.ArmReadyMarker && (mode != RouteStoreModeDBFirst || !rc.On()) {
+		return fmt.Errorf("RouteStore.Reconcile.ArmReadyMarker=true requires Mode=%q and Reconcile.Enabled not false (got Mode=%q, Enabled=%t); "+
+			"when rolling back, set ArmReadyMarker=false first", RouteStoreModeDBFirst, mode, rc.On())
+	}
+	return nil
 }
 
 // SchemaConfig 建表策略。

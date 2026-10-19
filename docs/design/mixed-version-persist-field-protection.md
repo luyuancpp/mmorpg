@@ -1,6 +1,6 @@
 # 新旧版本混跑时的玩家持久字段保护
 
-> **状态**：设计稿 v0.3（2026-10-19，Claude）。**未落码、未编译、未测试**（AGENTS.md §10.1）。经两轮只读对抗评审：v0.1 被推翻三处核心做法，v0.2 又发现一个必现的误报（S-A）以及若干缺口。v0.3 已按两轮结论修订，明细见 §15。负责人评审通过后按 §9 分批实施，每批由 Codex 验证。
+> **状态**：设计稿 v0.4（2026-10-19，Claude）。经两轮只读对抗评审：v0.1 被推翻三处核心做法，v0.2 又发现一个必现的误报（S-A）以及若干缺口，v0.3 已按两轮结论修订。负责人 2026-10-19 通过 §13 第 1–5 条，第 1 批已落码。v0.4 回写第 1 批实施中的调整（§15）。**第 1 批未编译、未测试，待 Codex 验证**（AGENTS.md §10.1）；第 2 批及以后未开工。
 > **起因**：2026-10-18 核对灰度 / 不停服 / 金丝雀时发现，新旧版本混跑会丢玩家持久字段。负责人 2026-10-19 要求先补三件事：①存盘保留不认识的字段；②Redis 父快照记录写方版本并校验；③go/db 只写改动列。先出设计。
 > **范围**：玩家数据链，即 C++ scene 内存 → Redis 父快照 `PlayerAllData:{id}` → Kafka `db_task_zone_*` → go/db → MySQL 两张玩家表；外加 login 冷加载、回档快照、离线工具这些旁路。guild、mail、trade 各自的库表，以及客户端契约，不在本文范围内（§12）。
 > **证据口径**：[C] 表示对照 2026-10-19 工作区代码读过；[I] 表示推断。相关文件正被其他会话修改，行号会漂移，所以正文以函数名为主。
@@ -116,18 +116,25 @@ login → go/db 读任务 → SELECT 本版本认识的列 → 读回执 → log
 ### 3.1 世代号与台账
 
 - **世代号**：`uint32`，从 1 开始单调递增。覆盖从两张玩家表消息（`OptionIsPlayerDatabase`）可达的全部字段。`PlayerAllData` 顶层不经过 SQL，所以**不作为根**，并且冻结。
-- **台账** `proto/persist_schema_gen.txt`：由生成器维护，提交进仓库。格式：
+- **台账** `proto/persist_schema_gen.txt`：由生成器维护，提交进仓库。每个持久字段一行，身份是 `消息全名#字段号`；字段名只为可读，改名不算改动。格式（第 1 批实现）：
   ```text
-  1=baseline:<规范化字段集合的 sha256>
-  2=player_database.foo_component(22):message:FooComp
-  2=CurrencyDebtEntry.interest(9):uint64
+  state=bootstrap
+  1=player_database#21 optional uint32 persist_schema_gen
+  1=CurrencyComp#2 repeated CurrencyDebtEntry debts
+  2=CurrencyDebtEntry#9 optional uint64 interest
+  1=ItemComp#3 map map<uint32,Attr> attrs
+  retired=SomeComp#4
   ```
+  台账缺失时生成器拒绝运行，不会自动重建基线（重建会把发号历史抹成世代 1）。初始文件只有表头和 `state=bootstrap`，第一次生成时写入世代 1 的基线。
 - **生成器的行为**：
   - 只有新增 → 追加世代 `N+1`；
   - 删除且写了 `reserved N;` → 把原行标为 retired；
   - 改号、改类型、复用号 → 生成失败（AGENTS §4.3）。
 - **退役字段**：残留字节会作为未知字段一直被携带，因为字段号永不复用，这是无害的。机制三按世代号判断，不看有没有未知字段，所以不会被这些残留卡住。
-- **生成产物**（不手改）：C++ 常量 `kPersistSchemaGen`；Go 包 `go/shared/generated/persistschema` 的常量 `Gen`；C++ 往返一致性测试用的"冻结类型 / 投影字段"清单。
+- **生成产物**（不手改）：
+  - C++ 头文件 `cpp/generated/persist_schema/persist_schema_gen.h`：`persist_schema::kPersistSchemaGen`，以及往返一致性测试用的 `kFrozenMessageTypes`、`kUncarriedFields`；只有头文件，不需要登记工程；
+  - Go 包 `go/shared/generated/persistschema` 的常量 `Gen`。
+- **持久根与可携带集合**：根是两张玩家表，以及显式冻结的消息（让 `PlayerAllData` 这类不经 SQL 的顶层容器也受 R1 约束）。"可携带集合"只从玩家表、以及玩家表到达不了的冻结根出发，不穿过未携带字段；往返一致性测试要覆盖的，就是其中的非冻结类型。
 - **只在主干发号**：发布分支和 hotfix 分支不得自己追加世代。需要新持久字段时，先合主干拿号，再把台账行原样 cherry-pick 过去。
 
 ### 3.2 可携带性规则
@@ -140,23 +147,26 @@ login → go/db 读任务 → SELECT 本版本认识的列 → 读回执 → log
 | R4 | 字段迁移：子消息字段提升为列、拆分、换存储位置。生成器只能检测"同一世代内既删又增"并给出提示 | expand / contract：新旧位置双写一个完整版本周期，然后再切换读方 |
 | R5 | **语义耦合字段**：会参与等价判定、合堆、合并、逻辑重置的字段，或者按 ID 引用其他实体、而这类实体旧代码能删除后重建的字段。生成器无法检测，列入评审清单 | 依赖 §4.4 的守卫（旧代码遇到带未知字段的对象就拒绝做这类操作）；守卫覆盖不到的场景，走破坏性变更流程。跨实体引用只能用永不复用的实例 ID |
 
-**两个 option**，都定义在 `proto/db/proto_option.proto`。生成器从描述符的原始字节动态读取，不需要升级外部模块 `protooption`：
+**两个 option**，都定义在 `proto/db/proto_option.proto`。生成器从描述符的原始字节按字段号动态读取，不需要升级外部模块 `protooption`：
 
-- message 级 `OptionPersistFrozen`：冻结类型。往返测试不在这类节点上注入，但会继续向下遍历它的子字段。
-- field 级 `OptionPersistProjection`：投影字段。存盘时由另一个载体重新算出，往返测试不在这个字段上注入。生成器检查：投影字段的类型，必须另有一条非投影路径可达，或者本身就是冻结类型。
+- message 级 `OptionPersistFrozen = 500040`：冻结类型。生成器拒绝给它加字段（R1）；往返测试不在这类节点上注入，但会继续向下遍历它的子字段。
+- field 级 `OptionPersistUncarried = 600040`：存盘时不原样携带的字段，包括由别的载体重算的投影，以及 scene 每次存盘重新生成或清空的字段。往返测试不经由它注入。**只经这类字段可达**的消息类型不进入往返测试，也不受 R1 约束，因为这些数据本来就不靠原样携带。v0.3 原名 `OptionPersistProjection`，第 1 批实施时为覆盖压测探针、合服标记这类"每次重新生成"的字段而放宽了含义。
+- 编号避开 proto2mysql pbopt 已用的 500000–500024 与 600100–600101。
 
-**v0.3 的初始冻结清单 / 投影清单** [C]：
+**初始冻结 / 未携带清单（第 1 批已标注）** [C]：
 
-| 类型或字段 | 处理 | 原因 |
+| 类型或字段 | 标注 | 原因 |
 |---|---|---|
-| `PlayerAllData` | 冻结 | 不经过 SQL，`bag_data` / `quest_data` 只是兼容副本 |
-| `BagAllData`、`DynamicBagData`、`ItemEntry` | 冻结 | 布局层由 `bag_marshal` 重建。注意 `ItemEntry.instance`（ItemComp）是载体，**不冻结** |
-| `ItemEntry.equip` | 投影 | 由 `ItemComp.equip` 重新算出；`EquipInstanceData` 经 `ItemComp.equip` 可达，保持可携带 |
-| `QuestAllData`、`QuestScopeData`、`QuestEntry` | 冻结 | 由 `mission_marshal` 重建；`active` / `QuestEntry` 是只读的旧格式。`QuestScopeData.mission_list`（MissionListComp）是载体，不冻结 |
-| `MailAllData`、`MailEntry` | 冻结 | 没有写入方 |
-| `PlayerStressTestProbe`、`PlayerMergeStateComp` | 冻结 | scene 不 marshal 这两类字段（压测探针、合服标记，由工具写入）。是否属于有意设计，见 §12 |
-| `Vector3`、`Rotation` | 冻结 | 共用的几何类型，瞬移时整块替换 |
+| `PlayerAllData` | 冻结 | 不经过 SQL，冷加载由骨架组装 |
+| `PlayerAllData.bag_data` / `quest_data` / `mail_data` | 未携带 | 前两个是由数据库记录重算的兼容副本，`mail_data` 没有写入方；`MailAllData` / `MailEntry` 因此只经未携带字段可达，不再单独冻结 |
+| `BagAllData`、`BagAllData.DynamicBagData`、`ItemEntry` | 冻结 | 布局层由 `bag_marshal` 重建。`ItemEntry.instance`（ItemComp）是载体，**不冻结** |
+| `ItemEntry.equip` | 未携带（投影） | 由 `ItemComp.equip` 重新算出；`EquipInstanceData` 经 `ItemComp.equip` 可达，保持可携带 |
+| `QuestAllData`、`QuestScopeData` | 冻结 | 由 `mission_marshal` 重建。`QuestScopeData.mission_list`（MissionListComp）是载体，不冻结 |
+| `QuestAllData.active` | 未携带 | 只读旧格式，加载时转换、存盘不写出；`QuestEntry` 因此只经未携带字段可达，不再单独冻结 |
+| `player_database.stress_test_probe`、`player_database.merge_state`、`player_database_1.stress_test_probe` | 未携带 | 探针每次写盘重新生成；合服标记 scene 不处理、整行写会清空（是否有意见 §12）。改为标注引用字段，而不是冻结 `PlayerStressTestProbe` / `PlayerMergeStateComp` 类型：这两个类型定义在组件 proto 里 |
 | map 的 entry 类型 | 不纳入注入，也不纳入覆盖率统计 | 由生成器自动识别（`map_entry` 选项） |
+
+**不标注的类型**：`Vector3`、`Rotation`，以及上表中 `PlayerStressTestProbe` 等定义在 `proto/common/component/` 下的类型。组件 proto 可能被客户端使用，给它们加 option 就要导入服务端的 option 文件，会影响客户端仓（AGENTS §9、§12）。`Vector3` / `Rotation` 只在瞬移时被整块替换，这属于"重置"语义（§1.2）；它们的字段变更走客户端契约流程。
 
 ### 3.3 世代戳
 
@@ -389,7 +399,7 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 ### 8.1 引导期：上线机制本身
 
 1. **生成器就位**：台账写入世代 1 的基线，冻结清单和投影清单通过生成器检查，往返一致性测试通过。
-2. **引导期内禁止升世代**：生成器看到台账上的"引导中"标记，就拒绝追加世代。
+2. **引导期内不升世代**：台账为 `state=bootstrap` 时，生成器把新增字段一律记为世代 1。这样不会阻断其他人加持久字段，世代号也始终是 1。这与"引导期禁止升世代"的目的一致：机制前的二进制还在时，任何大于 1 的世代都没有意义。R1–R3 照常检查。状态不能从 `active` 改回 `bootstrap`，生成器会拒绝。
 3. **发布顺序**：
    - DDL：两张表各加戳列，默认值 0；
    - go/db：全部 zone，此时不开 C0，`G = 1`；
@@ -574,6 +584,18 @@ v0.2 要求每次存盘都满足"加载世代 ≥ hash"，而写入成功后 has
 | S4 退役字段 | C1 不再看未知字段 |
 | S5 回滚承诺 | 改为有条件 |
 | M1–M9 | 返回值、比较函数、种子不盖戳、恢复工具、`s < r` 拒写、R4、C2 立即失败、C0 与主干发号、LogQL |
+
+### v0.4（第 1 批落码，2026-10-19）
+
+负责人通过 §13 第 1–5 条后实施第 1 批，回写以下调整：
+
+| 项 | 调整 | 原因 |
+|---|---|---|
+| 字段级 option | `OptionPersistProjection` 改为 `OptionPersistUncarried`（600040），含义放宽为"存盘时不原样携带"；只经此类字段可达的类型不受 R1 约束 | 压测探针、合服标记是每次重新生成或清空的字段，不是投影；冻结它们的类型没有意义，还会挡住正当的扩展 |
+| 冻结清单 | `QuestEntry`、`MailAllData` / `MailEntry`、`PlayerStressTestProbe`、`PlayerMergeStateComp`、`Vector3` / `Rotation` 不再显式冻结 | 前四个改为标注引用字段；组件 proto 可能被客户端使用，不加服务端 option |
+| 引导期 | 新增字段并入世代 1，不阻断开发 | 世代号依旧不超过 1，目的不变；生成器拒绝阻断会卡住其他会话正在做的持久字段 |
+| 台账格式 | 逐字段记录，不再用基线哈希 | 逐字段才能判断改类型、删字段、复用字段号 |
+| 可携带集合 | 只从玩家表、以及玩家表到达不了的冻结根出发 | 深处冻结类型作为根只为受 R1 约束，不应成为往返测试的覆盖对象 |
 
 ### v0.3（第二轮评审）
 
