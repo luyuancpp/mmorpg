@@ -9439,3 +9439,19 @@ PROGRESS 一直没有条目)。上面 2026-09-21 条里"第 7–9 步未跑""修
 - 已验证:最新主干上MSVC Release烘焙器重新编译与13项合同测试通过;三图67500个格心与实际Detour网格查询0差异,精确出生探针通过;二次烘焙bin字节一致、源xlsx/JSON/PB清单SHA一致。schema索引发现主干MessageLimiter条数过期,用正式生成器更新81→87这一行后复查通过,源表未动。C++镜像Dockerfile与.dockerignore确认包含整份`data/scene_nav_bin`。细节见`docs/design/scene-navmesh-pipeline.md` §9。
 - 验证边界:完整scene/gate/Unity联机未运行。本机虚拟化未开,Docker daemon未运行,标准bin目录缺gate/scene/battle可执行文件。本条不宣称已完成玩家进游戏验收。
 - Java对应版本:0.1.0-SNAPSHOT,同一任务正在同步`config-data/navmesh/current_maps`与权威出生/移动校验;最终Java验证结论见Java仓库PARITY.md,本仓不替另一版提前报通过。
+## 2026-10-19 zone Redis 存活探测与空应答修复:验证状态补记(Claude,只读核对 Codex 10-17 的证据)
+
+- **结论**:上面 10-16 两条(「C++ zone Redis 连接加存活探测」与「zone Redis 空应答 / ERROR 不再被当成业务结论」)标题里写的「未编译,待 Codex 验证」已过时。
+  Codex 10-17「Go 1.27.2 与主干合并编译回归收尾」那一轮在合并后的 main 上编译并跑完了测试。
+- **逐项证据**(本机 `run/merge-validation-20261017/cpp-final-test-*.xml`,不入库):
+  - `rpc_controller_test` 共 80 项,0 失败(另有 2 项原本就禁用)。其中 `RedisManagerAuth` 10 例、`RedisManagerLiveness` 5 例全部通过,单例耗时 0.77–1.97 秒。
+  - `routing_identity_test` 98 项、`bag_test` 629 项、`currency_test` 186 项,均 0 失败。
+- **同轮另有两处修改**(`5778ccae92`),与存活探测相互独立:
+  - Codex 修了 Hiredis 适配层在 Windows 上收到纯 HUP 时的空转,两份 `Hiredis.cc` 逐字节一致。
+  - 测试夹具改为先等服务端看到全部断开,再析构 server。
+- **仍未做**:`--gtest_repeat=20` 稳定性复跑;Linux 构建与运行;在真实多节点集群上演练代理整机消失(见 `deploy/k8s/README.md`「代理整机消失」条)。
+- **在途**:空应答修复第二轮复审提了两项,修复会话会在 `fix/zone-redis-null-reply` 上另起提交,合入 main 前要再编译测试:
+  - P3:冻结到期的复查不该按锁重建;
+  - `settlement_outbox.h` 有一处注释把累计次数写成了「连续」。
+- **文档**:no-single-node 设计文档 §5.3 与 `deploy/k8s/README.md`「代理整机消失」条已同步为已验证状态。
+- **Java 版(AGENTS §12)**:不涉及客户端契约,无对应改动;本机没有 Java 仓,未核对 `PARITY.md`,对应 Java 版本号:无。
